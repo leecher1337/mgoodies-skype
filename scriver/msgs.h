@@ -45,6 +45,8 @@ struct ParentWindowData
 	HWND	hwndStatus;
 	HWND	hwndTabs;
 	DWORD	flags;
+	POINT	mouseLBDownPos;
+	int		mouseLBDown;
 	int		lastClickTab;
 	int		lastClickTime;
 	int		nFlash;
@@ -95,7 +97,8 @@ struct MessageWindowData
 	int nTypeMode;
 	int avatarWidth;
 	int avatarHeight;
-	int limitAvatarH;
+	int limitAvatarMaxH;
+	int limitAvatarMinH;
 	HBITMAP avatarPic;
 	DWORD nLastTyping;
 	int showTyping;
@@ -287,9 +290,11 @@ extern const int msgDlgFontCount;
 #define SRMSGSET_AVATARENABLE       "AvatarEnable"
 #define SRMSGDEFSET_AVATARENABLE    1
 #define SRMSGSET_LIMITAVHEIGHT      "AvatarLimitHeight"
-#define SRMSGDEFSET_LIMITAVHEIGHT   1
-#define SRMSGSET_AVHEIGHT          "AvatarHeight"
+#define SRMSGDEFSET_LIMITAVHEIGHT   0
+#define SRMSGSET_AVHEIGHT           "AvatarHeight"
 #define SRMSGDEFSET_AVHEIGHT        60
+#define SRMSGSET_AVHEIGHTMIN        "AvatarHeightMin"
+#define SRMSGDEFSET_AVHEIGHTMIN     20
 #define SRMSGSET_AVATAR             "Avatar"
 
 #endif

@@ -77,8 +77,13 @@ BEGIN
     CONTROL         "Enable avatar support in the message window",
                     IDC_AVATARSUPPORT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     8,180,292,10
-    CONTROL         "Do not resize avatars if possible",IDC_LIMITAVATARH,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,193,278,10
+	CONTROL         "Limit avatar height to min.",IDC_LIMITAVATARH,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,22,192,106,10
+    EDITTEXT        IDC_AVATARHEIGHTMIN,148,190,28,13,ES_AUTOHSCROLL
+    LTEXT           "and max.",IDC_STATIC,188,192,35,8
+    EDITTEXT        IDC_AVATARHEIGHT,230,190,28,13,ES_AUTOHSCROLL
+    LTEXT           "pixels.",IDC_STATIC,263,192,35,8
+
     CONTROL         "Send message on double 'Enter'",IDC_SENDONDBLENTER,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,204,293,10
     CONTROL         "Send message on 'Enter'",IDC_SENDONENTER,"Button",

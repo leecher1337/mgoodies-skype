@@ -99,9 +99,9 @@
 #define IDC_AVATAR                      1610
 #define IDC_AVATARSUPPORT               1611
 #define IDC_LIMITAVATARH                1612
+#define IDC_AVATARHEIGHT                1613
+#define IDC_AVATARHEIGHTMIN             1614
 #define IDC_LIMITNAMES					1615
-
-//#define IDC_AVATARHEIGHT                1613
 #define IDC_MARKFOLLOWUPS               1618
 #define IDM_CUT                         40000
 #define IDM_COPY                        40001
