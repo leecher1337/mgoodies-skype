@@ -72,8 +72,16 @@ const char *TextToken::getText() {
 	return text;
 }
 
+const wchar_t *TextToken::getTextW() {
+	return wtext;
+}
+
 const char *TextToken::getLink() {
 	return link;
+}
+
+const wchar_t *TextToken::getLinkW() {
+	return wlink;
 }
 
 void TextToken::setLink(const char *link) {
@@ -541,9 +549,9 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
         case SMILEY:
             eText = urlEncode(wtext);
             if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {
-            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" /> ", link, eText);
+            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" /> ", wlink, eText);
             } else {
-            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" />", link, eText);
+            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" />", wlink, eText);
             }
             break;
     }
@@ -560,7 +568,7 @@ wchar_t * HTMLBuilder::encode(const wchar_t *text, const char *proto, bool useSm
 	for (token = token1 = TextToken::tokenizeLinks(text);token!=NULL;token=token1) {
 	    token1 = token->getNext();
 	    if (useSmiley && token->getType() == TextToken::TEXT) {
-    		for (token2 = token3 = TextToken::tokenizeSmileys(proto, token->getText());token2!=NULL;token2=token3) {
+    		for (token2 = token3 = TextToken::tokenizeSmileys(proto, token->getTextW());token2!=NULL;token2=token3) {
     		    token3 = token2->getNext();
     	    	token2->toString(&output, &outputSize);
     	    	delete token2;
@@ -571,4 +579,46 @@ wchar_t * HTMLBuilder::encode(const wchar_t *text, const char *proto, bool useSm
         delete token;
 	}
 	return output;
+}
+
+char * HTMLBuilder::UTF8Encode(const wchar_t *wtext)
+{
+	unsigned char *szOut;
+	int len, i;
+	const wchar_t *w;
+
+	if (wtext == NULL) return NULL;
+	for (len=0, w=wtext; *w; w++) {
+		if (*w < 0x0080) len++;
+		else if (*w < 0x0800) len += 2;
+		else len += 3;
+	}
+	if ((szOut=(unsigned char *) malloc(len + 1)) == NULL)
+		return NULL;
+
+	for (i=0, w=wtext; *w; w++) {
+		if (*w < 0x0080)
+			szOut[i++] = (unsigned char) *w;
+		else if (*w < 0x0800) {
+			szOut[i++] = 0xc0 | ((*w) >> 6);
+			szOut[i++] = 0x80 | ((*w) & 0x3f);
+		}
+		else {
+			szOut[i++] = 0xe0 | ((*w) >> 12);
+			szOut[i++] = 0x80 | (((*w) >> 6) & 0x3f);
+			szOut[i++] = 0x80 | ((*w) & 0x3f);
+		}
+	}
+	szOut[i] = '\0';
+	return (char *) szOut;
+}
+
+
+char * HTMLBuilder::encodeUTF8(const wchar_t *wtext, const char *proto, bool useSmiley) {
+	wchar_t *output;
+	char * outputStr;
+	output = encode(wtext, proto, useSmiley);
+	outputStr = UTF8Encode(output);
+	free(output);
+	return outputStr;
 }

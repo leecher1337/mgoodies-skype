@@ -87,7 +87,7 @@ public:
 	STDMETHODIMP_(void)FileDownload(VARIANT_BOOL*);
 };
 
-class IEView:public IOleClientSite, public IOleInPlaceSite, public IDocHostUIHandler {
+class IEView:public IDispatch, public IOleClientSite, public IOleInPlaceSite, public IDocHostUIHandler {
 private:
    	static CRITICAL_SECTION mutex;
 	HWND 		parent;
@@ -103,10 +103,16 @@ private:
 	HTMLBuilder *builder;
 	SmileyWindow *smileyWindow;
 
+    // IUnknown
 	STDMETHODIMP QueryInterface(REFIID riid, PVOID *ppv);
 	STDMETHODIMP_(ULONG) AddRef(void);
 	STDMETHODIMP_(ULONG) Release(void);
 
+    // IDispatch
+	STDMETHOD(GetTypeInfoCount)(UINT*);
+	STDMETHOD(GetTypeInfo)(UINT, LCID, LPTYPEINFO*);
+	STDMETHOD(GetIDsOfNames)(REFIID,LPOLESTR*,UINT,LCID,DISPID*);
+	STDMETHOD(Invoke)(DISPID,REFIID,LCID,WORD,DISPPARAMS*,VARIANT*,EXCEPINFO*,UINT*);
 	// IOleWindow
 	STDMETHOD(GetWindow)(HWND *phwnd);
 	STDMETHOD(ContextSensitiveHelp)(BOOL fEnterMode);

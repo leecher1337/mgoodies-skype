@@ -21,7 +21,7 @@ protected:
 	void        setLastEventType(int);
 public:
     TabSRMMHTMLBuilder();
-	void buildHead(IEView *);
+	void buildHead(IEView *, IEVIEWEVENT *event);
 	void appendEvent(IEView *, IEVIEWEVENT *event);
 };
 

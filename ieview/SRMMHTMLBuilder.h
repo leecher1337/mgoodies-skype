@@ -12,7 +12,7 @@ protected:
 	virtual bool isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei);
 	virtual char *timestampToString(DWORD dwFlags, time_t check);
 public:
-	void buildHead(IEView *);
+	void buildHead(IEView *, IEVIEWEVENT *event);
 	void appendEvent(IEView *, IEVIEWEVENT *event);
 	void clear();
 };

@@ -48,6 +48,7 @@ public:
 	const char *		getText();
 	const wchar_t*      getTextW();
 	const char *		getLink();
+	const wchar_t *		getLinkW();
 	void 				setLink(const char *link);
 	void 				setLink(const wchar_t *wlink);
 	TextToken *			getNext();
@@ -65,11 +66,14 @@ public:
 };
 
 class HTMLBuilder {
+private:
+	char *UTF8Encode(const wchar_t *wtext);
 protected:
 	virtual char *encode(const char *text, const char *proto, bool replaceSmiley);
 	virtual wchar_t *encode(const wchar_t *text, const char *proto, bool replaceSmiley);
+	virtual char *encodeUTF8(const wchar_t *text, const char *proto, bool replaceSmiley);
 public:
-	virtual void buildHead(IEView *)=0;
+	virtual void buildHead(IEView *, IEVIEWEVENT *event)=0;
 	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;
 };
 

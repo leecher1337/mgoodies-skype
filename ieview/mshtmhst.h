@@ -1,3 +1,23 @@
+#define DISPID_AMBIENT_DLCONTROL                (-5512)
+#define DISPID_AMBIENT_USERAGENT                (-5513)
+#define DISPID_SECURITYDOMAIN                   (-5514)
+#define DLCTL_DLIMAGES                          0x00000010
+#define DLCTL_VIDEOS                            0x00000020
+#define DLCTL_BGSOUNDS                          0x00000040
+#define DLCTL_NO_SCRIPTS                        0x00000080
+#define DLCTL_NO_JAVA                           0x00000100
+#define DLCTL_NO_RUNACTIVEXCTLS                 0x00000200
+#define DLCTL_NO_DLACTIVEXCTLS                  0x00000400
+#define DLCTL_DOWNLOADONLY                      0x00000800
+#define DLCTL_NO_FRAMEDOWNLOAD                  0x00001000
+#define DLCTL_RESYNCHRONIZE                     0x00002000
+#define DLCTL_PRAGMA_NO_CACHE                   0x00004000
+#define DLCTL_FORCEOFFLINE                      0x10000000
+#define DLCTL_NO_CLIENTPULL                     0x20000000
+#define DLCTL_SILENT                            0x40000000
+#define DLCTL_OFFLINEIFNOTCONNECTED             0x80000000
+#define DLCTL_OFFLINE                           DLCTL_OFFLINEIFNOTCONNECTED
+
 
 /*****************************************************************************
  * IDocHostUIHandler interface

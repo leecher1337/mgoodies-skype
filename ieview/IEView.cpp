@@ -54,12 +54,12 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
            		}
 		    }
 		    break;
-    }    
+    }
     if (serverWindowProc != NULL) {
         return CallWindowProc(serverWindowProc, hwnd, message, wParam, lParam);
-    }    
+    }
     return DefWindowProc (hwnd, message, wParam, lParam);
-}    
+}
 
 static LRESULT CALLBACK IEViewDocWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     if (message == WM_PARENTNOTIFY) {
@@ -67,12 +67,12 @@ static LRESULT CALLBACK IEViewDocWindowProcedure (HWND hwnd, UINT message, WPARA
             serverWindowProc = (WNDPROC) GetWindowLong( (HWND)lParam, GWL_WNDPROC );
         }
         SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewServerWindowProcedure);
-    }    
+    }
     if (docWindowProc != NULL) {
         return CallWindowProc(docWindowProc, hwnd, message, wParam, lParam);
-    }    
+    }
     return DefWindowProc (hwnd, message, wParam, lParam);
-}    
+}
 
 static LRESULT CALLBACK IEViewWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     if (message == WM_PARENTNOTIFY) {
@@ -80,12 +80,12 @@ static LRESULT CALLBACK IEViewWindowProcedure (HWND hwnd, UINT message, WPARAM w
             docWindowProc = (WNDPROC) GetWindowLong( (HWND)lParam, GWL_WNDPROC );
         }
         SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewDocWindowProcedure);
-    }    
+    }
     if (frameWindowProc != NULL) {
         return CallWindowProc(frameWindowProc, hwnd, message, wParam, lParam);
-    }    
+    }
     return DefWindowProc (hwnd, message, wParam, lParam);
-}    
+}
 
 
 void IEView::init() {
@@ -120,31 +120,31 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 #else
 	if (SUCCEEDED(CoCreateInstance(CLSID_WebBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
 #endif
-		pWebBrowser->put_RegisterAsBrowser(VARIANT_TRUE);
-		pWebBrowser->put_RegisterAsDropTarget(VARIANT_TRUE);
+//		pWebBrowser->put_RegisterAsBrowser(VARIANT_FALSE);
+//		pWebBrowser->put_RegisterAsDropTarget(VARIANT_FALSE);
 		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleObject, (void**)&pOleObject))) {
-    		pOleObject->SetClientSite(this);
     		rcClient.left = x;
     		rcClient.top = y;
     		rcClient.right = x + cx;
     		rcClient.bottom = y + cy;
+    		pOleObject->SetClientSite(this);
     		pOleObject->DoVerb(OLEIVERB_INPLACEACTIVATE, &msg, this, 0, parent, &rcClient);
     		pOleObject->Release();
    		} else {
   			MessageBox(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
-   		}    
-  		
+   		}
+
 		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleInPlaceObject, (void**)&pOleInPlace))) {
     		pOleInPlace->GetWindow(&hwnd);
     		pOleInPlace->Release();
 		} else {
   			MessageBox(NULL,"IID_IOleInPlaceObject failed.","RESULT",MB_OK);
-		}    
+		}
 
 		LONG style = GetWindowLong(hwnd, GWL_EXSTYLE);
 		style |= (WS_EX_STATICEDGE);
 		SetWindowLong(hwnd,GWL_EXSTYLE,style);
-		
+
    		IConnectionPointContainer* pCPContainer;
 	   // Step 1: Get a pointer to the connection point container.
    		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IConnectionPointContainer,
@@ -163,16 +163,16 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 #endif
 	      	}
       		pCPContainer->Release();
-   		}    
+   		}
 #ifndef GECKO
 		frameWindowProc = (WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) IEViewWindowProcedure);
-#endif		
+#endif
     }
     EnterCriticalSection(&mutex);
 	next = list;
 	if (next != NULL) {
 	    next->prev = this;
-	}    
+	}
 	list = this;
 	LeaveCriticalSection(&mutex);
 	clear();
@@ -197,8 +197,8 @@ IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, in
 #else
 	if (SUCCEEDED(CoCreateInstance(CLSID_WebBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
 #endif
-		pWebBrowser->put_RegisterAsBrowser(VARIANT_TRUE);
-		pWebBrowser->put_RegisterAsDropTarget(VARIANT_TRUE);
+//		pWebBrowser->put_RegisterAsBrowser(VARIANT_FALSE);
+//		pWebBrowser->put_RegisterAsDropTarget(VARIANT_FALSE);
 		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleObject, (void**)&pOleObject))) {
     		rcClient.left = x;
     		rcClient.top = y;
@@ -248,7 +248,7 @@ IEView::~IEView() {
 		pOleObject->Release();
 	} else {
 		MessageBox(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
-	}    
+	}
     EnterCriticalSection(&mutex);
 	if (list == this) {
 		list = next;
@@ -299,6 +299,20 @@ STDMETHODIMP_(ULONG) IEView::AddRef(void) {
 STDMETHODIMP_(ULONG) IEView::Release(void) {
 	--m_cRef;
 	return m_cRef;
+}
+
+// IDispatch
+STDMETHODIMP IEView::GetTypeInfoCount(UINT *ptr) { return E_NOTIMPL; }
+STDMETHODIMP IEView::GetTypeInfo(UINT iTInfo, LCID lcid, LPTYPEINFO* ppTInfo) { return S_OK; }
+STDMETHODIMP IEView::GetIDsOfNames(REFIID riid, LPOLESTR* rgszNames, UINT cNames, LCID lcid, DISPID* rgDispId) { return S_OK; }
+
+STDMETHODIMP IEView::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid , WORD wFlags,
+							DISPPARAMS* pDispParams, VARIANT* pVarResult, EXCEPINFO*pExcepInfo, UINT*puArgErr) {
+ 	switch (dispIdMember) {
+		case  DISPID_AMBIENT_DLCONTROL:
+			break;
+	}
+	return DISP_E_MEMBERNOTFOUND;
 }
 
 // IOleWindow
@@ -425,11 +439,11 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 STDMETHODIMP IEView::GetHostInfo(DOCHOSTUIINFO *pInfo) {
  	pInfo->dwFlags = DOCHOSTUIFLAG_NO3DBORDER;// | DOCHOSTUIFLAG_DISABLE_SCRIPT_INACTIVE;
  	return S_OK;
-}    
+}
 STDMETHODIMP IEView::ShowUI(DWORD dwID, IOleInPlaceActiveObject *pActiveObject, IOleCommandTarget *pCommandTarget,
 		    				IOleInPlaceFrame *pFrame, IOleInPlaceUIWindow *pDoc) {
  	return S_OK;
-}    
+}
 
 STDMETHODIMP IEView::HideUI(void) {return S_OK;}
 STDMETHODIMP IEView::UpdateUI(void) {return S_OK;}
@@ -438,7 +452,7 @@ STDMETHODIMP IEView::OnDocWindowActivate(BOOL fEnable) { return E_NOTIMPL; }
 STDMETHODIMP IEView::OnFrameWindowActivate(BOOL fEnable) { return E_NOTIMPL; }
 STDMETHODIMP IEView::ResizeBorder(LPCRECT prcBorder, IOleInPlaceUIWindow *pUIWindow, BOOL fRameWindow) {
     return E_NOTIMPL;
-}    
+}
 STDMETHODIMP IEView::TranslateAccelerator(LPMSG lpMsg, const GUID *pguidCmdGroup, DWORD nCmdID) { return S_FALSE;}
 STDMETHODIMP IEView::GetOptionKeyPath(LPOLESTR *pchKey, DWORD dw) { return E_NOTIMPL; }
 STDMETHODIMP IEView::GetDropTarget(IDropTarget *pDropTarget, IDropTarget **ppDropTarget) { return E_NOTIMPL; }
@@ -446,13 +460,11 @@ STDMETHODIMP IEView::GetDropTarget(IDropTarget *pDropTarget, IDropTarget **ppDro
 STDMETHODIMP IEView::GetExternal(IDispatch **ppDispatch) {
 	*ppDispatch = NULL;
     return S_FALSE;
-}    
+}
 STDMETHODIMP IEView::TranslateUrl(DWORD dwTranslate, OLECHAR *pchURLIn, OLECHAR **ppchURLOut) { return E_NOTIMPL; }
 STDMETHODIMP IEView::FilterDataObject(IDataObject *pDO, IDataObject **ppDORet) { return E_NOTIMPL; }
 
-// IDispatch
 
-// IUnknown
 IEViewSink::IEViewSink() {
 	smileyWindow = NULL;
 }
@@ -461,7 +473,7 @@ IEViewSink::IEViewSink(SmileyWindow *smptr) {
 	smileyWindow = smptr;
 }
 
-IEViewSink::~IEViewSink() {}    
+IEViewSink::~IEViewSink() {}
 
 STDMETHODIMP IEViewSink::QueryInterface(REFIID riid, PVOID *ppv) {
 	*ppv=NULL;
@@ -507,9 +519,9 @@ STDMETHODIMP IEViewSink::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid , WO
             				pDispParams->rgvarg[2].pvarVal,
             				pDispParams->rgvarg[1].pvarVal,
             				pDispParams->rgvarg[0].pboolVal);
-			break;
+	    	return S_OK;
 	}
-    return S_OK;
+	return DISP_E_MEMBERNOTFOUND;
 }
 // DWebBrowserEvents2
 
@@ -644,7 +656,7 @@ void IEView::scrollToBottom() {/*
                 if (licznik == 1) break;
                 Sleep(10);
     		} while (!wcscmp(p, L"loading"));
-		}    
+		}
 		IHTMLWindow2* pWindow = NULL;
 		if (SUCCEEDED(document->get_parentWindow( &pWindow )) && pWindow != NULL) {
 			pWindow->scrollBy( 0, 0x01FFFFFF );
@@ -695,7 +707,7 @@ void IEView::write(const char *text) {
 		WCHAR *tTemp = new WCHAR[textLen];
 		SafeArrayAccessData(safe_array,(LPVOID *)&variant);
 		variant->vt = VT_BSTR;
-		MultiByteToWideChar(CP_ACP, 0, text, -1, tTemp, textLen);
+		MultiByteToWideChar(CP_UTF8, 0, text, -1, tTemp, textLen);
 		variant->bstrVal = SysAllocString(tTemp);
 		SafeArrayUnaccessData(safe_array);
 		document->write(safe_array);
@@ -729,7 +741,7 @@ void IEView::clear() {
 #ifdef GECKO
     pWebBrowser->Navigate(L"www.onet.pl", NULL, NULL, NULL, NULL);
     return;
-#endif    
+#endif
 	IHTMLDocument2 *document = getDocument();
 	if (document == NULL) {
 		pWebBrowser->Navigate(L"about:blank", NULL, NULL, NULL, NULL);
@@ -757,7 +769,7 @@ void IEView::clear() {
 		open_name.bstrVal = SysAllocString(L"_self");
 		VariantInit(&open_features);
 		VariantInit(&open_replace);
-		
+
 		HRESULT hr = document->open(SysAllocString(L"text/html"),
 		                    open_name,
 			                    open_features,
@@ -772,14 +784,15 @@ void IEView::clear() {
 		document->Release();
 	}
 	if (builder!=NULL) {
-		builder->buildHead(this);
+        IEVIEWEVENT event;
+		builder->buildHead(this, &event);
 	}
 }
 
 void IEView::appendEvent(IEVIEWEVENT *event) {
 	if (builder!=NULL) {
 		builder->appendEvent(this, event);
-	}		
+	}
 }
 
 IEView* IEView::get(HWND hwnd) {
@@ -809,7 +822,7 @@ void IEView::translateAccelerator(UINT uMsg, WPARAM wParam, LPARAM lParam) {
        pIOIPAO->TranslateAccelerator(&msg);
        pIOIPAO->Release();
     }
-}	
+}
 
 BSTR IEView::getHrefFromAnchor(IHTMLElement *element) {
     if (element != NULL) {
@@ -822,7 +835,7 @@ BSTR IEView::getHrefFromAnchor(IHTMLElement *element) {
             	url2 = wcsdup(url);
             	SysFreeString(url);
             	url = url2;
-           	}   	
+           	}
             pAnchor->Release();
             return url;
         } else {
@@ -835,7 +848,7 @@ BSTR IEView::getHrefFromAnchor(IHTMLElement *element) {
         }
     }
     return NULL;
-}    
+}
 
 bool IEView::mouseClick(POINT pt) {
     bool result = false;
@@ -854,10 +867,10 @@ bool IEView::mouseClick(POINT pt) {
                 result = true;
   			}
   			element->Release();
-  		}    
+  		}
 	    document->Release();
-	}    
+	}
 	return result;
 }
-    
+
 

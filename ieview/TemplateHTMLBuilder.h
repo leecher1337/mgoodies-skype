@@ -22,7 +22,7 @@ protected:
 	const char *groupTemplate;
 public:
     TemplateHTMLBuilder();
-	void buildHead(IEView *);
+	void buildHead(IEView *, IEVIEWEVENT *event);
 	void appendEvent(IEView *, IEVIEWEVENT *event);
 };
 

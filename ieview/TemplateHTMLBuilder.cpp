@@ -77,11 +77,10 @@ char *TemplateHTMLBuilder::makeRelativeDate(time_t check, int mode)
 }
 
 
-void TemplateHTMLBuilder::buildHead(IEView *view) {
+void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	groupTemplate = NULL;
 	isCleared = true;
-	return;
-	/*
+	isCleared = false;
 	int outputSize;
 	char *output;
     char szBase[1024];
@@ -118,7 +117,6 @@ void TemplateHTMLBuilder::buildHead(IEView *view) {
 		free(output);
 	}
 	groupTemplate = NULL;
-	*/
 }
 
 void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
@@ -189,7 +187,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			    ci.szProto = dbei.szModule;
 			    ci.dwFlag = CNF_DISPLAY;
 				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        szName = ci.pszVal;
+			        szName = encode(ci.pszVal, NULL, false);
     			}
 				sprintf(szCID, "%d", 0);
    			} else {
@@ -201,16 +199,19 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		       		}				    
            			DBFreeVariant(&dbv);
    				}    
-                szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0);
+                szName = encode((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
 				sprintf(szCID, "%d", (int)event->hContact);
             }
-			szName = encode(szName, NULL, false);
 			tmpltName[0] = groupTemplate;
 			tmpltName[1] = NULL;
 			groupTemplate = NULL;
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
-				szText = (char *)dbei.pBlob;
-                szText = encode(szText, szProto, true);
+				DWORD aLen = strlen((char *)dbei.pBlob)+1;
+				if (dbei.cbBlob > aLen) {
+					szText = encodeUTF8((wchar_t *)(dbei.pBlob + aLen), szProto, true);
+				} else {
+                	szText = encode((char *)dbei.pBlob, szProto, true);
+				}
                 if (isGrouping && (Options::getTemplatesFlags() & Options::LOG_GROUP_MESSAGES)) {
                     if (isGroupBreak || isCleared) {
               		    tmpltName[1] = isHistory ? isSent ? "hMessageOutGroupStart" : "hMessageInGroupStart" : isSent ? "MessageOutGroupStart" : "MessageInGroupStart";
@@ -222,16 +223,13 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                		tmpltName[1] = isHistory ? isSent ? "hMessageOut" : "hMessageIn" : isSent ? "MessageOut" : "MessageIn";
                	}    
 			} else if (dbei.eventType == EVENTTYPE_FILE) {
-				szText = (char *)dbei.pBlob + sizeof(DWORD);
-                szText = encode(szText, NULL, false);
+                szText = encode((char *)dbei.pBlob + sizeof(DWORD), NULL, false);
                 tmpltName[1] = isHistory ? "hFile" : "File";
 			} else if (dbei.eventType == EVENTTYPE_URL) {
-				szText = (char *)dbei.pBlob;
-                szText = encode(szText, NULL, false);
+                szText = encode((char *)dbei.pBlob, NULL, false);
                 tmpltName[1] = isHistory ? "hURL" : "URL";
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-				szText = (char *)dbei.pBlob;
-                szText = encode(szText, NULL, false);
+                szText = encode((char *)dbei.pBlob, NULL, false);
                 tmpltName[1] = isHistory ? "hStatus" : "Status";
 			}
 			/* template-specific formatting */

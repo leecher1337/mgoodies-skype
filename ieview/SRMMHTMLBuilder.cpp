@@ -105,42 +105,44 @@ char *SRMMHTMLBuilder::timestampToString(DWORD dwFlags, time_t check)
 }
 
 
-void SRMMHTMLBuilder::buildHead(IEView *view) {
+void SRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	LOGFONTA lf;
 	COLORREF color;
+	char *output = NULL;
+	int outputSize;
  	if (Options::getExternalCSSFlags() & Options::EXTERNALCSS_ENABLED) {
 	 	const char *externalCSS = Options::getExternalCSSFile();
-        view->writef("<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n",externalCSS);
+        Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n",externalCSS);
 		return;
 	}
 	HDC hdc = GetDC(NULL);
     int logPixelSY = GetDeviceCaps(hdc, LOGPIXELSY);
 	ReleaseDC(NULL, hdc);
-	view->write("<html><head><style type=\"text/css\">\n");
+	Utils::appendText(&output, &outputSize, "<html><head><style type=\"text/css\">\n");
 	COLORREF bkgColor = DBGetContactSettingDword(NULL, SRMMMOD, "BkgColour", 0xFFFFFF);
 	COLORREF inColor, outColor;
     bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
 	inColor = outColor = bkgColor;
 	if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
 		const char *bkgImageFilename = Options::getBkgImageFile();
-		view->writef(".body {margin: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); }\n",
+		Utils::appendText(&output, &outputSize, ".body {margin: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); }\n",
 		Options::getBkgImageFlags() & Options::BKGIMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
 	} else {
-		view->writef(".body {margin: 2px; text-align: left; background-color: #%06X; }\n",
+		Utils::appendText(&output, &outputSize, ".body {margin: 2px; text-align: left; background-color: #%06X; }\n",
 			 	     (int) bkgColor);
 	}
-	view->writef(".link {color: #0000FF; text-decoration: underline;}\n");
-	view->write(".img {vertical-align: middle;}\n");
+	Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
+	Utils::appendText(&output, &outputSize, ".img {vertical-align: middle;}\n");
 	if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
-		view->writef(".divIn {word-wrap: break-word;}\n");
-		view->writef(".divOut {word-wrap: break-word;}\n");
+		Utils::appendText(&output, &outputSize, ".divIn {word-wrap: break-word;}\n");
+		Utils::appendText(&output, &outputSize, ".divOut {word-wrap: break-word;}\n");
 	} else {
-		view->writef(".divIn {word-wrap: break-word; background-color: #%06X;}\n", (int) inColor);
-		view->writef(".divOut {word-wrap: break-word; background-color: #%06X;}\n", (int) outColor);
+		Utils::appendText(&output, &outputSize, ".divIn {word-wrap: break-word; background-color: #%06X;}\n", (int) inColor);
+		Utils::appendText(&output, &outputSize, ".divOut {word-wrap: break-word; background-color: #%06X;}\n", (int) outColor);
 	}
  	for(int i = 0; i < FONT_NUM; i++) {
 		loadMsgDlgFont(i, &lf, &color);
-		view->writef("%s {font-family: %s; font-size: %dpt; font-weight: %d; color: #%06X; %s}\n",
+		Utils::appendText(&output, &outputSize, "%s {font-family: %s; font-size: %dpt; font-weight: %d; color: #%06X; %s}\n",
 		classNames[i],
 		lf.lfFaceName,
 		abs((signed char)lf.lfHeight) *  74 /logPixelSY ,
@@ -148,7 +150,11 @@ void SRMMHTMLBuilder::buildHead(IEView *view) {
 		(int)(((color & 0xFF) << 16) | (color & 0xFF00) | ((color & 0xFF0000) >> 16)),
 		lf.lfItalic ? "font-style: italic" : "");
 	}
-	view->write("</style></head><body class=\"body\">\n");
+	Utils::appendText(&output, &outputSize, "</style></head><body class=\"body\">\n");
+	if (output != NULL) {
+        view->write(output);
+		free(output);
+	}
 
 }
 
@@ -198,18 +204,20 @@ void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			    ci.szProto = dbei.szModule;
 			    ci.dwFlag = CNF_DISPLAY;
 				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        szName = ci.pszVal;
+			        szName = encode(ci.pszVal, NULL, false);
     			}
    			} else {
-                szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0);
+                szName = encode((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
 			}
-			szName = encode(szName, NULL, false);
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
-				szText = (char *)dbei.pBlob;
-                szText = encode(szText, szProto, true);
+				DWORD aLen = strlen((char *)dbei.pBlob)+1;
+				if (dbei.cbBlob > aLen) {
+					szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, true);
+				} else {
+                	szText = encode((char *)dbei.pBlob, szProto, true);
+				}
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-				szText = (char *)dbei.pBlob;
-                szText = encode(szText, NULL, false);
+                szText = encode((char *)dbei.pBlob, NULL, false);
 			}
 			/* SRMM-specific formatting */
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
