@@ -45,6 +45,7 @@ struct ParentWindowData
 	int		lastClickTime;
 	int		nFlash;
 	int		nFlashMax;
+	int		bMinimized;
 };
 
 struct NewMessageWindowLParam

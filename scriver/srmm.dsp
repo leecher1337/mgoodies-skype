@@ -108,7 +108,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib shell32.lib ole32.lib comdlg32.lib /nologo /dll /pdb:none /machine:I386 /out:"../../bin/release/plugins/srmm.dll"
-# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib shell32.lib ole32.lib comdlg32.lib /nologo /dll /pdb:none /machine:I386 /out:"d:/mim/plugins/scriver.dll"
+# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib shell32.lib ole32.lib comdlg32.lib /nologo /dll /pdb:none /machine:I386 /out:"d:/mim/plugins/scriver_unicode.dll"
 
 !ELSEIF  "$(CFG)" == "srmm - Win32 Unicode Debug"
 
