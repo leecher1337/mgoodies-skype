@@ -58,18 +58,22 @@ BEGIN
     CONTROL         "Save the splitter position individually for each contact",
                     IDC_SAVESPLITTERPERCONTACT,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,8,111,292,10
-    CONTROL         "Show status bar",IDC_SHOWSTATUSBAR,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,154,138,10
-    CONTROL         "Show tool bar ",IDC_SHOWBUTTONLINE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,148,154,152,10
-    EDITTEXT        IDC_SECONDS,223,225,25,12,ES_AUTOHSCROLL
-    LTEXT           "seconds.",IDC_STATIC,253,227,44,8
     CONTROL         "Support control up/down in message area to show previously sent messages",
                     IDC_CTRLSUPPORT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,
-                    121,298,10
+                    122,298,10
     CONTROL         "Delete temporary contacts when closing message window",
-                    IDC_DELTEMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,132,
+                    IDC_DELTEMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,133,
                     287,10
+    CONTROL         "Show 'sending in progress' indicator",IDC_SHOWPROGRESS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,144,292,10
+    CONTROL         "Show status bar",IDC_SHOWSTATUSBAR,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,155,138,10
+    CONTROL         "Show tool bar ",IDC_SHOWBUTTONLINE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,148,155,152,10
+    CONTROL         "Show title bar",IDC_SHOWTITLEBAR,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,166,278,10
+    EDITTEXT        IDC_SECONDS,223,225,25,12,ES_AUTOHSCROLL
+    LTEXT           "seconds.",IDC_STATIC,253,227,44,8
     CONTROL         "Enable avatar support in the message window",
                     IDC_AVATARSUPPORT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     8,180,292,10

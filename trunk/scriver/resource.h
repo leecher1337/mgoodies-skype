@@ -69,7 +69,9 @@
 #define IDC_LOADTIME                    1047
 #define IDC_FONTLIST                    1048
 #define IDC_CHOOSEFONT                  1049
+#define IDC_SHOWTITLEBAR                1050
 #define IDC_STMINSOLD                   1051
+#define IDC_SHOWPROGRESS				1052
 #define IDC_DETAILS                     1069
 #define IDC_ADD                         1070
 #define IDC_USERMENU                    1071

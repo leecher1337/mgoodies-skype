@@ -1202,9 +1202,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 	case DM_UPDATESTATUSBAR:
 		if (dat->parent->hwndActive == hwndDlg) {
-			if (dat->messagesInProgress) {
+			if (dat->messagesInProgress && (g_dat->flags & SMF_SHOWPROGRESS)) {
 				char szBuf[256];
-				_snprintf(szBuf, sizeof(szBuf), Translate("%d message being sent..."), dat->messagesInProgress);
+				_snprintf(szBuf, sizeof(szBuf), Translate("Sending in progress: %d message(s) left..."), dat->messagesInProgress);
 				SendMessageA(dat->parent->hwndStatus, SB_SETTEXTA, 0, (LPARAM) szBuf);
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) g_dat->hIcons[SMF_ICON_DELIVERING]);
 			} else if (dat->nTypeSecs) {
@@ -1283,7 +1283,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				}*/
 				if (dat->messagesInProgress>0) {
 					dat->messagesInProgress--;
-					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+					if (g_dat->flags & SMF_SHOWPROGRESS) {
+						SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+					}
 				}
 				CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGSENDERROR), hwndDlg, ErrorDlgProc, (LPARAM) ewd);
 			}
@@ -1349,7 +1351,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			if (dat->sendInfo[lParam].sendBuffer) {
 				SetTimer(hwndDlg, TIMERID_MSGSEND, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_MSGTIMEOUT, SRMSGDEFSET_MSGTIMEOUT), NULL);
 				dat->messagesInProgress++;
-				SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+				if (g_dat->flags & SMF_SHOWPROGRESS) {
+					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+				}
 				dat->sendInfo[lParam].state = 0;
 				dat->sendInfo[lParam].hSendId = (HANDLE) CallContactService(dat->hContact, MsgServiceName(dat->hContact), SEND_FLAGS, (LPARAM) dat->sendInfo[lParam].sendBuffer);
 			}
@@ -1440,7 +1444,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				SetTimer(hwndDlg, TIMERID_MSGSEND, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_MSGTIMEOUT, SRMSGDEFSET_MSGTIMEOUT), NULL);
 				memcpy(dat->sendInfo[dat->sendCount-1].sendBuffer, dat->sendBuffer, bufSize * (sizeof(TCHAR) + 1));
 				dat->messagesInProgress++;
-				SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+				if (g_dat->flags & SMF_SHOWPROGRESS) {
+					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+				}
 				dat->sendInfo[dat->sendCount-1].state = 0;
 				dat->sendInfo[dat->sendCount-1].sendBufferSize = bufSize * (sizeof(TCHAR) + 1);
 				dat->sendInfo[dat->sendCount-1].hSendId = (HANDLE) CallContactService(dat->hContact, MsgServiceName(dat->hContact), SEND_FLAGS, (LPARAM) dat->sendBuffer);
@@ -1738,7 +1744,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			if (dat->messagesInProgress>0) {
 				dat->messagesInProgress--;
-				SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+				if (g_dat->flags & SMF_SHOWPROGRESS) {
+					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+				}
 			}
 			if (ack->result == ACKRESULT_FAILED) {
 				if (i == dat->sendCount) {
