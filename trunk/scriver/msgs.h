@@ -31,8 +31,8 @@ struct ErrorWindowData
 {
 	char *	szDescription;
 	char *	szText;
+	int		textSize;
 	HWND	hwndParent;
-	int		sendIdx;
 };
 
 struct ParentWindowData
@@ -64,7 +64,7 @@ struct NewMessageWindowLParam
 struct MessageSendInfo
 {
 	HANDLE hSendId;
-	int		state;
+	int		timeout;
 	char *	sendBuffer;
 	int		sendBufferSize;
 };
@@ -82,6 +82,7 @@ struct MessageWindowData
 	struct MessageSendInfo *sendInfo;
 	int sendCount;
 	HBRUSH hBkgBrush;
+	HBRUSH hMessageBkgBrush;
 	int splitterPos, originalSplitterPos;
 	char *sendBuffer;
 	SIZE minEditBoxSize;
@@ -97,8 +98,6 @@ struct MessageWindowData
 	int nTypeMode;
 	int avatarWidth;
 	int avatarHeight;
-	int limitAvatarMaxH;
-	int limitAvatarMinH;
 	HBITMAP avatarPic;
 	DWORD nLastTyping;
 	int showTyping;
@@ -270,7 +269,9 @@ extern const int msgDlgFontCount;
 #define SRMSGSET_SHOWSTATUSCH      "ShowStatusChanges"
 #define SRMSGDEFSET_SHOWSTATUSCH   1
 #define SRMSGSET_BKGCOLOUR         "BkgColour"
-#define SRMSGDEFSET_BKGCOLOUR      GetSysColor(COLOR_WINDOW)
+#define SRMSGDEFSET_BKGCOLOUR       GetSysColor(COLOR_WINDOW)
+#define SRMSGSET_INPUTBKGCOLOUR     "InputBkgColour"
+#define SRMSGDEFSET_INPUTBKGCOLOUR  GetSysColor(COLOR_WINDOW)
 
 #define SRMSGSET_TYPING             "SupportTyping"
 #define SRMSGSET_TYPINGNEW          "DefaultTyping"

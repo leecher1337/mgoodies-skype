@@ -182,10 +182,11 @@ void ReloadGlobals() {
 		g_dat->flags |= SMF_SHOWBTNS;
 //	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDBUTTON, SRMSGDEFSET_SENDBUTTON))
 //		g_dat->flags |= SMF_SENDBTN;
-	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AVATARENABLE, SRMSGDEFSET_AVATARENABLE))
+	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AVATARENABLE, SRMSGDEFSET_AVATARENABLE)) {
 		g_dat->flags |= SMF_AVATAR;
-	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITAVHEIGHT, SRMSGDEFSET_LIMITAVHEIGHT))
-		g_dat->flags |= SMF_LIMITAVATARH;
+		if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITAVHEIGHT, SRMSGDEFSET_LIMITAVHEIGHT))
+			g_dat->flags |= SMF_LIMITAVATARH;
+	}
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSBAR, SRMSGDEFSET_SHOWSTATUSBAR))
 		g_dat->flags |= SMF_SHOWSTATUSBAR;
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTITLEBAR, SRMSGDEFSET_SHOWTITLEBAR))
@@ -226,6 +227,16 @@ void ReloadGlobals() {
 		g_dat->flags |= SMF_SHOWTYPINGTRAY;
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTYPINGCLIST, SRMSGDEFSET_SHOWTYPINGCLIST))
 		g_dat->flags |= SMF_SHOWTYPINGCLIST;
+
+	g_dat->limitAvatarMaxH = 100000;
+	g_dat->limitAvatarMinH = 0;
+	if (g_dat->flags & SMF_LIMITAVATARH) {
+		g_dat->limitAvatarMaxH = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT);
+		g_dat->limitAvatarMinH = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHTMIN, SRMSGDEFSET_AVHEIGHTMIN);
+		if (g_dat->limitAvatarMinH > g_dat->limitAvatarMaxH) {
+			g_dat->limitAvatarMinH = g_dat->limitAvatarMaxH;
+		}
+	}
 
 }
 
