@@ -16,6 +16,7 @@ public:
 	static wchar_t *dupString(const wchar_t *a, int l);
 	static wchar_t *convertToWCS(const char *a);
 	static char *convertToString(const wchar_t *a);
+	static DWORD safe_wcslen(wchar_t *msg, DWORD maxLen);
 
 }; 
 
