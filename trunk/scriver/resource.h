@@ -98,6 +98,7 @@
 #define IDC_LIMITNAMES                  1615
 #define IDC_TRANSPARENCY                1616
 #define IDC_MARKFOLLOWUPS               1617
+#define IDC_MESSAGEONNEWLINE            1618
 #define IDC_ATRANSPARENCYVALUE			1619
 #define IDC_ATRANSPARENCYPERC           1620
 #define IDC_ITRANSPARENCYVALUE			1621
