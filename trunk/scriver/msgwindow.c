@@ -221,17 +221,24 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				if (i==0 || mmi->ptMinTrackSize.x > minW) minW = mmi->ptMinTrackSize.x;
 				if (i==0 || mmi->ptMinTrackSize.y > minH) minH = mmi->ptMinTrackSize.y;
 			}
-			mmi->ptMinTrackSize.x = minW + (rcWindow.right - rcWindow.left) - (rc.right - rc.left);
-			mmi->ptMinTrackSize.y = minH + (rcWindow.bottom - rcWindow.top) - (rc.bottom - rc.top);
+			if (dat->bMinimized) {
+				mmi->ptMinTrackSize.x = minW;
+				mmi->ptMinTrackSize.y = minH;
+			} else {
+				mmi->ptMinTrackSize.x = minW + (rcWindow.right - rcWindow.left) - (rc.right - rc.left);
+				mmi->ptMinTrackSize.y = minH + (rcWindow.bottom - rcWindow.top) - (rc.bottom - rc.top);
+			}
 			return FALSE;
 		}
 
 		case WM_SIZE:
-			if (IsIconic(hwndDlg) || wParam == SIZE_MINIMIZED)
-				break;
-			{
+			if (wParam == SIZE_MINIMIZED) {
+				dat->bMinimized = 1;
+
+			} else if (!IsIconic(hwndDlg))	{
 				int i;
 				RECT rc, rcStatus, rcChild, rcWindow;
+				dat->bMinimized = 0;
 				GetClientRect(hwndDlg, &rc);
 				rcStatus.top = rcStatus.bottom = 0;
 				if (g_dat->flags & SMF_SHOWSTATUSBAR) {
