@@ -299,10 +299,11 @@ extern const int msgDlgFontCount;
 #define SRMSGDEFSET_AVHEIGHTMIN     20
 #define SRMSGSET_AVATAR             "Avatar"
 
-
-//#define SRMSGSET_WINDOWALPHA		"UseWindowAlpha"
-//#define SRMSGDEFSET_WINDOWALPHA		0
-#define SRMSGSET_WINDOWALPHA		"WindowAlpha"
-#define SRMSGDEFSET_WINDOWALPHA		0
+#define SRMSGSET_USETRANSPARENCY	"UseTransparency"
+#define SRMSGDEFSET_USETRANSPARENCY 0
+#define SRMSGSET_ACTIVEALPHA		"ActiveAlpha"
+#define SRMSGDEFSET_ACTIVEALPHA		0
+#define SRMSGSET_INACTIVEALPHA		"InactiveAlpha"
+#define SRMSGDEFSET_INACTIVEALPHA	0
 
 #endif

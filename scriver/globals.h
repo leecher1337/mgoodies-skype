@@ -8,6 +8,7 @@
 #define SMF_SHOWTYPINGCLIST 0x00000010
 #define SMF_SHOWICONS       0x00000020
 #define SMF_SHOWTIME        0x00000040
+#define SMF_USETRANSPARENCY 0x00000080
 #define SMF_AVATAR          0x00000100
 #define SMF_LIMITAVATARH    0x00000200
 #define SMF_SHOWDATE        0x00000400
@@ -56,7 +57,8 @@ struct GlobalMessageData
 	char **	protoNames;
 	int		limitAvatarMaxH;
 	int		limitAvatarMinH;
-	int		transparency;
+	int		activeAlpha;
+	int		inactiveAlpha;
 	HIMAGELIST hIconList;
 };
 

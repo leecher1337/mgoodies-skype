@@ -2,6 +2,7 @@
 
 struct GlobalMessageData *g_dat=NULL;
 extern HINSTANCE g_hInst;
+extern PSLWA pSetLayeredWindowAttributes;
 static HANDLE g_hDbEvent = 0, g_hAck = 0;
 static int dbaddedevent(WPARAM wParam, LPARAM lParam);
 static int ackevent(WPARAM wParam, LPARAM lParam);
@@ -237,8 +238,12 @@ void ReloadGlobals() {
 			g_dat->limitAvatarMinH = g_dat->limitAvatarMaxH;
 		}
 	}
-	g_dat->transparency = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_WINDOWALPHA, SRMSGDEFSET_WINDOWALPHA);
-
+	if (LOBYTE(LOWORD(GetVersion())) >= 5  && pSetLayeredWindowAttributes != NULL) {
+		if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_USETRANSPARENCY, SRMSGDEFSET_USETRANSPARENCY))
+			g_dat->flags |= SMF_USETRANSPARENCY;
+		g_dat->activeAlpha = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_ACTIVEALPHA, SRMSGDEFSET_ACTIVEALPHA);
+		g_dat->inactiveAlpha = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_INACTIVEALPHA, SRMSGDEFSET_INACTIVEALPHA);
+	}
 }
 
 static int ackevent(WPARAM wParam, LPARAM lParam) {

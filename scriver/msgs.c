@@ -74,9 +74,6 @@ static int MessageEventAdded(WPARAM wParam, LPARAM lParam)
 	CallServiceSync(MS_CLIST_REMOVEEVENT, wParam, (LPARAM) 1);
 	/* does a window for the contact exist? */
 	if (hwnd) {
-		if (GetForegroundWindow()==GetParent(hwnd))
-			SkinPlaySound("RecvMsgActive");
-		else SkinPlaySound("RecvMsgInactive");
 		return 0;
 	}
 	/* new message */
@@ -310,8 +307,6 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 	PROTOCOLDESCRIPTOR **protocol;
 	int protoCount, i;
 
-	hDLL = LoadLibraryA("user32");
-	pSetLayeredWindowAttributes = (PSLWA) GetProcAddress(hDLL,"SetLayeredWindowAttributes");
 	SetIcoLibIcons();
 	LoadGlobalIcons();
 	LoadMsgLogIcons();
@@ -377,6 +372,8 @@ int LoadSendRecvMessageModule(void)
 			return 1;
 		return 0;
 	}
+	hDLL = LoadLibraryA("user32");
+	pSetLayeredWindowAttributes = (PSLWA) GetProcAddress(hDLL,"SetLayeredWindowAttributes");
 	InitGlobals();
 	RichUtil_Load();
 	OleInitialize(NULL);
