@@ -189,18 +189,22 @@ extern const int msgDlgFontCount;
 
 #define SRMMMOD                    "SRMM"
 
+#define SRMSGSET_SHOWTITLEBAR	   "ShowTitleBar"
+#define SRMSGDEFSET_SHOWTITLEBAR  1
 #define SRMSGSET_SHOWSTATUSBAR	   "ShowStatusBar"
 #define SRMSGDEFSET_SHOWSTATUSBAR  0
 #define SRMSGSET_USETABS		   "UseTabs"
 #define SRMSGDEFSET_USETABS		   1
 #define SRMSGSET_TABSATBOTTOM	   "TabsPosition"
 #define SRMSGDEFSET_TABSATBOTTOM   0
-#define SRMSGSET_LIMITNAMES			"LimitNamesOnTabs"
+#define SRMSGSET_LIMITNAMES		   "LimitNamesOnTabs"
 #define SRMSGDEFSET_LIMITNAMES		1
 #define SRMSGSET_SHOWBUTTONLINE    "ShowButtonLine"
 #define SRMSGDEFSET_SHOWBUTTONLINE 1
 #define SRMSGSET_SHOWINFOLINE      "ShowInfoLine"
 #define SRMSGDEFSET_SHOWINFOLINE   1
+#define SRMSGSET_SHOWPROGRESS	   "ShowProgress"
+#define SRMSGDEFSET_SHOWPROGRESS   0
 #define SRMSGSET_AUTOPOPUP         "AutoPopupMsg"
 #define SRMSGDEFSET_AUTOPOPUP      0
 #define SRMSGSET_AUTOMIN           "AutoMin"

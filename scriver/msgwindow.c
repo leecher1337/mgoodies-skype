@@ -223,11 +223,23 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			}
 			WindowList_Add(g_dat->hParentWindowList, hwndDlg, 0);
 			OldTabCtrlProc = (WNDPROC) SetWindowLong(dat->hwndTabs, GWL_WNDPROC, (LONG) TabCtrlProc);
-			ws = GetWindowLong(dat->hwndTabs, GWL_STYLE);
+			ws = GetWindowLong(dat->hwndTabs, GWL_STYLE) & ~(TCS_BOTTOM);
 			if (g_dat->flags & SMF_TABSATBOTTOM) {
 				ws |= TCS_BOTTOM;
 			}
 			SetWindowLong(dat->hwndTabs, GWL_STYLE, ws);
+			ws = GetWindowLong(hwndDlg, GWL_STYLE) & ~(WS_CAPTION);
+			if (g_dat->flags & SMF_SHOWTITLEBAR) {
+				ws |= WS_CAPTION;
+				SetWindowLong(hwndDlg, GWL_STYLE, ws);
+			} else {
+				RECT rc;
+				SetWindowLong(hwndDlg, GWL_STYLE, ws);
+				GetWindowRect(hwndDlg, &rc);
+				SetWindowPos(hwndDlg, 0, 0, 0, rc.right - rc.left, rc.bottom - rc.top,
+							 SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER  | SWP_FRAMECHANGED | SWP_NOSENDCHANGING); 
+			}
+
 			//SetWindowPos(dat->hwndTabs, 0, 0, -10, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 			if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
 				ShowWindow(dat->hwndStatus, SW_HIDE);
@@ -610,18 +622,27 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		break;
 	case DM_OPTIONSAPPLIED:
 		{
+			RECT rc;
 			dat->flags = g_dat->flags;
 			if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
 				ShowWindow(dat->hwndStatus, SW_HIDE);
 			} else {
 				ShowWindow(dat->hwndStatus, SW_SHOW);
 			}
+			ws = GetWindowLong(hwndDlg, GWL_STYLE) & ~(WS_CAPTION);
+			if (dat->flags & SMF_SHOWTITLEBAR) {
+				ws |= WS_CAPTION;
+			} 
+			SetWindowLong(hwndDlg, GWL_STYLE, ws);
 			ws = GetWindowLong(dat->hwndTabs, GWL_STYLE) & ~(TCS_BOTTOM);
 			if (dat->flags & SMF_TABSATBOTTOM) {
 				ws |= TCS_BOTTOM;
 			} 
 			SetWindowLong(dat->hwndTabs, GWL_STYLE, ws);
 			RedrawWindow(dat->hwndTabs, NULL, NULL, RDW_INVALIDATE);
+			GetWindowRect(hwndDlg, &rc);
+			SetWindowPos(hwndDlg, 0, 0, 0, rc.right - rc.left, rc.bottom - rc.top, 
+                        SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOSENDCHANGING);
 			SendMessage(hwndDlg, WM_SIZE, 0, 0);
 			break;
 		}
@@ -655,7 +676,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			SetWindowLong(hwndDlg, GWL_STYLE, ws);
 			GetWindowRect(hwndDlg, &rc);
 			SetWindowPos(hwndDlg, 0, 0, 0, rc.right - rc.left, rc.bottom - rc.top,
-                         SWP_NOMOVE | SWP_NOZORDER |  SWP_FRAMECHANGED | SWP_NOSENDCHANGING); 
+                         SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER  | SWP_FRAMECHANGED | SWP_NOSENDCHANGING); 
 		}
 		break;
 	case DM_CASCADENEWWINDOW:
