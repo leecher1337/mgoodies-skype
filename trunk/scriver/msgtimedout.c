@@ -41,7 +41,11 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 				if (!ewd->szText) 
 					ewd->szText = strdup("");
 				SetDlgItemTextA(hwndDlg, IDC_ERRORTEXT, ewd->szDescription);
+		#if defined( _UNICODE )
+				SetDlgItemTextW(hwndDlg, IDC_MSGTEXT, (TCHAR *)(ewd->szText + strlen(ewd->szText) + 1));
+		#else
 				SetDlgItemTextA(hwndDlg, IDC_MSGTEXT, ewd->szText);
+		#endif
 				free(ewd->szDescription);
 				free(ewd->szText);
 			}

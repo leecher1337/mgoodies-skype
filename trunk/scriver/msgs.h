@@ -44,13 +44,13 @@ struct ParentWindowData
 	HWND	hwndActive;
 	HWND	hwndStatus;
 	HWND	hwndTabs;
+	DWORD	flags;
 	int		lastClickTab;
 	int		lastClickTime;
 	int		nFlash;
 	int		nFlashMax;
 	int		bMinimized;
 	int		windowWasCascaded;
-	DWORD	flags;		
 };
 
 struct NewMessageWindowLParam
@@ -63,7 +63,8 @@ struct MessageSendInfo
 {
 	HANDLE hSendId;
 	int		state;
-	char *sendBuffer;
+	char *	sendBuffer;
+	int		sendBufferSize;
 };
 
 
@@ -109,6 +110,7 @@ struct MessageWindowData
 	time_t 	lastEventTime;
 	int    	lastEventType;
 	DWORD	flags;		
+	int		messagesInProgress;
 };
 
 #define HM_EVENTSENT         (WM_USER+10)
@@ -142,8 +144,10 @@ struct MessageWindowData
 #define DM_CLEARLOG			 (WM_USER+46)
 #define DM_SWITCHSTATUSBAR	 (WM_USER+47)
 #define DM_SWITCHTOOLBAR	 (WM_USER+48)
+#define DM_SWITCHTITLEBAR	 (WM_USER+49)
 #define DM_SWITCHRTL		 (WM_USER+50)
 #define DM_SWITCHUNICODE	 (WM_USER+51)
+#define DM_MESSAGESENDING	 (WM_USER+52)
 
 
 #define EVENTTYPE_STATUSCHANGE 25368
@@ -191,6 +195,8 @@ extern const int msgDlgFontCount;
 #define SRMSGDEFSET_USETABS		   1
 #define SRMSGSET_TABSATBOTTOM	   "TabsPosition"
 #define SRMSGDEFSET_TABSATBOTTOM   0
+#define SRMSGSET_LIMITNAMES			"LimitNamesOnTabs"
+#define SRMSGDEFSET_LIMITNAMES		1
 #define SRMSGSET_SHOWBUTTONLINE    "ShowButtonLine"
 #define SRMSGDEFSET_SHOWBUTTONLINE 1
 #define SRMSGSET_SHOWINFOLINE      "ShowInfoLine"
