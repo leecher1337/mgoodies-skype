@@ -205,25 +205,25 @@ void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	}
 	if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
 		const char *bkgImageFilename = Options::getBkgImageFile();
-		Utils::appendText(&output, &outputSize, ".body {margin: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); }\n",
+		Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); }\n",
 		Options::getBkgImageFlags() & Options::BKGIMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
 	} else {
-		Utils::appendText(&output, &outputSize, ".body {margin: 2px; text-align: left; background-color: #%06X; }\n",
+		Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; }\n",
 			 	     (int) bkgColor);
 	}
 	Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
 	Utils::appendText(&output, &outputSize, ".img {vertical-align: middle;}\n");
 	if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
-		Utils::appendText(&output, &outputSize, ".divIn {word-wrap: break-word;}\n");
-		Utils::appendText(&output, &outputSize, ".divOut {word-wrap: break-word;}\n");
-		Utils::appendText(&output, &outputSize, ".divInGrid {word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) gridColor);
-		Utils::appendText(&output, &outputSize, ".divOutGrid {word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) gridColor);
+		Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
+		Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
+		Utils::appendText(&output, &outputSize, ".divInGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) gridColor);
+		Utils::appendText(&output, &outputSize, ".divOutGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) gridColor);
 	} else {
-		Utils::appendText(&output, &outputSize, ".divIn {word-wrap: break-word; background-color: #%06X;}\n", (int) inColor);
-		Utils::appendText(&output, &outputSize, ".divOut {word-wrap: break-word; background-color: #%06X;}\n", (int) outColor);
-		Utils::appendText(&output, &outputSize, ".divInGrid {word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
+		Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) inColor);
+		Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) outColor);
+		Utils::appendText(&output, &outputSize, ".divInGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
 	        (int) gridColor, (int) inColor);
-		Utils::appendText(&output, &outputSize, ".divOutGrid {word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
+		Utils::appendText(&output, &outputSize, ".divOutGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
 	        (int) gridColor, (int) outColor);
 	}
  	for(int i = 0; i < FONT_NUM; i++) {

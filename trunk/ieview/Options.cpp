@@ -498,6 +498,8 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 
 			EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME_RTL), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES_RTL), bChecked);
 
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_FILE), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_URL), bChecked);
@@ -514,12 +516,17 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			if (path != NULL) {
                 SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path);
 			}
+			path = (char *)Options::getTemplatesFileRTL();
+			if (path != NULL) {
+                SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path);
+			}
 			return TRUE;
 		}
 	case WM_COMMAND:
 		{
 			switch (LOWORD(wParam)) {
             case IDC_TEMPLATES_FILENAME:
+            case IDC_TEMPLATES_FILENAME_RTL:
 				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE)
 					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
@@ -539,7 +546,9 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				bChecked = IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES), bChecked);
-				
+				EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME_RTL), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES_RTL), bChecked);
+
 				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_FILE), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_URL), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_STATUSCHANGE), bChecked);
@@ -568,6 +577,25 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 					ofn.lpstrDefExt = "ivt";
 					if(GetOpenFileName(&ofn)) {
 						SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path);
+						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					}
+				}
+				break;
+			case IDC_BROWSE_TEMPLATES_RTL:
+				{
+					OPENFILENAME ofn={0};
+					GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
+					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
+					ofn.hwndOwner = hwndDlg;
+					ofn.hInstance = NULL;
+					ofn.lpstrFilter = "Templates (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
+					ofn.lpstrFile = path;
+					ofn.Flags = OFN_FILEMUSTEXIST;
+					ofn.nMaxFile = sizeof(path);
+					ofn.nMaxFileTitle = MAX_PATH;
+					ofn.lpstrDefExt = "ivt";
+					if(GetOpenFileName(&ofn)) {
+						SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path);
 						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 					}
 				}
@@ -616,6 +644,8 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				Options::setTemplatesFlags(i);
 				GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
 				Options::setTemplatesFile(path);
+				GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
+				Options::setTemplatesFileRTL(path);
 				return TRUE;
 			}
 		}
@@ -631,8 +661,9 @@ int Options::bkgFlags;
 int Options::smileyFlags;
 char *Options::externalCSSFilename = NULL;
 int Options::externalCSSFlags;
-char *Options::templatesFilename= NULL;
+char *Options::templatesFilename = NULL;
 int Options::templatesFlags;
+char *Options::templatesFilenameRTL = NULL;
 
 void Options::init() {
 	DBVARIANT dbv;
@@ -707,7 +738,21 @@ void Options::init() {
         templatesFilename = new char[1];
         strcpy(templatesFilename, "");
 	}
+	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_TEMPLATESFILE_RTL, &dbv)) {
+    	char tmpPath[MAX_PATH];
+    	strcpy(tmpPath, dbv.pszVal);
+    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
+   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+   		}
+		templatesFilenameRTL = new char[strlen(tmpPath)+1];
+		strcpy(templatesFilenameRTL, tmpPath);
+		DBFreeVariant(&dbv);
+	} else {
+        templatesFilenameRTL = new char[1];
+        strcpy(templatesFilenameRTL, "");
+	}
 	TemplateMap::loadTemplates("default", templatesFilename);
+	TemplateMap::loadTemplates("default_rtl", templatesFilenameRTL);
 	smileyIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_SMILEY), IMAGE_ICON, 0, 0, 0);
 }
 
@@ -812,8 +857,28 @@ void Options::setTemplatesFile(const char *filename) {
 	TemplateMap::loadTemplates("default", templatesFilename);
 }
 
+void Options::setTemplatesFileRTL(const char *filename) {
+	if (templatesFilenameRTL != NULL) {
+		delete [] templatesFilenameRTL;
+	}
+	templatesFilenameRTL = new char[strlen(filename)+1];
+	strcpy(templatesFilenameRTL, filename);
+    char tmpPath[MAX_PATH];
+    strcpy (tmpPath, filename);
+    if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
+   	}
+	DBWriteContactSettingString(NULL, muccModuleName, DBS_TEMPLATESFILE_RTL, tmpPath);
+
+	TemplateMap::loadTemplates("default_rtl", templatesFilenameRTL);
+}
+
 const char *Options::getTemplatesFile() {
 	return templatesFilename;
+}
+
+const char *Options::getTemplatesFileRTL() {
+	return templatesFilenameRTL;
 }
 
 void Options::setTemplatesFlags(int flags) {
