@@ -98,6 +98,12 @@ Unicode support in Miranda is rather poor. IEView tries to determin if a message
 but this may fail sometimes and you will need to switch Unicode off in such cases. There is a possibility to turn
 Unicode off manually in Scriver.
 
+C) Avatars
+Unfortunately each Miranda plugin tends to store avatars in a different way. I am not going to add support
+for all of these possibilities to IEView, because I believe there should be only one standard. As a result
+IEView ALWAYS takes avatars stored in ContactPhoto/File DB entry. TabSRMM, Scriver and mToolTip use this field
+properly and I think authors of other plugins should consider changing their programs in order to use it.
+
 6. Change Log
 -------------
 1.0.2.0:
