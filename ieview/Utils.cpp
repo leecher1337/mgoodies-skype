@@ -143,7 +143,7 @@ char * Utils::UTF8Encode(const wchar_t *wtext) {
 		else if (*w < 0x0800) len += 2;
 		else len += 3;
 	}
-	szOut = (unsigned char *)malloc(len+1);
+	szOut = new unsigned char [len+1];
 	if (szOut == NULL) return NULL;
 
 	for (i=0, w=wtext; *w; w++) {
@@ -174,6 +174,6 @@ void Utils::UTF8Encode(const char *text, char *output, int maxLen) {
     wchar_t *wtext = Utils::convertToWCS(text);
     char *atext = UTF8Encode(wtext);
     memcpy(output, atext, min ((int)strlen(atext)+1, maxLen));
-	free (atext);
+	delete atext;
 	delete wtext;
 }

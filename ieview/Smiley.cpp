@@ -282,6 +282,9 @@ bool SmileyMap::loadSmileyFile(const char *proto, const char *filename, bool onl
 									if (!strncmp(patterns+m, "%%_%%", 5)) {
 										patterns[n++] = ' ';
 										m += 5;
+									} else if (!strncmp(patterns+m, "%%''%%", 6)) {
+										patterns[n++] = '\"';
+										m += 6;
 									} else {
 										patterns[n++] = patterns[m++];
 									}

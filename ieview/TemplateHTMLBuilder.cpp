@@ -91,7 +91,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	char *output;
 
 	output = NULL;
-	szProto = _strdup((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
+	szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
 	szBase[0]='\0';
 	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
 	if (tmpm!=NULL) {
@@ -113,28 +113,28 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		}
 		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
 	} else {
-        szNameOut = _strdup("&nbsp;");
-        szNameIn = _strdup("&nbsp;");
+        szNameOut = Utils::dupString("&nbsp;");
+        szNameIn = Utils::dupString("&nbsp;");
 	}
 	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-       		szAvatarIn = _strdup(dbv.pszVal);
+       		szAvatarIn = Utils::dupString(dbv.pszVal);
 		    Utils::convertPath(szAvatarIn);
 	    }
        	DBFreeVariant(&dbv);
 	}
 	if (szAvatarIn == NULL) {
-        szAvatarIn = _strdup(szNoAvatar);
+        szAvatarIn = Utils::dupString(szNoAvatar);
 	}
 	if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-       		szAvatarOut = _strdup(dbv.pszVal);
+       		szAvatarOut = Utils::dupString(dbv.pszVal);
 		    Utils::convertPath(szAvatarOut);
 	    }
        	DBFreeVariant(&dbv);
 	}
 	if (szAvatarOut == NULL) {
-        szAvatarOut = _strdup(szNoAvatar);
+        szAvatarOut = Utils::dupString(szNoAvatar);
 	}
 	Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", "HTMLStart") : TemplateMap::getTemplate("default", "HTMLStart");
 	if (tmplt!=NULL) {
@@ -173,11 +173,11 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
         view->write(output);
 		free(output);
 	}
-    if (szProto) free(szProto);
-	if (szAvatarIn) free(szAvatarIn);
-	if (szAvatarOut) free(szAvatarOut);
-	if (szNameIn) free(szNameIn);
-	if (szNameOut) free(szNameOut);
+    if (szProto!=NULL) delete szProto;
+	if (szAvatarIn!=NULL) delete szAvatarIn;
+	if (szAvatarOut!=NULL) delete szAvatarOut;
+	if (szNameIn!=NULL) delete szNameIn;
+	if (szNameOut!=NULL) delete szNameOut;
 	view->scrollToBottom();
 	groupTemplate = NULL;
 	iLastEventType = -1;
@@ -199,7 +199,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	char *szProto = NULL;
 	const char *tmpltName[2];
 	bool isGrouping = false;
-	szProto = _strdup((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
+	szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
 	szBase[0]='\0';
 	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
 	if (tmpm!=NULL) {
@@ -222,28 +222,28 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		}
 		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
 	} else {
-        szNameOut = _strdup("&nbsp;");
-        szNameIn = _strdup("&nbsp;");
+        szNameOut = Utils::dupString("&nbsp;");
+        szNameIn = Utils::dupString("&nbsp;");
 	}
 	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-       		szAvatarIn = _strdup(dbv.pszVal);
+       		szAvatarIn = Utils::dupString(dbv.pszVal);
 		    Utils::convertPath(szAvatarIn);
 	    }
        	DBFreeVariant(&dbv);
 	}
 	if (szAvatarIn == NULL) {
-        szAvatarIn = _strdup(szNoAvatar);
+        szAvatarIn = Utils::dupString(szNoAvatar);
 	}
 	if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-       		szAvatarOut = _strdup(dbv.pszVal);
+       		szAvatarOut = Utils::dupString(dbv.pszVal);
 		    Utils::convertPath(szAvatarOut);
 	    }
        	DBFreeVariant(&dbv);
 	}
 	if (szAvatarOut == NULL) {
-        szAvatarOut = _strdup(szNoAvatar);
+        szAvatarOut = Utils::dupString(szNoAvatar);
 	}
 	HANDLE hDbEvent = event->hDbEventFirst;
 	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
@@ -388,7 +388,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			}
 			setLastEventType(MAKELONG(dbei.flags, dbei.eventType));
 			setLastEventTime(dbei.timestamp);
-			if (szText) free(szText);
+			if (szText!=NULL) delete szText;
 		}
 		if (output != NULL) {
             view->write(output);
@@ -396,11 +396,11 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		}
         free(dbei.pBlob);
     }
-    if (szProto) free(szProto);
-	if (szAvatarIn) free(szAvatarIn);
-	if (szAvatarOut) free(szAvatarOut);
-	if (szNameIn) free(szNameIn);
-	if (szNameOut) free(szNameOut);
+    if (szProto!=NULL) delete szProto;
+	if (szAvatarIn!=NULL) delete szAvatarIn;
+	if (szAvatarOut!=NULL) delete szAvatarOut;
+	if (szNameIn!=NULL) delete szNameIn;
+	if (szNameOut!=NULL) delete szNameOut;
 	view->scrollToBottom();
 }
 

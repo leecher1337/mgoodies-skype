@@ -229,7 +229,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_GROUPMESSAGES, 0) ? SMF_LOG_GROUPMESSAGES : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_MARKFOLLOWUPS, 0) ? SMF_LOG_MARKFOLLOWUPS : 0;
 
-	char *szProto = _strdup((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
+	char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
 	HANDLE hDbEvent = event->hDbEventFirst;
 	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
 		int outputSize;
@@ -336,8 +336,8 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
             Utils::appendText(&output, &outputSize, "</div>\n");
 			setLastEventType(MAKELONG(dbei.flags, dbei.eventType));
 			setLastEventTime(dbei.timestamp);
-			free (szName);
-			free (szText);
+			if (szName!=NULL) delete szName;
+			if (szText!=NULL) delete szText;
 		}
 		if (output != NULL) {
             view->write(output);
@@ -345,7 +345,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		}
         free(dbei.pBlob);
     }
-    free (szProto);
+    if (szProto!=NULL) delete szProto;
 	view->scrollToBottom();
 }
 
