@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SMF_LOG_USELONGDATE 128
 #define SMF_LOG_GROUPMESSAGES	256
 #define SMF_LOG_MARKFOLLOWUPS	512
+#define SMF_LOG_MSGONNEWLINE 	1024
 
 #define EVENTTYPE_STATUSCHANGE 25368
 #define SRMMMOD "SRMM"
@@ -48,6 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SRMSGSET_USELONGDATE  	   "UseLongDate"
 #define SRMSGSET_GROUPMESSAGES     "GroupMessages"
 #define SRMSGSET_MARKFOLLOWUPS	   "MarkFollowUps"
+#define SRMSGSET_MESSAGEONNEWLINE  "MessageOnNewLine"
 
 #define FONTF_BOLD   1
 #define FONTF_ITALIC 2
@@ -228,6 +230,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_USELONGDATE, 0) ? SMF_LOG_USELONGDATE : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_GROUPMESSAGES, 0) ? SMF_LOG_GROUPMESSAGES : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_MARKFOLLOWUPS, 0) ? SMF_LOG_MARKFOLLOWUPS : 0;
+    dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_MESSAGEONNEWLINE, 0) ? SMF_LOG_MSGONNEWLINE : 0;
 
 	int cp = CP_ACP;
 	if (event->cbSize == sizeof(IEVIEWEVENT)) {
@@ -332,6 +335,9 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			}
 			const char *className = "";
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
+				if (dwFlags & SMF_LOG_MSGONNEWLINE && isGroupBreak) {
+					Utils::appendText(&output, &outputSize, "<br>");
+				}
 				className = isSent ? "messageOut" : "messageIn";
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
                 className = "notices";

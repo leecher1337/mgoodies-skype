@@ -126,6 +126,16 @@ char *Utils::convertToString(const wchar_t *a) {
 }
 
 
+char *Utils::convertToString(const wchar_t *a, int cp) {
+	if (a!=NULL) {
+		int len = wcslen(a)+1;
+		char *b = new char[len];
+		WideCharToMultiByte(cp, 0, a, len, b, len, NULL, FALSE);
+		return b;
+	}
+	return NULL;
+}
+
 void Utils::convertPath(char *path) {
    	for (; *path!='\0'; path++) {
    	    if (*path == '\\') *path = '/';

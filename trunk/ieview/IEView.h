@@ -91,7 +91,6 @@ class IEView:public IDispatch, public IOleClientSite, public IOleInPlaceSite, pu
 private:
    	static CRITICAL_SECTION mutex;
    	static bool isInited;
-   	static HMENU hMenuANSIEncoding;
 	static BOOL CALLBACK LangAddCallback(CHAR * str);
 	HWND 		parent;
 	HWND		hwnd;
