@@ -54,6 +54,9 @@ struct GlobalMessageData
 	HWND	hParent;
 	int		protoNum;
 	char **	protoNames;
+	int		limitAvatarMaxH;
+	int		limitAvatarMinH;
+
 	HIMAGELIST hIconList;
 };
 

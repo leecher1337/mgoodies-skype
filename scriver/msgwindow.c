@@ -38,7 +38,6 @@ static TCHAR* GetTabName(HANDLE *hContact)
 	return result;
 }
 
-
 static void GetChildWindowRect(struct ParentWindowData *dat, RECT *rcChild)
 {
 	RECT rc, rcStatus, rcTabs;
@@ -67,6 +66,28 @@ static void GetChildWindowRect(struct ParentWindowData *dat, RECT *rcChild)
 		rcChild->bottom = rc.bottom - rc.top - (rcStatus.bottom - rcStatus.top);
 	}
 }
+
+static void GetMinimunWindowSize(struct ParentWindowData *dat, SIZE *size)
+{
+	MINMAXINFO mmi;
+	RECT rc, rcWindow;
+	int i, minW = 240, minH = 80;
+	GetWindowRect(dat->hwnd, &rcWindow);
+	GetChildWindowRect(dat, &rc);
+	for (i=0;i<dat->childrenCount;i++) {
+		SendMessage(dat->children[i], WM_GETMINMAXINFO, 0, (LPARAM) &mmi);
+		if (i==0 || mmi.ptMinTrackSize.x > minW) minW = mmi.ptMinTrackSize.x;
+		if (i==0 || mmi.ptMinTrackSize.y > minH) minH = mmi.ptMinTrackSize.y;
+	}
+	if (dat->bMinimized) {
+		size->cx = minW;
+		size->cy = minH;
+	} else {
+		size->cx = minW + (rcWindow.right - rcWindow.left) - (rc.right - rc.left);
+		size->cy = minH + (rcWindow.bottom - rcWindow.top) - (rc.bottom - rc.top);
+	}
+}
+
 
 static int GetChildTab(struct ParentWindowData *dat, HWND child) 
 {
@@ -269,22 +290,10 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	case WM_GETMINMAXINFO:
 	{
 		MINMAXINFO *mmi = (MINMAXINFO *) lParam;
-		RECT rc, rcWindow;
-		int i, minW = 240, minH = 80;
-		GetWindowRect(hwndDlg, &rcWindow);
-		GetChildWindowRect(dat, &rc);
-		for (i=0;i<dat->childrenCount;i++) {
-			SendMessage(dat->children[i], WM_GETMINMAXINFO, 0, lParam);
-			if (i==0 || mmi->ptMinTrackSize.x > minW) minW = mmi->ptMinTrackSize.x;
-			if (i==0 || mmi->ptMinTrackSize.y > minH) minH = mmi->ptMinTrackSize.y;
-		}
-		if (dat->bMinimized) {
-			mmi->ptMinTrackSize.x = minW;
-			mmi->ptMinTrackSize.y = minH;
-		} else {
-			mmi->ptMinTrackSize.x = minW + (rcWindow.right - rcWindow.left) - (rc.right - rc.left);
-			mmi->ptMinTrackSize.y = minH + (rcWindow.bottom - rcWindow.top) - (rc.bottom - rc.top);
-		}
+		SIZE size;
+		GetMinimunWindowSize(dat, &size);
+		mmi->ptMinTrackSize.x = size.cx;
+		mmi->ptMinTrackSize.y = size.cy;
 		return FALSE;
 	}
 
@@ -295,19 +304,13 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		} else if (!IsIconic(hwndDlg))	{
 			int i;
 			RECT rc, rcStatus, rcChild, rcWindow;
+			SIZE size;
 			dat->bMinimized = 0;
 			GetClientRect(hwndDlg, &rc);
 			rcStatus.top = rcStatus.bottom = 0;
 			if (dat->flags & SMF_SHOWSTATUSBAR) {
 				int statwidths[4];
 				GetWindowRect(dat->hwndStatus, &rcStatus);
-				/*
-				statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_TYPING_WIDTH - SB_SENDING_WIDTH;
-				statwidths[1] = rc.right - rc.left - SB_TYPING_WIDTH - SB_SENDING_WIDTH; //rc.right - rc.left - SB_CHAR_WIDTH;
-				statwidths[2] = rc.right - rc.left - SB_TYPING_WIDTH; //rc.right - rc.left - SB_CHAR_WIDTH;
-				statwidths[3] = -1;
-				SendMessage(dat->hwndStatus, SB_SETPARTS, 4, (LPARAM) statwidths);
-				*/
 				statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_TYPING_WIDTH;
 				statwidths[1] = rc.right - rc.left - SB_TYPING_WIDTH;
 				statwidths[2] = -1;
@@ -316,25 +319,27 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			}
 			MoveWindow(dat->hwndTabs, 0, 2, (rc.right - rc.left), (rc.bottom - rc.top) - (rcStatus.bottom - rcStatus.top) - 2,	FALSE); 
 			RedrawWindow(dat->hwndTabs, NULL, NULL, RDW_INVALIDATE | RDW_FRAME | RDW_ERASE);
-			GetChildWindowRect(dat, &rcChild);
-			if ((rcChild.bottom-rcChild.top) < 81 || (rcChild.right-rcChild.left) < 240) {
-				GetWindowRect(hwndDlg, &rcWindow);
-				if ((rcChild.bottom-rcChild.top) < 81) {
-					rcWindow.bottom = rcWindow.top + 81 + (rcWindow.bottom - rcWindow.top) - (rcChild.bottom - rcChild.top);
+			GetMinimunWindowSize(dat, &size);
+			GetWindowRect(hwndDlg, &rcWindow);
+			if ((rcWindow.bottom-rcWindow.top) < size.cy || (rcWindow.right-rcWindow.left) < size.cx) {
+				if ((rcWindow.bottom-rcWindow.top) < size.cy) {
+					rcWindow.bottom = rcWindow.top + size.cy;
 				} 
-				if ((rcChild.right-rcChild.left) < 240) {
-					rcWindow.right = rcWindow.left + 240;
+				if ((rcWindow.right-rcWindow.left) < size.cx) {
+					rcWindow.right = rcWindow.left + size.cx;
 				}
 				MoveWindow(hwndDlg, rcWindow.left, rcWindow.top, rcWindow.right - rcWindow.left, rcWindow.bottom - rcWindow.top,	TRUE); 
-				GetChildWindowRect(dat, &rcChild);
 			}
+			GetChildWindowRect(dat, &rcChild);
 			for (i=0;i<dat->childrenCount;i++) {
 				if (dat->children[i] == dat->hwndActive) {
 					MoveWindow(dat->children[i], rcChild.left, rcChild.top, rcChild.right-rcChild.left, rcChild.bottom - rcChild.top, TRUE);
 					RedrawWindow(GetDlgItem(dat->children[i], IDC_LOG), NULL, NULL, RDW_INVALIDATE);
 				} 
 			}
-
+			if (dat->flags & SMF_SHOWSTATUSBAR) {
+				RedrawWindow(dat->hwndStatus, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+			}
 		}
 		return FALSE;
 	case WM_SETFOCUS:
