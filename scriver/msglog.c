@@ -412,6 +412,9 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 	}
 	switch (dbei.eventType) {
 		case EVENTTYPE_MESSAGE:
+		if (isGroupBreak && g_dat->flags & SMF_MSGONNEWLINE) {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\line");
+		}
 		{
 #if defined( _UNICODE )
 			wchar_t *msg;
