@@ -695,8 +695,11 @@ int Options::externalCSSFlags;
 char *Options::templatesFilename = NULL;
 char *Options::templatesFilenameRTL = NULL;
 int Options::templatesFlags;
+bool Options::isInited = false;
 
 void Options::init() {
+	if (isInited) return;
+	isInited = true;
 	DBVARIANT dbv;
 	bkgFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_BACKGROUNDIMAGEFLAGS, 0);
 	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_BACKGROUNDIMAGEFILE, &dbv)) {
@@ -721,6 +724,7 @@ void Options::init() {
 			char dbName[1024];
 			strcpy(dbName, protoList[i]->szName);
 			strcat(dbName, "SmileyFile");
+			//MessageBox(NULL, dbName, "SMILEYS", MB_OK);
 			if (!DBGetContactSetting(NULL,  muccModuleName, dbName, &dbv)) {
 			   	char tmpPath[MAX_PATH];
             	strcpy(tmpPath, dbv.pszVal);

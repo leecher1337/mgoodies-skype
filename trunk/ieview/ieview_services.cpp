@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 	IEVIEWWINDOW *window = (IEVIEWWINDOW *) lParam;
+	IEView::init();
+	Options::init();
 	if (window->iType == IEW_CREATE) {
 		HTMLBuilder *builder;
 		if (Options::getTemplatesFlags() & Options::TEMPLATES_ENABLED) {
@@ -63,6 +65,8 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 	IEVIEWEVENT *event = (IEVIEWEVENT *) lParam;
 	IEView * view = IEView::get(event->hwnd);
+	IEView::init();
+	Options::init();
 	if (event->iType == IEE_LOG_EVENTS) {
 		if (view != NULL) {
 			view->appendEvent(event);
@@ -78,6 +82,8 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 int HandleSmileyShowSelection(WPARAM wParam, LPARAM lParam) {
 	SMADD_SHOWSEL *smInfo = (SMADD_SHOWSEL *) lParam;
 	SmileyMap* map;
+	IEView::init();
+	Options::init();
 	if (!(Options::getSmileyFlags() & Options::SMILEY_ENABLED)) return 0;
 	if (Options::getSmileyFlags() & Options::SMILEY_PROTOCOLS) {
  		map = SmileyMap::getSmileyMap(smInfo->Protocolname);
