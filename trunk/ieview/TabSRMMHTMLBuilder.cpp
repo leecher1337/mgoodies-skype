@@ -257,7 +257,7 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	dwFlags2 |= MWF_SHOW_MICROLF;
     dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, "followupts", 1) ? MWF_SHOW_MARKFOLLOWUPTS : 0;
 
-	char *szProto = _strdup((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
+	char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
 	HANDLE hDbEvent = event->hDbEventFirst;
 	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
 		int outputSize;
@@ -405,8 +405,8 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
             Utils::appendText(&output, &outputSize, "</div>\n");
 			setLastEventType(MAKELONG(dbei.flags, dbei.eventType));
 			setLastEventTime(dbei.timestamp);
-			free (szName);
-			free (szText);
+			if (szName!=NULL) delete szName;
+			if (szText!=NULL) delete szText;
 		}
 		if (output != NULL) {
             view->write(output);
@@ -414,7 +414,7 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		}
         free(dbei.pBlob);
     }
-    free (szProto);
+    if (szProto!=NULL) delete szProto;
 	view->scrollToBottom();
 }
 

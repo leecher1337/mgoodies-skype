@@ -66,8 +66,6 @@ public:
 };
 
 class HTMLBuilder {
-private:
-	char *UTF8Encode(const wchar_t *wtext);
 protected:
 	virtual char *encode(const char *text, const char *proto, bool replaceSmiley);
 	virtual wchar_t *encode(const wchar_t *text, const char *proto, bool replaceSmiley);
