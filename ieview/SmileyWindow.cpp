@@ -1,0 +1,155 @@
+#include "SmileyWindow.h"
+#include "resource.h"
+
+static BOOL CALLBACK SmileySelectionDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+
+
+SmileyWindow::SmileyWindow(SmileyMap *map) {
+	this->map = map;
+ 	hwnd = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_SMILEYSELECTION), NULL,
+                                          SmileySelectionDlgProc, (LPARAM) this);
+	view = new IEView(hwnd, this, 0, 0, 200, 200);
+	
+}
+
+SmileyWindow::~SmileyWindow() {
+	if (hwnd!=NULL) {
+		DestroyWindow(hwnd);
+	}
+	if (view!=NULL) {
+		delete view;
+	}
+}
+
+void SmileyWindow::init(int cw, int ch) {
+    maxWidth = 350;
+    maxHeight = 250;
+	cellWidth = cw;
+	cellHeight = ch;
+    int cellWidthBorder = cellWidth + 1;
+	int cellHeightBorder = cellHeight + 1;
+	// init window
+	Smiley * s;
+	int i, j;
+
+	view->clear();
+	int totalNum = map->getVisibleSmileyNum();
+	if (!totalNum) return;
+	int maxInLine = maxWidth/(cellWidthBorder);
+	int maxInColumn = maxHeight/(cellHeightBorder);
+	int hSize = maxInLine;
+	int vSize = (totalNum + hSize -1)  / hSize;
+	for (;vSize < maxInColumn && vSize * cellHeightBorder < hSize * cellWidthBorder;) {
+		hSize--;
+        vSize = (totalNum + hSize -1)  / hSize;
+	}
+
+	viewHeight = min(vSize, maxInColumn) * cellHeightBorder +1;
+	
+	NONCLIENTMETRICS ncm;
+	ncm.cbSize=sizeof(NONCLIENTMETRICS);
+	SystemParametersInfo(SPI_GETNONCLIENTMETRICS,sizeof(NONCLIENTMETRICS),&ncm,0);
+
+	viewWidth= hSize * cellWidthBorder + ncm.iScrollWidth + 1;
+
+	SetWindowPos(hwnd, NULL, 0, 0, viewWidth+ 2, viewHeight + 2, SWP_NOMOVE | SWP_NOZORDER | SWP_HIDEWINDOW);
+	view->setWindowPos(0, 0, viewWidth, viewHeight);
+	view->writef("<html><head><style type=\"text/css\"> \n\
+.body {margin: 0px; background-color: #FFFFFF; }\n\
+.link {color: #0000FF; text-decoration: underline;}\n\
+.img {vertical-align: middle;}\n\
+.table {border: 1px dotted #8080E0; border-top: 0px; border-left: 0px; }\n\
+.td { background-color: #FFFFFF; border: 1px dotted #8080E0; border-right: 0px; border-bottom: 0px; }\n\
+div#outer { float:left; height: %dpx; width: %dpx; overflow: hidden; position: relative; }\n\
+div#middle { position: absolute; top: 50%%; left: 50%%; }\n\
+div#inner { position: relative; top: -50%%; left: -50%%; }\n\
+</style></head><body class=\"body\">\n", cellHeight, cellWidth);
+	view->write("<table class=\"table\" cellspacing=\"0\" cellpadding=\"0\">\n");
+	for (i=j=0, s=map->getSmiley();s!=NULL && j<150;s=s->getNext(),i++) {
+		if (s->isHidden()) continue;
+		if (j%hSize == 0) {
+			view->write("<tr>\n");
+		}
+		view->writef("<td class=\"td\"><div id=\"outer\"><div id=\"middle\"><div id=\"inner\"><a href=\"/%d\"><img class=\"img\" src=\"%s\" alt=\"%s\" border=\"0\"/></a></div></div></div></td>\n",
+							i, s->getFile(), s->getDescription());
+		if (j%hSize == hSize-1) {
+			view->write("</tr>\n");
+		}
+		j++;
+	}
+	for (;j%hSize != 0;j++) {
+		view->write("<td class=\"td\"><div id=\"outer\"><div id=\"middle\"><div id=\"inner\">&nbsp;</div></div></div></td>\n");
+		if (j%hSize == hSize-1) {
+			view->write("</tr>\n");
+		}
+	}
+	view->write("</table></body></html>\n");
+}
+
+void SmileyWindow::show(HWND hwndTarget, UINT targetMessage, WPARAM targetWParam, int x, int y) {
+	int direction = 0;
+	int xScreen = GetSystemMetrics(SM_CXSCREEN);
+	int yScreen = GetSystemMetrics(SM_CYSCREEN);
+	if(y + viewHeight > yScreen) {
+		y -= 24;
+		direction = 3;
+	}
+	if (x + viewWidth > xScreen) {
+		x -= viewWidth;
+	}
+    switch (direction) { //   2 3
+                       //   1 0
+        case 1:
+            x -= viewWidth;
+            break;
+        case 2:
+            x -= viewWidth;
+            y -= viewHeight;
+            break;
+        case 3:
+            y -= viewHeight;
+            break;
+    }
+	this->hwndTarget = hwndTarget;
+	this->targetMessage = targetMessage;
+	this->targetWParam = targetWParam;
+	SetWindowPos(hwnd, NULL, x, y, viewWidth+ 2, viewHeight + 2, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+}
+
+static BOOL CALLBACK SmileySelectionDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+	SmileyWindow *smileyWindow;
+	smileyWindow = (SmileyWindow *) GetWindowLong(hwndDlg, GWL_USERDATA);
+    switch (msg) {
+        case WM_INITDIALOG:
+			smileyWindow = (SmileyWindow *) lParam;
+			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) smileyWindow);
+			ShowWindow(hwndDlg, SW_HIDE);
+            return TRUE;
+        case WM_ACTIVATE:
+            if (wParam == WA_INACTIVE) ShowWindow(hwndDlg, SW_HIDE);
+            break;
+        case WM_DESTROY:
+            SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) NULL);
+            if (smileyWindow != NULL) {
+			}
+            return TRUE;
+    }
+    return FALSE;
+}
+
+void SmileyWindow::choose(const char * smiley) {
+	ShowWindow(hwnd, SW_HIDE);
+	if (hwndTarget!=NULL) {
+		char *str = strstr(smiley, "/");
+		if (str!=NULL) {
+			int i = atoi(str+1);
+			Smiley *s;
+			for (s=map->getSmiley();i>0 && s!=NULL;s=s->getNext(),i--);
+			if (s!=NULL) {
+				SendMessage(hwndTarget, targetMessage, targetWParam, (LPARAM) s->getPatternString());
+			}
+			
+		}
+	}
+}
+

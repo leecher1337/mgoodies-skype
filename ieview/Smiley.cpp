@@ -1,0 +1,370 @@
+#include "Smiley.h"
+#include "Utils.h"
+
+SmileyPattern::SmileyPattern(const char *pattern) {
+	next = NULL;
+	this->pattern = Utils::dupString(pattern);
+	length = strlen(pattern);
+	wpattern = new wchar_t[length+1];
+	MultiByteToWideChar(CP_ACP, 0, pattern, -1, wpattern, length+1);
+}
+
+SmileyPattern::~SmileyPattern() {
+	if (wpattern != NULL) delete wpattern;
+	if (pattern != NULL) delete pattern;
+}
+
+void SmileyPattern::setNext(SmileyPattern *ptr) {
+	next = ptr;
+}
+
+SmileyPattern * SmileyPattern::getNext() {
+	return next;
+}
+
+int SmileyPattern::getLength() {
+	return length;
+}
+
+bool SmileyPattern::equals(const char *text) {
+	if (!strncmp(text, this->pattern, length)) {
+		return true;
+	}
+	return false;
+}
+
+bool SmileyPattern::equals(const wchar_t *wtext) {
+	if (!wcsncmp(wtext, this->wpattern, length)) {
+		return true;
+	}
+	return false;
+}
+
+const char *SmileyPattern::getPattern() {
+	return pattern;
+}
+
+SmileyMap* SmileyMap::mapList = NULL;
+
+Smiley::Smiley(const char *file, const char *description, bool isHidden) {
+	next = NULL;
+	patterns = NULL;
+	this->file = Utils::dupString(file);
+	this->description = Utils::dupString(description);
+	Utils::convertPath(this->file);
+	hidden = isHidden;
+}
+
+Smiley::~Smiley() {
+	SmileyPattern *ptr, *ptr2;
+	if (file != NULL) delete file;
+	if (description != NULL) delete description;
+	ptr = patterns;
+	for (;ptr!=NULL;ptr=ptr2) {
+		ptr2 = ptr->getNext();
+		delete ptr;
+	}
+}
+
+void Smiley::setNext(Smiley *ptr) {
+	next = ptr;
+}
+
+Smiley* Smiley::getNext() {
+	return next;
+}
+
+
+SmileyPattern *	Smiley::addPattern(const char *pattern) {
+	SmileyPattern *p, *ptr;
+	p = new SmileyPattern(pattern);
+	for (ptr = patterns; ptr!=NULL && ptr->getNext()!=NULL; ptr = ptr->getNext());
+	if (ptr == NULL) {
+		patterns = p;
+	} else {
+		ptr->setNext(p);
+	}
+	return p;
+}
+
+const char *Smiley::getPatternString() {
+	if (patterns != NULL) {
+		return patterns->getPattern();
+	}
+	return "";
+}
+
+const char *Smiley::getDescription() {
+	return description;
+}
+
+const char *Smiley::getFile() {
+	return file;
+}
+
+int Smiley::match(const char *text, int minLen) {
+	int maxl = minLen;
+	for (SmileyPattern *ptr = patterns; ptr!=NULL; ptr=ptr->getNext()) {
+		if (ptr->getLength() > maxl) {
+			if (ptr->equals(text)) {
+				maxl = ptr->getLength();
+			}
+		}
+	}
+	return maxl > minLen ? maxl : 0;
+}
+
+int Smiley::match(const wchar_t *wtext, int minLen) {
+	int maxl = minLen;
+	for (SmileyPattern *ptr = patterns; ptr!=NULL; ptr=ptr->getNext()) {
+		if (ptr->getLength() > maxl) {
+			if (ptr->equals(wtext)) {
+				maxl = ptr->getLength();
+			}
+		}
+	}
+	return maxl > minLen ? maxl : 0;
+}
+
+bool Smiley::isHidden() {
+	return hidden;
+}
+
+SmileyMap::SmileyMap(const char *name, const char *filename) {
+	entries = NULL;
+	next = NULL;
+	this->name = Utils::dupString(name);
+	this->filename = Utils::dupString(filename);
+	window = new SmileyWindow(this);
+	smileyNum = 0;
+	visibleSmileyNum = 0;
+}
+
+SmileyMap::~SmileyMap() {
+	if (name != NULL) {
+		delete name;
+	}
+	if (filename != NULL) {
+		delete filename;
+	}
+	clear();
+}
+
+void SmileyMap::clear() {
+	Smiley *ptr, *ptr2;
+	ptr = entries;
+	entries = NULL;
+	for (;ptr!=NULL;ptr=ptr2) {
+		ptr2 = ptr->getNext();
+		delete ptr;
+	}
+	smileyNum = 0;
+	visibleSmileyNum = 0;
+}
+
+
+bool SmileyMap::loadSmileyFile(const char *proto, const char *filename, bool onlyInfo) {
+	FILE* fh;
+	int previewW = 40, previewH =30;
+	char patterns[1024], description[1024];
+	char pathstring[500];
+
+	if (filename == NULL || strlen(filename) == 0) {
+		return false;
+	}
+	strcpy(pathstring, filename);
+	char* pathrun = pathstring + strlen(pathstring);
+	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > pathstring)) pathrun--;
+	pathrun++;
+	*pathrun = '\0';
+
+	fh = fopen(filename, "rt");
+	if (fh == NULL) {
+		return false;
+	}
+	SmileyMap *smap = SmileyMap::add(proto, filename);
+	char store[1024];
+	while (fgets(store, sizeof(store), fh) != NULL) {
+    	//is comment?
+    	if (store[0] == ';') continue;
+    	//empty line?
+    	if (sscanf(store, "%s", description) == EOF) continue;
+    	//name tag?
+    	if (strncmp(store, "Name", 4) == 0) {
+      		sscanf(store, "Name = \"%[^\"]", description);
+      		continue;
+    	}
+    	//author tag?
+    	if (strncmp(store, "Author", 6) == 0) {
+      		sscanf(store, "Author = \"%[^\"]", description);
+      		continue;
+    	}
+	    //date tag?
+	    if (strncmp(store, "Date", 4) == 0) {
+			sscanf(store, "Date = \"%[^\"]", description);
+			continue;
+	    }
+	    if (strncmp(store, "Date", 4) == 0) {
+			sscanf(store, "Date = \"%[^\"]", description);
+			continue;
+	    }
+	    //version tag?
+	    if (strncmp(store, "Version", 7) == 0) {
+			sscanf(store, "Version = \"%[^\"]", description);
+			continue;
+	    }
+	    if (strncmp(store, "SelectionSize", 12) == 0) {
+			sscanf(store, "SelectionSize = %d, %d", &previewW, &previewH);
+			if (previewW < 10) previewW = 10;
+			else if (previewW > 100) previewW = 100;
+			if (previewH < 10) previewH = 10;
+			else if (previewH > 100) previewH = 100;
+			continue;
+	    }
+	    //smiley icon tag?
+	    if (strncmp(store, "Smiley", 6) == 0  && !onlyInfo) {
+			int iconIndex;
+			bool isHidden;
+	    	char resourceFile[255];
+	      	patterns[0] = 0; description[0] = 0;
+	      	isHidden = 0;
+	    	if (store[6] == '*') { //hidden
+		        sscanf(store, "Smiley* = \" %[^\"] \" , %d , \"%[^\"] \" , \"%[^\"]\" ",
+		               resourceFile, &iconIndex, patterns, description);
+		      	isHidden = 1;
+	    	} else {
+        		sscanf(store, "Smiley = \" %[^\"] \" , %d , \"%[^\"] \" , \"%[^\"]\" ",
+               			resourceFile, &iconIndex, patterns, description);
+			}
+			strcpy(pathrun, resourceFile);
+			strcpy(resourceFile, pathstring);
+			Smiley *smiley = smap->addSmiley(resourceFile, description, isHidden);
+			int tokenMode = 0;
+			int i, j, l;
+			l = strlen(patterns);
+			for (i=j=0; i<=l;i++) {
+				switch (tokenMode) {
+					case 0:
+						if (patterns[i]!=' ' && patterns[i]!='\t' && patterns[i]!='\r' && patterns[i]!='\n') {
+							j = i;
+							tokenMode = 1;
+						}
+						break;
+					case 1:
+						if (patterns[i]==' ' || patterns[i]=='\t' || patterns[i]=='\r' || patterns[i]=='\n' || patterns[i]=='\0') {
+                            patterns[i] = '\0';
+							int m, n;
+							for (m=n=j;m<i;) {
+								if (!strncmp(patterns+m, "%%_%%", 5)) {
+									patterns[n++] = ' ';
+									m += 5;
+								} else {
+									patterns[n++] = patterns[m++];
+								}
+							}
+							patterns[n] = '\0';
+							smiley->addPattern(patterns+j);
+							tokenMode = 0;
+						}
+				}
+			}
+    	}
+  	}
+  	smap->getWindow()->init(previewW, previewH);
+  	fclose(fh);
+	return true;
+}
+
+Smiley* SmileyMap::getSmiley(const char *text, int *maxLen) {
+	int l;
+	Smiley *ptr, *foundPtr = NULL;
+	*maxLen = 0;
+	for (ptr=entries; ptr!=NULL; ptr=ptr->getNext()) {
+		if (l=ptr->match(text, *maxLen)) {
+			*maxLen = l;
+			foundPtr = ptr;
+		}
+	}
+	return foundPtr;
+}
+
+Smiley* SmileyMap::getSmiley(const char *proto, const char *text, int *len) {
+	SmileyMap *ptr;
+	for (ptr=mapList; ptr!=NULL; ptr=ptr->next) {
+		if (!strcmp(ptr->name, proto)) {
+			return ptr->getSmiley(text, len);
+		}
+	}
+	return NULL;
+}
+
+Smiley* SmileyMap::getSmiley() {
+	return entries;
+}
+
+SmileyWindow* SmileyMap::getWindow() {
+	return window;
+}
+
+SmileyMap* SmileyMap::add(const char *proto, const char *filename) {
+	SmileyMap *map;
+	for (map=mapList; map!=NULL; map=map->next) {
+		if (!strcmp(map->name, proto)) {
+			map->clear();
+			map->setFilename(filename);
+			return map;
+		}
+	}
+	map = new SmileyMap(proto, filename);
+	map->next = mapList;
+	mapList = map;
+	return map;
+}
+
+void SmileyMap::setFilename(const char *filename) {
+	if (this->filename != NULL) {
+		delete this->filename;
+	}
+	this->filename = Utils::dupString(filename);
+}
+
+const char *SmileyMap::getFilename() {
+	return filename;
+}
+
+Smiley* SmileyMap::addSmiley(const char *file, const char *description, bool isHidden) {
+	Smiley *p, *ptr;
+	p = new Smiley(file, description, isHidden);
+	for (ptr = entries; ptr!=NULL && ptr->getNext()!=NULL; ptr = ptr->getNext());
+	if (ptr == NULL) {
+		entries = p;
+	} else {
+		ptr->setNext(p);
+	}
+	if (!isHidden) visibleSmileyNum++;
+	smileyNum++;
+	return p;
+}
+
+int SmileyMap::getSmileyNum() {
+	return 	smileyNum;
+}
+
+int SmileyMap::getVisibleSmileyNum() {
+	return 	visibleSmileyNum;
+}
+
+SmileyMap *	SmileyMap::getSmileyMap(const char *proto) {
+	SmileyMap *map;
+	for (map=mapList; map!=NULL; map=map->next) {
+		if (!strcmp(map->name, proto)) {
+			break;
+		}
+	}
+	return map;
+}
+
+
+bool SmileyMap::loadLibrary(const char *proto, const char *filename) {
+	return loadSmileyFile(proto, filename, false);
+}
