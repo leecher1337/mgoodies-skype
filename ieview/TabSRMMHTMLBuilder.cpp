@@ -181,62 +181,62 @@ void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	char *output = NULL;
 	int outputSize;
  	if (Options::getExternalCSSFlags() & Options::EXTERNALCSS_ENABLED) {
-	 	const char *externalCSS = Options::getExternalCSSFile();
+	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? Options::getExternalCSSFileRTL() : Options::getExternalCSSFile();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n",externalCSS);
-		return;
-	}
-	HDC hdc = GetDC(NULL);
-    int logPixelSY = GetDeviceCaps(hdc, LOGPIXELSY);
-	ReleaseDC(NULL, hdc);
- 	DWORD dwFlags = DBGetContactSettingDword(NULL, SRMSGMOD_T, "mwflags", MWF_LOG_DEFAULT);
-	Utils::appendText(&output, &outputSize, "<html><head><style type=\"text/css\">\n");
-	COLORREF inColor, outColor;
-	COLORREF bkgColor = DBGetContactSettingDword(NULL, SRMSGMOD, "BkgColour", 0xFFFFFF);
-    bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
-	COLORREF gridColor = DBGetContactSettingDword(NULL, SRMSGMOD_T, "hgrid", 0xFFFFFF);
-    gridColor= (((gridColor & 0xFF) << 16) | (gridColor & 0xFF00) | ((gridColor & 0xFF0000) >> 16));
-    if (dwFlags & MWF_LOG_INDIVIDUALBKG) {
-		inColor = DBGetContactSettingDword(NULL, SRMSGMOD_T, "inbg", RGB(224,224,224));
-	    outColor = DBGetContactSettingDword(NULL, SRMSGMOD_T, "outbg", RGB(224,224,224));
-	    inColor= (((inColor & 0xFF) << 16) | (inColor & 0xFF00) | ((inColor & 0xFF0000) >> 16));
-	    outColor= (((outColor & 0xFF) << 16) | (outColor & 0xFF00) | ((outColor & 0xFF0000) >> 16));
 	} else {
-		inColor = outColor = bkgColor;
+		HDC hdc = GetDC(NULL);
+	    int logPixelSY = GetDeviceCaps(hdc, LOGPIXELSY);
+		ReleaseDC(NULL, hdc);
+	 	DWORD dwFlags = DBGetContactSettingDword(NULL, SRMSGMOD_T, "mwflags", MWF_LOG_DEFAULT);
+		Utils::appendText(&output, &outputSize, "<html><head><style type=\"text/css\">\n");
+		COLORREF inColor, outColor;
+		COLORREF bkgColor = DBGetContactSettingDword(NULL, SRMSGMOD, "BkgColour", 0xFFFFFF);
+	    bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
+		COLORREF gridColor = DBGetContactSettingDword(NULL, SRMSGMOD_T, "hgrid", 0xFFFFFF);
+	    gridColor= (((gridColor & 0xFF) << 16) | (gridColor & 0xFF00) | ((gridColor & 0xFF0000) >> 16));
+	    if (dwFlags & MWF_LOG_INDIVIDUALBKG) {
+			inColor = DBGetContactSettingDword(NULL, SRMSGMOD_T, "inbg", RGB(224,224,224));
+		    outColor = DBGetContactSettingDword(NULL, SRMSGMOD_T, "outbg", RGB(224,224,224));
+		    inColor= (((inColor & 0xFF) << 16) | (inColor & 0xFF00) | ((inColor & 0xFF0000) >> 16));
+		    outColor= (((outColor & 0xFF) << 16) | (outColor & 0xFF00) | ((outColor & 0xFF0000) >> 16));
+		} else {
+			inColor = outColor = bkgColor;
+		}
+		if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
+			const char *bkgImageFilename = Options::getBkgImageFile();
+			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); }\n",
+			Options::getBkgImageFlags() & Options::BKGIMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
+		} else {
+			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; }\n",
+				 	     (int) bkgColor);
+		}
+		Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
+		Utils::appendText(&output, &outputSize, ".img {vertical-align: middle;}\n");
+		if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
+			Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
+			Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
+			Utils::appendText(&output, &outputSize, ".divInGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) gridColor);
+			Utils::appendText(&output, &outputSize, ".divOutGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) gridColor);
+		} else {
+			Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) inColor);
+			Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) outColor);
+			Utils::appendText(&output, &outputSize, ".divInGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
+		        (int) gridColor, (int) inColor);
+			Utils::appendText(&output, &outputSize, ".divOutGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
+		        (int) gridColor, (int) outColor);
+		}
+	 	for(int i = 0; i < FONT_NUM; i++) {
+			loadMsgDlgFont(i, &lf, &color);
+			Utils::appendText(&output, &outputSize, "%s {font-family: %s; font-size: %dpt; font-weight: %d; color: #%06X; %s}\n",
+			classNames[i],
+			lf.lfFaceName,
+			abs((signed char)lf.lfHeight) *  74 /logPixelSY ,
+			lf.lfWeight >= FW_BOLD ? 900 : 300,
+			(int)(((color & 0xFF) << 16) | (color & 0xFF00) | ((color & 0xFF0000) >> 16)),
+			lf.lfItalic ? "font-style: italic;" : "");
+		}
+		Utils::appendText(&output, &outputSize, "</style></head><body class=\"body\">\n");
 	}
-	if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
-		const char *bkgImageFilename = Options::getBkgImageFile();
-		Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); }\n",
-		Options::getBkgImageFlags() & Options::BKGIMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
-	} else {
-		Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; }\n",
-			 	     (int) bkgColor);
-	}
-	Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
-	Utils::appendText(&output, &outputSize, ".img {vertical-align: middle;}\n");
-	if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
-		Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
-		Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
-		Utils::appendText(&output, &outputSize, ".divInGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) gridColor);
-		Utils::appendText(&output, &outputSize, ".divOutGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) gridColor);
-	} else {
-		Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) inColor);
-		Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) outColor);
-		Utils::appendText(&output, &outputSize, ".divInGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
-	        (int) gridColor, (int) inColor);
-		Utils::appendText(&output, &outputSize, ".divOutGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
-	        (int) gridColor, (int) outColor);
-	}
- 	for(int i = 0; i < FONT_NUM; i++) {
-		loadMsgDlgFont(i, &lf, &color);
-		Utils::appendText(&output, &outputSize, "%s {font-family: %s; font-size: %dpt; font-weight: %d; color: #%06X; %s}\n",
-		classNames[i],
-		lf.lfFaceName,
-		abs((signed char)lf.lfHeight) *  74 /logPixelSY ,
-		lf.lfWeight >= FW_BOLD ? 900 : 300,
-		(int)(((color & 0xFF) << 16) | (color & 0xFF00) | ((color & 0xFF0000) >> 16)),
-		lf.lfItalic ? "font-style: italic" : "");
-	}
-	Utils::appendText(&output, &outputSize, "</style></head><body class=\"body\">\n");
 	if (output != NULL) {
         view->write(output);
 		free(output);

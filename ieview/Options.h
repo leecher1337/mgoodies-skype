@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DBS_BACKGROUNDIMAGEFLAGS  "BackgroundImageFlags"
 
 #define DBS_EXTERNALCSSFILE       "ExternalCSSFile"
+#define DBS_EXTERNALCSSFILE_RTL   "ExternalCSSFileRTL"
 #define DBS_EXTERNALCSSFLAGS	  "ExternalCSSFlags"
 
 #define DBS_TEMPLATESFILE         "TemplatesFile"
@@ -43,6 +44,7 @@ private:
    	static int 		bkgFlags;
    	static int 		smileyFlags;
    	static char *	externalCSSFilename;
+   	static char *	externalCSSFilenameRTL;
    	static int 		externalCSSFlags;
    	
    	static char *	templatesFilename;
@@ -87,6 +89,8 @@ public:
    	static int				getBkgImageFlags();
    	static void      		setExternalCSSFile(const char *filename);
    	static const char *		getExternalCSSFile();
+   	static void      		setExternalCSSFileRTL(const char *filename);
+   	static const char *		getExternalCSSFileRTL();
    	static void				setExternalCSSFlags(int flags);
    	static int				getExternalCSSFlags();
    	static void     		setTemplatesFileRTL(const char *filename);
