@@ -101,6 +101,7 @@ char *SRMMHTMLBuilder::timestampToString(DWORD dwFlags, time_t check)
     }
 	CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
     strncat(szResult, str, 500);
+	Utils::UTF8Encode(szResult, szResult, 500);
     return szResult;
 }
 
@@ -194,8 +195,8 @@ void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		output = NULL;
 		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
 			int isSent = (dbei.flags & DBEF_SENT);
-			char *szName = "";
-			char *szText = "";
+			char *szName = NULL;
+			char *szText = NULL;
 			if (isSent) {
                 CONTACTINFO ci;
 				ZeroMemory(&ci, sizeof(ci));

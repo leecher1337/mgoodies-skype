@@ -170,6 +170,7 @@ char *TabSRMMHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int isG
     }
 	CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
     strncat(szResult, str, 500);
+	Utils::UTF8Encode(szResult, szResult, 500);
     return szResult;
 }
 
@@ -289,8 +290,8 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			  && ((dbei.timestamp - getLastEventTime()) < 86400)) {
 		        isGroupBreak = FALSE;
 		    }
-			char *szName = "";
-			char *szText = "";
+			char *szName = NULL;
+			char *szText = NULL;
 			if (isSent) {
                 CONTACTINFO ci;
 				ZeroMemory(&ci, sizeof(ci));
