@@ -185,6 +185,7 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 		}
 		return 0;
 		break;
+		//for saved msg queue the keyup/keydowns generate wm_chars themselves
 	case EM_REPLAYSAVEDKEYSTROKES:
 		{
 			int i;
@@ -219,24 +220,6 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 		if (GetWindowLong(hwnd, GWL_STYLE) & ES_READONLY) {
 			break;
 		}
-		//for saved msg queue the keyup/keydowns generate wm_chars themselves
-		if (wParam == '\n' || wParam == '\r') {
-			if (((GetKeyState(VK_CONTROL) & 0x8000) != 0) ^ (0 != DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDONENTER, SRMSGDEFSET_SENDONENTER))) {
-				PostMessage(GetParent(hwnd), WM_COMMAND, IDOK, 0);
-				return 0;
-			}
-			if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDONDBLENTER, SRMSGDEFSET_SENDONDBLENTER)) {
-				if (dat->lastEnterTime + ENTERCLICKTIME < GetTickCount())
-					dat->lastEnterTime = GetTickCount();
-				else {
-					SendMessage(hwnd, WM_CHAR, '\b', 0);
-					PostMessage(GetParent(hwnd), WM_COMMAND, IDOK, 0);
-					return 0;
-				}
-			}
-		}
-		else
-			dat->lastEnterTime = 0;
 		if (wParam == 1 && GetKeyState(VK_CONTROL) & 0x8000) {      //ctrl-a
 			SendMessage(hwnd, EM_SETSEL, 0, -1);
 			return 0;
@@ -341,7 +324,25 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 				return 0;
 			}
 		}
-		if (wParam == VK_RETURN)
+		if (wParam == VK_RETURN) {
+			if (((GetKeyState(VK_CONTROL) & 0x8000) != 0) ^ (0 != DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDONENTER, SRMSGDEFSET_SENDONENTER))) {
+				PostMessage(GetParent(hwnd), WM_COMMAND, IDOK, 0);
+				return 0;
+			}
+			if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDONDBLENTER, SRMSGDEFSET_SENDONDBLENTER)) {
+				if (dat->lastEnterTime + ENTERCLICKTIME < GetTickCount())
+					dat->lastEnterTime = GetTickCount();
+				else {
+					SendMessage(hwnd, WM_KEYDOWN, VK_BACK, 0);
+					SendMessage(hwnd, WM_KEYUP, VK_BACK, 0);
+//					SendMessage(hwnd, WM_CHAR, '\b', 0);
+					PostMessage(GetParent(hwnd), WM_COMMAND, IDOK, 0);
+					return 0;
+				}
+			}
+		}
+		else
+			dat->lastEnterTime = 0;
 			break;
 		//fall through
 	case WM_LBUTTONDOWN:

@@ -514,12 +514,12 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		IEVIEWEVENT event;
 		event.cbSize = sizeof(IEVIEWEVENT);
 		event.hwnd = dat->hwndLog;
+		event.hContact = dat->hContact;
 		if (!fAppend) {
 			event.iType = IEE_CLEAR_LOG;
 			CallService(MS_IEVIEW_EVENT, 0, (LPARAM)&event);
 		}
 		event.iType = IEE_LOG_EVENTS;
-		event.hContact = dat->hContact;
 		event.hDbEventFirst = hDbEventFirst;
 		event.count = count;
 		CallService(MS_IEVIEW_EVENT, 0, (LPARAM)&event);
