@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "IEView.h"
 #include "resource.h"
+#include "Options.h"
 //#define GECKO
 #define DISPID_BEFORENAVIGATE2      250   // hyperlink clicked on
 
@@ -30,6 +31,7 @@ static const CLSID CLSID_MozillaBrowser=
 
 IEView * IEView::list = NULL;
 CRITICAL_SECTION IEView::mutex;
+bool IEView::isInited = false;
 
 static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     IEView *view = IEView::get(GetParent(GetParent(hwnd)));
@@ -85,8 +87,10 @@ static LRESULT CALLBACK IEViewWindowProcedure (HWND hwnd, UINT message, WPARAM w
 
 
 void IEView::init() {
-   InitializeCriticalSection(&mutex);
-   if (FAILED(OleInitialize(NULL))) {
+	if (isInited) return;
+	isInited = true;
+	InitializeCriticalSection(&mutex);
+	if (FAILED(OleInitialize(NULL))) {
 		MessageBox(NULL,"OleInitialize failed.","RESULT",MB_OK);
 	}
 }
@@ -171,6 +175,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	}
 	list = this;
 	LeaveCriticalSection(&mutex);
+	disableUnicode = 0;
 	clear();
 }
 
@@ -234,6 +239,7 @@ IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, in
       		pCPContainer->Release();
    		}
     }
+	disableUnicode = 0;
 	clear();
 }
 
@@ -422,6 +428,10 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			} if (dwID == 4) { // text select
 				EnableMenuItem(hMenu, ID_MENU_COPY, MF_BYCOMMAND | MF_ENABLED);
 			}
+			if (builder!=NULL) {
+
+			}
+			CheckMenuItem(hMenu, ID_MENU_UNICODE, MF_BYCOMMAND | disableUnicode ? MF_CHECKED : MF_UNCHECKED);
 		 	int iSelection = TrackPopupMenu(hMenu,
 		                                      TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD,
 		                                      ppt->x,
@@ -432,6 +442,10 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			DestroyMenu(hMenu);
 			if (iSelection == ID_MENU_CLEARLOG) {
 				clear();
+			} else if (iSelection == ID_MENU_UNICODE) {
+				disableUnicode ^= 1;
+				DBWriteContactSettingByte(hContact, muccModuleName, DBS_DISABLEUNICODE, (BYTE)disableUnicode);
+				rebuildLog();
 			} else {
 		    	SendMessage(hSPWnd, WM_COMMAND, iSelection, (LPARAM) NULL);
 			}
@@ -784,8 +798,10 @@ void IEView::clear() {
 		}
 		document->Release();
 	}
+	hDbEventFirst = NULL;
 	if (builder!=NULL) {
         IEVIEWEVENT event;
+		event.cbSize = sizeof(IEVIEWEVENT);
         event.hContact = hContact;
         event.dwFlags = dwLogFlags;
 		builder->buildHead(this, &event);
@@ -794,7 +810,9 @@ void IEView::clear() {
 
 void IEView::appendEvent(IEVIEWEVENT *event) {
 	hContact = event->hContact;
+	event->dwFlags |= disableUnicode ? IEEF_NO_UNICODE : 0;
 	dwLogFlags = event->dwFlags;
+	hDbEventFirst = (hDbEventFirst != NULL) ? hDbEventFirst : event->hDbEventFirst;
 	if (builder!=NULL) {
 		builder->appendEvent(this, event);
 	}
@@ -803,9 +821,23 @@ void IEView::appendEvent(IEVIEWEVENT *event) {
 
 void IEView::clear(IEVIEWEVENT *event) {
 	hContact = event->hContact;
+	disableUnicode = DBGetContactSettingByte(hContact, muccModuleName, DBS_DISABLEUNICODE, 0);
+	event->dwFlags |= disableUnicode ? IEEF_NO_UNICODE : 0;
 	dwLogFlags = event->dwFlags;
 	clear();
 	getFocus = false;
+}
+
+void IEView::rebuildLog() {
+	IEVIEWEVENT event;
+	event.cbSize = sizeof(IEVIEWEVENT);
+	event.hContact = hContact;
+	event.dwFlags = dwLogFlags;
+    event.hDbEventFirst = hDbEventFirst;
+	event.count = -1;
+	event.hwnd = hwnd;
+	clear();
+	appendEvent(&event);
 }
 
 IEView* IEView::get(HWND hwnd) {

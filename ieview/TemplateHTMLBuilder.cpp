@@ -15,7 +15,6 @@
 #define SRMSGSET_SHOWSTATUSCHANGES "ShowStatusChanges"
 
 TemplateHTMLBuilder::TemplateHTMLBuilder() {
-	isCleared = true;
 	iLastEventType = -1;
 	startedTime = time(NULL);
 	lastEventTime = time(NULL);
@@ -180,6 +179,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	if (szNameOut) free(szNameOut);
 	view->scrollToBottom();
 	groupTemplate = NULL;
+	iLastEventType = -1;
 }
 
 void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
@@ -292,7 +292,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			groupTemplate = NULL;
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;
-				if (dbei.cbBlob > aLen) {
+				if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
 					DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
 					if (wlen > 0 && wlen < aLen) {
                         szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, true);
@@ -303,7 +303,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                 	szText = encodeUTF8((char *)dbei.pBlob, szProto, true);
 				}
                 if (isGrouping && (Options::getTemplatesFlags() & Options::LOG_GROUP_MESSAGES)) {
-                    if (isGroupBreak || isCleared) {
+                    if (isGroupBreak) {
               		    tmpltName[1] = isHistory ? isSent ? "hMessageOutGroupStart" : "hMessageInGroupStart" : isSent ? "MessageOutGroupStart" : "MessageInGroupStart";
                    	} else {
                    		tmpltName[0] = isHistory ? isSent ? "hMessageOutGroupInner" : "hMessageInGroupInner" : isSent ? "MessageOutGroupInner" : "MessageInGroupInner";

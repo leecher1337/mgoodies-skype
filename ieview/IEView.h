@@ -90,6 +90,7 @@ public:
 class IEView:public IDispatch, public IOleClientSite, public IOleInPlaceSite, public IDocHostUIHandler {
 private:
    	static CRITICAL_SECTION mutex;
+   	static bool isInited;
 	HWND 		parent;
 	HWND		hwnd;
 	IEView		*prev, *next;
@@ -105,6 +106,8 @@ private:
  	WNDPROC    	userWndProc;
 	DWORD       dwLogFlags;
    	HANDLE      hContact;
+   	HANDLE      hDbEventFirst;
+   	int        	disableUnicode;
    	bool        getFocus;
 
     // IUnknown
@@ -179,6 +182,7 @@ public:
 	void			write(const char *text);
 	void            writef(const char *fmt, ...);
 	void            appendEvent(IEVIEWEVENT * event);
+	void            rebuildLog();
 	void            clear(IEVIEWEVENT * event);
 	void            clear();
 	void            scrollToBottom();

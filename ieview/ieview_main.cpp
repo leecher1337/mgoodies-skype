@@ -93,8 +93,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	CreateServiceFunction(MS_IEVIEW_WINDOW, HandleIEWindow);
 	CreateServiceFunction(MS_IEVIEW_EVENT, HandleIEEvent);
 	CreateServiceFunction(MS_IEVIEW_SHOWSMILEYSELECTION, HandleSmileyShowSelection);
-	IEView::init();
-	Options::init();
 	return 0;
 }
 
@@ -102,7 +100,8 @@ void test();
 
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
-	//test();
+	IEView::init();
+	Options::init();
 	return 0;
 }
 

@@ -212,6 +212,7 @@ void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
         view->write(output);
 		free(output);
 	}
+	iLastEventType = -1;
 }
 
 void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
@@ -278,7 +279,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			}
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;
-				if (dbei.cbBlob > aLen) {
+				if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
 					DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
 					if (wlen > 0 && wlen < aLen) {
                         szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, true);

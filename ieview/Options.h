@@ -36,6 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define DBS_SMILEYSFLAGS  		  "SmileyFlags"
 
+#define DBS_DISABLEUNICODE		  "DisableUnicode"
+
 extern int IEViewOptInit(WPARAM wParam, LPARAM lParam);
 
 class Options {
@@ -50,6 +52,7 @@ private:
    	static char *	templatesFilename;
    	static char *	templatesFilenameRTL;
    	static int 		templatesFlags;
+   	static bool     isInited;
 public:
 	enum OPTIONS {
 		BKGIMAGE_ENABLED        = 1,
