@@ -4,31 +4,34 @@
 //
 #define IDD_MSGSENDERROR                102
 #define IDD_MSGWIN                      103
-#define IDI_USERDETAILS                 160
-#define IDI_HISTORY                     174
+
+#define IDI_ADDCONTACT                  120
+#define IDI_USERDETAILS                 121
+#define IDI_HISTORY                     122
+#define IDI_SEND                        123
+#define IDI_CANCEL                      124
+#define IDI_SMILEY                      125
+#define IDI_TYPING                      126
+#define IDI_INCOMING                    127
+#define IDI_OUTGOING                    128
+#define IDI_NOTICE                      129
+
+#define IDI_TIMESTAMP                   130
+#define IDI_DOWNARROW                   131
+#define IDI_TIMESTAMP32                 132
+#define IDI_TYPING32                    133
+#define IDI_DOWNARROW32                 134
+#define IDI_HISTORY32                   135
+#define IDI_USERDETAILS32               136
+
 #define IDR_CONTEXT                     180
 #define IDC_DROP                        183
-#define IDI_SMILEY                      200
-#define IDI_SEND                        201
-#define IDI_CANCEL                      202
-#define IDI_TIMESTAMP                   208
-#define IDI_ADDCONTACT                  210
 #define IDC_HYPERLINKHAND               214
 #define IDC_DROPUSER                    215
 #define IDD_OPT_MSGDLG                  243
 #define IDD_MSG                         244
 #define IDD_OPT_MSGLOG                  245
-#define IDI_DOWNARROW                   264
-#define IDI_TYPING                      268
-#define IDI_TIMESTAMP32                 269
-#define IDI_TYPING32                    270
-#define IDI_DOWNARROW32                 271
-#define IDI_HISTORY32                   272
-#define IDI_USERDETAILS32               274
 #define IDD_OPT_MSGTYPE                 275
-#define IDI_INCOMING                    276
-#define IDI_OUTGOING                    277
-#define IDI_NOTICE                      282
 #define IDC_TABS                        1000
 #define IDC_LOG                         1001
 #define IDC_MESSAGE                     1002
@@ -75,6 +78,7 @@
 #define IDC_PROTOCOL                    1580
 #define IDC_TYPINGNOTIFY                1581
 #define IDC_ERRORTEXT                   1596
+#define IDC_MSGTEXT						1597
 #define IDC_SHOWNOTIFY                  1600
 #define IDC_STATUSWIN                   1601
 #define IDC_TYPEWIN                     1602

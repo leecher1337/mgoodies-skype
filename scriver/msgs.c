@@ -270,9 +270,11 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 	CLISTMENUITEM mi;
 	PROTOCOLDESCRIPTOR **protocol;
 	int protoCount, i;
-
+	
+	SetIcoLibIcons();
 	LoadMsgLogIcons();
-	CreateProtocolIcons();	
+	LoadProtocolIcons();
+	LoadGlobalIcons();
 	ZeroMemory(&mi, sizeof(mi));
 	mi.cbSize = sizeof(mi);
 	mi.position = -2000090000;
@@ -338,7 +340,7 @@ static int IconsChanged(WPARAM wParam, LPARAM lParam)
 	}
 	FreeMsgLogIcons();
 	LoadMsgLogIcons();
-	CreateProtocolIcons();
+	LoadProtocolIcons();
 	WindowList_Broadcast(g_dat->hMessageWindowList, DM_REMAKELOG, 0, 0);
 	// change all the icons
 	WindowList_Broadcast(g_dat->hMessageWindowList, DM_UPDATEWINICON, 0, 0);

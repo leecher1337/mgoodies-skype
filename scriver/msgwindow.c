@@ -18,7 +18,7 @@ static void GetChildWindowRect(struct ParentWindowData *dat, RECT *rcChild)
 	GetClientRect(dat->hwndTabs, &rcTabs);
 	TabCtrl_AdjustRect(dat->hwndTabs, FALSE, &rcTabs);
 	rcStatus.top = rcStatus.bottom = 0;
-	if (g_dat->flags & SMF_SHOWSTATUSBAR) {
+	if (dat->flags & SMF_SHOWSTATUSBAR) {
 		GetWindowRect(dat->hwndStatus, &rcStatus);
 	}
 	rcChild->left = 0;
@@ -177,6 +177,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				dat->childrenCount = 0;
 				dat->children = NULL;
 				dat->hwnd = hwndDlg;
+				dat->flags = g_dat->flags;
 				dat->hwndStatus = CreateWindowEx(0, STATUSCLASSNAME, NULL, WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwndDlg, NULL, g_hInst, NULL);
 				{
 					int statwidths[3];
@@ -202,7 +203,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				}
 				SetWindowLong(dat->hwndTabs, GWL_STYLE, ws);
 				SetWindowPos(dat->hwndTabs, 0, 0, -10, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-				if (!(g_dat->flags & SMF_SHOWSTATUSBAR)) {
+				if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
 					ShowWindow(dat->hwndStatus, SW_HIDE);
 				}
 				ShowWindow(hwndDlg, SW_HIDE);
@@ -241,7 +242,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				dat->bMinimized = 0;
 				GetClientRect(hwndDlg, &rc);
 				rcStatus.top = rcStatus.bottom = 0;
-				if (g_dat->flags & SMF_SHOWSTATUSBAR) {
+				if (dat->flags & SMF_SHOWSTATUSBAR) {
 					int statwidths[3];
 					GetWindowRect(dat->hwndStatus, &rcStatus);
 					statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_TYPING_WIDTH;
@@ -501,13 +502,14 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 		case DM_OPTIONSAPPLIED:
 		{
-			if (!(g_dat->flags & SMF_SHOWSTATUSBAR)) {
+			dat->flags = g_dat->flags;
+			if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
 				ShowWindow(dat->hwndStatus, SW_HIDE);
 			} else {
 				ShowWindow(dat->hwndStatus, SW_SHOW);
 			}
 			ws = GetWindowLong(dat->hwndTabs, GWL_STYLE) & ~(TCS_BOTTOM);
-			if (g_dat->flags & SMF_TABSATBOTTOM) {
+			if (dat->flags & SMF_TABSATBOTTOM) {
 				ws |= TCS_BOTTOM;
 			} 
 			SetWindowLong(dat->hwndTabs, GWL_STYLE, ws);
@@ -515,8 +517,15 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			SendMessage(hwndDlg, WM_SIZE, 0, 0);
 			break;
 		}
-
-
+		case DM_SWITCHSTATUSBAR:
+			dat->flags = dat->flags ^ SMF_SHOWSTATUSBAR;
+			if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
+				ShowWindow(dat->hwndStatus, SW_HIDE);
+			} else {
+				ShowWindow(dat->hwndStatus, SW_SHOW);
+			}
+			SendMessage(hwndDlg, WM_SIZE, 0, 0);
+			break;
 	}
 	return FALSE;
 }

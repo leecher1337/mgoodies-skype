@@ -30,7 +30,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 struct ErrorWindowData
 {
 	char *	szDescription;
+	char *	szText;
 	HWND	hwndParent;
+	int		sendIdx;
 };
 
 struct ParentWindowData
@@ -46,6 +48,7 @@ struct ParentWindowData
 	int		nFlash;
 	int		nFlashMax;
 	int		bMinimized;
+	DWORD	flags;		
 };
 
 struct NewMessageWindowLParam
@@ -57,6 +60,7 @@ struct NewMessageWindowLParam
 struct MessageSendInfo
 {
 	HANDLE hSendId;
+	int		state;
 	char *sendBuffer;
 };
 
@@ -102,6 +106,7 @@ struct MessageWindowData
 	TCmdList *cmdListCurrent;
 	time_t 	lastEventTime;
 	int    	lastEventType;
+	DWORD	flags;		
 };
 
 #define HM_EVENTSENT         (WM_USER+10)
@@ -130,6 +135,11 @@ struct MessageWindowData
 #define DM_ACTIVATEPREV		 (WM_USER+40)
 #define DM_ACTIVATENEXT		 (WM_USER+41)
 #define DM_STARTFLASHING	 (WM_USER+45)
+#define DM_CLEARLOG			 (WM_USER+46)
+#define DM_SWITCHSTATUSBAR	 (WM_USER+47)
+#define DM_SWITCHTOOLBAR	 (WM_USER+48)
+#define DM_SWITCHRTL		 (WM_USER+50)
+
 
 #define EVENTTYPE_STATUSCHANGE 25368
 

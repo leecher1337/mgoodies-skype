@@ -6,7 +6,7 @@ static HANDLE g_hDbEvent = 0, g_hAck = 0;
 static int dbaddedevent(WPARAM wParam, LPARAM lParam);
 static int ackevent(WPARAM wParam, LPARAM lParam);
 
-void CreateProtocolIcons() {
+void LoadProtocolIcons() {
 	PROTOCOLDESCRIPTOR **pProtos;
 	int i, j, allProtoNum, k;
 	HICON hIcon;
@@ -28,8 +28,7 @@ void CreateProtocolIcons() {
 	}
 
     ImageList_AddIcon(g_dat->hIconList, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
-    ImageList_AddIcon(g_dat->hIconList, g_dat->hIcons[SMF_ICON_TYPING]);
-
+	ImageList_AddIcon(g_dat->hIconList, g_dat->hIcons[SMF_ICON_TYPING]);
 	for (i = ID_STATUS_OFFLINE; i <= ID_STATUS_OUTTOLUNCH; i++) {
 		ImageList_AddIcon(g_dat->hIconList, LoadSkinnedProtoIcon(NULL, i));
 	}
@@ -50,20 +49,77 @@ void CreateProtocolIcons() {
     }
 }
 
+void SetIcoLibIcons() {
+	if (ServiceExists(MS_SKIN2_ADDICON)) {
+		SKINICONDESC sid;
+		char path[MAX_PATH];
+		GetModuleFileName(g_hInst, path, MAX_PATH);
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.pszSection = "Scriver";
+		sid.pszDefaultFile = path;
+		sid.pszName = (char *) "scriver_ADD";
+		sid.iDefaultIndex = 0; //IDI_ADDCONTACT;
+		sid.pszDescription = Translate("Add");
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		sid.pszName = (char *) "scriver_USERDETAILS";
+		sid.iDefaultIndex = 1;//IDI_USERDETAILS;
+		sid.pszDescription = Translate("User details");
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		sid.pszName = (char *) "scriver_HISTORY";
+		sid.iDefaultIndex = 2;//IDI_USERDETAILS;
+		sid.pszDescription = Translate("History");
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		sid.pszName = (char *) "scriver_SEND";
+		sid.iDefaultIndex = 3;//IDI_USERDETAILS;
+		sid.pszDescription = Translate("Send");
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		sid.pszName = (char *) "scriver_CANCEL";
+		sid.iDefaultIndex = 4;//IDI_CANCEL;
+		sid.pszDescription = Translate("Close session");
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		sid.pszName = (char *) "scriver_SMILEY";
+		sid.iDefaultIndex = 5;//IDI_SMILEY;
+		sid.pszDescription = Translate("Smiley button");
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		sid.pszName = (char *) "scriver_TYPING";
+		sid.iDefaultIndex = 6;//IDI_TYPING;
+		sid.pszDescription = Translate("Typing icon");
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		sid.pszName = (char *) "scriver_INCOMING";
+		sid.iDefaultIndex = 7;//IDI_INCOMING;
+		sid.pszDescription = Translate("Incoming message");
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		sid.pszName = (char *) "scriver_OUTGOING";
+		sid.iDefaultIndex = 8;//IDI_OUTGOING;
+		sid.pszDescription = Translate("Outgoing message");
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		sid.pszName = (char *) "scriver_NOTICE";
+		sid.iDefaultIndex = 9;//IDI_NOTICE;
+		sid.pszDescription = Translate("Notice");
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+	}
+}
+
+void LoadGlobalIcons() {
+
+	{
+		g_dat->hIcons[SMF_ICON_ADD] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_ADDCONTACT), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_USERDETAILS] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_USERDETAILS32 : IDI_USERDETAILS), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_HISTORY] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_HISTORY32 : IDI_HISTORY), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_ARROW] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_DOWNARROW32 : IDI_DOWNARROW), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_TYPING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_TYPING32 : IDI_TYPING), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_SEND] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_SEND : IDI_SEND), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_CANCEL] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_CANCEL : IDI_CANCEL), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_SMILEY] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_SMILEY : IDI_SMILEY), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+	}
+}
+
 void InitGlobals() {
 	g_dat = (struct GlobalMessageData *)malloc(sizeof(struct GlobalMessageData));
 	g_dat->hMessageWindowList = (HANDLE) CallService(MS_UTILS_ALLOCWINDOWLIST, 0, 0);
 	g_dat->hParentWindowList = (HANDLE) CallService(MS_UTILS_ALLOCWINDOWLIST, 0, 0);
 	g_hAck = HookEvent(ME_PROTO_ACK, ackevent);
 	ReloadGlobals();
-	g_dat->hIcons[SMF_ICON_ADD] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_ADDCONTACT), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-	g_dat->hIcons[SMF_ICON_USERDETAIL] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_USERDETAILS32 : IDI_USERDETAILS), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-	g_dat->hIcons[SMF_ICON_HISTORY] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_HISTORY32 : IDI_HISTORY), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-	g_dat->hIcons[SMF_ICON_ARROW] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_DOWNARROW32 : IDI_DOWNARROW), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-	g_dat->hIcons[SMF_ICON_TYPING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_TYPING32 : IDI_TYPING), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-	g_dat->hIcons[SMF_ICON_SEND] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_SEND : IDI_SEND), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-	g_dat->hIcons[SMF_ICON_CANCEL] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_CANCEL : IDI_CANCEL), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-	g_dat->hIcons[SMF_ICON_SMILEY] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_SMILEY : IDI_SMILEY), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 	g_dat->hParent = NULL;
 	g_dat->protoNum = 0;
 	g_dat->protoNames = NULL;
