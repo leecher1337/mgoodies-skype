@@ -170,7 +170,7 @@ public:
 	HWND			getHWND();
 	void 			translateAccelerator(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	bool			mouseClick(POINT pt);
-	bool            setFocus();
+	bool            setFocus(HWND prevFocus);
    	void            setWindowPos(int x, int y, int cx, int cy);
 	HTMLBuilder*    getBuilder();
 

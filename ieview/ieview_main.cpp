@@ -39,8 +39,8 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"IEView Plugin",
-	PLUGIN_MAKE_VERSION(1,0,1,9),
-	"IE Control Chat Log (1.0.1.9 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,0,1,10),
+	"IE Control Chat Log (1.0.1.10 "__DATE__")",
 	"Piotr Piastucki",
 	"the_leech@users.berlios.de",
 	"(c) 2004-2005 Piotr Piastucki",
@@ -93,6 +93,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	CreateServiceFunction(MS_IEVIEW_WINDOW, HandleIEWindow);
 	CreateServiceFunction(MS_IEVIEW_EVENT, HandleIEEvent);
 	CreateServiceFunction(MS_IEVIEW_SHOWSMILEYSELECTION, HandleSmileyShowSelection);
+	IEView::init();
+	Options::init();
 	return 0;
 }
 
@@ -100,8 +102,6 @@ void test();
 
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
-	IEView::init();
-	Options::init();
 	//test();
 	return 0;
 }
