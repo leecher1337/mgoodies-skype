@@ -97,9 +97,11 @@
 #define IDC_AVATARHEIGHTMIN             1614
 #define IDC_LIMITNAMES                  1615
 #define IDC_TRANSPARENCY                1616
-#define IDC_MARKFOLLOWUPS               1618
-#define IDC_TRANSPARENCYVALUE			1619
-#define IDC_TRANSPARENCYPERC            1620
+#define IDC_MARKFOLLOWUPS               1617
+#define IDC_ATRANSPARENCYVALUE			1619
+#define IDC_ATRANSPARENCYPERC           1620
+#define IDC_ITRANSPARENCYVALUE			1621
+#define IDC_ITRANSPARENCYPERC           1622
 #define IDM_CUT                         40000
 #define IDM_COPY                        40001
 #define IDM_PASTE                       40002

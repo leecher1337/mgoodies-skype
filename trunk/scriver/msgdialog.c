@@ -845,6 +845,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			return 0;
 		if (pAck->type != ACKTYPE_AVATAR)
 			return 0;
+		if (pai==NULL)
+			return 0;
 		if (pAck->result == ACKRESULT_SUCCESS) {
 			if (pai->filename&&strlen(pai->filename)&&VALID_AVATAR(pai->format)) {
 				DBWriteContactSettingString(dat->hContact, SRMMMOD, SRMSGSET_AVATAR, pai->filename);
@@ -1261,6 +1263,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dbei.eventType == EVENTTYPE_MESSAGE && !(dbei.flags & (DBEF_SENT))) {
 					dat->lastMessage = dbei.timestamp;
 					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+					if (GetForegroundWindow()==GetParent(hwndDlg) && dat->parent->hwndActive == hwndDlg)
+						SkinPlaySound("RecvMsgActive");
+					else SkinPlaySound("RecvMsgInactive");
 				}
 				if ((HANDLE) lParam != dat->hDbEventFirst && (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, lParam, 0) == NULL)
 					SendMessage(hwndDlg, DM_APPENDTOLOG, lParam, 0);
