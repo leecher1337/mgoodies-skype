@@ -216,7 +216,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				if (i==0 || mmi->ptMinTrackSize.x > minW) minW = mmi->ptMinTrackSize.x;
 				if (i==0 || mmi->ptMinTrackSize.y > minH) minH = mmi->ptMinTrackSize.y;
 			}
-			mmi->ptMinTrackSize.x = minW;
+			mmi->ptMinTrackSize.x = minW + (rcWindow.right - rcWindow.left) - (rc.right - rc.left);
 			mmi->ptMinTrackSize.y = minH + (rcWindow.bottom - rcWindow.top) - (rc.bottom - rc.top);
 			return FALSE;
 		}

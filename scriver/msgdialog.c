@@ -813,6 +813,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			// if edit box width < min then adjust avatarWidth
 			if (rc.right - dat->avatarWidth < 240) {
 				dat->avatarWidth = rc.right - 240;
+				if (dat->avatarWidth < 0) dat->avatarWidth = 0;
 				aspect = (double)dat->avatarWidth / (double)bminfo.bmWidth;
 				dat->avatarHeight = (int)(bminfo.bmHeight * aspect);
 
