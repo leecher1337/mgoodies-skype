@@ -548,7 +548,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			RichUtil_SubClass(GetDlgItem(hwndDlg, IDC_LOG));
 			{ // avatar stuff
 				dat->avatarPic = 0;
-				dat->limitAvatarH = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITAVHEIGHT, SRMSGDEFSET_LIMITAVHEIGHT)?DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT):0;
+//				dat->limitAvatarH = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITAVHEIGHT, SRMSGDEFSET_LIMITAVHEIGHT)?DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT):0;
 			}
 			if (dat->hContact && dat->szProto != NULL)
 				dat->wStatus = DBGetContactSettingWord(dat->hContact, dat->szProto, "Status", ID_STATUS_OFFLINE);
@@ -582,7 +582,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 //				dat->splitterPos = (int) DBGetContactSettingDword(NULL, SRMMMOD, "splitterPos", (DWORD) - 1);
 //			}
 			dat->windowWasCascaded = 0;
-			dat->nFlash = 0;
+//			dat->nFlash = 0;
 			dat->nTypeSecs = 0;
 			dat->nLastTyping = 0;
 			dat->showTyping = 0;
@@ -595,7 +595,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->lastEventType = 0;
 			dat->lastEventTime = time(NULL);
 	
-			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
+//			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
 			{
 				RECT rc;
 				POINT pt;
@@ -921,7 +921,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 //			dat->avatarPic = 0;
 			dat->limitAvatarH = 0;
 			if (CallProtoService(dat->szProto, PS_GETCAPS, PFLAGNUM_4, 0)&PF4_AVATARS) {
-				dat->limitAvatarH = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITAVHEIGHT, SRMSGDEFSET_LIMITAVHEIGHT)?DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT):0;
+//				dat->limitAvatarH = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITAVHEIGHT, SRMSGDEFSET_LIMITAVHEIGHT)?DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT):0;
 			}
 			SendMessage(hwndDlg, DM_GETAVATAR, 0, 0);
 		}
@@ -1021,11 +1021,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			break;
 		//fall through
 	case WM_MOUSEACTIVATE:
-		
 		if (KillTimer(hwndDlg, TIMERID_FLASHWND)) {
-			FlashWindow(GetParent(hwndDlg), FALSE);
 			dat->showUnread = 0;
-			dat->nFlash = 0;
+//			dat->nFlash = 0;
 			SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
 		}
 		break;
@@ -1127,11 +1125,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					SendMessage(hwndDlg, DM_APPENDTOLOG, lParam, 0);
 				else
 					SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
-				if ((GetActiveWindow() != hwndDlg && GetForegroundWindow() != GetParent(hwndDlg)) && !(dbei.flags & DBEF_SENT)
-					&& dbei.eventType != EVENTTYPE_STATUSCHANGE) {
-						dat->nFlash = 0;
+				if (!(dbei.flags & DBEF_SENT) && dbei.eventType != EVENTTYPE_STATUSCHANGE) {
+//					dat->nFlash = dat->nFlashMax;
+					SendMessage(dat->hwndParent, DM_STARTFLASHING, 0, 0);
+					if ((GetActiveWindow() != dat->hwndParent && GetForegroundWindow() != dat->hwndParent) || dat->parent->hwndActive != hwndDlg) {
+						dat->showUnread = 0;
 						SetTimer(hwndDlg, TIMERID_FLASHWND, TIMEOUT_FLASHWND, NULL);
 					}
+				}
 			}
 			break;
 		}
@@ -1175,15 +1176,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGSENDERROR), hwndDlg, ErrorDlgProc, (LPARAM) &ewd);
 		}
 		else if (wParam == TIMERID_FLASHWND) {
-			if (dat->nFlash > dat->nFlashMax || GetForegroundWindow() == GetParent(hwndDlg)) {
-//				KillTimer(hwndDlg, TIMERID_FLASHWND);
-				FlashWindow(GetParent(hwndDlg), FALSE);
-//				dat->nFlash = 0;
-			} else {
-				FlashWindow(GetParent(hwndDlg), TRUE);
-				dat->nFlash++;
-			}
-			dat->showUnread += 1;
+			dat->showUnread++;
 			SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
 		}
 		else if (wParam == TIMERID_TYPE) {
@@ -1205,10 +1198,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dat->nTypeSecs) {
 					dat->showTyping = 1;
 					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
-					if (((g_dat->flags&SMF_SHOWTYPINGWIN) && GetForegroundWindow() != dat->hwndParent) ||
-						(GetForegroundWindow() == dat->hwndParent && !(g_dat->flags&SMF_SHOWSTATUSBAR)))
+//					if (((g_dat->flags&SMF_SHOWTYPINGWIN) && GetForegroundWindow() != dat->hwndParent) ||
+//						(GetForegroundWindow() == dat->hwndParent && !(g_dat->flags&SMF_SHOWSTATUSBAR)))
+//					if (((g_dat->flags&SMF_SHOWTYPINGWIN) && GetForegroundWindow() != dat->hwndParent) ||
 //					if ((g_dat->flags&SMF_SHOWTYPINGWIN) || GetForegroundWindow() == dat->hwndParent)
-						SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
+//					if (g_dat->flags&SMF_SHOWTYPINGWIN)
+					SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
 				}
 			}
 		}

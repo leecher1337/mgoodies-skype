@@ -5,6 +5,9 @@ extern HINSTANCE g_hInst;
 #define SB_CHAR_WIDTH		 45
 #define SB_TYPING_WIDTH 	 35
 
+#define TIMERID_FLASHWND     1
+#define TIMEOUT_FLASHWND     900
+
 static WNDPROC OldTabCtrlProc;
 BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -169,6 +172,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			{
 				struct NewMessageWindowLParam *newData = (struct NewMessageWindowLParam *) lParam;
 				dat = (struct ParentWindowData *) malloc(sizeof(struct ParentWindowData));
+				dat->nFlash = 0;
+				dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
 				dat->childrenCount = 0;
 				dat->children = NULL;
 				dat->hwnd = hwndDlg;
@@ -328,10 +333,26 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				}
 			}
 			break;
+		case WM_TIMER:
+			if (wParam == TIMERID_FLASHWND) {
+				if ((dat->nFlash > dat->nFlashMax) || (GetActiveWindow() == hwndDlg) || (GetForegroundWindow() == hwndDlg)) {
+					KillTimer(hwndDlg, TIMERID_FLASHWND);
+					FlashWindow(hwndDlg, FALSE);
+				} else if (dat->nFlash < dat->nFlashMax) {
+					FlashWindow(hwndDlg, TRUE);
+					dat->nFlash++;
+				}
+			}
+			break;
+			
 		case WM_ACTIVATE:
 			if (LOWORD(wParam) != WA_ACTIVE)
 				break;
 		case WM_MOUSEACTIVATE:
+			if (KillTimer(hwndDlg, TIMERID_FLASHWND)) {
+				FlashWindow(hwndDlg, FALSE);
+				dat->nFlash = 0;
+			}
 			SendMessage(dat->hwndActive, WM_ACTIVATE, WA_ACTIVE, 0);
 			break;
 		case WM_DESTROY:
@@ -343,7 +364,12 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			break;
 		case DM_ERRORDECIDED:
 			break;
-
+		case DM_STARTFLASHING:
+			if (GetActiveWindow() != hwndDlg && GetForegroundWindow() != hwndDlg) {
+				dat->nFlash = 0;
+				SetTimer(hwndDlg, TIMERID_FLASHWND, TIMEOUT_FLASHWND, NULL);
+			}
+			break;
 		case DM_REMOVECHILD:
 			{
 				RemoveChild(dat, (HWND) lParam);
@@ -430,9 +456,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 					wStatus = DBGetContactSettingWord(mdat->hContact, mdat->szProto, "Status", ID_STATUS_OFFLINE);
 					if (mdat->hwnd == dat->hwndActive) {
 						if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON)) {
-							if (mdat->showTyping) {
+							if (mdat->showTyping && (g_dat->flags&SMF_SHOWTYPINGWIN)) {
 								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) g_dat->hIcons[SMF_ICON_TYPING]);
-							} else if (mdat->showUnread) {
+							} else if (mdat->showUnread && GetActiveWindow() != hwndDlg && GetForegroundWindow() != hwndDlg) {
 								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));	
 							} else {
 								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedProtoIcon(mdat->szProto, wStatus));

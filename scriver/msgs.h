@@ -27,13 +27,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MSGERROR_CANCEL	0
 #define MSGERROR_RETRY	    1
 
-struct ErrorWindowData 
+struct ErrorWindowData
 {
 	char *	szDescription;
 	HWND	hwndParent;
 };
 
-struct ParentWindowData 
+struct ParentWindowData
 {
 	HWND	hwnd;
 	HWND *	children;
@@ -43,7 +43,8 @@ struct ParentWindowData
 	HWND	hwndTabs;
 	int		lastClickTab;
 	int		lastClickTime;
-
+	int		nFlash;
+	int		nFlashMax;
 };
 
 struct NewMessageWindowLParam
@@ -127,6 +128,7 @@ struct MessageWindowData
 #define DM_UPDATESTATUSBAR	 (WM_USER+35)
 #define DM_ACTIVATEPREV		 (WM_USER+40)
 #define DM_ACTIVATENEXT		 (WM_USER+41)
+#define DM_STARTFLASHING	 (WM_USER+45)
 
 #define EVENTTYPE_STATUSCHANGE 25368
 

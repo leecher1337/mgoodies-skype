@@ -90,8 +90,7 @@
 #define IDC_AVATAR                      1610
 #define IDC_AVATARSUPPORT               1611
 #define IDC_LIMITAVATARH                1612
-#define IDC_AVATARHEIGHT                1613
-#define IDC_CHECK4                      1617
+//#define IDC_AVATARHEIGHT                1613
 #define IDC_MARKFOLLOWUPS               1618
 #define IDM_COPY                        40001
 #define IDM_COPYALL                     40011
