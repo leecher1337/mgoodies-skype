@@ -30,9 +30,6 @@ static const CLSID CLSID_MozillaBrowser=
 
 IEView * IEView::list = NULL;
 CRITICAL_SECTION IEView::mutex;
-//static WNDPROC serverWindowProc = NULL;
-//static WNDPROC docWindowProc = NULL;
-//static WNDPROC frameWindowProc = NULL;
 
 static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     IEView *view = IEView::get(GetParent(GetParent(hwnd)));
@@ -42,7 +39,7 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
 			view->translateAccelerator(message, wParam, lParam);
 		   	break;
 		case WM_SETFOCUS:
-			if (view->setFocus()) {
+			if (view->setFocus((HWND)wParam)) {
 				return TRUE;
 			}
 			break;
@@ -69,11 +66,7 @@ static LRESULT CALLBACK IEViewDocWindowProcedure (HWND hwnd, UINT message, WPARA
 			view->setUserWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewServerWindowProcedure));
 		}
 		return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
-       // serverWindowProc = (WNDPROC) SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewServerWindowProcedure);
     }
-   // if (docWindowProc != NULL) {
-    //    return CallWindowProc(docWindowProc, hwnd, message, wParam, lParam);
-    //}
     return DefWindowProc (hwnd, message, wParam, lParam);
 }
 
@@ -87,9 +80,6 @@ static LRESULT CALLBACK IEViewWindowProcedure (HWND hwnd, UINT message, WPARAM w
 		}
 		return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
     }
-    //if (frameWindowProc != NULL) {
-//        return CallWindowProc(frameWindowProc, hwnd, message, wParam, lParam);
-    //}
     return DefWindowProc (hwnd, message, wParam, lParam);
 }
 
@@ -172,7 +162,6 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
    		}
 #ifndef GECKO
 		setUserWndProc((WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) IEViewWindowProcedure));
-//		frameWindowProc = ;
 #endif
     }
     EnterCriticalSection(&mutex);
@@ -699,7 +688,6 @@ void IEView::scrollToBottom() {/*
 		}
 		document->Release();
 	}
-	SetFocus(parent);
 }
 
 void IEView::write(const wchar_t *text) {
@@ -901,9 +889,9 @@ bool IEView::mouseClick(POINT pt) {
 	return result;
 }
 
-bool IEView::setFocus() {
-	if (GetFocus() != hwnd && !getFocus) {
-		SetFocus(parent);
+bool IEView::setFocus(HWND prevFocus) {
+	if (GetFocus() != hwnd && !getFocus) { // && IsChild(prevFocus, hwnd
+		SetFocus(prevFocus);
 		return true;
 	}
 	getFocus = false;
