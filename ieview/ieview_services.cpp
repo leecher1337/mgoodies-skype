@@ -69,7 +69,7 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 		}
 	} else if (event->iType == IEE_CLEAR_LOG) {
 		if (view != NULL) {
-			view->clear();
+			view->clear(event);
 		}
 	}
 	return 0;

@@ -20,7 +20,12 @@ public:
 		TIME,
 		DATE,
 		AVATAR,
-		CID
+		CID,
+		PROTO,
+		AVATARIN,
+		AVATAROUT,
+		NAMEIN,
+		NAMEOUT
 		
 	};
 	Token(int, const char *);

@@ -9,7 +9,7 @@ class TemplateHTMLBuilder:public HTMLBuilder
 {
 protected:
 	virtual bool isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei);
-	virtual char *makeRelativeDate(time_t check, int mode);
+	virtual char *timestampToString(time_t check, int mode);
 	bool        isCleared;
 	time_t 		startedTime;
 	time_t 		lastEventTime;

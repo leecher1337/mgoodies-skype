@@ -103,6 +103,8 @@ private:
 	HTMLBuilder *builder;
 	SmileyWindow *smileyWindow;
  	WNDPROC    	userWndProc;
+	DWORD       dwLogFlags;
+   	HANDLE      hContact;
 
     // IUnknown
 	STDMETHODIMP QueryInterface(REFIID riid, PVOID *ppv);
@@ -175,6 +177,7 @@ public:
 	void			write(const char *text);
 	void            writef(const char *fmt, ...);
 	void            appendEvent(IEVIEWEVENT * event);
+	void            clear(IEVIEWEVENT * event);
 	void            clear();
 	void            scrollToBottom();
 	void            scrollToBottomSoft();
@@ -184,7 +187,7 @@ public:
 	WNDPROC         getUserWndProc();
 
 	static IEView* 	get(HWND);
-	static IEView* 	getByDoc(HWND);
+//	static IEView* 	getByDoc(HWND);
 	static void 	init();
 	static void 	release();
 

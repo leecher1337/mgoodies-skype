@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DBS_EXTERNALCSSFLAGS	  "ExternalCSSFlags"
 
 #define DBS_TEMPLATESFILE         "TemplatesFile"
+#define DBS_TEMPLATESFILE_RTL     "TemplatesFileRTL"
 #define DBS_TEMPLATESFLAGS		  "TemplatesFlags"
 
 #define DBS_SMILEYSFLAGS  		  "SmileyFlags"
@@ -45,6 +46,7 @@ private:
    	static int 		externalCSSFlags;
    	
    	static char *	templatesFilename;
+   	static char *	templatesFilenameRTL;
    	static int 		templatesFlags;
 public:
 	enum OPTIONS {
@@ -87,8 +89,10 @@ public:
    	static const char *		getExternalCSSFile();
    	static void				setExternalCSSFlags(int flags);
    	static int				getExternalCSSFlags();
+   	static void     		setTemplatesFileRTL(const char *filename);
    	static void     		setTemplatesFile(const char *filename);
    	static const char *		getTemplatesFile();
+   	static const char *		getTemplatesFileRTL();
    	static void				setTemplatesFlags(int flags);
    	static int				getTemplatesFlags();
    	static void      		init();

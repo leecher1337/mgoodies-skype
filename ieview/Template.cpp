@@ -113,6 +113,26 @@ void Template::tokenize() {
 				str[i] = '\0';
 				newTokenType = Token::CID;
 				newTokenSize = 5;
+			} else if (!strncmp(str+i, "%proto%", 7)) {
+				str[i] = '\0';
+				newTokenType = Token::PROTO;
+				newTokenSize = 7;
+			} else if (!strncmp(str+i, "%avatarIn%", 10)) {
+				str[i] = '\0';
+				newTokenType = Token::AVATARIN;
+				newTokenSize = 10;
+			} else if (!strncmp(str+i, "%avatarOut%", 11)) {
+				str[i] = '\0';
+				newTokenType = Token::AVATAROUT;
+				newTokenSize = 11;
+			} else if (!strncmp(str+i, "%nameIn%", 8)) {
+				str[i] = '\0';
+				newTokenType = Token::NAMEIN;
+				newTokenSize = 8;
+			} else if (!strncmp(str+i, "%nameOut%", 9)) {
+				str[i] = '\0';
+				newTokenType = Token::NAMEOUT;
+				newTokenSize = 9;
 			} else {
 				newTokenType = Token::PLAIN;
 				newTokenSize = 1;

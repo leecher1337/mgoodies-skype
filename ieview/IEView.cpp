@@ -30,9 +30,9 @@ static const CLSID CLSID_MozillaBrowser=
 
 IEView * IEView::list = NULL;
 CRITICAL_SECTION IEView::mutex;
-static WNDPROC serverWindowProc = NULL;
-static WNDPROC docWindowProc = NULL;
-static WNDPROC frameWindowProc = NULL;
+//static WNDPROC serverWindowProc = NULL;
+//static WNDPROC docWindowProc = NULL;
+//static WNDPROC frameWindowProc = NULL;
 
 static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     IEView *view = IEView::get(GetParent(GetParent(hwnd)));
@@ -792,14 +792,24 @@ void IEView::clear() {
 	}
 	if (builder!=NULL) {
         IEVIEWEVENT event;
+        event.hContact = hContact;
+        event.dwFlags = dwLogFlags;
 		builder->buildHead(this, &event);
 	}
 }
 
 void IEView::appendEvent(IEVIEWEVENT *event) {
+	hContact = event->hContact;
+	dwLogFlags = event->dwFlags;
 	if (builder!=NULL) {
 		builder->appendEvent(this, event);
 	}
+}
+
+void IEView::clear(IEVIEWEVENT *event) {
+	hContact = event->hContact;
+	dwLogFlags = event->dwFlags;
+	clear();
 }
 
 IEView* IEView::get(HWND hwnd) {

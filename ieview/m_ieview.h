@@ -51,8 +51,9 @@ typedef struct {
 	int			cy;                 // IE control vertical size
 } IEVIEWWINDOW;
 
-#define IEE_LOG_EVENTS  1               // log specified number of DB events
-#define IEE_CLEAR_LOG	2               // clear log
+#define IEE_LOG_EVENTS  1           // log specified number of DB events
+#define IEE_CLEAR_LOG	2           // clear log
+#define IEEF_RTL        1           // turn on RTL support
 
 typedef struct {
 	int			cbSize;             // size of the strusture

@@ -41,7 +41,7 @@ bool TemplateHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
 }
 
 
-char *TemplateHTMLBuilder::makeRelativeDate(time_t check, int mode)
+char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
 {
     static char szResult[512];
     char str[80];
@@ -78,16 +78,22 @@ char *TemplateHTMLBuilder::makeRelativeDate(time_t check, int mode)
 
 
 void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
-	groupTemplate = NULL;
-	isCleared = true;
-	isCleared = false;
+	DBVARIANT dbv;
+	CONTACTINFO ci;
+	char szBase[1024];
+	char szNoAvatar[1024];
+	char *szProto = NULL;
+	char *szNameIn = NULL;
+	char *szNameOut = NULL;
+	char *szAvatarIn = NULL;
+	char *szAvatarOut = NULL;
 	int outputSize;
 	char *output;
-    char szBase[1024];
+
 	output = NULL;
-	Template *tmplt = TemplateMap::getTemplate("default", "HTMLStart");
-	TemplateMap *tmpm = TemplateMap::getTemplateMap("default");
+	szProto = _strdup((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
 	szBase[0]='\0';
+	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
 	if (tmpm!=NULL) {
     	strcpy(szBase, tmpm->getFilename());
     	char* pathrun = szBase + strlen(szBase);
@@ -95,17 +101,68 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
     	pathrun++;
     	*pathrun = '\0';
 	}
+	sprintf(szNoAvatar, "%snoavatar.jpg", szBase);
+	if (Options::getTemplatesFlags() & Options::LOG_SHOW_NICKNAMES) {
+		ZeroMemory(&ci, sizeof(ci));
+	    ci.cbSize = sizeof(ci);
+	    ci.hContact = NULL;
+	    ci.szProto = szProto;
+	    ci.dwFlag = CNF_DISPLAY;
+		if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+	        szNameOut = encodeUTF8(ci.pszVal, NULL, false);
+		}
+		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
+	} else {
+        szNameOut = _strdup("&nbsp;");
+        szNameIn = _strdup("&nbsp;");
+	}
+	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
+	    if (strlen(dbv.pszVal) > 0) {
+       		szAvatarIn = _strdup(dbv.pszVal);
+		    Utils::convertPath(szAvatarIn);
+	    }
+       	DBFreeVariant(&dbv);
+	}
+	if (szAvatarIn == NULL) {
+        szAvatarIn = _strdup(szNoAvatar);
+	}
+	if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
+	    if (strlen(dbv.pszVal) > 0) {
+       		szAvatarOut = _strdup(dbv.pszVal);
+		    Utils::convertPath(szAvatarOut);
+	    }
+       	DBFreeVariant(&dbv);
+	}
+	if (szAvatarOut == NULL) {
+        szAvatarOut = _strdup(szNoAvatar);
+	}
+	Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", "HTMLStart") : TemplateMap::getTemplate("default", "HTMLStart");
 	if (tmplt!=NULL) {
 		for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
 			const char *tokenVal;
 			tokenVal = NULL;
 			switch (token->getType()) {
 				case Token::PLAIN:
-					tokenVal = token->getText();
+                    tokenVal = token->getText();
 					break;
 				case Token::BASE:
-     				tokenVal = szBase;
-                   break;
+				    tokenVal = szBase;
+				    break;
+				case Token::NAMEIN:
+                    tokenVal = szNameIn;
+					break;
+				case Token::NAMEOUT:
+                    tokenVal = szNameOut;
+					break;
+				case Token::AVATARIN:
+			    	tokenVal = szAvatarIn;
+					break;
+				case Token::AVATAROUT:
+			    	tokenVal = szAvatarOut;
+					break;
+				case Token::PROTO:
+				    tokenVal = szProto;
+				    break;
 			}
 			if (tokenVal != NULL) {
 				Utils::appendText(&output, &outputSize, "%s", tokenVal);
@@ -116,17 +173,34 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
         view->write(output);
 		free(output);
 	}
+    if (szProto) free(szProto);
+	if (szAvatarIn) free(szAvatarIn);
+	if (szAvatarOut) free(szAvatarOut);
+	if (szNameIn) free(szNameIn);
+	if (szNameOut) free(szNameOut);
+	view->scrollToBottom();
 	groupTemplate = NULL;
 }
 
 void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
+	DBVARIANT dbv;
+	CONTACTINFO ci;
 	char szBase[1024];
 	char szNoAvatar[1024];
+	char szCID[32];
+	char *szName = NULL;
+	char *szNameIn = NULL;
+	char *szNameOut = NULL;
+	char *szAvatar = NULL;
+	char *szAvatarIn = NULL;
+	char *szAvatarOut = NULL;
+	char *szText = NULL;
+	char *szProto = NULL;
 	const char *tmpltName[2];
 	bool isGrouping = false;
-
-   	TemplateMap *tmpm = TemplateMap::getTemplateMap("default");
+	szProto = _strdup((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
 	szBase[0]='\0';
+	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
 	if (tmpm!=NULL) {
     	strcpy(szBase, tmpm->getFilename());
     	char* pathrun = szBase + strlen(szBase);
@@ -136,10 +210,39 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     	isGrouping = tmpm->isGrouping();
 	}
 	sprintf(szNoAvatar, "%snoavatar.jpg", szBase);
-
-	char *szProto = _strdup((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
-	if (isCleared) {
-		groupTemplate = "HTMLStart";
+	if (Options::getTemplatesFlags() & Options::LOG_SHOW_NICKNAMES) {
+		ZeroMemory(&ci, sizeof(ci));
+	    ci.cbSize = sizeof(ci);
+	    ci.hContact = NULL;
+	    ci.szProto = szProto;
+	    ci.dwFlag = CNF_DISPLAY;
+		if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+	        szNameOut = encodeUTF8(ci.pszVal, NULL, false);
+		}
+		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
+	} else {
+        szNameOut = _strdup("&nbsp;");
+        szNameIn = _strdup("&nbsp;");
+	}
+	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
+	    if (strlen(dbv.pszVal) > 0) {
+       		szAvatarIn = _strdup(dbv.pszVal);
+		    Utils::convertPath(szAvatarIn);
+	    }
+       	DBFreeVariant(&dbv);
+	}
+	if (szAvatarIn == NULL) {
+        szAvatarIn = _strdup(szNoAvatar);
+	}
+	if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
+	    if (strlen(dbv.pszVal) > 0) {
+       		szAvatarOut = _strdup(dbv.pszVal);
+		    Utils::convertPath(szAvatarOut);
+	    }
+       	DBFreeVariant(&dbv);
+	}
+	if (szAvatarOut == NULL) {
+        szAvatarOut = _strdup(szNoAvatar);
 	}
 	HANDLE hDbEvent = event->hDbEventFirst;
 	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
@@ -175,33 +278,15 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			  && ((dbei.timestamp - getLastEventTime()) < 86400)) {
 		        isGroupBreak = FALSE;
 		    }
-			char *szName = "";
-			char *szText = "";
-			char *szAvatar = NULL;
-			char szCID[32];
 			if (isSent) {
-                CONTACTINFO ci;
-				ZeroMemory(&ci, sizeof(ci));
-			    ci.cbSize = sizeof(ci);
-			    ci.hContact = NULL;
-			    ci.szProto = dbei.szModule;
-			    ci.dwFlag = CNF_DISPLAY;
-				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        szName = encodeUTF8(ci.pszVal, NULL, false);
-    			}
+				szName = szNameOut;
+				szAvatar = szAvatarOut;
 				sprintf(szCID, "%d", 0);
-   			} else {
-   				DBVARIANT dbv;
-   				if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
-   				    if (strlen(dbv.pszVal) > 0) {
-			       		szAvatar = _strdup(dbv.pszVal);
-			       		Utils::convertPath(szAvatar);
-		       		}				    
-           			DBFreeVariant(&dbv);
-   				}    
-                szName = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
+			} else {
+				szName = szNameIn;
+				szAvatar = szAvatarIn;
 				sprintf(szCID, "%d", (int)event->hContact);
-            }
+			}
 			tmpltName[0] = groupTemplate;
 			tmpltName[1] = NULL;
 			groupTemplate = NULL;
@@ -241,7 +326,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			for (int i=0;i<2;i++) {
 				Template *tmplt;
 				if (tmpltName[i] == NULL) continue;
-				tmplt = TemplateMap::getTemplate("default", tmpltName[i]);
+				tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[i]) : TemplateMap::getTemplate("default", tmpltName[i]);
 				if (tmplt == NULL) continue;
 				for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
 					const char *tokenVal;
@@ -251,22 +336,18 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                             tokenVal = token->getText();
 							break;
 						case Token::NAME:
-							if (Options::getTemplatesFlags() & Options::LOG_SHOW_NICKNAMES) {
-	                            tokenVal = szName;
-							} else {
-                                tokenVal = "&nbsp;";
-							}
+                            tokenVal = szName;
 							break;
 						case Token::TIME:
 							if (Options::getTemplatesFlags() & Options::LOG_SHOW_TIME) {
-	                            tokenVal = makeRelativeDate(dbei.timestamp, 1);
+	                            tokenVal = timestampToString(dbei.timestamp, 1);
 							} else {
                                 tokenVal = "&nbsp;";
 							}
 							break;
 						case Token::DATE:
 							if (Options::getTemplatesFlags() & Options::LOG_SHOW_DATE) {
-	                            tokenVal = makeRelativeDate(dbei.timestamp, 0);
+	                            tokenVal = timestampToString(dbei.timestamp, 0);
 							} else {
                                 tokenVal = "&nbsp;";
 							}
@@ -275,11 +356,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 							tokenVal = szText;
 							break;
 	  					case Token::AVATAR:
-	  					    if (szAvatar != NULL) {
-	  					    	tokenVal = szAvatar;
- 							} else {
-                                tokenVal = szNoAvatar;
- 							}    
+  					    	tokenVal = szAvatar;
 							break;
 	  					case Token::CID:
 							tokenVal = szCID;
@@ -287,23 +364,30 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 						case Token::BASE:
 						    tokenVal = szBase;
 						    break;
+						case Token::NAMEIN:
+		                    tokenVal = szNameIn;
+							break;
+						case Token::NAMEOUT:
+		                    tokenVal = szNameOut;
+							break;
+						case Token::AVATARIN:
+					    	tokenVal = szAvatarIn;
+							break;
+						case Token::AVATAROUT:
+					    	tokenVal = szAvatarOut;
+							break;
+						case Token::PROTO:
+						    tokenVal = szProto;
+						    break;
 					}
 					if (tokenVal != NULL) {
 						Utils::appendText(&output, &outputSize, "%s", tokenVal);
 					}
 				}
-				if (isCleared) {
-					isCleared = false;
-					view->write(output);
-					free(output);
-					output = NULL;
-				}
 			}
 			setLastEventType(MAKELONG(dbei.flags, dbei.eventType));
 			setLastEventTime(dbei.timestamp);
-			if (szAvatar!=NULL) free (szAvatar);
-			free (szName);
-			free (szText);
+			if (szText) free(szText);
 		}
 		if (output != NULL) {
             view->write(output);
@@ -311,7 +395,11 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		}
         free(dbei.pBlob);
     }
-    free (szProto);
+    if (szProto) free(szProto);
+	if (szAvatarIn) free(szAvatarIn);
+	if (szAvatarOut) free(szAvatarOut);
+	if (szNameIn) free(szNameIn);
+	if (szNameOut) free(szNameOut);
 	view->scrollToBottom();
 }
 
