@@ -306,7 +306,12 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;
 				if (dbei.cbBlob > aLen) {
-					szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, true);
+					DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
+					if (wlen > 0 && wlen < aLen) {
+                        szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, true);
+					} else {
+                        szText = encodeUTF8((char *)dbei.pBlob, szProto, true);
+					}
 				} else {
                 	szText = encodeUTF8((char *)dbei.pBlob, szProto, true);
 				}

@@ -122,3 +122,12 @@ void Utils::convertPath(char *path) {
    	} 
 }
     
+
+DWORD Utils::safe_wcslen(wchar_t *msg, DWORD maxLen) {
+    DWORD i;
+	for (i = 0; i < maxLen; i++) {
+		if (msg[i] == (wchar_t)0)
+			break;
+	}
+	return i;
+}
