@@ -158,6 +158,13 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 {
 	struct MsgEditSubclassData *dat;
 	struct MessageWindowData *pdat;
+	SETTEXTEX  st;
+	st.flags = ST_DEFAULT;
+	#ifdef _UNICODE
+		st.codepage = 1200;
+	#else 
+		st.codepage = CP_ACP;
+	#endif
 
 	pdat=(struct MessageWindowData *)GetWindowLong(GetParent(hwnd),GWL_USERDATA);
 	dat = (struct MsgEditSubclassData *) GetWindowLong(hwnd, GWL_USERDATA);
@@ -176,6 +183,7 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 			dat->keyboardMsgQueue = NULL;
 			dat->msgQueueCount = 0;
 		}
+		return 0;
 		break;
 	case EM_REPLAYSAVEDKEYSTROKES:
 		{
@@ -208,8 +216,9 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 			return 0;
 		}
 	case WM_CHAR:
-		if (GetWindowLong(hwnd, GWL_STYLE) & ES_READONLY)
+		if (GetWindowLong(hwnd, GWL_STYLE) & ES_READONLY) {
 			break;
+		}
 		//for saved msg queue the keyup/keydowns generate wm_chars themselves
 		if (wParam == '\n' || wParam == '\r') {
 			if (((GetKeyState(VK_CONTROL) & 0x8000) != 0) ^ (0 != DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDONENTER, SRMSGDEFSET_SENDONENTER))) {
@@ -234,23 +243,6 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 		}
 		if (wParam == 23 && GetKeyState(VK_CONTROL) & 0x8000) {     // ctrl-w
 			SendMessage(GetParent(hwnd), WM_CLOSE, 0, 0);
-			return 0;
-		}
-		if (wParam == 127 && GetKeyState(VK_CONTROL) & 0x8000) {    //ctrl-backspace
-			DWORD start, end;
-			TCHAR *text;
-			int textLen;
-			SendMessage(hwnd, EM_GETSEL, (WPARAM) & end, (LPARAM) (PDWORD) NULL);
-			SendMessage(hwnd, WM_KEYDOWN, VK_LEFT, 0);
-			SendMessage(hwnd, EM_GETSEL, (WPARAM) & start, (LPARAM) (PDWORD) NULL);
-			textLen = GetWindowTextLength(hwnd);
-			text = (TCHAR *) malloc(sizeof(TCHAR) * (textLen + 1));
-			GetWindowText(hwnd, text, textLen + 1);
-			MoveMemory(text + start, text + end, sizeof(TCHAR) * (textLen + 1 - end));
-			SetWindowText(hwnd, text);
-			free(text);
-			SendMessage(hwnd, EM_SETSEL, start, start);
-			SendMessage(GetParent(hwnd), WM_COMMAND, MAKEWPARAM(GetDlgCtrlID(hwnd), EN_CHANGE), (LPARAM) hwnd);
 			return 0;
 		}
 		break;
@@ -296,23 +288,26 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 			if (pdat->cmdList) {
 				if (!pdat->cmdListCurrent) {
 					pdat->cmdListCurrent = tcmdlist_last(pdat->cmdList);
-					SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
-					SetWindowText(hwnd, pdat->cmdListCurrent->szCmd);
+				//	SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
+					SendMessage(hwnd, EM_SETTEXTEX, (WPARAM) &st, (LPARAM)pdat->cmdListCurrent->szCmd);
+//					SetWindowText(hwnd, pdat->cmdListCurrent->szCmd);
 					SendMessage(hwnd, EM_SCROLLCARET, 0,0);
-					SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
-					SendMessage(hwnd, EM_SETSEL, 0, -1);
+				//	SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
+					//SendMessage(hwnd, EM_SETSEL, 0, -1);
 				}
 				else if (pdat->cmdListCurrent->prev) {
 					pdat->cmdListCurrent = pdat->cmdListCurrent->prev;
-					SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
-					SetWindowText(hwnd, pdat->cmdListCurrent->szCmd);
+				//	SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
+					SendMessage(hwnd, EM_SETTEXTEX, (WPARAM) &st, (LPARAM)pdat->cmdListCurrent->szCmd);
+//					SetWindowText(hwnd, pdat->cmdListCurrent->szCmd);
 					SendMessage(hwnd, EM_SCROLLCARET, 0,0);
-					SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
-					SendMessage(hwnd, EM_SETSEL, 0, -1);
+				//	SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
+					//SendMessage(hwnd, EM_SETSEL, 0, -1);
 				}
 			}
 			EnableWindow(GetDlgItem(GetParent(hwnd), IDOK), GetWindowTextLength(GetDlgItem(GetParent(hwnd), IDC_MESSAGE)) != 0);
 			UpdateReadChars(GetParent(hwnd), pdat);
+			return 0;
 		}
 		else if (wParam == VK_DOWN && (GetKeyState(VK_CONTROL) & 0x8000) && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CTRLSUPPORT, SRMSGDEFSET_CTRLSUPPORT) && !DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOCLOSE, SRMSGDEFSET_AUTOCLOSE)) {
 			if (pdat->cmdList) {
@@ -320,11 +315,12 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 					pdat->cmdListCurrent = tcmdlist_last(pdat->cmdList);
 				if (pdat->cmdListCurrent->next) {
 					pdat->cmdListCurrent = pdat->cmdListCurrent->next;
-					SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
-					SetWindowText(hwnd, pdat->cmdListCurrent->szCmd);
+					//SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
+					SendMessage(hwnd, EM_SETTEXTEX, (WPARAM) &st, (LPARAM)pdat->cmdListCurrent->szCmd);
+//					SetWindowText(hwnd, pdat->cmdListCurrent->szCmd);
 					SendMessage(hwnd, EM_SCROLLCARET, 0,0);
-					SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
-					SendMessage(hwnd, EM_SETSEL, 0, -1);
+					//SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
+					//SendMessage(hwnd, EM_SETSEL, 0, -1);
 				}
 				else {
 					pdat->cmdListCurrent = 0;
@@ -333,6 +329,17 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 			}
 			EnableWindow(GetDlgItem(GetParent(hwnd), IDOK), GetWindowTextLength(GetDlgItem(GetParent(hwnd), IDC_MESSAGE)) != 0);
 			UpdateReadChars(GetParent(hwnd), pdat);
+			return 0;
+		}
+		if(wParam == VK_INSERT && (GetKeyState(VK_SHIFT) & 0x8000)) {
+			SendMessage(hwnd, EM_PASTESPECIAL, CF_TEXT, 0);
+			return 0;
+		}
+		if ((GetKeyState(VK_CONTROL) & 0x8000) && !(GetKeyState(VK_MENU) & 0x8000)) {
+			if (wParam == 'V') {
+				SendMessage(hwnd, EM_PASTESPECIAL, CF_TEXT, 0);
+				return 0;
+			}
 		}
 		if (wParam == VK_RETURN)
 			break;
@@ -346,11 +353,19 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 		break;
 	case WM_SYSKEYDOWN:
 		if ((wParam == VK_LEFT) && GetKeyState(VK_MENU) & 0x8000) {
-			PostMessage(GetParent(GetParent(hwnd)), DM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
+			SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
 			return 0;
 		}
 		if ((wParam == VK_RIGHT) && GetKeyState(VK_MENU) & 0x8000) {
-			PostMessage(GetParent(GetParent(hwnd)), DM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
+			SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
+			return 0;
+		}
+		break;
+	case WM_SYSKEYUP:
+		if ((wParam == VK_LEFT) && GetKeyState(VK_MENU) & 0x8000) {
+			return 0;
+		}
+		if ((wParam == VK_RIGHT) && GetKeyState(VK_MENU) & 0x8000) {
 			return 0;
 		}
 		break;
@@ -415,14 +430,9 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
 	}
 	dat->splitterPos = hSplitterPos;
 	SendMessage(hwndDlg, DM_AVATARCALCSIZE, 0, 0);
-	{
-		char str[200];
-		sprintf(str, "avW=%d avH=%d", dat->avatarWidth, dat->avatarHeight);
-//		MessageBox(NULL, str, "AV", MB_OK);
-	}
 	hdwp = BeginDeferWindowPos(11);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_LOG), 0, 0, 0, w-vSplitterPos, h-hSplitterPos-toolbarHeight-1, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_MESSAGE), 0, 0, h-hSplitterPos+2, w-dat->avatarWidth, hSplitterPos-2, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_MESSAGE), 0, 0, h-hSplitterPos+2, w-dat->avatarWidth-1, hSplitterPos-2, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_SPLITTER), 0, 0, h - hSplitterPos-1, w-dat->avatarWidth, 3, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_USERMENU), 0, 0, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_DETAILS), 0, 24, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
@@ -640,6 +650,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETOLECALLBACK, 0, (LPARAM) & reOleCallback);
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_LINK);
+
+			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_KEYEVENTS | ENM_CHANGE);
+ 
 			/* duh, how come we didnt use this from the start? */
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_AUTOURLDETECT, (WPARAM) TRUE, 0);
 			if (dat->hContact) {
@@ -1281,7 +1294,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					dat->sendBuffer = (char *) realloc(dat->sendBuffer, bufSize * (sizeof(TCHAR) + 1));
 					GetDlgItemTextA(hwndDlg, IDC_MESSAGE, dat->sendBuffer, bufSize);
 			#if defined( _UNICODE )
-					GetDlgItemTextW(hwndDlg, IDC_MESSAGE, (TCHAR *) & dat->sendBuffer[bufSize], bufSize);
+					{
+						GETTEXTEX  gt;
+						gt.cb = bufSize * sizeof(TCHAR);
+						gt.flags = GT_DEFAULT;
+						gt.codepage = 1200;
+						SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_GETTEXTEX, (WPARAM) &gt, (LPARAM) & dat->sendBuffer[bufSize]);
+					}
+					//GetDlgItemTextW(hwndDlg, IDC_MESSAGE, (TCHAR *) & dat->sendBuffer[bufSize], bufSize);
 			#endif
 					if (dat->sendBuffer[0] == 0)
 						break;
