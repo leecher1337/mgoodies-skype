@@ -41,6 +41,11 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
 		case WM_KEYDOWN:
 			view->translateAccelerator(message, wParam, lParam);
 		   	break;
+		case WM_SETFOCUS:
+			if (view->setFocus()) {
+				return TRUE;
+			}
+			break;
 		case WM_LBUTTONDOWN:
 		    POINT pt;
 		    pt.x = LOWORD(lParam);
@@ -694,6 +699,7 @@ void IEView::scrollToBottom() {/*
 		}
 		document->Release();
 	}
+	SetFocus(parent);
 }
 
 void IEView::write(const wchar_t *text) {
@@ -804,12 +810,14 @@ void IEView::appendEvent(IEVIEWEVENT *event) {
 	if (builder!=NULL) {
 		builder->appendEvent(this, event);
 	}
+	getFocus = false;
 }
 
 void IEView::clear(IEVIEWEVENT *event) {
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
 	clear();
+	getFocus = false;
 }
 
 IEView* IEView::get(HWND hwnd) {
@@ -869,6 +877,9 @@ BSTR IEView::getHrefFromAnchor(IHTMLElement *element) {
 
 bool IEView::mouseClick(POINT pt) {
     bool result = false;
+    if (GetFocus() != hwnd) {
+		getFocus = true;
+	}
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
         IHTMLElement *element;
@@ -890,4 +901,11 @@ bool IEView::mouseClick(POINT pt) {
 	return result;
 }
 
-
+bool IEView::setFocus() {
+	if (GetFocus() != hwnd && !getFocus) {
+		SetFocus(parent);
+		return true;
+	}
+	getFocus = false;
+	return false;
+}

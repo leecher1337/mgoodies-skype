@@ -153,9 +153,15 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 			}
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS_RTL), bChecked);
 			path = (char *)Options::getExternalCSSFile();
 			if (path != NULL) {
                 SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
+			}
+			path = (char *)Options::getExternalCSSFileRTL();
+			if (path != NULL) {
+                SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
 			}
 			return TRUE;
 		}
@@ -164,6 +170,7 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 			switch (LOWORD(wParam)) {
 			case IDC_BACKGROUND_IMAGE_FILENAME:
             case IDC_EXTERNALCSS_FILENAME:
+            case IDC_EXTERNALCSS_FILENAME_RTL:
 				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE)
 					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
@@ -181,6 +188,8 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 				bChecked = IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS_RTL), bChecked);
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			case IDC_BROWSE_BACKGROUND_IMAGE:
@@ -221,6 +230,25 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 					}
 				}
 				break;
+			case IDC_BROWSE_EXTERNALCSS_RTL:
+				{
+					OPENFILENAME ofn={0};
+					GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
+					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
+					ofn.hwndOwner = hwndDlg;
+					ofn.hInstance = NULL;
+					ofn.lpstrFilter = "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0";
+					ofn.lpstrFile = path;
+					ofn.Flags = OFN_FILEMUSTEXIST;
+					ofn.nMaxFile = sizeof(path);
+					ofn.nMaxFileTitle = MAX_PATH;
+					ofn.lpstrDefExt = "css";
+					if(GetOpenFileName(&ofn)) {
+						SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
+						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					}
+				}
+				break;
 			}
 		}
 		break;
@@ -245,6 +273,8 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 				Options::setExternalCSSFlags(i);
 				GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
 				Options::setExternalCSSFile(path);
+				GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
+				Options::setExternalCSSFileRTL(path);
 				return TRUE;
 			}
 		}
@@ -660,10 +690,11 @@ char *Options::bkgFilename = NULL;
 int Options::bkgFlags;
 int Options::smileyFlags;
 char *Options::externalCSSFilename = NULL;
+char *Options::externalCSSFilenameRTL = NULL;
 int Options::externalCSSFlags;
 char *Options::templatesFilename = NULL;
-int Options::templatesFlags;
 char *Options::templatesFilenameRTL = NULL;
+int Options::templatesFlags;
 
 void Options::init() {
 	DBVARIANT dbv;
@@ -723,6 +754,19 @@ void Options::init() {
 	} else {
         externalCSSFilename = new char[1];
         strcpy(externalCSSFilename, "");
+	}
+	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_EXTERNALCSSFILE_RTL, &dbv)) {
+    	char tmpPath[MAX_PATH];
+    	strcpy(tmpPath, dbv.pszVal);
+    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
+   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+   		}
+		externalCSSFilenameRTL = new char[strlen(tmpPath)+1];
+		strcpy(externalCSSFilenameRTL, tmpPath);
+		DBFreeVariant(&dbv);
+	} else {
+        externalCSSFilenameRTL = new char[1];
+        strcpy(externalCSSFilenameRTL, "");
 	}
 	templatesFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_TEMPLATESFLAGS, FALSE);
 	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_TEMPLATESFILE, &dbv)) {
@@ -829,6 +873,24 @@ void Options::setExternalCSSFile(const char *filename) {
 
 const char *Options::getExternalCSSFile() {
 	return externalCSSFilename;
+}
+
+void Options::setExternalCSSFileRTL(const char *filename) {
+	if (externalCSSFilenameRTL != NULL) {
+		delete [] externalCSSFilenameRTL;
+	}
+	externalCSSFilenameRTL = new char[strlen(filename)+1];
+	strcpy(externalCSSFilenameRTL, filename);
+    char tmpPath[MAX_PATH];
+    strcpy (tmpPath, filename);
+    if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
+    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
+   	}
+	DBWriteContactSettingString(NULL, muccModuleName, DBS_EXTERNALCSSFILE_RTL, tmpPath);
+}
+
+const char *Options::getExternalCSSFileRTL() {
+	return externalCSSFilenameRTL;
 }
 
 void Options::setExternalCSSFlags(int flags) {
