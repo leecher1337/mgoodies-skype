@@ -622,3 +622,12 @@ char * HTMLBuilder::encodeUTF8(const wchar_t *wtext, const char *proto, bool use
 	free(output);
 	return outputStr;
 }
+
+char * HTMLBuilder::encodeUTF8(const char *text, const char *proto, bool useSmiley) {
+	char * outputStr;
+	wchar_t *wtext = Utils::convertToWCS(text);
+	outputStr = encodeUTF8(wtext, proto, useSmiley);
+	delete wtext;
+	return outputStr;
+}
+

@@ -204,20 +204,20 @@ void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			    ci.szProto = dbei.szModule;
 			    ci.dwFlag = CNF_DISPLAY;
 				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        szName = encode(ci.pszVal, NULL, false);
+			        szName = encodeUTF8(ci.pszVal, NULL, false);
     			}
    			} else {
-                szName = encode((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
+                szName = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
 			}
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;
 				if (dbei.cbBlob > aLen) {
 					szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, true);
 				} else {
-                	szText = encode((char *)dbei.pBlob, szProto, true);
+                	szText = encodeUTF8((char *)dbei.pBlob, szProto, true);
 				}
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-                szText = encode((char *)dbei.pBlob, NULL, false);
+                szText = encodeUTF8((char *)dbei.pBlob, NULL, false);
 			}
 			/* SRMM-specific formatting */
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");

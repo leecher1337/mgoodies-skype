@@ -16,7 +16,7 @@
 
 TemplateHTMLBuilder::TemplateHTMLBuilder() {
 	isCleared = true;
-	iLastEventType = 0;
+	iLastEventType = -1;
 	startedTime = time(NULL);
 	lastEventTime = time(NULL);
 	groupTemplate = NULL;
@@ -187,7 +187,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			    ci.szProto = dbei.szModule;
 			    ci.dwFlag = CNF_DISPLAY;
 				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        szName = encode(ci.pszVal, NULL, false);
+			        szName = encodeUTF8(ci.pszVal, NULL, false);
     			}
 				sprintf(szCID, "%d", 0);
    			} else {
@@ -199,7 +199,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		       		}				    
            			DBFreeVariant(&dbv);
    				}    
-                szName = encode((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
+                szName = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
 				sprintf(szCID, "%d", (int)event->hContact);
             }
 			tmpltName[0] = groupTemplate;
@@ -210,7 +210,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 				if (dbei.cbBlob > aLen) {
 					szText = encodeUTF8((wchar_t *)(dbei.pBlob + aLen), szProto, true);
 				} else {
-                	szText = encode((char *)dbei.pBlob, szProto, true);
+                	szText = encodeUTF8((char *)dbei.pBlob, szProto, true);
 				}
                 if (isGrouping && (Options::getTemplatesFlags() & Options::LOG_GROUP_MESSAGES)) {
                     if (isGroupBreak || isCleared) {
@@ -223,13 +223,13 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                		tmpltName[1] = isHistory ? isSent ? "hMessageOut" : "hMessageIn" : isSent ? "MessageOut" : "MessageIn";
                	}    
 			} else if (dbei.eventType == EVENTTYPE_FILE) {
-                szText = encode((char *)dbei.pBlob + sizeof(DWORD), NULL, false);
+                szText = encodeUTF8((char *)dbei.pBlob + sizeof(DWORD), NULL, false);
                 tmpltName[1] = isHistory ? "hFile" : "File";
 			} else if (dbei.eventType == EVENTTYPE_URL) {
-                szText = encode((char *)dbei.pBlob, NULL, false);
+                szText = encodeUTF8((char *)dbei.pBlob, NULL, false);
                 tmpltName[1] = isHistory ? "hURL" : "URL";
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-                szText = encode((char *)dbei.pBlob, NULL, false);
+                szText = encodeUTF8((char *)dbei.pBlob, NULL, false);
                 tmpltName[1] = isHistory ? "hStatus" : "Status";
 			}
 			/* template-specific formatting */

@@ -604,26 +604,12 @@ void IEView::setWindowPos(int x, int y, int cx, int cy) {
 	}
 }
 
-void IEView::write(const WCHAR *text) {
-	IHTMLDocument2 *document = getDocument();
-	if (document != NULL) {
-		SAFEARRAY *safe_array = SafeArrayCreateVector(VT_VARIANT,0,1);
-		VARIANT	*variant;
-		SafeArrayAccessData(safe_array,(LPVOID *)&variant);
-		variant->vt = VT_BSTR;
-		variant->bstrVal = SysAllocString(text);
-		SafeArrayUnaccessData(safe_array);
-		document->write(safe_array);
-		document->Release();
-	}
-}
-
 void IEView::scrollToTop() {
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
 		IHTMLWindow2* pWindow = NULL;
 		if (SUCCEEDED(document->get_parentWindow( &pWindow )) && pWindow != NULL) {
-			pWindow->scrollBy( 0, -0x01FFFFFF );
+			pWindow->scrollBy( -0x01FFFFFF, -0x01FFFFFF );
 			pWindow->Release();
 		}
 		document->Release();
@@ -635,7 +621,7 @@ void IEView::scrollToBottomSoft() {
 	if (document != NULL) {
 		IHTMLWindow2* pWindow = NULL;
 		if (SUCCEEDED(document->get_parentWindow( &pWindow )) && (pWindow != NULL)) {
-			pWindow->scrollBy( 0, 0x01FFFFFF );
+			pWindow->scrollBy( -0x01FFFFFF, 0x01FFFFFF );
 			pWindow->Release();
 		}
 		document->Release();
@@ -690,30 +676,38 @@ void IEView::scrollToBottom() {/*
 		}
 		IHTMLWindow2* pWindow = NULL;
 		if (SUCCEEDED(document->get_parentWindow( &pWindow )) && (pWindow != NULL)) {
-			pWindow->scrollBy( 0, 0x01FFFFFF );
+			pWindow->scrollBy( -0x01FFFFFF, 0x01FFFFFF );
 			pWindow->Release();
 		}
 		document->Release();
 	}
-
 }
 
-void IEView::write(const char *text) {
+void IEView::write(const wchar_t *text) {
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
 		SAFEARRAY *safe_array = SafeArrayCreateVector(VT_VARIANT,0,1);
-		VARIANT	*variant;
-		int textLen = strlen(text) + 1;
-		WCHAR *tTemp = new WCHAR[textLen];
-		SafeArrayAccessData(safe_array,(LPVOID *)&variant);
-		variant->vt = VT_BSTR;
-		MultiByteToWideChar(CP_UTF8, 0, text, -1, tTemp, textLen);
-		variant->bstrVal = SysAllocString(tTemp);
-		SafeArrayUnaccessData(safe_array);
-		document->write(safe_array);
+		if (safe_array != NULL) {
+			VARIANT	*variant;
+			BSTR bstr;
+			SafeArrayAccessData(safe_array,(LPVOID *)&variant);
+			variant->vt = VT_BSTR;
+			variant->bstrVal = bstr = SysAllocString(text);
+			SafeArrayUnaccessData(safe_array);
+			document->write(safe_array);
+			//SysFreeString(bstr); -> SafeArrayDestroy should be enough
+			SafeArrayDestroy(safe_array);
+		}
 		document->Release();
-		delete [] tTemp;
 	}
+}
+
+void IEView::write(const char *text) {
+	int textLen = strlen(text) + 1;
+	wchar_t *wcsTemp = new wchar_t[textLen];
+	MultiByteToWideChar(CP_UTF8, 0, text, -1, wcsTemp, textLen);
+	write(wcsTemp);
+	delete [] wcsTemp;
 }
 
 void IEView::writef(const char *fmt, ...) {

@@ -38,6 +38,7 @@ protected:
 	void        setLastEventTime(time_t);
 	void        setLastEventType(int);
 public:
+    ScriverHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
 	void appendEvent(IEView *, IEVIEWEVENT *event);
 	void clear();
