@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "IEView.h"
 #include "resource.h"
 #include "Options.h"
+#include "Utils.h"
 //#define GECKO
 #define DISPID_BEFORENAVIGATE2      250   // hyperlink clicked on
 
@@ -32,7 +33,7 @@ static const CLSID CLSID_MozillaBrowser=
 IEView * IEView::list = NULL;
 CRITICAL_SECTION IEView::mutex;
 bool IEView::isInited = false;
-
+HMENU IEView::hMenuANSIEncoding = NULL;
 static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     IEView *view = IEView::get(GetParent(GetParent(hwnd)));
 	if (view != NULL) {
@@ -85,7 +86,6 @@ static LRESULT CALLBACK IEViewWindowProcedure (HWND hwnd, UINT message, WPARAM w
     return DefWindowProc (hwnd, message, wParam, lParam);
 }
 
-
 void IEView::init() {
 	if (isInited) return;
 	isInited = true;
@@ -115,6 +115,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	pWebBrowser = NULL;
 	m_pConnectionPoint = NULL;
 	m_cRef = 0;
+	quoteBuffer = NULL;
 #ifdef GECKO
 	if (SUCCEEDED(CoCreateInstance(CLSID_MozillaBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
 #else
@@ -191,7 +192,7 @@ IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, in
 	pWebBrowser = NULL;
 	m_pConnectionPoint = NULL;
 	m_cRef = 0;
-
+	quoteBuffer = NULL;
 #ifdef GECKO
 	if (SUCCEEDED(CoCreateInstance(CLSID_MozillaBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
 #else
@@ -269,6 +270,9 @@ IEView::~IEView() {
 	}
 	if (sink != NULL) {
 		delete sink;
+	}
+	if (quoteBuffer != NULL) {
+		delete 	quoteBuffer;
 	}
 	pWebBrowser->Release();
 	DestroyWindow(hwnd);
@@ -426,7 +430,8 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			} if (dwID == 4) { // text select
 				EnableMenuItem(hMenu, ID_MENU_COPY, MF_BYCOMMAND | MF_ENABLED);
 			}
-			if (builder!=NULL) {
+ 			InsertMenuA(hMenu, 5, MF_BYPOSITION | MF_POPUP, (UINT_PTR) hMenuANSIEncoding, Translate("ANSI Encoding"));
+            if (builder!=NULL) {
 
 			}
 		 	int iSelection = TrackPopupMenu(hMenu,
@@ -797,6 +802,7 @@ void IEView::clear() {
 		event.cbSize = sizeof(IEVIEWEVENT);
         event.hContact = hContact;
         event.dwFlags = dwLogFlags;
+        event.codepage = iLogCodepage;
 		builder->buildHead(this, &event);
 	}
 }
@@ -804,6 +810,7 @@ void IEView::clear() {
 void IEView::appendEvent(IEVIEWEVENT *event) {
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
+	iLogCodepage = event->codepage;
 	hDbEventFirst = (hDbEventFirst != NULL) ? hDbEventFirst : event->hDbEventFirst;
 	if (builder!=NULL) {
 		builder->appendEvent(this, event);
@@ -814,8 +821,22 @@ void IEView::appendEvent(IEVIEWEVENT *event) {
 void IEView::clear(IEVIEWEVENT *event) {
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
+	iLogCodepage = event->codepage;
+	hDbEventFirst = NULL;
 	clear();
 	getFocus = false;
+}
+
+void* IEView::quote(IEVIEWEVENT *event) {
+	if (quoteBuffer!=NULL) delete quoteBuffer;
+	quoteBuffer = getSelection();
+	if (event->dwFlags & IEEF_NO_UNICODE) {
+		int cp = CP_ACP;
+		if (event->cbSize == sizeof(IEVIEWEVENT)) {
+			cp = event->codepage;
+		}
+	}
+	return (void *)quoteBuffer;
 }
 
 void IEView::rebuildLog() {
@@ -823,11 +844,14 @@ void IEView::rebuildLog() {
 	event.cbSize = sizeof(IEVIEWEVENT);
 	event.hContact = hContact;
 	event.dwFlags = dwLogFlags;
+    event.codepage = iLogCodepage;
     event.hDbEventFirst = hDbEventFirst;
 	event.count = -1;
 	event.hwnd = hwnd;
 	clear();
-	appendEvent(&event);
+	if (hDbEventFirst!=NULL) {
+		appendEvent(&event);
+	}
 }
 
 IEView* IEView::get(HWND hwnd) {
@@ -859,6 +883,34 @@ void IEView::translateAccelerator(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     }
 }
 
+/**
+ * Returns the selected text within the active document
+ **/
+BSTR IEView::getSelection() {
+	BSTR text = NULL;
+	IHTMLDocument2 *document = getDocument();
+	if (document != NULL) {
+        IHTMLSelectionObject *pSelection = NULL;
+		if (SUCCEEDED(document->get_selection( &pSelection )) && pSelection != NULL) {
+			IDispatch *pDisp = NULL;
+			if (SUCCEEDED(pSelection->createRange( &pDisp )) &&  pDisp != NULL) {
+                IHTMLTxtRange *pRange = NULL;
+			    if (SUCCEEDED(pDisp->QueryInterface(IID_IHTMLTxtRange, (void**)&pRange))) {
+					if (SUCCEEDED(pRange->get_text(&text))) {
+						text = Utils::dupString(text);
+					}
+					pRange->Release();
+				}
+				pDisp->Release();
+			}
+			pSelection->Release();
+		}
+		document->Release();
+	}
+	return text;
+}
+
+
 BSTR IEView::getHrefFromAnchor(IHTMLElement *element) {
     if (element != NULL) {
     	IHTMLAnchorElement * pAnchor;
@@ -867,7 +919,7 @@ BSTR IEView::getHrefFromAnchor(IHTMLElement *element) {
             BSTR url2;
             pAnchor->get_href( &url );
             if (url!=NULL) {
-            	url2 = wcsdup(url);
+            	url2 = Utils::dupString(url);
             	SysFreeString(url);
             	url = url2;
            	}
@@ -901,7 +953,7 @@ bool IEView::mouseClick(POINT pt) {
   			    WideCharToMultiByte(CP_ACP, 0, url, -1, tTemp, i+1, NULL, NULL);
 		    	CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) tTemp);
                 delete tTemp;
-                free (url);
+                delete url;
                 result = true;
   			}
   			element->Release();

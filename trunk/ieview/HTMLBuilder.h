@@ -71,6 +71,7 @@ protected:
 	virtual wchar_t *encode(const wchar_t *text, const char *proto, bool replaceSmiley);
 	virtual char *encodeUTF8(const wchar_t *text, const char *proto, bool replaceSmiley);
 	virtual char *encodeUTF8(const char *text, const char *proto, bool replaceSmiley);
+	virtual char *encodeUTF8(const char *text, int cp, const char *proto, bool replaceSmiley);
 public:
 	virtual void buildHead(IEView *, IEVIEWEVENT *event)=0;
 	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;

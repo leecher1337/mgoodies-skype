@@ -91,6 +91,8 @@ class IEView:public IDispatch, public IOleClientSite, public IOleInPlaceSite, pu
 private:
    	static CRITICAL_SECTION mutex;
    	static bool isInited;
+   	static HMENU hMenuANSIEncoding;
+	static BOOL CALLBACK LangAddCallback(CHAR * str);
 	HWND 		parent;
 	HWND		hwnd;
 	IEView		*prev, *next;
@@ -105,9 +107,11 @@ private:
 	SmileyWindow *smileyWindow;
  	WNDPROC    	userWndProc;
 	DWORD       dwLogFlags;
+	int         iLogCodepage;
    	HANDLE      hContact;
    	HANDLE      hDbEventFirst;
    	bool        getFocus;
+	BSTR        quoteBuffer;
 
     // IUnknown
 	STDMETHODIMP QueryInterface(REFIID riid, PVOID *ppv);
@@ -164,6 +168,7 @@ private:
 
 	IHTMLDocument2 *getDocument();
 	BSTR 			getHrefFromAnchor(IHTMLElement *element);
+	BSTR 			getSelection();
 public:
 	static IEView *list;
 	IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy);
@@ -180,9 +185,7 @@ public:
 	void			write(const WCHAR *text);
 	void			write(const char *text);
 	void            writef(const char *fmt, ...);
-	void            appendEvent(IEVIEWEVENT * event);
 	void            rebuildLog();
-	void            clear(IEVIEWEVENT * event);
 	void            clear();
 	void            scrollToBottom();
 	void            scrollToBottomSoft();
@@ -190,6 +193,10 @@ public:
 
 	void            setUserWndProc(WNDPROC);
 	WNDPROC         getUserWndProc();
+
+	void            appendEvent(IEVIEWEVENT * event);
+	void            clear(IEVIEWEVENT * event);
+	void*           quote(IEVIEWEVENT * event);
 
 	static IEView* 	get(HWND);
 //	static IEView* 	getByDoc(HWND);

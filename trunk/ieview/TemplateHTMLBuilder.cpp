@@ -199,6 +199,11 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	char *szProto = NULL;
 	const char *tmpltName[2];
 	bool isGrouping = false;
+
+	int cp = CP_ACP;
+	if (event->cbSize == sizeof(IEVIEWEVENT)) {
+		cp = event->codepage;
+	}
 	szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
 	szBase[0]='\0';
 	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
@@ -298,10 +303,10 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 					if (wlen > 0 && wlen < aLen) {
                         szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, true);
 					} else {
-                        szText = encodeUTF8((char *)dbei.pBlob, szProto, true);
+                        szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, true);
 					}
 				} else {
-                	szText = encodeUTF8((char *)dbei.pBlob, szProto, true);
+                	szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, true);
 				}
                 if (isGrouping && (Options::getTemplatesFlags() & Options::LOG_GROUP_MESSAGES)) {
                     if (isGroupBreak) {

@@ -53,6 +53,7 @@ typedef struct {
 
 #define IEE_LOG_EVENTS  1           // log specified number of DB events
 #define IEE_CLEAR_LOG	2           // clear log
+#define IEE_QUOTE		3           // quote
 
 #define IEEF_RTL        1           // turn on RTL support
 #define IEEF_NO_UNICODE 2           // disable Unicode support
@@ -65,6 +66,7 @@ typedef struct {
 	HANDLE      hContact;           // contact
 	HANDLE 		hDbEventFirst;      // first event to log
 	int 		count;              // number of events to log
+	int         codepage;           // ANSI codepage
 } IEVIEWEVENT;
 
 
