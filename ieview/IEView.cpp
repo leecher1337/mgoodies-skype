@@ -175,7 +175,6 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	}
 	list = this;
 	LeaveCriticalSection(&mutex);
-	disableUnicode = 0;
 	clear();
 }
 
@@ -239,7 +238,6 @@ IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, in
       		pCPContainer->Release();
    		}
     }
-	disableUnicode = 0;
 	clear();
 }
 
@@ -431,7 +429,6 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			if (builder!=NULL) {
 
 			}
-			CheckMenuItem(hMenu, ID_MENU_UNICODE, MF_BYCOMMAND | disableUnicode ? MF_CHECKED : MF_UNCHECKED);
 		 	int iSelection = TrackPopupMenu(hMenu,
 		                                      TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD,
 		                                      ppt->x,
@@ -442,10 +439,6 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			DestroyMenu(hMenu);
 			if (iSelection == ID_MENU_CLEARLOG) {
 				clear();
-			} else if (iSelection == ID_MENU_UNICODE) {
-				disableUnicode ^= 1;
-				DBWriteContactSettingByte(hContact, muccModuleName, DBS_DISABLEUNICODE, (BYTE)disableUnicode);
-				rebuildLog();
 			} else {
 		    	SendMessage(hSPWnd, WM_COMMAND, iSelection, (LPARAM) NULL);
 			}
@@ -810,7 +803,6 @@ void IEView::clear() {
 
 void IEView::appendEvent(IEVIEWEVENT *event) {
 	hContact = event->hContact;
-	event->dwFlags |= disableUnicode ? IEEF_NO_UNICODE : 0;
 	dwLogFlags = event->dwFlags;
 	hDbEventFirst = (hDbEventFirst != NULL) ? hDbEventFirst : event->hDbEventFirst;
 	if (builder!=NULL) {
@@ -821,8 +813,6 @@ void IEView::appendEvent(IEVIEWEVENT *event) {
 
 void IEView::clear(IEVIEWEVENT *event) {
 	hContact = event->hContact;
-	disableUnicode = DBGetContactSettingByte(hContact, muccModuleName, DBS_DISABLEUNICODE, 0);
-	event->dwFlags |= disableUnicode ? IEEF_NO_UNICODE : 0;
 	dwLogFlags = event->dwFlags;
 	clear();
 	getFocus = false;
