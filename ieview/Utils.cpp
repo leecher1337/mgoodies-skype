@@ -131,3 +131,49 @@ DWORD Utils::safe_wcslen(wchar_t *msg, DWORD maxLen) {
 	}
 	return 0;
 }
+
+char * Utils::UTF8Encode(const wchar_t *wtext) {
+	unsigned char *szOut;
+	int len, i;
+	const wchar_t *w;
+
+	if (wtext == NULL) return NULL;
+	for (len=0, w=wtext; *w; w++) {
+		if (*w < 0x0080) len++;
+		else if (*w < 0x0800) len += 2;
+		else len += 3;
+	}
+	szOut = (unsigned char *)malloc(len+1);
+	if (szOut == NULL) return NULL;
+
+	for (i=0, w=wtext; *w; w++) {
+		if (*w < 0x0080)
+			szOut[i++] = (unsigned char) *w;
+		else if (*w < 0x0800) {
+			szOut[i++] = 0xc0 | ((*w) >> 6);
+			szOut[i++] = 0x80 | ((*w) & 0x3f);
+		}
+		else {
+			szOut[i++] = 0xe0 | ((*w) >> 12);
+			szOut[i++] = 0x80 | (((*w) >> 6) & 0x3f);
+			szOut[i++] = 0x80 | ((*w) & 0x3f);
+		}
+	}
+	szOut[i] = '\0';
+	return (char *) szOut;
+}
+
+char *Utils::UTF8Encode(const char *text) {
+    wchar_t *wtext = Utils::convertToWCS(text);
+    char *atext = UTF8Encode(wtext);
+	delete wtext;
+	return atext;
+}
+
+void Utils::UTF8Encode(const char *text, char *output, int maxLen) {
+    wchar_t *wtext = Utils::convertToWCS(text);
+    char *atext = UTF8Encode(wtext);
+    memcpy(output, atext, min ((int)strlen(atext)+1, maxLen));
+	free (atext);
+	delete wtext;
+}

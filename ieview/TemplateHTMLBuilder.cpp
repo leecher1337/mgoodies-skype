@@ -72,6 +72,7 @@ char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
 		    strncat(szResult, str, 500);
         }
 	}
+	Utils::UTF8Encode(szResult, szResult, 500);
     return szResult;
 }
 

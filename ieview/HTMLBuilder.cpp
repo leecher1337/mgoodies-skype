@@ -581,44 +581,12 @@ wchar_t * HTMLBuilder::encode(const wchar_t *text, const char *proto, bool useSm
 	return output;
 }
 
-char * HTMLBuilder::UTF8Encode(const wchar_t *wtext)
-{
-	unsigned char *szOut;
-	int len, i;
-	const wchar_t *w;
-
-	if (wtext == NULL) return NULL;
-	for (len=0, w=wtext; *w; w++) {
-		if (*w < 0x0080) len++;
-		else if (*w < 0x0800) len += 2;
-		else len += 3;
-	}
-	if ((szOut=(unsigned char *) malloc(len + 1)) == NULL)
-		return NULL;
-
-	for (i=0, w=wtext; *w; w++) {
-		if (*w < 0x0080)
-			szOut[i++] = (unsigned char) *w;
-		else if (*w < 0x0800) {
-			szOut[i++] = 0xc0 | ((*w) >> 6);
-			szOut[i++] = 0x80 | ((*w) & 0x3f);
-		}
-		else {
-			szOut[i++] = 0xe0 | ((*w) >> 12);
-			szOut[i++] = 0x80 | (((*w) >> 6) & 0x3f);
-			szOut[i++] = 0x80 | ((*w) & 0x3f);
-		}
-	}
-	szOut[i] = '\0';
-	return (char *) szOut;
-}
-
 
 char * HTMLBuilder::encodeUTF8(const wchar_t *wtext, const char *proto, bool useSmiley) {
 	wchar_t *output;
 	char * outputStr;
 	output = encode(wtext, proto, useSmiley);
-	outputStr = UTF8Encode(output);
+	outputStr = Utils::UTF8Encode(output);
 	free(output);
 	return outputStr;
 }

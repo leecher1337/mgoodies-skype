@@ -17,8 +17,10 @@ public:
 	static wchar_t *convertToWCS(const char *a);
 	static char *convertToString(const wchar_t *a);
 	static DWORD safe_wcslen(wchar_t *msg, DWORD maxLen);
-
-}; 
+	static char *UTF8Encode(const wchar_t *wtext);
+	static char *UTF8Encode(const char *text);
+	static void  UTF8Encode(const char *text, char *output, int maxLen);
+};
 
 #endif
 

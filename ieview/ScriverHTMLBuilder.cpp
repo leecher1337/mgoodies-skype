@@ -157,6 +157,7 @@ char *ScriverHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int gro
     }
 	CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
     strncat(szResult, str, 500);
+	Utils::UTF8Encode(szResult, szResult, 500);
     return szResult;
 }
 
