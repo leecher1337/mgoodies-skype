@@ -241,6 +241,10 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 			SendMessage(GetParent(hwnd), DM_SWITCHRTL, 0, 0);
 			return 0;
 		}
+		if (wParam == 13 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl+shift-s
+			SendMessage(GetParent(GetParent(hwnd)), DM_SWITCHTITLEBAR, 0, 0);
+			return 0;
+		}
 		if (wParam == 23 && GetKeyState(VK_CONTROL) & 0x8000) {     // ctrl-w
 			SendMessage(GetParent(hwnd), WM_CLOSE, 0, 0);
 			return 0;
@@ -606,6 +610,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->hDbEventFirst = NULL;
 			dat->sendBuffer = NULL;
 			dat->sendCount = 0;
+			dat->messagesInProgress = 0;
+
 //			dat->windowWasCascaded = 0;
 //			dat->nFlash = 0;
 			dat->nTypeSecs = 0;
@@ -1196,7 +1202,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 	case DM_UPDATESTATUSBAR:
 		if (dat->parent->hwndActive == hwndDlg) {
-			if (dat->nTypeSecs) {
+			if (dat->messagesInProgress) {
+				char szBuf[256];
+				_snprintf(szBuf, sizeof(szBuf), Translate("%d message being sent..."), dat->messagesInProgress);
+				SendMessageA(dat->parent->hwndStatus, SB_SETTEXTA, 0, (LPARAM) szBuf);
+				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) g_dat->hIcons[SMF_ICON_DELIVERING]);
+			} else if (dat->nTypeSecs) {
 				char szBuf[256];
 				char *szContactName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0);
 				_snprintf(szBuf, sizeof(szBuf), Translate("%s is typing a message..."), szContactName);
@@ -1254,9 +1265,26 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				struct ErrorWindowData *ewd = (struct ErrorWindowData *) malloc(sizeof(struct ErrorWindowData));
 				KillTimer(hwndDlg, TIMERID_MSGSEND);
 				ewd->szDescription = strdup(Translate("The message send timed out."));
-				ewd->szText = strdup(dat->sendInfo[i].sendBuffer);
+				ewd->szText = (char *)malloc(dat->sendInfo[i].sendBufferSize);
+				memcpy(ewd->szText, dat->sendInfo[i].sendBuffer, dat->sendInfo[i].sendBufferSize);
 				ewd->hwndParent = hwndDlg;
 				ewd->sendIdx = i;
+				/*
+				free(dat->sendInfo[i].sendBuffer);
+				dat->sendInfo[i].sendBuffer = NULL;
+				dat->sendInfo[i].hSendId = NULL;
+				for (i = 0; i < dat->sendCount; i++)
+					if (dat->sendInfo[i].sendBuffer)
+						break;
+				if (i == dat->sendCount) {
+					dat->sendCount = 0;
+					free(dat->sendInfo);
+					dat->sendInfo = NULL;
+				}*/
+				if (dat->messagesInProgress>0) {
+					dat->messagesInProgress--;
+					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+				}
 				CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGSENDERROR), hwndDlg, ErrorDlgProc, (LPARAM) ewd);
 			}
 		}
@@ -1312,7 +1340,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						dat->sendInfo = NULL;
 					}
 	//				EnableWindow(GetDlgItem(hwndDlg, IDOK), TRUE);
-					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETREADONLY, FALSE, 0);
+//					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETREADONLY, FALSE, 0);
 					SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 				}
 			}
@@ -1320,6 +1348,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		case MSGERROR_RETRY:
 			if (dat->sendInfo[lParam].sendBuffer) {
 				SetTimer(hwndDlg, TIMERID_MSGSEND, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_MSGTIMEOUT, SRMSGDEFSET_MSGTIMEOUT), NULL);
+				dat->messagesInProgress++;
+				SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
 				dat->sendInfo[lParam].state = 0;
 				dat->sendInfo[lParam].hSendId = (HANDLE) CallContactService(dat->hContact, MsgServiceName(dat->hContact), SEND_FLAGS, (LPARAM) dat->sendInfo[lParam].sendBuffer);
 			}
@@ -1409,7 +1439,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				EnableWindow(GetDlgItem(hwndDlg, IDOK), FALSE);
 				SetTimer(hwndDlg, TIMERID_MSGSEND, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_MSGTIMEOUT, SRMSGDEFSET_MSGTIMEOUT), NULL);
 				memcpy(dat->sendInfo[dat->sendCount-1].sendBuffer, dat->sendBuffer, bufSize * (sizeof(TCHAR) + 1));
+				dat->messagesInProgress++;
+				SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
 				dat->sendInfo[dat->sendCount-1].state = 0;
+				dat->sendInfo[dat->sendCount-1].sendBufferSize = bufSize * (sizeof(TCHAR) + 1);
 				dat->sendInfo[dat->sendCount-1].hSendId = (HANDLE) CallContactService(dat->hContact, MsgServiceName(dat->hContact), SEND_FLAGS, (LPARAM) dat->sendBuffer);
 //					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETREADONLY, TRUE, 0);
 				if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOMIN, SRMSGDEFSET_AUTOMIN))
@@ -1624,6 +1657,68 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				break;
 			}
 			break;
+		case IDC_MESSAGE:
+			switch (((NMHDR *) lParam)->code) {
+			case EN_MSGFILTER:
+				switch (((MSGFILTER *) lParam)->msg) {
+				case WM_RBUTTONUP:
+					{
+						HMENU hMenu, hSubMenu;
+						POINT pt;
+						CHARRANGE sel, all = { 0, -1 };
+
+						hMenu = LoadMenu(g_hInst, MAKEINTRESOURCE(IDR_CONTEXT));
+						hSubMenu = GetSubMenu(hMenu, 2);
+						CallService(MS_LANGPACK_TRANSLATEMENU, (WPARAM) hSubMenu, 0);
+						SendMessage(((NMHDR *) lParam)->hwndFrom, EM_EXGETSEL, 0, (LPARAM) & sel);
+						if (sel.cpMin == sel.cpMax) {
+							EnableMenuItem(hSubMenu, IDM_CUT, MF_BYCOMMAND | MF_GRAYED);
+							EnableMenuItem(hSubMenu, IDM_COPY, MF_BYCOMMAND | MF_GRAYED);
+							EnableMenuItem(hSubMenu, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
+						}
+						if (!SendMessage(((NMHDR *) lParam)->hwndFrom, EM_CANUNDO, 0, 0)) {
+							EnableMenuItem(hSubMenu, IDM_UNDO, MF_BYCOMMAND | MF_GRAYED);
+						}
+						if (!SendMessage(((NMHDR *) lParam)->hwndFrom, EM_CANREDO, 0, 0)) {
+							EnableMenuItem(hSubMenu, IDM_REDO, MF_BYCOMMAND | MF_GRAYED);
+						}
+						if (!SendMessage(((NMHDR *) lParam)->hwndFrom, EM_CANPASTE, 0, 0)) {
+							EnableMenuItem(hSubMenu, IDM_PASTE, MF_BYCOMMAND | MF_GRAYED);
+						}
+						pt.x = (short) LOWORD(((ENLINK *) lParam)->lParam);
+						pt.y = (short) HIWORD(((ENLINK *) lParam)->lParam);
+						ClientToScreen(((NMHDR *) lParam)->hwndFrom, &pt);
+						switch (TrackPopupMenu(hSubMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hwndDlg, NULL)) {
+						case IDM_UNDO:
+							SendMessage(((NMHDR *) lParam)->hwndFrom, WM_UNDO, 0, 0);
+							break;
+						case IDM_REDO:
+							SendMessage(((NMHDR *) lParam)->hwndFrom, EM_REDO, 0, 0);
+							break;
+						case IDM_CUT:
+							SendMessage(((NMHDR *) lParam)->hwndFrom, WM_CUT, 0, 0);
+							break;
+						case IDM_COPY:
+							SendMessage(((NMHDR *) lParam)->hwndFrom, WM_COPY, 0, 0);
+							break;
+						case IDM_PASTE:
+							SendMessage(((NMHDR *) lParam)->hwndFrom, WM_PASTE, 0, 0);
+							break;
+						case IDM_DELETE:
+							SendMessage(((NMHDR *) lParam)->hwndFrom, EM_REPLACESEL, TRUE, 0);
+							break;
+						case IDM_SELECTALL:
+							SendMessage(((NMHDR *) lParam)->hwndFrom, EM_EXSETSEL, 0, (LPARAM) & all);
+							break;
+						}
+						DestroyMenu(hMenu);
+						SetWindowLong(hwndDlg, DWL_MSGRESULT, TRUE);
+						return TRUE;
+					}
+				}
+				break;
+			}
+			break;
 		}
 		break;
 	case HM_EVENTSENT:
@@ -1638,8 +1733,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			if (dat->sendCount==0)
 				break;
 			for (i = 0; i < dat->sendCount; i++) {
-				if (ack->hProcess == dat->sendInfo[i].hSendId && ack->hContact == dat->hContact) 
+				if (ack->hProcess == dat->sendInfo[i].hSendId && ack->hContact == dat->hContact)
 					break;
+			}
+			if (dat->messagesInProgress>0) {
+				dat->messagesInProgress--;
+				SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
 			}
 			if (ack->result == ACKRESULT_FAILED) {
 				if (i == dat->sendCount) {
@@ -1654,7 +1753,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					struct ErrorWindowData *ewd = (struct ErrorWindowData *) malloc(sizeof(struct ErrorWindowData));
 					KillTimer(hwndDlg, TIMERID_MSGSEND);
 					ewd->szDescription = strdup((char *) ack->lParam);
-					ewd->szText = strdup(dat->sendInfo[i].sendBuffer);
+					ewd->szText = (char *)malloc(dat->sendInfo[i].sendBufferSize);
+					memcpy(ewd->szText, dat->sendInfo[i].sendBuffer, dat->sendInfo[i].sendBufferSize);
 					ewd->hwndParent = hwndDlg;
 					ewd->sendIdx = i;
 					CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGSENDERROR), hwndDlg, ErrorDlgProc, (LPARAM) ewd);
@@ -1679,29 +1779,20 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				dat->hDbEventFirst = hNewEvent;
 				SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 			}
-
-			free(dat->sendInfo[i].sendBuffer);
-			dat->sendInfo[i].sendBuffer = NULL;
-			dat->sendInfo[i].hSendId = NULL;
+			if (dat->sendInfo[i].state == 0) {
+				free(dat->sendInfo[i].sendBuffer);
+				dat->sendInfo[i].sendBuffer = NULL;
+				dat->sendInfo[i].hSendId = NULL;
+			}
 			for (i = 0; i < dat->sendCount; i++)
 				if (dat->sendInfo[i].sendBuffer)
 					break;
 			if (i == dat->sendCount) {
-//				int len;
 				//all messages sent
 				dat->sendCount = 0;
 				free(dat->sendInfo);
 				dat->sendInfo = NULL;
 				KillTimer(hwndDlg, TIMERID_MSGSEND);
-				//SetDlgItemText(hwndDlg, IDC_MESSAGE, _T(""));
-				//EnableWindow(GetDlgItem(hwndDlg, IDOK), FALSE);
-				SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETREADONLY, FALSE, 0);
-				//SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_REPLAYSAVEDKEYSTROKES, 0, 0);
-				//if (GetForegroundWindow() == hwndDlg)
-				//	SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
-//				len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
-//				UpdateReadChars(hwndDlg, dat);
-//				EnableWindow(GetDlgItem(hwndDlg, IDOK), len != 0);
 				if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOCLOSE, SRMSGDEFSET_AUTOCLOSE))
 					DestroyWindow(hwndDlg);
 			}
