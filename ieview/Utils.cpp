@@ -42,7 +42,7 @@ void Utils::appendText(wchar_t **str, int *sizeAlloced, const wchar_t *fmt, ...)
 	}
 	else {
 		len = wcslen(*str);
-		size = *sizeAlloced - wcslen(*str);
+		size = *sizeAlloced - sizeof(wchar_t) * wcslen(*str);
 	}
 
 	p = *str + len;

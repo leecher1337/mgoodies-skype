@@ -102,6 +102,7 @@ private:
 	IWebBrowser2* pWebBrowser;
 	HTMLBuilder *builder;
 	SmileyWindow *smileyWindow;
+ 	WNDPROC    	userWndProc;
 
     // IUnknown
 	STDMETHODIMP QueryInterface(REFIID riid, PVOID *ppv);
@@ -178,6 +179,9 @@ public:
 	void            scrollToBottom();
 	void            scrollToBottomSoft();
 	void            scrollToTop();
+
+	void            setUserWndProc(WNDPROC);
+	WNDPROC         getUserWndProc();
 
 	static IEView* 	get(HWND);
 	static IEView* 	getByDoc(HWND);
