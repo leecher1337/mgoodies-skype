@@ -631,6 +631,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
 				dat->flags |= SMF_RTL;
 			}
+			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "DisableUnicode", (BYTE) 0)) {
+				dat->flags |= SMF_DISABLE_UNICODE;
+			}
 
 //			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
 			{
@@ -780,7 +783,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 	case WM_CONTEXTMENU:
 		{
-			if (dat->hwndStatus && dat->hwndStatus == (HWND) wParam) {
+			if (GetParent(hwndDlg) == (HWND) wParam) {
 				POINT pt;
 				HMENU hMenu = (HMENU) CallService(MS_CLIST_MENUBUILDCONTACT, (WPARAM) dat->hContact, 0);
 
@@ -823,6 +826,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		SendDlgItemMessage(hwndDlg, IDC_SMILEYS, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_SMILEY]);
 		SendDlgItemMessage(hwndDlg, IDOK, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_SEND]);
 		SendDlgItemMessage(hwndDlg, IDCANCEL, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_CANCEL]);
+		SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
 		break;
 	case DM_AVATARCALCSIZE:
 	{
@@ -1043,6 +1047,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		SetDialogToType(hwndDlg);
 //		SendMessage(dat->hwndParent, DM_SWITCHTOOLBAR, 0, 0);
 		break;
+	case DM_SWITCHUNICODE:
+		dat->flags ^= SMF_DISABLE_UNICODE;
+		SendMessage(dat->parent->hwndStatus, SB_SETICON, 2, (LPARAM) g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON]);
+		SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
+//		SendMessage(dat->hwndParent, DM_SWITCHSTATUSBAR, 0, 0);
+		break;
 	case DM_SWITCHRTL:
 		{
 			PARAFORMAT2 pf2;
@@ -1211,6 +1221,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				SendMessageA(dat->parent->hwndStatus, SB_SETTEXTA, 0, (LPARAM) "");
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) NULL);
 			}
+			SendMessage(dat->parent->hwndStatus, SB_SETICON, 2, (LPARAM) g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON]);
 			UpdateReadChars(hwndDlg, dat);
 			break;
 		}
@@ -1721,27 +1732,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			if (hFont != NULL && hFont != (HFONT) SendDlgItemMessage(hwndDlg, IDOK, WM_GETFONT, 0, 0))
 				DeleteObject(hFont);
 		}
-		if (dat->flags & SMF_RTL) {
-			DBWriteContactSettingByte(dat->hContact, SRMMMOD, "UseRTL", (BYTE) 1);
-		}
-		if (!(g_dat->flags & SMF_USETABS )) {
-			WINDOWPLACEMENT wp = { 0 };
-			HANDLE hContact;
-
-			if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT))
-				hContact = dat->hContact;
-			else
-				hContact = NULL;
-			wp.length = sizeof(wp);
-			GetWindowPlacement(GetParent(hwndDlg), &wp);
-			if (!dat->windowWasCascaded) {
-				DBWriteContactSettingDword(hContact, SRMMMOD, "x", wp.rcNormalPosition.left);
-				DBWriteContactSettingDword(hContact, SRMMMOD, "y", wp.rcNormalPosition.top);
-			}
-			DBWriteContactSettingDword(hContact, SRMMMOD, "width", wp.rcNormalPosition.right - wp.rcNormalPosition.left);
-			DBWriteContactSettingDword(hContact, SRMMMOD, "height", wp.rcNormalPosition.bottom - wp.rcNormalPosition.top);
-
-		}
+		DBWriteContactSettingByte(dat->hContact, SRMMMOD, "UseRTL", (BYTE) ((dat->flags & SMF_RTL) ? 1 : 0));
+		DBWriteContactSettingByte(dat->hContact, SRMMMOD, "DisableUnicode", (BYTE) ((dat->flags & SMF_DISABLE_UNICODE) ? 1 : 0));
 		{
 			HANDLE hContact;
 			if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVESPLITTERPERCONTACT, SRMSGDEFSET_SAVESPLITTERPERCONTACT))

@@ -23,26 +23,29 @@
 #define SMF_GROUPMESSAGES	0x00800000
 #define SMF_MARKFOLLOWUPS	0x01000000
 #define SMF_RTL				0x02000000
+#define SMF_DISABLE_UNICODE	0x04000000
 
 
 #define SMF_ICON_ADD         0
 #define SMF_ICON_USERDETAILS 1
 #define SMF_ICON_HISTORY     2
-#define SMF_ICON_ARROW       3
-#define SMF_ICON_TYPING      4
-#define SMF_ICON_SEND		 5
-#define SMF_ICON_CANCEL		 6
-#define SMF_ICON_SMILEY		 7
-#define SMF_ICON_INCOMING	 8
-#define SMF_ICON_OUTGOING	 9
-#define SMF_ICON_NOTICE		 10
-#define SMF_ICON_TYPINGON	 11
-#define SMF_ICON_TYPINGOFF	 12
+//#define SMF_ICON_ARROW       3
+#define SMF_ICON_SEND		 3
+#define SMF_ICON_CANCEL		 4
+#define SMF_ICON_SMILEY		 5
+#define SMF_ICON_TYPING      6
+#define SMF_ICON_UNICODEON	 7
+#define SMF_ICON_UNICODEOFF	 8
+#define SMF_ICON_DELIVERING	 9
+
+#define SMF_ICON_INCOMING	 10
+#define SMF_ICON_OUTGOING	 11
+#define SMF_ICON_NOTICE		 12
 
 struct GlobalMessageData
 {
 	unsigned int flags;
-	HICON hIcons[12];
+	HICON hIcons[16];
 	HANDLE hMessageWindowList;
 	HANDLE hParentWindowList;
 	HWND	hParent;

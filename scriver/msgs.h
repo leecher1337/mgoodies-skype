@@ -50,7 +50,6 @@ struct ParentWindowData
 	int		nFlashMax;
 	int		bMinimized;
 	int		windowWasCascaded;
-	int		nTypeMode;
 	DWORD	flags;		
 };
 
@@ -144,6 +143,7 @@ struct MessageWindowData
 #define DM_SWITCHSTATUSBAR	 (WM_USER+47)
 #define DM_SWITCHTOOLBAR	 (WM_USER+48)
 #define DM_SWITCHRTL		 (WM_USER+50)
+#define DM_SWITCHUNICODE	 (WM_USER+51)
 
 
 #define EVENTTYPE_STATUSCHANGE 25368
