@@ -35,7 +35,6 @@ by the user instead. You can use several variable in templates including message
 nicknames etc. This part of IEView is still changing, so more information on templates is
 included in a separate file called templates_info.txt.
 
-
 2. Installation
 ---------------
 
@@ -48,12 +47,12 @@ templates  - examples of HTML templates, which can be used with IEView
 
 emots, css and templates folders may be copied anywhere.
 
-In order to use IEView with SRMM you need a modified version of SRMM available here:
-
-If IEVIew is among avtive plugins it will be automatically used for message log rendering,
+In order to use IEView you need Scriver or TabSRMM. Scriver (SRMM mod) project page is located here:
+http://developer.berlios.de/projects/mgoodies.
+If IEVIew is among avtive plugins it will be automatically used by Scriver for message log rendering,
 otherwise regular RichEdit control is used.
 
-In order to use IEView with TabSRMM you need at least TabSRMM 0.9.9.5. Moreover it is necessary
+In order to use IEView with TabSRMM you need at least TabSRMM 0.9.9.9. Moreover it is necessary
 to turn on support for IEView in TabSRMM configuration.
 Please go to Window Sessions -> Message Window -> Message log options page, locate and
 check "Activate support for external".
@@ -66,15 +65,18 @@ Emoticons - just select .asl file(s). They can be located anywhere in any folder
 
 4. FAQ
 ------
-Q: Is there any stable version of IEView?
-A: No, IEView is still in a VERY EARLY stage of development (so-called alpha version)
+Q: Where can I find new versions of IEView, report bugs or request new features ?
+A: http://developer.berlios.de/projects/mgoodies.
 
 Q: Is SmileyAdd required in order to use animated emoticons ?
 A: SmileyAdd is NOT required to see animated emoticons in the log, however,
    IEView does not provide any button for smiley selection, so no SmileyAdd means no such button.
 
 Q: Does IEView support Unicode ?
-A: No, not yet.
+A: Yes, it does.
+
+Q: Does IEView support RTL ?
+A: Yes, it does - in CSS or template mode.
 
 Q: What version of Miranda is required to run IEView ?
 A: IEView DOES require Miranda IM 04. RC2.
@@ -84,8 +86,23 @@ Q: I use TabSRMM, why IEView does not work ?
 A: Make sure Window Sessions -> Message Window -> Message log -> Activate support of external log
    is turned on.
 
-5. Change Log
+5. Known Issues
+---------------
+
+A) Animated smiley librabries
+Please avoid using huge number of animated smileys, otherwise Miranda and your system may crash !
+It is not a bug in IEView, but rather known limitation of Internet Explorer, so please be reasonable.
+
+B) Unicode
+Unicode support in Miranda is rather poor. IEView tries to determin if a message contains Unicode part or not,
+but this may fail sometimes and you will need to switch Unicode off in such cases. There is a possibility to turn
+Unicode off manually in Scriver.
+
+6. Change Log
 -------------
+1.0.2.0:
+* improved Unicode support
+* bugfixes
 1.0.1.10:
 + Unicode support (I would like to thank Nightwish for his support)
 + RTL support (template and CSS mode)
