@@ -138,7 +138,23 @@ static struct MessageWindowData * GetChildFromTab(struct ParentWindowData *dat, 
 	tci.mask = TCIF_PARAM;
 	TabCtrl_GetItem(dat->hwndTabs, tabId, &tci);
 	return (struct MessageWindowData *) tci.lParam; 
+}
 
+static struct MessageWindowData * GetChildFromHWND(struct ParentWindowData *dat, HWND hwnd) 
+{
+	struct MessageWindowData * mdat;
+	TCITEM tci;
+	int l, i;
+	l = TabCtrl_GetItemCount(dat->hwndTabs);
+	for (i = 0; i < l; i++) {
+		tci.mask = TCIF_PARAM;
+		TabCtrl_GetItem(dat->hwndTabs, i, &tci);
+		mdat = (struct MessageWindowData *) tci.lParam; 
+		if (mdat->hwnd == hwnd) {
+			return mdat;
+		}
+	}
+	return NULL;
 }
 
 static void AddChild(struct ParentWindowData *dat, struct MessageWindowData * mdat) 
@@ -446,7 +462,32 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	case WM_CONTEXTMENU:
 	{
 		if (dat->hwndStatus && dat->hwndStatus == (HWND) wParam) {
-			SendMessage(dat->hwndActive, WM_CONTEXTMENU, (WPARAM)hwndDlg, 0);
+			RECT rc;
+			POINT pt, pt2;
+			GetCursorPos(&pt);
+			pt2.x = pt.x;
+			pt2.y = pt.y;
+			ScreenToClient(dat->hwndStatus, &pt);
+			SendMessage(dat->hwndStatus, SB_GETRECT, SendMessage(dat->hwndStatus, SB_GETPARTS, 0, 0) - 1, (LPARAM)&rc);
+			if (pt.x >= rc.left && dat->hwndActive != NULL) {
+				int codePage = (int) SendMessage(dat->hwndActive, DM_GETCODEPAGE, 0, 0);
+				int i, iSel;
+				for(i = 0; i < GetMenuItemCount(g_dat->hMenuANSIEncoding); i++) {
+					CheckMenuItem (g_dat->hMenuANSIEncoding, i, MF_BYPOSITION | MF_UNCHECKED);
+				}
+				if(codePage == CP_ACP) {
+					CheckMenuItem(g_dat->hMenuANSIEncoding, 0, MF_BYPOSITION | MF_CHECKED);
+				} else {
+					CheckMenuItem(g_dat->hMenuANSIEncoding, codePage, MF_BYCOMMAND | MF_CHECKED);
+				}
+				iSel = TrackPopupMenu(g_dat->hMenuANSIEncoding, TPM_RETURNCMD, pt2.x, pt2.y, 0, hwndDlg, NULL);
+				if (iSel >= 500) {
+					if (iSel == 500) iSel = CP_ACP;
+					SendMessage(dat->hwndActive, DM_SETCODEPAGE, 0, iSel);
+				}
+			}
+			else 
+				SendMessage(dat->hwndActive, WM_CONTEXTMENU, (WPARAM)hwndDlg, 0);
 		}
 		break;
 	}

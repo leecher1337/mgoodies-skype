@@ -431,13 +431,13 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 						AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
 					} else {
 						msg = (TCHAR *) malloc(sizeof(TCHAR) * msglen); 
-						MultiByteToWideChar(CP_ACP, 0, (char *) dbei.pBlob, -1, msg, msglen);
+						MultiByteToWideChar(dat->codePage, 0, (char *) dbei.pBlob, -1, msg, msglen);
 						AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
 						free(msg);
 					}
 				} else {
 					msg = (TCHAR *) malloc(sizeof(TCHAR) * msglen); 
-					MultiByteToWideChar(CP_ACP, 0, (char *) dbei.pBlob, -1, msg, msglen);
+					MultiByteToWideChar(dat->codePage, 0, (char *) dbei.pBlob, -1, msg, msglen);
 					AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
 					free(msg);
 				}
@@ -549,6 +549,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 			CallService(MS_IEVIEW_EVENT, 0, (LPARAM)&event);
 		}
 		event.iType = IEE_LOG_EVENTS;
+		event.codepage = dat->codePage;
 		event.hDbEventFirst = hDbEventFirst;
 		event.count = count;
 		CallService(MS_IEVIEW_EVENT, 0, (LPARAM)&event);

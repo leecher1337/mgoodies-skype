@@ -153,10 +153,45 @@ void LoadGlobalIcons() {
 	}
 }
 
+
+static BOOL CALLBACK LangAddCallback(CHAR * str) {
+	int i, count;
+	UINT cp;
+	static struct { UINT cpId; char *cpName; } cpTable[] = {
+		{	874,	"Thai" },
+		{	932,	"Japanese" },
+		{	936,	"Simplified Chinese" },
+		{	949,	"Korean" },
+		{	950,	"Traditional Chinese" },
+		{	1250,	"Central European" },
+		{	1251,	"Cyrillic" },
+		{	1252,	"Latin I" },
+		{	1253,	"Greek" },
+		{	1254,	"Turkish" },
+		{	1255,	"Hebrew" },
+		{	1256,	"Arabic" },
+		{	1257,	"Baltic" },
+		{	1258,	"Vietnamese" },
+		{	1361,	"Korean (Johab)" }
+	};
+    cp = atoi(str);
+	count = sizeof(cpTable)/sizeof(cpTable[0]);
+	for (i=0; i<count && cpTable[i].cpId!=cp; i++);
+	if (i < count) {
+        AppendMenuA(g_dat->hMenuANSIEncoding, MF_STRING, cp, Translate(cpTable[i].cpName));
+	}
+	return TRUE;
+}
+
+
 void InitGlobals() {
 	g_dat = (struct GlobalMessageData *)malloc(sizeof(struct GlobalMessageData));
 	g_dat->hMessageWindowList = (HANDLE) CallService(MS_UTILS_ALLOCWINDOWLIST, 0, 0);
 	g_dat->hParentWindowList = (HANDLE) CallService(MS_UTILS_ALLOCWINDOWLIST, 0, 0);
+    g_dat->hMenuANSIEncoding = CreatePopupMenu();
+    AppendMenuA(g_dat->hMenuANSIEncoding, MF_STRING, 500, Translate("Default codepage"));
+    AppendMenuA(g_dat->hMenuANSIEncoding, MF_SEPARATOR, 0, 0);
+    EnumSystemCodePagesA(LangAddCallback, CP_INSTALLED);
 	g_hAck = HookEvent(ME_PROTO_ACK, ackevent);
 	ReloadGlobals();
 	g_dat->hParent = NULL;
