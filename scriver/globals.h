@@ -33,11 +33,14 @@
 #define SMF_ICON_SEND		 5
 #define SMF_ICON_CANCEL		 6
 #define SMF_ICON_SMILEY		 7
+#define SMF_ICON_INCOMING	 8
+#define SMF_ICON_OUTGOING	 9
+#define SMF_ICON_NOTICE		 10
 
 struct GlobalMessageData
 {
 	unsigned int flags;
-	HICON hIcons[8];
+	HICON hIcons[12];
 	HANDLE hMessageWindowList;
 	HANDLE hParentWindowList;
 	HWND	hParent;
@@ -52,6 +55,7 @@ void ReloadGlobals();
 void SetIcoLibIcons();
 void LoadProtocolIcons();
 void LoadGlobalIcons();
+int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,const char *szNamePrefix, int flags, int showCmd);
 
 extern struct GlobalMessageData *g_dat;
 

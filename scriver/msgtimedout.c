@@ -48,11 +48,6 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			GetWindowRect(hwndDlg, &rc);
 			GetWindowRect(ewd->hwndParent, &rcParent);
-			{
-				char str[1024];
-				sprintf(str, "%d, %d    %d,%d", rcParent.left, rcParent.top, rc.left, rc.top);
-				//MessageBox(NULL, str, str, MB_OK);
-			}
 			SetWindowPos(hwndDlg, HWND_TOP, rcParent.left + (rcParent.right - rcParent.left - rc.right + rc.left) / 2, rcParent.top + (rcParent.bottom - rcParent.top - rc.bottom + rc.top), 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
 		}
 		return TRUE;
