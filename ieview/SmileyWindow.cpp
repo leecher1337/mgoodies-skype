@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "SmileyWindow.h"
 #include "resource.h"
+#include "Utils.h"
 
 static BOOL CALLBACK SmileySelectionDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -46,6 +47,8 @@ void SmileyWindow::init(int cw, int ch) {
     maxHeight = 250;
 	cellWidth = cw;
 	cellHeight = ch;
+	int outputSize;
+	char *output = NULL;
     int cellWidthBorder = cellWidth + 1;
 	int cellHeightBorder = cellHeight + 1;
 	// init window
@@ -74,7 +77,7 @@ void SmileyWindow::init(int cw, int ch) {
 
 	SetWindowPos(hwnd, NULL, 0, 0, viewWidth+ 2, viewHeight + 2, SWP_NOMOVE | SWP_NOZORDER | SWP_HIDEWINDOW);
 	view->setWindowPos(0, 0, viewWidth, viewHeight);
-	view->writef("<html><head><style type=\"text/css\"> \n\
+	Utils::appendText(&output, &outputSize, "<html><head><style type=\"text/css\"> \n\
 .body {margin: 0px; background-color: #FFFFFF; }\n\
 .link {color: #0000FF; text-decoration: underline;}\n\
 .img {vertical-align: middle;}\n\
@@ -84,26 +87,30 @@ div#outer { float:left; height: %dpx; width: %dpx; overflow: hidden; position: r
 div#middle { position: absolute; top: 50%%; left: 50%%; }\n\
 div#inner { position: relative; top: -50%%; left: -50%%; }\n\
 </style></head><body class=\"body\">\n", cellHeight, cellWidth);
-	view->write("<table class=\"table\" cellspacing=\"0\" cellpadding=\"0\">\n");
+	Utils::appendText(&output, &outputSize, "<table class=\"table\" cellspacing=\"0\" cellpadding=\"0\">\n");
 	for (i=j=0, s=map->getSmiley();s!=NULL && j<150;s=s->getNext(),i++) {
 		if (s->isHidden()) continue;
 		if (j%hSize == 0) {
-			view->write("<tr>\n");
+			Utils::appendText(&output, &outputSize, "<tr>\n");
 		}
-		view->writef("<td class=\"td\"><div id=\"outer\"><div id=\"middle\"><div id=\"inner\"><a href=\"/%d\"><img class=\"img\" src=\"%s\" alt=\"%s\" border=\"0\"/></a></div></div></div></td>\n",
+		Utils::appendText(&output, &outputSize, "<td class=\"td\"><div id=\"outer\"><div id=\"middle\"><div id=\"inner\"><a href=\"/%d\"><img class=\"img\" src=\"%s\" alt=\"%s\" border=\"0\"/></a></div></div></div></td>\n",
 							i, s->getFile(), s->getDescription());
 		if (j%hSize == hSize-1) {
-			view->write("</tr>\n");
+			Utils::appendText(&output, &outputSize, "</tr>\n");
 		}
 		j++;
 	}
 	for (;j%hSize != 0;j++) {
-		view->write("<td class=\"td\"><div id=\"outer\"><div id=\"middle\"><div id=\"inner\">&nbsp;</div></div></div></td>\n");
+		Utils::appendText(&output, &outputSize, "<td class=\"td\"><div id=\"outer\"><div id=\"middle\"><div id=\"inner\">&nbsp;</div></div></div></td>\n");
 		if (j%hSize == hSize-1) {
-			view->write("</tr>\n");
+			Utils::appendText(&output, &outputSize, "</tr>\n");
 		}
 	}
-	view->write("</table></body></html>\n");
+	Utils::appendText(&output, &outputSize, "</table></body></html>\n");
+	char *outputEnc = Utils::UTF8Encode(output);
+	free(output);
+	view->write(outputEnc);
+	delete outputEnc;
 }
 
 void SmileyWindow::show(HWND hwndTarget, UINT targetMessage, WPARAM targetWParam, int x, int y) {
