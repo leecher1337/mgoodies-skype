@@ -22,16 +22,17 @@
 #define SMF_SHOWSECONDS		0x00400000
 #define SMF_GROUPMESSAGES	0x00800000
 #define SMF_MARKFOLLOWUPS	0x01000000
+#define SMF_RTL				0x02000000
 
 
-#define SMF_ICON_ADD        0
-#define SMF_ICON_USERDETAIL 1
-#define SMF_ICON_HISTORY    2
-#define SMF_ICON_ARROW      3
-#define SMF_ICON_TYPING     4
-#define SMF_ICON_SEND		5
-#define SMF_ICON_CANCEL		6
-#define SMF_ICON_SMILEY		7
+#define SMF_ICON_ADD         0
+#define SMF_ICON_USERDETAILS 1
+#define SMF_ICON_HISTORY     2
+#define SMF_ICON_ARROW       3
+#define SMF_ICON_TYPING      4
+#define SMF_ICON_SEND		 5
+#define SMF_ICON_CANCEL		 6
+#define SMF_ICON_SMILEY		 7
 
 struct GlobalMessageData
 {
@@ -48,7 +49,9 @@ struct GlobalMessageData
 void InitGlobals();
 void FreeGlobals();
 void ReloadGlobals();
-void CreateProtocolIcons();
+void SetIcoLibIcons();
+void LoadProtocolIcons();
+void LoadGlobalIcons();
 
 extern struct GlobalMessageData *g_dat;
 

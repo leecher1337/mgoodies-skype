@@ -26,42 +26,53 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	HWND hwndParent = (HWND) GetWindowLong(hwndDlg, GWL_USERDATA);
+	struct ErrorWindowData *ewd = (struct ErrorWindowData *) GetWindowLong(hwndDlg, GWL_USERDATA);
+	//if (ewd==NULL && msg!=WM_INITDIALOG) return FALSE;
 	switch (msg) {
 		case WM_INITDIALOG:
 		{
 			RECT rc, rcParent;
-			struct ErrorWindowData *ewd = (struct ErrorWindowData *) lParam;
-
+			ewd = (struct ErrorWindowData *) lParam;
+			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) ewd);
 			TranslateDialogDefault(hwndDlg);
-
 			if (ewd != NULL) {
-				hwndParent = ewd->hwndParent;
-				SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) hwndParent);
-				if (!ewd->szDescription||!strlen(ewd->szDescription))
+				if (!ewd->szDescription) 
 					ewd->szDescription = strdup(Translate("An unknown error has occured."));
+				if (!ewd->szText) 
+					ewd->szText = strdup("");
 				SetDlgItemTextA(hwndDlg, IDC_ERRORTEXT, ewd->szDescription);
+				SetDlgItemTextA(hwndDlg, IDC_MSGTEXT, ewd->szText);
 				free(ewd->szDescription);
+				free(ewd->szText);
 			}
 
 			GetWindowRect(hwndDlg, &rc);
-			GetWindowRect(hwndParent, &rcParent);
-			SetWindowPos(hwndDlg, HWND_TOP, (rcParent.right - rcParent.left - rc.right + rc.left) / 2, (rcParent.bottom - rcParent.top - rc.bottom + rc.top), 0, 0, SWP_NOSIZE);
+			GetWindowRect(ewd->hwndParent, &rcParent);
+			{
+				char str[1024];
+				sprintf(str, "%d, %d    %d,%d", rcParent.left, rcParent.top, rc.left, rc.top);
+				//MessageBox(NULL, str, str, MB_OK);
+			}
+			SetWindowPos(hwndDlg, HWND_TOP, rcParent.left + (rcParent.right - rcParent.left - rc.right + rc.left) / 2, rcParent.top + (rcParent.bottom - rcParent.top - rc.bottom + rc.top), 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
 		}
-			return TRUE;
-
+		return TRUE;
 		case WM_COMMAND:
 			switch (LOWORD(wParam)) {
 				case IDOK:
-					SendMessage(hwndParent, DM_ERRORDECIDED, MSGERROR_RETRY, 0);
+					SendMessage(ewd->hwndParent, DM_ERRORDECIDED, MSGERROR_RETRY, (LPARAM) ewd->sendIdx);
 					DestroyWindow(hwndDlg);
 					break;
 				case IDCANCEL:
-					SendMessage(hwndParent, DM_ERRORDECIDED, MSGERROR_CANCEL, 0);
+					SendMessage(ewd->hwndParent, DM_ERRORDECIDED, MSGERROR_CANCEL, (LPARAM) ewd->sendIdx);
 					DestroyWindow(hwndDlg);
 					break;
 			}
 			break;
+		case WM_DESTROY:
+			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) NULL);
+			free(ewd);
+			break;
+
 	}
 	return FALSE;
 

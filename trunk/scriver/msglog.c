@@ -195,7 +195,10 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 	bufferAlloced = 1024;
 	buffer = (char *) malloc(bufferAlloced);
 	buffer[0] = '\0';
-	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "{\\rtf1\\ansi\\deff0{\\fonttbl");
+	if (dat->flags & SMF_RTL) 
+		AppendToBuffer(&buffer,&bufferEnd,&bufferAlloced,"{\\rtf1\\ansi\\deff0\\rtldoc{\\fonttbl");
+	else 
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "{\\rtf1\\ansi\\deff0{\\fonttbl");
 	for (i = 0; i < msgDlgFontCount; i++) {
 		LoadMsgDlgFont(i, &lf, NULL);
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "{\\f%u\\fnil\\fcharset%u %s;}", i, lf.lfCharSet, lf.lfFaceName);
@@ -210,7 +213,10 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 	else
 		colour = GetSysColor(COLOR_HOTLIGHT);
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
-	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\pard");
+	if (dat->flags & SMF_RTL) 
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\rtlpar");
+	else 
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\pard");
 	return buffer;
 }
 
@@ -513,6 +519,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	if (ServiceExists(MS_IEVIEW_EVENT)) {
 		IEVIEWEVENT event;
 		event.cbSize = sizeof(IEVIEWEVENT);
+		event.dwFlags = (dat->flags & SMF_RTL) ? IEEF_RTL : 0;
 		event.hwnd = dat->hwndLog;
 		event.hContact = dat->hContact;
 		if (!fAppend) {
