@@ -10,6 +10,8 @@ extern HINSTANCE g_hInst;
 #define TIMEOUT_FLASHWND     900
 
 static WNDPROC OldTabCtrlProc;
+PSLWA pSetLayeredWindowAttributes;
+
 BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 static TCHAR* GetTabName(HANDLE *hContact)
@@ -260,6 +262,15 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				GetWindowRect(hwndDlg, &rc);
 				SetWindowPos(hwndDlg, 0, 0, 0, rc.right - rc.left, rc.bottom - rc.top,
 							 SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER  | SWP_FRAMECHANGED | SWP_NOSENDCHANGING); 
+			}
+			if (LOBYTE(LOWORD(GetVersion())) >= 5  && pSetLayeredWindowAttributes != NULL) {
+					ws = GetWindowLong(hwndDlg, GWL_EXSTYLE) & ~WS_EX_LAYERED;
+					ws |= g_dat->transparency ? WS_EX_LAYERED : 0;
+					SetWindowLong(hwndDlg , GWL_EXSTYLE , ws);
+					if (g_dat->transparency) {
+    					pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(256-g_dat->transparency), LWA_ALPHA);
+					}
+//				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 			}
 
 			//SetWindowPos(dat->hwndTabs, 0, 0, -10, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
@@ -659,6 +670,17 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				ws |= WS_CAPTION;
 			} 
 			SetWindowLong(hwndDlg, GWL_STYLE, ws);
+
+			if (LOBYTE(LOWORD(GetVersion())) >= 5  && pSetLayeredWindowAttributes != NULL) {
+					ws = GetWindowLong(hwndDlg, GWL_EXSTYLE) & ~WS_EX_LAYERED;
+					ws |= g_dat->transparency ? WS_EX_LAYERED : 0;
+					SetWindowLong(hwndDlg , GWL_EXSTYLE , ws);
+					if (g_dat->transparency) {
+    					pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(256-g_dat->transparency), LWA_ALPHA);
+					}
+//				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+			}
+
 			ws = GetWindowLong(dat->hwndTabs, GWL_STYLE) & ~(TCS_BOTTOM);
 			if (dat->flags & SMF_TABSATBOTTOM) {
 				ws |= TCS_BOTTOM;

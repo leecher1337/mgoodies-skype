@@ -237,6 +237,7 @@ void ReloadGlobals() {
 			g_dat->limitAvatarMinH = g_dat->limitAvatarMaxH;
 		}
 	}
+	g_dat->transparency = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_WINDOWALPHA, SRMSGDEFSET_WINDOWALPHA);
 
 }
 

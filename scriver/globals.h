@@ -56,7 +56,7 @@ struct GlobalMessageData
 	char **	protoNames;
 	int		limitAvatarMaxH;
 	int		limitAvatarMinH;
-
+	int		transparency;
 	HIMAGELIST hIconList;
 };
 
