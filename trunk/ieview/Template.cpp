@@ -33,34 +33,6 @@ const char *Token::getText() {
 	return text;
 }
 
-void TemplateMap::appendText(char **str, int *sizeAlloced, const char *fmt, ...) {
-	va_list vararg;
-	char *p;
-	int size, len;
-
-	if (str == NULL) return;
-
-	if (*str==NULL || *sizeAlloced<=0) {
-		*sizeAlloced = size = 2048;
-		*str = (char *) malloc(size);
-		len = 0;
-	}
-	else {
-		len = strlen(*str);
-		size = *sizeAlloced - strlen(*str);
-	}
-
-	p = *str + len;
-	va_start(vararg, fmt);
-	while (_vsnprintf(p, size, fmt, vararg) == -1) {
-		size += 2048;
-		(*sizeAlloced) += 2048;
-		*str = (char *) realloc(*str, *sizeAlloced);
-		p = *str + len;
-	}
-	va_end(vararg);
-}
-
 Template::Template(const char *name, const char *text) {
 	next = NULL;
 	tokens = NULL;
@@ -274,7 +246,7 @@ bool TemplateMap::loadTemplateFile(const char *proto, const char *filename, bool
 				wasTemplate = true;
                 sscanf(store, "<!--%[^-]", lastTemplate);
 			} else if (wasTemplate) {
-				appendText(&templateText, &templateTextSize, "%s", store);
+				Utils::appendText(&templateText, &templateTextSize, "%s", store);
 			}
 		}
   	}

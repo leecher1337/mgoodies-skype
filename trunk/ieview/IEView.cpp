@@ -35,55 +35,56 @@ static WNDPROC docWindowProc = NULL;
 static WNDPROC frameWindowProc = NULL;
 
 static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    IEView *view;
-	switch (message) {
+    IEView *view = IEView::get(GetParent(GetParent(hwnd)));
+	if (view != NULL) {
+		switch (message) {
 		case WM_KEYDOWN:
-			view = IEView::get(GetParent(GetParent(hwnd)));
-			if (view != NULL) {
-		   		view->translateAccelerator(message, wParam, lParam);
-		    }
-		    break;
+			view->translateAccelerator(message, wParam, lParam);
+		   	break;
 		case WM_LBUTTONDOWN:
-			view = IEView::get(GetParent(GetParent(hwnd)));
-			if (view != NULL) {
-			    POINT pt;
-			    pt.x = LOWORD(lParam);
-			    pt.y = HIWORD(lParam);
-		   		if (view->mouseClick(pt)) {
-		   		    return TRUE;
-           		}
-		    }
+		    POINT pt;
+		    pt.x = LOWORD(lParam);
+		    pt.y = HIWORD(lParam);
+	   		if (view->mouseClick(pt)) {
+	   		    return TRUE;
+       		}
 		    break;
-    }
-    if (serverWindowProc != NULL) {
-        return CallWindowProc(serverWindowProc, hwnd, message, wParam, lParam);
+		}
+		return CallWindowProc(view->getUserWndProc(), hwnd, message, wParam, lParam);
     }
     return DefWindowProc (hwnd, message, wParam, lParam);
 }
 
 static LRESULT CALLBACK IEViewDocWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    if (message == WM_PARENTNOTIFY) {
-        if (serverWindowProc == NULL) {
-            serverWindowProc = (WNDPROC) GetWindowLong( (HWND)lParam, GWL_WNDPROC );
-        }
-        SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewServerWindowProcedure);
+   	IEView *view = IEView::get(GetParent(hwnd));
+   	if (view!=NULL) {
+		WNDPROC oldWndProc = view->getUserWndProc();
+    	if (message == WM_PARENTNOTIFY && wParam == WM_CREATE) {
+			SetWindowLong(hwnd, GWL_WNDPROC, (LONG) oldWndProc);
+			view->setUserWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewServerWindowProcedure));
+		}
+		return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
+       // serverWindowProc = (WNDPROC) SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewServerWindowProcedure);
     }
-    if (docWindowProc != NULL) {
-        return CallWindowProc(docWindowProc, hwnd, message, wParam, lParam);
-    }
+   // if (docWindowProc != NULL) {
+    //    return CallWindowProc(docWindowProc, hwnd, message, wParam, lParam);
+    //}
     return DefWindowProc (hwnd, message, wParam, lParam);
 }
 
 static LRESULT CALLBACK IEViewWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    if (message == WM_PARENTNOTIFY) {
-        if (docWindowProc == NULL) {
-            docWindowProc = (WNDPROC) GetWindowLong( (HWND)lParam, GWL_WNDPROC );
-        }
-        SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewDocWindowProcedure);
+   	IEView *view = IEView::get(hwnd);
+   	if (view!=NULL) {
+		WNDPROC oldWndProc = view->getUserWndProc();
+    	if (message == WM_PARENTNOTIFY && wParam == WM_CREATE) {
+			SetWindowLong(hwnd, GWL_WNDPROC, (LONG) oldWndProc);
+			view->setUserWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewDocWindowProcedure));
+		}
+		return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
     }
-    if (frameWindowProc != NULL) {
-        return CallWindowProc(frameWindowProc, hwnd, message, wParam, lParam);
-    }
+    //if (frameWindowProc != NULL) {
+//        return CallWindowProc(frameWindowProc, hwnd, message, wParam, lParam);
+    //}
     return DefWindowProc (hwnd, message, wParam, lParam);
 }
 
@@ -165,7 +166,8 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
       		pCPContainer->Release();
    		}
 #ifndef GECKO
-		frameWindowProc = (WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) IEViewWindowProcedure);
+		setUserWndProc((WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) IEViewWindowProcedure));
+//		frameWindowProc = ;
 #endif
     }
     EnterCriticalSection(&mutex);
@@ -273,6 +275,15 @@ IEView::~IEView() {
 	pWebBrowser->Release();
 	DestroyWindow(hwnd);
 }
+
+void IEView::setUserWndProc(WNDPROC wndProc) {
+	userWndProc = wndProc;
+}
+
+WNDPROC IEView::getUserWndProc() {
+	return userWndProc;
+}
+
 // IUnknown
 STDMETHODIMP IEView::QueryInterface(REFIID riid, PVOID *ppv) {
 	*ppv=NULL;
@@ -567,6 +578,8 @@ void IEViewSink::WindowClosing(VARIANT_BOOL isChildWindow, VARIANT_BOOL* cancel)
 void IEViewSink::ClientToHostWindow(long *cx, long *cy) {}
 void IEViewSink::SetSecureLockIcon(long val) {}
 void IEViewSink::FileDownload(VARIANT_BOOL* cancel) {}
+
+
 
 IHTMLDocument2 *IEView::getDocument() {
 	HRESULT hr = S_OK;
