@@ -226,6 +226,10 @@ SOURCE="..\..\Miranda-IM\res\addcontact.ico"
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\addcontact.ico
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\res\addcontact.ico
 # End Source File
 # Begin Source File
@@ -235,6 +239,10 @@ SOURCE=.\res\Clock32.ico
 # Begin Source File
 
 SOURCE=.\res\Clock8.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\delete.ico
 # End Source File
 # Begin Source File
 
@@ -275,6 +283,10 @@ SOURCE="..\..\Miranda-IM\res\dropuser.cur"
 # Begin Source File
 
 SOURCE=..\..\src\res\dropuser.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\emptyblo.ico
 # End Source File
 # Begin Source File
 

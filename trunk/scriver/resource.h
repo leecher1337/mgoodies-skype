@@ -12,15 +12,17 @@
 #define IDI_CANCEL                      124
 #define IDI_SMILEY                      125
 #define IDI_TYPING                      126
-#define IDI_INCOMING                    127
-#define IDI_OUTGOING                    128
-#define IDI_NOTICE                      129
+#define IDI_UNICODEON                  	127
+#define IDI_UNICODEOFF                  128
+#define IDI_TIMESTAMP                   129
 
-#define IDI_TIMESTAMP                   130
-#define IDI_DOWNARROW                   131
-#define IDI_TIMESTAMP32                 132
-#define IDI_TYPING32                    133
-#define IDI_DOWNARROW32                 134
+#define IDI_INCOMING                    130
+#define IDI_OUTGOING                    131
+#define IDI_NOTICE                      132
+//#define IDI_DOWNARROW                   131
+#define IDI_TIMESTAMP32                 133
+#define IDI_TYPING32                    134
+//#define IDI_DOWNARROW32                 134
 #define IDI_HISTORY32                   135
 #define IDI_USERDETAILS32               136
 
@@ -52,6 +54,7 @@
 #define IDC_SHOWSTATUSCHANGES           1035
 #define IDC_GROUPMESSAGES               1036
 #define IDC_SAVEPERCONTACT              1037
+#define IDC_SAVESPLITTERPERCONTACT		1038
 #define IDC_LOADCOUNTN                  1039
 #define IDC_LOADCOUNTSPIN               1040
 #define IDC_SHOWINFOLINE                1041
@@ -105,7 +108,7 @@
 #define IDM_COPYLINK                    40016
 
 // Next default values for new objects
-// 
+//
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        285

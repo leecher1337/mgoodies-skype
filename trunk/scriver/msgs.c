@@ -292,8 +292,7 @@ static int IconsChanged(WPARAM wParam, LPARAM lParam)
 static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam) 
 {
 	LoadGlobalIcons();
-	IconsChanged(wParam, lParam);
-	return 0;
+	return IconsChanged(wParam, lParam);
 }
 
 

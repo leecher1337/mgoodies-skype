@@ -54,6 +54,16 @@ struct LogStreamData
 	struct MessageWindowData *dlgDat;
 };
 
+
+static int safe_wcslen(wchar_t *msg, int maxLen) {
+    int i;
+	for (i = 0; i < maxLen; i++) {
+		if (msg[i] == (wchar_t)0)
+			return i;
+	}
+	return 0;
+}
+
 static void AppendToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, const char *fmt, ...)
 {
 	va_list va;
@@ -412,13 +422,24 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 #if defined( _UNICODE )
 			{
 				int msglen = strlen((char *) dbei.pBlob) + 1;
-				if (msglen != (int) dbei.cbBlob)
-					msg = (TCHAR *) & dbei.pBlob[msglen];
-				else {
-					msg = (TCHAR *) alloca(sizeof(TCHAR) * msglen); // TODO: alloca sucks, fixed that !
+				if (msglen != (int) dbei.cbBlob && !(dat->flags & SMF_DISABLE_UNICODE)) {
+					int wlen;
+					msg = (TCHAR *) &dbei.pBlob[msglen];
+					wlen = safe_wcslen(msg, (dbei.cbBlob - msglen) / 2);
+					if (wlen > 0 && wlen < msglen) {
+						AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
+					} else {
+						msg = (TCHAR *) malloc(sizeof(TCHAR) * msglen); 
+						MultiByteToWideChar(CP_ACP, 0, (char *) dbei.pBlob, -1, msg, msglen);
+						AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
+						free(msg);
+					}
+				} else {
+					msg = (TCHAR *) malloc(sizeof(TCHAR) * msglen); 
 					MultiByteToWideChar(CP_ACP, 0, (char *) dbei.pBlob, -1, msg, msglen);
+					AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
+					free(msg);
 				}
-				AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
 			}
 #else
 			msg = (BYTE *) dbei.pBlob;
@@ -519,7 +540,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	if (ServiceExists(MS_IEVIEW_EVENT)) {
 		IEVIEWEVENT event;
 		event.cbSize = sizeof(IEVIEWEVENT);
-		event.dwFlags = (dat->flags & SMF_RTL) ? IEEF_RTL : 0;
+		event.dwFlags = ((dat->flags & SMF_RTL) ? IEEF_RTL : 0) | ((dat->flags & SMF_DISABLE_UNICODE) ? IEEF_NO_UNICODE : 0); 
 		event.hwnd = dat->hwndLog;
 		event.hContact = dat->hContact;
 		if (!fAppend) {
