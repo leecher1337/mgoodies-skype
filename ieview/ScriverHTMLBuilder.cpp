@@ -229,6 +229,10 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_GROUPMESSAGES, 0) ? SMF_LOG_GROUPMESSAGES : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_MARKFOLLOWUPS, 0) ? SMF_LOG_MARKFOLLOWUPS : 0;
 
+	int cp = CP_ACP;
+	if (event->cbSize == sizeof(IEVIEWEVENT)) {
+		cp = event->codepage;
+	}
 	char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
 	HANDLE hDbEvent = event->hDbEventFirst;
 	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
@@ -285,10 +289,10 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 					if (wlen > 0 && wlen < aLen) {
                         szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, true);
 					} else {
-                        szText = encodeUTF8((char *)dbei.pBlob, szProto, true);
+                        szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, true);
 					}
 				} else {
-                	szText = encodeUTF8((char *)dbei.pBlob, szProto, true);
+                	szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, true);
 				}
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
                 szText = encodeUTF8((char *)dbei.pBlob, NULL, false);

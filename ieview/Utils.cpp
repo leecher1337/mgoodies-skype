@@ -105,6 +105,16 @@ wchar_t *Utils::convertToWCS(const char *a) {
 	return NULL;
 }
 
+wchar_t *Utils::convertToWCS(const char *a, int cp) {
+	if (a!=NULL) {
+		int len = strlen(a)+1;
+		wchar_t *b = new wchar_t[len];
+		MultiByteToWideChar(cp, 0, a, len, b, len);
+		return b;
+	}
+	return NULL;
+}
+
 char *Utils::convertToString(const wchar_t *a) {
 	if (a!=NULL) {
 		int len = wcslen(a)+1;

@@ -256,7 +256,10 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, "emptylinefix", 1) ? MWF_SHOW_EMPTYLINEFIX : 0;
 	dwFlags2 |= MWF_SHOW_MICROLF;
     dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, "followupts", 1) ? MWF_SHOW_MARKFOLLOWUPTS : 0;
-
+	int cp = CP_ACP;
+	if (event->cbSize == sizeof(IEVIEWEVENT)) {
+		cp = event->codepage;
+	}
 	char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
 	HANDLE hDbEvent = event->hDbEventFirst;
 	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
@@ -312,10 +315,10 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 					if (wlen > 0 && wlen < aLen) {
                         szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, true);
 					} else {
-                        szText = encodeUTF8((char *)dbei.pBlob, szProto, true);
+                        szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, true);
 					}
 				} else {
-                	szText = encodeUTF8((char *)dbei.pBlob, szProto, true);
+                	szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, true);
 				}
 			} else if (dbei.eventType == EVENTTYPE_FILE) {
                 szText = encodeUTF8((char *)dbei.pBlob + sizeof(DWORD), NULL, false);

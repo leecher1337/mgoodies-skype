@@ -599,3 +599,10 @@ char * HTMLBuilder::encodeUTF8(const char *text, const char *proto, bool useSmil
 	return outputStr;
 }
 
+char * HTMLBuilder::encodeUTF8(const char *text, int cp, const char *proto, bool useSmiley) {
+	char * outputStr;
+	wchar_t *wtext = Utils::convertToWCS(text, cp);
+	outputStr = encodeUTF8(wtext, proto, useSmiley);
+	delete wtext;
+	return outputStr;
+}
