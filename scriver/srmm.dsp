@@ -378,6 +378,14 @@ SOURCE=.\res\typingon.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\unicodeoff.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\unicodeon.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\res\unknown.bmp
 # End Source File
 # Begin Source File
