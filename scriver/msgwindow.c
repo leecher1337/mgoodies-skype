@@ -115,7 +115,7 @@ static void AddChild(struct ParentWindowData *dat, struct MessageWindowData * md
 	ActivateChild(dat, mdat->hwnd);
 }
 
-static HWND RemoveChild(struct ParentWindowData *dat, HWND child) 
+static void RemoveChild(struct ParentWindowData *dat, HWND child) 
 {
 	int i;
 	for (i=0;i<dat->childrenCount;i++) {
@@ -130,48 +130,31 @@ static HWND RemoveChild(struct ParentWindowData *dat, HWND child)
 		TabCtrl_DeleteItem(dat->hwndTabs, i);
 	}
 	if (dat->childrenCount > 0) {
-		TCITEM tci;
 		if (i==dat->childrenCount) i--;
-		TabCtrl_SetCurSel(dat->hwndTabs, i);
-		tci.mask = TCIF_PARAM;
-		if (TabCtrl_GetItem(dat->hwndTabs, i, &tci)) {
-			struct MessageWindowData * mdat = (struct MessageWindowData *) tci.lParam;
-			ActivateChild(dat, dat->children[i%dat->childrenCount]);
-		}
+		ActivateChild(dat, dat->children[i]);
 	}
-	return NULL;
-
 }
 
-/*
-
-int ActivateTabFromHWND(HWND hwndTab, HWND hwnd)
-{
-    NMHDR nmhdr;
-    int iItem = GetTabIndexFromHWND(hwndTab, hwnd);
-    if (iItem >= 0) {
-        TabCtrl_SetCurSel(hwndTab, iItem);
-        ZeroMemory((void *)&nmhdr, sizeof(nmhdr));
-        nmhdr.code = TCN_SELCHANGE;
-        SendMessage(GetParent(hwndTab), WM_NOTIFY, 0, (LPARAM) &nmhdr);     // do it via a WM_NOTIFY / TCN_SELCHANGE to simulate user-activation
-        return iItem;
-    }
-    return -1;
-}
-
-*/
-
-static void BroadCastChildren(struct ParentWindowData *dat, UINT message, WPARAM wParam, LPARAM lParam) 
+static void ActivateNextChild(struct ParentWindowData *dat, HWND child) 
 {
 	int i;
 	for (i=0;i<dat->childrenCount;i++) {
-		SendMessage(dat->children[i], message, wParam, lParam);
+		if (dat->children[i] == child) {
+			ActivateChild(dat, dat->children[(i+1)%dat->childrenCount]);
+			break;
+		}
 	}
 }
 
-static int ParentDialogResize(HWND hwndDlg, LPARAM lParam, UTILRESIZECONTROL * urc) 
+static void ActivatePrevChild(struct ParentWindowData *dat, HWND child) 
 {
-	return RD_ANCHORX_LEFT | RD_ANCHORY_TOP;
+	int i;
+	for (i=0;i<dat->childrenCount;i++) {
+		if (dat->children[i] == child) {
+			ActivateChild(dat, dat->children[(dat->childrenCount+i-1)%dat->childrenCount]);
+			break;
+		}
+	}
 }
 
 
@@ -225,10 +208,16 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		{
 			MINMAXINFO *mmi = (MINMAXINFO *) lParam;
 			RECT rc, rcWindow;
+			int i, minW = 240, minH = 80;
 			GetWindowRect(hwndDlg, &rcWindow);
 			GetChildWindowRect(dat, &rc);
-			mmi->ptMinTrackSize.x = 240;
-			mmi->ptMinTrackSize.y = 81 + (rcWindow.bottom - rcWindow.top) - (rc.bottom - rc.top);
+			for (i=0;i<dat->childrenCount;i++) {
+				SendMessage(dat->children[i], WM_GETMINMAXINFO, 0, lParam);
+				if (i==0 || mmi->ptMinTrackSize.x > minW) minW = mmi->ptMinTrackSize.x;
+				if (i==0 || mmi->ptMinTrackSize.y > minH) minH = mmi->ptMinTrackSize.y;
+			}
+			mmi->ptMinTrackSize.x = minW;
+			mmi->ptMinTrackSize.y = minH + (rcWindow.bottom - rcWindow.top) - (rc.bottom - rc.top);
 			return FALSE;
 		}
 
@@ -357,7 +346,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 
 		case DM_REMOVECHILD:
 			{
-				HWND nextChild = RemoveChild(dat, (HWND) lParam);
+				RemoveChild(dat, (HWND) lParam);
 				if (dat->childrenCount == 0) {
 					DestroyWindow(hwndDlg);
 				} else {
@@ -374,6 +363,12 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			if((HWND) lParam != dat->hwndActive) {
 				ActivateChild(dat, (HWND) lParam);
 			}
+			return TRUE;
+		case DM_ACTIVATEPREV:
+			ActivatePrevChild(dat, (HWND) lParam);
+			return TRUE;
+		case DM_ACTIVATENEXT:
+			ActivateNextChild(dat, (HWND) lParam);
 			return TRUE;
 		case DM_UPDATETITLE:
 		{

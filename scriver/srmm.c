@@ -35,12 +35,12 @@ PLUGININFO pluginInfo = {
 #else
 	"Send/Receive Messages",
 #endif
-	PLUGIN_MAKE_VERSION(2, 2, 1, 0),
+	PLUGIN_MAKE_VERSION(2, 2, 1, 1),
 	"Scriver - send and receive instant messages",
-	"Miranda IM Development Team (SRMM), Piotr Piastucki (Scriver mod)",
+	"Miranda IM Development Team (SRMM), Piotr Piastucki (Scriver)",
 	"the_leech@users.berlios.de",
 	"Copyright © 2000-2005 Miranda ICQ/IM Project, Piotr Piastucki",
-	"http://mtlen.berlios.de",
+	"http://developer.berlios.de/projects/mgoodies",
 	0,
 	DEFMOD_SRMESSAGE            // replace internal version (if any)
 };

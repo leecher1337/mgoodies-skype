@@ -55,6 +55,7 @@ struct NewMessageWindowLParam
 struct MessageSendInfo
 {
 	HANDLE hSendId;
+	char *sendBuffer;
 };
 
 
@@ -73,12 +74,14 @@ struct MessageWindowData
 	int splitterPos, originalSplitterPos;
 	char *sendBuffer;
 	SIZE minEditBoxSize;
+	SIZE minTopSize;
 	RECT minEditInit;
+	int	minLogBoxHeight;
+	int	minEditBoxHeight;
 	int toolbarHeight;
 	int windowWasCascaded;
 	int nFlash;
 	int nFlashMax;
-	int nLabelRight;
 	int nTypeSecs;
 	int nTypeMode;
 	int avatarWidth;
@@ -113,10 +116,8 @@ struct MessageWindowData
 #define DM_UPDATEWINICON     (WM_USER+21)
 #define DM_UPDATELASTMESSAGE (WM_USER+22)
 #define DM_USERNAMETOCLIP    (WM_USER+23)
-#define DM_AVATARSIZECHANGE  (WM_USER+24)
 #define DM_AVATARCALCSIZE    (WM_USER+25)
 #define DM_GETAVATAR         (WM_USER+26)
-#define DM_UPDATESIZEBAR     (WM_USER+27)
 #define HM_AVATARACK         (WM_USER+28)
 #define HM_ACKEVENT          (WM_USER+29)
 
@@ -124,6 +125,8 @@ struct MessageWindowData
 #define DM_REMOVECHILD		 (WM_USER+31)
 #define DM_ACTIVATECHILD	 (WM_USER+32)
 #define DM_UPDATESTATUSBAR	 (WM_USER+35)
+#define DM_ACTIVATEPREV		 (WM_USER+40)
+#define DM_ACTIVATENEXT		 (WM_USER+41)
 
 #define EVENTTYPE_STATUSCHANGE 25368
 

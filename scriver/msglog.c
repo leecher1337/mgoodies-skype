@@ -332,7 +332,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 	if (prefixParaBreak) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 	}
- 	if ((1) && dbei.flags == LOWORD(dat->lastEventType)
+ 	if ((g_dat->flags & SMF_GROUPMESSAGES) && dbei.flags == LOWORD(dat->lastEventType)
 	  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(dat->lastEventType) == EVENTTYPE_MESSAGE
 	  && ((dbei.timestamp - dat->lastEventTime) < 86400)) {
 		isGroupBreak = FALSE;
