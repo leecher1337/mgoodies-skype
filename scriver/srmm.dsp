@@ -358,6 +358,14 @@ SOURCE=.\res\Typing8.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\typingoff.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\typingon.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\res\unknown.bmp
 # End Source File
 # Begin Source File

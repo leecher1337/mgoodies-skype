@@ -93,11 +93,13 @@ static void ShowMultipleControls(HWND hwndDlg, const UINT * controls, int cContr
 static void SetDialogToType(HWND hwndDlg)
 {
 	struct MessageWindowData *dat;
+	struct ParentWindowData *pdat;
 	WINDOWPLACEMENT pl = { 0 };
 
 	dat = (struct MessageWindowData *) GetWindowLong(hwndDlg, GWL_USERDATA);
+	pdat = (struct ParentWindowData *) GetWindowLong(GetParent(hwndDlg), GWL_USERDATA);
 	if (dat->hContact) {
-		ShowMultipleControls(hwndDlg, buttonLineControls, sizeof(buttonLineControls) / sizeof(buttonLineControls[0]), (g_dat->flags&SMF_SHOWBTNS) ? SW_SHOW : SW_HIDE);
+		ShowMultipleControls(hwndDlg, buttonLineControls, sizeof(buttonLineControls) / sizeof(buttonLineControls[0]), (pdat->flags&SMF_SHOWBTNS) ? SW_SHOW : SW_HIDE);
 		if (!DBGetContactSettingByte(dat->hContact, "CList", "NotOnList", 0))
 			ShowWindow(GetDlgItem(hwndDlg, IDC_ADD), SW_HIDE);
 	}
@@ -227,8 +229,12 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 			SendMessage(GetParent(hwnd), DM_CLEARLOG, 0, 0);
 			return 0;
 		}
+		if (wParam == 20 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl+shift-t
+			SendMessage(GetParent(GetParent(hwnd)), DM_SWITCHTOOLBAR, 0, 0);
+			return 0;
+		}
 		if (wParam == 19 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl+shift-s
-			SendMessage(GetParent(hwnd), DM_SWITCHSTATUSBAR, 0, 0);
+			SendMessage(GetParent(GetParent(hwnd)), DM_SWITCHSTATUSBAR, 0, 0);
 			return 0;
 		}
 		if (wParam == 18 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl+shift-r
@@ -431,7 +437,8 @@ static LRESULT CALLBACK SplitterSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
 
 static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int w, int h) {
 	HDWP hdwp;
-	int vSplitterPos = 0, hSplitterPos = dat->splitterPos, toolbarHeight = g_dat->flags&SMF_SHOWBTNS ? dat->toolbarHeight : 0;
+	struct ParentWindowData *pdat = (struct ParentWindowData *) GetWindowLong(GetParent(hwndDlg), GWL_USERDATA);
+	int vSplitterPos = 0, hSplitterPos = dat->splitterPos, toolbarHeight = pdat->flags&SMF_SHOWBTNS ? dat->toolbarHeight : 0;
 	int hSplitterMinTop = toolbarHeight + dat->minLogBoxHeight, hSplitterMinBottom = dat->minEditBoxHeight;
 
 	if (h-hSplitterPos < hSplitterMinTop) {
@@ -820,6 +827,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	case DM_AVATARCALCSIZE:
 	{
 		BITMAP bminfo;
+		struct ParentWindowData *pdat;
+		pdat = (struct ParentWindowData *) GetWindowLong(GetParent(hwndDlg), GWL_USERDATA);
 		dat->avatarWidth = 0;
 		dat->avatarHeight = 0;
 		if (dat->avatarPic==0||!(g_dat->flags&SMF_AVATAR)) {
@@ -827,7 +836,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			return 0;
 		}
 		GetObject(dat->avatarPic, sizeof(bminfo), &bminfo);
-		dat->limitAvatarH = dat->splitterPos + ((g_dat->flags&SMF_SHOWBTNS) ? dat->toolbarHeight : 0);//- 3;
+		dat->limitAvatarH = dat->splitterPos + ((pdat->flags&SMF_SHOWBTNS) ? dat->toolbarHeight : 0);//- 3;
 		{
 			RECT rc;
 			double aspect = 0;
@@ -1028,7 +1037,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			break;
 		}
 	case DM_SWITCHSTATUSBAR:
-		SendMessage(dat->hwndParent, DM_SWITCHSTATUSBAR, 0, 0);
+//		SendMessage(dat->hwndParent, DM_SWITCHSTATUSBAR, 0, 0);
+		break;
+	case DM_SWITCHTOOLBAR:
+		SetDialogToType(hwndDlg);
+//		SendMessage(dat->hwndParent, DM_SWITCHTOOLBAR, 0, 0);
 		break;
 	case DM_SWITCHRTL:
 		{
