@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define IEWM_SRMM     0             // regular SRMM
 #define IEWM_TABSRMM  1             // TabSRMM-compatible HTML builder
-#define IEWM_HTML     2             // HTML 
+#define IEWM_HTML     2             // HTML
 #define IEWM_SCRIVER  3             // HTML
 
 typedef struct {
@@ -53,8 +53,9 @@ typedef struct {
 
 #define IEE_LOG_EVENTS  1           // log specified number of DB events
 #define IEE_CLEAR_LOG	2           // clear log
+
 #define IEEF_RTL        1           // turn on RTL support
-#define IEEF_NO_UNICODE 2           // turn on RTL support
+#define IEEF_NO_UNICODE 2           // disable Unicode support
 
 typedef struct {
 	int			cbSize;             // size of the strusture
@@ -67,7 +68,7 @@ typedef struct {
 } IEVIEWEVENT;
 
 
-#define IEN_SETTINGS_CHANGED	1            
+#define IEN_SETTINGS_CHANGED	1
 
 typedef struct {
 	int			cbSize;             // size of the strusture
