@@ -651,37 +651,33 @@ void Options::init() {
         strcpy(bkgFilename, "");
 	}
 	smileyFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_SMILEYSFLAGS, 1);
-	if (smileyFlags & Options::SMILEY_ENABLED) {
-		if (smileyFlags & Options::SMILEY_PROTOCOLS) {
-			PROTOCOLDESCRIPTOR **protoList;
-			int protoCount;
-			CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&protoCount, (LPARAM)&protoList);
-			for (int i = 0; i < protoCount; i++) {
-				if (protoList[i]->type == PROTOTYPE_PROTOCOL) {
-					char dbName[1024];
-					strcpy(dbName, protoList[i]->szName);
-					strcat(dbName, "SmileyFile");
-					if (!DBGetContactSetting(NULL,  muccModuleName, dbName, &dbv)) {
-					   	char tmpPath[MAX_PATH];
-		            	strcpy(tmpPath, dbv.pszVal);
-		            	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
-		           	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-		           		}
-						SmileyMap::loadLibrary(protoList[i]->szName, tmpPath);
-						DBFreeVariant(&dbv);
-					}
-				}
+	PROTOCOLDESCRIPTOR **protoList;
+	int protoCount;
+	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&protoCount, (LPARAM)&protoList);
+	for (int i = 0; i < protoCount; i++) {
+		if (protoList[i]->type == PROTOTYPE_PROTOCOL) {
+			char dbName[1024];
+			strcpy(dbName, protoList[i]->szName);
+			strcat(dbName, "SmileyFile");
+			if (!DBGetContactSetting(NULL,  muccModuleName, dbName, &dbv)) {
+			   	char tmpPath[MAX_PATH];
+            	strcpy(tmpPath, dbv.pszVal);
+            	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
+           	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+           		}
+				SmileyMap::loadLibrary(protoList[i]->szName, tmpPath);
+				DBFreeVariant(&dbv);
 			}
 		}
-		if (!DBGetContactSetting(NULL,  muccModuleName, "SmileyFile", &dbv)) {
-	    	char tmpPath[MAX_PATH];
-	    	strcpy(tmpPath, dbv.pszVal);
-	    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
-	   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-	   		}
-			SmileyMap::loadLibrary("", tmpPath);
-			DBFreeVariant(&dbv);
-		}
+	}
+	if (!DBGetContactSetting(NULL,  muccModuleName, "SmileyFile", &dbv)) {
+    	char tmpPath[MAX_PATH];
+		strcpy(tmpPath, dbv.pszVal);
+    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
+   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+   		}
+		SmileyMap::loadLibrary("", tmpPath);
+		DBFreeVariant(&dbv);
 	}
 	externalCSSFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_EXTERNALCSSFLAGS, FALSE);
 	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_EXTERNALCSSFILE, &dbv)) {
