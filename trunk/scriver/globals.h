@@ -36,6 +36,8 @@
 #define SMF_ICON_INCOMING	 8
 #define SMF_ICON_OUTGOING	 9
 #define SMF_ICON_NOTICE		 10
+#define SMF_ICON_TYPINGON	 11
+#define SMF_ICON_TYPINGOFF	 12
 
 struct GlobalMessageData
 {

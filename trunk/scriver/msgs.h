@@ -50,6 +50,7 @@ struct ParentWindowData
 	int		nFlashMax;
 	int		bMinimized;
 	int		windowWasCascaded;
+	int		nTypeMode;
 	DWORD	flags;		
 };
 

@@ -82,8 +82,18 @@ void SetIcoLibIcons() {
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		sid.pszName = (char *) "scriver_TYPING";
 		sid.iDefaultIndex = 6;//IDI_TYPING;
-		sid.pszDescription = Translate("Typing icon");
+		sid.pszDescription = Translate("User is typing");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		sid.pszName = (char *) "scriver_TYPINGON";
+		sid.iDefaultIndex = 7;//IDI_TYPING;
+		sid.pszDescription = Translate("Typing on");
+//		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		sid.pszName = (char *) "scriver_TYPINGOFF";
+		sid.iDefaultIndex = 8;//IDI_TYPING;
+		sid.pszDescription = Translate("Typing off");
+//		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
 		sid.pszName = (char *) "scriver_INCOMING";
 		sid.iDefaultIndex = 7;//IDI_INCOMING;
 		sid.pszDescription = Translate("Incoming message");
@@ -113,6 +123,9 @@ void LoadGlobalIcons() {
 //		g_dat->hIcons[SMF_ICON_INCOMING] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_INCOMING");
 //		g_dat->hIcons[SMF_ICON_OUTGOING] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_OUTGOING");
 //		g_dat->hIcons[SMF_ICON_NOTICE] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_NOTICE");
+//		g_dat->hIcons[SMF_ICON_TYPINGON] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_TYPINGON");
+//		g_dat->hIcons[SMF_ICON_TYPINGOFF] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_TYPINGOFF");
+
 		g_dat->hIcons[SMF_ICON_INCOMING] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_INCOMING));
 		g_dat->hIcons[SMF_ICON_OUTGOING] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_OUTGOING));
 		g_dat->hIcons[SMF_ICON_NOTICE] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_NOTICE));
@@ -121,10 +134,12 @@ void LoadGlobalIcons() {
 		g_dat->hIcons[SMF_ICON_USERDETAILS] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_USERDETAILS32 : IDI_USERDETAILS), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 		g_dat->hIcons[SMF_ICON_HISTORY] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_HISTORY32 : IDI_HISTORY), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 //		g_dat->hIcons[SMF_ICON_ARROW] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_DOWNARROW32 : IDI_DOWNARROW), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-		g_dat->hIcons[SMF_ICON_TYPING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_TYPING32 : IDI_TYPING), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 		g_dat->hIcons[SMF_ICON_SEND] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_SEND : IDI_SEND), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 		g_dat->hIcons[SMF_ICON_CANCEL] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_CANCEL : IDI_CANCEL), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 		g_dat->hIcons[SMF_ICON_SMILEY] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_SMILEY : IDI_SMILEY), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_TYPING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_TYPING32 : IDI_TYPING), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+//		g_dat->hIcons[SMF_ICON_TYPINGON] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_TYPINGON : IDI_TYPINGON), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+//		g_dat->hIcons[SMF_ICON_TYPINGOFF] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_TYPINGOFF : IDI_TYPINGOFF), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 		g_dat->hIcons[SMF_ICON_INCOMING] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_INCOMING));
 		g_dat->hIcons[SMF_ICON_OUTGOING] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_OUTGOING));
 		g_dat->hIcons[SMF_ICON_NOTICE] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_NOTICE));

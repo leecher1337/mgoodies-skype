@@ -544,7 +544,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			} 
 			break;
 		}
-		case DM_OPTIONSAPPLIED:
+	case DM_OPTIONSAPPLIED:
 		{
 			dat->flags = g_dat->flags;
 			if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
@@ -561,15 +561,25 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			SendMessage(hwndDlg, WM_SIZE, 0, 0);
 			break;
 		}
-		case DM_SWITCHSTATUSBAR:
-			dat->flags = dat->flags ^ SMF_SHOWSTATUSBAR;
-			if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
-				ShowWindow(dat->hwndStatus, SW_HIDE);
-			} else {
-				ShowWindow(dat->hwndStatus, SW_SHOW);
+	case DM_SWITCHSTATUSBAR:
+		dat->flags ^= SMF_SHOWSTATUSBAR;
+		if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
+			ShowWindow(dat->hwndStatus, SW_HIDE);
+		} else {
+			ShowWindow(dat->hwndStatus, SW_SHOW);
+		}
+		SendMessage(hwndDlg, WM_SIZE, 0, 0);
+		break;
+	case DM_SWITCHTOOLBAR:
+		{
+			int i;
+			dat->flags ^= SMF_SHOWBTNS;
+			for (i=0;i<dat->childrenCount;i++) {
+				SendMessage(dat->children[i], DM_SWITCHTOOLBAR, 0, 0);
 			}
 			SendMessage(hwndDlg, WM_SIZE, 0, 0);
-			break;
+		}
+		break;
 	case DM_CASCADENEWWINDOW:
 		if ((HWND) wParam == hwndDlg)
 			break;
