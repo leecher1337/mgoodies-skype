@@ -94,8 +94,8 @@ struct MessageWindowData
 	int	minEditBoxHeight;
 	int toolbarHeight;
 	int windowWasCascaded;
-	int nFlash;
-	int nFlashMax;
+//	int nFlash;
+//	int nFlashMax;
 	int nTypeSecs;
 	int nTypeMode;
 	int avatarWidth;
@@ -115,6 +115,7 @@ struct MessageWindowData
 	int    	lastEventType;
 	DWORD	flags;		
 	int		messagesInProgress;
+	int		codePage;
 };
 
 #define HM_EVENTSENT         (WM_USER+10)
@@ -151,7 +152,9 @@ struct MessageWindowData
 #define DM_SWITCHTITLEBAR	 (WM_USER+49)
 #define DM_SWITCHRTL		 (WM_USER+50)
 #define DM_SWITCHUNICODE	 (WM_USER+51)
-#define DM_MESSAGESENDING	 (WM_USER+52)
+#define DM_GETCODEPAGE		 (WM_USER+52)
+#define DM_SETCODEPAGE		 (WM_USER+53)
+#define DM_MESSAGESENDING	 (WM_USER+54)
 
 
 #define EVENTTYPE_STATUSCHANGE 25368

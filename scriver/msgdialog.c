@@ -676,7 +676,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "DisableUnicode", (BYTE) 0)) {
 				dat->flags |= SMF_DISABLE_UNICODE;
 			}
-
+			dat->codePage = DBGetContactSettingWord(dat->hContact, SRMMMOD, "CodePage", (WORD) CP_ACP);
 //			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
 			{
 				RECT rc;
@@ -1121,12 +1121,16 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			SendMessage(dat->hwndParent, DM_UPDATETITLE, (WPARAM)hwndDlg, (LPARAM)dat);
 			break;
 		}
-	case DM_SWITCHSTATUSBAR:
-//		SendMessage(dat->hwndParent, DM_SWITCHSTATUSBAR, 0, 0);
-		break;
 	case DM_SWITCHTOOLBAR:
 		SetDialogToType(hwndDlg);
 //		SendMessage(dat->hwndParent, DM_SWITCHTOOLBAR, 0, 0);
+		break;
+	case DM_GETCODEPAGE:
+		SetWindowLong(hwndDlg, DWL_MSGRESULT, dat->codePage);
+		return TRUE;
+	case DM_SETCODEPAGE:
+		dat->codePage = (int) lParam;
+		SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 		break;
 	case DM_SWITCHUNICODE:
 		dat->flags ^= SMF_DISABLE_UNICODE;
@@ -1545,9 +1549,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				smaddInfo.Direction = 0;
 				smaddInfo.xPosition = rc.left;
 				smaddInfo.yPosition = rc.top + 24;
-				if (ServiceExists(MS_IEVIEW_WINDOW)) {
+				if (ServiceExists(MS_IEVIEW_SHOWSMILEYSELECTION)) {
 					CallService(MS_IEVIEW_SHOWSMILEYSELECTION, 0, (LPARAM) &smaddInfo);
-				} else {
+				} else if (ServiceExists(MS_SMILEYADD_SHOWSELECTION)) {
 					CallService(MS_SMILEYADD_SHOWSELECTION, 0, (LPARAM) &smaddInfo);
 				}
 			}
@@ -1873,6 +1877,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 		DBWriteContactSettingByte(dat->hContact, SRMMMOD, "UseRTL", (BYTE) ((dat->flags & SMF_RTL) ? 1 : 0));
 		DBWriteContactSettingByte(dat->hContact, SRMMMOD, "DisableUnicode", (BYTE) ((dat->flags & SMF_DISABLE_UNICODE) ? 1 : 0));
+		DBWriteContactSettingWord(dat->hContact, SRMMMOD, "CodePage", (WORD) dat->codePage);
 		{
 			HANDLE hContact;
 			if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVESPLITTERPERCONTACT, SRMSGDEFSET_SAVESPLITTERPERCONTACT))

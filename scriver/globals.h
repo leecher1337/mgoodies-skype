@@ -59,6 +59,7 @@ struct GlobalMessageData
 	int		limitAvatarMinH;
 	int		activeAlpha;
 	int		inactiveAlpha;
+	HMENU	hMenuANSIEncoding;
 	HIMAGELIST hIconList;
 };
 
