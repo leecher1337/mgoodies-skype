@@ -38,6 +38,7 @@ struct ErrorWindowData
 struct ParentWindowData
 {
 	HWND	hwnd;
+	HANDLE	hContact;
 	HWND *	children;
 	int	    childrenCount;
 	HWND	hwndActive;
@@ -48,6 +49,7 @@ struct ParentWindowData
 	int		nFlash;
 	int		nFlashMax;
 	int		bMinimized;
+	int		windowWasCascaded;
 	DWORD	flags;		
 };
 
@@ -123,6 +125,8 @@ struct MessageWindowData
 #define DM_UPDATEWINICON     (WM_USER+21)
 #define DM_UPDATELASTMESSAGE (WM_USER+22)
 #define DM_USERNAMETOCLIP    (WM_USER+23)
+#define DM_CHANGEICONS		 (WM_USER+24)
+
 #define DM_AVATARCALCSIZE    (WM_USER+25)
 #define DM_GETAVATAR         (WM_USER+26)
 #define HM_AVATARACK         (WM_USER+28)
@@ -198,6 +202,8 @@ extern const int msgDlgFontCount;
 #define SRMSGDEFSET_AUTOCLOSE      0
 #define SRMSGSET_SAVEPERCONTACT    "SavePerContact"
 #define SRMSGDEFSET_SAVEPERCONTACT 0
+#define SRMSGSET_SAVESPLITTERPERCONTACT "SaveSplitterPerContact"
+#define SRMSGDEFSET_SAVESPLITTERPERCONTACT 0
 #define SRMSGSET_CASCADE           "Cascade"
 #define SRMSGDEFSET_CASCADE        1
 #define SRMSGSET_SENDONENTER       "SendOnEnter"

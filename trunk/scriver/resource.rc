@@ -28,12 +28,12 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPT_MSGDLG DIALOGEX 0, 0, 312, 231
+IDD_OPT_MSGDLG DIALOGEX 0, 0, 312, 234
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        "Message Window Options",IDC_STATIC,0,0,310,228
+    GROUPBOX        "Message Window Options",IDC_STATIC,0,0,310,231
     CONTROL         "Automatically pop up the window when a message is received",
                     IDC_AUTOPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,16,
                     300,10
@@ -46,36 +46,36 @@ BEGIN
                     273,10
     CONTROL         "Save the window size and location individually for each contact",
                     IDC_SAVEPERCONTACT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    8,90,300,10
+                    8,99,300,10
     CONTROL         "Cascade new windows",IDC_CASCADE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,102,136,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,88,136,10
     CONTROL         "Use tabbed mode",IDC_USETABS,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,8,64,135,10
     CONTROL         "Show status bar",IDC_SHOWSTATUSBAR,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,138,138,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,151,138,10
     CONTROL         "Show toolbar ",IDC_SHOWBUTTONLINE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,148,138,137,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,148,151,137,10
     CONTROL         "Send message on double 'Enter'",IDC_SENDONDBLENTER,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,178,137,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,191,137,10
     CONTROL         "Send message on 'Enter'",IDC_SENDONENTER,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,7,191,137,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,204,137,10
     CONTROL         "Tabs at bottom",IDC_TABSATBOTTOM,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,22,76,227,10
     LTEXT           "Show warning when message has not been received after",
-                    IDC_STATIC,8,203,211,8
-    EDITTEXT        IDC_SECONDS,223,201,25,12,ES_AUTOHSCROLL
-    LTEXT           "seconds.",IDC_STATIC,253,203,44,8
+                    IDC_STATIC,8,216,211,8
+    EDITTEXT        IDC_SECONDS,223,214,25,12,ES_AUTOHSCROLL
+    LTEXT           "seconds.",IDC_STATIC,253,216,44,8
     CONTROL         "Support control up/down in message area to show previously sent messages",
                     IDC_CTRLSUPPORT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,
-                    114,298,10
+                    127,298,10
     CONTROL         "Delete temporary contacts when closing message window",
-                    IDC_DELTEMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,126,
+                    IDC_DELTEMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,139,
                     287,10
     CONTROL         "Enable avatar support in the message window",
                     IDC_AVATARSUPPORT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    8,150,279,10
+                    8,163,279,10
     CONTROL         "Limit avatar height to ",IDC_LIMITAVATARH,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,22,164,106,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,22,177,106,10
 END
 
 IDD_MSGSENDERROR DIALOG DISCARDABLE  0, 0, 187, 97
@@ -235,7 +235,7 @@ BEGIN
         VERTGUIDE, 148
         VERTGUIDE, 300
         VERTGUIDE, 310
-        BOTTOMMARGIN, 228
+        BOTTOMMARGIN, 231
     END
 
     IDD_MSGSENDERROR, DIALOG

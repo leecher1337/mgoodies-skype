@@ -2,7 +2,8 @@
 
 extern HINSTANCE g_hInst;
 
-#define SB_CHAR_WIDTH		 45
+#define SB_CHAR_WIDTH		 35
+#define SB_SENDING_WIDTH 	 25
 #define SB_TYPING_WIDTH 	 35
 
 #define TIMERID_FLASHWND     1
@@ -172,6 +173,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			{
 				struct NewMessageWindowLParam *newData = (struct NewMessageWindowLParam *) lParam;
 				dat = (struct ParentWindowData *) malloc(sizeof(struct ParentWindowData));
+				dat->hContact = newData->hContact;
 				dat->nFlash = 0;
 				dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
 				dat->childrenCount = 0;
@@ -180,12 +182,19 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				dat->flags = g_dat->flags;
 				dat->hwndStatus = CreateWindowEx(0, STATUSCLASSNAME, NULL, WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwndDlg, NULL, g_hInst, NULL);
 				{
-					int statwidths[3];
+					int statwidths[4];
 					RECT rc;
 					SendMessage(dat->hwndStatus, SB_SETMINHEIGHT, GetSystemMetrics(SM_CYSMICON), 0);
 					GetWindowRect(dat->hwndStatus, &rc);
+					/*
+					statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_TYPING_WIDTH - SB_SENDING_WIDTH;
+					statwidths[1] = rc.right - rc.left - SB_TYPING_WIDTH - SB_SENDING_WIDTH; //rc.right - rc.left - SB_CHAR_WIDTH;
+					statwidths[2] = rc.right - rc.left - SB_TYPING_WIDTH; //rc.right - rc.left - SB_CHAR_WIDTH;
+					statwidths[3] = -1;
+					SendMessage(dat->hwndStatus, SB_SETPARTS, 4, (LPARAM) statwidths);
+					*/
 					statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_TYPING_WIDTH;
-					statwidths[1] = rc.right - rc.left - SB_TYPING_WIDTH; //rc.right - rc.left - SB_CHAR_WIDTH;
+					statwidths[1] = rc.right - rc.left - SB_TYPING_WIDTH;
 					statwidths[2] = -1;
 					SendMessage(dat->hwndStatus, SB_SETPARTS, 3, (LPARAM) statwidths);
 				}
@@ -202,14 +211,31 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 					ws |= TCS_BOTTOM;
 				}
 				SetWindowLong(dat->hwndTabs, GWL_STYLE, ws);
-				SetWindowPos(dat->hwndTabs, 0, 0, -10, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+				//SetWindowPos(dat->hwndTabs, 0, 0, -10, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 				if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
 					ShowWindow(dat->hwndStatus, SW_HIDE);
 				}
-				ShowWindow(hwndDlg, SW_HIDE);
+				if (g_dat->flags & SMF_USETABS) {
+					if (ScriverRestoreWindowPosition(hwndDlg, NULL, SRMMMOD, "", 0, SW_HIDE)) {
+						SetWindowPos(hwndDlg, 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE  | SWP_HIDEWINDOW);
+					}
+				} else {
+					int savePerContact = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT);
+					if (ScriverRestoreWindowPosition(hwndDlg, savePerContact ? dat->hContact : NULL, SRMMMOD, "", 0, SW_HIDE)) {
+					//if (Utils_RestoreWindowPosition(GetParent(hwndDlg), savePerContact ? dat->hContact : NULL, SRMMMOD, "")) {
+						if (savePerContact) {
+							if (ScriverRestoreWindowPosition(hwndDlg, NULL, SRMMMOD, "", RWPF_NOSIZE, SW_HIDE))
+						//	if (Utils_RestoreWindowPositionNoMove(GetParent(hwndDlg), NULL, SRMMMOD, ""))
+							SetWindowPos(GetParent(hwndDlg), 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE);
+						}
+						else
+							SetWindowPos(hwndDlg, 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE);
+					}
+					if (!savePerContact && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CASCADE, SRMSGDEFSET_CASCADE))
+						WindowList_Broadcast(g_dat->hParentWindowList, DM_CASCADENEWWINDOW, (WPARAM) hwndDlg, (LPARAM) & dat->windowWasCascaded);
+				}
 			}
 			return TRUE;
-
 		case WM_GETMINMAXINFO:
 		{
 			MINMAXINFO *mmi = (MINMAXINFO *) lParam;
@@ -243,10 +269,17 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				GetClientRect(hwndDlg, &rc);
 				rcStatus.top = rcStatus.bottom = 0;
 				if (dat->flags & SMF_SHOWSTATUSBAR) {
-					int statwidths[3];
+					int statwidths[4];
 					GetWindowRect(dat->hwndStatus, &rcStatus);
+					/*
+					statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_TYPING_WIDTH - SB_SENDING_WIDTH;
+					statwidths[1] = rc.right - rc.left - SB_TYPING_WIDTH - SB_SENDING_WIDTH; //rc.right - rc.left - SB_CHAR_WIDTH;
+					statwidths[2] = rc.right - rc.left - SB_TYPING_WIDTH; //rc.right - rc.left - SB_CHAR_WIDTH;
+					statwidths[3] = -1;
+					SendMessage(dat->hwndStatus, SB_SETPARTS, 4, (LPARAM) statwidths);
+					*/
 					statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_TYPING_WIDTH;
-					statwidths[1] = rc.right - rc.left - SB_TYPING_WIDTH; 
+					statwidths[1] = rc.right - rc.left - SB_TYPING_WIDTH;
 					statwidths[2] = -1;
 					SendMessage(dat->hwndStatus, SB_SETPARTS, 3, (LPARAM) statwidths);
 					SendMessage(dat->hwndStatus, WM_SIZE, 0, 0);
@@ -364,11 +397,22 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			SendMessage(dat->hwndActive, WM_ACTIVATE, WA_ACTIVE, 0);
 			break;
 		case WM_DESTROY:
-			g_dat->hParent = NULL;
-			SetWindowLong(hwndDlg, GWL_USERDATA, 0);
-			WindowList_Remove(g_dat->hParentWindowList, hwndDlg);
-			if (dat->children!=NULL) free (dat->children);
-			free(dat);
+			{
+				g_dat->hParent = NULL;
+				SetWindowLong(hwndDlg, GWL_USERDATA, 0);
+				WindowList_Remove(g_dat->hParentWindowList, hwndDlg);
+				if (dat->children!=NULL) free (dat->children);
+				free(dat);
+				if (g_dat->flags & SMF_USETABS) {
+					WINDOWPLACEMENT wp = { 0 };
+					wp.length = sizeof(wp);
+					GetWindowPlacement(hwndDlg, &wp);
+					DBWriteContactSettingDword(NULL, SRMMMOD, "x", wp.rcNormalPosition.left);
+					DBWriteContactSettingDword(NULL, SRMMMOD, "y", wp.rcNormalPosition.top);
+					DBWriteContactSettingDword(NULL, SRMMMOD, "width", wp.rcNormalPosition.right - wp.rcNormalPosition.left);
+					DBWriteContactSettingDword(NULL, SRMMMOD, "height", wp.rcNormalPosition.bottom - wp.rcNormalPosition.top);
+				}
+			}
 			break;
 		case DM_ERRORDECIDED:
 			break;
@@ -526,6 +570,21 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			}
 			SendMessage(hwndDlg, WM_SIZE, 0, 0);
 			break;
+	case DM_CASCADENEWWINDOW:
+		if ((HWND) wParam == hwndDlg)
+			break;
+		{
+			RECT rcThis, rcNew;
+			GetWindowRect(hwndDlg, &rcThis);
+			GetWindowRect((HWND) wParam, &rcNew);
+			if (abs(rcThis.left - rcNew.left) < 3 && abs(rcThis.top - rcNew.top) < 3) {
+				int offset = GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME);
+				SetWindowPos((HWND) wParam, 0, rcNew.left + offset, rcNew.top + offset, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+				*(int *) lParam = 1;
+			}
+		}
+		break;
+
 	}
 	return FALSE;
 }
@@ -553,5 +612,36 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
     }
 	return CallWindowProc(OldTabCtrlProc, hwnd, msg, wParam, lParam); 
+}
+
+
+int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,const char *szNamePrefix, int flags, int showCmd)
+{
+	WINDOWPLACEMENT wp;
+	char szSettingName[64];
+	int x,y;
+
+	wp.length=sizeof(wp);
+	GetWindowPlacement(hwnd,&wp);
+	wsprintf(szSettingName,"%sx",szNamePrefix);
+	x=DBGetContactSettingDword(hContact,szModule,szSettingName,-1);
+	wsprintf(szSettingName,"%sy",szNamePrefix);
+	y=(int)DBGetContactSettingDword(hContact,szModule,szSettingName,-1);
+	if(x==-1) return 1;
+	if(flags&RWPF_NOSIZE) {
+		OffsetRect(&wp.rcNormalPosition,x-wp.rcNormalPosition.left,y-wp.rcNormalPosition.top);
+	}
+	else {
+		wp.rcNormalPosition.left=x;
+		wp.rcNormalPosition.top=y;
+		wsprintf(szSettingName,"%swidth",szNamePrefix);
+		wp.rcNormalPosition.right=wp.rcNormalPosition.left+DBGetContactSettingDword(hContact,szModule,szSettingName,-1);
+		wsprintf(szSettingName,"%sheight",szNamePrefix);
+		wp.rcNormalPosition.bottom=wp.rcNormalPosition.top+DBGetContactSettingDword(hContact,szModule,szSettingName,-1);
+	}
+	wp.flags=0;
+	wp.showCmd = showCmd;
+	SetWindowPlacement(hwnd,&wp);
+	return 0;
 }
 

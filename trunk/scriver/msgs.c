@@ -265,6 +265,43 @@ static void RestoreUnreadMessageAlerts(void)
 	}
 }
 
+static int IconsChanged(WPARAM wParam, LPARAM lParam)
+{
+	if (hMsgMenuItem) {
+		int j;
+		CLISTMENUITEM mi;
+
+		mi.cbSize = sizeof(mi);
+		mi.flags = CMIM_ICON;
+		mi.hIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
+
+		for (j = 0; j < hMsgMenuItemCount; j++) {
+			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hMsgMenuItem[j], (LPARAM) & mi);
+		}
+	}
+	FreeMsgLogIcons();
+	LoadMsgLogIcons();
+	LoadProtocolIcons();
+	WindowList_Broadcast(g_dat->hMessageWindowList, DM_REMAKELOG, 0, 0);
+	// change all the icons
+	WindowList_Broadcast(g_dat->hMessageWindowList, DM_CHANGEICONS, 0, 0);
+	WindowList_Broadcast(g_dat->hMessageWindowList, DM_UPDATETITLE, 0, 0);
+	return 0;
+}
+
+static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam) 
+{
+	LoadGlobalIcons();
+	IconsChanged(wParam, lParam);
+	return 0;
+}
+
+
+static int GetWindowAPI(WPARAM wParam, LPARAM lParam)
+{
+	return PLUGIN_MAKE_VERSION(0,0,0,1);
+}
+
 static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
 	CLISTMENUITEM mi;
@@ -272,9 +309,9 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 	int protoCount, i;
 	
 	SetIcoLibIcons();
+	LoadGlobalIcons();
 	LoadMsgLogIcons();
 	LoadProtocolIcons();
-	LoadGlobalIcons();
 	ZeroMemory(&mi, sizeof(mi));
 	mi.cbSize = sizeof(mi);
 	mi.position = -2000090000;
@@ -293,6 +330,7 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 		}
 	}
 	HookEvent(ME_CLIST_DOUBLECLICKED, SendMessageCommand);
+	HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
 	RestoreUnreadMessageAlerts();
 	return 0;
 }
@@ -322,34 +360,6 @@ int SplitmsgShutdown(void)
 	RichUtil_Unload();
 	FreeGlobals();
 	return 0;
-}
-
-static int IconsChanged(WPARAM wParam, LPARAM lParam)
-{
-	if (hMsgMenuItem) {
-		int j;
-		CLISTMENUITEM mi;
-
-		mi.cbSize = sizeof(mi);
-		mi.flags = CMIM_ICON;
-		mi.hIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
-
-		for (j = 0; j < hMsgMenuItemCount; j++) {
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hMsgMenuItem[j], (LPARAM) & mi);
-		}
-	}
-	FreeMsgLogIcons();
-	LoadMsgLogIcons();
-	LoadProtocolIcons();
-	WindowList_Broadcast(g_dat->hMessageWindowList, DM_REMAKELOG, 0, 0);
-	// change all the icons
-	WindowList_Broadcast(g_dat->hMessageWindowList, DM_UPDATEWINICON, 0, 0);
-	return 0;
-}
-
-static int GetWindowAPI(WPARAM wParam, LPARAM lParam)
-{
-	return PLUGIN_MAKE_VERSION(0,0,0,1);
 }
 
 int LoadSendRecvMessageModule(void)

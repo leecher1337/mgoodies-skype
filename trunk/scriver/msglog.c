@@ -415,7 +415,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 				if (msglen != (int) dbei.cbBlob)
 					msg = (TCHAR *) & dbei.pBlob[msglen];
 				else {
-					msg = (TCHAR *) alloca(sizeof(TCHAR) * msglen);
+					msg = (TCHAR *) alloca(sizeof(TCHAR) * msglen); // TODO: alloca sucks, fixed that !
 					MultiByteToWideChar(CP_ACP, 0, (char *) dbei.pBlob, -1, msg, msglen);
 				}
 				AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
@@ -587,18 +587,15 @@ void LoadMsgLogIcons(void)
 	for (i = 0; i < sizeof(pLogIconBmpBits) / sizeof(pLogIconBmpBits[0]); i++) {
 		switch (i) {
 			case LOGICON_MSG_IN:
-				hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_INCOMING));
-				ImageList_AddIcon(g_hImageList, hIcon);
+				ImageList_AddIcon(g_hImageList, g_dat->hIcons[SMF_ICON_INCOMING]);
 				hIcon = ImageList_GetIcon(g_hImageList, LOGICON_MSG_IN, ILD_NORMAL);
 				break;
 			case LOGICON_MSG_OUT:
-				hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_OUTGOING));
-				ImageList_AddIcon(g_hImageList, hIcon);
+				ImageList_AddIcon(g_hImageList, g_dat->hIcons[SMF_ICON_OUTGOING]);
 				hIcon = ImageList_GetIcon(g_hImageList, LOGICON_MSG_OUT, ILD_NORMAL);
 				break;
 			case LOGICON_MSG_NOTICE:
-				hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_NOTICE));
-				ImageList_AddIcon(g_hImageList, hIcon);
+				ImageList_AddIcon(g_hImageList, g_dat->hIcons[SMF_ICON_NOTICE]);
 				hIcon = ImageList_GetIcon(g_hImageList, LOGICON_MSG_NOTICE, ILD_NORMAL);
 				break;
 		}

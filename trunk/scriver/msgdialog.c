@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <m_ieview.h>
 // IEVIew MOD End
 #define MS_SMILEYADD_SHOWSELECTION  "SmileyAdd/ShowSmileySelection"
-#define WS_EX_LAYOUTRTL 0x400000
 #pragma hdrstop
 
 #define TIMERID_MSGSEND      0
@@ -600,12 +599,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->hDbEventFirst = NULL;
 			dat->sendBuffer = NULL;
 			dat->sendCount = 0;
-//			if (savePerContact) {
-				dat->splitterPos = (int) DBGetContactSettingDword(dat->hContact, SRMMMOD, "splitterPos", (DWORD) - 1);
-//			} else {
-//				dat->splitterPos = (int) DBGetContactSettingDword(NULL, SRMMMOD, "splitterPos", (DWORD) - 1);
-//			}
-			dat->windowWasCascaded = 0;
+//			dat->windowWasCascaded = 0;
 //			dat->nFlash = 0;
 			dat->nTypeSecs = 0;
 			dat->nLastTyping = 0;
@@ -619,6 +613,17 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->lastEventType = -1;
 			dat->lastEventTime = time(NULL);
 			dat->flags = 0;
+			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "UseRTL", (BYTE) 0)) {
+				PARAFORMAT2 pf2;
+				ZeroMemory((void *)&pf2, sizeof(pf2));
+				pf2.cbSize = sizeof(pf2);
+				pf2.dwMask = PFM_RTLPARA;
+				pf2.wEffects = PFE_RTLPARA;
+				SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
+				SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
+				SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
+				dat->flags |= SMF_RTL;
+			}
 
 //			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
 			{
@@ -639,13 +644,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->minEditBoxHeight = dat->minEditInit.bottom - dat->minEditInit.top;
 			dat->minLogBoxHeight = dat->minEditBoxHeight;
 
-			SendDlgItemMessage(hwndDlg, IDC_ADD, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_ADD]);
-			SendDlgItemMessage(hwndDlg, IDC_DETAILS, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_USERDETAILS]);
-			SendDlgItemMessage(hwndDlg, IDC_HISTORY, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_HISTORY]);
-			SendDlgItemMessage(hwndDlg, IDC_USERMENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_ARROW]);
-			SendDlgItemMessage(hwndDlg, IDC_SMILEYS, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_SMILEY]);
-			SendDlgItemMessage(hwndDlg, IDOK, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_SEND]);
-			SendDlgItemMessage(hwndDlg, IDCANCEL, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_CANCEL]);
+			SendMessage(hwndDlg, DM_CHANGEICONS, 0, 0);
 			// Make them flat buttons
 			{
 				int i;
@@ -738,24 +737,13 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					}
 				}
 			}
+			{
+				int saveSplitterPerContact = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVESPLITTERPERCONTACT, SRMSGDEFSET_SAVESPLITTERPERCONTACT);
+				dat->splitterPos = (int) DBGetContactSettingDword(saveSplitterPerContact ? dat->hContact : NULL, SRMMMOD, "splitterPos", (DWORD) - 1);
+			}
 			SendMessage(dat->hwndParent, DM_ADDCHILD, 0, (LPARAM) dat);
 			SendMessage(hwndDlg, DM_OPTIONSAPPLIED, 0, 0);
-			SendMessage(hwndDlg, DM_AVATARCALCSIZE, 0, 0);
-			if (!(g_dat->flags & SMF_USETABS )) {
-				int savePerContact = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT);
-				if (Utils_RestoreWindowPosition(GetParent(hwndDlg), savePerContact ? dat->hContact : NULL, SRMMMOD, "")) {
-					if (savePerContact) {
-						if (Utils_RestoreWindowPositionNoMove(GetParent(hwndDlg), NULL, SRMMMOD, ""))
-							SetWindowPos(GetParent(hwndDlg), 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE);
-					}
-					else
-						SetWindowPos(GetParent(hwndDlg), 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE);
-				}
-				if (!savePerContact && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CASCADE, SRMSGDEFSET_CASCADE))
-					WindowList_Broadcast(g_dat->hMessageWindowList, DM_CASCADENEWWINDOW, (WPARAM) hwndDlg, (LPARAM) & dat->windowWasCascaded);
-			} else {
-				ShowWindow(GetParent(hwndDlg), SW_SHOW);
-			}
+//			SendMessage(hwndDlg, DM_AVATARCALCSIZE, 0, 0);
 			{
 				DBEVENTINFO dbei = { 0 };
 				HANDLE hdbEvent;
@@ -779,7 +767,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			ShowWindow(hwndDlg, SW_SHOWNORMAL);
 			SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
-
+			ShowWindow(GetParent(hwndDlg), SW_SHOW);
 			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPEN);
 			return TRUE;
 		}
@@ -820,6 +808,15 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 		break;
 	}
+	case DM_CHANGEICONS:
+		SendDlgItemMessage(hwndDlg, IDC_ADD, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_ADD]);
+		SendDlgItemMessage(hwndDlg, IDC_DETAILS, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_USERDETAILS]);
+		SendDlgItemMessage(hwndDlg, IDC_HISTORY, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_HISTORY]);
+//		SendDlgItemMessage(hwndDlg, IDC_USERMENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_ARROW]);
+		SendDlgItemMessage(hwndDlg, IDC_SMILEYS, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_SMILEY]);
+		SendDlgItemMessage(hwndDlg, IDOK, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_SEND]);
+		SendDlgItemMessage(hwndDlg, IDCANCEL, BM_SETIMAGE, IMAGE_ICON, (LPARAM) g_dat->hIcons[SMF_ICON_CANCEL]);
+		break;
 	case DM_AVATARCALCSIZE:
 	{
 		BITMAP bminfo;
@@ -1030,20 +1027,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			SendMessage(dat->hwndParent, DM_UPDATETITLE, (WPARAM)hwndDlg, (LPARAM)dat);
 			break;
 		}
-	case DM_CASCADENEWWINDOW:
-		if ((HWND) wParam == hwndDlg)
-			break;
-		{
-			RECT rcThis, rcNew;
-			GetWindowRect(GetParent(hwndDlg), &rcThis);
-			GetWindowRect(GetParent((HWND) wParam), &rcNew);
-			if (abs(rcThis.left - rcNew.left) < 3 && abs(rcThis.top - rcNew.top) < 3) {
-				int offset = GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME);
-				SetWindowPos(GetParent((HWND) wParam), 0, rcNew.left + offset, rcNew.top + offset, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-				*(int *) lParam = 1;
-			}
-		}
-		break;
 	case DM_SWITCHSTATUSBAR:
 		SendMessage(dat->hwndParent, DM_SWITCHSTATUSBAR, 0, 0);
 		break;
@@ -1054,6 +1037,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			pf2.cbSize = sizeof(pf2);
 			pf2.dwMask = PFM_RTLPARA;
 			dat->flags ^= SMF_RTL;
+			SetDlgItemText(hwndDlg, IDC_MESSAGE, _T(""));
 			if (dat->flags&SMF_RTL) {
 				pf2.wEffects = PFE_RTLPARA;
 				SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
@@ -1679,7 +1663,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dat->sendInfo[i].sendBuffer)
 					break;
 			if (i == dat->sendCount) {
-				int len;
+//				int len;
 				//all messages sent
 				dat->sendCount = 0;
 				free(dat->sendInfo);
@@ -1691,9 +1675,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				//SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_REPLAYSAVEDKEYSTROKES, 0, 0);
 				//if (GetForegroundWindow() == hwndDlg)
 				//	SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
-				len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
-				UpdateReadChars(hwndDlg, dat);
-				EnableWindow(GetDlgItem(hwndDlg, IDOK), len != 0);
+//				len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
+//				UpdateReadChars(hwndDlg, dat);
+//				EnableWindow(GetDlgItem(hwndDlg, IDOK), len != 0);
 				if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOCLOSE, SRMSGDEFSET_AUTOCLOSE))
 					DestroyWindow(hwndDlg);
 			}
@@ -1715,7 +1699,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		tcmdlist_free(dat->cmdList);
 		WindowList_Remove(g_dat->hMessageWindowList, hwndDlg);
 		//if (!(g_dat->flags&SMF_AVATAR)||!dat->avatarPic)
-			//DBWriteContactSettingDword(NULL, SRMMMOD, "splitterPos", dat->splitterPos);
 		SetWindowLong(GetDlgItem(hwndDlg, IDC_SPLITTER), GWL_WNDPROC, (LONG) OldSplitterProc);
 		SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_UNSUBCLASSED, 0, 0);
 		SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE), GWL_WNDPROC, (LONG) OldMessageEditProc);
@@ -1725,7 +1708,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			if (hFont != NULL && hFont != (HFONT) SendDlgItemMessage(hwndDlg, IDOK, WM_GETFONT, 0, 0))
 				DeleteObject(hFont);
 		}
-		{
+		if (dat->flags & SMF_RTL) {
+			DBWriteContactSettingByte(dat->hContact, SRMMMOD, "UseRTL", (BYTE) 1);
+		}
+		if (!(g_dat->flags & SMF_USETABS )) {
 			WINDOWPLACEMENT wp = { 0 };
 			HANDLE hContact;
 
@@ -1741,7 +1727,15 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			DBWriteContactSettingDword(hContact, SRMMMOD, "width", wp.rcNormalPosition.right - wp.rcNormalPosition.left);
 			DBWriteContactSettingDword(hContact, SRMMMOD, "height", wp.rcNormalPosition.bottom - wp.rcNormalPosition.top);
-			DBWriteContactSettingDword(dat->hContact, SRMMMOD, "splitterPos", dat->splitterPos);
+
+		}
+		{
+			HANDLE hContact;
+			if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVESPLITTERPERCONTACT, SRMSGDEFSET_SAVESPLITTERPERCONTACT))
+				hContact = dat->hContact;
+			else
+				hContact = NULL;
+			DBWriteContactSettingDword(hContact, SRMMMOD, "splitterPos", dat->splitterPos);
 		}
 		if (dat->avatarPic)
 			DeleteObject(dat->avatarPic);
