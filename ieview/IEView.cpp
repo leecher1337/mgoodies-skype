@@ -33,7 +33,6 @@ static const CLSID CLSID_MozillaBrowser=
 IEView * IEView::list = NULL;
 CRITICAL_SECTION IEView::mutex;
 bool IEView::isInited = false;
-HMENU IEView::hMenuANSIEncoding = NULL;
 static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     IEView *view = IEView::get(GetParent(GetParent(hwnd)));
 	if (view != NULL) {
@@ -430,7 +429,6 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			} if (dwID == 4) { // text select
 				EnableMenuItem(hMenu, ID_MENU_COPY, MF_BYCOMMAND | MF_ENABLED);
 			}
- 			InsertMenuA(hMenu, 5, MF_BYPOSITION | MF_POPUP, (UINT_PTR) hMenuANSIEncoding, Translate("ANSI Encoding"));
             if (builder!=NULL) {
 
 			}
@@ -835,6 +833,9 @@ void* IEView::quote(IEVIEWEVENT *event) {
 		if (event->cbSize == sizeof(IEVIEWEVENT)) {
 			cp = event->codepage;
 		}
+		char *strQuoteBuffer = Utils::convertToString(quoteBuffer, cp);
+		delete quoteBuffer;
+		quoteBuffer = (BSTR) strQuoteBuffer;
 	}
 	return (void *)quoteBuffer;
 }
