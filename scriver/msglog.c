@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ctype.h>
 #include <malloc.h>
 #include <mbstring.h>
+#include "m_smileyadd.h"
 
 extern HINSTANCE g_hInst;
 
@@ -571,6 +572,16 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMIN, fAppend ? SFF_SELECTION | SF_RTF : SF_RTF, (LPARAM) & stream);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & oldSel);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_HIDESELECTION, FALSE, 0);
+	if (ServiceExists(MS_SMILEYADD_REPLACESMILEYS)) {
+		SMADD_RICHEDIT2 smre;
+		smre.cbSize = sizeof(SMADD_RICHEDIT2);
+		smre.hwndRichEditControl = GetDlgItem(hwndDlg, IDC_LOG);
+		smre.Protocolname = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dat->hContact, 0);
+		smre.rangeToReplace = NULL;
+		smre.useSounds = FALSE;
+		smre.disableRedraw = FALSE;
+		CallService(MS_SMILEYADD_REPLACESMILEYS, 0, (LPARAM) &smre);
+	}
 	dat->hDbEventLast = streamData.hDbEventLast;
 	if (GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL) 
 		PostMessage(hwndDlg, DM_SCROLLLOGTOBOTTOM, 0, 0);
