@@ -13,9 +13,6 @@ void CreateProtocolIcons() {
 	int iCurIcon = 0;
 	
 	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM) &allProtoNum, (LPARAM) &pProtos);
-	if (allProtoNum == 0) {
-		MessageBox(NULL, "AD", "ASD",MB_OK);
-	}
 	g_dat->protoNum  = 0;
 	for(i = 0; i < allProtoNum; i++) {
         if (pProtos[i]->type == PROTOTYPE_PROTOCOL) g_dat->protoNum++;

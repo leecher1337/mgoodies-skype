@@ -122,7 +122,7 @@ BEGIN
                     0x18000000L
     CONTROL         "&D",IDC_DETAILS,"MButtonClass",WS_TABSTOP,17,31,16,14,
                     0x18000000L
-    CONTROL         "S",IDC_SMILEYS,"MButtonClass",WS_TABSTOP,41,31,16,14,
+    CONTROL         "",IDC_SMILEYS,"MButtonClass",WS_TABSTOP,41,31,16,14,
                     0x18000000L
     CONTROL         "",IDC_ADD,"MButtonClass",WS_TABSTOP,110,31,16,14,
                     0x18000000L
@@ -130,7 +130,7 @@ BEGIN
                     0x18000000L
     CONTROL         "Close",IDCANCEL,"MButtonClass",WS_TABSTOP,146,31,16,14,
                     0x18000000L
-    CONTROL         "&Send",IDOK,"MButtonClass",WS_TABSTOP,162,31,20,14,
+    CONTROL         "",IDOK,"MButtonClass",WS_TABSTOP,162,31,20,14,
                     0x18000000L
     CONTROL         "",IDC_SPLITTER,"Static",SS_ENHMETAFILE |
                     WS_CLIPSIBLINGS,0,45,183,2

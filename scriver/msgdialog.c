@@ -422,16 +422,16 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
 	}
 	hdwp = BeginDeferWindowPos(11);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_LOG), 0, 0, 0, w-vSplitterPos, h-hSplitterPos-toolbarHeight-1, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_MESSAGE), 0, 0, h-hSplitterPos+2, w-dat->avatarWidth, hSplitterPos-3, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_SPLITTER), 0, 0, h - hSplitterPos-1, w, 3, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_MESSAGE), 0, 0, h-hSplitterPos+2, w-dat->avatarWidth, hSplitterPos-2, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_SPLITTER), 0, 0, h - hSplitterPos-1, w-dat->avatarWidth, 3, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_USERMENU), 0, 0, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_DETAILS), 0, 24, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_SMILEYS), 0, 60, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_ADD), 0, w-3*24-38, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_HISTORY), 0, w-2*24-38, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDCANCEL), 0, w-24-38, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDOK), 0, w-38, h - hSplitterPos - toolbarHeight+1, 38, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - hSplitterPos+2, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_ADD), 0, w-3*24-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_HISTORY), 0, w-2*24-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDCANCEL), 0, w-24-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDOK), 0, w-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 38, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - hSplitterPos - toolbarHeight, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
 	EndDeferWindowPos(hdwp);
 	if (ServiceExists(MS_IEVIEW_WINDOW)) {
 		IEVIEWWINDOW ieWindow;
@@ -576,7 +576,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->hBkgBrush = NULL;
 			dat->hDbEventFirst = NULL;
 			dat->sendBuffer = NULL;
-			dat->splitterPos = (int) DBGetContactSettingDword(NULL, SRMMMOD, "splitterPos", (DWORD) - 1);
+//			if (savePerContact) {
+				dat->splitterPos = (int) DBGetContactSettingDword(dat->hContact, SRMMMOD, "splitterPos", (DWORD) - 1);
+//			} else {
+//				dat->splitterPos = (int) DBGetContactSettingDword(NULL, SRMMMOD, "splitterPos", (DWORD) - 1);
+//			}
 			dat->windowWasCascaded = 0;
 			dat->nFlash = 0;
 			dat->nTypeSecs = 0;
@@ -798,7 +802,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			return 0;
 		}
 		GetObject(dat->avatarPic, sizeof(bminfo), &bminfo);
-		dat->limitAvatarH = dat->splitterPos - 3;
+		dat->limitAvatarH = dat->splitterPos + ((g_dat->flags&SMF_SHOWBTNS) ? dat->toolbarHeight : 0);//- 3;
 		{
 			RECT rc;
 			double aspect = 0;
@@ -807,8 +811,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->avatarWidth = (int)(bminfo.bmWidth * aspect);
 			dat->avatarHeight = dat->limitAvatarH;
 			// if edit box width < min then adjust avatarWidth
-			if (rc.right - dat->avatarWidth < 100) {
-				dat->avatarWidth = rc.right - 100;
+			if (rc.right - dat->avatarWidth < 240) {
+				dat->avatarWidth = rc.right - 240;
 				aspect = (double)dat->avatarWidth / (double)bminfo.bmWidth;
 				dat->avatarHeight = (int)(bminfo.bmHeight * aspect);
 
@@ -1200,7 +1204,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dat->nTypeSecs) {
 					dat->showTyping = 1;
 					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
-					if ((g_dat->flags&SMF_SHOWTYPINGWIN) && GetForegroundWindow() != dat->hwndParent)
+					if (((g_dat->flags&SMF_SHOWTYPINGWIN) && GetForegroundWindow() != dat->hwndParent) ||
+						(GetForegroundWindow() == dat->hwndParent && !(g_dat->flags&SMF_SHOWSTATUSBAR)))
+//					if ((g_dat->flags&SMF_SHOWTYPINGWIN) || GetForegroundWindow() == dat->hwndParent)
 						SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
 				}
 			}
@@ -1258,7 +1264,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					}
                     hPen = CreatePen(PS_SOLID, 1, RGB(0,0,0));
                     SelectObject(dis->hDC, hPen);
-					ExcludeClipRect(dis->hDC, 1, 1, dat->avatarWidth-2, dat->avatarHeight-2);
+					ExcludeClipRect(dis->hDC, 1, 1, dat->avatarWidth-1, dat->avatarHeight-1);
                     Rectangle(dis->hDC, 0, 0, dat->avatarWidth, dat->avatarHeight);
                     DeleteObject(hPen);
 				}
@@ -1615,7 +1621,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		tcmdlist_free(dat->cmdList);
 		WindowList_Remove(g_dat->hMessageWindowList, hwndDlg);
 		//if (!(g_dat->flags&SMF_AVATAR)||!dat->avatarPic)
-			DBWriteContactSettingDword(NULL, SRMMMOD, "splitterPos", dat->splitterPos);
+			//DBWriteContactSettingDword(NULL, SRMMMOD, "splitterPos", dat->splitterPos);
 		SetWindowLong(GetDlgItem(hwndDlg, IDC_SPLITTER), GWL_WNDPROC, (LONG) OldSplitterProc);
 		SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_UNSUBCLASSED, 0, 0);
 		SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE), GWL_WNDPROC, (LONG) OldMessageEditProc);
@@ -1641,6 +1647,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			DBWriteContactSettingDword(hContact, SRMMMOD, "width", wp.rcNormalPosition.right - wp.rcNormalPosition.left);
 			DBWriteContactSettingDword(hContact, SRMMMOD, "height", wp.rcNormalPosition.bottom - wp.rcNormalPosition.top);
+			DBWriteContactSettingDword(dat->hContact, SRMMMOD, "splitterPos", dat->splitterPos);
 		}
 		if (dat->avatarPic)
 			DeleteObject(dat->avatarPic);
