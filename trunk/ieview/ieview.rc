@@ -48,8 +48,6 @@ BEGIN
 		MENUITEM SEPARATOR
 		MENUITEM "Clear Log",    	ID_MENU_CLEARLOG
 		MENUITEM "Show source",		ID_MENU_SHOWSOURCE
-		MENUITEM SEPARATOR
-		MENUITEM "Disable Unicode",	ID_MENU_UNICODE
 	END
 END
 
@@ -164,8 +162,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,1,10
- PRODUCTVERSION 1,0,1,19
+ FILEVERSION 1,0,2,0
+ PRODUCTVERSION 1,0,2,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -183,14 +181,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "http://developer.berlios.de/projects/mgoodies\0"
             VALUE "FileDescription", "IEView Plugin for Miranda IM\0"
-            VALUE "FileVersion", "1.0.1.10\0"
+            VALUE "FileVersion", "1.0.2.0\0"
             VALUE "InternalName", "ieview\0"
             VALUE "LegalCopyright", "Copyright (c) 2005 Piotr Piastucki\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "ieview.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "IEView Plugin\0"
-            VALUE "ProductVersion", "1.0.1.10\0"
+            VALUE "ProductVersion", "1.0.2.0\0"
             VALUE "SpecialBuild", "\0"
         END
     END

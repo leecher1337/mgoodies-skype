@@ -52,7 +52,7 @@ public:
 	STDMETHODIMP QueryInterface(REFIID riid, PVOID *ppv);
 	STDMETHODIMP_(ULONG) AddRef(void);
 	STDMETHODIMP_(ULONG) Release(void);
-	
+
 	STDMETHOD(GetTypeInfoCount)(UINT*);
 	STDMETHOD(GetTypeInfo)(UINT, LCID, LPTYPEINFO*);
 	STDMETHOD(GetIDsOfNames)(REFIID,LPOLESTR*,UINT,LCID,DISPID*);
@@ -107,7 +107,6 @@ private:
 	DWORD       dwLogFlags;
    	HANDLE      hContact;
    	HANDLE      hDbEventFirst;
-   	int        	disableUnicode;
    	bool        getFocus;
 
     // IUnknown
