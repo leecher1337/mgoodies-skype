@@ -1,17 +1,39 @@
+/*
+
+IEView Plugin for Miranda IM
+Copyright (C) 2005  Piotr Piastucki
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+*/
 #include "Smiley.h"
 #include "Utils.h"
 
 SmileyPattern::SmileyPattern(const char *pattern) {
 	next = NULL;
+	length = 0;
 	this->pattern = Utils::dupString(pattern);
-	length = strlen(pattern);
-	wpattern = new wchar_t[length+1];
-	MultiByteToWideChar(CP_ACP, 0, pattern, -1, wpattern, length+1);
+	this->wpattern = Utils::convertToWCS(this->pattern);
+	if (this->pattern!=NULL) {
+		length = strlen(pattern);
+	}
 }
 
 SmileyPattern::~SmileyPattern() {
-	if (wpattern != NULL) delete wpattern;
 	if (pattern != NULL) delete pattern;
+	if (wpattern != NULL) delete wpattern;
 }
 
 void SmileyPattern::setNext(SmileyPattern *ptr) {
@@ -276,6 +298,19 @@ bool SmileyMap::loadSmileyFile(const char *proto, const char *filename, bool onl
 }
 
 Smiley* SmileyMap::getSmiley(const char *text, int *maxLen) {
+	int l;
+	Smiley *ptr, *foundPtr = NULL;
+	*maxLen = 0;
+	for (ptr=entries; ptr!=NULL; ptr=ptr->getNext()) {
+		if (l=ptr->match(text, *maxLen)) {
+			*maxLen = l;
+			foundPtr = ptr;
+		}
+	}
+	return foundPtr;
+}
+
+Smiley* SmileyMap::getSmiley(const wchar_t *text, int *maxLen) {
 	int l;
 	Smiley *ptr, *foundPtr = NULL;
 	*maxLen = 0;

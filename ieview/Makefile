@@ -1,12 +1,11 @@
-# Project: mtlen
-# Makefile created by Dev-C++ 4.9.9.0
+# Project: ieview
 
 CPP  = g++.exe
 CC   = gcc.exe
 WINDRES = windres.exe
 RM = rm
 UPX = upx -9 -q --compress-icons=0
-SRC = IEView.cpp ieview_services.cpp ieview_main.cpp HTMLBuilder.cpp SRMMHTMLBuilder.cpp SRMM2HTMLBuilder.cpp TabSRMMHTMLBuilder.cpp Smiley.cpp Options.cpp Template.cpp TemplateHTMLBuilder.cpp Utils.cpp SmileyWindow.cpp
+SRC = IEView.cpp ieview_services.cpp ieview_main.cpp HTMLBuilder.cpp SRMMHTMLBuilder.cpp ScriverHTMLBuilder.cpp TabSRMMHTMLBuilder.cpp Smiley.cpp Options.cpp Template.cpp TemplateHTMLBuilder.cpp Utils.cpp SmileyWindow.cpp
 RES  = ieview.res
 OBJ = $(SRC:.cpp=.o) $(RES)
 BIN  = d:/mim/plugins/ieview.dll

@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "ieview_services.h"
 #include "SRMMHTMLBuilder.h"
-#include "SRMM2HTMLBuilder.h"
+#include "ScriverHTMLBuilder.h"
 #include "TabSRMMHTMLBuilder.h"
 #include "TemplateHTMLBuilder.h"
 #include "IEView.h"
@@ -38,8 +38,8 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 		} else {
 			if (window->dwMode == IEWM_TABSRMM) {
 				builder = new TabSRMMHTMLBuilder();
-			} else if (window->dwMode == IEWM_SRMM2) {
-				builder = new SRMM2HTMLBuilder();
+			} else if (window->dwMode == IEWM_SCRIVER) {
+				builder = new ScriverHTMLBuilder();
 			} else {
 				builder = new SRMMHTMLBuilder();
 			}
@@ -91,29 +91,3 @@ int HandleSmileyShowSelection(WPARAM wParam, LPARAM lParam) {
 	return 0;
 }
 	
-int HandleSmileyReplaceSmileys(WPARAM wParam, LPARAM lParam) {
-	return 0;
-}
-
-int HandleSmileyGetSmileyIcon(WPARAM wParam, LPARAM lParam) {
-	return 0;
-}
-
-int HandleSmileyGetInfo(WPARAM wParam, LPARAM lParam) {
-	SMADD_INFO *smInfo = (SMADD_INFO *) lParam;
-	SmileyMap* map;
-	if (!(Options::getSmileyFlags() & Options::SMILEY_ENABLED)) return 0;
- 	if (Options::getSmileyFlags() & Options::SMILEY_PROTOCOLS) {
- 		map = SmileyMap::getSmileyMap(smInfo->Protocolname);
-	} else {
-		map = SmileyMap::getSmileyMap("");
-	}    
-	if (map!=NULL) {
-		smInfo->ButtonIcon = NULL;
-		smInfo->NumberOfVisibleSmileys = map->getSmileyNum();
-		smInfo->NumberOfSmileys = map->getSmileyNum();
-	}
-	return 0;
-}
-
-

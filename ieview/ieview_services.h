@@ -26,9 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern int HandleIEWindow(WPARAM wParam, LPARAM lParam);
 extern int HandleIEEvent(WPARAM wParam, LPARAM lParam);
 extern int HandleSmileyShowSelection(WPARAM wParam, LPARAM lParam);
-extern int HandleSmileyReplaceSmileys(WPARAM wParam, LPARAM lParam);
-extern int HandleSmileyGetSmileyIcon(WPARAM wParam, LPARAM lParam);
-extern int HandleSmileyGetInfo(WPARAM wParam, LPARAM lParam);
 
 #endif
 

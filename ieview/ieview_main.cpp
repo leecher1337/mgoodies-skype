@@ -102,13 +102,6 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
 	IEView::init();
 	Options::init();
-	/*
-	if (Options::getSmileyFlags() & Options::SMILEY_SMILEYADD) {
-		CreateServiceFunction(MS_SMILEYADD_SHOWSELECTION, HandleSmileyShowSelection);
-		CreateServiceFunction(MS_SMILEYADD_REPLACESMILEYS, HandleSmileyReplaceSmileys);
-		CreateServiceFunction(MS_SMILEYADD_GETINFO, HandleSmileyGetInfo);
-		CreateServiceFunction(MS_SMILEYADD_GETSMILEYICON, HandleSmileyGetSmileyIcon);
-	}*/
 	//test();
 	return 0;
 }

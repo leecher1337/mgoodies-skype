@@ -95,6 +95,27 @@ wchar_t *Utils::dupString(const wchar_t *a, int l) {
 }
 
 
+wchar_t *Utils::convertToWCS(const char *a) {
+	if (a!=NULL) {
+		int len = strlen(a)+1;
+		wchar_t *b = new wchar_t[len];
+		MultiByteToWideChar(CP_ACP, 0, a, len, b, len);
+		return b;
+	}
+	return NULL;
+}
+
+char *Utils::convertToString(const wchar_t *a) {
+	if (a!=NULL) {
+		int len = wcslen(a)+1;
+		char *b = new char[len];
+		WideCharToMultiByte(CP_ACP, 0, a, len, b, len, NULL, FALSE);
+		return b;
+	}
+	return NULL;
+}
+
+
 void Utils::convertPath(char *path) {
    	for (; *path!='\0'; path++) {
    	    if (*path == '\\') *path = '/';

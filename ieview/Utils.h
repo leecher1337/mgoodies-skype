@@ -14,6 +14,8 @@ public:
 	static char *dupString(const char *a, int l);
 	static wchar_t *dupString(const wchar_t *a);
 	static wchar_t *dupString(const wchar_t *a, int l);
+	static wchar_t *convertToWCS(const char *a);
+	static char *convertToString(const wchar_t *a);
 
 }; 
 
