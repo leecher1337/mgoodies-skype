@@ -1,4 +1,24 @@
-#include "SRMM2HTMLBuilder.h"
+/*
+
+IEView Plugin for Miranda IM
+Copyright (C) 2005  Piotr Piastucki
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+*/
+#include "ScriverHTMLBuilder.h"
 
 #include "Options.h"
 #include "Utils.h"
@@ -40,7 +60,7 @@ static const char *classNames[] = {
 	".inputArea", ".notices"
 };
 
-bool SRMM2HTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
+bool ScriverHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
 {
     switch (dbei->eventType) {
         case EVENTTYPE_MESSAGE:
@@ -52,7 +72,7 @@ bool SRMM2HTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
     return 0;
 }
 
-void SRMM2HTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
+void ScriverHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
     char str[32];
     int style;
     DBVARIANT dbv;
@@ -93,7 +113,7 @@ void SRMM2HTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
     }
 }
 
-char *SRMM2HTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int groupStart)
+char *ScriverHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int groupStart)
 {
     static char szResult[512];
     char str[80];
@@ -140,7 +160,7 @@ char *SRMM2HTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int group
 }
 
 
-void SRMM2HTMLBuilder::buildHead(IEView *view) {
+void ScriverHTMLBuilder::buildHead(IEView *view) {
 	LOGFONTA lf;
 	COLORREF color;
  	if (Options::getExternalCSSFlags() & Options::EXTERNALCSS_ENABLED) {
@@ -187,7 +207,7 @@ void SRMM2HTMLBuilder::buildHead(IEView *view) {
 
 }
 
-void SRMM2HTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
+void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 
 	DWORD dwFlags = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTIME, 0) ? SMF_LOG_SHOWTIME : 0;
     dwFlags |= !DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_HIDENAMES, 0) ? SMF_LOG_SHOWNICK : 0;
@@ -313,18 +333,18 @@ void SRMM2HTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	view->scrollToBottom();
 }
 
-int SRMM2HTMLBuilder::getLastEventType() {
+int ScriverHTMLBuilder::getLastEventType() {
 	return iLastEventType;
 }
 
-void SRMM2HTMLBuilder::setLastEventType(int t) {
+void ScriverHTMLBuilder::setLastEventType(int t) {
 	iLastEventType = t;
 }
 
-time_t SRMM2HTMLBuilder::getLastEventTime() {
+time_t ScriverHTMLBuilder::getLastEventTime() {
 	return lastEventTime;
 }
 
-void SRMM2HTMLBuilder::setLastEventTime(time_t t) {
+void ScriverHTMLBuilder::setLastEventTime(time_t t) {
 	lastEventTime = t;
 }
