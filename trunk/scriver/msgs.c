@@ -28,6 +28,9 @@ HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand;
 static HANDLE hEventDbEventAdded, hEventDbSettingChange, hEventContactDeleted;
 HANDLE *hMsgMenuItem = NULL, hHookWinEvt=NULL;
 int hMsgMenuItemCount = 0;
+static HMODULE hDLL;
+
+extern PSLWA pSetLayeredWindowAttributes;
 
 extern HINSTANCE g_hInst;
 
@@ -306,7 +309,9 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 	CLISTMENUITEM mi;
 	PROTOCOLDESCRIPTOR **protocol;
 	int protoCount, i;
-	
+
+	hDLL = LoadLibraryA("user32");
+	pSetLayeredWindowAttributes = (PSLWA) GetProcAddress(hDLL,"SetLayeredWindowAttributes");
 	SetIcoLibIcons();
 	LoadGlobalIcons();
 	LoadMsgLogIcons();

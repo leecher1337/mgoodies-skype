@@ -248,19 +248,19 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 			SendMessage(GetParent(hwnd), DM_CLEARLOG, 0, 0);
 			return 0;
 		}
-		if (wParam == 20 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl+shift-t
+		if (wParam == 20 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl-shift-t
 			SendMessage(GetParent(GetParent(hwnd)), DM_SWITCHTOOLBAR, 0, 0);
 			return 0;
 		}
-		if (wParam == 19 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl+shift-s
+		if (wParam == 19 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl-shift-s
 			SendMessage(GetParent(GetParent(hwnd)), DM_SWITCHSTATUSBAR, 0, 0);
 			return 0;
 		}
-		if (wParam == 18 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl+shift-r
+		if (wParam == 18 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl-shift-r
 			SendMessage(GetParent(hwnd), DM_SWITCHRTL, 0, 0);
 			return 0;
 		}
-		if (wParam == 13 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl+shift-s
+		if (wParam == 13 && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {     // ctrl-shift-m
 			SendMessage(GetParent(GetParent(hwnd)), DM_SWITCHTITLEBAR, 0, 0);
 			return 0;
 		}
@@ -355,12 +355,22 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 			return 0;
 		}
 		if(wParam == VK_INSERT && (GetKeyState(VK_SHIFT) & 0x8000)) {
-			SendMessage(hwnd, EM_PASTESPECIAL, CF_TEXT, 0);
+			SendMessage(hwnd, EM_PASTESPECIAL, CF_TEXT, 0); // shift insert
 			return 0;
 		}
+		if ((GetKeyState(VK_CONTROL) & 0x8000) && (GetKeyState(VK_SHIFT) & 0x8000)) {
+			if (wParam == VK_TAB) {	// ctrl-shift tab
+				SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
+				return 0;
+			}
+		}
 		if ((GetKeyState(VK_CONTROL) & 0x8000) && !(GetKeyState(VK_MENU) & 0x8000)) {
-			if (wParam == 'V') {
-				SendMessage(hwnd, EM_PASTESPECIAL, CF_TEXT, 0);
+			if (wParam == 'V') {    // ctrl v
+				SendMessage(hwnd, EM_PASTESPECIAL, CF_TEXT, 0); 
+				return 0;
+			}
+			if (wParam == VK_TAB) { // ctrl tab
+				SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
 				return 0;
 			}
 		}

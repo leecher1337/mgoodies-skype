@@ -116,6 +116,13 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			CheckDlgButton(hwndDlg, IDC_LIMITNAMES, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITNAMES, SRMSGDEFSET_LIMITNAMES));
 //			CheckDlgButton(hwndDlg, IDC_STATUSWIN, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON));
 	
+			SendDlgItemMessage(hwndDlg,IDC_TRANSPARENCYVALUE,TBM_SETRANGE, FALSE, MAKELONG(0,256));
+			SendDlgItemMessage(hwndDlg,IDC_TRANSPARENCYVALUE,TBM_SETPOS, TRUE, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_WINDOWALPHA, SRMSGDEFSET_WINDOWALPHA));
+			{	char str[10];
+				sprintf(str,"%d%%",100*SendDlgItemMessage(hwndDlg,IDC_TRANSPARENCYVALUE,TBM_GETPOS,0,0)/256);
+				SetDlgItemTextA(hwndDlg, IDC_TRANSPARENCYPERC, str);
+			}
+
 			CheckDlgButton(hwndDlg, IDC_AVATARSUPPORT, g_dat->flags&SMF_AVATAR);
 //			EnableWindow(GetDlgItem(hwndDlg, IDC_LIMITAVATARH), FALSE);
 //			EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHT), FALSE);
@@ -197,6 +204,13 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			}
 			SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 			break;
+		case WM_HSCROLL:
+			{	char str[10];
+				sprintf(str,"%d%%",100*SendDlgItemMessage(hwndDlg,IDC_TRANSPARENCYVALUE,TBM_GETPOS,0,0)/256);
+				SetDlgItemTextA(hwndDlg, IDC_TRANSPARENCYPERC, str);
+				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+			}
+			break;
 		case WM_NOTIFY:
 			switch (((LPNMHDR) lParam)->idFrom) {
 				case 0:
@@ -237,6 +251,9 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_DELTEMP, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_DELTEMP));
 							msgTimeout = GetDlgItemInt(hwndDlg, IDC_SECONDS, NULL, TRUE) >= SRMSGSET_MSGTIMEOUT_MIN / 1000 ? GetDlgItemInt(hwndDlg, IDC_SECONDS, NULL, TRUE) * 1000 : SRMSGDEFSET_MSGTIMEOUT;
 							DBWriteContactSettingDword(NULL, SRMMMOD, SRMSGSET_MSGTIMEOUT, msgTimeout);
+
+							DBWriteContactSettingDword(NULL, SRMMMOD, SRMSGSET_WINDOWALPHA, SendDlgItemMessage(hwndDlg,IDC_TRANSPARENCYVALUE,TBM_GETPOS,0,0));
+
 							ReloadGlobals();
 							WindowList_Broadcast(g_dat->hMessageWindowList, DM_OPTIONSAPPLIED, 0, 0);
 							WindowList_Broadcast(g_dat->hParentWindowList, DM_OPTIONSAPPLIED, 0, 0);

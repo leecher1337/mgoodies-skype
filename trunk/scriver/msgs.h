@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MSGERROR_CANCEL	0
 #define MSGERROR_RETRY	    1
 
+typedef DWORD (WINAPI *PSLWA)(HWND, DWORD, BYTE, DWORD);
+
 struct ErrorWindowData
 {
 	char *	szDescription;
@@ -287,7 +289,6 @@ extern const int msgDlgFontCount;
 #define SRMSGSET_SHOWTYPINGCLIST    "ShowTypingClist"
 #define SRMSGDEFSET_SHOWTYPINGCLIST 1
 
-
 #define SRMSGSET_AVATARENABLE       "AvatarEnable"
 #define SRMSGDEFSET_AVATARENABLE    1
 #define SRMSGSET_LIMITAVHEIGHT      "AvatarLimitHeight"
@@ -297,5 +298,11 @@ extern const int msgDlgFontCount;
 #define SRMSGSET_AVHEIGHTMIN        "AvatarHeightMin"
 #define SRMSGDEFSET_AVHEIGHTMIN     20
 #define SRMSGSET_AVATAR             "Avatar"
+
+
+//#define SRMSGSET_WINDOWALPHA		"UseWindowAlpha"
+//#define SRMSGDEFSET_WINDOWALPHA		0
+#define SRMSGSET_WINDOWALPHA		"WindowAlpha"
+#define SRMSGDEFSET_WINDOWALPHA		0
 
 #endif
