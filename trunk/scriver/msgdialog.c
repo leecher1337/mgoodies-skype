@@ -453,6 +453,10 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
 	}
 	dat->splitterPos = hSplitterPos;
 	SendMessage(hwndDlg, DM_AVATARCALCSIZE, 0, 0);
+	if (hSplitterPos + toolbarHeight < dat->avatarHeight) {
+		hSplitterPos = dat->avatarHeight - toolbarHeight;
+	}
+	dat->splitterPos = hSplitterPos;
 	hdwp = BeginDeferWindowPos(11);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_LOG), 0, 0, 0, w-vSplitterPos, h-hSplitterPos-toolbarHeight-1, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_MESSAGE), 0, 0, h-hSplitterPos+2, w-(dat->avatarWidth ? dat->avatarWidth+1 : 0), hSplitterPos-2, SWP_NOZORDER);
@@ -464,7 +468,8 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_HISTORY), 0, w-2*24-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDCANCEL), 0, w-24-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDOK), 0, w-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 38, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - hSplitterPos - toolbarHeight, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - dat->avatarHeight, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
+//	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - (hSplitterPos + toolbarHeight + dat->avatarHeight)/2, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
 	EndDeferWindowPos(hdwp);
 	if (ServiceExists(MS_IEVIEW_WINDOW)) {
 		IEVIEWWINDOW ieWindow;
@@ -581,7 +586,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			RichUtil_SubClass(GetDlgItem(hwndDlg, IDC_LOG));
 			{ // avatar stuff
 				dat->avatarPic = 0;
-//				dat->limitAvatarH = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITAVHEIGHT, SRMSGDEFSET_LIMITAVHEIGHT)?DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT):0;
+				dat->limitAvatarMaxH = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT);
+				dat->limitAvatarMinH = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHTMIN, SRMSGDEFSET_AVHEIGHTMIN);
 			}
 			if (dat->hContact && dat->szProto != NULL)
 				dat->wStatus = DBGetContactSettingWord(dat->hContact, dat->szProto, "Status", ID_STATUS_OFFLINE);
@@ -837,6 +843,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	case DM_AVATARCALCSIZE:
 	{
 		BITMAP bminfo;
+		int avatarH;
 		struct ParentWindowData *pdat;
 		pdat = (struct ParentWindowData *) GetWindowLong(GetParent(hwndDlg), GWL_USERDATA);
 		dat->avatarWidth = 0;
@@ -846,14 +853,22 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			return 0;
 		}
 		GetObject(dat->avatarPic, sizeof(bminfo), &bminfo);
-		dat->limitAvatarH = dat->splitterPos + ((pdat->flags&SMF_SHOWBTNS) ? dat->toolbarHeight : 0);//- 3;
+		dat->avatarHeight = avatarH = dat->splitterPos + ((pdat->flags&SMF_SHOWBTNS) ? dat->toolbarHeight : 0);//- 3;
+		if (g_dat->flags & SMF_LIMITAVATARH) {
+			if (avatarH < dat->limitAvatarMinH) {
+				avatarH = dat->limitAvatarMinH;
+			}
+			if (avatarH > dat->limitAvatarMaxH) {
+				avatarH = dat->limitAvatarMaxH;
+			}
+		}
 		{
 			RECT rc;
 			double aspect = 0;
 			GetClientRect(hwndDlg, &rc);
-			aspect = (double)dat->limitAvatarH / (double)bminfo.bmHeight;
+			dat->avatarHeight = avatarH;
+			aspect = (double)dat->avatarHeight / (double)bminfo.bmHeight;
 			dat->avatarWidth = (int)(bminfo.bmWidth * aspect);
-			dat->avatarHeight = dat->limitAvatarH;
 			// if edit box width < min then adjust avatarWidth
 			if (rc.right - dat->avatarWidth < 240) {
 				dat->avatarWidth = rc.right - 240;
@@ -909,7 +924,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			ShowAvatar(hwndDlg, dat);
 		}
 		else if (result==GAIR_NOAVATAR) {
+			DBVARIANT dbv;
 			DBDeleteContactSetting(dat->hContact, SRMMMOD, SRMSGSET_AVATAR);
+			if (!DBGetContactSetting(dat->hContact, "ContactPhoto", "File", &dbv)) {
+				DBWriteContactSettingString(dat->hContact, SRMMMOD, SRMSGSET_AVATAR, dbv.pszVal);
+				DBFreeVariant(&dbv);
+			}
 			ShowAvatar(hwndDlg, dat);
 		}
 		SetWindowLong(hwndDlg, DWL_MSGRESULT, 1);
@@ -963,10 +983,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		{
 			// avatar stuff
 //			dat->avatarPic = 0;
-			dat->limitAvatarH = 0;
-			if (CallProtoService(dat->szProto, PS_GETCAPS, PFLAGNUM_4, 0)&PF4_AVATARS) {
-//				dat->limitAvatarH = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITAVHEIGHT, SRMSGDEFSET_LIMITAVHEIGHT)?DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT):0;
-			}
+//			dat->limitAvatarMaxH = 0;
+//			dat->limitAvatarMaxH = 0;
+//			if (CallProtoService(dat->szProto, PS_GETCAPS, PFLAGNUM_4, 0)&PF4_AVATARS) {
+			dat->limitAvatarMinH = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHTMIN, SRMSGDEFSET_AVHEIGHTMIN);
+			dat->limitAvatarMaxH = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT);
+//			}
 			SendMessage(hwndDlg, DM_GETAVATAR, 0, 0);
 		}
 		SetDialogToType(hwndDlg);

@@ -196,6 +196,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			dat->children = NULL;
 			dat->hwnd = hwndDlg;
 			dat->flags = g_dat->flags | SMF_SHOWTITLEBAR;
+			dat->mouseLBDown = 0;
 			dat->windowWasCascaded = 0;
 			dat->hwndStatus = CreateWindowEx(0, STATUSCLASSNAME, NULL, WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwndDlg, NULL, g_hInst, NULL);
 			{
@@ -444,6 +445,25 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			dat->nFlash = 0;
 		}
 		SendMessage(dat->hwndActive, WM_ACTIVATE, WA_ACTIVE, 0);
+		break;
+	case WM_LBUTTONDOWN:
+		dat->mouseLBDown = 1;
+		GetCursorPos(&dat->mouseLBDownPos);
+		SetCapture(hwndDlg);
+		break;
+	case WM_LBUTTONUP:
+		dat->mouseLBDown = 0;
+		ReleaseCapture();
+		break;
+	case WM_MOUSEMOVE:
+		if (dat->mouseLBDown) { // && !(dat->flags&SMF_SHOWTITLEBAR)
+			POINT pt;
+			RECT  rc;
+			GetCursorPos(&pt);
+			GetWindowRect(hwndDlg, &rc);
+			SetWindowPos(hwndDlg, 0, rc.left - (dat->mouseLBDownPos.x - pt.x), rc.top - (dat->mouseLBDownPos.y - pt.y), 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+			dat->mouseLBDownPos = pt;
+		}
 		break;
 	case WM_DESTROY:
 		{
