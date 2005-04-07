@@ -51,7 +51,6 @@ extern HINSTANCE g_hInst;
 static void UpdateReadChars(HWND hwndDlg, struct MessageWindowData * dat);
 
 static WNDPROC OldMessageEditProc, OldSplitterProc;
-//static const UINT infoLineControls[] = { };
 static const UINT buttonLineControls[] = { IDC_USERMENU, IDC_DETAILS, IDC_SMILEYS, IDC_ADD, IDC_HISTORY, IDCANCEL, IDOK};
 static const UINT sendControls[] = { IDC_MESSAGE };
 
@@ -641,8 +640,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 
 			dat->wOldStatus = dat->wStatus;
 			dat->sendInfo = NULL;
-			dat->hBkgBrush = NULL;
-//			dat->hMessageBkgBrush = NULL;
+//			dat->hBkgBrush = NULL;
 			dat->hDbEventFirst = NULL;
 			dat->sendBuffer = NULL;
 			dat->sendCount = 0;
@@ -702,8 +700,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				int i;
 				for (i = 0; i < sizeof(buttonLineControls) / sizeof(buttonLineControls[0]); i++)
 					SendMessage(GetDlgItem(hwndDlg, buttonLineControls[i]), BUTTONSETASFLATBTN, 0, 0);
-//				for (i = 0; i < sizeof(infoLineControls) / sizeof(infoLineControls[0]); i++)
-//					SendMessage(GetDlgItem(hwndDlg, infoLineControls[i]), BUTTONSETASFLATBTN, 0, 0);
 			}
 			SendMessage(GetDlgItem(hwndDlg, IDC_ADD), BUTTONADDTOOLTIP, (WPARAM) Translate("Add Contact Permanently to List"), 0);
 			SendMessage(GetDlgItem(hwndDlg, IDC_USERMENU), BUTTONADDTOOLTIP, (WPARAM) Translate("User Menu"), 0);
@@ -1024,16 +1020,13 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			SendMessage(hwndDlg, DM_GETAVATAR, 0, 0);
 		}
 		SetDialogToType(hwndDlg);
-		if (dat->hBkgBrush)
-			DeleteObject(dat->hBkgBrush);
-//		if (dat->hMessageBkgBrush)
-//			DeleteObject(dat->hMessageBkgBrush);
+//		if (dat->hBkgBrush)
+//			DeleteObject(dat->hBkgBrush);
 		{
 			COLORREF colour = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_BKGCOLOUR, SRMSGDEFSET_BKGCOLOUR);
-			dat->hBkgBrush = CreateSolidBrush(colour);
+//			dat->hBkgBrush = CreateSolidBrush(colour);
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETBKGNDCOLOR, 0, colour);
 			colour = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_INPUTBKGCOLOUR, SRMSGDEFSET_INPUTBKGCOLOUR);
-//			dat->hMessageBkgBrush = CreateSolidBrush(colour);
 			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETBKGNDCOLOR, 0, colour);
 
 		}
@@ -1857,8 +1850,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 		if (dat->sendInfo)
 			free(dat->sendInfo);
-		if (dat->hBkgBrush)
-			DeleteObject(dat->hBkgBrush);
+//		if (dat->hBkgBrush)
+//			DeleteObject(dat->hBkgBrush);
 		if (dat->sendBuffer != NULL)
 			free(dat->sendBuffer);
 		if (dat->hwndStatus)
