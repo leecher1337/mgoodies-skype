@@ -83,8 +83,6 @@ struct MessageWindowData
 	HANDLE hDbEventFirst, hDbEventLast;
 	struct MessageSendInfo *sendInfo;
 	int sendCount;
-	HBRUSH hBkgBrush;
-	HBRUSH hMessageBkgBrush;
 	int splitterPos, originalSplitterPos;
 	char *sendBuffer;
 	SIZE minEditBoxSize;
@@ -94,8 +92,6 @@ struct MessageWindowData
 	int	minEditBoxHeight;
 	int toolbarHeight;
 	int windowWasCascaded;
-//	int nFlash;
-//	int nFlashMax;
 	int nTypeSecs;
 	int nTypeMode;
 	int avatarWidth;
@@ -206,6 +202,8 @@ extern const int msgDlgFontCount;
 #define SRMSGDEFSET_TABSATBOTTOM   0
 #define SRMSGSET_LIMITNAMES		   "LimitNamesOnTabs"
 #define SRMSGDEFSET_LIMITNAMES		1
+#define SRMSGSET_HIDEONETAB			"HideOnetab"
+#define SRMSGDEFSET_HIDEONETAB		1
 #define SRMSGSET_SHOWBUTTONLINE    "ShowButtonLine"
 #define SRMSGDEFSET_SHOWBUTTONLINE 1
 #define SRMSGSET_SHOWINFOLINE      "ShowInfoLine"

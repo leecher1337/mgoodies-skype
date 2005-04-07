@@ -103,6 +103,7 @@
 #define IDC_ATRANSPARENCYPERC           1620
 #define IDC_ITRANSPARENCYVALUE			1621
 #define IDC_ITRANSPARENCYPERC           1622
+#define IDC_HIDEONETAB					1623
 #define IDM_CUT                         40000
 #define IDM_COPY                        40001
 #define IDM_PASTE                       40002

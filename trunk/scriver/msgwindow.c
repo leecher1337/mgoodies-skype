@@ -54,13 +54,13 @@ static void GetChildWindowRect(struct ParentWindowData *dat, RECT *rcChild)
 	rcChild->right = rc.right;
 	if (g_dat->flags & SMF_TABSATBOTTOM) {
 		rcChild->top = 2;
-		if (dat->childrenCount > 1) {
+		if (dat->childrenCount > 1 || !(g_dat->flags & SMF_HIDEONETAB)) {
 			rcChild->bottom = rcTabs.bottom + 4;
 		} else {
 			rcChild->bottom = rc.bottom - rc.top - (rcStatus.bottom - rcStatus.top);
 		}
 	} else {
-		if (dat->childrenCount > 1) {
+		if (dat->childrenCount > 1 || !(g_dat->flags & SMF_HIDEONETAB)) {
 			rcChild->top = rcTabs.top;
 		} else {
 			rcChild->top = 2;//rcTabs.top - 2;
@@ -744,6 +744,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			SetWindowPos(hwndDlg, 0, 0, 0, rc.right - rc.left, rc.bottom - rc.top, 
                         SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOSENDCHANGING);
 			SendMessage(hwndDlg, WM_SIZE, 0, 0);
+			//RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 			break;
 		}
 	case DM_SWITCHSTATUSBAR:
@@ -777,6 +778,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			GetWindowRect(hwndDlg, &rc);
 			SetWindowPos(hwndDlg, 0, 0, 0, rc.right - rc.left, rc.bottom - rc.top,
                          SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER  | SWP_FRAMECHANGED | SWP_NOSENDCHANGING); 
+			RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
+//			SendMessage(hwndDlg, WM_SIZE, 0, 0);
 		}
 		break;
 	case DM_CASCADENEWWINDOW:

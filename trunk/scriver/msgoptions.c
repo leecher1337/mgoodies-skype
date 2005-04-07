@@ -114,7 +114,9 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			CheckDlgButton(hwndDlg, IDC_USETABS, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_USETABS, SRMSGDEFSET_USETABS));
 			CheckDlgButton(hwndDlg, IDC_TABSATBOTTOM, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_TABSATBOTTOM, SRMSGDEFSET_TABSATBOTTOM));
 			CheckDlgButton(hwndDlg, IDC_LIMITNAMES, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITNAMES, SRMSGDEFSET_LIMITNAMES));
-//			CheckDlgButton(hwndDlg, IDC_STATUSWIN, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON));
+			CheckDlgButton(hwndDlg, IDC_HIDEONETAB, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_HIDEONETAB, SRMSGDEFSET_HIDEONETAB));
+
+			//			CheckDlgButton(hwndDlg, IDC_STATUSWIN, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON));
 
 
 			CheckDlgButton(hwndDlg, IDC_TRANSPARENCY, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_USETRANSPARENCY, SRMSGDEFSET_USETRANSPARENCY));
@@ -156,6 +158,7 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 			EnableWindow(GetDlgItem(hwndDlg, IDC_TABSATBOTTOM), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LIMITNAMES), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
+			EnableWindow(GetDlgItem(hwndDlg, IDC_HIDEONETAB), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !IsDlgButtonChecked(hwndDlg, IDC_USETABS) && !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SAVEPERCONTACT), !IsDlgButtonChecked(hwndDlg, IDC_USETABS));
 			return TRUE;
@@ -168,6 +171,7 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				case IDC_USETABS:
 					EnableWindow(GetDlgItem(hwndDlg, IDC_TABSATBOTTOM), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
 					EnableWindow(GetDlgItem(hwndDlg, IDC_LIMITNAMES), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
+					EnableWindow(GetDlgItem(hwndDlg, IDC_HIDEONETAB), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
 					EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !IsDlgButtonChecked(hwndDlg, IDC_USETABS) && !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
 					EnableWindow(GetDlgItem(hwndDlg, IDC_SAVEPERCONTACT), !IsDlgButtonChecked(hwndDlg, IDC_USETABS));
 					break;
@@ -245,6 +249,7 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_USETABS, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_USETABS));
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_TABSATBOTTOM, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_TABSATBOTTOM));
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITNAMES, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_LIMITNAMES));
+							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_HIDEONETAB, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_HIDEONETAB));
 
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_AVATARENABLE, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_AVATARSUPPORT));
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITAVHEIGHT, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_LIMITAVATARH));
@@ -265,8 +270,8 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 							DBWriteContactSettingDword(NULL, SRMMMOD, SRMSGSET_INACTIVEALPHA, SendDlgItemMessage(hwndDlg,IDC_ITRANSPARENCYVALUE,TBM_GETPOS,0,0));
 
 							ReloadGlobals();
-							WindowList_Broadcast(g_dat->hMessageWindowList, DM_OPTIONSAPPLIED, 0, 0);
 							WindowList_Broadcast(g_dat->hParentWindowList, DM_OPTIONSAPPLIED, 0, 0);
+							WindowList_Broadcast(g_dat->hMessageWindowList, DM_OPTIONSAPPLIED, 0, 0);
 							return TRUE;
 						}
 					}
