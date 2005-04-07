@@ -110,7 +110,7 @@ private:
    	HANDLE      hContact;
    	HANDLE      hDbEventFirst;
    	bool        getFocus;
-	BSTR        quoteBuffer;
+   	BSTR		selectedText;
 
     // IUnknown
 	STDMETHODIMP QueryInterface(REFIID riid, PVOID *ppv);
@@ -195,7 +195,7 @@ public:
 
 	void            appendEvent(IEVIEWEVENT * event);
 	void            clear(IEVIEWEVENT * event);
-	void*           quote(IEVIEWEVENT * event);
+	void*           getSelection(IEVIEWEVENT * event);
 
 	static IEView* 	get(HWND);
 //	static IEView* 	getByDoc(HWND);

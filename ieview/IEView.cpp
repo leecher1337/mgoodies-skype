@@ -114,7 +114,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	pWebBrowser = NULL;
 	m_pConnectionPoint = NULL;
 	m_cRef = 0;
-	quoteBuffer = NULL;
+	selectedText = NULL;
 #ifdef GECKO
 	if (SUCCEEDED(CoCreateInstance(CLSID_MozillaBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
 #else
@@ -191,7 +191,7 @@ IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, in
 	pWebBrowser = NULL;
 	m_pConnectionPoint = NULL;
 	m_cRef = 0;
-	quoteBuffer = NULL;
+	selectedText = NULL;
 #ifdef GECKO
 	if (SUCCEEDED(CoCreateInstance(CLSID_MozillaBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
 #else
@@ -270,8 +270,8 @@ IEView::~IEView() {
 	if (sink != NULL) {
 		delete sink;
 	}
-	if (quoteBuffer != NULL) {
-		delete 	quoteBuffer;
+	if (selectedText != NULL) {
+		delete 	selectedText;
 	}
 	pWebBrowser->Release();
 	DestroyWindow(hwnd);
@@ -441,6 +441,16 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 		                                      (RECT*)NULL);
 			DestroyMenu(hMenu);
 			if (iSelection == ID_MENU_CLEARLOG) {
+				/*
+				BSTR selection = getSelection();
+				if (selection == NULL) {
+					MessageBoxW(NULL, selection, L"NULL SELECTION", MB_OK);
+				} else if (wcslen(selection)==0) {
+					MessageBoxW(NULL, selection, L"EMPTY SELECTION", MB_OK);
+				} else {
+					MessageBoxW(NULL, selection, L"SELECTION", MB_OK);
+				}
+				*/
 				clear();
 			} else {
 		    	SendMessage(hSPWnd, WM_COMMAND, iSelection, (LPARAM) NULL);
@@ -825,19 +835,19 @@ void IEView::clear(IEVIEWEVENT *event) {
 	getFocus = false;
 }
 
-void* IEView::quote(IEVIEWEVENT *event) {
-	if (quoteBuffer!=NULL) delete quoteBuffer;
-	quoteBuffer = getSelection();
+void* IEView::getSelection(IEVIEWEVENT *event) {
+	if (selectedText!=NULL) delete selectedText;
+	selectedText = getSelection();
 	if (event->dwFlags & IEEF_NO_UNICODE) {
 		int cp = CP_ACP;
 		if (event->cbSize == sizeof(IEVIEWEVENT)) {
 			cp = event->codepage;
 		}
-		char *strQuoteBuffer = Utils::convertToString(quoteBuffer, cp);
-		delete quoteBuffer;
-		quoteBuffer = (BSTR) strQuoteBuffer;
+		char *str = Utils::convertToString(selectedText, cp);
+		delete selectedText;
+		selectedText = (BSTR) str;
 	}
-	return (void *)quoteBuffer;
+	return (void *)selectedText;
 }
 
 void IEView::rebuildLog() {
@@ -912,6 +922,9 @@ BSTR IEView::getSelection() {
 }
 
 
+/**
+ * Returns the destination url (href) of the given anchor element (or parent anchor element)
+ **/
 BSTR IEView::getHrefFromAnchor(IHTMLElement *element) {
     if (element != NULL) {
     	IHTMLAnchorElement * pAnchor;
