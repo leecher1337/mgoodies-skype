@@ -31,7 +31,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 IDD_OPT_MSGDLG DIALOGEX 0, 0, 312, 246
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        "Message Window Options",IDC_STATIC,0,0,310,246
     CONTROL         "Automatically pop up the window when a message is received",
@@ -48,7 +48,7 @@ BEGIN
                     WS_TABSTOP,8,54,292,10
     CONTROL         "Tabs at bottom",IDC_TABSATBOTTOM,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,22,65,126,10
-    CONTROL         "Limit names on tabs to 20 character",IDC_LIMITNAMES,
+    CONTROL         "Limit names on tabs to 20 characters",IDC_LIMITNAMES,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,65,152,10
     CONTROL         "Cascade new windows",IDC_CASCADE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,8,76,292,10
@@ -181,8 +181,8 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,110,146,10
     CONTROL         "Mark follow-up msgs with timestamp",IDC_MARKFOLLOWUPS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,124,137,10
-    CONTROL         "Show message on a new line",IDC_MESSAGEONNEWLINE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,138,146,10
+    CONTROL         "Start message text on a new line",IDC_MESSAGEONNEWLINE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,138,146,10
     CONTROL         "Show status changes",IDC_SHOWSTATUSCHANGES,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,152,146,10
     GROUPBOX        "Fonts",IDC_STATIC,162,0,145,166
