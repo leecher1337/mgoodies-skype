@@ -52,15 +52,15 @@ static void GetChildWindowRect(struct ParentWindowData *dat, RECT *rcChild)
 	}
 	rcChild->left = 0;
 	rcChild->right = rc.right;
-	if (g_dat->flags & SMF_TABSATBOTTOM) {
+	if (dat->flags & SMF_TABSATBOTTOM) {
 		rcChild->top = 2;
-		if (dat->childrenCount > 1 || !(g_dat->flags & SMF_HIDEONETAB)) {
+		if (dat->childrenCount > 1 || !(dat->flags & SMF_HIDEONETAB)) {
 			rcChild->bottom = rcTabs.bottom + 4;
 		} else {
 			rcChild->bottom = rc.bottom - rc.top - (rcStatus.bottom - rcStatus.top);
 		}
 	} else {
-		if (dat->childrenCount > 1 || !(g_dat->flags & SMF_HIDEONETAB)) {
+		if (dat->childrenCount > 1 || !(dat->flags & SMF_HIDEONETAB)) {
 			rcChild->top = rcTabs.top;
 		} else {
 			rcChild->top = 2;//rcTabs.top - 2;
@@ -234,7 +234,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			dat->childrenCount = 0;
 			dat->children = NULL;
 			dat->hwnd = hwndDlg;
-			dat->flags = g_dat->flags | SMF_SHOWTITLEBAR;
+			dat->flags = g_dat->flags;// | SMF_SHOWTITLEBAR;
 			dat->mouseLBDown = 0;
 			dat->windowWasCascaded = 0;
 			dat->hwndStatus = CreateWindowEx(0, STATUSCLASSNAME, NULL, WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwndDlg, NULL, g_hInst, NULL);
@@ -264,12 +264,12 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			WindowList_Add(g_dat->hParentWindowList, hwndDlg, 0);
 			OldTabCtrlProc = (WNDPROC) SetWindowLong(dat->hwndTabs, GWL_WNDPROC, (LONG) TabCtrlProc);
 			ws = GetWindowLong(dat->hwndTabs, GWL_STYLE) & ~(TCS_BOTTOM);
-			if (g_dat->flags & SMF_TABSATBOTTOM) {
+			if (dat->flags & SMF_TABSATBOTTOM) {
 				ws |= TCS_BOTTOM;
 			}
 			SetWindowLong(dat->hwndTabs, GWL_STYLE, ws);
 			ws = GetWindowLong(hwndDlg, GWL_STYLE) & ~(WS_CAPTION);
-			if (g_dat->flags & SMF_SHOWTITLEBAR) {
+			if (dat->flags & SMF_SHOWTITLEBAR) {
 				ws |= WS_CAPTION;
 				SetWindowLong(hwndDlg, GWL_STYLE, ws);
 			} else {
@@ -280,9 +280,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 							 SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER  | SWP_FRAMECHANGED | SWP_NOSENDCHANGING); 
 			}
 			ws = GetWindowLong(hwndDlg, GWL_EXSTYLE) & ~WS_EX_LAYERED;
-			ws |= g_dat->flags & SMF_USETRANSPARENCY ? WS_EX_LAYERED : 0;
+			ws |= dat->flags & SMF_USETRANSPARENCY ? WS_EX_LAYERED : 0;
 			SetWindowLong(hwndDlg , GWL_EXSTYLE , ws);
-			if (g_dat->flags & SMF_USETRANSPARENCY) {
+			if (dat->flags & SMF_USETRANSPARENCY) {
    				pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(255-g_dat->inactiveAlpha), LWA_ALPHA);
 //				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 			}
@@ -291,7 +291,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
 				ShowWindow(dat->hwndStatus, SW_HIDE);
 			}
-			if (g_dat->flags & SMF_USETABS) {
+			if (dat->flags & SMF_USETABS) {
 				if (ScriverRestoreWindowPosition(hwndDlg, NULL, SRMMMOD, "", 0, SW_HIDE)) {
 					SetWindowPos(hwndDlg, 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE  | SWP_HIDEWINDOW);
 				}
@@ -494,9 +494,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	case WM_ACTIVATE:
 		if (LOWORD(wParam) == WA_INACTIVE) {
 			ws = GetWindowLong(hwndDlg, GWL_EXSTYLE) & ~WS_EX_LAYERED;
-			ws |= g_dat->flags & SMF_USETRANSPARENCY ? WS_EX_LAYERED : 0;
+			ws |= dat->flags & SMF_USETRANSPARENCY ? WS_EX_LAYERED : 0;
 			SetWindowLong(hwndDlg , GWL_EXSTYLE , ws);
-			if (g_dat->flags & SMF_USETRANSPARENCY) {
+			if (dat->flags & SMF_USETRANSPARENCY) {
    				pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(255-g_dat->inactiveAlpha), LWA_ALPHA);
 //				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 			}
@@ -509,9 +509,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			dat->nFlash = 0;
 		}
 		ws = GetWindowLong(hwndDlg, GWL_EXSTYLE) & ~WS_EX_LAYERED;
-		ws |= g_dat->flags & SMF_USETRANSPARENCY ? WS_EX_LAYERED : 0;
+		ws |= dat->flags & SMF_USETRANSPARENCY ? WS_EX_LAYERED : 0;
 		SetWindowLong(hwndDlg , GWL_EXSTYLE , ws);
-		if (g_dat->flags & SMF_USETRANSPARENCY) {
+		if (dat->flags & SMF_USETRANSPARENCY) {
    			pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(255-g_dat->activeAlpha), LWA_ALPHA);
 //				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 		}
@@ -527,7 +527,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		ReleaseCapture();
 		break;
 	case WM_MOUSEMOVE:
-		if (dat->mouseLBDown) { // && !(dat->flags&SMF_SHOWTITLEBAR)
+		if (dat->mouseLBDown) { 
 			POINT pt;
 			RECT  rc;
 			GetCursorPos(&pt);
@@ -543,7 +543,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			WindowList_Remove(g_dat->hParentWindowList, hwndDlg);
 			if (dat->children!=NULL) free (dat->children);
 			free(dat);
-			if (g_dat->flags & SMF_USETABS) {
+			if (dat->flags & SMF_USETABS) {
 				WINDOWPLACEMENT wp = { 0 };
 				wp.length = sizeof(wp);
 				GetWindowPlacement(hwndDlg, &wp);
@@ -673,7 +673,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 					wStatus = DBGetContactSettingWord(mdat->hContact, mdat->szProto, "Status", ID_STATUS_OFFLINE);
 					if (mdat->hwnd == dat->hwndActive) {
 						if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON)) {
-							if (mdat->showTyping && (g_dat->flags&SMF_SHOWTYPINGWIN)) {
+							if (mdat->showTyping && (dat->flags&SMF_SHOWTYPINGWIN)) {
 								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) g_dat->hIcons[SMF_ICON_TYPING]);
 							} else if (mdat->showUnread && GetActiveWindow() != hwndDlg && GetForegroundWindow() != hwndDlg) {
 								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));	
@@ -727,9 +727,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			SetWindowLong(hwndDlg, GWL_STYLE, ws);
 
 			ws = GetWindowLong(hwndDlg, GWL_EXSTYLE)& ~WS_EX_LAYERED;
-			ws |= g_dat->flags & SMF_USETRANSPARENCY ? WS_EX_LAYERED : 0;
+			ws |= dat->flags & SMF_USETRANSPARENCY ? WS_EX_LAYERED : 0;
 			SetWindowLong(hwndDlg , GWL_EXSTYLE , ws);
-			if (g_dat->flags & SMF_USETRANSPARENCY) {
+			if (dat->flags & SMF_USETRANSPARENCY) {
    				pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(255-g_dat->inactiveAlpha), LWA_ALPHA);
 //				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 			}
@@ -778,8 +778,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			GetWindowRect(hwndDlg, &rc);
 			SetWindowPos(hwndDlg, 0, 0, 0, rc.right - rc.left, rc.bottom - rc.top,
                          SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER  | SWP_FRAMECHANGED | SWP_NOSENDCHANGING); 
-			RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
 //			SendMessage(hwndDlg, WM_SIZE, 0, 0);
+			RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
 		}
 		break;
 	case DM_CASCADENEWWINDOW:
