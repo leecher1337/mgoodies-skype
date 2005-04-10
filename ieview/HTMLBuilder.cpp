@@ -364,16 +364,14 @@ TextToken* TextToken::tokenizeLinks(const wchar_t *text) {
     for (int i=0, lastTokenStart=0; i<=l;) {
         TextToken *newToken;
 		int newTokenType, newTokenSize;
-        if (text[i]=='\0') {
+		int urlLen = Utils::detectURL(text+i);
+		if (text[i]=='\0') {
 			newTokenType = END;
 			newTokenSize = 1;
-		} else if (!wcsncmp(text+i, L"ftp:/", 5)) {
+		} else if (urlLen > 0) {
 			newTokenType = LINK;
-        	newTokenSize = countNoWhitespace(text+i);
-       	} else if (!wcsncmp(text+i, L"http:/", 6)) {
-			newTokenType = LINK;
-       		newTokenSize = countNoWhitespace(text+i);
-  		} else if (!wcsncmp(text+i, L"www.", 4)) {
+       		newTokenSize = urlLen;
+		} else if (!wcsncmp(text+i, L"www.", 4)) {
 			newTokenType = WWWLINK;
   			newTokenSize = countNoWhitespace(text+i);
      	} else if (!wcsncmp(text+i, L"mailto:", 7)) {

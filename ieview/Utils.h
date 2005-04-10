@@ -22,6 +22,7 @@ public:
 	static char *UTF8Encode(const wchar_t *wtext);
 	static char *UTF8Encode(const char *text);
 	static void  UTF8Encode(const char *text, char *output, int maxLen);
+	static int   detectURL(const wchar_t *text);
 };
 
 #endif
