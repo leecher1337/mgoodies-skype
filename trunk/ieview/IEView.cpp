@@ -442,13 +442,26 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			DestroyMenu(hMenu);
 			if (iSelection == ID_MENU_CLEARLOG) {
 				/*
-				BSTR selection = getSelection();
+				IEVIEWEVENT event;
+				event.cbSize = sizeof(IEVIEWEVENT);
+				event.dwFlags=0;
+				event.codepage = CP_ACP;
+				BSTR selection = (BSTR)getSelection(&event);
 				if (selection == NULL) {
-					MessageBoxW(NULL, selection, L"NULL SELECTION", MB_OK);
+					MessageBoxW(NULL, L"", L"NULL SELECTION", MB_OK);
 				} else if (wcslen(selection)==0) {
 					MessageBoxW(NULL, selection, L"EMPTY SELECTION", MB_OK);
 				} else {
 					MessageBoxW(NULL, selection, L"SELECTION", MB_OK);
+				}
+				event.dwFlags=IEEF_NO_UNICODE;
+				char *selectionA = (char *)getSelection(&event);
+				if (selectionA == NULL) {
+					MessageBoxA(NULL, "", "NULL SELECTION", MB_OK);
+				} else if (strlen(selectionA)==0) {
+					MessageBoxA(NULL, selectionA, "EMPTY SELECTION", MB_OK);
+				} else {
+					MessageBoxA(NULL, selectionA, "SELECTION", MB_OK);
 				}
 				*/
 				clear();
@@ -838,6 +851,7 @@ void IEView::clear(IEVIEWEVENT *event) {
 void* IEView::getSelection(IEVIEWEVENT *event) {
 	if (selectedText!=NULL) delete selectedText;
 	selectedText = getSelection();
+	if (selectedText == NULL || wcslen(selectedText)== 0) return NULL;
 	if (event->dwFlags & IEEF_NO_UNICODE) {
 		int cp = CP_ACP;
 		if (event->cbSize == sizeof(IEVIEWEVENT)) {
