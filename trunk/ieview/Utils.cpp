@@ -1,5 +1,11 @@
 #include "Utils.h"
 
+static int countNoWhitespace(const wchar_t *str) {
+	int c;
+	for (c=0; *str!='\n' && *str!='\r' && *str!='\t' && *str!=' ' && *str!='\0'; str++, c++);
+	return c;
+}
+
 void Utils::appendText(char **str, int *sizeAlloced, const char *fmt, ...) {
 	va_list vararg;
 	char *p;
@@ -196,4 +202,18 @@ void Utils::UTF8Encode(const char *text, char *output, int maxLen) {
     memcpy(output, atext, min ((int)strlen(atext)+1, maxLen));
 	delete atext;
 	delete wtext;
+}
+
+int Utils::detectURL(const wchar_t *text) {
+	int i, len;
+	for (i=len=0;text[i]!='\0';i++, len++) {
+		if (!((text[i] >= '0' && text[i]<='9') || (text[i] >= 'A' && text[i]<='Z') || (text[i] >= 'a' && text[i]<='z'))) {
+			break;
+		}
+	}
+	if (len > 0 && text[i]==':' && text[i+1]=='/') {
+		len += countNoWhitespace(text+i);
+		return len;
+	}
+	return 0;
 }
