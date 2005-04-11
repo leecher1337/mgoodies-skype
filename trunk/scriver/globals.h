@@ -46,10 +46,11 @@
 #define SMF_ICON_UNICODEON	 7
 #define SMF_ICON_UNICODEOFF	 8
 #define SMF_ICON_DELIVERING	 9
+#define SMF_ICON_QUOTE		 10
 
-#define SMF_ICON_INCOMING	 10
-#define SMF_ICON_OUTGOING	 11
-#define SMF_ICON_NOTICE		 12
+#define SMF_ICON_INCOMING	 11
+#define SMF_ICON_OUTGOING	 12
+#define SMF_ICON_NOTICE		 13
 
 struct GlobalMessageData
 {
