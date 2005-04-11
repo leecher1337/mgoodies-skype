@@ -107,6 +107,73 @@ static TCHAR *GetIEViewSelection(struct MessageWindowData *dat) {
 	return buffer;
 }
 
+static TCHAR *GetQuotedTextW(TCHAR * text) {
+	int i, j, l, newLine, wasCR;
+	TCHAR *out;
+#ifdef _UNICODE
+	l = wcslen(text);
+#else
+	l = strlen(text);
+#endif
+	newLine = 1;
+	wasCR = 0;
+	for (i=j=0; i<l; i++) {
+		if (text[i]=='\r') {
+			wasCR = 1;
+			newLine = 1;
+			j += text[i+1]!='\n' ? 2 : 1;
+		} else if (text[i]=='\n') {
+			newLine = 1;
+			j += wasCR ? 1 : 2;
+			wasCR = 0;
+		} else {
+			j++;
+			if (newLine) {
+				//for (;i<l && text[i]=='>';i++) j--;
+				j+=2;
+			}
+			newLine = 0;
+			wasCR = 0;
+		}
+	}
+	j+=3;
+	out = (TCHAR *)malloc(sizeof(TCHAR) * j);
+	newLine = 1;
+	wasCR = 0;
+	for (i=j=0; i<l; i++) {
+		if (text[i]=='\r') {
+			wasCR = 1;
+			newLine = 1;
+			out[j++] = '\r';
+			if (text[i+1]!='\n') {
+				out[j++]='\n';
+			}
+		} else if (text[i]=='\n') {
+			newLine = 1;
+			if (!wasCR) {
+				out[j++]='\r';
+			}
+			out[j++]='\n';
+			wasCR = 0;
+		} else {
+			if (newLine) {
+				out[j++]='>';
+				out[j++]=' ';
+				//for (;i<l && text[i]=='>';i++) j--;
+			}
+			newLine = 0;
+			wasCR = 0;
+			out[j++]=text[i];
+		}
+	}
+	out[j++]='\r';
+	out[j++]='\n';
+	out[j++]='\0';
+	return out;
+}
+
+
+
 static void RemoveSendBuffer(struct MessageWindowData *dat, int i) {
 	if (dat->sendInfo[i].sendBuffer) {
  		free(dat->sendInfo[i].sendBuffer);
@@ -703,12 +770,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 
 			dat->wOldStatus = dat->wStatus;
 			dat->sendInfo = NULL;
-//			dat->hBkgBrush = NULL;
 			dat->hDbEventFirst = NULL;
+			dat->hDbEventLast = NULL;
 			dat->sendBuffer = NULL;
 			dat->sendCount = 0;
 			dat->messagesInProgress = 0;
-//			dat->windowWasCascaded = 0;
 //			dat->nFlash = 0;
 			dat->nTypeSecs = 0;
 			dat->nLastTyping = 0;
@@ -1611,7 +1677,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			{
 				DBEVENTINFO dbei = { 0 };
 				SETTEXTEX  st;
-				st.flags = ST_DEFAULT;
+				st.flags = ST_SELECTION;
 #ifdef _UNICODE
 				st.codepage = 1200;
 #else
@@ -1621,14 +1687,20 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (ServiceExists(MS_IEVIEW_EVENT)) {
 					TCHAR *buffer = GetIEViewSelection(dat);
 					if (buffer!=NULL) {
-						SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETTEXTEX, (WPARAM) &st, (LPARAM)buffer);
+						TCHAR *quotedBuffer = GetQuotedTextW(buffer);
+						SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETTEXTEX, (WPARAM) &st, (LPARAM)quotedBuffer);
+						free (quotedBuffer);
+						SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 						break;
 					}
 				} else {
 					TCHAR *buffer = GetRichEditSelection(hwndDlg);
 					if (buffer!=NULL) {
-						SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETTEXTEX, (WPARAM) &st, (LPARAM)buffer);
+						TCHAR *quotedBuffer = GetQuotedTextW(buffer);
+						SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETTEXTEX, (WPARAM) &st, (LPARAM)quotedBuffer);
+						free (quotedBuffer);
 						free(buffer);
+						SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 						break;
 					}
 
@@ -1647,19 +1719,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 							DWORD wlen = safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
 							if (wlen > 0 && wlen < aLen) {
 								buffer = (TCHAR *)&dbei.pBlob[aLen];
-							} else {
-								buffer = (TCHAR *) malloc(sizeof(TCHAR) * aLen);
-								MultiByteToWideChar(CP_ACP, 0, (char *) dbei.pBlob, -1, buffer, aLen);
-								free(dbei.pBlob);
-								dbei.pBlob = (char *)buffer;
-							}
-						} else {
-							buffer = (TCHAR *) malloc(sizeof(TCHAR) * aLen);
-							MultiByteToWideChar(CP_ACP, 0, (char *) dbei.pBlob, -1, buffer, aLen);
-							free(dbei.pBlob);
-							dbei.pBlob = (char *)buffer;
+							} 
 						}
-					} else {
+					} 
+					if (buffer == NULL) {
 						buffer = (TCHAR *) malloc(sizeof(TCHAR) * aLen);
 						MultiByteToWideChar(CP_ACP, 0, (char *) dbei.pBlob, -1, buffer, aLen);
 						free(dbei.pBlob);
@@ -1669,10 +1732,13 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					buffer = (TCHAR *)dbei.pBlob;
 #endif                            
 					if (buffer!=NULL) {
-						SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETTEXTEX, (WPARAM) &st, (LPARAM)buffer);
+						TCHAR *quotedBuffer = GetQuotedTextW(buffer);
+						SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETTEXTEX, (WPARAM) &st, (LPARAM)quotedBuffer);
+						free (quotedBuffer);
 					}
 				}
 				free(dbei.pBlob);
+				SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 				break;
 			}
 		case IDC_ADD:
