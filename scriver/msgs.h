@@ -168,6 +168,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 int InitOptions(void);
 BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 int DbEventIsShown(DBEVENTINFO * dbei, struct MessageWindowData *dat);
+int safe_wcslen(wchar_t *msg, int maxLen);
 void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend);
 void LoadMsgLogIcons(void);
 void FreeMsgLogIcons(void);

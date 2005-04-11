@@ -56,7 +56,7 @@ struct LogStreamData
 };
 
 
-static int safe_wcslen(wchar_t *msg, int maxLen) {
+int safe_wcslen(wchar_t *msg, int maxLen) {
     int i;
 	for (i = 0; i < maxLen; i++) {
 		if (msg[i] == (wchar_t)0)
@@ -556,6 +556,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		event.hDbEventFirst = hDbEventFirst;
 		event.count = count;
 		CallService(MS_IEVIEW_EVENT, 0, (LPARAM)&event);
+		dat->hDbEventLast = event.hDbEventFirst;
 		return;
 	}
 // IEVIew MOD End
