@@ -233,7 +233,7 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 			case IDC_BROWSE_EXTERNALCSS_RTL:
 				{
 					OPENFILENAME ofn={0};
-					GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
+					GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
 					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
 					ofn.hwndOwner = hwndDlg;
 					ofn.hInstance = NULL;
@@ -614,7 +614,7 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			case IDC_BROWSE_TEMPLATES_RTL:
 				{
 					OPENFILENAME ofn={0};
-					GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
+					GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
 					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
 					ofn.hwndOwner = hwndDlg;
 					ofn.hInstance = NULL;

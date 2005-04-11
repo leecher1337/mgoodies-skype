@@ -75,7 +75,7 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 		if (view != NULL) {
 			view->clear(event);
 		}
-	} else if (event->iType == IEE_GETSELECTION) {
+	} else if (event->iType == IEE_GET_SELECTION) {
 		if (view != NULL) {
 			return (int)view->getSelection(event);
 		}
