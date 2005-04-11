@@ -251,6 +251,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
         szAvatarOut = Utils::dupString(szNoAvatar);
 	}
 	HANDLE hDbEvent = event->hDbEventFirst;
+	event->hDbEventFirst = NULL;
 	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
 		int outputSize;
 		char *output;
@@ -269,6 +270,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
 			CallService(MS_DB_EVENT_MARKREAD, (WPARAM) event->hContact, (LPARAM) hDbEvent);
 		}
+		HANDLE hCurDbEvent = hDbEvent;
         hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
 		if (!isDbEventShown(0, &dbei)) {
             free(dbei.pBlob);
@@ -391,6 +393,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 					}
 				}
 			}
+			event->hDbEventFirst = hCurDbEvent;
 			setLastEventType(MAKELONG(dbei.flags, dbei.eventType));
 			setLastEventTime(dbei.timestamp);
 			if (szText!=NULL) delete szText;
