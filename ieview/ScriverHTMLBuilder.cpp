@@ -238,6 +238,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	}
 	char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
 	HANDLE hDbEvent = event->hDbEventFirst;
+	event->hDbEventFirst = NULL;
 	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
 		int outputSize;
 		char *output;
@@ -256,6 +257,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
 			CallService(MS_DB_EVENT_MARKREAD, (WPARAM) event->hContact, (LPARAM) hDbEvent);
 		}
+		HANDLE hCurDbEvent = hDbEvent;
         hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
 		if (!isDbEventShown(dwFlags, &dbei)) {
             free(dbei.pBlob);
@@ -344,6 +346,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			}
             Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>", className, szText);
             Utils::appendText(&output, &outputSize, "</div>\n");
+			event->hDbEventFirst = hCurDbEvent;
 			setLastEventType(MAKELONG(dbei.flags, dbei.eventType));
 			setLastEventTime(dbei.timestamp);
 			if (szName!=NULL) delete szName;
