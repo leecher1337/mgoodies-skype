@@ -159,12 +159,12 @@ BEGIN
                     WS_CLIPSIBLINGS,1,50,1,13,0x18000000L
 END
 
-IDD_OPT_MSGLOG DIALOGEX 0, 0, 308, 235
+IDD_OPT_MSGLOG DIALOGEX 0, 0, 308, 240
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        "Message Window Event Log",IDC_STMSGLOGGROUP,0,0,158,166
+    GROUPBOX        "Message Window Event Log",IDC_STMSGLOGGROUP,0,0,158,169
     CONTROL         "Show icons",IDC_SHOWLOGICONS,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,10,12,146,10
     CONTROL         "Show names",IDC_SHOWNAMES,"Button",BS_AUTOCHECKBOX | 
@@ -187,40 +187,40 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,138,146,10
     CONTROL         "Show status changes",IDC_SHOWSTATUSCHANGES,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,152,146,10
-    GROUPBOX        "Fonts",IDC_STATIC,162,0,145,166
+    GROUPBOX        "Fonts",IDC_STATIC,162,0,145,169
     LTEXT           "Background colour:",IDC_STATIC,169,13,91,8
     CONTROL         "",IDC_BKGCOLOUR,"ColourPicker",WS_TABSTOP,265,10,35,12
-    CONTROL         "",IDC_INPUTBKGCOLOUR,"ColourPicker",WS_TABSTOP,265,24,
+    CONTROL         "",IDC_INPUTBKGCOLOUR,"ColourPicker",WS_TABSTOP,265,26,
                     35,12
-    LISTBOX         IDC_FONTLIST,169,39,131,82,LBS_OWNERDRAWVARIABLE | 
+    LISTBOX         IDC_FONTLIST,169,43,131,82,LBS_OWNERDRAWVARIABLE | 
                     LBS_NOINTEGRALHEIGHT | LBS_EXTENDEDSEL | WS_VSCROLL | 
                     WS_TABSTOP
-    CONTROL         "",IDC_FONTCOLOUR,"ColourPicker",WS_TABSTOP,169,125,57,
+    CONTROL         "",IDC_FONTCOLOUR,"ColourPicker",WS_TABSTOP,169,129,57,
                     14
-    PUSHBUTTON      "Choose font...",IDC_CHOOSEFONT,243,125,57,14
-    GROUPBOX        "Load History Events",IDC_STATIC,0,169,306,64
+    PUSHBUTTON      "Choose font...",IDC_CHOOSEFONT,243,129,57,14
+    GROUPBOX        "Load History Events",IDC_STATIC,0,174,308,64
     CONTROL         "Load unread events only",IDC_LOADUNREAD,"Button",
-                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,182,138,10
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,187,138,10
     CONTROL         "Load number of previous events",IDC_LOADCOUNT,"Button",
-                    BS_AUTORADIOBUTTON,10,198,138,10
-    EDITTEXT        IDC_LOADCOUNTN,148,197,33,12,ES_RIGHT | ES_NUMBER | 
+                    BS_AUTORADIOBUTTON,10,203,138,10
+    EDITTEXT        IDC_LOADCOUNTN,148,202,33,12,ES_RIGHT | ES_NUMBER | 
                     WS_DISABLED
     CONTROL         "Spin1",IDC_LOADCOUNTSPIN,"msctls_updown32",
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | 
                     UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK | 
-                    WS_DISABLED,170,196,10,14
+                    WS_DISABLED,170,201,10,14
     CONTROL         "Load previous events less than",IDC_LOADTIME,"Button",
-                    BS_AUTORADIOBUTTON,10,214,138,10
-    EDITTEXT        IDC_LOADTIMEN,148,213,33,12,ES_RIGHT | ES_NUMBER | 
+                    BS_AUTORADIOBUTTON,10,219,138,10
+    EDITTEXT        IDC_LOADTIMEN,148,218,33,12,ES_RIGHT | ES_NUMBER | 
                     WS_DISABLED
     CONTROL         "Spin1",IDC_LOADTIMESPIN,"msctls_updown32",
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | 
                     UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK | 
-                    WS_DISABLED,170,212,10,14
-    LTEXT           "minutes old",IDC_STMINSOLD,185,215,90,8,WS_DISABLED
+                    WS_DISABLED,170,217,10,14
+    LTEXT           "minutes old",IDC_STMINSOLD,185,220,90,8,WS_DISABLED
     CTEXT           "Select multiple fonts by dragging or by using the control key",
-                    IDC_STATIC,169,142,131,16
-    LTEXT           "Input area background:",IDC_STATIC,169,25,91,8
+                    IDC_STATIC,169,146,131,16
+    LTEXT           "Input area background:",IDC_STATIC,169,27,91,8
 END
 
 IDD_OPT_MSGTYPE DIALOGEX 0, 0, 283, 252
