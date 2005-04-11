@@ -64,7 +64,8 @@ typedef struct {
 	DWORD		dwFlags;			// one of IEEF_* values
 	HWND		hwnd;               // HWND returned by IEW_CREATE
 	HANDLE      hContact;           // contact
-	HANDLE 		hDbEventFirst;      // first event to log
+	HANDLE 		hDbEventFirst;      // first event to log, when IEE_LOG_EVENTS returns it will contain
+	                                // the last event actually logged or NULL if no event was logged
 	int 		count;              // number of events to log
 	int         codepage;           // ANSI codepage
 } IEVIEWEVENT;
