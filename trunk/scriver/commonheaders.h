@@ -1,8 +1,8 @@
 /*
 SRMM
 
-Copyright 2000-2003 Miranda ICQ/IM project, 
-all portions of this codebase are copyrighted to the people 
+Copyright 2000-2003 Miranda ICQ/IM project,
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include <tchar.h>
 #define _WIN32_WINNT 0x0501
+#define _WIN32_IE 0x0500
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
@@ -33,6 +34,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <process.h>
 #include "resource.h"
 #include <win2k.h>
+#ifdef __MINGW32__
+#define EM_SETTEXTEX	(WM_USER + 97)
+#define ST_DEFAULT		0
+#define ST_KEEPUNDO		1
+#define ST_SELECTION	2
+#define ST_NEWCHARS		4
+typedef struct _settextex
+{
+	DWORD	flags;
+	UINT	codepage;
+} SETTEXTEX;
+#define	CFM_WEIGHT			0x00400000
+#endif
 #include <newpluginapi.h>
 #include <m_system.h>
 #include <m_database.h>
