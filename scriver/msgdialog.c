@@ -245,7 +245,7 @@ static void SetDialogToType(HWND hwndDlg)
 		ShowMultipleControls(hwndDlg, buttonLineControls, sizeof(buttonLineControls) / sizeof(buttonLineControls[0]), SW_HIDE);
 	}
 // IEVIew MOD Begin
-	if (ServiceExists(MS_IEVIEW_WINDOW)) {
+	if (dat->flags & SMF_USEIEVIEW) {
 		ShowWindow (GetDlgItem(hwndDlg, IDC_LOG), SW_HIDE);
 	}
 // IEVIew MOD End
@@ -629,7 +629,7 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - dat->avatarHeight, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
 //	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - (hSplitterPos + toolbarHeight + dat->avatarHeight)/2, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
 	EndDeferWindowPos(hdwp);
-	if (ServiceExists(MS_IEVIEW_WINDOW)) {
+	if (dat->flags & SMF_USEIEVIEW) {
 		IEVIEWWINDOW ieWindow;
 		ieWindow.cbSize = sizeof(IEVIEWWINDOW);
 		ieWindow.iType = IEW_SETPOS;
@@ -751,28 +751,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				dat->wStatus = DBGetContactSettingWord(dat->hContact, dat->szProto, "Status", ID_STATUS_OFFLINE);
 			else
 				dat->wStatus = ID_STATUS_OFFLINE;
-// IEVIew MOD Begin
-			if (ServiceExists(MS_IEVIEW_WINDOW)) {
-				IEVIEWWINDOW ieWindow;
-				ieWindow.cbSize = sizeof(IEVIEWWINDOW);
-				ieWindow.iType = IEW_CREATE;
-				ieWindow.dwFlags = 0;
-				ieWindow.dwMode = IEWM_SCRIVER;
-				ieWindow.parent = hwndDlg;
-				ieWindow.x = 0;
-				ieWindow.y = 0;
-				ieWindow.cx = 200;
-				ieWindow.cy = 300;
-				CallService(MS_IEVIEW_WINDOW, 0, (LPARAM)&ieWindow);
-				dat->hwndLog = ieWindow.hwnd;
-			}
-// IEVIew MOD End
-
 			dat->wOldStatus = dat->wStatus;
 			dat->sendInfo = NULL;
 			dat->hDbEventFirst = NULL;
 			dat->hDbEventLast = NULL;
-			dat->sendBuffer = NULL;
+//			dat->sendBuffer = NULL;
 			dat->sendCount = 0;
 			dat->messagesInProgress = 0;
 //			dat->nFlash = 0;
@@ -802,6 +785,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "DisableUnicode", (BYTE) 0)) {
 				dat->flags |= SMF_DISABLE_UNICODE;
 			}
+			dat->flags |= g_dat->flags & SMF_USEIEVIEW;
 			dat->codePage = DBGetContactSettingWord(dat->hContact, SRMMMOD, "CodePage", (WORD) CP_ACP);
 //			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
 			{
@@ -843,7 +827,22 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_LINK);
 
 			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_KEYEVENTS | ENM_CHANGE);
-
+// IEVIew MOD Begin
+			if (dat->flags & SMF_USEIEVIEW) {
+				IEVIEWWINDOW ieWindow;
+				ieWindow.cbSize = sizeof(IEVIEWWINDOW);
+				ieWindow.iType = IEW_CREATE;
+				ieWindow.dwFlags = 0;
+				ieWindow.dwMode = IEWM_SCRIVER;
+				ieWindow.parent = hwndDlg;
+				ieWindow.x = 0;
+				ieWindow.y = 0;
+				ieWindow.cx = 200;
+				ieWindow.cy = 300;
+				CallService(MS_IEVIEW_WINDOW, 0, (LPARAM)&ieWindow);
+				dat->hwndLog = ieWindow.hwnd;
+			}
+// IEVIew MOD End
 			/* duh, how come we didnt use this from the start? */
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_AUTOURLDETECT, (WPARAM) TRUE, 0);
 			if (dat->hContact) {
@@ -1149,11 +1148,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			SendMessage(hwndDlg, DM_GETAVATAR, 0, 0);
 		}
 		SetDialogToType(hwndDlg);
-//		if (dat->hBkgBrush)
-//			DeleteObject(dat->hBkgBrush);
 		{
 			COLORREF colour = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_BKGCOLOUR, SRMSGDEFSET_BKGCOLOUR);
-//			dat->hBkgBrush = CreateSolidBrush(colour);
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETBKGNDCOLOR, 0, colour);
 			colour = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_INPUTBKGCOLOUR, SRMSGDEFSET_INPUTBKGCOLOUR);
 			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETBKGNDCOLOR, 0, colour);
@@ -1447,7 +1443,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		break;
 	case DM_CLEARLOG:
 	// IEVIew MOD Begin
-		if (ServiceExists(MS_IEVIEW_EVENT)) {
+		if (dat->flags & SMF_USEIEVIEW) {
 			IEVIEWEVENT event;
 			event.cbSize = sizeof(IEVIEWEVENT);
 			event.iType = IEE_CLEAR_LOG;
@@ -1469,6 +1465,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					dat->sendInfo[i].timeout+=1000;
 					if (dat->sendInfo[i].timeout > timeout) {
 						struct ErrorWindowData *ewd = (struct ErrorWindowData *) malloc(sizeof(struct ErrorWindowData));
+						ewd->szName = NULL;
 						ewd->szDescription = strdup(Translate("The message send timed out."));
 						ewd->textSize = dat->sendInfo[i].sendBufferSize;
 						ewd->szText = (char *)malloc(dat->sendInfo[i].sendBufferSize);
@@ -1481,7 +1478,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 							}
 						}
 						CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGSENDERROR), hwndDlg, ErrorDlgProc, (LPARAM) ewd);
-						RemoveSendBuffer(dat, i);
+						//RemoveSendBuffer(dat, i);
 					}
 				}
 			}
@@ -1514,6 +1511,28 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 		}
 		break;
+	case DM_SENDMESSAGE:
+			if (lParam) {
+				HANDLE hSendId;
+				struct MessageSendInfo *msi = (struct MessageSendInfo *)lParam;
+				dat->sendCount ++;
+				dat->sendInfo = (struct MessageSendInfo *) realloc(dat->sendInfo, sizeof(struct MessageSendInfo) * dat->sendCount);
+				dat->sendInfo[dat->sendCount-1].sendBufferSize = msi->sendBufferSize;
+				dat->sendInfo[dat->sendCount-1].sendBuffer = (char *) malloc(msi->sendBufferSize);
+				dat->sendInfo[dat->sendCount-1].timeout=0;
+				memcpy(dat->sendInfo[dat->sendCount-1].sendBuffer, msi->sendBuffer, dat->sendInfo[dat->sendCount-1].sendBufferSize);
+				SetTimer(hwndDlg, TIMERID_MSGSEND, 1000, NULL);
+				dat->messagesInProgress++;
+				if (g_dat->flags & SMF_SHOWPROGRESS) {
+					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+				}
+				hSendId = (HANDLE) CallContactService(dat->hContact, MsgServiceName(dat->hContact), SEND_FLAGS, (LPARAM) dat->sendInfo[dat->sendCount-1].sendBuffer);
+				if (dat->sendCount>0) {
+					dat->sendInfo[dat->sendCount-1].hSendId = hSendId;
+				}
+			}
+
+		break;
 	case DM_ERRORDECIDED:
 		switch (wParam) {
 		case MSGERROR_CANCEL:
@@ -1523,6 +1542,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			break;
 		case MSGERROR_RETRY:
 			if (lParam) {
+				struct MessageSendInfo msi;
+				struct ErrorWindowData *ewd = (struct ErrorWindowData *)lParam;
+				msi.sendBufferSize = ewd->textSize;
+				msi.sendBuffer = ewd->szText;
+				SendMessage(hwndDlg, DM_SENDMESSAGE, 0, (LPARAM)&msi);
+				/*
 				HANDLE hSendId;
 				struct ErrorWindowData *ewd = (struct ErrorWindowData *)lParam;
 				dat->sendCount ++;
@@ -1540,6 +1565,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dat->sendCount>0) {
 					dat->sendInfo[dat->sendCount-1].hSendId = hSendId;
 				}
+				*/
 			}
 			break;
 		}
@@ -1577,18 +1603,43 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			break;
 		switch (LOWORD(wParam)) {
 		case IDOK:
+			//this is a 'send' button
 			if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDOK)))
 				break;
 			if (dat->hContact !=NULL) {
-				//this is a 'send' button
-				HANDLE hSendId;
+				struct MessageSendInfo msi;
+			//	HANDLE hSendId;
 				int bufSize;
+
+				bufSize = GetWindowTextLengthA(GetDlgItem(hwndDlg, IDC_MESSAGE)) + 1;
+				msi.sendBufferSize = bufSize * (sizeof(TCHAR) + 1);
+				msi.sendBuffer = (char *) malloc(msi.sendBufferSize);
+				GetDlgItemTextA(hwndDlg, IDC_MESSAGE, msi.sendBuffer, bufSize);
+		#if defined( _UNICODE )
+				{
+					GETTEXTEX  gt;
+					gt.cb = bufSize * sizeof(TCHAR);
+					gt.flags = GT_USECRLF;
+					gt.codepage = 1200;
+					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_GETTEXTEX, (WPARAM) &gt, (LPARAM) &msi.sendBuffer[bufSize]);
+				}
+		#endif
+				if (msi.sendBuffer[0] == 0)
+					break;
+		#if defined( _UNICODE )
+				dat->cmdList = tcmdlist_append(dat->cmdList, (TCHAR *) &msi.sendBuffer[bufSize]);
+		#else
+				dat->cmdList = tcmdlist_append(dat->cmdList, msi.sendBuffer);
+		#endif
+				dat->cmdListCurrent = 0;
+/*
+				bufSize = GetWindowTextLengthA(GetDlgItem(hwndDlg, IDC_MESSAGE)) + 1;
 				dat->sendCount ++;
 				dat->sendInfo = (struct MessageSendInfo *) realloc(dat->sendInfo, sizeof(struct MessageSendInfo) * dat->sendCount);
-				bufSize = GetWindowTextLengthA(GetDlgItem(hwndDlg, IDC_MESSAGE)) + 1;
 				dat->sendBuffer = (char *) realloc(dat->sendBuffer, bufSize * (sizeof(TCHAR) + 1));
 				dat->sendInfo[dat->sendCount-1].sendBufferSize = bufSize * (sizeof(TCHAR) + 1);
 				dat->sendInfo[dat->sendCount-1].sendBuffer = (char *) malloc(dat->sendInfo[dat->sendCount-1].sendBufferSize);
+				dat->sendInfo[dat->sendCount-1].timeout=0;
 				GetDlgItemTextA(hwndDlg, IDC_MESSAGE, dat->sendBuffer, bufSize);
 		#if defined( _UNICODE )
 				{
@@ -1607,15 +1658,13 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				dat->cmdList = tcmdlist_append(dat->cmdList, dat->sendBuffer);
 		#endif
 				dat->cmdListCurrent = 0;
+
 				if (dat->nTypeMode == PROTOTYPE_SELFTYPING_ON) {
 					NotifyTyping(dat, PROTOTYPE_SELFTYPING_OFF);
 				}
+				memcpy(dat->sendInfo[dat->sendCount-1].sendBuffer, dat->sendBuffer, dat->sendInfo[dat->sendCount-1].sendBufferSize);
 
 				//create a timeout timer
-				SetDlgItemText(hwndDlg, IDC_MESSAGE, _T(""));
-				EnableWindow(GetDlgItem(hwndDlg, IDOK), FALSE);
-				memcpy(dat->sendInfo[dat->sendCount-1].sendBuffer, dat->sendBuffer, dat->sendInfo[dat->sendCount-1].sendBufferSize);
-				dat->sendInfo[dat->sendCount-1].timeout=0;
 				SetTimer(hwndDlg, TIMERID_MSGSEND, 1000, NULL);
 				dat->messagesInProgress++;
 				if (g_dat->flags & SMF_SHOWPROGRESS) {
@@ -1625,6 +1674,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dat->sendCount>0) {
 					dat->sendInfo[dat->sendCount-1].hSendId = hSendId;
 				}
+				*/
+				if (dat->nTypeMode == PROTOTYPE_SELFTYPING_ON) {
+					NotifyTyping(dat, PROTOTYPE_SELFTYPING_OFF);
+				}
+				SetDlgItemText(hwndDlg, IDC_MESSAGE, _T(""));
+				EnableWindow(GetDlgItem(hwndDlg, IDOK), FALSE);
+				SendMessage(hwndDlg, DM_SENDMESSAGE, 0, (LPARAM) &msi);
+				free (msi.sendBuffer);
 				if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOMIN, SRMSGDEFSET_AUTOMIN))
 					ShowWindow(GetParent(hwndDlg), SW_MINIMIZE);
 			}
@@ -1666,7 +1723,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				smaddInfo.Direction = 0;
 				smaddInfo.xPosition = rc.left;
 				smaddInfo.yPosition = rc.top + 24;
-				if (ServiceExists(MS_IEVIEW_SHOWSMILEYSELECTION)) {
+				if (dat->flags & SMF_USEIEVIEW) {
 					CallService(MS_IEVIEW_SHOWSMILEYSELECTION, 0, (LPARAM) &smaddInfo);
 				} else if (ServiceExists(MS_SMILEYADD_SHOWSELECTION)) {
 					CallService(MS_SMILEYADD_SHOWSELECTION, 0, (LPARAM) &smaddInfo);
@@ -1684,7 +1741,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				st.codepage = CP_ACP;
 #endif
 				if (dat->hDbEventLast==NULL) break;
-				if (ServiceExists(MS_IEVIEW_EVENT)) {
+				if (dat->flags & SMF_USEIEVIEW) {
 					TCHAR *buffer = GetIEViewSelection(dat);
 					if (buffer!=NULL) {
 						TCHAR *quotedBuffer = GetQuotedTextW(buffer);
@@ -2000,6 +2057,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				}
 				if (i < dat->sendCount) {
 					struct ErrorWindowData *ewd = (struct ErrorWindowData *) malloc(sizeof(struct ErrorWindowData));
+					ewd->szName = NULL;
 					ewd->szDescription = strdup((char *) ack->lParam);
 					ewd->textSize = dat->sendInfo[i].sendBufferSize;
 					ewd->szText = (char *)malloc(dat->sendInfo[i].sendBufferSize);
@@ -2040,12 +2098,15 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		if (dat->nTypeMode == PROTOTYPE_SELFTYPING_ON) {
 			NotifyTyping(dat, PROTOTYPE_SELFTYPING_OFF);
 		}
-		if (dat->sendInfo)
+		if (dat->sendInfo) {
+			int i;
+			for (i = 0; i < dat->sendCount; i++) {
+				RemoveSendBuffer(dat, i);
+			}
 			free(dat->sendInfo);
-//		if (dat->hBkgBrush)
-//			DeleteObject(dat->hBkgBrush);
-		if (dat->sendBuffer != NULL)
-			free(dat->sendBuffer);
+		}
+//		if (dat->sendBuffer != NULL)
+//			free(dat->sendBuffer);
 		if (dat->hwndStatus)
 			DestroyWindow(dat->hwndStatus);
 		tcmdlist_free(dat->cmdList);
@@ -2081,7 +2142,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 
 // IEVIew MOD Begin
-		if (ServiceExists(MS_IEVIEW_WINDOW)) {
+		if (dat->flags & SMF_USEIEVIEW) {
 			IEVIEWWINDOW ieWindow;
 			ieWindow.cbSize = sizeof(IEVIEWWINDOW);
 			ieWindow.iType = IEW_DESTROY;

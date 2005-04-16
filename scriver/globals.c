@@ -1,4 +1,5 @@
 #include "commonheaders.h"
+#include <m_ieview.h>
 
 struct GlobalMessageData *g_dat=NULL;
 extern HINSTANCE g_hInst;
@@ -58,50 +59,50 @@ void SetIcoLibIcons() {
 		sid.pszSection = "Scriver";
 		sid.pszDefaultFile = path;
 		sid.pszName = (char *) "scriver_ADD";
-		sid.iDefaultIndex = 0; //IDI_ADDCONTACT;
+		sid.iDefaultIndex = -IDI_ADDCONTACT;
 		sid.pszDescription = Translate("Add contact");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		sid.pszName = (char *) "scriver_USERDETAILS";
-		sid.iDefaultIndex = 1;//IDI_USERDETAILS;
+		sid.iDefaultIndex = -IDI_USERDETAILS;
 		sid.pszDescription = Translate("User's details");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		sid.pszName = (char *) "scriver_HISTORY";
-		sid.iDefaultIndex = 2;//IDI_USERDETAILS;
+		sid.iDefaultIndex = -IDI_HISTORY;
 		sid.pszDescription = Translate("User's history");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		sid.pszName = (char *) "scriver_SEND";
-		sid.iDefaultIndex = 3;//IDI_USERDETAILS;
+		sid.iDefaultIndex = -IDI_SEND;
 		sid.pszDescription = Translate("Send message");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		sid.pszName = (char *) "scriver_CANCEL";
-		sid.iDefaultIndex = 4;//IDI_CANCEL;
+		sid.iDefaultIndex = -IDI_CANCEL;
 		sid.pszDescription = Translate("Close session");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		sid.pszName = (char *) "scriver_SMILEY";
-		sid.iDefaultIndex = 5;//IDI_SMILEY;
+		sid.iDefaultIndex = -IDI_SMILEY;
 		sid.pszDescription = Translate("Smiley button");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		sid.pszName = (char *) "scriver_TYPING";
-		sid.iDefaultIndex = 6;//IDI_TYPING;
+		sid.iDefaultIndex = -IDI_TYPING;
 		sid.pszDescription = Translate("User is typing");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = (char *) "scriver_UNICODEON";
-		sid.iDefaultIndex = 7;//IDI_UNICODEON;
+		sid.iDefaultIndex = -IDI_UNICODEON;
 		sid.pszDescription = Translate("Unicode is on");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		sid.pszName = (char *) "scriver_UNICODEOFF";
-		sid.iDefaultIndex = 8;//IDI_UNICODEOFF;
+		sid.iDefaultIndex = -IDI_UNICODEOFF;
 		sid.pszDescription = Translate("Unicode is off");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = (char *) "scriver_DELIVERING";
-		sid.iDefaultIndex = 9;//IDI_UNICODEOFF;
+		sid.iDefaultIndex = -IDI_TIMESTAMP;
 		sid.pszDescription = Translate("Sending");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = (char *) "scriver_QUOTE";
-		sid.iDefaultIndex = 10;//IDI_UNICODEOFF;
+		sid.iDefaultIndex = -IDI_QUOTE;
 		sid.pszDescription = Translate("Quote button");
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
@@ -290,6 +291,10 @@ void ReloadGlobals() {
 		g_dat->activeAlpha = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_ACTIVEALPHA, SRMSGDEFSET_ACTIVEALPHA);
 		g_dat->inactiveAlpha = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_INACTIVEALPHA, SRMSGDEFSET_INACTIVEALPHA);
 	}
+	if (ServiceExists(MS_IEVIEW_WINDOW)) {
+		g_dat->flags |= SMF_USEIEVIEW;
+	}
+
 }
 
 static int ackevent(WPARAM wParam, LPARAM lParam) {
