@@ -503,6 +503,10 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 			return 0;
 		}
 		if (wParam == VK_RETURN) {
+			if (GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_MENU) & 0x8000) {
+				PostMessage(GetParent(hwnd), WM_COMMAND, IDC_SENDALL, 0);
+				return 0;
+			}
 			if (((GetKeyState(VK_CONTROL) & 0x8000) != 0) ^ (0 != DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDONENTER, SRMSGDEFSET_SENDONENTER))) {
 				PostMessage(GetParent(hwnd), WM_COMMAND, IDOK, 0);
 				return 0;
@@ -943,13 +947,13 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			ShowWindow(hwndDlg, SW_SHOWNORMAL);
 			SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
-			ShowWindow(GetParent(hwndDlg), SW_SHOW);
+			ShowWindow(dat->hwndParent, SW_SHOW);
 			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPEN);
 			return TRUE;
 		}
 	case WM_CONTEXTMENU:
 		{
-			if (GetParent(hwndDlg) == (HWND) wParam) {
+			if (dat->hwndParent == (HWND) wParam) {
 				POINT pt;
 				HMENU hMenu = (HMENU) CallService(MS_CLIST_MENUBUILDCONTACT, (WPARAM) dat->hContact, 0);
 
@@ -1001,7 +1005,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		BITMAP bminfo;
 		int avatarH;
 		struct ParentWindowData *pdat;
-		pdat = (struct ParentWindowData *) GetWindowLong(GetParent(hwndDlg), GWL_USERDATA);
+		pdat = (struct ParentWindowData *) GetWindowLong(dat->hwndParent, GWL_USERDATA);
 		dat->avatarWidth = 0;
 		dat->avatarHeight = 0;
 		if (dat->avatarPic==0||!(g_dat->flags&SMF_AVATAR)) {
@@ -1289,7 +1293,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 		break;
 	case WM_SETFOCUS:
-		SendMessage(GetParent(hwndDlg), DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
+		SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		return TRUE;
 	case WM_GETMINMAXINFO:
@@ -1385,7 +1389,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dbei.eventType == EVENTTYPE_MESSAGE && !(dbei.flags & (DBEF_SENT))) {
 					dat->lastMessage = dbei.timestamp;
 					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
-					if (GetForegroundWindow()==GetParent(hwndDlg) && dat->parent->hwndActive == hwndDlg)
+					if (GetForegroundWindow()==dat->hwndParent && dat->parent->hwndActive == hwndDlg)
 						SkinPlaySound("RecvMsgActive");
 					else SkinPlaySound("RecvMsgInactive");
 				}
@@ -1602,10 +1606,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		if (CallService(MS_CLIST_MENUPROCESSCOMMAND, MAKEWPARAM(LOWORD(wParam), MPCF_CONTACTMENU), (LPARAM) dat->hContact))
 			break;
 		switch (LOWORD(wParam)) {
+		case IDC_SENDALL:
 		case IDOK:
 			//this is a 'send' button
 			if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDOK)))
 				break;
+			//if(GetKeyState(VK_CTRL) & 0x8000) {    // copy user name
+					//SendMessage(hwndDlg, DM_USERNAMETOCLIP, 0, 0);
+			//}
 			if (dat->hContact !=NULL) {
 				struct MessageSendInfo msi;
 			//	HANDLE hSendId;
@@ -1680,10 +1688,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				}
 				SetDlgItemText(hwndDlg, IDC_MESSAGE, _T(""));
 				EnableWindow(GetDlgItem(hwndDlg, IDOK), FALSE);
-				SendMessage(hwndDlg, DM_SENDMESSAGE, 0, (LPARAM) &msi);
+				if (LOWORD(wParam) == IDC_SENDALL) {
+					SendMessage(dat->hwndParent, DM_SENDMESSAGE, 0, (LPARAM) &msi);
+				} else {
+					SendMessage(hwndDlg, DM_SENDMESSAGE, 0, (LPARAM) &msi);
+				}
 				free (msi.sendBuffer);
 				if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOMIN, SRMSGDEFSET_AUTOMIN))
-					ShowWindow(GetParent(hwndDlg), SW_MINIMIZE);
+					ShowWindow(dat->hwndParent, SW_MINIMIZE);
 			}
 			return TRUE;
 		case IDCANCEL:
