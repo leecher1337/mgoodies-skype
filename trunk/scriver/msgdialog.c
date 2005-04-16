@@ -72,16 +72,15 @@ static TCHAR *GetRichEditSelection(HWND hwndDlg) {
 	if (sel.cpMin!=sel.cpMax) {
 		struct MessageSendInfo msi;
 		EDITSTREAM stream;
-		char *pszText = NULL;
 		DWORD dwFlags = 0;
 		ZeroMemory(&stream, sizeof(stream));
 		stream.pfnCallback = StreamOutCallback;
-		stream.dwCookie = (DWORD) &msi; 
+		stream.dwCookie = (DWORD) &msi;
 #if defined( _UNICODE )
 		dwFlags = SF_TEXT|SF_UNICODE|SFF_SELECTION;
 #else
         dwFlags = SF_TEXT|SFF_SELECTION;
-#endif    
+#endif
 		msi.sendBuffer = NULL;
 		msi.sendBufferSize = 0;
 		SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMOUT, (WPARAM)dwFlags, (LPARAM) & stream);
@@ -95,9 +94,9 @@ static TCHAR *GetIEViewSelection(struct MessageWindowData *dat) {
 	IEVIEWEVENT event;
 	event.cbSize = sizeof(IEVIEWEVENT);
 #ifdef _UNICODE
-	event.dwFlags = 0; 
+	event.dwFlags = 0;
 #else
-	event.dwFlags = IEEF_NO_UNICODE; 
+	event.dwFlags = IEEF_NO_UNICODE;
 #endif
 	event.codepage = dat->codePage;
 	event.hwnd = dat->hwndLog;
@@ -490,7 +489,7 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 		}
 		if ((GetKeyState(VK_CONTROL) & 0x8000) && !(GetKeyState(VK_MENU) & 0x8000)) {
 			if (wParam == 'V') {    // ctrl v
-				SendMessage(hwnd, EM_PASTESPECIAL, CF_TEXT, 0); 
+				SendMessage(hwnd, EM_PASTESPECIAL, CF_TEXT, 0);
 				return 0;
 			}
 			if (wParam == VK_TAB) { // ctrl tab
@@ -967,8 +966,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	{
 		ACKDATA *pAck = (ACKDATA *)lParam;
 		PROTO_AVATAR_INFORMATION *pai = (PROTO_AVATAR_INFORMATION *)pAck->hProcess;
-		HWND hwnd = 0;
-
 		if (pAck->hContact!=dat->hContact)
 			return 0;
 		if (pAck->type != ACKTYPE_AVATAR)
@@ -1044,7 +1041,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	case DM_GETAVATAR:
 	{
 		PROTO_AVATAR_INFORMATION pai;
-		int caps = 0, result;
+		int result;
 
 		SetWindowLong(hwndDlg, DWL_MSGRESULT, 0);
 		//Disable avatars
@@ -1304,7 +1301,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			mmi->ptMinTrackSize.x = 240;// + dat->avatarWidth;
 			mmi->ptMinTrackSize.y = dat->minLogBoxHeight + minBottomHeight;
-			
+
 			return 0;
 		}
 	case WM_SIZE:
@@ -1724,7 +1721,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		case IDC_SMILEYS:
 			{
 				IEVIEWSHOWSMILEYSEL smaddInfo;
-				HICON hButtonIcon = 0;
 				RECT rc;
 				smaddInfo.cbSize = sizeof(IEVIEWSHOWSMILEYSEL);
 				smaddInfo.hwndTarget = GetDlgItem(hwndDlg, IDC_MESSAGE);
@@ -1781,25 +1777,25 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				CallService(MS_DB_EVENT_GET, (WPARAM)  dat->hDbEventLast, (LPARAM) & dbei);
 				if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
 					TCHAR *buffer = NULL;
-					DWORD aLen = strlen((char *)dbei.pBlob)+1;
 #ifdef _UNICODE
+					DWORD aLen = strlen((char *)dbei.pBlob)+1;
 					if (dbei.eventType == EVENTTYPE_MESSAGE) {
 						if (dbei.cbBlob > aLen) {
 							DWORD wlen = safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
 							if (wlen > 0 && wlen < aLen) {
 								buffer = (TCHAR *)&dbei.pBlob[aLen];
-							} 
+							}
 						}
-					} 
+					}
 					if (buffer == NULL) {
 						buffer = (TCHAR *) malloc(sizeof(TCHAR) * aLen);
 						MultiByteToWideChar(CP_ACP, 0, (char *) dbei.pBlob, -1, buffer, aLen);
 						free(dbei.pBlob);
 						dbei.pBlob = (char *)buffer;
 					}
-#else 
+#else
 					buffer = (TCHAR *)dbei.pBlob;
-#endif                            
+#endif
 					if (buffer!=NULL) {
 						TCHAR *quotedBuffer = GetQuotedTextW(buffer);
 						SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETTEXTEX, (WPARAM) &st, (LPARAM)quotedBuffer);

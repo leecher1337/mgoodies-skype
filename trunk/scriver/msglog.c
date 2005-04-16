@@ -1,8 +1,8 @@
 /*
 SRMM
 
-Copyright 2000-2003 Miranda ICQ/IM project, 
-all portions of this codebase are copyrighted to the people 
+Copyright 2000-2003 Miranda ICQ/IM project,
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -206,9 +206,9 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 	bufferAlloced = 1024;
 	buffer = (char *) malloc(bufferAlloced);
 	buffer[0] = '\0';
-	if (dat->flags & SMF_RTL) 
+	if (dat->flags & SMF_RTL)
 		AppendToBuffer(&buffer,&bufferEnd,&bufferAlloced,"{\\rtf1\\ansi\\deff0\\rtldoc{\\fonttbl");
-	else 
+	else
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "{\\rtf1\\ansi\\deff0{\\fonttbl");
 	for (i = 0; i < msgDlgFontCount; i++) {
 		LoadMsgDlgFont(i, &lf, NULL);
@@ -224,9 +224,9 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 	else
 		colour = GetSysColor(COLOR_HOTLIGHT);
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
-	if (dat->flags & SMF_RTL) 
+	if (dat->flags & SMF_RTL)
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\rtlpar");
-	else 
+	else
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\pard");
 	return buffer;
 }
@@ -356,7 +356,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 	}
 
 	if (g_dat->flags&SMF_SHOWICONS && isGroupBreak) {
-		int i;
+		int i = LOGICON_MSG_NOTICE;
 
 		switch (dbei.eventType) {
 			case EVENTTYPE_MESSAGE:
@@ -385,7 +385,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 		showColon = 1;
 	}
 	if (!(g_dat->flags&SMF_HIDENAMES) && dbei.eventType != EVENTTYPE_STATUSCHANGE  && isGroupBreak) {
-		char *szName;
+		char *szName = "";
 		CONTACTINFO ci;
 		ZeroMemory(&ci, sizeof(ci));
 
@@ -433,13 +433,13 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 					if (wlen > 0 && wlen < msglen) {
 						AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
 					} else {
-						msg = (TCHAR *) malloc(sizeof(TCHAR) * msglen); 
+						msg = (TCHAR *) malloc(sizeof(TCHAR) * msglen);
 						MultiByteToWideChar(dat->codePage, 0, (char *) dbei.pBlob, -1, msg, msglen);
 						AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
 						free(msg);
 					}
 				} else {
-					msg = (TCHAR *) malloc(sizeof(TCHAR) * msglen); 
+					msg = (TCHAR *) malloc(sizeof(TCHAR) * msglen);
 					MultiByteToWideChar(dat->codePage, 0, (char *) dbei.pBlob, -1, msg, msglen);
 					AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
 					free(msg);
@@ -454,7 +454,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 		case EVENTTYPE_STATUSCHANGE:
 		{
 			BYTE *msg;
-			char *szName;
+			char *szName = "";
 			CONTACTINFO ci;
 			ZeroMemory(&ci, sizeof(ci));
 
@@ -544,7 +544,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	if (dat->flags & SMF_USEIEVIEW) {
 		IEVIEWEVENT event;
 		event.cbSize = sizeof(IEVIEWEVENT);
-		event.dwFlags = ((dat->flags & SMF_RTL) ? IEEF_RTL : 0) | ((dat->flags & SMF_DISABLE_UNICODE) ? IEEF_NO_UNICODE : 0); 
+		event.dwFlags = ((dat->flags & SMF_RTL) ? IEEF_RTL : 0) | ((dat->flags & SMF_DISABLE_UNICODE) ? IEEF_NO_UNICODE : 0);
 		event.hwnd = dat->hwndLog;
 		event.hContact = dat->hContact;
 		if (!fAppend) {
@@ -589,14 +589,14 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		CallService(MS_SMILEYADD_REPLACESMILEYS, 0, (LPARAM) &smre);
 	}
 	dat->hDbEventLast = streamData.hDbEventLast;
-	if (GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL) 
+	if (GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL)
 		PostMessage(hwndDlg, DM_SCROLLLOGTOBOTTOM, 0, 0);
 }
 
 #define RTFPICTHEADERMAXSIZE   78
 void LoadMsgLogIcons(void)
 {
-	HICON hIcon;
+	HICON hIcon = NULL;
 	HBITMAP hBmp, hoBmp;
 	HDC hdc, hdcMem;
 	BITMAPINFOHEADER bih = { 0 };
@@ -639,7 +639,7 @@ void LoadMsgLogIcons(void)
 		}
 		pLogIconBmpBits[i] = (PBYTE) malloc(RTFPICTHEADERMAXSIZE + (bih.biSize + widthBytes * bih.biHeight) * 2);
 		//I can't seem to get binary mode working. No matter.
-		rtfHeaderSize = sprintf(pLogIconBmpBits[i], "{\\pict\\dibitmap0\\wbmbitspixel%u\\wbmplanes1\\wbmwidthbytes%u\\picw%u\\pich%u ", bih.biBitCount, widthBytes, bih.biWidth, bih.biHeight);
+		rtfHeaderSize = sprintf(pLogIconBmpBits[i], "{\\pict\\dibitmap0\\wbmbitspixel%u\\wbmplanes1\\wbmwidthbytes%u\\picw%u\\pich%u ", bih.biBitCount, widthBytes, (UINT) bih.biWidth, (UINT)bih.biHeight);
 		hoBmp = (HBITMAP) SelectObject(hdcMem, hBmp);
 		FillRect(hdcMem, &rc, hBkgBrush);
 		DrawIconEx(hdcMem, 0, 0, hIcon, bih.biWidth, bih.biHeight, 0, NULL, DI_NORMAL);

@@ -33,7 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stddef.h>
 #include <process.h>
 #include "resource.h"
-#include <win2k.h>
 #ifdef __MINGW32__
 #define EM_SETTEXTEX	(WM_USER + 97)
 #define ST_DEFAULT		0
@@ -46,7 +45,13 @@ typedef struct _settextex
 	UINT	codepage;
 } SETTEXTEX;
 #define	CFM_WEIGHT			0x00400000
+#define WinVerMajor()      LOBYTE(LOWORD(GetVersion()))
+#define WinVerMinor()      HIBYTE(LOWORD(GetVersion()))
+#define IsWinVerXPPlus()   (WinVerMajor()>=5 && LOWORD(GetVersion())!=5)
+#else
+#include <win2k.h>
 #endif
+
 #include <newpluginapi.h>
 #include <m_system.h>
 #include <m_database.h>

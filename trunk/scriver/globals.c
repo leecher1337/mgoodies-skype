@@ -5,15 +5,13 @@ struct GlobalMessageData *g_dat=NULL;
 extern HINSTANCE g_hInst;
 extern PSLWA pSetLayeredWindowAttributes;
 static HANDLE g_hDbEvent = 0, g_hAck = 0;
-static int dbaddedevent(WPARAM wParam, LPARAM lParam);
 static int ackevent(WPARAM wParam, LPARAM lParam);
 
 void LoadProtocolIcons() {
 	PROTOCOLDESCRIPTOR **pProtos;
 	int i, j, allProtoNum, k;
 	HICON hIcon;
-	int iCurIcon = 0;
-	
+
 	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM) &allProtoNum, (LPARAM) &pProtos);
 	g_dat->protoNum  = 0;
 	for(i = 0; i < allProtoNum; i++) {
@@ -299,7 +297,7 @@ void ReloadGlobals() {
 
 static int ackevent(WPARAM wParam, LPARAM lParam) {
 	ACKDATA *pAck = (ACKDATA *)lParam;
-	
+
 	if (!pAck) return 0;
 	else if (pAck->type==ACKTYPE_AVATAR) {
 		HWND h = WindowList_Find(g_dat->hMessageWindowList, (HANDLE)pAck->hContact);

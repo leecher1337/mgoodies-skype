@@ -5,12 +5,12 @@
 		RichUtil_Load();
 	Before the application exits, call:
 		RichUtil_Unload();
-	
+
 	Then to use the library (it draws the xp border around it), you need
-	to make sure you control has the WS_EX_CLIENTEDGE flag.  Then you just 
+	to make sure you control has the WS_EX_CLIENTEDGE flag.  Then you just
 	subclass it with:
 		RichUtil_SubClass(hwndEdit);
-	
+
 	If no xptheme is present, the window isn't subclassed the SubClass function
 	just returns.  And if WS_EX_CLIENTEDGE isn't present, the subclass does nothing.
 	Otherwise it removes the border and draws it by itself.
@@ -27,7 +27,7 @@ static HRESULT (WINAPI *MyDrawThemeParentBackground)(HWND,HDC,RECT*) = 0;
 static BOOL    (WINAPI *MyIsThemeBackgroundPartiallyTransparent)(HANDLE,int,int) = 0;
 
 static LRESULT CALLBACK RichUtil_Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-static RichUtil_ClearUglyBorder(TRichUtil *ru);
+static void RichUtil_ClearUglyBorder(TRichUtil *ru);
 static WNDPROC origProc;
 
 void RichUtil_Load() {
@@ -124,12 +124,12 @@ static LRESULT CALLBACK RichUtil_Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
 		{
 			LRESULT ret = CallWindowProc(origProc, hwnd, msg, wParam, lParam);
 			NCCALCSIZE_PARAMS *ncsParam = (NCCALCSIZE_PARAMS*)lParam;
-			
+
 			if (ru->hasUglyBorder&&MyIsThemeActive()) {
 				HANDLE hTheme = MyOpenThemeData(hwnd, L"EDIT");
 
 				if (hTheme) {
-					RECT rcClient; 
+					RECT rcClient;
 					HDC hdc = GetDC(GetParent(hwnd));
 
 					ZeroMemory(&rcClient, sizeof(RECT));
@@ -167,7 +167,7 @@ static LRESULT CALLBACK RichUtil_Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
 	return CallWindowProc(origProc, hwnd, msg, wParam, lParam);
 }
 
-static RichUtil_ClearUglyBorder(TRichUtil *ru) {
+static void RichUtil_ClearUglyBorder(TRichUtil *ru) {
 	if (mTheme&&MyIsThemeActive()&&GetWindowLong(ru->hwnd, GWL_EXSTYLE)&WS_EX_CLIENTEDGE) {
 		ru->hasUglyBorder = 1;
 		SetWindowLong(ru->hwnd, GWL_EXSTYLE, GetWindowLong(ru->hwnd, GWL_EXSTYLE)^WS_EX_CLIENTEDGE);
