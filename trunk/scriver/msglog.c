@@ -541,7 +541,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	CHARRANGE oldSel, sel;
 
 // IEVIew MOD Begin
-	if (ServiceExists(MS_IEVIEW_EVENT)) {
+	if (dat->flags & SMF_USEIEVIEW) {
 		IEVIEWEVENT event;
 		event.cbSize = sizeof(IEVIEWEVENT);
 		event.dwFlags = ((dat->flags & SMF_RTL) ? IEEF_RTL : 0) | ((dat->flags & SMF_DISABLE_UNICODE) ? IEEF_NO_UNICODE : 0); 

@@ -31,6 +31,7 @@ typedef DWORD (WINAPI *PSLWA)(HWND, DWORD, BYTE, DWORD);
 
 struct ErrorWindowData
 {
+	char *	szName;
 	char *	szDescription;
 	char *	szText;
 	int		textSize;
@@ -84,7 +85,7 @@ struct MessageWindowData
 	struct MessageSendInfo *sendInfo;
 	int sendCount;
 	int splitterPos, originalSplitterPos;
-	char *sendBuffer;
+//	char *sendBuffer;
 	SIZE minEditBoxSize;
 	SIZE minTopSize;
 	RECT minEditInit;
@@ -132,6 +133,8 @@ struct MessageWindowData
 
 #define DM_AVATARCALCSIZE    (WM_USER+25)
 #define DM_GETAVATAR         (WM_USER+26)
+#define DM_SENDMESSAGE		 (WM_USER+27)
+
 #define HM_AVATARACK         (WM_USER+28)
 #define HM_ACKEVENT          (WM_USER+29)
 

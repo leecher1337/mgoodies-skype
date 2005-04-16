@@ -40,6 +40,8 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 					ewd->szDescription = strdup(Translate("An unknown error has occured."));
 				if (!ewd->szText) 
 					ewd->szText = strdup("");
+				if (!ewd->szName) 
+					ewd->szName = strdup("");
 				SetDlgItemTextA(hwndDlg, IDC_ERRORTEXT, ewd->szDescription);
 		#if defined( _UNICODE )
 				SetDlgItemTextW(hwndDlg, IDC_MSGTEXT, (TCHAR *)(ewd->szText + strlen(ewd->szText) + 1));
@@ -67,6 +69,7 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		case WM_DESTROY:
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) NULL);
+			free(ewd->szName);
 			free(ewd->szDescription);
 			free(ewd->szText);
 			free(ewd);

@@ -604,6 +604,50 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	case DM_ACTIVATENEXT:
 		ActivateNextChild(dat, (HWND) lParam);
 		return TRUE;
+	case DM_SENDMESSAGE:
+		{
+			int i;
+			for (i=0;i<dat->childrenCount;i++) {
+				SendMessage(dat->children[i], DM_SENDMESSAGE, wParam, lParam);
+			}
+		}
+		break;
+	case DM_OPTIONSAPPLIED:
+		{
+			RECT rc;
+			dat->flags = g_dat->flags;
+			if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
+				ShowWindow(dat->hwndStatus, SW_HIDE);
+			} else {
+				ShowWindow(dat->hwndStatus, SW_SHOW);
+			}
+			ws = GetWindowLong(hwndDlg, GWL_STYLE) & ~(WS_CAPTION);
+			if (dat->flags & SMF_SHOWTITLEBAR) {
+				ws |= WS_CAPTION;
+			} 
+			SetWindowLong(hwndDlg, GWL_STYLE, ws);
+
+			ws = GetWindowLong(hwndDlg, GWL_EXSTYLE)& ~WS_EX_LAYERED;
+			ws |= dat->flags & SMF_USETRANSPARENCY ? WS_EX_LAYERED : 0;
+			SetWindowLong(hwndDlg , GWL_EXSTYLE , ws);
+			if (dat->flags & SMF_USETRANSPARENCY) {
+   				pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(255-g_dat->inactiveAlpha), LWA_ALPHA);
+//				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+			}
+
+			ws = GetWindowLong(dat->hwndTabs, GWL_STYLE) & ~(TCS_BOTTOM);
+			if (dat->flags & SMF_TABSATBOTTOM) {
+				ws |= TCS_BOTTOM;
+			} 
+			SetWindowLong(dat->hwndTabs, GWL_STYLE, ws);
+			RedrawWindow(dat->hwndTabs, NULL, NULL, RDW_INVALIDATE);
+			GetWindowRect(hwndDlg, &rc);
+			SetWindowPos(hwndDlg, 0, 0, 0, rc.right - rc.left, rc.bottom - rc.top, 
+                        SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOSENDCHANGING);
+			SendMessage(hwndDlg, WM_SIZE, 0, 0);
+			//RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+			break;
+		}
 	case DM_UPDATETITLE:
 		{
 			struct MessageWindowData * mdat = (struct MessageWindowData *) lParam;
@@ -711,42 +755,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 	case DM_UPDATESTATUSBAR:
 		break;
-	case DM_OPTIONSAPPLIED:
-		{
-			RECT rc;
-			dat->flags = g_dat->flags;
-			if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
-				ShowWindow(dat->hwndStatus, SW_HIDE);
-			} else {
-				ShowWindow(dat->hwndStatus, SW_SHOW);
-			}
-			ws = GetWindowLong(hwndDlg, GWL_STYLE) & ~(WS_CAPTION);
-			if (dat->flags & SMF_SHOWTITLEBAR) {
-				ws |= WS_CAPTION;
-			} 
-			SetWindowLong(hwndDlg, GWL_STYLE, ws);
-
-			ws = GetWindowLong(hwndDlg, GWL_EXSTYLE)& ~WS_EX_LAYERED;
-			ws |= dat->flags & SMF_USETRANSPARENCY ? WS_EX_LAYERED : 0;
-			SetWindowLong(hwndDlg , GWL_EXSTYLE , ws);
-			if (dat->flags & SMF_USETRANSPARENCY) {
-   				pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(255-g_dat->inactiveAlpha), LWA_ALPHA);
-//				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
-			}
-
-			ws = GetWindowLong(dat->hwndTabs, GWL_STYLE) & ~(TCS_BOTTOM);
-			if (dat->flags & SMF_TABSATBOTTOM) {
-				ws |= TCS_BOTTOM;
-			} 
-			SetWindowLong(dat->hwndTabs, GWL_STYLE, ws);
-			RedrawWindow(dat->hwndTabs, NULL, NULL, RDW_INVALIDATE);
-			GetWindowRect(hwndDlg, &rc);
-			SetWindowPos(hwndDlg, 0, 0, 0, rc.right - rc.left, rc.bottom - rc.top, 
-                        SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOSENDCHANGING);
-			SendMessage(hwndDlg, WM_SIZE, 0, 0);
-			//RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
-			break;
-		}
 	case DM_SWITCHSTATUSBAR:
 		dat->flags ^= SMF_SHOWSTATUSBAR;
 		if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
