@@ -8,12 +8,13 @@ UPX = upx -9 -q --compress-icons=0
 SRC = cmdlist.c globals.c msgdialog.c msglog.c msgoptions.c msgs.c msgtimedout.c msgwindow.c richutil.c srmm.c
 RES  = resource.res
 OBJ = $(SRC:.c=.o) $(RES)
-BIN  = scriver.dll
 INCS =  -I"../../include"
 ifdef UNICODE
+BIN  = scriver_unicode.dll
 CFLAGS = $(INCS) -DBUILDING_DLL=1 -DUNICODE -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
 CXXFLAGS = $(INCS) -DBUILDING_DLL=1 -DUNICODE -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
 else
+BIN  = scriver.dll
 CFLAGS = $(INCS) -DBUILDING_DLL=1 -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
 CXXFLAGS = $(INCS) -DBUILDING_DLL=1 -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
 endif
