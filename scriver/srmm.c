@@ -1,7 +1,9 @@
 /*
-SRMM
+Scriver
 
 Copyright 2000-2003 Miranda ICQ/IM project, 
+Copyright 2005 Piotr Piastucki
+
 all portions of this codebase are copyrighted to the people 
 listed in contributors.txt.
 
@@ -19,7 +21,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-
 #include "commonheaders.h"
 
 int LoadSendRecvMessageModule(void);
@@ -35,7 +36,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Send/Receive Messages",
 #endif
-	PLUGIN_MAKE_VERSION(2, 2, 1, 9),
+	PLUGIN_MAKE_VERSION(2, 2, 1, 10),
 	"Scriver - send and receive instant messages",
 	"Miranda IM Development Team (SRMM), Piotr Piastucki (Scriver)",
 	"the_leech@users.berlios.de",

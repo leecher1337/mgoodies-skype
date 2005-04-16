@@ -1,7 +1,9 @@
 /*
-SRMM
+Scriver
 
 Copyright 2000-2003 Miranda ICQ/IM project, 
+Copyright 2005 Piotr Piastucki
+
 all portions of this codebase are copyrighted to the people 
 listed in contributors.txt.
 
@@ -32,6 +34,7 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_INITDIALOG:
 		{
 			RECT rc, rcParent;
+			char caption[2048];
 			ewd = (struct ErrorWindowData *) lParam;
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) ewd);
 			TranslateDialogDefault(hwndDlg);
@@ -48,11 +51,12 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		#else
 				SetDlgItemTextA(hwndDlg, IDC_MSGTEXT, ewd->szText);
 		#endif
+				sprintf(caption, "%s - %s", ewd->szName, Translate("Send Error"));
+				SetWindowTextA(hwndDlg, caption);
+				GetWindowRect(hwndDlg, &rc);
+				GetWindowRect(ewd->hwndParent, &rcParent);
+				SetWindowPos(hwndDlg, HWND_TOP, rcParent.left + (rcParent.right - rcParent.left - rc.right + rc.left) / 2, rcParent.top + (rcParent.bottom - rcParent.top - rc.bottom + rc.top), 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
 			}
-
-			GetWindowRect(hwndDlg, &rc);
-			GetWindowRect(ewd->hwndParent, &rcParent);
-			SetWindowPos(hwndDlg, HWND_TOP, rcParent.left + (rcParent.right - rcParent.left - rc.right + rc.left) / 2, rcParent.top + (rcParent.bottom - rcParent.top - rc.bottom + rc.top), 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
 		}
 		return TRUE;
 		case WM_COMMAND:
