@@ -1,8 +1,10 @@
 /*
-SRMM
+Scriver
 
-Copyright 2000-2003 Miranda ICQ/IM project,
-all portions of this codebase are copyrighted to the people
+Copyright 2000-2003 Miranda ICQ/IM project, 
+Copyright 2005 Piotr Piastucki
+
+all portions of this codebase are copyrighted to the people 
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
