@@ -52,6 +52,8 @@ private:
    	static char *	templatesFilename;
    	static char *	templatesFilenameRTL;
    	static int 		templatesFlags;
+   	
+   	static int      mathModuleFlags;
    	static bool     isInited;
 public:
 	enum OPTIONS {
@@ -80,6 +82,8 @@ public:
 		LOG_RELATIVE_DATE       = 0x2000,
 
 		LOG_GROUP_MESSAGES		= 0x4000,
+		
+		MATHMODULE_ENABLED      = 1,
 
 	};
    	static void     		setSmileyFile(const char *proto, const char *filename);
@@ -102,6 +106,7 @@ public:
    	static const char *		getTemplatesFileRTL();
    	static void				setTemplatesFlags(int flags);
    	static int				getTemplatesFlags();
+   	static int				getMathModuleFlags();
    	static void      		init();
 };
 

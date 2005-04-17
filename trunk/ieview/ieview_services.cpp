@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ScriverHTMLBuilder.h"
 #include "TabSRMMHTMLBuilder.h"
 #include "TemplateHTMLBuilder.h"
+#include "MUCCHTMLBuilder.h"
 #include "IEView.h"
 #include "Smiley.h"
 #include "m_ieview.h"
@@ -35,7 +36,12 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 	Options::init();
 	if (window->iType == IEW_CREATE) {
 		HTMLBuilder *builder;
-		if (Options::getTemplatesFlags() & Options::TEMPLATES_ENABLED) {
+		if (window->dwMode == IEWM_MUCC || window->dwMode == IEWM_CHAT) {
+            if (window->dwMode == IEWM_MUCC) {
+            	builder = new MUCCHTMLBuilder();
+			} else if (window->dwMode == IEWM_CHAT) {
+			}
+		} else if (Options::getTemplatesFlags() & Options::TEMPLATES_ENABLED) {
             builder = new TemplateHTMLBuilder();
 		} else {
 			if (window->dwMode == IEWM_TABSRMM) {
