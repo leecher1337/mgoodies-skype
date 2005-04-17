@@ -232,7 +232,7 @@ void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 			classNames[i],
 			lf.lfFaceName,
 			abs((signed char)lf.lfHeight) *  74 /logPixelSY ,
-			lf.lfWeight >= FW_BOLD ? 900 : 300,
+			lf.lfWeight >= FW_BOLD ? FW_BOLD : FW_NORMAL,
 			(int)(((color & 0xFF) << 16) | (color & 0xFF00) | ((color & 0xFF0000) >> 16)),
 			lf.lfItalic ? "font-style: italic;" : "");
 		}

@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "resource.h"
 #include "Smiley.h"
 #include "Template.h"
+#include "m_MathModule.h"
 
 static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -696,6 +697,7 @@ char *Options::templatesFilename = NULL;
 char *Options::templatesFilenameRTL = NULL;
 int Options::templatesFlags;
 bool Options::isInited = false;
+int Options::mathModuleFlags;
 
 void Options::init() {
 	if (isInited) return;
@@ -802,6 +804,7 @@ void Options::init() {
 	TemplateMap::loadTemplates("default", templatesFilename);
 	TemplateMap::loadTemplates("default_rtl", templatesFilenameRTL);
 	smileyIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_SMILEY), IMAGE_ICON, 0, 0, 0);
+	mathModuleFlags = ServiceExists(MTH_GET_HTML_SOURCE) ? MATHMODULE_ENABLED : 0;
 }
 
 void Options::setBkgImageFile(const char *filename) {
@@ -954,4 +957,8 @@ void Options::setTemplatesFlags(int flags) {
 
 int	Options::getTemplatesFlags() {
 	return templatesFlags;
+}
+
+int Options::getMathModuleFlags() {
+	return mathModuleFlags;
 }

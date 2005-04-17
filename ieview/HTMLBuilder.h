@@ -24,6 +24,7 @@ class HTMLBuilder;
 #define HTMLBUILDER_INCLUDED
 
 #include "IEView.h"
+#include "m_MathModule.h"
 
 class TextToken {
 private:
