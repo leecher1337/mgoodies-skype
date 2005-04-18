@@ -41,6 +41,7 @@
 #define IDC_SHOWSECONDS                 1023
 #define IDC_USELONGDATE                 1024
 #define IDC_USERELATIVEDATE             1025
+#define IDC_USEIEVIEW					1026
 #define IDC_SHOWLOGICONS                1032
 #define IDC_SHOWTIMES                   1033
 #define IDC_SHOWDATES                   1034

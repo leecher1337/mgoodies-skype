@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "commonheaders.h"
 
 extern HINSTANCE g_hInst;
+PSLWA pSetLayeredWindowAttributes;
 
 #define SB_CHAR_WIDTH		 40
 #define SB_SENDING_WIDTH 	 25
@@ -34,7 +35,6 @@ extern HINSTANCE g_hInst;
 #define TIMEOUT_FLASHWND     900
 
 static WNDPROC OldTabCtrlProc;
-PSLWA pSetLayeredWindowAttributes;
 
 BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

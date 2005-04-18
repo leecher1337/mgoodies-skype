@@ -283,6 +283,9 @@ extern const int msgDlgFontCount;
 #define SRMSGDEFSET_BKGCOLOUR       GetSysColor(COLOR_WINDOW)
 #define SRMSGSET_INPUTBKGCOLOUR     "InputBkgColour"
 #define SRMSGDEFSET_INPUTBKGCOLOUR  GetSysColor(COLOR_WINDOW)
+#define SRMSGSET_USEIEVIEW			"UseIEView"
+#define SRMSGDEFSET_USEIEVIEW       1
+
 
 #define SRMSGSET_TYPING             "SupportTyping"
 #define SRMSGSET_TYPINGNEW          "DefaultTyping"
