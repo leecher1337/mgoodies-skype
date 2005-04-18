@@ -205,15 +205,15 @@ void Utils::UTF8Encode(const char *text, char *output, int maxLen) {
 }
 
 int Utils::detectURL(const wchar_t *text) {
-	int i, len;
-	for (i=len=0;text[i]!='\0';i++, len++) {
+	int i;
+	for (i=0;text[i]!='\0';i++) {
 		if (!((text[i] >= '0' && text[i]<='9') || (text[i] >= 'A' && text[i]<='Z') || (text[i] >= 'a' && text[i]<='z'))) {
 			break;
 		}
 	}
-	if (len > 0 && text[i]==':' && text[i+1]=='/') {
-		len += countNoWhitespace(text+i);
-		return len;
+	if (i > 0 && text[i]==':' && text[i+1]=='/' && text[i+2]=='/') {
+		i += countNoWhitespace(text+i);
+		return i;
 	}
 	return 0;
 }
