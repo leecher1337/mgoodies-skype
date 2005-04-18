@@ -1361,6 +1361,13 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		break;
 	case DM_SCROLLLOGTOBOTTOM:
 		{
+			/*
+			int	nMin, nMax;
+			HWND hwndLog = GetDlgItem(hwndDlg, IDC_LOG);
+			GetScrollRange(hwndLog, SB_VERT, &nMin, &nMax);
+			SetScrollPos(hwndLog, SB_VERT, nMax, TRUE);
+			PostMessage(hwndLog, WM_VSCROLL, MAKEWPARAM(SB_THUMBPOSITION, nMax), (LPARAM) NULL);
+			*/
 			SCROLLINFO si = { 0 };
 			if ((GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL) == 0)
 				break;
@@ -1372,6 +1379,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				SetScrollInfo(GetDlgItem(hwndDlg, IDC_LOG), SB_VERT, &si, TRUE);
 				PostMessage(GetDlgItem(hwndDlg, IDC_LOG), WM_VSCROLL, MAKEWPARAM(SB_BOTTOM, 0), 0);
 			}
+			
 			break;
 		}
 	case HM_DBEVENTADDED:
