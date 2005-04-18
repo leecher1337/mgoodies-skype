@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
 // IEVIew MOD Begin
-#include <m_ieview.h>
+#include "m_ieview.h"
 // IEVIew MOD End
 #pragma hdrstop
 #include <ctype.h>
@@ -591,8 +591,13 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		CallService(MS_SMILEYADD_REPLACESMILEYS, 0, (LPARAM) &smre);
 	}
 	dat->hDbEventLast = streamData.hDbEventLast;
-	if (GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL)
-		PostMessage(hwndDlg, DM_SCROLLLOGTOBOTTOM, 0, 0);
+	{		
+		int len;
+		len = GetWindowTextLengthA(GetDlgItem(hwndDlg, IDC_LOG));
+		SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETSEL, len - 1, len - 1);
+	}
+//	if (GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL)
+	PostMessage(hwndDlg, DM_SCROLLLOGTOBOTTOM, 0, 0);
 }
 
 #define RTFPICTHEADERMAXSIZE   78

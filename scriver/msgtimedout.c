@@ -51,7 +51,7 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		#else
 				SetDlgItemTextA(hwndDlg, IDC_MSGTEXT, ewd->szText);
 		#endif
-				sprintf(caption, "%s - %s", ewd->szName, Translate("Send Error"));
+				sprintf(caption, "%s - %s", Translate("Send Error"), ewd->szName);
 				SetWindowTextA(hwndDlg, caption);
 				GetWindowRect(hwndDlg, &rc);
 				GetWindowRect(ewd->hwndParent, &rcParent);

@@ -22,7 +22,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
-#include <m_ieview.h>
+#include "m_ieview.h"
 
 struct GlobalMessageData *g_dat=NULL;
 extern HINSTANCE g_hInst;
@@ -312,9 +312,10 @@ void ReloadGlobals() {
 		g_dat->activeAlpha = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_ACTIVEALPHA, SRMSGDEFSET_ACTIVEALPHA);
 		g_dat->inactiveAlpha = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_INACTIVEALPHA, SRMSGDEFSET_INACTIVEALPHA);
 	}
-	if (ServiceExists(MS_IEVIEW_WINDOW)) {
+	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTYPINGCLIST, SRMSGDEFSET_SHOWTYPINGCLIST))
+		g_dat->flags |= SMF_SHOWTYPINGCLIST;
+	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_USEIEVIEW, SRMSGDEFSET_USEIEVIEW))
 		g_dat->flags |= SMF_USEIEVIEW;
-	}
 
 }
 

@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
 // IEVIew MOD Begin
-#include <m_ieview.h>
+#include "m_ieview.h"
 // IEVIew MOD End
 #define MS_SMILEYADD_SHOWSELECTION  "SmileyAdd/ShowSmileySelection"
 #pragma hdrstop
@@ -246,7 +246,7 @@ static void SetDialogToType(HWND hwndDlg)
 		ShowMultipleControls(hwndDlg, buttonLineControls, sizeof(buttonLineControls) / sizeof(buttonLineControls[0]), SW_HIDE);
 	}
 // IEVIew MOD Begin
-	if (dat->flags & SMF_USEIEVIEW) {
+	if (dat->hwndLog != NULL) {
 		ShowWindow (GetDlgItem(hwndDlg, IDC_LOG), SW_HIDE);
 	}
 // IEVIew MOD End
@@ -634,7 +634,7 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - dat->avatarHeight, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
 //	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - (hSplitterPos + toolbarHeight + dat->avatarHeight)/2, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
 	EndDeferWindowPos(hdwp);
-	if (dat->flags & SMF_USEIEVIEW) {
+	if (dat->hwndLog != NULL) {
 		IEVIEWWINDOW ieWindow;
 		ieWindow.cbSize = sizeof(IEVIEWWINDOW);
 		ieWindow.iType = IEW_SETPOS;
@@ -681,6 +681,7 @@ void ShowAvatar(HWND hwndDlg, struct MessageWindowData *dat) {
 		}
 		DBFreeVariant(&dbv);
 	}
+	SendMessage(hwndDlg, DM_SCROLLLOGTOBOTTOM, 0, 0);
 }
 
 static void NotifyTyping(struct MessageWindowData *dat, int mode)
@@ -744,6 +745,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			dat->hwnd = hwndDlg;
 			dat->hwndParent = GetParent(hwndDlg);
+			dat->hwndLog = NULL;
 			dat->parent = (struct ParentWindowData *) GetWindowLong(dat->hwndParent, GWL_USERDATA);
 			dat->szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dat->hContact, 0);
 			RichUtil_SubClass(GetDlgItem(hwndDlg, IDC_LOG));
@@ -790,7 +792,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "DisableUnicode", (BYTE) 0)) {
 				dat->flags |= SMF_DISABLE_UNICODE;
 			}
-			dat->flags |= g_dat->flags & SMF_USEIEVIEW;
+			dat->flags |= ServiceExists(MS_IEVIEW_WINDOW) ? g_dat->flags & SMF_USEIEVIEW : 0;
 			dat->codePage = DBGetContactSettingWord(dat->hContact, SRMMMOD, "CodePage", (WORD) CP_ACP);
 //			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
 			{
@@ -1364,11 +1366,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				break;
 			si.cbSize = sizeof(si);
 			si.fMask = SIF_PAGE | SIF_RANGE;
-			GetScrollInfo(GetDlgItem(hwndDlg, IDC_LOG), SB_VERT, &si);
-			si.fMask = SIF_POS;
-			si.nPos = si.nMax - si.nPage + 1;
-			SetScrollInfo(GetDlgItem(hwndDlg, IDC_LOG), SB_VERT, &si, TRUE);
-			PostMessage(GetDlgItem(hwndDlg, IDC_LOG), WM_VSCROLL, MAKEWPARAM(SB_BOTTOM, 0), 0);
+			if (GetScrollInfo(GetDlgItem(hwndDlg, IDC_LOG), SB_VERT, &si)) {
+				si.fMask = SIF_POS;
+				si.nPos = si.nMax - si.nPage + 1;
+				SetScrollInfo(GetDlgItem(hwndDlg, IDC_LOG), SB_VERT, &si, TRUE);
+				PostMessage(GetDlgItem(hwndDlg, IDC_LOG), WM_VSCROLL, MAKEWPARAM(SB_BOTTOM, 0), 0);
+			}
 			break;
 		}
 	case HM_DBEVENTADDED:
@@ -1446,7 +1449,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		break;
 	case DM_CLEARLOG:
 	// IEVIew MOD Begin
-		if (dat->flags & SMF_USEIEVIEW) {
+		if (dat->hwndLog != NULL) {
 			IEVIEWEVENT event;
 			event.cbSize = sizeof(IEVIEWEVENT);
 			event.iType = IEE_CLEAR_LOG;
@@ -1639,49 +1642,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				dat->cmdList = tcmdlist_append(dat->cmdList, msi.sendBuffer);
 		#endif
 				dat->cmdListCurrent = 0;
-/*
-				bufSize = GetWindowTextLengthA(GetDlgItem(hwndDlg, IDC_MESSAGE)) + 1;
-				dat->sendCount ++;
-				dat->sendInfo = (struct MessageSendInfo *) realloc(dat->sendInfo, sizeof(struct MessageSendInfo) * dat->sendCount);
-				dat->sendBuffer = (char *) realloc(dat->sendBuffer, bufSize * (sizeof(TCHAR) + 1));
-				dat->sendInfo[dat->sendCount-1].sendBufferSize = bufSize * (sizeof(TCHAR) + 1);
-				dat->sendInfo[dat->sendCount-1].sendBuffer = (char *) malloc(dat->sendInfo[dat->sendCount-1].sendBufferSize);
-				dat->sendInfo[dat->sendCount-1].timeout=0;
-				GetDlgItemTextA(hwndDlg, IDC_MESSAGE, dat->sendBuffer, bufSize);
-		#if defined( _UNICODE )
-				{
-					GETTEXTEX  gt;
-					gt.cb = bufSize * sizeof(TCHAR);
-					gt.flags = GT_USECRLF;
-					gt.codepage = 1200;
-					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_GETTEXTEX, (WPARAM) &gt, (LPARAM) & dat->sendBuffer[bufSize]);
-				}
-		#endif
-				if (dat->sendBuffer[0] == 0)
-					break;
-		#if defined( _UNICODE )
-				dat->cmdList = tcmdlist_append(dat->cmdList, (TCHAR *) & dat->sendBuffer[bufSize]);
-		#else
-				dat->cmdList = tcmdlist_append(dat->cmdList, dat->sendBuffer);
-		#endif
-				dat->cmdListCurrent = 0;
-
-				if (dat->nTypeMode == PROTOTYPE_SELFTYPING_ON) {
-					NotifyTyping(dat, PROTOTYPE_SELFTYPING_OFF);
-				}
-				memcpy(dat->sendInfo[dat->sendCount-1].sendBuffer, dat->sendBuffer, dat->sendInfo[dat->sendCount-1].sendBufferSize);
-
-				//create a timeout timer
-				SetTimer(hwndDlg, TIMERID_MSGSEND, 1000, NULL);
-				dat->messagesInProgress++;
-				if (g_dat->flags & SMF_SHOWPROGRESS) {
-					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
-				}
-				hSendId = (HANDLE) CallContactService(dat->hContact, MsgServiceName(dat->hContact), SEND_FLAGS, (LPARAM) dat->sendBuffer);
-				if (dat->sendCount>0) {
-					dat->sendInfo[dat->sendCount-1].hSendId = hSendId;
-				}
-				*/
 				if (dat->nTypeMode == PROTOTYPE_SELFTYPING_ON) {
 					NotifyTyping(dat, PROTOTYPE_SELFTYPING_OFF);
 				}
@@ -1733,7 +1693,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				smaddInfo.Direction = 0;
 				smaddInfo.xPosition = rc.left;
 				smaddInfo.yPosition = rc.top + 24;
-				if (dat->flags & SMF_USEIEVIEW) {
+				if (dat->hwndLog != NULL) {
 					CallService(MS_IEVIEW_SHOWSMILEYSELECTION, 0, (LPARAM) &smaddInfo);
 				} else if (ServiceExists(MS_SMILEYADD_SHOWSELECTION)) {
 					CallService(MS_SMILEYADD_SHOWSELECTION, 0, (LPARAM) &smaddInfo);
@@ -1751,7 +1711,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				st.codepage = CP_ACP;
 #endif
 				if (dat->hDbEventLast==NULL) break;
-				if (dat->flags & SMF_USEIEVIEW) {
+				if (dat->hwndLog != NULL) {
 					TCHAR *buffer = GetIEViewSelection(dat);
 					if (buffer!=NULL) {
 						TCHAR *quotedBuffer = GetQuotedTextW(buffer);
@@ -2152,7 +2112,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 
 // IEVIew MOD Begin
-		if (dat->flags & SMF_USEIEVIEW) {
+		if (dat->hwndLog != NULL) {
 			IEVIEWWINDOW ieWindow;
 			ieWindow.cbSize = sizeof(IEVIEWWINDOW);
 			ieWindow.iType = IEW_DESTROY;
