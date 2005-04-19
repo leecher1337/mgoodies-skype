@@ -36,7 +36,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Send/Receive Messages",
 #endif
-	PLUGIN_MAKE_VERSION(2, 2, 2, 0),
+	PLUGIN_MAKE_VERSION(2, 2, 1, 11),
 	"Scriver - send and receive instant messages",
 	"Miranda IM Development Team (SRMM), Piotr Piastucki (Scriver)",
 	"the_leech@users.berlios.de",
