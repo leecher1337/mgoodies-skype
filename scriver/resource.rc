@@ -207,17 +207,17 @@ BEGIN
     CONTROL         "Load unread events only",IDC_LOADUNREAD,"Button",
                     BS_AUTORADIOBUTTON | WS_TABSTOP,10,187,138,10
     CONTROL         "Load number of previous events",IDC_LOADCOUNT,"Button",
-                    BS_AUTORADIOBUTTON,10,203,138,10
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,203,138,10
     EDITTEXT        IDC_LOADCOUNTN,148,202,33,12,ES_RIGHT | ES_NUMBER |
-                    WS_DISABLED
+                    WS_DISABLED | WS_TABSTOP
     CONTROL         "Spin1",IDC_LOADCOUNTSPIN,"msctls_updown32",
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY |
                     UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK |
                     WS_DISABLED,170,201,10,14
     CONTROL         "Load previous events less than",IDC_LOADTIME,"Button",
-                    BS_AUTORADIOBUTTON,10,219,138,10
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,219,138,10
     EDITTEXT        IDC_LOADTIMEN,148,218,33,12,ES_RIGHT | ES_NUMBER |
-                    WS_DISABLED
+                    WS_DISABLED | WS_TABSTOP
     CONTROL         "Spin1",IDC_LOADTIMESPIN,"msctls_updown32",
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY |
                     UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK |
