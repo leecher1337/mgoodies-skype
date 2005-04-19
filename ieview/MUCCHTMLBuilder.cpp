@@ -166,7 +166,7 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		ReleaseDC(NULL, hdc);
 		Utils::appendText(&output, &outputSize, "<html><head>");
 		Utils::appendText(&output, &outputSize, "<style type=\"text/css\">\n");
-		COLORREF bkgColor = DBGetContactSettingDword(NULL, SRMMMOD, "BkgColour", 0xFFFFFF);
+		COLORREF bkgColor = DBGetContactSettingDword(NULL, SRMMMOD, "BackgroundLog", 0xFFFFFF);
 		COLORREF inColor, outColor;
 	    bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
 		inColor = outColor = bkgColor;
@@ -208,13 +208,13 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 
 void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 
-	DWORD dwFlags = DBGetContactSettingDword(NULL, SRMMMOD, MUCCSET_OPTIONS, 0);
 	int cp = CP_ACP;
 	if (event->cbSize == sizeof(IEVIEWEVENT)) {
 		cp = event->codepage;
 	}
     IEVIEWEVENTDATA* eventData = (IEVIEWEVENTDATA *) event->hDbEventFirst;
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
+		DWORD dwFlags = eventData->dwData;
 		char *style = NULL;
 		int styleSize;
 		int isSent = eventData->bIsMe;
@@ -258,29 +258,37 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\"><span style=\"%s\">%s</span></span>", className, style!=NULL ? style : "", szText);
             Utils::appendText(&output, &outputSize, "</div>\n");
 			if (style!=NULL) free(style);
-		} else if (eventData->iType == IEED_EVENT_JOIN || eventData->iType == IEED_EVENT_LEAVE || eventData->iType == IEED_EVENT_TOPIC) {
+		} else if (eventData->iType == IEED_EVENT_JOINED || eventData->iType == IEED_EVENT_LEFT || eventData->iType == IEED_EVENT_TOPIC) {
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
 			if (dwFlags & FLAG_SHOW_TIMESTAMP || dwFlags & FLAG_SHOW_DATE) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
 							isSent ? "timestamp" : "timestamp", timestampToString(dwFlags, eventData->time));
 			}
 			const char *className;
-			if (eventData->iType == IEED_EVENT_JOIN) {
+			const char *eventText;
+			if (eventData->iType == IEED_EVENT_JOINED) {
                 className = "userJoined";
+				eventText = "%s has joined.";
 				szText = encodeUTF8(eventData->pszNick, NULL, false);
-			} else if (eventData->iType == IEED_EVENT_LEAVE) {
+			} else if (eventData->iType == IEED_EVENT_LEFT) {
                 className = "userLeft";
+				eventText = "%s has left.";
 				szText = encodeUTF8(eventData->pszNick, NULL, false);
 			} else {
                 className = "topicChange";
+				eventText = "The topic is %s.";
 				szText = encodeUTF8(eventData->pszText, NULL, false);
 			}
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">", className);
-			Utils::appendText(&output, &outputSize, Translate("%s has joined."), szText);
+			Utils::appendText(&output, &outputSize, Translate(eventText), szText);
 			Utils::appendText(&output, &outputSize, "</span>");
             Utils::appendText(&output, &outputSize, "</div>\n");
 		} else if (eventData->iType == IEED_EVENT_ERROR) {
-
+            const char *className = "error";
+			szText = encodeUTF8(eventData->pszText, NULL, false);
+			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
+			Utils::appendText(&output, &outputSize, "<span class=\"%s\"> %s: %s</span>", className, Translate("Error"), szText);
+            Utils::appendText(&output, &outputSize, "</div>\n");
 		}
 		if (szName!=NULL) delete szName;
 		if (szText!=NULL) delete szText;

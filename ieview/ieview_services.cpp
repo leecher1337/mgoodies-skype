@@ -35,7 +35,7 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 	IEView::init();
 	Options::init();
 	if (window->iType == IEW_CREATE) {
-		HTMLBuilder *builder;
+		HTMLBuilder *builder = NULL;
 		if (window->dwMode == IEWM_MUCC || window->dwMode == IEWM_CHAT) {
             if (window->dwMode == IEWM_MUCC) {
             	builder = new MUCCHTMLBuilder();
