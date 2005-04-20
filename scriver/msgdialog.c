@@ -1476,23 +1476,25 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			int timeout = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_MSGTIMEOUT, SRMSGDEFSET_MSGTIMEOUT);
 			for (i = 0; i < dat->sendCount; i++) {
 				if (dat->sendInfo[i].sendBuffer) {
-					dat->sendInfo[i].timeout+=1000;
-					if (dat->sendInfo[i].timeout > timeout) {
-						struct ErrorWindowData *ewd = (struct ErrorWindowData *) malloc(sizeof(struct ErrorWindowData));
-						ewd->szName = strdup ((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0));
-						ewd->szDescription = strdup(Translate("The message send timed out."));
-						ewd->textSize = dat->sendInfo[i].sendBufferSize;
-						ewd->szText = (char *)malloc(dat->sendInfo[i].sendBufferSize);
-						memcpy(ewd->szText, dat->sendInfo[i].sendBuffer, dat->sendInfo[i].sendBufferSize);
-						ewd->hwndParent = hwndDlg;
-						if (dat->messagesInProgress>0) {
-							dat->messagesInProgress--;
-							if (g_dat->flags & SMF_SHOWPROGRESS) {
-								SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+					if (dat->sendInfo[i].timeout < timeout) {
+						dat->sendInfo[i].timeout+=1000;
+						if (dat->sendInfo[i].timeout > timeout) {
+							struct ErrorWindowData *ewd = (struct ErrorWindowData *) malloc(sizeof(struct ErrorWindowData));
+							ewd->szName = strdup ((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0));
+							ewd->szDescription = strdup(Translate("The message send timed out."));
+							ewd->textSize = dat->sendInfo[i].sendBufferSize;
+							ewd->szText = (char *)malloc(dat->sendInfo[i].sendBufferSize);
+							memcpy(ewd->szText, dat->sendInfo[i].sendBuffer, dat->sendInfo[i].sendBufferSize);
+							ewd->hwndParent = hwndDlg;
+							if (dat->messagesInProgress>0) {
+								dat->messagesInProgress--;
+								if (g_dat->flags & SMF_SHOWPROGRESS) {
+									SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+								}
 							}
+							CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGSENDERROR), hwndDlg, ErrorDlgProc, (LPARAM) ewd);
+							//RemoveSendBuffer(dat, i);
 						}
-						CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGSENDERROR), hwndDlg, ErrorDlgProc, (LPARAM) ewd);
-						//RemoveSendBuffer(dat, i);
 					}
 				}
 			}
