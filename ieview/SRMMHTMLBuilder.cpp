@@ -142,11 +142,11 @@ void SRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		}
 	 	for(int i = 0; i < FONT_NUM; i++) {
 			loadMsgDlgFont(i, &lf, &color);
-			Utils::appendText(&output, &outputSize, "%s {font-family: %s; font-size: %dpt; font-weight: %d; color: #%06X; %s}\n",
+			Utils::appendText(&output, &outputSize, "%s {font-family: %s; font-size: %dpt; font-weight: %s; color: #%06X; %s }\n",
 			classNames[i],
 			lf.lfFaceName,
 			abs((signed char)lf.lfHeight) *  74 /logPixelSY ,
-			lf.lfWeight >= FW_BOLD ? FW_BOLD : FW_NORMAL,
+			lf.lfWeight >= FW_BOLD ? "bold" : "normal",
 			(int)(((color & 0xFF) << 16) | (color & 0xFF00) | ((color & 0xFF0000) >> 16)),
 			lf.lfItalic ? "font-style: italic;" : "");
 		}

@@ -189,11 +189,11 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		}
 	 	for(int i = 0; i < FONT_NUM; i++) {
 			loadMsgDlgFont(i, &lf, &color);
-			Utils::appendText(&output, &outputSize, "%s {font-family: %s; font-size: %dpt; font-weight: %d; color: #%06X; %s }\n",
+			Utils::appendText(&output, &outputSize, "%s {font-family: %s; font-size: %dpt; font-weight: %s; color: #%06X; %s }\n",
 			classNames[i],
 			lf.lfFaceName,
 			abs((signed char)lf.lfHeight) *  74 /logPixelSY ,
-			lf.lfWeight >= FW_BOLD ? FW_BOLD : FW_NORMAL,
+			lf.lfWeight >= FW_BOLD ? "bold" : "normal",
 			(int)(((color & 0xFF) << 16) | (color & 0xFF00) | ((color & 0xFF0000) >> 16)),
 			lf.lfItalic ? "font-style: italic;" : "");
 		}
@@ -251,7 +251,7 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                 Utils::appendText(&style, &styleSize, "font-family:%s;", eventData->fontName);
 			}
 			if (eventData->dwFlags & IEEDF_FORMAT_STYLE) {
-                Utils::appendText(&style, &styleSize, "font-weight: %d;", eventData->fontStyle & IE_FONT_BOLD ? FW_BOLD : FW_NORMAL);
+                Utils::appendText(&style, &styleSize, "font-weight: %s;", eventData->fontStyle & IE_FONT_BOLD ? "bold" : "normal");
                 Utils::appendText(&style, &styleSize, "font-style: %s;", eventData->fontStyle & IE_FONT_ITALIC ? "italic" : "normal");
                 Utils::appendText(&style, &styleSize, "text-decoration: %s;", eventData->fontStyle & IE_FONT_UNDERLINE ? "underline" : "none");
 			}
