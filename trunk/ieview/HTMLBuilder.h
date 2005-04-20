@@ -29,11 +29,15 @@ class HTMLBuilder;
 class TextToken {
 private:
 	int  type;
+	bool end;
+	int  tag;
+	DWORD value;
 	wchar_t *wtext;
 	char *text;
 	wchar_t *wlink;
 	char *link;
 	TextToken *next;
+	static TextToken* 	tokenizeBBCodes(const wchar_t *text, int len);
 public:
 	enum TOKENS {
 		END      = 0,
@@ -41,34 +45,48 @@ public:
 		LINK,
 		WWWLINK,
 		SMILEY,
+		BBCODE,
+	};
+	enum BBCODES {
+		BB_B = 0,
+		BB_I,
+		BB_U,
+		BB_COLOR,
+		BB_SIZE,
+		BB_IMG,
 	};
 	TextToken(int type, const char *text, int len);
 	TextToken(int type, const wchar_t *wtext, int len);
 	~TextToken();
-	int getType();
+	int 				getType();
 	const char *		getText();
 	const wchar_t*      getTextW();
 	const char *		getLink();
 	const wchar_t *		getLinkW();
 	void 				setLink(const char *link);
 	void 				setLink(const wchar_t *wlink);
+	int 				getTag();
+	void                setTag(int);
+	bool 				isEnd();
+	void                setEnd(bool);
 	TextToken *			getNext();
 	void   				setNext(TextToken *);
-	void				toString(char **str, int *sizeAlloced);
+//	void				toString(char **str, int *sizeAlloced);
 	void				toString(wchar_t **str, int *sizeAlloced);
-	static char *		urlEncode(const char *str);
-	static char *		urlEncode2(const char *str);
-	static TextToken* 	tokenizeLinks(const char *text);
-	static TextToken*	tokenizeSmileys(const char *proto, const char *text);
+//	static char *		urlEncode(const char *str);
+//	static char *		urlEncode2(const char *str);
+//	static TextToken* 	tokenizeLinks(const char *text);
+//	static TextToken*	tokenizeSmileys(const char *proto, const char *text);
 	// UNICODE
 	wchar_t *			urlEncode(const wchar_t *str);
 	static TextToken* 	tokenizeLinks(const wchar_t *wtext);
 	static TextToken* 	tokenizeSmileys(const char *proto, const wchar_t *wtext);
+	static TextToken* 	tokenizeBBCodes(const wchar_t *text);
 };
 
 class HTMLBuilder {
 protected:
-	virtual char *encode(const char *text, const char *proto, bool replaceSmiley);
+//	virtual char *encode(const char *text, const char *proto, bool replaceSmiley);
 	virtual wchar_t *encode(const wchar_t *text, const char *proto, bool replaceSmiley);
 	virtual char *encodeUTF8(const wchar_t *text, const char *proto, bool replaceSmiley);
 	virtual char *encodeUTF8(const char *text, const char *proto, bool replaceSmiley);
