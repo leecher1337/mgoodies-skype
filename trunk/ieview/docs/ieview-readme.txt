@@ -106,6 +106,20 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.3.0:
++ support for (nested) BBCodes ! currently supported: [b][i][u][img][size][color]
++ support for Tlen group chats (requires mucc.dll v1.0.6.2 or higher)
+  support for chat.dll coming soon !
+* bugfixes & improvements
+1.0.2.2:
++ internal change: support for getting selected text
++ internal change: support for code page selection
+* better links detection
+* bugfixes
+1.0.2.1:
++ support for %%''%% in .asl files
+* fixed UTF8 encoding of date and time
+* other bugfixes
 1.0.2.0:
 * improved Unicode support
 * bugfixes
