@@ -627,7 +627,7 @@ void IEView::setWindowPos(int x, int y, int cx, int cy) {
  	if (builder == NULL) {
 		//scrollToTop();
 	} else {
-		scrollToBottomSoft();
+//		scrollToBottomSoft();
 	}
 	SetWindowPos(getHWND(), HWND_TOP, x, y, cx, cy, 0);
 	/*
@@ -640,7 +640,7 @@ void IEView::setWindowPos(int x, int y, int cx, int cy) {
  	if (builder == NULL) {
 		//scrollToTop();
 	} else {
-		scrollToBottomSoft();
+//		scrollToBottomSoft();
 	}
 }
 
