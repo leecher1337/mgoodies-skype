@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //#include "FontList.h"
 #include "ieview_common.h"
 
+#define DBS_BASICFLAGS  		  "BasicFlags"
+
 #define DBS_BACKGROUNDIMAGEFILE   "BackgroundImageFile"
 #define DBS_BACKGROUNDIMAGEFLAGS  "BackgroundImageFlags"
 
@@ -42,6 +44,7 @@ extern int IEViewOptInit(WPARAM wParam, LPARAM lParam);
 
 class Options {
 private:
+   	static int 		basicFlags;
    	static char *	bkgFilename;
    	static int 		bkgFlags;
    	static int 		smileyFlags;
@@ -57,6 +60,7 @@ private:
    	static bool     isInited;
 public:
 	enum OPTIONS {
+		BASIC_ENABLE_BBCODES	= 1,
 		BKGIMAGE_ENABLED        = 1,
 		BKGIMAGE_SCROLL         = 2,
 
@@ -86,6 +90,8 @@ public:
 		MATHMODULE_ENABLED      = 1,
 
 	};
+   	static void     		setBasicFlags(int flags);
+   	static int				getBasicFlags();
    	static void     		setSmileyFile(const char *proto, const char *filename);
    	static const char *		getSmileyFile(const char *proto);
    	static void     		setSmileyFlags(int flags);
