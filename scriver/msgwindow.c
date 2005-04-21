@@ -142,10 +142,10 @@ static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 	if(child != dat->hwndActive) {
 		HWND prev = dat->hwndActive;
 		dat->hwndActive = child;
-		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
-		ShowWindow(dat->hwndActive, SW_SHOW);
 		SendMessage(dat->hwndActive, DM_UPDATESTATUSBAR, 0, 0);
 		SendMessage(dat->hwndActive, DM_UPDATETITLE, 0, 0);
+		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
+		ShowWindow(dat->hwndActive, SW_SHOW);
 		ShowWindow(prev, SW_HIDE);
 	} else {
 		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
@@ -474,7 +474,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		break;
 	case WM_TIMER:
 		if (wParam == TIMERID_FLASHWND) {
-			if ((dat->nFlash > dat->nFlashMax) || (GetActiveWindow() == hwndDlg) || (GetForegroundWindow() == hwndDlg)) {
+			if ((dat->nFlash > dat->nFlashMax)) {// || ((GetActiveWindow() == hwndDlg) && (GetForegroundWindow() == hwndDlg))) {
 				KillTimer(hwndDlg, TIMERID_FLASHWND);
 				FlashWindow(hwndDlg, FALSE);
 			} else if (dat->nFlash < dat->nFlashMax) {
@@ -597,7 +597,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	case DM_ERRORDECIDED:
 		break;
 	case DM_STARTFLASHING:
-		if (GetActiveWindow() != hwndDlg && GetForegroundWindow() != hwndDlg) {
+		if (GetActiveWindow() != hwndDlg || GetForegroundWindow() != hwndDlg) {
 			dat->nFlash = 0;
 			SetTimer(hwndDlg, TIMERID_FLASHWND, TIMEOUT_FLASHWND, NULL);
 		}
@@ -743,7 +743,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON)) {
 							if (mdat->showTyping && (dat->flags&SMF_SHOWTYPINGWIN)) {
 								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) g_dat->hIcons[SMF_ICON_TYPING]);
-							} else if (mdat->showUnread && GetActiveWindow() != hwndDlg && GetForegroundWindow() != hwndDlg) {
+							} else if (mdat->showUnread && (GetActiveWindow() != hwndDlg || GetForegroundWindow() != hwndDlg)) {
 								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));	
 							} else {
 								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedProtoIcon(mdat->szProto, wStatus));

@@ -503,6 +503,10 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 //			SendMessage(hwnd, EM_REPLACESEL, FALSE, (LPARAM) "\t");
 			return 0;
 		}
+		if(wParam == VK_ESCAPE && (GetKeyState(VK_SHIFT) & 0x8000)) {
+			ShowWindow(GetParent(GetParent(hwnd)), SW_MINIMIZE);
+			return 0;
+		}
 		if (wParam == VK_RETURN) {
 			if (GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_MENU) & 0x8000) {
 				PostMessage(GetParent(hwnd), WM_COMMAND, IDC_SENDALL, 0);
@@ -729,6 +733,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
+			int notifyUnread = 0;
 			struct NewMessageWindowLParam *newData = (struct NewMessageWindowLParam *) lParam;
 			TranslateDialogDefault(hwndDlg);
 			dat = (struct MessageWindowData *) malloc(sizeof(struct MessageWindowData));
@@ -869,6 +874,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				int historyMode = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LOADHISTORY, SRMSGDEFSET_LOADHISTORY);
 				// This finds the first message to display, it works like shit
 				dat->hDbEventFirst = (HANDLE) CallService(MS_DB_EVENT_FINDFIRSTUNREAD, (WPARAM) dat->hContact, 0);
+				if (dat->hDbEventFirst != NULL) {
+					DBEVENTINFO dbei = { 0 };
+					dbei.cbSize = sizeof(dbei);
+					CallService(MS_DB_EVENT_GET, (WPARAM) dat->hDbEventFirst, (LPARAM) & dbei);
+					if (dbei.eventType == EVENTTYPE_MESSAGE && !(dbei.flags & DBEF_READ) && !(dbei.flags & DBEF_SENT)) {
+						notifyUnread = 1;
+					}
+				}
 				switch (historyMode) {
 				case LOADHISTORY_COUNT:
 					{
@@ -946,12 +959,18 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					}
 					while (hdbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDPREV, (WPARAM) hdbEvent, 0));
 				}
-
 			}
 			ShowWindow(hwndDlg, SW_SHOWNORMAL);
 			SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 			ShowWindow(dat->hwndParent, SW_SHOW);
 			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPEN);
+			if (notifyUnread) {
+				SendMessage(dat->hwndParent, DM_STARTFLASHING, 0, 0); 
+				if (GetActiveWindow() != dat->hwndParent || GetForegroundWindow() != dat->hwndParent || dat->parent->hwndActive != hwndDlg) {
+					dat->showUnread = 0;
+					SetTimer(hwndDlg, TIMERID_FLASHWND, TIMEOUT_FLASHWND, NULL);
+				}
+			}
 			return TRUE;
 		}
 	case WM_CONTEXTMENU:
@@ -1409,8 +1428,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 				if (!(dbei.flags & DBEF_SENT) && dbei.eventType != EVENTTYPE_STATUSCHANGE) {
 //					dat->nFlash = dat->nFlashMax;
-					SendMessage(dat->hwndParent, DM_STARTFLASHING, 0, 0);
-					if ((GetActiveWindow() != dat->hwndParent && GetForegroundWindow() != dat->hwndParent) || dat->parent->hwndActive != hwndDlg) {
+					SendMessage(dat->hwndParent, DM_STARTFLASHING, 0, 0); 
+					if (GetActiveWindow() != dat->hwndParent || GetForegroundWindow() != dat->hwndParent || dat->parent->hwndActive != hwndDlg) {
 						dat->showUnread = 0;
 						SetTimer(hwndDlg, TIMERID_FLASHWND, TIMEOUT_FLASHWND, NULL);
 					}
