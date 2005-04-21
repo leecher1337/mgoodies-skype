@@ -164,6 +164,9 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 			if (path != NULL) {
                 SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
 			}
+			if (Options::getBasicFlags() & Options::BASIC_ENABLE_BBCODES) {
+				CheckDlgButton(hwndDlg, IDC_ENABLE_BBCODES, TRUE);
+			}
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -176,6 +179,7 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			case IDC_SCROLL_BACKGROUND_IMAGE:
+			case IDC_ENABLE_BBCODES:
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			case IDC_BACKGROUND_IMAGE:
@@ -276,6 +280,11 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 				Options::setExternalCSSFile(path);
 				GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
 				Options::setExternalCSSFileRTL(path);
+				i = 0;
+				if (IsDlgButtonChecked(hwndDlg, IDC_ENABLE_BBCODES)) {
+					i |= Options::BASIC_ENABLE_BBCODES;
+				}
+				Options::setBasicFlags(i);
 				return TRUE;
 			}
 		}
@@ -687,6 +696,7 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 	return FALSE;
 }
 
+int Options::basicFlags;
 char *Options::bkgFilename = NULL;
 int Options::bkgFlags;
 int Options::smileyFlags;
@@ -703,6 +713,7 @@ void Options::init() {
 	if (isInited) return;
 	isInited = true;
 	DBVARIANT dbv;
+	basicFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_BASICFLAGS, 0);
 	bkgFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_BACKGROUNDIMAGEFLAGS, 0);
 	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_BACKGROUNDIMAGEFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
@@ -832,6 +843,15 @@ void Options::setBkgImageFlags(int flags) {
 
 int	Options::getBkgImageFlags() {
 	return bkgFlags;
+}
+
+void Options::setBasicFlags(int flags) {
+	basicFlags = flags;
+	DBWriteContactSettingDword(NULL, muccModuleName, DBS_BASICFLAGS, (DWORD) flags);
+}
+
+int	Options::getBasicFlags() {
+	return basicFlags;
 }
 
 void Options::setSmileyFile(const char *proto, const char *filename) {
