@@ -735,14 +735,17 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 					Utils::appendText(str, sizeAlloced, L"<span style=\"text-decoration: underline;\">");
 					break;
 				case BB_IMG:
-            		eText = urlEncode(wtext);   //< document.body.clientWidth  ? this.parentNode.offsetWidth : document.body.clientWidth
+            		eText = urlEncode(wtext);   // 100%% //< document.body.clientWidth  ? this.parentNode.width : document.body.clientWidth 
         	    	Utils::appendText(str, sizeAlloced, L"<div style=\"width: 100%%; border: 0; overflow: hidden;\"><img class=\"img\" style=\"width: expression((maxw = this.parentNode.offsetWidth ) > this.width ? 'auto' : maxw);\" src=\"%s\" /></div>", eText);
+        	    	break;
 				case BB_COLOR:
             		eText = urlEncode(wtext);
         	    	Utils::appendText(str, sizeAlloced, L"<span style=\"color: %s;\">", eText);
+        	    	break;
 				case BB_SIZE:
             		eText = urlEncode(wtext);
         	    	Utils::appendText(str, sizeAlloced, L"<span style=\"font-size: %s;\">", eText);
+        	    	break;
 				}
 			} else {
 				switch (tag) {
