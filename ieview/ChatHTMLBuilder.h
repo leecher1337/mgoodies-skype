@@ -9,7 +9,6 @@ class ChatHTMLBuilder:public HTMLBuilder
 {
 protected:
     virtual void loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour);
-	virtual bool isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei);
 	virtual char *timestampToString(DWORD dwFlags, time_t check);
 	time_t 		lastEventTime;
 	int     	iLastEventType;

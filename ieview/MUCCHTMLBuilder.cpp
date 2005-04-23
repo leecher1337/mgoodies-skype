@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SMF_LOG_MSGONNEWLINE 	1024
 
 #define EVENTTYPE_STATUSCHANGE 25368
-#define SRMMMOD "MUCC"
+#define MUCCMOD 			"MUCC"
 #define MUCCSET_OPTIONS      "ChatWindowOptions"
 
 #define FONTF_BOLD   1
@@ -66,47 +66,35 @@ MUCCHTMLBuilder::MUCCHTMLBuilder() {
 	lastEventTime = time(NULL);
 }
 
-bool MUCCHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
-{
-    switch (dbei->eventType) {
-        case EVENTTYPE_MESSAGE:
-            return 1;
-        case EVENTTYPE_STATUSCHANGE:
-            if (dbei->flags & DBEF_READ) return 0;
-            return 1;
-    }
-    return 0;
-}
-
 void MUCCHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
     char str[32];
     int style;
     DBVARIANT dbv;
     if (colour) {
         wsprintfA(str, "Font%dCol", i);
-        *colour = DBGetContactSettingDword(NULL, SRMMMOD, str, 0x000000);
+        *colour = DBGetContactSettingDword(NULL, MUCCMOD, str, 0x000000);
     }
     if (lf) {
         wsprintfA(str, "Font%dSize", i);
-        lf->lfHeight = (char) DBGetContactSettingByte(NULL, SRMMMOD, str, 10);
+        lf->lfHeight = (char) DBGetContactSettingByte(NULL, MUCCMOD, str, 10);
         lf->lfHeight = abs(lf->lfHeight);
         lf->lfWidth = 0;
         lf->lfEscapement = 0;
         lf->lfOrientation = 0;
         wsprintfA(str, "Font%dStyle", i);
-        style = DBGetContactSettingByte(NULL, SRMMMOD, str, 0);
+        style = DBGetContactSettingByte(NULL, MUCCMOD, str, 0);
         lf->lfWeight = style & FONTF_BOLD ? FW_BOLD : FW_NORMAL;
         lf->lfItalic = style & FONTF_ITALIC ? 1 : 0;
         lf->lfUnderline = style & FONTF_UNDERLINE ? 1 : 0;
         lf->lfStrikeOut = 0;
         wsprintfA(str, "Font%dSet", i);
-        lf->lfCharSet = DBGetContactSettingByte(NULL, SRMMMOD, str, DEFAULT_CHARSET);
+        lf->lfCharSet = DBGetContactSettingByte(NULL, MUCCMOD, str, DEFAULT_CHARSET);
         lf->lfOutPrecision = OUT_DEFAULT_PRECIS;
         lf->lfClipPrecision = CLIP_DEFAULT_PRECIS;
         lf->lfQuality = DEFAULT_QUALITY;
         lf->lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
         wsprintfA(str, "Font%dFace", i);
-        if (DBGetContactSetting(NULL, SRMMMOD, str, &dbv))
+        if (DBGetContactSetting(NULL, MUCCMOD, str, &dbv))
             lstrcpyA(lf->lfFaceName, "Verdana");
         else {
             lstrcpynA(lf->lfFaceName, dbv.pszVal, sizeof(lf->lfFaceName));
@@ -166,7 +154,7 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		ReleaseDC(NULL, hdc);
 		Utils::appendText(&output, &outputSize, "<html><head>");
 		Utils::appendText(&output, &outputSize, "<style type=\"text/css\">\n");
-		COLORREF bkgColor = DBGetContactSettingDword(NULL, SRMMMOD, "BackgroundLog", 0xFFFFFF);
+		COLORREF bkgColor = DBGetContactSettingDword(NULL, MUCCMOD, "BackgroundLog", 0xFFFFFF);
 		COLORREF inColor, outColor;
 	    bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
 		inColor = outColor = bkgColor;
@@ -268,15 +256,15 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			const char *eventText;
 			if (eventData->iType == IEED_EVENT_JOINED) {
                 className = "userJoined";
-				eventText = "%s has joined.";
+				eventText = Translate("%s has joined.");
 				szText = encodeUTF8(eventData->pszNick, NULL, false);
 			} else if (eventData->iType == IEED_EVENT_LEFT) {
                 className = "userLeft";
-				eventText = "%s has left.";
+				eventText = Translate("%s has left.");
 				szText = encodeUTF8(eventData->pszNick, NULL, false);
 			} else {
                 className = "topicChange";
-				eventText = "The topic is %s.";
+				eventText = Translate("The topic is %s.");
 				szText = encodeUTF8(eventData->pszText, NULL, false);
 			}
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">", className);
