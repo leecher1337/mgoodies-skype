@@ -1538,7 +1538,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dat->sendInfo[i].sendBuffer) {
 					if (dat->sendInfo[i].timeout < timeout) {
 						dat->sendInfo[i].timeout+=1000;
-						if (dat->sendInfo[i].timeout > timeout) {
+						if (dat->sendInfo[i].timeout >= timeout) {
 							struct ErrorWindowData *ewd = (struct ErrorWindowData *) malloc(sizeof(struct ErrorWindowData));
 							ewd->szName = strdup ((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0));
 							ewd->szDescription = strdup(Translate("The message send timed out."));
