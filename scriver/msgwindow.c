@@ -472,6 +472,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			}
 		}
 		break;
+	case WM_DROPFILES:
+		SendMessage(dat->hwndActive, WM_DROPFILES, wParam, lParam);
+		break;
 	case WM_TIMER:
 		if (wParam == TIMERID_FLASHWND) {
 			if ((dat->nFlash > dat->nFlashMax)) {// || ((GetActiveWindow() == hwndDlg) && (GetForegroundWindow() == hwndDlg))) {
