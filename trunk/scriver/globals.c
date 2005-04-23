@@ -1,7 +1,7 @@
 /*
 Scriver
 
-Copyright 2000-2003 Miranda ICQ/IM project, 
+Copyright 2000-2005 Miranda ICQ/IM project, 
 Copyright 2005 Piotr Piastucki
 
 all portions of this codebase are copyrighted to the people 
@@ -287,7 +287,7 @@ void ReloadGlobals() {
 		g_dat->flags |= SMF_MSGONNEWLINE;
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_HIDENAMES, SRMSGDEFSET_HIDENAMES))
 		g_dat->flags |= SMF_HIDENAMES;
-
+	//g_dat->openFlags = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_POPFLAGS, SRMSGDEFSET_POPFLAGS);
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTYPING, SRMSGDEFSET_SHOWTYPING))
 		g_dat->flags |= SMF_SHOWTYPING;
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTYPINGWIN, SRMSGDEFSET_SHOWTYPINGWIN))

@@ -72,6 +72,7 @@ typedef struct _settextex
 #include <m_history.h>
 #include <m_addcontact.h>
 #include <m_message.h>
+#include <m_file.h>
 #include "cmdlist.h"
 #include "msgs.h"
 #include "globals.h"

@@ -303,6 +303,32 @@ static int GetWindowAPI(WPARAM wParam, LPARAM lParam)
 	return PLUGIN_MAKE_VERSION(0,0,0,2);
 }
 
+static int GetWindowClass(WPARAM wParam, LPARAM lParam)
+{
+	char *szBuf = (char*)wParam;
+	int size = (int)lParam;
+	_snprintf(szBuf, size, SRMMMOD);
+	return 0;
+}
+/*
+static int GetWindowData(WPARAM wParam, LPARAM lParam)
+{
+	MessageWindowInputData *mwid = (MessageWindowInputData*)wParam;
+	MessageWindowData *mwd = (MessageWindowData*)lParam;
+	HWND hwnd;
+
+	if (mwid==NULL||mwd==NULL) return 1;
+	if (mwid->cbSize!=sizeof(MessageWindowInputData)||mwd->cbSize!=sizeof(MessageWindowData)) return 1;
+	if (mwid->hContact==NULL) return 1;
+	if (mwid->uFlags!=MSG_WINDOW_UFLAG_MSG_BOTH) return 1;
+	hwnd = WindowList_Find(g_dat->hMessageWindowList, mwid->hContact);
+	mwd->uFlags = MSG_WINDOW_UFLAG_MSG_BOTH;
+	mwd->hwndWindow = hwnd;
+	mwd->local = 0;
+	mwd->uState = SendMessage(hwnd, DM_GETWINDOWSTATE, 0, 0);
+	return 0;
+}
+*/
 static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
 	CLISTMENUITEM mi;
@@ -393,6 +419,8 @@ int LoadSendRecvMessageModule(void)
 	CreateServiceFunction(MS_MSG_SENDMESSAGE "W", SendMessageCommand);
 #endif
 	CreateServiceFunction(MS_MSG_GETWINDOWAPI, GetWindowAPI);
+//	CreateServiceFunction(MS_MSG_GETWINDOWCLASS, GetWindowClass);
+//	CreateServiceFunction(MS_MSG_GETWINDOWDATA, GetWindowData);
 	CreateServiceFunction("SRMsg/ReadMessage", ReadMessageCommand);
 	CreateServiceFunction("SRMsg/TypingMessage", TypingMessageCommand);
 	hHookWinEvt=CreateHookableEvent(ME_MSG_WINDOWEVENT);
