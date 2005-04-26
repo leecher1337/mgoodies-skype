@@ -135,7 +135,7 @@ static RList *slist = NULL;
 static CRITICAL_SECTION csRich;
 
 static LRESULT CALLBACK RichUtil_Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-static RichUtil_ClearUglyBorder(TRichUtil *ru);
+static void RichUtil_ClearUglyBorder(TRichUtil *ru);
 
 void RichUtil_Load() {
 	mTheme = RIsWinVerXPPlus()?LoadLibraryA("uxtheme.dll"):0;
@@ -284,7 +284,7 @@ static LRESULT CALLBACK RichUtil_Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
 	return CallWindowProc(ru->origProc, hwnd, msg, wParam, lParam);
 }
 
-static RichUtil_ClearUglyBorder(TRichUtil *ru) {
+static void RichUtil_ClearUglyBorder(TRichUtil *ru) {
 	if (mTheme&&MyIsThemeActive()&&GetWindowLong(ru->hwnd, GWL_EXSTYLE)&WS_EX_CLIENTEDGE) {
 		ru->hasUglyBorder = 1;
 		SetWindowLong(ru->hwnd, GWL_EXSTYLE, GetWindowLong(ru->hwnd, GWL_EXSTYLE)^WS_EX_CLIENTEDGE);
