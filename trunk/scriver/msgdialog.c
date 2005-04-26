@@ -1345,6 +1345,20 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 		SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 		break;
+	case DM_GETWINDOWSTATE:
+		{
+			UINT state = 0;
+			
+			state |= MSG_WINDOW_STATE_EXISTS;
+			if (IsWindowVisible(hwndDlg)) 
+				state |= MSG_WINDOW_STATE_VISIBLE;
+			if (GetFocus()==hwndDlg) 
+				state |= MSG_WINDOW_STATE_FOCUS;
+			if (IsIconic(hwndDlg))
+				state |= MSG_WINDOW_STATE_ICONIC;
+			return state;
+
+		}
 	case WM_ACTIVATE:
 		if (LOWORD(wParam) != WA_ACTIVE)
 			break;
