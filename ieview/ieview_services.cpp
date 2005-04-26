@@ -75,17 +75,15 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 	IEView * view = IEView::get(event->hwnd);
 	IEView::init();
 	Options::init();
-	if (event->iType == IEE_LOG_EVENTS) {
-		if (view != NULL) {
+	if (view != NULL) {
+		if (event->iType == IEE_LOG_EVENTS) {
 			view->appendEvent(event);
-		}
-	} else if (event->iType == IEE_CLEAR_LOG) {
-		if (view != NULL) {
+		} else if (event->iType == IEE_CLEAR_LOG) {
 			view->clear(event);
-		}
-	} else if (event->iType == IEE_GET_SELECTION) {
-		if (view != NULL) {
+		} else if (event->iType == IEE_GET_SELECTION) {
 			return (int)view->getSelection(event);
+		} else if (event->iType == IEE_SAVE_DOCUMENT) {
+			view->saveDocument();
 		}
 	}
 	return 0;

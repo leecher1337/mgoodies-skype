@@ -54,6 +54,7 @@ public:
 		BB_COLOR,
 		BB_SIZE,
 		BB_IMG,
+		BB_MATH,
 	};
 	TextToken(int type, const char *text, int len);
 	TextToken(int type, const wchar_t *wtext, int len);

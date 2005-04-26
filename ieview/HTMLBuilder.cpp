@@ -398,7 +398,24 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 	static int 		bbTagNameLen[] = {1, 1, 1, 3, 5, 4};
 	static int 		bbTagArg[] = {0, 0, 0, 0, 1, 1};
 	static int 		bbTagId[] = {BB_B, BB_I, BB_U, BB_IMG, BB_COLOR, BB_SIZE};
-
+	static bool     mathModInitialized = false;
+	static wchar_t *mathTagName[] = {NULL, NULL};
+	static int      mathTagLen[] = {0, 0};
+	if (!mathModInitialized) {
+    	if (ServiceExists(MATH_GET_PARAMS)) {
+			char* mthDelStart =  (char *)CallService(MATH_GET_PARAMS, (WPARAM)MATH_PARAM_STARTDELIMITER, 0);
+			char* mthDelEnd   =  (char *)CallService(MATH_GET_PARAMS, (WPARAM)MATH_PARAM_ENDDELIMITER, 0);
+			/*
+			mathTagName[0] = Utils::convertToWCS(mthDelStart);
+			mathTagLen[0] = wcslen(mathTagName[0]);
+			mathTagName[1] = Utils::convertToWCS(mthDelEnd);
+			mathTagLen[1] = wcslen(mathTagName[1]);
+			*/
+			CallService(MTH_FREE_MATH_BUFFER,0, (LPARAM) mthDelStart);
+			CallService(MTH_FREE_MATH_BUFFER,0, (LPARAM) mthDelEnd);
+		}
+       	mathModInitialized = true;
+	}
     TextToken *firstToken = NULL, *lastToken = NULL, * bbTokenFirst = NULL, * bbTokenLast = NULL;
     int textLen = 0;
     for (int i=0;i<=l;) {
@@ -472,12 +489,17 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 								newTokenSize = k - i;
 								break;
 							}
-						}
+						} 
 					}
 				}
 			}
 		}
 		if (!bbFound) {
+			if (mathTagName[0] != NULL && mathTagName[1] != NULL) {
+				if (!wcsnicmp(text, mathTagName[0], mathTagLen[0])) {
+					k = i + mathTagLen[0];
+				}
+			}
 			if (i==l) {
 				newTokenType = END;
 				newTokenSize = 1;
@@ -717,7 +739,7 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
         case SMILEY:
             eText = urlEncode(wtext);
             if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {
-            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" /> ", wlink, eText);
+            	Utils::appendText(str, sizeAlloced, L" <img class=\"img\" src=\"%s\" alt=\"%s\" /> ", wlink, eText);
             } else {
             	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" />", wlink, eText);
             }
@@ -755,6 +777,7 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 				case BB_COLOR:
 				case BB_SIZE:
 					Utils::appendText(str, sizeAlloced, L"</span>");
+					break;
 				}
 			}
 			break;
