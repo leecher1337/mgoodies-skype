@@ -652,6 +652,7 @@ void LoadMsgLogIcons(void)
 		DrawIconEx(hdcMem, 0, 0, hIcon, bih.biWidth, bih.biHeight, 0, NULL, DI_NORMAL);
 		SelectObject(hdcMem, hoBmp);
 		GetDIBits(hdc, hBmp, 0, bih.biHeight, pBmpBits, (BITMAPINFO *) & bih, DIB_RGB_COLORS);
+		DestroyIcon(hIcon);
 		{
 			int n;
 			for (n = 0; n < sizeof(BITMAPINFOHEADER); n++)
