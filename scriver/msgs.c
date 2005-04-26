@@ -300,7 +300,7 @@ static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 
 static int GetWindowAPI(WPARAM wParam, LPARAM lParam)
 {
-	return PLUGIN_MAKE_VERSION(0,0,0,2);
+	return PLUGIN_MAKE_VERSION(0,0,0,3);
 }
 
 static int GetWindowClass(WPARAM wParam, LPARAM lParam)
@@ -310,7 +310,7 @@ static int GetWindowClass(WPARAM wParam, LPARAM lParam)
 	_snprintf(szBuf, size, SRMMMOD);
 	return 0;
 }
-/*
+
 static int GetWindowData(WPARAM wParam, LPARAM lParam)
 {
 	MessageWindowInputData *mwid = (MessageWindowInputData*)wParam;
@@ -328,7 +328,7 @@ static int GetWindowData(WPARAM wParam, LPARAM lParam)
 	mwd->uState = SendMessage(hwnd, DM_GETWINDOWSTATE, 0, 0);
 	return 0;
 }
-*/
+
 static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
 	CLISTMENUITEM mi;
@@ -419,8 +419,8 @@ int LoadSendRecvMessageModule(void)
 	CreateServiceFunction(MS_MSG_SENDMESSAGE "W", SendMessageCommand);
 #endif
 	CreateServiceFunction(MS_MSG_GETWINDOWAPI, GetWindowAPI);
-//	CreateServiceFunction(MS_MSG_GETWINDOWCLASS, GetWindowClass);
-//	CreateServiceFunction(MS_MSG_GETWINDOWDATA, GetWindowData);
+	CreateServiceFunction(MS_MSG_GETWINDOWCLASS, GetWindowClass);
+	CreateServiceFunction(MS_MSG_GETWINDOWDATA, GetWindowData);
 	CreateServiceFunction("SRMsg/ReadMessage", ReadMessageCommand);
 	CreateServiceFunction("SRMsg/TypingMessage", TypingMessageCommand);
 	hHookWinEvt=CreateHookableEvent(ME_MSG_WINDOWEVENT);
