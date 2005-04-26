@@ -123,10 +123,12 @@ typedef struct
 // wparam=paramcode
 // lparam=lparamOfPARAM // see below
 // paramcodes and returnvalues:
-    #define MATH_PARAM_STARTDELIMITER // retval: *char delimiter // the delimiter that marks the beginning of a formula
+#define MATH_PARAM_STARTDELIMITER "Math/ParStDel" // retval: *char delimiter
+									  // the delimiter that marks the beginning of a formula
                                       // !!! the result-buffer must be deleted with MTH_FREE_MATH_BUFFER
                                       // lparam=0
-    #define MATH_PARAM_ENDDELIMITER   // retval: *char delimiter // the delimiter that marks the end of a formula
+#define MATH_PARAM_ENDDELIMITER "Math/ParEndDel"  // retval: *char delimiter
+	   								  // the delimiter that marks the end of a formula
                                       // !!! the result-buffer must be deleted with MTH_FREE_MATH_BUFFER
                                       // lparam=0
 // ************end parameter functions.
