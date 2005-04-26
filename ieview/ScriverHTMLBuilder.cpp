@@ -282,10 +282,10 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			    ci.szProto = dbei.szModule;
 			    ci.dwFlag = CNF_DISPLAY;
 				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        szName = encodeUTF8(ci.pszVal, NULL, false);
+			        szName = encodeUTF8(ci.pszVal, szProto, false);
     			}
    			} else {
-                szName = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
+                szName = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, false);
 			}
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;
@@ -300,7 +300,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                 	szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, true);
 				}
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-                szText = encodeUTF8((char *)dbei.pBlob, NULL, false);
+                szText = encodeUTF8((char *)dbei.pBlob, szProto, false);
 			}
 			/* SRMM-specific formatting */
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");

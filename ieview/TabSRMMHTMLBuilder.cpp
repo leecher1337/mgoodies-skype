@@ -305,10 +305,10 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			    ci.szProto = dbei.szModule;
 			    ci.dwFlag = CNF_DISPLAY;
 				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        szName = encodeUTF8(ci.pszVal, NULL, false);
+			        szName = encodeUTF8(ci.pszVal, szProto, false);
     			}
    			} else {
-                szName = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
+                szName = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, false);
 			}
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;
@@ -323,11 +323,11 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                 	szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, true);
 				}
 			} else if (dbei.eventType == EVENTTYPE_FILE) {
-                szText = encodeUTF8((char *)dbei.pBlob + sizeof(DWORD), NULL, false);
+                szText = encodeUTF8((char *)dbei.pBlob + sizeof(DWORD), szProto, false);
 			} else if (dbei.eventType == EVENTTYPE_URL) {
-                szText = encodeUTF8((char *)dbei.pBlob, NULL, false);
+                szText = encodeUTF8((char *)dbei.pBlob, szProto, false);
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-                szText = encodeUTF8((char *)dbei.pBlob, NULL, false);
+                szText = encodeUTF8((char *)dbei.pBlob, szProto, false);
 			}
 			/* TabSRMM-specific formatting */
 			if (dwFlags & MWF_LOG_GRID && isGroupBreak) {
