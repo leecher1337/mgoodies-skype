@@ -109,11 +109,13 @@ BEGIN
     PUSHBUTTON      "...",IDC_BROWSE_SMILEYS,270,55,15,11
  	LISTBOX         IDC_PROTOLIST,14,55,80,75, LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     CONTROL         "", IDC_SMILEYS_PREVIEW,"MButtonClass", WS_TABSTOP,170,90,15,15, 0x18000000L
-    GROUPBOX        "Options",IDC_SIMPLE,5,145,288,38
+    GROUPBOX        "Options",IDC_SIMPLE,5,145,288,52
     CONTROL         "Only replace isolated smileys",IDC_ISOLATED_SMILEYS,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,160,120,10
     CONTROL         "Surround smileys with spaces",IDC_SURROUND_SMILEYS,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,170,120,10
+    CONTROL         "Replace smileys in user names",IDC_SIMPLE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,180,120,10
 END
 
 IDD_TEMPLATES_OPTIONS DIALOGEX 5, 20, 300, 220

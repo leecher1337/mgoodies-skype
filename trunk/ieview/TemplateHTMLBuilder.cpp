@@ -81,7 +81,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	DBVARIANT dbv;
 	CONTACTINFO ci;
 	char szBase[1024];
-	char szNoAvatar[1024];
+	char tempStr[1024];
+	char *szNoAvatar=NULL;
 	char *szProto = NULL;
 	char *szNameIn = NULL;
 	char *szNameOut = NULL;
@@ -101,7 +102,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
     	pathrun++;
     	*pathrun = '\0';
 	}
-	sprintf(szNoAvatar, "%snoavatar.jpg", szBase);
+	sprintf(tempStr, "%snoavatar.jpg", szBase);
+	szNoAvatar = encodeUTF8(tempStr, szProto, false);
 	if (Options::getTemplatesFlags() & Options::LOG_SHOW_NICKNAMES) {
 		ZeroMemory(&ci, sizeof(ci));
 	    ci.cbSize = sizeof(ci);
@@ -109,16 +111,16 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	    ci.szProto = szProto;
 	    ci.dwFlag = CNF_DISPLAY;
 		if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-	        szNameOut = encodeUTF8(ci.pszVal, NULL, false);
+	        szNameOut = encodeUTF8(ci.pszVal, szProto, false);
 		}
-		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
+		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, false);
 	} else {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");
 	}
 	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-       		szAvatarIn = Utils::dupString(dbv.pszVal);
+       		szAvatarIn = encodeUTF8(dbv.pszVal, szProto, false);
 		    Utils::convertPath(szAvatarIn);
 	    }
        	DBFreeVariant(&dbv);
@@ -128,7 +130,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	}
 	if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-       		szAvatarOut = Utils::dupString(dbv.pszVal);
+       		szAvatarOut = encodeUTF8(dbv.pszVal, szProto, false);
 		    Utils::convertPath(szAvatarOut);
 	    }
        	DBFreeVariant(&dbv);
@@ -174,6 +176,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		free(output);
 	}
     if (szProto!=NULL) delete szProto;
+	if (szNoAvatar!=NULL) delete szNoAvatar;
 	if (szAvatarIn!=NULL) delete szAvatarIn;
 	if (szAvatarOut!=NULL) delete szAvatarOut;
 	if (szNameIn!=NULL) delete szNameIn;
@@ -187,7 +190,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	DBVARIANT dbv;
 	CONTACTINFO ci;
 	char szBase[1024];
-	char szNoAvatar[1024];
+	char tempStr[1024];
+	char *szNoAvatar=NULL;
 	char szCID[32];
 	char *szName = NULL;
 	char *szNameIn = NULL;
@@ -215,7 +219,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     	*pathrun = '\0';
     	isGrouping = tmpm->isGrouping();
 	}
-	sprintf(szNoAvatar, "%snoavatar.jpg", szBase);
+	sprintf(tempStr, "%snoavatar.jpg", szBase);
+	szNoAvatar = encodeUTF8(tempStr, szProto, false);
 	if (Options::getTemplatesFlags() & Options::LOG_SHOW_NICKNAMES) {
 		ZeroMemory(&ci, sizeof(ci));
 	    ci.cbSize = sizeof(ci);
@@ -223,16 +228,16 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	    ci.szProto = szProto;
 	    ci.dwFlag = CNF_DISPLAY;
 		if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-	        szNameOut = encodeUTF8(ci.pszVal, NULL, false);
+	        szNameOut = encodeUTF8(ci.pszVal, szProto, false);
 		}
-		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), NULL, false);
+		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, false);
 	} else {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");
 	}
 	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-       		szAvatarIn = Utils::dupString(dbv.pszVal);
+       		szAvatarIn = encodeUTF8(dbv.pszVal, szProto, false);
 		    Utils::convertPath(szAvatarIn);
 	    }
        	DBFreeVariant(&dbv);
@@ -242,7 +247,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	}
 	if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-       		szAvatarOut = Utils::dupString(dbv.pszVal);
+       		szAvatarOut = encodeUTF8(dbv.pszVal, szProto, false);
 		    Utils::convertPath(szAvatarOut);
 	    }
        	DBFreeVariant(&dbv);
@@ -321,13 +326,13 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                		tmpltName[1] = isHistory ? isSent ? "hMessageOut" : "hMessageIn" : isSent ? "MessageOut" : "MessageIn";
                	}    
 			} else if (dbei.eventType == EVENTTYPE_FILE) {
-                szText = encodeUTF8((char *)dbei.pBlob + sizeof(DWORD), NULL, false);
+                szText = encodeUTF8((char *)dbei.pBlob + sizeof(DWORD), szProto, false);
                 tmpltName[1] = isHistory ? "hFile" : "File";
 			} else if (dbei.eventType == EVENTTYPE_URL) {
-                szText = encodeUTF8((char *)dbei.pBlob, NULL, false);
+                szText = encodeUTF8((char *)dbei.pBlob, szProto, false);
                 tmpltName[1] = isHistory ? "hURL" : "URL";
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-                szText = encodeUTF8((char *)dbei.pBlob, NULL, false);
+                szText = encodeUTF8((char *)dbei.pBlob, szProto, false);
                 tmpltName[1] = isHistory ? "hStatus" : "Status";
 			}
 			/* template-specific formatting */
@@ -405,6 +410,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
         free(dbei.pBlob);
     }
     if (szProto!=NULL) delete szProto;
+	if (szNoAvatar!=NULL) delete szNoAvatar;
 	if (szAvatarIn!=NULL) delete szAvatarIn;
 	if (szAvatarOut!=NULL) delete szAvatarOut;
 	if (szNameIn!=NULL) delete szNameIn;

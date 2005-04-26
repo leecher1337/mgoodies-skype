@@ -215,7 +215,7 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			} else {
 				szText = encodeUTF8((char *)eventData->pszText, eventData->pszProto, true);
 			}
-			szName = encodeUTF8(eventData->pszNick, NULL, false);
+			szName = encodeUTF8(eventData->pszNick, eventData->pszProto, false);
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
 			if (dwFlags & FLAG_SHOW_TIMESTAMP || dwFlags & FLAG_SHOW_DATE) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
@@ -257,15 +257,15 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			if (eventData->iType == IEED_EVENT_JOINED) {
                 className = "userJoined";
 				eventText = Translate("%s has joined.");
-				szText = encodeUTF8(eventData->pszNick, NULL, false);
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, false);
 			} else if (eventData->iType == IEED_EVENT_LEFT) {
                 className = "userLeft";
 				eventText = Translate("%s has left.");
-				szText = encodeUTF8(eventData->pszNick, NULL, false);
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, false);
 			} else {
                 className = "topicChange";
 				eventText = Translate("The topic is %s.");
-				szText = encodeUTF8(eventData->pszText, NULL, false);
+				szText = encodeUTF8(eventData->pszText, eventData->pszProto, true);
 			}
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">", className);
 			Utils::appendText(&output, &outputSize, Translate(eventText), szText);
@@ -273,7 +273,7 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
             Utils::appendText(&output, &outputSize, "</div>\n");
 		} else if (eventData->iType == IEED_EVENT_ERROR) {
             const char *className = "error";
-			szText = encodeUTF8(eventData->pszText, NULL, false);
+			szText = encodeUTF8(eventData->pszText, eventData->pszProto, false);
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\"> %s: %s</span>", className, Translate("Error"), szText);
             Utils::appendText(&output, &outputSize, "</div>\n");

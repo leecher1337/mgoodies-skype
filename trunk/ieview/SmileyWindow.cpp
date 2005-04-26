@@ -71,14 +71,17 @@ void SmileyWindow::init(int cw, int ch) {
 	
 	NONCLIENTMETRICS ncm;
 	ncm.cbSize=sizeof(NONCLIENTMETRICS);
-	SystemParametersInfo(SPI_GETNONCLIENTMETRICS,sizeof(NONCLIENTMETRICS),&ncm,0);
-
+	if (vSize > maxInColumn) {
+		SystemParametersInfo(SPI_GETNONCLIENTMETRICS,sizeof(NONCLIENTMETRICS),&ncm,0);
+	} else {
+        ncm.iScrollWidth = 0;
+	}
 	viewWidth= hSize * cellWidthBorder + ncm.iScrollWidth + 1;
 
 	SetWindowPos(hwnd, NULL, 0, 0, viewWidth+ 2, viewHeight + 2, SWP_NOMOVE | SWP_NOZORDER | SWP_HIDEWINDOW);
 	view->setWindowPos(0, 0, viewWidth, viewHeight);
 	Utils::appendText(&output, &outputSize, "<html><head><style type=\"text/css\"> \n\
-.body {margin: 0px; background-color: #FFFFFF; }\n\
+.body {margin: 0px; background-color: #FFFFFF; overflow: auto;}\n\
 .link {color: #0000FF; text-decoration: underline;}\n\
 .img {vertical-align: middle;}\n\
 .table {border: 1px dotted #8080E0; border-top: 0px; border-left: 0px; }\n\
