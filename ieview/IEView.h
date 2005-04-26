@@ -196,9 +196,9 @@ public:
 	void            appendEvent(IEVIEWEVENT * event);
 	void            clear(IEVIEWEVENT * event);
 	void*           getSelection(IEVIEWEVENT * event);
+	void            saveDocument();
 
 	static IEView* 	get(HWND);
-//	static IEView* 	getByDoc(HWND);
 	static void 	init();
 	static void 	release();
 

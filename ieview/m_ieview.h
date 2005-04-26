@@ -97,11 +97,26 @@ typedef struct {
 #define IEEDF_FORMAT_COLOR	0x00000400 // if set color is valid and should be used
 #define IEEDF_FORMAT_STYLE	0x00000800 // if set fontSize is valid and should be used
 		
+		
 #define IEED_EVENT_MESSAGE		0x0001 // message
 #define IEED_EVENT_TOPIC		0x0002 // topic change
 #define IEED_EVENT_JOINED		0x0003 // user joined
 #define IEED_EVENT_LEFT			0x0004 // user left
 #define IEED_EVENT_ERROR		0x0005 // error
+
+#define IEED_GC_EVENT_HIGHLIGHT 	0x8000
+#define IEED_GC_EVENT_MESSAGE   	0x0001
+#define IEED_GC_EVENT_TOPIC     	0x0002
+#define IEED_GC_EVENT_JOIN      	0x0003
+#define IEED_GC_EVENT_PART      	0x0004
+#define IEED_GC_EVENT_QUIT      	0x0006
+#define IEED_GC_EVENT_NICK      	0x0007
+#define IEED_GC_EVENT_ACTION    	0x0008
+#define IEED_GC_EVENT_KICK      	0x0009
+#define IEED_GC_EVENT_NOTICE    	0x000A
+#define IEED_GC_EVENT_INFORMATION   0x000B
+#define IEED_GC_EVENT_ADDSTATUS     0x000C
+#define IEED_GC_EVENT_REMOVESTATUS  0x000D
 
 #define IE_FONT_BOLD			0x000100	// Bold font flag
 #define IE_FONT_ITALIC			0x000200	// Italic font flag

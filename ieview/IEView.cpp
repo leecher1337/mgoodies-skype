@@ -426,8 +426,10 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 		 	CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)hMenu,0);
 			if (dwID == 5) { // anchor
 				EnableMenuItem(hMenu, ID_MENU_COPYLINK, MF_BYCOMMAND | MF_ENABLED);
-			} if (dwID == 4) { // text select
+			} else if (dwID == 4) { // text select
 				EnableMenuItem(hMenu, ID_MENU_COPY, MF_BYCOMMAND | MF_ENABLED);
+			} else if (dwID == 1) { // control (image)
+				EnableMenuItem(hMenu, ID_MENU_SAVEIMAGE, MF_BYCOMMAND | MF_ENABLED);
 			}
             if (builder!=NULL) {
 
@@ -441,29 +443,7 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 		                                      (RECT*)NULL);
 			DestroyMenu(hMenu);
 			if (iSelection == ID_MENU_CLEARLOG) {
-				/*
-				IEVIEWEVENT event;
-				event.cbSize = sizeof(IEVIEWEVENT);
-				event.dwFlags=0;
-				event.codepage = CP_ACP;
-				BSTR selection = (BSTR)getSelection(&event);
-				if (selection == NULL) {
-					MessageBoxW(NULL, L"", L"NULL SELECTION", MB_OK);
-				} else if (wcslen(selection)==0) {
-					MessageBoxW(NULL, selection, L"EMPTY SELECTION", MB_OK);
-				} else {
-					MessageBoxW(NULL, selection, L"SELECTION", MB_OK);
-				}
-				event.dwFlags=IEEF_NO_UNICODE;
-				char *selectionA = (char *)getSelection(&event);
-				if (selectionA == NULL) {
-					MessageBoxA(NULL, "", "NULL SELECTION", MB_OK);
-				} else if (strlen(selectionA)==0) {
-					MessageBoxA(NULL, selectionA, "EMPTY SELECTION", MB_OK);
-				} else {
-					MessageBoxA(NULL, selectionA, "SELECTION", MB_OK);
-				}
-				*/
+				saveDocument();
 				clear();
 			} else {
 		    	SendMessage(hSPWnd, WM_COMMAND, iSelection, (LPARAM) NULL);
@@ -998,4 +978,16 @@ bool IEView::setFocus(HWND prevFocus) {
 	}
 	getFocus = false;
 	return false;
+}
+
+void IEView::saveDocument() {
+	IHTMLDocument2 *document = getDocument();
+	if (document != NULL) {
+		IOleCommandTarget * pOleCommandTarget;
+    	if (SUCCEEDED(document->QueryInterface(IID_IOleCommandTarget, (void**)&pOleCommandTarget)) && pOleCommandTarget!=NULL) {
+            pOleCommandTarget->Exec(NULL, OLECMDID_SAVEAS, 0, NULL, NULL);
+            pOleCommandTarget->Release();
+		}
+	    document->Release();
+	}
 }
