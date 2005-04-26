@@ -584,6 +584,9 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 			return 0;
 		}
 		break;
+	case WM_DROPFILES:
+		SendMessage(GetParent(hwnd), WM_DROPFILES, wParam, lParam);
+		return 0;
 	case EM_UNSUBCLASSED:
 		if (dat->keyboardMsgQueue)
 			free(dat->keyboardMsgQueue);
