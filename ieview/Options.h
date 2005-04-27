@@ -70,7 +70,7 @@ public:
 		SMILEY_ISOLATED         = 2,
 		SMILEY_SURROUND      	= 4,
 		SMILEY_PROTOCOLS        = 8,
-		SMILEY_SMILEYADD        = 0x100,
+		SMILEY_SMILEYINNAMES    = 16,
 
 		TEMPLATES_ENABLED		= 1,
 		

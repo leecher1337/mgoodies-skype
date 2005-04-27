@@ -402,18 +402,18 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 	static wchar_t *mathTagName[] = {NULL, NULL};
 	static int      mathTagLen[] = {0, 0};
 	if (!mathModInitialized) {
+	    /*
     	if (ServiceExists(MATH_GET_PARAMS)) {
 			char* mthDelStart =  (char *)CallService(MATH_GET_PARAMS, (WPARAM)MATH_PARAM_STARTDELIMITER, 0);
 			char* mthDelEnd   =  (char *)CallService(MATH_GET_PARAMS, (WPARAM)MATH_PARAM_ENDDELIMITER, 0);
-			/*
 			mathTagName[0] = Utils::convertToWCS(mthDelStart);
 			mathTagLen[0] = wcslen(mathTagName[0]);
 			mathTagName[1] = Utils::convertToWCS(mthDelEnd);
 			mathTagLen[1] = wcslen(mathTagName[1]);
-			*/
 			CallService(MTH_FREE_MATH_BUFFER,0, (LPARAM) mthDelStart);
 			CallService(MTH_FREE_MATH_BUFFER,0, (LPARAM) mthDelEnd);
 		}
+		*/
        	mathModInitialized = true;
 	}
     TextToken *firstToken = NULL, *lastToken = NULL, * bbTokenFirst = NULL, * bbTokenLast = NULL;
@@ -489,7 +489,7 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 								newTokenSize = k - i;
 								break;
 							}
-						} 
+						}
 					}
 				}
 			}
@@ -593,10 +593,12 @@ TextToken* TextToken::tokenizeSmileys(const char *proto, const wchar_t *text) {
 	bool wasSpace;
     int textLen = 0;
     int l = wcslen(text);
+	/*
 	if (!(Options::getSmileyFlags() & Options::SMILEY_ENABLED)) {
 	    return new TextToken(TEXT, text, l);
  	}
-	if (Options::getSmileyFlags() & Options::SMILEY_PROTOCOLS) {
+	*/
+	if ((proto!=NULL) && (Options::getSmileyFlags() & Options::SMILEY_PROTOCOLS)) {
 		smileyMap = SmileyMap::getSmileyMap(proto);
 	} else {
 		smileyMap = SmileyMap::getSmileyMap("");
@@ -757,7 +759,7 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 					Utils::appendText(str, sizeAlloced, L"<span style=\"text-decoration: underline;\">");
 					break;
 				case BB_IMG:
-            		eText = urlEncode(wtext);   // 100%% //< document.body.clientWidth  ? this.parentNode.width : document.body.clientWidth 
+            		eText = urlEncode(wtext);   // 100%% //< document.body.clientWidth  ? this.parentNode.width : document.body.clientWidth
         	    	Utils::appendText(str, sizeAlloced, L"<div style=\"width: 100%%; border: 0; overflow: hidden;\"><img class=\"img\" style=\"width: expression((maxw = this.parentNode.offsetWidth ) > this.width ? 'auto' : maxw);\" src=\"%s\" /></div>", eText);
         	    	break;
 				case BB_COLOR:
@@ -786,50 +788,49 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
     if (eLink!=NULL) delete eLink;
 }
 
-wchar_t * HTMLBuilder::encode(const wchar_t *text, const char *proto, bool useSmiley) {
+bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags) {
+	TextToken *token = NULL, *token2;
+	switch (level) {
+	case 0:
+		token = TextToken::tokenizeLinks(text);
+		break;
+	case 1:
+		if ((Options::getBasicFlags()&Options::BASIC_ENABLE_BBCODES) && (flags & ENF_BBCODES)) {
+			token = TextToken::tokenizeBBCodes(text);
+			break;
+		}
+	case 2:
+		if (Options::getSmileyFlags() & Options::SMILEY_ENABLED) {
+		    if ((flags & ENF_SMILEYS) || 
+      			((Options::getSmileyFlags() & Options::SMILEY_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) {
+			    token = TextToken::tokenizeSmileys(proto, text);
+      			break;
+   			}
+		}
+	}
+	if (token!=NULL) {
+		for (token2 = token;token!=NULL;token=token2) {
+			bool skip = false;
+			token2 = token->getNext();
+			if (token->getType() == TextToken::TEXT) {
+				skip = encode(token->getTextW(), proto, output, outputSize, level+1, flags);
+			}
+			if (!skip) {
+				token->toString(output, outputSize);
+			}
+			delete token;
+		}
+		return true;
+	}
+	return false;
+}
+
+wchar_t * HTMLBuilder::encode(const wchar_t *text, const char *proto, int flags ) {
 	wchar_t *output;
  	int outputSize;
 	output = NULL;
 	if (text == NULL) return NULL;
-	if (!(Options::getBasicFlags()&Options::BASIC_ENABLE_BBCODES)) {
-		TextToken *token1a, *token1b, *token2a, *token2b;
-		for (token1a = token1b = TextToken::tokenizeLinks(text);token1a!=NULL;token1a=token1b) {
-		    token1b = token1a->getNext();
-		    if (useSmiley && token1a->getType() == TextToken::TEXT) {
-	    		for (token2a = token2b = TextToken::tokenizeSmileys(proto, token1a->getTextW());token2a!=NULL;token2a=token2b) {
-	    		    token2b = token2a->getNext();
-	    	    	token2a->toString(&output, &outputSize);
-	    	    	delete token2a;
-	            }
-	        } else {
-	        	token1a->toString(&output, &outputSize);
-	        }
-	        delete token1a;
-		}
-	} else {
-		TextToken *token1a, *token1b, *token2a, *token2b, *token3a, *token3b;
-		for (token1a = token1b = TextToken::tokenizeBBCodes(text);token1a!=NULL;token1a=token1b) {
-		    token1b = token1a->getNext();
-		    if (token1a->getType() == TextToken::TEXT) {
-				for (token2a = token2b = TextToken::tokenizeLinks(token1a->getTextW());token2a!=NULL;token2a=token2b) {
-				    token2b = token2a->getNext();
-				    if (useSmiley && token2a->getType() == TextToken::TEXT) {
-			    		for (token3a = token3b = TextToken::tokenizeSmileys(proto, token2a->getTextW());token3a!=NULL;token3a=token3b) {
-			    		    token3b = token3a->getNext();
-			    	    	token3a->toString(&output, &outputSize);
-			    	    	delete token3a;
-			            }
-			        } else {
-			        	token2a->toString(&output, &outputSize);
-			        }
-			        delete token2a;
-				}
-	        } else {
-	        	token1a->toString(&output, &outputSize);
-	        }
-			delete token1a;
-		}
-	}
+	encode(text, proto, &output, &outputSize, 0, flags);
 	// mathMod begin
 //	if (ServiceExists(MTH_GET_HTML_SOURCE_UNICODE)) {
     //   wchar_t* mathOutput=(wchar_t*)CallService(MTH_GET_HTML_SOURCE_UNICODE, 0, (LPARAM) output);
@@ -843,27 +844,27 @@ wchar_t * HTMLBuilder::encode(const wchar_t *text, const char *proto, bool useSm
 }
 
 
-char * HTMLBuilder::encodeUTF8(const wchar_t *wtext, const char *proto, bool useSmiley) {
+char * HTMLBuilder::encodeUTF8(const wchar_t *wtext, const char *proto, int flags) {
 	wchar_t *output;
 	char * outputStr;
-	output = encode(wtext, proto, useSmiley);
+	output = encode(wtext, proto, flags);
 	outputStr = Utils::UTF8Encode(output);
 	free(output);
 	return outputStr;
 }
 
-char * HTMLBuilder::encodeUTF8(const char *text, const char *proto, bool useSmiley) {
+char * HTMLBuilder::encodeUTF8(const char *text, const char *proto, int flags) {
 	char * outputStr;
 	wchar_t *wtext = Utils::convertToWCS(text);
-	outputStr = encodeUTF8(wtext, proto, useSmiley);
+	outputStr = encodeUTF8(wtext, proto, flags);
 	delete wtext;
 	return outputStr;
 }
 
-char * HTMLBuilder::encodeUTF8(const char *text, int cp, const char *proto, bool useSmiley) {
+char * HTMLBuilder::encodeUTF8(const char *text, int cp, const char *proto, int flags) {
 	char * outputStr;
 	wchar_t *wtext = Utils::convertToWCS(text, cp);
-	outputStr = encodeUTF8(wtext, proto, useSmiley);
+	outputStr = encodeUTF8(wtext, proto, flags);
 	delete wtext;
 	return outputStr;
 }
