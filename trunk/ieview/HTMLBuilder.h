@@ -82,6 +82,7 @@ public:
 	static TextToken* 	tokenizeLinks(const wchar_t *wtext);
 	static TextToken* 	tokenizeSmileys(const char *proto, const wchar_t *wtext);
 	static TextToken* 	tokenizeBBCodes(const wchar_t *text);
+	static TextToken* 	tokenizeMath(const wchar_t *text);
 };
 
 class HTMLBuilder {
