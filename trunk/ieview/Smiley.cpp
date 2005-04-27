@@ -397,6 +397,7 @@ int SmileyMap::getVisibleSmileyNum() {
 
 SmileyMap *	SmileyMap::getSmileyMap(const char *proto) {
 	SmileyMap *map;
+	if (proto == NULL) return NULL;
 	for (map=mapList; map!=NULL; map=map->next) {
 		if (!strcmp(map->name, proto)) {
 			break;

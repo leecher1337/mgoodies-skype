@@ -160,10 +160,10 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		inColor = outColor = bkgColor;
 		if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
 			const char *bkgImageFilename = Options::getBkgImageFile();
-			Utils::appendText(&output, &outputSize, ".body {padding: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); }\n",
+			Utils::appendText(&output, &outputSize, ".body {padding: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
 			Options::getBkgImageFlags() & Options::BKGIMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
 		} else {
-			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; }\n",
+			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; overflow: auto;}\n",
 				 	     (int) bkgColor);
 		}
 		Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
@@ -211,11 +211,11 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		char *szName = NULL, *szText = NULL;
 		if (eventData->iType == IEED_EVENT_MESSAGE) {
 			if (eventData->dwFlags & IEEDF_UNICODE) {
-				szText = encodeUTF8((wchar_t *)eventData->pszText, eventData->pszProto, true);
+				szText = encodeUTF8((wchar_t *)eventData->pszText, eventData->pszProto, ENF_ALL);
 			} else {
-				szText = encodeUTF8((char *)eventData->pszText, eventData->pszProto, true);
+				szText = encodeUTF8((char *)eventData->pszText, eventData->pszProto, ENF_ALL);
 			}
-			szName = encodeUTF8(eventData->pszNick, eventData->pszProto, false);
+			szName = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NAMESMILEYS);
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
 			if (dwFlags & FLAG_SHOW_TIMESTAMP || dwFlags & FLAG_SHOW_DATE) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
@@ -257,15 +257,15 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			if (eventData->iType == IEED_EVENT_JOINED) {
                 className = "userJoined";
 				eventText = Translate("%s has joined.");
-				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, false);
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
 			} else if (eventData->iType == IEED_EVENT_LEFT) {
                 className = "userLeft";
 				eventText = Translate("%s has left.");
-				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, false);
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
 			} else {
                 className = "topicChange";
 				eventText = Translate("The topic is %s.");
-				szText = encodeUTF8(eventData->pszText, eventData->pszProto, true);
+				szText = encodeUTF8(eventData->pszText, eventData->pszProto, ENF_ALL);
 			}
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">", className);
 			Utils::appendText(&output, &outputSize, Translate(eventText), szText);
@@ -273,7 +273,7 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
             Utils::appendText(&output, &outputSize, "</div>\n");
 		} else if (eventData->iType == IEED_EVENT_ERROR) {
             const char *className = "error";
-			szText = encodeUTF8(eventData->pszText, eventData->pszProto, false);
+			szText = encodeUTF8(eventData->pszText, eventData->pszProto, ENF_NONE);
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\"> %s: %s</span>", className, Translate("Error"), szText);
             Utils::appendText(&output, &outputSize, "</div>\n");

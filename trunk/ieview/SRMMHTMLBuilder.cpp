@@ -125,10 +125,10 @@ void SRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		inColor = outColor = bkgColor;
 		if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
 			const char *bkgImageFilename = Options::getBkgImageFile();
-			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); }\n",
+			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
 			Options::getBkgImageFlags() & Options::BKGIMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
 		} else {
-			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; }\n",
+			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; overflow: auto;}\n",
 				 	     (int) bkgColor);
 		}
 		Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
@@ -210,25 +210,25 @@ void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			    ci.szProto = dbei.szModule;
 			    ci.dwFlag = CNF_DISPLAY;
 				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        szName = encodeUTF8(ci.pszVal, szProto, false);
+			        szName = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
     			}
    			} else {
-                szName = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, false);
+                szName = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, ENF_NAMESMILEYS);
 			}
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;
 				if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
 					DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
 					if (wlen > 0 && wlen < aLen) {
-                        szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, true);
+                        szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, ENF_ALL);
 					} else {
-                        szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, true);
+                        szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, ENF_ALL);
 					}
 				} else {
-                	szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, true);
+                	szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, ENF_ALL);
 				}
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-                szText = encodeUTF8((char *)dbei.pBlob, szProto, false);
+                szText = encodeUTF8((char *)dbei.pBlob, szProto, ENF_NONE);
 			}
 			/* SRMM-specific formatting */
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");

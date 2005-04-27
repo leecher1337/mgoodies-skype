@@ -54,7 +54,6 @@ public:
 		BB_COLOR,
 		BB_SIZE,
 		BB_IMG,
-		BB_MATH,
 	};
 	TextToken(int type, const char *text, int len);
 	TextToken(int type, const wchar_t *wtext, int len);
@@ -87,11 +86,20 @@ public:
 
 class HTMLBuilder {
 protected:
+    enum ENCODEFLAGS {
+        ENF_NONE = 0,
+        ENF_SMILEYS = 1,
+        ENF_NAMESMILEYS = 2,
+        ENF_BBCODES = 4,
+        ENF_LINKS = 8,
+        ENF_ALL = 255
+    };    
 //	virtual char *encode(const char *text, const char *proto, bool replaceSmiley);
-	virtual wchar_t *encode(const wchar_t *text, const char *proto, bool replaceSmiley);
-	virtual char *encodeUTF8(const wchar_t *text, const char *proto, bool replaceSmiley);
-	virtual char *encodeUTF8(const char *text, const char *proto, bool replaceSmiley);
-	virtual char *encodeUTF8(const char *text, int cp, const char *proto, bool replaceSmiley);
+	virtual wchar_t *encode(const wchar_t *text, const char *proto, int flags);
+	virtual char *encodeUTF8(const wchar_t *text, const char *proto, int flags);
+	virtual char *encodeUTF8(const char *text, const char *proto, int flags);
+	virtual char *encodeUTF8(const char *text, int cp, const char *proto, int flags);
+	virtual bool encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags);
 public:
 	virtual void buildHead(IEView *, IEVIEWEVENT *event)=0;
 	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;

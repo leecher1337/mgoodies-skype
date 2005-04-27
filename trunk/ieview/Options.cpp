@@ -316,6 +316,7 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_SMILEYS), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_ISOLATED_SMILEYS), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SURROUND_SMILEYS), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_IN_NAMES), bChecked);
 //			EnableWindow(GetDlgItem(hwndDlg, IDC_REPLACE_SMILEYADD), bChecked);
 			if (Options::getSmileyFlags() & Options::SMILEY_PROTOCOLS) {
 				CheckDlgButton(hwndDlg, IDC_PROTO_SMILEYS, TRUE);
@@ -329,9 +330,9 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			if (i&Options::SMILEY_SURROUND) {
 				CheckDlgButton(hwndDlg, IDC_SURROUND_SMILEYS, TRUE);
 			}
-//			if (i&Options::SMILEY_SMILEYADD) {
-	//			CheckDlgButton(hwndDlg, IDC_REPLACE_SMILEYADD, TRUE);
-		//	}
+			if (i&Options::SMILEY_SMILEYINNAMES) {
+				CheckDlgButton(hwndDlg, IDC_SMILEYS_IN_NAMES, TRUE);
+			}
 			PROTOCOLDESCRIPTOR **protoList;
 			int protoCount;
 			CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&protoCount, (LPARAM)&protoList);
@@ -393,7 +394,7 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			    break;
 			case IDC_ISOLATED_SMILEYS:
 			case IDC_SURROUND_SMILEYS:
-//			case IDC_REPLACE_SMILEYADD:
+			case IDC_SMILEYS_IN_NAMES:
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			case IDC_SMILEYS:
@@ -402,7 +403,7 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_SMILEYS), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_ISOLATED_SMILEYS), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_SURROUND_SMILEYS), bChecked);
-//				EnableWindow(GetDlgItem(hwndDlg, IDC_REPLACE_SMILEYADD), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_IN_NAMES), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_PROTO_SMILEYS), bChecked);
 			case IDC_PROTO_SMILEYS:
 				bChecked = IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS) & IsDlgButtonChecked(hwndDlg, IDC_SMILEYS);
@@ -460,10 +461,10 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				if (IsDlgButtonChecked(hwndDlg, IDC_SURROUND_SMILEYS)) {
 					i |= Options::SMILEY_SURROUND;
 				}
-/*				if (IsDlgButtonChecked(hwndDlg, IDC_REPLACE_SMILEYADD)) {
-					i |= Options::SMILEY_SMILEYADD;
+				if (IsDlgButtonChecked(hwndDlg, IDC_SMILEYS_IN_NAMES)) {
+					i |= Options::SMILEY_SMILEYINNAMES;
 				}
-	*/			if (IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS)) {
+				if (IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS)) {
 					i |= Options::SMILEY_PROTOCOLS;
 				}
 				Options::setSmileyFlags(i);
