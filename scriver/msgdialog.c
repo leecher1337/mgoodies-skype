@@ -1370,6 +1370,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
 		}
 		break;
+	case WM_LBUTTONDOWN:
+		SendMessage(dat->hwndParent, WM_LBUTTONDOWN, wParam, lParam);
+		return TRUE;
 	case WM_SETFOCUS:
 		SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
