@@ -40,6 +40,18 @@ struct ErrorWindowData
 	HWND	hwndParent;
 };
 
+struct TabCtrlData 
+{
+	RECT	indicatorPos;
+	POINT	mouseLBDownPos;
+	void *	lastClickChild;
+	int		lastClickTime;
+	int		bDragging;
+	int		bDragged;
+	int		destTab;
+	int		srcTab;
+};
+
 struct ParentWindowData
 {
 	HWND	hwnd;
@@ -52,12 +64,11 @@ struct ParentWindowData
 	DWORD	flags;
 	POINT	mouseLBDownPos;
 	int		mouseLBDown;
-	int		lastClickTab;
-	int		lastClickTime;
 	int		nFlash;
 	int		nFlashMax;
 	int		bMinimized;
 	int		windowWasCascaded;
+	struct TabCtrlData *tabCtrlDat;
 };
 
 struct NewMessageWindowLParam
