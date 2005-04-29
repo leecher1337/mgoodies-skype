@@ -93,6 +93,49 @@ static void GetChildWindowRect(struct ParentWindowData *dat, RECT *rcChild)
 	}
 }
 
+static int GetTabFromHWND(struct ParentWindowData *dat, HWND child) 
+{
+	struct MessageWindowData * mdat;
+	TCITEM tci;
+	int l, i;
+	l = TabCtrl_GetItemCount(dat->hwndTabs);
+	for (i = 0; i < l; i++) {
+		tci.mask = TCIF_PARAM;
+		TabCtrl_GetItem(dat->hwndTabs, i, &tci);
+		mdat = (struct MessageWindowData *) tci.lParam; 
+		if (mdat->hwnd == child) {
+			return i;
+		}
+	}
+	return -1;
+
+}
+
+static struct MessageWindowData * GetChildFromTab(HWND hwndTabs, int tabId) 
+{
+	TCITEM tci;
+	tci.mask = TCIF_PARAM;
+	TabCtrl_GetItem(hwndTabs, tabId, &tci);
+	return (struct MessageWindowData *) tci.lParam; 
+}
+
+static struct MessageWindowData * GetChildFromHWND(struct ParentWindowData *dat, HWND hwnd) 
+{
+	struct MessageWindowData * mdat;
+	TCITEM tci;
+	int l, i;
+	l = TabCtrl_GetItemCount(dat->hwndTabs);
+	for (i = 0; i < l; i++) {
+		tci.mask = TCIF_PARAM;
+		TabCtrl_GetItem(dat->hwndTabs, i, &tci);
+		mdat = (struct MessageWindowData *) tci.lParam; 
+		if (mdat->hwnd == hwnd) {
+			return mdat;
+		}
+	}
+	return NULL;
+}
+
 static void GetMinimunWindowSize(struct ParentWindowData *dat, SIZE *size)
 {
 	MINMAXINFO mmi;
@@ -114,25 +157,6 @@ static void GetMinimunWindowSize(struct ParentWindowData *dat, SIZE *size)
 	}
 }
 
-
-static int GetChildTab(struct ParentWindowData *dat, HWND child) 
-{
-	struct MessageWindowData * mdat;
-	TCITEM tci;
-	int l, i;
-	l = TabCtrl_GetItemCount(dat->hwndTabs);
-	for (i = 0; i < l; i++) {
-		tci.mask = TCIF_PARAM;
-		TabCtrl_GetItem(dat->hwndTabs, i, &tci);
-		mdat = (struct MessageWindowData *) tci.lParam; 
-		if (mdat->hwnd == child) {
-			return i;
-		}
-	}
-	return -1;
-
-}
-
 static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 	int i;
 	RECT rcChild;
@@ -150,35 +174,10 @@ static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 	} else {
 		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
 	}
-	i = GetChildTab(dat, child);
+	i = GetTabFromHWND(dat, child);
 	TabCtrl_SetCurSel(dat->hwndTabs, i);
 	SendMessage(dat->hwndActive, WM_ACTIVATE, WA_ACTIVE, 0);
 	SetFocus(dat->hwndActive);
-}
-
-static struct MessageWindowData * GetChildFromTab(struct ParentWindowData *dat, int tabId) 
-{
-	TCITEM tci;
-	tci.mask = TCIF_PARAM;
-	TabCtrl_GetItem(dat->hwndTabs, tabId, &tci);
-	return (struct MessageWindowData *) tci.lParam; 
-}
-
-static struct MessageWindowData * GetChildFromHWND(struct ParentWindowData *dat, HWND hwnd) 
-{
-	struct MessageWindowData * mdat;
-	TCITEM tci;
-	int l, i;
-	l = TabCtrl_GetItemCount(dat->hwndTabs);
-	for (i = 0; i < l; i++) {
-		tci.mask = TCIF_PARAM;
-		TabCtrl_GetItem(dat->hwndTabs, i, &tci);
-		mdat = (struct MessageWindowData *) tci.lParam; 
-		if (mdat->hwnd == hwnd) {
-			return mdat;
-		}
-	}
-	return NULL;
 }
 
 static void AddChild(struct ParentWindowData *dat, struct MessageWindowData * mdat) 
@@ -208,36 +207,48 @@ static void RemoveChild(struct ParentWindowData *dat, HWND child)
 			break;
 		}
 	}
-	i = GetChildTab(dat, child);
+	i = GetTabFromHWND(dat, child);
 	if (i >= 0) {
 		TabCtrl_DeleteItem(dat->hwndTabs, i);
 	}
 	if (dat->childrenCount > 0) {
-		if (i==dat->childrenCount) i--;
-		ActivateChild(dat, dat->children[i]);
+		if (i == TabCtrl_GetItemCount(dat->hwndTabs)) i--;
+		if (i >=0 ) {
+			ActivateChild(dat, GetChildFromTab(dat->hwndTabs, i)->hwnd);
+		}
 	}
 }
 
 static void ActivateNextChild(struct ParentWindowData *dat, HWND child) 
 {
+	int i = GetTabFromHWND(dat, child);
+	int l = TabCtrl_GetItemCount(dat->hwndTabs);
+	i = (i+1) % l;
+	ActivateChild(dat, GetChildFromTab(dat->hwndTabs, i)->hwnd);
+	/*
 	int i;
 	for (i=0;i<dat->childrenCount;i++) {
 		if (dat->children[i] == child) {
 			ActivateChild(dat, dat->children[(i+1)%dat->childrenCount]);
 			break;
 		}
-	}
+	}*/
 }
 
 static void ActivatePrevChild(struct ParentWindowData *dat, HWND child) 
 {
-	int i;
+	int i = GetTabFromHWND(dat, child);
+	int l = TabCtrl_GetItemCount(dat->hwndTabs);
+	i = (i+l-1) % l;
+	ActivateChild(dat, GetChildFromTab(dat->hwndTabs, i)->hwnd);
+/*	int i;
 	for (i=0;i<dat->childrenCount;i++) {
 		if (dat->children[i] == child) {
 			ActivateChild(dat, dat->children[(dat->childrenCount+i-1)%dat->childrenCount]);
 			break;
 		}
 	}
+	*/
 }
 
 
@@ -286,6 +297,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				TabCtrl_SetImageList(dat->hwndTabs, g_dat->hIconList);
 			}
 			WindowList_Add(g_dat->hParentWindowList, hwndDlg, 0);
+			dat->tabCtrlDat = (struct TabCtrlData *) malloc(sizeof(struct TabCtrlData));
+			dat->tabCtrlDat->bDragging = FALSE;
+			SetWindowLong(dat->hwndTabs, GWL_USERDATA, (LONG) dat->tabCtrlDat);
 			OldTabCtrlProc = (WNDPROC) SetWindowLong(dat->hwndTabs, GWL_WNDPROC, (LONG) TabCtrlProc);
 			ws = GetWindowLong(dat->hwndTabs, GWL_STYLE) & ~(TCS_BOTTOM);
 			if (dat->flags & SMF_TABSATBOTTOM) {
@@ -419,25 +433,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						}
 					}
 					break;
-				case NM_CLICK: 
-					{
-						FILETIME ft;
-						TCHITTESTINFO thinfo;
-						int tabId;
-						GetSystemTimeAsFileTime(&ft);
-						GetCursorPos(&thinfo.pt);
-						ScreenToClient(dat->hwndTabs, &thinfo.pt);
-						tabId = TabCtrl_HitTest(dat->hwndTabs, &thinfo);
-						if (tabId != -1 && tabId == dat->lastClickTab && 
-							(ft.dwLowDateTime - dat->lastClickTime) < (GetDoubleClickTime() * 10000)) {
-							SendMessage(GetChildFromTab(dat, tabId)->hwnd, WM_CLOSE, 0, 0);
-							dat->lastClickTab = -1;
-						} else {
-							dat->lastClickTab = tabId;
-						}
-						dat->lastClickTime = ft.dwLowDateTime;
-					}
-					break;
 				case NM_RCLICK:
 					{
 						TCHITTESTINFO thinfo;
@@ -448,7 +443,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						ScreenToClient(dat->hwndTabs, &thinfo.pt);
 						tabId = TabCtrl_HitTest(dat->hwndTabs, &thinfo);
 						if (tabId != -1) {
-							struct MessageWindowData * mwd = GetChildFromTab(dat, tabId);
+							struct MessageWindowData * mwd = GetChildFromTab(dat->hwndTabs, tabId);
 							//CallService(MS_USERINFO_SHOWDIALOG, (WPARAM) mwd->hContact, 0);
 							HMENU hMenu = (HMENU) CallService(MS_CLIST_MENUBUILDCONTACT, (WPARAM) mwd->hContact, 0);
 							TrackPopupMenu(hMenu, 0, x, y, 0, mwd->hwnd, NULL);
@@ -569,6 +564,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			SetWindowLong(hwndDlg, GWL_USERDATA, 0);
 			WindowList_Remove(g_dat->hParentWindowList, hwndDlg);
 			if (dat->children!=NULL) free (dat->children);
+			free(dat->tabCtrlDat);
 			free(dat);
 			if (dat->flags & SMF_USETABS) {
 				WINDOWPLACEMENT wp = { 0 };
@@ -726,7 +722,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 					//SendMessage(hwndDlg, WM_SIZE, 0, 0);
 				}
 			}
-			tabId = GetChildTab(dat, mdat->hwnd);
+			tabId = GetTabFromHWND(dat, mdat->hwnd);
 			tContactName = GetTabName(mdat->hContact);
 			tci.mask = TCIF_TEXT;
 			tci.pszText = tContactName;
@@ -769,7 +765,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 							icoIdx = 0;
 						}
 					}
-					i = GetChildTab(dat, mdat->hwnd);
+					i = GetTabFromHWND(dat, mdat->hwnd);
 					if (i>=0) {
 						TCITEM tci;
 						tci.mask = TCIF_IMAGE;
@@ -839,16 +835,22 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	return FALSE;
 }
 
+#define INDICATOR_WIDTH 3
+#define INDICATOR_COLOR 26
+
 BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	struct TabCtrlData *dat;
+	dat = (struct TabCtrlData *) GetWindowLong(hwnd, GWL_USERDATA);
     switch(msg) {
-        case WM_MBUTTONDOWN: {
+        case WM_MBUTTONDOWN: 
+		{
 			TCITEM tci;
 			int tabId;
 			struct MessageWindowData *mwd;
 			TCHITTESTINFO thinfo;
-		    thinfo.pt.x = LOWORD(lParam);
-		    thinfo.pt.y = HIWORD(lParam);
+			thinfo.pt.x = (lParam<<16)>>16;
+			thinfo.pt.y = lParam>>16;
 			tabId = TabCtrl_HitTest(hwnd, &thinfo);
 			if (tabId >= 0) {
 				tci.mask = TCIF_PARAM;
@@ -860,6 +862,150 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 	        return TRUE;
         }
+		case WM_LBUTTONDBLCLK: 
+		{
+			TCHITTESTINFO thinfo;
+			int tabId;
+			thinfo.pt.x = (lParam<<16)>>16;
+			thinfo.pt.y = lParam>>16;
+			tabId = TabCtrl_HitTest(hwnd, &thinfo);
+			if (tabId >=0 ) {
+				void * clickChild = GetChildFromTab(hwnd, tabId)->hwnd;
+				if (clickChild == dat->lastClickChild) {
+					SendMessage(clickChild, WM_CLOSE, 0, 0);
+				}
+			}
+			dat->lastClickChild = NULL;
+		}
+		break;
+		case WM_LBUTTONDOWN: 
+		{
+			if (!dat->bDragging) {
+				TCHITTESTINFO thinfo;
+				thinfo.pt.x = (lParam<<16)>>16;
+				thinfo.pt.y = lParam>>16;
+				dat->srcTab = dat->destTab = TabCtrl_HitTest(hwnd, &thinfo);
+				if (dat->srcTab >=0 ) {
+					dat->lastClickChild = GetChildFromTab(hwnd, dat->srcTab)->hwnd;
+				} else {
+					dat->lastClickChild = NULL;
+				}
+				dat->bDragging = TRUE;
+				dat->bDragged = FALSE;
+				dat->mouseLBDownPos.x = thinfo.pt.x;
+				dat->mouseLBDownPos.y = thinfo.pt.y;
+				dat->indicatorPos.left = 0;
+				dat->indicatorPos.top = 0;
+				dat->indicatorPos.right = 0;
+				dat->indicatorPos.bottom = 0;
+				SetCapture(hwnd);
+				return 0;
+			}
+		}
+		break;
+		case WM_CAPTURECHANGED:
+		case WM_LBUTTONUP: 
+			if (dat->bDragging) {
+				TCHITTESTINFO thinfo;
+				thinfo.pt.x = (lParam<<16)>>16;
+				thinfo.pt.y = lParam>>16;
+				if (dat->destTab != dat->srcTab) {
+					NMHDR nmh;
+					TCHAR  sBuffer[500];
+					TCITEM item;
+					int curSel;
+					curSel = TabCtrl_GetCurSel(hwnd);
+					item.mask = TCIF_IMAGE | TCIF_PARAM | TCIF_TEXT;
+					item.pszText = sBuffer;
+					item.cchTextMax = sizeof(sBuffer)/sizeof(TCHAR);
+					TabCtrl_GetItem(hwnd, dat->srcTab, &item);
+					sBuffer[499]='\0';
+					dat->destTab -= dat->destTab > dat->srcTab ? 1 : 0;
+					if (curSel == dat->srcTab) {
+						curSel = dat->destTab;
+					} else {
+						if (curSel > dat->srcTab && curSel <= dat->destTab) {
+							curSel--;
+						} else if (curSel < dat->srcTab && curSel >= dat->destTab) {
+							curSel++;
+						}
+					}
+					TabCtrl_DeleteItem(hwnd, dat->srcTab);
+					TabCtrl_InsertItem(hwnd, dat->destTab, &item );
+					TabCtrl_SetCurSel(hwnd, curSel);
+					nmh.hwndFrom = hwnd;
+					nmh.idFrom = GetDlgCtrlID(hwnd);
+					nmh.code = TCN_SELCHANGE;
+					SendMessage(GetParent(hwnd), WM_NOTIFY, nmh.idFrom, (LPARAM)&nmh);
+					UpdateWindow(hwnd);
+				} else {
+					InvalidateRect(hwnd, &dat->indicatorPos, TRUE);
+				}
+				if (!dat->bDragged) {
+					SendMessage(hwnd, WM_LBUTTONDOWN, wParam, lParam);
+				}
+				dat->bDragging = FALSE;
+				ReleaseCapture();
+			}
+			break;
+		case WM_MOUSEMOVE:
+			if (!(wParam & MK_LBUTTON)) break;
+			if (dat->bDragging) {
+				HBRUSH hBrush;
+				HPEN hPen;
+				HDC hDC;
+				RECT rect, indicatorPos;
+				int tabId;
+				TCHITTESTINFO thinfo;
+
+				thinfo.pt.x = (lParam<<16)>>16;
+				thinfo.pt.y = lParam>>16;
+				if (thinfo.pt.x == dat->mouseLBDownPos.x && thinfo.pt.y == dat->mouseLBDownPos.y) {
+					break;
+				}
+				dat->bDragged = TRUE;
+				ImageList_DragEnter(hwnd, thinfo.pt.x, thinfo.pt.y);
+				dat->mouseLBDownPos.x = thinfo.pt.x;
+				dat->mouseLBDownPos.y = thinfo.pt.y;
+			
+				tabId = TabCtrl_HitTest(hwnd, &thinfo);
+				if (thinfo.flags != TCHT_NOWHERE )  {
+					dat->destTab = tabId;
+				} else {
+					if (dat->destTab == TabCtrl_GetItemCount(hwnd)) dat->destTab--;
+				}
+				TabCtrl_GetItemRect(hwnd, dat->destTab, &rect);
+				indicatorPos.left = rect.left - 1;
+				if (thinfo.pt.x >= rect.right - (rect.right - rect.left + 1)/2 ) {
+					indicatorPos.left = rect.right - 1;
+					dat->destTab++;
+				}
+				indicatorPos.top = rect.top;
+				indicatorPos.right = indicatorPos.left + INDICATOR_WIDTH;
+				indicatorPos.bottom = indicatorPos.top + rect.bottom - rect.top;
+
+				if (indicatorPos.left != dat->indicatorPos.left ||
+					indicatorPos.top != dat->indicatorPos.top ||
+					indicatorPos.right != dat->indicatorPos.right ||
+					indicatorPos.bottom != dat->indicatorPos.bottom) {
+					InvalidateRect(hwnd, &dat->indicatorPos, TRUE);
+					dat->indicatorPos.left = indicatorPos.left;
+					dat->indicatorPos.top = indicatorPos.top;
+					dat->indicatorPos.right = indicatorPos.right;
+					dat->indicatorPos.bottom = indicatorPos.bottom;
+				}
+				hDC = GetDC(hwnd);
+				hBrush = CreateSolidBrush(GetSysColor(INDICATOR_COLOR));
+				hPen = CreatePen(PS_SOLID,1,GetSysColor(INDICATOR_COLOR));
+				SelectObject(hDC, hBrush);
+				SelectObject(hDC, hPen);
+				Rectangle(hDC, indicatorPos.left, indicatorPos.top, indicatorPos.right, indicatorPos.bottom);
+				ReleaseDC(hwnd, hDC);
+				DeleteObject(hPen);
+				DeleteObject(hBrush);
+				return TRUE;
+			}
+			break;
     }
 	return CallWindowProc(OldTabCtrlProc, hwnd, msg, wParam, lParam); 
 }
@@ -894,4 +1040,3 @@ int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,
 	SetWindowPlacement(hwnd,&wp);
 	return 0;
 }
-
