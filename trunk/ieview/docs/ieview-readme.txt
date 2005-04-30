@@ -106,6 +106,12 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.3.1:
++ saving images (Save Image As... in context menu)
++ option to replace smileys in user names
+* scrollbar in smiley selection window is visible only when needed
+* fixed encoding of avatar filenames
+* bugfixes in BBCodes support
 1.0.3.0:
 + support for (nested) BBCodes ! currently supported: [b][i][u][img][size][color]
 + support for Tlen group chats (requires mucc.dll v1.0.6.2 or higher)
