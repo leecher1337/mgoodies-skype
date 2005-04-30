@@ -156,17 +156,17 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	         // Step 3: Advise the connection point that you
 	         // want to sink its events.
 	            sink = new IEViewSink();
-#ifndef GECKO
+//#ifndef GECKO
 	         	if (FAILED(m_pConnectionPoint->Advise((IUnknown *)sink, &m_dwCookie)))     {
 	            	MessageBox(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
 	         	}
-#endif
+//#endif
 	      	}
       		pCPContainer->Release();
    		}
-#ifndef GECKO
+//#ifndef GECKO
 		setUserWndProc((WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) IEViewWindowProcedure));
-#endif
+//#endif
     }
     EnterCriticalSection(&mutex);
 	next = list;
@@ -229,11 +229,11 @@ IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, in
 	         // Step 3: Advise the connection point that you
 	         // want to sink its events.
 	            sink = new IEViewSink(smileyWindow);
-#ifndef GECKO
+//#ifndef GECKO
 	         	if (FAILED(m_pConnectionPoint->Advise((IUnknown *)sink, &m_dwCookie)))     {
 	            	MessageBox(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
 	         	}
-#endif
+//#endif
 	      	}
       		pCPContainer->Release();
    		}
@@ -443,7 +443,6 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 		                                      (RECT*)NULL);
 			DestroyMenu(hMenu);
 			if (iSelection == ID_MENU_CLEARLOG) {
-				saveDocument();
 				clear();
 			} else {
 		    	SendMessage(hSPWnd, WM_COMMAND, iSelection, (LPARAM) NULL);
@@ -753,8 +752,8 @@ void IEView::navigate(const char *url) {
 
 void IEView::clear() {
 #ifdef GECKO
-    pWebBrowser->Navigate(L"www.onet.pl", NULL, NULL, NULL, NULL);
-    return;
+//    pWebBrowser->Navigate(L"www.onet.pl", NULL, NULL, NULL, NULL);
+  //  return;
 #endif
 	IHTMLDocument2 *document = getDocument();
 	if (document == NULL) {
@@ -807,7 +806,16 @@ void IEView::clear() {
 		builder->buildHead(this, &event);
 	}
 }
-
+/*
+void IEView::documentClose() {
+	IHTMLDocument2 *document = getDocument();
+	if (document != NULL) {
+		write("</body></html>");
+		document->close();
+		document->Release();
+	}
+}
+*/
 void IEView::appendEvent(IEVIEWEVENT *event) {
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
@@ -983,11 +991,13 @@ bool IEView::setFocus(HWND prevFocus) {
 void IEView::saveDocument() {
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
-		IOleCommandTarget * pOleCommandTarget;
-    	if (SUCCEEDED(document->QueryInterface(IID_IOleCommandTarget, (void**)&pOleCommandTarget)) && pOleCommandTarget!=NULL) {
-            pOleCommandTarget->Exec(NULL, OLECMDID_SAVEAS, 0, NULL, NULL);
-            pOleCommandTarget->Release();
-		}
+		BSTR bCmd = SysAllocString(L"SaveAs");
+    	VARIANT_BOOL vb;
+    	VARIANT      vValue;
+    	vValue.vt = VT_BOOL;
+    	vValue.boolVal = TRUE;
+        document->execCommand(bCmd, VARIANT_FALSE, vValue, &vb);
+    	SysFreeString(bCmd);
 	    document->Release();
 	}
 }
