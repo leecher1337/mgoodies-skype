@@ -795,8 +795,11 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 	TextToken *token = NULL, *token2;
 	switch (level) {
 	case 0:
-		token = TextToken::tokenizeLinks(text);
-		break;
+		if ((Options::getBasicFlags()&Options::BASIC_ENABLE_BBCODES) && (flags & ENF_BBCODES)) {
+			token = TextToken::tokenizeBBCodes(text);
+			break;
+		}
+		level++;
 	case 1:
 		if (ServiceExists(MTH_GET_HTML_SOURCE_UNICODE)) {
 //			token = TextToken::tokenizeMath(text);
@@ -809,11 +812,8 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
     	}
 		level++;
 	case 2:
-		if ((Options::getBasicFlags()&Options::BASIC_ENABLE_BBCODES) && (flags & ENF_BBCODES)) {
-			token = TextToken::tokenizeBBCodes(text);
-			break;
-		}
-		level++;
+		token = TextToken::tokenizeLinks(text);
+		break;
 	case 3:
 		if (Options::getSmileyFlags() & Options::SMILEY_ENABLED) {
 		    if ((flags & ENF_SMILEYS) || 
