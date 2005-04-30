@@ -392,10 +392,14 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
     	if (ServiceExists(MATH_GET_PARAMS)) {
 			char* mthDelStart =  (char *)CallService(MATH_GET_PARAMS, (WPARAM)MATH_PARAM_STARTDELIMITER, 0);
 			char* mthDelEnd   =  (char *)CallService(MATH_GET_PARAMS, (WPARAM)MATH_PARAM_ENDDELIMITER, 0);
-			mathTagName[0] = Utils::convertToWCS(mthDelStart);
-			mathTagLen[0] = wcslen(mathTagName[0]);
-			mathTagName[1] = Utils::convertToWCS(mthDelEnd);
-			mathTagLen[1] = wcslen(mathTagName[1]);
+			if (mthDelStart!=NULL) {
+				mathTagName[0] = Utils::convertToWCS(mthDelStart);
+				mathTagLen[0] = wcslen(mathTagName[0]);
+			}
+			if (mthDelEnd!=NULL) {
+				mathTagName[1] = Utils::convertToWCS(mthDelEnd);
+				mathTagLen[1] = wcslen(mathTagName[1]);
+			}
 			CallService(MTH_FREE_MATH_BUFFER,0, (LPARAM) mthDelStart);
 			CallService(MTH_FREE_MATH_BUFFER,0, (LPARAM) mthDelEnd);
 		}
@@ -410,6 +414,7 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
 //			}
 	//	}
 	}
+	return new TextToken(TEXT, text, wcslen(text));
 	return NULL;
 }
 
@@ -792,30 +797,24 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 	case 0:
 		token = TextToken::tokenizeLinks(text);
 		break;
-//	case 1:
-		/*
-	if (ServiceExists(MTH_GET_HTML_SOURCE_UNICODE)) {
-		token = TextToken::tokenizeMath(text);
+	case 1:
+		if (ServiceExists(MTH_GET_HTML_SOURCE_UNICODE)) {
+//			token = TextToken::tokenizeMath(text);
     //   wchar_t* mathOutput=(wchar_t*)CallService(MTH_GET_HTML_SOURCE_UNICODE, 0, (LPARAM) output);
 //       free(output);
   //     output = (wchar_t *)malloc (sizeof(wchar_t) *(wcslen(mathOutput)+1));
     //   wcscpy(output, mathOutput);
      //  CallService(MTH_FREE_HTML_BUFFER, 1, LPARAM(mathOutput));
-    }
-	// mathMod end
-
-		if ((Options::getBasicFlags()&Options::BASIC_ENABLE_BBCODES) && (flags & ENF_BBCODES)) {
-			token = TextToken::tokenizeMath(text);
-			break;
-		}*/
-	//	level++;
-	case 1:
+//            break;
+    	}
+		level++;
+	case 2:
 		if ((Options::getBasicFlags()&Options::BASIC_ENABLE_BBCODES) && (flags & ENF_BBCODES)) {
 			token = TextToken::tokenizeBBCodes(text);
 			break;
 		}
 		level++;
-	case 2:
+	case 3:
 		if (Options::getSmileyFlags() & Options::SMILEY_ENABLED) {
 		    if ((flags & ENF_SMILEYS) || 
       			((Options::getSmileyFlags() & Options::SMILEY_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) {
