@@ -24,6 +24,7 @@
 #define IDI_USERDETAILS32               138
 #define IDR_CONTEXT                     180
 #define IDC_HYPERLINKHAND               214
+#define IDC_DRAGCURSOR					215
 #define IDD_OPT_MSGDLG                  243
 #define IDD_MSG                         244
 #define IDD_OPT_MSGLOG                  245

@@ -270,19 +270,7 @@ SOURCE=.\res\Downarrow8.ico
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\Miranda-IM\res\dragcopy.cur"
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\src\res\dragcopy.cur
-# End Source File
-# Begin Source File
-
-SOURCE="..\..\Miranda-IM\res\dropuser.cur"
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\res\dropuser.cur
 # End Source File
 # Begin Source File
 
