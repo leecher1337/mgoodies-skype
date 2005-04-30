@@ -66,6 +66,13 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.2.2
+* a bunch of bugfixes and improvements:
+  - simple drag&drop tab sorting
+  - easier easy drag :)
+  - improved drag&drop file transfer
+2.2.2.1
+* bugfixes
 2.2.2.0 Stable
 + drag&drop file transfer support
 + new shortcut: shift+ESC (minimize window)
