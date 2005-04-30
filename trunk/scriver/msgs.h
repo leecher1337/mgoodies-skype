@@ -42,10 +42,9 @@ struct ErrorWindowData
 
 struct TabCtrlData 
 {
-	RECT	indicatorPos;
 	POINT	mouseLBDownPos;
 	void *	lastClickChild;
-	int		lastClickTime;
+	HIMAGELIST hDragImageList;
 	int		bDragging;
 	int		bDragged;
 	int		destTab;

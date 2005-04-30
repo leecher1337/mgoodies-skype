@@ -372,7 +372,8 @@ IDI_USERDETAILS32       ICON    DISCARDABLE     "res/Details32.ico"
 // Cursor
 //
 
-IDC_HYPERLINKHAND       CURSOR  DISCARDABLE     "../../src/res/hyperlin.cur"
+IDC_HYPERLINKHAND       CURSOR  DISCARDABLE     "res/hyperlin.cur"
+IDC_DRAGCURSOR			CURSOR  DISCARDABLE     "res/dragcopy.cur"
 
 /////////////////////////////////////////////////////////////////////////////
 //

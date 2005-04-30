@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static void InitREOleCallback(void);
 
-HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand;
+HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand, hDragCursor;
 static HANDLE hEventDbEventAdded, hEventDbSettingChange, hEventContactDeleted;
 HANDLE *hMsgMenuItem = NULL, hHookWinEvt=NULL;
 int hMsgMenuItemCount = 0;
@@ -373,6 +373,7 @@ int SplitmsgShutdown(void)
 	DestroyCursor(hCurSplitNS);
 	DestroyCursor(hCurHyperlinkHand);
 	DestroyCursor(hCurSplitWE);
+	DestroyCursor(hDragCursor);
 	UnhookEvent(hEventDbEventAdded);
 	UnhookEvent(hEventDbSettingChange);
 	UnhookEvent(hEventContactDeleted);
@@ -433,6 +434,7 @@ int LoadSendRecvMessageModule(void)
 	hCurHyperlinkHand = LoadCursor(NULL, IDC_HAND);
 	if (hCurHyperlinkHand == NULL)
 		hCurHyperlinkHand = LoadCursor(g_hInst, MAKEINTRESOURCE(IDC_HYPERLINKHAND));
+	hDragCursor = LoadCursor(g_hInst,  MAKEINTRESOURCE(IDC_DRAGCURSOR));
 	return 0;
 }
 

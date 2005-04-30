@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "commonheaders.h"
 
 extern HINSTANCE g_hInst;
+extern HCURSOR hDragCursor;
 PSLWA pSetLayeredWindowAttributes;
 
 #define SB_CHAR_WIDTH		 40
@@ -894,10 +895,6 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				dat->bDragged = FALSE;
 				dat->mouseLBDownPos.x = thinfo.pt.x;
 				dat->mouseLBDownPos.y = thinfo.pt.y;
-				dat->indicatorPos.left = 0;
-				dat->indicatorPos.top = 0;
-				dat->indicatorPos.right = 0;
-				dat->indicatorPos.bottom = 0;
 				SetCapture(hwnd);
 				return 0;
 			}
@@ -909,41 +906,45 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				TCHITTESTINFO thinfo;
 				thinfo.pt.x = (lParam<<16)>>16;
 				thinfo.pt.y = lParam>>16;
-				if (dat->destTab != dat->srcTab) {
-					NMHDR nmh;
-					TCHAR  sBuffer[500];
-					TCITEM item;
-					int curSel;
-					curSel = TabCtrl_GetCurSel(hwnd);
-					item.mask = TCIF_IMAGE | TCIF_PARAM | TCIF_TEXT;
-					item.pszText = sBuffer;
-					item.cchTextMax = sizeof(sBuffer)/sizeof(TCHAR);
-					TabCtrl_GetItem(hwnd, dat->srcTab, &item);
-					sBuffer[499]='\0';
-					dat->destTab -= dat->destTab > dat->srcTab ? 1 : 0;
-					if (curSel == dat->srcTab) {
-						curSel = dat->destTab;
-					} else {
-						if (curSel > dat->srcTab && curSel <= dat->destTab) {
-							curSel--;
-						} else if (curSel < dat->srcTab && curSel >= dat->destTab) {
-							curSel++;
+				if (dat->bDragged) {
+					ImageList_DragLeave(GetDesktopWindow());
+					ImageList_EndDrag();
+					ImageList_Destroy(dat->hDragImageList);
+					SetCursor(LoadCursor(NULL, IDC_ARROW));
+					dat->destTab = TabCtrl_HitTest(hwnd, &thinfo);
+					if (thinfo.flags != TCHT_NOWHERE && dat->destTab != dat->srcTab)  {
+						NMHDR nmh;
+						TCHAR  sBuffer[501];
+						TCITEM item;
+						int curSel;
+						curSel = TabCtrl_GetCurSel(hwnd);
+						item.mask = TCIF_IMAGE | TCIF_PARAM | TCIF_TEXT;
+						item.pszText = sBuffer;
+						item.cchTextMax = sizeof(sBuffer)/sizeof(TCHAR);
+						TabCtrl_GetItem(hwnd, dat->srcTab, &item);
+						sBuffer[sizeof(sBuffer)/sizeof(TCHAR)-1] = '\0';
+						if (curSel == dat->srcTab) {
+							curSel = dat->destTab;
+						} else {
+							if (curSel > dat->srcTab && curSel <= dat->destTab) {
+								curSel--;
+							} else if (curSel < dat->srcTab && curSel >= dat->destTab) {
+								curSel++;
+							}
 						}
+						TabCtrl_DeleteItem(hwnd, dat->srcTab);
+						TabCtrl_InsertItem(hwnd, dat->destTab, &item );
+						TabCtrl_SetCurSel(hwnd, curSel);
+						nmh.hwndFrom = hwnd;
+						nmh.idFrom = GetDlgCtrlID(hwnd);
+						nmh.code = TCN_SELCHANGE;
+						SendMessage(GetParent(hwnd), WM_NOTIFY, nmh.idFrom, (LPARAM)&nmh);
+						UpdateWindow(hwnd);
 					}
-					TabCtrl_DeleteItem(hwnd, dat->srcTab);
-					TabCtrl_InsertItem(hwnd, dat->destTab, &item );
-					TabCtrl_SetCurSel(hwnd, curSel);
-					nmh.hwndFrom = hwnd;
-					nmh.idFrom = GetDlgCtrlID(hwnd);
-					nmh.code = TCN_SELCHANGE;
-					SendMessage(GetParent(hwnd), WM_NOTIFY, nmh.idFrom, (LPARAM)&nmh);
-					UpdateWindow(hwnd);
 				} else {
-					InvalidateRect(hwnd, &dat->indicatorPos, TRUE);
-				}
-				if (!dat->bDragged) {
 					SendMessage(hwnd, WM_LBUTTONDOWN, wParam, lParam);
 				}
+				dat->bDragged = FALSE;
 				dat->bDragging = FALSE;
 				ReleaseCapture();
 			}
@@ -951,58 +952,49 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_MOUSEMOVE:
 			if (!(wParam & MK_LBUTTON)) break;
 			if (dat->bDragging) {
-				HBRUSH hBrush;
-				HPEN hPen;
-				HDC hDC;
-				RECT rect, indicatorPos;
-				int tabId;
 				TCHITTESTINFO thinfo;
-
 				thinfo.pt.x = (lParam<<16)>>16;
 				thinfo.pt.y = lParam>>16;
 				if (thinfo.pt.x == dat->mouseLBDownPos.x && thinfo.pt.y == dat->mouseLBDownPos.y) {
 					break;
 				}
+				if (!dat->bDragged) {
+					POINT pt;
+					RECT rect;
+					RECT rect2;
+					HDC hDC, hMemDC;
+					HBITMAP hBitmap, hOldBitmap;
+					HBRUSH hBrush = CreateSolidBrush(RGB(255,0,254));
+					GetCursorPos(&pt);
+					TabCtrl_GetItemRect(hwnd, dat->srcTab, &rect);
+					rect.right -= rect.left-1;
+					rect.bottom -= rect.top-1;
+					rect2.left = 0; rect2.right = rect.right; rect2.top = 0; rect2.bottom = rect.bottom;
+					dat->hDragImageList = ImageList_Create(rect.right, rect.bottom, ILC_COLOR | ILC_MASK, 0, 1);
+					hDC = GetDC(hwnd);
+					hMemDC = CreateCompatibleDC(hDC);
+					hBitmap = CreateCompatibleBitmap(hDC, rect.right, rect.bottom);
+					hOldBitmap = SelectObject(hMemDC, hBitmap);
+					FillRect(hMemDC, &rect2, hBrush);
+					SetWindowOrgEx (hMemDC, rect.left, rect.top, NULL);
+					SendMessage(hwnd, WM_PRINTCLIENT, (WPARAM)hMemDC, PRF_CLIENT);
+					SelectObject(hMemDC, hOldBitmap);
+					ImageList_AddMasked(dat->hDragImageList, hBitmap, RGB(255,0,254));
+					DeleteObject(hBitmap);
+					DeleteObject(hBrush);
+					ReleaseDC(hwnd, hDC);
+					DeleteDC(hMemDC);
+					ImageList_BeginDrag(dat->hDragImageList, 0, dat->mouseLBDownPos.x - rect.left, dat->mouseLBDownPos.y - rect.top);
+					ImageList_DragEnter(GetDesktopWindow(), pt.x, pt.y);
+					SetCursor(hDragCursor);
+				} else {
+					POINT pt;
+					GetCursorPos(&pt);
+					ImageList_DragMove(pt.x, pt.y);
+				}
 				dat->bDragged = TRUE;
-				ImageList_DragEnter(hwnd, thinfo.pt.x, thinfo.pt.y);
 				dat->mouseLBDownPos.x = thinfo.pt.x;
 				dat->mouseLBDownPos.y = thinfo.pt.y;
-			
-				tabId = TabCtrl_HitTest(hwnd, &thinfo);
-				if (thinfo.flags != TCHT_NOWHERE )  {
-					dat->destTab = tabId;
-				} else {
-					if (dat->destTab == TabCtrl_GetItemCount(hwnd)) dat->destTab--;
-				}
-				TabCtrl_GetItemRect(hwnd, dat->destTab, &rect);
-				indicatorPos.left = rect.left - 1;
-				if (thinfo.pt.x >= rect.right - (rect.right - rect.left + 1)/2 ) {
-					indicatorPos.left = rect.right - 1;
-					dat->destTab++;
-				}
-				indicatorPos.top = rect.top;
-				indicatorPos.right = indicatorPos.left + INDICATOR_WIDTH;
-				indicatorPos.bottom = indicatorPos.top + rect.bottom - rect.top;
-
-				if (indicatorPos.left != dat->indicatorPos.left ||
-					indicatorPos.top != dat->indicatorPos.top ||
-					indicatorPos.right != dat->indicatorPos.right ||
-					indicatorPos.bottom != dat->indicatorPos.bottom) {
-					InvalidateRect(hwnd, &dat->indicatorPos, TRUE);
-					dat->indicatorPos.left = indicatorPos.left;
-					dat->indicatorPos.top = indicatorPos.top;
-					dat->indicatorPos.right = indicatorPos.right;
-					dat->indicatorPos.bottom = indicatorPos.bottom;
-				}
-				hDC = GetDC(hwnd);
-				hBrush = CreateSolidBrush(GetSysColor(INDICATOR_COLOR));
-				hPen = CreatePen(PS_SOLID,1,GetSysColor(INDICATOR_COLOR));
-				SelectObject(hDC, hBrush);
-				SelectObject(hDC, hPen);
-				Rectangle(hDC, indicatorPos.left, indicatorPos.top, indicatorPos.right, indicatorPos.bottom);
-				ReleaseDC(hwnd, hDC);
-				DeleteObject(hPen);
-				DeleteObject(hBrush);
 				return TRUE;
 			}
 			break;
