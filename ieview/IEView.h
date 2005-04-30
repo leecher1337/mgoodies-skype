@@ -184,6 +184,7 @@ public:
 	void			write(const WCHAR *text);
 	void			write(const char *text);
 	void            writef(const char *fmt, ...);
+//	void            documentClose();
 	void            rebuildLog();
 	void            clear();
 	void            scrollToBottom();
