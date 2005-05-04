@@ -25,13 +25,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_MathModule.h"
 
 static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static int protoNum;
 static char (*protoNames)[128];
 static char (*protoFilenames)[MAX_PATH];
-static HWND hwndBasic, hwndEmoticons, hwndTemplates, hwndCurrentTab;
+static HWND hwndBasic, hwndEmoticons, hwndTemplates, hwndCurrentTab, hwndGeneral, hwndGroupChats;
 static int lastProtoItem;
 static HICON smileyIcon;
 
@@ -61,21 +63,29 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 			TCITEM tci;
 			tc = GetDlgItem(hwndDlg, IDC_TABS);
 			tci.mask = TCIF_TEXT;
-			tci.pszText = Translate("Basic");
+			tci.pszText = Translate("General");
 			TabCtrl_InsertItem(tc, 0, &tci);
 			tci.pszText = Translate("Emoticons");
 			TabCtrl_InsertItem(tc, 1, &tci);
-			tci.pszText = Translate("Templates");
+			tci.pszText = Translate("Basic");
 			TabCtrl_InsertItem(tc, 2, &tci);
-			
+			tci.pszText = Translate("Templates");
+			TabCtrl_InsertItem(tc, 3, &tci);
+			tci.pszText = Translate("Group Chats");
+			TabCtrl_InsertItem(tc, 4, &tci);
+
 			hwndBasic = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_BASIC_OPTIONS), hwndDlg, IEViewBasicOptDlgProc, (LPARAM) NULL);
-			SetWindowPos(hwndBasic, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-			ShowWindow(hwndBasic, SW_SHOW);
+			SetWindowPos(hwndBasic, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 			hwndEmoticons = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_EMOTICONS_OPTIONS), hwndDlg, IEViewEmoticonsOptDlgProc, (LPARAM) NULL);
-			SetWindowPos(hwndEmoticons, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			SetWindowPos(hwndEmoticons, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 			hwndTemplates = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_TEMPLATES_OPTIONS), hwndDlg, IEViewTemplatesOptDlgProc, (LPARAM) NULL);
-			SetWindowPos(hwndTemplates, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-			hwndCurrentTab = hwndBasic;
+			SetWindowPos(hwndTemplates, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
+			hwndGeneral = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_GENERAL_OPTIONS), hwndDlg, IEViewGeneralOptDlgProc, (LPARAM) NULL);
+			SetWindowPos(hwndTemplates, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
+			hwndGroupChats = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_GROUPCHATS_OPTIONS), hwndDlg, IEViewGroupChatsOptDlgProc, (LPARAM) NULL);
+			SetWindowPos(hwndTemplates, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
+			hwndCurrentTab = hwndGeneral;
+			ShowWindow(hwndGeneral, SW_SHOW);
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -91,13 +101,19 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 						switch (TabCtrl_GetCurSel(GetDlgItem(hwndDlg, IDC_TABS))) {
 						default:
 						case 0:
-							hwnd = hwndBasic;
+							hwnd = hwndGeneral;
 							break;
 						case 1:
 							hwnd = hwndEmoticons;
 							break;
 						case 2:
+							hwnd = hwndBasic;
+							break;
+						case 3:
 							hwnd = hwndTemplates;
+							break;
+						case 4:
+							hwnd = hwndGroupChats;
 							break;
 						}
 						if (hwnd!=hwndCurrentTab) {
@@ -110,9 +126,50 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 				}
 				break;
 			case PSN_APPLY:
-				SendMessage(hwndBasic, WM_NOTIFY, wParam, lParam);
+				SendMessage(hwndGeneral, WM_NOTIFY, wParam, lParam);
 				SendMessage(hwndEmoticons, WM_NOTIFY, wParam, lParam);
+				SendMessage(hwndBasic, WM_NOTIFY, wParam, lParam);
 				SendMessage(hwndTemplates, WM_NOTIFY, wParam, lParam);
+				SendMessage(hwndGroupChats, WM_NOTIFY, wParam, lParam);
+				return TRUE;
+			}
+		}
+		break;
+	case WM_DESTROY:
+		break;
+	}
+	return FALSE;
+}
+
+static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+	int i;
+	switch (msg) {
+	case WM_INITDIALOG:
+		{
+			TranslateDialogDefault(hwndDlg);
+			if (Options::getGeneralFlags() & Options::GENERAL_ENABLE_BBCODES) {
+				CheckDlgButton(hwndDlg, IDC_ENABLE_BBCODES, TRUE);
+			}
+			return TRUE;
+		}
+	case WM_COMMAND:
+		{
+			switch (LOWORD(wParam)) {
+			case IDC_ENABLE_BBCODES:
+				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				break;
+			}
+		}
+		break;
+	case WM_NOTIFY:
+		{
+			switch (((LPNMHDR) lParam)->code) {
+			case PSN_APPLY:
+				i = 0;
+				if (IsDlgButtonChecked(hwndDlg, IDC_ENABLE_BBCODES)) {
+					i |= Options::GENERAL_ENABLE_BBCODES;
+				}
+				Options::setGeneralFlags(i);
 				return TRUE;
 			}
 		}
@@ -130,25 +187,23 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
-			char *path;
 			TranslateDialogDefault(hwndDlg);
 			bChecked = FALSE;
-			if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
+			if (Options::getBkgImageFlags() & Options::BASIC_BKGIMAGE_ENABLED) {
 			    bChecked = TRUE;
 				CheckDlgButton(hwndDlg, IDC_BACKGROUND_IMAGE, TRUE);
 			}
 			EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_BACKGROUND_IMAGE), bChecked);
-			if (Options::getBkgImageFlags() & Options::BKGIMAGE_SCROLL) {
+			if (Options::getBkgImageFlags() & Options::BASIC_BKGIMAGE_SCROLL) {
 				CheckDlgButton(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE, TRUE);
 			}
-			path = (char *)Options::getBkgImageFile();
-			if (path != NULL) {
-                SetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path);
+			if (Options::getBkgImageFile() != NULL) {
+                SetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, Options::getBkgImageFile());
 			}
 			bChecked = FALSE;
-			if (Options::getExternalCSSFlags() & Options::EXTERNALCSS_ENABLED) {
+			if (Options::getExternalCSSFlags() & Options::BASIC_EXTERNALCSS_ENABLED) {
 			    bChecked = TRUE;
 				CheckDlgButton(hwndDlg, IDC_EXTERNALCSS, TRUE);
 			}
@@ -156,16 +211,11 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS_RTL), bChecked);
-			path = (char *)Options::getExternalCSSFile();
-			if (path != NULL) {
-                SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
+			if (Options::getExternalCSSFile() != NULL) {
+                SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, Options::getExternalCSSFile());
 			}
-			path = (char *)Options::getExternalCSSFileRTL();
-			if (path != NULL) {
-                SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
-			}
-			if (Options::getBasicFlags() & Options::BASIC_ENABLE_BBCODES) {
-				CheckDlgButton(hwndDlg, IDC_ENABLE_BBCODES, TRUE);
+			if (Options::getExternalCSSFileRTL() != NULL) {
+                SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, Options::getExternalCSSFileRTL());
 			}
 			return TRUE;
 		}
@@ -179,7 +229,6 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			case IDC_SCROLL_BACKGROUND_IMAGE:
-			case IDC_ENABLE_BBCODES:
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			case IDC_BACKGROUND_IMAGE:
@@ -263,28 +312,23 @@ static BOOL CALLBACK IEViewBasicOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 			case PSN_APPLY:
 				i = 0;
 				if (IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE)) {
-					i |= Options::BKGIMAGE_ENABLED;
+					i |= Options::BASIC_BKGIMAGE_ENABLED;
 				}
 				if (IsDlgButtonChecked(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE)) {
-					i |= Options::BKGIMAGE_SCROLL;
+					i |= Options::BASIC_BKGIMAGE_SCROLL;
 				}
 				Options::setBkgImageFlags(i);
 				GetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
 				Options::setBkgImageFile(path);
 				i = 0;
 				if (IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS)) {
-					i |= Options::BKGIMAGE_ENABLED;
+					i |= Options::BASIC_BKGIMAGE_ENABLED;
 				}
 				Options::setExternalCSSFlags(i);
 				GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
 				Options::setExternalCSSFile(path);
 				GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
 				Options::setExternalCSSFileRTL(path);
-				i = 0;
-				if (IsDlgButtonChecked(hwndDlg, IDC_ENABLE_BBCODES)) {
-					i |= Options::BASIC_ENABLE_BBCODES;
-				}
-				Options::setBasicFlags(i);
 				return TRUE;
 			}
 		}
@@ -499,7 +543,6 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
-			char *path;
 			TranslateDialogDefault(hwndDlg);
 			bChecked = FALSE;
 			if (Options::getTemplatesFlags() & Options::TEMPLATES_ENABLED) {
@@ -553,13 +596,11 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_RELATIVE_DATE), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_GROUP_MESSAGES), bChecked);
 
-			path = (char *)Options::getTemplatesFile();
-			if (path != NULL) {
-                SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path);
+			if (Options::getTemplatesFile() != NULL) {
+                SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, Options::getTemplatesFile());
 			}
-			path = (char *)Options::getTemplatesFileRTL();
-			if (path != NULL) {
-                SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path);
+			if (Options::getTemplatesFileRTL() != NULL) {
+                SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, Options::getTemplatesFileRTL());
 			}
 			return TRUE;
 		}
@@ -697,24 +738,102 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 	return FALSE;
 }
 
-int Options::basicFlags;
+static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+	int i;
+	BOOL bChecked;
+	char path[MAX_PATH];
+	switch (msg) {
+	case WM_INITDIALOG:
+		{
+			TranslateDialogDefault(hwndDlg);
+			if (Options::getGroupChatCSSFile() != NULL) {
+                SetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, Options::getGroupChatCSSFile());
+			}
+			bChecked = FALSE;
+			if (Options::getGroupChatFlags() & Options::GROUPCHAT_CSS_ENABLED) {
+				CheckDlgButton(hwndDlg, IDC_GROUPCHAT_CSS, TRUE);
+			    bChecked = TRUE;
+			}
+			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_BROWSE), bChecked);
+			return TRUE;
+		}
+	case WM_COMMAND:
+		{
+			switch (LOWORD(wParam)) {
+            case IDC_GROUPCHAT_CSS_FILENAME:
+				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE)
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				break;
+			case IDC_GROUPCHAT_CSS:
+				bChecked = IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_CSS);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_BROWSE), bChecked);
+				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				break;
+			case IDC_GROUPCHAT_CSS_BROWSE:
+				{
+					OPENFILENAME ofn={0};
+					GetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path, sizeof(path));
+					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
+					ofn.hwndOwner = hwndDlg;
+					ofn.hInstance = NULL;
+					ofn.lpstrFilter = "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0";
+					ofn.lpstrFile = path;
+					ofn.Flags = OFN_FILEMUSTEXIST;
+					ofn.nMaxFile = sizeof(path);
+					ofn.nMaxFileTitle = MAX_PATH;
+					ofn.lpstrDefExt = "css";
+					if(GetOpenFileName(&ofn)) {
+						SetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path);
+						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					}
+				}
+				break;
+			}
+		}
+		break;
+	case WM_NOTIFY:
+		{
+			switch (((LPNMHDR) lParam)->code) {
+			case PSN_APPLY:
+				GetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path, sizeof(path));
+				Options::setGroupChatCSSFile(path);
+				i = 0;
+				if (IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_CSS)) {
+					i |= Options::GROUPCHAT_CSS_ENABLED;
+				}
+				Options::setGroupChatFlags(i);
+				return TRUE;
+			}
+		}
+		break;
+	case WM_DESTROY:
+		break;
+	}
+	return FALSE;
+}
+
+bool Options::isInited = false;
+int Options::generalFlags;
 char *Options::bkgFilename = NULL;
 int Options::bkgFlags;
 int Options::smileyFlags;
+int Options::groupChatFlags;
+char *Options::groupChatCSSFilename = NULL;
 char *Options::externalCSSFilename = NULL;
 char *Options::externalCSSFilenameRTL = NULL;
 int Options::externalCSSFlags;
 char *Options::templatesFilename = NULL;
 char *Options::templatesFilenameRTL = NULL;
 int Options::templatesFlags;
-bool Options::isInited = false;
 int Options::mathModuleFlags;
 
 void Options::init() {
 	if (isInited) return;
 	isInited = true;
 	DBVARIANT dbv;
-	basicFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_BASICFLAGS, 0);
+	generalFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_BASICFLAGS, 0);
 	bkgFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_BACKGROUNDIMAGEFLAGS, 0);
 	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_BACKGROUNDIMAGEFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
@@ -813,10 +932,25 @@ void Options::init() {
         templatesFilenameRTL = new char[1];
         strcpy(templatesFilenameRTL, "");
 	}
+	groupChatFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_GROUPCHATFLAGS, FALSE);
+	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_GROUPCHATCSSFILE, &dbv)) {
+    	char tmpPath[MAX_PATH];
+    	strcpy(tmpPath, dbv.pszVal);
+    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
+   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+   		}
+		groupChatCSSFilename = new char[strlen(tmpPath)+1];
+		strcpy(groupChatCSSFilename, tmpPath);
+		DBFreeVariant(&dbv);
+	} else {
+        groupChatCSSFilename = new char[1];
+        strcpy(groupChatCSSFilename, "");
+	}
+
 	TemplateMap::loadTemplates("default", templatesFilename);
 	TemplateMap::loadTemplates("default_rtl", templatesFilenameRTL);
 	smileyIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_SMILEY), IMAGE_ICON, 0, 0, 0);
-	mathModuleFlags = ServiceExists(MTH_GET_HTML_SOURCE) ? MATHMODULE_ENABLED : 0;
+	mathModuleFlags = ServiceExists(MTH_GET_HTML_SOURCE) ? GENERAL_ENABLE_MATHMODULE : 0;
 }
 
 void Options::setBkgImageFile(const char *filename) {
@@ -846,13 +980,13 @@ int	Options::getBkgImageFlags() {
 	return bkgFlags;
 }
 
-void Options::setBasicFlags(int flags) {
-	basicFlags = flags;
+void Options::setGeneralFlags(int flags) {
+	generalFlags = flags;
 	DBWriteContactSettingDword(NULL, muccModuleName, DBS_BASICFLAGS, (DWORD) flags);
 }
 
-int	Options::getBasicFlags() {
-	return basicFlags;
+int	Options::getGeneralFlags() {
+	return generalFlags;
 }
 
 void Options::setSmileyFile(const char *proto, const char *filename) {
@@ -982,4 +1116,31 @@ int	Options::getTemplatesFlags() {
 
 int Options::getMathModuleFlags() {
 	return mathModuleFlags;
+}
+
+void Options::setGroupChatCSSFile(const char *filename) {
+	if (groupChatCSSFilename != NULL) {
+		delete [] groupChatCSSFilename;
+	}
+	groupChatCSSFilename = new char[strlen(filename)+1];
+	strcpy(groupChatCSSFilename, filename);
+    char tmpPath[MAX_PATH];
+    strcpy (tmpPath, filename);
+    if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
+    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
+   	}
+	DBWriteContactSettingString(NULL, muccModuleName, DBS_GROUPCHATCSSFILE, tmpPath);
+}
+
+const char *Options::getGroupChatCSSFile() {
+	return groupChatCSSFilename;
+}
+
+void Options::setGroupChatFlags(int flags) {
+	groupChatFlags = flags;
+	DBWriteContactSettingDword(NULL, muccModuleName, DBS_GROUPCHATFLAGS, (DWORD) flags);
+}
+
+int	Options::getGroupChatFlags() {
+	return groupChatFlags;
 }
