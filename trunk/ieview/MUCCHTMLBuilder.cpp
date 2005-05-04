@@ -145,10 +145,10 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
-/* 	if (Options::getExternalCSSFlags() & Options::EXTERNALCSS_ENABLED) {
-	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? Options::getExternalCSSFileRTL() : Options::getExternalCSSFile();
+ 	if (Options::getGroupChatFlags() & Options::GROUPCHAT_CSS_ENABLED) {
+	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? Options::getGroupChatCSSFile() : Options::getGroupChatCSSFile();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n", externalCSS);
-	} else */{
+	} else {
 		HDC hdc = GetDC(NULL);
 	    int logPixelSY = GetDeviceCaps(hdc, LOGPIXELSY);
 		ReleaseDC(NULL, hdc);
