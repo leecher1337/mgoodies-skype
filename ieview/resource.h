@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define IDD_EMOTICONS_OPTIONS          	152
 #define IDD_TEMPLATES_OPTIONS          	153
 #define IDD_SMILEYSELECTION             154
+#define IDD_GENERAL_OPTIONS             155
+#define IDD_GROUPCHATS_OPTIONS          156
 
 #define IDR_CONTEXTMENU                 200
 
@@ -69,6 +71,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define IDC_LOG_RELATIVE_DATE			1048
 
 #define IDC_LOG_GROUP_MESSAGES			1050
+
+#define IDC_GROUPCHAT_CSS       		1051
+#define IDC_GROUPCHAT_CSS_FILENAME      1052
+#define IDC_GROUPCHAT_CSS_BROWSE		1053
+
 
 #define IDC_SIMPLE                      1100
 #define IDC_TABS                        2000

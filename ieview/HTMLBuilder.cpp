@@ -795,7 +795,7 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 	TextToken *token = NULL, *token2;
 	switch (level) {
 	case 0:
-		if ((Options::getBasicFlags()&Options::BASIC_ENABLE_BBCODES) && (flags & ENF_BBCODES)) {
+		if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_BBCODES) && (flags & ENF_BBCODES)) {
 			token = TextToken::tokenizeBBCodes(text);
 			break;
 		}

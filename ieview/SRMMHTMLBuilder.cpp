@@ -111,7 +111,7 @@ void SRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
- 	if (Options::getExternalCSSFlags() & Options::EXTERNALCSS_ENABLED) {
+ 	if (Options::getExternalCSSFlags() & Options::BASIC_EXTERNALCSS_ENABLED) {
 	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? Options::getExternalCSSFileRTL() : Options::getExternalCSSFile();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n",externalCSS);
 	} else {
@@ -123,17 +123,17 @@ void SRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		COLORREF inColor, outColor;
 	    bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
 		inColor = outColor = bkgColor;
-		if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
+		if (Options::getBkgImageFlags() & Options::BASIC_BKGIMAGE_ENABLED) {
 			const char *bkgImageFilename = Options::getBkgImageFile();
 			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
-			Options::getBkgImageFlags() & Options::BKGIMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
+			Options::getBkgImageFlags() & Options::BASIC_BKGIMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
 		} else {
 			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; overflow: auto;}\n",
 				 	     (int) bkgColor);
 		}
 		Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
 		Utils::appendText(&output, &outputSize, ".img {vertical-align: middle;}\n");
-		if (Options::getBkgImageFlags() & Options::BKGIMAGE_ENABLED) {
+		if (Options::getBkgImageFlags() & Options::BASIC_BKGIMAGE_ENABLED) {
 			Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
 			Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
 		} else {

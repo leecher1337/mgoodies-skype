@@ -65,8 +65,19 @@ EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
 	CONTROL         "Tab1",IDC_TABS,"SysTabControl32",
-                    TCS_FIXEDWIDTH | 0x8,0,0,310,245
-// TCS_BUTTONS |
+                    0x8,0,0,310,245
+// TCS_FIXEDWIDTH | TCS_BUTTONS |
+END
+
+IDD_GENERAL_OPTIONS DIALOGEX 5, 20, 300, 210
+STYLE DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Options",IDC_SIMPLE,5,5,288,60
+    CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,19,220,10
+    LTEXT           "Currently the following BBCodes ae supported: [b][i][u][img][size][color]",IDC_SIMPLE, 14,31,270,12
 END
 
 IDD_BASIC_OPTIONS DIALOGEX 5, 20, 300, 210
@@ -89,10 +100,6 @@ BEGIN
     LTEXT           "RTL CSS file",IDC_SIMPLE, 26,120,184,12
  	EDITTEXT        IDC_EXTERNALCSS_FILENAME_RTL,26,130,184,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE_EXTERNALCSS_RTL,212,130,15,11
-    GROUPBOX        "Other",IDC_SIMPLE,5,163,288,40
-    CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,177,220,10
-    LTEXT           "Currently the following BBCodes ae supported: [b][i][u][img][size][color]",IDC_SIMPLE, 14,188,270,12
 END
 
 IDD_EMOTICONS_OPTIONS DIALOGEX 5, 20, 300, 220
@@ -153,6 +160,24 @@ BEGIN
                     WS_TABSTOP,176,165,110,10
     CONTROL         "Use message grouping", IDC_LOG_GROUP_MESSAGES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,162,175,120,10
+END
+
+IDD_GROUPCHATS_OPTIONS DIALOGEX 5, 20, 300, 210
+STYLE DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "External CSS file",IDC_SIMPLE,5,75,288,70
+    CONTROL         "Use external CSS file",IDC_GROUPCHAT_CSS,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,89,220,10
+ 	EDITTEXT        IDC_GROUPCHAT_CSS_FILENAME,26,104,184,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_GROUPCHAT_CSS_BROWSE,212,104,15,11
+/*
+    GROUPBOX        "Options",IDC_SIMPLE,5,163,288,40
+    CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,177,220,10
+    LTEXT           "Currently the following BBCodes ae supported: [b][i][u][img][size][color]",IDC_SIMPLE, 14,188,270,12
+    */
 END
 
 IDD_SMILEYSELECTION DIALOGEX 10, 10, 234, 150
