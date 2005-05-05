@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define EVENTTYPE_STATUSCHANGE 25368
 #define CHATMOD 			"Chat"
 #define CHATFONTMOD 		"ChatFonts"
-#define MUCCSET_OPTIONS      "ChatWindowOptions"
+#define MUCCSET_OPTIONS     "ChatWindowOptions"
 
 #define FONTF_BOLD   1
 #define FONTF_ITALIC 2
@@ -148,10 +148,10 @@ void ChatHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
-/* 	if (Options::getExternalCSSFlags() & Options::EXTERNALCSS_ENABLED) {
-	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? Options::getExternalCSSFileRTL() : Options::getExternalCSSFile();
+ 	if (Options::getGroupChatFlags() & Options::GROUPCHAT_CSS_ENABLED) {
+	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? Options::getGroupChatCSSFile() : Options::getGroupChatCSSFile();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n", externalCSS);
-	} else */{
+	} else {
 		HDC hdc = GetDC(NULL);
 	    int logPixelSY = GetDeviceCaps(hdc, LOGPIXELSY);
 		ReleaseDC(NULL, hdc);
@@ -259,15 +259,47 @@ void ChatHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			const char *eventText;
 			if (eventData->iType == IEED_GC_EVENT_JOIN) {
                 className = "userJoined";
-				eventText = "%s has joined.";
+				eventText = "%s has joined";
 				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
-			} else if (eventData->iType == IEED_EVENT_LEFT) {
+			} else if (eventData->iType == IEED_GC_EVENT_PART) {
+                className = "userLeft";
+				eventText = "%s has left";
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
+			} else if (eventData->iType == IEED_GC_EVENT_QUIT) {
+                className = "userLeft";
+				eventText = "%s has disconnected";
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
+			} else if (eventData->iType == IEED_GC_EVENT_NICK) {
+                className = "userLeft";
+				eventText = "%s is now known as %s";
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
+			} else if (eventData->iType == IEED_GC_EVENT_ACTION) {
+                className = "userLeft";
+				eventText = "%s has left.";
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
+			} else if (eventData->iType == IEED_GC_EVENT_KICK) {
+                className = "userLeft";
+				eventText = "%s kicked %s";
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
+			} else if (eventData->iType == IEED_GC_EVENT_NOTICE) {
+                className = "userLeft";
+				eventText = "Notice from %s: %s";
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
+			} else if (eventData->iType == IEED_GC_EVENT_INFORMATION) {
+                className = "userLeft";
+				eventText = "";
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
+			} else if (eventData->iType == IEED_GC_EVENT_ADDSTATUS) {
+                className = "userLeft";
+				eventText = "%s has left.";
+				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
+			} else if (eventData->iType == IEED_GC_EVENT_REMOVESTATUS) {
                 className = "userLeft";
 				eventText = "%s has left.";
 				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
 			} else {
                 className = "topicChange";
-				eventText = "The topic is %s.";
+				eventText = "The topic is \'%s%s\'";
 				szText = encodeUTF8(eventData->pszText, eventData->pszProto, ENF_NONE);
 			}
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">", className);
