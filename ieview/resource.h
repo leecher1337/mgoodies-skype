@@ -75,6 +75,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define IDC_GROUPCHAT_CSS       		1051
 #define IDC_GROUPCHAT_CSS_FILENAME      1052
 #define IDC_GROUPCHAT_CSS_BROWSE		1053
+#define IDC_GROUPCHAT_TEMPLATES_BROWSE  1054
+#define IDC_GROUPCHAT_TEMPLATES_FILENAME 1055
+#define IDC_GROUPCHAT_TEMPLATES         1056
 
 
 #define IDC_SIMPLE                      1100
