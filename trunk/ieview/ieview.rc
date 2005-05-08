@@ -108,20 +108,20 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        "Animated Smiley Libraries",IDC_SIMPLE,5,5,288,135
     CONTROL         "Enable smiley replacement",IDC_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,19,220,10
+                    WS_TABSTOP,14,19,250,10
     CONTROL         "Specify library for each protocol",IDC_PROTO_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,26,34,120,10
+                    WS_TABSTOP,26,34,250,10
  	EDITTEXT        IDC_SMILEYS_FILENAME,100,55,168,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE_SMILEYS,270,55,15,11
  	LISTBOX         IDC_PROTOLIST,14,55,80,75, LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     CONTROL         "", IDC_SMILEYS_PREVIEW,"MButtonClass", WS_TABSTOP,170,90,15,15, 0x18000000L
     GROUPBOX        "Options",IDC_SIMPLE,5,145,288,52
     CONTROL         "Only replace isolated smileys",IDC_ISOLATED_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,160,120,10
+                    WS_TABSTOP,14,160,250,10
     CONTROL         "Surround smileys with spaces",IDC_SURROUND_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,170,120,10
+                    WS_TABSTOP,14,170,250,10
     CONTROL         "Replace smileys in user names",IDC_SMILEYS_IN_NAMES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,180,120,10
+                    WS_TABSTOP,14,180,250,10
 END
 
 IDD_TEMPLATES_OPTIONS DIALOGEX 5, 15, 300, 225
@@ -180,17 +180,15 @@ STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "External CSS file",IDC_SIMPLE,5,5,288,80
-    CONTROL         "Use external CSS file",IDC_GROUPCHAT_CSS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,19,220,10
- 	EDITTEXT        IDC_GROUPCHAT_CSS_FILENAME,26,34,184,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_GROUPCHAT_CSS_BROWSE,212,34,15,11
-/*
-    GROUPBOX        "Options",IDC_SIMPLE,5,163,288,40
-    CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,177,220,10
-    LTEXT           "Currently the following BBCodes ae supported: [b][i][u][img][size][color]",IDC_SIMPLE, 14,188,270,12
-    */
+    GROUPBOX        "Mode",IDC_SIMPLE,5,5,288,120
+    CONTROL         "External CSS file",IDC_GROUPCHAT_CSS,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,20,86,10
+ 	EDITTEXT        IDC_GROUPCHAT_CSS_FILENAME,100,19,168,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_GROUPCHAT_CSS_BROWSE,270,19,15,11
+    CONTROL         "Template",IDC_GROUPCHAT_TEMPLATES,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,40,86,10
+ 	EDITTEXT        IDC_GROUPCHAT_TEMPLATES_FILENAME,100,39,168,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_GROUPCHAT_TEMPLATES_BROWSE,270,39,15,11
 END
 
 IDD_SMILEYSELECTION DIALOGEX 10, 10, 234, 150
