@@ -24,17 +24,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ieview_common.h"
 
 #define DBS_BASICFLAGS  		  "GeneralFlags"
+#define DBS_SRMMFLAGS		  	  "SRMMFlags"
 
 #define DBS_BACKGROUNDIMAGEFILE   "BackgroundImageFile"
-#define DBS_BACKGROUNDIMAGEFLAGS  "BackgroundImageFlags"
-
 #define DBS_EXTERNALCSSFILE       "ExternalCSSFile"
 #define DBS_EXTERNALCSSFILE_RTL   "ExternalCSSFileRTL"
-#define DBS_EXTERNALCSSFLAGS	  "ExternalCSSFlags"
-
 #define DBS_TEMPLATESFILE         "TemplatesFile"
 #define DBS_TEMPLATESFILE_RTL     "TemplatesFileRTL"
-#define DBS_TEMPLATESFLAGS		  "TemplatesFlags"
 
 #define DBS_SMILEYSFLAGS  		  "SmileyFlags"
 #define DBS_GROUPCHATFLAGS        "GroupChatFlags"
@@ -46,50 +42,44 @@ class Options {
 private:
    	static int 		generalFlags;
    	static char *	bkgFilename;
-   	static int 		bkgFlags;
    	static int 		smileyFlags;
    	static char *	externalCSSFilename;
    	static char *	externalCSSFilenameRTL;
-   	static int 		externalCSSFlags;
    	
    	static char *	templatesFilename;
    	static char *	templatesFilenameRTL;
-   	static int 		templatesFlags;
+   	static int 		srmmFlags;
    	
    	static int 		groupChatFlags;
    	static char *	groupChatCSSFilename;
 
-   	static int      mathModuleFlags;
    	static bool     isInited;
 public:
 	enum OPTIONS {
 		GENERAL_ENABLE_BBCODES	= 1,
 		GENERAL_ENABLE_MATHMODULE = 2,
 
-		BASIC_BKGIMAGE_ENABLED        = 1,
-		BASIC_BKGIMAGE_SCROLL         = 2,
-		BASIC_EXTERNALCSS_ENABLED		= 1,
+		IMAGE_ENABLED        = 1,
+		IMAGE_SCROLL         = 2,
+		CSS_ENABLED  		  = 4,
+		TEMPLATES_ENABLED	  = 8,
+
+		LOG_SHOW_FILE           = 0x20,
+		LOG_SHOW_URL            = 0x40,
+		LOG_SHOW_STATUSCHANGE   = 0x80,
+		LOG_SHOW_NICKNAMES      = 0x0100,
+		LOG_SHOW_TIME           = 0x0200,
+		LOG_SHOW_DATE           = 0x0400,
+		LOG_SHOW_SECONDS        = 0x0800,
+		LOG_LONG_DATE       	 = 0x1000,
+		LOG_RELATIVE_DATE       = 0x2000,
+		LOG_GROUP_MESSAGES		 = 0x4000,
 
         SMILEY_ENABLED          = 1,
 		SMILEY_ISOLATED         = 2,
 		SMILEY_SURROUND      	= 4,
 		SMILEY_PROTOCOLS        = 8,
 		SMILEY_SMILEYINNAMES    = 16,
-
-		TEMPLATES_ENABLED		= 1,
-		LOG_SHOW_FILE           = 2,
-		LOG_SHOW_URL            = 4,
-		LOG_SHOW_STATUSCHANGE   = 8,
-		LOG_SHOW_NICKNAMES      = 0x0100,
-		LOG_SHOW_TIME           = 0x0200,
-		LOG_SHOW_DATE           = 0x0400,
-		LOG_SHOW_SECONDS        = 0x0800,
-		LOG_LONG_DATE       	= 0x1000,
-		LOG_RELATIVE_DATE       = 0x2000,
-		LOG_GROUP_MESSAGES		= 0x4000,
-		
-
-		GROUPCHAT_CSS_ENABLED        = 1,
 
 	};
    	static void     		setGeneralFlags(int flags);
@@ -100,25 +90,22 @@ public:
    	static int				getSmileyFlags();
    	static void     		setBkgImageFile(const char *filename);
    	static const char *		getBkgImageFile();
-   	static void				setBkgImageFlags(int flags);
-   	static int				getBkgImageFlags();
    	static void      		setExternalCSSFile(const char *filename);
    	static const char *		getExternalCSSFile();
    	static void      		setExternalCSSFileRTL(const char *filename);
    	static const char *		getExternalCSSFileRTL();
-   	static void				setExternalCSSFlags(int flags);
-   	static int				getExternalCSSFlags();
    	static void     		setTemplatesFileRTL(const char *filename);
    	static void     		setTemplatesFile(const char *filename);
    	static const char *		getTemplatesFile();
    	static const char *		getTemplatesFileRTL();
-   	static void				setTemplatesFlags(int flags);
-   	static int				getTemplatesFlags();
-   	static int				getMathModuleFlags();
+   	static void				setSRMMFlags(int flags);
+   	static int				getSRMMFlags();
    	static void      		setGroupChatCSSFile(const char *filename);
    	static const char *		getGroupChatCSSFile();
    	static void				setGroupChatFlags(int flags);
    	static int				getGroupChatFlags();
+   	static void     		setGroupChatTemplatesFile(const char *filename);
+   	static const char *		getGroupChatTemplatesFile();
    	static void      		init();
 };
 
