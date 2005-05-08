@@ -43,7 +43,7 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 			} else if (window->dwMode == IEWM_CHAT) {
             	builder = new ChatHTMLBuilder();
 			}
-		} else if (Options::getTemplatesFlags() & Options::TEMPLATES_ENABLED) {
+		} else if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
             builder = new TemplateHTMLBuilder();
 		} else {
 			if (window->dwMode == IEWM_TABSRMM) {

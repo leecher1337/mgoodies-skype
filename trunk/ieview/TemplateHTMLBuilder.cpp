@@ -27,13 +27,13 @@ bool TemplateHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
         case EVENTTYPE_MESSAGE:
 			return 1;
         case EVENTTYPE_FILE:
-			if (Options::getTemplatesFlags() & Options::LOG_SHOW_FILE) return 1;
+			if (Options::getSRMMFlags() & Options::LOG_SHOW_FILE) return 1;
 			return 0;
         case EVENTTYPE_URL:
-			if (Options::getTemplatesFlags() & Options::LOG_SHOW_URL) return 1;
+			if (Options::getSRMMFlags() & Options::LOG_SHOW_URL) return 1;
 			return 0;
         case EVENTTYPE_STATUSCHANGE:
-			if (Options::getTemplatesFlags() & Options::LOG_SHOW_STATUSCHANGE) return 1;
+			if (Options::getSRMMFlags() & Options::LOG_SHOW_STATUSCHANGE) return 1;
             return 0;
     }
     return 0;
@@ -49,7 +49,7 @@ char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
     dbtts.szDest = str;
     szResult[0] = '\0';
 	if (mode) { //time
-		dbtts.szFormat = (Options::getTemplatesFlags() & Options::LOG_SHOW_SECONDS) ? (char *)"s" : (char *)"t";
+		dbtts.szFormat = (Options::getSRMMFlags() & Options::LOG_SHOW_SECONDS) ? (char *)"s" : (char *)"t";
 		CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
 	    strncat(szResult, str, 500);
 	} else {    //date
@@ -60,14 +60,14 @@ char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
         tm_today = tm_now;
         tm_today.tm_hour = tm_today.tm_min = tm_today.tm_sec = 0;
         today = mktime(&tm_today);
-        if (Options::getTemplatesFlags() & Options::LOG_RELATIVE_DATE && check >= today) {
+        if (Options::getSRMMFlags() & Options::LOG_RELATIVE_DATE && check >= today) {
             strcpy(szResult, Translate("Today"));
         }
-        else if(Options::getTemplatesFlags() & Options::LOG_RELATIVE_DATE && check > (today - 86400)) {
+        else if(Options::getSRMMFlags() & Options::LOG_RELATIVE_DATE && check > (today - 86400)) {
             strcpy(szResult, Translate("Yesterday"));
         }
         else {
-			dbtts.szFormat = (Options::getTemplatesFlags() & Options::LOG_LONG_DATE) ? (char *)"D" : (char *)"d";
+			dbtts.szFormat = (Options::getSRMMFlags() & Options::LOG_LONG_DATE) ? (char *)"D" : (char *)"d";
 			CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
 		    strncat(szResult, str, 500);
         }
@@ -104,7 +104,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	}
 	sprintf(tempStr, "%snoavatar.jpg", szBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
-	if (Options::getTemplatesFlags() & Options::LOG_SHOW_NICKNAMES) {
+	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
 		ZeroMemory(&ci, sizeof(ci));
 	    ci.cbSize = sizeof(ci);
 	    ci.hContact = NULL;
@@ -221,7 +221,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	}
 	sprintf(tempStr, "%snoavatar.jpg", szBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
-	if (Options::getTemplatesFlags() & Options::LOG_SHOW_NICKNAMES) {
+	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
 		ZeroMemory(&ci, sizeof(ci));
 	    ci.cbSize = sizeof(ci);
 	    ci.hContact = NULL;
@@ -286,7 +286,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			int isSent = (dbei.flags & DBEF_SENT);
 			int isHistory = (dbei.timestamp < (DWORD)getStartedTime() && (dbei.flags & DBEF_READ || dbei.flags & DBEF_SENT));
 			int isGroupBreak = TRUE;
- 		  	if ((Options::getTemplatesFlags() & Options::LOG_GROUP_MESSAGES) && dbei.flags == LOWORD(getLastEventType())
+ 		  	if ((Options::getSRMMFlags() & Options::LOG_GROUP_MESSAGES) && dbei.flags == LOWORD(getLastEventType())
 			  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(getLastEventType()) == EVENTTYPE_MESSAGE
 			  && ((dbei.timestamp - getLastEventTime()) < 86400)) {
 		        isGroupBreak = FALSE;
@@ -315,7 +315,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 				} else {
                 	szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, ENF_ALL);
 				}
-                if (isGrouping && (Options::getTemplatesFlags() & Options::LOG_GROUP_MESSAGES)) {
+                if (isGrouping && (Options::getSRMMFlags() & Options::LOG_GROUP_MESSAGES)) {
                     if (isGroupBreak) {
               		    tmpltName[1] = isHistory ? isSent ? "hMessageOutGroupStart" : "hMessageInGroupStart" : isSent ? "MessageOutGroupStart" : "MessageInGroupStart";
                    	} else {
@@ -352,14 +352,14 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                             tokenVal = szName;
 							break;
 						case Token::TIME:
-							if (Options::getTemplatesFlags() & Options::LOG_SHOW_TIME) {
+							if (Options::getSRMMFlags() & Options::LOG_SHOW_TIME) {
 	                            tokenVal = timestampToString(dbei.timestamp, 1);
 							} else {
                                 tokenVal = "&nbsp;";
 							}
 							break;
 						case Token::DATE:
-							if (Options::getTemplatesFlags() & Options::LOG_SHOW_DATE) {
+							if (Options::getSRMMFlags() & Options::LOG_SHOW_DATE) {
 	                            tokenVal = timestampToString(dbei.timestamp, 0);
 							} else {
                                 tokenVal = "&nbsp;";
