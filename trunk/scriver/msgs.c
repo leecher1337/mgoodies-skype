@@ -99,7 +99,7 @@ static int MessageEventAdded(WPARAM wParam, LPARAM lParam)
 	cle.hIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
 	cle.pszService = "SRMsg/ReadMessage";
 	contactName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, wParam, 0);
-	_snprintf(toolTip, sizeof(toolTip), Translate("Message from %s"), contactName);
+	mir_snprintf(toolTip, sizeof(toolTip), Translate("Message from %s"), contactName);
 	cle.pszTooltip = toolTip;
 	CallService(MS_CLIST_ADDEVENT, 0, (LPARAM) & cle);
 	return 0;
@@ -169,7 +169,7 @@ static int TypingMessage(WPARAM wParam, LPARAM lParam)
 	if ((int) lParam && !foundWin && (g_dat->flags&SMF_SHOWTYPINGTRAY)) {
 		char szTip[256];
 
-		_snprintf(szTip, sizeof(szTip), Translate("%s is typing a message"), (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, wParam, 0));
+		mir_snprintf(szTip, sizeof(szTip), Translate("%s is typing a message"), (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, wParam, 0));
 		if (ServiceExists(MS_CLIST_SYSTRAY_NOTIFY) && !(g_dat->flags&SMF_SHOWTYPINGCLIST)) {
 			MIRANDASYSTRAYNOTIFY tn;
 			tn.szProto = NULL;
@@ -256,7 +256,7 @@ static void RestoreUnreadMessageAlerts(void)
 				else {
 					cle.hContact = hContact;
 					cle.hDbEvent = hDbEvent;
-					_snprintf(toolTip, sizeof(toolTip), Translate("Message from %s"), (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0));
+					mir_snprintf(toolTip, sizeof(toolTip), Translate("Message from %s"), (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0));
 					cle.pszTooltip = toolTip;
 					CallService(MS_CLIST_ADDEVENT, 0, (LPARAM) & cle);
 				}
@@ -307,7 +307,7 @@ static int GetWindowClass(WPARAM wParam, LPARAM lParam)
 {
 	char *szBuf = (char*)wParam;
 	int size = (int)lParam;
-	_snprintf(szBuf, size, SRMMMOD);
+	mir_snprintf(szBuf, size, SRMMMOD);
 	return 0;
 }
 

@@ -699,19 +699,19 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 							switch (ci.type) {
 							case CNFT_ASCIIZ:
-								_snprintf(buf, sizeof(buf), "%s", ci.pszVal);
+								mir_snprintf(buf, sizeof(buf), "%s", ci.pszVal);
 								miranda_sys_free(ci.pszVal);
 								break;
 							case CNFT_DWORD:
-								_snprintf(buf, sizeof(buf), "%u", ci.dVal);
+								mir_snprintf(buf, sizeof(buf), "%u", ci.dVal);
 								break;
 							}
 						}
 						szStatus = (char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, mdat->szProto == NULL ? ID_STATUS_OFFLINE : DBGetContactSettingWord(mdat->hContact, mdat->szProto, "Status", ID_STATUS_OFFLINE), 0);
 						if (statusIcon)
-							_snprintf(newtitle, sizeof(newtitle), "%s - %s", contactName, Translate(pszNewTitleEnd));
+							mir_snprintf(newtitle, sizeof(newtitle), "%s - %s", contactName, Translate(pszNewTitleEnd));
 						else
-							_snprintf(newtitle, sizeof(newtitle), "%s (%s): %s", contactName, szStatus, Translate(pszNewTitleEnd));
+							mir_snprintf(newtitle, sizeof(newtitle), "%s (%s): %s", contactName, szStatus, Translate(pszNewTitleEnd));
 
 					}
 				}

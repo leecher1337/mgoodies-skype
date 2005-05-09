@@ -226,6 +226,10 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 	else
 		colour = GetSysColor(COLOR_HOTLIGHT);
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
+	colour = DBGetContactSettingDword(NULL, SRMMMOD, "IncomingBkgColour", RGB(224,224,224));
+    AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
+    colour = DBGetContactSettingDword(NULL, SRMMMOD, "OutgoingBkgColour", RGB(224,224,224));
+    AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
 	if (dat->flags & SMF_RTL)
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\rtlpar");
 	else
@@ -351,6 +355,9 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 	if (prefixParaBreak) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 	}
+	if (dbei.eventType == EVENTTYPE_MESSAGE) {
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1 + ((dbei.flags & DBEF_SENT) ? 1 : 0));
+	}
  	if ((g_dat->flags & SMF_GROUPMESSAGES) && dbei.flags == LOWORD(dat->lastEventType)
 	  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(dat->lastEventType) == EVENTTYPE_MESSAGE
 	  && ((dbei.timestamp - dat->lastEventTime) < 86400)) {
@@ -373,7 +380,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 				i = LOGICON_MSG_NOTICE;
 				break;
 		}
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\f0\\fs14");
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\f0\\fs14\\-"); 
 		while (bufferAlloced - bufferEnd < logIconBmpSize[i])
 			bufferAlloced += 1024;
 		buffer = (char *) realloc(buffer, bufferAlloced);
@@ -609,12 +616,17 @@ void LoadMsgLogIcons(void)
 	BITMAPINFOHEADER bih = { 0 };
 	int widthBytes, i;
 	RECT rc;
+	HBRUSH hBrush;
 	HBRUSH hBkgBrush;
+	HBRUSH hInBkgBrush;
+	HBRUSH hOutBkgBrush;
 	int rtfHeaderSize;
 	PBYTE pBmpBits;
 
 	g_hImageList = ImageList_Create(10, 10, IsWinVerXPPlus()? ILC_COLOR32 | ILC_MASK : ILC_COLOR8 | ILC_MASK, sizeof(pLogIconBmpBits) / sizeof(pLogIconBmpBits[0]), 0);
 	hBkgBrush = CreateSolidBrush(DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_BKGCOLOUR, SRMSGDEFSET_BKGCOLOUR));
+	hInBkgBrush = CreateSolidBrush(DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_INCOMINGBKGCOLOUR, SRMSGDEFSET_INCOMINGBKGCOLOUR));
+	hOutBkgBrush = CreateSolidBrush(DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_OUTGOINGBKGCOLOUR, SRMSGDEFSET_OUTGOINGBKGCOLOUR));
 	bih.biSize = sizeof(bih);
 	bih.biBitCount = 24;
 	bih.biCompression = BI_RGB;
@@ -634,21 +646,24 @@ void LoadMsgLogIcons(void)
 			case LOGICON_MSG_IN:
 				ImageList_AddIcon(g_hImageList, g_dat->hIcons[SMF_ICON_INCOMING]);
 				hIcon = ImageList_GetIcon(g_hImageList, LOGICON_MSG_IN, ILD_NORMAL);
+				hBrush = hInBkgBrush;
 				break;
 			case LOGICON_MSG_OUT:
 				ImageList_AddIcon(g_hImageList, g_dat->hIcons[SMF_ICON_OUTGOING]);
 				hIcon = ImageList_GetIcon(g_hImageList, LOGICON_MSG_OUT, ILD_NORMAL);
+				hBrush = hOutBkgBrush;
 				break;
 			case LOGICON_MSG_NOTICE:
 				ImageList_AddIcon(g_hImageList, g_dat->hIcons[SMF_ICON_NOTICE]);
 				hIcon = ImageList_GetIcon(g_hImageList, LOGICON_MSG_NOTICE, ILD_NORMAL);
+				hBrush = hBkgBrush;
 				break;
 		}
 		pLogIconBmpBits[i] = (PBYTE) malloc(RTFPICTHEADERMAXSIZE + (bih.biSize + widthBytes * bih.biHeight) * 2);
 		//I can't seem to get binary mode working. No matter.
 		rtfHeaderSize = sprintf(pLogIconBmpBits[i], "{\\pict\\dibitmap0\\wbmbitspixel%u\\wbmplanes1\\wbmwidthbytes%u\\picw%u\\pich%u ", bih.biBitCount, widthBytes, (UINT) bih.biWidth, (UINT)bih.biHeight);
 		hoBmp = (HBITMAP) SelectObject(hdcMem, hBmp);
-		FillRect(hdcMem, &rc, hBkgBrush);
+		FillRect(hdcMem, &rc, hBrush);
 		DrawIconEx(hdcMem, 0, 0, hIcon, bih.biWidth, bih.biHeight, 0, NULL, DI_NORMAL);
 		SelectObject(hdcMem, hoBmp);
 		GetDIBits(hdc, hBmp, 0, bih.biHeight, pBmpBits, (BITMAPINFO *) & bih, DIB_RGB_COLORS);
@@ -668,6 +683,8 @@ void LoadMsgLogIcons(void)
 	DeleteObject(hBmp);
 	ReleaseDC(NULL, hdc);
 	DeleteObject(hBkgBrush);
+	DeleteObject(hInBkgBrush);
+	DeleteObject(hOutBkgBrush);
 }
 
 void FreeMsgLogIcons(void)
