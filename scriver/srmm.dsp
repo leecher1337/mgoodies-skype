@@ -95,7 +95,7 @@ LINK32=link.exe
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Unicode_Release"
 # PROP Intermediate_Dir "Unicode_Release"
-# PROP Ignore_Export_Lib 0
+# PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SRMM_EXPORTS" /YX /FD /c
 # ADD CPP /nologo /MD /W3 /O1 /I "../../include" /D "UNICODE" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SRMM_EXPORTS" /YX /FD /c
@@ -270,6 +270,10 @@ SOURCE=.\res\Downarrow8.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\dragcopy.cur
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\res\dragcopy.cur
 # End Source File
 # Begin Source File
@@ -295,6 +299,10 @@ SOURCE=.\res\History8.ico
 # Begin Source File
 
 SOURCE="..\..\Miranda-IM\res\hyperlin.cur"
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\hyperlin.cur
 # End Source File
 # Begin Source File
 

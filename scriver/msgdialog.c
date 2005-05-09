@@ -214,7 +214,7 @@ static char *MsgServiceName(HANDLE hContact)
     if (szProto == NULL)
         return PSS_MESSAGE;
 
-    _snprintf(szServiceName, sizeof(szServiceName), "%s%sW", szProto, PSS_MESSAGE);
+    mir_snprintf(szServiceName, sizeof(szServiceName), "%s%sW", szProto, PSS_MESSAGE);
     if (ServiceExists(szServiceName))
         return PSS_MESSAGE "W";
 #endif
@@ -857,6 +857,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETOLECALLBACK, 0, (LPARAM) & reOleCallback);
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_LINK);
+			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETEDITSTYLE, SES_EXTENDBACKCOLOR, SES_EXTENDBACKCOLOR);
 
 			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_KEYEVENTS | ENM_CHANGE);
 // IEVIew MOD Begin
@@ -1185,11 +1186,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 					switch (ci.type) {
 						case CNFT_ASCIIZ:
-							_snprintf(buf, sizeof(buf), "%s", ci.pszVal);
+							mir_snprintf(buf, sizeof(buf), "%s", ci.pszVal);
 							miranda_sys_free(ci.pszVal);
 							break;
 						case CNFT_DWORD:
-							_snprintf(buf, sizeof(buf), "%u", ci.dVal);
+							mir_snprintf(buf, sizeof(buf), "%u", ci.dVal);
 							break;
 					}
 				}
@@ -1239,15 +1240,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			cf2.bPitchAndFamily = lf.lfPitchAndFamily;
 			cf2.yHeight = abs(lf.lfHeight) * 15;
 			SendDlgItemMessageA(hwndDlg, IDC_MESSAGE, EM_SETCHARFORMAT, 0, (LPARAM)&cf2);
-/*
-			HFONT hFont;
-			hFont = (HFONT) SendDlgItemMessage(hwndDlg, IDC_MESSAGE, WM_GETFONT, 0, 0);
-			if (hFont != NULL && hFont != (HFONT) SendDlgItemMessage(hwndDlg, IDOK, WM_GETFONT, 0, 0))
-				DeleteObject(hFont);
-			LoadMsgDlgFont(MSGFONTID_MESSAGEAREA, &lf, NULL);
-			hFont = CreateFontIndirectA(&lf);
-			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(TRUE, 0));
-			*/
 		}
 		SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 		SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
@@ -1257,6 +1249,28 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING *) wParam;
 			if (dat->hContact) {
 				if (dat->szProto) {
+					CONTACTINFO ci;
+					char buf[128];
+					buf[0] = 0;
+					ZeroMemory(&ci, sizeof(ci));
+					ci.cbSize = sizeof(ci);
+					ci.hContact = dat->hContact;
+					ci.szProto = dat->szProto;
+					ci.dwFlag = CNF_UNIQUEID;
+					if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+						switch (ci.type) {
+						case CNFT_ASCIIZ:
+							mir_snprintf(buf, sizeof(buf), Translate("User Menu - %s"), ci.pszVal);
+							miranda_sys_free(ci.pszVal);
+							break;
+						case CNFT_DWORD:
+							mir_snprintf(buf, sizeof(buf), Translate("User Menu - %u"), ci.dVal);
+							break;
+						}
+					}
+					SendMessage(GetDlgItem(hwndDlg, IDC_USERMENU), BUTTONADDTOOLTIP, (WPARAM) buf, 0);
+		//			SetDlgItemTextA(hwndDlg, IDC_NAME, buf[0] ? buf : contactName);
+			
 					if (!cws || (!strcmp(cws->szModule, dat->szProto) && !strcmp(cws->szSetting, "Status"))) {
 						HICON hIcon;
 						DWORD dwStatus;
@@ -1278,13 +1292,13 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 							char *szNewStatus = (char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wStatus, 0);
 
 							if (dat->wStatus == ID_STATUS_OFFLINE) {
-								_snprintf(buffer, sizeof(buffer), Translate("signed off (was %s)"), szOldStatus);
+								mir_snprintf(buffer, sizeof(buffer), Translate("signed off (was %s)"), szOldStatus);
 							}
 							else if (dat->wOldStatus == ID_STATUS_OFFLINE) {
-								_snprintf(buffer, sizeof(buffer), Translate("signed on (%s)"), szNewStatus);
+								mir_snprintf(buffer, sizeof(buffer), Translate("signed on (%s)"), szNewStatus);
 							}
 							else {
-								_snprintf(buffer, sizeof(buffer), Translate("is now %s (was %s)"), szNewStatus, szOldStatus);
+								mir_snprintf(buffer, sizeof(buffer), Translate("is now %s (was %s)"), szNewStatus, szOldStatus);
 							}
 							iLen = strlen(buffer) + 1;
 							MultiByteToWideChar(CP_ACP, 0, buffer, iLen, (LPWSTR) & buffer[iLen], iLen);
@@ -1502,13 +1516,13 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		if (dat->parent->hwndActive == hwndDlg) {
 			if (dat->messagesInProgress && (g_dat->flags & SMF_SHOWPROGRESS)) {
 				char szBuf[256];
-				_snprintf(szBuf, sizeof(szBuf), Translate("Sending in progress: %d message(s) left..."), dat->messagesInProgress);
+				mir_snprintf(szBuf, sizeof(szBuf), Translate("Sending in progress: %d message(s) left..."), dat->messagesInProgress);
 				SendMessageA(dat->parent->hwndStatus, SB_SETTEXTA, 0, (LPARAM) szBuf);
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) g_dat->hIcons[SMF_ICON_DELIVERING]);
 			} else if (dat->nTypeSecs) {
 				char szBuf[256];
 				char *szContactName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0);
-				_snprintf(szBuf, sizeof(szBuf), Translate("%s is typing a message..."), szContactName);
+				mir_snprintf(szBuf, sizeof(szBuf), Translate("%s is typing a message..."), szContactName);
 				dat->nTypeSecs--;
 				SendMessageA(dat->parent->hwndStatus, SB_SETTEXTA, 0, (LPARAM) szBuf);
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) g_dat->hIcons[SMF_ICON_TYPING]);
@@ -1523,7 +1537,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				dbtts.cbDest = sizeof(time);
 				dbtts.szDest = time;
 				CallService(MS_DB_TIME_TIMESTAMPTOSTRING, dat->lastMessage, (LPARAM) & dbtts);
-				_snprintf(fmt, sizeof(fmt), Translate("Last message received on %s at %s."), date, time);
+				mir_snprintf(fmt, sizeof(fmt), Translate("Last message received on %s at %s."), date, time);
 				SendMessageA(dat->parent->hwndStatus, SB_SETTEXTA, 0, (LPARAM) fmt);
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) NULL);
 			} else {

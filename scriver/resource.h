@@ -75,7 +75,9 @@
 #define IDC_HISTORY                     1080
 #define IDC_SMILEYS                     1081
 #define IDC_BKGCOLOUR                   1269
-#define IDC_INPUTBKGCOLOUR              1270
+#define IDC_BKGINPUT					1270
+#define IDC_BKGINCOMING					1271
+#define IDC_BKGOUTGOING					1272
 #define IDC_FONTCOLOUR                  1282
 #define IDC_STMSGLOGGROUP               1442
 #define IDC_ERRORTEXT                   1596
