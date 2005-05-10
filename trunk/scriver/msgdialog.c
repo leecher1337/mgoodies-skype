@@ -691,6 +691,7 @@ void ShowAvatar(HWND hwndDlg, struct MessageWindowData *dat) {
 	}
 	if (DBGetContactSetting(dat->hContact, SRMMMOD, SRMSGSET_AVATAR, &dbv)) {
 		SendMessage(hwndDlg, DM_AVATARCALCSIZE, 0, 0);
+		SendMessage(hwndDlg, WM_SIZE, 0, 0);
 	}
 	else {
 		HANDLE hFile;
@@ -706,6 +707,7 @@ void ShowAvatar(HWND hwndDlg, struct MessageWindowData *dat) {
 		DBFreeVariant(&dbv);
 	}
 	SendMessage(hwndDlg, DM_SCROLLLOGTOBOTTOM, 0, 0);
+	SendMessage(hwndDlg, WM_SIZE, 0, 0);
 }
 
 static void NotifyTyping(struct MessageWindowData *dat, int mode)
@@ -1110,7 +1112,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	{
 		PROTO_AVATAR_INFORMATION pai;
 		int result;
-
 		SetWindowLong(hwndDlg, DWL_MSGRESULT, 0);
 		//Disable avatars
         if (!(g_dat->flags&SMF_AVATAR)) {
