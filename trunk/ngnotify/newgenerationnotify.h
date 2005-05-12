@@ -137,7 +137,8 @@ int _Workaround_CallService(const char *name, WPARAM wParam, LPARAM lParam);
 #define OPTIONS_TITLE "Event Notify"
 #define OPTIONS_MESSAGE_TITLE "Event Notify (Message)"
 
-#define MENUITEM_NAME "Notify of new events"
+#define MENUITEM_NAME_ENABLE "Enable notify of new events"
+#define MENUITEM_NAME_DISABLE "Disable notify of new events"
 
 //---------------------------
 //---Structures
@@ -214,3 +215,4 @@ int MenuitemInit(BOOL bStatus);
 int MenuitemUpdate(BOOL bStatus);
 int NumberPopupData(HANDLE hContact);
 int CheckMsgWnd(WPARAM contact);
+HINSTANCE hInst;

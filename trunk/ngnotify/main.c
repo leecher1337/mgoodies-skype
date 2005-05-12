@@ -97,7 +97,6 @@ int _Workaround_CallService(const char *name, WPARAM wParam, LPARAM lParam)
 //---------------------------
 //---Some global variables for the plugin
 
-HINSTANCE hInst;
 PLUGIN_OPTIONS pluginOptions;
 PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo = {
