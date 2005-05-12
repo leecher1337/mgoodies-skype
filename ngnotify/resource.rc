@@ -184,6 +184,16 @@ BEGIN
 END
 #endif    // APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_POPUP               ICON    DISCARDABLE     "Icons\\popup.ico"
+IDI_NOPOPUP             ICON    DISCARDABLE     "Icons\\popup_no.ico"
 #endif    // Polish resources
 /////////////////////////////////////////////////////////////////////////////
 

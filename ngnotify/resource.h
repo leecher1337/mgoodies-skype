@@ -3,7 +3,8 @@
 // Used by resource.rc
 //
 #define IDD_OPT                         101
-#define IDD_OPT2                        102
+#define IDI_POPUP                       109
+#define IDI_NOPOPUP                     110
 #define IDC_PREVIEW                     1000
 #define IDC_CHKNOTIFY_MESSAGE           1001
 #define IDC_CHKNOTIFY_URL               1002
@@ -62,7 +63,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        109
+#define _APS_NEXT_RESOURCE_VALUE        111
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1052
 #define _APS_NEXT_SYMED_VALUE           101

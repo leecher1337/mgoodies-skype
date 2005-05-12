@@ -24,6 +24,7 @@
 
 #include "newgenerationnotify.h"
 #include <m_clist.h>
+#include <m_system.h>
 
 CLISTMENUITEM menuitem;
 HANDLE hMenuitemNotify;
@@ -42,21 +43,47 @@ static int MenuitemNotifyCmd(WPARAM wParam,LPARAM lParam)
 
 int MenuitemUpdate(BOOL bStatus)
 {
-    menuitem.flags = CMIM_FLAGS | (bStatus ? CMIF_CHECKED : 0);
+	menuitem.cbSize = sizeof(CLISTMENUITEM);
+	if (bStatus == FALSE) 
+	{
+		menuitem.pszName = Translate(MENUITEM_NAME_DISABLE);
+		if (CallService(MS_SYSTEM_GETVERSION,(WPARAM)0,(LPARAM)0)>=0x00010202) 
+			menuitem.hIcon = LoadIcon(hInst,MAKEINTRESOURCE(IDI_POPUP));
+	}
+	else 
+	{
+		menuitem.pszName = Translate(MENUITEM_NAME_ENABLE);
+		if (CallService(MS_SYSTEM_GETVERSION,(WPARAM)0,(LPARAM)0)>=0x00010202) 
+			menuitem.hIcon = LoadIcon(hInst,MAKEINTRESOURCE(IDI_NOPOPUP));
+	}
+	menuitem.flags = CMIM_NAME;
+	if (CallService(MS_SYSTEM_GETVERSION,(WPARAM)0,(LPARAM)0)>=0x00010202) 
+		menuitem.flags = CMIM_ICON | CMIM_NAME;
+	
 	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuitemNotify, (LPARAM)&menuitem);
-
 	return 0;
 }
 
 int MenuitemInit(BOOL bStatus)
 {
+	
 	CreateServiceFunction(MS_NGN_MENUNOTIFY, MenuitemNotifyCmd);
-
 	menuitem.cbSize = sizeof(CLISTMENUITEM);
-	menuitem.pszName = Translate(MENUITEM_NAME);
-	menuitem.flags = 0;
-	menuitem.position = -0x7FFFFFFE;
+	if (bStatus == FALSE) 
+	{
+		menuitem.pszName = Translate(MENUITEM_NAME_DISABLE);
+		if (CallService(MS_SYSTEM_GETVERSION,(WPARAM)0,(LPARAM)0)>=0x00010202) 
+			menuitem.hIcon = LoadIcon(hInst,MAKEINTRESOURCE(IDI_POPUP));
+	}
+	else 
+	{
+		menuitem.pszName = Translate(MENUITEM_NAME_ENABLE);
+		if (CallService(MS_SYSTEM_GETVERSION,(WPARAM)0,(LPARAM)0)>=0x00010202) 
+			menuitem.hIcon = LoadIcon(hInst,MAKEINTRESOURCE(IDI_NOPOPUP));
+	}
 	menuitem.pszService = MS_NGN_MENUNOTIFY;
+	menuitem.pszPopupName = Translate("PopUps");
+	menuitem.flags = 0;
 	hMenuitemNotify = (HANDLE)CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&menuitem);
 
 	bNotify = bStatus;
