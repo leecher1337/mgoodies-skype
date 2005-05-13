@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DBS_SMILEYSFLAGS  		  "SmileyFlags"
 #define DBS_GROUPCHATFLAGS        "GroupChatFlags"
 #define DBS_GROUPCHATCSSFILE      "GroupChatCSSFile"
+#define DBS_GROUPCHATTEMPLATESFILE   "GroupChatTemplatesFile"
 
 extern int IEViewOptInit(WPARAM wParam, LPARAM lParam);
 
@@ -52,6 +53,7 @@ private:
    	
    	static int 		groupChatFlags;
    	static char *	groupChatCSSFilename;
+   	static char *	groupChatTemplatesFilename;
 
    	static bool     isInited;
 public:

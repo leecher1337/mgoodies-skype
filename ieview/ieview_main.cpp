@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utils.h"
 #include "SmileyWindow.h"
 
-char *muccModuleName;
+char *ieviewModuleName;
 HINSTANCE hInstance;
 PLUGINLINK *pluginLink;
 IEView *debugView;
@@ -39,8 +39,8 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"IEView Plugin",
-	PLUGIN_MAKE_VERSION(1,0,3,1),
-	"IE Control Chat Log (1.0.3.1 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,0,3,2),
+	"IE Control Chat Log (1.0.3.2 "__DATE__")",
 	"Piotr Piastucki",
 	"the_leech@users.berlios.de",
 	"(c) 2004-2005 Piotr Piastucki",
@@ -80,8 +80,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	p++;
 	q = strrchr(p, '.');
 	*q = '\0';
-	muccModuleName = _strdup(p);
-	_strupr(muccModuleName);
+	ieviewModuleName = _strdup(p);
+	_strupr(ieviewModuleName);
 
 	pluginLink = link;
 

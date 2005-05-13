@@ -784,16 +784,17 @@ char *Options::externalCSSFilename = NULL;
 char *Options::externalCSSFilenameRTL = NULL;
 char *Options::templatesFilename = NULL;
 char *Options::templatesFilenameRTL = NULL;
+char *Options::groupChatTemplatesFilename = NULL;
 int Options::srmmFlags;
 
 void Options::init() {
 	if (isInited) return;
 	isInited = true;
 	DBVARIANT dbv;
-	generalFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_BASICFLAGS, 0);
-	srmmFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_SRMMFLAGS, FALSE);
-	smileyFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_SMILEYSFLAGS, 1);
-	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_BACKGROUNDIMAGEFILE, &dbv)) {
+	generalFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, 0);
+	srmmFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SRMMFLAGS, FALSE);
+	smileyFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYSFLAGS, 1);
+	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_BACKGROUNDIMAGEFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
     	strcpy(tmpPath, dbv.pszVal);
     	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
@@ -815,7 +816,7 @@ void Options::init() {
 			strcpy(dbName, protoList[i]->szName);
 			strcat(dbName, "SmileyFile");
 			//MessageBox(NULL, dbName, "SMILEYS", MB_OK);
-			if (!DBGetContactSetting(NULL,  muccModuleName, dbName, &dbv)) {
+			if (!DBGetContactSetting(NULL,  ieviewModuleName, dbName, &dbv)) {
 			   	char tmpPath[MAX_PATH];
             	strcpy(tmpPath, dbv.pszVal);
             	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
@@ -826,7 +827,7 @@ void Options::init() {
 			}
 		}
 	}
-	if (!DBGetContactSetting(NULL,  muccModuleName, "SmileyFile", &dbv)) {
+	if (!DBGetContactSetting(NULL,  ieviewModuleName, "SmileyFile", &dbv)) {
     	char tmpPath[MAX_PATH];
 		strcpy(tmpPath, dbv.pszVal);
     	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
@@ -835,7 +836,7 @@ void Options::init() {
 		SmileyMap::loadLibrary("", tmpPath);
 		DBFreeVariant(&dbv);
 	}
-	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_EXTERNALCSSFILE, &dbv)) {
+	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_EXTERNALCSSFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
     	strcpy(tmpPath, dbv.pszVal);
     	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
@@ -848,7 +849,7 @@ void Options::init() {
         externalCSSFilename = new char[1];
         strcpy(externalCSSFilename, "");
 	}
-	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_EXTERNALCSSFILE_RTL, &dbv)) {
+	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_EXTERNALCSSFILE_RTL, &dbv)) {
     	char tmpPath[MAX_PATH];
     	strcpy(tmpPath, dbv.pszVal);
     	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
@@ -861,7 +862,7 @@ void Options::init() {
         externalCSSFilenameRTL = new char[1];
         strcpy(externalCSSFilenameRTL, "");
 	}
-	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_TEMPLATESFILE, &dbv)) {
+	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_TEMPLATESFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
     	strcpy(tmpPath, dbv.pszVal);
     	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
@@ -874,7 +875,7 @@ void Options::init() {
         templatesFilename = new char[1];
         strcpy(templatesFilename, "");
 	}
-	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_TEMPLATESFILE_RTL, &dbv)) {
+	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_TEMPLATESFILE_RTL, &dbv)) {
     	char tmpPath[MAX_PATH];
     	strcpy(tmpPath, dbv.pszVal);
     	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
@@ -887,8 +888,8 @@ void Options::init() {
         templatesFilenameRTL = new char[1];
         strcpy(templatesFilenameRTL, "");
 	}
-	groupChatFlags = DBGetContactSettingDword(NULL, muccModuleName, DBS_GROUPCHATFLAGS, FALSE);
-	if (!DBGetContactSetting(NULL,  muccModuleName, DBS_GROUPCHATCSSFILE, &dbv)) {
+	groupChatFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_GROUPCHATFLAGS, FALSE);
+	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_GROUPCHATCSSFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
     	strcpy(tmpPath, dbv.pszVal);
     	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
@@ -901,9 +902,22 @@ void Options::init() {
         groupChatCSSFilename = new char[1];
         strcpy(groupChatCSSFilename, "");
 	}
-
+	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_GROUPCHATTEMPLATESFILE, &dbv)) {
+    	char tmpPath[MAX_PATH];
+    	strcpy(tmpPath, dbv.pszVal);
+    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
+   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+   		}
+		groupChatTemplatesFilename = new char[strlen(tmpPath)+1];
+		strcpy(groupChatTemplatesFilename, tmpPath);
+		DBFreeVariant(&dbv);
+	} else {
+        groupChatTemplatesFilename = new char[1];
+        strcpy(groupChatTemplatesFilename, "");
+	}
 	TemplateMap::loadTemplates("default", templatesFilename);
 	TemplateMap::loadTemplates("default_rtl", templatesFilenameRTL);
+	TemplateMap::loadTemplates("groupchat", groupChatTemplatesFilename);
 	smileyIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_SMILEY), IMAGE_ICON, 0, 0, 0);
 //	mathModuleFlags = ServiceExists(MTH_GET_HTML_SOURCE) ? GENERAL_ENABLE_MATHMODULE : 0;
 }
@@ -919,7 +933,7 @@ void Options::setBkgImageFile(const char *filename) {
     if (ServiceExists(MS_UTILS_PATHTORELATIVE)&& strncmp(tmpPath, "http://", 7)) {
     	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
    	}   	
-	DBWriteContactSettingString(NULL, muccModuleName, DBS_BACKGROUNDIMAGEFILE, tmpPath);
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_BACKGROUNDIMAGEFILE, tmpPath);
 }
 
 const char * Options::getBkgImageFile() {
@@ -928,7 +942,7 @@ const char * Options::getBkgImageFile() {
 
 void Options::setGeneralFlags(int flags) {
 	generalFlags = flags;
-	DBWriteContactSettingDword(NULL, muccModuleName, DBS_BASICFLAGS, (DWORD) flags);
+	DBWriteContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, (DWORD) flags);
 }
 
 int	Options::getGeneralFlags() {
@@ -944,7 +958,7 @@ void Options::setSmileyFile(const char *proto, const char *filename) {
     if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
     	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
    	}   	
-	DBWriteContactSettingString(NULL, muccModuleName, dbName, tmpPath);
+	DBWriteContactSettingString(NULL, ieviewModuleName, dbName, tmpPath);
 	SmileyMap::loadLibrary(proto, filename);
 }
 
@@ -958,7 +972,7 @@ const char *Options::getSmileyFile(const char *proto) {
 
 void Options::setSmileyFlags(int flags) {
 	smileyFlags = flags;
-	DBWriteContactSettingDword(NULL, muccModuleName, DBS_SMILEYSFLAGS, (DWORD) flags);
+	DBWriteContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYSFLAGS, (DWORD) flags);
 }
 
 int	Options::getSmileyFlags() {
@@ -976,7 +990,7 @@ void Options::setExternalCSSFile(const char *filename) {
     if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
     	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
    	}   	
-	DBWriteContactSettingString(NULL, muccModuleName, DBS_EXTERNALCSSFILE, tmpPath);
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_EXTERNALCSSFILE, tmpPath);
 }
 
 const char *Options::getExternalCSSFile() {
@@ -994,7 +1008,7 @@ void Options::setExternalCSSFileRTL(const char *filename) {
     if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
     	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
    	}
-	DBWriteContactSettingString(NULL, muccModuleName, DBS_EXTERNALCSSFILE_RTL, tmpPath);
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_EXTERNALCSSFILE_RTL, tmpPath);
 }
 
 const char *Options::getExternalCSSFileRTL() {
@@ -1012,7 +1026,7 @@ void Options::setTemplatesFile(const char *filename) {
     if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
     	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
    	}   	
-	DBWriteContactSettingString(NULL, muccModuleName, DBS_TEMPLATESFILE, tmpPath);
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_TEMPLATESFILE, tmpPath);
 	
 	TemplateMap::loadTemplates("default", templatesFilename);
 }
@@ -1028,7 +1042,7 @@ void Options::setTemplatesFileRTL(const char *filename) {
     if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
     	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
    	}
-	DBWriteContactSettingString(NULL, muccModuleName, DBS_TEMPLATESFILE_RTL, tmpPath);
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_TEMPLATESFILE_RTL, tmpPath);
 
 	TemplateMap::loadTemplates("default_rtl", templatesFilenameRTL);
 }
@@ -1043,7 +1057,7 @@ const char *Options::getTemplatesFileRTL() {
 
 void Options::setSRMMFlags(int flags) {
 	srmmFlags = flags;
-	DBWriteContactSettingDword(NULL, muccModuleName, DBS_SRMMFLAGS, (DWORD) flags);
+	DBWriteContactSettingDword(NULL, ieviewModuleName, DBS_SRMMFLAGS, (DWORD) flags);
 }
 
 int	Options::getSRMMFlags() {
@@ -1061,7 +1075,7 @@ void Options::setGroupChatCSSFile(const char *filename) {
     if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
     	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
    	}
-	DBWriteContactSettingString(NULL, muccModuleName, DBS_GROUPCHATCSSFILE, tmpPath);
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_GROUPCHATCSSFILE, tmpPath);
 }
 
 const char *Options::getGroupChatCSSFile() {
@@ -1070,9 +1084,28 @@ const char *Options::getGroupChatCSSFile() {
 
 void Options::setGroupChatFlags(int flags) {
 	groupChatFlags = flags;
-	DBWriteContactSettingDword(NULL, muccModuleName, DBS_GROUPCHATFLAGS, (DWORD) flags);
+	DBWriteContactSettingDword(NULL, ieviewModuleName, DBS_GROUPCHATFLAGS, (DWORD) flags);
 }
 
 int	Options::getGroupChatFlags() {
 	return groupChatFlags;
+}
+
+void Options::setGroupChatTemplatesFile(const char *filename) {
+	if (groupChatTemplatesFilename != NULL) {
+		delete [] groupChatTemplatesFilename;
+	}
+	groupChatTemplatesFilename = new char[strlen(filename)+1];
+	strcpy(groupChatTemplatesFilename, filename);
+    char tmpPath[MAX_PATH];
+    strcpy (tmpPath, filename);
+    if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
+   	}
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_GROUPCHATTEMPLATESFILE, tmpPath);
+	TemplateMap::loadTemplates("groupchat", groupChatTemplatesFilename);
+}
+
+const char *Options::getGroupChatTemplatesFile() {
+	return groupChatTemplatesFilename;
 }
