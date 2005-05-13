@@ -30,7 +30,7 @@ SmileyWindow::SmileyWindow(SmileyMap *map) {
  	hwnd = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_SMILEYSELECTION), NULL,
                                           SmileySelectionDlgProc, (LPARAM) this);
 	view = new IEView(hwnd, this, 0, 0, 200, 200);
-	
+	created = false;
 }
 
 SmileyWindow::~SmileyWindow() {
@@ -41,12 +41,7 @@ SmileyWindow::~SmileyWindow() {
 		delete view;
 	}
 }
-
-void SmileyWindow::init(int cw, int ch) {
-    maxWidth = 350;
-    maxHeight = 250;
-	cellWidth = cw;
-	cellHeight = ch;
+void SmileyWindow::createSelection() {
 	int outputSize;
 	char *output = NULL;
     int cellWidthBorder = cellWidth + 1;
@@ -68,7 +63,7 @@ void SmileyWindow::init(int cw, int ch) {
 	}
 
 	viewHeight = min(vSize, maxInColumn) * cellHeightBorder +1;
-	
+
 	NONCLIENTMETRICS ncm;
 	ncm.cbSize=sizeof(NONCLIENTMETRICS);
 	if (vSize > maxInColumn) {
@@ -116,10 +111,21 @@ div#inner { position: relative; top: -50%%; left: -50%%; }\n\
 	delete outputEnc;
 }
 
+void SmileyWindow::init(int cw, int ch) {
+    maxWidth = 350;
+    maxHeight = 250;
+	cellWidth = cw;
+	cellHeight = ch;
+}
+
 void SmileyWindow::show(HWND hwndTarget, UINT targetMessage, WPARAM targetWParam, int x, int y) {
 	int direction = 0;
 	int xScreen = GetSystemMetrics(SM_CXSCREEN);
 	int yScreen = GetSystemMetrics(SM_CYSCREEN);
+	if (!created) {
+		created = true;
+		createSelection();
+	}
 	if(y + viewHeight > yScreen) {
 		y -= 24;
 		direction = 3;
@@ -178,7 +184,7 @@ void SmileyWindow::choose(const char * smiley) {
 			if (s!=NULL) {
 				SendMessage(hwndTarget, targetMessage, targetWParam, (LPARAM) s->getPatternString());
 			}
-			
+
 		}
 	}
 }

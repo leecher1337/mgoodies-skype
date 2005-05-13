@@ -52,6 +52,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern HINSTANCE hInstance;
 extern IEView *debugView;
 extern char *workingDir;
-extern char *muccModuleName;
+extern char *ieviewModuleName;
 
 #endif

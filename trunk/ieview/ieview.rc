@@ -143,12 +143,12 @@ BEGIN
     LTEXT           "RTL CSS file",IDC_SIMPLE, 26,68,74,12
  	EDITTEXT        IDC_EXTERNALCSS_FILENAME_RTL,100,67,168,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE_EXTERNALCSS_RTL,270,67,15,11
-    CONTROL         "Template",IDC_TEMPLATES,"Button",BS_AUTOCHECKBOX |
+    CONTROL         "Templates",IDC_TEMPLATES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,89,86,10
    // GROUPBOX        "Template Library",IDC_SIMPLE,5,77,288,50
  	EDITTEXT        IDC_TEMPLATES_FILENAME,100,88,168,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE_TEMPLATES,270,88,15,11
-    LTEXT           "RTL template",IDC_SIMPLE, 26,106,74,12
+    LTEXT           "RTL templates",IDC_SIMPLE, 26,106,74,12
  	EDITTEXT        IDC_TEMPLATES_FILENAME_RTL,100,104,168,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE_TEMPLATES_RTL,270,104,15,11
     GROUPBOX        "Events To Show",IDC_SIMPLE,5,131,140,89
@@ -185,7 +185,7 @@ BEGIN
                     WS_TABSTOP,14,20,86,10
  	EDITTEXT        IDC_GROUPCHAT_CSS_FILENAME,100,19,168,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_GROUPCHAT_CSS_BROWSE,270,19,15,11
-    CONTROL         "Template",IDC_GROUPCHAT_TEMPLATES,"Button",BS_AUTOCHECKBOX |
+    CONTROL         "Templates",IDC_GROUPCHAT_TEMPLATES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,40,86,10
  	EDITTEXT        IDC_GROUPCHAT_TEMPLATES_FILENAME,100,39,168,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_GROUPCHAT_TEMPLATES_BROWSE,270,39,15,11
@@ -206,8 +206,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,3,1
- PRODUCTVERSION 1,0,3,1
+ FILEVERSION 1,0,3,2
+ PRODUCTVERSION 1,0,3,2
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -225,14 +225,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "http://developer.berlios.de/projects/mgoodies\0"
             VALUE "FileDescription", "IEView Plugin for Miranda IM\0"
-            VALUE "FileVersion", "1.0.3.1\0"
+            VALUE "FileVersion", "1.0.3.2\0"
             VALUE "InternalName", "ieview\0"
             VALUE "LegalCopyright", "Copyright (c) 2005 Piotr Piastucki\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "ieview.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "IEView Plugin\0"
-            VALUE "ProductVersion", "1.0.3.1\0"
+            VALUE "ProductVersion", "1.0.3.2\0"
             VALUE "SpecialBuild", "\0"
         END
     END

@@ -33,11 +33,13 @@ private:
 	HWND    hwnd;
 	IEView* view;
 	SmileyMap *map;
+	bool    created;
 	int 	cellWidth, maxWidth, maxHeight, cellHeight;
 	int     viewWidth, viewHeight;
     HWND 	hwndTarget;
 	UINT 	targetMessage;
   	LPARAM 	targetWParam;
+  	void    createSelection();
 public:
 	SmileyWindow(SmileyMap *);
 	~SmileyWindow();
