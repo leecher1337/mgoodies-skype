@@ -1,5 +1,5 @@
-/* this changes the way main window background looks like //background-color: #E6E8E6; overflow: auto;*/
-.body {margin: 0px; text-align: left; background: #FEFEFE;}
+/* this changes the way main window background looks like */
+.body {margin: 0px; text-align: left; background-color: #E6E8E6; overflow: auto;}
 /* this changes the way your links look like */
 .link {color: #0000FF; text-decoration: underline;}
 /* this changes the way smileys and log icons look like */
