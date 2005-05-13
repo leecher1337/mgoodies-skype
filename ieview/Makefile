@@ -8,13 +8,10 @@ UPX = upx -9 -q --compress-icons=0
 SRC = IEView.cpp ieview_services.cpp ieview_main.cpp HTMLBuilder.cpp ChatHTMLBuilder.cpp MUCCHTMLBuilder.cpp SRMMHTMLBuilder.cpp ScriverHTMLBuilder.cpp TabSRMMHTMLBuilder.cpp Smiley.cpp Options.cpp Template.cpp TemplateHTMLBuilder.cpp Utils.cpp SmileyWindow.cpp
 RES  = ieview.res
 OBJ = $(SRC:.cpp=.o) $(RES)
-BIN  = d:/mim/plugins/ieview$(_DATE_).dll
+BIN  = ieview.dll
 INCS =  -I"../../include"
 CFLAGS = $(INCS) -DBUILDING_DLL=1 -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
-# -fexpensive-optimizations -O3 -Os
 CXXFLAGS = $(INCS) -DBUILDING_DLL=1 -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
-# -fexpensive-optimizations -O3 -Os
-# -fexpensive-optimizations -O3 -Os
 # -save-temps
 LIBS =  -lversion -lwsock32 -lole32 -lcomctl32 -luuid -loleaut32
 LFLAGS = -s -mdll -mwindows --add-stdcall-alias
