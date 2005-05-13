@@ -64,7 +64,7 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 			tci.mask = TCIF_TEXT;
 			tci.pszText = Translate("General");
 			TabCtrl_InsertItem(tc, 0, &tci);
-			tci.pszText = Translate("Look&&Feel");
+			tci.pszText = Translate("Message Log");
 			TabCtrl_InsertItem(tc, 1, &tci);
 			tci.pszText = Translate("Emoticons");
 			TabCtrl_InsertItem(tc, 2, &tci);
@@ -710,12 +710,27 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
                 SetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, Options::getGroupChatCSSFile());
 			}
 			bChecked = FALSE;
+			if (Options::getGroupChatFlags() & Options::TEMPLATES_ENABLED) {
+				CheckDlgButton(hwndDlg, IDC_GROUPCHAT_TEMPLATES, TRUE);
+			    bChecked = TRUE;
+			}
+			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_TEMPLATES_BROWSE), bChecked);
+			if (Options::getGroupChatTemplatesFile() != NULL) {
+                SetDlgItemText(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, Options::getGroupChatTemplatesFile());
+			}
+			bChecked = !IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_TEMPLATES);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS), bChecked);
 			if (Options::getGroupChatFlags() & Options::CSS_ENABLED) {
 				CheckDlgButton(hwndDlg, IDC_GROUPCHAT_CSS, TRUE);
-			    bChecked = TRUE;
+			} else {
+                bChecked = FALSE;
 			}
 			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_BROWSE), bChecked);
+			if (Options::getGroupChatCSSFile() != NULL) {
+                SetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, Options::getGroupChatCSSFile());
+			}
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -725,8 +740,13 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE)
 					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
+			case IDC_GROUPCHAT_TEMPLATES:
+				bChecked = IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_TEMPLATES);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_TEMPLATES_BROWSE), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS), !bChecked);
 			case IDC_GROUPCHAT_CSS:
-				bChecked = IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_CSS);
+               	bChecked = !IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_TEMPLATES) && IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_CSS);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_BROWSE), bChecked);
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
@@ -750,6 +770,25 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 					}
 				}
 				break;
+			case IDC_GROUPCHAT_TEMPLATES_BROWSE:
+				{
+					OPENFILENAME ofn={0};
+					GetDlgItemText(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, path, sizeof(path));
+					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
+					ofn.hwndOwner = hwndDlg;
+					ofn.hInstance = NULL;
+					ofn.lpstrFilter = "Templates (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
+					ofn.lpstrFile = path;
+					ofn.Flags = OFN_FILEMUSTEXIST;
+					ofn.nMaxFile = sizeof(path);
+					ofn.nMaxFileTitle = MAX_PATH;
+					ofn.lpstrDefExt = "ivt";
+					if(GetOpenFileName(&ofn)) {
+						SetDlgItemText(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, path);
+						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					}
+				}
+				break;
 			}
 		}
 		break;
@@ -760,6 +799,9 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 				GetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path, sizeof(path));
 				Options::setGroupChatCSSFile(path);
 				i = 0;
+				if (IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_TEMPLATES)) {
+					i |= Options::TEMPLATES_ENABLED;
+				}
 				if (IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_CSS)) {
 					i |= Options::CSS_ENABLED;
 				}
