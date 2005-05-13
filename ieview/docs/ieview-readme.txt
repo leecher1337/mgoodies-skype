@@ -106,6 +106,10 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.3.2:
++ support for external CSS files in Tlen group chats
+* rearranged option pages
+* some memory usage optimizations
 1.0.3.1:
 + saving images (Save Image As... in context menu)
 + option to replace smileys in user names
