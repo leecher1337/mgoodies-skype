@@ -31,12 +31,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <mbstring.h>
 #include "m_smileyadd.h"
 
-extern HINSTANCE g_hInst;
+#define TABSRMM_SMILEYADD_BKGCOLORMODE 0x10000000
 
-static int logPixelSY;
 #define LOGICON_MSG_IN      0
 #define LOGICON_MSG_OUT     1
 #define LOGICON_MSG_NOTICE  2
+
+extern HINSTANCE g_hInst;
+static int logPixelSY;
 static PBYTE pLogIconBmpBits[3];
 static int logIconBmpSize[sizeof(pLogIconBmpBits) / sizeof(pLogIconBmpBits[0])];
 static HIMAGELIST g_hImageList;
@@ -580,10 +582,11 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	streamData.isEmpty = fAppend ? GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG)) == 0 : 1;
 	stream.pfnCallback = LogStreamInEvents;
 	stream.dwCookie = (DWORD_PTR) & streamData;
+	sel.cpMin = 0;
 	if (fAppend) {
 		sel.cpMin = sel.cpMax = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
 		SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & sel);
-	}
+	} 
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMIN, fAppend ? SFF_SELECTION | SF_RTF : SF_RTF, (LPARAM) & stream);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & oldSel);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_HIDESELECTION, FALSE, 0);
@@ -592,10 +595,15 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		smre.cbSize = sizeof(SMADD_RICHEDIT2);
 		smre.hwndRichEditControl = GetDlgItem(hwndDlg, IDC_LOG);
 		smre.Protocolname = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dat->hContact, 0);
-		smre.rangeToReplace = NULL;
+		if (sel.cpMin > 0) {
+			sel.cpMax = -1;
+			smre.rangeToReplace = &sel;
+		} else {
+			smre.rangeToReplace = NULL;
+		}
 		smre.useSounds = FALSE;
 		smre.disableRedraw = FALSE;
-		CallService(MS_SMILEYADD_REPLACESMILEYS, 0, (LPARAM) &smre);
+		CallService(MS_SMILEYADD_REPLACESMILEYS, TABSRMM_SMILEYADD_BKGCOLORMODE, (LPARAM) &smre);
 	}
 	dat->hDbEventLast = streamData.hDbEventLast;
 	{		
