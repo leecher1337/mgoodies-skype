@@ -1371,7 +1371,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				state |= MSG_WINDOW_STATE_FOCUS;
 			if (IsIconic(hwndDlg))
 				state |= MSG_WINDOW_STATE_ICONIC;
-			return state;
+			SetWindowLong(hwndDlg, DWL_MSGRESULT, state);
+			return TRUE;
 
 		}
 	case WM_ACTIVATE:
