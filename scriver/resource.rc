@@ -38,7 +38,7 @@ BEGIN
     CONTROL         "Automatically pop up the window when a message is received",
                     IDC_AUTOPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,11,
                     292,10
-    CONTROL         "Stay minimized",IDC_STATIC,"Button",BS_AUTOCHECKBOX |
+    CONTROL         "Stay minimized",IDC_STAYMINIMIZED,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,22,22,272,10
     CONTROL         "Close the message window on send",IDC_AUTOCLOSE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,8,33,292,10

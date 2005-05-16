@@ -35,6 +35,7 @@
 #define IDC_AUTOPOPUP                   1003
 #define IDC_AUTOCLOSE                   1004
 #define IDC_AUTOMIN                     1005
+#define IDC_STAYMINIMIZED				1006
 #define IDC_SPLITTER                    1017
 #define IDC_SHOWNAMES                   1020
 #define IDC_SHOWSENDBTN                 1021

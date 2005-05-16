@@ -104,6 +104,7 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			TranslateDialogDefault(hwndDlg);
 			CheckDlgButton(hwndDlg, IDC_SHOWBUTTONLINE, g_dat->flags&SMF_SHOWBTNS);
 			CheckDlgButton(hwndDlg, IDC_AUTOPOPUP, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOPOPUP, SRMSGDEFSET_AUTOPOPUP));
+			CheckDlgButton(hwndDlg, IDC_STAYMINIMIZED, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STAYMINIMIZED, SRMSGDEFSET_STAYMINIMIZED));
 			CheckDlgButton(hwndDlg, IDC_AUTOMIN, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOMIN, SRMSGDEFSET_AUTOMIN));
 			CheckDlgButton(hwndDlg, IDC_AUTOCLOSE, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOCLOSE, SRMSGDEFSET_AUTOCLOSE));
 			CheckDlgButton(hwndDlg, IDC_SAVEPERCONTACT, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT));
@@ -166,6 +167,7 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			SetDlgItemInt(hwndDlg, IDC_SECONDS, msgTimeout >= SRMSGSET_MSGTIMEOUT_MIN ? msgTimeout / 1000 : SRMSGDEFSET_MSGTIMEOUT / 1000, FALSE);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_CTRLSUPPORT), !IsDlgButtonChecked(hwndDlg, IDC_AUTOCLOSE));
 
+			EnableWindow(GetDlgItem(hwndDlg, IDC_STAYMINIMIZED), IsDlgButtonChecked(hwndDlg, IDC_AUTOPOPUP));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_TABSATBOTTOM), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LIMITNAMES), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_HIDEONETAB), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
@@ -175,15 +177,21 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 		}
 		case WM_COMMAND:
 			switch (LOWORD(wParam)) {
+				case IDC_AUTOPOPUP:
+					EnableWindow(GetDlgItem(hwndDlg, IDC_STAYMINIMIZED), IsDlgButtonChecked(hwndDlg, IDC_AUTOPOPUP));
+					break;
 				case IDC_AUTOMIN:
 					CheckDlgButton(hwndDlg, IDC_AUTOCLOSE, BST_UNCHECKED);
 					break;
 				case IDC_USETABS:
-					EnableWindow(GetDlgItem(hwndDlg, IDC_TABSATBOTTOM), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
-					EnableWindow(GetDlgItem(hwndDlg, IDC_LIMITNAMES), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
-					EnableWindow(GetDlgItem(hwndDlg, IDC_HIDEONETAB), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
-					EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !IsDlgButtonChecked(hwndDlg, IDC_USETABS) && !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
-					EnableWindow(GetDlgItem(hwndDlg, IDC_SAVEPERCONTACT), !IsDlgButtonChecked(hwndDlg, IDC_USETABS));
+					{
+						int bChecked = IsDlgButtonChecked(hwndDlg, IDC_USETABS);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_TABSATBOTTOM), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_LIMITNAMES), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_HIDEONETAB), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !bChecked && !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
+						EnableWindow(GetDlgItem(hwndDlg, IDC_SAVEPERCONTACT), !bChecked);
+					}
 					break;
 				case IDC_AUTOCLOSE:
 					CheckDlgButton(hwndDlg, IDC_AUTOMIN, BST_UNCHECKED);
@@ -244,6 +252,7 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWBUTTONLINE, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_SHOWBUTTONLINE));
 							//DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWINFOLINE, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_SHOWINFOLINE));
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOPOPUP, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_AUTOPOPUP));
+							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_STAYMINIMIZED, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_STAYMINIMIZED));
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOMIN, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_AUTOMIN));
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOCLOSE, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_AUTOCLOSE));
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));

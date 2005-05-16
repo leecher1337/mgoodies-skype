@@ -211,17 +211,17 @@ extern const int msgDlgFontCount;
 #define SRMMMOD                    "SRMM"
 
 #define SRMSGSET_SHOWTITLEBAR	   "ShowTitleBar"
-#define SRMSGDEFSET_SHOWTITLEBAR  1
+#define SRMSGDEFSET_SHOWTITLEBAR   1
 #define SRMSGSET_SHOWSTATUSBAR	   "ShowStatusBar"
-#define SRMSGDEFSET_SHOWSTATUSBAR  0
+#define SRMSGDEFSET_SHOWSTATUSBAR  1
 #define SRMSGSET_USETABS		   "UseTabs"
 #define SRMSGDEFSET_USETABS		   1
 #define SRMSGSET_TABSATBOTTOM	   "TabsPosition"
 #define SRMSGDEFSET_TABSATBOTTOM   0
 #define SRMSGSET_LIMITNAMES		   "LimitNamesOnTabs"
-#define SRMSGDEFSET_LIMITNAMES		1
-#define SRMSGSET_HIDEONETAB			"HideOnetab"
-#define SRMSGDEFSET_HIDEONETAB		1
+#define SRMSGDEFSET_LIMITNAMES	   1
+#define SRMSGSET_HIDEONETAB		   "HideOnetab"
+#define SRMSGDEFSET_HIDEONETAB	   1
 #define SRMSGSET_SHOWBUTTONLINE    "ShowButtonLine"
 #define SRMSGDEFSET_SHOWBUTTONLINE 1
 #define SRMSGSET_SHOWINFOLINE      "ShowInfoLine"
@@ -230,6 +230,8 @@ extern const int msgDlgFontCount;
 #define SRMSGDEFSET_SHOWPROGRESS   0
 #define SRMSGSET_AUTOPOPUP         "AutoPopupMsg"
 #define SRMSGDEFSET_AUTOPOPUP      0
+#define SRMSGSET_STAYMINIMIZED     "StayMinimized"
+#define SRMSGDEFSET_STAYMINIMIZED  0
 #define SRMSGSET_AUTOMIN           "AutoMin"
 #define SRMSGDEFSET_AUTOMIN        0
 #define SRMSGSET_AUTOCLOSE         "AutoClose"
