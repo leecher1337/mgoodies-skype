@@ -371,6 +371,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			SIZE size;
 			dat->bMinimized = 0;
 			GetClientRect(hwndDlg, &rc);
+			GetWindowRect(hwndDlg, &rcWindow);
 			rcStatus.top = rcStatus.bottom = 0;
 			if (dat->flags & SMF_SHOWSTATUSBAR) {
 				int statwidths[4];
@@ -384,7 +385,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			MoveWindow(dat->hwndTabs, 0, 2, (rc.right - rc.left), (rc.bottom - rc.top) - (rcStatus.bottom - rcStatus.top) - 2,	FALSE); 
 			RedrawWindow(dat->hwndTabs, NULL, NULL, RDW_INVALIDATE | RDW_FRAME | RDW_ERASE);
 			GetMinimunWindowSize(dat, &size);
-			GetWindowRect(hwndDlg, &rcWindow);
 			if ((rcWindow.bottom-rcWindow.top) < size.cy || (rcWindow.right-rcWindow.left) < size.cx) {
 				if ((rcWindow.bottom-rcWindow.top) < size.cy) {
 					rcWindow.bottom = rcWindow.top + size.cy;
