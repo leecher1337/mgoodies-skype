@@ -107,7 +107,7 @@ PLUGININFO pluginInfo = {
 	"Notifies you when you receive a message, url, file or any other event by displaying a popup. Uses the PopUp-Plugin by hrk",
 	"Prezes",
 	"prezesso@klub.chip.pl",
-	"GNU GPL Prezes",
+	"GNU GPL",
 	"http://www.miranda.kom.pl/dev/prezes",
 	0,
 	0
