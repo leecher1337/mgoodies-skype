@@ -42,6 +42,7 @@
 #include <time.h>
 
 int g_IsServiceAvail = 0;
+int g_IsWindowAPI = 0;
 
 extern PLUGIN_DATA* PopUpList[20];
 //---------------------------
@@ -162,7 +163,6 @@ int HookedNewEvent(WPARAM wParam, LPARAM lParam)
 	
 	if (dbe.eventType == EVENTTYPE_MESSAGE && (pluginOptions.bMsgWindowcheck && CheckMsgWnd(wParam)))
 		return 0;
-
 	if (NumberPopupData((HANDLE)wParam) != -1 && pluginOptions.bMergePopup && dbe.eventType == EVENTTYPE_MESSAGE)
 	{
 		PopupUpdate((HANDLE)wParam, (HANDLE)lParam);
@@ -185,6 +185,10 @@ int HookedInit(WPARAM wParam, LPARAM lParam)
 	if (ServiceExists("PluginSweeper/Add"))
         CallService("PluginSweeper/Add", (WPARAM)MODULE, (LPARAM)MODULE);
 
+	if (ServiceExists(MS_MSG_GETWINDOWDATA))
+		g_IsWindowAPI = 1;
+	else 
+		g_IsWindowAPI = 0;
 	if (ServiceExists(MS_MSG_MOD_MESSAGEDIALOGOPENED))
 		g_IsServiceAvail = 1;
 	else
@@ -252,6 +256,18 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
 int CheckMsgWnd(WPARAM contact)
 {
+	if (g_IsWindowAPI) {
+		MessageWindowData mwd;
+		MessageWindowInputData mwid;
+		mwid.cbSize = sizeof(MessageWindowInputData); 
+		mwid.hContact = (HANDLE) contact;
+		mwid.uFlags = MSG_WINDOW_UFLAG_MSG_BOTH;
+		mwd.cbSize = sizeof(MessageWindowData);
+		mwd.hContact = (HANDLE) contact;
+		if (!CallService(MS_MSG_GETWINDOWDATA, (WPARAM) &mwid, (LPARAM) &mwd)) {
+			if (mwd.hwndWindow != NULL && (mwd.uState & MSG_WINDOW_STATE_EXISTS)) return 1;
+		}
+	}
 	if(g_IsServiceAvail) {				// use the service provided by tabSRMM
 		if(CallService(MS_MSG_MOD_MESSAGEDIALOGOPENED, (WPARAM) contact, 0))
 			return 1;
