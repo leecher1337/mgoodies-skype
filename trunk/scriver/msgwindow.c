@@ -365,7 +365,12 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		if (wParam == SIZE_MINIMIZED) {
 			dat->bMinimized = 1;
 
-		} else if (!IsIconic(hwndDlg))	{
+		} 
+		if (IsIconic(hwndDlg))	{
+			MoveWindow(dat->hwndActive, dat->childRect.left, dat->childRect.top, dat->childRect.right-dat->childRect.left, dat->childRect.bottom - dat->childRect.top, TRUE);
+		} else {
+//		}
+//		if (!IsIconic(hwndDlg)) {
 			int i;
 			RECT rc, rcStatus, rcChild, rcWindow;
 			SIZE size;
@@ -395,6 +400,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				MoveWindow(hwndDlg, rcWindow.left, rcWindow.top, rcWindow.right - rcWindow.left, rcWindow.bottom - rcWindow.top,	TRUE); 
 			}
 			GetChildWindowRect(dat, &rcChild);
+			memcpy(&dat->childRect, &rcChild, sizeof(RECT));
 			for (i=0;i<dat->childrenCount;i++) {
 				if (dat->children[i] == dat->hwndActive) {
 					MoveWindow(dat->children[i], rcChild.left, rcChild.top, rcChild.right-rcChild.left, rcChild.bottom - rcChild.top, TRUE);

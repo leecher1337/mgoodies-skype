@@ -985,7 +985,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			ShowWindow(hwndDlg, SW_SHOWNORMAL);
 			SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
-			ShowWindow(dat->hwndParent, SW_SHOW);
+			if (newData->minimized) {
+				ShowWindow(dat->hwndParent, SW_MINIMIZE);
+			} else {
+				ShowWindow(dat->hwndParent, SW_SHOW);
+			}
 			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPEN);
 			if (notifyUnread) {
 				SendMessage(dat->hwndParent, DM_STARTFLASHING, 0, 0); 

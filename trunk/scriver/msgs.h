@@ -61,6 +61,7 @@ struct ParentWindowData
 	HWND	hwndStatus;
 	HWND	hwndTabs;
 	DWORD	flags;
+	RECT	childRect;
 	POINT	mouseLBDownPos;
 	int		mouseLBDown;
 	int		nFlash;
@@ -74,6 +75,7 @@ struct NewMessageWindowLParam
 {
 	HANDLE	hContact;
 	const char *szInitialText;
+	int		minimized;
 };
 
 struct MessageSendInfo
