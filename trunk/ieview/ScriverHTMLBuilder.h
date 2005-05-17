@@ -32,6 +32,7 @@ protected:
 	virtual bool isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei);
 	virtual char *timestampToString(DWORD dwFlags, time_t check, int groupStart);
 	time_t 		lastEventTime;
+	time_t 		startedTime;
 	int     	iLastEventType;
 	int         getLastEventType();
 	time_t 		getLastEventTime();

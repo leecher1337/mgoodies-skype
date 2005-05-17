@@ -65,6 +65,7 @@ static const char *classNames[] = {
 ScriverHTMLBuilder::ScriverHTMLBuilder() {
 	iLastEventType = -1;
 	lastEventTime = time(NULL);
+	startedTime = time(NULL);
 }
 
 bool ScriverHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
@@ -271,7 +272,8 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			int isGroupBreak = TRUE;
  		  	if ((dwFlags & SMF_LOG_GROUPMESSAGES) && dbei.flags == LOWORD(getLastEventType())
 			  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(getLastEventType()) == EVENTTYPE_MESSAGE
-			  && ((dbei.timestamp - getLastEventTime()) < 86400)) {
+			  && ((dbei.timestamp - getLastEventTime()) < 86400)
+			  && (((int)dbei.timestamp < startedTime) == (getLastEventTime() < startedTime))) {
 		        isGroupBreak = FALSE;
 		    }
 			char *szName = NULL;
