@@ -83,16 +83,16 @@ BEGIN
     CONTROL         "Limit avatar height to min.",IDC_LIMITAVATARH,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,22,187,106,10
     EDITTEXT        IDC_AVATARHEIGHTMIN,148,185,28,13,ES_AUTOHSCROLL
-    LTEXT           "and max.",IDC_STATIC,188,187,35,8
+    LTEXT           "and max.",IDC_AVATARTEXT1,188,187,35,8
     EDITTEXT        IDC_AVATARHEIGHT,230,185,28,13,ES_AUTOHSCROLL
-    LTEXT           "pixels.",IDC_STATIC,263,187,35,8
+    LTEXT           "pixels.",IDC_AVATARTEXT2,263,187,35,8
     CONTROL         "Enable transparency",IDC_TRANSPARENCY,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,8,203,140,10
-    LTEXT           "active",IDC_STATIC,148,199,40,8
+    LTEXT           "active",IDC_TRANSPARENCYTEXT1,148,199,40,8
     CONTROL         "Slider1",IDC_ATRANSPARENCYVALUE,"msctls_trackbar32",
                     TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,194,199,70,11
     LTEXT           "100%",IDC_ATRANSPARENCYPERC,264,199,22,8
-    LTEXT           "inactive",IDC_STATIC,148,210,40,8
+    LTEXT           "inactive",IDC_TRANSPARENCYTEXT2,148,210,40,8
     CONTROL         "Slider1",IDC_ITRANSPARENCYVALUE,"msctls_trackbar32",
                     TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,194,210,70,11
     LTEXT           "100%",IDC_ITRANSPARENCYPERC,264,210,22,8
