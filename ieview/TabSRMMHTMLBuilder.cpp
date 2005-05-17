@@ -292,7 +292,8 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			int isHistory = (dbei.timestamp < (DWORD)getStartedTime() && (dbei.flags & DBEF_READ || dbei.flags & DBEF_SENT));
 		  	if (dwFlags & MWF_LOG_GROUPMODE && dbei.flags == LOWORD(getLastEventType())
 			  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(getLastEventType()) == EVENTTYPE_MESSAGE
-			  && ((dbei.timestamp - getLastEventTime()) < 86400)) {
+			  && ((dbei.timestamp - getLastEventTime()) < 86400)
+			  && (((int)dbei.timestamp < startedTime) == (getLastEventTime() < startedTime))) {
 		        isGroupBreak = FALSE;
 		    }
 			char *szName = NULL;
