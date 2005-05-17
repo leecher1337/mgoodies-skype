@@ -100,7 +100,6 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 		case WM_INITDIALOG:
 		{
 			DWORD msgTimeout, avatarHeight;
-
 			TranslateDialogDefault(hwndDlg);
 			CheckDlgButton(hwndDlg, IDC_SHOWBUTTONLINE, g_dat->flags&SMF_SHOWBTNS);
 			CheckDlgButton(hwndDlg, IDC_AUTOPOPUP, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOPOPUP, SRMSGDEFSET_AUTOPOPUP));
@@ -120,9 +119,6 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			CheckDlgButton(hwndDlg, IDC_TABSATBOTTOM, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_TABSATBOTTOM, SRMSGDEFSET_TABSATBOTTOM));
 			CheckDlgButton(hwndDlg, IDC_LIMITNAMES, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITNAMES, SRMSGDEFSET_LIMITNAMES));
 			CheckDlgButton(hwndDlg, IDC_HIDEONETAB, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_HIDEONETAB, SRMSGDEFSET_HIDEONETAB));
-
-			//			CheckDlgButton(hwndDlg, IDC_STATUSWIN, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON));
-
 			CheckDlgButton(hwndDlg, IDC_TRANSPARENCY, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_USETRANSPARENCY, SRMSGDEFSET_USETRANSPARENCY));
 			SendDlgItemMessage(hwndDlg,IDC_ATRANSPARENCYVALUE,TBM_SETRANGE, FALSE, MAKELONG(0,255));
 			SendDlgItemMessage(hwndDlg,IDC_ATRANSPARENCYVALUE,TBM_SETPOS, TRUE, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_ACTIVEALPHA, SRMSGDEFSET_ACTIVEALPHA));
@@ -138,9 +134,19 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			if (pSetLayeredWindowAttributes == NULL) {
 				EnableWindow(GetDlgItem(hwndDlg, IDC_TRANSPARENCY), FALSE);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_ATRANSPARENCYVALUE), FALSE);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_ATRANSPARENCYVALUE), FALSE);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_ATRANSPARENCYPERC), FALSE);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_ITRANSPARENCYVALUE), FALSE);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_ITRANSPARENCYVALUE), FALSE);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_ITRANSPARENCYPERC), FALSE);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_TRANSPARENCYTEXT1), FALSE);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_TRANSPARENCYTEXT2), FALSE);
+			} else  {
+				int bChecked = IsDlgButtonChecked(hwndDlg, IDC_TRANSPARENCY);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_ATRANSPARENCYVALUE), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_ATRANSPARENCYPERC), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_ITRANSPARENCYVALUE), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_ITRANSPARENCYPERC), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_TRANSPARENCYTEXT1), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_TRANSPARENCYTEXT2), bChecked);
 			}
 			CheckDlgButton(hwndDlg, IDC_AVATARSUPPORT, g_dat->flags&SMF_AVATAR);
 //			EnableWindow(GetDlgItem(hwndDlg, IDC_LIMITAVATARH), FALSE);
@@ -155,10 +161,14 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			if (!IsDlgButtonChecked(hwndDlg, IDC_AVATARSUPPORT)) {
 				EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHT), FALSE);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHTMIN), FALSE);
-			}
-			else {
-				EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHT), IsDlgButtonChecked(hwndDlg, IDC_LIMITAVATARH));
-				EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHTMIN), IsDlgButtonChecked(hwndDlg, IDC_LIMITAVATARH));
+				EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARTEXT1), FALSE);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARTEXT2), FALSE);
+			} else {
+				int bChecked = IsDlgButtonChecked(hwndDlg, IDC_LIMITAVATARH);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHT), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHTMIN), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARTEXT1), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARTEXT2), bChecked);
 			}
 
 			CheckDlgButton(hwndDlg, IDC_CTRLSUPPORT, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CTRLSUPPORT, SRMSGDEFSET_CTRLSUPPORT));
@@ -173,6 +183,7 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			EnableWindow(GetDlgItem(hwndDlg, IDC_HIDEONETAB), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !IsDlgButtonChecked(hwndDlg, IDC_USETABS) && !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SAVEPERCONTACT), !IsDlgButtonChecked(hwndDlg, IDC_USETABS));
+
 			return TRUE;
 		}
 		case WM_COMMAND:
@@ -215,19 +226,40 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 					if (!IsDlgButtonChecked(hwndDlg, IDC_AVATARSUPPORT)) {
 						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHT), FALSE);
 						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHTMIN), FALSE);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARTEXT1), FALSE);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARTEXT2), FALSE);
 					} else {
-						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHT), IsDlgButtonChecked(hwndDlg, IDC_LIMITAVATARH));
-						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHTMIN), IsDlgButtonChecked(hwndDlg, IDC_LIMITAVATARH));
+						int bChecked = IsDlgButtonChecked(hwndDlg, IDC_LIMITAVATARH);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHT), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHTMIN), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARTEXT1), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARTEXT2), bChecked);
 					}
 					break;
 				case IDC_LIMITAVATARH:
-					EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHT), IsDlgButtonChecked(hwndDlg, IDC_LIMITAVATARH));
-					EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHTMIN), IsDlgButtonChecked(hwndDlg, IDC_LIMITAVATARH));
+					{
+						int bChecked = IsDlgButtonChecked(hwndDlg, IDC_LIMITAVATARH);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHT), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARHEIGHTMIN), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARTEXT1), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_AVATARTEXT2), bChecked);
+					}
 					break;
 				case IDC_AVATARHEIGHT:
 				case IDC_AVATARHEIGHTMIN:
 					if (HIWORD(wParam) != EN_CHANGE || (HWND) lParam != GetFocus())
 						return 0;
+					break;
+				case IDC_TRANSPARENCY:
+					if (pSetLayeredWindowAttributes != NULL) {
+						int bChecked = IsDlgButtonChecked(hwndDlg, IDC_TRANSPARENCY);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_ATRANSPARENCYVALUE), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_ATRANSPARENCYPERC), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_ITRANSPARENCYVALUE), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_ITRANSPARENCYPERC), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_TRANSPARENCYTEXT1), bChecked);
+						EnableWindow(GetDlgItem(hwndDlg, IDC_TRANSPARENCYTEXT2), bChecked);
+					}
 					break;
 			}
 			SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);

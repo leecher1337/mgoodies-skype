@@ -110,6 +110,10 @@
 #define IDC_ITRANSPARENCYPERC           1622
 #define IDC_HIDEONETAB					1623
 #define IDC_SENDALL						1624
+#define IDC_AVATARTEXT1                 1625
+#define IDC_AVATARTEXT2					1626
+#define IDC_TRANSPARENCYTEXT1			1627
+#define IDC_TRANSPARENCYTEXT2			1628
 #define IDM_CUT                         40000
 #define IDM_COPY                        40001
 #define IDM_PASTE                       40002
