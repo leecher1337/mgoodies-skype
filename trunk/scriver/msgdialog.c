@@ -56,7 +56,6 @@ static WNDPROC OldMessageEditProc, OldSplitterProc;
 static const UINT buttonLineControls[] = { IDC_USERMENU, IDC_DETAILS, IDC_SMILEYS, IDC_ADD, IDC_HISTORY, IDCANCEL, IDOK, IDC_QUOTE};
 static const UINT sendControls[] = { IDC_MESSAGE };
 
-
 static DWORD CALLBACK StreamOutCallback(DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG * pcb)
 {
 	struct MessageSendInfo * msi = (struct MessageSendInfo *) dwCookie;
@@ -804,6 +803,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->lastMessage = 0;
 			dat->lastEventType = -1;
 			dat->lastEventTime = time(NULL);
+			dat->startTime = time(NULL);
 			dat->flags = 0;
 			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "UseRTL", (BYTE) 0)) {
 				PARAFORMAT2 pf2;
