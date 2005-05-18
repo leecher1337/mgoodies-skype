@@ -1147,13 +1147,16 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		result = CallProtoService(dat->szProto, PS_GETAVATARINFO, GAIF_FORCE, (LPARAM)&pai);
 		if (result==GAIR_SUCCESS) {
 			if (VALID_AVATAR(pai.format)) {
+				DBVARIANT dbv;
 				DBWriteContactSettingString(dat->hContact, SRMMMOD, SRMSGSET_AVATAR, pai.filename);
-				DBWriteContactSettingString(dat->hContact, "ContactPhoto", "File", pai.filename);
-			}
-			else DBDeleteContactSetting(dat->hContact, SRMMMOD, SRMSGSET_AVATAR);
+				if (DBGetContactSetting(dat->hContact, "ContactPhoto", "File", &dbv)) {
+					DBWriteContactSettingString(dat->hContact, "ContactPhoto", "File", pai.filename);
+				} else {
+					DBFreeVariant(&dbv);
+				}
+			} else DBDeleteContactSetting(dat->hContact, SRMMMOD, SRMSGSET_AVATAR);
 			ShowAvatar(hwndDlg, dat);
-		}
-		else if (result==GAIR_NOAVATAR) {
+		} else if (result==GAIR_NOAVATAR) {
 			DBVARIANT dbv;
 			DBDeleteContactSetting(dat->hContact, SRMMMOD, SRMSGSET_AVATAR);
 			if (!DBGetContactSetting(dat->hContact, "ContactPhoto", "File", &dbv)) {
