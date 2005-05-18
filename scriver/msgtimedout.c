@@ -38,6 +38,10 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			ewd = (struct ErrorWindowData *) lParam;
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) ewd);
 			TranslateDialogDefault(hwndDlg);
+		//	if (IsIconic(ewd->hwndParent)) {
+				ShowWindow(GetParent(ewd->hwndParent), SW_RESTORE);
+		//		MessageBoxA(NULL, "restoring", "parent", MB_OK);
+		//	}
 			if (ewd != NULL) {
 				if (!ewd->szDescription) 
 					ewd->szDescription = strdup(Translate("An unknown error has occured."));
@@ -54,8 +58,8 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 				sprintf(caption, "%s - %s", Translate("Send Error"), ewd->szName);
 				SetWindowTextA(hwndDlg, caption);
 				GetWindowRect(hwndDlg, &rc);
-				GetWindowRect(ewd->hwndParent, &rcParent);
-				SetWindowPos(hwndDlg, HWND_TOP, rcParent.left + (rcParent.right - rcParent.left - rc.right + rc.left) / 2, rcParent.top + (rcParent.bottom - rcParent.top - rc.bottom + rc.top), 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
+				GetWindowRect(GetParent(ewd->hwndParent), &rcParent);
+				SetWindowPos(hwndDlg, HWND_TOP, rcParent.left + (rcParent.right - rcParent.left - rc.right + rc.left) / 2, rcParent.top + (rcParent.bottom - rcParent.top - rc.bottom + rc.top) / 2, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
 			}
 		}
 		return TRUE;

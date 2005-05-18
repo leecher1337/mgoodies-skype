@@ -1760,14 +1760,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				}
 				SetDlgItemText(hwndDlg, IDC_MESSAGE, _T(""));
 				EnableWindow(GetDlgItem(hwndDlg, IDOK), FALSE);
+				if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOMIN, SRMSGDEFSET_AUTOMIN))
+					ShowWindow(dat->hwndParent, SW_MINIMIZE);
 				if (LOWORD(wParam) == IDC_SENDALL) {
 					SendMessage(dat->hwndParent, DM_SENDMESSAGE, 0, (LPARAM) &msi);
 				} else {
 					SendMessage(hwndDlg, DM_SENDMESSAGE, 0, (LPARAM) &msi);
 				}
 				free (msi.sendBuffer);
-				if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOMIN, SRMSGDEFSET_AUTOMIN))
-					ShowWindow(dat->hwndParent, SW_MINIMIZE);
 			}
 			return TRUE;
 		case IDCANCEL:
@@ -2146,7 +2146,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					ewd->szText = (char *)malloc(dat->sendInfo[i].sendBufferSize);
 					memcpy(ewd->szText, dat->sendInfo[i].sendBuffer, dat->sendInfo[i].sendBufferSize);
 					ewd->hwndParent = hwndDlg;
-					CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGSENDERROR), hwndDlg, ErrorDlgProc, (LPARAM) ewd);
+					CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGSENDERROR), hwndDlg, ErrorDlgProc, (LPARAM) ewd);//hwndDlg
 					RemoveSendBuffer(dat, i);
 				}
 				return 0;
