@@ -66,6 +66,14 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.2.4
++ pop up and stay minimized
+* bugfix: error dialog when messaging window is minimized
+* bugfix: message grouping
+* option page improvements
+2.2.2.3
++ separate background colours for incoming and outgoing messages
+* avatar support fixes
 2.2.2.2
 * a bunch of bugfixes and improvements:
   - simple drag&drop tab sorting
