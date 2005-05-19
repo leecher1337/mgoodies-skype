@@ -37,6 +37,12 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
     IEView *view = IEView::get(GetParent(GetParent(hwnd)));
 	if (view != NULL) {
 		switch (message) {
+		case WM_KEYUP:
+			if (LOWORD(wParam) == VK_ESCAPE && !(GetKeyState(VK_SHIFT) & 0x8000)
+			&& !(GetKeyState(VK_CONTROL) & 0x8000) && !(GetKeyState(VK_MENU) & 0x8000)) {
+				SendMessage(GetParent(GetParent(GetParent(hwnd))), WM_COMMAND, IDCANCEL, 0);
+			} 
+			break;
 		case WM_KEYDOWN:
 			view->translateAccelerator(message, wParam, lParam);
 		   	break;
@@ -893,7 +899,7 @@ void IEView::translateAccelerator(UINT uMsg, WPARAM wParam, LPARAM lParam) {
        msg.lParam = lParam;
        pIOIPAO->TranslateAccelerator(&msg);
        pIOIPAO->Release();
-    }
+	}
 }
 
 /**
