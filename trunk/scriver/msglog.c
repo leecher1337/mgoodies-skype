@@ -547,6 +547,7 @@ static DWORD CALLBACK LogStreamInEvents(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG 
 
 void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 {
+	FINDTEXTEXA fi;
 	EDITSTREAM stream = { 0 };
 	struct LogStreamData streamData = { 0 };
 	struct MessageWindowData *dat = (struct MessageWindowData *) GetWindowLong(hwndDlg, GWL_USERDATA);
@@ -585,9 +586,20 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	stream.dwCookie = (DWORD_PTR) & streamData;
 	sel.cpMin = 0;
 	if (fAppend) {
-		sel.cpMin = sel.cpMax = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
-		SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & sel);
-	}
+        GETTEXTLENGTHEX gtxl = {0};
+#if defined( _UNICODE )
+        gtxl.codepage = 1200;
+        gtxl.flags = GTL_DEFAULT | GTL_PRECISE | GTL_NUMCHARS;
+#else
+        gtxl.codepage = CP_ACP;
+        gtxl.flags = GTL_DEFAULT | GTL_PRECISE;
+#endif        
+        sel.cpMin = sel.cpMax = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
+        SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & sel);
+        fi.chrg.cpMin = SendDlgItemMessage(hwndDlg, IDC_LOG, EM_GETTEXTLENGTHEX, (WPARAM)&gtxl, 0);
+    } else
+        fi.chrg.cpMin = 0;
+
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMIN, fAppend ? SFF_SELECTION | SF_RTF : SF_RTF, (LPARAM) & stream);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & oldSel);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_HIDESELECTION, FALSE, 0);
@@ -596,23 +608,25 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		smre.cbSize = sizeof(SMADD_RICHEDIT2);
 		smre.hwndRichEditControl = GetDlgItem(hwndDlg, IDC_LOG);
 		smre.Protocolname = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dat->hContact, 0);
-		if (sel.cpMin > 0) {
+		if (fi.chrg.cpMin > 0) {
+			sel.cpMin = fi.chrg.cpMin;
 			sel.cpMax = -1;
 			smre.rangeToReplace = &sel;
 		} else {
 			smre.rangeToReplace = NULL;
 		}
+		smre.rangeToReplace = NULL;
 		smre.useSounds = FALSE;
 		smre.disableRedraw = FALSE;
 		CallService(MS_SMILEYADD_REPLACESMILEYS, TABSRMM_SMILEYADD_BKGCOLORMODE, (LPARAM) &smre);
 	}
-	dat->hDbEventLast = streamData.hDbEventLast;
+//	if (GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL)
 	{
 		int len;
 		len = GetWindowTextLengthA(GetDlgItem(hwndDlg, IDC_LOG));
 		SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETSEL, len - 1, len - 1);
 	}
-//	if (GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL)
+	dat->hDbEventLast = streamData.hDbEventLast;
 	PostMessage(hwndDlg, DM_SCROLLLOGTOBOTTOM, 0, 0);
 }
 
