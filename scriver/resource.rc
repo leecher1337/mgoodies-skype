@@ -182,7 +182,7 @@ BEGIN
                     WS_TABSTOP,19,68,137,10
     CONTROL         "Use long date format",IDC_USELONGDATE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,28,82,128,10
-    CONTROL         "Use relative temstamp",IDC_USERELATIVEDATE,"Button",
+    CONTROL         "Use relative timestamp",IDC_USERELATIVEDATE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,28,96,128,10
     CONTROL         "Use message grouping",IDC_GROUPMESSAGES,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,110,146,10
