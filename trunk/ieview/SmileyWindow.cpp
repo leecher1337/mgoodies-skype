@@ -61,9 +61,7 @@ void SmileyWindow::createSelection() {
 		hSize--;
         vSize = (totalNum + hSize -1)  / hSize;
 	}
-
 	viewHeight = min(vSize, maxInColumn) * cellHeightBorder +1;
-
 	NONCLIENTMETRICS ncm;
 	ncm.cbSize=sizeof(NONCLIENTMETRICS);
 	if (vSize > maxInColumn) {
@@ -72,7 +70,6 @@ void SmileyWindow::createSelection() {
         ncm.iScrollWidth = 0;
 	}
 	viewWidth= hSize * cellWidthBorder + ncm.iScrollWidth + 1;
-
 	SetWindowPos(hwnd, NULL, 0, 0, viewWidth+ 2, viewHeight + 2, SWP_NOMOVE | SWP_NOZORDER | SWP_HIDEWINDOW);
 	view->setWindowPos(0, 0, viewWidth, viewHeight);
 	Utils::appendText(&output, &outputSize, "<html><head><style type=\"text/css\"> \n\
@@ -116,6 +113,8 @@ void SmileyWindow::init(int cw, int ch) {
     maxHeight = 250;
 	cellWidth = cw;
 	cellHeight = ch;
+	created = true;
+	createSelection();
 }
 
 void SmileyWindow::show(HWND hwndTarget, UINT targetMessage, WPARAM targetWParam, int x, int y) {
