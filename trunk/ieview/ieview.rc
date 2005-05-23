@@ -77,7 +77,7 @@ BEGIN
     GROUPBOX        "Options",IDC_SIMPLE,5,5,288,60
     CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,19,220,10
-    LTEXT           "Currently the following BBCodes ae supported: [b][i][u][img][size][color]",IDC_SIMPLE, 14,31,270,12
+    LTEXT           "Currently the following BBCodes are supported: [b][i][u][img][size][color]",IDC_SIMPLE, 14,31,270,12
 END
 
 IDD_BASIC_OPTIONS DIALOGEX 5, 15, 300, 225
