@@ -496,7 +496,7 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 						newTokenSize = tagDataStart - i;
 						break;
 					case BB_IMG:
-						bbToken = new TextToken(BBCODE, text + tagDataStart, k - tagDataStart);
+						bbToken = new TextToken(BBCODE, text + tagDataStart, k - 6 - tagDataStart);
 						bbToken->setTag(bbTagId[j]);
 						bbToken->setEnd(false);
 						newTokenType = BBCODE;
@@ -887,11 +887,27 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
             break;
         case SMILEY:
             eText = urlEncode(wtext);
-            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {
-            	Utils::appendText(str, sizeAlloced, L" <img class=\"img\" src=\"%s\" alt=\"%s\" /> ", wlink, eText);
-            } else {
-            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" />", wlink, eText);
-            }
+            if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_FLASH) && (wcsstr(wlink, L".swf")!=NULL)) {
+	            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {
+                    Utils::appendText(str, sizeAlloced,
+		L" <object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
+		codebase=\"http://active.macromedia.com/flash2/cabs/swflash.cab#version=4,0,0,0\" >\
+		<param NAME=\"movie\" VALUE=\"%s\"><param NAME=\"quality\" VALUE=\"high\"><PARAM NAME=\"loop\" VALUE=\"true\"></object> ",
+	            	wlink);
+	            } else {
+                    Utils::appendText(str, sizeAlloced,
+		L"<object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
+		codebase=\"http://active.macromedia.com/flash2/cabs/swflash.cab#version=4,0,0,0\" >\
+		<param NAME=\"movie\" VALUE=\"%s\"><param NAME=\"quality\" VALUE=\"high\"><PARAM NAME=\"loop\" VALUE=\"true\"></object>",
+	            	wlink);
+	            }
+			} else {
+	            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {
+	            	Utils::appendText(str, sizeAlloced, L" <img class=\"img\" src=\"%s\" alt=\"%s\" /> ", wlink, eText);
+	            } else {
+	            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" />", wlink, eText);
+	            }
+			}
             break;
         case BBCODE:
 			if (!end) {
@@ -910,7 +926,15 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 					break;
 				case BB_IMG:
             		eText = urlEncode(wtext);   // 100%% //< document.body.clientWidth  ? this.parentNode.width : document.body.clientWidth
-        	    	Utils::appendText(str, sizeAlloced, L"<div style=\"width: 100%%; border: 0; overflow: hidden;\"><img class=\"img\" style=\"width: expression((maxw = this.parentNode.offsetWidth ) > this.width ? 'auto' : maxw);\" src=\"%s\" /></div>", eText);
+		            if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_FLASH) && (wcsstr(wlink, L".swf")!=NULL)) {
+        		    	Utils::appendText(str, sizeAlloced,
+		L"<div style=\"width: 100%%; border: 0; overflow: hidden;\"><object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
+		codebase=\"http://active.macromedia.com/flash2/cabs/swflash.cab#version=4,0,0,0\" width=\"100%%\" >\
+		<param NAME=\"movie\" VALUE=\"%s\"><param NAME=\"quality\" VALUE=\"high\"><PARAM NAME=\"loop\" VALUE=\"true\"></object></div>",
+						eText);
+					} else {
+        		    	Utils::appendText(str, sizeAlloced, L"<div style=\"width: 100%%; border: 0; overflow: hidden;\"><img class=\"img\" style=\"width: expression((maxw = this.parentNode.offsetWidth ) > this.width ? 'auto' : maxw);\" src=\"%s\" /></div>", eText);
+					}
         	    	break;
 				case BB_COLOR:
             		eText = urlEncode(wtext);
