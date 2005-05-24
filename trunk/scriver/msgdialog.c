@@ -668,6 +668,8 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
         ieWindow.cx = w-vSplitterPos;
         ieWindow.cy = h-hSplitterPos - toolbarHeight - 1;
 		CallService(MS_IEVIEW_WINDOW, 0, (LPARAM)&ieWindow);
+	} else {
+		RedrawWindow(GetDlgItem(hwndDlg, IDC_LOG), NULL, NULL, RDW_INVALIDATE);
 	}
 }
 
