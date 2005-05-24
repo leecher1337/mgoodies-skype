@@ -141,12 +141,16 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			if (Options::getGeneralFlags() & Options::GENERAL_ENABLE_BBCODES) {
 				CheckDlgButton(hwndDlg, IDC_ENABLE_BBCODES, TRUE);
 			}
+			if (Options::getGeneralFlags() & Options::GENERAL_ENABLE_FLASH) {
+				CheckDlgButton(hwndDlg, IDC_ENABLE_FLASH, TRUE);
+			}
 			return TRUE;
 		}
 	case WM_COMMAND:
 		{
 			switch (LOWORD(wParam)) {
 			case IDC_ENABLE_BBCODES:
+            case IDC_ENABLE_FLASH:
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			}
@@ -159,6 +163,9 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 				i = 0;
 				if (IsDlgButtonChecked(hwndDlg, IDC_ENABLE_BBCODES)) {
 					i |= Options::GENERAL_ENABLE_BBCODES;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_ENABLE_FLASH)) {
+					i |= Options::GENERAL_ENABLE_FLASH;
 				}
 				Options::setGeneralFlags(i);
 				return TRUE;
