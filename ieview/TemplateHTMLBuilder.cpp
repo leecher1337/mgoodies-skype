@@ -86,6 +86,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	char *szProto = NULL;
 	char *szNameIn = NULL;
 	char *szNameOut = NULL;
+	char *szUINIn = NULL;
+	char *szUINOut = NULL;
 	char *szAvatarIn = NULL;
 	char *szAvatarOut = NULL;
 	int outputSize;
@@ -196,6 +198,9 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	char *szName = NULL;
 	char *szNameIn = NULL;
 	char *szNameOut = NULL;
+	char *szUIN = NULL;
+	char *szUINIn = NULL;
+	char *szUINOut = NULL;
 	char *szAvatar = NULL;
 	char *szAvatarIn = NULL;
 	char *szAvatarOut = NULL;

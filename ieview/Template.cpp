@@ -50,7 +50,6 @@ Template::~Template() {
 		ptr2 = ptr->getNext();
 		delete ptr;
 	}
-
 }
 
 const char *Template::getText() {
@@ -86,56 +85,56 @@ void Template::tokenize() {
 				newTokenType = Token::END;
 				newTokenSize = 1;
 			} else if (!strncmp(str+i, "%name%", 6)) {
-				str[i] = '\0';
 				newTokenType = Token::NAME;
 				newTokenSize = 6;
 			} else if (!strncmp(str+i, "%time%", 6)) {
-				str[i] = '\0';
 				newTokenType = Token::TIME;
 				newTokenSize = 6;
 			} else if (!strncmp(str+i, "%text%", 6)) {
-				str[i] = '\0';
 				newTokenType = Token::TEXT;
 				newTokenSize = 6;
 			} else if (!strncmp(str+i, "%date%", 6)) {
-				str[i] = '\0';
 				newTokenType = Token::DATE;
 				newTokenSize = 6;
 			} else if (!strncmp(str+i, "%base%", 6)) {
-				str[i] = '\0';
 				newTokenType = Token::BASE;
 				newTokenSize = 6;
 			} else if (!strncmp(str+i, "%avatar%", 8)) {
-				str[i] = '\0';
 				newTokenType = Token::AVATAR;
 				newTokenSize = 8;
 			} else if (!strncmp(str+i, "%cid%", 5)) {
-				str[i] = '\0';
 				newTokenType = Token::CID;
 				newTokenSize = 5;
 			} else if (!strncmp(str+i, "%proto%", 7)) {
-				str[i] = '\0';
 				newTokenType = Token::PROTO;
 				newTokenSize = 7;
 			} else if (!strncmp(str+i, "%avatarIn%", 10)) {
-				str[i] = '\0';
 				newTokenType = Token::AVATARIN;
 				newTokenSize = 10;
 			} else if (!strncmp(str+i, "%avatarOut%", 11)) {
-				str[i] = '\0';
 				newTokenType = Token::AVATAROUT;
 				newTokenSize = 11;
 			} else if (!strncmp(str+i, "%nameIn%", 8)) {
-				str[i] = '\0';
 				newTokenType = Token::NAMEIN;
 				newTokenSize = 8;
 			} else if (!strncmp(str+i, "%nameOut%", 9)) {
-				str[i] = '\0';
 				newTokenType = Token::NAMEOUT;
 				newTokenSize = 9;
+			} else if (!strncmp(str+i, "%uin%", 6)) {
+				newTokenType = Token::UIN;
+				newTokenSize = 5;
+			} else if (!strncmp(str+i, "%uinIn%", 7)) {
+				newTokenType = Token::UININ;
+				newTokenSize = 7;
+			} else if (!strncmp(str+i, "%uinOut%", 8)) {
+				newTokenType = Token::UINOUT;
+				newTokenSize = 8;
 			} else {
 				newTokenType = Token::PLAIN;
 				newTokenSize = 1;
+			}
+			if (newTokenType != Token::PLAIN) {
+				str[i] = '\0';
 			}
 			if (lastTokenType!=newTokenType && i!=lastTokenStart) {
 				if (lastTokenType == Token::PLAIN) {
@@ -148,7 +147,6 @@ void Template::tokenize() {
 				} else {
 					tokens = newToken;
 				}
-//				debugView->writef("Token: %d<br>", lastTokenType);
 				lastToken = newToken;
 				lastTokenStart = i;
 			}

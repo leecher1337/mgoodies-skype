@@ -25,8 +25,10 @@ public:
 		AVATARIN,
 		AVATAROUT,
 		NAMEIN,
-		NAMEOUT
-		
+		NAMEOUT,
+		UIN,
+		UININ,
+		UINOUT,
 	};
 	Token(int, const char *);
 	~Token();

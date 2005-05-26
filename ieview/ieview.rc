@@ -77,11 +77,11 @@ BEGIN
     GROUPBOX        "Options",IDC_SIMPLE,5,5,288,80
     CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,19,220,10
-    LTEXT           "Currently the following BBCodes are supported: [b][i][u][img][size][color]",IDC_SIMPLE, 21,31,270,12
-    CONTROL         "Enable Flash for smileys and BBCodes",IDC_ENABLE_FLASH,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,47,220,10
+    LTEXT           "Currently the following BBCodes are supported: [b][i][u][img][size][color]",IDC_SIMPLE, 26,31,260,12
+    CONTROL         "Enable support for Flash files in smileys and BBCodes",IDC_ENABLE_FLASH,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,46,220,10
     CONTROL         "Enable MathModule support",IDC_ENABLE_MATHMODULE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,62,220,10
+                    WS_TABSTOP,14,61,220,10
 END
 
 IDD_BASIC_OPTIONS DIALOGEX 5, 15, 300, 225
@@ -210,8 +210,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,3,2
- PRODUCTVERSION 1,0,3,2
+ FILEVERSION 1,0,3,3
+ PRODUCTVERSION 1,0,3,3
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -229,14 +229,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "http://developer.berlios.de/projects/mgoodies\0"
             VALUE "FileDescription", "IEView Plugin for Miranda IM\0"
-            VALUE "FileVersion", "1.0.3.2\0"
+            VALUE "FileVersion", "1.0.3.3\0"
             VALUE "InternalName", "ieview\0"
             VALUE "LegalCopyright", "Copyright (c) 2005 Piotr Piastucki\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "ieview.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "IEView Plugin\0"
-            VALUE "ProductVersion", "1.0.3.2\0"
+            VALUE "ProductVersion", "1.0.3.3\0"
             VALUE "SpecialBuild", "\0"
         END
     END
