@@ -79,7 +79,7 @@ Q: Does IEView support RTL ?
 A: Yes, it does - in CSS or template mode.
 
 Q: What version of Miranda is required to run IEView ?
-A: IEView DOES require Miranda IM 04. RC2.
+A: IEView DOES require Miranda IM 0.4.
    It may work with older releases, but there is no guarantee !
 
 Q: I use TabSRMM, why IEView does not work ?
@@ -106,6 +106,12 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.3.3:
++ support for MathModule (requires MathModule.dll v0.3.1.5 or later)
++ support for Macromedia Flash (.swf) files in smileys and [img] BBCode
++ closing messaging window with ESC key
+* proper handling of "unevenly" aligned BBCodes
+* fixed message grouping
 1.0.3.2:
 + support for external CSS files in Tlen group chats
 * rearranged option pages
