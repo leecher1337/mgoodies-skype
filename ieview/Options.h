@@ -55,6 +55,7 @@ private:
    	static char *	groupChatCSSFilename;
    	static char *	groupChatTemplatesFilename;
 
+	static bool     bMathModule;
    	static bool     isInited;
 public:
 	enum OPTIONS {
@@ -109,6 +110,7 @@ public:
    	static int				getGroupChatFlags();
    	static void     		setGroupChatTemplatesFile(const char *filename);
    	static const char *		getGroupChatTemplatesFile();
+   	static bool             isMathModule();
    	static void      		init();
 };
 
