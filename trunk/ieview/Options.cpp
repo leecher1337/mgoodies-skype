@@ -147,6 +147,7 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			if (Options::getGeneralFlags() & Options::GENERAL_ENABLE_MATHMODULE) {
 				CheckDlgButton(hwndDlg, IDC_ENABLE_MATHMODULE, TRUE);
 			}
+			EnableWindow(GetDlgItem(hwndDlg, IDC_ENABLE_MATHMODULE), Options::isMathModule());
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -831,6 +832,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 }
 
 bool Options::isInited = false;
+bool Options::bMathModule = false;
 int Options::generalFlags;
 char *Options::bkgFilename = NULL;
 int Options::smileyFlags;
@@ -846,6 +848,7 @@ int Options::srmmFlags;
 void Options::init() {
 	if (isInited) return;
 	isInited = true;
+	bMathModule = (bool) ServiceExists(MTH_GET_GIF_UNICODE);
 	DBVARIANT dbv;
 	generalFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, 0);
 	srmmFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SRMMFLAGS, FALSE);
@@ -1164,4 +1167,8 @@ void Options::setGroupChatTemplatesFile(const char *filename) {
 
 const char *Options::getGroupChatTemplatesFile() {
 	return groupChatTemplatesFilename;
+}
+
+bool Options::isMathModule() {
+	return bMathModule;
 }

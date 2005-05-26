@@ -1039,7 +1039,7 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 		}
 		level++;
 	case 1:
-		if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_MATHMODULE) && ServiceExists(MTH_GET_GIF_UNICODE)) {
+		if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_MATHMODULE) && Options::isMathModule()) {
 			token = TextToken::tokenizeMath(text);
             break;
     	}
