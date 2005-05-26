@@ -68,6 +68,22 @@ typedef struct
 //example:
 //HBITMAP Bmp=(HBITMAP)CallService(MTH_GETBITMAP,0, (LPARAM)formula);
 
+#define MTH_GET_GIF "Math/GetGif"
+// this renders a formula given in lparam and produces a gif-image in a temporary-folder
+// and returns the filename (full path). Be sure to copy the file if you want to preserve it,
+// because the files are managed as a ring-buffer, if 99 files already exist, this
+// function overwrites the first one.
+// wparam=0
+// lparam=*char text  // formula WITHOUT delimiters
+// result=(*char)path
+// !!! the result-buffer must be deleted with MTH_FREE_GIFPATH
+#define MTH_GET_GIF_UNICODE "Math/GetGifUnicode"
+// wparam=0
+// lparam=*wchar_t text
+// result=*char path
+// !!! the result-buffer must be deleted with MTH_FREE_GIFPATH
+#define MTH_FREE_GIFPATH "Math/FreeRTFBitmapText"
+
 #define MTH_GET_RTF_BITMAPTEXT "Math/GetRTFBitmapText"
 // returns rich-text stream that includes bitmaps from text given in lparam
 // text included between MATH_GET_STARTDELIMITER and MATH_GETENDDELIMITER
@@ -123,12 +139,10 @@ typedef struct
 // wparam=paramcode
 // lparam=lparamOfPARAM // see below
 // paramcodes and returnvalues:
-#define MATH_PARAM_STARTDELIMITER "Math/ParStDel" // retval: *char delimiter
-									  // the delimiter that marks the beginning of a formula
+    #define MATH_PARAM_STARTDELIMITER 4 // retval: *char delimiter // the delimiter that marks the beginning of a formula
                                       // !!! the result-buffer must be deleted with MTH_FREE_MATH_BUFFER
                                       // lparam=0
-#define MATH_PARAM_ENDDELIMITER "Math/ParEndDel"  // retval: *char delimiter
-	   								  // the delimiter that marks the end of a formula
+    #define MATH_PARAM_ENDDELIMITER 5 // retval: *char delimiter // the delimiter that marks the end of a formula
                                       // !!! the result-buffer must be deleted with MTH_FREE_MATH_BUFFER
                                       // lparam=0
 // ************end parameter functions.
@@ -246,3 +260,4 @@ typedef struct
 //---------------------------------------------------
 #endif
 //#ifndef M_MATHMODULE_H_
+

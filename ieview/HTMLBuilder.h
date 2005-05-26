@@ -46,6 +46,7 @@ public:
 		WWWLINK,
 		SMILEY,
 		BBCODE,
+		MATH,
 	};
 	enum BBCODES {
 		BB_B = 0,

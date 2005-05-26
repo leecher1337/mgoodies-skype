@@ -144,6 +144,9 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			if (Options::getGeneralFlags() & Options::GENERAL_ENABLE_FLASH) {
 				CheckDlgButton(hwndDlg, IDC_ENABLE_FLASH, TRUE);
 			}
+			if (Options::getGeneralFlags() & Options::GENERAL_ENABLE_MATHMODULE) {
+				CheckDlgButton(hwndDlg, IDC_ENABLE_MATHMODULE, TRUE);
+			}
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -151,6 +154,7 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			switch (LOWORD(wParam)) {
 			case IDC_ENABLE_BBCODES:
             case IDC_ENABLE_FLASH:
+            case IDC_ENABLE_MATHMODULE:
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			}
@@ -166,6 +170,9 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 				}
 				if (IsDlgButtonChecked(hwndDlg, IDC_ENABLE_FLASH)) {
 					i |= Options::GENERAL_ENABLE_FLASH;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_ENABLE_MATHMODULE)) {
+					i |= Options::GENERAL_ENABLE_MATHMODULE;
 				}
 				Options::setGeneralFlags(i);
 				return TRUE;

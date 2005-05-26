@@ -385,9 +385,11 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text) {
 }
 
 TextToken* TextToken::tokenizeMath(const wchar_t *text) {
+   	TextToken *firstToken = NULL, *lastToken = NULL, *mathToken = NULL;
 	static bool     mathModInitialized = false;
 	static wchar_t *mathTagName[] = {NULL, NULL};
 	static int      mathTagLen[] = {0, 0};
+	int i;
 	if (!mathModInitialized) {
     	if (ServiceExists(MATH_GET_PARAMS)) {
 			char* mthDelStart =  (char *)CallService(MATH_GET_PARAMS, (WPARAM)MATH_PARAM_STARTDELIMITER, 0);
@@ -405,17 +407,69 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
 		}
        	mathModInitialized = true;
 	}
-  //  int textLen = 0;
-  //  int l = wcslen(text);
+    int textLen = 0;
+    int l = wcslen(text);
 	if (mathTagName[0] != NULL && mathTagName[1] != NULL) {
-	//    for (int i=0; i<=l;) {
-//			if (!wcsnicmp(text, mathTagName[0], mathTagLen[0])) {
-//				k = i + mathTagLen[0];
-//			}
-	//	}
-	}
-	return new TextToken(TEXT, text, wcslen(text));
-	return NULL;
+	    for (i=0; i<=l;) {
+			int k, tagDataStart=0, newTokenType = 0, newTokenSize = 0;
+            bool mathFound = false;
+			if (!wcsnicmp(text+i, mathTagName[0], mathTagLen[0])) {
+				k = tagDataStart = i + mathTagLen[0];
+				for (; k < l; k++) {
+					if (!wcsnicmp(text+k, mathTagName[1], mathTagLen[1])) {
+						k += mathTagLen[1];
+						mathFound = true;
+						break;
+					}
+				}
+			}
+			if (mathFound) {
+				mathToken = new TextToken(MATH, text + tagDataStart, k - mathTagLen[1] - tagDataStart);
+				char* mathPath=(char*)CallService(MTH_GET_GIF_UNICODE, 0, (LPARAM) mathToken->getTextW());
+				if (mathPath!=NULL) {
+					mathToken->setLink(mathPath);
+					CallService(MTH_FREE_GIFPATH, 0, (LPARAM) mathPath);
+				} else {
+					mathToken->setLink("");
+				}
+				mathToken->setEnd(false);
+				newTokenType = MATH;
+				newTokenSize = k - i;
+			} else {
+				if (i==l) {
+					newTokenType = END;
+					newTokenSize = 1;
+				} else {
+					newTokenType = TEXT;
+					newTokenSize = 1;
+				}
+			}
+			if (newTokenType != TEXT) {
+				if (textLen >0 ) {
+	                TextToken *newToken = new TextToken(TEXT, text+i-textLen, textLen);
+					textLen = 0;
+					if (lastToken == NULL) {
+						firstToken = newToken;
+					} else {
+					    lastToken->setNext(newToken);
+					}
+					lastToken = newToken;
+				}
+            	if (newTokenType == MATH) {
+					if (lastToken == NULL) {
+						firstToken = mathToken;
+					} else {
+					    lastToken->setNext(mathToken);
+					}
+					lastToken = mathToken;
+	            }
+			} else {
+				textLen += newTokenSize;
+			}
+			i += newTokenSize;
+		}
+    }
+    return firstToken;
 }
 
 TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
@@ -909,6 +963,10 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 	            }
 			}
             break;
+        case MATH:
+            eText = urlEncode(wtext);
+            Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" />", wlink, eText);
+            break;
         case BBCODE:
 			if (!end) {
 				switch (tag) {
@@ -981,14 +1039,9 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 		}
 		level++;
 	case 1:
-		if (ServiceExists(MTH_GET_HTML_SOURCE_UNICODE)) {
-//			token = TextToken::tokenizeMath(text);
-    //   wchar_t* mathOutput=(wchar_t*)CallService(MTH_GET_HTML_SOURCE_UNICODE, 0, (LPARAM) output);
-//       free(output);
-  //     output = (wchar_t *)malloc (sizeof(wchar_t) *(wcslen(mathOutput)+1));
-    //   wcscpy(output, mathOutput);
-     //  CallService(MTH_FREE_HTML_BUFFER, 1, LPARAM(mathOutput));
-//            break;
+		if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_MATHMODULE) && ServiceExists(MTH_GET_GIF_UNICODE)) {
+			token = TextToken::tokenizeMath(text);
+            break;
     	}
 		level++;
 	case 2:
