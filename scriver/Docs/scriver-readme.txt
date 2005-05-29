@@ -66,6 +66,9 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.2.5
++ new option: Do not bring new tabs to front
+* bugfixes: SmileAdd support, typos, RichEdit control scrollbar
 2.2.2.4
 + pop up and stay minimized
 * bugfix: error dialog when messaging window is minimized
