@@ -170,8 +170,8 @@ static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 		SendMessage(dat->hwndActive, DM_UPDATESTATUSBAR, 0, 0);
 		SendMessage(dat->hwndActive, DM_UPDATETITLE, 0, 0);
 		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
-		ShowWindow(dat->hwndActive, SW_SHOW);
-		ShowWindow(prev, SW_HIDE);
+		ShowWindow(dat->hwndActive, SW_SHOWNORMAL);
+		if (prev!=NULL) ShowWindow(prev, SW_HIDE);
 	} else {
 		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
 	}
@@ -186,7 +186,6 @@ static void AddChild(struct ParentWindowData *dat, struct MessageWindowData * md
 	TCHAR *contactName;
 	TCITEM tci;
 	int tabId;
-
 	dat->children=(HWND*)realloc(dat->children, sizeof(HWND)*(dat->childrenCount+1));
 	dat->children[dat->childrenCount++] = mdat->hwnd;
 	contactName = GetTabName(mdat->hContact);
@@ -195,7 +194,9 @@ static void AddChild(struct ParentWindowData *dat, struct MessageWindowData * md
 	tci.lParam = (LPARAM) mdat;
 	tabId = TabCtrl_InsertItem(dat->hwndTabs, dat->childrenCount-1, &tci);
 	free(contactName);
-	ActivateChild(dat, mdat->hwnd);
+//		ActivateChild(dat, mdat->hwnd);
+	SetWindowPos(mdat->hwnd, HWND_TOP, dat->childRect.left, dat->childRect.top, dat->childRect.right-dat->childRect.left, dat->childRect.bottom - dat->childRect.top, SWP_HIDEWINDOW);
+	SendMessage(dat->hwnd, WM_SIZE, 0, 0);
 }
 
 static void RemoveChild(struct ParentWindowData *dat, HWND child) 
@@ -626,6 +627,13 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	case DM_ACTIVATECHILD:
 		if((HWND) lParam != dat->hwndActive) {
 			ActivateChild(dat, (HWND) lParam);
+		}
+		return TRUE;
+	case DM_ACTIVATENEWCHILD:
+		if((HWND) lParam != dat->hwndActive) {
+			if (dat->childrenCount == 1 || !(g_dat->flags & SMF_CREATETABSINBKG)) {
+				ActivateChild(dat, (HWND) lParam);
+			}
 		}
 		return TRUE;
 	case DM_ACTIVATEPREV:

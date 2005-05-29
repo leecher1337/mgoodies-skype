@@ -985,7 +985,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					while (hdbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDPREV, (WPARAM) hdbEvent, 0));
 				}
 			}
-			ShowWindow(hwndDlg, SW_SHOWNORMAL);
+			SendMessage(dat->hwndParent, DM_ACTIVATENEWCHILD, 0, (LPARAM) hwndDlg);
+//			ShowWindow(hwndDlg, SW_SHOWNORMAL);
 			SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 			if (newData->minimized) {
 				ShowWindow(dat->hwndParent, SW_MINIMIZE);
