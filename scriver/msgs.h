@@ -156,6 +156,7 @@ struct MessageWindowData
 #define DM_ADDCHILD          (WM_USER+30)
 #define DM_REMOVECHILD		 (WM_USER+31)
 #define DM_ACTIVATECHILD	 (WM_USER+32)
+#define DM_ACTIVATENEWCHILD	 (WM_USER+33)
 #define DM_UPDATESTATUSBAR	 (WM_USER+35)
 #define DM_ACTIVATEPREV		 (WM_USER+40)
 #define DM_ACTIVATENEXT		 (WM_USER+41)
@@ -232,6 +233,8 @@ extern const int msgDlgFontCount;
 #define SRMSGSET_AUTOPOPUP         "AutoPopupMsg"
 #define SRMSGDEFSET_AUTOPOPUP      0
 #define SRMSGSET_STAYMINIMIZED     "StayMinimized"
+#define SRMSGDEFSET_CREATETABSINBKG 0
+#define SRMSGSET_CREATETABSINBKG   "CreateTabsInBkg"
 #define SRMSGDEFSET_STAYMINIMIZED  0
 #define SRMSGSET_AUTOMIN           "AutoMin"
 #define SRMSGDEFSET_AUTOMIN        0
