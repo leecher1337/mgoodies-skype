@@ -363,7 +363,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
  	if ((g_dat->flags & SMF_GROUPMESSAGES) && dbei.flags == LOWORD(dat->lastEventType)
 	  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(dat->lastEventType) == EVENTTYPE_MESSAGE
 	  && ((dbei.timestamp - dat->lastEventTime) < 86400)
-	  && (((int)dbei.timestamp < dat->startTime) == (dat->lastEventTime < dat->startTime))) {
+	  && (((int)dbei.timestamp < dat->startTime) == (dat->lastEventTime < dat->startTime)) || !(dbei.flags & DBEF_READ)) {
 		isGroupBreak = FALSE;
 	}
 
