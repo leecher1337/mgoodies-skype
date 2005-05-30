@@ -294,7 +294,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
  		  	if ((Options::getSRMMFlags() & Options::LOG_GROUP_MESSAGES) && dbei.flags == LOWORD(getLastEventType())
 			  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(getLastEventType()) == EVENTTYPE_MESSAGE
 			  && ((dbei.timestamp - getLastEventTime()) < 86400)
-			  && (((int)dbei.timestamp < startedTime) == (getLastEventTime() < startedTime))) {
+			  && (((dbei.timestamp < (DWORD)startedTime) == (getLastEventTime() < startedTime)) || !(dbei.flags & DBEF_READ))) {
 		        isGroupBreak = FALSE;
 		    }
 			if (isSent) {
