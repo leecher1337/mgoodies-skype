@@ -94,7 +94,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	char *output;
 
 	output = NULL;
-	szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
+	szProto = getProto(event->hContact);
 	szBase[0]='\0';
 	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
 	if (tmpm!=NULL) {
@@ -213,7 +213,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	if (event->cbSize == sizeof(IEVIEWEVENT)) {
 		cp = event->codepage;
 	}
-	szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) event->hContact, 0));
+	szProto = getProto(event->hContact);
 	szBase[0]='\0';
 	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
 	if (tmpm!=NULL) {
