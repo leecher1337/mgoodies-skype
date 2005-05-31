@@ -1347,6 +1347,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	case DM_SWITCHUNICODE:
 		dat->flags ^= SMF_DISABLE_UNICODE;
 		SendMessage(dat->parent->hwndStatus, SB_SETICON, 2, (LPARAM) g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON]);
+		RedrawWindow(dat->parent->hwndStatus, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
 		SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 //		SendMessage(dat->hwndParent, DM_SWITCHSTATUSBAR, 0, 0);
 		break;
