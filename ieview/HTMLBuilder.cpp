@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "HTMLBuilder.h"
 #include "m_MathModule.h"
+#include "m_metacontacts.h"
 #include "Utils.h"
 #include "Smiley.h"
 #include "Options.h"
@@ -1108,4 +1109,16 @@ char * HTMLBuilder::encodeUTF8(const char *text, int cp, const char *proto, int 
 	outputStr = encodeUTF8(wtext, proto, flags);
 	delete wtext;
 	return outputStr;
+}
+
+char *HTMLBuilder::getProto(HANDLE hContact) {
+    char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+	if (szProto!=NULL && !strcmp(szProto,"MetaContacts")) {
+		hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
+		if (hContact!=NULL) {
+			delete szProto;
+			szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+		}
+	}
+	return szProto;
 }

@@ -237,7 +237,7 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				if (i==0) {
                     strcpy(protoNames[protoNum], "");
                     protocolName = "Standard";
-				} else if (protoList[i-1]->type == PROTOTYPE_PROTOCOL) {
+				} else if (protoList[i-1]->type == PROTOTYPE_PROTOCOL) {// && strcmp(protoList[i-1]->szName,"MetaContacts")) {
 	    			strcpy(protoNames[protoNum], protoList[i-1]->szName);
 	    			CallProtoService(protoList[i-1]->szName, PS_GETNAME, sizeof(protoName), (LPARAM)protoName);
 	    			protocolName = protoName;//protoList[i-1]->szName;
@@ -870,11 +870,10 @@ void Options::init() {
 	int protoCount;
 	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&protoCount, (LPARAM)&protoList);
 	for (int i = 0; i < protoCount; i++) {
-		if (protoList[i]->type == PROTOTYPE_PROTOCOL) {
+		if (protoList[i]->type == PROTOTYPE_PROTOCOL) {// && strcmp(protoList[i]->szName,"MetaContacts")) {
 			char dbName[1024];
 			strcpy(dbName, protoList[i]->szName);
 			strcat(dbName, "SmileyFile");
-			//MessageBox(NULL, dbName, "SMILEYS", MB_OK);
 			if (!DBGetContactSetting(NULL,  ieviewModuleName, dbName, &dbv)) {
 			   	char tmpPath[MAX_PATH];
             	strcpy(tmpPath, dbv.pszVal);
