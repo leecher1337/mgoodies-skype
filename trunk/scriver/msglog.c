@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <malloc.h>
 #include <mbstring.h>
 #include "m_smileyadd.h"
+#include "m_metacontacts.h"
 
 #define TABSRMM_SMILEYADD_BKGCOLORMODE 0x10000000
 
@@ -607,7 +608,13 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		SMADD_RICHEDIT2 smre;
 		smre.cbSize = sizeof(SMADD_RICHEDIT2);
 		smre.hwndRichEditControl = GetDlgItem(hwndDlg, IDC_LOG);
-		smre.Protocolname = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dat->hContact, 0);
+		smre.Protocolname = dat->szProto;
+        if (dat->szProto!=NULL && strcmp(dat->szProto,"MetaContacts")==0) {
+            HANDLE hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) dat->hContact, 0);
+            if (hContact!=NULL) {
+                smre.Protocolname = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+            }
+        }
 		if (fi.chrg.cpMin > 0) {
 			sel.cpMin = fi.chrg.cpMin;
 			sel.cpMax = -1;

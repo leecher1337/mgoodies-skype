@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "commonheaders.h"
 // IEVIew MOD Begin
 #include "m_ieview.h"
+#include "m_metacontacts.h"
 // IEVIew MOD End
 #define MS_SMILEYADD_SHOWSELECTION  "SmileyAdd/ShowSmileySelection"
 #pragma hdrstop
@@ -1805,6 +1806,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				smaddInfo.targetMessage = EM_REPLACESEL;
 				smaddInfo.targetWParam = TRUE;
 				smaddInfo.Protocolname = dat->szProto;
+				if (dat->szProto!=NULL && strcmp(dat->szProto,"MetaContacts")==0) {
+					HANDLE hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) dat->hContact, 0);
+					if (hContact!=NULL) {
+						smaddInfo.Protocolname = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+					}
+				}
 				GetWindowRect(GetDlgItem(hwndDlg, IDC_SMILEYS), &rc);
 				smaddInfo.Direction = 0;
 				smaddInfo.xPosition = rc.left;
