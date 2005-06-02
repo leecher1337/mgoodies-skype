@@ -80,8 +80,9 @@ char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
 void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	DBVARIANT dbv;
 	CONTACTINFO ci;
-	char szBase[1024];
+	char tempBase[1024];
 	char tempStr[1024];
+	char *szBase=NULL;
 	char *szNoAvatar=NULL;
 	char *szProto = NULL;
 	char *szNameIn = NULL;
@@ -95,16 +96,17 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 
 	output = NULL;
 	szProto = getProto(event->hContact);
-	szBase[0]='\0';
+	tempBase[0]='\0';
 	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
 	if (tmpm!=NULL) {
-    	strcpy(szBase, tmpm->getFilename());
-    	char* pathrun = szBase + strlen(szBase);
-    	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > szBase)) pathrun--;
+    	strcpy(tempBase, tmpm->getFilename());
+    	char* pathrun = tempBase + strlen(tempBase);
+    	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > tempBase)) pathrun--;
     	pathrun++;
     	*pathrun = '\0';
 	}
-	sprintf(tempStr, "%snoavatar.jpg", szBase);
+	szBase = Utils::UTF8Encode(tempBase);
+	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
 		ZeroMemory(&ci, sizeof(ci));
@@ -177,6 +179,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
         view->write(output);
 		free(output);
 	}
+	if (szBase!=NULL) delete szBase;
     if (szProto!=NULL) delete szProto;
 	if (szNoAvatar!=NULL) delete szNoAvatar;
 	if (szAvatarIn!=NULL) delete szAvatarIn;
@@ -191,7 +194,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	DBVARIANT dbv;
 	CONTACTINFO ci;
-	char szBase[1024];
+	char tempBase[1024];
+	char *szBase=NULL;
 	char tempStr[1024];
 	char *szNoAvatar=NULL;
 	char szCID[32];
@@ -214,17 +218,18 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		cp = event->codepage;
 	}
 	szProto = getProto(event->hContact);
-	szBase[0]='\0';
+	tempBase[0]='\0';
 	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
 	if (tmpm!=NULL) {
-    	strcpy(szBase, tmpm->getFilename());
-    	char* pathrun = szBase + strlen(szBase);
-    	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > szBase)) pathrun--;
+    	strcpy(tempBase, tmpm->getFilename());
+    	char* pathrun = tempBase + strlen(tempBase);
+    	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > tempBase)) pathrun--;
     	pathrun++;
     	*pathrun = '\0';
     	isGrouping = tmpm->isGrouping();
 	}
-	sprintf(tempStr, "%snoavatar.jpg", szBase);
+	szBase = Utils::UTF8Encode(tempBase);
+	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
 		ZeroMemory(&ci, sizeof(ci));
@@ -415,6 +420,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		}
         free(dbei.pBlob);
     }
+	if (szBase!=NULL) delete szBase;
     if (szProto!=NULL) delete szProto;
 	if (szNoAvatar!=NULL) delete szNoAvatar;
 	if (szAvatarIn!=NULL) delete szAvatarIn;
