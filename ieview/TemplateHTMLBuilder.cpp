@@ -106,8 +106,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
     	*pathrun = '\0';
 	}
 	szBase = Utils::UTF8Encode(tempBase);
-	szUINIn = getUIN(event->hContact);
-	szUINOut = getUIN(NULL);
+	getUINs(event->hContact, szUINIn, szUINOut);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
 		ZeroMemory(&ci, sizeof(ci));
 	    ci.cbSize = sizeof(ci);
@@ -239,8 +238,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     	isGrouping = tmpm->isGrouping();
 	}
 	szBase = Utils::UTF8Encode(tempBase);
-	szUINIn = getUIN(event->hContact);
-	szUINOut = getUIN(NULL);
+	getUINs(event->hContact, szUINIn, szUINOut);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
 		ZeroMemory(&ci, sizeof(ci));
 	    ci.cbSize = sizeof(ci);

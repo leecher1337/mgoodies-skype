@@ -1051,7 +1051,7 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 		break;
 	case 3:
 		if (Options::getSmileyFlags() & Options::SMILEY_ENABLED) {
-		    if ((flags & ENF_SMILEYS) || 
+		    if ((flags & ENF_SMILEYS) ||
       			((Options::getSmileyFlags() & Options::SMILEY_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) {
 			    token = TextToken::tokenizeSmileys(proto, text);
       			break;
@@ -1123,16 +1123,23 @@ char *HTMLBuilder::getProto(HANDLE hContact) {
 	return szProto;
 }
 
-char *HTMLBuilder::getUIN(HANDLE hContact) {
+void HTMLBuilder::getUINs(HANDLE hContact, char *&uinIn, char *&uinOut) {
 	CONTACTINFO ci;
 	char buf[128];
-	buf[0] = 0;
     char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+	if (szProto!=NULL && !strcmp(szProto,"MetaContacts")) {
+		hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
+		if (hContact!=NULL) {
+			delete szProto;
+			szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+		}
+	}
 	ZeroMemory(&ci, sizeof(ci));
 	ci.cbSize = sizeof(ci);
 	ci.hContact = hContact;
 	ci.szProto = szProto;
 	ci.dwFlag = CNF_UNIQUEID;
+	buf[0] = 0;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		switch (ci.type) {
 		case CNFT_ASCIIZ:
@@ -1144,7 +1151,21 @@ char *HTMLBuilder::getUIN(HANDLE hContact) {
 			break;
 		}
 	}
+	uinIn = Utils::UTF8Encode(buf);
+	ci.hContact = NULL;
+	buf[0] = 0;
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+		switch (ci.type) {
+		case CNFT_ASCIIZ:
+			mir_snprintf(buf, sizeof(buf), "%s", ci.pszVal);
+			miranda_sys_free(ci.pszVal);
+			break;
+		case CNFT_DWORD:
+			mir_snprintf(buf, sizeof(buf), "%u", ci.dVal);
+			break;
+		}
+	}
+	uinOut = Utils::UTF8Encode(buf);
 	delete szProto;
-	return Utils::dupString(buf);
 }
 
