@@ -836,7 +836,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dat->splitterPos == -1)
 					dat->splitterPos = dat->originalSplitterPos;// + 60;
 				GetWindowRect(GetDlgItem(hwndDlg, IDC_ADD), &rc);
-				dat->toolbarHeight = 24 +3;//rc.bottom - rc.top + 3;
+				dat->toolbarHeight = 24 + 2;//rc.bottom - rc.top + 3;
 			}
 			WindowList_Add(g_dat->hMessageWindowList, hwndDlg, dat->hContact);
 			GetWindowRect(GetDlgItem(hwndDlg, IDC_MESSAGE), &dat->minEditInit);
