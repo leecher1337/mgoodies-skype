@@ -39,8 +39,8 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"IEView Plugin",
-	PLUGIN_MAKE_VERSION(1,0,3,3),
-	"IE Control Chat Log (1.0.3.3 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,0,3,4),
+	"IE Control Chat Log (1.0.3.4 "__DATE__")",
 	"Piotr Piastucki",
 	"the_leech@users.berlios.de",
 	"(c) 2004-2005 Piotr Piastucki",
@@ -57,8 +57,8 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpvRese
 
 extern "C" __declspec(dllexport) PLUGININFO *MirandaPluginInfo(DWORD mirandaVersion)
 {
-	if (mirandaVersion < PLUGIN_MAKE_VERSION(0,3,1,0)) {
-		MessageBox(NULL, "The IEView plugin cannot be loaded. It requires Miranda IM 0.3.1 or later.", "IEView Plugin", MB_OK|MB_ICONWARNING|MB_SETFOREGROUND|MB_TOPMOST);
+	if (mirandaVersion < PLUGIN_MAKE_VERSION(0,4,0,0)) {
+		MessageBox(NULL, "The IEView plugin cannot be loaded. It requires Miranda IM 0.4 or later.", "IEView Plugin", MB_OK|MB_ICONWARNING|MB_SETFOREGROUND|MB_TOPMOST);
 		return NULL;
 	}
 	return &pluginInfo;

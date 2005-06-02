@@ -106,8 +106,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
     	*pathrun = '\0';
 	}
 	szBase = Utils::UTF8Encode(tempBase);
-	sprintf(tempStr, "%snoavatar.jpg", tempBase);
-	szNoAvatar = Utils::UTF8Encode(tempStr);
+	szUINIn = getUIN(event->hContact);
+	szUINOut = getUIN(NULL);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
 		ZeroMemory(&ci, sizeof(ci));
 	    ci.cbSize = sizeof(ci);
@@ -122,6 +122,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");
 	}
+	sprintf(tempStr, "%snoavatar.jpg", tempBase);
+	szNoAvatar = Utils::UTF8Encode(tempStr);
 	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
        		szAvatarIn = Utils::UTF8Encode(dbv.pszVal);
@@ -169,6 +171,12 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 				case Token::PROTO:
 				    tokenVal = szProto;
 				    break;
+				case Token::UININ:
+				    tokenVal = szUINIn;
+				    break;
+				case Token::UINOUT:
+				    tokenVal = szUINOut;
+				    break;
 			}
 			if (tokenVal != NULL) {
 				Utils::appendText(&output, &outputSize, "%s", tokenVal);
@@ -181,6 +189,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	}
 	if (szBase!=NULL) delete szBase;
     if (szProto!=NULL) delete szProto;
+	if (szUINIn!=NULL) delete szUINIn;
+	if (szUINOut!=NULL) delete szUINOut;
 	if (szNoAvatar!=NULL) delete szNoAvatar;
 	if (szAvatarIn!=NULL) delete szAvatarIn;
 	if (szAvatarOut!=NULL) delete szAvatarOut;
@@ -229,8 +239,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     	isGrouping = tmpm->isGrouping();
 	}
 	szBase = Utils::UTF8Encode(tempBase);
-	sprintf(tempStr, "%snoavatar.jpg", tempBase);
-	szNoAvatar = Utils::UTF8Encode(tempStr);
+	szUINIn = getUIN(event->hContact);
+	szUINOut = getUIN(NULL);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
 		ZeroMemory(&ci, sizeof(ci));
 	    ci.cbSize = sizeof(ci);
@@ -245,6 +255,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");
 	}
+	sprintf(tempStr, "%snoavatar.jpg", tempBase);
+	szNoAvatar = Utils::UTF8Encode(tempStr);
 	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
        		szAvatarIn = Utils::UTF8Encode(dbv.pszVal);
@@ -305,10 +317,12 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			if (isSent) {
 				szName = szNameOut;
 				szAvatar = szAvatarOut;
+				szUIN = szUINOut;
 				sprintf(szCID, "%d", 0);
 			} else {
 				szName = szNameIn;
 				szAvatar = szAvatarIn;
+				szUIN = szUINIn;
 				sprintf(szCID, "%d", (int)event->hContact);
 			}
 			tmpltName[0] = groupTemplate;
@@ -403,6 +417,15 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 						case Token::PROTO:
 						    tokenVal = szProto;
 						    break;
+						case Token::UIN:
+						    tokenVal = szUIN;
+						    break;
+						case Token::UININ:
+						    tokenVal = szUINIn;
+						    break;
+						case Token::UINOUT:
+						    tokenVal = szUINOut;
+						    break;
 					}
 					if (tokenVal != NULL) {
 						Utils::appendText(&output, &outputSize, "%s", tokenVal);
@@ -422,6 +445,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     }
 	if (szBase!=NULL) delete szBase;
     if (szProto!=NULL) delete szProto;
+	if (szUINIn!=NULL) delete szUINIn;
+	if (szUINOut!=NULL) delete szUINOut;
 	if (szNoAvatar!=NULL) delete szNoAvatar;
 	if (szAvatarIn!=NULL) delete szAvatarIn;
 	if (szAvatarOut!=NULL) delete szAvatarOut;

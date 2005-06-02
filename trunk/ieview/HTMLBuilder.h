@@ -103,6 +103,7 @@ protected:
 	virtual char *encodeUTF8(const char *text, int cp, const char *proto, int flags);
 	virtual bool encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags);
 	virtual char* getProto(HANDLE hContact);
+	virtual char *getUIN(HANDLE hContact);
 public:
 	virtual void buildHead(IEView *, IEVIEWEVENT *event)=0;
 	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;
