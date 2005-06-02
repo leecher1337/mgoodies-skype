@@ -969,8 +969,9 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				TCHITTESTINFO thinfo;
 				thinfo.pt.x = (lParam<<16)>>16;
 				thinfo.pt.y = lParam>>16;
-				if (thinfo.pt.x == dat->mouseLBDownPos.x && thinfo.pt.y == dat->mouseLBDownPos.y) {
-					break;
+				if (!dat->bDragged) {
+					if (abs(thinfo.pt.x-dat->mouseLBDownPos.x)<4 && abs(thinfo.pt.y-dat->mouseLBDownPos.y)<4) 
+						break;
 				}
 				if (!dat->bDragged) {
 					POINT pt;
@@ -1001,14 +1002,14 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					ImageList_BeginDrag(dat->hDragImageList, 0, dat->mouseLBDownPos.x - rect.left, dat->mouseLBDownPos.y - rect.top);
 					ImageList_DragEnter(GetDesktopWindow(), pt.x, pt.y);
 					SetCursor(hDragCursor);
+					dat->mouseLBDownPos.x = thinfo.pt.x;
+					dat->mouseLBDownPos.y = thinfo.pt.y;
 				} else {
 					POINT pt;
 					GetCursorPos(&pt);
 					ImageList_DragMove(pt.x, pt.y);
 				}
 				dat->bDragged = TRUE;
-				dat->mouseLBDownPos.x = thinfo.pt.x;
-				dat->mouseLBDownPos.y = thinfo.pt.y;
 				return TRUE;
 			}
 			break;
