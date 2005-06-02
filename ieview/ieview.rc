@@ -76,33 +76,12 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        "Options",IDC_SIMPLE,5,5,288,80
     CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,19,220,10
-    LTEXT           "Currently the following BBCodes are supported: [b][i][u][img][size][color]",IDC_SIMPLE, 26,31,260,12
+                    WS_TABSTOP,14,19,265,10
+    LTEXT           "Currently the following BBCodes are supported: [b][i][u][img][size][color]",IDC_SIMPLE, 26,31,265,12
     CONTROL         "Enable support for Flash files in smileys and BBCodes",IDC_ENABLE_FLASH,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,46,220,10
+                    WS_TABSTOP,14,46,265,10
     CONTROL         "Enable MathModule support",IDC_ENABLE_MATHMODULE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,61,220,10
-END
-
-IDD_BASIC_OPTIONS DIALOGEX 5, 15, 300, 225
-STYLE DS_FIXEDSYS | WS_CHILD
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
-BEGIN
-    GROUPBOX        "Mode",IDC_SIMPLE,5,5,288,80
-    CONTROL         "Background image",IDC_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,19,86,10
- 	EDITTEXT        IDC_BACKGROUND_IMAGE_FILENAME,100,18,168,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BROWSE_BACKGROUND_IMAGE,270,18,15,11
-    CONTROL         "Scroll with text",IDC_SCROLL_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,26,34,220,10
-    CONTROL         "External CSS file",IDC_EXTERNALCSS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,52,86,10
- 	EDITTEXT        IDC_EXTERNALCSS_FILENAME,100,51,168,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BROWSE_EXTERNALCSS,270,51,15,11
-    LTEXT           "RTL CSS file",IDC_SIMPLE, 26,68,74,12
- 	EDITTEXT        IDC_EXTERNALCSS_FILENAME_RTL,100,67,168,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BROWSE_EXTERNALCSS_RTL,270,67,15,11
+                    WS_TABSTOP,14,61,265,10
 END
 
 IDD_EMOTICONS_OPTIONS DIALOGEX 5, 15, 300, 225
@@ -121,11 +100,11 @@ BEGIN
     CONTROL         "", IDC_SMILEYS_PREVIEW,"MButtonClass", WS_TABSTOP,170,90,15,15, 0x18000000L
     GROUPBOX        "Options",IDC_SIMPLE,5,145,288,52
     CONTROL         "Only replace isolated smileys",IDC_ISOLATED_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,160,250,10
+                    WS_TABSTOP,14,160,265,10
     CONTROL         "Surround smileys with spaces",IDC_SURROUND_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,170,250,10
+                    WS_TABSTOP,14,170,265,10
     CONTROL         "Replace smileys in user names",IDC_SMILEYS_IN_NAMES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,180,250,10
+                    WS_TABSTOP,14,180,265,10
 END
 
 IDD_TEMPLATES_OPTIONS DIALOGEX 5, 15, 300, 225
@@ -139,7 +118,7 @@ BEGIN
  	EDITTEXT        IDC_BACKGROUND_IMAGE_FILENAME,100,18,168,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE_BACKGROUND_IMAGE,270,18,15,11
     CONTROL         "Scroll with text",IDC_SCROLL_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,26,34,220,10
+                    WS_TABSTOP,26,34,240,10
     CONTROL         "External CSS file",IDC_EXTERNALCSS,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,52,86,10
  	EDITTEXT        IDC_EXTERNALCSS_FILENAME,100,51,168,12,ES_AUTOHSCROLL
@@ -161,22 +140,22 @@ BEGIN
     CONTROL         "Show url events",IDC_LOG_SHOW_URL,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,154,120,10
     CONTROL         "Show status changes",IDC_LOG_SHOW_STATUSCHANGE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,164,120,10
+                    WS_TABSTOP,14,164,125,10
     GROUPBOX        "Log Options",IDC_SIMPLE,153,131,140,89
     CONTROL         "Show nicknames",IDC_LOG_SHOW_NICKNAMES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,162,144,120,10
+                    WS_TABSTOP,162,144,125,10
     CONTROL         "Show time",IDC_LOG_SHOW_TIME,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,162,154,120,10
+                    WS_TABSTOP,162,154,125,10
     CONTROL         "Show seconds",IDC_LOG_SHOW_SECONDS,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,177,164,110,10
     CONTROL         "Show date",IDC_LOG_SHOW_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,162,174,120,10
+                    WS_TABSTOP,162,174,125,10
     CONTROL         "Use long date format",IDC_LOG_LONG_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,176,184,110,10
+                    WS_TABSTOP,177,184,110,10
     CONTROL         "Use relative timestamp", IDC_LOG_RELATIVE_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,176,194,110,10
+                    WS_TABSTOP,177,194,110,10
     CONTROL         "Use message grouping", IDC_LOG_GROUP_MESSAGES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,162,204,120,10
+                    WS_TABSTOP,162,204,125,10
 END
 
 IDD_GROUPCHATS_OPTIONS DIALOGEX 5, 15, 300, 225
@@ -210,8 +189,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,3,3
- PRODUCTVERSION 1,0,3,3
+ FILEVERSION 1,0,3,4
+ PRODUCTVERSION 1,0,3,4
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -229,14 +208,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "http://developer.berlios.de/projects/mgoodies\0"
             VALUE "FileDescription", "IEView Plugin for Miranda IM\0"
-            VALUE "FileVersion", "1.0.3.3\0"
+            VALUE "FileVersion", "1.0.3.4\0"
             VALUE "InternalName", "ieview\0"
             VALUE "LegalCopyright", "Copyright (c) 2005 Piotr Piastucki\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "ieview.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "IEView Plugin\0"
-            VALUE "ProductVersion", "1.0.3.3\0"
+            VALUE "ProductVersion", "1.0.3.4\0"
             VALUE "SpecialBuild", "\0"
         END
     END

@@ -120,7 +120,7 @@ void Template::tokenize() {
 			} else if (!strncmp(str+i, "%nameOut%", 9)) {
 				newTokenType = Token::NAMEOUT;
 				newTokenSize = 9;
-			} else if (!strncmp(str+i, "%uin%", 6)) {
+			} else if (!strncmp(str+i, "%uin%", 5)) {
 				newTokenType = Token::UIN;
 				newTokenSize = 5;
 			} else if (!strncmp(str+i, "%uinIn%", 7)) {
@@ -134,6 +134,9 @@ void Template::tokenize() {
 				newTokenSize = 1;
 			}
 			if (newTokenType != Token::PLAIN) {
+				if (str[i + newTokenSize] == '%') {
+                    //newTokenSize++;
+				}
 				str[i] = '\0';
 			}
 			if (lastTokenType!=newTokenType && i!=lastTokenStart) {

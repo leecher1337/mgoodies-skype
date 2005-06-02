@@ -1122,3 +1122,29 @@ char *HTMLBuilder::getProto(HANDLE hContact) {
 	}
 	return szProto;
 }
+
+char *HTMLBuilder::getUIN(HANDLE hContact) {
+	CONTACTINFO ci;
+	char buf[128];
+	buf[0] = 0;
+    char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+	ZeroMemory(&ci, sizeof(ci));
+	ci.cbSize = sizeof(ci);
+	ci.hContact = hContact;
+	ci.szProto = szProto;
+	ci.dwFlag = CNF_UNIQUEID;
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+		switch (ci.type) {
+		case CNFT_ASCIIZ:
+			mir_snprintf(buf, sizeof(buf), "%s", ci.pszVal);
+			miranda_sys_free(ci.pszVal);
+			break;
+		case CNFT_DWORD:
+			mir_snprintf(buf, sizeof(buf), "%u", ci.dVal);
+			break;
+		}
+	}
+	delete szProto;
+	return Utils::dupString(buf);
+}
+
