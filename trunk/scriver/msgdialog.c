@@ -627,7 +627,7 @@ static LRESULT CALLBACK SplitterSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
 
 static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int w, int h) {
 	HDWP hdwp;
-	struct ParentWindowData *pdat = (struct ParentWindowData *) GetWindowLong(GetParent(hwndDlg), GWL_USERDATA);
+	struct ParentWindowData *pdat = dat->parent;
 	int vSplitterPos = 0, hSplitterPos = dat->splitterPos, toolbarHeight = pdat->flags&SMF_SHOWBTNS ? dat->toolbarHeight : 0;
 	int hSplitterMinTop = toolbarHeight + dat->minLogBoxHeight, hSplitterMinBottom = dat->minEditBoxHeight;
 
@@ -986,10 +986,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					while (hdbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDPREV, (WPARAM) hdbEvent, 0));
 				}
 			}
-			SendMessage(dat->hwndParent, DM_ACTIVATENEWCHILD, 0, (LPARAM) hwndDlg);
+			if (dat->parent->childrenCount == 1 || !(g_dat->flags & SMF_CREATETABSINBKG) || !newData->minimized) {
+				SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
+			}
 //			ShowWindow(hwndDlg, SW_SHOWNORMAL);
-			SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
-			if (newData->minimized) {
+			if (dat->parent->childrenCount == 1 && newData->minimized && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STAYMINIMIZED, SRMSGDEFSET_STAYMINIMIZED)) {
 				ShowWindow(dat->hwndParent, SW_MINIMIZE);
 			} else {
 				ShowWindow(dat->hwndParent, SW_SHOW);
@@ -1080,7 +1081,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		BITMAP bminfo;
 		int avatarH;
 		struct ParentWindowData *pdat;
-		pdat = (struct ParentWindowData *) GetWindowLong(dat->hwndParent, GWL_USERDATA);
+		pdat = dat->parent;
 		dat->avatarWidth = 0;
 		dat->avatarHeight = 0;
 		if (dat->avatarPic==0||!(g_dat->flags&SMF_AVATAR)) {

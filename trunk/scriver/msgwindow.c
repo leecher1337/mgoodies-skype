@@ -629,13 +629,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			ActivateChild(dat, (HWND) lParam);
 		}
 		return TRUE;
-	case DM_ACTIVATENEWCHILD:
-		if((HWND) lParam != dat->hwndActive) {
-			if (dat->childrenCount == 1 || !(g_dat->flags & SMF_CREATETABSINBKG)) {
-				ActivateChild(dat, (HWND) lParam);
-			}
-		}
-		return TRUE;
 	case DM_ACTIVATEPREV:
 		ActivatePrevChild(dat, (HWND) lParam);
 		return TRUE;
