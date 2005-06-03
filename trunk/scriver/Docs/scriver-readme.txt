@@ -66,6 +66,13 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.2.6
+* better smiley selection/replacement for metacontact (real protocols' emoticons are used)
+* improved tabs dragging
+* bugfix: stay minimized and do not bring new tabs to front
+* bugfix: message grouping
+* bugfix: status bar redrawing
+* bugfix: option page
 2.2.2.5
 + new option: Do not bring new tabs to front
 * bugfixes: SmileAdd support, typos, RichEdit control scrollbar
