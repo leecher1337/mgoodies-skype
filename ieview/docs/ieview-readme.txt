@@ -106,46 +106,58 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
-1.0.3.3:
+1.0.3.4
++ smileys are now properly copied/quoted (patch by Tweety and Vasilich)
++ uin, uinIn and uinOut variables
+* respective real protocol smileys are used for metacontacts
+* bugfix: message grouping
+* fixed %base% variable encoding
+1.0.3.3
 + support for MathModule (requires MathModule.dll v0.3.1.5 or later)
 + support for Macromedia Flash (.swf) files in smileys and [img] BBCode
 + closing messaging window with ESC key
 * proper handling of "unevenly" aligned BBCodes
 * fixed message grouping
-1.0.3.2:
+1.0.3.3
++ support for MathModule (requires MathModule.dll v0.3.1.5 or later)
++ support for Macromedia Flash (.swf) files in smileys and [img] BBCode
++ closing messaging window with ESC key
+* proper handling of "unevenly" aligned BBCodes
+* fixed message grouping
+1.0.3.2
 + support for external CSS files in Tlen group chats
 * rearranged option pages
 * some memory usage optimizations
-1.0.3.1:
+1.0.3.1
 + saving images (Save Image As... in context menu)
 + option to replace smileys in user names
 * scrollbar in smiley selection window is visible only when needed
 * fixed encoding of avatar filenames
 * bugfixes in BBCodes support
-1.0.3.0:
+1.0.3.0
 + support for (nested) BBCodes ! currently supported: [b][i][u][img][size][color]
 + support for Tlen group chats (requires mucc.dll v1.0.6.2 or higher)
   support for chat.dll coming soon !
 * bugfixes & improvements
-1.0.2.2:
+1.0.2.2
 + internal change: support for getting selected text
 + internal change: support for code page selection
 * better links detection
 * bugfixes
-1.0.2.1:
+1.0.2.1
 + support for %%''%% in .asl files
 * fixed UTF8 encoding of date and time
 * other bugfixes
-1.0.2.0:
+1.0.2.0
 * improved Unicode support
 * bugfixes
-1.0.1.10:
+1.0.1.10
 + Unicode support (I would like to thank Nightwish for his support)
 + RTL support (template and CSS mode)
 + new variables: %avatarIn%, %avatarOut%, %nameIn%, %nameOut%, %proto% (please see ieview-templates.txt for details)
 + auto-scrolling to left
 * bugfixes: memory leaks, focus stealing, message grouping (Nightwish, thanks again) and a lot of other bugfixes
-1.0.1.7:
+1.0.1.7
 + animated smileys selection window
   This feature is not fully available yet, because it requires also changes in TabSRMM source code and
   you can use it in rather experimental mode at the moment. In order to do that you have to remove
