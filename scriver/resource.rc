@@ -174,29 +174,30 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        "Message Window Event Log",IDC_STMSGLOGGROUP,0,0,158,180
     CONTROL         "Show icons",IDC_SHOWLOGICONS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,10,12,146,10
+                    WS_TABSTOP,7,12,146,10
     CONTROL         "Show names",IDC_SHOWNAMES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,10,26,146,10
+                    WS_TABSTOP,7,26,146,10
     CONTROL         "Show times",IDC_SHOWTIMES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,10,40,146,10
+                    WS_TABSTOP,7,40,146,10
     CONTROL         "Show seconds",IDC_SHOWSECONDS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,19,54,129,10
+                    WS_TABSTOP,16,54,129,10
     CONTROL         "Show dates",IDC_SHOWDATES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,19,68,137,10
+                    WS_TABSTOP,16,68,137,10
     CONTROL         "Use long date format",IDC_USELONGDATE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,28,82,128,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,25,82,128,10
     CONTROL         "Use relative timestamp",IDC_USERELATIVEDATE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,28,96,128,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,25,96,128,10
     CONTROL         "Use message grouping",IDC_GROUPMESSAGES,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,110,146,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,110,146,10
     CONTROL         "Mark follow-up msgs with timestamp",IDC_MARKFOLLOWUPS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,124,137,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,124,137,10
     CONTROL         "Start message text on a new line",IDC_MESSAGEONNEWLINE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,138,146,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,138,146,10
     CONTROL         "Draw lines between messages",IDC_DRAWLINES,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,152,146,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,152,129,10
+    CONTROL         "",IDC_LINECOLOUR,"ColourPicker",WS_TABSTOP,137,152,16,11
     CONTROL         "Show status changes",IDC_SHOWSTATUSCHANGES,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,166,146,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,166,146,10
     GROUPBOX        "Fonts",IDC_STATIC,162,0,145,180
     LTEXT           "Background colour:",IDC_STATIC,169,12,91,8
     CONTROL         "",IDC_BKGCOLOUR,"ColourPicker",WS_TABSTOP,265,10,35,12
@@ -218,9 +219,9 @@ BEGIN
                     IDC_STATIC,169,156,131,16
     GROUPBOX        "Load History Events",IDC_STATIC,0,183,308,56
     CONTROL         "Load unread events only",IDC_LOADUNREAD,"Button",
-                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,195,138,10
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,7,195,138,10
     CONTROL         "Load number of previous events",IDC_LOADCOUNT,"Button",
-                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,208,138,10
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,7,208,138,10
     EDITTEXT        IDC_LOADCOUNTN,148,207,33,12,ES_RIGHT | ES_NUMBER |
                     WS_DISABLED
     CONTROL         "Spin1",IDC_LOADCOUNTSPIN,"msctls_updown32",
@@ -228,7 +229,7 @@ BEGIN
                     UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK |
                     WS_DISABLED,170,206,10,14
     CONTROL         "Load previous events less than",IDC_LOADTIME,"Button",
-                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,222,138,10
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,7,222,138,10
     EDITTEXT        IDC_LOADTIMEN,148,221,33,12,ES_RIGHT | ES_NUMBER |
                     WS_DISABLED
     CONTROL         "Spin1",IDC_LOADTIMESPIN,"msctls_updown32",

@@ -233,7 +233,7 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
     AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
     colour = DBGetContactSettingDword(NULL, SRMMMOD, "OutgoingBkgColour", RGB(224,224,224));
     AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
-    colour = DBGetContactSettingDword(NULL, SRMMMOD, "BkgColour", RGB(224,224,224));
+    colour = DBGetContactSettingDword(NULL, SRMMMOD, "LineColour", RGB(224,224,224));
     AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
 	if (dat->flags & SMF_RTL)
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\rtlpar");

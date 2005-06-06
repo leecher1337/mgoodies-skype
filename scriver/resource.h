@@ -116,6 +116,7 @@
 #define IDC_TRANSPARENCYTEXT1			1627
 #define IDC_TRANSPARENCYTEXT2			1628
 #define IDC_DRAWLINES					1629
+#define IDC_LINECOLOUR					1630
 #define IDM_CUT                         40000
 #define IDM_COPY                        40001
 #define IDM_PASTE                       40002
