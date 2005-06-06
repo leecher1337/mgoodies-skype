@@ -233,10 +233,13 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
     AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
     colour = DBGetContactSettingDword(NULL, SRMMMOD, "OutgoingBkgColour", RGB(224,224,224));
     AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
+    colour = DBGetContactSettingDword(NULL, SRMMMOD, "BkgColour", RGB(224,224,224));
+    AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
 	if (dat->flags & SMF_RTL)
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\rtlpar");
 	else
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\pard");
+	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\li30\\ri30\\fi0");
 	return buffer;
 }
 
@@ -358,14 +361,17 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 	if (prefixParaBreak) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 	}
-	if (dbei.eventType == EVENTTYPE_MESSAGE) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1 + ((dbei.flags & DBEF_SENT) ? 1 : 0));
-	}
  	if ((g_dat->flags & SMF_GROUPMESSAGES) && dbei.flags == LOWORD(dat->lastEventType)
 	  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(dat->lastEventType) == EVENTTYPE_MESSAGE
 	  && ((dbei.timestamp - dat->lastEventTime) < 86400)
 	  && ((((int)dbei.timestamp < dat->startTime) == (dat->lastEventTime < dat->startTime)) || !(dbei.flags & DBEF_READ))) {
 		isGroupBreak = FALSE;
+	}
+	if (prefixParaBreak && isGroupBreak) {
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\highlight%d\\line\\sl0", msgDlgFontCount + 3);
+	}
+	if (dbei.eventType == EVENTTYPE_MESSAGE) {
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1 + ((dbei.flags & DBEF_SENT) ? 1 : 0));
 	}
 
 	if (g_dat->flags&SMF_SHOWICONS && isGroupBreak) {
