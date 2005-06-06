@@ -331,7 +331,7 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                 szText = encodeUTF8((char *)dbei.pBlob, szProto, ENF_NONE);
 			}
 			/* TabSRMM-specific formatting */
-			if (dwFlags & MWF_LOG_GRID && isGroupBreak) {
+			if ((dwFlags & MWF_LOG_GRID) && isGroupBreak && getLastEventType()!=-1) {
 				Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOutGrid" : "divInGrid");
 			} else {
 				Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");

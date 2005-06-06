@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SMF_LOG_GROUPMESSAGES	256
 #define SMF_LOG_MARKFOLLOWUPS	512
 #define SMF_LOG_MSGONNEWLINE 	1024
+#define SMF_LOG_DRAWLINES	   2048
 
 #define EVENTTYPE_STATUSCHANGE 25368
 #define SRMMMOD "SRMM"
@@ -50,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SRMSGSET_GROUPMESSAGES     "GroupMessages"
 #define SRMSGSET_MARKFOLLOWUPS	   "MarkFollowUps"
 #define SRMSGSET_MESSAGEONNEWLINE  "MessageOnNewLine"
+#define SRMSGSET_DRAWLINES		   "DrawLines"
 
 #define FONTF_BOLD   1
 #define FONTF_ITALIC 2
@@ -182,9 +184,11 @@ void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		COLORREF bkgColor = DBGetContactSettingDword(NULL, SRMMMOD, "BkgColour", 0xFFFFFF);
 		COLORREF inColor = DBGetContactSettingDword(NULL, SRMMMOD, "IncomingBkgColour", 0xFFFFFF);
 		COLORREF outColor = DBGetContactSettingDword(NULL, SRMMMOD, "OutgoingBkgColour", 0xFFFFFF);
+		COLORREF lineColor = DBGetContactSettingDword(NULL, SRMMMOD, "LineColour", 0xFFFFFF);
 	    bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
 		inColor= (((inColor & 0xFF) << 16) | (inColor & 0xFF00) | ((inColor & 0xFF0000) >> 16));
 		outColor= (((outColor & 0xFF) << 16) | (outColor & 0xFF00) | ((outColor & 0xFF0000) >> 16));
+	    lineColor= (((lineColor & 0xFF) << 16) | (lineColor & 0xFF00) | ((lineColor & 0xFF0000) >> 16));
 		if (Options::getSRMMFlags() & Options::IMAGE_ENABLED) {
 			const char *bkgImageFilename = Options::getBkgImageFile();
 			Utils::appendText(&output, &outputSize, ".body {padding: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
@@ -198,9 +202,15 @@ void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		if (Options::getSRMMFlags() & Options::IMAGE_ENABLED) {
 			Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
 			Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
+			Utils::appendText(&output, &outputSize, ".divInGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
+			Utils::appendText(&output, &outputSize, ".divOutGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
 		} else {
 			Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) inColor);
 			Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) outColor);
+			Utils::appendText(&output, &outputSize, ".divInGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
+		        (int) lineColor, (int) inColor);
+			Utils::appendText(&output, &outputSize, ".divOutGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
+		        (int) lineColor, (int) outColor);
 		}
 	 	for(int i = 0; i < FONT_NUM; i++) {
 			loadMsgDlgFont(i, &lf, &color);
@@ -234,6 +244,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_GROUPMESSAGES, 0) ? SMF_LOG_GROUPMESSAGES : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_MARKFOLLOWUPS, 0) ? SMF_LOG_MARKFOLLOWUPS : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_MESSAGEONNEWLINE, 0) ? SMF_LOG_MSGONNEWLINE : 0;
+    dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_DRAWLINES, 0) ? SMF_LOG_DRAWLINES : 0;
 
 	int cp = CP_ACP;
 	if (event->cbSize == sizeof(IEVIEWEVENT)) {
@@ -307,7 +318,11 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                 szText = encodeUTF8((char *)dbei.pBlob, szProto, ENF_NONE);
 			}
 			/* SRMM-specific formatting */
-			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
+			if ((dwFlags & SMF_LOG_DRAWLINES) && isGroupBreak && getLastEventType()!=-1) {
+				Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOutGrid" : "divInGrid");
+			} else {
+				Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
+			}
 			if ((dwFlags & SMF_LOG_SHOWICONS) && isGroupBreak) {
 				const char *iconFile = "";
 				if (dbei.eventType == EVENTTYPE_MESSAGE) {
