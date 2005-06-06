@@ -367,7 +367,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 	  && ((((int)dbei.timestamp < dat->startTime) == (dat->lastEventTime < dat->startTime)) || !(dbei.flags & DBEF_READ))) {
 		isGroupBreak = FALSE;
 	}
-	if (prefixParaBreak && isGroupBreak) {
+	if (prefixParaBreak && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\highlight%d\\line\\sl0", msgDlgFontCount + 3);
 	}
 	if (dbei.eventType == EVENTTYPE_MESSAGE) {
