@@ -10,8 +10,9 @@
 #define _WIN32_WINNT 0x0501
 #define _WIN32_IE 0x0500
 #include <windows.h>
-#include <winres.h>
+#include "winres.h"
 #include "../../include/statusmodes.h"
+
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
@@ -32,14 +33,14 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 IDD_OPT_MSGDLG DIALOGEX 0, 0, 312, 248
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        "Message Window Options",IDC_STATIC,0,0,310,248
     CONTROL         "Automatically pop up the window when a message is received",
                     IDC_AUTOPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,11,
                     292,10
-    CONTROL         "Stay minimized",IDC_STAYMINIMIZED,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,22,22,126,10
+    CONTROL         "Stay minimized",IDC_STAYMINIMIZED,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,22,22,126,10
     CONTROL         "Do not bring new tabs to front",IDC_CREATETABSINBKG,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,22,152,10
     CONTROL         "Close the message window on send",IDC_AUTOCLOSE,"Button",
@@ -169,9 +170,9 @@ END
 IDD_OPT_MSGLOG DIALOGEX 0, 0, 308, 240
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        "Message Window Event Log",IDC_STMSGLOGGROUP,0,0,158,176
+    GROUPBOX        "Message Window Event Log",IDC_STMSGLOGGROUP,0,0,158,180
     CONTROL         "Show icons",IDC_SHOWLOGICONS,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,10,12,146,10
     CONTROL         "Show names",IDC_SHOWNAMES,"Button",BS_AUTOCHECKBOX |
@@ -192,9 +193,11 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,124,137,10
     CONTROL         "Start message text on a new line",IDC_MESSAGEONNEWLINE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,138,146,10
-    CONTROL         "Show status changes",IDC_SHOWSTATUSCHANGES,"Button",
+    CONTROL         "Draw lines between messages",IDC_DRAWLINES,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,152,146,10
-    GROUPBOX        "Fonts",IDC_STATIC,162,0,145,176
+    CONTROL         "Show status changes",IDC_SHOWSTATUSCHANGES,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,166,146,10
+    GROUPBOX        "Fonts",IDC_STATIC,162,0,145,180
     LTEXT           "Background colour:",IDC_STATIC,169,12,91,8
     CONTROL         "",IDC_BKGCOLOUR,"ColourPicker",WS_TABSTOP,265,10,35,12
     LTEXT           "Input area background:",IDC_STATIC,169,25,91,8
@@ -213,17 +216,17 @@ BEGIN
     PUSHBUTTON      "Choose font...",IDC_CHOOSEFONT,243,141,57,14
     CTEXT           "Select multiple fonts by dragging or by using the control key",
                     IDC_STATIC,169,156,131,16
-    GROUPBOX        "Load History Events",IDC_STATIC,0,180,308,59
+    GROUPBOX        "Load History Events",IDC_STATIC,0,183,308,56
     CONTROL         "Load unread events only",IDC_LOADUNREAD,"Button",
-                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,193,138,10
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,195,138,10
     CONTROL         "Load number of previous events",IDC_LOADCOUNT,"Button",
-                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,207,138,10
-    EDITTEXT        IDC_LOADCOUNTN,148,206,33,12,ES_RIGHT | ES_NUMBER |
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,208,138,10
+    EDITTEXT        IDC_LOADCOUNTN,148,207,33,12,ES_RIGHT | ES_NUMBER |
                     WS_DISABLED
     CONTROL         "Spin1",IDC_LOADCOUNTSPIN,"msctls_updown32",
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY |
                     UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK |
-                    WS_DISABLED,170,205,10,14
+                    WS_DISABLED,170,206,10,14
     CONTROL         "Load previous events less than",IDC_LOADTIME,"Button",
                     BS_AUTORADIOBUTTON | WS_TABSTOP,10,222,138,10
     EDITTEXT        IDC_LOADTIMEN,148,221,33,12,ES_RIGHT | ES_NUMBER |
@@ -306,7 +309,6 @@ BEGIN
         VERTGUIDE, 169
         VERTGUIDE, 300
         BOTTOMMARGIN, 229
-        HORZGUIDE, 183
         HORZGUIDE, 199
     END
 
