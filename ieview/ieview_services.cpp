@@ -61,6 +61,11 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 		if (view!=NULL) {
 			view->setWindowPos(window->x, window->y, window->cx,window->cy);
 		}
+	} else if (window->iType == IEW_SCROLLBOTTOM) {
+		IEView * view = IEView::get(window->hwnd);
+		if (view!=NULL) {
+			view->scrollToBottom();
+		}
 	} else if (window->iType == IEW_DESTROY) {
 		IEView * view = IEView::get(window->hwnd);
 		if (view!=NULL) {
