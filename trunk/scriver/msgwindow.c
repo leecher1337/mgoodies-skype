@@ -171,6 +171,7 @@ static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 		SendMessage(dat->hwndActive, DM_UPDATETITLE, 0, 0);
 		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
 		ShowWindow(dat->hwndActive, SW_SHOWNORMAL);
+		SendMessage(dat->hwndActive, DM_SCROLLLOGTOBOTTOM, 0, 0);
 		if (prev!=NULL) ShowWindow(prev, SW_HIDE);
 	} else {
 		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
