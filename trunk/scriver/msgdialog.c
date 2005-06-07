@@ -1470,7 +1470,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		StreamInEvents(hwndDlg, (HANDLE) wParam, 1, 1);
 		break;
 	case DM_SCROLLLOGTOBOTTOM:
-		{
+		if (dat->hwndLog == NULL) {
 			/*
 			int	nMin, nMax;
 			HWND hwndLog = GetDlgItem(hwndDlg, IDC_LOG);
@@ -1489,7 +1489,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				SetScrollInfo(GetDlgItem(hwndDlg, IDC_LOG), SB_VERT, &si, TRUE);
 				PostMessage(GetDlgItem(hwndDlg, IDC_LOG), WM_VSCROLL, MAKEWPARAM(SB_BOTTOM, 0), 0);
 			}
-			
+			RedrawWindow(GetDlgItem(hwndDlg, IDC_LOG), NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 			break;
 		}
 	case HM_DBEVENTADDED:
