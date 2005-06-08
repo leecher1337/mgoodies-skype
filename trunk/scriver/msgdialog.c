@@ -1,10 +1,10 @@
 /*
 Scriver
 
-Copyright 2000-2003 Miranda ICQ/IM project, 
+Copyright 2000-2003 Miranda ICQ/IM project,
 Copyright 2005 Piotr Piastucki
 
-all portions of this codebase are copyrighted to the people 
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -998,7 +998,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPEN);
 			if (notifyUnread) {
-				SendMessage(dat->hwndParent, DM_STARTFLASHING, 0, 0); 
+				SendMessage(dat->hwndParent, DM_STARTFLASHING, 0, 0);
 				if (GetActiveWindow() != dat->hwndParent || GetForegroundWindow() != dat->hwndParent || dat->parent->hwndActive != hwndDlg) {
 					dat->showUnread = 0;
 					SetTimer(hwndDlg, TIMERID_FLASHWND, TIMEOUT_FLASHWND, NULL);
@@ -1284,7 +1284,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					}
 					SendMessage(GetDlgItem(hwndDlg, IDC_USERMENU), BUTTONADDTOOLTIP, (WPARAM) buf, 0);
 		//			SetDlgItemTextA(hwndDlg, IDC_NAME, buf[0] ? buf : contactName);
-			
+
 					if (!cws || (!strcmp(cws->szModule, dat->szProto) && !strcmp(cws->szSetting, "Status"))) {
 						HICON hIcon;
 						DWORD dwStatus;
@@ -1377,11 +1377,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	case DM_GETWINDOWSTATE:
 		{
 			UINT state = 0;
-			
+
 			state |= MSG_WINDOW_STATE_EXISTS;
-			if (IsWindowVisible(hwndDlg)) 
+			if (IsWindowVisible(hwndDlg))
 				state |= MSG_WINDOW_STATE_VISIBLE;
-			if (GetFocus()==hwndDlg) 
+			if (GetFocus()==hwndDlg)
 				state |= MSG_WINDOW_STATE_FOCUS;
 			if (IsIconic(hwndDlg))
 				state |= MSG_WINDOW_STATE_ICONIC;
@@ -1491,6 +1491,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			RedrawWindow(GetDlgItem(hwndDlg, IDC_LOG), NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 			break;
+		} else {
+			IEVIEWWINDOW ieWindow;
+			ieWindow.cbSize = sizeof(IEVIEWWINDOW);
+			ieWindow.iType = IEW_SCROLLBOTTOM;
+			ieWindow.hwnd = dat->hwndLog;
+			CallService(MS_IEVIEW_WINDOW, 0, (LPARAM)&ieWindow);
 		}
 	case HM_DBEVENTADDED:
 		if ((HANDLE) wParam != dat->hContact)
@@ -1519,7 +1525,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 				if (!(dbei.flags & DBEF_SENT) && dbei.eventType != EVENTTYPE_STATUSCHANGE) {
 //					dat->nFlash = dat->nFlashMax;
-					SendMessage(dat->hwndParent, DM_STARTFLASHING, 0, 0); 
+					SendMessage(dat->hwndParent, DM_STARTFLASHING, 0, 0);
 					if (GetActiveWindow() != dat->hwndParent || GetForegroundWindow() != dat->hwndParent || dat->parent->hwndActive != hwndDlg) {
 						dat->showUnread = 0;
 						SetTimer(hwndDlg, TIMERID_FLASHWND, TIMEOUT_FLASHWND, NULL);

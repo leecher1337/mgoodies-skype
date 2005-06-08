@@ -94,7 +94,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // method to get state of 'force' for a metacontact
 // wParam=(HANDLE)hMetaContact
 // lParam= (DWORD)&contact_number or NULL
-// 
+//
 // if lparam supplied, the contact_number of the contatct 'in force' will be copied to the address it points to,
 // or if none is in force, the value (DWORD)-1 will be copied
 // (v0.8.0.8+ returns 1 if 'force default' is true with *lParam == default contact number, else returns 0 with *lParam as above)
@@ -105,7 +105,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // lParam=(HANDLE)hDefaultContact
 #define ME_MC_DEFAULTTCHANGED				"MetaContacts/DefaultChanged"
 
-// fired when a metacontact's subcontacts change (fired upon creation of metacontact, when contacts are added or removed, and when 
+// fired when a metacontact's subcontacts change (fired upon creation of metacontact, when contacts are added or removed, and when
 //	contacts are reordered) - a signal to re-read metacontact data
 // wParam=(HANDLE)hMetaContact
 // lParam=0
@@ -113,12 +113,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // fired when a metacontact is forced to send using a specific subcontact
 // wParam=(HANDLE)hMetaContact
-// lParam=(HANDLE)hForceContact 
+// lParam=(HANDLE)hForceContact
 #define ME_MC_FORCESEND						"MetaContacts/ForceSend"
 
 // fired when a metacontact is 'unforced' to send using a specific subcontact
 // wParam=(HANDLE)hMetaContact
-// lParam=0 
+// lParam=0
 #define ME_MC_UNFORCESEND					"MetaContacts/UnforceSend"
 
 // method to get protocol name - used to be sure you're dealing with a "real" metacontacts plugin :)
