@@ -268,37 +268,6 @@ static void RestoreUnreadMessageAlerts(void)
 	}
 }
 
-static int IconsChanged(WPARAM wParam, LPARAM lParam)
-{
-	if (hMsgMenuItem) {
-		int j;
-		CLISTMENUITEM mi;
-
-		mi.cbSize = sizeof(mi);
-		mi.flags = CMIM_ICON;
-		mi.hIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
-
-		for (j = 0; j < hMsgMenuItemCount; j++) {
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hMsgMenuItem[j], (LPARAM) & mi);
-		}
-	}
-	FreeMsgLogIcons();
-	LoadMsgLogIcons();
-	LoadProtocolIcons();
-	WindowList_Broadcast(g_dat->hMessageWindowList, DM_REMAKELOG, 0, 0);
-	// change all the icons
-	WindowList_Broadcast(g_dat->hMessageWindowList, DM_CHANGEICONS, 0, 0);
-	WindowList_Broadcast(g_dat->hMessageWindowList, DM_UPDATETITLE, 0, 0);
-	return 0;
-}
-
-static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam) 
-{
-	LoadGlobalIcons();
-	return IconsChanged(wParam, lParam);
-}
-
-
 static int GetWindowAPI(WPARAM wParam, LPARAM lParam)
 {
 	return PLUGIN_MAKE_VERSION(0,0,0,3);
@@ -336,7 +305,8 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 	PROTOCOLDESCRIPTOR **protocol;
 	int protoCount, i;
 
-	SetIcoLibIcons();
+	RegisterIcoLibIcons();
+	RegisterFontServiceFonts();
 	LoadGlobalIcons();
 	LoadMsgLogIcons();
 	LoadProtocolIcons();
@@ -358,7 +328,6 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 		}
 	}
 	HookEvent(ME_CLIST_DOUBLECLICKED, SendMessageCommand);
-	HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
 	RestoreUnreadMessageAlerts();
 	return 0;
 }
@@ -547,3 +516,4 @@ static void InitREOleCallback(void)
 	reOleCallback.lpVtbl->ShowContainerUI = (HRESULT(__stdcall *) (IRichEditOleCallback *, BOOL)) CREOleCallback_ShowContainerUI;
 	reOleCallback.refCount = 0;
 }
+
