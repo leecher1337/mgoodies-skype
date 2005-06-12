@@ -95,10 +95,12 @@ struct GlobalMessageData
 	HIMAGELIST hIconList;
 };
 
+int IconsChanged(WPARAM wParam, LPARAM lParam);
 void InitGlobals();
 void FreeGlobals();
 void ReloadGlobals();
-void SetIcoLibIcons();
+void RegisterIcoLibIcons();
+void RegisterFontServiceFonts();
 void LoadProtocolIcons();
 void LoadGlobalIcons();
 int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,const char *szNamePrefix, int flags, int showCmd);

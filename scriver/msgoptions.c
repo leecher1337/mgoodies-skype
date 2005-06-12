@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
 #include "m_ieview.h"
+#include "m_fontservice.h"
 #pragma hdrstop
 
 extern HINSTANCE g_hInst;
@@ -55,6 +56,42 @@ static fontOptionsList[] = {
 	{"Notices", RGB(90, 90, 160), "Arial", DEFAULT_CHARSET, 0, -12},
 };
 const int msgDlgFontCount = sizeof(fontOptionsList) / sizeof(fontOptionsList[0]);
+
+static int FontServiceFontsChanged(WPARAM wParam, LPARAM lParam) 
+{
+	WindowList_Broadcast(g_dat->hMessageWindowList, DM_OPTIONSAPPLIED, 0, 0);
+	return 0;
+}
+
+void RegisterFontServiceFonts() {
+	if (ServiceExists(MS_FONT_REGISTER)) {
+		int i;
+		char szTemp[100];
+		LOGFONTA lf;
+		FontID fid = {0};
+		fid.cbSize = sizeof(fid);
+		strncpy(fid.group, "Scriver", sizeof(fid.group));
+		strncpy(fid.dbSettingsGroup, SRMMMOD, sizeof(fid.dbSettingsGroup));
+		fid.flags = FIDF_DEFAULTVALID;
+		for (i = 0; i < sizeof(fontOptionsList) / sizeof(fontOptionsList[0]); i++) {
+			LoadMsgDlgFont(i, &lf, &fontOptionsList[i].colour);
+			fontOptionsList[i].size = 
+			_snprintf(szTemp, sizeof(szTemp), "SRMFont%d", i);
+			strncpy(fid.prefix, szTemp, sizeof(fid.prefix));
+			fid.order = i;
+			strncpy(fid.name, fontOptionsList[i].szDescr, sizeof(fid.name));
+			fid.deffontsettings.colour = fontOptionsList[i].colour;
+			fid.deffontsettings.size = (char) lf.lfHeight;
+			//(BYTE)DBGetContactSettingByte(NULL, FONTMODULE, szTemp, fontOptionsList[0].defSize);
+			//fid.deffontsettings.size = -MulDiv(fid.deffontsettings.size, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+			fid.deffontsettings.style = (lf.lfWeight >= FW_BOLD ? FONTF_BOLD : 0) | (lf.lfItalic ? FONTF_ITALIC : 0);
+			fid.deffontsettings.charset = lf.lfCharSet;
+			lstrcpynA(fid.deffontsettings.szFace, lf.lfFaceName, LF_FACESIZE);
+			CallService(MS_FONT_REGISTER, (WPARAM)&fid, 0);
+		}
+	}
+	HookEvent(ME_FONT_RELOAD, FontServiceFontsChanged);
+}
 
 void LoadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour)
 {

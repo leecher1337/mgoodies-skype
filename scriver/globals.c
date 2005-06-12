@@ -27,8 +27,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 struct GlobalMessageData *g_dat=NULL;
 extern HINSTANCE g_hInst;
 extern PSLWA pSetLayeredWindowAttributes;
+extern HANDLE *hMsgMenuItem;
+extern int hMsgMenuItemCount;
+
 static HANDLE g_hDbEvent = 0, g_hAck = 0;
 static int ackevent(WPARAM wParam, LPARAM lParam);
+
 
 void LoadProtocolIcons() {
 	PROTOCOLDESCRIPTOR **pProtos;
@@ -71,7 +75,35 @@ void LoadProtocolIcons() {
     }
 }
 
-void SetIcoLibIcons() {
+int IconsChanged(WPARAM wParam, LPARAM lParam)
+{
+	if (hMsgMenuItem) {
+		int j;
+		CLISTMENUITEM mi;
+		mi.cbSize = sizeof(mi);
+		mi.flags = CMIM_ICON;
+		mi.hIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
+		for (j = 0; j < hMsgMenuItemCount; j++) {
+			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hMsgMenuItem[j], (LPARAM) & mi);
+		}
+	}
+	FreeMsgLogIcons();
+	LoadMsgLogIcons();
+	LoadProtocolIcons();
+	WindowList_Broadcast(g_dat->hMessageWindowList, DM_REMAKELOG, 0, 0);
+	// change all the icons
+	WindowList_Broadcast(g_dat->hMessageWindowList, DM_CHANGEICONS, 0, 0);
+	WindowList_Broadcast(g_dat->hMessageWindowList, DM_UPDATETITLE, 0, 0);
+	return 0;
+}
+
+static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam) 
+{
+	LoadGlobalIcons();
+	return IconsChanged(wParam, lParam);
+}
+
+void RegisterIcoLibIcons() {
 	if (ServiceExists(MS_SKIN2_ADDICON)) {
 		SKINICONDESC sid;
 		char path[MAX_PATH];
@@ -140,6 +172,7 @@ void SetIcoLibIcons() {
 		sid.pszDescription = Translate("Notice");
 //		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 	}
+	HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
 }
 
 void LoadGlobalIcons() {
