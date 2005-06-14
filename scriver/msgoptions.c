@@ -493,14 +493,36 @@ static BOOL CALLBACK DlgProcLogOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LP
 		{
 			DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT *) lParam;
 			HFONT hFont, hoFont;
+			HBRUSH hBrush;
 			char *pszText;
 			int iItem = dis->itemData - 1;
+			COLORREF color = (COLORREF) SendDlgItemMessage(hwndDlg, IDC_BKGCOLOUR, CPM_GETCOLOUR, 0, 0);
+			switch (iItem) {
+			case 1:
+			case 5:
+			case 6:
+			case 7:
+			case 9:
+				color = (COLORREF) SendDlgItemMessage(hwndDlg, IDC_BKGINCOMING, CPM_GETCOLOUR, 0, 0);
+				break;
+			case 0:
+			case 2:
+			case 3:
+			case 4:
+				color = (COLORREF) SendDlgItemMessage(hwndDlg, IDC_BKGOUTGOING, CPM_GETCOLOUR, 0, 0);
+				break;
+			case 8:
+				color = (COLORREF) SendDlgItemMessage(hwndDlg, IDC_BKGINPUT, CPM_GETCOLOUR, 0, 0);
+				break;
+
+			}
+			hBrush = CreateSolidBrush(color);
 			hFont = CreateFontA(fontOptionsList[iItem].size, 0, 0, 0,
 								fontOptionsList[iItem].style & FONTF_BOLD ? FW_BOLD : FW_NORMAL,
 								fontOptionsList[iItem].style & FONTF_ITALIC ? 1 : 0, 0, 0, fontOptionsList[iItem].charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, fontOptionsList[iItem].szFace);
 			hoFont = (HFONT) SelectObject(dis->hDC, hFont);
 			SetBkMode(dis->hDC, TRANSPARENT);
-			FillRect(dis->hDC, &dis->rcItem, hBkgColourBrush);
+			FillRect(dis->hDC, &dis->rcItem, hBrush);
 			if (dis->itemState & ODS_SELECTED)
 				FrameRect(dis->hDC, &dis->rcItem, GetSysColorBrush(COLOR_HIGHLIGHT));
 			SetTextColor(dis->hDC, fontOptionsList[iItem].colour);
@@ -508,6 +530,7 @@ static BOOL CALLBACK DlgProcLogOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			TextOutA(dis->hDC, dis->rcItem.left, dis->rcItem.top, pszText, lstrlenA(pszText));
 			SelectObject(dis->hDC, hoFont);
 			DeleteObject(hFont);
+			DeleteObject(hBrush);
 			return TRUE;
 		}
 		case WM_COMMAND:
@@ -537,6 +560,9 @@ static BOOL CALLBACK DlgProcLogOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LP
 				case IDC_BKGCOLOUR:
 					DeleteObject(hBkgColourBrush);
 					hBkgColourBrush = CreateSolidBrush(SendDlgItemMessage(hwndDlg, IDC_BKGCOLOUR, CPM_GETCOLOUR, 0, 0));
+				case IDC_BKGINCOMING:
+				case IDC_BKGOUTGOING:
+				case IDC_BKGINPUT:
 					InvalidateRect(GetDlgItem(hwndDlg, IDC_FONTLIST), NULL, TRUE);
 					break;
 				case IDC_FONTLIST:
