@@ -695,9 +695,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						CONTACTINFO ci;
 						char buf[128];
 						int statusIcon = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON);
-
 						buf[0] = 0;
-						mdat->wStatus = DBGetContactSettingWord(mdat->hContact, mdat->szProto, "Status", ID_STATUS_OFFLINE);
 						contactName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) mdat->hContact, 0);
 						ZeroMemory(&ci, sizeof(ci));
 						ci.cbSize = sizeof(ci);

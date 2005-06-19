@@ -777,7 +777,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->hwndLog = NULL;
 			dat->parent = (struct ParentWindowData *) GetWindowLong(dat->hwndParent, GWL_USERDATA);
 			dat->szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dat->hContact, 0);
-			RichUtil_SubClass(GetDlgItem(hwndDlg, IDC_LOG));
+	//		RichUtil_SubClass(GetDlgItem(hwndDlg, IDC_LOG));
 			{ // avatar stuff
 				dat->avatarPic = 0;
 //				dat->limitAvatarMaxH = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT);
@@ -1287,49 +1287,46 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 
 					if (!cws || (!strcmp(cws->szModule, dat->szProto) && !strcmp(cws->szSetting, "Status"))) {
 						HICON hIcon;
-						DWORD dwStatus;
-						dwStatus = DBGetContactSettingWord(dat->hContact, dat->szProto, "Status", ID_STATUS_OFFLINE);
-						hIcon = LoadSkinnedProtoIcon(dat->szProto, dwStatus);
+						dat->wStatus = DBGetContactSettingWord(dat->hContact, dat->szProto, "Status", ID_STATUS_OFFLINE);
+						hIcon = LoadSkinnedProtoIcon(dat->szProto, dat->wStatus);
 						SendDlgItemMessage(hwndDlg, IDC_USERMENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hIcon);
 						SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
 					}
-
 					// log status change
 					if ((dat->wStatus != dat->wOldStatus || lParam != 0)
 						&& DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSCH, SRMSGDEFSET_SHOWSTATUSCH)) {
-							DBEVENTINFO dbei;
-							char buffer[450];
-							HANDLE hNewEvent;
-							int iLen;
+						DBEVENTINFO dbei;
+						char buffer[450];
+						HANDLE hNewEvent;
+						int iLen;
+						char *szOldStatus = (char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wOldStatus, 0);
+						char *szNewStatus = (char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wStatus, 0);
 
-							char *szOldStatus = (char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wOldStatus, 0);
-							char *szNewStatus = (char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wStatus, 0);
-
-							if (dat->wStatus == ID_STATUS_OFFLINE) {
-								mir_snprintf(buffer, sizeof(buffer), Translate("signed off (was %s)"), szOldStatus);
-							}
-							else if (dat->wOldStatus == ID_STATUS_OFFLINE) {
-								mir_snprintf(buffer, sizeof(buffer), Translate("signed on (%s)"), szNewStatus);
-							}
-							else {
-								mir_snprintf(buffer, sizeof(buffer), Translate("is now %s (was %s)"), szNewStatus, szOldStatus);
-							}
-							iLen = strlen(buffer) + 1;
-							MultiByteToWideChar(CP_ACP, 0, buffer, iLen, (LPWSTR) & buffer[iLen], iLen);
-							dbei.cbSize = sizeof(dbei);
-							dbei.pBlob = (PBYTE) buffer;
-							dbei.cbBlob = (strlen(buffer) + 1) * (sizeof(TCHAR) + 1);
-							dbei.eventType = EVENTTYPE_STATUSCHANGE;
-							dbei.flags = 0;
-							dbei.timestamp = time(NULL);
-							dbei.szModule = dat->szProto;
-							hNewEvent = (HANDLE) CallService(MS_DB_EVENT_ADD, (WPARAM) dat->hContact, (LPARAM) & dbei);
-							if (dat->hDbEventFirst == NULL) {
-								dat->hDbEventFirst = hNewEvent;
-								SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
-							}
+						if (dat->wStatus == ID_STATUS_OFFLINE) {
+							mir_snprintf(buffer, sizeof(buffer), Translate("signed off (was %s)"), szOldStatus);
+						}
+						else if (dat->wOldStatus == ID_STATUS_OFFLINE) {
+							mir_snprintf(buffer, sizeof(buffer), Translate("signed on (%s)"), szNewStatus);
+						}
+						else {
+							mir_snprintf(buffer, sizeof(buffer), Translate("is now %s (was %s)"), szNewStatus, szOldStatus);
+						}
+						iLen = strlen(buffer) + 1;
+						MultiByteToWideChar(CP_ACP, 0, buffer, iLen, (LPWSTR) & buffer[iLen], iLen);
+						dbei.cbSize = sizeof(dbei);
+						dbei.pBlob = (PBYTE) buffer;
+						dbei.cbBlob = (strlen(buffer) + 1) * (sizeof(TCHAR) + 1);
+						dbei.eventType = EVENTTYPE_STATUSCHANGE;
+						dbei.flags = 0;
+						dbei.timestamp = time(NULL);
+						dbei.szModule = dat->szProto;
+						hNewEvent = (HANDLE) CallService(MS_DB_EVENT_ADD, (WPARAM) dat->hContact, (LPARAM) & dbei);
+						if (dat->hDbEventFirst == NULL) {
+							dat->hDbEventFirst = hNewEvent;
+							SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 						}
 						dat->wOldStatus = dat->wStatus;
+					}
 				}
 			}
 			SendMessage(dat->hwndParent, DM_UPDATETITLE, (WPARAM)hwndDlg, (LPARAM)dat);
