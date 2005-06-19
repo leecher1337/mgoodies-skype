@@ -56,6 +56,7 @@ struct LogStreamData
 	char *buffer;
 	int bufferOffset, bufferLen;
 	int eventsToInsert;
+	int isFirst;
 	int isEmpty;
 	struct MessageWindowData *dlgDat;
 };
@@ -239,7 +240,7 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\rtlpar");
 	else
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\pard");
-	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\li30\\ri30\\fi0");
+	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\li30\\ri30\\fi0\\tx0");
 	return buffer;
 }
 
@@ -329,7 +330,7 @@ char *TimestampToString(DWORD dwFlags, time_t check, int groupStart)
 }
 
 //free() the return value
-static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact, HANDLE hDbEvent, int prefixParaBreak, struct LogStreamData *streamData)
+static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact, HANDLE hDbEvent, int prefixParaBreak, int firstEvent, struct LogStreamData *streamData)
 {
 	char *buffer;
 	int bufferAlloced, bufferEnd;
@@ -367,11 +368,14 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 	  && ((((int)dbei.timestamp < dat->startTime) == (dat->lastEventTime < dat->startTime)) || !(dbei.flags & DBEF_READ))) {
 		isGroupBreak = FALSE;
 	}
-	if (prefixParaBreak && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\highlight%d\\line\\sl0", msgDlgFontCount + 3);
+	if (!firstEvent && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
+//		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\highlight%d\\line\\sl0", msgDlgFontCount + 3);
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\par\\sl0", msgDlgFontCount + 3);
 	}
 	if (dbei.eventType == EVENTTYPE_MESSAGE) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1 + ((dbei.flags & DBEF_SENT) ? 1 : 0));
+	} else {
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 2);
 	}
 
 	if (g_dat->flags&SMF_SHOWICONS && isGroupBreak) {
@@ -432,7 +436,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 	switch (dbei.eventType) {
 		case EVENTTYPE_MESSAGE:
 		if (isGroupBreak && g_dat->flags & SMF_MSGONNEWLINE) {
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\line");
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 		}
 		{
 #if defined( _UNICODE )
@@ -498,6 +502,9 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 			break;
 		}
 	}
+	if (!prefixParaBreak) {
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
+	}
 	dat->lastEventTime = dbei.timestamp;
 	dat->lastEventType = MAKELONG(dbei.flags, dbei.eventType);
 	free(dbei.pBlob);
@@ -518,7 +525,7 @@ static DWORD CALLBACK LogStreamInEvents(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG 
 			case STREAMSTAGE_EVENTS:
 				if (dat->eventsToInsert) {
 					do {
-						dat->buffer = CreateRTFFromDbEvent(dat->dlgDat, dat->hContact, dat->hDbEvent, !dat->isEmpty, dat);
+						dat->buffer = CreateRTFFromDbEvent(dat->dlgDat, dat->hContact, dat->hDbEvent, !dat->isFirst, dat->isEmpty, dat);
 						if (dat->buffer)
 							dat->hDbEventLast = dat->hDbEvent;
 						dat->hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) dat->hDbEvent, 0);
@@ -589,6 +596,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	streamData.dlgDat = dat;
 	streamData.eventsToInsert = count;
 	streamData.isEmpty = fAppend ? GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG)) == 0 : 1;
+	streamData.isFirst = streamData.isEmpty;
 	stream.pfnCallback = LogStreamInEvents;
 	stream.dwCookie = (DWORD_PTR) & streamData;
 	sel.cpMin = 0;
