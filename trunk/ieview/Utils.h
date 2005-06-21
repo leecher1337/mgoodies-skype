@@ -18,6 +18,7 @@ public:
 	static wchar_t *convertToWCS(const char *a, int cp);
 	static char *convertToString(const wchar_t *a);
 	static char *convertToString(const wchar_t *a, int cp);
+	static char *escapeString(const char *a);
 	static DWORD safe_wcslen(wchar_t *msg, DWORD maxLen);
 	static char *UTF8Encode(const wchar_t *wtext);
 	static char *UTF8Encode(const char *text);

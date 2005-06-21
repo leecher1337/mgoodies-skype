@@ -422,7 +422,7 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
         free(dbei.pBlob);
     }
     if (szProto!=NULL) delete szProto;
-	view->scrollToBottom();
+//	view->scrollToBottom();
 }
 
 time_t TabSRMMHTMLBuilder::getStartedTime() {
