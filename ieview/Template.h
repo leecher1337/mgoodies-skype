@@ -5,8 +5,16 @@ class Template;
 
 #include "ieview_common.h"
 
+struct TokenDef {
+	const char *tokenString;
+	int 		token;
+	int         tokenLen;
+	int         escape;
+};
+
 class Token {
 private:
+	int  escape;
 	int  type;
 	char *text;
 	Token *next;
@@ -30,9 +38,10 @@ public:
 		UININ,
 		UINOUT,
 	};
-	Token(int, const char *);
+	Token(int, const char *, int );
 	~Token();
 	int getType();
+	int getEscape();
 	const char *getText();
 	Token *getNext();
 	void   setNext(Token *);

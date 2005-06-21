@@ -217,3 +217,29 @@ int Utils::detectURL(const wchar_t *text) {
 	}
 	return 0;
 }
+
+char *Utils::escapeString(const char *a) {
+	int i, l, len;
+	char *out;
+	if (a == NULL) {
+		return NULL;
+	}
+	len = strlen(a);
+	for (i = l = 0; i < len; i++, l++) {
+		if (a[i] == '\\' || a[i] == '\n' || a[i] == '\r' || a[i] == '\"'
+			|| a[i] == '\'' || a[i] == '\b' || a[i] == '\t' || a[i] == '\f') {
+			l++;
+		}
+	}
+	out = new char[l+1];
+	for (i = l = 0; i < len; i++, l++) {
+		if (a[i] == '\\' || a[i] == '\n' || a[i] == '\r' || a[i] == '\"'
+			|| a[i] == '\'' || a[i] == '\b' || a[i] == '\t' || a[i] == '\f') {
+			out[l++] = '\\';
+		}
+		out[l] = a[i];
+	}
+	out[l] = '\0';
+	return out;
+}
+

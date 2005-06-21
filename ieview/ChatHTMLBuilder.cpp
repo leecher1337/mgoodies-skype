@@ -320,7 +320,7 @@ void ChatHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			free(output);
 		}
     }
-	view->scrollToBottom();
+//	view->scrollToBottom();
 }
 
 int ChatHTMLBuilder::getLastEventType() {

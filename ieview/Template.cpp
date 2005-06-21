@@ -1,9 +1,10 @@
 #include "Template.h"
 #include "Utils.h"
 
-Token::Token(int type, const char *text) {
+Token::Token(int type, const char *text, int escape) {
 	next = NULL;
 	this->type = type;
+	this->escape = escape;
 	if (text!=NULL) {
 		this->text = Utils::dupString(text);
 	} else {
@@ -27,6 +28,10 @@ void Token::setNext(Token *ptr) {
 
 int Token::getType() {
 	return type;
+}
+
+int Token::getEscape() {
+	return escape;
 }
 
 const char *Token::getText() {
@@ -71,67 +76,71 @@ bool Template::equals(const char *name) {
 	return false;
 }
 
+static TokenDef tokenNames[] = {
+	{"%name%", Token::NAME, 6, 0},
+	{"%time%", Token::TIME, 6, 0},
+	{"%text%", Token::TEXT, 6, 0},
+	{"%date%", Token::DATE, 6, 0},
+	{"%base%", Token::BASE, 6, 0},
+	{"%avatar%", Token::AVATAR, 8, 0},
+	{"%cid%", Token::CID, 5, 0},
+	{"%proto%", Token::PROTO, 7, 0},
+	{"%avatarIn%", Token::AVATARIN, 10, 0},
+	{"%avatarOut%", Token::AVATAROUT, 11, 0},
+	{"%nameIn%", Token::NAMEIN, 8, 0},
+	{"%nameOut%", Token::NAMEOUT, 9, 0},
+	{"%uin%", Token::UIN, 5, 0},
+	{"%uinIn%", Token::UININ, 7, 0},
+	{"%uinOut%", Token::UINOUT, 8, 0},
+
+	{"%\\name%", Token::NAME, 7, 1},
+	{"%\\time%", Token::TIME, 7, 1},
+	{"%\\text%", Token::TEXT, 7, 1},
+	{"%\\date%", Token::DATE, 7, 1},
+	{"%\\base%", Token::BASE, 7, 1},
+	{"%\\avatar%", Token::AVATAR, 9, 1},
+	{"%\\cid%", Token::CID, 6, 1},
+	{"%\\proto%", Token::PROTO, 8, 1},
+	{"%\\avatarIn%", Token::AVATARIN, 11, 1},
+	{"%\\avatarOut%", Token::AVATAROUT, 12, 1},
+	{"%\\nameIn%", Token::NAMEIN, 9, 1},
+	{"%\\nameOut%", Token::NAMEOUT, 10, 1},
+	{"%\\uin%", Token::UIN, 6, 1},
+	{"%\\uinIn%", Token::UININ, 8, 1},
+	{"%\\uinOut%", Token::UINOUT, 9, 1}
+};
+
 void Template::tokenize() {
 	if (text!=NULL) {
 //		debugView->writef("Tokenizing: %s<br>---<br>", text);
 		char *str = Utils::dupString(text);
 		Token *lastToken = NULL;
 		int lastTokenType = Token::PLAIN;
+		int lastTokenEscape = 0;
 		int l = strlen(str);
 		for (int i=0, lastTokenStart=0; i<=l;) {
 			Token *newToken;
-			int newTokenType, newTokenSize;
+			int newTokenType, newTokenSize, newTokenEscape;
 			if (str[i]=='\0') {
 				newTokenType = Token::END;
 				newTokenSize = 1;
-			} else if (!strncmp(str+i, "%name%", 6)) {
-				newTokenType = Token::NAME;
-				newTokenSize = 6;
-			} else if (!strncmp(str+i, "%time%", 6)) {
-				newTokenType = Token::TIME;
-				newTokenSize = 6;
-			} else if (!strncmp(str+i, "%text%", 6)) {
-				newTokenType = Token::TEXT;
-				newTokenSize = 6;
-			} else if (!strncmp(str+i, "%date%", 6)) {
-				newTokenType = Token::DATE;
-				newTokenSize = 6;
-			} else if (!strncmp(str+i, "%base%", 6)) {
-				newTokenType = Token::BASE;
-				newTokenSize = 6;
-			} else if (!strncmp(str+i, "%avatar%", 8)) {
-				newTokenType = Token::AVATAR;
-				newTokenSize = 8;
-			} else if (!strncmp(str+i, "%cid%", 5)) {
-				newTokenType = Token::CID;
-				newTokenSize = 5;
-			} else if (!strncmp(str+i, "%proto%", 7)) {
-				newTokenType = Token::PROTO;
-				newTokenSize = 7;
-			} else if (!strncmp(str+i, "%avatarIn%", 10)) {
-				newTokenType = Token::AVATARIN;
-				newTokenSize = 10;
-			} else if (!strncmp(str+i, "%avatarOut%", 11)) {
-				newTokenType = Token::AVATAROUT;
-				newTokenSize = 11;
-			} else if (!strncmp(str+i, "%nameIn%", 8)) {
-				newTokenType = Token::NAMEIN;
-				newTokenSize = 8;
-			} else if (!strncmp(str+i, "%nameOut%", 9)) {
-				newTokenType = Token::NAMEOUT;
-				newTokenSize = 9;
-			} else if (!strncmp(str+i, "%uin%", 5)) {
-				newTokenType = Token::UIN;
-				newTokenSize = 5;
-			} else if (!strncmp(str+i, "%uinIn%", 7)) {
-				newTokenType = Token::UININ;
-				newTokenSize = 7;
-			} else if (!strncmp(str+i, "%uinOut%", 8)) {
-				newTokenType = Token::UINOUT;
-				newTokenSize = 8;
+				newTokenEscape = 0;
 			} else {
-				newTokenType = Token::PLAIN;
-				newTokenSize = 1;
+				bool found = false;
+				for (unsigned int j=0; j<(sizeof(tokenNames)/sizeof(TokenDef)); j++) {
+					if (!strncmp(str+i, tokenNames[j].tokenString, tokenNames[j].tokenLen)) {
+						newTokenType = tokenNames[j].token;
+						newTokenSize = tokenNames[j].tokenLen;
+						newTokenEscape = tokenNames[j].escape;
+						found = true;
+						break;
+					}
+				}
+				if (!found) {
+					newTokenType = Token::PLAIN;
+					newTokenSize = 1;
+					newTokenEscape = 0;
+				}
 			}
 			if (newTokenType != Token::PLAIN) {
 				if (str[i + newTokenSize] == '%') {
@@ -139,11 +148,11 @@ void Template::tokenize() {
 				}
 				str[i] = '\0';
 			}
-			if (lastTokenType!=newTokenType && i!=lastTokenStart) {
+			if ((lastTokenType!=newTokenType || lastTokenEscape != newTokenEscape) && i!=lastTokenStart) {
 				if (lastTokenType == Token::PLAIN) {
-                    newToken = new Token(lastTokenType, str+lastTokenStart);
+                    newToken = new Token(lastTokenType, str+lastTokenStart, lastTokenEscape);
 				} else {
-					newToken = new Token(lastTokenType, NULL);
+					newToken = new Token(lastTokenType, NULL, lastTokenEscape);
 				}
 				if (lastToken != NULL) {
 					lastToken->setNext(newToken);
@@ -153,6 +162,7 @@ void Template::tokenize() {
 				lastToken = newToken;
 				lastTokenStart = i;
 			}
+			lastTokenEscape = newTokenEscape;
 			lastTokenType = newTokenType;
 			i += newTokenSize;
 		}

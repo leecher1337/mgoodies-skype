@@ -450,7 +450,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	if (szAvatarOut!=NULL) delete szAvatarOut;
 	if (szNameIn!=NULL) delete szNameIn;
 	if (szNameOut!=NULL) delete szNameOut;
-	view->scrollToBottom();
+//	view->scrollToBottom();
 }
 
 time_t TemplateHTMLBuilder::getStartedTime() {

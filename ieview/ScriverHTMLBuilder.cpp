@@ -378,7 +378,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
         free(dbei.pBlob);
     }
     if (szProto!=NULL) delete szProto;
-	view->scrollToBottom();
+//	view->scrollToBottom();
 }
 
 int ScriverHTMLBuilder::getLastEventType() {
