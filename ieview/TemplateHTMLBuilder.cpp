@@ -356,10 +356,18 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                	}    
 			} else if (dbei.eventType == EVENTTYPE_FILE) {
                 szText = encodeUTF8((char *)dbei.pBlob + sizeof(DWORD), szProto, ENF_NONE);
-                tmpltName[1] = isHistory ? "hFile" : "File";
+                tmpltName[1] = isHistory ? isSent ? "hFileOut" : "hFileIn" : isSent ? "FileOut" : "FileIn";
+                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[1]) : TemplateMap::getTemplate("default", tmpltName[1]);
+                if (tmplt == NULL) {
+                	tmpltName[1] = isHistory ? "hFile" : "File";
+				}
 			} else if (dbei.eventType == EVENTTYPE_URL) {
                 szText = encodeUTF8((char *)dbei.pBlob, szProto, ENF_NONE);
-                tmpltName[1] = isHistory ? "hURL" : "URL";
+                tmpltName[1] = isHistory ? isSent ? "hURLOut" : "hURLIn" : isSent ? "URLOut" : "URLIn";
+                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[1]) : TemplateMap::getTemplate("default", tmpltName[1]);
+                if (tmplt == NULL) {
+	                tmpltName[1] = isHistory ? "hURL" : "URL";
+				}
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
                 szText = encodeUTF8((char *)dbei.pBlob, szProto, ENF_NONE);
                 tmpltName[1] = isHistory ? "hStatus" : "Status";
