@@ -178,7 +178,13 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 				    break;
 			}
 			if (tokenVal != NULL) {
-				Utils::appendText(&output, &outputSize, "%s", tokenVal);
+				if (token->getEscape()) {
+					char *escapedToken  = Utils::escapeString(tokenVal);
+					Utils::appendText(&output, &outputSize, "%s", escapedToken);
+					delete escapedToken;
+				} else {
+					Utils::appendText(&output, &outputSize, "%s", tokenVal);
+				}
 			}
 		}
 	}
@@ -426,7 +432,13 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 						    break;
 					}
 					if (tokenVal != NULL) {
-						Utils::appendText(&output, &outputSize, "%s", tokenVal);
+						if (token->getEscape()) {
+							char *escapedToken  = Utils::escapeString(tokenVal);
+							Utils::appendText(&output, &outputSize, "%s", escapedToken);
+							delete escapedToken;
+						} else {
+							Utils::appendText(&output, &outputSize, "%s", tokenVal);
+						}
 					}
 				}
 			}
