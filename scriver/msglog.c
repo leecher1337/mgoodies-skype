@@ -142,6 +142,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 		event->text = strdup((char *) dbei.pBlob);
 	}
 #endif
+	free(dbei.pBlob);
 	return event;
 }
 
@@ -319,6 +320,8 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 	else
 		colour = GetSysColor(COLOR_HOTLIGHT);
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
+	colour = DBGetContactSettingDword(NULL, SRMMMOD, "BkgColour", RGB(224,224,224));
+	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
 	colour = DBGetContactSettingDword(NULL, SRMMMOD, "IncomingBkgColour", RGB(224,224,224));
     AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
     colour = DBGetContactSettingDword(NULL, SRMMMOD, "OutgoingBkgColour", RGB(224,224,224));
@@ -445,12 +448,12 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 	}
 	if (!firstEvent && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
 //		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\highlight%d\\line\\sl0", msgDlgFontCount + 3);
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\par\\sl0", msgDlgFontCount + 3);
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\par\\sl0", msgDlgFontCount + 4);
 	}
 	if (dbei.eventType == EVENTTYPE_MESSAGE) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1 + ((dbei.flags & DBEF_SENT) ? 1 : 0));
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 2 + ((dbei.flags & DBEF_SENT) ? 1 : 0));
 	} else {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 2);
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1);
 	}
 
 	if (g_dat->flags&SMF_SHOWICONS && isGroupBreak) {
@@ -572,13 +575,18 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 			}
 			else
 				szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0);
-
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(MSGFONTID_NOTICE));
 			msg = (BYTE *) dbei.pBlob;
 			if (dbei.eventType == EVENTTYPE_FILE) {
 				msg += sizeof(DWORD);
-			} 
-			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s %s", szName, msg);
+				if (dbei.flags & DBEF_SENT) {
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File received"), msg);
+				} else {
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File sent"), msg);
+				}
+			} else {
+				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s %s", szName, msg);
+			}
 			if (ci.pszVal)
 				miranda_sys_free(ci.pszVal);
 			break;
@@ -619,12 +627,12 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 	}
 	if (!firstEvent && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
 //		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\highlight%d\\line\\sl0", msgDlgFontCount + 3);
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\par\\sl0", msgDlgFontCount + 3);
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\par\\sl0", msgDlgFontCount + 4);
 	}
 	if (event->eventType == EVENTTYPE_MESSAGE) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1 + ((event->flags & DBEF_SENT) ? 1 : 0));
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 2 + ((event->flags & DBEF_SENT) ? 1 : 0));
 	} else {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 2);
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1);
 	}
 
 	if (g_dat->flags&SMF_SHOWICONS && isGroupBreak) {
@@ -690,11 +698,16 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 		}
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
+
+#if defined( _UNICODE )
 		if (event->wtext != NULL) {
 			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->wtext);
 		} else {
 			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->text);
 		}
+#else
+		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->text);
+#endif
 		break;
 		case EVENTTYPE_STATUSCHANGE:
 		case EVENTTYPE_URL:
@@ -716,9 +729,16 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 			}
 			else
 				szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0);
-
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(MSGFONTID_NOTICE));
-			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s %s", szName, event->text);
+			if (event->eventType == EVENTTYPE_FILE) {
+				if (event->flags & DBEF_SENT) {
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File received"), event->text);
+				} else {
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File sent"), event->text);
+				}
+			} else {
+				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s %s", szName, event->text);
+			}
 			if (ci.pszVal)
 				miranda_sys_free(ci.pszVal);
 			break;
@@ -928,8 +948,8 @@ void LoadMsgLogIcons(void)
 			case LOGICON_MSG_NOTICE:
 				ImageList_AddIcon(g_hImageList, g_dat->hIcons[SMF_ICON_NOTICE]);
 				hIcon = ImageList_GetIcon(g_hImageList, LOGICON_MSG_NOTICE, ILD_NORMAL);
-				hBrush = hInBkgBrush;
-				//hBrush = hBkgBrush;
+				//hBrush = hInBkgBrush;
+				hBrush = hBkgBrush;
 				break;
 		}
 		pLogIconBmpBits[i] = (PBYTE) malloc(RTFPICTHEADERMAXSIZE + (bih.biSize + widthBytes * bih.biHeight) * 2);
