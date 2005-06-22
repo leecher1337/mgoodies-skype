@@ -263,7 +263,15 @@ bool TemplateMap::loadTemplateFile(const char *proto, const char *filename, bool
 				 !strncmp(store, "<!--MessageOutGroupEnd-->", 25) ||
 				 !strncmp(store, "<!--hMessageOutGroupStart-->", 28) ||
 				 !strncmp(store, "<!--hMessageOutGroupInner-->", 28) ||
-				 !strncmp(store, "<!--hMessageOutGroupEnd-->", 26)
+				 !strncmp(store, "<!--hMessageOutGroupEnd-->", 26) ||
+				 !strncmp(store, "<!--FileIn-->", 13) ||
+				 !strncmp(store, "<!--hFileIn-->", 14) ||
+				 !strncmp(store, "<!--FileOut-->", 14) ||
+				 !strncmp(store, "<!--hFileOut-->", 15) ||
+				 !strncmp(store, "<!--URLIn-->", 12) ||
+				 !strncmp(store, "<!--hURLIn-->", 13) ||
+				 !strncmp(store, "<!--URLOut-->", 13) ||
+				 !strncmp(store, "<!--hURLOut-->", 14)
 				 ) {
 				if (wasTemplate) {
 					tmap->addTemplate(lastTemplate, templateText);
