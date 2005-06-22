@@ -880,6 +880,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				ieWindow.cy = 300;
 				CallService(MS_IEVIEW_WINDOW, 0, (LPARAM)&ieWindow);
 				dat->hwndLog = ieWindow.hwnd;
+				if (dat->hwndLog == NULL) {
+					dat->flags ^= SMF_USEIEVIEW;
+				}
 			}
 // IEVIew MOD End
 			/* duh, how come we didnt use this from the start? */

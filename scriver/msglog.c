@@ -83,7 +83,7 @@ int DbEventIsShown(DBEVENTINFO * dbei, struct MessageWindowData *dat)
 			return 1;
 		case EVENTTYPE_FILE:
 		case EVENTTYPE_URL:
-			if (dat->hwndLog != NULL)
+//			if (dat->hwndLog != NULL)
 				return 1;
 	}
 	return 0;
@@ -101,7 +101,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 		free(dbei.pBlob);
 		return NULL;
 	}
-	if (!(dbei.flags & DBEF_SENT) && dbei.eventType == EVENTTYPE_MESSAGE) {
+	if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL)) {
 		CallService(MS_DB_EVENT_MARKREAD, (WPARAM) hContact, (LPARAM) hDbEvent);
 		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) hContact, (LPARAM) hDbEvent);
 	}
@@ -114,9 +114,11 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	event->flags = dbei.flags;
 	event->timestamp = dbei.timestamp;
 #if defined( _UNICODE )
-	event->text = strdup((char *) dbei.pBlob);
-	{
+	if (event->eventType == EVENTTYPE_FILE) {
+		event->text = strdup(((char *) dbei.pBlob) + sizeof(DWORD));
+	} else if (event->eventType == EVENTTYPE_MESSAGE) {
 		int msglen = strlen((char *) dbei.pBlob) + 1;
+		event->text = strdup((char *) dbei.pBlob);
 		if (msglen != (int) dbei.cbBlob && !(dat->flags & SMF_DISABLE_UNICODE)) {
 			int wlen;
 			wlen = safe_wcslen((wchar_t*) &dbei.pBlob[msglen], (dbei.cbBlob - msglen) / 2);
@@ -130,11 +132,23 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 			event->wtext = (wchar_t *) malloc(sizeof(TCHAR) * msglen);
 			MultiByteToWideChar(dat->codePage, 0, (char *) dbei.pBlob, -1, event->wtext, msglen);
 		}
+	} else {
+		event->text = strdup((char *) dbei.pBlob);
 	}
 #else
-	event->text = strdup((char *) dbei.pBlob);
+	if (event->eventType == EVENTTYPE_FILE) {
+		event->text = strdup(((char *) dbei.pBlob) + sizeof(DWORD));
+	} else {
+		event->text = strdup((char *) dbei.pBlob);
+	}
 #endif
 	return event;
+}
+
+void freeEvent(struct EventData *event) {
+	if (event->text != NULL) free (event->text);
+	if (event->wtext != NULL) free (event->wtext);
+	free(event);
 }
 
 int safe_wcslen(wchar_t *msg, int maxLen) {
@@ -409,7 +423,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 		free(dbei.pBlob);
 		return NULL;
 	}
-	if (!(dbei.flags & DBEF_SENT) && dbei.eventType == EVENTTYPE_MESSAGE) {
+	if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL)) {
 		CallService(MS_DB_EVENT_MARKREAD, (WPARAM) hContact, (LPARAM) hDbEvent);
 		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) hContact, (LPARAM) hDbEvent);
 	}
@@ -452,6 +466,8 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 				}
 				break;
 			case EVENTTYPE_STATUSCHANGE:
+			case EVENTTYPE_URL:
+			case EVENTTYPE_FILE:
 				i = LOGICON_MSG_NOTICE;
 				break;
 		}
@@ -468,7 +484,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", TimestampToString(g_dat->flags, dbei.timestamp, isGroupBreak));
 		showColon = 1;
 	}
-	if (!(g_dat->flags&SMF_HIDENAMES) && dbei.eventType != EVENTTYPE_STATUSCHANGE  && isGroupBreak) {
+	if (!(g_dat->flags&SMF_HIDENAMES) && dbei.eventType == EVENTTYPE_MESSAGE  && isGroupBreak) {
 		char *szName = "";
 		CONTACTINFO ci;
 		ZeroMemory(&ci, sizeof(ci));
@@ -536,6 +552,8 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 			break;
 		}
 		case EVENTTYPE_STATUSCHANGE:
+		case EVENTTYPE_URL:
+		case EVENTTYPE_FILE:
 		{
 			BYTE *msg;
 			char *szName = "";
@@ -557,6 +575,9 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(MSGFONTID_NOTICE));
 			msg = (BYTE *) dbei.pBlob;
+			if (dbei.eventType == EVENTTYPE_FILE) {
+				msg += sizeof(DWORD);
+			} 
 			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s %s", szName, msg);
 			if (ci.pszVal)
 				miranda_sys_free(ci.pszVal);
@@ -619,6 +640,8 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 				}
 				break;
 			case EVENTTYPE_STATUSCHANGE:
+			case EVENTTYPE_URL:
+			case EVENTTYPE_FILE:
 				i = LOGICON_MSG_NOTICE;
 				break;
 		}
@@ -635,7 +658,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", TimestampToString(g_dat->flags, event->timestamp, isGroupBreak));
 		showColon = 1;
 	}
-	if (!(g_dat->flags&SMF_HIDENAMES) && event->eventType != EVENTTYPE_STATUSCHANGE  && isGroupBreak) {
+	if (!(g_dat->flags&SMF_HIDENAMES) && event->eventType == EVENTTYPE_MESSAGE  && isGroupBreak) {
 		char *szName = "";
 		CONTACTINFO ci;
 		ZeroMemory(&ci, sizeof(ci));
@@ -674,6 +697,8 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 		}
 		break;
 		case EVENTTYPE_STATUSCHANGE:
+		case EVENTTYPE_URL:
+		case EVENTTYPE_FILE:
 		{
 			char *szName = "";
 			CONTACTINFO ci;
@@ -704,6 +729,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 	}
 	dat->lastEventTime = event->timestamp;
 	dat->lastEventType = MAKELONG(event->flags, event->eventType);
+	freeEvent(event);
 	return buffer;
 }
 
@@ -721,7 +747,7 @@ static DWORD CALLBACK LogStreamInEvents(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG 
 			case STREAMSTAGE_EVENTS:
 				if (dat->eventsToInsert) {
 					do {
-						dat->buffer = CreateRTFFromDbEvent2(dat->dlgDat, dat->hContact, dat->hDbEvent, !dat->isFirst, dat->isEmpty, dat);
+						dat->buffer = CreateRTFFromDbEvent(dat->dlgDat, dat->hContact, dat->hDbEvent, !dat->isFirst, dat->isEmpty, dat);
 						if (dat->buffer)
 							dat->hDbEventLast = dat->hDbEvent;
 						dat->hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) dat->hDbEvent, 0);
@@ -764,7 +790,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	CHARRANGE oldSel, sel;
 
 // IEVIew MOD Begin
-	if (dat->flags & SMF_USEIEVIEW) {
+	if (dat->hwndLog != NULL) {
 		IEVIEWEVENT event;
 		IEVIEWWINDOW ieWindow;
 		event.cbSize = sizeof(IEVIEWEVENT);
