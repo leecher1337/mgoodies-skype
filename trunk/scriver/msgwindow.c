@@ -38,7 +38,35 @@ PSLWA pSetLayeredWindowAttributes;
 static WNDPROC OldTabCtrlProc;
 
 BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
+/*
+static char* GetWindowName(HANDLE *hContact, const char *szProto)
+{
+	DBVARIANT dbv;
+	CONTACTINFO ci;
+	char *contactName;
+	char buf[128];
+	char* s, *p, *q;
+	int c;
+	buf[0] = 0;
+	contactName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0);
+	ZeroMemory(&ci, sizeof(ci));
+	ci.cbSize = sizeof(ci);
+	ci.hContact = hContact;
+	ci.szProto = szProto;
+	ci.dwFlag = CNF_UNIQUEID;
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+		switch (ci.type) {
+		case CNFT_ASCIIZ:
+			mir_snprintf(buf, sizeof(buf), "%s", ci.pszVal);
+			miranda_sys_free(ci.pszVal);
+			break;
+		case CNFT_DWORD:
+			mir_snprintf(buf, sizeof(buf), "%u", ci.dVal);
+			break;
+		}
+	}
+}
+*/
 static TCHAR* GetTabName(HANDLE *hContact)
 {
 	char *contactName;
@@ -685,34 +713,15 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			struct MessageWindowData * mdat = (struct MessageWindowData *) lParam;
 			TCITEM tci;
 			int tabId;
-			char newtitle[256], oldtitle[256];
-			char *szStatus, *contactName, *pszNewTitleEnd;
 			TCHAR *tContactName;
 			if (mdat && mdat->hwnd == dat->hwndActive) {
+				char newtitle[256], oldtitle[256];
+				char *szStatus, *contactName, *pszNewTitleEnd;
 				pszNewTitleEnd = "Message Session";
 				if (mdat->hContact) {
 					if (mdat->szProto) {
-						CONTACTINFO ci;
-						char buf[128];
 						int statusIcon = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON);
-						buf[0] = 0;
 						contactName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) mdat->hContact, 0);
-						ZeroMemory(&ci, sizeof(ci));
-						ci.cbSize = sizeof(ci);
-						ci.hContact = mdat->hContact;
-						ci.szProto = mdat->szProto;
-						ci.dwFlag = CNF_UNIQUEID;
-						if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-							switch (ci.type) {
-							case CNFT_ASCIIZ:
-								mir_snprintf(buf, sizeof(buf), "%s", ci.pszVal);
-								miranda_sys_free(ci.pszVal);
-								break;
-							case CNFT_DWORD:
-								mir_snprintf(buf, sizeof(buf), "%u", ci.dVal);
-								break;
-							}
-						}
 						szStatus = (char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, mdat->szProto == NULL ? ID_STATUS_OFFLINE : DBGetContactSettingWord(mdat->hContact, mdat->szProto, "Status", ID_STATUS_OFFLINE), 0);
 						if (statusIcon)
 							mir_snprintf(newtitle, sizeof(newtitle), "%s - %s", contactName, Translate(pszNewTitleEnd));
