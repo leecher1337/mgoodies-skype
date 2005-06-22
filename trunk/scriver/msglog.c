@@ -928,7 +928,8 @@ void LoadMsgLogIcons(void)
 			case LOGICON_MSG_NOTICE:
 				ImageList_AddIcon(g_hImageList, g_dat->hIcons[SMF_ICON_NOTICE]);
 				hIcon = ImageList_GetIcon(g_hImageList, LOGICON_MSG_NOTICE, ILD_NORMAL);
-				hBrush = hBkgBrush;
+				hBrush = hInBkgBrush;
+				//hBrush = hBkgBrush;
 				break;
 		}
 		pLogIconBmpBits[i] = (PBYTE) malloc(RTFPICTHEADERMAXSIZE + (bih.biSize + widthBytes * bih.biHeight) * 2);
