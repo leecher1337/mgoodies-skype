@@ -78,6 +78,10 @@ bool ScriverHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
         case EVENTTYPE_STATUSCHANGE:
             if (dbei->flags & DBEF_READ) return 0;
             return 1;
+        case EVENTTYPE_URL:
+            return 1;
+        case EVENTTYPE_FILE:
+			return 1;
     }
     return 0;
 }
@@ -212,6 +216,8 @@ void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 			Utils::appendText(&output, &outputSize, ".divOutGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
 		        (int) lineColor, (int) outColor);
 		}
+		Utils::appendText(&output, &outputSize, ".divNotice {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
+		Utils::appendText(&output, &outputSize, ".divNoticeGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
 	 	for(int i = 0; i < FONT_NUM; i++) {
 			loadMsgDlgFont(i, &lf, &color);
 			Utils::appendText(&output, &outputSize, "%s {font-family: %s; font-size: %dpt; font-weight: %s; color: #%06X; %s }\n",
@@ -265,7 +271,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
         dbei.pBlob = (PBYTE) malloc(dbei.cbBlob);
         CallService(MS_DB_EVENT_GET, (WPARAM)  hDbEvent, (LPARAM) & dbei);
 
-		if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE )) {
+		if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL)) {
 			CallService(MS_DB_EVENT_MARKREAD, (WPARAM) event->hContact, (LPARAM) hDbEvent);
 			CallService(MS_CLIST_REMOVEEVENT, (WPARAM) event->hContact, (LPARAM) hDbEvent);
 		} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
@@ -278,7 +284,8 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	        continue;
     	}
 		output = NULL;
-		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
+		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_STATUSCHANGE
+			|| dbei.eventType == EVENTTYPE_URL || dbei.eventType == EVENTTYPE_FILE) {
 			int isSent = (dbei.flags & DBEF_SENT);
 			int isGroupBreak = TRUE;
  		  	if ((dwFlags & SMF_LOG_GROUPMESSAGES) && dbei.flags == LOWORD(getLastEventType())
@@ -314,19 +321,35 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 				} else {
                 	szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, ENF_ALL);
 				}
+			} else if (dbei.eventType == EVENTTYPE_FILE) {
+                szText = encodeUTF8(((char *)dbei.pBlob) + sizeof(DWORD), szProto, ENF_NONE);
+			} else if (dbei.eventType == EVENTTYPE_URL) {
+                szText = encodeUTF8((char *)dbei.pBlob, szProto, ENF_NONE);
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
                 szText = encodeUTF8((char *)dbei.pBlob, szProto, ENF_NONE);
 			}
 			/* SRMM-specific formatting */
 			if ((dwFlags & SMF_LOG_DRAWLINES) && isGroupBreak && getLastEventType()!=-1) {
-				Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOutGrid" : "divInGrid");
+				if (dbei.eventType == EVENTTYPE_MESSAGE) {
+					Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOutGrid" : "divInGrid");
+				} else {
+					Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divNoticeGrid" : "divNoticeGrid");
+				}
 			} else {
-				Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
+				if (dbei.eventType == EVENTTYPE_MESSAGE) {
+					Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
+				} else {
+					Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divNotice" : "divNotice");
+				}
 			}
 			if ((dwFlags & SMF_LOG_SHOWICONS) && isGroupBreak) {
 				const char *iconFile = "";
 				if (dbei.eventType == EVENTTYPE_MESSAGE) {
 					iconFile = isSent ? "message_out.gif" : "message_in.gif";
+				} else if (dbei.eventType == EVENTTYPE_FILE) {
+					iconFile = "file.gif";
+				} else if (dbei.eventType == EVENTTYPE_URL) {
+					iconFile = "url.gif";
 				} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
 					iconFile = "status.gif";
 				}
@@ -346,13 +369,13 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 							className, timestampToString(dwFlags, dbei.timestamp, isGroupBreak));
 				}
 			}
-			if ((dwFlags & SMF_LOG_SHOWNICK) && isGroupBreak) {
-                if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-					Utils::appendText(&output, &outputSize, "<span class=\"notices\">%s </span>", szName);
-				} else {
+            if (dbei.eventType == EVENTTYPE_MESSAGE) {
+    			if ((dwFlags & SMF_LOG_SHOWNICK) && isGroupBreak) {
 					Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span><span class=\"%s\">: </span>",
 								isSent ? "nameOut" : "nameIn", szName, isSent ? "colonOut" : "colonIn");
-				}
+				} 
+			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
+				Utils::appendText(&output, &outputSize, "<span class=\"notices\">%s </span>", szName);
 			}
 			const char *className = "";
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
@@ -360,10 +383,24 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 					Utils::appendText(&output, &outputSize, "<br>");
 				}
 				className = isSent ? "messageOut" : "messageIn";
-			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
+			} else {
                 className = "notices";
 			}
-            Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>", className, szText);
+			if (dbei.eventType == EVENTTYPE_FILE) {
+				if (isSent) {
+	            	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: %s</span>", className, Translate("File sent"), szText);
+				} else {
+	            	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: %s</span>", className, Translate("File received"), szText);
+				}
+			} else if (dbei.eventType == EVENTTYPE_URL) {
+				if (isSent) {
+	            	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: %s</span>", className, Translate("URL sent"), szText);
+				} else {
+	            	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: %s</span>", className, Translate("URL received"), szText);
+				}
+			} else {
+            	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>", className, szText);
+			}
             Utils::appendText(&output, &outputSize, "</div>\n");
 			event->hDbEventFirst = hCurDbEvent;
 			setLastEventType(MAKELONG(dbei.flags, dbei.eventType));
