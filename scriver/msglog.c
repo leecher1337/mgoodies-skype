@@ -580,9 +580,15 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 			if (dbei.eventType == EVENTTYPE_FILE) {
 				msg += sizeof(DWORD);
 				if (dbei.flags & DBEF_SENT) {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File received"), msg);
-				} else {
 					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File sent"), msg);
+				} else {
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File received"), msg);
+				}
+			} else if (dbei.eventType == EVENTTYPE_URL) {
+				if (dbei.flags & DBEF_SENT) {
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL sent"), msg);
+				} else {
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL received"), msg);
 				}
 			} else {
 				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s %s", szName, msg);
@@ -732,9 +738,15 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(MSGFONTID_NOTICE));
 			if (event->eventType == EVENTTYPE_FILE) {
 				if (event->flags & DBEF_SENT) {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File received"), event->text);
-				} else {
 					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File sent"), event->text);
+				} else {
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File received"), event->text);
+				}
+			} else if (event->eventType == EVENTTYPE_URL) {
+				if (event->flags & DBEF_SENT) {
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL sent"), event->text);
+				} else {
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL received"), event->text);
 				}
 			} else {
 				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s %s", szName, event->text);
