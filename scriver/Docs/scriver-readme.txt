@@ -47,7 +47,7 @@ A: Yes, it does.
 Q: Does Scriver support RTL ?
 A: Yes, it does.
 
-Q: What version of Miranda is required to run IEView ?
+Q: What version of Miranda is required to run Scriver ?
 A: Scriver requires Miranda IM 0.4.
 
 Q: How to hide avatar on the right hand side without disabling avatar support ?
@@ -66,6 +66,14 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.2.8
++ showing file and URL events in logs
+* bugfixes: status changes logging, compatibility with newer RichEdit control, background colours
+2.2.2.7
++ option to draw horizontal line between messages
++ FontService support
++ individual background colours in font selection list
+* bugfixes
 2.2.2.6
 * better smiley selection/replacement for metacontact (real protocols' emoticons are used)
 * improved tabs dragging
