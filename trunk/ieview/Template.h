@@ -37,6 +37,8 @@ public:
 		UIN,
 		UININ,
 		UINOUT,
+		STATUSMSG,
+		NICKIN,
 	};
 	Token(int, const char *, int );
 	~Token();

@@ -91,6 +91,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	char *szUINOut = NULL;
 	char *szAvatarIn = NULL;
 	char *szAvatarOut = NULL;
+	char *szNickIn = NULL;
+	char *szStatusMsg = NULL;
 	int outputSize;
 	char *output;
 
@@ -108,13 +110,17 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
+        struct MM_INTERFACE mmi;
+        mmi.cbSize = sizeof(mmi);
+        CallService(MS_SYSTEM_GET_MMI, 0, (LPARAM) &mmi);
 		ZeroMemory(&ci, sizeof(ci));
 	    ci.cbSize = sizeof(ci);
 	    ci.hContact = NULL;
 	    ci.szProto = szProto;
 	    ci.dwFlag = CNF_DISPLAY;
-		if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+		if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) &ci)) {
 	        szNameOut = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+	        mmi.mmi_free(ci.pszVal);
 		}
 		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, ENF_NAMESMILEYS);
 	} else {
@@ -143,6 +149,21 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	if (szAvatarOut == NULL) {
         szAvatarOut = Utils::dupString(szNoAvatar);
 	}
+	if (!DBGetContactSetting(event->hContact, "CList", "StatusMsg",&dbv)) {
+	    if (strlen(dbv.pszVal) > 0) {
+       		szStatusMsg = Utils::UTF8Encode(dbv.pszVal);
+	    }
+       	DBFreeVariant(&dbv);
+	}
+	ZeroMemory(&ci, sizeof(ci));
+    ci.cbSize = sizeof(ci);
+    ci.hContact = event->hContact;
+    ci.szProto = szProto;
+    ci.dwFlag = CNF_NICK;
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+        szNickIn = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+	}
+
 	Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", "HTMLStart") : TemplateMap::getTemplate("default", "HTMLStart");
 	if (tmplt!=NULL) {
 		for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
@@ -176,6 +197,12 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 				case Token::UINOUT:
 				    tokenVal = szUINOut;
 				    break;
+				case Token::STATUSMSG:
+				    tokenVal = szStatusMsg;
+				    break;
+				case Token::NICKIN:
+				    tokenVal = szNickIn;
+				    break;
 			}
 			if (tokenVal != NULL) {
 				if (token->getEscape()) {
@@ -201,6 +228,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	if (szAvatarOut!=NULL) delete szAvatarOut;
 	if (szNameIn!=NULL) delete szNameIn;
 	if (szNameOut!=NULL) delete szNameOut;
+	if (szNickIn!=NULL) delete szNickIn;
+	if (szStatusMsg!=NULL) delete szStatusMsg;
 	view->scrollToBottom();
 	groupTemplate = NULL;
 	iLastEventType = -1;
@@ -220,6 +249,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	char *szUIN = NULL;
 	char *szUINIn = NULL;
 	char *szUINOut = NULL;
+	char *szNickIn = NULL;
+	char *szStatusMsg = NULL;
 	char *szAvatar = NULL;
 	char *szAvatarIn = NULL;
 	char *szAvatarOut = NULL;
@@ -246,6 +277,9 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
+        struct MM_INTERFACE mmi;
+        mmi.cbSize = sizeof(mmi);
+        CallService(MS_SYSTEM_GET_MMI, 0, (LPARAM) &mmi);
 		ZeroMemory(&ci, sizeof(ci));
 	    ci.cbSize = sizeof(ci);
 	    ci.hContact = NULL;
@@ -253,6 +287,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	    ci.dwFlag = CNF_DISPLAY;
 		if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 	        szNameOut = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+	        mmi.mmi_free(ci.pszVal);
 		}
 		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, ENF_NAMESMILEYS);
 	} else {
@@ -280,6 +315,20 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	}
 	if (szAvatarOut == NULL) {
         szAvatarOut = Utils::dupString(szNoAvatar);
+	}
+	if (!DBGetContactSetting(event->hContact, "CList", "StatusMsg",&dbv)) {
+	    if (strlen(dbv.pszVal) > 0) {
+       		szStatusMsg = Utils::UTF8Encode(dbv.pszVal);
+	    }
+       	DBFreeVariant(&dbv);
+	}
+	ZeroMemory(&ci, sizeof(ci));
+    ci.cbSize = sizeof(ci);
+    ci.hContact = event->hContact;
+    ci.szProto = szProto;
+    ci.dwFlag = CNF_NICK;
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+        szNickIn = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
 	}
 	HANDLE hDbEvent = event->hDbEventFirst;
 	event->hDbEventFirst = NULL;
@@ -438,6 +487,12 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 						case Token::UINOUT:
 						    tokenVal = szUINOut;
 						    break;
+						case Token::STATUSMSG:
+						    tokenVal = szStatusMsg;
+						    break;
+						case Token::NICKIN:
+						    tokenVal = szNickIn;
+						    break;
 					}
 					if (tokenVal != NULL) {
 						if (token->getEscape()) {
@@ -470,6 +525,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	if (szAvatarOut!=NULL) delete szAvatarOut;
 	if (szNameIn!=NULL) delete szNameIn;
 	if (szNameOut!=NULL) delete szNameOut;
+	if (szNickIn!=NULL) delete szNickIn;
+	if (szStatusMsg!=NULL) delete szStatusMsg;
 //	view->scrollToBottom();
 }
 
