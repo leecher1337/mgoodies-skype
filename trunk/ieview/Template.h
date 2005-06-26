@@ -39,6 +39,7 @@ public:
 		UINOUT,
 		STATUSMSG,
 		NICKIN,
+		FILEDESC,
 	};
 	Token(int, const char *, int );
 	~Token();

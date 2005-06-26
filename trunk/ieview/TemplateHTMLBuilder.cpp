@@ -256,6 +256,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	char *szAvatarOut = NULL;
 	char *szText = NULL;
 	char *szProto = NULL;
+	char *szFileDesc = NULL;
 	const char *tmpltName[2];
 	bool isGrouping = false;
 //	DWORD today = (DWORD)time(NULL);
@@ -383,6 +384,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			tmpltName[0] = groupTemplate;
 			tmpltName[1] = NULL;
 			groupTemplate = NULL;
+			szText = NULL;
+			szFileDesc = NULL;
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;
 				if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
@@ -406,7 +409,9 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                		tmpltName[1] = isHistory ? isSent ? "hMessageOut" : "hMessageIn" : isSent ? "MessageOut" : "MessageIn";
                	}    
 			} else if (dbei.eventType == EVENTTYPE_FILE) {
-                szText = encodeUTF8((char *)dbei.pBlob + sizeof(DWORD), szProto, ENF_NONE);
+				char *ptr = (char *)dbei.pBlob + sizeof(DWORD);
+                szText = encodeUTF8(ptr, szProto, ENF_NONE);
+				szFileDesc = encodeUTF8(ptr + strlen(ptr) + 1 , szProto, ENF_NONE);
                 tmpltName[1] = isHistory ? isSent ? "hFileOut" : "hFileIn" : isSent ? "FileOut" : "FileIn";
                 Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[1]) : TemplateMap::getTemplate("default", tmpltName[1]);
                 if (tmplt == NULL) {
@@ -495,6 +500,9 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 						case Token::NICKIN:
 						    tokenVal = szNickIn;
 						    break;
+						case Token::FILEDESC:
+							tokenVal = szFileDesc;
+							break;
 					}
 					if (tokenVal != NULL) {
 						if (token->getEscape()) {
@@ -529,6 +537,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	if (szNameOut!=NULL) delete szNameOut;
 	if (szNickIn!=NULL) delete szNickIn;
 	if (szStatusMsg!=NULL) delete szStatusMsg;
+	if (szFileDesc!=NULL) delete szFileDesc;
 //	view->scrollToBottom();
 }
 
