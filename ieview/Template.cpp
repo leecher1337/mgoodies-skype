@@ -92,8 +92,9 @@ static TokenDef tokenNames[] = {
 	{"%uin%", Token::UIN, 5, 0},
 	{"%uinIn%", Token::UININ, 7, 0},
 	{"%uinOut%", Token::UINOUT, 8, 0},
-	{"%statusMsg%", Token::STATUSMSG, 11, 0},
 	{"%nickIn%", Token::NICKIN, 8, 0},
+	{"%statusMsg%", Token::STATUSMSG, 11, 0},
+	{"%fileDesc%", Token::FILEDESC, 10, 0},
 
 	{"%\\name%", Token::NAME, 7, 1},
 	{"%\\time%", Token::TIME, 7, 1},
@@ -110,8 +111,9 @@ static TokenDef tokenNames[] = {
 	{"%\\uin%", Token::UIN, 6, 1},
 	{"%\\uinIn%", Token::UININ, 8, 1},
 	{"%\\uinOut%", Token::UINOUT, 9, 1},
+	{"%\\nickIn%", Token::NICKIN, 9, 1},
 	{"%\\statusMsg%", Token::STATUSMSG, 12, 1},
-	{"%\\nickIn%", Token::NICKIN, 9, 1}
+	{"%\\fileDesc%", Token::FILEDESC, 11, 1}
 };
 
 void Template::tokenize() {
