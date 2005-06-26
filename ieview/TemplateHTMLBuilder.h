@@ -12,13 +12,7 @@ protected:
 	virtual char *timestampToString(time_t check, int mode);
 	bool        isCleared;
 	time_t 		startedTime;
-	time_t 		lastEventTime;
-	int     	iLastEventType;
 	time_t 		getStartedTime();
-	int         getLastEventType();
-	time_t 		getLastEventTime();
-	void        setLastEventTime(time_t);
-	void       	setLastEventType(int);
 	const char *groupTemplate;
 public:
     TemplateHTMLBuilder();

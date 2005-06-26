@@ -323,18 +323,3 @@ void ChatHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 //	view->scrollToBottom();
 }
 
-int ChatHTMLBuilder::getLastEventType() {
-	return iLastEventType;
-}
-
-void ChatHTMLBuilder::setLastEventType(int t) {
-	iLastEventType = t;
-}
-
-time_t ChatHTMLBuilder::getLastEventTime() {
-	return lastEventTime;
-}
-
-void ChatHTMLBuilder::setLastEventTime(time_t t) {
-	lastEventTime = t;
-}

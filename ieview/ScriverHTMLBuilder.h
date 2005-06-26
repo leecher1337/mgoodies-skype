@@ -31,13 +31,7 @@ protected:
     virtual void loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour);
 	virtual bool isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei);
 	virtual char *timestampToString(DWORD dwFlags, time_t check, int groupStart);
-	time_t 		lastEventTime;
 	time_t 		startedTime;
-	int     	iLastEventType;
-	int         getLastEventType();
-	time_t 		getLastEventTime();
-	void        setLastEventTime(time_t);
-	void        setLastEventType(int);
 public:
     ScriverHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);

@@ -1168,3 +1168,29 @@ void HTMLBuilder::getUINs(HANDLE hContact, char *&uinIn, char *&uinOut) {
 	delete szProto;
 }
 
+int HTMLBuilder::getLastEventType() {
+	return iLastEventType;
+}
+
+void HTMLBuilder::setLastEventType(int t) {
+	iLastEventType = t;
+}
+
+DWORD HTMLBuilder::getLastEventTime() {
+	return lastEventTime;
+}
+
+void HTMLBuilder::setLastEventTime(DWORD t) {
+	lastEventTime = t;
+}
+
+bool HTMLBuilder::isSameDate(DWORD time1, DWORD time2) {
+    struct tm tm_t1, tm_t2;
+    tm_t1 = *localtime((time_t *)(&time1));
+    tm_t2 = *localtime((time_t *)(&time2));
+    if (tm_t1.tm_year == tm_t2.tm_year && tm_t1.tm_mon == tm_t2.tm_mon
+		&& tm_t1.tm_mday == tm_t2.tm_mday) {
+		return true;
+	}
+	return false;
+}

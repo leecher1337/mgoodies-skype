@@ -290,8 +290,8 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			int isGroupBreak = TRUE;
  		  	if ((dwFlags & SMF_LOG_GROUPMESSAGES) && dbei.flags == LOWORD(getLastEventType())
 			  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(getLastEventType()) == EVENTTYPE_MESSAGE
-			  && ((dbei.timestamp - getLastEventTime()) < 86400)
-			  && (((dbei.timestamp < (DWORD)startedTime) == (getLastEventTime() < startedTime)) || !(dbei.flags & DBEF_READ))) {
+			  && (isSameDate(dbei.timestamp, getLastEventTime()))
+			  && (((dbei.timestamp < (DWORD)startedTime) == (getLastEventTime() < (DWORD)startedTime)) || !(dbei.flags & DBEF_READ))) {
 		        isGroupBreak = FALSE;
 		    }
 			char *szName = NULL;
@@ -418,18 +418,3 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 //	view->scrollToBottom();
 }
 
-int ScriverHTMLBuilder::getLastEventType() {
-	return iLastEventType;
-}
-
-void ScriverHTMLBuilder::setLastEventType(int t) {
-	iLastEventType = t;
-}
-
-time_t ScriverHTMLBuilder::getLastEventTime() {
-	return lastEventTime;
-}
-
-void ScriverHTMLBuilder::setLastEventTime(time_t t) {
-	lastEventTime = t;
-}
