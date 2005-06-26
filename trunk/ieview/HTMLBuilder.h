@@ -88,6 +88,8 @@ public:
 
 class HTMLBuilder {
 protected:
+	DWORD lastEventTime;
+	int iLastEventType;
     enum ENCODEFLAGS {
         ENF_NONE = 0,
         ENF_SMILEYS = 1,
@@ -104,6 +106,11 @@ protected:
 	virtual bool encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags);
 	virtual char* getProto(HANDLE hContact);
 	virtual void getUINs(HANDLE hContact, char *&uinIn, char *&uinOut);
+	virtual DWORD getLastEventTime();
+	virtual void setLastEventTime(DWORD);
+	virtual int getLastEventType();
+	virtual void setLastEventType(int);
+	virtual bool isSameDate(DWORD time1, DWORD time2);
 public:
 	virtual void buildHead(IEView *, IEVIEWEVENT *event)=0;
 	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;

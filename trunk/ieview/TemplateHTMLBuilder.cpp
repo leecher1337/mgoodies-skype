@@ -258,7 +258,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	char *szProto = NULL;
 	const char *tmpltName[2];
 	bool isGrouping = false;
-
+//	DWORD today = (DWORD)time(NULL);
+//	today = today - today % 86400;
 	int cp = CP_ACP;
 	if (event->cbSize == sizeof(IEVIEWEVENT)) {
 		cp = event->codepage;
@@ -363,8 +364,9 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			int isGroupBreak = TRUE;
  		  	if ((Options::getSRMMFlags() & Options::LOG_GROUP_MESSAGES) && dbei.flags == LOWORD(getLastEventType())
 			  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(getLastEventType()) == EVENTTYPE_MESSAGE
-			  && ((dbei.timestamp - getLastEventTime()) < 86400)
-			  && (((dbei.timestamp < (DWORD)startedTime) == (getLastEventTime() < startedTime)) || !(dbei.flags & DBEF_READ))) {
+			  && (isSameDate(dbei.timestamp, getLastEventTime()))
+//			  && ((dbei.timestamp < today) == (getLastEventTime() < today))
+			  && (((dbei.timestamp < (DWORD)startedTime) == (getLastEventTime() < (DWORD)startedTime)) || !(dbei.flags & DBEF_READ))) {
 		        isGroupBreak = FALSE;
 		    }
 			if (isSent) {
@@ -533,21 +535,3 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 time_t TemplateHTMLBuilder::getStartedTime() {
 	return startedTime;
 }
-
-int TemplateHTMLBuilder::getLastEventType() {
-	return iLastEventType;
-}
-
-void TemplateHTMLBuilder::setLastEventType(int t) {
-	iLastEventType = t;
-}
-
-time_t TemplateHTMLBuilder::getLastEventTime() {
-	return lastEventTime;
-}
-
-void TemplateHTMLBuilder::setLastEventTime(time_t t) {
-	lastEventTime = t;
-}
-
-    

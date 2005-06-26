@@ -249,6 +249,8 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 
 //	int	  indentLeft = DBGetContactSettingDword(NULL, SRMSGMOD_T, "IndentAmount", 0);
 //	int	  indentRight = DBGetContactSettingDword(NULL, SRMSGMOD_T, "RightIndent", 0);
+	DWORD today = (DWORD)time(NULL);
+	today = today - today % 86400;
  	DWORD dwFlags = DBGetContactSettingDword(NULL, SRMSGMOD_T, "mwflags", MWF_LOG_DEFAULT);
 	DWORD dwFlags2 = DBGetContactSettingByte(NULL, SRMSGMOD, SRMSGSET_SHOWURLS, 0) ? MWF_SHOW_URLEVENTS : 0;
     dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD, SRMSGSET_SHOWFILES, 0) ? MWF_SHOW_FILEEVENTS : 0;
@@ -292,8 +294,8 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			int isHistory = (dbei.timestamp < (DWORD)getStartedTime() && (dbei.flags & DBEF_READ || dbei.flags & DBEF_SENT));
 		  	if (dwFlags & MWF_LOG_GROUPMODE && dbei.flags == LOWORD(getLastEventType())
 			  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(getLastEventType()) == EVENTTYPE_MESSAGE
-			  && ((dbei.timestamp - getLastEventTime()) < 86400)
-			  && (((dbei.timestamp < (DWORD)startedTime) == (getLastEventTime() < startedTime)) || !(dbei.flags & DBEF_READ))) {
+			  && ((dbei.timestamp < today) == (getLastEventTime() < today))
+			  && (((dbei.timestamp < (DWORD)startedTime) == (getLastEventTime() < (DWORD)startedTime)) || !(dbei.flags & DBEF_READ))) {
 		        isGroupBreak = FALSE;
 		    }
 			char *szName = NULL;
@@ -429,20 +431,5 @@ time_t TabSRMMHTMLBuilder::getStartedTime() {
 	return startedTime;
 }
 
-int TabSRMMHTMLBuilder::getLastEventType() {
-	return iLastEventType;
-}
-
-void TabSRMMHTMLBuilder::setLastEventType(int t) {
-	iLastEventType = t;
-}
-
-time_t TabSRMMHTMLBuilder::getLastEventTime() {
-	return lastEventTime;
-}
-
-void TabSRMMHTMLBuilder::setLastEventTime(time_t t) {
-	lastEventTime = t;
-}
 
 

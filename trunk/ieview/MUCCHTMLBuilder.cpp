@@ -288,18 +288,3 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 //	view->scrollToBottom();
 }
 
-int MUCCHTMLBuilder::getLastEventType() {
-	return iLastEventType;
-}
-
-void MUCCHTMLBuilder::setLastEventType(int t) {
-	iLastEventType = t;
-}
-
-time_t MUCCHTMLBuilder::getLastEventTime() {
-	return lastEventTime;
-}
-
-void MUCCHTMLBuilder::setLastEventTime(time_t t) {
-	lastEventTime = t;
-}
