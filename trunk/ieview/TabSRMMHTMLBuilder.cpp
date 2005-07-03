@@ -35,6 +35,7 @@
 
 #define SRMSGMOD "SRMsg"
 #define SRMSGMOD_T "Tab_SRMsg"
+#define TABSRMM_FONTMODULE "TabSRMM_Fonts"
 
 #define EVENTTYPE_STATUSCHANGE 25368
 #define EVENTTYPE_DIVIDER 25367
@@ -89,7 +90,7 @@ void TabSRMMHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour)
     DBVARIANT dbv;
     if (colour) {
         wsprintfA(str, "Font%dCol", i);
-        *colour = DBGetContactSettingDword(NULL, SRMSGMOD_T, str, 0x000000);
+        *colour = DBGetContactSettingDword(NULL, TABSRMM_FONTMODULE, str, 0x000000);
     }
     if (lf) {
         HDC hdc = GetDC(NULL);
@@ -97,7 +98,7 @@ void TabSRMMHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour)
 //        if(i == H_MSGFONTID_DIVIDERS)
   //          lf->lfHeight = 5;
      //   else {
-            lf->lfHeight = (char) DBGetContactSettingByte(NULL, SRMSGMOD_T, str, 10);
+            lf->lfHeight = (char) DBGetContactSettingByte(NULL, TABSRMM_FONTMODULE, str, 10);
             lf->lfHeight= MulDiv(lf->lfHeight, GetDeviceCaps(hdc, LOGPIXELSY), 74);
        // }
         ReleaseDC(NULL,hdc);
@@ -105,19 +106,19 @@ void TabSRMMHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour)
         lf->lfEscapement = 0;
         lf->lfOrientation = 0;
         wsprintfA(str, "Font%dSty", i);
-        style = DBGetContactSettingByte(NULL, SRMSGMOD_T, str, 0);
+        style = DBGetContactSettingByte(NULL, TABSRMM_FONTMODULE, str, 0);
         lf->lfWeight = style & FONTF_BOLD ? FW_BOLD : FW_NORMAL;
         lf->lfItalic = style & FONTF_ITALIC ? 1 : 0;
         lf->lfUnderline = style & FONTF_UNDERLINE ? 1 : 0;
         lf->lfStrikeOut = 0;
         wsprintfA(str, "Font%dSet", i);
-        lf->lfCharSet = DBGetContactSettingByte(NULL, SRMSGMOD_T, str, DEFAULT_CHARSET);
+        lf->lfCharSet = DBGetContactSettingByte(NULL, TABSRMM_FONTMODULE, str, DEFAULT_CHARSET);
         lf->lfOutPrecision = OUT_DEFAULT_PRECIS;
         lf->lfClipPrecision = CLIP_DEFAULT_PRECIS;
         lf->lfQuality = DEFAULT_QUALITY;
         lf->lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
         wsprintfA(str, "Font%d", i);
-        if (DBGetContactSetting(NULL, SRMSGMOD_T, str, &dbv))
+        if (DBGetContactSetting(NULL, TABSRMM_FONTMODULE, str, &dbv))
             lstrcpyA(lf->lfFaceName, "Verdana");
         else {
             lstrcpynA(lf->lfFaceName, dbv.pszVal, sizeof(lf->lfFaceName));
@@ -191,13 +192,13 @@ void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	 	DWORD dwFlags = DBGetContactSettingDword(NULL, SRMSGMOD_T, "mwflags", MWF_LOG_DEFAULT);
 		Utils::appendText(&output, &outputSize, "<html><head><style type=\"text/css\">\n");
 		COLORREF inColor, outColor;
-		COLORREF bkgColor = DBGetContactSettingDword(NULL, SRMSGMOD, "BkgColour", 0xFFFFFF);
+		COLORREF bkgColor = DBGetContactSettingDword(NULL, TABSRMM_FONTMODULE, "BkgColour", 0xFFFFFF);
 	    bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
-		COLORREF gridColor = DBGetContactSettingDword(NULL, SRMSGMOD_T, "hgrid", 0xFFFFFF);
+		COLORREF gridColor = DBGetContactSettingDword(NULL, TABSRMM_FONTMODULE, "hgrid", 0xFFFFFF);
 	    gridColor= (((gridColor & 0xFF) << 16) | (gridColor & 0xFF00) | ((gridColor & 0xFF0000) >> 16));
 	    if (dwFlags & MWF_LOG_INDIVIDUALBKG) {
-			inColor = DBGetContactSettingDword(NULL, SRMSGMOD_T, "inbg", RGB(224,224,224));
-		    outColor = DBGetContactSettingDword(NULL, SRMSGMOD_T, "outbg", RGB(224,224,224));
+			inColor = DBGetContactSettingDword(NULL, TABSRMM_FONTMODULE, "inbg", RGB(224,224,224));
+		    outColor = DBGetContactSettingDword(NULL, TABSRMM_FONTMODULE, "outbg", RGB(224,224,224));
 		    inColor= (((inColor & 0xFF) << 16) | (inColor & 0xFF00) | ((inColor & 0xFF0000) >> 16));
 		    outColor= (((outColor & 0xFF) << 16) | (outColor & 0xFF00) | ((outColor & 0xFF0000) >> 16));
 		} else {
@@ -252,8 +253,8 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	DWORD today = (DWORD)time(NULL);
 	today = today - today % 86400;
  	DWORD dwFlags = DBGetContactSettingDword(NULL, SRMSGMOD_T, "mwflags", MWF_LOG_DEFAULT);
-	DWORD dwFlags2 = DBGetContactSettingByte(NULL, SRMSGMOD, SRMSGSET_SHOWURLS, 0) ? MWF_SHOW_URLEVENTS : 0;
-    dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD, SRMSGSET_SHOWFILES, 0) ? MWF_SHOW_FILEEVENTS : 0;
+	DWORD dwFlags2 = DBGetContactSettingByte(NULL, SRMSGMOD_T, SRMSGSET_SHOWURLS, 0) ? MWF_SHOW_URLEVENTS : 0;
+    dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, SRMSGSET_SHOWFILES, 0) ? MWF_SHOW_FILEEVENTS : 0;
     dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, "in_out_icons", 0) ? MWF_SHOW_INOUTICONS : 0;
     dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, "emptylinefix", 1) ? MWF_SHOW_EMPTYLINEFIX : 0;
 	dwFlags2 |= MWF_SHOW_MICROLF;
@@ -430,6 +431,3 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 time_t TabSRMMHTMLBuilder::getStartedTime() {
 	return startedTime;
 }
-
-
-
