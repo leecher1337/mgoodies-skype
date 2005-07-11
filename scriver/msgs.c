@@ -87,7 +87,7 @@ static int MessageEventAdded(WPARAM wParam, LPARAM lParam)
 		if (g_dat->hParent == NULL || !(g_dat->flags & SMF_USETABS)) {
 			g_dat->hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
 		}
-		newData.minimized = 1;
+		newData.flags = NMWLP_INCOMING;
 		CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), g_dat->hParent, DlgProcMessage, (LPARAM) & newData);
 		return 0;
 	}
@@ -249,7 +249,7 @@ static void RestoreUnreadMessageAlerts(void)
 					HWND hwndParent;
 					struct NewMessageWindowLParam newData = { 0 };
 					newData.hContact = hContact;
-					newData.minimized = 1;
+					newData.flags = NMWLP_INCOMING;
 					hwndParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
 					CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), hwndParent, DlgProcMessage, (LPARAM) & newData);
 //					CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), NULL, DlgProcMessage, (LPARAM) & newData);
