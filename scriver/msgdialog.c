@@ -628,6 +628,7 @@ static LRESULT CALLBACK SplitterSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
 static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int w, int h) {
 	HDWP hdwp;
 	struct ParentWindowData *pdat = dat->parent;
+	int rPos, vPos;
 	int vSplitterPos = 0, hSplitterPos = dat->splitterPos, toolbarHeight = pdat->flags&SMF_SHOWBTNS ? dat->toolbarHeight : 0;
 	int hSplitterMinTop = toolbarHeight + dat->minLogBoxHeight, hSplitterMinBottom = dat->minEditBoxHeight;
 
@@ -643,18 +644,24 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
 		hSplitterPos = dat->avatarHeight - toolbarHeight;
 	}
 	dat->splitterPos = hSplitterPos;
+	vPos = h - hSplitterPos - toolbarHeight + 1;
 	hdwp = BeginDeferWindowPos(12);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_LOG), 0, 0, 0, w-vSplitterPos, h-hSplitterPos-toolbarHeight-1, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_MESSAGE), 0, 0, h-hSplitterPos+2, w-(dat->avatarWidth ? dat->avatarWidth+1 : 0), hSplitterPos-2, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_SPLITTER), 0, 0, h - hSplitterPos-1, w-dat->avatarWidth, 3, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_USERMENU), 0, 0, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_DETAILS), 0, 24, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_SMILEYS), 0, 60, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_ADD), 0, w-4*24-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_HISTORY), 0, w-3*24-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_QUOTE), 0, w-2*24-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDCANCEL), 0, w-24-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDOK), 0, w-38-dat->avatarWidth, h - hSplitterPos - toolbarHeight+1, 38, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_USERMENU), 0, 0, vPos, 24, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_DETAILS), 0, 24, vPos, 24, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_SMILEYS), 0, 60, vPos, 24, 24, SWP_NOZORDER);
+	if (h - dat->avatarHeight > vPos + 24) {
+		rPos = w;
+	} else {
+		rPos = w - dat->avatarWidth;
+	}
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_ADD), 0, rPos-4*24-38, vPos, 24, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_HISTORY), 0, rPos-3*24-38, vPos, 24, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_QUOTE), 0, rPos-2*24-38, vPos, 24, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDCANCEL), 0, rPos-24-38, vPos, 24, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDOK), 0, rPos-38, vPos, 38, 24, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - dat->avatarHeight, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
 //	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - (hSplitterPos + toolbarHeight + dat->avatarHeight)/2, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
 	EndDeferWindowPos(hdwp);
@@ -990,14 +997,18 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					while (hdbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDPREV, (WPARAM) hdbEvent, 0));
 				}
 			}
-			if (dat->parent->childrenCount == 1 || !(g_dat->flags & SMF_CREATETABSINBKG) || !newData->minimized) {
-				SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
-			}
 //			ShowWindow(hwndDlg, SW_SHOWNORMAL);
-			if (dat->parent->childrenCount == 1 && newData->minimized && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STAYMINIMIZED, SRMSGDEFSET_STAYMINIMIZED)) {
-				ShowWindow(dat->hwndParent, SW_MINIMIZE);
+			if (newData->flags & NMWLP_INCOMING) {
+				if (dat->parent->childrenCount == 1 && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STAYMINIMIZED, SRMSGDEFSET_STAYMINIMIZED)) {
+					ShowWindow(dat->hwndParent, SW_SHOWMINNOACTIVE);
+				} else {
+					ShowWindow(dat->hwndParent, SW_SHOW);
+				}
 			} else {
-				ShowWindow(dat->hwndParent, SW_SHOW);
+				ShowWindow(dat->hwndParent, SW_SHOWNORMAL);
+			}
+			if (dat->parent->childrenCount == 1 || !(g_dat->flags & SMF_CREATETABSINBKG) || !(newData->flags & NMWLP_INCOMING)) {
+				SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 			}
 			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPEN);
 			if (notifyUnread) {
@@ -1404,6 +1415,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		SendMessage(dat->hwndParent, WM_LBUTTONDOWN, wParam, lParam);
 		return TRUE;
 	case WM_SETFOCUS:
+		{
+			char szBuf[256];
+			char *szContactName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0);
+			mir_snprintf(szBuf, sizeof(szBuf), Translate("%s setfocus "), szContactName);
+		//	MessageBoxA(NULL, szBuf, "ASS", MB_OK);
+		}
 		SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		return TRUE;
@@ -1719,7 +1736,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 							SetStretchBltMode(dis->hDC, HALFTONE);
                             StretchBlt(dis->hDC, 1, 1, dat->avatarWidth-2, dat->avatarHeight-2, hdcMem, 0, 0, bminfo.bmWidth, bminfo.bmHeight, SRCCOPY);
 						}
-						DeleteObject(hbmMem);
+						SelectObject(hdcMem, hbmMem);
                         DeleteDC(hdcMem);
 					}
                     hPen = CreatePen(PS_SOLID, 1, RGB(0,0,0));
