@@ -71,11 +71,13 @@ struct ParentWindowData
 	struct TabCtrlData *tabCtrlDat;
 };
 
+#define NMWLP_INCOMING 1
+
 struct NewMessageWindowLParam
 {
 	HANDLE	hContact;
 	const char *szInitialText;
-	int		minimized;
+	int		flags;
 };
 
 struct MessageSendInfo
