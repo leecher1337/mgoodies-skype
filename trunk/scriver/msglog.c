@@ -407,6 +407,18 @@ char *TimestampToString(DWORD dwFlags, time_t check, int groupStart)
     return szResult;
 }
 
+int isSameDate(DWORD time1, DWORD time2) 
+{
+    struct tm tm_t1, tm_t2;
+    tm_t1 = *localtime((time_t *)(&time1));
+    tm_t2 = *localtime((time_t *)(&time2));
+    if (tm_t1.tm_year == tm_t2.tm_year && tm_t1.tm_mon == tm_t2.tm_mon
+		&& tm_t1.tm_mday == tm_t2.tm_mday) {
+		return 1;
+	}
+	return 0;
+}
+
 //free() the return value
 static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact, HANDLE hDbEvent, int prefixParaBreak, int firstEvent, struct LogStreamData *streamData)
 {
@@ -442,7 +454,8 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 	}
  	if ((g_dat->flags & SMF_GROUPMESSAGES) && dbei.flags == LOWORD(dat->lastEventType)
 	  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(dat->lastEventType) == EVENTTYPE_MESSAGE
-	  && ((dbei.timestamp - dat->lastEventTime) < 86400)
+	  && (isSameDate(dbei.timestamp, dat->lastEventTime))
+//	  && ((dbei.timestamp - dat->lastEventTime) < 86400)
 	  && ((((int)dbei.timestamp < dat->startTime) == (dat->lastEventTime < dat->startTime)) || !(dbei.flags & DBEF_READ))) {
 		isGroupBreak = FALSE;
 	}
@@ -627,7 +640,8 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 	}
  	if ((g_dat->flags & SMF_GROUPMESSAGES) && event->flags == LOWORD(dat->lastEventType)
 	  && event->eventType == EVENTTYPE_MESSAGE && HIWORD(dat->lastEventType) == EVENTTYPE_MESSAGE
-	  && ((event->timestamp - dat->lastEventTime) < 86400)
+	  && (isSameDate(event->timestamp, dat->lastEventTime))
+//	  && ((dbei.timestamp - dat->lastEventTime) < 86400)
 	  && ((((int)event->timestamp < dat->startTime) == (dat->lastEventTime < dat->startTime)) || !(event->flags & DBEF_READ))) {
 		isGroupBreak = FALSE;
 	}
