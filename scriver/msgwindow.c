@@ -762,6 +762,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 					SetWindowTextA(hwndDlg, newtitle);
 					//SendMessage(hwndDlg, WM_SIZE, 0, 0);
 				}
+				free(newtitle);
 			}
 			tabId = GetTabFromHWND(dat, mdat->hwnd);
 			tContactName = GetTabName(mdat->hContact);
