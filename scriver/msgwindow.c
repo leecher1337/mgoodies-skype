@@ -38,35 +38,74 @@ PSLWA pSetLayeredWindowAttributes;
 static WNDPROC OldTabCtrlProc;
 
 BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-/*
-static char* GetWindowName(HANDLE *hContact, const char *szProto)
+
+static char* GetWindowTitle(HANDLE *hContact, const char *szProto)
 {
 	DBVARIANT dbv;
-	CONTACTINFO ci;
-	char *contactName;
-	char buf[128];
-	char* s, *p, *q;
-	int c;
-	buf[0] = 0;
-	contactName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0);
-	ZeroMemory(&ci, sizeof(ci));
-	ci.cbSize = sizeof(ci);
-	ci.hContact = hContact;
-	ci.szProto = szProto;
-	ci.dwFlag = CNF_UNIQUEID;
-	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-		switch (ci.type) {
-		case CNFT_ASCIIZ:
-			mir_snprintf(buf, sizeof(buf), "%s", ci.pszVal);
-			miranda_sys_free(ci.pszVal);
-			break;
-		case CNFT_DWORD:
-			mir_snprintf(buf, sizeof(buf), "%u", ci.dVal);
-			break;
+	char *p, *szContactName, *szStatus, *title;
+	char *pszNewTitleEnd = "Message Session";
+	int len;
+	if (hContact && szProto) {
+		szContactName = strdup((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0));
+		szStatus = strdup((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, szProto == NULL ? ID_STATUS_OFFLINE : DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE), 0));
+		if (!DBGetContactSetting(NULL, SRMMMOD, SRMSGSET_WINDOWTITLE, &dbv)) {
+			for (len = 0, p = dbv.pszVal; *p; p++) {
+				if (*p == '%') {
+					if (!strncmp(p, "%name%", 6)) {
+						len += strlen(szContactName);
+						p += 5;
+						continue;
+					} else if (!strncmp(p, "%status%", 8)) {
+						len += strlen(szStatus);
+						p += 7;
+						continue;
+					}
+				}
+				len++;
+			}
+			title = (char *)malloc(len + 1);
+			for (len = 0, p = dbv.pszVal; *p; p++) {
+				if (*p == '%') {
+					if (!strncmp(p, "%name%", 6)) {
+						memcpy(title+len, szContactName, strlen(szContactName));
+						len += strlen(szContactName);
+						p += 5;
+						continue;
+					} else if (!strncmp(p, "%status%", 8)) {
+						memcpy(title+len, szStatus, strlen(szStatus));
+						len += strlen(szStatus);
+						p += 7;
+						continue;
+					}
+				}
+				title[len++] = *p;
+			}
+			title[len] = '\0';
+			DBFreeVariant(&dbv);
+		} else {
+			int statusIcon = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON);
+			if (statusIcon) {
+				len = strlen(Translate(pszNewTitleEnd)) + strlen(szContactName) + 4;
+				title = (char *)malloc(len);
+				mir_snprintf(title, len, "%s - %s", szContactName, Translate(pszNewTitleEnd));
+			} else {
+				len = strlen(Translate(pszNewTitleEnd)) + strlen(szContactName) + strlen(szStatus) + 6;
+				title = (char *)malloc(len);
+				mir_snprintf(title, len, "%s (%s): %s", szContactName, szStatus, Translate(pszNewTitleEnd));
+			}
 		}
+		free(szContactName);
+		free(szStatus);
+	} else {
+		len = strlen(Translate(pszNewTitleEnd)) + 1;
+		title = (char *)malloc(len);
+		strcpy(title, Translate(pszNewTitleEnd));
 	}
+	return title;
 }
-*/
+
+
+
 static TCHAR* GetTabName(HANDLE *hContact)
 {
 	char *contactName;
@@ -206,6 +245,7 @@ static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 	}
 	i = GetTabFromHWND(dat, child);
 	TabCtrl_SetCurSel(dat->hwndTabs, i);
+//	MessageBoxA(NULL, "setting focus", "ass", MB_OK);
 	SendMessage(dat->hwndActive, WM_ACTIVATE, WA_ACTIVE, 0);
 	SetFocus(dat->hwndActive);
 }
@@ -715,23 +755,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			int tabId;
 			TCHAR *tContactName;
 			if (mdat && mdat->hwnd == dat->hwndActive) {
-				char newtitle[256], oldtitle[256];
-				char *szStatus, *contactName, *pszNewTitleEnd;
-				pszNewTitleEnd = "Message Session";
-				if (mdat->hContact) {
-					if (mdat->szProto) {
-						int statusIcon = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON);
-						contactName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) mdat->hContact, 0);
-						szStatus = (char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, mdat->szProto == NULL ? ID_STATUS_OFFLINE : DBGetContactSettingWord(mdat->hContact, mdat->szProto, "Status", ID_STATUS_OFFLINE), 0);
-						if (statusIcon)
-							mir_snprintf(newtitle, sizeof(newtitle), "%s - %s", contactName, Translate(pszNewTitleEnd));
-						else
-							mir_snprintf(newtitle, sizeof(newtitle), "%s (%s): %s", contactName, szStatus, Translate(pszNewTitleEnd));
-
-					}
-				}
-				else
-					lstrcpynA(newtitle, pszNewTitleEnd, sizeof(newtitle));
+				char *newtitle, oldtitle[256];
+				newtitle = GetWindowTitle(mdat->hContact, mdat->szProto);
 				GetWindowTextA(hwndDlg, oldtitle, sizeof(oldtitle));
 				if (lstrcmpA(newtitle, oldtitle)) { //swt() flickers even if the title hasn't actually changed
 					SetWindowTextA(hwndDlg, newtitle);
