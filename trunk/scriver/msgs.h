@@ -345,4 +345,6 @@ extern const int msgDlgFontCount;
 #define SRMSGSET_INACTIVEALPHA		"InactiveAlpha"
 #define SRMSGDEFSET_INACTIVEALPHA	0
 
+#define SRMSGSET_WINDOWTITLE		"WindowTitle"
+
 #endif

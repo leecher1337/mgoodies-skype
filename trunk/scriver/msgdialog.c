@@ -520,6 +520,10 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 //			SendMessage(hwnd, EM_REPLACESEL, FALSE, (LPARAM) "\t");
 			return 0;
 		}
+		if (wParam == VK_F4 && (GetKeyState(VK_CONTROL) & 0x8000) && !(GetKeyState(VK_SHIFT) & 0x8000)) {
+			SendMessage(GetParent(hwnd), WM_CLOSE, 0, 0);
+			return 0;
+		}
 		if(wParam == VK_ESCAPE && (GetKeyState(VK_SHIFT) & 0x8000)) {
 			ShowWindow(GetParent(GetParent(hwnd)), SW_MINIMIZE);
 			return 0;
