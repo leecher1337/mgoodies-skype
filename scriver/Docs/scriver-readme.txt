@@ -66,6 +66,13 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.2.9
++ midnight-split message grouping
++ ctrl+F4 closes tabs
++ configurable window title - "hidden" (editable with DBEditor only) WindowTitle setting is used to store the template, %name% and %status% variables are available)
++ "smarter" toolbar auto-sizing
+* bugfixes: creating new tabs, showing history in RichEdit mode
+* other small changes and improvements
 2.2.2.8
 + showing file and URL events in logs
 * bugfixes: status changes logging, compatibility with newer RichEdit control, background colours
