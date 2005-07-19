@@ -1012,9 +1012,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			} else {
 				ShowWindow(dat->hwndParent, SW_SHOWNORMAL);
 			}
-			if (dat->parent->childrenCount == 1 || !(g_dat->flags & SMF_CREATETABSINBKG) || !(newData->flags & NMWLP_INCOMING)) {
+			if (dat->parent->childrenCount == 1 || 
+				(!(g_dat->flags & SMF_CREATETABSINBKG) && (IsIconic(dat->hwndParent) || GetActiveWindow() != dat->hwndParent)) || 
+				!(newData->flags & NMWLP_INCOMING)) {
 				SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
-			}
+			} 
 			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPEN);
 			if (notifyUnread) {
 				SendMessage(dat->hwndParent, DM_STARTFLASHING, 0, 0);
