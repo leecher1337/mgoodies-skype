@@ -99,7 +99,7 @@ void TabSRMMHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour)
   //          lf->lfHeight = 5;
      //   else {
             lf->lfHeight = (char) DBGetContactSettingByte(NULL, TABSRMM_FONTMODULE, str, 10);
-            lf->lfHeight= MulDiv(lf->lfHeight, GetDeviceCaps(hdc, LOGPIXELSY), 74);
+//            lf->lfHeight= MulDiv(lf->lfHeight, GetDeviceCaps(hdc, LOGPIXELSY), 74);
        // }
         ReleaseDC(NULL,hdc);
         lf->lfWidth = 0;
