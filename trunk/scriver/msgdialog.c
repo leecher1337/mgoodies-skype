@@ -952,23 +952,24 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						DWORD firstTime;
 
 						dbei.cbSize = sizeof(dbei);
-						if (dat->hDbEventFirst == NULL)
+						if (dat->hDbEventFirst == NULL) {
 							dbei.timestamp = time(NULL);
-						else
+							hPrevEvent = (HANDLE) CallService(MS_DB_EVENT_FINDLAST, (WPARAM) dat->hContact, 0);
+						} else {
 							CallService(MS_DB_EVENT_GET, (WPARAM) dat->hDbEventFirst, (LPARAM) & dbei);
+							hPrevEvent = (HANDLE) CallService(MS_DB_EVENT_FINDPREV, (WPARAM) dat->hDbEventFirst, 0);
+						}
 						firstTime = dbei.timestamp - 60 * DBGetContactSettingWord(NULL, SRMMMOD, SRMSGSET_LOADTIME, SRMSGDEFSET_LOADTIME);
 						for (;;) {
-							if (dat->hDbEventFirst == NULL)
-								hPrevEvent = (HANDLE) CallService(MS_DB_EVENT_FINDLAST, (WPARAM) dat->hContact, 0);
-							else
-								hPrevEvent = (HANDLE) CallService(MS_DB_EVENT_FINDPREV, (WPARAM) dat->hDbEventFirst, 0);
 							if (hPrevEvent == NULL)
 								break;
 							dbei.cbBlob = 0;
 							CallService(MS_DB_EVENT_GET, (WPARAM) hPrevEvent, (LPARAM) & dbei);
 							if (dbei.timestamp < firstTime)
 								break;
-							dat->hDbEventFirst = hPrevEvent;
+							if (DbEventIsShown(&dbei, dat))
+								dat->hDbEventFirst = hPrevEvent;
+							hPrevEvent = (HANDLE) CallService(MS_DB_EVENT_FINDPREV, (WPARAM) hPrevEvent, 0);
 						}
 						break;
 					}
