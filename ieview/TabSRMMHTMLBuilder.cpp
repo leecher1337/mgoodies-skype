@@ -310,6 +310,9 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			    ci.dwFlag = CNF_DISPLAY;
 				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 			        szName = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+					if (ci.pszVal) {
+						miranda_sys_free(ci.pszVal);
+					}
     			}
    			} else {
                 szName = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, ENF_NAMESMILEYS);
