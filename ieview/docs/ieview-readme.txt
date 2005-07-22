@@ -48,11 +48,11 @@ templates  - examples of HTML templates, which can be used with IEView
 emots, css and templates folders may be copied anywhere.
 
 In order to use IEView you need Scriver or TabSRMM. Scriver (SRMM mod) project page is located here:
-http://developer.berlios.de/projects/mgoodies.
+http://developer.berlios.de/projects/mgoodies. Scriver v2.2.2.9 or later is recommended.
 If IEVIew is among avtive plugins it will be automatically used by Scriver for message log rendering,
 otherwise regular RichEdit control is used.
 
-In order to use IEView with TabSRMM you need at least TabSRMM 0.9.9.9. Moreover it is necessary
+In order to use IEView with TabSRMM you need at least TabSRMM 0.9.9.96. Moreover it is necessary
 to turn on support for IEView in TabSRMM configuration.
 Please go to Window Sessions -> Message Window -> Message log options page, locate and
 check "Activate support for external".
@@ -106,6 +106,16 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.3.6
+* fixed compatibility with TabSRMM
+* bugfix: memory leaks
+1.0.3.5
++ new templates: fileIn, fileOut, hFileIn, hFileOut, URLIn, URLOut, hURLIn, hURLOut
++ new variables: %statusMsg%, %nickIn%, %fileDesc%
++ escaped variables: %\name% %\text% etc.
+* midnight-split message grouping
+* improved Scriver compatibility
+* bugfixes: swf support, memory leaks
 1.0.3.4
 + smileys are now properly copied/quoted (patch by Tweety and Vasilich)
 + uin, uinIn and uinOut variables
