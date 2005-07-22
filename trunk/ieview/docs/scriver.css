@@ -8,6 +8,14 @@
 .divIn {word-wrap: break-word; background-color: #FFFFFF;}
 /* this changes the way outgoing (sent) events look like including timestamp, name, etc. */
 .divOut {word-wrap: break-word; background-color: #FFFFFF;}
+/* this changes the way incoming (received) events look like including timestamp, name, etc. */
+.divInGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #000000; background-color: #FFFFFF;}
+/* this changes the way outgoing (sent) events look like including timestamp, name, etc. */
+.divOutGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #000000; background-color: #FFFFFF;}
+/* this changes the way incoming (received) events look like including timestamp, name, etc. */
+.divNotice {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}
+/* this changes the way outgoing (sent) events look like including timestamp, name, etc. */
+.divNoticeGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #000000}
 /* this changes the way outgoing (sent by you) messages look like */
 .messageOut {font-family: Arial; font-size: 12pt; font-weight: 900; color: #6A6A6A; }
 /* this changes the way incoming (received from your contact) messages look like */
