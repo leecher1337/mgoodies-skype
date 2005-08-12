@@ -967,7 +967,13 @@ bool IEView::mouseClick(POINT pt) {
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
         IHTMLElement *element;
+		IHTMLAnchorElement * pAnchor;
   		if (SUCCEEDED(document->elementFromPoint( pt.x, pt.y, &element ))&& element!=NULL) {
+			if (SUCCEEDED(element->QueryInterface(IID_IHTMLAnchorElement, (void**)&pAnchor)) && (pAnchor!=NULL)) {
+				element->click();
+				pAnchor->Release();
+				result = true;
+			}/*
   			BSTR url = getHrefFromAnchor(element);
   			if (url != NULL) {
   			    int i = wcslen(url);
@@ -977,7 +983,7 @@ bool IEView::mouseClick(POINT pt) {
                 delete tTemp;
                 delete url;
                 result = true;
-  			}
+  			}*/
   			element->Release();
   		}
 	    document->Release();
