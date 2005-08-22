@@ -38,9 +38,9 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
-	"IEView Plugin",
-	PLUGIN_MAKE_VERSION(1,0,3,6),
-	"IE Control Chat Log (1.0.3.6 "__DATE__")",
+	"IEView",
+	PLUGIN_MAKE_VERSION(1,0,3,7),
+	"IE Based Chat Log (1.0.3.7 "__DATE__")",
 	"Piotr Piastucki",
 	"the_leech@users.berlios.de",
 	"(c) 2004-2005 Piotr Piastucki",
@@ -69,7 +69,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	char text[_MAX_PATH];
 	char *p, *q;
-	
+
 	int wdsize = GetCurrentDirectory(0, NULL);
 	workingDir = new char[wdsize];
 	GetCurrentDirectory(wdsize, workingDir);

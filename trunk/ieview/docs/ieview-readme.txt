@@ -106,6 +106,9 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.3.7
+* some links were not handled properly
+* fixed Updater compatibility
 1.0.3.6
 * fixed compatibility with TabSRMM
 * bugfix: memory leaks
