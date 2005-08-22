@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_smileyadd.h"
 #include "m_metacontacts.h"
 
-#define MIRANDA_0_5
+//#define MIRANDA_0_5
 
 #define LOGICON_MSG_IN      0
 #define LOGICON_MSG_OUT     1
@@ -112,6 +112,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	memset(event, 0, sizeof(struct EventData));
 	event->hContact = hContact;
 	event->eventType = dbei.eventType;
+	event->szModule = strdup(dbei.szModule);
 	event->flags = dbei.flags;
 	event->timestamp = dbei.timestamp;
 #if defined( _UNICODE )
@@ -150,6 +151,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 void freeEvent(struct EventData *event) {
 	if (event->text != NULL) free (event->text);
 	if (event->wtext != NULL) free (event->wtext);
+	if (event->szModule != NULL) free (event->szModule);
 	free(event);
 }
 
