@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_smileyadd.h"
 #include "m_metacontacts.h"
 
-#define TABSRMM_SMILEYADD_BKGCOLORMODE 0x10000000
+#define MIRANDA_0_5
 
 #define LOGICON_MSG_IN      0
 #define LOGICON_MSG_OUT     1
@@ -110,6 +110,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	}
 	event = (struct EventData *) malloc(sizeof(struct EventData));
 	memset(event, 0, sizeof(struct EventData));
+	event->hContact = hContact;
 	event->eventType = dbei.eventType;
 	event->flags = dbei.flags;
 	event->timestamp = dbei.timestamp;
@@ -512,7 +513,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 			ci.dwFlag = CNF_DISPLAY;
 			if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 				// CNF_DISPLAY always returns a string type
-				szName = ci.pszVal;
+				szName = (char *)ci.pszVal;
 			}
 		}
 		else
@@ -583,7 +584,7 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 				ci.dwFlag = CNF_DISPLAY;
 				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 					// CNF_DISPLAY always returns a string type
-					szName = ci.pszVal;
+					szName = (char *)ci.pszVal;
 				}
 			}
 			else
@@ -621,16 +622,13 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 }
 
 //free() the return value
-static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContact, HANDLE hDbEvent, int prefixParaBreak, int firstEvent, struct LogStreamData *streamData)
+static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventData *event, int prefixParaBreak, int firstEvent, struct LogStreamData *streamData)
 {
 	char *buffer;
 	int bufferAlloced, bufferEnd;
 	int showColon = 0;
 	int isGroupBreak = TRUE;
-	struct EventData *event;
 
-	event = getEventFromDB(dat, hContact, hDbEvent);
-	if (event == NULL) return NULL;
 	bufferEnd = 0;
 	bufferAlloced = 1024;
 	buffer = (char *) malloc(bufferAlloced);
@@ -698,11 +696,11 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 			ci.dwFlag = CNF_DISPLAY;
 			if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 				// CNF_DISPLAY always returns a string type
-				szName = ci.pszVal;
+				szName = (char *)ci.pszVal;
 			}
 		}
 		else
-			szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0);
+			szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0);
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYNAME : MSGFONTID_YOURNAME));
 		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
 		showColon = 1;
@@ -744,11 +742,11 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 				ci.dwFlag = CNF_DISPLAY;
 				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 					// CNF_DISPLAY always returns a string type
-					szName = ci.pszVal;
+					szName = (char *)ci.pszVal;
 				}
 			}
 			else
-				szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0);
+				szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0);
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(MSGFONTID_NOTICE));
 			if (event->eventType == EVENTTYPE_FILE) {
 				if (event->flags & DBEF_SENT) {
@@ -770,12 +768,23 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, HANDLE hContac
 			break;
 		}
 	}
+/*
+#if defined( _UNICODE )
+		if (event->wtext != NULL) {
+			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->wtext);
+		} else {
+			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->text);
+		}
+#else
+		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->text);
+#endif
+*/
 	if (!prefixParaBreak) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 	}
 	dat->lastEventTime = event->timestamp;
 	dat->lastEventType = MAKELONG(event->flags, event->eventType);
-	freeEvent(event);
+	dat->lastEventContact = event->hContact;
 	return buffer;
 }
 
@@ -793,7 +802,16 @@ static DWORD CALLBACK LogStreamInEvents(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG 
 			case STREAMSTAGE_EVENTS:
 				if (dat->eventsToInsert) {
 					do {
+#ifdef MIRANDA_0_5
+						struct EventData *event = getEventFromDB(dat->dlgDat, dat->hContact, dat->hDbEvent);
+						dat->buffer = NULL;
+						if (event != NULL) {
+							dat->buffer = CreateRTFFromDbEvent2(dat->dlgDat, event, !dat->isFirst, dat->isEmpty, dat);
+							freeEvent(event);
+						} 
+#else 
 						dat->buffer = CreateRTFFromDbEvent(dat->dlgDat, dat->hContact, dat->hDbEvent, !dat->isFirst, dat->isEmpty, dat);
+#endif
 						if (dat->buffer)
 							dat->hDbEventLast = dat->hDbEvent;
 						dat->hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) dat->hDbEvent, 0);
@@ -913,7 +931,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		smre.rangeToReplace = NULL;
 		smre.useSounds = FALSE;
 		smre.disableRedraw = FALSE;
-		CallService(MS_SMILEYADD_REPLACESMILEYS, TABSRMM_SMILEYADD_BKGCOLORMODE, (LPARAM) &smre);
+		CallService(MS_SMILEYADD_REPLACESMILEYS, 0, (LPARAM) &smre);
 	}
 //	if (GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL)
 	{

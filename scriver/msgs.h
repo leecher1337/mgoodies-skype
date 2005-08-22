@@ -42,6 +42,9 @@ struct ErrorWindowData
 
 struct TabCtrlData 
 {
+	int		lastClickTime;
+	WPARAM  clickWParam;
+	LPARAM  clickLParam;
 	POINT	mouseLBDownPos;
 	void *	lastClickChild;
 	HIMAGELIST hDragImageList;
@@ -127,6 +130,7 @@ struct MessageWindowData
 	time_t	startTime;
 	time_t 	lastEventTime;
 	int    	lastEventType;
+	HANDLE  lastEventContact;
 	DWORD	flags;		
 	int		messagesInProgress;
 	int		codePage;

@@ -31,13 +31,13 @@ HINSTANCE g_hInst;
 
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
+	"Scriver",
+	PLUGIN_MAKE_VERSION(2, 2, 2, 10),
 #ifdef _UNICODE
-	"Send/Receive Messages (Unicode)",
+	"Scriver - send and receive instant messages (Unicode)",
 #else
-	"Send/Receive Messages",
-#endif
-	PLUGIN_MAKE_VERSION(2, 2, 2, 9),
 	"Scriver - send and receive instant messages",
+#endif
 	"Miranda IM Development Team (SRMM), Piotr Piastucki (Scriver)",
 	"the_leech@users.berlios.de",
 	"Copyright © 2000-2005 Miranda ICQ/IM Project, Piotr Piastucki",

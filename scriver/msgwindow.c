@@ -923,7 +923,9 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_LBUTTONDOWN: 
 		{
 			if (!dat->bDragging) {
+				FILETIME ft;
 				TCHITTESTINFO thinfo;
+				GetSystemTimeAsFileTime(&ft);
 				thinfo.pt.x = (lParam<<16)>>16;
 				thinfo.pt.y = lParam>>16;
 				dat->srcTab = dat->destTab = TabCtrl_HitTest(hwnd, &thinfo);
@@ -934,6 +936,9 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				}
 				dat->bDragging = TRUE;
 				dat->bDragged = FALSE;
+				dat->clickLParam = lParam;
+				dat->clickWParam = wParam;
+				dat->lastClickTime = ft.dwLowDateTime;
 				dat->mouseLBDownPos.x = thinfo.pt.x;
 				dat->mouseLBDownPos.y = thinfo.pt.y;
 				SetCapture(hwnd);
@@ -983,7 +988,7 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						UpdateWindow(hwnd);
 					}
 				} else {
-					SendMessage(hwnd, WM_LBUTTONDOWN, wParam, lParam);
+					SendMessage(hwnd, WM_LBUTTONDOWN, dat->clickWParam, dat->clickLParam);
 				}
 				dat->bDragged = FALSE;
 				dat->bDragging = FALSE;
@@ -993,11 +998,14 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_MOUSEMOVE:
 			if (!(wParam & MK_LBUTTON)) break;
 			if (dat->bDragging) {
+				FILETIME ft;
 				TCHITTESTINFO thinfo;
+				GetSystemTimeAsFileTime(&ft);
 				thinfo.pt.x = (lParam<<16)>>16;
 				thinfo.pt.y = lParam>>16;
 				if (!dat->bDragged) {
-					if (abs(thinfo.pt.x-dat->mouseLBDownPos.x)<4 && abs(thinfo.pt.y-dat->mouseLBDownPos.y)<4) 
+					if ((abs(thinfo.pt.x-dat->mouseLBDownPos.x)<3 && abs(thinfo.pt.y-dat->mouseLBDownPos.y)<3) 
+						|| (ft.dwLowDateTime - dat->lastClickTime) < 10*1000*150)
 						break;
 				}
 				if (!dat->bDragged) {
