@@ -73,15 +73,22 @@ private:
 	int                 smileyNum, visibleSmileyNum;
 	char *				name;
 	char *				filename;
+	char *				author;
+	char *				version;
+	char *				description;
 	SmileyMap *         next;
 	Smiley *			entries;
 	SmileyWindow *		window;
 	SmileyMap(const char *name, const char *filename);
 	void                clear();
 	void                setFilename(const char *filename);
+	void                setAuthor(const char *author);
+	void                setDescription(const char *description);
+	void                setVersion(const char *version);
 	Smiley *			addSmiley(const char *file, const char *text, bool isHidden);
 	static bool			loadSmileyFile(const char *proto, const char *filename, bool onlyInfo);
 	static SmileyMap* 	add(const char *proto, const char *filename);
+	static void         remove(const char *proto);
 public:
 	~SmileyMap();
 	Smiley *            getSmiley(const char *text, int *len);
@@ -92,6 +99,9 @@ public:
 	static Smiley *		getSmiley(const char *proto, const char *text, int *len);
 	static bool         loadLibrary(const char *proto, const char *filename);
 	const char *        getFilename();
+	const char *        getAuthor();
+	const char *        getVersion();
+	const char *        getDescription();
 	int                 getSmileyNum();
 	int                 getVisibleSmileyNum();
 };

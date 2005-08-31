@@ -1,6 +1,7 @@
 #include "resource.h"
 #ifdef __MINGW32__
 	#define WINVER 0x500
+	#define _WIN32_IE 0x400
 	#include <windows.h>
 	#ifndef IDC_STATIC
 	#define IDC_STATIC (-1)
@@ -10,6 +11,7 @@
 	#include "winres.h"
 	#undef APSTUDIO_READONLY_SYMBOLS
 #endif
+#include <commctrl.h>
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU) || defined(__MINGW32__)
 #ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
@@ -69,12 +71,12 @@ BEGIN
 // TCS_FIXEDWIDTH | TCS_BUTTONS |
 END
 
-IDD_GENERAL_OPTIONS DIALOGEX 5, 15, 300, 225
+IDD_GENERAL_OPTIONS DIALOGEX 2, 15, 306, 228
 STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Options",IDC_SIMPLE,5,5,288,80
+    GROUPBOX        "Options",IDC_SIMPLE,5,5,294,80
     CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,19,265,10
     LTEXT           "Currently the following BBCodes are supported: [b][i][u][img][size][color]",IDC_SIMPLE, 26,31,265,12
@@ -84,21 +86,38 @@ BEGIN
                     WS_TABSTOP,14,61,265,10
 END
 
-IDD_EMOTICONS_OPTIONS DIALOGEX 5, 15, 300, 225
+IDD_EMOTICONS_OPTIONS DIALOGEX 2, 15, 306, 228
 STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Animated Smiley Libraries",IDC_SIMPLE,5,5,288,135
+    GROUPBOX        "Animated Smiley Libraries",IDC_SIMPLE,5,5,294,135
     CONTROL         "Enable smiley replacement",IDC_SMILEYS,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,19,250,10
     CONTROL         "Specify library for each protocol",IDC_PROTO_SMILEYS,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,26,34,250,10
- 	EDITTEXT        IDC_SMILEYS_FILENAME,100,55,168,12,ES_AUTOHSCROLL
+ 	EDITTEXT        IDC_SMILEYS_FILENAME,120,55,148,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE_SMILEYS,270,55,15,11
- 	LISTBOX         IDC_PROTOLIST,14,55,80,75, LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "", IDC_SMILEYS_PREVIEW,"MButtonClass", WS_TABSTOP,170,90,15,15, 0x18000000L
-    GROUPBOX        "Options",IDC_SIMPLE,5,145,288,52
+    CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP |
+                    TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER |
+                    WS_TABSTOP,14,50,100,83
+//    CONTROL         "Specify Smiley Pack for each protocol",IDC_USESTDPACK,
+                    //"Button",BS_AUTOCHECKBOX | WS_TABSTOP,124,11,165,11
+//    EDITTEXT        IDC_SMILEYS_FILENAME,124,25,185,12,ES_AUTOHSCROLL,
+  //                  WS_EX_ACCEPTFILES
+//    PUSHBUTTON      "...",IDC_BROWSE_SMILEYS,296,15,13,11
+    LTEXT           "Name:",IDC_STATIC,125,80,30,8
+//    LTEXT           "",IDC_LIBNAME,159,49,150,11,SS_SUNKEN | SS_PATHELLIPSIS
+    LTEXT           "Author:",IDC_STATIC,125,94,30,8
+//    LTEXT           "",IDC_LIBAUTHOR,159,63,104,11,SS_SUNKEN |
+  //                  SS_PATHELLIPSIS
+    LTEXT           "Version:",IDC_STATIC,125,188,30,8
+    //LTEXT           "",IDC_LIBVERSION,159,78,104,11,SS_SUNKEN |
+      //              SS_PATHELLIPSIS
+    PUSHBUTTON      "Preview",IDC_SMILEYS_PREVIEW,270,95,37,25
+//	LISTBOX         IDC_PROTOLIST,14,55,80,75, LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+//    CONTROL         "", IDC_SMILEYS_PREVIEW,"MButtonClass", WS_TABSTOP,170,90,15,15, 0x18000000L
+    GROUPBOX        "Options",IDC_SIMPLE,5,145,294,52
     CONTROL         "Only replace isolated smileys",IDC_ISOLATED_SMILEYS,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,160,265,10
     CONTROL         "Surround smileys with spaces",IDC_SURROUND_SMILEYS,"Button",BS_AUTOCHECKBOX |
@@ -107,12 +126,12 @@ BEGIN
                     WS_TABSTOP,14,180,265,10
 END
 
-IDD_TEMPLATES_OPTIONS DIALOGEX 5, 15, 300, 225
+IDD_TEMPLATES_OPTIONS DIALOGEX 2, 15, 306, 228
 STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Mode",IDC_SIMPLE,5,5,288,120
+    GROUPBOX        "Mode",IDC_SIMPLE,5,5,294,120
     CONTROL         "Background image",IDC_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,19,86,10
  	EDITTEXT        IDC_BACKGROUND_IMAGE_FILENAME,100,18,168,12,ES_AUTOHSCROLL
@@ -134,36 +153,36 @@ BEGIN
     LTEXT           "RTL templates",IDC_SIMPLE, 26,106,74,12
  	EDITTEXT        IDC_TEMPLATES_FILENAME_RTL,100,104,168,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE_TEMPLATES_RTL,270,104,15,11
-    GROUPBOX        "Events To Show",IDC_SIMPLE,5,131,140,89
+    GROUPBOX        "Events To Show",IDC_SIMPLE,5,131,143,89
     CONTROL         "Show file events",IDC_LOG_SHOW_FILE,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,144,120,10
     CONTROL         "Show url events",IDC_LOG_SHOW_URL,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,154,120,10
     CONTROL         "Show status changes",IDC_LOG_SHOW_STATUSCHANGE,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,164,125,10
-    GROUPBOX        "Log Options",IDC_SIMPLE,153,131,140,89
+    GROUPBOX        "Log Options",IDC_SIMPLE,156,131,143,89
     CONTROL         "Show nicknames",IDC_LOG_SHOW_NICKNAMES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,162,144,125,10
+                    WS_TABSTOP,165,144,125,10
     CONTROL         "Show time",IDC_LOG_SHOW_TIME,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,162,154,125,10
+                    WS_TABSTOP,165,154,125,10
     CONTROL         "Show seconds",IDC_LOG_SHOW_SECONDS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,177,164,110,10
+                    WS_TABSTOP,180,164,110,10
     CONTROL         "Show date",IDC_LOG_SHOW_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,162,174,125,10
+                    WS_TABSTOP,165,174,125,10
     CONTROL         "Use long date format",IDC_LOG_LONG_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,177,184,110,10
+                    WS_TABSTOP,180,184,110,10
     CONTROL         "Use relative timestamp", IDC_LOG_RELATIVE_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,177,194,110,10
+                    WS_TABSTOP,180,194,110,10
     CONTROL         "Use message grouping", IDC_LOG_GROUP_MESSAGES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,162,204,125,10
+                    WS_TABSTOP,165,204,125,10
 END
 
-IDD_GROUPCHATS_OPTIONS DIALOGEX 5, 15, 300, 225
+IDD_GROUPCHATS_OPTIONS DIALOGEX 2, 15, 306, 228
 STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Mode",IDC_SIMPLE,5,5,288,60
+    GROUPBOX        "Mode",IDC_SIMPLE,5,5,294,60
     CONTROL         "External CSS file",IDC_GROUPCHAT_CSS,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,20,86,10
  	EDITTEXT        IDC_GROUPCHAT_CSS_FILENAME,100,19,168,12,ES_AUTOHSCROLL
