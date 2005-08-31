@@ -157,6 +157,9 @@ SmileyMap::SmileyMap(const char *name, const char *filename) {
 	next = NULL;
 	this->name = Utils::dupString(name);
 	this->filename = Utils::dupString(filename);
+	this->version = Utils::dupString("");
+	this->author = Utils::dupString("");
+	this->description = Utils::dupString("");
 	window = new SmileyWindow(this);
 	smileyNum = 0;
 	visibleSmileyNum = 0;
@@ -168,6 +171,15 @@ SmileyMap::~SmileyMap() {
 	}
 	if (filename != NULL) {
 		delete filename;
+	}
+	if (version != NULL) {
+		delete version;
+	}
+	if (author != NULL) {
+		delete author;
+	}
+	if (description != NULL) {
+		delete description;
 	}
 	clear();
 }
@@ -192,6 +204,7 @@ bool SmileyMap::loadSmileyFile(const char *proto, const char *filename, bool onl
 	char pathstring[500];
 
 	if (filename == NULL || strlen(filename) == 0) {
+        SmileyMap::remove(proto);
 		return false;
 	}
 	strcpy(pathstring, filename);
@@ -202,6 +215,7 @@ bool SmileyMap::loadSmileyFile(const char *proto, const char *filename, bool onl
 
 	fh = fopen(filename, "rt");
 	if (fh == NULL) {
+        SmileyMap::remove(proto);
 		return false;
 	}
 	SmileyMap *smap = SmileyMap::add(proto, filename);
@@ -216,25 +230,25 @@ bool SmileyMap::loadSmileyFile(const char *proto, const char *filename, bool onl
 	    	//name tag?
 	    	if (strncmp(store, "Name", 4) == 0) {
 	      		sscanf(store, "Name = \"%[^\"]", description);
+				smap->setDescription(description);
 	      		continue;
 	    	}
 	    	//author tag?
 	    	if (strncmp(store, "Author", 6) == 0) {
 	      		sscanf(store, "Author = \"%[^\"]", description);
+				smap->setAuthor(description);
 	      		continue;
 	    	}
 		    //date tag?
 		    if (strncmp(store, "Date", 4) == 0) {
 				sscanf(store, "Date = \"%[^\"]", description);
-				continue;
-		    }
-		    if (strncmp(store, "Date", 4) == 0) {
-				sscanf(store, "Date = \"%[^\"]", description);
+				//smap->setDescription(description);
 				continue;
 		    }
 		    //version tag?
 		    if (strncmp(store, "Version", 7) == 0) {
 				sscanf(store, "Version = \"%[^\"]", description);
+				smap->setVersion(description);
 				continue;
 		    }
 		    if (strncmp(store, "SelectionSize", 12) == 0) {
@@ -347,6 +361,22 @@ SmileyWindow* SmileyMap::getWindow() {
 	return window;
 }
 
+void SmileyMap::remove(const char *proto) {
+	SmileyMap *map, *lastmap;
+	for (map=mapList, lastmap=NULL; map!=NULL; map=map->next) {
+		if (!strcmp(map->name, proto)) {
+			if (lastmap == NULL) {
+				mapList = map->next;
+			} else {
+				lastmap->next = map->next;
+			}
+			delete map;
+			break;
+		}
+		lastmap = map;
+	}
+}
+
 SmileyMap* SmileyMap::add(const char *proto, const char *filename) {
 	SmileyMap *map;
 	for (map=mapList; map!=NULL; map=map->next) {
@@ -369,7 +399,40 @@ void SmileyMap::setFilename(const char *filename) {
 	this->filename = Utils::dupString(filename);
 }
 
+void SmileyMap::setAuthor(const char *author) {
+	if (this->author != NULL) {
+		delete this->author;
+	}
+	this->author = Utils::dupString(author);
+}
+
+void SmileyMap::setVersion(const char *version) {
+	if (this->version != NULL) {
+		delete this->version;
+	}
+	this->version = Utils::dupString(version);
+}
+
+void SmileyMap::setDescription(const char *description) {
+	if (this->description != NULL) {
+		delete this->description;
+	}
+	this->description = Utils::dupString(description);
+}
+
 const char *SmileyMap::getFilename() {
+	return filename;
+}
+
+const char *SmileyMap::getAuthor() {
+	return filename;
+}
+
+const char *SmileyMap::getVersion() {
+	return filename;
+}
+
+const char *SmileyMap::getDescription() {
 	return filename;
 }
 

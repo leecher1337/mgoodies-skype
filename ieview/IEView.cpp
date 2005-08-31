@@ -937,14 +937,18 @@ BSTR IEView::getHrefFromAnchor(IHTMLElement *element) {
     if (element != NULL) {
     	IHTMLAnchorElement * pAnchor;
         if (SUCCEEDED(element->QueryInterface(IID_IHTMLAnchorElement, (void**)&pAnchor)) && (pAnchor!=NULL)) {
+			VARIANT	variant;
             BSTR url;
-            BSTR url2;
-            pAnchor->get_href( &url );
-            if (url!=NULL) {
-            	url2 = Utils::dupString(url);
-            	SysFreeString(url);
-            	url = url2;
-           	}
+            if (SUCCEEDED(element->getAttribute(L"href", 2, &variant) && variant.vt == VT_BSTR)) {
+				url = Utils::dupString(variant.bstrVal);
+				SysFreeString(variant.bstrVal);
+			}
+            //pAnchor->get_href( &url );
+//            if (url!=NULL) {
+  //          	url2 = Utils::dupString(url);
+  //          	SysFreeString(url);
+    //        	url = url2;
+      //     	}
             pAnchor->Release();
             return url;
         } else {
@@ -967,13 +971,13 @@ bool IEView::mouseClick(POINT pt) {
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
         IHTMLElement *element;
-		IHTMLAnchorElement * pAnchor;
   		if (SUCCEEDED(document->elementFromPoint( pt.x, pt.y, &element ))&& element!=NULL) {
-			if (SUCCEEDED(element->QueryInterface(IID_IHTMLAnchorElement, (void**)&pAnchor)) && (pAnchor!=NULL)) {
-				element->click();
-				pAnchor->Release();
-				result = true;
-			}/*
+//		IHTMLAnchorElement * pAnchor;
+//			if (SUCCEEDED(element->QueryInterface(IID_IHTMLAnchorElement, (void**)&pAnchor)) && (pAnchor!=NULL)) {
+//				element->click();
+//				result = true;
+//				pAnchor->Release();
+//			}
   			BSTR url = getHrefFromAnchor(element);
   			if (url != NULL) {
   			    int i = wcslen(url);
@@ -983,7 +987,7 @@ bool IEView::mouseClick(POINT pt) {
                 delete tTemp;
                 delete url;
                 result = true;
-  			}*/
+  			}
   			element->Release();
   		}
 	    document->Release();
