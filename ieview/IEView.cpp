@@ -980,6 +980,10 @@ bool IEView::mouseClick(POINT pt) {
 //			}
   			BSTR url = getHrefFromAnchor(element);
   			if (url != NULL) {
+				if ((GetKeyState(VK_SHIFT) & 0x8000) && !(GetKeyState(VK_CONTROL) & 0x8000)
+				&& !(GetKeyState(VK_MENU) & 0x8000)) {
+					SendMessage(GetParent(hwnd), WM_COMMAND, IDCANCEL, 0);
+				}
   			    int i = wcslen(url);
   			    char *tTemp = new char[i+1];
   			    WideCharToMultiByte(CP_ACP, 0, url, -1, tTemp, i+1, NULL, NULL);

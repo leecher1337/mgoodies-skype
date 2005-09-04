@@ -81,11 +81,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define IDC_GROUPCHAT_TEMPLATES         1056
 
 
+#define IDC_LIBNAME                     1070
+#define IDC_LIBAUTHOR                   1071
+#define IDC_LIBVERSION                  1072
+
 #define IDC_SIMPLE                      1100
 #define IDC_TABS                        2000
 
-
+/*
+ * Values taken from shdoclc.dll
+ */
 #define ID_MENU_COPY     				15
+#define ID_MENU_PRINT                   27
 #define ID_MENU_COPYLINK 				2262
 #define ID_MENU_SELECTALL 				31
 #define ID_MENU_CLEARLOG                40000
