@@ -93,6 +93,7 @@ static TokenDef tokenNames[] = {
 	{"%uinIn%", Token::UININ, 7, 0},
 	{"%uinOut%", Token::UINOUT, 8, 0},
 	{"%nickIn%", Token::NICKIN, 8, 0},
+	{"%nickOut%", Token::NICKOUT, 9, 1},
 	{"%statusMsg%", Token::STATUSMSG, 11, 0},
 	{"%fileDesc%", Token::FILEDESC, 10, 0},
 
@@ -112,6 +113,7 @@ static TokenDef tokenNames[] = {
 	{"%\\uinIn%", Token::UININ, 8, 1},
 	{"%\\uinOut%", Token::UINOUT, 9, 1},
 	{"%\\nickIn%", Token::NICKIN, 9, 1},
+	{"%\\nickOut%", Token::NICKOUT, 10, 1},
 	{"%\\statusMsg%", Token::STATUSMSG, 12, 1},
 	{"%\\fileDesc%", Token::FILEDESC, 11, 1}
 };
