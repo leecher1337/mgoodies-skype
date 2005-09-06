@@ -92,6 +92,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	char *szAvatarIn = NULL;
 	char *szAvatarOut = NULL;
 	char *szNickIn = NULL;
+	char *szNickOut = NULL;
 	char *szStatusMsg = NULL;
 	int outputSize;
 	char *output;
@@ -165,6 +166,14 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
         szNickIn = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
 	}
+	ZeroMemory(&ci, sizeof(ci));
+    ci.cbSize = sizeof(ci);
+    ci.hContact = NULL;
+    ci.szProto = szProto;
+    ci.dwFlag = CNF_NICK;
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+        szNickOut = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+	}
 
 	Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", "HTMLStart") : TemplateMap::getTemplate("default", "HTMLStart");
 	if (tmplt!=NULL) {
@@ -205,6 +214,9 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 				case Token::NICKIN:
 				    tokenVal = szNickIn;
 				    break;
+ 				case Token::NICKOUT:
+				    tokenVal = szNickOut;
+ 				    break;
 			}
 			if (tokenVal != NULL) {
 				if (token->getEscape()) {
@@ -231,6 +243,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	if (szNameIn!=NULL) delete szNameIn;
 	if (szNameOut!=NULL) delete szNameOut;
 	if (szNickIn!=NULL) delete szNickIn;
+	if (szNickOut!=NULL) delete szNickOut;
 	if (szStatusMsg!=NULL) delete szStatusMsg;
 	view->scrollToBottom();
 	groupTemplate = NULL;
@@ -252,6 +265,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	char *szUINIn = NULL;
 	char *szUINOut = NULL;
 	char *szNickIn = NULL;
+	char *szNickOut = NULL;
 	char *szStatusMsg = NULL;
 	char *szAvatar = NULL;
 	char *szAvatarIn = NULL;
@@ -335,6 +349,14 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
         szNickIn = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+	}
+	ZeroMemory(&ci, sizeof(ci));
+    ci.cbSize = sizeof(ci);
+    ci.hContact = NULL;
+    ci.szProto = szProto;
+    ci.dwFlag = CNF_NICK;
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+        szNickOut = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
 	}
 	HANDLE hDbEvent = event->hDbEventFirst;
 	event->hDbEventFirst = NULL;
@@ -504,6 +526,9 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 						case Token::NICKIN:
 						    tokenVal = szNickIn;
 						    break;
+		 				case Token::NICKOUT:
+						    tokenVal = szNickOut;
+		 				    break;
 						case Token::FILEDESC:
 							tokenVal = szFileDesc;
 							break;
@@ -540,9 +565,9 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	if (szNameIn!=NULL) delete szNameIn;
 	if (szNameOut!=NULL) delete szNameOut;
 	if (szNickIn!=NULL) delete szNickIn;
+	if (szNickOut!=NULL) delete szNickOut;
 	if (szStatusMsg!=NULL) delete szStatusMsg;
 	if (szFileDesc!=NULL) delete szFileDesc;
-//	view->scrollToBottom();
 }
 
 time_t TemplateHTMLBuilder::getStartedTime() {
