@@ -104,8 +104,10 @@ protected:
 	virtual char *encodeUTF8(const char *text, const char *proto, int flags);
 	virtual char *encodeUTF8(const char *text, int cp, const char *proto, int flags);
 	virtual bool encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags);
+	virtual char* getRealProto(HANDLE hContact);
 	virtual char* getProto(HANDLE hContact);
 	virtual void getUINs(HANDLE hContact, char *&uinIn, char *&uinOut);
+	virtual HANDLE getRealContact(HANDLE hContact);
 	virtual DWORD getLastEventTime();
 	virtual void setLastEventTime(DWORD);
 	virtual int getLastEventType();
