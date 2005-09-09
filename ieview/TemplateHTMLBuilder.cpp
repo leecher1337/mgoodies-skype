@@ -82,6 +82,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	CONTACTINFO ci;
 	char tempBase[1024];
 	char tempStr[1024];
+	HANDLE hRealContact;
+	char *szRealProto = NULL;
 	char *szBase=NULL;
 	char *szNoAvatar=NULL;
 	char *szProto = NULL;
@@ -98,6 +100,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	char *output;
 
 	output = NULL;
+	hRealContact = getRealContact(event->hContact);
+	szRealProto = getProto(hRealContact);
 	szProto = getProto(event->hContact);
 	tempBase[0]='\0';
 	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
@@ -120,12 +124,12 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	    ci.szProto = szProto;
 	    ci.dwFlag = CNF_DISPLAY;
 		if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) &ci)) {
-	        szNameOut = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+	        szNameOut = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
 			if (ci.pszVal) {
 				miranda_sys_free(ci.pszVal);
 			}
 		}
-		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, ENF_NAMESMILEYS);
+		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szRealProto, ENF_NAMESMILEYS);
 	} else {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");
@@ -164,7 +168,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
     ci.szProto = szProto;
     ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-        szNickIn = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+        szNickIn = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
 	}
 	ZeroMemory(&ci, sizeof(ci));
     ci.cbSize = sizeof(ci);
@@ -172,7 +176,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
     ci.szProto = szProto;
     ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-        szNickOut = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+        szNickOut = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
 	}
 
 	Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", "HTMLStart") : TemplateMap::getTemplate("default", "HTMLStart");
@@ -200,7 +204,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 			    	tokenVal = szAvatarOut;
 					break;
 				case Token::PROTO:
-				    tokenVal = szProto;
+				    tokenVal = szRealProto;
 				    break;
 				case Token::UININ:
 				    tokenVal = szUINIn;
@@ -234,6 +238,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		free(output);
 	}
 	if (szBase!=NULL) delete szBase;
+    if (szRealProto!=NULL) delete szRealProto;
     if (szProto!=NULL) delete szProto;
 	if (szUINIn!=NULL) delete szUINIn;
 	if (szUINOut!=NULL) delete szUINOut;
@@ -253,6 +258,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	DBVARIANT dbv;
 	CONTACTINFO ci;
+	HANDLE hRealContact;
+	char *szRealProto = NULL;
 	char tempBase[1024];
 	char *szBase=NULL;
 	char tempStr[1024];
@@ -278,9 +285,11 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 //	DWORD today = (DWORD)time(NULL);
 //	today = today - today % 86400;
 	int cp = CP_ACP;
-	if (event->cbSize == sizeof(IEVIEWEVENT)) {
+	if ((DWORD)event->cbSize >= sizeof(IEVIEWEVENT)) {
 		cp = event->codepage;
 	}
+	hRealContact = getRealContact(event->hContact);
+	szRealProto = getProto(hRealContact);
 	szProto = getProto(event->hContact);
 	tempBase[0]='\0';
 	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
@@ -304,12 +313,12 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	    ci.szProto = szProto;
 	    ci.dwFlag = CNF_DISPLAY;
 		if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-	        szNameOut = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+	        szNameOut = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
 			if (ci.pszVal) {
 				miranda_sys_free(ci.pszVal);
 			}
 		}
-		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, ENF_NAMESMILEYS);
+		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szRealProto, ENF_NAMESMILEYS);
 	} else {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");
@@ -348,7 +357,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     ci.szProto = szProto;
     ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-        szNickIn = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+        szNickIn = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
 	}
 	ZeroMemory(&ci, sizeof(ci));
     ci.cbSize = sizeof(ci);
@@ -356,7 +365,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     ci.szProto = szProto;
     ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-        szNickOut = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
+        szNickOut = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
 	}
 	HANDLE hDbEvent = event->hDbEventFirst;
 	event->hDbEventFirst = NULL;
@@ -417,12 +426,12 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 				if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
 					DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
 					if (wlen > 0 && wlen < aLen) {
-                        szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, ENF_ALL);
+                        szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szRealProto, ENF_ALL);
 					} else {
-                        szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, ENF_ALL);
+                        szText = encodeUTF8((char *)dbei.pBlob, cp, szRealProto, ENF_ALL);
 					}
 				} else {
-                	szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, ENF_ALL);
+                	szText = encodeUTF8((char *)dbei.pBlob, cp, szRealProto, ENF_ALL);
 				}
                 if (isGrouping && (Options::getSRMMFlags() & Options::LOG_GROUP_MESSAGES)) {
                     if (isGroupBreak) {
@@ -436,22 +445,22 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                	}    
 			} else if (dbei.eventType == EVENTTYPE_FILE) {
 				char *ptr = (char *)dbei.pBlob + sizeof(DWORD);
-                szText = encodeUTF8(ptr, szProto, ENF_NONE);
-				szFileDesc = encodeUTF8(ptr + strlen(ptr) + 1 , szProto, ENF_NONE);
+                szText = encodeUTF8(ptr, szRealProto, ENF_NONE);
+				szFileDesc = encodeUTF8(ptr + strlen(ptr) + 1 , szRealProto, ENF_NONE);
                 tmpltName[1] = isHistory ? isSent ? "hFileOut" : "hFileIn" : isSent ? "FileOut" : "FileIn";
                 Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[1]) : TemplateMap::getTemplate("default", tmpltName[1]);
                 if (tmplt == NULL) {
                 	tmpltName[1] = isHistory ? "hFile" : "File";
 				}
 			} else if (dbei.eventType == EVENTTYPE_URL) {
-                szText = encodeUTF8((char *)dbei.pBlob, szProto, ENF_NONE);
+                szText = encodeUTF8((char *)dbei.pBlob, szRealProto, ENF_NONE);
                 tmpltName[1] = isHistory ? isSent ? "hURLOut" : "hURLIn" : isSent ? "URLOut" : "URLIn";
                 Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[1]) : TemplateMap::getTemplate("default", tmpltName[1]);
                 if (tmplt == NULL) {
 	                tmpltName[1] = isHistory ? "hURL" : "URL";
 				}
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-                szText = encodeUTF8((char *)dbei.pBlob, szProto, ENF_NONE);
+                szText = encodeUTF8((char *)dbei.pBlob, szRealProto, ENF_NONE);
                 tmpltName[1] = isHistory ? "hStatus" : "Status";
 			}
 			/* template-specific formatting */
@@ -509,7 +518,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 					    	tokenVal = szAvatarOut;
 							break;
 						case Token::PROTO:
-						    tokenVal = szProto;
+						    tokenVal = szRealProto;
 						    break;
 						case Token::UIN:
 						    tokenVal = szUIN;
@@ -556,6 +565,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
         free(dbei.pBlob);
     }
 	if (szBase!=NULL) delete szBase;
+    if (szRealProto!=NULL) delete szRealProto;
     if (szProto!=NULL) delete szProto;
 	if (szUINIn!=NULL) delete szUINIn;
 	if (szUINOut!=NULL) delete szUINOut;

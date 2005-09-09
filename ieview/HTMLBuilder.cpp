@@ -1111,6 +1111,10 @@ char * HTMLBuilder::encodeUTF8(const char *text, int cp, const char *proto, int 
 }
 
 char *HTMLBuilder::getProto(HANDLE hContact) {
+	return Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+}
+
+char *HTMLBuilder::getRealProto(HANDLE hContact) {
     char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
 	if (szProto!=NULL && !strcmp(szProto,"MetaContacts")) {
 		hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
@@ -1120,6 +1124,15 @@ char *HTMLBuilder::getProto(HANDLE hContact) {
 		}
 	}
 	return szProto;
+}
+
+HANDLE HTMLBuilder::getRealContact(HANDLE hContact) {
+    char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+	if (szProto != NULL && !strcmp(szProto,"MetaContacts")) {
+		hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
+	}
+	if (szProto != NULL) delete szProto;
+	return hContact;
 }
 
 void HTMLBuilder::getUINs(HANDLE hContact, char *&uinIn, char *&uinOut) {
@@ -1194,3 +1207,4 @@ bool HTMLBuilder::isSameDate(DWORD time1, DWORD time2) {
 	}
 	return false;
 }
+
