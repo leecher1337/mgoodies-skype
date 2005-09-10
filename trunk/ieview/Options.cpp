@@ -37,6 +37,13 @@ static HWND hwndEmoticons, hwndTemplates, hwndCurrentTab, hwndGeneral, hwndGroup
 static int currentProtoItem;
 static HICON smileyIcon;
 
+typedef struct tagTVKEYDOWN {
+    NMHDR hdr;
+    WORD wVKey;
+    UINT flags;
+} NMTVKEYDOWN, FAR *LPNMTVKEYDOWN;
+
+
 
 BOOL TreeView_SetCheckState(HWND hwndTreeView, HTREEITEM hItem, BOOL fCheck)
 {
@@ -221,7 +228,20 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 }
 
 static void updateSmileyInfo(HWND hwndDlg, int proto) {
+	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
 	SetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[proto]);
+	SmileyMap *map = SmileyMap::getLibraryInfo(protoFilenames[proto]);
+	TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), map!=NULL);
+	if (map != NULL) {
+		SetDlgItemText(hwndDlg, IDC_LIBNAME, map->getDescription());
+		SetDlgItemText(hwndDlg, IDC_LIBAUTHOR, map->getAuthor());
+		SetDlgItemText(hwndDlg, IDC_LIBVERSION, map->getVersion());
+		delete map;
+	} else {
+		SetDlgItemText(hwndDlg, IDC_LIBNAME, Translate("Not loaded"));
+		SetDlgItemText(hwndDlg, IDC_LIBAUTHOR, "");
+		SetDlgItemText(hwndDlg, IDC_LIBVERSION, "");
+	}
 	currentProtoItem = proto;
 }
 
@@ -308,7 +328,6 @@ static bool browseSmileys(HWND hwndDlg) {
 	ofn.lpstrDefExt = "asl";
 	if(GetOpenFileName(&ofn)) {
         strcpy(protoFilenames[currentProtoItem], path);
-//		SetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, path);
 		return true;
 	}
 	return false;
@@ -385,8 +404,13 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 		{
 			switch (LOWORD(wParam)) {
 			case IDC_SMILEYS_FILENAME:
-				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE)
+				if (HIWORD(wParam)==EN_KILLFOCUS) {
+					GetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[currentProtoItem], MAX_PATH);
+					updateSmileyInfo(hwndDlg, currentProtoItem);
+				}
+				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE) {
 					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				}
 				break;
 			case IDC_SMILEYS_PREVIEW:
 				{
@@ -429,7 +453,7 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				break;
 			case IDC_BROWSE_SMILEYS:
 				if (browseSmileys(hwndDlg)) {
-					SetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[currentProtoItem]);
+					updateSmileyInfo(hwndDlg, currentProtoItem);
 					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
@@ -442,9 +466,7 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				TreeView_SelectItem((HWND)wParam, (HTREEITEM) lParam);
 			}
 			if (TreeView_GetCheckState((HWND)wParam, (HTREEITEM) lParam)) {
-				if (!browseSmileys(hwndDlg)) {
-					TreeView_SetCheckState((HWND)wParam, (HTREEITEM) lParam, FALSE);
-				}
+				browseSmileys(hwndDlg);
 			} else {
 				strcpy(protoFilenames[getSelProto((HWND)wParam, (HTREEITEM) lParam)], "");
 			}
@@ -467,13 +489,12 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
                                 PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom, (LPARAM)ht.hItem);
 							}
 						}
-						break;/*
+						break;
 					case TVN_KEYDOWN:
 						 if (((LPNMTVKEYDOWN) lParam)->wVKey == VK_SPACE)
-								PostMessage(m_hwndDialog, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom,
+								PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom,
 								(LPARAM)TreeView_GetSelection(((LPNMHDR)lParam)->hwndFrom));
 						break;
-*/
 					case TVN_SELCHANGED:
 						{
 							LPNMTREEVIEW pnmtv = (LPNMTREEVIEW) lParam;

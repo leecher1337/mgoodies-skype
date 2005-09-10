@@ -80,13 +80,13 @@ private:
 	Smiley *			entries;
 	SmileyWindow *		window;
 	SmileyMap(const char *name, const char *filename);
+	SmileyMap();
 	void                clear();
 	void                setFilename(const char *filename);
 	void                setAuthor(const char *author);
 	void                setDescription(const char *description);
 	void                setVersion(const char *version);
 	Smiley *			addSmiley(const char *file, const char *text, bool isHidden);
-	static bool			loadSmileyFile(const char *proto, const char *filename, bool onlyInfo);
 	static SmileyMap* 	add(const char *proto, const char *filename);
 	static void         remove(const char *proto);
 public:
@@ -98,6 +98,7 @@ public:
 	static SmileyMap *	getSmileyMap(const char *proto);
 	static Smiley *		getSmiley(const char *proto, const char *text, int *len);
 	static bool         loadLibrary(const char *proto, const char *filename);
+	static SmileyMap *	getLibraryInfo(const char *filename);
 	const char *        getFilename();
 	const char *        getAuthor();
 	const char *        getVersion();
