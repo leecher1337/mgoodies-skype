@@ -27,8 +27,7 @@ static BOOL CALLBACK SmileySelectionDlgProc(HWND hwndDlg, UINT msg, WPARAM wPara
 
 SmileyWindow::SmileyWindow(SmileyMap *map) {
 	this->map = map;
- 	hwnd = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_SMILEYSELECTION), NULL,
-                                          SmileySelectionDlgProc, (LPARAM) this);
+ 	hwnd = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_SMILEYSELECTION), NULL, SmileySelectionDlgProc, (LPARAM) this);
 	view = new IEView(hwnd, this, 0, 0, 200, 200);
 	created = false;
 }
@@ -42,6 +41,7 @@ SmileyWindow::~SmileyWindow() {
 	}
 }
 void SmileyWindow::createSelection() {
+	DWORD bkgColor = 0xFFFFFF;
 	int outputSize;
 	char *output = NULL;
     int cellWidthBorder = cellWidth + 1;
@@ -73,7 +73,7 @@ void SmileyWindow::createSelection() {
 	SetWindowPos(hwnd, NULL, 0, 0, viewWidth+ 2, viewHeight + 2, SWP_NOMOVE | SWP_NOZORDER | SWP_HIDEWINDOW);
 	view->setWindowPos(0, 0, viewWidth, viewHeight);
 	Utils::appendText(&output, &outputSize, "<html><head><style type=\"text/css\"> \n\
-.body {margin: 0px; background-color: #FFFFFF; overflow: auto;}\n\
+.body {margin: 0px; background-color: #%06X; overflow: auto;}\n\
 .link {color: #0000FF; text-decoration: underline;}\n\
 .img {vertical-align: middle;}\n\
 .table {border: 1px dotted #8080E0; border-top: 0px; border-left: 0px; }\n\
@@ -81,7 +81,7 @@ void SmileyWindow::createSelection() {
 div#outer { float:left; height: %dpx; width: %dpx; overflow: hidden; position: relative; }\n\
 div#middle { position: absolute; top: 50%%; left: 50%%; }\n\
 div#inner { position: relative; top: -50%%; left: -50%%; }\n\
-</style></head><body class=\"body\">\n", cellHeight, cellWidth);
+</style></head><body class=\"body\">\n", bkgColor, cellHeight, cellWidth);
 	Utils::appendText(&output, &outputSize, "<table class=\"table\" cellspacing=\"0\" cellpadding=\"0\">\n");
 	for (i=j=0, s=map->getSmiley();s!=NULL && j<150;s=s->getNext(),i++) {
 		if (s->isHidden()) continue;

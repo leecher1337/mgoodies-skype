@@ -165,6 +165,19 @@ SmileyMap::SmileyMap(const char *name, const char *filename) {
 	visibleSmileyNum = 0;
 }
 
+SmileyMap::SmileyMap() {
+	entries = NULL;
+	next = NULL;
+	window = NULL;
+	smileyNum = 0;
+	visibleSmileyNum = 0;
+	this->name = Utils::dupString("");
+	this->filename = Utils::dupString("");
+	this->version = Utils::dupString("");
+	this->author = Utils::dupString("");
+	this->description = Utils::dupString("");
+}
+
 SmileyMap::~SmileyMap() {
 	if (name != NULL) {
 		delete name;
@@ -181,6 +194,9 @@ SmileyMap::~SmileyMap() {
 	if (description != NULL) {
 		delete description;
 	}
+	if (window != NULL) {
+		delete window;
+	}
 	clear();
 }
 
@@ -196,126 +212,6 @@ void SmileyMap::clear() {
 	visibleSmileyNum = 0;
 }
 
-
-bool SmileyMap::loadSmileyFile(const char *proto, const char *filename, bool onlyInfo) {
-	FILE* fh;
-	int previewW = 40, previewH =30;
-	char patterns[1024], description[1024];
-	char pathstring[500];
-
-	if (filename == NULL || strlen(filename) == 0) {
-        SmileyMap::remove(proto);
-		return false;
-	}
-	strcpy(pathstring, filename);
-	char* pathrun = pathstring + strlen(pathstring);
-	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > pathstring)) pathrun--;
-	pathrun++;
-	*pathrun = '\0';
-
-	fh = fopen(filename, "rt");
-	if (fh == NULL) {
-        SmileyMap::remove(proto);
-		return false;
-	}
-	SmileyMap *smap = SmileyMap::add(proto, filename);
-//	if (smileyFlags & Options::SMILEY_ENABLED) { // && smileyFlags & Options::SMILEY_PROTOCOLS
-	{
-		char store[1024];
-		while (fgets(store, sizeof(store), fh) != NULL) {
-	    	//is comment?
-	    	if (store[0] == ';') continue;
-	    	//empty line?
-	    	if (sscanf(store, "%s", description) == EOF) continue;
-	    	//name tag?
-	    	if (strncmp(store, "Name", 4) == 0) {
-	      		sscanf(store, "Name = \"%[^\"]", description);
-				smap->setDescription(description);
-	      		continue;
-	    	}
-	    	//author tag?
-	    	if (strncmp(store, "Author", 6) == 0) {
-	      		sscanf(store, "Author = \"%[^\"]", description);
-				smap->setAuthor(description);
-	      		continue;
-	    	}
-		    //date tag?
-		    if (strncmp(store, "Date", 4) == 0) {
-				sscanf(store, "Date = \"%[^\"]", description);
-				//smap->setDescription(description);
-				continue;
-		    }
-		    //version tag?
-		    if (strncmp(store, "Version", 7) == 0) {
-				sscanf(store, "Version = \"%[^\"]", description);
-				smap->setVersion(description);
-				continue;
-		    }
-		    if (strncmp(store, "SelectionSize", 12) == 0) {
-				sscanf(store, "SelectionSize = %d, %d", &previewW, &previewH);
-				if (previewW < 10) previewW = 10;
-				else if (previewW > 100) previewW = 100;
-				if (previewH < 10) previewH = 10;
-				else if (previewH > 100) previewH = 100;
-				continue;
-		    }
-		    //smiley icon tag?
-		    if (strncmp(store, "Smiley", 6) == 0  && !onlyInfo) {
-				int iconIndex;
-				bool isHidden;
-		    	char resourceFile[255];
-		      	patterns[0] = 0; description[0] = 0;
-		      	isHidden = 0;
-		    	if (store[6] == '*') { //hidden
-			        sscanf(store, "Smiley* = \" %[^\"] \" , %d , \"%[^\"] \" , \"%[^\"]\" ",
-			               resourceFile, &iconIndex, patterns, description);
-			      	isHidden = 1;
-		    	} else {
-	        		sscanf(store, "Smiley = \" %[^\"] \" , %d , \"%[^\"] \" , \"%[^\"]\" ",
-	               			resourceFile, &iconIndex, patterns, description);
-				}
-				strcpy(pathrun, resourceFile);
-				strcpy(resourceFile, pathstring);
-				Smiley *smiley = smap->addSmiley(resourceFile, description, isHidden);
-				int tokenMode = 0;
-				int i, j, l;
-				l = strlen(patterns);
-				for (i=j=0; i<=l;i++) {
-					switch (tokenMode) {
-						case 0:
-							if (patterns[i]!=' ' && patterns[i]!='\t' && patterns[i]!='\r' && patterns[i]!='\n') {
-								j = i;
-								tokenMode = 1;
-							}
-							break;
-						case 1:
-							if (patterns[i]==' ' || patterns[i]=='\t' || patterns[i]=='\r' || patterns[i]=='\n' || patterns[i]=='\0') {
-	                            patterns[i] = '\0';
-								int m, n;
-								for (m=n=j;m<i;) {
-									if (!strncmp(patterns+m, "%%_%%", 5)) {
-										patterns[n++] = ' ';
-										m += 5;
-									} else if (!strncmp(patterns+m, "%%''%%", 6)) {
-										patterns[n++] = '\"';
-										m += 6;
-									} else {
-										patterns[n++] = patterns[m++];
-									}
-								}
-								patterns[n] = '\0';
-								smiley->addPattern(patterns+j);
-								tokenMode = 0;
-							}
-					}
-				}
-	    	}
-	  	}
-	  	smap->getWindow()->init(previewW, previewH);
-	}
-  	fclose(fh);
-	return true;
-}
 
 Smiley* SmileyMap::getSmiley(const char *text, int *maxLen) {
 	int l;
@@ -425,15 +321,15 @@ const char *SmileyMap::getFilename() {
 }
 
 const char *SmileyMap::getAuthor() {
-	return filename;
+	return author;
 }
 
 const char *SmileyMap::getVersion() {
-	return filename;
+	return version;
 }
 
 const char *SmileyMap::getDescription() {
-	return filename;
+	return description;
 }
 
 Smiley* SmileyMap::addSmiley(const char *file, const char *description, bool isHidden) {
@@ -470,6 +366,171 @@ SmileyMap *	SmileyMap::getSmileyMap(const char *proto) {
 }
 
 
+SmileyMap *SmileyMap::getLibraryInfo(const char *filename) {
+	FILE* fh;
+	char description[1024];
+	char store[1024];
+
+	if (filename == NULL || strlen(filename) == 0) {
+		return NULL;
+	}
+	fh = fopen(filename, "rt");
+	if (fh == NULL) {
+		return NULL;
+	}
+	
+	SmileyMap *smap = new SmileyMap();
+	smap->setFilename(filename);
+	while (fgets(store, sizeof(store), fh) != NULL) {
+    	//is comment?
+    	if (store[0] == ';') continue;
+    	//empty line?
+    	if (sscanf(store, "%s", description) == EOF) continue;
+    	//name tag?
+    	if (strncmp(store, "Name", 4) == 0) {
+      		sscanf(store, "Name = \"%[^\"]", description);
+			smap->setDescription(description);
+      		continue;
+    	}
+    	//author tag?
+    	if (strncmp(store, "Author", 6) == 0) {
+      		sscanf(store, "Author = \"%[^\"]", description);
+			smap->setAuthor(description);
+      		continue;
+    	}
+	    //date tag?
+	    if (strncmp(store, "Date", 4) == 0) {
+			sscanf(store, "Date = \"%[^\"]", description);
+			//smap->setDescription(description);
+			continue;
+	    }
+	    //version tag?
+	    if (strncmp(store, "Version", 7) == 0) {
+			sscanf(store, "Version = \"%[^\"]", description);
+			smap->setVersion(description);
+			continue;
+	    }
+	}
+  	fclose(fh);
+	return smap;
+}
+
 bool SmileyMap::loadLibrary(const char *proto, const char *filename) {
-	return loadSmileyFile(proto, filename, false);
+	FILE* fh;
+	int previewW = 40, previewH =30;
+	char patterns[1024], description[1024];
+	char pathstring[500];
+
+	if (filename == NULL || strlen(filename) == 0) {
+        SmileyMap::remove(proto);
+		return false;
+	}
+	strcpy(pathstring, filename);
+	char* pathrun = pathstring + strlen(pathstring);
+	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > pathstring)) pathrun--;
+	pathrun++;
+	*pathrun = '\0';
+
+	fh = fopen(filename, "rt");
+	if (fh == NULL) {
+        SmileyMap::remove(proto);
+		return false;
+	}
+	SmileyMap *smap = SmileyMap::add(proto, filename);
+//	if (smileyFlags & Options::SMILEY_ENABLED) { // && smileyFlags & Options::SMILEY_PROTOCOLS
+	{
+		char store[1024];
+		while (fgets(store, sizeof(store), fh) != NULL) {
+	    	//is comment?
+	    	if (store[0] == ';') continue;
+	    	//empty line?
+	    	if (sscanf(store, "%s", description) == EOF) continue;
+	    	//name tag?
+	    	if (strncmp(store, "Name", 4) == 0) {
+	      		sscanf(store, "Name = \"%[^\"]", description);
+				smap->setDescription(description);
+	      		continue;
+	    	}
+	    	//author tag?
+	    	if (strncmp(store, "Author", 6) == 0) {
+	      		sscanf(store, "Author = \"%[^\"]", description);
+				smap->setAuthor(description);
+	      		continue;
+	    	}
+		    //date tag?
+		    if (strncmp(store, "Date", 4) == 0) {
+				sscanf(store, "Date = \"%[^\"]", description);
+				//smap->setDescription(description);
+				continue;
+		    }
+		    //version tag?
+		    if (strncmp(store, "Version", 7) == 0) {
+				sscanf(store, "Version = \"%[^\"]", description);
+				smap->setVersion(description);
+				continue;
+		    }
+		    if (strncmp(store, "SelectionSize", 12) == 0) {
+				sscanf(store, "SelectionSize = %d, %d", &previewW, &previewH);
+				if (previewW < 10) previewW = 10;
+				else if (previewW > 100) previewW = 100;
+				if (previewH < 10) previewH = 10;
+				else if (previewH > 100) previewH = 100;
+				continue;
+		    }
+		    //smiley icon tag?
+		    if (strncmp(store, "Smiley", 6) == 0) {
+				int iconIndex;
+				bool isHidden;
+		    	char resourceFile[255];
+		      	patterns[0] = 0; description[0] = 0;
+		      	isHidden = 0;
+		    	if (store[6] == '*') { //hidden
+			        sscanf(store, "Smiley* = \" %[^\"] \" , %d , \"%[^\"] \" , \"%[^\"]\" ",
+			               resourceFile, &iconIndex, patterns, description);
+			      	isHidden = 1;
+		    	} else {
+	        		sscanf(store, "Smiley = \" %[^\"] \" , %d , \"%[^\"] \" , \"%[^\"]\" ",
+	               			resourceFile, &iconIndex, patterns, description);
+				}
+				strcpy(pathrun, resourceFile);
+				strcpy(resourceFile, pathstring);
+				Smiley *smiley = smap->addSmiley(resourceFile, description, isHidden);
+				int tokenMode = 0;
+				int i, j, l;
+				l = strlen(patterns);
+				for (i=j=0; i<=l;i++) {
+					switch (tokenMode) {
+						case 0:
+							if (patterns[i]!=' ' && patterns[i]!='\t' && patterns[i]!='\r' && patterns[i]!='\n') {
+								j = i;
+								tokenMode = 1;
+							}
+							break;
+						case 1:
+							if (patterns[i]==' ' || patterns[i]=='\t' || patterns[i]=='\r' || patterns[i]=='\n' || patterns[i]=='\0') {
+	                            patterns[i] = '\0';
+								int m, n;
+								for (m=n=j;m<i;) {
+									if (!strncmp(patterns+m, "%%_%%", 5)) {
+										patterns[n++] = ' ';
+										m += 5;
+									} else if (!strncmp(patterns+m, "%%''%%", 6)) {
+										patterns[n++] = '\"';
+										m += 6;
+									} else {
+										patterns[n++] = patterns[m++];
+									}
+								}
+								patterns[n] = '\0';
+								smiley->addPattern(patterns+j);
+								tokenMode = 0;
+							}
+					}
+				}
+	    	}
+	  	}
+	  	smap->getWindow()->init(previewW, previewH);
+	}
+  	fclose(fh);
+	return true;
 }

@@ -39,8 +39,8 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"IEView",
-	PLUGIN_MAKE_VERSION(1,0,3,7),
-	"IE Based Chat Log (1.0.3.7 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,0,3,8),
+	"IE Based Chat Log (1.0.3.8 "__DATE__")",
 	"Piotr Piastucki",
 	"the_leech@users.berlios.de",
 	"(c) 2004-2005 Piotr Piastucki",
@@ -96,8 +96,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	return 0;
 }
 
-void test();
-
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
 	IEView::init();
@@ -115,80 +113,4 @@ extern "C" int __declspec(dllexport) Unload(void)
 {
 	delete workingDir;
 	return 0;
-}
-
-
-/*  Declare Windows procedure  */
-LRESULT CALLBACK WindowProcedure (HWND, UINT, WPARAM, LPARAM);
-
-/*  Make the class name into a global variable  */
-char szClassName[ ] = "IEVIewTestWindowClass";
-
-void test() {
-    HWND hwnd;               /* This is the handle for our window */
-    WNDCLASSEX wincl;        /* Data structure for the windowclass */
-
-    /* The Window structure */
-    wincl.hInstance = hInstance;
-    wincl.lpszClassName = szClassName;
-    wincl.lpfnWndProc = WindowProcedure;      /* This function is called by windows */
-    wincl.style = CS_DBLCLKS;                 /* Catch double-clicks */
-    wincl.cbSize = sizeof (WNDCLASSEX);
-
-    /* Use default icon and mouse-pointer */
-    wincl.hIcon = LoadIcon (NULL, IDI_APPLICATION);
-    wincl.hIconSm = LoadIcon (NULL, IDI_APPLICATION);
-    wincl.hCursor = LoadCursor (NULL, IDC_ARROW);
-    wincl.lpszMenuName = NULL;                 /* No menu */
-    wincl.cbClsExtra = 0;                      /* No extra bytes after the window class */
-    wincl.cbWndExtra = 0;                      /* structure or the window instance */
-    /* Use Windows's default color as the background of the window */
-    wincl.hbrBackground = (HBRUSH) COLOR_BACKGROUND;
-
-    /* Register the window class, and if it fails quit the program */
-    if (!RegisterClassEx (&wincl)) return;
-
-    /* The class is registered, let's create the program*/
-    hwnd = CreateWindowEx (
-           0,                   /* Extended possibilites for variation */
-           szClassName,         /* Classname */
-           "IEView Test Windows",       /* Title Text */
-           WS_OVERLAPPEDWINDOW, /* default window */
-           CW_USEDEFAULT,       /* Windows decides the position */
-           CW_USEDEFAULT,       /* where the window ends up on the screen */
-           544,                 /* The programs width */
-           375,                 /* and height in pixels */
-           HWND_DESKTOP,        /* The window is a child-window to desktop */
-           NULL,                /* No menu */
-           hInstance,       /* Program Instance handler */
-           NULL                 /* No Window Creation data */
-           );
-
-    /* Make the window visible on the screen */
-	ShowWindow (hwnd, SW_SHOW);
-
-}
-
-/*  This function is called by the Windows function DispatchMessage()  */
-
-LRESULT CALLBACK WindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)                  /* handle the messages */
-    {
-		case WM_CREATE:
-			{
-				debugView = new IEView(hwnd, (HTMLBuilder *)NULL, 0, 0, 300, 200);
-			}
-			break;
-        case WM_DESTROY:
-			break;
-		case WM_SIZE:
-//			debugView->setWindowPos(0, 0, LOWORD(lParam), HIWORD(lParam));
-			debugView->setWindowPos(0, 0, LOWORD(lParam), HIWORD(lParam));
-			break;
-        default:
-			break;
-    }
-
-    return DefWindowProc (hwnd, message, wParam, lParam);
 }
