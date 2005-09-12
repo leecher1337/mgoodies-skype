@@ -111,13 +111,15 @@ BEGIN
     PUSHBUTTON      "Preview",IDC_SMILEYS_PREVIEW,257,93,36,25
 //	LISTBOX         IDC_PROTOLIST,14,55,80,75, LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
 //    CONTROL         "", IDC_SMILEYS_PREVIEW,"MButtonClass", WS_TABSTOP,170,90,15,15, 0x18000000L
-    GROUPBOX        "Options",IDC_SIMPLE,5,145,294,52
+    GROUPBOX        "Options",IDC_SIMPLE,5,143,294,48
     CONTROL         "Only replace isolated smileys",IDC_ISOLATED_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,160,265,10
+                    WS_TABSTOP,14,155,265,10
     CONTROL         "Surround smileys with spaces",IDC_SURROUND_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,170,265,10
+                    WS_TABSTOP,14,165,265,10
     CONTROL         "Replace smileys in user names",IDC_SMILEYS_IN_NAMES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,180,265,10
+                    WS_TABSTOP,14,175,265,10
+    GROUPBOX        "Smiley Selector",IDC_SIMPLE,5,194,294,26
+    LTEXT           "Background Color",IDC_STATIC,14,206,80,8
 END
 
 IDD_TEMPLATES_OPTIONS DIALOGEX 2, 15, 306, 228
@@ -202,8 +204,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,3,7
- PRODUCTVERSION 1,0,3,7
+ FILEVERSION 1,0,3,8
+ PRODUCTVERSION 1,0,3,8
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -221,14 +223,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "http://developer.berlios.de/projects/mgoodies\0"
             VALUE "FileDescription", "IEView Plugin for Miranda IM\0"
-            VALUE "FileVersion", "1.0.3.7\0"
+            VALUE "FileVersion", "1.0.3.8\0"
             VALUE "InternalName", "ieview\0"
             VALUE "LegalCopyright", "Copyright (c) 2005 Piotr Piastucki\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "ieview.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "IEView Plugin\0"
-            VALUE "ProductVersion", "1.0.3.7\0"
+            VALUE "ProductVersion", "1.0.3.8\0"
             VALUE "SpecialBuild", "\0"
         END
     END
