@@ -106,6 +106,13 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.3.8
++ nickOut variable and improved compatibility with metacontacts (patch by Tweety)
++ SHIFT+click opens links and closes message window at the same time
++ option to print log in context menu
++ new smiley configuration page
+* fixed handling of URLs in links
+* fixed some other minor bugs
 1.0.3.7
 * some links were not handled properly
 * fixed Updater compatibility
