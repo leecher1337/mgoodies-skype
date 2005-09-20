@@ -171,11 +171,17 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		if (Options::getGroupChatFlags() & Options::IMAGE_ENABLED) {
 			Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
 			Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
+			Utils::appendText(&output, &outputSize, ".divUserJoined {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
+			Utils::appendText(&output, &outputSize, ".divUserLeft {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
+			Utils::appendText(&output, &outputSize, ".divTopicChange {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
 		} else {
 			Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) inColor);
 			Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) outColor);
+			Utils::appendText(&output, &outputSize, ".divUserJoined {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) inColor);
+			Utils::appendText(&output, &outputSize, ".divUserLeft {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) inColor);
+			Utils::appendText(&output, &outputSize, ".divTopicChange {padding-left: 2px; padding-right: 2px; word-wrap: break-word; background-color: #%06X;}\n", (int) inColor);
 		}
-	 	for(int i = 0; i < FONT_NUM; i++) {
+	 	for (int i = 0; i < FONT_NUM; i++) {
 			loadMsgDlgFont(i, &lf, &color);
 			Utils::appendText(&output, &outputSize, "%s {font-family: %s; font-size: %dpt; font-weight: %s; color: #%06X; %s }\n",
 			classNames[i],
@@ -247,25 +253,28 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
             Utils::appendText(&output, &outputSize, "</div>\n");
 			if (style!=NULL) free(style);
 		} else if (eventData->iType == IEED_EVENT_JOINED || eventData->iType == IEED_EVENT_LEFT || eventData->iType == IEED_EVENT_TOPIC) {
-			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
-			if (dwFlags & FLAG_SHOW_TIMESTAMP || dwFlags & FLAG_SHOW_DATE) {
-				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
-							isSent ? "timestamp" : "timestamp", timestampToString(dwFlags, eventData->time));
-			}
-			const char *className;
+			const char *className, *divName;
 			const char *eventText;
 			if (eventData->iType == IEED_EVENT_JOINED) {
                 className = "userJoined";
+                divName = "divUserJoined";
 				eventText = Translate("%s has joined.");
 				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
 			} else if (eventData->iType == IEED_EVENT_LEFT) {
                 className = "userLeft";
+                divName = "divUserJoined";
 				eventText = Translate("%s has left.");
 				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
 			} else {
                 className = "topicChange";
+                divName = "divTopicChange";
 				eventText = Translate("The topic is %s.");
 				szText = encodeUTF8(eventData->pszText, eventData->pszProto, ENF_ALL);
+			}
+			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", divName);
+			if (dwFlags & FLAG_SHOW_TIMESTAMP || dwFlags & FLAG_SHOW_DATE) {
+				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
+							isSent ? "timestamp" : "timestamp", timestampToString(dwFlags, eventData->time));
 			}
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">", className);
 			Utils::appendText(&output, &outputSize, Translate(eventText), szText);
@@ -274,7 +283,7 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		} else if (eventData->iType == IEED_EVENT_ERROR) {
             const char *className = "error";
 			szText = encodeUTF8(eventData->pszText, eventData->pszProto, ENF_NONE);
-			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
+			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divError");
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\"> %s: %s</span>", className, Translate("Error"), szText);
             Utils::appendText(&output, &outputSize, "</div>\n");
 		}
