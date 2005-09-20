@@ -1,10 +1,10 @@
 /*
 Scriver
 
-Copyright 2000-2003 Miranda ICQ/IM project, 
+Copyright 2000-2003 Miranda ICQ/IM project,
 Copyright 2005 Piotr Piastucki
 
-all portions of this codebase are copyrighted to the people 
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -22,7 +22,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
-#pragma hdrstop
 #include "msgs.h"
 
 
@@ -43,11 +42,11 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		//		MessageBoxA(NULL, "restoring", "parent", MB_OK);
 		//	}
 			if (ewd != NULL) {
-				if (!ewd->szDescription) 
+				if (!ewd->szDescription)
 					ewd->szDescription = strdup(Translate("An unknown error has occured."));
-				if (!ewd->szText) 
+				if (!ewd->szText)
 					ewd->szText = strdup("");
-				if (!ewd->szName) 
+				if (!ewd->szName)
 					ewd->szName = strdup("");
 				SetDlgItemTextA(hwndDlg, IDC_ERRORTEXT, ewd->szDescription);
 		#if defined( _UNICODE )
