@@ -1012,11 +1012,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			} else {
 				ShowWindow(dat->hwndParent, SW_SHOWNORMAL);
 			}
-			if (dat->parent->childrenCount == 1 || 
-				(!(g_dat->flags & SMF_CREATETABSINBKG) && (IsIconic(dat->hwndParent) || GetActiveWindow() != dat->hwndParent)) || 
+			if (dat->parent->childrenCount == 1 ||
+				(!(g_dat->flags & SMF_DONTBRINGTOFRONT) && (IsIconic(dat->hwndParent) || GetActiveWindow() != dat->hwndParent)) ||
 				!(newData->flags & NMWLP_INCOMING)) {
 				SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
-			} 
+			}
 			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPEN);
 			if (notifyUnread) {
 				SendMessage(dat->hwndParent, DM_STARTFLASHING, 0, 0);
@@ -1399,9 +1399,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			state |= MSG_WINDOW_STATE_EXISTS;
 			if (IsWindowVisible(hwndDlg))
 				state |= MSG_WINDOW_STATE_VISIBLE;
-			if (GetFocus()==hwndDlg)
+			if (GetForegroundWindow()==dat->hwndParent)
 				state |= MSG_WINDOW_STATE_FOCUS;
-			if (IsIconic(hwndDlg))
+			if (IsIconic(dat->hwndParent))
 				state |= MSG_WINDOW_STATE_ICONIC;
 			SetWindowLong(hwndDlg, DWL_MSGRESULT, state);
 			return TRUE;
@@ -1542,6 +1542,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					if (GetForegroundWindow()==dat->hwndParent && dat->parent->hwndActive == hwndDlg)
 						SkinPlaySound("RecvMsgActive");
 					else SkinPlaySound("RecvMsgInactive");
+					if (!(g_dat->flags & SMF_DONTBRINGTOFRONT) && (IsIconic(dat->hwndParent) || GetActiveWindow() != dat->hwndParent)) {
+						SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
+					}
 				}
 				if ((HANDLE) lParam != dat->hDbEventFirst && (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, lParam, 0) == NULL)
 					SendMessage(hwndDlg, DM_APPENDTOLOG, lParam, 0);
