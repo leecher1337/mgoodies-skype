@@ -1,10 +1,10 @@
 /*
 Scriver
 
-Copyright 2000-2003 Miranda ICQ/IM project, 
+Copyright 2000-2003 Miranda ICQ/IM project,
 Copyright 2005 Piotr Piastucki
 
-all portions of this codebase are copyrighted to the people 
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -214,7 +214,7 @@ static int ContactDeleted(WPARAM wParam, LPARAM lParam)
 {
 	HWND hwnd;
 
-	if (hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE) wParam)) {
+	if ((hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE) wParam))) {
 		SendMessage(hwnd, WM_CLOSE, 0, 0);
 	}
 	return 0;

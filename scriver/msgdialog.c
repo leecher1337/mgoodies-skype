@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_metacontacts.h"
 // IEVIew MOD End
 #define MS_SMILEYADD_SHOWSELECTION  "SmileyAdd/ShowSmileySelection"
-#pragma hdrstop
 
 #define TIMERID_MSGSEND      0
 #define TIMERID_FLASHWND     1
@@ -231,7 +230,7 @@ static void AddToFileList(char ***pppFiles,int *totalCount,const char *szFilenam
 		char szPath[MAX_PATH];
 		lstrcpyA(szPath,szFilename);
 		lstrcatA(szPath,"\\*");
-		if(hFind=FindFirstFileA(szPath,&fd)) {
+		if((hFind=FindFirstFileA(szPath,&fd))) {
 			do {
 				if(!lstrcmpA(fd.cFileName,".") || !lstrcmpA(fd.cFileName,"..")) continue;
 				lstrcpyA(szPath,szFilename);
@@ -999,7 +998,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 							break;
 						}
 					}
-					while (hdbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDPREV, (WPARAM) hdbEvent, 0));
+					while ((hdbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDPREV, (WPARAM) hdbEvent, 0)));
 				}
 			}
 //			ShowWindow(hwndDlg, SW_SHOWNORMAL);
@@ -1737,22 +1736,20 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dis->hwndItem == GetDlgItem(hwndDlg, IDC_AVATAR) && dat->avatarPic && (g_dat->flags&SMF_AVATAR)) {
 					BITMAP bminfo;
 					HPEN hPen;
-
 					GetObject(dat->avatarPic, sizeof(bminfo), &bminfo);
 					{
 						HDC hdcMem = CreateCompatibleDC(dis->hDC);
                         HBITMAP hbmMem = (HBITMAP)SelectObject(hdcMem, dat->avatarPic);
-						{
-							SetStretchBltMode(dis->hDC, HALFTONE);
-                            StretchBlt(dis->hDC, 1, 1, dat->avatarWidth-2, dat->avatarHeight-2, hdcMem, 0, 0, bminfo.bmWidth, bminfo.bmHeight, SRCCOPY);
-						}
+						SetStretchBltMode(dis->hDC, HALFTONE);
+                        StretchBlt(dis->hDC, 1, 1, dat->avatarWidth-2, dat->avatarHeight-2, hdcMem, 0, 0, bminfo.bmWidth, bminfo.bmHeight, SRCCOPY);
 						SelectObject(hdcMem, hbmMem);
                         DeleteDC(hdcMem);
 					}
                     hPen = CreatePen(PS_SOLID, 1, RGB(0,0,0));
-                    SelectObject(dis->hDC, hPen);
+                    hPen = (HPEN)SelectObject(dis->hDC, hPen);
 					ExcludeClipRect(dis->hDC, 1, 1, dat->avatarWidth-1, dat->avatarHeight-1);
                     Rectangle(dis->hDC, 0, 0, dat->avatarWidth, dat->avatarHeight);
+					hPen = (HPEN)SelectObject(dis->hDC, hPen);
                     DeleteObject(hPen);
 				}
 				return CallService(MS_CLIST_MENUDRAWITEM, wParam, lParam);

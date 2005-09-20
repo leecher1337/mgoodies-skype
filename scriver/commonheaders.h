@@ -46,11 +46,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ST_KEEPUNDO		1
 #define ST_SELECTION	2
 #define ST_NEWCHARS		4
-typedef struct _settextex
-{
-	DWORD	flags;
-	UINT	codepage;
-} SETTEXTEX;
 #define	CFM_WEIGHT			0x00400000
 #define WinVerMajor()      LOBYTE(LOWORD(GetVersion()))
 #define WinVerMinor()      HIBYTE(LOWORD(GetVersion()))
