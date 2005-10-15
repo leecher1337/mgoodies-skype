@@ -115,21 +115,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
-        struct MM_INTERFACE mmi;
-        mmi.cbSize = sizeof(mmi);
-        CallService(MS_SYSTEM_GET_MMI, 0, (LPARAM) &mmi);
-		ZeroMemory(&ci, sizeof(ci));
-	    ci.cbSize = sizeof(ci);
-	    ci.hContact = NULL;
-	    ci.szProto = szProto;
-	    ci.dwFlag = CNF_DISPLAY;
-		if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) &ci)) {
-	        szNameOut = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
-			if (ci.pszVal) {
-				miranda_sys_free(ci.pszVal);
-			}
-		}
-		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szRealProto, ENF_NAMESMILEYS);
+		szNameOut = getContactName(NULL, szRealProto);
+		szNameIn = getContactName(event->hContact, szRealProto);
 	} else {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");
@@ -304,21 +291,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
-        struct MM_INTERFACE mmi;
-        mmi.cbSize = sizeof(mmi);
-        CallService(MS_SYSTEM_GET_MMI, 0, (LPARAM) &mmi);
-		ZeroMemory(&ci, sizeof(ci));
-	    ci.cbSize = sizeof(ci);
-	    ci.hContact = NULL;
-	    ci.szProto = szProto;
-	    ci.dwFlag = CNF_DISPLAY;
-		if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-	        szNameOut = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
-			if (ci.pszVal) {
-				miranda_sys_free(ci.pszVal);
-			}
-		}
-		szNameIn = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szRealProto, ENF_NAMESMILEYS);
+		szNameOut = getContactName(NULL, szRealProto);
+		szNameIn = getContactName(event->hContact, szRealProto);
 	} else {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");

@@ -87,6 +87,12 @@ public:
 };
 
 class HTMLBuilder {
+private:
+	static int mimFlags;
+	enum MIMFLAGS {
+		MIM_CHECKED = 1,
+		MIM_UNICODE = 2
+	};
 protected:
 	DWORD lastEventTime;
 	int iLastEventType;
@@ -106,6 +112,7 @@ protected:
 	virtual bool encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags);
 	virtual char* getRealProto(HANDLE hContact);
 	virtual char* getProto(HANDLE hContact);
+	virtual char *getContactName(HANDLE hContact, const char *szProto);
 	virtual void getUINs(HANDLE hContact, char *&uinIn, char *&uinOut);
 	virtual HANDLE getRealContact(HANDLE hContact);
 	virtual DWORD getLastEventTime();
@@ -113,6 +120,7 @@ protected:
 	virtual int getLastEventType();
 	virtual void setLastEventType(int);
 	virtual bool isSameDate(DWORD time1, DWORD time2);
+	virtual bool isUnicodeMIM();
 public:
 	virtual void buildHead(IEView *, IEVIEWEVENT *event)=0;
 	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;
