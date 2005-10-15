@@ -203,20 +203,9 @@ void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			char *szName = NULL;
 			char *szText = NULL;
 			if (isSent) {
-                CONTACTINFO ci;
-				ZeroMemory(&ci, sizeof(ci));
-			    ci.cbSize = sizeof(ci);
-			    ci.hContact = NULL;
-			    ci.szProto = dbei.szModule;
-			    ci.dwFlag = CNF_DISPLAY;
-				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        szName = encodeUTF8(ci.pszVal, szProto, ENF_NAMESMILEYS);
-					if (ci.pszVal) {
-						miranda_sys_free(ci.pszVal);
-					}
-    			}
+				szName = getContactName(NULL, szProto);
    			} else {
-                szName = encodeUTF8((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0), szProto, ENF_NAMESMILEYS);
+                szName = getContactName(event->hContact, szProto);
 			}
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;

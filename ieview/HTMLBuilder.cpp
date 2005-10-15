@@ -1030,6 +1030,20 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
     if (eLink!=NULL) delete eLink;
 }
 
+int HTMLBuilder::mimFlags = 0;
+
+bool HTMLBuilder::isUnicodeMIM() {
+	if (!(mimFlags & MIM_CHECKED)) {
+		char str[512];
+		mimFlags = MIM_CHECKED;
+		CallService(MS_SYSTEM_GETVERSIONTEXT, (WPARAM)500, (LPARAM)(char*)str);
+		if(strstr(str, "Unicode")) {
+			mimFlags |= MIM_UNICODE;
+		}
+	}
+	return (mimFlags & MIM_UNICODE) != 0;
+}
+
 bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags) {
 	TextToken *token = NULL, *token2;
 	switch (level) {
@@ -1208,3 +1222,28 @@ bool HTMLBuilder::isSameDate(DWORD time1, DWORD time2) {
 	return false;
 }
 
+char *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto) {
+	char *szName = NULL;
+	CONTACTINFO ci;
+	ZeroMemory(&ci, sizeof(ci));
+	ci.cbSize = sizeof(ci);
+	ci.hContact = hContact;
+    ci.szProto = (char *)szProto;
+	ci.dwFlag = CNF_DISPLAY;
+	if(isUnicodeMIM()) {
+		ci.dwFlag |= CNF_UNICODE;
+    }
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+		if (ci.type == CNFT_ASCIIZ) {
+			if (ci.pszVal) {
+				if(isUnicodeMIM()) {
+	        	    szName = encodeUTF8((wchar_t *)ci.pszVal, szProto, ENF_NAMESMILEYS);
+				} else {
+	        	    szName = encodeUTF8((char *)ci.pszVal, szProto, ENF_NAMESMILEYS);
+				}
+				miranda_sys_free(ci.pszVal);
+			}
+		}
+	}
+    return (szName != NULL)? szName : encodeUTF8(Translate("(Unknown Contact)"), szProto, ENF_NAMESMILEYS);
+}

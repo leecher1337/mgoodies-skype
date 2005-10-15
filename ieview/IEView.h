@@ -181,7 +181,7 @@ public:
 	HTMLBuilder*    getBuilder();
 
 	void			navigate(const char *);
-	void			write(const WCHAR *text);
+	void			write(const wchar_t *text);
 	void			write(const char *text);
 	void            writef(const char *fmt, ...);
 //	void            documentClose();
