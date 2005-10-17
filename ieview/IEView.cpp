@@ -33,6 +33,7 @@ static const CLSID CLSID_MozillaBrowser=
 IEView * IEView::list = NULL;
 CRITICAL_SECTION IEView::mutex;
 bool IEView::isInited = false;
+
 static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     IEView *view = IEView::get(GetParent(GetParent(hwnd)));
 	if (view != NULL) {
@@ -40,7 +41,11 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
 		case WM_KEYUP:
 			if (LOWORD(wParam) == VK_ESCAPE && !(GetKeyState(VK_SHIFT) & 0x8000)
 			&& !(GetKeyState(VK_CONTROL) & 0x8000) && !(GetKeyState(VK_MENU) & 0x8000)) {
-				SendMessage(GetParent(GetParent(GetParent(hwnd))), WM_COMMAND, IDCANCEL, 0);
+				//if (view->getBuilder() != NULL) {
+					SendMessage(GetParent(GetParent(GetParent(hwnd))), WM_COMMAND, IDCANCEL, 0);
+//				} else {
+
+	//			}
 			} 
 			break;
 		case WM_KEYDOWN:
@@ -60,7 +65,7 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
        		}
 		    break;
 		}
-		return CallWindowProc(view->getUserWndProc(), hwnd, message, wParam, lParam);
+		return CallWindowProc(view->getServerWndProc(), hwnd, message, wParam, lParam);
     }
     return DefWindowProc (hwnd, message, wParam, lParam);
 }
@@ -68,10 +73,10 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
 static LRESULT CALLBACK IEViewDocWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
    	IEView *view = IEView::get(GetParent(hwnd));
    	if (view!=NULL) {
-		WNDPROC oldWndProc = view->getUserWndProc();
+		WNDPROC oldWndProc = view->getDocWndProc();
     	if (message == WM_PARENTNOTIFY && wParam == WM_CREATE) {
 			SetWindowLong(hwnd, GWL_WNDPROC, (LONG) oldWndProc);
-			view->setUserWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewServerWindowProcedure));
+			view->setServerWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewServerWindowProcedure));
 		}
 		return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
     }
@@ -81,10 +86,10 @@ static LRESULT CALLBACK IEViewDocWindowProcedure (HWND hwnd, UINT message, WPARA
 static LRESULT CALLBACK IEViewWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
    	IEView *view = IEView::get(hwnd);
    	if (view!=NULL) {
-		WNDPROC oldWndProc = view->getUserWndProc();
+		WNDPROC oldWndProc = view->getMainWndProc();
     	if (message == WM_PARENTNOTIFY && wParam == WM_CREATE) {
 			SetWindowLong(hwnd, GWL_WNDPROC, (LONG) oldWndProc);
-			view->setUserWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewDocWindowProcedure));
+			view->setDocWndProc((WNDPROC) SetWindowLong((HWND)lParam, GWL_WNDPROC, (LONG) IEViewDocWindowProcedure));
 		}
 		return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
     }
@@ -127,7 +132,6 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	if (SUCCEEDED(CoCreateInstance(CLSID_WebBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
 #endif
 //		pWebBrowser->put_RegisterAsBrowser(VARIANT_FALSE);
-//		pWebBrowser->put_RegisterAsDropTarget(VARIANT_FALSE);
 		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleObject, (void**)&pOleObject))) {
     		rcClient.left = x;
     		rcClient.top = y;
@@ -149,6 +153,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 
 		LONG style = GetWindowLong(hwnd, GWL_EXSTYLE);
 		style |= (WS_EX_STATICEDGE);
+//		style &= ~(WS_EX_ACCEPTFILES);
 		SetWindowLong(hwnd,GWL_EXSTYLE,style);
 
    		IConnectionPointContainer* pCPContainer;
@@ -171,7 +176,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
       		pCPContainer->Release();
    		}
 //#ifndef GECKO
-		setUserWndProc((WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) IEViewWindowProcedure));
+		setMainWndProc((WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) IEViewWindowProcedure));
 //#endif
     }
     EnterCriticalSection(&mutex);
@@ -182,6 +187,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	list = this;
 	LeaveCriticalSection(&mutex);
 	clear();
+	pWebBrowser->put_RegisterAsDropTarget(VARIANT_FALSE);
 }
 
 IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, int cy) {
@@ -283,12 +289,28 @@ IEView::~IEView() {
 	DestroyWindow(hwnd);
 }
 
-void IEView::setUserWndProc(WNDPROC wndProc) {
-	userWndProc = wndProc;
+void IEView::setMainWndProc(WNDPROC wndProc) {
+	mainWndProc = wndProc;
 }
 
-WNDPROC IEView::getUserWndProc() {
-	return userWndProc;
+WNDPROC IEView::getMainWndProc() {
+	return mainWndProc;
+}
+
+void IEView::setDocWndProc(WNDPROC wndProc) {
+	docWndProc = wndProc;
+}
+
+WNDPROC IEView::getDocWndProc() {
+	return docWndProc;
+}
+
+void IEView::setServerWndProc(WNDPROC wndProc) {
+	serverWndProc = wndProc;
+}
+
+WNDPROC IEView::getServerWndProc() {
+	return serverWndProc;
 }
 
 // IUnknown
@@ -473,12 +495,14 @@ STDMETHODIMP IEView::UpdateUI(void) {return S_OK;}
 STDMETHODIMP IEView::EnableModeless(BOOL fEnable) { return E_NOTIMPL; }
 STDMETHODIMP IEView::OnDocWindowActivate(BOOL fEnable) { return E_NOTIMPL; }
 STDMETHODIMP IEView::OnFrameWindowActivate(BOOL fEnable) { return E_NOTIMPL; }
-STDMETHODIMP IEView::ResizeBorder(LPCRECT prcBorder, IOleInPlaceUIWindow *pUIWindow, BOOL fRameWindow) {
-    return E_NOTIMPL;
-}
+STDMETHODIMP IEView::ResizeBorder(LPCRECT prcBorder, IOleInPlaceUIWindow *pUIWindow, BOOL fRameWindow) {return E_NOTIMPL;}
 STDMETHODIMP IEView::TranslateAccelerator(LPMSG lpMsg, const GUID *pguidCmdGroup, DWORD nCmdID) { return S_FALSE;}
 STDMETHODIMP IEView::GetOptionKeyPath(LPOLESTR *pchKey, DWORD dw) { return E_NOTIMPL; }
-STDMETHODIMP IEView::GetDropTarget(IDropTarget *pDropTarget, IDropTarget **ppDropTarget) { return E_NOTIMPL; }
+STDMETHODIMP IEView::GetDropTarget(IDropTarget *pDropTarget, IDropTarget **ppDropTarget) {
+	*ppDropTarget = NULL;
+	return S_OK;
+//	return E_NOTIMPL;
+}
 
 STDMETHODIMP IEView::GetExternal(IDispatch **ppDispatch) {
 	*ppDispatch = NULL;
@@ -486,7 +510,6 @@ STDMETHODIMP IEView::GetExternal(IDispatch **ppDispatch) {
 }
 STDMETHODIMP IEView::TranslateUrl(DWORD dwTranslate, OLECHAR *pchURLIn, OLECHAR **ppchURLOut) { return E_NOTIMPL; }
 STDMETHODIMP IEView::FilterDataObject(IDataObject *pDO, IDataObject **ppDORet) { return E_NOTIMPL; }
-
 
 IEViewSink::IEViewSink() {
 	smileyWindow = NULL;
