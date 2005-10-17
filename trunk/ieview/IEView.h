@@ -104,7 +104,7 @@ private:
 	IWebBrowser2* pWebBrowser;
 	HTMLBuilder *builder;
 	SmileyWindow *smileyWindow;
- 	WNDPROC    	userWndProc;
+ 	WNDPROC    	mainWndProc, docWndProc, serverWndProc;
 	DWORD       dwLogFlags;
 	int         iLogCodepage;
    	HANDLE      hContact;
@@ -191,8 +191,12 @@ public:
 	void            scrollToBottomSoft();
 	void            scrollToTop();
 
-	void            setUserWndProc(WNDPROC);
-	WNDPROC         getUserWndProc();
+	void            setMainWndProc(WNDPROC);
+	WNDPROC         getMainWndProc();
+	void            setDocWndProc(WNDPROC);
+	WNDPROC         getDocWndProc();
+	void            setServerWndProc(WNDPROC);
+	WNDPROC         getServerWndProc();
 
 	void            appendEvent(IEVIEWEVENT * event);
 	void            clear(IEVIEWEVENT * event);
