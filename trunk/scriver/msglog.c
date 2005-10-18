@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_smileyadd.h"
 #include "m_metacontacts.h"
 
-//#define MIRANDA_0_5
+#define MIRANDA_0_5
 
 #define LOGICON_MSG_IN      0
 #define LOGICON_MSG_OUT     1
@@ -148,7 +148,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	return event;
 }
 
-void freeEvent(struct EventData *event) {
+static void freeEvent(struct EventData *event) {
 	if (event->text != NULL) free (event->text);
 	if (event->wtext != NULL) free (event->wtext);
 	if (event->szModule != NULL) free (event->szModule);
@@ -162,6 +162,74 @@ int safe_wcslen(wchar_t *msg, int maxLen) {
 			return i;
 	}
 	return 0;
+}
+
+
+static int mimFlags = 0;
+
+enum MIMFLAGS {
+	MIM_CHECKED = 1,
+	MIM_UNICODE = 2
+};
+
+static int IsUnicodeMIM() {
+	if (!(mimFlags & MIM_CHECKED)) {
+		char str[512];
+		mimFlags = MIM_CHECKED;
+		CallService(MS_SYSTEM_GETVERSIONTEXT, (WPARAM)500, (LPARAM)(char*)str);
+		if(strstr(str, "Unicode")) {
+			mimFlags |= MIM_UNICODE;
+		}
+	}
+	return (mimFlags & MIM_UNICODE) != 0;
+}
+
+wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
+	CONTACTINFO ci;
+	ZeroMemory(&ci, sizeof(ci));
+	ci.cbSize = sizeof(ci);
+	ci.hContact = hContact;
+    ci.szProto = (char *)szProto;
+	ci.dwFlag = CNF_DISPLAY;
+	if(IsUnicodeMIM()) {
+		ci.dwFlag |= CNF_UNICODE;
+    }
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+		if (ci.type == CNFT_ASCIIZ) {
+			if (ci.pszVal) {
+				wchar_t *szName;
+				if(IsUnicodeMIM()) {
+					szName = wcsdup((wchar_t *)ci.pszVal);
+				} else {
+					int len = strlen((char *)ci.pszVal) + 1;
+					szName = (wchar_t *)malloc(len * sizeof(TCHAR));
+					MultiByteToWideChar(CP_ACP, 0, (char *)ci.pszVal, -1, szName, len);
+				}
+				miranda_sys_free(ci.pszVal);
+				return szName;
+			}
+		}
+	}
+    return wcsdup(L"Unknown Contact");
+}
+
+char *GetNickname(HANDLE hContact, const char* szProto) {
+	CONTACTINFO ci;
+	ZeroMemory(&ci, sizeof(ci));
+	ci.cbSize = sizeof(ci);
+	ci.hContact = hContact;
+    ci.szProto = (char *)szProto;
+	ci.dwFlag = CNF_DISPLAY;
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+		if (ci.type == CNFT_ASCIIZ) {
+			if (ci.pszVal) {
+				char *szName = strdup((char *)ci.pszVal);
+				miranda_sys_free(ci.pszVal);
+				return szName;
+			}
+		}
+	}
+    return strdup(Translate("Unknown Contact"));
 }
 
 static void AppendToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, const char *fmt, ...)
@@ -504,27 +572,31 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 		showColon = 1;
 	}
 	if (!(g_dat->flags&SMF_HIDENAMES) && dbei.eventType == EVENTTYPE_MESSAGE  && isGroupBreak) {
-		char *szName = "";
-		CONTACTINFO ci;
-		ZeroMemory(&ci, sizeof(ci));
-
-		if (dbei.flags & DBEF_SENT) {
-			ci.cbSize = sizeof(ci);
-			ci.hContact = NULL;
-			ci.szProto = dbei.szModule;
-			ci.dwFlag = CNF_DISPLAY;
-			if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-				// CNF_DISPLAY always returns a string type
-				szName = (char *)ci.pszVal;
-			}
-		}
-		else
-			szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0);
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(dbei.flags & DBEF_SENT ? MSGFONTID_MYNAME : MSGFONTID_YOURNAME));
-		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
+#if defined( _UNICODE )
+		{
+			wchar_t *szName;
+			if (dbei.flags & DBEF_SENT) {
+				szName = GetNicknameW(NULL, dbei.szModule);
+			} else {
+				szName = GetNicknameW(hContact, dbei.szModule);
+			}
+			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, szName);
+			free(szName);
+		}
+#else
+		{
+			char *szName;
+			if (dbei.flags & DBEF_SENT) {
+				 szName = GetNickname(NULL, dbei.szModule);
+			} else {
+				 szName = GetNickname(hContact, dbei.szModule);
+			}
+			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
+			free(szName);
+		}
+#endif;
 		showColon = 1;
-		if (ci.pszVal)
-			miranda_sys_free(ci.pszVal);
 	}
 	if (showColon) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s :", SetToStyle(dbei.flags & DBEF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
@@ -607,7 +679,8 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL received"), msg);
 				}
 			} else {
-				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s %s", szName, msg);
+				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
+				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, " %s", msg);
 			}
 			if (ci.pszVal)
 				miranda_sys_free(ci.pszVal);
@@ -687,27 +760,31 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		showColon = 1;
 	}
 	if (!(g_dat->flags&SMF_HIDENAMES) && event->eventType == EVENTTYPE_MESSAGE  && isGroupBreak) {
-		char *szName = "";
-		CONTACTINFO ci;
-		ZeroMemory(&ci, sizeof(ci));
-
-		if (event->flags & DBEF_SENT) {
-			ci.cbSize = sizeof(ci);
-			ci.hContact = NULL;
-			ci.szProto = event->szModule;
-			ci.dwFlag = CNF_DISPLAY;
-			if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-				// CNF_DISPLAY always returns a string type
-				szName = (char *)ci.pszVal;
-			}
-		}
-		else
-			szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0);
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYNAME : MSGFONTID_YOURNAME));
-		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
+#if defined( _UNICODE )
+		{
+			wchar_t *szName;
+			if (event->flags & DBEF_SENT) {
+				szName = GetNicknameW(NULL, event->szModule);
+			} else {
+				szName = GetNicknameW(event->hContact, event->szModule);
+			}
+			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, szName);
+			free(szName);
+		}
+#else
+		{
+			char *szName;
+			if (event->flags & DBEF_SENT) {
+				 szName = GetNickname(NULL, event->szModule);
+			} else {
+				 szName = GetNickname(event->hContact, event->szModule);
+			}
+			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
+			free(szName);
+		}
+#endif;
 		showColon = 1;
-		if (ci.pszVal)
-			miranda_sys_free(ci.pszVal);
 	}
 	if (showColon) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s :", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
@@ -734,6 +811,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		case EVENTTYPE_FILE:
 		{
 			char *szName = "";
+			wchar_t *szNameW = L"";
 			CONTACTINFO ci;
 			ZeroMemory(&ci, sizeof(ci));
 
@@ -763,7 +841,8 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL received"), event->text);
 				}
 			} else {
-				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s %s", szName, event->text);
+				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
+				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, " %s", event->text);
 			}
 			if (ci.pszVal)
 				miranda_sys_free(ci.pszVal);

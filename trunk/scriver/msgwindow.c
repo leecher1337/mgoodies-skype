@@ -38,6 +38,8 @@ PSLWA pSetLayeredWindowAttributes;
 static WNDPROC OldTabCtrlProc;
 
 BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+wchar_t *GetNicknameW(HANDLE hContact, const char* szProto);
+char *GetNickname(HANDLE hContact, const char* szProto);
 
 static char* GetWindowTitle(HANDLE *hContact, const char *szProto)
 {
@@ -105,25 +107,19 @@ static char* GetWindowTitle(HANDLE *hContact, const char *szProto)
 }
 
 
-
 static TCHAR* GetTabName(HANDLE *hContact)
 {
-	char *contactName;
 	int len;
 	TCHAR *result;
-	contactName = Translate("Unknown");
 	if (hContact) {
-		contactName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0);
-	}
-	len = strlen(contactName) + 1;
-	result = (TCHAR *)malloc(len * sizeof(TCHAR));
 #if defined ( _UNICODE )
-	{
-		MultiByteToWideChar(CP_ACP, 0, contactName, -1, result, len);
-	}
+	result = GetNicknameW(hContact, NULL);
+	len = wcslen(result);
 #else
-	memcpy(result, contactName, len);
+	result = GetNickname(hContact, NULL);
+	len = strlen(result);
 #endif
+	}
 	if (g_dat->flags & SMF_LIMITNAMES) {
 		if (len > 20 ) {
 			result[20] = '\0';
