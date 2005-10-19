@@ -1014,7 +1014,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				ShowWindow(dat->hwndParent, SW_SHOWNORMAL);
 			}
 			if (dat->parent->childrenCount == 1 ||
-				(!(g_dat->flags & SMF_DONTBRINGTOFRONT) && (IsIconic(dat->hwndParent) || GetActiveWindow() != dat->hwndParent)) ||
+				((g_dat->flags & SMF_SWITCHTOACTIVE) && (IsIconic(dat->hwndParent) || GetActiveWindow() != dat->hwndParent)) ||
 				!(newData->flags & NMWLP_INCOMING)) {
 				SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 			}
@@ -1543,7 +1543,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					if (GetForegroundWindow()==dat->hwndParent && dat->parent->hwndActive == hwndDlg)
 						SkinPlaySound("RecvMsgActive");
 					else SkinPlaySound("RecvMsgInactive");
-					if (!(g_dat->flags & SMF_DONTBRINGTOFRONT) && (IsIconic(dat->hwndParent) || GetActiveWindow() != dat->hwndParent)) {
+					if ((g_dat->flags & SMF_SWITCHTOACTIVE) && (IsIconic(dat->hwndParent) || GetActiveWindow() != dat->hwndParent)) {
 						SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 					}
 				}
