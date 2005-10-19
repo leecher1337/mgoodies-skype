@@ -38,74 +38,154 @@ PSLWA pSetLayeredWindowAttributes;
 static WNDPROC OldTabCtrlProc;
 
 BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-wchar_t *GetNicknameW(HANDLE hContact, const char* szProto);
-char *GetNickname(HANDLE hContact, const char* szProto);
 
-static char* GetWindowTitle(HANDLE *hContact, const char *szProto)
+#if defined ( _UNICODE )
+	extern wchar_t *GetNicknameW(HANDLE hContact, const char* szProto);
+	extern wchar_t *strToWcs(const char *text, int textlen, int cp);
+#endif
+extern char *GetNickname(HANDLE hContact, const char* szProto);
+
+static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 {
 	DBVARIANT dbv;
-	char *p, *szContactName, *szStatus, *title;
-	char *pszNewTitleEnd = "Message Session";
-	int len;
+	int isTemplate;
+	int len, contactNameLen, statusLen;
+	TCHAR *p, *tmplt, *szContactName, *szStatus, *title;
+#if defined ( _UNICODE )
+	TCHAR *pszNewTitleEnd = strToWcs(Translate("Message Session"), -1, CP_ACP);
+#else 
+	TCHAR *pszNewTitleEnd = strdup(Translate("Message Session"));
+#endif
+	isTemplate = 0;
+#if defined ( _UNICODE )
 	if (hContact && szProto) {
-		szContactName = strdup((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0));
-		szStatus = strdup((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, szProto == NULL ? ID_STATUS_OFFLINE : DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE), 0));
+		szContactName = GetNicknameW(hContact, szProto);
+		contactNameLen = wcslen(szContactName);
+		szStatus = strToWcs((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, szProto == NULL ? ID_STATUS_OFFLINE : DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE), 0), -1, CP_ACP);
+		statusLen = wcslen(szStatus);
 		if (!DBGetContactSetting(NULL, SRMMMOD, SRMSGSET_WINDOWTITLE, &dbv)) {
-			for (len = 0, p = dbv.pszVal; *p; p++) {
-				if (*p == '%') {
-					if (!strncmp(p, "%name%", 6)) {
-						len += strlen(szContactName);
-						p += 5;
-						continue;
-					} else if (!strncmp(p, "%status%", 8)) {
-						len += strlen(szStatus);
-						p += 7;
-						continue;
-					}
-				}
-				len++;
-			}
-			title = (char *)malloc(len + 1);
-			for (len = 0, p = dbv.pszVal; *p; p++) {
-				if (*p == '%') {
-					if (!strncmp(p, "%name%", 6)) {
-						memcpy(title+len, szContactName, strlen(szContactName));
-						len += strlen(szContactName);
-						p += 5;
-						continue;
-					} else if (!strncmp(p, "%status%", 8)) {
-						memcpy(title+len, szStatus, strlen(szStatus));
-						len += strlen(szStatus);
-						p += 7;
-						continue;
-					}
-				}
-				title[len++] = *p;
-			}
-			title[len] = '\0';
+			isTemplate = 1;
+			tmplt = strToWcs(dbv.pszVal, -1, CP_ACP);
 			DBFreeVariant(&dbv);
 		} else {
 			int statusIcon = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON);
 			if (statusIcon) {
-				len = strlen(Translate(pszNewTitleEnd)) + strlen(szContactName) + 4;
-				title = (char *)malloc(len);
-				mir_snprintf(title, len, "%s - %s", szContactName, Translate(pszNewTitleEnd));
+				tmplt = L"%name% - ";
 			} else {
-				len = strlen(Translate(pszNewTitleEnd)) + strlen(szContactName) + strlen(szStatus) + 6;
-				title = (char *)malloc(len);
-				mir_snprintf(title, len, "%s (%s): %s", szContactName, szStatus, Translate(pszNewTitleEnd));
+				tmplt = L"%name% (%status%) : ";
 			}
 		}
-		free(szContactName);
-		free(szStatus);
 	} else {
-		len = strlen(Translate(pszNewTitleEnd)) + 1;
-		title = (char *)malloc(len);
-		strcpy(title, Translate(pszNewTitleEnd));
+		tmplt = L"";
 	}
+	for (len = 0, p = tmplt; *p; p++) {
+		if (*p == '%') {
+			if (!wcsncmp(p, L"%name%", 6)) {
+				len += contactNameLen;
+				p += 5;
+				continue;
+			} else if (!wcsncmp(p, L"%status%", 8)) {
+				len += statusLen;
+				p += 7;
+				continue;
+			}
+		}
+		len++;
+	}
+	if (!isTemplate) {
+		len += wcslen(pszNewTitleEnd);
+	}
+	title = (wchar_t *)malloc(sizeof(wchar_t) * (len + 1));
+	for (len = 0, p = tmplt; *p; p++) {
+		if (*p == '%') {
+			if (!wcsncmp(p, L"%name%", 6)) {
+				memcpy(title+len, szContactName, sizeof(wchar_t) * contactNameLen);
+				len += contactNameLen;
+				p += 5;
+				continue;
+			} else if (!wcsncmp(p, L"%status%", 8)) {
+				memcpy(title+len, szStatus, sizeof(wchar_t) * statusLen);
+				len += statusLen;
+				p += 7;
+				continue;
+			}
+		}
+		title[len++] = *p;
+	}
+	if (!isTemplate) {
+		memcpy(title+len, pszNewTitleEnd, sizeof(wchar_t) * wcslen(pszNewTitleEnd));
+		len += wcslen(pszNewTitleEnd);
+	}
+	title[len] = '\0';
+#else
+	if (hContact && szProto) {
+		szContactName = GetNickname(hContact, szProto);
+		contactNameLen = strlen(szContactName);
+		szStatus = strdup((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, szProto == NULL ? ID_STATUS_OFFLINE : DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE), 0));
+		statusLen = strlen(szStatus);
+		if (!DBGetContactSetting(NULL, SRMMMOD, SRMSGSET_WINDOWTITLE, &dbv)) {
+			isTemplate = 1;
+			tmplt = strdup(dbv.pszVal);
+			DBFreeVariant(&dbv);
+		} else {
+			int statusIcon = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON);
+			if (statusIcon) {
+				tmplt = "%name% - ";
+			} else {
+				tmplt = "%name% (%status%) : ";
+			}
+		}
+	} else {
+		tmplt = "";
+	}
+	for (len = 0, p = tmplt; *p; p++) {
+		if (*p == '%') {
+			if (!strncmp(p, "%name%", 6)) {
+				len += contactNameLen;
+				p += 5;
+				continue;
+			} else if (!strncmp(p, "%status%", 8)) {
+				len += statusLen;
+				p += 7;
+				continue;
+			}
+		}
+		len++;
+	} 
+	if (!isTemplate) {
+		len += strlen(pszNewTitleEnd);
+	}
+	title = (char *)malloc(len + 1);
+	for (len = 0, p = tmplt; *p; p++) {
+		if (*p == '%') {
+			if (!strncmp(p, "%name%", 6)) {
+				memcpy(title+len, szContactName, contactNameLen);
+				len += contactNameLen;
+				p += 5;
+				continue;
+			} else if (!strncmp(p, "%status%", 8)) {
+				memcpy(title+len, szStatus, statusLen);
+				len += statusLen;
+				p += 7;
+				continue;
+			}
+		}
+		title[len++] = *p;
+	}
+	if (!isTemplate) {
+		memcpy(title+len, pszNewTitleEnd, strlen(pszNewTitleEnd));
+		len += strlen(pszNewTitleEnd);
+	}
+	title[len] = '\0';
+#endif
+	if (isTemplate) {
+		free(tmplt);
+	}
+	free(szContactName);
+	free(szStatus);
+	free(pszNewTitleEnd);
 	return title;
 }
-
 
 static TCHAR* GetTabName(HANDLE *hContact)
 {
@@ -751,11 +831,15 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			int tabId;
 			TCHAR *tContactName;
 			if (mdat && mdat->hwnd == dat->hwndActive) {
-				char *newtitle, oldtitle[256];
+				TCHAR *newtitle, oldtitle[256];
+#if defined ( _UNICODE )
 				newtitle = GetWindowTitle(mdat->hContact, mdat->szProto);
-				GetWindowTextA(hwndDlg, oldtitle, sizeof(oldtitle));
-				if (lstrcmpA(newtitle, oldtitle)) { //swt() flickers even if the title hasn't actually changed
-					SetWindowTextA(hwndDlg, newtitle);
+#else
+				newtitle = GetWindowTitle(mdat->hContact, mdat->szProto);
+#endif
+				GetWindowText(hwndDlg, oldtitle, sizeof(oldtitle));
+				if (lstrcmp(newtitle, oldtitle)) { //swt() flickers even if the title hasn't actually changed
+					SetWindowText(hwndDlg, newtitle);
 					//SendMessage(hwndDlg, WM_SIZE, 0, 0);
 				}
 				free(newtitle);
