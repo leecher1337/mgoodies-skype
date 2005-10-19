@@ -1,0 +1,397 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Czech resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CSY)
+#ifdef _WIN32
+LANGUAGE LANG_CZECH, SUBLANG_DEFAULT
+#pragma code_page(1250)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_DLGVIEWMESSAGES, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 455
+        TOPMARGIN, 5
+        BOTTOMMARGIN, 105
+    END
+
+    IDD_DLGBADCONNECT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 43
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DLGVIEWMESSAGES DIALOG DISCARDABLE  50, 200, 460, 110
+STYLE DS_3DLOOK | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | 
+    WS_THICKFRAME
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL         "List4",IDC_LISTMAILS,"SysListView32",LVS_REPORT | 
+                    LVS_EDITLABELS | WS_BORDER | WS_TABSTOP,5,5,450,70
+    DEFPUSHBUTTON   "OK",IDC_BTNOK,156,90,146,15
+    PUSHBUTTON      "",IDC_BTNAPP,307,90,146,15
+    PUSHBUTTON      "",IDC_BTNDEL,5,90,146,15
+    LTEXT           "",IDC_STSTATUS,5,75,450,10
+END
+
+IDD_DLGBADCONNECT DIALOG DISCARDABLE  0, 0, 186, 50
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+FONT 8, "MS Shell Dlg"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDC_BTNOK,70,30,50,14
+    LTEXT           "",IDC_STATICMSG,5,7,170,18
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICOYAMN2            ICON    DISCARDABLE     "icoyamn2.ico"
+IDI_ICOYAMN1            ICON    DISCARDABLE     "icoyamn1.ico"
+IDI_ICOYAMN3            ICON    DISCARDABLE     "icoyamn3.ico"
+IDI_ICONEUTRAL          ICON    DISCARDABLE     "iconeutral.ico"
+#endif    // Czech resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_YAMNOPT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 312
+        VERTGUIDE, 13
+        VERTGUIDE, 85
+        VERTGUIDE, 160
+        VERTGUIDE, 307
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 243
+        HORZGUIDE, 5
+        HORZGUIDE, 20
+        HORZGUIDE, 147
+        HORZGUIDE, 157
+        HORZGUIDE, 173
+        HORZGUIDE, 184
+        HORZGUIDE, 207
+        HORZGUIDE, 217
+        HORZGUIDE, 228
+        HORZGUIDE, 239
+        HORZGUIDE, 243
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_YAMNOPT DIALOGEX 0, 0, 320, 250
+STYLE DS_SYSMODAL | DS_3DLOOK | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "HotKey1",IDC_HKFORCE,"msctls_hotkey32",WS_BORDER | 
+                    WS_TABSTOP,160,8,110,12
+    LTEXT           "Hotkey for mail check:",IDC_STATIC,7,10,153,10
+    GROUPBOX        "Installed plugins",IDC_STATIC,7,147,305,96
+    COMBOBOX        IDC_COMBOPLUGINS,13,157,294,58,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Version:",IDC_STATIC,13,173,72,11
+    LTEXT           "Description:",IDC_STATIC,13,184,72,23
+    LTEXT           "Copyright:",IDC_STATIC,13,207,72,10
+    LTEXT           "Contact:",IDC_STATIC,13,217,72,11
+    LTEXT           "WWW:",IDC_STATIC,13,228,72,11
+    CONTROL         "",IDC_STWWW,"Hyperlink",WS_TABSTOP,85,228,222,11
+    EDITTEXT        IDC_STMAIL,85,217,222,12,ES_AUTOHSCROLL | ES_READONLY | 
+                    NOT WS_BORDER | WS_GROUP
+    EDITTEXT        IDC_STCOPY,85,206,222,12,ES_AUTOHSCROLL | ES_READONLY | 
+                    NOT WS_BORDER | WS_GROUP
+    EDITTEXT        IDC_STDESC,85,184,222,23,ES_AUTOHSCROLL | ES_READONLY | 
+                    NOT WS_BORDER | WS_GROUP
+    EDITTEXT        IDC_STVER,85,173,222,12,ES_AUTOHSCROLL | ES_READONLY | 
+                    NOT WS_BORDER | WS_GROUP
+    CONTROL         "TopToolBar button ""Check mail""",IDC_CHECKTTB,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,20,153,11
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.K.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_POP3ACCOUNTOPT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 330
+        VERTGUIDE, 155
+        VERTGUIDE, 240
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 252
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_POP3ACCOUNTOPT DIALOGEX 0, 0, 334, 259
+STYLE DS_SYSMODAL | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    COMBOBOX        IDC_COMBOACCOUNT,5,5,140,65,CBS_DROPDOWN | CBS_SORT
+    PUSHBUTTON      "Delete",IDC_BTNDEL,160,190,75,13,0,WS_EX_TRANSPARENT
+    PUSHBUTTON      "Default",IDC_BTNDEFAULT,160,205,75,13
+    PUSHBUTTON      "Reset counter",IDC_BTNRESET,160,220,75,13
+    CONTROL         "Check this account",IDC_CHECK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,5,20,135,10,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_EDITINTERVAL,125,35,20,12,ES_AUTOHSCROLL | ES_NUMBER,
+                    WS_EX_TRANSPARENT
+    CONTROL         "Sound notification",IDC_CHECKSND,"Button",
+                    BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,12,52,135,10
+    CONTROL         "Message notification",IDC_CHECKMSG,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,63,135,10
+    CONTROL         "Tray icon notification",IDC_CHECKICO,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,73,140,10
+    CONTROL         "Application execution:",IDC_CHECKAPP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,96,135,8
+    PUSHBUTTON      "...",IDC_BTNAPP,21,107,16,12
+    EDITTEXT        IDC_EDITAPP,41,107,65,12,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDITAPPPARAM,111,107,40,12,ES_AUTOHSCROLL
+    CONTROL         "Popup notification",IDC_CHECKPOP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,123,108,10
+    CONTROL         "",IDC_CHECKCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    120,125,8,10
+    CONTROL         "",IDC_CPB,"ColourPicker",WS_TABSTOP,130,125,10,10
+    CONTROL         "",IDC_CPT,"ColourPicker",WS_TABSTOP,140,125,10,10
+    CONTROL         "Single popup",IDC_RADIOPOP1,"Button",BS_AUTORADIOBUTTON | 
+                    WS_TABSTOP,21,133,95,10
+    CONTROL         "Multi popup",IDC_RADIOPOPN,"Button",BS_AUTORADIOBUTTON | 
+                    WS_TABSTOP,21,142,95,10
+    CONTROL         "Popup if no mail",IDC_CHECKNPOP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,162,94,10
+    CONTROL         "",IDC_CHECKNCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    120,162,8,10
+    CONTROL         "",IDC_CPNB,"ColourPicker",WS_TABSTOP,140,162,10,10
+    CONTROL         "",IDC_CPNT,"ColourPicker",WS_TABSTOP,130,162,10,10
+    CONTROL         "Sound notification if failed",IDC_CHECKFSND,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,198,135,10
+    CONTROL         "Message notification if failed",IDC_CHECKFMSG,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,208,135,10
+    CONTROL         "Tray icon notification if failed",IDC_CHECKFICO,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,218,135,9
+    CONTROL         "Popup notification if failed",IDC_CHECKFPOP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,228,110,10
+    CONTROL         "",IDC_CHECKFCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    121,227,8,10
+    CONTROL         "",IDC_CPFB,"ColourPicker",WS_TABSTOP,131,227,10,10
+    CONTROL         "",IDC_CPFT,"ColourPicker",WS_TABSTOP,141,227,10,10
+    EDITTEXT        IDC_EDITSERVER,240,15,75,12,ES_AUTOHSCROLL | WS_GROUP
+    EDITTEXT        IDC_EDITPORT,288,30,27,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    WS_GROUP
+    EDITTEXT        IDC_EDITLOGIN,240,65,75,12,ES_AUTOHSCROLL | WS_GROUP
+    EDITTEXT        IDC_EDITPASS,240,90,75,12,ES_PASSWORD | ES_AUTOHSCROLL | 
+                    WS_GROUP
+    COMBOBOX        IDC_COMBOCP,155,15,75,130,CBS_DROPDOWNLIST | 
+                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Offline",IDC_CHECKST0,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,160,46,70,9
+    CONTROL         "Online",IDC_CHECKST1,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,160,55,70,9
+    CONTROL         "Away",IDC_CHECKST2,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_TABSTOP,160,65,70,9
+    CONTROL         "N/A",IDC_CHECKST3,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_TABSTOP,160,75,70,9
+    CONTROL         "Occupied",IDC_CHECKST4,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,160,86,70,9
+    CONTROL         "DND",IDC_CHECKST5,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_TABSTOP,160,95,70,9
+    CONTROL         "Free for chat",IDC_CHECKST6,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,160,105,70,9
+    CONTROL         "Invisible",IDC_CHECKST7,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,160,115,70,9
+    CONTROL         "On the phone",IDC_CHECKST8,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,160,126,70,9
+    CONTROL         "Out to lunch",IDC_CHECKST9,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,160,135,70,9
+    CONTROL         "Startup check",IDC_CHECKSTART,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,160,150,70,15
+    LTEXT           "Default codepage:",IDC_STCP,155,5,70,8
+    LTEXT           "",IDC_STTIMELEFT,160,180,155,8
+    LTEXT           "Check interval [min]:",IDC_STINTERVAL,5,35,115,10
+    LTEXT           "Check while:",IDC_STWCHECK,160,35,70,10
+    CONTROL         "Check from menu",IDC_CHECKFORCE,"Button",
+                    BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,160,165,70,8
+    LTEXT           "Server:",IDC_STSERVER,240,5,75,10,SS_CENTERIMAGE
+    LTEXT           "Port:",IDC_STPORT,240,30,45,10,SS_CENTERIMAGE
+    LTEXT           "User:",IDC_STLOGIN,240,55,75,10
+    LTEXT           "Password:",IDC_STPASS,240,80,75,10
+    EDITTEXT        IDC_EDITPOPS,124,136,20,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDITNPOPS,124,172,20,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDITFPOPS,126,238,20,12,ES_AUTOHSCROLL
+    LTEXT           "s",IDC_STATIC,144,137,8,8
+    LTEXT           "s",IDC_STATIC,144,173,8,8
+    LTEXT           "s",IDC_STATIC,146,239,8,8
+    GROUPBOX        "New mail notifications",IDC_GBNEWMAIL,5,45,150,108
+    GROUPBOX        "No new mail notifications",IDC_GBNONEWMAIL,7,154,150,33
+    GROUPBOX        "Connection failure notifications",IDC_GBBADCONNECT,7,
+                    187,150,65
+    LTEXT           "",IDC_STSTATUS,160,235,155,8
+    CONTROL         "APOP auth",IDC_CHECKAPOP,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,240,105,71,10
+    CONTROL         "Persistant message",IDC_CHECKNMSGP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,172,110,10
+    CONTROL         "Use SSL",IDC_CHECKSSL,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFTTEXT | BS_RIGHT | WS_TABSTOP,240,45,75,10
+    CONTROL         "Keyboard Flash",IDC_CHECKKBN,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,12,84,132,9
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_POP3ACCOUNTOPT DLGINIT
+BEGIN
+    IDC_COMBOACCOUNT, 0x403, 1, 0
+"\000" 
+    0
+END
+
+#endif    // English (U.K.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// French (Belgium) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_FRB)
+#ifdef _WIN32
+LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICOTTBDW            ICON    DISCARDABLE     "iconttbdown.ico"
+IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
+#endif    // French (Belgium) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
