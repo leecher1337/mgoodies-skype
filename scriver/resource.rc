@@ -41,7 +41,7 @@ BEGIN
                     292,10
     CONTROL         "Stay minimized",IDC_STAYMINIMIZED,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,22,22,126,10
-    CONTROL         "Do not bring new tabs to front",IDC_CREATETABSINBKG,
+    CONTROL         "Smartly switch to active tab",IDC_SWITCHTOACTIVE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,22,152,10
     CONTROL         "Close the message window on send",IDC_AUTOCLOSE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,8,33,292,10

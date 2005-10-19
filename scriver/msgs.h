@@ -238,8 +238,8 @@ extern const int msgDlgFontCount;
 #define SRMSGSET_AUTOPOPUP         "AutoPopupMsg"
 #define SRMSGDEFSET_AUTOPOPUP      0
 #define SRMSGSET_STAYMINIMIZED     "StayMinimized"
-#define SRMSGDEFSET_CREATETABSINBKG 0
-#define SRMSGSET_CREATETABSINBKG   "CreateTabsInBkg"
+#define SRMSGDEFSET_SWITCHTOACTIVE 0
+#define SRMSGSET_SWITCHTOACTIVE    "SwitchToActiveTab"
 #define SRMSGDEFSET_STAYMINIMIZED  0
 #define SRMSGSET_AUTOMIN           "AutoMin"
 #define SRMSGDEFSET_AUTOMIN        0
