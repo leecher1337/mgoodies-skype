@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #if defined(_UNICODE)
 	#define SEND_FLAGS PREF_UNICODE
+	extern wchar_t *strToWcs(const char *text, int textlen, int cp);
 #else
 	#define SEND_FLAGS 0
 #endif
@@ -49,6 +50,7 @@ extern HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand, hDragCursor;
 extern HANDLE hHookWinEvt;
 extern struct CREOleCallback reOleCallback;
 extern HINSTANCE g_hInst;
+
 
 static void UpdateReadChars(HWND hwndDlg, struct MessageWindowData * dat);
 
@@ -1906,8 +1908,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						}
 					}
 					if (buffer == NULL) {
-						buffer = (TCHAR *) malloc(sizeof(TCHAR) * aLen);
-						MultiByteToWideChar(CP_ACP, 0, (char *) dbei.pBlob, -1, buffer, aLen);
+						buffer = strToWcs((char *) dbei.pBlob, aLen, CP_ACP);
 						free(dbei.pBlob);
 						dbei.pBlob = (char *)buffer;
 					}

@@ -89,6 +89,18 @@ int DbEventIsShown(DBEVENTINFO * dbei, struct MessageWindowData *dat)
 	return 0;
 }
 
+#if defined( _UNICODE )
+wchar_t *strToWcs(const char *text, int textlen, int cp) {
+	wchar_t *wtext;
+	if (textlen == -1) {
+		textlen = strlen(text) + 1;
+	}
+	wtext = (wchar_t *) malloc(sizeof(wchar_t) * textlen);
+	MultiByteToWideChar(cp, 0, text, -1, wtext, textlen);
+	return wtext;
+}
+#endif
+
 struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact, HANDLE hDbEvent) {
 	DBEVENTINFO dbei = { 0 };
 	struct EventData *event;
@@ -127,12 +139,10 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 			if (wlen > 0 && wlen < msglen) {
 				event->wtext = wcsdup((wchar_t*) &dbei.pBlob[msglen]);
 			} else {
-				event->wtext = (wchar_t *) malloc(sizeof(TCHAR) * msglen);
-				MultiByteToWideChar(dat->codePage, 0, (char *) dbei.pBlob, -1, event->wtext, msglen);
+				event->wtext = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
 			}
 		} else {
-			event->wtext = (wchar_t *) malloc(sizeof(TCHAR) * msglen);
-			MultiByteToWideChar(dat->codePage, 0, (char *) dbei.pBlob, -1, event->wtext, msglen);
+			event->wtext = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
 		}
 	} else {
 		event->text = strdup((char *) dbei.pBlob);
@@ -184,6 +194,8 @@ static int IsUnicodeMIM() {
 	return (mimFlags & MIM_UNICODE) != 0;
 }
 
+#if defined ( _UNICODE )
+
 wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
 	CONTACTINFO ci;
 	ZeroMemory(&ci, sizeof(ci));
@@ -201,9 +213,7 @@ wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
 				if(IsUnicodeMIM()) {
 					szName = wcsdup((wchar_t *)ci.pszVal);
 				} else {
-					int len = strlen((char *)ci.pszVal) + 1;
-					szName = (wchar_t *)malloc(len * sizeof(TCHAR));
-					MultiByteToWideChar(CP_ACP, 0, (char *)ci.pszVal, -1, szName, len);
+					szName = strToWcs((char *)ci.pszVal, -1, CP_ACP);
 				}
 				miranda_sys_free(ci.pszVal);
 				return szName;
@@ -212,6 +222,8 @@ wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
 	}
     return wcsdup(L"Unknown Contact");
 }
+
+#endif
 
 char *GetNickname(HANDLE hContact, const char* szProto) {
 	CONTACTINFO ci;
@@ -624,14 +636,12 @@ static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact
 					if (wlen > 0 && wlen < msglen) {
 						AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
 					} else {
-						msg = (TCHAR *) malloc(sizeof(TCHAR) * msglen);
-						MultiByteToWideChar(dat->codePage, 0, (char *) dbei.pBlob, -1, msg, msglen);
+						msg = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
 						AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
 						free(msg);
 					}
 				} else {
-					msg = (TCHAR *) malloc(sizeof(TCHAR) * msglen);
-					MultiByteToWideChar(dat->codePage, 0, (char *) dbei.pBlob, -1, msg, msglen);
+					msg = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
 					AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
 					free(msg);
 				}
