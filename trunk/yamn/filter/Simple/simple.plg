@@ -1,0 +1,33 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: simple - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\fme\LOCALS~1\Temp\RSP8D.tmp" with contents
+[
+/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /Fp"Release/simple.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
+"E:\Projets\Miranda\miranda\mgoodies\yamn\filter\simple\maindll.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\fme\LOCALS~1\Temp\RSP8D.tmp" 
+Creating temporary file "C:\DOCUME~1\fme\LOCALS~1\Temp\RSP8E.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib msvcrt.lib /nologo /dll /incremental:no /pdb:"Release/simple.pdb" /machine:I386 /nodefaultlib /out:"Release/simple.dll" /implib:"Release/simple.lib" 
+.\Release\maindll.obj
+]
+Creating command line "link.exe @C:\DOCUME~1\fme\LOCALS~1\Temp\RSP8E.tmp"
+<h3>Output Window</h3>
+Compiling...
+maindll.cpp
+Linking...
+   Creating library Release/simple.lib and object Release/simple.exp
+
+
+
+<h3>Results</h3>
+simple.dll - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>
