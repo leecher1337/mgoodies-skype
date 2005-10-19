@@ -220,7 +220,7 @@ wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
 			}
 		}
 	}
-    return wcsdup(L"Unknown Contact");
+    return wcsdup(TranslateT("Unknown Contact"));
 }
 
 #endif

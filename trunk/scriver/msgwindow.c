@@ -52,7 +52,7 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 	int len, contactNameLen, statusLen;
 	TCHAR *p, *tmplt, *szContactName, *szStatus, *title;
 #if defined ( _UNICODE )
-	TCHAR *pszNewTitleEnd = strToWcs(Translate("Message Session"), -1, CP_ACP);
+	TCHAR *pszNewTitleEnd = wcsdup(TranslateT("Message Session"));
 #else 
 	TCHAR *pszNewTitleEnd = strdup(Translate("Message Session"));
 #endif
