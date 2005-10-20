@@ -70,7 +70,7 @@
 [Message Window Options]
 [Automatically pop up the window when a message is received]
 [Stay minimized]
-[utomatically switch to active tab]
+[Automatically switch to active tab]
 [Close the message window on send]
 [Minimize the message window on send]
 [Use the contact's status icon as the window icon]
