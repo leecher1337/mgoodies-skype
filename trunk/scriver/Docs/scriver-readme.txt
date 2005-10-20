@@ -66,6 +66,12 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.9.0
++ support for Unicode nick names
++ new, experimental RichEdit renderer
++ translation file contributed by Raq
+* improved switching to active tab (FR001089)
+* fixed problem with MS_MSG_GETWINDOWDATA service (005026)
 2.2.2.10
 * improved drag&drop tab sorting
 * fixed Updater compatibility
