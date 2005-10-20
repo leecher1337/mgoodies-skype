@@ -40,9 +40,7 @@ BEGIN
                     IDC_AUTOPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,11,
                     292,10
     CONTROL         "Stay minimized",IDC_STAYMINIMIZED,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,22,22,126,10
-    CONTROL         "Smartly switch to active tab",IDC_SWITCHTOACTIVE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,22,152,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,22,22,226,10
     CONTROL         "Close the message window on send",IDC_AUTOCLOSE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,8,33,292,10
     CONTROL         "Minimize the message window on send",IDC_AUTOMIN,"Button",
@@ -58,28 +56,30 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,22,76,126,10
     CONTROL         "Limit names on tabs to 20 characters",IDC_LIMITNAMES,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,76,152,10
+    CONTROL         "Automatically switch to active tab",IDC_SWITCHTOACTIVE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,87,152,10
     CONTROL         "Cascade new windows",IDC_CASCADE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,87,292,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,98,292,10
     CONTROL         "Save the window size and location individually for each contact",
                     IDC_SAVEPERCONTACT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    8,98,292,10
+                    8,109,292,10
     CONTROL         "Save the splitter position individually for each contact",
                     IDC_SAVESPLITTERPERCONTACT,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,8,109,292,10
+                    WS_TABSTOP,8,120,292,10
     CONTROL         "Support control up/down in message area to show previously sent messages",
                     IDC_CTRLSUPPORT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,
-                    120,298,10
+                    131,298,10
     CONTROL         "Delete temporary contacts when closing message window",
-                    IDC_DELTEMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,131,
+                    IDC_DELTEMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,142,
                     287,10
-    CONTROL         "Show 'sending in progress' indicator",IDC_SHOWPROGRESS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,142,292,10
     CONTROL         "Show title bar",IDC_SHOWTITLEBAR,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,8,153,140,10
     CONTROL         "Show status bar",IDC_SHOWSTATUSBAR,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,148,157,138,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,148,153,138,10
     CONTROL         "Show tool bar ",IDC_SHOWBUTTONLINE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,164,138,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,164,140,10
+    CONTROL         "Show 'sending in progress' indicator",IDC_SHOWPROGRESS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,164,138,10
     CONTROL         "Enable avatar support in the message window",
                     IDC_AVATARSUPPORT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     8,175,292,10
