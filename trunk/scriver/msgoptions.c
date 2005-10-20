@@ -218,20 +218,19 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 			EnableWindow(GetDlgItem(hwndDlg, IDC_STAYMINIMIZED), IsDlgButtonChecked(hwndDlg, IDC_AUTOPOPUP));
 			bChecked = IsDlgButtonChecked(hwndDlg, IDC_USETABS);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_SWITCHTOACTIVE), bChecked && IsDlgButtonChecked(hwndDlg, IDC_AUTOPOPUP));
+			EnableWindow(GetDlgItem(hwndDlg, IDC_SWITCHTOACTIVE), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_TABSATBOTTOM), bChecked );
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LIMITNAMES), bChecked );
 			EnableWindow(GetDlgItem(hwndDlg, IDC_HIDEONETAB), bChecked );
 			EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !bChecked  && !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SAVEPERCONTACT), !bChecked );
-
 			return TRUE;
 		}
 		case WM_COMMAND:
 			switch (LOWORD(wParam)) {
 				case IDC_AUTOPOPUP:
 					EnableWindow(GetDlgItem(hwndDlg, IDC_STAYMINIMIZED), IsDlgButtonChecked(hwndDlg, IDC_AUTOPOPUP));
-					EnableWindow(GetDlgItem(hwndDlg, IDC_SWITCHTOACTIVE), IsDlgButtonChecked(hwndDlg, IDC_USETABS) && IsDlgButtonChecked(hwndDlg, IDC_AUTOPOPUP));
+					EnableWindow(GetDlgItem(hwndDlg, IDC_SWITCHTOACTIVE), IsDlgButtonChecked(hwndDlg, IDC_USETABS));
 					break;
 				case IDC_AUTOMIN:
 					CheckDlgButton(hwndDlg, IDC_AUTOCLOSE, BST_UNCHECKED);
@@ -239,7 +238,7 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				case IDC_USETABS:
 					{
 						int bChecked = IsDlgButtonChecked(hwndDlg, IDC_USETABS);
-						EnableWindow(GetDlgItem(hwndDlg, IDC_SWITCHTOACTIVE), bChecked && IsDlgButtonChecked(hwndDlg, IDC_AUTOPOPUP));
+						EnableWindow(GetDlgItem(hwndDlg, IDC_SWITCHTOACTIVE), bChecked);
 						EnableWindow(GetDlgItem(hwndDlg, IDC_TABSATBOTTOM), bChecked);
 						EnableWindow(GetDlgItem(hwndDlg, IDC_LIMITNAMES), bChecked);
 						EnableWindow(GetDlgItem(hwndDlg, IDC_HIDEONETAB), bChecked);
