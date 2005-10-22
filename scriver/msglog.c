@@ -1021,7 +1021,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		}
 		smre.rangeToReplace = NULL;
 		smre.useSounds = FALSE;
-		smre.disableRedraw = FALSE;
+		smre.disableRedraw = TRUE;
 		CallService(MS_SMILEYADD_REPLACESMILEYS, 0, (LPARAM) &smre);
 	}
 //	if (GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL)
