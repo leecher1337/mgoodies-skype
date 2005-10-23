@@ -1,4 +1,4 @@
-SAcriver user's manual & FAQ v1.0
+Scriver user's manual & FAQ v1.0
 ---------------------------------
 
 1. Overview
@@ -66,6 +66,8 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.9.1
+* bugfixes
 2.2.9.0
 + support for Unicode nick names
 + new, experimental RichEdit renderer
