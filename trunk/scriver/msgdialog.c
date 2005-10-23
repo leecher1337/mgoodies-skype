@@ -1012,6 +1012,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				}
 			} else {
 				ShowWindow(dat->hwndParent, SW_SHOWNORMAL);
+				SetForegroundWindow(dat->hwndParent);
+				SetFocus(hwndDlg);
 			}
 			if (dat->parent->childrenCount == 1 ||
 				((g_dat->flags & SMF_SWITCHTOACTIVE) && (IsIconic(dat->hwndParent) || GetActiveWindow() != dat->hwndParent)) ||
