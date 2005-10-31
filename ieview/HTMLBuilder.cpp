@@ -945,23 +945,31 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
             if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_FLASH) && (wcsstr(wlink, L".swf")!=NULL)) {
 	            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {
                     Utils::appendText(str, sizeAlloced,
-		L" <object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
+		L" <span title=\"%s\" class=\"img\"><object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
 		codebase=\"http://active.macromedia.com/flash2/cabs/swflash.cab#version=4,0,0,0\" >\
-		<param NAME=\"movie\" VALUE=\"%s\"><param NAME=\"quality\" VALUE=\"high\"><PARAM NAME=\"loop\" VALUE=\"true\"></object><span style=\"position:absolute; visibility:hidden;\">%s</span> ",
+		<param NAME=\"movie\" VALUE=\"%s\"><param NAME=\"quality\" VALUE=\"high\"><PARAM NAME=\"loop\" VALUE=\"true\"></object></span><span style=\"position:absolute; visibility:hidden;\">%s</span> ",
 	            	wlink, eText);
 	            } else {
                     Utils::appendText(str, sizeAlloced,
-		L"<object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
+		L"<span title=\"%s\" class=\"img\"><object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
 		codebase=\"http://active.macromedia.com/flash2/cabs/swflash.cab#version=4,0,0,0\" >\
-		<param NAME=\"movie\" VALUE=\"%s\"><param NAME=\"quality\" VALUE=\"high\"><PARAM NAME=\"loop\" VALUE=\"true\"></object><span style=\"position:absolute; visibility:hidden;\">%s</span>",
+		<param NAME=\"movie\" VALUE=\"%s\"><param NAME=\"quality\" VALUE=\"high\"><PARAM NAME=\"loop\" VALUE=\"true\"></object></span><span style=\"position:absolute; visibility:hidden;\">%s</span>",
 	            	wlink, eText);
 	            }
 			} else {
-	            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {
-	            	Utils::appendText(str, sizeAlloced, L" <img class=\"img\" src=\"%s\" alt=\"%s\" /><span style=\"position:absolute; visibility:hidden;\">%s</span> ", wlink, eText, eText);
-	            } else {
-	            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" /><span style=\"position:absolute; visibility:hidden;\">%s</span>", wlink, eText, eText);
-	            }
+				if (wcsstr(wlink, L".png")!=NULL) {
+		            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {//
+		            	Utils::appendText(str, sizeAlloced, L" <span title=\"%s\" class=\"img\"><span style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\"></span><span style=\"position:absolute; visibility:hidden;\">%s</span> ", eText, wlink, eText);
+		            } else {
+		            	Utils::appendText(str, sizeAlloced, L"<span title=\"%s\" class=\"img\"><span style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\"/></span><span style=\"position:absolute; visibility:hidden;\">%s</span>", eText, wlink, eText);
+		            }
+				} else {
+		            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {
+		            	Utils::appendText(str, sizeAlloced, L" <img class=\"img\" src=\"%s\" alt=\"%s\" /><span style=\"position:absolute; visibility:hidden;\">%s</span> ", wlink, eText, eText);
+		            } else {
+		            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" /><span style=\"position:absolute; visibility:hidden;\">%s</span>", wlink, eText, eText);
+		            }
+				}
 			}
             break;
         case MATH:
