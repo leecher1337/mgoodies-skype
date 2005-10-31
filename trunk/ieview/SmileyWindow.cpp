@@ -30,6 +30,7 @@ SmileyWindow::SmileyWindow(SmileyMap *map) {
  	hwnd = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_SMILEYSELECTION), NULL, SmileySelectionDlgProc, (LPARAM) this);
 	view = new IEView(hwnd, this, 0, 0, 200, 200);
 	created = false;
+	bkgColor = 0xFFFFFF;
 }
 
 SmileyWindow::~SmileyWindow() {
@@ -41,7 +42,6 @@ SmileyWindow::~SmileyWindow() {
 	}
 }
 void SmileyWindow::createSelection() {
-	DWORD bkgColor = 0xFFFFFF;
 	int outputSize;
 	char *output = NULL;
     int cellWidthBorder = cellWidth + 1;
@@ -88,8 +88,13 @@ div#inner { position: relative; top: -50%%; left: -50%%; }\n\
 		if (j%hSize == 0) {
 			Utils::appendText(&output, &outputSize, "<tr>\n");
 		}
-		Utils::appendText(&output, &outputSize, "<td class=\"td\"><div id=\"outer\"><div id=\"middle\"><div id=\"inner\"><a href=\"/%d\"><img class=\"img\" src=\"%s\" alt=\"%s\" border=\"0\"/></a></div></div></div></td>\n",
+/*		if (strstr(s->getFile(), ".png")!=NULL) {
+			Utils::appendText(&output, &outputSize, "<td class=\"td\"><div id=\"outer\"><div id=\"middle\"><div id=\"inner\"><a href=\"/%d\"><span title=\"%s\"><span style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\"></span></a></div></div></div></td>\n",
+							i, s->getDescription(), s->getFile());
+		} else */{
+			Utils::appendText(&output, &outputSize, "<td class=\"td\"><div id=\"outer\"><div id=\"middle\"><div id=\"inner\"><a href=\"/%d\"><img class=\"img\" src=\"%s\" alt=\"%s\" border=\"0\"/></a></div></div></div></td>\n",
 							i, s->getFile(), s->getDescription());
+		}
 		if (j%hSize == hSize-1) {
 			Utils::appendText(&output, &outputSize, "</tr>\n");
 		}

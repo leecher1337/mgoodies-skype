@@ -34,6 +34,7 @@ private:
 	IEView* view;
 	SmileyMap *map;
 	bool    created;
+	DWORD 	bkgColor;
 	int 	cellWidth, maxWidth, maxHeight, cellHeight;
 	int     viewWidth, viewHeight;
     HWND 	hwndTarget;

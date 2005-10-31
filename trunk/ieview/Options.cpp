@@ -462,15 +462,16 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 		break;
 	case UM_CHECKSTATECHANGE:
 		{
-			if ((HTREEITEM) lParam != TreeView_GetSelection((HWND)wParam)) {
-				TreeView_SelectItem((HWND)wParam, (HTREEITEM) lParam);
-			}
 			if (TreeView_GetCheckState((HWND)wParam, (HTREEITEM) lParam)) {
 				browseSmileys(hwndDlg);
 			} else {
 				strcpy(protoFilenames[getSelProto((HWND)wParam, (HTREEITEM) lParam)], "");
 			}
-			updateSmileyInfo(hwndDlg, currentProtoItem);
+			if ((HTREEITEM) lParam != TreeView_GetSelection((HWND)wParam)) {
+				TreeView_SelectItem((HWND)wParam, (HTREEITEM) lParam);
+			} else {
+				updateSmileyInfo(hwndDlg, currentProtoItem);
+			}
 			SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 		}
 		break;
@@ -487,6 +488,7 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 							TreeView_HitTest(((LPNMHDR)lParam)->hwndFrom, &ht);
 							if (TVHT_ONITEMSTATEICON & ht.flags) {
                                 PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom, (LPARAM)ht.hItem);
+                                return FALSE;
 							}
 						}
 						break;
