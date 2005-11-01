@@ -534,3 +534,12 @@ bool SmileyMap::loadLibrary(const char *proto, const char *filename) {
   	fclose(fh);
 	return true;
 }
+
+void SmileyMap::setSelectorBackground(DWORD color) {
+	SmileyMap *map;
+	for (map=mapList; map!=NULL; map=map->next) {
+		if (map->getWindow() != NULL) {
+			map->getWindow()->setBackground(color);
+		}
+	}
+}

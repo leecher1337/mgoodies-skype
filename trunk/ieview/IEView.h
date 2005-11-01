@@ -89,9 +89,9 @@ public:
 
 class IEView:public IDispatch, public IOleClientSite, public IOleInPlaceSite, public IDocHostUIHandler {
 private:
+	static IEView *list;
    	static CRITICAL_SECTION mutex;
    	static bool isInited;
-	static BOOL CALLBACK LangAddCallback(CHAR * str);
 	HWND 		parent;
 	HWND		hwnd;
 	IEView		*prev, *next;
@@ -169,7 +169,6 @@ private:
 	BSTR 			getHrefFromAnchor(IHTMLElement *element);
 	BSTR 			getSelection();
 public:
-	static IEView *list;
 	IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy);
 	IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, int cy);
 	virtual ~IEView();

@@ -444,7 +444,7 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
     IOleWindow * pOleWindow;
 	HWND hSPWnd;
 	if (builder == NULL) {
-        return S_OK;
+   //     return S_OK;
 	}
     if (SUCCEEDED(pcmdTarget->QueryInterface(IID_IOleCommandTarget, (void**)&pOleCommandTarget))) {
 		if (SUCCEEDED(pOleCommandTarget->QueryInterface(IID_IOleWindow, (void**)&pOleWindow))) {
