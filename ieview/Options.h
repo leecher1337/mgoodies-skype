@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DBS_TEMPLATESFILE_RTL     "TemplatesFileRTL"
 
 #define DBS_SMILEYSFLAGS  		  "SmileyFlags"
+#define DBS_SMILEYBACKGROUND      "SmileyBackground"
 #define DBS_GROUPCHATFLAGS        "GroupChatFlags"
 #define DBS_GROUPCHATCSSFILE      "GroupChatCSSFile"
 #define DBS_GROUPCHATTEMPLATESFILE   "GroupChatTemplatesFile"
@@ -44,6 +45,7 @@ private:
    	static int 		generalFlags;
    	static char *	bkgFilename;
    	static int 		smileyFlags;
+   	static DWORD    smileyBackground;
    	static char *	externalCSSFilename;
    	static char *	externalCSSFilenameRTL;
    	
@@ -63,27 +65,27 @@ public:
 		GENERAL_ENABLE_MATHMODULE = 2,
 		GENERAL_ENABLE_FLASH = 4,
 
-		IMAGE_ENABLED        = 1,
-		IMAGE_SCROLL         = 2,
+		IMAGE_ENABLED         = 1,
+		IMAGE_SCROLL          = 2,
 		CSS_ENABLED  		  = 4,
 		TEMPLATES_ENABLED	  = 8,
 
-		LOG_SHOW_FILE           = 0x20,
-		LOG_SHOW_URL            = 0x40,
-		LOG_SHOW_STATUSCHANGE   = 0x80,
-		LOG_SHOW_NICKNAMES      = 0x0100,
-		LOG_SHOW_TIME           = 0x0200,
-		LOG_SHOW_DATE           = 0x0400,
-		LOG_SHOW_SECONDS        = 0x0800,
-		LOG_LONG_DATE       	 = 0x1000,
-		LOG_RELATIVE_DATE       = 0x2000,
-		LOG_GROUP_MESSAGES		 = 0x4000,
+		LOG_SHOW_FILE         = 0x20,
+		LOG_SHOW_URL          = 0x40,
+		LOG_SHOW_STATUSCHANGE = 0x80,
+		LOG_SHOW_NICKNAMES    = 0x0100,
+		LOG_SHOW_TIME         = 0x0200,
+		LOG_SHOW_DATE         = 0x0400,
+		LOG_SHOW_SECONDS      = 0x0800,
+		LOG_LONG_DATE         = 0x1000,
+		LOG_RELATIVE_DATE     = 0x2000,
+		LOG_GROUP_MESSAGES	  = 0x4000,
 
-        SMILEY_ENABLED          = 1,
-		SMILEY_ISOLATED         = 2,
-		SMILEY_SURROUND      	= 4,
-		SMILEY_PROTOCOLS        = 8,
-		SMILEY_SMILEYINNAMES    = 16,
+        SMILEY_ENABLED        = 1,
+		SMILEY_ISOLATED       = 2,
+		SMILEY_SURROUND       = 4,
+		SMILEY_PROTOCOLS      = 8,
+		SMILEY_SMILEYINNAMES  = 16,
 
 	};
    	static void     		setGeneralFlags(int flags);
@@ -92,6 +94,8 @@ public:
    	static const char *		getSmileyFile(const char *proto);
    	static void     		setSmileyFlags(int flags);
    	static int				getSmileyFlags();
+   	static void             setSmileyBackground(DWORD color);
+   	static DWORD 			getSmileyBackground();
    	static void     		setBkgImageFile(const char *filename);
    	static const char *		getBkgImageFile();
    	static void      		setExternalCSSFile(const char *filename);

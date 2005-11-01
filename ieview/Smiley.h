@@ -99,6 +99,7 @@ public:
 	static Smiley *		getSmiley(const char *proto, const char *text, int *len);
 	static bool         loadLibrary(const char *proto, const char *filename);
 	static SmileyMap *	getLibraryInfo(const char *filename);
+	static void         setSelectorBackground(DWORD color);
 	const char *        getFilename();
 	const char *        getAuthor();
 	const char *        getVersion();

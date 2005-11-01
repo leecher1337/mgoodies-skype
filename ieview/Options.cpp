@@ -354,6 +354,8 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SURROUND_SMILEYS), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_IN_NAMES), bChecked);
 //			EnableWindow(GetDlgItem(hwndDlg, IDC_REPLACE_SMILEYADD), bChecked);
+			SendDlgItemMessage(hwndDlg, IDC_BKGCOLOR, CPM_SETCOLOUR, 0, Options::getSmileyBackground());
+//			SendDlgItemMessage(hwndDlg, IDC_BKGCOLOUR, CPM_SETDEFAULTCOLOUR, 0, SRMSGDEFSET_BKGCOLOUR);
 			if (Options::getSmileyFlags() & Options::SMILEY_PROTOCOLS) {
 				CheckDlgButton(hwndDlg, IDC_PROTO_SMILEYS, TRUE);
 			} else {
@@ -457,6 +459,9 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
+   			case IDC_BKGCOLOR:
+				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				break;
 			}
 		}
 		break;
@@ -534,6 +539,8 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 					i |= Options::SMILEY_PROTOCOLS;
 				}
 				Options::setSmileyFlags(i);
+				Options::setSmileyBackground((DWORD)SendDlgItemMessage(hwndDlg, IDC_BKGCOLOR, CPM_GETCOLOUR, 0, 0));
+				SmileyMap::setSelectorBackground(Options::getSmileyBackground());
 				GetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[currentProtoItem], MAX_PATH);
 				for (i = 0; i < protoNum; i++) {
 					if (i==0 || protoNames[i][0] != '\0') {
@@ -1019,6 +1026,7 @@ char *Options::externalCSSFilenameRTL = NULL;
 char *Options::templatesFilename = NULL;
 char *Options::templatesFilenameRTL = NULL;
 char *Options::groupChatTemplatesFilename = NULL;
+DWORD Options::smileyBackground;
 int Options::srmmFlags;
 
 void Options::init() {
@@ -1029,6 +1037,7 @@ void Options::init() {
 	generalFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, 0);
 	srmmFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SRMMFLAGS, FALSE);
 	smileyFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYSFLAGS, 1);
+	smileyBackground = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYBACKGROUND, 1);
 	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_BACKGROUNDIMAGEFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
     	strcpy(tmpPath, dbv.pszVal);
@@ -1211,6 +1220,15 @@ void Options::setSmileyFlags(int flags) {
 
 int	Options::getSmileyFlags() {
 	return smileyFlags;
+}
+
+void Options::setSmileyBackground(DWORD color) {
+	smileyBackground = color;
+	DBWriteContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYBACKGROUND, color);
+}
+
+DWORD Options::getSmileyBackground() {
+	return smileyBackground;
 }
 
 void Options::setExternalCSSFile(const char *filename) {

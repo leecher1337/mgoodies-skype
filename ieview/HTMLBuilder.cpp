@@ -959,9 +959,9 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 			} else {
 				if (wcsstr(wlink, L".png")!=NULL) {
 		            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {//
-		            	Utils::appendText(str, sizeAlloced, L" <span title=\"%s\" class=\"img\"><span style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\"></span><span style=\"position:absolute; visibility:hidden;\">%s</span> ", eText, wlink, eText);
+		            	Utils::appendText(str, sizeAlloced, L" <img class=\"img\" style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\" alt=\"%s\"/><span style=\"position:absolute; visibility:hidden;\">%s</span> ", wlink, eText, eText);
 		            } else {
-		            	Utils::appendText(str, sizeAlloced, L"<span title=\"%s\" class=\"img\"><span style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\"/></span><span style=\"position:absolute; visibility:hidden;\">%s</span>", eText, wlink, eText);
+		            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\" alt=\"%s\"/><span style=\"position:absolute; visibility:hidden;\">%s</span>", wlink, eText, eText);
 		            }
 				} else {
 		            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {

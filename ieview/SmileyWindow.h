@@ -45,9 +45,9 @@ public:
 	SmileyWindow(SmileyMap *);
 	~SmileyWindow();
 	void    show(HWND hwndTarget, UINT targetMessage, WPARAM targetWParam, int , int);
+	void    setBackground(DWORD color);
 	void    init(int cw, int ch);
 	void    choose(const char *);
-	
 };
 
 #endif
