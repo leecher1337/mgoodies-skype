@@ -119,8 +119,8 @@ BEGIN
     CONTROL         "Replace smileys in user names",IDC_SMILEYS_IN_NAMES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,175,265,10
     GROUPBOX        "Smiley Selector",IDC_SIMPLE,5,194,294,26
-    LTEXT           "Background Color",IDC_STATIC,14,206,80,8
-    CONTROL         "",IDC_BKGCOLOR,"ColourPicker",WS_TABSTOP,130,204,24,12
+    LTEXT           "Background Color",IDC_STATIC,14,205,80,8
+    CONTROL         "",IDC_BKGCOLOR,"ColourPicker",WS_TABSTOP,150,203,32,12
 END
 
 IDD_TEMPLATES_OPTIONS DIALOGEX 2, 15, 306, 228
@@ -205,8 +205,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,3,8
- PRODUCTVERSION 1,0,3,8
+ FILEVERSION 1,0,3,9
+ PRODUCTVERSION 1,0,3,9
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -224,14 +224,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "http://developer.berlios.de/projects/mgoodies\0"
             VALUE "FileDescription", "IEView Plugin for Miranda IM\0"
-            VALUE "FileVersion", "1.0.3.8\0"
+            VALUE "FileVersion", "1.0.3.9\0"
             VALUE "InternalName", "ieview\0"
             VALUE "LegalCopyright", "Copyright (c) 2005 Piotr Piastucki\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "ieview.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "IEView Plugin\0"
-            VALUE "ProductVersion", "1.0.3.8\0"
+            VALUE "ProductVersion", "1.0.3.9\0"
             VALUE "SpecialBuild", "\0"
         END
     END
