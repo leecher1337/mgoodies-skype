@@ -106,6 +106,14 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.3.9
++ support for Unicode nick names
++ support for png emoticons (thanks to Alex Krivospitsky !)
++ support for drag&drop file transfer
++ possibility to choose smiley selector background color
++ new divUserJoined, divUserLeft, divUserKicked etc. styles (see chat.css)
++ translation file by Raq
+* bugfixes
 1.0.3.8
 + nickOut variable and improved compatibility with metacontacts (patch by Tweety)
 + SHIFT+click opens links and closes message window at the same time
