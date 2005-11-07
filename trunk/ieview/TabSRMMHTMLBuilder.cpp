@@ -263,7 +263,8 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	if (event->cbSize == sizeof(IEVIEWEVENT)) {
 		cp = event->codepage;
 	}
-	char *szProto = getRealProto(event->hContact);
+	char *szProto = getProto(event->hContact);
+	char *szRealProto = getRealProto(event->hContact);
 	HANDLE hDbEvent = event->hDbEventFirst;
 	event->hDbEventFirst = NULL;
 	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
@@ -302,28 +303,28 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			char *szName = NULL;
 			char *szText = NULL;
 			if (isSent) {
-				szName = getContactName(NULL, szProto);
+				szName = getContactName(NULL, szProto, szRealProto);
    			} else {
-                szName = getContactName(event->hContact, szProto);
+                szName = getContactName(event->hContact, szProto, szRealProto);
 			}
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;
 				if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
 					DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
 					if (wlen > 0 && wlen < aLen) {
-                        szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szProto, ENF_ALL);
+                        szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szRealProto, ENF_ALL);
 					} else {
-                        szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, ENF_ALL);
+                        szText = encodeUTF8((char *)dbei.pBlob, cp, szRealProto, ENF_ALL);
 					}
 				} else {
-                	szText = encodeUTF8((char *)dbei.pBlob, cp, szProto, ENF_ALL);
+                	szText = encodeUTF8((char *)dbei.pBlob, cp, szRealProto, ENF_ALL);
 				}
 			} else if (dbei.eventType == EVENTTYPE_FILE) {
-                szText = encodeUTF8((char *)dbei.pBlob + sizeof(DWORD), szProto, ENF_NONE);
+                szText = encodeUTF8((char *)dbei.pBlob + sizeof(DWORD), szRealProto, ENF_NONE);
 			} else if (dbei.eventType == EVENTTYPE_URL) {
-                szText = encodeUTF8((char *)dbei.pBlob, szProto, ENF_NONE);
+                szText = encodeUTF8((char *)dbei.pBlob, szRealProto, ENF_NONE);
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-                szText = encodeUTF8((char *)dbei.pBlob, szProto, ENF_NONE);
+                szText = encodeUTF8((char *)dbei.pBlob, szRealProto, ENF_NONE);
 			}
 			/* TabSRMM-specific formatting */
 			if ((dwFlags & MWF_LOG_GRID) && isGroupBreak && getLastEventType()!=-1) {
@@ -417,6 +418,7 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
         free(dbei.pBlob);
     }
     if (szProto!=NULL) delete szProto;
+    if (szRealProto!=NULL) delete szRealProto;
 //	view->scrollToBottom();
 }
 

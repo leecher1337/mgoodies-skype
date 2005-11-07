@@ -115,8 +115,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
-		szNameOut = getContactName(NULL, szRealProto);
-		szNameIn = getContactName(event->hContact, szRealProto);
+		szNameOut = getContactName(NULL, szProto, szRealProto);
+		szNameIn = getContactName(event->hContact, szProto, szRealProto);
 	} else {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");
@@ -291,8 +291,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
-		szNameOut = getContactName(NULL, szRealProto);
-		szNameIn = getContactName(event->hContact, szRealProto);
+		szNameOut = getContactName(NULL, szRealProto, szRealProto);
+		szNameIn = getContactName(event->hContact, szRealProto, szRealProto);
 	} else {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");

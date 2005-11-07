@@ -1160,12 +1160,12 @@ HANDLE HTMLBuilder::getRealContact(HANDLE hContact) {
 void HTMLBuilder::getUINs(HANDLE hContact, char *&uinIn, char *&uinOut) {
 	CONTACTINFO ci;
 	char buf[128];
-    char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+    char *szProto = getProto(hContact);
 	if (szProto!=NULL && !strcmp(szProto,"MetaContacts")) {
 		hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
 		if (hContact!=NULL) {
 			delete szProto;
-			szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+			szProto = getProto(hContact);
 		}
 	}
 	ZeroMemory(&ci, sizeof(ci));
@@ -1230,9 +1230,9 @@ bool HTMLBuilder::isSameDate(DWORD time1, DWORD time2) {
 	return false;
 }
 
-char *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto) {
-	char *szName = NULL;
+char *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto, const char* szSmileyProto) {
 	CONTACTINFO ci;
+	char *szName = NULL;
 	ZeroMemory(&ci, sizeof(ci));
 	ci.cbSize = sizeof(ci);
 	ci.hContact = hContact;
@@ -1245,13 +1245,18 @@ char *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto) {
 		if (ci.type == CNFT_ASCIIZ) {
 			if (ci.pszVal) {
 				if(isUnicodeMIM()) {
-	        	    szName = encodeUTF8((wchar_t *)ci.pszVal, szProto, ENF_NAMESMILEYS);
+	        	    szName = encodeUTF8((wchar_t *)ci.pszVal, szSmileyProto, ENF_NAMESMILEYS);
 				} else {
-	        	    szName = encodeUTF8((char *)ci.pszVal, szProto, ENF_NAMESMILEYS);
+	        	    szName = encodeUTF8((char *)ci.pszVal, szSmileyProto, ENF_NAMESMILEYS);
 				}
 				miranda_sys_free(ci.pszVal);
 			}
+		    if (szName != NULL) return szName;
 		}
 	}
-    return (szName != NULL)? szName : encodeUTF8(Translate("(Unknown Contact)"), szProto, ENF_NAMESMILEYS);
+	szName = (char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0);
+	if (szName != NULL) {
+	    return encodeUTF8(szName, szSmileyProto, ENF_NAMESMILEYS);
+	}
+    return encodeUTF8(Translate("(Unknown Contact)"), szSmileyProto, ENF_NAMESMILEYS);
 }
