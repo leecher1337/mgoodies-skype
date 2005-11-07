@@ -112,7 +112,7 @@ protected:
 	virtual bool encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags);
 	virtual char* getRealProto(HANDLE hContact);
 	virtual char* getProto(HANDLE hContact);
-	virtual char *getContactName(HANDLE hContact, const char *szProto);
+	virtual char *getContactName(HANDLE hContact, const char *szProto, const char *szSmileyProto);
 	virtual void getUINs(HANDLE hContact, char *&uinIn, char *&uinOut);
 	virtual HANDLE getRealContact(HANDLE hContact);
 	virtual DWORD getLastEventTime();
