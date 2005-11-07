@@ -197,6 +197,8 @@ static int IsUnicodeMIM() {
 #if defined ( _UNICODE )
 
 wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
+	char * szBaseNick;
+	wchar_t *szName;
 	CONTACTINFO ci;
 	ZeroMemory(&ci, sizeof(ci));
 	ci.cbSize = sizeof(ci);
@@ -209,7 +211,6 @@ wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		if (ci.type == CNFT_ASCIIZ) {
 			if (ci.pszVal) {
-				wchar_t *szName;
 				if(IsUnicodeMIM()) {
 					szName = wcsdup((wchar_t *)ci.pszVal);
 				} else {
@@ -220,12 +221,22 @@ wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
 			}
 		}
 	}
+	szBaseNick = (char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0);
+	if (szBaseNick != NULL) {
+		int len;
+		len = strlen(szBaseNick) + 1;
+		szName = (wchar_t *) malloc(len * 2)
+	    MultiByteToWideChar(CP_ACP, 0, szBaseNick, -1, szName, len);
+		szName[len - 1] = 0;
+	    return szName;
+	}
     return wcsdup(TranslateT("Unknown Contact"));
 }
 
 #endif
 
 char *GetNickname(HANDLE hContact, const char* szProto) {
+	char *szName;
 	CONTACTINFO ci;
 	ZeroMemory(&ci, sizeof(ci));
 	ci.cbSize = sizeof(ci);
@@ -235,11 +246,15 @@ char *GetNickname(HANDLE hContact, const char* szProto) {
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		if (ci.type == CNFT_ASCIIZ) {
 			if (ci.pszVal) {
-				char *szName = strdup((char *)ci.pszVal);
+				szName = strdup((char *)ci.pszVal);
 				miranda_sys_free(ci.pszVal);
 				return szName;
 			}
 		}
+	}
+	szName = (char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0);
+	if (szName != NULL) {
+	    return strdup(szName);
 	}
     return strdup(Translate("Unknown Contact"));
 }
