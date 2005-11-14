@@ -238,7 +238,7 @@ void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 }
 
 void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
-
+	bool showColon;
 	DWORD dwFlags = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTIME, 0) ? SMF_LOG_SHOWTIME : 0;
     dwFlags |= !DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_HIDENAMES, 0) ? SMF_LOG_SHOWNICK : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWDATE, 0) ? SMF_LOG_SHOWDATE : 0;
@@ -285,6 +285,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	        continue;
     	}
 		output = NULL;
+		showColon = false;
 		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_STATUSCHANGE
 			|| dbei.eventType == EVENTTYPE_URL || dbei.eventType == EVENTTYPE_FILE) {
 			int isSent = (dbei.flags & DBEF_SENT);
@@ -346,33 +347,53 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 				} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
 					iconFile = "status.gif";
 				}
-				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"%s/plugins/ieview/%s\"/>",
+				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"%s/plugins/ieview/%s\"/> ",
 								workingDir, iconFile);
 			}
-			if ((dwFlags & SMF_LOG_SHOWTIME) && (isGroupBreak || (dwFlags & SMF_LOG_MARKFOLLOWUPS))) {
-				const char *className = "";
-				className = isSent ? "timeOut" : "timeIn";
-				if (!(dwFlags & SMF_LOG_SHOWNICK) || (dbei.eventType == EVENTTYPE_STATUSCHANGE)) {
-					const char *className2 = "";
-					className2 = isSent ? "colonOut" : "colonIn";
-					Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span><span class=\"%s\">: </span>",
-							className, timestampToString(dwFlags, dbei.timestamp, isGroupBreak), className2);
+			if (dwFlags & SMF_LOG_SHOWTIME &&
+				(dbei.eventType != EVENTTYPE_MESSAGE ||
+			    !(dwFlags & SMF_LOG_GROUPMESSAGES) || 
+				(isGroupBreak && !(dwFlags & SMF_LOG_MARKFOLLOWUPS)) || (!isGroupBreak && (dwFlags & SMF_LOG_MARKFOLLOWUPS))))
+				{
+				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>",
+							isSent ? "timeOut" : "timeIn", timestampToString(dwFlags, dbei.timestamp, isGroupBreak));
+				if (dbei.eventType != EVENTTYPE_MESSAGE) {
+					Utils::appendText(&output, &outputSize, "<span class=\"%s\">: </span>",
+								isSent ? "colonOut" : "colonIn");
+				}
+				showColon = true;
+			}
+   			if ((dwFlags & SMF_LOG_SHOWNICK && dbei.eventType == EVENTTYPE_MESSAGE && isGroupBreak) || dbei.eventType == EVENTTYPE_STATUSCHANGE ) {
+	            if (dbei.eventType == EVENTTYPE_MESSAGE) {
+					if (showColon) {
+						Utils::appendText(&output, &outputSize, "<span class=\"%s\"> %s</span>",
+									isSent ? "nameOut" : "nameIn", szName);
+					} else {
+						Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>",
+									isSent ? "nameOut" : "nameIn", szName);
+					}
+                    showColon = true;
+					if (dwFlags & SMF_LOG_GROUPMESSAGES) {
+						Utils::appendText(&output, &outputSize, "<br>");
+						showColon = false;
+					}
 				} else {
-					Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
-							className, timestampToString(dwFlags, dbei.timestamp, isGroupBreak));
+					Utils::appendText(&output, &outputSize, "<span class=\"notices\">%s</span>", szName);
 				}
 			}
-            if (dbei.eventType == EVENTTYPE_MESSAGE) {
-    			if ((dwFlags & SMF_LOG_SHOWNICK) && isGroupBreak) {
-					Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span><span class=\"%s\">: </span>",
-								isSent ? "nameOut" : "nameIn", szName, isSent ? "colonOut" : "colonIn");
-				} 
-			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-				Utils::appendText(&output, &outputSize, "<span class=\"notices\">%s </span>", szName);
+			if (dwFlags & SMF_LOG_SHOWTIME && dwFlags & SMF_LOG_GROUPMESSAGES && dwFlags & SMF_LOG_MARKFOLLOWUPS
+				&& dbei.eventType == EVENTTYPE_MESSAGE && isGroupBreak) {
+				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>",
+							isSent ? "timeOut" : "timeIn", timestampToString(dwFlags, dbei.timestamp, isGroupBreak));
+				showColon = true;
+			}
+			if (showColon && dbei.eventType == EVENTTYPE_MESSAGE) {
+				Utils::appendText(&output, &outputSize, "<span class=\"%s\">: </span>",
+							isSent ? "colonOut" : "colonIn");
 			}
 			const char *className = "";
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
-				if (dwFlags & SMF_LOG_MSGONNEWLINE && isGroupBreak) {
+				if (dwFlags & SMF_LOG_MSGONNEWLINE && showColon) {
 					Utils::appendText(&output, &outputSize, "<br>");
 				}
 				className = isSent ? "messageOut" : "messageIn";
