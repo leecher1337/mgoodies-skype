@@ -225,7 +225,7 @@ wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
 	if (szBaseNick != NULL) {
 		int len;
 		len = strlen(szBaseNick) + 1;
-		szName = (wchar_t *) malloc(len * 2)
+		szName = (wchar_t *) malloc(len * 2);
 	    MultiByteToWideChar(CP_ACP, 0, szBaseNick, -1, szName, len);
 		szName[len - 1] = 0;
 	    return szName;
@@ -518,217 +518,12 @@ int isSameDate(DWORD time1, DWORD time2)
 }
 
 //free() the return value
-static char *CreateRTFFromDbEvent(struct MessageWindowData *dat, HANDLE hContact, HANDLE hDbEvent, int prefixParaBreak, int firstEvent, struct LogStreamData *streamData)
-{
-	char *buffer;
-	int bufferAlloced, bufferEnd;
-	DBEVENTINFO dbei = { 0 };
-	int showColon = 0;
-	int isGroupBreak = TRUE;
-
-	dbei.cbSize = sizeof(dbei);
-	dbei.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM) hDbEvent, 0);
-	if (dbei.cbBlob == -1)
-		return NULL;
-	dbei.pBlob = (PBYTE) malloc(dbei.cbBlob);
-	CallService(MS_DB_EVENT_GET, (WPARAM) hDbEvent, (LPARAM) & dbei);
-	if (!DbEventIsShown(&dbei, dat)) {
-		free(dbei.pBlob);
-		return NULL;
-	}
-	if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL)) {
-		CallService(MS_DB_EVENT_MARKREAD, (WPARAM) hContact, (LPARAM) hDbEvent);
-		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) hContact, (LPARAM) hDbEvent);
-	}
-	else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-		CallService(MS_DB_EVENT_MARKREAD, (WPARAM) hContact, (LPARAM) hDbEvent);
-	}
-	bufferEnd = 0;
-	bufferAlloced = 1024;
-	buffer = (char *) malloc(bufferAlloced);
-	buffer[0] = '\0';
-	if (prefixParaBreak) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
-	}
- 	if ((g_dat->flags & SMF_GROUPMESSAGES) && dbei.flags == LOWORD(dat->lastEventType)
-	  && dbei.eventType == EVENTTYPE_MESSAGE && HIWORD(dat->lastEventType) == EVENTTYPE_MESSAGE
-	  && (isSameDate(dbei.timestamp, dat->lastEventTime))
-//	  && ((dbei.timestamp - dat->lastEventTime) < 86400)
-	  && ((((int)dbei.timestamp < dat->startTime) == (dat->lastEventTime < dat->startTime)) || !(dbei.flags & DBEF_READ))) {
-		isGroupBreak = FALSE;
-	}
-	if (!firstEvent && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
-//		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\highlight%d\\line\\sl0", msgDlgFontCount + 3);
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\par\\sl0", msgDlgFontCount + 4);
-	}
-	if (dbei.eventType == EVENTTYPE_MESSAGE) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 2 + ((dbei.flags & DBEF_SENT) ? 1 : 0));
-	} else {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1);
-	}
-
-	if (g_dat->flags&SMF_SHOWICONS && isGroupBreak) {
-		int i = LOGICON_MSG_NOTICE;
-
-		switch (dbei.eventType) {
-			case EVENTTYPE_MESSAGE:
-				if (dbei.flags & DBEF_SENT) {
-					i = LOGICON_MSG_OUT;
-				}
-				else {
-					i = LOGICON_MSG_IN;
-				}
-				break;
-			case EVENTTYPE_STATUSCHANGE:
-			case EVENTTYPE_URL:
-			case EVENTTYPE_FILE:
-				i = LOGICON_MSG_NOTICE;
-				break;
-		}
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\f0\\fs14\\-");
-		while (bufferAlloced - bufferEnd < logIconBmpSize[i])
-			bufferAlloced += 1024;
-		buffer = (char *) realloc(buffer, bufferAlloced);
-		CopyMemory(buffer + bufferEnd, pLogIconBmpBits[i], logIconBmpSize[i]);
-		bufferEnd += logIconBmpSize[i];
-	}
-
-	if (g_dat->flags&SMF_SHOWTIME && (isGroupBreak || (g_dat->flags & SMF_MARKFOLLOWUPS))) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(dbei.flags & DBEF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
-		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", TimestampToString(g_dat->flags, dbei.timestamp, isGroupBreak));
-		showColon = 1;
-	}
-	if (!(g_dat->flags&SMF_HIDENAMES) && dbei.eventType == EVENTTYPE_MESSAGE  && isGroupBreak) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(dbei.flags & DBEF_SENT ? MSGFONTID_MYNAME : MSGFONTID_YOURNAME));
-#if defined( _UNICODE )
-		{
-			wchar_t *szName;
-			if (dbei.flags & DBEF_SENT) {
-				szName = GetNicknameW(NULL, dbei.szModule);
-			} else {
-				szName = GetNicknameW(hContact, dbei.szModule);
-			}
-			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, szName);
-			free(szName);
-		}
-#else
-		{
-			char *szName;
-			if (dbei.flags & DBEF_SENT) {
-				 szName = GetNickname(NULL, dbei.szModule);
-			} else {
-				 szName = GetNickname(hContact, dbei.szModule);
-			}
-			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
-			free(szName);
-		}
-#endif;
-		showColon = 1;
-	}
-	if (showColon) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s :", SetToStyle(dbei.flags & DBEF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
-	}
-	switch (dbei.eventType) {
-		case EVENTTYPE_MESSAGE:
-		if (isGroupBreak && g_dat->flags & SMF_MSGONNEWLINE) {
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
-		}
-		{
-#if defined( _UNICODE )
-			wchar_t *msg;
-#else
-			BYTE *msg;
-#endif
-
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(dbei.flags & DBEF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
-#if defined( _UNICODE )
-			{
-				int msglen = strlen((char *) dbei.pBlob) + 1;
-				if (msglen != (int) dbei.cbBlob && !(dat->flags & SMF_DISABLE_UNICODE)) {
-					int wlen;
-					msg = (TCHAR *) &dbei.pBlob[msglen];
-					wlen = safe_wcslen(msg, (dbei.cbBlob - msglen) / 2);
-					if (wlen > 0 && wlen < msglen) {
-						AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
-					} else {
-						msg = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
-						AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
-						free(msg);
-					}
-				} else {
-					msg = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
-					AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, msg);
-					free(msg);
-				}
-			}
-#else
-			msg = (BYTE *) dbei.pBlob;
-			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", msg);
-#endif
-			break;
-		}
-		case EVENTTYPE_STATUSCHANGE:
-		case EVENTTYPE_URL:
-		case EVENTTYPE_FILE:
-		{
-			BYTE *msg;
-			char *szName = "";
-			CONTACTINFO ci;
-			ZeroMemory(&ci, sizeof(ci));
-
-			if (dbei.flags & DBEF_SENT) {
-				ci.cbSize = sizeof(ci);
-				ci.hContact = NULL;
-				ci.szProto = dbei.szModule;
-				ci.dwFlag = CNF_DISPLAY;
-				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-					// CNF_DISPLAY always returns a string type
-					szName = (char *)ci.pszVal;
-				}
-			}
-			else
-				szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, 0);
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(MSGFONTID_NOTICE));
-			msg = (BYTE *) dbei.pBlob;
-			if (dbei.eventType == EVENTTYPE_FILE) {
-				msg += sizeof(DWORD);
-				if (dbei.flags & DBEF_SENT) {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File sent"), msg);
-				} else {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File received"), msg);
-				}
-			} else if (dbei.eventType == EVENTTYPE_URL) {
-				if (dbei.flags & DBEF_SENT) {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL sent"), msg);
-				} else {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL received"), msg);
-				}
-			} else {
-				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
-				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, " %s", msg);
-			}
-			if (ci.pszVal)
-				miranda_sys_free(ci.pszVal);
-			break;
-		}
-	}
-	if (!prefixParaBreak) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
-	}
-	dat->lastEventTime = dbei.timestamp;
-	dat->lastEventType = MAKELONG(dbei.flags, dbei.eventType);
-	free(dbei.pBlob);
-	return buffer;
-}
-
-//free() the return value
 static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventData *event, int prefixParaBreak, int firstEvent, struct LogStreamData *streamData)
 {
 	char *buffer;
 	int bufferAlloced, bufferEnd;
 	int showColon = 0;
 	int isGroupBreak = TRUE;
-
 	bufferEnd = 0;
 	bufferAlloced = 1024;
 	buffer = (char *) malloc(bufferAlloced);
@@ -777,17 +572,33 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		buffer = (char *) realloc(buffer, bufferAlloced);
 		CopyMemory(buffer + bufferEnd, pLogIconBmpBits[i], logIconBmpSize[i]);
 		bufferEnd += logIconBmpSize[i];
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " ");
 	}
 
-	if (g_dat->flags&SMF_SHOWTIME && (isGroupBreak || (g_dat->flags & SMF_MARKFOLLOWUPS))) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
+	if (g_dat->flags&SMF_SHOWTIME && 
+		(event->eventType != EVENTTYPE_MESSAGE || 
+		!(g_dat->flags & SMF_GROUPMESSAGES) ||
+		(isGroupBreak && !(g_dat->flags & SMF_MARKFOLLOWUPS)) ||  (!isGroupBreak && (g_dat->flags & SMF_MARKFOLLOWUPS))))
+	{
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
 		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", TimestampToString(g_dat->flags, event->timestamp, isGroupBreak));
+		if (event->eventType != EVENTTYPE_MESSAGE) {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s : ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
+		}
 		showColon = 1;
 	}
-	if (!(g_dat->flags&SMF_HIDENAMES) && event->eventType == EVENTTYPE_MESSAGE  && isGroupBreak) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYNAME : MSGFONTID_YOURNAME));
-#if defined( _UNICODE )
+	if ((!(g_dat->flags&SMF_HIDENAMES) && event->eventType == EVENTTYPE_MESSAGE && isGroupBreak) || event->eventType == EVENTTYPE_STATUSCHANGE) {
+		if (event->eventType == EVENTTYPE_MESSAGE) {
+			if (showColon) {
+				AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYNAME : MSGFONTID_YOURNAME));
+			} else {
+				AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYNAME : MSGFONTID_YOURNAME));
+			}
+		} else {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(MSGFONTID_NOTICE));
+		}
 		{
+#if defined( _UNICODE )
 			wchar_t *szName;
 			if (event->flags & DBEF_SENT) {
 				szName = GetNicknameW(NULL, event->szModule);
@@ -795,10 +606,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 				szName = GetNicknameW(event->hContact, event->szModule);
 			}
 			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, szName);
-			free(szName);
-		}
 #else
-		{
 			char *szName;
 			if (event->flags & DBEF_SENT) {
 				 szName = GetNickname(NULL, event->szModule);
@@ -806,20 +614,30 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 				 szName = GetNickname(event->hContact, event->szModule);
 			}
 			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
+#endif;
 			free(szName);
 		}
-#endif;
+		showColon = 1;
+		if (event->eventType == EVENTTYPE_MESSAGE && g_dat->flags & SMF_GROUPMESSAGES) {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
+			showColon = 0;
+		}
+	}
+	if (g_dat->flags&SMF_SHOWTIME && g_dat->flags & SMF_GROUPMESSAGES && g_dat->flags & SMF_MARKFOLLOWUPS
+		&& event->eventType == EVENTTYPE_MESSAGE && isGroupBreak) {
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
+		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", TimestampToString(g_dat->flags, event->timestamp, isGroupBreak));
 		showColon = 1;
 	}
-	if (showColon) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s :", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
+	if (showColon && event->eventType == EVENTTYPE_MESSAGE) {
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s : ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
 	}
 	switch (event->eventType) {
 		case EVENTTYPE_MESSAGE:
-		if (isGroupBreak && g_dat->flags & SMF_MSGONNEWLINE) {
+		if (g_dat->flags & SMF_MSGONNEWLINE && showColon) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 		}
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->flags & DBEF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
 
 #if defined( _UNICODE )
 		if (event->wtext != NULL) {
@@ -835,24 +653,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		case EVENTTYPE_URL:
 		case EVENTTYPE_FILE:
 		{
-			char *szName = "";
-			wchar_t *szNameW = L"";
-			CONTACTINFO ci;
-			ZeroMemory(&ci, sizeof(ci));
-
-			if (event->flags & DBEF_SENT) {
-				ci.cbSize = sizeof(ci);
-				ci.hContact = NULL;
-				ci.szProto = event->szModule;
-				ci.dwFlag = CNF_DISPLAY;
-				if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-					// CNF_DISPLAY always returns a string type
-					szName = (char *)ci.pszVal;
-				}
-			}
-			else
-				szName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) event->hContact, 0);
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(MSGFONTID_NOTICE));
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(MSGFONTID_NOTICE));
 			if (event->eventType == EVENTTYPE_FILE) {
 				if (event->flags & DBEF_SENT) {
 					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File sent"), event->text);
@@ -866,25 +667,11 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL received"), event->text);
 				}
 			} else {
-				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
 				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, " %s", event->text);
 			}
-			if (ci.pszVal)
-				miranda_sys_free(ci.pszVal);
 			break;
 		}
 	}
-/*
-#if defined( _UNICODE )
-		if (event->wtext != NULL) {
-			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->wtext);
-		} else {
-			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->text);
-		}
-#else
-		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->text);
-#endif
-*/
 	if (!prefixParaBreak) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 	}
