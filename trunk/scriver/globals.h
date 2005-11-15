@@ -96,6 +96,7 @@ struct GlobalMessageData
 };
 
 int IconsChanged(WPARAM wParam, LPARAM lParam);
+int SmileySettingsChanged(WPARAM wParam, LPARAM lParam);
 void InitGlobals();
 void FreeGlobals();
 void ReloadGlobals();

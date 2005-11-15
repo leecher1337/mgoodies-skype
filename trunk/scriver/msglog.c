@@ -29,8 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ctype.h>
 #include <malloc.h>
 #include <mbstring.h>
-#include "m_smileyadd.h"
-#include "m_metacontacts.h"
 
 #define MIRANDA_0_5
 
