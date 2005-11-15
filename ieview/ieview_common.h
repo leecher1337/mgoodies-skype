@@ -53,5 +53,6 @@ extern HINSTANCE hInstance;
 extern IEView *debugView;
 extern char *workingDir;
 extern char *ieviewModuleName;
+extern HANDLE hHookOptionsChanged;
 
 #endif

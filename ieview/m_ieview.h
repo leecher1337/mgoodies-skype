@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MS_IEVIEW_UTILS   "IEVIEW/Utils"
 #define MS_IEVIEW_SHOWSMILEYSELECTION  "IEVIEW/ShowSmileySelection"
 
+#define ME_IEVIEW_OPTIONSCHANGED  "IEVIEW/OptionsChanged"
 #define ME_IEVIEW_NOTIFICATION  "IEVIEW/Notification"
 
 #define IEW_CREATE  1               // create new window (control)

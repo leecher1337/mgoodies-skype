@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_MathModule.h"
 
 #define UM_CHECKSTATECHANGE (WM_USER+100)
+HANDLE hHookOptionsChanged;
 static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -163,6 +164,7 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 				SendMessage(hwndEmoticons, WM_NOTIFY, wParam, lParam);
 				SendMessage(hwndTemplates, WM_NOTIFY, wParam, lParam);
 				SendMessage(hwndGroupChats, WM_NOTIFY, wParam, lParam);
+				NotifyEventHooks(hHookOptionsChanged, 0, 0);
 				return TRUE;
 			}
 		}
