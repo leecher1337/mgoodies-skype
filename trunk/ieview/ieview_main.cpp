@@ -32,7 +32,6 @@ PLUGINLINK *pluginLink;
 IEView *debugView;
 SmileyWindow *smileyWindow;
 char *workingDir;
-HANDLE hHookEvent;
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 static int PreShutdown(WPARAM wParam, LPARAM lParam);
 
@@ -86,13 +85,15 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	pluginLink = link;
 
 	HookEvent(ME_OPT_INITIALISE, IEViewOptInit);
-
 	HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
 	HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
 	CreateServiceFunction(MS_IEVIEW_WINDOW, HandleIEWindow);
 	CreateServiceFunction(MS_IEVIEW_EVENT, HandleIEEvent);
 	CreateServiceFunction(MS_IEVIEW_SHOWSMILEYSELECTION, HandleSmileyShowSelection);
+
+	hHookOptionsChanged = CreateHookableEvent(ME_IEVIEW_OPTIONSCHANGED);
+
 	return 0;
 }
 
