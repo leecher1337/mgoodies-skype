@@ -97,6 +97,12 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+int SmileySettingsChanged(WPARAM wParam, LPARAM lParam)
+{
+	WindowList_Broadcast(g_dat->hMessageWindowList, DM_REMAKELOG, 0, 0);
+	return 0;
+}
+
 static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam) 
 {
 	LoadGlobalIcons();
