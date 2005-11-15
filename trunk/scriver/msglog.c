@@ -22,9 +22,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
-// IEVIew MOD Begin
-#include "m_ieview.h"
-// IEVIew MOD End
 #pragma hdrstop
 #include <ctype.h>
 #include <malloc.h>
@@ -180,6 +177,8 @@ enum MIMFLAGS {
 	MIM_UNICODE = 2
 };
 
+#if defined ( _UNICODE )
+
 static int IsUnicodeMIM() {
 	if (!(mimFlags & MIM_CHECKED)) {
 		char str[512];
@@ -191,8 +190,6 @@ static int IsUnicodeMIM() {
 	}
 	return (mimFlags & MIM_UNICODE) != 0;
 }
-
-#if defined ( _UNICODE )
 
 wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
 	char * szBaseNick;
@@ -503,7 +500,7 @@ char *TimestampToString(DWORD dwFlags, time_t check, int groupStart)
     return szResult;
 }
 
-int isSameDate(DWORD time1, DWORD time2) 
+int isSameDate(DWORD time1, DWORD time2)
 {
     struct tm tm_t1, tm_t2;
     tm_t1 = *localtime((time_t *)(&time1));
@@ -573,8 +570,8 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " ");
 	}
 
-	if (g_dat->flags&SMF_SHOWTIME && 
-		(event->eventType != EVENTTYPE_MESSAGE || 
+	if (g_dat->flags&SMF_SHOWTIME &&
+		(event->eventType != EVENTTYPE_MESSAGE ||
 		!(g_dat->flags & SMF_GROUPMESSAGES) ||
 		(isGroupBreak && !(g_dat->flags & SMF_MARKFOLLOWUPS)) ||  (!isGroupBreak && (g_dat->flags & SMF_MARKFOLLOWUPS))))
 	{
@@ -612,7 +609,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 				 szName = GetNickname(event->hContact, event->szModule);
 			}
 			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
-#endif;
+#endif
 			free(szName);
 		}
 		showColon = 1;
@@ -699,8 +696,8 @@ static DWORD CALLBACK LogStreamInEvents(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG 
 						if (event != NULL) {
 							dat->buffer = CreateRTFFromDbEvent2(dat->dlgDat, event, !dat->isFirst, dat->isEmpty, dat);
 							freeEvent(event);
-						} 
-#else 
+						}
+#else
 						dat->buffer = CreateRTFFromDbEvent(dat->dlgDat, dat->hContact, dat->hDbEvent, !dat->isFirst, dat->isEmpty, dat);
 #endif
 						if (dat->buffer)
@@ -762,7 +759,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		event.count = count;
 		CallService(MS_IEVIEW_EVENT, 0, (LPARAM)&event);
 		dat->hDbEventLast = event.hDbEventFirst != NULL ? event.hDbEventFirst : dat->hDbEventLast;
-		
+
 		ieWindow.cbSize = sizeof(IEVIEWWINDOW);
 		ieWindow.iType = IEW_SCROLLBOTTOM;
 		ieWindow.hwnd = dat->hwndLog;
@@ -791,7 +788,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 #else
         gtxl.codepage = CP_ACP;
         gtxl.flags = GTL_DEFAULT | GTL_PRECISE;
-#endif        
+#endif
         sel.cpMin = sel.cpMax = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
         SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & sel);
         fi.chrg.cpMin = SendDlgItemMessage(hwndDlg, IDC_LOG, EM_GETTEXTLENGTHEX, (WPARAM)&gtxl, 0);
@@ -868,6 +865,7 @@ void LoadMsgLogIcons(void)
 	hBmp = CreateCompatibleBitmap(hdc, bih.biWidth, bih.biHeight);
 	hdcMem = CreateCompatibleDC(hdc);
 	pBmpBits = (PBYTE) malloc(widthBytes * bih.biHeight);
+	hBrush = hBkgBrush;
 	for (i = 0; i < sizeof(pLogIconBmpBits) / sizeof(pLogIconBmpBits[0]); i++) {
 		switch (i) {
 			case LOGICON_MSG_IN:

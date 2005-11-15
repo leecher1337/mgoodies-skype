@@ -329,6 +329,7 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 	}
 	HookEvent(ME_CLIST_DOUBLECLICKED, SendMessageCommand);
 	HookEvent(ME_SMILEYADD_OPTIONSCHANGED, SmileySettingsChanged);
+	HookEvent(ME_IEVIEW_OPTIONSCHANGED, SmileySettingsChanged);
 	RestoreUnreadMessageAlerts();
 	return 0;
 }
