@@ -12,7 +12,6 @@ INCS =  -I"../../include"
 BIN  = scriver.dll
 CFLAGS = $(INCS) -DBUILDING_DLL=1 -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
 CXXFLAGS = $(INCS) -DBUILDING_DLL=1 -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
-endif
 # -save-temps
 LIBS =  -lversion -lwsock32 -lole32 -lcomctl32 -luuid -loleaut32
 LFLAGS = -s -mdll -mwindows --add-stdcall-alias
