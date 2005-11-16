@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef struct _TCmdList {
 	struct _TCmdList *next;
 	struct _TCmdList *prev;
+	HANDLE  hContact;
 #ifdef _UNICODE
 	wchar_t *szCmd;
 #else
@@ -39,6 +40,8 @@ typedef struct _TCmdList {
 
 TCmdList *tcmdlist_append(TCmdList *list, CMDCHAR *data);
 TCmdList *tcmdlist_remove(TCmdList *list, CMDCHAR *data);
+TCmdList *tcmdlist_append2(TCmdList *list, HANDLE hContact, CMDCHAR *data);
+TCmdList *tcmdlist_remove2(TCmdList *list, HANDLE hContact);
 int tcmdlist_len(TCmdList *list);
 TCmdList *tcmdlist_last(TCmdList *list);
 void tcmdlist_free(TCmdList * list);

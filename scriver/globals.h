@@ -93,6 +93,7 @@ struct GlobalMessageData
 	int		inactiveAlpha;
 	HMENU	hMenuANSIEncoding;
 	HIMAGELIST hIconList;
+	TCmdList *draftList;
 };
 
 int IconsChanged(WPARAM wParam, LPARAM lParam);

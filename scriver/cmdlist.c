@@ -94,6 +94,54 @@ TCmdList *tcmdlist_remove(TCmdList *list, CMDCHAR *data) {
 	return list;
 }
 
+TCmdList *tcmdlist_append2(TCmdList *list, HANDLE hContact, CMDCHAR *data) {
+	TCmdList *n;
+	TCmdList *new_list = malloc(sizeof(TCmdList));
+	TCmdList *attach_to = NULL;
+	
+	if (!data) {
+		free(new_list);
+		return list;
+	}
+	new_list->next = NULL;
+	new_list->hContact = hContact;
+#ifdef _UNICODE
+	new_list->szCmd = _tcsdup(data);
+#else
+	new_list->szCmd = _strdup(data);
+#endif
+	new_list->hash = tcmdlist_hash(data);
+	list = tcmdlist_remove2(list, hContact);
+	for (n=list; n!=NULL; n=n->next) {
+		attach_to = n;
+	}
+	if (attach_to==NULL) {
+		new_list->prev = NULL;
+		return new_list;
+	} 
+	else {
+		new_list->prev = attach_to;
+		attach_to->next = new_list;
+		return list;
+	}
+}
+
+TCmdList *tcmdlist_remove2(TCmdList *list, HANDLE hContact) {
+	TCmdList *n;
+	for (n=list; n!=NULL; n=n->next) {
+		if (n->hContact==hContact) {
+			if (n->next) n->next->prev = n->prev;
+			if (n->prev) n->prev->next = n->next;
+			if (n==list) list = n->next;
+			free(n->szCmd);
+			free(n);
+			return list;
+		}
+	}
+	return list;
+}
+
+
 int tcmdlist_len(TCmdList *list) {
 	TCmdList *n;
 	int i = 0;
@@ -124,3 +172,4 @@ void tcmdlist_free(TCmdList *list) {
 		n = next;
 	}
 }
+
