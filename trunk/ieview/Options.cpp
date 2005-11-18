@@ -342,7 +342,7 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 	case WM_INITDIALOG:
 		{
 			TranslateDialogDefault(hwndDlg);
-			SendDlgItemMessage(hwndDlg, IDC_SMILEYS_PREVIEW, BM_SETIMAGE, IMAGE_ICON, (LPARAM) smileyIcon);
+//			SendDlgItemMessage(hwndDlg, IDC_SMILEYS_PREVIEW, BM_SETIMAGE, IMAGE_ICON, (LPARAM) smileyIcon);
 
 			bChecked = FALSE;
 			i = Options::getSmileyFlags();
@@ -355,6 +355,8 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			EnableWindow(GetDlgItem(hwndDlg, IDC_ISOLATED_SMILEYS), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SURROUND_SMILEYS), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_IN_NAMES), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_PREVIEW), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_PROTOLIST), bChecked);
 //			EnableWindow(GetDlgItem(hwndDlg, IDC_REPLACE_SMILEYADD), bChecked);
 			SendDlgItemMessage(hwndDlg, IDC_BKGCOLOR, CPM_SETCOLOUR, 0, Options::getSmileyBackground());
 //			SendDlgItemMessage(hwndDlg, IDC_BKGCOLOUR, CPM_SETDEFAULTCOLOUR, 0, SRMSGDEFSET_BKGCOLOUR);
@@ -447,6 +449,8 @@ static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				EnableWindow(GetDlgItem(hwndDlg, IDC_SURROUND_SMILEYS), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_IN_NAMES), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_PROTO_SMILEYS), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_PREVIEW), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_PROTOLIST), bChecked);
 			case IDC_PROTO_SMILEYS:
 				bChecked = IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS) & IsDlgButtonChecked(hwndDlg, IDC_SMILEYS);
 				if (!bChecked ) {
