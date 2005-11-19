@@ -501,6 +501,21 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	{
 		MINMAXINFO *mmi = (MINMAXINFO *) lParam;
 		SIZE size;
+		if (GetKeyState(VK_CONTROL) & 0x8000) {
+			WINDOWPLACEMENT wp;
+			RECT rcDesktop;
+			wp.length = sizeof(wp);
+			GetWindowPlacement(hwndDlg, &wp);
+			SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);
+			mmi->ptMaxSize.x = wp.rcNormalPosition.right - wp.rcNormalPosition.left;
+			mmi->ptMaxSize.y = rcDesktop.bottom - rcDesktop.top;
+			mmi->ptMaxPosition.x = wp.rcNormalPosition.left;
+			if(IsIconic(hwndDlg)) {
+				mmi->ptMaxPosition.y = rcDesktop.top;
+			} else {
+				mmi->ptMaxPosition.y = 0;
+			}
+		}
 		GetMinimunWindowSize(dat, &size);
 		mmi->ptMinTrackSize.x = size.cx;
 		mmi->ptMinTrackSize.y = size.cy;
