@@ -1660,8 +1660,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				else {
 					dat->showTyping = 0;
 					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
-					if (g_dat->flags&SMF_SHOWTYPINGWIN)
-						SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
+					SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
 				}
 			}
 			else {

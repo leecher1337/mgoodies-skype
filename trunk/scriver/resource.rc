@@ -251,7 +251,7 @@ BEGIN
     CONTROL         "Show typing notifications when a user is typing a message",
                     IDC_SHOWNOTIFY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,
                     178,233,13
-    CONTROL         "Update inactive message window icons when a user is typing",
+    CONTROL         "Update message window icons when a user is typing",
                     IDC_TYPEWIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,29,193,
                     230,10
     CONTROL         "Show typing notification when no message dialog is open",
