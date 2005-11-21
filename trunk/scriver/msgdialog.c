@@ -2260,8 +2260,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					gt.codepage = 1200;
 					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_GETTEXTEX, (WPARAM) &gt, (LPARAM) textBuffer);
 				}
-	#else 
-				GetDlgItemTextA(hwndDlg, IDC_MESSAGE, msi.sendBuffer, bufSize);
+	#else
+				GetDlgItemTextA(hwndDlg, IDC_MESSAGE, textBuffer, textBufferSize);
 	#endif
 				g_dat->draftList = tcmdlist_append2(g_dat->draftList, dat->hContact, (TCHAR *) textBuffer);
 				free(textBuffer);
