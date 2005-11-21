@@ -133,8 +133,7 @@ static int SendMessageCommand(WPARAM wParam, LPARAM lParam)
 		ShowWindow(GetParent(hwnd), SW_SHOWNORMAL);
 		SetForegroundWindow(GetParent(hwnd));
 		SetFocus(hwnd);
-	}
-	else {
+	} else {
 		newData.hContact = (HANDLE) wParam;
 		newData.szInitialText = (const char *) lParam;
 		if (g_dat->hParent == NULL || !(g_dat->flags & SMF_USETABS)) {
