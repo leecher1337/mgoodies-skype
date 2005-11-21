@@ -774,14 +774,26 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			TranslateDialogDefault(hwndDlg);
 			dat = (struct MessageWindowData *) malloc(sizeof(struct MessageWindowData));
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) dat);
-			{
-				dat->hContact = newData->hContact;
-				NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPENING);
-				if (newData->szInitialText) {
-					int len;
-					SetDlgItemTextA(hwndDlg, IDC_MESSAGE, newData->szInitialText);
-					len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
-					PostMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETSEL, len, len);
+			dat->hContact = newData->hContact;
+			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPENING);
+			if (newData->szInitialText) {
+				int len;
+				SetDlgItemTextA(hwndDlg, IDC_MESSAGE, newData->szInitialText);
+				len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
+				PostMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETSEL, len, len);
+			} else if (g_dat->flags & SMF_SAVEDRAFTS) {
+				TCmdList *draft = tcmdlist_get2(g_dat->draftList, dat->hContact);
+				if (draft != NULL) {
+					SETTEXTEX  st;
+					st.flags = ST_DEFAULT;
+	#ifdef _UNICODE
+					st.codepage = 1200;
+	#else
+					st.codepage = CP_ACP;
+	#endif
+					SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETTEXTEX, (WPARAM) &st, (LPARAM)draft->szCmd);
+					SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SCROLLCARET, 0,0);
+					SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETSEL, (WPARAM)-1, (LPARAM)-1);
 				}
 			}
 			dat->hwnd = hwndDlg;
@@ -2233,8 +2245,32 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			free(dat->sendInfo);
 		}
-//		if (dat->sendBuffer != NULL)
-//			free(dat->sendBuffer);
+		if (g_dat->flags & SMF_SAVEDRAFTS) {
+			TCHAR *textBuffer;
+			int textBufferSize;
+			textBufferSize = (GetWindowTextLengthA(GetDlgItem(hwndDlg, IDC_MESSAGE)) + 1);
+			if (textBufferSize > 1) {
+				textBufferSize *= sizeof(TCHAR);
+				textBuffer = (TCHAR *) malloc(textBufferSize);
+	#if defined( _UNICODE )
+				{
+					GETTEXTEX  gt;
+					gt.cb = textBufferSize;
+					gt.flags = GT_USECRLF;
+					gt.codepage = 1200;
+					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_GETTEXTEX, (WPARAM) &gt, (LPARAM) textBuffer);
+				}
+	#else 
+				GetDlgItemTextA(hwndDlg, IDC_MESSAGE, msi.sendBuffer, bufSize);
+	#endif
+				g_dat->draftList = tcmdlist_append2(g_dat->draftList, dat->hContact, (TCHAR *) textBuffer);
+				free(textBuffer);
+			} else {
+				g_dat->draftList = tcmdlist_remove2(g_dat->draftList, dat->hContact);
+			}
+		} else {
+			g_dat->draftList = tcmdlist_remove2(g_dat->draftList, dat->hContact);
+		}
 		if (dat->hwndStatus)
 			DestroyWindow(dat->hwndStatus);
 		tcmdlist_free(dat->cmdList);

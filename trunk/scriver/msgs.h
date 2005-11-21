@@ -351,4 +351,7 @@ extern const int msgDlgFontCount;
 
 #define SRMSGSET_WINDOWTITLE		"WindowTitle"
 
+#define SRMSGSET_SAVEDRAFTS			"SaveDrafts"
+#define SRMSGDEFSET_SAVEDRAFTS		0
+
 #endif

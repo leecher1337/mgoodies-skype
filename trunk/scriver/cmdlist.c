@@ -141,6 +141,15 @@ TCmdList *tcmdlist_remove2(TCmdList *list, HANDLE hContact) {
 	return list;
 }
 
+TCmdList *tcmdlist_get2(TCmdList *list, HANDLE hContact) {
+	TCmdList *n;
+	for (n=list; n!=NULL; n=n->next) {
+		if (n->hContact==hContact) {
+			return n;
+		}
+	}
+	return NULL;
+}
 
 int tcmdlist_len(TCmdList *list) {
 	TCmdList *n;

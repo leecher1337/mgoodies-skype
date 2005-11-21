@@ -42,6 +42,7 @@ TCmdList *tcmdlist_append(TCmdList *list, CMDCHAR *data);
 TCmdList *tcmdlist_remove(TCmdList *list, CMDCHAR *data);
 TCmdList *tcmdlist_append2(TCmdList *list, HANDLE hContact, CMDCHAR *data);
 TCmdList *tcmdlist_remove2(TCmdList *list, HANDLE hContact);
+TCmdList *tcmdlist_get2(TCmdList *list, HANDLE hContact);
 int tcmdlist_len(TCmdList *list);
 TCmdList *tcmdlist_last(TCmdList *list);
 void tcmdlist_free(TCmdList * list);

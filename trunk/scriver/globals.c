@@ -266,6 +266,7 @@ void InitGlobals() {
 	g_dat->protoNum = 0;
 	g_dat->protoNames = NULL;
 	g_dat->hIconList = NULL;
+	g_dat->draftList = NULL;
 }
 
 void FreeGlobals() {
@@ -278,6 +279,7 @@ void FreeGlobals() {
 	}
 	if (g_hDbEvent) UnhookEvent(g_hDbEvent);
 	if (g_hAck) UnhookEvent(g_hAck);
+	if (g_dat->draftList != NULL) tcmdlist_free(g_dat->draftList);
 }
 
 void ReloadGlobals() {
@@ -339,6 +341,8 @@ void ReloadGlobals() {
 		g_dat->flags |= SMF_SHOWTYPINGTRAY;
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTYPINGCLIST, SRMSGDEFSET_SHOWTYPINGCLIST))
 		g_dat->flags |= SMF_SHOWTYPINGCLIST;
+	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEDRAFTS, SRMSGDEFSET_SAVEDRAFTS))
+		g_dat->flags |= SMF_SAVEDRAFTS;
 
 	g_dat->limitAvatarMaxH = 100000;
 	g_dat->limitAvatarMinH = 0;
