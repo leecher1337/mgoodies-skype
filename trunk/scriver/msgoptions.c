@@ -236,7 +236,6 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				case IDC_AUTOMIN:
 					CheckDlgButton(hwndDlg, IDC_AUTOCLOSE, BST_UNCHECKED);
 					EnableWindow(GetDlgItem(hwndDlg, IDC_CTRLSUPPORT), !IsDlgButtonChecked(hwndDlg, IDC_AUTOCLOSE));
-					EnableWindow(GetDlgItem(hwndDlg, IDC_SAVEDRAFTS), !IsDlgButtonChecked(hwndDlg, IDC_AUTOCLOSE));
 					break;
 				case IDC_USETABS:
 					{
@@ -252,7 +251,6 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				case IDC_AUTOCLOSE:
 					CheckDlgButton(hwndDlg, IDC_AUTOMIN, BST_UNCHECKED);
 					EnableWindow(GetDlgItem(hwndDlg, IDC_CTRLSUPPORT), !IsDlgButtonChecked(hwndDlg, IDC_AUTOCLOSE));
-					EnableWindow(GetDlgItem(hwndDlg, IDC_SAVEDRAFTS), !IsDlgButtonChecked(hwndDlg, IDC_AUTOCLOSE));
 					break;
 				case IDC_SENDONENTER:
 					CheckDlgButton(hwndDlg, IDC_SENDONDBLENTER, BST_UNCHECKED);
