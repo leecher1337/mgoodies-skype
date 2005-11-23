@@ -49,8 +49,8 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 {
 	DBVARIANT dbv;
 	int isTemplate;
-	int len, contactNameLen, statusLen;
-	TCHAR *p, *tmplt, *szContactName, *szStatus, *title;
+	int len, contactNameLen = 0, statusLen = 0, statusMsgLen = 0, protocolLen = 0;
+	TCHAR *p, *tmplt, *szContactName = NULL, *szStatus = NULL, *szStatusMsg = NULL, *szProtocol = NULL, *title;
 #if defined ( _UNICODE )
 	TCHAR *pszNewTitleEnd = wcsdup(TranslateT("Message Session"));
 #else 
@@ -63,6 +63,14 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 		contactNameLen = wcslen(szContactName);
 		szStatus = strToWcs((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, szProto == NULL ? ID_STATUS_OFFLINE : DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE), 0), -1, CP_ACP);
 		statusLen = wcslen(szStatus);
+		if (!DBGetContactSetting(hContact, "CList", "StatusMsg",&dbv)) {
+			if (strlen(dbv.pszVal) > 0) {
+       			szStatusMsg = strToWcs(dbv.pszVal, -1, CP_ACP);
+				statusMsgLen = wcslen(szStatusMsg);
+			}
+       		DBFreeVariant(&dbv);
+		}
+
 		if (!DBGetContactSetting(NULL, SRMMMOD, SRMSGSET_WINDOWTITLE, &dbv)) {
 			isTemplate = 1;
 			tmplt = strToWcs(dbv.pszVal, -1, CP_ACP);
@@ -88,6 +96,10 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 				len += statusLen;
 				p += 7;
 				continue;
+			} else if (!wcsncmp(p, L"%statusmsg%", 11)) {
+				len += statusMsgLen;
+				p += 10;
+				continue;
 			}
 		}
 		len++;
@@ -108,6 +120,11 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 				len += statusLen;
 				p += 7;
 				continue;
+			} else if (!wcsncmp(p, L"%statusmsg%", 11)) {
+				memcpy(title+len, szStatusMsg, sizeof(wchar_t) * statusMsgLen);
+				len += statusMsgLen;
+				p += 10;
+				continue;
 			}
 		}
 		title[len++] = *p;
@@ -123,6 +140,13 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 		contactNameLen = strlen(szContactName);
 		szStatus = strdup((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, szProto == NULL ? ID_STATUS_OFFLINE : DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE), 0));
 		statusLen = strlen(szStatus);
+		if (!DBGetContactSetting(hContact, "CList", "StatusMsg",&dbv)) {
+			if (strlen(dbv.pszVal) > 0) {
+       			szStatusMsg = strdup(dbv.pszVal);
+				statusMsgLen = strlen(szStatusMsg);
+			}
+       		DBFreeVariant(&dbv);
+		}
 		if (!DBGetContactSetting(NULL, SRMMMOD, SRMSGSET_WINDOWTITLE, &dbv)) {
 			isTemplate = 1;
 			tmplt = strdup(dbv.pszVal);
@@ -148,6 +172,10 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 				len += statusLen;
 				p += 7;
 				continue;
+			} else if (!wcsncmp(p, "%statusmsg%", 11)) {
+				len += statusMsgLen;
+				p += 10;
+				continue;
 			}
 		}
 		len++;
@@ -167,6 +195,11 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 				memcpy(title+len, szStatus, statusLen);
 				len += statusLen;
 				p += 7;
+				continue;
+			} else if (!strncmp(p, "%statusmsg%", 11)) {
+				memcpy(title+len, szStatusMsg, statusMsgLen);
+				len += statusMsgLen;
+				p += 10;
 				continue;
 			}
 		}
