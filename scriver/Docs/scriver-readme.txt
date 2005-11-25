@@ -66,6 +66,14 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.9.2
++ option to save drafts
++ support for ME_SMILEYADD_OPTIONSCHANGED and ME_IEVIEW_OPTIONSCHANGED
++ vertical maximize
++ %statusmsg% macro
++ improved message grouping
+* log formatting improvements
+* bugfixes
 2.2.9.1
 * bugfixes
 2.2.9.0
