@@ -931,7 +931,18 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				if (mdat->szProto) {
 					int i, icoIdx = 0;
 					WORD wStatus;
-					wStatus = DBGetContactSettingWord(mdat->hContact, mdat->szProto, "Status", ID_STATUS_OFFLINE);
+					char *szProto = mdat->szProto;
+					HANDLE hContact = mdat->hContact;
+					if (strcmp(mdat->szProto, "MetaContacts") == 0 && DBGetContactSettingByte(NULL,"CLC","Meta",0) == 0) {
+						hContact = (HANDLE)CallService(MS_MC_GETMOSTONLINECONTACT,(UINT)mdat->hContact, 0);
+						if (hContact != NULL) {
+							szProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO,(UINT)hContact,0);
+						} else {
+							hContact = mdat->hContact;
+						}
+					}
+					wStatus = DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE);
+					mdat->wStatus = wStatus;
 					if (mdat->hwnd == dat->hwndActive) {
 						if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON)) {
 							if (mdat->showTyping && (g_dat->flags&SMF_SHOWTYPINGWIN)) {
@@ -939,15 +950,16 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 							} else if (mdat->showUnread && (GetActiveWindow() != hwndDlg || GetForegroundWindow() != hwndDlg)) {
 								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
 							} else {
-								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedProtoIcon(mdat->szProto, wStatus));
+								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedProtoIcon(szProto, wStatus));
 							}
 						} else {
 							SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
 						}
 					}
+					SendDlgItemMessage(mdat->hwnd, IDC_USERMENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedProtoIcon(szProto, wStatus));
 					icoIdx = 0;
 					for (i = 0; i < g_dat->protoNum; i++) {
-						if (!strcmp(g_dat->protoNames[i], mdat->szProto)) {
+						if (!strcmp(g_dat->protoNames[i], szProto)) {
 							icoIdx = wStatus - ID_STATUS_OFFLINE + (ID_STATUS_OUTTOLUNCH - ID_STATUS_OFFLINE + 1) * (i +1) + 2;
 							break;
 						}

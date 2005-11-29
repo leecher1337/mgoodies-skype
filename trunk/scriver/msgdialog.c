@@ -1322,10 +1322,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		//			SetDlgItemTextA(hwndDlg, IDC_NAME, buf[0] ? buf : contactName);
 
 					if (!cws || (!strcmp(cws->szModule, dat->szProto) && !strcmp(cws->szSetting, "Status"))) {
-						HICON hIcon;
-						dat->wStatus = DBGetContactSettingWord(dat->hContact, dat->szProto, "Status", ID_STATUS_OFFLINE);
-						hIcon = LoadSkinnedProtoIcon(dat->szProto, dat->wStatus);
-						SendDlgItemMessage(hwndDlg, IDC_USERMENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hIcon);
 						SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
 					}
 					// log status change
