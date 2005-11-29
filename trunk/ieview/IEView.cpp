@@ -483,6 +483,9 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 }
 STDMETHODIMP IEView::GetHostInfo(DOCHOSTUIINFO *pInfo) {
  	pInfo->dwFlags = DOCHOSTUIFLAG_NO3DBORDER;// | DOCHOSTUIFLAG_DISABLE_SCRIPT_INACTIVE;
+	if (builder == NULL) {
+	pInfo->dwFlags |= DOCHOSTUIFLAG_DIALOG;
+	}
  	return S_OK;
 }
 STDMETHODIMP IEView::ShowUI(DWORD dwID, IOleInPlaceActiveObject *pActiveObject, IOleCommandTarget *pCommandTarget,
