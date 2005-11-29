@@ -65,8 +65,20 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 		statusLen = wcslen(szStatus);
 		if (!DBGetContactSetting(hContact, "CList", "StatusMsg",&dbv)) {
 			if (strlen(dbv.pszVal) > 0) {
+				int i, j;
        			szStatusMsg = strToWcs(dbv.pszVal, -1, CP_ACP);
 				statusMsgLen = wcslen(szStatusMsg);
+				for (i = j = 0; i < statusMsgLen; i++) {
+					if (szStatusMsg[i] == '\r') {
+						continue;
+					} else if (szStatusMsg[i] == '\n') {
+						szStatusMsg[j++] = ' ';
+					} else {
+						szStatusMsg[j++] = szStatusMsg[i];
+					}
+				}
+				szStatusMsg[j] = '\0';
+				statusMsgLen = j;
 			}
        		DBFreeVariant(&dbv);
 		}
@@ -142,8 +154,20 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 		statusLen = strlen(szStatus);
 		if (!DBGetContactSetting(hContact, "CList", "StatusMsg",&dbv)) {
 			if (strlen(dbv.pszVal) > 0) {
+				int i, j;
        			szStatusMsg = strdup(dbv.pszVal);
 				statusMsgLen = strlen(szStatusMsg);
+				for (i = j = 0; i < statusMsgLen; i++) {
+					if (szStatusMsg[i] == '\r') {
+						continue;
+					} else if (szStatusMsg[i] == '\n') {
+						szStatusMsg[j++] = ' ';
+					} else {
+						szStatusMsg[j++] = szStatusMsg[i];
+					}
+				}
+				szStatusMsg[j] = '\0';
+				statusMsgLen = j;
 			}
        		DBFreeVariant(&dbv);
 		}
