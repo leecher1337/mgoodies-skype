@@ -25,8 +25,7 @@ all: all-before $(BIN) all-after
 ifdef PACK
 	$(UPX) $(BIN)
 endif
-	copy /Y $(BIN) d:\mim\plugins\$(BIN)
-	
+
 clean: clean-custom
 	$(RM) -f $(OBJ) $(BIN)
 
