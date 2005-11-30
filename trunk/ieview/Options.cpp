@@ -1043,7 +1043,7 @@ void Options::init() {
 	generalFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, 0);
 	srmmFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SRMMFLAGS, FALSE);
 	smileyFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYSFLAGS, 1);
-	smileyBackground = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYBACKGROUND, 1);
+	smileyBackground = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYBACKGROUND, 0xFFFFFF);
 	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_BACKGROUNDIMAGEFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
     	strcpy(tmpPath, dbv.pszVal);
