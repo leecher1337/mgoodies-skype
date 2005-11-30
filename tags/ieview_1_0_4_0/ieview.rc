@@ -1,0 +1,269 @@
+#include "resource.h"
+#ifdef __MINGW32__
+	#define WINVER 0x500
+	#define _WIN32_IE 0x400
+	#include <windows.h>
+	#ifndef IDC_STATIC
+	#define IDC_STATIC (-1)
+#endif
+#else
+	#define APSTUDIO_READONLY_SYMBOLS
+	#include "winres.h"
+	#undef APSTUDIO_READONLY_SYMBOLS
+#endif
+#include <commctrl.h>
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU) || defined(__MINGW32__)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif
+#ifdef APSTUDIO_INVOKED
+
+1 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+IDR_CONTEXTMENU MENU DISCARDABLE
+BEGIN
+    POPUP "", MENUBREAK
+    BEGIN
+		MENUITEM "Copy",            ID_MENU_COPY, GRAYED
+		MENUITEM "Copy Link",    	ID_MENU_COPYLINK, GRAYED
+		MENUITEM SEPARATOR
+		MENUITEM "Select All",    	ID_MENU_SELECTALL
+		MENUITEM SEPARATOR
+		MENUITEM "Save Image As...",ID_MENU_SAVEIMAGE, GRAYED
+		MENUITEM SEPARATOR
+		MENUITEM "Print",    		ID_MENU_PRINT
+		MENUITEM "Clear Log",    	ID_MENU_CLEARLOG
+		MENUITEM "Show source",		ID_MENU_SHOWSOURCE
+	END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_OPTIONS DIALOGEX 0, 0, 310, 245
+STYLE DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+	CONTROL         "Tab1",IDC_TABS,"SysTabControl32",
+                    TCS_FIXEDWIDTH | 0x8,0,0,310,245
+// TCS_FIXEDWIDTH | TCS_BUTTONS |
+END
+
+IDD_GENERAL_OPTIONS DIALOGEX 2, 15, 306, 228
+STYLE DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Options",IDC_SIMPLE,5,5,294,80
+    CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,19,265,10
+    LTEXT           "Currently the following BBCodes are supported: [b][i][u][img][size][color]",IDC_SIMPLE, 26,31,265,12
+    CONTROL         "Enable support for Flash files in smileys and BBCodes",IDC_ENABLE_FLASH,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,46,265,10
+    CONTROL         "Enable MathModule support",IDC_ENABLE_MATHMODULE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,61,265,10
+END
+
+IDD_EMOTICONS_OPTIONS DIALOGEX 2, 15, 306, 228
+STYLE DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Animated Smiley Libraries",IDC_SIMPLE,5,5,294,135
+    CONTROL         "Enable smiley replacement",IDC_SMILEYS,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,19,250,10
+    CONTROL         "Specify library for each protocol",IDC_PROTO_SMILEYS,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,26,34,250,10
+ 	EDITTEXT        IDC_SMILEYS_FILENAME,120,55,148,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_BROWSE_SMILEYS,270,55,15,11
+    CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP |
+                    TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER |
+                    WS_TABSTOP,14,50,100,83
+    LTEXT           "Name:",IDC_STATIC,120,80,30,8
+    LTEXT           "",IDC_LIBNAME,154,78,140,11,SS_SUNKEN | SS_PATHELLIPSIS
+    LTEXT           "Author:",IDC_STATIC,120,95,30,8
+    LTEXT           "",IDC_LIBAUTHOR,154,93,100,11,SS_SUNKEN | SS_PATHELLIPSIS
+    LTEXT           "Version:",IDC_STATIC,120,110,30,8
+    LTEXT           "",IDC_LIBVERSION,154,108,100,11,SS_SUNKEN | SS_PATHELLIPSIS
+    PUSHBUTTON      "Preview",IDC_SMILEYS_PREVIEW,257,93,36,25
+//	LISTBOX         IDC_PROTOLIST,14,55,80,75, LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+//    CONTROL         "", IDC_SMILEYS_PREVIEW,"MButtonClass", WS_TABSTOP,170,90,15,15, 0x18000000L
+    GROUPBOX        "Options",IDC_SIMPLE,5,143,294,48
+    CONTROL         "Only replace isolated smileys",IDC_ISOLATED_SMILEYS,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,155,265,10
+    CONTROL         "Surround smileys with spaces",IDC_SURROUND_SMILEYS,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,165,265,10
+    CONTROL         "Replace smileys in user names",IDC_SMILEYS_IN_NAMES,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,175,265,10
+    GROUPBOX        "Smiley Selector",IDC_SIMPLE,5,194,294,26
+    LTEXT           "Background Color",IDC_STATIC,14,205,80,8
+    CONTROL         "",IDC_BKGCOLOR,"ColourPicker",WS_TABSTOP,150,203,32,12
+END
+
+IDD_TEMPLATES_OPTIONS DIALOGEX 2, 15, 306, 228
+STYLE DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Mode",IDC_SIMPLE,5,5,294,120
+    CONTROL         "Background image",IDC_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,19,86,10
+ 	EDITTEXT        IDC_BACKGROUND_IMAGE_FILENAME,100,18,168,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_BROWSE_BACKGROUND_IMAGE,270,18,15,11
+    CONTROL         "Scroll with text",IDC_SCROLL_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,26,34,240,10
+    CONTROL         "External CSS file",IDC_EXTERNALCSS,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,52,86,10
+ 	EDITTEXT        IDC_EXTERNALCSS_FILENAME,100,51,168,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_BROWSE_EXTERNALCSS,270,51,15,11
+    LTEXT           "RTL CSS file",IDC_SIMPLE, 26,68,74,12
+ 	EDITTEXT        IDC_EXTERNALCSS_FILENAME_RTL,100,67,168,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_BROWSE_EXTERNALCSS_RTL,270,67,15,11
+    CONTROL         "Templates",IDC_TEMPLATES,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,89,86,10
+   // GROUPBOX        "Template Library",IDC_SIMPLE,5,77,288,50
+ 	EDITTEXT        IDC_TEMPLATES_FILENAME,100,88,168,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_BROWSE_TEMPLATES,270,88,15,11
+    LTEXT           "RTL templates",IDC_SIMPLE, 26,106,74,12
+ 	EDITTEXT        IDC_TEMPLATES_FILENAME_RTL,100,104,168,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_BROWSE_TEMPLATES_RTL,270,104,15,11
+    GROUPBOX        "Events To Show",IDC_SIMPLE,5,131,143,89
+    CONTROL         "Show file events",IDC_LOG_SHOW_FILE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,144,120,10
+    CONTROL         "Show url events",IDC_LOG_SHOW_URL,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,154,120,10
+    CONTROL         "Show status changes",IDC_LOG_SHOW_STATUSCHANGE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,164,125,10
+    GROUPBOX        "Log Options",IDC_SIMPLE,156,131,143,89
+    CONTROL         "Show nicknames",IDC_LOG_SHOW_NICKNAMES,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,165,144,125,10
+    CONTROL         "Show time",IDC_LOG_SHOW_TIME,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,165,154,125,10
+    CONTROL         "Show seconds",IDC_LOG_SHOW_SECONDS,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,180,164,110,10
+    CONTROL         "Show date",IDC_LOG_SHOW_DATE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,165,174,125,10
+    CONTROL         "Use long date format",IDC_LOG_LONG_DATE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,180,184,110,10
+    CONTROL         "Use relative timestamp", IDC_LOG_RELATIVE_DATE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,180,194,110,10
+    CONTROL         "Use message grouping", IDC_LOG_GROUP_MESSAGES,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,165,204,125,10
+END
+
+IDD_GROUPCHATS_OPTIONS DIALOGEX 2, 15, 306, 228
+STYLE DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Mode",IDC_SIMPLE,5,5,294,60
+    CONTROL         "External CSS file",IDC_GROUPCHAT_CSS,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,20,86,10
+ 	EDITTEXT        IDC_GROUPCHAT_CSS_FILENAME,100,19,168,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_GROUPCHAT_CSS_BROWSE,270,19,15,11
+    CONTROL         "Templates",IDC_GROUPCHAT_TEMPLATES,"Button",BS_AUTOCHECKBOX |
+                    NOT WS_VISIBLE | WS_TABSTOP,14,40,86,10
+ 	EDITTEXT        IDC_GROUPCHAT_TEMPLATES_FILENAME,100,39,168,12,ES_AUTOHSCROLL | NOT WS_VISIBLE
+    PUSHBUTTON      "...",IDC_GROUPCHAT_TEMPLATES_BROWSE,270,39,15,11,NOT WS_VISIBLE
+END
+
+IDD_SMILEYSELECTION DIALOGEX 10, 10, 234, 150
+STYLE DS_SETFONT | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | WS_BORDER | WS_SYSMENU | NOT WS_VISIBLE
+EXSTYLE WS_EX_TOPMOST | WS_EX_TOOLWINDOW
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+
+END
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,4,0
+ PRODUCTVERSION 1,0,4,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041504e3"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "http://developer.berlios.de/projects/mgoodies\0"
+            VALUE "FileDescription", "IEView Plugin for Miranda IM\0"
+            VALUE "FileVersion", "1.0.4.0\0"
+            VALUE "InternalName", "ieview\0"
+            VALUE "LegalCopyright", "Copyright (c) 2005 Piotr Piastucki\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "ieview.dll\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "IEView Plugin\0"
+            VALUE "ProductVersion", "1.0.4.0\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x415, 1251
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_SMILEY                ICON    DISCARDABLE     "icos\\smile.ico"
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
