@@ -106,6 +106,10 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.4.0
++ ME_IEVIEW_OPTIONSCHANGED event
+* improved compatibility with Scriver
+* bugfixes: metacontacts' nicknames, GUI fixes
 1.0.3.9
 + support for Unicode nick names
 + support for png emoticons (thanks to Alex Krivospitsky !)
