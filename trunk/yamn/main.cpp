@@ -180,6 +180,9 @@ int AddTopToolbarIcon(WPARAM,LPARAM);
 //Loads plugins located in MirandaDir/Plugins/YAMN/*.dll
 void LoadPlugins();
 
+//  Loading Icon and checking for icolib 
+void LoadIcons();
+
 //Ask information when user wants to uninstall plugin
 int UninstallQuestionSvc(WPARAM,LPARAM);
 
@@ -381,7 +384,9 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	if(ServiceExists(MS_SKIN2_ADDICON))
         HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
 
-	LoadPlugins();	
+	LoadPlugins();
+	//  Loading Icon and checking for icolib 
+	LoadIcons();
 
 //Insert "Check mail (YAMN)" item to Miranda's menu
 	ZeroMemory(&mi,sizeof(mi));
@@ -485,6 +490,56 @@ extern "C" int __declspec(dllexport) Unload(void)
 	delete PluginRegCS;
 
 	return 0;
+}
+
+void LoadIcons()
+{
+	//Load icons
+
+	if(ServiceExists(MS_SKIN2_ADDICON))
+	{
+		//MessageBox(NULL,"Icolib present","test",0);
+		SKINICONDESC sid;
+		char szFilename[MAX_PATH];
+		strncpy(szFilename, "plugins\\YAMN.dll", MAX_PATH);
+
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.pszSection = "YAMN";
+		sid.pszDefaultFile = szFilename;
+
+		sid.pszName = "YAMN_Neutral";
+        sid.pszDescription = Translate("Neutral");
+        sid.iDefaultIndex = -IDI_ICONEUTRAL;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		
+		sid.pszName = "YAMN_Yamn";
+        sid.pszDescription = "YAMN";
+        sid.iDefaultIndex = -IDI_ICOYAMN1;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		sid.pszName = "YAMN_NewMail";
+        sid.pszDescription = Translate("New Mail");
+        sid.iDefaultIndex = -IDI_ICOYAMN2;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		sid.pszName = "YAMN_ConnectFail";
+        sid.pszDescription = Translate("Connect Fail");
+        sid.iDefaultIndex = -IDI_ICOYAMN3;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		hNeutralIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral");
+		hYamnIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn");
+		hNewMailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail");
+		hConnectFailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail");
+	}
+	else
+	{
+		hNeutralIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICONEUTRAL));
+		hYamnIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN1));
+		hNewMailIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN2));
+		hConnectFailIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN3));
+	}
+
 }
 
 void LoadPlugins()

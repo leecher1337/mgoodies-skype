@@ -222,55 +222,7 @@ void WINAPI StopPOP3Account(HACCOUNT Which)
 		((HPOP3ACCOUNT)Which)->Client.NetClient->Stopped=TRUE;
 }
 
-void LoadIcons()
-{
-	//Load icons
 
-	if(ServiceExists(MS_SKIN2_ADDICON))
-	{
-		//MessageBox(NULL,"Icolib present","test",0);
-		SKINICONDESC sid;
-		char szFilename[MAX_PATH];
-		strncpy(szFilename, "plugins\\YAMN.dll", MAX_PATH);
-
-		sid.cbSize = sizeof(SKINICONDESC);
-		sid.pszSection = "YAMN";
-		sid.pszDefaultFile = szFilename;
-
-		sid.pszName = "YAMN_Neutral";
-        sid.pszDescription = Translate("Neutral");
-        sid.iDefaultIndex = -IDI_ICONEUTRAL;
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-		
-		sid.pszName = "YAMN_Yamn";
-        sid.pszDescription = "YAMN";
-        sid.iDefaultIndex = -IDI_ICOYAMN1;
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		sid.pszName = "YAMN_NewMail";
-        sid.pszDescription = Translate("New Mail");
-        sid.iDefaultIndex = -IDI_ICOYAMN2;
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		sid.pszName = "YAMN_ConnectFail";
-        sid.pszDescription = Translate("Connect Fail");
-        sid.iDefaultIndex = -IDI_ICOYAMN3;
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		hNeutralIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral");
-		hYamnIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn");
-		hNewMailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail");
-		hConnectFailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail");
-	}
-	else
-	{
-		hNeutralIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICONEUTRAL));
-		hYamnIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN1));
-		hNewMailIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN2));
-		hConnectFailIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN3));
-	}
-
-}
 
 //This function is like main function for POP3 internal protocol
 int RegisterPOP3Plugin(WPARAM,LPARAM)
@@ -360,7 +312,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	HookEvent(ME_OPT_INITIALISE,POP3OptInit);
 
 	//  Loading Icon and checking for icolib 
-	LoadIcons();
+	//LoadIcons();
 
 	return 0;
 }
