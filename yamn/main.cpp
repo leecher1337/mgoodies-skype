@@ -154,6 +154,8 @@ HICON hYamnIcon;
 HICON hNeutralIcon;
 HICON hNewMailIcon;
 HICON hConnectFailIcon;
+HICON hTopToolBarUp;
+HICON hTopToolBarDown;
 
 HANDLE hNewMailHook;
 //HANDLE hUninstallPluginsHook;
@@ -263,6 +265,8 @@ static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 	hYamnIcon= (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn");
 	hNewMailIcon= (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail");
 	hConnectFailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail");
+	hTopToolBarUp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp");
+	hTopToolBarDown = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown");
 	return 0;
 }
 
@@ -527,17 +531,31 @@ void LoadIcons()
         sid.iDefaultIndex = -IDI_ICOYAMN3;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
+		sid.pszName = "YAMN_TopToolBarUp";
+        sid.pszDescription = Translate("TopToolBar UP");
+        sid.iDefaultIndex = -IDI_ICOTTBUP;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		sid.pszName = "YAMN_TopToolBarDown";
+        sid.pszDescription = Translate("TopToolBar Down");
+        sid.iDefaultIndex = -IDI_ICOTTBDW;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
 		hNeutralIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral");
 		hYamnIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn");
 		hNewMailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail");
 		hConnectFailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail");
+		hTopToolBarUp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp");
+		hTopToolBarDown = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown");
 	}
 	else
 	{
-		hNeutralIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICONEUTRAL));
-		hYamnIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN1));
-		hNewMailIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN2));
-		hConnectFailIcon=LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN3));
+		hNeutralIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICONEUTRAL));
+		hYamnIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN1));
+		hNewMailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN2));
+		hConnectFailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN3));
+		hTopToolBarUp = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOTTBUP));
+		hTopToolBarDown = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOTTBDW));
 	}
 
 }
@@ -613,14 +631,11 @@ void GetIconSize(HICON hIcon, int* sizeX, int* sizeY)
     DeleteObject(ii.hbmColor);
 }
 
-HBITMAP LoadBmpFromIcon(int IdRes)
+HBITMAP LoadBmpFromIcon(HICON hIcon)
 {
 	HBITMAP hBmp, hoBmp;
     HDC hdc, hdcMem;
     HBRUSH hBkgBrush;
-	HICON hIcon;
-
-	hIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IdRes));
 
 	int IconSizeX = 16;
     int IconSizeY = 16;
@@ -680,8 +695,8 @@ int AddTopToolbarIcon(WPARAM,LPARAM)
 	
 	Button.name=Translate("Check mail");
 	
-	Button.hbBitmapUp = LoadBmpFromIcon(IDI_ICOTTBUP);
-	Button.hbBitmapDown = LoadBmpFromIcon(IDI_ICOTTBDW); //LoadBitmap(YAMNVar.hInst,MAKEINTRESOURCE(IDB_BMTTB));
+	Button.hbBitmapUp = LoadBmpFromIcon(hTopToolBarUp);
+	Button.hbBitmapDown = LoadBmpFromIcon(hTopToolBarDown); //LoadBitmap(YAMNVar.hInst,MAKEINTRESOURCE(IDB_BMTTB));
 	
 	if((HANDLE)-1==(hTTButton=(HANDLE)CallService(MS_TTB_ADDBUTTON,(WPARAM)&Button,(LPARAM)0)))
 		return 1;
