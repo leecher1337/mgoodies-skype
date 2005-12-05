@@ -1569,9 +1569,23 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 					switch(((LPNMHDR)lParam)->code)
 					{
 						case LVN_COLUMNCLICK:
+							HACCOUNT ActualAccount;
+							if(NULL==(ActualAccount=GetWindowAccount(hDlg)))
+								break;
+
 							NM_LISTVIEW* pNMListView;
 							pNMListView = (NM_LISTVIEW*)lParam;
-							ListView_SortItems(pNMListView->hdr.hwndFrom,ListViewCompareProc,pNMListView->iSubItem,);
+							if(WAIT_OBJECT_0==WaitToReadFcn(ActualAccount->AccountAccessSO))
+							{
+#ifdef DEBUG_SYNCHRO
+								DebugLog(SynchroFile,"MailBrowser:COLUMNCLICK:ActualAccountSO-read enter\n");
+#endif
+								ListView_SortItems(pNMListView->hdr.hwndFrom,ListViewCompareProc,pNMListView->iSubItem,);
+#ifdef DEBUG_SYNCHRO
+								DebugLog(SynchroFile,"MailBrowser:BTNAPP:ActualAccountSO-read done\n");
+#endif
+								ReadDoneFcn(ActualAccount->AccountAccessSO);
+							}
 							break;
 
 						case NM_CUSTOMDRAW:
