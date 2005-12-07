@@ -229,6 +229,8 @@ extern const int msgDlgFontCount;
 #define SRMSGDEFSET_LIMITNAMES	   1
 #define SRMSGSET_HIDEONETAB		   "HideOnetab"
 #define SRMSGDEFSET_HIDEONETAB	   1
+#define SRMSGSET_POPFLAGS          "PopupFlags"
+#define SRMSGDEFSET_POPFLAGS       0
 #define SRMSGSET_SHOWBUTTONLINE    "ShowButtonLine"
 #define SRMSGDEFSET_SHOWBUTTONLINE 1
 #define SRMSGSET_SHOWINFOLINE      "ShowInfoLine"

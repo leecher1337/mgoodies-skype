@@ -1,10 +1,10 @@
 /*
 Scriver
 
-Copyright 2000-2005 Miranda ICQ/IM project, 
+Copyright 2000-2005 Miranda ICQ/IM project,
 Copyright 2005 Piotr Piastucki
 
-all portions of this codebase are copyrighted to the people 
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -57,7 +57,7 @@ static fontOptionsList[] = {
 };
 const int msgDlgFontCount = sizeof(fontOptionsList) / sizeof(fontOptionsList[0]);
 
-static int FontServiceFontsChanged(WPARAM wParam, LPARAM lParam) 
+static int FontServiceFontsChanged(WPARAM wParam, LPARAM lParam)
 {
 	WindowList_Broadcast(g_dat->hMessageWindowList, DM_OPTIONSAPPLIED, 0, 0);
 	return 0;
@@ -75,7 +75,7 @@ void RegisterFontServiceFonts() {
 		fid.flags = FIDF_DEFAULTVALID;
 		for (i = 0; i < sizeof(fontOptionsList) / sizeof(fontOptionsList[0]); i++) {
 			LoadMsgDlgFont(i, &lf, &fontOptionsList[i].colour);
-			fontOptionsList[i].size = 
+			fontOptionsList[i].size =
 			_snprintf(szTemp, sizeof(szTemp), "SRMFont%d", i);
 			strncpy(fid.prefix, szTemp, sizeof(fid.prefix));
 			fid.order = i;
@@ -131,6 +131,58 @@ void LoadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour)
 	}
 }
 
+struct CheckBoxValues_t
+{
+    DWORD  style;
+    TCHAR* szDescr;
+}
+
+static const statusValues[] =
+{
+	{ MODEF_OFFLINE,  _T("Offline")       },
+	{ PF2_ONLINE,     _T("Online")        },
+	{ PF2_SHORTAWAY,  _T("Away")          },
+	{ PF2_LONGAWAY,   _T("NA")            },
+	{ PF2_LIGHTDND,   _T("Occupied")      },
+	{ PF2_HEAVYDND,   _T("DND")           },
+	{ PF2_FREECHAT,   _T("Free for chat") },
+	{ PF2_INVISIBLE,  _T("Invisible")     },
+	{ PF2_OUTTOLUNCH, _T("Out to lunch")  },
+	{ PF2_ONTHEPHONE, _T("On the phone")  }
+};
+
+static void FillCheckBoxTree(HWND hwndTree, const struct CheckBoxValues_t *values, int nValues, DWORD style)
+{
+	TVINSERTSTRUCT tvis;
+	int i;
+
+	tvis.hParent = NULL;
+	tvis.hInsertAfter = TVI_LAST;
+	tvis.item.mask = TVIF_PARAM | TVIF_TEXT | TVIF_STATE;
+	for (i = 0; i < nValues; i++) {
+		tvis.item.lParam = values[i].style;
+		tvis.item.pszText = TranslateTS(values[i].szDescr);
+		tvis.item.stateMask = TVIS_STATEIMAGEMASK;
+		tvis.item.state = INDEXTOSTATEIMAGEMASK((style & tvis.item.lParam) != 0 ? 2 : 1);
+		TreeView_InsertItem( hwndTree, &tvis );
+}	}
+
+static DWORD MakeCheckBoxTreeFlags(HWND hwndTree)
+{
+    DWORD flags = 0;
+    TVITEM tvi;
+
+    tvi.mask = TVIF_HANDLE | TVIF_PARAM | TVIF_STATE;
+    tvi.hItem = TreeView_GetRoot(hwndTree);
+    while (tvi.hItem) {
+        TreeView_GetItem(hwndTree, &tvi);
+        if (((tvi.state & TVIS_STATEIMAGEMASK) >> 12 == 2))
+            flags |= tvi.lParam;
+        tvi.hItem = TreeView_GetNextSibling(hwndTree, tvi.hItem);
+    }
+    return flags;
+}
+
 static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg) {
@@ -139,6 +191,9 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			int bChecked;
 			DWORD msgTimeout, avatarHeight;
 			TranslateDialogDefault(hwndDlg);
+			SetWindowLong(GetDlgItem(hwndDlg, IDC_POPLIST), GWL_STYLE, (GetWindowLong(GetDlgItem(hwndDlg, IDC_POPLIST), GWL_STYLE) & ~WS_BORDER) | TVS_NOHSCROLL | TVS_CHECKBOXES);
+			FillCheckBoxTree(GetDlgItem(hwndDlg, IDC_POPLIST), statusValues, sizeof(statusValues) / sizeof(statusValues[0]),
+                             DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_POPFLAGS, SRMSGDEFSET_POPFLAGS));
 			CheckDlgButton(hwndDlg, IDC_SHOWBUTTONLINE, g_dat->flags&SMF_SHOWBTNS);
 			CheckDlgButton(hwndDlg, IDC_AUTOPOPUP, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOPOPUP, SRMSGDEFSET_AUTOPOPUP));
 			CheckDlgButton(hwndDlg, IDC_STAYMINIMIZED, DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STAYMINIMIZED, SRMSGDEFSET_STAYMINIMIZED));
@@ -319,12 +374,31 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			break;
 		case WM_NOTIFY:
 			switch (((LPNMHDR) lParam)->idFrom) {
+				 case IDC_POPLIST:
+                    if (((LPNMHDR) lParam)->code == NM_CLICK) {
+                        TVHITTESTINFO hti;
+                        hti.pt.x = (short) LOWORD(GetMessagePos());
+                        hti.pt.y = (short) HIWORD(GetMessagePos());
+                        ScreenToClient(((LPNMHDR) lParam)->hwndFrom, &hti.pt);
+                        if (TreeView_HitTest(((LPNMHDR) lParam)->hwndFrom, &hti))
+                            if (hti.flags & TVHT_ONITEMSTATEICON) {
+                                TVITEM tvi;
+                                tvi.mask = TVIF_HANDLE | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
+                                tvi.hItem = hti.hItem;
+                                TreeView_GetItem(((LPNMHDR) lParam)->hwndFrom, &tvi);
+                                tvi.iImage = tvi.iSelectedImage = tvi.iImage == 1 ? 2 : 1;
+                                TreeView_SetItem(((LPNMHDR) lParam)->hwndFrom, &tvi);
+                                SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+                            }
+                    }
+                    break;
 				case 0:
 					switch (((LPNMHDR) lParam)->code) {
 						case PSN_APPLY:
 						{
 							DWORD msgTimeout, avatarHeight;
 
+							DBWriteContactSettingDword(NULL, SRMMMOD, SRMSGSET_POPFLAGS, MakeCheckBoxTreeFlags(GetDlgItem(hwndDlg, IDC_POPLIST)));
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWBUTTONLINE, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_SHOWBUTTONLINE));
 							//DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWINFOLINE, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_SHOWINFOLINE));
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOPOPUP, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_AUTOPOPUP));
@@ -448,7 +522,7 @@ static BOOL CALLBACK DlgProcLogOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			SendDlgItemMessage(hwndDlg, IDC_BKGOUTGOING, CPM_SETDEFAULTCOLOUR, 0, SRMSGDEFSET_OUTGOINGBKGCOLOUR);
 
 			SendDlgItemMessage(hwndDlg, IDC_LINECOLOUR, CPM_SETCOLOUR, 0, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_LINECOLOUR, SRMSGDEFSET_LINECOLOUR));
-			
+
 			hBkgColourBrush = CreateSolidBrush(SendDlgItemMessage(hwndDlg, IDC_BKGCOLOUR, CPM_GETCOLOUR, 0, 0));
 
 			{
@@ -747,7 +821,7 @@ static void RebuildList(HWND hwndDlg, HANDLE hItemNew, HANDLE hItemUnknown)
 		if (hItem && DBGetContactSettingByte(hContact, SRMMMOD, SRMSGSET_TYPING, defType)) {
 			SendDlgItemMessage(hwndDlg, IDC_CLIST, CLM_SETCHECKMARK, (WPARAM) hItem, 1);
 		}
-	} while (hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM) hContact, 0));
+	} while ((hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM) hContact, 0)));
 }
 
 static void SaveList(HWND hwndDlg, HANDLE hItemNew, HANDLE hItemUnknown)
@@ -766,7 +840,7 @@ static void SaveList(HWND hwndDlg, HANDLE hItemNew, HANDLE hItemUnknown)
 		if (hItem) {
 			DBWriteContactSettingByte(hContact, SRMMMOD, SRMSGSET_TYPING, (BYTE)(SendDlgItemMessage(hwndDlg, IDC_CLIST, CLM_GETCHECKMARK, (WPARAM) hItem, 0) ? 1 : 0));
 		}
-	} while (hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM) hContact, 0));
+	} while ((hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM) hContact, 0)));
 }
 
 static BOOL CALLBACK DlgProcTypeOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
