@@ -36,6 +36,33 @@ extern PSLWA pSetLayeredWindowAttributes;
 
 extern HINSTANCE g_hInst;
 
+static int SRMMStatusToPf2(int status)
+{
+    switch (status) {
+        case ID_STATUS_ONLINE:
+            return PF2_ONLINE;
+        case ID_STATUS_AWAY:
+            return PF2_SHORTAWAY;
+        case ID_STATUS_DND:
+            return PF2_HEAVYDND;
+        case ID_STATUS_NA:
+            return PF2_LONGAWAY;
+        case ID_STATUS_OCCUPIED:
+            return PF2_LIGHTDND;
+        case ID_STATUS_FREECHAT:
+            return PF2_FREECHAT;
+        case ID_STATUS_INVISIBLE:
+            return PF2_INVISIBLE;
+        case ID_STATUS_ONTHEPHONE:
+            return PF2_ONTHEPHONE;
+        case ID_STATUS_OUTTOLUNCH:
+            return PF2_OUTTOLUNCH;
+        case ID_STATUS_OFFLINE:
+            return MODEF_OFFLINE;
+    }
+    return 0;
+}
+
 static int ReadMessageCommand(WPARAM wParam, LPARAM lParam)
 {
 	struct NewMessageWindowLParam newData = { 0 };
@@ -80,18 +107,19 @@ static int MessageEventAdded(WPARAM wParam, LPARAM lParam)
 	}
 	/* new message */
 	SkinPlaySound("AlertMsg");
-
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOPOPUP, SRMSGDEFSET_AUTOPOPUP)) {
-		struct NewMessageWindowLParam newData = { 0 };
-		newData.hContact = (HANDLE) wParam;
-		if (g_dat->hParent == NULL || !(g_dat->flags & SMF_USETABS)) {
-			g_dat->hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+		char *szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) wParam, 0);
+		if (szProto && (g_dat->openFlags & SRMMStatusToPf2(CallProtoService(szProto, PS_GETSTATUS, 0, 0)))) {
+			struct NewMessageWindowLParam newData = { 0 };
+			newData.hContact = (HANDLE) wParam;
+			if (g_dat->hParent == NULL || !(g_dat->flags & SMF_USETABS)) {
+				g_dat->hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+			}
+			newData.flags = NMWLP_INCOMING;
+			CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), g_dat->hParent, DlgProcMessage, (LPARAM) & newData);
+			return 0;
 		}
-		newData.flags = NMWLP_INCOMING;
-		CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), g_dat->hParent, DlgProcMessage, (LPARAM) & newData);
-		return 0;
 	}
-
 	ZeroMemory(&cle, sizeof(cle));
 	cle.cbSize = sizeof(cle);
 	cle.hContact = (HANDLE) wParam;
@@ -225,8 +253,8 @@ static void RestoreUnreadMessageAlerts(void)
 	DBEVENTINFO dbei = { 0 };
 	char toolTip[256];
 	int windowAlreadyExists;
-	int autoPopup = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOPOPUP, SRMSGDEFSET_AUTOPOPUP);
 	HANDLE hDbEvent, hContact;
+	int autoPopup = 0;
 
 	dbei.cbSize = sizeof(dbei);
 	cle.cbSize = sizeof(cle);
@@ -244,6 +272,12 @@ static void RestoreUnreadMessageAlerts(void)
 				if (windowAlreadyExists)
 					continue;
 
+				if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOPOPUP, SRMSGDEFSET_AUTOPOPUP)) {
+					char *szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+					if (szProto && (g_dat->openFlags & SRMMStatusToPf2(CallProtoService(szProto, PS_GETSTATUS, 0, 0)))) {
+						autoPopup = 1;
+					}
+				}
 				if (autoPopup && !windowAlreadyExists) {
 					HWND hwndParent;
 					struct NewMessageWindowLParam newData = { 0 };
