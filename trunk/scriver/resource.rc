@@ -36,11 +36,14 @@ EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        "Message Window Options",IDC_STATIC,0,0,310,248
-    CONTROL         "Automatically pop up the window when a message is received",
+    CONTROL         "Automatically pop up the window when",
                     IDC_AUTOPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,11,
-                    292,10
+                    155,10
+	CONTROL         "Tree1",IDC_POPLIST,"SysTreeView32",TVS_DISABLEDRAGDROP |
+                    TVS_NOTOOLTIPS | TVS_NONEVENHEIGHT | WS_BORDER |
+                    WS_TABSTOP,163,8,98,23
     CONTROL         "Stay minimized",IDC_STAYMINIMIZED,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,22,22,226,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,22,22,141,10
     CONTROL         "Close the message window on send",IDC_AUTOCLOSE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,8,33,140,10
     CONTROL         "Minimize the message window on send",IDC_AUTOMIN,"Button",

@@ -123,7 +123,7 @@ static int SendMessageCommand(WPARAM wParam, LPARAM lParam)
 		}                       //if
 	}
 
-	if (hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE) wParam)) {
+	if ((hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE) wParam))) {
 		if (lParam) {
 			HWND hEdit;
 			hEdit = GetDlgItem(hwnd, IDC_MESSAGE);
@@ -161,7 +161,7 @@ static int TypingMessage(WPARAM wParam, LPARAM lParam)
 
 	if (!(g_dat->flags&SMF_SHOWTYPING))
 		return 0;
-	if (hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE) wParam)) {
+	if ((hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE) wParam))) {
 		SendMessage(hwnd, DM_TYPING, 0, lParam);
 		foundWin = 1;
 	}
