@@ -30,11 +30,7 @@ typedef struct _TCmdList {
 	struct _TCmdList *next;
 	struct _TCmdList *prev;
 	HANDLE  hContact;
-#ifdef _UNICODE
-	wchar_t *szCmd;
-#else
-	char *szCmd;
-#endif
+	TCHAR *szCmd;
 	unsigned long hash;
 } TCmdList;
 

@@ -41,10 +41,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #if defined(_UNICODE)
 	#define SEND_FLAGS PREF_UNICODE
-	extern wchar_t *strToWcs(const char *text, int textlen, int cp);
 #else
 	#define SEND_FLAGS 0
 #endif
+extern TCHAR *strToWcs(const char *text, int textlen, int cp);
 
 extern HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand, hDragCursor;
 extern HANDLE hHookWinEvt;

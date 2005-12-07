@@ -84,8 +84,8 @@ int DbEventIsShown(DBEVENTINFO * dbei, struct MessageWindowData *dat)
 	return 0;
 }
 
-#if defined( _UNICODE )
-wchar_t *strToWcs(const char *text, int textlen, int cp) {
+TCHAR *strToWcs(const char *text, int textlen, int cp) {
+#if defined ( _UNICODE )
 	wchar_t *wtext;
 	if (textlen == -1) {
 		textlen = strlen(text) + 1;
@@ -93,8 +93,10 @@ wchar_t *strToWcs(const char *text, int textlen, int cp) {
 	wtext = (wchar_t *) malloc(sizeof(wchar_t) * textlen);
 	MultiByteToWideChar(cp, 0, text, -1, wtext, textlen);
 	return wtext;
-}
+#else
+	return _tcsdup(text);
 #endif
+}
 
 struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact, HANDLE hDbEvent) {
 	DBEVENTINFO dbei = { 0 };
@@ -177,7 +179,6 @@ enum MIMFLAGS {
 	MIM_UNICODE = 2
 };
 
-#if defined ( _UNICODE )
 
 static int IsUnicodeMIM() {
 	if (!(mimFlags & MIM_CHECKED)) {
@@ -191,26 +192,32 @@ static int IsUnicodeMIM() {
 	return (mimFlags & MIM_UNICODE) != 0;
 }
 
-wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
+TCHAR *GetNickname(HANDLE hContact, const char* szProto) {
 	char * szBaseNick;
-	wchar_t *szName;
+	TCHAR *szName;
 	CONTACTINFO ci;
 	ZeroMemory(&ci, sizeof(ci));
 	ci.cbSize = sizeof(ci);
 	ci.hContact = hContact;
     ci.szProto = (char *)szProto;
 	ci.dwFlag = CNF_DISPLAY;
+#if defined ( _UNICODE )
 	if(IsUnicodeMIM()) {
 		ci.dwFlag |= CNF_UNICODE;
     }
+#endif
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		if (ci.type == CNFT_ASCIIZ) {
 			if (ci.pszVal) {
+#if defined ( _UNICODE )
 				if(IsUnicodeMIM()) {
-					szName = wcsdup((wchar_t *)ci.pszVal);
+					szName = _tcsdup((TCHAR *)ci.pszVal);
 				} else {
 					szName = strToWcs((char *)ci.pszVal, -1, CP_ACP);
 				}
+#else 
+				szName = _tcsdup((TCHAR *)ci.pszVal);
+#endif
 				miranda_sys_free(ci.pszVal);
 				return szName;
 			}
@@ -218,40 +225,18 @@ wchar_t *GetNicknameW(HANDLE hContact, const char* szProto) {
 	}
 	szBaseNick = (char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0);
 	if (szBaseNick != NULL) {
+#if defined ( _UNICODE )
 		int len;
 		len = strlen(szBaseNick) + 1;
-		szName = (wchar_t *) malloc(len * 2);
+		szName = (TCHAR *) malloc(len * 2);
 	    MultiByteToWideChar(CP_ACP, 0, szBaseNick, -1, szName, len);
 		szName[len - 1] = 0;
 	    return szName;
-	}
-    return wcsdup(TranslateT("Unknown Contact"));
-}
-
+#else
+	    return _tcsdup(szBaseNick);
 #endif
-
-char *GetNickname(HANDLE hContact, const char* szProto) {
-	char *szName;
-	CONTACTINFO ci;
-	ZeroMemory(&ci, sizeof(ci));
-	ci.cbSize = sizeof(ci);
-	ci.hContact = hContact;
-    ci.szProto = (char *)szProto;
-	ci.dwFlag = CNF_DISPLAY;
-	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-		if (ci.type == CNFT_ASCIIZ) {
-			if (ci.pszVal) {
-				szName = strdup((char *)ci.pszVal);
-				miranda_sys_free(ci.pszVal);
-				return szName;
-			}
-		}
 	}
-	szName = (char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0);
-	if (szName != NULL) {
-	    return strdup(szName);
-	}
-    return strdup(Translate("Unknown Contact"));
+    return _tcsdup(TranslateT("Unknown Contact"));
 }
 
 static void AppendToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, const char *fmt, ...)
@@ -593,24 +578,18 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(MSGFONTID_NOTICE));
 		}
 		{
+			TCHAR *szName;
+			if (event->flags & DBEF_SENT) {
+				szName = GetNickname(NULL, event->szModule);
+			} else {
+				szName = GetNickname(event->hContact, event->szModule);
 #if defined( _UNICODE )
-			wchar_t *szName;
-			if (event->flags & DBEF_SENT) {
-				szName = GetNicknameW(NULL, event->szModule);
-			} else {
-				szName = GetNicknameW(event->hContact, event->szModule);
-			}
-			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, szName);
+				AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, szName);
 #else
-			char *szName;
-			if (event->flags & DBEF_SENT) {
-				 szName = GetNickname(NULL, event->szModule);
-			} else {
-				 szName = GetNickname(event->hContact, event->szModule);
-			}
-			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
+				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
 #endif
-			free(szName);
+				free(szName);
+			}
 		}
 		showColon = 1;
 		if (event->eventType == EVENTTYPE_MESSAGE && g_dat->flags & SMF_GROUPMESSAGES) {
