@@ -30,7 +30,7 @@ SmileyWindow::SmileyWindow(SmileyMap *map) {
  	hwnd = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_SMILEYSELECTION), NULL, SmileySelectionDlgProc, (LPARAM) this);
 	view = new IEView(hwnd, this, 0, 0, 200, 200);
 	created = false;
-	bkgColor = Options::getSmileyBackground();//0xFFFFFF;
+//	bkgColor = Options::getSmileyBackground();//0xFFFFFF;
     bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
 }
 
@@ -74,7 +74,7 @@ void SmileyWindow::createSelection() {
 	viewWidth= hSize * cellWidthBorder + ncm.iScrollWidth + 1;
 	SetWindowPos(hwnd, NULL, 0, 0, viewWidth+ 2, viewHeight + 2, SWP_NOMOVE | SWP_NOZORDER | SWP_HIDEWINDOW);
 	view->setWindowPos(0, 0, viewWidth, viewHeight);
-	
+
 	Utils::appendText(&output, &outputSize, "<html><head><style type=\"text/css\"> \n\
 .body {margin: 0px; background-color: #%06X; overflow: auto;}\n\
 .link {color: #0000FF; text-decoration: underline;}\n\

@@ -38,17 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define IDC_ENABLE_BBCODES				1004
 #define IDC_ENABLE_FLASH                1005
 #define IDC_ENABLE_MATHMODULE           1006
-
-#define IDC_SMILEYS                     1010
-#define IDC_SMILEYS_FILENAME			1011
-#define IDC_BROWSE_SMILEYS     			1012
-#define IDC_ISOLATED_SMILEYS		    1013
-#define IDC_SURROUND_SMILEYS		    1014
-#define IDC_PROTO_SMILEYS		    	1015
-#define IDC_PROTOLIST                   1016
-#define IDC_SMILEYS_PREVIEW             1017
-#define IDC_SMILEYS_IN_NAMES            1018
-#define IDC_BKGCOLOR                    1019
+#define IDC_ENABLE_PNGHACK				1007
 
 #define IDC_EXTERNALCSS                 1020
 #define IDC_EXTERNALCSS_FILENAME		1021

@@ -117,136 +117,20 @@ void TextToken::setLink(const char *link) {
     this->wlink = Utils::convertToWCS(link);
 }
 
+void TextToken::setLink(const wchar_t *link) {
+    if (this->link != NULL) {
+        delete this->link;
+    }
+    if (this->wlink != NULL) {
+        delete this->wlink;
+    }
+    this->link = Utils::convertToString(link);
+    this->wlink = Utils::dupString(link);
+}
+
+
 /*
 
-static int countNoWhitespace(const char *str) {
-	int c;
-	for (c=0; *str!='\n' && *str!='\r' && *str!='\t' && *str!=' ' && *str!='\0'; str++, c++);
-	return c;
-}
-
-TextToken* TextToken::tokenizeLinks(const char *text) {
-    TextToken *firstToken = NULL, *lastToken = NULL;
-    int lastTokenType = TEXT;
-    int l = strlen(text);
-    for (int i=0, lastTokenStart=0; i<=l;) {
-        TextToken *newToken;
-		int newTokenType, newTokenSize;
-        if (text[i]=='\0') {
-			newTokenType = END;
-			newTokenSize = 1;
-		} else if (!strncmp(text+i, "ftp:/", 5)) {
-			newTokenType = LINK;
-        	newTokenSize = countNoWhitespace(text+i);
-       	} else if (!strncmp(text+i, "http:/", 6)) {
-			newTokenType = LINK;
-       		newTokenSize = countNoWhitespace(text+i);
-  		} else if (!strncmp(text+i, "www.", 4)) {
-			newTokenType = WWWLINK;
-  			newTokenSize = countNoWhitespace(text+i);
-     	} else if (!strncmp(text+i, "mailto:", 7)) {
-			newTokenType = LINK;
-            newTokenSize = countNoWhitespace(text+i);
-        } else {
-			newTokenType = TEXT;
-			newTokenSize = 1;
-		}
-		if (lastTokenType!=TEXT || (lastTokenType!=newTokenType && i!=lastTokenStart)) {
-            newToken = new TextToken(lastTokenType, text+lastTokenStart, i-lastTokenStart);
-            if (lastTokenType == WWWLINK || lastTokenType == LINK) {
-                newToken->setLink(newToken->getText());
-            }
-			if (lastToken == NULL) {
-				firstToken = newToken;
-			} else {
-			    lastToken->setNext(newToken);
-			}
-			lastToken = newToken;
-			lastTokenStart = i;
-		}
-		lastTokenType = newTokenType;
-		i += newTokenSize;
-    }
-    return firstToken;
-}
-
-TextToken* TextToken::tokenizeSmileys(const char *proto, const char *text) {
- 	SmileyMap *smileyMap;
-    TextToken *firstToken = NULL, *lastToken = NULL;
-	Smiley *lastSmiley = NULL;
-	bool wasSpace;
-    int lastTokenType = TEXT;
-    int l = strlen(text);
-	if (!(Options::getSmileyFlags() & Options::SMILEY_ENABLED)) {
-	    return new TextToken(TEXT, text, l);
- 	}
-	if (Options::getSmileyFlags() & Options::SMILEY_PROTOCOLS) {
-		smileyMap = SmileyMap::getSmileyMap(proto);
-	} else {
-		smileyMap = SmileyMap::getSmileyMap("");
-    }
-	if (smileyMap == NULL) {
- 		return new TextToken(TEXT, text, l);
- 	}
- 	wasSpace = true;
-    for (int i=0, lastTokenStart=0; i<=l;) {
-        TextToken *newToken;
-		int newTokenType, newTokenSize;
-		Smiley *newSmiley = NULL;
-        if (text[i]=='\0') {
-			newTokenType = END;
-			newTokenSize = 1;
-		} else {
-		    Smiley* smiley = NULL;
-      		if (wasSpace) {
-    			smiley = smileyMap->getSmiley(text+i, &newTokenSize);
-                if (smiley != NULL) {
-                   	newTokenType = SMILEY;
-                   	newSmiley = smiley;
-                   	if (Options::getSmileyFlags() & Options::SMILEY_ISOLATED) {
-						int dummy;
-                       	if (smileyMap->getSmiley(text+i+newTokenSize, &dummy)==NULL && text[i+newTokenSize]!='\n'
-                       		&& text[i+newTokenSize]!='\r' && text[i+newTokenSize]!='\t'
-                         	&& text[i+newTokenSize]!=' ' && text[i+newTokenSize]!='\0') {
-                         	    smiley = NULL;
-                  		}
-                     }
-                }
-            }
-            if (smiley == NULL) {
-                wasSpace = true;
-               	if (Options::getSmileyFlags() & Options::SMILEY_ISOLATED) {
-                    if (text[i]!='\n' && text[i]!='\r' && text[i]!='\t' && text[i]!=' ') {
-                        wasSpace = false;
-                    }
-                }
-           	    smiley = NULL;
-    			newTokenType = TEXT;
-    			newTokenSize = 1;
-    			newSmiley = NULL;
-            }
-        }
-		if (lastTokenType!=TEXT || (lastTokenType!=newTokenType && i!=lastTokenStart)) {
-            if (lastTokenType == SMILEY) {
-                newToken = new TextToken(lastTokenType, text+lastTokenStart, i-lastTokenStart);
-                newToken->setLink(lastSmiley->getFile());
-            } else {
-                newToken = new TextToken(lastTokenType, text+lastTokenStart, i-lastTokenStart);
-            }
-			if (lastToken == NULL) {
-				firstToken = newToken;
-			} else {
-			    lastToken->setNext(newToken);
-			}
-			lastToken = newToken;
-			lastTokenStart = i;
-		}
-		lastSmiley = newSmiley;
-		lastTokenType = newTokenType;
-		i += newTokenSize;
-    }
-    return firstToken;
-}
 
 char *TextToken::urlEncode(const char *str) {
     char *out;
@@ -617,126 +501,6 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
     return firstToken;
 }
 
-/*
-TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
-	static wchar_t *bbTagName[] = {L"b", L"i", L"u", L"img", L"color", L"size"};
-	static int 		bbTagNameLen[] = {1, 1, 1, 3, 5, 4};
-	static int 		bbTagArg[] = {0, 0, 0, 0, 1, 1};
-	static int 		bbTagId[] = {BB_B, BB_I, BB_U, BB_IMG, BB_COLOR, BB_SIZE};
-   	TextToken *firstToken = NULL, *lastToken = NULL, * bbTokenFirst = NULL, * bbTokenLast = NULL;
-    int textLen = 0;
-    for (int i=0;i<=l;) {
-		int j, k, tagDataStart, tagDataEnd, tagArgStart, tagArgEnd, newTokenType = 0, newTokenSize = 0;
-		bool bbFound = false;
-		if (text[i] == '[') {
-			for (j = 0; j < 6; j++) {
-				k = i + 1;
-				if (!wcsnicmp(text+k, bbTagName[j], bbTagNameLen[j])) {
-					tagArgStart = tagArgEnd = 0;
-					k += bbTagNameLen[j];
-					if (bbTagArg[j]) {
-						if (text[k] != '=') continue;
-						k++;
-						tagArgStart = k;
-						for (; text[k]!='\0'; k++) {
-							if ((text[k]>='0' && text[k]<='9') ||
-								(text[k]>='A' && text[k]<='Z') ||
-								(text[k]>='a' && text[k]<='z') ||
-								(text[k]=='#')) continue;
-							break;
-						}
-						tagArgEnd = k;
-					}
-					if (text[k] == ']') {
-						k++;
-						tagDataStart = tagDataEnd = k;
-						for (; k < l; k++) {
-							tagDataEnd = k;
-							if (text[k] == '[' && text[k+1] == '/') {
-								k += 2;
-								if (!wcsnicmp(text+k, bbTagName[j], bbTagNameLen[j])) {
-									k += bbTagNameLen[j];
-									if (text[k] == ']') {
-										k++;
-										bbFound = true;
-										break;
-									}
-								}
-							}
-						}
-						if (bbFound) {
-							switch (bbTagId[j]) {
-							case BB_B:
-							case BB_I:
-							case BB_U:
-							case BB_COLOR:
-							case BB_SIZE:
-								if (bbTagArg[j]) {
-									bbTokenFirst = new TextToken(BBCODE, text + tagArgStart, tagArgEnd - tagArgStart);
-								} else {
-									bbTokenFirst = new TextToken(BBCODE, bbTagName[j], bbTagNameLen[j]);
-								}
-								bbTokenFirst->setEnd(false);
-								bbTokenFirst->setTag(bbTagId[j]);
-								bbTokenFirst->setNext(tokenizeBBCodes(text + tagDataStart, tagDataEnd - tagDataStart));
-								bbTokenLast = new TextToken(BBCODE, bbTagName[j], bbTagNameLen[j]);
-								bbTokenLast->setEnd(true);
-								bbTokenLast->setTag(bbTagId[j]);
-								TextToken *token;
-								for (token = bbTokenFirst; token->getNext()!=NULL; token = token->getNext());
-								token->setNext(bbTokenLast);
-								newTokenType = BBCODE;
-								newTokenSize = k - i;
-								break;
-							case BB_IMG:
-								bbTokenFirst = new TextToken(BBCODE, text + tagDataStart, tagDataEnd - tagDataStart);
-								bbTokenFirst->setTag(bbTagId[j]);
-								bbTokenLast = bbTokenFirst;
-								newTokenType = BBCODE;
-								newTokenSize = k - i;
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-		if (!bbFound) {
-			if (i==l) {
-				newTokenType = END;
-				newTokenSize = 1;
-			} else {
-				newTokenType = TEXT;
-				newTokenSize = 1;
-			}
-		}
-		if (newTokenType != TEXT) {
-			if (textLen >0 ) {
-                TextToken *newToken = new TextToken(TEXT, text+i-textLen, textLen);
-				textLen = 0;
-				if (lastToken == NULL) {
-					firstToken = newToken;
-				} else {
-				    lastToken->setNext(newToken);
-				}
-				lastToken = newToken;
-			}
-            if (newTokenType == BBCODE) {
-				if (lastToken == NULL) {
-					firstToken = bbTokenFirst;
-				} else {
-				    lastToken->setNext(bbTokenFirst);
-				}
-				lastToken = bbTokenLast;
-            }
-		} else {
-			textLen += newTokenSize;
-		}
-		i += newTokenSize;
-    }
-    return firstToken;
-}
-*/
 TextToken* TextToken::tokenizeLinks(const wchar_t *text) {
     TextToken *firstToken = NULL, *lastToken = NULL;
     int textLen = 0;
@@ -789,66 +553,24 @@ TextToken* TextToken::tokenizeLinks(const wchar_t *text) {
     return firstToken;
 }
 
-TextToken* TextToken::tokenizeSmileys(const char *proto, const wchar_t *text) {
- 	SmileyMap *smileyMap;
+TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) {
     TextToken *firstToken = NULL, *lastToken = NULL;
-	bool wasSpace;
-    int textLen = 0;
+	SMADD_PARSEW2 sp;
     int l = wcslen(text);
-	/*
-	if (!(Options::getSmileyFlags() & Options::SMILEY_ENABLED)) {
-	    return new TextToken(TEXT, text, l);
- 	}
-	*/
-	if ((proto!=NULL) && (Options::getSmileyFlags() & Options::SMILEY_PROTOCOLS)) {
-		smileyMap = SmileyMap::getSmileyMap(proto);
-	} else {
-		smileyMap = SmileyMap::getSmileyMap("");
-    }
-	if (smileyMap == NULL) {
+	int last_pos=0;
+	if (!ServiceExists(MS_SMILEYADD_PARSEW)) {
  		return new TextToken(TEXT, text, l);
- 	}
- 	wasSpace = true;
-    for (int i=0; i<=l;) {
-		int newTokenType, newTokenSize;
-		Smiley *newSmiley = NULL;
-        if (i == l) {
-			newTokenType = END;
-			newTokenSize = 1;
-		} else {
-		    Smiley* smiley = NULL;
-      		if (wasSpace) {
-    			smiley = smileyMap->getSmiley(text+i, &newTokenSize);
-                if (smiley != NULL) {
-                   	newTokenType = SMILEY;
-                   	newSmiley = smiley;
-                   	if (Options::getSmileyFlags() & Options::SMILEY_ISOLATED) {
-						int dummy;
-                       	if (smileyMap->getSmiley(text+i+newTokenSize, &dummy)==NULL && text[i+newTokenSize]!='\n'
-                       		&& text[i+newTokenSize]!='\r' && text[i+newTokenSize]!='\t'
-                         	&& text[i+newTokenSize]!=' ' && text[i+newTokenSize]!='\0') {
-                         	    smiley = NULL;
-                  		}
-                     }
-                }
-            }
-            if (smiley == NULL) {
-                wasSpace = true;
-               	if (Options::getSmileyFlags() & Options::SMILEY_ISOLATED) {
-                    if (text[i]!='\n' && text[i]!='\r' && text[i]!='\t' && text[i]!=' ') {
-                        wasSpace = false;
-                    }
-                }
-           	    smiley = NULL;
-    			newTokenType = TEXT;
-    			newTokenSize = 1;
-    			newSmiley = NULL;
-            }
-        }
-		if (newTokenType != TEXT) {
-			if (textLen >0 ) {
-                TextToken *newToken = new TextToken(TEXT, text+i-textLen, textLen);
-				textLen = 0;
+	}
+	sp.cbSize = sizeof(sp);
+	sp.Protocolname = proto;
+	sp.str = (wchar_t *)text;
+	sp.startChar = 0;
+	sp.size = 0;
+    while (last_pos < l) {
+		CallService(MS_SMILEYADD_PARSEW, 0, (LPARAM)&sp);
+		if (sp.size != 0) {
+			if (sp.startChar - last_pos > 0) {
+                TextToken *newToken = new TextToken(TEXT, text+last_pos, sp.startChar-last_pos);
 				if (lastToken == NULL) {
 					firstToken = newToken;
 				} else {
@@ -856,20 +578,25 @@ TextToken* TextToken::tokenizeSmileys(const char *proto, const wchar_t *text) {
 				}
 				lastToken = newToken;
 			}
-            if (newTokenType == SMILEY) {
-		        TextToken *newToken = new TextToken(newTokenType, text+i, newTokenSize);
-                newToken->setLink(newSmiley->getFile());
-				if (lastToken == NULL) {
-					firstToken = newToken;
-				} else {
-				    lastToken->setNext(newToken);
-				}
-				lastToken = newToken;
-            }
-		} else {
-			textLen += newTokenSize;
+            TextToken *newToken = new TextToken(SMILEY, text+sp.startChar, sp.size);
+            newToken->setLink(sp.filepath);
+			if (lastToken == NULL) {
+				firstToken = newToken;
+			} else {
+			    lastToken->setNext(newToken);
+			}
+			lastToken = newToken;
+            last_pos = sp.startChar + sp.size;
+        } else {
+            TextToken *newToken = new TextToken(TEXT, text+last_pos, l-last_pos);
+			if (lastToken == NULL) {
+				firstToken = newToken;
+			} else {
+			    lastToken->setNext(newToken);
+			}
+			lastToken = newToken;
+			break;
 		}
-		i += newTokenSize;
     }
     return firstToken;
 }
@@ -943,33 +670,15 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
         case SMILEY:
             eText = urlEncode(wtext);
             if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_FLASH) && (wcsstr(wlink, L".swf")!=NULL)) {
-	            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {
-                    Utils::appendText(str, sizeAlloced,
-		L" <span title=\"%s\" class=\"img\"><object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
-		codebase=\"http://active.macromedia.com/flash2/cabs/swflash.cab#version=4,0,0,0\" >\
-		<param NAME=\"movie\" VALUE=\"%s\"><param NAME=\"quality\" VALUE=\"high\"><PARAM NAME=\"loop\" VALUE=\"true\"></object></span><span style=\"position:absolute; visibility:hidden;\">%s</span> ",
-	            	wlink, eText);
-	            } else {
-                    Utils::appendText(str, sizeAlloced,
+                Utils::appendText(str, sizeAlloced,
 		L"<span title=\"%s\" class=\"img\"><object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
 		codebase=\"http://active.macromedia.com/flash2/cabs/swflash.cab#version=4,0,0,0\" >\
 		<param NAME=\"movie\" VALUE=\"%s\"><param NAME=\"quality\" VALUE=\"high\"><PARAM NAME=\"loop\" VALUE=\"true\"></object></span><span style=\"position:absolute; visibility:hidden;\">%s</span>",
-	            	wlink, eText);
-	            }
+            	wlink, eText);
+			} else if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_PNGHACK) && (wcsstr(wlink, L".png")!=NULL)) {
+	           	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\" alt=\"%s\"/><span style=\"position:absolute; visibility:hidden;\">%s</span>", wlink, eText, eText);
 			} else {
-				if (wcsstr(wlink, L".png")!=NULL) {
-		            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {//
-		            	Utils::appendText(str, sizeAlloced, L" <img class=\"img\" style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\" alt=\"%s\"/><span style=\"position:absolute; visibility:hidden;\">%s</span> ", wlink, eText, eText);
-		            } else {
-		            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\" alt=\"%s\"/><span style=\"position:absolute; visibility:hidden;\">%s</span>", wlink, eText, eText);
-		            }
-				} else {
-		            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {
-		            	Utils::appendText(str, sizeAlloced, L" <img class=\"img\" src=\"%s\" alt=\"%s\" /><span style=\"position:absolute; visibility:hidden;\">%s</span> ", wlink, eText, eText);
-		            } else {
-		            	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" /><span style=\"position:absolute; visibility:hidden;\">%s</span>", wlink, eText, eText);
-		            }
-				}
+	           	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" src=\"%s\" alt=\"%s\" /><span style=\"position:absolute; visibility:hidden;\">%s</span>", wlink, eText, eText);
 			}
             break;
         case MATH:
@@ -999,6 +708,8 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 		codebase=\"http://active.macromedia.com/flash2/cabs/swflash.cab#version=4,0,0,0\" width=\"100%%\" >\
 		<param NAME=\"movie\" VALUE=\"%s\"><param NAME=\"quality\" VALUE=\"high\"><PARAM NAME=\"loop\" VALUE=\"true\"></object></div>",
 						eText);
+					} else if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_PNGHACK) && (wcsstr(eText, L".png")!=NULL)) {
+			           	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\" />", eText);
 					} else {
         		    	Utils::appendText(str, sizeAlloced, L"<div style=\"width: 100%%; border: 0; overflow: hidden;\"><img class=\"img\" style=\"width: expression((maxw = this.parentNode.offsetWidth ) > this.width ? 'auto' : maxw);\" src=\"%s\" /></div>", eText);
 					}
@@ -1071,13 +782,13 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 		token = TextToken::tokenizeLinks(text);
 		break;
 	case 3:
-		if (Options::getSmileyFlags() & Options::SMILEY_ENABLED) {
-		    if ((flags & ENF_SMILEYS) ||
-      			((Options::getSmileyFlags() & Options::SMILEY_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) {
-			    token = TextToken::tokenizeSmileys(proto, text);
+//		if (Options::getSmileyFlags() & Options::SMILEY_ENABLED) {
+		/*    if ((flags & ENF_SMILEYS) ||
+      			((Options::getSmileyFlags() & Options::SMILEY_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) */{
+			    token = TextToken::tokenizeSmileysSA(proto, text);
       			break;
    			}
-		}
+	//	}
 		level++;
 	}
 	if (token!=NULL) {
