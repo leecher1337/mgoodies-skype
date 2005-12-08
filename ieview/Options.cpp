@@ -28,15 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 HANDLE hHookOptionsChanged;
 static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+//static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-static int protoNum;
-static char (*protoNames)[128];
-static char (*protoFilenames)[MAX_PATH];
-static HWND hwndEmoticons, hwndTemplates, hwndCurrentTab, hwndGeneral, hwndGroupChats;
-static int currentProtoItem;
-static HICON smileyIcon;
+static HWND hwndTemplates, hwndCurrentTab, hwndGeneral, hwndGroupChats;
 
 typedef struct tagTVKEYDOWN {
     NMHDR hdr;
@@ -108,13 +103,13 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 			TabCtrl_InsertItem(tc, 0, &tci);
 			tci.pszText = Translate("Message Log");
 			TabCtrl_InsertItem(tc, 1, &tci);
-			tci.pszText = Translate("Emoticons");
-			TabCtrl_InsertItem(tc, 2, &tci);
+//			tci.pszText = Translate("Emoticons");
+//			TabCtrl_InsertItem(tc, 2, &tci);
 			tci.pszText = Translate("Group Chats");
-			TabCtrl_InsertItem(tc, 3, &tci);
+			TabCtrl_InsertItem(tc, 2, &tci);
 
-			hwndEmoticons = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_EMOTICONS_OPTIONS), hwndDlg, IEViewEmoticonsOptDlgProc, (LPARAM) NULL);
-			SetWindowPos(hwndEmoticons, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
+//			hwndEmoticons = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_EMOTICONS_OPTIONS), hwndDlg, IEViewEmoticonsOptDlgProc, (LPARAM) NULL);
+	//		SetWindowPos(hwndEmoticons, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 			hwndTemplates = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_TEMPLATES_OPTIONS), hwndDlg, IEViewTemplatesOptDlgProc, (LPARAM) NULL);
 			SetWindowPos(hwndTemplates, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 			hwndGeneral = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_GENERAL_OPTIONS), hwndDlg, IEViewGeneralOptDlgProc, (LPARAM) NULL);
@@ -144,9 +139,9 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 							hwnd = hwndTemplates;
 							break;
 						case 2:
-							hwnd = hwndEmoticons;
-							break;
-						case 3:
+//							hwnd = hwndEmoticons;
+	//						break;
+		//				case 3:
 							hwnd = hwndGroupChats;
 							break;
 						}
@@ -161,7 +156,7 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 				break;
 			case PSN_APPLY:
 				SendMessage(hwndGeneral, WM_NOTIFY, wParam, lParam);
-				SendMessage(hwndEmoticons, WM_NOTIFY, wParam, lParam);
+//				SendMessage(hwndEmoticons, WM_NOTIFY, wParam, lParam);
 				SendMessage(hwndTemplates, WM_NOTIFY, wParam, lParam);
 				SendMessage(hwndGroupChats, WM_NOTIFY, wParam, lParam);
 				NotifyEventHooks(hHookOptionsChanged, 0, 0);
@@ -190,6 +185,9 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			if (Options::getGeneralFlags() & Options::GENERAL_ENABLE_MATHMODULE) {
 				CheckDlgButton(hwndDlg, IDC_ENABLE_MATHMODULE, TRUE);
 			}
+			if (Options::getGeneralFlags() & Options::GENERAL_ENABLE_PNGHACK) {
+				CheckDlgButton(hwndDlg, IDC_ENABLE_PNGHACK, TRUE);
+			}
 			EnableWindow(GetDlgItem(hwndDlg, IDC_ENABLE_MATHMODULE), Options::isMathModule());
 			return TRUE;
 		}
@@ -199,6 +197,7 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			case IDC_ENABLE_BBCODES:
             case IDC_ENABLE_FLASH:
             case IDC_ENABLE_MATHMODULE:
+            case IDC_ENABLE_PNGHACK:
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			}
@@ -218,355 +217,15 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 				if (IsDlgButtonChecked(hwndDlg, IDC_ENABLE_MATHMODULE)) {
 					i |= Options::GENERAL_ENABLE_MATHMODULE;
 				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_ENABLE_PNGHACK)) {
+					i |= Options::GENERAL_ENABLE_PNGHACK;
+				}
 				Options::setGeneralFlags(i);
 				return TRUE;
 			}
 		}
 		break;
 	case WM_DESTROY:
-		break;
-	}
-	return FALSE;
-}
-
-static void updateSmileyInfo(HWND hwndDlg, int proto) {
-	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-	SetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[proto]);
-	SmileyMap *map = SmileyMap::getLibraryInfo(protoFilenames[proto]);
-	TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), map!=NULL);
-	if (map != NULL) {
-		SetDlgItemText(hwndDlg, IDC_LIBNAME, map->getDescription());
-		SetDlgItemText(hwndDlg, IDC_LIBAUTHOR, map->getAuthor());
-		SetDlgItemText(hwndDlg, IDC_LIBVERSION, map->getVersion());
-		delete map;
-	} else {
-		SetDlgItemText(hwndDlg, IDC_LIBNAME, Translate("Not loaded"));
-		SetDlgItemText(hwndDlg, IDC_LIBAUTHOR, "");
-		SetDlgItemText(hwndDlg, IDC_LIBVERSION, "");
-	}
-	currentProtoItem = proto;
-}
-
-static void buildProtoList() {
-	int protoCount;
-	PROTOCOLDESCRIPTOR **pProtos;
-	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&protoCount, (LPARAM)&pProtos);
-	protoNum = protoCount+1;
-	protoNames = new char[protoCount+1][128];
-	protoFilenames = new char[protoCount+1][MAX_PATH];
-	for (int i = 0; i < protoNum; i++) {
-		protoNames[i][0] = '\0';
-		if (i==0) {
-			strcpy(protoNames[i], "");
-		} else if ((pProtos[i-1]->type == PROTOTYPE_PROTOCOL) && strcmp(pProtos[i-1]->szName,"MetaContacts")) {
-			strcpy(protoNames[i], pProtos[i-1]->szName);
-		} else {
-			continue;
-		}
-		char * path = (char *) Options::getSmileyFile(protoNames[i]);
-		if (path != NULL) {
-			strcpy (protoFilenames[i], path);
-		} else {
-			strcpy (protoFilenames[i], "");
-		}
-	}
-}
-
-static void refreshProtoList(HWND hwndDlg, BOOL protoSmileys) {
-    HTREEITEM hItem = NULL;
-	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-	TreeView_DeleteAllItems(hProtoList);
-	updateSmileyInfo(hwndDlg, 0);
-	for (int i = 0; i < protoNum; i++) {
-		if (i==0 || (protoSmileys && protoNames[i][0]!= '\0')) {
-			char protoName[128];
-			TVINSERTSTRUCT tvi = {0};
-			tvi.hParent = TVI_ROOT;
-			tvi.hInsertAfter = TVI_LAST;
-			tvi.item.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_STATE | TVIF_SELECTEDIMAGE;
-			tvi.item.stateMask = TVIS_SELECTED | TVIS_STATEIMAGEMASK;
-			if (i==0) {
-				strcpy(protoName, Translate("Standard"));
-			} else {
-				CallProtoService(protoNames[i], PS_GETNAME, sizeof(protoName), (LPARAM)protoName);
-			}
-			strcat(protoName, " ");
-			strcat(protoName, Translate("smileys"));
-			tvi.item.pszText = protoName;
-			tvi.item.iImage = i;
-			tvi.item.iSelectedImage = i;
-			tvi.item.state = INDEXTOSTATEIMAGEMASK(strlen(protoFilenames[i]) > 0 ? 2 : 1);
-			if (i==0) {
-                hItem = TreeView_InsertItem(hProtoList, &tvi);
-			} else {
-				TreeView_InsertItem(hProtoList, &tvi);
-			}
-			 
-		}
-	}
-	TreeView_SelectItem(hProtoList, hItem);
-}
-
-static int getSelProto(HWND hLstView, HTREEITEM hItem) {
-	TVITEM tvi = {0};
-	tvi.mask = TVIF_IMAGE;
-	tvi.hItem = hItem == NULL ? TreeView_GetSelection(hLstView) : hItem;
-	TreeView_GetItem(hLstView, &tvi);
-	return tvi.iImage;
-}
-
-static bool browseSmileys(HWND hwndDlg) {
-	char path[MAX_PATH];
-	OPENFILENAME ofn={0};
-	GetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, path, sizeof(path));
-	ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
-	ofn.hwndOwner = hwndDlg;
-	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Smiley Library (*.asl)\0*.asl\0All Files\0*.*\0\0";
-	ofn.lpstrFile = path;
-	ofn.Flags = OFN_FILEMUSTEXIST;
-	ofn.nMaxFile = sizeof(path);
-	ofn.nMaxFileTitle = MAX_PATH;
-	ofn.lpstrDefExt = "asl";
-	if(GetOpenFileName(&ofn)) {
-        strcpy(protoFilenames[currentProtoItem], path);
-		return true;
-	}
-	return false;
-}
-
-static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
-	int i;
-	BOOL bChecked;
-	switch (msg) {
-	case WM_INITDIALOG:
-		{
-			TranslateDialogDefault(hwndDlg);
-//			SendDlgItemMessage(hwndDlg, IDC_SMILEYS_PREVIEW, BM_SETIMAGE, IMAGE_ICON, (LPARAM) smileyIcon);
-
-			bChecked = FALSE;
-			i = Options::getSmileyFlags();
-			if (i&Options::SMILEY_ENABLED) {
-			    bChecked = TRUE;
-				CheckDlgButton(hwndDlg, IDC_SMILEYS, TRUE);
-			}
-			EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_FILENAME), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_SMILEYS), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_ISOLATED_SMILEYS), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_SURROUND_SMILEYS), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_IN_NAMES), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_PREVIEW), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_PROTOLIST), bChecked);
-//			EnableWindow(GetDlgItem(hwndDlg, IDC_REPLACE_SMILEYADD), bChecked);
-			SendDlgItemMessage(hwndDlg, IDC_BKGCOLOR, CPM_SETCOLOUR, 0, Options::getSmileyBackground());
-//			SendDlgItemMessage(hwndDlg, IDC_BKGCOLOUR, CPM_SETDEFAULTCOLOUR, 0, SRMSGDEFSET_BKGCOLOUR);
-			if (Options::getSmileyFlags() & Options::SMILEY_PROTOCOLS) {
-				CheckDlgButton(hwndDlg, IDC_PROTO_SMILEYS, TRUE);
-			} else {
-				bChecked = FALSE;
-			}
-			if (i&Options::SMILEY_ISOLATED) {
-				CheckDlgButton(hwndDlg, IDC_ISOLATED_SMILEYS, TRUE);
-			}
-			if (i&Options::SMILEY_SURROUND) {
-				CheckDlgButton(hwndDlg, IDC_SURROUND_SMILEYS, TRUE);
-			}
-			if (i&Options::SMILEY_SMILEYINNAMES) {
-				CheckDlgButton(hwndDlg, IDC_SMILEYS_IN_NAMES, TRUE);
-			}
-			buildProtoList();
-
-			{
-				int protoCount;
-				PROTOCOLDESCRIPTOR **pProtos;
-				CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&protoCount, (LPARAM)&pProtos);
-				HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-				HIMAGELIST hImageList = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
-					ILC_MASK | ILC_COLOR32, protoCount+1, 0);
-
-				for (i = 0; i<protoCount+1; i++)  {
-					HICON hIcon = NULL;
-					if (i > 0 ) {
-						if (pProtos[i-1]->type == PROTOTYPE_PROTOCOL) {
-							hIcon=(HICON)CallProtoService(pProtos[i-1]->szName, PS_LOADICON, PLI_PROTOCOL | PLIF_SMALL, 0);
-							if (hIcon == NULL)  {
-								hIcon=(HICON)CallProtoService(pProtos[i-1]->szName, PS_LOADICON, PLI_PROTOCOL, 0);
-							}
-						}
-					}
-					if (hIcon == NULL) {
-						hIcon = (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_SMILEY), IMAGE_ICON,
-										GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-					}
-					ImageList_AddIcon(hImageList, hIcon);
-					DestroyIcon(hIcon);
-				}
-				TreeView_SetImageList(hProtoList, hImageList, TVSIL_NORMAL);
-			}
-			refreshProtoList(hwndDlg, IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS));
-			return TRUE;
-		}
-	case WM_COMMAND:
-		{
-			switch (LOWORD(wParam)) {
-			case IDC_SMILEYS_FILENAME:
-				if (HIWORD(wParam)==EN_KILLFOCUS) {
-					GetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[currentProtoItem], MAX_PATH);
-					updateSmileyInfo(hwndDlg, currentProtoItem);
-				}
-				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE) {
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-				}
-				break;
-			case IDC_SMILEYS_PREVIEW:
-				{
-					char path[MAX_PATH];
-					HWND hLstView = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-					int iItem = getSelProto(hLstView, TreeView_GetSelection(hLstView));
-					GetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, path, sizeof(path));
-					if (SmileyMap::loadLibrary("IEVIewPreview", path)) {
-					    SmileyMap *map = SmileyMap::getSmileyMap("IEVIewPreview");
-					    if (map!=NULL) {
-	                        RECT rc;
-						    GetWindowRect(GetDlgItem(hwndDlg, IDC_SMILEYS_PREVIEW), &rc);
-							map->getWindow()->show(NULL, 0, 0, rc.left, rc.bottom);
-						}
-					} else {
-	                	SetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[iItem]);
-					}
-				}
-			    break;
-			case IDC_ISOLATED_SMILEYS:
-			case IDC_SURROUND_SMILEYS:
-			case IDC_SMILEYS_IN_NAMES:
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-				break;
-			case IDC_SMILEYS:
-				bChecked = IsDlgButtonChecked(hwndDlg, IDC_SMILEYS);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_FILENAME), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_SMILEYS), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_ISOLATED_SMILEYS), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_SURROUND_SMILEYS), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_IN_NAMES), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_PROTO_SMILEYS), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_PREVIEW), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_PROTOLIST), bChecked);
-			case IDC_PROTO_SMILEYS:
-				bChecked = IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS) & IsDlgButtonChecked(hwndDlg, IDC_SMILEYS);
-				if (!bChecked ) {
-					GetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[currentProtoItem], sizeof(MAX_PATH));
-				}
-				refreshProtoList(hwndDlg, IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS));
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-				break;
-			case IDC_BROWSE_SMILEYS:
-				if (browseSmileys(hwndDlg)) {
-					updateSmileyInfo(hwndDlg, currentProtoItem);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-				}
-				break;
-   			case IDC_BKGCOLOR:
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-				break;
-			}
-		}
-		break;
-	case UM_CHECKSTATECHANGE:
-		{
-			if (TreeView_GetCheckState((HWND)wParam, (HTREEITEM) lParam)) {
-				browseSmileys(hwndDlg);
-			} else {
-				strcpy(protoFilenames[getSelProto((HWND)wParam, (HTREEITEM) lParam)], "");
-			}
-			if ((HTREEITEM) lParam != TreeView_GetSelection((HWND)wParam)) {
-				TreeView_SelectItem((HWND)wParam, (HTREEITEM) lParam);
-			} else {
-				updateSmileyInfo(hwndDlg, currentProtoItem);
-			}
-			SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-		}
-		break;
-	case WM_NOTIFY:
-		{
-			if (((LPNMHDR)lParam)->idFrom == IDC_PROTOLIST) {
-				switch (((LPNMHDR)lParam)->code) {
-					case NM_CLICK:
-						{
-							TVHITTESTINFO ht = {0};
-							DWORD dwpos = GetMessagePos();
-							POINTSTOPOINT(ht.pt, MAKEPOINTS(dwpos));
-							MapWindowPoints(HWND_DESKTOP, ((LPNMHDR)lParam)->hwndFrom, &ht.pt, 1);
-							TreeView_HitTest(((LPNMHDR)lParam)->hwndFrom, &ht);
-							if (TVHT_ONITEMSTATEICON & ht.flags) {
-                                PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom, (LPARAM)ht.hItem);
-                                return FALSE;
-							}
-						}
-						break;
-					case TVN_KEYDOWN:
-						 if (((LPNMTVKEYDOWN) lParam)->wVKey == VK_SPACE)
-								PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom,
-								(LPARAM)TreeView_GetSelection(((LPNMHDR)lParam)->hwndFrom));
-						break;
-					case TVN_SELCHANGED:
-						{
-							LPNMTREEVIEW pnmtv = (LPNMTREEVIEW) lParam;
-							if (pnmtv->itemNew.state & TVIS_SELECTED) {
-								HWND hLstView = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-								TVITEM tvi = {0};
-								tvi.mask = TVIF_IMAGE;
-								tvi.hItem = TreeView_GetSelection(hLstView);
-								TreeView_GetItem(hLstView, &tvi);
-								int iItem = tvi.iImage;
-								GetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[currentProtoItem], MAX_PATH);
-								updateSmileyInfo(hwndDlg, iItem);
-							}
-						}
-						break;
-				}
-				break;
-			}
-			switch (((LPNMHDR) lParam)->code) {
-			case PSN_APPLY:
-				i = 0;
-				if (IsDlgButtonChecked(hwndDlg, IDC_SMILEYS)) {
-					i |= Options::SMILEY_ENABLED;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_ISOLATED_SMILEYS)) {
-					i |= Options::SMILEY_ISOLATED;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_SURROUND_SMILEYS)) {
-					i |= Options::SMILEY_SURROUND;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_SMILEYS_IN_NAMES)) {
-					i |= Options::SMILEY_SMILEYINNAMES;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS)) {
-					i |= Options::SMILEY_PROTOCOLS;
-				}
-				Options::setSmileyFlags(i);
-				Options::setSmileyBackground((DWORD)SendDlgItemMessage(hwndDlg, IDC_BKGCOLOR, CPM_GETCOLOUR, 0, 0));
-				SmileyMap::setSelectorBackground(Options::getSmileyBackground());
-				GetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[currentProtoItem], MAX_PATH);
-				for (i = 0; i < protoNum; i++) {
-					if (i==0 || protoNames[i][0] != '\0') {
-                    	Options::setSmileyFile(protoNames[i], protoFilenames[i]);
-					}
-				}
-				return TRUE;
-
-			}
-		}
-		break;
-	case WM_DESTROY:
-		if (protoNames != NULL) {
-			delete[] protoNames;
-			protoNames = NULL;
-		}
-		if (protoFilenames != NULL) {
-			delete[] protoFilenames;
-			protoFilenames = NULL;
-		}
 		break;
 	}
 	return FALSE;
@@ -1024,7 +683,6 @@ bool Options::isInited = false;
 bool Options::bMathModule = false;
 int Options::generalFlags;
 char *Options::bkgFilename = NULL;
-int Options::smileyFlags;
 int Options::groupChatFlags;
 char *Options::groupChatCSSFilename = NULL;
 char *Options::externalCSSFilename = NULL;
@@ -1032,7 +690,6 @@ char *Options::externalCSSFilenameRTL = NULL;
 char *Options::templatesFilename = NULL;
 char *Options::templatesFilenameRTL = NULL;
 char *Options::groupChatTemplatesFilename = NULL;
-DWORD Options::smileyBackground;
 int Options::srmmFlags;
 
 void Options::init() {
@@ -1042,8 +699,6 @@ void Options::init() {
 	DBVARIANT dbv;
 	generalFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, 0);
 	srmmFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SRMMFLAGS, FALSE);
-	smileyFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYSFLAGS, 1);
-	smileyBackground = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYBACKGROUND, 0xFFFFFF);
 	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_BACKGROUNDIMAGEFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
     	strcpy(tmpPath, dbv.pszVal);
@@ -1056,34 +711,6 @@ void Options::init() {
 	} else {
         bkgFilename = new char[1];
         strcpy(bkgFilename, "");
-	}
-	PROTOCOLDESCRIPTOR **protoList;
-	int protoCount;
-	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&protoCount, (LPARAM)&protoList);
-	for (int i = 0; i < protoCount; i++) {
-		if (protoList[i]->type == PROTOTYPE_PROTOCOL && strcmp(protoList[i]->szName,"MetaContacts")) {
-			char dbName[1024];
-			strcpy(dbName, protoList[i]->szName);
-			strcat(dbName, "SmileyFile");
-			if (!DBGetContactSetting(NULL,  ieviewModuleName, dbName, &dbv)) {
-			   	char tmpPath[MAX_PATH];
-            	strcpy(tmpPath, dbv.pszVal);
-            	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
-           	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-           		}
-				SmileyMap::loadLibrary(protoList[i]->szName, tmpPath);
-				DBFreeVariant(&dbv);
-			}
-		}
-	}
-	if (!DBGetContactSetting(NULL,  ieviewModuleName, "SmileyFile", &dbv)) {
-    	char tmpPath[MAX_PATH];
-		strcpy(tmpPath, dbv.pszVal);
-    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
-   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-   		}
-		SmileyMap::loadLibrary("", tmpPath);
-		DBFreeVariant(&dbv);
 	}
 	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_EXTERNALCSSFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
@@ -1167,7 +794,6 @@ void Options::init() {
 	TemplateMap::loadTemplates("default", templatesFilename);
 	TemplateMap::loadTemplates("default_rtl", templatesFilenameRTL);
 	TemplateMap::loadTemplates("groupchat", groupChatTemplatesFilename);
-	smileyIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(IDI_SMILEY), IMAGE_ICON, 0, 0, 0);
 //	mathModuleFlags = ServiceExists(MTH_GET_HTML_SOURCE) ? GENERAL_ENABLE_MATHMODULE : 0;
 }
 
@@ -1196,45 +822,6 @@ void Options::setGeneralFlags(int flags) {
 
 int	Options::getGeneralFlags() {
 	return generalFlags;
-}
-
-void Options::setSmileyFile(const char *proto, const char *filename) {
-	char dbName[1024];
-	strcpy(dbName, proto);
-	strcat(dbName, "SmileyFile");
-    char tmpPath[MAX_PATH];
-    strcpy (tmpPath, filename);
-    if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
-    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
-   	}
-	DBWriteContactSettingString(NULL, ieviewModuleName, dbName, tmpPath);
-	SmileyMap::loadLibrary(proto, filename);
-}
-
-const char *Options::getSmileyFile(const char *proto) {
-	SmileyMap *map = SmileyMap::getSmileyMap(proto);
-	if (map != NULL) {
-		return map->getFilename();
-	}
-    return NULL;
-}
-
-void Options::setSmileyFlags(int flags) {
-	smileyFlags = flags;
-	DBWriteContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYSFLAGS, (DWORD) flags);
-}
-
-int	Options::getSmileyFlags() {
-	return smileyFlags;
-}
-
-void Options::setSmileyBackground(DWORD color) {
-	smileyBackground = color;
-	DBWriteContactSettingDword(NULL, ieviewModuleName, DBS_SMILEYBACKGROUND, color);
-}
-
-DWORD Options::getSmileyBackground() {
-	return smileyBackground;
 }
 
 void Options::setExternalCSSFile(const char *filename) {

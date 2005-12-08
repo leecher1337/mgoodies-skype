@@ -77,50 +77,18 @@ STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Options",IDC_SIMPLE,5,5,294,80
+    GROUPBOX        "Options",IDC_SIMPLE,5,5,294,99
     CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,19,265,10
     LTEXT           "Currently the following BBCodes are supported: [b][i][u][img][size][color]",IDC_SIMPLE, 26,31,265,12
     CONTROL         "Enable support for Flash files in smileys and BBCodes",IDC_ENABLE_FLASH,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,46,265,10
-    CONTROL         "Enable MathModule support",IDC_ENABLE_MATHMODULE,"Button",BS_AUTOCHECKBOX |
+    CONTROL         "Enable workaround for PNG transparency",IDC_ENABLE_PNGHACK,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,61,265,10
-END
-
-IDD_EMOTICONS_OPTIONS DIALOGEX 2, 15, 306, 228
-STYLE DS_FIXEDSYS | WS_CHILD
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
-BEGIN
-    GROUPBOX        "Animated Smiley Libraries",IDC_SIMPLE,5,5,294,135
-    CONTROL         "Enable smiley replacement",IDC_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,19,250,10
-    CONTROL         "Specify library for each protocol",IDC_PROTO_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,26,34,250,10
- 	EDITTEXT        IDC_SMILEYS_FILENAME,120,55,148,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BROWSE_SMILEYS,270,55,15,11
-    CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP |
-                    TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER |
-                    WS_TABSTOP,14,50,100,83
-    LTEXT           "Name:",IDC_STATIC,120,80,30,8
-    LTEXT           "",IDC_LIBNAME,154,78,140,11,SS_SUNKEN | SS_PATHELLIPSIS
-    LTEXT           "Author:",IDC_STATIC,120,95,30,8
-    LTEXT           "",IDC_LIBAUTHOR,154,93,100,11,SS_SUNKEN | SS_PATHELLIPSIS
-    LTEXT           "Version:",IDC_STATIC,120,110,30,8
-    LTEXT           "",IDC_LIBVERSION,154,108,100,11,SS_SUNKEN | SS_PATHELLIPSIS
-    PUSHBUTTON      "Preview",IDC_SMILEYS_PREVIEW,257,93,36,25
-//	LISTBOX         IDC_PROTOLIST,14,55,80,75, LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-//    CONTROL         "", IDC_SMILEYS_PREVIEW,"MButtonClass", WS_TABSTOP,170,90,15,15, 0x18000000L
-    GROUPBOX        "Options",IDC_SIMPLE,5,143,294,48
-    CONTROL         "Only replace isolated smileys",IDC_ISOLATED_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,155,265,10
-    CONTROL         "Surround smileys with spaces",IDC_SURROUND_SMILEYS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,165,265,10
-    CONTROL         "Replace smileys in user names",IDC_SMILEYS_IN_NAMES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,175,265,10
-    GROUPBOX        "Smiley Selector",IDC_SIMPLE,5,194,294,26
-    LTEXT           "Background Color",IDC_STATIC,14,205,80,8
-    CONTROL         "",IDC_BKGCOLOR,"ColourPicker",WS_TABSTOP,150,203,32,12
+    CONTROL         "Enable MathModule support",IDC_ENABLE_MATHMODULE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,76,265,10
+//    CONTROL         "Replace smileys in user names",IDC_SMILEYS_IN_NAMES,"Button",BS_AUTOCHECKBOX |
+  //                  WS_TABSTOP,14,91,265,10
 END
 
 IDD_TEMPLATES_OPTIONS DIALOGEX 2, 15, 306, 228
