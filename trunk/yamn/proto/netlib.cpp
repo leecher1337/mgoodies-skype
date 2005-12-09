@@ -126,14 +126,33 @@ char* CNLClient::Recv(char *buf,int buflen) throw(DWORD)
 			buf=(char *)malloc(sizeof(char)*(buflen+1));
 		if(buf==NULL)
 			throw NetworkError=(DWORD)ENL_RECVALLOC;
+
+		NETLIBSELECT nls;
+		memset(&nls, 0, sizeof(NETLIBSELECT));
+		nls.cbSize = sizeof(NETLIBSELECT);
+		nls.dwTimeout = 60000;
+		nls.hReadConns[0] = hConnection;
+		switch (CallService(MS_NETLIB_SELECT, 0, (LPARAM) &nls)) 
+		{
+			case SOCKET_ERROR:
+			free(buf);
+			SystemError=WSAGetLastError();
+			throw NetworkError = (DWORD) ENL_RECV;
+			case 0: // time out!
+			free(buf);
+			throw NetworkError = (DWORD) ENL_TIMEOUT;
+		}
+
 		ZeroMemory(buf,buflen);
 		if(SOCKET_ERROR==(Rcv=Netlib_Recv(hConnection,buf,buflen,MSG_DUMPASTEXT)))
 		{
+			free(buf);
 			SystemError=WSAGetLastError();
 			throw NetworkError=(DWORD)ENL_RECV;
 		}
 		if(!Rcv)
 		{
+			free(buf);
 			SystemError=WSAGetLastError();
 			throw NetworkError=(DWORD)ENL_RECV;
 		}

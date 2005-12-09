@@ -607,7 +607,7 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 			item.pszText=NULL;
 			item.iSubItem=0;
 
-			SendMessageW(hListView,LVM_INSERTITEM,(WPARAM)0,(LPARAM)&item);
+			item.iItem = SendMessageW(hListView,LVM_INSERTITEM,(WPARAM)0,(LPARAM)&item);
 
 			item.pszText=Temp;
 			item.iSubItem=0;

@@ -26,9 +26,10 @@ enum
 	ENL_GETHOSTBYNAME,	//DNS error			//only wsock
 	ENL_CREATESOCKET,	//error creating socket		//only wsock
 	ENL_CONNECT,		//cannot connect to server
-	ENL_SEND,		//cannot send data
-	ENL_RECV,		//cannot receive data
+	ENL_SEND,			//cannot send data
+	ENL_RECV,			//cannot receive data
 	ENL_RECVALLOC,		//cannot allocate memory for received data
+	ENL_TIMEOUT,		//timed out during recv
 };
 
 #endif
