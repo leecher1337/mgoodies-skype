@@ -8,29 +8,9 @@
  * (c) majvan 2002-2004
  */
 
-#include <wchar.h>
-#include <windows.h>
-#include <direct.h>		//For _chdir()
-#include <commctrl.h>		//For hotkeys
-#include "../../../SDK/headers_c/newpluginapi.h"
-#include "../../../SDK/headers_c/m_utils.h"
-#include "../../../SDK/headers_c/m_system.h"
-#include "../../../SDK/headers_c/m_skin.h"
-#include "../../../SDK/headers_c/m_langpack.h"
-#include "../../../SDK/headers_c/m_clist.h"
-#include "../../../SDK/headers_c/m_options.h"
-#include "../../../SDK/headers_c/m_database.h"
-#include "SDK/Import/m_uninstaller.h"
-#include "SDK/Import/m_toptoolbar.h"
-#include "SDK/Import/icolib.h"
-#include "SDK/Import/m_kbdnotify.h"
-#include "browser/m_browser.h"
-#include "mails/m_mails.h"
-#include "m_protoplugin.h"
-#include "m_filterplugin.h"
-#include "m_yamn.h"
-#include "debug.h"
+
 #include "main.h"
+#include "yamn.h"
 #include "resources/resource.h"
 
 //- imported ---------------------------------------------------------------------------------------
@@ -45,75 +25,20 @@ extern HANDLE ExitEV;
 extern HANDLE WriteToFileEV;
 
 extern int PosX,PosY,SizeX,SizeY;
-//From debug.cpp
-#ifdef YAMN_DEBUG
-extern void InitDebug();
-extern void UnInitDebug();
-#endif
-//From synchro.cpp
-struct CExportedFunctions SynchroExported[];
-//From yamn.cpp
-extern int GetFcnPtrSvc(WPARAM wParam,LPARAM lParam);
-extern int GetVariablesSvc(WPARAM,LPARAM);
-extern int AddWndToYAMNWindowsSvc(WPARAM,LPARAM);
-extern int RemoveWndFromYAMNWindowsSvc(WPARAM,LPARAM);
-extern DWORD WINAPI YAMNHotKeyThread(LPVOID);
-extern void CALLBACK TimerProc(HWND,UINT,UINT,DWORD);
-extern int ForceCheckSvc(WPARAM,LPARAM);
-//extern int ExitProc(WPARAM,LPARAM);
+
 //From account.cpp
 extern LPCRITICAL_SECTION AccountStatusCS;
 extern LPCRITICAL_SECTION FileWritingCS;
-struct CExportedFunctions AccountExported[];
-extern int CreatePluginAccountSvc(WPARAM wParam,LPARAM lParam);
-extern int DeletePluginAccountSvc(WPARAM wParam,LPARAM lParam);
-extern int WriteAccountsToFileASvc(WPARAM wParam,LPARAM lParam);
-extern int WriteAccountsToFileWSvc(WPARAM wParam,LPARAM lParam);
-extern int AddAccountsFromFileASvc(WPARAM,LPARAM);
-extern int AddAccountsFromFileWSvc(WPARAM,LPARAM);
-extern int DeleteAccountSvc(WPARAM,LPARAM);
-extern int FindAccountByNameSvc(WPARAM wParam,LPARAM lParam);
-extern int GetNextFreeAccountSvc(WPARAM wParam,LPARAM lParam);
-//From protoplugin.cpp
-struct CExportedFunctions ProtoPluginExported[];
-extern int UnregisterProtoPlugins();
-extern int RegisterProtocolPluginSvc(WPARAM,LPARAM);
-extern int UnregisterProtocolPluginSvc(WPARAM,LPARAM);
-extern int GetFileNameWSvc(WPARAM,LPARAM);
-extern int GetFileNameASvc(WPARAM,LPARAM);
-extern int DeleteFileNameSvc(WPARAM,LPARAM);
-//From filterplugin.cpp
-struct CExportedFunctions FilterPluginExported[];
-extern int UnregisterFilterPlugins();
-extern int RegisterFilterPluginSvc(WPARAM,LPARAM);
-extern int UnregisterFilterPluginSvc(WPARAM,LPARAM);
-extern int FilterMailSvc(WPARAM,LPARAM);
-//From mails.cpp (MIME)
-struct CExportedFunctions MailExported[];
-extern int CreateAccountMailSvc(WPARAM wParam,LPARAM lParam);
-extern int DeleteAccountMailSvc(WPARAM wParam,LPARAM lParam);
-extern int LoadMailDataSvc(WPARAM wParam,LPARAM lParam);
-extern int UnloadMailDataSvc(WPARAM wParam,LPARAM);
-extern int SaveMailDataSvc(WPARAM wParam,LPARAM lParam);
-//From mime.cpp
-//extern void WINAPI ExtractHeaderFcn(char *,int,WORD,HYAMNMAIL);	//already in MailExported
-//From pop3comm.cpp
-extern int RegisterPOP3Plugin(WPARAM,LPARAM);
-extern int UninstallPOP3(PLUGINUNINSTALLPARAMS* ppup);			//to uninstall POP3 plugin with YAMN
-//From mailbrowser.cpp
-extern int RunMailBrowserSvc(WPARAM,LPARAM);
-//From badconnect.cpp
-extern int RunBadConnectionSvc(WPARAM,LPARAM);
-//From YAMNopts.cpp
-extern void WordToModAndVk(WORD,UINT *,UINT *);
-extern int YAMNOptInitSvc(WPARAM,LPARAM);
-
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
 WCHAR *ProfileName;		//e.g. "majvan"
 WCHAR *UserDirectory;		//e.g. "F:\WINNT\Profiles\UserXYZ"
+char *ProtoName;
+char *AltProtoName;
 char *szMirandaDir;
+
+int YAMN_STATUS;
 
 BOOL UninstallPlugins;
 
@@ -167,26 +92,6 @@ HANDLE hTTButton;		//TopToolBar button
 DWORD HotKeyThreadID;
 
 UINT SecTimer;
-
-//Executed after all plugins loaded
-//YAMN reads mails from file and notify every protocol it should set its functions
-int PostLoad(WPARAM,LPARAM);
-
-//Executed before Miranda is going to shutdown
-int Shutdown(WPARAM,LPARAM);
-
-//Executed when TopToolBar plugin loaded
-//Adds bitmap to toolbar
-int AddTopToolbarIcon(WPARAM,LPARAM);
-
-//Loads plugins located in MirandaDir/Plugins/YAMN/*.dll
-void LoadPlugins();
-
-//  Loading Icon and checking for icolib 
-void LoadIcons();
-
-//Ask information when user wants to uninstall plugin
-int UninstallQuestionSvc(WPARAM,LPARAM);
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -259,25 +164,29 @@ extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVers
 	return &pluginInfo;
 }
 
-static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
-{
-	hNeutralIcon= (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral");
-	hYamnIcon= (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn");
-	hNewMailIcon= (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail");
-	hConnectFailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail");
-	hTopToolBarUp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp");
-	hTopToolBarDown = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown");
-	return 0;
-}
-
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
-	CLISTMENUITEM mi;
+	
 	UINT mod,vk;
 	char pn[MAX_PATH+1];
 	char *fc;
 
 	pluginLink=link;
+
+	ProtoName = "YAMN";
+	YAMN_STATUS = ID_STATUS_ONLINE;
+
+	//Registering YAMN as protocol
+	PROTOCOLDESCRIPTOR pd;
+
+	memset(&pd,0,sizeof(pd));
+	pd.cbSize=sizeof(pd);
+	pd.szName=ProtoName;
+	pd.type=PROTOTYPE_PROTOCOL;
+	
+	CallService(MS_PROTO_REGISTERMODULE,0,(LPARAM)&pd);
+	
+	DBWriteContactSettingString(NULL, "Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
 
 	if(NULL==(ProfileName=new WCHAR[MAX_PATH]))
 		return 1;
@@ -322,55 +231,9 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 #ifdef YAMN_DEBUG
 	InitDebug();
 #endif
-//Create function for plugins
-//Function with which protocol plugin can register
-	CreateServiceFunction(MS_YAMN_GETFCNPTR,GetFcnPtrSvc);
-//Function returns pointer to YAMN variables
-	CreateServiceFunction(MS_YAMN_GETVARIABLES,GetVariablesSvc);
-//Function with which protocol plugin can register
-	CreateServiceFunction(MS_YAMN_REGISTERPROTOPLUGIN,RegisterProtocolPluginSvc);
-//Function with which protocol plugin can unregister
-	CreateServiceFunction(MS_YAMN_UNREGISTERPROTOPLUGIN,UnregisterProtocolPluginSvc);
-//Function creates an account for plugin
-	CreateServiceFunction(MS_YAMN_CREATEPLUGINACCOUNT,CreatePluginAccountSvc);
-//Function deletes plugin account 
-	CreateServiceFunction(MS_YAMN_DELETEPLUGINACCOUNT,DeletePluginAccountSvc);
-//Finds account for plugin by name
-	CreateServiceFunction(MS_YAMN_FINDACCOUNTBYNAME,FindAccountByNameSvc);
-//Creates next account for plugin
-	CreateServiceFunction(MS_YAMN_GETNEXTFREEACCOUNT,GetNextFreeAccountSvc);
-//Function removes account from YAMN queue. Does not delete it from memory
-	CreateServiceFunction(MS_YAMN_DELETEACCOUNT,DeleteAccountSvc);
-//Function finds accounts for specified plugin
-	CreateServiceFunction(MS_YAMN_READACCOUNTSA,AddAccountsFromFileASvc);
-//Function that reads all plugin mails from file
-	CreateServiceFunction(MS_YAMN_READACCOUNTSW,AddAccountsFromFileWSvc);
-//Function that stores all plugin mails to one file 
-	CreateServiceFunction(MS_YAMN_WRITEACCOUNTSA,WriteAccountsToFileASvc);
-//Function that stores all plugin mails to one file 
-	CreateServiceFunction(MS_YAMN_WRITEACCOUNTSW,WriteAccountsToFileWSvc);
-//Function that returns user's filename
-	CreateServiceFunction(MS_YAMN_GETFILENAMEA,GetFileNameASvc);
-//Function that returns user's filename (unicode input)
-	CreateServiceFunction(MS_YAMN_GETFILENAMEW,GetFileNameWSvc);
-//Releases unicode string from memory
-	CreateServiceFunction(MS_YAMN_DELETEFILENAME,DeleteFileNameSvc);
-//Checks mail
-	CreateServiceFunction(MS_YAMN_FORCECHECK,ForceCheckSvc);
-//Runs YAMN's mail browser
-	CreateServiceFunction(MS_YAMN_MAILBROWSER,RunMailBrowserSvc);
-//Runs YAMN's bad conenction window
-	CreateServiceFunction(MS_YAMN_BADCONNECTION,RunBadConnectionSvc);
-//Function creates new mail for plugin
-	CreateServiceFunction(MS_YAMN_CREATEACCOUNTMAIL,CreateAccountMailSvc);
-//Function deletes plugin account 
-	CreateServiceFunction(MS_YAMN_DELETEACCOUNTMAIL,DeleteAccountMailSvc);
-//Function with which filter plugin can register
-	CreateServiceFunction(MS_YAMN_REGISTERFILTERPLUGIN,RegisterFilterPluginSvc);
-//Function with which filter plugin can unregister
-	CreateServiceFunction(MS_YAMN_UNREGISTERFILTERPLUGIN,UnregisterFilterPluginSvc);
-//Function filters mail
-	CreateServiceFunction(MS_YAMN_FILTERMAIL,FilterMailSvc);
+
+
+	CreateServiceFunctions();
 
 	CallService(MS_SKIN_ADDNEWSOUND,0,(LPARAM)&NewMailSound);
 	CallService(MS_SKIN_ADDNEWSOUND,0,(LPARAM)&ConnectFailureSound);
@@ -378,29 +241,9 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	hNewMailHook=CreateHookableEvent(ME_YAMN_NEWMAIL);
 //	hUninstallPluginsHook=CreateHookableEvent(ME_YAMN_UNINSTALLPLUGINS);
 
-	HookEvent(ME_OPT_INITIALISE,YAMNOptInitSvc);
-
-	HookEvent(ME_PLUGINUNINSTALLER_UNINSTALL,UninstallQuestionSvc);
-
-	HookEvent(ME_SYSTEM_PRESHUTDOWN,Shutdown);
-
-		//Check if icolib is there
-	if(ServiceExists(MS_SKIN2_ADDICON))
-        HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
+	HookEvents();
 
 	LoadPlugins();
-	//  Loading Icon and checking for icolib 
-	LoadIcons();
-
-//Insert "Check mail (YAMN)" item to Miranda's menu
-	ZeroMemory(&mi,sizeof(mi));
-	mi.cbSize=sizeof(mi);
-	mi.position=0xb0000000;
-	mi.flags=CMIM_ICON;
-	mi.hIcon=hYamnIcon;
-	mi.pszName=Translate("Check &mail (YAMN)");
-	mi.pszService=MS_YAMN_FORCECHECK;
-	CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 
 	WordToModAndVk(DBGetContactSettingWord(NULL,YAMN_DBMODULE,YAMN_HKCHECKMAIL,YAMN_DEFAULTHK),&mod,&vk);
 		
@@ -415,6 +258,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 //user can be registered after all modules are loaded (see m_netlib.h in Miranda)
 	HookEvent(ME_TTB_MODULELOADED,AddTopToolbarIcon);
 	HookEvent(ME_SYSTEM_MODULESLOADED,RegisterPOP3Plugin);	//pop3 plugin must be included after all miranda modules are loaded
+
 
 #ifdef YAMN_VER_BETA
 	#ifndef YAMN_DEBUG
@@ -431,6 +275,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	MessageBox(NULL,"This YAMN beta version is intended for testing. You should inform author if it works or when it does not work. Please read included readme when available. Thank you.","YAMN beta",MB_OK);
 	#endif
 #endif
+	
 	return 0;
 }
 
@@ -494,70 +339,6 @@ extern "C" int __declspec(dllexport) Unload(void)
 	delete PluginRegCS;
 
 	return 0;
-}
-
-void LoadIcons()
-{
-	//Load icons
-
-	if(ServiceExists(MS_SKIN2_ADDICON))
-	{
-		//MessageBox(NULL,"Icolib present","test",0);
-		SKINICONDESC sid;
-		char szFilename[MAX_PATH];
-		strncpy(szFilename, "plugins\\YAMN.dll", MAX_PATH);
-
-		sid.cbSize = sizeof(SKINICONDESC);
-		sid.pszSection = "YAMN";
-		sid.pszDefaultFile = szFilename;
-
-		sid.pszName = "YAMN_Neutral";
-        sid.pszDescription = Translate("Neutral");
-        sid.iDefaultIndex = -IDI_ICONEUTRAL;
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-		
-		sid.pszName = "YAMN_Yamn";
-        sid.pszDescription = "YAMN";
-        sid.iDefaultIndex = -IDI_ICOYAMN1;
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		sid.pszName = "YAMN_NewMail";
-        sid.pszDescription = Translate("New Mail");
-        sid.iDefaultIndex = -IDI_ICOYAMN2;
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		sid.pszName = "YAMN_ConnectFail";
-        sid.pszDescription = Translate("Connect Fail");
-        sid.iDefaultIndex = -IDI_ICOYAMN3;
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		sid.pszName = "YAMN_TopToolBarUp";
-        sid.pszDescription = Translate("TopToolBar UP");
-        sid.iDefaultIndex = -IDI_ICOTTBUP;
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		sid.pszName = "YAMN_TopToolBarDown";
-        sid.pszDescription = Translate("TopToolBar Down");
-        sid.iDefaultIndex = -IDI_ICOTTBDW;
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		hNeutralIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral");
-		hYamnIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn");
-		hNewMailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail");
-		hConnectFailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail");
-		hTopToolBarUp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp");
-		hTopToolBarDown = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown");
-	}
-	else
-	{
-		hNeutralIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICONEUTRAL));
-		hYamnIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN1));
-		hNewMailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN2));
-		hConnectFailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN3));
-		hTopToolBarUp = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOTTBUP));
-		hTopToolBarDown = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOTTBDW));
-	}
-
 }
 
 void LoadPlugins()

@@ -180,6 +180,34 @@ SOURCE=.\mails\mails.cpp
 SOURCE=.\mails\mime.cpp
 # End Source File
 # End Group
+# Begin Group "POP3 plugin"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\proto\md5.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\proto\netlib.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\proto\pop3\pop3.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\proto\pop3\pop3comm.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\proto\pop3\pop3opt.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\proto\ssl.cpp
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\account.cpp
@@ -263,34 +291,6 @@ SOURCE=.\resources\ttbfcheck.bmp
 # Begin Source File
 
 SOURCE=.\resources\YAMN.rc
-# End Source File
-# End Group
-# Begin Group "POP3 plugin"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\proto\md5.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\proto\netlib.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\proto\pop3\pop3.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\proto\pop3\pop3comm.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\proto\pop3\pop3opt.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\proto\ssl.cpp
 # End Source File
 # End Group
 # Begin Group "Documentation"

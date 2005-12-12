@@ -4,6 +4,7 @@
  * (c) majvan 2002-2003
  */
 
+/*
 #include <tchar.h>
 #include <stdio.h>
 #include <windows.h>
@@ -21,6 +22,8 @@
 #include "../../resources/resource.h"
 #include "../../m_yamn.h"
 #include "../../debug.h"
+*/
+#include "../../yamn.h"
 #include "pop3comm.h"
 #include "pop3opt.h"
 
@@ -296,6 +299,7 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		CheckDlgButton(hDlg,IDC_CHECKST9,ActualAccount->StatusFlags & YAMN_ACC_ST9 ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKSTART,ActualAccount->StatusFlags & YAMN_ACC_STARTS ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKFORCE,ActualAccount->StatusFlags & YAMN_ACC_FORCE ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKCONTACT,ActualAccount->NewMailN.Flags & YAMN_ACC_CONT ? BST_CHECKED : BST_UNCHECKED);
 #ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"Options:SHOWACCOUNT:ActualAccountSO-read done\n");
 #endif
@@ -805,7 +809,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 						{
 							TCHAR Text[MAX_PATH];
 							WCHAR TextW[MAX_PATH];
-							BOOL Translated,NewAcc=FALSE,Check,CheckMsg,CheckSnd,CheckIco,CheckPopup,CheckPopupW,CheckApp,CheckNPopup,CheckNPopupW,CheckNMsgP,CheckFMsg,CheckFSnd,CheckFIco,CheckFPopup,CheckFPopupW,CheckPopN,CheckKBN;
+							BOOL Translated,NewAcc=FALSE,Check,CheckMsg,CheckSnd,CheckIco,CheckPopup,CheckPopupW,CheckApp,CheckNPopup,CheckNPopupW,CheckNMsgP,CheckFMsg,CheckFSnd,CheckFIco,CheckFPopup,CheckFPopupW,CheckPopN,CheckKBN, CheckContact;
 							BOOL CheckSSL,CheckAPOP;
 							BOOL Check0,Check1,Check2,Check3,Check4,Check5,Check6,Check7,Check8,Check9,CheckStart,CheckForce;
 							int Length,index;
@@ -823,6 +827,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 								CheckPopupW=(IsDlgButtonChecked(hDlg,IDC_CHECKCOL)==BST_CHECKED);
 								CheckApp=(IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED);
 								CheckKBN=(IsDlgButtonChecked(hDlg,IDC_CHECKKBN)==BST_CHECKED);
+								CheckContact=(IsDlgButtonChecked(hDlg,IDC_CHECKCONTACT)==BST_CHECKED);
 
 								CheckFSnd=(IsDlgButtonChecked(hDlg,IDC_CHECKFSND)==BST_CHECKED);
 								CheckFMsg=(IsDlgButtonChecked(hDlg,IDC_CHECKFMSG)==BST_CHECKED);
@@ -1048,6 +1053,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 									(CheckPopupW ? YAMN_ACC_POPC : 0) |
 									(CheckApp ? YAMN_ACC_APP : 0) |
 									(CheckKBN ? YAMN_ACC_KBN : 0) |
+									(CheckContact ? YAMN_ACC_CONT : 0) |
 									YAMN_ACC_MSGP;			//this is default: when new mail arrives and window was displayed, leave it displayed.
 
 								ActualAccount->NoNewMailN.Flags=
@@ -1084,6 +1090,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 //								if(0==WritePOP3Accounts())
 //									Beep(500,100);
 								WritePOP3Accounts();
+								RefreshContact();
 								return TRUE;
 							}
 						}

@@ -55,6 +55,7 @@ typedef struct CNotification
 #define YAMN_ACC_POPC	0x00000040	//Use custom colors in popup
 #define	YAMN_ACC_MSGP	0x00000080	//Persistant messgage. This means, when an situation occurs (e.g. new mail) and message is displayed, it is not destroyed when YAMN_ACC_MSG is not set
 #define YAMN_ACC_KBN	0x00000100  //Use Keyboard notify
+#define YAMN_ACC_CONT	0x00000200  //Use Contact notify
 //(1) - usable only in newmail notification
 	DWORD Flags;
 
@@ -180,6 +181,9 @@ typedef struct CAccount
 //Reading from messages means reading message queue (browsing through all messages) or reading message data
 //Use MsgsWaitToRead(),MsgsReadDone(),MsgsWaitToWrite(),MsgsWriteDone() synchronization functions
 	PSWMRG MessagesAccessSO;
+
+//For clist contact notification
+	HANDLE Contact; 
 
 	struct CAccount *Next;
 } *HACCOUNT;
