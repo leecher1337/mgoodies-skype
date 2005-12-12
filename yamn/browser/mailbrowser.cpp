@@ -1768,7 +1768,7 @@ DWORD WINAPI MailBrowser(LPVOID Param)
 int RunMailBrowserSvc(WPARAM wParam,LPARAM lParam)
 {
 	DWORD tid;
-//an event for successfull copy parameters to which point a pointer in stack for new thread
+	//an event for successfull copy parameters to which point a pointer in stack for new thread
 	HANDLE ThreadRunningEV;
 	PYAMN_MAILBROWSERPARAM Param=(PYAMN_MAILBROWSERPARAM)wParam;
 

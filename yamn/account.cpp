@@ -6,6 +6,7 @@
  * (c) majvan 2002-2004
  */
 
+/*
 #include <windows.h>
 #include <tchar.h>
 #include "../../../SDK/headers_c/newpluginapi.h"
@@ -13,7 +14,8 @@
 #include "m_messages.h"
 #include "m_protoplugin.h"
 #include "m_yamn.h"
-#include "debug.h"
+#include "debug.h"*/
+#include "yamn.h"
 #include "mails/m_mails.h"
 #if defined(DEBUG_FILEREAD) || defined(DEBUG_FILEREADMESSAGES) || defined(DEBUG_SYNCHRO)
 	#include <stdio.h>
@@ -1468,7 +1470,10 @@ int DeleteAccounts(HYAMNPROTOPLUGIN Plugin)
 
 	for(Finder=Plugin->FirstAccount;Finder!=NULL;Finder=Finder->Next)
 	{
+		if(Finder->Contact != NULL)
+			CallService(MS_DB_CONTACT_DELETE,(WPARAM)(HANDLE) Finder->Contact, 0);
 		DeletePluginAccountSvc((WPARAM)Finder,(LPARAM)0);
+
 	}
 
 //leave write access

@@ -3,18 +3,12 @@
  * 
  * (c) majvan 2002-2004
  */
-
-#include <windows.h>
-#include "../../../SDK/headers_c/newpluginapi.h"
-#include "../../../SDK/headers_c/m_utils.h"
-#include "../../../SDK/headers_c/m_clist.h"
-#include "SDK/Import/m_toptoolbar.h"
 #include "m_yamn.h"
-#include "debug.h"
 #include "m_protoplugin.h"
 #include "m_messages.h"
 #include "m_synchro.h"
 #include "main.h"
+#include "yamn.h"
 #ifdef DEBUG_SYNCHRO
 	#include <stdio.h>
 #endif

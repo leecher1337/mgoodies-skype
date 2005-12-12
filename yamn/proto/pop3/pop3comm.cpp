@@ -11,26 +11,7 @@
 
 
 #pragma warning( disable : 4290 )
-
-#include <tchar.h>
-#include <windows.h>
-#include <stdio.h>
-#include "../../../../../SDK/headers_c/newpluginapi.h"	//CallService,UnHookEvent
-#include "../../../../../SDK/headers_c/m_utils.h"		//window broadcasting
-#include "../../../../../SDK/headers_c/m_langpack.h"
-#include "../../../../../SDK/headers_c/m_options.h"
-#include "../../SDK/Import/m_uninstaller.h"			//PluginUninstaller structures
-#include "../../m_yamn.h"	//Main YAMN's variables
-#include "../../m_protoplugin.h"	//Protocol registration and so on
-#include "../../m_synchro.h"	//Synchronization
-#include "../../debug.h"	//if we want to debug our POP3 sessions
-#include "../../m_account.h"	//Account structure and all needed structures to cooperate with YAMN
-#include "../../m_messages.h"	//Messages sent to YAMN windows
-#include "../../mails/m_mails.h"	//use YAMN's mails
-#include "../../mails/m_decode.h"	//use decoding macros (needed for header extracting)
-#include "../../browser/m_browser.h"	//we want to run YAMN mailbrowser, no new mail notification and bad connect window
-#include "../../SDK/Import/icolib.h"
-#include "../../resources/resource.h"
+#include "../../yamn.h"
 #include "pop3.h"
 #include "pop3comm.h"		//all we need for POP3 account (POP3 account= YAMN account + some more POP3 specified members)
 
@@ -47,6 +28,9 @@ extern HANDLE RegisterNLClient(const char *name);
 extern int RegisterSSL();
 //this is imported because of one bug, should not be imported normally (this POP3 is plugin of YAMN)
 extern int FilterMailSvc(WPARAM,LPARAM);
+
+extern char *ProtoName;
+extern int YAMN_STATUS;
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -124,6 +108,9 @@ void ExtractUIDL(char *stream,int len,HYAMNMAIL queue);
 // queue- address of first message, where size of message #1 will be stored
 void ExtractList(char *stream,int len,HYAMNMAIL queue);
 
+//  Loading Icon and checking for icolib 
+void LoadIcons();
+
 struct YAMNExportedFcns *pYAMNFcn;
 struct MailExportedFcns *pYAMNMailFcn;
 
@@ -160,11 +147,11 @@ HYAMNPROTOPLUGIN POP3Plugin;
 YAMN_PROTOREGISTRATION POP3ProtocolRegistration=
 {
 	"POP3 protocol (internal)",
-	"0.2.4.7",
-	"© 2002-2004 majvan",
+	"0.0.0.2",
+	"© 2002-2004 majvan | 2005 tweety",
 	"Connects to POP3 server to see for new mails",
-	"om3tn@psg.sk",
-	"http://www.majvan.host.sk/Projekty/YAMN?fm=soft",
+	"",
+	"http://forums.miranda-im.org/showthread.php?t=3035",
 };
 
 WCHAR *FileName=NULL;
@@ -174,6 +161,8 @@ extern HICON hYamnIcon;
 extern HICON hNeutralIcon;
 extern HICON hNewMailIcon;
 extern HICON hConnectFailIcon;
+extern HICON hTopToolBarUp;
+extern HICON hTopToolBarDown;
 extern YAMN_VARIABLES YAMNVar;
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -223,19 +212,98 @@ void WINAPI StopPOP3Account(HACCOUNT Which)
 }
 
 
+void LoadIcons()
+{
+	//Load icons
+
+	if(ServiceExists(MS_SKIN2_ADDICON))
+	{
+		//MessageBox(NULL,"Icolib present","test",0);
+		SKINICONDESC sid;
+		char szFilename[MAX_PATH];
+		strncpy(szFilename, "plugins\\YAMN.dll", MAX_PATH);
+
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.pszSection = "YAMN";
+		sid.pszDefaultFile = szFilename;
+
+		sid.pszName = "YAMN_Neutral";
+        sid.pszDescription = Translate("Neutral");
+        sid.iDefaultIndex = -IDI_ICONEUTRAL;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		
+		sid.pszName = "YAMN_Yamn";
+        sid.pszDescription = "YAMN";
+        sid.iDefaultIndex = -IDI_ICOYAMN1;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		sid.pszName = "YAMN_NewMail";
+        sid.pszDescription = Translate("New Mail");
+        sid.iDefaultIndex = -IDI_ICOYAMN2;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		sid.pszName = "YAMN_ConnectFail";
+        sid.pszDescription = Translate("Connect Fail");
+        sid.iDefaultIndex = -IDI_ICOYAMN3;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		sid.pszName = "YAMN_TopToolBarUp";
+        sid.pszDescription = Translate("TopToolBar UP");
+        sid.iDefaultIndex = -IDI_ICOTTBUP;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		sid.pszName = "YAMN_TopToolBarDown";
+        sid.pszDescription = Translate("TopToolBar Down");
+        sid.iDefaultIndex = -IDI_ICOTTBDW;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		hNeutralIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral");
+		hYamnIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn");
+		hNewMailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail");
+		hConnectFailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail");
+		hTopToolBarUp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp");
+		hTopToolBarDown = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown");
+	}
+	else
+	{
+		hNeutralIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICONEUTRAL));
+		hYamnIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN1));
+		hNewMailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN2));
+		hConnectFailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN3));
+		hTopToolBarUp = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOTTBUP));
+		hTopToolBarDown = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOTTBDW));
+	}
+
+}
 
 //This function is like main function for POP3 internal protocol
 int RegisterPOP3Plugin(WPARAM,LPARAM)
 {
-//Get YAMN variables we can use
+	CLISTMENUITEM mi;
+
+	//  Loading Icon and checking for icolib 
+	LoadIcons();
+
+	//Insert "Check mail (YAMN)" item to Miranda's menu
+	ZeroMemory(&mi,sizeof(mi));
+	mi.cbSize=sizeof(mi);
+	mi.position=0xb0000000;
+	mi.flags=CMIM_ICON;
+	mi.hIcon=hYamnIcon;
+	mi.pszName=Translate("Check &mail (YAMN)");
+	mi.pszService=MS_YAMN_FORCECHECK;
+	CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
+
+
+	//Get YAMN variables we can use
 	if(NULL==(pYAMNVar=(PYAMN_VARIABLES)CallService(MS_YAMN_GETVARIABLES,(WPARAM)YAMN_VARIABLESVERSION,(LPARAM)0)))
 		return 0;
 
-//We have to get pointers to YAMN exported functions: allocate structure and fill it
+	//We have to get pointers to YAMN exported functions: allocate structure and fill it
 	if(NULL==(pYAMNFcn=new struct YAMNExportedFcns))
 		return 0;
 
-//Register new pop3 user in netlib
+	//Register new pop3 user in netlib
 	if(NULL==(hNetLib=RegisterNLClient("YAMN-POP3")))
 	{
 		delete pYAMNFcn;
@@ -268,22 +336,22 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	pYAMNMailFcn->FindMessageByIDFcn=(YAMN_FINDMIMEMESSAGEFCN)CallService(MS_YAMN_GETFCNPTR,(WPARAM)YAMN_FINDMIMEMESSAGEID,(LPARAM)0);
 	pYAMNMailFcn->CreateNewDeleteQueueFcn=(YAMN_CREATENEWDELETEQUEUEFCN)CallService(MS_YAMN_GETFCNPTR,(WPARAM)YAMN_CREATENEWDELETEQUEUEID,(LPARAM)0);
 
-//set static variable
+	//set static variable
 	if(CPOP3Account::AccountWriterSO==NULL)
 		CPOP3Account::AccountWriterSO=new SCOUNTER;
 
-//First, we register this plugin
-//it is quite impossible this function returns zero (failure) as YAMN and internal plugin structre versions are the same
+	//First, we register this plugin
+	//it is quite impossible this function returns zero (failure) as YAMN and internal plugin structre versions are the same
 	if(NULL==(POP3Plugin=(HYAMNPROTOPLUGIN)CallService(MS_YAMN_REGISTERPROTOPLUGIN,(WPARAM)&POP3ProtocolRegistration,(LPARAM)YAMN_PROTOREGISTRATIONVERSION)))
 		return 0;
 
-//Next we set our imported functions for YAMN
+	//Next we set our imported functions for YAMN
 	if(!SetProtocolPluginFcnImport(POP3Plugin,&POP3ProtocolFunctions,YAMN_PROTOIMPORTFCNVERSION,&POP3MailFunctions,YAMN_MAILIMPORTFCNVERSION))
 		return 0;
 
-//Then, we read all mails for accounts.
-//You must first register account, before using this function as YAMN must use CreatePOP3Account function to add new accounts
-//But if CreatePOP3Account is not implemented (equals to NULL), YAMN creates account as YAMN's standard HACCOUNT
+	//Then, we read all mails for accounts.
+	//You must first register account, before using this function as YAMN must use CreatePOP3Account function to add new accounts
+	//But if CreatePOP3Account is not implemented (equals to NULL), YAMN creates account as YAMN's standard HACCOUNT
 	FileName=(WCHAR *)CallService(MS_YAMN_GETFILENAMEA,(WPARAM)"pop3",(LPARAM)0);
 
 	switch(CallService(MS_YAMN_READACCOUNTSW,(WPARAM)POP3Plugin,(LPARAM)FileName))
@@ -311,8 +379,49 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	}
 	HookEvent(ME_OPT_INITIALISE,POP3OptInit);
 
-	//  Loading Icon and checking for icolib 
-	//LoadIcons();
+	HACCOUNT Finder;
+	HANDLE hContact;
+	DBVARIANT dbv;
+	char *szProto;
+	char *szId;
+
+	szId = NULL;
+	for(Finder=POP3Plugin->FirstAccount;Finder!=NULL;Finder=Finder->Next)
+	{
+		Finder->Contact = NULL;
+		hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
+		while(hContact) 
+		{
+			szProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+			if(szProto != NULL && strcmp(szProto, ProtoName)==0)
+			{
+				if(!DBGetContactSetting(hContact,ProtoName,"Id",&dbv)) 
+				{
+					
+					if( strcmp((char*)dbv.pszVal, Finder->Name)==0)
+					{
+						Finder->Contact = hContact;
+						DBWriteContactSettingWord(Finder->Contact, ProtoName, "Status", YAMN_STATUS);
+						DBWriteContactSettingString(Finder->Contact, "CList", "StatusMsg", Translate("No new mail"));
+					}
+					DBFreeVariant(&dbv);
+				}
+
+			}
+			hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0);
+		}
+		if(Finder->Contact == NULL && (Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
+		{
+			//No account contact found, have to create one
+			Finder->Contact =(HANDLE) CallService(MS_DB_CONTACT_ADD, 0, 0);
+			CallService(MS_PROTO_ADDTOCONTACT,(WPARAM)Finder->Contact,(LPARAM)ProtoName);
+			DBWriteContactSettingString(Finder->Contact,ProtoName,"Id",Finder->Name);
+			DBWriteContactSettingString(Finder->Contact,ProtoName,"Nick",Finder->Name);
+			DBWriteContactSettingString(Finder->Contact,"Protocol","p",ProtoName);
+			DBWriteContactSettingWord(Finder->Contact, ProtoName, "Status", YAMN_STATUS);
+		}
+
+	}
 
 	return 0;
 }

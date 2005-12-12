@@ -42,6 +42,7 @@
 #define IDC_EDITAPP                     1027
 #define IDC_CHECKST8                    1028
 #define IDC_CHECKST9                    1029
+#define IDC_CHECKCONTACT                1030
 #define IDC_STTIMELEFT                  1033
 #define IDC_LISTMAILS                   1038
 #define IDC_EDITAPPPARAM                1044
@@ -89,6 +90,7 @@
 #define IDC_CHECKSSL                    1117
 #define IDC_CHECKNMSGP                  1118
 #define IDC_CHECKKBN                    1121
+#define IDC_GBCONTACT                   1122
 #define IDC_CHECKAPOP                   1200
 
 // Next default values for new objects
@@ -97,7 +99,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        139
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1122
+#define _APS_NEXT_CONTROL_VALUE         1123
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
