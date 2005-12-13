@@ -407,6 +407,14 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 						Finder->Contact = hContact;
 						DBWriteContactSettingWord(Finder->Contact, ProtoName, "Status", YAMN_STATUS);
 						DBWriteContactSettingString(Finder->Contact, "CList", "StatusMsg", Translate("No new mail"));
+						if((Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
+						{
+							DBDeleteContactSetting(Finder->Contact, "CList", "Hidden");
+						}
+						if(!(Finder->Flags & YAMN_ACC_ENA) || !(Finder->NewMailN.Flags & YAMN_ACC_CONT))
+						{
+							DBWriteContactSettingByte(Finder->Contact, "CList", "Hidden", 1);
+						}
 					}
 					DBFreeVariant(&dbv);
 				}

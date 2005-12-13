@@ -1468,10 +1468,7 @@ int DeleteAccounts(HYAMNPROTOPLUGIN Plugin)
 
 	for(Finder=Plugin->FirstAccount;Finder!=NULL;Finder=Finder->Next)
 	{
-		if(Finder->Contact != NULL)
-			CallService(MS_DB_CONTACT_DELETE,(WPARAM)(HANDLE) Finder->Contact, 0);
 		DeletePluginAccountSvc((WPARAM)Finder,(LPARAM)0);
-
 	}
 
 //leave write access
