@@ -688,7 +688,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		cEvent.cbSize = sizeof(CLISTEVENT);
 		cEvent.hContact = ActualAccount->Contact;
 		cEvent.hIcon = hNewMailIcon;
-		cEvent.flags = 0;
+		cEvent.flags = CLEF_URGENT;
 		cEvent.hDbEvent = NULL;
 		cEvent.lParam = (LPARAM) ActualAccount->Contact;
 		cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
