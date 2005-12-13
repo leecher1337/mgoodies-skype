@@ -237,13 +237,13 @@ STYLE DS_SYSMODAL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    COMBOBOX        IDC_COMBOACCOUNT,5,5,140,65,CBS_DROPDOWN | CBS_SORT
-    PUSHBUTTON      "Delete",IDC_BTNDEL,240,132,75,13,0,WS_EX_TRANSPARENT
-    PUSHBUTTON      "Default",IDC_BTNDEFAULT,240,147,75,13
-    PUSHBUTTON      "Reset counter",IDC_BTNRESET,240,162,75,13
+    COMBOBOX        IDC_COMBOACCOUNT,10,6,140,65,CBS_DROPDOWN | CBS_SORT
+    PUSHBUTTON      "Delete",IDC_BTNDEL,247,122,75,13,0,WS_EX_TRANSPARENT
+    PUSHBUTTON      "Default",IDC_BTNDEFAULT,248,137,75,13
+    PUSHBUTTON      "Reset counter",IDC_BTNRESET,248,152,75,13
     CONTROL         "Check this account",IDC_CHECK,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,5,20,135,10,WS_EX_TRANSPARENT
-    EDITTEXT        IDC_EDITINTERVAL,125,32,20,12,ES_AUTOHSCROLL | ES_NUMBER,
+                    WS_TABSTOP,11,21,135,10,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_EDITINTERVAL,131,32,20,12,ES_AUTOHSCROLL | ES_NUMBER,
                     WS_EX_TRANSPARENT
     CONTROL         "Sound notification",IDC_CHECKSND,"Button",
                     BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,12,57,135,10
@@ -257,9 +257,9 @@ BEGIN
     EDITTEXT        IDC_EDITAPP,41,113,65,12,ES_AUTOHSCROLL | ES_READONLY
     EDITTEXT        IDC_EDITAPPPARAM,111,113,40,12,ES_AUTOHSCROLL
     CONTROL         "Popup notification",IDC_CHECKPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,11,129,108,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,129,108,10
     CONTROL         "",IDC_CHECKCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    120,131,8,10
+                    120,131,9,10
     CONTROL         "",IDC_CPB,"ColourPicker",WS_TABSTOP,130,131,10,10
     CONTROL         "",IDC_CPT,"ColourPicker",WS_TABSTOP,141,131,10,10
     CONTROL         "Single popup",IDC_RADIOPOP1,"Button",BS_AUTORADIOBUTTON | 
@@ -269,7 +269,7 @@ BEGIN
     CONTROL         "Popup if no mail",IDC_CHECKNPOP,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,11,193,94,10
     CONTROL         "",IDC_CHECKNCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    120,193,8,10
+                    120,193,10,10
     CONTROL         "",IDC_CPNB,"ColourPicker",WS_TABSTOP,141,193,10,10
     CONTROL         "",IDC_CPNT,"ColourPicker",WS_TABSTOP,130,193,10,10
     CONTROL         "Sound notification if failed",IDC_CHECKFSND,"Button",
@@ -281,7 +281,7 @@ BEGIN
     CONTROL         "Popup notification if failed",IDC_CHECKFPOP,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,160,222,118,10
     CONTROL         "",IDC_CHECKFCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    286,222,11,10
+                    288,221,11,10
     CONTROL         "",IDC_CPFB,"ColourPicker",WS_TABSTOP,300,221,10,10
     CONTROL         "",IDC_CPFT,"ColourPicker",WS_TABSTOP,311,221,10,10
     EDITTEXT        IDC_EDITSERVER,240,15,75,12,ES_AUTOHSCROLL | WS_GROUP
@@ -315,8 +315,8 @@ BEGIN
     CONTROL         "Startup check",IDC_CHECKSTART,"Button",BS_AUTOCHECKBOX | 
                     BS_NOTIFY | WS_TABSTOP,160,150,70,15
     LTEXT           "Default codepage:",IDC_STCP,155,5,70,8
-    LTEXT           "",IDC_STTIMELEFT,7,238,148,8
-    LTEXT           "Check interval [min]:",IDC_STINTERVAL,5,35,115,10
+    LTEXT           "",IDC_STTIMELEFT,7,238,142,8
+    LTEXT           "Check interval [min]:",IDC_STINTERVAL,11,35,115,10
     LTEXT           "Check while:",IDC_STWCHECK,160,35,70,10
     CONTROL         "Check from menu",IDC_CHECKFORCE,"Button",
                     BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,160,165,70,8
@@ -330,10 +330,10 @@ BEGIN
     LTEXT           "s",IDC_STATIC,144,143,8,8
     LTEXT           "s",IDC_STATIC,144,207,8,8
     LTEXT           "s",IDC_STATIC,313,234,8,8
-    GROUPBOX        "New mail notifications",IDC_GBNEWMAIL,5,47,150,132
-    GROUPBOX        "No new mail notifications",IDC_GBNONEWMAIL,7,178,148,45
+    GROUPBOX        "New mail notifications",IDC_GBNEWMAIL,7,47,148,129
+    GROUPBOX        "No new mail notifications",IDC_GBNONEWMAIL,7,179,148,45
     GROUPBOX        "Connection failure notifications",IDC_GBBADCONNECT,156,
-                    178,168,70
+                    179,168,70
     LTEXT           "",IDC_STSTATUS,7,238,155,8
     CONTROL         "APOP auth",IDC_CHECKAPOP,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,240,105,71,10

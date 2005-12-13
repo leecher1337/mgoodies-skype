@@ -366,12 +366,14 @@ void RefreshContact(void)
 			if((Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
 			{
 				DBWriteContactSettingWord(Finder->Contact, ProtoName, "Status", YAMN_STATUS);
-				DBWriteContactSettingString(Finder->Contact, "CList", "StatusMsg", Translate("No new mail"));
+				//DBWriteContactSettingString(Finder->Contact, "CList", "StatusMsg", Translate("No new mail"));
+				DBDeleteContactSetting(Finder->Contact, "CList", "Hidden");
 			}
 			else
 			{
-				CallService(MS_DB_CONTACT_DELETE,(WPARAM)(HANDLE) Finder->Contact, 0);
-				Finder->Contact = NULL;
+				//CallService(MS_DB_CONTACT_DELETE,(WPARAM)(HANDLE) Finder->Contact, 0);
+				DBWriteContactSettingByte(Finder->Contact, "CList", "Hidden", 1);
+				//Finder->Contact = NULL;
 			}
 		}
 		else
