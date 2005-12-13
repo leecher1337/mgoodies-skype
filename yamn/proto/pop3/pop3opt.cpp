@@ -230,6 +230,7 @@ BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	EnableWindow(GetDlgItem(hDlg,IDC_BTNDEFAULT),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKSSL),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKAPOP),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKCONTACT),(BOOL)wParam);
 	return TRUE;
 }
 
@@ -621,6 +622,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_RADIOPOPN:
 				case IDC_RADIOPOP1:
 				case IDC_CHECKAPOP:
+				case IDC_CHECKCONTACT:
 					Changed=TRUE;
 					break;
 				case IDC_CHECKSSL:
