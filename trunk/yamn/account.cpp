@@ -36,8 +36,6 @@ extern DWORD WINAPI SWMRGWaitToWrite(PSWMRG pSWMRG,DWORD dwTimeout);
 extern void WINAPI SWMRGDoneWriting(PSWMRG pSWMRG);
 extern DWORD WINAPI SWMRGWaitToRead(PSWMRG pSWMRG, DWORD dwTimeout);
 extern void WINAPI SWMRGDoneReading(PSWMRG pSWMRG);
-extern DWORD WINAPI WaitToWriteFcn(PSWMRG SObject,PSCOUNTER=NULL);
-extern void WINAPI WriteDoneFcn(PSWMRG SObject,PSCOUNTER=NULL);
 extern DWORD WINAPI WaitToReadFcn(PSWMRG SObject);
 extern void WINAPI ReadDoneFcn(PSWMRG SObject);
 extern HYAMNPROTOPLUGIN FindPlugin(DWORD PluginID);
