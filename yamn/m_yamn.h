@@ -86,6 +86,26 @@ struct CExportedServices
 //LPARAM- not used
 #define MS_YAMN_FORCECHECK		"YAMN/Service/ForceCheck"
 
+//Contact List Context Menu Click
+//wParam=(WPARAM)hContact
+//lParam=0
+//
+//Event is fired when there is a double click on a CList contact,
+//it is upto the caller to check for the protocol & status
+//of the HCONTACT, it's not done for you anymore since it didn't make
+//sense to store all this information in memory, etc.
+#define MS_YAMN_CLISTCONTEXT	"YAMN/Service/ClistContactContextMenu"
+
+//Contact List Double Click
+//wParam=(WPARAM)hContact
+//lParam=0
+//
+//Event is fired when there is a double click on a CList contact,
+//it is upto the caller to check for the protocol & status
+//of the HCONTACT, it's not done for you anymore since it didn't make
+//sense to store all this information in memory, etc.
+#define MS_YAMN_CLISTDBLCLICK	"YAMN/Service/ClistContactDoubleclicked"
+
 //FilterMail Service
 //Ask YAMN to process mail filtering. YAMN calls filter plugins to mark mail as spam etc... Warning! Leave all
 //read or write access to mail as this function waits for write-access to mail!

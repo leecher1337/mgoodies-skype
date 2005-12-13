@@ -9,6 +9,30 @@ extern HICON hConnectFailIcon;
 extern HICON hTopToolBarUp;
 extern HICON hTopToolBarDown;
 
+
+//MessageWndCS
+//We want to send messages to all windows in the queue
+//When we send messages, no other window can register itself to the queue for receiving messages
+extern LPCRITICAL_SECTION MessageWndCS;
+
+//Plugin registration CS
+//Used if we add (register) plugin to YAMN plugins and when we browse through registered plugins
+extern LPCRITICAL_SECTION PluginRegCS;
+
+//AccountWriterCS
+//We want to store number of writers of Accounts (number of Accounts used for writing)
+//If we want to read all accounts (for saving to file) immidiatelly, we have to wait until no account is changing (no thread writing to account)
+extern SCOUNTER *AccountWriterSO;
+
+//NoExitEV
+//Event that is signaled when there's a request to exit, so no new pop3 check should be performed
+extern HANDLE ExitEV;
+
+//WriteToFileEV
+//If this is signaled, write accounts to file is performed. Set this event if you want to actualize your accounts and messages
+extern HANDLE WriteToFileEV;
+
+
 extern char *ProtoName;
 extern int YAMN_STATUS;
 
@@ -74,33 +98,132 @@ static int Service_LoadIcon(WPARAM wParam,LPARAM lParam)
 	}
 	return 0;
 }
+ 
+static int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
+{
+	ContactDoubleclicked(((CLISTEVENT*)lParam)->lParam, lParam);
+	return 0;
+}
 
 static int Service_ContactDoubleclicked(WPARAM wParam, LPARAM lParam)
 {
+	ContactDoubleclicked(wParam, lParam);
+	return 0;
+}
+
+static int ContactMailCheck(WPARAM wParam, LPARAM lParam)
+{
+
 	DBVARIANT dbv;
 	char *szProto;
-	WPARAM mwParam;
+	HACCOUNT ActualAccount;
+	HANDLE ThreadRunningEV;
+	DWORD tid;
 
 	szProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0);
 	if(szProto != NULL && strcmp(szProto, ProtoName)==0)
 	{
 		if(!DBGetContactSetting((HANDLE) wParam,ProtoName,"Id",&dbv)) 
 		{
-			mwParam = CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
-			if(mwParam != NULL)
+			ActualAccount=(HACCOUNT) CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
+			if(ActualAccount != NULL)
 			{
-				YAMN_MAILBROWSERPARAM Param={(HANDLE)0,(CAccount*)mwParam,YAMN_ACC_MSGP,YAMN_ACC_MSGP,NULL};
+				//we use event to signal, that running thread has all needed stack parameters copied
+				if(NULL==(ThreadRunningEV=CreateEvent(NULL,FALSE,FALSE,NULL)))
+					return 0;
+				//if we want to close miranda, we get event and do not run pop3 checking anymore
+				if(WAIT_OBJECT_0==WaitForSingleObject(ExitEV,0))
+					return 0;
+				EnterCriticalSection(PluginRegCS);
+				#ifdef DEBUG_SYNCHRO
+				DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read wait\n");
+				#endif
+				if(WAIT_OBJECT_0!=WaitToReadFcn(ActualAccount->AccountAccessSO))
+				{
+					#ifdef DEBUG_SYNCHRO
+					DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read wait failed\n");
+					#endif
+				}
+				else
+				{
+					#ifdef DEBUG_SYNCHRO
+					DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read enter\n");
+					#endif
+					if((ActualAccount->Flags & YAMN_ACC_ENA) && (ActualAccount->StatusFlags & YAMN_ACC_FORCE))			//account cannot be forced to check
+					{
+						if(ActualAccount->Plugin->Fcn->ForceCheckFcnPtr==NULL)
+						{
+							ReadDoneFcn(ActualAccount->AccountAccessSO);
+						}
+						struct CheckParam ParamToPlugin={YAMN_CHECKVERSION,ThreadRunningEV,ActualAccount,YAMN_FORCECHECK,(void *)0,NULL};
 
-				Param.nnflags=Param.nnflags | (YAMN_ACC_POP | YAMN_ACC_MSGP);
-				CallService(MS_YAMN_MAILBROWSER,(WPARAM)&Param,(LPARAM)YAMN_MAILBROWSERVERSION);
-
+						if(NULL==CreateThread(NULL,0,(YAMN_STANDARDFCN)ActualAccount->Plugin->Fcn->ForceCheckFcnPtr,&ParamToPlugin,0,&tid))
+						{
+							ReadDoneFcn(ActualAccount->AccountAccessSO);
+						}
+						else
+							WaitForSingleObject(ThreadRunningEV,INFINITE);
+					}
+					ReadDoneFcn(ActualAccount->AccountAccessSO);
+				}
+				LeaveCriticalSection(PluginRegCS);
+				CloseHandle(ThreadRunningEV);
 			}
 			DBFreeVariant(&dbv);
 		}
 
 	}
-
 	return 0;
+}
+
+
+static void ContactDoubleclicked(WPARAM wParam, LPARAM lParam)
+{
+	DBVARIANT dbv;
+	char *szProto;
+	HACCOUNT ActualAccount;
+
+	szProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0);
+	if(szProto != NULL && strcmp(szProto, ProtoName)==0)
+	{
+		if(!DBGetContactSetting((HANDLE) wParam,ProtoName,"Id",&dbv)) 
+		{
+			ActualAccount=(HACCOUNT) CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
+			if(ActualAccount != NULL)
+			{
+				#ifdef DEBUG_SYNCHRO
+				DebugLog(SynchroFile,"Service_ContactDoubleclicked:ActualAccountSO-read wait\n");
+				#endif
+				if(WAIT_OBJECT_0==WaitToReadFcn(ActualAccount->AccountAccessSO))
+				{
+					#ifdef DEBUG_SYNCHRO
+					DebugLog(SynchroFile,"Service_ContactDoubleclicked:ActualAccountSO-read enter\n");
+					#endif
+					YAMN_MAILBROWSERPARAM Param={(HANDLE)0,ActualAccount,ActualAccount->NewMailN.Flags,ActualAccount->NoNewMailN.Flags,0};
+
+					Param.nnflags=Param.nnflags | YAMN_ACC_MSG;			//show mails in account even no new mail in account
+					Param.nnflags=Param.nnflags & ~YAMN_ACC_POP;
+
+					Param.nflags=Param.nflags | YAMN_ACC_MSG;			//show mails in account even no new mail in account
+					Param.nflags=Param.nflags & ~YAMN_ACC_POP;
+
+					RunMailBrowserSvc((WPARAM)&Param,(LPARAM)YAMN_MAILBROWSERVERSION);
+					
+					#ifdef DEBUG_SYNCHRO
+					DebugLog(SynchroFile,"Service_ContactDoubleclicked:ActualAccountSO-read done\n");
+					#endif
+					ReadDoneFcn(ActualAccount->AccountAccessSO);
+				}
+				#ifdef DEBUG_SYNCHRO
+				else
+					DebugLog(SynchroFile,"Service_ContactDoubleclicked:ActualAccountSO-read enter failed\n");
+				#endif
+				
+			}
+			DBFreeVariant(&dbv);
+		}
+
+	}
 }
 
 
@@ -221,6 +344,12 @@ void CreateServiceFunctions(void)
 	
 	//Function filters mail
 	CreateServiceFunction(MS_YAMN_FILTERMAIL,FilterMailSvc);
+
+	//Function contact list double click
+	CreateServiceFunction(MS_YAMN_CLISTDBLCLICK,ClistContactDoubleclicked);
+
+	//Function contact list context menu click
+	CreateServiceFunction(MS_YAMN_CLISTCONTEXT,ContactMailCheck);
 
 	return;
 }

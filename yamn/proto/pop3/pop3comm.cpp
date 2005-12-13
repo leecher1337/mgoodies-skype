@@ -11,6 +11,7 @@
 
 
 #pragma warning( disable : 4290 )
+#include "../../main.h"
 #include "../../yamn.h"
 #include "pop3.h"
 #include "pop3comm.h"		//all we need for POP3 account (POP3 account= YAMN account + some more POP3 specified members)
@@ -147,10 +148,10 @@ HYAMNPROTOPLUGIN POP3Plugin;
 YAMN_PROTOREGISTRATION POP3ProtocolRegistration=
 {
 	"POP3 protocol (internal)",
-	"0.0.0.2",
+	(char *)YAMN_VERSION,
 	"© 2002-2004 majvan | 2005 tweety",
-	"Connects to POP3 server to see for new mails",
-	"",
+	"Mail notifier and browser for Miranda IM. Included POP3 protocol.",
+	"francois.mean@skynet.be",
 	"http://forums.miranda-im.org/showthread.php?t=3035",
 };
 
@@ -286,14 +287,19 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 
 	//Insert "Check mail (YAMN)" item to Miranda's menu
 	ZeroMemory(&mi,sizeof(mi));
-	mi.cbSize=sizeof(mi);
-	mi.position=0xb0000000;
-	mi.flags=CMIM_ICON;
-	mi.hIcon=hYamnIcon;
-	mi.pszName=Translate("Check &mail (YAMN)");
-	mi.pszService=MS_YAMN_FORCECHECK;
+	mi.cbSize = sizeof(mi);
+	mi.position = 0xb0000000;
+	mi.flags = CMIM_ICON;
+	mi.hIcon = hYamnIcon;
+	mi.pszName = Translate("Check &mail (YAMN)");
+	mi.pszService = MS_YAMN_FORCECHECK;
 	CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 
+	mi.flags = mi.flags;
+	mi.pszContactOwner = ProtoName;
+	mi.pszService = MS_YAMN_CLISTCONTEXT;
+	CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
+	
 
 	//Get YAMN variables we can use
 	if(NULL==(pYAMNVar=(PYAMN_VARIABLES)CallService(MS_YAMN_GETVARIABLES,(WPARAM)YAMN_VARIABLESVERSION,(LPARAM)0)))
@@ -383,9 +389,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	HANDLE hContact;
 	DBVARIANT dbv;
 	char *szProto;
-	char *szId;
 
-	szId = NULL;
 	for(Finder=POP3Plugin->FirstAccount;Finder!=NULL;Finder=Finder->Next)
 	{
 		Finder->Contact = NULL;
@@ -452,9 +456,9 @@ DWORD WINAPI UnLoadPOP3(void *)
 	delete CPOP3Account::AccountWriterSO;	
 	delete pYAMNMailFcn;
 	delete pYAMNFcn;
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"UnLoadPOP3:done\n");
-#endif
+	#endif
 	return 1;
 }
 
@@ -786,49 +790,49 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 		if(msgs)
 		{
 			DataRX=MyClient->List();
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"<Extracting list>\n");
-#endif
+			#endif
 			ExtractList(DataRX,MyClient->NetClient->Rcv,NewMails);
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"</Extracting list>\n");
-#endif
+			#endif
 			if(DataRX!=NULL)
 				free(DataRX);
 			DataRX=NULL;
 
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"<Extracting UIDL>\n");
-#endif
+			#endif
 			DataRX=MyClient->Uidl();
 			ExtractUIDL(DataRX,MyClient->NetClient->Rcv,NewMails);
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"</Extracting UIDL>\n");
-#endif
+			#endif
 			if(DataRX!=NULL)
 				free(DataRX);
 			DataRX=NULL;
 		}
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write wait\n");
-#endif
+		#endif
 		if(WAIT_OBJECT_0!=MsgsWaitToWrite(ActualAccount))
 		{
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write wait failed\n");
-#endif
+			#endif
 			throw (DWORD)ActualAccount->SystemError=EACC_STOPPED;
 		}
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write enter\n");
-#endif
+		#endif
 		ActualAccount->LastChecked=now;
 		SynchroMessages(ActualAccount,(HYAMNMAIL *)&ActualAccount->Mails,NULL,(HYAMNMAIL *)&NewMails,NULL);		//we get only new mails on server!
 //		NewMails=NULL;
 
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write done\n");
-#endif
+		#endif
 		MsgsWriteDone(ActualAccount);
 
 		for(msgs=0,MsgQueuePtr=NewMails;MsgQueuePtr!=NULL;MsgQueuePtr=MsgQueuePtr->Next,msgs++);			//get number of new mails
@@ -843,10 +847,10 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 				sprintf(accstatus,Translate("Reading new mails (%d%% done)"),100*i/msgs);
 				SetAccountStatus(ActualAccount,accstatus);
 
-#ifdef DEBUG_DECODE
+				#ifdef DEBUG_DECODE
 				DebugLog(DecodeFile,"<New mail>\n");
 				DebugLog(DecodeFile,"<Header>%s</Header>\n",DataRX);
-#endif
+				#endif
 				if(DataRX!=NULL)
 				{
 					Temp=DataRX;
@@ -861,15 +865,15 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 					
 				TranslateHeader(Temp,MyClient->NetClient->Rcv-(Temp-DataRX),&MsgQueuePtr->MailData->TranslatedHeader);
 
-#ifdef DEBUG_DECODE
+				#ifdef DEBUG_DECODE
 				DebugLog(DecodeFile,"</New mail>\n");
-#endif
+				#endif
 				MsgQueuePtr->Flags|=YAMN_MSG_NORMALNEW;
 
-//We are going to filter mail. Warning!- we must not be in read access neither write access to mails when calling this service
-//This is done, because the "NewMails" queue is not synchronised. It is because it is new queue. Only this thread uses new queue yet, it is not
-//connected to account mail queue.
-//				CallService(MS_YAMN_FILTERMAIL,(WPARAM)ActualAccount,(LPARAM)MsgQueuePtr);
+				//We are going to filter mail. Warning!- we must not be in read access neither write access to mails when calling this service
+				//This is done, because the "NewMails" queue is not synchronised. It is because it is new queue. Only this thread uses new queue yet, it is not
+				//connected to account mail queue.
+				//				CallService(MS_YAMN_FILTERMAIL,(WPARAM)ActualAccount,(LPARAM)MsgQueuePtr);
 				FilterMailSvc((WPARAM)ActualAccount,(LPARAM)MsgQueuePtr);
 
 				MsgQueuePtr=MsgQueuePtr->Next;
@@ -879,23 +883,23 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 				DataRX=NULL;
 
 			}
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"</--------Account checking-------->\n");
-#endif
+			#endif
 
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write wait\n");
-#endif
+			#endif
 			if(WAIT_OBJECT_0!=MsgsWaitToWrite(ActualAccount))
 			{
-#ifdef DEBUG_SYNCHRO
+				#ifdef DEBUG_SYNCHRO
 				DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write wait failed\n");
-#endif
+				#endif
 				throw (DWORD)ActualAccount->SystemError==EACC_STOPPED;
 			}
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write enter\n");
-#endif
+			#endif
 			if(ActualAccount->Mails==NULL)
 				ActualAccount->Mails=NewMails;
 			else
@@ -903,21 +907,21 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 				ActualAccount->LastMail=ActualAccount->LastChecked;
 				AppendQueue((HYAMNMAIL)ActualAccount->Mails,NewMails);
 			}
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write done\n");
-#endif
+			#endif
 			MsgsWriteDone(ActualAccount);
 
-//	we are going to delete mails having SPAM flag level3 and 4 (see m_mails.h) set
+			//	we are going to delete mails having SPAM flag level3 and 4 (see m_mails.h) set
 			{
 				struct DeleteParam ParamToDeleteMails={YAMN_DELETEVERSION,INVALID_HANDLE_VALUE,ActualAccount,YAMNParam,(void *)POP3_DELETEFROMCHECK};
 
-//	Delete mails from server. Here we should not be in write access for account's mails
+				//	Delete mails from server. Here we should not be in write access for account's mails
 				DeleteMailsPOP3(&ParamToDeleteMails);
 			}
 
-//	if there is no waiting thread for internet connection close it
-//	else leave connection open
+			//	if there is no waiting thread for internet connection close it
+			//	else leave connection open
 			if(0==SCGetNumber(ActualAccount->InternetQueries))
 			{
 				DataRX=MyClient->Quit();
@@ -930,9 +934,9 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 			}
 
 			UsingInternet=FALSE;
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"CheckPOP3:InternetFreeEV-done\n");
-#endif
+			#endif
 			SetEvent(ActualAccount->UseInternetFree);
 
 			ActualAccount->LastSChecked=ActualAccount->LastChecked;

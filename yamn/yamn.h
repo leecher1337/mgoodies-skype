@@ -38,6 +38,8 @@
 void CreateServiceFunctions(void);
 void HookEvents(void);
 void RefreshContact(void);
+void ContactDoubleclicked(WPARAM wParam,LPARAM lParam);
+int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam);
 
 //From debug.cpp
 #ifdef YAMN_DEBUG
@@ -117,3 +119,19 @@ int Shutdown(WPARAM,LPARAM);				//Executed before Miranda is going to shutdown
 int AddTopToolbarIcon(WPARAM,LPARAM);		//Executed when TopToolBar plugin loaded Adds bitmap to toolbar
 void LoadPlugins();							//Loads plugins located in MirandaDir/Plugins/YAMN/*.dll
 int UninstallQuestionSvc(WPARAM,LPARAM);	//Ask information when user wants to uninstall plugin
+
+//From synchro.cpp
+extern DWORD WINAPI WaitToWriteFcn(PSWMRG SObject,PSCOUNTER SCounter=NULL);
+extern void WINAPI WriteDoneFcn(PSWMRG SObject,PSCOUNTER SCounter=NULL);
+extern DWORD WINAPI WaitToReadFcn(PSWMRG SObject);
+extern void WINAPI ReadDoneFcn(PSWMRG SObject);
+extern DWORD WINAPI SCIncFcn(PSCOUNTER SCounter);
+extern DWORD WINAPI SCDecFcn(PSCOUNTER SCounter);
+//From mails.cpp
+extern void WINAPI DeleteMessageFromQueueFcn(HYAMNMAIL *From,HYAMNMAIL Which,int mode);
+extern void WINAPI SetRemoveFlagsInQueueFcn(HYAMNMAIL From,DWORD FlagsSet,DWORD FlagsNotSet,DWORD FlagsToSet,int mode);
+//From mime.cpp
+void ExtractHeader(struct CMimeItem *items,int CP,struct CHeader *head);
+void DeleteHeaderContent(struct CHeader *head);
+//From account.cpp
+void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);

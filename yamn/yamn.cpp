@@ -330,39 +330,39 @@ int ForceCheckSvc(WPARAM,LPARAM)
 	HANDLE ThreadRunningEV;
 	DWORD tid;
 
-//	we use event to signal, that running thread has all needed stack parameters copied
+	//we use event to signal, that running thread has all needed stack parameters copied
 	if(NULL==(ThreadRunningEV=CreateEvent(NULL,FALSE,FALSE,NULL)))
 		return 0;
-//	if we want to close miranda, we get event and do not run pop3 checking anymore
+	//if we want to close miranda, we get event and do not run pop3 checking anymore
 	if(WAIT_OBJECT_0==WaitForSingleObject(ExitEV,0))
 		return 0;
 	EnterCriticalSection(PluginRegCS);
 	for(ActualPlugin=FirstProtoPlugin;ActualPlugin!=NULL;ActualPlugin=ActualPlugin->Next)
 	{
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"ForceCheck:AccountBrowserSO-read wait\n");
-#endif                                                                        
+		#endif                                                                        
 		SWMRGWaitToRead(ActualPlugin->Plugin->AccountBrowserSO,INFINITE);
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"ForceCheck:AccountBrowserSO-read enter\n");
-#endif
+		#endif
 		for(ActualAccount=ActualPlugin->Plugin->FirstAccount;ActualAccount!=NULL;ActualAccount=ActualAccount->Next)
 		{
 			if(ActualAccount->Plugin->Fcn==NULL)		//account not inited
 				continue;
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read wait\n");
-#endif
+			#endif
 			if(WAIT_OBJECT_0!=WaitToReadFcn(ActualAccount->AccountAccessSO))
 			{
-#ifdef DEBUG_SYNCHRO
+				#ifdef DEBUG_SYNCHRO
 				DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read wait failed\n");
-#endif
+				#endif
 				continue;
 			}
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read enter\n");
-#endif
+			#endif
 			if((ActualAccount->Flags & YAMN_ACC_ENA) && (ActualAccount->StatusFlags & YAMN_ACC_FORCE))			//account cannot be forced to check
 			{
 				if(ActualAccount->Plugin->Fcn->ForceCheckFcnPtr==NULL)

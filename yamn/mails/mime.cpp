@@ -5,7 +5,7 @@
  */
 
 #pragma warning( disable : 4290 )
-
+/*
 #include <windows.h>
 #include <tchar.h>
 #include <stdio.h>
@@ -15,7 +15,8 @@
 #include "../browser/m_browser.h"
 #include "../debug.h"
 #include "m_mails.h"
-#include "m_decode.h"
+#include "m_decode.h"*/
+#include "../yamn.h"
 
 //- imported ---------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------

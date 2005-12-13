@@ -10,6 +10,7 @@
  * put it back to uncommented and compile again :)
  */
 
+ 
 #include <windows.h>
 #undef UNICODE
 #include "../../../../SDK/headers_c/newpluginapi.h"
@@ -17,6 +18,7 @@
 #include "../../../../SDK/headers_c/m_skin.h"
 #include "../../../../SDK/headers_c/m_langpack.h"
 #include "../../../../SDK/headers_c/m_database.h"
+#include "../../../../SDK/headers_c/m_clist.h"
 #include "../SDK/Import/m_popup.h"
 #include "../SDK/Import/m_kbdnotify.h"
 #include "../main.h"
@@ -28,6 +30,7 @@
 #include "../m_yamn.h"
 #include "../resources/resource.h"
 
+#undef UNICODE
 #include "m_browser.h"
 
 #ifndef UNICODE
@@ -54,7 +57,6 @@ extern HANDLE hNewMailHook;
 extern HANDLE WriteToFileEV;
 extern YAMN_VARIABLES YAMNVar;
 extern HICON hYamnIcon,hNewMailIcon,hNeutralIcon;
-
 //From synchro.cpp
 extern DWORD WINAPI WaitToWriteFcn(PSWMRG SObject,PSCOUNTER SCounter=NULL);
 extern void WINAPI WriteDoneFcn(PSWMRG SObject,PSCOUNTER SCounter=NULL);
@@ -600,6 +602,7 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 				item.cchTextMax=0;
 		}
 
+
 		if((hListView!=NULL) && (msgq->Flags & YAMN_MSG_DISPLAY))
 		{
 			WCHAR *Temp=item.pszText;
@@ -678,6 +681,23 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		CallService(MS_KBDNOTIFY_STARTBLINKEXT,(WPARAM)MN->Real.PopUpNC+MN->Virtual.PopUpNC,(LPARAM) &kbnOpt);
 	}
 
+	if((nflags & YAMN_ACC_CONT) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
+	{
+		char tmp[255];
+		CLISTEVENT cEvent;
+		cEvent.cbSize = sizeof(CLISTEVENT);
+		cEvent.hContact = ActualAccount->Contact;
+		cEvent.hIcon = hNewMailIcon;
+		cEvent.flags = 0;
+		cEvent.hDbEvent = NULL;
+		cEvent.lParam = (LPARAM) ActualAccount->Contact;
+		cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
+
+		sprintf(tmp,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
+		cEvent.pszTooltip = tmp;
+		CallService(MS_CLIST_ADDEVENT,(WPARAM)ActualAccount->Contact,(LPARAM)&cEvent);
+	}
+
 	if((nflags & YAMN_ACC_POP) && !(ActualAccount->Flags & YAMN_ACC_POPN) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
 	{
 		POPUPDATAEX NewMailPopUp;
@@ -713,30 +733,31 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 			ShowWindow(hDlg,SW_SHOWNORMAL);
 		}
 	}
-	else if(hDlg!=NULL)								//else insert icon and set window if new mails
-	{
-		SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_SCROLL,(WPARAM)0,(LPARAM)0x7ffffff);
-
-		if((nflags & YAMN_ACC_ICO) && (MN->Real.SysTrayUC+MN->Virtual.SysTrayUC))
+	else 
+		if(hDlg!=NULL)								//else insert icon and set window if new mails
 		{
-			TCHAR *src,*dest;
-			int i;
+			SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_SCROLL,(WPARAM)0,(LPARAM)0x7ffffff);
 
-			for(src=ActualAccount->Name,dest=nid.szTip,i=0;(*src!=(TCHAR)0) && (i+1<sizeof(nid.szTip));*dest++=*src++);
-			for(src=NotIconText;(*src!=(TCHAR)0) && (i+1<sizeof(nid.szTip));*dest++=*src++);
-			*dest=(TCHAR)0;
-			nid.cbSize=sizeof(NOTIFYICONDATA);
-			nid.hWnd=hDlg;
-			nid.hIcon=hNewMailIcon;
-			nid.uID=0;
-			nid.uFlags=NIF_ICON | NIF_MESSAGE | NIF_TIP;
-			nid.uCallbackMessage=WM_YAMN_NOTIFYICON;
-			Shell_NotifyIcon(NIM_ADD,&nid);
-			SetTimer(hDlg,TIMER_FLASHING,500,NULL);
+			if((nflags & YAMN_ACC_ICO) && (MN->Real.SysTrayUC+MN->Virtual.SysTrayUC))
+			{
+				TCHAR *src,*dest;
+				int i;
+
+				for(src=ActualAccount->Name,dest=nid.szTip,i=0;(*src!=(TCHAR)0) && (i+1<sizeof(nid.szTip));*dest++=*src++);
+				for(src=NotIconText;(*src!=(TCHAR)0) && (i+1<sizeof(nid.szTip));*dest++=*src++);
+				*dest=(TCHAR)0;
+				nid.cbSize=sizeof(NOTIFYICONDATA);
+				nid.hWnd=hDlg;
+				nid.hIcon=hNewMailIcon;
+				nid.uID=0;
+				nid.uFlags=NIF_ICON | NIF_MESSAGE | NIF_TIP;
+				nid.uCallbackMessage=WM_YAMN_NOTIFYICON;
+				Shell_NotifyIcon(NIM_ADD,&nid);
+				SetTimer(hDlg,TIMER_FLASHING,500,NULL);
+			}
+			if(nflags & YAMN_ACC_MSG)											//if no new mail and msg should be executed
+				ShowWindow(hDlg,SW_SHOWNORMAL);
 		}
-		if(nflags & YAMN_ACC_MSG)											//if no new mail and msg should be executed
-			ShowWindow(hDlg,SW_SHOWNORMAL);
-	}
 
 	if(MN->Real.AppNC+MN->Virtual.AppNC!=0)
 	{
@@ -1383,14 +1404,14 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 					ZeroMemory(&si,sizeof(si));
 					si.cb=sizeof(si);
 
-#ifdef DEBUG_SYNCHRO
+					#ifdef DEBUG_SYNCHRO
 					DebugLog(SynchroFile,"MailBrowser:BTNAPP:ActualAccountSO-read wait\n");
-#endif
+					#endif
 					if(WAIT_OBJECT_0==WaitToReadFcn(ActualAccount->AccountAccessSO))
 					{
-#ifdef DEBUG_SYNCHRO
+						#ifdef DEBUG_SYNCHRO
 						DebugLog(SynchroFile,"MailBrowser:BTNAPP:ActualAccountSO-read enter\n");
-#endif
+						#endif
 						if(ActualAccount->NewMailN.App!=NULL)
 						{
 							WCHAR *Command;
@@ -1411,15 +1432,15 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 							}
 						}
 
-#ifdef DEBUG_SYNCHRO
+						#ifdef DEBUG_SYNCHRO
 						DebugLog(SynchroFile,"MailBrowser:BTNAPP:ActualAccountSO-read done\n");
-#endif
+						#endif
 						ReadDoneFcn(ActualAccount->AccountAccessSO);
 					}
-#ifdef DEBUG_SYNCHRO
+					#ifdef DEBUG_SYNCHRO
 					else
 						DebugLog(SynchroFile,"MailBrowser:BTNAPP:ActualAccountSO-read enter failed\n");
-#endif
+					#endif
 					if(!(GetKeyState(VK_SHIFT) & 0x8000) && !(GetKeyState(VK_CONTROL) & 0x8000))
 						DestroyWindow(hDlg);
 
@@ -1432,20 +1453,20 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 					HANDLE ThreadRunningEV;
 					DWORD tid,Total=0;
 
-//	we use event to signal, that running thread has all needed stack parameters copied
+					//	we use event to signal, that running thread has all needed stack parameters copied
 					if(NULL==(ThreadRunningEV=CreateEvent(NULL,FALSE,FALSE,NULL)))
 						break;
 					int Items=ListView_GetItemCount(GetDlgItem(hDlg,IDC_LISTMAILS));
 
 					item.stateMask=0xFFFFFFFF;
-#ifdef DEBUG_SYNCHRO
+					#ifdef DEBUG_SYNCHRO
 					DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write wait\n");
-#endif
+					#endif
 					if(WAIT_OBJECT_0==WaitToWriteFcn(ActualAccount->MessagesAccessSO))
 					{
-#ifdef DEBUG_SYNCHRO
+						#ifdef DEBUG_SYNCHRO
 						DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write enter\n");
-#endif
+						#endif
 						for(int i=0;i<Items;i++)
 						{
 							item.iItem=i;
@@ -1463,10 +1484,10 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 							}
 						}
 
-// Enable write-access to mails
-#ifdef DEBUG_SYNCHRO
+						// Enable write-access to mails
+						#ifdef DEBUG_SYNCHRO
 						DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write done\n");
-#endif
+						#endif
 						WriteDoneFcn(ActualAccount->MessagesAccessSO);
 
 						if(Total)
@@ -1478,15 +1499,15 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 							{
 								struct DeleteParam ParamToDeleteMails={YAMN_DELETEVERSION,ThreadRunningEV,ActualAccount,NULL};
 
-// Find if there's mail marked to delete, which was deleted before
-#ifdef DEBUG_SYNCHRO
+								// Find if there's mail marked to delete, which was deleted before
+								#ifdef DEBUG_SYNCHRO
 								DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write wait\n");
-#endif
+								#endif
 								if(WAIT_OBJECT_0==WaitToWriteFcn(ActualAccount->MessagesAccessSO))
 								{
-#ifdef DEBUG_SYNCHRO
+									#ifdef DEBUG_SYNCHRO
 									DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write enter\n");
-#endif
+									#endif
 									for(ActualMail=(HYAMNMAIL)ActualAccount->Mails;ActualMail!=NULL;ActualMail=ActualMail->Next)
 									{
 										if((ActualMail->Flags & YAMN_MSG_DELETED) && ((ActualMail->Flags & YAMN_MSG_USERDELETE)))	//if selected mail was already deleted
@@ -1496,9 +1517,9 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 											continue;
 										}
 									}
-// Set flag to marked mails that they can be deleted
+									// Set flag to marked mails that they can be deleted
 									SetRemoveFlagsInQueueFcn((HYAMNMAIL)ActualAccount->Mails,YAMN_MSG_DISPLAY | YAMN_MSG_USERDELETE,0,YAMN_MSG_DELETEOK,1);
-// Create new thread which deletes marked mails.
+									// Create new thread which deletes marked mails.
 									HANDLE NewThread;
 
 									if(NULL!=(NewThread=CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)ActualAccount->Plugin->Fcn->DeleteMailsFcnPtr,(LPVOID)&ParamToDeleteMails,0,&tid)))
@@ -1506,15 +1527,15 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 										WaitForSingleObject(ThreadRunningEV,INFINITE);
 										CloseHandle(NewThread);
 									}
-// Enable write-access to mails
-#ifdef DEBUG_SYNCHRO
+									// Enable write-access to mails
+									#ifdef DEBUG_SYNCHRO
 									DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write done\n");
-#endif
+									#endif
 									WriteDoneFcn(ActualAccount->MessagesAccessSO);
 								}
 							}
 							else
-//else mark messages that they are not to be deleted
+								//else mark messages that they are not to be deleted
 								SetRemoveFlagsInQueueFcn((HYAMNMAIL)ActualAccount->Mails,YAMN_MSG_DISPLAY | YAMN_MSG_USERDELETE,0,YAMN_MSG_USERDELETE,0);
 						}
 					}
@@ -1577,13 +1598,13 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 							pNMListView = (NM_LISTVIEW*)lParam;
 							if(WAIT_OBJECT_0==WaitToReadFcn(ActualAccount->AccountAccessSO))
 							{
-#ifdef DEBUG_SYNCHRO
+								#ifdef DEBUG_SYNCHRO
 								DebugLog(SynchroFile,"MailBrowser:COLUMNCLICK:ActualAccountSO-read enter\n");
-#endif
+								#endif
 								ListView_SortItems(pNMListView->hdr.hwndFrom,ListViewCompareProc,pNMListView->iSubItem,);
-#ifdef DEBUG_SYNCHRO
+								#ifdef DEBUG_SYNCHRO
 								DebugLog(SynchroFile,"MailBrowser:BTNAPP:ActualAccountSO-read done\n");
-#endif
+								#endif
 								ReadDoneFcn(ActualAccount->AccountAccessSO);
 							}
 							break;
@@ -1618,20 +1639,20 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 										umma= mwui->UpdateMailsMessagesAccess;
 									}
 									ActualMail=(HYAMNMAIL)cd->nmcd.lItemlParam;
-#ifdef DEBUG_SYNCHRO
+									#ifdef DEBUG_SYNCHRO
 									DebugLog(SynchroFile,"MailBrowser:DRAWITEM:ActualAccountMsgsSO-read wait\n");
-#endif
+									#endif
 									if(!umma)
 										if(WAIT_OBJECT_0!=WaitToReadFcn(ActualAccount->MessagesAccessSO))
 										{
-#ifdef DEBUG_SYNCHRO
+											#ifdef DEBUG_SYNCHRO
 											DebugLog(SynchroFile,"MailBrowser:DRAWITEM:ActualAccountMsgsSO-read wait failed\n");
-#endif
+											#endif
 											return 0;
 										}
-#ifdef DEBUG_SYNCHRO
+									#ifdef DEBUG_SYNCHRO
 									DebugLog(SynchroFile,"MailBrowser:DRAWITEM:ActualAccountMsgsSO-read enter\n");
-#endif
+									#endif
 									switch(ActualMail->Flags & YAMN_MSG_SPAMMASK)
 									{
 										case YAMN_MSG_SPAML1:
@@ -1655,9 +1676,9 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 
 									if(!umma)
 									{
-#ifdef DEBUG_SYNCHRO
+										#ifdef DEBUG_SYNCHRO
 										DebugLog(SynchroFile,"MailBrowser:DRAWITEM:ActualAccountMsgsSO-read done\n");
-#endif
+										#endif
 										ReadDoneFcn(ActualAccount->MessagesAccessSO);
 									}
 
