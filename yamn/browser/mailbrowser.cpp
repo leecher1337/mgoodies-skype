@@ -697,7 +697,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		cEvent.lParam = (LPARAM) ActualAccount->Contact;
 		cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
 
-		sprintf(tmp,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
+		sprintf(tmp,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
 		cEvent.pszTooltip = tmp;
 		CallService(MS_CLIST_ADDEVENT,(WPARAM)ActualAccount->Contact,(LPARAM)&cEvent);
 		DBWriteContactSettingString(ActualAccount->Contact, "CList", "StatusMsg", tmp);

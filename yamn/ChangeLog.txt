@@ -1,6 +1,7 @@
 0.0.0.8
 ============
 + Add date field in mail browser
+* Modify the tooltip text for the clist event (add account name)
 
 0.0.0.7
 ============
