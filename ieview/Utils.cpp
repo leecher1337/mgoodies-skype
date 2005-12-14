@@ -20,9 +20,14 @@ void Utils::appendText(char **str, int *sizeAlloced, const char *fmt, ...) {
 	}
 	else {
 		len = strlen(*str);
-		size = *sizeAlloced - strlen(*str);
+		size = *sizeAlloced - len;
 	}
 
+	if (size < 128) {
+		size += 2048;
+		(*sizeAlloced) += 2048;
+		*str = (char *) realloc(*str, *sizeAlloced);
+	}
 	p = *str + len;
 	va_start(vararg, fmt);
 	while (_vsnprintf(p, size, fmt, vararg) == -1) {
@@ -48,9 +53,14 @@ void Utils::appendText(wchar_t **str, int *sizeAlloced, const wchar_t *fmt, ...)
 	}
 	else {
 		len = wcslen(*str);
-		size = *sizeAlloced - sizeof(wchar_t) * wcslen(*str);
+		size = *sizeAlloced - sizeof(wchar_t) * len;
 	}
 
+	if (size < 128) {
+		size += 2048;
+		(*sizeAlloced) += 2048;
+		*str = (wchar_t *) realloc(*str, *sizeAlloced);
+	}
 	p = *str + len;
 	va_start(vararg, fmt);
 	while (_vsnwprintf(p, size / sizeof(wchar_t), fmt, vararg) == -1) {
@@ -59,6 +69,7 @@ void Utils::appendText(wchar_t **str, int *sizeAlloced, const wchar_t *fmt, ...)
 		*str = (wchar_t *) realloc(*str, *sizeAlloced);
 		p = *str + len;
 	}
+	
 	va_end(vararg);
 }
 

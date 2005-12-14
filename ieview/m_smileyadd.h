@@ -133,6 +133,14 @@ typedef struct
 
 #define MS_SMILEYADD_PARSE "SmileyAdd/Parse"
 
+#define SAFL_PATH		1	// provide smiley file path, icon otherwise 
+#define SAFL_UNICODE	2   // string fields in OPTIONSDIALOGPAGE are WCHAR*
+
+#if defined( _UNICODE )
+	#define SAFL_TCHAR     SAFL_UNICODE
+#else
+	#define SAFL_TCHAR     0
+#endif
 
 typedef struct 
 {
@@ -143,7 +151,15 @@ typedef struct
 								//Or, use "Standard" for standard smiley set. Or "ICQ", "MSN"
 								//if you prefer those icons. 
 								//If not found or NULL: "Standard" will be used
-	char* str;                  //String to parse 
+	union {
+		TCHAR*   str;           //String to parse
+		char*    astr;
+		wchar_t* wstr;
+	};
+	unsigned flag;				//One of the SAFL_ flags for input string
+
+	unsigned numSmileys;        //Number of Smileys found
+	unsigned oflag;				//One of the SAFL_ flags for filename
 } SMADD_BATCHPARSE;
 
 typedef struct 
@@ -154,7 +170,12 @@ typedef struct
 	unsigned size;              //Number of characters in smiley (0 if not found)
 								//Because of iterative nature of the API caller should set this 
 								//parameter to correct value
-	char filepath[MAX_PATH];
+	union {
+		const TCHAR*   filepath;
+		const char*    afilepath;
+		const wchar_t* wfilepath;
+		HICON          hIcon;
+	};
 } SMADD_BATCHPARSERES;
 
 //find all smileys in ASCII text

@@ -357,17 +357,18 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
     return firstToken;
 }
 
+#define BB_TAG_NUM 7
 TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
-	static wchar_t *bbTagName[] = {L"b", L"i", L"u", L"img", L"color", L"size"};
-	static int 		bbTagNameLen[] = {1, 1, 1, 3, 5, 4};
-	static int 		bbTagArg[] = {0, 0, 0, 0, 1, 1};
-	static int 		bbTagId[] = {BB_B, BB_I, BB_U, BB_IMG, BB_COLOR, BB_SIZE};
-	static int      bbTagEnd[6];
-	static int      bbTagCount[6];
+	static wchar_t *bbTagName[] = {L"b", L"i", L"u", L"s", L"img", L"color", L"size"};
+	static int 		bbTagNameLen[] = {1, 1, 1, 1, 3, 5, 4};
+	static int 		bbTagArg[] = {0, 0, 0, 0, 0, 1, 1};
+	static int 		bbTagId[] = {BB_B, BB_I, BB_U, BB_S, BB_IMG, BB_COLOR, BB_SIZE};
+	static int      bbTagEnd[BB_TAG_NUM];
+	static int      bbTagCount[BB_TAG_NUM];
 	int i,j;
    	TextToken *firstToken = NULL, *lastToken = NULL, * bbToken = NULL;
     int textLen = 0;
-	for (j = 0; j < 6; j++) {
+	for (j = 0; j < BB_TAG_NUM; j++) {
 		bbTagCount[j] = 0;
 		bbTagEnd[j] = 0;
 	}
@@ -376,7 +377,7 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 		bool bbFound = false;
 		if (text[i] == '[') {
 			if (text[i+1] != '/') {
-				for (j = 0; j < 6; j++) {
+				for (j = 0; j < BB_TAG_NUM; j++) {
 					k = i + 1;
 					if (!wcsnicmp(text+k, bbTagName[j], bbTagNameLen[j])) {
 						tagArgStart = tagArgEnd = 0;
@@ -421,6 +422,7 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 					case BB_B:
 					case BB_I:
 					case BB_U:
+                    case BB_S:
 					case BB_COLOR:
 					case BB_SIZE:
 	                    bbTagCount[j]++;
@@ -444,7 +446,7 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 					}
 				}
 			} else {
-				for (j = 0; j < 6; j++) {
+				for (j = 0; j < BB_TAG_NUM; j++) {
 					k = i + 2;
 					if (bbTagCount[j]>0 && !wcsnicmp(text+k, bbTagName[j], bbTagNameLen[j])) {
 						k += bbTagNameLen[j];
@@ -563,13 +565,14 @@ TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) 
 	}
 	sp.cbSize = sizeof(sp);
 	sp.Protocolname = proto;
-//	sp.str = (wchar_t *)text;
-	sp.str = (char *)Utils::convertToString(text);
+	sp.oflag = SAFL_PATH;// | SAFL_UNICODE;
+	sp.wstr = (wchar_t *)Utils::convertToString(text);
 	spRes = (SMADD_BATCHPARSERES *) CallService(MS_SMILEYADD_BATCHPARSE, 0, (LPARAM)&sp);
     int last_pos = 0;
 	if (spRes != NULL) {
-		for (int i = 0; i<2 && spRes[i].size != 0; i++) {
-			if (spRes[i].startChar - last_pos > 0) {
+//		for (unsigned int i = 0; i < sp.numSmileys; i++) {
+		for (int i = (int)sp.numSmileys-1; i >=0; i--) {
+			if ((int)spRes[i].startChar - last_pos > 0) {
 	            TextToken *newToken = new TextToken(TEXT, text+last_pos, spRes[i].startChar-last_pos);
 				if (lastToken == NULL) {
 					firstToken = newToken;
@@ -579,7 +582,8 @@ TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) 
 				lastToken = newToken;
 			}
 	        TextToken *newToken = new TextToken(SMILEY, text+spRes[i].startChar, spRes[i].size);
-	        newToken->setLink(spRes[i].filepath);
+//	        TextToken *newToken = new TextToken(TEXT, text+spRes[i].startChar, spRes[i].size);
+	        newToken->setLink((wchar_t *)spRes[i].filepath);
 			if (lastToken == NULL) {
 				firstToken = newToken;
 			} else {
@@ -701,6 +705,10 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 					//Utils::appendText(str, sizeAlloced, L"<span style=\"text-decoration: underline;\">");
 					Utils::appendText(str, sizeAlloced, L"<u>");
 					break;
+				case BB_S:
+					//Utils::appendText(str, sizeAlloced, L"<span style=\"font-style: italic;\">");
+					Utils::appendText(str, sizeAlloced, L"<s>");
+					break;
 				case BB_IMG:
             		eText = urlEncode(wtext);   // 100%% //< document.body.clientWidth  ? this.parentNode.width : document.body.clientWidth
 		            if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_FLASH) && (wcsstr(eText, L".swf")!=NULL)) {
@@ -735,6 +743,9 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 					break;
 				case BB_U:
 					Utils::appendText(str, sizeAlloced, L"</u>");
+					break;
+				case BB_S:
+					Utils::appendText(str, sizeAlloced, L"</s>");
 					break;
 				case BB_COLOR:
 					Utils::appendText(str, sizeAlloced, L"</font>");

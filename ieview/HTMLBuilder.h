@@ -52,6 +52,7 @@ public:
 		BB_B = 0,
 		BB_I,
 		BB_U,
+		BB_S,
 		BB_COLOR,
 		BB_SIZE,
 		BB_IMG,
