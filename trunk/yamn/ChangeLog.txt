@@ -1,3 +1,7 @@
+0.0.0.8
+============
++ Add date field in mail browser
+
 0.0.0.7
 ============
 + Added changelog txt file.

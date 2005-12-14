@@ -77,7 +77,7 @@ void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
 //--------------------------------------------------------------------------------------------------
 
 int PosX=0,PosY=0,SizeX=460,SizeY=100;
-static int FromWidth=250,SubjectWidth=355,SizeWidth=55;
+static int FromWidth=250,SubjectWidth=280,SizeWidth=50,SizeDate=160;
 struct CMailNumbersSub
 {
 	int Total;		//any mail
@@ -633,6 +633,11 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 			item.pszText=SizeStr;
 			item.cchTextMax=wcslen(SizeStr);
 			SendMessageW(hListView,LVM_SETITEMTEXT,(WPARAM)item.iItem,(LPARAM)&item);
+
+			item.iSubItem=3;
+			item.pszText=UnicodeHeader.Date;
+			item.cchTextMax=wcslen(UnicodeHeader.Date);
+			SendMessageW(hListView,LVM_SETITEMTEXT,(WPARAM)item.iItem,(LPARAM)&item);
 		}
 
 		if((nflags & YAMN_ACC_POP) && (ActualAccount->Flags & YAMN_ACC_POPN) && (msgq->Flags & YAMN_MSG_POPUP) && (msgq->Flags & YAMN_MSG_NEW))
@@ -1046,6 +1051,17 @@ int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSor
 				if(email1->MailData->Size > email2->MailData->Size) nResult = 1;
 				if(email1->MailData->Size < email2->MailData->Size) nResult = -1;
 				break;
+
+			case 3:
+				if(UnicodeHeader1.Date == NULL) str1 = L" ";
+				else str1 = UnicodeHeader1.Date;
+
+				if(UnicodeHeader2.Date == NULL) str2 = L" ";
+				else str2 = UnicodeHeader2.Date;
+
+				nResult = _wcsicmp(str1, str2);
+				break;
+
 			default:
 				if(UnicodeHeader1.Subject == NULL) str1 = L" ";
 				else str1 = UnicodeHeader1.Subject;
@@ -1081,6 +1097,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			WCHAR *iFromW=NULL;
 			WCHAR *iSubjectW=NULL;
 			WCHAR *iSizeW=NULL;
+			WCHAR *iDateW=NULL;
 			WCHAR *iRunAppW=NULL;
 			WCHAR *iDeleteMailsW=NULL;
 			int StrLen;
@@ -1125,6 +1142,10 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			iSizeW=new WCHAR[StrLen+1];
 			MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Size"),-1,iSizeW,StrLen);
 
+			StrLen=MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Date"),-1,NULL,0);
+			iDateW=new WCHAR[StrLen+1];
+			MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Date"),-1,iDateW,StrLen);
+
 			StrLen=MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Run application"),-1,NULL,0);
 			iRunAppW=new WCHAR[StrLen+1];
 			MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Run application"),-1,iRunAppW,StrLen);
@@ -1139,15 +1160,19 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			LV_COLUMNW lvc0={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM,LVCFMT_LEFT,FromWidth,iFromW,wcslen(iFromW)+1,0};
 			LV_COLUMNW lvc1={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM,LVCFMT_LEFT,SubjectWidth,iSubjectW,wcslen(iSubjectW)+1,1};
 			LV_COLUMNW lvc2={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM,LVCFMT_LEFT,SizeWidth,iSizeW,wcslen(iSizeW)+1,2};
+			LV_COLUMNW lvc3={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM,LVCFMT_LEFT,SizeDate,iDateW,wcslen(iDateW)+1,3};
 			SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMN,(WPARAM)0,(LPARAM)&lvc0);
 			SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMN,(WPARAM)1,(LPARAM)&lvc1);
 			SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMN,(WPARAM)2,(LPARAM)&lvc2);
+			SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMN,(WPARAM)3,(LPARAM)&lvc3);
 			if(NULL!=iFromW)
 				delete[] iFromW;
 			if(NULL!=iSubjectW)
 				delete[] iSubjectW;
 			if(NULL!=iSizeW)
 				delete[] iSizeW;
+			if(NULL!=iDateW)
+				delete[] iDateW;
 			if(NULL!=iRunAppW)
 				delete[] iRunAppW;
 			if(NULL!=iDeleteMailsW)
@@ -1426,9 +1451,8 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			{
 				case IDC_BTNOK:
 					DestroyWindow(hDlg);
-					if(ActualAccount->Contact != NULL)
-						DBWriteContactSettingString(ActualAccount->Contact, "CList", "StatusMsg", Translate("No new mail"));
 					break;
+
 				case IDC_BTNAPP:
 				{
 					PROCESS_INFORMATION pi;
