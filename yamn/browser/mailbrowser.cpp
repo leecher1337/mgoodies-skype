@@ -669,9 +669,9 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 
 	ZeroMemory(&nid,sizeof(nid));
 
-	if(MN->Real.EventNC+MN->Virtual.EventNC)
+/*	if(MN->Real.EventNC+MN->Virtual.EventNC)
 		NotifyEventHooks(hNewMailHook,0,0);
-
+*/
 	if((nflags & YAMN_ACC_KBN) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
 	{
 		KBDNOTIFYOPT kbnOpt;
@@ -818,7 +818,16 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 	if((nflags & YAMN_ACC_CONT) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun==0))
 	{
 		if(ActualAccount->Contact != NULL)
-			DBWriteContactSettingString(ActualAccount->Contact, "CList", "StatusMsg", Translate("No new mail"));
+		{
+			if(MN->Real.PopUpTC+MN->Virtual.PopUpTC)
+			{
+				char tmp[255];
+				sprintf(tmp,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
+				DBWriteContactSettingString(ActualAccount->Contact, "CList", "StatusMsg", tmp);
+			}
+			else
+				DBWriteContactSettingString(ActualAccount->Contact, "CList", "StatusMsg", Translate("No new mail"));
+		}
 	}
 	return;
 }

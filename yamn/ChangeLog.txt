@@ -1,0 +1,50 @@
+0.0.0.7
+============
++ Added changelog txt file.
++ Check presence of icolib to choose the right icon to show in clist
++ Status message will show all message pending in mail box (until they get retrieve by your email client)
+
+0.0.0.6
+============
+* Options page redesign.
++ Right click on popup close the clist event too.
++ Update status message if no new mail.
++ Right click on popup^with no new mail close the popup.
+* No more delete of contact (avoid group affectation bug).
+
+0.0.0.5
+============
++ Add contact context menu entry to check for new mail.
++ Catch double click event on contact to shown the mail browser.
+
+0.0.0.4
+============
++ Add per account option to be show as contact or not.
++ Gestion de la suppression d'un compte
++ Use of the status message for showing number of emails.
++ Refresh yamn contact on the click on apply in options dialog.
+* Better condition for the ^contact loop  (ouuppsss)
+
+0.0.0.3
+============
++ Now account are shown as a contact.
++ Source code modification and use of yamn.h
++ Wait the event moduleloaded before loading the icons (support icolib).
+
+0.0.0.2
+============
++ Use of patch by Q (From file listing) (Memory cleaning, empty mail browser even if there are mails, yamn freeze sometime)
++ Use of thread access function.
++ Possibility to change toptoolbar icons via icolib.
++ Icon in main menu entry (Asked by a7)
++ New Icons set by Manudevil.
++ Change version number to be compatible with updater plugin
+
+0.01
+============
+
++ icolib support.
++ keyboard flash support (just 10 sec) (thx TioDuke) needs Keyboard Notify Ext. 1.5.4.4
++ list of email can be sorted.
+* left click on popup shows email list.
+* better toptoolbar support.

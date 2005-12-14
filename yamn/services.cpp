@@ -240,6 +240,12 @@ static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 
 void HookEvents(void)
 {
+	//We set function which registers needed POP3 accounts. This is a part of internal POP3 plugin.
+	//Your plugin should do the same task in your Load fcn. Why we call it in MODULESLOADED? Because netlib
+	//user can be registered after all modules are loaded (see m_netlib.h in Miranda)
+	HookEvent(ME_TTB_MODULELOADED,AddTopToolbarIcon);
+	HookEvent(ME_SYSTEM_MODULESLOADED,RegisterPOP3Plugin);	//pop3 plugin must be included after all miranda modules are loaded
+
 	HookEvent(ME_OPT_INITIALISE,YAMNOptInitSvc);
 
 	HookEvent(ME_PLUGINUNINSTALLER_UNINSTALL,UninstallQuestionSvc);
