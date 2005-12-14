@@ -278,6 +278,10 @@ SOURCE=.\account.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\ChangeLog.txt
+# End Source File
+# Begin Source File
+
 SOURCE=.\debug.cpp
 # End Source File
 # Begin Source File

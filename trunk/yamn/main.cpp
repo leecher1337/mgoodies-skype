@@ -56,7 +56,7 @@ PLUGININFO pluginInfo={
 	"tweety (majvan)",
 	"francois.mean@skynet.be",
 	"© (2002-2004 majvan) 2005 tweety",
-	"http://www.majvan.host.sk/Projekty/YAMN?fm=soft",
+	"http://www.miranda-im.org/download/details.php?action=viewfile&id=2165", //"http://www.majvan.host.sk/Projekty/YAMN?fm=soft",
 	0,		//not transient
 	0		//doesn't replace anything built-in
 };
@@ -176,6 +176,23 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	ProtoName = "YAMN";
 	YAMN_STATUS = ID_STATUS_ONLINE;
 
+	if(ServiceExists(MS_SKIN2_ADDICON))
+	{
+		//Icon to show in contact list
+		DBVARIANT dbv;
+		if(!DBGetContactSetting(NULL,"SkinIcons","YAMN_Neutral",&dbv)) 
+		{
+			DBWriteContactSettingString(NULL, "Icons", "YAMN40072", (char *)dbv.pszVal);			
+			DBFreeVariant(&dbv);
+		}
+		else
+			DBWriteContactSettingString(NULL,"Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
+	}
+	else
+	{
+		DBWriteContactSettingString(NULL, "Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
+	}
+
 	//Registering YAMN as protocol
 	PROTOCOLDESCRIPTOR pd;
 
@@ -185,8 +202,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	pd.type=PROTOTYPE_PROTOCOL;
 	
 	CallService(MS_PROTO_REGISTERMODULE,0,(LPARAM)&pd);
-	
-	DBWriteContactSettingString(NULL, "Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
 
 	if(NULL==(ProfileName=new WCHAR[MAX_PATH]))
 		return 1;
@@ -252,12 +267,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 //Create thread that will be executed every second
 	if(!(SecTimer=SetTimer(NULL,0,1000,(TIMERPROC)TimerProc)))
 		return 1;
-
-//We set function which registers needed POP3 accounts. This is a part of internal POP3 plugin.
-//Your plugin should do the same task in your Load fcn. Why we call it in MODULESLOADED? Because netlib
-//user can be registered after all modules are loaded (see m_netlib.h in Miranda)
-	HookEvent(ME_TTB_MODULELOADED,AddTopToolbarIcon);
-	HookEvent(ME_SYSTEM_MODULESLOADED,RegisterPOP3Plugin);	//pop3 plugin must be included after all miranda modules are loaded
 
 
 #ifdef YAMN_VER_BETA
