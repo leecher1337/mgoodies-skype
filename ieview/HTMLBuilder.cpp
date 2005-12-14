@@ -555,22 +555,22 @@ TextToken* TextToken::tokenizeLinks(const wchar_t *text) {
 
 TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) {
     TextToken *firstToken = NULL, *lastToken = NULL;
-	SMADD_PARSEW2 sp;
+    SMADD_BATCHPARSE sp;
+    SMADD_BATCHPARSERES *spRes;
     int l = wcslen(text);
-	int last_pos=0;
-	if (!ServiceExists(MS_SMILEYADD_PARSEW)) {
+	if (!ServiceExists(MS_SMILEYADD_BATCHPARSE)) {
  		return new TextToken(TEXT, text, l);
 	}
 	sp.cbSize = sizeof(sp);
 	sp.Protocolname = proto;
-	sp.str = (wchar_t *)text;
-	sp.startChar = 0;
-	sp.size = 0;
-    while (last_pos < l) {
-		CallService(MS_SMILEYADD_PARSEW, 0, (LPARAM)&sp);
-		if (sp.size != 0) {
-			if (sp.startChar - last_pos > 0) {
-                TextToken *newToken = new TextToken(TEXT, text+last_pos, sp.startChar-last_pos);
+//	sp.str = (wchar_t *)text;
+	sp.str = (char *)Utils::convertToString(text);
+	spRes = (SMADD_BATCHPARSERES *) CallService(MS_SMILEYADD_BATCHPARSE, 0, (LPARAM)&sp);
+    int last_pos = 0;
+	if (spRes != NULL) {
+		for (int i = 0; i<2 && spRes[i].size != 0; i++) {
+			if (spRes[i].startChar - last_pos > 0) {
+	            TextToken *newToken = new TextToken(TEXT, text+last_pos, spRes[i].startChar-last_pos);
 				if (lastToken == NULL) {
 					firstToken = newToken;
 				} else {
@@ -578,26 +578,27 @@ TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) 
 				}
 				lastToken = newToken;
 			}
-            TextToken *newToken = new TextToken(SMILEY, text+sp.startChar, sp.size);
-            newToken->setLink(sp.filepath);
+	        TextToken *newToken = new TextToken(SMILEY, text+spRes[i].startChar, spRes[i].size);
+	        newToken->setLink(spRes[i].filepath);
 			if (lastToken == NULL) {
 				firstToken = newToken;
 			} else {
 			    lastToken->setNext(newToken);
 			}
 			lastToken = newToken;
-            last_pos = sp.startChar + sp.size;
-        } else {
-            TextToken *newToken = new TextToken(TEXT, text+last_pos, l-last_pos);
-			if (lastToken == NULL) {
-				firstToken = newToken;
-			} else {
-			    lastToken->setNext(newToken);
-			}
-			lastToken = newToken;
-			break;
+	        last_pos = spRes[i].startChar + spRes[i].size;
 		}
-    }
+		CallService(MS_SMILEYADD_BATCHFREE, 0, (LPARAM)spRes);
+	}
+	if (last_pos < l)  {
+        TextToken *newToken = new TextToken(TEXT, text+last_pos, l-last_pos);
+		if (lastToken == NULL) {
+			firstToken = newToken;
+		} else {
+		    lastToken->setNext(newToken);
+		}
+		lastToken = newToken;
+	}
     return firstToken;
 }
 

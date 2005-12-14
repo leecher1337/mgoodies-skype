@@ -133,10 +133,46 @@ typedef struct
 
 #define MS_SMILEYADD_PARSE "SmileyAdd/Parse"
 
-//find smiley in text, API could be called iterativly, on each iteration the remainder 
-//of the string after last smiley processed  
+
+typedef struct 
+{
+	int cbSize;                 //size of the structure
+	const char* Protocolname;	//protocol to use... if you have defined a protocol, u can 
+								//use your own protocol name. Smiley add wil automatically 
+								//select the smileypack that is defined for your protocol.
+								//Or, use "Standard" for standard smiley set. Or "ICQ", "MSN"
+								//if you prefer those icons. 
+								//If not found or NULL: "Standard" will be used
+	char* str;                  //String to parse 
+} SMADD_BATCHPARSE;
+
+typedef struct 
+{
+	unsigned startChar;         //Starting smiley character 
+								//Because of iterative nature of the API caller should set this 
+								//parameter to correct value
+	unsigned size;              //Number of characters in smiley (0 if not found)
+								//Because of iterative nature of the API caller should set this 
+								//parameter to correct value
+	char filepath[MAX_PATH];
+} SMADD_BATCHPARSERES;
+
+//find all smileys in ASCII text
 //wParam = (WPARAM) 0; not used
-//lParam = (LPARAM) (SMADD_PARSE*) &smgp;  //pointer to SMADD_PARSE
+//lParam = (LPARAM) (SMADD_BATCHPARSE*) &smgp;  //pointer to SMADD_BATCHPARSE
+//function returns pointer to array SMADD_BATCHPARSERES records for each smiley found
+//if no smileys found NULL is returned
+//if non NULL value returned pointer must be freed with MS_SMILEYADD_BATCHFREE API
+#define MS_SMILEYADD_BATCHPARSE "SmileyAdd/BatchParse"
+
+//find all smileys in text 
+//wParam = (WPARAM) 0; not used
+//lParam = (LPARAM) (SMADD_BATCHPARSERES*) &smgp;  //pointer to SMADD_BATCHPARSERES
+#define MS_SMILEYADD_BATCHFREE "SmileyAdd/BatchFree"
+
+//find smileys in unicode text  
+//wParam = (WPARAM) 0; not used
+//lParam = (LPARAM) (SMADD_PARSEW*) &smgp;  //pointer to SMADD_PARSEW
 typedef struct 
 {
 	int cbSize;                 //size of the structure
