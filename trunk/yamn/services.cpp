@@ -367,18 +367,18 @@ void RefreshContact(void)
 
 	for(Finder=POP3Plugin->FirstAccount;Finder!=NULL;Finder=Finder->Next)
 	{
-		if(Finder->Contact != NULL)
+		if(Finder->hContact != NULL)
 		{
 			if((Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
 			{
-				DBWriteContactSettingWord(Finder->Contact, ProtoName, "Status", YAMN_STATUS);
-				//DBWriteContactSettingString(Finder->Contact, "CList", "StatusMsg", Translate("No new mail"));
-				DBDeleteContactSetting(Finder->Contact, "CList", "Hidden");
+				DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", YAMN_STATUS);
+				//DBWriteContactSettingString(Finder->hContact, "CList", "StatusMsg", Translate("No new mail"));
+				DBDeleteContactSetting(Finder->hContact, "CList", "Hidden");
 			}
 			else
 			{
 				//CallService(MS_DB_CONTACT_DELETE,(WPARAM)(HANDLE) Finder->Contact, 0);
-				DBWriteContactSettingByte(Finder->Contact, "CList", "Hidden", 1);
+				DBWriteContactSettingByte(Finder->hContact, "CList", "Hidden", 1);
 				//Finder->Contact = NULL;
 			}
 		}
@@ -386,13 +386,13 @@ void RefreshContact(void)
 		{
 			if((Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
 			{
-				Finder->Contact =(HANDLE) CallService(MS_DB_CONTACT_ADD, 0, 0);
-				CallService(MS_PROTO_ADDTOCONTACT,(WPARAM)Finder->Contact,(LPARAM)ProtoName);
-				DBWriteContactSettingString(Finder->Contact,ProtoName,"Id",Finder->Name);
-				DBWriteContactSettingString(Finder->Contact,ProtoName,"Nick",Finder->Name);
-				DBWriteContactSettingString(Finder->Contact,"Protocol","p",ProtoName);
-				DBWriteContactSettingWord(Finder->Contact, ProtoName, "Status", YAMN_STATUS);
-				DBWriteContactSettingString(Finder->Contact, "CList", "StatusMsg", Translate("No new mail"));
+				Finder->hContact =(HANDLE) CallService(MS_DB_CONTACT_ADD, 0, 0);
+				CallService(MS_PROTO_ADDTOCONTACT,(WPARAM)Finder->hContact,(LPARAM)ProtoName);
+				DBWriteContactSettingString(Finder->hContact,ProtoName,"Id",Finder->Name);
+				DBWriteContactSettingString(Finder->hContact,ProtoName,"Nick",Finder->Name);
+				DBWriteContactSettingString(Finder->hContact,"Protocol","p",ProtoName);
+				DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", YAMN_STATUS);
+				DBWriteContactSettingString(Finder->hContact, "CList", "StatusMsg", Translate("No new mail"));
 			}
 
 		}

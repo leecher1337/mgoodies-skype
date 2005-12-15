@@ -1,6 +1,16 @@
 #ifndef __MAIN_H
 #define __MAIN_H
 
+//For updater
+//#define YAMN_9x
+#ifdef YAMN_9x
+	#define YAMN_SHORTNAME "YAMN tweety win9x"
+	#define YAMN_FILENAME "yamn 9x"
+#else
+	#define YAMN_SHORTNAME "YAMN tweety "
+	#define YAMN_FILENAME "yamn"
+#endif
+
 #define	YAMN_VERSION			PLUGIN_MAKE_VERSION(0,0,0,8) 	//ok but do not forget rewrite version for debug release in debug.cpp and POP3 filter in pop3comm.cpp
 #define YAMN_NEWMAILSNDDESC		"YAMN: new mail"
 #define YAMN_CONNECTFAILSNDDESC	"YAMN: connect failed"
@@ -18,3 +28,4 @@
 #define YAMN_DEFAULTHK		MAKEWORD(VK_F12,MOD_CONTROL)
 
 #endif
+

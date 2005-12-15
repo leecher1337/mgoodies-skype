@@ -6,9 +6,9 @@
 
 #include <windows.h>
 #include <stdio.h>
-#include "../../../../SDK/headers_c/newpluginapi.h"	//CallService,UnHookEvent
-#include "../../../../SDK/headers_c/m_netlib.h"		//socket thorugh proxy functions
-#include "../../../../SDK/headers_c/m_langpack.h"	//langpack for "connection" and other words
+#include "../../../include/newpluginapi.h"	//CallService,UnHookEvent
+#include "../../../include/m_netlib.h"		//socket thorugh proxy functions
+#include "../../../include/m_langpack.h"	//langpack for "connection" and other words
 #include "../debug.h"
 #ifdef SSLTHRUNETLIB
 	#include "netlib.h"					//yes, we want to use netlib connection

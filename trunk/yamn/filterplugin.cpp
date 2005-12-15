@@ -7,8 +7,8 @@
 #include <windows.h>
 #include <tchar.h>
 #include <stdio.h>
-#include "../../../SDK/headers_c/newpluginapi.h"
-#include "../../../SDK/headers_c/m_database.h"
+#include "../../include/newpluginapi.h"
+#include "../../include/m_database.h"
 #include "m_yamn.h"
 #include "m_filterplugin.h"
 #include "mails/m_mails.h"

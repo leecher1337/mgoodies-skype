@@ -6,15 +6,6 @@
  * (c) majvan 2002-2004
  */
 
-/*
-#include <windows.h>
-#include <tchar.h>
-#include "../../../SDK/headers_c/newpluginapi.h"
-#include "../../../SDK/headers_c/m_utils.h"
-#include "m_messages.h"
-#include "m_protoplugin.h"
-#include "m_yamn.h"
-#include "debug.h"*/
 #include "yamn.h"
 #include "mails/m_mails.h"
 #if defined(DEBUG_FILEREAD) || defined(DEBUG_FILEREADMESSAGES) || defined(DEBUG_SYNCHRO)

@@ -32,6 +32,7 @@ extern int FilterMailSvc(WPARAM,LPARAM);
 
 extern char *ProtoName;
 extern int YAMN_STATUS;
+extern PLUGININFO pluginInfo;
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -311,6 +312,38 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	mi.pszContactOwner = ProtoName;
 	mi.pszService = MS_YAMN_CLISTCONTEXT;
 	CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
+
+	//Use for the Updater plugin
+	if(ServiceExists(MS_UPDATE_REGISTER)) 
+	{
+		Update update = {0};
+		char szVersion[16];
+		char szUrl[250];
+
+		update.szComponentName = pluginInfo.shortName;
+		update.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szVersion);
+		update.cpbVersion = strlen((char *)update.pbVersion);
+
+		#ifdef YAMN_9x
+		update.szUpdateURL = "http://miranda-im.org/download/feed.php?dlfile=2166";
+		update.szVersionURL = "http://www.miranda-im.org/download/details.php?action=viewfile&id=2166";
+		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Updater ";
+		#else
+		update.szUpdateURL = "http://miranda-im.org/download/feed.php?dlfile=2165";
+		update.szVersionURL = "http://www.miranda-im.org/download/details.php?action=viewfile&id=2165";
+		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Updater ";
+		#endif
+		wsprintf(szUrl,"http://www.miranda-fr.net/tweety/yamn/%s.zip",YAMN_FILENAME);
+	    update.szBetaUpdateURL = szUrl;
+		update.szBetaVersionURL = "http://www.miranda-fr.net/tweety/yamn/yamn_beta.html";
+		update.pbBetaVersionPrefix = (BYTE *)"YAMN version ";
+
+		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
+		update.cpbBetaVersionPrefix = strlen((char *)update.pbBetaVersionPrefix);
+
+		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
+
+	}
 	
 
 	//Get YAMN variables we can use
@@ -404,7 +437,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 
 	for(Finder=POP3Plugin->FirstAccount;Finder!=NULL;Finder=Finder->Next)
 	{
-		Finder->Contact = NULL;
+		Finder->hContact = NULL;
 		hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 		while(hContact) 
 		{
@@ -416,16 +449,16 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 					
 					if( strcmp((char*)dbv.pszVal, Finder->Name)==0)
 					{
-						Finder->Contact = hContact;
-						DBWriteContactSettingWord(Finder->Contact, ProtoName, "Status", YAMN_STATUS);
-						DBWriteContactSettingString(Finder->Contact, "CList", "StatusMsg", Translate("No new mail"));
+						Finder->hContact = hContact;
+						DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", YAMN_STATUS);
+						DBWriteContactSettingString(Finder->hContact, "CList", "StatusMsg", Translate("No new mail"));
 						if((Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
 						{
-							DBDeleteContactSetting(Finder->Contact, "CList", "Hidden");
+							DBDeleteContactSetting(Finder->hContact, "CList", "Hidden");
 						}
 						if(!(Finder->Flags & YAMN_ACC_ENA) || !(Finder->NewMailN.Flags & YAMN_ACC_CONT))
 						{
-							DBWriteContactSettingByte(Finder->Contact, "CList", "Hidden", 1);
+							DBWriteContactSettingByte(Finder->hContact, "CList", "Hidden", 1);
 						}
 					}
 					DBFreeVariant(&dbv);
@@ -434,15 +467,15 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 			}
 			hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0);
 		}
-		if(Finder->Contact == NULL && (Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
+		if(Finder->hContact == NULL && (Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
 		{
 			//No account contact found, have to create one
-			Finder->Contact =(HANDLE) CallService(MS_DB_CONTACT_ADD, 0, 0);
-			CallService(MS_PROTO_ADDTOCONTACT,(WPARAM)Finder->Contact,(LPARAM)ProtoName);
-			DBWriteContactSettingString(Finder->Contact,ProtoName,"Id",Finder->Name);
-			DBWriteContactSettingString(Finder->Contact,ProtoName,"Nick",Finder->Name);
-			DBWriteContactSettingString(Finder->Contact,"Protocol","p",ProtoName);
-			DBWriteContactSettingWord(Finder->Contact, ProtoName, "Status", YAMN_STATUS);
+			Finder->hContact =(HANDLE) CallService(MS_DB_CONTACT_ADD, 0, 0);
+			CallService(MS_PROTO_ADDTOCONTACT,(WPARAM)Finder->hContact,(LPARAM)ProtoName);
+			DBWriteContactSettingString(Finder->hContact,ProtoName,"Id",Finder->Name);
+			DBWriteContactSettingString(Finder->hContact,ProtoName,"Nick",Finder->Name);
+			DBWriteContactSettingString(Finder->hContact,"Protocol","p",ProtoName);
+			DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", YAMN_STATUS);
 		}
 
 	}
