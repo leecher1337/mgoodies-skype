@@ -5,11 +5,11 @@
  */
 #include <windows.h>
 #include <stdio.h>
-#include "../../../../SDK/headers_c/newpluginapi.h"
-#include "../../../../SDK/headers_c/m_utils.h"
-#include "../../../../SDK/headers_c/m_skin.h"
-#include "../../../../SDK/headers_c/m_langpack.h"
-#include "../../../../SDK/headers_c/m_database.h"
+#include "../../../include/newpluginapi.h"
+#include "../../../include/m_utils.h"
+#include "../../../include/m_skin.h"
+#include "../../../include/m_langpack.h"
+#include "../../../include/m_database.h"
 #include "../SDK/import/m_popup.h"
 #include "../main.h"
 #include "../m_protoplugin.h"

@@ -50,7 +50,7 @@ YAMN_VARIABLES YAMNVar;
 
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
-	"tweety's Yet Another Mail Notifier",
+	YAMN_SHORTNAME,
 	YAMN_VERSION,
 	"Mail notifier and browser for Miranda IM. Included POP3 protocol.",
 	"tweety (majvan)",

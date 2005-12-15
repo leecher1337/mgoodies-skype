@@ -183,7 +183,7 @@ typedef struct CAccount
 	PSWMRG MessagesAccessSO;
 
 //For clist contact notification
-	HANDLE Contact; 
+	HANDLE hContact; 
 
 	struct CAccount *Next;
 } *HACCOUNT;

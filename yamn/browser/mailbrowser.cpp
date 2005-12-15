@@ -12,13 +12,14 @@
 
  
 #include <windows.h>
+#include <stdio.h>
 #undef UNICODE
-#include "../../../../SDK/headers_c/newpluginapi.h"
-#include "../../../../SDK/headers_c/m_utils.h"
-#include "../../../../SDK/headers_c/m_skin.h"
-#include "../../../../SDK/headers_c/m_langpack.h"
-#include "../../../../SDK/headers_c/m_database.h"
-#include "../../../../SDK/headers_c/m_clist.h"
+#include "../../../include/newpluginapi.h"
+#include "../../../include/m_utils.h"
+#include "../../../include/m_skin.h"
+#include "../../../include/m_langpack.h"
+#include "../../../include/m_database.h"
+#include "../../../include/m_clist.h"
 #include "../SDK/Import/m_popup.h"
 #include "../SDK/Import/m_kbdnotify.h"
 #include "../main.h"
@@ -691,16 +692,16 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		char tmp[255];
 		CLISTEVENT cEvent;
 		cEvent.cbSize = sizeof(CLISTEVENT);
-		cEvent.hContact = ActualAccount->Contact;
+		cEvent.hContact = ActualAccount->hContact;
 		cEvent.hIcon = hNewMailIcon;
 		cEvent.hDbEvent = (HANDLE)1;
-		cEvent.lParam = (LPARAM) ActualAccount->Contact;
+		cEvent.lParam = (LPARAM) ActualAccount->hContact;
 		cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
 
 		sprintf(tmp,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
 		cEvent.pszTooltip = tmp;
-		CallService(MS_CLIST_ADDEVENT,(WPARAM)ActualAccount->Contact,(LPARAM)&cEvent);
-		DBWriteContactSettingString(ActualAccount->Contact, "CList", "StatusMsg", tmp);
+		CallService(MS_CLIST_ADDEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)&cEvent);
+		DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", tmp);
 	}
 
 	if((nflags & YAMN_ACC_POP) && !(ActualAccount->Flags & YAMN_ACC_POPN) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
@@ -822,16 +823,16 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 
 	if((nflags & YAMN_ACC_CONT) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun==0))
 	{
-		if(ActualAccount->Contact != NULL)
+		if(ActualAccount->hContact != NULL)
 		{
 			if(MN->Real.PopUpTC+MN->Virtual.PopUpTC)
 			{
 				char tmp[255];
 				sprintf(tmp,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
-				DBWriteContactSettingString(ActualAccount->Contact, "CList", "StatusMsg", tmp);
+				DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", tmp);
 			}
 			else
-				DBWriteContactSettingString(ActualAccount->Contact, "CList", "StatusMsg", Translate("No new mail"));
+				DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", Translate("No new mail"));
 		}
 	}
 	return;
@@ -884,9 +885,9 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 			HACCOUNT ActualAccount;
 
 			ActualAccount=(HACCOUNT)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
-			if(ActualAccount->Contact != NULL)
+			if(ActualAccount->hContact != NULL)
 			{
-				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->Contact,(LPARAM)1);
+				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)1);
 			}
 			SendMessage(hWnd,UM_DESTROYPOPUP,0,0);
 			break;			
@@ -1198,9 +1199,9 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			}
 			SetTimer(hDlg,TIMER_FLASHING,500,NULL);
 
-			if(ActualAccount->Contact != NULL)
+			if(ActualAccount->hContact != NULL)
 			{
-				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->Contact,(LPARAM)1);
+				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)1);
 			}
 
 			break;

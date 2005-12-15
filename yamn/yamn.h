@@ -1,26 +1,30 @@
+#ifndef __YAMN_H
+#define __YAMN_H
+
 #include <wchar.h>
 #include <tchar.h>
 #include <windows.h>
 #include <stdio.h>
 #include <direct.h>		//For _chdir()
 #include <commctrl.h>		//For hotkeys
-#include "../../../SDK/headers_c/newpluginapi.h"	//CallService,UnHookEvent
-#include "../../../SDK/headers_c/m_utils.h"			//window broadcasting
-#include "../../../SDK/headers_c/m_system.h"
-#include "../../../SDK/headers_c/m_skin.h"
-#include "../../../SDK/headers_c/m_langpack.h"
-#include "../../../SDK/headers_c/m_clist.h"
-#include "../../../SDK/headers_c/m_options.h"
-#include "../../../SDK/headers_c/m_database.h"		//database
-#include "../../../SDK/headers_c/m_contacts.h"		//contact
-#include "../../../SDK/headers_c/m_protocols.h"		//protocols
-#include "../../../SDK/headers_c/m_protomod.h"		//protocols module
-#include "../../../SDK/headers_c/m_protosvc.h"
+#include "../../include/newpluginapi.h"	//CallService,UnHookEvent
+#include "../../include/m_utils.h"			//window broadcasting
+#include "../../include/m_system.h"
+#include "../../include/m_skin.h"
+#include "../../include/m_langpack.h"
+#include "../../include/m_clist.h"
+#include "../../include/m_options.h"
+#include "../../include/m_database.h"		//database
+#include "../../include/m_contacts.h"		//contact
+#include "../../include/m_protocols.h"		//protocols
+#include "../../include/m_protomod.h"		//protocols module
+#include "../../include/m_protosvc.h"
 #include "SDK/Import/m_uninstaller.h"				//PluginUninstaller structures
 #include "SDK/Import/m_toptoolbar.h"
 #include "SDK/Import/icolib.h"
 #include "SDK/Import/m_kbdnotify.h"
 #include "SDK/import/m_popup.h"
+#include "SDK/import/m_updater.h"
 #include "m_account.h"	//Account structure and all needed structures to cooperate with YAMN
 #include "m_messages.h"	//Messages sent to YAMN windows
 #include "mails/m_mails.h"	//use YAMN's mails
@@ -135,3 +139,5 @@ void ExtractHeader(struct CMimeItem *items,int CP,struct CHeader *head);
 void DeleteHeaderContent(struct CHeader *head);
 //From account.cpp
 void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
+
+#endif

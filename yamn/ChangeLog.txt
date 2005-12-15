@@ -2,6 +2,9 @@
 ============
 + Add date field in mail browser
 * Modify the tooltip text for the clist event (add account name)
+* Rename Contact member of CAccount by hContact since it is an HANDLE
++ Updater support for BETA
+* Using the right headers (no more the one in SDK)
 
 0.0.0.7
 ============
