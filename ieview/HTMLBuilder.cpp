@@ -565,13 +565,13 @@ TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) 
 	}
 	sp.cbSize = sizeof(sp);
 	sp.Protocolname = proto;
-	sp.oflag = SAFL_PATH;// | SAFL_UNICODE;
-	sp.wstr = (wchar_t *)Utils::convertToString(text);
+	sp.flag = SAFL_PATH | SAFL_UNICODE;
+	sp.oflag = SAFL_UNICODE;
+	sp.wstr = (wchar_t *)text;
 	spRes = (SMADD_BATCHPARSERES *) CallService(MS_SMILEYADD_BATCHPARSE, 0, (LPARAM)&sp);
     int last_pos = 0;
 	if (spRes != NULL) {
-//		for (unsigned int i = 0; i < sp.numSmileys; i++) {
-		for (int i = (int)sp.numSmileys-1; i >=0; i--) {
+		for (int i = 0; i < (int)sp.numSmileys; i++) {
 			if ((int)spRes[i].startChar - last_pos > 0) {
 	            TextToken *newToken = new TextToken(TEXT, text+last_pos, spRes[i].startChar-last_pos);
 				if (lastToken == NULL) {
@@ -582,7 +582,6 @@ TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) 
 				lastToken = newToken;
 			}
 	        TextToken *newToken = new TextToken(SMILEY, text+spRes[i].startChar, spRes[i].size);
-//	        TextToken *newToken = new TextToken(TEXT, text+spRes[i].startChar, spRes[i].size);
 	        newToken->setLink((wchar_t *)spRes[i].filepath);
 			if (lastToken == NULL) {
 				firstToken = newToken;
