@@ -139,5 +139,4 @@ void ExtractHeader(struct CMimeItem *items,int CP,struct CHeader *head);
 void DeleteHeaderContent(struct CHeader *head);
 //From account.cpp
 void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
-
 #endif

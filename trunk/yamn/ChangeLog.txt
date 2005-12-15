@@ -1,3 +1,9 @@
+0.0.0.9
+============
++ Sorting asc and desc of the mail browser listview
++ Use the format yyyy-mm-dd hh:mm:ss for date comparaison in sorting
++ Doubleclick on list view to show the mail body but it seems to be empty :(
+
 0.0.0.8
 ============
 + Add date field in mail browser

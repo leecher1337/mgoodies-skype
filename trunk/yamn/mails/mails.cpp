@@ -5,18 +5,6 @@
  */
 
 #pragma warning( disable : 4290 )
-/*
-#include <windows.h>
-#include <tchar.h>
-#include <stdio.h>
-#include <string.h>
-#include "../m_yamn.h"
-#include "../m_messages.h"
-#include "../m_protoplugin.h"
-#include "../debug.h"
-#include "m_mails.h"
-#include "m_decode.h"
-*/
 #include "../yamn.h"
 
 //--------------------------------------------------------------------------------------------------
