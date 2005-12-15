@@ -5,17 +5,6 @@
  */
 
 #pragma warning( disable : 4290 )
-/*
-#include <windows.h>
-#include <tchar.h>
-#include <stdio.h>
-#include <string.h>
-#include "../m_messages.h"
-#include "../m_account.h"
-#include "../browser/m_browser.h"
-#include "../debug.h"
-#include "m_mails.h"
-#include "m_decode.h"*/
 #include "../yamn.h"
 
 //- imported ---------------------------------------------------------------------------------------
@@ -243,49 +232,49 @@ void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head)
 		{
 			if(items->value==NULL)
 				continue;
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"<Extracting from>");
-#endif
+			#endif
 			ExtractAddressFromLine(items->value,&head->From,&head->FromNick);
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"</Extracting>\n");
-#endif
+			#endif
 		}
 		else if(0==_strnicmp(items->name,"Return-Path",11))
 		{
 			if(items->value==NULL)
 				continue;
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"<Extracting return-path>");
-#endif
+			#endif
 			ExtractAddressFromLine(items->value,&head->ReturnPath,&head->ReturnPathNick);
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"</Extracting>\n");
-#endif
+			#endif
 		}
 		else if(0==_strnicmp(items->name,"Subject",7))
 		{
 			if(items->value==NULL)
 				continue;
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"<Extracting subject>");
-#endif
+			#endif
 			ExtractStringFromLine(items->value,&head->Subject);
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"</Extracting>\n");
-#endif
+			#endif
 		}
 		else if(0==_strnicmp(items->name,"Date",4))
 		{
 			if(items->value==NULL)
 				continue;
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"<Extracting date>");
-#endif
+			#endif
 			ExtractStringFromLine(items->value,&head->Date);
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"</Extracting>\n");
-#endif
+			#endif
 		}
 		else if(0==_strnicmp(items->name,"Content-Type",12))
 		{
@@ -293,13 +282,13 @@ void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head)
 				continue;
 
 			char *ContentType=NULL,*CharSetStr;
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"<Extracting Content-Type>");
-#endif
+			#endif
 			ExtractStringFromLine(items->value,&ContentType);
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"</Extracting>\n");
-#endif
+			#endif
 			ToLower(ContentType);
 			if(NULL!=(CharSetStr=ExtractFromContentType(ContentType,"charset=")))
 			{
@@ -312,9 +301,9 @@ void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head)
 		{
 			if(items->value==NULL)
 				continue;
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"<Extracting importance>");
-#endif
+			#endif
 			if(head->Priority!=-1)
 			{
 				if(0==strncmp(items->value,"low",3))
@@ -324,22 +313,22 @@ void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head)
 				else if(0==strncmp(items->value,"high",4))
 					head->Priority=1;
 			}
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"</Extracting>\n");
-#endif
+			#endif
 		}
 		else if(0==_strnicmp(items->name,"X-Priority",10))
 		{
 			if(items->value==NULL)
 				continue;
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"<X-Priority>");
-#endif
+			#endif
 			if((*items->value>='1') && (*items->value<='5'))
 				head->Priority=*items->value-'0';
-#ifdef DEBUG_DECODE
+			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"</Extracting>\n");
-#endif
+			#endif
 		}
 
 	}

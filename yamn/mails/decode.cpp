@@ -4,16 +4,6 @@
  *
  * (c) majvan 2002-2004
  */
-/*
-#include <windows.h>
-#include <string.h>
-#include "../debug.h"
-#include "m_mails.h"
-#include "m_decode.h"
-
-#include <stdio.h>
-#include <wchar.h>
-*/
 #include "../yamn.h"
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -299,6 +289,8 @@ end:
 #endif
 	return 1;
 }
+
+
 
 int ConvertStringToUnicode(char *stream,unsigned int cp,WCHAR **out)
 {

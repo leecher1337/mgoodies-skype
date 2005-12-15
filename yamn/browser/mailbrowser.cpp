@@ -70,13 +70,15 @@ extern void WINAPI DeleteMessageFromQueueFcn(HYAMNMAIL *From,HYAMNMAIL Which,int
 extern void WINAPI SetRemoveFlagsInQueueFcn(HYAMNMAIL From,DWORD FlagsSet,DWORD FlagsNotSet,DWORD FlagsToSet,int mode);
 //From mime.cpp
 void ExtractHeader(struct CMimeItem *items,int CP,struct CHeader *head);
+void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head); 
 void DeleteHeaderContent(struct CHeader *head);
 //From account.cpp
 void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
-
+char* s_MonthNames[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+bool bDate = false,bSub=false,bSize=false,bFrom=false;
 int PosX=0,PosY=0,SizeX=460,SizeY=100;
 static int FromWidth=250,SubjectWidth=280,SizeWidth=50,SizeDate=160;
 struct CMailNumbersSub
@@ -1002,83 +1004,157 @@ LRESULT CALLBACK NoNewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lPar
 	return DefWindowProc(hWnd,msg,wParam,lParam);
 }
 
+int FormatMimeDate(char *datein,char *dateout)
+{
+	int i,j,l,max,m;
+	char *day, *month, *year, *time, *tmp;
+
+	j = 0;
+	l = 0;
+	max = strlen(datein);
+	
+	day = new char[2];
+	month = new char[3];
+	year = new char[4];
+	time = new char[8];
+	tmp = new char[max];
+	
+	for(i=0;i<max;i++,l++)
+	{
+		if(datein[i] == ' ')
+		{
+			j++;
+			l=-1;
+			switch(j)
+			{
+				case 2:
+					sprintf(day,"%c%c",tmp[0],tmp[1]);
+					break;
+				case 3:
+					sprintf(month,"%c%c%c",tmp[0],tmp[1],tmp[2]);
+					break;
+				case 4:
+					sprintf(year,"%c%c%c%c",tmp[0],tmp[1],tmp[2],tmp[3]);
+					break;
+				case 5:
+					sprintf(time,"%c%c%c%c%c%c%c%c",tmp[0],tmp[1],tmp[2],tmp[3],tmp[4],tmp[5],tmp[6],tmp[7]);
+					break;
+				default:
+					break;
+			}
+		}
+		else
+			tmp[l] = datein[i];
+	}
+
+	m = 0;
+	for(i=0;i<12;i++)
+	{
+		if(strcmp(month,s_MonthNames[i])==0)
+		{
+			m = i + 1;
+		}
+	}
+
+	sprintf(dateout,"date = %s-%2d-%s %s",year,m,day,time);
+	delete[] day;
+	delete[] month;
+	delete[] year ;
+	delete[] time;
+	delete[] tmp;
+	return 0;
+}
+
 int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSort )
 {
 
 	int					nResult;
 	HYAMNMAIL			email1;
 	HYAMNMAIL			email2;
-	struct CHeader	UnicodeHeader1;
-	struct CHeader	UnicodeHeader2;	
-	WCHAR			*str1;
-	WCHAR			*str2;
+	struct CShortHeader	Header1;
+	struct CShortHeader	Header2;	
+	char			*str1;
+	char			*str2;
 
 	email1 = (HYAMNMAIL)lParam1;
 	email2 = (HYAMNMAIL)lParam2;
 
-	ZeroMemory(&UnicodeHeader1,sizeof(UnicodeHeader1));
-	ZeroMemory(&UnicodeHeader2,sizeof(UnicodeHeader2));
+	ZeroMemory(&Header1,sizeof(Header1));
+	ZeroMemory(&Header2,sizeof(Header2));
+
 
 	nResult = 0;
 
 	try
 	{
 
-		ExtractHeader(email1->MailData->TranslatedHeader,email1->MailData->CP,&UnicodeHeader1);
-		ExtractHeader(email2->MailData->TranslatedHeader,email2->MailData->CP,&UnicodeHeader2);	
+		ExtractShortHeader(email1->MailData->TranslatedHeader,&Header1);
+		ExtractShortHeader(email2->MailData->TranslatedHeader,&Header2);	
 		
 		switch((int)lParamSort)
 		{
 			case 0:
-				if(UnicodeHeader1.FromNick == NULL) str1 = UnicodeHeader1.From;
-				else str1 = UnicodeHeader1.FromNick;
+				if(Header1.FromNick == NULL) str1 = Header1.From;
+				else str1 = Header1.FromNick;
 
-				if(UnicodeHeader2.FromNick == NULL) str2 = UnicodeHeader2.From;
-				else str2 = UnicodeHeader2.FromNick;
+				if(Header2.FromNick == NULL) str2 = Header2.From;
+				else str2 = Header2.FromNick;
 
-				nResult = _wcsicmp(str1, str2);			
+				nResult = strcmp(str1, str2);
+
+				if(bFrom) nResult = -nResult;
 				break;
 			case 1:
-				if(UnicodeHeader1.Subject == NULL) str1 = L" ";
-				else str1 = UnicodeHeader1.Subject;
+				if(Header1.Subject == NULL) str1 = " ";
+				else str1 = Header1.Subject;
 
-				if(UnicodeHeader2.Subject == NULL) str2 = L" ";
-				else str2 = UnicodeHeader2.Subject;
+				if(Header2.Subject == NULL) str2 = " ";
+				else str2 = Header2.Subject;
 
-				nResult = _wcsicmp(str1, str2);
+				nResult = strcmp(str1, str2);
+
+				if(bSub) nResult = -nResult;
 				break;
 			case 2:
 				if(email1->MailData->Size == email2->MailData->Size) nResult = 0;
 				if(email1->MailData->Size > email2->MailData->Size) nResult = 1;
 				if(email1->MailData->Size < email2->MailData->Size) nResult = -1;
+
+				if(bSize) nResult = -nResult;
 				break;
 
 			case 3:
-				if(UnicodeHeader1.Date == NULL) str1 = L" ";
-				else str1 = UnicodeHeader1.Date;
+				char *date1;
+				char *date2;
 
-				if(UnicodeHeader2.Date == NULL) str2 = L" ";
-				else str2 = UnicodeHeader2.Date;
+				date1 = new char[100];
+				date2 = new char[100];
 
-				nResult = _wcsicmp(str1, str2);
+				if(Header1.Date != NULL)
+					FormatMimeDate(Header1.Date,date1);
+
+				if(Header2.Date != NULL)
+					FormatMimeDate(Header2.Date,date2);				
+
+				nResult = strcmp(date1, date2);
+
+				delete[] date1;
+				delete[] date2;
+
+				if(bDate) nResult = -nResult;
 				break;
 
 			default:
-				if(UnicodeHeader1.Subject == NULL) str1 = L" ";
-				else str1 = UnicodeHeader1.Subject;
+				if(Header1.Subject == NULL) str1 = " ";
+				else str1 = Header1.Subject;
 
-				if(UnicodeHeader2.Subject == NULL) str2 = L" ";
-				else str2 = UnicodeHeader2.Subject;
+				if(Header2.Subject == NULL) str2 = " ";
+				else str2 = Header2.Subject;
 
-				nResult = _wcsicmp(str1, str2);
+				nResult = strcmp(str1, str2);
 				break;
 		}
-
-		/*char    *from1   = (char *)malloc( 200 );
-		char    *from2   = (char *)malloc( 200 );
-		wcstombs( from1, str1, 100 );
-		wcstombs( from2, str2, 100 );
-		MessageBox(NULL,from1,from2,0);*/
+		//MessageBox(NULL,str1,str2,0);
 	}
 	catch( ... )
 	{
@@ -1647,6 +1723,32 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				{
 					switch(((LPNMHDR)lParam)->code)
 					{
+						case NM_DBLCLK:
+						{
+							NM_LISTVIEW* pNMListView;
+							pNMListView = (NM_LISTVIEW*)lParam;
+							int iSelect;
+							iSelect=SendMessage(hDlg,LVM_GETNEXTITEM,-1,LVNI_FOCUSED); // return item selected
+
+							if(iSelect!=-1) 
+							{
+								LV_ITEMW item;
+								HYAMNMAIL ActualMail;
+								item.iItem=iSelect;
+								item.iSubItem=0;
+								item.mask=LVIF_PARAM | LVIF_STATE;
+								item.stateMask=0xFFFFFFFF;
+								ListView_GetItem(GetDlgItem(hDlg,IDC_LISTMAILS),&item);
+								ActualMail=(HYAMNMAIL)item.lParam;
+								if(NULL!=ActualMail)
+								{
+									//MessageBox(NULL,ActualMail->MailData->Body,"Mail",0);
+								}
+
+							}
+						}
+							break;
+
 						case LVN_COLUMNCLICK:
 							HACCOUNT ActualAccount;
 							if(NULL==(ActualAccount=GetWindowAccount(hDlg)))
@@ -1659,6 +1761,23 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 								#ifdef DEBUG_SYNCHRO
 								DebugLog(SynchroFile,"MailBrowser:COLUMNCLICK:ActualAccountSO-read enter\n");
 								#endif
+								switch((int)pNMListView->iSubItem)
+								{
+									case 0:
+										bFrom = !bFrom;
+										break;
+									case 1:
+										bSub = !bSub;
+										break;
+									case 2:
+										bSize = !bSize;
+										break;
+									case 3:
+										bDate = !bDate;
+										break;
+									default:
+										break;
+								}
 								ListView_SortItems(pNMListView->hdr.hwndFrom,ListViewCompareProc,pNMListView->iSubItem,);
 								#ifdef DEBUG_SYNCHRO
 								DebugLog(SynchroFile,"MailBrowser:BTNAPP:ActualAccountSO-read done\n");
