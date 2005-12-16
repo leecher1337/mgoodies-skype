@@ -583,13 +583,13 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 				szName = GetNickname(NULL, event->szModule);
 			} else {
 				szName = GetNickname(event->hContact, event->szModule);
-#if defined( _UNICODE )
-				AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, szName);
-#else
-				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
-#endif
-				free(szName);
 			}
+#if defined( _UNICODE )
+			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, szName);
+#else
+			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
+#endif
+			free(szName);
 		}
 		showColon = 1;
 		if (event->eventType == EVENTTYPE_MESSAGE && g_dat->flags & SMF_GROUPMESSAGES) {
