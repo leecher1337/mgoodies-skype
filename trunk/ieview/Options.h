@@ -55,6 +55,7 @@ private:
 
 	static bool     bMathModule;
    	static bool     isInited;
+	static int      smileyAddFlags;
 public:
 	enum OPTIONS {
 		GENERAL_ENABLE_BBCODES	= 1,
@@ -78,8 +79,10 @@ public:
 		LOG_LONG_DATE         = 0x1000,
 		LOG_RELATIVE_DATE     = 0x2000,
 		LOG_GROUP_MESSAGES	  = 0x4000,
-
-
+	};
+	enum SMILEYADDFLAGS {
+		SMILEYADD_PRESENT     = 0x0001,
+		SMILEYADD_UNICODE     = 0x0002
 	};
    	static void     		setGeneralFlags(int flags);
    	static int				getGeneralFlags();
@@ -102,6 +105,7 @@ public:
    	static void     		setGroupChatTemplatesFile(const char *filename);
    	static const char *		getGroupChatTemplatesFile();
    	static bool             isMathModule();
+   	static int              getSmileyAddFlags();
    	static void      		init();
 };
 
