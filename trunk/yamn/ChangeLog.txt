@@ -1,3 +1,8 @@
+0.0.0.10
+============
++ Now able to pass hContact handle to popup so can show avatar if set.
+* Change folder structure in svn SDK\import replace by include
+
 0.0.0.9
 ============
 + Sorting asc and desc of the mail browser listview

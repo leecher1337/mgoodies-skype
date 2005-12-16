@@ -217,42 +217,6 @@ SOURCE=.\debug.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\SDK\Import\IcoLib.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\m_account.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\browser\m_browser.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\SDK\headers_c\m_langpack.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\SDK\headers_c\m_plugins.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\SDK\Import\m_popup.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\SDK\Import\m_toptoolbar.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\SDK\Import\m_uninstaller.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\SDK\headers_c\m_utils.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\main.h
 # End Source File
 # Begin Source File
@@ -270,6 +234,34 @@ SOURCE=.\proto\pop3\pop3opt.h
 # Begin Source File
 
 SOURCE=.\yamn.h
+# End Source File
+# End Group
+# Begin Group "include"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\include\IcoLib.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\include\m_kbdnotify.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\include\m_popup.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\include\m_toptoolbar.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\include\m_uninstaller.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\include\m_updater.h
 # End Source File
 # End Group
 # Begin Source File

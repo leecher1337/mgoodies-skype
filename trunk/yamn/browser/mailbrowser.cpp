@@ -20,8 +20,8 @@
 #include "../../../include/m_langpack.h"
 #include "../../../include/m_database.h"
 #include "../../../include/m_clist.h"
-#include "../SDK/Import/m_popup.h"
-#include "../SDK/Import/m_kbdnotify.h"
+#include "../include/m_popup.h"
+#include "../include/m_kbdnotify.h"
 #include "../main.h"
 #include "../m_protoplugin.h"
 #include "../m_account.h"
@@ -53,6 +53,8 @@
 
 //- imported ---------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
+extern char *ProtoName;
+extern HYAMNPROTOPLUGIN POP3Plugin;
 
 extern HANDLE hNewMailHook;
 extern HANDLE WriteToFileEV;
@@ -542,7 +544,7 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 		lfoundi=0;
 	}
 
-	NewMailPopUp.lchContact=ActualAccount;
+	NewMailPopUp.lchContact=ActualAccount->hContact;
 	NewMailPopUp.lchIcon=hNewMailIcon;
 	NewMailPopUp.colorBack=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpB : GetSysColor(COLOR_BTNFACE);
 	NewMailPopUp.colorText=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpT : GetSysColor(COLOR_WINDOWTEXT);
@@ -710,7 +712,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 	{
 		POPUPDATAEX NewMailPopUp;
 
-		NewMailPopUp.lchContact=ActualAccount;
+		NewMailPopUp.lchContact=ActualAccount->hContact;
 		NewMailPopUp.lchIcon=hNewMailIcon;
 		NewMailPopUp.colorBack=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpB : GetSysColor(COLOR_BTNFACE);
 		NewMailPopUp.colorText=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpT : GetSysColor(COLOR_WINDOWTEXT);
@@ -806,7 +808,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 	{
 		POPUPDATAEX NoNewMailPopUp;
 
-		NoNewMailPopUp.lchContact=ActualAccount;
+		NoNewMailPopUp.lchContact=ActualAccount->hContact;
 		NoNewMailPopUp.lchIcon=hYamnIcon;
 		NoNewMailPopUp.colorBack=ActualAccount->NoNewMailN.Flags & YAMN_ACC_POPC ? ActualAccount->NoNewMailN.PopUpB : GetSysColor(COLOR_BTNFACE);
 		NoNewMailPopUp.colorText=ActualAccount->NoNewMailN.Flags & YAMN_ACC_POPC ? ActualAccount->NoNewMailN.PopUpT : GetSysColor(COLOR_WINDOWTEXT);
@@ -849,8 +851,19 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 			if((HIWORD(wParam)==STN_CLICKED) && (msg==WM_COMMAND) && (CallService(MS_POPUP_GETPLUGINDATA,(WPARAM)hWnd,(LPARAM)&PluginParam)))	//if clicked and it's new mail popup window
 			{
 				HACCOUNT ActualAccount;
+				HANDLE hContact;
+				DBVARIANT dbv;
 
-				ActualAccount=(HACCOUNT)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
+				hContact=(HANDLE)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
+
+				if(!DBGetContactSetting((HANDLE) hContact,ProtoName,"Id",&dbv)) 
+				{
+					ActualAccount=(HACCOUNT) CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
+					DBFreeVariant(&dbv);
+				}
+				else
+					break;
+
 				#ifdef DEBUG_SYNCHRO
 				DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read wait\n");
 				#endif
@@ -928,16 +941,27 @@ LRESULT CALLBACK NoNewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lPar
 			if((HIWORD(wParam)==STN_CLICKED) && (msg==WM_COMMAND))
 			{
 				HACCOUNT ActualAccount;
+				HANDLE hContact;
+				DBVARIANT dbv;
 
-				ActualAccount=(HACCOUNT)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
-#ifdef DEBUG_SYNCHRO
+				hContact=(HANDLE)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
+
+				if(!DBGetContactSetting((HANDLE) hContact,ProtoName,"Id",&dbv)) 
+				{
+					ActualAccount=(HACCOUNT) CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
+					DBFreeVariant(&dbv);
+				}
+				else
+					break;
+
+				#ifdef DEBUG_SYNCHRO
 				DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read wait\n");
-#endif
+				#endif
 				if(WAIT_OBJECT_0==WaitToReadFcn(ActualAccount->AccountAccessSO))
 				{
-#ifdef DEBUG_SYNCHRO
+					#ifdef DEBUG_SYNCHRO
 					DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read enter\n");
-#endif
+					#endif
 					switch(msg)
 					{
 						case WM_COMMAND:
@@ -954,15 +978,15 @@ LRESULT CALLBACK NoNewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lPar
 						}
 						break;
 					}
-#ifdef DEBUG_SYNCHRO
+					#ifdef DEBUG_SYNCHRO
 					DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read done\n");
-#endif
+					#endif
 					ReadDoneFcn(ActualAccount->AccountAccessSO);
 				}
-#ifdef DEBUG_SYNCHRO
+				#ifdef DEBUG_SYNCHRO
 				else
 					DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read enter failed\n");
-#endif
+				#endif
 				SendMessage(hWnd,UM_DESTROYPOPUP,0,0);
 			}
 			break;

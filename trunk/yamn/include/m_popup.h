@@ -3,7 +3,7 @@
                                 PopUp plugin
 Plugin Name: PopUp
 Plugin authors: Luca Santarelli aka hrk (hrk@users.sourceforge.net)
-                Victor Pavlychko aka zazoo (zazoo@ua.fm)
+                Victor Pavlychko aka zazoo (nullbie@gmail.com)
 ===============================================================================
 The purpose of this plugin is to give developers a common "platform/interface"
 to show PopUps. It is born from the source code of NewStatusNotify, another
@@ -54,6 +54,7 @@ typedef struct {
 	WNDPROC PluginWindowProc;
 	void * PluginData;
 	int iSeconds;                         //Custom delay time in seconds. -1 means "forever", 0 means "default time".
+//	char cZero[16];
 	LPCTSTR lpzClass;                     //PopUp class. Used with skinning. See PopUp/AddClass for details
 	COLORREF skinBack;                    //Background color for colorizable skins
 	char cZero[16 - sizeof(LPCTSTR) - sizeof(COLORREF)];
@@ -260,6 +261,16 @@ Changes the text displayed in the second line of the popup.
 #define MS_POPUP_CHANGETEXT "PopUp/Changetext"
 static int __inline PUChangeText(HWND hWndPopUp, LPCTSTR lpzNewText) {
 	return (int)CallService(MS_POPUP_CHANGETEXT, (WPARAM)hWndPopUp, (LPARAM)lpzNewText);
+}
+
+/*
+wParam = (WPARAM)(HWND)hPopUpWindow
+lParam = (LPARAM)(POPUPDATAEX*)newData
+Changes the entire popup
+*/
+#define MS_POPUP_CHANGE "PopUp/Change"
+static int __inline PUChange(HWND hWndPopUp, POPUPDATAEX *newData) {
+	return (int)CallService(MS_POPUP_CHANGE, (WPARAM)hWndPopUp, (LPARAM)newData);
 }
 
 /*
