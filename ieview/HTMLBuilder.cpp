@@ -566,7 +566,6 @@ TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) 
 	sp.cbSize = sizeof(sp);
 	sp.Protocolname = proto;
 	sp.flag = SAFL_PATH | SAFL_UNICODE;
-	sp.oflag = 0;//SAFL_UNICODE;
 	sp.wstr = (wchar_t *)text;
 	spRes = (SMADD_BATCHPARSERES *) CallService(MS_SMILEYADD_BATCHPARSE, 0, (LPARAM)&sp);
     int last_pos = 0;
@@ -582,7 +581,11 @@ TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) 
 				lastToken = newToken;
 			}
 	        TextToken *newToken = new TextToken(SMILEY, text+spRes[i].startChar, spRes[i].size);
-	        newToken->setLink((char *)spRes[i].filepath);
+			if (sp.oflag & SAFL_UNICODE) {
+		        newToken->setLink((wchar_t *)spRes[i].filepath);
+			} else {
+	        	newToken->setLink((char *)spRes[i].filepath);
+			}
 			if (lastToken == NULL) {
 				firstToken = newToken;
 			} else {
