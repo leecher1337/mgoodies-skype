@@ -1,7 +1,9 @@
 #ifndef __DEBUG_H
 #define __DEBUG_H
 
-//#define YAMN_DEBUG
+#ifndef YAMN_DEBUG
+//	#define YAMN_DEBUG
+#endif
 //#define YAMN_VER_BETA
 //#define YAMN_VER_BETA_CRASHONLY
 

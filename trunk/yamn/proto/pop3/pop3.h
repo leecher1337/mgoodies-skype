@@ -35,6 +35,7 @@ public:
 	char* Top(int nr);
 	char* Uidl(int nr=0);
 	char* Dele(int nr);
+	char* Retr(int nr);
 
 	unsigned char AckFlag;
 	BOOL SSL;

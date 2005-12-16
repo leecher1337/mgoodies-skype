@@ -228,6 +228,7 @@ void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head)
 	for(;items!=NULL;items=items->Next)
 	{
 		//at the start of line
+		//MessageBox(NULL,items->value,items->name,0);
 		if(0==_strnicmp(items->name,"From",4))
 		{
 			if(items->value==NULL)
@@ -260,6 +261,18 @@ void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head)
 			DebugLog(DecodeFile,"<Extracting subject>");
 			#endif
 			ExtractStringFromLine(items->value,&head->Subject);
+			#ifdef DEBUG_DECODE
+			DebugLog(DecodeFile,"</Extracting>\n");
+			#endif
+		}
+		else if(0==_strnicmp(items->name,"Body",4))
+		{
+			if(items->value==NULL)
+				continue;
+			#ifdef DEBUG_DECODE
+			DebugLog(DecodeFile,"<Extracting body>");
+			#endif
+			ExtractStringFromLine(items->value,&head->Body);
 			#ifdef DEBUG_DECODE
 			DebugLog(DecodeFile,"</Extracting>\n");
 			#endif
@@ -340,14 +353,14 @@ void ExtractHeader(struct CMimeItem *items,int CP,struct CHeader *head)
 
 	ZeroMemory(&ShortHeader,sizeof(struct CShortHeader));
 	ShortHeader.Priority=ShortHeader.CP=-1;
-#ifdef DEBUG_DECODE
+	#ifdef DEBUG_DECODE
 	DebugLog(DecodeFile,"<Extracting header>\n");
-#endif
+	#endif
 	ExtractShortHeader(items,&ShortHeader);
 
 	head->Priority=ShortHeader.Priority==-1 ? 3 : ShortHeader.Priority;
 	CP=ShortHeader.CP==-1 ? CP : ShortHeader.CP;
-#ifdef DEBUG_DECODE
+	#ifdef DEBUG_DECODE
 	if(NULL!=ShortHeader.From)
 		DebugLog(DecodeFile,"<Decoded from>%s</Decoded)\n",ShortHeader.From);
 	if(NULL!=ShortHeader.FromNick)
@@ -362,43 +375,49 @@ void ExtractHeader(struct CMimeItem *items,int CP,struct CHeader *head)
 		DebugLog(DecodeFile,"<Decoded date>%s</Decoded)\n",ShortHeader.Date);
 	DebugLog(DecodeFile,"</Extracting header>\n");
 	DebugLog(DecodeFile,"<Convert>\n");
-#endif
+	#endif
 
 	ConvertCodedStringToUnicode(ShortHeader.From,&head->From,CP,MIME_PLAIN);
 
-#ifdef DEBUG_DECODE
+	#ifdef DEBUG_DECODE
 	if(NULL!=head->From)
 		DebugLogW(DecodeFile,L"<Converted from>%s</Converted>\n",head->From);
-#endif
+	#endif
 	ConvertCodedStringToUnicode(ShortHeader.FromNick,&head->FromNick,CP,MIME_MAIL);
-#ifdef DEBUG_DECODE
+	#ifdef DEBUG_DECODE
 	if(NULL!=head->FromNick)
 		DebugLogW(DecodeFile,L"<Converted from-nick>%s</Converted>\n",head->FromNick);
-#endif
+	#endif
 	ConvertCodedStringToUnicode(ShortHeader.ReturnPath,&head->ReturnPath,CP,MIME_PLAIN);
-#ifdef DEBUG_DECODE
+	#ifdef DEBUG_DECODE
 	if(NULL!=head->ReturnPath)
 		DebugLogW(DecodeFile,L"<Converted return-path>%s</Converted>\n",head->ReturnPath);
-#endif
+	#endif
 	ConvertCodedStringToUnicode(ShortHeader.ReturnPathNick,&head->ReturnPathNick,CP,MIME_MAIL);
-#ifdef DEBUG_DECODE
+	#ifdef DEBUG_DECODE
 	if(NULL!=head->ReturnPathNick)
 		DebugLogW(DecodeFile,L"<Converted return-path nick>%s</Converted>\n",head->ReturnPathNick);
-#endif
+	#endif
 	ConvertCodedStringToUnicode(ShortHeader.Subject,&head->Subject,CP,MIME_PLAIN);
-#ifdef DEBUG_DECODE
+	#ifdef DEBUG_DECODE
 	if(NULL!=head->Subject)
 		DebugLogW(DecodeFile,L"<Converted subject>%s</Converted>\n",head->Subject);
-#endif
+	#endif
 	ConvertCodedStringToUnicode(ShortHeader.Date,&head->Date,CP,MIME_PLAIN);
-#ifdef DEBUG_DECODE
+	#ifdef DEBUG_DECODE
 	if(NULL!=head->Date)
 		DebugLogW(DecodeFile,L"<Converted date>%s</Converted>\n",head->Date);
-#endif
+	#endif
 
-#ifdef DEBUG_DECODE
+	ConvertCodedStringToUnicode(ShortHeader.Body,&head->Body,CP,MIME_PLAIN);
+	#ifdef DEBUG_DECODE
+	if(NULL!=head->Body)
+		DebugLogW(DecodeFile,L"<Converted Body>%s</Converted>\n",head->Body);
+	#endif
+
+	#ifdef DEBUG_DECODE
 	DebugLog(DecodeFile,"</Convert>\n");
-#endif
+	#endif
 	DeleteShortHeaderContent(&ShortHeader);
 
 //	head->From=L"Frommmm";
