@@ -2,8 +2,8 @@
 #define _M_UPDATER_H
 
 #include <stdio.h>
-#include "../../../../include/newpluginapi.h"	//CallService,UnHookEvent
-#include "../../../../include/m_utils.h"			//window broadcasting
+#include "../../../include/newpluginapi.h"	//CallService,UnHookEvent
+#include "../../../include/m_utils.h"			//window broadcasting
 //#include <newpluginapi.h>
 //#include <m_utils.h>
 

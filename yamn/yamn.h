@@ -19,12 +19,12 @@
 #include "../../include/m_protocols.h"		//protocols
 #include "../../include/m_protomod.h"		//protocols module
 #include "../../include/m_protosvc.h"
-#include "SDK/Import/m_uninstaller.h"				//PluginUninstaller structures
-#include "SDK/Import/m_toptoolbar.h"
-#include "SDK/Import/icolib.h"
-#include "SDK/Import/m_kbdnotify.h"
-#include "SDK/import/m_popup.h"
-#include "SDK/import/m_updater.h"
+#include "include/m_uninstaller.h"				//PluginUninstaller structures
+#include "include/m_toptoolbar.h"
+#include "include/icolib.h"
+#include "include/m_kbdnotify.h"
+#include "include/m_popup.h"
+#include "include/m_updater.h"
 #include "m_account.h"	//Account structure and all needed structures to cooperate with YAMN
 #include "m_messages.h"	//Messages sent to YAMN windows
 #include "mails/m_mails.h"	//use YAMN's mails

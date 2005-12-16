@@ -10,7 +10,7 @@
 #include "../../../include/m_skin.h"
 #include "../../../include/m_langpack.h"
 #include "../../../include/m_database.h"
-#include "../SDK/import/m_popup.h"
+#include "../include/m_popup.h"
 #include "../main.h"
 #include "../m_protoplugin.h"
 #include "../m_account.h"
