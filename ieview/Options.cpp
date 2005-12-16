@@ -681,6 +681,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 
 bool Options::isInited = false;
 bool Options::bMathModule = false;
+int  Options::smileyAddFlags = 0;
 int Options::generalFlags;
 char *Options::bkgFilename = NULL;
 int Options::groupChatFlags;
@@ -695,8 +696,15 @@ int Options::srmmFlags;
 void Options::init() {
 	if (isInited) return;
 	isInited = true;
-	bMathModule = (bool) ServiceExists(MTH_GET_GIF_UNICODE);
 	DBVARIANT dbv;
+	bMathModule = (bool) ServiceExists(MTH_GET_GIF_UNICODE);
+	smileyAddFlags = 0;
+	if (ServiceExists(MS_SMILEYADD_BATCHPARSE)) {
+		smileyAddFlags = SMILEYADD_PRESENT;
+		if (ServiceExists(MS_SMILEYADD_PARSEW)) {
+			smileyAddFlags |= SMILEYADD_UNICODE;
+		}
+	}
 	generalFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, 0);
 	srmmFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SRMMFLAGS, FALSE);
 	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_BACKGROUNDIMAGEFILE, &dbv)) {
@@ -957,4 +965,8 @@ const char *Options::getGroupChatTemplatesFile() {
 
 bool Options::isMathModule() {
 	return bMathModule;
+}
+
+int Options::getSmileyAddFlags() {
+	return smileyAddFlags;
 }
