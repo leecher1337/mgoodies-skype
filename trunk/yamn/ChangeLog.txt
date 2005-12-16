@@ -2,6 +2,7 @@
 ============
 + Add a function to retrieve the whole mail source.
 + Show the mail source when double clicking on it in mail browser.
++ Add a version resource.
 
 0.0.0.10
 ============
