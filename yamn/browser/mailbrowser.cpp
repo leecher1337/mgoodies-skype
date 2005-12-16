@@ -679,9 +679,9 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 
 	ZeroMemory(&nid,sizeof(nid));
 
-/*	if(MN->Real.EventNC+MN->Virtual.EventNC)
+	if(MN->Real.EventNC+MN->Virtual.EventNC)
 		NotifyEventHooks(hNewMailHook,0,0);
-*/
+
 	if((nflags & YAMN_ACC_KBN) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
 	{
 		KBDNOTIFYOPT kbnOpt;
@@ -1114,7 +1114,7 @@ int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSor
 
 		ExtractShortHeader(email1->MailData->TranslatedHeader,&Header1);
 		ExtractShortHeader(email2->MailData->TranslatedHeader,&Header2);	
-		
+
 		switch((int)lParamSort)
 		{
 			case 0:
@@ -1216,20 +1216,20 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			mwui->RunFirstTime=TRUE;
 
 			SetWindowLong(hDlg,DWL_USER,(LONG)mwui);
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"MailBrowser:INIT:ActualAccountSO-read wait\n");
-#endif
+			#endif
 			if(WAIT_OBJECT_0!=WaitToReadFcn(ActualAccount->AccountAccessSO))
 			{
-#ifdef DEBUG_SYNCHRO
+				#ifdef DEBUG_SYNCHRO
 				DebugLog(SynchroFile,"MailBrowser:INIT:ActualAccountSO-read enter failed\n");
-#endif
+				#endif
 				DestroyWindow(hDlg);
 				return FALSE;
 			}
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"MailBrowser:INIT:ActualAccountSO-read enter\n");
-#endif
+			#endif
 
 			StrLen=MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("From"),-1,NULL,0);
 			iFromW=new WCHAR[StrLen+1];
@@ -1758,6 +1758,8 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 							{
 								LV_ITEMW item;
 								HYAMNMAIL ActualMail;
+								struct CHeader UnicodeHeader;
+
 								item.iItem=iSelect;
 								item.iSubItem=0;
 								item.mask=LVIF_PARAM | LVIF_STATE;
@@ -1766,7 +1768,9 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 								ActualMail=(HYAMNMAIL)item.lParam;
 								if(NULL!=ActualMail)
 								{
-									//MessageBox(NULL,ActualMail->MailData->Body,"Mail",0);
+									ZeroMemory(&UnicodeHeader,sizeof(UnicodeHeader));
+									ExtractHeader(ActualMail->MailData->TranslatedHeader,ActualMail->MailData->CP,&UnicodeHeader);
+									MessageBox(NULL,ActualMail->MailData->Body,Translate("Mail source"),0);
 								}
 
 							}
@@ -1911,9 +1915,9 @@ DWORD WINAPI MailBrowser(LPVOID Param)
 
 	MyParam=*(struct MailBrowserWinParam *)Param;
 	ActualAccount=MyParam.account;	
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"MailBrowser:Incrementing \"using threads\" %x (account %x)\n",ActualAccount->UsingThreads,ActualAccount);
-#endif
+	#endif
 	SCIncFcn(ActualAccount->UsingThreads);
 
 //	we will not use params in stack anymore
@@ -1921,19 +1925,19 @@ DWORD WINAPI MailBrowser(LPVOID Param)
 
 	__try
 	{
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"MailBrowser:ActualAccountSO-read wait\n");
-#endif
+		#endif
 		if(WAIT_OBJECT_0!=WaitToReadFcn(ActualAccount->AccountAccessSO))
 		{
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"MailBrowser:ActualAccountSO-read wait failed\n");
-#endif
+			#endif
 			return 0;
 		}
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"MailBrowser:ActualAccountSO-read enter\n");
-#endif
+		#endif
 		if(!(ActualAccount->AbilityFlags & YAMN_ACC_BROWSE))
 		{
 			MyParam.nflags=MyParam.nflags & ~YAMN_ACC_MSG;
@@ -1941,9 +1945,9 @@ DWORD WINAPI MailBrowser(LPVOID Param)
 		}
 		if(!(ActualAccount->AbilityFlags & YAMN_ACC_POPUP))
 			MyParam.nflags=MyParam.nflags & ~YAMN_ACC_POP;
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"MailBrowser:ActualAccountSO-read done\n");
-#endif
+		#endif
 		ReadDoneFcn(ActualAccount->AccountAccessSO);
 
 		if(NULL!=(hMailBrowser=WindowList_Find(YAMNVar.NewMailAccountWnd,ActualAccount)))
@@ -1979,9 +1983,9 @@ DWORD WINAPI MailBrowser(LPVOID Param)
 	}
 	__finally
 	{
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"MailBrowser:Decrementing \"using threads\" %x (account %x)\n",ActualAccount->UsingThreads,ActualAccount);
-#endif
+		#endif
 		SCDecFcn(ActualAccount->UsingThreads);
 	}
 	return 1;

@@ -1,3 +1,8 @@
+0.0.0.11
+============
++ Add a function to retrieve the whole mail source.
++ Show the mail source when double clicking on it in mail browser.
+
 0.0.0.10
 ============
 + Now able to pass hContact handle to popup so can show avatar if set.

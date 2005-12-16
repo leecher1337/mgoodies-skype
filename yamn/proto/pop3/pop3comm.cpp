@@ -110,6 +110,8 @@ void ExtractUIDL(char *stream,int len,HYAMNMAIL queue);
 // queue- address of first message, where size of message #1 will be stored
 void ExtractList(char *stream,int len,HYAMNMAIL queue);
 
+void ExtractMail(char *stream,int len,HYAMNMAIL queue);
+
 //  Loading Icon and checking for icolib 
 void LoadIcons();
 
@@ -672,47 +674,47 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 		DWORD NNFlags;
 	} ActualCopied;
 
-//First, we should compare our version of CheckParam structure, but here it is not needed, because YAMN and internal plugin
-//have the same version. But your plugin should do that in this way:
-//	if(((struct CheckParam *)WhichTemp)->Ver!=YAMN_CHECKVERSION)
-//	{
-//		SetEvent(((struct CheckParam *)WhichTemp)->ThreadRunningEV);				//don't forget to unblock YAMN
-//		return (DWORD)-1;									//ok, but we should return value.
-//			//When our plugin returns e.g. 0xFFFFFFFF (=-1, this is only our plugin value, YAMN does nothing with return value,
-//			//but only tests if it is nonzero. If yes, it calls GetErrorStringFcn. We know problem occured in YAMN incompatibility
-//			//and then we can in our GetErrorStringFcn e.g. return string "Uncompatible version of YAMN".
-//	}
+	//First, we should compare our version of CheckParam structure, but here it is not needed, because YAMN and internal plugin
+	//have the same version. But your plugin should do that in this way:
+	//	if(((struct CheckParam *)WhichTemp)->Ver!=YAMN_CHECKVERSION)
+	//	{
+	//		SetEvent(((struct CheckParam *)WhichTemp)->ThreadRunningEV);				//don't forget to unblock YAMN
+	//		return (DWORD)-1;									//ok, but we should return value.
+	//			//When our plugin returns e.g. 0xFFFFFFFF (=-1, this is only our plugin value, YAMN does nothing with return value,
+	//			//but only tests if it is nonzero. If yes, it calls GetErrorStringFcn. We know problem occured in YAMN incompatibility
+	//			//and then we can in our GetErrorStringFcn e.g. return string "Uncompatible version of YAMN".
+	//	}
 
 	ActualAccount=(HPOP3ACCOUNT)WhichTemp->AccountParam;			//copy address of structure from calling thread to stack of this thread
 	YAMNParam=WhichTemp->BrowserParam;
 	CheckFlags=WhichTemp->Flags;
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"CheckPOP3:Incrementing \"using threads\" %x (account %x)\n",ActualAccount->UsingThreads,ActualAccount);
-#endif
+	#endif
 	SCInc(ActualAccount->UsingThreads);
-//Unblock YAMN, signal that we have copied all parameters from YAMN thread stack
+	//Unblock YAMN, signal that we have copied all parameters from YAMN thread stack
 	if(INVALID_HANDLE_VALUE!=WhichTemp->ThreadRunningEV)
 		SetEvent(WhichTemp->ThreadRunningEV);
 
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"CheckPOP3:ActualAccountSO-read wait\n");
-#endif
+	#endif
 	if(WAIT_OBJECT_0!=WaitToRead(ActualAccount))
 	{
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"CheckPOP3:ActualAccountSO-read wait failed\n");
-#endif
-#ifdef DEBUG_SYNCHRO
+		#endif
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"CheckPOP3:Decrementing \"using threads\" %x (account %x)\n",ActualAccount->UsingThreads,ActualAccount);
-#endif
+		#endif
 		SCDec(ActualAccount->UsingThreads);
 		return 0;
 	}
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"CheckPOP3:ActualAccountSO-read enter\n");
-#endif
+	#endif
 	MyClient=&ActualAccount->Client;
-//Now, copy all needed information about account to local variables, so ActualAccount is not blocked in read mode during all connection process, which can last for several minutes.
+	//Now, copy all needed information about account to local variables, so ActualAccount is not blocked in read mode during all connection process, which can last for several minutes.
 	ActualCopied.ServerName=_strdup(ActualAccount->Server->Name);
 	ActualCopied.ServerPort=ActualAccount->Server->Port;
 	ActualCopied.Flags=ActualAccount->Flags;
@@ -721,33 +723,33 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 	ActualCopied.NFlags=ActualAccount->NewMailN.Flags;
 	ActualCopied.NNFlags=ActualAccount->NoNewMailN.Flags;
 
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"CheckPOP3:ActualAccountSO-read done\n");
-#endif
+	#endif
 	ReadDone(ActualAccount);
 
 	SCInc(ActualAccount->InternetQueries);				//increment counter, that there is one more thread waiting for connection
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"CheckPOP3:InternetFreeEV-wait\n");
-#endif
+	#endif
 	WaitForSingleObject(ActualAccount->UseInternetFree,INFINITE);	//wait until we can use connection
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"CheckPOP3:InternetFreeEV-enter\n");
-#endif
+	#endif
 	SCDec(ActualAccount->InternetQueries);
 
-//OK, we enter the "use internet" section. But after we start communication, we can test if we did not enter the "use internet" section only for the reason,
-//that previous thread release the internet section because this account has stop signal (we stop account and there are 2 threads: one communicating,
-//the second one waiting for network access- the first one ends because we want to stop account, this one is released, but should be stopped as well).
+	//OK, we enter the "use internet" section. But after we start communication, we can test if we did not enter the "use internet" section only for the reason,
+	//that previous thread release the internet section because this account has stop signal (we stop account and there are 2 threads: one communicating,
+	//the second one waiting for network access- the first one ends because we want to stop account, this one is released, but should be stopped as well).
 	if(!ActualAccount->AbleToWork)
 	{
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"CheckPOP3:stop signal-InternetFreeEV-done\n");
-#endif
+		#endif
 		SetEvent(ActualAccount->UseInternetFree);
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"CheckPOP3:stop signal-Decrementing \"using threads\" %x (account %x)\n",ActualAccount->UsingThreads,ActualAccount);
-#endif
+		#endif
 		SCDec(ActualAccount->UsingThreads);
 		return 0;
 	}
@@ -758,11 +760,11 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 	ActualAccount->SystemError=0;					//now we can use internet for this socket. First, clear errorcode.
 	try
 	{
-#ifdef DEBUG_COMM
+		#ifdef DEBUG_COMM
 		DebugLog(CommFile,"<--------Communication-------->\n");
-#endif
-//	if we are already connected, we have open session (another thread left us open session), so we don't need to login
-//	note that connected state without logging cannot occur, because if we close session, we always close socket too (we must close socket is the right word :) )
+		#endif
+		//	if we are already connected, we have open session (another thread left us open session), so we don't need to login
+		//	note that connected state without logging cannot occur, because if we close session, we always close socket too (we must close socket is the right word :) )
 		if((MyClient->NetClient==NULL) || !MyClient->NetClient->Connected())
 		{
 			SetAccountStatus(ActualAccount,Translate("Connecting to server"));
@@ -811,16 +813,16 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 
 		DataRX=MyClient->Stat();
 
-#ifdef DEBUG_DECODE
+		#ifdef DEBUG_DECODE
 		DebugLog(DecodeFile,"<--------Account checking-------->\n");
 		DebugLog(DecodeFile,"<Extracting stat>\n");
-#endif
+		#endif
 		ExtractStat(DataRX,MyClient->NetClient->Rcv,&mboxsize,&msgs);
-#ifdef DEBUG_DECODE
+		#ifdef DEBUG_DECODE
 		DebugLog(DecodeFile,"<MailBoxSize>%d</MailBoxSize>\n",mboxsize);
 		DebugLog(DecodeFile,"<Msgs>%d</Msgs>\n",msgs);
 		DebugLog(DecodeFile,"</Extracting stat>\n");
-#endif
+		#endif
 		if(DataRX!=NULL)
 			free(DataRX);
 		DataRX=NULL;
@@ -917,6 +919,7 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 					continue;
 					
 				TranslateHeader(Temp,MyClient->NetClient->Rcv-(Temp-DataRX),&MsgQueuePtr->MailData->TranslatedHeader);
+				
 
 				#ifdef DEBUG_DECODE
 				DebugLog(DecodeFile,"</New mail>\n");
@@ -929,11 +932,13 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 				//				CallService(MS_YAMN_FILTERMAIL,(WPARAM)ActualAccount,(LPARAM)MsgQueuePtr);
 				FilterMailSvc((WPARAM)ActualAccount,(LPARAM)MsgQueuePtr);
 
-				MsgQueuePtr=MsgQueuePtr->Next;
-
 				if(DataRX!=NULL)
 					free(DataRX);
 				DataRX=NULL;
+
+				MsgQueuePtr->MailData->Body=MyClient->Retr(MsgQueuePtr->Number);
+
+				MsgQueuePtr=MsgQueuePtr->Next;
 
 			}
 			#ifdef DEBUG_DECODE
@@ -1008,35 +1013,35 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 			CallService(MS_YAMN_MAILBROWSER,(WPARAM)&Param,(LPARAM)YAMN_MAILBROWSERVERSION);
 		}
 	}
-#ifdef DEBUG_COMM
+	#ifdef DEBUG_COMM
 	catch(DWORD ErrorCode)
-#else
+	#else
 	catch(DWORD)
-#endif
+	#endif
 	{
 		if(ActualAccount->Client.POP3Error==EPOP3_STOPPED)
 	                ActualAccount->SystemError=EACC_STOPPED;
-#ifdef DEBUG_COMM
+		#ifdef DEBUG_COMM
 		DebugLog(CommFile,"ERROR: %x\n",ErrorCode);
-#endif
-#ifdef DEBUG_SYNCHRO
+		#endif
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write wait\n");
-#endif
+		#endif
 		if(WAIT_OBJECT_0==MsgsWaitToWrite(ActualAccount))
 		{
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write enter\n");
-#endif
+			#endif
 			ActualAccount->LastChecked=now;
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write done\n");
-#endif
+			#endif
 			MsgsWriteDone(ActualAccount);
 		}
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		else
 			DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write wait failed\n");
-#endif
+		#endif
 
 		DeleteMIMEQueue(ActualAccount,NewMails);
 
@@ -1055,9 +1060,9 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 
 		if(UsingInternet)	//if our thread still uses internet
 		{
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"CheckPOP3:InternetFreeEV-done\n");
-#endif
+			#endif
 			SetEvent(ActualAccount->UseInternetFree);
 		}
 	}
@@ -1065,13 +1070,13 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 	free(ActualCopied.ServerName);
 	free(ActualCopied.ServerLogin);
 	free(ActualCopied.ServerPasswd);
-#ifdef DEBUG_COMM
+	#ifdef DEBUG_COMM
 	DebugLog(CommFile,"</--------Communication-------->\n");
-#endif
+	#endif
 //	WriteAccounts();
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"CheckPOP3:Decrementing \"using threads\" %x (account %x)\n",ActualAccount->UsingThreads,ActualAccount);
-#endif
+	#endif
 	SCDec(ActualAccount->UsingThreads);
 	return 0;
 }
@@ -1096,16 +1101,16 @@ DWORD WINAPI DeleteMailsPOP3(struct DeleteParam *WhichTemp)
 		DWORD NNFlags;
 	} ActualCopied;
 
-//First, we should compare our version of DeleteParam structure, but here it is not needed, because YAMN and internal plugin
-//have the same version. But your plugin should do that in this way:
-//	if(((struct DeleteParam *)WhichTemp)->Ver!=YAMN_DELETEVERSION)
-//	{
-//		SetEvent(((struct DeleteParam *)WhichTemp)->ThreadRunningEV);				//don't forget to unblock YAMN
-//		return (DWORD)-1;									//ok, but we should return value.
-//			//When our plugin returns e.g. 0xFFFFFFFF (this is only our plugin value, YAMN does nothing with return value,
-//			//but only tests if it is nonzero. If yes, it calls GetErrorStringFcn), we know problem occured in YAMN incompatibility
-//			//and then we can in our GetErrorStringFcn e.g. return string "Uncompatible version of YAMN".
-//	}
+	//First, we should compare our version of DeleteParam structure, but here it is not needed, because YAMN and internal plugin
+	//have the same version. But your plugin should do that in this way:
+	//	if(((struct DeleteParam *)WhichTemp)->Ver!=YAMN_DELETEVERSION)
+	//	{
+	//		SetEvent(((struct DeleteParam *)WhichTemp)->ThreadRunningEV);				//don't forget to unblock YAMN
+	//		return (DWORD)-1;									//ok, but we should return value.
+	//			//When our plugin returns e.g. 0xFFFFFFFF (this is only our plugin value, YAMN does nothing with return value,
+	//			//but only tests if it is nonzero. If yes, it calls GetErrorStringFcn), we know problem occured in YAMN incompatibility
+	//			//and then we can in our GetErrorStringFcn e.g. return string "Uncompatible version of YAMN".
+	//	}
 
 	ActualAccount=(HPOP3ACCOUNT)((struct DeleteParam *)WhichTemp)->AccountParam;			//copy address of structure from calling thread to stack of this thread
 	YAMNParam=((struct DeleteParam *)WhichTemp)->BrowserParam;
@@ -1472,6 +1477,50 @@ void ExtractStat(char *stream,int len,int *mboxsize,int *mails)
 	if(1!=sscanf(finder,"%d",mboxsize))
 		throw (DWORD)EPOP3_STAT;
 }
+void ExtractMail(char *stream,int len,HYAMNMAIL queue)
+{
+	char *finder=stream;
+	char *finderend;
+	int msgnr,i;
+	HYAMNMAIL queueptr=queue;
+
+	while(WS(finder) || ENDLINE(finder)) finder++;
+	while(!ACKLINE(finder)) finder++;
+	while(!ENDLINE(finder)) finder++;			//now we at the end of first ack line
+	while(finder<=(stream+len))
+	{
+		while(ENDLINE(finder)) finder++;		//go to the new line
+		if(DOTLINE(finder+1))					//at the end of stream
+			break;
+		#ifdef DEBUG_DECODE
+		DebugLog(DecodeFile,"<Message>\n");
+		#endif
+		while(WS(finder)) finder++;			//jump whitespace
+		if(1!=sscanf(finder,"%d",&msgnr))
+			throw (DWORD)EPOP3_UIDL;
+		#ifdef DEBUG_DECODE
+		DebugLog(DecodeFile,"<Nr>%d</Nr>\n",msgnr);
+		#endif
+//		for(i=1,queueptr=queue;(queueptr->Next!=NULL) && (i<msgnr);queueptr=queueptr->Next,i++);
+//		if(i!=msgnr)
+//			throw (DWORD)EPOP3_UIDL;
+		while(!WS(finder)) finder++;			//jump characters
+		while(WS(finder)) finder++;			//jump whitespace
+		finderend=finder+1;
+		while(!WS(finderend) && !ENDLINE(finderend)) finderend++;
+		queueptr->ID=new char[finderend-finder+1];
+		for(i=0;finder!=finderend;finder++,i++)
+			queueptr->MailData->Body[i]=*finder;
+		queueptr->MailData->Body[i]=0;				//ends string
+		queueptr->Number=msgnr;
+		#ifdef DEBUG_DECODE
+		DebugLog(DecodeFile,"<ID>%s</ID>\n",queueptr->MailData->Body);
+		DebugLog(DecodeFile,"</Message>\n");
+		#endif
+		queueptr=queueptr->Next;
+		while(!ENDLINE(finder)) finder++;
+	}
+}
 
 void ExtractUIDL(char *stream,int len,HYAMNMAIL queue)
 {
@@ -1488,15 +1537,15 @@ void ExtractUIDL(char *stream,int len,HYAMNMAIL queue)
 		while(ENDLINE(finder)) finder++;		//go to the new line
 		if(DOTLINE(finder+1))					//at the end of stream
 			break;
-#ifdef DEBUG_DECODE
+		#ifdef DEBUG_DECODE
 		DebugLog(DecodeFile,"<Message>\n");
-#endif
+		#endif
 		while(WS(finder)) finder++;			//jump whitespace
 		if(1!=sscanf(finder,"%d",&msgnr))
 			throw (DWORD)EPOP3_UIDL;
-#ifdef DEBUG_DECODE
+		#ifdef DEBUG_DECODE
 		DebugLog(DecodeFile,"<Nr>%d</Nr>\n",msgnr);
-#endif
+		#endif
 //		for(i=1,queueptr=queue;(queueptr->Next!=NULL) && (i<msgnr);queueptr=queueptr->Next,i++);
 //		if(i!=msgnr)
 //			throw (DWORD)EPOP3_UIDL;
@@ -1509,10 +1558,10 @@ void ExtractUIDL(char *stream,int len,HYAMNMAIL queue)
 			queueptr->ID[i]=*finder;
 		queueptr->ID[i]=0;				//ends string
 		queueptr->Number=msgnr;
-#ifdef DEBUG_DECODE
+		#ifdef DEBUG_DECODE
 		DebugLog(DecodeFile,"<ID>%s</ID>\n",queueptr->ID);
 		DebugLog(DecodeFile,"</Message>\n");
-#endif
+		#endif
 		queueptr=queueptr->Next;
 		while(!ENDLINE(finder)) finder++;
 	}
@@ -1533,15 +1582,15 @@ void ExtractList(char *stream,int len,HYAMNMAIL queue)
 		while(ENDLINE(finder)) finder++;		//go to the new line
 		if(DOTLINE(finder+1))				//at the end of stream
 			break;
-#ifdef DEBUG_DECODE
+		#ifdef DEBUG_DECODE
 		DebugLog(DecodeFile,"<Message>\n",NULL,0);
-#endif
+		#endif
 		while(WS(finder)) finder++;			//jump whitespace
 		if(1!=sscanf(finder,"%d",&msgnr))		//message nr.
 			throw (DWORD)EPOP3_LIST;
-#ifdef DEBUG_DECODE
+		#ifdef DEBUG_DECODE
 		DebugLog(DecodeFile,"<Nr>%d</Nr>\n",msgnr);
-#endif
+		#endif
 
 		for(i=1,queueptr=queue;(queueptr->Next!=NULL) && (i<msgnr);queueptr=queueptr->Next,i++);
 		if(i!=msgnr)
@@ -1551,9 +1600,9 @@ void ExtractList(char *stream,int len,HYAMNMAIL queue)
 		finderend=finder+1;
 		if(1!=sscanf(finder,"%d",&queueptr->MailData->Size))
 			throw (DWORD)EPOP3_LIST;
-#ifdef DEBUG_DECODE
+		#ifdef DEBUG_DECODE
 		DebugLog(DecodeFile,"<Nr>%d</Nr>\n",queueptr->MailData->Size);
-#endif
+		#endif
 		while(!ENDLINE(finder)) finder++;
 	}
 }

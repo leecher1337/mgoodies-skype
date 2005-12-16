@@ -36,6 +36,7 @@ struct CShortHeader
 	PYAMN_MIMESHORTNAMES Bcc;
 	char *Date;
 	char Priority;
+	char *Body;
 
 	int CP;
 
@@ -56,6 +57,7 @@ struct CHeader
 	PYAMN_MIMENAMES Bcc;
 	WCHAR *Date;
 	TCHAR Priority;
+	WCHAR *Body;
 
 	CHeader() {}
 	~CHeader() {}
