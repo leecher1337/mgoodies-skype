@@ -936,7 +936,7 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 					free(DataRX);
 				DataRX=NULL;
 
-				MsgQueuePtr->MailData->Body=MyClient->Retr(MsgQueuePtr->Number);
+				//MsgQueuePtr->MailData->Body=MyClient->Retr(MsgQueuePtr->Number);
 
 				MsgQueuePtr=MsgQueuePtr->Next;
 

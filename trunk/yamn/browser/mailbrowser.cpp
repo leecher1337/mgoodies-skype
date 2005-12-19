@@ -1745,11 +1745,11 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				
 				case IDC_LISTMAILS:
 				{
+					NM_LISTVIEW* pNMListView;
+
 					switch(((LPNMHDR)lParam)->code)
 					{
 						case NM_DBLCLK:
-						{
-							NM_LISTVIEW* pNMListView;
 							pNMListView = (NM_LISTVIEW*)lParam;
 							int iSelect;
 							iSelect=SendMessage(hDlg,LVM_GETNEXTITEM,-1,LVNI_FOCUSED); // return item selected
@@ -1758,7 +1758,6 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 							{
 								LV_ITEMW item;
 								HYAMNMAIL ActualMail;
-								struct CHeader UnicodeHeader;
 
 								item.iItem=iSelect;
 								item.iSubItem=0;
@@ -1768,21 +1767,18 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 								ActualMail=(HYAMNMAIL)item.lParam;
 								if(NULL!=ActualMail)
 								{
-									ZeroMemory(&UnicodeHeader,sizeof(UnicodeHeader));
-									ExtractHeader(ActualMail->MailData->TranslatedHeader,ActualMail->MailData->CP,&UnicodeHeader);
 									MessageBox(NULL,ActualMail->MailData->Body,Translate("Mail source"),0);
 								}
 
 							}
-						}
 							break;
+						
 
 						case LVN_COLUMNCLICK:
 							HACCOUNT ActualAccount;
 							if(NULL==(ActualAccount=GetWindowAccount(hDlg)))
 								break;
 
-							NM_LISTVIEW* pNMListView;
 							pNMListView = (NM_LISTVIEW*)lParam;
 							if(WAIT_OBJECT_0==WaitToReadFcn(ActualAccount->AccountAccessSO))
 							{
