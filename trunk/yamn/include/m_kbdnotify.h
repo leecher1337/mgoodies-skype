@@ -54,17 +54,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MS_KBDNOTIFY_FLASHINGACTIVE "KeyboardNotify/IsFlashingActive"
 
 
-typedef struct {
-	int cbSize;				//size of the structure in bytes
-	WORD timer_max;			//maximum amount if time, in seconds (0 = do not use max. timer)
-	char *szCustomSequence;	//pointer to the string representing the flashing sequence to use or NULL to use the current one
-} KBDNOTIFYOPT;
-
-//Makes the flashing begin
-//wParam=(unsigned int)eventCount
-//lParam=(KBDNOTIFYOPT *)pointer to the flashing options or NULL if you want the plugin to use current settings
-//returns 0
-#define MS_KBDNOTIFY_STARTBLINKEXT  "KeyboardNotify/StartBlinkingExt"
+//Normalizes the flashing sequence informed
+//wParam=0
+//lParam=(char *)szFlashingSequence <- it is rewritten
+//returns a pointer to the string representing the sequence normalized (which is in fact lParam)
+#define MS_KBDNOTIFY_NORMALSEQUENCE "KeyboardNotify/NormalizeSequence"
 
 
 #endif

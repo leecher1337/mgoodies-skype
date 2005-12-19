@@ -366,40 +366,40 @@ int UpdateMails(HWND hDlg,HACCOUNT ActualAccount,DWORD nflags,DWORD nnflags)
 	BOOL RunMailBrowser,RunPopUps;
 
 	mwui=(struct CMailWinUserInfo *)GetWindowLong(hDlg,DWL_USER);
-//now we ensure read access for account and write access for its mails
-#ifdef DEBUG_SYNCHRO
+	//now we ensure read access for account and write access for its mails
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"UpdateMails:ActualAccountSO-read wait\n");
-#endif
+	#endif
 	if(WAIT_OBJECT_0!=WaitToReadFcn(ActualAccount->AccountAccessSO))
 	{
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"UpdateMails:ActualAccountSO-read wait failed\n");
-#endif
+		#endif
 		PostMessage(hDlg,WM_DESTROY,(WPARAM)0,(LPARAM)0);
 
 		return UPDATE_FAIL;
 	}
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"UpdateMails:ActualAccountSO-read enter\n");
-#endif
+	#endif
 
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"UpdateMails:ActualAccountMsgsSO-write wait\n");
-#endif
+	#endif
 	if(WAIT_OBJECT_0!=WaitToWriteFcn(ActualAccount->MessagesAccessSO))
 	{
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"UpdateMails:ActualAccountMsgsSO-write wait failed\n");
 		DebugLog(SynchroFile,"UpdateMails:ActualAccountSO-read done\n");
-#endif
+		#endif
 		ReadDoneFcn(ActualAccount->AccountAccessSO);
 
 		PostMessage(hDlg,WM_DESTROY,(WPARAM)0,(LPARAM)0);
 		return UPDATE_FAIL;
 	}
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"UpdateMails:ActualAccountMsgsSO-write enter\n");
-#endif
+	#endif
 
 	ZeroMemory(&MN,sizeof(MN));
 
@@ -423,7 +423,7 @@ int UpdateMails(HWND hDlg,HACCOUNT ActualAccount,DWORD nflags,DWORD nnflags)
 	if(mwui!=NULL)
 		mwui->UpdateMailsMessagesAccess=TRUE;
 
-//Now we are going to check if extracting data from mail headers are needed. If popups will be displayed or mailbrowser window
+	//Now we are going to check if extracting data from mail headers are needed. If popups will be displayed or mailbrowser window
 	if((((mwui!=NULL) && !(mwui->RunFirstTime)) && (((nnflags & YAMN_ACC_MSGP) && !(MN.Real.BrowserUC+MN.Virtual.BrowserUC)) || ((nflags & YAMN_ACC_MSGP) && (MN.Real.BrowserUC+MN.Virtual.BrowserUC)))) ||		//if mail window was displayed before and flag YAMN_ACC_MSGP is set
 		((nnflags & YAMN_ACC_MSG) && !(MN.Real.BrowserUC+MN.Virtual.BrowserUC)) ||	//if needed to run mailbrowser when no unseen and no unseen mail found
 		((nflags & YAMN_ACC_MSG) && (MN.Real.BrowserUC+MN.Virtual.BrowserUC)) ||	//if unseen mails found, we sure run mailbrowser
@@ -457,13 +457,13 @@ int UpdateMails(HWND hDlg,HACCOUNT ActualAccount,DWORD nflags,DWORD nnflags)
 		delete[] TitleStrW;
 	}
 
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"UpdateMails:Do mail actions\n");
-#endif
+	#endif
 	DoMailActions(hDlg,ActualAccount,&MN,nflags,nnflags);
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"UpdateMails:Do mail actions done\n");
-#endif
+	#endif
 	
 	SetRemoveFlagsInQueueFcn((HYAMNMAIL)ActualAccount->Mails,YAMN_MSG_NEW,0,YAMN_MSG_NEW,YAMN_FLAG_REMOVE);				//rempve the new flag
 	if(!RunMailBrowser)
@@ -474,10 +474,10 @@ int UpdateMails(HWND hDlg,HACCOUNT ActualAccount,DWORD nflags,DWORD nnflags)
 		mwui->UpdateMailsMessagesAccess=FALSE;
 		mwui->RunFirstTime=FALSE;
 	}
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"UpdateMails:ActualAccountMsgsSO-write done\n");
 	DebugLog(SynchroFile,"UpdateMails:ActualAccountSO-read done\n");
-#endif
+	#endif
 	WriteDoneFcn(ActualAccount->MessagesAccessSO);
 	ReadDoneFcn(ActualAccount->AccountAccessSO);
 
@@ -653,6 +653,10 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 			CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NewMailPopUp,0);
 		}
 
+		if((msgq->Flags & YAMN_MSG_UNSEEN) && (ActualAccount->NewMailN.Flags & YAMN_ACC_KBN))
+			CallService(MS_KBDNOTIFY_EVENTSOPENED,(WPARAM)1,NULL);
+		
+
 		if(FromStrNew)
 			delete[] FromStr;
 
@@ -684,11 +688,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 
 	if((nflags & YAMN_ACC_KBN) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
 	{
-		KBDNOTIFYOPT kbnOpt;
-		kbnOpt.cbSize = sizeof(KBDNOTIFYOPT);
-		kbnOpt.timer_max = 10;
-		kbnOpt.szCustomSequence = NULL;
-		CallService(MS_KBDNOTIFY_STARTBLINKEXT,(WPARAM)MN->Real.PopUpNC+MN->Virtual.PopUpNC,(LPARAM) &kbnOpt);
+		CallService(MS_KBDNOTIFY_STARTBLINK,(WPARAM)MN->Real.PopUpNC+MN->Virtual.PopUpNC,NULL);
 	}
 
 	if((nflags & YAMN_ACC_CONT) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
