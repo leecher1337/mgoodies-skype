@@ -701,9 +701,6 @@ void Options::init() {
 	smileyAddFlags = 0;
 	if (ServiceExists(MS_SMILEYADD_BATCHPARSE)) {
 		smileyAddFlags = SMILEYADD_PRESENT;
-		if (ServiceExists(MS_SMILEYADD_PARSEW)) {
-			smileyAddFlags |= SMILEYADD_UNICODE;
-		}
 	}
 	generalFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, 0);
 	srmmFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SRMMFLAGS, FALSE);
