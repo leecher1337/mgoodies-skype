@@ -106,6 +106,11 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.5.0
+- Removed internal support for emoticons (SmileyAdd v0.1.10.1 or higher is now required)
++ option to turn on/off workaround for PNG transparency
++ new BBCode: [s] (strikethrough)
+* workaround for weird bug in _vswnprintf()
 1.0.4.0
 + ME_IEVIEW_OPTIONSCHANGED event
 * improved compatibility with Scriver

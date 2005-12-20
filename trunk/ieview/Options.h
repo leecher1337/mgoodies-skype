@@ -82,7 +82,6 @@ public:
 	};
 	enum SMILEYADDFLAGS {
 		SMILEYADD_PRESENT     = 0x0001,
-		SMILEYADD_UNICODE     = 0x0002
 	};
    	static void     		setGeneralFlags(int flags);
    	static int				getGeneralFlags();
