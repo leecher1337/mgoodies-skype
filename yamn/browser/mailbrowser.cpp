@@ -693,7 +693,6 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 
 	if((nflags & YAMN_ACC_CONT) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
 	{
-		char tmp[255];
 		CLISTEVENT cEvent;
 		cEvent.cbSize = sizeof(CLISTEVENT);
 		cEvent.hContact = ActualAccount->hContact;
@@ -701,11 +700,11 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		cEvent.hDbEvent = (HANDLE)1;
 		cEvent.lParam = (LPARAM) ActualAccount->hContact;
 		cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
+		cEvent.pszTooltip = new char[250];
 
-		sprintf(tmp,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
-		cEvent.pszTooltip = tmp;
+		sprintf(cEvent.pszTooltip,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
 		CallService(MS_CLIST_ADDEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)&cEvent);
-		DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", tmp);
+		DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", cEvent.pszTooltip);
 	}
 
 	if((nflags & YAMN_ACC_POP) && !(ActualAccount->Flags & YAMN_ACC_POPN) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
@@ -1749,7 +1748,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 
 					switch(((LPNMHDR)lParam)->code)
 					{
-						case NM_DBLCLK:
+					/*	case NM_DBLCLK:
 							pNMListView = (NM_LISTVIEW*)lParam;
 							int iSelect;
 							iSelect=SendMessage(hDlg,LVM_GETNEXTITEM,-1,LVNI_FOCUSED); // return item selected
@@ -1772,7 +1771,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 
 							}
 							break;
-						
+						*/
 
 						case LVN_COLUMNCLICK:
 							HACCOUNT ActualAccount;

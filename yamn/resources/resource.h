@@ -13,6 +13,7 @@
 #define IDB_BMTTB                       127
 #define IDI_ICOTTBDW                    137
 #define IDI_ICOTTBUP                    138
+#define IDD_CHOOSESTATUSMODES           310
 #define IDC_EDITSERVER                  1000
 #define IDC_EDITPORT                    1001
 #define IDC_EDITLOGIN                   1002
@@ -90,8 +91,9 @@
 #define IDC_CHECKSSL                    1117
 #define IDC_CHECKNMSGP                  1118
 #define IDC_CHECKKBN                    1121
-#define IDC_GBCONTACT                   1122
+#define IDC_BTNSTATUS                   1123
 #define IDC_CHECKAPOP                   1200
+#define IDC_STATUSGROUP                 1338
 
 // Next default values for new objects
 // 
@@ -99,7 +101,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        139
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1123
+#define _APS_NEXT_CONTROL_VALUE         1124
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

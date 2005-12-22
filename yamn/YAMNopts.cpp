@@ -55,6 +55,7 @@ void WordToModAndVk(WORD w,UINT *mod,UINT *vk)
 	*vk=LOBYTE(w);
 }
 
+
 BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
 	switch(msg)
