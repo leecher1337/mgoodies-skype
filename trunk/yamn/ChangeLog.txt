@@ -1,3 +1,9 @@
+0.0.0.14
+============
+! Tooltip on the clist event will now show correct text
+! Remove the messagebox on double clik on mail
+* Change options dialog add dialog for status choose.
+
 0.0.0.13
 ============
 + Use of event count for the keyboard flashing

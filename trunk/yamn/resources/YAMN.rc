@@ -49,6 +49,30 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICOYAMN2            ICON    DISCARDABLE     "icoyamn2.ico"
+IDI_ICOYAMN1            ICON    DISCARDABLE     "icoyamn1.ico"
+IDI_ICOYAMN3            ICON    DISCARDABLE     "icoyamn3.ico"
+IDI_ICONEUTRAL          ICON    DISCARDABLE     "iconeutral.ico"
+#endif    // Czech resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+#ifdef _WIN32
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // DESIGNINFO
 //
 
@@ -69,6 +93,47 @@ BEGIN
         RIGHTMARGIN, 179
         TOPMARGIN, 7
         BOTTOMMARGIN, 43
+    END
+
+    IDD_YAMNOPT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 312
+        VERTGUIDE, 13
+        VERTGUIDE, 85
+        VERTGUIDE, 160
+        VERTGUIDE, 307
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 243
+        HORZGUIDE, 5
+        HORZGUIDE, 20
+        HORZGUIDE, 147
+        HORZGUIDE, 157
+        HORZGUIDE, 173
+        HORZGUIDE, 184
+        HORZGUIDE, 207
+        HORZGUIDE, 217
+        HORZGUIDE, 228
+        HORZGUIDE, 239
+        HORZGUIDE, 243
+    END
+
+    IDD_POP3ACCOUNTOPT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 330
+        VERTGUIDE, 155
+        VERTGUIDE, 240
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 252
+    END
+
+    IDD_CHOOSESTATUSMODES, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 219
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 147
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -100,70 +165,6 @@ BEGIN
     LTEXT           "",IDC_STATICMSG,5,7,170,18
 END
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_ICOYAMN2            ICON    DISCARDABLE     "icoyamn2.ico"
-IDI_ICOYAMN1            ICON    DISCARDABLE     "icoyamn1.ico"
-IDI_ICOYAMN3            ICON    DISCARDABLE     "icoyamn3.ico"
-IDI_ICONEUTRAL          ICON    DISCARDABLE     "iconeutral.ico"
-#endif    // Czech resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
-BEGIN
-    IDD_YAMNOPT, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 312
-        VERTGUIDE, 13
-        VERTGUIDE, 85
-        VERTGUIDE, 160
-        VERTGUIDE, 307
-        TOPMARGIN, 4
-        BOTTOMMARGIN, 243
-        HORZGUIDE, 5
-        HORZGUIDE, 20
-        HORZGUIDE, 147
-        HORZGUIDE, 157
-        HORZGUIDE, 173
-        HORZGUIDE, 184
-        HORZGUIDE, 207
-        HORZGUIDE, 217
-        HORZGUIDE, 228
-        HORZGUIDE, 239
-        HORZGUIDE, 243
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
 IDD_YAMNOPT DIALOGEX 0, 0, 320, 250
 STYLE DS_SYSMODAL | DS_3DLOOK | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
@@ -193,159 +194,130 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,20,153,11
 END
 
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.K.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
-BEGIN
-    IDD_POP3ACCOUNTOPT, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 330
-        VERTGUIDE, 155
-        VERTGUIDE, 240
-        TOPMARGIN, 4
-        BOTTOMMARGIN, 252
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
 IDD_POP3ACCOUNTOPT DIALOGEX 0, 0, 334, 259
 STYLE DS_SYSMODAL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
     COMBOBOX        IDC_COMBOACCOUNT,10,6,140,65,CBS_DROPDOWN | CBS_SORT
-    PUSHBUTTON      "Delete",IDC_BTNDEL,247,122,75,13,0,WS_EX_TRANSPARENT
-    PUSHBUTTON      "Default",IDC_BTNDEFAULT,248,137,75,13
-    PUSHBUTTON      "Reset counter",IDC_BTNRESET,248,152,75,13
+    PUSHBUTTON      "Delete",IDC_BTNDEL,249,215,75,13
+    PUSHBUTTON      "Default",IDC_BTNDEFAULT,249,233,75,13
+    PUSHBUTTON      "Reset counter",IDC_BTNRESET,160,211,75,13
     CONTROL         "Check this account",IDC_CHECK,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,11,21,135,10,WS_EX_TRANSPARENT
     EDITTEXT        IDC_EDITINTERVAL,131,32,20,12,ES_AUTOHSCROLL | ES_NUMBER,
                     WS_EX_TRANSPARENT
     CONTROL         "Sound notification",IDC_CHECKSND,"Button",
-                    BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,12,57,135,10
+                    BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,12,66,135,10
     CONTROL         "Message notification",IDC_CHECKMSG,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,68,135,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,78,135,10
     CONTROL         "Tray icon notification",IDC_CHECKICO,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,79,140,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,90,140,10
     CONTROL         "Application execution:",IDC_CHECKAPP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,102,135,8
-    PUSHBUTTON      "...",IDC_BTNAPP,21,113,16,12
-    EDITTEXT        IDC_EDITAPP,41,113,65,12,ES_AUTOHSCROLL | ES_READONLY
-    EDITTEXT        IDC_EDITAPPPARAM,111,113,40,12,ES_AUTOHSCROLL
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,113,135,8
+    PUSHBUTTON      "...",IDC_BTNAPP,21,125,16,12
+    EDITTEXT        IDC_EDITAPP,41,125,65,12,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDITAPPPARAM,111,125,40,12,ES_AUTOHSCROLL
     CONTROL         "Popup notification",IDC_CHECKPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,129,108,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,141,108,10
     CONTROL         "",IDC_CHECKCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    120,131,9,10
-    CONTROL         "",IDC_CPB,"ColourPicker",WS_TABSTOP,130,131,10,10
-    CONTROL         "",IDC_CPT,"ColourPicker",WS_TABSTOP,141,131,10,10
+                    120,144,9,10
+    CONTROL         "",IDC_CPB,"ColourPicker",WS_TABSTOP,130,144,10,10
+    CONTROL         "",IDC_CPT,"ColourPicker",WS_TABSTOP,142,144,10,10
     CONTROL         "Single popup",IDC_RADIOPOP1,"Button",BS_AUTORADIOBUTTON | 
-                    WS_TABSTOP,21,139,95,10
+                    WS_TABSTOP,21,152,95,10
     CONTROL         "Multi popup",IDC_RADIOPOPN,"Button",BS_AUTORADIOBUTTON | 
-                    WS_TABSTOP,21,148,95,10
+                    WS_TABSTOP,21,164,95,10
     CONTROL         "Popup if no mail",IDC_CHECKNPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,11,193,94,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,214,94,10
     CONTROL         "",IDC_CHECKNCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    120,193,10,10
-    CONTROL         "",IDC_CPNB,"ColourPicker",WS_TABSTOP,141,193,10,10
-    CONTROL         "",IDC_CPNT,"ColourPicker",WS_TABSTOP,130,193,10,10
+                    120,214,10,10
+    CONTROL         "",IDC_CPNB,"ColourPicker",WS_TABSTOP,141,214,10,10
+    CONTROL         "",IDC_CPNT,"ColourPicker",WS_TABSTOP,130,214,10,10
     CONTROL         "Sound notification if failed",IDC_CHECKFSND,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,160,189,135,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,160,129,135,10
     CONTROL         "Message notification if failed",IDC_CHECKFMSG,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,160,200,135,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,160,142,135,10
     CONTROL         "Tray icon notification if failed",IDC_CHECKFICO,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,160,211,135,9
+                    BS_AUTOCHECKBOX | WS_TABSTOP,160,154,135,9
     CONTROL         "Popup notification if failed",IDC_CHECKFPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,160,222,118,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,160,169,118,10
     CONTROL         "",IDC_CHECKFCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    288,221,11,10
-    CONTROL         "",IDC_CPFB,"ColourPicker",WS_TABSTOP,300,221,10,10
-    CONTROL         "",IDC_CPFT,"ColourPicker",WS_TABSTOP,311,221,10,10
-    EDITTEXT        IDC_EDITSERVER,240,15,75,12,ES_AUTOHSCROLL | WS_GROUP
-    EDITTEXT        IDC_EDITPORT,288,30,27,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    286,162,11,10
+    CONTROL         "",IDC_CPFB,"ColourPicker",WS_TABSTOP,298,162,10,10
+    CONTROL         "",IDC_CPFT,"ColourPicker",WS_TABSTOP,309,162,10,10
+    EDITTEXT        IDC_EDITSERVER,157,45,75,12,ES_AUTOHSCROLL | WS_GROUP
+    EDITTEXT        IDC_EDITPORT,205,60,27,12,ES_AUTOHSCROLL | ES_NUMBER | 
                     WS_GROUP
-    EDITTEXT        IDC_EDITLOGIN,240,65,75,12,ES_AUTOHSCROLL | WS_GROUP
-    EDITTEXT        IDC_EDITPASS,240,90,75,12,ES_PASSWORD | ES_AUTOHSCROLL | 
+    EDITTEXT        IDC_EDITLOGIN,242,17,75,12,ES_AUTOHSCROLL | WS_GROUP
+    EDITTEXT        IDC_EDITPASS,242,44,75,12,ES_PASSWORD | ES_AUTOHSCROLL | 
                     WS_GROUP
-    COMBOBOX        IDC_COMBOCP,155,15,75,130,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_COMBOCP,157,15,75,130,CBS_DROPDOWNLIST | 
                     CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Offline",IDC_CHECKST0,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,160,46,70,9
-    CONTROL         "Online",IDC_CHECKST1,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,160,55,70,9
-    CONTROL         "Away",IDC_CHECKST2,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_TABSTOP,160,65,70,9
-    CONTROL         "N/A",IDC_CHECKST3,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_TABSTOP,160,75,70,9
-    CONTROL         "Occupied",IDC_CHECKST4,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,160,86,70,9
-    CONTROL         "DND",IDC_CHECKST5,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_TABSTOP,160,95,70,9
-    CONTROL         "Free for chat",IDC_CHECKST6,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,160,105,70,9
-    CONTROL         "Invisible",IDC_CHECKST7,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,160,115,70,9
-    CONTROL         "On the phone",IDC_CHECKST8,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,160,126,70,9
-    CONTROL         "Out to lunch",IDC_CHECKST9,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,160,135,70,9
     CONTROL         "Startup check",IDC_CHECKSTART,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,160,150,70,15
-    LTEXT           "Default codepage:",IDC_STCP,155,5,70,8
-    LTEXT           "",IDC_STTIMELEFT,7,238,142,8
+                    BS_NOTIFY | WS_TABSTOP,162,84,78,15
+    LTEXT           "Default codepage:",IDC_STCP,157,5,70,8
+    LTEXT           "",IDC_STTIMELEFT,161,199,142,8
     LTEXT           "Check interval [min]:",IDC_STINTERVAL,11,35,115,10
-    LTEXT           "Check while:",IDC_STWCHECK,160,35,70,10
     CONTROL         "Check from menu",IDC_CHECKFORCE,"Button",
-                    BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,160,165,70,8
-    LTEXT           "Server:",IDC_STSERVER,240,5,75,10,SS_CENTERIMAGE
-    LTEXT           "Port:",IDC_STPORT,240,30,45,10,SS_CENTERIMAGE
-    LTEXT           "User:",IDC_STLOGIN,240,55,75,10
-    LTEXT           "Password:",IDC_STPASS,240,80,75,10
-    EDITTEXT        IDC_EDITPOPS,124,142,20,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDITNPOPS,124,206,20,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDITFPOPS,289,233,20,12,ES_AUTOHSCROLL
-    LTEXT           "s",IDC_STATIC,144,143,8,8
-    LTEXT           "s",IDC_STATIC,144,207,8,8
-    LTEXT           "s",IDC_STATIC,313,234,8,8
-    GROUPBOX        "New mail notifications",IDC_GBNEWMAIL,7,47,148,129
-    GROUPBOX        "No new mail notifications",IDC_GBNONEWMAIL,7,179,148,45
+                    BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,162,100,78,8
+    LTEXT           "Server:",IDC_STSERVER,157,31,75,10,SS_CENTERIMAGE
+    LTEXT           "Port:",IDC_STPORT,157,62,45,10,SS_CENTERIMAGE
+    LTEXT           "User:",IDC_STLOGIN,242,6,75,10
+    LTEXT           "Password:",IDC_STPASS,242,32,75,10
+    EDITTEXT        IDC_EDITPOPS,124,156,20,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDITNPOPS,124,227,20,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDITFPOPS,287,175,20,12,ES_AUTOHSCROLL
+    LTEXT           "s",IDC_STATIC,146,158,8,8
+    LTEXT           "s",IDC_STATIC,146,228,8,8
+    LTEXT           "s",IDC_STATIC,311,176,8,8
+    GROUPBOX        "New mail notifications",IDC_GBNEWMAIL,7,55,148,139
+    GROUPBOX        "No new mail notifications",IDC_GBNONEWMAIL,7,200,148,45
     GROUPBOX        "Connection failure notifications",IDC_GBBADCONNECT,156,
-                    179,168,70
-    LTEXT           "",IDC_STSTATUS,7,238,155,8
+                    118,168,76
+    LTEXT           "",IDC_STSTATUS,11,44,135,8
     CONTROL         "APOP auth",IDC_CHECKAPOP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,240,105,71,10
+                    WS_TABSTOP,242,60,71,10
     CONTROL         "Persistant message",IDC_CHECKNMSGP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,11,206,110,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,227,110,10
     CONTROL         "Use SSL",IDC_CHECKSSL,"Button",BS_AUTOCHECKBOX | 
-                    BS_LEFTTEXT | BS_RIGHT | WS_TABSTOP,240,45,75,10
+                    BS_LEFT | WS_TABSTOP,242,74,75,10
     CONTROL         "Keyboard Flash",IDC_CHECKKBN,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,12,90,132,9
+                    WS_TABSTOP,12,101,132,9
     CONTROL         "Use contact notification for this account",
                     IDC_CHECKCONTACT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    11,163,138,10,WS_EX_TRANSPARENT
+                    11,179,138,10,WS_EX_TRANSPARENT
+    PUSHBUTTON      "Check while:",IDC_BTNSTATUS,244,92,83,12
+END
+
+IDD_CHOOSESTATUSMODES DIALOG DISCARDABLE  0, 0, 226, 154
+STYLE DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Check while:"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,112,133,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,169,133,50,14
+    GROUPBOX        "Choose modes",IDC_STATUSGROUP,7,7,212,119
+    CONTROL         "Offline",IDC_CHECKST0,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,15,19,70,9
+    CONTROL         "Online",IDC_CHECKST1,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,15,39,70,9
+    CONTROL         "Away",IDC_CHECKST2,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_TABSTOP,15,62,70,9
+    CONTROL         "N/A",IDC_CHECKST3,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_TABSTOP,15,83,70,9
+    CONTROL         "Occupied",IDC_CHECKST4,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,15,104,70,9
+    CONTROL         "DND",IDC_CHECKST5,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_TABSTOP,134,19,70,9
+    CONTROL         "Free for chat",IDC_CHECKST6,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,134,39,70,9
+    CONTROL         "Invisible",IDC_CHECKST7,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,134,62,70,9
+    CONTROL         "On the phone",IDC_CHECKST8,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,134,83,70,9
+    CONTROL         "Out to lunch",IDC_CHECKST9,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,134,104,70,9
 END
 
 
@@ -361,7 +333,7 @@ BEGIN
     0
 END
 
-#endif    // English (U.K.) resources
+#endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -391,8 +363,8 @@ IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,11
- PRODUCTVERSION 0,0,0,11
+ FILEVERSION 0,0,0,14
+ PRODUCTVERSION 0,0,0,14
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -407,17 +379,17 @@ BEGIN
     BEGIN
         BLOCK "080c04b0"
         BEGIN
-            VALUE "Comments", "Yet An other Mail Notifier\0"
+            VALUE "Comments", "Yet Another Mail Notifier\0"
             VALUE "CompanyName", "\0"
-            VALUE "FileDescription", "YAMN\0"
-            VALUE "FileVersion", "0, 0, 0, 11\0"
+            VALUE "FileDescription", "Yet Another Mail Notifier\0"
+            VALUE "FileVersion", "0, 0, 0, 14\0"
             VALUE "InternalName", "YAMN\0"
             VALUE "LegalCopyright", "Copyright © 2005\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "YAMN.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "YAMN tweety\0"
-            VALUE "ProductVersion", "0, 0, 0, 11\0"
+            VALUE "ProductVersion", "0, 0, 0, 14\0"
             VALUE "SpecialBuild", "\0"
         END
     END

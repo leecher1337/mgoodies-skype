@@ -34,6 +34,7 @@ extern PLUGINLINK *pluginLink;
 extern PYAMN_VARIABLES pYAMNVar;
 extern HYAMNPROTOPLUGIN POP3Plugin;
 extern struct YAMNExportedFcns *pYAMNFcn;
+extern YAMN_VARIABLES YAMNVar;
 
 extern DWORD WINAPI WritePOP3Accounts();
 
@@ -151,6 +152,9 @@ struct _tcptable CodePageNames[]=
 #define CPLEN	(sizeof(CodePageNames)/sizeof(CodePageNames[0]))
 #define CPDEFINDEX	63	//ISO-8859-1
 
+BOOL Check0,Check1,Check2,Check3,Check4,Check5,Check6,Check7,Check8,Check9;
+TCHAR DlgInput[MAX_PATH];
+
 //Enables account in options
 BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam);
 
@@ -169,11 +173,30 @@ BOOL DlgSetItemTextW(HWND hDlg,WPARAM wParam,LPARAM lParam);
 //Options dialog procedure
 BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
+//Options dialog procedure
+BOOL CALLBACK DlgProcPOP3AccStatusOpt(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+
 //Initializes POP3 options for Miranda
 int POP3OptInit(WPARAM wParam,LPARAM lParam);
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
+BOOL DlgEnableAccountStatus(HWND hDlg,WPARAM wParam,LPARAM lParam)
+{
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST0),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST1),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST2),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST3),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST4),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST5),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST6),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST7),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST8),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST9),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST9),(BOOL)wParam);
+	return TRUE;
+}
+
 
 BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 {
@@ -211,7 +234,7 @@ BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKFCOL),(IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CPFB),lParam && (IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CPFT),lParam && (IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST0),(BOOL)wParam);
+	/*EnableWindow(GetDlgItem(hDlg,IDC_CHECKST0),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST1),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST2),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST3),(BOOL)wParam);
@@ -221,19 +244,59 @@ BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST7),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST8),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST9),(BOOL)wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST9),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST9),(BOOL)wParam);*/
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKSTART),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKFORCE),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_COMBOCP),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_STTIMELEFT),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_BTNRESET),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_BTNDEFAULT),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_BTNSTATUS),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKSSL),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKAPOP),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKCONTACT),(BOOL)wParam);
 	return TRUE;
 }
-
+BOOL DlgShowAccountStatus(HWND hDlg,WPARAM wParam,LPARAM lParam)
+{
+	HPOP3ACCOUNT ActualAccount=(HPOP3ACCOUNT)lParam;
+	
+	if((DWORD)wParam==M_SHOWACTUAL)
+	{
+		#ifdef DEBUG_SYNCHRO
+		DebugLog(SynchroFile,"Options:SHOWACCOUNT:ActualAccountSO-read wait\n");
+		#endif
+		WaitToRead(ActualAccount);		//we do not need to check if account is deleted. It is not deleted, because only thread that can delete account is this thread
+		#ifdef DEBUG_SYNCHRO
+		DebugLog(SynchroFile,"Options:SHOWACCOUNT:ActualAccountSO-read enter\n");
+		#endif
+		CheckDlgButton(hDlg,IDC_CHECKST0,ActualAccount->StatusFlags & YAMN_ACC_ST0 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST1,ActualAccount->StatusFlags & YAMN_ACC_ST1 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST2,ActualAccount->StatusFlags & YAMN_ACC_ST2 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST3,ActualAccount->StatusFlags & YAMN_ACC_ST3 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST4,ActualAccount->StatusFlags & YAMN_ACC_ST4 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST5,ActualAccount->StatusFlags & YAMN_ACC_ST5 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST6,ActualAccount->StatusFlags & YAMN_ACC_ST6 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST7,ActualAccount->StatusFlags & YAMN_ACC_ST7 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST8,ActualAccount->StatusFlags & YAMN_ACC_ST8 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST9,ActualAccount->StatusFlags & YAMN_ACC_ST9 ? BST_CHECKED : BST_UNCHECKED);
+		ReadDone(ActualAccount);
+	}
+	else
+	{
+		CheckDlgButton(hDlg,IDC_CHECKST0,BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST1,BST_CHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST2,BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST3,BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST4,BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST5,BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST6,BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST7,BST_CHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST8,BST_CHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST9,BST_CHECKED);
+	}
+	return TRUE;
+}
 BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 {
 	HPOP3ACCOUNT ActualAccount=(HPOP3ACCOUNT)lParam;
@@ -242,13 +305,13 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	if((DWORD)wParam==M_SHOWACTUAL)
 	{
 		TCHAR accstatus[256];
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"Options:SHOWACCOUNT:ActualAccountSO-read wait\n");
-#endif
+		#endif
 		WaitToRead(ActualAccount);		//we do not need to check if account is deleted. It is not deleted, because only thread that can delete account is this thread
-#ifdef DEBUG_SYNCHRO
+		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"Options:SHOWACCOUNT:ActualAccountSO-read enter\n");
-#endif
+		#endif
 		DlgSetItemText(hDlg,(WPARAM)IDC_EDITSERVER,(LPARAM)ActualAccount->Server->Name);
 		DlgSetItemText(hDlg,(WPARAM)IDC_EDITLOGIN,(LPARAM)ActualAccount->Server->Login);
 		DlgSetItemText(hDlg,(WPARAM)IDC_EDITPASS,(LPARAM)ActualAccount->Server->Passwd);
@@ -288,7 +351,7 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		CheckDlgButton(hDlg,IDC_RADIOPOP1,ActualAccount->Flags & YAMN_ACC_POPN ? BST_UNCHECKED : BST_CHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKSSL,ActualAccount->Flags & YAMN_ACC_SSL23 ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKAPOP,ActualAccount->Flags & YAMN_ACC_APOP ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg,IDC_CHECKST0,ActualAccount->StatusFlags & YAMN_ACC_ST0 ? BST_CHECKED : BST_UNCHECKED);
+		/*CheckDlgButton(hDlg,IDC_CHECKST0,ActualAccount->StatusFlags & YAMN_ACC_ST0 ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST1,ActualAccount->StatusFlags & YAMN_ACC_ST1 ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST2,ActualAccount->StatusFlags & YAMN_ACC_ST2 ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST3,ActualAccount->StatusFlags & YAMN_ACC_ST3 ? BST_CHECKED : BST_UNCHECKED);
@@ -297,7 +360,17 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		CheckDlgButton(hDlg,IDC_CHECKST6,ActualAccount->StatusFlags & YAMN_ACC_ST6 ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST7,ActualAccount->StatusFlags & YAMN_ACC_ST7 ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST8,ActualAccount->StatusFlags & YAMN_ACC_ST8 ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg,IDC_CHECKST9,ActualAccount->StatusFlags & YAMN_ACC_ST9 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST9,ActualAccount->StatusFlags & YAMN_ACC_ST9 ? BST_CHECKED : BST_UNCHECKED);*/
+		Check0=ActualAccount->StatusFlags & YAMN_ACC_ST0;
+		Check1=ActualAccount->StatusFlags & YAMN_ACC_ST1;
+		Check2=ActualAccount->StatusFlags & YAMN_ACC_ST2;
+		Check3=ActualAccount->StatusFlags & YAMN_ACC_ST3;
+		Check4=ActualAccount->StatusFlags & YAMN_ACC_ST4;
+		Check5=ActualAccount->StatusFlags & YAMN_ACC_ST5;
+		Check6=ActualAccount->StatusFlags & YAMN_ACC_ST6;
+		Check7=ActualAccount->StatusFlags & YAMN_ACC_ST7;
+		Check8=ActualAccount->StatusFlags & YAMN_ACC_ST8;
+		Check9=ActualAccount->StatusFlags & YAMN_ACC_ST9;
 		CheckDlgButton(hDlg,IDC_CHECKSTART,ActualAccount->StatusFlags & YAMN_ACC_STARTS ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKFORCE,ActualAccount->StatusFlags & YAMN_ACC_FORCE ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKCONTACT,ActualAccount->NewMailN.Flags & YAMN_ACC_CONT ? BST_CHECKED : BST_UNCHECKED);
@@ -336,7 +409,7 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		CheckDlgButton(hDlg,IDC_CHECKFICO,BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKFPOP,BST_CHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKFCOL,BST_CHECKED);
-		CheckDlgButton(hDlg,IDC_CHECKST0,BST_UNCHECKED);
+		/*CheckDlgButton(hDlg,IDC_CHECKST0,BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST1,BST_CHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST2,BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST3,BST_UNCHECKED);
@@ -345,7 +418,7 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		CheckDlgButton(hDlg,IDC_CHECKST6,BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST7,BST_CHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST8,BST_CHECKED);
-		CheckDlgButton(hDlg,IDC_CHECKST9,BST_CHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKST9,BST_CHECKED);*/
 		CheckDlgButton(hDlg,IDC_CHECKSTART,BST_CHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKFORCE,BST_CHECKED);
 		CheckDlgButton(hDlg,IDC_RADIOPOPN,BST_UNCHECKED);
@@ -423,6 +496,61 @@ BOOL DlgSetItemTextW(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	return TRUE;
 }
 
+BOOL CALLBACK DlgProcPOP3AccStatusOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+{
+	static HPOP3ACCOUNT ActualAccount;
+	switch(msg)
+	{
+		case WM_INITDIALOG:
+		{
+			ActualAccount=(HPOP3ACCOUNT)CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)DlgInput);
+			if(ActualAccount != NULL)
+			{
+				DlgShowAccountStatus(hDlg,(WPARAM)M_SHOWACTUAL,(LPARAM)ActualAccount);
+				DlgEnableAccountStatus(hDlg,(WPARAM)TRUE,(LPARAM)TRUE);
+			}
+			TranslateDialogDefault(hDlg);
+			SendMessage(GetParent(hDlg),PSM_UNCHANGED,(WPARAM)hDlg,0);
+			return TRUE;
+			break;
+		}
+		case WM_COMMAND:
+		{
+		
+			WORD wNotifyCode = HIWORD(wParam);
+			switch(LOWORD(wParam))
+			{
+				case IDOK:
+					Check0=(IsDlgButtonChecked(hDlg,IDC_CHECKST0)==BST_CHECKED);
+					Check1=(IsDlgButtonChecked(hDlg,IDC_CHECKST1)==BST_CHECKED);
+					Check2=(IsDlgButtonChecked(hDlg,IDC_CHECKST2)==BST_CHECKED);
+					Check3=(IsDlgButtonChecked(hDlg,IDC_CHECKST3)==BST_CHECKED);
+					Check4=(IsDlgButtonChecked(hDlg,IDC_CHECKST4)==BST_CHECKED);
+					Check5=(IsDlgButtonChecked(hDlg,IDC_CHECKST5)==BST_CHECKED);
+					Check6=(IsDlgButtonChecked(hDlg,IDC_CHECKST6)==BST_CHECKED);
+					Check7=(IsDlgButtonChecked(hDlg,IDC_CHECKST7)==BST_CHECKED);
+					Check8=(IsDlgButtonChecked(hDlg,IDC_CHECKST8)==BST_CHECKED);
+					Check9=(IsDlgButtonChecked(hDlg,IDC_CHECKST9)==BST_CHECKED);
+					WindowList_BroadcastAsync(YAMNVar.MessageWnds,WM_YAMN_CHANGESTATUSOPTION,(WPARAM)0,(LPARAM)0);
+					EndDialog(hDlg,0);
+					DestroyWindow(hDlg);
+					break;
+				
+				case IDCANCEL:
+					EndDialog(hDlg,0);
+					DestroyWindow(hDlg);
+					break;
+				
+				default:
+                        break;
+			}
+		}
+		default:
+			break;
+	}
+	return FALSE;
+}
+
 BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
 	BOOL Changed=FALSE;
@@ -441,20 +569,20 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			DlgEnableAccount(hDlg,(WPARAM)FALSE,(LPARAM)FALSE);
 			DlgShowAccount(hDlg,(WPARAM)M_SHOWDEFAULT,0);
 //			DlgShowAccountColors(hDlg,0,(LPARAM)ActualAccount);
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"Options:INITDIALOG:AccountBrowserSO-read wait\n");
-#endif
+			#endif
 			WaitToReadSO(POP3Plugin->AccountBrowserSO);
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"Options:INITDIALOG:AccountBrowserSO-read enter\n");
-#endif
+			#endif
 			if(POP3Plugin->FirstAccount!=NULL)
 				for(ActualAccount=(HPOP3ACCOUNT)POP3Plugin->FirstAccount;ActualAccount!=NULL;ActualAccount=(HPOP3ACCOUNT)ActualAccount->Next)
 					if(ActualAccount->Name!=NULL)
 						SendDlgItemMessage(hDlg,IDC_COMBOACCOUNT,CB_ADDSTRING,0,(LPARAM)ActualAccount->Name);
-#ifdef DEBUG_SYNCHRO
+			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"Options:INITDIALOG:AccountBrowserSO-read done\n");
-#endif
+			#endif
 			ReadDoneSO(POP3Plugin->AccountBrowserSO);
 			for(i=0;i<CPLEN;i++)
 				SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_ADDSTRING,0,(LPARAM)CodePageNames[i].Name);
@@ -534,6 +662,12 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			SetDlgItemTextA(hDlg,IDC_STSTATUS,accstatus);
 		}
 			return TRUE;
+		case WM_YAMN_CHANGESTATUSOPTION:
+		{
+			Changed=TRUE;
+			SendMessage(GetParent(hDlg),PSM_CHANGED,0,0);
+		}
+			return TRUE;
 		case WM_YAMN_CHANGETIME:
 			if((HPOP3ACCOUNT)wParam==ActualAccount)
 			{
@@ -547,9 +681,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			WORD wNotifyCode = HIWORD(wParam);
 			switch(LOWORD(wParam))
 			{
-				TCHAR DlgInput[MAX_PATH];
 				LONG Result;
-
 				case IDC_COMBOACCOUNT:
 					switch(wNotifyCode)
 					{
@@ -744,6 +876,12 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					EnableWindow(GetDlgItem(hDlg,IDC_CPNT),IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED);
 					EnableWindow(GetDlgItem(hDlg,IDC_EDITNPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED));
 					break;
+				case IDC_BTNSTATUS:
+				{
+					DialogBoxParamW(pYAMNVar->hInst,MAKEINTRESOURCEW(IDD_CHOOSESTATUSMODES),hDlg,(DLGPROC)DlgProcPOP3AccStatusOpt,(LPARAM)NULL);										
+					break;
+				}
+				
 				case IDC_BTNAPP:
 				{
 					OPENFILENAME OFNStruct;
@@ -818,7 +956,8 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 							WCHAR TextW[MAX_PATH];
 							BOOL Translated,NewAcc=FALSE,Check,CheckMsg,CheckSnd,CheckIco,CheckPopup,CheckPopupW,CheckApp,CheckNPopup,CheckNPopupW,CheckNMsgP,CheckFMsg,CheckFSnd,CheckFIco,CheckFPopup,CheckFPopupW,CheckPopN,CheckKBN, CheckContact;
 							BOOL CheckSSL,CheckAPOP;
-							BOOL Check0,Check1,Check2,Check3,Check4,Check5,Check6,Check7,Check8,Check9,CheckStart,CheckForce;
+							//BOOL Check0,Check1,Check2,Check3,Check4,Check5,Check6,Check7,Check8,Check9,
+							BOOL CheckStart,CheckForce;
 							int Length,index;
 							UINT Port,Interval,Time,TimeN,TimeF;
 
@@ -904,18 +1043,18 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 								if(NULL==(ActualAccount=(HPOP3ACCOUNT)CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)Text)))
 								{
 									NewAcc=TRUE;
-#ifdef DEBUG_SYNCHRO                    
+									#ifdef DEBUG_SYNCHRO                    
 									DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write wait\n");
-#endif                                  
+									#endif                                  
 									WaitToWriteSO(POP3Plugin->AccountBrowserSO);
-#ifdef DEBUG_SYNCHRO                    
+									#ifdef DEBUG_SYNCHRO                    
 									DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write enter\n");
-#endif                                  
+									#endif                                  
 									if(NULL==(ActualAccount=(HPOP3ACCOUNT)CallService(MS_YAMN_GETNEXTFREEACCOUNT,(WPARAM)POP3Plugin,(LPARAM)YAMN_ACCOUNTVERSION)))
 									{
-#ifdef DEBUG_SYNCHRO                    
+										#ifdef DEBUG_SYNCHRO                    
 										DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write done\n");
-#endif                                  
+										#endif                                  
 										WriteDoneSO(POP3Plugin->AccountBrowserSO);
 										MessageBox(hDlg,Translate("Cannot allocate memory space for new account"),Translate("Memory error"),MB_OK);
 										break;
@@ -923,32 +1062,32 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 								}
 								else
 								{
-#ifdef DEBUG_SYNCHRO                    
+									#ifdef DEBUG_SYNCHRO                    
 									DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write wait\n");
-#endif                                  
-//We have to get full access to AccountBrowser, so other iterating thrads cannot get new account until new account is right set
+									#endif                                  
+									//We have to get full access to AccountBrowser, so other iterating thrads cannot get new account until new account is right set
 									WaitToWriteSO(POP3Plugin->AccountBrowserSO);
-#ifdef DEBUG_SYNCHRO                    
+									#ifdef DEBUG_SYNCHRO                    
 									DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write enter\n");
-#endif                                  
+									#endif                                  
 								}
-#ifdef DEBUG_SYNCHRO
+								#ifdef DEBUG_SYNCHRO
 								DebugLog(SynchroFile,"Options:APPLY:ActualAccountSO-write wait\n");
-#endif
+								#endif
 								if(WAIT_OBJECT_0!=WaitToWrite(ActualAccount))
 								{
-#ifdef DEBUG_SYNCHRO
+									#ifdef DEBUG_SYNCHRO
 									DebugLog(SynchroFile,"Options:APPLY:ActualAccountSO-write wait failed\n");
-#endif
-#ifdef DEBUG_SYNCHRO
+									#endif
+									#ifdef DEBUG_SYNCHRO
 									DebugLog(SynchroFile,"Options:APPLY:ActualBrowserSO-write done\n");
-#endif
+									#endif
 									WriteDoneSO(POP3Plugin->AccountBrowserSO);
 
 								}
-#ifdef DEBUG_SYNCHRO
+								#ifdef DEBUG_SYNCHRO
 								DebugLog(SynchroFile,"Options:APPLY:ActualAccountSO-write enter\n");
-#endif
+								#endif
 				        
 //								Beep(1000,100);Sleep(200);
 								if(NULL==ActualAccount->Name)
@@ -1018,7 +1157,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				        
 								CheckPopN=(IsDlgButtonChecked(hDlg,IDC_RADIOPOPN)==BST_CHECKED);
 				        
-								Check0=(IsDlgButtonChecked(hDlg,IDC_CHECKST0)==BST_CHECKED);
+								/*Check0=(IsDlgButtonChecked(hDlg,IDC_CHECKST0)==BST_CHECKED);
 								Check1=(IsDlgButtonChecked(hDlg,IDC_CHECKST1)==BST_CHECKED);
 								Check2=(IsDlgButtonChecked(hDlg,IDC_CHECKST2)==BST_CHECKED);
 								Check3=(IsDlgButtonChecked(hDlg,IDC_CHECKST3)==BST_CHECKED);
@@ -1027,7 +1166,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 								Check6=(IsDlgButtonChecked(hDlg,IDC_CHECKST6)==BST_CHECKED);
 								Check7=(IsDlgButtonChecked(hDlg,IDC_CHECKST7)==BST_CHECKED);
 								Check8=(IsDlgButtonChecked(hDlg,IDC_CHECKST8)==BST_CHECKED);
-								Check9=(IsDlgButtonChecked(hDlg,IDC_CHECKST9)==BST_CHECKED);
+								Check9=(IsDlgButtonChecked(hDlg,IDC_CHECKST9)==BST_CHECKED);*/
 							
 								CheckStart=(IsDlgButtonChecked(hDlg,IDC_CHECKSTART)==BST_CHECKED);
 								CheckForce=(IsDlgButtonChecked(hDlg,IDC_CHECKFORCE)==BST_CHECKED);
@@ -1075,13 +1214,13 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 									(CheckFPopup ? YAMN_ACC_POP : 0) |
 									(CheckFPopupW ? YAMN_ACC_POPC : 0);
 
-#ifdef DEBUG_SYNCHRO
+								#ifdef DEBUG_SYNCHRO
 								DebugLog(SynchroFile,"Options:APPLY:ActualAccountSO-write done\n");
-#endif
+								#endif
 								WriteDone(ActualAccount);
-#ifdef DEBUG_SYNCHRO                    
+								#ifdef DEBUG_SYNCHRO                    
 								DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write done\n");
-#endif                                  
+								#endif                                  
 								WriteDoneSO(POP3Plugin->AccountBrowserSO);
 								if(NewAcc)
 								{
