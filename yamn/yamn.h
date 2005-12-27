@@ -7,18 +7,18 @@
 #include <stdio.h>
 #include <direct.h>		//For _chdir()
 #include <commctrl.h>		//For hotkeys
-#include "../../include/newpluginapi.h"	//CallService,UnHookEvent
-#include "../../include/m_utils.h"			//window broadcasting
-#include "../../include/m_system.h"
-#include "../../include/m_skin.h"
-#include "../../include/m_langpack.h"
-#include "../../include/m_clist.h"
-#include "../../include/m_options.h"
-#include "../../include/m_database.h"		//database
-#include "../../include/m_contacts.h"		//contact
-#include "../../include/m_protocols.h"		//protocols
-#include "../../include/m_protomod.h"		//protocols module
-#include "../../include/m_protosvc.h"
+#include "newpluginapi.h"	//CallService,UnHookEvent
+#include "m_utils.h"			//window broadcasting
+#include "m_system.h"
+#include "m_skin.h"
+#include "m_langpack.h"
+#include "m_clist.h"
+#include "m_options.h"
+#include "m_database.h"		//database
+#include "m_contacts.h"		//contact
+#include "m_protocols.h"		//protocols
+#include "m_protomod.h"		//protocols module
+#include "m_protosvc.h"
 #include "include/m_uninstaller.h"				//PluginUninstaller structures
 #include "include/m_toptoolbar.h"
 #include "include/icolib.h"

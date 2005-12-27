@@ -5,11 +5,11 @@
  */
 #include <windows.h>
 #include <stdio.h>
-#include "../../../include/newpluginapi.h"
-#include "../../../include/m_utils.h"
-#include "../../../include/m_skin.h"
-#include "../../../include/m_langpack.h"
-#include "../../../include/m_database.h"
+#include <newpluginapi.h>
+#include <m_utils.h>
+#include <m_skin.h>
+#include <m_langpack.h>
+#include <m_database.h>
 #include "../include/m_popup.h"
 #include "../main.h"
 #include "../m_protoplugin.h"
