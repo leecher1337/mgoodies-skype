@@ -8,11 +8,11 @@
 #include <windows.h>
 #include <stdio.h>
 #include <commctrl.h>
-#include "../../include/newpluginapi.h"
-#include "../../include/m_database.h"
-#include "../../include/m_options.h"
-#include "../../include/m_langpack.h"
-#include "../../include/m_utils.h"
+#include <newpluginapi.h>
+#include <m_database.h>
+#include <m_options.h>
+#include <m_langpack.h>
+#include <m_utils.h>
 #include "m_yamn.h"
 #include "m_protoplugin.h"
 #include "m_filterplugin.h"

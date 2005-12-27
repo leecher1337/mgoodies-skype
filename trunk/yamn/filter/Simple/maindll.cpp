@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include "../../../../../SDK/headers_c/newpluginapi.h"
-#include "../../../../../SDK/headers_c/m_system.h"
-#include "../../../../../SDK/headers_c/m_langpack.h"
-#include "../../../../../SDK/headers_c/m_options.h"
+#include <newpluginapi.h>
+#include <m_system.h>
+#include <m_langpack.h>
+#include <m_options.h>
 #include "../../m_filterplugin.h"
 #include "aggressiveoptimize.h"
 
