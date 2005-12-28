@@ -697,13 +697,13 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		cEvent.cbSize = sizeof(CLISTEVENT);
 		cEvent.hContact = ActualAccount->hContact;
 		cEvent.hIcon = hNewMailIcon;
-		cEvent.hDbEvent = (HANDLE)1;
+		cEvent.hDbEvent = (HANDLE)"yamn new mail";
 		cEvent.lParam = (LPARAM) ActualAccount->hContact;
 		cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
 		cEvent.pszTooltip = new char[250];
 
 		sprintf(cEvent.pszTooltip,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
-		CallService(MS_CLIST_ADDEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)&cEvent);
+		CallServiceSync(MS_CLIST_ADDEVENT, 0,(LPARAM)&cEvent);
 		DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", cEvent.pszTooltip);
 	}
 
@@ -896,12 +896,12 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 			break;
 
 		case WM_CONTEXTMENU:
-			HACCOUNT ActualAccount;
+			HANDLE hContact;
 
-			ActualAccount=(HACCOUNT)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
-			if(ActualAccount->hContact != NULL)
+			hContact=(HANDLE)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
+			if(hContact != NULL)
 			{
-				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)1);
+				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)hContact,(LPARAM)"yamn new mail");
 			}
 			SendMessage(hWnd,UM_DESTROYPOPUP,0,0);
 			break;			
@@ -1300,7 +1300,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 
 			if(ActualAccount->hContact != NULL)
 			{
-				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)1);
+				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)"yamn new mail");
 			}
 
 			break;

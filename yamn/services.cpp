@@ -81,11 +81,13 @@ static int Service_SetStatus(WPARAM wParam,LPARAM lParam)
 	return 0;
 
 }
+
 static int Service_GetName(WPARAM wParam, LPARAM lParam)
 {
 	lstrcpyn((char *) lParam, ProtoName, wParam);;
 	return 0;
 }
+
 static int Service_LoadIcon(WPARAM wParam,LPARAM lParam)
 {
 
