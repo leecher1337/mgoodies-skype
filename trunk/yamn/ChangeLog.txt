@@ -1,3 +1,9 @@
+0.0.0.15
+============
+! Fixed dismiss event by right click on new mail popup crash
+* Change string for the status choose button
+! use CallServiceSync() instead of CallService() for adding clistevent (now icon blinks)
+
 0.0.0.14
 ============
 ! Tooltip on the clist event will now show correct text
