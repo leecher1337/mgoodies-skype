@@ -68,7 +68,7 @@
 ;controls
 
 [Message Window Options]
-[Automatically pop up the window when a message is received]
+[Automatically pop up the window when]
 [Stay minimized]
 [Automatically switch to active tab]
 [Close the message window on send]
@@ -82,6 +82,7 @@
 [Save the window size and location individually for each contact]
 [Save the splitter position individually for each contact]
 [Support control up/down in message area to show previously sent messages]
+[Save message draft on close]
 [Delete temporary contacts when closing message window]
 [Show 'sending in progress' indicator]
 [Show title bar]
@@ -130,7 +131,7 @@
 [Typing Notification Options]
 [Send typing notifications to the following users when you are typing a message to them:]
 [Show typing notifications when a user is typing a message]
-[Update inactive message window icons when a user is typing]
+[Update message window icons when a user is typing]
 [Show typing notification when no message dialog is open]
 [Flash in the system tray and in the contact list]
 [Show balloon popup]
