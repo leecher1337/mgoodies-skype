@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define IEW_CREATE  1               // create new window (control)
 #define IEW_DESTROY 2               // destroy control
 #define IEW_SETPOS  3               // set window position and size
-#define IEW_SCROLLBOTTOM 4               // set window position and size
+#define IEW_SCROLLBOTTOM 4          // scroll text to bottom
 
 #define IEWM_SRMM     0             // regular SRMM
 #define IEWM_TABSRMM  1             // TabSRMM-compatible HTML builder
@@ -55,52 +55,15 @@ typedef struct {
 	int			cy;                 // IE control vertical size
 } IEVIEWWINDOW;
 
-#define IEE_LOG_EVENTS  	1       // log specified number of DB events
-#define IEE_CLEAR_LOG		2       // clear log
-#define IEE_GET_SELECTION	3       // get selected text
-#define IEE_SAVE_DOCUMENT	4       // save current document
-
-#define IEEF_RTL          1           // turn on RTL support
-#define IEEF_NO_UNICODE   2           // disable Unicode support
-#define IEEF_NO_SCROLLING 4           // do not scroll logs to bottom
-
-typedef struct {
-	int			cbSize;             // size of the strusture
-	int			iType;				// one of IEE_* values
-	DWORD		dwFlags;			// one of IEEF_* values
-	HWND		hwnd;               // HWND returned by IEW_CREATE
-	HANDLE      hContact;           // contact
-	HANDLE 		hDbEventFirst;      // first event to log, when IEE_LOG_EVENTS returns it will contain
-	                                // the last event actually logged or NULL if no event was logged
-	int 		count;              // number of events to log
-	int         codepage;           // ANSI codepage
-} IEVIEWEVENT;
-
-typedef struct {
-	int cbSize;                //size of the structure
-	const char* Protocolname;  //protocol to use... if you have defined a protocol, u can
-                             //use your own protocol name. Smiley add wil automatically
-                             //select the smileypack that is defined for your protocol.
-                             //Or, use "Standard" for standard smiley set. Or "ICQ", "MSN"
-                             //if you prefer those icons.
-                             //If not found or NULL: "Standard" will be used
-	int xPosition;             //Postition to place the selectwindow
-	int yPosition;             // "
-	int Direction;             //Direction (i.e. size upwards/downwards/etc) of the window 0, 1, 2, 3
-  	HWND hwndTarget;           //Window, where to send the message when smiley is selected.
-	UINT targetMessage;        //Target message, to be sent.
-	LPARAM targetWParam;       //Target WParam to be sent (LParam will be char* to select smiley)
-                             //see the example file.
-} IEVIEWSHOWSMILEYSEL;
-
 #define IEEDF_UNICODE 		1          // if set pszText is a pointer to wchar_t string instead of char string
+#define IEEDF_UNICODE_TEXT	1          // if set pszText is a pointer to wchar_t string instead of char string
+#define IEEDF_UNICODE_NICK	2          // if set pszNick is a pointer to wchar_t string instead of char string
 /* The following flags are valid only for message events (IEED_EVENT_MESSAGE) */
 #define IEEDF_FORMAT_FONT	0x00000100 // if set pszFont (font name) is valid and should be used
 #define IEEDF_FORMAT_SIZE	0x00000200 // if set fontSize is valid and should be used
 #define IEEDF_FORMAT_COLOR	0x00000400 // if set color is valid and should be used
 #define IEEDF_FORMAT_STYLE	0x00000800 // if set fontSize is valid and should be used
-		
-		
+
 #define IEED_EVENT_MESSAGE		0x0001 // message
 #define IEED_EVENT_TOPIC		0x0002 // topic change
 #define IEED_EVENT_JOINED		0x0003 // user joined
@@ -123,7 +86,7 @@ typedef struct {
 
 #define IE_FONT_BOLD			0x000100	// Bold font flag
 #define IE_FONT_ITALIC			0x000200	// Italic font flag
-#define IE_FONT_UNDERLINE		0x000400	// Underlined font flags 
+#define IE_FONT_UNDERLINE		0x000400	// Underlined font flags
 
 typedef struct tagIEVIEWEVENTDATA {
 	int			cbSize;
@@ -134,16 +97,61 @@ typedef struct tagIEVIEWEVENTDATA {
 	int         fontStyle;          // Text font style (combination of IE_FONT_* flags)
 	COLORREF	color;				// Text color
 	const char *pszProto;			// Name of the protocol
-//	const char *pszID;				// Unique identifier of the chat room corresponding to the event,
-//	const char *pszName;			// Name of the chat room visible to the user
-//	const char *pszUID;				// User identifier, usage depends on type of event
-	const char *pszNick;			// Nick, usage depends on type of event
-	const char *pszText;			// Text, usage depends on type of event
+	union {
+		const char *pszNick;		// Nick, usage depends on type of event
+		const wchar_t *pszNickW;    // Nick - Unicode
+	};
+	union {
+		const char *pszText;			// Text, usage depends on type of event
+		const wchar_t *pszTextW;			// Text - Unicode
+	};
 	DWORD		dwData;				// DWORD data e.g. status
 	BOOL		bIsMe;				// TRUE if the event is related to the user
 	time_t		time;				// Time of the event
 	struct tagIEVIEWEVENTDATA *next;
 } IEVIEWEVENTDATA;
+
+#define IEE_LOG_EVENTS  	1       // log specified number of DB events
+#define IEE_CLEAR_LOG		2       // clear log
+#define IEE_GET_SELECTION	3       // get selected text
+#define IEE_SAVE_DOCUMENT	4       // save current document
+#define IEE_LOG_IEV_EVENTS 	5       // log specified number of IEView events events
+
+#define IEEF_RTL          1           // turn on RTL support
+#define IEEF_NO_UNICODE   2           // disable Unicode support
+#define IEEF_NO_SCROLLING 4           // do not scroll logs to bottom
+
+typedef struct {
+	int			cbSize;             // size of the strusture
+	int			iType;				// one of IEE_* values
+	DWORD		dwFlags;			// one of IEEF_* values
+	HWND		hwnd;               // HWND returned by IEW_CREATE
+	HANDLE      hContact;           // contact
+	union {
+		HANDLE 		hDbEventFirst;      // first event to log, when IEE_LOG_EVENTS returns it will contain
+										// the last event actually logged or NULL if no event was logged (IEE_LOG_EVENTS)
+		IEVIEWEVENTDATA *eventData;	    // the pointer to an array of IEVIEWEVENTDATA objects (IEE_LOG_IEV_EVENTS)
+	};
+	int 		count;              // number of events to log
+	int         codepage;           // ANSI codepage
+} IEVIEWEVENT;
+
+typedef struct {
+	int cbSize;                //size of the structure
+	const char* Protocolname;  //protocol to use... if you have defined a protocol, u can
+                             //use your own protocol name. Smiley add wil automatically
+                             //select the smileypack that is defined for your protocol.
+                             //Or, use "Standard" for standard smiley set. Or "ICQ", "MSN"
+                             //if you prefer those icons.
+                             //If not found or NULL: "Standard" will be used
+	int xPosition;             //Postition to place the selectwindow
+	int yPosition;             // "
+	int Direction;             //Direction (i.e. size upwards/downwards/etc) of the window 0, 1, 2, 3
+  	HWND hwndTarget;           //Window, where to send the message when smiley is selected.
+	UINT targetMessage;        //Target message, to be sent.
+	LPARAM targetWParam;       //Target WParam to be sent (LParam will be char* to select smiley)
+                             //see the example file.
+} IEVIEWSHOWSMILEYSEL;
 
 #endif
 
