@@ -80,7 +80,7 @@ BEGIN
     GROUPBOX        "Options",IDC_SIMPLE,5,5,294,99
     CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,19,265,10
-    LTEXT           "Currently the following BBCodes are supported: [b][i][u][img][size][color]",IDC_SIMPLE, 26,31,265,12
+    LTEXT           "Currently the following BBCodes are supported: [b][i][u][s][img][size][color]",IDC_SIMPLE, 26,31,265,12
     CONTROL         "Enable support for Flash files in smileys and BBCodes",IDC_ENABLE_FLASH,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,46,265,10
     CONTROL         "Enable workaround for PNG transparency",IDC_ENABLE_PNGHACK,"Button",BS_AUTOCHECKBOX |
