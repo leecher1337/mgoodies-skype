@@ -131,7 +131,7 @@ protected:
 public:
 	virtual void appendEventOld(IEView *, IEVIEWEVENT *event);
 	virtual void buildHead(IEView *, IEVIEWEVENT *event)=0;
-	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;
+//	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;
 	virtual void appendEventMem(IEView *, IEVIEWEVENT *event)=0;
 };
 

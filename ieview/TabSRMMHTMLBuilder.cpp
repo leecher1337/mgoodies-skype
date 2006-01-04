@@ -266,7 +266,7 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	dwFlags2 |= MWF_SHOW_MICROLF;
     dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, "followupts", 1) ? MWF_SHOW_MARKFOLLOWUPTS : 0;
 	int cp = CP_ACP;
-	if (event->cbSize == sizeof(IEVIEWEVENT)) {
+	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
 		cp = event->codepage;
 	}
 	char *szProto = getProto(event->hContact);
@@ -471,7 +471,7 @@ void TabSRMMHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
 				szText = encodeUTF8(eventData->pszTextW, szRealProto, ENF_ALL);
    			} else {
-                szText = encodeUTF8(eventData->pszText, szRealProto, ENF_ALL);
+                szText = encodeUTF8(eventData->pszText, event->codepage, szRealProto, ENF_ALL);
 			}
 			/* TabSRMM-specific formatting */
 			if ((dwFlags & MWF_LOG_GRID) && isGroupBreak && getLastEventType()!=-1) {

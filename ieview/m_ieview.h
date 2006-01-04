@@ -58,6 +58,7 @@ typedef struct {
 #define IEEDF_UNICODE 		1          // if set pszText is a pointer to wchar_t string instead of char string
 #define IEEDF_UNICODE_TEXT	1          // if set pszText is a pointer to wchar_t string instead of char string
 #define IEEDF_UNICODE_NICK	2          // if set pszNick is a pointer to wchar_t string instead of char string
+#define IEEDF_UNICODE_TEXT2	4          // if set pszText2 is a pointer to wchar_t string instead of char string
 /* The following flags are valid only for message events (IEED_EVENT_MESSAGE) */
 #define IEEDF_FORMAT_FONT	0x00000100 // if set pszFont (font name) is valid and should be used
 #define IEEDF_FORMAT_SIZE	0x00000200 // if set fontSize is valid and should be used
@@ -105,7 +106,6 @@ typedef struct tagIEVIEWEVENTDATA {
 	int			fontSize;			// Text font size (in pixels)
 	int         fontStyle;          // Text font style (combination of IE_FONT_* flags)
 	COLORREF	color;				// Text color
-	const char *pszProto;			// Name of the protocol
 	union {
 		const char *pszNick;		// Nick, usage depends on type of event
 		const wchar_t *pszNickW;    // Nick - Unicode
@@ -118,7 +118,10 @@ typedef struct tagIEVIEWEVENTDATA {
 	BOOL		bIsMe;				// TRUE if the event is related to the user
 	DWORD		time;				// Time of the event
 	struct tagIEVIEWEVENTDATA *next;
-	HANDLE 		hDbEvent;
+	union {
+		const char *pszText2;			// Text, usage depends on type of event
+		const wchar_t *pszText2W;			// Text - Unicode
+	};
 } IEVIEWEVENTDATA;
 
 #define IEE_LOG_EVENTS  	1       // log specified number of DB events
@@ -130,6 +133,10 @@ typedef struct tagIEVIEWEVENTDATA {
 #define IEEF_RTL          1           // turn on RTL support
 #define IEEF_NO_UNICODE   2           // disable Unicode support
 #define IEEF_NO_SCROLLING 4           // do not scroll logs to bottom
+
+#define IEVIEWEVENT_SIZE_V1 28
+#define IEVIEWEVENT_SIZE_V2 32
+#define IEVIEWEVENT_SIZE_V3 36
 
 typedef struct {
 	int			cbSize;             // size of the strusture
@@ -144,6 +151,7 @@ typedef struct {
 	};
 	int 		count;              // number of events to log
 	int         codepage;           // ANSI codepage
+	const char *pszProto;			// Name of the protocol
 } IEVIEWEVENT;
 
 typedef struct {
