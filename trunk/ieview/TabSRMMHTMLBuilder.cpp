@@ -37,7 +37,6 @@
 #define SRMSGMOD_T "Tab_SRMsg"
 #define TABSRMM_FONTMODULE "TabSRMM_Fonts"
 
-#define EVENTTYPE_STATUSCHANGE 25368
 #define EVENTTYPE_DIVIDER 25367
 #define EVENTTYPE_ERRMSG 25366
 
@@ -82,6 +81,13 @@ bool TabSRMMHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
             break;
     }
     return 0;
+}
+
+bool TabSRMMHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei)
+{
+	DWORD dwFlags2 = DBGetContactSettingByte(NULL, SRMSGMOD_T, SRMSGSET_SHOWURLS, 0) ? MWF_SHOW_URLEVENTS : 0;
+    dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, SRMSGSET_SHOWFILES, 0) ? MWF_SHOW_FILEEVENTS : 0;
+    return isDbEventShown(dwFlags2, dbei);
 }
 
 void TabSRMMHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
@@ -303,9 +309,9 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			char *szName = NULL;
 			char *szText = NULL;
 			if (isSent) {
-				szName = getContactName(NULL, szProto, szRealProto);
+				szName = getEncodedContactName(NULL, szProto, szRealProto);
    			} else {
-                szName = getContactName(event->hContact, szProto, szRealProto);
+                szName = getEncodedContactName(event->hContact, szProto, szRealProto);
 			}
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;
@@ -424,4 +430,138 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 
 time_t TabSRMMHTMLBuilder::getStartedTime() {
 	return startedTime;
+}
+
+void TabSRMMHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
+//	int	  indentLeft = DBGetContactSettingDword(NULL, SRMSGMOD_T, "IndentAmount", 0);
+//	int	  indentRight = DBGetContactSettingDword(NULL, SRMSGMOD_T, "RightIndent", 0);
+	DWORD today = (DWORD)time(NULL);
+	today = today - today % 86400;
+ 	DWORD dwFlags = DBGetContactSettingDword(NULL, SRMSGMOD_T, "mwflags", MWF_LOG_DEFAULT);
+	DWORD dwFlags2 = DBGetContactSettingByte(NULL, SRMSGMOD_T, SRMSGSET_SHOWURLS, 0) ? MWF_SHOW_URLEVENTS : 0;
+    dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, SRMSGSET_SHOWFILES, 0) ? MWF_SHOW_FILEEVENTS : 0;
+    dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, "in_out_icons", 0) ? MWF_SHOW_INOUTICONS : 0;
+    dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, "emptylinefix", 1) ? MWF_SHOW_EMPTYLINEFIX : 0;
+	dwFlags2 |= MWF_SHOW_MICROLF;
+    dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, "followupts", 1) ? MWF_SHOW_MARKFOLLOWUPTS : 0;
+
+	char *szRealProto = getRealProto(event->hContact);
+	IEVIEWEVENTDATA* eventData = event->eventData;
+	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
+		int outputSize;
+		char *output;
+		output = NULL;
+		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_FILE || eventData->iType == IEED_EVENT_URL || eventData->iType == IEED_EVENT_STATUSCHANGE) {
+			int isGroupBreak = TRUE;
+			int isSent = (eventData->dwFlags & IEEDF_SENT);
+			int isHistory = (eventData->time < (DWORD)getStartedTime() && (!(eventData->dwFlags & IEEDF_UNREAD) || eventData->dwFlags & IEEDF_SENT));
+		  	if (dwFlags & MWF_LOG_GROUPMODE && eventData->dwFlags == LOWORD(getLastEventType())
+			  && eventData->iType == IEED_EVENT_MESSAGE && HIWORD(getLastEventType()) == IEED_EVENT_MESSAGE
+			  && ((eventData->time < today) == (getLastEventTime() < today))
+			  && (((eventData->time < (DWORD)startedTime) == (getLastEventTime() < (DWORD)startedTime)) || (eventData->dwFlags & IEEDF_UNREAD))) {
+		        isGroupBreak = FALSE;
+		    }
+			char *szName = NULL;
+			char *szText = NULL;
+			if (eventData->dwFlags & IEEDF_UNICODE_NICK) {
+				szName = encodeUTF8(eventData->pszNickW, szRealProto, ENF_NAMESMILEYS);
+   			} else {
+                szName = encodeUTF8(eventData->pszNick, szRealProto, ENF_NAMESMILEYS);
+			}
+			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
+				szText = encodeUTF8(eventData->pszTextW, szRealProto, ENF_ALL);
+   			} else {
+                szText = encodeUTF8(eventData->pszText, szRealProto, ENF_ALL);
+			}
+			/* TabSRMM-specific formatting */
+			if ((dwFlags & MWF_LOG_GRID) && isGroupBreak && getLastEventType()!=-1) {
+				Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOutGrid" : "divInGrid");
+			} else {
+				Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
+			}
+			if (dwFlags & MWF_LOG_SHOWICONS && isGroupBreak) {
+				const char *iconFile = "";
+				if (eventData->iType == IEED_EVENT_MESSAGE) {
+					if (dwFlags2 & MWF_SHOW_INOUTICONS) iconFile = isSent ? "message_out.gif" : "message_in.gif";
+					else iconFile = "message.gif";
+				} else if (eventData->iType == IEED_EVENT_FILE) {
+					iconFile = "file.gif";
+				} else if (eventData->iType == IEED_EVENT_URL) {
+					iconFile = "url.gif";
+				} else if (eventData->iType == IEED_EVENT_STATUSCHANGE) {
+					iconFile = "status.gif";
+				}
+				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"%s/plugins/ieview/%s\"/>",
+								workingDir, iconFile);
+			}
+			if ((dwFlags & MWF_LOG_SWAPNICK) && (dwFlags & MWF_LOG_SHOWNICK) && isGroupBreak && (eventData->iType != IEED_EVENT_STATUSCHANGE)) {
+				const char *className = "";
+				if (!isHistory)	className = isSent ? "nameOut" : "nameIn";
+				else className = isSent ? "hNameOut" : "hNameIn";
+				if (dwFlags & MWF_LOG_UNDERLINE) {
+					Utils::appendText(&output, &outputSize, "<span class=\"%s\"><u>%s%s</span>",
+								className, szName, (dwFlags & MWF_LOG_SHOWTIME) ? " </u>" :"</u>: ");
+				} else {
+					Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s%s</span>",
+								className, szName, (dwFlags & MWF_LOG_SHOWTIME) ? " " :": ");
+				}
+			}
+			if (dwFlags & MWF_LOG_SHOWTIME && (isGroupBreak || dwFlags2 & MWF_SHOW_MARKFOLLOWUPTS)) {
+				const char *className = "";
+				if (!isHistory)	className = isSent ? "timeOut" : "timeIn";
+				else className = isSent ? "hTimeOut" : "hTimeIn";
+				if (dwFlags & MWF_LOG_UNDERLINE) {
+					Utils::appendText(&output, &outputSize, "<span class=\"%s\"><u>%s%s</span>",
+								className, timestampToString(dwFlags, eventData->time, isGroupBreak),
+								(!isGroupBreak || (eventData->iType == IEED_EVENT_STATUSCHANGE) || (dwFlags & MWF_LOG_SWAPNICK) || !(dwFlags & MWF_LOG_SHOWNICK)) ? "</u>: " : " </u>");
+				} else {
+					Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s%s</span>",
+								className, timestampToString(dwFlags, eventData->time, isGroupBreak),
+								(!isGroupBreak || (eventData->iType == IEED_EVENT_STATUSCHANGE) || (dwFlags & MWF_LOG_SWAPNICK) || !(dwFlags & MWF_LOG_SHOWNICK)) ? ": " : " ");
+				}
+			}
+			if ((eventData->iType == IEED_EVENT_STATUSCHANGE) || ((dwFlags & MWF_LOG_SHOWNICK) && !(dwFlags & MWF_LOG_SWAPNICK) && isGroupBreak)) {
+				if (eventData->iType == IEED_EVENT_STATUSCHANGE) {
+					Utils::appendText(&output, &outputSize, "<span class=\"statusChange\">%s </span>", szName);
+				} else {
+					const char *className = "";
+					if (!isHistory) className = isSent ? "nameOut" : "nameIn";
+					else className = isSent ? "hNameOut" : "hNameIn";
+					if (dwFlags & MWF_LOG_UNDERLINE) {
+						Utils::appendText(&output, &outputSize, "<span class=\"%s\"><u>%s</u>: </span>",
+									className, szName);
+					} else {
+						Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: </span>",
+									className, szName);
+					}
+				}
+			}
+			if (dwFlags & MWF_LOG_NEWLINE && eventData->iType != IEED_EVENT_STATUSCHANGE && eventData->iType != IEED_EVENT_ERRMSG && isGroupBreak) {
+				Utils::appendText(&output, &outputSize, "<br>");
+			}
+    		const char *className = "";
+			if (eventData->iType == IEED_EVENT_MESSAGE) {
+				if (!isHistory) className = isSent ? "messageOut" : "messageIn";
+				else className = isSent ? "hMessageOut" : "hMessageIn";
+			} else if (eventData->iType == IEED_EVENT_FILE) {
+				className = isHistory ? "hMiscIn" : "miscIn";
+			} else if (eventData->iType == IEED_EVENT_URL) {
+				className = isHistory ? "hMiscIn" : "miscIn";
+			} else if (eventData->iType == IEED_EVENT_STATUSCHANGE) {
+				className = "statusChange";
+			}
+            Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>", className, szText);
+            Utils::appendText(&output, &outputSize, "</div>\n");
+			setLastEventType(MAKELONG(eventData->dwFlags, eventData->iType));
+			setLastEventTime(eventData->time);
+			if (szName!=NULL) delete szName;
+			if (szText!=NULL) delete szText;
+		}
+		if (output != NULL) {
+            view->write(output);
+			free(output);
+		}
+    }
+    if (szRealProto!=NULL) delete szRealProto;
+//	view->scrollToBottom();
 }

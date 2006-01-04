@@ -828,7 +828,6 @@ void IEView::clear() {
 		}
 		document->Release();
 	}
-	hDbEventFirst = NULL;
 	if (builder!=NULL) {
         IEVIEWEVENT event;
 		event.cbSize = sizeof(IEVIEWEVENT);
@@ -848,13 +847,22 @@ void IEView::documentClose() {
 	}
 }
 */
+void IEView::appendEventOld(IEVIEWEVENT *event) {
+	hContact = event->hContact;
+	dwLogFlags = event->dwFlags;
+	iLogCodepage = event->codepage;
+	if (builder!=NULL) {
+		builder->appendEventOld(this, event);
+	}
+	getFocus = false;
+}
+
 void IEView::appendEvent(IEVIEWEVENT *event) {
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
 	iLogCodepage = event->codepage;
-	hDbEventFirst = (hDbEventFirst != NULL) ? hDbEventFirst : event->hDbEventFirst;
 	if (builder!=NULL) {
-		builder->appendEvent(this, event);
+		builder->appendEventMem(this, event);
 	}
 	getFocus = false;
 }
@@ -863,7 +871,6 @@ void IEView::clear(IEVIEWEVENT *event) {
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
 	iLogCodepage = event->codepage;
-	hDbEventFirst = NULL;
 	clear();
 	getFocus = false;
 }
@@ -884,20 +891,6 @@ void* IEView::getSelection(IEVIEWEVENT *event) {
 	return (void *)selectedText;
 }
 
-void IEView::rebuildLog() {
-	IEVIEWEVENT event;
-	event.cbSize = sizeof(IEVIEWEVENT);
-	event.hContact = hContact;
-	event.dwFlags = dwLogFlags;
-    event.codepage = iLogCodepage;
-    event.hDbEventFirst = hDbEventFirst;
-	event.count = -1;
-	event.hwnd = hwnd;
-	clear();
-	if (hDbEventFirst!=NULL) {
-		appendEvent(&event);
-	}
-}
 
 IEView* IEView::get(HWND hwnd) {
 	IEView *ptr;

@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include "ieview_services.h"
-#include "SRMMHTMLBuilder.h"
+//#include "SRMMHTMLBuilder.h"
 #include "ScriverHTMLBuilder.h"
 #include "TabSRMMHTMLBuilder.h"
 #include "TemplateHTMLBuilder.h"
@@ -51,7 +51,7 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 			} else if (window->dwMode == IEWM_SCRIVER) {
 				builder = new ScriverHTMLBuilder();
 			} else {
-				builder = new SRMMHTMLBuilder();
+				builder = new ScriverHTMLBuilder();
 			}
 		}
 		IEView * view = new IEView(window->parent, builder, window->x, window->y, window->cx, window->cy);
@@ -82,7 +82,7 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 	Options::init();
 	if (view != NULL) {
 		if (event->iType == IEE_LOG_EVENTS) {
-			view->appendEvent(event);
+			view->appendEventOld(event);
 		} else if (event->iType == IEE_CLEAR_LOG) {
 			view->clear(event);
 		} else if (event->iType == IEE_GET_SELECTION) {

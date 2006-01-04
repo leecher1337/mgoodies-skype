@@ -9,7 +9,6 @@
 #define SMF_LOG_SHOWDATES 4
 #define SMF_LOG_SHOWICONS 8
 #define SMF_LOG_SHOWSTATUSCHANGES 16
-#define EVENTTYPE_STATUSCHANGE 25368
 #define SRMMMOD "SRMM"
 
 #define SRMSGSET_SHOWLOGICONS      "ShowLogIcon"
@@ -29,7 +28,7 @@ static const char *classNames[] = {
 	".inputArea", ".notices"
 };
 
-bool SRMMHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
+bool SRMMHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei)
 {
     switch (dbei->eventType) {
         case EVENTTYPE_MESSAGE:
@@ -194,7 +193,7 @@ void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		}
 		HANDLE hCurDbEvent = hDbEvent;
         hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
-		if (!isDbEventShown(dwFlags, &dbei)) {
+		if (!isDbEventShown(&dbei)) {
             free(dbei.pBlob);
 	        continue;
     	}
@@ -204,9 +203,9 @@ void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			char *szName = NULL;
 			char *szText = NULL;
 			if (isSent) {
-				szName = getContactName(NULL, szProto, szRealProto);
+				szName = getEncodedContactName(NULL, szProto, szRealProto);
    			} else {
-                szName = getContactName(event->hContact, szProto, szRealProto);
+                szName = getEncodedContactName(event->hContact, szProto, szRealProto);
 			}
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				DWORD aLen = strlen((char *)dbei.pBlob)+1;

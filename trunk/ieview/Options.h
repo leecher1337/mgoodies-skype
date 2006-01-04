@@ -23,18 +23,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //#include "FontList.h"
 #include "ieview_common.h"
 
-#define DBS_BASICFLAGS  		  "GeneralFlags"
-#define DBS_SRMMFLAGS		  	  "SRMMFlags"
+#define DBS_BASICFLAGS  		  	"GeneralFlags"
 
-#define DBS_BACKGROUNDIMAGEFILE   "BackgroundImageFile"
-#define DBS_EXTERNALCSSFILE       "ExternalCSSFile"
-#define DBS_EXTERNALCSSFILE_RTL   "ExternalCSSFileRTL"
-#define DBS_TEMPLATESFILE         "TemplatesFile"
-#define DBS_TEMPLATESFILE_RTL     "TemplatesFileRTL"
+#define DBS_SRMMFLAGS		  	  	"SRMMFlags"
+#define DBS_BACKGROUNDIMAGEFILE   	"BackgroundImageFile"
+#define DBS_EXTERNALCSSFILE       	"ExternalCSSFile"
+#define DBS_EXTERNALCSSFILE_RTL   	"ExternalCSSFileRTL"
+#define DBS_TEMPLATESFILE         	"TemplatesFile"
+#define DBS_TEMPLATESFILE_RTL     	"TemplatesFileRTL"
 
-#define DBS_GROUPCHATFLAGS        "GroupChatFlags"
-#define DBS_GROUPCHATCSSFILE      "GroupChatCSSFile"
-#define DBS_GROUPCHATTEMPLATESFILE   "GroupChatTemplatesFile"
+#define DBS_GROUPCHATFLAGS        	"GroupChatFlags"
+#define DBS_GROUPCHATCSSFILE      	"GroupChatCSSFile"
+#define DBS_GROUPCHATTEMPLATESFILE  "GroupChatTemplatesFile"
+
+#define DBS_HISTORYFLAGS		  	 "HistoryFlags"
+#define DBS_HISTORYCSSFILE      	 "HistoryCSSFile"
+#define DBS_HISTORYCSSFILE_RTL     	 "HistoryCSSFileRTL"
+#define DBS_HISTORYTEMPLATESFILE  	 "HistoryTemplatesFile"
+#define DBS_HISTORYTEMPLATESFILE_RTL "HistoryTemplatesFileRTL"
+
 
 extern int IEViewOptInit(WPARAM wParam, LPARAM lParam);
 

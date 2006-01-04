@@ -873,26 +873,30 @@ char *HTMLBuilder::getRealProto(HANDLE hContact) {
 	return szProto;
 }
 
+char *HTMLBuilder::getRealProto(HANDLE hContact, const char *szProto) {
+	if (szProto!=NULL && !strcmp(szProto,"MetaContacts")) {
+		hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
+		if (hContact!=NULL) {
+			return Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+		}
+	}
+	return Utils::dupString(szProto);
+}
+
 HANDLE HTMLBuilder::getRealContact(HANDLE hContact) {
-    char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+    char *szProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 	if (szProto != NULL && !strcmp(szProto,"MetaContacts")) {
 		hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
 	}
-	if (szProto != NULL) delete szProto;
 	return hContact;
 }
 
 void HTMLBuilder::getUINs(HANDLE hContact, char *&uinIn, char *&uinOut) {
 	CONTACTINFO ci;
 	char buf[128];
-    char *szProto = getProto(hContact);
-	if (szProto!=NULL && !strcmp(szProto,"MetaContacts")) {
-		hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
-		if (hContact!=NULL) {
-			delete szProto;
-			szProto = getProto(hContact);
-		}
-	}
+	char *szProto;
+    hContact = getRealContact(hContact);
+    szProto = getProto(hContact);
 	ZeroMemory(&ci, sizeof(ci));
 	ci.cbSize = sizeof(ci);
 	ci.hContact = hContact;
@@ -955,7 +959,48 @@ bool HTMLBuilder::isSameDate(DWORD time1, DWORD time2) {
 	return false;
 }
 
-char *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto, const char* szSmileyProto) {
+wchar_t *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto) {
+	CONTACTINFO ci;
+	wchar_t *szName = NULL;
+	ZeroMemory(&ci, sizeof(ci));
+	ci.cbSize = sizeof(ci);
+	ci.hContact = hContact;
+    ci.szProto = (char *)szProto;
+	ci.dwFlag = CNF_DISPLAY;
+	if(isUnicodeMIM()) {
+		ci.dwFlag |= CNF_UNICODE;
+    }
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+		if (ci.type == CNFT_ASCIIZ) {
+			if (ci.pszVal) {
+				if(isUnicodeMIM()) {
+	        	    szName = Utils::dupString((wchar_t *)ci.pszVal);
+				} else {
+	        	    szName = Utils::convertToWCS((char *)ci.pszVal);
+				}
+				miranda_sys_free(ci.pszVal);
+			}
+		}
+	}
+    if (szName != NULL) return szName;
+	char *szNameStr = (char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0);
+	if (szNameStr != NULL) {
+   	    return Utils::convertToWCS(szNameStr);
+	}
+	ci.dwFlag = CNF_UNIQUEID;
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+		if (ci.type == CNFT_ASCIIZ) {
+			if (ci.pszVal) {
+        	    szName = Utils::convertToWCS((char *)ci.pszVal);
+				miranda_sys_free(ci.pszVal);
+			}
+		}
+	}
+    if (szName != NULL) return szName;
+    return Utils::convertToWCS(Translate("(Unknown Contact)"));
+}
+
+char *HTMLBuilder::getEncodedContactName(HANDLE hContact, const char* szProto, const char* szSmileyProto) {
 	CONTACTINFO ci;
 	char *szName = NULL;
 	ZeroMemory(&ci, sizeof(ci));
@@ -983,5 +1028,121 @@ char *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto, const ch
 	if (szName != NULL) {
 	    return encodeUTF8(szName, szSmileyProto, ENF_NAMESMILEYS);
 	}
+	ci.dwFlag = CNF_UNIQUEID;
+	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+		if (ci.type == CNFT_ASCIIZ) {
+			if (ci.pszVal) {
+        	    szName = encodeUTF8((char *)ci.pszVal, szSmileyProto, ENF_NAMESMILEYS);
+				miranda_sys_free(ci.pszVal);
+			}
+		}
+	}
+    if (szName != NULL) return szName;
     return encodeUTF8(Translate("(Unknown Contact)"), szSmileyProto, ENF_NAMESMILEYS);
+}
+
+bool HTMLBuilder::isDbEventShown(DBEVENTINFO * dbei) {
+	return true;
+}
+
+
+void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
+    IEVIEWEVENT newEvent;
+    IEVIEWEVENTDATA* eventData;
+    IEVIEWEVENTDATA* prevEventData = NULL;
+	HANDLE hDbEvent = event->hDbEventFirst;
+	event->hDbEventFirst = NULL;
+	newEvent.cbSize = sizeof (IEVIEWEVENT);
+	newEvent.iType = IEE_LOG_MEM_EVENTS;
+	newEvent.codepage = CP_ACP;
+	if (event->cbSize == sizeof(IEVIEWEVENT)) {
+		newEvent.codepage = event->codepage;
+	} 
+	newEvent.count = 0;
+	newEvent.dwFlags = event->dwFlags;
+	newEvent.hContact = event->hContact;
+	newEvent.hwnd = event->hwnd;
+	newEvent.eventData = NULL;
+	char *szProto = getProto(event->hContact);
+	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
+		DBEVENTINFO dbei = { 0 };
+        dbei.cbSize = sizeof(dbei);
+        dbei.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM) hDbEvent, 0);
+        if (dbei.cbBlob == 0xFFFFFFFF) {
+	   		hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
+            continue;
+		}
+        dbei.pBlob = (PBYTE) malloc(dbei.cbBlob);
+        CallService(MS_DB_EVENT_GET, (WPARAM)  hDbEvent, (LPARAM) & dbei);
+		if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL)) {
+			CallService(MS_DB_EVENT_MARKREAD, (WPARAM) event->hContact, (LPARAM) hDbEvent);
+			CallService(MS_CLIST_REMOVEEVENT, (WPARAM) event->hContact, (LPARAM) hDbEvent);
+		} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
+			CallService(MS_DB_EVENT_MARKREAD, (WPARAM) event->hContact, (LPARAM) hDbEvent);
+		}
+		if (!isDbEventShown(&dbei)) {
+		    free(dbei.pBlob);
+	   		hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
+		    continue;
+		}
+		eventData = new IEVIEWEVENTDATA;
+		eventData->cbSize = sizeof(IEVIEWEVENTDATA);
+		eventData->hDbEvent = hDbEvent;
+		eventData->dwFlags = IEEDF_UNICODE_TEXT | IEEDF_UNICODE_NICK |
+							(dbei.flags & DBEF_READ ? 0 : IEEDF_UNREAD) | (dbei.flags & DBEF_SENT ? IEEDF_SENT : 0);
+		eventData->time = dbei.timestamp;
+		eventData->pszProto = szProto;
+		if (dbei.flags & DBEF_SENT) {
+			eventData->pszNickW = getContactName(NULL, szProto);
+			eventData->bIsMe = TRUE;
+		} else {
+            eventData->pszNickW = getContactName(event->hContact, szProto);
+			eventData->bIsMe = FALSE;
+		}
+		if (dbei.eventType == EVENTTYPE_MESSAGE) {
+			DWORD aLen = strlen((char *)dbei.pBlob)+1;
+			if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
+				DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
+				if (wlen > 0 && wlen < aLen) {
+                    eventData->pszTextW = Utils::dupString((wchar_t *)&dbei.pBlob[aLen]);
+				} else {
+                    eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
+				}
+			} else {
+            	eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
+			}
+			eventData->iType = IEED_EVENT_MESSAGE;
+		} else if (dbei.eventType == EVENTTYPE_FILE) {
+            eventData->pszTextW = Utils::convertToWCS(((char *)dbei.pBlob) + sizeof(DWORD), newEvent.codepage);
+			eventData->iType = IEED_EVENT_FILE;
+		} else if (dbei.eventType == EVENTTYPE_URL) {
+            eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
+			eventData->iType = IEED_EVENT_URL;
+		} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
+            eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
+			eventData->iType = IEED_EVENT_STATUSCHANGE;
+		}
+	    free(dbei.pBlob);
+		eventData->next = NULL;
+		if (prevEventData != NULL) {
+			prevEventData->next = eventData;
+		} else {
+			newEvent.eventData = eventData;
+		}
+        prevEventData = eventData;
+        newEvent.count++;
+        event->hDbEventFirst = hDbEvent;
+   		hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
+	}
+	appendEventMem(view, &newEvent);
+	for ( IEVIEWEVENTDATA* eventData2 = newEvent.eventData; eventData2 != NULL; eventData2 = eventData) {
+		eventData = eventData2->next;
+		if (eventData2->pszTextW != NULL) {
+			delete eventData2->pszTextW;
+		}
+		if (eventData2->pszNickW != NULL) {
+			delete eventData2->pszNickW;
+		}
+		delete eventData2;
+	}
 }

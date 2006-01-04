@@ -108,7 +108,6 @@ private:
 	DWORD       dwLogFlags;
 	int         iLogCodepage;
    	HANDLE      hContact;
-   	HANDLE      hDbEventFirst;
    	bool        getFocus;
    	BSTR		selectedText;
 
@@ -197,6 +196,7 @@ public:
 	void            setServerWndProc(WNDPROC);
 	WNDPROC         getServerWndProc();
 
+	void            appendEventOld(IEVIEWEVENT * event);
 	void            appendEvent(IEVIEWEVENT * event);
 	void            clear(IEVIEWEVENT * event);
 	void*           getSelection(IEVIEWEVENT * event);

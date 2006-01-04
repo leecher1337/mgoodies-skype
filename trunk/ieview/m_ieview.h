@@ -64,11 +64,20 @@ typedef struct {
 #define IEEDF_FORMAT_COLOR	0x00000400 // if set color is valid and should be used
 #define IEEDF_FORMAT_STYLE	0x00000800 // if set fontSize is valid and should be used
 
-#define IEED_EVENT_MESSAGE		0x0001 // message
-#define IEED_EVENT_TOPIC		0x0002 // topic change
-#define IEED_EVENT_JOINED		0x0003 // user joined
-#define IEED_EVENT_LEFT			0x0004 // user left
-#define IEED_EVENT_ERROR		0x0005 // error
+#define IEEDF_UNREAD		0x00001000 // if set
+#define IEEDF_SENT			0x00002000 // if set
+
+#define IEED_EVENT_MESSAGE			0x0001 // message
+#define IEED_EVENT_STATUSCHANGE		0x0002 // status change
+#define IEED_EVENT_FILE				0x0003 // file
+#define IEED_EVENT_URL				0x0004 // url
+#define IEED_EVENT_ERRMSG           0x0005 // error message
+
+#define IEED_MUCC_EVENT_MESSAGE		0x0001 // message
+#define IEED_MUCC_EVENT_TOPIC		0x0002 // topic change
+#define IEED_MUCC_EVENT_JOINED		0x0003 // user joined
+#define IEED_MUCC_EVENT_LEFT		0x0004 // user left
+#define IEED_MUCC_EVENT_ERROR		0x0005 // error
 
 #define IEED_GC_EVENT_HIGHLIGHT 	0x8000
 #define IEED_GC_EVENT_MESSAGE   	0x0001
@@ -107,15 +116,16 @@ typedef struct tagIEVIEWEVENTDATA {
 	};
 	DWORD		dwData;				// DWORD data e.g. status
 	BOOL		bIsMe;				// TRUE if the event is related to the user
-	time_t		time;				// Time of the event
+	DWORD		time;				// Time of the event
 	struct tagIEVIEWEVENTDATA *next;
+	HANDLE 		hDbEvent;
 } IEVIEWEVENTDATA;
 
 #define IEE_LOG_EVENTS  	1       // log specified number of DB events
 #define IEE_CLEAR_LOG		2       // clear log
 #define IEE_GET_SELECTION	3       // get selected text
 #define IEE_SAVE_DOCUMENT	4       // save current document
-#define IEE_LOG_IEV_EVENTS 	5       // log specified number of IEView events events
+#define IEE_LOG_MEM_EVENTS 	5       // log specified number of IEView events events
 
 #define IEEF_RTL          1           // turn on RTL support
 #define IEEF_NO_UNICODE   2           // disable Unicode support

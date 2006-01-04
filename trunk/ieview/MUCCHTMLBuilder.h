@@ -14,7 +14,7 @@ public:
     MUCCHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
 	void appendEvent(IEView *, IEVIEWEVENT *event);
-	void clear();
+	void appendEventMem(IEView *, IEVIEWEVENT *event);
 };
 
 #endif

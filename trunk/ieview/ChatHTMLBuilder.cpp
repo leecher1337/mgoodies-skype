@@ -249,7 +249,7 @@ void ChatHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\"><span style=\"%s\">%s</span></span>", className, style!=NULL ? style : "", szText);
             Utils::appendText(&output, &outputSize, "</div>\n");
 			if (style!=NULL) free(style);
-		} else if (eventData->iType == IEED_GC_EVENT_JOIN || eventData->iType == IEED_EVENT_LEFT || eventData->iType == IEED_GC_EVENT_TOPIC) {
+		} else if (eventData->iType == IEED_GC_EVENT_JOIN || eventData->iType == IEED_GC_EVENT_PART || eventData->iType == IEED_GC_EVENT_TOPIC) {
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
 			if (dwFlags & FLAG_SHOW_TIMESTAMP || dwFlags & FLAG_SHOW_DATE) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
@@ -323,3 +323,6 @@ void ChatHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 //	view->scrollToBottom();
 }
 
+void ChatHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
+	appendEvent(view, event);
+}
