@@ -166,7 +166,7 @@ void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWLOGICONS, 0) ? SMF_LOG_SHOWICONS : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSCHANGES, 0) ? SMF_LOG_SHOWSTATUSCHANGES : 0;
 	int cp = CP_ACP;
-	if (event->cbSize == sizeof(IEVIEWEVENT)) {
+	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
 		cp = event->codepage;
 	}
 	char *szProto = getProto(event->hContact);

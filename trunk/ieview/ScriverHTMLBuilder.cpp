@@ -252,7 +252,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_DRAWLINES, 0) ? SMF_LOG_DRAWLINES : 0;
 
 	int cp = CP_ACP;
-	if (event->cbSize == sizeof(IEVIEWEVENT)) {
+	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
 		cp = event->codepage;
 	}
 	char *szProto = getProto(event->hContact);
@@ -475,7 +475,7 @@ void ScriverHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
 				szText = encodeUTF8(eventData->pszTextW, szRealProto, ENF_ALL);
    			} else {
-                szText = encodeUTF8(eventData->pszText, szRealProto, ENF_ALL);
+                szText = encodeUTF8(eventData->pszText, event->codepage, szRealProto, ENF_ALL);
 			}
 			/* SRMM-specific formatting */
 			if ((dwFlags & SMF_LOG_DRAWLINES) && isGroupBreak && getLastEventType()!=-1) {
