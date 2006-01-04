@@ -200,13 +200,17 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	iLastEventType = -1;
 }
 
+void MUCCHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
+	appendEvent(view, event);
+}
+
 void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 
 	int cp = CP_ACP;
 	if (event->cbSize == sizeof(IEVIEWEVENT)) {
 		cp = event->codepage;
 	}
-    IEVIEWEVENTDATA* eventData = (IEVIEWEVENTDATA *) event->hDbEventFirst;
+    IEVIEWEVENTDATA* eventData = (IEVIEWEVENTDATA *) event->eventData;
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
 		DWORD dwFlags = eventData->dwData;
 		char *style = NULL;
@@ -252,15 +256,15 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\"><span style=\"%s\">%s</span></span>", className, style!=NULL ? style : "", szText);
             Utils::appendText(&output, &outputSize, "</div>\n");
 			if (style!=NULL) free(style);
-		} else if (eventData->iType == IEED_EVENT_JOINED || eventData->iType == IEED_EVENT_LEFT || eventData->iType == IEED_EVENT_TOPIC) {
+		} else if (eventData->iType == IEED_MUCC_EVENT_JOINED || eventData->iType == IEED_MUCC_EVENT_LEFT || eventData->iType == IEED_MUCC_EVENT_TOPIC) {
 			const char *className, *divName;
 			const char *eventText;
-			if (eventData->iType == IEED_EVENT_JOINED) {
+			if (eventData->iType == IEED_MUCC_EVENT_JOINED) {
                 className = "userJoined";
                 divName = "divUserJoined";
 				eventText = Translate("%s has joined.");
 				szText = encodeUTF8(eventData->pszNick, eventData->pszProto, ENF_NONE);
-			} else if (eventData->iType == IEED_EVENT_LEFT) {
+			} else if (eventData->iType == IEED_MUCC_EVENT_LEFT) {
                 className = "userLeft";
                 divName = "divUserJoined";
 				eventText = Translate("%s has left.");
@@ -280,7 +284,7 @@ void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			Utils::appendText(&output, &outputSize, Translate(eventText), szText);
 			Utils::appendText(&output, &outputSize, "</span>");
             Utils::appendText(&output, &outputSize, "</div>\n");
-		} else if (eventData->iType == IEED_EVENT_ERROR) {
+		} else if (eventData->iType == IEED_MUCC_EVENT_ERROR) {
             const char *className = "error";
 			szText = encodeUTF8(eventData->pszText, eventData->pszProto, ENF_NONE);
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divError");

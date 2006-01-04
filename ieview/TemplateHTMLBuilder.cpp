@@ -21,7 +21,7 @@ TemplateHTMLBuilder::TemplateHTMLBuilder() {
 	groupTemplate = NULL;
 }    
 
-bool TemplateHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
+bool TemplateHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei)
 {
     switch (dbei->eventType) {
         case EVENTTYPE_MESSAGE:
@@ -38,7 +38,6 @@ bool TemplateHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
     }
     return 0;
 }
-
 
 char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
 {
@@ -115,8 +114,8 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
-		szNameOut = getContactName(NULL, szProto, szRealProto);
-		szNameIn = getContactName(event->hContact, szProto, szRealProto);
+		szNameOut = getEncodedContactName(NULL, szProto, szRealProto);
+		szNameIn = getEncodedContactName(event->hContact, szProto, szRealProto);
 	} else {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");
@@ -291,8 +290,8 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
 	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
-		szNameOut = getContactName(NULL, szProto, szRealProto);
-		szNameIn = getContactName(event->hContact, szProto, szRealProto);
+		szNameOut = getEncodedContactName(NULL, szProto, szRealProto);
+		szNameIn = getEncodedContactName(event->hContact, szProto, szRealProto);
 	} else {
         szNameOut = Utils::dupString("&nbsp;");
         szNameIn = Utils::dupString("&nbsp;");
@@ -363,7 +362,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		}
 		HANDLE hCurDbEvent = hDbEvent;
         hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
-		if (!isDbEventShown(0, &dbei)) {
+		if (!isDbEventShown(&dbei)) {
             free(dbei.pBlob);
 	        continue;
     	}
@@ -556,4 +555,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 
 time_t TemplateHTMLBuilder::getStartedTime() {
 	return startedTime;
+}
+
+void TemplateHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
 }

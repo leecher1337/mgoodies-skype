@@ -31,7 +31,7 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 //static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-static HWND hwndTemplates, hwndCurrentTab, hwndGeneral, hwndGroupChats;
+static HWND hwndCurrentTab, hwndPages[4];
 
 typedef struct tagTVKEYDOWN {
     NMHDR hdr;
@@ -107,17 +107,21 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 //			TabCtrl_InsertItem(tc, 2, &tci);
 			tci.pszText = Translate("Group Chats");
 			TabCtrl_InsertItem(tc, 2, &tci);
+			tci.pszText = Translate("History");
+			TabCtrl_InsertItem(tc, 3, &tci);
 
 //			hwndEmoticons = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_EMOTICONS_OPTIONS), hwndDlg, IEViewEmoticonsOptDlgProc, (LPARAM) NULL);
 	//		SetWindowPos(hwndEmoticons, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
-			hwndTemplates = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_TEMPLATES_OPTIONS), hwndDlg, IEViewTemplatesOptDlgProc, (LPARAM) NULL);
-			SetWindowPos(hwndTemplates, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
-			hwndGeneral = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_GENERAL_OPTIONS), hwndDlg, IEViewGeneralOptDlgProc, (LPARAM) NULL);
-			SetWindowPos(hwndTemplates, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
-			hwndGroupChats = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_GROUPCHATS_OPTIONS), hwndDlg, IEViewGroupChatsOptDlgProc, (LPARAM) NULL);
-			SetWindowPos(hwndTemplates, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
-			hwndCurrentTab = hwndGeneral;
-			ShowWindow(hwndGeneral, SW_SHOW);
+			hwndPages[0] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_GENERAL_OPTIONS), hwndDlg, IEViewGeneralOptDlgProc, (LPARAM) NULL);
+			SetWindowPos(hwndPages[0], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
+			hwndPages[1] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_SRMM_OPTIONS), hwndDlg, IEViewTemplatesOptDlgProc, (LPARAM) NULL);
+			SetWindowPos(hwndPages[1], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
+			hwndPages[2] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_GROUPCHATS_OPTIONS), hwndDlg, IEViewGroupChatsOptDlgProc, (LPARAM) NULL);
+			SetWindowPos(hwndPages[2], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
+			hwndPages[3] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_HISTORY_OPTIONS), hwndDlg, IEViewGroupChatsOptDlgProc, (LPARAM) NULL);
+			SetWindowPos(hwndPages[3], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
+			hwndCurrentTab = hwndPages[0];
+			ShowWindow(hwndPages[0], SW_SHOW);
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -129,22 +133,7 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
                 switch (wParam) {
 				case IDC_TABS:
 					{
-						HWND hwnd;
-						switch (TabCtrl_GetCurSel(GetDlgItem(hwndDlg, IDC_TABS))) {
-						default:
-						case 0:
-							hwnd = hwndGeneral;
-							break;
-						case 1:
-							hwnd = hwndTemplates;
-							break;
-						case 2:
-//							hwnd = hwndEmoticons;
-	//						break;
-		//				case 3:
-							hwnd = hwndGroupChats;
-							break;
-						}
+						HWND hwnd = hwndPages[TabCtrl_GetCurSel(GetDlgItem(hwndDlg, IDC_TABS))];
 						if (hwnd!=hwndCurrentTab) {
 	                    	ShowWindow(hwnd, SW_SHOW);
 	                    	ShowWindow(hwndCurrentTab, SW_HIDE);
@@ -155,10 +144,9 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 				}
 				break;
 			case PSN_APPLY:
-				SendMessage(hwndGeneral, WM_NOTIFY, wParam, lParam);
-//				SendMessage(hwndEmoticons, WM_NOTIFY, wParam, lParam);
-				SendMessage(hwndTemplates, WM_NOTIFY, wParam, lParam);
-				SendMessage(hwndGroupChats, WM_NOTIFY, wParam, lParam);
+				for (int i = 0; i < 4; i++) {
+                    SendMessage(hwndPages[i], WM_NOTIFY, wParam, lParam);
+				}
 				NotifyEventHooks(hHookOptionsChanged, 0, 0);
 				return TRUE;
 			}

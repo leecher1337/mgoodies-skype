@@ -1,4 +1,4 @@
-class SRMMHTMLBuilder;
+class TemplateHTMLBuilder;
 
 #ifndef TEMPLATEHTMLBUILDER_INCLUDED
 #define TEMPLATEHTMLBUILDER_INCLUDED
@@ -8,16 +8,17 @@ class SRMMHTMLBuilder;
 class TemplateHTMLBuilder:public HTMLBuilder
 {
 protected:
-	virtual bool isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei);
 	virtual char *timestampToString(time_t check, int mode);
 	bool        isCleared;
 	time_t 		startedTime;
 	time_t 		getStartedTime();
 	const char *groupTemplate;
+	bool isDbEventShown(DBEVENTINFO * dbei);
 public:
     TemplateHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
 	void appendEvent(IEView *, IEVIEWEVENT *event);
+	void appendEventMem(IEView *, IEVIEWEVENT *event);
 };
 
 #endif

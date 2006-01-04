@@ -23,6 +23,8 @@ class HTMLBuilder;
 #ifndef HTMLBUILDER_INCLUDED
 #define HTMLBUILDER_INCLUDED
 
+#define EVENTTYPE_STATUSCHANGE 25368
+
 #include "IEView.h"
 #include "m_MathModule.h"
 
@@ -112,9 +114,11 @@ protected:
 	virtual char *encodeUTF8(const char *text, const char *proto, int flags);
 	virtual char *encodeUTF8(const char *text, int cp, const char *proto, int flags);
 	virtual bool encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags);
-	virtual char* getRealProto(HANDLE hContact);
 	virtual char* getProto(HANDLE hContact);
-	virtual char *getContactName(HANDLE hContact, const char *szProto, const char *szSmileyProto);
+	virtual char* getRealProto(HANDLE hContact);
+	virtual char* getRealProto(HANDLE hContact, const char *proto);
+	virtual wchar_t *getContactName(HANDLE hContact, const char* szProto);
+	virtual char *getEncodedContactName(HANDLE hContact, const char *szProto, const char *szSmileyProto);
 	virtual void getUINs(HANDLE hContact, char *&uinIn, char *&uinOut);
 	virtual HANDLE getRealContact(HANDLE hContact);
 	virtual DWORD getLastEventTime();
@@ -123,9 +127,12 @@ protected:
 	virtual void setLastEventType(int);
 	virtual bool isSameDate(DWORD time1, DWORD time2);
 	virtual bool isUnicodeMIM();
+	virtual bool isDbEventShown(DBEVENTINFO * dbei);
 public:
+	virtual void appendEventOld(IEView *, IEVIEWEVENT *event);
 	virtual void buildHead(IEView *, IEVIEWEVENT *event)=0;
 	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;
+	virtual void appendEventMem(IEView *, IEVIEWEVENT *event)=0;
 };
 
 #endif
