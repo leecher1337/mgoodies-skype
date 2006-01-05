@@ -171,6 +171,10 @@ char *ScriverHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int gro
 
 
 void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
+ 	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
+		buildHeadTemplate(view, event);
+		return;
+	}
 	LOGFONTA lf;
 	COLORREF color;
 	char *output = NULL;
@@ -235,7 +239,7 @@ void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	}
 	iLastEventType = -1;
 }
-
+/*
 void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	bool showColon;
 	DWORD dwFlags = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTIME, 0) ? SMF_LOG_SHOWTIME : 0;
@@ -321,7 +325,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
                 szText = encodeUTF8((char *)dbei.pBlob, szRealProto, ENF_NONE);
 			}
-			/* SRMM-specific formatting */
+			// SRMM-specific formatting
 			if ((dwFlags & SMF_LOG_DRAWLINES) && isGroupBreak && getLastEventType()!=-1) {
 				if (dbei.eventType == EVENTTYPE_MESSAGE) {
 					Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOutGrid" : "divInGrid");
@@ -432,8 +436,12 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 //	view->scrollToBottom();
 }
 
-
+*/
 void ScriverHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
+ 	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
+		appendEventTemplate(view, event);
+		return;
+	}
 	bool showColon;
 	DWORD dwFlags = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTIME, 0) ? SMF_LOG_SHOWTIME : 0;
     dwFlags |= !DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_HIDENAMES, 0) ? SMF_LOG_SHOWNICK : 0;

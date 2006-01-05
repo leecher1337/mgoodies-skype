@@ -201,10 +201,6 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 }
 
 void MUCCHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
-	appendEvent(view, event);
-}
-
-void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 
 	int cp = CP_ACP;
 	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {

@@ -37,22 +37,22 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 	Options::init();
 	if (window->iType == IEW_CREATE) {
 		HTMLBuilder *builder = NULL;
-		if (window->dwMode == IEWM_MUCC || window->dwMode == IEWM_CHAT) {
-            if (window->dwMode == IEWM_MUCC) {
-            	builder = new MUCCHTMLBuilder();
-			} else if (window->dwMode == IEWM_CHAT) {
-            	builder = new ChatHTMLBuilder();
-			}
-		} else if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
-            builder = new TemplateHTMLBuilder();
-		} else {
-			if (window->dwMode == IEWM_TABSRMM) {
+		switch (window->dwMode) {
+			case IEWM_MUCC:
+				builder = new MUCCHTMLBuilder();
+				break;
+			case IEWM_CHAT:
+                builder = new ChatHTMLBuilder();
+                break;
+			case IEWM_TABSRMM:
 				builder = new TabSRMMHTMLBuilder();
-			} else if (window->dwMode == IEWM_SCRIVER) {
+				break;
+			case IEWM_SCRIVER:
 				builder = new ScriverHTMLBuilder();
-			} else {
+				break;
+			default:
 				builder = new ScriverHTMLBuilder();
-			}
+				break;
 		}
 		IEView * view = new IEView(window->parent, builder, window->x, window->y, window->cx, window->cy);
 		window->hwnd = view->getHWND();

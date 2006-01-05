@@ -197,7 +197,7 @@ void ChatHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	iLastEventType = -1;
 }
 
-void ChatHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
+void ChatHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
 
 	int cp = CP_ACP;
 	if (event->cbSize == sizeof(IEVIEWEVENT)) {
@@ -323,6 +323,3 @@ void ChatHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 //	view->scrollToBottom();
 }
 
-void ChatHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
-	appendEvent(view, event);
-}

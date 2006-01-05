@@ -23,9 +23,9 @@ class ScriverHTMLBuilder;
 #ifndef SCRIVERHTMLBUILDER_INCLUDED
 #define SCRIVERHTMLBUILDER_INCLUDED
 
-#include "HTMLBuilder.h"
+#include "TemplateHTMLBuilder.h"
 
-class ScriverHTMLBuilder:public HTMLBuilder
+class ScriverHTMLBuilder:public TemplateHTMLBuilder
 {
 protected:
     virtual void loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour);
@@ -35,7 +35,7 @@ protected:
 public:
     ScriverHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
-	void appendEvent(IEView *, IEVIEWEVENT *event);
+//	void appendEvent(IEView *, IEVIEWEVENT *event);
 	void appendEventMem(IEView *, IEVIEWEVENT *event);
 };
 

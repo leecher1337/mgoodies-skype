@@ -14,10 +14,12 @@ protected:
 	time_t 		getStartedTime();
 	const char *groupTemplate;
 	bool isDbEventShown(DBEVENTINFO * dbei);
+	void buildHeadTemplate(IEView *, IEVIEWEVENT *event);
+	void appendEventTemplate(IEView *, IEVIEWEVENT *event);
 public:
     TemplateHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
-	void appendEvent(IEView *, IEVIEWEVENT *event);
+//	void appendEvent(IEView *, IEVIEWEVENT *event);
 	void appendEventMem(IEView *, IEVIEWEVENT *event);
 };
 

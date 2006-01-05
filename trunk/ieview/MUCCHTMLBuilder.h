@@ -13,7 +13,7 @@ protected:
 public:
     MUCCHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
-	void appendEvent(IEView *, IEVIEWEVENT *event);
+//	void appendEvent(IEView *, IEVIEWEVENT *event);
 	void appendEventMem(IEView *, IEVIEWEVENT *event);
 };
 

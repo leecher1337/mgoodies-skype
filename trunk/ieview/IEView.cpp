@@ -858,6 +858,7 @@ void IEView::appendEventOld(IEVIEWEVENT *event) {
 }
 
 void IEView::appendEvent(IEVIEWEVENT *event) {
+	return;
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
 	iLogCodepage = event->codepage;

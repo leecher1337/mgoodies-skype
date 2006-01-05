@@ -1092,9 +1092,9 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 		eventData->dwFlags = IEEDF_UNICODE_TEXT | IEEDF_UNICODE_NICK | IEEDF_UNICODE_TEXT2 |
 							(dbei.flags & DBEF_READ ? 0 : IEEDF_UNREAD) | (dbei.flags & DBEF_SENT ? IEEDF_SENT : 0);
 		eventData->time = dbei.timestamp;
-		eventData->pszNick = NULL;
-		eventData->pszText = NULL;
-		eventData->pszText2 = NULL;
+		eventData->pszNickW = NULL;
+		eventData->pszTextW = NULL;
+		eventData->pszText2W = NULL;
 		if (dbei.flags & DBEF_SENT) {
 			eventData->pszNickW = getContactName(NULL, szProto);
 			eventData->bIsMe = TRUE;
