@@ -75,8 +75,11 @@ char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
     return szResult;
 }
 
-
 void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
+    buildHeadTemplate(view, event);
+}
+
+void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	DBVARIANT dbv;
 	CONTACTINFO ci;
 	char tempBase[1024];
@@ -240,7 +243,7 @@ void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	groupTemplate = NULL;
 	iLastEventType = -1;
 }
-
+/*
 void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	DBVARIANT dbv;
 	CONTACTINFO ci;
@@ -436,7 +439,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                 szText = encodeUTF8((char *)dbei.pBlob, szRealProto, ENF_NONE);
                 tmpltName[1] = isHistory ? "hStatus" : "Status";
 			}
-			/* template-specific formatting */
+			// template-specific formatting
 			for (int i=0;i<2;i++) {
 				Template *tmplt;
 				if (tmpltName[i] == NULL) continue;
@@ -552,8 +555,13 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	if (szStatusMsg!=NULL) delete szStatusMsg;
 	if (szFileDesc!=NULL) delete szFileDesc;
 }
+*/
 
 void TemplateHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
+    appendEventTemplate(view, event);
+}
+
+void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) {
 	DBVARIANT dbv;
 	CONTACTINFO ci;
 	HANDLE hRealContact;

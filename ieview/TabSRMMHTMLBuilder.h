@@ -3,9 +3,9 @@ class TabSRMMHTMLBuilder;
 #ifndef TABSRMMHTMLBUILDER_INCLUDED
 #define TABSRMMHTMLBUILDER_INCLUDED
 
-#include "HTMLBuilder.h"
+#include "TemplateHTMLBuilder.h"
 
-class TabSRMMHTMLBuilder:public HTMLBuilder
+class TabSRMMHTMLBuilder:public TemplateHTMLBuilder
 {
 protected:
     virtual void loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour);
@@ -17,7 +17,7 @@ protected:
 public:
     TabSRMMHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
-	void appendEvent(IEView *, IEVIEWEVENT *event);
+//	void appendEvent(IEView *, IEVIEWEVENT *event);
 	void appendEventMem(IEView *, IEVIEWEVENT *event);
 };
 

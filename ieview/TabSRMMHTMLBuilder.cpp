@@ -184,6 +184,10 @@ char *TabSRMMHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int isG
 
 
 void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
+ 	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
+		buildHeadTemplate(view, event);
+		return;
+	}
 	LOGFONTA lf;
 	COLORREF color;
 	char *output = NULL;
@@ -251,7 +255,7 @@ void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	}
 	iLastEventType = -1;
 }
-
+/*
 void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 
 //	int	  indentLeft = DBGetContactSettingDword(NULL, SRMSGMOD_T, "IndentAmount", 0);
@@ -332,7 +336,7 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
                 szText = encodeUTF8((char *)dbei.pBlob, szRealProto, ENF_NONE);
 			}
-			/* TabSRMM-specific formatting */
+			// TabSRMM-specific formatting
 			if ((dwFlags & MWF_LOG_GRID) && isGroupBreak && getLastEventType()!=-1) {
 				Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOutGrid" : "divInGrid");
 			} else {
@@ -427,7 +431,7 @@ void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
     if (szRealProto!=NULL) delete szRealProto;
 //	view->scrollToBottom();
 }
-
+*/
 time_t TabSRMMHTMLBuilder::getStartedTime() {
 	return startedTime;
 }
@@ -435,6 +439,10 @@ time_t TabSRMMHTMLBuilder::getStartedTime() {
 void TabSRMMHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
 //	int	  indentLeft = DBGetContactSettingDword(NULL, SRMSGMOD_T, "IndentAmount", 0);
 //	int	  indentRight = DBGetContactSettingDword(NULL, SRMSGMOD_T, "RightIndent", 0);
+ 	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
+		appendEventTemplate(view, event);
+		return;
+	}
 	DWORD today = (DWORD)time(NULL);
 	today = today - today % 86400;
  	DWORD dwFlags = DBGetContactSettingDword(NULL, SRMSGMOD_T, "mwflags", MWF_LOG_DEFAULT);

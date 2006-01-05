@@ -37,10 +37,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define IEWM_SRMM     0             // regular SRMM
 #define IEWM_TABSRMM  1             // TabSRMM-compatible HTML builder
-#define IEWM_HTML     2             // HTML
-#define IEWM_SCRIVER  3             // HTML
+#define IEWM_SCRIVER  3             // Scriver-compatible HTML builder
 #define IEWM_MUCC     4             // MUCC group chats GUI
 #define IEWM_CHAT     5             // chat.dll group chats GUI
+#define IEWM_HISTORY  6             // history viewer
 
 typedef struct {
 	int			cbSize;             // size of the strusture
