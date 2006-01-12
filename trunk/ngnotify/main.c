@@ -139,12 +139,26 @@ int HookedNewEvent(WPARAM wParam, LPARAM lParam)
 	dbe.cbBlob = 0;
 	dbe.pBlob = NULL;
 	CallService(MS_DB_EVENT_GET, (WPARAM)lParam, (LPARAM)&dbe);
+
+	// Nightwish (no popups for RSS contacts at all...
+	if(pluginOptions.bNoRSS) 
+	{						
+		if(dbe.szModule != NULL) {
+			if(!strncmp(dbe.szModule, "RSS", 3))
+				return 0;
+		}
+	}
+
 	
 	if (DBGetContactSettingDword((HANDLE)wParam, METACONTACTS_MODULE, METACONTACTS_HANDLE, FALSE))
 		return 0;
 
 	//is it an event info about online/offline status user
 	if (dbe.eventType == 25368)
+		return 0;
+
+	//if event was allready read don't show it
+	if (pluginOptions.bReadCheck && (dbe.flags & DBEF_READ))
 		return 0;
 
 	//is it an event sent by the user? -> don't show
@@ -189,6 +203,7 @@ int HookedInit(WPARAM wParam, LPARAM lParam)
 		g_IsWindowAPI = 1;
 	else 
 		g_IsWindowAPI = 0;
+		
 	if (ServiceExists(MS_MSG_MOD_MESSAGEDIALOGOPENED))
 		g_IsServiceAvail = 1;
 	else
@@ -222,8 +237,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
     OptionsInit(&pluginOptions);
     pluginOptions.hInst = hInst;
 
-    if (pluginOptions.bMenuitem)
-        MenuitemInit(!pluginOptions.bDisable);
+    MenuitemInit(!pluginOptions.bDisable);
 
     _WorkaroundInit();
 
@@ -282,7 +296,9 @@ int CheckMsgWnd(WPARAM contact)
 		szProto=(char*)CallService(MS_PROTO_GETCONTACTBASEPROTO,contact,0);
 		contactName=(char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,contact,0);
 		szStatus=(char*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,szProto==NULL?ID_STATUS_OFFLINE:DBGetContactSettingWord((HANDLE)contact,szProto,"Status",ID_STATUS_OFFLINE),0);
-		
+
+	// vj: This code was added by preeze and it does not work:
+	// vlko: it maybe work with other plugins 
 		_snprintf(newtitle,sizeof(newtitle),"%s  (%s)",contactName,szStatus);
 		if(FindWindow("TMsgWindow",newtitle))
 			return 2;
@@ -290,6 +306,18 @@ int CheckMsgWnd(WPARAM contact)
 		_snprintf(newtitle,sizeof(newtitle),"[%s  (%s)]",contactName,szStatus);
 		if(FindWindow("TfrmContainer",newtitle))
 			return 1;
+
+	// vj: I have restored this code from original plugin's source: (NewEventNotify 0.0.4)
+		_snprintf(newtitle,sizeof(newtitle),"%s (%s): %s",contactName,szStatus,Translate("Message Session"));
+		if(FindWindow("#32770",newtitle))
+			return 1;
+
+		_snprintf(newtitle,sizeof(newtitle),"%s (%s): %s",contactName,szStatus,Translate("Message Received"));
+		if(FindWindow("#32770",newtitle))
+			return 2;
+
 		return 0;
 	}
 }
+
+

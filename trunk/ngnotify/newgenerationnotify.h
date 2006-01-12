@@ -65,6 +65,7 @@ int _Workaround_CallService(const char *name, WPARAM wParam, LPARAM lParam);
 #define DEFAULT_MASKNOTIFY (MASK_MESSAGE|MASK_URL|MASK_FILE|MASK_OTHER)
 #define DEFAULT_MASKACTL (MASK_OPEN|MASK_REMOVE|MASK_DISMISS)
 #define DEFAULT_MASKACTR (MASK_REMOVE|MASK_DISMISS)
+#define DEFAULT_MASKACTE (MASK_DISMISS)
 #define DEFAULT_DELAY -1
 
 #define MASK_MESSAGE    0x0001
@@ -85,6 +86,8 @@ int _Workaround_CallService(const char *name, WPARAM wParam, LPARAM lParam);
 #define	METACONTACTS_HANDLE	"Handle"
 
 #define WM_MOUSEWHEEL 0x020A
+#define WM_UPDATETEXT (WM_USER + 0x0400)
+
 #define TIMER_TO_ACTION 50685
 
 //Entrys in the database, don't translate
@@ -120,6 +123,8 @@ int _Workaround_CallService(const char *name, WPARAM wParam, LPARAM lParam);
 #define OPT_NUMBER_MSG "NumberMsg"
 #define OPT_SHOW_ON "ShowOldOrNew"
 #define OPT_HIDESEND "HideSend"
+#define OPT_NORSS "NoRSSAnnounces"
+#define OPT_READCHECK "ReadCheck"
 //---------------------------
 //---Translateable Strings
 
@@ -137,17 +142,18 @@ int _Workaround_CallService(const char *name, WPARAM wParam, LPARAM lParam);
 #define OPTIONS_TITLE "Event Notify"
 #define OPTIONS_MESSAGE_TITLE "Event Notify (Message)"
 
-#define MENUITEM_NAME_ENABLE "Enable notify of new events"
-#define MENUITEM_NAME_DISABLE "Disable notify of new events"
+#define MENUITEM_NAME "Notify of new events"
+
+#define MENUITEM_ENABLE "Enable new event notification"
+#define MENUITEM_DISABLE "Disable new event notification"
 
 //---------------------------
 //---Structures
 
-typedef struct {
+typedef struct PLUGIN_OPTIONS_struct{
+
     HINSTANCE hInst;
     BOOL bDisable;
-    BOOL bPreview;
-    BOOL bMenuitem;
     BOOL bDefaultColorMsg;
 	BOOL bDefaultColorUrl;
 	BOOL bDefaultColorFile;
@@ -178,6 +184,8 @@ typedef struct {
 	BYTE iNumberMsg;
 	BOOL bShowON;
 	BOOL bHideSend;
+	BOOL bNoRSS;
+	BOOL bReadCheck;
 } PLUGIN_OPTIONS;
 
 typedef struct EVENT_DATA_EX{
@@ -187,7 +195,7 @@ typedef struct EVENT_DATA_EX{
 	struct EVENT_DATA_EX* prev;
 } EVENT_DATA_EX;
 
-typedef struct {
+typedef struct PLUGIN_DATA_struct {
     UINT eventType;
     HANDLE hContact;
     PLUGIN_OPTIONS* pluginOptions;
@@ -198,6 +206,7 @@ typedef struct {
 	struct EVENT_DATA_EX* lastEventData;
 	long countEvent;
 	long iSeconds;
+	int iLock;
 } PLUGIN_DATA;
 
 
@@ -215,4 +224,5 @@ int MenuitemInit(BOOL bStatus);
 int MenuitemUpdate(BOOL bStatus);
 int NumberPopupData(HANDLE hContact);
 int CheckMsgWnd(WPARAM contact);
-HINSTANCE hInst;
+
+extern HINSTANCE hInst;

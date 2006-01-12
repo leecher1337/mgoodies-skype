@@ -3,6 +3,9 @@
 // Used by resource.rc
 //
 #define IDD_OPT                         101
+#define IDI_ENABLED                     106
+#define IDI_ICON2                       107
+#define IDI_DISABLED                    107
 #define IDI_POPUP                       109
 #define IDI_NOPOPUP                     110
 #define IDC_PREVIEW                     1000
@@ -10,7 +13,6 @@
 #define IDC_CHKNOTIFY_URL               1002
 #define IDC_CHKNOTIFY_FILE              1003
 #define IDC_CHKNOTIFY_OTHER             1004
-#define IDC_CHKMENUITEM                 1005
 #define IDC_CHKDISABLE                  1006
 #define IDC_CHKACTL_DISMISS             1007
 #define IDC_CHKACTL_OPEN                1008
@@ -20,7 +22,6 @@
 #define IDC_CHKACTR_REMOVE              1012
 #define IDC_CHKWINDOWCHECK              1013
 #define IDC_CHKREPLYWINDOW              1014
-#define IDC_CHKPREVIEW                  1015
 #define IDC_CHKINFINITE                 1016
 #define IDC_CHKHIDESEND                 1016
 #define IDC_CHKDEFAULTCOL_MESSAGE       1017
@@ -52,9 +53,12 @@
 #define IDC_CHKINFINITE_URL             1042
 #define IDC_CHKINFINITE_FILE            1043
 #define IDC_CHKINFINITE_OTHERS          1044
+#define IDC_CHKMERGEPOPUP2              1045
+#define IDC_SUPRESSRSS                  1045
+#define IDC_TESTFORREAD                 1046
+#define IDC_READCHECK                   1046
 #define IDC_CMDEDITHEADERS              1047
 #define IDC_CHKACTTE_DISMISS            1049
-#define IDC_TAB1                        1049
 #define IDC_CHKACTTE_OPEN               1050
 #define IDC_CHKACTTE_REMOVE             1051
 #define IDC_STATIC                      -1
