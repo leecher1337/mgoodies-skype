@@ -40,7 +40,7 @@ extern int g_IsServiceAvail;
 
 static int PopupCount = 0;
 
-PLUGIN_DATA* PopUpList[20];
+PLUGIN_DATA* PopUpList[MAX_POPUPS];
 
 /*
 TIME NowTime()
@@ -59,7 +59,7 @@ int NumberPopupData(HANDLE hContact)
 {
 	int n;
 
-	for (n=0;n<20;n++)
+	for (n=0;n<MAX_POPUPS;n++)
 	{
 		if (!PopUpList[n] && !hContact)
 			return n;
@@ -99,80 +99,29 @@ int PopupAct(HWND hWnd, UINT mask, PLUGIN_DATA* pdata)
 
     if (mask & MASK_REMOVE)
     {
-	
-		eventData = pdata->lastEventData;
-		while (eventData && eventData->prev)
+		eventData = pdata->firstEventData;
+		while (eventData)
 		{
 			CallService(MS_CLIST_REMOVEEVENT, (WPARAM)pdata->hContact, (LPARAM)eventData->hEvent);
 			CallService(MS_DB_EVENT_MARKREAD, (WPARAM)pdata->hContact, (LPARAM)eventData->hEvent);
-			eventData = eventData->prev;
-			free(eventData->next);
-			eventData->next = NULL;
+			eventData = eventData->next;
 		}
-		free(eventData);
-		pdata->lastEventData = pdata->firstEventData = pdata->firstShowEventData = NULL;
-		PopUpList[NumberPopupData(pdata->hContact)] = NULL;
     }
 
     if (mask & MASK_DISMISS)
 	{
         PUDeletePopUp(hWnd);
+		PopUpList[NumberPopupData(pdata->hContact)] = NULL;
+		eventData = pdata->lastEventData;
+		while (eventData && eventData->prev)
+		{
+			eventData = eventData->prev;
+			free(eventData->next);
+		}
+		free(eventData);
 	}
 		
 	return 0;
-}
-
-static BOOL CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	PLUGIN_DATA* pdata = NULL;
-
-    pdata = (PLUGIN_DATA*)CallService(MS_POPUP_GETPLUGINDATA, (WPARAM)hWnd, (LPARAM)pdata);
-    if (!pdata) return FALSE;
-
-    switch (message)
-    {
-        case WM_COMMAND:
-			PopupAct(hWnd, pdata->pluginOptions->maskActL, pdata);
-            break;
-        case WM_CONTEXTMENU:
-			PopupAct(hWnd, pdata->pluginOptions->maskActR, pdata);
-            break;
-		case UM_FREEPLUGINDATA:
-			PopupCount--;
-            free(pdata);
-			return TRUE;
-		case UM_INITPOPUP:
-			pdata->hWnd = hWnd;
-			if (pdata->iSeconds != -1)
-				SetTimer(hWnd, TIMER_TO_ACTION, pdata->iSeconds * 1000, NULL);
-			break;
-		case WM_MOUSEWHEEL:
-			if ((short)HIWORD(wParam) > 0 && pdata->firstShowEventData->prev)
-			{
-				pdata->firstShowEventData = pdata->firstShowEventData->prev;
-				PopupUpdate(pdata->hContact, NULL);
-			}
-			if ((short)HIWORD(wParam) < 0 && pdata->firstShowEventData->next && 
-				pdata->countEvent - pdata->firstShowEventData->number >= pdata->pluginOptions->iNumberMsg) 
-			{
-				pdata->firstShowEventData = pdata->firstShowEventData->next;
-				PopupUpdate(pdata->hContact, NULL);
-			}
-				break;
-		case WM_SETCURSOR:
-			SetFocus(hWnd);
-			break;
-		case WM_TIMER:
-			if (wParam != TIMER_TO_ACTION)
-				break;
-			if (pdata->iSeconds != -1)
-				KillTimer(hWnd, TIMER_TO_ACTION);
-			PopupAct(hWnd, pdata->pluginOptions->maskActTE, pdata);
-			break;
-		default:
-			break;
-    }
-    return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 char* GetPreview(UINT eventType, char* pBlob)
@@ -245,9 +194,8 @@ char* GetPreview(UINT eventType, char* pBlob)
     return commentFix;
 }
 
-int PopupUpdate(HANDLE hContact, HANDLE hEvent)
+int PopupUpdateText(PLUGIN_DATA* pdata, HANDLE hContact, HANDLE hEvent)
 {
-	PLUGIN_DATA* pdata;
 	DBEVENTINFO dbe;
 	EVENT_DATA_EX* eventData;
 	char lpzText[MAX_SECONDLINE] = "";
@@ -255,23 +203,23 @@ int PopupUpdate(HANDLE hContact, HANDLE hEvent)
 	char formatTime[MAX_DATASIZE] = "";
 	int iEvent = 0;
 
-	pdata = (PLUGIN_DATA*)PopUpList[NumberPopupData(hContact)];
-	
 	if (hEvent)
 	{
-		pdata->countEvent++;
-
 		pdata->lastEventData->next = malloc(sizeof(EVENT_DATA_EX));
 		pdata->lastEventData->next->prev = pdata->lastEventData;
 		pdata->lastEventData = pdata->lastEventData->next;
 		pdata->lastEventData->hEvent = hEvent;
 		pdata->lastEventData->number = pdata->lastEventData->prev->number + 1;
 		pdata->lastEventData->next = NULL;
+		pdata->countEvent++;
 		if ( pdata->pud && pdata->pud->iSeconds > 1 )
 			pdata->pud->iSeconds = pdata->pluginOptions->iDelayMsg;
 		//pdata->pud->iSeconds = pdata->pluginOptions->iDelayMsg;
-		if (!pdata->pluginOptions->bShowON && pdata->countEvent > pdata->pluginOptions->iNumberMsg && pdata->pluginOptions->iNumberMsg)
-			pdata->firstShowEventData = pdata->firstShowEventData->next;
+		if (!pdata->pluginOptions->bShowON && pdata->pluginOptions->iNumberMsg) {
+			while (pdata->lastEventData->number - pdata->firstShowEventData->number >= pdata->pluginOptions->iNumberMsg) {
+				pdata->firstShowEventData = pdata->firstShowEventData->next;
+  			}
+        }
 	}
 
 	if (pdata->pluginOptions->bShowHeaders)
@@ -289,7 +237,7 @@ int PopupUpdate(HANDLE hContact, HANDLE hEvent)
 		iEvent++;
 		//get DBEVENTINFO with pBlob if preview is needed (when is test then is off)
 		dbe.pBlob = NULL;
-		if (pdata->pluginOptions->bPreview && hContact)
+		if (hContact)
 		{
 			dbe.cbSize = sizeof(dbe);
 			dbe.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM)eventData->hEvent, 0);
@@ -319,6 +267,78 @@ int PopupUpdate(HANDLE hContact, HANDLE hEvent)
 			_snprintf(lpzText, sizeof(lpzText), "%s\n...", lpzText);
 	}
 	CallService(MS_POPUP_CHANGETEXT, (WPARAM)pdata->hWnd, (LPARAM)lpzText);
+	return 0;
+}
+
+static BOOL CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	PLUGIN_DATA* pdata = NULL;
+
+    pdata = (PLUGIN_DATA*)CallService(MS_POPUP_GETPLUGINDATA, (WPARAM)hWnd, (LPARAM)pdata);
+    if (!pdata) return FALSE;
+
+    switch (message)
+    {
+        case WM_COMMAND:
+			PopupAct(hWnd, pdata->pluginOptions->maskActL, pdata);
+            break;
+        case WM_CONTEXTMENU:
+			PopupAct(hWnd, pdata->pluginOptions->maskActR, pdata);
+            break;
+		case UM_FREEPLUGINDATA:
+			PopupCount--;
+            free(pdata);
+			return TRUE;
+		case UM_INITPOPUP:
+			pdata->hWnd = hWnd;
+			if (pdata->iSeconds != -1)
+				SetTimer(hWnd, TIMER_TO_ACTION, 1000, NULL);
+			break;
+		case WM_MOUSEWHEEL:
+			if ((short)HIWORD(wParam) > 0 && pdata->firstShowEventData->prev)
+			{
+				pdata->firstShowEventData = pdata->firstShowEventData->prev;
+				PopupUpdate(pdata->hContact, NULL);
+			}
+			if ((short)HIWORD(wParam) < 0 && pdata->firstShowEventData->next && 
+				pdata->countEvent - pdata->firstShowEventData->number >= pdata->pluginOptions->iNumberMsg) 
+			{
+				pdata->firstShowEventData = pdata->firstShowEventData->next;
+				PopupUpdate(pdata->hContact, NULL);
+			}
+				break;
+		case WM_SETCURSOR:
+			SetFocus(hWnd);
+			break;
+		case WM_TIMER:
+			if (wParam != TIMER_TO_ACTION)
+				break;
+			pdata->iSeconds--;
+			if (pdata->iSeconds <= 0) {
+				KillTimer(hWnd, TIMER_TO_ACTION);
+				PopupAct(hWnd, pdata->pluginOptions->maskActTE, pdata);
+			}
+			break;
+		case WM_UPDATETEXT:
+			PopupUpdateText(pdata, (HANDLE) wParam, (HANDLE) lParam);
+			pdata->iSeconds = pdata->pluginOptions->iDelayMsg;
+			if (pdata->iSeconds != -1)
+				SetTimer(hWnd, TIMER_TO_ACTION, 1000, NULL);
+			break;
+		default:
+			break;
+    }
+    return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
+
+int PopupUpdate(HANDLE hContact, HANDLE hEvent)
+{
+	PLUGIN_DATA* pdata;
+	pdata = (PLUGIN_DATA*)PopUpList[NumberPopupData(hContact)];
+	if (pdata != NULL) {
+		SendMessage(pdata->hWnd, WM_UPDATETEXT, (WPARAM)hContact, (LPARAM)hEvent);
+	}
 	return 0;
 }
 
@@ -381,7 +401,7 @@ int PopupShow(PLUGIN_OPTIONS* pluginOptions, HANDLE hContact, HANDLE hEvent, UIN
     //get DBEVENTINFO with pBlob if preview is needed (when is test then is off)
     dbe.pBlob = NULL;
     
-	if (pluginOptions->bPreview && hContact)
+	if (hContact)
     {
         dbe.cbSize = sizeof(dbe);
         dbe.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM)hEvent, 0);
@@ -419,7 +439,7 @@ int PopupShow(PLUGIN_OPTIONS* pluginOptions, HANDLE hContact, HANDLE hEvent, UIN
 	}
     else
 	{
-		strncpy(pud.lpzContactName, "Plugin Test", MAX_CONTACTNAME);
+		strncpy(pud.lpzContactName, "Plugin Test AA", MAX_CONTACTNAME);
 		strncpy(pud.lpzText, sampleEvent, MAX_SECONDLINE);
 	}
     

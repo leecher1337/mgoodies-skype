@@ -33,8 +33,6 @@ BOOL bWmNotify;
 int OptionsRead(void)
 {
     options->bDisable = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_DISABLE, FALSE);
-    options->bPreview = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_PREVIEW, TRUE);
-    options->bMenuitem = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_MENUITEM, FALSE);
     options->bDefaultColorMsg = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_MESSAGE, FALSE);
 	options->bDefaultColorUrl = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_URL, FALSE);
 	options->bDefaultColorFile = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_FILE, FALSE);
@@ -66,14 +64,14 @@ int OptionsRead(void)
 	options->iNumberMsg = (BYTE)DBGetContactSettingByte(NULL, MODULE, OPT_NUMBER_MSG, TRUE);
 	options->bShowON = (BYTE)DBGetContactSettingByte(NULL, MODULE, OPT_SHOW_ON, TRUE);
 	options->bHideSend = (BYTE)DBGetContactSettingByte(NULL, MODULE, OPT_HIDESEND, TRUE);
+	options->bNoRSS = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_NORSS, FALSE);
+	options->bReadCheck = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_READCHECK, FALSE);
     return 0;
 }
 
 int OptionsWrite(void)
 {
     DBWriteContactSettingByte(NULL, MODULE, OPT_DISABLE, (BYTE)options->bDisable);
-    DBWriteContactSettingByte(NULL, MODULE, OPT_PREVIEW, (BYTE)options->bPreview);
-    DBWriteContactSettingByte(NULL, MODULE, OPT_MENUITEM, (BYTE)options->bMenuitem);
     DBWriteContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_MESSAGE, (BYTE)options->bDefaultColorMsg);
     DBWriteContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_URL, (BYTE)options->bDefaultColorUrl);
     DBWriteContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_FILE, (BYTE)options->bDefaultColorFile);
@@ -103,6 +101,8 @@ int OptionsWrite(void)
 	DBWriteContactSettingByte(NULL, MODULE, OPT_NUMBER_MSG, (BYTE)options->iNumberMsg);
 	DBWriteContactSettingByte(NULL, MODULE, OPT_SHOW_ON, (BYTE)options->bShowON);
 	DBWriteContactSettingByte(NULL, MODULE, OPT_HIDESEND, (BYTE)options->bHideSend);
+	DBWriteContactSettingByte(NULL, MODULE, OPT_NORSS, (BYTE)options->bNoRSS);
+	DBWriteContactSettingByte(NULL, MODULE, OPT_READCHECK, (BYTE)options->bReadCheck);
     return 0;
 }
 
@@ -126,9 +126,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
        			CheckDlgButton(hWnd, IDC_CHKDEFAULTCOL_URL, options->bDefaultColorUrl?BST_CHECKED:BST_UNCHECKED);
        			CheckDlgButton(hWnd, IDC_CHKDEFAULTCOL_FILE, options->bDefaultColorFile?BST_CHECKED:BST_UNCHECKED);
        			CheckDlgButton(hWnd, IDC_CHKDEFAULTCOL_OTHERS, options->bDefaultColorOthers?BST_CHECKED:BST_UNCHECKED);
-       			CheckDlgButton(hWnd, IDC_CHKMENUITEM, options->bMenuitem?BST_CHECKED:BST_UNCHECKED);
        			CheckDlgButton(hWnd, IDC_CHKDISABLE, options->bDisable?BST_CHECKED:BST_UNCHECKED);
-       			CheckDlgButton(hWnd, IDC_CHKPREVIEW, options->bPreview?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_CHKMERGEPOPUP, options->bMergePopup?BST_CHECKED:BST_UNCHECKED);
        			CheckDlgButton(hWnd, IDC_CHKNOTIFY_MESSAGE, options->maskNotify & MASK_MESSAGE);
        			CheckDlgButton(hWnd, IDC_CHKNOTIFY_URL, options->maskNotify & MASK_URL);
@@ -151,6 +149,8 @@ static BOOL CALLBACK OptionsDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				CheckDlgButton(hWnd, IDC_RDNEW, options->bShowON?BST_UNCHECKED:BST_CHECKED);
 				CheckDlgButton(hWnd, IDC_RDOLD, options->bShowON?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_CHKHIDESEND, options->bHideSend?BST_CHECKED:BST_UNCHECKED);
+				CheckDlgButton(hWnd, IDC_SUPRESSRSS, options->bNoRSS?BST_CHECKED:BST_UNCHECKED);
+				CheckDlgButton(hWnd, IDC_READCHECK, options->bReadCheck?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_CHKINFINITE_MESSAGE, options->iDelayMsg == -1?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_CHKINFINITE_URL, options->iDelayUrl == -1?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_CHKINFINITE_FILE, options->iDelayFile == -1?BST_CHECKED:BST_UNCHECKED);
@@ -212,9 +212,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				            options->bDefaultColorUrl = IsDlgButtonChecked(hWnd, IDC_CHKDEFAULTCOL_URL);
 					        options->bDefaultColorFile = IsDlgButtonChecked(hWnd, IDC_CHKDEFAULTCOL_FILE);
 						    options->bDefaultColorOthers = IsDlgButtonChecked(hWnd, IDC_CHKDEFAULTCOL_OTHERS);
-			    			options->bMenuitem = IsDlgButtonChecked(hWnd, IDC_CHKMENUITEM);
 							options->bDisable = IsDlgButtonChecked(hWnd, IDC_CHKDISABLE);
-	                        options->bPreview = IsDlgButtonChecked(hWnd, IDC_CHKPREVIEW);
 							options->iDelayMsg = IsDlgButtonChecked(hWnd, IDC_CHKINFINITE_MESSAGE)?-1:(DWORD)GetDlgItemInt(hWnd, IDC_DELAY_MESSAGE, NULL, FALSE);
 							options->iDelayUrl = IsDlgButtonChecked(hWnd, IDC_CHKINFINITE_URL)?-1:(DWORD)GetDlgItemInt(hWnd, IDC_DELAY_URL, NULL, FALSE);
 							options->iDelayFile = IsDlgButtonChecked(hWnd, IDC_CHKINFINITE_FILE)?-1:(DWORD)GetDlgItemInt(hWnd, IDC_DELAY_FILE, NULL, FALSE);
@@ -229,6 +227,8 @@ static BOOL CALLBACK OptionsDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 							options->bShowON = !IsDlgButtonChecked(hWnd, IDC_RDNEW);
 							options->bHideSend = IsDlgButtonChecked(hWnd, IDC_CHKHIDESEND);
 							options->iNumberMsg = GetDlgItemInt(hWnd, IDC_NUMBERMSG, NULL, FALSE);
+							options->bNoRSS = IsDlgButtonChecked(hWnd, IDC_SUPRESSRSS);
+							options->bReadCheck = IsDlgButtonChecked(hWnd, IDC_READCHECK);
 							EnableWindow(GetDlgItem(hWnd, IDC_COLBACK_MESSAGE), !options->bDefaultColorMsg);
 							EnableWindow(GetDlgItem(hWnd, IDC_COLTEXT_MESSAGE), !options->bDefaultColorMsg);
 				            EnableWindow(GetDlgItem(hWnd, IDC_COLBACK_URL), !options->bDefaultColorUrl);
