@@ -21,7 +21,6 @@
 #define IDC_CHKACTR_OPEN                1011
 #define IDC_CHKACTR_REMOVE              1012
 #define IDC_CHKWINDOWCHECK              1013
-#define IDC_CHKREPLYWINDOW              1014
 #define IDC_CHKINFINITE                 1016
 #define IDC_CHKHIDESEND                 1016
 #define IDC_CHKDEFAULTCOL_MESSAGE       1017
@@ -56,7 +55,6 @@
 #define IDC_CHKMERGEPOPUP2              1045
 #define IDC_SUPRESSRSS                  1045
 #define IDC_TESTFORREAD                 1046
-#define IDC_READCHECK                   1046
 #define IDC_CMDEDITHEADERS              1047
 #define IDC_CHKACTTE_DISMISS            1049
 #define IDC_CHKACTTE_OPEN               1050
@@ -64,7 +62,7 @@
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
-// 
+//
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        111

@@ -30,12 +30,13 @@ IDD_OPT DIALOGEX 0, 0, 314, 263
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    GROUPBOX        "General Options",IDC_STATIC,6,6,199,43
-    CONTROL         "Disable popups",IDC_CHKDISABLE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,15,120,10
-    CONTROL         "No popups for RSS contacts",IDC_SUPRESSRSS,"Button",
+    GROUPBOX        "General Options",IDC_STATIC,6,6,199,33
+    CONTROL         "Disable notifications",IDC_CHKDISABLE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,16,120,10
+    CONTROL         "Disable notifications for RSS contacts",IDC_SUPRESSRSS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,26,186,10
-    GROUPBOX        "Popup Options",IDC_STATIC,6,49,199,76
+
+    GROUPBOX        "Popup Options",IDC_STATIC,6,49,199,73
     LTEXT           "Message",IDC_STATIC,11,69,44,13
     LTEXT           "URL",IDC_STATIC,11,82,44,13
     LTEXT           "File",IDC_STATIC,11,95,44,13
@@ -57,86 +58,88 @@ BEGIN
     CONTROL         "",IDC_COLBACK_OTHERS,"ColourPicker",WS_TABSTOP,86,105,
                     24,13
     CTEXT           "Time to expires",IDC_STATIC,144,56,48,10
-    EDITTEXT        IDC_DELAY_MESSAGE,155,66,26,13,ES_AUTOHSCROLL | 
+    EDITTEXT        IDC_DELAY_MESSAGE,155,66,26,13,ES_AUTOHSCROLL |
                     ES_NUMBER
     EDITTEXT        IDC_DELAY_URL,155,79,26,13,ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_DELAY_FILE,155,92,26,13,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_DELAY_OTHERS,155,105,26,13,ES_AUTOHSCROLL | 
+    EDITTEXT        IDC_DELAY_OTHERS,155,105,26,13,ES_AUTOHSCROLL |
                     ES_NUMBER
+    CONTROL         "",IDC_CHKDEFAULTCOL_MESSAGE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,133,69,11,10
+    CONTROL         "",IDC_CHKDEFAULTCOL_URL,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,133,82,11,10
+    CONTROL         "",IDC_CHKDEFAULTCOL_FILE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,133,95,11,10
+    CONTROL         "",IDC_CHKDEFAULTCOL_OTHERS,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,133,107,11,10
+    CONTROL         "",IDC_CHKINFINITE_MESSAGE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,185,69,11,10
+    CONTROL         "",IDC_CHKINFINITE_URL,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,185,82,11,10
+    CONTROL         "",IDC_CHKINFINITE_FILE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,185,95,11,10
+    CONTROL         "",IDC_CHKINFINITE_OTHERS,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,185,107,11,10
+
     GROUPBOX        "Notify me of ...",IDC_STATIC,208,6,100,50
-    CONTROL         "Message",IDC_CHKNOTIFY_MESSAGE,"Button",BS_AUTOCHECKBOX | 
+    CONTROL         "Message",IDC_CHKNOTIFY_MESSAGE,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,212,16,90,10
-    CONTROL         "URL",IDC_CHKNOTIFY_URL,"Button",BS_AUTOCHECKBOX | 
+    CONTROL         "URL",IDC_CHKNOTIFY_URL,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,212,25,90,10
-    CONTROL         "File",IDC_CHKNOTIFY_FILE,"Button",BS_AUTOCHECKBOX | 
+    CONTROL         "File",IDC_CHKNOTIFY_FILE,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,212,35,90,10
-    CONTROL         "Others",IDC_CHKNOTIFY_OTHER,"Button",BS_AUTOCHECKBOX | 
+    CONTROL         "Others",IDC_CHKNOTIFY_OTHER,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,212,44,90,10
-    GROUPBOX        "Left Click Actions",IDC_STATIC,208,56,100,43
+
+    GROUPBOX        "Left Click Actions",IDC_STATIC,208,56,100,42
     CONTROL         "Dismiss Popup",IDC_CHKACTL_DISMISS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,212,65,90,10
-    CONTROL         "Open Event",IDC_CHKACTL_OPEN,"Button",BS_AUTOCHECKBOX | 
+    CONTROL         "Open Event",IDC_CHKACTL_OPEN,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,212,75,90,10
     CONTROL         "Dismiss Event",IDC_CHKACTL_REMOVE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,212,85,90,10
-    GROUPBOX        "Right Click Actions",IDC_STATIC,208,99,100,43
+
+    GROUPBOX        "Right Click Actions",IDC_STATIC,208,99,100,42
     CONTROL         "Dismiss Popup",IDC_CHKACTR_DISMISS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,212,108,79,10
-    CONTROL         "Open Event",IDC_CHKACTR_OPEN,"Button",BS_AUTOCHECKBOX | 
+    CONTROL         "Open Event",IDC_CHKACTR_OPEN,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,212,118,78,10
     CONTROL         "Dismiss Event",IDC_CHKACTR_REMOVE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,212,128,77,10
-    GROUPBOX        "Message-Event only",IDC_STATIC,6,128,199,129
-    CONTROL         "Don't show Popup when Message-Dialog is already open",
-                    IDC_CHKWINDOWCHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    10,135,192,10
-    CONTROL         "Open Reply-Dialog instead of reading the Message",
-                    IDC_CHKREPLYWINDOW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    10,153,186,10
-    CONTROL         "Merge popups from one user",IDC_CHKMERGEPOPUP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,163,186,10
-    CONTROL         "",IDC_CHKDEFAULTCOL_MESSAGE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,133,69,11,10
-    PUSHBUTTON      "Preview",IDC_PREVIEW,228,203,60,12
-    CONTROL         "",IDC_CHKDEFAULTCOL_URL,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,133,82,11,10
-    CONTROL         "",IDC_CHKDEFAULTCOL_FILE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,133,95,11,10
-    CONTROL         "",IDC_CHKDEFAULTCOL_OTHERS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,133,107,11,10
-    CONTROL         "Show Date",IDC_CHKSHOWDATE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,20,172,84,10
-    CONTROL         "Show Time",IDC_CHKSHOWTIME,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,20,182,84,10
-    CONTROL         "Show Headers",IDC_CHKSHOWHEADERS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,20,192,84,10
-    LTEXT           "Number of begin shown messages",IDC_LBNUMBERMSG,20,201,
-                    143,8
-    EDITTEXT        IDC_NUMBERMSG,171,197,26,13,ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "Last message display first",IDC_RDNEW,"Button",
-                    BS_AUTORADIOBUTTON,19,211,107,9
-    CONTROL         "Last message display last",IDC_RDOLD,"Button",
-                    BS_AUTORADIOBUTTON,19,222,111,9
-    CONTROL         "",IDC_CHKINFINITE_MESSAGE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,185,69,11,10
-    CONTROL         "",IDC_CHKINFINITE_URL,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,185,82,11,10
-    CONTROL         "",IDC_CHKINFINITE_FILE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,185,95,11,10
-    CONTROL         "",IDC_CHKINFINITE_OTHERS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,185,107,11,10
-    CONTROL         "Hide Popup when sending new message",IDC_CHKHIDESEND,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,144,192,10
-    PUSHBUTTON      "Edit",IDC_CMDEDITHEADERS,107,191,36,11
-    GROUPBOX        "Time Expires Actions",IDC_STATIC,208,143,100,43
+
+    GROUPBOX        "Time Expires Actions",IDC_STATIC,208,143,100,42
     CONTROL         "Dismiss Popup",IDC_CHKACTTE_DISMISS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,212,152,79,10
-    CONTROL         "Open Event",IDC_CHKACTTE_OPEN,"Button",BS_AUTOCHECKBOX | 
+    CONTROL         "Open Event",IDC_CHKACTTE_OPEN,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,212,162,78,10
     CONTROL         "Dismiss Event",IDC_CHKACTTE_REMOVE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,212,172,77,10
-    CONTROL         "No popups for read messages",IDC_READCHECK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,243,186,10
+
+    GROUPBOX        "Message Notifications",IDC_STATIC,6,128,199,98
+    CONTROL         "Don't show popup when message dialog is already open",
+                    IDC_CHKWINDOWCHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    10,137,192,10
+    CONTROL         "Hide popup when sending new message",IDC_CHKHIDESEND,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,147,192,10
+    CONTROL         "Merge popups from one user",IDC_CHKMERGEPOPUP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,157,186,10
+    CONTROL         "Show Date",IDC_CHKSHOWDATE,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,20,168,84,10
+    CONTROL         "Show Time",IDC_CHKSHOWTIME,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,105,168,84,10
+    CONTROL         "Show Headers",IDC_CHKSHOWHEADERS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,20,179,84,10
+    PUSHBUTTON      "Edit",IDC_CMDEDITHEADERS,105,179,36,11
+    LTEXT           "Number of messages shown",IDC_LBNUMBERMSG,20,191,
+                    143,8
+    EDITTEXT        IDC_NUMBERMSG,171,187,26,13,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Last message at the begining",IDC_RDNEW,"Button",
+                    BS_AUTORADIOBUTTON,19,201,107,9
+    CONTROL         "Last message at the end",IDC_RDOLD,"Button",
+                    BS_AUTORADIOBUTTON,19,212,111,9
+
+    PUSHBUTTON      "Preview",IDC_PREVIEW,228,203,60,12
+
 END
 
 
@@ -146,18 +149,18 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE DISCARDABLE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE DISCARDABLE
 BEGIN
     "#include ""winresrc.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE DISCARDABLE
 BEGIN
     "\r\n"
     "\0"
@@ -172,7 +175,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+GUIDELINES DESIGNINFO DISCARDABLE
 BEGIN
     IDD_OPT, DIALOG
     BEGIN

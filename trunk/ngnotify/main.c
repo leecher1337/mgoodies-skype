@@ -98,6 +98,8 @@ int _Workaround_CallService(const char *name, WPARAM wParam, LPARAM lParam)
 //---------------------------
 //---Some global variables for the plugin
 
+HANDLE mainThread;
+
 PLUGIN_OPTIONS pluginOptions;
 PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo = {
@@ -141,15 +143,15 @@ int HookedNewEvent(WPARAM wParam, LPARAM lParam)
 	CallService(MS_DB_EVENT_GET, (WPARAM)lParam, (LPARAM)&dbe);
 
 	// Nightwish (no popups for RSS contacts at all...
-	if(pluginOptions.bNoRSS) 
-	{						
+	if(pluginOptions.bNoRSS)
+	{
 		if(dbe.szModule != NULL) {
 			if(!strncmp(dbe.szModule, "RSS", 3))
 				return 0;
 		}
 	}
 
-	
+
 	if (DBGetContactSettingDword((HANDLE)wParam, METACONTACTS_MODULE, METACONTACTS_HANDLE, FALSE))
 		return 0;
 
@@ -158,7 +160,7 @@ int HookedNewEvent(WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	//if event was allready read don't show it
-	if (pluginOptions.bReadCheck && (dbe.flags & DBEF_READ))
+	if (dbe.flags & DBEF_READ)
 		return 0;
 
 	//is it an event sent by the user? -> don't show
@@ -168,13 +170,13 @@ int HookedNewEvent(WPARAM wParam, LPARAM lParam)
 		{
 			while(pdata = PopUpList[NumberPopupData((HANDLE)wParam)])
 				PopupAct(pdata->hWnd, MASK_REMOVE|MASK_DISMISS, pdata);
-		}		
-	    return 0; 
+		}
+	    return 0;
 	}
     //which status do we have, are we allowed to post popups?
     //UNDER CONSTRUCTION!!!
     CallService(MS_CLIST_GETSTATUSMODE, 0, 0);
-	
+
 	if (dbe.eventType == EVENTTYPE_MESSAGE && (pluginOptions.bMsgWindowcheck && CheckMsgWnd(wParam)))
 		return 0;
 	if (NumberPopupData((HANDLE)wParam) != -1 && pluginOptions.bMergePopup && dbe.eventType == EVENTTYPE_MESSAGE)
@@ -201,9 +203,9 @@ int HookedInit(WPARAM wParam, LPARAM lParam)
 
 	if (ServiceExists(MS_MSG_GETWINDOWDATA))
 		g_IsWindowAPI = 1;
-	else 
+	else
 		g_IsWindowAPI = 0;
-		
+
 	if (ServiceExists(MS_MSG_MOD_MESSAGEDIALOGOPENED))
 		g_IsServiceAvail = 1;
 	else
@@ -231,6 +233,8 @@ __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
 int __declspec(dllexport) Load(PLUGINLINK *link)
 {
     pluginLink = link;
+	DuplicateHandle( GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &mainThread, THREAD_SET_CONTEXT, FALSE, 0 );
+
     hHookedInit = HookEvent(ME_SYSTEM_MODULESLOADED, HookedInit);
     hHookedOpt = HookEvent(ME_OPT_INITIALISE, HookedOptions);
 
@@ -273,7 +277,7 @@ int CheckMsgWnd(WPARAM contact)
 	if (g_IsWindowAPI) {
 		MessageWindowData mwd;
 		MessageWindowInputData mwid;
-		mwid.cbSize = sizeof(MessageWindowInputData); 
+		mwid.cbSize = sizeof(MessageWindowInputData);
 		mwid.hContact = (HANDLE) contact;
 		mwid.uFlags = MSG_WINDOW_UFLAG_MSG_BOTH;
 		mwd.cbSize = sizeof(MessageWindowData);
@@ -285,10 +289,10 @@ int CheckMsgWnd(WPARAM contact)
 	if(g_IsServiceAvail) {				// use the service provided by tabSRMM
 		if(CallService(MS_MSG_MOD_MESSAGEDIALOGOPENED, (WPARAM) contact, 0))
 			return 1;
-		else 
+		else
 			return 0;
-	} // if(ServiceExists(MS_MSG_MOD_MESSAGEDIALOGOPENED)) 
-	else 
+	} // if(ServiceExists(MS_MSG_MOD_MESSAGEDIALOGOPENED))
+	else
 	{					// old way: find it by using the window class & title
 		char newtitle[256];
 		char *szProto,*szStatus,*contactName;
@@ -298,7 +302,7 @@ int CheckMsgWnd(WPARAM contact)
 		szStatus=(char*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,szProto==NULL?ID_STATUS_OFFLINE:DBGetContactSettingWord((HANDLE)contact,szProto,"Status",ID_STATUS_OFFLINE),0);
 
 	// vj: This code was added by preeze and it does not work:
-	// vlko: it maybe work with other plugins 
+	// vlko: it maybe work with other plugins
 		_snprintf(newtitle,sizeof(newtitle),"%s  (%s)",contactName,szStatus);
 		if(FindWindow("TMsgWindow",newtitle))
 			return 2;

@@ -111,7 +111,6 @@ int _Workaround_CallService(const char *name, WPARAM wParam, LPARAM lParam);
 #define OPT_MASKACTR "ActionRight"
 #define OPT_MASKACTTE "ActionTimeExpires"
 #define OPT_MSGWINDOWCHECK "WindowCheck"
-#define OPT_MSGREPLYWINDOW "ReplyWindow"
 #define OPT_MERGEPOPUP "MergePopup"
 #define OPT_DELAY_MESSAGE "DelayMessage"
 #define OPT_DELAY_URL "DelayUrl"
@@ -185,7 +184,6 @@ typedef struct PLUGIN_OPTIONS_struct{
 	BOOL bShowON;
 	BOOL bHideSend;
 	BOOL bNoRSS;
-	BOOL bReadCheck;
 } PLUGIN_OPTIONS;
 
 typedef struct EVENT_DATA_EX{
