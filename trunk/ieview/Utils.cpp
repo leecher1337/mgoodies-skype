@@ -15,7 +15,7 @@ const wchar_t *Utils::getBaseDir() {
 
 wchar_t* Utils::toAbsolute(wchar_t* relative) {
 	const wchar_t* bdir = getBaseDir();
-	static long len = wcslen(bdir);
+	long len = wcslen(bdir);
 	long tlen = len + wcslen(relative);
 	wchar_t* result = new wchar_t[tlen + 1];
 	if(result){
