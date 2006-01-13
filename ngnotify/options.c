@@ -50,7 +50,6 @@ int OptionsRead(void)
     options->maskActR = (UINT)DBGetContactSettingByte(NULL, MODULE, OPT_MASKACTR, DEFAULT_MASKACTR);
 	options->maskActTE = (UINT)DBGetContactSettingByte(NULL, MODULE, OPT_MASKACTTE, DEFAULT_MASKACTR);
     options->bMsgWindowcheck = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_MSGWINDOWCHECK, TRUE);
-    options->bMsgReplywindow = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_MSGREPLYWINDOW, FALSE);
 	options->bMergePopup = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_MERGEPOPUP, TRUE);
 	options->iDelayMsg = (int)DBGetContactSettingDword(NULL, MODULE, OPT_DELAY_MESSAGE, DEFAULT_DELAY);
 	options->iDelayUrl = (int)DBGetContactSettingDword(NULL, MODULE, OPT_DELAY_URL, DEFAULT_DELAY);
@@ -65,7 +64,6 @@ int OptionsRead(void)
 	options->bShowON = (BYTE)DBGetContactSettingByte(NULL, MODULE, OPT_SHOW_ON, TRUE);
 	options->bHideSend = (BYTE)DBGetContactSettingByte(NULL, MODULE, OPT_HIDESEND, TRUE);
 	options->bNoRSS = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_NORSS, FALSE);
-	options->bReadCheck = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_READCHECK, FALSE);
     return 0;
 }
 
@@ -89,7 +87,6 @@ int OptionsWrite(void)
     DBWriteContactSettingByte(NULL, MODULE, OPT_MASKACTR, (BYTE)options->maskActR);
 	DBWriteContactSettingByte(NULL, MODULE, OPT_MASKACTTE, (BYTE)options->maskActTE);
     DBWriteContactSettingByte(NULL, MODULE, OPT_MSGWINDOWCHECK, (BYTE)options->bMsgWindowcheck);
-    DBWriteContactSettingByte(NULL, MODULE, OPT_MSGREPLYWINDOW, (BYTE)options->bMsgReplywindow);
 	DBWriteContactSettingByte(NULL, MODULE, OPT_MERGEPOPUP, (BYTE)options->bMergePopup);
 	DBWriteContactSettingDword(NULL, MODULE, OPT_DELAY_MESSAGE, (DWORD)options->iDelayMsg);
 	DBWriteContactSettingDword(NULL, MODULE, OPT_DELAY_URL, (DWORD)options->iDelayUrl);
@@ -102,7 +99,6 @@ int OptionsWrite(void)
 	DBWriteContactSettingByte(NULL, MODULE, OPT_SHOW_ON, (BYTE)options->bShowON);
 	DBWriteContactSettingByte(NULL, MODULE, OPT_HIDESEND, (BYTE)options->bHideSend);
 	DBWriteContactSettingByte(NULL, MODULE, OPT_NORSS, (BYTE)options->bNoRSS);
-	DBWriteContactSettingByte(NULL, MODULE, OPT_READCHECK, (BYTE)options->bReadCheck);
     return 0;
 }
 
@@ -142,15 +138,13 @@ static BOOL CALLBACK OptionsDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
        			CheckDlgButton(hWnd, IDC_CHKACTTE_OPEN, options->maskActTE & MASK_OPEN);
        			CheckDlgButton(hWnd, IDC_CHKACTTE_REMOVE, options->maskActTE & MASK_REMOVE);
        			CheckDlgButton(hWnd, IDC_CHKWINDOWCHECK, options->bMsgWindowcheck?BST_CHECKED:BST_UNCHECKED);
-       			CheckDlgButton(hWnd, IDC_CHKREPLYWINDOW, options->bMsgReplywindow?BST_CHECKED:BST_UNCHECKED);
-				CheckDlgButton(hWnd, IDC_CHKSHOWDATE, options->bShowDate?BST_CHECKED:BST_UNCHECKED); 
-				CheckDlgButton(hWnd, IDC_CHKSHOWTIME, options->bShowTime?BST_CHECKED:BST_UNCHECKED); 
-				CheckDlgButton(hWnd, IDC_CHKSHOWHEADERS, options->bShowHeaders?BST_CHECKED:BST_UNCHECKED); 
+				CheckDlgButton(hWnd, IDC_CHKSHOWDATE, options->bShowDate?BST_CHECKED:BST_UNCHECKED);
+				CheckDlgButton(hWnd, IDC_CHKSHOWTIME, options->bShowTime?BST_CHECKED:BST_UNCHECKED);
+				CheckDlgButton(hWnd, IDC_CHKSHOWHEADERS, options->bShowHeaders?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_RDNEW, options->bShowON?BST_UNCHECKED:BST_CHECKED);
 				CheckDlgButton(hWnd, IDC_RDOLD, options->bShowON?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_CHKHIDESEND, options->bHideSend?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_SUPRESSRSS, options->bNoRSS?BST_CHECKED:BST_UNCHECKED);
-				CheckDlgButton(hWnd, IDC_READCHECK, options->bReadCheck?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_CHKINFINITE_MESSAGE, options->iDelayMsg == -1?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_CHKINFINITE_URL, options->iDelayUrl == -1?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_CHKINFINITE_FILE, options->iDelayFile == -1?BST_CHECKED:BST_UNCHECKED);
@@ -186,7 +180,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
        			bWmNotify = FALSE;
                 return TRUE;
         case WM_COMMAND:
-			if (!bWmNotify) 
+			if (!bWmNotify)
 			{
 				switch (LOWORD(wParam))
 					{
@@ -219,7 +213,6 @@ static BOOL CALLBACK OptionsDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 							options->iDelayOthers = IsDlgButtonChecked(hWnd, IDC_CHKINFINITE_OTHERS)?-1:(DWORD)GetDlgItemInt(hWnd, IDC_DELAY_OTHERS, NULL, FALSE);
 							options->bMergePopup = IsDlgButtonChecked(hWnd, IDC_CHKMERGEPOPUP);
 							options->bMsgWindowcheck = IsDlgButtonChecked(hWnd, IDC_CHKWINDOWCHECK);
-							options->bMsgReplywindow = IsDlgButtonChecked(hWnd, IDC_CHKREPLYWINDOW);
 				            options->bShowDate = IsDlgButtonChecked(hWnd, IDC_CHKSHOWDATE);
 							options->bShowTime = IsDlgButtonChecked(hWnd, IDC_CHKSHOWTIME);
 							options->bShowHeaders = IsDlgButtonChecked(hWnd, IDC_CHKSHOWHEADERS);
@@ -228,7 +221,6 @@ static BOOL CALLBACK OptionsDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 							options->bHideSend = IsDlgButtonChecked(hWnd, IDC_CHKHIDESEND);
 							options->iNumberMsg = GetDlgItemInt(hWnd, IDC_NUMBERMSG, NULL, FALSE);
 							options->bNoRSS = IsDlgButtonChecked(hWnd, IDC_SUPRESSRSS);
-							options->bReadCheck = IsDlgButtonChecked(hWnd, IDC_READCHECK);
 							EnableWindow(GetDlgItem(hWnd, IDC_COLBACK_MESSAGE), !options->bDefaultColorMsg);
 							EnableWindow(GetDlgItem(hWnd, IDC_COLTEXT_MESSAGE), !options->bDefaultColorMsg);
 				            EnableWindow(GetDlgItem(hWnd, IDC_COLBACK_URL), !options->bDefaultColorUrl);
@@ -277,7 +269,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
                             OptionsWrite();
                       case PSN_RESET:
                             OptionsRead();
-                            
+
                             //maybe something changed with the menuitem
                             MenuitemUpdate(!options->bDisable);
 				}
@@ -320,7 +312,7 @@ int Opt_DisableNGN(BOOL Status)
 {
     options->bDisable = Status;
     OptionsWrite();
-    
+
     //BUG!
     //Update options dialog if open!
 

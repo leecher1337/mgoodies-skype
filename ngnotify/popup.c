@@ -55,6 +55,12 @@ TIME NowTime()
 }
 */
 
+
+void __stdcall sttOpenSRMMWindowProc( ULONG dwParam )
+{
+	CallService(MS_MSG_SENDMESSAGE, (WPARAM)dwParam, 0);
+}
+
 int NumberPopupData(HANDLE hContact)
 {
 	int n;
@@ -80,7 +86,7 @@ int PopupAct(HWND hWnd, UINT mask, PLUGIN_DATA* pdata)
 	if (mask & MASK_OPEN)
     {
         // do MS_MSG_SENDMESSAGE instead if wanted to reply and not read!
-        if (pdata->pluginOptions->bMsgReplywindow && pdata->eventType == EVENTTYPE_MESSAGE)
+        if (pdata->eventType == EVENTTYPE_MESSAGE)
         {
             _Workaround_CallService(MS_MSG_SENDMESSAGE, (WPARAM)pdata->hContact, (LPARAM)NULL);
         }
@@ -91,8 +97,9 @@ int PopupAct(HWND hWnd, UINT mask, PLUGIN_DATA* pdata)
             cle = (CLISTEVENT*)CallService(MS_CLIST_GETEVENT, (WPARAM)pdata->hContact, 0);
             if (cle)
             {
-                if (ServiceExists(cle->pszService))
+                if (ServiceExists(cle->pszService)) {
                     _Workaround_CallService(cle->pszService, (WPARAM)NULL, (LPARAM)cle);
+				}
             }
         }
     }
@@ -120,7 +127,7 @@ int PopupAct(HWND hWnd, UINT mask, PLUGIN_DATA* pdata)
 		}
 		free(eventData);
 	}
-		
+
 	return 0;
 }
 
@@ -224,7 +231,7 @@ int PopupUpdateText(PLUGIN_DATA* pdata, HANDLE hContact, HANDLE hEvent)
 
 	if (pdata->pluginOptions->bShowHeaders)
 		_snprintf(lpzText, sizeof(lpzText), "[b]%s %d[/b]\n", Translate("Number of new message: "), pdata->countEvent);
-	
+
 	if (pdata->firstShowEventData != pdata->firstEventData)
 			_snprintf(lpzText, sizeof(lpzText), "%s...\n", lpzText);
 
@@ -300,8 +307,8 @@ static BOOL CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 				pdata->firstShowEventData = pdata->firstShowEventData->prev;
 				PopupUpdate(pdata->hContact, NULL);
 			}
-			if ((short)HIWORD(wParam) < 0 && pdata->firstShowEventData->next && 
-				pdata->countEvent - pdata->firstShowEventData->number >= pdata->pluginOptions->iNumberMsg) 
+			if ((short)HIWORD(wParam) < 0 && pdata->firstShowEventData->next &&
+				pdata->countEvent - pdata->firstShowEventData->number >= pdata->pluginOptions->iNumberMsg)
 			{
 				pdata->firstShowEventData = pdata->firstShowEventData->next;
 				PopupUpdate(pdata->hContact, NULL);
@@ -350,7 +357,7 @@ int PopupShow(PLUGIN_OPTIONS* pluginOptions, HANDLE hContact, HANDLE hEvent, UIN
 	EVENT_DATA_EX* eventData;
 	char* sampleEvent;
 	long iSeconds;
-  
+
 	//there has to be a maximum number of popups shown at the same time
     if (PopupCount >= MAX_POPUPS)
         return 2;
@@ -365,7 +372,7 @@ int PopupShow(PLUGIN_OPTIONS* pluginOptions, HANDLE hContact, HANDLE hEvent, UIN
                 pud.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
 				pud.colorBack = pluginOptions->bDefaultColorMsg ? 0 : pluginOptions->colBackMsg;
 				pud.colorText = pluginOptions->bDefaultColorMsg ? 0 : pluginOptions->colTextMsg;
-				pud.iSeconds = -1; 
+				pud.iSeconds = -1;
 				iSeconds = pluginOptions->iDelayMsg;
 				sampleEvent = Translate("This is a sample message event :-)");
                 break;
@@ -374,7 +381,7 @@ int PopupShow(PLUGIN_OPTIONS* pluginOptions, HANDLE hContact, HANDLE hEvent, UIN
                 pud.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_URL);
 				pud.colorBack = pluginOptions->bDefaultColorUrl ? 0 : pluginOptions->colBackUrl;
 				pud.colorText = pluginOptions->bDefaultColorUrl ? 0 : pluginOptions->colTextUrl;
-				pud.iSeconds = -1; 
+				pud.iSeconds = -1;
 				iSeconds = pluginOptions->iDelayUrl;
 				sampleEvent = Translate("This is a sample URL event ;-)");
                 break;
@@ -400,7 +407,7 @@ int PopupShow(PLUGIN_OPTIONS* pluginOptions, HANDLE hContact, HANDLE hEvent, UIN
 
     //get DBEVENTINFO with pBlob if preview is needed (when is test then is off)
     dbe.pBlob = NULL;
-    
+
 	if (hContact)
     {
         dbe.cbSize = sizeof(dbe);
@@ -408,7 +415,7 @@ int PopupShow(PLUGIN_OPTIONS* pluginOptions, HANDLE hContact, HANDLE hEvent, UIN
         dbe.pBlob = (PBYTE)malloc(dbe.cbBlob);
         CallService(MS_DB_EVENT_GET, (WPARAM)hEvent, (LPARAM)&dbe);
     }
-	
+
     eventData = (EVENT_DATA_EX*)malloc(sizeof(EVENT_DATA_EX));
 	eventData->hEvent = hEvent;
 	eventData->number = 1;
@@ -424,12 +431,12 @@ int PopupShow(PLUGIN_OPTIONS* pluginOptions, HANDLE hContact, HANDLE hEvent, UIN
 	pdata->pud = &pud;
 	pdata->iSeconds = iSeconds ? iSeconds : pluginOptions->iDelayDefault;
 	pdata->firstEventData = pdata->firstShowEventData = pdata->lastEventData = eventData;
-    
+
 	//finally create the popup
 	pud.lchContact = hContact;
 	pud.PluginWindowProc = (WNDPROC)PopupDlgProc;
     pud.PluginData = pdata;
-	
+
 	//if hContact is NULL, then popup is only Test
 	if (hContact)
 	{
@@ -442,12 +449,12 @@ int PopupShow(PLUGIN_OPTIONS* pluginOptions, HANDLE hContact, HANDLE hEvent, UIN
 		strncpy(pud.lpzContactName, "Plugin Test AA", MAX_CONTACTNAME);
 		strncpy(pud.lpzText, sampleEvent, MAX_SECONDLINE);
 	}
-    
+
 	PopupCount++;
 
 	PopUpList[NumberPopupData(NULL)] = pdata;
 	//send data to popup plugin
-	
+
 	CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&pud, 0);
     if (dbe.pBlob)
         free(dbe.pBlob);
