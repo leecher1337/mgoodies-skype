@@ -19,8 +19,6 @@ protected:
 public:
     TemplateHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
-//	void appendEvent(IEView *, IEVIEWEVENT *event);
-	void appendEventMem(IEView *, IEVIEWEVENT *event);
 };
 
 #endif

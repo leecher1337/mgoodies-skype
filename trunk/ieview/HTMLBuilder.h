@@ -58,6 +58,7 @@ public:
 		BB_COLOR,
 		BB_SIZE,
 		BB_IMG,
+		BB_BIMG,
 	};
 	TextToken(int type, const char *text, int len);
 	TextToken(int type, const wchar_t *wtext, int len);
@@ -128,11 +129,12 @@ protected:
 	virtual bool isSameDate(DWORD time1, DWORD time2);
 	virtual bool isUnicodeMIM();
 	virtual bool isDbEventShown(DBEVENTINFO * dbei);
+//	virtual void appendEventNonTemplate(IEView *, IEVIEWEVENT *event)=0;
+//	virtual void appendEventTemplate(IEView *, IEVIEWEVENT *event)=0;
 public:
-	virtual void appendEventOld(IEView *, IEVIEWEVENT *event);
+	void appendEventOld(IEView *, IEVIEWEVENT *event);
 	virtual void buildHead(IEView *, IEVIEWEVENT *event)=0;
-//	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;
-	virtual void appendEventMem(IEView *, IEVIEWEVENT *event)=0;
+	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;
 };
 
 #endif

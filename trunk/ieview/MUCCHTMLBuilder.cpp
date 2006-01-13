@@ -200,7 +200,7 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	iLastEventType = -1;
 }
 
-void MUCCHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
+void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 
 	int cp = CP_ACP;
 	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
@@ -301,3 +301,6 @@ void MUCCHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
 //	view->scrollToBottom();
 }
 
+void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
+	appendEventNonTemplate(view, event);
+}

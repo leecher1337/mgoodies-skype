@@ -14,11 +14,12 @@ protected:
 	time_t 		getStartedTime();
 	virtual bool isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei);
 	bool isDbEventShown(DBEVENTINFO * dbei);
+	void appendEventNonTemplate(IEView *, IEVIEWEVENT *event);
 public:
     TabSRMMHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
-//	void appendEvent(IEView *, IEVIEWEVENT *event);
-	void appendEventMem(IEView *, IEVIEWEVENT *event);
+	void appendEvent(IEView *, IEVIEWEVENT *event);
+	
 };
 
 #endif

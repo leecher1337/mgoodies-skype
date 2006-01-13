@@ -557,10 +557,6 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 }
 */
 
-void TemplateHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
-    appendEventTemplate(view, event);
-}
-
 void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) {
 	DBVARIANT dbv;
 	CONTACTINFO ci;

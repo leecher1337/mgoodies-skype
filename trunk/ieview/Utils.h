@@ -6,7 +6,11 @@ class Utils;
 #include "ieview_common.h"
 
 class Utils {
+private:
+	static wchar_t base_dir[MAX_PATH];
 public:
+	static const wchar_t *getBaseDir();
+	static wchar_t* toAbsolute(wchar_t* relative);
 	static void appendText(char **str, int *sizeAlloced, const char *fmt, ...);
 	static void appendText(wchar_t **str, int *sizeAlloced, const wchar_t *fmt, ...);
 	static void convertPath(char *path);

@@ -436,13 +436,17 @@ time_t TabSRMMHTMLBuilder::getStartedTime() {
 	return startedTime;
 }
 
-void TabSRMMHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
-//	int	  indentLeft = DBGetContactSettingDword(NULL, SRMSGMOD_T, "IndentAmount", 0);
-//	int	  indentRight = DBGetContactSettingDword(NULL, SRMSGMOD_T, "RightIndent", 0);
+void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
  	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
 		appendEventTemplate(view, event);
-		return;
+	} else {
+		appendEventNonTemplate(view, event);
 	}
+}
+
+void TabSRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
+//	int	  indentLeft = DBGetContactSettingDword(NULL, SRMSGMOD_T, "IndentAmount", 0);
+//	int	  indentRight = DBGetContactSettingDword(NULL, SRMSGMOD_T, "RightIndent", 0);
 	DWORD today = (DWORD)time(NULL);
 	today = today - today % 86400;
  	DWORD dwFlags = DBGetContactSettingDword(NULL, SRMSGMOD_T, "mwflags", MWF_LOG_DEFAULT);

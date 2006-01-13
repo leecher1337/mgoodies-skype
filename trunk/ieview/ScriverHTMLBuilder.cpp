@@ -437,11 +437,7 @@ void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 }
 
 */
-void ScriverHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
- 	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
-		appendEventTemplate(view, event);
-		return;
-	}
+void ScriverHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 	bool showColon;
 	DWORD dwFlags = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTIME, 0) ? SMF_LOG_SHOWTIME : 0;
     dwFlags |= !DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_HIDENAMES, 0) ? SMF_LOG_SHOWNICK : 0;
@@ -593,3 +589,10 @@ void ScriverHTMLBuilder::appendEventMem(IEView *view, IEVIEWEVENT *event) {
 //	view->scrollToBottom();
 }
 
+void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
+ 	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
+		appendEventTemplate(view, event);
+	} else {
+		appendEventNonTemplate(view, event);
+	}
+}
