@@ -357,12 +357,12 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
     return firstToken;
 }
 
-#define BB_TAG_NUM 7
+#define BB_TAG_NUM 8
 TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
-	static wchar_t *bbTagName[] = {L"b", L"i", L"u", L"s", L"img", L"color", L"size"};
-	static int 		bbTagNameLen[] = {1, 1, 1, 1, 3, 5, 4};
-	static int 		bbTagArg[] = {0, 0, 0, 0, 0, 1, 1};
-	static int 		bbTagId[] = {BB_B, BB_I, BB_U, BB_S, BB_IMG, BB_COLOR, BB_SIZE};
+	static wchar_t *bbTagName[] = {L"b", L"i", L"u", L"s", L"img", L"color", L"size", L"bimg"};
+	static int 		bbTagNameLen[] = {1, 1, 1, 1, 3, 5, 4, 4};
+	static int 		bbTagArg[] = {0, 0, 0, 0, 0, 1, 1, 0};
+	static int 		bbTagId[] = {BB_B, BB_I, BB_U, BB_S, BB_IMG, BB_COLOR, BB_SIZE, BB_BIMG};
 	static int      bbTagEnd[BB_TAG_NUM];
 	static int      bbTagCount[BB_TAG_NUM];
 	int i,j;
@@ -437,7 +437,8 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 						newTokenSize = tagDataStart - i;
 						break;
 					case BB_IMG:
-						bbToken = new TextToken(BBCODE, text + tagDataStart, k - 6 - tagDataStart);
+					case BB_BIMG:
+						bbToken = new TextToken(BBCODE, text + tagDataStart, k - bbTagNameLen[j] - 3 - tagDataStart);
 						bbToken->setTag(bbTagId[j]);
 						bbToken->setEnd(false);
 						newTokenType = BBCODE;
@@ -712,7 +713,25 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 					Utils::appendText(str, sizeAlloced, L"<s>");
 					break;
 				case BB_IMG:
-            		eText = urlEncode(wtext);   // 100%% //< document.body.clientWidth  ? this.parentNode.width : document.body.clientWidth
+            		eText = urlEncode(wtext);
+		            if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_FLASH) && (wcsstr(eText, L".swf")!=NULL)) {
+        		    	Utils::appendText(str, sizeAlloced,
+		L"<div style=\"width: 100%%; border: 0; overflow: hidden;\"><object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
+		codebase=\"http://active.macromedia.com/flash2/cabs/swflash.cab#version=4,0,0,0\" width=\"100%%\" >\
+		<param NAME=\"movie\" VALUE=\"%s\"><param NAME=\"quality\" VALUE=\"high\"><PARAM NAME=\"loop\" VALUE=\"true\"></object></div>",
+						eText);
+					} else if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_PNGHACK) && (wcsstr(eText, L".png")!=NULL)) {
+			           	Utils::appendText(str, sizeAlloced, L"<img class=\"img\" style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\" />", eText);
+					} else {
+        		    	Utils::appendText(str, sizeAlloced, L"<div style=\"width: 100%%; border: 0; overflow: hidden;\"><img class=\"img\" style=\"width: expression((maxw = this.parentNode.offsetWidth ) > this.width ? 'auto' : maxw);\" src=\"%s\" /></div>", eText);
+					}
+        	    	break;
+				case BB_BIMG:
+					{
+						wchar_t *absolutePath = Utils::toAbsolute(eText);
+	            		eText = urlEncode(absolutePath);
+						delete absolutePath;
+					}
 		            if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_FLASH) && (wcsstr(eText, L".swf")!=NULL)) {
         		    	Utils::appendText(str, sizeAlloced,
 		L"<div style=\"width: 100%%; border: 0; overflow: hidden;\"><object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
