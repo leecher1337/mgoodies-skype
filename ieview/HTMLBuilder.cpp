@@ -798,12 +798,11 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 	case 3:
 //		if (Options::getSmileyFlags() & Options::SMILEY_ENABLED) {
 		/*    if ((flags & ENF_SMILEYS) ||
-      			((Options::getSmileyFlags() & Options::SMILEY_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) */{
-			    token = TextToken::tokenizeSmileysSA(proto, text);
-      			break;
-   			}
+      			((Options::getSmileyFlags() & Options::SMILEY_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) {*/
+	    token = TextToken::tokenizeSmileysSA(proto, text);
+		break;
+//   			}
 	//	}
-		level++;
 	}
 	if (token!=NULL) {
 		for (token2 = token;token!=NULL;token=token2) {
@@ -1139,7 +1138,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
         event->hDbEventFirst = hDbEvent;
    		hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
 	}
-	appendEventMem(view, &newEvent);
+	appendEvent(view, &newEvent);
 	for ( IEVIEWEVENTDATA* eventData2 = newEvent.eventData; eventData2 != NULL; eventData2 = eventData) {
 		eventData = eventData2->next;
 		if (eventData2->pszTextW != NULL) {

@@ -858,12 +858,11 @@ void IEView::appendEventOld(IEVIEWEVENT *event) {
 }
 
 void IEView::appendEvent(IEVIEWEVENT *event) {
-	return;
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
 	iLogCodepage = event->codepage;
 	if (builder!=NULL) {
-		builder->appendEventMem(this, event);
+		builder->appendEvent(this, event);
 	}
 	getFocus = false;
 }

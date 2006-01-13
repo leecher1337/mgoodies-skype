@@ -5,16 +5,16 @@ class SRMMHTMLBuilder;
 
 #include "HTMLBuilder.h"
 
-class SRMMHTMLBuilder:public HTMLBuilder
+class SRMMHTMLBuilder:public TemplateHTMLBuilder
 {
 protected:
     virtual void loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour);
 	virtual char *timestampToString(DWORD dwFlags, time_t check);
 	bool isDbEventShown(DBEVENTINFO * dbei);
+	void 	appendEventNonTemplate(IEView *, IEVIEWEVENT *event);
 public:
 	void buildHead(IEView *, IEVIEWEVENT *event);
 	void appendEvent(IEView *, IEVIEWEVENT *event);
-	void appendEventMem(IEView *, IEVIEWEVENT *event);
 };
 
 #endif

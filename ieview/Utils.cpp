@@ -1,5 +1,30 @@
 #include "Utils.h"
 
+wchar_t Utils::base_dir[MAX_PATH];
+
+const wchar_t *Utils::getBaseDir() {
+	char temp[MAX_PATH];
+	base_dir[0] = '\0';
+	long tlen = CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)"miranda32.exe", (LPARAM)temp);
+	if (tlen) {
+		temp[tlen - 13]=0;
+		MultiByteToWideChar(CP_ACP, 0, temp, strlen(temp), base_dir, MAX_PATH);
+	}
+	return base_dir;
+}
+
+wchar_t* Utils::toAbsolute(wchar_t* relative) {
+	const wchar_t* bdir = util_get_base_dir();
+	static long len = wcslen(bdir);
+	long tlen = len + wcslen(relative);
+	wchar_t* result = new wchar_t[tlen + 1];
+	if(result){
+		wcscpy(result,bdir);
+		wcscpy(result + len,relative);
+	}
+	return result;
+}
+ 
 static int countNoWhitespace(const wchar_t *str) {
 	int c;
 	for (c=0; *str!='\n' && *str!='\r' && *str!='\t' && *str!=' ' && *str!='\0'; str++, c++);

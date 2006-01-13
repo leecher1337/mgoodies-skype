@@ -158,7 +158,7 @@ void SRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 
 }
 
-void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
+void SRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 
 	DWORD dwFlags = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTIME, 0) ? SMF_LOG_SHOWTIME : 0;
     dwFlags |= !DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_HIDENAMES, 0) ? SMF_LOG_SHOWNICK : 0;
@@ -278,3 +278,10 @@ void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 //	view->scrollToBottom();
 }
   
+void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
+ 	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
+		appendEventTemplate(view, event);
+	} else {
+		appendEventNonTemplate(view, event);
+	}
+}
