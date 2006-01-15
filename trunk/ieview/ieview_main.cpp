@@ -31,7 +31,7 @@ HINSTANCE hInstance;
 PLUGINLINK *pluginLink;
 IEView *debugView;
 SmileyWindow *smileyWindow;
-char *workingDir;
+TCHAR *workingDir;
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 static int PreShutdown(WPARAM wParam, LPARAM lParam);
 
@@ -57,7 +57,7 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpvRese
 extern "C" __declspec(dllexport) PLUGININFO *MirandaPluginInfo(DWORD mirandaVersion)
 {
 	if (mirandaVersion < PLUGIN_MAKE_VERSION(0,4,0,0)) {
-		MessageBox(NULL, "The IEView plugin cannot be loaded. It requires Miranda IM 0.4 or later.", "IEView Plugin", MB_OK|MB_ICONWARNING|MB_SETFOREGROUND|MB_TOPMOST);
+		MessageBoxA(NULL, "The IEView plugin cannot be loaded. It requires Miranda IM 0.4 or later.", "IEView Plugin", MB_OK|MB_ICONWARNING|MB_SETFOREGROUND|MB_TOPMOST);
 		return NULL;
 	}
 	return &pluginInfo;
@@ -70,11 +70,11 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	char *p, *q;
 
 	int wdsize = GetCurrentDirectory(0, NULL);
-	workingDir = new char[wdsize];
+	workingDir = new TCHAR[wdsize];
 	GetCurrentDirectory(wdsize, workingDir);
 	Utils::convertPath(workingDir);
 
-	GetModuleFileName(hInstance, text, sizeof(text));
+	GetModuleFileNameA(hInstance, text, sizeof(text));
 	p = strrchr(text, '\\');
 	p++;
 	q = strrchr(p, '.');

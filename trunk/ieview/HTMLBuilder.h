@@ -128,7 +128,7 @@ protected:
 	virtual void setLastEventType(int);
 	virtual bool isSameDate(DWORD time1, DWORD time2);
 	virtual bool isUnicodeMIM();
-	virtual bool isDbEventShown(DBEVENTINFO * dbei);
+	virtual bool isDbEventShown(DBEVENTINFO * dbei)=0;
 //	virtual void appendEventNonTemplate(IEView *, IEVIEWEVENT *event)=0;
 //	virtual void appendEventTemplate(IEView *, IEVIEWEVENT *event)=0;
 public:

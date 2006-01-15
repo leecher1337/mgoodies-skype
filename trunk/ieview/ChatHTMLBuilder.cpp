@@ -326,3 +326,7 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 void ChatHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	appendEventNonTemplate(view, event);
 }
+
+bool ChatHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei) {
+	return true;
+}

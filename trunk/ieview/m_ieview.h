@@ -124,11 +124,11 @@ typedef struct tagIEVIEWEVENTDATA {
 	};
 } IEVIEWEVENTDATA;
 
-#define IEE_LOG_EVENTS  	1       // log specified number of DB events
+#define IEE_LOG_DB_EVENTS  	1       // log specified number of DB events
 #define IEE_CLEAR_LOG		2       // clear log
 #define IEE_GET_SELECTION	3       // get selected text
 #define IEE_SAVE_DOCUMENT	4       // save current document
-#define IEE_LOG_MEM_EVENTS 	5       // log specified number of IEView events events
+#define IEE_LOG_MEM_EVENTS 	5       // log specified number of IEView events 
 
 #define IEEF_RTL          1           // turn on RTL support
 #define IEEF_NO_UNICODE   2           // disable Unicode support

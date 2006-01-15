@@ -13,7 +13,6 @@ protected:
 	time_t 		startedTime;
 	time_t 		getStartedTime();
 	const char *groupTemplate;
-	bool isDbEventShown(DBEVENTINFO * dbei);
 	void buildHeadTemplate(IEView *, IEVIEWEVENT *event);
 	void appendEventTemplate(IEView *, IEVIEWEVENT *event);
 public:

@@ -82,7 +82,7 @@ int IEViewOptInit(WPARAM wParam, LPARAM lParam)
 	odp.position = 0;
 	odp.hInstance = hInstance;
 	odp.pszGroup = Translate("Message Sessions");
-	odp.pszTemplate = MAKEINTRESOURCE(IDD_OPTIONS);
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
 	odp.pszTitle = Translate("IEView plugin");
 	odp.flags = ODPF_BOLDGROUPS;
 	odp.pfnDlgProc = IEViewOptDlgProc;
@@ -99,15 +99,15 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 			TCITEM tci;
 			tc = GetDlgItem(hwndDlg, IDC_TABS);
 			tci.mask = TCIF_TEXT;
-			tci.pszText = Translate("General");
+			tci.pszText = TranslateT("General");
 			TabCtrl_InsertItem(tc, 0, &tci);
-			tci.pszText = Translate("Message Log");
+			tci.pszText = TranslateT("Message Log");
 			TabCtrl_InsertItem(tc, 1, &tci);
 //			tci.pszText = Translate("Emoticons");
 //			TabCtrl_InsertItem(tc, 2, &tci);
-			tci.pszText = Translate("Group Chats");
+			tci.pszText = TranslateT("Group Chats");
 			TabCtrl_InsertItem(tc, 2, &tci);
-			tci.pszText = Translate("History");
+			tci.pszText = TranslateT("History");
 			TabCtrl_InsertItem(tc, 3, &tci);
 
 //			hwndEmoticons = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_EMOTICONS_OPTIONS), hwndDlg, IEViewEmoticonsOptDlgProc, (LPARAM) NULL);
@@ -233,15 +233,6 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			    bChecked = TRUE;
 				CheckDlgButton(hwndDlg, IDC_TEMPLATES, TRUE);
 			}
-			if (Options::getSRMMFlags() & Options::LOG_SHOW_FILE) {
-				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_FILE, TRUE);
-			}
-			if (Options::getSRMMFlags() & Options::LOG_SHOW_URL) {
-				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_URL, TRUE);
-			}
-			if (Options::getSRMMFlags() & Options::LOG_SHOW_STATUSCHANGE) {
-				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_STATUSCHANGE, TRUE);
-			}
 			if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
 				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_NICKNAMES, TRUE);
 			}
@@ -269,9 +260,6 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME_RTL), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES_RTL), bChecked);
 
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_FILE), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_URL), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_STATUSCHANGE), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_NICKNAMES), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_TIME), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_DATE), bChecked);
@@ -281,10 +269,10 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_GROUP_MESSAGES), bChecked);
 
 			if (Options::getTemplatesFile() != NULL) {
-                SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, Options::getTemplatesFile());
+                SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, Options::getTemplatesFile());
 			}
 			if (Options::getTemplatesFileRTL() != NULL) {
-                SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, Options::getTemplatesFileRTL());
+                SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, Options::getTemplatesFileRTL());
 			}
 
 			bChecked = !IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES);
@@ -299,10 +287,10 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS_RTL), bChecked);
 			if (Options::getExternalCSSFile() != NULL) {
-                SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, Options::getExternalCSSFile());
+                SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, Options::getExternalCSSFile());
 			}
 			if (Options::getExternalCSSFileRTL() != NULL) {
-                SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, Options::getExternalCSSFileRTL());
+                SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, Options::getExternalCSSFileRTL());
 			}
 
 			bChecked = !IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES) && !IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS);
@@ -319,7 +307,7 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				CheckDlgButton(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE, TRUE);
 			}
 			if (Options::getBkgImageFile() != NULL) {
-                SetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, Options::getBkgImageFile());
+                SetDlgItemTextA(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, Options::getBkgImageFile());
 			}
 			return TRUE;
 		}
@@ -335,9 +323,6 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			case IDC_SCROLL_BACKGROUND_IMAGE:
-			case IDC_LOG_SHOW_FILE:
-			case IDC_LOG_SHOW_URL:
-			case IDC_LOG_SHOW_STATUSCHANGE:
 			case IDC_LOG_SHOW_NICKNAMES:
 			case IDC_LOG_SHOW_TIME:
 			case IDC_LOG_SHOW_DATE:
@@ -353,9 +338,6 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME_RTL), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES_RTL), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_FILE), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_URL), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_STATUSCHANGE), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_NICKNAMES), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_TIME), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_DATE), bChecked);
@@ -385,8 +367,8 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				break;
 			case IDC_BROWSE_TEMPLATES:
 				{
-					OPENFILENAME ofn={0};
-					GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
 					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
 					ofn.hwndOwner = hwndDlg;
 					ofn.hInstance = NULL;
@@ -396,16 +378,16 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 					ofn.nMaxFile = sizeof(path);
 					ofn.nMaxFileTitle = MAX_PATH;
 					ofn.lpstrDefExt = "ivt";
-					if(GetOpenFileName(&ofn)) {
-						SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path);
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
 						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 					}
 				}
 				break;
 			case IDC_BROWSE_TEMPLATES_RTL:
 				{
-					OPENFILENAME ofn={0};
-					GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
 					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
 					ofn.hwndOwner = hwndDlg;
 					ofn.hInstance = NULL;
@@ -415,16 +397,16 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 					ofn.nMaxFile = sizeof(path);
 					ofn.nMaxFileTitle = MAX_PATH;
 					ofn.lpstrDefExt = "ivt";
-					if(GetOpenFileName(&ofn)) {
-						SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path);
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path);
 						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 					}
 				}
 				break;
 			case IDC_BROWSE_BACKGROUND_IMAGE:
 				{
-					OPENFILENAME ofn={0};
-					GetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
 					ofn.lStructSize = sizeof(OPENFILENAME);
 					ofn.hwndOwner = hwndDlg;
 					ofn.hInstance = NULL;
@@ -434,16 +416,16 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 					ofn.nMaxFile = sizeof(path);
 					ofn.nMaxFileTitle = MAX_PATH;
 					ofn.lpstrDefExt = "jpg";
-					if(GetOpenFileName(&ofn)) {
-						SetDlgItemText(hwndDlg,IDC_BACKGROUND_IMAGE_FILENAME,path);
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg,IDC_BACKGROUND_IMAGE_FILENAME,path);
 						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 					}
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS:
 				{
-					OPENFILENAME ofn={0};
-					GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
 					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
 					ofn.hwndOwner = hwndDlg;
 					ofn.hInstance = NULL;
@@ -453,16 +435,16 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 					ofn.nMaxFile = sizeof(path);
 					ofn.nMaxFileTitle = MAX_PATH;
 					ofn.lpstrDefExt = "css";
-					if(GetOpenFileName(&ofn)) {
-						SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
 						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 					}
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS_RTL:
 				{
-					OPENFILENAME ofn={0};
-					GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
 					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
 					ofn.hwndOwner = hwndDlg;
 					ofn.hInstance = NULL;
@@ -472,8 +454,8 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 					ofn.nMaxFile = sizeof(path);
 					ofn.nMaxFileTitle = MAX_PATH;
 					ofn.lpstrDefExt = "css";
-					if(GetOpenFileName(&ofn)) {
-						SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
 						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 					}
 				}
@@ -488,15 +470,6 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				i = 0;
 				if (IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES)) {
 					i |= Options::TEMPLATES_ENABLED;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_FILE)) {
-					i |= Options::LOG_SHOW_FILE;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_URL)) {
-					i |= Options::LOG_SHOW_URL;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_STATUSCHANGE)) {
-					i |= Options::LOG_SHOW_STATUSCHANGE;
 				}
 				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_NICKNAMES)) {
 					i |= Options::LOG_SHOW_NICKNAMES;
@@ -529,15 +502,15 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 					i |= Options::CSS_ENABLED;
 				}
 				Options::setSRMMFlags(i);
-				GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
+				GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
 				Options::setTemplatesFile(path);
-				GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
+				GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
 				Options::setTemplatesFileRTL(path);
-				GetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
+				GetDlgItemTextA(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
 				Options::setBkgImageFile(path);
-				GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
+				GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
 				Options::setExternalCSSFile(path);
-				GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
+				GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
 				Options::setExternalCSSFileRTL(path);
 				return TRUE;
 			}
@@ -558,7 +531,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 		{
 			TranslateDialogDefault(hwndDlg);
 			if (Options::getGroupChatCSSFile() != NULL) {
-                SetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, Options::getGroupChatCSSFile());
+                SetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, Options::getGroupChatCSSFile());
 			}
 			bChecked = FALSE;
 			if (Options::getGroupChatFlags() & Options::TEMPLATES_ENABLED) {
@@ -568,7 +541,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_TEMPLATES_BROWSE), bChecked);
 			if (Options::getGroupChatTemplatesFile() != NULL) {
-                SetDlgItemText(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, Options::getGroupChatTemplatesFile());
+                SetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, Options::getGroupChatTemplatesFile());
 			}
 			bChecked = !IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_TEMPLATES);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS), bChecked);
@@ -580,7 +553,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_BROWSE), bChecked);
 			if (Options::getGroupChatCSSFile() != NULL) {
-                SetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, Options::getGroupChatCSSFile());
+                SetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, Options::getGroupChatCSSFile());
 			}
 			return TRUE;
 		}
@@ -604,8 +577,8 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 				break;
 			case IDC_GROUPCHAT_CSS_BROWSE:
 				{
-					OPENFILENAME ofn={0};
-					GetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path, sizeof(path));
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path, sizeof(path));
 					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
 					ofn.hwndOwner = hwndDlg;
 					ofn.hInstance = NULL;
@@ -615,16 +588,16 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 					ofn.nMaxFile = sizeof(path);
 					ofn.nMaxFileTitle = MAX_PATH;
 					ofn.lpstrDefExt = "css";
-					if(GetOpenFileName(&ofn)) {
-						SetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path);
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path);
 						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 					}
 				}
 				break;
 			case IDC_GROUPCHAT_TEMPLATES_BROWSE:
 				{
-					OPENFILENAME ofn={0};
-					GetDlgItemText(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, path, sizeof(path));
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, path, sizeof(path));
 					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
 					ofn.hwndOwner = hwndDlg;
 					ofn.hInstance = NULL;
@@ -634,8 +607,8 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 					ofn.nMaxFile = sizeof(path);
 					ofn.nMaxFileTitle = MAX_PATH;
 					ofn.lpstrDefExt = "ivt";
-					if(GetOpenFileName(&ofn)) {
-						SetDlgItemText(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, path);
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, path);
 						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 					}
 				}
@@ -647,7 +620,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 		{
 			switch (((LPNMHDR) lParam)->code) {
 			case PSN_APPLY:
-				GetDlgItemText(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path, sizeof(path));
+				GetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path, sizeof(path));
 				Options::setGroupChatCSSFile(path);
 				i = 0;
 				if (IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_TEMPLATES)) {

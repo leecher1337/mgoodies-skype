@@ -19,8 +19,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#if defined(UNICODE)
+   #define _UNICODE
+#endif
+
 #ifndef IEVIEW_COMMON_H
 #define IEVIEW_COMMON_H
+
 #include <windows.h>
 #include <stdio.h>
 
@@ -51,7 +56,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern HINSTANCE hInstance;
 extern IEView *debugView;
-extern char *workingDir;
+extern TCHAR *workingDir;
 extern char *ieviewModuleName;
 extern HANDLE hHookOptionsChanged;
 

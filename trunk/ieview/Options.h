@@ -76,9 +76,6 @@ public:
 		CSS_ENABLED  		  = 4,
 		TEMPLATES_ENABLED	  = 8,
 
-		LOG_SHOW_FILE         = 0x20,
-		LOG_SHOW_URL          = 0x40,
-		LOG_SHOW_STATUSCHANGE = 0x80,
 		LOG_SHOW_NICKNAMES    = 0x0100,
 		LOG_SHOW_TIME         = 0x0200,
 		LOG_SHOW_DATE         = 0x0400,

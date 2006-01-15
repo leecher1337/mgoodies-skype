@@ -14,6 +14,7 @@ public:
 	static void appendText(char **str, int *sizeAlloced, const char *fmt, ...);
 	static void appendText(wchar_t **str, int *sizeAlloced, const wchar_t *fmt, ...);
 	static void convertPath(char *path);
+	static void convertPath(wchar_t *path);
 	static char *dupString(const char *a);
 	static char *dupString(const char *a, int l);
 	static wchar_t *dupString(const wchar_t *a);
