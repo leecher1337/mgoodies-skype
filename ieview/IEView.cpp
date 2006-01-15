@@ -101,7 +101,7 @@ void IEView::init() {
 	isInited = true;
 	InitializeCriticalSection(&mutex);
 	if (FAILED(OleInitialize(NULL))) {
-		MessageBox(NULL,"OleInitialize failed.","RESULT",MB_OK);
+		MessageBoxA(NULL,"OleInitialize failed.","RESULT",MB_OK);
 	}
 }
 
@@ -141,14 +141,14 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
     		pOleObject->DoVerb(OLEIVERB_INPLACEACTIVATE, &msg, this, 0, parent, &rcClient);
     		pOleObject->Release();
    		} else {
-  			MessageBox(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
+  			MessageBoxA(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
    		}
 
 		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleInPlaceObject, (void**)&pOleInPlace))) {
     		pOleInPlace->GetWindow(&hwnd);
     		pOleInPlace->Release();
 		} else {
-  			MessageBox(NULL,"IID_IOleInPlaceObject failed.","RESULT",MB_OK);
+  			MessageBoxA(NULL,"IID_IOleInPlaceObject failed.","RESULT",MB_OK);
 		}
 
 		LONG style = GetWindowLong(hwnd, GWL_EXSTYLE);
@@ -169,7 +169,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	            sink = new IEViewSink();
 //#ifndef GECKO
 	         	if (FAILED(m_pConnectionPoint->Advise((IUnknown *)sink, &m_dwCookie)))     {
-	            	MessageBox(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
+	            	MessageBoxA(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
 	         	}
 //#endif
 	      	}
@@ -220,14 +220,14 @@ IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, in
     		pOleObject->DoVerb(OLEIVERB_INPLACEACTIVATE, &msg, this, 0, parent, &rcClient);
     		pOleObject->Release();
    		} else {
-  			MessageBox(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
+  			MessageBoxA(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
    		}
 
 		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleInPlaceObject, (void**)&pOleInPlace))) {
     		pOleInPlace->GetWindow(&hwnd);
     		pOleInPlace->Release();
 		} else {
-  			MessageBox(NULL,"IID_IOleInPlaceObject failed.","RESULT",MB_OK);
+  			MessageBoxA(NULL,"IID_IOleInPlaceObject failed.","RESULT",MB_OK);
 		}
 
    		IConnectionPointContainer* pCPContainer;
@@ -243,7 +243,7 @@ IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, in
 	            sink = new IEViewSink(smileyWindow);
 //#ifndef GECKO
 	         	if (FAILED(m_pConnectionPoint->Advise((IUnknown *)sink, &m_dwCookie)))     {
-	            	MessageBox(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
+	            	MessageBoxA(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
 	         	}
 //#endif
 	      	}
@@ -259,7 +259,7 @@ IEView::~IEView() {
 		pOleObject->SetClientSite(NULL);
 		pOleObject->Release();
 	} else {
-		MessageBox(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
+		MessageBoxA(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
 	}
     EnterCriticalSection(&mutex);
 	if (list == this) {

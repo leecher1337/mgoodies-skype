@@ -993,7 +993,14 @@ wchar_t *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto) {
 		if (ci.type == CNFT_ASCIIZ) {
 			if (ci.pszVal) {
 				if(isUnicodeMIM()) {
-	        	    szName = Utils::dupString((wchar_t *)ci.pszVal);
+					if(!wcscmp((wchar_t *)ci.pszVal, TranslateW(L"'(Unknown Contact)'"))) {
+						ci.dwFlag &= ~CNF_UNICODE;
+						if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
+			        	    szName = Utils::convertToWCS((char *)ci.pszVal);
+						}
+					} else {
+		        	    szName = Utils::dupString((wchar_t *)ci.pszVal);
+					}
 				} else {
 	        	    szName = Utils::convertToWCS((char *)ci.pszVal);
 				}
@@ -1020,50 +1027,15 @@ wchar_t *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto) {
 }
 
 char *HTMLBuilder::getEncodedContactName(HANDLE hContact, const char* szProto, const char* szSmileyProto) {
-	CONTACTINFO ci;
 	char *szName = NULL;
-	ZeroMemory(&ci, sizeof(ci));
-	ci.cbSize = sizeof(ci);
-	ci.hContact = hContact;
-    ci.szProto = (char *)szProto;
-	ci.dwFlag = CNF_DISPLAY;
-	if(isUnicodeMIM()) {
-		ci.dwFlag |= CNF_UNICODE;
-    }
-	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-		if (ci.type == CNFT_ASCIIZ) {
-			if (ci.pszVal) {
-				if(isUnicodeMIM()) {
-	        	    szName = encodeUTF8((wchar_t *)ci.pszVal, szSmileyProto, ENF_NAMESMILEYS);
-				} else {
-	        	    szName = encodeUTF8((char *)ci.pszVal, szSmileyProto, ENF_NAMESMILEYS);
-				}
-				miranda_sys_free(ci.pszVal);
-			}
-		}
-	}
-    if (szName != NULL) return szName;
-	ci.dwFlag = CNF_UNIQUEID;
-	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-		if (ci.type == CNFT_ASCIIZ) {
-			if (ci.pszVal) {
-        	    szName = encodeUTF8((char *)ci.pszVal, szSmileyProto, ENF_NAMESMILEYS);
-				miranda_sys_free(ci.pszVal);
-			}
-		}
-	}
-    if (szName != NULL) return szName;
-	szName = (char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0);
-	if (szName != NULL) {
-	    return encodeUTF8(szName, szSmileyProto, ENF_NAMESMILEYS);
-	}
-    return encodeUTF8(Translate("(Unknown Contact)"), szSmileyProto, ENF_NAMESMILEYS);
+	wchar_t *name = getContactName(hContact, szProto);
+	if (name != NULL) {
+		szName = encodeUTF8(name, szSmileyProto, ENF_NAMESMILEYS);
+		delete name;
+		return szName;
+	} 
+    return encodeUTF8(TranslateT("(Unknown Contact)"), szSmileyProto, ENF_NAMESMILEYS);
 }
-
-bool HTMLBuilder::isDbEventShown(DBEVENTINFO * dbei) {
-	return true;
-}
-
 
 void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
     IEVIEWEVENT newEvent;

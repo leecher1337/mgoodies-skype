@@ -11,6 +11,7 @@ protected:
     void loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour);
 	char *timestampToString(DWORD dwFlags, time_t check);
 	void appendEventNonTemplate(IEView *, IEVIEWEVENT *event);
+	bool isDbEventShown(DBEVENTINFO * dbei);
 public:
     MUCCHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);

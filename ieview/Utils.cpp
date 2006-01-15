@@ -184,6 +184,11 @@ void Utils::convertPath(char *path) {
    	}
 }
 
+void Utils::convertPath(wchar_t *path) {
+   	for (; *path!='\0'; path++) {
+   	    if (*path == '\\') *path = '/';
+   	}
+}
 
 DWORD Utils::safe_wcslen(wchar_t *msg, DWORD maxLen) {
     DWORD i;

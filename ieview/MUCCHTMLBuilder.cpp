@@ -304,3 +304,7 @@ void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	appendEventNonTemplate(view, event);
 }
+
+bool MUCCHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei) {
+	return true;
+}

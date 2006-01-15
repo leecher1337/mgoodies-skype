@@ -81,7 +81,7 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 	IEView::init();
 	Options::init();
 	if (view != NULL) {
-		if (event->iType == IEE_LOG_EVENTS) {
+		if (event->iType == IEE_LOG_DB_EVENTS) {
 			view->appendEventOld(event);
 		} else if (event->iType == IEE_CLEAR_LOG) {
 			view->clear(event);
@@ -89,7 +89,9 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 			return (int)view->getSelection(event);
 		} else if (event->iType == IEE_SAVE_DOCUMENT) {
 			view->saveDocument();
-		}
+		} else if (event->iType == IEE_LOG_MEM_EVENTS) {
+			view->appendEvent(event);
+		} 
 	}
 	return 0;
 }

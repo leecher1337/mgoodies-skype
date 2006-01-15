@@ -21,24 +21,6 @@ TemplateHTMLBuilder::TemplateHTMLBuilder() {
 	groupTemplate = NULL;
 }    
 
-bool TemplateHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei)
-{
-    switch (dbei->eventType) {
-        case EVENTTYPE_MESSAGE:
-			return 1;
-        case EVENTTYPE_FILE:
-			if (Options::getSRMMFlags() & Options::LOG_SHOW_FILE) return 1;
-			return 0;
-        case EVENTTYPE_URL:
-			if (Options::getSRMMFlags() & Options::LOG_SHOW_URL) return 1;
-			return 0;
-        case EVENTTYPE_STATUSCHANGE:
-			if (Options::getSRMMFlags() & Options::LOG_SHOW_STATUSCHANGE) return 1;
-            return 0;
-    }
-    return 0;
-}
-
 char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
 {
     static char szResult[512];
