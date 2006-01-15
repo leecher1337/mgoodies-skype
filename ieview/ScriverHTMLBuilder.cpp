@@ -537,7 +537,7 @@ void ScriverHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 						showColon = false;
 					}
 				} else {
-					Utils::appendText(&output, &outputSize, "<span class=\"notices\">%s</span>", szName);
+					Utils::appendText(&output, &outputSize, "<span class=\"notices\">%s </span>", szName);
 				}
 			}
 			if (dwFlags & SMF_LOG_SHOWTIME && dwFlags & SMF_LOG_GROUPMESSAGES && dwFlags & SMF_LOG_MARKFOLLOWUPS
