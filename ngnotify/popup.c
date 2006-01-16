@@ -22,6 +22,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 #include "newgenerationnotify.h"
+#include <time.h>
 #include <m_database.h>
 #include <m_skin.h>
 #include <m_clist.h>
@@ -32,9 +33,7 @@
 //needed for reply instead of read
 #include <m_message.h>
 #include <m_popup.h>
-#include <string.h>
-#include <time.h>
-#include <stdio.h>
+#include <m_utils.h>
 
 extern int g_IsServiceAvail;
 
@@ -81,8 +80,6 @@ int NumberPopupData(HANDLE hContact)
 int PopupAct(HWND hWnd, UINT mask, PLUGIN_DATA* pdata)
 {
 
-	EVENT_DATA_EX* eventData;
-
 	if (mask & MASK_OPEN)
     {
         // do MS_MSG_SENDMESSAGE instead if wanted to reply and not read!
@@ -106,28 +103,18 @@ int PopupAct(HWND hWnd, UINT mask, PLUGIN_DATA* pdata)
 
     if (mask & MASK_REMOVE)
     {
-		eventData = pdata->firstEventData;
-		while (eventData)
-		{
-			CallService(MS_CLIST_REMOVEEVENT, (WPARAM)pdata->hContact, (LPARAM)eventData->hEvent);
-			CallService(MS_DB_EVENT_MARKREAD, (WPARAM)pdata->hContact, (LPARAM)eventData->hEvent);
-			eventData = eventData->next;
+		int i;
+		for (i=0;i<pdata->countEvent; i++) {
+			CallService(MS_CLIST_REMOVEEVENT, (WPARAM)pdata->hContact, (LPARAM)pdata->eventData[i].hEvent);
+			CallService(MS_DB_EVENT_MARKREAD, (WPARAM)pdata->hContact, (LPARAM)pdata->eventData[i].hEvent);
 		}
     }
 
     if (mask & MASK_DISMISS)
 	{
-        PUDeletePopUp(hWnd);
 		PopUpList[NumberPopupData(pdata->hContact)] = NULL;
-		eventData = pdata->lastEventData;
-		while (eventData && eventData->prev)
-		{
-			eventData = eventData->prev;
-			free(eventData->next);
-		}
-		free(eventData);
+        PUDeletePopUp(hWnd);
 	}
-
 	return 0;
 }
 
@@ -136,59 +123,66 @@ char* GetPreview(UINT eventType, char* pBlob)
     char* comment1 = NULL;
     char* comment2 = NULL;
     char* commentFix = NULL;
+    static char szPreviewHelp[256];
 
     //now get text
     switch(eventType)
     {
-		case EVENTTYPE_MESSAGE:
-			if (pBlob) comment1 = pBlob;
-			commentFix = Translate(POPUP_COMMENT_MESSAGE);
-			break;
+	case EVENTTYPE_MESSAGE:
+		if (pBlob) comment1 = pBlob;
+		commentFix = Translate(POPUP_COMMENT_MESSAGE);
+		break;
 
-		case EVENTTYPE_URL:
-			if (pBlob) comment2 = pBlob;
-			if (pBlob) comment1 = pBlob + strlen(comment2) + 1;
-			commentFix = Translate(POPUP_COMMENT_URL);
-			break;
+	case EVENTTYPE_URL:
+		if (pBlob) comment2 = pBlob;
+		if (pBlob) comment1 = pBlob + strlen(comment2) + 1;
+		commentFix = Translate(POPUP_COMMENT_URL);
+		break;
 
-		case EVENTTYPE_FILE:
-			if (pBlob) comment2 = pBlob + 4;
-			if (pBlob) comment1 = pBlob + strlen(comment2) + 5;
-			commentFix = Translate(POPUP_COMMENT_FILE);
-			break;
+	case EVENTTYPE_FILE:
+		if (pBlob) comment2 = pBlob + 4;
+		if (pBlob) comment1 = pBlob + strlen(comment2) + 5;
+		commentFix = Translate(POPUP_COMMENT_FILE);
+		break;
 
-		case EVENTTYPE_CONTACTS:
-		    commentFix = Translate(POPUP_COMMENT_CONTACTS);
-		    break;
-		case EVENTTYPE_ADDED:
-		    commentFix = Translate(POPUP_COMMENT_ADDED);
-		    break;
-		case EVENTTYPE_AUTHREQUEST:
-		    commentFix = Translate(POPUP_COMMENT_AUTH);
-		    break;
+	case EVENTTYPE_CONTACTS:
+		commentFix = Translate(POPUP_COMMENT_CONTACTS);
+		break;
+	case EVENTTYPE_ADDED:
+		if(pBlob) {
+			mir_snprintf(szPreviewHelp, 256, Translate("%s added you to the contact list"), pBlob + 8);
+			return szPreviewHelp;
+		}
+		commentFix = Translate(POPUP_COMMENT_ADDED);
+		break;
+	case EVENTTYPE_AUTHREQUEST:
+		if(pBlob) {
+			mir_snprintf(szPreviewHelp, 256, Translate("%s requested authorization"), pBlob + 8);
+			return szPreviewHelp;
+		}
+		commentFix = Translate(POPUP_COMMENT_AUTH);
+		break;
 
 //blob format is:
 //ASCIIZ    text, usually "Sender IP: xxx.xxx.xxx.xxx\r\n%s"
 //ASCIIZ    from name
 //ASCIIZ    from e-mail
         case ICQEVENTTYPE_WEBPAGER:
-			if (pBlob) comment1 = pBlob;
-//			if (pBlob) comment1 = pBlob + strlen(comment2) + 1;
-		    commentFix = Translate(POPUP_COMMENT_WEBPAGER);
-		    break;
+		if (pBlob) comment1 = pBlob;
+		commentFix = Translate(POPUP_COMMENT_WEBPAGER);
+		break;
 //blob format is:
 //ASCIIZ    text, usually of the form "Subject: %s\r\n%s"
 //ASCIIZ    from name
 //ASCIIZ    from e-mail
         case ICQEVENTTYPE_EMAILEXPRESS:
-			if (pBlob) comment1 = pBlob;
-//			if (pBlob) comment1 = pBlob + strlen(comment2) + 1;
-		    commentFix = Translate(POPUP_COMMENT_EMAILEXP);
-		    break;
+		if (pBlob) comment1 = pBlob;
+		commentFix = Translate(POPUP_COMMENT_EMAILEXP);
+		break;
 
-		default:
-			commentFix = Translate(POPUP_COMMENT_OTHER);
-   			break;
+	default:
+		commentFix = Translate(POPUP_COMMENT_OTHER);
+   		break;
     }
 
     if (comment1)
@@ -204,78 +198,79 @@ char* GetPreview(UINT eventType, char* pBlob)
 int PopupUpdateText(PLUGIN_DATA* pdata, HANDLE hContact, HANDLE hEvent)
 {
 	DBEVENTINFO dbe;
-	EVENT_DATA_EX* eventData;
+	long eventIndex;
 	char lpzText[MAX_SECONDLINE] = "";
 	char timestamp[MAX_DATASIZE] = "";
 	char formatTime[MAX_DATASIZE] = "";
-	int iEvent = 0;
+	int i;
 
 	if (hEvent)
 	{
-		pdata->lastEventData->next = malloc(sizeof(EVENT_DATA_EX));
-		pdata->lastEventData->next->prev = pdata->lastEventData;
-		pdata->lastEventData = pdata->lastEventData->next;
-		pdata->lastEventData->hEvent = hEvent;
-		pdata->lastEventData->number = pdata->lastEventData->prev->number + 1;
-		pdata->lastEventData->next = NULL;
+		eventIndex = pdata->countEvent;
+		pdata->eventData = realloc(pdata->eventData, (eventIndex + 1) * sizeof(EVENT_DATA_EX));
 		pdata->countEvent++;
-		if ( pdata->pud && pdata->pud->iSeconds > 1 )
-			pdata->pud->iSeconds = pdata->pluginOptions->iDelayMsg;
-		//pdata->pud->iSeconds = pdata->pluginOptions->iDelayMsg;
+		pdata->eventData[eventIndex].hEvent = hEvent;
+		pdata->iSeconds = pdata->pluginOptions->iDelayMsg;
 		if (!pdata->pluginOptions->bShowON && pdata->pluginOptions->iNumberMsg) {
-			while (pdata->lastEventData->number - pdata->firstShowEventData->number >= pdata->pluginOptions->iNumberMsg) {
-				pdata->firstShowEventData = pdata->firstShowEventData->next;
+			while (pdata->countEvent - pdata->firstShownEvent > pdata->pluginOptions->iNumberMsg) {
+				pdata->firstShownEvent ++;
   			}
-        }
-	}
-
-	if (pdata->pluginOptions->bShowHeaders)
-		_snprintf(lpzText, sizeof(lpzText), "[b]%s %d[/b]\n", Translate("Number of new message: "), pdata->countEvent);
-
-	if (pdata->firstShowEventData != pdata->firstEventData)
-			_snprintf(lpzText, sizeof(lpzText), "%s...\n", lpzText);
-
-	eventData = pdata->firstShowEventData;
-
-	while (TRUE)
-	{
-		if (iEvent)
-			eventData = eventData->next;
-		iEvent++;
-		//get DBEVENTINFO with pBlob if preview is needed (when is test then is off)
+		}
+		ZeroMemory((void *)&dbe, sizeof(dbe));
+		dbe.cbSize = sizeof(dbe);
 		dbe.pBlob = NULL;
-		if (hContact)
+		if (pdata->pluginOptions->bPreview && hContact != NULL)
 		{
-			dbe.cbSize = sizeof(dbe);
-			dbe.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM)eventData->hEvent, 0);
+			dbe.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM)hEvent, 0);
 			dbe.pBlob = (PBYTE)malloc(dbe.cbBlob);
-			CallService(MS_DB_EVENT_GET, (WPARAM)eventData->hEvent, (LPARAM)&dbe);
-		}
-		if (pdata->pluginOptions->bShowDate || pdata->pluginOptions->bShowTime)
-		{
-			strncpy(formatTime,"",sizeof(formatTime));
-			if (pdata->pluginOptions->bShowDate)
-				strncpy(formatTime, "%Y.%m.%d ", sizeof(formatTime));
-			if (pdata->pluginOptions->bShowTime)
-				strncat(formatTime, "%H:%M", sizeof(formatTime));
-			strftime(timestamp,sizeof(timestamp), formatTime, localtime(&dbe.timestamp));
-			_snprintf(lpzText, sizeof(lpzText), "%s[b][i]%s[/i][/b]\n", lpzText, timestamp);
-		}
-		_snprintf(lpzText, sizeof(lpzText), "%s%s", lpzText, GetPreview(dbe.eventType, dbe.pBlob));
+		} 
+		CallService(MS_DB_EVENT_GET, (WPARAM)hEvent, (LPARAM)&dbe);
+		pdata->eventData[eventIndex].timestamp = dbe.timestamp;
+		mir_snprintf(pdata->eventData[eventIndex].szText, MAX_SECONDLINE, "%s", GetPreview(dbe.eventType, dbe.pBlob));
 		if (dbe.pBlob)
 			free(dbe.pBlob);
-		if ((iEvent >= pdata->pluginOptions->iNumberMsg && pdata->pluginOptions->iNumberMsg) || !eventData->next)
-			break;
-		_snprintf(lpzText, sizeof(lpzText), "%s\n", lpzText);
+		/* update popup text */			
+		if (pdata->pluginOptions->bShowHeaders)
+			mir_snprintf(lpzText, sizeof(lpzText), "[b]%s %d[/b]\n", Translate("Number of new message: "), pdata->countEvent);
+	
+		if (pdata->firstShownEvent != 0)
+			mir_snprintf(lpzText, sizeof(lpzText), "%s...\n", lpzText);
+	
+		for (i = pdata->firstShownEvent; i < pdata->countEvent; i++)
+		{
+			//get DBEVENTINFO with pBlob if preview is needed (when is test then is off)
+			if (i != pdata->firstShownEvent) 
+			{
+				mir_snprintf(lpzText, sizeof(lpzText), "%s\n", lpzText);
+				
+			}
+			if (pdata->pluginOptions->bShowDate || pdata->pluginOptions->bShowTime)
+			{
+				strncpy(formatTime,"",sizeof(formatTime));
+				if (pdata->pluginOptions->bShowDate)
+					strncpy(formatTime, "%Y.%m.%d ", sizeof(formatTime));
+				if (pdata->pluginOptions->bShowTime)
+					strncat(formatTime, "%H:%M", sizeof(formatTime));
+				strftime(timestamp,sizeof(timestamp), formatTime, localtime(&pdata->eventData[i].timestamp));
+				mir_snprintf(lpzText, sizeof(lpzText), "%s[b][i]%s[/i][/b]\n", lpzText, timestamp);
+			}
+			mir_snprintf(lpzText, sizeof(lpzText), "%s%s", lpzText, pdata->eventData[i].szText);
+			if (i - pdata->firstShownEvent + 1 >= pdata->pluginOptions->iNumberMsg && pdata->pluginOptions->iNumberMsg > 0) {
+				i++;
+				break;
+			}
+		}
+		if (pdata->pluginOptions->iNumberMsg && i != pdata->countEvent)
+		{
+			mir_snprintf(lpzText, sizeof(lpzText), "%s\n...", lpzText);
+		}
+	    SendMessage(pdata->hWnd, WM_SETREDRAW, FALSE, 0);
+		CallService(MS_POPUP_CHANGETEXT, (WPARAM)pdata->hWnd, (LPARAM)lpzText);
+	    SendMessage(pdata->hWnd, WM_SETREDRAW, TRUE, 0);
 	}
-	if (pdata->pluginOptions->iNumberMsg && pdata->countEvent > pdata->pluginOptions->iNumberMsg)
-	{
-		if (pdata->lastEventData != eventData)
-			_snprintf(lpzText, sizeof(lpzText), "%s\n...", lpzText);
-	}
-	CallService(MS_POPUP_CHANGETEXT, (WPARAM)pdata->hWnd, (LPARAM)lpzText);
 	return 0;
 }
+
 
 static BOOL CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -294,6 +289,7 @@ static BOOL CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
             break;
 		case UM_FREEPLUGINDATA:
 			PopupCount--;
+			free(pdata->eventData);
             free(pdata);
 			return TRUE;
 		case UM_INITPOPUP:
@@ -302,15 +298,15 @@ static BOOL CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 				SetTimer(hWnd, TIMER_TO_ACTION, 1000, NULL);
 			break;
 		case WM_MOUSEWHEEL:
-			if ((short)HIWORD(wParam) > 0 && pdata->firstShowEventData->prev)
+			if ((short)HIWORD(wParam) > 0 && pdata->firstShownEvent > 0)
 			{
-				pdata->firstShowEventData = pdata->firstShowEventData->prev;
+				pdata->firstShownEvent--;
 				PopupUpdate(pdata->hContact, NULL);
 			}
-			if ((short)HIWORD(wParam) < 0 && pdata->firstShowEventData->next &&
-				pdata->countEvent - pdata->firstShowEventData->number >= pdata->pluginOptions->iNumberMsg)
+			if ((short)HIWORD(wParam) < 0 && 
+				pdata->countEvent - pdata->firstShownEvent > pdata->pluginOptions->iNumberMsg)
 			{
-				pdata->firstShowEventData = pdata->firstShowEventData->next;
+				pdata->firstShownEvent++;
 				PopupUpdate(pdata->hContact, NULL);
 			}
 				break;
@@ -327,10 +323,13 @@ static BOOL CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 			}
 			break;
 		case WM_UPDATETEXT:
-			PopupUpdateText(pdata, (HANDLE) wParam, (HANDLE) lParam);
 			pdata->iSeconds = pdata->pluginOptions->iDelayMsg;
 			if (pdata->iSeconds != -1)
 				SetTimer(hWnd, TIMER_TO_ACTION, 1000, NULL);
+			PopupUpdateText(pdata, (HANDLE) wParam, (HANDLE) lParam);
+			break;
+		case WM_POPUPACTION:
+			PopupAct(hWnd, (UINT)wParam, pdata);
 			break;
 		default:
 			break;
@@ -405,23 +404,6 @@ int PopupShow(PLUGIN_OPTIONS* pluginOptions, HANDLE hContact, HANDLE hEvent, UIN
        			break;
     }
 
-    //get DBEVENTINFO with pBlob if preview is needed (when is test then is off)
-    dbe.pBlob = NULL;
-
-	if (hContact)
-    {
-        dbe.cbSize = sizeof(dbe);
-        dbe.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM)hEvent, 0);
-        dbe.pBlob = (PBYTE)malloc(dbe.cbBlob);
-        CallService(MS_DB_EVENT_GET, (WPARAM)hEvent, (LPARAM)&dbe);
-    }
-
-    eventData = (EVENT_DATA_EX*)malloc(sizeof(EVENT_DATA_EX));
-	eventData->hEvent = hEvent;
-	eventData->number = 1;
-	eventData->next = NULL;
-	eventData->prev = NULL;
-
 	//set plugin_data ... will be useable within PopupDlgProc
     pdata = (PLUGIN_DATA*)malloc(sizeof(PLUGIN_DATA));
     pdata->eventType = eventType;
@@ -430,34 +412,52 @@ int PopupShow(PLUGIN_OPTIONS* pluginOptions, HANDLE hContact, HANDLE hEvent, UIN
 	pdata->countEvent = 1;
 	pdata->pud = &pud;
 	pdata->iSeconds = iSeconds ? iSeconds : pluginOptions->iDelayDefault;
-	pdata->firstEventData = pdata->firstShowEventData = pdata->lastEventData = eventData;
+	pdata->firstShownEvent = 0;
 
-	//finally create the popup
 	pud.lchContact = hContact;
 	pud.PluginWindowProc = (WNDPROC)PopupDlgProc;
     pud.PluginData = pdata;
 
+   	eventData = (EVENT_DATA_EX*)malloc(sizeof(EVENT_DATA_EX));
+	eventData->hEvent = hEvent;
+	pdata->eventData = eventData;
+
+    //get DBEVENTINFO with pBlob if preview is needed (when is test then is off)
 	//if hContact is NULL, then popup is only Test
-	if (hContact)
+	ZeroMemory((void *)&dbe, sizeof(dbe));
+    dbe.cbSize = sizeof(dbe);
+    dbe.pBlob = NULL;
+	if (pdata->pluginOptions->bPreview || hContact == NULL)
 	{
 		//get the needed event data
-		strncpy(pud.lpzContactName, (char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0), MAX_CONTACTNAME);
-		strncpy(pud.lpzText, GetPreview(dbe.eventType, dbe.pBlob), MAX_SECONDLINE);
+        dbe.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM)hEvent, 0);
+        dbe.pBlob = (PBYTE)malloc(dbe.cbBlob);
 	}
-    else
+    CallService(MS_DB_EVENT_GET, (WPARAM)hEvent, (LPARAM)&dbe);
+	pdata->eventData[0].timestamp = dbe.timestamp;
+    if(hContact == NULL && (eventType == EVENTTYPE_MESSAGE || eventType == EVENTTYPE_FILE || eventType == EVENTTYPE_URL || eventType == -1)) {
+        strncpy(pud.lpzContactName, "Plugin Test", MAX_CONTACTNAME);
+        strncpy(pud.lpzText, sampleEvent, MAX_SECONDLINE);
+    } 
+	else 
 	{
-		strncpy(pud.lpzContactName, "Plugin Test AA", MAX_CONTACTNAME);
-		strncpy(pud.lpzText, sampleEvent, MAX_SECONDLINE);
-	}
-
-	PopupCount++;
-
-	PopUpList[NumberPopupData(NULL)] = pdata;
-	//send data to popup plugin
-
-	CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&pud, 0);
+        if (hContact != NULL) 
+            mir_snprintf(pud.lpzContactName, MAX_CONTACTNAME, "%s", (char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0));
+        else
+            mir_snprintf(pud.lpzContactName, MAX_CONTACTNAME, "%s", dbe.szModule);
+        mir_snprintf(pud.lpzText, MAX_SECONDLINE, "%s", GetPreview(eventType, (char *)dbe.pBlob));
+    }
+	mir_snprintf(pdata->eventData[0].szText, MAX_SECONDLINE, "%s", pud.lpzText);
+  
     if (dbe.pBlob)
         free(dbe.pBlob);
+
+	PopupCount++;
+	PopUpList[NumberPopupData(NULL)] = pdata;
+	//send data to popup plugin
+	//finally create the popup
+
+	CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&pud, 0);
 
     return 0;
 }
