@@ -26,6 +26,8 @@
 //---Includes
 
 #include <windows.h>
+#include <stdio.h>
+#include <string.h>
 #include <commctrl.h>
 #include "resource.h"
 #include <newpluginapi.h>
@@ -84,13 +86,15 @@ int _Workaround_CallService(const char *name, WPARAM wParam, LPARAM lParam);
 #define MAX_DATASIZE	24
 #define METACONTACTS_MODULE	"MetaContacts"
 #define	METACONTACTS_HANDLE	"Handle"
-
-#define WM_MOUSEWHEEL 0x020A
+#ifndef WM_MOUSEWHEEL 
+	#define WM_MOUSEWHEEL 0x020A
+#endif
 #define WM_UPDATETEXT (WM_USER + 0x0400)
+#define WM_POPUPACTION (WM_USER + 0x0401)
 
 #define TIMER_TO_ACTION 50685
 
-//Entrys in the database, don't translate
+//Entries in the database, don't translate
 #define OPT_DISABLE "Disabled"
 #define OPT_PREVIEW "Preview"
 #define OPT_MENUITEM "MenuItem"
@@ -153,6 +157,7 @@ typedef struct PLUGIN_OPTIONS_struct{
 
     HINSTANCE hInst;
     BOOL bDisable;
+    BOOL bPreview;
     BOOL bDefaultColorMsg;
 	BOOL bDefaultColorUrl;
 	BOOL bDefaultColorFile;
@@ -188,9 +193,8 @@ typedef struct PLUGIN_OPTIONS_struct{
 
 typedef struct EVENT_DATA_EX{
 	HANDLE hEvent;
-	int number;
-	struct EVENT_DATA_EX* next;
-	struct EVENT_DATA_EX* prev;
+	DWORD timestamp;
+	char szText[MAX_SECONDLINE];
 } EVENT_DATA_EX;
 
 typedef struct PLUGIN_DATA_struct {
@@ -199,9 +203,9 @@ typedef struct PLUGIN_DATA_struct {
     PLUGIN_OPTIONS* pluginOptions;
 	POPUPDATAEX* pud;
 	HWND hWnd;
-	struct EVENT_DATA_EX* firstEventData;
-	struct EVENT_DATA_EX* firstShowEventData;
-	struct EVENT_DATA_EX* lastEventData;
+	struct EVENT_DATA_EX* eventData;
+	long firstShownEvent;
+	long allocedEvents;
 	long countEvent;
 	long iSeconds;
 	int iLock;

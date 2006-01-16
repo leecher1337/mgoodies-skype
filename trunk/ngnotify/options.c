@@ -33,6 +33,7 @@ BOOL bWmNotify;
 int OptionsRead(void)
 {
     options->bDisable = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_DISABLE, FALSE);
+	options->bPreview = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_PREVIEW, TRUE);
     options->bDefaultColorMsg = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_MESSAGE, FALSE);
 	options->bDefaultColorUrl = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_URL, FALSE);
 	options->bDefaultColorFile = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_FILE, FALSE);
@@ -70,6 +71,7 @@ int OptionsRead(void)
 int OptionsWrite(void)
 {
     DBWriteContactSettingByte(NULL, MODULE, OPT_DISABLE, (BYTE)options->bDisable);
+	DBWriteContactSettingByte(NULL, MODULE, OPT_PREVIEW, (BYTE)options->bPreview);
     DBWriteContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_MESSAGE, (BYTE)options->bDefaultColorMsg);
     DBWriteContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_URL, (BYTE)options->bDefaultColorUrl);
     DBWriteContactSettingByte(NULL, MODULE, OPT_COLDEFAULT_FILE, (BYTE)options->bDefaultColorFile);
@@ -123,6 +125,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
        			CheckDlgButton(hWnd, IDC_CHKDEFAULTCOL_FILE, options->bDefaultColorFile?BST_CHECKED:BST_UNCHECKED);
        			CheckDlgButton(hWnd, IDC_CHKDEFAULTCOL_OTHERS, options->bDefaultColorOthers?BST_CHECKED:BST_UNCHECKED);
        			CheckDlgButton(hWnd, IDC_CHKDISABLE, options->bDisable?BST_CHECKED:BST_UNCHECKED);
+				CheckDlgButton(hWnd, IDC_CHKPREVIEW, options->bPreview?BST_CHECKED:BST_UNCHECKED);
 				CheckDlgButton(hWnd, IDC_CHKMERGEPOPUP, options->bMergePopup?BST_CHECKED:BST_UNCHECKED);
        			CheckDlgButton(hWnd, IDC_CHKNOTIFY_MESSAGE, options->maskNotify & MASK_MESSAGE);
        			CheckDlgButton(hWnd, IDC_CHKNOTIFY_URL, options->maskNotify & MASK_URL);
@@ -207,6 +210,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 					        options->bDefaultColorFile = IsDlgButtonChecked(hWnd, IDC_CHKDEFAULTCOL_FILE);
 						    options->bDefaultColorOthers = IsDlgButtonChecked(hWnd, IDC_CHKDEFAULTCOL_OTHERS);
 							options->bDisable = IsDlgButtonChecked(hWnd, IDC_CHKDISABLE);
+							options->bPreview = IsDlgButtonChecked(hWnd, IDC_CHKPREVIEW);
 							options->iDelayMsg = IsDlgButtonChecked(hWnd, IDC_CHKINFINITE_MESSAGE)?-1:(DWORD)GetDlgItemInt(hWnd, IDC_DELAY_MESSAGE, NULL, FALSE);
 							options->iDelayUrl = IsDlgButtonChecked(hWnd, IDC_CHKINFINITE_URL)?-1:(DWORD)GetDlgItemInt(hWnd, IDC_DELAY_URL, NULL, FALSE);
 							options->iDelayFile = IsDlgButtonChecked(hWnd, IDC_CHKINFINITE_FILE)?-1:(DWORD)GetDlgItemInt(hWnd, IDC_DELAY_FILE, NULL, FALSE);

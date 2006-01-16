@@ -21,6 +21,7 @@
 #define IDC_CHKACTR_OPEN                1011
 #define IDC_CHKACTR_REMOVE              1012
 #define IDC_CHKWINDOWCHECK              1013
+#define IDC_CHKPREVIEW                  1015
 #define IDC_CHKINFINITE                 1016
 #define IDC_CHKHIDESEND                 1016
 #define IDC_CHKDEFAULTCOL_MESSAGE       1017

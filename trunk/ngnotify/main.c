@@ -98,6 +98,7 @@ int _Workaround_CallService(const char *name, WPARAM wParam, LPARAM lParam)
 //---------------------------
 //---Some global variables for the plugin
 
+HINSTANCE hInst;
 HANDLE mainThread;
 
 PLUGIN_OPTIONS pluginOptions;
@@ -168,8 +169,10 @@ int HookedNewEvent(WPARAM wParam, LPARAM lParam)
 	{
 		if (pluginOptions.bHideSend && NumberPopupData((HANDLE)wParam) != -1)
 		{
-			while(pdata = PopUpList[NumberPopupData((HANDLE)wParam)])
-				PopupAct(pdata->hWnd, MASK_REMOVE|MASK_DISMISS, pdata);
+			while((pdata = PopUpList[NumberPopupData((HANDLE)wParam)])) {
+				SendMessage(pdata->hWnd, WM_POPUPACTION, MASK_REMOVE|MASK_DISMISS, 0);
+//				PopupAct(pdata->hWnd, MASK_REMOVE|MASK_DISMISS, pdata);
+			}
 		}
 	    return 0;
 	}
