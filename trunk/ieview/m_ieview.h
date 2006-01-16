@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define IEW_SETPOS  3               // set window position and size
 #define IEW_SCROLLBOTTOM 4          // scroll text to bottom
 
-#define IEWM_SRMM     0             // regular SRMM
+//#define IEWM_SRMM     0             // regular SRMM
 #define IEWM_TABSRMM  1             // TabSRMM-compatible HTML builder
 #define IEWM_SCRIVER  3             // Scriver-compatible HTML builder
 #define IEWM_MUCC     4             // MUCC group chats GUI
@@ -120,7 +120,7 @@ typedef struct tagIEVIEWEVENTDATA {
 	struct tagIEVIEWEVENTDATA *next;
 	union {
 		const char *pszText2;			// Text, usage depends on type of event
-		const wchar_t *pszText2W;			// Text - Unicode
+		const wchar_t *pszText2W;		// Text - Unicode
 	};
 } IEVIEWEVENTDATA;
 
