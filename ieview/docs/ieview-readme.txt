@@ -109,6 +109,7 @@ properly and I think authors of other plugins should consider changing their pro
 1.0.5.1
 + new API for direct event logging (no need to store events in the DB)
 + on-the-fly switching between template and regular mode
++ [bimg] BBCode for showing images with relative paths
 * fixed bug #005790 (Unknown Contact displayed instead of user's id)
 - removed some obsolete options
 1.0.5.0
