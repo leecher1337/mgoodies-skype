@@ -107,11 +107,13 @@ PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"NewGenerationNotify",
 	PLUGIN_MAKE_VERSION(0, VER_MAJOR, VER_MINOR, VER_BUILD),
-	"Notifies you when you receive a message, url, file or any other event by displaying a popup. Uses the PopUp-Plugin by hrk",
-	"Prezes",
+	"Notifies you when you receive a message, url, file or any other event by displaying a popup. Uses the PopUp-Plugin by hrk,"
+	"Original plugin was written by icebreaker, modified by Prezes and some "
+	"bugfixes were made by vj, vlko, Nightwish, TheLeech and others.",
+	"icebreaker, Prezes, Piotr Piastucki",
 	"prezesso@klub.chip.pl",
 	"GNU GPL",
-	"http://www.miranda.kom.pl/dev/prezes",
+	"http://developer.berlios.de/projects/mgoodies",
 	0,
 	0
 };
