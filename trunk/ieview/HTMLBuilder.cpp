@@ -728,7 +728,7 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
         	    	break;
 				case BB_BIMG:
 					{
-						wchar_t *absolutePath = Utils::toAbsolute(eText);
+						wchar_t *absolutePath = Utils::toAbsolute(wtext);
 	            		eText = urlEncode(absolutePath);
 						delete absolutePath;
 					}

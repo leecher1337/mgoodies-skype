@@ -1,7 +1,7 @@
 #include "resource.h"
 #ifdef __MINGW32__
 	#define WINVER 0x500
-	#define _WIN32_IE 0x400
+	#define _WIN32_IE 0x500
 	#include <windows.h>
 	#ifndef IDC_STATIC
 	#define IDC_STATIC (-1)
