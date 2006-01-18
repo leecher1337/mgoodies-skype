@@ -108,7 +108,7 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 			tci.pszText = TranslateT("Group Chats");
 			TabCtrl_InsertItem(tc, 2, &tci);
 			tci.pszText = TranslateT("History");
-			TabCtrl_InsertItem(tc, 3, &tci);
+			//TabCtrl_InsertItem(tc, 3, &tci);
 
 //			hwndEmoticons = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_EMOTICONS_OPTIONS), hwndDlg, IEViewEmoticonsOptDlgProc, (LPARAM) NULL);
 	//		SetWindowPos(hwndEmoticons, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
