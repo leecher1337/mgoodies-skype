@@ -1,24 +1,18 @@
-//Microsoft Developer Studio generated resource script.
-//
 #include "resource.h"
-
-#define APSTUDIO_READONLY_SYMBOLS
-/////////////////////////////////////////////////////////////////////////////
-//
-// Generated from the TEXTINCLUDE 2 resource.
-//
-#define _WIN32_WINNT 0x0501
-#define _WIN32_IE 0x0500
 #include <windows.h>
-#include "winres.h"
-#include "../../include/statusmodes.h"
-
-/////////////////////////////////////////////////////////////////////////////
-#undef APSTUDIO_READONLY_SYMBOLS
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
+#ifdef __MINGW32__
+	#define WINVER 0x500
+	#define _WIN32_WINNT 0x501
+	#define _WIN32_IE 0x500
+	#include <windows.h>
+	#ifndef IDC_STATIC
+	#define IDC_STATIC (-1)
+#endif
+#else
+	#define APSTUDIO_READONLY_SYMBOLS
+	#include "winres.h"
+	#undef APSTUDIO_READONLY_SYMBOLS
+#endif
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 #ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
