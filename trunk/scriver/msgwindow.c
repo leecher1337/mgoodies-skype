@@ -268,6 +268,7 @@ static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 		SendMessage(dat->hwndActive, DM_UPDATESTATUSBAR, 0, 0);
 		SendMessage(dat->hwndActive, DM_UPDATETITLE, 0, 0);
 		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
+//		ShowWindow(dat->hwndActive, SW_SHOWNOACTIVATE);
 		ShowWindow(dat->hwndActive, SW_SHOWNORMAL);
 		SendMessage(dat->hwndActive, DM_SCROLLLOGTOBOTTOM, 0, 0);
 		if (prev!=NULL) ShowWindow(prev, SW_HIDE);
@@ -278,7 +279,6 @@ static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 	TabCtrl_SetCurSel(dat->hwndTabs, i);
 //	MessageBoxA(NULL, "setting focus", "ass", MB_OK);
 	SendMessage(dat->hwndActive, WM_ACTIVATE, WA_ACTIVE, 0);
-	SetFocus(dat->hwndActive);
 }
 
 static void AddChild(struct ParentWindowData *dat, struct MessageWindowData * mdat)
@@ -553,6 +553,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						if (TabCtrl_GetItem(dat->hwndTabs, iSel, &tci)) {
 							struct MessageWindowData * mdat = (struct MessageWindowData *) tci.lParam;
 							ActivateChild(dat, mdat->hwnd);
+							SetFocus(dat->hwndActive);
 						}
 					}
 					break;
@@ -661,6 +662,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 //				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 		}
 		SendMessage(dat->hwndActive, WM_ACTIVATE, WA_ACTIVE, 0);
+		SetFocus(dat->hwndActive);
 		break;
 	case WM_LBUTTONDOWN:
 		dat->mouseLBDown = 1;
@@ -746,9 +748,11 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		return TRUE;
 	case DM_ACTIVATEPREV:
 		ActivatePrevChild(dat, (HWND) lParam);
+		SetFocus(dat->hwndActive);
 		return TRUE;
 	case DM_ACTIVATENEXT:
 		ActivateNextChild(dat, (HWND) lParam);
+		SetFocus(dat->hwndActive);
 		return TRUE;
 	case DM_SENDMESSAGE:
 		{

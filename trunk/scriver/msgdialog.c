@@ -1020,7 +1020,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dat->parent->childrenCount == 1 && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STAYMINIMIZED, SRMSGDEFSET_STAYMINIMIZED)) {
 					ShowWindow(dat->hwndParent, SW_SHOWMINNOACTIVE);
 				} else {
-					ShowWindow(dat->hwndParent, SW_SHOW);
+					ShowWindow(dat->hwndParent, SW_SHOWNA);
 				}
 			} else {
 				ShowWindow(dat->hwndParent, SW_SHOWNORMAL);
