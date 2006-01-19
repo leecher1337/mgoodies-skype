@@ -106,6 +106,8 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.5.2
+* bugfix: [bimg]
 1.0.5.1
 + new API for direct event logging (no need to store events in the DB)
 + on-the-fly switching between template and regular mode
