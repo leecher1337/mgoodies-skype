@@ -32,7 +32,7 @@ HINSTANCE g_hInst;
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Scriver",
-	PLUGIN_MAKE_VERSION(2, 2, 9, 3),
+	PLUGIN_MAKE_VERSION(2, 2, 9, 4),
 #ifdef _UNICODE
 	"Scriver - send and receive instant messages (Unicode)",
 #else
@@ -40,7 +40,7 @@ PLUGININFO pluginInfo = {
 #endif
 	"Miranda IM Development Team (SRMM), Piotr Piastucki (Scriver)",
 	"the_leech@users.berlios.de",
-	"Copyright © 2000-2005 Miranda ICQ/IM Project, Piotr Piastucki",
+	"Copyright © 2000-2006 Miranda ICQ/IM Project, Piotr Piastucki",
 	"http://mgoodies.berlios.de",
 	0,
 	DEFMOD_SRMESSAGE            // replace internal version (if any)

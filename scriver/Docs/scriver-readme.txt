@@ -66,6 +66,8 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.9.4
+* bugfixes (focus stealing, Unicode nick names)
 2.2.9.3
 * bugfix
 2.2.9.2
