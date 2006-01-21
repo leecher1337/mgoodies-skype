@@ -1371,8 +1371,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						char buffer[450];
 						HANDLE hNewEvent;
 						int iLen;
-						char *szOldStatus = (char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wOldStatus, 0);
-						char *szNewStatus = (char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wStatus, 0);
+						char *szOldStatus = strdup((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wOldStatus, 0));
+						char *szNewStatus = strdup((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wStatus, 0));
 
 						if (dat->wStatus == ID_STATUS_OFFLINE) {
 							mir_snprintf(buffer, sizeof(buffer), Translate("signed off (was %s)"), szOldStatus);
@@ -1398,6 +1398,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 							SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 						}
 						dat->wOldStatus = dat->wStatus;
+						free(szOldStatus);
+						free(szNewStatus);
 					}
 				}
 			}
