@@ -69,6 +69,7 @@ A: There is a special Unicode icon in the status bar (U),
 2.2.9.5
 + option to switch IEview on and off
 * bugfix: bug #006144 autoselection of text
+* bugfix: bug #006139 maximized container resizing issue
 2.2.9.4
 * bugfixes (focus stealing, Unicode nick names)
 2.2.9.3
