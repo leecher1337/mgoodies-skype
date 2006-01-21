@@ -729,9 +729,10 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	case DM_REMOVECHILD:
 		{
 			RemoveChild(dat, (HWND) lParam);
-			if (dat->childrenCount == 0) {
-				DestroyWindow(hwndDlg);
+			if (dat->childrenCount != 0) {
+				SetFocus(dat->hwndActive);
 			} else {
+				DestroyWindow(hwndDlg);
 			}
 		}
 		return TRUE;
