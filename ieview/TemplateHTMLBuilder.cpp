@@ -88,7 +88,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	szRealProto = getProto(hRealContact);
 	szProto = getProto(event->hContact);
 	tempBase[0]='\0';
-	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
+	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("srmm_default_rtl") : TemplateMap::getTemplateMap("srmm_default");
 	if (tmpm!=NULL) {
     	strcpy(tempBase, tmpm->getFilename());
     	char* pathrun = tempBase + strlen(tempBase);
@@ -150,7 +150,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
         szNickOut = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
 	}
 
-	Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", "HTMLStart") : TemplateMap::getTemplate("default", "HTMLStart");
+	Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("srmm_default_rtl", "HTMLStart") : TemplateMap::getTemplate("srmm_default", "HTMLStart");
 	if (tmplt!=NULL) {
 		for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
 			const char *tokenVal;
@@ -263,7 +263,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 	szRealProto = getProto(hRealContact);
 	szProto = getProto(event->hContact);
 	tempBase[0]='\0';
-	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
+	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("srmm_default_rtl") : TemplateMap::getTemplateMap("srmm_default");
 	if (tmpm!=NULL) {
     	strcpy(tempBase, tmpm->getFilename());
     	char* pathrun = tempBase + strlen(tempBase);
@@ -406,14 +406,14 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
                 szText = encodeUTF8(ptr, szRealProto, ENF_NONE);
 				szFileDesc = encodeUTF8(ptr + strlen(ptr) + 1 , szRealProto, ENF_NONE);
                 tmpltName[1] = isHistory ? isSent ? "hFileOut" : "hFileIn" : isSent ? "FileOut" : "FileIn";
-                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[1]) : TemplateMap::getTemplate("default", tmpltName[1]);
+                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("srmm_default_rtl", tmpltName[1]) : TemplateMap::getTemplate("srmm_default", tmpltName[1]);
                 if (tmplt == NULL) {
                 	tmpltName[1] = isHistory ? "hFile" : "File";
 				}
 			} else if (dbei.eventType == EVENTTYPE_URL) {
                 szText = encodeUTF8((char *)dbei.pBlob, szRealProto, ENF_NONE);
                 tmpltName[1] = isHistory ? isSent ? "hURLOut" : "hURLIn" : isSent ? "URLOut" : "URLIn";
-                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[1]) : TemplateMap::getTemplate("default", tmpltName[1]);
+                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("srmm_default_rtl", tmpltName[1]) : TemplateMap::getTemplate("srmm_default", tmpltName[1]);
                 if (tmplt == NULL) {
 	                tmpltName[1] = isHistory ? "hURL" : "URL";
 				}
@@ -425,7 +425,7 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 			for (int i=0;i<2;i++) {
 				Template *tmplt;
 				if (tmpltName[i] == NULL) continue;
-				tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[i]) : TemplateMap::getTemplate("default", tmpltName[i]);
+				tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("srmm_default_rtl", tmpltName[i]) : TemplateMap::getTemplate("srmm_default", tmpltName[i]);
 				if (tmplt == NULL) continue;
 				for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
 					const char *tokenVal;
@@ -572,7 +572,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 	szRealProto = getProto(hRealContact);
 	szProto = getProto(event->hContact);
 	tempBase[0]='\0';
-	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("default_rtl") : TemplateMap::getTemplateMap("default");
+	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("srmm_default_rtl") : TemplateMap::getTemplateMap("srmm_default");
 	if (tmpm!=NULL) {
     	strcpy(tempBase, tmpm->getFilename());
     	char* pathrun = tempBase + strlen(tempBase);
@@ -697,13 +697,13 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
                	}
 			} else if (eventData->iType == EVENTTYPE_FILE) {
                 tmpltName[1] = isHistory ? isSent ? "hFileOut" : "hFileIn" : isSent ? "FileOut" : "FileIn";
-                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[1]) : TemplateMap::getTemplate("default", tmpltName[1]);
+                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("srmm_default_rtl", tmpltName[1]) : TemplateMap::getTemplate("srmm_default", tmpltName[1]);
                 if (tmplt == NULL) {
                 	tmpltName[1] = isHistory ? "hFile" : "File";
 				}
 			} else if (eventData->iType == EVENTTYPE_URL) {
                 tmpltName[1] = isHistory ? isSent ? "hURLOut" : "hURLIn" : isSent ? "URLOut" : "URLIn";
-                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[1]) : TemplateMap::getTemplate("default", tmpltName[1]);
+                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("srmm_default_rtl", tmpltName[1]) : TemplateMap::getTemplate("srmm_default", tmpltName[1]);
                 if (tmplt == NULL) {
 	                tmpltName[1] = isHistory ? "hURL" : "URL";
 				}
@@ -714,7 +714,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 			for (int i=0;i<2;i++) {
 				Template *tmplt;
 				if (tmpltName[i] == NULL) continue;
-				tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("default_rtl", tmpltName[i]) : TemplateMap::getTemplate("default", tmpltName[i]);
+				tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("srmm_default_rtl", tmpltName[i]) : TemplateMap::getTemplate("srmm_default", tmpltName[i]);
 				if (tmplt == NULL) continue;
 				for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
 					const char *tokenVal;
