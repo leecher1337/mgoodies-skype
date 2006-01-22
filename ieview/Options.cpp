@@ -1097,8 +1097,8 @@ void Options::init() {
 	TemplateMap::loadTemplates("srmm_default_rtl", srmmTemplatesFilenameRTL);
 	TemplateMap::loadTemplates("groupchat_default", groupChatTemplatesFilename);
 //	TemplateMap::loadTemplates("groupchat", groupChatTemplatesFilename);
-	TemplateMap::loadTemplates("history_default", historyTemplatesFilename);
-	TemplateMap::loadTemplates("history_default_rtl", historyTemplatesFilenameRTL);
+//	TemplateMap::loadTemplates("history_default", historyTemplatesFilename);
+//	TemplateMap::loadTemplates("history_default_rtl", historyTemplatesFilenameRTL);
 //	mathModuleFlags = ServiceExists(MTH_GET_HTML_SOURCE) ? GENERAL_ENABLE_MATHMODULE : 0;
 }
 
@@ -1272,7 +1272,7 @@ void Options::setHistoryCSSFile(const char *filename) {
     if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
     	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
    	}
-	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_EXTERNALCSSFILE, tmpPath);
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_HISTORYCSSFILE, tmpPath);
 }
 
 const char *Options::getHistoryCSSFile() {
@@ -1290,7 +1290,7 @@ void Options::setHistoryCSSFileRTL(const char *filename) {
     if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
     	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
    	}
-	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_EXTERNALCSSFILE_RTL, tmpPath);
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_HISTORYCSSFILE_RTL, tmpPath);
 }
 
 const char *Options::getHistoryCSSFileRTL() {
@@ -1308,7 +1308,7 @@ void Options::setHistoryTemplatesFile(const char *filename) {
     if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
     	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
    	}
-	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_TEMPLATESFILE, tmpPath);
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_HISTORYTEMPLATESFILE, tmpPath);
 
 	TemplateMap::loadTemplates("history_default", historyTemplatesFilename);
 }
@@ -1324,7 +1324,7 @@ void Options::setHistoryTemplatesFileRTL(const char *filename) {
     if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
     	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
    	}
-	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_TEMPLATESFILE_RTL, tmpPath);
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_HISTORYTEMPLATESFILE_RTL, tmpPath);
 
 	TemplateMap::loadTemplates("history_default_rtl", historyTemplatesFilenameRTL);
 }
