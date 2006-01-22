@@ -56,6 +56,7 @@ typedef struct CNotification
 #define	YAMN_ACC_MSGP	0x00000080	//Persistant messgage. This means, when an situation occurs (e.g. new mail) and message is displayed, it is not destroyed when YAMN_ACC_MSG is not set
 #define YAMN_ACC_KBN	0x00000100  //Use Keyboard notify
 #define YAMN_ACC_CONT	0x00000200  //Use Contact notify
+#define YAMN_ACC_CONTNICK	0x00000400  //Use Contact Nick replacement
 //(1) - usable only in newmail notification
 	DWORD Flags;
 

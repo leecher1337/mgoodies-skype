@@ -115,6 +115,9 @@ LRESULT CALLBACK BadConnectPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lPa
 		case UM_INITPOPUP:
 			//This is the equivalent to WM_INITDIALOG you'd get if you were the maker of dialog popups.
 			break;
+		case WM_CONTEXTMENU:
+			SendMessage(hWnd,UM_DESTROYPOPUP,0,0);
+			break;
 		case WM_NOTIFY:
 /*			switch(((LPNMHDR)lParam)->code)
 			{

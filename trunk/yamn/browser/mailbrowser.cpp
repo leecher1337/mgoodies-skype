@@ -992,6 +992,7 @@ LRESULT CALLBACK NoNewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lPar
 	
 		case WM_CONTEXTMENU:
 			SendMessage(hWnd,UM_DESTROYPOPUP,0,0);
+			break;
 
 		case UM_FREEPLUGINDATA:
 			//Here we'd free our own data, if we had it.

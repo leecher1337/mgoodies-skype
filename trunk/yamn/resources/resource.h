@@ -44,6 +44,7 @@
 #define IDC_CHECKST8                    1028
 #define IDC_CHECKST9                    1029
 #define IDC_CHECKCONTACT                1030
+#define IDC_CHECKCONTACTNICK            1031
 #define IDC_STTIMELEFT                  1033
 #define IDC_LISTMAILS                   1038
 #define IDC_EDITAPPPARAM                1044

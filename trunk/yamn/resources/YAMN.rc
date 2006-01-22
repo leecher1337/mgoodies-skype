@@ -199,7 +199,8 @@ STYLE DS_SYSMODAL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    COMBOBOX        IDC_COMBOACCOUNT,10,6,140,65,CBS_DROPDOWN | CBS_SORT
+    COMBOBOX        IDC_COMBOACCOUNT,10,6,140,65,CBS_DROPDOWN | CBS_SORT | 
+                    WS_TABSTOP
     PUSHBUTTON      "Delete",IDC_BTNDEL,249,215,75,13
     PUSHBUTTON      "Default",IDC_BTNDEFAULT,249,233,75,13
     PUSHBUTTON      "Reset counter",IDC_BTNRESET,160,211,75,13
@@ -229,11 +230,11 @@ BEGIN
     CONTROL         "Multi popup",IDC_RADIOPOPN,"Button",BS_AUTORADIOBUTTON | 
                     WS_TABSTOP,21,164,95,10
     CONTROL         "Popup if no mail",IDC_CHECKNPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,11,214,94,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,219,94,10
     CONTROL         "",IDC_CHECKNCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    120,214,10,10
-    CONTROL         "",IDC_CPNB,"ColourPicker",WS_TABSTOP,141,214,10,10
-    CONTROL         "",IDC_CPNT,"ColourPicker",WS_TABSTOP,130,214,10,10
+                    120,219,10,10
+    CONTROL         "",IDC_CPNB,"ColourPicker",WS_TABSTOP,141,219,10,10
+    CONTROL         "",IDC_CPNT,"ColourPicker",WS_TABSTOP,130,219,10,10
     CONTROL         "Sound notification if failed",IDC_CHECKFSND,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,160,129,135,10
     CONTROL         "Message notification if failed",IDC_CHECKFMSG,"Button",
@@ -266,20 +267,20 @@ BEGIN
     LTEXT           "User:",IDC_STLOGIN,242,6,75,10
     LTEXT           "Password:",IDC_STPASS,242,32,75,10
     EDITTEXT        IDC_EDITPOPS,124,156,20,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDITNPOPS,124,227,20,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDITNPOPS,124,232,20,12,ES_AUTOHSCROLL
     EDITTEXT        IDC_EDITFPOPS,287,175,20,12,ES_AUTOHSCROLL
     LTEXT           "s",IDC_STATIC,146,158,8,8
-    LTEXT           "s",IDC_STATIC,146,228,8,8
+    LTEXT           "s",IDC_STATIC,146,233,8,8
     LTEXT           "s",IDC_STATIC,311,176,8,8
-    GROUPBOX        "New mail notifications",IDC_GBNEWMAIL,7,55,148,139
-    GROUPBOX        "No new mail notifications",IDC_GBNONEWMAIL,7,200,148,45
+    GROUPBOX        "New mail notifications",IDC_GBNEWMAIL,7,55,148,153
+    GROUPBOX        "No new mail notifications",IDC_GBNONEWMAIL,7,210,148,38
     GROUPBOX        "Connection failure notifications",IDC_GBBADCONNECT,156,
                     118,168,76
     LTEXT           "",IDC_STSTATUS,11,44,135,8
     CONTROL         "APOP auth",IDC_CHECKAPOP,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,242,60,71,10
     CONTROL         "Persistant message",IDC_CHECKNMSGP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,11,227,110,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,232,110,10
     CONTROL         "Use SSL",IDC_CHECKSSL,"Button",BS_AUTOCHECKBOX | 
                     BS_LEFT | WS_TABSTOP,242,74,75,10
     CONTROL         "Keyboard Flash",IDC_CHECKKBN,"Button",BS_AUTOCHECKBOX | 
@@ -288,6 +289,9 @@ BEGIN
                     IDC_CHECKCONTACT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     11,179,138,10,WS_EX_TRANSPARENT
     PUSHBUTTON      "Check while ...",IDC_BTNSTATUS,244,92,83,12
+    CONTROL         "Replace nick name",IDC_CHECKCONTACTNICK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,23,190,126,10,
+                    WS_EX_TRANSPARENT
 END
 
 IDD_CHOOSESTATUSMODES DIALOG DISCARDABLE  0, 0, 226, 154
@@ -363,8 +367,8 @@ IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,15
- PRODUCTVERSION 0,0,0,15
+ FILEVERSION 0,0,0,16
+ PRODUCTVERSION 0,0,0,16
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -382,14 +386,14 @@ BEGIN
             VALUE "Comments", "Yet Another Mail Notifier\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "Yet Another Mail Notifier\0"
-            VALUE "FileVersion", "0, 0, 0, 15\0"
+            VALUE "FileVersion", "0, 0, 0, 16\0"
             VALUE "InternalName", "YAMN\0"
             VALUE "LegalCopyright", "Copyright © 2005\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "YAMN.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "YAMN tweety\0"
-            VALUE "ProductVersion", "0, 0, 0, 15\0"
+            VALUE "ProductVersion", "0, 0, 0, 16\0"
             VALUE "SpecialBuild", "\0"
         END
     END

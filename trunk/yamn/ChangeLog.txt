@@ -1,3 +1,9 @@
+0.0.0.16
+============
+* Right click on error popup close the popup.
+! Missing break; in nonewmail popup in switch.
++ Add option to rename contact according to new mail.
+
 0.0.0.15
 ============
 ! Fixed dismiss event by right click on new mail popup crash
