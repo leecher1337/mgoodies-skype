@@ -31,6 +31,7 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 //static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static HWND hwndCurrentTab, hwndPages[4];
 
 typedef struct tagTVKEYDOWN {
@@ -38,8 +39,6 @@ typedef struct tagTVKEYDOWN {
     WORD wVKey;
     UINT flags;
 } NMTVKEYDOWN, FAR *LPNMTVKEYDOWN;
-
-
 
 BOOL TreeView_SetCheckState(HWND hwndTreeView, HTREEITEM hItem, BOOL fCheck)
 {
@@ -103,12 +102,10 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 			TabCtrl_InsertItem(tc, 0, &tci);
 			tci.pszText = TranslateT("Message Log");
 			TabCtrl_InsertItem(tc, 1, &tci);
-//			tci.pszText = Translate("Emoticons");
-//			TabCtrl_InsertItem(tc, 2, &tci);
 			tci.pszText = TranslateT("Group Chats");
 			TabCtrl_InsertItem(tc, 2, &tci);
 			tci.pszText = TranslateT("History");
-			//TabCtrl_InsertItem(tc, 3, &tci);
+			TabCtrl_InsertItem(tc, 3, &tci);
 
 //			hwndEmoticons = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_EMOTICONS_OPTIONS), hwndDlg, IEViewEmoticonsOptDlgProc, (LPARAM) NULL);
 	//		SetWindowPos(hwndEmoticons, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
@@ -118,7 +115,7 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 			SetWindowPos(hwndPages[1], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 			hwndPages[2] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_GROUPCHATS_OPTIONS), hwndDlg, IEViewGroupChatsOptDlgProc, (LPARAM) NULL);
 			SetWindowPos(hwndPages[2], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
-			hwndPages[3] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_HISTORY_OPTIONS), hwndDlg, IEViewGroupChatsOptDlgProc, (LPARAM) NULL);
+			hwndPages[3] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_HISTORY_OPTIONS), hwndDlg, IEViewHistoryOptDlgProc, (LPARAM) NULL);
 			SetWindowPos(hwndPages[3], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 			hwndCurrentTab = hwndPages[0];
 			ShowWindow(hwndPages[0], SW_SHOW);
@@ -268,11 +265,11 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_RELATIVE_DATE), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_GROUP_MESSAGES), bChecked);
 
-			if (Options::getTemplatesFile() != NULL) {
-                SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, Options::getTemplatesFile());
+			if (Options::getSRMMTemplatesFile() != NULL) {
+                SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, Options::getSRMMTemplatesFile());
 			}
-			if (Options::getTemplatesFileRTL() != NULL) {
-                SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, Options::getTemplatesFileRTL());
+			if (Options::getSRMMTemplatesFileRTL() != NULL) {
+                SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, Options::getSRMMTemplatesFileRTL());
 			}
 
 			bChecked = !IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES);
@@ -286,11 +283,11 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL), bChecked);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS_RTL), bChecked);
-			if (Options::getExternalCSSFile() != NULL) {
-                SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, Options::getExternalCSSFile());
+			if (Options::getSRMMCSSFile() != NULL) {
+                SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, Options::getSRMMCSSFile());
 			}
-			if (Options::getExternalCSSFileRTL() != NULL) {
-                SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, Options::getExternalCSSFileRTL());
+			if (Options::getSRMMCSSFileRTL() != NULL) {
+                SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, Options::getSRMMCSSFileRTL());
 			}
 
 			bChecked = !IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES) && !IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS);
@@ -503,15 +500,318 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				}
 				Options::setSRMMFlags(i);
 				GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
-				Options::setTemplatesFile(path);
+				Options::setSRMMTemplatesFile(path);
 				GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
-				Options::setTemplatesFileRTL(path);
+				Options::setSRMMTemplatesFileRTL(path);
 				GetDlgItemTextA(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
 				Options::setBkgImageFile(path);
 				GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
-				Options::setExternalCSSFile(path);
+				Options::setSRMMCSSFile(path);
 				GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
-				Options::setExternalCSSFileRTL(path);
+				Options::setSRMMCSSFileRTL(path);
+				return TRUE;
+			}
+		}
+		break;
+	case WM_DESTROY:
+		break;
+	}
+	return FALSE;
+}
+
+static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+	int i;
+	BOOL bChecked;
+	char path[MAX_PATH];
+	switch (msg) {
+	case WM_INITDIALOG:
+		{
+			TranslateDialogDefault(hwndDlg);
+
+			bChecked = FALSE;
+			if (Options::getHistoryFlags() & Options::TEMPLATES_ENABLED) {
+			    bChecked = TRUE;
+				CheckDlgButton(hwndDlg, IDC_TEMPLATES, TRUE);
+			}
+			if (Options::getHistoryFlags() & Options::LOG_SHOW_NICKNAMES) {
+				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_NICKNAMES, TRUE);
+			}
+			if (Options::getHistoryFlags() & Options::LOG_SHOW_TIME) {
+				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_TIME, TRUE);
+			}
+			if (Options::getHistoryFlags() & Options::LOG_SHOW_DATE) {
+				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_DATE, TRUE);
+			}
+			if (Options::getHistoryFlags() & Options::LOG_SHOW_SECONDS) {
+				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_SECONDS, TRUE);
+			}
+			if (Options::getHistoryFlags() & Options::LOG_LONG_DATE) {
+				CheckDlgButton(hwndDlg, IDC_LOG_LONG_DATE, TRUE);
+			}
+			if (Options::getHistoryFlags() & Options::LOG_RELATIVE_DATE) {
+				CheckDlgButton(hwndDlg, IDC_LOG_RELATIVE_DATE, TRUE);
+			}
+			if (Options::getHistoryFlags() & Options::LOG_GROUP_MESSAGES) {
+				CheckDlgButton(hwndDlg, IDC_LOG_GROUP_MESSAGES, TRUE);
+			}
+
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME_RTL), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES_RTL), bChecked);
+
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_NICKNAMES), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_TIME), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_DATE), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_SECONDS), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_LONG_DATE), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_RELATIVE_DATE), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_GROUP_MESSAGES), bChecked);
+
+			if (Options::getHistoryTemplatesFile() != NULL) {
+                SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, Options::getHistoryTemplatesFile());
+			}
+			if (Options::getHistoryTemplatesFileRTL() != NULL) {
+                SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, Options::getHistoryTemplatesFileRTL());
+			}
+
+			bChecked = !IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS), bChecked);
+			if (Options::getHistoryFlags() & Options::CSS_ENABLED) {
+				CheckDlgButton(hwndDlg, IDC_EXTERNALCSS, TRUE);
+			} else {
+                bChecked = FALSE;
+			}
+			EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS_RTL), bChecked);
+			if (Options::getHistoryCSSFile() != NULL) {
+                SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, Options::getHistoryCSSFile());
+			}
+			if (Options::getHistoryCSSFileRTL() != NULL) {
+                SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, Options::getHistoryCSSFileRTL());
+			}
+
+			bChecked = !IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES) && !IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE), bChecked);
+			if (Options::getHistoryFlags() & Options::IMAGE_ENABLED) {
+				CheckDlgButton(hwndDlg, IDC_BACKGROUND_IMAGE, TRUE);
+			} else {
+				bChecked = FALSE;
+			}
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE), bChecked);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_BACKGROUND_IMAGE), bChecked);
+			if (Options::getHistoryFlags() & Options::IMAGE_SCROLL) {
+				CheckDlgButton(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE, TRUE);
+			}
+			if (Options::getBkgImageFile() != NULL) {
+                SetDlgItemTextA(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, Options::getBkgImageFile());
+			}
+			return TRUE;
+		}
+	case WM_COMMAND:
+		{
+			switch (LOWORD(wParam)) {
+			case IDC_BACKGROUND_IMAGE_FILENAME:
+            case IDC_EXTERNALCSS_FILENAME:
+            case IDC_EXTERNALCSS_FILENAME_RTL:
+            case IDC_TEMPLATES_FILENAME:
+            case IDC_TEMPLATES_FILENAME_RTL:
+				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE)
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				break;
+			case IDC_SCROLL_BACKGROUND_IMAGE:
+			case IDC_LOG_SHOW_NICKNAMES:
+			case IDC_LOG_SHOW_TIME:
+			case IDC_LOG_SHOW_DATE:
+			case IDC_LOG_SHOW_SECONDS:
+			case IDC_LOG_LONG_DATE:
+			case IDC_LOG_RELATIVE_DATE:
+			case IDC_LOG_GROUP_MESSAGES:
+				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				break;
+			case IDC_TEMPLATES:
+				bChecked = IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME_RTL), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES_RTL), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_NICKNAMES), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_TIME), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_DATE), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_SECONDS), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_LONG_DATE), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_RELATIVE_DATE), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_GROUP_MESSAGES), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS), !bChecked);
+//				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+	//			break;
+			case IDC_EXTERNALCSS:
+                bChecked = IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES) || IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE), !bChecked);
+               	bChecked = !IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES) && IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS_RTL), bChecked);
+		//		SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+			//	break;
+			case IDC_BACKGROUND_IMAGE:
+                bChecked = !IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES) && !IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS) && IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_BACKGROUND_IMAGE), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE), bChecked);
+				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				break;
+			case IDC_BROWSE_TEMPLATES:
+				{
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
+					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
+					ofn.hwndOwner = hwndDlg;
+					ofn.hInstance = NULL;
+					ofn.lpstrFilter = "Templates (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
+					ofn.lpstrFile = path;
+					ofn.Flags = OFN_FILEMUSTEXIST;
+					ofn.nMaxFile = sizeof(path);
+					ofn.nMaxFileTitle = MAX_PATH;
+					ofn.lpstrDefExt = "ivt";
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
+						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					}
+				}
+				break;
+			case IDC_BROWSE_TEMPLATES_RTL:
+				{
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
+					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
+					ofn.hwndOwner = hwndDlg;
+					ofn.hInstance = NULL;
+					ofn.lpstrFilter = "Templates (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
+					ofn.lpstrFile = path;
+					ofn.Flags = OFN_FILEMUSTEXIST;
+					ofn.nMaxFile = sizeof(path);
+					ofn.nMaxFileTitle = MAX_PATH;
+					ofn.lpstrDefExt = "ivt";
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path);
+						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					}
+				}
+				break;
+			case IDC_BROWSE_BACKGROUND_IMAGE:
+				{
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
+					ofn.lStructSize = sizeof(OPENFILENAME);
+					ofn.hwndOwner = hwndDlg;
+					ofn.hInstance = NULL;
+					ofn.lpstrFilter = "All Images (*.jpg,*.gif,*.png,*.bmp)\0*.jpg;*.gif;*.png;*.bmp\0All Files\0*.*\0\0";
+					ofn.lpstrFile = path;
+					ofn.Flags = OFN_FILEMUSTEXIST;
+					ofn.nMaxFile = sizeof(path);
+					ofn.nMaxFileTitle = MAX_PATH;
+					ofn.lpstrDefExt = "jpg";
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg,IDC_BACKGROUND_IMAGE_FILENAME,path);
+						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					}
+				}
+				break;
+			case IDC_BROWSE_EXTERNALCSS:
+				{
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
+					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
+					ofn.hwndOwner = hwndDlg;
+					ofn.hInstance = NULL;
+					ofn.lpstrFilter = "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0";
+					ofn.lpstrFile = path;
+					ofn.Flags = OFN_FILEMUSTEXIST;
+					ofn.nMaxFile = sizeof(path);
+					ofn.nMaxFileTitle = MAX_PATH;
+					ofn.lpstrDefExt = "css";
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
+						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					}
+				}
+				break;
+			case IDC_BROWSE_EXTERNALCSS_RTL:
+				{
+					OPENFILENAMEA ofn={0};
+					GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
+					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
+					ofn.hwndOwner = hwndDlg;
+					ofn.hInstance = NULL;
+					ofn.lpstrFilter = "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0";
+					ofn.lpstrFile = path;
+					ofn.Flags = OFN_FILEMUSTEXIST;
+					ofn.nMaxFile = sizeof(path);
+					ofn.nMaxFileTitle = MAX_PATH;
+					ofn.lpstrDefExt = "css";
+					if(GetOpenFileNameA(&ofn)) {
+						SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
+						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					}
+				}
+				break;
+			}
+		}
+		break;
+	case WM_NOTIFY:
+		{
+			switch (((LPNMHDR) lParam)->code) {
+			case PSN_APPLY:
+				i = 0;
+				if (IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES)) {
+					i |= Options::TEMPLATES_ENABLED;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_NICKNAMES)) {
+					i |= Options::LOG_SHOW_NICKNAMES;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_TIME)) {
+					i |= Options::LOG_SHOW_TIME;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_DATE)) {
+					i |= Options::LOG_SHOW_DATE;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_SECONDS)) {
+					i |= Options::LOG_SHOW_SECONDS;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_LONG_DATE)) {
+					i |= Options::LOG_LONG_DATE;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_RELATIVE_DATE)) {
+					i |= Options::LOG_RELATIVE_DATE;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_GROUP_MESSAGES)) {
+					i |= Options::LOG_GROUP_MESSAGES;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE)) {
+					i |= Options::IMAGE_ENABLED;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE)) {
+					i |= Options::IMAGE_SCROLL;
+				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS)) {
+					i |= Options::CSS_ENABLED;
+				}
+				Options::setHistoryFlags(i);
+				GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
+				Options::setHistoryTemplatesFile(path);
+				GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
+				Options::setHistoryTemplatesFileRTL(path);
+				GetDlgItemTextA(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
+				Options::setBkgImageFile(path);
+				GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
+				Options::setHistoryCSSFile(path);
+				GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
+				Options::setHistoryCSSFileRTL(path);
 				return TRUE;
 			}
 		}
@@ -644,15 +944,23 @@ bool Options::isInited = false;
 bool Options::bMathModule = false;
 int  Options::smileyAddFlags = 0;
 int Options::generalFlags;
+int Options::srmmFlags;
+char *Options::srmmTemplatesFilename = NULL;
+char *Options::srmmTemplatesFilenameRTL = NULL;
 char *Options::bkgFilename = NULL;
+char *Options::srmmCSSFilename = NULL;
+char *Options::srmmCSSFilenameRTL = NULL;
+
 int Options::groupChatFlags;
 char *Options::groupChatCSSFilename = NULL;
-char *Options::externalCSSFilename = NULL;
-char *Options::externalCSSFilenameRTL = NULL;
-char *Options::templatesFilename = NULL;
-char *Options::templatesFilenameRTL = NULL;
 char *Options::groupChatTemplatesFilename = NULL;
-int Options::srmmFlags;
+
+int Options::historyFlags;
+char *Options::historyCSSFilename = NULL;
+char *Options::historyCSSFilenameRTL = NULL;
+char *Options::historyTemplatesFilename = NULL;
+char *Options::historyTemplatesFilenameRTL = NULL;
+
 
 void Options::init() {
 	if (isInited) return;
@@ -684,12 +992,12 @@ void Options::init() {
     	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
    	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
    		}
-		externalCSSFilename = new char[strlen(tmpPath)+1];
-		strcpy(externalCSSFilename, tmpPath);
+		srmmCSSFilename = new char[strlen(tmpPath)+1];
+		strcpy(srmmCSSFilename, tmpPath);
 		DBFreeVariant(&dbv);
 	} else {
-        externalCSSFilename = new char[1];
-        strcpy(externalCSSFilename, "");
+        srmmCSSFilename = new char[1];
+        strcpy(srmmCSSFilename, "");
 	}
 	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_EXTERNALCSSFILE_RTL, &dbv)) {
     	char tmpPath[MAX_PATH];
@@ -697,12 +1005,12 @@ void Options::init() {
     	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
    	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
    		}
-		externalCSSFilenameRTL = new char[strlen(tmpPath)+1];
-		strcpy(externalCSSFilenameRTL, tmpPath);
+		srmmCSSFilenameRTL = new char[strlen(tmpPath)+1];
+		strcpy(srmmCSSFilenameRTL, tmpPath);
 		DBFreeVariant(&dbv);
 	} else {
-        externalCSSFilenameRTL = new char[1];
-        strcpy(externalCSSFilenameRTL, "");
+        srmmCSSFilenameRTL = new char[1];
+        strcpy(srmmCSSFilenameRTL, "");
 	}
 	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_TEMPLATESFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
@@ -710,12 +1018,12 @@ void Options::init() {
     	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
    	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
    		}
-		templatesFilename = new char[strlen(tmpPath)+1];
-		strcpy(templatesFilename, tmpPath);
+		srmmTemplatesFilename = new char[strlen(tmpPath)+1];
+		strcpy(srmmTemplatesFilename, tmpPath);
 		DBFreeVariant(&dbv);
 	} else {
-        templatesFilename = new char[1];
-        strcpy(templatesFilename, "");
+        srmmTemplatesFilename = new char[1];
+        strcpy(srmmTemplatesFilename, "");
 	}
 	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_TEMPLATESFILE_RTL, &dbv)) {
     	char tmpPath[MAX_PATH];
@@ -723,12 +1031,12 @@ void Options::init() {
     	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
    	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
    		}
-		templatesFilenameRTL = new char[strlen(tmpPath)+1];
-		strcpy(templatesFilenameRTL, tmpPath);
+		srmmTemplatesFilenameRTL = new char[strlen(tmpPath)+1];
+		strcpy(srmmTemplatesFilenameRTL, tmpPath);
 		DBFreeVariant(&dbv);
 	} else {
-        templatesFilenameRTL = new char[1];
-        strcpy(templatesFilenameRTL, "");
+        srmmTemplatesFilenameRTL = new char[1];
+        strcpy(srmmTemplatesFilenameRTL, "");
 	}
 	groupChatFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_GROUPCHATFLAGS, FALSE);
 	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_GROUPCHATCSSFILE, &dbv)) {
@@ -757,9 +1065,40 @@ void Options::init() {
         groupChatTemplatesFilename = new char[1];
         strcpy(groupChatTemplatesFilename, "");
 	}
-	TemplateMap::loadTemplates("default", templatesFilename);
-	TemplateMap::loadTemplates("default_rtl", templatesFilenameRTL);
-	TemplateMap::loadTemplates("groupchat", groupChatTemplatesFilename);
+	historyFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_HISTORYFLAGS, FALSE);
+	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_HISTORYCSSFILE, &dbv)) {
+    	char tmpPath[MAX_PATH];
+    	strcpy(tmpPath, dbv.pszVal);
+    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
+   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+   		}
+		historyCSSFilename = new char[strlen(tmpPath)+1];
+		strcpy(historyCSSFilename, tmpPath);
+		DBFreeVariant(&dbv);
+	} else {
+        historyCSSFilename = new char[1];
+        strcpy(historyCSSFilename, "");
+	}
+	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_HISTORYCSSFILE_RTL, &dbv)) {
+    	char tmpPath[MAX_PATH];
+    	strcpy(tmpPath, dbv.pszVal);
+    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
+   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+   		}
+		historyCSSFilenameRTL = new char[strlen(tmpPath)+1];
+		strcpy(historyCSSFilenameRTL, tmpPath);
+		DBFreeVariant(&dbv);
+	} else {
+        historyCSSFilenameRTL = new char[1];
+        strcpy(historyCSSFilenameRTL, "");
+	}
+
+	TemplateMap::loadTemplates("srmm_default", srmmTemplatesFilename);
+	TemplateMap::loadTemplates("srmm_default_rtl", srmmTemplatesFilenameRTL);
+	TemplateMap::loadTemplates("groupchat_default", groupChatTemplatesFilename);
+//	TemplateMap::loadTemplates("groupchat", groupChatTemplatesFilename);
+	TemplateMap::loadTemplates("history_default", historyTemplatesFilename);
+	TemplateMap::loadTemplates("history_default_rtl", historyTemplatesFilenameRTL);
 //	mathModuleFlags = ServiceExists(MTH_GET_HTML_SOURCE) ? GENERAL_ENABLE_MATHMODULE : 0;
 }
 
@@ -790,12 +1129,12 @@ int	Options::getGeneralFlags() {
 	return generalFlags;
 }
 
-void Options::setExternalCSSFile(const char *filename) {
-	if (externalCSSFilename != NULL) {
-		delete [] externalCSSFilename;
+void Options::setSRMMCSSFile(const char *filename) {
+	if (srmmCSSFilename != NULL) {
+		delete [] srmmCSSFilename;
 	}
-	externalCSSFilename = new char[strlen(filename)+1];
-	strcpy(externalCSSFilename, filename);
+	srmmCSSFilename = new char[strlen(filename)+1];
+	strcpy(srmmCSSFilename, filename);
     char tmpPath[MAX_PATH];
     strcpy (tmpPath, filename);
     if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
@@ -804,16 +1143,16 @@ void Options::setExternalCSSFile(const char *filename) {
 	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_EXTERNALCSSFILE, tmpPath);
 }
 
-const char *Options::getExternalCSSFile() {
-	return externalCSSFilename;
+const char *Options::getSRMMCSSFile() {
+	return srmmCSSFilename;
 }
 
-void Options::setExternalCSSFileRTL(const char *filename) {
-	if (externalCSSFilenameRTL != NULL) {
-		delete [] externalCSSFilenameRTL;
+void Options::setSRMMCSSFileRTL(const char *filename) {
+	if (srmmCSSFilenameRTL != NULL) {
+		delete [] srmmCSSFilenameRTL;
 	}
-	externalCSSFilenameRTL = new char[strlen(filename)+1];
-	strcpy(externalCSSFilenameRTL, filename);
+	srmmCSSFilenameRTL = new char[strlen(filename)+1];
+	strcpy(srmmCSSFilenameRTL, filename);
     char tmpPath[MAX_PATH];
     strcpy (tmpPath, filename);
     if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
@@ -822,16 +1161,16 @@ void Options::setExternalCSSFileRTL(const char *filename) {
 	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_EXTERNALCSSFILE_RTL, tmpPath);
 }
 
-const char *Options::getExternalCSSFileRTL() {
-	return externalCSSFilenameRTL;
+const char *Options::getSRMMCSSFileRTL() {
+	return srmmCSSFilenameRTL;
 }
 
-void Options::setTemplatesFile(const char *filename) {
-	if (templatesFilename != NULL) {
-		delete [] templatesFilename;
+void Options::setSRMMTemplatesFile(const char *filename) {
+	if (srmmTemplatesFilename != NULL) {
+		delete [] srmmTemplatesFilename;
 	}
-	templatesFilename = new char[strlen(filename)+1];
-	strcpy(templatesFilename, filename);
+	srmmTemplatesFilename = new char[strlen(filename)+1];
+	strcpy(srmmTemplatesFilename, filename);
     char tmpPath[MAX_PATH];
     strcpy (tmpPath, filename);
     if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
@@ -839,15 +1178,15 @@ void Options::setTemplatesFile(const char *filename) {
    	}
 	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_TEMPLATESFILE, tmpPath);
 
-	TemplateMap::loadTemplates("default", templatesFilename);
+	TemplateMap::loadTemplates("srmm_default", srmmTemplatesFilename);
 }
 
-void Options::setTemplatesFileRTL(const char *filename) {
-	if (templatesFilenameRTL != NULL) {
-		delete [] templatesFilenameRTL;
+void Options::setSRMMTemplatesFileRTL(const char *filename) {
+	if (srmmTemplatesFilenameRTL != NULL) {
+		delete [] srmmTemplatesFilenameRTL;
 	}
-	templatesFilenameRTL = new char[strlen(filename)+1];
-	strcpy(templatesFilenameRTL, filename);
+	srmmTemplatesFilenameRTL = new char[strlen(filename)+1];
+	strcpy(srmmTemplatesFilenameRTL, filename);
     char tmpPath[MAX_PATH];
     strcpy (tmpPath, filename);
     if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
@@ -855,15 +1194,15 @@ void Options::setTemplatesFileRTL(const char *filename) {
    	}
 	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_TEMPLATESFILE_RTL, tmpPath);
 
-	TemplateMap::loadTemplates("default_rtl", templatesFilenameRTL);
+	TemplateMap::loadTemplates("srmm_default_rtl", srmmTemplatesFilenameRTL);
 }
 
-const char *Options::getTemplatesFile() {
-	return templatesFilename;
+const char *Options::getSRMMTemplatesFile() {
+	return srmmTemplatesFilename;
 }
 
-const char *Options::getTemplatesFileRTL() {
-	return templatesFilenameRTL;
+const char *Options::getSRMMTemplatesFileRTL() {
+	return srmmTemplatesFilenameRTL;
 }
 
 void Options::setSRMMFlags(int flags) {
@@ -920,6 +1259,93 @@ void Options::setGroupChatTemplatesFile(const char *filename) {
 const char *Options::getGroupChatTemplatesFile() {
 	return groupChatTemplatesFilename;
 }
+
+
+void Options::setHistoryCSSFile(const char *filename) {
+	if (historyCSSFilename != NULL) {
+		delete [] historyCSSFilename;
+	}
+	historyCSSFilename = new char[strlen(filename)+1];
+	strcpy(historyCSSFilename, filename);
+    char tmpPath[MAX_PATH];
+    strcpy (tmpPath, filename);
+    if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
+    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
+   	}
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_EXTERNALCSSFILE, tmpPath);
+}
+
+const char *Options::getHistoryCSSFile() {
+	return historyCSSFilename;
+}
+
+void Options::setHistoryCSSFileRTL(const char *filename) {
+	if (historyCSSFilenameRTL != NULL) {
+		delete [] historyCSSFilenameRTL;
+	}
+	historyCSSFilenameRTL = new char[strlen(filename)+1];
+	strcpy(historyCSSFilenameRTL, filename);
+    char tmpPath[MAX_PATH];
+    strcpy (tmpPath, filename);
+    if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
+    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
+   	}
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_EXTERNALCSSFILE_RTL, tmpPath);
+}
+
+const char *Options::getHistoryCSSFileRTL() {
+	return historyCSSFilenameRTL;
+}
+
+void Options::setHistoryTemplatesFile(const char *filename) {
+	if (historyTemplatesFilename != NULL) {
+		delete [] historyTemplatesFilename;
+	}
+	historyTemplatesFilename = new char[strlen(filename)+1];
+	strcpy(historyTemplatesFilename, filename);
+    char tmpPath[MAX_PATH];
+    strcpy (tmpPath, filename);
+    if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
+   	}
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_TEMPLATESFILE, tmpPath);
+
+	TemplateMap::loadTemplates("history_default", historyTemplatesFilename);
+}
+
+void Options::setHistoryTemplatesFileRTL(const char *filename) {
+	if (historyTemplatesFilenameRTL != NULL) {
+		delete [] historyTemplatesFilenameRTL;
+	}
+	historyTemplatesFilenameRTL = new char[strlen(filename)+1];
+	strcpy(historyTemplatesFilenameRTL, filename);
+    char tmpPath[MAX_PATH];
+    strcpy (tmpPath, filename);
+    if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
+   	}
+	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_TEMPLATESFILE_RTL, tmpPath);
+
+	TemplateMap::loadTemplates("history_default_rtl", historyTemplatesFilenameRTL);
+}
+
+const char *Options::getHistoryTemplatesFile() {
+	return historyTemplatesFilename;
+}
+
+const char *Options::getHistoryTemplatesFileRTL() {
+	return historyTemplatesFilenameRTL;
+}
+
+void Options::setHistoryFlags(int flags) {
+	historyFlags = flags;
+	DBWriteContactSettingDword(NULL, ieviewModuleName, DBS_HISTORYFLAGS, (DWORD) flags);
+}
+
+int	Options::getHistoryFlags() {
+	return historyFlags;
+}
+
 
 bool Options::isMathModule() {
 	return bMathModule;

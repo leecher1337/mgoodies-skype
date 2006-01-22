@@ -49,16 +49,22 @@ class Options {
 private:
    	static int 		generalFlags;
    	static char *	bkgFilename;
-   	static char *	externalCSSFilename;
-   	static char *	externalCSSFilenameRTL;
+   	static char *	srmmCSSFilename;
+   	static char *	srmmCSSFilenameRTL;
 
-   	static char *	templatesFilename;
-   	static char *	templatesFilenameRTL;
+   	static char *	srmmTemplatesFilename;
+   	static char *	srmmTemplatesFilenameRTL;
    	static int 		srmmFlags;
 
    	static int 		groupChatFlags;
    	static char *	groupChatCSSFilename;
    	static char *	groupChatTemplatesFilename;
+
+   	static int 		historyFlags;
+   	static char *	historyTemplatesFilename;
+   	static char *	historyTemplatesFilenameRTL;
+   	static char *	historyCSSFilename;
+   	static char *	historyCSSFilenameRTL;
 
 	static bool     bMathModule;
    	static bool     isInited;
@@ -91,22 +97,35 @@ public:
    	static int				getGeneralFlags();
    	static void     		setBkgImageFile(const char *filename);
    	static const char *		getBkgImageFile();
-   	static void      		setExternalCSSFile(const char *filename);
-   	static const char *		getExternalCSSFile();
-   	static void      		setExternalCSSFileRTL(const char *filename);
-   	static const char *		getExternalCSSFileRTL();
-   	static void     		setTemplatesFileRTL(const char *filename);
-   	static void     		setTemplatesFile(const char *filename);
-   	static const char *		getTemplatesFile();
-   	static const char *		getTemplatesFileRTL();
+   	static void      		setSRMMCSSFile(const char *filename);
+   	static const char *		getSRMMCSSFile();
+   	static void      		setSRMMCSSFileRTL(const char *filename);
+   	static const char *		getSRMMCSSFileRTL();
+   	static void     		setSRMMTemplatesFileRTL(const char *filename);
+   	static void     		setSRMMTemplatesFile(const char *filename);
+   	static const char *		getSRMMTemplatesFile();
+   	static const char *		getSRMMTemplatesFileRTL();
    	static void				setSRMMFlags(int flags);
    	static int				getSRMMFlags();
+   	
    	static void      		setGroupChatCSSFile(const char *filename);
    	static const char *		getGroupChatCSSFile();
    	static void				setGroupChatFlags(int flags);
    	static int				getGroupChatFlags();
    	static void     		setGroupChatTemplatesFile(const char *filename);
    	static const char *		getGroupChatTemplatesFile();
+
+   	static void				setHistoryFlags(int flags);
+   	static int				getHistoryFlags();
+   	static void      		setHistoryCSSFile(const char *filename);
+   	static const char *		getHistoryCSSFile();
+   	static void      		setHistoryCSSFileRTL(const char *filename);
+   	static const char *		getHistoryCSSFileRTL();
+   	static void     		setHistoryTemplatesFileRTL(const char *filename);
+   	static void     		setHistoryTemplatesFile(const char *filename);
+   	static const char *		getHistoryTemplatesFile();
+   	static const char *		getHistoryTemplatesFileRTL();
+
    	static bool             isMathModule();
    	static int              getSmileyAddFlags();
    	static void      		init();
