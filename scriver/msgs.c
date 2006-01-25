@@ -114,7 +114,7 @@ static int MessageEventAdded(WPARAM wParam, LPARAM lParam)
 			newData.hContact = (HANDLE) wParam;
 			if (g_dat->hParent == NULL || !(g_dat->flags & SMF_USETABS)) {
 				g_dat->hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
-			}
+			}	
 			newData.flags = NMWLP_INCOMING;
 			CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), g_dat->hParent, DlgProcMessage, (LPARAM) & newData);
 			return 0;
