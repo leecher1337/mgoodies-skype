@@ -66,6 +66,10 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.9.6
++ improved (more bash-like :) history of sent events
+* feature #001675: flashing minimized window
+* bug #006163: focus stealing when minimized
 2.2.9.5
 + option to switch IEview on and off
 * bugfix: bug #006144 autoselection of text
