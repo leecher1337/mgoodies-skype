@@ -268,8 +268,7 @@ static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 		SendMessage(dat->hwndActive, DM_UPDATESTATUSBAR, 0, 0);
 		SendMessage(dat->hwndActive, DM_UPDATETITLE, 0, 0);
 		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
-//		ShowWindow(dat->hwndActive, SW_SHOWNOACTIVATE);
-		ShowWindow(dat->hwndActive, SW_SHOWNORMAL);
+		ShowWindow(dat->hwndActive, SW_SHOWNOACTIVATE);
 		SendMessage(dat->hwndActive, DM_SCROLLLOGTOBOTTOM, 0, 0);
 		if (prev!=NULL) ShowWindow(prev, SW_HIDE);
 	} else {
@@ -277,8 +276,7 @@ static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 	}
 	i = GetTabFromHWND(dat, child);
 	TabCtrl_SetCurSel(dat->hwndTabs, i);
-//	MessageBoxA(NULL, "setting focus", "ass", MB_OK);
-	SendMessage(dat->hwndActive, WM_ACTIVATE, WA_ACTIVE, 0);
+	SendMessage(dat->hwndActive, DM_ACTIVATE, WA_ACTIVE, 0);
 }
 
 static void AddChild(struct ParentWindowData *dat, struct MessageWindowData * mdat)
@@ -294,7 +292,7 @@ static void AddChild(struct ParentWindowData *dat, struct MessageWindowData * md
 	tci.lParam = (LPARAM) mdat;
 	tabId = TabCtrl_InsertItem(dat->hwndTabs, dat->childrenCount-1, &tci);
 	free(contactName);
-//		ActivateChild(dat, mdat->hwnd);
+//	ActivateChild(dat, mdat->hwnd);
 	SetWindowPos(mdat->hwnd, HWND_TOP, dat->childRect.left, dat->childRect.top, dat->childRect.right-dat->childRect.left, dat->childRect.bottom - dat->childRect.top, SWP_HIDEWINDOW);
 	SendMessage(dat->hwnd, WM_SIZE, 0, 0);
 }
@@ -327,14 +325,6 @@ static void ActivateNextChild(struct ParentWindowData *dat, HWND child)
 	int l = TabCtrl_GetItemCount(dat->hwndTabs);
 	i = (i+1) % l;
 	ActivateChild(dat, GetChildFromTab(dat->hwndTabs, i)->hwnd);
-	/*
-	int i;
-	for (i=0;i<dat->childrenCount;i++) {
-		if (dat->children[i] == child) {
-			ActivateChild(dat, dat->children[(i+1)%dat->childrenCount]);
-			break;
-		}
-	}*/
 }
 
 static void ActivatePrevChild(struct ParentWindowData *dat, HWND child)
@@ -343,14 +333,6 @@ static void ActivatePrevChild(struct ParentWindowData *dat, HWND child)
 	int l = TabCtrl_GetItemCount(dat->hwndTabs);
 	i = (i+l-1) % l;
 	ActivateChild(dat, GetChildFromTab(dat->hwndTabs, i)->hwnd);
-/*	int i;
-	for (i=0;i<dat->childrenCount;i++) {
-		if (dat->children[i] == child) {
-			ActivateChild(dat, dat->children[(dat->childrenCount+i-1)%dat->childrenCount]);
-			break;
-		}
-	}
-	*/
 }
 
 
@@ -365,6 +347,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		{
 			struct NewMessageWindowLParam *newData = (struct NewMessageWindowLParam *) lParam;
 			dat = (struct ParentWindowData *) malloc(sizeof(struct ParentWindowData));
+			dat->foregroundWindow = GetForegroundWindow();
 			dat->hContact = newData->hContact;
 			dat->nFlash = 0;
 			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
@@ -426,7 +409,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
    				pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(255-g_dat->inactiveAlpha), LWA_ALPHA);
 //				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 			}
-
 			//SetWindowPos(dat->hwndTabs, 0, 0, -10, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 			if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
 				ShowWindow(dat->hwndStatus, SW_HIDE);
@@ -529,7 +511,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 		return FALSE;
 	case WM_SETFOCUS:
-		SetFocus(dat->hwndActive);
+		if (dat->hwndActive != NULL) {
+			SetFocus(dat->hwndActive);
+		}
 		return TRUE;
 	case WM_CLOSE:
 		DestroyWindow(hwndDlg);
@@ -637,6 +621,10 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 		break;
 	}
+	case DM_DEACTIVATE:
+		SetForegroundWindow(dat->foregroundWindow);
+		break;
+
 	case WM_ACTIVATE:
 		if (LOWORD(wParam) == WA_INACTIVE) {
 			ws = GetWindowLong(hwndDlg, GWL_EXSTYLE) & ~WS_EX_LAYERED;
@@ -661,8 +649,11 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
    			pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(255-g_dat->activeAlpha), LWA_ALPHA);
 //				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 		}
-		SendMessage(dat->hwndActive, WM_ACTIVATE, WA_ACTIVE, 0);
-		SetFocus(dat->hwndActive);
+		if (dat->hwndActive == NULL) { // do not set foreground window at all (always stay in the background !)
+//			SendMessage(hwndDlg, DM_DEACTIVATE, 0, 0);
+		} else {
+			PostMessage(hwndDlg, WM_SETFOCUS, 0, 0);
+		}
 		break;
 	case WM_LBUTTONDOWN:
 		dat->mouseLBDown = 1;

@@ -1,10 +1,10 @@
 /*
 Scriver
 
-Copyright 2000-2003 Miranda ICQ/IM project, 
+Copyright 2000-2003 Miranda ICQ/IM project,
 Copyright 2005 Piotr Piastucki
 
-all portions of this codebase are copyrighted to the people 
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -40,7 +40,7 @@ struct ErrorWindowData
 	HWND	hwndParent;
 };
 
-struct TabCtrlData 
+struct TabCtrlData
 {
 	int		lastClickTime;
 	WPARAM  clickWParam;
@@ -63,6 +63,7 @@ struct ParentWindowData
 	HWND	hwndActive;
 	HWND	hwndStatus;
 	HWND	hwndTabs;
+	HWND	foregroundWindow;
 	DWORD	flags;
 	RECT	childRect;
 	POINT	mouseLBDownPos;
@@ -131,7 +132,7 @@ struct MessageWindowData
 	time_t 	lastEventTime;
 	int    	lastEventType;
 	HANDLE  lastEventContact;
-	DWORD	flags;		
+	DWORD	flags;
 	int		messagesInProgress;
 	int		codePage;
 };
@@ -176,6 +177,9 @@ struct MessageWindowData
 #define DM_SETCODEPAGE		 (WM_USER+53)
 #define DM_MESSAGESENDING	 (WM_USER+54)
 #define DM_GETWINDOWSTATE	 (WM_USER+55)
+
+#define DM_ACTIVATE			 (WM_USER+60)
+#define DM_DEACTIVATE		 (WM_USER+61)
 
 #define EVENTTYPE_STATUSCHANGE 25368
 

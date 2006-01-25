@@ -158,7 +158,11 @@ static int SendMessageCommand(WPARAM wParam, LPARAM lParam)
 			SendMessage(hEdit, EM_SETSEL, -1, SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0));
 			SendMessage(hEdit, EM_REPLACESEL, FALSE, (LPARAM) (char *) lParam);
 		}
-		ShowWindow(GetParent(hwnd), SW_SHOWNORMAL);
+		if (IsIconic(GetParent(hwnd))) {
+			ShowWindow(GetParent(hwnd), SW_SHOWNORMAL);
+		} else {
+			ShowWindow(GetParent(hwnd), SW_SHOW);
+		}
 		SetForegroundWindow(GetParent(hwnd));
 		SetFocus(hwnd);
 	} else {
