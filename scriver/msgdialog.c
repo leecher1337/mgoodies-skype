@@ -174,6 +174,30 @@ static TCHAR *GetQuotedTextW(TCHAR * text) {
 	return out;
 }
 
+static void saveDraftMessage(struct MessageWindowData *dat) {
+	TCHAR *textBuffer;
+	int textBufferSize;
+	textBufferSize = (GetWindowTextLengthA(GetDlgItem(dat->hwnd, IDC_MESSAGE)) + 1);
+	if (textBufferSize > 1) {
+		textBufferSize *= sizeof(TCHAR);
+		textBuffer = (TCHAR *) malloc(textBufferSize);
+#if defined( _UNICODE )
+		{
+			GETTEXTEX  gt;
+			gt.cb = textBufferSize;
+			gt.flags = GT_USECRLF;
+			gt.codepage = 1200;
+			SendDlgItemMessage(dat->hwnd, IDC_MESSAGE, EM_GETTEXTEX, (WPARAM) &gt, (LPARAM) textBuffer);
+		}
+#else
+		GetDlgItemTextA(dat->hwnd, IDC_MESSAGE, textBuffer, textBufferSize);
+#endif
+		g_dat->draftList = tcmdlist_append2(g_dat->draftList, dat->hContact, (TCHAR *) textBuffer);
+		free(textBuffer);
+	} else {
+		g_dat->draftList = tcmdlist_remove2(g_dat->draftList, dat->hContact);
+	}
+}
 
 
 static void RemoveSendBuffer(struct MessageWindowData *dat, int i) {
@@ -455,7 +479,9 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 		if (wParam == VK_UP && (GetKeyState(VK_CONTROL) & 0x8000) && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CTRLSUPPORT, SRMSGDEFSET_CTRLSUPPORT) && !DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOCLOSE, SRMSGDEFSET_AUTOCLOSE)) {
 			if (pdat->cmdList) {
 				if (!pdat->cmdListCurrent) {
-					pdat->cmdListCurrent = tcmdlist_last(pdat->cmdList);
+					saveDraftMessage(pdat);
+//					g_dat->draftList = tcmdlist_append2(g_dat->draftList, pdat->hContact, (TCHAR *) textBuffer);
+					pdat->cmdListCurrent = pdat->cmdListNew = tcmdlist_last(pdat->cmdList);
 				//	SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
 					SendMessage(hwnd, EM_SETTEXTEX, (WPARAM) &st, (LPARAM)pdat->cmdListCurrent->szCmd);
 //					SetWindowText(hwnd, pdat->cmdListCurrent->szCmd);
@@ -464,7 +490,7 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 					//SendMessage(hwnd, EM_SETSEL, 0, -1);
 				}
 				else if (pdat->cmdListCurrent->prev) {
-					pdat->cmdListCurrent = pdat->cmdListCurrent->prev;
+					pdat->cmdListCurrent = pdat->cmdListNew = pdat->cmdListCurrent->prev;
 				//	SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
 					SendMessage(hwnd, EM_SETTEXTEX, (WPARAM) &st, (LPARAM)pdat->cmdListCurrent->szCmd);
 //					SetWindowText(hwnd, pdat->cmdListCurrent->szCmd);
@@ -479,20 +505,22 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 		}
 		else if (wParam == VK_DOWN && (GetKeyState(VK_CONTROL) & 0x8000) && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CTRLSUPPORT, SRMSGDEFSET_CTRLSUPPORT) && !DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOCLOSE, SRMSGDEFSET_AUTOCLOSE)) {
 			if (pdat->cmdList) {
-				if (!pdat->cmdListCurrent)
-					pdat->cmdListCurrent = tcmdlist_last(pdat->cmdList);
-				if (pdat->cmdListCurrent->next) {
-					pdat->cmdListCurrent = pdat->cmdListCurrent->next;
-					//SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
-					SendMessage(hwnd, EM_SETTEXTEX, (WPARAM) &st, (LPARAM)pdat->cmdListCurrent->szCmd);
-//					SetWindowText(hwnd, pdat->cmdListCurrent->szCmd);
-					SendMessage(hwnd, EM_SCROLLCARET, 0,0);
-					//SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
-					//SendMessage(hwnd, EM_SETSEL, 0, -1);
-				}
-				else {
-					pdat->cmdListCurrent = 0;
-					SetWindowTextA(hwnd, "");
+				if (pdat->cmdListCurrent) {
+					pdat->cmdListCurrent = pdat->cmdListNew = pdat->cmdListCurrent->next;
+					if (!pdat->cmdListCurrent) {
+						pdat->cmdListCurrent = tcmdlist_get2(g_dat->draftList, pdat->hContact);
+					}
+					if (pdat->cmdListCurrent) {
+						//SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
+						SendMessage(hwnd, EM_SETTEXTEX, (WPARAM) &st, (LPARAM)pdat->cmdListCurrent->szCmd);
+		//					SetWindowText(hwnd, pdat->cmdListCurrent->szCmd);
+						SendMessage(hwnd, EM_SCROLLCARET, 0,0);
+						//SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
+						//SendMessage(hwnd, EM_SETSEL, 0, -1);
+					} else {
+						pdat->cmdListCurrent = 0;
+						SetWindowTextA(hwnd, "");
+					}
 				}
 			}
 			EnableWindow(GetDlgItem(GetParent(hwnd), IDOK), GetWindowTextLength(GetDlgItem(GetParent(hwnd), IDC_MESSAGE)) != 0);
@@ -827,6 +855,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->showUnread = 0;
 			dat->cmdList = 0;
 			dat->cmdListCurrent = 0;
+			dat->cmdListNew = 0;
 			dat->nTypeMode = PROTOTYPE_SELFTYPING_OFF;
 			SetTimer(hwndDlg, TIMERID_TYPE, 1000, NULL);
 			dat->lastMessage = 0;
@@ -1992,6 +2021,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		case IDC_MESSAGE:
 			if (HIWORD(wParam) == EN_CHANGE) {
 				int len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
+				dat->cmdListCurrent = dat->cmdListNew;
+				dat->cmdListNew = 0;
 				UpdateReadChars(hwndDlg, dat);
 				EnableWindow(GetDlgItem(hwndDlg, IDOK), len != 0);
 				if (!(GetKeyState(VK_CONTROL) & 0x8000) && !(GetKeyState(VK_SHIFT) & 0x8000)) {
@@ -2285,28 +2316,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			free(dat->sendInfo);
 		}
 		if (g_dat->flags & SMF_SAVEDRAFTS) {
-			TCHAR *textBuffer;
-			int textBufferSize;
-			textBufferSize = (GetWindowTextLengthA(GetDlgItem(hwndDlg, IDC_MESSAGE)) + 1);
-			if (textBufferSize > 1) {
-				textBufferSize *= sizeof(TCHAR);
-				textBuffer = (TCHAR *) malloc(textBufferSize);
-	#if defined( _UNICODE )
-				{
-					GETTEXTEX  gt;
-					gt.cb = textBufferSize;
-					gt.flags = GT_USECRLF;
-					gt.codepage = 1200;
-					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_GETTEXTEX, (WPARAM) &gt, (LPARAM) textBuffer);
-				}
-	#else
-				GetDlgItemTextA(hwndDlg, IDC_MESSAGE, textBuffer, textBufferSize);
-	#endif
-				g_dat->draftList = tcmdlist_append2(g_dat->draftList, dat->hContact, (TCHAR *) textBuffer);
-				free(textBuffer);
-			} else {
-				g_dat->draftList = tcmdlist_remove2(g_dat->draftList, dat->hContact);
-			}
+			saveDraftMessage(dat);
 		} else {
 			g_dat->draftList = tcmdlist_remove2(g_dat->draftList, dat->hContact);
 		}
