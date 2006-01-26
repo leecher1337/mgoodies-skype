@@ -656,13 +656,17 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 		break;
 	case WM_LBUTTONDOWN:
-		dat->mouseLBDown = 1;
-		GetCursorPos(&dat->mouseLBDownPos);
-		SetCapture(hwndDlg);
+		if (!IsZoomed(hwndDlg)) {
+			dat->mouseLBDown = 1;
+			GetCursorPos(&dat->mouseLBDownPos);
+			SetCapture(hwndDlg);
+		}
 		break;
 	case WM_LBUTTONUP:
-		dat->mouseLBDown = 0;
-		ReleaseCapture();
+		if (dat->mouseLBDown) {
+			dat->mouseLBDown = 0;
+			ReleaseCapture();
+		}
 		break;
 	case WM_MOUSEMOVE:
 		if (dat->mouseLBDown) {
