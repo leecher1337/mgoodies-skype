@@ -66,6 +66,9 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.9.7
+* bug #6176: movable mazimized windows
+* bug #6195: disabled text selection
 2.2.9.6
 + improved (more bash-like :) history of sent messages
 * feature #001675: flashing minimized window
