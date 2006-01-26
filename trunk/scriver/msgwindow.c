@@ -637,6 +637,11 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 		if (LOWORD(wParam) != WA_ACTIVE)
 			break;
+		if (dat->hwndActive == NULL) { // do not set foreground window at all (always stay in the background !)
+//			SendMessage(hwndDlg, DM_DEACTIVATE, 0, 0);
+		} else {
+			PostMessage(hwndDlg, WM_SETFOCUS, 0, 0);
+		}
 	case WM_MOUSEACTIVATE:
 		if (KillTimer(hwndDlg, TIMERID_FLASHWND)) {
 			FlashWindow(hwndDlg, FALSE);
@@ -648,11 +653,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		if (dat->flags & SMF_USETRANSPARENCY) {
    			pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(255-g_dat->activeAlpha), LWA_ALPHA);
 //				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
-		}
-		if (dat->hwndActive == NULL) { // do not set foreground window at all (always stay in the background !)
-//			SendMessage(hwndDlg, DM_DEACTIVATE, 0, 0);
-		} else {
-			PostMessage(hwndDlg, WM_SETFOCUS, 0, 0);
 		}
 		break;
 	case WM_LBUTTONDOWN:
