@@ -29,7 +29,7 @@ class HistoryHTMLBuilder:public TemplateHTMLBuilder
 {
 protected:
     void loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour);
-	char *timestampToString(DWORD dwFlags, time_t check, int groupStart);
+	char *timestampToString(DWORD dwFlags, time_t check);
 	DWORD startedTime;
 	bool isDbEventShown(DBEVENTINFO * dbei);
 	void appendEventNonTemplate(IEView *, IEVIEWEVENT *event);
