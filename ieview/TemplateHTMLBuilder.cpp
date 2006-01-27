@@ -109,7 +109,13 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	szNoAvatar = Utils::UTF8Encode(tempStr);
 	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-       		szAvatarIn = Utils::UTF8Encode(dbv.pszVal);
+			/* relative -> absolute */
+		    char tmpPath[MAX_PATH];
+		    strcpy (tmpPath, dbv.pszVal);
+		    if (ServiceExists(MS_UTILS_PATHTORELATIVE)&& strncmp(tmpPath, "http://", 7)) {
+    			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+		   	}
+       		szAvatarIn = Utils::UTF8Encode(tmpPath);
 		    Utils::convertPath(szAvatarIn);
 	    }
        	DBFreeVariant(&dbv);
@@ -119,7 +125,13 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	}
 	if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-            szAvatarOut = Utils::UTF8Encode(dbv.pszVal);
+			/* relative -> absolute */
+		    char tmpPath[MAX_PATH];
+		    strcpy (tmpPath, dbv.pszVal);
+		    if (ServiceExists(MS_UTILS_PATHTORELATIVE)&& strncmp(tmpPath, "http://", 7)) {
+    			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+		   	}
+            szAvatarOut = Utils::UTF8Encode(tmpPath);
 		    Utils::convertPath(szAvatarOut);
 	    }
        	DBFreeVariant(&dbv);
@@ -594,7 +606,13 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 	szNoAvatar = Utils::UTF8Encode(tempStr);
 	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-       		szAvatarIn = Utils::UTF8Encode(dbv.pszVal);
+			/* relative -> absolute */
+		    char tmpPath[MAX_PATH];
+		    strcpy (tmpPath, dbv.pszVal);
+		    if (ServiceExists(MS_UTILS_PATHTORELATIVE)&& strncmp(tmpPath, "http://", 7)) {
+    			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+		   	}
+       		szAvatarIn = Utils::UTF8Encode(tmpPath);
 		    Utils::convertPath(szAvatarIn);
 	    }
        	DBFreeVariant(&dbv);
@@ -604,7 +622,13 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 	}
 	if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 	    if (strlen(dbv.pszVal) > 0) {
-       		szAvatarOut = Utils::UTF8Encode(dbv.pszVal);
+			/* relative -> absolute */
+		    char tmpPath[MAX_PATH];
+		    strcpy (tmpPath, dbv.pszVal);
+		    if (ServiceExists(MS_UTILS_PATHTORELATIVE)&& strncmp(tmpPath, "http://", 7)) {
+    			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+		   	}
+       		szAvatarOut = Utils::UTF8Encode(tmpPath);
 		    Utils::convertPath(szAvatarOut);
 	    }
        	DBFreeVariant(&dbv);
@@ -640,7 +664,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 		int outputSize;
 		char *output;
 		output = NULL;
-		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == EVENTTYPE_STATUSCHANGE || eventData->iType == EVENTTYPE_FILE || eventData->iType == EVENTTYPE_URL) {
+		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_STATUSCHANGE || eventData->iType == IEED_EVENT_FILE || eventData->iType == IEED_EVENT_URL) {
 			int isSent = (eventData->dwFlags & IEEDF_SENT);
 			int isHistory = (eventData->time < (DWORD)getStartedTime() && (!(eventData->dwFlags & IEEDF_UNREAD) || eventData->dwFlags & IEEDF_SENT));
 			int isGroupBreak = TRUE;
@@ -695,19 +719,19 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
                	} else {
                		tmpltName[1] = isHistory ? isSent ? "hMessageOut" : "hMessageIn" : isSent ? "MessageOut" : "MessageIn";
                	}
-			} else if (eventData->iType == EVENTTYPE_FILE) {
+			} else if (eventData->iType == IEED_EVENT_FILE) {
                 tmpltName[1] = isHistory ? isSent ? "hFileOut" : "hFileIn" : isSent ? "FileOut" : "FileIn";
                 Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("srmm_default_rtl", tmpltName[1]) : TemplateMap::getTemplate("srmm_default", tmpltName[1]);
                 if (tmplt == NULL) {
                 	tmpltName[1] = isHistory ? "hFile" : "File";
 				}
-			} else if (eventData->iType == EVENTTYPE_URL) {
+			} else if (eventData->iType == IEED_EVENT_URL) {
                 tmpltName[1] = isHistory ? isSent ? "hURLOut" : "hURLIn" : isSent ? "URLOut" : "URLIn";
                 Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("srmm_default_rtl", tmpltName[1]) : TemplateMap::getTemplate("srmm_default", tmpltName[1]);
                 if (tmplt == NULL) {
 	                tmpltName[1] = isHistory ? "hURL" : "URL";
 				}
-			} else if (eventData->iType == EVENTTYPE_STATUSCHANGE) {
+			} else if (eventData->iType == IEED_EVENT_STATUSCHANGE) {
                 tmpltName[1] = isHistory ? "hStatus" : "Status";
 			}
 			/* template-specific formatting */
