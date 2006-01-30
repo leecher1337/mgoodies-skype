@@ -692,21 +692,23 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			pRect->top = pt.y-dat->mouseLBDownPos.y;
 			pRect->right = pRect->left+szSize.cx;
 			pRect->bottom = pRect->top+szSize.cy;				
-			if(pRect->top < snapPixels && pRect->top > -snapPixels) {
-				pRect->top = 0;
-				pRect->bottom = szSize.cy;
-			}
-			if(pRect->left < snapPixels && pRect->left > -snapPixels) {
-				pRect->left = 0;
-				pRect->right = szSize.cx;
-			}
-			if(pRect->right < rcDesktop.right+snapPixels && pRect->right > rcDesktop.right-snapPixels) {
-				pRect->right = rcDesktop.right;
-				pRect->left = rcDesktop.right-szSize.cx;
-			}
-			if(pRect->bottom < rcDesktop.bottom+snapPixels && pRect->bottom > rcDesktop.bottom-snapPixels) {
-				pRect->bottom = rcDesktop.bottom;
-				pRect->top = rcDesktop.bottom-szSize.cy;
+            if (!(GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
+				if(pRect->top < snapPixels && pRect->top > -snapPixels) {
+					pRect->top = 0;
+					pRect->bottom = szSize.cy;
+				}
+				if(pRect->left < snapPixels && pRect->left > -snapPixels) {
+					pRect->left = 0;
+					pRect->right = szSize.cx;
+				}
+				if(pRect->right < rcDesktop.right+snapPixels && pRect->right > rcDesktop.right-snapPixels) {
+					pRect->right = rcDesktop.right;
+					pRect->left = rcDesktop.right-szSize.cx;
+				}
+				if(pRect->bottom < rcDesktop.bottom+snapPixels && pRect->bottom > rcDesktop.bottom-snapPixels) {
+					pRect->bottom = rcDesktop.bottom;
+					pRect->top = rcDesktop.bottom-szSize.cy;
+				}
 			}
 		}
 		break;
