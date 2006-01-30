@@ -560,7 +560,7 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 			return 0;
 		}
 		if (wParam == VK_RETURN) {
-			if (GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_MENU) & 0x8000) {
+			if (GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) {
 				PostMessage(GetParent(hwnd), WM_COMMAND, IDC_SENDALL, 0);
 				return 0;
 			}
@@ -1511,7 +1511,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		SendMessage(dat->hwndParent, WM_LBUTTONDOWN, wParam, lParam);
 		return TRUE;
 	case WM_SETFOCUS:
-		//SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
+		SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		return TRUE;
 	case WM_GETMINMAXINFO:
