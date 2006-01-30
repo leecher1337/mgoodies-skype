@@ -621,9 +621,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 		break;
 	}
-	case DM_DEACTIVATE:
-		SetForegroundWindow(dat->foregroundWindow);
-		break;
 
 	case WM_ACTIVATE:
 		if (LOWORD(wParam) == WA_INACTIVE) {
@@ -657,18 +654,22 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		break;
 	case WM_LBUTTONDOWN:
 		if (!IsZoomed(hwndDlg)) {
-			dat->mouseLBDown = 1;
-			GetCursorPos(&dat->mouseLBDownPos);
-			SetCapture(hwndDlg);
+			POINT pt;
+			GetCursorPos(&pt);
+		//	dat->mouseLBDown = 1;
+		//	GetCursorPos(&dat->mouseLBDownPos);
+			return SendMessage(hwndDlg, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, MAKELPARAM(pt.x, pt.y));
+		//	SetCapture(hwndDlg);
+			
 		}
 		break;
 	case WM_LBUTTONUP:
-		if (dat->mouseLBDown) {
-			dat->mouseLBDown = 0;
-			ReleaseCapture();
-		}
+		//if (dat->mouseLBDown) {
+		//	dat->mouseLBDown = 0;
+		//	ReleaseCapture();
+		//}
 		break;
-	case WM_MOUSEMOVE:
+	case WM_MOUSEMOVE:/*
 		if (dat->mouseLBDown) {
 			POINT pt;
 			RECT  rc;
@@ -676,6 +677,45 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			GetWindowRect(hwndDlg, &rc);
 			SetWindowPos(hwndDlg, 0, rc.left - (dat->mouseLBDownPos.x - pt.x), rc.top - (dat->mouseLBDownPos.y - pt.y), 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 			dat->mouseLBDownPos = pt;
+		}*/
+		break;
+	case WM_MOVING:
+		{
+			int snapPixels = 10;
+			RECT rcDesktop;
+			RECT *pRect = (RECT *)lParam;
+			POINT pt;
+			SIZE szSize = {pRect->right-pRect->left,pRect->bottom-pRect->top};
+			GetCursorPos(&pt);
+			SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);			
+			pRect->left = pt.x-dat->mouseLBDownPos.x;
+			pRect->top = pt.y-dat->mouseLBDownPos.y;
+			pRect->right = pRect->left+szSize.cx;
+			pRect->bottom = pRect->top+szSize.cy;				
+			if(pRect->top < snapPixels && pRect->top > -snapPixels) {
+				pRect->top = 0;
+				pRect->bottom = szSize.cy;
+			}
+			if(pRect->left < snapPixels && pRect->left > -snapPixels) {
+				pRect->left = 0;
+				pRect->right = szSize.cx;
+			}
+			if(pRect->right < rcDesktop.right+snapPixels && pRect->right > rcDesktop.right-snapPixels) {
+				pRect->right = rcDesktop.right;
+				pRect->left = rcDesktop.right-szSize.cx;
+			}
+			if(pRect->bottom < rcDesktop.bottom+snapPixels && pRect->bottom > rcDesktop.bottom-snapPixels) {
+				pRect->bottom = rcDesktop.bottom;
+				pRect->top = rcDesktop.bottom-szSize.cy;
+			}
+		}
+		break;
+	case WM_SYSCOMMAND:
+		if ((wParam & 0xFFF0) == SC_MOVE) {
+			RECT  rc;
+			GetWindowRect(hwndDlg, &rc);
+			dat->mouseLBDownPos.x = LOWORD(lParam) - rc.left;
+			dat->mouseLBDownPos.y = HIWORD(lParam) - rc.top;
 		}
 		break;
 	case WM_DESTROY:
@@ -712,6 +752,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			}
 
 		}
+		break;
+	case DM_DEACTIVATE:
+		SetForegroundWindow(dat->foregroundWindow);
 		break;
 	case DM_ERRORDECIDED:
 		break;
