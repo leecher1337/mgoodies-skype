@@ -38,13 +38,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "resource.h"
 #ifdef __MINGW32__
 #define SES_EXTENDBACKCOLOR	4
-#define EM_SETEDITSTYLE (WM_USER + 204)
-#define EM_SETSCROLLPOS (WM_USER + 222)
-#define SF_USECODEPAGE 0x00000020
-#define EM_SETTEXTEX	(WM_USER + 97)
-#define ST_DEFAULT		0
-#define ST_KEEPUNDO		1
-#define ST_SELECTION	2
 #define ST_NEWCHARS		4
 #define	CFM_WEIGHT			0x00400000
 #define WinVerMajor()      LOBYTE(LOWORD(GetVersion()))
