@@ -66,6 +66,9 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.2.9.9
++ Always On Top option in system menu
+* bug #006247: 'Unread msg' when the window is minimized
 2.2.9.8
 + window snapping
 * bug #006208: double click does not activate tab

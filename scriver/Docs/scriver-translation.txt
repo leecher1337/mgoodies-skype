@@ -67,6 +67,7 @@
 
 ;controls
 
+[Always On Top]
 [Message Window Options]
 [Automatically pop up the window when]
 [Stay minimized]
@@ -104,6 +105,7 @@
 [Cancel]
 [while sending the following message:]
 [Message Window Event Log]
+[Enable IEView]
 [Show icons]
 [Show names]
 [Show times]

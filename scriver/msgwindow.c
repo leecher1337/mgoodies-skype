@@ -150,14 +150,14 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 static TCHAR* GetTabName(HANDLE *hContact)
 {
 	int len;
-	TCHAR *result;
+	TCHAR *result = NULL;
 	if (hContact) {
 		result = GetNickname(hContact, NULL);
 		len = lstrlen(result);
-	}
-	if (g_dat->flags & SMF_LIMITNAMES) {
-		if (len > 20 ) {
-			result[20] = '\0';
+		if (g_dat->flags & SMF_LIMITNAMES) {
+			if (len > 20 ) {
+				result[20] = '\0';
+			}
 		}
 	}
 	return result;
@@ -345,6 +345,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
+			HMENU hMenu;
+			HANDLE hSContact;
+			int savePerContact = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT);
 			struct NewMessageWindowLParam *newData = (struct NewMessageWindowLParam *) lParam;
 			dat = (struct ParentWindowData *) malloc(sizeof(struct ParentWindowData));
 			dat->foregroundWindow = GetForegroundWindow();
@@ -357,6 +360,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			dat->flags = g_dat->flags;// | SMF_SHOWTITLEBAR;
 			dat->mouseLBDown = 0;
 			dat->windowWasCascaded = 0;
+			dat->bMinimized = 0;
 			dat->hwndStatus = CreateWindowEx(0, STATUSCLASSNAME, NULL, WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwndDlg, NULL, g_hInst, NULL);
 			{
 				int statwidths[4];
@@ -409,28 +413,29 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
    				pSetLayeredWindowAttributes(hwndDlg, RGB(255,255,255), (BYTE)(255-g_dat->inactiveAlpha), LWA_ALPHA);
 //				RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 			}
-			//SetWindowPos(dat->hwndTabs, 0, 0, -10, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 			if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
 				ShowWindow(dat->hwndStatus, SW_HIDE);
 			}
-			if (dat->flags & SMF_USETABS) {
-				if (ScriverRestoreWindowPosition(hwndDlg, NULL, SRMMMOD, "", 0, SW_HIDE)) {
-					SetWindowPos(hwndDlg, 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE  | SWP_HIDEWINDOW);
+			hSContact = !(dat->flags & SMF_USETABS) && savePerContact ? dat->hContact : NULL;
+			dat->bTopmost = DBGetContactSettingByte(hSContact, SRMMMOD, SRMSGSET_TOPMOST, SRMSGDEFSET_TOPMOST);
+			if (ScriverRestoreWindowPosition(hwndDlg, hSContact, SRMMMOD, "", 0, SW_HIDE)) {
+				if (ScriverRestoreWindowPosition(hwndDlg, hSContact, SRMMMOD, "", RWPF_NOSIZE, SW_HIDE)) {
+					SetWindowPos(GetParent(hwndDlg), 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_HIDEWINDOW);
+				} else {
+					SetWindowPos(hwndDlg, 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE | SWP_HIDEWINDOW);
 				}
-			} else {
-				int savePerContact = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT);
-				if (ScriverRestoreWindowPosition(hwndDlg, savePerContact ? dat->hContact : NULL, SRMMMOD, "", 0, SW_HIDE)) {
-				//if (Utils_RestoreWindowPosition(GetParent(hwndDlg), savePerContact ? dat->hContact : NULL, SRMMMOD, "")) {
-					if (savePerContact) {
-						if (ScriverRestoreWindowPosition(hwndDlg, NULL, SRMMMOD, "", RWPF_NOSIZE, SW_HIDE))
-					//	if (Utils_RestoreWindowPositionNoMove(GetParent(hwndDlg), NULL, SRMMMOD, ""))
-						SetWindowPos(GetParent(hwndDlg), 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE);
-					}
-					else
-						SetWindowPos(hwndDlg, 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE);
-				}
+			}
+			if (!(dat->flags & SMF_USETABS)) {
 				if (!savePerContact && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CASCADE, SRMSGDEFSET_CASCADE))
 					WindowList_Broadcast(g_dat->hParentWindowList, DM_CASCADENEWWINDOW, (WPARAM) hwndDlg, (LPARAM) & dat->windowWasCascaded);
+			}
+			hMenu = GetSystemMenu( hwndDlg, FALSE );
+			AppendMenu( hMenu, MF_SEPARATOR, 0, NULL );
+			if (dat->bTopmost) {
+				AppendMenu( hMenu, MF_ENABLED | MF_CHECKED | MF_STRING, IDM_TOPMOST, TranslateT("Always On Top"));
+                SetWindowPos(hwndDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+			} else {
+				AppendMenu( hMenu, MF_ENABLED | MF_UNCHECKED | MF_STRING, IDM_TOPMOST, TranslateT("Always On Top"));
 			}
 		}
 		return TRUE;
@@ -660,7 +665,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		//	GetCursorPos(&dat->mouseLBDownPos);
 			return SendMessage(hwndDlg, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, MAKELPARAM(pt.x, pt.y));
 		//	SetCapture(hwndDlg);
-			
+
 		}
 		break;
 	case WM_LBUTTONUP:
@@ -687,11 +692,11 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			POINT pt;
 			SIZE szSize = {pRect->right-pRect->left,pRect->bottom-pRect->top};
 			GetCursorPos(&pt);
-			SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);			
+			SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);
 			pRect->left = pt.x-dat->mouseLBDownPos.x;
 			pRect->top = pt.y-dat->mouseLBDownPos.y;
 			pRect->right = pRect->left+szSize.cx;
-			pRect->bottom = pRect->top+szSize.cy;				
+			pRect->bottom = pRect->top+szSize.cy;
             if (!(GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
 				if(pRect->top < snapPixels && pRect->top > -snapPixels) {
 					pRect->top = 0;
@@ -718,41 +723,43 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			GetWindowRect(hwndDlg, &rc);
 			dat->mouseLBDownPos.x = LOWORD(lParam) - rc.left;
 			dat->mouseLBDownPos.y = HIWORD(lParam) - rc.top;
-		}
+		} else if (wParam == IDM_TOPMOST) {
+            HMENU hMenu = GetSystemMenu(hwndDlg, FALSE);
+            if (dat->bTopmost)  {
+                CheckMenuItem(hMenu, IDM_TOPMOST, MF_BYCOMMAND | MF_UNCHECKED);
+                SetWindowPos(hwndDlg, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                dat->bTopmost = FALSE;
+            }
+            else {
+                CheckMenuItem(hMenu, IDM_TOPMOST, MF_BYCOMMAND | MF_CHECKED);
+                SetWindowPos(hwndDlg, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                dat->bTopmost = TRUE;
+            }
+        }
 		break;
 	case WM_DESTROY:
 		{
+			WINDOWPLACEMENT wp = { 0 };
+			HANDLE hContact;
 			g_dat->hParent = NULL;
 			SetWindowLong(hwndDlg, GWL_USERDATA, 0);
 			WindowList_Remove(g_dat->hParentWindowList, hwndDlg);
 			if (dat->children!=NULL) free (dat->children);
 			free(dat->tabCtrlDat);
 			free(dat);
-			if (dat->flags & SMF_USETABS) {
-				WINDOWPLACEMENT wp = { 0 };
-				wp.length = sizeof(wp);
-				GetWindowPlacement(hwndDlg, &wp);
-				DBWriteContactSettingDword(NULL, SRMMMOD, "x", wp.rcNormalPosition.left);
-				DBWriteContactSettingDword(NULL, SRMMMOD, "y", wp.rcNormalPosition.top);
-				DBWriteContactSettingDword(NULL, SRMMMOD, "width", wp.rcNormalPosition.right - wp.rcNormalPosition.left);
-				DBWriteContactSettingDword(NULL, SRMMMOD, "height", wp.rcNormalPosition.bottom - wp.rcNormalPosition.top);
-			} else {
-				WINDOWPLACEMENT wp = { 0 };
-				HANDLE hContact;
-				if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT))
-					hContact = dat->hContact;
-				else
-					hContact = NULL;
-				wp.length = sizeof(wp);
-				GetWindowPlacement(hwndDlg, &wp);
-				if (!dat->windowWasCascaded) {
-					DBWriteContactSettingDword(hContact, SRMMMOD, "x", wp.rcNormalPosition.left);
-					DBWriteContactSettingDword(hContact, SRMMMOD, "y", wp.rcNormalPosition.top);
-				}
-				DBWriteContactSettingDword(hContact, SRMMMOD, "width", wp.rcNormalPosition.right - wp.rcNormalPosition.left);
-				DBWriteContactSettingDword(hContact, SRMMMOD, "height", wp.rcNormalPosition.bottom - wp.rcNormalPosition.top);
+			if (!(dat->flags & SMF_USETABS) && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT))
+				hContact = dat->hContact;
+			else
+				hContact = NULL;
+			wp.length = sizeof(wp);
+			GetWindowPlacement(hwndDlg, &wp);
+			if (!dat->windowWasCascaded) {
+				DBWriteContactSettingDword(hContact, SRMMMOD, "x", wp.rcNormalPosition.left);
+				DBWriteContactSettingDword(hContact, SRMMMOD, "y", wp.rcNormalPosition.top);
 			}
-
+			DBWriteContactSettingDword(hContact, SRMMMOD, "width", wp.rcNormalPosition.right - wp.rcNormalPosition.left);
+			DBWriteContactSettingDword(hContact, SRMMMOD, "height", wp.rcNormalPosition.bottom - wp.rcNormalPosition.top);
+			DBWriteContactSettingByte(hContact, SRMMMOD, SRMSGSET_TOPMOST, (BYTE)dat->bTopmost);
 		}
 		break;
 	case DM_DEACTIVATE:
@@ -783,9 +790,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 		return TRUE;
 	case DM_ACTIVATECHILD:
-		if((HWND) lParam != dat->hwndActive) {
+//		if((HWND) lParam != dat->hwndActive) {
 			ActivateChild(dat, (HWND) lParam);
-		}
+//		}
 		return TRUE;
 	case DM_ACTIVATEPREV:
 		ActivatePrevChild(dat, (HWND) lParam);
@@ -1162,10 +1169,12 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,const char *szNamePrefix, int flags, int showCmd)
 {
+	RECT rcDesktop;
 	WINDOWPLACEMENT wp;
 	char szSettingName[64];
 	int x,y;
 
+	SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);
 	wp.length=sizeof(wp);
 	GetWindowPlacement(hwnd,&wp);
 	wsprintfA(szSettingName,"%sx",szNamePrefix);
@@ -1186,6 +1195,8 @@ int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,
 	}
 	wp.flags=0;
 	wp.showCmd = showCmd;
+	if (wp.rcNormalPosition.left > rcDesktop.right || wp.rcNormalPosition.top > rcDesktop.bottom 
+		|| wp.rcNormalPosition.right < rcDesktop.left || wp.rcNormalPosition.bottom < rcDesktop.top) return 1;
 	SetWindowPlacement(hwnd,&wp);
 	return 0;
 }
