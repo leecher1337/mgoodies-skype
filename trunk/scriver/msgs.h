@@ -71,6 +71,7 @@ struct ParentWindowData
 	int		nFlash;
 	int		nFlashMax;
 	int		bMinimized;
+	int		bTopmost;
 	int		windowWasCascaded;
 	struct TabCtrlData *tabCtrlDat;
 };
@@ -226,13 +227,15 @@ extern const int msgDlgFontCount;
 #define SRMSGDEFSET_SHOWTITLEBAR   1
 #define SRMSGSET_SHOWSTATUSBAR	   "ShowStatusBar"
 #define SRMSGDEFSET_SHOWSTATUSBAR  1
+#define SRMSGSET_TOPMOST		   "Topmost"
+#define SRMSGDEFSET_TOPMOST		   0
 #define SRMSGSET_USETABS		   "UseTabs"
 #define SRMSGDEFSET_USETABS		   1
 #define SRMSGSET_TABSATBOTTOM	   "TabsPosition"
 #define SRMSGDEFSET_TABSATBOTTOM   0
 #define SRMSGSET_LIMITNAMES		   "LimitNamesOnTabs"
 #define SRMSGDEFSET_LIMITNAMES	   1
-#define SRMSGSET_HIDEONETAB		   "HideOnetab"
+#define SRMSGSET_HIDEONETAB		   "HideOneTab"
 #define SRMSGDEFSET_HIDEONETAB	   1
 #define SRMSGSET_POPFLAGS          "PopupFlags"
 #define SRMSGDEFSET_POPFLAGS       0

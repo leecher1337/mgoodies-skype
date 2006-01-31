@@ -1496,6 +1496,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 
 		}
 	case DM_ACTIVATE:
+
 	case WM_ACTIVATE:
 		if (LOWORD(wParam) != WA_ACTIVE)
 			break;
