@@ -693,6 +693,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 
 	if((nflags & YAMN_ACC_CONT) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
 	{
+		char sMsg[250];
 		CLISTEVENT cEvent;
 		cEvent.cbSize = sizeof(CLISTEVENT);
 		cEvent.hContact = ActualAccount->hContact;
@@ -704,7 +705,14 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 
 		sprintf(cEvent.pszTooltip,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
 		CallServiceSync(MS_CLIST_ADDEVENT, 0,(LPARAM)&cEvent);
-		DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", cEvent.pszTooltip);
+		
+		sprintf(sMsg,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
+		DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", sMsg);
+		
+		if(nflags & YAMN_ACC_CONTNICK)
+		{
+			DBWriteContactSettingString(ActualAccount->hContact, ProtoName, "Nick", cEvent.pszTooltip);
+		}
 	}
 
 	if((nflags & YAMN_ACC_POP) && !(ActualAccount->Flags & YAMN_ACC_POPN) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
@@ -836,6 +844,11 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 			}
 			else
 				DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", Translate("No new mail"));
+
+			if(nflags & YAMN_ACC_CONTNICK)
+			{
+				DBWriteContactSettingString(ActualAccount->hContact, ProtoName, "Nick", ActualAccount->Name);
+			}
 		}
 	}
 	return;

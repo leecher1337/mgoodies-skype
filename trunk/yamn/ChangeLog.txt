@@ -3,6 +3,7 @@
 * Right click on error popup close the popup.
 ! Missing break; in nonewmail popup in switch.
 + Add option to rename contact according to new mail.
+! Patch by pescuma on delete accounts 
 
 0.0.0.15
 ============
