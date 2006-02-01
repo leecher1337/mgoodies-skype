@@ -1446,26 +1446,28 @@ int DeleteAccounts(HYAMNPROTOPLUGIN Plugin)
 {
 	HACCOUNT Finder;
 
-//1. wait to get write access
-#ifdef DEBUG_SYNCHRO
+	//1. wait to get write access
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"DeleteAccounts:AccountBrowserSO-write wait\n");
-#endif
+	#endif
 	SWMRGWaitToWrite(Plugin->AccountBrowserSO,INFINITE);
-#ifdef DEBUG_SYNCHRO
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"DeleteAccounts:AccountBrowserSO-write enter\n");
-#endif
+	#endif
 
 	WaitForAllAccounts(Plugin,FALSE);
 
-	for(Finder=Plugin->FirstAccount;Finder!=NULL;Finder=Finder->Next)
+	for(Finder=Plugin->FirstAccount;Finder!=NULL;)
 	{
+		HACCOUNT Next = Finder->Next;
 		DeletePluginAccountSvc((WPARAM)Finder,(LPARAM)0);
+		Finder = Next;
 	}
 
-//leave write access
-#ifdef DEBUG_SYNCHRO
+	//leave write access
+	#ifdef DEBUG_SYNCHRO
 	DebugLog(SynchroFile,"DeleteAccounts:AccountBrowserSO-write done\n");
-#endif
+	#endif
 	SWMRGDoneWriting(Plugin->AccountBrowserSO);
 
 	return 1;
