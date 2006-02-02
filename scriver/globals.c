@@ -267,6 +267,7 @@ void InitGlobals() {
 	g_dat->protoNames = NULL;
 	g_dat->hIconList = NULL;
 	g_dat->draftList = NULL;
+	g_dat->avatarServiceExists = ServiceExists(MS_AV_GETAVATARBITMAP);
 }
 
 void FreeGlobals() {
