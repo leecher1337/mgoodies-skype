@@ -3,6 +3,7 @@
 #include "Options.h"
 #include "Template.h"
 #include "Utils.h"
+#include "m_avatars.h"
 
 // srmm stuff
 #define EVENTTYPE_STATUSCHANGE 25368
@@ -107,18 +108,20 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	}
 	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
-	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
-	    if (strlen(dbv.pszVal) > 0) {
-			/* relative -> absolute */
-		    char tmpPath[MAX_PATH];
-		    strcpy (tmpPath, dbv.pszVal);
-		    if (ServiceExists(MS_UTILS_PATHTORELATIVE)&& strncmp(tmpPath, "http://", 7)) {
-    			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-		   	}
-       		szAvatarIn = Utils::UTF8Encode(tmpPath);
-		    Utils::convertPath(szAvatarIn);
-	    }
-       	DBFreeVariant(&dbv);
+	if(DBGetContactSettingWord(event->hContact, szProto, "Status", ID_STATUS_OFFLINE) != ID_STATUS_OFFLINE) {
+		if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
+		    if (strlen(dbv.pszVal) > 0) {
+				/* relative -> absolute */
+			    char tmpPath[MAX_PATH];
+			    strcpy (tmpPath, dbv.pszVal);
+			    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+	    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			   	}
+	       		szAvatarIn = Utils::UTF8Encode(tmpPath);
+			    Utils::convertPath(szAvatarIn);
+		    }
+	       	DBFreeVariant(&dbv);
+		}
 	}
 	if (szAvatarIn == NULL) {
         szAvatarIn = Utils::dupString(szNoAvatar);
@@ -128,8 +131,8 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 			/* relative -> absolute */
 		    char tmpPath[MAX_PATH];
 		    strcpy (tmpPath, dbv.pszVal);
-		    if (ServiceExists(MS_UTILS_PATHTORELATIVE)&& strncmp(tmpPath, "http://", 7)) {
-    			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+		    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
 		   	}
             szAvatarOut = Utils::UTF8Encode(tmpPath);
 		    Utils::convertPath(szAvatarOut);
@@ -604,18 +607,20 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 	}
 	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
-	if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
-	    if (strlen(dbv.pszVal) > 0) {
-			/* relative -> absolute */
-		    char tmpPath[MAX_PATH];
-		    strcpy (tmpPath, dbv.pszVal);
-		    if (ServiceExists(MS_UTILS_PATHTORELATIVE)&& strncmp(tmpPath, "http://", 7)) {
-    			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-		   	}
-       		szAvatarIn = Utils::UTF8Encode(tmpPath);
-		    Utils::convertPath(szAvatarIn);
-	    }
-       	DBFreeVariant(&dbv);
+	if(DBGetContactSettingWord(event->hContact, szProto, "Status", ID_STATUS_OFFLINE) != ID_STATUS_OFFLINE) {
+		if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
+		    if (strlen(dbv.pszVal) > 0) {
+				/* relative -> absolute */
+			    char tmpPath[MAX_PATH];
+			    strcpy (tmpPath, dbv.pszVal);
+			    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+	    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			   	}
+	       		szAvatarIn = Utils::UTF8Encode(tmpPath);
+			    Utils::convertPath(szAvatarIn);
+		    }
+	       	DBFreeVariant(&dbv);
+		}
 	}
 	if (szAvatarIn == NULL) {
         szAvatarIn = Utils::dupString(szNoAvatar);
@@ -625,8 +630,8 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 			/* relative -> absolute */
 		    char tmpPath[MAX_PATH];
 		    strcpy (tmpPath, dbv.pszVal);
-		    if (ServiceExists(MS_UTILS_PATHTORELATIVE)&& strncmp(tmpPath, "http://", 7)) {
-    			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+		    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
 		   	}
        		szAvatarOut = Utils::UTF8Encode(tmpPath);
 		    Utils::convertPath(szAvatarOut);
