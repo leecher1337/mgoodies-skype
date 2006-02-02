@@ -114,7 +114,7 @@ static int MessageEventAdded(WPARAM wParam, LPARAM lParam)
 			newData.hContact = (HANDLE) wParam;
 			if (g_dat->hParent == NULL || !(g_dat->flags & SMF_USETABS)) {
 				g_dat->hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
-			}	
+			}
 			newData.flags = NMWLP_INCOMING;
 			CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), g_dat->hParent, DlgProcMessage, (LPARAM) & newData);
 			return 0;
@@ -336,6 +336,21 @@ static int GetWindowData(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+static int MyAvatarChanged(WPARAM wParam, LPARAM lParam) {
+	return 0;
+}
+
+static int AvatarChanged(WPARAM wParam, LPARAM lParam) {
+	if (wParam == 0) {			// protocol picture has changed...
+		WindowList_Broadcast(g_dat->hMessageWindowList, DM_PROTOAVATARCHANGED, wParam, lParam);
+	} else {
+	    HWND hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE)wParam);
+		SendMessage(hwnd, DM_AVATARCHANGED, wParam, lParam);
+	}
+    return 0;
+}
+
+
 static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
 	CLISTMENUITEM mi;
@@ -367,6 +382,8 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 	HookEvent(ME_CLIST_DOUBLECLICKED, SendMessageCommand);
 	HookEvent(ME_SMILEYADD_OPTIONSCHANGED, SmileySettingsChanged);
 	HookEvent(ME_IEVIEW_OPTIONSCHANGED, SmileySettingsChanged);
+	HookEvent(ME_AV_MYAVATARCHANGED, MyAvatarChanged);
+	HookEvent(ME_AV_AVATARCHANGED, AvatarChanged);
 	RestoreUnreadMessageAlerts();
 	return 0;
 }
