@@ -137,6 +137,7 @@ struct MessageWindowData
 	DWORD	flags;
 	int		messagesInProgress;
 	int		codePage;
+	struct avatarCacheEntry *ace;
 };
 
 #define HM_EVENTSENT         (WM_USER+10)
@@ -182,6 +183,9 @@ struct MessageWindowData
 
 #define DM_ACTIVATE			 (WM_USER+60)
 #define DM_DEACTIVATE		 (WM_USER+61)
+#define DM_MYAVATARCHANGED	 (WM_USER+62)
+#define DM_PROTOAVATARCHANGED (WM_USER+63)
+#define DM_AVATARCHANGED	 (WM_USER+64)
 
 #define EVENTTYPE_STATUSCHANGE 25368
 
