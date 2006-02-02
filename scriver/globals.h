@@ -95,6 +95,7 @@ struct GlobalMessageData
 	HMENU	hMenuANSIEncoding;
 	HIMAGELIST hIconList;
 	TCmdList *draftList;
+	int		avatarServiceExists;
 };
 
 int IconsChanged(WPARAM wParam, LPARAM lParam);
