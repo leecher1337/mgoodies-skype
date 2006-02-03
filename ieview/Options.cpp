@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Smiley.h"
 #include "Template.h"
 #include "m_MathModule.h"
+#include "m_avatars.h"
 
 #define UM_CHECKSTATECHANGE (WM_USER+100)
 HANDLE hHookOptionsChanged;
@@ -943,6 +944,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 bool Options::isInited = false;
 bool Options::bMathModule = false;
 int  Options::smileyAddFlags = 0;
+int  Options::avatarServiceFlags = 0;
 int Options::generalFlags;
 int Options::srmmFlags;
 char *Options::srmmTemplatesFilename = NULL;
@@ -970,6 +972,10 @@ void Options::init() {
 	smileyAddFlags = 0;
 	if (ServiceExists(MS_SMILEYADD_BATCHPARSE)) {
 		smileyAddFlags = SMILEYADD_PRESENT;
+	}
+	avatarServiceFlags = 0;
+	if (ServiceExists(MS_AV_GETAVATARBITMAP)) {
+		avatarServiceFlags = AVATARSERVICE_PRESENT;
 	}
 	generalFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, 0);
 	srmmFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SRMMFLAGS, FALSE);
@@ -1353,4 +1359,8 @@ bool Options::isMathModule() {
 
 int Options::getSmileyAddFlags() {
 	return smileyAddFlags;
+}
+
+int Options::getAvatarServiceFlags() {
+	return avatarServiceFlags;
 }
