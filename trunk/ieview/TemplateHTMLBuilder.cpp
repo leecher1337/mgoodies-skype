@@ -108,8 +108,38 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	}
 	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
-	if(DBGetContactSettingWord(event->hContact, szProto, "Status", ID_STATUS_OFFLINE) != ID_STATUS_OFFLINE) {
-		if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
+	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
+		struct avatarCacheEntry *ace = CallService(MS_AV_GETAVATARBITMAP, (WPARAM)event->hContact, 0);
+		if (ace!=NULL) {
+			szAvatarIn = Utils::UTF8Encode(ace->szFilename);
+		}
+	} else {
+		if(DBGetContactSettingWord(event->hContact, szProto, "Status", ID_STATUS_OFFLINE) != ID_STATUS_OFFLINE) {
+			if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
+			    if (strlen(dbv.pszVal) > 0) {
+					/* relative -> absolute */
+				    char tmpPath[MAX_PATH];
+				    strcpy (tmpPath, dbv.pszVal);
+				    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+		    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+				   	}
+		       		szAvatarIn = Utils::UTF8Encode(tmpPath);
+				    Utils::convertPath(szAvatarIn);
+			    }
+		       	DBFreeVariant(&dbv);
+			}
+		}
+	}
+	if (szAvatarIn == NULL) {
+        szAvatarIn = Utils::dupString(szNoAvatar);
+	}
+	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
+		struct avatarCacheEntry *ace = CallService(MS_AV_GETMYAVATAR, (WPARAM)0, (LPARAM)szRealProto);
+		if (ace!=NULL) {
+			szAvatarOut = Utils::UTF8Encode(ace->szFilename);
+		}
+	} else {
+		if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 		    if (strlen(dbv.pszVal) > 0) {
 				/* relative -> absolute */
 			    char tmpPath[MAX_PATH];
@@ -117,27 +147,11 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 			    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
 	    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
 			   	}
-	       		szAvatarIn = Utils::UTF8Encode(tmpPath);
-			    Utils::convertPath(szAvatarIn);
+	            szAvatarOut = Utils::UTF8Encode(tmpPath);
+			    Utils::convertPath(szAvatarOut);
 		    }
 	       	DBFreeVariant(&dbv);
 		}
-	}
-	if (szAvatarIn == NULL) {
-        szAvatarIn = Utils::dupString(szNoAvatar);
-	}
-	if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
-	    if (strlen(dbv.pszVal) > 0) {
-			/* relative -> absolute */
-		    char tmpPath[MAX_PATH];
-		    strcpy (tmpPath, dbv.pszVal);
-		    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-		   	}
-            szAvatarOut = Utils::UTF8Encode(tmpPath);
-		    Utils::convertPath(szAvatarOut);
-	    }
-       	DBFreeVariant(&dbv);
 	}
 	if (szAvatarOut == NULL) {
         szAvatarOut = Utils::dupString(szNoAvatar);
@@ -607,8 +621,38 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 	}
 	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
-	if(DBGetContactSettingWord(event->hContact, szProto, "Status", ID_STATUS_OFFLINE) != ID_STATUS_OFFLINE) {
-		if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
+	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
+		struct avatarCacheEntry *ace = CallService(MS_AV_GETAVATARBITMAP, (WPARAM)event->hContact, 0);
+		if (ace!=NULL) {
+			szAvatarIn = Utils::UTF8Encode(ace->szFilename);
+		}
+	} else {
+		if(DBGetContactSettingWord(event->hContact, szProto, "Status", ID_STATUS_OFFLINE) != ID_STATUS_OFFLINE) {
+			if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
+			    if (strlen(dbv.pszVal) > 0) {
+					/* relative -> absolute */
+				    char tmpPath[MAX_PATH];
+				    strcpy (tmpPath, dbv.pszVal);
+				    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+		    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+				   	}
+		       		szAvatarIn = Utils::UTF8Encode(tmpPath);
+				    Utils::convertPath(szAvatarIn);
+			    }
+		       	DBFreeVariant(&dbv);
+			}
+		}
+	}
+	if (szAvatarIn == NULL) {
+        szAvatarIn = Utils::dupString(szNoAvatar);
+	}
+	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
+		struct avatarCacheEntry *ace = CallService(MS_AV_GETMYAVATAR, (WPARAM)0, (LPARAM)szRealProto);
+		if (ace!=NULL) {
+			szAvatarOut = Utils::UTF8Encode(ace->szFilename);
+		}
+	} else {
+		if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 		    if (strlen(dbv.pszVal) > 0) {
 				/* relative -> absolute */
 			    char tmpPath[MAX_PATH];
@@ -616,27 +660,11 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 			    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
 	    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
 			   	}
-	       		szAvatarIn = Utils::UTF8Encode(tmpPath);
-			    Utils::convertPath(szAvatarIn);
+	       		szAvatarOut = Utils::UTF8Encode(tmpPath);
+			    Utils::convertPath(szAvatarOut);
 		    }
 	       	DBFreeVariant(&dbv);
 		}
-	}
-	if (szAvatarIn == NULL) {
-        szAvatarIn = Utils::dupString(szNoAvatar);
-	}
-	if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
-	    if (strlen(dbv.pszVal) > 0) {
-			/* relative -> absolute */
-		    char tmpPath[MAX_PATH];
-		    strcpy (tmpPath, dbv.pszVal);
-		    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-		   	}
-       		szAvatarOut = Utils::UTF8Encode(tmpPath);
-		    Utils::convertPath(szAvatarOut);
-	    }
-       	DBFreeVariant(&dbv);
 	}
 	if (szAvatarOut == NULL) {
         szAvatarOut = Utils::dupString(szNoAvatar);

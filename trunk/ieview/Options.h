@@ -69,6 +69,7 @@ private:
 	static bool     bMathModule;
    	static bool     isInited;
 	static int      smileyAddFlags;
+	static int      avatarServiceFlags;
 public:
 	enum OPTIONS {
 		GENERAL_ENABLE_BBCODES	= 1,
@@ -92,6 +93,9 @@ public:
 	};
 	enum SMILEYADDFLAGS {
 		SMILEYADD_PRESENT     = 0x0001,
+	};
+	enum AVATARSERVICEFLAGS {
+		AVATARSERVICE_PRESENT     = 0x0001,
 	};
    	static void     		setGeneralFlags(int flags);
    	static int				getGeneralFlags();
@@ -128,6 +132,7 @@ public:
 
    	static bool             isMathModule();
    	static int              getSmileyAddFlags();
+   	static int				getAvatarServiceFlags();
    	static void      		init();
 };
 
