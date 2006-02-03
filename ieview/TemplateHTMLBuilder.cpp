@@ -109,7 +109,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
 	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
-		struct avatarCacheEntry *ace = CallService(MS_AV_GETAVATARBITMAP, (WPARAM)event->hContact, 0);
+		struct avatarCacheEntry *ace = (struct avatarCacheEntry *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)event->hContact, 0);
 		if (ace!=NULL) {
 			szAvatarIn = Utils::UTF8Encode(ace->szFilename);
 		}
@@ -134,7 +134,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
         szAvatarIn = Utils::dupString(szNoAvatar);
 	}
 	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
-		struct avatarCacheEntry *ace = CallService(MS_AV_GETMYAVATAR, (WPARAM)0, (LPARAM)szRealProto);
+		struct avatarCacheEntry *ace = (struct avatarCacheEntry *)CallService(MS_AV_GETMYAVATAR, (WPARAM)0, (LPARAM)szRealProto);
 		if (ace!=NULL) {
 			szAvatarOut = Utils::UTF8Encode(ace->szFilename);
 		}
@@ -622,7 +622,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
 	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
-		struct avatarCacheEntry *ace = CallService(MS_AV_GETAVATARBITMAP, (WPARAM)event->hContact, 0);
+		struct avatarCacheEntry *ace = (struct avatarCacheEntry *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)event->hContact, 0);
 		if (ace!=NULL) {
 			szAvatarIn = Utils::UTF8Encode(ace->szFilename);
 		}
@@ -647,7 +647,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
         szAvatarIn = Utils::dupString(szNoAvatar);
 	}
 	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
-		struct avatarCacheEntry *ace = CallService(MS_AV_GETMYAVATAR, (WPARAM)0, (LPARAM)szRealProto);
+		struct avatarCacheEntry *ace = (struct avatarCacheEntry *)CallService(MS_AV_GETMYAVATAR, (WPARAM)0, (LPARAM)szRealProto);
 		if (ace!=NULL) {
 			szAvatarOut = Utils::UTF8Encode(ace->szFilename);
 		}
