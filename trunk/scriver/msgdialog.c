@@ -1195,11 +1195,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		break;
 	}
 	case DM_AVATARCHANGED:
-		{
-			if (dat->hContact == (HANDLE) wParam) {
-				dat->ace = (struct avatarCacheEntry *) lParam;
-				ShowAvatar(hwndDlg, dat);
-			}
+		if ((HANDLE) wParam == NULL) {
+			dat->ace = (struct avatarCacheEntry *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)dat->hContact, 0);
+			ShowAvatar(hwndDlg, dat);
+		} else if (dat->hContact == (HANDLE) wParam) {
+			dat->ace = (struct avatarCacheEntry *) lParam;
+			ShowAvatar(hwndDlg, dat);
 		}
 		break;
 	case DM_GETAVATAR:

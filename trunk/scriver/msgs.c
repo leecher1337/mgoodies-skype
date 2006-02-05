@@ -342,7 +342,7 @@ static int MyAvatarChanged(WPARAM wParam, LPARAM lParam) {
 
 static int AvatarChanged(WPARAM wParam, LPARAM lParam) {
 	if (wParam == 0) {			// protocol picture has changed...
-		WindowList_Broadcast(g_dat->hMessageWindowList, DM_PROTOAVATARCHANGED, wParam, lParam);
+		WindowList_Broadcast(g_dat->hMessageWindowList, DM_AVATARCHANGED, wParam, lParam);
 	} else {
 	    HWND hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE)wParam);
 		SendMessage(hwnd, DM_AVATARCHANGED, wParam, lParam);
