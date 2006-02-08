@@ -66,6 +66,8 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.3.0.1
+* bugfix: bug #006324
 2.3.0.0
 + improved support for Avatar Service plugin
 * bugfixes

@@ -639,12 +639,12 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 		if (LOWORD(wParam) != WA_ACTIVE)
 			break;
+	case WM_MOUSEACTIVATE:
 		if (dat->hwndActive == NULL) { // do not set foreground window at all (always stay in the background !)
 //			SendMessage(hwndDlg, DM_DEACTIVATE, 0, 0);
 		} else {
 			PostMessage(hwndDlg, WM_SETFOCUS, 0, 0);
 		}
-	case WM_MOUSEACTIVATE:
 		if (KillTimer(hwndDlg, TIMERID_FLASHWND)) {
 			FlashWindow(hwndDlg, FALSE);
 			dat->nFlash = 0;
