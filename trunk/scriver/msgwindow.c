@@ -519,6 +519,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		if (dat->hwndActive != NULL) {
 			SetFocus(dat->hwndActive);
 		}
+
 		return TRUE;
 	case WM_CLOSE:
 		DestroyWindow(hwndDlg);
@@ -643,7 +644,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		if (dat->hwndActive == NULL) { // do not set foreground window at all (always stay in the background !)
 //			SendMessage(hwndDlg, DM_DEACTIVATE, 0, 0);
 		} else {
-			PostMessage(hwndDlg, WM_SETFOCUS, 0, 0);
+			ActivateChild(dat, dat->hwndActive);
+			PostMessage(dat->hwndActive, DM_SETFOCUS, 0, msg);
 		}
 		if (KillTimer(hwndDlg, TIMERID_FLASHWND)) {
 			FlashWindow(hwndDlg, FALSE);
