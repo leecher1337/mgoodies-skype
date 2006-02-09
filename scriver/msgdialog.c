@@ -1519,8 +1519,24 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	case WM_LBUTTONDOWN:
 		SendMessage(dat->hwndParent, WM_LBUTTONDOWN, wParam, lParam);
 		return TRUE;
+	case DM_SETFOCUS:
+		if (lParam == WM_MOUSEACTIVATE) {
+			HWND hLog;
+			RECT rc;
+			POINT pt;
+			GetCursorPos(&pt);
+			if (dat->hwndLog != NULL) {
+				hLog = dat->hwndLog;
+			} else {
+				hLog = GetDlgItem(hwndDlg, IDC_LOG);
+			}
+			GetWindowRect(hLog, &rc);
+			if (pt.x >= rc.left && pt.x <= rc.right && pt.y >= rc.top && pt.y <=rc.bottom) {
+				SetFocus(hLog);
+				return TRUE;
+			}
+		}
 	case WM_SETFOCUS:
-		SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		return TRUE;
 	case WM_GETMINMAXINFO:
@@ -1704,6 +1720,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	// IEVIew MOD End
 		SetDlgItemText(hwndDlg, IDC_LOG, _T(""));
 		dat->hDbEventFirst = NULL;
+		dat->lastEventType = -1;
 		break;
 	case WM_TIMER:
 		if (wParam == TIMERID_MSGSEND) {

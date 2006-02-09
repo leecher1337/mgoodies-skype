@@ -66,6 +66,8 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.3.0.2
+* bugfixes
 2.3.0.1
 * bugfix: bug #006324
 2.3.0.0
