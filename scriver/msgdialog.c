@@ -1534,7 +1534,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			GetWindowRect(hLog, &rc);
 			if (pt.x >= rc.left && pt.x <= rc.right && pt.y >= rc.top && pt.y <=rc.bottom) {
-				SetFocus(hLog);
+		//		SetFocus(hLog);
 				return TRUE;
 			}
 		}
