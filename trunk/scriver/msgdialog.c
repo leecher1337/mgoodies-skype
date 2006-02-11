@@ -1128,6 +1128,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			return 0;
 		if (pAck->type != ACKTYPE_AVATAR)
 			return 0;
+		if (pAck->result == ACKRESULT_STATUS) {
+			SendMessage(hwndDlg, DM_GETAVATAR, 0, 0);
+			return 0;
+		} 
 		if (pai==NULL)
 			return 0;
 		if (pAck->result == ACKRESULT_SUCCESS) {
@@ -1135,8 +1139,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				DBWriteContactSettingString(dat->hContact, SRMMMOD, SRMSGSET_AVATAR, pai->filename);
 				ShowAvatar(hwndDlg, dat);
 			}
-		} else if (pAck->result == ACKRESULT_STATUS) {
-			SendMessage(hwndDlg, DM_GETAVATAR, 0, 0);
 		} else if (pAck->result == ACKRESULT_FAILED) {
 			DBDeleteContactSetting(dat->hContact, SRMMMOD, SRMSGSET_AVATAR);
 			SendMessage(hwndDlg, DM_GETAVATAR, 0, 0);
@@ -1536,7 +1538,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				return TRUE;
 			}
 		}
+		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
+		return TRUE;
 	case WM_SETFOCUS:
+		SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM)hwndDlg);
 		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		return TRUE;
 	case WM_GETMINMAXINFO:

@@ -314,7 +314,7 @@ static int GetWindowClass(WPARAM wParam, LPARAM lParam)
 {
 	char *szBuf = (char*)wParam;
 	int size = (int)lParam;
-	mir_snprintf(szBuf, size, SRMMMOD);
+	mir_snprintf(szBuf, size, "Scriver");
 	return 0;
 }
 
