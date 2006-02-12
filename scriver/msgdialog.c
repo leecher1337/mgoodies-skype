@@ -1121,7 +1121,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		break;
 	}
 	case HM_AVATARACK:
-	if(!g_dat->avatarServiceExists) {
+	{
 		ACKDATA *pAck = (ACKDATA *)lParam;
 		PROTO_AVATAR_INFORMATION *pai = (PROTO_AVATAR_INFORMATION *)pAck->hProcess;
 		if (pAck->hContact!=dat->hContact)
@@ -1206,11 +1206,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 		break;
 	case DM_GETAVATAR:
-	if(g_dat->avatarServiceExists) {
-		dat->ace = (struct avatarCacheEntry *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)dat->hContact, 0);
-		ShowAvatar(hwndDlg, dat);
-		break;
-	} else {
+	{
 		PROTO_AVATAR_INFORMATION pai;
 		int result;
 		//Disable avatars
@@ -1350,6 +1346,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 //			dat->limitAvatarMaxH = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT);
 //			}
 			SendMessage(hwndDlg, DM_GETAVATAR, 0, 0);
+			if(g_dat->avatarServiceExists) {
+				dat->ace = (struct avatarCacheEntry *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)dat->hContact, 0);
+			}
 		}
 		SetDialogToType(hwndDlg);
 		{
