@@ -66,6 +66,8 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.3.0.5
+* bugfix: crash on exit (patch by borkra)
 2.3.0.4
 + "Scriver" is now returned by MS_MSG_GETWINDOWCLASS
 * bugfixes: bug #6350
