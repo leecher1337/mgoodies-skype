@@ -273,14 +273,14 @@ void InitGlobals() {
 void FreeGlobals() {
 	int i;
 
+	if (g_hDbEvent) UnhookEvent(g_hDbEvent);
+	if (g_hAck) UnhookEvent(g_hAck);
 	if (g_dat) {
+		if (g_dat->draftList != NULL) tcmdlist_free(g_dat->draftList);
 		for (i=0;i<sizeof(g_dat->hIcons)/sizeof(g_dat->hIcons[0]);i++)
 			DestroyIcon(g_dat->hIcons[i]);
 		free(g_dat);
 	}
-	if (g_hDbEvent) UnhookEvent(g_hDbEvent);
-	if (g_hAck) UnhookEvent(g_hAck);
-	if (g_dat->draftList != NULL) tcmdlist_free(g_dat->draftList);
 }
 
 void ReloadGlobals() {
