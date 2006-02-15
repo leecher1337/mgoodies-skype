@@ -1,0 +1,313 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Bulgarian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_BGR)
+#ifdef _WIN32
+LANGUAGE LANG_BULGARIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Bulgarian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+#ifdef _WIN32
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_OPT_NUDGE DIALOGEX 0, 0, 320, 250
+STYLE DS_SYSMODAL | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    GROUPBOX        "Status Options",IDC_STATIC,7,5,300,64
+    CONTROL         "Offline",IDC_CHECKST0,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,13,15,70,9
+    CONTROL         "Online",IDC_CHECKST1,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,13,28,70,9
+    CONTROL         "Away",IDC_CHECKST2,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_DISABLED | WS_TABSTOP,13,41,70,9
+    CONTROL         "N/A",IDC_CHECKST3,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_DISABLED | WS_TABSTOP,13,52,70,9
+    CONTROL         "Occupied",IDC_CHECKST4,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,160,15,70,9
+    CONTROL         "DND",IDC_CHECKST5,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_DISABLED | WS_TABSTOP,85,15,70,9
+    CONTROL         "Free for chat",IDC_CHECKST6,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,85,28,70,9
+    CONTROL         "Invisible",IDC_CHECKST7,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,85,41,70,9
+    CONTROL         "On the phone",IDC_CHECKST8,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,160,42,70,9
+    CONTROL         "Out to lunch",IDC_CHECKST9,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,160,28,70,9
+    PUSHBUTTON      "Preview",IDC_PREVIEW,258,49,41,15
+    GROUPBOX        "Popup Options",IDC_STATIC,7,73,300,64
+    CONTROL         "Popup notification",IDC_CHECKPOP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,83,108,10
+    CONTROL         "Use custom color",IDC_CHECKCOL,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,26,96,72,10
+    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,101,96,
+                    10,10
+    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_TABSTOP,113,96,
+                    10,10
+    EDITTEXT        IDC_POPUPTIME,101,111,20,12,ES_AUTOHSCROLL
+    LTEXT           "s",IDC_STATIC,121,113,8,8
+    LTEXT           "Popup duration",IDC_STATIC,35,111,57,8
+    CONTROL         "",IDC_BGCOLOUR,"ColourPicker",WS_TABSTOP,85,147,39,12
+    LTEXT           "Background colour",IDC_STATIC,129,149,176,8,
+                    SS_CENTERIMAGE
+    CONTROL         "",IDC_TEXTCOLOUR,"ColourPicker",WS_TABSTOP,85,163,39,12
+    LTEXT           "Text colour",IDC_STATIC,129,165,176,8,SS_CENTERIMAGE
+    CONTROL         "&Use Windows colours",IDC_USEWINCOLORS,"Button",
+                    BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,85,
+                    179,220,8
+END
+
+IDD_OPTIONS DIALOGEX 0, 0, 320, 250
+STYLE DS_SYSMODAL | DS_3DLOOK | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",0x0,7,4,305,239,
+                    WS_EX_TRANSPARENT
+END
+
+IDD_OPT_SHAKE DIALOGEX 0, 0, 320, 250
+STYLE DS_SYSMODAL | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    GROUPBOX        "Shaking Clist Options",IDC_STATIC,7,5,300,101
+    GROUPBOX        "Shaking Message Window Options",IDC_STATIC,7,111,300,
+                    101
+    CONTROL         "Slider1",IDC_SNUMBER_CLIST,"msctls_trackbar32",
+                    TBS_AUTOTICKS | TBS_BOTH | WS_TABSTOP,86,28,191,13
+    RTEXT           "Number of move",IDC_STATIC,13,30,72,9
+    RTEXT           "Number of move",IDC_STATIC,13,138,72,9
+    CONTROL         "Slider1",IDC_SNUMBER_CHAT,"msctls_trackbar32",
+                    TBS_AUTOTICKS | TBS_BOTH | WS_TABSTOP,85,136,191,12
+    LTEXT           "Static",IDC_LNUMBER_CLIST,277,31,25,8
+    LTEXT           "Static",IDC_LNUMBER_CHAT,278,138,24,8
+    CONTROL         "",IDC_SSCALE_CLIST,"msctls_trackbar32",TBS_AUTOTICKS | 
+                    TBS_BOTH | WS_TABSTOP,86,47,191,13
+    RTEXT           "Width of move",IDC_STATIC,13,49,72,9
+    LTEXT           "Static",IDC_LSCALE_CLIST,277,50,25,8
+    CONTROL         "",IDC_SSCALE_CHAT,"msctls_trackbar32",TBS_AUTOTICKS | 
+                    TBS_BOTH | WS_TABSTOP,86,153,191,13
+    RTEXT           "Width of move",IDC_STATIC,13,154,72,9
+    LTEXT           "Static",IDC_LSCALE_CHAT,277,155,25,8
+    CONTROL         "Enable clist shaking",IDC_CHECKCLIST,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,16,147,10
+    CONTROL         "Enable message window shaking",IDC_CHECKCHAT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,123,147,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_OPT_NUDGE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 312
+        VERTGUIDE, 13
+        VERTGUIDE, 85
+        VERTGUIDE, 160
+        VERTGUIDE, 307
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 243
+        HORZGUIDE, 5
+        HORZGUIDE, 20
+        HORZGUIDE, 147
+        HORZGUIDE, 157
+        HORZGUIDE, 173
+        HORZGUIDE, 184
+        HORZGUIDE, 207
+        HORZGUIDE, 217
+        HORZGUIDE, 228
+        HORZGUIDE, 239
+        HORZGUIDE, 243
+    END
+
+    IDD_OPTIONS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 312
+        VERTGUIDE, 13
+        VERTGUIDE, 85
+        VERTGUIDE, 160
+        VERTGUIDE, 307
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 243
+        HORZGUIDE, 5
+        HORZGUIDE, 20
+        HORZGUIDE, 147
+        HORZGUIDE, 157
+        HORZGUIDE, 173
+        HORZGUIDE, 184
+        HORZGUIDE, 207
+        HORZGUIDE, 217
+        HORZGUIDE, 228
+        HORZGUIDE, 239
+        HORZGUIDE, 243
+    END
+
+    IDD_OPT_SHAKE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 312
+        VERTGUIDE, 13
+        VERTGUIDE, 85
+        VERTGUIDE, 160
+        VERTGUIDE, 307
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 243
+        HORZGUIDE, 5
+        HORZGUIDE, 20
+        HORZGUIDE, 147
+        HORZGUIDE, 157
+        HORZGUIDE, 173
+        HORZGUIDE, 184
+        HORZGUIDE, 207
+        HORZGUIDE, 217
+        HORZGUIDE, 228
+        HORZGUIDE, 239
+        HORZGUIDE, 243
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// French (Belgium) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_FRB)
+#ifdef _WIN32
+LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,0,0,2
+ PRODUCTVERSION 0,0,0,2
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "Comments", "Plugin that render nudge events from different protocols\0"
+            VALUE "CompanyName", "\0"
+            VALUE "FileDescription", "Nudge\0"
+            VALUE "FileVersion", "0, 0, 0, 2\0"
+            VALUE "InternalName", "Nudge\0"
+            VALUE "LegalCopyright", "Copyright © 2006\0"
+            VALUE "OriginalFilename", "nudge.dll\0"
+            VALUE "ProductName", "nudge\0"
+            VALUE "ProductVersion", "0, 0, 0, 2\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_NUDGE               ICON    DISCARDABLE     "nudge.ico"
+#endif    // French (Belgium) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
