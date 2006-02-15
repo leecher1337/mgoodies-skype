@@ -21,6 +21,7 @@
 #include "include\m_trigger.h"
 #include "include\m_metacontacts.h"
 #include "include\m_updater.h"	
+#include "include\icolib.h"	
 #include "resource.h"
 #include "m_nudge.h"
 

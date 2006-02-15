@@ -22,7 +22,7 @@ CNudgeElement *NudgeList;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,0,3),
+	PLUGIN_MAKE_VERSION(0,0,0,4),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -124,9 +124,8 @@ int MainInit(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-int ModulesLoaded(WPARAM,LPARAM)
+void LoadProtocols(void)
 {
-	RegisterToUpdate();
 	int numberOfProtocols,ret;
 	char str[MAXMODULELABELLENGTH + 10];
 	HANDLE NudgeEvent = NULL;
@@ -153,7 +152,10 @@ int ModulesLoaded(WPARAM,LPARAM)
 	{
 		MessageBox(NULL,n->ProtocolName,n->NudgeSoundname,0);
 	}*/
+}
 
+void RegisterToTrigger(void)
+{
 	if( ServiceExists(MS_TRIGGER_REGISTERACTION))
 	{
 		ACTIONREGISTER ar;
@@ -163,17 +165,70 @@ int ModulesLoaded(WPARAM,LPARAM)
 		ar.pfnDlgProc = NULL;
 		ar.pszTemplate = NULL;
 
-		ar.pszName = Translate("ShakeClist");
+		ar.pszName = Translate("Shake contact list");
 		ar.pszService = MS_SHAKE_CLIST;
 
 		/* register the action */
 		CallService(MS_TRIGGER_REGISTERACTION, 0, (LPARAM)&ar);
 
-		ar.pszName = Translate("ShakeChat");
+		ar.pszName = Translate("Shake message window");
 		ar.pszService = MS_TRIGGER_SHAKE_CHAT;
 		/* register the action */
 		CallService(MS_TRIGGER_REGISTERACTION, 0, (LPARAM)&ar);
 	}
+}
+
+void LoadIcons(void)
+{
+	//Load icons
+	if(ServiceExists(MS_SKIN2_ADDICON))
+	{
+		CNudgeElement *n;
+		for(n = NudgeList;n != NULL; n = n->next)
+		{
+			SKINICONDESC sid;
+			char szFilename[MAX_PATH];
+			char iconName[MAXMODULELABELLENGTH + 10];
+			char iconDesc[MAXMODULELABELLENGTH + 10];
+			strncpy(szFilename, "plugins\\nudge.dll", MAX_PATH);
+
+			sid.cbSize = sizeof(SKINICONDESC);
+			sid.pszSection = Translate("Nudge");
+			sid.pszDefaultFile = szFilename;
+			sprintf(iconName,"Nudge_%s",n->ProtocolName);
+			sid.pszName = iconName;
+			sprintf(iconDesc,"Nudge for %s",n->ProtocolName);
+			sid.pszDescription = Translate(iconDesc);
+			sid.iDefaultIndex = -IDI_NUDGE;
+			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+			n->hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
+		}
+	}
+}
+
+static int LoadChangedIcons(WPARAM wParam, LPARAM lParam)
+{
+	//Load icons
+	if(ServiceExists(MS_SKIN2_ADDICON))
+	{
+		CNudgeElement *n;
+		for(n = NudgeList;n != NULL; n = n->next)
+		{
+			char iconName[MAXMODULELABELLENGTH + 10];
+			sprintf(iconName,"Nudge_%s",n->ProtocolName);
+			n->hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
+		}
+	}
+	return 0;
+}
+
+int ModulesLoaded(WPARAM,LPARAM)
+{
+	RegisterToUpdate();
+	RegisterToTrigger();
+	LoadProtocols();
+	LoadIcons();
 	return 0;
 }
 
@@ -182,6 +237,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	pluginLink = link;
 	NudgeList = NULL;
 	HookEvent(ME_SYSTEM_MODULESLOADED,ModulesLoaded);
+	if(ServiceExists(MS_SKIN2_ADDICON))
+        HookEvent(ME_SKIN2_ICONSCHANGED, LoadChangedIcons);
 	
 	InitOptions();
 
@@ -245,7 +302,7 @@ void Nudge_ShowPopup(CNudgeElement *n, HANDLE hCont)
 		NudgePopUp.lchContact = (HANDLE) n;
 
 	NudgePopUp.lchContact = hContact;
-	NudgePopUp.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_NUDGE ));
+	NudgePopUp.lchIcon = n->hIcon;
 	NudgePopUp.colorBack = ! n->popupWindowColor ? n->popupBackColor : GetSysColor(COLOR_BTNFACE);
 	NudgePopUp.colorText = ! n->popupWindowColor ? n->popupTextColor : GetSysColor(COLOR_WINDOWTEXT);
 	NudgePopUp.iSeconds = n->popupTimeSec;
