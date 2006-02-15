@@ -1,5 +1,5 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
+// Microsoft Visual C++ generated include file.
 // Used by resource.rc
 //
 #define IDD_DIALOG1                     101
@@ -50,9 +50,12 @@
 #define IDC_CHECKST8                    1028
 #define IDC_CHECKST9                    1029
 #define IDC_BGCOLOUR                    1030
+#define IDC_PROTOLIST                   1030
 #define IDC_TEXTCOLOUR                  1031
+#define IDC_CHECK1                      1031
+#define IDC_USEBYPROTOCOL               1031
+#define IDC_CHECKCOL                    1073
 #define IDC_POPUPBACKCOLOR              1074
-#define IDC_CHECKCOL					1073
 #define IDC_CHECKPOP                    1087
 #define IDC_POPUPTIME                   1090
 
@@ -62,7 +65,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        105
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1028
+#define _APS_NEXT_CONTROL_VALUE         1032
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

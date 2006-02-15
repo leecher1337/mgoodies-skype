@@ -1,26 +1,9 @@
 #include "headers.h"
 #include "shake.h"
 #include "main.h"
+#include "options.h"
 
-extern HINSTANCE hInst;
-extern bool Shaking;
-extern bool ShakingChat;
-extern bool bShakeClist;
-extern bool bShakeChat;
-extern int nScaleClist; 
-extern int nScaleChat;
-extern int nMoveClist; 
-extern int nMoveChat;
-extern bool bShowPopup;
-extern COLORREF colorBack;
-extern COLORREF colorText;
-extern int popupTime;
-extern bool bUseWindowColor;
-extern CNudgeElement* NudgeList;
 
-static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
-static BOOL CALLBACK DlgProcShakeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
 
 int NudgeOptInit(WPARAM wParam,LPARAM lParam)
 {
@@ -243,12 +226,85 @@ BOOL CALLBACK DlgProcShakeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 	return FALSE;
 }
 
+void CreateImageList(HWND hWnd)
+{
+	// Create and populate image list
+	HIMAGELIST hImList = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),	ILC_MASK | ILC_COLOR32, nProtocol, 0);
+
+	CNudgeElement *n;
+	for(n = NudgeList;n != NULL; n = n->next)
+	{
+		HICON hIcon = NULL;
+		hIcon=(HICON)CallProtoService(n->ProtocolName, PS_LOADICON,PLI_PROTOCOL | PLIF_SMALL, 0);
+		if (hIcon == NULL || (int)hIcon == CALLSERVICE_NOTFOUND) 
+		{
+			hIcon=(HICON)CallProtoService(n->ProtocolName, PS_LOADICON, PLI_PROTOCOL, 0);
+		}
+ 
+		if (hIcon == NULL || (int)hIcon == CALLSERVICE_NOTFOUND) 
+			hIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_NUDGE), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+
+		ImageList_AddIcon(hImList, hIcon);
+		DestroyIcon(hIcon);
+	}
+	//ADD default Icon for nudge
+	HICON hIcon = NULL;
+	hIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_NUDGE), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+	ImageList_AddIcon(hImList, hIcon);
+	DestroyIcon(hIcon);
+
+	HWND hLstView = GetDlgItem(hWnd, IDC_PROTOLIST);
+	TreeView_SetImageList(hLstView, hImList, TVSIL_NORMAL);
+}
+
+void PopulateProtocolList(HWND hWnd)
+{
+	bool useOne = IsDlgButtonChecked(hWnd, IDC_USEBYPROTOCOL) == BST_UNCHECKED;
+
+	HWND hLstView = GetDlgItem(hWnd, IDC_PROTOLIST);
+
+	TreeView_DeleteAllItems(hLstView);
+
+	TVINSERTSTRUCT tvi = {0};
+	tvi.hParent = TVI_ROOT;
+	tvi.hInsertAfter = TVI_LAST;
+	tvi.item.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_STATE | TVIF_SELECTEDIMAGE;
+	tvi.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_SELECTED;
+
+	CNudgeElement *n;
+	int i = 0;
+	if (!useOne)
+	{
+		for(n = NudgeList;n != NULL; n = n->next)
+		{
+			tvi.item.pszText = (TCHAR*)n->ProtocolName;
+			tvi.item.iImage  = i;
+			tvi.item.iSelectedImage = i;
+			tvi.item.state = 2;	
+			TreeView_InsertItem(hLstView, &tvi);
+		}
+	}
+	else
+	{
+		tvi.item.pszText = Translate("Nudge");
+		tvi.item.iImage  = nProtocol + 1;
+		tvi.item.iSelectedImage = nProtocol + 1;
+		tvi.item.state = 2;	
+		TreeView_InsertItem(hLstView, &tvi);
+
+	}
+	TreeView_SelectItem(hLstView, TreeView_GetRoot(hLstView));
+}
+
+
 BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 {
 	switch(msg)
 	{
 		case WM_INITDIALOG:
 			TranslateDialogDefault(hwnd);
+			CreateImageList(hwnd);
+			PopulateProtocolList(hwnd);
 			CheckDlgButton(hwnd,IDC_CHECKPOP, (WPARAM) bShowPopup);
 			CheckDlgButton(hwnd,IDC_USEWINCOLORS, (WPARAM) bUseWindowColor);
 			SetDlgItemInt(hwnd,IDC_POPUPTIME, popupTime,FALSE);
@@ -288,6 +344,9 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR),bShowPopup && ! bUseWindowColor);
 					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIME),bShowPopup);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
+					break;
+				case IDC_USEBYPROTOCOL:
+					PopulateProtocolList(hwnd);
 					break;
 			}
 			break;

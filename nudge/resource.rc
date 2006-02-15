@@ -70,44 +70,50 @@ STYLE DS_SYSMODAL | DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD |
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Status Options",IDC_STATIC,7,5,300,64
+    GROUPBOX        "Status Options",IDC_STATIC,7,102,300,64
     CONTROL         "Offline",IDC_CHECKST0,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,13,15,70,9
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,13,112,70,9
     CONTROL         "Online",IDC_CHECKST1,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,13,28,70,9
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,13,126,70,9
     CONTROL         "Away",IDC_CHECKST2,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_DISABLED | WS_TABSTOP,13,41,70,9
+                    WS_DISABLED | WS_TABSTOP,13,138,70,9
     CONTROL         "N/A",IDC_CHECKST3,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_DISABLED | WS_TABSTOP,13,52,70,9
+                    WS_DISABLED | WS_TABSTOP,13,150,70,9
     CONTROL         "Occupied",IDC_CHECKST4,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,160,15,70,9
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,160,112,70,9
     CONTROL         "DND",IDC_CHECKST5,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_DISABLED | WS_TABSTOP,85,15,70,9
+                    WS_DISABLED | WS_TABSTOP,85,112,70,9
     CONTROL         "Free for chat",IDC_CHECKST6,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,85,28,70,9
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,85,126,70,9
     CONTROL         "Invisible",IDC_CHECKST7,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,85,41,70,9
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,85,138,70,9
     CONTROL         "On the phone",IDC_CHECKST8,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,160,42,70,9
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,160,139,70,9
     CONTROL         "Out to lunch",IDC_CHECKST9,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,160,28,70,9
-    PUSHBUTTON      "Preview",IDC_PREVIEW,258,49,41,15
-    GROUPBOX        "Popup Options",IDC_STATIC,7,73,300,58
+                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,160,126,70,9
+    PUSHBUTTON      "Preview",IDC_PREVIEW,258,146,41,15
+    GROUPBOX        "Popup Options",IDC_STATIC,7,170,300,58
     CONTROL         "Popup notification",IDC_CHECKPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,13,83,108,10
-    EDITTEXT        IDC_POPUPTIME,30,98,20,12,ES_AUTOHSCROLL
-    LTEXT           "s",IDC_STATIC,54,100,8,8
-    LTEXT           "Popup duration",IDC_STATIC,64,100,82,8
-    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_TABSTOP,160,96,
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,180,108,10
+    EDITTEXT        IDC_POPUPTIME,30,195,20,12,ES_AUTOHSCROLL
+    LTEXT           "s",IDC_STATIC,54,198,8,8
+    LTEXT           "Popup duration",IDC_STATIC,64,198,82,8
+    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_TABSTOP,160,193,
                     39,12
-    LTEXT           "Background colour",IDC_STATIC,204,99,81,8,
+    LTEXT           "Background colour",IDC_STATIC,204,196,81,8,
                     SS_CENTERIMAGE
-    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,160,112,
+    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,160,209,
                     39,12
-    LTEXT           "Text colour",IDC_STATIC,204,115,82,8,SS_CENTERIMAGE
+    LTEXT           "Text colour",IDC_STATIC,204,212,82,8,SS_CENTERIMAGE
     CONTROL         "&Use Windows colours",IDC_USEWINCOLORS,"Button",
                     BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,30,
-                    115,121,8
+                    212,121,8
+    CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP | 
+                    TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER | 
+                    WS_TABSTOP,13,13,105,84
+    GROUPBOX        "Protocol options",IDC_STATIC,7,5,300,97
+    CONTROL         "Specify options for each protocol",IDC_USEBYPROTOCOL,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,123,13,162,14
 END
 
 IDD_OPTIONS DIALOGEX 0, 0, 320, 250
