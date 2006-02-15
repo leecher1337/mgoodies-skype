@@ -76,8 +76,8 @@ typedef struct SingleWriterMultiReaderGuard
 //================================== FUNCTIONS DEFINITIONS ========================================
 //
 
-typedef DWORD (WINAPI *YAMN_WAITTOWRITEFCN)(PSWMRG,PSCOUNTER=NULL);
-typedef void  (WINAPI *YAMN_WRITEDONEFCN)(PSWMRG,PSCOUNTER=NULL);
+typedef DWORD (WINAPI *YAMN_WAITTOWRITEFCN)(PSWMRG,PSCOUNTER);
+typedef void  (WINAPI *YAMN_WRITEDONEFCN)(PSWMRG,PSCOUNTER);
 typedef DWORD (WINAPI *YAMN_WAITTOREADFCN)(PSWMRG);
 typedef void  (WINAPI *YAMN_READDONEFCN)(PSWMRG);
 typedef DWORD (WINAPI *YAMN_SCMANAGEFCN)(PSCOUNTER);
@@ -132,23 +132,23 @@ typedef DWORD (WINAPI *YAMN_SCMANAGEFCN)(PSCOUNTER);
 #define	YAMN_SCINCID		"YAMN/SCInc"
 #define	YAMN_SCDECID		"YAMN/SCDec"
 
-#define	WaitToWrite(x)			pYAMNFcn->WaitToWriteFcn(x->AccountAccessSO)
+#define	WaitToWrite(x)			pYAMNFcn->WaitToWriteFcn(x->AccountAccessSO,0)
 #define	WaitToWriteEx(x,y)		pYAMNFcn->WaitToWriteFcn(x->AccountAccessSO,y)
-#define	WriteDone(x)			pYAMNFcn->WriteDoneFcn(x->AccountAccessSO)
+#define	WriteDone(x)			pYAMNFcn->WriteDoneFcn(x->AccountAccessSO,0)
 #define	WaitToRead(x)			pYAMNFcn->WaitToReadFcn(x->AccountAccessSO)
 #define	WaitToReadEx(x,y)		pYAMNFcn->WaitToReadFcn(x->AccountAccessSO,y)
 #define	ReadDone(x)			pYAMNFcn->ReadDoneFcn(x->AccountAccessSO)
 
-#define	MsgsWaitToWrite(x)		pYAMNFcn->WaitToWriteFcn(x->MessagesAccessSO)
+#define	MsgsWaitToWrite(x)		pYAMNFcn->WaitToWriteFcn(x->MessagesAccessSO,0)
 #define	MsgsWaitToWriteEx(x,y)		pYAMNFcn->WaitToWriteFcn(x->MessagesAccessSO,y)
-#define	MsgsWriteDone(x)		pYAMNFcn->WriteDoneFcn(x->MessagesAccessSO)
+#define	MsgsWriteDone(x)		pYAMNFcn->WriteDoneFcn(x->MessagesAccessSO,0)
 #define	MsgsWaitToRead(x)		pYAMNFcn->WaitToReadFcn(x->MessagesAccessSO)
 #define	MsgsWaitToReadEx(x)		pYAMNFcn->WaitToReadFcn(x->MessagesAccessSO,y)
 #define	MsgsReadDone(x)			pYAMNFcn->ReadDoneFcn(x->MessagesAccessSO)
 
-#define	WaitToWriteSO(x)		pYAMNFcn->WaitToWriteFcn(x)
+#define	WaitToWriteSO(x)		pYAMNFcn->WaitToWriteFcn(x,0)
 #define	WaitToWriteSOEx(x,y)		pYAMNFcn->WaitToWriteFcn(x,y)
-#define	WriteDoneSO(x)			pYAMNFcn->WriteDoneFcn(x)
+#define	WriteDoneSO(x)			pYAMNFcn->WriteDoneFcn(x,0)
 #define	WaitToReadSO(x)			pYAMNFcn->WaitToReadFcn(x)
 #define	WaitToReadSOEx(x,y)		pYAMNFcn->WaitToReadFcn(x,y)
 #define	ReadDoneSO(x)			pYAMNFcn->ReadDoneFcn(x)
