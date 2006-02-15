@@ -113,7 +113,7 @@ extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVers
 	return &pluginInfo;
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
+extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
 	hInst=hinstDLL;
 	return TRUE;
