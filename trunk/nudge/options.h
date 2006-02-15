@@ -1,0 +1,22 @@
+extern HINSTANCE hInst;
+extern bool Shaking;
+extern bool ShakingChat;
+extern bool bShakeClist;
+extern bool bShakeChat;
+extern int nScaleClist; 
+extern int nScaleChat;
+extern int nMoveClist; 
+extern int nMoveChat;
+extern bool bShowPopup;
+extern COLORREF colorBack;
+extern COLORREF colorText;
+extern int popupTime;
+extern bool bUseWindowColor;
+extern CNudgeElement* NudgeList;
+extern int nProtocol;
+
+static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
+static BOOL CALLBACK DlgProcShakeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
+void CreateImageList(HWND hWnd);
+void PopulateProtocolList(HWND hWnd);

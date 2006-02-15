@@ -11,6 +11,7 @@ bool bShowPopup = true;
 bool bUseWindowColor = true;
 bool bShakeClist = true;
 bool bShakeChat = true;
+int nProtocol = 0;
 static HANDLE hEventOptionsInitialize;
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
@@ -319,6 +320,7 @@ void Nudge_ShowPopup(CNudgeElement *n, HANDLE hCont)
 
 int Nudge_AddElement(char *protoName)
 {
+	nProtocol ++;
 	//Add contact menu entry
 	char servicefunction[ 100 ];
 	CLISTMENUITEM mi;
