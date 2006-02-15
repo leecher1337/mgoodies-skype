@@ -66,6 +66,8 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.3.0.6
+* bugfix: AvatarService support
 2.3.0.5
 * bugfix: crash on exit (patch by borkra)
 2.3.0.4
