@@ -1345,10 +1345,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 //			dat->limitAvatarMinH = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHTMIN, SRMSGDEFSET_AVHEIGHTMIN);
 //			dat->limitAvatarMaxH = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_AVHEIGHT, SRMSGDEFSET_AVHEIGHT);
 //			}
-			SendMessage(hwndDlg, DM_GETAVATAR, 0, 0);
 			if(g_dat->avatarServiceExists) {
 				dat->ace = (struct avatarCacheEntry *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)dat->hContact, 0);
 			}
+			SendMessage(hwndDlg, DM_GETAVATAR, 0, 0);
 		}
 		SetDialogToType(hwndDlg);
 		{
