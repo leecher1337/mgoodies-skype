@@ -347,6 +347,7 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 					break;
 				case IDC_USEBYPROTOCOL:
 					PopulateProtocolList(hwnd);
+					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 			}
 			break;
