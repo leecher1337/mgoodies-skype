@@ -10,6 +10,7 @@ typedef struct CNudgeElement
 	COLORREF popupBackColor;
 	COLORREF popupTextColor;
 	int popupTimeSec;
+	HICON hIcon;
 	CNudgeElement *next;
 } CNUDGEELEMENT;
 
@@ -18,6 +19,26 @@ typedef struct CNudgeElement
 *
 ****************************/
 void RegisterToUpdate(void);
+
+/*
+*
+****************************/
+void RegisterToTrigger(void);
+
+/*
+*
+****************************/
+void LoadProtocols(void);
+
+/*
+*
+****************************/
+void LoadIcons(void);
+
+/*
+*
+****************************/
+static int LoadChangedIcons(WPARAM, LPARAM);
 
 /*
 *

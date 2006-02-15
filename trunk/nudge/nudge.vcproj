@@ -242,6 +242,9 @@
 				RelativePath="resource.rc">
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\ChangeLog.txt">
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
