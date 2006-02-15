@@ -115,7 +115,7 @@ DWORD WINAPI FilterMail(HACCOUNT Account,DWORD AccountVer,HYAMNMAIL Mail,DWORD M
 							if(spamLevel>4)
 								spamLevel=2;
 							if(strstr(Browser->value,EmailSpam)!=NULL) {
-								if((Mail->Flags & YAMN_MSG_SPAMMASK==0) && (spamLevel==0))
+								if((Mail->Flags & (YAMN_MSG_SPAMMASK==0)) && (spamLevel==0))
 									Mail->Flags&=~(YAMN_MSG_SOUND | YAMN_MSG_APP | YAMN_MSG_POPUP | YAMN_MSG_SYSTRAY | YAMN_MSG_BROWSER);
 								else if((Mail->Flags & YAMN_MSG_SPAMMASK) < spamLevel)			//if some filter plugin set higher level of spam, we do nothing
 									Mail->Flags=(Mail->Flags & ~YAMN_MSG_SPAMMASK)+spamLevel;	//else we set spam level 2 (clearing spam bits and then settting them to level 2

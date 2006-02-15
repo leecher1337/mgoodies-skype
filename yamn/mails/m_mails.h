@@ -210,7 +210,7 @@ typedef void (WINAPI *YAMN_SYNCHROMIMEMSGSFCN)(HACCOUNT,HYAMNMAIL *,HYAMNMAIL *,
 typedef void (WINAPI *YAMN_TRANSLATEHEADERFCN)(char *,int,struct CMimeItem **);
 typedef void (WINAPI *YAMN_APPENDQUEUEFCN)(HYAMNMAIL,HYAMNMAIL);
 typedef void (WINAPI *YAMN_DELETEMIMEQUEUEFCN)(HACCOUNT,HYAMNMAIL);
-typedef void (WINAPI *YAMN_DELETEMIMEMESSAGEFCN)(HYAMNMAIL *,HYAMNMAIL,int=0);
+typedef void (WINAPI *YAMN_DELETEMIMEMESSAGEFCN)(HYAMNMAIL *,HYAMNMAIL,int);
 typedef HYAMNMAIL (WINAPI *YAMN_FINDMIMEMESSAGEFCN)(HYAMNMAIL,char *);
 typedef HYAMNMAIL (WINAPI *YAMN_CREATENEWDELETEQUEUEFCN)(HYAMNMAIL);
 typedef void (WINAPI *YAMN_SETREMOVEQUEUEFLAGSFCN)(HYAMNMAIL,DWORD,DWORD,DWORD,int);
@@ -271,7 +271,7 @@ typedef void (WINAPI *YAMN_SETREMOVEQUEUEFLAGSFCN)(HYAMNMAIL,DWORD,DWORD,DWORD,i
 #define TranslateHeader(a,b,c)		pYAMNMailFcn->TranslateHeaderFcn(a,b,c)
 #define AppendQueue(x,y)		pYAMNMailFcn->AppendQueueFcn(x,y)
 #define DeleteMIMEQueue(x,y)		pYAMNMailFcn->DeleteMessagesToEndFcn(x,y)
-#define DeleteMIMEMessage(x,y)		pYAMNMailFcn->DeleteMessageFromQueueFcn(x,y)
+#define DeleteMIMEMessage(x,y)		pYAMNMailFcn->DeleteMessageFromQueueFcn(x,y,0)
 #define DeleteMIMEMessageEx(x,y,z)	pYAMNMailFcn->DeleteMessageFromQueueFcn(x,y,z)
 #define FindMIMEMessageByID(x,y)	pYAMNMailFcn->FindMessageByIDFcn(x,y)
 #define CreateNewDeleteQueue(x)		pYAMNMailFcn->CreateNewDeleteQueueFcn(x)
