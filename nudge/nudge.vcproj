@@ -168,6 +168,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\nudge.cpp">
+			</File>
+			<File
 				RelativePath="options.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
@@ -223,6 +226,9 @@
 			</File>
 			<File
 				RelativePath="main.h">
+			</File>
+			<File
+				RelativePath=".\nudge.h">
 			</File>
 			<File
 				RelativePath=".\options.h">
