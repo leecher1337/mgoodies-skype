@@ -1,3 +1,7 @@
+0.0.0.5
+===========
+! Trigger plugin bug fix 
+
 0.0.0.4
 ============
 + Icolib support

@@ -23,7 +23,7 @@ CNudgeElement DefaultNudge;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,0,4),
+	PLUGIN_MAKE_VERSION(0,0,0,5),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -183,14 +183,14 @@ void RegisterToTrigger(void)
 		ar.pfnDlgProc = NULL;
 		ar.pszTemplate = NULL;
 
-		ar.pszName = Translate("Shake contact list");
-		ar.pszService = MS_SHAKE_CLIST;
+		ar.pszName = Translate("Nudge : Shake contact list");
+		ar.pszService = MS_SHAKE_CLIST_TRIGGER;
 
 		/* register the action */
 		CallService(MS_TRIGGER_REGISTERACTION, 0, (LPARAM)&ar);
 
-		ar.pszName = Translate("Shake message window");
-		ar.pszService = MS_TRIGGER_SHAKE_CHAT;
+		ar.pszName = Translate("Nudge : Shake message window");
+		ar.pszService = MS_SHAKE_CHAT_TRIGGER;
 		/* register the action */
 		CallService(MS_TRIGGER_REGISTERACTION, 0, (LPARAM)&ar);
 	}
@@ -279,7 +279,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	//Create function for plugins
 	CreateServiceFunction(MS_SHAKE_CLIST,ShakeClist);
 	CreateServiceFunction(MS_SHAKE_CHAT,ShakeChat);
-	CreateServiceFunction(MS_TRIGGER_SHAKE_CHAT,TriggerShakeChat);
+	CreateServiceFunction(MS_SHAKE_CHAT_TRIGGER,TriggerShakeChat);
+	CreateServiceFunction(MS_SHAKE_CLIST_TRIGGER,TriggerShakeClist);
 	return 0; 
 }
 

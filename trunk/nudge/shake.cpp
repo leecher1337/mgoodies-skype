@@ -103,6 +103,21 @@ int ShakeChat( WPARAM wParam, LPARAM lParam )
 	return 1;
 }
 
+int TriggerShakeClist( WPARAM wParam, LPARAM lParam )
+{
+	DWORD tid;
+	HWND hWnd;
+	int flags;
+	flags = (int)wParam;
+
+	if (!flags&ACT_PERFORM)
+		return 1;
+
+	hWnd = (HWND) CallService( MS_CLUI_GETHWND, 0, 0 );
+	CreateThread(NULL,0,ShakeClistWindow,hWnd,0,&tid);
+	return 1;
+}
+
 int TriggerShakeChat( WPARAM wParam, LPARAM lParam )
 {
 	DWORD tid;
@@ -110,6 +125,11 @@ int TriggerShakeChat( WPARAM wParam, LPARAM lParam )
 	char srmmName[100];
 	MessageWindowData mwd;
 	MessageWindowInputData mwid;
+	int flags;
+	flags = (int)wParam;
+
+	if (!flags&ACT_PERFORM)
+		return 1;
 
 	SPECIFICACTIONINFO *sai;
 	HANDLE hContact;
