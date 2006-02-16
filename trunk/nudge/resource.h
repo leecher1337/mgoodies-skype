@@ -38,7 +38,6 @@
 #define IDC_LSCALE_CHAT                 1016
 #define IDC_CHECKCLIST                  1018
 #define IDC_CHECKST0                    1019
-#define IDC_CHECKCHAT                   1019
 #define IDC_CHECKST1                    1020
 #define IDC_CHECKST2                    1021
 #define IDC_CHECKST3                    1022
@@ -50,14 +49,15 @@
 #define IDC_CHECKST8                    1028
 #define IDC_CHECKST9                    1029
 #define IDC_BGCOLOUR                    1030
-#define IDC_PROTOLIST                   1030
-#define IDC_TEXTCOLOUR                  1031
-#define IDC_CHECK1                      1031
-#define IDC_USEBYPROTOCOL               1031
-#define IDC_CHECKCOL                    1073
-#define IDC_POPUPBACKCOLOR              1074
-#define IDC_CHECKPOP                    1087
-#define IDC_POPUPTIME                   1090
+#define IDC_PROTOLIST                   1031
+#define IDC_TEXTCOLOUR                  1032
+#define IDC_USEBYPROTOCOL               1033
+#define IDC_CHECKCHAT2                  1034
+#define IDC_CHECKCHAT                   1034
+#define IDC_CHECKCOL                    1035
+#define IDC_POPUPBACKCOLOR              1036
+#define IDC_CHECKPOP                    1037
+#define IDC_POPUPTIME                   1038
 
 // Next default values for new objects
 // 

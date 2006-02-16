@@ -1,6 +1,6 @@
 #include "headers.h"
-#include "shake.h"
 #include "main.h"
+#include "shake.h"
 #include "options.h"
 
 
@@ -44,12 +44,12 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
          tci.lParam = (LPARAM)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_NUDGE), hwnd, DlgProcNudgeOpt);
          tci.pszText = TranslateT("Nudge");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
-         MoveWindow((HWND)tci.lParam,5,26,rcClient.right-8,rcClient.bottom-29,1);
+         MoveWindow((HWND)tci.lParam,14,29,rcClient.right-30,rcClient.bottom-45,1);
 
          tci.lParam = (LPARAM)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_SHAKE),hwnd,DlgProcShakeOpt);
          tci.pszText = TranslateT("Window Shaking");
          TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
-         MoveWindow((HWND)tci.lParam,5,26,rcClient.right-8,rcClient.bottom-29,1);
+         MoveWindow((HWND)tci.lParam,14,29,rcClient.right-30,rcClient.bottom-45,1);
          ShowWindow((HWND)tci.lParam, SW_HIDE);
          iInit = FALSE;
          return FALSE;
@@ -75,16 +75,13 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
                            TabCtrl_GetItem(GetDlgItem(hwnd,IDC_OPTIONSTAB),i,&tci);
                            SendMessage((HWND)tci.lParam,WM_NOTIFY,0,lParam);
                         }
-						CNudgeElement *n;
+
+						NudgeElementList *n;
 						for(n = NudgeList;n != NULL; n = n->next)
 						{
-							n->popupTimeSec = popupTime;
-							n->showPopup = bShowPopup;
-							n->popupBackColor = colorBack;
-							n->popupTextColor = colorText;
-							n->popupWindowColor = bUseWindowColor;
+							n->item.Save();
 						}
-						
+						DefaultNudge.Save();						
                      }
                   break;
                }
@@ -146,16 +143,6 @@ BOOL CALLBACK DlgProcShakeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 			SendDlgItemMessage(hwnd, IDC_SSCALE_CLIST, TBM_SETPOS, TRUE, nMoveClist);
 			SendDlgItemMessage(hwnd, IDC_SSCALE_CHAT, TBM_SETPOS, TRUE, nMoveChat);
 
-			CheckDlgButton(hwnd,IDC_CHECKCLIST,bShakeClist);
-			CheckDlgButton(hwnd,IDC_CHECKCHAT,bShakeChat);
-			EnableWindow(GetDlgItem(hwnd,IDC_SSCALE_CLIST),IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED);
-			EnableWindow(GetDlgItem(hwnd,IDC_SSCALE_CHAT),IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED);
-			EnableWindow(GetDlgItem(hwnd,IDC_SNUMBER_CLIST),(IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED));
-			EnableWindow(GetDlgItem(hwnd,IDC_SNUMBER_CHAT),(IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED));
-			EnableWindow(GetDlgItem(hwnd,IDC_LSCALE_CLIST),(IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED));
-			EnableWindow(GetDlgItem(hwnd,IDC_LSCALE_CHAT),(IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED));
-			EnableWindow(GetDlgItem(hwnd,IDC_LNUMBER_CLIST),(IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED));
-			EnableWindow(GetDlgItem(hwnd,IDC_LNUMBER_CHAT),(IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED));
 			break;
 		case WM_COMMAND:
 		{
@@ -165,18 +152,6 @@ BOOL CALLBACK DlgProcShakeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_PREVIEW:
 					ShakeClist(0,0);
 					//SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
-					break;
-				case IDC_CHECKCLIST:
-				case IDC_CHECKCHAT:
-					EnableWindow(GetDlgItem(hwnd,IDC_SSCALE_CLIST),IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hwnd,IDC_SSCALE_CHAT),IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hwnd,IDC_SNUMBER_CLIST),(IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED));
-					EnableWindow(GetDlgItem(hwnd,IDC_SNUMBER_CHAT),(IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED));
-					EnableWindow(GetDlgItem(hwnd,IDC_LSCALE_CLIST),(IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED));
-					EnableWindow(GetDlgItem(hwnd,IDC_LSCALE_CHAT),(IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED));
-					EnableWindow(GetDlgItem(hwnd,IDC_LNUMBER_CLIST),(IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED));
-					EnableWindow(GetDlgItem(hwnd,IDC_LNUMBER_CHAT),(IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED));
-					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 			}
 			break;
@@ -215,8 +190,6 @@ BOOL CALLBACK DlgProcShakeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 							nMoveChat = (int) SendMessage((HWND) GetDlgItem(hwnd, IDC_SNUMBER_CHAT), TBM_GETPOS, 0, 0);
 							nScaleClist = (int) SendMessage((HWND) GetDlgItem(hwnd, IDC_SSCALE_CLIST), TBM_GETPOS, 0, 0);
 							nScaleChat = (int) SendMessage((HWND) GetDlgItem(hwnd, IDC_SSCALE_CHAT), TBM_GETPOS, 0, 0);
-							bShakeClist = (IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED);
-							bShakeChat = (IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED);
 						}
 					}
 			}
@@ -231,14 +204,14 @@ void CreateImageList(HWND hWnd)
 	// Create and populate image list
 	HIMAGELIST hImList = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),	ILC_MASK | ILC_COLOR32, nProtocol, 0);
 
-	CNudgeElement *n;
+	NudgeElementList *n;
 	for(n = NudgeList;n != NULL; n = n->next)
 	{
 		HICON hIcon = NULL;
-		hIcon=(HICON)CallProtoService(n->ProtocolName, PS_LOADICON,PLI_PROTOCOL | PLIF_SMALL, 0);
+		hIcon=(HICON)CallProtoService(n->item.ProtocolName, PS_LOADICON,PLI_PROTOCOL | PLIF_SMALL, 0);
 		if (hIcon == NULL || (int)hIcon == CALLSERVICE_NOTFOUND) 
 		{
-			hIcon=(HICON)CallProtoService(n->ProtocolName, PS_LOADICON, PLI_PROTOCOL, 0);
+			hIcon=(HICON)CallProtoService(n->item.ProtocolName, PS_LOADICON, PLI_PROTOCOL, 0);
 		}
  
 		if (hIcon == NULL || (int)hIcon == CALLSERVICE_NOTFOUND) 
@@ -269,15 +242,15 @@ void PopulateProtocolList(HWND hWnd)
 	tvi.hParent = TVI_ROOT;
 	tvi.hInsertAfter = TVI_LAST;
 	tvi.item.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_STATE | TVIF_SELECTEDIMAGE;
-	tvi.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_SELECTED;
+	tvi.item.stateMask = TVIS_STATEIMAGEMASK;
 
-	CNudgeElement *n;
+	NudgeElementList *n;
 	int i = 0;
 	if (!useOne)
 	{
 		for(n = NudgeList;n != NULL; n = n->next)
 		{
-			tvi.item.pszText = (TCHAR*)n->ProtocolName;
+			tvi.item.pszText = (TCHAR*)n->item.ProtocolName;
 			tvi.item.iImage  = i;
 			tvi.item.iSelectedImage = i;
 			tvi.item.state = 2;	
@@ -287,13 +260,14 @@ void PopulateProtocolList(HWND hWnd)
 	else
 	{
 		tvi.item.pszText = Translate("Nudge");
-		tvi.item.iImage  = nProtocol + 1;
-		tvi.item.iSelectedImage = nProtocol + 1;
+		tvi.item.iImage  = nProtocol;
+		tvi.item.iSelectedImage = nProtocol;
 		tvi.item.state = 2;	
 		TreeView_InsertItem(hLstView, &tvi);
 
 	}
 	TreeView_SelectItem(hLstView, TreeView_GetRoot(hLstView));
+	TreeView_SetCheckState(hLstView, TreeView_GetRoot(hLstView), TRUE)
 }
 
 
@@ -305,16 +279,25 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 			TranslateDialogDefault(hwnd);
 			CreateImageList(hwnd);
 			PopulateProtocolList(hwnd);
-			CheckDlgButton(hwnd,IDC_CHECKPOP, (WPARAM) bShowPopup);
-			CheckDlgButton(hwnd,IDC_USEWINCOLORS, (WPARAM) bUseWindowColor);
-			SetDlgItemInt(hwnd,IDC_POPUPTIME, popupTime,FALSE);
-			SendDlgItemMessage(hwnd,IDC_POPUPBACKCOLOR,CPM_SETCOLOUR,0,(LPARAM) colorBack);
-			SendDlgItemMessage(hwnd,IDC_POPUPTEXTCOLOR,CPM_SETCOLOUR,0,(LPARAM) colorText);
-			EnableWindow(GetDlgItem(hwnd,IDC_CHECKPOP),bShowPopup);
-			EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORS),bUseWindowColor);
-			EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR),bShowPopup && ! bUseWindowColor);
-			EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR),bShowPopup && ! bUseWindowColor);
-			EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIME),bShowPopup);
+			if( !useByProtocol )
+				ActualNudge = &DefaultNudge;
+			else
+				ActualNudge = &DefaultNudge;
+
+			CheckDlgButton(hwnd, IDC_CHECKPOP, (WPARAM) ActualNudge->showPopup);
+			CheckDlgButton(hwnd, IDC_USEWINCOLORS, (WPARAM) ActualNudge->popupWindowColor);
+			CheckDlgButton(hwnd, IDC_CHECKCLIST, (WPARAM) ActualNudge->shakeClist);
+			CheckDlgButton(hwnd, IDC_CHECKCHAT, (WPARAM) ActualNudge->shakeChat);
+			SetDlgItemInt(hwnd, IDC_POPUPTIME, ActualNudge->popupTimeSec,FALSE);
+			SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETCOLOUR,0, ActualNudge->popupBackColor);
+			SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETDEFAULTCOLOUR, 0, GetSysColor(COLOR_BTNFACE));
+			SendDlgItemMessage(hwnd, IDC_POPUPTEXTCOLOR, CPM_SETCOLOUR,0, ActualNudge->popupTextColor);
+			SendDlgItemMessage(hwnd, IDC_POPUPTEXTCOLOR, CPM_SETDEFAULTCOLOUR, 0, GetSysColor(COLOR_WINDOWTEXT));
+			EnableWindow(GetDlgItem(hwnd, IDC_USEWINCOLORS), ActualNudge->showPopup);
+			EnableWindow(GetDlgItem(hwnd, IDC_POPUPBACKCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+			EnableWindow(GetDlgItem(hwnd, IDC_POPUPTEXTCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+			EnableWindow(GetDlgItem(hwnd, IDC_POPUPTIME), ActualNudge->showPopup);
+
 			break;
 		case WM_COMMAND:
 		{
@@ -325,28 +308,36 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 					Preview();
 					break;
 				case IDC_POPUPTIME:
+					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
+					break;
 				case IDC_POPUPTEXTCOLOR:
 				case IDC_POPUPBACKCOLOR:
-					colorBack = SendDlgItemMessage(hwnd,IDC_POPUPBACKCOLOR,CPM_GETCOLOUR,0,0);
-					colorText = SendDlgItemMessage(hwnd,IDC_POPUPTEXTCOLOR,CPM_GETCOLOUR,0,0);
+					ActualNudge->popupBackColor = SendDlgItemMessage(hwnd,IDC_POPUPBACKCOLOR,CPM_GETCOLOUR,0,0);
+					ActualNudge->popupTextColor = SendDlgItemMessage(hwnd,IDC_POPUPTEXTCOLOR,CPM_GETCOLOUR,0,0);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_USEWINCOLORS:
-					bUseWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR), bShowPopup && ! bUseWindowColor);
-					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR), bShowPopup && ! bUseWindowColor);
+					ActualNudge->popupWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_CHECKPOP:
-					bShowPopup = (IsDlgButtonChecked(hwnd,IDC_CHECKPOP)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORS),bShowPopup);
-					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR),bShowPopup && ! bUseWindowColor);
-					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR),bShowPopup && ! bUseWindowColor);
-					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIME),bShowPopup);
+					ActualNudge->showPopup = (IsDlgButtonChecked(hwnd,IDC_CHECKPOP)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORS),ActualNudge->showPopup);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR),ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR),ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIME),ActualNudge->showPopup);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_USEBYPROTOCOL:
 					PopulateProtocolList(hwnd);
+					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
+					break;
+				case IDC_CHECKCLIST:
+				case IDC_CHECKCHAT:
+					ActualNudge->shakeClist = (IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED);
+					ActualNudge->shakeChat = (IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 			}
@@ -364,11 +355,45 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 						case PSN_APPLY:
 						{
 							BOOL Translated;
-							popupTime = GetDlgItemInt(hwnd,IDC_POPUPTIME,&Translated,FALSE);
-							bUseWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
-							bShowPopup = (IsDlgButtonChecked(hwnd,IDC_CHECKPOP)==BST_CHECKED);
+							ActualNudge->popupTimeSec = GetDlgItemInt(hwnd,IDC_POPUPTIME,&Translated,FALSE);
+							ActualNudge->popupWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
+							ActualNudge->showPopup = (IsDlgButtonChecked(hwnd,IDC_CHECKPOP)==BST_CHECKED);
+							ActualNudge->Save();
 						}
 					}
+				case IDC_PROTOLIST:
+					switch (((LPNMHDR)lParam)->code)
+					{
+						case NM_CLICK:
+							{
+								TVHITTESTINFO ht = {0};
+
+								DWORD dwpos = GetMessagePos();
+								POINTSTOPOINT(ht.pt, MAKEPOINTS(dwpos));
+								MapWindowPoints(HWND_DESKTOP, ((LPNMHDR)lParam)->hwndFrom, &ht.pt, 1);
+
+								TreeView_HitTest(((LPNMHDR)lParam)->hwndFrom, &ht);
+								/*if (TVHT_ONITEM & ht.flags)
+									MessageBox(NULL,"test",NULL,0);
+								if (TVHT_ONITEMSTATEICON & ht.flags)
+									MessageBox(NULL,"test",NULL,0);*/
+							}
+
+						case TVN_KEYDOWN:
+							 /*if (((LPNMTVKEYDOWN) lParam)->wVKey == VK_SPACE)
+									MessageBox(NULL,"test",NULL,0);*/
+							break;
+
+						case TVN_SELCHANGEDA:
+						case TVN_SELCHANGEDW:
+							{
+								LPNMTREEVIEW pnmtv = (LPNMTREEVIEW) lParam;
+								/*if (pnmtv->itemNew.state & TVIS_SELECTED)
+									MessageBox(NULL,"Update Fields",NULL,0);*/
+							}
+							break;
+					}
+					break;
 			}
 			break;
 	}

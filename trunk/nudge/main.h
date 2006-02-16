@@ -1,19 +1,4 @@
-#ifndef NUDGE_H
-#define NUDGE_H
-typedef struct CNudgeElement
-{
-	char ProtocolName[64];
-	char NudgeSoundname[100];
-	bool showPopup;
-	bool showEvent;
-	bool popupWindowColor;
-	COLORREF popupBackColor;
-	COLORREF popupTextColor;
-	int popupTimeSec;
-	HICON hIcon;
-	CNudgeElement *next;
-} CNUDGEELEMENT;
-
+#include "nudge.h"
 
 /*
 *
@@ -58,11 +43,10 @@ int ModulesLoaded(WPARAM,LPARAM);
 /*
 *
 ****************************/
-void Nudge_ShowPopup(CNudgeElement*, HANDLE);
+void Nudge_ShowPopup(CNudgeElement, HANDLE);
 
 /*
 *
 ****************************/
 int Nudge_AddElement(char*);
 
-#endif

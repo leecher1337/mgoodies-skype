@@ -9,13 +9,13 @@ COLORREF colorBack = 250, colorText = 0;
 int popupTime = 4;
 bool bShowPopup = true;
 bool bUseWindowColor = true;
-bool bShakeClist = true;
-bool bShakeChat = true;
+bool useByProtocol = false;
 int nProtocol = 0;
 static HANDLE hEventOptionsInitialize;
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
-CNudgeElement *NudgeList;
+NudgeElementList *NudgeList;
+CNudgeElement DefaultNudge;
 
 //========================
 //  MirandaPluginInfo
@@ -64,46 +64,59 @@ void RegisterToUpdate(void)
 
 int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 {
-	if(bShakeClist)
-		ShakeClist(wParam,lParam);
-	if(bShakeChat)
-		ShakeChat(wParam,lParam);
 
 	char *protoName = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0);
 
-	CNudgeElement *n;
-	for(n = NudgeList;n != NULL; n = n->next)
+	if(useByProtocol)
 	{
-		if(!strcmp(protoName,n->ProtocolName))
+		NudgeElementList *n;
+		for(n = NudgeList;n != NULL; n = n->next)
 		{
-			SkinPlaySound( n->NudgeSoundname );
-			if(n->showPopup)
-				Nudge_ShowPopup(n, (HANDLE) wParam);
-			/*if(n->showEvent)
+			if(!strcmp(protoName,n->item.ProtocolName))
 			{
-				char sMsg[250];
-				CLISTEVENT cEvent;
-				cEvent.cbSize = sizeof(CLISTEVENT);
-				cEvent.hContact = (HCONTACT) wParam;
-				cEvent.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_NUDGE ));
-				cEvent.hDbEvent = (HANDLE)"yamn new mail";
-				cEvent.lParam = (LPARAM) ActualAccount->hContact;
-				cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
-				cEvent.pszTooltip = new char[250];
+				SkinPlaySound( n->item.NudgeSoundname );
+				if(n->item.showPopup)
+					Nudge_ShowPopup(n->item, (HANDLE) wParam);
+				if(n->item.shakeClist)
+					ShakeClist(wParam,lParam);
+				if(n->item.shakeChat)
+					ShakeChat(wParam,lParam);
 
-				sprintf(cEvent.pszTooltip,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
-				CallServiceSync(MS_CLIST_ADDEVENT, 0,(LPARAM)&cEvent);
-				
-				sprintf(sMsg,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
-				DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", sMsg);
-				
-				if(nflags & YAMN_ACC_CONTNICK)
+				/*if(n->showEvent)
 				{
-					DBWriteContactSettingString(ActualAccount->hContact, ProtoName, "Nick", cEvent.pszTooltip);
-				}
-			}*/
-			//MessageBox(NULL,n->ProtocolName,n->NudgeSoundname,0);
-		}		
+					char sMsg[250];
+					CLISTEVENT cEvent;
+					cEvent.cbSize = sizeof(CLISTEVENT);
+					cEvent.hContact = (HCONTACT) wParam;
+					cEvent.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_NUDGE ));
+					cEvent.hDbEvent = (HANDLE)"yamn new mail";
+					cEvent.lParam = (LPARAM) ActualAccount->hContact;
+					cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
+					cEvent.pszTooltip = new char[250];
+
+					sprintf(cEvent.pszTooltip,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
+					CallServiceSync(MS_CLIST_ADDEVENT, 0,(LPARAM)&cEvent);
+					
+					sprintf(sMsg,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
+					DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", sMsg);
+					
+					if(nflags & YAMN_ACC_CONTNICK)
+					{
+						DBWriteContactSettingString(ActualAccount->hContact, ProtoName, "Nick", cEvent.pszTooltip);
+					}
+				}*/
+				//MessageBox(NULL,n->ProtocolName,n->NudgeSoundname,0);
+			}		
+		}
+	}
+	else
+	{
+		if(DefaultNudge.showPopup)
+			Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam);
+		if(DefaultNudge.shakeClist)
+			ShakeClist(wParam,lParam);
+		if(DefaultNudge.shakeChat)
+			ShakeChat(wParam,lParam);
 	}
 	return 0;
 }
@@ -127,6 +140,10 @@ int MainInit(WPARAM wParam,LPARAM lParam)
 
 void LoadProtocols(void)
 {
+	//Load the default nudge
+	sprintf(DefaultNudge.ProtocolName,"Default");
+	DefaultNudge.Load();
+
 	int numberOfProtocols,ret;
 	char str[MAXMODULELABELLENGTH + 10];
 	HANDLE NudgeEvent = NULL;
@@ -184,7 +201,7 @@ void LoadIcons(void)
 	//Load icons
 	if(ServiceExists(MS_SKIN2_ADDICON))
 	{
-		CNudgeElement *n;
+		NudgeElementList *n;
 		for(n = NudgeList;n != NULL; n = n->next)
 		{
 			SKINICONDESC sid;
@@ -196,15 +213,31 @@ void LoadIcons(void)
 			sid.cbSize = sizeof(SKINICONDESC);
 			sid.pszSection = Translate("Nudge");
 			sid.pszDefaultFile = szFilename;
-			sprintf(iconName,"Nudge_%s",n->ProtocolName);
+			sprintf(iconName,"Nudge_%s",n->item.ProtocolName);
 			sid.pszName = iconName;
-			sprintf(iconDesc,"Nudge for %s",n->ProtocolName);
+			sprintf(iconDesc,"Nudge for %s",n->item.ProtocolName);
 			sid.pszDescription = Translate(iconDesc);
 			sid.iDefaultIndex = -IDI_NUDGE;
 			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
-			n->hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
+			n->item.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
 		}
+		SKINICONDESC sid;
+		char szFilename[MAX_PATH];
+		char iconName[MAXMODULELABELLENGTH + 10];
+		char iconDesc[MAXMODULELABELLENGTH + 10];
+		strncpy(szFilename, "plugins\\nudge.dll", MAX_PATH);
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.pszSection = Translate("Nudge");
+		sid.pszDefaultFile = szFilename;
+		sprintf(iconName,"Nudge_Default");
+		sid.pszName = iconName;
+		sprintf(iconDesc,"Nudge as Default");
+		sid.pszDescription = Translate(iconDesc);
+		sid.iDefaultIndex = -IDI_NUDGE;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		DefaultNudge.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
 	}
 }
 
@@ -213,12 +246,12 @@ static int LoadChangedIcons(WPARAM wParam, LPARAM lParam)
 	//Load icons
 	if(ServiceExists(MS_SKIN2_ADDICON))
 	{
-		CNudgeElement *n;
+		NudgeElementList *n;
 		for(n = NudgeList;n != NULL; n = n->next)
 		{
 			char iconName[MAXMODULELABELLENGTH + 10];
-			sprintf(iconName,"Nudge_%s",n->ProtocolName);
-			n->hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
+			sprintf(iconName,"Nudge_%s",n->item.ProtocolName);
+			n->item.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
 		}
 	}
 	return 0;
@@ -281,18 +314,27 @@ LRESULT CALLBACK NudgePopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 
 int Preview()
 {
-	if(bShakeClist)
-		ShakeClist(0,0);
-
-	CNudgeElement *n;
-	for(n = NudgeList;n != NULL; n = n->next)
+	if( useByProtocol )
 	{
-		if(n->showPopup)
-			Nudge_ShowPopup(n, NULL);
+		NudgeElementList *n;
+		for(n = NudgeList;n != NULL; n = n->next)
+		{
+			if(n->item.showPopup)
+				Nudge_ShowPopup(n->item, NULL);
+			if(n->item.shakeClist)
+				ShakeClist(0,0);
+		}
+	}
+	else
+	{
+		if(DefaultNudge.showPopup)
+			Nudge_ShowPopup(DefaultNudge, NULL);
+		if(DefaultNudge.shakeClist)
+			ShakeClist(0,0);
 	}
 	return 0;
 }
-void Nudge_ShowPopup(CNudgeElement *n, HANDLE hCont)
+void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont)
 {
 	POPUPDATAEX NudgePopUp;
 	HANDLE hContact;
@@ -300,13 +342,13 @@ void Nudge_ShowPopup(CNudgeElement *n, HANDLE hCont)
 	hContact = Nudge_GethContact(hCont);
 
 	if(hContact == NULL) //no contact at all
-		NudgePopUp.lchContact = (HANDLE) n;
+		NudgePopUp.lchContact = (HANDLE) &n;
 
 	NudgePopUp.lchContact = hContact;
-	NudgePopUp.lchIcon = n->hIcon;
-	NudgePopUp.colorBack = ! n->popupWindowColor ? n->popupBackColor : GetSysColor(COLOR_BTNFACE);
-	NudgePopUp.colorText = ! n->popupWindowColor ? n->popupTextColor : GetSysColor(COLOR_WINDOWTEXT);
-	NudgePopUp.iSeconds = n->popupTimeSec;
+	NudgePopUp.lchIcon = n.hIcon;
+	NudgePopUp.colorBack = ! n.popupWindowColor ? n.popupBackColor : GetSysColor(COLOR_BTNFACE);
+	NudgePopUp.colorText = ! n.popupWindowColor ? n.popupTextColor : GetSysColor(COLOR_WINDOWTEXT);
+	NudgePopUp.iSeconds = n.popupTimeSec;
 	NudgePopUp.PluginWindowProc = (WNDPROC)NudgePopUpProc;
 	NudgePopUp.PluginData = (void *)1;
 
@@ -340,21 +382,17 @@ int Nudge_AddElement(char *protoName)
 	
 	//Add a specific sound per protocol
 	char nudgesoundtemp[ 64 ];
-	CNudgeElement *newNudge;
-	newNudge = (CNudgeElement*) malloc(sizeof(CNudgeElement));
+	NudgeElementList *newNudge;
+	newNudge = (NudgeElementList*) malloc(sizeof(NudgeElementList));
 	strcpy( nudgesoundtemp, protoName );
 	strcat( nudgesoundtemp, ": " );
 	strcat( nudgesoundtemp,  Translate( "Nudge" ));
 
-	strcpy( newNudge->NudgeSoundname , nudgesoundtemp );
-	strcpy( newNudge->ProtocolName, protoName );
-	newNudge->showPopup = bShowPopup;
-	newNudge->popupBackColor = colorBack;
-	newNudge->popupTextColor = colorText;
-	newNudge->popupTimeSec = popupTime ;
-	newNudge->popupWindowColor = bUseWindowColor;
+	strcpy( newNudge->item.ProtocolName, protoName );
+
+	newNudge->item.Load();
 	
-	SkinAddNewSound( newNudge->NudgeSoundname, nudgesoundtemp, "nudge.wav" );
+	SkinAddNewSound( newNudge->item.NudgeSoundname, nudgesoundtemp, "nudge.wav" );
 	
 	newNudge->next = NudgeList;
 	NudgeList = newNudge;

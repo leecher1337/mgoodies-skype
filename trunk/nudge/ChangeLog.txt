@@ -1,6 +1,10 @@
 0.0.0.4
 ============
 + Icolib support
+! Option redesign to fix visual bug
++ First step in option page to by protocol option
++ Settings are now saved in DB :-)
+
 
 0.0.0.3
 ============
