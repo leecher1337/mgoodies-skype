@@ -388,6 +388,7 @@ int Nudge_AddElement(char *protoName)
 	strcpy( nudgesoundtemp, protoName );
 	strcat( nudgesoundtemp, ": " );
 	strcat( nudgesoundtemp,  Translate( "Nudge" ));
+	strcpy( newNudge->item.NudgeSoundname, nudgesoundtemp ); 
 
 	strcpy( newNudge->item.ProtocolName, protoName );
 
