@@ -2,6 +2,7 @@
 ===========
 * Change the return value for trigger functions
 ! Bug sound file name was not set (thx TioDuke)
++ Add default Sound
 
 0.0.0.5
 ===========

@@ -23,11 +23,11 @@ CNudgeElement DefaultNudge;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,0,5),
+	PLUGIN_MAKE_VERSION(0,0,0,6),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
-	"copywright to the miranda community",
+	"copyright to the miranda community",
 	"http://www.miranda-fr.net/",		// www
 	0,		//not transient
 	0		//doesn't replace anything built-in
@@ -111,6 +111,7 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 	}
 	else
 	{
+		SkinPlaySound( DefaultNudge.NudgeSoundname );
 		if(DefaultNudge.showPopup)
 			Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam);
 		if(DefaultNudge.shakeClist)
@@ -142,6 +143,8 @@ void LoadProtocols(void)
 {
 	//Load the default nudge
 	sprintf(DefaultNudge.ProtocolName,"Default");
+	sprintf(DefaultNudge.NudgeSoundname,"Nudge : Default");
+	SkinAddNewSound( DefaultNudge.NudgeSoundname, DefaultNudge.NudgeSoundname, "nudge.wav" );
 	DefaultNudge.Load();
 
 	int numberOfProtocols,ret;
@@ -320,6 +323,7 @@ int Preview()
 		NudgeElementList *n;
 		for(n = NudgeList;n != NULL; n = n->next)
 		{
+			SkinPlaySound( n->item.NudgeSoundname );
 			if(n->item.showPopup)
 				Nudge_ShowPopup(n->item, NULL);
 			if(n->item.shakeClist)
@@ -328,6 +332,7 @@ int Preview()
 	}
 	else
 	{
+		SkinPlaySound( DefaultNudge.NudgeSoundname );
 		if(DefaultNudge.showPopup)
 			Nudge_ShowPopup(DefaultNudge, NULL);
 		if(DefaultNudge.shakeClist)
@@ -394,7 +399,7 @@ int Nudge_AddElement(char *protoName)
 
 	newNudge->item.Load();
 	
-	SkinAddNewSound( newNudge->item.NudgeSoundname, nudgesoundtemp, "nudge.wav" );
+	SkinAddNewSound( newNudge->item.NudgeSoundname, newNudge->item.NudgeSoundname, "nudge.wav" );
 	
 	newNudge->next = NudgeList;
 	NudgeList = newNudge;
