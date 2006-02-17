@@ -1,3 +1,7 @@
+0.0.0.6
+===========
+* Change the return value for trigger functions
+
 0.0.0.5
 ===========
 ! Trigger plugin bug fix 
