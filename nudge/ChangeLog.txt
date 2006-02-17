@@ -1,6 +1,7 @@
 0.0.0.6
 ===========
 * Change the return value for trigger functions
+! Bug sound file name was not set (thx TioDuke)
 
 0.0.0.5
 ===========
