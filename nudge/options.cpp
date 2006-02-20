@@ -4,7 +4,6 @@
 #include "options.h"
 
 
-
 int NudgeOptInit(WPARAM wParam,LPARAM lParam)
 {
 	OPTIONSDIALOGPAGE odp = { 0 };
@@ -121,27 +120,29 @@ BOOL CALLBACK DlgProcShakeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 		case WM_INITDIALOG:
 			char szBuf[20];
 			TranslateDialogDefault(hwnd);
-			_snprintf(szBuf, 10, "%d", nMoveClist);
+			_snprintf(szBuf, 10, "%d", shake.nMoveClist);
 			SetWindowTextA(GetDlgItem(hwnd, IDC_LNUMBER_CLIST), szBuf);
-			_snprintf(szBuf, 10, "%d", nMoveChat);
+			_snprintf(szBuf, 10, "%d", shake.nMoveChat);
 			SetWindowTextA(GetDlgItem(hwnd, IDC_LNUMBER_CHAT), szBuf);
 
-			_snprintf(szBuf, 10, "%d", nScaleClist);
+			_snprintf(szBuf, 10, "%d", shake.nScaleClist);
 			SetWindowTextA(GetDlgItem(hwnd, IDC_LSCALE_CLIST), szBuf);
-			_snprintf(szBuf, 10, "%d", nScaleChat);
+			_snprintf(szBuf, 10, "%d", shake.nScaleChat);
 			SetWindowTextA(GetDlgItem(hwnd, IDC_LSCALE_CHAT), szBuf);
+
+			SendDlgItemMessage(hwnd, IDC_SNUMBER_CLIST, TBM_SETPOS, TRUE, shake.nMoveClist);
+			SendDlgItemMessage(hwnd, IDC_SNUMBER_CHAT, TBM_SETPOS, TRUE, shake.nMoveChat);
+
+			SendDlgItemMessage(hwnd, IDC_SSCALE_CLIST, TBM_SETPOS, TRUE, shake.nScaleClist);
+			SendDlgItemMessage(hwnd, IDC_SSCALE_CHAT, TBM_SETPOS, TRUE, shake.nScaleChat);
 
 			SendDlgItemMessage(hwnd, IDC_SNUMBER_CLIST, TBM_SETRANGE, 0, (LPARAM)MAKELONG(1, 60));
 			SendDlgItemMessage(hwnd, IDC_SNUMBER_CHAT, TBM_SETRANGE, 0, (LPARAM)MAKELONG(1, 60));
 
-			SendDlgItemMessage(hwnd, IDC_SNUMBER_CLIST, TBM_SETPOS, TRUE, nMoveClist);
-			SendDlgItemMessage(hwnd, IDC_SNUMBER_CHAT, TBM_SETPOS, TRUE, nMoveChat);
-
 			SendDlgItemMessage(hwnd, IDC_SSCALE_CLIST, TBM_SETRANGE, 0, (LPARAM)MAKELONG(1, 40));
 			SendDlgItemMessage(hwnd, IDC_SSCALE_CHAT, TBM_SETRANGE, 0, (LPARAM)MAKELONG(1, 40));
 
-			SendDlgItemMessage(hwnd, IDC_SSCALE_CLIST, TBM_SETPOS, TRUE, nMoveClist);
-			SendDlgItemMessage(hwnd, IDC_SSCALE_CHAT, TBM_SETPOS, TRUE, nMoveChat);
+
 
 			break;
 		case WM_COMMAND:
@@ -186,10 +187,11 @@ BOOL CALLBACK DlgProcShakeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 					{
 						case PSN_APPLY:
 						{
-							nMoveClist = (int) SendMessage((HWND) GetDlgItem(hwnd, IDC_SNUMBER_CLIST), TBM_GETPOS, 0, 0);
-							nMoveChat = (int) SendMessage((HWND) GetDlgItem(hwnd, IDC_SNUMBER_CHAT), TBM_GETPOS, 0, 0);
-							nScaleClist = (int) SendMessage((HWND) GetDlgItem(hwnd, IDC_SSCALE_CLIST), TBM_GETPOS, 0, 0);
-							nScaleChat = (int) SendMessage((HWND) GetDlgItem(hwnd, IDC_SSCALE_CHAT), TBM_GETPOS, 0, 0);
+							shake.nMoveClist = (int) SendMessage((HWND) GetDlgItem(hwnd, IDC_SNUMBER_CLIST), TBM_GETPOS, 0, 0);
+							shake.nMoveChat = (int) SendMessage((HWND) GetDlgItem(hwnd, IDC_SNUMBER_CHAT), TBM_GETPOS, 0, 0);
+							shake.nScaleClist = (int) SendMessage((HWND) GetDlgItem(hwnd, IDC_SSCALE_CLIST), TBM_GETPOS, 0, 0);
+							shake.nScaleChat = (int) SendMessage((HWND) GetDlgItem(hwnd, IDC_SSCALE_CHAT), TBM_GETPOS, 0, 0);
+							shake.Save();
 						}
 					}
 			}
@@ -288,6 +290,7 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 			CheckDlgButton(hwnd, IDC_USEWINCOLORS, (WPARAM) ActualNudge->popupWindowColor);
 			CheckDlgButton(hwnd, IDC_CHECKCLIST, (WPARAM) ActualNudge->shakeClist);
 			CheckDlgButton(hwnd, IDC_CHECKCHAT, (WPARAM) ActualNudge->shakeChat);
+			CheckDlgButton(hwnd, IDC_CHECKEVENT, (WPARAM) ActualNudge->showEvent);
 			SetDlgItemInt(hwnd, IDC_POPUPTIME, ActualNudge->popupTimeSec,FALSE);
 			SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETCOLOUR,0, ActualNudge->popupBackColor);
 			SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETDEFAULTCOLOUR, 0, GetSysColor(COLOR_BTNFACE));
@@ -334,10 +337,12 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 					PopulateProtocolList(hwnd);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
+				case IDC_CHECKEVENT:
 				case IDC_CHECKCLIST:
 				case IDC_CHECKCHAT:
 					ActualNudge->shakeClist = (IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED);
 					ActualNudge->shakeChat = (IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED);
+					ActualNudge->showEvent = (IsDlgButtonChecked(hwnd,IDC_CHECKEVENT)==BST_CHECKED);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 			}

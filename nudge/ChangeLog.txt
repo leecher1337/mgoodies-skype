@@ -1,3 +1,15 @@
+0.0.0.8
+===========
++ Shake options are now saved in DB
+! some code rewrite in order to easily change the algo of shaking
+! Patch by Tioduke for icons (non support of icolib)
++ Option to treat nudge as a message.
+! Recieved -> received.
+
+0.0.0.7
+===========
+! Wrong service call
+
 0.0.0.6
 ===========
 * Change the return value for trigger functions

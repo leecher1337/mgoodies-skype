@@ -1,63 +1,40 @@
 #include "headers.h"
 #include "shake.h"
 
-bool Shaking = false;
-bool ShakingChat = false;
-int nScaleClist = 5, nScaleChat = 2;
-int nMoveClist = 15, nMoveChat = 15;
+extern CShake shake;
+
+void CShake::Load(void)
+{
+
+	Shaking = false;
+	ShakingChat = false;
+	nScaleClist = DBGetContactSettingDword(NULL, "Nudge", "ScaleClist", 5);
+	nScaleChat = DBGetContactSettingDword(NULL, "Nudge", "ScaleChat", 2);
+	nMoveClist = DBGetContactSettingDword(NULL, "Nudge", "MoveClist", 15);
+	nMoveChat = DBGetContactSettingDword(NULL, "Nudge", "MoveChat", 15);
+}
+void CShake::Save(void)
+{
+	DBWriteContactSettingDword(NULL, "Nudge", "ScaleClist", this->nScaleClist);
+	DBWriteContactSettingDword(NULL, "Nudge", "ScaleChat", this->nScaleChat);
+	DBWriteContactSettingDword(NULL, "Nudge", "MoveClist", this->nMoveClist);
+	DBWriteContactSettingDword(NULL, "Nudge", "MoveChat", this->nMoveChat);
+}
 
 DWORD WINAPI ShakeChatWindow(LPVOID Param)
 {
-	if(!ShakingChat)
-	{
-		Shaking = true;
-		HWND hWnd;
-		hWnd = (HWND) Param;
-		int i;
-		RECT rect;
-		GetWindowRect(hWnd, &rect);
-		for(i = 0; i < nMoveChat; i++)
-		{
-			SetWindowPos(hWnd, 0, rect.left - nScaleChat, rect.top, 0, 0, SWP_NOSIZE);
-			Sleep(10);
-			SetWindowPos(hWnd, 0, rect.left, rect.top - nScaleChat, 0, 0, SWP_NOSIZE);
-			Sleep(10);
-			SetWindowPos(hWnd, 0, rect.left + nScaleChat, rect.top, 0, 0, SWP_NOSIZE);
-			Sleep(10);
-			SetWindowPos(hWnd, 0, rect.left, rect.top + nScaleChat, 0, 0, SWP_NOSIZE);
-			Sleep(10);
-		}
-		SetWindowPos(hWnd, 0, rect.left, rect.top, 0, 0, SWP_NOSIZE); //SWP_DRAWFRAME
-		ShakingChat = false;
-	}
+	HWND hWnd;
+	hWnd = (HWND) Param;
+	shake.ShakeChat(hWnd);
 	return 1;
 }
 
 DWORD WINAPI ShakeClistWindow(LPVOID Param)
 {
-	if(!Shaking)
-	{
-		Shaking = true;
-		HWND hWnd;
-		hWnd = (HWND) Param;
-		int i;
-		RECT rect;
-		GetWindowRect(hWnd, &rect);
-		for(i = 0; i < nMoveClist; i++)
-		{
-			SetWindowPos(hWnd, 0, rect.left - nScaleClist, rect.top, 0, 0, SWP_NOSIZE);
-			Sleep(10);
-			SetWindowPos(hWnd, 0, rect.left, rect.top - nScaleClist, 0, 0, SWP_NOSIZE);
-			Sleep(10);
-			SetWindowPos(hWnd, 0, rect.left + nScaleClist, rect.top, 0, 0, SWP_NOSIZE);
-			Sleep(10);
-			SetWindowPos(hWnd, 0, rect.left, rect.top + nScaleClist, 0, 0, SWP_NOSIZE);
-			Sleep(10);
-		}
-		SetWindowPos(hWnd, 0, rect.left, rect.top, 0, 0, SWP_NOSIZE);
-		Shaking = false;
-	}
-	return 1;
+	HWND hWnd;
+	hWnd = (HWND) Param;
+	shake.ShakeClist(hWnd);
+	return 0;
 }
 
 int ShakeClist( WPARAM wParam, LPARAM lParam )
@@ -65,8 +42,9 @@ int ShakeClist( WPARAM wParam, LPARAM lParam )
 	DWORD tid;
 	HWND hWnd;
 	hWnd = (HWND) CallService( MS_CLUI_GETHWND, 0, 0 );
-	CreateThread(NULL,0,ShakeClistWindow,hWnd,0,&tid);
-	return 1;
+
+	CreateThread(NULL,0,ShakeClistWindow,(LPVOID) hWnd,0,&tid);
+	return 0;
 }
 
 int ShakeChat( WPARAM wParam, LPARAM lParam )
@@ -99,8 +77,8 @@ int ShakeChat( WPARAM wParam, LPARAM lParam )
 	if ( !strnicmp( srmmName,"Scriver ", 7 ))
 		hWnd = GetParent(mwd.hwndWindow);
 
-	CreateThread(NULL,0,ShakeChatWindow,hWnd,0,&tid);
-	return 1;
+	CreateThread(NULL,0,ShakeChatWindow,(LPVOID) hWnd,0,&tid);
+	return 0;
 }
 
 int TriggerShakeClist( WPARAM wParam, LPARAM lParam )
@@ -114,7 +92,8 @@ int TriggerShakeClist( WPARAM wParam, LPARAM lParam )
 		return 0;
 
 	hWnd = (HWND) CallService( MS_CLUI_GETHWND, 0, 0 );
-	CreateThread(NULL,0,ShakeClistWindow,hWnd,0,&tid);
+	
+	CreateThread(NULL,0,ShakeClistWindow,(LPVOID) hWnd,0,&tid);
 	return 0;
 }
 
@@ -162,6 +141,56 @@ int TriggerShakeChat( WPARAM wParam, LPARAM lParam )
 	if ( !strnicmp( srmmName,"Scriver ", 7 ))
 		hWnd = GetParent(mwd.hwndWindow);
 
-	CreateThread(NULL,0,ShakeChatWindow,hWnd,0,&tid);
+	CreateThread(NULL,0,ShakeChatWindow,(LPVOID) hWnd,0,&tid);
+	return 0;
+}
+
+int CShake::ShakeChat(HWND hWnd)
+{
+	if(!ShakingChat)
+	{
+		Shaking = true;
+		int i;
+		RECT rect;
+		GetWindowRect(hWnd, &rect);
+		for(i = 0; i < nMoveChat; i++)
+		{
+			SetWindowPos(hWnd, 0, rect.left - nScaleChat, rect.top, 0, 0, SWP_NOSIZE);
+			Sleep(10);
+			SetWindowPos(hWnd, 0, rect.left, rect.top - nScaleChat, 0, 0, SWP_NOSIZE);
+			Sleep(10);
+			SetWindowPos(hWnd, 0, rect.left + nScaleChat, rect.top, 0, 0, SWP_NOSIZE);
+			Sleep(10);
+			SetWindowPos(hWnd, 0, rect.left, rect.top + nScaleChat, 0, 0, SWP_NOSIZE);
+			Sleep(10);
+		}
+		SetWindowPos(hWnd, 0, rect.left, rect.top, 0, 0, SWP_NOSIZE); //SWP_DRAWFRAME
+		ShakingChat = false;
+	}
+	return 0;
+}
+
+int CShake::ShakeClist(HWND hWnd)
+{
+	if(!Shaking)
+	{
+		Shaking = true;
+		int i;
+		RECT rect;
+		GetWindowRect(hWnd, &rect);
+		for(i = 0; i < nMoveClist; i++)
+		{
+			SetWindowPos(hWnd, 0, rect.left - nScaleClist, rect.top, 0, 0, SWP_NOSIZE);
+			Sleep(10);
+			SetWindowPos(hWnd, 0, rect.left, rect.top - nScaleClist, 0, 0, SWP_NOSIZE);
+			Sleep(10);
+			SetWindowPos(hWnd, 0, rect.left + nScaleClist, rect.top, 0, 0, SWP_NOSIZE);
+			Sleep(10);
+			SetWindowPos(hWnd, 0, rect.left, rect.top + nScaleClist, 0, 0, SWP_NOSIZE);
+			Sleep(10);
+		}
+		SetWindowPos(hWnd, 0, rect.left, rect.top, 0, 0, SWP_NOSIZE);
+		Shaking = false;
+	}
 	return 0;
 }

@@ -55,6 +55,8 @@
 #define IDC_CHECKCHAT2                  1034
 #define IDC_CHECKCHAT                   1034
 #define IDC_CHECKCOL                    1035
+#define IDC_CHECKCHAT3                  1035
+#define IDC_CHECKEVENT                  1035
 #define IDC_POPUPBACKCOLOR              1036
 #define IDC_CHECKPOP                    1037
 #define IDC_POPUPTIME                   1038

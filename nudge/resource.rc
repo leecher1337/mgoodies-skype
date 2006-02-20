@@ -119,6 +119,8 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,137,33,147,10
     CONTROL         "Enable message window shaking",IDC_CHECKCHAT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,137,47,147,10
+    CONTROL         "Treat nudge as a message",IDC_CHECKEVENT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,137,60,147,10
 END
 
 IDD_OPTIONS DIALOGEX 0, 0, 320, 250
@@ -247,8 +249,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,6
- PRODUCTVERSION 0,0,0,6
+ FILEVERSION 0,0,0,8
+ PRODUCTVERSION 0,0,0,8
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -265,12 +267,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "Plugin that render nudge events from different protocols"
             VALUE "FileDescription", "Nudge"
-            VALUE "FileVersion", "0, 0, 0, 6"
+            VALUE "FileVersion", "0, 0, 0, 8"
             VALUE "InternalName", "Nudge"
             VALUE "LegalCopyright", "Copyright © 2006"
             VALUE "OriginalFilename", "nudge.dll"
             VALUE "ProductName", "nudge"
-            VALUE "ProductVersion", "0, 0, 0, 6"
+            VALUE "ProductVersion", "0, 0, 0, 8"
         END
     END
     BLOCK "VarFileInfo"

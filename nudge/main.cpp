@@ -16,6 +16,7 @@ HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 NudgeElementList *NudgeList;
 CNudgeElement DefaultNudge;
+CShake shake;
 
 //========================
 //  MirandaPluginInfo
@@ -23,7 +24,7 @@ CNudgeElement DefaultNudge;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,0,6),
+	PLUGIN_MAKE_VERSION(0,0,0,8),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -61,6 +62,36 @@ void RegisterToUpdate(void)
 	}
 }
 
+int NudgeSend(WPARAM wParam,LPARAM lParam)
+{
+
+	char *protoName = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0);
+
+	if(useByProtocol)
+	{
+		NudgeElementList *n;
+		for(n = NudgeList;n != NULL; n = n->next)
+		{
+			if(!strcmp(protoName,n->item.ProtocolName))
+			{
+				if(n->item.showEvent)
+					Nudge_SentEvent(n->item, (HANDLE) wParam);
+			}		
+		}
+	}
+	else
+	{
+		if(DefaultNudge.showEvent)
+			Nudge_SentEvent(DefaultNudge, (HANDLE) wParam);
+	}
+
+	char servicefunction[ 100 ];
+	sprintf(servicefunction, "%s/SendNudge", protoName);
+
+	CallService(servicefunction, wParam, lParam);
+
+	return 0;
+}
 
 int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 {
@@ -81,31 +112,8 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 					ShakeClist(wParam,lParam);
 				if(n->item.shakeChat)
 					ShakeChat(wParam,lParam);
-
-				/*if(n->showEvent)
-				{
-					char sMsg[250];
-					CLISTEVENT cEvent;
-					cEvent.cbSize = sizeof(CLISTEVENT);
-					cEvent.hContact = (HCONTACT) wParam;
-					cEvent.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_NUDGE ));
-					cEvent.hDbEvent = (HANDLE)"yamn new mail";
-					cEvent.lParam = (LPARAM) ActualAccount->hContact;
-					cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
-					cEvent.pszTooltip = new char[250];
-
-					sprintf(cEvent.pszTooltip,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
-					CallServiceSync(MS_CLIST_ADDEVENT, 0,(LPARAM)&cEvent);
-					
-					sprintf(sMsg,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
-					DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", sMsg);
-					
-					if(nflags & YAMN_ACC_CONTNICK)
-					{
-						DBWriteContactSettingString(ActualAccount->hContact, ProtoName, "Nick", cEvent.pszTooltip);
-					}
-				}*/
-				//MessageBox(NULL,n->ProtocolName,n->NudgeSoundname,0);
+				if(n->item.showEvent)
+					Nudge_ShowEvent(n->item, (HANDLE) wParam);
 			}		
 		}
 	}
@@ -118,6 +126,8 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 			ShakeClist(wParam,lParam);
 		if(DefaultNudge.shakeChat)
 			ShakeChat(wParam,lParam);
+		if(DefaultNudge.showEvent)
+			Nudge_ShowEvent(DefaultNudge, (HANDLE) wParam);
 	}
 	return 0;
 }
@@ -158,7 +168,7 @@ void LoadProtocols(void)
 		{
 			if(ppProtocolDescriptors[i]->type == PROTOTYPE_PROTOCOL)
 			{
-				sprintf(str,"%s\\Nudge",ppProtocolDescriptors[i]->szName);
+				sprintf(str,"%s/Nudge",ppProtocolDescriptors[i]->szName);
 				NudgeEvent = HookEvent(str, NudgeRecieved);
 				if(NudgeEvent != NULL)
 					Nudge_AddElement(ppProtocolDescriptors[i]->szName);
@@ -168,6 +178,9 @@ void LoadProtocols(void)
 		}
 		
 	}
+
+	shake.Load();
+
 	/*CNudgeElement *n;
 	for(n = NudgeList;n != NULL; n = n->next)
 	{
@@ -242,6 +255,19 @@ void LoadIcons(void)
 
 		DefaultNudge.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
 	}
+	else // Do not forget people not using IcoLib!!!!
+	{
+		NudgeElementList *n;
+		for(n = NudgeList;n != NULL; n = n->next)
+		{
+			n->item.hIcon = (HICON)CallProtoService(n->item.ProtocolName, PS_LOADICON, PLI_PROTOCOL|PLIF_SMALL, 0);
+			if(n->item.hIcon == NULL || (int)n->item.hIcon == CALLSERVICE_NOTFOUND)
+				n->item.hIcon = (HICON)CallProtoService(n->item.ProtocolName, PS_LOADICON, PLI_PROTOCOL, 0);
+ 			if(n->item.hIcon == NULL || (int)n->item.hIcon == CALLSERVICE_NOTFOUND)
+				n->item.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_NUDGE));
+		}
+		DefaultNudge.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_NUDGE));
+	}
 }
 
 static int LoadChangedIcons(WPARAM wParam, LPARAM lParam)
@@ -284,6 +310,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	CreateServiceFunction(MS_SHAKE_CHAT,ShakeChat);
 	CreateServiceFunction(MS_SHAKE_CHAT_TRIGGER,TriggerShakeChat);
 	CreateServiceFunction(MS_SHAKE_CLIST_TRIGGER,TriggerShakeClist);
+	CreateServiceFunction(MS_NUDGE_SEND,NudgeSend);
 	return 0; 
 }
 
@@ -360,20 +387,58 @@ void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont)
 
 	char * lpzContactName = (char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,0);
 	
-	sprintf(NudgePopUp.lpzText, Translate("You recieved a nudge"));
+	sprintf(NudgePopUp.lpzText, Translate("You received a nudge"));
 	lstrcpy(NudgePopUp.lpzContactName, lpzContactName);
 
 	CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NudgePopUp,0);
+}
+
+void Nudge_SentEvent(CNudgeElement n, HANDLE hCont)
+{
+	DBEVENTINFO NudgeEvent = { 0 };;
+	HANDLE hContact;
+	char* EventLog;
+
+	hContact = hCont;
+	EventLog = Translate("You sent a nudge");
+
+	NudgeEvent.cbSize = sizeof(NudgeEvent);
+	NudgeEvent.szModule = n.ProtocolName;
+	NudgeEvent.flags = DBEF_SENT;
+	NudgeEvent.timestamp = ( DWORD )time(NULL);
+	NudgeEvent.eventType = EVENTTYPE_MESSAGE;
+	NudgeEvent.cbBlob = strlen( EventLog )+1;
+	NudgeEvent.pBlob = ( PBYTE )EventLog;
+
+	CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&NudgeEvent);
+}
+
+void Nudge_ShowEvent(CNudgeElement n, HANDLE hCont)
+{
+	DBEVENTINFO NudgeEvent = { 0 };;
+	HANDLE hContact;
+	char* EventLog;
+
+	hContact = hCont;
+	EventLog = Translate("You received a nudge");
+
+	NudgeEvent.cbSize = sizeof(NudgeEvent);
+	NudgeEvent.szModule = n.ProtocolName;
+	NudgeEvent.flags = 0;//DBEF_READ;
+	NudgeEvent.timestamp = ( DWORD )time(NULL);
+	NudgeEvent.eventType = EVENTTYPE_MESSAGE;
+	NudgeEvent.cbBlob = strlen( EventLog )+1;
+	NudgeEvent.pBlob = ( PBYTE )EventLog;
+
+	CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&NudgeEvent);
 }
 
 int Nudge_AddElement(char *protoName)
 {
 	nProtocol ++;
 	//Add contact menu entry
-	char servicefunction[ 100 ];
 	CLISTMENUITEM mi;
 
-	sprintf(servicefunction, "%s\\SendNudge", protoName);
 	memset( &mi, 0, sizeof( mi ));
 	mi.popupPosition = 500085000;
 	mi.pszContactOwner = protoName;
@@ -383,7 +448,7 @@ int Nudge_AddElement(char *protoName)
 	mi.position = -500050004;
 	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_NUDGE ));
 	mi.pszName = Translate( "Send &Nudge" );
-	mi.pszService = servicefunction;
+	mi.pszService = MS_NUDGE_SEND;
 	CallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 	
 	//Add a specific sound per protocol
