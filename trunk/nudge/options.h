@@ -1,12 +1,9 @@
 extern HINSTANCE hInst;
-extern int nScaleClist; 
-extern int nScaleChat;
-extern int nMoveClist; 
-extern int nMoveChat;
 extern NudgeElementList* NudgeList;
 extern int nProtocol;
 extern bool useByProtocol;
 extern CNudgeElement DefaultNudge;
+extern CShake shake;
 CNudgeElement* ActualNudge;
 
 static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
