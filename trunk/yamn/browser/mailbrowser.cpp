@@ -600,7 +600,9 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 				FromStr=UnicodeHeader.FromNick;
 			else if(UnicodeHeader.ReturnPath!=NULL)
 				FromStr=UnicodeHeader.ReturnPath;
+
 			item.pszText=FromStr;
+			
 			if(NULL!=FromStr)
 				item.cchTextMax=wcslen(item.pszText);
 			else
@@ -616,10 +618,12 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 			item.iSubItem=0;
 
 			item.iItem = SendMessageW(hListView,LVM_INSERTITEM,(WPARAM)0,(LPARAM)&item);
+			MessageBox(NULL,"1",NULL,0);
 
 			item.pszText=Temp;
 			item.iSubItem=0;
 			SendMessageW(hListView,LVM_SETITEMTEXT,(WPARAM)item.iItem,(LPARAM)&item);
+			MessageBox(NULL,"2",NULL,0);
 			
 			item.iSubItem=1;
 			if(NULL!=UnicodeHeader.Subject)
@@ -633,6 +637,7 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 				item.cchTextMax=1;
 			}
 			SendMessageW(hListView,LVM_SETITEMTEXT,(WPARAM)item.iItem,(LPARAM)&item);
+
 			item.iSubItem=2;
 			swprintf(SizeStr,L"%d kB",msgq->MailData->Size/1024);
 			item.pszText=SizeStr;
@@ -640,8 +645,16 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 			SendMessageW(hListView,LVM_SETITEMTEXT,(WPARAM)item.iItem,(LPARAM)&item);
 
 			item.iSubItem=3;
-			item.pszText=UnicodeHeader.Date;
-			item.cchTextMax=wcslen(UnicodeHeader.Date);
+			if(NULL!=UnicodeHeader.Date)
+			{
+				item.pszText=UnicodeHeader.Date;
+				item.cchTextMax=wcslen(item.pszText);
+			}
+			else
+			{
+				item.pszText=L"";
+				item.cchTextMax=1;
+			}
 			SendMessageW(hListView,LVM_SETITEMTEXT,(WPARAM)item.iItem,(LPARAM)&item);
 		}
 
@@ -656,7 +669,6 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 		if((msgq->Flags & YAMN_MSG_UNSEEN) && (ActualAccount->NewMailN.Flags & YAMN_ACC_KBN))
 			CallService(MS_KBDNOTIFY_EVENTSOPENED,(WPARAM)1,NULL);
 		
-
 		if(FromStrNew)
 			delete[] FromStr;
 
@@ -664,10 +676,12 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 		{
 			DeleteHeaderContent(&UnicodeHeader);
 			ZeroMemory(&UnicodeHeader,sizeof(UnicodeHeader));
+			MessageBox(NULL,"4",NULL,0);
 		}
 
 		if(!Loaded)
 		{
+			MessageBox(NULL,"5",NULL,0);
 			SaveMailData(msgq);
 			UnloadMailData(msgq);			//do not keep data for mail in memory
 		}
@@ -1119,6 +1133,11 @@ int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSor
 	ZeroMemory(&Header1,sizeof(Header1));
 	ZeroMemory(&Header2,sizeof(Header2));
 
+	if(lParam1 == NULL)
+		return 0;
+
+	if(lParam2 == NULL)
+		return 0;
 
 	nResult = 0;
 

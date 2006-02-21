@@ -418,6 +418,7 @@ void ExtractHeader(struct CMimeItem *items,int CP,struct CHeader *head)
 	#ifdef DEBUG_DECODE
 	DebugLog(DecodeFile,"</Convert>\n");
 	#endif
+
 	DeleteShortHeaderContent(&ShortHeader);
 
 //	head->From=L"Frommmm";
