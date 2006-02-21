@@ -618,12 +618,10 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 			item.iSubItem=0;
 
 			item.iItem = SendMessageW(hListView,LVM_INSERTITEM,(WPARAM)0,(LPARAM)&item);
-			MessageBox(NULL,"1",NULL,0);
 
 			item.pszText=Temp;
 			item.iSubItem=0;
 			SendMessageW(hListView,LVM_SETITEMTEXT,(WPARAM)item.iItem,(LPARAM)&item);
-			MessageBox(NULL,"2",NULL,0);
 			
 			item.iSubItem=1;
 			if(NULL!=UnicodeHeader.Subject)
@@ -676,12 +674,10 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 		{
 			DeleteHeaderContent(&UnicodeHeader);
 			ZeroMemory(&UnicodeHeader,sizeof(UnicodeHeader));
-			MessageBox(NULL,"4",NULL,0);
 		}
 
 		if(!Loaded)
 		{
-			MessageBox(NULL,"5",NULL,0);
 			SaveMailData(msgq);
 			UnloadMailData(msgq);			//do not keep data for mail in memory
 		}
