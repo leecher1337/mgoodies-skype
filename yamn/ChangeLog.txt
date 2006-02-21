@@ -1,6 +1,7 @@
 0.0.0.17
 ============
 * Redesign option page to have only one entry in plugins options
+! Bug fix where there is no date set in the header (spam mails)
 
 0.0.0.16
 ============

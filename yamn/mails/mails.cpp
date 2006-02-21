@@ -371,57 +371,67 @@ HYAMNMAIL WINAPI FindMessageByIDFcn(HYAMNMAIL From,char *ID)
 
 void WINAPI TranslateHeaderFcn(char *stream,int len,struct CMimeItem **head)
 {
-	char *finder=stream;
-	char *prev1,*prev2,*prev3;
-	struct CMimeItem *Item=NULL;
-
-	while(finder<=(stream+len))
+	try
 	{
-		while(ENDLINEWS(finder)) finder++;
+		char *finder=stream;
+		char *prev1,*prev2,*prev3;
+		struct CMimeItem *Item=NULL;
 
-		//at the start of line
-		if(DOTLINE(finder+1))					//at the end of stream
-			break;
-
-		prev1=finder;
-
-		while(*finder!=':' && !EOS(finder)) finder++;
-		if(!EOS(finder))
-			prev2=finder++;
-		else
-			break;
-
-		while(WS(finder) && !EOS(finder)) finder++;
-		if(!EOS(finder))
-			prev3=finder;
-		else
-			break;
-
-		do
+		while(finder<=(stream+len))
 		{
-			if(ENDLINEWS(finder)) finder+=2;						//after endline information continues
-			while(!ENDLINE(finder) && !EOS(finder)) finder++;
-		}while(ENDLINEWS(finder));
+			while(ENDLINEWS(finder)) finder++;
 
-		if(Item!=NULL)
-		{
-			if(NULL==(Item->Next=new struct CMimeItem))
+			//at the start of line
+			if(DOTLINE(finder+1))					//at the end of stream
 				break;
-			Item=Item->Next;
+
+			prev1=finder;
+
+			while(*finder!=':' && !EOS(finder)) finder++;
+			if(!EOS(finder))
+				prev2=finder++;
+			else
+				break;
+
+			while(WS(finder) && !EOS(finder)) finder++;
+			if(!EOS(finder))
+				prev3=finder;
+			else
+				break;
+
+			do
+			{
+				if(ENDLINEWS(finder)) finder+=2;						//after endline information continues
+				while(!ENDLINE(finder) && !EOS(finder)) finder++;
+			}while(ENDLINEWS(finder));
+
+			if(Item!=NULL)
+			{
+				if(NULL==(Item->Next=new struct CMimeItem))
+					break;
+				Item=Item->Next;
+			}
+			else
+			{
+				Item = new CMimeItem;
+				*head = Item;
+			}
+
+			Item->Next=NULL;
+			Item->name=new char [prev2-prev1+1];
+			lstrcpyn(Item->name,prev1,prev2-prev1+1);
+			Item->value=new char [finder-prev3+1];
+			lstrcpyn(Item->value,prev3,finder-prev3+1);
+
+			if(EOS(finder))
+				break;
+			finder++;
+			if(ENDLINE(finder)) finder++;
 		}
-		else
-			*head=Item=new struct CMimeItem;
-
-		Item->Next=NULL;
-		Item->name=new char [prev2-prev1+1];
-		lstrcpyn(Item->name,prev1,prev2-prev1+1);
-		Item->value=new char [finder-prev3+1];
-		lstrcpyn(Item->value,prev3,finder-prev3+1);
-
-		if(EOS(finder))
-			break;
-		finder++;
-		if(ENDLINE(finder)) finder++;
+	}
+	catch(...)
+	{
+		MessageBox(NULL,"Translate header error","",0);
 	}
 }
 
