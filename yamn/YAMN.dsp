@@ -300,10 +300,6 @@ SOURCE=.\synchro.cpp
 
 SOURCE=.\yamn.cpp
 # End Source File
-# Begin Source File
-
-SOURCE=.\yamnopts.cpp
-# End Source File
 # End Group
 # Begin Group "Resource Files"
 

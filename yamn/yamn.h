@@ -1,6 +1,5 @@
 #ifndef __YAMN_H
 #define __YAMN_H
-
 #include <wchar.h>
 #include <tchar.h>
 #include <windows.h>

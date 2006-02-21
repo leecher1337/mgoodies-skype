@@ -9,4 +9,36 @@ struct _tcptable
 	TCHAR *Name;
 	unsigned int CP;
 };
+
+//Enables account in options
+BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam);
+
+//Sets dialog controls to match current account
+BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam);
+
+//Sets colors to match colors of actual account 
+BOOL DlgShowAccountColors(HWND hDlg,WPARAM wParam,LPARAM lParam);
+
+//Sets dialog item text
+BOOL DlgSetItemText(HWND hDlg,WPARAM wParam,LPARAM lParam);
+
+//Sets dialog item text in Unicode
+BOOL DlgSetItemTextW(HWND hDlg,WPARAM wParam,LPARAM lParam);
+
+//Options dialog procedure
+BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+
+//Options dialog procedure
+BOOL CALLBACK DlgProcPOP3AccStatusOpt(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+
+//Options dialog procedure
+BOOL CALLBACK DlgOptionsProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+
+//Options dialog procedure
+BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+
+
+//Initializes POP3 options for Miranda
+int POP3OptInit(WPARAM wParam,LPARAM lParam);
+
 #endif
