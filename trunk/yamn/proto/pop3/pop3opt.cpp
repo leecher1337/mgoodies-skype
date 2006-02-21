@@ -24,6 +24,7 @@
 #include "../../debug.h"
 */
 #include "../../yamn.h"
+#include "../../main.h"
 #include "pop3comm.h"
 #include "pop3opt.h"
 
@@ -37,6 +38,12 @@ extern struct YAMNExportedFcns *pYAMNFcn;
 extern YAMN_VARIABLES YAMNVar;
 
 extern DWORD WINAPI WritePOP3Accounts();
+extern DWORD HotKeyThreadID;
+extern LPCRITICAL_SECTION PluginRegCS;
+//From filterplugin.cpp
+extern PYAMN_FILTERPLUGINQUEUE FirstFilterPlugin;
+//From protoplugin.cpp
+extern PYAMN_PROTOPLUGINQUEUE FirstProtoPlugin;
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -155,29 +162,167 @@ struct _tcptable CodePageNames[]=
 BOOL Check0,Check1,Check2,Check3,Check4,Check5,Check6,Check7,Check8,Check9;
 TCHAR DlgInput[MAX_PATH];
 
-//Enables account in options
-BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam);
+//Fuction took from Miranda
+void WordToModAndVk(WORD w,UINT *mod,UINT *vk);
 
-//Sets dialog controls to match current account
-BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam);
+//Initializes YAMN general options for Miranda
+int YAMNOptInitSvc(WPARAM wParam,LPARAM lParam);
 
-//Sets colors to match colors of actual account 
-BOOL DlgShowAccountColors(HWND hDlg,WPARAM wParam,LPARAM lParam);
+//--------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 
-//Sets dialog item text
-BOOL DlgSetItemText(HWND hDlg,WPARAM wParam,LPARAM lParam);
+void WordToModAndVk(WORD w,UINT *mod,UINT *vk)
+{
+	*mod=0;
+	if(HIBYTE(w)&HOTKEYF_CONTROL) *mod|=MOD_CONTROL;
+	if(HIBYTE(w)&HOTKEYF_SHIFT) *mod|=MOD_SHIFT;
+	if(HIBYTE(w)&HOTKEYF_ALT) *mod|=MOD_ALT;
+	if(HIBYTE(w)&HOTKEYF_EXT) *mod|=MOD_WIN;
+	*vk=LOBYTE(w);
+}
 
-//Sets dialog item text in Unicode
-BOOL DlgSetItemTextW(HWND hDlg,WPARAM wParam,LPARAM lParam);
 
-//Options dialog procedure
-BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+{
+	switch(msg)
+	{
+		case WM_INITDIALOG:
+			TranslateDialogDefault(hDlg);
+			CheckDlgButton(hDlg,IDC_CHECKTTB,DBGetContactSettingByte(NULL,YAMN_DBMODULE,YAMN_TTBFCHECK,1) ? BST_CHECKED : BST_UNCHECKED);
+			break;
+		case WM_COMMAND:
+		{
+			WORD wNotifyCode = HIWORD(wParam);
+			switch(LOWORD(wParam))
+			{
+				case IDC_CHECKTTB:
+				case IDC_HKFORCE:
+					SendMessage(GetParent(hDlg),PSM_CHANGED,0,0);
+					break;
+				case IDC_COMBOPLUGINS:
+					if(wNotifyCode==CBN_SELCHANGE)
+					{
+						HWND hCombo=GetDlgItem(hDlg,IDC_COMBOPLUGINS);
+						PYAMN_PROTOPLUGINQUEUE PParser;
+						PYAMN_FILTERPLUGINQUEUE FParser;
+						int index,id;
+	
+						if(CB_ERR==(index=SendMessage(hCombo,CB_GETCURSEL,0,0)))
+							break;
+						id=SendMessage(hCombo,CB_GETITEMDATA,(WPARAM)index,(LPARAM)0);
+						EnterCriticalSection(PluginRegCS);
+						for(PParser=FirstProtoPlugin;PParser!=NULL;PParser=PParser->Next)
+							if(id==(int)PParser->Plugin)
+							{
+								SetDlgItemText(hDlg,IDC_STVER,PParser->Plugin->PluginInfo->Ver);
+								SetDlgItemText(hDlg,IDC_STDESC,PParser->Plugin->PluginInfo->Description == NULL ? "" : PParser->Plugin->PluginInfo->Description);
+								SetDlgItemText(hDlg,IDC_STCOPY,PParser->Plugin->PluginInfo->Copyright == NULL ? "" : PParser->Plugin->PluginInfo->Copyright);
+								SetDlgItemText(hDlg,IDC_STMAIL,PParser->Plugin->PluginInfo->Email == NULL ? "" : PParser->Plugin->PluginInfo->Email);
+								SetDlgItemText(hDlg,IDC_STWWW,PParser->Plugin->PluginInfo->WWW == NULL ? "" : PParser->Plugin->PluginInfo->WWW);
+								break;
+							}
+						for(FParser=FirstFilterPlugin;FParser!=NULL;FParser=FParser->Next)
+							if(id==(int)FParser->Plugin)
+							{
+								SetDlgItemText(hDlg,IDC_STVER,FParser->Plugin->PluginInfo->Ver);
+								SetDlgItemText(hDlg,IDC_STDESC,FParser->Plugin->PluginInfo->Description == NULL ? "" : FParser->Plugin->PluginInfo->Description);
+								SetDlgItemText(hDlg,IDC_STCOPY,FParser->Plugin->PluginInfo->Copyright == NULL ? "" : FParser->Plugin->PluginInfo->Copyright);
+								SetDlgItemText(hDlg,IDC_STMAIL,FParser->Plugin->PluginInfo->Email == NULL ? "" : FParser->Plugin->PluginInfo->Email);
+								SetDlgItemText(hDlg,IDC_STWWW,FParser->Plugin->PluginInfo->WWW == NULL ? "" : FParser->Plugin->PluginInfo->WWW);
+								break;
+							}
+						LeaveCriticalSection(PluginRegCS);
+					}
+					break;
+				case IDC_STWWW:
+				{
+					char str[1024];
 
-//Options dialog procedure
-BOOL CALLBACK DlgProcPOP3AccStatusOpt(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+					GetDlgItemText(hDlg,IDC_STWWW,str,sizeof(str));
+					CallService(MS_UTILS_OPENURL,1,(LPARAM)str);
+					break;
+				}
 
-//Initializes POP3 options for Miranda
-int POP3OptInit(WPARAM wParam,LPARAM lParam);
+			}
+			break;
+		}
+		case WM_SHOWWINDOW:
+			if(TRUE==(BOOL)wParam)
+			{
+				PYAMN_PROTOPLUGINQUEUE PParser;
+				PYAMN_FILTERPLUGINQUEUE FParser;
+				int index;
+			
+				SendDlgItemMessage(hDlg,IDC_HKFORCE,HKM_SETHOTKEY,DBGetContactSettingWord(NULL,YAMN_DBMODULE,YAMN_HKCHECKMAIL,YAMN_DEFAULTHK),0);
+
+				EnterCriticalSection(PluginRegCS);
+				for(PParser=FirstProtoPlugin;PParser!=NULL;PParser=PParser->Next)
+				{
+					index=SendDlgItemMessage(hDlg,IDC_COMBOPLUGINS,CB_ADDSTRING,0,(LPARAM)PParser->Plugin->PluginInfo->Name);
+					index=SendDlgItemMessage(hDlg,IDC_COMBOPLUGINS,CB_SETITEMDATA,(WPARAM)index,(LPARAM)PParser->Plugin);
+				}
+				for(FParser=FirstFilterPlugin;FParser!=NULL;FParser=FParser->Next)
+				{
+					index=SendDlgItemMessage(hDlg,IDC_COMBOPLUGINS,CB_ADDSTRING,0,(LPARAM)FParser->Plugin->PluginInfo->Name);
+					index=SendDlgItemMessage(hDlg,IDC_COMBOPLUGINS,CB_SETITEMDATA,(WPARAM)index,(LPARAM)FParser->Plugin);
+				}
+
+				LeaveCriticalSection(PluginRegCS);
+				SendDlgItemMessage(hDlg,IDC_COMBOPLUGINS,CB_SETCURSEL,(WPARAM)0,(LPARAM)0);
+				SendMessage(hDlg,WM_COMMAND,MAKELONG(IDC_COMBOPLUGINS,CBN_SELCHANGE),(LPARAM)NULL);
+				break;
+			}
+			else		//delete all items in combobox
+			{
+				int cbn=SendDlgItemMessage(hDlg,IDC_COMBOPLUGINS,CB_GETCOUNT,(WPARAM)0,(LPARAM)0);
+
+				for(int i=0;i<cbn;i++)
+					SendDlgItemMessage(hDlg,IDC_COMBOPLUGINS,CB_DELETESTRING,(WPARAM)0,(LPARAM)0);
+				break;
+			}
+		case WM_NOTIFY:
+			switch(((LPNMHDR)lParam)->idFrom)
+			{
+				case 0:
+					switch(((LPNMHDR)lParam)->code)
+					{
+						case PSN_APPLY:
+						{
+							WORD ForceHotKey=(WORD)SendDlgItemMessage(hDlg,IDC_HKFORCE,HKM_GETHOTKEY,0,0);
+							BYTE TTBFCheck=(BYTE)IsDlgButtonChecked(hDlg,IDC_CHECKTTB);
+							UINT mod,vk;
+
+							DBWriteContactSettingWord(NULL,YAMN_DBMODULE,YAMN_HKCHECKMAIL,ForceHotKey);
+							DBWriteContactSettingByte(NULL,YAMN_DBMODULE,YAMN_TTBFCHECK,TTBFCheck);
+							WordToModAndVk(ForceHotKey,&mod,&vk);
+							PostThreadMessage(HotKeyThreadID,WM_YAMN_CHANGEHOTKEY,(WPARAM)mod,(LPARAM)vk);
+						}
+					}
+			}
+			break;
+	}
+
+	return FALSE;
+}
+
+
+int YAMNOptInitSvc(WPARAM wParam,LPARAM lParam)
+{
+	OPTIONSDIALOGPAGE odp={0};
+	
+	odp.cbSize=sizeof(odp);
+	odp.position=0x00000000;
+	odp.hInstance=YAMNVar.hInst;
+	odp.pszGroup=Translate("Plugins");
+	odp.pszTitle=Translate("YAMN");
+	odp.flags=ODPF_BOLDGROUPS;
+//insert YAMN options dialog
+	odp.pszTemplate=MAKEINTRESOURCEA(IDD_OPTIONS);
+	odp.pfnDlgProc=(DLGPROC)DlgOptionsProc;
+	CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+	return 0;
+}
+
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -551,6 +696,86 @@ BOOL CALLBACK DlgProcPOP3AccStatusOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lP
 			break;
 	}
 	return FALSE;
+}
+
+static BOOL CALLBACK DlgOptionsProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
+{
+	static int iInit = TRUE;
+   
+   switch(msg)
+   {
+      case WM_INITDIALOG:
+      {
+         TCITEM tci;
+         RECT rcClient;
+         GetClientRect(hwnd, &rcClient);
+
+		 iInit = TRUE;
+         tci.mask = TCIF_PARAM|TCIF_TEXT;
+         tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_POP3ACCOUNTOPT), hwnd, DlgProcPOP3AccOpt);
+         tci.pszText = TranslateT("Accounts");
+		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
+         MoveWindow((HWND)tci.lParam,12,29,rcClient.right-30,rcClient.bottom-45,1);
+
+         tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_YAMNOPT),hwnd,DlgProcYAMNOpt);
+         tci.pszText = TranslateT("Plugins");
+         TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
+         MoveWindow((HWND)tci.lParam,12,29,rcClient.right-30,rcClient.bottom-45,1);
+         ShowWindow((HWND)tci.lParam, SW_HIDE);
+         iInit = FALSE;
+         return FALSE;
+      }
+
+      case PSM_CHANGED: // used so tabs dont have to call SendMessage(GetParent(GetParent(hwnd)), PSM_CHANGED, 0, 0);
+         if(!iInit)
+             SendMessage(GetParent(hwnd), PSM_CHANGED, 0, 0);
+         break;
+      case WM_NOTIFY:
+         switch(((LPNMHDR)lParam)->idFrom) {
+            case 0:
+               switch (((LPNMHDR)lParam)->code)
+               {
+                  case PSN_APPLY:
+                     {				
+						TCITEM tci;
+                        int i,count;
+                        tci.mask = TCIF_PARAM;
+                        count = TabCtrl_GetItemCount(GetDlgItem(hwnd,IDC_OPTIONSTAB));
+                        for (i=0;i<count;i++)
+                        {
+                           TabCtrl_GetItem(GetDlgItem(hwnd,IDC_OPTIONSTAB),i,&tci);
+                           SendMessage((HWND)tci.lParam,WM_NOTIFY,0,lParam);
+                        }
+                     }
+                  break;
+               }
+            break;
+            case IDC_OPTIONSTAB:
+               switch (((LPNMHDR)lParam)->code)
+               {
+                  case TCN_SELCHANGING:
+                     {
+                        TCITEM tci;
+                        tci.mask = TCIF_PARAM;
+                        TabCtrl_GetItem(GetDlgItem(hwnd,IDC_OPTIONSTAB),TabCtrl_GetCurSel(GetDlgItem(hwnd,IDC_OPTIONSTAB)),&tci);
+                        ShowWindow((HWND)tci.lParam,SW_HIDE);                     
+                     }
+                  break;
+                  case TCN_SELCHANGE:
+                     {
+                        TCITEM tci;
+                        tci.mask = TCIF_PARAM;
+                        TabCtrl_GetItem(GetDlgItem(hwnd,IDC_OPTIONSTAB),TabCtrl_GetCurSel(GetDlgItem(hwnd,IDC_OPTIONSTAB)),&tci);
+                        ShowWindow((HWND)tci.lParam,SW_SHOW);                     
+                     }
+                  break;
+               }
+            break;
+
+         }
+      break;
+   }
+   return FALSE;
 }
 
 BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)

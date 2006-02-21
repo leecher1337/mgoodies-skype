@@ -430,7 +430,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 			}
 			break;
 	}
-	HookEvent(ME_OPT_INITIALISE,POP3OptInit);
+	//HookEvent(ME_OPT_INITIALISE,POP3OptInit);
 
 	HACCOUNT Finder;
 	HANDLE hContact;

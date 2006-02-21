@@ -1,3 +1,7 @@
+0.0.0.17
+============
+* Redesign option page to have only one entry in plugins options
+
 0.0.0.16
 ============
 * Right click on error popup close the popup.
