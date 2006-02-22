@@ -378,8 +378,8 @@ IDI_ICOTTBUP            ICON                    "iconttbup.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,17
- PRODUCTVERSION 0,0,0,17
+ FILEVERSION 0,0,0,18
+ PRODUCTVERSION 0,0,0,18
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -396,12 +396,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "Yet Another Mail Notifier"
             VALUE "FileDescription", "Yet Another Mail Notifier"
-            VALUE "FileVersion", "0, 0, 0, 17"
+            VALUE "FileVersion", "0, 0, 0, 18"
             VALUE "InternalName", "YAMN"
             VALUE "LegalCopyright", "Copyright © 2005"
             VALUE "OriginalFilename", "YAMN.dll"
             VALUE "ProductName", "YAMN tweety"
-            VALUE "ProductVersion", "0, 0, 0, 17"
+            VALUE "ProductVersion", "0, 0, 0, 18"
         END
     END
     BLOCK "VarFileInfo"

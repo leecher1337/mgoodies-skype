@@ -1,3 +1,8 @@
+0.0.0.18
+============
+! Visual bug in option page
+! Recompilation for win 9x users.
+
 0.0.0.17
 ============
 * Redesign option page to have only one entry in plugins options
