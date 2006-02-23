@@ -1,3 +1,13 @@
+0.0.0.9
+===========
+Patch by Tioduke
+{
+	* Use the right protoname for treating nudge as event
+	* Take care of the message dialog (open or not) in treating nudge as event
+	+ Registration in dbeditor ++
+}
+* Be aware of metacontact when sendig/receiving nudge (history).
+
 0.0.0.8
 ===========
 + Shake options are now saved in DB

@@ -249,8 +249,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,8
- PRODUCTVERSION 0,0,0,8
+ FILEVERSION 0,0,0,9
+ PRODUCTVERSION 0,0,0,9
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -267,12 +267,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "Plugin that render nudge events from different protocols"
             VALUE "FileDescription", "Nudge"
-            VALUE "FileVersion", "0, 0, 0, 8"
+            VALUE "FileVersion", "0, 0, 0, 9"
             VALUE "InternalName", "Nudge"
             VALUE "LegalCopyright", "Copyright © 2006"
             VALUE "OriginalFilename", "nudge.dll"
             VALUE "ProductName", "nudge"
-            VALUE "ProductVersion", "0, 0, 0, 8"
+            VALUE "ProductVersion", "0, 0, 0, 9"
         END
     END
     BLOCK "VarFileInfo"

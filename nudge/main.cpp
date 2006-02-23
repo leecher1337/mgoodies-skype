@@ -24,7 +24,7 @@ CShake shake;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,0,8),
+	PLUGIN_MAKE_VERSION(0,0,0,9),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -212,6 +212,13 @@ void RegisterToTrigger(void)
 	}
 }
 
+void RegisterToDbeditorpp(void)
+{
+    // known modules list
+    if (ServiceExists("DBEditorpp/RegisterSingleModule"))
+        CallService("DBEditorpp/RegisterSingleModule", (WPARAM)"Nudge", 0);
+}
+
 void LoadIcons(void)
 {
 	//Load icons
@@ -290,6 +297,7 @@ int ModulesLoaded(WPARAM,LPARAM)
 {
 	RegisterToUpdate();
 	RegisterToTrigger();
+	RegisterToDbeditorpp();
 	LoadProtocols();
 	LoadIcons();
 	return 0;
@@ -367,6 +375,7 @@ int Preview()
 	}
 	return 0;
 }
+
 void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont)
 {
 	POPUPDATAEX NudgePopUp;
@@ -393,23 +402,49 @@ void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont)
 	CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NudgePopUp,0);
 }
 
+BOOL CheckMsgWnd(HANDLE hContact)
+{
+	if (ServiceExists(MS_MSG_GETWINDOWDATA))	// use the new Window API
+	{
+		MessageWindowData mwd;
+		MessageWindowInputData mwid;
+
+		mwid.cbSize = sizeof(MessageWindowInputData); 
+		mwid.hContact = Nudge_GethContact(hContact);
+		mwid.uFlags = MSG_WINDOW_UFLAG_MSG_BOTH;
+		mwd.cbSize = sizeof(MessageWindowData);
+		mwd.hContact = Nudge_GethContact(hContact);
+		if (!CallService(MS_MSG_GETWINDOWDATA, (WPARAM)&mwid, (LPARAM)&mwd) && mwd.hwndWindow)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 void Nudge_SentEvent(CNudgeElement n, HANDLE hCont)
 {
 	DBEVENTINFO NudgeEvent = { 0 };;
 	HANDLE hContact;
+	HANDLE hMetaContact = NULL;
 	char* EventLog;
 
 	hContact = hCont;
 	EventLog = Translate("You sent a nudge");
 
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
-	NudgeEvent.szModule = n.ProtocolName;
+	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 	NudgeEvent.flags = DBEF_SENT;
 	NudgeEvent.timestamp = ( DWORD )time(NULL);
 	NudgeEvent.eventType = EVENTTYPE_MESSAGE;
 	NudgeEvent.cbBlob = strlen( EventLog )+1;
 	NudgeEvent.pBlob = ( PBYTE )EventLog;
 
+	if(ServiceExists(MS_MC_GETMETACONTACT)) //try to retrieve the metacontact if some
+		hMetaContact = (HANDLE) CallService( MS_MC_GETMETACONTACT, (WPARAM)hContact, 0 );
+	
+	if(hMetaContact != NULL) //metacontact
+		CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&NudgeEvent);
+	
 	CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&NudgeEvent);
 }
 
@@ -417,19 +452,29 @@ void Nudge_ShowEvent(CNudgeElement n, HANDLE hCont)
 {
 	DBEVENTINFO NudgeEvent = { 0 };;
 	HANDLE hContact;
+	HANDLE hMetaContact = NULL;
 	char* EventLog;
 
 	hContact = hCont;
 	EventLog = Translate("You received a nudge");
 
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
-	NudgeEvent.szModule = n.ProtocolName;
-	NudgeEvent.flags = 0;//DBEF_READ;
+	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+	NudgeEvent.flags = CheckMsgWnd(hContact) ? 0 : DBEF_READ;
 	NudgeEvent.timestamp = ( DWORD )time(NULL);
 	NudgeEvent.eventType = EVENTTYPE_MESSAGE;
 	NudgeEvent.cbBlob = strlen( EventLog )+1;
 	NudgeEvent.pBlob = ( PBYTE )EventLog;
 
+	if(ServiceExists(MS_MC_GETMETACONTACT)) //try to retrieve the metacontact if some
+		hMetaContact = (HANDLE) CallService( MS_MC_GETMETACONTACT, (WPARAM)hContact, 0 );
+	
+	if(hMetaContact != NULL) //metacontact
+	{
+		CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&NudgeEvent);
+		NudgeEvent.flags = DBEF_READ;
+	}
+	
 	CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&NudgeEvent);
 }
 
