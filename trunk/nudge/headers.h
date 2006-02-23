@@ -15,6 +15,7 @@
 #include "..\..\include\m_clui.h"
 #include "..\..\include\m_message.h"
 #include "..\..\include\m_protocols.h"
+#include "..\..\include\m_protomod.h"
 #include "..\..\include\m_options.h"
 #include "..\..\include\m_skin.h"
 #include "..\..\include\m_database.h"
