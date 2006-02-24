@@ -109,12 +109,11 @@ BEGIN
                     BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,35,
                     199,121,8
     CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP | 
-                    TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_DISABLED | 
-                    WS_BORDER | WS_TABSTOP,13,16,105,69
+                    TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER | 
+                    WS_TABSTOP,13,16,105,69
     GROUPBOX        "Protocol options",IDC_STATIC,7,4,286,216
     CONTROL         "Specify options for each protocol",IDC_USEBYPROTOCOL,
-                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,123,
-                    16,162,14
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,123,16,162,14
     CONTROL         "Enable clist shaking",IDC_CHECKCLIST,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,137,33,147,10
     CONTROL         "Enable message window shaking",IDC_CHECKCHAT,"Button",
@@ -249,8 +248,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,9
- PRODUCTVERSION 0,0,0,9
+ FILEVERSION 0,0,0,10
+ PRODUCTVERSION 0,0,0,10
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -267,12 +266,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "Plugin that render nudge events from different protocols"
             VALUE "FileDescription", "Nudge"
-            VALUE "FileVersion", "0, 0, 0, 9"
+            VALUE "FileVersion", "0, 0, 0, 10"
             VALUE "InternalName", "Nudge"
             VALUE "LegalCopyright", "Copyright © 2006"
             VALUE "OriginalFilename", "nudge.dll"
             VALUE "ProductName", "nudge"
-            VALUE "ProductVersion", "0, 0, 0, 9"
+            VALUE "ProductVersion", "0, 0, 0, 10"
         END
     END
     BLOCK "VarFileInfo"

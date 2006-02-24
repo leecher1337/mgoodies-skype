@@ -1,6 +1,21 @@
 #include "headers.h"
 #include "nudge.h"
 
+void CNudge::Save(void)
+{
+	char SectionName[MAXMODULELABELLENGTH + 30];
+	sprintf(SectionName,"useByProtocol"); 
+	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->useByProtocol); 
+}
+
+
+void CNudge::Load(void)
+{
+	char SectionName[MAXMODULELABELLENGTH + 30];
+	sprintf(SectionName,"useByProtocol"); 
+	this->useByProtocol = DBGetContactSettingByte(NULL, "Nudge", SectionName, FALSE) != 0; 
+}
+
 void CNudgeElement::Save(void)
 {
 	char SectionName[MAXMODULELABELLENGTH + 30];
@@ -20,6 +35,8 @@ void CNudgeElement::Save(void)
 	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->shakeClist); 
 	sprintf(SectionName,"%s-shakeChat", ProtocolName); 
 	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->shakeChat); 
+	sprintf(SectionName,"%s-enabled", ProtocolName); 
+	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->enabled); 
 }
 
 
@@ -42,4 +59,6 @@ void CNudgeElement::Load(void)
 	this->shakeClist = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0;  
 	sprintf(SectionName,"%s-shakeChat", ProtocolName); 
 	this->shakeChat = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0; 
+	sprintf(SectionName,"%s-enabled", ProtocolName); 
+	this->enabled = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0; 
 }
