@@ -4,12 +4,6 @@
 
 
 LRESULT CALLBACK NudgePopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam);
-
-COLORREF colorBack = 250, colorText = 0;
-int popupTime = 4;
-bool bShowPopup = true;
-bool bUseWindowColor = true;
-bool useByProtocol = false;
 int nProtocol = 0;
 static HANDLE hEventOptionsInitialize;
 HINSTANCE hInst;
@@ -17,6 +11,7 @@ PLUGINLINK *pluginLink;
 NudgeElementList *NudgeList;
 CNudgeElement DefaultNudge;
 CShake shake;
+CNudge GlobalNudge;
 
 //========================
 //  MirandaPluginInfo
@@ -24,7 +19,7 @@ CShake shake;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,0,9),
+	PLUGIN_MAKE_VERSION(0,0,0,10),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -67,7 +62,7 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 
 	char *protoName = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0);
 
-	if(useByProtocol)
+	if(GlobalNudge.useByProtocol)
 	{
 		NudgeElementList *n;
 		for(n = NudgeList;n != NULL; n = n->next)
@@ -98,36 +93,42 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 
 	char *protoName = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0);
 
-	if(useByProtocol)
+	if(GlobalNudge.useByProtocol)
 	{
 		NudgeElementList *n;
 		for(n = NudgeList;n != NULL; n = n->next)
 		{
 			if(!strcmp(protoName,n->item.ProtocolName))
 			{
-				SkinPlaySound( n->item.NudgeSoundname );
-				if(n->item.showPopup)
-					Nudge_ShowPopup(n->item, (HANDLE) wParam);
-				if(n->item.shakeClist)
-					ShakeClist(wParam,lParam);
-				if(n->item.shakeChat)
-					ShakeChat(wParam,lParam);
-				if(n->item.showEvent)
-					Nudge_ShowEvent(n->item, (HANDLE) wParam);
+				if(n->item.enabled)
+				{
+					SkinPlaySound( n->item.NudgeSoundname );
+					if(n->item.showPopup)
+						Nudge_ShowPopup(n->item, (HANDLE) wParam);
+					if(n->item.shakeClist)
+						ShakeClist(wParam,lParam);
+					if(n->item.shakeChat)
+						ShakeChat(wParam,lParam);
+					if(n->item.showEvent)
+						Nudge_ShowEvent(n->item, (HANDLE) wParam);
+				}
 			}		
 		}
 	}
 	else
 	{
-		SkinPlaySound( DefaultNudge.NudgeSoundname );
-		if(DefaultNudge.showPopup)
-			Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam);
-		if(DefaultNudge.shakeClist)
-			ShakeClist(wParam,lParam);
-		if(DefaultNudge.shakeChat)
-			ShakeChat(wParam,lParam);
-		if(DefaultNudge.showEvent)
-			Nudge_ShowEvent(DefaultNudge, (HANDLE) wParam);
+		if(DefaultNudge.enabled)
+		{
+			SkinPlaySound( DefaultNudge.NudgeSoundname );
+			if(DefaultNudge.showPopup)
+				Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam);
+			if(DefaultNudge.shakeClist)
+				ShakeClist(wParam,lParam);
+			if(DefaultNudge.shakeChat)
+				ShakeChat(wParam,lParam);
+			if(DefaultNudge.showEvent)
+				Nudge_ShowEvent(DefaultNudge, (HANDLE) wParam);
+		}
 	}
 	return 0;
 }
@@ -156,6 +157,8 @@ void LoadProtocols(void)
 	sprintf(DefaultNudge.NudgeSoundname,"Nudge : Default");
 	SkinAddNewSound( DefaultNudge.NudgeSoundname, DefaultNudge.NudgeSoundname, "nudge.wav" );
 	DefaultNudge.Load();
+
+	GlobalNudge.Load();
 
 	int numberOfProtocols,ret;
 	char str[MAXMODULELABELLENGTH + 10];
@@ -353,25 +356,31 @@ LRESULT CALLBACK NudgePopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam)
 
 int Preview()
 {
-	if( useByProtocol )
+	if( GlobalNudge.useByProtocol )
 	{
 		NudgeElementList *n;
 		for(n = NudgeList;n != NULL; n = n->next)
 		{
-			SkinPlaySound( n->item.NudgeSoundname );
-			if(n->item.showPopup)
-				Nudge_ShowPopup(n->item, NULL);
-			if(n->item.shakeClist)
-				ShakeClist(0,0);
+			if(n->item.enabled)
+			{
+				SkinPlaySound( n->item.NudgeSoundname );
+				if(n->item.showPopup)
+					Nudge_ShowPopup(n->item, NULL);
+				if(n->item.shakeClist)
+					ShakeClist(0,0);
+			}
 		}
 	}
 	else
 	{
-		SkinPlaySound( DefaultNudge.NudgeSoundname );
-		if(DefaultNudge.showPopup)
-			Nudge_ShowPopup(DefaultNudge, NULL);
-		if(DefaultNudge.shakeClist)
-			ShakeClist(0,0);
+		if(DefaultNudge.enabled)
+		{
+			SkinPlaySound( DefaultNudge.NudgeSoundname );
+			if(DefaultNudge.showPopup)
+				Nudge_ShowPopup(DefaultNudge, NULL);
+			if(DefaultNudge.shakeClist)
+				ShakeClist(0,0);
+		}
 	}
 	return 0;
 }
