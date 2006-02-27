@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "commonheaders.h"
+//#include <multimon.h>
 
 extern HINSTANCE g_hInst;
 extern HCURSOR hDragCursor;
@@ -692,19 +693,24 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			RECT rcDesktop;
 			RECT *pRect = (RECT *)lParam;
 			POINT pt;
+			MONITORINFO mi;
+			HMONITOR hMonitor = MonitorFromRect(hwndDlg, MONITOR_DEFAULTTONEAREST);
 			SIZE szSize = {pRect->right-pRect->left,pRect->bottom-pRect->top};
+			mi.cbSize = sizeof(mi);
+			GetMonitorInfo(hMonitor, &mi);			
 			GetCursorPos(&pt);
-			SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);
+//			SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);
+			rcDesktop = mi.rcWork;
 			pRect->left = pt.x-dat->mouseLBDownPos.x;
 			pRect->top = pt.y-dat->mouseLBDownPos.y;
 			pRect->right = pRect->left+szSize.cx;
 			pRect->bottom = pRect->top+szSize.cy;
             if (!(GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
-				if(pRect->top < snapPixels && pRect->top > -snapPixels) {
+				if(pRect->top < rcDesktop.top+snapPixels && pRect->top > rcDesktop.top-snapPixels) {
 					pRect->top = 0;
 					pRect->bottom = szSize.cy;
 				}
-				if(pRect->left < snapPixels && pRect->left > -snapPixels) {
+				if(pRect->left < rcDesktop.left+snapPixels && pRect->left > rcDesktop.left-snapPixels) {
 					pRect->left = 0;
 					pRect->right = szSize.cx;
 				}
