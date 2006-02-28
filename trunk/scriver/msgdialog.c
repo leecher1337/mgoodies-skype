@@ -806,6 +806,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) dat);
 			dat->hContact = newData->hContact;
 			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPENING);
+			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETTEXTMODE, TM_PLAINTEXT, 0);
 			if (newData->szInitialText) {
 				int len;
 				SetDlgItemTextA(hwndDlg, IDC_MESSAGE, newData->szInitialText);
@@ -920,7 +921,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_LINK);
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETEDITSTYLE, SES_EXTENDBACKCOLOR, SES_EXTENDBACKCOLOR);
 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELONG(0,0));
-
 			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_KEYEVENTS | ENM_CHANGE);
 // IEVIew MOD Begin
 			if (dat->flags & SMF_USEIEVIEW) {
@@ -1131,7 +1131,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		if (pAck->result == ACKRESULT_STATUS) {
 			SendMessage(hwndDlg, DM_GETAVATAR, 0, 0);
 			return 0;
-		} 
+		}
 		if (pai==NULL)
 			return 0;
 		if (pAck->result == ACKRESULT_SUCCESS) {
