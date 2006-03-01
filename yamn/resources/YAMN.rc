@@ -1,4 +1,4 @@
-// Microsoft Visual C++ generated resource script.
+//Microsoft Developer Studio generated resource script.
 //
 #include "resource.h"
 
@@ -27,18 +27,18 @@ LANGUAGE LANG_CZECH, SUBLANG_DEFAULT
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE DISCARDABLE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE DISCARDABLE 
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE DISCARDABLE 
 BEGIN
     "\r\n"
     "\0"
@@ -54,10 +54,10 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICOYAMN2            ICON                    "icoyamn2.ico"
-IDI_ICOYAMN1            ICON                    "icoyamn1.ico"
-IDI_ICOYAMN3            ICON                    "icoyamn3.ico"
-IDI_ICONEUTRAL          ICON                    "iconeutral.ico"
+IDI_ICOYAMN2            ICON    DISCARDABLE     "icoyamn2.ico"
+IDI_ICOYAMN1            ICON    DISCARDABLE     "icoyamn1.ico"
+IDI_ICOYAMN3            ICON    DISCARDABLE     "icoyamn3.ico"
+IDI_ICONEUTRAL          ICON    DISCARDABLE     "iconeutral.ico"
 #endif    // Czech resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -77,7 +77,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO DISCARDABLE 
 BEGIN
     IDD_DLGVIEWMESSAGES, DIALOG
     BEGIN
@@ -147,9 +147,9 @@ END
 // Dialog
 //
 
-IDD_DLGVIEWMESSAGES DIALOG  50, 200, 460, 110
-STYLE DS_SETFONT | DS_3DLOOK | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU | WS_THICKFRAME
+IDD_DLGVIEWMESSAGES DIALOG DISCARDABLE  50, 200, 460, 110
+STYLE DS_3DLOOK | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | 
+    WS_THICKFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "List4",IDC_LISTMAILS,"SysListView32",LVS_REPORT | 
@@ -160,8 +160,8 @@ BEGIN
     LTEXT           "",IDC_STSTATUS,5,75,450,10
 END
 
-IDD_DLGBADCONNECT DIALOG  0, 0, 186, 50
-STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+IDD_DLGBADCONNECT DIALOG DISCARDABLE  0, 0, 186, 50
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 FONT 8, "MS Shell Dlg"
 BEGIN
     DEFPUSHBUTTON   "OK",IDC_BTNOK,70,30,50,14
@@ -169,9 +169,9 @@ BEGIN
 END
 
 IDD_YAMNOPT DIALOGEX 0, 0, 320, 230
-STYLE DS_SYSMODAL | DS_SETFONT | DS_3DLOOK | WS_CHILD | WS_VISIBLE
+STYLE DS_SYSMODAL | DS_3DLOOK | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x0
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "HotKey1",IDC_HKFORCE,"msctls_hotkey32",WS_BORDER | 
                     WS_TABSTOP,169,8,110,12
@@ -198,9 +198,9 @@ BEGIN
 END
 
 IDD_POP3ACCOUNTOPT DIALOGEX 0, 0, 315, 239
-STYLE DS_SYSMODAL | DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+STYLE DS_SYSMODAL | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x0
+FONT 8, "MS Shell Dlg"
 BEGIN
     COMBOBOX        IDC_COMBOACCOUNT,4,6,140,65,CBS_DROPDOWN | CBS_SORT | 
                     WS_TABSTOP
@@ -297,9 +297,8 @@ BEGIN
     LTEXT           "",IDC_STSTATUS,147,6,161,8
 END
 
-IDD_CHOOSESTATUSMODES DIALOG  0, 0, 226, 154
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
+IDD_CHOOSESTATUSMODES DIALOG DISCARDABLE  0, 0, 226, 154
+STYLE DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Check while ..."
 FONT 8, "MS Shell Dlg"
 BEGIN
@@ -329,9 +328,9 @@ BEGIN
 END
 
 IDD_OPTIONS DIALOGEX 0, 0, 334, 259
-STYLE DS_SYSMODAL | DS_SETFONT | WS_CHILD | WS_VISIBLE
+STYLE DS_SYSMODAL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x0
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",0x0,7,4,323,248
 END
@@ -369,17 +368,18 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICOTTBDW            ICON                    "iconttbdown.ico"
-IDI_ICOTTBUP            ICON                    "iconttbup.ico"
+IDI_ICOTTBDW            ICON    DISCARDABLE     "iconttbdown.ico"
+IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
 
+#ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,18
- PRODUCTVERSION 0,0,0,18
+ FILEVERSION 0,0,1,0
+ PRODUCTVERSION 0,0,1,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -394,14 +394,18 @@ BEGIN
     BEGIN
         BLOCK "080c04b0"
         BEGIN
-            VALUE "Comments", "Yet Another Mail Notifier"
-            VALUE "FileDescription", "Yet Another Mail Notifier"
-            VALUE "FileVersion", "0, 0, 0, 18"
-            VALUE "InternalName", "YAMN"
-            VALUE "LegalCopyright", "Copyright © 2005"
-            VALUE "OriginalFilename", "YAMN.dll"
-            VALUE "ProductName", "YAMN tweety"
-            VALUE "ProductVersion", "0, 0, 0, 18"
+            VALUE "Comments", "Yet Another Mail Notifier\0"
+            VALUE "CompanyName", "\0"
+            VALUE "FileDescription", "Yet Another Mail Notifier\0"
+            VALUE "FileVersion", "0, 0, 1, 0\0"
+            VALUE "InternalName", "YAMN\0"
+            VALUE "LegalCopyright", "Copyright © 2005\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "YAMN.dll\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "YAMN tweety\0"
+            VALUE "ProductVersion", "0, 0, 1, 0\0"
+            VALUE "SpecialBuild", "\0"
         END
     END
     BLOCK "VarFileInfo"
@@ -409,6 +413,8 @@ BEGIN
         VALUE "Translation", 0x80c, 1200
     END
 END
+
+#endif    // !_MAC
 
 #endif    // French (Belgium) resources
 /////////////////////////////////////////////////////////////////////////////

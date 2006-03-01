@@ -1,3 +1,7 @@
+0.0.1.0
+============
+Time for release.
+
 0.0.0.18
 ============
 ! Visual bug in option page
