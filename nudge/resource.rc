@@ -72,25 +72,25 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        "Status Options",IDC_STATIC,13,89,276,61
     CONTROL         "Offline",IDC_CHECKST0,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,18,100,70,9
+                    BS_NOTIFY | WS_TABSTOP,15,100,67,9
     CONTROL         "Online",IDC_CHECKST1,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,18,114,70,9
+                    BS_NOTIFY | WS_TABSTOP,15,114,67,9
     CONTROL         "Away",IDC_CHECKST2,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_DISABLED | WS_TABSTOP,18,128,70,9
+                    WS_TABSTOP,15,128,67,9
     CONTROL         "N/A",IDC_CHECKST3,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_DISABLED | WS_TABSTOP,239,100,47,9
+                    WS_TABSTOP,232,100,54,9
     CONTROL         "Occupied",IDC_CHECKST4,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,165,100,70,9
+                    BS_NOTIFY | WS_TABSTOP,158,100,70,9
     CONTROL         "DND",IDC_CHECKST5,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_DISABLED | WS_TABSTOP,90,100,70,9
+                    WS_TABSTOP,85,100,70,9
     CONTROL         "Free for chat",IDC_CHECKST6,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,90,114,70,9
+                    BS_NOTIFY | WS_TABSTOP,85,114,70,9
     CONTROL         "Invisible",IDC_CHECKST7,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,90,128,70,9
+                    BS_NOTIFY | WS_TABSTOP,85,128,70,9
     CONTROL         "On the phone",IDC_CHECKST8,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,165,129,70,9
+                    BS_NOTIFY | WS_TABSTOP,158,129,70,9
     CONTROL         "Out to lunch",IDC_CHECKST9,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_DISABLED | WS_TABSTOP,165,114,70,9
+                    BS_NOTIFY | WS_TABSTOP,158,114,70,9
     PUSHBUTTON      "Preview",IDC_PREVIEW,248,72,41,15
     GROUPBOX        "Popup options",IDC_STATIC,13,154,276,61
     CONTROL         "Popup notification",IDC_CHECKPOP,"Button",
@@ -248,8 +248,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,10
- PRODUCTVERSION 0,0,0,10
+ FILEVERSION 0,0,0,11
+ PRODUCTVERSION 0,0,0,11
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -266,12 +266,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "Plugin that render nudge events from different protocols"
             VALUE "FileDescription", "Nudge"
-            VALUE "FileVersion", "0, 0, 0, 10"
+            VALUE "FileVersion", "0, 0, 0, 11"
             VALUE "InternalName", "Nudge"
             VALUE "LegalCopyright", "Copyright © 2006"
             VALUE "OriginalFilename", "nudge.dll"
             VALUE "ProductName", "nudge"
-            VALUE "ProductVersion", "0, 0, 0, 10"
+            VALUE "ProductVersion", "0, 0, 0, 11"
         END
     END
     BLOCK "VarFileInfo"

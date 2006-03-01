@@ -36,7 +36,9 @@ void CNudgeElement::Save(void)
 	sprintf(SectionName,"%s-shakeChat", ProtocolName); 
 	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->shakeChat); 
 	sprintf(SectionName,"%s-enabled", ProtocolName); 
-	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->enabled); 
+	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->enabled);
+	sprintf(SectionName,"%s-statusFlags", ProtocolName);
+	DBWriteContactSettingDword(NULL, "Nudge", SectionName, this->statusFlags);
 }
 
 
@@ -60,5 +62,7 @@ void CNudgeElement::Load(void)
 	sprintf(SectionName,"%s-shakeChat", ProtocolName); 
 	this->shakeChat = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0; 
 	sprintf(SectionName,"%s-enabled", ProtocolName); 
-	this->enabled = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0; 
+	this->enabled = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0;
+	sprintf(SectionName,"%s-statusFlags", ProtocolName);
+	this->statusFlags = DBGetContactSettingDword(NULL, "Nudge", SectionName, 0);
 }
