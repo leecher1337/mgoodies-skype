@@ -19,7 +19,7 @@ CNudge GlobalNudge;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,0,10),
+	PLUGIN_MAKE_VERSION(0,0,0,11),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -90,7 +90,7 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 
 int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 {
-
+	
 	char *protoName = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0);
 
 	if(GlobalNudge.useByProtocol)
@@ -102,15 +102,29 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 			{
 				if(n->item.enabled)
 				{
-					SkinPlaySound( n->item.NudgeSoundname );
-					if(n->item.showPopup)
-						Nudge_ShowPopup(n->item, (HANDLE) wParam);
-					if(n->item.shakeClist)
-						ShakeClist(wParam,lParam);
-					if(n->item.shakeChat)
-						ShakeChat(wParam,lParam);
-					if(n->item.showEvent)
-						Nudge_ShowEvent(n->item, (HANDLE) wParam);
+					DWORD Status = CallProtoService(protoName,PS_GETSTATUS,0,0);
+
+					if( ((n->item.statusFlags & NUDGE_ACC_ST0) && (Status<=ID_STATUS_OFFLINE)) ||
+						((n->item.statusFlags & NUDGE_ACC_ST1) && (Status==ID_STATUS_ONLINE)) ||
+						((n->item.statusFlags & NUDGE_ACC_ST2) && (Status==ID_STATUS_AWAY)) ||
+						((n->item.statusFlags & NUDGE_ACC_ST3) && (Status==ID_STATUS_DND)) ||
+						((n->item.statusFlags & NUDGE_ACC_ST4) && (Status==ID_STATUS_NA)) ||
+						((n->item.statusFlags & NUDGE_ACC_ST5) && (Status==ID_STATUS_OCCUPIED)) ||
+						((n->item.statusFlags & NUDGE_ACC_ST6) && (Status==ID_STATUS_FREECHAT)) ||
+						((n->item.statusFlags & NUDGE_ACC_ST7) && (Status==ID_STATUS_INVISIBLE)) ||
+						((n->item.statusFlags & NUDGE_ACC_ST8) && (Status==ID_STATUS_ONTHEPHONE)) ||
+						((n->item.statusFlags & NUDGE_ACC_ST9) && (Status==ID_STATUS_OUTTOLUNCH)))
+					{
+						SkinPlaySound( n->item.NudgeSoundname );
+						if(n->item.showPopup)
+							Nudge_ShowPopup(n->item, (HANDLE) wParam);
+						if(n->item.shakeClist)
+							ShakeClist(wParam,lParam);
+						if(n->item.shakeChat)
+							ShakeChat(wParam,lParam);
+						if(n->item.showEvent)
+							Nudge_ShowEvent(n->item, (HANDLE) wParam);
+					}
 				}
 			}		
 		}
@@ -119,15 +133,67 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 	{
 		if(DefaultNudge.enabled)
 		{
-			SkinPlaySound( DefaultNudge.NudgeSoundname );
-			if(DefaultNudge.showPopup)
-				Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam);
-			if(DefaultNudge.shakeClist)
-				ShakeClist(wParam,lParam);
-			if(DefaultNudge.shakeChat)
-				ShakeChat(wParam,lParam);
-			if(DefaultNudge.showEvent)
-				Nudge_ShowEvent(DefaultNudge, (HANDLE) wParam);
+			DWORD Status = CallService(MS_CLIST_GETSTATUSMODE,0,0);
+			/*switch(Status)
+			{
+			case ID_STATUS_OFFLINE:
+				MessageBox(NULL, "status offline\n",NULL,0);
+				break;
+			case ID_STATUS_ONLINE:
+				MessageBox(NULL, "status online\n",NULL,0);
+				break;
+			case ID_STATUS_AWAY:
+				MessageBox(NULL, "status away\n",NULL,0);
+				break;
+			case ID_STATUS_DND:
+				MessageBox(NULL, "status dnd\n",NULL,0);
+				break;
+			case ID_STATUS_NA:
+				MessageBox(NULL, "status na\n",NULL,0);
+				break;
+			case ID_STATUS_OCCUPIED:
+				MessageBox(NULL, "status occupied\n",NULL,0);
+				break;
+			case ID_STATUS_FREECHAT:
+				MessageBox(NULL, "status freechat\n",NULL,0);
+				break;
+			case ID_STATUS_INVISIBLE:
+				MessageBox(NULL, "status invisible\n",NULL,0);
+				break;
+			case ID_STATUS_ONTHEPHONE:
+				MessageBox(NULL, "status onthephone\n",NULL,0);
+				break;
+			case ID_STATUS_OUTTOLUNCH:
+				MessageBox(NULL, "status outtolunch\n",NULL,0);
+				break;
+			default:
+				char msg[500];
+				sprintf(msg," status : %X ", Status); 
+				MessageBox(NULL, msg,NULL,0);
+				break;
+			}*/
+
+			if( ((DefaultNudge.statusFlags & NUDGE_ACC_ST0) && (Status<=ID_STATUS_OFFLINE)) ||
+				((DefaultNudge.statusFlags & NUDGE_ACC_ST1) && (Status==ID_STATUS_ONLINE)) ||
+				((DefaultNudge.statusFlags & NUDGE_ACC_ST2) && (Status==ID_STATUS_AWAY)) ||
+				((DefaultNudge.statusFlags & NUDGE_ACC_ST3) && (Status==ID_STATUS_DND)) ||
+				((DefaultNudge.statusFlags & NUDGE_ACC_ST4) && (Status==ID_STATUS_NA)) ||
+				((DefaultNudge.statusFlags & NUDGE_ACC_ST5) && (Status==ID_STATUS_OCCUPIED)) ||
+				((DefaultNudge.statusFlags & NUDGE_ACC_ST6) && (Status==ID_STATUS_FREECHAT)) ||
+				((DefaultNudge.statusFlags & NUDGE_ACC_ST7) && (Status==ID_STATUS_INVISIBLE)) ||
+				((DefaultNudge.statusFlags & NUDGE_ACC_ST8) && (Status==ID_STATUS_ONTHEPHONE)) ||
+				((DefaultNudge.statusFlags & NUDGE_ACC_ST9) && (Status==ID_STATUS_OUTTOLUNCH)))
+			{
+				SkinPlaySound( DefaultNudge.NudgeSoundname );
+				if(DefaultNudge.showPopup)
+					Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam);
+				if(DefaultNudge.shakeClist)
+					ShakeClist(wParam,lParam);
+				if(DefaultNudge.shakeChat)
+					ShakeChat(wParam,lParam);
+				if(DefaultNudge.showEvent)
+					Nudge_ShowEvent(DefaultNudge, (HANDLE) wParam);
+			}
 		}
 	}
 	return 0;

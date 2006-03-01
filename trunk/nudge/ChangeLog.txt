@@ -1,3 +1,7 @@
+0.0.0.11
+===========
++ Status support (global or by protocol)
+
 0.0.0.10
 ===========
 + Multiprotocol options
