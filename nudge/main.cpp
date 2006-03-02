@@ -69,6 +69,16 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 		{
 			if(!strcmp(protoName,n->item.ProtocolName))
 			{
+				int diff = time(NULL) - n->item.LastSent;
+
+				if(diff < 30)
+				{
+					MessageBox(NULL,Translate("You are not allowed to send too much nudge (only 1 each 30 sec)"),NULL,0);
+					return 0;
+				}
+
+				n->item.LastSent = time(NULL);
+
 				if(n->item.showEvent)
 					Nudge_SentEvent(n->item, (HANDLE) wParam);
 			}		
@@ -100,6 +110,7 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 		{
 			if(!strcmp(protoName,n->item.ProtocolName))
 			{
+				
 				if(n->item.enabled)
 				{
 					DWORD Status = CallProtoService(protoName,PS_GETSTATUS,0,0);

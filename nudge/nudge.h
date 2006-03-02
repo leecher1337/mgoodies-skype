@@ -34,6 +34,7 @@ public:
 	bool shakeChat;
 	bool enabled;
 	DWORD statusFlags;
+	time_t LastSent;
 	unsigned int popupBackColor;
 	unsigned int popupTextColor;
 	int popupTimeSec;
