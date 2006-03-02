@@ -694,7 +694,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			RECT *pRect = (RECT *)lParam;
 			POINT pt;
 			MONITORINFO mi;
-			HMONITOR hMonitor = MonitorFromRect(hwndDlg, MONITOR_DEFAULTTONEAREST);
+			HMONITOR hMonitor = MonitorFromRect(pRect, MONITOR_DEFAULTTONEAREST);
 			SIZE szSize = {pRect->right-pRect->left,pRect->bottom-pRect->top};
 			mi.cbSize = sizeof(mi);
 			GetMonitorInfo(hMonitor, &mi);			
@@ -707,20 +707,20 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			pRect->bottom = pRect->top+szSize.cy;
             if (!(GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
 				if(pRect->top < rcDesktop.top+snapPixels && pRect->top > rcDesktop.top-snapPixels) {
-					pRect->top = 0;
-					pRect->bottom = szSize.cy;
+					pRect->top = rcDesktop.top;
+					pRect->bottom = rcDesktop.top + szSize.cy;
 				}
 				if(pRect->left < rcDesktop.left+snapPixels && pRect->left > rcDesktop.left-snapPixels) {
-					pRect->left = 0;
-					pRect->right = szSize.cx;
+					pRect->left = rcDesktop.left;
+					pRect->right = rcDesktop.left + szSize.cx;
 				}
 				if(pRect->right < rcDesktop.right+snapPixels && pRect->right > rcDesktop.right-snapPixels) {
 					pRect->right = rcDesktop.right;
-					pRect->left = rcDesktop.right-szSize.cx;
+					pRect->left = rcDesktop.right - szSize.cx;
 				}
 				if(pRect->bottom < rcDesktop.bottom+snapPixels && pRect->bottom > rcDesktop.bottom-snapPixels) {
 					pRect->bottom = rcDesktop.bottom;
-					pRect->top = rcDesktop.bottom-szSize.cy;
+					pRect->top = rcDesktop.bottom - szSize.cy;
 				}
 			}
 		}
@@ -1181,8 +1181,9 @@ int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,
 	WINDOWPLACEMENT wp;
 	char szSettingName[64];
 	int x,y;
-
-	SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);
+	MONITORINFO mi;
+	HMONITOR hMonitor;
+//	SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);
 	wp.length=sizeof(wp);
 	GetWindowPlacement(hwnd,&wp);
 	wsprintfA(szSettingName,"%sx",szNamePrefix);
@@ -1203,6 +1204,11 @@ int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,
 	}
 	wp.flags=0;
 	wp.showCmd = showCmd;
+
+	hMonitor = MonitorFromRect(&wp.rcNormalPosition, MONITOR_DEFAULTTONEAREST);
+	mi.cbSize = sizeof(mi);
+	GetMonitorInfo(hMonitor, &mi);			
+	rcDesktop = mi.rcWork;
 	if (wp.rcNormalPosition.left > rcDesktop.right || wp.rcNormalPosition.top > rcDesktop.bottom 
 		|| wp.rcNormalPosition.right < rcDesktop.left || wp.rcNormalPosition.bottom < rcDesktop.top) return 1;
 	SetWindowPlacement(hwnd,&wp);
