@@ -1,6 +1,7 @@
 0.0.0.11
 ===========
 + Status support (global or by protocol)
++ Limitation only sent 1 nudge every 30 sec per protocol.
 
 0.0.0.10
 ===========

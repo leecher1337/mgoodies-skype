@@ -65,4 +65,5 @@ void CNudgeElement::Load(void)
 	this->enabled = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0;
 	sprintf(SectionName,"%s-statusFlags", ProtocolName);
 	this->statusFlags = DBGetContactSettingDword(NULL, "Nudge", SectionName, 0);
+	this->LastSent = time(NULL);
 }
