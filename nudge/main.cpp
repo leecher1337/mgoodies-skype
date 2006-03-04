@@ -19,7 +19,7 @@ CNudge GlobalNudge;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,0,11),
+	PLUGIN_MAKE_VERSION(0,0,0,12),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -515,7 +515,7 @@ void Nudge_SentEvent(CNudgeElement n, HANDLE hCont)
 	char* EventLog;
 
 	hContact = hCont;
-	EventLog = Translate("You sent a nudge");
+	EventLog = Translate(n.senText);
 
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
 	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
@@ -542,7 +542,7 @@ void Nudge_ShowEvent(CNudgeElement n, HANDLE hCont)
 	char* EventLog;
 
 	hContact = hCont;
-	EventLog = Translate("You received a nudge");
+	EventLog = Translate(n.recText);
 
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
 	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
