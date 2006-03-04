@@ -91,35 +91,39 @@ BEGIN
                     BS_NOTIFY | WS_TABSTOP,158,129,70,9
     CONTROL         "Out to lunch",IDC_CHECKST9,"Button",BS_AUTOCHECKBOX | 
                     BS_NOTIFY | WS_TABSTOP,158,114,70,9
-    PUSHBUTTON      "Preview",IDC_PREVIEW,248,72,41,15
-    GROUPBOX        "Popup options",IDC_STATIC,13,154,276,61
+    PUSHBUTTON      "Preview",IDC_PREVIEW,245,198,41,15
+    GROUPBOX        "Popup options",IDC_STATIC,13,148,276,66
     CONTROL         "Popup notification",IDC_CHECKPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,17,167,108,10
-    EDITTEXT        IDC_POPUPTIME,35,182,20,12,ES_AUTOHSCROLL
-    LTEXT           "s",IDC_STATIC,59,185,8,8
-    LTEXT           "Popup duration",IDC_STATIC,69,185,82,8
-    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_TABSTOP,158,180,
+                    BS_AUTOCHECKBOX | WS_TABSTOP,17,158,108,10
+    EDITTEXT        IDC_POPUPTIME,35,169,20,12,ES_AUTOHSCROLL
+    LTEXT           "s",IDC_STATIC,59,172,8,8
+    LTEXT           "Popup duration",IDC_STATIC,69,172,82,8
+    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_TABSTOP,158,167,
                     39,12
-    LTEXT           "Background colour",IDC_STATIC,202,183,81,8,
+    LTEXT           "Background colour",IDC_STATIC,202,170,81,8,
                     SS_CENTERIMAGE
-    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,158,196,
+    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,158,183,
                     39,12
-    LTEXT           "Text colour",IDC_STATIC,202,199,82,8,SS_CENTERIMAGE
+    LTEXT           "Text colour",IDC_STATIC,202,186,82,8,SS_CENTERIMAGE
     CONTROL         "&Use Windows colours",IDC_USEWINCOLORS,"Button",
                     BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,35,
-                    199,121,8
+                    186,121,8
     CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP | 
                     TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER | 
                     WS_TABSTOP,13,16,105,69
-    GROUPBOX        "Protocol options",IDC_STATIC,7,4,286,216
+    GROUPBOX        "Protocol options",IDC_STATIC,7,0,286,216
     CONTROL         "Specify options for each protocol",IDC_USEBYPROTOCOL,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,123,16,162,14
     CONTROL         "Enable clist shaking",IDC_CHECKCLIST,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,137,33,147,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,132,30,147,10
     CONTROL         "Enable message window shaking",IDC_CHECKCHAT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,137,47,147,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,132,42,147,10
     CONTROL         "Treat nudge as a message",IDC_CHECKEVENT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,137,60,147,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,132,54,147,10
+    EDITTEXT        IDC_SENDTEXT,186,65,102,11,ES_AUTOHSCROLL
+    EDITTEXT        IDC_RECVTEXT,186,77,102,11,ES_AUTOHSCROLL
+    RTEXT           "Sending text",IDC_STATIC,119,66,66,8
+    RTEXT           "Receiving text",IDC_STATIC,120,78,65,8
 END
 
 IDD_OPTIONS DIALOGEX 0, 0, 320, 250
@@ -248,8 +252,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,11
- PRODUCTVERSION 0,0,0,11
+ FILEVERSION 0,0,0,12
+ PRODUCTVERSION 0,0,0,12
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -266,12 +270,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "Plugin that render nudge events from different protocols"
             VALUE "FileDescription", "Nudge"
-            VALUE "FileVersion", "0, 0, 0, 11"
+            VALUE "FileVersion", "0, 0, 0, 12"
             VALUE "InternalName", "Nudge"
             VALUE "LegalCopyright", "Copyright © 2006"
             VALUE "OriginalFilename", "nudge.dll"
             VALUE "ProductName", "nudge"
-            VALUE "ProductVersion", "0, 0, 0, 11"
+            VALUE "ProductVersion", "0, 0, 0, 12"
         END
     END
     BLOCK "VarFileInfo"

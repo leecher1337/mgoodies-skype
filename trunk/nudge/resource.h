@@ -12,7 +12,10 @@
 #define IDC_BUTTON1                     1000
 #define IDC_PREVIEW                     1000
 #define IDC_EDIT1                       1001
+#define IDC_SENDTEXT                    1001
 #define IDC_BUTTON2                     1002
+#define IDC_SENDTEXT2                   1002
+#define IDC_RECVTEXT                    1002
 #define IDC_BUTTON3                     1003
 #define IDC_BUTTON4                     1004
 #define IDC_BUTTON5                     1005
@@ -55,7 +58,6 @@
 #define IDC_CHECKCHAT2                  1034
 #define IDC_CHECKCHAT                   1034
 #define IDC_CHECKCOL                    1035
-#define IDC_CHECKCHAT3                  1035
 #define IDC_CHECKEVENT                  1035
 #define IDC_POPUPBACKCOLOR              1036
 #define IDC_CHECKPOP                    1037

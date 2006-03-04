@@ -27,6 +27,8 @@ class CNudgeElement
 public:
 	char ProtocolName[64];
 	char NudgeSoundname[100];
+	char recText[300];
+	char senText[300];
 	bool showPopup;
 	bool showEvent;
 	bool popupWindowColor;

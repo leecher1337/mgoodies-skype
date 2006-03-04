@@ -39,11 +39,16 @@ void CNudgeElement::Save(void)
 	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->enabled);
 	sprintf(SectionName,"%s-statusFlags", ProtocolName);
 	DBWriteContactSettingDword(NULL, "Nudge", SectionName, this->statusFlags);
+	sprintf(SectionName,"%s-recText", ProtocolName);
+	DBWriteContactSettingString(NULL, "Nudge", SectionName, this->recText);
+	sprintf(SectionName,"%s-senText", ProtocolName);
+	DBWriteContactSettingString(NULL, "Nudge", SectionName, this->senText);
 }
 
 
 void CNudgeElement::Load(void)
 {
+	DBVARIANT dbv;
 	char SectionName[MAXMODULELABELLENGTH + 30];
 	sprintf(SectionName,"%s-popupBackColor", ProtocolName);
 	this->popupBackColor = DBGetContactSettingDword(NULL, "Nudge", SectionName, GetSysColor(COLOR_BTNFACE));
@@ -65,5 +70,21 @@ void CNudgeElement::Load(void)
 	this->enabled = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0;
 	sprintf(SectionName,"%s-statusFlags", ProtocolName);
 	this->statusFlags = DBGetContactSettingDword(NULL, "Nudge", SectionName, 0);
+	sprintf(SectionName,"%s-recText", ProtocolName);
+	if(!DBGetContactSetting(NULL,"Nudge",SectionName,&dbv)) 
+	{
+		sprintf(this->recText,"%s",dbv.pszVal);
+		if(strlen(this->recText) < 1)
+			sprintf(this->recText,Translate("You received a nudge"));
+		DBFreeVariant(&dbv);
+	}
+	sprintf(SectionName,"%s-senText", ProtocolName);
+	if(!DBGetContactSetting(NULL,"Nudge",SectionName,&dbv)) 
+	{
+		sprintf(this->senText,"%s",dbv.pszVal);
+		if(strlen(this->senText) < 1)
+			sprintf(this->senText,Translate("You sent a nudge"));
+		DBFreeVariant(&dbv);
+	}
 	this->LastSent = time(NULL);
 }
