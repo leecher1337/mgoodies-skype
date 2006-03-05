@@ -22,7 +22,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
-#pragma hdrstop
 #include <ctype.h>
 #include <malloc.h>
 #include <mbstring.h>
@@ -61,7 +60,7 @@ struct EventData {
 	DWORD	dwFlags;
 	const char *fontName;
 	int			fontSize;
-	int         fontStyle; 
+	int         fontStyle;
 	COLORREF	color;
 	char *	pszNick;
 	wchar_t* pszNickW;
@@ -229,7 +228,7 @@ TCHAR *GetNickname(HANDLE hContact, const char* szProto) {
 				} else {
 					szName = strToWcs((char *)ci.pszVal, -1, CP_ACP);
 				}
-#else 
+#else
 				szName = _tcsdup((TCHAR *)ci.pszVal);
 #endif
 				miranda_sys_free(ci.pszVal);
