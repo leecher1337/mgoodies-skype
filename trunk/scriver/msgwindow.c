@@ -23,7 +23,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "commonheaders.h"
-//#include <multimon.h>
+
+#ifndef __MINGW32__
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0401
+#define COMPILE_MULTIMON_STUBS
+#include "multimon.h"
+#endif
 
 extern HINSTANCE g_hInst;
 extern HCURSOR hDragCursor;
@@ -697,7 +703,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			HMONITOR hMonitor = MonitorFromRect(pRect, MONITOR_DEFAULTTONEAREST);
 			SIZE szSize = {pRect->right-pRect->left,pRect->bottom-pRect->top};
 			mi.cbSize = sizeof(mi);
-			GetMonitorInfo(hMonitor, &mi);			
+			GetMonitorInfo(hMonitor, &mi);
 			GetCursorPos(&pt);
 //			SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);
 			rcDesktop = mi.rcWork;
@@ -1207,9 +1213,9 @@ int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,
 
 	hMonitor = MonitorFromRect(&wp.rcNormalPosition, MONITOR_DEFAULTTONEAREST);
 	mi.cbSize = sizeof(mi);
-	GetMonitorInfo(hMonitor, &mi);			
+	GetMonitorInfo(hMonitor, &mi);
 	rcDesktop = mi.rcWork;
-	if (wp.rcNormalPosition.left > rcDesktop.right || wp.rcNormalPosition.top > rcDesktop.bottom 
+	if (wp.rcNormalPosition.left > rcDesktop.right || wp.rcNormalPosition.top > rcDesktop.bottom
 		|| wp.rcNormalPosition.right < rcDesktop.left || wp.rcNormalPosition.bottom < rcDesktop.top) return 1;
 	SetWindowPlacement(hwnd,&wp);
 	return 0;

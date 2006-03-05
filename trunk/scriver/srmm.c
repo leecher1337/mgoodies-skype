@@ -32,7 +32,7 @@ HINSTANCE g_hInst;
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Scriver",
-	PLUGIN_MAKE_VERSION(2, 3, 0, 6),
+	PLUGIN_MAKE_VERSION(2, 3, 0, 7),
 #ifdef _UNICODE
 	"Scriver - send and receive instant messages (Unicode)",
 #else
