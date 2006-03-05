@@ -1,0 +1,100 @@
+[Status Message Change Notify]
+
+; main menu items
+[Enable &status message change notification]
+[Disable &status message change notification]
+[PopUps]
+[View Status Message History]
+[List Contacts with Status Message]
+[Status]
+[Disable SMCN PopUps]
+[Enable SMCN PopUps]
+
+; skin sound option
+[Status Message Changed]
+; default notifications
+[changes his/her status message to:]
+[cleares his/her status message]
+[changes his/her status message:]
+[<empty status message>]
+
+; popup preview
+[Contact]
+[Old status message]
+[New status message]
+
+; IcoLib icons descriptions
+[Contact Menu Icon]
+[External History]
+[Internal History]
+[PopUp Notify]
+[PopUp Enabled]
+[PopUp Disabled]
+[List Status Messages]
+[Go To URL in Status Message]
+
+; contacts with status message list
+[Nick]
+[Status Message]
+
+; status message history
+[Status Message History]
+; tooltips
+[User Menu]
+[View User's Details]
+[View User's History]
+[Send Instant Message]
+[Enable/Disable internal logging for this contact]
+[Enable/Disable external logging for this contact]
+[Enable/Disable popups for this contact]
+
+; options page - popups
+[PopUp]
+[Temporarily disable Popups]
+[Show PopUps when I connect]
+[Ignore empty status messages]
+[Background colour]
+[Text colour]
+[Use Windows colours]
+[PopUp text]
+[PopUp display time]
+[Seconds]
+[Left Click Actions]
+[Right Click Actions]
+[Preview]
+[Use OSD]
+
+; options page - status
+[Status Message Change Notify]
+[Do not notify and log when status message is empty]
+[Logging]
+[Log to]
+[Log format]
+[History]
+[History format]
+[Maximum entries]
+[Message Window]
+[Show status message changes in message window]
+[Message cleared]
+[Message changed]
+[List]
+[Background colour]
+[Text colour]
+[Use background image]
+[Variables]
+[%n New Status Message]
+[%o Old Status Message]
+[%D/%M/%Y day/month/year]
+[%c Custom nickname]
+[%H:%m Time (in 24h format)]
+[%h:%m %a (in 12h format)]
+[\\n line break]
+[\\t tab stop]
+
+; options page - mouse click action select menu
+[Dismiss PopUp]
+[Open message window]
+[View status message history]
+[Show user detail]
+[Show user menu]
+
