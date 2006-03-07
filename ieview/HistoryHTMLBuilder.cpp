@@ -24,22 +24,28 @@
 #define FONT_NUM 11
 
 static const char *classNames[] = {
-	".messageOut", ".messageIn", 
-	".fileOut", ".fileIn", 
-	".urlOut", ".urlIn", 
+	".messageOut", ".messageIn",
+	".fileOut", ".fileIn",
+	".urlOut", ".urlIn",
 	".system"
 	".nameOut", ".nameIn",
-	".timeOut", ".timeIn", 
+	".timeOut", ".timeIn",
 };
 
 static const char *dbSettingNames[] = {
-	"Font.OutMes", "Font.IncMes", 
-	"Font.OutFil", "Font.IncFil", 
-	"Font.OutUrl", "Font.IncUrl", 
+	"Font.OutMes", "Font.IncMes",
+	"Font.OutFil", "Font.IncFil",
+	"Font.OutUrl", "Font.IncUrl",
 	".system"
 	".nameOut", "Font.Contact",
-	".timeOut", "Font.ContactDate", 
+	".timeOut", "Font.ContactDate",
 };
+
+HistoryHTMLBuilder::HistoryHTMLBuilder() {
+	setLastEventType(-1);
+	setLastEventTime(time(NULL));
+	startedTime = time(NULL);
+}
 
 bool HistoryHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei)
 {
@@ -159,10 +165,13 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 			Utils::appendText(&output, &outputSize, ".divUrlOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
 			Utils::appendText(&output, &outputSize, ".divSystem {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
 		} else {
-			Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
-		        (int) lineColor, (int) inColor);
-			Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n",
-		        (int) lineColor, (int) outColor);
+			Utils::appendText(&output, &outputSize, ".divMessageIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n", (int) lineColor, (int) inColor);
+			Utils::appendText(&output, &outputSize, ".divMessageOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n", (int) lineColor, (int) outColor);
+			Utils::appendText(&output, &outputSize, ".divFileIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n", (int) lineColor, (int) inColor);
+			Utils::appendText(&output, &outputSize, ".divFileOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n", (int) lineColor, (int) outColor);
+			Utils::appendText(&output, &outputSize, ".divUrlIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n", (int) lineColor, (int) inColor);
+			Utils::appendText(&output, &outputSize, ".divUrlOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n", (int) lineColor, (int) outColor);
+			Utils::appendText(&output, &outputSize, ".divSystem {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X;}\n", (int) lineColor, (int) inColor);
 		}
 	 	for(int i = 0; i < FONT_NUM; i++) {
 			loadMsgDlgFont(i, &lf, &color);
@@ -180,7 +189,7 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
         view->write(output);
 		free(output);
 	}
-	iLastEventType = -1;
+	setLastEventType(-1);
 }
 
 void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
@@ -190,105 +199,82 @@ void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWDATE, 0) ? SMF_LOG_SHOWDATES : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWLOGICONS, 0) ? SMF_LOG_SHOWICONS : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSCHANGES, 0) ? SMF_LOG_SHOWSTATUSCHANGES : 0;
-	int cp = CP_ACP;
-	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
-		cp = event->codepage;
-	}
-	char *szProto = getProto(event->hContact);
 	char *szRealProto = getRealProto(event->hContact);
-	HANDLE hDbEvent = event->hDbEventFirst;
-	event->hDbEventFirst = NULL;
-	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
+	IEVIEWEVENTDATA* eventData = event->eventData;
+	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
 		int outputSize;
 		char *output;
-		DBEVENTINFO dbei = { 0 };
-        dbei.cbSize = sizeof(dbei);
-        dbei.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM) hDbEvent, 0);
-        if (dbei.cbBlob == 0xFFFFFFFF) {
-            return;
-		}
-        dbei.pBlob = (PBYTE) malloc(dbei.cbBlob);
-        CallService(MS_DB_EVENT_GET, (WPARAM)  hDbEvent, (LPARAM) & dbei);
-
-		if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE )) {
-			CallService(MS_DB_EVENT_MARKREAD, (WPARAM) event->hContact, (LPARAM) hDbEvent);
-			CallService(MS_CLIST_REMOVEEVENT, (WPARAM) event->hContact, (LPARAM) hDbEvent);
-		} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-			CallService(MS_DB_EVENT_MARKREAD, (WPARAM) event->hContact, (LPARAM) hDbEvent);
-		}
-		HANDLE hCurDbEvent = hDbEvent;
-        hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
-		if (!isDbEventShown(&dbei)) {
-            free(dbei.pBlob);
-	        continue;
-    	}
 		output = NULL;
-		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-			int isSent = (dbei.flags & DBEF_SENT);
+		int isSent = eventData->dwFlags & IEEDF_SENT;
+		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_STATUSCHANGE
+			|| eventData->iType == IEED_EVENT_URL || eventData->iType == IEED_EVENT_FILE) {
 			char *szName = NULL;
 			char *szText = NULL;
-			if (isSent) {
-				szName = getEncodedContactName(NULL, szProto, szRealProto);
+			if (eventData->dwFlags & IEEDF_UNICODE_NICK) {
+				szName = encodeUTF8(eventData->pszNickW, szRealProto, ENF_NAMESMILEYS);
    			} else {
-                szName = getEncodedContactName(event->hContact, szProto, szRealProto);
+                szName = encodeUTF8(eventData->pszNick, szRealProto, ENF_NAMESMILEYS);
 			}
-			if (dbei.eventType == EVENTTYPE_MESSAGE) {
-				DWORD aLen = strlen((char *)dbei.pBlob)+1;
-				if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
-					DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
-					if (wlen > 0 && wlen < aLen) {
-                        szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szRealProto, ENF_ALL);
-					} else {
-                        szText = encodeUTF8((char *)dbei.pBlob, cp, szRealProto, ENF_ALL);
-					}
-				} else {
-                	szText = encodeUTF8((char *)dbei.pBlob, cp, szRealProto, ENF_ALL);
-				}
-			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-                szText = encodeUTF8((char *)dbei.pBlob, szRealProto, ENF_NONE);
+			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
+				szText = encodeUTF8(eventData->pszTextW, szRealProto, ENF_ALL);
+   			} else {
+                szText = encodeUTF8(eventData->pszText, event->codepage, szRealProto, ENF_ALL);
 			}
 			/* SRMM-specific formatting */
-			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
-			if (dwFlags & SMF_LOG_SHOWICONS) {
-				const char *iconFile = "";
-				if (dbei.eventType == EVENTTYPE_MESSAGE) {
-					iconFile = isSent ? "message_out.gif" : "message_in.gif";
-				} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-					iconFile = "status.gif";
-				}
-				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"%s/plugins/ieview/%s\"/>",
+			const char *className = NULL;
+			const char *iconFile = NULL;
+			switch (eventData->iType) {
+				case IEED_EVENT_MESSAGE:
+					iconFile = "message.gif";
+					Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divMessageOut" : "divMessageIn");
+					break;
+				case IEED_EVENT_FILE:
+					iconFile = "file.gif";
+					Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divFileOut" : "divFileIn");
+					break;
+				case IEED_EVENT_URL:
+					iconFile = "url.gif";
+					Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divUrlOut" : "divUrlIn");
+					break;
+				default:
+					Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divSystem");
+			}
+			if (dwFlags & SMF_LOG_SHOWICONS && iconFile != NULL) {
+				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"%s/plugins/ieview/%s\"/> ",
 								workingDir, iconFile);
+			} else {
+				Utils::appendText(&output, &outputSize, " ");
 			}
-			if (dwFlags & SMF_LOG_SHOWTIME) {
-				const char *className = "";
-				className = isSent ? "timeOut" : "timeIn";
-				if (!(dwFlags & SMF_LOG_SHOWNICK) || (dbei.eventType == EVENTTYPE_STATUSCHANGE)) {
-					const char *className2 = "";
-					className2 = isSent ? "colonOut" : "colonIn";
-					Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span><span class=\"%s\">: </span>",
-							className, timestampToString(dwFlags, dbei.timestamp), className2);
-				} else {
-					Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
-							className, timestampToString(dwFlags, dbei.timestamp));
-				}
-			}
-			if (dwFlags & SMF_LOG_SHOWNICK) {
-                if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-					Utils::appendText(&output, &outputSize, "<span class=\"notices\">%s </span>", szName);
-				} else {
-					Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span><span class=\"%s\">: </span>",
-								isSent ? "nameOut" : "nameIn", szName, isSent ? "colonOut" : "colonIn");
-				}
-			}
-			const char *className = "";
-			if (dbei.eventType == EVENTTYPE_MESSAGE) {
+			Utils::appendText(&output, &outputSize, "<span class=\"%s\"> %s:</span>",
+									isSent ? "nameOut" : "nameIn", szName);
+
+			Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>",
+							isSent ? "timeOut" : "timeIn", timestampToString(dwFlags, eventData->time));
+
+			if (eventData->iType == IEED_EVENT_MESSAGE) {
+				Utils::appendText(&output, &outputSize, "<br>");
 				className = isSent ? "messageOut" : "messageIn";
-			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
+			} else {
                 className = "notices";
 			}
-            Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>", className, szText);
+			if (eventData->iType == IEED_EVENT_FILE) {
+				if (isSent) {
+	            	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: %s</span>", className, Translate("File sent"), szText);
+				} else {
+	            	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: %s</span>", className, Translate("File received"), szText);
+				}
+			} else if (eventData->iType == IEED_EVENT_URL) {
+				if (isSent) {
+	            	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: %s</span>", className, Translate("URL sent"), szText);
+				} else {
+	            	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: %s</span>", className, Translate("URL received"), szText);
+				}
+			} else {
+            	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>", className, szText);
+			}
             Utils::appendText(&output, &outputSize, "</div>\n");
-			event->hDbEventFirst = hCurDbEvent;
+			setLastEventType(MAKELONG(eventData->dwFlags, eventData->iType));
+			setLastEventTime(eventData->time);
 			if (szName!=NULL) delete szName;
 			if (szText!=NULL) delete szText;
 		}
@@ -296,13 +282,11 @@ void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
             view->write(output);
 			free(output);
 		}
-        free(dbei.pBlob);
     }
-    if (szProto!=NULL) delete szProto;
     if (szRealProto!=NULL) delete szRealProto;
 //	view->scrollToBottom();
 }
-  
+
 void HistoryHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
  	if (Options::getHistoryFlags() & Options::TEMPLATES_ENABLED) {
 		appendEventTemplate(view, event);

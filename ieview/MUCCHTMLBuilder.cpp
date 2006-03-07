@@ -62,8 +62,8 @@ static const char *classNames[] = {
 };
 
 MUCCHTMLBuilder::MUCCHTMLBuilder() {
-	iLastEventType = -1;
-	lastEventTime = time(NULL);
+	setLastEventType(-1);
+	setLastEventTime(time(NULL));
 }
 
 void MUCCHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
@@ -197,7 +197,7 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
         view->write(output);
 		free(output);
 	}
-	iLastEventType = -1;
+	setLastEventType(-1);
 }
 
 void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {

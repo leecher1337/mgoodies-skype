@@ -23,7 +23,6 @@ class IEView;
 #ifndef IEVIEW_INCLUDED
 #define IEVIEW_INCLUDED
 
-#include "ieview_common.h"
 
 //const IID IID_IDocHostUIHandler ={0xbd3f23c0,0xd43e,0x11CF,{0x89, 0x3b, 0x00, 0xaa, 0x00, 0xbd, 0xce, 0x1a}};
 #include <objbase.h>
@@ -32,9 +31,10 @@ class IEView;
 #include <initguid.h>
 #include <shlguid.h>
 #include <memory.h>
-#include <shlobj.h>
+//#include <shlobj.h>
 #include <mshtml.h>
 #include <oleauto.h>
+#include "ieview_common.h"
 #include "mshtmhst.h"
 
 #include "HTMLBuilder.h"
@@ -174,6 +174,7 @@ public:
 	HWND			getHWND();
 	void 			translateAccelerator(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	bool			mouseClick(POINT pt);
+	bool			mouseActivate();
 	bool            setFocus(HWND prevFocus);
    	void            setWindowPos(int x, int y, int cx, int cy);
 	HTMLBuilder*    getBuilder();

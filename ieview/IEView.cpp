@@ -52,9 +52,23 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
 			view->translateAccelerator(message, wParam, lParam);
 		   	break;
 		case WM_SETFOCUS:
-			if (view->setFocus((HWND)wParam)) {
-				return TRUE;
+			{
+				RECT rcWindow;
+				POINT cursor;
+				GetWindowRect(hwnd, &rcWindow);
+				GetCursorPos(&cursor);
+				if (cursor.y > rcWindow.bottom || cursor.y < rcWindow.top ||
+					cursor.x > rcWindow.right || cursor.x < rcWindow.left) {
+				} else {
+					view->mouseActivate();
+				}
+				if (view->setFocus((HWND)wParam)) {
+					return TRUE;
+				}
 			}
+			break;
+		case WM_MOUSEWHEEL:
+			SetFocus(GetParent(view->getHWND()));
 			break;
 		case WM_LBUTTONDOWN:
 		    POINT pt;
@@ -980,6 +994,13 @@ BSTR IEView::getHrefFromAnchor(IHTMLElement *element) {
         }
     }
     return NULL;
+}
+
+bool IEView::mouseActivate() {
+    if (GetFocus() != hwnd) {
+		getFocus = true;
+	}
+	return false;
 }
 
 bool IEView::mouseClick(POINT pt) {

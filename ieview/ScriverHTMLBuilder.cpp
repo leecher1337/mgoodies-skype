@@ -64,8 +64,8 @@ static const char *classNames[] = {
 };
 
 ScriverHTMLBuilder::ScriverHTMLBuilder() {
-	iLastEventType = -1;
-	lastEventTime = time(NULL);
+	setLastEventType(-1);
+	setLastEventTime(time(NULL));
 	startedTime = time(NULL);
 }
 
@@ -237,7 +237,7 @@ void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
         view->write(output);
 		free(output);
 	}
-	iLastEventType = -1;
+	setLastEventType(-1);
 }
 
 void ScriverHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {

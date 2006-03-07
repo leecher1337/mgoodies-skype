@@ -1033,7 +1033,7 @@ char *HTMLBuilder::getEncodedContactName(HANDLE hContact, const char* szProto, c
 		szName = encodeUTF8(name, szSmileyProto, ENF_NAMESMILEYS);
 		delete name;
 		return szName;
-	} 
+	}
     return encodeUTF8(TranslateT("(Unknown Contact)"), szSmileyProto, ENF_NAMESMILEYS);
 }
 
@@ -1048,7 +1048,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 	newEvent.codepage = CP_ACP;
 	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
 		newEvent.codepage = event->codepage;
-	} 
+	}
 	newEvent.count = 0;
 	newEvent.dwFlags = event->dwFlags;
 	newEvent.hContact = event->hContact;
@@ -1106,6 +1106,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 			}
 			eventData->iType = IEED_EVENT_MESSAGE;
 		} else if (dbei.eventType == EVENTTYPE_FILE) {
+			//blob is: sequenceid(DWORD),filename(ASCIIZ),description(ASCIIZ)
 			char *ptr =((char *)dbei.pBlob) + sizeof(DWORD);
             eventData->pszTextW = Utils::convertToWCS(ptr, newEvent.codepage);
             eventData->pszText2W = Utils::convertToWCS(ptr + strlen(ptr) + 1, newEvent.codepage);
@@ -1116,7 +1117,14 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 		} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
             eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
 			eventData->iType = IEED_EVENT_STATUSCHANGE;
+		} else if (dbei.eventType == EVENTTYPE_AUTHREQUEST) {
+		    //blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
+            eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
+		} else if (dbei.eventType == EVENTTYPE_ADDED) {
+			//blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
+            eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
 		}
+
 	    free(dbei.pBlob);
 		eventData->next = NULL;
 		if (prevEventData != NULL) {

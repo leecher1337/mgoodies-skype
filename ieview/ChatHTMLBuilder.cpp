@@ -65,8 +65,8 @@ static const char *classNames[] = {
 };
 
 ChatHTMLBuilder::ChatHTMLBuilder() {
-	iLastEventType = -1;
-	lastEventTime = time(NULL);
+	setLastEventType(-1);
+	setLastEventTime(time(NULL));
 }
 
 void ChatHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
@@ -194,7 +194,7 @@ void ChatHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
         view->write(output);
 		free(output);
 	}
-	iLastEventType = -1;
+	setLastEventType(-1);
 }
 
 void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {

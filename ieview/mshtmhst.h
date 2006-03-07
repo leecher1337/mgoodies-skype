@@ -18,6 +18,7 @@
 #define DLCTL_OFFLINEIFNOTCONNECTED             0x80000000
 #define DLCTL_OFFLINE                           DLCTL_OFFLINEIFNOTCONNECTED
 
+#ifndef _MSC_VER
 
 /*****************************************************************************
  * IDocHostUIHandler interface
@@ -70,6 +71,7 @@ DECLARE_INTERFACE_(IHTMLAnchorElement,IDispatch)
 	STDMETHOD(focus)(void) PURE;
 	STDMETHOD(blur)(void) PURE;
 };
+#endif
 
 
 /*****************************************************************************
