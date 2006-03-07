@@ -183,7 +183,7 @@ static BOOL CALLBACK SmileySelectionDlgProc(HWND hwndDlg, UINT msg, WPARAM wPara
 void SmileyWindow::choose(const char * smiley) {
 	ShowWindow(hwnd, SW_HIDE);
 	if (hwndTarget!=NULL) {
-		char *str = strstr(smiley, "/");
+		const char *str = strstr(smiley, "/");
 		if (str!=NULL) {
 			int i = atoi(str+1);
 			Smiley *s;

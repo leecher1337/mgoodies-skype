@@ -51,6 +51,9 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 			case IEWM_SCRIVER:
 				builder = new ScriverHTMLBuilder();
 				break;
+			case IEWM_HISTORY:
+				builder = new HistoryHTMLBuilder();
+				break;
 			default:
 				builder = new ScriverHTMLBuilder();
 				break;
@@ -92,7 +95,7 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 			view->saveDocument();
 		} else if (event->iType == IEE_LOG_MEM_EVENTS) {
 			view->appendEvent(event);
-		} 
+		}
 	}
 	return 0;
 }

@@ -59,8 +59,8 @@ static const char *classNames[] = {
 };
 
 TabSRMMHTMLBuilder::TabSRMMHTMLBuilder() {
-	iLastEventType = -1;
-	startedTime = time(NULL);
+	setLastEventType(-1);
+	setLastEventTime(time(NULL));
 	lastEventTime = time(NULL);
 }    
 
@@ -253,7 +253,7 @@ void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
         view->write(output);
 		free(output);
 	}
-	iLastEventType = -1;
+	setLastEventType(-1);
 }
 
 time_t TabSRMMHTMLBuilder::getStartedTime() {

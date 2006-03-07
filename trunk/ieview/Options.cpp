@@ -18,6 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
+#include <shlobj.h>
 #include "Options.h"
 #include "resource.h"
 #include "Smiley.h"
@@ -35,6 +36,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static HWND hwndCurrentTab, hwndPages[4];
 
+#ifndef _MSC_VER
 typedef struct tagTVKEYDOWN {
     NMHDR hdr;
     WORD wVKey;
@@ -72,6 +74,7 @@ BOOL TreeView_GetCheckState(HWND hwndTreeView, HTREEITEM hItem)
     // Return zero if it's not checked, or nonzero otherwise.
     return ((BOOL)(tvItem.state >> 12) -1);
 }
+#endif
 
 int IEViewOptInit(WPARAM wParam, LPARAM lParam)
 {
