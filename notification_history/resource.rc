@@ -1,0 +1,105 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Portuguese (Brazil) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_PTB)
+#ifdef _WIN32
+LANGUAGE LANG_PORTUGUESE, SUBLANG_PORTUGUESE_BRAZILIAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_OPT_HISTORY DIALOGEX 0, 0, 206, 107
+STYLE DS_SYSMODAL | DS_3DLOOK | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "When the notification has no contact associated:",
+                    IDC_STATIC,15,18,175,9
+    CONTROL         "Add to system history",IDC_SYSTEM_LOG,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,30,29,159,11
+    CONTROL         "Mark as read",IDC_SYSTEM_MARK_READ,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,30,41,159,11
+    LTEXT           "When the notification has a contact associated:",
+                    IDC_STATIC,15,59,175,9
+    CONTROL         "Add to contact history",IDC_CONTACT_LOG,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,30,70,159,11
+    CONTROL         "Mark as read",IDC_CONTACT_MARK_READ,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,30,83,159,11
+    GROUPBOX        "Log",IDC_STATIC,4,5,198,97
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_OPT_HISTORY, DIALOG
+    BEGIN
+        RIGHTMARGIN, 203
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Portuguese (Brazil) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
