@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define IDC_ENABLE_FLASH                1005
 #define IDC_ENABLE_MATHMODULE           1006
 #define IDC_ENABLE_PNGHACK				1007
+#define IDC_SMILEYS_IN_NAMES			1008
 
 #define IDC_EXTERNALCSS                 1020
 #define IDC_EXTERNALCSS_FILENAME		1021

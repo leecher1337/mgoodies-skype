@@ -66,9 +66,9 @@ private:
    	static char *	historyCSSFilename;
    	static char *	historyCSSFilenameRTL;
 
-	static bool     bMathModule;
    	static bool     isInited;
-	static int      smileyAddFlags;
+	static bool     bMathModule;
+	static bool     bSmileyAdd;
 	static int      avatarServiceFlags;
 public:
 	enum OPTIONS {
@@ -91,9 +91,6 @@ public:
 		LOG_RELATIVE_DATE     = 0x2000,
 		LOG_GROUP_MESSAGES	  = 0x4000,
 	};
-	enum SMILEYADDFLAGS {
-		SMILEYADD_PRESENT     = 0x0001,
-	};
 	enum AVATARSERVICEFLAGS {
 		AVATARSERVICE_PRESENT     = 0x0001,
 	};
@@ -111,7 +108,7 @@ public:
    	static const char *		getSRMMTemplatesFileRTL();
    	static void				setSRMMFlags(int flags);
    	static int				getSRMMFlags();
-   	
+
    	static void      		setGroupChatCSSFile(const char *filename);
    	static const char *		getGroupChatCSSFile();
    	static void				setGroupChatFlags(int flags);
@@ -131,7 +128,7 @@ public:
    	static const char *		getHistoryTemplatesFileRTL();
 
    	static bool             isMathModule();
-   	static int              getSmileyAddFlags();
+   	static bool             isSmileyAdd();
    	static int				getAvatarServiceFlags();
    	static void      		init();
 };

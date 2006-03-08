@@ -177,7 +177,11 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			if (Options::getGeneralFlags() & Options::GENERAL_ENABLE_PNGHACK) {
 				CheckDlgButton(hwndDlg, IDC_ENABLE_PNGHACK, TRUE);
 			}
+			if (Options::getGeneralFlags() & Options::GENERAL_SMILEYINNAMES) {
+				CheckDlgButton(hwndDlg, IDC_SMILEYS_IN_NAMES, TRUE);
+			}
 			EnableWindow(GetDlgItem(hwndDlg, IDC_ENABLE_MATHMODULE), Options::isMathModule());
+			EnableWindow(GetDlgItem(hwndDlg, IDC_SMILEYS_IN_NAMES), Options::isSmileyAdd());
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -946,7 +950,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 
 bool Options::isInited = false;
 bool Options::bMathModule = false;
-int  Options::smileyAddFlags = 0;
+bool  Options::bSmileyAdd = false;
 int  Options::avatarServiceFlags = 0;
 int Options::generalFlags;
 int Options::srmmFlags;
@@ -972,10 +976,7 @@ void Options::init() {
 	isInited = true;
 	DBVARIANT dbv;
 	bMathModule = (bool) ServiceExists(MTH_GET_GIF_UNICODE);
-	smileyAddFlags = 0;
-	if (ServiceExists(MS_SMILEYADD_BATCHPARSE)) {
-		smileyAddFlags = SMILEYADD_PRESENT;
-	}
+	bSmileyAdd = (bool) ServiceExists(MS_SMILEYADD_BATCHPARSE);
 	avatarServiceFlags = 0;
 	if (ServiceExists(MS_AV_GETAVATARBITMAP)) {
 		avatarServiceFlags = AVATARSERVICE_PRESENT;
@@ -1360,8 +1361,8 @@ bool Options::isMathModule() {
 	return bMathModule;
 }
 
-int Options::getSmileyAddFlags() {
-	return smileyAddFlags;
+bool Options::isSmileyAdd() {
+	return bSmileyAdd;
 }
 
 int Options::getAvatarServiceFlags() {
