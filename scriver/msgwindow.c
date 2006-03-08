@@ -694,7 +694,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}*/
 		break;
 	case WM_MOVING:
-		{
+        if (!(GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
 			int snapPixels = 10;
 			RECT rcDesktop;
 			RECT *pRect = (RECT *)lParam;
@@ -711,23 +711,21 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			pRect->top = pt.y-dat->mouseLBDownPos.y;
 			pRect->right = pRect->left+szSize.cx;
 			pRect->bottom = pRect->top+szSize.cy;
-            if (!(GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
-				if(pRect->top < rcDesktop.top+snapPixels && pRect->top > rcDesktop.top-snapPixels) {
-					pRect->top = rcDesktop.top;
-					pRect->bottom = rcDesktop.top + szSize.cy;
-				}
-				if(pRect->left < rcDesktop.left+snapPixels && pRect->left > rcDesktop.left-snapPixels) {
-					pRect->left = rcDesktop.left;
-					pRect->right = rcDesktop.left + szSize.cx;
-				}
-				if(pRect->right < rcDesktop.right+snapPixels && pRect->right > rcDesktop.right-snapPixels) {
-					pRect->right = rcDesktop.right;
-					pRect->left = rcDesktop.right - szSize.cx;
-				}
-				if(pRect->bottom < rcDesktop.bottom+snapPixels && pRect->bottom > rcDesktop.bottom-snapPixels) {
-					pRect->bottom = rcDesktop.bottom;
-					pRect->top = rcDesktop.bottom - szSize.cy;
-				}
+			if(pRect->top < rcDesktop.top+snapPixels && pRect->top > rcDesktop.top-snapPixels) {
+				pRect->top = rcDesktop.top;
+				pRect->bottom = rcDesktop.top + szSize.cy;
+			}
+			if(pRect->left < rcDesktop.left+snapPixels && pRect->left > rcDesktop.left-snapPixels) {
+				pRect->left = rcDesktop.left;
+				pRect->right = rcDesktop.left + szSize.cx;
+			}
+			if(pRect->right < rcDesktop.right+snapPixels && pRect->right > rcDesktop.right-snapPixels) {
+				pRect->right = rcDesktop.right;
+				pRect->left = rcDesktop.right - szSize.cx;
+			}
+			if(pRect->bottom < rcDesktop.bottom+snapPixels && pRect->bottom > rcDesktop.bottom-snapPixels) {
+				pRect->bottom = rcDesktop.bottom;
+				pRect->top = rcDesktop.bottom - szSize.cy;
 			}
 		}
 		break;
@@ -735,8 +733,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		if ((wParam & 0xFFF0) == SC_MOVE) {
 			RECT  rc;
 			GetWindowRect(hwndDlg, &rc);
-			dat->mouseLBDownPos.x = LOWORD(lParam) - rc.left;
-			dat->mouseLBDownPos.y = HIWORD(lParam) - rc.top;
+			dat->mouseLBDownPos.x = ((LONG) lParam << 16 >> 16) - rc.left;
+			dat->mouseLBDownPos.y = ((LONG) lParam >> 16) - rc.top;
 		} else if (wParam == IDM_TOPMOST) {
             HMENU hMenu = GetSystemMenu(hwndDlg, FALSE);
             if (dat->bTopmost)  {
