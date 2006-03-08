@@ -79,8 +79,10 @@ int DbEventIsShown(DBEVENTINFO * dbei, struct MessageWindowData *dat)
 		case EVENTTYPE_MESSAGE:
 			return 1;
 		case EVENTTYPE_STATUSCHANGE:
-			if (dbei->flags & DBEF_READ)
+			if (!DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSCH, SRMSGDEFSET_SHOWSTATUSCH)) {
+//			if (dbei->flags & DBEF_READ)
 				return 0;
+			}
 			return 1;
 		case EVENTTYPE_FILE:
 		case EVENTTYPE_URL:
