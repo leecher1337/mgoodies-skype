@@ -352,7 +352,7 @@ TemplateMap* TemplateMap::getTemplateMap(const char *proto) {
 
 const char *TemplateMap::getFilename() {
     return filename;
-}    
+}
 
 void TemplateMap::setFilename(const char *filename) {
 	if (this->filename != NULL) {
@@ -360,7 +360,7 @@ void TemplateMap::setFilename(const char *filename) {
 	}
 	this->filename = Utils::dupString(filename);
 	Utils::convertPath(this->filename);
-}    
+}
 
 void TemplateMap::loadTemplates(const char *proto, const char *filename) {
 	loadTemplateFile(proto, filename, false);

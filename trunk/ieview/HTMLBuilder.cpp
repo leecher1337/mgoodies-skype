@@ -561,7 +561,7 @@ TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) 
     SMADD_BATCHPARSE sp;
     SMADD_BATCHPARSERES *spRes;
     int l = wcslen(text);
-	if (!(Options::getSmileyAddFlags() & Options::SMILEYADD_PRESENT)) {
+	if (!Options::isSmileyAdd()) {
  		return new TextToken(TEXT, text, l);
 	}
 	sp.cbSize = sizeof(sp);
@@ -815,13 +815,11 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 		token = TextToken::tokenizeLinks(text);
 		break;
 	case 3:
-//		if (Options::getSmileyFlags() & Options::SMILEY_ENABLED) {
-		/*    if ((flags & ENF_SMILEYS) ||
-      			((Options::getSmileyFlags() & Options::SMILEY_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) {*/
-	    token = TextToken::tokenizeSmileysSA(proto, text);
+		if ((flags & ENF_SMILEYS) ||
+      			((Options::getGeneralFlags() & Options::GENERAL_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) {
+			token = TextToken::tokenizeSmileysSA(proto, text);
+		}
 		break;
-//   			}
-	//	}
 	}
 	if (token!=NULL) {
 		for (token2 = token;token!=NULL;token=token2) {
