@@ -73,6 +73,7 @@ typedef struct {
 #define IEED_EVENT_FILE				0x0003 // file
 #define IEED_EVENT_URL				0x0004 // url
 #define IEED_EVENT_ERRMSG           0x0005 // error message
+#define IEED_EVENT_SYSTEM           0x0006 // system event
 
 #define IEED_MUCC_EVENT_MESSAGE		0x0001 // message
 #define IEED_MUCC_EVENT_TOPIC		0x0002 // topic change
@@ -128,7 +129,7 @@ typedef struct tagIEVIEWEVENTDATA {
 #define IEE_CLEAR_LOG		2       // clear log
 #define IEE_GET_SELECTION	3       // get selected text
 #define IEE_SAVE_DOCUMENT	4       // save current document
-#define IEE_LOG_MEM_EVENTS 	5       // log specified number of IEView events 
+#define IEE_LOG_MEM_EVENTS 	5       // log specified number of IEView events
 
 #define IEEF_RTL          1           // turn on RTL support
 #define IEEF_NO_UNICODE   2           // disable Unicode support
