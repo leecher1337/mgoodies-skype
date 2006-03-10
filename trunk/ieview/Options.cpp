@@ -213,6 +213,9 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 				if (IsDlgButtonChecked(hwndDlg, IDC_ENABLE_PNGHACK)) {
 					i |= Options::GENERAL_ENABLE_PNGHACK;
 				}
+				if (IsDlgButtonChecked(hwndDlg, IDC_SMILEYS_IN_NAMES)) {
+					i |= Options::GENERAL_SMILEYINNAMES;
+				}
 				Options::setGeneralFlags(i);
 				return TRUE;
 			}

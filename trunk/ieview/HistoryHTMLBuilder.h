@@ -28,7 +28,7 @@ class HistoryHTMLBuilder;
 class HistoryHTMLBuilder:public TemplateHTMLBuilder
 {
 protected:
-    void loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour);
+    void loadMsgDlgFont(const char *, LOGFONTA * lf, COLORREF * colour, COLORREF * bkgColour);
 	char *timestampToString(DWORD dwFlags, time_t check);
 	DWORD startedTime;
 	bool isDbEventShown(DBEVENTINFO * dbei);

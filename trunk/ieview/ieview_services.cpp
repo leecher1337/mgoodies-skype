@@ -49,6 +49,7 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 				builder = new TabSRMMHTMLBuilder();
 				break;
 			case IEWM_SCRIVER:
+//				builder = new HistoryHTMLBuilder();
 				builder = new ScriverHTMLBuilder();
 				break;
 			case IEWM_HISTORY:
