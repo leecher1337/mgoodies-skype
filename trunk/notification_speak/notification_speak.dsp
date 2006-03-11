@@ -110,6 +110,10 @@ SOURCE=.\options.cpp
 
 SOURCE=.\resource.rc
 # End Source File
+# Begin Source File
+
+SOURCE=..\utils\templates.cpp
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
@@ -137,6 +141,10 @@ SOURCE=.\notification_speak.h
 # Begin Source File
 
 SOURCE=.\options.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\utils\templates.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

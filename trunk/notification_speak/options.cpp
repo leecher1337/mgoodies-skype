@@ -55,6 +55,7 @@ int NotifyOptionsInitialize(WPARAM wParam,LPARAM lParam)
 	odp.pszTitle = Translate("Speak");
 	odp.flags = ODPF_BOLDGROUPS;
 	odp.pfnDlgProc = DlgProcSpeak;
+	odp.position = 20;
 	CallService(MS_NOTIFY_OPT_ADDPAGE, wParam, (LPARAM)&odp);
 
 	return 0;
