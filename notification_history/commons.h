@@ -45,7 +45,7 @@ extern "C"
 #include "resource.h"
 
 
-#define MODULE_NAME "NotificationHistory"
+#define MODULE_NAME _T("NotificationHistory")
 
 extern HINSTANCE hInst;
 extern PLUGINLINK *pluginLink;
@@ -53,6 +53,7 @@ extern PLUGININFO pluginInfo;
 
 #include "m_notification_history.h"
 #include "options.h"
+#include "../utils/templates.h"
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options_notify.h"
 

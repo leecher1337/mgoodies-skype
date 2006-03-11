@@ -124,34 +124,20 @@ void HistoryLog(HANDLE hNotify, HANDLE hContact, BOOL log, BOOL read)
 {
 	if (log)
 	{
-		char *log_text;
-		bool free = false;
+		TCHAR def[1024];
+		mir_sntprintf(def, MAX_REGS(def), _T("%s\r\n%s"), 
+						MNotifyGetTTemplate(hNotify, NFOPT_DEFTEMPL_TITLET, _T("%title%")), 
+						MNotifyGetTTemplate(hNotify, NFOPT_DEFTEMPL_TEXTT, _T("%text%")));
 
 		// Get text
-		log_text = (char *) MNotifyGetString(hNotify, NFOPT_HISTORY_TEXT, 0);
-		if (log_text == NULL)
+		TCHAR *log_text;
+		if (hContact != NULL)
 		{
-			const char *title = MNotifyGetString(hNotify, NFOPT_TITLE, 0);
-			const char *text = MNotifyGetString(hNotify, NFOPT_TEXT, 0);
-
-			if (title != NULL && text != NULL)
-			{
-				size_t size = strlen(title) + 2 + strlen(text) + 1;
-
-				free = true;
-				log_text = (char *) mir_alloc(size * sizeof(char));
-				mir_snprintf(log_text, size, "%s\r\n%s", title, text);
-			}
-			else if (title != NULL)
-			{
-				free = true;
-				log_text = mir_dup(title);
-			}
-			else if (text != NULL)
-			{
-				free = true;
-				log_text = mir_dup(text);
-			}
+			log_text = MNotifyGetTParsedTemplate(hNotify, NFOPT_HISTORY_TEMPLATE_CONTACTT, 0);
+		}
+		else
+		{
+			log_text = MNotifyGetTParsedTemplate(hNotify, NFOPT_HISTORY_TEMPLATE_SYSTEMT, 0);
 		}
 
 		if (log_text != NULL)
@@ -159,13 +145,29 @@ void HistoryLog(HANDLE hNotify, HANDLE hContact, BOOL log, BOOL read)
 			DBEVENTINFO event = { 0 };;
 
 			event.cbSize = sizeof(event);
+
+#ifdef _UNICODE
+			size_t size = lstrlen(log_text) + 1;
+			BYTE *tmp = (BYTE *) mir_alloc0(size * 3);
+
+			WideCharToMultiByte(CP_ACP, 0, log_text, -1, tmp, size, NULL, NULL);
+
+			lstrcpyn(&tmp[size], log_text, size);
+
+			event.pBlob = tmp;
+			event.cbBlob = size * 3;
+
+			mir_free(tmp);
+#else
 			event.pBlob = (PBYTE) log_text;
 			event.cbBlob = strlen(log_text) + 1;
+#endif
+
 			event.eventType = MNotifyGetWord(hNotify, NFOPT_HISTORY_EVENTTYPE, EVENTTYPE_NOTIFICATION);
 			event.flags = read ? DBEF_READ : 0;
 			event.timestamp = (DWORD) time(NULL);
 
-			event.szModule = MODULE_NAME;
+			event.szModule = (char *) MNotifyGetTString(hNotify, NFOPT_TYPENAME, MODULE_NAME);
 
 			if (hContact != NULL)
 			{
@@ -185,8 +187,7 @@ void HistoryLog(HANDLE hNotify, HANDLE hContact, BOOL log, BOOL read)
 
 			CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&event);
 
-			if (free)
-				mir_free(log_text);
+			mir_free(log_text);
 		}
 	}
 }
