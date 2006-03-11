@@ -144,22 +144,17 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		}
 		Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
 		Utils::appendText(&output, &outputSize, ".img {float: left; vertical-align: middle;}\n");
-		/*
-		if (Options::getHistoryFlags() & Options::IMAGE_ENABLED) {
-			Utils::appendText(&output, &outputSize, ".divMessageIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
-			Utils::appendText(&output, &outputSize, ".divMessageOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
-			Utils::appendText(&output, &outputSize, ".divFileIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
-			Utils::appendText(&output, &outputSize, ".divFileOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
-			Utils::appendText(&output, &outputSize, ".divUrlIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
-			Utils::appendText(&output, &outputSize, ".divUrlOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
-			Utils::appendText(&output, &outputSize, ".divSystem {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
-		}
-		*/
-		Utils::appendText(&output, &outputSize, ".divDate {float: right; padding-right: 2px; clear: right;}\n");
 	 	for(int i = 0; i < DIV_FONT_NUM; i++) {
 			loadMsgDlgFont(dbDivSettingNames[i], &lf, &color, &bkgColor);
 			if (Options::getHistoryFlags() & Options::IMAGE_ENABLED) {
-
+				Utils::appendText(&output, &outputSize, "%s {float: left; padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; font-family: %s; font-size: %dpt; font-weight: %s; color: #%06X; %s}\n",
+					divClassNames[i],
+					(int) lineColor,
+					lf.lfFaceName,
+					lf.lfHeight,
+					lf.lfWeight >= FW_BOLD ? "bold" : "normal",
+					(int)(((color & 0xFF) << 16) | (color & 0xFF00) | ((color & 0xFF0000) >> 16)),
+					lf.lfItalic ? "font-style: italic;" : "");
 			} else {
 				Utils::appendText(&output, &outputSize, "%s {float: left; padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; background-color: #%06X; font-family: %s; font-size: %dpt; font-weight: %s; color: #%06X; %s}\n",
 					divClassNames[i],
@@ -174,8 +169,9 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		}
 	 	for(int i = 0; i < SPAN_FONT_NUM; i++) {
 			loadMsgDlgFont(dbSpanSettingNames[i], &lf, &color, NULL);
-			Utils::appendText(&output, &outputSize, "%s {float: left; font-family: %s; font-size: %dpt; font-weight: %s; color: #%06X; %s }\n",
+			Utils::appendText(&output, &outputSize, "%s {float: %s; font-family: %s; font-size: %dpt; font-weight: %s; color: #%06X; %s }\n",
 			spanClassNames[i],
+			i < 2 ? "left" : "right; clear: right;",
 			lf.lfFaceName,
 			lf.lfHeight,
 			lf.lfWeight >= FW_BOLD ? "bold" : "normal",
@@ -241,8 +237,7 @@ void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 				Utils::appendText(&output, &outputSize, " ");
 			}
            	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s:</span>", isSent ? "nameOut" : "nameIn", szName);
-           	Utils::appendText(&output, &outputSize, "<div class=\"divDate\"><span class=\"%s\">%s</span></div><br>", isSent ? "timeOut" : "timeIn", timestampToString(dwFlags, eventData->time));
-//           	Utils::appendText(&output, &outputSize, "<span class=\"%s\" alight: right;>%s</span>", isSent ? "timeOut" : "timeIn", timestampToString(dwFlags, eventData->time));
+           	Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span><br>", isSent ? "timeOut" : "timeIn", timestampToString(dwFlags, eventData->time));
 			if (eventData->iType == IEED_EVENT_FILE) {
 				Utils::appendText(&output, &outputSize, "%s:<br> %s", isSent ? Translate("Outgoing File Transfer") : Translate("Incoming File Transfer"), szText);
 			} else if (eventData->iType == IEED_EVENT_URL) {

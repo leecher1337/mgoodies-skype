@@ -46,11 +46,12 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
 //				} else {
 
 	//			}
-			} 
+			}
 			break;
 		case WM_KEYDOWN:
 			view->translateAccelerator(message, wParam, lParam);
 		   	break;
+		   	/*
 		case WM_SETFOCUS:
 			{
 				RECT rcWindow;
@@ -67,6 +68,7 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
 				}
 			}
 			break;
+				*/
 		case WM_MOUSEWHEEL:
 			SetFocus(GetParent(view->getHWND()));
 			break;

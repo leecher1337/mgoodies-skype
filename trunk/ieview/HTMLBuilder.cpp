@@ -581,19 +581,21 @@ TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) 
 				}
 				lastToken = newToken;
 			}
-	        TextToken *newToken = new TextToken(SMILEY, text+spRes[i].startChar, spRes[i].size);
-			if (sp.oflag & SAFL_UNICODE) {
-		        newToken->setLink((wchar_t *)spRes[i].filepath);
-			} else {
-	        	newToken->setLink((char *)spRes[i].filepath);
+			if (spRes[i].filepath != NULL && strlen((char *)spRes[i].filepath) > 0) {
+				TextToken *newToken = new TextToken(SMILEY, text+spRes[i].startChar, spRes[i].size);
+				if (sp.oflag & SAFL_UNICODE) {
+					newToken->setLink((wchar_t *)spRes[i].filepath);
+				} else {
+					newToken->setLink((char *)spRes[i].filepath);
+				}
+				if (lastToken == NULL) {
+					firstToken = newToken;
+				} else {
+					lastToken->setNext(newToken);
+				}
+				lastToken = newToken;
+				last_pos = spRes[i].startChar + spRes[i].size;
 			}
-			if (lastToken == NULL) {
-				firstToken = newToken;
-			} else {
-			    lastToken->setNext(newToken);
-			}
-			lastToken = newToken;
-	        last_pos = spRes[i].startChar + spRes[i].size;
 		}
 		CallService(MS_SMILEYADD_BATCHFREE, 0, (LPARAM)spRes);
 	}
