@@ -30,7 +30,11 @@ extern "C"
 #include <m_langpack.h>
 #include <tchar.h>
 #include <m_notify.h>
+#include "templates.h"
 }
+
+
+#define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 
 
 
@@ -58,26 +62,48 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, HWND h
 				{
 					case CONTROL_CHECKBOX:
 					{
-						CheckDlgButton(hwndDlg, ctrl->nID, MNotifyGetByte(hNotify, ctrl->setting, (BYTE)ctrl->defValue) == 1 ? BST_CHECKED : BST_UNCHECKED);
+						CheckDlgButton(hwndDlg, ctrl->nID, MNotifyGetByte(hNotify, ctrl->setting, (BYTE)ctrl->dwDefValue) == 1 ? BST_CHECKED : BST_UNCHECKED);
 						break;
 					}
 					case CONTROL_SPIN:
 					{
 						SendDlgItemMessage(hwndDlg, ctrl->nIDSpin, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwndDlg, ctrl->nID),0);
 						SendDlgItemMessage(hwndDlg, ctrl->nIDSpin, UDM_SETRANGE, 0, MAKELONG(ctrl->max, ctrl->min));
-						SendDlgItemMessage(hwndDlg, ctrl->nIDSpin, UDM_SETPOS,0, MAKELONG(MNotifyGetWord(hNotify, ctrl->setting, (WORD)ctrl->defValue), 0));
+						SendDlgItemMessage(hwndDlg, ctrl->nIDSpin, UDM_SETPOS,0, MAKELONG(MNotifyGetWord(hNotify, ctrl->setting, (WORD)ctrl->dwDefValue), 0));
 
 						break;
 					}
 					case CONTROL_COLOR:
 					{
-						SendDlgItemMessage(hwndDlg, ctrl->nID, CPM_SETCOLOUR, 0, (COLORREF) MNotifyGetDWord(hNotify, ctrl->setting, (DWORD)ctrl->defValue));
+						SendDlgItemMessage(hwndDlg, ctrl->nID, CPM_SETCOLOUR, 0, (COLORREF) MNotifyGetDWord(hNotify, ctrl->setting, (DWORD)ctrl->dwDefValue));
 
 						break;
 					}
 					case CONTROL_RADIO:
 					{
-						CheckDlgButton(hwndDlg, ctrl->nID, MNotifyGetWord(hNotify, ctrl->setting, (WORD)ctrl->defValue) == ctrl->value ? BST_CHECKED : BST_UNCHECKED);
+						CheckDlgButton(hwndDlg, ctrl->nID, MNotifyGetWord(hNotify, ctrl->setting, (WORD)ctrl->dwDefValue) == ctrl->value ? BST_CHECKED : BST_UNCHECKED);
+						break;
+					}
+					case CONTROL_TEXT:
+					{
+						SetDlgItemText(hwndDlg, ctrl->nID, MNotifyGetTString(hNotify, ctrl->setting, ctrl->szDefVale));
+
+						if (ctrl->max > 0)
+							SendDlgItemMessage(hwndDlg, ctrl->nID, EM_LIMITTEXT, min(ctrl->max, 1024), 0);
+						else
+							SendDlgItemMessage(hwndDlg, ctrl->nID, EM_LIMITTEXT, 1024, 0);
+						
+						break;
+					}
+					case CONTROL_TEMPLATE:
+					{
+						SetDlgItemText(hwndDlg, ctrl->nID, MNotifyGetTTemplate(hNotify, ctrl->setting, ctrl->szDefVale));
+
+						if (ctrl->max > 0)
+							SendDlgItemMessage(hwndDlg, ctrl->nID, EM_LIMITTEXT, min(ctrl->max, 1024), 0);
+						else
+							SendDlgItemMessage(hwndDlg, ctrl->nID, EM_LIMITTEXT, 1024, 0);
+						
 						break;
 					}
 				}
@@ -114,6 +140,7 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, HWND h
 						case PSN_APPLY:
 						{
 							HANDLE hNotify = (HANDLE)GetWindowLong(hwndDlg, GWL_USERDATA);
+							TCHAR tmp[1024];
 
 							for (int i = 0 ; i < controlsSize ; i++)
 							{
@@ -142,9 +169,20 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, HWND h
 											MNotifySetWord(hNotify, ctrl->setting, (BYTE)ctrl->value);
 										break;
 									}
+									case CONTROL_TEXT:
+									{
+										GetDlgItemText(hwndDlg, ctrl->nID, tmp, MAX_REGS(tmp));
+										MNotifySetTString(hNotify, ctrl->setting, tmp);
+										break;
+									}
+									case CONTROL_TEMPLATE:
+									{
+										GetDlgItemText(hwndDlg, ctrl->nID, tmp, MAX_REGS(tmp));
+										MNotifySetTTemplate(hNotify, ctrl->setting, tmp);
+										break;
+									}
 								}
 							}
-							
 
 							return TRUE;
 						}

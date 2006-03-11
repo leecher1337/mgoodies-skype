@@ -33,7 +33,7 @@ extern "C"
 #include <m_system.h>
 
 
-extern LIST_INTERFACE list_interface;
+extern struct LIST_INTERFACE list_interface;
 
 
 // Need to be called on ME_SYSTEM_MODULESLOADED

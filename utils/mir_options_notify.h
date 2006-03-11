@@ -38,12 +38,17 @@ extern "C"
 #define CONTROL_SPIN 1			// Stored as WORD
 #define CONTROL_COLOR 2			// Stored as DWORD
 #define CONTROL_RADIO 3			// Stored as WORD
+#define CONTROL_TEXT 4			// Stored as char *
+#define CONTROL_TEMPLATE 5		// Stored as Template
 
 struct OptPageControl {
 	int type;
 	int nID;
 	char *setting;
-	DWORD defValue;
+	union {
+		DWORD dwDefValue;
+		const TCHAR *szDefVale;
+	};
 	union {
 		int nIDSpin;
 		int value;
