@@ -27,7 +27,12 @@ extern "C"
 #endif
 
 
-#define NFOPT_HISTORY_TEXT				"History/Text"				// const char *
+#define NFOPT_HISTORY_TEMPLATE_SYSTEM	"History/SystemTemplate"	// const char *
+#define NFOPT_HISTORY_TEMPLATE_CONTACT	"History/ContactTemplate"	// const char *
+
+#define NFOPT_HISTORY_TEMPLATE_SYSTEMW	"History/SystemTemplateW"	// const char *
+#define NFOPT_HISTORY_TEMPLATE_CONTACTW	"History/ContactTemplateW"	// const char *
+
 #define NFOPT_HISTORY_SYSTEM_LOG		"History/SystemLog"			// BYTE
 #define NFOPT_HISTORY_SYSTEM_MARK_READ	"History/SystemMarkRead"	// BYTE
 #define NFOPT_HISTORY_CONTACT_LOG		"History/ContactLog"		// BYTE
@@ -42,6 +47,19 @@ extern "C"
 #define EVENTTYPE_NOTIFICATION			16065
 
 
+
+
+#ifdef _UNICODE
+
+# define NFOPT_HISTORY_TEMPLATE_SYSTEMT NFOPT_HISTORY_TEMPLATE_SYSTEMW
+# define NFOPT_HISTORY_TEMPLATE_CONTACTT NFOPT_HISTORY_TEMPLATE_CONTACTW
+
+#else
+
+# define NFOPT_HISTORY_TEMPLATE_SYSTEMT NFOPT_HISTORY_TEMPLATE_SYSTEM
+# define NFOPT_HISTORY_TEMPLATE_CONTACTT NFOPT_HISTORY_TEMPLATE_CONTACT
+
+#endif
 
 
 

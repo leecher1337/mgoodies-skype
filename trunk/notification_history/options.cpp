@@ -55,6 +55,7 @@ int NotifyOptionsInitialize(WPARAM wParam,LPARAM lParam)
 	odp.pszTitle = Translate("History");
 	odp.flags = ODPF_BOLDGROUPS;
 	odp.pfnDlgProc = DlgProcHistory;
+	odp.position = 10;
 	CallService(MS_NOTIFY_OPT_ADDPAGE, wParam, (LPARAM)&odp);
 	return 0;
 }
@@ -64,11 +65,50 @@ static OptPageControl pageControls[] = {
 	{ CONTROL_CHECKBOX, IDC_SYSTEM_LOG,			NFOPT_HISTORY_SYSTEM_LOG, (BYTE) 0 },
 	{ CONTROL_CHECKBOX, IDC_SYSTEM_MARK_READ,	NFOPT_HISTORY_SYSTEM_MARK_READ, (BYTE) 1 },
 	{ CONTROL_CHECKBOX, IDC_CONTACT_LOG,		NFOPT_HISTORY_CONTACT_LOG, (BYTE) 0 },
-	{ CONTROL_CHECKBOX, IDC_CONTACT_MARK_READ,	NFOPT_HISTORY_CONTACT_MARK_READ, (BYTE) 1 }
+	{ CONTROL_CHECKBOX, IDC_CONTACT_MARK_READ,	NFOPT_HISTORY_CONTACT_MARK_READ, (BYTE) 1 },
+	{ CONTROL_TEMPLATE, IDC_SYS_HIST,			NFOPT_HISTORY_TEMPLATE_SYSTEMT, NULL },
+	{ CONTROL_TEMPLATE, IDC_CNT_HIST,			NFOPT_HISTORY_TEMPLATE_CONTACTT, NULL }
 };
+
+TCHAR def[1024];
 
 static BOOL CALLBACK DlgProcHistory(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	switch (msg)
+	{
+		case WM_USER+100:
+		{
+			HANDLE hNotify = (HANDLE)lParam;
+
+			mir_sntprintf(def, MAX_REGS(def), _T("%s\r\n%s"), 
+							MNotifyGetTTemplate(hNotify, NFOPT_DEFTEMPL_TITLET, _T("%title%")), 
+							MNotifyGetTTemplate(hNotify, NFOPT_DEFTEMPL_TEXTT, _T("%text%")));
+
+			pageControls[4].szDefVale = MNotifyGetTTemplate(hNotify, NFOPT_HISTORY_TEMPLATE_SYSTEMT, def);
+			pageControls[5].szDefVale = MNotifyGetTTemplate(hNotify, NFOPT_HISTORY_TEMPLATE_CONTACTT, def);
+
+			break;
+		}
+        case WM_COMMAND: 
+		{
+			if (HIWORD(wParam) == BN_CLICKED) 
+			{ 
+				switch (LOWORD(wParam)) 
+				{ 
+                    case IDC_BTN_HELP: 
+					{
+						HANDLE hNotify = (HANDLE)GetWindowLong(hwndDlg, GWL_USERDATA);
+						MNotifyShowTVariables(hNotify);
+
+						return TRUE;
+					}
+				}
+			}
+
+			break;
+		}
+	}
+
 	return SaveOptsDlgProc(pageControls, MAX_REGS(pageControls), hwndDlg, msg, wParam, lParam);
 }
 

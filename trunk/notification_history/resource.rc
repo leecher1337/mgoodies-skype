@@ -26,24 +26,32 @@ LANGUAGE LANG_PORTUGUESE, SUBLANG_PORTUGUESE_BRAZILIAN
 // Dialog
 //
 
-IDD_OPT_HISTORY DIALOGEX 0, 0, 206, 107
+IDD_OPT_HISTORY DIALOGEX 0, 0, 206, 210
 STYLE DS_SYSMODAL | DS_3DLOOK | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
 FONT 8, "MS Sans Serif"
 BEGIN
     LTEXT           "When the notification has no contact associated:",
-                    IDC_STATIC,15,18,175,9
+                    IDC_STATIC,13,18,178,9
     CONTROL         "Add to system history",IDC_SYSTEM_LOG,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,30,29,159,11
     CONTROL         "Mark as read",IDC_SYSTEM_MARK_READ,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,30,41,159,11
     LTEXT           "When the notification has a contact associated:",
-                    IDC_STATIC,15,59,175,9
+                    IDC_STATIC,13,59,178,9
     CONTROL         "Add to contact history",IDC_CONTACT_LOG,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,30,70,159,11
     CONTROL         "Mark as read",IDC_CONTACT_MARK_READ,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,30,83,159,11
-    GROUPBOX        "Log",IDC_STATIC,4,5,198,97
+    GROUPBOX        " Log ",IDC_STATIC,4,5,199,97
+    GROUPBOX        " Text ",IDC_TEXT_GROUP,4,108,198,94
+    LTEXT           "System history text:",IDC_SYS_HIST_L,13,120,156,11
+    EDITTEXT        IDC_SYS_HIST,12,132,181,24,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_WANTRETURN
+    LTEXT           "Contact history text:",IDC_CNT_HIST_L,13,161,178,11
+    EDITTEXT        IDC_CNT_HIST,12,172,181,24,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_WANTRETURN
+    PUSHBUTTON      "?",IDC_BTN_HELP,174,115,18,14
 END
 
 
@@ -84,6 +92,7 @@ BEGIN
     IDD_OPT_HISTORY, DIALOG
     BEGIN
         RIGHTMARGIN, 203
+        BOTTOMMARGIN, 115
     END
 END
 #endif    // APSTUDIO_INVOKED
