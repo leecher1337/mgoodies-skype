@@ -54,6 +54,11 @@ void * mir_alloc0(size_t size)
 	return ptr;
 }
 
+void * mir_realloc(void *ptr, size_t size) 
+{
+	return mmInterface.mmi_realloc(ptr, size);
+}
+
 void mir_free(void *ptr) 
 {
 	if (ptr)

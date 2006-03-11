@@ -26,7 +26,7 @@ Boston, MA 02111-1307, USA.
 #include <m_system.h>
 
 
-LIST_INTERFACE list_interface = {0};
+struct LIST_INTERFACE list_interface = {0};
 
 
 void init_list_interface()

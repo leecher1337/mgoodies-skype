@@ -35,6 +35,7 @@ void init_mir_malloc();
 
 void * mir_alloc(size_t size);
 void * mir_alloc0(size_t size);
+void * mir_realloc(void *ptr, size_t size);
 void mir_free(void *ptr);
 char * mir_dup(const char *ptr);
 wchar_t * mir_dupW(const wchar_t *ptr);
