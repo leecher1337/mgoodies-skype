@@ -20,7 +20,9 @@ Boston, MA 02111-1307, USA.
 
 #include "mir_options_notify.h"
 
+#include <stdio.h>
 #include <commctrl.h>
+#include <tchar.h>
 
 extern "C"
 {
@@ -28,7 +30,6 @@ extern "C"
 #include <m_database.h>
 #include <m_utils.h>
 #include <m_langpack.h>
-#include <tchar.h>
 #include <m_notify.h>
 #include "templates.h"
 }

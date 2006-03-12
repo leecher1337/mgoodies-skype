@@ -54,12 +54,6 @@ typedef struct
 } TextPiece;
 
 
-struct _SmileyParseInfo
-{
-	SortedList *pieces;
-	int max_height;
-};
-
 
 SortedList * ReplaceSmileys(const char *text, int text_size, const char *protocol, int *max_smiley_height);
 void DrawTextSmiley(HDC hdcMem, RECT free_rc, const char *szText, int len, SortedList *plText, UINT uTextFormat, int max_smiley_height);
@@ -87,25 +81,23 @@ int InitContactListSmileys()
 	return 0;
 }
 
-SmileysParseInfo Smileys_PreParse(HDC hDC, LPCSTR lpString, int nCount, const char *protocol)
+SmileysParseInfo Smileys_PreParse(LPCSTR lpString, int nCount, const char *protocol)
 {
-	_SmileyParseInfo * info = (_SmileyParseInfo *) malloc(sizeof(_SmileyParseInfo));
+	SmileyParseInfo info = malloc(sizeof(_SmileyParseInfo));
 
 	info->pieces = ReplaceSmileys(lpString, nCount, protocol, &info->max_height);
 
-	return (SmileysParseInfo) info;
+	return info;
 }
 
 void Smileys_FreeParse(SmileysParseInfo parseInfo)
 {
 	if (parseInfo != NULL)
 	{
-		_SmileyParseInfo * info = (_SmileyParseInfo *) parseInfo;
+		if (parseInfo->pieces != NULL)
+			DestroySmileyList(parseInfo->pieces);
 
-		if (info->pieces != NULL)
-			DestroySmileyList(info->pieces);
-
-		free(info);
+		free(parseInfo);
 	}
 }
 
@@ -114,14 +106,14 @@ void Smileys_FreeParse(SmileysParseInfo parseInfo)
 // parseInfo is optional (pass NULL and it will be calculated and deleted inside function
 int Smileys_DrawText(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRect, UINT uFormat, const char *protocol, SmileysParseInfo parseInfo)
 {
-	_SmileyParseInfo * info;
+	SmileyParseInfo info;
 	int ret;
 
 	// Get parse info
 	if (parseInfo == NULL)
-		info = (_SmileyParseInfo *) Smileys_PreParse(hDC, lpString, nCount, protocol);
+		info = Smileys_PreParse(hDC, lpString, nCount, protocol);
 	else
-		info = (_SmileyParseInfo *) parseInfo;
+		info = parseInfo;
 
 	if (uFormat & DT_CALCRECT)
 	{

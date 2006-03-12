@@ -38,7 +38,9 @@ void * mir_alloc0(size_t size);
 void * mir_realloc(void *ptr, size_t size);
 void mir_free(void *ptr);
 char * mir_dup(const char *ptr);
-wchar_t * mir_dupW(const wchar_t *ptr);
+WCHAR * mir_dupW(const wchar_t *ptr);
+char *mir_dupToAscii(WCHAR *ptr);
+WCHAR *mir_dupToUnicode(char *ptr);
 
 #ifdef _UNICODE 
 # define mir_dupT mir_dupW
