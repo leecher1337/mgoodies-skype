@@ -30,8 +30,8 @@ extern "C"
 #define NFOPT_HISTORY_TEMPLATE_SYSTEM	"History/SystemTemplate"	// const char *
 #define NFOPT_HISTORY_TEMPLATE_CONTACT	"History/ContactTemplate"	// const char *
 
-#define NFOPT_HISTORY_TEMPLATE_SYSTEMW	"History/SystemTemplateW"	// const char *
-#define NFOPT_HISTORY_TEMPLATE_CONTACTW	"History/ContactTemplateW"	// const char *
+#define NFOPT_HISTORY_TEMPLATE_SYSTEMW	"History/SystemTemplateW"	// const WCHAR *
+#define NFOPT_HISTORY_TEMPLATE_CONTACTW	"History/ContactTemplateW"	// const WCHAR *
 
 #define NFOPT_HISTORY_SYSTEM_LOG		"History/SystemLog"			// BYTE
 #define NFOPT_HISTORY_SYSTEM_MARK_READ	"History/SystemMarkRead"	// BYTE

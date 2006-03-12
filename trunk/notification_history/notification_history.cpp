@@ -133,11 +133,11 @@ void HistoryLog(HANDLE hNotify, HANDLE hContact, BOOL log, BOOL read)
 		TCHAR *log_text;
 		if (hContact != NULL)
 		{
-			log_text = MNotifyGetTParsedTemplate(hNotify, NFOPT_HISTORY_TEMPLATE_CONTACTT, 0);
+			log_text = MNotifyGetTParsedTemplate(hNotify, NFOPT_HISTORY_TEMPLATE_CONTACTT, def);
 		}
 		else
 		{
-			log_text = MNotifyGetTParsedTemplate(hNotify, NFOPT_HISTORY_TEMPLATE_SYSTEMT, 0);
+			log_text = MNotifyGetTParsedTemplate(hNotify, NFOPT_HISTORY_TEMPLATE_SYSTEMT, def);
 		}
 
 		if (log_text != NULL)
@@ -147,12 +147,12 @@ void HistoryLog(HANDLE hNotify, HANDLE hContact, BOOL log, BOOL read)
 			event.cbSize = sizeof(event);
 
 #ifdef _UNICODE
-			size_t size = lstrlen(log_text) + 1;
+			size_t size = lstrlenW(log_text) + 1;
 			BYTE *tmp = (BYTE *) mir_alloc0(size * 3);
 
-			WideCharToMultiByte(CP_ACP, 0, log_text, -1, tmp, size, NULL, NULL);
+			WideCharToMultiByte(CP_ACP, 0, log_text, -1, (char *) tmp, size, NULL, NULL);
 
-			lstrcpyn(&tmp[size], log_text, size);
+			lstrcpynW((WCHAR *) &tmp[size], log_text, size);
 
 			event.pBlob = tmp;
 			event.cbBlob = size * 3;
