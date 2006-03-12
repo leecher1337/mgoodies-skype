@@ -51,9 +51,9 @@ int NotifyOptionsInitialize(WPARAM wParam,LPARAM lParam)
 	OPTIONSDIALOGPAGE odp = {0};
 	odp.cbSize = sizeof(odp);
 	odp.hInstance = hInst;
-	odp.pszTemplate = MAKEINTRESOURCE(IDD_OPT_HISTORY);
-	odp.pszTitle = Translate("History");
-	odp.flags = ODPF_BOLDGROUPS;
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_HISTORY);
+	odp.ptszTitle = TranslateT("History");
+	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
 	odp.pfnDlgProc = DlgProcHistory;
 	odp.position = 10;
 	CallService(MS_NOTIFY_OPT_ADDPAGE, wParam, (LPARAM)&odp);
@@ -84,8 +84,10 @@ static BOOL CALLBACK DlgProcHistory(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 							MNotifyGetTTemplate(hNotify, NFOPT_DEFTEMPL_TITLET, _T("%title%")), 
 							MNotifyGetTTemplate(hNotify, NFOPT_DEFTEMPL_TEXTT, _T("%text%")));
 
-			pageControls[4].szDefVale = MNotifyGetTTemplate(hNotify, NFOPT_HISTORY_TEMPLATE_SYSTEMT, def);
-			pageControls[5].szDefVale = MNotifyGetTTemplate(hNotify, NFOPT_HISTORY_TEMPLATE_CONTACTT, def);
+			pageControls[4].szDefVale = def;
+			pageControls[5].szDefVale = def;
+
+			MNotifyShowTVariables(hNotify);
 
 			break;
 		}

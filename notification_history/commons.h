@@ -21,16 +21,21 @@ Boston, MA 02111-1307, USA.
 #ifndef __COMMONS_H__
 # define __COMMONS_H__
 
+
+#include <windows.h>
+#include <stdio.h>
+#include <time.h>
+#include <win2k.h>
+#include <tchar.h>
+
+
 #ifdef __cplusplus
 extern "C" 
 {
 #endif
 
 
-#include <windows.h>
 #include <newpluginapi.h>
-#include <time.h>
-#include <win2k.h>
 #include <m_system.h>
 #include <m_plugins.h>
 #include <m_options.h>
