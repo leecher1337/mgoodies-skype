@@ -27,12 +27,25 @@ extern "C"
 #endif
 
 
-#define NFOPT_SPEAK_TEXT	"Speak/Text"				// const char *
+#define NFOPT_SPEAK_TEMPLATE_TEXT	"Speak/Text"				// const char *
+#define NFOPT_SPEAK_TEMPLATE_TEXTW	"Speak/TextW"				// const WCHAR *
+
 #define NFOPT_SPEAK_SAY		"Speak/Say"					// BYTE
+
 
 #define MS_SPEAK_SHOW		"Speak/Show"
 
 
+
+#ifdef _UNICODE
+
+# define NFOPT_SPEAK_TEMPLATE_TEXTT NFOPT_SPEAK_TEMPLATE_TEXTW
+
+#else
+
+# define NFOPT_SPEAK_TEMPLATE_TEXTT NFOPT_SPEAK_TEMPLATE_TEXT
+
+#endif
 
 
 

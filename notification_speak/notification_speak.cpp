@@ -35,7 +35,7 @@ PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Speak Notification",
 	PLUGIN_MAKE_VERSION(0,0,0,1),
-	"Notification type that speak notifications aloud",
+	"Notification type that speak notifications aloud. Depends on Speak plugin.",
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
@@ -104,8 +104,8 @@ int ModulesLoaded(WPARAM wParam,LPARAM lParam)
 	}
 	else
 	{
-		MessageBox(NULL, Translate("Speak Notification requires Speak plugin to be installed"), 
-			Translate("Error"), MB_OK | MB_ICONERROR);
+		MessageBox(NULL, TranslateT("Speak Notification requires Speak plugin to be installed"), 
+			TranslateT("Error"), MB_OK | MB_ICONERROR);
 	}
 
 	return 0;
@@ -136,41 +136,29 @@ int SpeakShow(WPARAM wParam, LPARAM lParam)
 	if (!MNotifyGetByte(hNotify, NFOPT_SPEAK_SAY, 0))
 		return 0;
 
-	char *log_text;
-	bool free = false;
+	TCHAR def[1024];
+	mir_sntprintf(def, MAX_REGS(def), _T("%s\r\n%s"), 
+					MNotifyGetTTemplate(hNotify, NFOPT_DEFTEMPL_TITLET, _T("%title%")), 
+					MNotifyGetTTemplate(hNotify, NFOPT_DEFTEMPL_TEXTT, _T("%text%")));
 
 	// Get text
-	log_text = (char *) MNotifyGetString(hNotify, NFOPT_SPEAK_TEXT, 0);
-	if (log_text == NULL)
-	{
-		const char *title = MNotifyGetString(hNotify, NFOPT_TITLE, 0);
-		const char *text = MNotifyGetString(hNotify, NFOPT_TEXT, 0);
-
-		if (title != NULL && text != NULL)
-		{
-			size_t size = strlen(title) + 2 + strlen(text) + 1;
-
-			free = true;
-			log_text = (char *) mir_alloc(size * sizeof(char));
-			mir_snprintf(log_text, size, "%s\r\n%s", title, text);
-		}
-		else if (title != NULL)
-		{
-			free = true;
-			log_text = mir_dup(title);
-		}
-		else if (text != NULL)
-		{
-			free = true;
-			log_text = mir_dup(text);
-		}
-	}
-
+	TCHAR *log_text = MNotifyGetTParsedTemplate(hNotify, NFOPT_SPEAK_TEMPLATE_TEXTT, def);
+	
 	if (log_text != NULL)
-		CallService(MS_SPEAK_SAY, 0, (LPARAM) log_text);
+	{
+#ifdef _UNICODE
+		// Speak does not have an unicode version
+		char *tmp = mir_dupToAscii(log_text);
 
-	if (free)
+		CallService(MS_SPEAK_SAY, 0, (LPARAM) tmp);
+
+		mir_free(tmp);
+#else
+		CallService(MS_SPEAK_SAY, 0, (LPARAM) log_text);
+#endif
+
 		mir_free(log_text);
+	}
 
 	return 0;
 }

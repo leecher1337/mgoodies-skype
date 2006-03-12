@@ -4,6 +4,10 @@
 //
 #define IDD_OPT_SPEAK                   101
 #define IDC_SAY                         1000
+#define IDC_TEXT_GROUP                  1004
+#define IDC_TEXT                        1005
+#define IDC_TEXT_L                      1007
+#define IDC_BTN_HELP                    1009
 
 // Next default values for new objects
 // 
