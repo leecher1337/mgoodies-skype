@@ -21,16 +21,20 @@ Boston, MA 02111-1307, USA.
 #ifndef __COMMONS_H__
 # define __COMMONS_H__
 
+
+#include <windows.h>
+#include <time.h>
+#include <win2k.h>
+#include <tchar.h>
+
+
 #ifdef __cplusplus
 extern "C" 
 {
 #endif
 
 
-#include <windows.h>
 #include <newpluginapi.h>
-#include <time.h>
-#include <win2k.h>
 #include <m_system.h>
 #include <m_plugins.h>
 #include <m_options.h>
@@ -55,6 +59,7 @@ extern PLUGININFO pluginInfo;
 #include "options.h"
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options_notify.h"
+#include "../utils/templates.h"
 
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
