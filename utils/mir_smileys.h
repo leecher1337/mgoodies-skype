@@ -41,9 +41,13 @@ int InitContactListSmileys();
 
 
 // Pre-parse smileys
-typedef void * SmileysParseInfo;
+typedef struct _SmileyParseInfo
+{
+	SortedList *pieces;
+	int max_height;
+} * SmileysParseInfo;
 
-SmileysParseInfo Smileys_PreParse(HDC hDC, LPCSTR lpString, int nCount, const char *protocol);
+SmileysParseInfo Smileys_PreParse(LPCSTR lpString, int nCount, const char *protocol);
 void Smileys_FreeParse(SmileysParseInfo parseInfo);
 
 // TODO:

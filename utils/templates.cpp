@@ -1,5 +1,6 @@
 #include "templates.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <tchar.h>
 
@@ -105,6 +106,8 @@ char * ParseText(const char *text,
 	{
 		if (text[i] == '%')
 		{
+			bool found = false;
+
 			if (CopyData(&ret, &text[nextPos], i - nextPos))
 				return NULL;
 
@@ -114,6 +117,8 @@ char * ParseText(const char *text,
 					return NULL;
 
 				i++;
+
+				found = true;
 			}
 			else
 			{
@@ -126,17 +131,23 @@ char * ParseText(const char *text,
 
 					if (strnicmp(&text[i], variables[j], vlen) == 0)
 					{
-						if (CopyData(&ret, data[j], lstrlen(data[j])))
+						if (CopyData(&ret, data[j], strlen(data[j])))
 							return NULL;
 
 						i += vlen - 1;
+
+						found = true;
 
 						break;
 					}
 				}
 			}
 
-			nextPos = i + 1;
+
+			if (found)
+				nextPos = i + 1;
+			else
+				nextPos = i;
 		}
 	}
 
@@ -218,6 +229,8 @@ WCHAR * ParseTextW(const WCHAR *text,
 	{
 		if (text[i] == L'%')
 		{
+			bool found = false;
+
 			if (CopyDataW(&ret, &text[nextPos], i - nextPos))
 				return NULL;
 
@@ -227,6 +240,8 @@ WCHAR * ParseTextW(const WCHAR *text,
 					return NULL;
 
 				i++;
+
+				found = true;
 			}
 			else
 			{
@@ -244,12 +259,17 @@ WCHAR * ParseTextW(const WCHAR *text,
 
 						i += vlen - 1;
 
+						found = true;
+
 						break;
 					}
 				}
 			}
 
-			nextPos = i + 1;
+			if (found)
+				nextPos = i + 1;
+			else
+				nextPos = i;
 		}
 	}
 
@@ -378,22 +398,25 @@ void MNotifyShowVariables(HANDLE notifyORtype)
 
 	for(size_t i = 0 ; i < varsSize ; i++)
 	{
-		if (CopyData(&ret, vars[i], strlen(vars[i])))
-			return;
-
-		if (i < descsSize && descs[i] != NULL && descs[i] != L'\0')
+		if (vars[i] != NULL)
 		{
-			if (CopyData(&ret, " -> ", 4))
+			if (CopyData(&ret, vars[i], strlen(vars[i])))
 				return;
-			if (CopyData(&ret, descs[i], strlen(descs[i])))
+
+			if (i < descsSize && descs[i] != NULL && descs[i] != L'\0')
+			{
+				if (CopyData(&ret, " -> ", 4))
+					return;
+				if (CopyData(&ret, descs[i], strlen(descs[i])))
+					return;
+			}
+
+			if (CopyData(&ret, "\r\n", 2))
 				return;
 		}
-
-		if (CopyData(&ret, "\r\n", 2))
-			return;
 	}
 
-	MessageBox(NULL, ret.text, "Variables", MB_OK);
+	MessageBoxA(NULL, ret.text, "Variables", MB_OK);
 
 	mir_free(ret.text);
 }
@@ -427,19 +450,22 @@ void MNotifyShowWVariables(HANDLE notifyORtype)
 
 	for(size_t i = 0 ; i < varsSize ; i++)
 	{
-		if (CopyDataW(&ret, vars[i], lstrlenW(vars[i])))
-			return;
-
-		if (i < descsSize && descs[i] != NULL && descs[i] != L'\0')
+		if (vars[i] != NULL)
 		{
-			if (CopyDataW(&ret, L" -> ", 3))
+			if (CopyDataW(&ret, vars[i], lstrlenW(vars[i])))
 				return;
-			if (CopyDataW(&ret, descs[i], lstrlenW(descs[i])))
+
+			if (i < descsSize && descs[i] != NULL && descs[i] != L'\0')
+			{
+				if (CopyDataW(&ret, L" -> ", 3))
+					return;
+				if (CopyDataW(&ret, descs[i], lstrlenW(descs[i])))
+					return;
+			}
+
+			if (CopyDataW(&ret, L"\r\n", 2))
 				return;
 		}
-
-		if (CopyDataW(&ret, L"\r\n", 2))
-			return;
 	}
 
 	MessageBoxW(NULL, ret.text, L"Variables", MB_OK);
