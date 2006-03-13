@@ -544,7 +544,7 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 		lfoundi=0;
 	}
 
-	NewMailPopUp.lchContact=ActualAccount->hContact;
+	NewMailPopUp.lchContact=(ActualAccount->hContact != NULL) ? ActualAccount->hContact : ActualAccount;
 	NewMailPopUp.lchIcon=hNewMailIcon;
 	NewMailPopUp.colorBack=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpB : GetSysColor(COLOR_BTNFACE);
 	NewMailPopUp.colorText=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpT : GetSysColor(COLOR_WINDOWTEXT);
@@ -729,7 +729,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 	{
 		POPUPDATAEX NewMailPopUp;
 
-		NewMailPopUp.lchContact=ActualAccount->hContact;
+		NewMailPopUp.lchContact=(ActualAccount->hContact != NULL) ? ActualAccount->hContact : ActualAccount;
 		NewMailPopUp.lchIcon=hNewMailIcon;
 		NewMailPopUp.colorBack=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpB : GetSysColor(COLOR_BTNFACE);
 		NewMailPopUp.colorText=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpT : GetSysColor(COLOR_WINDOWTEXT);
@@ -825,7 +825,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 	{
 		POPUPDATAEX NoNewMailPopUp;
 
-		NoNewMailPopUp.lchContact=ActualAccount->hContact;
+		NoNewMailPopUp.lchContact=(ActualAccount->hContact != NULL) ? ActualAccount->hContact : ActualAccount;
 		NoNewMailPopUp.lchIcon=hYamnIcon;
 		NoNewMailPopUp.colorBack=ActualAccount->NoNewMailN.Flags & YAMN_ACC_POPC ? ActualAccount->NoNewMailN.PopUpB : GetSysColor(COLOR_BTNFACE);
 		NoNewMailPopUp.colorText=ActualAccount->NoNewMailN.Flags & YAMN_ACC_POPC ? ActualAccount->NoNewMailN.PopUpT : GetSysColor(COLOR_WINDOWTEXT);
@@ -884,7 +884,8 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 					DBFreeVariant(&dbv);
 				}
 				else
-					break;
+					ActualAccount = (HACCOUNT) hContact;
+
 
 				#ifdef DEBUG_SYNCHRO
 				DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read wait\n");
@@ -922,7 +923,7 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 			HANDLE hContact;
 
 			hContact=(HANDLE)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
-			if(hContact != NULL)
+			if(CallService(MS_DB_CONTACT_IS,(WPARAM)hContact,(LPARAM)0))
 			{
 				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)hContact,(LPARAM)"yamn new mail");
 			}
@@ -941,8 +942,19 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 		case WM_YAMN_STOPACCOUNT:
 		{
 			HACCOUNT ActualAccount;
+			HANDLE hContact;
+			DBVARIANT dbv;
 
-			ActualAccount=(HACCOUNT)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
+			hContact=(HANDLE)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
+
+			if(!DBGetContactSetting((HANDLE) hContact,ProtoName,"Id",&dbv)) 
+			{
+				ActualAccount=(HACCOUNT) CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
+				DBFreeVariant(&dbv);
+			}
+			else
+				ActualAccount = (HACCOUNT) hContact;
+
 			if((HACCOUNT)wParam!=ActualAccount)
 				break;
 			DestroyWindow(hWnd);
@@ -974,7 +986,7 @@ LRESULT CALLBACK NoNewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lPar
 					DBFreeVariant(&dbv);
 				}
 				else
-					break;
+					ActualAccount = (HACCOUNT) hContact;
 
 				#ifdef DEBUG_SYNCHRO
 				DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read wait\n");
@@ -1030,10 +1042,22 @@ LRESULT CALLBACK NoNewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lPar
 		case WM_YAMN_STOPACCOUNT:
 		{
 			HACCOUNT ActualAccount;
+			HANDLE hContact;
+			DBVARIANT dbv;
 
-			ActualAccount=(HACCOUNT)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
+			hContact=(HANDLE)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
+
+			if(!DBGetContactSetting((HANDLE) hContact,ProtoName,"Id",&dbv)) 
+			{
+				ActualAccount=(HACCOUNT) CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
+				DBFreeVariant(&dbv);
+			}
+			else
+				ActualAccount = (HACCOUNT) hContact;
+
 			if((HACCOUNT)wParam!=ActualAccount)
 				break;
+
 			DestroyWindow(hWnd);
 			return 0;
 		}
