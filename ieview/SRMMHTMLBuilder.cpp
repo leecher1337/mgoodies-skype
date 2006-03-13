@@ -125,7 +125,7 @@ void SRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		if (Options::getSRMMFlags() & Options::IMAGE_ENABLED) {
 			const char *bkgImageFilename = Options::getBkgImageFile();
 			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
-			Options::getSRMMFlags() & Options::IMAGE_ENABLED ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
+			Options::getSRMMFlags() & Options::IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
 		} else {
 			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; overflow: auto;}\n",
 				 	     (int) bkgColor);
@@ -277,7 +277,7 @@ void SRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
     if (szRealProto!=NULL) delete szRealProto;
 //	view->scrollToBottom();
 }
-  
+
 void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
  	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
 		appendEventTemplate(view, event);

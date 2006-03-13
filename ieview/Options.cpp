@@ -76,6 +76,113 @@ BOOL TreeView_GetCheckState(HWND hwndTreeView, HTREEITEM hItem)
 }
 #endif
 
+static void buildProtoList() {
+	int protoCount;
+	PROTOCOLDESCRIPTOR **pProtos;
+	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&protoCount, (LPARAM)&pProtos);
+	protoNum = protoCount+1;
+	protoNames = new char[protoCount+1][128];
+	protoFilenames = new char[protoCount+1][MAX_PATH];
+	for (int i = 0; i < protoNum; i++) {
+		protoNames[i][0] = '\0';
+		if (i==0) {
+			strcpy(protoNames[i], "");
+		} else if ((pProtos[i-1]->type == PROTOTYPE_PROTOCOL) && strcmp(pProtos[i-1]->szName,"MetaContacts")) {
+			strcpy(protoNames[i], pProtos[i-1]->szName);
+		} else {
+			continue;
+		}
+		char * path = (char *) Options::getSmileyFile(protoNames[i]);
+		if (path != NULL) {
+			strcpy (protoFilenames[i], path);
+		} else {
+			strcpy (protoFilenames[i], "");
+		}
+	}
+}
+
+static void updateSmileyInfo(HWND hwndDlg, int proto) {
+	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
+	SetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[proto]);
+	SmileyMap *map = SmileyMap::getLibraryInfo(protoFilenames[proto]);
+	TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), map!=NULL);
+	if (map != NULL) {
+		SetDlgItemText(hwndDlg, IDC_LIBNAME, map->getDescription());
+		SetDlgItemText(hwndDlg, IDC_LIBAUTHOR, map->getAuthor());
+		SetDlgItemText(hwndDlg, IDC_LIBVERSION, map->getVersion());
+		delete map;
+	} else {
+		SetDlgItemText(hwndDlg, IDC_LIBNAME, Translate("Not loaded"));
+		SetDlgItemText(hwndDlg, IDC_LIBAUTHOR, "");
+		SetDlgItemText(hwndDlg, IDC_LIBVERSION, "");
+	}
+	currentProtoItem = proto;
+}
+
+
+static void refreshProtoList(HWND hwndDlg, BOOL protoSmileys) {
+    HTREEITEM hItem = NULL;
+	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
+	TreeView_DeleteAllItems(hProtoList);
+	updateSmileyInfo(hwndDlg, 0);
+	for (int i = 0; i < protoNum; i++) {
+		if (i==0 || (protoSmileys && protoNames[i][0]!= '\0')) {
+			char protoName[128];
+			TVINSERTSTRUCT tvi = {0};
+			tvi.hParent = TVI_ROOT;
+			tvi.hInsertAfter = TVI_LAST;
+			tvi.item.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_STATE | TVIF_SELECTEDIMAGE;
+			tvi.item.stateMask = TVIS_SELECTED | TVIS_STATEIMAGEMASK;
+			if (i==0) {
+				strcpy(protoName, Translate("Standard"));
+			} else {
+				CallProtoService(protoNames[i], PS_GETNAME, sizeof(protoName), (LPARAM)protoName);
+			}
+			strcat(protoName, " ");
+			strcat(protoName, Translate("smileys"));
+			tvi.item.pszText = protoName;
+			tvi.item.iImage = i;
+			tvi.item.iSelectedImage = i;
+			tvi.item.state = INDEXTOSTATEIMAGEMASK(strlen(protoFilenames[i]) > 0 ? 2 : 1);
+			if (i==0) {
+                hItem = TreeView_InsertItem(hProtoList, &tvi);
+			} else {
+				TreeView_InsertItem(hProtoList, &tvi);
+			}
+
+		}
+	}
+	TreeView_SelectItem(hProtoList, hItem);
+}
+
+static int getSelProto(HWND hLstView, HTREEITEM hItem) {
+	TVITEM tvi = {0};
+	tvi.mask = TVIF_IMAGE;
+	tvi.hItem = hItem == NULL ? TreeView_GetSelection(hLstView) : hItem;
+	TreeView_GetItem(hLstView, &tvi);
+	return tvi.iImage;
+}
+
+static bool browseSmileys(HWND hwndDlg) {
+	char path[MAX_PATH];
+	OPENFILENAME ofn={0};
+	GetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, path, sizeof(path));
+	ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
+	ofn.hwndOwner = hwndDlg;
+	ofn.hInstance = NULL;
+	ofn.lpstrFilter = "Smiley Library (*.asl)\0*.asl\0All Files\0*.*\0\0";
+	ofn.lpstrFile = path;
+	ofn.Flags = OFN_FILEMUSTEXIST;
+	ofn.nMaxFile = sizeof(path);
+	ofn.nMaxFileTitle = MAX_PATH;
+	ofn.lpstrDefExt = "asl";
+	if(GetOpenFileName(&ofn)) {
+        strcpy(protoFilenames[currentProtoItem], path);
+		return true;
+	}
+	return false;
+}
+
 int IEViewOptInit(WPARAM wParam, LPARAM lParam)
 {
 	OPTIONSDIALOGPAGE odp;
@@ -86,7 +193,7 @@ int IEViewOptInit(WPARAM wParam, LPARAM lParam)
 	odp.hInstance = hInstance;
 	odp.pszGroup = Translate("Message Sessions");
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
-	odp.pszTitle = Translate("IEView plugin");
+	odp.pszTitle = Translate("IEView");
 	odp.flags = ODPF_BOLDGROUPS;
 	odp.pfnDlgProc = IEViewOptDlgProc;
 	odp.nIDBottomSimpleControl = 0;

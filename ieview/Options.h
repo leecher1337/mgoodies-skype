@@ -45,6 +45,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern int IEViewOptInit(WPARAM wParam, LPARAM lParam);
 
+class ProtocolOptions {
+private:
+	char *cssFilename;
+	char *cssFilenameRtl;
+	char *templateFilename;
+	char *templateFilenameRtl;
+}
+
 class Options {
 private:
    	static int 		generalFlags;

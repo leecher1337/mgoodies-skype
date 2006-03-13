@@ -51,7 +51,6 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
 		case WM_KEYDOWN:
 			view->translateAccelerator(message, wParam, lParam);
 		   	break;
-		   	/*
 		case WM_SETFOCUS:
 			{
 				RECT rcWindow;
@@ -68,7 +67,6 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
 				}
 			}
 			break;
-				*/
 		case WM_MOUSEWHEEL:
 			SetFocus(GetParent(view->getHWND()));
 			break;
@@ -1043,7 +1041,8 @@ bool IEView::mouseClick(POINT pt) {
 
 bool IEView::setFocus(HWND prevFocus) {
 	if (GetFocus() != hwnd && !getFocus) { // && IsChild(prevFocus, hwnd
-		SetFocus(prevFocus);
+		SetFocus(GetParent(getHWND()));
+//		SetFocus(prevFocus);
 		return true;
 	}
 	getFocus = false;
