@@ -23,11 +23,13 @@ public:
 	void Send(const char *query) throw(DWORD);
 	char* Recv(char *buf=NULL,int buflen=65536) throw(DWORD);
 	void Disconnect();
+	void SSLify();
+
 	inline BOOL Connected() {return ConEstablished;}
 
-	static BOOL SSLLoaded;
-	static HINSTANCE hSSLLibrary;
-	static PVOID SSLCtx;
+	//static BOOL SSLLoaded;
+	//static HINSTANCE hSSLLibrary;
+	//static PVOID SSLCtx;
 protected:
 	HANDLE hConnection;
 #ifdef SSLTHRUNETLIB

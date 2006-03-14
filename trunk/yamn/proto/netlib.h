@@ -13,11 +13,16 @@ public:
 	void Send(const char *query) throw(DWORD);
 	char* Recv(char *buf=NULL,int buflen=65536) throw(DWORD);
 	void Disconnect();
-
+	void SSLify();
+	
 	inline BOOL Connected() {return hConnection!=NULL;}
 
 protected:
 	HANDLE hConnection;
+	BOOL isTLSed;
+	PVOID ssl;
+	int LocalNetlib_Send(HANDLE hConn,const char *buf,int len,int flags);
+	int LocalNetlib_Recv(HANDLE hConn,char *buf,int len,int flags);
 };
 
 enum

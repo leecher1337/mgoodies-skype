@@ -7,9 +7,10 @@
  * (c) majvan 2002-2004
  */
 
-#include <windows.h>
+/*#include <windows.h>
 #include <tchar.h>
-#include <stdio.h>
+#include <stdio.h>*/
+#include "yamn.h"
 #include "debug.h"
 #ifdef YAMN_DEBUG
 

@@ -398,6 +398,7 @@ BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	EnableWindow(GetDlgItem(hDlg,IDC_BTNDEFAULT),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_BTNSTATUS),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKSSL),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKNOTLS),(IsDlgButtonChecked(hDlg,IDC_CHECKSSL)==BST_UNCHECKED) && wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKAPOP),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKCONTACT),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKCONTACTNICK),(IsDlgButtonChecked(hDlg,IDC_CHECKCONTACT)==BST_CHECKED) && wParam);
@@ -496,6 +497,7 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		CheckDlgButton(hDlg,IDC_RADIOPOPN,ActualAccount->Flags & YAMN_ACC_POPN ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_RADIOPOP1,ActualAccount->Flags & YAMN_ACC_POPN ? BST_UNCHECKED : BST_CHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKSSL,ActualAccount->Flags & YAMN_ACC_SSL23 ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKNOTLS,ActualAccount->Flags & YAMN_ACC_NOTLS ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKAPOP,ActualAccount->Flags & YAMN_ACC_APOP ? BST_CHECKED : BST_UNCHECKED);
 		/*CheckDlgButton(hDlg,IDC_CHECKST0,ActualAccount->StatusFlags & YAMN_ACC_ST0 ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST1,ActualAccount->StatusFlags & YAMN_ACC_ST1 ? BST_CHECKED : BST_UNCHECKED);
@@ -571,6 +573,7 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		CheckDlgButton(hDlg,IDC_RADIOPOPN,BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_RADIOPOP1,BST_CHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKSSL,BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_CHECKNOTLS,BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKAPOP,BST_UNCHECKED);
 
 		SetDlgItemText(hDlg,IDC_STSTATUS,Translate("No account selected"));
@@ -715,12 +718,12 @@ static BOOL CALLBACK DlgOptionsProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lPar
          tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_POP3ACCOUNTOPT), hwnd, DlgProcPOP3AccOpt);
          tci.pszText = TranslateT("Accounts");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
-         MoveWindow((HWND)tci.lParam,12,29,rcClient.right-30,rcClient.bottom-45,1);
+         MoveWindow((HWND)tci.lParam,12,29,rcClient.right-10,rcClient.bottom-40,1);
 
          tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_YAMNOPT),hwnd,DlgProcYAMNOpt);
          tci.pszText = TranslateT("Plugins");
          TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
-         MoveWindow((HWND)tci.lParam,12,29,rcClient.right-30,rcClient.bottom-45,1);
+         MoveWindow((HWND)tci.lParam,12,29,rcClient.right-10,rcClient.bottom-40,1);
          ShowWindow((HWND)tci.lParam, SW_HIDE);
          iInit = FALSE;
          return FALSE;
@@ -982,6 +985,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_RADIOPOP1:
 				case IDC_CHECKAPOP:
 				case IDC_CHECKCONTACTNICK:
+				case IDC_CHECKNOTLS:
 					Changed=TRUE;
 					break;
 				case IDC_CHECKCONTACT:
@@ -992,6 +996,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				{
 					BOOL SSLC=(IsDlgButtonChecked(hDlg,IDC_CHECKSSL)==BST_CHECKED);
 					SetDlgItemInt(hDlg,IDC_EDITPORT,SSLC ? 995 : 110,FALSE);
+					EnableWindow(GetDlgItem(hDlg,IDC_CHECKNOTLS),SSLC?0:1);
 				}
 					Changed=TRUE;
 					break;
@@ -1007,6 +1012,9 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_CHECKFCOL:
 				case IDC_CHECKNCOL:
 				{
+					extern HICON hYamnIcon;
+					extern HICON hNewMailIcon;
+					extern HICON hConnectFailIcon;
 					POPUPDATA Tester;
 					POPUPDATA TesterF;
 					POPUPDATA TesterN;
@@ -1020,10 +1028,10 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					Tester.lchContact=NULL;
 					TesterF.lchContact=NULL;
 					TesterN.lchContact=NULL;
-					Tester.lchIcon=LoadIcon(pYAMNVar->hInst,MAKEINTRESOURCE(IDI_ICOYAMN2));
-					TesterF.lchIcon=LoadIcon(pYAMNVar->hInst,MAKEINTRESOURCE(IDI_ICOYAMN3));
-					TesterN.lchIcon=LoadIcon(pYAMNVar->hInst,MAKEINTRESOURCE(IDI_ICOYAMN1));
-//
+					Tester.lchIcon=hNewMailIcon;
+					TesterF.lchIcon=hConnectFailIcon;
+					TesterN.lchIcon=hYamnIcon;
+
 					lstrcpy(Tester.lpzContactName,Translate("Account Test"));
 					lstrcpy(TesterF.lpzContactName,Translate("Account Test (failed)"));
 					lstrcpy(TesterN.lpzContactName,Translate("Account Test"));
@@ -1188,7 +1196,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 							BOOL Translated,NewAcc=FALSE,Check,CheckMsg,CheckSnd,CheckIco,CheckPopup,CheckPopupW,CheckApp;
 							BOOL CheckNPopup,CheckNPopupW,CheckNMsgP,CheckFMsg,CheckFSnd,CheckFIco,CheckFPopup,CheckFPopupW;
 							BOOL CheckPopN,CheckKBN, CheckContact,CheckContactNick;
-							BOOL CheckSSL,CheckAPOP;
+							BOOL CheckSSL,CheckAPOP, CheckNoTLS;
 							//BOOL Check0,Check1,Check2,Check3,Check4,Check5,Check6,Check7,Check8,Check9,
 							BOOL CheckStart,CheckForce;
 							int Length,index;
@@ -1198,6 +1206,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 							{
 								Check=(IsDlgButtonChecked(hDlg,IDC_CHECK)==BST_CHECKED);
 								CheckSSL=(IsDlgButtonChecked(hDlg,IDC_CHECKSSL)==BST_CHECKED);
+								CheckNoTLS=(IsDlgButtonChecked(hDlg,IDC_CHECKNOTLS)==BST_CHECKED);
 								CheckAPOP=(IsDlgButtonChecked(hDlg,IDC_CHECKAPOP)==BST_CHECKED);
 								CheckMsg=(IsDlgButtonChecked(hDlg,IDC_CHECKMSG)==BST_CHECKED);
 								CheckSnd=(IsDlgButtonChecked(hDlg,IDC_CHECKSND)==BST_CHECKED);
@@ -1408,6 +1417,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 								ActualAccount->Flags=
 									(Check ? YAMN_ACC_ENA : 0) |
 					        			(CheckSSL ? YAMN_ACC_SSL23 : 0) |
+										(CheckNoTLS ? YAMN_ACC_NOTLS : 0) |
 					        			(CheckAPOP ? YAMN_ACC_APOP : 0) |
 									(CheckPopN ? YAMN_ACC_POPN : 0);
 				        

@@ -4,6 +4,7 @@
  * (c) majvan 2002-2004
  */
 
+#include "filter/simple/AggressiveOptimize.h"
 #include <windows.h>
 #include <tchar.h>
 #include <stdio.h>
