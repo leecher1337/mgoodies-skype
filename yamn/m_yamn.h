@@ -96,6 +96,16 @@ struct CExportedServices
 //sense to store all this information in memory, etc.
 #define MS_YAMN_CLISTCONTEXT	"YAMN/Service/ClistContactContextMenu"
 
+//Contact List Context Menu Click for application
+//wParam=(WPARAM)hContact
+//lParam=0
+//
+//Event is fired when there is a double click on a CList contact,
+//it is upto the caller to check for the protocol & status
+//of the HCONTACT, it's not done for you anymore since it didn't make
+//sense to store all this information in memory, etc.
+#define MS_YAMN_CLISTCONTEXTAPP	"YAMN/Service/ClistContactContextMenuApp"
+
 //Contact List Double Click
 //wParam=(WPARAM)hContact
 //lParam=0

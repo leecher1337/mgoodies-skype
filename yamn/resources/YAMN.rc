@@ -46,18 +46,6 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_ICOYAMN2            ICON    DISCARDABLE     "icoyamn2.ico"
-IDI_ICOYAMN1            ICON    DISCARDABLE     "icoyamn1.ico"
-IDI_ICOYAMN3            ICON    DISCARDABLE     "icoyamn3.ico"
-IDI_ICONEUTRAL          ICON    DISCARDABLE     "iconeutral.ico"
 #endif    // Czech resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -197,7 +185,7 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,20,153,11
 END
 
-IDD_POP3ACCOUNTOPT DIALOGEX 0, 0, 315, 239
+IDD_POP3ACCOUNTOPT DIALOGEX 0, 0, 315, 234
 STYLE DS_SYSMODAL | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
@@ -280,21 +268,23 @@ BEGIN
     GROUPBOX        "Connection failure notifications",IDC_GBBADCONNECT,150,
                     118,163,72
     CONTROL         "APOP auth",IDC_CHECKAPOP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,236,73,71,10
+                    WS_TABSTOP,236,72,71,10
     CONTROL         "Persistant message",IDC_CHECKNMSGP,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,5,216,110,10
     CONTROL         "Use SSL",IDC_CHECKSSL,"Button",BS_AUTOCHECKBOX | 
-                    BS_LEFT | WS_TABSTOP,236,85,75,10
+                    BS_LEFT | WS_TABSTOP,236,83,75,10
     CONTROL         "Keyboard Flash",IDC_CHECKKBN,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,6,89,132,9
     CONTROL         "Use contact notification for this account",
                     IDC_CHECKCONTACT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,
                     167,138,10,WS_EX_TRANSPARENT
-    PUSHBUTTON      "Check while:",IDC_BTNSTATUS,239,99,75,13
+    PUSHBUTTON      "Check while:",IDC_BTNSTATUS,239,104,75,13
     CONTROL         "Replace nick name",IDC_CHECKCONTACTNICK,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,17,178,126,10,
                     WS_EX_TRANSPARENT
     LTEXT           "",IDC_STSTATUS,147,6,161,8
+    CONTROL         "Disable STLS",IDC_CHECKNOTLS,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFT | WS_TABSTOP,236,95,75,10
 END
 
 IDD_CHOOSESTATUSMODES DIALOG DISCARDABLE  0, 0, 226, 154
@@ -338,6 +328,20 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICOYAMN2            ICON    DISCARDABLE     "icoyamn2.ico"
+IDI_ICOYAMN1            ICON    DISCARDABLE     "icoyamn1.ico"
+IDI_ICOYAMN3            ICON    DISCARDABLE     "icoyamn3.ico"
+IDI_ICONEUTRAL          ICON    DISCARDABLE     "iconeutral.ico"
+IDI_ICOTTBDW            ICON    DISCARDABLE     "iconttbdown.ico"
+IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Dialog Info
 //
 
@@ -361,16 +365,6 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 #pragma code_page(1252)
 #endif //_WIN32
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_ICOTTBDW            ICON    DISCARDABLE     "iconttbdown.ico"
-IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
-
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -378,8 +372,8 @@ IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,1,1
- PRODUCTVERSION 0,0,1,1
+ FILEVERSION 0,0,1,2
+ PRODUCTVERSION 0,0,1,2
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -397,14 +391,14 @@ BEGIN
             VALUE "Comments", "Yet Another Mail Notifier\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "Yet Another Mail Notifier\0"
-            VALUE "FileVersion", "0, 0, 1, 1\0"
+            VALUE "FileVersion", "0, 0, 1, 2\0"
             VALUE "InternalName", "YAMN\0"
             VALUE "LegalCopyright", "Copyright © 2005\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "YAMN.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "YAMN tweety\0"
-            VALUE "ProductVersion", "0, 0, 1, 1\0"
+            VALUE "ProductVersion", "0, 0, 1, 2\0"
             VALUE "SpecialBuild", "\0"
         END
     END

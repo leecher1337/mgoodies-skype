@@ -92,6 +92,7 @@
 #define IDC_CHECKTTB                    1117
 #define IDC_CHECKSSL                    1117
 #define IDC_CHECKNMSGP                  1118
+#define IDC_CHECKNOTLS                  1120
 #define IDC_CHECKKBN                    1121
 #define IDC_BTNSTATUS                   1123
 #define IDC_OPTIONSTAB                  1124

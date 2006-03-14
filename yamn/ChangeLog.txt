@@ -1,3 +1,15 @@
+0.0.1.2
+============
+! Bug fix with updater and stable version
++ Using new m_icolib.h
++ New context menu entry to launch application
++ Patch by y_b
+{
+  + Start TLS support
+  + Better icolib support
+  + SSL Logging
+}
+
 0.0.1.1
 ============
 ! Bug fix on left click popup.

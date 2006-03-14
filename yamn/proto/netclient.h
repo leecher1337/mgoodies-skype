@@ -10,11 +10,13 @@ public:
 	virtual char* Recv(char *buf=NULL,int buflen=65536)=0;
 	virtual void Disconnect()=0;
 	virtual BOOL Connected()=0;
+	virtual void SSLify()=0;
 
 	BOOL Stopped;
 	int Rcv;
 	DWORD NetworkError;
 	DWORD SystemError;
+	BOOL ifTLSed;
 };
 
 #endif

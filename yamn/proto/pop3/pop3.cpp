@@ -25,12 +25,16 @@
 
 #pragma warning( disable : 4290 )
 
+#include "../../filter/simple/AggressiveOptimize.h"
 #include <windows.h>
 #include <stdio.h>
 #include "pop3.h"
+
 extern "C" {
 #include "../md5.h"
 }
+
+extern void __stdcall	SSL_DebugLog( const char *fmt, ... );
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -39,8 +43,9 @@ extern "C" {
 //if not success, exception is throwed
 //returns welcome string returned by server
 //sets AckFlag
-char *CPop3Client::Connect(const char* servername,const int port,BOOL UseSSL)
+char *CPop3Client::Connect(const char* servername,const int port,BOOL UseSSL, BOOL NoTLS)
 {
+	char *temp = 0;
 	if(Stopped)			//check if we can work with this POP3 client session
 		throw POP3Error=(DWORD)EPOP3_STOPPED;
 
@@ -60,7 +65,20 @@ char *CPop3Client::Connect(const char* servername,const int port,BOOL UseSSL)
 	POP3Error=0;
 //	CTCNetClient::Prepare(servername,port);
 //	CTCNetClient::Connect();
-	return RecvRest(NetClient->Recv(),POP3_SEARCHACK);
+	temp = RecvRest(NetClient->Recv(),POP3_SEARCHACK);
+	extern BOOL SSLLoaded;
+	if (!NoTLS & (SSLLoaded) & !(SSL)){
+		if(NetClient->Stopped)			//check if we can work with this POP3 client session
+			throw POP3Error=(DWORD)EPOP3_STOPPED;
+		NetClient->Send("STLS\r\n");
+		temp=RecvRest(NetClient->Recv(),POP3_SEARCHACK);
+		if(AckFlag==POP3_FOK){ // Ok, we are going to tls
+			NetClient->SSLify();
+//			temp = RecvRest(NetClient->Recv(),POP3_SEARCHACK);
+		}
+	} 
+//	SSL_DebugLog("Received: %s",temp);
+	return temp;
 }
 
 //Receives data to the end of packet

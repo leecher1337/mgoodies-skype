@@ -160,6 +160,10 @@ YAMN_PROTOREGISTRATION POP3ProtocolRegistration=
 
 WCHAR *FileName=NULL;
 
+HANDLE hMenuItemMain = 0;
+HANDLE hMenuItemCont = 0;
+HANDLE hMenuItemContApp = 0;
+
 // External icon var for icolib support
 extern HICON hYamnIcon;
 extern HICON hNeutralIcon;
@@ -219,56 +223,63 @@ void WINAPI StopPOP3Account(HACCOUNT Which)
 void LoadIcons()
 {
 	//Load icons
+	hNeutralIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICONEUTRAL));
+	hYamnIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN1));
+	hNewMailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN2));
+	hConnectFailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN3));
+	hTopToolBarUp = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOTTBUP));
+	hTopToolBarDown = hNeutralIcon;
 
 	if(ServiceExists(MS_SKIN2_ADDICON))
 	{
 		//MessageBox(NULL,"Icolib present","test",0);
 		SKINICONDESC sid;
-		char szFilename[MAX_PATH];
-		strncpy(szFilename, "plugins\\YAMN.dll", MAX_PATH);
+//		char szFilename[MAX_PATH];
+//		strncpy(szFilename, "plugins\\YAMN.dll", MAX_PATH);
+		HICON temp;
 
 		sid.cbSize = sizeof(SKINICONDESC);
 		sid.pszSection = "YAMN";
-		sid.pszDefaultFile = szFilename;
+		sid.pszDefaultFile = NULL;
+        sid.iDefaultIndex = 0;
 
 		sid.pszName = "YAMN_Neutral";
         sid.pszDescription = Translate("Neutral");
-        sid.iDefaultIndex = -IDI_ICONEUTRAL;
+		sid.hDefaultIcon = hNeutralIcon;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		
 		sid.pszName = "YAMN_Yamn";
         sid.pszDescription = "YAMN";
-        sid.iDefaultIndex = -IDI_ICOYAMN1;
+        sid.hDefaultIcon = hYamnIcon;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = "YAMN_NewMail";
         sid.pszDescription = Translate("New Mail");
-        sid.iDefaultIndex = -IDI_ICOYAMN2;
+        sid.hDefaultIcon = hNewMailIcon;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = "YAMN_ConnectFail";
         sid.pszDescription = Translate("Connect Fail");
-        sid.iDefaultIndex = -IDI_ICOYAMN3;
+        sid.hDefaultIcon = hConnectFailIcon;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = "YAMN_TopToolBarUp";
         sid.pszDescription = Translate("TopToolBar UP");
-        sid.iDefaultIndex = -IDI_ICOTTBUP;
+        sid.hDefaultIcon = hTopToolBarUp;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = "YAMN_TopToolBarDown";
         sid.pszDescription = Translate("TopToolBar Down");
-        sid.iDefaultIndex = -IDI_ICOTTBDW;
+        sid.hDefaultIcon = hNeutralIcon;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+        // if by somereason MS_SKIN2_GETICON fails dont fsck-up already set-up icons
+		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral")) hNeutralIcon = temp;
+		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn")) hYamnIcon = temp;
+		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail")) hNewMailIcon = temp;
+		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail")) hConnectFailIcon = temp;
+		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp")) hTopToolBarUp = temp;
+		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown")) hTopToolBarDown = temp;
 
-		hNeutralIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral");
-		hYamnIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn");
-		hNewMailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail");
-		hConnectFailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail");
-		hTopToolBarUp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp");
-		hTopToolBarDown = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown");
-
-		//Icon to show in contact list
 		DBVARIANT dbv;
 		if(!DBGetContactSetting(NULL,"SkinIcons","YAMN_Neutral",&dbv)) 
 		{
@@ -280,12 +291,6 @@ void LoadIcons()
 	}
 	else
 	{
-		hNeutralIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICONEUTRAL));
-		hYamnIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN1));
-		hNewMailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN2));
-		hConnectFailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN3));
-		hTopToolBarUp = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOTTBUP));
-		hTopToolBarDown = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOTTBDW));
 		//Icon to show in contact list
 		DBWriteContactSettingString(NULL, "Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
 	}
@@ -308,12 +313,18 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	mi.hIcon = hYamnIcon;
 	mi.pszName = Translate("Check &mail (YAMN)");
 	mi.pszService = MS_YAMN_FORCECHECK;
-	CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
+	hMenuItemMain = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 
 	mi.flags = mi.flags;
 	mi.pszContactOwner = ProtoName;
 	mi.pszService = MS_YAMN_CLISTCONTEXT;
-	CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
+	hMenuItemCont = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
+
+	mi.flags = mi.flags;
+	mi.pszName = Translate("Launch application");
+	mi.pszContactOwner = ProtoName;
+	mi.pszService = MS_YAMN_CLISTCONTEXTAPP;
+	hMenuItemContApp = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
 
 	//Use for the Updater plugin
 	if(ServiceExists(MS_UPDATE_REGISTER)) 
@@ -769,7 +780,7 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 		{
 			SetAccountStatus(ActualAccount,Translate("Connecting to server"));
 
-			DataRX=MyClient->Connect(ActualCopied.ServerName,ActualCopied.ServerPort,ActualCopied.Flags & YAMN_ACC_SSL23);
+			DataRX=MyClient->Connect(ActualCopied.ServerName,ActualCopied.ServerPort,ActualCopied.Flags & YAMN_ACC_SSL23,ActualCopied.Flags & YAMN_ACC_NOTLS);
 			char *timestamp=NULL;
 
 			if(DataRX!=NULL)

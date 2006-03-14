@@ -75,8 +75,8 @@ static int Service_SetStatus(WPARAM wParam,LPARAM lParam)
 		break;
 	}
 
-	char t[150];
-	sprintf(t,"%i",wParam);
+	//char t[150];
+	//sprintf(t,"%i",wParam);
 	//MessageBox(NULL,t,"Test",0);
 	return 0;
 
@@ -110,6 +110,70 @@ static int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
 static int Service_ContactDoubleclicked(WPARAM wParam, LPARAM lParam)
 {
 	ContactDoubleclicked(wParam, lParam);
+	return 0;
+}
+
+static int ContactApplication(WPARAM wParam, LPARAM lParam)
+{
+	DBVARIANT dbv;
+	char *szProto;
+	HACCOUNT ActualAccount;
+
+	szProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0);
+	if(szProto != NULL && strcmp(szProto, ProtoName)==0)
+	{
+		if(!DBGetContactSetting((HANDLE) wParam,ProtoName,"Id",&dbv)) 
+		{
+			ActualAccount=(HACCOUNT) CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
+			if(ActualAccount != NULL)
+			{
+				PROCESS_INFORMATION pi;
+				STARTUPINFOW si;
+
+				ZeroMemory(&si,sizeof(si));
+				si.cb=sizeof(si);
+				
+				#ifdef DEBUG_SYNCHRO
+				DebugLog(SynchroFile,"ContactApplication:ActualAccountSO-read wait\n");
+				#endif
+				if(WAIT_OBJECT_0==WaitToReadFcn(ActualAccount->AccountAccessSO))
+				{
+					#ifdef DEBUG_SYNCHRO
+					DebugLog(SynchroFile,"ContactApplication:ualAccountSO-read enter\n");
+					#endif
+					if(ActualAccount->NewMailN.App!=NULL)
+					{
+						WCHAR *Command;
+						if(ActualAccount->NewMailN.AppParam!=NULL)
+							Command=new WCHAR[wcslen(ActualAccount->NewMailN.App)+wcslen(ActualAccount->NewMailN.AppParam)+6];
+						else
+							Command=new WCHAR[wcslen(ActualAccount->NewMailN.App)+6];
+					
+						if(Command!=NULL)
+						{
+							lstrcpyW(Command,L"\"");
+							lstrcatW(Command,ActualAccount->NewMailN.App);
+							lstrcatW(Command,L"\" ");
+							if(ActualAccount->NewMailN.AppParam!=NULL)
+								lstrcatW(Command,ActualAccount->NewMailN.AppParam);
+							CreateProcessW(NULL,Command,NULL,NULL,FALSE,NORMAL_PRIORITY_CLASS,NULL,NULL,&si,&pi);
+							delete[] Command;
+						}
+					}
+
+					#ifdef DEBUG_SYNCHRO
+					DebugLog(SynchroFile,"ContactApplication:ActualAccountSO-read done\n");
+					#endif
+					ReadDoneFcn(ActualAccount->AccountAccessSO);
+				}
+				#ifdef DEBUG_SYNCHRO
+				else
+					DebugLog(SynchroFile,"ContactApplication:ActualAccountSO-read enter failed\n");
+				#endif
+			}
+			DBFreeVariant(&dbv);
+		}
+	}
 	return 0;
 }
 
@@ -231,12 +295,24 @@ static void ContactDoubleclicked(WPARAM wParam, LPARAM lParam)
 
 static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 {
-	hNeutralIcon= (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral");
-	hYamnIcon= (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn");
-	hNewMailIcon= (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail");
-	hConnectFailIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail");
-	hTopToolBarUp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp");
-	hTopToolBarDown = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown");
+	HICON temp;
+	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral")) hNeutralIcon = temp;
+	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn")) hYamnIcon = temp;
+	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail")) hNewMailIcon = temp;
+	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail")) hConnectFailIcon = temp;
+	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp")) hTopToolBarUp = temp;
+	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown")) hTopToolBarDown = temp;
+	{	CLISTMENUITEM mi = {0};
+		extern HANDLE hMenuItemMain;
+		extern HANDLE hMenuItemCont;
+
+		mi.cbSize = sizeof(mi);
+		mi.flags = CMIM_FLAGS | CMIM_ICON;
+
+		mi.hIcon = hYamnIcon;
+		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemMain, (LPARAM)&mi);
+		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemCont, (LPARAM)&mi);
+	}
 	return 0;
 }
 
@@ -358,6 +434,9 @@ void CreateServiceFunctions(void)
 
 	//Function contact list context menu click
 	CreateServiceFunction(MS_YAMN_CLISTCONTEXT,ContactMailCheck);
+
+	//Function contact list context menu click
+	CreateServiceFunction(MS_YAMN_CLISTCONTEXTAPP,ContactApplication);
 
 	return;
 }

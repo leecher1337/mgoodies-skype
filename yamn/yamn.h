@@ -20,7 +20,7 @@
 #include "m_protosvc.h"
 #include "include/m_uninstaller.h"				//PluginUninstaller structures
 #include "include/m_toptoolbar.h"
-#include "include/icolib.h"
+#include "include/m_icolib.h"
 #include "include/m_kbdnotify.h"
 #include "include/m_popup.h"
 #include "include/m_updater.h"
@@ -35,7 +35,8 @@
 #include "m_yamn.h"	//Main YAMN's variables
 #include "m_protoplugin.h"	//Protocol registration and so on
 #include "m_synchro.h"	//Synchronization
-#include "debug.h"	
+#include "debug.h"
+#include "filter/simple/AggressiveOptimize.h"	
 
 //From services.cpp
 void CreateServiceFunctions(void);
