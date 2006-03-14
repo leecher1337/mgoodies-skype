@@ -327,13 +327,13 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 		update.cpbVersion = strlen((char *)update.pbVersion);
 
 		#ifdef YAMN_9x
-		update.szUpdateURL = "http://miranda-im.org/download/feed.php?dlfile=2166";
-		update.szVersionURL = "http://www.miranda-im.org/download/details.php?action=viewfile&id=2166";
-		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Updater ";
+		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2166";
+		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2166";
+		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">YAMN tweety win9x ";
 		#else
-		update.szUpdateURL = "http://miranda-im.org/download/feed.php?dlfile=2165";
-		update.szVersionURL = "http://www.miranda-im.org/download/details.php?action=viewfile&id=2165";
-		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Updater ";
+		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2165";
+		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2165";
+		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">YAMN tweety ";
 		#endif
 		wsprintf(szUrl,"http://www.miranda-fr.net/tweety/yamn/%s.zip",YAMN_FILENAME);
 	    update.szBetaUpdateURL = szUrl;
