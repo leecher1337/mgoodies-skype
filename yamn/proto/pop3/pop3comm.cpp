@@ -228,50 +228,60 @@ void LoadIcons()
 	hNewMailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN2));
 	hConnectFailIcon = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOYAMN3));
 	hTopToolBarUp = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOTTBUP));
-	hTopToolBarDown = hNeutralIcon;
+	hTopToolBarDown = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(IDI_ICOTTBDW));
 
 	if(ServiceExists(MS_SKIN2_ADDICON))
 	{
 		//MessageBox(NULL,"Icolib present","test",0);
 		SKINICONDESC sid;
-//		char szFilename[MAX_PATH];
-//		strncpy(szFilename, "plugins\\YAMN.dll", MAX_PATH);
+		char szFilename[MAX_PATH];
+		strncpy(szFilename, "plugins\\YAMN.dll", MAX_PATH);
 		HICON temp;
 
 		sid.cbSize = sizeof(SKINICONDESC);
 		sid.pszSection = "YAMN";
-		sid.pszDefaultFile = NULL;
+		sid.pszDefaultFile = szFilename;
         sid.iDefaultIndex = 0;
+		sid.flags = 0;
+		sid.cx = 16;
+		sid.cy = 16;
 
 		sid.pszName = "YAMN_Neutral";
         sid.pszDescription = Translate("Neutral");
 		sid.hDefaultIcon = hNeutralIcon;
+		sid.iDefaultIndex = -IDI_ICONEUTRAL;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		
 		sid.pszName = "YAMN_Yamn";
         sid.pszDescription = "YAMN";
         sid.hDefaultIcon = hYamnIcon;
+		sid.iDefaultIndex = -IDI_ICOYAMN1;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = "YAMN_NewMail";
         sid.pszDescription = Translate("New Mail");
         sid.hDefaultIcon = hNewMailIcon;
+		sid.iDefaultIndex = -IDI_ICOYAMN2;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = "YAMN_ConnectFail";
         sid.pszDescription = Translate("Connect Fail");
         sid.hDefaultIcon = hConnectFailIcon;
+		sid.iDefaultIndex = -IDI_ICOYAMN3;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = "YAMN_TopToolBarUp";
         sid.pszDescription = Translate("TopToolBar UP");
         sid.hDefaultIcon = hTopToolBarUp;
+		sid.iDefaultIndex = -IDI_ICOTTBUP;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = "YAMN_TopToolBarDown";
         sid.pszDescription = Translate("TopToolBar Down");
         sid.hDefaultIcon = hNeutralIcon;
+		sid.iDefaultIndex = -IDI_ICOTTBDW;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
         // if by somereason MS_SKIN2_GETICON fails dont fsck-up already set-up icons
 		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral")) hNeutralIcon = temp;
 		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn")) hYamnIcon = temp;
@@ -279,6 +289,7 @@ void LoadIcons()
 		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail")) hConnectFailIcon = temp;
 		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp")) hTopToolBarUp = temp;
 		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown")) hTopToolBarDown = temp;
+
 
 		DBVARIANT dbv;
 		if(!DBGetContactSetting(NULL,"SkinIcons","YAMN_Neutral",&dbv)) 

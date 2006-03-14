@@ -296,15 +296,20 @@ static void ContactDoubleclicked(WPARAM wParam, LPARAM lParam)
 static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 {
 	HICON temp;
+
 	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral")) hNeutralIcon = temp;
-	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn")) hYamnIcon = temp;
 	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail")) hNewMailIcon = temp;
 	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail")) hConnectFailIcon = temp;
 	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp")) hTopToolBarUp = temp;
 	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown")) hTopToolBarDown = temp;
-	{	CLISTMENUITEM mi = {0};
+	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn")) 
+	{	
+		CLISTMENUITEM mi = {0};
 		extern HANDLE hMenuItemMain;
 		extern HANDLE hMenuItemCont;
+		extern HANDLE hMenuItemContApp;
+
+		hYamnIcon = temp;
 
 		mi.cbSize = sizeof(mi);
 		mi.flags = CMIM_FLAGS | CMIM_ICON;
@@ -312,7 +317,10 @@ static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 		mi.hIcon = hYamnIcon;
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemMain, (LPARAM)&mi);
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemCont, (LPARAM)&mi);
+		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemContApp, (LPARAM)&mi);
 	}
+
+
 	return 0;
 }
 
