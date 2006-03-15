@@ -51,7 +51,7 @@ private:
 	char *cssFilenameRtl;
 	char *templateFilename;
 	char *templateFilenameRtl;
-}
+};
 
 class Options {
 private:
