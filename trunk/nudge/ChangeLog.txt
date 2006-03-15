@@ -1,3 +1,10 @@
+0.0.1.0
+===========
+* Some modifications of the option page.
+* Redesign option page.
+! Bug fix with slider in shake option.
+! Bug fix with updater and stable version.
+
 0.0.0.12
 ===========
 + Now possible to change the text shown when sending or receiving nudge ( [color=red]BUZZ!!![/color] for yahoo ;) )

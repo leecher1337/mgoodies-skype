@@ -64,102 +64,99 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 // Dialog
 //
 
-IDD_OPT_NUDGE DIALOGEX 0, 0, 294, 223
-STYLE DS_SYSMODAL | DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD | 
-    WS_VISIBLE
-EXSTYLE WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
-BEGIN
-    GROUPBOX        "Status Options",IDC_STATIC,13,89,276,61
-    CONTROL         "Offline",IDC_CHECKST0,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,15,100,67,9
-    CONTROL         "Online",IDC_CHECKST1,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,15,114,67,9
-    CONTROL         "Away",IDC_CHECKST2,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_TABSTOP,15,128,67,9
-    CONTROL         "N/A",IDC_CHECKST3,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_TABSTOP,232,100,54,9
-    CONTROL         "Occupied",IDC_CHECKST4,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,158,100,70,9
-    CONTROL         "DND",IDC_CHECKST5,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_TABSTOP,85,100,70,9
-    CONTROL         "Free for chat",IDC_CHECKST6,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,85,114,70,9
-    CONTROL         "Invisible",IDC_CHECKST7,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,85,128,70,9
-    CONTROL         "On the phone",IDC_CHECKST8,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,158,129,70,9
-    CONTROL         "Out to lunch",IDC_CHECKST9,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,158,114,70,9
-    PUSHBUTTON      "Preview",IDC_PREVIEW,245,198,41,15
-    GROUPBOX        "Popup options",IDC_STATIC,13,148,276,66
-    CONTROL         "Popup notification",IDC_CHECKPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,17,158,108,10
-    EDITTEXT        IDC_POPUPTIME,35,169,20,12,ES_AUTOHSCROLL
-    LTEXT           "s",IDC_STATIC,59,172,8,8
-    LTEXT           "Popup duration",IDC_STATIC,69,172,82,8
-    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_TABSTOP,158,167,
-                    39,12
-    LTEXT           "Background colour",IDC_STATIC,202,170,81,8,
-                    SS_CENTERIMAGE
-    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,158,183,
-                    39,12
-    LTEXT           "Text colour",IDC_STATIC,202,186,82,8,SS_CENTERIMAGE
-    CONTROL         "&Use Windows colours",IDC_USEWINCOLORS,"Button",
-                    BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,35,
-                    186,121,8
-    CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP | 
-                    TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER | 
-                    WS_TABSTOP,13,16,105,69
-    GROUPBOX        "Protocol options",IDC_STATIC,7,0,286,216
-    CONTROL         "Specify options for each protocol",IDC_USEBYPROTOCOL,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,123,16,162,14
-    CONTROL         "Enable clist shaking",IDC_CHECKCLIST,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,132,30,147,10
-    CONTROL         "Enable message window shaking",IDC_CHECKCHAT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,132,42,147,10
-    CONTROL         "Treat nudge as a message",IDC_CHECKEVENT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,132,54,147,10
-    EDITTEXT        IDC_SENDTEXT,186,65,102,11,ES_AUTOHSCROLL
-    EDITTEXT        IDC_RECVTEXT,186,77,102,11,ES_AUTOHSCROLL
-    RTEXT           "Sending text",IDC_STATIC,119,66,66,8
-    RTEXT           "Receiving text",IDC_STATIC,120,78,65,8
-END
-
-IDD_OPTIONS DIALOGEX 0, 0, 320, 250
-STYLE DS_SYSMODAL | DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD | 
-    WS_VISIBLE
+IDD_OPT_NUDGE DIALOGEX 0, 0, 300, 240
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",0x0,7,4,305,239,
-                    WS_EX_TRANSPARENT
+    GROUPBOX        "Check status for which nudge are allowed",IDC_STATIC,14,
+                    96,280,55
+    CONTROL         "Offline",IDC_CHECKST0,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,18,107,67,9
+    CONTROL         "Online",IDC_CHECKST1,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,18,121,67,9
+    CONTROL         "Away",IDC_CHECKST2,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_TABSTOP,18,135,67,9
+    CONTROL         "N/A",IDC_CHECKST3,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_TABSTOP,235,107,54,9
+    CONTROL         "Occupied",IDC_CHECKST4,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,161,107,70,9
+    CONTROL         "DND",IDC_CHECKST5,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+                    WS_TABSTOP,88,107,70,9
+    CONTROL         "Free for chat",IDC_CHECKST6,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,88,121,70,9
+    CONTROL         "Invisible",IDC_CHECKST7,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,88,135,70,9
+    CONTROL         "On the phone",IDC_CHECKST8,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,161,136,70,9
+    CONTROL         "Out to lunch",IDC_CHECKST9,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,161,121,70,9
+    PUSHBUTTON      "Preview",IDC_PREVIEW,245,202,41,15
+    GROUPBOX        "Popup options",IDC_STATIC,14,153,280,66
+    CONTROL         "Popup notification",IDC_CHECKPOP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,17,163,108,10
+    EDITTEXT        IDC_POPUPTIME,35,174,20,12,ES_AUTOHSCROLL
+    LTEXT           "s",IDC_STATIC,59,177,8,8
+    LTEXT           "Popup duration",IDC_STATIC,69,177,82,8
+    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_TABSTOP,158,172,
+                    39,12
+    LTEXT           "Background colour",IDC_STATIC,202,175,81,8,
+                    SS_CENTERIMAGE
+    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,158,188,
+                    39,12
+    LTEXT           "Text colour",IDC_STATIC,202,191,82,8,SS_CENTERIMAGE
+    CONTROL         "&Use Windows colours",IDC_USEWINCOLORS,"Button",
+                    BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,35,
+                    191,121,8
+    CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP | 
+                    TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER | 
+                    WS_TABSTOP,13,19,105,69
+    GROUPBOX        "Protocol options",IDC_STATIC,7,3,291,219
+    CONTROL         "Specify options for each protocol",IDC_USEBYPROTOCOL,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,123,19,162,14
+    CONTROL         "Enable clist shaking",IDC_CHECKCLIST,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,132,33,147,10
+    CONTROL         "Enable message window shaking",IDC_CHECKCHAT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,132,45,147,10
+    CONTROL         "Treat nudge as a message",IDC_CHECKEVENT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,132,57,147,10
+    EDITTEXT        IDC_SENDTEXT,192,68,102,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_RECVTEXT,192,82,102,12,ES_AUTOHSCROLL
+    RTEXT           "Sending text",IDC_STATIC,121,70,70,8
+    RTEXT           "Receiving text",IDC_STATIC,121,84,70,8
 END
 
-IDD_OPT_SHAKE DIALOGEX 0, 0, 293, 223
-STYLE DS_SYSMODAL | DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD | 
-    WS_VISIBLE
-EXSTYLE WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
+IDD_OPTIONS DIALOGEX 0, 0, 319, 249
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Shaking Clist Options",IDC_STATIC,7,5,286,100
-    GROUPBOX        "Shaking Message Window Options",IDC_STATIC,7,111,286,
+    CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",0x0,0,3,319,246
+END
+
+IDD_OPT_SHAKE DIALOGEX 0, 0, 300, 240
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Shaking Clist Options",IDC_STATIC,7,5,291,100
+    GROUPBOX        "Shaking Message Window Options",IDC_STATIC,7,111,291,
                     101
     CONTROL         "Slider1",IDC_SNUMBER_CLIST,"msctls_trackbar32",
                     TBS_AUTOTICKS | TBS_BOTH | WS_TABSTOP,81,28,179,13
-    RTEXT           "Number of move",IDC_STATIC,13,30,67,9
-    RTEXT           "Number of move",IDC_STATIC,13,138,67,9
+    RTEXT           "Number of move",IDC_STATIC,13,33,67,9
+    RTEXT           "Number of move",IDC_STATIC,13,140,67,9
     CONTROL         "Slider1",IDC_SNUMBER_CHAT,"msctls_trackbar32",
                     TBS_AUTOTICKS | TBS_BOTH | WS_TABSTOP,81,136,179,12
     LTEXT           "Static",IDC_LNUMBER_CLIST,260,31,25,8
     LTEXT           "Static",IDC_LNUMBER_CHAT,260,138,24,8
     CONTROL         "",IDC_SSCALE_CLIST,"msctls_trackbar32",TBS_AUTOTICKS | 
                     TBS_BOTH | WS_TABSTOP,81,47,179,13
-    RTEXT           "Width of move",IDC_STATIC,13,49,67,9
+    RTEXT           "Width of move",IDC_STATIC,13,51,67,9
     LTEXT           "Static",IDC_LSCALE_CLIST,260,50,25,8
     CONTROL         "",IDC_SSCALE_CHAT,"msctls_trackbar32",TBS_AUTOTICKS | 
                     TBS_BOTH | WS_TABSTOP,81,153,179,13
-    RTEXT           "Width of move",IDC_STATIC,13,154,67,9
+    RTEXT           "Width of move",IDC_STATIC,13,156,67,9
     LTEXT           "Static",IDC_LSCALE_CHAT,260,155,25,8
 END
 
@@ -175,11 +172,12 @@ BEGIN
     IDD_OPT_NUDGE, DIALOG
     BEGIN
         LEFTMARGIN, 7
+        RIGHTMARGIN, 298
         VERTGUIDE, 13
         VERTGUIDE, 85
         VERTGUIDE, 160
         TOPMARGIN, 4
-        BOTTOMMARGIN, 220
+        BOTTOMMARGIN, 222
         HORZGUIDE, 5
         HORZGUIDE, 20
         HORZGUIDE, 147
@@ -187,7 +185,7 @@ BEGIN
         HORZGUIDE, 173
         HORZGUIDE, 184
         HORZGUIDE, 205
-        HORZGUIDE, 216
+        HORZGUIDE, 217
     END
 
     IDD_OPTIONS, DIALOG
@@ -216,6 +214,7 @@ BEGIN
     IDD_OPT_SHAKE, DIALOG
     BEGIN
         LEFTMARGIN, 7
+        RIGHTMARGIN, 293
         VERTGUIDE, 13
         VERTGUIDE, 85
         VERTGUIDE, 160
@@ -252,8 +251,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,12
- PRODUCTVERSION 0,0,0,12
+ FILEVERSION 0,0,1,0
+ PRODUCTVERSION 0,0,1,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -270,12 +269,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "Plugin that render nudge events from different protocols"
             VALUE "FileDescription", "Nudge"
-            VALUE "FileVersion", "0, 0, 0, 12"
+            VALUE "FileVersion", "0, 0, 1, 0"
             VALUE "InternalName", "Nudge"
             VALUE "LegalCopyright", "Copyright © 2006"
             VALUE "OriginalFilename", "nudge.dll"
             VALUE "ProductName", "nudge"
-            VALUE "ProductVersion", "0, 0, 0, 12"
+            VALUE "ProductVersion", "0, 0, 1, 0"
         END
     END
     BLOCK "VarFileInfo"
