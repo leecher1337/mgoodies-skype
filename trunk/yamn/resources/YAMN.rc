@@ -370,8 +370,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,1,4
- PRODUCTVERSION 0,0,1,4
+ FILEVERSION 0,0,1,5
+ PRODUCTVERSION 0,0,1,5
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -384,25 +384,25 @@ VS_VERSION_INFO VERSIONINFO
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "080c04b0"
+        BLOCK "000004b0"
         BEGIN
             VALUE "Comments", "Yet Another Mail Notifier\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "Yet Another Mail Notifier\0"
-            VALUE "FileVersion", "0, 0, 1, 4\0"
+            VALUE "FileVersion", "0, 0, 1, 5\0"
             VALUE "InternalName", "YAMN\0"
-            VALUE "LegalCopyright", "Copyright © 2005\0"
+            VALUE "LegalCopyright", "Copyright © 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "YAMN.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "YAMN tweety\0"
-            VALUE "ProductVersion", "0, 0, 1, 4\0"
+            VALUE "ProductVersion", "0, 0, 1, 5\0"
             VALUE "SpecialBuild", "\0"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x80c, 1200
+        VALUE "Translation", 0x0, 1200
     END
 END
 

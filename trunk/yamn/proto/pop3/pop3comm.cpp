@@ -151,7 +151,7 @@ HYAMNPROTOPLUGIN POP3Plugin;
 YAMN_PROTOREGISTRATION POP3ProtocolRegistration=
 {
 	"POP3 protocol (internal)",
-	(char *)YAMN_VERSION,
+	YAMN_VERSION_C,
 	"© 2002-2004 majvan | 2005 tweety",
 	"Mail notifier and browser for Miranda IM. Included POP3 protocol.",
 	"francois.mean@skynet.be",
