@@ -1,3 +1,8 @@
+0.0.1.5
+============
+! Bug fix with help.dll problem. (Patch by Jazzy)
+  (http://developer.berlios.de/bugs/?func=detailbug&bug_id=6692&group_id=3292)
+
 0.0.1.4
 ============
 ! Option page bug (patch by y_b)
