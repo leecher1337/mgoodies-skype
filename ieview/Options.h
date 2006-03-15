@@ -78,6 +78,8 @@ private:
 	static bool     bMathModule;
 	static bool     bSmileyAdd;
 	static int      avatarServiceFlags;
+	static ProtocolOptions* protocolList;
+
 public:
 	enum OPTIONS {
 		GENERAL_ENABLE_BBCODES	= 1,
