@@ -120,11 +120,9 @@ BEGIN
     IDD_OPTIONS, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 330
         VERTGUIDE, 155
         VERTGUIDE, 240
         TOPMARGIN, 4
-        BOTTOMMARGIN, 252
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -157,9 +155,9 @@ BEGIN
 END
 
 IDD_YAMNOPT DIALOGEX 0, 0, 320, 230
-STYLE DS_SYSMODAL | DS_3DLOOK | WS_CHILD | WS_VISIBLE
+STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "HotKey1",IDC_HKFORCE,"msctls_hotkey32",WS_BORDER | 
                     WS_TABSTOP,169,8,110,12
@@ -186,14 +184,14 @@ BEGIN
 END
 
 IDD_POP3ACCOUNTOPT DIALOGEX 0, 0, 315, 234
-STYLE DS_SYSMODAL | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
     COMBOBOX        IDC_COMBOACCOUNT,4,6,140,65,CBS_DROPDOWN | CBS_SORT | 
                     WS_TABSTOP
-    PUSHBUTTON      "Delete",IDC_BTNDEL,239,193,75,13
-    PUSHBUTTON      "Default",IDC_BTNDEFAULT,239,209,75,13
+    PUSHBUTTON      "Delete",IDC_BTNDEL,240,193,75,13
+    PUSHBUTTON      "Default",IDC_BTNDEFAULT,240,209,75,13
     PUSHBUTTON      "Reset counter",IDC_BTNRESET,155,193,75,13
     CONTROL         "Check this account",IDC_CHECK,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,5,21,115,10,WS_EX_TRANSPARENT
@@ -208,7 +206,7 @@ BEGIN
     CONTROL         "Application execution:",IDC_CHECKAPP,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,6,101,135,8
     PUSHBUTTON      "...",IDC_BTNAPP,15,113,16,12
-    EDITTEXT        IDC_EDITAPP,35,113,65,12,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDITAPP,35,113,65,12,ES_AUTOHSCROLL
     EDITTEXT        IDC_EDITAPPPARAM,105,113,40,12,ES_AUTOHSCROLL
     CONTROL         "Popup notification",IDC_CHECKPOP,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,6,129,108,10
@@ -268,23 +266,23 @@ BEGIN
     GROUPBOX        "Connection failure notifications",IDC_GBBADCONNECT,150,
                     118,163,72
     CONTROL         "APOP auth",IDC_CHECKAPOP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,236,72,71,10
+                    WS_TABSTOP,236,71,71,10
     CONTROL         "Persistant message",IDC_CHECKNMSGP,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,5,216,110,10
+    CONTROL         "Disable STLS",IDC_CHECKNOTLS,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFT | WS_TABSTOP,236,91,75,10
     CONTROL         "Use SSL",IDC_CHECKSSL,"Button",BS_AUTOCHECKBOX | 
-                    BS_LEFT | WS_TABSTOP,236,83,75,10
+                    BS_LEFT | WS_TABSTOP,236,81,75,10
     CONTROL         "Keyboard Flash",IDC_CHECKKBN,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,6,89,132,9
     CONTROL         "Use contact notification for this account",
                     IDC_CHECKCONTACT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,
                     167,138,10,WS_EX_TRANSPARENT
-    PUSHBUTTON      "Check while:",IDC_BTNSTATUS,239,104,75,13
+    PUSHBUTTON      "Check while...",IDC_BTNSTATUS,240,104,75,13
     CONTROL         "Replace nick name",IDC_CHECKCONTACTNICK,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,17,178,126,10,
                     WS_EX_TRANSPARENT
     LTEXT           "",IDC_STSTATUS,147,6,161,8
-    CONTROL         "Disable STLS",IDC_CHECKNOTLS,"Button",BS_AUTOCHECKBOX | 
-                    BS_LEFT | WS_TABSTOP,236,95,75,10
 END
 
 IDD_CHOOSESTATUSMODES DIALOG DISCARDABLE  0, 0, 226, 154
@@ -317,12 +315,12 @@ BEGIN
                     BS_NOTIFY | WS_TABSTOP,134,104,70,9
 END
 
-IDD_OPTIONS DIALOGEX 0, 0, 334, 259
-STYLE DS_SYSMODAL | WS_CHILD | WS_VISIBLE
+IDD_OPTIONS DIALOGEX 0, 0, 319, 249
+STYLE DS_FIXEDSYS | DS_CENTER | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",0x0,7,4,323,248
+    CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",0x0,0,3,319,246
 END
 
 
@@ -372,8 +370,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,1,3
- PRODUCTVERSION 0,0,1,3
+ FILEVERSION 0,0,1,4
+ PRODUCTVERSION 0,0,1,4
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -391,14 +389,14 @@ BEGIN
             VALUE "Comments", "Yet Another Mail Notifier\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "Yet Another Mail Notifier\0"
-            VALUE "FileVersion", "0, 0, 1, 3\0"
+            VALUE "FileVersion", "0, 0, 1, 4\0"
             VALUE "InternalName", "YAMN\0"
             VALUE "LegalCopyright", "Copyright © 2005\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "YAMN.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "YAMN tweety\0"
-            VALUE "ProductVersion", "0, 0, 1, 3\0"
+            VALUE "ProductVersion", "0, 0, 1, 4\0"
             VALUE "SpecialBuild", "\0"
         END
     END

@@ -364,6 +364,7 @@ BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKAPP),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKKBN),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_BTNAPP),(IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_EDITAPP),(IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED) && wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_EDITAPPPARAM),(IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED) && wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKNPOP),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_EDITNPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED) && wParam);
@@ -718,12 +719,12 @@ static BOOL CALLBACK DlgOptionsProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lPar
          tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_POP3ACCOUNTOPT), hwnd, DlgProcPOP3AccOpt);
          tci.pszText = TranslateT("Accounts");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
-         MoveWindow((HWND)tci.lParam,12,29,rcClient.right-10,rcClient.bottom-40,1);
+         MoveWindow((HWND)tci.lParam,1,26,rcClient.right-3,rcClient.bottom-29,1);
 
          tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_YAMNOPT),hwnd,DlgProcYAMNOpt);
          tci.pszText = TranslateT("Plugins");
          TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
-         MoveWindow((HWND)tci.lParam,12,29,rcClient.right-10,rcClient.bottom-40,1);
+         MoveWindow((HWND)tci.lParam,1,26,rcClient.right-3,rcClient.bottom-29,1);
          ShowWindow((HWND)tci.lParam, SW_HIDE);
          iInit = FALSE;
          return FALSE;
@@ -1090,6 +1091,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_CHECKAPP:
 					Changed=TRUE;
 					EnableWindow(GetDlgItem(hDlg,IDC_BTNAPP),IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hDlg,IDC_EDITAPP),IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED);
 					EnableWindow(GetDlgItem(hDlg,IDC_EDITAPPPARAM),IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED);
 					break;
 				case IDC_CHECKPOP:

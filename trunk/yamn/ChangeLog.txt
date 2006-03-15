@@ -1,3 +1,8 @@
+0.0.1.4
+============
+! Option page bug (patch by y_b)
+* Allow to edit the application text
+
 0.0.1.3
 ============
 ! Bug fix with new icolib
