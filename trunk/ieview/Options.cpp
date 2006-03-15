@@ -35,6 +35,7 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static HWND hwndCurrentTab, hwndPages[4];
+static int currentProtoItem;
 
 #ifndef _MSC_VER
 typedef struct tagTVKEYDOWN {
@@ -77,6 +78,7 @@ BOOL TreeView_GetCheckState(HWND hwndTreeView, HTREEITEM hItem)
 #endif
 
 static void buildProtoList() {
+	/*
 	int protoCount;
 	PROTOCOLDESCRIPTOR **pProtos;
 	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&protoCount, (LPARAM)&pProtos);
@@ -98,23 +100,25 @@ static void buildProtoList() {
 		} else {
 			strcpy (protoFilenames[i], "");
 		}
-	}
+	}*/
+	
 }
 
 static void updateSmileyInfo(HWND hwndDlg, int proto) {
 	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-	SetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[proto]);
-	SmileyMap *map = SmileyMap::getLibraryInfo(protoFilenames[proto]);
-	TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), map!=NULL);
-	if (map != NULL) {
-		SetDlgItemText(hwndDlg, IDC_LIBNAME, map->getDescription());
-		SetDlgItemText(hwndDlg, IDC_LIBAUTHOR, map->getAuthor());
-		SetDlgItemText(hwndDlg, IDC_LIBVERSION, map->getVersion());
-		delete map;
+//	SetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[proto]);
+	TemplateMap *tmpm = TemplateMap::getTemplateMap("srmm_default");
+	TemplateMap *tmpmrtl = TemplateMap::getTemplateMap("srmm_default_rtl");
+	TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), tmpm!=NULL || tmpmrtl!=NULL);
+	if (tmpm != NULL) {
+		SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, tmpm->getFilename());
 	} else {
-		SetDlgItemText(hwndDlg, IDC_LIBNAME, Translate("Not loaded"));
-		SetDlgItemText(hwndDlg, IDC_LIBAUTHOR, "");
-		SetDlgItemText(hwndDlg, IDC_LIBVERSION, "");
+		SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, "");
+	}
+	if (tmpmrtl != NULL) {
+		SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, tmpmrtl->getFilename());
+	} else {
+		SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, "");
 	}
 	currentProtoItem = proto;
 }
@@ -1080,6 +1084,7 @@ char *Options::historyCSSFilenameRTL = NULL;
 char *Options::historyTemplatesFilename = NULL;
 char *Options::historyTemplatesFilenameRTL = NULL;
 
+ProtocolOptions *Options::protocolList = NULL;
 
 void Options::init() {
 	if (isInited) return;
