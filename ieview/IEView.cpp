@@ -140,6 +140,8 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	m_pConnectionPoint = NULL;
 	m_cRef = 0;
 	selectedText = NULL;
+	getFocus = false;
+	clearRequired = true;
 #ifdef GECKO
 	if (SUCCEEDED(CoCreateInstance(CLSID_MozillaBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
 #else
@@ -200,7 +202,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	}
 	list = this;
 	LeaveCriticalSection(&mutex);
-	clear();
+//	clear();
 	pWebBrowser->put_RegisterAsDropTarget(VARIANT_FALSE);
 }
 
@@ -218,6 +220,8 @@ IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, in
 	m_pConnectionPoint = NULL;
 	m_cRef = 0;
 	selectedText = NULL;
+	getFocus = false;
+	clearRequired = true;
 #ifdef GECKO
 	if (SUCCEEDED(CoCreateInstance(CLSID_MozillaBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
 #else
@@ -850,6 +854,7 @@ void IEView::clear() {
         event.codepage = iLogCodepage;
 		builder->buildHead(this, &event);
 	}
+	clearRequired = false;
 }
 /*
 void IEView::documentClose() {
@@ -865,6 +870,10 @@ void IEView::appendEventOld(IEVIEWEVENT *event) {
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
 	iLogCodepage = event->codepage;
+	if (clearRequired) {
+		MessageBoxA(NULL, "clear required", "AS", MB_OK);
+		clear();
+	}
 	if (builder!=NULL) {
 		builder->appendEventOld(this, event);
 	}
@@ -875,6 +884,9 @@ void IEView::appendEvent(IEVIEWEVENT *event) {
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
 	iLogCodepage = event->codepage;
+	if (clearRequired) {
+		clear();
+	}
 	if (builder!=NULL) {
 		builder->appendEvent(this, event);
 	}

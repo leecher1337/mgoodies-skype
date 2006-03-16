@@ -53,6 +53,7 @@ typedef struct {
 	int			y;                  // IE control vertical position
 	int			cx;                 // IE control horizontal size
 	int			cy;                 // IE control vertical size
+
 } IEVIEWWINDOW;
 
 #define IEEDF_UNICODE 		1          // if set pszText is a pointer to wchar_t string instead of char string

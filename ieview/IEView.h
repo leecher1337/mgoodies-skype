@@ -109,6 +109,7 @@ private:
 	int         iLogCodepage;
    	HANDLE      hContact;
    	bool        getFocus;
+   	bool		clearRequired;
    	BSTR		selectedText;
 
     // IUnknown

@@ -1152,3 +1152,12 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 		delete eventData2;
 	}
 }
+
+ProtocolSettings* HTMLBuilder::getProtocolSettings(const char *protocolName) {
+	ProtocolSettings *protoSettings =  Options::getProtocolSettings(protocolName);
+	if (protoSettings == NULL || !protoSettings->isEnable()) {
+		protoSettings =  Options::getProtocolSettings();
+	}
+	return protoSettings;
+}
+

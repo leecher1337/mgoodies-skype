@@ -84,11 +84,11 @@ private:
 	void                clear();
 	static TemplateMap*	add(const char *proto, const char *filename);
 	static void 		appendText(char **str, int *sizeAlloced, const char *fmt, ...);
-	static bool 		loadTemplateFile(const char *proto, const char *filename, bool onlyInfo);
+	static TemplateMap*	loadTemplateFile(const char *proto, const char *filename, bool onlyInfo);
 public:
 	static Template *	getTemplate(const char *proto, const char *name);
 	static TemplateMap *getTemplateMap(const char *proto);
-	static void         loadTemplates(const char *proto, const char *filename);
+	static TemplateMap* loadTemplates(const char *proto, const char *filename);
 	Template *          getTemplate(const char *text);
 	const char *		getFilename();
 	bool        		isGrouping();

@@ -26,6 +26,7 @@ class HTMLBuilder;
 #define EVENTTYPE_STATUSCHANGE 25368
 
 #include "IEView.h"
+#include "Options.h"
 #include "m_MathModule.h"
 
 class TextToken {
@@ -108,7 +109,7 @@ protected:
         ENF_BBCODES = 4,
         ENF_LINKS = 8,
         ENF_ALL = 255
-    };    
+    };
 //	virtual char *encode(const char *text, const char *proto, bool replaceSmiley);
 	virtual wchar_t *encode(const wchar_t *text, const char *proto, int flags);
 	virtual char *encodeUTF8(const wchar_t *text, const char *proto, int flags);
@@ -129,6 +130,7 @@ protected:
 	virtual bool isSameDate(DWORD time1, DWORD time2);
 	virtual bool isUnicodeMIM();
 	virtual bool isDbEventShown(DBEVENTINFO * dbei)=0;
+	virtual ProtocolSettings *getProtocolSettings(const char *protocolName);
 //	virtual void appendEventNonTemplate(IEView *, IEVIEWEVENT *event)=0;
 //	virtual void appendEventTemplate(IEView *, IEVIEWEVENT *event)=0;
 public:
