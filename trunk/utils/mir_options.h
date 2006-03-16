@@ -40,7 +40,7 @@ extern "C"
 #define CONTROL_COLOR 2			// Stored as DWORD
 #define CONTROL_RADIO 3			// Stored as WORD
 
-struct OptPageControl {
+typedef struct {
 	int type;
 	int nID;
 	char *setting;
@@ -51,7 +51,7 @@ struct OptPageControl {
 	};
 	WORD min;
 	WORD max;
-};
+} OptPageControl;
 
 BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *module, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -63,12 +63,12 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-struct ItemOption
+typedef struct
 { 
 	char *name;				// Tab name
 	int id;					// Dialog id
 	DLGPROC wnd_proc;		// Dialog function
-}; 
+} ItemOption; 
 
 BOOL CALLBACK TabsDlgProc(ItemOption *optItens, int optItensSize, HINSTANCE hInst, UINT idc_tab, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 

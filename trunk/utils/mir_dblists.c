@@ -72,6 +72,17 @@ int List_Append( SortedList* p_list, void* p_value )
 }
 
 
+int List_InsertOrdered( SortedList* p_list, void* p_value )
+{
+	int index;
+
+	List_GetIndex( p_list, p_value, &index );
+	List_Insert( p_list, p_value, index );
+
+	return index;
+}
+
+
 int List_RemoveByValue( SortedList* p_list, void* p_value )
 {
 	int ret = 0;
@@ -128,6 +139,15 @@ void* List_Pop( SortedList* p_list )
 	List_Remove( p_list, p_list->realCount - 1 );
 
 	return ret;
+}
+
+
+void* List_Peek( SortedList* p_list )
+{
+	if ( p_list->realCount <= 0 )
+		return NULL;
+
+	return p_list->items[ p_list->realCount - 1 ];
 }
 
 

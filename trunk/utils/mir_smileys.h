@@ -41,7 +41,7 @@ int InitContactListSmileys();
 
 
 // Pre-parse smileys
-typedef struct _SmileyParseInfo
+typedef struct _SmileysParseInfo
 {
 	SortedList *pieces;
 	int max_height;
