@@ -2,6 +2,7 @@
 ============
 ! Bug fix with help.dll problem. (Patch by Jazzy)
   (http://developer.berlios.de/bugs/?func=detailbug&bug_id=6692&group_id=3292)
+! Remove merge in agressiveoptimize.h
 
 0.0.1.4
 ============

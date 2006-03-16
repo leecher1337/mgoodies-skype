@@ -55,7 +55,7 @@ PLUGININFO pluginInfo={
 	"Mail notifier and browser for Miranda IM. Included POP3 protocol.",
 	"tweety (majvan)",
 	"francois.mean@skynet.be",
-	"© (2002-2004 majvan) 2005 tweety",
+	"© (2002-2004 majvan) 2005-2006 tweety",
 	"http://www.miranda-im.org/download/details.php?action=viewfile&id=2165", //"http://www.majvan.host.sk/Projekty/YAMN?fm=soft",
 	0,		//not transient
 	0		//doesn't replace anything built-in

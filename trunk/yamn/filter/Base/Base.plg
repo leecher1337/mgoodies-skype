@@ -6,33 +6,22 @@
 --------------------Configuration: Base - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\DOCUME~1\fme\LOCALS~1\Temp\RSP88.tmp" with contents
+Creating temporary file "C:\DOCUME~1\fme\LOCALS~1\Temp\RSP7E.tmp" with contents
 [
-/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "DEBUG_FILTER" /Fp"Release/Base.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
-"E:\Projets\Miranda\miranda\mgoodies\yamn\filter\Base\debug.cpp"
-"E:\Projets\Miranda\miranda\mgoodies\yamn\filter\Base\maindll.cpp"
-]
-Creating command line "cl.exe @C:\DOCUME~1\fme\LOCALS~1\Temp\RSP88.tmp" 
-Creating temporary file "C:\DOCUME~1\fme\LOCALS~1\Temp\RSP89.tmp" with contents
-[
-kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib msvcrt.lib /nologo /dll /incremental:no /pdb:"Release/Base.pdb" /machine:I386 /out:"Release/Base.dll" /implib:"Release/Base.lib" 
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib msvcrt.lib /nologo /dll /incremental:no /pdb:"Release/Base.pdb" /machine:I386 /out:"../../../../bin7/Release/plugins/YAMN/Base.dll" /implib:"Release/Base.lib" 
 .\Release\debug.obj
 .\Release\maindll.obj
 ]
-Creating command line "link.exe @C:\DOCUME~1\fme\LOCALS~1\Temp\RSP89.tmp"
+Creating command line "link.exe @C:\DOCUME~1\fme\LOCALS~1\Temp\RSP7E.tmp"
 <h3>Output Window</h3>
-Compiling...
-debug.cpp
-maindll.cpp
 Linking...
    Creating library Release/Base.lib and object Release/Base.exp
 LINK : warning LNK4098: defaultlib "LIBCMT" conflicts with use of other libs; use /NODEFAULTLIB:library
-LINK : warning LNK4078: multiple ".data" sections found with different attributes (60000020)
 
 
 
 <h3>Results</h3>
-Base.dll - 0 error(s), 2 warning(s)
+Base.dll - 0 error(s), 1 warning(s)
 </pre>
 </body>
 </html>
