@@ -19,6 +19,7 @@ Boston, MA 02111-1307, USA.
 
 
 #include "mir_smileys.h"
+#include "mir_memory.h"
 
 extern "C"
 {
@@ -83,7 +84,7 @@ int InitContactListSmileys()
 
 SmileysParseInfo Smileys_PreParse(LPCSTR lpString, int nCount, const char *protocol)
 {
-	SmileyParseInfo info = malloc(sizeof(_SmileyParseInfo));
+	SmileysParseInfo info = (SmileysParseInfo) mir_alloc0(sizeof(_SmileysParseInfo));
 
 	info->pieces = ReplaceSmileys(lpString, nCount, protocol, &info->max_height);
 
@@ -97,7 +98,7 @@ void Smileys_FreeParse(SmileysParseInfo parseInfo)
 		if (parseInfo->pieces != NULL)
 			DestroySmileyList(parseInfo->pieces);
 
-		free(parseInfo);
+		mir_free(parseInfo);
 	}
 }
 
@@ -106,12 +107,12 @@ void Smileys_FreeParse(SmileysParseInfo parseInfo)
 // parseInfo is optional (pass NULL and it will be calculated and deleted inside function
 int Smileys_DrawText(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRect, UINT uFormat, const char *protocol, SmileysParseInfo parseInfo)
 {
-	SmileyParseInfo info;
+	SmileysParseInfo info;
 	int ret;
 
 	// Get parse info
 	if (parseInfo == NULL)
-		info = Smileys_PreParse(hDC, lpString, nCount, protocol);
+		info = Smileys_PreParse(lpString, nCount, protocol);
 	else
 		info = parseInfo;
 
@@ -368,7 +369,7 @@ void DestroySmileyList( SortedList* p_list )
 				if (piece->type == TEXT_PIECE_TYPE_SMILEY)
 					DestroyIcon(piece->smiley);
 
-				free(piece);
+				mir_free(piece);
 			}
 		}
 	}
@@ -420,7 +421,7 @@ SortedList * ReplaceSmileys(const char *text, int text_size, const char *protoco
 			// Add text
 			if (start > next_text_pos)
 			{
-				TextPiece *piece = (TextPiece *) malloc(sizeof(TextPiece));
+				TextPiece *piece = (TextPiece *) mir_alloc0(sizeof(TextPiece));
 
 				piece->type = TEXT_PIECE_TYPE_TEXT;
 				piece->start_pos = next_text_pos - text;
@@ -433,7 +434,7 @@ SortedList * ReplaceSmileys(const char *text, int text_size, const char *protoco
 			{
 				BITMAP bm;
 				ICONINFO icon;
-				TextPiece *piece = (TextPiece *) malloc(sizeof(TextPiece));
+				TextPiece *piece = (TextPiece *) mir_alloc0(sizeof(TextPiece));
 
 				piece->type = TEXT_PIECE_TYPE_SMILEY;
 				piece->len = end - start;
@@ -465,7 +466,7 @@ SortedList * ReplaceSmileys(const char *text, int text_size, const char *protoco
 	// Add rest of text
 	if (last_text_pos > next_text_pos)
 	{
-		TextPiece *piece = (TextPiece *) malloc(sizeof(TextPiece));
+		TextPiece *piece = (TextPiece *) mir_alloc0(sizeof(TextPiece));
 
 		piece->type = TEXT_PIECE_TYPE_TEXT;
 		piece->start_pos = next_text_pos - text;

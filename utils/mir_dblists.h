@@ -43,20 +43,25 @@ void init_list_interface();
 #define List_Create(x,y)		(list_interface.List_Create(x,y))
 #define List_Destroy(x)			(list_interface.List_Destroy(x))
 #define List_Find(x,y)			(list_interface.List_Find(x,y))
-#define List_GetIndex(x,y,z)	(list_interface.List_Create(x,y,z))
+#define List_GetIndex(x,y,z)	(list_interface.List_GetIndex(x,y,z))
 #define List_Insert(x,y,z)		(list_interface.List_Insert(x,y,z))
 #define List_Remove(x,y)		(list_interface.List_Remove(x,y))
 #define List_IndexOf(x,y)		(list_interface.List_IndexOf(x,y))
 
 
+BOOL List_HasItens( SortedList* p_list );
 
 void List_DestroyFreeContents( SortedList* );
-int List_Append( SortedList*, void* );
 int List_RemoveByValue( SortedList*, void* );
 int List_RemoveByValueFreeContents( SortedList*, void* );
+
+int List_Append( SortedList*, void* );
+int List_InsertOrdered( SortedList*, void* );
+
+// Theese work on the end of the list
 void List_Push( SortedList* p_list, void* p_value );
 void* List_Pop( SortedList* p_list );
-BOOL List_HasItens( SortedList* p_list );
+void* List_Peek( SortedList* p_list );
 
 
 
