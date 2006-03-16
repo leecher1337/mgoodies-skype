@@ -30,7 +30,7 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,0,38),
+	PLUGIN_MAKE_VERSION(0,0,0,39),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -675,6 +675,7 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 	char * proto_name = (char *)lParam;
 	int proto_num = -1;
 	Protocol *proto = NULL;
+	TCHAR status_message[256];
 
 	if (proto_name != NULL)
 	{
@@ -708,8 +709,41 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 
 		if (proto != NULL)
 		{
+			// Has to get the unparsed message
+			NAS_PROTOINFO pi, *pii;
+
+			ZeroMemory(&pi, sizeof(pi));
+			pi.cbSize = sizeof(NAS_PROTOINFO);
+			pi.szProto = proto->name;
+			pi.status = proto->status;
+			pi.szMsg = NULL;
+
+			pii = &pi;
+
+			if (CallService(MS_NAS_GETSTATE, (WPARAM) &pii, 1) == 0)
+			{
+				if (pi.szMsg == NULL)
+				{
+					pi.szProto = NULL;
+
+					if (CallService(MS_NAS_GETSTATE, (WPARAM) &pii, 1) == 0)
+					{
+						if (pi.szMsg != NULL)
+						{
+							lstrcpyn(status_message, pi.szMsg, MAX_REGS(status_message));
+							mir_free(pi.szMsg);
+						}
+					}
+				}
+				else // if (pi.szMsg != NULL)
+				{
+					lstrcpyn(status_message, pi.szMsg, MAX_REGS(status_message));
+					mir_free(pi.szMsg);
+				}
+			}
+
 			iswi.szProto = proto->name;
-			iswi.szMsg = proto->status_message;
+			iswi.szMsg = status_message;
 		}
 		else
 		{
