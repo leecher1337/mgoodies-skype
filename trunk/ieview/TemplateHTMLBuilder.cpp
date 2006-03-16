@@ -1,6 +1,5 @@
 #include "TemplateHTMLBuilder.h"
 
-#include "Options.h"
 #include "Template.h"
 #include "Utils.h"
 #include "m_avatars.h"
@@ -20,7 +19,7 @@ TemplateHTMLBuilder::TemplateHTMLBuilder() {
 	startedTime = time(NULL);
 	lastEventTime = time(NULL);
 	groupTemplate = NULL;
-}    
+}
 
 char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
 {
@@ -89,13 +88,20 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	szRealProto = getProto(hRealContact);
 	szProto = getProto(event->hContact);
 	tempBase[0]='\0';
-	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("srmm_default_rtl") : TemplateMap::getTemplateMap("srmm_default");
+	ProtocolSettings *protoSettings =  getProtocolSettings(szRealProto);
+	if (protoSettings == NULL) {
+		return;
+	}
+	TemplateMap *tmpm = TemplateMap::getTemplateMap((event->dwFlags & IEEF_RTL) ? protoSettings->getTemplateFilenameRtl() : protoSettings->getTemplateFilename());
+//	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("srmm_default_rtl") : TemplateMap::getTemplateMap("srmm_default");
 	if (tmpm!=NULL) {
     	strcpy(tempBase, tmpm->getFilename());
     	char* pathrun = tempBase + strlen(tempBase);
     	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > tempBase)) pathrun--;
     	pathrun++;
     	*pathrun = '\0';
+	} else {
+		MessageBoxA(NULL, "DUPA!!!", protoSettings->getTemplateFilename(), MB_OK);
 	}
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
@@ -179,7 +185,8 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
         szNickOut = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
 	}
 
-	Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("srmm_default_rtl", "HTMLStart") : TemplateMap::getTemplate("srmm_default", "HTMLStart");
+	Template *tmplt = TemplateMap::getTemplate((event->dwFlags & IEEF_RTL) ? protoSettings->getTemplateFilenameRtl() : protoSettings->getTemplateFilename(), "HTMLStart");
+
 	if (tmplt!=NULL) {
 		for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
 			const char *tokenVal;
@@ -425,11 +432,11 @@ void TemplateHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
               		    tmpltName[1] = isHistory ? isSent ? "hMessageOutGroupStart" : "hMessageInGroupStart" : isSent ? "MessageOutGroupStart" : "MessageInGroupStart";
                    	} else {
                    		tmpltName[0] = isHistory ? isSent ? "hMessageOutGroupInner" : "hMessageInGroupInner" : isSent ? "MessageOutGroupInner" : "MessageInGroupInner";
-                   	}    
+                   	}
                		groupTemplate = isHistory ? isSent ? "hMessageOutGroupEnd" : "hMessageInGroupEnd" : isSent ? "MessageOutGroupEnd" : "MessageInGroupEnd";
                	} else {
                		tmpltName[1] = isHistory ? isSent ? "hMessageOut" : "hMessageIn" : isSent ? "MessageOut" : "MessageIn";
-               	}    
+               	}
 			} else if (dbei.eventType == EVENTTYPE_FILE) {
 				char *ptr = (char *)dbei.pBlob + sizeof(DWORD);
                 szText = encodeUTF8(ptr, szRealProto, ENF_NONE);
@@ -601,7 +608,12 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 	szRealProto = getProto(hRealContact);
 	szProto = getProto(event->hContact);
 	tempBase[0]='\0';
-	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("srmm_default_rtl") : TemplateMap::getTemplateMap("srmm_default");
+	ProtocolSettings *protoSettings =  getProtocolSettings(szRealProto);
+	if (protoSettings == NULL) {
+		return;
+	}
+	TemplateMap *tmpm = TemplateMap::getTemplateMap((event->dwFlags & IEEF_RTL) ? protoSettings->getTemplateFilenameRtl() : protoSettings->getTemplateFilename());
+//	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("srmm_default_rtl") : TemplateMap::getTemplateMap("srmm_default");
 	if (tmpm!=NULL) {
     	strcpy(tempBase, tmpm->getFilename());
     	char* pathrun = tempBase + strlen(tempBase);
@@ -771,7 +783,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 			for (int i=0;i<2;i++) {
 				Template *tmplt;
 				if (tmpltName[i] == NULL) continue;
-				tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate("srmm_default_rtl", tmpltName[i]) : TemplateMap::getTemplate("srmm_default", tmpltName[i]);
+				tmplt = TemplateMap::getTemplate((event->dwFlags & IEEF_RTL) ? protoSettings->getTemplateFilenameRtl() : protoSettings->getTemplateFilename(), tmpltName[i]);
 				if (tmplt == NULL) continue;
 				for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
 					const char *tokenVal;

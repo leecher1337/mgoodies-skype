@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "resource.h"
 #include "Smiley.h"
 #include "Template.h"
+#include "Utils.h"
 #include "m_MathModule.h"
 #include "m_avatars.h"
 
@@ -35,7 +36,8 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static HWND hwndCurrentTab, hwndPages[4];
-static int currentProtoItem;
+static ProtocolSettings *currentProtoItem = NULL;
+static HIMAGELIST hProtocolImageList = NULL;
 
 #ifndef _MSC_VER
 typedef struct tagTVKEYDOWN {
@@ -77,111 +79,128 @@ BOOL TreeView_GetCheckState(HWND hwndTreeView, HTREEITEM hItem)
 }
 #endif
 
-static void buildProtoList() {
-	/*
-	int protoCount;
-	PROTOCOLDESCRIPTOR **pProtos;
-	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&protoCount, (LPARAM)&pProtos);
-	protoNum = protoCount+1;
-	protoNames = new char[protoCount+1][128];
-	protoFilenames = new char[protoCount+1][MAX_PATH];
-	for (int i = 0; i < protoNum; i++) {
-		protoNames[i][0] = '\0';
-		if (i==0) {
-			strcpy(protoNames[i], "");
-		} else if ((pProtos[i-1]->type == PROTOTYPE_PROTOCOL) && strcmp(pProtos[i-1]->szName,"MetaContacts")) {
-			strcpy(protoNames[i], pProtos[i-1]->szName);
-		} else {
-			continue;
-		}
-		char * path = (char *) Options::getSmileyFile(protoNames[i]);
-		if (path != NULL) {
-			strcpy (protoFilenames[i], path);
-		} else {
-			strcpy (protoFilenames[i], "");
-		}
-	}*/
-	
+static LPARAM GetItemParam(HWND hwndTreeView, HTREEITEM hItem) {
+	TVITEM tvi = {0};
+	tvi.mask = TVIF_PARAM;
+	tvi.hItem = hItem == NULL ? TreeView_GetSelection(hwndTreeView) : hItem;
+	TreeView_GetItem(hwndTreeView, &tvi);
+	return tvi.lParam;
 }
 
-static void updateSmileyInfo(HWND hwndDlg, int proto) {
-	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-//	SetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, protoFilenames[proto]);
-	TemplateMap *tmpm = TemplateMap::getTemplateMap("srmm_default");
-	TemplateMap *tmpmrtl = TemplateMap::getTemplateMap("srmm_default_rtl");
-	TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), tmpm!=NULL || tmpmrtl!=NULL);
-	if (tmpm != NULL) {
-		SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, tmpm->getFilename());
-	} else {
-		SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, "");
+static void SaveProtoSettings(HWND hwndDlg, ProtocolSettings *proto) {
+	if (proto != NULL) {
+		char path[MAX_PATH];
+//		HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
+//		proto->setEnableTemp(TreeView_GetCheckState(hProtoList, TreeView_GetSelection(hProtoList)));
+		GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
+		proto->setTemplateFilenameTemp(path);
+		GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
+		proto->setTemplateFilenameRtlTemp(path);
 	}
-	if (tmpmrtl != NULL) {
-		SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, tmpmrtl->getFilename());
-	} else {
-		SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, "");
-	}
-	currentProtoItem = proto;
 }
 
+static void UpdateFilenameInfo(HWND hwndDlg, ProtocolSettings *proto) {
+	if (proto != NULL) {
+		HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
+		TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), proto->isEnableTemp());
+		if (proto->getTemplateFilenameTemp() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, proto->getTemplateFilenameTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, "");
+		}
+		if (proto->getTemplateFilenameRtlTemp() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, proto->getTemplateFilenameRtlTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, "");
+		}
+		currentProtoItem = proto;
+	}
+}
 
-static void refreshProtoList(HWND hwndDlg, BOOL protoSmileys) {
+static void RefreshProtoIcons(HWND hwndDlg) {
+	int i;
     HTREEITEM hItem = NULL;
 	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
 	TreeView_DeleteAllItems(hProtoList);
-	updateSmileyInfo(hwndDlg, 0);
-	for (int i = 0; i < protoNum; i++) {
-		if (i==0 || (protoSmileys && protoNames[i][0]!= '\0')) {
-			char protoName[128];
-			TVINSERTSTRUCT tvi = {0};
-			tvi.hParent = TVI_ROOT;
-			tvi.hInsertAfter = TVI_LAST;
-			tvi.item.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_STATE | TVIF_SELECTEDIMAGE;
-			tvi.item.stateMask = TVIS_SELECTED | TVIS_STATEIMAGEMASK;
-			if (i==0) {
-				strcpy(protoName, Translate("Standard"));
-			} else {
-				CallProtoService(protoNames[i], PS_GETNAME, sizeof(protoName), (LPARAM)protoName);
-			}
-			strcat(protoName, " ");
-			strcat(protoName, Translate("smileys"));
-			tvi.item.pszText = protoName;
-			tvi.item.iImage = i;
-			tvi.item.iSelectedImage = i;
-			tvi.item.state = INDEXTOSTATEIMAGEMASK(strlen(protoFilenames[i]) > 0 ? 2 : 1);
-			if (i==0) {
-                hItem = TreeView_InsertItem(hProtoList, &tvi);
-			} else {
-				TreeView_InsertItem(hProtoList, &tvi);
-			}
-
-		}
+	ProtocolSettings *proto;
+	if (hProtocolImageList != NULL) {
+		ImageList_RemoveAll(hProtocolImageList);
+	} else {
+		for (i=0,proto=Options::getProtocolSettings();proto!=NULL;proto=proto->getNext(),i++);
+		hProtocolImageList = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
+			ILC_MASK | ILC_COLOR32, i, 0);
 	}
+	for (i=0,proto=Options::getProtocolSettings();proto!=NULL;proto=proto->getNext(),i++) {
+		HICON hIcon = NULL;
+		if (i > 0 ) {
+			hIcon=(HICON)CallProtoService(proto->getProtocolName(), PS_LOADICON, PLI_PROTOCOL | PLIF_SMALL, 0);
+			if (hIcon == NULL)  {
+				hIcon=(HICON)CallProtoService(proto->getProtocolName(), PS_LOADICON, PLI_PROTOCOL, 0);
+			}
+		}
+		if (hIcon == NULL) {
+			hIcon = (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_SMILEY), IMAGE_ICON,
+							GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		}
+		ImageList_AddIcon(hProtocolImageList, hIcon);
+		DestroyIcon(hIcon);
+	}
+	TreeView_SetImageList(hProtoList, hProtocolImageList, TVSIL_NORMAL);
+//	refreshProtoList(hwndDlg, IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS));
+}
+
+static void RefreshProtoList(HWND hwndDlg, bool protoTemplates) {
+	int i;
+    HTREEITEM hItem = NULL;
+	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
+	TreeView_DeleteAllItems(hProtoList);
+	ProtocolSettings *proto;
+	for (i=0,proto=Options::getProtocolSettings();proto!=NULL;proto=proto->getNext(),i++) {
+		char protoName[128];
+		TVINSERTSTRUCT tvi = {0};
+		tvi.hParent = TVI_ROOT;
+		tvi.hInsertAfter = TVI_LAST;
+		tvi.item.mask = TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_STATE | TVIF_SELECTEDIMAGE;
+		tvi.item.stateMask = TVIS_SELECTED | TVIS_STATEIMAGEMASK;
+		if (i==0) {
+			strcpy(protoName, Translate("Default"));
+			currentProtoItem = proto;
+		} else {
+			CallProtoService(proto->getProtocolName(), PS_GETNAME, sizeof(protoName), (LPARAM)protoName);
+		}
+		strcat(protoName, " ");
+		strcat(protoName, Translate("template"));
+		tvi.item.pszText = protoName;
+		tvi.item.lParam = (LPARAM)proto;
+		tvi.item.iImage = i;
+		tvi.item.iSelectedImage = i;
+		tvi.item.state = INDEXTOSTATEIMAGEMASK(proto->isEnableTemp() ? 2 : 1);
+		if (i==0) {
+			hItem = TreeView_InsertItem(hProtoList, &tvi);
+		} else {
+			TreeView_InsertItem(hProtoList, &tvi);
+		}
+		if (!protoTemplates) break;
+	}
+	UpdateFilenameInfo(hwndDlg, Options::getProtocolSettings());
 	TreeView_SelectItem(hProtoList, hItem);
 }
 
-static int getSelProto(HWND hLstView, HTREEITEM hItem) {
-	TVITEM tvi = {0};
-	tvi.mask = TVIF_IMAGE;
-	tvi.hItem = hItem == NULL ? TreeView_GetSelection(hLstView) : hItem;
-	TreeView_GetItem(hLstView, &tvi);
-	return tvi.iImage;
-}
 
-static bool browseSmileys(HWND hwndDlg) {
-	char path[MAX_PATH];
-	OPENFILENAME ofn={0};
-	GetDlgItemText(hwndDlg, IDC_SMILEYS_FILENAME, path, sizeof(path));
+static bool BrowseFile(HWND hwndDlg, TCHAR *filter, TCHAR *defExt,  TCHAR *path, int maxLen) {
+	OPENFILENAMEA ofn={0};
+	GetWindowText(hwndDlg, path, maxLen);
 	ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
 	ofn.hwndOwner = hwndDlg;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Smiley Library (*.asl)\0*.asl\0All Files\0*.*\0\0";
+	ofn.lpstrFilter = filter;//"Templates (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
 	ofn.lpstrFile = path;
 	ofn.Flags = OFN_FILEMUSTEXIST;
-	ofn.nMaxFile = sizeof(path);
-	ofn.nMaxFileTitle = MAX_PATH;
-	ofn.lpstrDefExt = "asl";
+	ofn.nMaxFile = maxLen;
+	ofn.nMaxFileTitle = maxLen;
+	ofn.lpstrDefExt = defExt;//"ivt";
 	if(GetOpenFileName(&ofn)) {
-        strcpy(protoFilenames[currentProtoItem], path);
+		SetWindowText(hwndDlg, path);
 		return true;
 	}
 	return false;
@@ -302,6 +321,7 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
             case IDC_ENABLE_FLASH:
             case IDC_ENABLE_MATHMODULE:
             case IDC_ENABLE_PNGHACK:
+            case IDC_SMILEYS_IN_NAMES:
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			}
@@ -428,6 +448,10 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			if (Options::getBkgImageFile() != NULL) {
                 SetDlgItemTextA(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, Options::getBkgImageFile());
 			}
+			Options::resetProtocolSettings();
+			currentProtoItem = Options::getProtocolSettings();
+			RefreshProtoIcons(hwndDlg);
+			RefreshProtoList(hwndDlg, true);
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -486,12 +510,13 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				break;
 			case IDC_BROWSE_TEMPLATES:
 				{
+					//if (BrowseFile(hwndDlg,
 					OPENFILENAMEA ofn={0};
 					GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
 					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
 					ofn.hwndOwner = hwndDlg;
 					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Templates (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
+					ofn.lpstrFilter = "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
 					ofn.lpstrFile = path;
 					ofn.Flags = OFN_FILEMUSTEXIST;
 					ofn.nMaxFile = sizeof(path);
@@ -510,7 +535,7 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
 					ofn.hwndOwner = hwndDlg;
 					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Templates (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
+					ofn.lpstrFilter = "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
 					ofn.lpstrFile = path;
 					ofn.Flags = OFN_FILEMUSTEXIST;
 					ofn.nMaxFile = sizeof(path);
@@ -582,8 +607,56 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 			}
 		}
 		break;
+	case UM_CHECKSTATECHANGE:
+		{
+			ProtocolSettings *proto = (ProtocolSettings *)GetItemParam((HWND)wParam, (HTREEITEM) lParam);
+			if (proto != NULL) {
+				if (strcmpi(proto->getProtocolName(), "_default_")) {
+					proto->setEnableTemp(TreeView_GetCheckState((HWND)wParam, (HTREEITEM) lParam));
+				}
+			}
+			if ((HTREEITEM) lParam != TreeView_GetSelection((HWND)wParam)) {
+				TreeView_SelectItem((HWND)wParam, (HTREEITEM) lParam);
+			} else {
+				UpdateFilenameInfo(hwndDlg, proto);
+			}
+			SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+		}
+		break;
 	case WM_NOTIFY:
 		{
+			if (((LPNMHDR)lParam)->idFrom == IDC_PROTOLIST) {
+				switch (((LPNMHDR)lParam)->code) {
+					case NM_CLICK:
+						{
+							TVHITTESTINFO ht = {0};
+							DWORD dwpos = GetMessagePos();
+							POINTSTOPOINT(ht.pt, MAKEPOINTS(dwpos));
+							MapWindowPoints(HWND_DESKTOP, ((LPNMHDR)lParam)->hwndFrom, &ht.pt, 1);
+							TreeView_HitTest(((LPNMHDR)lParam)->hwndFrom, &ht);
+							if (TVHT_ONITEMSTATEICON & ht.flags) {
+                                PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom, (LPARAM)ht.hItem);
+                                return FALSE;
+							}
+						}
+						break;
+					case TVN_KEYDOWN:
+						 if (((LPNMTVKEYDOWN) lParam)->wVKey == VK_SPACE)
+								PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom,
+								(LPARAM)TreeView_GetSelection(((LPNMHDR)lParam)->hwndFrom));
+						break;
+					case TVN_SELCHANGED:
+						{
+							LPNMTREEVIEW pnmtv = (LPNMTREEVIEW) lParam;
+							HWND hLstView = GetDlgItem(hwndDlg, IDC_PROTOLIST);
+							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(hLstView, (HTREEITEM) NULL);
+							SaveProtoSettings(hwndDlg, currentProtoItem);
+							UpdateFilenameInfo(hwndDlg, proto);
+						}
+						break;
+				}
+				break;
+			}
 			switch (((LPNMHDR) lParam)->code) {
 			case PSN_APPLY:
 				i = 0;
@@ -631,6 +704,8 @@ static BOOL CALLBACK IEViewTemplatesOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wP
 				Options::setSRMMCSSFile(path);
 				GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
 				Options::setSRMMCSSFileRTL(path);
+				SaveProtoSettings(hwndDlg, currentProtoItem);
+				Options::saveProtocolSettings();
 				return TRUE;
 			}
 		}
@@ -1084,12 +1159,203 @@ char *Options::historyCSSFilenameRTL = NULL;
 char *Options::historyTemplatesFilename = NULL;
 char *Options::historyTemplatesFilenameRTL = NULL;
 
-ProtocolOptions *Options::protocolList = NULL;
+ProtocolSettings *Options::protocolList = NULL;
+
+ProtocolSettings::ProtocolSettings(const char *protocolName) {
+	this->protocolName = Utils::dupString(protocolName);
+	next = NULL;
+	enable = false;
+	cssFilename = Utils::dupString("");
+	cssFilenameRtl = Utils::dupString("");
+	templateFilename = Utils::dupString("");
+	templateFilenameRtl = Utils::dupString("");
+
+	cssFilenameTemp = Utils::dupString("");
+	cssFilenameRtlTemp = Utils::dupString("");
+	templateFilenameTemp = Utils::dupString("");
+	templateFilenameRtlTemp = Utils::dupString("");
+}
+
+ProtocolSettings::~ProtocolSettings() {
+	if (cssFilename != NULL) {
+		delete cssFilename;
+	}
+	if (cssFilenameRtl != NULL) {
+		delete cssFilenameRtl;
+	}
+	if (cssFilenameTemp != NULL) {
+		delete cssFilenameTemp;
+	}
+	if (cssFilenameRtlTemp != NULL) {
+		delete cssFilenameRtlTemp;
+	}
+	if (templateFilename != NULL) {
+		delete templateFilename;
+	}
+	if (templateFilenameRtl != NULL) {
+		delete templateFilenameRtl;
+	}
+	if (templateFilenameTemp != NULL) {
+		delete templateFilenameTemp;
+	}
+	if (templateFilenameRtlTemp != NULL) {
+		delete templateFilenameRtlTemp;
+	}
+}
+
+void ProtocolSettings::copyToTemp() {
+	setTemplateFilenameTemp(getTemplateFilename());
+	setTemplateFilenameRtlTemp(getTemplateFilenameRtl());
+	setEnableTemp(isEnable());
+}
+
+void ProtocolSettings::copyFromTemp() {
+	setTemplateFilename(getTemplateFilenameTemp());
+	setTemplateFilenameRtl(getTemplateFilenameRtlTemp());
+	setEnable(isEnableTemp());
+}
+
+void ProtocolSettings::setNext(ProtocolSettings *next) {
+	this->next = next;
+}
+
+void ProtocolSettings::setCssFilename(const char *filename) {
+	if (cssFilename != NULL) {
+		delete cssFilename;
+	}
+	cssFilename = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setCssFilenameRtl(const char *filename) {
+	if (cssFilenameRtl != NULL) {
+		delete cssFilenameRtl;
+	}
+	cssFilenameRtl = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setTemplateFilename(const char *filename) {
+	if (templateFilename != NULL) {
+		delete templateFilename;
+	}
+	templateFilename = Utils::dupString(filename);
+	TemplateMap::loadTemplates(getTemplateFilename(), getTemplateFilename());
+}
+
+void ProtocolSettings::setTemplateFilenameRtl(const char *filename) {
+	if (templateFilenameRtl != NULL) {
+		delete templateFilenameRtl;
+	}
+	templateFilenameRtl = Utils::dupString(filename);
+	TemplateMap::loadTemplates(getTemplateFilenameRtl(), getTemplateFilenameRtl());
+}
+
+void ProtocolSettings::setTemplateFilenameTemp(const char *filename) {
+	if (templateFilenameTemp != NULL) {
+		delete templateFilenameTemp;
+	}
+	templateFilenameTemp = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setTemplateFilenameRtlTemp(const char *filename) {
+	if (templateFilenameRtlTemp != NULL) {
+		delete templateFilenameRtlTemp;
+	}
+	templateFilenameRtlTemp = Utils::dupString(filename);
+}
+
+const char *ProtocolSettings::getProtocolName() {
+	return protocolName;
+}
+
+ProtocolSettings * ProtocolSettings::getNext() {
+	return next;
+}
+
+const char *ProtocolSettings::getTemplateFilename() {
+	return templateFilename;
+}
+
+const char *ProtocolSettings::getTemplateFilenameRtl() {
+	return templateFilenameRtl;
+}
+
+const char *ProtocolSettings::getTemplateFilenameTemp() {
+	return templateFilenameTemp;
+}
+
+const char *ProtocolSettings::getTemplateFilenameRtlTemp() {
+	return templateFilenameRtlTemp;
+}
+
+
+void ProtocolSettings::setEnable(bool enable) {
+	this->enable = enable;
+}
+
+bool ProtocolSettings::isEnable() {
+	return enable;
+}
+
+void ProtocolSettings::setEnableTemp(bool enable) {
+	this->enableTemp = enable;
+}
+
+bool ProtocolSettings::isEnableTemp() {
+	return enableTemp;
+}
+
 
 void Options::init() {
 	if (isInited) return;
 	isInited = true;
 	DBVARIANT dbv;
+
+	/* TODO: move to buildProtocolList method */
+	int protoCount;
+	PROTOCOLDESCRIPTOR **pProtos;
+	ProtocolSettings *lastProto = NULL;
+	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&protoCount, (LPARAM)&pProtos);
+	for (int i = 0; i < protoCount+1; i++) {
+		ProtocolSettings *proto;
+		char tmpPath[MAX_PATH];
+		char dbsName[256];
+		if (i==0) {
+			proto = new ProtocolSettings("_default_");
+			proto->setEnable(true);
+		} else if ((pProtos[i-1]->type == PROTOTYPE_PROTOCOL) && strcmp(pProtos[i-1]->szName,"MetaContacts")) {
+			proto = new ProtocolSettings(pProtos[i-1]->szName);
+			sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_ENABLE);
+			proto->setEnable(DBGetContactSettingByte(NULL, ieviewModuleName, dbsName, FALSE));
+		} else {
+			continue;
+		}
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_TEMPLATE);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+			if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setTemplateFilename(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_TEMPLATE_RTL);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+			if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setTemplateFilenameRtl(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+		proto->copyToTemp();
+		if (lastProto != NULL) {
+			lastProto->setNext(proto);
+		} else {
+			protocolList = proto;
+		}
+		lastProto = proto;
+	}
+
 	bMathModule = (bool) ServiceExists(MTH_GET_GIF_UNICODE);
 	bSmileyAdd = (bool) ServiceExists(MS_SMILEYADD_BATCHPARSE);
 	avatarServiceFlags = 0;
@@ -1482,4 +1748,49 @@ bool Options::isSmileyAdd() {
 
 int Options::getAvatarServiceFlags() {
 	return avatarServiceFlags;
+}
+
+ProtocolSettings * Options::getProtocolSettings() {
+	return protocolList;
+}
+
+ProtocolSettings * Options::getProtocolSettings(const char *protocolName) {
+	for (ProtocolSettings *proto=protocolList;proto!=NULL;proto=proto->getNext()) {
+		if (!strcmpi(proto->getProtocolName(), protocolName)) {
+			return proto;
+		}
+	}
+	return NULL;
+}
+
+void Options::resetProtocolSettings() {
+	for (ProtocolSettings *proto=Options::getProtocolSettings();proto!=NULL;proto=proto->getNext()) {
+		proto->copyToTemp();
+	}
+}
+
+void Options::saveProtocolSettings() {
+	ProtocolSettings *proto;
+	int i;
+	for (i=0,proto=Options::getProtocolSettings();proto!=NULL;proto=proto->getNext(),i++) {
+		char dbsName[256];
+		char tmpPath[MAX_PATH];
+		proto->copyFromTemp();
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_ENABLE);
+		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->isEnable());
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_TEMPLATE);
+		strcpy (tmpPath, proto->getTemplateFilename());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getTemplateFilename(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_TEMPLATE_RTL);
+		strcpy (tmpPath, proto->getTemplateFilenameRtl());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getTemplateFilenameRtl(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+	//	sprintf(dbsName, "%s", proto->getProtocolName());
+//		sprintf(dbsName, "%s.RTL", proto->getProtocolName());
+	}
 }

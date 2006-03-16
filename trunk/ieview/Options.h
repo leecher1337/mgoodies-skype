@@ -18,6 +18,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
+class ProtocolSettings;
+class Options;
 #ifndef OPTIONS_INCLUDED
 #define OPTIONS_INCLUDED
 //#include "FontList.h"
@@ -43,14 +45,54 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DBS_HISTORYTEMPLATESFILE_RTL "HistoryTemplatesFileRTL"
 
 
+#define DBS_SRMM_ENABLE          	"SRMMEnable"
+#define DBS_SRMM_TEMPLATE         	"SRMMTemplateFile"
+#define DBS_SRMM_TEMPLATE_RTL     	"SRMMTemplateFileRTL"
+
+
 extern int IEViewOptInit(WPARAM wParam, LPARAM lParam);
 
-class ProtocolOptions {
+class ProtocolSettings {
 private:
+	bool enable;
+	bool enableTemp;
+	char *protocolName;
 	char *cssFilename;
 	char *cssFilenameRtl;
 	char *templateFilename;
 	char *templateFilenameRtl;
+
+	char *cssFilenameTemp;
+	char *cssFilenameRtlTemp;
+	char *templateFilenameTemp;
+	char *templateFilenameRtlTemp;
+
+	ProtocolSettings *next;
+public:
+	ProtocolSettings(const char *protocolName);
+	~ProtocolSettings();
+	void	setNext(ProtocolSettings *next);
+	void	setEnable(bool enable);
+	void	setCssFilename(const char *filename);
+	void	setCssFilenameRtl(const char *filename);
+	void	setTemplateFilename(const char *filename);
+	void	setTemplateFilenameRtl(const char *filename);
+	const char *getProtocolName();
+	ProtocolSettings *getNext();
+	bool	isEnable();
+	const char *getTemplateFilename();
+	const char *getTemplateFilenameRtl();
+
+	void	setEnableTemp(bool enable);
+	void	setTemplateFilenameTemp(const char *filename);
+	void	setTemplateFilenameRtlTemp(const char *filename);
+	bool	isEnableTemp();
+	const char *getTemplateFilenameTemp();
+	const char *getTemplateFilenameRtlTemp();
+
+	void 	copyToTemp();
+	void	copyFromTemp();
+
 };
 
 class Options {
@@ -78,7 +120,7 @@ private:
 	static bool     bMathModule;
 	static bool     bSmileyAdd;
 	static int      avatarServiceFlags;
-	static ProtocolOptions* protocolList;
+	static ProtocolSettings* protocolList;
 
 public:
 	enum OPTIONS {
@@ -141,6 +183,10 @@ public:
    	static bool             isSmileyAdd();
    	static int				getAvatarServiceFlags();
    	static void      		init();
+	static void				saveProtocolSettings();
+	static void				resetProtocolSettings();
+   	static ProtocolSettings*getProtocolSettings();
+   	static ProtocolSettings*getProtocolSettings(const char *protocolName);
 };
 
 #endif

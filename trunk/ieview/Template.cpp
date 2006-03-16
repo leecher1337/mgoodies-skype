@@ -222,14 +222,19 @@ void TemplateMap::clear() {
 		delete ptr;
 	}
 }
-bool TemplateMap::loadTemplateFile(const char *proto, const char *filename, bool onlyInfo) {
+
+TemplateMap* TemplateMap::loadTemplateFile(const char *proto, const char *filename, bool onlyInfo) {
 	FILE* fh;
 	char lastTemplate[1024], tmp2[1024];
 	char pathstring[500];
-
-	TemplateMap *tmap = TemplateMap::add(proto, filename);
+	TemplateMap *tmap;
+	tmap = TemplateMap::getTemplateMap(proto);
+	if (tmap!=NULL && !strcmpi(tmap->getFilename(), filename)) {
+		return tmap;
+	}
+	tmap = TemplateMap::add(proto, filename);
 	if (filename == NULL || strlen(filename) == 0) {
-		return false;
+		return NULL;
 	}
 	strcpy(pathstring, filename);
 	char* pathrun = pathstring + strlen(pathstring);
@@ -239,7 +244,7 @@ bool TemplateMap::loadTemplateFile(const char *proto, const char *filename, bool
 
 	fh = fopen(filename, "rt");
 	if (fh == NULL) {
-		return false;
+		return NULL;
 	}
 	char store[4096];
 	bool wasTemplate = false;
@@ -313,7 +318,7 @@ bool TemplateMap::loadTemplateFile(const char *proto, const char *filename, bool
 			break;
 		}
 	}
-	return true;
+	return tmap;
 }
 
 bool TemplateMap::isGrouping() {
@@ -362,8 +367,8 @@ void TemplateMap::setFilename(const char *filename) {
 	Utils::convertPath(this->filename);
 }
 
-void TemplateMap::loadTemplates(const char *proto, const char *filename) {
-	loadTemplateFile(proto, filename, false);
+TemplateMap* TemplateMap::loadTemplates(const char *proto, const char *filename) {
+	return loadTemplateFile(proto, filename, false);
 }
 
 
