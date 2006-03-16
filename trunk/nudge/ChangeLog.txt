@@ -1,3 +1,11 @@
+0.0.1.2
+===========
++ Add the right url for updater, now that nudge is on FL.
+
+0.0.1.1
+===========
+:( skipped
+
 0.0.1.0
 ===========
 * Some modifications of the option page.
