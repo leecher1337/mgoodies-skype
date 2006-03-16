@@ -73,7 +73,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define IDC_MODE_COMPATIBLE				1060
 #define IDC_MODE_CSS					1061
 #define IDC_MODE_TEMPLATE				1062
-#define IDC_PROTOLIST					1061
+#define IDC_PROTOLIST					1063
 
 #define IDC_LIBNAME                     1070
 #define IDC_LIBAUTHOR                   1071
