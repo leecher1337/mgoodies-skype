@@ -1,6 +1,11 @@
-My Details 0.0.0.38
+My Details 0.0.0.39
 
 Changelog:
+
+. 0.0.0.39
+  * Reverted to show menus on key up
+  + Using miranda lists now. This version only works with newer versions of miranda
+  * Fixed call to NAS with parsed variables
 
 . 0.0.0.38
   * Fix for international languages
