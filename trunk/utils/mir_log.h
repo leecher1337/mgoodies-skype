@@ -29,7 +29,7 @@ extern "C"
 #endif
 
 
-int log(const char *function, const char *fmt, ...);
+int log(const char *module, const char *function, const char *fmt, ...);
 
 
 

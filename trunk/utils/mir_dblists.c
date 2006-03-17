@@ -19,6 +19,7 @@ Boston, MA 02111-1307, USA.
 
 
 #include "mir_dblists.h"
+#include "mir_memory.h"
 
 #include <stdio.h>
 
@@ -57,7 +58,7 @@ void List_DestroyFreeContents( SortedList* p_list )
 		{
 			if ( p_list->items[i] != NULL )
 			{
-				free( p_list->items[i] );
+				mir_free( p_list->items[i] );
 			}
 		}
 	}
@@ -112,7 +113,7 @@ int List_RemoveByValueFreeContents( SortedList* p_list, void* p_value )
 		{
 			if ( List_Compare( p_list, p_list->items[ i ], p_value ) )
 			{
-				free( p_list->items[ i ] );
+				mir_free( p_list->items[ i ] );
 				ret += List_Remove( p_list, i );
 			}
 		}
