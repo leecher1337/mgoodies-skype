@@ -8,6 +8,9 @@ extern HICON hNewMailIcon;
 extern HICON hConnectFailIcon;
 extern HICON hTopToolBarUp;
 extern HICON hTopToolBarDown;
+extern HANDLE hMenuItemMain;
+extern HANDLE hMenuItemCont;
+extern HANDLE hMenuItemContApp;
 
 
 //MessageWndCS
@@ -305,9 +308,6 @@ static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn")) 
 	{	
 		CLISTMENUITEM mi = {0};
-		extern HANDLE hMenuItemMain;
-		extern HANDLE hMenuItemCont;
-		extern HANDLE hMenuItemContApp;
 
 		hYamnIcon = temp;
 
@@ -318,8 +318,21 @@ static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemMain, (LPARAM)&mi);
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemCont, (LPARAM)&mi);
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemContApp, (LPARAM)&mi);
-	}
 
+		//Icon to show in contact list
+		DBVARIANT dbv;
+		if(!DBGetContactSetting(NULL,"SkinIcons","YAMN_Neutral",&dbv)) 
+		{
+			DBWriteContactSettingString(NULL, "Icons", "YAMN40072", (char *)dbv.pszVal);			
+			DBFreeVariant(&dbv);
+		}
+		else
+			DBWriteContactSettingString(NULL,"Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
+
+		CallService(ME_SKIN_ICONSCHANGED,0,0);
+
+	
+	}
 
 	return 0;
 }

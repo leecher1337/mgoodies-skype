@@ -1,3 +1,8 @@
+0.0.1.6
+============
+* Try to update all icons when changing in icolib.
+! Allow scrolling in list of email account. (Patch by Jazzy)
+
 0.0.1.5
 ============
 ! Bug fix with help.dll problem. (Patch by Jazzy)

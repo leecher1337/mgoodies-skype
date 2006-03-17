@@ -2,7 +2,7 @@
 #define __MAIN_H
 
 //For updater
-#define YAMN_9x
+//#define YAMN_9x
 #ifdef YAMN_9x
 	#define YAMN_SHORTNAME "YAMN tweety win9x"
 	#define YAMN_FILENAME "yamn_9x"
