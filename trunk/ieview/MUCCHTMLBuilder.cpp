@@ -159,7 +159,7 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	    bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
 		inColor = outColor = bkgColor;
 		if (Options::getGroupChatFlags() & Options::LOG_IMAGE_ENABLED) {
-			const char *bkgImageFilename = Options::getBkgImageFile();
+			const char *bkgImageFilename = "";//Options::getBkgImageFile();
 			Utils::appendText(&output, &outputSize, ".body {padding: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
 			Options::getGroupChatFlags() & Options::LOG_IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
 		} else {
