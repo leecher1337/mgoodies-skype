@@ -871,7 +871,6 @@ void IEView::appendEventOld(IEVIEWEVENT *event) {
 	dwLogFlags = event->dwFlags;
 	iLogCodepage = event->codepage;
 	if (clearRequired) {
-		MessageBoxA(NULL, "clear required", "AS", MB_OK);
 		clear();
 	}
 	if (builder!=NULL) {

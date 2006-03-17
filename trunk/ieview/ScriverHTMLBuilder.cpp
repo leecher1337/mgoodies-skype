@@ -171,7 +171,7 @@ char *ScriverHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int gro
 
 
 void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
- 	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
+ 	if (Options::getSRMMMode() == Options::MODE_TEMPLATE) {
 		buildHeadTemplate(view, event);
 		return;
 	}
@@ -179,9 +179,15 @@ void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
- 	if (Options::getSRMMFlags() & Options::CSS_ENABLED) {
-	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? Options::getSRMMCSSFileRTL() : Options::getSRMMCSSFile();
+ 	if (Options::getSRMMMode() == Options::MODE_CSS) {
+ 		char *szRealProto = getRealProto(event->hContact);
+		ProtocolSettings *protoSettings =  getProtocolSettings(szRealProto);
+		if (protoSettings == NULL) {
+			return;
+		}
+	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getSRMMCssFilenameRtl() : protoSettings->getSRMMCssFilename();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n", externalCSS);
+        delete szRealProto;
 	} else {
 		HDC hdc = GetDC(NULL);
 	    int logPixelSY = GetDeviceCaps(hdc, LOGPIXELSY);
@@ -196,17 +202,17 @@ void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		inColor= (((inColor & 0xFF) << 16) | (inColor & 0xFF00) | ((inColor & 0xFF0000) >> 16));
 		outColor= (((outColor & 0xFF) << 16) | (outColor & 0xFF00) | ((outColor & 0xFF0000) >> 16));
 	    lineColor= (((lineColor & 0xFF) << 16) | (lineColor & 0xFF00) | ((lineColor & 0xFF0000) >> 16));
-		if (Options::getSRMMFlags() & Options::IMAGE_ENABLED) {
+		if (Options::getSRMMFlags() & Options::LOG_IMAGE_ENABLED) {
 			const char *bkgImageFilename = Options::getBkgImageFile();
 			Utils::appendText(&output, &outputSize, ".body {padding: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
-			Options::getSRMMFlags() & Options::IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
+			Options::getSRMMFlags() & Options::LOG_IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
 		} else {
 			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; overflow: auto;}\n",
 				 	     (int) bkgColor);
 		}
 		Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
 		Utils::appendText(&output, &outputSize, ".img {vertical-align: middle;}\n");
-		if (Options::getSRMMFlags() & Options::IMAGE_ENABLED) {
+		if (Options::getSRMMFlags() & Options::LOG_IMAGE_ENABLED) {
 			Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
 			Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
 			Utils::appendText(&output, &outputSize, ".divInGrid {padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X}\n", (int) lineColor);
@@ -393,7 +399,7 @@ void ScriverHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 }
 
 void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
- 	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
+ 	if (Options::getSRMMMode() == Options::MODE_TEMPLATE) {
 		appendEventTemplate(view, event);
 	} else {
 		appendEventNonTemplate(view, event);
