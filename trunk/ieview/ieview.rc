@@ -108,9 +108,9 @@ BEGIN
 
     CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP |
                     TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER |
-                    WS_TABSTOP,10,37,100,120
+                    WS_TABSTOP,10,37,100,121
 
-    CONTROL         "Background image",IDC_SCROLL_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
+    CONTROL         "Background image",IDC_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,118,36,70,10
     CONTROL         "Scroll with text",IDC_SCROLL_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,190,36,110,10

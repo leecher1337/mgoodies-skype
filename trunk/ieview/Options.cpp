@@ -476,99 +476,33 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			case IDC_BROWSE_TEMPLATES:
-				{
-					//if (BrowseFile(hwndDlg,
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "ivt";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
 			case IDC_BROWSE_TEMPLATES_RTL:
-				{
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "ivt";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
 			case IDC_BROWSE_BACKGROUND_IMAGE:
-				{
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "All Images (*.jpg,*.gif,*.png,*.bmp)\0*.jpg;*.gif;*.png;*.bmp\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "jpg";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg,IDC_BACKGROUND_IMAGE_FILENAME,path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+				if (BrowseFile(hwndDlg, "All Images (*.jpg,*.gif,*.png,*.bmp)\0*.jpg;*.gif;*.png;*.bmp\0All Files\0*.*\0\0", "jpg", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg,IDC_BACKGROUND_IMAGE_FILENAME,path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS:
-				{
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "css";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS_RTL:
-				{
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "css";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
 			case IDC_MODE_COMPATIBLE:
