@@ -92,16 +92,13 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	if (protoSettings == NULL) {
 		return;
 	}
-	TemplateMap *tmpm = TemplateMap::getTemplateMap((event->dwFlags & IEEF_RTL) ? protoSettings->getTemplateFilenameRtl() : protoSettings->getTemplateFilename());
-//	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("srmm_default_rtl") : TemplateMap::getTemplateMap("srmm_default");
+	TemplateMap *tmpm = TemplateMap::getTemplateMap((event->dwFlags & IEEF_RTL) ? protoSettings->getSRMMTemplateFilenameRtl() : protoSettings->getSRMMTemplateFilename());
 	if (tmpm!=NULL) {
     	strcpy(tempBase, tmpm->getFilename());
     	char* pathrun = tempBase + strlen(tempBase);
     	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > tempBase)) pathrun--;
     	pathrun++;
     	*pathrun = '\0';
-	} else {
-		MessageBoxA(NULL, "DUPA!!!", protoSettings->getTemplateFilename(), MB_OK);
 	}
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
@@ -185,7 +182,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
         szNickOut = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
 	}
 
-	Template *tmplt = TemplateMap::getTemplate((event->dwFlags & IEEF_RTL) ? protoSettings->getTemplateFilenameRtl() : protoSettings->getTemplateFilename(), "HTMLStart");
+	Template *tmplt = TemplateMap::getTemplate((event->dwFlags & IEEF_RTL) ? protoSettings->getSRMMTemplateFilenameRtl() : protoSettings->getSRMMTemplateFilename(), "HTMLStart");
 
 	if (tmplt!=NULL) {
 		for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
@@ -612,8 +609,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 	if (protoSettings == NULL) {
 		return;
 	}
-	TemplateMap *tmpm = TemplateMap::getTemplateMap((event->dwFlags & IEEF_RTL) ? protoSettings->getTemplateFilenameRtl() : protoSettings->getTemplateFilename());
-//	TemplateMap *tmpm = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplateMap("srmm_default_rtl") : TemplateMap::getTemplateMap("srmm_default");
+	TemplateMap *tmpm = TemplateMap::getTemplateMap((event->dwFlags & IEEF_RTL) ? protoSettings->getSRMMTemplateFilenameRtl() : protoSettings->getSRMMTemplateFilename());
 	if (tmpm!=NULL) {
     	strcpy(tempBase, tmpm->getFilename());
     	char* pathrun = tempBase + strlen(tempBase);
@@ -783,7 +779,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 			for (int i=0;i<2;i++) {
 				Template *tmplt;
 				if (tmpltName[i] == NULL) continue;
-				tmplt = TemplateMap::getTemplate((event->dwFlags & IEEF_RTL) ? protoSettings->getTemplateFilenameRtl() : protoSettings->getTemplateFilename(), tmpltName[i]);
+				tmplt = TemplateMap::getTemplate((event->dwFlags & IEEF_RTL) ? protoSettings->getSRMMTemplateFilenameRtl() : protoSettings->getSRMMTemplateFilename(), tmpltName[i]);
 				if (tmplt == NULL) continue;
 				for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
 					const char *tokenVal;

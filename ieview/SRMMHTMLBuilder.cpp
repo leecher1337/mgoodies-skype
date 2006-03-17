@@ -111,7 +111,7 @@ void SRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	char *output = NULL;
 	int outputSize;
  	if (Options::getSRMMFlags() & Options::CSS_ENABLED) {
-	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? Options::getExternalCSSFileRTL() : Options::getExternalCSSFile();
+	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getCssFilenameRtl() : protoSettings->getCssFilename();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n",externalCSS);
 	} else {
 		HDC hdc = GetDC(NULL);

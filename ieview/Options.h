@@ -27,17 +27,15 @@ class Options;
 
 #define DBS_BASICFLAGS  		  	"GeneralFlags"
 
+#define DBS_SRMMMODE		  	  	"SRMMMode"
 #define DBS_SRMMFLAGS		  	  	"SRMMFlags"
 #define DBS_BACKGROUNDIMAGEFILE   	"BackgroundImageFile"
-#define DBS_EXTERNALCSSFILE       	"ExternalCSSFile"
-#define DBS_EXTERNALCSSFILE_RTL   	"ExternalCSSFileRTL"
-#define DBS_TEMPLATESFILE         	"TemplatesFile"
-#define DBS_TEMPLATESFILE_RTL     	"TemplatesFileRTL"
 
 #define DBS_GROUPCHATFLAGS        	"GroupChatFlags"
 #define DBS_GROUPCHATCSSFILE      	"GroupChatCSSFile"
 #define DBS_GROUPCHATTEMPLATESFILE  "GroupChatTemplatesFile"
 
+#define DBS_HISTORYMODE		  	 	 "HistoryMode"
 #define DBS_HISTORYFLAGS		  	 "HistoryFlags"
 #define DBS_HISTORYCSSFILE      	 "HistoryCSSFile"
 #define DBS_HISTORYCSSFILE_RTL     	 "HistoryCSSFileRTL"
@@ -46,6 +44,9 @@ class Options;
 
 
 #define DBS_SRMM_ENABLE          	"SRMMEnable"
+#define DBS_SRMM_FLAGS          	"SRMMFlags"
+#define DBS_SRMM_CSS         		"SRMMCSSFile"
+#define DBS_SRMM_CSS_RTL     		"SRMMCSSFileRTL"
 #define DBS_SRMM_TEMPLATE         	"SRMMTemplateFile"
 #define DBS_SRMM_TEMPLATE_RTL     	"SRMMTemplateFileRTL"
 
@@ -57,38 +58,51 @@ private:
 	bool enable;
 	bool enableTemp;
 	char *protocolName;
-	char *cssFilename;
-	char *cssFilenameRtl;
-	char *templateFilename;
-	char *templateFilenameRtl;
+	char *srmmCssFilename;
+	char *srmmCssFilenameRtl;
+	char *srmmTemplateFilename;
+	char *srmmTemplateFilenameRtl;
 
-	char *cssFilenameTemp;
-	char *cssFilenameRtlTemp;
-	char *templateFilenameTemp;
-	char *templateFilenameRtlTemp;
+	char *srmmCssFilenameTemp;
+	char *srmmCssFilenameRtlTemp;
+	char *srmmTemplateFilenameTemp;
+	char *srmmTemplateFilenameRtlTemp;
+	int flags;
+	int flagsTemp;
 
 	ProtocolSettings *next;
 public:
 	ProtocolSettings(const char *protocolName);
 	~ProtocolSettings();
 	void	setNext(ProtocolSettings *next);
-	void	setEnable(bool enable);
-	void	setCssFilename(const char *filename);
-	void	setCssFilenameRtl(const char *filename);
-	void	setTemplateFilename(const char *filename);
-	void	setTemplateFilenameRtl(const char *filename);
 	const char *getProtocolName();
 	ProtocolSettings *getNext();
+	void	setEnable(bool enable);
 	bool	isEnable();
-	const char *getTemplateFilename();
-	const char *getTemplateFilenameRtl();
+	void	setFlags(int flags);
+	int		getFlags();
+	void	setSRMMCssFilename(const char *filename);
+	const char *getSRMMCssFilename();
+	void	setSRMMCssFilenameRtl(const char *filename);
+	const char *getSRMMCssFilenameRtl();
+	void	setSRMMTemplateFilename(const char *filename);
+	const char *getSRMMTemplateFilename();
+	void	setSRMMTemplateFilenameRtl(const char *filename);
+	const char *getSRMMTemplateFilenameRtl();
 
+	void	setFlagsTemp(int flags);
+	int		getFlagsTemp();
 	void	setEnableTemp(bool enable);
-	void	setTemplateFilenameTemp(const char *filename);
-	void	setTemplateFilenameRtlTemp(const char *filename);
 	bool	isEnableTemp();
-	const char *getTemplateFilenameTemp();
-	const char *getTemplateFilenameRtlTemp();
+	void	setSRMMCssFilenameTemp(const char *filename);
+	const char *getSRMMCssFilenameTemp();
+	void	setSRMMCssFilenameRtlTemp(const char *filename);
+	const char *getSRMMCssFilenameRtlTemp();
+	void	setSRMMTemplateFilenameTemp(const char *filename);
+	const char *getSRMMTemplateFilenameTemp();
+	void	setSRMMTemplateFilenameRtlTemp(const char *filename);
+	const char *getSRMMTemplateFilenameRtlTemp();
+
 
 	void 	copyToTemp();
 	void	copyFromTemp();
@@ -99,12 +113,9 @@ class Options {
 private:
    	static int 		generalFlags;
    	static char *	bkgFilename;
-   	static char *	srmmCSSFilename;
-   	static char *	srmmCSSFilenameRTL;
 
-   	static char *	srmmTemplatesFilename;
-   	static char *	srmmTemplatesFilenameRTL;
    	static int 		srmmFlags;
+   	static int		srmmMode;
 
    	static int 		groupChatFlags;
    	static char *	groupChatCSSFilename;
@@ -123,43 +134,41 @@ private:
 	static ProtocolSettings* protocolList;
 
 public:
+	enum MODES {
+		MODE_COMPATIBLE = 0,
+		MODE_CSS = 1,
+		MODE_TEMPLATE = 2
+	};
 	enum OPTIONS {
-		GENERAL_ENABLE_BBCODES	= 1,
-		GENERAL_ENABLE_MATHMODULE = 2,
-		GENERAL_ENABLE_FLASH = 4,
-		GENERAL_ENABLE_PNGHACK = 8,
-		GENERAL_SMILEYINNAMES  = 16,
+		GENERAL_ENABLE_BBCODES	= 0x000001,
+		GENERAL_ENABLE_MATHMODULE = 0x000002,
+		GENERAL_ENABLE_FLASH 	= 0x000004,
+		GENERAL_ENABLE_PNGHACK 	= 0x000008,
+		GENERAL_SMILEYINNAMES  	= 0x000010,
 
-		IMAGE_ENABLED         = 1,
-		IMAGE_SCROLL          = 2,
-		CSS_ENABLED  		  = 4,
-		TEMPLATES_ENABLED	  = 8,
+		LOG_SHOW_NICKNAMES    	= 0x000100,
+		LOG_SHOW_TIME         	= 0x000200,
+		LOG_SHOW_DATE         	= 0x000400,
+		LOG_SHOW_SECONDS      	= 0x000800,
+		LOG_LONG_DATE         	= 0x001000,
+		LOG_RELATIVE_DATE     	= 0x002000,
+		LOG_GROUP_MESSAGES	  	= 0x004000,
 
-		LOG_SHOW_NICKNAMES    = 0x0100,
-		LOG_SHOW_TIME         = 0x0200,
-		LOG_SHOW_DATE         = 0x0400,
-		LOG_SHOW_SECONDS      = 0x0800,
-		LOG_LONG_DATE         = 0x1000,
-		LOG_RELATIVE_DATE     = 0x2000,
-		LOG_GROUP_MESSAGES	  = 0x4000,
+		LOG_IMAGE_ENABLED		= 0x010000,
+		LOG_IMAGE_SCROLL        = 0x020000
+
 	};
 	enum AVATARSERVICEFLAGS {
 		AVATARSERVICE_PRESENT     = 0x0001,
 	};
    	static void     		setGeneralFlags(int flags);
    	static int				getGeneralFlags();
-   	static void     		setBkgImageFile(const char *filename);
-   	static const char *		getBkgImageFile();
-   	static void      		setSRMMCSSFile(const char *filename);
-   	static const char *		getSRMMCSSFile();
-   	static void      		setSRMMCSSFileRTL(const char *filename);
-   	static const char *		getSRMMCSSFileRTL();
-   	static void     		setSRMMTemplatesFileRTL(const char *filename);
-   	static void     		setSRMMTemplatesFile(const char *filename);
-   	static const char *		getSRMMTemplatesFile();
-   	static const char *		getSRMMTemplatesFileRTL();
+   	static void				setSRMMMode(int mode);
+   	static int				getSRMMMode();
    	static void				setSRMMFlags(int flags);
    	static int				getSRMMFlags();
+   	static void     		setBkgImageFile(const char *filename);
+   	static const char *		getBkgImageFile();
 
    	static void      		setGroupChatCSSFile(const char *filename);
    	static const char *		getGroupChatCSSFile();
