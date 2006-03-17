@@ -21,7 +21,7 @@ TemplateHTMLBuilder::TemplateHTMLBuilder() {
 	groupTemplate = NULL;
 }
 
-char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
+char *TemplateHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int mode)
 {
     static char szResult[512];
     char str[80];
@@ -30,7 +30,7 @@ char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
     dbtts.szDest = str;
     szResult[0] = '\0';
 	if (mode) { //time
-		dbtts.szFormat = (Options::getSRMMFlags() & Options::LOG_SHOW_SECONDS) ? (char *)"s" : (char *)"t";
+		dbtts.szFormat = (dwFlags & Options::LOG_SHOW_SECONDS) ? (char *)"s" : (char *)"t";
 		CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
 	    strncat(szResult, str, 500);
 	} else {    //date
@@ -41,14 +41,14 @@ char *TemplateHTMLBuilder::timestampToString(time_t check, int mode)
         tm_today = tm_now;
         tm_today.tm_hour = tm_today.tm_min = tm_today.tm_sec = 0;
         today = mktime(&tm_today);
-        if (Options::getSRMMFlags() & Options::LOG_RELATIVE_DATE && check >= today) {
+        if (dwFlags & Options::LOG_RELATIVE_DATE && check >= today) {
             strcpy(szResult, Translate("Today"));
         }
-        else if(Options::getSRMMFlags() & Options::LOG_RELATIVE_DATE && check > (today - 86400)) {
+        else if(dwFlags & Options::LOG_RELATIVE_DATE && check > (today - 86400)) {
             strcpy(szResult, Translate("Yesterday"));
         }
         else {
-			dbtts.szFormat = (Options::getSRMMFlags() & Options::LOG_LONG_DATE) ? (char *)"D" : (char *)"d";
+			dbtts.szFormat = (dwFlags & Options::LOG_LONG_DATE) ? (char *)"D" : (char *)"d";
 			CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
 		    strncat(szResult, str, 500);
         }
@@ -102,7 +102,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	}
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
-	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
+	if (protoSettings->getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
 		szNameOut = getEncodedContactName(NULL, szProto, szRealProto);
 		szNameIn = getEncodedContactName(event->hContact, szProto, szRealProto);
 	} else {
@@ -620,7 +620,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 	}
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
-	if (Options::getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
+	if (protoSettings->getSRMMFlags() & Options::LOG_SHOW_NICKNAMES) {
 		szNameOut = getEncodedContactName(NULL, szProto, szRealProto);
 		szNameIn = getEncodedContactName(event->hContact, szProto, szRealProto);
 	} else {
@@ -709,7 +709,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 			int isSent = (eventData->dwFlags & IEEDF_SENT);
 			int isHistory = (eventData->time < (DWORD)getStartedTime() && (!(eventData->dwFlags & IEEDF_UNREAD) || eventData->dwFlags & IEEDF_SENT));
 			int isGroupBreak = TRUE;
- 		  	if ((Options::getSRMMFlags() & Options::LOG_GROUP_MESSAGES) && eventData->dwFlags == LOWORD(getLastEventType())
+ 		  	if ((protoSettings->getSRMMFlags() & Options::LOG_GROUP_MESSAGES) && eventData->dwFlags == LOWORD(getLastEventType())
 			  && eventData->iType == IEED_EVENT_MESSAGE && HIWORD(getLastEventType()) == IEED_EVENT_MESSAGE
 			  && (isSameDate(eventData->time, getLastEventTime()))
 //			  && ((eventData->time < today) == (getLastEventTime() < today))
@@ -750,7 +750,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 			}
 
 			if (eventData->iType == IEED_EVENT_MESSAGE) {
-                if (isGrouping && (Options::getSRMMFlags() & Options::LOG_GROUP_MESSAGES)) {
+                if (isGrouping && (protoSettings->getSRMMFlags() & Options::LOG_GROUP_MESSAGES)) {
                     if (isGroupBreak) {
               		    tmpltName[1] = isHistory ? isSent ? "hMessageOutGroupStart" : "hMessageInGroupStart" : isSent ? "MessageOutGroupStart" : "MessageInGroupStart";
                    	} else {
@@ -792,15 +792,15 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
                             tokenVal = szName;
 							break;
 						case Token::TIME:
-							if (Options::getSRMMFlags() & Options::LOG_SHOW_TIME) {
-	                            tokenVal = timestampToString(eventData->time, 1);
+							if (protoSettings->getSRMMFlags() & Options::LOG_SHOW_TIME) {
+	                            tokenVal = timestampToString(protoSettings->getSRMMFlags(), eventData->time, 1);
 							} else {
                                 tokenVal = "&nbsp;";
 							}
 							break;
 						case Token::DATE:
-							if (Options::getSRMMFlags() & Options::LOG_SHOW_DATE) {
-	                            tokenVal = timestampToString(eventData->time, 0);
+							if (protoSettings->getSRMMFlags() & Options::LOG_SHOW_DATE) {
+	                            tokenVal = timestampToString(protoSettings->getSRMMFlags(), eventData->time, 0);
 							} else {
                                 tokenVal = "&nbsp;";
 							}

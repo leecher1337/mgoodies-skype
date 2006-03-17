@@ -45,6 +45,7 @@ class Options;
 
 #define DBS_SRMM_ENABLE          	"SRMMEnable"
 #define DBS_SRMM_FLAGS          	"SRMMFlags"
+#define DBS_SRMM_BACKGROUND    		"SRMMBackgroundFile"
 #define DBS_SRMM_CSS         		"SRMMCSSFile"
 #define DBS_SRMM_CSS_RTL     		"SRMMCSSFileRTL"
 #define DBS_SRMM_TEMPLATE         	"SRMMTemplateFile"
@@ -55,22 +56,25 @@ extern int IEViewOptInit(WPARAM wParam, LPARAM lParam);
 
 class ProtocolSettings {
 private:
-	bool enable;
-	bool enableTemp;
 	char *protocolName;
+	ProtocolSettings *next;
+
+	bool enable;
+	int srmmFlags;
+	char *srmmBackgroundFilename;
 	char *srmmCssFilename;
 	char *srmmCssFilenameRtl;
 	char *srmmTemplateFilename;
 	char *srmmTemplateFilenameRtl;
 
+	bool enableTemp;
+	int srmmFlagsTemp;
+	char *srmmBackgroundFilenameTemp;
 	char *srmmCssFilenameTemp;
 	char *srmmCssFilenameRtlTemp;
 	char *srmmTemplateFilenameTemp;
 	char *srmmTemplateFilenameRtlTemp;
-	int flags;
-	int flagsTemp;
 
-	ProtocolSettings *next;
 public:
 	ProtocolSettings(const char *protocolName);
 	~ProtocolSettings();
@@ -79,8 +83,10 @@ public:
 	ProtocolSettings *getNext();
 	void	setEnable(bool enable);
 	bool	isEnable();
-	void	setFlags(int flags);
-	int		getFlags();
+	void	setSRMMFlags(int flags);
+	int		getSRMMFlags();
+	void	setSRMMBackgroundFilename(const char *filename);
+	const char *getSRMMBackgroundFilename();
 	void	setSRMMCssFilename(const char *filename);
 	const char *getSRMMCssFilename();
 	void	setSRMMCssFilenameRtl(const char *filename);
@@ -90,10 +96,12 @@ public:
 	void	setSRMMTemplateFilenameRtl(const char *filename);
 	const char *getSRMMTemplateFilenameRtl();
 
-	void	setFlagsTemp(int flags);
-	int		getFlagsTemp();
 	void	setEnableTemp(bool enable);
 	bool	isEnableTemp();
+	void	setSRMMFlagsTemp(int flags);
+	int		getSRMMFlagsTemp();
+	void	setSRMMBackgroundFilenameTemp(const char *filename);
+	const char *getSRMMBackgroundFilenameTemp();
 	void	setSRMMCssFilenameTemp(const char *filename);
 	const char *getSRMMCssFilenameTemp();
 	void	setSRMMCssFilenameRtlTemp(const char *filename);
@@ -112,7 +120,6 @@ public:
 class Options {
 private:
    	static int 		generalFlags;
-   	static char *	bkgFilename;
 
    	static int 		srmmFlags;
    	static int		srmmMode;
@@ -166,9 +173,7 @@ public:
    	static void				setSRMMMode(int mode);
    	static int				getSRMMMode();
    	static void				setSRMMFlags(int flags);
-   	static int				getSRMMFlags();
-   	static void     		setBkgImageFile(const char *filename);
-   	static const char *		getBkgImageFile();
+//   	static int				getSRMMFlags();
 
    	static void      		setGroupChatCSSFile(const char *filename);
    	static const char *		getGroupChatCSSFile();

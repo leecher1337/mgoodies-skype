@@ -96,15 +96,15 @@ STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Mode",IDC_SIMPLE,4,2,297,22
+    GROUPBOX        "Mode",IDC_SIMPLE,4,2,297,222
 
-    CONTROL         "Compatibility",IDC_MODE_COMPATIBLE,"Button",BS_AUTORADIOBUTTON,10,11,80,10
-    CONTROL         "External CSS",IDC_MODE_CSS,"Button",BS_AUTORADIOBUTTON,100,11,
+    CONTROL         "Compatibility Mode",IDC_MODE_COMPATIBLE,"Button",BS_AUTORADIOBUTTON,10,11,80,10
+    CONTROL         "Use External CSS",IDC_MODE_CSS,"Button",BS_AUTORADIOBUTTON,100,11,
                     80,10
-    CONTROL         "Template",IDC_MODE_TEMPLATE,"Button",BS_AUTORADIOBUTTON,200,
+    CONTROL         "Use Templates",IDC_MODE_TEMPLATE,"Button",BS_AUTORADIOBUTTON,200,
                     11,80,10
 
-    GROUPBOX        "Mode Settings",IDC_SIMPLE,4,26,297,138
+//    GROUPBOX        "Mode Settings",IDC_SIMPLE,4,26,297,198
 
     CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP |
                     TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER |
@@ -131,21 +131,21 @@ BEGIN
  	EDITTEXT        IDC_TEMPLATES_FILENAME_RTL,118,145,153,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE_TEMPLATES_RTL,278,145,15,11
 
-    GROUPBOX        "Template Options",IDC_SIMPLE,4,167,297,57
+    GROUPBOX        "Template Options",IDC_SIMPLE,10,161,284,57
     CONTROL         "Use message grouping", IDC_LOG_GROUP_MESSAGES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,12,178,125,10
+                    WS_TABSTOP,20,173,125,10
     CONTROL         "Show nicknames",IDC_LOG_SHOW_NICKNAMES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,12,188,125,10
+                    WS_TABSTOP,20,183,125,10
     CONTROL         "Show time",IDC_LOG_SHOW_TIME,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,12,198,125,10
+                    WS_TABSTOP,20,193,125,10
     CONTROL         "Show seconds",IDC_LOG_SHOW_SECONDS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,24,208,110,10
+                    WS_TABSTOP,30,203,110,10
     CONTROL         "Show date",IDC_LOG_SHOW_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,140,178,125,10
+                    WS_TABSTOP,140,173,125,10
     CONTROL         "Use long date format",IDC_LOG_LONG_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,152,188,110,10
+                    WS_TABSTOP,152,183,110,10
     CONTROL         "Use relative timestamp", IDC_LOG_RELATIVE_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,152,198,110,10
+                    WS_TABSTOP,152,193,110,10
 
 END
 

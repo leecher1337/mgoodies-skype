@@ -8,7 +8,7 @@ class TemplateHTMLBuilder;
 class TemplateHTMLBuilder:public HTMLBuilder
 {
 protected:
-	virtual char *timestampToString(time_t check, int mode);
+	virtual char *timestampToString(DWORD dwFlags, time_t check, int mode);
 	bool        isCleared;
 	time_t 		startedTime;
 	time_t 		getStartedTime();

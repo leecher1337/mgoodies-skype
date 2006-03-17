@@ -136,7 +136,7 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		COLORREF lineColor = DBGetContactSettingDword(NULL, HPPMOD, "LineColour", 0xFFFFFF);
 	    lineColor= 0;//(((lineColor & 0xFF) << 16) | (lineColor & 0xFF00) | ((lineColor & 0xFF0000) >> 16));
 		if (Options::getHistoryFlags() & Options::LOG_IMAGE_ENABLED) {
-			const char *bkgImageFilename = Options::getBkgImageFile();
+			const char *bkgImageFilename = "";//Options::getBkgImageFile();
 			Utils::appendText(&output, &outputSize, ".body {padding: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
 			Options::getHistoryFlags() & Options::LOG_IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
 		} else {
