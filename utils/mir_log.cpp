@@ -28,12 +28,9 @@ extern "C"
 #include <m_netlib.h>
 }
 
-#ifndef MODULE_NAME
-# define MODULE_NAME "UnknownModule"
-#endif
 
 
-int log(const char *function, const char *fmt, ...)
+int log(const char *module, const char *function, const char *fmt, ...)
 {
 #ifdef ENABLE_LOG
 
@@ -41,8 +38,8 @@ int log(const char *function, const char *fmt, ...)
     char text[1024];
 	size_t len;
 
-	mir_snprintf(text, sizeof(text) - 10, "[%08u - %08u] [" MODULE_NAME "] [%s] ", 
-				 GetCurrentThreadId(), GetTickCount(), function);
+	mir_snprintf(text, sizeof(text) - 10, "[%08u - %08u] [%s] [%s] ", 
+				 GetCurrentThreadId(), GetTickCount(), module, function);
 	len = strlen(text);
 
     va_start(va, fmt);
@@ -54,8 +51,10 @@ int log(const char *function, const char *fmt, ...)
     return CallService(MS_NETLIB_LOG, NULL, (LPARAM) text);
 
 #else
+	char file[256];
+	_snprintf(file, sizeof(file), "c:\\miranda_%s.log.txt", module);
 
-	FILE *fp = fopen("c:\\miranda_" MODULE_NAME ".log.txt","at");
+	FILE *fp = fopen(file,"at");
 
 	if (fp != NULL)
 	{
