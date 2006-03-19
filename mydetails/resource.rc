@@ -29,8 +29,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,39
- PRODUCTVERSION 0,0,0,39
+ FILEVERSION 0,0,0,40
+ PRODUCTVERSION 0,0,0,40
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -48,14 +48,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", " \0"
             VALUE "FileDescription", "MyDetails Miranda Plugin\0"
-            VALUE "FileVersion", "0, 0, 0, 38\0"
+            VALUE "FileVersion", "0, 0, 0, 40\0"
             VALUE "InternalName", "mydetails\0"
             VALUE "LegalCopyright", "Copyright © 2005 Ricardo Pescuma Domenecci\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "mydetails.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "\0"
-            VALUE "ProductVersion", "0, 0, 0, 38\0"
+            VALUE "ProductVersion", "0, 0, 0, 40\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -88,7 +88,7 @@ END
 IDD_OPTS DIALOGEX 0, 0, 316, 246
 STYLE WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "Tahoma", 0, 0, 0x1
+FONT 8, "Tahoma"
 BEGIN
     GROUPBOX        " General ",IDC_STATIC,7,7,302,70
     CONTROL         "Cycle through protocols every:",
@@ -120,7 +120,7 @@ BEGIN
     CONTROL         "Global on status message",IDC_GLOBAL_ON_STATUS_MESSAGE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,207,61,96,14
     GROUPBOX        " Frame Options ",IDC_STATIC,7,78,302,44
-    LTEXT           "Top: ",IDC_STATIC,16,91,41,11
+    LTEXT           "Top:",IDC_STATIC,16,91,41,11
     EDITTEXT        IDC_BORDER_TOP,59,89,35,12,ES_NUMBER
     CONTROL         "",IDC_BORDER_TOP_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
                     UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
@@ -150,7 +150,7 @@ BEGIN
     CONTROL         "",IDC_AVATAR_CUSTOM_SIZE_SPIN,"msctls_updown32",
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | 
                     UDS_NOTHOUSANDS | UDS_HOTTRACK,116,134,11,12
-    LTEXT           "pixels",IDC_STATIC,130,138,24,11
+    LTEXT           "pixels",IDC_STATIC,130,137,24,11
     CONTROL         "Allow it to grow",IDC_AVATAR_ALLOW_TO_GROW,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,174,137,106,9
     CONTROL         "Draw border on avatar",IDC_AVATAR_DRAW_BORDER,"Button",
