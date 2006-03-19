@@ -21,7 +21,7 @@ struct QueueItem
 {
 	HANDLE hContact;
 	DWORD check_time;
-	BOOL priority;
+	BOOL priority;		// If has to keep it in queue after other beeing fetched
 };
 
 
@@ -88,6 +88,15 @@ void FreePool()
 	mir_free(statusQueue.queue);
 }
 
+int UpdateDelay()
+{
+	int delay = max(50, DBGetContactSettingWord(NULL, MODULE_NAME, "UpdateDelay", UPDATE_DELAY));
+
+log(MODULE_NAME, "UpdateDelay", "Waiting %d s", delay);
+
+	return delay;
+}
+
 
 // Return true if this protocol has to be checked
 BOOL PoolCheckProtocol(const char *protocol)
@@ -117,7 +126,7 @@ void PoolStatusChangeAddContact(HANDLE hContact)
 {
 	char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 
-log(MODULE_NAME, "PoolStatusChangeAddContact", "[%d] [%s] Status changed", hContact, proto);
+logC(MODULE_NAME, "PoolStatusChangeAddContact", hContact, "Status changed");
 
 	if (proto != NULL && PoolCheckProtocol(proto) && PoolCheckContact(hContact))
 	{
@@ -127,7 +136,11 @@ log(MODULE_NAME, "PoolStatusChangeAddContact", "[%d] [%s] Status changed", hCont
 			if (opts.pool_clear_on_status_change)
 				ClearStatusMessage(hContact);
 
-			QueueAdd(hContact, GetTickCount() + opts.pool_timer_status * 1000, TRUE);
+			if (opts.pool_check_on_status_change)
+				QueueAdd(hContact, GetTickCount(), FALSE);
+
+			if (opts.pool_check_on_status_change_timer)
+				QueueAdd(hContact, GetTickCount() + opts.pool_timer_status * 1000, TRUE);
 		}
 		else
 		{
@@ -135,12 +148,15 @@ log(MODULE_NAME, "PoolStatusChangeAddContact", "[%d] [%s] Status changed", hCont
 			ClearStatusMessage(hContact);
 		}
 	}
+	else
+	{
+logC(MODULE_NAME, "PoolStatusChangeAddContact", hContact, "Contact should not be checked");
+	}
 }
 
-void PoolAddAllContacts(int timer, const char *protocol)
+void PoolAddAllContacts(int timer, const char *protocol, BOOL priority)
 {
-
-log(MODULE_NAME, "PoolAddAllContacts", "Start");
+log(MODULE_NAME, "PoolAddAllContacts", "[%s] Start", protocol == NULL ? "all" : protocol);
 
 	EnterCriticalSection(&update_cs);
 
@@ -152,7 +168,7 @@ log(MODULE_NAME, "PoolAddAllContacts", "Start");
 
 		if (proto != NULL && (protocol == NULL || strcmp(proto, protocol) == 0))
 		{
-			QueueAdd(hContact, GetTickCount() + timer, FALSE);
+			QueueAdd(hContact, GetTickCount() + timer, priority);
 
 			// Delete if possible
 			if (PoolCheckProtocol(proto) && PoolCheckContact(hContact) && !ProtocolStatusAllowMsgs(hContact, proto))
@@ -173,12 +189,15 @@ log(MODULE_NAME, "PoolAddAllContacts", "End");
 // Add a contact to the pool when the status of the contact has changed
 VOID CALLBACK PoolTimerAddContacts(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-	if (hTimer != NULL) {
+	if (hTimer != NULL) 
+	{
 		KillTimer(NULL, hTimer);
 		hTimer = NULL;
 	}
 
-	PoolAddAllContacts(opts.pool_timer_check * 60000, NULL);
+log(MODULE_NAME, "PoolTimerAddContacts", "Loop Timer");
+
+	PoolAddAllContacts(opts.pool_timer_check * 60000, NULL, FALSE);
 
 	PoolSetTimer();
 }
@@ -203,30 +222,30 @@ void PoolRemoveContact(HANDLE hContact)
 
 void QueueRemove(HANDLE hContact)
 {
-log(MODULE_NAME, "QueueRemove", "[%d]", hContact);
-
-	// Add this to thread...
-	QueueItem *item = (QueueItem *) mir_alloc(sizeof(QueueItem));
-
-	if (item == NULL)
-		return;
-
 	EnterCriticalSection(&update_cs);
 
-	item->hContact = hContact;
+	if ( statusQueue.queue->items != NULL )
+	{
+		for (int i = statusQueue.queue->realCount - 1 ; i >= 0 ; i-- )
+		{
+			QueueItem *item = (QueueItem*) statusQueue.queue->items[i];
 
-	List_RemoveByValueFreeContents(statusQueue.queue, item);
+			if (!item->priority && item->hContact == hContact)
+			{
+				mir_free(item);
+				List_Remove(statusQueue.queue, i);
+			}
+		}
+	}
 
 	LeaveCriticalSection(&update_cs);
-
-	mir_free(item);
 }
 
 
 // Add an contact to the pool queue
 void QueueAdd(HANDLE hContact, DWORD check_time, BOOL prio)
 {
-log(MODULE_NAME, "QueueAdd", "[%d]", hContact);
+logC(MODULE_NAME, "QueueAdd", hContact, "");
 
 	// Add this to thread...
 	QueueItem *item = (QueueItem *) mir_alloc(sizeof(QueueItem));
@@ -241,20 +260,7 @@ log(MODULE_NAME, "QueueAdd", "[%d]", hContact);
 
 	EnterCriticalSection(&update_cs);
 
-	if (prio)
-	{
-		// Remove from timer
-		List_RemoveByValueFreeContents(statusQueue.queue, item);
-
-		List_InsertOrdered(statusQueue.queue, item);
-	}
-	else
-	{
-		if (List_IndexOf(statusQueue.queue, item) == -1)
-			List_InsertOrdered(statusQueue.queue, item);
-		else
-			mir_free(item);
-	}
+	List_InsertOrdered(statusQueue.queue, item);
 
 	LeaveCriticalSection(&update_cs);
 
@@ -341,7 +347,7 @@ log(MODULE_NAME, "UpdateThread", "Has no contacts in list");
 log(MODULE_NAME, "UpdateThread", "No time to check contact yet");
 
 				if (statusQueue.bThreadRunning)
-					Sleep(UPDATE_DELAY);
+					Sleep(UpdateDelay());
 			}
 			else
 			{
@@ -349,31 +355,37 @@ log(MODULE_NAME, "UpdateThread", "No time to check contact yet");
 
 				char *proto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)qi->hContact, 0);
 
-log(MODULE_NAME, "UpdateThread", "[%d] [%s] Checking", qi->hContact, proto);
+logC(MODULE_NAME, "UpdateThread", qi->hContact, "Checking");
 
 				if (proto && PoolCheckProtocol(proto) && PoolCheckContact(qi->hContact))
 				{
+logC(MODULE_NAME, "UpdateThread", qi->hContact, "Have to check");
+
 					if (ProtocolStatusAllowMsgs(qi->hContact, proto))
 					{
 						CallContactService(qi->hContact,PSS_GETAWAYMSG,0,0);
 
 						LeaveCriticalSection(&update_cs);
 
-log(MODULE_NAME, "UpdateThread", "[%d] [%s] Checked", qi->hContact, proto);
+logC(MODULE_NAME, "UpdateThread", qi->hContact, "Requested");
 
 						if (statusQueue.bThreadRunning)
-							Sleep(UPDATE_DELAY);
+							Sleep(UpdateDelay());
 					}
 					else
 					{
 						ClearStatusMessage(qi->hContact);
 
 						LeaveCriticalSection(&update_cs);
+
+logC(MODULE_NAME, "UpdateThread", qi->hContact, "Set empty");
 					}
 				}
 				else
 				{
 					LeaveCriticalSection(&update_cs);
+
+logC(MODULE_NAME, "UpdateThread", qi->hContact, "Don't have to check");
 				}
 			}
 		}

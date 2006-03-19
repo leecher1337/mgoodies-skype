@@ -23,7 +23,7 @@ void PoolRemoveContact(HANDLE hContact);
 
 void PoolStatusChangeAddContact(HANDLE hContact);
 
-void PoolAddAllContacts(int timer, const char *protocol);
+void PoolAddAllContacts(int timer, const char *protocol, BOOL priority);
 
 
 
