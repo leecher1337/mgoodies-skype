@@ -30,6 +30,7 @@ extern "C"
 
 
 int log(const char *module, const char *function, const char *fmt, ...);
+int logC(const char *module, const char *function, HANDLE hContact, const char *fmt, ...);
 
 
 
