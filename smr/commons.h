@@ -48,6 +48,7 @@ extern "C"
 #include <m_database.h>
 #include <m_options.h>
 #include <m_utils.h>
+#include <m_updater.h>
 
 #include "../utils/mir_dblists.h"
 #include "../utils/mir_memory.h"
@@ -71,7 +72,7 @@ extern PLUGINLINK *pluginLink;
 
 
 #define INITIAL_TIMER 5000
-#define ONLINE_TIMER 1000
+#define ONLINE_TIMER 2000
 #define UPDATE_DELAY 1000
 
 

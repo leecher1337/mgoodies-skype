@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Status Message Retriever",
-	PLUGIN_MAKE_VERSION(0,0,1,0),
+	PLUGIN_MAKE_VERSION(0,0,1,1),
 	"Retrive status message based on timer / status change",
 	"Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
 	"",
@@ -69,7 +69,7 @@ __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
 
 
 int __declspec(dllexport) Load(PLUGINLINK *link) {
-	CLISTMENUITEM mi;
+	CLISTMENUITEM mi = {0};
 	
 	pluginLink = link;
 
@@ -79,6 +79,10 @@ int __declspec(dllexport) Load(PLUGINLINK *link) {
 	CreateServiceFunction(MS_SMR_ENABLE_CONTACT, MsgRetrievalEnabledForUser);
 
 	// Add menu item to enable/disable status message check
+	mi.cbSize = sizeof(mi);
+	mi.flags = 0;
+	mi.pszPopupName = NULL;
+
 	mi.position = 1000100020;
 	mi.ptszName = TranslateT("Disable Status Message Check");
 	mi.pszService = MS_SMR_DISABLE_CONTACT;
@@ -124,6 +128,29 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
+
+    // updater plugin support
+    if(ServiceExists(MS_UPDATE_REGISTER))
+	{
+		Update upd = {0};
+		char szCurrentVersion[30];
+
+		upd.cbSize = sizeof(upd);
+		upd.szComponentName = pluginInfo.shortName;
+
+		upd.szUpdateURL = UPDATER_AUTOREGISTER;
+
+		upd.szBetaVersionURL = "http://geocities.yahoo.com.br/ricardo_pescuma/smr_version.txt";
+		upd.szBetaChangelogURL = "http://geocities.yahoo.com.br/ricardo_pescuma/smr_version.txt";
+		upd.pbBetaVersionPrefix = (BYTE *)"Status Message Retriever ";
+		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
+		upd.szBetaUpdateURL = "http://geocities.yahoo.com.br/ricardo_pescuma/smr.zip";
+
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.cpbVersion = strlen((char *)upd.pbVersion);
+
+        CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
+	}
 
 	return 0;
 }

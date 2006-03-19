@@ -37,13 +37,22 @@ int ProtoAck(WPARAM wParam, LPARAM lParam)
 {
 	ACKDATA *ack = (ACKDATA*)lParam;
 
-	if (ack->type == ACKTYPE_AWAYMSG)
+	if (ack->type == ACKTYPE_STATUS)
+	{
+		WORD status = (WORD)ack->lParam;
+		char *proto = (char*)ack->szModule;
+
+		if (PoolCheckProtocol(proto) && status > ID_STATUS_OFFLINE)
+			PoolAddAllContacts(ONLINE_TIMER, proto, FALSE);
+
+	}
+	else if (ack->type == ACKTYPE_AWAYMSG)
 	{
 		PoolRemoveContact(ack->hContact);
 
 		if (ack->result == ACKRESULT_SUCCESS)
 		{
-log(MODULE_NAME, "ProtoAck", "[%d] Status msg changed", ack->hContact);
+logC(MODULE_NAME, "ProtoAck", ack->hContact, "Status msg changed");
 
 			SetStatusMessage(ack->hContact, (const TCHAR *) ack->lParam);
 		}

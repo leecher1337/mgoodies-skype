@@ -27,37 +27,39 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPT_PROTOCOLS DIALOGEX 0, 0, 219, 202
+IDD_OPT_PROTOCOLS DIALOGEX 0, 0, 219, 214
 STYLE WS_CHILD
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        " Status Retrieve ",IDC_STATIC,3,3,213,196
+    GROUPBOX        " Status Message Retrieve ",IDC_STATIC,3,3,213,208
     CONTROL         "Retrieve status messages every",IDC_CHECK_ONTIMER,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,14,119,10
     EDITTEXT        IDC_CHECK_ONTIMER_TIMER,133,14,31,12,ES_NUMBER | NOT 
                     WS_BORDER,WS_EX_STATICEDGE
     LTEXT           "minutes",IDC_STATIC,169,14,37,10
-    CONTROL         "Also retrieve on status change, after ",
-                    IDC_CHECK_ONSTATUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    10,30,130,8
+    CONTROL         "Also retrieve after ",IDC_CHECK_ONSTATUSTIMER,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,43,78,8
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
-                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,10,78,199,73
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,10,92,199,73
     LTEXT           "Get status messages for these protocols:",IDC_STATIC,10,
-                    66,199,9
+                    80,199,9
     LTEXT           "This feature is mainly for use with protocols that store status messages on server rather then in database (like ICQ). Uncheck any other protocol - status messages will be read in a standard way then.",
-                    IDC_STATIC,10,159,199,34
-    EDITTEXT        IDC_CHECK_ONSTATUS_TIMER,144,29,31,12,ES_NUMBER | NOT 
-                    WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "seconds",IDC_STATIC,177,30,32,10
+                    IDC_STATIC,10,173,199,34
+    EDITTEXT        IDC_CHECK_ONSTATUSTIMER_TIMER,91,42,31,12,ES_NUMBER | 
+                    NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "seconds after status change",IDC_STATIC,126,43,83,10
     CONTROL         "Spin1",IDC_CHECK_ONTIMER_TIMER_SPIN,"msctls_updown32",
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | 
                     UDS_NOTHOUSANDS | UDS_HOTTRACK,162,14,7,11
-    CONTROL         "Spin2",IDC_CHECK_ONSTATUS_TIMER_SPIN,"msctls_updown32",
-                    UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | 
-                    UDS_NOTHOUSANDS | UDS_HOTTRACK,174,30,6,10
+    CONTROL         "Spin2",IDC_CHECK_ONSTATUSTIMER_TIMER_SPIN,
+                    "msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | 
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,121,43,6,
+                    10
     CONTROL         "Clear message on status change",IDC_CLEAR_ON_STATUS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,45,199,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,58,199,10
+    CONTROL         "Retrieve on status change",IDC_CHECK_ONSTATUS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,29,199,10
 END
 
 
@@ -76,7 +78,7 @@ BEGIN
         VERTGUIDE, 10
         VERTGUIDE, 209
         TOPMARGIN, 3
-        BOTTOMMARGIN, 199
+        BOTTOMMARGIN, 211
     END
 END
 #endif    // APSTUDIO_INVOKED

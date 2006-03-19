@@ -1,0 +1,12 @@
+Status Message Retriever 0.0.1.1
+
+Changelog:
+
+. 0.0.1.1
+  + Updater support
+  + More options
+  + A lot of changes in pooling code
+  * Bugfix in contact menu option
+
+. 0.0.1.0
+  + Initial version

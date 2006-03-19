@@ -31,19 +31,21 @@ extern "C"
 {
 #endif
 
-#define OPT_CHECK_ONTIMER			"CheckOnTimer"
-#define OPT_CHECK_ONSTATUSCHANGE	"CheckOnStatusChange"
-#define OPT_CLEAR_ONSTATUSCHANGE	"ClearOnStatusChange"
-#define OPT_CHECK_ONTIMER_TIMER		"CheckOnTimerTimer"
-#define OPT_CHECK_ONSTATUS_TIMER	"CheckOnStatusTimer"
-#define OPT_CONTACT_GETMSG			"MsgCheck"
-#define OPT_PROTOCOL_GETMSG			"%sMsgCheck"
+#define OPT_CHECK_ONTIMER				"CheckOnTimer"
+#define OPT_CHECK_ONSTATUSCHANGE		"CheckOnStatusChange"
+#define OPT_CHECK_ONSTATUSCHANGETIMER	"CheckOnStatusChangeTimer"
+#define OPT_CLEAR_ONSTATUSCHANGE		"ClearOnStatusChange"
+#define OPT_CHECK_ONTIMER_TIMER			"CheckOnTimerTimer"
+#define OPT_CHECK_ONSTATUSTIMER_TIMER	"CheckOnStatusTimer"
+#define OPT_CONTACT_GETMSG				"MsgCheck"
+#define OPT_PROTOCOL_GETMSG				"%sMsgCheck"
 
 
 typedef struct 
 {
 	BOOL pool_check_on_timer;
 	BOOL pool_check_on_status_change;
+	BOOL pool_check_on_status_change_timer;
 	BOOL pool_clear_on_status_change;
 	WORD pool_timer_check;
 	WORD pool_timer_status;
