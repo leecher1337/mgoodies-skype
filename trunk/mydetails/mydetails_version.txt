@@ -1,6 +1,10 @@
-My Details 0.0.0.39
+My Details 0.0.0.40
 
 Changelog:
+
+. 0.0.0.40
+  * Changed text [Top: ] to [Top:]
+  + Added langpack_MyDetails.txt
 
 . 0.0.0.39
   * Reverted to show menus on key up
