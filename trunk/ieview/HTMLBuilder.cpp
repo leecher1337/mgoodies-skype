@@ -1155,7 +1155,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 
 ProtocolSettings* HTMLBuilder::getProtocolSettings(const char *protocolName) {
 	ProtocolSettings *protoSettings =  Options::getProtocolSettings(protocolName);
-	if (protoSettings == NULL || !protoSettings->isEnable()) {
+	if (protoSettings == NULL || !protoSettings->isSRMMEnable()) {
 		protoSettings =  Options::getProtocolSettings();
 	}
 	return protoSettings;

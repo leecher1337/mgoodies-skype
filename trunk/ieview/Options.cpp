@@ -36,7 +36,9 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static HWND hwndCurrentTab, hwndPages[4];
-static ProtocolSettings *currentProtoItem = NULL;
+static ProtocolSettings *srmmCurrentProtoItem = NULL;
+static ProtocolSettings *chatCurrentProtoItem = NULL;
+static ProtocolSettings *historyCurrentProtoItem = NULL;
 static HIMAGELIST hProtocolImageList = NULL;
 
 #ifndef _MSC_VER
@@ -121,7 +123,41 @@ static void SaveSRMMProtoSettings(HWND hwndDlg, ProtocolSettings *proto) {
 	}
 }
 
-static void UpdateSRMMControlsState(HWND hwndDlg) {
+static void SaveChatProtoSettings(HWND hwndDlg, ProtocolSettings *proto) {
+	if (proto != NULL) {
+		char path[MAX_PATH];
+		int i;
+		i = Options::MODE_COMPATIBLE;
+		if (IsDlgButtonChecked(hwndDlg, IDC_MODE_TEMPLATE)) {
+			i = Options::MODE_TEMPLATE;
+		} else if (IsDlgButtonChecked(hwndDlg, IDC_MODE_CSS)) {
+			i = Options::MODE_CSS;
+		}
+		proto->setChatModeTemp(i);
+		i = IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE) ? Options::LOG_IMAGE_ENABLED : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE) ? Options::LOG_IMAGE_SCROLL : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_NICKNAMES) ? Options::LOG_SHOW_NICKNAMES : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_TIME) ? Options::LOG_SHOW_TIME : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_DATE) ? Options::LOG_SHOW_DATE : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_SECONDS) ? Options::LOG_SHOW_SECONDS : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_LONG_DATE) ? Options::LOG_LONG_DATE : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_RELATIVE_DATE) ? Options::LOG_RELATIVE_DATE : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_GROUP_MESSAGES) ? Options::LOG_GROUP_MESSAGES : 0;
+		proto->setChatFlagsTemp(i);
+		GetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
+		proto->setChatBackgroundFilenameTemp(path);
+		GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
+		proto->setChatCssFilenameTemp(path);
+		GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
+		proto->setChatCssFilenameRtl(path);
+		GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
+		proto->setChatTemplateFilenameTemp(path);
+		GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
+		proto->setChatTemplateFilenameRtlTemp(path);
+	}
+}
+
+static void UpdateControlsState(HWND hwndDlg) {
 
 	BOOL bChecked = IsDlgButtonChecked(hwndDlg, IDC_MODE_TEMPLATE);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME), bChecked);
@@ -153,7 +189,7 @@ static void UpdateSRMMControlsState(HWND hwndDlg) {
 static void UpdateSRMMProtoInfo(HWND hwndDlg, ProtocolSettings *proto) {
 	if (proto != NULL) {
 		HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-		TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), proto->isEnableTemp());
+		TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), proto->isSRMMEnableTemp());
 		CheckDlgButton(hwndDlg, IDC_MODE_TEMPLATE, proto->getSRMMModeTemp() == Options::MODE_TEMPLATE ? TRUE : FALSE);
 		CheckDlgButton(hwndDlg, IDC_MODE_CSS, proto->getSRMMModeTemp() == Options::MODE_CSS ? TRUE : FALSE);
 		CheckDlgButton(hwndDlg, IDC_MODE_COMPATIBLE, proto->getSRMMModeTemp() == Options::MODE_COMPATIBLE ? TRUE : FALSE);
@@ -191,15 +227,59 @@ static void UpdateSRMMProtoInfo(HWND hwndDlg, ProtocolSettings *proto) {
 		} else {
 			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, "");
 		}
-		currentProtoItem = proto;
-		UpdateSRMMControlsState(hwndDlg);
+		srmmCurrentProtoItem = proto;
+		UpdateControlsState(hwndDlg);
+	}
+}
+
+static void UpdateChatProtoInfo(HWND hwndDlg, ProtocolSettings *proto) {
+	if (proto != NULL) {
+		HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
+		TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), proto->isChatEnableTemp());
+		CheckDlgButton(hwndDlg, IDC_MODE_TEMPLATE, proto->getChatModeTemp() == Options::MODE_TEMPLATE ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_MODE_CSS, proto->getChatModeTemp() == Options::MODE_CSS ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_MODE_COMPATIBLE, proto->getChatModeTemp() == Options::MODE_COMPATIBLE ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_BACKGROUND_IMAGE, proto->getChatFlagsTemp() & Options::LOG_IMAGE_ENABLED ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE, proto->getChatFlagsTemp() & Options::LOG_IMAGE_SCROLL ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_SHOW_NICKNAMES, proto->getChatFlagsTemp() & Options::LOG_SHOW_NICKNAMES ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_SHOW_TIME, proto->getChatFlagsTemp() & Options::LOG_SHOW_TIME ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_SHOW_DATE, proto->getChatFlagsTemp() & Options::LOG_SHOW_DATE ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_SHOW_SECONDS, proto->getChatFlagsTemp() & Options::LOG_SHOW_SECONDS ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_LONG_DATE, proto->getChatFlagsTemp() & Options::LOG_LONG_DATE ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_RELATIVE_DATE, proto->getChatFlagsTemp() & Options::LOG_RELATIVE_DATE ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_GROUP_MESSAGES, proto->getChatFlagsTemp() & Options::LOG_GROUP_MESSAGES ? TRUE : FALSE);
+		if (proto->getChatBackgroundFilenameTemp() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, proto->getChatBackgroundFilenameTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, "");
+		}
+		if (proto->getChatCssFilename() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, proto->getChatCssFilenameTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, "");
+		}
+		if (proto->getChatCssFilenameRtl() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, proto->getChatCssFilenameRtlTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, "");
+		}
+		if (proto->getChatTemplateFilenameTemp() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, proto->getChatTemplateFilenameTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, "");
+		}
+		if (proto->getChatTemplateFilenameRtlTemp() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, proto->getChatTemplateFilenameRtlTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, "");
+		}
+		chatCurrentProtoItem = proto;
+		UpdateControlsState(hwndDlg);
 	}
 }
 
 static void RefreshProtoIcons(HWND hwndDlg) {
 	int i;
-	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-	TreeView_DeleteAllItems(hProtoList);
 	ProtocolSettings *proto;
 	if (hProtocolImageList != NULL) {
 		ImageList_RemoveAll(hProtocolImageList);
@@ -223,7 +303,6 @@ static void RefreshProtoIcons(HWND hwndDlg) {
 		ImageList_AddIcon(hProtocolImageList, hIcon);
 		DestroyIcon(hIcon);
 	}
-	TreeView_SetImageList(hProtoList, hProtocolImageList, TVSIL_NORMAL);
 //	refreshProtoList(hwndDlg, IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS));
 }
 
@@ -232,6 +311,7 @@ static void RefreshProtoList(HWND hwndDlg, bool protoTemplates) {
     HTREEITEM hItem = NULL;
 	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
 	TreeView_DeleteAllItems(hProtoList);
+	TreeView_SetImageList(hProtoList, hProtocolImageList, TVSIL_NORMAL);
 	ProtocolSettings *proto;
 	for (i=0,proto=Options::getProtocolSettings();proto!=NULL;proto=proto->getNext(),i++) {
 		char protoName[128];
@@ -242,7 +322,6 @@ static void RefreshProtoList(HWND hwndDlg, bool protoTemplates) {
 		tvi.item.stateMask = TVIS_SELECTED | TVIS_STATEIMAGEMASK;
 		if (i==0) {
 			strcpy(protoName, Translate("Default"));
-			currentProtoItem = proto;
 		} else {
 			CallProtoService(proto->getProtocolName(), PS_GETNAME, sizeof(protoName), (LPARAM)protoName);
 //			strcat(protoName, " ");
@@ -252,7 +331,7 @@ static void RefreshProtoList(HWND hwndDlg, bool protoTemplates) {
 		tvi.item.lParam = (LPARAM)proto;
 		tvi.item.iImage = i;
 		tvi.item.iSelectedImage = i;
-		tvi.item.state = INDEXTOSTATEIMAGEMASK(proto->isEnableTemp() ? 2 : 1);
+		tvi.item.state = INDEXTOSTATEIMAGEMASK(proto->isSRMMEnableTemp() ? 2 : 1);
 		if (i==0) {
 			hItem = TreeView_InsertItem(hProtoList, &tvi);
 		} else {
@@ -260,7 +339,44 @@ static void RefreshProtoList(HWND hwndDlg, bool protoTemplates) {
 		}
 		if (!protoTemplates) break;
 	}
-	UpdateSRMMProtoInfo(hwndDlg, Options::getProtocolSettings());
+//	UpdateSRMMProtoInfo(hwndDlg, Options::getProtocolSettings());
+	TreeView_SelectItem(hProtoList, hItem);
+}
+
+static void RefreshChatProtoList(HWND hwndDlg, bool protoTemplates) {
+	int i;
+    HTREEITEM hItem = NULL;
+	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
+	TreeView_DeleteAllItems(hProtoList);
+	TreeView_SetImageList(hProtoList, hProtocolImageList, TVSIL_NORMAL);
+	ProtocolSettings *proto;
+	for (i=0,proto=Options::getProtocolSettings();proto!=NULL;proto=proto->getNext(),i++) {
+		char protoName[128];
+		TVINSERTSTRUCT tvi = {0};
+		tvi.hParent = TVI_ROOT;
+		tvi.hInsertAfter = TVI_LAST;
+		tvi.item.mask = TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_STATE | TVIF_SELECTEDIMAGE;
+		tvi.item.stateMask = TVIS_SELECTED | TVIS_STATEIMAGEMASK;
+		if (i==0) {
+			strcpy(protoName, Translate("Default"));
+		} else {
+			CallProtoService(proto->getProtocolName(), PS_GETNAME, sizeof(protoName), (LPARAM)protoName);
+//			strcat(protoName, " ");
+	//		strcat(protoName, Translate("protocol"));
+		}
+		tvi.item.pszText = protoName;
+		tvi.item.lParam = (LPARAM)proto;
+		tvi.item.iImage = i;
+		tvi.item.iSelectedImage = i;
+		tvi.item.state = INDEXTOSTATEIMAGEMASK(proto->isChatEnableTemp() ? 2 : 1);
+		if (i==0) {
+			hItem = TreeView_InsertItem(hProtoList, &tvi);
+		} else {
+			TreeView_InsertItem(hProtoList, &tvi);
+		}
+		if (!protoTemplates) break;
+	}
+//	UpdateSRMMProtoInfo(hwndDlg, Options::getProtocolSettings());
 	TreeView_SelectItem(hProtoList, hItem);
 }
 
@@ -308,6 +424,9 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 		{
             HWND tc;
 			TCITEM tci;
+			RefreshProtoIcons(hwndDlg);
+			Options::resetProtocolSettings();
+
 			tc = GetDlgItem(hwndDlg, IDC_TABS);
 			tci.mask = TCIF_TEXT;
 			tci.pszText = TranslateT("General");
@@ -318,7 +437,6 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 			TabCtrl_InsertItem(tc, 2, &tci);
 			tci.pszText = TranslateT("History");
 			TabCtrl_InsertItem(tc, 3, &tci);
-
 //			hwndEmoticons = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_EMOTICONS_OPTIONS), hwndDlg, IEViewEmoticonsOptDlgProc, (LPARAM) NULL);
 	//		SetWindowPos(hwndEmoticons, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 			hwndPages[0] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_GENERAL_OPTIONS), hwndDlg, IEViewGeneralOptDlgProc, (LPARAM) NULL);
@@ -357,6 +475,7 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
                     SendMessage(hwndPages[i], WM_NOTIFY, wParam, lParam);
 				}
 				NotifyEventHooks(hHookOptionsChanged, 0, 0);
+				Options::saveProtocolSettings();
 				return TRUE;
 			}
 		}
@@ -443,9 +562,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 	case WM_INITDIALOG:
 		{
 			TranslateDialogDefault(hwndDlg);
-			Options::resetProtocolSettings();
-			currentProtoItem = Options::getProtocolSettings();
-			RefreshProtoIcons(hwndDlg);
+			srmmCurrentProtoItem = NULL;
 			RefreshProtoList(hwndDlg, true);
 			return TRUE;
 		}
@@ -510,7 +627,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 			case IDC_MODE_COMPATIBLE:
 			case IDC_MODE_CSS:
 			case IDC_MODE_TEMPLATE:
-				UpdateSRMMControlsState(hwndDlg);
+				UpdateControlsState(hwndDlg);
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			}
@@ -521,7 +638,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 			ProtocolSettings *proto = (ProtocolSettings *)GetItemParam((HWND)wParam, (HTREEITEM) lParam);
 			if (proto != NULL) {
 				if (strcmpi(proto->getProtocolName(), "_default_")) {
-					proto->setEnableTemp(TreeView_GetCheckState((HWND)wParam, (HTREEITEM) lParam));
+					proto->setSRMMEnableTemp(TreeView_GetCheckState((HWND)wParam, (HTREEITEM) lParam));
 				}
 			}
 			if ((HTREEITEM) lParam != TreeView_GetSelection((HWND)wParam)) {
@@ -558,7 +675,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 						{
 							HWND hLstView = GetDlgItem(hwndDlg, IDC_PROTOLIST);
 							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(hLstView, (HTREEITEM) NULL);
-							SaveSRMMProtoSettings(hwndDlg, currentProtoItem);
+							SaveSRMMProtoSettings(hwndDlg, srmmCurrentProtoItem);
 							UpdateSRMMProtoInfo(hwndDlg, proto);
 						}
 						break;
@@ -567,8 +684,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 			}
 			switch (((LPNMHDR) lParam)->code) {
 			case PSN_APPLY:
-				SaveSRMMProtoSettings(hwndDlg, currentProtoItem);
-				Options::saveProtocolSettings();
+				SaveSRMMProtoSettings(hwndDlg, srmmCurrentProtoItem);
 				return TRUE;
 			}
 		}
@@ -587,73 +703,8 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 	case WM_INITDIALOG:
 		{
 			TranslateDialogDefault(hwndDlg);
-
-			if (Options::getHistoryFlags() & Options::LOG_SHOW_NICKNAMES) {
-				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_NICKNAMES, TRUE);
-			}
-			if (Options::getHistoryFlags() & Options::LOG_SHOW_TIME) {
-				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_TIME, TRUE);
-			}
-			if (Options::getHistoryFlags() & Options::LOG_SHOW_DATE) {
-				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_DATE, TRUE);
-			}
-			if (Options::getHistoryFlags() & Options::LOG_SHOW_SECONDS) {
-				CheckDlgButton(hwndDlg, IDC_LOG_SHOW_SECONDS, TRUE);
-			}
-			if (Options::getHistoryFlags() & Options::LOG_LONG_DATE) {
-				CheckDlgButton(hwndDlg, IDC_LOG_LONG_DATE, TRUE);
-			}
-			if (Options::getHistoryFlags() & Options::LOG_RELATIVE_DATE) {
-				CheckDlgButton(hwndDlg, IDC_LOG_RELATIVE_DATE, TRUE);
-			}
-			if (Options::getHistoryFlags() & Options::LOG_GROUP_MESSAGES) {
-				CheckDlgButton(hwndDlg, IDC_LOG_GROUP_MESSAGES, TRUE);
-			}
-
-			EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME_RTL), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES_RTL), bChecked);
-
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_NICKNAMES), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_TIME), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_DATE), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_SECONDS), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_LONG_DATE), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_RELATIVE_DATE), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_GROUP_MESSAGES), bChecked);
-
-			if (Options::getHistoryTemplatesFile() != NULL) {
-                SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, Options::getHistoryTemplatesFile());
-			}
-			if (Options::getHistoryTemplatesFileRTL() != NULL) {
-                SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, Options::getHistoryTemplatesFileRTL());
-			}
-
-			EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS_RTL), bChecked);
-			if (Options::getHistoryCSSFile() != NULL) {
-                SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, Options::getHistoryCSSFile());
-			}
-			if (Options::getHistoryCSSFileRTL() != NULL) {
-                SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, Options::getHistoryCSSFileRTL());
-			}
-
-			bChecked = !IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES) && !IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE), bChecked);
-			if (Options::getHistoryFlags() & Options::LOG_IMAGE_ENABLED) {
-				CheckDlgButton(hwndDlg, IDC_BACKGROUND_IMAGE, TRUE);
-			} else {
-				bChecked = FALSE;
-			}
-			EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_BACKGROUND_IMAGE), bChecked);
-			if (Options::getHistoryFlags() & Options::LOG_IMAGE_SCROLL) {
-				CheckDlgButton(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE, TRUE);
-			}
+			historyCurrentProtoItem = NULL;
+			RefreshProtoList(hwndDlg, true);
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -677,137 +728,70 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			case IDC_LOG_GROUP_MESSAGES:
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
-			case IDC_TEMPLATES:
-				bChecked = IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME_RTL), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES_RTL), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_NICKNAMES), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_TIME), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_DATE), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_SHOW_SECONDS), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_LONG_DATE), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_RELATIVE_DATE), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_LOG_GROUP_MESSAGES), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS), !bChecked);
-//				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-	//			break;
-			case IDC_EXTERNALCSS:
-                bChecked = IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES) || IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE), !bChecked);
-               	bChecked = !IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES) && IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_EXTERNALCSS_RTL), bChecked);
-		//		SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-			//	break;
 			case IDC_BACKGROUND_IMAGE:
-                bChecked = !IsDlgButtonChecked(hwndDlg, IDC_TEMPLATES) && !IsDlgButtonChecked(hwndDlg, IDC_EXTERNALCSS) && IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE);
+                bChecked = IsDlgButtonChecked(hwndDlg, IDC_MODE_COMPATIBLE) && IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_BACKGROUND_IMAGE), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE), bChecked);
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			case IDC_BROWSE_TEMPLATES:
-				{
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Templates (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "ivt";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
 			case IDC_BROWSE_TEMPLATES_RTL:
-				{
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Templates (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "ivt";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
 			case IDC_BROWSE_BACKGROUND_IMAGE:
-				{
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "All Images (*.jpg,*.gif,*.png,*.bmp)\0*.jpg;*.gif;*.png;*.bmp\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "jpg";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg,IDC_BACKGROUND_IMAGE_FILENAME,path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+				if (BrowseFile(hwndDlg, "All Images (*.jpg,*.gif,*.png,*.bmp)\0*.jpg;*.gif;*.png;*.bmp\0All Files\0*.*\0\0", "jpg", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg,IDC_BACKGROUND_IMAGE_FILENAME,path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS:
-				{
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "css";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS_RTL:
-				{
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "css";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
+				break;
+			case IDC_MODE_COMPATIBLE:
+			case IDC_MODE_CSS:
+			case IDC_MODE_TEMPLATE:
+				UpdateControlsState(hwndDlg);
+				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			}
 		}
 		break;
+		/*
+	case UM_CHECKSTATECHANGE:
+		{
+			ProtocolSettings *proto = (ProtocolSettings *)GetItemParam((HWND)wParam, (HTREEITEM) lParam);
+			if (proto != NULL) {
+				if (strcmpi(proto->getProtocolName(), "_default_")) {
+					proto->setSRMMEnableTemp(TreeView_GetCheckState((HWND)wParam, (HTREEITEM) lParam));
+				}
+			}
+			if ((HTREEITEM) lParam != TreeView_GetSelection((HWND)wParam)) {
+				TreeView_SelectItem((HWND)wParam, (HTREEITEM) lParam);
+			} else {
+				UpdateSRMMProtoInfo(hwndDlg, proto);
+			}
+			SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+		}
+		break;
+		*/
 	case WM_NOTIFY:
 		{
 			switch (((LPNMHDR) lParam)->code) {
@@ -862,109 +846,136 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 }
 
 static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
-	int i;
 	BOOL bChecked;
 	char path[MAX_PATH];
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
 			TranslateDialogDefault(hwndDlg);
-			if (Options::getGroupChatCSSFile() != NULL) {
-                SetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, Options::getGroupChatCSSFile());
-			}
-			bChecked = FALSE;
-			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_TEMPLATES_BROWSE), bChecked);
-			if (Options::getGroupChatTemplatesFile() != NULL) {
-                SetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, Options::getGroupChatTemplatesFile());
-			}
-			bChecked = !IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_TEMPLATES);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS), bChecked);
-/*			if (Options::getGroupChatFlags() & Options::CSS_ENABLED) {
-				CheckDlgButton(hwndDlg, IDC_GROUPCHAT_CSS, TRUE);
-			} else {
-                bChecked = FALSE;
-			}*/
-			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME), bChecked);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_BROWSE), bChecked);
-			if (Options::getGroupChatCSSFile() != NULL) {
-                SetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, Options::getGroupChatCSSFile());
-			}
+			chatCurrentProtoItem = NULL;
+			RefreshChatProtoList(hwndDlg, true);
 			return TRUE;
 		}
+		break;
 	case WM_COMMAND:
 		{
 			switch (LOWORD(wParam)) {
-            case IDC_GROUPCHAT_CSS_FILENAME:
+			case IDC_BACKGROUND_IMAGE_FILENAME:
+            case IDC_EXTERNALCSS_FILENAME:
+            case IDC_EXTERNALCSS_FILENAME_RTL:
+            case IDC_TEMPLATES_FILENAME:
+            case IDC_TEMPLATES_FILENAME_RTL:
 				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE)
 					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
-			case IDC_GROUPCHAT_TEMPLATES:
-				bChecked = IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_TEMPLATES);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_TEMPLATES_BROWSE), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS), !bChecked);
-			case IDC_GROUPCHAT_CSS:
-               	bChecked = !IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_TEMPLATES) && IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_CSS);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME), bChecked);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT_CSS_BROWSE), bChecked);
+			case IDC_SCROLL_BACKGROUND_IMAGE:
+			case IDC_LOG_SHOW_NICKNAMES:
+			case IDC_LOG_SHOW_TIME:
+			case IDC_LOG_SHOW_DATE:
+			case IDC_LOG_SHOW_SECONDS:
+			case IDC_LOG_LONG_DATE:
+			case IDC_LOG_RELATIVE_DATE:
+			case IDC_LOG_GROUP_MESSAGES:
 				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
-			case IDC_GROUPCHAT_CSS_BROWSE:
-				{
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "css";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+			case IDC_BACKGROUND_IMAGE:
+                bChecked = IsDlgButtonChecked(hwndDlg, IDC_MODE_COMPATIBLE) && IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_BACKGROUND_IMAGE), bChecked);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE), bChecked);
+				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				break;
+			case IDC_BROWSE_TEMPLATES:
+				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
 				break;
-			case IDC_GROUPCHAT_TEMPLATES_BROWSE:
-				{
-					OPENFILENAMEA ofn={0};
-					GetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, path, sizeof(path));
-					ofn.lStructSize = sizeof(OPENFILENAME);//_SIZE_VERSION_400;
-					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					ofn.lpstrFilter = "Templates (*.ivt)\0*.ivt\0All Files\0*.*\0\0";
-					ofn.lpstrFile = path;
-					ofn.Flags = OFN_FILEMUSTEXIST;
-					ofn.nMaxFile = sizeof(path);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "ivt";
-					if(GetOpenFileNameA(&ofn)) {
-						SetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_TEMPLATES_FILENAME, path);
-						SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
-					}
+			case IDC_BROWSE_TEMPLATES_RTL:
+				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				}
+				break;
+			case IDC_BROWSE_BACKGROUND_IMAGE:
+				if (BrowseFile(hwndDlg, "All Images (*.jpg,*.gif,*.png,*.bmp)\0*.jpg;*.gif;*.png;*.bmp\0All Files\0*.*\0\0", "jpg", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg,IDC_BACKGROUND_IMAGE_FILENAME,path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				}
+				break;
+			case IDC_BROWSE_EXTERNALCSS:
+				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				}
+				break;
+			case IDC_BROWSE_EXTERNALCSS_RTL:
+				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
+					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
+					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				}
+				break;
+			case IDC_MODE_COMPATIBLE:
+			case IDC_MODE_CSS:
+			case IDC_MODE_TEMPLATE:
+				UpdateControlsState(hwndDlg);
+				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 				break;
 			}
 		}
 		break;
+	case UM_CHECKSTATECHANGE:
+		{
+			ProtocolSettings *proto = (ProtocolSettings *)GetItemParam((HWND)wParam, (HTREEITEM) lParam);
+			if (proto != NULL) {
+				if (strcmpi(proto->getProtocolName(), "_default_")) {
+					proto->setChatEnableTemp(TreeView_GetCheckState((HWND)wParam, (HTREEITEM) lParam));
+				}
+			}
+			if ((HTREEITEM) lParam != TreeView_GetSelection((HWND)wParam)) {
+				TreeView_SelectItem((HWND)wParam, (HTREEITEM) lParam);
+			} else {
+				UpdateSRMMProtoInfo(hwndDlg, proto);
+			}
+			SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+		}
+		break;
 	case WM_NOTIFY:
 		{
+			if (((LPNMHDR)lParam)->idFrom == IDC_PROTOLIST) {
+				switch (((LPNMHDR)lParam)->code) {
+					case NM_CLICK:
+						{
+							TVHITTESTINFO ht = {0};
+							DWORD dwpos = GetMessagePos();
+							POINTSTOPOINT(ht.pt, MAKEPOINTS(dwpos));
+							MapWindowPoints(HWND_DESKTOP, ((LPNMHDR)lParam)->hwndFrom, &ht.pt, 1);
+							TreeView_HitTest(((LPNMHDR)lParam)->hwndFrom, &ht);
+							if (TVHT_ONITEMSTATEICON & ht.flags) {
+                                PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom, (LPARAM)ht.hItem);
+                                return FALSE;
+							}
+						}
+						break;
+					case TVN_KEYDOWN:
+						 if (((LPNMTVKEYDOWN) lParam)->wVKey == VK_SPACE)
+								PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom,
+								(LPARAM)TreeView_GetSelection(((LPNMHDR)lParam)->hwndFrom));
+						break;
+					case TVN_SELCHANGED:
+						{
+							HWND hLstView = GetDlgItem(hwndDlg, IDC_PROTOLIST);
+							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(hLstView, (HTREEITEM) NULL);
+							SaveChatProtoSettings(hwndDlg, chatCurrentProtoItem);
+							UpdateChatProtoInfo(hwndDlg, proto);
+						}
+						break;
+				}
+				break;
+			}
 			switch (((LPNMHDR) lParam)->code) {
 			case PSN_APPLY:
-				GetDlgItemTextA(hwndDlg, IDC_GROUPCHAT_CSS_FILENAME, path, sizeof(path));
-				Options::setGroupChatCSSFile(path);
-				i = 0;
-				if (IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_TEMPLATES)) {
-//					i |= Options::TEMPLATES_ENABLED;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_GROUPCHAT_CSS)) {
-		//			i |= Options::CSS_ENABLED;
-				}
-				Options::setGroupChatFlags(i);
+				SaveChatProtoSettings(hwndDlg, chatCurrentProtoItem);
 				return TRUE;
 			}
 		}
@@ -981,9 +992,6 @@ bool  Options::bSmileyAdd = false;
 int  Options::avatarServiceFlags = 0;
 int Options::generalFlags;
 
-int Options::srmmMode;
-int Options::srmmFlags;
-
 int Options::groupChatFlags;
 char *Options::groupChatCSSFilename = NULL;
 char *Options::groupChatTemplatesFilename = NULL;
@@ -999,7 +1007,7 @@ ProtocolSettings *Options::protocolList = NULL;
 ProtocolSettings::ProtocolSettings(const char *protocolName) {
 	this->protocolName = Utils::dupString(protocolName);
 	next = NULL;
-	enable = false;
+	srmmEnable = false;
 	srmmMode = Options::MODE_COMPATIBLE;
 	srmmFlags = 0;
 	srmmBackgroundFilename = Utils::dupString("");
@@ -1013,6 +1021,22 @@ ProtocolSettings::ProtocolSettings(const char *protocolName) {
 	srmmCssFilenameRtlTemp = Utils::dupString("");
 	srmmTemplateFilenameTemp = Utils::dupString("");
 	srmmTemplateFilenameRtlTemp = Utils::dupString("");
+
+	chatEnable = false;
+	chatMode = Options::MODE_COMPATIBLE;
+	chatFlags = 0;
+	chatBackgroundFilename = Utils::dupString("");
+	chatCssFilename = Utils::dupString("");
+	chatCssFilenameRtl = Utils::dupString("");
+	chatTemplateFilename = Utils::dupString("");
+	chatTemplateFilenameRtl = Utils::dupString("");
+
+	chatBackgroundFilenameTemp = Utils::dupString("");
+	chatCssFilenameTemp = Utils::dupString("");
+	chatCssFilenameRtlTemp = Utils::dupString("");
+	chatTemplateFilenameTemp = Utils::dupString("");
+	chatTemplateFilenameRtlTemp = Utils::dupString("");
+
 }
 
 ProtocolSettings::~ProtocolSettings() {
@@ -1046,6 +1070,38 @@ ProtocolSettings::~ProtocolSettings() {
 	if (srmmTemplateFilenameRtlTemp != NULL) {
 		delete srmmTemplateFilenameRtlTemp;
 	}
+
+	if (chatBackgroundFilename != NULL) {
+		delete chatBackgroundFilename;
+	}
+	if (chatBackgroundFilenameTemp != NULL) {
+		delete chatBackgroundFilenameTemp;
+	}
+	if (chatCssFilename != NULL) {
+		delete chatCssFilename;
+	}
+	if (chatCssFilenameRtl != NULL) {
+		delete chatCssFilenameRtl;
+	}
+	if (chatCssFilenameTemp != NULL) {
+		delete chatCssFilenameTemp;
+	}
+	if (chatCssFilenameRtlTemp != NULL) {
+		delete chatCssFilenameRtlTemp;
+	}
+	if (chatTemplateFilename != NULL) {
+		delete chatTemplateFilename;
+	}
+	if (chatTemplateFilenameRtl != NULL) {
+		delete chatTemplateFilenameRtl;
+	}
+	if (chatTemplateFilenameTemp != NULL) {
+		delete chatTemplateFilenameTemp;
+	}
+	if (chatTemplateFilenameRtlTemp != NULL) {
+		delete chatTemplateFilenameRtlTemp;
+	}
+
 }
 
 void ProtocolSettings::copyToTemp() {
@@ -1056,7 +1112,17 @@ void ProtocolSettings::copyToTemp() {
 	setSRMMCssFilenameRtlTemp(getSRMMCssFilenameRtl());
 	setSRMMTemplateFilenameTemp(getSRMMTemplateFilename());
 	setSRMMTemplateFilenameRtlTemp(getSRMMTemplateFilenameRtl());
-	setEnableTemp(isEnable());
+	setSRMMEnableTemp(isSRMMEnable());
+
+	setChatModeTemp(getChatMode());
+	setChatFlagsTemp(getChatFlags());
+	setChatBackgroundFilenameTemp(getChatBackgroundFilename());
+	setChatCssFilenameTemp(getChatCssFilename());
+	setChatCssFilenameRtlTemp(getChatCssFilenameRtl());
+	setChatTemplateFilenameTemp(getChatTemplateFilename());
+	setChatTemplateFilenameRtlTemp(getChatTemplateFilenameRtl());
+	setChatEnableTemp(isChatEnable());
+
 }
 
 void ProtocolSettings::copyFromTemp() {
@@ -1067,11 +1133,29 @@ void ProtocolSettings::copyFromTemp() {
 	setSRMMCssFilenameRtl(getSRMMCssFilenameRtlTemp());
 	setSRMMTemplateFilename(getSRMMTemplateFilenameTemp());
 	setSRMMTemplateFilenameRtl(getSRMMTemplateFilenameRtlTemp());
-	setEnable(isEnableTemp());
+	setSRMMEnable(isSRMMEnableTemp());
+
+	setChatMode(getChatModeTemp());
+	setChatFlags(getChatFlagsTemp());
+	setChatBackgroundFilename(getChatBackgroundFilenameTemp());
+	setChatCssFilename(getChatCssFilenameTemp());
+	setChatCssFilenameRtl(getChatCssFilenameRtlTemp());
+	setChatTemplateFilename(getChatTemplateFilenameTemp());
+	setChatTemplateFilenameRtl(getChatTemplateFilenameRtlTemp());
+	setChatEnable(isChatEnableTemp());
+
 }
 
 void ProtocolSettings::setNext(ProtocolSettings *next) {
 	this->next = next;
+}
+
+const char *ProtocolSettings::getProtocolName() {
+	return protocolName;
+}
+
+ProtocolSettings * ProtocolSettings::getNext() {
+	return next;
 }
 
 void ProtocolSettings::setSRMMBackgroundFilename(const char *filename) {
@@ -1146,14 +1230,6 @@ void ProtocolSettings::setSRMMTemplateFilenameRtlTemp(const char *filename) {
 	srmmTemplateFilenameRtlTemp = Utils::dupString(filename);
 }
 
-const char *ProtocolSettings::getProtocolName() {
-	return protocolName;
-}
-
-ProtocolSettings * ProtocolSettings::getNext() {
-	return next;
-}
-
 const char *ProtocolSettings::getSRMMBackgroundFilename() {
 	return srmmBackgroundFilename;
 }
@@ -1194,20 +1270,20 @@ const char *ProtocolSettings::getSRMMTemplateFilenameRtlTemp() {
 	return srmmTemplateFilenameRtlTemp;
 }
 
-void ProtocolSettings::setEnable(bool enable) {
-	this->enable = enable;
+void ProtocolSettings::setSRMMEnable(bool enable) {
+	this->srmmEnable = enable;
 }
 
-bool ProtocolSettings::isEnable() {
-	return enable;
+bool ProtocolSettings::isSRMMEnable() {
+	return srmmEnable;
 }
 
-void ProtocolSettings::setEnableTemp(bool enable) {
-	this->enableTemp = enable;
+void ProtocolSettings::setSRMMEnableTemp(bool enable) {
+	this->srmmEnableTemp = enable;
 }
 
-bool ProtocolSettings::isEnableTemp() {
-	return enableTemp;
+bool ProtocolSettings::isSRMMEnableTemp() {
+	return srmmEnableTemp;
 }
 
 void ProtocolSettings::setSRMMMode(int mode) {
@@ -1242,10 +1318,174 @@ int ProtocolSettings::getSRMMFlagsTemp() {
 	return srmmFlagsTemp;
 }
 
+/* */
+
+void ProtocolSettings::setChatBackgroundFilename(const char *filename) {
+	if (chatBackgroundFilename != NULL) {
+		delete chatBackgroundFilename;
+	}
+	chatBackgroundFilename = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setChatBackgroundFilenameTemp(const char *filename) {
+	if (chatBackgroundFilenameTemp != NULL) {
+		delete chatBackgroundFilenameTemp;
+	}
+	chatBackgroundFilenameTemp = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setChatCssFilename(const char *filename) {
+	if (chatCssFilename != NULL) {
+		delete chatCssFilename;
+	}
+	chatCssFilename = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setChatCssFilenameRtl(const char *filename) {
+	if (chatCssFilenameRtl != NULL) {
+		delete chatCssFilenameRtl;
+	}
+	chatCssFilenameRtl = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setChatCssFilenameTemp(const char *filename) {
+	if (chatCssFilenameTemp != NULL) {
+		delete chatCssFilenameTemp;
+	}
+	chatCssFilenameTemp = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setChatCssFilenameRtlTemp(const char *filename) {
+	if (chatCssFilenameRtlTemp != NULL) {
+		delete chatCssFilenameRtlTemp;
+	}
+	chatCssFilenameRtlTemp = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setChatTemplateFilename(const char *filename) {
+	if (chatTemplateFilename != NULL) {
+		delete chatTemplateFilename;
+	}
+	chatTemplateFilename = Utils::dupString(filename);
+	TemplateMap::loadTemplates(getChatTemplateFilename(), getChatTemplateFilename());
+}
+
+void ProtocolSettings::setChatTemplateFilenameRtl(const char *filename) {
+	if (chatTemplateFilenameRtl != NULL) {
+		delete chatTemplateFilenameRtl;
+	}
+	chatTemplateFilenameRtl = Utils::dupString(filename);
+	TemplateMap::loadTemplates(getChatTemplateFilenameRtl(), getChatTemplateFilenameRtl());
+}
+
+void ProtocolSettings::setChatTemplateFilenameTemp(const char *filename) {
+	if (chatTemplateFilenameTemp != NULL) {
+		delete chatTemplateFilenameTemp;
+	}
+	chatTemplateFilenameTemp = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setChatTemplateFilenameRtlTemp(const char *filename) {
+	if (chatTemplateFilenameRtlTemp != NULL) {
+		delete chatTemplateFilenameRtlTemp;
+	}
+	chatTemplateFilenameRtlTemp = Utils::dupString(filename);
+}
+
+const char *ProtocolSettings::getChatBackgroundFilename() {
+	return chatBackgroundFilename;
+}
+
+const char *ProtocolSettings::getChatBackgroundFilenameTemp() {
+	return chatBackgroundFilenameTemp;
+}
+
+const char *ProtocolSettings::getChatCssFilename() {
+	return chatCssFilename;
+}
+
+const char *ProtocolSettings::getChatCssFilenameRtl() {
+	return chatCssFilenameRtl;
+}
+
+const char *ProtocolSettings::getChatCssFilenameTemp() {
+	return chatCssFilenameTemp;
+}
+
+const char *ProtocolSettings::getChatCssFilenameRtlTemp() {
+	return chatCssFilenameRtlTemp;
+}
+
+const char *ProtocolSettings::getChatTemplateFilename() {
+	return chatTemplateFilename;
+}
+
+const char *ProtocolSettings::getChatTemplateFilenameRtl() {
+	return chatTemplateFilenameRtl;
+}
+
+const char *ProtocolSettings::getChatTemplateFilenameTemp() {
+	return chatTemplateFilenameTemp;
+}
+
+const char *ProtocolSettings::getChatTemplateFilenameRtlTemp() {
+	return chatTemplateFilenameRtlTemp;
+}
+
+void ProtocolSettings::setChatEnable(bool enable) {
+	this->chatEnable = enable;
+}
+
+bool ProtocolSettings::isChatEnable() {
+	return chatEnable;
+}
+
+void ProtocolSettings::setChatEnableTemp(bool enable) {
+	this->chatEnableTemp = enable;
+}
+
+bool ProtocolSettings::isChatEnableTemp() {
+	return chatEnableTemp;
+}
+
+void ProtocolSettings::setChatMode(int mode) {
+	this->chatMode = mode;
+}
+
+int ProtocolSettings::getChatMode() {
+	return chatMode;
+}
+
+void ProtocolSettings::setChatModeTemp(int mode) {
+	this->chatModeTemp = mode;
+}
+
+int ProtocolSettings::getChatModeTemp() {
+	return chatModeTemp;
+}
+
+void ProtocolSettings::setChatFlags(int flags) {
+	this->chatFlags = flags;
+}
+
+int ProtocolSettings::getChatFlags() {
+	return chatFlags;
+}
+
+void ProtocolSettings::setChatFlagsTemp(int flags) {
+	this->chatFlagsTemp = flags;
+}
+
+int ProtocolSettings::getChatFlagsTemp() {
+	return chatFlagsTemp;
+}
+
 void Options::init() {
 	if (isInited) return;
 	isInited = true;
 	DBVARIANT dbv;
+
+	generalFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, 0);
 
 	/* TODO: move to buildProtocolList method */
 	int protoCount;
@@ -1258,14 +1498,15 @@ void Options::init() {
 		char dbsName[256];
 		if (i==0) {
 			proto = new ProtocolSettings("_default_");
-			proto->setEnable(true);
+			proto->setSRMMEnable(true);
 		} else if ((pProtos[i-1]->type == PROTOTYPE_PROTOCOL) && strcmp(pProtos[i-1]->szName,"MetaContacts")) {
 			proto = new ProtocolSettings(pProtos[i-1]->szName);
-			sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_ENABLE);
-			proto->setEnable(DBGetContactSettingByte(NULL, ieviewModuleName, dbsName, FALSE));
 		} else {
 			continue;
 		}
+		/* SRMM settings */
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_ENABLE);
+		proto->setSRMMEnable(i==0 ? true : DBGetContactSettingByte(NULL, ieviewModuleName, dbsName, FALSE));
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_MODE);
 		proto->setSRMMMode(DBGetContactSettingByte(NULL, ieviewModuleName, dbsName, FALSE));
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_FLAGS);
@@ -1315,6 +1556,60 @@ void Options::init() {
 			proto->setSRMMTemplateFilenameRtl(tmpPath);
 			DBFreeVariant(&dbv);
 		}
+
+		/* Group chat settings */
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_ENABLE);
+		proto->setChatEnable(i==0 ? true : DBGetContactSettingByte(NULL, ieviewModuleName, dbsName, FALSE));
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_MODE);
+		proto->setChatMode(DBGetContactSettingByte(NULL, ieviewModuleName, dbsName, FALSE));
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_FLAGS);
+		proto->setChatFlags(DBGetContactSettingDword(NULL, ieviewModuleName, dbsName, FALSE));
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_BACKGROUND);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+			if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setChatBackgroundFilename(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_CSS);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+			if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setChatCssFilename(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_CSS_RTL);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+	    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setChatCssFilenameRtl(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_TEMPLATE);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+			if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setChatTemplateFilename(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_TEMPLATE_RTL);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+			if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setChatTemplateFilenameRtl(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+
 		proto->copyToTemp();
 		if (lastProto != NULL) {
 			lastProto->setNext(proto);
@@ -1330,9 +1625,7 @@ void Options::init() {
 	if (ServiceExists(MS_AV_GETAVATARBITMAP)) {
 		avatarServiceFlags = AVATARSERVICE_PRESENT;
 	}
-	generalFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, 0);
-	srmmMode = DBGetContactSettingByte(NULL, ieviewModuleName, DBS_SRMMMODE, 0);
-	srmmFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_SRMMFLAGS, 0);
+
 	groupChatFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_GROUPCHATFLAGS, FALSE);
 	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_GROUPCHATCSSFILE, &dbv)) {
     	char tmpPath[MAX_PATH];
@@ -1573,7 +1866,7 @@ void Options::saveProtocolSettings() {
 		char tmpPath[MAX_PATH];
 		proto->copyFromTemp();
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_ENABLE);
-		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->isEnable());
+		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->isSRMMEnable());
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_MODE);
 		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->getSRMMMode());
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_FLAGS);

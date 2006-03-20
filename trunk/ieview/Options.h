@@ -27,10 +27,6 @@ class Options;
 
 #define DBS_BASICFLAGS  		  	"GeneralFlags"
 
-#define DBS_SRMMMODE		  	  	"SRMMMode"
-#define DBS_SRMMFLAGS		  	  	"SRMMFlags"
-#define DBS_BACKGROUNDIMAGEFILE   	"BackgroundImageFile"
-
 #define DBS_GROUPCHATFLAGS        	"GroupChatFlags"
 #define DBS_GROUPCHATCSSFILE      	"GroupChatCSSFile"
 #define DBS_GROUPCHATTEMPLATESFILE  "GroupChatTemplatesFile"
@@ -52,6 +48,15 @@ class Options;
 #define DBS_SRMM_TEMPLATE         	"SRMMTemplateFile"
 #define DBS_SRMM_TEMPLATE_RTL     	"SRMMTemplateFileRTL"
 
+#define DBS_CHAT_ENABLE          	"ChatEnable"
+#define DBS_CHAT_MODE          		"ChatMode"
+#define DBS_CHAT_FLAGS          	"ChatFlags"
+#define DBS_CHAT_BACKGROUND    		"ChatBackgroundFile"
+#define DBS_CHAT_CSS         		"ChatCSSFile"
+#define DBS_CHAT_CSS_RTL     		"ChatCSSFileRTL"
+#define DBS_CHAT_TEMPLATE         	"ChatTemplateFile"
+#define DBS_CHAT_TEMPLATE_RTL     	"ChatTemplateFileRTL"
+
 
 extern int IEViewOptInit(WPARAM wParam, LPARAM lParam);
 
@@ -60,7 +65,7 @@ private:
 	char *protocolName;
 	ProtocolSettings *next;
 
-	bool enable;
+	bool srmmEnable;
 	int srmmMode;
 	int srmmFlags;
 	char *srmmBackgroundFilename;
@@ -69,7 +74,7 @@ private:
 	char *srmmTemplateFilename;
 	char *srmmTemplateFilenameRtl;
 
-	bool enableTemp;
+	bool srmmEnableTemp;
 	int srmmModeTemp;
 	int srmmFlagsTemp;
 	char *srmmBackgroundFilenameTemp;
@@ -78,14 +83,32 @@ private:
 	char *srmmTemplateFilenameTemp;
 	char *srmmTemplateFilenameRtlTemp;
 
+	bool chatEnable;
+	int chatMode;
+	int chatFlags;
+	char *chatBackgroundFilename;
+	char *chatCssFilename;
+	char *chatCssFilenameRtl;
+	char *chatTemplateFilename;
+	char *chatTemplateFilenameRtl;
+
+	bool chatEnableTemp;
+	int chatModeTemp;
+	int chatFlagsTemp;
+	char *chatBackgroundFilenameTemp;
+	char *chatCssFilenameTemp;
+	char *chatCssFilenameRtlTemp;
+	char *chatTemplateFilenameTemp;
+	char *chatTemplateFilenameRtlTemp;
+
 public:
 	ProtocolSettings(const char *protocolName);
 	~ProtocolSettings();
 	void	setNext(ProtocolSettings *next);
 	const char *getProtocolName();
 	ProtocolSettings *getNext();
-	void	setEnable(bool enable);
-	bool	isEnable();
+	void	setSRMMEnable(bool enable);
+	bool	isSRMMEnable();
 	void	setSRMMMode(int flags);
 	int		getSRMMMode();
 	void	setSRMMFlags(int flags);
@@ -101,8 +124,8 @@ public:
 	void	setSRMMTemplateFilenameRtl(const char *filename);
 	const char *getSRMMTemplateFilenameRtl();
 
-	void	setEnableTemp(bool enable);
-	bool	isEnableTemp();
+	void	setSRMMEnableTemp(bool enable);
+	bool	isSRMMEnableTemp();
 	void	setSRMMModeTemp(int flags);
 	int		getSRMMModeTemp();
 	void	setSRMMFlagsTemp(int flags);
@@ -118,6 +141,40 @@ public:
 	void	setSRMMTemplateFilenameRtlTemp(const char *filename);
 	const char *getSRMMTemplateFilenameRtlTemp();
 
+	void	setChatEnable(bool enable);
+	bool	isChatEnable();
+	void	setChatMode(int flags);
+	int		getChatMode();
+	void	setChatFlags(int flags);
+	int		getChatFlags();
+	void	setChatBackgroundFilename(const char *filename);
+	const char *getChatBackgroundFilename();
+	void	setChatCssFilename(const char *filename);
+	const char *getChatCssFilename();
+	void	setChatCssFilenameRtl(const char *filename);
+	const char *getChatCssFilenameRtl();
+	void	setChatTemplateFilename(const char *filename);
+	const char *getChatTemplateFilename();
+	void	setChatTemplateFilenameRtl(const char *filename);
+	const char *getChatTemplateFilenameRtl();
+
+	void	setChatEnableTemp(bool enable);
+	bool	isChatEnableTemp();
+	void	setChatModeTemp(int flags);
+	int		getChatModeTemp();
+	void	setChatFlagsTemp(int flags);
+	int		getChatFlagsTemp();
+	void	setChatBackgroundFilenameTemp(const char *filename);
+	const char *getChatBackgroundFilenameTemp();
+	void	setChatCssFilenameTemp(const char *filename);
+	const char *getChatCssFilenameTemp();
+	void	setChatCssFilenameRtlTemp(const char *filename);
+	const char *getChatCssFilenameRtlTemp();
+	void	setChatTemplateFilenameTemp(const char *filename);
+	const char *getChatTemplateFilenameTemp();
+	void	setChatTemplateFilenameRtlTemp(const char *filename);
+	const char *getChatTemplateFilenameRtlTemp();
+
 
 	void 	copyToTemp();
 	void	copyFromTemp();
@@ -127,9 +184,6 @@ public:
 class Options {
 private:
    	static int 		generalFlags;
-
-   	static int 		srmmFlags;
-   	static int		srmmMode;
 
    	static int 		groupChatFlags;
    	static char *	groupChatCSSFilename;
