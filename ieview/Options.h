@@ -44,6 +44,7 @@ class Options;
 
 
 #define DBS_SRMM_ENABLE          	"SRMMEnable"
+#define DBS_SRMM_MODE          		"SRMMMode"
 #define DBS_SRMM_FLAGS          	"SRMMFlags"
 #define DBS_SRMM_BACKGROUND    		"SRMMBackgroundFile"
 #define DBS_SRMM_CSS         		"SRMMCSSFile"
@@ -60,6 +61,7 @@ private:
 	ProtocolSettings *next;
 
 	bool enable;
+	int srmmMode;
 	int srmmFlags;
 	char *srmmBackgroundFilename;
 	char *srmmCssFilename;
@@ -68,6 +70,7 @@ private:
 	char *srmmTemplateFilenameRtl;
 
 	bool enableTemp;
+	int srmmModeTemp;
 	int srmmFlagsTemp;
 	char *srmmBackgroundFilenameTemp;
 	char *srmmCssFilenameTemp;
@@ -83,6 +86,8 @@ public:
 	ProtocolSettings *getNext();
 	void	setEnable(bool enable);
 	bool	isEnable();
+	void	setSRMMMode(int flags);
+	int		getSRMMMode();
 	void	setSRMMFlags(int flags);
 	int		getSRMMFlags();
 	void	setSRMMBackgroundFilename(const char *filename);
@@ -98,6 +103,8 @@ public:
 
 	void	setEnableTemp(bool enable);
 	bool	isEnableTemp();
+	void	setSRMMModeTemp(int flags);
+	int		getSRMMModeTemp();
 	void	setSRMMFlagsTemp(int flags);
 	int		getSRMMFlagsTemp();
 	void	setSRMMBackgroundFilenameTemp(const char *filename);
@@ -170,10 +177,6 @@ public:
 	};
    	static void     		setGeneralFlags(int flags);
    	static int				getGeneralFlags();
-   	static void				setSRMMMode(int mode);
-   	static int				getSRMMMode();
-   	static void				setSRMMFlags(int flags);
-//   	static int				getSRMMFlags();
 
    	static void      		setGroupChatCSSFile(const char *filename);
    	static const char *		getGroupChatCSSFile();

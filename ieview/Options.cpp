@@ -91,6 +91,13 @@ static void SaveSRMMProtoSettings(HWND hwndDlg, ProtocolSettings *proto) {
 	if (proto != NULL) {
 		char path[MAX_PATH];
 		int i;
+		i = Options::MODE_COMPATIBLE;
+		if (IsDlgButtonChecked(hwndDlg, IDC_MODE_TEMPLATE)) {
+			i = Options::MODE_TEMPLATE;
+		} else if (IsDlgButtonChecked(hwndDlg, IDC_MODE_CSS)) {
+			i = Options::MODE_CSS;
+		}
+		proto->setSRMMModeTemp(i);
 		i = IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE) ? Options::LOG_IMAGE_ENABLED : 0;
 		i |= IsDlgButtonChecked(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE) ? Options::LOG_IMAGE_SCROLL : 0;
 		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_NICKNAMES) ? Options::LOG_SHOW_NICKNAMES : 0;
@@ -115,6 +122,7 @@ static void SaveSRMMProtoSettings(HWND hwndDlg, ProtocolSettings *proto) {
 }
 
 static void UpdateSRMMControlsState(HWND hwndDlg) {
+
 	BOOL bChecked = IsDlgButtonChecked(hwndDlg, IDC_MODE_TEMPLATE);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATES_FILENAME), bChecked);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_TEMPLATES), bChecked);
@@ -146,6 +154,9 @@ static void UpdateSRMMProtoInfo(HWND hwndDlg, ProtocolSettings *proto) {
 	if (proto != NULL) {
 		HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
 		TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), proto->isEnableTemp());
+		CheckDlgButton(hwndDlg, IDC_MODE_TEMPLATE, proto->getSRMMModeTemp() == Options::MODE_TEMPLATE ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_MODE_CSS, proto->getSRMMModeTemp() == Options::MODE_CSS ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_MODE_COMPATIBLE, proto->getSRMMModeTemp() == Options::MODE_COMPATIBLE ? TRUE : FALSE);
 		CheckDlgButton(hwndDlg, IDC_BACKGROUND_IMAGE, proto->getSRMMFlagsTemp() & Options::LOG_IMAGE_ENABLED ? TRUE : FALSE);
 		CheckDlgButton(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE, proto->getSRMMFlagsTemp() & Options::LOG_IMAGE_SCROLL ? TRUE : FALSE);
 		CheckDlgButton(hwndDlg, IDC_LOG_SHOW_NICKNAMES, proto->getSRMMFlagsTemp() & Options::LOG_SHOW_NICKNAMES ? TRUE : FALSE);
@@ -426,18 +437,12 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 }
 
 static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
-	int i;
 	BOOL bChecked;
 	char path[MAX_PATH];
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
 			TranslateDialogDefault(hwndDlg);
-
-			CheckDlgButton(hwndDlg, IDC_MODE_TEMPLATE, Options::getSRMMMode() == Options::MODE_TEMPLATE ? TRUE : FALSE);
-			CheckDlgButton(hwndDlg, IDC_MODE_CSS, Options::getSRMMMode() == Options::MODE_CSS ? TRUE : FALSE);
-			CheckDlgButton(hwndDlg, IDC_MODE_COMPATIBLE, Options::getSRMMMode() == Options::MODE_COMPATIBLE ? TRUE : FALSE);
-
 			Options::resetProtocolSettings();
 			currentProtoItem = Options::getProtocolSettings();
 			RefreshProtoIcons(hwndDlg);
@@ -562,13 +567,6 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 			}
 			switch (((LPNMHDR) lParam)->code) {
 			case PSN_APPLY:
-				i = Options::MODE_COMPATIBLE;
-				if (IsDlgButtonChecked(hwndDlg, IDC_MODE_TEMPLATE)) {
-					i = Options::MODE_TEMPLATE;
-				} else if (IsDlgButtonChecked(hwndDlg, IDC_MODE_CSS)) {
-					i = Options::MODE_CSS;
-				}
-				Options::setSRMMMode(i);
 				SaveSRMMProtoSettings(hwndDlg, currentProtoItem);
 				Options::saveProtocolSettings();
 				return TRUE;
@@ -1002,6 +1000,7 @@ ProtocolSettings::ProtocolSettings(const char *protocolName) {
 	this->protocolName = Utils::dupString(protocolName);
 	next = NULL;
 	enable = false;
+	srmmMode = Options::MODE_COMPATIBLE;
 	srmmFlags = 0;
 	srmmBackgroundFilename = Utils::dupString("");
 	srmmCssFilename = Utils::dupString("");
@@ -1050,6 +1049,7 @@ ProtocolSettings::~ProtocolSettings() {
 }
 
 void ProtocolSettings::copyToTemp() {
+	setSRMMModeTemp(getSRMMMode());
 	setSRMMFlagsTemp(getSRMMFlags());
 	setSRMMBackgroundFilenameTemp(getSRMMBackgroundFilename());
 	setSRMMCssFilenameTemp(getSRMMCssFilename());
@@ -1060,6 +1060,7 @@ void ProtocolSettings::copyToTemp() {
 }
 
 void ProtocolSettings::copyFromTemp() {
+	setSRMMMode(getSRMMModeTemp());
 	setSRMMFlags(getSRMMFlagsTemp());
 	setSRMMBackgroundFilename(getSRMMBackgroundFilenameTemp());
 	setSRMMCssFilename(getSRMMCssFilenameTemp());
@@ -1209,6 +1210,22 @@ bool ProtocolSettings::isEnableTemp() {
 	return enableTemp;
 }
 
+void ProtocolSettings::setSRMMMode(int mode) {
+	this->srmmMode = mode;
+}
+
+int ProtocolSettings::getSRMMMode() {
+	return srmmMode;
+}
+
+void ProtocolSettings::setSRMMModeTemp(int mode) {
+	this->srmmModeTemp = mode;
+}
+
+int ProtocolSettings::getSRMMModeTemp() {
+	return srmmModeTemp;
+}
+
 void ProtocolSettings::setSRMMFlags(int flags) {
 	this->srmmFlags = flags;
 }
@@ -1249,6 +1266,10 @@ void Options::init() {
 		} else {
 			continue;
 		}
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_MODE);
+		proto->setSRMMMode(DBGetContactSettingByte(NULL, ieviewModuleName, dbsName, FALSE));
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_FLAGS);
+		proto->setSRMMFlags(DBGetContactSettingDword(NULL, ieviewModuleName, dbsName, FALSE));
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_BACKGROUND);
 		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
 			strcpy(tmpPath, dbv.pszVal);
@@ -1378,20 +1399,6 @@ void Options::setGeneralFlags(int flags) {
 
 int	Options::getGeneralFlags() {
 	return generalFlags;
-}
-
-void Options::setSRMMMode(int mode) {
-	srmmMode = mode;
-	DBWriteContactSettingByte(NULL, ieviewModuleName, DBS_SRMMMODE, (DWORD) mode);
-}
-
-int	Options::getSRMMMode() {
-	return srmmMode;
-}
-
-void Options::setSRMMFlags(int flags) {
-	srmmFlags = flags;
-	DBWriteContactSettingDword(NULL, ieviewModuleName, DBS_SRMMFLAGS, (DWORD) flags);
 }
 
 void Options::setGroupChatCSSFile(const char *filename) {
@@ -1565,6 +1572,12 @@ void Options::saveProtocolSettings() {
 		char dbsName[256];
 		char tmpPath[MAX_PATH];
 		proto->copyFromTemp();
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_ENABLE);
+		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->isEnable());
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_MODE);
+		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->getSRMMMode());
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_FLAGS);
+		DBWriteContactSettingDword(NULL, ieviewModuleName, dbsName, proto->getSRMMFlags());
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_BACKGROUND);
 		strcpy (tmpPath, proto->getSRMMBackgroundFilename());
 		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
@@ -1583,8 +1596,6 @@ void Options::saveProtocolSettings() {
 			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getSRMMCssFilenameRtl(), (LPARAM)tmpPath);
 		}
 		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
-		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_ENABLE);
-		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->isEnable());
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_TEMPLATE);
 		strcpy (tmpPath, proto->getSRMMTemplateFilename());
 		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {

@@ -171,21 +171,19 @@ char *ScriverHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int gro
 
 
 void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
- 	if (Options::getSRMMMode() == Options::MODE_TEMPLATE) {
-		buildHeadTemplate(view, event);
-		return;
-	}
 	LOGFONTA lf;
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
-	char *szRealProto = getRealProto(event->hContact);
-	ProtocolSettings *protoSettings =  getProtocolSettings(szRealProto);
-    delete szRealProto;
+	ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
 	if (protoSettings == NULL) {
 		return;
 	}
- 	if (Options::getSRMMMode() == Options::MODE_CSS) {
+ 	if (protoSettings->getSRMMMode() == Options::MODE_TEMPLATE) {
+		buildHeadTemplate(view, event);
+		return;
+	}
+ 	if (protoSettings->getSRMMMode() == Options::MODE_CSS) {
 	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getSRMMCssFilenameRtl() : protoSettings->getSRMMCssFilename();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n", externalCSS);
 	} else {
@@ -398,7 +396,11 @@ void ScriverHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 }
 
 void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
- 	if (Options::getSRMMMode() == Options::MODE_TEMPLATE) {
+	ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
+	if (protoSettings == NULL) {
+		return;
+	}
+ 	if (protoSettings->getSRMMMode() == Options::MODE_TEMPLATE) {
 		appendEventTemplate(view, event);
 	} else {
 		appendEventNonTemplate(view, event);

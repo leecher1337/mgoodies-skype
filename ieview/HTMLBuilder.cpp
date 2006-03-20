@@ -1161,3 +1161,11 @@ ProtocolSettings* HTMLBuilder::getProtocolSettings(const char *protocolName) {
 	return protoSettings;
 }
 
+ProtocolSettings* HTMLBuilder::getProtocolSettings(HANDLE hContact) {
+	char *szRealProto = getRealProto(hContact);
+	ProtocolSettings *protoSettings =  getProtocolSettings(szRealProto);
+    delete szRealProto;
+	return protoSettings;
+}
+
+
