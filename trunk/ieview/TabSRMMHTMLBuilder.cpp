@@ -184,21 +184,19 @@ char *TabSRMMHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int isG
 
 
 void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
- 	if (Options::getSRMMMode() == Options::MODE_TEMPLATE) {
-		buildHeadTemplate(view, event);
-		return;
-	}
 	LOGFONTA lf;
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
-	char *szRealProto = getRealProto(event->hContact);
-	ProtocolSettings *protoSettings =  getProtocolSettings(szRealProto);
-    delete szRealProto;
+	ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
 	if (protoSettings == NULL) {
 		return;
 	}
- 	if (Options::getSRMMMode() == Options::MODE_CSS) {
+ 	if (protoSettings->getSRMMMode() == Options::MODE_TEMPLATE) {
+		buildHeadTemplate(view, event);
+		return;
+	}
+ 	if (protoSettings->getSRMMMode() == Options::MODE_CSS) {
 	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getSRMMCssFilenameRtl() : protoSettings->getSRMMCssFilename();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n",externalCSS);
 	} else {
@@ -263,14 +261,6 @@ void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 
 time_t TabSRMMHTMLBuilder::getStartedTime() {
 	return startedTime;
-}
-
-void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
- 	if (Options::getSRMMMode() == Options::MODE_TEMPLATE) {
-		appendEventTemplate(view, event);
-	} else {
-		appendEventNonTemplate(view, event);
-	}
 }
 
 void TabSRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
@@ -405,4 +395,16 @@ void TabSRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
     }
     if (szRealProto!=NULL) delete szRealProto;
 //	view->scrollToBottom();
+}
+
+void TabSRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
+	ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
+	if (protoSettings == NULL) {
+		return;
+	}
+ 	if (protoSettings->getSRMMMode() == Options::MODE_TEMPLATE) {
+		appendEventTemplate(view, event);
+	} else {
+		appendEventNonTemplate(view, event);
+	}
 }

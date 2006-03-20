@@ -131,6 +131,7 @@ protected:
 	virtual bool isUnicodeMIM();
 	virtual bool isDbEventShown(DBEVENTINFO * dbei)=0;
 	virtual ProtocolSettings *getProtocolSettings(const char *protocolName);
+	virtual ProtocolSettings *getProtocolSettings(HANDLE hContact);
 //	virtual void appendEventNonTemplate(IEView *, IEVIEWEVENT *event)=0;
 //	virtual void appendEventTemplate(IEView *, IEVIEWEVENT *event)=0;
 public:
