@@ -129,7 +129,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
     IOleInPlaceObject *pOleInPlace;
 	this->parent = parent;
 	this->builder = builder;
-	this->smileyWindow = NULL;
+//	this->smileyWindow = NULL;
 	prev = next = NULL;
 	hwnd = NULL;
 	sink = NULL;
@@ -179,7 +179,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	                                             &m_pConnectionPoint))) {
 	         // Step 3: Advise the connection point that you
 	         // want to sink its events.
-	            sink = new IEViewSink();
+	            sink = new IEViewSink(this);
 //#ifndef GECKO
 	         	if (FAILED(m_pConnectionPoint->Advise((IUnknown *)sink, &m_dwCookie)))     {
 	            	MessageBoxA(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
@@ -203,7 +203,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	pWebBrowser->put_RegisterAsDropTarget(VARIANT_FALSE);
 }
 
-IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, int cy) {
+/*IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, int cy) {
 	MSG msg;
 	IOleObject*   pOleObject = NULL;
     IOleInPlaceObject *pOleInPlace;
@@ -255,7 +255,7 @@ IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, in
 	                                             &m_pConnectionPoint))) {
 	         // Step 3: Advise the connection point that you
 	         // want to sink its events.
-	            sink = new IEViewSink(smileyWindow);
+	            sink = new IEViewSink(this);
 //#ifndef GECKO
 	         	if (FAILED(m_pConnectionPoint->Advise((IUnknown *)sink, &m_dwCookie)))     {
 	            	MessageBoxA(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
@@ -267,7 +267,7 @@ IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, in
     }
 	clear();
 }
-
+*/
 IEView::~IEView() {
 	IOleObject*   pOleObject = NULL;
 	if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleObject, (void**)&pOleObject))) {
@@ -529,12 +529,8 @@ STDMETHODIMP IEView::GetExternal(IDispatch **ppDispatch) {
 STDMETHODIMP IEView::TranslateUrl(DWORD dwTranslate, OLECHAR *pchURLIn, OLECHAR **ppchURLOut) { return E_NOTIMPL; }
 STDMETHODIMP IEView::FilterDataObject(IDataObject *pDO, IDataObject **ppDORet) { return E_NOTIMPL; }
 
-IEViewSink::IEViewSink() {
-	smileyWindow = NULL;
-}
-
-IEViewSink::IEViewSink(SmileyWindow *smptr) {
-	smileyWindow = smptr;
+IEViewSink::IEViewSink(IEView *smptr) {
+	ieWindow = smptr;
 }
 
 IEViewSink::~IEViewSink() {}
@@ -602,11 +598,11 @@ void IEViewSink::BeforeNavigate2(IDispatch* pDisp,VARIANT* url,VARIANT* flags, V
    	char *tTemp = new char[i+1];
    	WideCharToMultiByte(CP_ACP, 0, url->bstrVal, -1, tTemp, i+1, NULL, NULL);
 	if (strcmp(tTemp, "about:blank")) {
-		if (smileyWindow==NULL) {
+//		if (smileyWindow==NULL) {
       		CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) tTemp);
-   		} else {
-			smileyWindow->choose(tTemp);
-		}
+  // 		} else {
+	//		smileyWindow->choose(tTemp);
+	//	}
     	*cancel = VARIANT_TRUE;
 	}
    	delete tTemp;

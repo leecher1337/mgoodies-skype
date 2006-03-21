@@ -78,7 +78,7 @@ private:
 	char *				description;
 	SmileyMap *         next;
 	Smiley *			entries;
-	SmileyWindow *		window;
+//	SmileyWindow *		window;
 	SmileyMap(const char *name, const char *filename);
 	SmileyMap();
 	void                clear();
@@ -94,7 +94,7 @@ public:
 	Smiley *            getSmiley(const char *text, int *len);
 	Smiley *            getSmiley(const wchar_t *text, int *len);
 	Smiley *            getSmiley();
-	SmileyWindow *      getWindow();
+//	SmileyWindow *      getWindow();
 	static SmileyMap *	getSmileyMap(const char *proto);
 	static Smiley *		getSmiley(const char *proto, const char *text, int *len);
 	static bool         loadLibrary(const char *proto, const char *filename);
