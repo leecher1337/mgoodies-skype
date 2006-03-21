@@ -38,15 +38,14 @@ class IEView;
 #include "mshtmhst.h"
 
 #include "HTMLBuilder.h"
-#include "SmileyWindow.h"
+//#include "SmileyWindow.h"
 
 class IEViewSink:public  DWebBrowserEvents2 {
 private:
 	int		m_cRef;
-	SmileyWindow *smileyWindow;
+	IEView *ieWindow;
 public:
-	IEViewSink();
-	IEViewSink(SmileyWindow *);
+	IEViewSink(IEView *);
 	virtual ~IEViewSink();
     // IDispatch
 	STDMETHODIMP QueryInterface(REFIID riid, PVOID *ppv);
@@ -103,7 +102,7 @@ private:
 	IEViewSink 	*sink;
 	IWebBrowser2* pWebBrowser;
 	HTMLBuilder *builder;
-	SmileyWindow *smileyWindow;
+//	SmileyWindow *smileyWindow;
  	WNDPROC    	mainWndProc, docWndProc, serverWndProc;
 	DWORD       dwLogFlags;
 	int         iLogCodepage;
@@ -170,7 +169,7 @@ private:
 	BSTR 			getSelection();
 public:
 	IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy);
-	IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, int cy);
+//	IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, int cy);
 	virtual ~IEView();
 	HWND			getHWND();
 	void 			translateAccelerator(UINT uMsg, WPARAM wParam, LPARAM lParam);

@@ -160,7 +160,7 @@ SmileyMap::SmileyMap(const char *name, const char *filename) {
 	this->version = Utils::dupString("");
 	this->author = Utils::dupString("");
 	this->description = Utils::dupString("");
-	window = new SmileyWindow(this);
+//	window = new SmileyWindow(this);
 	smileyNum = 0;
 	visibleSmileyNum = 0;
 }
@@ -168,7 +168,7 @@ SmileyMap::SmileyMap(const char *name, const char *filename) {
 SmileyMap::SmileyMap() {
 	entries = NULL;
 	next = NULL;
-	window = NULL;
+//	window = NULL;
 	smileyNum = 0;
 	visibleSmileyNum = 0;
 	this->name = Utils::dupString("");
@@ -194,9 +194,9 @@ SmileyMap::~SmileyMap() {
 	if (description != NULL) {
 		delete description;
 	}
-	if (window != NULL) {
-		delete window;
-	}
+//	if (window != NULL) {
+//		delete window;
+//	}
 	clear();
 }
 
@@ -253,9 +253,9 @@ Smiley* SmileyMap::getSmiley() {
 	return entries;
 }
 
-SmileyWindow* SmileyMap::getWindow() {
-	return window;
-}
+//SmileyWindow* SmileyMap::getWindow() {
+//	return window;
+//}
 
 void SmileyMap::remove(const char *proto) {
 	SmileyMap *map, *lastmap;
@@ -378,7 +378,7 @@ SmileyMap *SmileyMap::getLibraryInfo(const char *filename) {
 	if (fh == NULL) {
 		return NULL;
 	}
-	
+
 	SmileyMap *smap = new SmileyMap();
 	smap->setFilename(filename);
 	while (fgets(store, sizeof(store), fh) != NULL) {
@@ -529,7 +529,7 @@ bool SmileyMap::loadLibrary(const char *proto, const char *filename) {
 				}
 	    	}
 	  	}
-	  	smap->getWindow()->init(previewW, previewH);
+//	  	smap->getWindow()->init(previewW, previewH);
 	}
   	fclose(fh);
 	return true;
@@ -538,8 +538,8 @@ bool SmileyMap::loadLibrary(const char *proto, const char *filename) {
 void SmileyMap::setSelectorBackground(DWORD color) {
 	SmileyMap *map;
 	for (map=mapList; map!=NULL; map=map->next) {
-		if (map->getWindow() != NULL) {
-			map->getWindow()->setBackground(color);
-		}
+//		if (map->getWindow() != NULL) {
+	//		map->getWindow()->setBackground(color);
+		//}
 	}
 }
