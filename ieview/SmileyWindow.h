@@ -24,7 +24,7 @@ class SmileyWindow;
 #define SMILEYWINDOW_INCLUDED
 
 #include "IEView.h"
-#include "Smiley.h"
+//#include "Smiley.h"
 #include "ieview_common.h"
 
 class SmileyWindow {
