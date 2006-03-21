@@ -27,18 +27,6 @@ class Options;
 
 #define DBS_BASICFLAGS  		  	"GeneralFlags"
 
-#define DBS_GROUPCHATFLAGS        	"GroupChatFlags"
-#define DBS_GROUPCHATCSSFILE      	"GroupChatCSSFile"
-#define DBS_GROUPCHATTEMPLATESFILE  "GroupChatTemplatesFile"
-
-#define DBS_HISTORYMODE		  	 	 "HistoryMode"
-#define DBS_HISTORYFLAGS		  	 "HistoryFlags"
-#define DBS_HISTORYCSSFILE      	 "HistoryCSSFile"
-#define DBS_HISTORYCSSFILE_RTL     	 "HistoryCSSFileRTL"
-#define DBS_HISTORYTEMPLATESFILE  	 "HistoryTemplatesFile"
-#define DBS_HISTORYTEMPLATESFILE_RTL "HistoryTemplatesFileRTL"
-
-
 #define DBS_SRMM_ENABLE          	"SRMMEnable"
 #define DBS_SRMM_MODE          		"SRMMMode"
 #define DBS_SRMM_FLAGS          	"SRMMFlags"
@@ -57,6 +45,14 @@ class Options;
 #define DBS_CHAT_TEMPLATE         	"ChatTemplateFile"
 #define DBS_CHAT_TEMPLATE_RTL     	"ChatTemplateFileRTL"
 
+#define DBS_HISTORY_ENABLE          "HistoryEnable"
+#define DBS_HISTORY_MODE          	"HistoryMode"
+#define DBS_HISTORY_FLAGS          	"HistoryFlags"
+#define DBS_HISTORY_BACKGROUND    	"HistoryBackgroundFile"
+#define DBS_HISTORY_CSS         	"HistoryCSSFile"
+#define DBS_HISTORY_CSS_RTL     	"HistoryCSSFileRTL"
+#define DBS_HISTORY_TEMPLATE        "HistoryTemplateFile"
+#define DBS_HISTORY_TEMPLATE_RTL    "HistoryTemplateFileRTL"
 
 extern int IEViewOptInit(WPARAM wParam, LPARAM lParam);
 
@@ -100,6 +96,24 @@ private:
 	char *chatCssFilenameRtlTemp;
 	char *chatTemplateFilenameTemp;
 	char *chatTemplateFilenameRtlTemp;
+
+	bool historyEnable;
+	int historyMode;
+	int historyFlags;
+	char *historyBackgroundFilename;
+	char *historyCssFilename;
+	char *historyCssFilenameRtl;
+	char *historyTemplateFilename;
+	char *historyTemplateFilenameRtl;
+
+	bool historyEnableTemp;
+	int historyModeTemp;
+	int historyFlagsTemp;
+	char *historyBackgroundFilenameTemp;
+	char *historyCssFilenameTemp;
+	char *historyCssFilenameRtlTemp;
+	char *historyTemplateFilenameTemp;
+	char *historyTemplateFilenameRtlTemp;
 
 public:
 	ProtocolSettings(const char *protocolName);
@@ -175,6 +189,39 @@ public:
 	void	setChatTemplateFilenameRtlTemp(const char *filename);
 	const char *getChatTemplateFilenameRtlTemp();
 
+	void	setHistoryEnable(bool enable);
+	bool	isHistoryEnable();
+	void	setHistoryMode(int flags);
+	int		getHistoryMode();
+	void	setHistoryFlags(int flags);
+	int		getHistoryFlags();
+	void	setHistoryBackgroundFilename(const char *filename);
+	const char *getHistoryBackgroundFilename();
+	void	setHistoryCssFilename(const char *filename);
+	const char *getHistoryCssFilename();
+	void	setHistoryCssFilenameRtl(const char *filename);
+	const char *getHistoryCssFilenameRtl();
+	void	setHistoryTemplateFilename(const char *filename);
+	const char *getHistoryTemplateFilename();
+	void	setHistoryTemplateFilenameRtl(const char *filename);
+	const char *getHistoryTemplateFilenameRtl();
+
+	void	setHistoryEnableTemp(bool enable);
+	bool	isHistoryEnableTemp();
+	void	setHistoryModeTemp(int flags);
+	int		getHistoryModeTemp();
+	void	setHistoryFlagsTemp(int flags);
+	int		getHistoryFlagsTemp();
+	void	setHistoryBackgroundFilenameTemp(const char *filename);
+	const char *getHistoryBackgroundFilenameTemp();
+	void	setHistoryCssFilenameTemp(const char *filename);
+	const char *getHistoryCssFilenameTemp();
+	void	setHistoryCssFilenameRtlTemp(const char *filename);
+	const char *getHistoryCssFilenameRtlTemp();
+	void	setHistoryTemplateFilenameTemp(const char *filename);
+	const char *getHistoryTemplateFilenameTemp();
+	void	setHistoryTemplateFilenameRtlTemp(const char *filename);
+	const char *getHistoryTemplateFilenameRtlTemp();
 
 	void 	copyToTemp();
 	void	copyFromTemp();
@@ -184,17 +231,6 @@ public:
 class Options {
 private:
    	static int 		generalFlags;
-
-   	static int 		groupChatFlags;
-   	static char *	groupChatCSSFilename;
-   	static char *	groupChatTemplatesFilename;
-
-   	static int 		historyFlags;
-   	static char *	historyTemplatesFilename;
-   	static char *	historyTemplatesFilenameRTL;
-   	static char *	historyCSSFilename;
-   	static char *	historyCSSFilenameRTL;
-
    	static bool     isInited;
 	static bool     bMathModule;
 	static bool     bSmileyAdd;
@@ -231,24 +267,6 @@ public:
 	};
    	static void     		setGeneralFlags(int flags);
    	static int				getGeneralFlags();
-
-   	static void      		setGroupChatCSSFile(const char *filename);
-   	static const char *		getGroupChatCSSFile();
-   	static void				setGroupChatFlags(int flags);
-   	static int				getGroupChatFlags();
-   	static void     		setGroupChatTemplatesFile(const char *filename);
-   	static const char *		getGroupChatTemplatesFile();
-
-   	static void				setHistoryFlags(int flags);
-   	static int				getHistoryFlags();
-   	static void      		setHistoryCSSFile(const char *filename);
-   	static const char *		getHistoryCSSFile();
-   	static void      		setHistoryCSSFileRTL(const char *filename);
-   	static const char *		getHistoryCSSFileRTL();
-   	static void     		setHistoryTemplatesFileRTL(const char *filename);
-   	static void     		setHistoryTemplatesFile(const char *filename);
-   	static const char *		getHistoryTemplatesFile();
-   	static const char *		getHistoryTemplatesFileRTL();
 
    	static bool             isMathModule();
    	static bool             isSmileyAdd();

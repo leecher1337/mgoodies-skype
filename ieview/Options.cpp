@@ -157,6 +157,40 @@ static void SaveChatProtoSettings(HWND hwndDlg, ProtocolSettings *proto) {
 	}
 }
 
+static void SaveHistoryProtoSettings(HWND hwndDlg, ProtocolSettings *proto) {
+	if (proto != NULL) {
+		char path[MAX_PATH];
+		int i;
+		i = Options::MODE_COMPATIBLE;
+		if (IsDlgButtonChecked(hwndDlg, IDC_MODE_TEMPLATE)) {
+			i = Options::MODE_TEMPLATE;
+		} else if (IsDlgButtonChecked(hwndDlg, IDC_MODE_CSS)) {
+			i = Options::MODE_CSS;
+		}
+		proto->setHistoryModeTemp(i);
+		i = IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE) ? Options::LOG_IMAGE_ENABLED : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE) ? Options::LOG_IMAGE_SCROLL : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_NICKNAMES) ? Options::LOG_SHOW_NICKNAMES : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_TIME) ? Options::LOG_SHOW_TIME : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_DATE) ? Options::LOG_SHOW_DATE : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_SECONDS) ? Options::LOG_SHOW_SECONDS : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_LONG_DATE) ? Options::LOG_LONG_DATE : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_RELATIVE_DATE) ? Options::LOG_RELATIVE_DATE : 0;
+		i |= IsDlgButtonChecked(hwndDlg, IDC_LOG_GROUP_MESSAGES) ? Options::LOG_GROUP_MESSAGES : 0;
+		proto->setHistoryFlagsTemp(i);
+		GetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
+		proto->setHistoryBackgroundFilenameTemp(path);
+		GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
+		proto->setHistoryCssFilenameTemp(path);
+		GetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
+		proto->setHistoryCssFilenameRtl(path);
+		GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
+		proto->setHistoryTemplateFilenameTemp(path);
+		GetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
+		proto->setHistoryTemplateFilenameRtlTemp(path);
+	}
+}
+
 static void UpdateControlsState(HWND hwndDlg) {
 
 	BOOL bChecked = IsDlgButtonChecked(hwndDlg, IDC_MODE_TEMPLATE);
@@ -278,6 +312,52 @@ static void UpdateChatProtoInfo(HWND hwndDlg, ProtocolSettings *proto) {
 	}
 }
 
+static void UpdateHistoryProtoInfo(HWND hwndDlg, ProtocolSettings *proto) {
+	if (proto != NULL) {
+		HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
+		TreeView_SetCheckState(hProtoList, TreeView_GetSelection(hProtoList), proto->isHistoryEnableTemp());
+		CheckDlgButton(hwndDlg, IDC_MODE_TEMPLATE, proto->getHistoryModeTemp() == Options::MODE_TEMPLATE ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_MODE_CSS, proto->getHistoryModeTemp() == Options::MODE_CSS ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_MODE_COMPATIBLE, proto->getHistoryModeTemp() == Options::MODE_COMPATIBLE ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_BACKGROUND_IMAGE, proto->getHistoryFlagsTemp() & Options::LOG_IMAGE_ENABLED ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE, proto->getHistoryFlagsTemp() & Options::LOG_IMAGE_SCROLL ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_SHOW_NICKNAMES, proto->getHistoryFlagsTemp() & Options::LOG_SHOW_NICKNAMES ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_SHOW_TIME, proto->getHistoryFlagsTemp() & Options::LOG_SHOW_TIME ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_SHOW_DATE, proto->getHistoryFlagsTemp() & Options::LOG_SHOW_DATE ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_SHOW_SECONDS, proto->getHistoryFlagsTemp() & Options::LOG_SHOW_SECONDS ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_LONG_DATE, proto->getHistoryFlagsTemp() & Options::LOG_LONG_DATE ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_RELATIVE_DATE, proto->getHistoryFlagsTemp() & Options::LOG_RELATIVE_DATE ? TRUE : FALSE);
+		CheckDlgButton(hwndDlg, IDC_LOG_GROUP_MESSAGES, proto->getHistoryFlagsTemp() & Options::LOG_GROUP_MESSAGES ? TRUE : FALSE);
+		if (proto->getHistoryBackgroundFilenameTemp() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, proto->getHistoryBackgroundFilenameTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, "");
+		}
+		if (proto->getHistoryCssFilename() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, proto->getHistoryCssFilenameTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME, "");
+		}
+		if (proto->getHistoryCssFilenameRtl() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, proto->getHistoryCssFilenameRtlTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, "");
+		}
+		if (proto->getHistoryTemplateFilenameTemp() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, proto->getHistoryTemplateFilenameTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, "");
+		}
+		if (proto->getHistoryTemplateFilenameRtlTemp() != NULL) {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, proto->getHistoryTemplateFilenameRtlTemp());
+		} else {
+			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, "");
+		}
+		historyCurrentProtoItem = proto;
+		UpdateControlsState(hwndDlg);
+	}
+}
+
 static void RefreshProtoIcons(HWND hwndDlg) {
 	int i;
 	ProtocolSettings *proto;
@@ -306,7 +386,7 @@ static void RefreshProtoIcons(HWND hwndDlg) {
 //	refreshProtoList(hwndDlg, IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS));
 }
 
-static void RefreshProtoList(HWND hwndDlg, bool protoTemplates) {
+static void RefreshProtoList(HWND hwndDlg, int mode, bool protoTemplates) {
 	int i;
     HTREEITEM hItem = NULL;
 	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
@@ -331,7 +411,17 @@ static void RefreshProtoList(HWND hwndDlg, bool protoTemplates) {
 		tvi.item.lParam = (LPARAM)proto;
 		tvi.item.iImage = i;
 		tvi.item.iSelectedImage = i;
-		tvi.item.state = INDEXTOSTATEIMAGEMASK(proto->isSRMMEnableTemp() ? 2 : 1);
+		switch (mode) {
+			case 0:
+				tvi.item.state = INDEXTOSTATEIMAGEMASK(proto->isSRMMEnableTemp() ? 2 : 1);
+				break;
+			case 1:
+				tvi.item.state = INDEXTOSTATEIMAGEMASK(proto->isChatEnableTemp() ? 2 : 1);
+				break;
+			case 2:
+				tvi.item.state = INDEXTOSTATEIMAGEMASK(proto->isHistoryEnableTemp() ? 2 : 1);
+				break;
+		}
 		if (i==0) {
 			hItem = TreeView_InsertItem(hProtoList, &tvi);
 		} else {
@@ -342,44 +432,6 @@ static void RefreshProtoList(HWND hwndDlg, bool protoTemplates) {
 //	UpdateSRMMProtoInfo(hwndDlg, Options::getProtocolSettings());
 	TreeView_SelectItem(hProtoList, hItem);
 }
-
-static void RefreshChatProtoList(HWND hwndDlg, bool protoTemplates) {
-	int i;
-    HTREEITEM hItem = NULL;
-	HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-	TreeView_DeleteAllItems(hProtoList);
-	TreeView_SetImageList(hProtoList, hProtocolImageList, TVSIL_NORMAL);
-	ProtocolSettings *proto;
-	for (i=0,proto=Options::getProtocolSettings();proto!=NULL;proto=proto->getNext(),i++) {
-		char protoName[128];
-		TVINSERTSTRUCT tvi = {0};
-		tvi.hParent = TVI_ROOT;
-		tvi.hInsertAfter = TVI_LAST;
-		tvi.item.mask = TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_STATE | TVIF_SELECTEDIMAGE;
-		tvi.item.stateMask = TVIS_SELECTED | TVIS_STATEIMAGEMASK;
-		if (i==0) {
-			strcpy(protoName, Translate("Default"));
-		} else {
-			CallProtoService(proto->getProtocolName(), PS_GETNAME, sizeof(protoName), (LPARAM)protoName);
-//			strcat(protoName, " ");
-	//		strcat(protoName, Translate("protocol"));
-		}
-		tvi.item.pszText = protoName;
-		tvi.item.lParam = (LPARAM)proto;
-		tvi.item.iImage = i;
-		tvi.item.iSelectedImage = i;
-		tvi.item.state = INDEXTOSTATEIMAGEMASK(proto->isChatEnableTemp() ? 2 : 1);
-		if (i==0) {
-			hItem = TreeView_InsertItem(hProtoList, &tvi);
-		} else {
-			TreeView_InsertItem(hProtoList, &tvi);
-		}
-		if (!protoTemplates) break;
-	}
-//	UpdateSRMMProtoInfo(hwndDlg, Options::getProtocolSettings());
-	TreeView_SelectItem(hProtoList, hItem);
-}
-
 
 static bool BrowseFile(HWND hwndDlg, TCHAR *filter, TCHAR *defExt,  TCHAR *path, int maxLen) {
 	OPENFILENAMEA ofn={0};
@@ -563,7 +615,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 		{
 			TranslateDialogDefault(hwndDlg);
 			srmmCurrentProtoItem = NULL;
-			RefreshProtoList(hwndDlg, true);
+			RefreshProtoList(hwndDlg, 0, true);
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -696,7 +748,6 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 }
 
 static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
-	int i;
 	BOOL bChecked = FALSE;
 	char path[MAX_PATH];
 	switch (msg) {
@@ -704,7 +755,7 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 		{
 			TranslateDialogDefault(hwndDlg);
 			historyCurrentProtoItem = NULL;
-			RefreshProtoList(hwndDlg, true);
+			RefreshProtoList(hwndDlg, 2, true);
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -774,67 +825,58 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			}
 		}
 		break;
-		/*
 	case UM_CHECKSTATECHANGE:
 		{
 			ProtocolSettings *proto = (ProtocolSettings *)GetItemParam((HWND)wParam, (HTREEITEM) lParam);
 			if (proto != NULL) {
 				if (strcmpi(proto->getProtocolName(), "_default_")) {
-					proto->setSRMMEnableTemp(TreeView_GetCheckState((HWND)wParam, (HTREEITEM) lParam));
+					proto->setHistoryEnableTemp(TreeView_GetCheckState((HWND)wParam, (HTREEITEM) lParam));
 				}
 			}
 			if ((HTREEITEM) lParam != TreeView_GetSelection((HWND)wParam)) {
 				TreeView_SelectItem((HWND)wParam, (HTREEITEM) lParam);
 			} else {
-				UpdateSRMMProtoInfo(hwndDlg, proto);
+				UpdateHistoryProtoInfo(hwndDlg, proto);
 			}
 			SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 		}
 		break;
-		*/
 	case WM_NOTIFY:
 		{
+			if (((LPNMHDR)lParam)->idFrom == IDC_PROTOLIST) {
+				switch (((LPNMHDR)lParam)->code) {
+					case NM_CLICK:
+						{
+							TVHITTESTINFO ht = {0};
+							DWORD dwpos = GetMessagePos();
+							POINTSTOPOINT(ht.pt, MAKEPOINTS(dwpos));
+							MapWindowPoints(HWND_DESKTOP, ((LPNMHDR)lParam)->hwndFrom, &ht.pt, 1);
+							TreeView_HitTest(((LPNMHDR)lParam)->hwndFrom, &ht);
+							if (TVHT_ONITEMSTATEICON & ht.flags) {
+                                PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom, (LPARAM)ht.hItem);
+                                return FALSE;
+							}
+						}
+						break;
+					case TVN_KEYDOWN:
+						 if (((LPNMTVKEYDOWN) lParam)->wVKey == VK_SPACE)
+								PostMessage(hwndDlg, UM_CHECKSTATECHANGE, (WPARAM)((LPNMHDR)lParam)->hwndFrom,
+								(LPARAM)TreeView_GetSelection(((LPNMHDR)lParam)->hwndFrom));
+						break;
+					case TVN_SELCHANGED:
+						{
+							HWND hLstView = GetDlgItem(hwndDlg, IDC_PROTOLIST);
+							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(hLstView, (HTREEITEM) NULL);
+							SaveHistoryProtoSettings(hwndDlg, historyCurrentProtoItem);
+							UpdateHistoryProtoInfo(hwndDlg, proto);
+						}
+						break;
+				}
+				break;
+			}
 			switch (((LPNMHDR) lParam)->code) {
 			case PSN_APPLY:
-				i = 0;
-				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_NICKNAMES)) {
-					i |= Options::LOG_SHOW_NICKNAMES;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_TIME)) {
-					i |= Options::LOG_SHOW_TIME;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_DATE)) {
-					i |= Options::LOG_SHOW_DATE;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_SHOW_SECONDS)) {
-					i |= Options::LOG_SHOW_SECONDS;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_LONG_DATE)) {
-					i |= Options::LOG_LONG_DATE;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_RELATIVE_DATE)) {
-					i |= Options::LOG_RELATIVE_DATE;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_LOG_GROUP_MESSAGES)) {
-					i |= Options::LOG_GROUP_MESSAGES;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE)) {
-					i |= Options::LOG_IMAGE_ENABLED;
-				}
-				if (IsDlgButtonChecked(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE)) {
-					i |= Options::LOG_IMAGE_SCROLL;
-				}
-				Options::setHistoryFlags(i);
-				GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path, sizeof(path));
-				Options::setHistoryTemplatesFile(path);
-				GetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME_RTL, path, sizeof(path));
-				Options::setHistoryTemplatesFileRTL(path);
-				GetDlgItemTextA(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME, path, sizeof(path));
-//				Options::setBkgImageFile(path);
-				GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path, sizeof(path));
-				Options::setHistoryCSSFile(path);
-				GetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path, sizeof(path));
-				Options::setHistoryCSSFileRTL(path);
+				SaveHistoryProtoSettings(hwndDlg, historyCurrentProtoItem);
 				return TRUE;
 			}
 		}
@@ -853,7 +895,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 		{
 			TranslateDialogDefault(hwndDlg);
 			chatCurrentProtoItem = NULL;
-			RefreshChatProtoList(hwndDlg, true);
+			RefreshProtoList(hwndDlg, 1, true);
 			return TRUE;
 		}
 		break;
@@ -935,7 +977,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 			if ((HTREEITEM) lParam != TreeView_GetSelection((HWND)wParam)) {
 				TreeView_SelectItem((HWND)wParam, (HTREEITEM) lParam);
 			} else {
-				UpdateSRMMProtoInfo(hwndDlg, proto);
+				UpdateChatProtoInfo(hwndDlg, proto);
 			}
 			SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
 		}
@@ -992,16 +1034,6 @@ bool  Options::bSmileyAdd = false;
 int  Options::avatarServiceFlags = 0;
 int Options::generalFlags;
 
-int Options::groupChatFlags;
-char *Options::groupChatCSSFilename = NULL;
-char *Options::groupChatTemplatesFilename = NULL;
-
-int Options::historyFlags;
-char *Options::historyCSSFilename = NULL;
-char *Options::historyCSSFilenameRTL = NULL;
-char *Options::historyTemplatesFilename = NULL;
-char *Options::historyTemplatesFilenameRTL = NULL;
-
 ProtocolSettings *Options::protocolList = NULL;
 
 ProtocolSettings::ProtocolSettings(const char *protocolName) {
@@ -1036,6 +1068,21 @@ ProtocolSettings::ProtocolSettings(const char *protocolName) {
 	chatCssFilenameRtlTemp = Utils::dupString("");
 	chatTemplateFilenameTemp = Utils::dupString("");
 	chatTemplateFilenameRtlTemp = Utils::dupString("");
+
+	historyEnable = false;
+	historyMode = Options::MODE_COMPATIBLE;
+	historyFlags = 0;
+	historyBackgroundFilename = Utils::dupString("");
+	historyCssFilename = Utils::dupString("");
+	historyCssFilenameRtl = Utils::dupString("");
+	historyTemplateFilename = Utils::dupString("");
+	historyTemplateFilenameRtl = Utils::dupString("");
+
+	historyBackgroundFilenameTemp = Utils::dupString("");
+	historyCssFilenameTemp = Utils::dupString("");
+	historyCssFilenameRtlTemp = Utils::dupString("");
+	historyTemplateFilenameTemp = Utils::dupString("");
+	historyTemplateFilenameRtlTemp = Utils::dupString("");
 
 }
 
@@ -1102,6 +1149,36 @@ ProtocolSettings::~ProtocolSettings() {
 		delete chatTemplateFilenameRtlTemp;
 	}
 
+	if (historyBackgroundFilename != NULL) {
+		delete historyBackgroundFilename;
+	}
+	if (historyBackgroundFilenameTemp != NULL) {
+		delete historyBackgroundFilenameTemp;
+	}
+	if (historyCssFilename != NULL) {
+		delete historyCssFilename;
+	}
+	if (historyCssFilenameRtl != NULL) {
+		delete historyCssFilenameRtl;
+	}
+	if (historyCssFilenameTemp != NULL) {
+		delete historyCssFilenameTemp;
+	}
+	if (historyCssFilenameRtlTemp != NULL) {
+		delete historyCssFilenameRtlTemp;
+	}
+	if (historyTemplateFilename != NULL) {
+		delete historyTemplateFilename;
+	}
+	if (historyTemplateFilenameRtl != NULL) {
+		delete historyTemplateFilenameRtl;
+	}
+	if (historyTemplateFilenameTemp != NULL) {
+		delete historyTemplateFilenameTemp;
+	}
+	if (historyTemplateFilenameRtlTemp != NULL) {
+		delete historyTemplateFilenameRtlTemp;
+	}
 }
 
 void ProtocolSettings::copyToTemp() {
@@ -1123,6 +1200,14 @@ void ProtocolSettings::copyToTemp() {
 	setChatTemplateFilenameRtlTemp(getChatTemplateFilenameRtl());
 	setChatEnableTemp(isChatEnable());
 
+	setHistoryModeTemp(getHistoryMode());
+	setHistoryFlagsTemp(getHistoryFlags());
+	setHistoryBackgroundFilenameTemp(getHistoryBackgroundFilename());
+	setHistoryCssFilenameTemp(getHistoryCssFilename());
+	setHistoryCssFilenameRtlTemp(getHistoryCssFilenameRtl());
+	setHistoryTemplateFilenameTemp(getHistoryTemplateFilename());
+	setHistoryTemplateFilenameRtlTemp(getHistoryTemplateFilenameRtl());
+	setHistoryEnableTemp(isHistoryEnable());
 }
 
 void ProtocolSettings::copyFromTemp() {
@@ -1144,6 +1229,14 @@ void ProtocolSettings::copyFromTemp() {
 	setChatTemplateFilenameRtl(getChatTemplateFilenameRtlTemp());
 	setChatEnable(isChatEnableTemp());
 
+	setHistoryMode(getHistoryModeTemp());
+	setHistoryFlags(getHistoryFlagsTemp());
+	setHistoryBackgroundFilename(getHistoryBackgroundFilenameTemp());
+	setHistoryCssFilename(getHistoryCssFilenameTemp());
+	setHistoryCssFilenameRtl(getHistoryCssFilenameRtlTemp());
+	setHistoryTemplateFilename(getHistoryTemplateFilenameTemp());
+	setHistoryTemplateFilenameRtl(getHistoryTemplateFilenameRtlTemp());
+	setHistoryEnable(isHistoryEnableTemp());
 }
 
 void ProtocolSettings::setNext(ProtocolSettings *next) {
@@ -1480,6 +1573,168 @@ int ProtocolSettings::getChatFlagsTemp() {
 	return chatFlagsTemp;
 }
 
+/* */
+
+void ProtocolSettings::setHistoryBackgroundFilename(const char *filename) {
+	if (historyBackgroundFilename != NULL) {
+		delete historyBackgroundFilename;
+	}
+	historyBackgroundFilename = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setHistoryBackgroundFilenameTemp(const char *filename) {
+	if (historyBackgroundFilenameTemp != NULL) {
+		delete historyBackgroundFilenameTemp;
+	}
+	historyBackgroundFilenameTemp = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setHistoryCssFilename(const char *filename) {
+	if (historyCssFilename != NULL) {
+		delete historyCssFilename;
+	}
+	historyCssFilename = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setHistoryCssFilenameRtl(const char *filename) {
+	if (historyCssFilenameRtl != NULL) {
+		delete historyCssFilenameRtl;
+	}
+	historyCssFilenameRtl = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setHistoryCssFilenameTemp(const char *filename) {
+	if (historyCssFilenameTemp != NULL) {
+		delete historyCssFilenameTemp;
+	}
+	historyCssFilenameTemp = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setHistoryCssFilenameRtlTemp(const char *filename) {
+	if (historyCssFilenameRtlTemp != NULL) {
+		delete historyCssFilenameRtlTemp;
+	}
+	historyCssFilenameRtlTemp = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setHistoryTemplateFilename(const char *filename) {
+	if (historyTemplateFilename != NULL) {
+		delete historyTemplateFilename;
+	}
+	historyTemplateFilename = Utils::dupString(filename);
+	TemplateMap::loadTemplates(getHistoryTemplateFilename(), getHistoryTemplateFilename());
+}
+
+void ProtocolSettings::setHistoryTemplateFilenameRtl(const char *filename) {
+	if (historyTemplateFilenameRtl != NULL) {
+		delete historyTemplateFilenameRtl;
+	}
+	historyTemplateFilenameRtl = Utils::dupString(filename);
+	TemplateMap::loadTemplates(getHistoryTemplateFilenameRtl(), getHistoryTemplateFilenameRtl());
+}
+
+void ProtocolSettings::setHistoryTemplateFilenameTemp(const char *filename) {
+	if (historyTemplateFilenameTemp != NULL) {
+		delete historyTemplateFilenameTemp;
+	}
+	historyTemplateFilenameTemp = Utils::dupString(filename);
+}
+
+void ProtocolSettings::setHistoryTemplateFilenameRtlTemp(const char *filename) {
+	if (historyTemplateFilenameRtlTemp != NULL) {
+		delete historyTemplateFilenameRtlTemp;
+	}
+	historyTemplateFilenameRtlTemp = Utils::dupString(filename);
+}
+
+const char *ProtocolSettings::getHistoryBackgroundFilename() {
+	return historyBackgroundFilename;
+}
+
+const char *ProtocolSettings::getHistoryBackgroundFilenameTemp() {
+	return historyBackgroundFilenameTemp;
+}
+
+const char *ProtocolSettings::getHistoryCssFilename() {
+	return historyCssFilename;
+}
+
+const char *ProtocolSettings::getHistoryCssFilenameRtl() {
+	return historyCssFilenameRtl;
+}
+
+const char *ProtocolSettings::getHistoryCssFilenameTemp() {
+	return historyCssFilenameTemp;
+}
+
+const char *ProtocolSettings::getHistoryCssFilenameRtlTemp() {
+	return historyCssFilenameRtlTemp;
+}
+
+const char *ProtocolSettings::getHistoryTemplateFilename() {
+	return historyTemplateFilename;
+}
+
+const char *ProtocolSettings::getHistoryTemplateFilenameRtl() {
+	return historyTemplateFilenameRtl;
+}
+
+const char *ProtocolSettings::getHistoryTemplateFilenameTemp() {
+	return historyTemplateFilenameTemp;
+}
+
+const char *ProtocolSettings::getHistoryTemplateFilenameRtlTemp() {
+	return historyTemplateFilenameRtlTemp;
+}
+
+void ProtocolSettings::setHistoryEnable(bool enable) {
+	this->historyEnable = enable;
+}
+
+bool ProtocolSettings::isHistoryEnable() {
+	return historyEnable;
+}
+
+void ProtocolSettings::setHistoryEnableTemp(bool enable) {
+	this->historyEnableTemp = enable;
+}
+
+bool ProtocolSettings::isHistoryEnableTemp() {
+	return historyEnableTemp;
+}
+
+void ProtocolSettings::setHistoryMode(int mode) {
+	this->historyMode = mode;
+}
+
+int ProtocolSettings::getHistoryMode() {
+	return historyMode;
+}
+
+void ProtocolSettings::setHistoryModeTemp(int mode) {
+	this->historyModeTemp = mode;
+}
+
+int ProtocolSettings::getHistoryModeTemp() {
+	return historyModeTemp;
+}
+
+void ProtocolSettings::setHistoryFlags(int flags) {
+	this->historyFlags = flags;
+}
+
+int ProtocolSettings::getHistoryFlags() {
+	return historyFlags;
+}
+
+void ProtocolSettings::setHistoryFlagsTemp(int flags) {
+	this->historyFlagsTemp = flags;
+}
+
+int ProtocolSettings::getHistoryFlagsTemp() {
+	return historyFlagsTemp;
+}
+
 void Options::init() {
 	if (isInited) return;
 	isInited = true;
@@ -1610,6 +1865,59 @@ void Options::init() {
 			DBFreeVariant(&dbv);
 		}
 
+		/* History settings */
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_ENABLE);
+		proto->setHistoryEnable(i==0 ? true : DBGetContactSettingByte(NULL, ieviewModuleName, dbsName, FALSE));
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_MODE);
+		proto->setHistoryMode(DBGetContactSettingByte(NULL, ieviewModuleName, dbsName, FALSE));
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_FLAGS);
+		proto->setHistoryFlags(DBGetContactSettingDword(NULL, ieviewModuleName, dbsName, FALSE));
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_BACKGROUND);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+			if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setHistoryBackgroundFilename(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_CSS);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+			if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setHistoryCssFilename(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_CSS_RTL);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+	    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setHistoryCssFilenameRtl(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_TEMPLATE);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+			if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setHistoryTemplateFilename(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_TEMPLATE_RTL);
+		if (!DBGetContactSetting(NULL,  ieviewModuleName, dbsName, &dbv)) {
+			strcpy(tmpPath, dbv.pszVal);
+			if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+			}
+			proto->setHistoryTemplateFilenameRtl(tmpPath);
+			DBFreeVariant(&dbv);
+		}
+
 		proto->copyToTemp();
 		if (lastProto != NULL) {
 			lastProto->setNext(proto);
@@ -1626,62 +1934,7 @@ void Options::init() {
 		avatarServiceFlags = AVATARSERVICE_PRESENT;
 	}
 
-	groupChatFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_GROUPCHATFLAGS, FALSE);
-	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_GROUPCHATCSSFILE, &dbv)) {
-    	char tmpPath[MAX_PATH];
-    	strcpy(tmpPath, dbv.pszVal);
-    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
-   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-   		}
-		groupChatCSSFilename = new char[strlen(tmpPath)+1];
-		strcpy(groupChatCSSFilename, tmpPath);
-		DBFreeVariant(&dbv);
-	} else {
-        groupChatCSSFilename = new char[1];
-        strcpy(groupChatCSSFilename, "");
-	}
-	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_GROUPCHATTEMPLATESFILE, &dbv)) {
-    	char tmpPath[MAX_PATH];
-    	strcpy(tmpPath, dbv.pszVal);
-    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
-   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-   		}
-		groupChatTemplatesFilename = new char[strlen(tmpPath)+1];
-		strcpy(groupChatTemplatesFilename, tmpPath);
-		DBFreeVariant(&dbv);
-	} else {
-        groupChatTemplatesFilename = new char[1];
-        strcpy(groupChatTemplatesFilename, "");
-	}
-	historyFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_HISTORYFLAGS, FALSE);
-	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_HISTORYCSSFILE, &dbv)) {
-    	char tmpPath[MAX_PATH];
-    	strcpy(tmpPath, dbv.pszVal);
-    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
-   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-   		}
-		historyCSSFilename = new char[strlen(tmpPath)+1];
-		strcpy(historyCSSFilename, tmpPath);
-		DBFreeVariant(&dbv);
-	} else {
-        historyCSSFilename = new char[1];
-        strcpy(historyCSSFilename, "");
-	}
-	if (!DBGetContactSetting(NULL,  ieviewModuleName, DBS_HISTORYCSSFILE_RTL, &dbv)) {
-    	char tmpPath[MAX_PATH];
-    	strcpy(tmpPath, dbv.pszVal);
-    	if (ServiceExists(MS_UTILS_PATHTOABSOLUTE) && strncmp(tmpPath, "http://", 7)) {
-   	    	CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-   		}
-		historyCSSFilenameRTL = new char[strlen(tmpPath)+1];
-		strcpy(historyCSSFilenameRTL, tmpPath);
-		DBFreeVariant(&dbv);
-	} else {
-        historyCSSFilenameRTL = new char[1];
-        strcpy(historyCSSFilenameRTL, "");
-	}
 
-	TemplateMap::loadTemplates("groupchat_default", groupChatTemplatesFilename);
 //	mathModuleFlags = ServiceExists(MTH_GET_HTML_SOURCE) ? GENERAL_ENABLE_MATHMODULE : 0;
 }
 
@@ -1693,139 +1946,6 @@ void Options::setGeneralFlags(int flags) {
 int	Options::getGeneralFlags() {
 	return generalFlags;
 }
-
-void Options::setGroupChatCSSFile(const char *filename) {
-	if (groupChatCSSFilename != NULL) {
-		delete [] groupChatCSSFilename;
-	}
-	groupChatCSSFilename = new char[strlen(filename)+1];
-	strcpy(groupChatCSSFilename, filename);
-    char tmpPath[MAX_PATH];
-    strcpy (tmpPath, filename);
-    if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
-    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
-   	}
-	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_GROUPCHATCSSFILE, tmpPath);
-}
-
-const char *Options::getGroupChatCSSFile() {
-	return groupChatCSSFilename;
-}
-
-void Options::setGroupChatFlags(int flags) {
-	groupChatFlags = flags;
-	DBWriteContactSettingDword(NULL, ieviewModuleName, DBS_GROUPCHATFLAGS, (DWORD) flags);
-}
-
-int	Options::getGroupChatFlags() {
-	return groupChatFlags;
-}
-
-void Options::setGroupChatTemplatesFile(const char *filename) {
-	if (groupChatTemplatesFilename != NULL) {
-		delete [] groupChatTemplatesFilename;
-	}
-	groupChatTemplatesFilename = new char[strlen(filename)+1];
-	strcpy(groupChatTemplatesFilename, filename);
-    char tmpPath[MAX_PATH];
-    strcpy (tmpPath, filename);
-    if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
-    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
-   	}
-	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_GROUPCHATTEMPLATESFILE, tmpPath);
-	TemplateMap::loadTemplates("groupchat", groupChatTemplatesFilename);
-}
-
-const char *Options::getGroupChatTemplatesFile() {
-	return groupChatTemplatesFilename;
-}
-
-
-void Options::setHistoryCSSFile(const char *filename) {
-	if (historyCSSFilename != NULL) {
-		delete [] historyCSSFilename;
-	}
-	historyCSSFilename = new char[strlen(filename)+1];
-	strcpy(historyCSSFilename, filename);
-    char tmpPath[MAX_PATH];
-    strcpy (tmpPath, filename);
-    if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
-    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
-   	}
-	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_HISTORYCSSFILE, tmpPath);
-}
-
-const char *Options::getHistoryCSSFile() {
-	return historyCSSFilename;
-}
-
-void Options::setHistoryCSSFileRTL(const char *filename) {
-	if (historyCSSFilenameRTL != NULL) {
-		delete [] historyCSSFilenameRTL;
-	}
-	historyCSSFilenameRTL = new char[strlen(filename)+1];
-	strcpy(historyCSSFilenameRTL, filename);
-    char tmpPath[MAX_PATH];
-    strcpy (tmpPath, filename);
-    if (ServiceExists(MS_UTILS_PATHTORELATIVE) && strncmp(tmpPath, "http://", 7)) {
-    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
-   	}
-	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_HISTORYCSSFILE_RTL, tmpPath);
-}
-
-const char *Options::getHistoryCSSFileRTL() {
-	return historyCSSFilenameRTL;
-}
-
-void Options::setHistoryTemplatesFile(const char *filename) {
-	if (historyTemplatesFilename != NULL) {
-		delete [] historyTemplatesFilename;
-	}
-	historyTemplatesFilename = new char[strlen(filename)+1];
-	strcpy(historyTemplatesFilename, filename);
-    char tmpPath[MAX_PATH];
-    strcpy (tmpPath, filename);
-    if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
-    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
-   	}
-	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_HISTORYTEMPLATESFILE, tmpPath);
-
-	TemplateMap::loadTemplates("history_default", historyTemplatesFilename);
-}
-
-void Options::setHistoryTemplatesFileRTL(const char *filename) {
-	if (historyTemplatesFilenameRTL != NULL) {
-		delete [] historyTemplatesFilenameRTL;
-	}
-	historyTemplatesFilenameRTL = new char[strlen(filename)+1];
-	strcpy(historyTemplatesFilenameRTL, filename);
-    char tmpPath[MAX_PATH];
-    strcpy (tmpPath, filename);
-    if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
-    	CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)filename, (LPARAM)tmpPath);
-   	}
-	DBWriteContactSettingString(NULL, ieviewModuleName, DBS_HISTORYTEMPLATESFILE_RTL, tmpPath);
-
-	TemplateMap::loadTemplates("history_default_rtl", historyTemplatesFilenameRTL);
-}
-
-const char *Options::getHistoryTemplatesFile() {
-	return historyTemplatesFilename;
-}
-
-const char *Options::getHistoryTemplatesFileRTL() {
-	return historyTemplatesFilenameRTL;
-}
-
-void Options::setHistoryFlags(int flags) {
-	historyFlags = flags;
-	DBWriteContactSettingDword(NULL, ieviewModuleName, DBS_HISTORYFLAGS, (DWORD) flags);
-}
-
-int	Options::getHistoryFlags() {
-	return historyFlags;
-}
-
 
 bool Options::isMathModule() {
 	return bMathModule;
@@ -1865,6 +1985,7 @@ void Options::saveProtocolSettings() {
 		char dbsName[256];
 		char tmpPath[MAX_PATH];
 		proto->copyFromTemp();
+		/* SRMM settings */
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_ENABLE);
 		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->isSRMMEnable());
 		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_SRMM_MODE);
@@ -1901,7 +2022,80 @@ void Options::saveProtocolSettings() {
 			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getSRMMTemplateFilenameRtl(), (LPARAM)tmpPath);
 		}
 		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
-	//	sprintf(dbsName, "%s", proto->getProtocolName());
-//		sprintf(dbsName, "%s.RTL", proto->getProtocolName());
+		/* Group Chat settings */
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_ENABLE);
+		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->isChatEnable());
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_MODE);
+		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->getChatMode());
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_FLAGS);
+		DBWriteContactSettingDword(NULL, ieviewModuleName, dbsName, proto->getChatFlags());
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_BACKGROUND);
+		strcpy (tmpPath, proto->getChatBackgroundFilename());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getChatBackgroundFilename(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_CSS);
+		strcpy (tmpPath, proto->getChatCssFilename());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getChatCssFilename(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_CSS_RTL);
+		strcpy (tmpPath, proto->getChatCssFilenameRtl());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getChatCssFilenameRtl(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_TEMPLATE);
+		strcpy (tmpPath, proto->getChatTemplateFilename());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getChatTemplateFilename(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_CHAT_TEMPLATE_RTL);
+		strcpy (tmpPath, proto->getChatTemplateFilenameRtl());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getChatTemplateFilenameRtl(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+		/* History settings */
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_ENABLE);
+		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->isHistoryEnable());
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_MODE);
+		DBWriteContactSettingByte(NULL, ieviewModuleName, dbsName, proto->getHistoryMode());
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_FLAGS);
+		DBWriteContactSettingDword(NULL, ieviewModuleName, dbsName, proto->getHistoryFlags());
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_BACKGROUND);
+		strcpy (tmpPath, proto->getHistoryBackgroundFilename());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getHistoryBackgroundFilename(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_CSS);
+		strcpy (tmpPath, proto->getHistoryCssFilename());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getHistoryCssFilename(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_CSS_RTL);
+		strcpy (tmpPath, proto->getHistoryCssFilenameRtl());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getHistoryCssFilenameRtl(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_TEMPLATE);
+		strcpy (tmpPath, proto->getHistoryTemplateFilename());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getHistoryTemplateFilename(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+		sprintf(dbsName, "%s.%s", proto->getProtocolName(), DBS_HISTORY_TEMPLATE_RTL);
+		strcpy (tmpPath, proto->getHistoryTemplateFilenameRtl());
+		if (ServiceExists(MS_UTILS_PATHTORELATIVE)) {
+			CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)proto->getHistoryTemplateFilenameRtl(), (LPARAM)tmpPath);
+		}
+		DBWriteContactSettingString(NULL, ieviewModuleName, dbsName, tmpPath);
+
 	}
 }

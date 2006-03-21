@@ -145,10 +145,18 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
- 	/*if (Options::getGroupChatFlags() & Options::CSS_ENABLED) {
-	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? Options::getGroupChatCSSFile() : Options::getGroupChatCSSFile();
+	ProtocolSettings *protoSettings = getProtocolSettings(event->pszProto);
+	if (protoSettings == NULL) {
+		return;
+	}
+ 	if (protoSettings->getChatMode() == Options::MODE_TEMPLATE) {
+//		buildHeadTemplate(view, event);
+		return;
+	}
+ 	if (protoSettings->getChatMode() == Options::MODE_CSS) {
+	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getChatCssFilenameRtl() : protoSettings->getChatCssFilename();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n", externalCSS);
-	} else*/ {
+	} else {
 		HDC hdc = GetDC(NULL);
 	    int logPixelSY = GetDeviceCaps(hdc, LOGPIXELSY);
 		ReleaseDC(NULL, hdc);
@@ -158,17 +166,16 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		COLORREF inColor, outColor;
 	    bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
 		inColor = outColor = bkgColor;
-		if (Options::getGroupChatFlags() & Options::LOG_IMAGE_ENABLED) {
-			const char *bkgImageFilename = "";//Options::getBkgImageFile();
+		if (protoSettings->getChatFlags() & Options::LOG_IMAGE_ENABLED) {
 			Utils::appendText(&output, &outputSize, ".body {padding: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
-			Options::getGroupChatFlags() & Options::LOG_IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
+			protoSettings->getChatFlags() & Options::LOG_IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, protoSettings->getChatBackgroundFilename());
 		} else {
 			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; overflow: auto;}\n",
 				 	     (int) bkgColor);
 		}
 		Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
 		Utils::appendText(&output, &outputSize, ".img {vertical-align: middle;}\n");
-		if (Options::getGroupChatFlags() & Options::LOG_IMAGE_ENABLED) {
+		if (protoSettings->getChatFlags() & Options::LOG_IMAGE_ENABLED) {
 			Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
 			Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
 			Utils::appendText(&output, &outputSize, ".divUserJoined {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
@@ -302,7 +309,15 @@ void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 }
 
 void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
-	appendEventNonTemplate(view, event);
+	ProtocolSettings *protoSettings = getProtocolSettings(event->pszProto);
+	if (protoSettings == NULL) {
+		return;
+	}
+// 	if (protoSettings->getSRMMMode() == Options::MODE_TEMPLATE) {
+	//	appendEventTemplate(view, event);
+//	} else {
+		appendEventNonTemplate(view, event);
+//	}
 }
 
 bool MUCCHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei) {
