@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <shlobj.h>
 #include "Options.h"
 #include "resource.h"
-#include "Smiley.h"
+//#include "Smiley.h"
 #include "Template.h"
 #include "Utils.h"
 #include "m_MathModule.h"

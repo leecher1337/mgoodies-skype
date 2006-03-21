@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define IDD_OPTIONS                  	150
 #define IDD_EMOTICONS_OPTIONS          	152
 #define IDD_SRMM_OPTIONS	          	153
-#define IDD_SMILEYSELECTION             154
+//#define IDD_SMILEYSELECTION             154
 #define IDD_GENERAL_OPTIONS             155
 #define IDD_GROUPCHATS_OPTIONS          156
 #define IDD_HISTORY_OPTIONS          	157

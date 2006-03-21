@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_MathModule.h"
 #include "m_metacontacts.h"
 #include "Utils.h"
-#include "Smiley.h"
+//#include "Smiley.h"
 #include "Options.h"
 
 TextToken::TextToken(int type, const char *text, int len) {
