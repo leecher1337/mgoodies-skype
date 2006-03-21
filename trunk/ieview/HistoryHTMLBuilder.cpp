@@ -118,27 +118,29 @@ void HistoryHTMLBuilder::loadMsgDlgFont(const char *dbSetting, LOGFONTA * lf, CO
 }
 
 void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
-/* 	if (Options::getHistoryFlags() & Options::TEMPLATES_ENABLED) {
-		buildHeadTemplate(view, event);
-		return;
-	}*/
 	LOGFONTA lf;
 	COLORREF color, bkgColor;
 	char *output = NULL;
 	int outputSize;
-	/*
- 	if (Options::getHistoryFlags() & Options::CSS_ENABLED) {
-	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? Options::getHistoryCSSFileRTL() : Options::getHistoryCSSFile();
+	ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
+	if (protoSettings == NULL) {
+		return;
+	}
+ 	if (protoSettings->getHistoryMode() == Options::MODE_TEMPLATE) {
+		buildHeadTemplate(view, event);
+		return;
+	}
+ 	if (protoSettings->getHistoryMode() == Options::MODE_CSS) {
+	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getHistoryCssFilenameRtl() : protoSettings->getHistoryCssFilename();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n", externalCSS);
-	} else */{
+	} else {
 		Utils::appendText(&output, &outputSize, "<html><head>");
 		Utils::appendText(&output, &outputSize, "<style type=\"text/css\">\n");
 		COLORREF lineColor = DBGetContactSettingDword(NULL, HPPMOD, "LineColour", 0xFFFFFF);
 	    lineColor= 0;//(((lineColor & 0xFF) << 16) | (lineColor & 0xFF00) | ((lineColor & 0xFF0000) >> 16));
-		if (Options::getHistoryFlags() & Options::LOG_IMAGE_ENABLED) {
-			const char *bkgImageFilename = "";//Options::getBkgImageFile();
+		if (protoSettings->getHistoryFlags() & Options::LOG_IMAGE_ENABLED) {
 			Utils::appendText(&output, &outputSize, ".body {padding: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
-			Options::getHistoryFlags() & Options::LOG_IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
+			protoSettings->getHistoryFlags() & Options::LOG_IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, protoSettings->getHistoryBackgroundFilename());
 		} else {
 			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; overflow: auto;}\n",
 				 	     (int) bkgColor);
@@ -147,7 +149,7 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		Utils::appendText(&output, &outputSize, ".img {float: left; vertical-align: middle;}\n");
 	 	for(int i = 0; i < DIV_FONT_NUM; i++) {
 			loadMsgDlgFont(dbDivSettingNames[i], &lf, &color, &bkgColor);
-			if (Options::getHistoryFlags() & Options::LOG_IMAGE_ENABLED) {
+			if (protoSettings->getHistoryFlags() & Options::LOG_IMAGE_ENABLED) {
 				Utils::appendText(&output, &outputSize, "%s {float: left; padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; font-family: %s; font-size: %dpt; font-weight: %s; color: #%06X; %s}\n",
 					divClassNames[i],
 					(int) lineColor,

@@ -67,9 +67,6 @@ static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WP
 				}
 			}
 			break;
-		case WM_MOUSEWHEEL:
-			SetFocus(GetParent(view->getHWND()));
-			break;
 		case WM_LBUTTONDOWN:
 		    POINT pt;
 		    pt.x = LOWORD(lParam);
