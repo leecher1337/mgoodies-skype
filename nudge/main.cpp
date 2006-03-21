@@ -19,12 +19,12 @@ CNudge GlobalNudge;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,1,2),
+	PLUGIN_MAKE_VERSION(0,0,1,3),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
 	"copyright to the miranda community",
-	"http://www.miranda-fr.net/",		// www
+	"http://addons.miranda-im.org/details.php?action=viewfile&id=2708",		// www
 	0,		//not transient
 	0		//doesn't replace anything built-in
 };
@@ -86,6 +86,15 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 	}
 	else
 	{
+		int diff = time(NULL) - DefaultNudge.LastSent;
+
+		if(diff < 30)
+		{
+			MessageBox(NULL,Translate("You are not allowed to send too much nudge (only 1 each 30 sec)"),NULL,0);
+			return 0;
+		}
+		DefaultNudge.LastSent = time(NULL);
+
 		if(DefaultNudge.showEvent)
 			Nudge_SentEvent(DefaultNudge, (HANDLE) wParam);
 	}
