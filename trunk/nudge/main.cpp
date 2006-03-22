@@ -19,7 +19,7 @@ CNudge GlobalNudge;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,1,3),
+	PLUGIN_MAKE_VERSION(0,0,1,4),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -42,7 +42,7 @@ void RegisterToUpdate(void)
 		update.szComponentName = pluginInfo.shortName;
 		update.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szVersion);
 		update.cpbVersion = strlen((char *)update.pbVersion);
-		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlsource=2708";
+		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2708";
 		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2708";
 		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Nudge ";
 	    update.szBetaUpdateURL = "http://www.miranda-fr.net/tweety/Nudge/Nudge.zip";
