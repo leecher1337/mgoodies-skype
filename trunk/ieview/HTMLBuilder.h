@@ -94,6 +94,7 @@ public:
 
 class HTMLBuilder {
 private:
+	IEVIEWEVENT lastIEViewEvent;
 	static int mimFlags;
 	enum MIMFLAGS {
 		MIM_CHECKED = 1,
@@ -133,11 +134,13 @@ protected:
 	virtual bool isDbEventShown(DBEVENTINFO * dbei)=0;
 	virtual ProtocolSettings *getProtocolSettings(const char *protocolName);
 	virtual ProtocolSettings *getProtocolSettings(HANDLE hContact);
-//	virtual void appendEventNonTemplate(IEView *, IEVIEWEVENT *event)=0;
-//	virtual void appendEventTemplate(IEView *, IEVIEWEVENT *event)=0;
-public:
-	void appendEventOld(IEView *, IEVIEWEVENT *event);
+	void	setLastIEViewEvent(IEVIEWEVENT *event);
 	virtual void buildHead(IEView *, IEVIEWEVENT *event)=0;
+public:
+	HTMLBuilder();
+	virtual ~HTMLBuilder();
+	void appendEventOld(IEView *, IEVIEWEVENT *event);
+	void clear(IEView *, IEVIEWEVENT *event);
 	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;
 };
 

@@ -786,6 +786,24 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 
 int HTMLBuilder::mimFlags = 0;
 
+HTMLBuilder::HTMLBuilder() {
+	lastIEViewEvent.cbSize = sizeof (IEVIEWEVENT);
+	lastIEViewEvent.iType = IEE_LOG_MEM_EVENTS;
+	lastIEViewEvent.codepage = CP_ACP;
+	lastIEViewEvent.pszProto = NULL;
+	lastIEViewEvent.count = 0;
+	lastIEViewEvent.dwFlags = 0;
+	lastIEViewEvent.hContact = NULL;
+	lastIEViewEvent.hwnd = NULL;
+	lastIEViewEvent.eventData = NULL;
+}
+
+HTMLBuilder::~HTMLBuilder() {
+	if (lastIEViewEvent.pszProto != NULL) {
+		delete lastIEViewEvent.pszProto;
+	}
+}
+
 bool HTMLBuilder::isUnicodeMIM() {
 	if (!(mimFlags & MIM_CHECKED)) {
 		char str[512];
@@ -1048,6 +1066,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
     IEVIEWEVENT newEvent;
     IEVIEWEVENTDATA* eventData;
     IEVIEWEVENTDATA* prevEventData = NULL;
+	char *szProto = NULL;
 	HANDLE hDbEvent = event->hDbEventFirst;
 	event->hDbEventFirst = NULL;
 	newEvent.cbSize = sizeof (IEVIEWEVENT);
@@ -1056,13 +1075,17 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
 		newEvent.codepage = event->codepage;
 	}
+/*	if (event->cbSize >= IEVIEWEVENT_SIZE_V3 && event->pszProto != NULL) {
+		szProto = Utils::dupString(szProto);
+	} else */{
+		szProto = getProto(event->hContact);
+ 	}
+	newEvent.pszProto = szProto;
 	newEvent.count = 0;
 	newEvent.dwFlags = event->dwFlags;
 	newEvent.hContact = event->hContact;
 	newEvent.hwnd = event->hwnd;
 	newEvent.eventData = NULL;
-	char *szProto = getProto(event->hContact);
-	newEvent.pszProto = szProto;
 	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
 		DBEVENTINFO dbei = { 0 };
         dbei.cbSize = sizeof(dbei);
@@ -1131,7 +1154,6 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 			//blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
             eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
 		}
-
 	    free(dbei.pBlob);
 		eventData->next = NULL;
 		if (prevEventData != NULL) {
@@ -1144,6 +1166,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
         event->hDbEventFirst = hDbEvent;
    		hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
 	}
+	setLastIEViewEvent(&newEvent);
 	appendEvent(view, &newEvent);
 	for ( IEVIEWEVENTDATA* eventData2 = newEvent.eventData; eventData2 != NULL; eventData2 = eventData) {
 		eventData = eventData2->next;
@@ -1158,7 +1181,9 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 		}
 		delete eventData2;
 	}
-	delete szProto;
+	if (szProto != NULL) {
+		delete szProto;
+	}
 }
 
 ProtocolSettings* HTMLBuilder::getProtocolSettings(const char *protocolName) {
@@ -1176,4 +1201,33 @@ ProtocolSettings* HTMLBuilder::getProtocolSettings(HANDLE hContact) {
 	return protoSettings;
 }
 
+void HTMLBuilder::setLastIEViewEvent(IEVIEWEVENT *event) {
+	lastIEViewEvent.cbSize = sizeof (IEVIEWEVENT);
+	lastIEViewEvent.iType = event->iType;
+	lastIEViewEvent.codepage = CP_ACP;
+	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
+		lastIEViewEvent.codepage = event->codepage;
+	}
+	lastIEViewEvent.count = 0;
+	lastIEViewEvent.dwFlags = event->dwFlags;
+	lastIEViewEvent.hContact = event->hContact;
+	lastIEViewEvent.hwnd = event->hwnd;
+	lastIEViewEvent.eventData = NULL;
+	if (lastIEViewEvent.pszProto != NULL) {
+		delete (char *)lastIEViewEvent.pszProto ;
+	}
+	/*if (event->cbSize >= IEVIEWEVENT_SIZE_V3 && event->pszProto != NULL) {
+		lastIEViewEvent.pszProto = Utils::dupString(event->pszProto);
+	} else*/ {
+		lastIEViewEvent.pszProto = getProto(event->hContact);
+ 	}
+}
 
+void HTMLBuilder::clear(IEView *view, IEVIEWEVENT *event) {
+	if (event != NULL) {
+		setLastIEViewEvent(event);
+	}
+	if (lastIEViewEvent.pszProto != NULL) {
+		buildHead(view, &lastIEViewEvent);
+	}
+}

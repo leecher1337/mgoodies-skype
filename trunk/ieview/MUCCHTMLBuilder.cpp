@@ -209,10 +209,6 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 
 void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 
-	int cp = CP_ACP;
-	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
-		cp = event->codepage;
-	}
     IEVIEWEVENTDATA* eventData = (IEVIEWEVENTDATA *) event->eventData;
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
 		DWORD dwFlags = eventData->dwData;

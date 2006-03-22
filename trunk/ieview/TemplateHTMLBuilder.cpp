@@ -82,7 +82,6 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	char *szStatusMsg = NULL;
 	int outputSize;
 	char *output;
-
 	output = NULL;
 	hRealContact = getRealContact(event->hContact);
 	szRealProto = getProto(hRealContact);

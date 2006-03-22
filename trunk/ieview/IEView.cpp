@@ -137,7 +137,6 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	m_pConnectionPoint = NULL;
 	m_cRef = 0;
 	selectedText = NULL;
-	szProto = NULL;
 	getFocus = false;
 	clearRequired = true;
 #ifdef GECKO
@@ -300,9 +299,6 @@ IEView::~IEView() {
 	}
 	if (selectedText != NULL) {
 		delete 	selectedText;
-	}
-	if (szProto != NULL) {
-		delete 	szProto;
 	}
 	pWebBrowser->Release();
 	DestroyWindow(hwnd);
@@ -490,7 +486,7 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 		                                      (RECT*)NULL);
 			DestroyMenu(hMenu);
 			if (iSelection == ID_MENU_CLEARLOG) {
-				clear();
+				clear(NULL);
 			} else {
 		    	SendMessage(hSPWnd, WM_COMMAND, iSelection, (LPARAM) NULL);
 			}
@@ -797,7 +793,37 @@ void IEView::navigate(const char *url) {
 	delete tTemp;
 }
 
-void IEView::clear() {
+/*
+void IEView::documentClose() {
+	IHTMLDocument2 *document = getDocument();
+	if (document != NULL) {
+		write("</body></html>");
+		document->close();
+		document->Release();
+	}
+}
+*/
+void IEView::appendEventOld(IEVIEWEVENT *event) {
+	if (clearRequired) {
+		clear(NULL);
+	}
+	if (builder!=NULL) {
+		builder->appendEventOld(this, event);
+	}
+	getFocus = false;
+}
+
+void IEView::appendEvent(IEVIEWEVENT *event) {
+	if (clearRequired) {
+		clear(NULL);
+	}
+	if (builder!=NULL) {
+		builder->appendEvent(this, event);
+	}
+	getFocus = false;
+}
+
+void IEView::clear(IEVIEWEVENT *event) {
 #ifdef GECKO
 //    pWebBrowser->Navigate(L"www.onet.pl", NULL, NULL, NULL, NULL);
   //  return;
@@ -844,69 +870,9 @@ void IEView::clear() {
 		document->Release();
 	}
 	if (builder!=NULL) {
-        IEVIEWEVENT event;
-		event.cbSize = sizeof(IEVIEWEVENT);
-        event.hContact = hContact;
-        event.dwFlags = dwLogFlags;
-        event.codepage = iLogCodepage;
-        event.pszProto = szProto;
-		builder->buildHead(this, &event);
+		builder->clear(this, event);
 	}
 	clearRequired = false;
-}
-/*
-void IEView::documentClose() {
-	IHTMLDocument2 *document = getDocument();
-	if (document != NULL) {
-		write("</body></html>");
-		document->close();
-		document->Release();
-	}
-}
-*/
-void IEView::appendEventOld(IEVIEWEVENT *event) {
-	hContact = event->hContact;
-	dwLogFlags = event->dwFlags;
-	iLogCodepage = event->codepage;
-	if (szProto != NULL) {
-		delete szProto;
-	}
-	szProto = Utils::dupString(event->pszProto);
-	if (clearRequired) {
-		clear();
-	}
-	if (builder!=NULL) {
-		builder->appendEventOld(this, event);
-	}
-	getFocus = false;
-}
-
-void IEView::appendEvent(IEVIEWEVENT *event) {
-	hContact = event->hContact;
-	dwLogFlags = event->dwFlags;
-	iLogCodepage = event->codepage;
-	if (szProto != NULL) {
-		delete szProto;
-	}
-	szProto = Utils::dupString(event->pszProto);
-	if (clearRequired) {
-		clear();
-	}
-	if (builder!=NULL) {
-		builder->appendEvent(this, event);
-	}
-	getFocus = false;
-}
-
-void IEView::clear(IEVIEWEVENT *event) {
-	hContact = event->hContact;
-	dwLogFlags = event->dwFlags;
-	iLogCodepage = event->codepage;
-	if (szProto != NULL) {
-		delete szProto;
-	}
-	szProto = Utils::dupString(event->pszProto);
-	clear();
 	getFocus = false;
 }
 
@@ -916,7 +882,7 @@ void* IEView::getSelection(IEVIEWEVENT *event) {
 	if (selectedText == NULL || wcslen(selectedText)== 0) return NULL;
 	if (event->dwFlags & IEEF_NO_UNICODE) {
 		int cp = CP_ACP;
-		if (event->cbSize == sizeof(IEVIEWEVENT)) {
+		if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
 			cp = event->codepage;
 		}
 		char *str = Utils::convertToString(selectedText, cp);
