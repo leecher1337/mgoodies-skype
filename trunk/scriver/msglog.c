@@ -741,7 +741,8 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	if (dat->hwndLog != NULL) {
 		IEVIEWEVENT event;
 		IEVIEWWINDOW ieWindow;
-		event.cbSize = sizeof(IEVIEWEVENT);
+		ZeroMemory(&event, sizeof(event));
+		event.cbSize = sizeof(event);
 		event.dwFlags = ((dat->flags & SMF_RTL) ? IEEF_RTL : 0) | ((dat->flags & SMF_DISABLE_UNICODE) ? IEEF_NO_UNICODE : 0);
 		event.hwnd = dat->hwndLog;
 		event.hContact = dat->hContact;
@@ -756,7 +757,8 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		CallService(MS_IEVIEW_EVENT, 0, (LPARAM)&event);
 		dat->hDbEventLast = event.hDbEventFirst != NULL ? event.hDbEventFirst : dat->hDbEventLast;
 
-		ieWindow.cbSize = sizeof(IEVIEWWINDOW);
+		ZeroMemory(&ieWindow, sizeof(ieWindow));
+		ieWindow.cbSize = sizeof(ieWindow);
 		ieWindow.iType = IEW_SCROLLBOTTOM;
 		ieWindow.hwnd = dat->hwndLog;
 		CallService(MS_IEVIEW_WINDOW, 0, (LPARAM)&ieWindow);
