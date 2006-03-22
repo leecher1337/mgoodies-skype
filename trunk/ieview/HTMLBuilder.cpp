@@ -128,137 +128,6 @@ void TextToken::setLink(const wchar_t *link) {
     this->wlink = Utils::dupString(link);
 }
 
-
-/*
-
-
-char *TextToken::urlEncode(const char *str) {
-    char *out;
-    const char *ptr;
-    bool wasSpace;
-    int c;
-    c = 0;
-    wasSpace = false;
-    for (ptr=str; *ptr!='\0'; ptr++) {
-    	if (*ptr==' ' && wasSpace) {
-   			wasSpace = true;
-   		 	c += 6;
-   		} else {
-   		    wasSpace = false;
-        	switch (*ptr) {
-        		case '\n': c += 4; break;
-    			case '\r': break;
-        		case '&': c += 5; break;
-        		case '>': c += 4; break;
-        		case '<': c += 4; break;
-        		case '"': c += 6; break;
-    			case ' ': wasSpace = true;
-        		default: c += 1; break;
-        	}
-      	}
-    }
-    char *output = new char[c+1];
-    wasSpace = false;
-    for (out=output, ptr=str; *ptr!='\0'; ptr++) {
-    	if (*ptr==' ' && wasSpace) {
-	      	strcpy(out, "&nbsp;");
-    		out += 6;
-   		} else {
-   		    wasSpace = false;
-        	switch (*ptr) {
-    			case '\n': strcpy(out, "<br>"); out += 4; break;
-    			case '\r': break;
-    			case '&': strcpy(out, "&amp;"); out += 5; break;
-    			case '>': strcpy(out, "&gt;"); out += 4; break;
-    			case '<': strcpy(out, "&lt;"); out += 4; break;
-    			case '"': strcpy(out, "&quot;"); out += 6; break;
-    			case ' ': wasSpace = true;
-        		default: *out = *ptr; out += 1; break;
-        	}
-         }
-    }
-    *out  = '\0';
-    return output;
-}
-
-char *TextToken::urlEncode2(const char *str) {
-    char *out;
-    const char *ptr;
-    int c;
-    c = 0;
-    for (ptr=str; *ptr!='\0'; ptr++) {
-    	switch (*ptr) {
-    		case '>': c += 4; break;
-    		case '<': c += 4; break;
-    		case '"': c += 6; break;
-    		default: c += 1; break;
-    	}
-    }
-    char *output = new char[c+1];
-    for (out=output, ptr=str; *ptr!='\0'; ptr++) {
-    	switch (*ptr) {
-			case '>': strcpy(out, "&gt;"); out += 4; break;
-			case '<': strcpy(out, "&lt;"); out += 4; break;
-			case '"': strcpy(out, "&quot;"); out += 6; break;
-    		default: *out = *ptr; out += 1; break;
-    	}
-    }
-    *out  = '\0';
-    return output;
-}
-
-void TextToken::toString(char **str, int *sizeAlloced) {
-    char *eText = NULL, *eLink = NULL;
-    switch (type) {
-        case TEXT:
-            eText = urlEncode(text);
-            Utils::appendText(str, sizeAlloced, "%s", eText);
-            break;
-        case WWWLINK:
-            eText = urlEncode(text);
-            eLink = urlEncode(link);
-            Utils::appendText(str, sizeAlloced, "<a class=\"link\" target=\"_self\" href=\"http://%s\">%s</a>", eLink, eText);
-            break;
-        case LINK:
-            eText = urlEncode(text);
-            eLink = urlEncode(link);
-            Utils::appendText(str, sizeAlloced, "<a class=\"link\" target=\"_self\" href=\"%s\">%s</a>", eLink, eText);
-            break;
-        case SMILEY:
-            eText = urlEncode(text);
-            if (Options::getSmileyFlags() & Options::SMILEY_SURROUND) {
-            	Utils::appendText(str, sizeAlloced, "<img class=\"img\" src=\"%s\" alt=\"%s\" /> ", link, eText);
-            } else {
-            	Utils::appendText(str, sizeAlloced, "<img class=\"img\" src=\"%s\" alt=\"%s\" />", link, eText);
-            }
-            break;
-    }
-    if (eText!=NULL) delete eText;
-    if (eLink!=NULL) delete eLink;
-}
-
-char * HTMLBuilder::encode(const char *text, const char *proto, bool useSmiley) {
-	char *output;
- 	int outputSize;
-	output = NULL;
-	if (text == NULL) return NULL;
-	TextToken *token, *token1, *token2, *token3;
-	for (token = token1 = TextToken::tokenizeLinks(text);token!=NULL;token=token1) {
-	    token1 = token->getNext();
-	    if (useSmiley && token->getType() == TextToken::TEXT) {
-    		for (token2 = token3 = TextToken::tokenizeSmileys(proto, token->getText());token2!=NULL;token2=token3) {
-    		    token3 = token2->getNext();
-    	    	token2->toString(&output, &outputSize);
-    	    	delete token2;
-            }
-        } else {
-        	token->toString(&output, &outputSize);
-        }
-        delete token;
-	}
-	return output;
-}
-*/
 static int countNoWhitespace(const wchar_t *str) {
 	int c;
 	for (c=0; *str!='\n' && *str!='\r' && *str!='\t' && *str!=' ' && *str!='\0'; str++, c++);
@@ -357,12 +226,12 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
     return firstToken;
 }
 
-#define BB_TAG_NUM 8
+#define BB_TAG_NUM 9
 TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
-	static wchar_t *bbTagName[] = {L"b", L"i", L"u", L"s", L"img", L"color", L"size", L"bimg"};
-	static int 		bbTagNameLen[] = {1, 1, 1, 1, 3, 5, 4, 4};
-	static int 		bbTagArg[] = {0, 0, 0, 0, 0, 1, 1, 0};
-	static int 		bbTagId[] = {BB_B, BB_I, BB_U, BB_S, BB_IMG, BB_COLOR, BB_SIZE, BB_BIMG};
+	static wchar_t *bbTagName[] = {L"b", L"i", L"u", L"s", L"img", L"color", L"size", L"bimg", L"url"};
+	static int 		bbTagNameLen[] = {1, 1, 1, 1, 3, 5, 4, 4, 3};
+	static int 		bbTagArg[] = {0, 0, 0, 0, 0, 1, 1, 0, 1};
+	static int 		bbTagId[] = {BB_B, BB_I, BB_U, BB_S, BB_IMG, BB_COLOR, BB_SIZE, BB_BIMG, BB_URL};
 	static int      bbTagEnd[BB_TAG_NUM];
 	static int      bbTagCount[BB_TAG_NUM];
 	int i,j;
@@ -431,11 +300,12 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 						} else {
 							bbToken = new TextToken(BBCODE, bbTagName[j], bbTagNameLen[j]);
 						}
-						bbToken->setEnd(false);
 						bbToken->setTag(bbTagId[j]);
+						bbToken->setEnd(false);
 						newTokenType = BBCODE;
 						newTokenSize = tagDataStart - i;
 						break;
+					case BB_URL:
 					case BB_IMG:
 					case BB_BIMG:
 						bbToken = new TextToken(BBCODE, text + tagDataStart, k - bbTagNameLen[j] - 3 - tagDataStart);
@@ -443,6 +313,11 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 						bbToken->setEnd(false);
 						newTokenType = BBCODE;
 						newTokenSize = k - i;
+						if (bbTagArg[j]) {
+							wchar_t *urlLink = 	Utils::dupString(text + tagArgStart, tagArgEnd - tagArgStart);
+							bbToken->setLink(urlLink);
+							delete urlLink;
+						}
 						break;
 					}
 				}
@@ -745,6 +620,11 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 					} else {
         		    	Utils::appendText(str, sizeAlloced, L"<div style=\"width: 100%%; border: 0; overflow: hidden;\"><img class=\"img\" style=\"width: expression((maxw = this.parentNode.offsetWidth ) > this.width ? 'auto' : maxw);\" src=\"%s\" /></div>", eText);
 					}
+        	    	break;
+				case BB_URL:
+					eText = urlEncode(wtext);
+					eLink = urlEncode(wlink);
+        	    	Utils::appendText(str, sizeAlloced, L"<a href =\"%s\">%s</a>", eLink, eText);
         	    	break;
 				case BB_COLOR:
             		eText = urlEncode(wtext);

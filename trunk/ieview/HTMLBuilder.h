@@ -60,6 +60,7 @@ public:
 		BB_SIZE,
 		BB_IMG,
 		BB_BIMG,
+		BB_URL,
 	};
 	TextToken(int type, const char *text, int len);
 	TextToken(int type, const wchar_t *wtext, int len);
