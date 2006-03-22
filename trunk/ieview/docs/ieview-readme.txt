@@ -106,6 +106,13 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.9.0
++ flexible, per-protocol settings
++ support for Avatar Service
++ option to replace smileys in nick names
++ support for IEView-based history plugins
+* smileys will not be replaced with "red X" when incompatible emoticon set is used
+* a lot of bugfixes including endless loop when focus was lost
 1.0.5.2
 * bugfix: [bimg]
 1.0.5.1

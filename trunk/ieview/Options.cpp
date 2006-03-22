@@ -1755,6 +1755,9 @@ void Options::init() {
 			proto = new ProtocolSettings("_default_");
 			proto->setSRMMEnable(true);
 		} else if ((pProtos[i-1]->type == PROTOTYPE_PROTOCOL) && strcmp(pProtos[i-1]->szName,"MetaContacts")) {
+			if ((CallProtoService(pProtos[i-1]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_IM) == 0) {
+				continue;
+			}
 			proto = new ProtocolSettings(pProtos[i-1]->szName);
 		} else {
 			continue;
