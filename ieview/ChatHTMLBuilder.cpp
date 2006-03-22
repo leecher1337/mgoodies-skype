@@ -206,10 +206,6 @@ void ChatHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 
 void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 
-	int cp = CP_ACP;
-	if (event->cbSize == sizeof(IEVIEWEVENT)) {
-		cp = event->codepage;
-	}
     IEVIEWEVENTDATA* eventData = (IEVIEWEVENTDATA *) event->hDbEventFirst;
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
 		DWORD dwFlags = eventData->dwData;

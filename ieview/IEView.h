@@ -104,10 +104,6 @@ private:
 	HTMLBuilder *builder;
 //	SmileyWindow *smileyWindow;
  	WNDPROC    	mainWndProc, docWndProc, serverWndProc;
-	DWORD       dwLogFlags;
-	int         iLogCodepage;
-   	HANDLE      hContact;
-   	char 		*szProto;
    	bool        getFocus;
    	bool		clearRequired;
    	BSTR		selectedText;
@@ -186,7 +182,6 @@ public:
 	void            writef(const char *fmt, ...);
 //	void            documentClose();
 	void            rebuildLog();
-	void            clear();
 	void            scrollToBottom();
 	void            scrollToBottomSoft();
 	void            scrollToTop();
