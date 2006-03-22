@@ -879,6 +879,13 @@ char *HTMLBuilder::getProto(HANDLE hContact) {
 	return Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
 }
 
+char *HTMLBuilder::getProto(const char *proto, HANDLE hContact) {
+	if (proto != NULL) {
+		return Utils::dupString(proto);
+	}
+	return Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+}
+
 char *HTMLBuilder::getRealProto(HANDLE hContact) {
     char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
 	if (szProto!=NULL && !strcmp(szProto,"MetaContacts")) {
@@ -1151,6 +1158,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 		}
 		delete eventData2;
 	}
+	delete szProto;
 }
 
 ProtocolSettings* HTMLBuilder::getProtocolSettings(const char *protocolName) {

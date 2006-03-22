@@ -86,7 +86,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	output = NULL;
 	hRealContact = getRealContact(event->hContact);
 	szRealProto = getProto(hRealContact);
-	szProto = Utils::dupString(event->pszProto);
+	szProto = getProto(event->pszProto, event->hContact);
 	tempBase[0]='\0';
 	ProtocolSettings *protoSettings =  getProtocolSettings(szRealProto);
 	if (protoSettings == NULL) {
@@ -290,7 +290,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 //	today = today - today % 86400;
 	hRealContact = getRealContact(event->hContact);
 	szRealProto = getProto(hRealContact);
-	szProto = Utils::dupString(event->pszProto);
+	szProto = getProto(event->pszProto, event->hContact);
 	tempBase[0]='\0';
 	ProtocolSettings *protoSettings =  getProtocolSettings(szRealProto);
 	if (protoSettings == NULL) {
