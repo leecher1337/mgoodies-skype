@@ -117,6 +117,7 @@ protected:
 	virtual char *encodeUTF8(const char *text, int cp, const char *proto, int flags);
 	virtual bool encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags);
 	virtual char* getProto(HANDLE hContact);
+	virtual char* getProto(const char *proto, HANDLE hContact);
 	virtual char* getRealProto(HANDLE hContact);
 	virtual char* getRealProto(HANDLE hContact, const char *proto);
 	virtual wchar_t *getContactName(HANDLE hContact, const char* szProto);

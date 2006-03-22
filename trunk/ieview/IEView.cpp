@@ -137,6 +137,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	m_pConnectionPoint = NULL;
 	m_cRef = 0;
 	selectedText = NULL;
+	szProto = NULL;
 	getFocus = false;
 	clearRequired = true;
 #ifdef GECKO
@@ -299,6 +300,9 @@ IEView::~IEView() {
 	}
 	if (selectedText != NULL) {
 		delete 	selectedText;
+	}
+	if (szProto != NULL) {
+		delete 	szProto;
 	}
 	pWebBrowser->Release();
 	DestroyWindow(hwnd);
@@ -845,6 +849,7 @@ void IEView::clear() {
         event.hContact = hContact;
         event.dwFlags = dwLogFlags;
         event.codepage = iLogCodepage;
+        event.pszProto = szProto;
 		builder->buildHead(this, &event);
 	}
 	clearRequired = false;
@@ -863,6 +868,10 @@ void IEView::appendEventOld(IEVIEWEVENT *event) {
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
 	iLogCodepage = event->codepage;
+	if (szProto != NULL) {
+		delete szProto;
+	}
+	szProto = Utils::dupString(event->pszProto);
 	if (clearRequired) {
 		clear();
 	}
@@ -876,6 +885,10 @@ void IEView::appendEvent(IEVIEWEVENT *event) {
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
 	iLogCodepage = event->codepage;
+	if (szProto != NULL) {
+		delete szProto;
+	}
+	szProto = Utils::dupString(event->pszProto);
 	if (clearRequired) {
 		clear();
 	}
@@ -889,6 +902,10 @@ void IEView::clear(IEVIEWEVENT *event) {
 	hContact = event->hContact;
 	dwLogFlags = event->dwFlags;
 	iLogCodepage = event->codepage;
+	if (szProto != NULL) {
+		delete szProto;
+	}
+	szProto = Utils::dupString(event->pszProto);
 	clear();
 	getFocus = false;
 }

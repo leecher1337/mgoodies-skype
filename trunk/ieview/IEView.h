@@ -107,6 +107,7 @@ private:
 	DWORD       dwLogFlags;
 	int         iLogCodepage;
    	HANDLE      hContact;
+   	char 		*szProto;
    	bool        getFocus;
    	bool		clearRequired;
    	BSTR		selectedText;

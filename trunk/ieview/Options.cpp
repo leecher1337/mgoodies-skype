@@ -526,8 +526,8 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 				for (int i = 0; i < 4; i++) {
                     SendMessage(hwndPages[i], WM_NOTIFY, wParam, lParam);
 				}
-				NotifyEventHooks(hHookOptionsChanged, 0, 0);
 				Options::saveProtocolSettings();
+				NotifyEventHooks(hHookOptionsChanged, 0, 0);
 				return TRUE;
 			}
 		}
