@@ -95,7 +95,8 @@ static TCHAR *GetRichEditSelection(HWND hwndDlg) {
 static TCHAR *GetIEViewSelection(struct MessageWindowData *dat) {
 	TCHAR *buffer;
 	IEVIEWEVENT event;
-	event.cbSize = sizeof(IEVIEWEVENT);
+	ZeroMemory(&event, sizeof(event));
+	event.cbSize = sizeof(event);
 #ifdef _UNICODE
 	event.dwFlags = 0;
 #else
@@ -1714,7 +1715,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	// IEVIew MOD Begin
 		if (dat->hwndLog != NULL) {
 			IEVIEWEVENT event;
-			event.cbSize = sizeof(IEVIEWEVENT);
+			ZeroMemory(&event, sizeof(event));
+			event.cbSize = sizeof(event);
 			event.iType = IEE_CLEAR_LOG;
 			event.dwFlags = 0;
 			event.hwnd = dat->hwndLog;
