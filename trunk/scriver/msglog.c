@@ -746,12 +746,13 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		event.dwFlags = ((dat->flags & SMF_RTL) ? IEEF_RTL : 0) | ((dat->flags & SMF_DISABLE_UNICODE) ? IEEF_NO_UNICODE : 0);
 		event.hwnd = dat->hwndLog;
 		event.hContact = dat->hContact;
+		event.codepage = dat->codePage;
+		event.pszProto = dat->szProto;
 		if (!fAppend) {
 			event.iType = IEE_CLEAR_LOG;
 			CallService(MS_IEVIEW_EVENT, 0, (LPARAM)&event);
 		}
 		event.iType = IEE_LOG_DB_EVENTS;
-		event.codepage = dat->codePage;
 		event.hDbEventFirst = hDbEventFirst;
 		event.count = count;
 		CallService(MS_IEVIEW_EVENT, 0, (LPARAM)&event);

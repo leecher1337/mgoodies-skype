@@ -1721,6 +1721,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			event.dwFlags = 0;
 			event.hwnd = dat->hwndLog;
 			event.hContact = dat->hContact;
+			event.codepage = dat->codePage;
+			event.pszProto = dat->szProto;
 			CallService(MS_IEVIEW_EVENT, 0, (LPARAM)&event);
 		}
 	// IEVIew MOD End
