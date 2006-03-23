@@ -62,16 +62,16 @@ struct EventData {
 	int			fontSize;
 	int         fontStyle;
 	COLORREF	color;
-	char *	pszNick;
-	wchar_t* pszNickW;
+	union {
+		const char *pszNick;		// Nick, usage depends on type of event
+		const wchar_t *pszNickW;    // Nick - Unicode
+	};
 	char *	pszText;
 	wchar_t* pszTextW;
 	DWORD	time;
 	DWORD	eventType;
 	HANDLE	hContact;
-	char *	szModule;
 };
-
 
 int DbEventIsShown(DBEVENTINFO * dbei, struct MessageWindowData *dat)
 {
@@ -129,7 +129,6 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	memset(event, 0, sizeof(struct EventData));
 	event->hContact = hContact;
 	event->eventType = dbei.eventType;
-	event->szModule = strdup(dbei.szModule);
 	event->dwFlags = dbei.flags;
 	event->time = dbei.timestamp;
 #if defined( _UNICODE )
@@ -166,7 +165,6 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 static void freeEvent(struct EventData *event) {
 	if (event->pszText != NULL) free (event->pszText);
 	if (event->pszTextW != NULL) free (event->pszTextW);
-	if (event->szModule != NULL) free (event->szModule);
 	free(event);
 }
 
@@ -597,9 +595,9 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		{
 			TCHAR *szName;
 			if (event->dwFlags & DBEF_SENT) {
-				szName = GetNickname(NULL, event->szModule);
+				szName = GetNickname(NULL, dat->szProto);
 			} else {
-				szName = GetNickname(event->hContact, event->szModule);
+				szName = GetNickname(event->hContact, dat->szProto);
 			}
 #if defined( _UNICODE )
 			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, szName);
