@@ -547,6 +547,14 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 				SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
 				return 0;
 			}
+			if (wParam == VK_PRIOR) { // page up
+				SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
+				return 0;
+			}
+			if (wParam == VK_NEXT) { // page down
+				SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
+				return 0;
+			}
 		}
 		if (wParam == VK_TAB && !(GetKeyState(VK_CONTROL) & 0x8000) && !(GetKeyState(VK_SHIFT) & 0x8000)) {
 //			SendMessage(hwnd, EM_REPLACESEL, FALSE, (LPARAM) "\t");
