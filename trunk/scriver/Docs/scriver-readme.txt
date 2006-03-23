@@ -66,6 +66,9 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.3.0.9
++ new shortcuts: ctrl+page down, ctrl+page up
+* bugfixes: improved compatibility with new versions of IEView
 2.3.0.8
 * bugfix: #006550 multiple monitors support
 * bugfix: #004621 disappearing notices
