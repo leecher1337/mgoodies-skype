@@ -4,15 +4,7 @@
 #include "Utils.h"
 #include "m_avatars.h"
 
-// srmm stuff
 #define EVENTTYPE_STATUSCHANGE 25368
-#define SRMMMOD "SRMM"
-
-#define SRMSGSET_SHOWLOGICONS      "ShowLogIcon"
-#define SRMSGSET_HIDENAMES         "HideNames"
-#define SRMSGSET_SHOWTIME          "ShowTime"
-#define SRMSGSET_SHOWDATE          "ShowDate"
-#define SRMSGSET_SHOWSTATUSCHANGES "ShowStatusChanges"
 
 TemplateHTMLBuilder::TemplateHTMLBuilder() {
 	iLastEventType = -1;

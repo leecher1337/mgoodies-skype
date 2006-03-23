@@ -49,16 +49,9 @@ void SRMMHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
         *colour = DBGetContactSettingDword(NULL, SRMMMOD, str, 0x000000);
     }
     if (lf) {
-//        HDC hdc = GetDC(NULL);
         wsprintfA(str, "SRMFont%dSize", i);
-//        if(i == H_MSGFONTID_DIVIDERS)
-  //          lf->lfHeight = 5;
-     //   else {
-            lf->lfHeight = (char) DBGetContactSettingByte(NULL, SRMMMOD, str, 10);
-//            lf->lfHeight=-MulDiv(lf->lfHeight, GetDeviceCaps(hdc, LOGPIXELSY), 72);
-            lf->lfHeight = abs(lf->lfHeight);
-       // }
-//        ReleaseDC(NULL,hdc);
+        lf->lfHeight = (char) DBGetContactSettingByte(NULL, SRMMMOD, str, 10);
+        lf->lfHeight = abs(lf->lfHeight);
         lf->lfWidth = 0;
         lf->lfEscapement = 0;
         lf->lfOrientation = 0;
@@ -84,8 +77,7 @@ void SRMMHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
     }
 }
 
-char *SRMMHTMLBuilder::timestampToString(DWORD dwFlags, time_t check)
-{
+char *SRMMHTMLBuilder::timestampToString(DWORD dwFlags, time_t check) {
     static char szResult[512];
     char str[80];
     DBTIMETOSTRING dbtts;
@@ -110,8 +102,16 @@ void SRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
- 	if (Options::getSRMMFlags() & Options::CSS_ENABLED) {
-	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getCssFilenameRtl() : protoSettings->getCssFilename();
+	ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
+	if (protoSettings == NULL) {
+		return;
+	}
+ 	if (protoSettings->getSRMMMode() == Options::MODE_TEMPLATE) {
+		buildHeadTemplate(view, event);
+		return;
+	}
+ 	if (protoSettings->getSRMMMode() == Options::MODE_CSS) {
+	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getSRMMCssFilenameRtl() : protoSettings->getSRMMCssFilename();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n",externalCSS);
 	} else {
 		HDC hdc = GetDC(NULL);
@@ -122,17 +122,16 @@ void SRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		COLORREF inColor, outColor;
 	    bkgColor= (((bkgColor & 0xFF) << 16) | (bkgColor & 0xFF00) | ((bkgColor & 0xFF0000) >> 16));
 		inColor = outColor = bkgColor;
-		if (Options::getSRMMFlags() & Options::IMAGE_ENABLED) {
-			const char *bkgImageFilename = Options::getBkgImageFile();
+		if (protoSettings->getSRMMFlags() & Options::LOG_IMAGE_ENABLED) {
 			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
-			Options::getSRMMFlags() & Options::IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, bkgImageFilename);
+			protoSettings->getSRMMFlags() & Options::LOG_IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, protoSettings->getSRMMBackgroundFilename());
 		} else {
 			Utils::appendText(&output, &outputSize, ".body {margin: 0px; text-align: left; background-color: #%06X; overflow: auto;}\n",
 				 	     (int) bkgColor);
 		}
 		Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
 		Utils::appendText(&output, &outputSize, ".img {vertical-align: middle;}\n");
-		if (Options::getSRMMFlags() & Options::IMAGE_ENABLED) {
+		if (protoSettings->getSRMMFlags() & Options::LOG_IMAGE_ENABLED) {
 			Utils::appendText(&output, &outputSize, ".divIn {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
 			Utils::appendText(&output, &outputSize, ".divOut {padding-left: 2px; padding-right: 2px; word-wrap: break-word;}\n");
 		} else {
@@ -165,63 +164,30 @@ void SRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWDATE, 0) ? SMF_LOG_SHOWDATES : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWLOGICONS, 0) ? SMF_LOG_SHOWICONS : 0;
     dwFlags |= DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSCHANGES, 0) ? SMF_LOG_SHOWSTATUSCHANGES : 0;
-	int cp = CP_ACP;
-	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
-		cp = event->codepage;
-	}
-	char *szProto = getProto(event->hContact);
+
 	char *szRealProto = getRealProto(event->hContact);
-	HANDLE hDbEvent = event->hDbEventFirst;
-	event->hDbEventFirst = NULL;
-	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
+	IEVIEWEVENTDATA* eventData = event->eventData;
+	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
 		int outputSize;
 		char *output;
-		DBEVENTINFO dbei = { 0 };
-        dbei.cbSize = sizeof(dbei);
-        dbei.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM) hDbEvent, 0);
-        if (dbei.cbBlob == 0xFFFFFFFF) {
-            return;
-		}
-        dbei.pBlob = (PBYTE) malloc(dbei.cbBlob);
-        CallService(MS_DB_EVENT_GET, (WPARAM)  hDbEvent, (LPARAM) & dbei);
-
-		if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE )) {
-			CallService(MS_DB_EVENT_MARKREAD, (WPARAM) event->hContact, (LPARAM) hDbEvent);
-			CallService(MS_CLIST_REMOVEEVENT, (WPARAM) event->hContact, (LPARAM) hDbEvent);
-		} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-			CallService(MS_DB_EVENT_MARKREAD, (WPARAM) event->hContact, (LPARAM) hDbEvent);
-		}
-		HANDLE hCurDbEvent = hDbEvent;
-        hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
-		if (!isDbEventShown(&dbei)) {
-            free(dbei.pBlob);
-	        continue;
-    	}
 		output = NULL;
-		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-			int isSent = (dbei.flags & DBEF_SENT);
+		int isSent = eventData->dwFlags & IEEDF_SENT;
+		showColon = false;
+
+		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_STATUSCHANGE) {
 			char *szName = NULL;
 			char *szText = NULL;
-			if (isSent) {
-				szName = getEncodedContactName(NULL, szProto, szRealProto);
+			if (eventData->dwFlags & IEEDF_UNICODE_NICK) {
+				szName = encodeUTF8(eventData->pszNickW, szRealProto, ENF_NAMESMILEYS);
    			} else {
-                szName = getEncodedContactName(event->hContact, szProto, szRealProto);
+                szName = encodeUTF8(eventData->pszNick, szRealProto, ENF_NAMESMILEYS);
 			}
-			if (dbei.eventType == EVENTTYPE_MESSAGE) {
-				DWORD aLen = strlen((char *)dbei.pBlob)+1;
-				if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
-					DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
-					if (wlen > 0 && wlen < aLen) {
-                        szText = encodeUTF8((wchar_t *)&dbei.pBlob[aLen], szRealProto, ENF_ALL);
-					} else {
-                        szText = encodeUTF8((char *)dbei.pBlob, cp, szRealProto, ENF_ALL);
-					}
-				} else {
-                	szText = encodeUTF8((char *)dbei.pBlob, cp, szRealProto, ENF_ALL);
-				}
-			} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-                szText = encodeUTF8((char *)dbei.pBlob, szRealProto, ENF_NONE);
+			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
+				szText = encodeUTF8(eventData->pszTextW, szRealProto, ENF_ALL);
+   			} else {
+                szText = encodeUTF8(eventData->pszText, event->codepage, szRealProto, ENF_ALL);
 			}
+
 			/* SRMM-specific formatting */
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
 			if (dwFlags & SMF_LOG_SHOWICONS) {
@@ -271,11 +237,8 @@ void SRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
             view->write(output);
 			free(output);
 		}
-        free(dbei.pBlob);
     }
-    if (szProto!=NULL) delete szProto;
     if (szRealProto!=NULL) delete szRealProto;
-//	view->scrollToBottom();
 }
 
 void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
