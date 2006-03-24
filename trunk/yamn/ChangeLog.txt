@@ -2,6 +2,7 @@
 ============
 * Try to update all icons when changing in icolib.
 ! Allow scrolling in list of email account. (Patch by Jazzy)
+! Memory leak in stls fix (y_b)
 
 0.0.1.5
 ============
