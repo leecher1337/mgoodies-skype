@@ -71,6 +71,7 @@ char *CPop3Client::Connect(const char* servername,const int port,BOOL UseSSL, BO
 		if(NetClient->Stopped)			//check if we can work with this POP3 client session
 			throw POP3Error=(DWORD)EPOP3_STOPPED;
 		NetClient->Send("STLS\r\n");
+		free(temp);
 		temp=RecvRest(NetClient->Recv(),POP3_SEARCHACK);
 		if(AckFlag==POP3_FOK){ // Ok, we are going to tls
 			NetClient->SSLify();
