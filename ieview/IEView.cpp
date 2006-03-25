@@ -203,71 +203,6 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	pWebBrowser->put_RegisterAsDropTarget(VARIANT_FALSE);
 }
 
-/*IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, int cy) {
-	MSG msg;
-	IOleObject*   pOleObject = NULL;
-    IOleInPlaceObject *pOleInPlace;
-	this->parent = parent;
-	builder = NULL;
-	this->smileyWindow = smileyWindow;
-	prev = next = NULL;
-	hwnd = NULL;
-	sink = NULL;
-	pWebBrowser = NULL;
-	m_pConnectionPoint = NULL;
-	m_cRef = 0;
-	selectedText = NULL;
-	getFocus = false;
-	clearRequired = true;
-#ifdef GECKO
-	if (SUCCEEDED(CoCreateInstance(CLSID_MozillaBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
-#else
-	if (SUCCEEDED(CoCreateInstance(CLSID_WebBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
-#endif
-//		pWebBrowser->put_RegisterAsBrowser(VARIANT_FALSE);
-//		pWebBrowser->put_RegisterAsDropTarget(VARIANT_FALSE);
-		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleObject, (void**)&pOleObject))) {
-    		rcClient.left = x;
-    		rcClient.top = y;
-    		rcClient.right = x + cx;
-    		rcClient.bottom = y + cy;
-    		pOleObject->SetClientSite(this);
-    		pOleObject->DoVerb(OLEIVERB_INPLACEACTIVATE, &msg, this, 0, parent, &rcClient);
-    		pOleObject->Release();
-   		} else {
-  			MessageBoxA(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
-   		}
-
-		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleInPlaceObject, (void**)&pOleInPlace))) {
-    		pOleInPlace->GetWindow(&hwnd);
-    		pOleInPlace->Release();
-		} else {
-  			MessageBoxA(NULL,"IID_IOleInPlaceObject failed.","RESULT",MB_OK);
-		}
-
-   		IConnectionPointContainer* pCPContainer;
-	   // Step 1: Get a pointer to the connection point container.
-   		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IConnectionPointContainer,
-                                      		(void**)&pCPContainer))) {
-	      // m_pConnectionPoint is defined like this:
-	      // Step 2: Find the connection point.
-      		if (SUCCEEDED(pCPContainer->FindConnectionPoint(DIID_DWebBrowserEvents2,
-	                                             &m_pConnectionPoint))) {
-	         // Step 3: Advise the connection point that you
-	         // want to sink its events.
-	            sink = new IEViewSink(this);
-//#ifndef GECKO
-	         	if (FAILED(m_pConnectionPoint->Advise((IUnknown *)sink, &m_dwCookie)))     {
-	            	MessageBoxA(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
-	         	}
-//#endif
-	      	}
-      		pCPContainer->Release();
-   		}
-    }
-	clear();
-}
-*/
 IEView::~IEView() {
 	IOleObject*   pOleObject = NULL;
 	if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleObject, (void**)&pOleObject))) {
@@ -805,7 +740,7 @@ void IEView::documentClose() {
 */
 void IEView::appendEventOld(IEVIEWEVENT *event) {
 	if (clearRequired) {
-		clear(NULL);
+		clear(event);
 	}
 	if (builder!=NULL) {
 		builder->appendEventOld(this, event);
@@ -815,7 +750,7 @@ void IEView::appendEventOld(IEVIEWEVENT *event) {
 
 void IEView::appendEvent(IEVIEWEVENT *event) {
 	if (clearRequired) {
-		clear(NULL);
+		clear(event);
 	}
 	if (builder!=NULL) {
 		builder->appendEvent(this, event);

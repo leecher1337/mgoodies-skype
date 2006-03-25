@@ -955,9 +955,9 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 	if (event->cbSize >= IEVIEWEVENT_SIZE_V2) {
 		newEvent.codepage = event->codepage;
 	}
-/*	if (event->cbSize >= IEVIEWEVENT_SIZE_V3 && event->pszProto != NULL) {
+	if (event->cbSize >= IEVIEWEVENT_SIZE_V3 && event->pszProto != NULL) {
 		szProto = Utils::dupString(szProto);
-	} else */{
+	} else {
 		szProto = getProto(event->hContact);
  	}
 	newEvent.pszProto = szProto;
@@ -1096,9 +1096,9 @@ void HTMLBuilder::setLastIEViewEvent(IEVIEWEVENT *event) {
 	if (lastIEViewEvent.pszProto != NULL) {
 		delete (char *)lastIEViewEvent.pszProto ;
 	}
-	/*if (event->cbSize >= IEVIEWEVENT_SIZE_V3 && event->pszProto != NULL) {
+	if (event->cbSize >= IEVIEWEVENT_SIZE_V3 && event->pszProto != NULL) {
 		lastIEViewEvent.pszProto = Utils::dupString(event->pszProto);
-	} else*/ {
+	} else {
 		lastIEViewEvent.pszProto = getProto(event->hContact);
  	}
 }
