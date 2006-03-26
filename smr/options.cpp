@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2006 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -40,14 +40,14 @@ static BOOL CALLBACK ProtocolsOptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 // Initializations needed by options
 void LoadOptions()
 {
-	opts.pool_check_on_timer = DBGetContactSettingByte(NULL, MODULE_NAME, OPT_CHECK_ONTIMER, TRUE);
-	opts.pool_check_on_status_change = DBGetContactSettingByte(NULL, MODULE_NAME, OPT_CHECK_ONSTATUSCHANGE, TRUE);
-	opts.pool_check_on_status_change_timer = DBGetContactSettingByte(NULL, MODULE_NAME, OPT_CHECK_ONSTATUSCHANGETIMER, TRUE);
-	opts.pool_timer_check = DBGetContactSettingWord(NULL, MODULE_NAME, OPT_CHECK_ONTIMER_TIMER, 10);
-	opts.pool_timer_status = DBGetContactSettingWord(NULL, MODULE_NAME, OPT_CHECK_ONSTATUSTIMER_TIMER, 15);
-	opts.pool_clear_on_status_change = DBGetContactSettingByte(NULL, MODULE_NAME, OPT_CLEAR_ONSTATUSCHANGE, TRUE);
+	opts.poll_check_on_timer = DBGetContactSettingByte(NULL, MODULE_NAME, OPT_CHECK_ONTIMER, TRUE);
+	opts.poll_check_on_status_change = DBGetContactSettingByte(NULL, MODULE_NAME, OPT_CHECK_ONSTATUSCHANGE, TRUE);
+	opts.poll_check_on_status_change_timer = DBGetContactSettingByte(NULL, MODULE_NAME, OPT_CHECK_ONSTATUSCHANGETIMER, TRUE);
+	opts.poll_timer_check = DBGetContactSettingWord(NULL, MODULE_NAME, OPT_CHECK_ONTIMER_TIMER, 10);
+	opts.poll_timer_status = DBGetContactSettingWord(NULL, MODULE_NAME, OPT_CHECK_ONSTATUSTIMER_TIMER, 15);
+	opts.poll_clear_on_status_change = DBGetContactSettingByte(NULL, MODULE_NAME, OPT_CLEAR_ONSTATUSCHANGE, TRUE);
 
-	PoolSetTimer();
+	PollSetTimer();
 }
 
 int InitOptionsCallback(WPARAM wParam,LPARAM lParam)

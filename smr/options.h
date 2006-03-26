@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2006 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -43,12 +43,12 @@ extern "C"
 
 typedef struct 
 {
-	BOOL pool_check_on_timer;
-	BOOL pool_check_on_status_change;
-	BOOL pool_check_on_status_change_timer;
-	BOOL pool_clear_on_status_change;
-	WORD pool_timer_check;
-	WORD pool_timer_status;
+	BOOL poll_check_on_timer;
+	BOOL poll_check_on_status_change;
+	BOOL poll_check_on_status_change_timer;
+	BOOL poll_clear_on_status_change;
+	WORD poll_timer_check;
+	WORD poll_timer_status;
 } Options;
 
 extern Options opts;

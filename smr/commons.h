@@ -57,7 +57,7 @@ extern "C"
 
 #include "resource.h"
 #include "m_smr.h"
-#include "pool.h"
+#include "poll.h"
 #include "status_msg.h"
 #include "status.h"
 #include "options.h"
@@ -73,7 +73,10 @@ extern PLUGINLINK *pluginLink;
 
 #define INITIAL_TIMER 5000
 #define ONLINE_TIMER 2000
-#define UPDATE_DELAY 1000
+#define UPDATE_DELAY 3000
+#define ERROR_DELAY 15000
+#define POOL_DELAY 1000
+#define WAIT_TIME 5000
 
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
