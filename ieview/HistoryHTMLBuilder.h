@@ -33,6 +33,8 @@ protected:
 	DWORD startedTime;
 	bool isDbEventShown(DBEVENTINFO * dbei);
 	void appendEventNonTemplate(IEView *, IEVIEWEVENT *event);
+	const char *getTemplateFilename(ProtocolSettings *);
+	const char *getTemplateFilenameRtl(ProtocolSettings *);
 public:
     HistoryHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);

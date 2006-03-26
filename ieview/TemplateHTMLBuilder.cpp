@@ -13,6 +13,14 @@ TemplateHTMLBuilder::TemplateHTMLBuilder() {
 	groupTemplate = NULL;
 }
 
+const char *TemplateHTMLBuilder::getTemplateFilename(ProtocolSettings * protoSettings) {
+	return protoSettings->getSRMMTemplateFilename();
+}
+
+const char *TemplateHTMLBuilder::getTemplateFilenameRtl(ProtocolSettings * protoSettings) {
+	return protoSettings->getSRMMTemplateFilenameRtl();
+}
+
 char *TemplateHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int mode)
 {
     static char szResult[512];
