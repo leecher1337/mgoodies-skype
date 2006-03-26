@@ -117,6 +117,14 @@ void HistoryHTMLBuilder::loadMsgDlgFont(const char *dbSetting, LOGFONTA * lf, CO
     }
 }
 
+const char *HistoryHTMLBuilder::getTemplateFilename(ProtocolSettings * protoSettings) {
+	return protoSettings->getSRMMTemplateFilename();
+}
+
+const char *HistoryHTMLBuilder::getTemplateFilenameRtl(ProtocolSettings * protoSettings) {
+	return protoSettings->getSRMMTemplateFilenameRtl();
+}
+
 void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	LOGFONTA lf;
 	COLORREF color, bkgColor;

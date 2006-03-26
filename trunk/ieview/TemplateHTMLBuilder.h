@@ -15,6 +15,8 @@ protected:
 	const char *groupTemplate;
 	void buildHeadTemplate(IEView *, IEVIEWEVENT *event);
 	void appendEventTemplate(IEView *, IEVIEWEVENT *event);
+	virtual const char *getTemplateFilename(ProtocolSettings *);
+	virtual const char *getTemplateFilenameRtl(ProtocolSettings *);
 public:
     TemplateHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
