@@ -1,6 +1,9 @@
-Status Message Retriever 0.0.1.1
+Status Message Retriever 0.0.1.2
 
 Changelog:
+
+. 0.0.1.2
+  + New logic to handle requests. Should work better for ICQ, but messages will take longer to arrive.
 
 . 0.0.1.1
   + Updater support

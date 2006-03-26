@@ -18,8 +18,8 @@ Boston, MA 02111-1307, USA.
 */
 
 
-#ifndef __STATUS_H__
-# define __STATUS_H__
+#ifndef __POLL_H__
+# define __POLL_H__
 
 #include <windows.h>
 
@@ -31,10 +31,21 @@ extern "C"
 #include "commons.h"
 
 
-void InitStatus();
-void FreeStatus();
+void InitPoll();
+void FreePoll();
 
+void PollPause();
 
+void PollSetTimer(void);
+
+BOOL PollCheckProtocol(const char *protocol);
+BOOL PollCheckContact(HANDLE hContact);
+
+void PollReceivedContactMessage(HANDLE hContact, BOOL from_network);
+
+void PollStatusChangeAddContact(HANDLE hContact);
+void PollAddAllContactsTimer(int timer);
+void PollAddAllContactsProtoOnline(int timer, const char *protocol);
 
 
 
@@ -48,4 +59,4 @@ void FreeStatus();
 }
 #endif
 
-#endif // __STATUS_H__
+#endif // __POLL_H__
