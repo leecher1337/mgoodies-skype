@@ -19,7 +19,7 @@ CNudge GlobalNudge;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,1,4),
+	PLUGIN_MAKE_VERSION(0,0,1,5),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -413,7 +413,14 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 extern "C" int __declspec(dllexport) Unload(void) 
 { 
-	return 0;
+	NudgeElementList* p = NudgeList;
+	while ( p != NULL ) 
+	{
+		NudgeElementList* p1 = p->next;
+		free( p );
+		p = p1;
+	}
+	return 0; 
 }
 
 LRESULT CALLBACK NudgePopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) 
