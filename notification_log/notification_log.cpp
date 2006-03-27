@@ -22,6 +22,14 @@ Boston, MA 02111-1307, USA.
 #include "notification_log.h"
 
 
+#define FOLDER_LOGSW                   PROFILE_PATHW L"\\" CURRENT_PROFILEW L"\\logs"
+
+#ifdef _UNICODE
+# define FOLDER_LOGST FOLDER_LOGSW
+#else
+# define FOLDER_LOGST FOLDER_LOGS
+#endif
+
 
 // Prototypes /////////////////////////////////////////////////////////////////////////////////////
 
@@ -47,8 +55,8 @@ PLUGININFO pluginInfo = {
 
 HANDLE hhkNotificationShow = NULL;
 HANDLE hhkModulesLoaded = NULL;
-int hLogFolder = 0;
-char szDBPath[MAX_PATH];		// database profile path (read at startup only)
+HANDLE hLogFolder = 0;
+TCHAR szLogPath[MAX_PATH];		// database profile path (read at startup only)
 
 
 int ModulesLoaded(WPARAM wParam,LPARAM lParam);
@@ -105,20 +113,18 @@ int ModulesLoaded(WPARAM wParam,LPARAM lParam)
 	// Folders plugin support
 	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
 	{
-		FOLDERSDATA fd;
-
-		fd.cbSize = sizeof(fd);
-
-		strncpy(fd.szSection, Translate("Logs"), sizeof(fd.szSection));
-		fd.szSection[sizeof(fd.szSection)-1] = '\0';
-		strncpy(fd.szName, Translate("Logs"), sizeof(fd.szName));
-		fd.szName[sizeof(fd.szName)-1] = '\0';
-
-		hLogFolder = (int) CallService(MS_FOLDERS_REGISTER_PATH, (WPARAM) FOLDER_LOGS, (LPARAM) &fd);
+		hLogFolder = (HANDLE) FoldersRegisterCustomPathT("Logs", "Logs Path", FOLDER_LOGST);
 	}
 	else
 	{
-		CallService(MS_DB_GETPROFILEPATH, MAX_PATH, (LPARAM)szDBPath);
+		char path[MAX_PATH];
+		CallService(MS_DB_GETPROFILEPATH, MAX_PATH, (LPARAM)path);
+
+#ifdef _UNICODE
+		mir_sntprintf(szLogPath, sizeof(szLogPath), L"%S\\Logs", path);
+#else
+		mir_sntprintf(szLogPath, sizeof(szLogPath), "%s\\Logs", path);
+#endif
 	}
 
 
@@ -170,22 +176,9 @@ int LogShow(WPARAM wParam, LPARAM lParam)
 
 		if (_tcschr(filename, ':') == NULL)
 		{
-			if (ServiceExists(MS_FOLDERS_GET_PATH))
-			{
-				char *path;
-				CallService(MS_FOLDERS_GET_PATH_ALLOC, (WPARAM) hLogFolder, (LPARAM) &path);
-
-#ifdef _UNICODE
-				mir_sntprintf(fullFilename, MAX_REGS(fullFilename), L"%S\\%s", path, filename);
-#else
-				mir_sntprintf(fullFilename, MAX_REGS(fullFilename), "%s\\%s", path, filename);
-#endif
-				mir_free(path);
-			}
-			else
-			{
-				mir_sntprintf(fullFilename, MAX_REGS(fullFilename), _T("%s\\%s"), szDBPath, filename);
-			}
+			TCHAR path[MAX_PATH];
+			FoldersGetCustomPathT(hLogFolder, path, MAX_PATH, szLogPath);
+			mir_sntprintf(fullFilename, MAX_REGS(fullFilename), _T("%s\\%s"), path, filename);
 		}
 		else
 		{
