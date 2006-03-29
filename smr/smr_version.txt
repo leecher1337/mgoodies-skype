@@ -1,6 +1,11 @@
-Status Message Retriever 0.0.1.2
+Status Message Retriever 0.0.1.3
 
 Changelog:
+
+. 0.0.1.3
+  + Option to always clear status message
+  * Fixed error detection
+  * Online check if check on timer enabled also
 
 . 0.0.1.2
   + New logic to handle requests. Should work better for ICQ, but messages will take longer to arrive.
