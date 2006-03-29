@@ -27,39 +27,44 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPT_PROTOCOLS DIALOGEX 0, 0, 219, 214
+IDD_OPT_PROTOCOLS DIALOGEX 0, 0, 235, 224
 STYLE WS_CHILD
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        " Status Message Retrieve ",IDC_STATIC,3,3,213,208
+    GROUPBOX        " Status Message Retrieve ",IDC_STATIC,3,3,229,218
     CONTROL         "Retrieve status messages every",IDC_CHECK_ONTIMER,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,14,119,10
-    EDITTEXT        IDC_CHECK_ONTIMER_TIMER,133,14,31,12,ES_NUMBER | NOT 
+    EDITTEXT        IDC_CHECK_ONTIMER_TIMER,131,14,31,12,ES_NUMBER | NOT 
                     WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "minutes",IDC_STATIC,169,14,37,10
-    CONTROL         "Also retrieve after ",IDC_CHECK_ONSTATUSTIMER,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,43,78,8
-    CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
-                    LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
-                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,10,92,199,73
-    LTEXT           "Get status messages for these protocols:",IDC_STATIC,10,
-                    80,199,9
-    LTEXT           "This feature is mainly for use with protocols that store status messages on server rather then in database (like ICQ). Uncheck any other protocol - status messages will be read in a standard way then.",
-                    IDC_STATIC,10,173,199,34
-    EDITTEXT        IDC_CHECK_ONSTATUSTIMER_TIMER,91,42,31,12,ES_NUMBER | 
-                    NOT WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "seconds after status change",IDC_STATIC,126,43,83,10
     CONTROL         "Spin1",IDC_CHECK_ONTIMER_TIMER_SPIN,"msctls_updown32",
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | 
                     UDS_NOTHOUSANDS | UDS_HOTTRACK,162,14,7,11
+    LTEXT           "minutes",IDC_STATIC,167,15,37,10
+    CONTROL         "Retrieve on status change",IDC_CHECK_ONSTATUS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,28,216,10
+    CONTROL         "Also retrieve after ",IDC_CHECK_ONSTATUSTIMER,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,42,76,8
+    EDITTEXT        IDC_CHECK_ONSTATUSTIMER_TIMER,87,41,31,12,ES_NUMBER | 
+                    NOT WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "seconds after status change",IDC_STATIC,127,42,99,10
+    CONTROL         "Clear message on status change",IDC_CLEAR_ON_STATUS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,54,216,10
     CONTROL         "Spin2",IDC_CHECK_ONSTATUSTIMER_TIMER_SPIN,
                     "msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | 
-                    UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,121,43,6,
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,117,43,6,
                     10
-    CONTROL         "Clear message on status change",IDC_CLEAR_ON_STATUS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,58,199,10
-    CONTROL         "Retrieve on status change",IDC_CHECK_ONSTATUS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,29,199,10
+    CONTROL         "Always clear message if status does not support it",
+                    IDC_ALWAYS_CLEAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    10,68,216,10
+    LTEXT           "(even for contacts with msg check disabled)",IDC_STATIC,
+                    22,79,204,10
+    LTEXT           "Get status messages for these protocols:",IDC_STATIC,10,
+                    95,216,9
+    CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,10,107,216,73
+    LTEXT           "This feature is mainly for use with protocols that store status messages on server rather then in database (like ICQ). Uncheck any other protocol - status messages will be read in a standard way then.",
+                    IDC_STATIC,10,184,216,33
 END
 
 
@@ -74,11 +79,11 @@ BEGIN
     IDD_OPT_PROTOCOLS, DIALOG
     BEGIN
         LEFTMARGIN, 3
-        RIGHTMARGIN, 216
+        RIGHTMARGIN, 232
         VERTGUIDE, 10
-        VERTGUIDE, 209
+        VERTGUIDE, 226
         TOPMARGIN, 3
-        BOTTOMMARGIN, 211
+        BOTTOMMARGIN, 221
     END
 END
 #endif    // APSTUDIO_INVOKED

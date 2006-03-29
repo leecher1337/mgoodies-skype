@@ -34,8 +34,6 @@ extern "C"
 void InitPoll();
 void FreePoll();
 
-void PollPause();
-
 void PollSetTimer(void);
 
 BOOL PollCheckProtocol(const char *protocol);

@@ -48,6 +48,7 @@
 #define IDC_CLEAR_ON_STATUS             1051
 #define IDC_RETRIEVE_ON_STATUS          1052
 #define IDC_CHECK_ONSTATUS              1052
+#define IDC_ALWAYS_CLEAR                1053
 #define IDM_M1                          40001
 #define IDM_M2                          40003
 #define IDM_M3                          40005

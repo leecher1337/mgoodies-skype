@@ -67,7 +67,7 @@ int ProtoAck(WPARAM wParam, LPARAM lParam)
 				&& newStatus > ID_STATUS_OFFLINE && newStatus != ID_STATUS_INVISIBLE
 				&& PollCheckProtocol(proto))
 		{
-			if (opts.poll_check_on_status_change)
+			if (opts.poll_check_on_status_change || opts.poll_check_on_status_change_timer)
 				PollAddAllContactsProtoOnline(ONLINE_TIMER, proto);
 		}
 	}
@@ -75,19 +75,11 @@ int ProtoAck(WPARAM wParam, LPARAM lParam)
 	{
 		char *proto = (char*)ack->szModule;
 
-		if (PollCheckProtocol(proto))
+		if (ack->result == ACKRESULT_SUCCESS && PollCheckProtocol(proto))
 		{
-			if (ack->result == ACKRESULT_SUCCESS)
-			{
 logC(MODULE_NAME, "ProtoAck", ack->hContact, "Status msg changed");
-				PollReceivedContactMessage(ack->hContact, TRUE);
-				SetStatusMessage(ack->hContact, (const TCHAR *) ack->lParam);
-			}
-			else if (ack->result == ACKRESULT_FAILED)
-			{
-log(MODULE_NAME, "ProtoAck", "ERROR, pausing for a while");
-				PollPause();
-			}
+			PollReceivedContactMessage(ack->hContact, TRUE);
+			SetStatusMessage(ack->hContact, (const TCHAR *) ack->lParam);
 		}
 	}
 

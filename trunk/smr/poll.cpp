@@ -176,24 +176,32 @@ void PollStatusChangeAddContact(HANDLE hContact)
 
 logC(MODULE_NAME, "PollStatusChangeAddContact", hContact, "Status changed");
 
-	if (proto != NULL && PollCheckProtocol(proto) && PollCheckContact(hContact))
+	if (proto != NULL && PollCheckProtocol(proto))
 	{
+		BOOL check = PollCheckContact(hContact);
+
 		// Delete some messages now (don't add to list...)
 		if (ProtocolStatusAllowMsgs(hContact, proto))
 		{
-			if (opts.poll_clear_on_status_change)
-				ClearStatusMessage(hContact);
+			if (check)
+			{
+				if (opts.poll_clear_on_status_change)
+					ClearStatusMessage(hContact);
 
-			if (opts.poll_check_on_status_change)
-				QueueAdd(hContact, GetTickCount(), STATUS_CHANGE);
+				if (opts.poll_check_on_status_change)
+					QueueAdd(hContact, GetTickCount(), STATUS_CHANGE);
 
-			if (opts.poll_check_on_status_change_timer)
-				QueueAdd(hContact, GetTickCount() + opts.poll_timer_status * 1000, STATUS_CHANGE_TIMER);
+				if (opts.poll_check_on_status_change_timer)
+					QueueAdd(hContact, GetTickCount() + opts.poll_timer_status * 1000, STATUS_CHANGE_TIMER);
+			}
 		}
 		else
 		{
-			PollReceivedContactMessage(hContact, FALSE);
-			ClearStatusMessage(hContact);
+			if (check || opts.always_clear)
+			{
+				PollReceivedContactMessage(hContact, FALSE);
+				ClearStatusMessage(hContact);
+			}
 		}
 	}
 	else
@@ -226,13 +234,14 @@ log(MODULE_NAME, "PollAddAllContacts", "[%s] Start", protocol == NULL ? "all" : 
 
 		if (proto != NULL && (protocol == NULL || strcmp(proto, protocol) == 0))
 		{
-			QueueAdd(hContact, GetTickCount() + timer, type);
-
-			// Delete if possible
-			if (PollCheckProtocol(proto) && PollCheckContact(hContact) && !ProtocolStatusAllowMsgs(hContact, proto))
+			if (type == PROTOCOL_ONLINE && PollCheckProtocol(proto) 
+				&& (PollCheckContact(hContact) || opts.always_clear)
+				&& !ProtocolStatusAllowMsgs(hContact, proto))
 			{
 				ClearStatusMessage(hContact);
 			}
+
+			QueueAdd(hContact, GetTickCount() + timer, type);
 		}
 
 		hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0);
@@ -288,8 +297,7 @@ void PollReceivedContactMessage(HANDLE hContact, BOOL from_network)
 
 		LeaveCriticalSection(&update_cs);
 
-		DWORD delay = UpdateDelay();
-		SetNextRequestAt(GetTickCount() + delay);
+		SetNextRequestAt(GetTickCount() + UpdateDelay());
 	}
 }
 
@@ -560,18 +568,37 @@ logC(MODULE_NAME, "UpdateThread", qi->hContact, "Have to check");
 
 						if (ProtocolStatusAllowMsgs(qi->hContact, proto))
 						{
-							CallContactService(qi->hContact,PSS_GETAWAYMSG,0,0);
+							int ret = CallContactService(qi->hContact,PSS_GETAWAYMSG,0,0);
 
-							requested_item = qi;
-							requested_item->check_time = GetTickCount();
+							if (ret != 0)
+							{
+								requested_item = qi;
+								requested_item->check_time = GetTickCount();
 
-							LeaveCriticalSection(&update_cs);
+								LeaveCriticalSection(&update_cs);
 
 logC(MODULE_NAME, "UpdateThread", qi->hContact, "Requested");
 
-							if (statusQueue.bThreadRunning)
+								if (statusQueue.bThreadRunning)
+								{
+									Sleep(POOL_DELAY);
+								}
+							}
+							else
 							{
-								Sleep(POOL_DELAY);
+								// Error, pause for a while
+								List_Push(statusQueue.queue, qi);
+
+								LeaveCriticalSection(&update_cs);
+
+log(MODULE_NAME, "UpdateThread", "ERROR, pausing for a while");
+
+								if (statusQueue.bThreadRunning)
+								{
+									int delay = ErrorDelay();
+									SetNextRequestAt(GetTickCount() + delay);
+									Sleep(delay);
+								}
 							}
 						}
 						else
@@ -617,10 +644,3 @@ DWORD GetNextRequestAt(void)
 
 	return ret;
 }
-
-
-void PollPause()
-{
-	SetNextRequestAt(GetTickCount() + ErrorDelay());
-}
-\
