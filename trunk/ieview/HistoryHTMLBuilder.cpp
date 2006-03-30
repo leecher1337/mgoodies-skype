@@ -271,9 +271,9 @@ void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 }
 
 void HistoryHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
-/* 	if (Options::getHistoryFlags() & Options::TEMPLATES_ENABLED) {
+    /*if (Options::getHistoryFlags() & Options::TEMPLATES_ENABLED) {
 		appendEventTemplate(view, event);
-	} else */{
+	} else*/{
 		appendEventNonTemplate(view, event);
 	}
 }
