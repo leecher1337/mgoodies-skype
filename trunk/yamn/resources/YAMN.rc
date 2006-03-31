@@ -189,7 +189,7 @@ EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
     COMBOBOX        IDC_COMBOACCOUNT,4,6,140,65,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP 
+                    WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Delete",IDC_BTNDEL,240,193,75,13
     PUSHBUTTON      "Default",IDC_BTNDEFAULT,240,209,75,13
     PUSHBUTTON      "Reset counter",IDC_BTNRESET,155,193,75,13
@@ -213,7 +213,7 @@ BEGIN
     CONTROL         "",IDC_CHECKCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     114,132,9,10
     CONTROL         "",IDC_CPB,"ColourPicker",WS_TABSTOP,124,132,10,10
-    CONTROL         "",IDC_CPT,"ColourPicker",WS_TABSTOP,136,132,10,10
+    CONTROL         "",IDC_CPT,"ColourPicker",WS_TABSTOP,135,132,10,10
     CONTROL         "Single popup",IDC_RADIOPOP1,"Button",BS_AUTORADIOBUTTON | 
                     WS_TABSTOP,15,140,95,10
     CONTROL         "Multi popup",IDC_RADIOPOPN,"Button",BS_AUTORADIOBUTTON | 
@@ -222,19 +222,19 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,5,203,94,10
     CONTROL         "",IDC_CHECKNCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     114,203,10,10
-    CONTROL         "",IDC_CPNB,"ColourPicker",WS_TABSTOP,135,203,10,10
-    CONTROL         "",IDC_CPNT,"ColourPicker",WS_TABSTOP,124,203,10,10
+    CONTROL         "",IDC_CPNB,"ColourPicker",WS_TABSTOP,124,203,10,10
+    CONTROL         "",IDC_CPNT,"ColourPicker",WS_TABSTOP,135,203,10,10
     CONTROL         "Sound notification if failed",IDC_CHECKFSND,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,154,129,135,10
     CONTROL         "Message notification if failed",IDC_CHECKFMSG,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,154,142,135,10
     CONTROL         "Tray icon notification if failed",IDC_CHECKFICO,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,154,154,135,9
+                    BS_AUTOCHECKBOX | WS_TABSTOP,154,154,135,8
     CONTROL         "Popup notification if failed",IDC_CHECKFPOP,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,154,165,118,10
     CONTROL         "",IDC_CHECKFCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    277,162,11,10
-    CONTROL         "",IDC_CPFB,"ColourPicker",WS_TABSTOP,289,162,10,10
+                    277,162,8,10
+    CONTROL         "",IDC_CPFB,"ColourPicker",WS_TABSTOP,288,162,10,10
     CONTROL         "",IDC_CPFT,"ColourPicker",WS_TABSTOP,300,162,10,10
     EDITTEXT        IDC_EDITSERVER,151,58,75,12,ES_AUTOHSCROLL | WS_GROUP
     EDITTEXT        IDC_EDITPORT,199,74,27,12,ES_AUTOHSCROLL | ES_NUMBER | 
@@ -370,8 +370,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,1,5
- PRODUCTVERSION 0,0,1,5
+ FILEVERSION 0,0,1,6
+ PRODUCTVERSION 0,0,1,6
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -389,14 +389,14 @@ BEGIN
             VALUE "Comments", "Yet Another Mail Notifier\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "Yet Another Mail Notifier\0"
-            VALUE "FileVersion", "0, 0, 1, 5\0"
+            VALUE "FileVersion", "0, 0, 1, 6\0"
             VALUE "InternalName", "YAMN\0"
             VALUE "LegalCopyright", "Copyright © 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "YAMN.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "YAMN tweety\0"
-            VALUE "ProductVersion", "0, 0, 1, 5\0"
+            VALUE "ProductVersion", "0, 0, 1, 6\0"
             VALUE "SpecialBuild", "\0"
         END
     END
