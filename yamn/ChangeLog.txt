@@ -1,3 +1,7 @@
+0.0.1.7
+============
+! Invert back and text color for no new mail popup in option page.
+
 0.0.1.6
 ============
 * Try to update all icons when changing in icolib.
