@@ -115,37 +115,20 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 		if (ace!=NULL) {
 			szAvatarIn = Utils::UTF8Encode(ace->szFilename);
 		}
-        else{
-            if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
-			    if (strlen(dbv.pszVal) > 0) {
-					/* relative -> absolute */
-				    char tmpPath[MAX_PATH];
-				    strcpy (tmpPath, dbv.pszVal);
-				    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-		    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-				   	}
-		       		szAvatarIn = Utils::UTF8Encode(tmpPath);
-				    Utils::convertPath(szAvatarIn);
-			    }
-		       	DBFreeVariant(&dbv);
+	}
+	if (szAvatarIn == NULL) {
+		if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
+			if (strlen(dbv.pszVal) > 0) {
+				/* relative -> absolute */
+				char tmpPath[MAX_PATH];
+				strcpy (tmpPath, dbv.pszVal);
+				if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+					CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+				}
+				szAvatarIn = Utils::UTF8Encode(tmpPath);
+				Utils::convertPath(szAvatarIn);
 			}
-        }
-            
-	} else {
-		/*if(DBGetContactSettingWord(event->hContact, szProto, "Status", ID_STATUS_OFFLINE) != ID_STATUS_OFFLINE) */{
-			if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
-			    if (strlen(dbv.pszVal) > 0) {
-					/* relative -> absolute */
-				    char tmpPath[MAX_PATH];
-				    strcpy (tmpPath, dbv.pszVal);
-				    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-		    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-				   	}
-		       		szAvatarIn = Utils::UTF8Encode(tmpPath);
-				    Utils::convertPath(szAvatarIn);
-			    }
-		       	DBFreeVariant(&dbv);
-			}
+			DBFreeVariant(&dbv);
 		}
 	}
 	if (szAvatarIn == NULL) {
@@ -156,7 +139,8 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 		if (ace!=NULL) {
 			szAvatarOut = Utils::UTF8Encode(ace->szFilename);
 		}
-	} else {
+	}
+	if (szAvatarOut == NULL) {
 		if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 		    if (strlen(dbv.pszVal) > 0) {
 				/* relative -> absolute */
