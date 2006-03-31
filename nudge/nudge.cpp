@@ -5,7 +5,11 @@ void CNudge::Save(void)
 {
 	char SectionName[MAXMODULELABELLENGTH + 30];
 	sprintf(SectionName,"useByProtocol"); 
-	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->useByProtocol); 
+	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->useByProtocol);
+	sprintf(SectionName,"%recvTimeSec");
+	DBWriteContactSettingDword(NULL, "Nudge", SectionName, this->recvTimeSec);
+	sprintf(SectionName,"%sendTimeSec");
+	DBWriteContactSettingDword(NULL, "Nudge", SectionName, this->sendTimeSec);
 }
 
 
@@ -13,7 +17,11 @@ void CNudge::Load(void)
 {
 	char SectionName[MAXMODULELABELLENGTH + 30];
 	sprintf(SectionName,"useByProtocol"); 
-	this->useByProtocol = DBGetContactSettingByte(NULL, "Nudge", SectionName, FALSE) != 0; 
+	this->useByProtocol = DBGetContactSettingByte(NULL, "Nudge", SectionName, FALSE) != 0;
+	sprintf(SectionName,"%recvTimeSec");
+	this->recvTimeSec = DBGetContactSettingDword(NULL, "Nudge", SectionName, 30);
+	sprintf(SectionName,"%sendTimeSec");
+	this->sendTimeSec = DBGetContactSettingDword(NULL, "Nudge", SectionName, 30);
 }
 
 void CNudgeElement::Save(void)
@@ -29,6 +37,8 @@ void CNudgeElement::Save(void)
 	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->popupWindowColor);
 	sprintf(SectionName,"%s-showEvent", ProtocolName); 
 	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->showEvent); 
+	sprintf(SectionName,"%s-showStatus", ProtocolName); 
+	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->showStatus); 
 	sprintf(SectionName,"%s-showPopup", ProtocolName); 
 	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->showPopup); 
 	sprintf(SectionName,"%s-shakeClist", ProtocolName); 
@@ -60,6 +70,8 @@ void CNudgeElement::Load(void)
 	this->popupWindowColor = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0;
 	sprintf(SectionName,"%s-showEvent", ProtocolName); 
 	this->showEvent = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0; 
+	sprintf(SectionName,"%s-showStatus", ProtocolName); 
+	this->showStatus = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0; 
 	sprintf(SectionName,"%s-showPopup", ProtocolName); 
 	this->showPopup = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0; 
 	sprintf(SectionName,"%s-shakeClist", ProtocolName); 
@@ -86,5 +98,4 @@ void CNudgeElement::Load(void)
 			sprintf(this->senText,Translate("You sent a nudge"));
 		DBFreeVariant(&dbv);
 	}
-	this->LastSent = time(NULL);
 }
