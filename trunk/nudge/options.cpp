@@ -324,9 +324,11 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_CHECKEVENT:
 				case IDC_CHECKCLIST:
 				case IDC_CHECKCHAT:
+				case IDC_CHECKSTATUS:
 					ActualNudge->shakeClist = (IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED);
 					ActualNudge->shakeChat = (IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED);
 					ActualNudge->showEvent = (IsDlgButtonChecked(hwnd,IDC_CHECKEVENT)==BST_CHECKED);
+					ActualNudge->showStatus = (IsDlgButtonChecked(hwnd,IDC_CHECKSTATUS)==BST_CHECKED);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_CHECKST0:
@@ -341,6 +343,8 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_CHECKST9:
 				case IDC_SENDTEXT:
 				case IDC_RECVTEXT:
+				case IDC_SENDTIME:
+				case IDC_RECVTIME:
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 			}
@@ -358,6 +362,8 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 						case PSN_APPLY:
 						{
 							BOOL Translated;
+							GlobalNudge.sendTimeSec = GetDlgItemInt(hwnd,IDC_SENDTIME,&Translated,FALSE);
+							GlobalNudge.recvTimeSec  = GetDlgItemInt(hwnd,IDC_RECVTIME,&Translated,FALSE);
 							ActualNudge->popupTimeSec = GetDlgItemInt(hwnd,IDC_POPUPTIME,&Translated,FALSE);
 							ActualNudge->popupWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
 							ActualNudge->showPopup = (IsDlgButtonChecked(hwnd,IDC_CHECKPOP)==BST_CHECKED);
@@ -468,7 +474,10 @@ void UpdateControls(HWND hwnd)
 	CheckDlgButton(hwnd, IDC_CHECKCLIST, (WPARAM) ActualNudge->shakeClist);
 	CheckDlgButton(hwnd, IDC_CHECKCHAT, (WPARAM) ActualNudge->shakeChat);
 	CheckDlgButton(hwnd, IDC_CHECKEVENT, (WPARAM) ActualNudge->showEvent);
+	CheckDlgButton(hwnd, IDC_CHECKSTATUS, (WPARAM) ActualNudge->showStatus);
 	SetDlgItemInt(hwnd, IDC_POPUPTIME, ActualNudge->popupTimeSec,FALSE);
+	SetDlgItemInt(hwnd, IDC_SENDTIME, GlobalNudge.sendTimeSec,FALSE);
+	SetDlgItemInt(hwnd, IDC_RECVTIME, GlobalNudge.recvTimeSec,FALSE);
 	CheckDlgButton(hwnd, IDC_USEBYPROTOCOL, (WPARAM) GlobalNudge.useByProtocol);
 	SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETCOLOUR,0, ActualNudge->popupBackColor);
 	SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETDEFAULTCOLOUR, 0, GetSysColor(COLOR_BTNFACE));

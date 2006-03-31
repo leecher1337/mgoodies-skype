@@ -19,7 +19,7 @@ CNudge GlobalNudge;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,1,5),
+	PLUGIN_MAKE_VERSION(0,0,1,6),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -60,7 +60,18 @@ void RegisterToUpdate(void)
 int NudgeSend(WPARAM wParam,LPARAM lParam)
 {
 
-	char *protoName = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0);
+	char *protoName = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0);	
+	int diff = time(NULL) - DBGetContactSettingDword((HANDLE) wParam, "Nudge", "LastSent", time(NULL)-30);
+
+	if(diff < GlobalNudge.sendTimeSec)
+	{
+		char msg[500];
+		sprintf(msg,Translate("You are not allowed to send too much nudge (only 1 each %d sec, %d sec left)"),GlobalNudge.sendTimeSec, 30 - diff);
+		MessageBox(NULL,msg,NULL,0);
+		return 0;
+	}
+	
+	DBWriteContactSettingDword((HANDLE) wParam, "Nudge", "LastSent", time(NULL));
 
 	if(GlobalNudge.useByProtocol)
 	{
@@ -69,34 +80,19 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 		{
 			if(!strcmp(protoName,n->item.ProtocolName))
 			{
-				int diff = time(NULL) - n->item.LastSent;
-
-				if(diff < 30)
-				{
-					MessageBox(NULL,Translate("You are not allowed to send too much nudge (only 1 each 30 sec)"),NULL,0);
-					return 0;
-				}
-
-				n->item.LastSent = time(NULL);
-
 				if(n->item.showEvent)
 					Nudge_SentEvent(n->item, (HANDLE) wParam);
+				if(n->item.showStatus)
+					Nudge_SentStatus(n->item, (HANDLE) wParam);
 			}		
 		}
 	}
 	else
 	{
-		int diff = time(NULL) - DefaultNudge.LastSent;
-
-		if(diff < 30)
-		{
-			MessageBox(NULL,Translate("You are not allowed to send too much nudge (only 1 each 30 sec)"),NULL,0);
-			return 0;
-		}
-		DefaultNudge.LastSent = time(NULL);
-
 		if(DefaultNudge.showEvent)
 			Nudge_SentEvent(DefaultNudge, (HANDLE) wParam);
+		if(DefaultNudge.showStatus)
+			Nudge_SentStatus(DefaultNudge, (HANDLE) wParam);
 	}
 
 	char servicefunction[ 100 ];
@@ -111,6 +107,13 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 {
 	
 	char *protoName = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0);
+
+	int diff = time(NULL) - DBGetContactSettingDword((HANDLE) wParam, "Nudge", "LastReceived", time(NULL)-30);
+
+	if(diff < GlobalNudge.recvTimeSec)
+		return 0;
+	
+	DBWriteContactSettingDword((HANDLE) wParam, "Nudge", "LastReceived", time(NULL));
 
 	if(GlobalNudge.useByProtocol)
 	{
@@ -144,6 +147,8 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 							ShakeChat(wParam,lParam);
 						if(n->item.showEvent)
 							Nudge_ShowEvent(n->item, (HANDLE) wParam);
+						if(n->item.showStatus)
+							Nudge_ShowStatus(n->item, (HANDLE) wParam);
 					}
 				}
 			}		
@@ -213,6 +218,8 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 					ShakeChat(wParam,lParam);
 				if(DefaultNudge.showEvent)
 					Nudge_ShowEvent(DefaultNudge, (HANDLE) wParam);
+				if(DefaultNudge.showStatus)
+					Nudge_ShowStatus(DefaultNudge, (HANDLE) wParam);
 			}
 		}
 	}
@@ -546,6 +553,63 @@ void Nudge_SentEvent(CNudgeElement n, HANDLE hCont)
 	
 	if(hMetaContact != NULL) //metacontact
 		CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&NudgeEvent);
+	
+	CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&NudgeEvent);
+}
+
+void Nudge_SentStatus(CNudgeElement n, HANDLE hCont)
+{
+	DBEVENTINFO NudgeEvent = { 0 };;
+	HANDLE hContact;
+	HANDLE hMetaContact = NULL;
+	char* EventLog;
+
+	hContact = hCont;
+	EventLog = Translate("Sent a nudge");
+
+	NudgeEvent.cbSize = sizeof(NudgeEvent);
+	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+	NudgeEvent.flags = DBEF_SENT;
+	NudgeEvent.timestamp = ( DWORD )time(NULL);
+	NudgeEvent.eventType = EVENTTYPE_STATUSCHANGE;
+	NudgeEvent.cbBlob = strlen( EventLog )+1;
+	NudgeEvent.pBlob = ( PBYTE )EventLog;
+
+	if(ServiceExists(MS_MC_GETMETACONTACT)) //try to retrieve the metacontact if some
+		hMetaContact = (HANDLE) CallService( MS_MC_GETMETACONTACT, (WPARAM)hContact, 0 );
+	
+	if(hMetaContact != NULL) //metacontact
+		CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&NudgeEvent);
+	
+	CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&NudgeEvent);
+}
+
+void Nudge_ShowStatus(CNudgeElement n, HANDLE hCont)
+{
+	DBEVENTINFO NudgeEvent = { 0 };;
+	HANDLE hContact;
+	HANDLE hMetaContact = NULL;
+	char* EventLog;
+
+	hContact = hCont;
+	EventLog = Translate("Sent a nudge");
+
+	NudgeEvent.cbSize = sizeof(NudgeEvent);
+	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+	NudgeEvent.flags = CheckMsgWnd(hContact) ? 0 : DBEF_READ;
+	NudgeEvent.timestamp = ( DWORD )time(NULL);
+	NudgeEvent.eventType = EVENTTYPE_STATUSCHANGE;
+	NudgeEvent.cbBlob = strlen( EventLog )+1;
+	NudgeEvent.pBlob = ( PBYTE )EventLog;
+
+	if(ServiceExists(MS_MC_GETMETACONTACT)) //try to retrieve the metacontact if some
+		hMetaContact = (HANDLE) CallService( MS_MC_GETMETACONTACT, (WPARAM)hContact, 0 );
+	
+	if(hMetaContact != NULL) //metacontact
+	{
+		CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&NudgeEvent);
+		NudgeEvent.flags = DBEF_READ;
+	}
 	
 	CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&NudgeEvent);
 }

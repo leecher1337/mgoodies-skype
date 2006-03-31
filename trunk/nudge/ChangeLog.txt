@@ -1,3 +1,9 @@
+0.0.1.6
+===========
++ Per contact limitation (no more per protocol cause too restrictive)
++ Privacy options to limit the number of nudge to receive
++ Options to show nudge as status change. (thx Tioduke)
+
 0.0.1.5
 ===========
 ! Memory leaks fix. (Patch by Ghazan)

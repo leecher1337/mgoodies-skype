@@ -13,10 +13,15 @@
 #define NUDGE_ACC_ST8   0x00000100		//Check (countdown) when On the phone
 #define NUDGE_ACC_ST9   0x00000200		//Check (countdown) when Out to lunch
 
+// For status log
+#define EVENTTYPE_STATUSCHANGE	25368
+
 class CNudge
 {
 public:
 	bool useByProtocol;
+	int sendTimeSec;
+	int recvTimeSec;
 
 	void Load(void);
 	void Save(void);
@@ -31,12 +36,12 @@ public:
 	char senText[300];
 	bool showPopup;
 	bool showEvent;
+	bool showStatus;
 	bool popupWindowColor;
 	bool shakeClist;
 	bool shakeChat;
 	bool enabled;
 	DWORD statusFlags;
-	time_t LastSent;
 	unsigned int popupBackColor;
 	unsigned int popupTextColor;
 	int popupTimeSec;

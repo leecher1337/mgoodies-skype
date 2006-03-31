@@ -62,6 +62,10 @@
 #define IDC_POPUPBACKCOLOR              1036
 #define IDC_CHECKPOP                    1037
 #define IDC_POPUPTIME                   1038
+#define IDC_SENDTIME                    1039
+#define IDC_RECVTIME                    1040
+#define IDC_CHECKEVENT2                 1041
+#define IDC_CHECKSTATUS                 1041
 
 // Next default values for new objects
 // 
@@ -69,7 +73,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        105
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1032
+#define _APS_NEXT_CONTROL_VALUE         1040
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

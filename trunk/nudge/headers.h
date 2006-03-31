@@ -14,6 +14,7 @@
 #include "..\..\include\m_popup.h"	
 #include "..\..\include\m_clui.h"
 #include "..\..\include\m_message.h"
+#include "..\..\include\m_contacts.h"
 #include "..\..\include\m_protocols.h"
 #include "..\..\include\m_protomod.h"
 #include "..\..\include\m_options.h"
