@@ -1,3 +1,10 @@
+0.0.1.7
+===========
+! Change text for status log on receive.
+* Use flags = 0 for status notify.
+! Wrong section name in options saving.
+* Use winres.h in resource.
+
 0.0.1.6
 ===========
 + Per contact limitation (no more per protocol cause too restrictive)

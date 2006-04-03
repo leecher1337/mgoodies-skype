@@ -6,9 +6,9 @@ void CNudge::Save(void)
 	char SectionName[MAXMODULELABELLENGTH + 30];
 	sprintf(SectionName,"useByProtocol"); 
 	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->useByProtocol);
-	sprintf(SectionName,"%recvTimeSec");
+	sprintf(SectionName,"RecvTimeSec");
 	DBWriteContactSettingDword(NULL, "Nudge", SectionName, this->recvTimeSec);
-	sprintf(SectionName,"%sendTimeSec");
+	sprintf(SectionName,"SendTimeSec");
 	DBWriteContactSettingDword(NULL, "Nudge", SectionName, this->sendTimeSec);
 }
 
@@ -18,9 +18,9 @@ void CNudge::Load(void)
 	char SectionName[MAXMODULELABELLENGTH + 30];
 	sprintf(SectionName,"useByProtocol"); 
 	this->useByProtocol = DBGetContactSettingByte(NULL, "Nudge", SectionName, FALSE) != 0;
-	sprintf(SectionName,"%recvTimeSec");
+	sprintf(SectionName,"RecvTimeSec");
 	this->recvTimeSec = DBGetContactSettingDword(NULL, "Nudge", SectionName, 30);
-	sprintf(SectionName,"%sendTimeSec");
+	sprintf(SectionName,"SendTimeSec");
 	this->sendTimeSec = DBGetContactSettingDword(NULL, "Nudge", SectionName, 30);
 }
 

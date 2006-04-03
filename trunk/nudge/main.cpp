@@ -19,7 +19,7 @@ CNudge GlobalNudge;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,1,6),
+	PLUGIN_MAKE_VERSION(0,0,1,7),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -565,11 +565,11 @@ void Nudge_SentStatus(CNudgeElement n, HANDLE hCont)
 	char* EventLog;
 
 	hContact = hCont;
-	EventLog = Translate("Sent a nudge");
+	EventLog = Translate("received a nudge");
 
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
 	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
-	NudgeEvent.flags = DBEF_SENT;
+	NudgeEvent.flags = 0;
 	NudgeEvent.timestamp = ( DWORD )time(NULL);
 	NudgeEvent.eventType = EVENTTYPE_STATUSCHANGE;
 	NudgeEvent.cbBlob = strlen( EventLog )+1;
@@ -592,11 +592,11 @@ void Nudge_ShowStatus(CNudgeElement n, HANDLE hCont)
 	char* EventLog;
 
 	hContact = hCont;
-	EventLog = Translate("Sent a nudge");
+	EventLog = Translate("sent a nudge");
 
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
 	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
-	NudgeEvent.flags = CheckMsgWnd(hContact) ? 0 : DBEF_READ;
+	NudgeEvent.flags = 0;
 	NudgeEvent.timestamp = ( DWORD )time(NULL);
 	NudgeEvent.eventType = EVENTTYPE_STATUSCHANGE;
 	NudgeEvent.cbBlob = strlen( EventLog )+1;
