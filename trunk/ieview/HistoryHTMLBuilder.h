@@ -35,6 +35,7 @@ protected:
 	void appendEventNonTemplate(IEView *, IEVIEWEVENT *event);
 	const char *getTemplateFilename(ProtocolSettings *);
 	const char *getTemplateFilenameRtl(ProtocolSettings *);
+	int getFlags(ProtocolSettings *);
 public:
     HistoryHTMLBuilder();
 	void buildHead(IEView *, IEVIEWEVENT *event);
