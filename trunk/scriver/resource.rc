@@ -1,12 +1,12 @@
 #include "resource.h"
-#include <windows.h>
-#ifndef IDC_STATIC
-#define IDC_STATIC (-1)
-#endif
 #ifdef __MINGW32__
 	#define WINVER 0x500
 	#define _WIN32_WINNT 0x501
 	#define _WIN32_IE 0x500
+#endif
+#include <windows.h>
+#ifndef IDC_STATIC
+#define IDC_STATIC (-1)
 #endif
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 #ifdef _WIN32
