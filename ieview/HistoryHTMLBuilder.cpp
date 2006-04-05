@@ -118,11 +118,11 @@ void HistoryHTMLBuilder::loadMsgDlgFont(const char *dbSetting, LOGFONTA * lf, CO
 }
 
 const char *HistoryHTMLBuilder::getTemplateFilename(ProtocolSettings * protoSettings) {
-	return protoSettings->getSRMMTemplateFilename();
+	return protoSettings->getHistoryTemplateFilename();
 }
 
 const char *HistoryHTMLBuilder::getTemplateFilenameRtl(ProtocolSettings * protoSettings) {
-	return protoSettings->getSRMMTemplateFilenameRtl();
+	return protoSettings->getHistoryTemplateFilenameRtl();
 }
 
 void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
@@ -135,7 +135,7 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		return;
 	}
  	if (protoSettings->getHistoryMode() == Options::MODE_TEMPLATE) {
-		buildHeadTemplate(view, event);
+		buildHeadHistoryTemplate(view, event);
 		return;
 	}
  	if (protoSettings->getHistoryMode() == Options::MODE_CSS) {
@@ -271,9 +271,13 @@ void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 }
 
 void HistoryHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
-    /*if (Options::getHistoryFlags() & Options::TEMPLATES_ENABLED) {
-		appendEventTemplate(view, event);
-	} else*/{
+    ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
+	if (protoSettings == NULL) {
+		return;
+	}
+    if (protoSettings->getHistoryMode() & Options::MODE_TEMPLATE) {
+		appendEventHistoryTemplate(view, event);
+	} else{
 		appendEventNonTemplate(view, event);
 	}
 }
