@@ -751,6 +751,7 @@ void ShowAvatar(HWND hwndDlg, struct MessageWindowData *dat) {
 		}
 		if (!DBGetContactSetting(dat->hContact, SRMMMOD, SRMSGSET_AVATAR, &dbv)) {
 			HANDLE hFile;
+			/* relative to absolute here */
 			if((hFile = CreateFileA(dbv.pszVal, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) != INVALID_HANDLE_VALUE) {
 				dat->avatarPic=(HBITMAP)CallService(MS_UTILS_LOADBITMAP,0,(LPARAM)dbv.pszVal);
 				CloseHandle(hFile);
@@ -1421,26 +1422,42 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					if ((dat->wStatus != dat->wOldStatus || lParam != 0)
 						&& DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSCH, SRMSGDEFSET_SHOWSTATUSCH)) {
 						DBEVENTINFO dbei;
-						char buffer[450];
+						TCHAR buffer[450];
+						char blob[1000];
 						HANDLE hNewEvent;
 						int iLen;
-						char *szOldStatus = strdup((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wOldStatus, 0));
-						char *szNewStatus = strdup((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wStatus, 0));
+						TCHAR *szOldStatus = _tcsdup((TCHAR *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wOldStatus, GCMDF_TCHAR));
+						TCHAR *szNewStatus = _tcsdup((TCHAR *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wStatus, GCMDF_TCHAR));
 
 						if (dat->wStatus == ID_STATUS_OFFLINE) {
-							mir_snprintf(buffer, sizeof(buffer), Translate("signed off (was %s)"), szOldStatus);
+							iLen = mir_sntprintf(buffer, sizeof(buffer)/sizeof(TCHAR), TranslateT("signed off (was %s)"), szOldStatus);
+							SendMessage(hwndDlg, DM_TYPING, 0, 0);
 						}
 						else if (dat->wOldStatus == ID_STATUS_OFFLINE) {
-							mir_snprintf(buffer, sizeof(buffer), Translate("signed on (%s)"), szNewStatus);
+							iLen = mir_sntprintf(buffer, sizeof(buffer)/sizeof(TCHAR), TranslateT("signed on (%s)"), szNewStatus);
 						}
 						else {
-							mir_snprintf(buffer, sizeof(buffer), Translate("is now %s (was %s)"), szNewStatus, szOldStatus);
+							iLen = mir_sntprintf(buffer, sizeof(buffer)/sizeof(TCHAR), TranslateT("is now %s (was %s)"), szNewStatus, szOldStatus);
 						}
-						iLen = strlen(buffer) + 1;
-						MultiByteToWideChar(CP_ACP, 0, buffer, iLen, (LPWSTR) & buffer[iLen], iLen);
+					#if defined( _UNICODE )
+						{
+							int ansiLen = WideCharToMultiByte(CP_ACP, 0, buffer, -1, blob, sizeof(blob), 0, 0);
+							memcpy( blob+ansiLen, buffer, sizeof(TCHAR)*(iLen+1));
+							dbei.cbBlob = ansiLen + sizeof(TCHAR)*(iLen+1);
+						}
+					#else
+						{
+							int wLen = MultiByteToWideChar(CP_ACP, 0, buffer, -1, NULL, 0 );
+							memcpy( blob, buffer, iLen+1 );
+							MultiByteToWideChar(CP_ACP, 0, buffer, -1, (WCHAR*)&blob[iLen+1], wLen+1 );
+							dbei.cbBlob = iLen+1 + sizeof(WCHAR)*wLen;
+						}
+					#endif
+						//iLen = strlen(buffer) + 1;
+						//MultiByteToWideChar(CP_ACP, 0, buffer, iLen, (LPWSTR) & buffer[iLen], iLen);
 						dbei.cbSize = sizeof(dbei);
 						dbei.pBlob = (PBYTE) buffer;
-						dbei.cbBlob = (strlen(buffer) + 1) * (sizeof(TCHAR) + 1);
+					//	dbei.cbBlob = (strlen(buffer) + 1) * (sizeof(TCHAR) + 1);
 						dbei.eventType = EVENTTYPE_STATUSCHANGE;
 						dbei.flags = 0;
 						dbei.timestamp = time(NULL);
@@ -1876,6 +1893,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						DeleteDC(hdcTemp);
 					} else {
 						AVATARDRAWREQUEST adr;
+						ZeroMemory(&adr, sizeof(adr));
 						adr.cbSize = sizeof (AVATARDRAWREQUEST);
 						adr.hContact = dat->hContact;
 						adr.hTargetDC = hdcMem;
@@ -1883,7 +1901,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						adr.rcDraw.top = 1;
 						adr.rcDraw.right = dat->avatarWidth-1;
 						adr.rcDraw.bottom = dat->avatarHeight -1;
-						adr.dwFlags = 0;
+						adr.dwFlags = AVDRQ_DRAWBORDER;
+						
 						adr.alpha = 0;
 						CallService(MS_AV_DRAWAVATAR, (WPARAM)0, (LPARAM)&adr);
 					}
