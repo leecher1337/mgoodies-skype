@@ -125,6 +125,10 @@ const char *HistoryHTMLBuilder::getTemplateFilenameRtl(ProtocolSettings * protoS
 	return protoSettings->getHistoryTemplateFilenameRtl();
 }
 
+int HistoryHTMLBuilder::getFlags(ProtocolSettings * protoSettings) {
+	return protoSettings->getHistoryFlags();
+}
+
 void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	LOGFONTA lf;
 	COLORREF color, bkgColor;
@@ -135,7 +139,7 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		return;
 	}
  	if (protoSettings->getHistoryMode() == Options::MODE_TEMPLATE) {
-		buildHeadHistoryTemplate(view, event);
+		buildHeadTemplate(view, event);
 		return;
 	}
  	if (protoSettings->getHistoryMode() == Options::MODE_CSS) {
@@ -276,7 +280,7 @@ void HistoryHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
 		return;
 	}
     if (protoSettings->getHistoryMode() & Options::MODE_TEMPLATE) {
-		appendEventHistoryTemplate(view, event);
+		appendEventTemplate(view, event);
 	} else{
 		appendEventNonTemplate(view, event);
 	}
