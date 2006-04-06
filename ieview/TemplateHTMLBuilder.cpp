@@ -61,12 +61,7 @@ char *TemplateHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int mo
     return szResult;
 }
 
-void TemplateHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
-    buildHeadTemplate(view, event);
-}
-
-
-void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
+void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, ProtocolSettings *protoSettings) {
 	DBVARIANT dbv;
 	CONTACTINFO ci;
 	char tempBase[1024];
@@ -92,7 +87,6 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	szRealProto = getProto(hRealContact);
 	szProto = getProto(event->pszProto, event->hContact);
 	tempBase[0]='\0';
-	ProtocolSettings *protoSettings =  getProtocolSettings(szRealProto);
 	if (protoSettings == NULL) {
 		return;
 	}
@@ -265,7 +259,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event) {
 	iLastEventType = -1;
 }
 
-void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) {
+void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, ProtocolSettings* protoSettings) {
 	DBVARIANT dbv;
 	CONTACTINFO ci;
 	HANDLE hRealContact;
@@ -298,7 +292,6 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event) 
 	szRealProto = getProto(hRealContact);
 	szProto = getProto(event->pszProto, event->hContact);
 	tempBase[0]='\0';
-	ProtocolSettings *protoSettings =  getProtocolSettings(szRealProto);
 	if (protoSettings == NULL) {
 		return;
 	}

@@ -1066,7 +1066,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 	}
 }
 
-ProtocolSettings* HTMLBuilder::getProtocolSettings(const char *protocolName) {
+ProtocolSettings* HTMLBuilder::getSRMMProtocolSettings(const char *protocolName) {
 	ProtocolSettings *protoSettings =  Options::getProtocolSettings(protocolName);
 	if (protoSettings == NULL || !protoSettings->isSRMMEnable()) {
 		protoSettings =  Options::getProtocolSettings();
@@ -1074,9 +1074,39 @@ ProtocolSettings* HTMLBuilder::getProtocolSettings(const char *protocolName) {
 	return protoSettings;
 }
 
-ProtocolSettings* HTMLBuilder::getProtocolSettings(HANDLE hContact) {
+ProtocolSettings* HTMLBuilder::getSRMMProtocolSettings(HANDLE hContact) {
 	char *szRealProto = getRealProto(hContact);
-	ProtocolSettings *protoSettings =  getProtocolSettings(szRealProto);
+	ProtocolSettings *protoSettings =  getSRMMProtocolSettings(szRealProto);
+    delete szRealProto;
+	return protoSettings;
+}
+
+ProtocolSettings* HTMLBuilder::getHistoryProtocolSettings(const char *protocolName) {
+	ProtocolSettings *protoSettings =  Options::getProtocolSettings(protocolName);
+	if (protoSettings == NULL || !protoSettings->isHistoryEnable()) {
+		protoSettings =  Options::getProtocolSettings();
+	}
+	return protoSettings;
+}
+
+ProtocolSettings* HTMLBuilder::getHistoryProtocolSettings(HANDLE hContact) {
+	char *szRealProto = getRealProto(hContact);
+	ProtocolSettings *protoSettings =  getHistoryProtocolSettings(szRealProto);
+    delete szRealProto;
+	return protoSettings;
+}
+
+ProtocolSettings* HTMLBuilder::getChatProtocolSettings(const char *protocolName) {
+	ProtocolSettings *protoSettings =  Options::getProtocolSettings(protocolName);
+	if (protoSettings == NULL || !protoSettings->isChatEnable()) {
+		protoSettings =  Options::getProtocolSettings();
+	}
+	return protoSettings;
+}
+
+ProtocolSettings* HTMLBuilder::getChatProtocolSettings(HANDLE hContact) {
+	char *szRealProto = getRealProto(hContact);
+	ProtocolSettings *protoSettings =  getChatProtocolSettings(szRealProto);
     delete szRealProto;
 	return protoSettings;
 }

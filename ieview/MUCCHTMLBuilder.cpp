@@ -145,7 +145,7 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
-	ProtocolSettings *protoSettings = getProtocolSettings(event->pszProto);
+	ProtocolSettings *protoSettings = getChatProtocolSettings(event->pszProto);
 	if (protoSettings == NULL) {
 		return;
 	}
@@ -305,7 +305,7 @@ void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 }
 
 void MUCCHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
-	ProtocolSettings *protoSettings = getProtocolSettings(event->pszProto);
+	ProtocolSettings *protoSettings = getChatProtocolSettings(event->pszProto);
 	if (protoSettings == NULL) {
 		return;
 	}
