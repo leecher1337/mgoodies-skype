@@ -751,12 +751,17 @@ void ShowAvatar(HWND hwndDlg, struct MessageWindowData *dat) {
 		}
 		if (!DBGetContactSetting(dat->hContact, SRMMMOD, SRMSGSET_AVATAR, &dbv)) {
 			HANDLE hFile;
+			char tmpPath[MAX_PATH];
 			/* relative to absolute here */
-			if((hFile = CreateFileA(dbv.pszVal, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) != INVALID_HANDLE_VALUE) {
-				dat->avatarPic=(HBITMAP)CallService(MS_UTILS_LOADBITMAP,0,(LPARAM)dbv.pszVal);
-				CloseHandle(hFile);
+			strcpy(tmpPath, dbv.pszVal);
+			if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)) {
+				CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
 			}
 			DBFreeVariant(&dbv);
+			if((hFile = CreateFileA(tmpPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) != INVALID_HANDLE_VALUE) {
+				dat->avatarPic=(HBITMAP)CallService(MS_UTILS_LOADBITMAP,0,(LPARAM)tmpPath);
+				CloseHandle(hFile);
+			}
 		}
 	}
 	SendMessage(hwndDlg, DM_AVATARCALCSIZE, 0, 0);
