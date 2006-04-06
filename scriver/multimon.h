@@ -48,19 +48,6 @@ typedef struct tagMONITORINFO
 
 #define MONITORINFOF_PRIMARY        0x00000001
 
-#ifdef __cplusplus
-typedef struct tagMONITORINFOEX : public tagMONITORINFO
-{
-  TCHAR       szDevice[CCHDEVICENAME];
-} MONITORINFOEX, *LPMONITORINFOEX;
-#else
-typedef struct
-{
-  MONITORINFO;
-  TCHAR       szDevice[CCHDEVICENAME];
-} MONITORINFOEX, *LPMONITORINFOEX;
-#endif
-
 #ifndef MONITOR_DEFAULTTONULL
 #define MONITOR_DEFAULTTONULL       0x00000000
 #endif
@@ -75,6 +62,19 @@ typedef BOOL (CALLBACK* MONITORENUMPROC)(HMONITOR, HDC, LPRECT, LPARAM);
 
 
 #ifndef DISPLAY_DEVICE_ATTACHED_TO_DESKTOP
+
+#ifdef __cplusplus
+typedef struct tagMONITORINFOEX : public tagMONITORINFO
+{
+  TCHAR       szDevice[CCHDEVICENAME];
+} MONITORINFOEX, *LPMONITORINFOEX;
+#else
+typedef struct
+{
+  MONITORINFO;
+  TCHAR       szDevice[CCHDEVICENAME];
+} MONITORINFOEX, *LPMONITORINFOEX;
+#endif
 
 typedef struct {
     DWORD  cb;
