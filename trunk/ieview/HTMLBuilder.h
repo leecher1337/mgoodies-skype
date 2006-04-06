@@ -133,8 +133,12 @@ protected:
 	virtual bool isSameDate(DWORD time1, DWORD time2);
 	virtual bool isUnicodeMIM();
 	virtual bool isDbEventShown(DBEVENTINFO * dbei)=0;
-	virtual ProtocolSettings *getProtocolSettings(const char *protocolName);
-	virtual ProtocolSettings *getProtocolSettings(HANDLE hContact);
+	virtual ProtocolSettings *getSRMMProtocolSettings(const char *protocolName);
+	virtual ProtocolSettings *getSRMMProtocolSettings(HANDLE hContact);
+	virtual ProtocolSettings *getHistoryProtocolSettings(const char *protocolName);
+	virtual ProtocolSettings *getHistoryProtocolSettings(HANDLE hContact);
+	virtual ProtocolSettings *getChatProtocolSettings(const char *protocolName);
+	virtual ProtocolSettings *getChatProtocolSettings(HANDLE hContact);
 	void	setLastIEViewEvent(IEVIEWEVENT *event);
 	virtual void buildHead(IEView *, IEVIEWEVENT *event)=0;
 public:

@@ -13,14 +13,14 @@ protected:
 	time_t 		startedTime;
 	time_t 		getStartedTime();
 	const char *groupTemplate;
-	void buildHeadTemplate(IEView *, IEVIEWEVENT *event);
-	void appendEventTemplate(IEView *, IEVIEWEVENT *event);
+	void buildHeadTemplate(IEView *, IEVIEWEVENT *event, ProtocolSettings* protoSettings);
+	void appendEventTemplate(IEView *, IEVIEWEVENT *event, ProtocolSettings* protoSettings);
 	virtual const char *getTemplateFilename(ProtocolSettings *);
 	virtual const char *getTemplateFilenameRtl(ProtocolSettings *);
 	virtual int getFlags(ProtocolSettings *);
 public:
     TemplateHTMLBuilder();
-	void buildHead(IEView *, IEVIEWEVENT *event);
+//	void buildHead(IEView *, IEVIEWEVENT *event);
 };
 
 #endif

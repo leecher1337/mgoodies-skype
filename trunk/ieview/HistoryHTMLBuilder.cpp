@@ -134,12 +134,12 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	COLORREF color, bkgColor;
 	char *output = NULL;
 	int outputSize;
-	ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
+	ProtocolSettings *protoSettings = getHistoryProtocolSettings(event->hContact);
 	if (protoSettings == NULL) {
 		return;
 	}
  	if (protoSettings->getHistoryMode() == Options::MODE_TEMPLATE) {
-		buildHeadTemplate(view, event);
+		buildHeadTemplate(view, event, protoSettings);
 		return;
 	}
  	if (protoSettings->getHistoryMode() == Options::MODE_CSS) {
@@ -275,12 +275,12 @@ void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 }
 
 void HistoryHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
-    ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
+    ProtocolSettings *protoSettings = getHistoryProtocolSettings(event->hContact);
 	if (protoSettings == NULL) {
 		return;
 	}
     if (protoSettings->getHistoryMode() & Options::MODE_TEMPLATE) {
-		appendEventTemplate(view, event);
+		appendEventTemplate(view, event, protoSettings);
 	} else{
 		appendEventNonTemplate(view, event);
 	}

@@ -148,7 +148,7 @@ void ChatHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
-	ProtocolSettings *protoSettings = getProtocolSettings(event->pszProto);
+	ProtocolSettings *protoSettings = getChatProtocolSettings(event->pszProto);
 	if (protoSettings == NULL) {
 		return;
 	}
@@ -326,7 +326,7 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 }
 
 void ChatHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
-	ProtocolSettings *protoSettings = getProtocolSettings(event->pszProto);
+	ProtocolSettings *protoSettings = getChatProtocolSettings(event->pszProto);
 	if (protoSettings == NULL) {
 		return;
 	}

@@ -175,12 +175,12 @@ void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
-	ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
+	ProtocolSettings *protoSettings = getSRMMProtocolSettings(event->hContact);
 	if (protoSettings == NULL) {
 		return;
 	}
  	if (protoSettings->getSRMMMode() == Options::MODE_TEMPLATE) {
-		buildHeadTemplate(view, event);
+		buildHeadTemplate(view, event, protoSettings);
 		return;
 	}
  	if (protoSettings->getSRMMMode() == Options::MODE_CSS) {
@@ -396,12 +396,12 @@ void ScriverHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 }
 
 void ScriverHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
-	ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
+	ProtocolSettings *protoSettings = getSRMMProtocolSettings(event->hContact);
 	if (protoSettings == NULL) {
 		return;
 	}
  	if (protoSettings->getSRMMMode() == Options::MODE_TEMPLATE) {
-		appendEventTemplate(view, event);
+		appendEventTemplate(view, event, protoSettings);
 	} else {
 		appendEventNonTemplate(view, event);
 	}
