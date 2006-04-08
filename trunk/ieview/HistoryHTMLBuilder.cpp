@@ -150,6 +150,7 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		Utils::appendText(&output, &outputSize, "<style type=\"text/css\">\n");
 		COLORREF lineColor = DBGetContactSettingDword(NULL, HPPMOD, "LineColour", 0xFFFFFF);
 	    lineColor= 0;//(((lineColor & 0xFF) << 16) | (lineColor & 0xFF00) | ((lineColor & 0xFF0000) >> 16));
+		bkgColor = 0xFFFFFF;
 		if (protoSettings->getHistoryFlags() & Options::LOG_IMAGE_ENABLED) {
 			Utils::appendText(&output, &outputSize, ".body {padding: 2px; text-align: left; background-attachment: %s; background-color: #%06X;  background-image: url('%s'); overflow: auto;}\n",
 			protoSettings->getHistoryFlags() & Options::LOG_IMAGE_SCROLL ? "scroll" : "fixed", (int) bkgColor, protoSettings->getHistoryBackgroundFilename());

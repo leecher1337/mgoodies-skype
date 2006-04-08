@@ -2,14 +2,10 @@
 #ifdef __MINGW32__
 	#define WINVER 0x500
 	#define _WIN32_IE 0x500
-	#include <windows.h>
-	#ifndef IDC_STATIC
-	#define IDC_STATIC (-1)
 #endif
-#else
-	#define APSTUDIO_READONLY_SYMBOLS
-	#include "winres.h"
-	#undef APSTUDIO_READONLY_SYMBOLS
+#include <windows.h>
+#ifndef IDC_STATIC
+#define IDC_STATIC (-1)
 #endif
 #include <commctrl.h>
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU) || defined(__MINGW32__)
