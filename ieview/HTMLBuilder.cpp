@@ -831,7 +831,7 @@ void HTMLBuilder::setLastEventTime(DWORD t) {
 	lastEventTime = t;
 }
 
-bool HTMLBuilder::isSameDate(DWORD time1, DWORD time2) {
+bool HTMLBuilder::isSameDate(time_t time1, time_t time2) {
     struct tm tm_t1, tm_t2;
     tm_t1 = *localtime((time_t *)(&time1));
     tm_t2 = *localtime((time_t *)(&time2));
