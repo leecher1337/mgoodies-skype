@@ -356,6 +356,7 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 	PROTOCOLDESCRIPTOR **protocol;
 	int protoCount, i;
 
+	ReloadGlobals();
 	RegisterIcoLibIcons();
 	RegisterFontServiceFonts();
 	LoadGlobalIcons();

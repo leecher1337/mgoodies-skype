@@ -246,7 +246,7 @@ static void GetMinimunWindowSize(struct ParentWindowData *dat, SIZE *size)
 {
 	MINMAXINFO mmi;
 	RECT rc, rcWindow;
-	int i, minW = 240, minH = 80;
+	int i, minW = 216, minH = 80;
 	GetWindowRect(dat->hwnd, &rcWindow);
 	GetChildWindowRect(dat, &rc);
 	for (i=0;i<dat->childrenCount;i++) {

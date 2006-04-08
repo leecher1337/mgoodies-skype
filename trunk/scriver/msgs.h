@@ -112,7 +112,7 @@ struct MessageWindowData
 	RECT minEditInit;
 	int	minLogBoxHeight;
 	int	minEditBoxHeight;
-	int toolbarHeight;
+	SIZE toolbarSize;
 	int windowWasCascaded;
 	int nTypeSecs;
 	int nTypeMode;

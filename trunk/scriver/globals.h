@@ -96,6 +96,7 @@ struct GlobalMessageData
 	HIMAGELIST hIconList;
 	TCmdList *draftList;
 	int		avatarServiceExists;
+	int		smileyServiceExists;
 };
 
 int IconsChanged(WPARAM wParam, LPARAM lParam);

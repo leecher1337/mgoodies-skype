@@ -287,8 +287,12 @@ static void SetDialogToType(HWND hwndDlg)
 	pdat = (struct ParentWindowData *) GetWindowLong(GetParent(hwndDlg), GWL_USERDATA);
 	if (dat->hContact) {
 		ShowMultipleControls(hwndDlg, buttonLineControls, sizeof(buttonLineControls) / sizeof(buttonLineControls[0]), (pdat->flags&SMF_SHOWBTNS) ? SW_SHOW : SW_HIDE);
-		if (!DBGetContactSettingByte(dat->hContact, "CList", "NotOnList", 0))
+		if (!DBGetContactSettingByte(dat->hContact, "CList", "NotOnList", 0)) {
 			ShowWindow(GetDlgItem(hwndDlg, IDC_ADD), SW_HIDE);
+		}
+		if (!g_dat->smileyServiceExists) {
+			ShowWindow(GetDlgItem(hwndDlg, IDC_SMILEYS), SW_HIDE);
+		}
 	}
 	else {
 		ShowMultipleControls(hwndDlg, buttonLineControls, sizeof(buttonLineControls) / sizeof(buttonLineControls[0]), SW_HIDE);
@@ -673,7 +677,7 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
 	HDWP hdwp;
 	struct ParentWindowData *pdat = dat->parent;
 	int rPos, vPos;
-	int vSplitterPos = 0, hSplitterPos = dat->splitterPos, toolbarHeight = pdat->flags&SMF_SHOWBTNS ? dat->toolbarHeight : 0;
+	int vSplitterPos = 0, hSplitterPos = dat->splitterPos, toolbarHeight = pdat->flags&SMF_SHOWBTNS ? dat->toolbarSize.cy : 0;
 	int hSplitterMinTop = toolbarHeight + dat->minLogBoxHeight, hSplitterMinBottom = dat->minEditBoxHeight;
 
 	if (h-hSplitterPos < hSplitterMinTop) {
@@ -908,7 +912,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dat->splitterPos == -1)
 					dat->splitterPos = dat->originalSplitterPos;// + 60;
 				GetWindowRect(GetDlgItem(hwndDlg, IDC_ADD), &rc);
-				dat->toolbarHeight = 24 + 2;//rc.bottom - rc.top + 3;
+				dat->toolbarSize.cy = 24 + 2;//rc.bottom - rc.top + 3;
+				dat->toolbarSize.cx = g_dat->smileyServiceExists ? 240 : 214;
 			}
 			WindowList_Add(g_dat->hMessageWindowList, hwndDlg, dat->hContact);
 			GetWindowRect(GetDlgItem(hwndDlg, IDC_MESSAGE), &dat->minEditInit);
@@ -1183,7 +1188,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			return 0;
 		}
 		GetObject(dat->avatarPic, sizeof(bminfo), &bminfo);
-		dat->avatarHeight = avatarH = dat->splitterPos + ((pdat->flags&SMF_SHOWBTNS) ? dat->toolbarHeight : 0);//- 3;
+		dat->avatarHeight = avatarH = dat->splitterPos + ((pdat->flags&SMF_SHOWBTNS) ? dat->toolbarSize.cy : 0);//- 3;
 		if (g_dat->flags & SMF_LIMITAVATARH) {
 			if (avatarH < g_dat->limitAvatarMinH) {
 				avatarH = g_dat->limitAvatarMinH;
@@ -1200,8 +1205,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			aspect = (double)dat->avatarHeight / (double)bminfo.bmHeight;
 			dat->avatarWidth = (int)(bminfo.bmWidth * aspect);
 			// if edit box width < min then adjust avatarWidth
-			if (rc.right - dat->avatarWidth < 240) {
-				dat->avatarWidth = rc.right - 240;
+			if (rc.right - dat->avatarWidth < dat->toolbarSize.cx) {
+				dat->avatarWidth = rc.right - dat->toolbarSize.cx;
 				if (dat->avatarWidth < 0) dat->avatarWidth = 0;
 				aspect = (double)dat->avatarWidth / (double)bminfo.bmWidth;
 				dat->avatarHeight = (int)(bminfo.bmHeight * aspect);
@@ -1461,7 +1466,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						//iLen = strlen(buffer) + 1;
 						//MultiByteToWideChar(CP_ACP, 0, buffer, iLen, (LPWSTR) & buffer[iLen], iLen);
 						dbei.cbSize = sizeof(dbei);
-						dbei.pBlob = (PBYTE) buffer;
+						dbei.pBlob = (PBYTE) blob;
 					//	dbei.cbBlob = (strlen(buffer) + 1) * (sizeof(TCHAR) + 1);
 						dbei.eventType = EVENTTYPE_STATUSCHANGE;
 						dbei.flags = 0;
@@ -1577,10 +1582,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	case WM_GETMINMAXINFO:
 		{
 			MINMAXINFO *mmi = (MINMAXINFO *) lParam;
-			int minBottomHeight = dat->toolbarHeight + dat->minEditBoxHeight;
+			int minBottomHeight = dat->toolbarSize.cy + dat->minEditBoxHeight;
 			if (minBottomHeight < g_dat->limitAvatarMinH) {
 			}
-			mmi->ptMinTrackSize.x = 240;// + dat->avatarWidth;
+			mmi->ptMinTrackSize.x = dat->toolbarSize.cx;// + dat->avatarWidth;
 			mmi->ptMinTrackSize.y = dat->minLogBoxHeight + minBottomHeight;
 
 			return 0;
@@ -1906,7 +1911,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						adr.rcDraw.top = 1;
 						adr.rcDraw.right = dat->avatarWidth-1;
 						adr.rcDraw.bottom = dat->avatarHeight -1;
-						adr.dwFlags = AVDRQ_DRAWBORDER;
+						adr.dwFlags = 0;//AVDRQ_DRAWBORDER;
 						
 						adr.alpha = 0;
 						CallService(MS_AV_DRAWAVATAR, (WPARAM)0, (LPARAM)&adr);
@@ -2018,7 +2023,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				smaddInfo.yPosition = rc.top + 24;
 				if (dat->hwndLog != NULL) {
 					CallService(MS_IEVIEW_SHOWSMILEYSELECTION, 0, (LPARAM) &smaddInfo);
-				} else if (ServiceExists(MS_SMILEYADD_SHOWSELECTION)) {
+				} else if (g_dat->smileyServiceExists) {
 					CallService(MS_SMILEYADD_SHOWSELECTION, 0, (LPARAM) &smaddInfo);
 				}
 			}

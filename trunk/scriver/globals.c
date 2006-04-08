@@ -267,7 +267,6 @@ void InitGlobals() {
 	g_dat->protoNames = NULL;
 	g_dat->hIconList = NULL;
 	g_dat->draftList = NULL;
-	g_dat->avatarServiceExists = ServiceExists(MS_AV_GETAVATARBITMAP);
 }
 
 void FreeGlobals() {
@@ -284,6 +283,8 @@ void FreeGlobals() {
 }
 
 void ReloadGlobals() {
+	g_dat->avatarServiceExists = ServiceExists(MS_AV_GETAVATARBITMAP);
+	g_dat->smileyServiceExists =  ServiceExists(MS_SMILEYADD_SHOWSELECTION);
 	g_dat->flags = 0;
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWBUTTONLINE, SRMSGDEFSET_SHOWBUTTONLINE))
 		g_dat->flags |= SMF_SHOWBTNS;
