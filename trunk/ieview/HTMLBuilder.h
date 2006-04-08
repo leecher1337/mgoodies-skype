@@ -130,7 +130,7 @@ protected:
 	virtual void setLastEventTime(DWORD);
 	virtual int getLastEventType();
 	virtual void setLastEventType(int);
-	virtual bool isSameDate(DWORD time1, DWORD time2);
+	virtual bool isSameDate(time_t time1, time_t time2);
 	virtual bool isUnicodeMIM();
 	virtual bool isDbEventShown(DBEVENTINFO * dbei)=0;
 	virtual ProtocolSettings *getSRMMProtocolSettings(const char *protocolName);

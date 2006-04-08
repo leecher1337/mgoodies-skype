@@ -82,6 +82,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	char *szStatusMsg = NULL;
 	int outputSize;
 	char *output;
+
 	output = NULL;
 	hRealContact = getRealContact(event->hContact);
 	szRealProto = getProto(hRealContact);
@@ -434,10 +435,9 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
    			} else {
                 szFileDesc = encodeUTF8(eventData->pszText2, event->codepage, szRealProto, ENF_ALL);
 			}
-
 			if (eventData->iType == IEED_EVENT_MESSAGE) {
                 if (isGrouping && (getFlags(protoSettings) & Options::LOG_GROUP_MESSAGES)) {
-                    if (isGroupBreak) {
+	                if (isGroupBreak) {
               		    tmpltName[1] = isHistory ? isSent ? "hMessageOutGroupStart" : "hMessageInGroupStart" : isSent ? "MessageOutGroupStart" : "MessageInGroupStart";
                    	} else {
                    		tmpltName[0] = isHistory ? isSent ? "hMessageOutGroupInner" : "hMessageInGroupInner" : isSent ? "MessageOutGroupInner" : "MessageInGroupInner";
