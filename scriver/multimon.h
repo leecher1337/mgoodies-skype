@@ -34,7 +34,6 @@ extern "C" {            /* Assume C declarations for C++ */
 
 DECLARE_HANDLE(HMONITOR);
 
-
 typedef struct tagMONITORINFO
 {
     DWORD   cbSize;
@@ -60,9 +59,6 @@ typedef struct tagMONITORINFO
 
 typedef BOOL (CALLBACK* MONITORENUMPROC)(HMONITOR, HDC, LPRECT, LPARAM);
 
-
-#ifndef DISPLAY_DEVICE_ATTACHED_TO_DESKTOP
-
 #ifdef __cplusplus
 typedef struct tagMONITORINFOEX : public tagMONITORINFO
 {
@@ -75,6 +71,9 @@ typedef struct
   TCHAR       szDevice[CCHDEVICENAME];
 } MONITORINFOEX, *LPMONITORINFOEX;
 #endif
+
+
+#ifndef DISPLAY_DEVICE_ATTACHED_TO_DESKTOP
 
 typedef struct {
     DWORD  cb;

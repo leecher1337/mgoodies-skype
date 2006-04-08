@@ -134,7 +134,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 #if defined( _UNICODE )
 	if (event->eventType == EVENTTYPE_FILE) {
 		event->pszText = strdup(((char *) dbei.pBlob) + sizeof(DWORD));
-	} else if (event->eventType == EVENTTYPE_MESSAGE) {
+	} else { //if (event->eventType == EVENTTYPE_MESSAGE) {
 		int msglen = strlen((char *) dbei.pBlob) + 1;
 		event->pszText = strdup((char *) dbei.pBlob);
 		if (msglen != (int) dbei.cbBlob && !(dat->flags & SMF_DISABLE_UNICODE)) {
@@ -148,9 +148,9 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 		} else {
 			event->pszTextW = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
 		}
-	} else {
+	}/* else {
 		event->pszText = strdup((char *) dbei.pBlob);
-	}
+	}*/
 #else
 	if (event->eventType == EVENTTYPE_FILE) {
 		event->pszText = strdup(((char *) dbei.pBlob) + sizeof(DWORD));
