@@ -796,8 +796,8 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & oldSel);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_HIDESELECTION, FALSE, 0);
 	if (ServiceExists(MS_SMILEYADD_REPLACESMILEYS)) {
-		SMADD_RICHEDIT2 smre;
-		smre.cbSize = sizeof(SMADD_RICHEDIT2);
+		SMADD_RICHEDIT3 smre;
+		smre.cbSize = sizeof(SMADD_RICHEDIT3);
 		smre.hwndRichEditControl = GetDlgItem(hwndDlg, IDC_LOG);
 		smre.Protocolname = dat->szProto;
         if (dat->szProto!=NULL && strcmp(dat->szProto,"MetaContacts")==0) {
@@ -814,8 +814,8 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 			smre.rangeToReplace = NULL;
 		}
 		smre.rangeToReplace = NULL;
-		smre.useSounds = FALSE;
 		smre.disableRedraw = TRUE;
+		smre.hContact = dat->hContact;
 		CallService(MS_SMILEYADD_REPLACESMILEYS, 0, (LPARAM) &smre);
 	}
 //	if (GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL)
