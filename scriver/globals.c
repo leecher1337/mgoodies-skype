@@ -99,7 +99,7 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 
 int SmileySettingsChanged(WPARAM wParam, LPARAM lParam)
 {
-	WindowList_Broadcast(g_dat->hMessageWindowList, DM_REMAKELOG, 0, 0);
+	WindowList_Broadcast(g_dat->hMessageWindowList, DM_REMAKELOG, wParam, 0);
 	return 0;
 }
 

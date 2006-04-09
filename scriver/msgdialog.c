@@ -1636,7 +1636,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			break;
 		}
 	case DM_REMAKELOG:
-		StreamInEvents(hwndDlg, dat->hDbEventFirst, -1, 0);
+		if (wParam == 0 || (HANDLE) wParam == dat->hContact) {
+			StreamInEvents(hwndDlg, dat->hDbEventFirst, -1, 0);
+		}
 		break;
 	case DM_APPENDTOLOG:   //takes wParam=hDbEvent
 		StreamInEvents(hwndDlg, (HANDLE) wParam, 1, 1);
@@ -2003,10 +2005,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			CallService(MS_USERINFO_SHOWDIALOG, (WPARAM) dat->hContact, 0);
 			break;
 		case IDC_SMILEYS:
-			{
-				IEVIEWSHOWSMILEYSEL smaddInfo;
+			if (g_dat->smileyServiceExists) {
+				SMADD_SHOWSEL3 smaddInfo;
 				RECT rc;
-				smaddInfo.cbSize = sizeof(IEVIEWSHOWSMILEYSEL);
+				smaddInfo.cbSize = sizeof(SMADD_SHOWSEL3);
 				smaddInfo.hwndTarget = GetDlgItem(hwndDlg, IDC_MESSAGE);
 				smaddInfo.targetMessage = EM_REPLACESEL;
 				smaddInfo.targetWParam = TRUE;
@@ -2021,11 +2023,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				smaddInfo.Direction = 0;
 				smaddInfo.xPosition = rc.left;
 				smaddInfo.yPosition = rc.top + 24;
-				if (dat->hwndLog != NULL) {
-					CallService(MS_IEVIEW_SHOWSMILEYSELECTION, 0, (LPARAM) &smaddInfo);
-				} else if (g_dat->smileyServiceExists) {
-					CallService(MS_SMILEYADD_SHOWSELECTION, 0, (LPARAM) &smaddInfo);
-				}
+				smaddInfo.hContact = dat->hContact;
+				CallService(MS_SMILEYADD_SHOWSELECTION, 0, (LPARAM) &smaddInfo);
 			}
 			break;
 		case IDC_QUOTE:
