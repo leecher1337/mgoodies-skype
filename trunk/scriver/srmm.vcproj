@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1250"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="srmm"
 	ProjectGUID="{B8928210-546C-4AE3-956B-E2B724E6B8E5}"
 	>
@@ -241,6 +241,7 @@
 				Optimization="1"
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
+				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="../../include"
 				PreprocessorDefinitions="UNICODE;WIN32;NDEBUG;_WINDOWS;_USRDLL;SRMM_EXPORTS"
 				StringPooling="true"
@@ -843,15 +844,15 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="..\..\Miranda-IM\res\addcontact.ico"
-				>
-			</File>
-			<File
 				RelativePath="res\addcontact.ico"
 				>
 			</File>
 			<File
 				RelativePath="..\..\src\res\addcontact.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Miranda-IM\res\addcontact.ico"
 				>
 			</File>
 			<File
@@ -863,11 +864,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\res\delete.ico"
+				RelativePath="res\delete.ico"
 				>
 			</File>
 			<File
-				RelativePath="res\delete.ico"
+				RelativePath="..\..\src\res\delete.ico"
 				>
 			</File>
 			<File
@@ -891,11 +892,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\res\dragcopy.cur"
+				RelativePath="res\dragcopy.cur"
 				>
 			</File>
 			<File
-				RelativePath="res\dragcopy.cur"
+				RelativePath="..\..\src\res\dragcopy.cur"
 				>
 			</File>
 			<File
