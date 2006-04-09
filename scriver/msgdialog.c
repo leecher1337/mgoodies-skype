@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_ieview.h"
 #include "m_metacontacts.h"
 // IEVIew MOD End
-#define MS_SMILEYADD_SHOWSELECTION  "SmileyAdd/ShowSmileySelection"
+//#define MS_SMILEYADD_SHOWSELECTION  "SmileyAdd/ShowSmileySelection"
 
 #define TIMERID_MSGSEND      0
 #define TIMERID_FLASHWND     1
@@ -2009,6 +2009,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				SMADD_SHOWSEL3 smaddInfo;
 				RECT rc;
 				smaddInfo.cbSize = sizeof(SMADD_SHOWSEL3);
+				smaddInfo.hwndParent = dat->hwndParent;
 				smaddInfo.hwndTarget = GetDlgItem(hwndDlg, IDC_MESSAGE);
 				smaddInfo.targetMessage = EM_REPLACESEL;
 				smaddInfo.targetWParam = TRUE;
