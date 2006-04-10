@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_ieview.h"
 #include "m_metacontacts.h"
 // IEVIew MOD End
-//#define MS_SMILEYADD_SHOWSELECTION  "SmileyAdd/ShowSmileySelection"
 
 #define TIMERID_MSGSEND      0
 #define TIMERID_FLASHWND     1
