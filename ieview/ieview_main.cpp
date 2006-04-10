@@ -37,8 +37,8 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"IEView",
-	PLUGIN_MAKE_VERSION(1,0,9,1),
-	"IE Based Chat Log (1.0.9.1 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,0,9,2),
+	"IE Based Chat Log (1.0.9.2	"__DATE__")",
 	"Piotr Piastucki",
 	"the_leech@users.berlios.de",
 	"(c) 2005-2006 Piotr Piastucki",
@@ -89,7 +89,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	CreateServiceFunction(MS_IEVIEW_WINDOW, HandleIEWindow);
 	CreateServiceFunction(MS_IEVIEW_EVENT, HandleIEEvent);
-	CreateServiceFunction(MS_IEVIEW_SHOWSMILEYSELECTION, HandleSmileyShowSelection);
 
 	hHookOptionsChanged = CreateHookableEvent(ME_IEVIEW_OPTIONSCHANGED);
 

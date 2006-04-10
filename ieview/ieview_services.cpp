@@ -100,25 +100,3 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 	}
 	return 0;
 }
-
-int HandleSmileyShowSelection(WPARAM wParam, LPARAM lParam) {
-	return CallService(MS_SMILEYADD_SHOWSELECTION, wParam, lParam);
-	/*
-	SMADD_SHOWSEL *smInfo = (SMADD_SHOWSEL *) lParam;
-	SmileyMap* map;
-	IEView::init();
-	Options::init();
-	if (!(Options::getSmileyFlags() & Options::SMILEY_ENABLED)) return 0;
-	if (Options::getSmileyFlags() & Options::SMILEY_PROTOCOLS) {
- 		map = SmileyMap::getSmileyMap(smInfo->Protocolname);
-	} else {
-		map = SmileyMap::getSmileyMap("");
-	}
-	if (map!=NULL) {
-		map->getWindow()->show(smInfo->hwndTarget, smInfo->targetMessage,smInfo->targetWParam,
-	                        smInfo->xPosition, smInfo->yPosition);
-	}
-	return 0;
-	*/
-}
-
