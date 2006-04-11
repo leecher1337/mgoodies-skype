@@ -526,7 +526,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		if (dat->hwndActive != NULL) {
 			SetFocus(dat->hwndActive);
 		}
-
 		return TRUE;
 	case WM_CLOSE:
 		DestroyWindow(hwndDlg);

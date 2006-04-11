@@ -1078,7 +1078,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 						if (dat->parent->childrenCount == 1) {
 							SetForegroundWindow(dat->hwndParent);
-							SetFocus(hwndDlg);
+							SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 						}
 					}
 				}
@@ -1090,7 +1090,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				}
 				SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 				SetForegroundWindow(dat->hwndParent);
-				SetFocus(hwndDlg);
+				SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 			}
 			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPEN);
 			if (notifyUnread) {
@@ -1546,9 +1546,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			break;
 		//fall through
 	case WM_MOUSEACTIVATE:
-		if (KillTimer(hwndDlg, TIMERID_FLASHWND)) {
+		if (dat->showUnread) {
 			dat->showUnread = 0;
-//			dat->nFlash = 0;
+			if (KillTimer(hwndDlg, TIMERID_FLASHWND)) {
+	//			dat->nFlash = 0;
+			}
 			SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
 		}
 		break;
@@ -1576,7 +1578,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		return TRUE;
 	case WM_SETFOCUS:
 		SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM)hwndDlg);
-		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
+		PostMessage(hwndDlg, DM_SETFOCUS, 0, 0);
+//		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		return TRUE;
 	case WM_GETMINMAXINFO:
 		{
@@ -1913,7 +1916,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						adr.rcDraw.right = dat->avatarWidth-1;
 						adr.rcDraw.bottom = dat->avatarHeight -1;
 						adr.dwFlags = 0;//AVDRQ_DRAWBORDER;
-						
+
 						adr.alpha = 0;
 						CallService(MS_AV_DRAWAVATAR, (WPARAM)0, (LPARAM)&adr);
 					}
