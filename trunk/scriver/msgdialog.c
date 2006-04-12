@@ -819,7 +819,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		{
 			int notifyUnread = 0;
 			struct NewMessageWindowLParam *newData = (struct NewMessageWindowLParam *) lParam;
-			TranslateDialogDefault(hwndDlg);
+			//TranslateDialogDefault(hwndDlg);
 			dat = (struct MessageWindowData *) malloc(sizeof(struct MessageWindowData));
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) dat);
 			dat->hContact = newData->hContact;
@@ -1067,7 +1067,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				}
 			}
 			if (newData->flags & NMWLP_INCOMING) {
-				if (dat->parent->childrenCount == 1 && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STAYMINIMIZED, SRMSGDEFSET_STAYMINIMIZED)) {
+				if (dat->parent->childrenCount == 1 && g_dat->flags2 & SMF2_STAYMINIMIZED) {
 					SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 					SendMessage(dat->hwndParent, DM_DEACTIVATE, 0, 0);
 					ShowWindow(dat->hwndParent, SW_SHOWMINNOACTIVE);
@@ -1104,17 +1104,25 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			return TRUE;
 		}
 	case WM_CONTEXTMENU:
-	{
 		if (dat->hwndParent == (HWND) wParam) {
 			POINT pt;
 			HMENU hMenu = (HMENU) CallService(MS_CLIST_MENUBUILDCONTACT, (WPARAM) dat->hContact, 0);
-
+			GetCursorPos(&pt);
+			TrackPopupMenu(hMenu, 0, pt.x, pt.y, 0, hwndDlg, NULL);
+			DestroyMenu(hMenu);
+		} else {
+			break;
+		}
+		break;
+	case WM_RBUTTONUP:
+		{
+			POINT pt;
+			HMENU hMenu = (HMENU) CallService(MS_CLIST_MENUBUILDCONTACT, (WPARAM) dat->hContact, 0);
 			GetCursorPos(&pt);
 			TrackPopupMenu(hMenu, 0, pt.x, pt.y, 0, hwndDlg, NULL);
 			DestroyMenu(hMenu);
 		}
-		break;
-	}
+		return TRUE;
 	case WM_DROPFILES:
 	{
 		if (dat->szProto==NULL) break;
