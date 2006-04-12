@@ -61,10 +61,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SMF_SAVEDRAFTS		0x20000000
 #define SMF_USEIEVIEW		0x80000000
 
+
+#define SMF2_AUTOPOPUP      0x00000001
+#define SMF2_STAYMINIMIZED	0x00000002
+
 #define SMF_ICON_ADD         0
 #define SMF_ICON_USERDETAILS 1
 #define SMF_ICON_HISTORY     2
-//#define SMF_ICON_ARROW       3
 #define SMF_ICON_SEND		 3
 #define SMF_ICON_CANCEL		 4
 #define SMF_ICON_SMILEY		 5
@@ -81,6 +84,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 struct GlobalMessageData
 {
 	unsigned int flags;
+	unsigned int flags2;
 	HICON hIcons[16];
 	HANDLE hMessageWindowList;
 	DWORD openFlags;
@@ -93,7 +97,8 @@ struct GlobalMessageData
 	int		activeAlpha;
 	int		inactiveAlpha;
 	HMENU	hMenuANSIEncoding;
-	HIMAGELIST hIconList;
+	HIMAGELIST hTabIconList;
+	HIMAGELIST hButtonIconList;
 	TCmdList *draftList;
 	int		avatarServiceExists;
 	int		smileyServiceExists;

@@ -389,8 +389,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			dat->hwndTabs = GetDlgItem(hwndDlg, IDC_TABS);
 			dat->hwndActive = NULL;
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) dat);
-			if (g_dat->hIconList != NULL) {
-				TabCtrl_SetImageList(dat->hwndTabs, g_dat->hIconList);
+			if (g_dat->hTabIconList != NULL) {
+				TabCtrl_SetImageList(dat->hwndTabs, g_dat->hTabIconList);
 			}
 			WindowList_Add(g_dat->hParentWindowList, hwndDlg, 0);
 			dat->tabCtrlDat = (struct TabCtrlData *) malloc(sizeof(struct TabCtrlData));
@@ -630,7 +630,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			}
 			else
 				SendMessage(dat->hwndActive, WM_CONTEXTMENU, (WPARAM)hwndDlg, 0);
-		}
+		} 
 		break;
 	}
 
@@ -779,7 +779,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	case DM_ERRORDECIDED:
 		break;
 	case DM_STARTFLASHING:
-		if (GetActiveWindow() != hwndDlg || GetForegroundWindow() != hwndDlg) {
+		if ((GetActiveWindow() != hwndDlg || GetForegroundWindow() != hwndDlg)) {// && !(g_dat->flags2 & SMF2_STAYMINIMIZED)) {
 			dat->nFlash = 0;
 			SetTimer(hwndDlg, TIMERID_FLASHWND, TIMEOUT_FLASHWND, NULL);
 		}

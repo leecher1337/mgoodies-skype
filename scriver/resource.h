@@ -19,7 +19,6 @@
 #define IDI_OUTGOING                    133
 #define IDI_NOTICE                      134
 #define IDI_TIMESTAMP32                 135
-#define IDI_TYPING32                    136
 #define IDI_HISTORY32                   137
 #define IDI_USERDETAILS32               138
 #define IDR_CONTEXT                     180

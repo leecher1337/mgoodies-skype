@@ -46,18 +46,24 @@ void LoadProtocolIcons() {
 	}
 
 	if (g_dat->protoNames != NULL) {
+		for(i = 0; i < g_dat->protoNum; i++) {
+			if (g_dat->protoNames[i] != NULL) {
+				free(g_dat->protoNames[i]);
+			}
+		}
+		free(g_dat->protoNames);
 	}
 	g_dat->protoNames = (char **) malloc(sizeof(char **) * g_dat->protoNum);
-	if (g_dat->hIconList == NULL) {
-		g_dat->hIconList = ImageList_Create(16, 16, IsWinVerXPPlus() ? ILC_COLOR32 | ILC_MASK : ILC_COLOR8 | ILC_MASK, (g_dat->protoNum + 1) * 12 + 8, 0);
+	if (g_dat->hTabIconList == NULL) {
+		g_dat->hTabIconList = ImageList_Create(16, 16, IsWinVerXPPlus() ? ILC_COLOR32 | ILC_MASK : ILC_COLOR8 | ILC_MASK, (g_dat->protoNum + 1) * 12 + 8, 0);
 	} else {
-		ImageList_RemoveAll(g_dat->hIconList);
+		ImageList_RemoveAll(g_dat->hTabIconList);
 	}
 
-    ImageList_AddIcon(g_dat->hIconList, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
-	ImageList_AddIcon(g_dat->hIconList, g_dat->hIcons[SMF_ICON_TYPING]);
+    ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
+	ImageList_AddIcon(g_dat->hTabIconList, g_dat->hIcons[SMF_ICON_TYPING]);
 	for (i = ID_STATUS_OFFLINE; i <= ID_STATUS_OUTTOLUNCH; i++) {
-		ImageList_AddIcon(g_dat->hIconList, LoadSkinnedProtoIcon(NULL, i));
+		ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(NULL, i));
 	}
 
 	for(i = j = 0; i < allProtoNum; i++) {
@@ -66,9 +72,9 @@ void LoadProtocolIcons() {
         for (k = ID_STATUS_OFFLINE; k <= ID_STATUS_OUTTOLUNCH; k++) {
             hIcon = LoadSkinnedProtoIcon(pProtos[i]->szName, k);
             if (hIcon != NULL) {
-				ImageList_AddIcon(g_dat->hIconList, hIcon);
+				ImageList_AddIcon(g_dat->hTabIconList, hIcon);
             } else {
-				ImageList_AddIcon(g_dat->hIconList, LoadSkinnedProtoIcon(NULL, ID_STATUS_OFFLINE));
+				ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(NULL, ID_STATUS_OFFLINE));
 			}
         }
 		j++;
@@ -181,8 +187,10 @@ void RegisterIcoLibIcons() {
 	HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
 }
 
-void LoadGlobalIcons() {
+static int buttonIcons[] = {-SMF_ICON_USERDETAILS, SMF_ICON_ADD, SMF_ICON_USERDETAILS};
 
+void LoadGlobalIcons() {
+	int i;
 	if (ServiceExists(MS_SKIN2_ADDICON)) {
 		g_dat->hIcons[SMF_ICON_ADD] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_ADD");
 		g_dat->hIcons[SMF_ICON_USERDETAILS] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_USERDETAILS");
@@ -191,9 +199,6 @@ void LoadGlobalIcons() {
 		g_dat->hIcons[SMF_ICON_SEND] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_SEND");
 		g_dat->hIcons[SMF_ICON_CANCEL] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_CANCEL");
 		g_dat->hIcons[SMF_ICON_SMILEY] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_SMILEY");
-//		g_dat->hIcons[SMF_ICON_INCOMING] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_INCOMING");
-//		g_dat->hIcons[SMF_ICON_OUTGOING] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_OUTGOING");
-//		g_dat->hIcons[SMF_ICON_NOTICE] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_NOTICE");
 		g_dat->hIcons[SMF_ICON_UNICODEON] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_UNICODEON");
 		g_dat->hIcons[SMF_ICON_UNICODEOFF] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_UNICODEOFF");
 		g_dat->hIcons[SMF_ICON_DELIVERING] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_DELIVERING");
@@ -206,19 +211,29 @@ void LoadGlobalIcons() {
 		g_dat->hIcons[SMF_ICON_ADD] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_ADDCONTACT), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 		g_dat->hIcons[SMF_ICON_USERDETAILS] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_USERDETAILS32 : IDI_USERDETAILS), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 		g_dat->hIcons[SMF_ICON_HISTORY] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_HISTORY32 : IDI_HISTORY), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-		g_dat->hIcons[SMF_ICON_SEND] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_SEND : IDI_SEND), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-		g_dat->hIcons[SMF_ICON_CANCEL] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_CANCEL : IDI_CANCEL), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-		g_dat->hIcons[SMF_ICON_SMILEY] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_SMILEY : IDI_SMILEY), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-		g_dat->hIcons[SMF_ICON_TYPING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_TYPING32 : IDI_TYPING), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-		g_dat->hIcons[SMF_ICON_UNICODEON] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_UNICODEON : IDI_UNICODEON), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-		g_dat->hIcons[SMF_ICON_UNICODEOFF] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_UNICODEOFF : IDI_UNICODEOFF), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_SEND] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_SEND), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_CANCEL] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_CANCEL), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_SMILEY] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_SMILEY), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_TYPING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_TYPING), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_UNICODEON] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_UNICODEON), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_UNICODEOFF] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_UNICODEOFF), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 		g_dat->hIcons[SMF_ICON_DELIVERING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_TIMESTAMP : IDI_TIMESTAMP), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
-		g_dat->hIcons[SMF_ICON_QUOTE] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IsWinVerXPPlus()? IDI_QUOTE : IDI_QUOTE), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+		g_dat->hIcons[SMF_ICON_QUOTE] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_QUOTE), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 
 		g_dat->hIcons[SMF_ICON_INCOMING] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_INCOMING));
 		g_dat->hIcons[SMF_ICON_OUTGOING] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_OUTGOING));
 		g_dat->hIcons[SMF_ICON_NOTICE] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_NOTICE));
 	}
+	if (g_dat->hButtonIconList == NULL) {
+		g_dat->hButtonIconList = ImageList_Create(16, 16, IsWinVerXPPlus() ? ILC_COLOR32 | ILC_MASK : ILC_COLOR8 | ILC_MASK, (g_dat->protoNum + 1) * 12 + 8, 0);
+	} else {
+		ImageList_RemoveAll(g_dat->hButtonIconList);
+	}
+	for (i=0; i<sizeof(buttonIcons)/sizeof(int); i++) {
+		ImageList_AddIcon(g_dat->hButtonIconList, g_dat->hIcons[buttonIcons[i]]);
+	}
+
+
 }
 
 
@@ -265,7 +280,8 @@ void InitGlobals() {
 	g_dat->hParent = NULL;
 	g_dat->protoNum = 0;
 	g_dat->protoNames = NULL;
-	g_dat->hIconList = NULL;
+	g_dat->hTabIconList = NULL;
+	g_dat->hButtonIconList = NULL;
 	g_dat->draftList = NULL;
 }
 
@@ -286,6 +302,7 @@ void ReloadGlobals() {
 	g_dat->avatarServiceExists = ServiceExists(MS_AV_GETAVATARBITMAP);
 	g_dat->smileyServiceExists =  ServiceExists(MS_SMILEYADD_SHOWSELECTION);
 	g_dat->flags = 0;
+	g_dat->flags2 = 0;
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWBUTTONLINE, SRMSGDEFSET_SHOWBUTTONLINE))
 		g_dat->flags |= SMF_SHOWBTNS;
 //	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDBUTTON, SRMSGDEFSET_SENDBUTTON))
@@ -346,6 +363,11 @@ void ReloadGlobals() {
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEDRAFTS, SRMSGDEFSET_SAVEDRAFTS))
 		g_dat->flags |= SMF_SAVEDRAFTS;
 
+	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOPOPUP, SRMSGDEFSET_AUTOPOPUP))
+		g_dat->flags2 |= SMF2_AUTOPOPUP;
+	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STAYMINIMIZED, SRMSGDEFSET_STAYMINIMIZED))
+		g_dat->flags2 |= SMF2_STAYMINIMIZED;
+	
 	g_dat->limitAvatarMaxH = 100000;
 	g_dat->limitAvatarMinH = 0;
 	if (g_dat->flags & SMF_LIMITAVATARH) {
