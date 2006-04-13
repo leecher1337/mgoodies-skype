@@ -36,7 +36,7 @@ void FreeStatusMsgs();
 
 
 void ClearStatusMessage(HANDLE hContact);
-void SetStatusMessage(HANDLE hContact, TCHAR *msg);
+void SetStatusMessage(HANDLE hContact, const TCHAR *msg);
 
 
 

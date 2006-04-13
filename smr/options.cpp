@@ -29,7 +29,8 @@ HANDLE hOptHook = NULL;
 
 Options opts;
 
-
+static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static BOOL CALLBACK GeneralOptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK ProtocolsOptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
@@ -47,6 +48,7 @@ void LoadOptions()
 	opts.poll_timer_status = DBGetContactSettingWord(NULL, MODULE_NAME, OPT_CHECK_ONSTATUSTIMER_TIMER, 15);
 	opts.poll_clear_on_status_change = DBGetContactSettingByte(NULL, MODULE_NAME, OPT_CLEAR_ONSTATUSCHANGE, TRUE);
 	opts.always_clear = DBGetContactSettingByte(NULL, MODULE_NAME, OPT_ALWAYS_CLEAR, TRUE);
+	opts.when_xstatus = (XStatusAction) DBGetContactSettingWord(NULL, MODULE_NAME, OPT_WHEN_XSTATUS, Clear);
 
 	PollSetTimer();
 }
@@ -61,9 +63,9 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	odp.hInstance=hInst;
 	odp.ptszGroup = TranslateT("Status");
 	odp.ptszTitle = TranslateT("Status Msg Retrieve");
-	odp.pfnDlgProc = ProtocolsOptionsDlgProc;
-	odp.pszTemplate = MAKEINTRESOURCE(IDD_OPT_PROTOCOLS);
-    odp.flags=ODPF_BOLDGROUPS;
+	odp.pfnDlgProc = OptionsDlgProc;
+	odp.pszTemplate = MAKEINTRESOURCE(IDD_OPTS);
+    odp.flags = ODPF_BOLDGROUPS;
     CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
 	return 0;
@@ -83,6 +85,25 @@ void DeInitOptions()
 	UnhookEvent(hOptHook);
 }
 
+// Options page
+
+static ItemOption pages[] = {
+	{ "General", IDD_OPT_GENERAL, GeneralOptionsDlgProc },
+	{ "Protocols", IDD_OPT_PROTOCOLS, ProtocolsOptionsDlgProc }
+};
+
+static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	BOOL ret = TabsDlgProc(pages, MAX_REGS(pages), hInst, IDC_TAB, hwndDlg, msg, wParam, lParam);
+
+	if (msg == WM_NOTIFY && ((LPNMHDR)lParam)->idFrom == 0 && ((LPNMHDR)lParam)->code == PSN_APPLY)
+		LoadOptions();
+
+	return ret;
+}
+
+
+// General page
 
 static OptPageControl pageControls[] = { 
 	{ CONTROL_CHECKBOX, IDC_CHECK_ONTIMER, OPT_CHECK_ONTIMER, (BYTE) TRUE },
@@ -91,10 +112,32 @@ static OptPageControl pageControls[] = {
 	{ CONTROL_CHECKBOX, IDC_CLEAR_ON_STATUS, OPT_CLEAR_ONSTATUSCHANGE, (BYTE) TRUE },
 	{ CONTROL_CHECKBOX, IDC_ALWAYS_CLEAR, OPT_ALWAYS_CLEAR, (BYTE) TRUE },
 	{ CONTROL_SPIN,		IDC_CHECK_ONTIMER_TIMER, OPT_CHECK_ONTIMER_TIMER, (WORD) 10, IDC_CHECK_ONTIMER_TIMER_SPIN, (WORD) 1, (WORD) 255 },
-	{ CONTROL_SPIN,		IDC_CHECK_ONSTATUSTIMER_TIMER, OPT_CHECK_ONSTATUSTIMER_TIMER, (WORD) 15, IDC_CHECK_ONSTATUSTIMER_TIMER_SPIN, (WORD) 1, (WORD) 255 }
+	{ CONTROL_SPIN,		IDC_CHECK_ONSTATUSTIMER_TIMER, OPT_CHECK_ONSTATUSTIMER_TIMER, (WORD) 15, IDC_CHECK_ONSTATUSTIMER_TIMER_SPIN, (WORD) 1, (WORD) 255 }, 
+	{ CONTROL_COMBO,	IDC_XSTATUS, OPT_WHEN_XSTATUS, (WORD) Clear }
 };
 
 
+static BOOL CALLBACK GeneralOptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	switch (msg) 
+	{
+		case WM_INITDIALOG:
+		{
+			SendDlgItemMessage(hwndDlg, IDC_XSTATUS, CB_ADDSTRING, 0, (LONG) TranslateT("Retrieve as usual"));
+			SendDlgItemMessage(hwndDlg, IDC_XSTATUS, CB_ADDSTRING, 0, (LONG) TranslateT("Clear"));
+			SendDlgItemMessage(hwndDlg, IDC_XSTATUS, CB_ADDSTRING, 0, (LONG) TranslateT("Clear only if XStatus message is set"));
+			SendDlgItemMessage(hwndDlg, IDC_XSTATUS, CB_ADDSTRING, 0, (LONG) TranslateT("Set to XStatus Name"));
+			SendDlgItemMessage(hwndDlg, IDC_XSTATUS, CB_ADDSTRING, 0, (LONG) TranslateT("Set to XStatus Message"));
+			SendDlgItemMessage(hwndDlg, IDC_XSTATUS, CB_ADDSTRING, 0, (LONG) TranslateT("Set to XStatus Name: XStatus Message"));
+			break;
+		}
+	}
+
+	return SaveOptsDlgProc(pageControls, MAX_REGS(pageControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+}
+
+
+// Protocols page
 
 typedef struct tagProtocolData 
 {
@@ -104,12 +147,14 @@ typedef struct tagProtocolData
 
 static BOOL CALLBACK ProtocolsOptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
-	BOOL ret = SaveOptsDlgProc(pageControls, MAX_REGS(pageControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+	BOOL ret = FALSE;
 
 	switch (msg) 
 	{
 		case WM_INITDIALOG:
 		{
+			TranslateDialogDefault(hwndDlg);
+
 			// Fill list view
 			HWND hwndProtocols = GetDlgItem(hwndDlg, IDC_PROTOCOLS);
 			LVCOLUMN lvc;
@@ -218,8 +263,6 @@ static BOOL CALLBACK ProtocolsOptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 								pd = (ProtocolData *)lvi.lParam;
 								DBWriteContactSettingByte(NULL, MODULE_NAME, pd->setting, (BYTE)(BOOL)ListView_GetCheckState(hwndProtocols, i));
 							}
-							
-							LoadOptions();
 
 							ret = TRUE;
 							break;

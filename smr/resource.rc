@@ -27,44 +27,62 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPT_PROTOCOLS DIALOGEX 0, 0, 235, 224
+IDD_OPT_PROTOCOLS DIALOG DISCARDABLE  0, 0, 257, 164
 STYLE WS_CHILD
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        " Status Message Retrieve ",IDC_STATIC,3,3,229,218
+    LTEXT           "Get status messages for these protocols:",IDC_STATIC,10,
+                    9,236,9
+    CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,10,21,236,90
+    LTEXT           "This feature is mainly for use with protocols that store status messages on server rather then in database (like ICQ). Uncheck any other protocol - status messages will be read in a standard way then.",
+                    IDC_STATIC,10,114,236,36
+END
+
+IDD_OPT_GENERAL DIALOGEX 0, 0, 271, 167
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        " Retrieve ",IDC_STATIC,7,7,257,60
     CONTROL         "Retrieve status messages every",IDC_CHECK_ONTIMER,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,14,119,10
-    EDITTEXT        IDC_CHECK_ONTIMER_TIMER,131,14,31,12,ES_NUMBER | NOT 
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,20,119,10
+    EDITTEXT        IDC_CHECK_ONTIMER_TIMER,137,20,31,12,ES_NUMBER | NOT 
                     WS_BORDER,WS_EX_STATICEDGE
     CONTROL         "Spin1",IDC_CHECK_ONTIMER_TIMER_SPIN,"msctls_updown32",
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | 
-                    UDS_NOTHOUSANDS | UDS_HOTTRACK,162,14,7,11
-    LTEXT           "minutes",IDC_STATIC,167,15,37,10
+                    UDS_NOTHOUSANDS | UDS_HOTTRACK,167,20,11,11
+    LTEXT           "minutes",IDC_STATIC,173,21,37,10
     CONTROL         "Retrieve on status change",IDC_CHECK_ONSTATUS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,28,216,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,15,34,216,10
     CONTROL         "Also retrieve after ",IDC_CHECK_ONSTATUSTIMER,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,42,76,8
-    EDITTEXT        IDC_CHECK_ONSTATUSTIMER_TIMER,87,41,31,12,ES_NUMBER | 
+                    BS_AUTOCHECKBOX | WS_TABSTOP,15,48,76,8
+    EDITTEXT        IDC_CHECK_ONSTATUSTIMER_TIMER,93,47,31,12,ES_NUMBER | 
                     NOT WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "seconds after status change",IDC_STATIC,127,42,99,10
-    CONTROL         "Clear message on status change",IDC_CLEAR_ON_STATUS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,54,216,10
     CONTROL         "Spin2",IDC_CHECK_ONSTATUSTIMER_TIMER_SPIN,
                     "msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | 
-                    UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,117,43,6,
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,123,49,11,
                     10
-    CONTROL         "Always clear message if status does not support it",
+    LTEXT           "seconds after status change",IDC_STATIC,133,48,99,10
+    GROUPBOX        " Clear ",IDC_STATIC,7,70,257,53
+    CONTROL         "Clear message on status change",IDC_CLEAR_ON_STATUS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,83,216,10
+    CONTROL         "Always clear message if status does not support messages",
                     IDC_ALWAYS_CLEAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    10,68,216,10
+                    15,97,216,10
     LTEXT           "(even for contacts with msg check disabled)",IDC_STATIC,
-                    22,79,204,10
-    LTEXT           "Get status messages for these protocols:",IDC_STATIC,10,
-                    95,216,9
-    CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
-                    LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
-                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,10,107,216,73
-    LTEXT           "This feature is mainly for use with protocols that store status messages on server rather then in database (like ICQ). Uncheck any other protocol - status messages will be read in a standard way then.",
-                    IDC_STATIC,10,184,216,33
+                    28,108,204,10
+    GROUPBOX        " XStatus ",IDC_STATIC,7,126,257,34
+    LTEXT           "If contact has XStatus set:",IDC_STATIC,15,141,92,13
+    COMBOBOX        IDC_XSTATUS,109,139,148,12,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+END
+
+IDD_OPTS DIALOG DISCARDABLE  0, 0, 299, 197
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Tab2",IDC_TAB,"SysTabControl32",0x0,7,7,285,183
 END
 
 
@@ -79,11 +97,27 @@ BEGIN
     IDD_OPT_PROTOCOLS, DIALOG
     BEGIN
         LEFTMARGIN, 3
-        RIGHTMARGIN, 232
+        RIGHTMARGIN, 254
         VERTGUIDE, 10
-        VERTGUIDE, 226
+        VERTGUIDE, 246
         TOPMARGIN, 3
-        BOTTOMMARGIN, 221
+        BOTTOMMARGIN, 161
+    END
+
+    IDD_OPT_GENERAL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 264
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 160
+    END
+
+    IDD_OPTS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 292
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 190
     END
 END
 #endif    // APSTUDIO_INVOKED

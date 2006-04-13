@@ -42,11 +42,22 @@ void FreeStatus()
 static int ContactSettingChanged(WPARAM wParam, LPARAM lParam) {
 	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
 	HANDLE hContact = (HANDLE)wParam;
+	const char *proto = cws->szModule;
 
 	// Check contact status changed
-	if (hContact != NULL && strcmp(cws->szSetting, "Status") == 0) 
+	if (hContact != NULL && proto != NULL) 
 	{
-		PollStatusChangeAddContact(hContact);
+		if (strcmp(cws->szSetting, "Status") == 0)
+		{
+			PollStatusChangeAddContact(hContact);
+		}
+		else if (strcmp(cws->szSetting, "XStatusName") == 0 
+			|| strcmp(cws->szSetting, "XStatusMsg") == 0
+			|| strcmp(cws->szSetting, "XStatusId") == 0)
+		{
+			if (opts.when_xstatus != Normal && PollCheckProtocol(proto))
+				ProtocolStatusCheckMsg(hContact, proto);
+		}
 	}
 
 	return 0;
