@@ -38,6 +38,7 @@ void PollSetTimer(void);
 
 BOOL PollCheckProtocol(const char *protocol);
 BOOL PollCheckContact(HANDLE hContact);
+BOOL ProtocolStatusCheckMsg(HANDLE hContact, const char *protocol);
 
 void PollReceivedContactMessage(HANDLE hContact, BOOL from_network);
 

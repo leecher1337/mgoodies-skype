@@ -38,9 +38,18 @@ extern "C"
 #define OPT_CHECK_ONTIMER_TIMER			"CheckOnTimerTimer"
 #define OPT_CHECK_ONSTATUSTIMER_TIMER	"CheckOnStatusTimer"
 #define OPT_ALWAYS_CLEAR				"AlwaysClear"
+#define OPT_WHEN_XSTATUS				"WhenXStatus"
 #define OPT_CONTACT_GETMSG				"MsgCheck"
 #define OPT_PROTOCOL_GETMSG				"%sMsgCheck"
 
+typedef enum {
+	Normal = 0,
+	Clear,
+	ClearOnMessage,
+	SetToXStatusName,
+	SetToXStatusMessage,
+	SetToXStatusNameXStatusMessage,
+} XStatusAction;
 
 typedef struct 
 {
@@ -51,6 +60,7 @@ typedef struct
 	WORD poll_timer_check;
 	WORD poll_timer_status;
 	BOOL always_clear;
+	XStatusAction when_xstatus;
 } Options;
 
 extern Options opts;
