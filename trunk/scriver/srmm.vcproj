@@ -146,7 +146,7 @@
 				Optimization="1"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="../../include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SRMM_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SRMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -243,7 +243,7 @@
 				FavorSizeOrSpeed="2"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="../../include"
-				PreprocessorDefinitions="UNICODE;WIN32;NDEBUG;_WINDOWS;_USRDLL;SRMM_EXPORTS"
+				PreprocessorDefinitions="UNICODE;WIN32;NDEBUG;_WINDOWS;_USRDLL;SRMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				ExceptionHandling="0"
 				RuntimeLibrary="2"
@@ -844,15 +844,15 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="res\addcontact.ico"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\res\addcontact.ico"
 				>
 			</File>
 			<File
 				RelativePath="..\..\Miranda-IM\res\addcontact.ico"
+				>
+			</File>
+			<File
+				RelativePath="res\addcontact.ico"
 				>
 			</File>
 			<File
@@ -864,11 +864,11 @@
 				>
 			</File>
 			<File
-				RelativePath="res\delete.ico"
+				RelativePath="..\..\src\res\delete.ico"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\res\delete.ico"
+				RelativePath="res\delete.ico"
 				>
 			</File>
 			<File
@@ -892,11 +892,11 @@
 				>
 			</File>
 			<File
-				RelativePath="res\dragcopy.cur"
+				RelativePath="..\..\src\res\dragcopy.cur"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\res\dragcopy.cur"
+				RelativePath="res\dragcopy.cur"
 				>
 			</File>
 			<File
