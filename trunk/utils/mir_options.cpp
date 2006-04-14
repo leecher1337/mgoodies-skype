@@ -29,6 +29,8 @@ extern "C"
 #include <m_database.h>
 #include <m_utils.h>
 #include <m_langpack.h>
+#include <m_protocols.h>
+#include <m_protosvc.h>
 #include <tchar.h>
 }
 
@@ -245,7 +247,6 @@ BOOL CALLBACK TabsDlgProc(ItemOption *optItens, int optItensSize, HINSTANCE hIns
 // Dialog to save options
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *module, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -270,18 +271,67 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 						SendDlgItemMessage(hwndDlg, ctrl->nIDSpin, UDM_SETBUDDY, (WPARAM)GetDlgItem(hwndDlg, ctrl->nID),0);
 						SendDlgItemMessage(hwndDlg, ctrl->nIDSpin, UDM_SETRANGE, 0, MAKELONG(ctrl->max, ctrl->min));
 						SendDlgItemMessage(hwndDlg, ctrl->nIDSpin, UDM_SETPOS,0, MAKELONG(DBGetContactSettingWord(NULL, module, ctrl->setting, ctrl->defValue), 0));
-
 						break;
 					}
 					case CONTROL_COLOR:
 					{
 						SendDlgItemMessage(hwndDlg, ctrl->nID, CPM_SETCOLOUR, 0, (COLORREF) DBGetContactSettingDword(NULL, module, ctrl->setting, ctrl->defValue));
-
 						break;
 					}
 					case CONTROL_RADIO:
 					{
 						CheckDlgButton(hwndDlg, ctrl->nID, DBGetContactSettingWord(NULL, module, ctrl->setting, ctrl->defValue) == ctrl->value ? BST_CHECKED : BST_UNCHECKED);
+						break;
+					}
+					case CONTROL_COMBO:
+					{
+						SendDlgItemMessage(hwndDlg, ctrl->nID, CB_SETCURSEL, DBGetContactSettingWord(NULL, module, ctrl->setting, ctrl->defValue), 0);
+						break;
+					}
+					case CONTROL_PROTOCOL_LIST:
+					{
+						// Fill list view
+						HWND hwndProtocols = GetDlgItem(hwndDlg, ctrl->nID);
+						LVCOLUMN lvc;
+						LVITEM lvi;
+						PROTOCOLDESCRIPTOR **protos;
+						int i,count;
+						char szName[128];
+						
+						ListView_SetExtendedListViewStyle(hwndProtocols, LVS_EX_CHECKBOXES);
+						
+						ZeroMemory(&lvc, sizeof(lvc));
+						lvc.mask = LVCF_FMT;
+						lvc.fmt = LVCFMT_IMAGE | LVCFMT_LEFT;
+						ListView_InsertColumn(hwndProtocols, 0, &lvc);
+						
+						ZeroMemory(&lvi, sizeof(lvi));
+						lvi.mask = LVIF_TEXT | LVIF_PARAM;
+						lvi.iSubItem = 0;
+						lvi.iItem = 1000;
+						
+						CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+						
+						for (i = 0; i < count; i++)
+						{
+							if (protos[i]->type != PROTOTYPE_PROTOCOL || CallProtoService(protos[i]->szName, PS_GETCAPS, PFLAGNUM_2, 0) == 0)
+								continue;
+							
+							CallProtoService(protos[i]->szName, PS_GETNAME, sizeof(szName), (LPARAM)szName);
+							
+							char *setting = (char *) mir_alloc0(128 * sizeof(char));
+							mir_snprintf(setting, 128, ctrl->setting, protos[i]->szName);
+
+							BOOL show = (BOOL)DBGetContactSettingByte(NULL, module, setting, ctrl->defValue);
+							
+							lvi.lParam = (LPARAM)setting;
+							lvi.pszText = TranslateT(szName);
+							lvi.iItem = ListView_InsertItem(hwndProtocols, &lvi);
+							ListView_SetItemState(hwndProtocols, lvi.iItem, INDEXTOSTATEIMAGEMASK(show?2:1), LVIS_STATEIMAGEMASK);
+						}
+						
+						ListView_SetColumnWidth(hwndProtocols, 0, LVSCW_AUTOSIZE);
+						ListView_Arrange(hwndProtocols, LVA_ALIGNLEFT | LVA_ALIGNTOP);
 						break;
 					}
 				}
@@ -290,66 +340,143 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 		}
 		case WM_COMMAND:
 		{
-			// Don't make apply enabled during buddy set crap
-			if (HIWORD(wParam) != EN_CHANGE || (HWND)lParam != GetFocus())
+			for (int i = 0 ; i < controlsSize ; i++)
 			{
-				for (int i = 0 ; i < controlsSize ; i++)
+				OptPageControl *ctrl = &controls[i];
+
+				if (LOWORD(wParam) == ctrl->nID)
 				{
-					if (controls[i].type == CONTROL_SPIN && LOWORD(wParam) == controls[i].nID)
+					switch(ctrl->type)
 					{
-						return 0;
+						case CONTROL_SPIN:
+						{
+							// Don't make apply enabled during buddy set
+							if (HIWORD(wParam) != EN_CHANGE || (HWND)lParam != GetFocus())
+								return 0;
+
+							break;
+						}
+						case CONTROL_COMBO:
+						{
+							if (HIWORD(wParam) != CBN_SELCHANGE || (HWND)lParam != GetFocus())
+								return 0;
+
+							break;
+						}
 					}
 				}
 			}
 
 			SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+
 			break;
 		}
 		case WM_NOTIFY:
 		{
-			switch (((LPNMHDR)lParam)->idFrom) 
+			LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+
+			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
 			{
-				case 0:
+				for (int i = 0 ; i < controlsSize ; i++)
 				{
-					switch (((LPNMHDR)lParam)->code)
+					OptPageControl *ctrl = &controls[i];
+
+					switch(ctrl->type)
 					{
-						case PSN_APPLY:
+						case CONTROL_CHECKBOX:
 						{
-							for (int i = 0 ; i < controlsSize ; i++)
-							{
-								OptPageControl *ctrl = &controls[i];
-
-								switch(ctrl->type)
-								{
-									case CONTROL_CHECKBOX:
-									{
-										DBWriteContactSettingByte(NULL, module, ctrl->setting, (BYTE)IsDlgButtonChecked(hwndDlg, ctrl->nID));
-										break;
-									}
-									case CONTROL_SPIN:
-									{
-										DBWriteContactSettingWord(NULL, module, ctrl->setting, (WORD)SendDlgItemMessage(hwndDlg, ctrl->nIDSpin, UDM_GETPOS, 0, 0));
-										break;
-									}
-									case CONTROL_COLOR:
-									{
-										DBWriteContactSettingDword(NULL, module, ctrl->setting, (DWORD)SendDlgItemMessage(hwndDlg, ctrl->nID, CPM_GETCOLOUR, 0, 0));
-										break;
-									}
-									case CONTROL_RADIO:
-									{
-										if (IsDlgButtonChecked(hwndDlg, ctrl->nID))
-											DBWriteContactSettingWord(NULL, module, ctrl->setting, (BYTE)ctrl->value);
-										break;
-									}
-								}
-							}
+							DBWriteContactSettingByte(NULL, module, ctrl->setting, (BYTE)IsDlgButtonChecked(hwndDlg, ctrl->nID));
+							break;
+						}
+						case CONTROL_SPIN:
+						{
+							DBWriteContactSettingWord(NULL, module, ctrl->setting, (WORD)SendDlgItemMessage(hwndDlg, ctrl->nIDSpin, UDM_GETPOS, 0, 0));
+							break;
+						}
+						case CONTROL_COLOR:
+						{
+							DBWriteContactSettingDword(NULL, module, ctrl->setting, (DWORD)SendDlgItemMessage(hwndDlg, ctrl->nID, CPM_GETCOLOUR, 0, 0));
+							break;
+						}
+						case CONTROL_RADIO:
+						{
+							if (IsDlgButtonChecked(hwndDlg, ctrl->nID))
+								DBWriteContactSettingWord(NULL, module, ctrl->setting, (BYTE)ctrl->value);
+							break;
+						}
+						case CONTROL_COMBO:
+						{
+							DBWriteContactSettingWord(NULL, module, ctrl->setting, (WORD)SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETCURSEL, 0, 0));
+							break;
+						}
+						case CONTROL_PROTOCOL_LIST:
+						{
+							LVITEM lvi = {0};
+							HWND hwndProtocols = GetDlgItem(hwndDlg, ctrl->nID);
+							int i;
 							
-
-							return TRUE;
+							lvi.mask = (UINT) LVIF_PARAM;
+							
+							for (i = 0; i < ListView_GetItemCount(hwndProtocols); i++)
+							{
+								lvi.iItem = i;
+								ListView_GetItem(hwndProtocols, &lvi);
+								
+								char *setting = (char *)lvi.lParam;
+								DBWriteContactSettingByte(NULL, module, setting, (BYTE)ListView_GetCheckState(hwndProtocols, i));
+							}
+							break;
 						}
 					}
-					break;
+				}
+				
+
+				return TRUE;
+			}
+			else if (lpnmhdr->idFrom != 0 && lpnmhdr->code == LVN_ITEMCHANGED)
+			{
+				// Changed for protocols
+				for (int i = 0 ; i < controlsSize ; i++)
+				{
+					OptPageControl *ctrl = &controls[i];
+
+					if (ctrl->type == CONTROL_PROTOCOL_LIST && ctrl->nID == lpnmhdr->idFrom)
+					{
+						NMLISTVIEW *nmlv = (NMLISTVIEW *)lParam;
+						
+						if(IsWindowVisible(GetDlgItem(hwndDlg, ctrl->nID)) && ((nmlv->uNewState ^ nmlv->uOldState) & LVIS_STATEIMAGEMASK))
+							SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+
+						break;
+					}
+				}
+			}
+			break;
+		}
+		case WM_DESTROY:
+		{
+			for (int i = 0 ; i < controlsSize ; i++)
+			{
+				OptPageControl *ctrl = &controls[i];
+
+				switch(ctrl->type)
+				{
+					case CONTROL_PROTOCOL_LIST:
+					{
+						LVITEM lvi = {0};
+						HWND hwndProtocols = GetDlgItem(hwndDlg, ctrl->nID);
+						int i;
+						
+						lvi.mask = (UINT) LVIF_PARAM;
+						
+						for (i = 0; i < ListView_GetItemCount(hwndProtocols); i++)
+						{
+							lvi.iItem = i;
+							ListView_GetItem(hwndProtocols, &lvi);
+							mir_free((char *) lvi.lParam);
+						}
+						break;
+					}
 				}
 			}
 			break;
