@@ -39,10 +39,12 @@ extern "C"
 #define CONTROL_SPIN 1			// Stored as WORD
 #define CONTROL_COLOR 2			// Stored as DWORD
 #define CONTROL_RADIO 3			// Stored as WORD
+#define CONTROL_COMBO 4			// Stored as WORD
+#define CONTROL_PROTOCOL_LIST 5	// Stored as BYTEs
 
 typedef struct {
 	int type;
-	int nID;
+	unsigned int nID;
 	char *setting;
 	DWORD defValue;
 	union {

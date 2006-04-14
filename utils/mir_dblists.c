@@ -39,10 +39,10 @@ void init_list_interface()
 
 BOOL List_Compare( SortedList* p_list, void *p_value1, void *p_value2 )
 {
-	if ( p_list->compareFunc == NULL )
+//	if ( p_list->compareFunc == NULL )
 		return p_value1 == p_value2;
-	else
-		return p_list->compareFunc( p_value1, p_value2 ) == 0;
+//	else
+//		return p_list->compareFunc( p_value1, p_value2 ) == 0;
 }
 
 
