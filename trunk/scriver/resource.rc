@@ -357,7 +357,7 @@ END
 // remains consistent on all systems.
 IDI_ADDCONTACT          ICON    DISCARDABLE     "res/addcontact.ico"
 IDI_USERDETAILS         ICON    DISCARDABLE     "res/Details8.ico"
-IDI_HISTORY             ICON    DISCARDABLE     "res/History8.ico"
+IDI_HISTORY             ICON    DISCARDABLE     "res/history.ico"
 IDI_SEND                ICON    DISCARDABLE     "res/send.ico"
 IDI_CANCEL              ICON    DISCARDABLE     "res/delete.ico"
 IDI_SMILEY              ICON    DISCARDABLE     "res/smiley.ico"
@@ -370,7 +370,6 @@ IDI_INCOMING            ICON    DISCARDABLE     "res/incoming.ico"
 IDI_OUTGOING            ICON    DISCARDABLE     "res/outgoing.ico"
 IDI_NOTICE              ICON    DISCARDABLE     "res/notice.ico"
 IDI_TIMESTAMP32         ICON    DISCARDABLE     "res/Clock32.ico"
-IDI_HISTORY32           ICON    DISCARDABLE     "res/History32.ico"
 IDI_USERDETAILS32       ICON    DISCARDABLE     "res/Details32.ico"
 
 /////////////////////////////////////////////////////////////////////////////

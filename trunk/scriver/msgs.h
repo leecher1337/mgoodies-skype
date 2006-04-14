@@ -363,10 +363,10 @@ extern const int msgDlgFontCount;
 #define SRMSGDEFSET_ACTIVEALPHA		0
 #define SRMSGSET_INACTIVEALPHA		"InactiveAlpha"
 #define SRMSGDEFSET_INACTIVEALPHA	0
-
 #define SRMSGSET_WINDOWTITLE		"WindowTitle"
-
 #define SRMSGSET_SAVEDRAFTS			"SaveDrafts"
 #define SRMSGDEFSET_SAVEDRAFTS		0
+#define SRMSGSET_BUTTONVISIBILITY	"ButtonVisibility"
+#define SRMSGDEFSET_BUTTONVISIBILITY 0xFFFF
 
 #endif

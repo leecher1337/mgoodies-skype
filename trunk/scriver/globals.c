@@ -187,7 +187,7 @@ void RegisterIcoLibIcons() {
 	HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
 }
 
-static int buttonIcons[] = {-SMF_ICON_USERDETAILS, SMF_ICON_ADD, SMF_ICON_USERDETAILS};
+static int buttonIcons[] = {-1, SMF_ICON_USERDETAILS, SMF_ICON_SMILEY, SMF_ICON_ADD, SMF_ICON_HISTORY, SMF_ICON_QUOTE, SMF_ICON_CANCEL, SMF_ICON_SEND};
 
 void LoadGlobalIcons() {
 	int i;
@@ -230,7 +230,11 @@ void LoadGlobalIcons() {
 		ImageList_RemoveAll(g_dat->hButtonIconList);
 	}
 	for (i=0; i<sizeof(buttonIcons)/sizeof(int); i++) {
-		ImageList_AddIcon(g_dat->hButtonIconList, g_dat->hIcons[buttonIcons[i]]);
+		if (buttonIcons[i] == -1) {
+			ImageList_AddIcon(g_dat->hButtonIconList, LoadSkinnedProtoIcon(NULL, ID_STATUS_OFFLINE));
+		} else {
+			ImageList_AddIcon(g_dat->hButtonIconList, g_dat->hIcons[buttonIcons[i]]);
+		}
 	}
 
 
@@ -286,15 +290,19 @@ void InitGlobals() {
 }
 
 void FreeGlobals() {
-	int i;
-
 	if (g_hDbEvent) UnhookEvent(g_hDbEvent);
 	if (g_hAck) UnhookEvent(g_hAck);
 	if (g_dat) {
 		if (g_dat->draftList != NULL) tcmdlist_free(g_dat->draftList);
-		for (i=0;i<sizeof(g_dat->hIcons)/sizeof(g_dat->hIcons[0]);i++)
-			DestroyIcon(g_dat->hIcons[i]);
+	//	for (i=0;i<sizeof(g_dat->hIcons)/sizeof(g_dat->hIcons[0]);i++)
+	//		DestroyIcon(g_dat->hIcons[i]);
 		free(g_dat);
+	}
+	if (g_dat->hTabIconList) {
+		ImageList_Destroy(g_dat->hTabIconList);
+	}
+	if (g_dat->hButtonIconList) {
+		ImageList_Destroy(g_dat->hButtonIconList);
 	}
 }
 
@@ -387,6 +395,8 @@ void ReloadGlobals() {
 		g_dat->flags |= SMF_SHOWTYPINGCLIST;
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_USEIEVIEW, SRMSGDEFSET_USEIEVIEW))
 		g_dat->flags |= SMF_USEIEVIEW;
+
+	g_dat->buttonVisibility = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_BUTTONVISIBILITY, SRMSGDEFSET_BUTTONVISIBILITY);
 
 }
 
