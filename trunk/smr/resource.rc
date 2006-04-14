@@ -74,7 +74,7 @@ BEGIN
                     28,108,204,10
     GROUPBOX        " XStatus ",IDC_STATIC,7,126,257,34
     LTEXT           "If contact has XStatus set:",IDC_STATIC,15,141,92,13
-    COMBOBOX        IDC_XSTATUS,109,139,148,12,CBS_DROPDOWNLIST | WS_VSCROLL | 
+    COMBOBOX        IDC_XSTATUS,109,139,148,72,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
 END
 

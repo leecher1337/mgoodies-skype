@@ -1,6 +1,10 @@
-Status Message Retriever 0.0.1.4
+Status Message Retriever 0.0.1.5
 
 Changelog:
+
+. 0.0.1.5
+  * Bugfix in poll
+  * Bugfix in xstatus code
 
 . 0.0.1.4
   + Deal with XStatus
@@ -17,7 +21,7 @@ Changelog:
 . 0.0.1.1
   + Updater support
   + More options
-  + A lot of changes in pooling code
+  + A lot of changes in polling code
   * Bugfix in contact menu option
 
 . 0.0.1.0

@@ -50,6 +50,7 @@ struct QueueItem
 #define STATUS_CHANGE_TIMER 2
 #define PROTOCOL_ONLINE 4
 #define POOL 8
+#define XSTATUS_CHANGE 16
 
 
 UINT_PTR hTimer = 0;
@@ -178,7 +179,9 @@ logC(MODULE_NAME, "PollStatusChangeAddContact", hContact, "Status changed");
 	if (proto != NULL && PollCheckProtocol(proto))
 	{
 		// Delete some messages now (don't add to list...)
-		if (ProtocolStatusCheckMsg(hContact, proto))
+		Check what = ProtocolStatusCheckMsg(hContact, proto);
+
+		if (what == Retrieve)
 		{
 			if (opts.poll_clear_on_status_change)
 				ClearStatusMessage(hContact);
@@ -189,10 +192,35 @@ logC(MODULE_NAME, "PollStatusChangeAddContact", hContact, "Status changed");
 			if (opts.poll_check_on_status_change_timer)
 				QueueAdd(hContact, GetTickCount() + opts.poll_timer_status * 1000, STATUS_CHANGE_TIMER);
 		}
+		else if (what == UseXStatus || what == ClearXStatus)
+		{
+			PollXStatusChangeAddContact(hContact);
+		}
+		else
+		{
+			ProcessCheckNotToServer(what, hContact, proto);
+		}
 	}
 	else
 	{
 logC(MODULE_NAME, "PollStatusChangeAddContact", hContact, "Contact should not be checked");
+	}
+}
+
+// Check after some time, to allow proto to set all data about XStatus
+void PollXStatusChangeAddContact(HANDLE hContact)
+{
+	char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+
+logC(MODULE_NAME, "PollXStatusChangeAddContact", hContact, "XStatus changed");
+
+	if (proto != NULL && PollCheckProtocol(proto) && opts.when_xstatus != Normal)
+	{
+		QueueAdd(hContact, GetTickCount() + 200, XSTATUS_CHANGE);
+	}
+	else
+	{
+logC(MODULE_NAME, "PollXStatusChangeAddContact", hContact, "Contact should not be checked");
 	}
 }
 
@@ -227,7 +255,14 @@ log(MODULE_NAME, "PollAddAllContacts", "[%s] Start", protocol == NULL ? "all" : 
 		{
 			if (type == PROTOCOL_ONLINE)
 			{
-				ProtocolStatusCheckMsg(hContact, proto);
+				Check what = ProtocolStatusCheckMsg(hContact, proto);
+
+				if (what == Clear || what == UseXStatus)
+				{
+					LeaveCriticalSection(&update_cs);
+					ProcessCheckNotToServer(what, hContact, proto);
+					EnterCriticalSection(&update_cs);
+				}
 			}
 
 			QueueAdd(hContact, GetTickCount() + timer, type);
@@ -242,7 +277,6 @@ log(MODULE_NAME, "PollAddAllContacts", "End");
 
 }
 
-// Add a contact to the poll when the status of the contact has changed
 VOID CALLBACK PollTimerAddContacts(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
 	if (hTimer != NULL) 
@@ -253,7 +287,10 @@ VOID CALLBACK PollTimerAddContacts(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwT
 
 log(MODULE_NAME, "PollTimerAddContacts", "Loop Timer");
 
-	PollAddAllContactsTimer(opts.poll_timer_check * 60000);
+	// Adds with half the timer because the real timer is the calling of this function. 
+	// The timer passed here is the amout of time that it will wait to see if the user do not 
+	// request the message by itself
+	PollAddAllContactsTimer(opts.poll_timer_check * 60000 / 3);
 
 	PollSetTimer();
 }
@@ -261,11 +298,14 @@ log(MODULE_NAME, "PollTimerAddContacts", "Loop Timer");
 
 void PollSetTimer(void)
 {
-	if (hTimer != NULL)
+	if (hTimer != NULL) 
+	{
 		KillTimer(NULL, hTimer);
+		hTimer = NULL;
+	}
 
 	if (opts.poll_check_on_timer)
-		hTimer = SetTimer(NULL, 0, opts.poll_check_on_timer * 60000, PollTimerAddContacts);
+		hTimer = SetTimer(NULL, 0, opts.poll_timer_check * 60000, PollTimerAddContacts);
 }
 
 
@@ -297,9 +337,7 @@ void QueueRemove(HANDLE hContact)
 
 	if (statusQueue.queue->items != NULL)
 	{
-		DWORD now = GetTickCount();
-		DWORD timePool = now + (DWORD) (opts.poll_timer_check / 3.0 * 60000);
-		now += 5000;	// 5secs error allowed
+		DWORD now = GetTickCount() + 5000;	// 5secs error allowed
 
 		for (int i = statusQueue.queue->realCount - 1 ; i >= 0 ; i-- )
 		{
@@ -308,18 +346,11 @@ void QueueRemove(HANDLE hContact)
 			if (item->hContact == hContact)
 			{
 				// Remove old items and status changes
-				if ((item->type & ~(POOL | STATUS_CHANGE_TIMER)) || now <= item->check_time)
+				if ((item->type & ~STATUS_CHANGE_TIMER) || item->check_time <= now)
 				{
 					mir_free(item);
 					List_Remove(statusQueue.queue, i);
 				}
-				// Remove pool if 1/3 has passed
-				else if ((item->type & POOL) && timePool <= item->check_time)
-				{
-					mir_free(item);
-					List_Remove(statusQueue.queue, i);
-				}
-
 			}
 		}
 	}
@@ -335,6 +366,21 @@ BOOL QueueTestAdd(QueueItem *item)
 
 	switch(item->type)
 	{
+		case XSTATUS_CHANGE:
+		{
+			// Remove ALL
+			int i;
+			for ( i = statusQueue.queue->realCount - 1 ; i >= 0 ; i-- )
+			{
+				QueueItem *tmp = (QueueItem *) statusQueue.queue->items[i];
+				if (tmp->hContact == item->hContact)
+				{
+					mir_free(tmp);
+					List_Remove(statusQueue.queue, i);
+				}
+			}
+			break;
+		}
 		case STATUS_CHANGE:
 		{
 			// Remove all, exept PROTOCOL_ONLINE
@@ -352,13 +398,17 @@ BOOL QueueTestAdd(QueueItem *item)
 					}
 					else
 					{
+logC(MODULE_NAME, "QueueTestAdd", item->hContact, "Will not add because proto online already in queue");
 						add = FALSE;
 					}
 				}
 			}
 
 			if (requested_item != NULL && requested_item->hContact == item->hContact)
+			{
+logC(MODULE_NAME, "QueueTestAdd", item->hContact, "Will not add because is requesting now");
 				add = FALSE;
+			}
 
 			break;
 		}
@@ -379,6 +429,7 @@ BOOL QueueTestAdd(QueueItem *item)
 					}
 					else if (tmp->type & PROTOCOL_ONLINE)
 					{
+logC(MODULE_NAME, "QueueTestAdd", item->hContact, "Will not add because proto online already in queue");
 						add = FALSE;
 					}
 				}
@@ -410,12 +461,23 @@ BOOL QueueTestAdd(QueueItem *item)
 	return add;
 }
 
+void QueueDump()
+{
+log(MODULE_NAME, "QueueDump", "Start");
+	for (int i = statusQueue.queue->realCount - 1; i >= 0; i--)
+	{
+		QueueItem *qi = (QueueItem *) statusQueue.queue->items[i];
+logC(MODULE_NAME, "QueueDump", qi->hContact, "hContact = %d  check_time = %ld  Type = %d", qi->hContact, qi->check_time, qi->type);	
+	}
+log(MODULE_NAME, "QueueDump", "End");
+}
+
 
 // Add an contact to the poll queue
 void QueueAdd(HANDLE hContact, DWORD check_time, int type)
 {
 	// Add this to thread...
-	QueueItem *item = (QueueItem *) mir_alloc(sizeof(QueueItem));
+	QueueItem *item = (QueueItem *) mir_alloc0(sizeof(QueueItem));
 
 	if (item == NULL)
 		return;
@@ -434,6 +496,7 @@ logC(MODULE_NAME, "QueueAdd", hContact, "Type = %d", type);
 	else
 	{
 		mir_free(item);
+logC(MODULE_NAME, "QueueAdd", hContact, "Item not added");
 	}
 
 	LeaveCriticalSection(&update_cs);
@@ -448,9 +511,8 @@ int QueueSortItems(void *i1, void *i2)
 	return ((QueueItem*)i2)->check_time - ((QueueItem*)i1)->check_time;
 }
 
-// Returns true if has to check that status
-// It sets the message if returns false
-BOOL ProtocolStatusCheckMsg(HANDLE hContact, const char *protocol)
+// Returns if has to check that status
+Check ProtocolStatusCheckMsg(HANDLE hContact, const char *protocol)
 {
 	BOOL check = PollCheckContact(hContact);
 	int status = CallProtoService(protocol, PS_GETSTATUS, 0, 0);
@@ -492,65 +554,18 @@ BOOL ProtocolStatusCheckMsg(HANDLE hContact, const char *protocol)
 				DBFreeVariant(&dbv);
 			}
 
-			// Clear || ClearOnMessage
 			if (opts.when_xstatus == Clear 
 				|| (opts.when_xstatus == ClearOnMessage && has_xstatus_message) )
 			{
-				if (check || opts.always_clear)
-				{
-					PollReceivedContactMessage(hContact, FALSE);
-					ClearStatusMessage(hContact);
-				}
-
-				return FALSE;
+logC(MODULE_NAME, "ProtocolStatusCheckMsg", hContact, "XStatus is set");
+				return (check || opts.always_clear) ? ClearMessage : DoNothing;
 			}
-
-			// SetToXStatusName
-			if (opts.when_xstatus == SetToXStatusName)
+			else if (opts.when_xstatus == SetToXStatusName 
+					 || opts.when_xstatus == SetToXStatusMessage 
+					 || opts.when_xstatus == SetToXStatusNameXStatusMessage)
 			{
-				if (check)
-				{
-					PollReceivedContactMessage(hContact, FALSE);
-					SetStatusMessage(hContact, name);
-				}
-				return FALSE;
-			}
-
-			// SetToXStatusMessage
-			if (opts.when_xstatus == SetToXStatusMessage)
-			{
-				if (check)
-				{
-					PollReceivedContactMessage(hContact, FALSE);
-					SetStatusMessage(hContact, msg);
-				}
-				return FALSE;
-			}
-
-			// SetToXStatusNameXStatusValue
-			if (opts.when_xstatus == SetToXStatusNameXStatusMessage)
-			{
-				PollReceivedContactMessage(hContact, FALSE);
-
-				if (check)
-				{
-					if (has_xstatus_name && has_xstatus_message)
-					{
-						TCHAR message[512];
-						mir_sntprintf(message, sizeof(message), _T("%s: %s"), name, msg);
-						SetStatusMessage(hContact, message);
-					}
-					else if (has_xstatus_name)
-					{
-						SetStatusMessage(hContact, name);
-					}
-					else if (has_xstatus_message)
-					{
-						SetStatusMessage(hContact, msg);
-					}
-				}
-
-				return FALSE;
+logC(MODULE_NAME, "ProtocolStatusCheckMsg", hContact, "XStatus is set");
+				return check ? UseXStatus : DoNothing;
 			}
 		}
 
@@ -558,28 +573,96 @@ BOOL ProtocolStatusCheckMsg(HANDLE hContact, const char *protocol)
 		DWORD protoStatusFlags = CallProtoService(protocol, PS_GETCAPS, PFLAGNUM_3, 0);
 		if (protoStatusFlags & Proto_Status2Flag(contact_status))
 		{
-			return check;// here you know the proto named protocol supports status i
+			return check ? Retrieve : DoNothing;// here you know the proto named protocol supports status i
 		}
 		else
 		{
-			if (check || opts.always_clear)
-			{
-				PollReceivedContactMessage(hContact, FALSE);
-				ClearStatusMessage(hContact);
-			}
-
-			return FALSE;
+logC(MODULE_NAME, "ProtocolStatusCheckMsg", hContact, "Contact in a status that do not support msgs");
+			return (check || opts.always_clear) ? ClearMessage : DoNothing;
 		}
 	}
-	else // Protocol in a status that do not have to check status
+	else // Protocol in a status that do not have to check msgs
 	{
-		if (check || opts.always_clear)
-		{
-			PollReceivedContactMessage(hContact, FALSE);
-			ClearStatusMessage(hContact);
-		}
+logC(MODULE_NAME, "ProtocolStatusCheckMsg", hContact, "Protocol in a status that do not have to check msgs");
+		return (check || opts.always_clear) ? ClearMessage : DoNothing;
+	}
+}
 
-		return FALSE;
+// This should be called from outside the critical session
+void ProcessCheckNotToServer(Check what, HANDLE hContact, const char *protocol)
+{
+	switch(what)
+	{
+		case ClearMessage:
+		{
+			ClearStatusMessage(hContact);
+			PollReceivedContactMessage(hContact, FALSE);
+logC(MODULE_NAME, "ProtocolStatusCheckMsg", hContact, "Cleared status message");
+			break;
+		}
+		case UseXStatus:
+		{
+			bool has_xstatus_name = false;
+			bool has_xstatus_message = false;
+			TCHAR name[256] = {0};
+			TCHAR msg[256] = {0};
+
+			DBVARIANT dbv;
+			if (!DBGetContactSettingTString(hContact, protocol, "XStatusName", &dbv))
+			{
+				if (dbv.ptszVal != NULL && dbv.ptszVal[0] != _T('\0'))
+				{
+					lstrcpyn(name, dbv.ptszVal, sizeof(name));
+					has_xstatus_name = true;
+				}
+				DBFreeVariant(&dbv);
+			}
+			if (!DBGetContactSettingTString(hContact, protocol, "XStatusMsg", &dbv))
+			{
+				if (dbv.ptszVal != NULL && dbv.ptszVal[0] != _T('\0'))
+				{
+					lstrcpyn(msg, dbv.ptszVal, sizeof(msg));
+					has_xstatus_message = true;
+				}
+				DBFreeVariant(&dbv);
+			}
+
+			// SetToXStatusName
+			if (opts.when_xstatus == SetToXStatusName)
+			{
+				SetStatusMessage(hContact, name);
+				PollReceivedContactMessage(hContact, FALSE);
+			}
+
+			// SetToXStatusMessage
+			else if (opts.when_xstatus == SetToXStatusMessage)
+			{
+				SetStatusMessage(hContact, msg);
+				PollReceivedContactMessage(hContact, FALSE);
+			}
+
+			// SetToXStatusNameXStatusValue
+			else if (opts.when_xstatus == SetToXStatusNameXStatusMessage)
+			{
+				if (has_xstatus_name && has_xstatus_message)
+				{
+					TCHAR message[512];
+					mir_sntprintf(message, sizeof(message), _T("%s: %s"), name, msg);
+					SetStatusMessage(hContact, message);
+				}
+				else if (has_xstatus_name)
+				{
+					SetStatusMessage(hContact, name);
+				}
+				else if (has_xstatus_message)
+				{
+					SetStatusMessage(hContact, msg);
+				}
+				PollReceivedContactMessage(hContact, FALSE);
+			}
+logC(MODULE_NAME, "ProtocolStatusCheckMsg", hContact, "Set status message to XStatus");
+			break;
+		}
 	}
 }
 
@@ -593,11 +676,54 @@ log(MODULE_NAME, "UpdateThread", "Start");
 
 	while (statusQueue.bThreadRunning)
 	{
+		// First remove all that are due and do not have to be pooled
+		EnterCriticalSection(&update_cs);
+		if (List_HasItens(statusQueue.queue))
+		{
+			for (int i = statusQueue.queue->realCount - 1; i >= 0; i--)
+			{
+				QueueItem *qi = (QueueItem *) statusQueue.queue->items[i];
+
+				if (qi->check_time > GetTickCount()) 
+					break;
+
+				char *proto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)qi->hContact, 0);
+
+				if (proto == NULL || !PollCheckProtocol(proto))
+				{
+logC(MODULE_NAME, "UpdateThread", qi->hContact, "Removing contact that don't have to be requested");
+
+					List_Remove(statusQueue.queue, i);
+					mir_free(qi);
+				}
+				else
+				{
+					Check what = ProtocolStatusCheckMsg(qi->hContact, proto);
+
+					if (what == ClearMessage || what == UseXStatus || what == ClearXStatus)
+					{
+						LeaveCriticalSection(&update_cs);
+						ProcessCheckNotToServer(what, qi->hContact, proto);
+						EnterCriticalSection(&update_cs);
+
+						// Restart loop
+						i = statusQueue.queue->realCount;
+					}
+					else if (what == DoNothing)
+					{
+						List_Remove(statusQueue.queue, i);
+						mir_free(qi);
+					}
+				}
+			}
+		}
+		LeaveCriticalSection(&update_cs);
+
 		// Was to run yet?
 		DWORD test_timer = GetNextRequestAt();
 		if (test_timer > GetTickCount())
 		{
-			Sleep(test_timer - GetTickCount());
+			Sleep(POOL_DELAY);
 		}
 		else
 		{
@@ -663,8 +789,15 @@ log(MODULE_NAME, "UpdateThread", "Last request not received in time-out. Ignorin
 					if (proto && PollCheckProtocol(proto))
 					{
 logC(MODULE_NAME, "UpdateThread", qi->hContact, "Have to check");
+						Check what = ProtocolStatusCheckMsg(qi->hContact, proto);
 
-						if (ProtocolStatusCheckMsg(qi->hContact, proto))
+						if (what == Clear || what == UseXStatus)
+						{
+							LeaveCriticalSection(&update_cs);
+
+							ProcessCheckNotToServer(what, qi->hContact, proto);
+						}
+						else if (what == Retrieve)
 						{
 							int ret = CallContactService(qi->hContact,PSS_GETAWAYMSG,0,0);
 
@@ -703,16 +836,16 @@ log(MODULE_NAME, "UpdateThread", "ERROR, pausing for a while");
 						{
 							LeaveCriticalSection(&update_cs);
 
-logC(MODULE_NAME, "UpdateThread", qi->hContact, "Set empty");
+logC(MODULE_NAME, "UpdateThread", qi->hContact, "Did nothing with contact");
 
 							mir_free(qi);
 						}
 					}
 					else
 					{
-						mir_free(qi);
-
 						LeaveCriticalSection(&update_cs);
+
+						mir_free(qi);
 					}
 				}
 			}
