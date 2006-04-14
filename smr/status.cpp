@@ -55,8 +55,7 @@ static int ContactSettingChanged(WPARAM wParam, LPARAM lParam) {
 			|| strcmp(cws->szSetting, "XStatusMsg") == 0
 			|| strcmp(cws->szSetting, "XStatusId") == 0)
 		{
-			if (opts.when_xstatus != Normal && PollCheckProtocol(proto))
-				ProtocolStatusCheckMsg(hContact, proto);
+			PollXStatusChangeAddContact(hContact);
 		}
 	}
 

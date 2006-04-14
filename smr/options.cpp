@@ -105,7 +105,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 // General page
 
-static OptPageControl pageControls[] = { 
+static OptPageControl generalControls[] = { 
 	{ CONTROL_CHECKBOX, IDC_CHECK_ONTIMER, OPT_CHECK_ONTIMER, (BYTE) TRUE },
 	{ CONTROL_CHECKBOX, IDC_CHECK_ONSTATUS, OPT_CHECK_ONSTATUSCHANGE, (BYTE) TRUE },
 	{ CONTROL_CHECKBOX, IDC_CHECK_ONSTATUSTIMER, OPT_CHECK_ONSTATUSCHANGETIMER, (BYTE) TRUE },
@@ -133,148 +133,20 @@ static BOOL CALLBACK GeneralOptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 		}
 	}
 
-	return SaveOptsDlgProc(pageControls, MAX_REGS(pageControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+	return SaveOptsDlgProc(generalControls, MAX_REGS(generalControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
 
 
 // Protocols page
 
-typedef struct tagProtocolData 
-{
-	char setting[128];
-} ProtocolData;
+
+static OptPageControl protocolControls[] = { 
+	{ CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS, OPT_PROTOCOL_GETMSG, (BYTE) FALSE }
+};
 
 
 static BOOL CALLBACK ProtocolsOptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
-	BOOL ret = FALSE;
-
-	switch (msg) 
-	{
-		case WM_INITDIALOG:
-		{
-			TranslateDialogDefault(hwndDlg);
-
-			// Fill list view
-			HWND hwndProtocols = GetDlgItem(hwndDlg, IDC_PROTOCOLS);
-			LVCOLUMN lvc;
-			LVITEM lvi;
-			PROTOCOLDESCRIPTOR **protos;
-			int i,count;
-			char szName[128];
-			ProtocolData *pd;
-			
-			ListView_SetExtendedListViewStyle(hwndProtocols, LVS_EX_CHECKBOXES);
-			
-			ZeroMemory(&lvc, sizeof(lvc));
-			lvc.mask = LVCF_FMT;
-			lvc.fmt = LVCFMT_IMAGE | LVCFMT_LEFT;
-			ListView_InsertColumn(hwndProtocols, 0, &lvc);
-			
-			ZeroMemory(&lvi, sizeof(lvi));
-			lvi.mask = LVIF_TEXT | LVIF_PARAM;
-			lvi.iSubItem = 0;
-			lvi.iItem = 1000;
-			
-			CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
-			
-			for (i = 0; i < count; i++)
-			{
-				if (protos[i]->type != PROTOTYPE_PROTOCOL || CallProtoService(protos[i]->szName, PS_GETCAPS, PFLAGNUM_2, 0) == 0)
-					continue;
-				
-				CallProtoService(protos[i]->szName, PS_GETNAME, sizeof(szName), (LPARAM)szName);
-				
-				pd = (ProtocolData*)malloc(sizeof(ProtocolData));
-				mir_snprintf(pd->setting, sizeof(pd->setting), OPT_PROTOCOL_GETMSG, protos[i]->szName);
-
-				BOOL show = (BOOL)DBGetContactSettingByte(NULL, MODULE_NAME, pd->setting, FALSE);
-				
-				lvi.lParam = (LPARAM)pd;
-				lvi.pszText = TranslateT(szName);
-				lvi.iItem = ListView_InsertItem(hwndProtocols, &lvi);
-				ListView_SetItemState(hwndProtocols, lvi.iItem, INDEXTOSTATEIMAGEMASK(show?2:1), LVIS_STATEIMAGEMASK);
-			}
-			
-			ListView_SetColumnWidth(hwndProtocols, 0, LVSCW_AUTOSIZE);
-			ListView_Arrange(hwndProtocols, LVA_ALIGNLEFT | LVA_ALIGNTOP);
-
-			ret = TRUE;
-			break;
-		}
-		case WM_DESTROY:
-		{
-			LVITEM lvi = {0};
-			HWND hwndProtocols = GetDlgItem(hwndDlg, IDC_PROTOCOLS);
-			int i;
-			
-			lvi.mask = (UINT) LVIF_PARAM;
-			
-			for (i = 0; i < ListView_GetItemCount(hwndProtocols); i++)
-			{
-				lvi.iItem = i;
-				ListView_GetItem(hwndProtocols, &lvi);
-				free((ProtocolData *) lvi.lParam);
-			}
-			
-			ret = TRUE;
-			break;
-		}
-		case WM_NOTIFY:
-		{
-			switch (((LPNMHDR)lParam)->idFrom)
-			{
-				case IDC_PROTOCOLS:
-				{
-					switch (((LPNMHDR)lParam)->code)
-					{
-						case LVN_ITEMCHANGED:
-						{
-							NMLISTVIEW *nmlv = (NMLISTVIEW *)lParam;
-							
-							if(IsWindowVisible(GetDlgItem(hwndDlg, IDC_PROTOCOLS)) && ((nmlv->uNewState ^ nmlv->uOldState) & LVIS_STATEIMAGEMASK))
-								SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
-
-							ret = TRUE;
-
-							break;
-						}
-					}
-					break;
-				}
-				case 0:
-				{
-					switch (((LPNMHDR)lParam)->code)
-					{
-						case PSN_APPLY:
-						{
-							LVITEM lvi = {0};
-							ProtocolData *pd;
-							HWND hwndProtocols = GetDlgItem(hwndDlg, IDC_PROTOCOLS);
-							int i;
-							
-							lvi.mask = (UINT) LVIF_PARAM;
-							
-							for (i = 0; i < ListView_GetItemCount(hwndProtocols); i++)
-							{
-								lvi.iItem = i;
-								ListView_GetItem(hwndProtocols, &lvi);
-								
-								pd = (ProtocolData *)lvi.lParam;
-								DBWriteContactSettingByte(NULL, MODULE_NAME, pd->setting, (BYTE)(BOOL)ListView_GetCheckState(hwndProtocols, i));
-							}
-
-							ret = TRUE;
-							break;
-						}
-					}
-					break;
-				}
-			}
-			break;
-		}
-	}
-
-	return ret;
+	return SaveOptsDlgProc(protocolControls, MAX_REGS(protocolControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
 

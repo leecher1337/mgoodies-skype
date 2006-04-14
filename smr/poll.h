@@ -38,11 +38,21 @@ void PollSetTimer(void);
 
 BOOL PollCheckProtocol(const char *protocol);
 BOOL PollCheckContact(HANDLE hContact);
-BOOL ProtocolStatusCheckMsg(HANDLE hContact, const char *protocol);
+
+typedef enum {
+	Retrieve,
+	DoNothing,
+	ClearMessage,
+	UseXStatus,
+	ClearXStatus
+} Check;
+Check ProtocolStatusCheckMsg(HANDLE hContact, const char *protocol);
+void ProcessCheckNotToServer(Check what, HANDLE hContact, const char *protocol);
 
 void PollReceivedContactMessage(HANDLE hContact, BOOL from_network);
 
 void PollStatusChangeAddContact(HANDLE hContact);
+void PollXStatusChangeAddContact(HANDLE hContact);
 void PollAddAllContactsTimer(int timer);
 void PollAddAllContactsProtoOnline(int timer, const char *protocol);
 
