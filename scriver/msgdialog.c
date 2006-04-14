@@ -54,8 +54,11 @@ extern HINSTANCE g_hInst;
 static void UpdateReadChars(HWND hwndDlg, struct MessageWindowData * dat);
 
 static WNDPROC OldMessageEditProc, OldSplitterProc;
-static const UINT buttonLineControls[] = { IDC_USERMENU, IDC_DETAILS, IDC_SMILEYS, IDC_ADD, IDC_HISTORY, IDCANCEL, IDOK, IDC_QUOTE};
-static const UINT sendControls[] = { IDC_MESSAGE };
+static TCHAR *buttonNames[] = {_T("User Menu"), _T("User Details"), _T("Smiley"), _T("Add Contact"), _T("History"), _T("Quote"), _T("Close"), _T("Send")};
+static const UINT buttonLineControls[] = { IDC_USERMENU, IDC_DETAILS, IDC_SMILEYS, IDC_ADD, IDC_HISTORY, IDC_QUOTE, IDCANCEL, IDOK};
+static char buttonAlignment[] = { 0, 0, 0, 1, 1, 1, 1, 1};
+static UINT buttonSpacing[] = { 0, 0, 12, 0, 0, 0, 0, 0};
+static UINT buttonWidth[] = { 24, 24, 24, 24, 24, 24, 24, 38};
 
 static DWORD CALLBACK StreamOutCallback(DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG * pcb)
 {
@@ -269,11 +272,24 @@ static void AddToFileList(char ***pppFiles,int *totalCount,const char *szFilenam
 	}
 }
 
+static int GetToolbarWidth() 
+{
+	int i, w = 0;
+	for (i = 0; i < sizeof(buttonLineControls) / sizeof(buttonLineControls[0]); i++) {
+//		if (g_dat->buttonVisibility & (1 << i)) {
+			if (buttonLineControls[i] != IDC_SMILEYS || g_dat->smileyServiceExists) {
+				w += buttonWidth[i] + buttonSpacing[i];
+			}
+//		}
+	}
+	return w;
+}
+
 static void ShowMultipleControls(HWND hwndDlg, const UINT * controls, int cControls, int state)
 {
 	int i;
 	for (i = 0; i < cControls; i++)
-		ShowWindow(GetDlgItem(hwndDlg, controls[i]), state);
+		ShowWindow(GetDlgItem(hwndDlg, controls[i]), (g_dat->buttonVisibility & (1 << i)) ? state : SW_HIDE);
 }
 
 static void SetDialogToType(HWND hwndDlg)
@@ -292,10 +308,10 @@ static void SetDialogToType(HWND hwndDlg)
 		if (!g_dat->smileyServiceExists) {
 			ShowWindow(GetDlgItem(hwndDlg, IDC_SMILEYS), SW_HIDE);
 		}
-	}
-	else {
+	} else {
 		ShowMultipleControls(hwndDlg, buttonLineControls, sizeof(buttonLineControls) / sizeof(buttonLineControls[0]), SW_HIDE);
 	}
+	ShowWindow(GetDlgItem(hwndDlg, IDC_MESSAGE), SW_SHOW);
 // IEVIew MOD Begin
 	if (dat->hwndLog != NULL) {
 		ShowWindow (GetDlgItem(hwndDlg, IDC_LOG), SW_HIDE);
@@ -303,7 +319,6 @@ static void SetDialogToType(HWND hwndDlg)
 		ShowWindow (GetDlgItem(hwndDlg, IDC_LOG), SW_SHOW);
 	}
 // IEVIew MOD End
-	ShowMultipleControls(hwndDlg, sendControls, sizeof(sendControls) / sizeof(sendControls[0]), SW_SHOW);
 	UpdateReadChars(hwndDlg, dat);
 	ShowWindow(GetDlgItem(hwndDlg, IDC_SPLITTER), SW_SHOW);
 	EnableWindow(GetDlgItem(hwndDlg, IDOK), GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE))?TRUE:FALSE);
@@ -675,7 +690,7 @@ static LRESULT CALLBACK SplitterSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
 static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int w, int h) {
 	HDWP hdwp;
 	struct ParentWindowData *pdat = dat->parent;
-	int rPos, vPos;
+	int i, lPos, rPos, vPos;
 	int vSplitterPos = 0, hSplitterPos = dat->splitterPos, toolbarHeight = pdat->flags&SMF_SHOWBTNS ? dat->toolbarSize.cy : 0;
 	int hSplitterMinTop = toolbarHeight + dat->minLogBoxHeight, hSplitterMinBottom = dat->minEditBoxHeight;
 
@@ -696,19 +711,35 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_LOG), 0, 0, 0, w-vSplitterPos, h-hSplitterPos-toolbarHeight-1, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_MESSAGE), 0, 0, h-hSplitterPos+2, w-(dat->avatarWidth ? dat->avatarWidth+1 : 0), hSplitterPos-2, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_SPLITTER), 0, 0, h - hSplitterPos-1, w-dat->avatarWidth, 3, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_USERMENU), 0, 0, vPos, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_DETAILS), 0, 24, vPos, 24, 24, SWP_NOZORDER);
-	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_SMILEYS), 0, 60, vPos, 24, 24, SWP_NOZORDER);
+	lPos = 0;
 	if (h - dat->avatarHeight > vPos + 24) {
 		rPos = w;
 	} else {
 		rPos = w - dat->avatarWidth;
 	}
+	for (i = 0; i < sizeof(buttonLineControls) / sizeof(buttonLineControls[0]); i++) {
+		if (!buttonAlignment[i] && (g_dat->buttonVisibility & (1 << i))) {
+			lPos += buttonSpacing[i];
+			hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, buttonLineControls[i]), 0, lPos, vPos, buttonWidth[i], 24, SWP_NOZORDER);
+			lPos += buttonWidth[i];
+		}
+	}
+	for (i = sizeof(buttonLineControls) / sizeof(buttonLineControls[0]) - 1; i >=0; i--) {
+		if (buttonAlignment[i] && (g_dat->buttonVisibility & (1 << i))) {
+			rPos -= buttonSpacing[i] + buttonWidth[i];
+			hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, buttonLineControls[i]), 0, rPos, vPos, buttonWidth[i], 24, SWP_NOZORDER);
+		}
+	}
+	/*
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_USERMENU), 0, 0, vPos, 24, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_DETAILS), 0, 24, vPos, 24, 24, SWP_NOZORDER);
+	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_SMILEYS), 0, 60, vPos, 24, 24, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_ADD), 0, rPos-4*24-38, vPos, 24, 24, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_HISTORY), 0, rPos-3*24-38, vPos, 24, 24, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_QUOTE), 0, rPos-2*24-38, vPos, 24, 24, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDCANCEL), 0, rPos-24-38, vPos, 24, 24, SWP_NOZORDER);
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDOK), 0, rPos-38, vPos, 38, 24, SWP_NOZORDER);
+*/
 	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - dat->avatarHeight, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
 //	hdwp = DeferWindowPos(hdwp, GetDlgItem(hwndDlg, IDC_AVATAR), 0, w-dat->avatarWidth, h - (hSplitterPos + toolbarHeight + dat->avatarHeight)/2, dat->avatarWidth, dat->avatarHeight, SWP_NOZORDER);
 	EndDeferWindowPos(hdwp);
@@ -809,8 +840,68 @@ static void NotifyTyping(struct MessageWindowData *dat, int mode)
 	CallService(MS_PROTO_SELFISTYPING, (WPARAM) dat->hContact, dat->nTypeMode);
 }
 
+
+static int MeasureMenuItem(WPARAM wParam, LPARAM lParam)
+{
+	LPMEASUREITEMSTRUCT mis = (LPMEASUREITEMSTRUCT) lParam;
+	if (mis->itemData != 0xDEAD) {
+		return FALSE;
+	}
+	mis->itemWidth = max(0, GetSystemMetrics(SM_CXSMICON) - GetSystemMetrics(SM_CXMENUCHECK) + 4);
+	mis->itemHeight = GetSystemMetrics(SM_CYSMICON) + 2;
+	return TRUE;
+}
+
+
+static int DrawMenuItem(WPARAM wParam, LPARAM lParam)
+{
+	int y;
+	LPDRAWITEMSTRUCT dis = (LPDRAWITEMSTRUCT) lParam;
+	if (dis->itemData != 0xDEAD) {
+		return FALSE;
+	}
+	y = (dis->rcItem.bottom - dis->rcItem.top - GetSystemMetrics(SM_CYSMICON)) / 2 + 1;
+	if (dis->itemState & ODS_SELECTED) {
+		if (dis->itemState & ODS_CHECKED) {
+			RECT rc;
+			rc.left = 2;
+			rc.right = GetSystemMetrics(SM_CXSMICON) + 2;
+			rc.top = y;
+			rc.bottom = rc.top + GetSystemMetrics(SM_CYSMICON) + 2;
+			FillRect(dis->hDC, &rc, GetSysColorBrush(COLOR_HIGHLIGHT));
+			ImageList_DrawEx(g_dat->hButtonIconList, dis->itemID - 1, dis->hDC, 2, y, 0, 0, CLR_NONE, CLR_DEFAULT, ILD_SELECTED);
+		} else
+			ImageList_DrawEx(g_dat->hButtonIconList, dis->itemID - 1, dis->hDC, 2, y, 0, 0, CLR_NONE, CLR_DEFAULT, ILD_FOCUS);
+	} else {
+		if (dis->itemState & ODS_CHECKED) {
+			HBRUSH hBrush;
+			RECT rc;
+			COLORREF menuCol, hiliteCol;
+			rc.left = 0;
+			rc.right = GetSystemMetrics(SM_CXSMICON) + 4;
+			rc.top = y - 2;
+			rc.bottom = rc.top + GetSystemMetrics(SM_CYSMICON) + 4;
+			DrawEdge(dis->hDC, &rc, BDR_SUNKENOUTER, BF_RECT);
+			InflateRect(&rc, -1, -1);
+			menuCol = GetSysColor(COLOR_MENU);
+			hiliteCol = GetSysColor(COLOR_3DHIGHLIGHT);
+			hBrush =
+				CreateSolidBrush(RGB
+				((GetRValue(menuCol) + GetRValue(hiliteCol)) / 2, (GetGValue(menuCol) + GetGValue(hiliteCol)) / 2,
+				(GetBValue(menuCol) + GetBValue(hiliteCol)) / 2));
+			FillRect(dis->hDC, &rc, hBrush);
+			DeleteObject(hBrush);
+			ImageList_DrawEx(g_dat->hButtonIconList, dis->itemID - 1, dis->hDC, 2, y, 0, 0, CLR_NONE, GetSysColor(COLOR_MENU), ILD_BLEND25);
+		} else 
+			ImageList_DrawEx(g_dat->hButtonIconList, dis->itemID - 1, dis->hDC, 2, y, 0, 0, CLR_NONE, CLR_NONE, ILD_NORMAL);
+	}
+	return TRUE;
+}
+
+
 BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	static HMENU hToolbarMenu;
 	struct MessageWindowData *dat;
 	dat = (struct MessageWindowData *) GetWindowLong(hwndDlg, GWL_USERDATA);
 	if (!dat && msg!=WM_INITDIALOG) return FALSE;
@@ -912,7 +1003,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					dat->splitterPos = dat->originalSplitterPos;// + 60;
 				GetWindowRect(GetDlgItem(hwndDlg, IDC_ADD), &rc);
 				dat->toolbarSize.cy = 24 + 2;//rc.bottom - rc.top + 3;
-				dat->toolbarSize.cx = g_dat->smileyServiceExists ? 240 : 214;
+				dat->toolbarSize.cx = GetToolbarWidth();//g_dat->smileyServiceExists ? 240 : 214;
 			}
 			WindowList_Add(g_dat->hMessageWindowList, hwndDlg, dat->hContact);
 			GetWindowRect(GetDlgItem(hwndDlg, IDC_MESSAGE), &dat->minEditInit);
@@ -1110,19 +1201,38 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			GetCursorPos(&pt);
 			TrackPopupMenu(hMenu, 0, pt.x, pt.y, 0, hwndDlg, NULL);
 			DestroyMenu(hMenu);
-		} else {
-			break;
-		}
+		} 
 		break;
 	case WM_RBUTTONUP:
 		{
+			int i;
 			POINT pt;
-			HMENU hMenu = (HMENU) CallService(MS_CLIST_MENUBUILDCONTACT, (WPARAM) dat->hContact, 0);
-			GetCursorPos(&pt);
-			TrackPopupMenu(hMenu, 0, pt.x, pt.y, 0, hwndDlg, NULL);
-			DestroyMenu(hMenu);
+			MENUITEMINFO mii;
+			hToolbarMenu = CreatePopupMenu();
+			for (i = 0; i < 8; i++) {
+				ZeroMemory(&mii, sizeof(mii));
+				mii.cbSize = sizeof(mii);
+				mii.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE | MIIM_DATA | MIIM_BITMAP;
+				mii.fType = MFT_STRING;
+				mii.fState = (g_dat->buttonVisibility & (1<< i)) ? MFS_CHECKED : MFS_UNCHECKED;
+				mii.wID = i + 1;
+				mii.dwItemData = 0xDEAD;
+				mii.hbmpItem = HBMMENU_CALLBACK;
+				mii.dwTypeData = buttonNames[i];
+				InsertMenuItem(hToolbarMenu, i, TRUE, &mii);
+			}
+			CallService(MS_LANGPACK_TRANSLATEMENU, (WPARAM) hToolbarMenu, 0);
+			pt.x = (short) LOWORD(GetMessagePos());
+			pt.y = (short) HIWORD(GetMessagePos());
+			i = TrackPopupMenu(hToolbarMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hwndDlg, NULL);
+			if (i > 0) {
+				g_dat->buttonVisibility ^= (1 << (i - 1));
+				DBWriteContactSettingDword(NULL, SRMMMOD, SRMSGSET_BUTTONVISIBILITY, g_dat->buttonVisibility);
+				WindowList_Broadcast(g_dat->hMessageWindowList, DM_OPTIONSAPPLIED, 0, 0);
+			}
+			DestroyMenu(hToolbarMenu);
+			return TRUE;
 		}
-		return TRUE;
 	case WM_DROPFILES:
 	{
 		if (dat->szProto==NULL) break;
@@ -1683,8 +1793,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			CallService(MS_IEVIEW_WINDOW, 0, (LPARAM)&ieWindow);
 		}
 	case HM_DBEVENTADDED:
-		if ((HANDLE) wParam != dat->hContact)
-			break;
+		if ((HANDLE) wParam == dat->hContact)
 		{
 			DBEVENTINFO dbei = { 0 };
 
@@ -1719,8 +1828,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					}
 				}
 			}
-			break;
 		}
+		break;
 	case DM_UPDATESTATUSBAR:
 		if (dat->parent->hwndActive == hwndDlg) {
 			if (dat->messagesInProgress && (g_dat->flags & SMF_SHOWPROGRESS)) {
@@ -1893,11 +2002,17 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 		break;
 	case WM_MEASUREITEM:
-		return CallService(MS_CLIST_MENUMEASUREITEM, wParam, lParam);
+		if (!MeasureMenuItem(wParam, lParam)) {
+			return CallService(MS_CLIST_MENUMEASUREITEM, wParam, lParam);
+		}
+		return TRUE;
+
 	case WM_DRAWITEM:
 			{
 				LPDRAWITEMSTRUCT dis = (LPDRAWITEMSTRUCT) lParam;
-				if (dis->hwndItem == GetDlgItem(hwndDlg, IDC_AVATAR) && dat->avatarPic && (g_dat->flags&SMF_AVATAR)) {
+				if (dis->hwndItem == (HWND)hToolbarMenu) {
+					return DrawMenuItem(wParam, lParam);
+				} else if (dis->hwndItem == GetDlgItem(hwndDlg, IDC_AVATAR) && dat->avatarPic && (g_dat->flags&SMF_AVATAR)) {
 					HDC hdcMem = CreateCompatibleDC(dis->hDC);
 					HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0,0,0));
 					HBITMAP hbmMem = CreateCompatibleBitmap(dis->hDC, dat->avatarWidth, dat->avatarHeight);
@@ -1934,7 +2049,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
                     DeleteObject(hPen);
 					DeleteObject(hbmMem);
                     DeleteDC(hdcMem);
-					break;
+					return TRUE;
 				}
 				return CallService(MS_CLIST_MENUDRAWITEM, wParam, lParam);
 			}

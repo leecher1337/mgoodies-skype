@@ -102,6 +102,7 @@ struct GlobalMessageData
 	TCmdList *draftList;
 	int		avatarServiceExists;
 	int		smileyServiceExists;
+	int		buttonVisibility;
 };
 
 int IconsChanged(WPARAM wParam, LPARAM lParam);
