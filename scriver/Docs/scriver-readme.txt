@@ -66,6 +66,10 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.3.2.1
++ new icons by FaithHealer
++ customizable toolbar (right click)
+* bugfixes: bug #006833
 2.3.2.0
 + new SmileyAdd API (per-contact smileys)
 + smiley button auto-hiding
