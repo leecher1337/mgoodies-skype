@@ -1896,8 +1896,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						dat->sendInfo[i].timeout+=1000;
 						if (dat->sendInfo[i].timeout >= timeout) {
 							struct ErrorWindowData *ewd = (struct ErrorWindowData *) malloc(sizeof(struct ErrorWindowData));
-							ewd->szName = strdup ((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0));
-							ewd->szDescription = strdup(Translate("The message send timed out."));
+							ewd->szName = _strdup ((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0));
+							ewd->szDescription = _strdup(Translate("The message send timed out."));
 							ewd->textSize = dat->sendInfo[i].sendBufferSize;
 							ewd->szText = (char *)malloc(dat->sendInfo[i].sendBufferSize);
 							memcpy(ewd->szText, dat->sendInfo[i].sendBuffer, dat->sendInfo[i].sendBufferSize);
@@ -2481,8 +2481,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				}
 				if (i < dat->sendCount) {
 					struct ErrorWindowData *ewd = (struct ErrorWindowData *) malloc(sizeof(struct ErrorWindowData));
-					ewd->szName = strdup ((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0));
-					ewd->szDescription = strdup((char *) ack->lParam);
+					ewd->szName = _strdup ((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0));
+					ewd->szDescription = _strdup((char *) ack->lParam);
 					ewd->textSize = dat->sendInfo[i].sendBufferSize;
 					ewd->szText = (char *)malloc(dat->sendInfo[i].sendBufferSize);
 					memcpy(ewd->szText, dat->sendInfo[i].sendBuffer, dat->sendInfo[i].sendBufferSize);
