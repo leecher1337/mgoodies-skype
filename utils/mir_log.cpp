@@ -32,7 +32,7 @@ extern "C"
 
 
 
-int log(const char *module, const char *function, const char *fmt, ...)
+int mlog(const char *module, const char *function, const char *fmt, ...)
 {
 #ifdef ENABLE_LOG
 
@@ -78,7 +78,7 @@ int log(const char *module, const char *function, const char *fmt, ...)
 #endif
 }
 
-int logC(const char *module, const char *function, HANDLE hContact, const char *fmt, ...)
+int mlogC(const char *module, const char *function, HANDLE hContact, const char *fmt, ...)
 {
 #ifdef ENABLE_LOG
 
