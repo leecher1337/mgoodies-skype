@@ -88,7 +88,7 @@ public:
 	wchar_t *			urlEncode(const wchar_t *str);
 	static TextToken* 	tokenizeLinks(const wchar_t *wtext);
 	static TextToken* 	tokenizeSmileys(const char *proto, const wchar_t *wtext);
-	static TextToken* 	tokenizeSmileysSA(const char *proto, const wchar_t *wtext);
+	static TextToken* 	tokenizeSmileysSA(HANDLE hContact, const char *proto, const wchar_t *wtext);
 	static TextToken* 	tokenizeBBCodes(const wchar_t *text);
 	static TextToken* 	tokenizeMath(const wchar_t *text);
 };
@@ -113,11 +113,11 @@ protected:
         ENF_ALL = 255
     };
 //	virtual char *encode(const char *text, const char *proto, bool replaceSmiley);
-	virtual wchar_t *encode(const wchar_t *text, const char *proto, int flags);
-	virtual char *encodeUTF8(const wchar_t *text, const char *proto, int flags);
-	virtual char *encodeUTF8(const char *text, const char *proto, int flags);
-	virtual char *encodeUTF8(const char *text, int cp, const char *proto, int flags);
-	virtual bool encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags);
+	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const wchar_t *text, int flags);
+	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const char *text, int flags);
+	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const char *text, int cp, int flags);
+	virtual wchar_t *encode(HANDLE hContact, const char *proto, const wchar_t *text, int flags);
+	virtual bool encode(HANDLE hContact, const char *proto, const wchar_t *text, wchar_t **output, int *outputSize,  int level, int flags);
 	virtual char* getProto(HANDLE hContact);
 	virtual char* getProto(const char *proto, HANDLE hContact);
 	virtual char* getRealProto(HANDLE hContact);

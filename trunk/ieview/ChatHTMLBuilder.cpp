@@ -217,11 +217,11 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		char *szName = NULL, *szText = NULL;
 		if (eventData->iType == IEED_GC_EVENT_MESSAGE) {
 			if (eventData->dwFlags & IEEDF_UNICODE) {
-				szText = encodeUTF8((wchar_t *)eventData->pszText, event->pszProto, ENF_ALL);
+				szText = encodeUTF8(NULL, event->pszProto, (wchar_t *)eventData->pszText, ENF_ALL);
 			} else {
-				szText = encodeUTF8((char *)eventData->pszText, event->pszProto, ENF_ALL);
+				szText = encodeUTF8(NULL, event->pszProto, (char *)eventData->pszText, ENF_ALL);
 			}
-			szName = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NAMESMILEYS);
+			szName = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NAMESMILEYS);
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
 			if (dwFlags & FLAG_SHOW_TIMESTAMP || dwFlags & FLAG_SHOW_DATE) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
@@ -263,47 +263,47 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			if (eventData->iType == IEED_GC_EVENT_JOIN) {
                 className = "userJoined";
 				eventText = "%s has joined";
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else if (eventData->iType == IEED_GC_EVENT_PART) {
                 className = "userLeft";
 				eventText = "%s has left";
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else if (eventData->iType == IEED_GC_EVENT_QUIT) {
                 className = "userLeft";
 				eventText = "%s has disconnected";
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else if (eventData->iType == IEED_GC_EVENT_NICK) {
                 className = "userLeft";
 				eventText = "%s is now known as %s";
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else if (eventData->iType == IEED_GC_EVENT_ACTION) {
                 className = "userLeft";
 				eventText = "%s has left.";
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else if (eventData->iType == IEED_GC_EVENT_KICK) {
                 className = "userLeft";
 				eventText = "%s kicked %s";
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else if (eventData->iType == IEED_GC_EVENT_NOTICE) {
                 className = "userLeft";
 				eventText = "Notice from %s: %s";
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else if (eventData->iType == IEED_GC_EVENT_INFORMATION) {
                 className = "userLeft";
 				eventText = "";
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else if (eventData->iType == IEED_GC_EVENT_ADDSTATUS) {
                 className = "userLeft";
 				eventText = "%s has left.";
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else if (eventData->iType == IEED_GC_EVENT_REMOVESTATUS) {
                 className = "userLeft";
 				eventText = "%s has left.";
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else {
                 className = "topicChange";
 				eventText = "The topic is \'%s%s\'";
-				szText = encodeUTF8(eventData->pszText, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszText, ENF_NONE);
 			}
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">", className);
 			Utils::appendText(&output, &outputSize, Translate(eventText), szText);
@@ -311,7 +311,7 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
             Utils::appendText(&output, &outputSize, "</div>\n");
 		} else if (eventData->iType == IEED_GC_EVENT_NOTICE) {
             const char *className = "error";
-			szText = encodeUTF8(eventData->pszText, event->pszProto, ENF_NONE);
+			szText = encodeUTF8(NULL, event->pszProto, eventData->pszText, ENF_NONE);
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\"> %s: %s</span>", className, Translate("Error"), szText);
             Utils::appendText(&output, &outputSize, "</div>\n");

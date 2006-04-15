@@ -431,9 +431,9 @@ TextToken* TextToken::tokenizeLinks(const wchar_t *text) {
     return firstToken;
 }
 
-TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) {
+TextToken* TextToken::tokenizeSmileysSA(HANDLE hContact, const char *proto, const wchar_t *text) {
     TextToken *firstToken = NULL, *lastToken = NULL;
-    SMADD_BATCHPARSE sp;
+    SMADD_BATCHPARSE2 sp;
     SMADD_BATCHPARSERES *spRes;
     int l = wcslen(text);
 	if (!Options::isSmileyAdd()) {
@@ -443,6 +443,7 @@ TextToken* TextToken::tokenizeSmileysSA(const char *proto, const wchar_t *text) 
 	sp.Protocolname = proto;
 	sp.flag = SAFL_PATH | SAFL_UNICODE;
 	sp.wstr = (wchar_t *)text;
+	sp.hContact = hContact;
 	spRes = (SMADD_BATCHPARSERES *) CallService(MS_SMILEYADD_BATCHPARSE, 0, (LPARAM)&sp);
     int last_pos = 0;
 	if (spRes != NULL) {
@@ -696,7 +697,7 @@ bool HTMLBuilder::isUnicodeMIM() {
 	return (mimFlags & MIM_UNICODE) != 0;
 }
 
-bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **output, int *outputSize,  int level, int flags) {
+bool HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text, wchar_t **output, int *outputSize,  int level, int flags) {
 	TextToken *token = NULL, *token2;
 	switch (level) {
 	case 0:
@@ -717,7 +718,7 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 	case 3:
 		if ((flags & ENF_SMILEYS) ||
       			((Options::getGeneralFlags() & Options::GENERAL_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) {
-			token = TextToken::tokenizeSmileysSA(proto, text);
+			token = TextToken::tokenizeSmileysSA(hContact, proto, text);
 		}
 		break;
 	}
@@ -726,7 +727,7 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 			bool skip = false;
 			token2 = token->getNext();
 			if (token->getType() == TextToken::TEXT) {
-				skip = encode(token->getTextW(), proto, output, outputSize, level+1, flags);
+				skip = encode(hContact, proto, token->getTextW(), output, outputSize, level+1, flags);
 			}
 			if (!skip) {
 				token->toString(output, outputSize);
@@ -738,37 +739,37 @@ bool HTMLBuilder::encode(const wchar_t *text, const char *proto, wchar_t **outpu
 	return false;
 }
 
-wchar_t * HTMLBuilder::encode(const wchar_t *text, const char *proto, int flags ) {
+wchar_t * HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text, int flags ) {
 	wchar_t *output;
  	int outputSize;
 	output = NULL;
 	if (text == NULL) return NULL;
-	encode(text, proto, &output, &outputSize, 0, flags);
+	encode(hContact, proto, text, &output, &outputSize, 0, flags);
 	return output;
 }
 
 
-char * HTMLBuilder::encodeUTF8(const wchar_t *wtext, const char *proto, int flags) {
+char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const wchar_t *wtext, int flags) {
 	wchar_t *output;
 	char * outputStr;
-	output = encode(wtext, proto, flags);
+	output = encode(hContact, proto, wtext, flags);
 	outputStr = Utils::UTF8Encode(output);
 	free(output);
 	return outputStr;
 }
 
-char * HTMLBuilder::encodeUTF8(const char *text, const char *proto, int flags) {
+char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const char *text, int flags) {
 	char * outputStr;
 	wchar_t *wtext = Utils::convertToWCS(text);
-	outputStr = encodeUTF8(wtext, proto, flags);
+	outputStr = encodeUTF8(hContact, proto, wtext, flags);
 	delete wtext;
 	return outputStr;
 }
 
-char * HTMLBuilder::encodeUTF8(const char *text, int cp, const char *proto, int flags) {
+char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const char *text, int cp, int flags) {
 	char * outputStr;
 	wchar_t *wtext = Utils::convertToWCS(text, cp);
-	outputStr = encodeUTF8(wtext, proto, flags);
+	outputStr = encodeUTF8(hContact, proto, wtext, flags);
 	delete wtext;
 	return outputStr;
 }
@@ -935,11 +936,11 @@ char *HTMLBuilder::getEncodedContactName(HANDLE hContact, const char* szProto, c
 	char *szName = NULL;
 	wchar_t *name = getContactName(hContact, szProto);
 	if (name != NULL) {
-		szName = encodeUTF8(name, szSmileyProto, ENF_NAMESMILEYS);
+		szName = encodeUTF8(hContact, szSmileyProto, name, ENF_NAMESMILEYS);
 		delete name;
 		return szName;
 	}
-    return encodeUTF8(TranslateT("(Unknown Contact)"), szSmileyProto, ENF_NAMESMILEYS);
+    return encodeUTF8(hContact, szSmileyProto, TranslateT("(Unknown Contact)"), ENF_NAMESMILEYS);
 }
 
 void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
