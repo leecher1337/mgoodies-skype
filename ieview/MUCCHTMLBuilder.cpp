@@ -220,14 +220,14 @@ void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		char *szName = NULL, *szText = NULL;
 		if (eventData->iType == IEED_MUCC_EVENT_MESSAGE) {
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
-				szText = encodeUTF8(eventData->pszTextW, event->pszProto, ENF_ALL);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszTextW, ENF_ALL);
 			} else {
-				szText = encodeUTF8(eventData->pszText, event->pszProto, ENF_ALL);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszText, ENF_ALL);
 			}
 			if (eventData->dwFlags & IEEDF_UNICODE_NICK) {
-				szName = encodeUTF8(eventData->pszNickW, event->pszProto, ENF_NAMESMILEYS);
+				szName = encodeUTF8(NULL, event->pszProto, eventData->pszNickW, ENF_NAMESMILEYS);
 			} else {
-				szName = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NAMESMILEYS);
+				szName = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NAMESMILEYS);
 			}
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
 			if (dwFlags & FLAG_SHOW_TIMESTAMP || dwFlags & FLAG_SHOW_DATE) {
@@ -266,17 +266,17 @@ void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
                 className = "userJoined";
                 divName = "divUserJoined";
 				eventText = Translate("%s has joined.");
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else if (eventData->iType == IEED_MUCC_EVENT_LEFT) {
                 className = "userLeft";
                 divName = "divUserJoined";
 				eventText = Translate("%s has left.");
-				szText = encodeUTF8(eventData->pszNick, event->pszProto, ENF_NONE);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else {
                 className = "topicChange";
                 divName = "divTopicChange";
 				eventText = Translate("The topic is %s.");
-				szText = encodeUTF8(eventData->pszText, event->pszProto, ENF_ALL);
+				szText = encodeUTF8(NULL, event->pszProto, eventData->pszText, ENF_ALL);
 			}
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", divName);
 			if (dwFlags & FLAG_SHOW_TIMESTAMP || dwFlags & FLAG_SHOW_DATE) {
@@ -289,7 +289,7 @@ void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
             Utils::appendText(&output, &outputSize, "</div>\n");
 		} else if (eventData->iType == IEED_MUCC_EVENT_ERROR) {
             const char *className = "error";
-			szText = encodeUTF8(eventData->pszText, event->pszProto, ENF_NONE);
+			szText = encodeUTF8(NULL, event->pszProto, eventData->pszText, ENF_NONE);
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divError");
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\"> %s: %s</span>", className, Translate("Error"), szText);
             Utils::appendText(&output, &outputSize, "</div>\n");

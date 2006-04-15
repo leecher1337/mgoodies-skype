@@ -172,7 +172,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
     ci.szProto = szProto;
     ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-        szNickIn = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
+        szNickIn = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS);
 	}
 	ZeroMemory(&ci, sizeof(ci));
     ci.cbSize = sizeof(ci);
@@ -180,7 +180,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
     ci.szProto = szProto;
     ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-        szNickOut = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
+        szNickOut = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS);
 	}
 
 	Template *tmplt = TemplateMap::getTemplate((event->dwFlags & IEEF_RTL) ? getTemplateFilenameRtl(protoSettings) : getTemplateFilename(protoSettings), "HTMLStart");
@@ -376,7 +376,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
     ci.szProto = szProto;
     ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-        szNickIn = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
+        szNickIn = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS);
 	}
 	ZeroMemory(&ci, sizeof(ci));
     ci.cbSize = sizeof(ci);
@@ -384,7 +384,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
     ci.szProto = szProto;
     ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-        szNickOut = encodeUTF8(ci.pszVal, szRealProto, ENF_NAMESMILEYS);
+        szNickOut = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS);
 	}
 //	char *szRealProto = getRealProto(event->hContact);
 	IEVIEWEVENTDATA* eventData = event->eventData;
@@ -426,14 +426,14 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
                 szName = encodeUTF8(eventData->pszNick, szRealProto, ENF_NAMESMILEYS);
 			}*/
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
-				szText = encodeUTF8(eventData->pszTextW, szRealProto, ENF_ALL);
+				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, ENF_ALL);
    			} else {
-                szText = encodeUTF8(eventData->pszText, event->codepage, szRealProto, ENF_ALL);
+                szText = encodeUTF8(event->hContact, szRealProto, eventData->pszText, event->codepage, ENF_ALL);
 			}
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT2) {
-				szFileDesc = encodeUTF8(eventData->pszText2W, szRealProto, ENF_ALL);
+				szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2W, ENF_ALL);
    			} else {
-                szFileDesc = encodeUTF8(eventData->pszText2, event->codepage, szRealProto, ENF_ALL);
+                szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2, event->codepage, ENF_ALL);
 			}
 			if (eventData->iType == IEED_EVENT_MESSAGE) {
                 if (isGrouping && (getFlags(protoSettings) & Options::LOG_GROUP_MESSAGES)) {
