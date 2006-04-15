@@ -106,6 +106,8 @@ properly and I think authors of other plugins should consider changing their pro
 
 6. Change Log
 -------------
+1.0.9.2
+* bugfixes
 1.0.9.1
 + [url] bbcode
 * bugfixes
