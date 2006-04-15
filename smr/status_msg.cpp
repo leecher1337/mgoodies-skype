@@ -77,7 +77,7 @@ int ProtoAck(WPARAM wParam, LPARAM lParam)
 
 		if (ack->result == ACKRESULT_SUCCESS && PollCheckProtocol(proto))
 		{
-logC(MODULE_NAME, "ProtoAck", ack->hContact, "Status msg changed");
+mlogC(MODULE_NAME, "ProtoAck", ack->hContact, "Status msg changed");
 			PollReceivedContactMessage(ack->hContact, TRUE);
 			SetStatusMessage(ack->hContact, (const TCHAR *) ack->lParam);
 		}

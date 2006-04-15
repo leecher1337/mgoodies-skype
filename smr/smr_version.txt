@@ -1,6 +1,9 @@
-Status Message Retriever 0.0.1.5
+Status Message Retriever 0.0.1.6
 
 Changelog:
+
+. 0.0.1.6
+  * Bugfix to freezing
 
 . 0.0.1.5
   * Bugfix in poll
