@@ -1209,7 +1209,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			POINT pt;
 			MENUITEMINFO mii;
 			hToolbarMenu = CreatePopupMenu();
-			for (i = 0; i < sizeof(buttonLineControls) / sizeof(buttonLineControls[0]; i++) {
+			for (i = 0; i < sizeof(buttonLineControls) / sizeof(buttonLineControls[0]); i++) {
 				ZeroMemory(&mii, sizeof(mii));
 				mii.cbSize = sizeof(mii);
 				mii.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE | MIIM_DATA | MIIM_BITMAP;
@@ -1218,10 +1218,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				mii.wID = i + 1;
 				mii.dwItemData = 0xDEAD;
 				mii.hbmpItem = HBMMENU_CALLBACK;
-				mii.dwTypeData = buttonNames[i];
+				mii.dwTypeData = TranslateTS((buttonNames[i]));
 				InsertMenuItem(hToolbarMenu, i, TRUE, &mii);
 			}
-			CallService(MS_LANGPACK_TRANSLATEMENU, (WPARAM) hToolbarMenu, 0);
+//			CallService(MS_LANGPACK_TRANSLATEMENU, (WPARAM) hToolbarMenu, 0);
 			pt.x = (short) LOWORD(GetMessagePos());
 			pt.y = (short) HIWORD(GetMessagePos());
 			i = TrackPopupMenu(hToolbarMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hwndDlg, NULL);

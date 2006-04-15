@@ -66,6 +66,8 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.3.2.2
+* bugfix: removed usage of incompatible MS_LANGPACK_TRANSLATEMENU service
 2.3.2.1
 + new icons by FaithHealer
 + customizable toolbar (right click)
