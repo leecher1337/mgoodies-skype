@@ -1209,7 +1209,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			POINT pt;
 			MENUITEMINFO mii;
 			hToolbarMenu = CreatePopupMenu();
-			for (i = 0; i < 8; i++) {
+			for (i = 0; i < sizeof(buttonLineControls) / sizeof(buttonLineControls[0]; i++) {
 				ZeroMemory(&mii, sizeof(mii));
 				mii.cbSize = sizeof(mii);
 				mii.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE | MIIM_DATA | MIIM_BITMAP;
