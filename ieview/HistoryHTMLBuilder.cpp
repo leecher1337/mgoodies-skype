@@ -201,6 +201,7 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		free(output);
 	}
 	setLastEventType(-1);
+    view->documentClose();
 }
 
 void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
@@ -273,6 +274,7 @@ void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 		}
     }
     if (szRealProto!=NULL) delete szRealProto;
+    view->documentClose();
 }
 
 void HistoryHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {

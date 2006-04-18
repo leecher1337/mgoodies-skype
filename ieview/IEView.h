@@ -180,7 +180,7 @@ public:
 	void			write(const wchar_t *text);
 	void			write(const char *text);
 	void            writef(const char *fmt, ...);
-//	void            documentClose();
+	void            documentClose();
 	void            rebuildLog();
 	void            scrollToBottom();
 	void            scrollToBottomSoft();
