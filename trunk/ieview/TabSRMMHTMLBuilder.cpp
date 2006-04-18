@@ -257,6 +257,7 @@ void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		free(output);
 	}
 	setLastEventType(-1);
+    view->documentClose();
 }
 
 time_t TabSRMMHTMLBuilder::getStartedTime() {
@@ -394,6 +395,7 @@ void TabSRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 		}
     }
     if (szRealProto!=NULL) delete szRealProto;
+    view->documentClose();
 //	view->scrollToBottom();
 }
 

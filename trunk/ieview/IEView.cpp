@@ -728,16 +728,19 @@ void IEView::navigate(const char *url) {
 	delete tTemp;
 }
 
-/*
+
 void IEView::documentClose() {
+    
+#ifdef GECKO
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
-		write("</body></html>");
+		//write("</body></html>");
 		document->close();
 		document->Release();
 	}
+#endif
 }
-*/
+
 void IEView::appendEventOld(IEVIEWEVENT *event) {
 	if (clearRequired) {
 		clear(event);

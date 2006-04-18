@@ -258,6 +258,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	view->scrollToBottom();
 	groupTemplate = NULL;
 	iLastEventType = -1;
+    view->documentClose();
 }
 
 void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, ProtocolSettings* protoSettings) {
@@ -574,6 +575,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	if (szNickOut!=NULL) delete szNickOut;
 	if (szStatusMsg!=NULL) delete szStatusMsg;
 	if (szFileDesc!=NULL) delete szFileDesc;
+    view->documentClose();
 }
 
 time_t TemplateHTMLBuilder::getStartedTime() {
