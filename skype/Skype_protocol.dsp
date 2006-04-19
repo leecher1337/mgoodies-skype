@@ -1,24 +1,24 @@
 # Microsoft Developer Studio Project File - Name="Skype_protocol" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
-# ** NICHT BEARBEITEN **
+# ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
 CFG=Skype_protocol - Win32 Debug
-!MESSAGE Dies ist kein gültiges Makefile. Zum Erstellen dieses Projekts mit NMAKE
-!MESSAGE verwenden Sie den Befehl "Makefile exportieren" und führen Sie den Befehl
+!MESSAGE This is not a valid makefile. To build this project using NMAKE,
+!MESSAGE use the Export Makefile command and run
 !MESSAGE 
 !MESSAGE NMAKE /f "Skype_protocol.mak".
 !MESSAGE 
-!MESSAGE Sie können beim Ausführen von NMAKE eine Konfiguration angeben
-!MESSAGE durch Definieren des Makros CFG in der Befehlszeile. Zum Beispiel:
+!MESSAGE You can specify a configuration when running NMAKE
+!MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
 !MESSAGE NMAKE /f "Skype_protocol.mak" CFG="Skype_protocol - Win32 Debug"
 !MESSAGE 
-!MESSAGE Für die Konfiguration stehen zur Auswahl:
+!MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "Skype_protocol - Win32 Release" (basierend auf  "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "Skype_protocol - Win32 Debug" (basierend auf  "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Skype_protocol - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "Skype_protocol - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SKYPE_PROTOCOL_EXPORTS" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc07 /d "NDEBUG"
@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 user32.lib advapi32.lib /nologo /dll /machine:I386 /out:"Release/Skype.dll"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib comctl32.lib Rpcrt4.lib /nologo /dll /machine:I386 /out:"Release/Skype.dll"
 
 !ELSEIF  "$(CFG)" == "Skype_protocol - Win32 Debug"
 
@@ -92,31 +92,27 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=.\contacts.c
+SOURCE=.\contacts.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\debug.c
+SOURCE=.\gchat.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\gchat.c
+SOURCE=.\pthread.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\pthread.c
+SOURCE=.\skype.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\skype.c
+SOURCE=.\skypeapi.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\skypeapi.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\utf8.c
+SOURCE=.\utf8.cpp
 # End Source File
 # End Group
 # Begin Group "Header-Dateien"
@@ -199,5 +195,9 @@ SOURCE=.\resumecall.ico
 SOURCE=.\Skript1.rc
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\changelog.txt
+# End Source File
 # End Target
 # End Project

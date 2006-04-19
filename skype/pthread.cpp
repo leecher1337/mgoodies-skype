@@ -53,14 +53,14 @@ void pthread_r(struct pthread_arg *fa)
     }
 }
 
-unsigned long pthread_create(void (*threadcode) (void *), void *arg)
+unsigned long pthread_create(pThreadFunc parFunc, void *arg)
 {
     unsigned long rc;
     struct pthread_arg fa;
     fa.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    fa.threadcode = threadcode;
+    fa.threadcode = parFunc;
     fa.arg = arg;
-    rc = _beginthread((void *) (void *) pthread_r, 0, &fa);
+    rc = _beginthread((pThreadFunc) pthread_r, 0, &fa);
     if ((unsigned long) -1L != rc) {
         WaitForSingleObject(fa.hEvent, INFINITE);
     }

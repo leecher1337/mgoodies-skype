@@ -1,19 +1,20 @@
 // System includes
 #include <stdio.h>
 #include <windows.h>
+#include <commctrl.h>
 #include <process.h>
 #include <time.h>
 #include "resource.h"
 
 // Miranda Includes
-#include "../headers_c/newpluginapi.h"
-#include "../headers_c/m_protosvc.h"
-#include "../headers_c/m_protomod.h"
-#include "../headers_c/m_skin.h"
-#include "../headers_c/m_message.h"
-#include "../headers_c/m_database.h"
-#include "../headers_c/m_clist.h"
-#include "../headers_c/m_system.h"
+#include "../../include/newpluginapi.h"
+#include "../../include/m_protosvc.h"
+#include "../../include/m_protomod.h"
+#include "../../include/m_skin.h"
+#include "../../include/m_message.h"
+#include "../../include/m_database.h"
+#include "../../include/m_clist.h"
+#include "../../include/m_system.h"
 
 // Program defines
 #define SKYPE_NAME		"Username"
@@ -35,24 +36,28 @@
 #define SKYPE_ANSWERCALL "Skype_protocol/AnswerCall"
 #define SKYPE_HOLDCALL "Skype_protocol/HoldCall"
 #define SKYPE_SENDFILE "Skype_protocol/SendFile"
+#define SKYPE_SETAVATAR "Skype_protocol/SetAvatar"
 #define EVENTTYPE_CALL 2000
 
 // Common used code-pieces
 #define OUTPUT(a) ShowMessage(IDI_ICON1, a, 1);
 #define ERRCHK 	if (!strncmp(ptr, "ERROR", 5)) { OUTPUT(ptr); free(ptr); SetEvent(SkypeMsgFetched); return; }
 
+typedef void ( __cdecl* pThreadFunc )( void* );
+
 // Prototypes
 
-void SkypeSystemInit(char *);
+void __cdecl SkypeSystemInit(char *);
 int HookContactAdded(WPARAM wParam, LPARAM lParam);
 void PingPong(void);
-void SkypeSystemInit(char *);
 void CheckIfApiIsResponding(char *);
 void TellError(DWORD err);
 int ShowMessage(int, char*, int);
 void EndCallThread(char *);
 DWORD WINAPI ThreadFunc(VOID);
 void GetInfoThread(HANDLE);
+int OnDetailsInit( WPARAM, LPARAM );
+BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // Structs
 

@@ -11,6 +11,8 @@
 #define IDD_CALLSTAT                    111
 #define IDI_HOLD                        112
 #define IDI_RESUME                      113
+#define IDD_SETAVATAR                   114
+#define IDI_AVATAR                      115
 #define IDC_STARTSKYPE                  1000
 #define IDC_NOTRAY                      1001
 #define IDC_NOSPLASH                    1002
@@ -35,12 +37,15 @@
 #define IDC_JOIN                        1023
 #define IDC_HOLD                        1024
 #define IDC_HANGUP                      1025
+#define IDC_AVATAR                      1026
+#define IDC_SETAVATAR                   1027
+#define IDC_DELETEAVATAR                1028
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        114
+#define _APS_NEXT_RESOURCE_VALUE        115
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1026
 #define _APS_NEXT_SYMED_VALUE           101

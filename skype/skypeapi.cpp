@@ -8,8 +8,8 @@
 #include "contacts.h"
 #include "skypeproxy.h"
 #include "pthread.h"
-#include "../headers_c/m_utils.h"
-#include "../headers_c/m_langpack.h"
+#include "../../include/m_utils.h"
+#include "../../include/m_langpack.h"
 #include "m_toptoolbar.h"
 
 // Imported Globals
@@ -80,8 +80,9 @@ void rcvThread(char *dummy) {
 		CopyData.lpData=buf; 
 		CopyData.cbData=strlen(buf)+1;
 		if (!SendMessage(hWnd, WM_COPYDATA, (WPARAM)hSkypeWnd, (LPARAM)&CopyData))
+		{
 			LOGL("SendMessage failed: ", GetLastError());
-
+		}
 		free(buf);
 	}
 }
@@ -196,7 +197,10 @@ int __sendMsg(char *szMsg) {
 	   CopyData.dwData=0; 
 	   CopyData.lpData=szMsg; 
 	   CopyData.cbData=strlen(szMsg)+1;
-       if (!hSkypeWnd) LOG("SkypeSend", "DAMN! No Skype window handle! :(");
+       if (!hSkypeWnd) 
+	   {
+		   LOG("SkypeSend", "DAMN! No Skype window handle! :(");
+	   }
 	   SendResult=SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&CopyData);
        LOGL("SkypeSend: SendMessage returned ", SendResult);
    }
@@ -217,7 +221,7 @@ int __sendMsg(char *szMsg) {
 			   send(ClientSocket, szMsg, length, 0)==SOCKET_ERROR) return -1;
 		  } else
 			if (!SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&CopyData)) return -1;
-		  pthread_create(SkypeSystemInit, NULL);
+		  pthread_create(( pThreadFunc )SkypeSystemInit, NULL);
 	  } else return -1;
 
 //	  SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
@@ -267,7 +271,7 @@ int SkypeSend(char *szFmt, ...) {
 	   // Now allocate buffer
 	   length++;
 //	   LOGL("Allocating buffer of size", length);
-	   if (!(szMsg=malloc(length))) return -1;
+	   if (!(szMsg=(char*)malloc(length))) return -1;
 
 	   va_start(ap, szFmt);
          _vsnprintf(szMsg, length, szFmt, ap);
@@ -336,7 +340,7 @@ char *SkypeGet(char *szWhat, char *szWho, char *szProperty) {
   char *str, *ptr;
   int retval, len;
 
-  if (!(str=malloc(strlen(szWhat)+strlen(szWho)+strlen(szProperty)+7))) return NULL;
+  if (!(str=(char *)malloc(strlen(szWhat)+strlen(szWho)+strlen(szProperty)+7))) return NULL;
   sprintf(str, "GET %s %s %s", szWhat, szWho, szProperty);
   retval=__sendMsg(str);
   if (retval) {
@@ -440,6 +444,8 @@ void FixNumber(char *p) {
 static int CALLBACK DialDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	static HANDLE hContact;
 	static unsigned int entries=0;
+	BOOL TempAdded=FALSE;
+	char number[64], *msg, *ptr=NULL;
 	
 	switch (uMsg){
 		case WM_INITDIALOG:	
@@ -489,9 +495,6 @@ static int CALLBACK DialDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			return TRUE;
 		case WM_COMMAND:
 			switch (LOWORD(wParam)) {
-				char number[64], *msg, *ptr=NULL;
-				BOOL TempAdded=FALSE;
-
 				case IDDIAL:
 					EnableWindow(GetDlgItem(hwndDlg, IDDIAL), FALSE);
 					GetDlgItemText(hwndDlg, IDC_NUMBER, number, sizeof(number));
@@ -637,16 +640,16 @@ static int CALLBACK CallstatDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 								sprintf(msg, "SET %s JOIN_CONFERENCE%s", dbv.pszVal, szIdCall2);
 							break;
 						case IDC_HOLD:
-							if (msg=malloc(strlen(dbv2.pszVal)+20)) {
+							if (msg=(char*)malloc(strlen(dbv2.pszVal)+20)) {
 								sprintf(msg, "SET %s STATUS ONHOLD", dbv2.pszVal);
 								SkypeSend(msg);
 								free(msg);
-								if (msg=malloc(strlen(dbv.pszVal)+23))
+								if (msg=(char*)malloc(strlen(dbv.pszVal)+23))
 									sprintf(msg, "SET %s STATUS INPROGRESS", dbv.pszVal);
 							}
 							break;
 						case IDC_HANGUP:
-							if (msg=malloc(strlen(dbv.pszVal)+22))
+							if (msg=(char*)malloc(strlen(dbv.pszVal)+22))
 								sprintf(msg, "SET %s STATUS FINISHED", dbv.pszVal);
 							break;
 					}
@@ -702,7 +705,7 @@ int SkypeOutCall(WPARAM wParam, LPARAM lParam) {
 		msg=(char *)malloc(strlen(dbv.pszVal)+21);
 		sprintf(msg, "SET %s STATUS FINISHED", dbv.pszVal);
 		res=SkypeSend(msg);
-		pthread_create(SkypeOutCallErrorCheck, strdup(dbv.pszVal));
+		pthread_create(( pThreadFunc )SkypeOutCallErrorCheck, strdup(dbv.pszVal));
 		DBFreeVariant(&dbv);
 		free(msg);
 	} else if (!CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_DIAL), NULL, DialDlgProc, (LPARAM)wParam)) return -1;
@@ -725,7 +728,7 @@ int SkypeHoldCall(WPARAM wParam, LPARAM lParam) {
 	if (!wParam || DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv))
 		return -1;
 	
-	if (!(msg=(char *)msg=malloc(strlen(dbv.pszVal)+23))) {
+	if (!(msg=(char*)malloc(strlen(dbv.pszVal)+23))) {
 		DBFreeVariant(&dbv);
 		return -1;
 	}
@@ -754,6 +757,51 @@ int SkypeAnswerCall(WPARAM wParam, LPARAM lParam) {
 	CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_CALLSTAT), NULL, CallstatDlgProc, (LPARAM)((CLISTEVENT*)lParam)->hContact);
 	return 0;
 }
+/* SkypeGetAvatarInfo
+ * 
+ * Purpose: Set user avatar in profile
+ * Params : wParam=0
+ *			lParam=(LPARAM)(const char*)filename
+ * Returns: 0 - Success
+ *		   -1 - Failure
+ */
+int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
+{
+
+	DBVARIANT dbv;
+	PROTO_AVATAR_INFORMATION* AI = ( PROTO_AVATAR_INFORMATION* )lParam;	
+	if (!DBGetContactSetting(NULL,pszSkypeProtoName, "AvatarFile", &dbv) && (AI->hContact == NULL)){
+		lstrcpynA(AI->filename, dbv.pszVal, sizeof(AI->filename));
+		DBFreeVariant(&dbv);
+		return GAIR_SUCCESS;
+	}
+	else
+		return GAIR_NOAVATAR;
+
+
+	if (( wParam & GAIF_FORCE ) != 0 && AI->hContact != NULL ) {
+		return GAIR_WAITFOR;
+	}
+
+	return GAIR_NOAVATAR;
+}
+/* SkypeSetAvatar
+ * 
+ * Purpose: Set user avatar in profile
+ * Params : wParam=0
+ *			lParam=(LPARAM)(const char*)filename
+ * Returns: 0 - Success
+ *		   -1 - Failure
+ */
+int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
+	int retval;
+	
+	DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", (char*)lParam);
+	retval = SkypeSend("SET AVATAR 1 %s", lParam);
+	
+	return retval;
+}
+
 
 /* SkypeSendFile
  * 
@@ -974,7 +1022,7 @@ int ConnectToSkypeAPI(char *path) {
 
 
 		if (!rcvThreadRunning)
-			if(_beginthread(rcvThread, 0, NULL)==-1)
+			if(_beginthread(( pThreadFunc )rcvThread, 0, NULL)==-1)
 				return -1;
 		AttachStatus=SKYPECONTROLAPI_ATTACH_SUCCESS;
 		return 0;

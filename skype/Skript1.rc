@@ -13,52 +13,61 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Deutsch (Österreich) resources
+// French (Belgium) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_FRB)
+#ifdef _WIN32
+LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_SETAVATAR DIALOGEX 0, 0, 222, 131
+STYLE DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_AVATAR,"Static",SS_BITMAP | SS_CENTERIMAGE | 
+                    SS_SUNKEN,9,11,96,96
+    PUSHBUTTON      "Set",IDC_SETAVATAR,9,112,45,13
+    PUSHBUTTON      "Delete",IDC_DELETEAVATAR,61,112,41,13
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_SETAVATAR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 87
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // French (Belgium) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// German (Austria) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEA)
 #ifdef _WIN32
 LANGUAGE LANG_GERMAN, SUBLANG_GERMAN_AUSTRIAN
 #pragma code_page(1252)
 #endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_CALL                ICON    DISCARDABLE     "Call.ico"
-IDI_ICON1               ICON    DISCARDABLE     "icon2.ico"
-IDI_HUP                 ICON    DISCARDABLE     "Hangup.ico"
-IDI_HOLD                ICON    DISCARDABLE     "holdcall.ico"
-IDI_RESUME              ICON    DISCARDABLE     "resumecall.ico"
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "\r\n"
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -82,13 +91,13 @@ BEGIN
     CONTROL         "/MINIMIZED - Start Skype minimized",IDC_MINIMIZED,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,37,36,228,12
     CONTROL         "Shut down Skype when you close Miranda",IDC_SHUTDOWN,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,68,191,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,68,197,10
     CONTROL         "Enable Skype Menu options (currently: Find/Add user)",
                     IDC_ENABLEMENU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
-                    80,185,10
+                    80,194,10
     CONTROL         "Unload Skype when you change to status ""offline""",
                     IDC_UNLOADOFFLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    7,91,185,11
+                    7,91,195,11
     GROUPBOX        "Skypeproxy",IDC_STATIC,7,177,265,77
     CONTROL         "Use Skypeproxy connection over network instead of local Skype API",
                     IDC_USES2S,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,187,
@@ -106,7 +115,7 @@ BEGIN
                     NOT WS_BORDER
     CONTROL         "Use Popup-Plugin (if installed) for displaying messages ",
                     IDC_USEPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,104,
-                    189,9
+                    197,9
     CONTROL         "Use groupchat interface for conversations - requires chat.dll (Please don't!)",
                     IDC_GROUPCHAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
                     128,265,9
@@ -191,11 +200,50 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_CALL                ICON    DISCARDABLE     "Call.ico"
+IDI_ICON1               ICON    DISCARDABLE     "icon2.ico"
+IDI_HUP                 ICON    DISCARDABLE     "Hangup.ico"
+IDI_HOLD                ICON    DISCARDABLE     "holdcall.ico"
+IDI_RESUME              ICON    DISCARDABLE     "resumecall.ico"
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Bitmap
 //
 
 IDB_CALL                BITMAP  DISCARDABLE     "bitmap1.bmp"
-#endif    // Deutsch (Österreich) resources
+#endif    // German (Austria) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
