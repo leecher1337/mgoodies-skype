@@ -198,7 +198,11 @@ void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	}
  	if (protoSettings->getSRMMMode() == Options::MODE_CSS) {
 	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getSRMMCssFilenameRtl() : protoSettings->getSRMMCssFilename();
-        Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n",externalCSS);
+		if (strncmp(externalCSS, "http://", 7)) {
+			Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"file://%s\"/></head><body class=\"body\">\n", externalCSS);
+		} else {
+			Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n", externalCSS);
+		}
 	} else {
 		HDC hdc = GetDC(NULL);
 	    int logPixelSY = GetDeviceCaps(hdc, LOGPIXELSY);
@@ -257,7 +261,6 @@ void TabSRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		free(output);
 	}
 	setLastEventType(-1);
-    view->documentClose();
 }
 
 time_t TabSRMMHTMLBuilder::getStartedTime() {
@@ -323,7 +326,7 @@ void TabSRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 				} else if (eventData->iType == IEED_EVENT_STATUSCHANGE) {
 					iconFile = "status.gif";
 				}
-				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"%s/plugins/ieview/%s\"/>",
+				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"file://%s/plugins/ieview/%s\"/>",
 								workingDir, iconFile);
 			}
 			if ((dwFlags & MWF_LOG_SWAPNICK) && (dwFlags & MWF_LOG_SHOWNICK) && isGroupBreak && (eventData->iType != IEED_EVENT_STATUSCHANGE)) {

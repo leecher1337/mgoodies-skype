@@ -201,7 +201,6 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		free(output);
 	}
 	setLastEventType(-1);
-    view->documentClose();
 }
 
 void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
@@ -248,7 +247,7 @@ void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 					Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divMessageOut" : "divMessageIn");
 			}
 			if (dwFlags & SMF_LOG_SHOWICONS && iconFile != NULL) {
-				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"%s/plugins/ieview/%s\"/> ",
+				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"file://%s/plugins/ieview/%s\"/> ",
 								workingDir, iconFile);
 			} else {
 				Utils::appendText(&output, &outputSize, " ");

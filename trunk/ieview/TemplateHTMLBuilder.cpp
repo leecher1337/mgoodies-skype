@@ -95,7 +95,8 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
     TemplateMap *tmpm = TemplateMap::getTemplateMap((event->dwFlags & IEEF_RTL) ? getTemplateFilenameRtl(protoSettings) : getTemplateFilename(protoSettings));
 
 	if (tmpm!=NULL) {
-    	strcpy(tempBase, tmpm->getFilename());
+		strcpy(tempBase, "file://");
+    	strcat(tempBase, tmpm->getFilename());
     	char* pathrun = tempBase + strlen(tempBase);
     	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > tempBase)) pathrun--;
     	pathrun++;
@@ -258,7 +259,6 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	view->scrollToBottom();
 	groupTemplate = NULL;
 	iLastEventType = -1;
-    view->documentClose();
 }
 
 void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, ProtocolSettings* protoSettings) {
@@ -299,7 +299,8 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	}
 	TemplateMap *tmpm = TemplateMap::getTemplateMap((event->dwFlags & IEEF_RTL) ? getTemplateFilenameRtl(protoSettings) : getTemplateFilename(protoSettings));
 	if (tmpm!=NULL) {
-    	strcpy(tempBase, tmpm->getFilename());
+		strcpy(tempBase, "file://");
+    	strcat(tempBase, tmpm->getFilename());
     	char* pathrun = tempBase + strlen(tempBase);
     	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > tempBase)) pathrun--;
     	pathrun++;

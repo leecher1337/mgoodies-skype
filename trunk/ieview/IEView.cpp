@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "resource.h"
 #include "Options.h"
 #include "Utils.h"
-//#define GECKO
+#define GECKO
 #define DISPID_BEFORENAVIGATE2      250   // hyperlink clicked on
 
 static const CLSID CLSID_MozillaBrowser=
@@ -180,17 +180,15 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	         // Step 3: Advise the connection point that you
 	         // want to sink its events.
 	            sink = new IEViewSink(this);
-//#ifndef GECKO
 	         	if (FAILED(m_pConnectionPoint->Advise((IUnknown *)sink, &m_dwCookie)))     {
 	            	MessageBoxA(NULL, "Failed to Advise", "C++ Event Sink", MB_OK);
 	         	}
-//#endif
 	      	}
       		pCPContainer->Release();
    		}
-//#ifndef GECKO
+#ifndef GECKO
 		setMainWndProc((WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) IEViewWindowProcedure));
-//#endif
+#endif
     }
     EnterCriticalSection(&mutex);
 	next = list;
@@ -201,6 +199,9 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	LeaveCriticalSection(&mutex);
 //	clear();
 	pWebBrowser->put_RegisterAsDropTarget(VARIANT_FALSE);
+#ifdef GECKO
+    pWebBrowser->Navigate(L"about:blank", NULL, NULL, NULL, NULL);
+#endif
 }
 
 IEView::~IEView() {
@@ -235,7 +236,9 @@ IEView::~IEView() {
 	if (selectedText != NULL) {
 		delete 	selectedText;
 	}
+#ifndef GECKO
 	pWebBrowser->Release();
+#endif
 	DestroyWindow(hwnd);
 }
 
@@ -396,6 +399,36 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 	if (builder == NULL) {
    //     return S_OK;
 	}
+#ifdef GECKO
+	{
+		HMENU hMenu;
+		hMenu = GetSubMenu(LoadMenu(hInstance, MAKEINTRESOURCE(IDR_CONTEXTMENU)),0);
+		CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)hMenu,0);
+		if (dwID == 6) { // anchor
+			EnableMenuItem(hMenu, ID_MENU_COPYLINK, MF_BYCOMMAND | MF_ENABLED);
+		} else if (dwID == 5) { // text select
+			EnableMenuItem(hMenu, ID_MENU_COPY, MF_BYCOMMAND | MF_ENABLED);
+		} else if (dwID == 1) { // control (image)
+			EnableMenuItem(hMenu, ID_MENU_SAVEIMAGE, MF_BYCOMMAND | MF_ENABLED);
+		}
+		if (builder!=NULL) {
+
+		}
+		int iSelection = TrackPopupMenu(hMenu,
+										  TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD,
+										  ppt->x,
+										  ppt->y,
+										  0,
+										  hwnd,
+										  (RECT*)NULL);
+		DestroyMenu(hMenu);
+		if (iSelection == ID_MENU_CLEARLOG) {
+			clear(NULL);
+		} else {
+			SendMessage(hSPWnd, WM_COMMAND, iSelection, (LPARAM) NULL);
+		}
+	}
+#else
     if (SUCCEEDED(pcmdTarget->QueryInterface(IID_IOleCommandTarget, (void**)&pOleCommandTarget))) {
 		if (SUCCEEDED(pOleCommandTarget->QueryInterface(IID_IOleWindow, (void**)&pOleWindow))) {
     		pOleWindow->GetWindow(&hSPWnd);
@@ -429,6 +462,7 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 		}
 	    pOleCommandTarget->Release();
 	}
+#endif
 	return S_OK;
 }
 STDMETHODIMP IEView::GetHostInfo(DOCHOSTUIINFO *pInfo) {
@@ -532,6 +566,7 @@ void IEViewSink::BeforeNavigate2(IDispatch* pDisp,VARIANT* url,VARIANT* flags, V
    	int i = wcslen(url->bstrVal);
    	char *tTemp = new char[i+1];
    	WideCharToMultiByte(CP_ACP, 0, url->bstrVal, -1, tTemp, i+1, NULL, NULL);
+#ifndef GECKO
 	if (strcmp(tTemp, "about:blank")) {
 //		if (smileyWindow==NULL) {
       		CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) tTemp);
@@ -540,6 +575,7 @@ void IEViewSink::BeforeNavigate2(IDispatch* pDisp,VARIANT* url,VARIANT* flags, V
 	//	}
     	*cancel = VARIANT_TRUE;
 	}
+#endif
    	delete tTemp;
 }
 
@@ -730,14 +766,16 @@ void IEView::navigate(const char *url) {
 
 
 void IEView::documentClose() {
-    
+
 #ifdef GECKO
+	/*
 	IHTMLDocument2 *document = getDocument();
 	if (document != NULL) {
 		//write("</body></html>");
 		document->close();
 		document->Release();
 	}
+	*/
 #endif
 }
 
@@ -763,8 +801,42 @@ void IEView::appendEvent(IEVIEWEVENT *event) {
 
 void IEView::clear(IEVIEWEVENT *event) {
 #ifdef GECKO
-//    pWebBrowser->Navigate(L"www.onet.pl", NULL, NULL, NULL, NULL);
-  //  return;
+    pWebBrowser->Navigate(L"about:blank", NULL, NULL, NULL, NULL);
+	{
+		IHTMLDocument2 *document = getDocument();
+		if (document != NULL) {
+			document->close();
+			VARIANT		open_name;
+			VARIANT		open_features;
+			VARIANT		open_replace;
+			IDispatch	*open_window	= NULL;
+			VariantInit(&open_name);
+			open_name.vt      = VT_BSTR;
+			open_name.bstrVal = SysAllocString(L"_self");
+			VariantInit(&open_features);
+			VariantInit(&open_replace);
+
+			HRESULT hr = document->open(SysAllocString(L"text/html"),
+								open_name,
+									open_features,
+									open_replace,
+									&open_window);
+			if (hr == S_OK) {
+			//	pWebBrowser->Refresh();
+			}
+			if (open_window != NULL) {
+				open_window->Release();
+			}
+			document->Release();
+		}
+		if (builder!=NULL) {
+			builder->clear(this, event);
+		}
+		clearRequired = false;
+		getFocus = false;
+
+	}
+    return;
 #endif
 	IHTMLDocument2 *document = getDocument();
 	if (document == NULL) {
