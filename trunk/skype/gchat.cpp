@@ -3,9 +3,9 @@
 #include "gchat.h"
 #include "contacts.h"
 #include "debug.h"
-#include "../headers_c/m_langpack.h"
-#include "../headers_c/m_userinfo.h"
-#include "../headers_c/m_history.h"
+#include "../../include/m_langpack.h"
+#include "../../include/m_userinfo.h"
+#include "../../include/m_history.h"
 
 extern char pszSkypeProtoName[MAX_PATH+30];
 extern HANDLE hInitChat;
@@ -30,7 +30,7 @@ gchat_contacts *GetChat(char *szChatId) {
 
 	for (i=0;i<chatcount;i++)
 		if (!strcmp(chats[i].szChatName, szChatId)) return &chats[i];
-	if (chats = realloc(chats, sizeof(gchat_contacts)*(++chatcount))) {
+	if (chats = (gchat_contacts *)realloc(chats, sizeof(gchat_contacts)*(++chatcount))) {
 		memset(&chats[chatcount-1], 0, sizeof(gchat_contacts));
 		chats[chatcount-1].szChatName=strdup(szChatId);
 		return &chats[chatcount-1];
@@ -51,7 +51,7 @@ void RemChat(char *szChatId) {
 			if (chats[i].szChatName) free(chats[i].szChatName);
 			if (chats[i].mJoinedContacts) free(chats[i].mJoinedContacts);
 			if (i<--chatcount) memmove(&chats[i], &chats[i+1], (chatcount-i)*sizeof(gchat_contacts));
-			chats = realloc(chats, sizeof(gchat_contacts)*chatcount);
+			chats = (gchat_contacts *)realloc(chats, sizeof(gchat_contacts)*chatcount);
 			return;
 		}
 }
@@ -108,7 +108,7 @@ int AddChatContact(gchat_contacts *gc, char *who) {
 	}
 	DBFreeVariant(&dbv);
 
-	if (!(gc->mJoinedContacts=realloc(gc->mJoinedContacts, ++gc->mJoinedCount*sizeof(HANDLE)))) return -2;
+	if (!(gc->mJoinedContacts=(void **)realloc(gc->mJoinedContacts, ++gc->mJoinedCount*sizeof(HANDLE)))) return -2;
 	gc->mJoinedContacts[i=(gc->mJoinedCount-1)]=hContact;
 	return i;
 }
@@ -120,7 +120,7 @@ void RemChatContact(gchat_contacts *gc, HANDLE hContact) {
 		if (gc->mJoinedContacts[i]==hContact) {
 			if (i<--gc->mJoinedCount) 
 				memmove(&gc->mJoinedContacts[i], &gc->mJoinedContacts[i+1], (gc->mJoinedCount-i)*sizeof(HANDLE));
-			if (gc->mJoinedCount) gc->mJoinedContacts = realloc(gc->mJoinedContacts, sizeof(HANDLE)*gc->mJoinedCount);
+			if (gc->mJoinedCount) gc->mJoinedContacts = (void **) realloc(gc->mJoinedContacts, sizeof(HANDLE)*gc->mJoinedCount);
 			else {free (gc->mJoinedContacts); gc->mJoinedContacts = NULL; }
 			return;
 		}
@@ -148,7 +148,7 @@ HANDLE find_chat(char *chatname) {
 }
 
 
-int AddMembers(char *szChatId) {
+int  __cdecl AddMembers(char *szChatId) {
 	BYTE *contactmask=NULL;
 	DBVARIANT dbv, dbv2;
 	char *ptr2, *str, *who;
@@ -156,7 +156,7 @@ int AddMembers(char *szChatId) {
 	gchat_contacts *gc;
 
 	LOG("AddMembers", "STARTED"); 
-	if (!(str=malloc(strlen(szChatId)+18)) ||
+	if (!(str=(char*)malloc(strlen(szChatId)+18)) ||
 		!find_chat(szChatId)) return -1;
 	sprintf(str, "GET CHAT %s MEMBERS", szChatId);
 	if (SkypeSend(str)==-1 || !(ptr2=SkypeRcv(str+4, INFINITE))) {
@@ -175,8 +175,8 @@ int AddMembers(char *szChatId) {
 	while (who) {
 		if (strcmp(who, dbv2.pszVal)) {
 			i=AddChatContact(gc, who);
-			if (i!=-1 && !contactmask && !(contactmask=calloc(gc->mJoinedCount, 1))) i=-1;
-			if (i==-1 || !(contactmask=realloc(contactmask, gc->mJoinedCount))) {
+			if (i!=-1 && !contactmask && !(contactmask= (unsigned char *)calloc(gc->mJoinedCount, 1))) i=-1;
+			if (i==-1 || !(contactmask= (unsigned char *) realloc(contactmask, gc->mJoinedCount))) {
 				if (contactmask) free(contactmask);
 				free(ptr2);
 				DBFreeVariant(&dbv2);
@@ -233,7 +233,7 @@ int AddMembers(char *szChatId) {
    Parameters:  wParam = (char *)Name of new chat session
 				lParam = 0
 */
-int ChatInit(WPARAM wParam, LPARAM lParam) {
+int __cdecl  ChatInit(WPARAM wParam, LPARAM lParam) {
 	GCWINDOW gcw = {0};
 	GCEVENT gce = {0};
 	GCDEST gcd = {0};
@@ -246,7 +246,7 @@ int ChatInit(WPARAM wParam, LPARAM lParam) {
 	gcw.pszModule = pszSkypeProtoName;
 	gcw.pszID = (char *)wParam;
 
-	if (!(str=malloc(strlen(gcw.pszID)+16))) return -1;
+	if (!(str= (char *) malloc(strlen(gcw.pszID)+16))) return -1;
 	sprintf(str, "GET CHAT %s TOPIC", gcw.pszID);
 	if (SkypeSend(str)==-1 || !(ptr2=SkypeRcv(str+4, INFINITE))) {
 		free(str);
@@ -266,7 +266,7 @@ int ChatInit(WPARAM wParam, LPARAM lParam) {
 
 	gce.cbSize = sizeof(GCEVENT);
 	gcd.pszModule = pszSkypeProtoName;
-	(const char*)gcd.pszID = gcw.pszID;
+	gcd.pszID = (char *) gcw.pszID;
 	gcd.iType = GC_EVENT_ADDGROUP;
 	gce.pDest = &gcd;
 	gce.pszStatus = Translate("Me");
@@ -312,7 +312,7 @@ int ChatInit(WPARAM wParam, LPARAM lParam) {
 
    Parameters:  szChatId = (char *)Name of new chat session
 */
-int ChatStart(char *szChatId) {
+int  __cdecl ChatStart(char *szChatId) {
 	LOG("ChatStart", "New groupchat started");
 	if (!szChatId || NotifyEventHooks(hInitChat, (WPARAM)szChatId, 0)) return -1;
 	return AddMembers(szChatId);
@@ -480,7 +480,7 @@ int GCEventHook(WPARAM wParam,LPARAM lParam) {
 	return 0;
 }
 
-int GCMenuHook(WPARAM wParam,LPARAM lParam) {
+int __cdecl  GCMenuHook(WPARAM wParam,LPARAM lParam) {
 	GCMENUITEMS *gcmi= (GCMENUITEMS*) lParam;
 	DBVARIANT dbv;
 	char* szInvite  = Translate("&Invite user...");

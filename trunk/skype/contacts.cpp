@@ -6,7 +6,7 @@
 #include "skypeapi.h"
 #include "debug.h"
 #include "pthread.h"
-#include "../headers_c/m_langpack.h"
+#include "../../include/m_langpack.h"
 
 // #include <shlwapi.h>
 
@@ -173,7 +173,7 @@ HANDLE add_mainmenu(void) {
 
 }
 
-int PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
+int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 	DBVARIANT dbv;
 	CLISTMENUITEM mi;
 	char *szProto;
@@ -297,7 +297,7 @@ HANDLE add_contact(char *name, DWORD flags) {
 			DBWriteContactSettingByte(hContact, "CList", "Hidden", 1);
 		}
 		if (name[0]) {
-			if (str=malloc(strlen(name)+22)) {
+			if (str=(char*)malloc(strlen(name)+22)) {
 				strcpy(str, "GET USER ");
 				strcat(str, name);
 				strcat(str, " DISPLAYNAME");

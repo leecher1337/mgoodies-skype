@@ -15,224 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
-NOTES
------
-
-  You have to manually disable popup of messages in SKYPE, as there is
-  currently no function in the API to do this
-  Got to File/Options/Instant messages and disable the checkboxes there
-
-TODO
-----
-  * Make an option for the autoimport of History
-  * Under heavy load launching Skype startup may fail
-  * Implement renaming of a contact so that the renamed contact will also be renamed in 
-    Skype --> not supported by Skype API
-  * Implement conference calls
-  * Check if sending a message fails because message is too long (?)
-  * .. 
-  * lots of more stuff
-
-
-BUGS
-----
-
-  Still a lot I guess...
-  rand
-CODE
-----
-  Currently a real mess. At least I splitted it up a bit now.
-  But hey, it kinda works... ;)
-
-HISTORY
--------
-0.0.0.3  - * I hope it's thread-safe now
-		   * Changing the Online-Status should work correctly now
-		   * Fixed "We got a sync problem :(" bug	- big thx to Azzie
-		   * Now starts Skype more in the background as proposed by Kreisquadratur
-		   * Implemented PING-PONG with Skype to detect if Connection to Skype API
-		     was lost
-		   * Launching of Skype by Miranda improved
-0.0.0.4  - * Missed messages are fetched now
-		   * User details work now
-		   * More verbose error msgs now (to help Win98 user debugging his problem)
-		   * Added option for starting skype with miranda and shutting down
-		     Skype when closing miranda.
-		   * You can now chose the command line options to pass to Skype on startup
-		   * Hopefully the bug with multiple Call - Entries per user is fixed now
-		   * Protocol name is now "Skype", not "Skype_protocol" - Remember this
-		     when updating, so DELETE skype_protocol.dll first!!
-		   * Secured Message Queue with a Mutex 
-		   * Fixed a Message-receiving bug that could cause delays in message-processing
-		   * Adding a Contact in Skype now also adds it to Miranda immediately
-		     (Deleting should also work, but doesn't because of a Skype API bug)
-		   * Added searching for contacts, but this feature seems to be quite useless,
-		     as Skype API doesn't support adding contacts, so you still have to add
-			 your contacts in the Skype program, sorry
-			 In order to do this comfortably, I added a Miranda Menu-Item for adding
-			 Skype-contacts.
-0.0.0.5  - * Fixed a bug that caused the plugin to crash with bigger contact lists
-			 (Skype API was flooded on startup)
-0.0.0.6  - * Added feature requests from kreisquadratur:
-				* Option to disable Skype-Menuitems
-				* Fixed bug with Apply-Button
-				* Using a nicer Skype-Icon now
-		   * Now using Skype-Timestamp for messages
-		   * Implementing importing history from skype (see contextmenu of contact)
-		   * Fixed bug with processing first message of MESSAGES - List
-		   * Found out, that RegisterClass() doesn't work for UNICODE-Programs on
-			 non-UNICODE win98, therefore return-value check for RegisterClass removed
-		   * Fixed a bug that caused a "We got a Sync problem :("
-0.0.0.7 -  * Fixed a bug that caused a lockup on Plugin startup (when a Window was not
-			 reacting to the HWND_BROADCAST) (thx to Cool Blue)
-		   * Fixed a bug in the Startup-procedure..
-		   * Now Skype doesn't go offline when you close Miranda (thx to Egodust)
-		   * Now it should really work unter WIN98 (thx to TioDuke for testing)
-		   * Implemented feature for Shutting down Skype on going offline and
-		     restarting Skype on changing to online mode again, as many people requested.
-0.0.0.8 -  * Now there is support for the "Occupied" mode, which is mapped to DND
-			 This is useful for users who do a global statusmodechange so that Skype
-			 gets to "Occupied" state instead of staying online.
-		   * Now the protocol doesn't disable itself when you chose to not start
-		     Skype on startup, instead it stays offline and starts Skype when you
-			 try to go online.
-0.0.0.9 -  * Fixed bug with error when starting Skype with Miranda ("Wheee...")
-		   * As Skype seems to use new, UNDOCUMENTED Message types (I think it's
-			 a severe Skype-API bug) I adapted the plugin so that it works
-			 with new API now. This fixes the problem of not being able to receive
-			 messages in new Skype versions.
-			 Skype now sends "MESSAGE TYPE SAID" instead of "MESSAGE TYPE TEXT",
-			 the bug has been reported to Skype forum.
-			 (http://forum.skype.com/viewtopic.php?t=15435)
-		   * Fixed a memory leak in Message-receiving routine
-		   * Added UTF8-support for Contact properties (does this fix something?)
-		   * Fixed a memory leak in Startup-routine
-		   * Finally renamed Plugin from SKYPE_PROTOCOL to SKYPE internally.
-			 Hopefully it will upgrade your existing DB seamlessly.
-		   * Now all threads should be sync with Miranda as I'm using the pthread-
-		     functions "borrowed" from Yahoo protocol.
-0.0.0.10 - * Hopefully recovery after sync problem works a bit better now
-			 (Sync-Problem Messages are no longer shown)
-		   * Now you can hang up a call directly from a contact's context menu
-		   * Now implemented support for using Skype over a network. You can use
-		     the included skypeproxy service to in/output Skype API messages
-			 on a socket and can connect to it with the plugin.
-			 So you can, for example, launch the skypeproxy service on your
-			 Windows-server (eeek! :P) and control Skype from your workstation
-			 using Miranda. (requested feature by foosmate)
-		   * Now you can accept incoming calls via Miranda (or hang them up)
-		   * The status mode bug (clist status menu was not updated properly)
-		     should be fixed by now.
-		   * The logfile in the dbeug-build should now always be written to the
-		     Miranda directory.
-0.0.0.11 - Only minor bugfixes:
-		   * The gender in user-details is now saved correctly to the DB
-			 (thanks to LeON for the hint!)
-		   * The Apply-Button should now be disabled in the options DLG by default
-			 (thanks to sje for the bug report)
-		   * Contactlist should be reinitialized after a SYNC-Problem now.
-		   * Bug with usernames that contain commas should be fixed
-		   * Protocol messages are now shown as popups if Popup-plugin is installed
-0.0.0.12 - Bugfixing because of strange Skype API behaviour:
-		   * Adding of contacts that are just searched, but not added in Skype 
-		     should be prevented now.
-		   * Version number correct again.
-0.0.0.13 - A few minor fixes:
-		   * Logging off users shouldn't flood the StatusNotify-Plugin now.
-		   * Popup-plugin can be enabled/disabled in the options dlg.
-		   * Implemented support for SkypeOut contacts (they caused crashes)
-		   * Now using Nick instead of Skype-Handle as Contact list name on
-		     adding new users, if it is available.
-0.0.0.14 - 
-		   * Miranda crash on exit if Skype was not found installed should be
-		     fixed by now.
-		   * Implemented compatibility layer for Skype API Protocol V3 and above.
-		   * Removed some useless code introduced in 0.0.0.12
-		   * Added some fixes made by TioDuke (thank you!)
-			 - Using your own Nick instead of your Skype-Handle in conversations
-			 - LastName 3rd token & above are not ignored any more
-			 - Status modes "On the phone" and "out to lunch" are mapped now
-		   * Fixed a bug that caused "Skype API not available" messages under high load.
-		     (thanks to Romeo28 for testing!)
-		   * Fixed a bug that caused Message sending thread to wait forever if sending
-		     a message times out (causing dead threads)
-		   * Skype contact list should be synced now when Skype-Status changes.
-		     (thx to Markus Mützel for Bugreport)
-		   * Implemented a garbage collector that removes old messages from queue
-		     in order to prevent possible memory exhaustion
-		   * Added option to disable all modal Error-message dialog boxes (as people
-		     keep telling me that they are annoyed by them)
-		   * Added langpack support for error messages
-		   * Added option to increase the time the protocol is waiting for Skype
-		   * Added groupchat functions. WARNING: For testing purposes only!
-		     Currently there is a memleak which I cannot find, but even worse,
-			 Skype API doesn't seem to support sending to a groupchat, inviting etc.
-			 So this is currently only experimental! When you send to a groupchat you
-			 currently send single messages to every user seperately. Skype staff
-			 didn't answer my question about sending to groupchats so far, so it
-			 depends on them when this feature will be available for real use.
-0.0.0.15 - * Fixed a crash on Miranda-exit when error occured on Skype-Protocol start
-		   * Fixed Bug #0000006: Now user is asked if he wants to enable the Protocol
-		     for the current profile, if he starts with a new profile.
-		   * Fixed Bug #0000002: Now interfacing with Skype is really stopped on going
-			 offline if the option is enabled. (PingPong-thread killed)
-		   - This also applies on closing Skype
-		   * Fixed a memory leak in MsgFetchThread that appeared in the last version because
-		     of the groupchat-implementation (free() within wrong if clause, ooops ;)
-		   * Fixed Bug #0000005: When there is a msg from a user that is not on Skype's contact
-		     list, the user is now added PALF_TEMPORARY and disappears again on next Miranda-start
-		   * Implemented a fix for Skype API's statusmode bug reported by Markus Mützel:
-		     If you change the online status while Skype is still connecting, Skype changes to
-			 the FIRST state that it was requested to change to, after going online, instead of
-			 the LAST state. However the bug was not reproducable for me.
-		   * Fixed broken popup-support (I hope)
-		   * CHANGE of behaviour (inspired by Bug #0000007): 
-			 If you turn off "Start Skype with Miranda", the plugin wouldn't search for a 
-			 running Skype instance anymore.
-		   * Now when going online and Skype is not launched, Skype will be launched via a 
-		     seperate thread (in background) so that Miranda isn't blocked while Skype is loading
-		   * Options Dlg. should now be translateable too. 
-0.0.0.16 - * Fixed a severe memory-allocation bug in utf8-encoded messages that caused random
-			 crashes (oops :-O) - Thanks to Ary Dvoretz for reporting.
-		   * Bug in SkypeStatusMode-Bug fix from last release fixed (protocol stayed offline)
-		   * Now onlinestatus for SkypeOut-Contacts is configurable
-		   * Made Menu-Options translatable
-		   * Added support for calling SkypeOut-Phonenumbers. You can now dial a PSTN-Number
-		     by calling "Do a SkypeOut call" in the main menu (or top toolbar if the
-			 toptoolbar plugin is installed) and entering a number or
-			 by right-clicking on a non-Skype contact and selecting "Call using SkypeOut",
-			 if there is a phone-Number entry in the User's-Details.
-			 This, of course, is only working if you have SkypeOut privilege
-0.0.0.17 - * Startup of Skype in a seperate thread was not solved properly. Now it should really
-			 start in background
-		   * The hack for the statusmode-bug is optional in the settings and is turned off
-		     per default. (Thx to Eddie Hung for reporting problems and help)
-		   * Added an ugly hack for the Skype-API offline bug   (grr.. ) 
-		   * Nickname is now set correctly. To cleanup the existing Nicks, please go to
-		     the options page an push the "Cleanup Nicknames" button.
-			 This will clean out entries where the Nick was set to the Skype handle
-		   * Fixed a bug in the message sending routine that caused errors in communication
-		     (missed messages in Skype that were not fetched..)
-		   * Added "Hold call" feature while calling
-		   * Added support for conference calls (if a second user is calling while you 
-		     are in a conversation, you can now choose whether to block the call or let 
-			 the user join you in a conference with the existing caller or to put the
-			 other caller on hold)
-		   * Fixed a bug in the code for adding users that were just searched via the
-		     Skype search-window but never have been in contact list.
-		   * Fixed some bugs (memleak, nick error, ..) in the Search-Routine for 
-			 Skype-contacts. (thx to Deadman for reporting)
-		   * Fixed a bug with unknown SKYPE_IN contacts
-		   * Added file-sending capability (requires new Skype-version)
-		   * Did a litte code-cleanup
-		   * Adding / Removing contacts can now be done via the Miranda standard-dialogs if
-		     you use the newest Skype-Version
-		   * With the new Skype-version you are able to handle Authorisation-Requests via Miranda
-		     now.
-0.0.0.18 - * HOTFIX - Double File-Transfer icon removed. Please note that you can't send files
-             via drag & drop, because of the nature of Skype API - Skype wants to open its own
-			 "File/Open" dialog, so I cannot supply a path to the file to be sent, therefore I
-			 had to add a seperate File-sending function rather than using Miranda's function.
 */
 
 #include "skype.h"
@@ -242,14 +24,17 @@ HISTORY
 #include "utf8.h"
 #include "pthread.h"
 #include "gchat.h"
-#include "../headers_c/m_utils.h"
-#include "../headers_c/m_options.h"
-#include "../headers_c/m_langpack.h"
+
+#include "../../include/m_utils.h"
+#include "../../include/m_options.h"
+#include "../../include/m_langpack.h"
+#include "../../include/m_userinfo.h"
+#include "../../include/m_avatars.h"
 #include "m_toptoolbar.h"
 
 // Exported Globals
 HWND hSkypeWnd=NULL, hWnd=NULL;
-HANDLE SkypeReady, SkypeMsgReceived, hOptHook, MessagePumpReady, hInitChat=NULL, httbButton=NULL;
+HANDLE SkypeReady, SkypeMsgReceived, hOptHook,hHookOnUserInfoInit, MessagePumpReady, hInitChat=NULL, httbButton=NULL;
 BOOL SkypeInitialized=FALSE, QueryMsgDirection=FALSE, MirandaShuttingDown=FALSE;
 BOOL UseSockets=FALSE, bSkypeOut=FALSE;
 char pszSkypeProtoName[MAX_PATH+30], skype_path[MAX_PATH], protocol=2;
@@ -257,7 +42,7 @@ int SkypeStatus=ID_STATUS_OFFLINE, hSearchThread=-1, receivers=1;
 UINT ControlAPIAttach, ControlAPIDiscover;
 LONG AttachStatus=-1;
 HINSTANCE hInst;
-PLUGININFO pluginInfo;
+
 
 // Module Internal Globals
 PLUGINLINK *pluginLink;
@@ -277,12 +62,13 @@ char cmdMessage[16]="MESSAGE", cmdPartner[8]="PARTNER";	// Compatibility command
 // Imported Globals
 extern status_map status_codes[];
 
+static HBITMAP hAvatar = NULL;
 
 // Plugin Info
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,18),
+	PLUGIN_MAKE_VERSION(0,0,0,19),
 	"Support for Skype network",
 	"leecher",
 	"leecher@dose.0wnz.at",
@@ -374,7 +160,7 @@ void PingPong(void) {
 		Sleep(PING_INTERVAL);
 		if (!hPingPong) return;
 		if (SkypeSend("PING")==-1) {
-			if (ConnectToSkypeAPI(NULL)!=-1) pthread_create(SkypeSystemInit, NULL);
+			if (ConnectToSkypeAPI(NULL)!=-1) pthread_create(( pThreadFunc )SkypeSystemInit, NULL);
 		}
 		testfor("PONG", PING_INTERVAL);
 		SkypeMsgCollectGarbage(MAX_MSG_AGE);
@@ -657,7 +443,7 @@ void SearchFriendsThread(char *dummy) {
 	SkypeInitialized=TRUE;
 }
 
-void SkypeSystemInit(char *dummy) {
+void __cdecl SkypeSystemInit(char *dummy) {
 	char buf[48];
 	DWORD ThreadID;
 	static BOOL Initializing=FALSE;
@@ -713,7 +499,7 @@ void FirstLaunch(char *dummy) {
 		int oldstatus=SkypeStatus;
 
 		LOG("OnModulesLoaded", "starting offline..");	
-		InterlockedExchange(&SkypeStatus, ID_STATUS_OFFLINE);
+		InterlockedExchange((long*)&SkypeStatus, ID_STATUS_OFFLINE);
 		ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
 	}
 	if (AttachStatus==-1) return;
@@ -734,7 +520,7 @@ void FirstLaunch(char *dummy) {
 	LOG("CheckIfApiIsResponding", "Testing for PONG");
 	testfor("PONG", 2000); // Flush PONG from MsgQueue
 
-	pthread_create(SkypeSystemInit, NULL);
+	pthread_create(( pThreadFunc )SkypeSystemInit, NULL);
 }
 
 static int CreateTopToolbarButton(WPARAM wParam, LPARAM lParam) {
@@ -769,7 +555,7 @@ static int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 		if (CallService(MS_GC_REGISTER, 0, (LPARAM)&gcr)) {
 			OUTPUT("Unable to register with Groupchat module!");
 		}
-		if (szEvent=malloc(strlen(pszSkypeProtoName)+10)) {
+		if (szEvent=(char*)malloc(strlen(pszSkypeProtoName)+10)) {
 			_snprintf(szEvent, sizeof szEvent, "%s\\ChatInit", pszSkypeProtoName);
 			hInitChat = CreateHookableEvent(szEvent);
 			hEvInitChat = HookEvent(szEvent, ChatInit);
@@ -781,7 +567,8 @@ static int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 	}
 	// We cannot check for the TTB-service before this event gets fired... :-/
 	hTTBModuleLoadedHook = HookEvent(ME_TTB_MODULELOADED, CreateTopToolbarButton);
-	pthread_create(FirstLaunch, NULL);
+	hHookOnUserInfoInit = HookEvent( ME_USERINFO_INITIALISE, OnDetailsInit );
+	pthread_create(( pThreadFunc )FirstLaunch, NULL);
 	return 0;
 }
 
@@ -1081,7 +868,7 @@ void MessageListProcessingThread(char *str) {
 		if (args=(fetchmsg_arg *)malloc(sizeof(*args))) {
 			args->msgnum=strdup(token+1);
 			args->getstatus=TRUE;
-			pthread_create(FetchMessageThread, args);
+			pthread_create(( pThreadFunc )FetchMessageThread, args);
 			WaitForSingleObject(SkypeMsgFetched, INFINITE);
 		}
 		token=strtok(NULL, ",");
@@ -1146,8 +933,8 @@ void RingThread(char *szSkypeMsg) {
 	dbei.eventType=EVENTTYPE_CALL;
 	dbei.szModule=pszSkypeProtoName;
 	dbei.timestamp=time(NULL);
-	dbei.pBlob=Translate("Phonecall");
-	dbei.cbBlob=lstrlen(dbei.pBlob)+1;
+	dbei.pBlob=(unsigned char*)Translate("Phonecall");
+	dbei.cbBlob=lstrlen((const char*)dbei.pBlob)+1;
 	if (!strncmp(ptr, "INCOMING", 8)) {
 		CLISTEVENT cle={0};
 		char toolTip[256];
@@ -1271,18 +1058,18 @@ void LaunchSkypeAndSetStatusThread(void *newStatus) {
 		   return 1;
 	   }
 */
-	InterlockedExchange(&SkypeStatus, ID_STATUS_CONNECTING);
+	InterlockedExchange((long*)&SkypeStatus, ID_STATUS_CONNECTING);
 	ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_OFFLINE, SkypeStatus);
 	   
 	startSkype=DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1);
 	if (!startSkype) DBWriteContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1);
 	if (ConnectToSkypeAPI(skype_path)!=-1) {
 		int oldStatus=SkypeStatus;
-		pthread_create(SkypeSystemInit, NULL);
-		InterlockedExchange(&SkypeStatus, (int)newStatus);
+		pthread_create(( pThreadFunc )SkypeSystemInit, NULL);
+		InterlockedExchange((long*)&SkypeStatus, (int)newStatus);
 		ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
 	} else {
-	   InterlockedExchange(&SkypeStatus, ID_STATUS_OFFLINE);
+	   InterlockedExchange((long*)&SkypeStatus, ID_STATUS_OFFLINE);
 	   ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_CONNECTING, SkypeStatus);
 	}
 	DBWriteContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", startSkype);
@@ -1305,7 +1092,7 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 //		 LOG("WM_COPYDATA", "start");
 		 if(hSkypeWnd==(HWND)wParam) { 
 			CopyData=(PCOPYDATASTRUCT)lParam;
-			szSkypeMsg=strdup(CopyData->lpData);
+			szSkypeMsg=strdup((char*)CopyData->lpData);
 			ReplyMessage(1);
 			LOG("<", szSkypeMsg);
 
@@ -1323,13 +1110,13 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 
 				if (sstat) {
 					oldstatus=SkypeStatus;
-					InterlockedExchange(&SkypeStatus, sstat);
+					InterlockedExchange((long*)&SkypeStatus, sstat);
 					ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
 					if (sstat!=ID_STATUS_OFFLINE) {
 						if (sstat!=ID_STATUS_CONNECTING && (oldstatus==ID_STATUS_OFFLINE || oldstatus==ID_STATUS_CONNECTING)) {
 
 							SkypeInitialized=FALSE;
-							pthread_create(SkypeSystemInit, NULL);
+							pthread_create(( pThreadFunc )SkypeSystemInit, NULL);
 						}
 						if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "KeepState", 0)) RestoreUserStatus=TRUE;
 					}
@@ -1352,12 +1139,12 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 							RestoreUserStatus=FALSE;
 						}
 						oldstatus=SkypeStatus;
-						InterlockedExchange(&SkypeStatus, sstat);
+						InterlockedExchange((long*)&SkypeStatus, sstat);
 						ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, sstat);
 #ifdef SKYPEBUG_OFFLN
 						if ((oldstatus==ID_STATUS_OFFLINE || oldstatus==ID_STATUS_CONNECTING) && 
 							SkypeStatus!=ID_STATUS_CONNECTING && SkypeStatus!=ID_STATUS_OFFLINE) 
-							pthread_create(SearchFriendsThread, NULL);
+							pthread_create(( pThreadFunc )SearchFriendsThread, NULL);
 #endif
 				}
 #ifdef SKYPEBUG_OFFLN
@@ -1413,7 +1200,7 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 			if (!strncmp(szSkypeMsg, "CURRENTUSERHANDLE", 17)) {	// My username
 				DBWriteContactSettingString(NULL, pszSkypeProtoName, SKYPE_NAME, szSkypeMsg+18);
 				DBWriteContactSettingString(NULL, pszSkypeProtoName, "Nick", szSkypeMsg+18);
-				pthread_create(GetDisplaynameThread, NULL);
+				pthread_create(( pThreadFunc )GetDisplaynameThread, NULL);
 				break;
 			}
 			if ((strstr(szSkypeMsg, "STATUS READ") && !QueryMsgDirection) ||
@@ -1448,14 +1235,14 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 				// context menu
 				if (ptr=strstr(szSkypeMsg, " STATUS ")) {
 					ptr[0]=0; ptr+=8;
-					if (!strcmp(ptr, "RINGING") || !strcmp(ptr, "ROUTING")) pthread_create(RingThread, strdup(szSkypeMsg));
+					if (!strcmp(ptr, "RINGING") || !strcmp(ptr, "ROUTING")) pthread_create(( pThreadFunc )RingThread, strdup(szSkypeMsg));
 					if (!strcmp(ptr, "FAILED") || !strcmp(ptr, "FINISHED") ||
 						!strcmp(ptr, "MISSED") || !strcmp(ptr, "REFUSED")  ||
 						!strcmp(ptr, "BUSY")   || !strcmp(ptr, "CANCELLED"))
-							pthread_create(EndCallThread, strdup(szSkypeMsg));
+							pthread_create(( pThreadFunc )EndCallThread, strdup(szSkypeMsg));
 					if (!strcmp(ptr, "ONHOLD") || !strcmp(ptr, "LOCALHOLD") ||
-						!strcmp(ptr, "REMOTEHOLD")) pthread_create(HoldCallThread, strdup(szSkypeMsg));
-					if (!strcmp(ptr, "INPROGRESS")) pthread_create(ResumeCallThread, strdup(szSkypeMsg));
+						!strcmp(ptr, "REMOTEHOLD")) pthread_create(( pThreadFunc )HoldCallThread, strdup(szSkypeMsg));
+					if (!strcmp(ptr, "INPROGRESS")) pthread_create(( pThreadFunc )ResumeCallThread, strdup(szSkypeMsg));
 					break;
 				} else if ((!strstr(szSkypeMsg, "PARTNER_HANDLE") && !strstr(szSkypeMsg, "FROM_HANDLE"))
 							&& !strstr(szSkypeMsg, "TYPE")) break;
@@ -1493,12 +1280,12 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 			  if (!(args=(fetchmsg_arg *)malloc(sizeof(*args)))) break;
 			  args->msgnum=strdup(strchr(szSkypeMsg, ' ')+1);
 			  args->getstatus=FALSE;
-			  pthread_create(FetchMessageThread, args);
+			  pthread_create(( pThreadFunc )FetchMessageThread, args);
 			  break;
 			}
 			if (!strncmp(szSkypeMsg, "MESSAGES", 8) || !strncmp(szSkypeMsg, "CHATMESSAGES", 12)) {
 				if (strlen(szSkypeMsg)<=(UINT)(strchr(szSkypeMsg, ' ')-szSkypeMsg+1)) break;
-				pthread_create(MessageListProcessingThread, strdup(strchr(szSkypeMsg, ' ')));
+				pthread_create(( pThreadFunc )MessageListProcessingThread, strdup(strchr(szSkypeMsg, ' ')));
 				break;
 			}
 			if (!strncmp(szSkypeMsg, "ERROR 68", 8)) {
@@ -1552,7 +1339,7 @@ void TellError(DWORD err) {
 	
 		FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
 					  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL);
-        MessageBox( NULL, lpMsgBuf, "GetLastError", MB_OK|MB_ICONINFORMATION );
+        MessageBox( NULL, (char*)lpMsgBuf, "GetLastError", MB_OK|MB_ICONINFORMATION );
         LocalFree( lpMsgBuf );
 		return;
 }
@@ -1695,7 +1482,7 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
    if ((int)wParam==ID_STATUS_OFFLINE) {
 	   if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0)) {
 		   if (AttachStatus!=-1) _spawnl(_P_NOWAIT, skype_path, skype_path, "/SHUTDOWN", NULL);
-		   InterlockedExchange(&SkypeStatus, (int)wParam);
+		   InterlockedExchange((long*)&SkypeStatus, (int)wParam);
 		   ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
 	 	   SkypeInitialized=FALSE;
 		   ResetEvent(SkypeReady);
@@ -1736,7 +1523,7 @@ int SkypeBasicSearch(WPARAM wParam, LPARAM lParam) {
 
 	LOG("SkypeBasicSearch", (char *)lParam);
 	if (!SkypeInitialized) return 0;
-	return (hSearchThread=pthread_create(BasicSearchThread, strdup((char *)lParam)));
+	return (hSearchThread=pthread_create(( pThreadFunc )BasicSearchThread, strdup((char *)lParam)));
 }
 
 void MessageSendWatchThread(HANDLE hContact) {
@@ -1835,7 +1622,7 @@ char *__skypeauth(WPARAM wParam) {
 
 	dbei.cbSize = sizeof(dbei);
 	if ((dbei.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, wParam, 0))==-1 ||
-		!(dbei.pBlob = malloc(dbei.cbBlob))) 
+		!(dbei.pBlob = (unsigned char*)malloc(dbei.cbBlob))) 
 	{	return NULL; }
 
 	if (CallService(MS_DB_EVENT_GET, wParam, (LPARAM)&dbei) ||
@@ -1845,7 +1632,7 @@ char *__skypeauth(WPARAM wParam) {
 		free(dbei.pBlob);
 		return NULL;
 	}
-	return dbei.pBlob;
+	return (char *)dbei.pBlob;
 }
 
 int SkypeAuthAllow(WPARAM wParam, LPARAM lParam) {
@@ -1911,6 +1698,95 @@ void CleanupNicknames(char *dummy) {
 		}
 	}
 	OUTPUT("Cleanup finished.");
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// EnterBitmapFileName - enters a bitmap filename
+
+int __stdcall EnterBitmapFileName( char* szDest )
+{
+	*szDest = 0;
+
+	char szFilter[ 512 ];
+	CallService( MS_UTILS_GETBITMAPFILTERSTRINGS, sizeof szFilter, ( LPARAM )szFilter );
+
+	char str[ MAX_PATH ]; str[0] = 0;
+	OPENFILENAMEA ofn = {0};
+	ofn.lStructSize = sizeof( OPENFILENAME );
+	ofn.lpstrFilter = szFilter;
+	ofn.lpstrFile = szDest;
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.nMaxFileTitle = MAX_PATH;
+	ofn.lpstrDefExt = "bmp";
+	if ( !GetOpenFileNameA( &ofn ))
+		return 1;
+
+	return ERROR_SUCCESS;
+}
+
+/*AvatarDlgProc
+*
+* For setting the skype avatar
+*
+*/
+BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	static RECT r;
+
+	switch ( msg ) {
+	case WM_INITDIALOG:
+		TranslateDialogDefault( hwndDlg );
+
+		hAvatar = NULL;
+		char tBuffer[ MAX_PATH ];
+		if(ServiceExists(MS_AV_GETMYAVATAR)){
+			struct avatarCacheEntry *ace = (struct avatarCacheEntry *)CallService(MS_AV_GETMYAVATAR, 0,(LPARAM) pszSkypeProtoName);
+			if (ace!=NULL) {
+				hAvatar = ( HBITMAP )CallService( MS_UTILS_LOADBITMAP, 0, ( LPARAM )ace->szFilename);
+				if ( hAvatar != NULL )
+					SendDlgItemMessage(hwndDlg, IDC_AVATAR, STM_SETIMAGE, IMAGE_BITMAP, (WPARAM)hAvatar );
+			}
+		}
+
+
+		
+		return TRUE;
+
+	case WM_COMMAND:
+		if ( HIWORD( wParam ) == BN_CLICKED ) {
+			switch( LOWORD( wParam )) {
+			case IDC_SETAVATAR:
+				char szFileName[ MAX_PATH ];
+				if ( EnterBitmapFileName( szFileName ) != ERROR_SUCCESS )
+					return false;
+
+				hAvatar = ( HBITMAP )CallService( MS_UTILS_LOADBITMAP, 0, ( LPARAM )szFileName);
+				if ( hAvatar != NULL ){
+					SendDlgItemMessage(hwndDlg, IDC_AVATAR, STM_SETIMAGE, IMAGE_BITMAP, (WPARAM)hAvatar );
+					CallService(SKYPE_SETAVATAR, 0, ( LPARAM )szFileName);
+				}
+				break;
+
+			case IDC_DELETEAVATAR:
+				if ( hAvatar != NULL ) {
+					DeleteObject( hAvatar );
+					hAvatar = NULL;
+					CallService(SKYPE_SETAVATAR, 0, NULL);
+				}
+				DBDeleteContactSetting( NULL, pszSkypeProtoName, "AvatarFile" );
+				InvalidateRect( hwndDlg, NULL, TRUE );
+				break;
+		}	}
+		break;
+
+	case WM_DESTROY:
+		if ( hAvatar != NULL )
+			DeleteObject( hAvatar );
+		break;
+	}
+
+	return 0;
 }
 
 /*
@@ -2026,7 +1902,7 @@ static int CALLBACK OptionsDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 					EnableWindow(GetDlgItem(hwndDlg, IDC_PASSWORD), SendMessage(GetDlgItem(hwndDlg, LOWORD(wParam)), BM_GETCHECK,0,0));
 					break;
 				case IDC_CLEANUP:
-					pthread_create(CleanupNicknames, NULL);
+					pthread_create(( pThreadFunc )CleanupNicknames, NULL);
 					break;
 
 			}
@@ -2036,7 +1912,30 @@ static int CALLBACK OptionsDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 	return 0;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// OnDetailsInit - initializes user info dialog pages.
 
+int OnDetailsInit( WPARAM wParam, LPARAM lParam )
+{
+	OPTIONSDIALOGPAGE odp = {0};
+	odp.cbSize = sizeof(odp);
+	odp.hIcon = NULL;
+	odp.hInstance = hInst;
+
+	HANDLE hContact = ( HANDLE )lParam;
+	if ( hContact == NULL ) {
+		
+		char szTitle[256];
+		mir_snprintf( szTitle, sizeof( szTitle ), "Skype %s", Translate( "Avatar" ));
+
+		odp.pfnDlgProc = AvatarDlgProc;
+		odp.position = 1900000000;
+		odp.pszTemplate = MAKEINTRESOURCEA(IDD_SETAVATAR);
+		odp.pszTitle = szTitle;
+		CallService(MS_USERINFO_ADDPAGE, wParam, (LPARAM)&odp);
+	}
+	return 0;
+}
 /*
  * RegisterOptions
  *
@@ -2074,7 +1973,7 @@ int EnumOldPluginName(const char *szSetting,LPARAM lParam)
 {
 	struct PLUGINDI *pdi=(struct PLUGINDI*)lParam;
 	if (pdi && lParam) {
-			pdi->szSettings=realloc(pdi->szSettings,(pdi->dwCount+1)*sizeof(char*));
+			pdi->szSettings=(char**)realloc(pdi->szSettings,(pdi->dwCount+1)*sizeof(char*));
 			pdi->szSettings[pdi->dwCount++]=_strdup(szSetting);
 	} 
 	return 0;
@@ -2159,21 +2058,21 @@ void UpgradeName(char *OldName)
 
 // DLL Stuff //
 
-__declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
+extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
 {
 		return &pluginInfo;
 }
 
 
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
+extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
 	hInst = hinstDLL;
 	return TRUE;
 }
 
 
-int __declspec(dllexport) Load(PLUGINLINK *link)
+extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 
 	PROTOCOLDESCRIPTOR pd;
@@ -2240,7 +2139,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 				SkypeInstalled=FALSE;
 		Buffsize=sizeof(skype_path);
 		if (SkypeInstalled==FALSE || 
-			RegQueryValueEx(MyKey, "SkypePath", NULL, NULL, skype_path,  &Buffsize)!=ERROR_SUCCESS) {
+			RegQueryValueEx(MyKey, "SkypePath", NULL, NULL, (unsigned char *)skype_path,  &Buffsize)!=ERROR_SUCCESS) {
 			    OUTPUT("Skype was not found installed :(");
 				RegCloseKey(MyKey);
 				skype_path[0]=0;
@@ -2297,6 +2196,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 		CreateServiceFunction(SKYPE_IMPORTHISTORY, ImportHistory);
 		CreateServiceFunction(SKYPE_ANSWERCALL, SkypeAnswerCall);
 		CreateServiceFunction(SKYPE_SENDFILE, SkypeSendFile);
+		CreateServiceFunction(SKYPE_SETAVATAR, SkypeSetAvatar);
 
 		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETCAPS);
 		CreateServiceFunction(pszServiceName , SkypeGetCaps);
@@ -2332,6 +2232,9 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_AUTHDENY);
 		CreateServiceFunction(pszServiceName , SkypeAuthDeny);
 
+		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETAVATARINFO);
+		CreateServiceFunction(pszServiceName , SkypeGetAvatarInfo);
+
 	}
 	hStatusHookContact = HookEvent(ME_DB_CONTACT_ADDED,HookContactAdded);
 	hContactDeleted = HookEvent( ME_DB_CONTACT_DELETED, HookContactDeleted );
@@ -2345,13 +2248,14 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 	hHookModulesLoaded = HookEvent( ME_SYSTEM_MODULESLOADED, OnModulesLoaded);
 	hHookOkToExit = HookEvent(ME_SYSTEM_OKTOEXIT, OkToExit);
 	
+	
 	return 0;
 
 }
 
 
 
-int __declspec(dllexport) Unload(void) 
+extern "C" int __declspec( dllexport ) Unload(void) 
 {
 	if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "Shutdown", 0) && skype_path[0])
 		_spawnl(_P_NOWAIT, skype_path, skype_path, "/SHUTDOWN", NULL);
@@ -2370,6 +2274,7 @@ int __declspec(dllexport) Unload(void)
 		UnhookEvent(hHookOkToExit);
 		UnhookEvent(PrebuildContactMenu);
 		UnhookEvent(hPrebuildCMenu);
+		UnhookEvent(hHookOnUserInfoInit);
 		//UnhookEvent(ClistDblClick);
 		CloseHandle(hThread);
 		CloseHandle(SkypeReady);
