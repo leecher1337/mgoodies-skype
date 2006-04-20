@@ -1093,7 +1093,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 {
 	struct ThreadData *info;
 	HANDLE hContact;
-	XmlNode *queryNode, *siNode, *n;
+	XmlNode *queryNode, *siNode, *n, *newMailNode;
 	char* from, *type, *jid, *nick;
 	char* xmlns, *profile;
 	char* idStr, *str, *p, *q;
@@ -1372,6 +1372,15 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 				idStr = JabberXmlGetAttrValue( node, "id" );
 				JabberSend( jabberThreadInfo->s, "<iq type='error' to='%s'%s%s%s><error code='400' type='cancel'><bad-request xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/><bad-profile xmlns='http://jabber.org/protocol/si'/></error></iq>", from, ( idStr )?" id='":"", ( idStr )?idStr:"", ( idStr )?"'":"" );
 		}	}
+	}
+	// RECVED: <iq type='set'><new-mail ' ...
+	else if ( !strcmp( type, "set" ) && ( newMailNode=JabberXmlGetChild( node, "new-mail" ) ) ) {
+
+		// RECVED: new-mail notify
+		// ACTION: Reply & request 
+		idStr = JabberXmlGetAttrValue( node, "id" );
+		JabberSend( jabberThreadInfo->s, "<iq type='result' id='%s'/>",idStr );
+		JabberRequestMailBox( info->s );
 	}
 	// RECVED: <iq type='error'> ...
 	else if ( !strcmp( type, "error" )) {
