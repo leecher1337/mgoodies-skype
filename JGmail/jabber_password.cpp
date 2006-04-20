@@ -49,7 +49,7 @@ static BOOL CALLBACK JabberChangePasswordDlgProc( HWND hwndDlg, UINT msg, WPARAM
 		{
 			char text[128];
 
-			SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )LoadIcon( hInst, MAKEINTRESOURCE( IDI_KEYS )) );
+			SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )iconBigList[1] );
 			TranslateDialogDefault( hwndDlg );
 			if ( jabberOnline && jabberThreadInfo!=NULL ) {
 				mir_snprintf( text, sizeof( text ), "%s %s@%s", JTranslate( "Set New Password for" ), jabberThreadInfo->username, jabberThreadInfo->server );

@@ -1194,9 +1194,10 @@ static HANDLE hEventSettingChanged = NULL;
 static HANDLE hEventContactDeleted = NULL;
 static HANDLE hEventRebuildCMenu = NULL;
 
-static HANDLE hMenuAgent = NULL;
-static HANDLE hMenuChangePassword = NULL;
-static HANDLE hMenuGroupchat = NULL;
+HANDLE hMenuAgent = NULL;
+HANDLE hMenuChangePassword = NULL;
+HANDLE hMenuGroupchat = NULL;
+HANDLE hMenuVCard = NULL;
 
 int JabberMenuHandleAgents( WPARAM wParam, LPARAM lParam );
 int JabberMenuHandleChangePassword( WPARAM wParam, LPARAM lParam );
@@ -1273,7 +1274,7 @@ int JabberSvcInit( void )
 		mi.popupPosition = 500090000;
 		mi.pszName = JTranslate( "Agents..." );
 		mi.position = 2000050000;
-		mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_AGENTS ));
+		mi.hIcon = iconList[2];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_AGENTS ));
 		mi.pszService = text;
 		hMenuAgent = ( HANDLE ) JCallService( MS_CLIST_ADDMAINMENUITEM, 0, ( LPARAM )&mi );
 		JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM ) hMenuAgent, ( LPARAM )&clmi );
@@ -1283,7 +1284,7 @@ int JabberSvcInit( void )
 		CreateServiceFunction( text, JabberMenuHandleChangePassword );
 		mi.pszName = JTranslate( "Change Password..." );
 		mi.position = 2000050001;
-		mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_KEYS ));
+		mi.hIcon = iconBigList[1];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_KEYS ));
 		mi.pszService = text;
 		hMenuChangePassword = ( HANDLE ) JCallService( MS_CLIST_ADDMAINMENUITEM, 0, ( LPARAM )&mi );
 		JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM ) hMenuChangePassword, ( LPARAM )&clmi );
@@ -1293,7 +1294,7 @@ int JabberSvcInit( void )
 		CreateServiceFunction( text, JabberMenuHandleGroupchat );
 		mi.pszName = JTranslate( "Multi-User Conference..." );
 		mi.position = 2000050002;
-		mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_GROUP ));
+		mi.hIcon = iconBigList[0];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_GROUP ));
 		mi.pszService = text;
 		hMenuGroupchat = ( HANDLE ) JCallService( MS_CLIST_ADDMAINMENUITEM, 0, ( LPARAM )&mi );
 		JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM ) hMenuGroupchat, ( LPARAM )&clmi );
@@ -1303,9 +1304,9 @@ int JabberSvcInit( void )
 		CreateServiceFunction( text, JabberMenuHandleVcard );
 		mi.pszName = JTranslate( "Personal vCard..." );
 		mi.position = 2000050003;
-		mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_VCARD ));
+		mi.hIcon = iconList[1];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_VCARD ));
 		mi.pszService = text;
-		JCallService( MS_CLIST_ADDMAINMENUITEM, 0, ( LPARAM )&mi );
+		hMenuVCard = ( HANDLE ) JCallService( MS_CLIST_ADDMAINMENUITEM, 0, ( LPARAM )&mi );
 	}
 	return 0;
 }

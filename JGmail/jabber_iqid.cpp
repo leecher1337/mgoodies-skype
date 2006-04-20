@@ -35,6 +35,7 @@ extern char* streamId;
 extern char* jabberVcardPhotoFileName;
 extern char* jabberVcardPhotoType;
 
+/* this is not needed anylonger - new Auth procedure
 void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata )
 {
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
@@ -111,13 +112,6 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 			JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
 			JabberSend( info->s, "<iq type='get' id='"JABBER_IQID"%d'><query xmlns='jabber:iq:agents'/></iq>", iqId );
 		}
-		{
-			int i = JGetByte(NULL,"EnableGMail",1);
-			if (i & 1) {
-				JabberEnableNotifications(info);
-				if ((i & 2) == 0) JabberRequestMailBox(info->s);
-			}
-		}
 	}
 	// What to do if password error? etc...
 	else if ( !strcmp( type, "error" )) {
@@ -129,6 +123,59 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 		jabberThreadInfo = NULL;	// To disallow auto reconnect
 }	}
+*/
+void JabberIqResultBind( XmlNode *iqNode, void *userdata )
+{
+//	JabberXmlDumpNode( iqNode );
+	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	int iqId;
+	XmlNode* queryNode = JabberXmlGetChild( iqNode, "bind" );
+	if (queryNode){
+//		JabberLog("Has query node");
+		if (queryNode=JabberXmlGetChild( queryNode, "jid" )){
+//			JabberLog("Has query jid");
+			if (queryNode->text) {
+//				JabberLog("JID has text");
+				JabberLog("text: %s",queryNode->text);
+				if (!strncmp(info->fullJID,queryNode->text,sizeof (info->fullJID))){
+					JabberLog( "Result Bind: %s %s %s",info->fullJID,"confirmed.",NULL);
+				} else {
+					JabberLog( "Result Bind: %s %s %s",info->fullJID,"changed to",queryNode->text);
+					strncpy(info->fullJID,queryNode->text,sizeof (info->fullJID));
+			}	}
+		} else if (queryNode=JabberXmlGetChild( queryNode, "error" )){
+			//rfc3920 page 39
+			char errorMessage [256];
+			int pos=0;
+			pos = mir_snprintf(errorMessage,256,Translate("Resource "));
+			XmlNode *tempNode;
+			if (tempNode = JabberXmlGetChild( queryNode, "resource" )) pos += mir_snprintf(errorMessage,256-pos,"\"%s\" ",tempNode->text);
+			pos += mir_snprintf(errorMessage,256-pos,Translate("refused by server\n%s: %s"),Translate("Type"),Translate(JabberXmlGetAttrValue( queryNode, "type" )));
+			if (queryNode->numChild) pos += mir_snprintf(errorMessage+pos,256-pos,"\n%s: %s\n",Translate("Reason"),Translate(queryNode->child[0]->name));
+			mir_snprintf( errorMessage,256-pos, "%s %s@%s.", JTranslate( "Authentication failed for" ), info->username, info->server );
+			MessageBoxA( NULL, errorMessage, JTranslate( "Jabber Protocol" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPROTOCOL );
+			JabberSend( info->s, "</stream:stream>" );
+			jabberThreadInfo = NULL;	// To disallow auto reconnect
+		}
+	}
+	{
+		int i = JGetByte(NULL,"EnableGMail",1);
+		if (i & 1) {
+			JabberEnableNotifications(info);
+			if ((i & 2) == 0) JabberRequestMailBox(info->s);
+		}
+	}
+	iqId = JabberSerialNext();
+	JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
+	JabberSend( info->s, "<iq type='get' id='"JABBER_IQID"%d'><query xmlns='jabber:iq:roster'/></iq>", iqId );
+	if ( hwndJabberAgents ) {
+		// Retrieve agent information
+		iqId = JabberSerialNext();
+		JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
+		JabberSend( info->s, "<iq type='get' id='"JABBER_IQID"%d'><query xmlns='jabber:iq:agents'/></iq>", iqId );
+	}
+}
 
 void CALLBACK sttCreateRoom( ULONG dwParam )
 {

@@ -527,4 +527,6 @@ extern MM_INTERFACE memoryManagerInterface;
 #define mir_free(ptr) memoryManagerInterface.mmi_free(ptr)
 #define mir_realloc(ptr,size) memoryManagerInterface.mmi_realloc(ptr,size)
 
+extern HICON iconBigList[3];
+extern HICON iconList[14];
 #endif

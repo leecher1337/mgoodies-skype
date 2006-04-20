@@ -103,7 +103,7 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 	switch ( msg ) {
 	case WM_INITDIALOG:
 		// lParam is the initial conference server ( if any )
-		SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )LoadIcon( hInst, MAKEINTRESOURCE( IDI_GROUP )) );
+		SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )iconBigList[0] );
 		TranslateDialogDefault( hwndDlg );
 		sortColumn = -1;
 		// Add columns
@@ -774,7 +774,7 @@ static BOOL CALLBACK JabberGroupchatInviteAcceptDlgProc( HWND hwndDlg, UINT msg,
 			nick = JabberNickFromJID( jabberJID );
 			SetDlgItemTextA( hwndDlg, IDC_NICK, nick );
 			free( nick );
-			SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )LoadIcon( hInst, MAKEINTRESOURCE( IDI_GROUP )) );
+			SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )iconBigList[0] );
 		}
 		return TRUE;
 	case WM_COMMAND:

@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by jabber.rc
+// Microsoft Developer Studio generated include file.
+// Used by msvc6.rc
 //
 #define IDCANCEL2                       3
 #define IDD_OPT_JABBER                  101
@@ -10,10 +10,12 @@
 #define IDD_AGENTS                      106
 #define IDD_FORM                        107
 #define IDD_PASSWORD                    111
-#define IDI_TLEN                        121
-#define IDI_ADDCONTACT                  122
-#define IDI_DELETE                      123
-#define IDI_EDIT                        124
+//#define IDI_TLEN                        121
+#define IDB_ICONSSMALL                  122
+#define IDB_ICONSBIG                    123
+//#define IDI_ADDCONTACT                  122
+//#define IDI_DELETE                      123
+//#define IDI_EDIT                        124
 #define IDD_VCARD                       125
 #define IDD_VCARD_HOME                  126
 #define IDD_VCARD_PERSONAL              127
@@ -21,37 +23,37 @@
 #define IDD_VCARD_CONTACT               129
 #define IDD_VCARD_ADDEMAIL              130
 #define IDD_VCARD_ADDPHONE              131
-#define IDI_OPEN                        131
+//#define IDI_OPEN                        131
 #define IDD_VCARD_PHOTO                 132
 #define IDD_VCARD_NOTE                  133
 #define IDD_CHANGEPASSWORD              136
 #define IDD_OPT_JABBER2                 140
-#define IDI_REQUEST                     141
+//#define IDI_REQUEST                     141
 #define IDD_GROUPCHAT                   141
-#define IDI_GRANT                       142
-#define IDI_KEYS                        144
-#define IDI_GROUP                       147
+//#define IDI_GRANT                       142
+//#define IDI_KEYS                        144
+//#define IDI_GROUP                       147
 #define IDD_GROUPCHAT_JOIN              148
-#define IDI_AGENTS                      154
-#define IDI_VCARD                       155
-#define IDI_WRITE                       162
-#define IDI_SAVE                        166
+//#define IDI_AGENTS                      154
+//#define IDI_VCARD                       155
+//#define IDI_WRITE                       162
+//#define IDI_SAVE                        166
 #define IDD_GROUPCHAT_INPUT             167
 #define IDD_ADVSEARCH_TLEN              169
 #define IDD_JIDLIST                     171
-#define IDI_GCOWNER                     173
-#define IDI_GCADMIN                     175
-#define IDI_GCMODERATOR                 176
-#define IDI_GCVOICE                     179
+//#define IDI_GCOWNER                     173
+//#define IDI_GCADMIN                     175
+//#define IDI_GCMODERATOR                 176
+//#define IDI_GCVOICE                     179
 #define IDD_AGENT_MANUAL_REGISTER       182
 #define IDD_GROUPCHAT_INVITE            183
 #define IDD_GROUPCHAT_INVITE_ACCEPT     184
 #define IDD_OPT_JABBER3                 185
 #define IDD_OPT_SETAVATAR               185
-#define IDI_MAIL_NEW                    186
-#define IDI_MAIL_STOP                   187
-#define IDI_MAIL_INFO                   188
-#define IDI_MAIL_CLOCK                  189
+//#define IDI_MAIL_NEW                    186
+//#define IDI_MAIL_STOP                   187
+//#define IDI_MAIL_INFO                   188
+//#define IDI_MAIL_CLOCK                  189
 #define IDD_OPT_EXPERT                  190
 #define IDC_OPT_EXPERT_TAB              191
 #define IDD_OPT_JGMAIL                  192
@@ -253,7 +255,7 @@
 #define IDM_INVITE                      10016
 
 // Next default values for new objects
-//
+// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        220

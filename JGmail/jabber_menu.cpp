@@ -34,9 +34,9 @@ void JabberGroupchatJoinRoom( const char* server, const char* room, const char* 
 /////////////////////////////////////////////////////////////////////////////////////////
 // module data
 
-static HANDLE hMenuRequestAuth = NULL;
-static HANDLE hMenuGrantAuth = NULL;
-static HANDLE hMenuJoinLeave = NULL;
+HANDLE hMenuRequestAuth = NULL;
+HANDLE hMenuGrantAuth = NULL;
+HANDLE hMenuJoinLeave = NULL;
 
 static void sttEnableMenuItem( HANDLE hMenuItem, BOOL bEnable )
 {
@@ -165,7 +165,7 @@ void JabberMenuInit()
 	CreateServiceFunction( text, JabberMenuHandleRequestAuth );
 	mi.pszName = JTranslate( "Request authorization" );
 	mi.position = -2000001001;
-	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_REQUEST ));
+	mi.hIcon = iconList[6];// IDI_REQUEST;
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuRequestAuth = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
@@ -175,7 +175,7 @@ void JabberMenuInit()
 	CreateServiceFunction( text, JabberMenuHandleGrantAuth );
 	mi.pszName = JTranslate( "Grant authorization" );
 	mi.position = -2000001000;
-	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_GRANT ));
+	mi.hIcon = iconList[7];// IDI_GRANT;
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuGrantAuth = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
@@ -185,7 +185,7 @@ void JabberMenuInit()
 	CreateServiceFunction( text, JabberMenuJoinLeave );
 	mi.pszName = JTranslate( "Join chat" );
 	mi.position = -2000001002;
-	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_GROUP ));
+	mi.hIcon = iconBigList[0];
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuJoinLeave = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
