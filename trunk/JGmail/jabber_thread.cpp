@@ -141,8 +141,18 @@ static int xmpp_client_query( char* domain )
 }
 
 static XmlState xmlState;
-void xmlStreamBegin(struct ThreadData *info, char *which){
-	JabberLog("Initialising stream %s",which);
+static char *xmlStreamToBeInitialized = 0;
+static void xmlStreamInitialize(char *which){
+	JabberLog("Stream will be initialized %s",which);
+	xmlStreamToBeInitialized = strdup(which);
+}
+static void xmlStreamInitializeNow(struct ThreadData *info){
+	JabberLog("Stream is initializing %s",xmlStreamToBeInitialized?xmlStreamToBeInitialized:"after connect");
+	if (xmlStreamToBeInitialized){
+		free(xmlStreamToBeInitialized);
+		xmlStreamToBeInitialized = NULL;
+		JabberXmlDestroyState(&xmlState);
+	}
 	JabberXmlInitState( &xmlState );
 	JabberXmlSetCallback( &xmlState, 1, ELEM_OPEN, JabberProcessStreamOpening, info );
 	JabberXmlSetCallback( &xmlState, 1, ELEM_CLOSE, JabberProcessStreamClosing, info );
@@ -341,20 +351,20 @@ LBL_Exit:
 
 	BOOL sslMode = FALSE;
 	if ( info->port==443){ //fake ssl session - Client Hello
-		BYTE peer0_0[] = { //Long Live Ethereal!
-		0x80, 0x46, 0x01, 0x03, 0x01, 0x00, 0x2d, 0x00, 
-		0x00, 0x00, 0x10, 0x01, 0x00, 0x80, 0x03, 0x00, 
-		0x80, 0x07, 0x00, 0xc0, 0x06, 0x00, 0x40, 0x02, 
-		0x00, 0x80, 0x04, 0x00, 0x80, 0x00, 0x00, 0x04, 
-		0x00, 0xfe, 0xff, 0x00, 0x00, 0x0a, 0x00, 0xfe, 
-		0xfe, 0x00, 0x00, 0x09, 0x00, 0x00, 0x64, 0x00, 
-		0x00, 0x62, 0x00, 0x00, 0x03, 0x00, 0x00, 0x06, 
-		0x1f, 0x17, 0x0c, 0xa6, 0x2f, 0x00, 0x78, 0xfc, 
-		0x46, 0x55, 0x2e, 0xb1, 0x83, 0x39, 0xf1, 0xea };
-		JabberWsSend(info->s,(char *)peer0_0,sizeof(peer0_0));
+		unsigned int fake[] = {//Long Live Ethereal!
+			0x03014680, 0x002D0001, 0x01100000, 0x00038000,
+			0xC0000780, 0x02400006, 0x00048000, 0x04000080,
+			0x00FFFE00, 0xFE000A00, 0x090000FE, 0x00640000,
+			0x00006200, 0x06000003, 0xA60C171F, 0xFC78002F,
+			0xB12E5546, 0xEAF13983};
+		Netlib_Send( info->s,(char *)fake,sizeof(fake), MSG_NODUMP );
 		char *buff = (char *)mir_alloc(0x100);
-		int i = JabberWsRecv(info->s,buff,0x100);
+		int i = Netlib_Recv( info->s,buff,0x100, MSG_NODUMP );
 		mir_free(buff);
+		if (!i){
+			JabberLog( "Thread ended, fake HTTPS session failed" );
+			goto LBL_Exit;
+		}
 	} else if ( info->useSSL ) {
 		JabberLog( "Intializing SSL connection" );
 		if ( 
@@ -417,7 +427,7 @@ LBL_Exit:
 			JabberForkThread( JabberKeepAliveThread, 0, info->s );
 		}
 
-		xmlStreamBegin(info, "Entering main recv loop" );
+		xmlStreamInitializeNow(info);
 		datalen = 0;
 
 		for ( ;; ) {
@@ -464,6 +474,8 @@ LBL_Exit:
 					break;
 			}	}
 			else JabberLog( "Unknown state: bytesParsed=%d, datalen=%d, jabberNetworkBufferSize=%d", bytesParsed, datalen, jabberNetworkBufferSize );
+			
+			if (xmlStreamToBeInitialized) xmlStreamInitializeNow(info);
 		}
 
 		JabberXmlDestroyState( &xmlState );
@@ -571,13 +583,12 @@ static void JabberProcessStreamClosing( XmlNode *node, void *userdata )
 		MessageBoxA( NULL, JTranslate( node->text ), JTranslate( "Jabber Connection Error" ), MB_OK|MB_ICONERROR|MB_SETFOREGROUND );
 }
 
-static void JabberProcessFeatures( XmlNode *node, void *userdata )
-{
+static void JabberProcessFeatures( XmlNode *node, void *userdata ){
 	int i,k;
 	bool isPlainAvailable = false;
+	bool isXGoogleTokenAvailable = false;
 	bool isRegisterAvailable = false;
 	bool areMechanismsDefined = false;
-	char *PLAIN = 0;
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
 	for (i=0;i<node->numChild;i++){
 		if (!strcmp(node->child[i]->name,"starttls")){
@@ -597,24 +608,39 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 				if (!strcmp(node->child[i]->child[k]->name,"mechanism"))
 					//JabberLog("Mechanism: %s",node->child[i]->child[k]->text);
 					if (!strcmp(node->child[i]->child[k]->text,"PLAIN")) isPlainAvailable = true;
+					if (!strcmp(node->child[i]->child[k]->text,"X-GOOGLE-TOKEN")) isXGoogleTokenAvailable = true;
 			}
 		} else if (!strcmp(node->child[i]->name,"register")) isRegisterAvailable = true;
 	}
 	if (areMechanismsDefined) {
-		if (isPlainAvailable){
+		char *PLAIN = 0;
+		char *X_GOOGLE_TOKEN = 0;
+		if (isPlainAvailable && isXGoogleTokenAvailable)
+			if (info->useSSL ) isXGoogleTokenAvailable = false;//we Prefere plain if SSL
+		if (isXGoogleTokenAvailable){
+			int size = strlen(info->username)+1+strlen(info->server);
+			char *localJid = (char *)mir_alloc(size+1);
+			mir_snprintf(localJid,size+1,"%s@%s",info->username,info->server);
+			X_GOOGLE_TOKEN = getXGoogleToken(localJid,info->password);
+			if (!X_GOOGLE_TOKEN) X_GOOGLE_TOKEN = ""; //Later will show auth failed
+			mir_free(localJid);
+		} else if (isPlainAvailable){
 			int size = strlen(info->username)*2+strlen(info->server)+strlen(info->password)+3;
 			char *toEncode = (char *)mir_alloc(size+1);
 			mir_snprintf(toEncode,size+1,"%s@%s%c%s%c%s",info->username,info->server,0,info->username,0,info->password);
 			PLAIN = JabberBase64Encode( toEncode, size );
+			mir_free(toEncode);
 			JabberLog( "Never publish the hash below" );
 		} else {
-			MessageBoxA( NULL, JTranslate("Auth method 'PLAIN' not available. Giving up."), JTranslate( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+			MessageBoxA( NULL, JTranslate("No known auth methods available. Giving up."), JTranslate( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JabberSend( info->s, "</stream:stream>" );
 			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 			return;
 		}
 		if ( info->type == JABBER_SESSION_NORMAL ) {
-			JabberSend( info->s, "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN'>%s</auth>",PLAIN);
+			JabberSend( info->s, "<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='%s'>%s</auth>",
+				X_GOOGLE_TOKEN?"X-GOOGLE-TOKEN":"PLAIN",
+				X_GOOGLE_TOKEN?X_GOOGLE_TOKEN:PLAIN);
 		}
 		else if ( info->type == JABBER_SESSION_REGISTER ) {
 			iqIdRegGetReg = JabberSerialNext();
@@ -622,6 +648,15 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 50, ( LPARAM )JTranslate( "Requesting registration instruction..." ));
 		}
 		else JabberSend( info->s, "</stream:stream>" );
+		if (PLAIN) free(PLAIN);
+//		if (X_GOOGLE_TOKEN) free(X_GOOGLE_TOKEN);
+	} else { // mechanisms are not defined. We are already logged-in
+		char *str=JabberTextEncode( info->resource );
+		int iqId = JabberSerialNext();
+		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultBind );
+		JabberSend( info->s, "<iq type='set' id='"JABBER_IQID"%d'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>%s</resource></bind></iq>",iqId,str);
+		JabberSend( info->s, "<iq type='set' id='sess_1'><session xmlns='urn:ietf:params:xml:ns:xmpp-session'/></iq>");
+		free(str);
 	}
 }
 
@@ -666,28 +701,20 @@ static void JabberProcessSuccess( XmlNode *node, void *userdata )
 	//JabberXmlDumpNode( node );
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
 	char* type;
-	int iqId;
+//	int iqId;
 	// RECVED: <success ...
 	// ACTION: if successfully logged in, continue by requesting roster list and set my initial status
 	if (( type=JabberXmlGetAttrValue( node, "xmlns" )) == NULL ) return;
 
 	if ( !strcmp( type, "urn:ietf:params:xml:ns:xmpp-sasl" )){
 		DBVARIANT dbv;
-		char *str;
 
 		JabberLog( "Succcess: Logged-in." );
 		if ( DBGetContactSetting( NULL, jabberProtoName, "Nick", &dbv ))
 			JSetString( NULL, "Nick", info->username );
 		else
 			JFreeVariant( &dbv );
-		JabberXmlDestroyState(&xmlState);
-		xmlStreamBegin( info, "after successful sasl" );
-		str=JabberTextEncode( info->resource );
-		iqId = JabberSerialNext();
-		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultBind );
-		JabberSend( info->s, "<iq type='set' id='"JABBER_IQID"%d'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>%s</resource></bind></iq>",iqId,str);
-		JabberSend( info->s, "<iq type='set' id='sess_1'><session xmlns='urn:ietf:params:xml:ns:xmpp-session'/></iq>");
-		free(str);
+		xmlStreamInitialize( "after successful sasl" );
 	}
 	else { 
 		JabberLog( "Succcess: unknown action %s.",type);
@@ -755,7 +782,7 @@ static void JabberProcessProceed( XmlNode *node, void *userdata )
 					JabberSslAddHandle( info->s, ssl );	// This make all communication on this handle use SSL
 					info->useSSL = true;
 					JabberLog( "SSL enabled for handle = %d", info->s );
-					xmlStreamBegin( info, "after successful StartTLS" );
+					xmlStreamInitialize( "after successful StartTLS" );
 				}
 				else {
 					JabberLog( "SSL negotiation failed" );

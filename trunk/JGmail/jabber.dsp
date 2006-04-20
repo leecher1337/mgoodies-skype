@@ -238,6 +238,10 @@ SOURCE=.\gmail.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\google_token.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\icolib.cpp
 # End Source File
 # Begin Source File

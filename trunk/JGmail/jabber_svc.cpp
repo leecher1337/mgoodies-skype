@@ -627,9 +627,14 @@ static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 						if ( r[i].statusMessage ) {
 							if ( str[0] != '\0' ) strcat( str, "\r\n" );
 							if ( msgCount > 1 ) {
+								int templen = strlen(r[i].resourceName)+1;
+								char *temp = (char *)mir_alloc(templen);
 								strcat( str, "( " );
-								strcat( str, r[i].resourceName );
+								strncpy(temp,r[i].resourceName, templen);
+								JabberUtf8Decode(temp,NULL);
+								strcat( str, temp);
 								strcat( str, " ): " );
+								mir_free(temp);
 							}
 							strcat( str, r[i].statusMessage );
 						}
