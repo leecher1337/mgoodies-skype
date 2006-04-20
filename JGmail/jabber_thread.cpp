@@ -583,7 +583,8 @@ static void JabberProcessStreamClosing( XmlNode *node, void *userdata )
 		MessageBoxA( NULL, JTranslate( node->text ), JTranslate( "Jabber Connection Error" ), MB_OK|MB_ICONERROR|MB_SETFOREGROUND );
 }
 
-static void JabberProcessFeatures( XmlNode *node, void *userdata ){
+static void JabberProcessFeatures( XmlNode *node, void *userdata )
+{
 	int i,k;
 	bool isPlainAvailable = false;
 	bool isXGoogleTokenAvailable = false;
@@ -724,8 +725,6 @@ static void JabberProcessSuccess( XmlNode *node, void *userdata )
 static void JabberProcessProtocol( XmlNode *node, void *userdata )
 {
 	struct ThreadData *info;
-
-	//JabberXmlDumpNode( node );
 
 	info = ( struct ThreadData * ) userdata;
 	if ( !strcmp( node->name, "proceed" )){
