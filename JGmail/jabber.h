@@ -287,13 +287,13 @@ typedef void ( __cdecl *JABBER_THREAD_FUNC )( void * );
  *******************************************************************/
 extern HINSTANCE hInst;
 extern HANDLE hMainThread;
-#ifndef STATICSSL
 extern DWORD jabberMainThreadId;
-#endif
 extern char* jabberProtoName;
 extern char* jabberModuleName;
 extern HANDLE hNetlibUser;
+#ifndef STATICSSL
 extern HMODULE hLibSSL;
+#endif
 extern PVOID jabberSslCtx;
 
 extern struct ThreadData *jabberThreadInfo;

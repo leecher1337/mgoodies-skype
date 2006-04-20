@@ -128,10 +128,6 @@ PostBuild_Cmds=upx --best --force ../../bin/release/plugins/staticssl/JGmail.dll
 # PROP BASE Intermediate_Dir "jabberg___Win32_Release_Unicode"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
-SOURCE=.\gmail.cpp
-# End Source File
-# Begin Source File
-
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir ".\Release_Unicode"
@@ -193,6 +189,10 @@ LINK32=link.exe
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+# Begin Source File
+
+SOURCE=.\gmail.cpp
+# End Source File
 # Begin Source File
 
 SOURCE=.\jabber.cpp
@@ -363,22 +363,6 @@ SOURCE=.\jabber_list.h
 
 SOURCE=.\jabber_proxy.h
 # End Source File
-# End Source File
-# Begin Source File
-
-SOURCE=".\icos\mail-clock.ico"
-# End Source File
-# Begin Source File
-
-SOURCE=".\icos\mail-info.ico"
-# End Source File
-# Begin Source File
-
-SOURCE=".\icos\mail-new.ico"
-# End Source File
-# Begin Source File
-
-SOURCE=".\icos\mail-stop.ico"
 # Begin Source File
 
 SOURCE=.\jabber_ssl.h
@@ -442,6 +426,22 @@ SOURCE=.\icos\jabber.ico
 # Begin Source File
 
 SOURCE=.\icos\key.ico
+# End Source File
+# Begin Source File
+
+SOURCE=".\icos\mail-clock.ico"
+# End Source File
+# Begin Source File
+
+SOURCE=".\icos\mail-info.ico"
+# End Source File
+# Begin Source File
+
+SOURCE=".\icos\mail-new.ico"
+# End Source File
+# Begin Source File
+
+SOURCE=".\icos\mail-stop.ico"
 # End Source File
 # Begin Source File
 
