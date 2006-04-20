@@ -37,16 +37,16 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo = {
 	sizeof( PLUGININFO ),
 	#if defined( _UNICODE )
-		"Jabber Protocol (Unicode)",
+		"Jabber Protocol (GMail) (Unicode)",
 	#else
-		"Jabber Protocol",
+		"Jabber Protocol (GMail)",
 	#endif
 	__VERSION_DWORD,
-	"Jabber protocol plugin for Miranda IM ( "__DATE__" )",
-	"George Hazan",
-	"ghazan@postman.ru",
-	"( c ) 2002-05 Santithorn Bunchua, George Hazan",
-	"http://miranda-im.org/download/details.php?action=viewfile&id=437",
+	"Jabber protocol plugin (GMail mod) for Miranda IM ( "__DATE__" )",
+	"George Hazan, YB",
+	"yb@saaplugin.no-ip.info",
+	"( c ) 2002-05 Santithorn Bunchua, George Hazan, YB",
+	"http://forums.miranda-im.org/showthread.php?p=43865",
 	0,
 	0
 };

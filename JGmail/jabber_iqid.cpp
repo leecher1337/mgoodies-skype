@@ -111,6 +111,7 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 			JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
 			JabberSend( info->s, "<iq type='get' id='"JABBER_IQID"%d'><query xmlns='jabber:iq:agents'/></iq>", iqId );
 		}
+		JabberRequestMailBox(info->s);
 	}
 	// What to do if password error? etc...
 	else if ( !strcmp( type, "error" )) {
