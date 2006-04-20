@@ -63,7 +63,7 @@ CLISTMENUITEM SkypeOutCallItem(void) {
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
 	mi.flags=CMIF_HIDDEN;
-	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
+	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALLSKYPEOUT));
 	mi.pszName=Translate("Call using SkypeOut");
 	mi.pszService=SKYPEOUT_CALL;
 
@@ -76,7 +76,7 @@ CLISTMENUITEM HupItem(void) {
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
 	mi.flags=CMIF_NOTOFFLINE;
-	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_HUP));
+	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_HANGUP));
 	mi.pszName=Translate("Hang up call (Skype)");
 	mi.pszService=SKYPE_CALL;
 
@@ -88,7 +88,7 @@ CLISTMENUITEM SkypeOutHupItem(void) {
 
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
-	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_HUP));
+	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_HANGUP));
 	mi.pszName=Translate("Hang up SkypeOut call");
 	mi.pszService=SKYPEOUT_CALL;
 	return mi;
@@ -152,7 +152,7 @@ HANDLE add_contextmenu(HANDLE hContact) {
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
 	mi.flags=0;
-	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_ICON1));
+	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_IMPORT));
 	mi.pszContactOwner=pszSkypeProtoName;
 	mi.pszName=Translate("Import Skype history");
 	mi.pszService=SKYPE_IMPORTHISTORY;
@@ -165,7 +165,7 @@ HANDLE add_mainmenu(void) {
 	mi.cbSize=sizeof(mi);
 	mi.position=-2000005000;
 	mi.flags=0;
-	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_ICON1));
+	mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_ADD));
 	mi.pszContactOwner=pszSkypeProtoName;
 	mi.pszName=Translate("Add Skype contact");
 	mi.pszService=SKYPE_ADDUSER;

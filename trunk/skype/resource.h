@@ -2,17 +2,31 @@
 // Microsoft Developer Studio generated include file.
 // Used by Skript1.rc
 //
-#define IDI_CALL                        102
-#define IDD_OPTIONS                     105
-#define IDI_ICON1                       106
-#define IDI_HUP                         108
-#define IDD_DIAL                        109
-#define IDB_CALL                        110
-#define IDD_CALLSTAT                    111
-#define IDI_HOLD                        112
-#define IDI_RESUME                      113
-#define IDD_SETAVATAR                   114
-#define IDI_AVATAR                      115
+#define IDI_SKYPE                       102
+#define IDI_ADD                         103
+#define IDI_IMPORT                      104
+#define IDI_ERRORS                      105
+#define IDI_MESSAGE                     106
+#define IDI_CALL                        107
+#define IDI_CALLSKYPEOUT                108
+#define IDI_HOLD                        109
+#define IDI_RESUME                      110
+#define IDI_HANGUP                      111
+#define IDI_ONLINE                      112
+#define IDI_CHAT                        113
+#define IDI_AWAY                        114
+#define IDI_NA                          115
+#define IDI_DND                         116
+#define IDI_OCCUPIED                    117
+#define IDI_INVISIBLE                   118
+#define IDI_OFFLINE                     119
+#define IDI_PHONE                       120
+#define IDI_AVATAR                      121
+#define IDD_OPTIONS                     122
+#define IDD_DIAL                        123
+#define IDB_CALL                        124
+#define IDD_CALLSTAT                    125
+#define IDD_SETAVATAR                   126
 #define IDC_STARTSKYPE                  1000
 #define IDC_NOTRAY                      1001
 #define IDC_NOSPLASH                    1002
@@ -41,13 +55,14 @@
 #define IDC_SETAVATAR                   1027
 #define IDC_DELETEAVATAR                1028
 
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        115
+#define _APS_NEXT_RESOURCE_VALUE        126
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1026
+#define _APS_NEXT_CONTROL_VALUE         1029
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

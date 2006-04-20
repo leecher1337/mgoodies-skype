@@ -205,11 +205,25 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_CALL                ICON    DISCARDABLE     "Call.ico"
-IDI_ICON1               ICON    DISCARDABLE     "icon2.ico"
-IDI_HUP                 ICON    DISCARDABLE     "Hangup.ico"
-IDI_HOLD                ICON    DISCARDABLE     "holdcall.ico"
-IDI_RESUME              ICON    DISCARDABLE     "resumecall.ico"
+IDI_SKYPE               ICON    DISCARDABLE     "res\\skype.ico"
+IDI_ADD                 ICON    DISCARDABLE     "res\\add.ico"
+IDI_IMPORT              ICON    DISCARDABLE     "res\\import.ico"
+IDI_ERRORS              ICON    DISCARDABLE     "res\\error.ico"
+IDI_MESSAGE             ICON    DISCARDABLE     "res\\message.ico"
+IDI_CALL                ICON    DISCARDABLE     "res\\call.ico"
+IDI_CALLSKYPEOUT        ICON    DISCARDABLE     "res\\skypeout.ico"
+IDI_HOLD                ICON    DISCARDABLE     "res\\hold.ico"
+IDI_RESUME              ICON    DISCARDABLE     "res\\resume.ico"
+IDI_HANGUP              ICON    DISCARDABLE     "res\\hang_up.ico"
+IDI_ONLINE              ICON    DISCARDABLE     "res\\online.ico"
+IDI_CHAT                ICON    DISCARDABLE     "res\\chat.ico"
+IDI_AWAY                ICON    DISCARDABLE     "res\\away.ico"
+IDI_NA                  ICON    DISCARDABLE     "res\\na.ico"
+IDI_OCCUPIED            ICON    DISCARDABLE     "res\\occupied.ico"
+IDI_DND                 ICON    DISCARDABLE     "res\\dnd.ico"
+IDI_INVISIBLE           ICON    DISCARDABLE     "res\\invisible.ico"
+IDI_OFFLINE             ICON    DISCARDABLE     "res\\offline.ico"
+IDI_PHONE               ICON    DISCARDABLE     "res\\phone.ico"
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -242,7 +256,7 @@ END
 // Bitmap
 //
 
-IDB_CALL                BITMAP  DISCARDABLE     "bitmap1.bmp"
+IDB_CALL                BITMAP  DISCARDABLE     "res\\call.bmp"
 #endif    // German (Austria) resources
 /////////////////////////////////////////////////////////////////////////////
 

@@ -109,7 +109,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\Release"
+			OutputDirectory="..\..\..\..\Miranda IM\Plugins\disabled\"
 			IntermediateDirectory=".\Release"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
@@ -144,7 +144,7 @@
 				InlineFunctionExpansion="1"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SKYPE_PROTOCOL_EXPORTS"
 				StringPooling="true"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile=".\Release/Skype_protocol.pch"
 				AssemblerListingLocation=".\Release/"
@@ -168,9 +168,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib wsock32.lib comctl32.lib Rpcrt4.lib"
-				OutputFile="Release/Skype.dll"
+				OutputFile="..\..\..\..\Miranda IM\Plugins\disabled\Skype.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				GenerateManifest="false"
 				ProgramDatabaseFile=".\Release/Skype.pdb"
 				ImportLibrary=".\Release/Skype.lib"
 				TargetMachine="1"
