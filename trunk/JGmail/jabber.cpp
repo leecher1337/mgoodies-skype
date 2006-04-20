@@ -42,11 +42,11 @@ PLUGININFO pluginInfo = {
 		"Jabber Protocol",
 	#endif
 	__VERSION_DWORD,
-	"Jabber protocol plugin (GMail mod) for Miranda IM ( "__DATE__" )",
-	"George Hazan, YB",
-	"yb@saaplugin.no-ip.info",
-	"( c ) 2002-05 Santithorn Bunchua, George Hazan, YB",
-	"http://forums.miranda-im.org/showthread.php?p=43865",
+	"Jabber protocol plugin for Miranda IM ( "__DATE__" )",
+	"George Hazan",
+	"ghazan@postman.ru",
+	"( c ) 2002-05 Santithorn Bunchua, George Hazan",
+	"http://miranda-im.org/download/details.php?action=viewfile&id=437",
 	0,
 	0
 };
