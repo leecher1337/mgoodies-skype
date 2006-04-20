@@ -3,6 +3,7 @@
 #include <m_popup.h>
 #include <m_utils.h>
 #include <m_database.h>
+#include "resource.h"
 
 void StringFromUnixTime(char* str, int length, unsigned long t)
 {
@@ -32,6 +33,40 @@ static int sprint64u( char* buffer, unsigned __int64 x) {
   return chars_written;
 }
 
+int makeHead(char *target, int tSize, __int64 tid, __int64 time){
+//	char sttemp[50];
+	int l = 0;
+	target[0] = '\0';
+	if (tid != -1){
+		l = mir_snprintf(target,tSize,"MinTrhd: ");
+		StringFromUnixTime(target+l,tSize-l,(long)((tid>>20)/1000));
+		l = strlen(target);
+		l += mir_snprintf(target+l,tSize-l,".%03d",
+			((tid>>20)%1000)
+		);
+		l += mir_snprintf(target+l,tSize-l," (%05X)",
+			(int)(tid&0xFFFFF)
+		);
+		if (time != -1) l += mir_snprintf(target+l,tSize-l,"\n");
+	}
+	if (time != -1){
+		l += mir_snprintf(target+l,tSize-l,"MinTime: ");
+		StringFromUnixTime(target+l,tSize-l,(long)((time)/1000));
+		l = strlen(target);
+		l += mir_snprintf(target+l,tSize-l,".%03d",
+			((time)%1000)
+		);
+	}
+	return l;
+}
+
+void JabberEnableNotifications(ThreadData *info){
+	if(CallService(MS_POPUP_QUERY, PUQS_GETSTATUS, 0)){//will enable notifications only if we have popups
+		JabberSend( info->s, "<iq type='set' to='%s@%s' id='EnMailNotify'><usersetting xmlns='google:setting'><mailnotifications value='true'/></usersetting></iq>", info->username, info->server );
+	}
+}
+
+
 static __int64 maxtid = 0;
 static __int64 maxtime = 0;
 
@@ -51,6 +86,19 @@ void JabberRequestMailBox(HANDLE hConn){
 			stime,
 			stid
 		);
+		if (JGetByte(NULL,"ShowRequest",0)) {
+			POPUPDATAEX ppd;
+			ZeroMemory((void *)&ppd, sizeof(ppd));
+			ppd.lchContact = 0;
+//			ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
+			ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_INFO ));
+			mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox request",jabberProtoName);
+			ppd.colorText = NULL;
+			ppd.colorBack = RGB(255,255,128);
+			ppd.iSeconds = JGetDword(NULL,"PopUpTimeout",-1);
+			makeHead(ppd.lpzText, MAX_SECONDLINE - 5,maxtid,maxtime);
+			CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+		}
 	}
 }
 
@@ -67,11 +115,67 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 	// ACTION: show popups with the received e-mails
 	JabberLog( "<iq/> mailbox" );
 	if (( type=JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) return;
+
+	if (( queryNode=JabberXmlGetChild( iqNode, "error" )) ){ // error situation
+		char *errcode = JabberXmlGetAttrValue( queryNode, "code" );
+		char *errtype = JabberXmlGetAttrValue( queryNode, "type" );
+
+		POPUPDATAEX ppd;
+		ZeroMemory((void *)&ppd, sizeof(ppd));
+        ppd.lchContact = 0;
+//        ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
+		ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_STOP ));
+        mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName, 
+			errcode?errcode:"Unknown",
+			errtype?errtype:"Unknown");
+		XmlNode *textNode = JabberXmlGetChild( queryNode, "text" );
+        int l = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Message: %s\n", 
+			textNode?JabberUtf8Decode( textNode->text, 0 ):"none"
+		);
+		textNode = JabberXmlGetChild( iqNode, "query" );
+		if (textNode) {
+			__int64 tid = _atoi64(JabberXmlGetAttrValue( textNode, "newer-than-tid" ));
+			__int64 time = _atoi64(JabberXmlGetAttrValue( textNode, "newer-than-time" ));
+			l = makeHead(ppd.lpzText+l,MAX_SECONDLINE-5-l,tid,time);
+		}
+		
+        ppd.colorText = NULL;
+        ppd.colorBack = RGB(255,128,128);
+		ppd.iSeconds = JGetDword(NULL,"PopUpTimeout",-1);
+		JabberLog( "Notify error: %s\n%s", ppd.lpzContactName, ppd.lpzText);
+        CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+
+		return;
+	}
+	
 	if (( queryNode=JabberXmlGetChild( iqNode, "mailbox" )) == NULL ) return;
 
 	if ( !strcmp( type, "result" )) {
 		str = JabberXmlGetAttrValue( queryNode, "xmlns" );
 		if ( str!=NULL && !strcmp( str, "google:mail:notify" )) {
+			if (JGetByte(NULL,"ShowResult",0)) {
+				POPUPDATAEX ppd;
+				ZeroMemory((void *)&ppd, sizeof(ppd));
+				ppd.lchContact = 0;
+//				ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
+				ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_INFO ));
+				mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox result: Matched %s",
+					jabberProtoName,
+					JabberXmlGetAttrValue( queryNode, "total-matched" )
+				);
+				ppd.colorText = NULL;
+				ppd.colorBack = RGB(255,255,128);
+				ppd.iSeconds = JGetDword(NULL,"PopUpTimeout",-1);
+				__int64 rt = _atoi64(JabberXmlGetAttrValue( queryNode, "result-time" ));
+				int pos = makeHead(ppd.lpzText, MAX_SECONDLINE - 5,
+					-1,
+					rt
+				);
+				mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"\nLocalDrift: %d seconds",
+					((unsigned int)(rt/1000)) - time(NULL)
+				);
+				CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+			}
 			XmlNode *threadNode;
 			int i;
 			for ( i=0; i<queryNode->numChild; i++ ) {
@@ -102,7 +206,8 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			        POPUPDATAEX ppd;
 					ZeroMemory((void *)&ppd, sizeof(ppd));
 			        ppd.lchContact = 0;
-			        ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
+//			        ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
+					ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_NEW ));
 			        strncpy(ppd.lpzContactName, sendersList, MAX_CONTACTNAME);
 					sendersNode = JabberXmlGetChild( threadNode, "subject" );
 					XmlNode *snippetNode = JabberXmlGetChild( threadNode, "snippet" );
@@ -115,7 +220,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 						);
 			        ppd.colorText = NULL;
 			        ppd.colorBack = NULL;
-					ppd.iSeconds = -1;
+					ppd.iSeconds = JGetDword(NULL,"PopUpTimeout",-1);
 			        CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
 			    }
 			}
@@ -124,5 +229,5 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			JSetDword(NULL,"MaxTimeLo",(DWORD)maxtime);
 			JSetDword(NULL,"MaxTimeHi",(DWORD)(maxtime>>32));
 		}		
-
-}	}
+	}
+}	

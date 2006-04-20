@@ -82,5 +82,6 @@ void JabberIqResultMucGetAdminList( XmlNode *iqNode, void *userdata );
 void JabberIqResultMucGetOwnerList( XmlNode *iqNode, void *userdata );
 void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata );
 void JabberRequestMailBox(HANDLE hConn);
+void JabberEnableNotifications(ThreadData *info);
 
 #endif

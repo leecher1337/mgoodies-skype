@@ -155,7 +155,6 @@ LINK32=link.exe
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
-
 SOURCE=.\gmail.cpp
 # End Source File
 # Begin Source File
@@ -328,6 +327,18 @@ SOURCE=.\jabber_list.h
 
 SOURCE=.\jabber_proxy.h
 # End Source File
+# End Source File
+# Begin Source File
+
+SOURCE=".\icos\mail-info.ico"
+# End Source File
+# Begin Source File
+
+SOURCE=".\icos\mail-new.ico"
+# End Source File
+# Begin Source File
+
+SOURCE=".\icos\mail-stop.ico"
 # Begin Source File
 
 SOURCE=.\jabber_ssl.h

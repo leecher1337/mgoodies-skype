@@ -267,7 +267,7 @@ int JabberBasicSearch( WPARAM wParam, LPARAM lParam )
 	if ( strchr( szJid, '@' ) == NULL ) {
 		char szServer[ 100 ];
 		if ( JGetStaticString( "LoginServer", NULL, szServer, sizeof szServer ))
-			strcpy( szServer, "jabber.org" );
+			strcpy( szServer, "gmail.com" );
 
 		mir_snprintf( jsb->jid, sizeof jsb->jid, "%s@%s", szJid, szServer );
 	}

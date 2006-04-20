@@ -48,6 +48,9 @@
 #define IDD_GROUPCHAT_INVITE_ACCEPT     184
 #define IDD_OPT_JABBER3                 185
 #define IDD_OPT_SETAVATAR               185
+#define IDI_MAIL_NEW			186
+#define IDI_MAIL_STOP			187
+#define IDI_MAIL_INFO			188
 #define IDC_EDIT_USERNAME               1000
 #define IDC_SAVE                        1000
 #define IDC_EDIT_PASSWORD               1001
@@ -223,7 +226,7 @@
 //
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        185
+#define _APS_NEXT_RESOURCE_VALUE        189
 #define _APS_NEXT_COMMAND_VALUE         40017
 #define _APS_NEXT_CONTROL_VALUE         1181
 #define _APS_NEXT_SYMED_VALUE           101
