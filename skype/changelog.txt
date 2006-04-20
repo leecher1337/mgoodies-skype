@@ -29,103 +29,80 @@ CODE
 
 HISTORY
 -------
-0.0.0.3  - * I hope it's thread-safe now
-		   * Changing the Online-Status should work correctly now
-		   * Fixed "We got a sync problem :(" bug	- big thx to Azzie
-		   * Now starts Skype more in the background as proposed by Kreisquadratur
-		   * Implemented PING-PONG with Skype to detect if Connection to Skype API
-		     was lost
-		   * Launching of Skype by Miranda improved
-0.0.0.4  - * Missed messages are fetched now
-		   * User details work now
-		   * More verbose error msgs now (to help Win98 user debugging his problem)
-		   * Added option for starting skype with miranda and shutting down
-		     Skype when closing miranda.
-		   * You can now chose the command line options to pass to Skype on startup
-		   * Hopefully the bug with multiple Call - Entries per user is fixed now
-		   * Protocol name is now "Skype", not "Skype_protocol" - Remember this
-		     when updating, so DELETE skype_protocol.dll first!!
-		   * Secured Message Queue with a Mutex 
-		   * Fixed a Message-receiving bug that could cause delays in message-processing
-		   * Adding a Contact in Skype now also adds it to Miranda immediately
-		     (Deleting should also work, but doesn't because of a Skype API bug)
-		   * Added searching for contacts, but this feature seems to be quite useless,
-		     as Skype API doesn't support adding contacts, so you still have to add
-			 your contacts in the Skype program, sorry
-			 In order to do this comfortably, I added a Miranda Menu-Item for adding
-			 Skype-contacts.
-0.0.0.5  - * Fixed a bug that caused the plugin to crash with bigger contact lists
-			 (Skype API was flooded on startup)
-0.0.0.6  - * Added feature requests from kreisquadratur:
-				* Option to disable Skype-Menuitems
-				* Fixed bug with Apply-Button
-				* Using a nicer Skype-Icon now
-		   * Now using Skype-Timestamp for messages
-		   * Implementing importing history from skype (see contextmenu of contact)
-		   * Fixed bug with processing first message of MESSAGES - List
-		   * Found out, that RegisterClass() doesn't work for UNICODE-Programs on
-			 non-UNICODE win98, therefore return-value check for RegisterClass removed
-		   * Fixed a bug that caused a "We got a Sync problem :("
-0.0.0.7 -  * Fixed a bug that caused a lockup on Plugin startup (when a Window was not
-			 reacting to the HWND_BROADCAST) (thx to Cool Blue)
-		   * Fixed a bug in the Startup-procedure..
-		   * Now Skype doesn't go offline when you close Miranda (thx to Egodust)
-		   * Now it should really work unter WIN98 (thx to TioDuke for testing)
-		   * Implemented feature for Shutting down Skype on going offline and
-		     restarting Skype on changing to online mode again, as many people requested.
-0.0.0.8 -  * Now there is support for the "Occupied" mode, which is mapped to DND
-			 This is useful for users who do a global statusmodechange so that Skype
-			 gets to "Occupied" state instead of staying online.
-		   * Now the protocol doesn't disable itself when you chose to not start
-		     Skype on startup, instead it stays offline and starts Skype when you
-			 try to go online.
-0.0.0.9 -  * Fixed bug with error when starting Skype with Miranda ("Wheee...")
-		   * As Skype seems to use new, UNDOCUMENTED Message types (I think it's
-			 a severe Skype-API bug) I adapted the plugin so that it works
-			 with new API now. This fixes the problem of not being able to receive
-			 messages in new Skype versions.
-			 Skype now sends "MESSAGE TYPE SAID" instead of "MESSAGE TYPE TEXT",
-			 the bug has been reported to Skype forum.
-			 (http://forum.skype.com/viewtopic.php?t=15435)
-		   * Fixed a memory leak in Message-receiving routine
-		   * Added UTF8-support for Contact properties (does this fix something?)
-		   * Fixed a memory leak in Startup-routine
-		   * Finally renamed Plugin from SKYPE_PROTOCOL to SKYPE internally.
-			 Hopefully it will upgrade your existing DB seamlessly.
-		   * Now all threads should be sync with Miranda as I'm using the pthread-
-		     functions "borrowed" from Yahoo protocol.
-0.0.0.10 - * Hopefully recovery after sync problem works a bit better now
-			 (Sync-Problem Messages are no longer shown)
-		   * Now you can hang up a call directly from a contact's context menu
-		   * Now implemented support for using Skype over a network. You can use
-		     the included skypeproxy service to in/output Skype API messages
-			 on a socket and can connect to it with the plugin.
-			 So you can, for example, launch the skypeproxy service on your
-			 Windows-server (eeek! :P) and control Skype from your workstation
-			 using Miranda. (requested feature by foosmate)
-		   * Now you can accept incoming calls via Miranda (or hang them up)
-		   * The status mode bug (clist status menu was not updated properly)
-		     should be fixed by now.
-		   * The logfile in the dbeug-build should now always be written to the
-		     Miranda directory.
-0.0.0.11 - Only minor bugfixes:
-		   * The gender in user-details is now saved correctly to the DB
-			 (thanks to LeON for the hint!)
-		   * The Apply-Button should now be disabled in the options DLG by default
-			 (thanks to sje for the bug report)
-		   * Contactlist should be reinitialized after a SYNC-Problem now.
-		   * Bug with usernames that contain commas should be fixed
-		   * Protocol messages are now shown as popups if Popup-plugin is installed
-0.0.0.12 - Bugfixing because of strange Skype API behaviour:
-		   * Adding of contacts that are just searched, but not added in Skype 
-		     should be prevented now.
-		   * Version number correct again.
-0.0.0.13 - A few minor fixes:
-		   * Logging off users shouldn't flood the StatusNotify-Plugin now.
-		   * Popup-plugin can be enabled/disabled in the options dlg.
-		   * Implemented support for SkypeOut contacts (they caused crashes)
-		   * Now using Nick instead of Skype-Handle as Contact list name on
-		     adding new users, if it is available.
+0.0.0.19 - * Add avatar support for own user only (no api to ge contacts avatar)
+           * Add set status message.
+           * Add Get status message for contact where viewing contact details
+           * Change icons (thanks to Faith Healer)
+           * Updater support (BETA ONLY)
+           * DBeEditor known module support
+           * Mods to avoid warning in VC++ 8
+           
+0.0.0.18 - * HOTFIX - Double File-Transfer icon removed. Please note that you can't send files
+             via drag & drop, because of the nature of Skype API - Skype wants to open its own
+			 "File/Open" dialog, so I cannot supply a path to the file to be sent, therefore I
+			 had to add a seperate File-sending function rather than using Miranda's function.
+             
+0.0.0.17 - * Startup of Skype in a seperate thread was not solved properly. Now it should really
+			 start in background
+		   * The hack for the statusmode-bug is optional in the settings and is turned off
+		     per default. (Thx to Eddie Hung for reporting problems and help)
+		   * Added an ugly hack for the Skype-API offline bug   (grr.. ) 
+		   * Nickname is now set correctly. To cleanup the existing Nicks, please go to
+		     the options page an push the "Cleanup Nicknames" button.
+			 This will clean out entries where the Nick was set to the Skype handle
+		   * Fixed a bug in the message sending routine that caused errors in communication
+		     (missed messages in Skype that were not fetched..)
+		   * Added "Hold call" feature while calling
+		   * Added support for conference calls (if a second user is calling while you 
+		     are in a conversation, you can now choose whether to block the call or let 
+			 the user join you in a conference with the existing caller or to put the
+			 other caller on hold)
+		   * Fixed a bug in the code for adding users that were just searched via the
+		     Skype search-window but never have been in contact list.
+		   * Fixed some bugs (memleak, nick error, ..) in the Search-Routine for 
+			 Skype-contacts. (thx to Deadman for reporting)
+		   * Fixed a bug with unknown SKYPE_IN contacts
+		   * Added file-sending capability (requires new Skype-version)
+		   * Did a litte code-cleanup
+		   * Adding / Removing contacts can now be done via the Miranda standard-dialogs if
+		     you use the newest Skype-Version
+		   * With the new Skype-version you are able to handle Authorisation-Requests via Miranda
+		     now.
+
+0.0.0.16 - * Fixed a severe memory-allocation bug in utf8-encoded messages that caused random
+			 crashes (oops :-O) - Thanks to Ary Dvoretz for reporting.
+		   * Bug in SkypeStatusMode-Bug fix from last release fixed (protocol stayed offline)
+		   * Now onlinestatus for SkypeOut-Contacts is configurable
+		   * Made Menu-Options translatable
+		   * Added support for calling SkypeOut-Phonenumbers. You can now dial a PSTN-Number
+		     by calling "Do a SkypeOut call" in the main menu (or top toolbar if the
+			 toptoolbar plugin is installed) and entering a number or
+			 by right-clicking on a non-Skype contact and selecting "Call using SkypeOut",
+			 if there is a phone-Number entry in the User's-Details.
+			 This, of course, is only working if you have SkypeOut privilege
+
+0.0.0.15 - * Fixed a crash on Miranda-exit when error occured on Skype-Protocol start
+		   * Fixed Bug #0000006: Now user is asked if he wants to enable the Protocol
+		     for the current profile, if he starts with a new profile.
+		   * Fixed Bug #0000002: Now interfacing with Skype is really stopped on going
+			 offline if the option is enabled. (PingPong-thread killed)
+		   - This also applies on closing Skype
+		   * Fixed a memory leak in MsgFetchThread that appeared in the last version because
+		     of the groupchat-implementation (free() within wrong if clause, ooops ;)
+		   * Fixed Bug #0000005: When there is a msg from a user that is not on Skype's contact
+		     list, the user is now added PALF_TEMPORARY and disappears again on next Miranda-start
+		   * Implemented a fix for Skype API's statusmode bug reported by Markus Mützel:
+		     If you change the online status while Skype is still connecting, Skype changes to
+			 the FIRST state that it was requested to change to, after going online, instead of
+			 the LAST state. However the bug was not reproducable for me.
+		   * Fixed broken popup-support (I hope)
+		   * CHANGE of behaviour (inspired by Bug #0000007): 
+			 If you turn off "Start Skype with Miranda", the plugin wouldn't search for a 
+			 running Skype instance anymore.
+		   * Now when going online and Skype is not launched, Skype will be launched via a 
+		     seperate thread (in background) so that Miranda isn't blocked while Skype is loading
+		   * Options Dlg. should now be translateable too. 
+           
 0.0.0.14 - 
 		   * Miranda crash on exit if Skype was not found installed should be
 		     fixed by now.
@@ -154,65 +131,111 @@ HISTORY
 			 currently send single messages to every user seperately. Skype staff
 			 didn't answer my question about sending to groupchats so far, so it
 			 depends on them when this feature will be available for real use.
-0.0.0.15 - * Fixed a crash on Miranda-exit when error occured on Skype-Protocol start
-		   * Fixed Bug #0000006: Now user is asked if he wants to enable the Protocol
-		     for the current profile, if he starts with a new profile.
-		   * Fixed Bug #0000002: Now interfacing with Skype is really stopped on going
-			 offline if the option is enabled. (PingPong-thread killed)
-		   - This also applies on closing Skype
-		   * Fixed a memory leak in MsgFetchThread that appeared in the last version because
-		     of the groupchat-implementation (free() within wrong if clause, ooops ;)
-		   * Fixed Bug #0000005: When there is a msg from a user that is not on Skype's contact
-		     list, the user is now added PALF_TEMPORARY and disappears again on next Miranda-start
-		   * Implemented a fix for Skype API's statusmode bug reported by Markus Mützel:
-		     If you change the online status while Skype is still connecting, Skype changes to
-			 the FIRST state that it was requested to change to, after going online, instead of
-			 the LAST state. However the bug was not reproducable for me.
-		   * Fixed broken popup-support (I hope)
-		   * CHANGE of behaviour (inspired by Bug #0000007): 
-			 If you turn off "Start Skype with Miranda", the plugin wouldn't search for a 
-			 running Skype instance anymore.
-		   * Now when going online and Skype is not launched, Skype will be launched via a 
-		     seperate thread (in background) so that Miranda isn't blocked while Skype is loading
-		   * Options Dlg. should now be translateable too. 
-0.0.0.16 - * Fixed a severe memory-allocation bug in utf8-encoded messages that caused random
-			 crashes (oops :-O) - Thanks to Ary Dvoretz for reporting.
-		   * Bug in SkypeStatusMode-Bug fix from last release fixed (protocol stayed offline)
-		   * Now onlinestatus for SkypeOut-Contacts is configurable
-		   * Made Menu-Options translatable
-		   * Added support for calling SkypeOut-Phonenumbers. You can now dial a PSTN-Number
-		     by calling "Do a SkypeOut call" in the main menu (or top toolbar if the
-			 toptoolbar plugin is installed) and entering a number or
-			 by right-clicking on a non-Skype contact and selecting "Call using SkypeOut",
-			 if there is a phone-Number entry in the User's-Details.
-			 This, of course, is only working if you have SkypeOut privilege
-0.0.0.17 - * Startup of Skype in a seperate thread was not solved properly. Now it should really
-			 start in background
-		   * The hack for the statusmode-bug is optional in the settings and is turned off
-		     per default. (Thx to Eddie Hung for reporting problems and help)
-		   * Added an ugly hack for the Skype-API offline bug   (grr.. ) 
-		   * Nickname is now set correctly. To cleanup the existing Nicks, please go to
-		     the options page an push the "Cleanup Nicknames" button.
-			 This will clean out entries where the Nick was set to the Skype handle
-		   * Fixed a bug in the message sending routine that caused errors in communication
-		     (missed messages in Skype that were not fetched..)
-		   * Added "Hold call" feature while calling
-		   * Added support for conference calls (if a second user is calling while you 
-		     are in a conversation, you can now choose whether to block the call or let 
-			 the user join you in a conference with the existing caller or to put the
-			 other caller on hold)
-		   * Fixed a bug in the code for adding users that were just searched via the
-		     Skype search-window but never have been in contact list.
-		   * Fixed some bugs (memleak, nick error, ..) in the Search-Routine for 
-			 Skype-contacts. (thx to Deadman for reporting)
-		   * Fixed a bug with unknown SKYPE_IN contacts
-		   * Added file-sending capability (requires new Skype-version)
-		   * Did a litte code-cleanup
-		   * Adding / Removing contacts can now be done via the Miranda standard-dialogs if
-		     you use the newest Skype-Version
-		   * With the new Skype-version you are able to handle Authorisation-Requests via Miranda
-		     now.
-0.0.0.18 - * HOTFIX - Double File-Transfer icon removed. Please note that you can't send files
-             via drag & drop, because of the nature of Skype API - Skype wants to open its own
-			 "File/Open" dialog, so I cannot supply a path to the file to be sent, therefore I
-			 had to add a seperate File-sending function rather than using Miranda's function.
+             
+0.0.0.13 - A few minor fixes:
+		   * Logging off users shouldn't flood the StatusNotify-Plugin now.
+		   * Popup-plugin can be enabled/disabled in the options dlg.
+		   * Implemented support for SkypeOut contacts (they caused crashes)
+		   * Now using Nick instead of Skype-Handle as Contact list name on
+		     adding new users, if it is available.
+             
+0.0.0.12 - Bugfixing because of strange Skype API behaviour:
+		   * Adding of contacts that are just searched, but not added in Skype 
+		     should be prevented now.
+		   * Version number correct again.
+           
+0.0.0.11 - Only minor bugfixes:
+		   * The gender in user-details is now saved correctly to the DB
+			 (thanks to LeON for the hint!)
+		   * The Apply-Button should now be disabled in the options DLG by default
+			 (thanks to sje for the bug report)
+		   * Contactlist should be reinitialized after a SYNC-Problem now.
+		   * Bug with usernames that contain commas should be fixed
+		   * Protocol messages are now shown as popups if Popup-plugin is installed
+           
+0.0.0.10 - * Hopefully recovery after sync problem works a bit better now
+			 (Sync-Problem Messages are no longer shown)
+		   * Now you can hang up a call directly from a contact's context menu
+		   * Now implemented support for using Skype over a network. You can use
+		     the included skypeproxy service to in/output Skype API messages
+			 on a socket and can connect to it with the plugin.
+			 So you can, for example, launch the skypeproxy service on your
+			 Windows-server (eeek! :P) and control Skype from your workstation
+			 using Miranda. (requested feature by foosmate)
+		   * Now you can accept incoming calls via Miranda (or hang them up)
+		   * The status mode bug (clist status menu was not updated properly)
+		     should be fixed by now.
+		   * The logfile in the dbeug-build should now always be written to the
+		     Miranda directory.
+
+0.0.0.9 -  * Fixed bug with error when starting Skype with Miranda ("Wheee...")
+		   * As Skype seems to use new, UNDOCUMENTED Message types (I think it's
+			 a severe Skype-API bug) I adapted the plugin so that it works
+			 with new API now. This fixes the problem of not being able to receive
+			 messages in new Skype versions.
+			 Skype now sends "MESSAGE TYPE SAID" instead of "MESSAGE TYPE TEXT",
+			 the bug has been reported to Skype forum.
+			 (http://forum.skype.com/viewtopic.php?t=15435)
+		   * Fixed a memory leak in Message-receiving routine
+		   * Added UTF8-support for Contact properties (does this fix something?)
+		   * Fixed a memory leak in Startup-routine
+		   * Finally renamed Plugin from SKYPE_PROTOCOL to SKYPE internally.
+			 Hopefully it will upgrade your existing DB seamlessly.
+		   * Now all threads should be sync with Miranda as I'm using the pthread-
+		     functions "borrowed" from Yahoo protocol.
+
+0.0.0.8 -  * Now there is support for the "Occupied" mode, which is mapped to DND
+			 This is useful for users who do a global statusmodechange so that Skype
+			 gets to "Occupied" state instead of staying online.
+		   * Now the protocol doesn't disable itself when you chose to not start
+		     Skype on startup, instead it stays offline and starts Skype when you
+			 try to go online.
+  
+0.0.0.7 -  * Fixed a bug that caused a lockup on Plugin startup (when a Window was not
+			 reacting to the HWND_BROADCAST) (thx to Cool Blue)
+		   * Fixed a bug in the Startup-procedure..
+		   * Now Skype doesn't go offline when you close Miranda (thx to Egodust)
+		   * Now it should really work unter WIN98 (thx to TioDuke for testing)
+		   * Implemented feature for Shutting down Skype on going offline and
+		     restarting Skype on changing to online mode again, as many people requested. 
+             
+0.0.0.6  - * Added feature requests from kreisquadratur:
+				* Option to disable Skype-Menuitems
+				* Fixed bug with Apply-Button
+				* Using a nicer Skype-Icon now
+		   * Now using Skype-Timestamp for messages
+		   * Implementing importing history from skype (see contextmenu of contact)
+		   * Fixed bug with processing first message of MESSAGES - List
+		   * Found out, that RegisterClass() doesn't work for UNICODE-Programs on
+			 non-UNICODE win98, therefore return-value check for RegisterClass removed
+		   * Fixed a bug that caused a "We got a Sync problem :("
+           
+0.0.0.5  - * Fixed a bug that caused the plugin to crash with bigger contact lists
+			 (Skype API was flooded on startup)
+             
+0.0.0.4  - * Missed messages are fetched now
+		   * User details work now
+		   * More verbose error msgs now (to help Win98 user debugging his problem)
+		   * Added option for starting skype with miranda and shutting down
+		     Skype when closing miranda.
+		   * You can now chose the command line options to pass to Skype on startup
+		   * Hopefully the bug with multiple Call - Entries per user is fixed now
+		   * Protocol name is now "Skype", not "Skype_protocol" - Remember this
+		     when updating, so DELETE skype_protocol.dll first!!
+		   * Secured Message Queue with a Mutex 
+		   * Fixed a Message-receiving bug that could cause delays in message-processing
+		   * Adding a Contact in Skype now also adds it to Miranda immediately
+		     (Deleting should also work, but doesn't because of a Skype API bug)
+		   * Added searching for contacts, but this feature seems to be quite useless,
+		     as Skype API doesn't support adding contacts, so you still have to add
+			 your contacts in the Skype program, sorry
+			 In order to do this comfortably, I added a Miranda Menu-Item for adding
+			 Skype-contacts.
+             
+0.0.0.3  - * I hope it's thread-safe now
+		   * Changing the Online-Status should work correctly now
+		   * Fixed "We got a sync problem :(" bug	- big thx to Azzie
+		   * Now starts Skype more in the background as proposed by Kreisquadratur
+		   * Implemented PING-PONG with Skype to detect if Connection to Skype API
+		     was lost
+		   * Launching of Skype by Miranda improved

@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_DEPRECATE 1
+
 // System includes
 #include <stdio.h>
 #include <windows.h>
@@ -8,6 +10,7 @@
 
 // Miranda Includes
 #include "../../include/newpluginapi.h"
+#include "../../include/m_utils.h"
 #include "../../include/m_protosvc.h"
 #include "../../include/m_protomod.h"
 #include "../../include/m_skin.h"
@@ -15,6 +18,8 @@
 #include "../../include/m_database.h"
 #include "../../include/m_clist.h"
 #include "../../include/m_system.h"
+#include "../../include/m_updater.h"
+
 
 // Program defines
 #define SKYPE_NAME		"Username"

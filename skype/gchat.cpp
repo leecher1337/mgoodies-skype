@@ -32,7 +32,7 @@ gchat_contacts *GetChat(char *szChatId) {
 		if (!strcmp(chats[i].szChatName, szChatId)) return &chats[i];
 	if (chats = (gchat_contacts *)realloc(chats, sizeof(gchat_contacts)*(++chatcount))) {
 		memset(&chats[chatcount-1], 0, sizeof(gchat_contacts));
-		chats[chatcount-1].szChatName=strdup(szChatId);
+		chats[chatcount-1].szChatName=_strdup(szChatId);
 		return &chats[chatcount-1];
 	}
 	return NULL;

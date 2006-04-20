@@ -82,6 +82,38 @@ PLUGININFO pluginInfo = {
 
 /*                           P R O G R A M                                */
 
+void RegisterToDbeditorpp(void)
+{
+    // known modules list
+    if (ServiceExists("DBEditorpp/RegisterSingleModule"))
+        CallService("DBEditorpp/RegisterSingleModule", (WPARAM)pszSkypeProtoName, 0);
+}
+
+void RegisterToUpdate(void)
+{
+	//Use for the Updater plugin
+	if(ServiceExists(MS_UPDATE_REGISTER)) 
+	{
+		Update update = {0};
+		char szVersion[16];
+
+		update.szComponentName = pluginInfo.shortName;
+		update.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szVersion);
+		update.cpbVersion = strlen((char *)update.pbVersion);
+		//update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2708";
+		//update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2708";
+		//update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Nudge ";
+	    update.szBetaUpdateURL = "http://www.miranda-fr.net/tweety/skype/skype.zip";
+		update.szBetaVersionURL = "http://www.miranda-fr.net/tweety/skype/skype_beta.html";
+		update.pbBetaVersionPrefix = (BYTE *)"SKYPE version ";
+
+		//update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
+		update.cpbBetaVersionPrefix = strlen((char *)update.pbBetaVersionPrefix);
+
+		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
+
+	}
+}
 
 /*
  * ShowMessage
@@ -239,7 +271,7 @@ void GetInfoThread(HANDLE hContact) {
 			CallService(MS_UTILS_GETCOUNTRYLIST, (WPARAM)&countryCount, (LPARAM)&countries);
 			for (i=0; i<countryCount; i++) {
 				if (countries[i].id == 0 || countries[i].id == 0xFFFF) continue;
-				if (!stricmp(countries[i].szName, ptr+strlen(str+3))) 
+				if (!_stricmp(countries[i].szName, ptr+strlen(str+3))) 
 					DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Country", (BYTE)countries[i].id);
 			}
 		}
@@ -252,8 +284,8 @@ void GetInfoThread(HANDLE hContact) {
 		DBDeleteContactSetting(hContact, pszSkypeProtoName, "Gender");
 		if (ptr[strlen(str+3)]) {
 			BYTE sex=0;
-			if (!stricmp(ptr+strlen(str+3), "MALE")) sex=0x4D;
-			if (!stricmp(ptr+strlen(str+3), "FEMALE")) sex=0x46;
+			if (!_stricmp(ptr+strlen(str+3), "MALE")) sex=0x4D;
+			if (!_stricmp(ptr+strlen(str+3), "FEMALE")) sex=0x46;
 			if (sex) DBWriteContactSettingByte(hContact, pszSkypeProtoName, "Gender", sex);
 		}
 		free(ptr);
@@ -306,7 +338,7 @@ void BasicSearchThread(char *nick) {
 	token=strtok(cmd+5, ", ");
 	psr.cbSize=sizeof(psr);
 	while (token) {
-		psr.nick=strdup(token);
+		psr.nick=_strdup(token);
 		psr.lastName=NULL;
 		psr.firstName=NULL;
 		psr.email=NULL;
@@ -316,10 +348,10 @@ void BasicSearchThread(char *nick) {
 			// So we use our own function
 			if (psr.lastName=strchr(ptr, ' ')) {
 				*psr.lastName=0;
-				psr.lastName=strdup(psr.lastName+1);
+				psr.lastName=_strdup(psr.lastName+1);
 				LOG("lastName", psr.lastName);
 			}
-			psr.firstName=strdup(ptr);
+			psr.firstName=_strdup(ptr);
 			LOG("firstName", psr.firstName);
 			free(ptr);
 		}
@@ -550,6 +582,9 @@ static int CreateTopToolbarButton(WPARAM wParam, LPARAM lParam) {
 
 static int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 	bModulesLoaded=TRUE;
+
+	RegisterToUpdate();
+	RegisterToDbeditorpp();
 	
 	add_contextmenu(NULL);
 	if ( ServiceExists( MS_GC_REGISTER )) {
@@ -701,7 +736,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 		return;
 	}
 	ERRCHK
-	who=strdup(ptr+strlen(str+4)+1);
+	who=_strdup(ptr+strlen(str+4)+1);
 	str[msgl]=0;
 	free(ptr);
 
@@ -878,7 +913,7 @@ void MessageListProcessingThread(char *str) {
 	token=strtok(str, ",");
 	while (token) {
 		if (args=(fetchmsg_arg *)malloc(sizeof(*args))) {
-			args->msgnum=strdup(token+1);
+			args->msgnum=_strdup(token+1);
 			args->getstatus=TRUE;
 			pthread_create(( pThreadFunc )FetchMessageThread, args);
 			WaitForSingleObject(SkypeMsgFetched, INFINITE);
@@ -1104,7 +1139,7 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 //		 LOG("WM_COPYDATA", "start");
 		 if(hSkypeWnd==(HWND)wParam) { 
 			CopyData=(PCOPYDATASTRUCT)lParam;
-			szSkypeMsg=strdup((char*)CopyData->lpData);
+			szSkypeMsg=_strdup((char*)CopyData->lpData);
 			ReplyMessage(1);
 			LOG("<", szSkypeMsg);
 
@@ -1165,7 +1200,7 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 				break;
 			} 
 			if (!strncmp(szSkypeMsg, "USER ", 5)) {
-				buf=strdup(szSkypeMsg+5);
+				buf=_strdup(szSkypeMsg+5);
 				nick=strtok(buf, " ");
 				ptr=strtok(NULL, " ");
 				if (!strcmp(ptr, "ONLINESTATUS")) {
@@ -1247,14 +1282,14 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 				// context menu
 				if (ptr=strstr(szSkypeMsg, " STATUS ")) {
 					ptr[0]=0; ptr+=8;
-					if (!strcmp(ptr, "RINGING") || !strcmp(ptr, "ROUTING")) pthread_create(( pThreadFunc )RingThread, strdup(szSkypeMsg));
+					if (!strcmp(ptr, "RINGING") || !strcmp(ptr, "ROUTING")) pthread_create(( pThreadFunc )RingThread, _strdup(szSkypeMsg));
 					if (!strcmp(ptr, "FAILED") || !strcmp(ptr, "FINISHED") ||
 						!strcmp(ptr, "MISSED") || !strcmp(ptr, "REFUSED")  ||
 						!strcmp(ptr, "BUSY")   || !strcmp(ptr, "CANCELLED"))
-							pthread_create(( pThreadFunc )EndCallThread, strdup(szSkypeMsg));
+							pthread_create(( pThreadFunc )EndCallThread, _strdup(szSkypeMsg));
 					if (!strcmp(ptr, "ONHOLD") || !strcmp(ptr, "LOCALHOLD") ||
-						!strcmp(ptr, "REMOTEHOLD")) pthread_create(( pThreadFunc )HoldCallThread, strdup(szSkypeMsg));
-					if (!strcmp(ptr, "INPROGRESS")) pthread_create(( pThreadFunc )ResumeCallThread, strdup(szSkypeMsg));
+						!strcmp(ptr, "REMOTEHOLD")) pthread_create(( pThreadFunc )HoldCallThread, _strdup(szSkypeMsg));
+					if (!strcmp(ptr, "INPROGRESS")) pthread_create(( pThreadFunc )ResumeCallThread, _strdup(szSkypeMsg));
 					break;
 				} else if ((!strstr(szSkypeMsg, "PARTNER_HANDLE") && !strstr(szSkypeMsg, "FROM_HANDLE"))
 							&& !strstr(szSkypeMsg, "TYPE")) break;
@@ -1290,14 +1325,14 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 			  // If new message is available, fetch it
 			  ptr[0]=0;
 			  if (!(args=(fetchmsg_arg *)malloc(sizeof(*args)))) break;
-			  args->msgnum=strdup(strchr(szSkypeMsg, ' ')+1);
+			  args->msgnum=_strdup(strchr(szSkypeMsg, ' ')+1);
 			  args->getstatus=FALSE;
 			  pthread_create(( pThreadFunc )FetchMessageThread, args);
 			  break;
 			}
 			if (!strncmp(szSkypeMsg, "MESSAGES", 8) || !strncmp(szSkypeMsg, "CHATMESSAGES", 12)) {
 				if (strlen(szSkypeMsg)<=(UINT)(strchr(szSkypeMsg, ' ')-szSkypeMsg+1)) break;
-				pthread_create(( pThreadFunc )MessageListProcessingThread, strdup(strchr(szSkypeMsg, ' ')));
+				pthread_create(( pThreadFunc )MessageListProcessingThread, _strdup(strchr(szSkypeMsg, ' ')));
 				break;
 			}
 			if (!strncmp(szSkypeMsg, "ERROR 68", 8)) {
@@ -1571,7 +1606,7 @@ int SkypeBasicSearch(WPARAM wParam, LPARAM lParam) {
 
 	LOG("SkypeBasicSearch", (char *)lParam);
 	if (!SkypeInitialized) return 0;
-	return (hSearchThread=pthread_create(( pThreadFunc )BasicSearchThread, strdup((char *)lParam)));
+	return (hSearchThread=pthread_create(( pThreadFunc )BasicSearchThread, _strdup((char *)lParam)));
 }
 
 void MessageSendWatchThread(HANDLE hContact) {

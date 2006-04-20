@@ -241,7 +241,7 @@ void convert_set_charset(const char *charset)
   free(current_charset);
   current_charset = 0;
   if (charset && *charset)
-    current_charset = strdup(charset);
+    current_charset = _strdup(charset);
 }
 
 static int convert_buffer(const char *fromcode, const char *tocode,

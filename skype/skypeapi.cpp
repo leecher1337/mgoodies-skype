@@ -123,7 +123,7 @@ int SkypeMsgAdd(char *msg) {
 	while (ptr->next!=NULL) ptr=ptr->next;
 	if ((ptr->next=(struct MsgQueue*)malloc(sizeof(struct MsgQueue)))==NULL) return -1;
 	ptr=ptr->next;
-	ptr->message = strdup(msg); // Don't forget to free!
+	ptr->message = _strdup(msg); // Don't forget to free!
 	ptr->tAdded = time(NULL);
 	ptr->next=NULL;
 	LeaveCriticalSection(&MsgQueueMutex);
@@ -705,7 +705,7 @@ int SkypeOutCall(WPARAM wParam, LPARAM lParam) {
 		msg=(char *)malloc(strlen(dbv.pszVal)+21);
 		sprintf(msg, "SET %s STATUS FINISHED", dbv.pszVal);
 		res=SkypeSend(msg);
-		pthread_create(( pThreadFunc )SkypeOutCallErrorCheck, strdup(dbv.pszVal));
+		pthread_create(( pThreadFunc )SkypeOutCallErrorCheck, _strdup(dbv.pszVal));
 		DBFreeVariant(&dbv);
 		free(msg);
 	} else if (!CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_DIAL), NULL, DialDlgProc, (LPARAM)wParam)) return -1;
@@ -874,19 +874,19 @@ char *GetSkypeErrorMsg(char *str) {
 	char *pos, *reason, *msg;
 
 	if (!strncmp(str, "ERROR", 5)) {
-		reason=strdup(str);
+		reason=_strdup(str);
 		return reason;
 	}
 	if ((pos=strstr(str, "FAILURE")) ) {
 		switch(atoi(pos+14)) {
-			case MISC_ERROR: msg=strdup("Misc. Error"); break;
-			case USER_NOT_FOUND: msg=strdup("User does not exist, check username"); break;
-			case USER_NOT_ONLINE: msg=strdup("Trying to send IM to an user, who is not online"); break;
-			case USER_BLOCKED: msg=strdup("IM blocked by recipient"); break;
-			case TYPE_UNSUPPORTED: msg=strdup("Type unsupported"); break;
-			case SENDER_NOT_FRIEND: msg=strdup("Sending IM message to user, who has not added you to friendslist and has chosen 'only people in my friendslist can start IM'"); break;
-			case SENDER_NOT_AUTHORIZED: msg=strdup("Sending IM message to user, who has not authorized you and has chosen 'only people whom I have authorized can start IM'"); break;
-			default: msg=strdup("Unknown error");
+			case MISC_ERROR: msg=_strdup("Misc. Error"); break;
+			case USER_NOT_FOUND: msg=_strdup("User does not exist, check username"); break;
+			case USER_NOT_ONLINE: msg=_strdup("Trying to send IM to an user, who is not online"); break;
+			case USER_BLOCKED: msg=_strdup("IM blocked by recipient"); break;
+			case TYPE_UNSUPPORTED: msg=_strdup("Type unsupported"); break;
+			case SENDER_NOT_FRIEND: msg=_strdup("Sending IM message to user, who has not added you to friendslist and has chosen 'only people in my friendslist can start IM'"); break;
+			case SENDER_NOT_AUTHORIZED: msg=_strdup("Sending IM message to user, who has not authorized you and has chosen 'only people whom I have authorized can start IM'"); break;
+			default: msg=_strdup("Unknown error");
 		}
 		reason=(char *)malloc(strlen(pos)+strlen(msg)+3);
 		strcpy(reason, pos);
