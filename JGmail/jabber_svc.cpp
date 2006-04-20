@@ -990,11 +990,13 @@ int JabberSendMessage( WPARAM wParam, LPARAM lParam )
 				id = JabberSerialNext();
 				char szClientJid[ 256 ];
 				JabberGetClientJID( dbv.pszVal, szClientJid, sizeof( szClientJid ));
+				char *szClientJidEncoded = JabberUrlEncode(szClientJid);
 				if ( !isEncrypted )
-					JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s' id='"JABBER_IQID"%d'><body>%s</body><x xmlns='jabber:x:event'><composing/></x></message>", szClientJid, msgType, id, msg );
+					JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s' id='"JABBER_IQID"%d'><body>%s</body><x xmlns='jabber:x:event'><composing/></x></message>", szClientJidEncoded, msgType, id, msg );
 				else
 					JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s' id='"JABBER_IQID"%d'><body>[This message is encrypted.]</body><x xmlns='jabber:x:encrypted'>%s</x><x xmlns='jabber:x:event'><composing/></x></message>",
-						szClientJid, msgType, id, msg );
+						szClientJidEncoded, msgType, id, msg );
+				free (szClientJidEncoded);
 			}
 			JabberForkThread( JabberSendMessageAckThread, 0, ( void* )ccs->hContact );
 		}
@@ -1004,12 +1006,14 @@ int JabberSendMessage( WPARAM wParam, LPARAM lParam )
 				item->idMsgAckPending = id;
 
 			char szClientJid[ 256 ];
+			char *szClientJidEncoded = JabberUrlEncode(szClientJid);
 			JabberGetClientJID( dbv.pszVal, szClientJid, sizeof( szClientJid ));
 			if ( !isEncrypted )
-				JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s' id='"JABBER_IQID"%d'><body>%s</body><x xmlns='jabber:x:event'><offline/><delivered/><composing/></x></message>", szClientJid, msgType, id, msg );
+				JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s' id='"JABBER_IQID"%d'><body>%s</body><x xmlns='jabber:x:event'><offline/><delivered/><composing/></x></message>", szClientJidEncoded, msgType, id, msg );
 			else
             JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s' id='"JABBER_IQID"%d'><body>[This message is encrypted.]</body><x xmlns='jabber:x:encrypted'>%s</x><x xmlns='jabber:x:event'><offline/><delivered/><composing/></x></message>",
-					szClientJid, msgType, id, msg );
+					szClientJidEncoded, msgType, id, msg );
+			free (szClientJidEncoded);
 		}
 		free( msg );
 	}
@@ -1177,15 +1181,17 @@ int JabberUserIsTyping( WPARAM wParam, LPARAM lParam )
 		if (( item=JabberListGetItemPtr( LIST_ROSTER, dbv.pszVal ))!=NULL && item->wantComposingEvent==TRUE ) {
 			char szClientJid[ 256 ];
 			JabberGetClientJID( dbv.pszVal, szClientJid, sizeof( szClientJid ));
-
+			char *szClientJidEncoded = JabberUrlEncode(szClientJid);
 			switch ( lParam ){
 			case PROTOTYPE_SELFTYPING_OFF:
-				JabberSend( jabberThreadInfo->s, "<message to='%s'><x xmlns='jabber:x:event'><id>%s</id></x></message>", szClientJid, ( item->messageEventIdStr==NULL )?"":item->messageEventIdStr );
+				JabberSend( jabberThreadInfo->s, "<message to='%s'><x xmlns='jabber:x:event'><id>%s</id></x></message>", szClientJidEncoded, ( item->messageEventIdStr==NULL )?"":item->messageEventIdStr );
 				break;
 			case PROTOTYPE_SELFTYPING_ON:
-				JabberSend( jabberThreadInfo->s, "<message to='%s'><x xmlns='jabber:x:event'><composing/><id>%s</id></x></message>", szClientJid, ( item->messageEventIdStr==NULL )?"":item->messageEventIdStr );
+				JabberSend( jabberThreadInfo->s, "<message to='%s'><x xmlns='jabber:x:event'><composing/><id>%s</id></x></message>", szClientJidEncoded, ( item->messageEventIdStr==NULL )?"":item->messageEventIdStr );
 				break;
-		}	}
+			}
+			free(szClientJidEncoded);
+		}	
 
 		JFreeVariant( &dbv );
 	}
