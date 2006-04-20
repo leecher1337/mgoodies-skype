@@ -136,7 +136,7 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 //			JabberLog("Has query jid");
 			if (queryNode->text) {
 //				JabberLog("JID has text");
-				JabberLog("text: %s",queryNode->text);
+//				JabberLog("text: %s",queryNode->text);
 				if (!strncmp(info->fullJID,queryNode->text,sizeof (info->fullJID))){
 					JabberLog( "Result Bind: %s %s %s",info->fullJID,"confirmed.",NULL);
 				} else {

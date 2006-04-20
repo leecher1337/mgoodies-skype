@@ -64,5 +64,6 @@ int JabberSslFindHandle( HANDLE hConn );
 PVOID JabberSslHandleToSsl( HANDLE hConn );
 void JabberSslAddHandle( HANDLE hConn, PVOID ssl );
 void JabberSslRemoveHandle( HANDLE hConn );
+char * getXGoogleToken(char * email, char * passwd);
 
 #endif

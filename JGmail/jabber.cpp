@@ -81,7 +81,9 @@ BOOL  jabberSendKeepAlive;
 HICON jabberIcon[JABBER_ICON_TOTAL];
 
 // SSL-related global variable
+#ifndef STATICSSL
 HMODULE hLibSSL = NULL;
+#endif
 PVOID jabberSslCtx;
 
 const char xmlnsAdmin[]  = "<query xmlns='http://jabber.org/protocol/muc#admin'>";
