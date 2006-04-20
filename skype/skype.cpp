@@ -1409,7 +1409,7 @@ int SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
     int ret = 0;
     switch (wParam) {        
         case PFLAGNUM_1:
-			ret = PF1_BASICSEARCH | PF1_IM; // | PF1_AUTHREQ;
+			ret = PF1_BASICSEARCH | PF1_IM | PF1_MODEMSG; // | PF1_AUTHREQ;
 			if (protocol>=5) ret |= PF1_ADDSEARCHRES;
             break;
 
@@ -1419,12 +1419,13 @@ int SkypeGetCaps(WPARAM wParam, LPARAM lParam) {
 	ret |= PF2_LIGHTDND;
 #endif		
             break;
-/* Not supported
+
         case PFLAGNUM_3:
+			ret = PF2_ONLINE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_LIGHTDND | PF2_ONTHEPHONE;
             break;
-*/            
+            
         case PFLAGNUM_4:
-            ret = PF4_FORCEAUTH | PF4_FORCEADDED;
+            ret = PF4_FORCEAUTH | PF4_FORCEADDED | PF4_AVATARS;
             break;
         case PFLAG_UNIQUEIDTEXT:
             ret = (int) "NAME";
@@ -1498,6 +1499,41 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 
    return SetUserStatus(); 
 }
+
+int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam)
+{
+	return 0;
+}
+
+/* SkypeGetAvatarInfo
+ * 
+ * Purpose: Set user avatar in profile
+ * Params : wParam=0
+ *			lParam=(LPARAM)(const char*)filename
+ * Returns: 0 - Success
+ *		   -1 - Failure
+ */
+int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
+{
+
+	DBVARIANT dbv;
+	PROTO_AVATAR_INFORMATION* AI = ( PROTO_AVATAR_INFORMATION* )lParam;	
+	if (!DBGetContactSetting(NULL,pszSkypeProtoName, "AvatarFile", &dbv) && (AI->hContact == NULL)){
+		lstrcpynA(AI->filename, dbv.pszVal, sizeof(AI->filename));
+		DBFreeVariant(&dbv);
+		return GAIR_SUCCESS;
+	}
+	else
+		return GAIR_NOAVATAR;
+
+
+	if (( wParam & GAIF_FORCE ) != 0 && AI->hContact != NULL ) {
+		return GAIR_WAITFOR;
+	}
+
+	return GAIR_NOAVATAR;
+}
+
 
 int SkypeGetStatus(WPARAM wParam, LPARAM lParam) {
 	return SkypeStatus;
@@ -2235,10 +2271,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETAVATARINFO);
 		CreateServiceFunction(pszServiceName , SkypeGetAvatarInfo);
 
-		/*strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETAWAYMSG);
+		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETAWAYMSG);
 		CreateServiceFunction(pszServiceName , SkypeSetAwayMessage);
 		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETSTATUS);
-		CreateServiceFunction(pszServiceName , SkypeGetAwayMessage);*/
+		CreateServiceFunction(pszServiceName , SkypeGetAwayMessage);
 
 	}
 	hStatusHookContact = HookEvent(ME_DB_CONTACT_ADDED,HookContactAdded);

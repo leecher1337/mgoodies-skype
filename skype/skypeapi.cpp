@@ -757,33 +757,23 @@ int SkypeAnswerCall(WPARAM wParam, LPARAM lParam) {
 	CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_CALLSTAT), NULL, CallstatDlgProc, (LPARAM)((CLISTEVENT*)lParam)->hContact);
 	return 0;
 }
-/* SkypeGetAvatarInfo
+
+/* SkypeSetAwayMessage
  * 
- * Purpose: Set user avatar in profile
+ * Purpose: Set Mood message in profile
  * Params : wParam=0
- *			lParam=(LPARAM)(const char*)filename
+ *			lParam=(LPARAM)(const char*)message text
  * Returns: 0 - Success
  *		   -1 - Failure
  */
-int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
-{
+int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
+	int retval;
+	
+	DBWriteContactSettingString(NULL, pszSkypeProtoName, "MoodText", (char*)lParam);
+	retval = SkypeSend("SET PROFILE MOOD_TEXT %s", lParam);
+	
+	return retval;
 
-	DBVARIANT dbv;
-	PROTO_AVATAR_INFORMATION* AI = ( PROTO_AVATAR_INFORMATION* )lParam;	
-	if (!DBGetContactSetting(NULL,pszSkypeProtoName, "AvatarFile", &dbv) && (AI->hContact == NULL)){
-		lstrcpynA(AI->filename, dbv.pszVal, sizeof(AI->filename));
-		DBFreeVariant(&dbv);
-		return GAIR_SUCCESS;
-	}
-	else
-		return GAIR_NOAVATAR;
-
-
-	if (( wParam & GAIF_FORCE ) != 0 && AI->hContact != NULL ) {
-		return GAIR_WAITFOR;
-	}
-
-	return GAIR_NOAVATAR;
 }
 /* SkypeSetAvatar
  * 
