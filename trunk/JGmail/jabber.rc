@@ -216,9 +216,9 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "Close",IDCLOSE,188,190,45,14
     LTEXT           "",IDC_WHITERECT,0,0,238,26
-    ICON            IDI_WRITE,IDC_LOGO,7,4,20,20
+    ICON            "",IDC_LOGO,7,4,20,20
     LTEXT           "",IDC_NAME,33,5,200,8,0,WS_EX_TRANSPARENT
-    CONTROL         "Tab1",IDC_TABS,"SysTabControl32",TCS_HOTTRACK | 
+    CONTROL         "Tab1",IDC_TABS,"SysTabControl32",TCS_HOTTRACK |
                     TCS_MULTILINE | WS_TABSTOP,5,29,228,158
     LTEXT           "View and update Jabber personal vCard",IDC_DESCRIPTION,44,13,
                     189,8,0,WS_EX_TRANSPARENT
@@ -553,7 +553,7 @@ EXSTYLE WS_EX_CONTROLPARENT
 CAPTION "JID List"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "List4",IDC_LIST,"SysListView32",LVS_REPORT | 
+    CONTROL         "List4",IDC_LIST,"SysListView32",LVS_REPORT |
                     LVS_SINGLESEL | LVS_NOLABELWRAP | LVS_AUTOARRANGE | 
                     LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER | 
                     WS_TABSTOP,7,7,193,98
@@ -846,6 +846,7 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_JABBER              ICON                    "icos\\jabber.ico"
+/*
 IDI_GROUP               ICON                    "icos\\group.ico"
 IDI_KEYS                ICON                    "icos\\key.ico"
 IDI_ADDCONTACT          ICON                    "icos\\addcontact.ico"
@@ -866,6 +867,9 @@ IDI_MAIL_NEW		ICON			"icos\\mail-new.ico"
 IDI_MAIL_STOP		ICON			"icos\\mail-stop.ico"
 IDI_MAIL_INFO		ICON			"icos\\mail-info.ico"
 IDI_MAIL_CLOCK		ICON			"icos\\mail-clock.ico"
+*/
+IDB_ICONSBIG		BITMAP	DISCARDABLE	"icos\\32x32.bmp"
+IDB_ICONSSMALL		BITMAP	DISCARDABLE	"icos\\16x16.bmp"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

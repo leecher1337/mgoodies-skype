@@ -186,6 +186,7 @@ HANDLE hChatEvent = NULL,
 		 hEvUserInfoInit = NULL;
 
 void JGmailSetupIcons();
+void JGmailSetupIcoLib();
 static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 {
 	if ( !ServiceExists( MS_DB_CONTACT_GETSETTING_STR )) {
@@ -203,8 +204,6 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 		mir_snprintf(soundname,64, "%s/NewMail",jabberProtoName);
 		mir_snprintf(sounddesc,64, "%s: %s",jabberProtoName,"New Mail Notify");
 		SkinAddNewSound( soundname, sounddesc, "newmail.wav" );
-		//setup the icons
-		JGmailSetupIcons();
 	}
 
 
@@ -229,19 +228,19 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 		hInitChat = CreateHookableEvent( szEvent );
 		hEvInitChat = HookEvent( szEvent, JabberGcInit );
 	}
-
+	JGmailSetupIcoLib();
 	return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // OnLoad - initialize the plugin instance
 
-static int iconList[] = {
-	IDI_GCOWNER,
-	IDI_GCADMIN,
-	IDI_GCMODERATOR,
-	IDI_GCVOICE
-};
+//static int iconList[] = {
+//	IDI_GCOWNER,
+//	IDI_GCADMIN,
+//	IDI_GCMODERATOR,
+//	IDI_GCVOICE
+//};
 
 extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 {
@@ -274,6 +273,8 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 	hEvModulesLoaded = HookEvent( ME_SYSTEM_MODULESLOADED, OnModulesLoaded );
 	hEvPreShutdown   = HookEvent( ME_SYSTEM_PRESHUTDOWN, OnPreShutdown );
 
+	//Load the icons. Later will change the menus if IcoLib is available
+	JGmailSetupIcons();
 	// Register protocol module
 	PROTOCOLDESCRIPTOR pd;
 	ZeroMemory( &pd, sizeof( PROTOCOLDESCRIPTOR ));
@@ -300,8 +301,8 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 	InitializeCriticalSection( &mutex );
 	InitializeCriticalSection( &modeMsgMutex );
 
-	for ( int i=0; i < JABBER_ICON_TOTAL; i++ )
-		jabberIcon[i] = ( HICON )LoadImage( hInst, MAKEINTRESOURCE( iconList[i] ), IMAGE_ICON, 0, 0, 0 );
+//	for ( int i=0; i < JABBER_ICON_TOTAL; i++ )
+//		jabberIcon[i] = ( HICON )LoadImage( hInst, MAKEINTRESOURCE( iconList[i] ), IMAGE_ICON, 0, 0, 0 );
 
 	srand(( unsigned ) time( NULL ));
 	JabberSerialInit();

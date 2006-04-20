@@ -58,8 +58,8 @@ JABBER_IQ_PFUNC JabberIqFetchXmlnsFunc( char* xmlns );
 
 void JabberIqResultExtSearch( XmlNode *iqNode, void *userdata );
 void JabberIqResultGetAvatar( XmlNode *iqNode, void *userdata );
-void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata );
-void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata );
+//void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata );
+//void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata );
 void JabberIqResultGetRoster( XmlNode *iqNode, void *userdata );
 void JabberIqResultGetAgents( XmlNode *iqNode, void *userdata );
 void JabberIqResultGetRegister( XmlNode *iqNode, void *userdata );
@@ -80,6 +80,7 @@ void JabberIqResultMucGetModeratorList( XmlNode *iqNode, void *userdata );
 void JabberIqResultMucGetBanList( XmlNode *iqNode, void *userdata );
 void JabberIqResultMucGetAdminList( XmlNode *iqNode, void *userdata );
 void JabberIqResultMucGetOwnerList( XmlNode *iqNode, void *userdata );
+void JabberIqResultBind( XmlNode *iqNode, void *userdata );
 void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata );
 void JabberRequestMailBox(HANDLE hConn);
 void JabberEnableNotifications(ThreadData *info);

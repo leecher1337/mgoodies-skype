@@ -317,7 +317,7 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 	case WM_INITDIALOG:
 		{
 			TranslateDialogDefault( hwndDlg );
-			SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )LoadIcon( hInst, MAKEINTRESOURCE( IDI_GROUP )) );
+			SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )iconBigList[0]);
 			SetDlgItemTextA( hwndDlg, IDC_ROOM, ( char* )lParam );
 			HWND hwndComboBox = GetDlgItem( hwndDlg, IDC_USER );
 			int index = 0;

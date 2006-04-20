@@ -316,6 +316,7 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 					SetDlgItemInt( hwndDlg, IDC_PORT, 5222, FALSE );
 			}	}
 			// Fall through
+		case IDC_USE_TLS:
 		case IDC_SAVEPASSWORD:
 		case IDC_KEEPALIVE:
 		case IDC_ROSTER_SYNC:

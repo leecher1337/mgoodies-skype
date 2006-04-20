@@ -4,7 +4,6 @@
 #include <m_utils.h>
 #include <m_database.h>
 #include "resource.h"
-#include <m_icolib.h>
 
 LRESULT CALLBACK PopupDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 typedef struct {
@@ -69,44 +68,6 @@ int makeHead(char *target, int tSize, __int64 tid, __int64 time){
 	return l;
 }
 
-static int hasIcoLib = 0;
-HICON JGmailGetIcon(HICON icon, const char* ident) {  // borrowed from IcqOscarJ
-  if (hasIcoLib){
-		char szTemp[MAX_PATH + 128];
-		HICON hNew;
-		mir_snprintf(szTemp, sizeof(szTemp), "%s_%s", jabberProtoName, ident);
-		hNew = (HICON)CallService(MS_SKIN2_GETICON, 0, (LPARAM)szTemp);
-		if (hNew) return hNew;
-  }
-
-  return icon;
-}
-
-
-static char *iconNames[4]={"mail-new","mail-info","mail-clock","mail-stop"};
-static char *iconDescs[4]={"New E-Mail","Info","Clock","Error"};
-static int iconInd[4]={IDI_MAIL_NEW,IDI_MAIL_INFO,IDI_MAIL_CLOCK,IDI_MAIL_STOP};
-
-void JGmailSetupIcons(){
-		if (ServiceExists(MS_SKIN2_GETICON) & ( ServiceExists(MS_POPUP_QUERY) != 0)){
-			hasIcoLib = 1;
-			SKINICONDESC2 sid = {0};
-			char szTemp[MAX_PATH + 128];
-
-			sid.cbSize = sizeof(SKINICONDESC2);
-			sid.pszSection = jabberProtoName;
-			sid.pszDefaultFile = NULL;
-			sid.iDefaultIndex = 0;
-			for (int i=0;i<4;i++){
-				sid.pszDescription = iconDescs[i];
-				mir_snprintf(szTemp, sizeof(szTemp), "%s_%s", jabberProtoName, iconNames[i]);
-				sid.pszName = szTemp;
-				sid.hDefaultIcon = LoadIcon( hInst, MAKEINTRESOURCE( iconInd[i] ));;
-				CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-			}
-		}
-}
-
 void JabberDummyResult( XmlNode *iqNode, void *userdata ){
 	JabberLog( "Received DummyResult. id: \"%s\", type: \"%s\"",JabberXmlGetAttrValue( iqNode, "id" ),JabberXmlGetAttrValue( iqNode, "type" ));
 }
@@ -156,7 +117,7 @@ void MyNotification(POPUPDATAEX *ppd){
 		DBEVENTINFO dbei = { 0 };
 		int l = strlen(ppd->lpzContactName)+strlen(ppd->lpzText)+2;
 		char * msg;
-		msg =( char* )malloc(l);
+		msg =( char* )mir_alloc(l);
 		mir_snprintf(msg,l,"%s\n%s",ppd->lpzContactName,ppd->lpzText);
 		dbei.cbSize = sizeof( dbei );
 		dbei.szModule = jabberProtoName;
@@ -201,7 +162,7 @@ void JabberRequestMailBox(HANDLE hConn){
 			POPUPDATAEX ppd;
 			ZeroMemory((void *)&ppd, sizeof(ppd));
 			ppd.lchContact = 0;
-			ppd.lchIcon = JGmailGetIcon(LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_INFO )),iconNames[1]);
+			ppd.lchIcon = iconList[12];
 			mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox request",jabberProtoName);
 			ppd.colorText = JGetDword(NULL,"ColDebugText",0);
 			ppd.colorBack = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
@@ -238,7 +199,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 		ZeroMemory((void *)&ppd, sizeof(ppd));
         ppd.lchContact = 0;
 //        ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
-		ppd.lchIcon = JGmailGetIcon(LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_STOP )),iconNames[3]);
+		ppd.lchIcon = iconList[11];
         mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName, 
 			errcode?errcode:"Unknown",
 			errtype?errtype:"Unknown");
@@ -262,7 +223,14 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 		return;
 	}
 	
-	if (( queryNode=JabberXmlGetChild( iqNode, "mailbox" )) == NULL ) return;
+	if (( queryNode=JabberXmlGetChild( iqNode, "mailbox" )) == NULL ) {
+		//hm... returned result with no data... it happens some time
+		if (((byte)JGetByte( NULL, "GMailUse",1) & 2)==2){ // we use Fake Contact
+			if (!fakeContact) fakeContact = fakeContactFindCreate();
+			JSetWord( fakeContact, "Status", ID_STATUS_NA );
+		}
+		return;
+	}
 
 	if ( !strcmp( type, "result" )) {
 		str = JabberXmlGetAttrValue( queryNode, "xmlns" );
@@ -288,7 +256,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				POPUPDATAEX ppd;
 				ZeroMemory((void *)&ppd, sizeof(ppd));
 				ppd.lchContact = 0;
-				ppd.lchIcon = JGmailGetIcon(LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_INFO )),iconNames[1]);
+				ppd.lchIcon = iconList[12];
 				mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox result: Matched %s",
 					jabberProtoName,
 					JabberXmlGetAttrValue( queryNode, "total-matched" )
@@ -312,7 +280,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					POPUPDATAEX ppd;
 					ZeroMemory((void *)&ppd, sizeof(ppd));
 					ppd.lchContact = 0;
-					ppd.lchIcon = JGmailGetIcon(LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_CLOCK )),iconNames[2]);
+					ppd.lchIcon = iconList[13];
 					mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: System clock %ssynchronized",
 						jabberProtoName,syncTimeResult?"":"NOT "
 					);
@@ -355,7 +323,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			        POPUPDATAEX ppd;
 					ZeroMemory((void *)&ppd, sizeof(ppd));
 			        ppd.lchContact = 0;
-					ppd.lchIcon = JGmailGetIcon(LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_NEW )),iconNames[0]);
+					ppd.lchIcon = iconList[10];
 			        strncpy(ppd.lpzContactName, sendersList, MAX_CONTACTNAME);
 					sendersNode = JabberXmlGetChild( threadNode, "subject" );
 					XmlNode *snippetNode = JabberXmlGetChild( threadNode, "snippet" );
@@ -558,7 +526,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 
 					ZeroMemory(&ppd, sizeof(ppd));
 					{ // show the error popup
-						ppd.lchIcon = JGmailGetIcon(LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_STOP )),iconNames[3]);
+						ppd.lchIcon = iconList[11];
 						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName, 
 							"500",
 							"wait");
@@ -573,7 +541,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						MyNotification(&ppd);
 					}
 					if (IsDlgButtonChecked( hwndDlg, IDC_SHOWREQUEST ) ){
-						ppd.lchIcon = JGmailGetIcon(LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_INFO )),iconNames[1]);
+						ppd.lchIcon = iconList[12];
 						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox request",jabberProtoName);
 						ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURTEXT,CPM_GETCOLOUR,0,0);
 						ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,255,128);
@@ -582,7 +550,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						MyNotification(&ppd);
 					}
 					if (IsDlgButtonChecked( hwndDlg, IDC_SHOWRESULT ) ){
-						ppd.lchIcon = JGmailGetIcon(LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_INFO )),iconNames[1]);
+						ppd.lchIcon = iconList[12];
 						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox result: Matched %s",
 							jabberProtoName,
 							"1" 
@@ -599,7 +567,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						MyNotification(&ppd);
 					} else { // the clock syncronisation will be shown only if the result popup is disabled
 						if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE ) && (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZESILENT )==0)){
-							ppd.lchIcon = JGmailGetIcon(LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_CLOCK )),iconNames[2]);
+							ppd.lchIcon = iconList[13];
 							mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: System clock %ssynchronized",
 								jabberProtoName,""
 							);
@@ -612,7 +580,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 							MyNotification(&ppd);
 						}
 					}
-					ppd.lchIcon = JGmailGetIcon(LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_NEW )),iconNames[0]);
+					ppd.lchIcon = iconList[10];
 					mir_snprintf(ppd.lpzContactName,150,"%s: New mail from ",jabberProtoName);
 					strncat(ppd.lpzContactName,"Some One, Me Myself",150);
 					StringFromUnixTime(sendersList,50,time(NULL));
@@ -638,7 +606,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 				if (jabberThreadInfo)JabberRequestMailBox(jabberThreadInfo->s);
 				else {
 					POPUPDATAEX ppd = { 0 };
-					ppd.lchIcon = JGmailGetIcon(LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_STOP )),iconNames[3]);
+					ppd.lchIcon = iconList[11];
 					mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: No connection.",jabberProtoName);
 					mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Impossible to check");
 					ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_ERRORCOLOURTEXT,CPM_GETCOLOUR,0,0);
