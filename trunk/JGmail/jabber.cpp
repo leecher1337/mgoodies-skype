@@ -195,6 +195,14 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 	JabberWsInit();
 	JabberSslInit();
 	HookEvent( ME_USERINFO_INITIALISE, JabberUserInfoInit );
+	if (JGetByte(NULL,"EnableGMail",1) & 1) {
+		extern char soundname[64];
+		char sounddesc[64];
+		mir_snprintf(soundname,64, "%s/NewMail",jabberProtoName);
+		mir_snprintf(sounddesc,64, "%s: %s",jabberProtoName,"New Mail Notify");
+		SkinAddNewSound( soundname, sounddesc, "newmail.wav" );
+	}
+
 
 	if ( ServiceExists( MS_GC_REGISTER )) {
 		jabberChatDllPresent = true;

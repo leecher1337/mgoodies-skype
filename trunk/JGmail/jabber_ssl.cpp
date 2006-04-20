@@ -105,20 +105,6 @@ BOOL JabberSslInit()
 		return FALSE;
 }
 
-void JabberSslUninit()
-{
-	if ( hLibSSL ) {
-		pfn_SSL_CTX_free( jabberSslCtx );
-
-		JabberLog( "Free SSL library" );
-		FreeLibrary( hLibSSL );
-		hLibSSL = NULL;
-	}
-
-	if ( sslHandleList ) free( sslHandleList );
-	sslHandleCount = 0;
-	DeleteCriticalSection( &sslHandleMutex );
-}
 #else // ndef STATICSSL
 BOOL JabberSslInit()
 {
@@ -144,16 +130,24 @@ BOOL JabberSslInit()
 
 		return TRUE;
 }
+#endif // ndef STATICSSL
 
 void JabberSslUninit()
 {
+#ifndef STATICSSL
+	if ( hLibSSL ) {
+#endif // ndef STATICSSL
 		pfn_SSL_CTX_free( jabberSslCtx );
-
+#ifndef STATICSSL
+		JabberLog( "Free SSL library" );
+		FreeLibrary( hLibSSL );
+		hLibSSL = NULL;
+	}
+#endif // ndef STATICSSL
 	if ( sslHandleList ) free( sslHandleList );
 	sslHandleCount = 0;
 	DeleteCriticalSection( &sslHandleMutex );
 }
-#endif // ndef STATICSSL
 
 int JabberSslFindHandle( HANDLE hConn )
 {
