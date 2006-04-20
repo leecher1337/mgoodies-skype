@@ -1256,7 +1256,7 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 						mi.cbSize=sizeof(mi);
 						mi.position=-2000005000;
 						mi.flags=0;
-						mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
+						mi.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALLSKYPEOUT));
 						mi.pszContactOwner=pszSkypeProtoName;
 						mi.pszName=Translate("Do a SkypeOut-call");
 						mi.pszService=SKYPEOUT_CALL;
@@ -1453,7 +1453,7 @@ int SkypeLoadIcon(WPARAM wParam,LPARAM lParam)
 	UINT id;
 
 	switch(wParam&0xFFFF) {
-		case PLI_PROTOCOL: id=IDI_ICON1; break; // IDI_MAIN is the main icon for the protocol
+		case PLI_PROTOCOL: id=IDI_SKYPE; break; // IDI_MAIN is the main icon for the protocol
 		default: return (int)(HICON)NULL;	
 	}
 	return (int)LoadImage(hInst,MAKEINTRESOURCE(id),IMAGE_ICON,GetSystemMetrics(wParam&PLIF_SMALL?SM_CXSMICON:SM_CXICON),GetSystemMetrics(wParam&PLIF_SMALL?SM_CYSMICON:SM_CYICON),0);

@@ -40,7 +40,7 @@
 #define EVENTTYPE_CALL 2000
 
 // Common used code-pieces
-#define OUTPUT(a) ShowMessage(IDI_ICON1, a, 1);
+#define OUTPUT(a) ShowMessage(IDI_ERRORS, a, 1);
 #define ERRCHK 	if (!strncmp(ptr, "ERROR", 5)) { OUTPUT(ptr); free(ptr); SetEvent(SkypeMsgFetched); return; }
 
 typedef void ( __cdecl* pThreadFunc )( void* );

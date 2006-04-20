@@ -164,7 +164,19 @@ SOURCE=.\utf8.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
+SOURCE=.\res\add.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\away.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\bitmap1.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\call.bmp
 # End Source File
 # Begin Source File
 
@@ -172,7 +184,31 @@ SOURCE=.\Call.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\call.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\chat.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\DND.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\error.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\hang_up.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\Hangup.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\hold.ico
 # End Source File
 # Begin Source File
 
@@ -188,11 +224,55 @@ SOURCE=.\icon2.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\import.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\invisible.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\message.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\NA.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\occupied.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\offline.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\online.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\phone.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\resume.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\resumecall.ico
 # End Source File
 # Begin Source File
 
 SOURCE=.\Skript1.rc
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\skype.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\skypeout.ico
 # End Source File
 # End Group
 # Begin Source File
