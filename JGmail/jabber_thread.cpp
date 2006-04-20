@@ -49,6 +49,8 @@ static void JabberProcessPresence( XmlNode *node, void *userdata );
 static void JabberProcessIq( XmlNode *node, void *userdata );
 static void JabberProcessProceed( XmlNode *node, void *userdata );
 static void JabberProcessRegIq( XmlNode *node, void *userdata );
+void JabberUserConfigResult( XmlNode *iqNode, void *userdata );
+
 
 static VOID CALLBACK JabberDummyApcFunc( DWORD param )
 {
@@ -1392,6 +1394,16 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 			JabberSend( jabberThreadInfo->s, "<iq type='result' id='%s'/>",idStr );
 			JabberRequestMailBox( info->s );
 	}	}
+	// RECVED: <iq type='set'><usersetting ' ...
+	else if ( (!strcmp( type, "set" ) || !strcmp( type, "result"))  && ( newMailNode=JabberXmlGetChild( node, "usersetting" ) ) ) {
+		// RECVED: usersettings result/set
+		// ACTION: if "set": reply; parse the settings always.
+		if (!strcmp( type, "set" )) {
+			idStr = JabberXmlGetAttrValue( node, "id" );
+			JabberSend( jabberThreadInfo->s, "<iq type='result' id='%s'/>",idStr );
+		}
+		JabberUserConfigResult(node,jabberThreadInfo);
+	}
 	// RECVED: <iq type='error'> ...
 	else if ( !strcmp( type, "error" )) {
 
