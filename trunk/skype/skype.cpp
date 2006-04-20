@@ -2235,6 +2235,11 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETAVATARINFO);
 		CreateServiceFunction(pszServiceName , SkypeGetAvatarInfo);
 
+		/*strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETAWAYMSG);
+		CreateServiceFunction(pszServiceName , SkypeSetAwayMessage);
+		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETSTATUS);
+		CreateServiceFunction(pszServiceName , SkypeGetAwayMessage);*/
+
 	}
 	hStatusHookContact = HookEvent(ME_DB_CONTACT_ADDED,HookContactAdded);
 	hContactDeleted = HookEvent( ME_DB_CONTACT_DELETED, HookContactDeleted );
