@@ -259,6 +259,18 @@ void GetInfoThread(HANDLE hContact) {
 		free(ptr);
 	}
 
+	str[eol]=0;
+	strcat(str, "MOOD_TEXT");
+	if (!SkypeSend(str) && (ptr=SkypeRcv(str+4, INFINITE))) {
+		if (ptr[strlen(str+3)]) {
+			if (utf8_decode(strtok(ptr+strlen(str+3), " "), &utfdstr)!=-1 && utfdstr) {
+				DBWriteContactSettingString(hContact, "CList", "StatusMsg", utfdstr);
+				free(utfdstr);
+			}
+		}
+		free(ptr);
+	}
+
 	i=0;
 	while (settings[i].SkypeSetting) {
 		str[eol]=0;
