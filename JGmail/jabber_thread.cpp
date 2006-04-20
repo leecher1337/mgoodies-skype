@@ -28,7 +28,7 @@ Last change by : $Author: ghazan $
 #include "jabber.h"
 
 #include <io.h>
-#include <WinDNS.h>   // requires Windows Platform SDK
+#include "WinDNS.h"   // requires Windows Platform SDK
 
 #include "jabber_ssl.h"
 #include "jabber_list.h"
@@ -1224,6 +1224,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 			if ( hwndJabberAgents )
 				SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
 		}
+
 		// RECVED: file transfer request
 		// ACTION: notify Miranda throuch CHAINRECV
 		else if ( !strcmp( xmlns, "jabber:iq:oob" )) {
@@ -1356,15 +1357,6 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 								r->system = NULL;
 		}	}	}	}	}
 	}
-	// RECVED: <iq type='set'><new-mail ' ...
-	else if ( !strcmp( type, "set" ) && ( newMailNode=JabberXmlGetChild( node, "new-mail" ) ) ) {
-
-		// RECVED: new-mail notify
-		// ACTION: Reply & request 
-		idStr = JabberXmlGetAttrValue( node, "id" );
-		JabberSend( jabberThreadInfo->s, "<iq type='result' id='%s'/>",idStr );
-		JabberRequestMailBox( info->s );
-	}
 	// RECVED: <iq type='set'><si xmlns='http://jabber.org/protocol/si' ...
 	else if ( !strcmp( type, "set" ) && ( siNode=JabberXmlGetChildWithGivenAttrValue( node, "si", "xmlns", "http://jabber.org/protocol/si" ))!=NULL && ( profile=JabberXmlGetAttrValue( siNode, "profile" ))!=NULL ) {
 
@@ -1374,6 +1366,15 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 			JabberFtHandleSiRequest( node );
 		}
 		// RECVED: unknown profile
+	}
+	// RECVED: <iq type='set'><new-mail ' ...
+	else if ( !strcmp( type, "set" ) && ( newMailNode=JabberXmlGetChild( node, "new-mail" ) ) ) {
+
+		// RECVED: new-mail notify
+		// ACTION: Reply & request 
+		idStr = JabberXmlGetAttrValue( node, "id" );
+		JabberSend( jabberThreadInfo->s, "<iq type='result' id='%s'/>",idStr );
+		JabberRequestMailBox( info->s );
 		// ACTION: reply with bad-profile
 		else {
 			if (( from=JabberXmlGetAttrValue( node, "from" )) != NULL ) {

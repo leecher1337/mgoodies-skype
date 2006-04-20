@@ -918,7 +918,7 @@ void __stdcall JabberSendPresenceTo( int status, char* to, char* extra )
 			JabberSend( jabberThreadInfo->s, "<presence%s>%s%s</presence>", toStr, priorityStr, extra );
 		break;
 	case ID_STATUS_INVISIBLE:
-		JabberSend( jabberThreadInfo->s, "<presence type='invisible'%s>%s%s</presence>", toStr, priorityStr, extra );
+		JabberSend( jabberThreadInfo->s, "<presence type='%s'%s>%s%s</presence>", JGetByte(NULL,"InvAsUnavail",TRUE)?"unavailable":"invisible",toStr, priorityStr, extra );
 		break;
 	case ID_STATUS_AWAY:
 	case ID_STATUS_ONTHEPHONE:

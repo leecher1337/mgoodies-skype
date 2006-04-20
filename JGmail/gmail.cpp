@@ -153,6 +153,19 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 	if ( !strcmp( type, "result" )) {
 		str = JabberXmlGetAttrValue( queryNode, "xmlns" );
 		if ( str!=NULL && !strcmp( str, "google:mail:notify" )) {
+			__int64 rt = _atoi64(JabberXmlGetAttrValue( queryNode, "result-time" ));
+			BOOL syncTimeResult = false;
+			int drift = ((unsigned int)(rt/1000)) - time(NULL);
+			if (drift) if (JGetByte(NULL,"SyncTime",FALSE)){
+				SYSTEMTIME st;
+			    LONGLONG ll;
+				FILETIME ft;
+			    ll = (rt*10000) + 116444736000000000;
+				ft.dwLowDateTime = (DWORD)ll;
+				ft.dwHighDateTime = (DWORD)(ll >> 32);
+				FileTimeToSystemTime(&ft, &st);
+				syncTimeResult = SetSystemTime(&st);
+			}
 			if (JGetByte(NULL,"ShowResult",0)) {
 				POPUPDATAEX ppd;
 				ZeroMemory((void *)&ppd, sizeof(ppd));
@@ -166,15 +179,34 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				ppd.colorText = NULL;
 				ppd.colorBack = RGB(255,255,128);
 				ppd.iSeconds = JGetDword(NULL,"PopUpTimeout",-1);
-				__int64 rt = _atoi64(JabberXmlGetAttrValue( queryNode, "result-time" ));
 				int pos = makeHead(ppd.lpzText, MAX_SECONDLINE - 5,
 					-1,
 					rt
 				);
-				mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"\nLocalDrift: %d seconds",
-					((unsigned int)(rt/1000)) - time(NULL)
-				);
+				if (drift){
+				  pos += mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"\nLocalDrift: %d seconds",
+					drift
+				  );
+				  if (syncTimeResult) mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"; Synchronized.");
+				}
 				CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+			} else {
+				if (drift) if (JGetByte(NULL,"SyncTime",FALSE)){
+					POPUPDATAEX ppd;
+					ZeroMemory((void *)&ppd, sizeof(ppd));
+					ppd.lchContact = 0;
+					ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_CLOCK ));
+					mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: System clock %ssynchronized",
+						jabberProtoName,syncTimeResult?"":" NOT"
+					);
+					ppd.colorText = NULL;
+					ppd.colorBack = NULL;
+					ppd.iSeconds = JGetDword(NULL,"PopUpTimeout",-1);
+					mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5,"LocalDrift: %d seconds",
+					  drift
+					);
+					CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+				}
 			}
 			XmlNode *threadNode;
 			int i;
