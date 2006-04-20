@@ -37,9 +37,9 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo = {
 	sizeof( PLUGININFO ),
 	#if defined( _UNICODE )
-		"Jabber Protocol (GMail) (Unicode)",
+		"Jabber Protocol (JGmail) (Unicode)",
 	#else
-		"Jabber Protocol (GMail)",
+		"Jabber Protocol (JGmail)",
 	#endif
 	__VERSION_DWORD,
 	"Jabber protocol plugin (GMail mod) for Miranda IM ( "__DATE__" )",

@@ -111,6 +111,7 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 			JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
 			JabberSend( info->s, "<iq type='get' id='"JABBER_IQID"%d'><query xmlns='jabber:iq:agents'/></iq>", iqId );
 		}
+		JabberEnableNotifications(info);
 		JabberRequestMailBox(info->s);
 	}
 	// What to do if password error? etc...
@@ -207,7 +208,7 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 		}
 
 		if ( JGetByte( hContact, "ChatRoom", 0 ))
-			QueueUserAPC( sttCreateRoom, hMainThread, ( ULONG_PTR )jid );
+			QueueUserAPC( sttCreateRoom, hMainThread, ( unsigned long )jid );
 
       DBVARIANT dbNick;
 		if ( !JGetStringUtf( hContact, "Nick", &dbNick )) {

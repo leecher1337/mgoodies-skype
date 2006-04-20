@@ -537,7 +537,7 @@ static void JabberProcessStreamOpening( XmlNode *node, void *userdata )
 	if ( node->name==NULL || strcmp( node->name, "stream:stream" ))
 		return;
 
-	if ( !info->useSSL && hLibSSL != NULL && JGetByte( "UseTLS", FALSE )) {
+	if ( !info->useSSL && hLibSSL != NULL && JGetByte( "UseTLS", TRUE )) {
 		JabberLog( "Requesting TLS" );
 		JabberSend( info->s, "<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>" );
 		return;
@@ -1224,7 +1224,6 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 			if ( hwndJabberAgents )
 				SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
 		}
-
 		// RECVED: file transfer request
 		// ACTION: notify Miranda throuch CHAINRECV
 		else if ( !strcmp( xmlns, "jabber:iq:oob" )) {
@@ -1357,6 +1356,15 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 								r->system = NULL;
 		}	}	}	}	}
 	}
+	// RECVED: <iq type='set'><new-mail ' ...
+	else if ( !strcmp( type, "set" ) && ( newMailNode=JabberXmlGetChild( node, "new-mail" ) ) ) {
+
+		// RECVED: new-mail notify
+		// ACTION: Reply & request 
+		idStr = JabberXmlGetAttrValue( node, "id" );
+		JabberSend( jabberThreadInfo->s, "<iq type='result' id='%s'/>",idStr );
+		JabberRequestMailBox( info->s );
+	}
 	// RECVED: <iq type='set'><si xmlns='http://jabber.org/protocol/si' ...
 	else if ( !strcmp( type, "set" ) && ( siNode=JabberXmlGetChildWithGivenAttrValue( node, "si", "xmlns", "http://jabber.org/protocol/si" ))!=NULL && ( profile=JabberXmlGetAttrValue( siNode, "profile" ))!=NULL ) {
 
@@ -1372,15 +1380,6 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 				idStr = JabberXmlGetAttrValue( node, "id" );
 				JabberSend( jabberThreadInfo->s, "<iq type='error' to='%s'%s%s%s><error code='400' type='cancel'><bad-request xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/><bad-profile xmlns='http://jabber.org/protocol/si'/></error></iq>", from, ( idStr )?" id='":"", ( idStr )?idStr:"", ( idStr )?"'":"" );
 		}	}
-	}
-	// RECVED: <iq type='set'><new-mail ' ...
-	else if ( !strcmp( type, "set" ) && ( newMailNode=JabberXmlGetChild( node, "new-mail" ) ) ) {
-
-		// RECVED: new-mail notify
-		// ACTION: Reply & request 
-		idStr = JabberXmlGetAttrValue( node, "id" );
-		JabberSend( jabberThreadInfo->s, "<iq type='result' id='%s'/>",idStr );
-		JabberRequestMailBox( info->s );
 	}
 	// RECVED: <iq type='error'> ...
 	else if ( !strcmp( type, "error" )) {
