@@ -199,13 +199,13 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				}
 				CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
 			} else {
-				if (drift) if (0x2 & JGetByte(NULL,"SyncTime",0)){
+				if (drift) if ((0x2 & JGetByte(NULL,"SyncTime",0))==0){
 					POPUPDATAEX ppd;
 					ZeroMemory((void *)&ppd, sizeof(ppd));
 					ppd.lchContact = 0;
 					ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_CLOCK ));
 					mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: System clock %ssynchronized",
-						jabberProtoName,syncTimeResult?"":" NOT"
+						jabberProtoName,syncTimeResult?"":"NOT "
 					);
 					ppd.colorText = JGetDword(NULL,"ColClockText",0);
 					ppd.colorBack = JGetDword(NULL,"ColClockBack",0);
