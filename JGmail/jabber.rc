@@ -1,0 +1,830 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_OPT_JABBER DIALOGEX 0, 0, 258, 214
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Jabber",IDC_SIMPLE,7,7,244,99
+    LTEXT           "Username:",IDC_STATIC,19,21,45,8
+    EDITTEXT        IDC_EDIT_USERNAME,70,19,86,12,ES_AUTOHSCROLL
+    LTEXT           "Password:",IDC_STATIC,19,35,45,8
+    EDITTEXT        IDC_EDIT_PASSWORD,70,33,86,12,ES_PASSWORD | 
+                    ES_AUTOHSCROLL
+    LTEXT           "Resource:",IDC_RESOURCE_T,19,49,45,8
+    EDITTEXT        IDC_EDIT_RESOURCE,70,47,86,12,ES_AUTOHSCROLL
+    LTEXT           "Priority:",IDC_PRIORITY_LABEL,165,49,31,8
+    EDITTEXT        IDC_PRIORITY,199,47,42,12,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Spin1",IDC_PRIORITY_SPIN,"msctls_updown32",
+                    UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | 
+                    UDS_NOTHOUSANDS,231,47,11,12
+    CONTROL         "Save password",IDC_SAVEPASSWORD,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,70,61,172,10
+    LTEXT           "Login server:",IDC_STATIC,19,75,45,8
+    EDITTEXT        IDC_EDIT_LOGIN_SERVER,70,73,86,12,ES_AUTOHSCROLL
+    LTEXT           "Port:",IDC_STATIC,19,89,45,8
+    EDITTEXT        IDC_PORT,70,87,26,12,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Use SSL",IDC_USE_SSL,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,104,88,54,10
+    CONTROL         "Use TLS",IDC_USE_TLS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,165,88,80,10
+    PUSHBUTTON      "Register new user",IDC_BUTTON_REGISTER,165,19,78,13
+    CONTROL         "List of public servers",IDC_LINK_PUBLIC_SERVER,
+                    "Hyperlink",WS_TABSTOP,165,74,79,11
+    GROUPBOX        "Expert",IDC_STATIC,7,108,244,99
+    CONTROL         "Manually specify connection host",IDC_MANUAL,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,19,121,223,10
+    LTEXT           "Host:",IDC_STATIC,31,134,26,8
+    EDITTEXT        IDC_HOST,62,132,90,12,ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "Port:",IDC_STATIC,161,134,21,8
+    EDITTEXT        IDC_HOSTPORT,186,132,31,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    WS_DISABLED
+    CONTROL         "Keep connection alive",IDC_KEEPALIVE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,19,146,221,10
+    CONTROL         "Automatically delete contacts not in my roster",
+                    IDC_ROSTER_SYNC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,
+                    158,221,10
+    LTEXT           "User directory:",IDC_JUD_LABEL,19,175,68,8
+    EDITTEXT        IDC_JUD,92,172,103,12,ES_AUTOHSCROLL
+    LTEXT           "Messaging language:",IDC_MSGLANG_LABEL,19,189,70,8
+    COMBOBOX        IDC_MSGLANG,92,187,103,69,CBS_DROPDOWNLIST | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_INFO_JABBER DIALOGEX 0, 0, 221, 132
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "JID:",IDC_STATIC,7,7,19,8
+    EDITTEXT        IDC_INFO_JID,31,7,183,12,ES_AUTOHSCROLL | ES_READONLY | 
+                    NOT WS_BORDER | NOT WS_TABSTOP
+    LTEXT           "Resources:",IDC_STATIC,7,65,81,8
+    LISTBOX         IDC_INFO_RESOURCE,7,75,69,50,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL
+    LTEXT           "Subscription type:",IDC_STATIC,7,20,60,8,NOT WS_GROUP
+    EDITTEXT        IDC_SUBSCRIPTION,70,20,144,12,ES_READONLY | NOT 
+                    WS_BORDER | NOT WS_TABSTOP
+    LTEXT           "Software:",IDC_STATIC,81,74,35,8
+    LTEXT           "Version:",IDC_STATIC,81,103,35,8
+    LTEXT           "System:",IDC_STATIC,81,117,35,8
+    EDITTEXT        IDC_SOFTWARE,121,74,93,26,ES_MULTILINE | ES_READONLY | 
+                    WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT        IDC_VERSION,121,103,93,12,ES_AUTOHSCROLL | ES_READONLY | 
+                    WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT        IDC_SYSTEM,121,117,93,13,ES_AUTOHSCROLL | ES_READONLY | 
+                    WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+END
+
+IDD_OPT_REGISTER DIALOGEX 0, 0, 165, 61
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | 
+    WS_CAPTION
+CAPTION "Jabber Account Registration"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "",IDC_REG_STATUS,18,7,139,19
+    CONTROL         "Progress1",IDC_PROGRESS_REG,"msctls_progress32",NOT 
+                    WS_VISIBLE | WS_BORDER,18,27,130,7
+    PUSHBUTTON      "OK",IDOK,29,40,50,14
+    DEFPUSHBUTTON   "Cancel",IDCANCEL,85,40,50,14
+    DEFPUSHBUTTON   "OK",IDOK2,55,40,50,14,NOT WS_VISIBLE
+    DEFPUSHBUTTON   "Cancel",IDCANCEL2,55,40,50,14,NOT WS_VISIBLE
+END
+
+IDD_AGENTS DIALOGEX 0, 0, 294, 254
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
+    WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "Jabber Agents"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Register/Search Jabber Agents",IDC_STATIC,7,7,280,115
+    LTEXT           "Jabber server:",IDC_STATIC,13,20,47,8
+    EDITTEXT        IDC_AGENT_SERVER,65,19,136,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "Browse",IDC_AGENT_BROWSE,209,19,46,13,WS_DISABLED
+    CONTROL         "List1",IDC_AGENT_LIST,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | 
+                    WS_BORDER | WS_TABSTOP,13,36,267,60
+    PUSHBUTTON      "Register...",IDC_AGENT_REGISTER,13,100,50,14,
+                    WS_DISABLED
+    PUSHBUTTON      "Browse/Join chat room...",IDC_JOIN,69,100,93,14,
+                    WS_DISABLED
+    PUSHBUTTON      "Search...",IDC_AGENT_SEARCH,171,100,50,14,NOT 
+                    WS_VISIBLE | WS_DISABLED
+    GROUPBOX        "Registered Jabber Transports",IDC_STATIC,7,128,280,99
+    CONTROL         "List1",IDC_AGENT_TRANSPORT,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | 
+                    WS_BORDER | WS_TABSTOP,13,142,267,60
+    PUSHBUTTON      "Log on",IDC_AGENT_LOGON,13,206,50,14,WS_DISABLED
+    PUSHBUTTON      "Log off",IDC_AGENT_LOGOFF,69,206,50,14,WS_DISABLED
+    PUSHBUTTON      "Unregister",IDC_AGENT_UNREGISTER,125,206,50,14,
+                    WS_DISABLED
+    PUSHBUTTON      "Register with a new service...",IDC_MANUAL_REGISTER,7,
+                    233,106,14
+    PUSHBUTTON      "Close",IDCLOSE,237,233,50,14
+END
+
+IDD_FORM DIALOGEX 0, 0, 258, 224
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | 
+    DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "Jabber Form"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Instruction:",IDC_STATIC,7,7,243,8,NOT WS_GROUP
+    EDITTEXT        IDC_INSTRUCTION,7,17,243,38,ES_MULTILINE | ES_READONLY | 
+                    WS_VSCROLL | NOT WS_TABSTOP
+    LTEXT           "",IDC_FRAME,7,60,243,138,NOT WS_GROUP,WS_EX_CLIENTEDGE
+    EDITTEXT        IDC_FRAME_TEXT,18,101,220,33,ES_CENTER | ES_MULTILINE | 
+                    ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    SCROLLBAR       IDC_VSCROLL,238,61,11,136,SBS_VERT | WS_DISABLED
+    DEFPUSHBUTTON   "Submit",IDC_SUBMIT,146,203,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,200,203,50,14
+END
+
+IDD_PASSWORD DIALOGEX 0, 0, 151, 63
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
+    WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "Jabber Password"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_JID,7,7,137,12,ES_READONLY | NOT WS_BORDER | NOT 
+                    WS_TABSTOP
+    EDITTEXT        IDC_PASSWORD,7,22,137,12,ES_PASSWORD | ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,23,42,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,77,42,50,14
+END
+
+IDD_VCARD DIALOGEX 0, 0, 238, 210
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | 
+    DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Personal vCard"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Close",IDCLOSE,188,190,45,14
+    LTEXT           "",IDC_WHITERECT,0,0,238,26
+    ICON            IDI_WRITE,IDC_LOGO,7,4,20,20
+    LTEXT           "",IDC_NAME,33,5,200,8,0,WS_EX_TRANSPARENT
+    CONTROL         "Tab1",IDC_TABS,"SysTabControl32",TCS_HOTTRACK | 
+                    TCS_MULTILINE | WS_TABSTOP,5,29,228,158
+    LTEXT           "View and update Jabber personal vCard",IDC_DESCRIPTION,44,13,
+                    189,8,0,WS_EX_TRANSPARENT
+    CTEXT           "Updating",IDC_UPDATING,65,194,49,8,SS_NOPREFIX | 
+                    SS_CENTERIMAGE | NOT WS_VISIBLE
+    PUSHBUTTON      "Update Now",IDC_UPDATE,5,190,55,14,WS_DISABLED
+    PUSHBUTTON      "Save Changes",IDC_SAVE,124,190,61,14,WS_DISABLED
+END
+
+IDD_VCARD_HOME DIALOGEX 0, 0, 222, 132
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Address1:",IDC_STATIC,5,7,50,8
+    LTEXT           "City:",IDC_STATIC,5,34,50,8
+    LTEXT           "State:",IDC_STATIC,5,48,50,8
+    LTEXT           "Address2:",IDC_STATIC,5,20,50,8
+    EDITTEXT        IDC_ADDRESS1,58,5,148,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_ADDRESS2,58,19,148,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_CITY,58,33,75,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_STATE,58,47,75,12,ES_AUTOHSCROLL
+    LTEXT           "ZIP:",IDC_STATIC,5,63,50,8
+    EDITTEXT        IDC_ZIP,58,61,58,12,ES_AUTOHSCROLL
+    LTEXT           "Country:",IDC_STATIC,5,76,50,8
+    EDITTEXT        IDC_COUNTRY,58,75,75,12,ES_AUTOHSCROLL
+END
+
+IDD_VCARD_PERSONAL DIALOGEX 0, 0, 222, 132
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Full name:",IDC_STATIC,5,7,51,8
+    EDITTEXT        IDC_FULLNAME,58,5,159,12,ES_AUTOHSCROLL
+    LTEXT           "Nick name:",IDC_STATIC,5,20,51,8
+    EDITTEXT        IDC_NICKNAME,58,19,82,12,ES_AUTOHSCROLL
+    LTEXT           "First name:",IDC_STATIC,5,34,51,8
+    EDITTEXT        IDC_FIRSTNAME,58,33,82,12,ES_AUTOHSCROLL
+    LTEXT           "Middle:",IDC_STATIC,143,34,25,8
+    EDITTEXT        IDC_MIDDLE,174,33,43,12,ES_AUTOHSCROLL
+    LTEXT           "Last name:",IDC_STATIC,5,48,51,8
+    EDITTEXT        IDC_LASTNAME,58,47,82,12,ES_AUTOHSCROLL
+    LTEXT           "Date of birth:",IDC_STATIC,5,63,51,8
+    EDITTEXT        IDC_BIRTH,58,61,62,12,ES_AUTOHSCROLL
+    LTEXT           "YYYY-MM-DD",IDC_STATIC,124,63,90,8
+    LTEXT           "Gender:",IDC_STATIC,5,77,51,8
+    COMBOBOX        IDC_GENDER,58,75,62,52,CBS_DROPDOWN | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "Occupation:",IDC_STATIC,5,90,51,8
+    EDITTEXT        IDC_OCCUPATION,58,89,159,12,ES_AUTOHSCROLL
+    LTEXT           "Homepage:",IDC_STATIC,6,104,51,8
+    EDITTEXT        IDC_HOMEPAGE,58,102,159,12,ES_AUTOHSCROLL
+END
+
+IDD_VCARD_WORK DIALOGEX 0, 0, 222, 132
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Company:",IDC_STATIC,6,7,50,8
+    EDITTEXT        IDC_COMPANY,58,5,148,12,ES_AUTOHSCROLL
+    LTEXT           "Department:",IDC_STATIC,6,20,50,8
+    EDITTEXT        IDC_DEPARTMENT,58,19,148,12,ES_AUTOHSCROLL
+    LTEXT           "Title:",IDC_STATIC,6,33,50,8
+    EDITTEXT        IDC_TITLE,58,32,75,12,ES_AUTOHSCROLL
+    LTEXT           "Address1:",IDC_STATIC,5,47,50,8
+    EDITTEXT        IDC_ADDRESS1,58,45,148,12,ES_AUTOHSCROLL
+    LTEXT           "Address2:",IDC_STATIC,5,60,50,8
+    EDITTEXT        IDC_ADDRESS2,58,59,148,12,ES_AUTOHSCROLL
+    LTEXT           "City:",IDC_STATIC,5,74,50,8
+    EDITTEXT        IDC_CITY,58,73,75,12,ES_AUTOHSCROLL
+    LTEXT           "State:",IDC_STATIC,5,88,50,8
+    EDITTEXT        IDC_STATE,58,87,75,12,ES_AUTOHSCROLL
+    LTEXT           "ZIP:",IDC_STATIC,5,103,50,8
+    EDITTEXT        IDC_ZIP,58,101,58,12,ES_AUTOHSCROLL
+    LTEXT           "Country:",IDC_STATIC,5,116,50,8
+    EDITTEXT        IDC_COUNTRY,58,115,75,12,ES_AUTOHSCROLL
+END
+
+IDD_VCARD_CONTACT DIALOGEX 0, 0, 222, 132
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "E-mail:",IDC_STATIC,5,5,212,8
+    CONTROL         "List1",IDC_EMAILS,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_NOLABELWRAP | LVS_AUTOARRANGE | 
+                    LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER,5,14,
+                    212,50
+    LTEXT           "Phone:",IDC_STATIC,5,68,212,8
+    CONTROL         "List1",IDC_PHONES,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_NOLABELWRAP | LVS_AUTOARRANGE | 
+                    LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER,5,77,
+                    212,50
+END
+
+IDD_VCARD_ADDEMAIL DIALOGEX 0, 0, 186, 89
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Jabber vCard: Add Email Address"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Email address:",IDC_STATIC,7,8,52,8
+    EDITTEXT        IDC_EMAIL,61,7,118,12,ES_AUTOHSCROLL
+    CONTROL         "Home",IDC_HOME,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,61,
+                    23,110,10
+    CONTROL         "Work",IDC_WORK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,61,
+                    33,111,10
+    CONTROL         "Internet",IDC_INTERNET,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,61,43,110,10
+    CONTROL         "X400",IDC_X400,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,61,
+                    53,110,10
+    DEFPUSHBUTTON   "OK",IDOK,40,68,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,96,68,50,14
+END
+
+IDD_VCARD_ADDPHONE DIALOGEX  0, 0, 186, 110
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Jabber vCard: Add Phone Number"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Phone number:",IDC_STATIC,7,8,49,8
+    EDITTEXT        IDC_PHONE,61,7,118,12,ES_AUTOHSCROLL
+    CONTROL         "Home",IDC_HOME,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,26,
+                    23,67,10
+    CONTROL         "Work",IDC_WORK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,26,
+                    33,67,10
+    CONTROL         "Voice",IDC_VOICE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    26,43,67,10
+    CONTROL         "Fax",IDC_FAX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,26,
+                    53,67,10
+    DEFPUSHBUTTON   "OK",IDOK,40,88,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,96,88,50,14
+    CONTROL         "Cellular",IDC_CELL,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,101,23,71,10
+    CONTROL         "Video",IDC_VIDEO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    101,33,71,10
+    CONTROL         "BBS",IDC_BBS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,101,
+                    43,71,10
+    CONTROL         "Modem",IDC_MODEM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    101,53,71,10
+    CONTROL         "Pager",IDC_PAGER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    26,63,67,10
+    CONTROL         "Text/Messaging",IDC_MSG,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,26,73,67,10
+    CONTROL         "ISDN",IDC_ISDN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    101,63,71,10
+    CONTROL         "PCS",IDC_PCS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,101,
+                    73,71,10
+END
+
+IDD_VCARD_PHOTO DIALOGEX 0, 0, 222, 132
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    PUSHBUTTON      "",IDC_LOAD,200,5,17,14,BS_ICON
+    PUSHBUTTON      "",IDC_SAVE,200,5,17,14,BS_ICON
+    CTEXT           "",IDC_CANVAS,5,5,189,122,SS_CENTERIMAGE
+    PUSHBUTTON      "",IDC_DELETE,200,23,17,14,BS_ICON | WS_DISABLED
+END
+
+IDD_VCARD_NOTE DIALOGEX 0, 0, 222, 132
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Description:",IDC_STATIC,5,5,212,8
+    EDITTEXT        IDC_DESC,5,15,212,112,ES_MULTILINE
+END
+
+IDD_CHANGEPASSWORD DIALOGEX 0, 0, 181, 79
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | 
+    DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "Change Password"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Current Password:",IDC_STATIC,7,8,81,8
+    EDITTEXT        IDC_OLDPASSWD,95,7,79,12,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "New Password:",IDC_STATIC,7,22,81,8
+    EDITTEXT        IDC_NEWPASSWD,95,21,79,12,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "Confirm New Password:",IDC_STATIC,7,36,81,8
+    EDITTEXT        IDC_NEWPASSWD2,95,35,79,12,ES_PASSWORD | ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,38,58,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,92,58,50,14
+END
+
+IDD_OPT_JABBER2 DIALOGEX 0, 0, 222, 173
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "File Transfer",IDC_STATIC,2,3,216,71
+    CONTROL         "Allow file sending through bytestream proxy server",
+                    IDC_PROXY,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
+                    WS_TABSTOP,9,42,202,10
+    EDITTEXT        IDC_PROXY_ADDR,117,53,81,12,ES_AUTOHSCROLL | WS_DISABLED | 
+                    WS_GROUP
+    CONTROL         "Specify external address",IDC_DIRECT_MANUAL,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,30,101,10
+    EDITTEXT        IDC_DIRECT_ADDR,117,29,81,12,ES_AUTOHSCROLL
+    GROUPBOX        "Miscellaneous",IDC_STATIC,2,75,216,93
+    CONTROL         "Show transport agents on contact list",
+                    IDC_SHOW_TRANSPORT,"Button",BS_AUTOCHECKBOX | BS_TOP | 
+                    WS_TABSTOP,9,142,202,11
+    CONTROL         "Automatically add contact when accept authorization",
+                    IDC_AUTO_ADD,"Button",BS_AUTOCHECKBOX | BS_TOP | 
+                    WS_TABSTOP,9,86,203,12
+    CONTROL         "Send messages slower, but with full acknowledgement",
+                    IDC_MSG_ACK,"Button",BS_AUTOCHECKBOX | BS_TOP | 
+                    WS_TABSTOP,9,120,203,12
+    CONTROL         "Allow file sending through direct peer-to-peer connection",
+                    IDC_DIRECT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,18,
+                    202,10
+    CONTROL         "Specify proxy server",IDC_PROXY_MANUAL,"Button",
+                    BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,9,54,102,10
+    CONTROL         "Disable main menu",IDC_DISABLE_MAINMENU,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,131,202,9
+    CONTROL         "Enable avatars",IDC_ENABLE_AVATARS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,153,201,10
+    CONTROL         "Automatically join conferences on login",IDC_AUTOJOIN,
+                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,9,97,
+                    202,10
+    CONTROL         "Autoaccept multiuser chat invitations",
+                    IDC_AUTO_ACCEPT_MUC,"Button",BS_AUTOCHECKBOX | 
+                    WS_DISABLED | WS_TABSTOP,9,109,202,9
+END
+
+IDD_GROUPCHAT DIALOGEX 0, 0, 306, 208
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
+    WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "Jabber Multi-User Conference"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Conference server:",-1,5,8,70,8
+    COMBOBOX        IDC_SERVER,80,7,168,79,CBS_DROPDOWN | CBS_AUTOHSCROLL | 
+                    WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON   "Browse",IDC_BROWSE,253,7,46,13
+    CONTROL         "List1",IDC_ROOM,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | 
+                    WS_TABSTOP,5,24,294,160
+    PUSHBUTTON      "Close",IDCLOSE,249,189,50,14
+END
+
+IDD_GROUPCHAT_JOIN DIALOGEX 0, 0, 208, 96
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
+    WS_POPUP | WS_VISIBLE | WS_CAPTION
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "Join Jabber Multi-User Conference Room"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Conference server:",IDC_STATIC,7,8,64,8
+    EDITTEXT        IDC_SERVER,74,7,127,12,ES_AUTOHSCROLL
+    LTEXT           "Room:",IDC_STATIC,7,22,64,8
+    EDITTEXT        IDC_ROOM,74,21,127,12,ES_AUTOHSCROLL
+    LTEXT           "Nick name:",IDC_STATIC,7,36,64,8
+    EDITTEXT        IDC_NICK,74,35,127,12,ES_AUTOHSCROLL
+    LTEXT           "Password:",IDC_STATIC,7,50,64,8
+    EDITTEXT        IDC_PASSWORD,74,49,127,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,51,75,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,106,75,50,14
+END
+
+IDD_GROUPCHAT_INPUT DIALOGEX 0, 0, 275, 46
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | 
+    DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_TOPIC,7,7,261,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,165,25,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,218,25,50,14
+END
+
+IDD_JIDLIST DIALOGEX 0, 0, 207, 112
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | 
+    DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "JID List"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "List4",IDC_LIST,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_NOLABELWRAP | LVS_AUTOARRANGE | 
+                    LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER | 
+                    WS_TABSTOP,7,7,193,98
+END
+
+IDD_AGENT_MANUAL_REGISTER DIALOGEX 0, 0, 186, 45
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | 
+    DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
+CAPTION "Jabber Agent Registration"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "JID:",IDC_STATIC,7,9,17,8
+    EDITTEXT        IDC_JID,29,7,150,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "Register",IDOK,75,24,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,129,24,50,14
+END
+
+IDD_GROUPCHAT_INVITE DIALOGEX 0, 0, 186, 73
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_FIXEDSYS | WS_POPUP | 
+    WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Jabber Groupchat Invite a User"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Room JID:",IDC_STATIC,7,6,46,8
+    EDITTEXT        IDC_ROOM,57,4,122,12,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "User JID:",IDC_STATIC,7,21,46,8
+    COMBOBOX        IDC_USER,57,19,122,64,CBS_DROPDOWN | CBS_AUTOHSCROLL | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Reason:",IDC_STATIC,7,37,46,8
+    EDITTEXT        IDC_REASON,57,35,122,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "&Invite",IDC_INVITE,75,53,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,129,53,50,14
+END
+
+IDD_GROUPCHAT_INVITE_ACCEPT DIALOGEX  0, 0, 232, 112
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_FIXEDSYS | 
+    DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Multi-User Conference Invitation"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "&Accept",IDC_ACCEPT,124,93,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,178,93,50,14
+    LTEXT           "From:",IDC_STATIC,33,24,63,8
+    LTEXT           "Room JID:",IDC_STATIC,33,38,63,8
+    LTEXT           "Reason:",IDC_STATIC,33,52,63,8
+    LTEXT           "Nick:",IDC_STATIC,33,76,62,8
+    LTEXT           "The following invitation to join a multi-user conference is received.",
+                    IDC_STATIC,3,4,225,8
+    EDITTEXT        IDC_FROM,99,22,105,12,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_ROOM,99,36,105,12,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_REASON,99,50,105,12,ES_AUTOHSCROLL | ES_READONLY
+    GROUPBOX        "",IDC_STATIC,12,13,211,57
+    EDITTEXT        IDC_NICK,99,74,105,12,ES_AUTOHSCROLL
+END
+
+IDD_OPT_SETAVATAR DIALOGEX 0, 0, 222, 131
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_AVATAR,"Static",SS_BITMAP | SS_CENTERIMAGE | 
+                    SS_SUNKEN,9,11,96,96
+    LTEXT           "Note: Only JPGs and GIFs\nImage size max 64x64\nFile size max 6kB",
+                    IDC_STATIC,112,54,106,34
+    PUSHBUTTON      "Set",IDC_SETAVATAR,9,112,45,13
+    PUSHBUTTON      "Delete",IDC_DELETEAVATAR,61,112,41,13
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_OPT_JABBER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 251
+        VERTGUIDE, 19
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 207
+    END
+
+    IDD_INFO_JABBER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 214
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 125
+    END
+
+    IDD_OPT_REGISTER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 158
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 54
+    END
+
+    IDD_AGENTS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 287
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 247
+    END
+
+    IDD_FORM, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 250
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 217
+    END
+
+    IDD_PASSWORD, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 144
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 56
+    END
+
+    IDD_VCARD, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 233
+        TOPMARGIN, 5
+        BOTTOMMARGIN, 204
+    END
+
+    IDD_VCARD_HOME, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 217
+        TOPMARGIN, 5
+        BOTTOMMARGIN, 127
+    END
+
+    IDD_VCARD_PERSONAL, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 217
+        TOPMARGIN, 5
+        BOTTOMMARGIN, 127
+    END
+
+    IDD_VCARD_WORK, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 217
+        TOPMARGIN, 5
+        BOTTOMMARGIN, 127
+    END
+
+    IDD_VCARD_CONTACT, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 217
+        TOPMARGIN, 5
+        BOTTOMMARGIN, 127
+    END
+
+    IDD_VCARD_ADDEMAIL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 82
+    END
+
+    IDD_VCARD_ADDPHONE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 102
+    END
+
+    IDD_VCARD_PHOTO, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 217
+        TOPMARGIN, 5
+        BOTTOMMARGIN, 127
+    END
+
+    IDD_VCARD_NOTE, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 217
+        TOPMARGIN, 5
+        BOTTOMMARGIN, 127
+    END
+
+    IDD_CHANGEPASSWORD, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 174
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 72
+    END
+
+    IDD_OPT_JABBER2, DIALOG
+    BEGIN
+        LEFTMARGIN, 2
+        RIGHTMARGIN, 218
+        VERTGUIDE, 9
+        TOPMARGIN, 3
+        BOTTOMMARGIN, 168
+    END
+
+    IDD_GROUPCHAT, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 299
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 203
+    END
+
+    IDD_GROUPCHAT_JOIN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 201
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 89
+    END
+
+    IDD_GROUPCHAT_INPUT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 268
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 39
+    END
+
+    IDD_JIDLIST, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 200
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 105
+    END
+
+    IDD_AGENT_MANUAL_REGISTER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 38
+    END
+
+    IDD_GROUPCHAT_INVITE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 67
+    END
+
+    IDD_GROUPCHAT_INVITE_ACCEPT, DIALOG
+    BEGIN
+        LEFTMARGIN, 3
+        RIGHTMARGIN, 228
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 107
+    END
+
+    IDD_OPT_SETAVATAR, DIALOG
+    BEGIN
+        LEFTMARGIN, 2
+        RIGHTMARGIN, 218
+        VERTGUIDE, 9
+        TOPMARGIN, 3
+        BOTTOMMARGIN, 126
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_JABBER              ICON                    "icos\\jabber.ico"
+IDI_GROUP               ICON                    "icos\\group.ico"
+IDI_KEYS                ICON                    "icos\\key.ico"
+IDI_ADDCONTACT          ICON                    "icos\\addcontact.ico"
+IDI_AGENTS              ICON                    "icos\\block.ico"
+IDI_VCARD               ICON                    "icos\\pages.ico"
+IDI_DELETE              ICON                    "icos\\delete.ico"
+IDI_EDIT                ICON                    "icos\\rename.ico"
+IDI_GRANT               ICON                    "icos\\grant.ico"
+IDI_OPEN                ICON                    "icos\\open.ico"
+IDI_REQUEST             ICON                    "icos\\request.ico"
+IDI_WRITE               ICON                    "icos\\write.ico"
+IDI_SAVE                ICON                    "icos\\save.ico"
+IDI_GCOWNER             ICON                    "icos\\gcowner.ico"
+IDI_GCADMIN             ICON                    "icos\\gcadmin.ico"
+IDI_GCMODERATOR         ICON                    "icos\\gcmodera.ico"
+IDI_GCVOICE             ICON                    "icos\\gcvoice.ico"
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
