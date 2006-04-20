@@ -330,7 +330,11 @@ LBL_Exit:
 	BOOL sslMode = FALSE;
 	if ( info->useSSL ) {
 		JabberLog( "Intializing SSL connection" );
-		if ( hLibSSL!=NULL && socket!=INVALID_SOCKET ) {
+		if ( 
+#ifndef STATICSSL
+			hLibSSL!=NULL && 
+#endif
+			socket!=INVALID_SOCKET ) {
 			JabberLog( "SSL using socket = %d", socket );
 			if (( ssl=pfn_SSL_new( jabberSslCtx )) != NULL ) {
 				JabberLog( "SSL create context ok" );
@@ -364,7 +368,9 @@ LBL_Exit:
 				SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )JTranslate( "Error: Cannot connect to the server" ));
 			}
 			free( buffer );
+#ifndef STATICSSL
 			if ( !hLibSSL )
+#endif
 				MessageBox( NULL, TranslateT( "The connection requires an OpenSSL library, which is not installed." ), TranslateT( "Jabber Connection Error" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JabberLog( "Thread ended, SSL connection failed" );
 			goto LBL_Exit;
@@ -537,7 +543,11 @@ static void JabberProcessStreamOpening( XmlNode *node, void *userdata )
 	if ( node->name==NULL || strcmp( node->name, "stream:stream" ))
 		return;
 
-	if ( !info->useSSL && hLibSSL != NULL && JGetByte( "UseTLS", TRUE )) {
+	if ( !info->useSSL && 
+#ifndef STATICSSL
+		hLibSSL != NULL && 
+#endif
+		JGetByte( "UseTLS", TRUE )) {
 		JabberLog( "Requesting TLS" );
 		JabberSend( info->s, "<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>" );
 		return;
@@ -1372,9 +1382,11 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 
 		// RECVED: new-mail notify
 		// ACTION: Reply & request 
-		idStr = JabberXmlGetAttrValue( node, "id" );
-		JabberSend( jabberThreadInfo->s, "<iq type='result' id='%s'/>",idStr );
-		JabberRequestMailBox( info->s );
+		if (JGetByte(NULL,"EnableGMail",1) & 1) {
+			idStr = JabberXmlGetAttrValue( node, "id" );
+			JabberSend( jabberThreadInfo->s, "<iq type='result' id='%s'/>",idStr );
+			JabberRequestMailBox( info->s );
+		}
 		// ACTION: reply with bad-profile
 		else {
 			if (( from=JabberXmlGetAttrValue( node, "from" )) != NULL ) {
