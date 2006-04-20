@@ -185,6 +185,7 @@ HANDLE hChatEvent = NULL,
 		 hEvPreShutdown = NULL,
 		 hEvUserInfoInit = NULL;
 
+void JGmailSetupIcons();
 static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 {
 	if ( !ServiceExists( MS_DB_CONTACT_GETSETTING_STR )) {
@@ -196,11 +197,14 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 	JabberSslInit();
 	HookEvent( ME_USERINFO_INITIALISE, JabberUserInfoInit );
 	if (JGetByte(NULL,"EnableGMail",1) & 1) {
+		//Setup the sound
 		extern char soundname[64];
 		char sounddesc[64];
 		mir_snprintf(soundname,64, "%s/NewMail",jabberProtoName);
 		mir_snprintf(sounddesc,64, "%s: %s",jabberProtoName,"New Mail Notify");
 		SkinAddNewSound( soundname, sounddesc, "newmail.wav" );
+		//setup the icons
+		JGmailSetupIcons();
 	}
 
 

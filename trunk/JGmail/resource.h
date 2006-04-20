@@ -73,6 +73,7 @@
 #define IDC_EDIT_DEBUGTIMEOUT           209
 #define IDC_ERRORCOLOURTEXT             210
 #define IDC_ERRORCOLOURBACK             211
+#define IDC_USEFAKE                     212
 #define IDC_EDIT_ERRORTIMEOUT           213
 #define IDC_CLOCKCOLOURTEXT             214
 #define IDC_CLOCKCOLOURBACK             215
