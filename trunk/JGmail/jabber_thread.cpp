@@ -806,7 +806,11 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 		return;
 	if (( from = JabberXmlGetAttrValue( node, "from" )) == NULL )
 		return;
-
+	
+	nick = JabberUrlEncode(from); // abusing nick as temp string;
+	char *encodedFrom = (char *)alloca(strlen(nick)+1);
+	strcpy(encodedFrom,nick);
+	free(nick); // end abusing nick
 	BOOL isChatRoomJid = JabberListExist( LIST_CHATROOM, JabberUrlDecode( from ));
 	if ( isChatRoomJid && type != NULL && !strcmp( type, "groupchat" )) {
 		JabberGroupchatProcessMessage( node, userdata );
@@ -860,7 +864,7 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 					if ( !delivered && ( n=JabberXmlGetChild( xNode, "delivered" ))!=NULL ) {
 						delivered = TRUE;
 						idStr = JabberXmlGetAttrValue( node, "id" );
-						JabberSend( info->s, "<message to='%s'><x xmlns='jabber:x:event'><delivered/><id>%s</id></x></message>", from, ( idStr!=NULL )?idStr:"" );
+						JabberSend( info->s, "<message to='%s'><x xmlns='jabber:x:event'><delivered/><id>%s</id></x></message>", encodedFrom, ( idStr!=NULL )?idStr:"" );
 					}
 					if ( item!=NULL && JabberXmlGetChild( xNode, "composing" )!=NULL ) {
 						composing = TRUE;
@@ -1044,7 +1048,11 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 					JABBER_RESOURCE_STATUS *r = item->resource;
 					for ( i=0; i < item->resourceCount && strcmp( r->resourceName, p ); i++, r++ );
 					if ( i >= item->resourceCount || ( r->version == NULL && r->system == NULL && r->software == NULL ))
-						JabberSend( info->s, "<iq type='get' to='%s'><query xmlns='jabber:iq:version'/></iq>", from );
+					{	char *strtemp = JabberUrlEncode(from);
+						JabberLog("From: %s; strTemp: %s",from, strtemp);
+						JabberSend( info->s, "<iq type='get' to='%s'><query xmlns='jabber:iq:version'/></iq>", strtemp );
+						free (strtemp);
+					}
 		}	}	}
 
 		if (( statusNode = JabberXmlGetChild( node, "status" )) != NULL && statusNode->text != NULL )
@@ -1159,7 +1167,6 @@ static void JabberProcessIqVersion( char* idStr, XmlNode* node )
 	char* from, *resultId;
 	if (( from=JabberXmlGetAttrValue( node, "from" )) == NULL )
 		return;
-
 	char* str = JabberGetVersionText();
 	char* version = JabberTextEncode( str );
 	char* os = NULL;
@@ -1494,7 +1501,9 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 				if (( item=JabberListGetItemPtr( LIST_ROSTER, from ))!=NULL && ( r=item->resource )!=NULL ) {
 					if (( p=strchr( from, '/' ))!=NULL && p[1]!='\0' ) {
 						p++;
-						for ( i=0; i<item->resourceCount && strcmp( r->resourceName, p ); i++, r++ );
+						char *resDecoded = JabberUrlDecode(p);
+						//JabberLog("res: \"%s\" resDecoded: \"%s\"",p,resDecoded);
+						for ( i=0; i<item->resourceCount && strcmp( r->resourceName, resDecoded ); i++, r++ );
 						if ( i < item->resourceCount ) {
 							if ( r->software ) free( r->software );
 							if (( n=JabberXmlGetChild( queryNode, "name" ))!=NULL && n->text ) {
@@ -1517,7 +1526,9 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 								r->system = JabberTextDecode( n->text );
 							else
 								r->system = NULL;
-		}	}	}	}	}
+						}
+						free (resDecoded);
+		}	}	}	}	
 	}
 	// RECVED: <iq type='set'><si xmlns='http://jabber.org/protocol/si' ...
 	else if ( !strcmp( type, "set" ) && ( siNode=JabberXmlGetChildWithGivenAttrValue( node, "si", "xmlns", "http://jabber.org/protocol/si" ))!=NULL && ( profile=JabberXmlGetAttrValue( siNode, "profile" ))!=NULL ) {
