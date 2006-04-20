@@ -28,7 +28,7 @@ Last change by : $Author: ghazan $
 #include "jabber.h"
 
 #include <io.h>
-#include "WinDNS.h"   // requires Windows Platform SDK
+#include <WinDNS.h>   // requires Windows Platform SDK
 
 #include "jabber_ssl.h"
 #include "jabber_list.h"

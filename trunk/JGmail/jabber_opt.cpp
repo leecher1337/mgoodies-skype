@@ -186,7 +186,7 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 				if ( !dbv.pszVal[0] ) enableRegister = FALSE;
 				JFreeVariant( &dbv );
 			}
-			else SetDlgItemTextA( hwndDlg, IDC_EDIT_LOGIN_SERVER, "jabber.org" );
+			else SetDlgItemTextA( hwndDlg, IDC_EDIT_LOGIN_SERVER, "gmail.com" );
 
 			WORD port = ( WORD )JGetWord( NULL, "Port", JABBER_DEFAULT_PORT );
 			SetDlgItemInt( hwndDlg, IDC_PORT, port, FALSE );
@@ -421,6 +421,7 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 
 static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
 {
+	char text[256];
 	BOOL bChecked;
 
 	switch ( msg ) {
@@ -501,8 +502,6 @@ static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 	}
 	case WM_NOTIFY:
 		if (( ( LPNMHDR ) lParam )->code == PSN_APPLY ) {
-			BOOL bChecked;
-			char text[256];
 			// File transfer options
 			JSetByte( "BsDirect", ( BYTE ) IsDlgButtonChecked( hwndDlg, IDC_DIRECT ));
 			JSetByte( "BsDirectManual", ( BYTE ) IsDlgButtonChecked( hwndDlg, IDC_DIRECT_MANUAL ));
@@ -539,11 +538,12 @@ static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			JSetByte( "EnableAvatars",       ( BYTE )IsDlgButtonChecked( hwndDlg, IDC_ENABLE_AVATARS ));
 			JSetByte( "AutoAcceptMUC",       ( BYTE )IsDlgButtonChecked( hwndDlg, IDC_AUTO_ACCEPT_MUC ));
 			JSetByte( "AutoJoinConferences", ( BYTE )IsDlgButtonChecked( hwndDlg, IDC_AUTOJOIN ));
+			return TRUE;
 		}
 		break;
-	}//switch
-
+	}
 	return FALSE;
+
 }
 
 BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam );
@@ -595,14 +595,11 @@ long AdvOptsDlg, GMailOptsDlg;
 
 			TabCtrl_SetCurSel(GetDlgItem(hwndDlg, IDC_OPT_EXPERT_TAB),t);
 
-
-//			SendDlgItemMessage(hwndDlg, IDC_AAPROTOCOL, CB_ADDSTRING, 0, (LPARAM)Translate("All") );
-//         return FALSE;
-		return TRUE;
+			return TRUE;
 		}
 		case PSM_CHANGED:
 #ifdef _DEBUG
-			MessageBox(hwndDlg,"Child dialog changed","EventHapened",0);
+			MessageBoxA(hwndDlg,"Child dialog changed","EventHapened",0);
 #endif
 			SendMessage(GetParent(hwndDlg), PSM_CHANGED, (unsigned int)hwndDlg, 0);
 			break;
@@ -613,7 +610,7 @@ long AdvOptsDlg, GMailOptsDlg;
 			  BOOL CommandApply = FALSE;
 			  if ( (CommandApply = lParam && ((LPNMHDR)lParam)->code == PSN_APPLY) || (lParam && ((LPNMHDR)lParam)->code == PSN_RESET) ) {
 #ifdef _DEBUG
-				MessageBox(hwndDlg,CommandApply?"Apply":"Cancel","EventHapened",0);
+				MessageBoxA(hwndDlg,CommandApply?"Apply":"Cancel","EventHapened",0);
 #endif
 				if (CommandApply) {
 					SendMessage((HWND)AdvOptsDlg, WM_NOTIFY, wParam, lParam);
@@ -655,7 +652,6 @@ long AdvOptsDlg, GMailOptsDlg;
 	return FALSE;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////////////
 // JabberOptInit - initializes all options dialogs
 
@@ -674,7 +670,7 @@ int JabberOptInit( WPARAM wParam, LPARAM lParam )
 	odp.nIDBottomSimpleControl = IDC_SIMPLE;
 	JCallService( MS_OPT_ADDPAGE, wParam, ( LPARAM )&odp );
 
-	odp.pszTemplate = MAKEINTRESOURCEA( IDD_OPT_JABBER2 );
+	odp.pszTemplate = MAKEINTRESOURCEA( IDD_OPT_EXPERT );
 	mir_snprintf( str, sizeof( str ), "%s %s", jabberModuleName, JTranslate( "Advanced" ));
 	str[sizeof( str )-1] = '\0';
 	odp.pszTitle = str;

@@ -22,10 +22,10 @@ void StringFromUnixTime(char* str, int length, unsigned long t)
     ft.dwLowDateTime = (DWORD)ll;
     ft.dwHighDateTime = (DWORD)(ll >> 32);
     FileTimeToSystemTime(&ft, &st);
-	GetDateFormat(LOCALE_USER_DEFAULT, DATE_LONGDATE, &st, NULL, str, length);
+	GetDateFormatA(LOCALE_USER_DEFAULT, DATE_LONGDATE, &st, NULL, str, length);
 	int l = strlen(str);
 	str[l] = ' ';
-	GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, NULL, str+l+1, length-l+1);
+	GetTimeFormatA(LOCALE_USER_DEFAULT, 0, &st, NULL, str+l+1, length-l+1);
 }
 
 static int sprint64u( char* buffer, unsigned __int64 x) {
