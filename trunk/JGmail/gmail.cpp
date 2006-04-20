@@ -107,12 +107,12 @@ void JGmailSetupIcons(){
 		}
 }
 
-void JabberEnableNotificationsResult( XmlNode *iqNode, void *userdata ){
-	JabberLog( "Received EnableNotificationsResult");
+void JabberDummyResult( XmlNode *iqNode, void *userdata ){
+	JabberLog( "Received DummyResult. id: \"%s\", type: \"%s\"",JabberXmlGetAttrValue( iqNode, "id" ),JabberXmlGetAttrValue( iqNode, "type" ));
 }
 void JabberEnableNotifications(ThreadData *info){
 	int iqId = JabberSerialNext();
-	JabberIqAdd( iqId, IQ_PROC_NONE, JabberEnableNotificationsResult );
+	JabberIqAdd( iqId, IQ_PROC_NONE, JabberDummyResult );
 	JabberSend( info->s, "<iq type='set' to='%s@%s' id='"JABBER_IQID"%d'><usersetting xmlns='google:setting'><mailnotifications value='true'/></usersetting></iq>", info->username, info->server, iqId);
 }
 
@@ -432,6 +432,57 @@ LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
+int saveChatsToServer = -1; //-1: unknown; 0: disabled; 1: enabled
+extern long GMailOptsDlg;
+void JabberUserConfigResult( XmlNode *iqNode, void *userdata ){
+	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	XmlNode *queryNode;
+	char* type;
+	int tempSaveChatsToServer = saveChatsToServer;
+	saveChatsToServer = -1;
+	JabberLog( "Received JabberUserConfigResult");
+//<iq to="xxx@gmail.com/Miranda-Home" from="xxx@gmail.com" id="mir_XX" type="result">
+//	 <usersetting xmlns="google:setting">
+//	   <autoacceptsuggestions value="true"/>
+//	   <autoacceptrequests value="false"/>
+//	   <mailnotifications value="true"/>
+//	   <archivingenabled value="false"/>
+//	 </usersetting>
+//	</iq>
+	if (( type=JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) goto LBLEnd;
+	if (( queryNode=JabberXmlGetChild( iqNode, "error" )) )goto LBLEnd; // error situation
+	/*if ( !strcmp( type, "result" ))*/ {
+		char *str;
+		if (( queryNode=JabberXmlGetChild( iqNode, "usersetting" )) == NULL ) goto LBLOK;
+		str = JabberXmlGetAttrValue( queryNode, "xmlns" );
+		if ( str!=NULL && !strcmp( str, "google:setting" )) {
+			XmlNode *settingNode = JabberXmlGetChild( queryNode, "archivingenabled" );
+			str = JabberXmlGetAttrValue(settingNode,"value");
+			if (str){
+				if ( !strcmp( str, "true" )) tempSaveChatsToServer = 1;
+				if ( !strcmp( str, "false" )) tempSaveChatsToServer = 0;
+			}
+		}  else goto LBLEnd;
+LBLOK:
+		saveChatsToServer = tempSaveChatsToServer;
+	}
+LBLEnd:
+	if (GMailOptsDlg) SetDlgItemText((HWND)GMailOptsDlg, IDC_SAVECHATS, (saveChatsToServer==-1)?TranslateT("Unknown"):(saveChatsToServer?TranslateT("Enabled"):TranslateT("Disabled")));
+}
+
+void JabberUserConfigRequest(ThreadData *info){
+	int iqId = JabberSerialNext();
+	if (saveChatsToServer!=-1) {
+		//send the option
+		JabberIqAdd( iqId, IQ_PROC_NONE, JabberDummyResult );
+		JabberSend( info->s, "<iq type='set' to='%s@%s' id='"JABBER_IQID"%d'><usersetting xmlns='google:setting'><archivingenabled value=\"%s\"/></usersetting></iq>", info->username, info->server, iqId, saveChatsToServer?"false":"true");
+//		saveChatsToServer = saveChatsToServer?0:1;
+		iqId = JabberSerialNext(); //we already used the initial one
+	}
+	JabberIqAdd( iqId, IQ_PROC_NONE, JabberUserConfigResult );
+	JabberSend( info->s, "<iq type='get' to='%s@%s' id='"JABBER_IQID"%d'><usersetting xmlns='google:setting'/></iq>", info->username, info->server, iqId);
+}
+
 BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam ){
 	BOOL bChecked;
 
@@ -474,6 +525,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 		i = JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000);
 		SetDlgItemInt(hwndDlg, IDC_EDIT_DEBUGTIMEOUT,((i&0xFFFF)==0xFFFF)?-1:(i&0xFFFF),TRUE);
 		SetDlgItemInt(hwndDlg, IDC_EDIT_ERRORTIMEOUT,((i>>16)==0xFFFF)?-1:(i>>16),TRUE);
+		SetDlgItemText(hwndDlg, IDC_SAVECHATS, (saveChatsToServer==-1)?TranslateT("Unknown"):(saveChatsToServer?TranslateT("Enabled"):TranslateT("Disabled")));
 			
 		return TRUE;
 	}
@@ -596,6 +648,9 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 				}
 				maxtid = tmptid;
 				maxtime = tmptime;
+			}break;
+		case IDC_SAVECHATS:{
+				if (jabberThreadInfo)JabberUserConfigRequest(jabberThreadInfo);
 			}break;
 		case IDC_EDIT_TIMEOUT:
 		case IDC_EDIT_DEBUGTIMEOUT:
