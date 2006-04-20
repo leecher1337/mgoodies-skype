@@ -74,7 +74,7 @@ void JabberDummyResult( XmlNode *iqNode, void *userdata ){
 void JabberEnableNotifications(ThreadData *info){
 	int iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberDummyResult );
-	JabberSend( info->s, "<iq type='set' to='%s@%s' id='"JABBER_IQID"%d'><usersetting xmlns='google:setting'><mailnotifications value='true'/></usersetting></iq>", info->username, info->server, iqId);
+    JabberSend( info->s, "<iq type=\"set\" to=\"%s@%s\" id=\""JABBER_IQID"%d\"><usersetting xmlns=\"google:setting\"><mailnotifications value=\"true\"/></usersetting></iq>", info->username, info->server, iqId);
 }
 
 HANDLE fakeContact = NULL;
@@ -168,7 +168,7 @@ void JabberRequestMailBox(HANDLE hConn){
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultMailNotify );
 		char stid[21]; sprint64u(stid,maxtid);
 		char stime[21];sprint64u(stime,maxtime);
-		JabberSend( hConn, "<iq type='get' id='"JABBER_IQID"%d'><query xmlns='google:mail:notify' newer-than-time='%s' newer-than-tid='%s'/></iq>", 
+        JabberSend( hConn, "<iq type=\"get\" id=\""JABBER_IQID"%d\"><query xmlns=\"google:mail:notify\" newer-than-time=\"%s\" newer-than-tid=\"%s\"/></iq>",
 			iqId,
 			stime,
 			stid
@@ -195,7 +195,7 @@ LRESULT CALLBACK PopupErrorDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 			break;
 		case WM_COMMAND:
 			if (HIWORD(wParam) != STN_CLICKED) break;
-		case WM_CONTEXTMENU: 
+		case WM_CONTEXTMENU:
 			PUDeletePopUp(hWnd);
 			break;
 		case UM_FREEPLUGINDATA:
@@ -235,7 +235,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			ppd.lchContact = 0;
 			//ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
 			ppd.lchIcon = iconList[11];
-			mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName, 
+			mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName,
 				errcode?errcode:"Unknown",
 				errtype?errtype:"Unknown");
 			XmlNode *textNode = JabberXmlGetChild( queryNode, "text" );
@@ -249,7 +249,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				__int64 time = _atoi64(JabberXmlGetAttrValue( textNode, "newer-than-time" ));
 				l = makeHead(ppd.lpzText+l,MAX_SECONDLINE-5-l,tid,time);
 			}
-			
+
 			ppd.colorText = JGetDword(NULL,"ColErrorText",0);
 			ppd.colorBack = JGetDword(NULL,"ColErrorBack",RGB(255,128,128));
 			ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)>>16);
@@ -264,7 +264,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 		}
 		return;
 	}
-	
+
 	if (( queryNode=JabberXmlGetChild( iqNode, "mailbox" )) == NULL ) {
 		//hm... returned result with no data... it happens some time
 		if (((byte)JGetByte( NULL, "GMailUse",1) & 2)==2){ // we use Fake Contact
@@ -348,7 +348,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				if (gmstamp>maxtime)maxtime=gmstamp;
 				int numMesg = atoi(JabberXmlGetAttrValue( threadNode, "messages" ));
 				char mesgs[10];
-				if (numMesg>1) mir_snprintf(mesgs,10," (%d)",numMesg); else mesgs[0] = '\0';
+                if (numMesg>1) mir_snprintf(mesgs,10," (%d)",numMesg); else mesgs[0] = '\0';
 				char sttime[50];
 				StringFromUnixTime(sttime,50,(long)(gmstamp/1000));
 //				char stthread[50];
@@ -372,11 +372,11 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			        strncpy(ppd.lpzContactName, sendersList, MAX_CONTACTNAME);
 					sendersNode = JabberXmlGetChild( threadNode, "subject" );
 					XmlNode *snippetNode = JabberXmlGetChild( threadNode, "snippet" );
-			        mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s", 
+			        mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s",
 						mesgs,
 						sendersNode?JabberUtf8Decode( sendersNode->text, 0 ):"none",
 						sttime,
-						snippetNode?JabberUtf8Decode( snippetNode->text, 0 ):"none"						
+						snippetNode?JabberUtf8Decode( snippetNode->text, 0 ):"none"
 						);
 					ppd.colorText = JGetDword(NULL,"ColMsgText",0);
 					ppd.colorBack = JGetDword(NULL,"ColMsgBack",0);
@@ -400,9 +400,9 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			JSetDword(NULL,"MaxTidHi",(DWORD)(maxtid>>32));
 			JSetDword(NULL,"MaxTimeLo",(DWORD)maxtime);
 			JSetDword(NULL,"MaxTimeHi",(DWORD)(maxtime>>32));
-		}		
+		}
 	}
-}	
+}
 
 LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	POPUP_ACCINFO * mpd = NULL;
@@ -415,7 +415,7 @@ LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 					mir_snprintf(url,MAX_PATH,
 //						"https://www.google.com/accounts/ServiceLoginAuth?service=mail&Email=%s&Passwd=%s&continue=https://mail.google.com/mail/",
 //http://mail.google.com/mail/?view=cv&search=inbox&th=10859fac99369d5f&lvp=-1&cvp=9&qt=&fs=1&tf=1
-//http%3A%2F%2Fmail.google.com%2Fmail%3Fview%3Dcv%26search%3Dinbox%26th%3D1085ab8ed25d733c%26lvp%3D-1%26cvp%3D9%26qt%3D%26fs%3D1%26tf%3D1&source=googletalk 
+//http%3A%2F%2Fmail.google.com%2Fmail%3Fview%3Dcv%26search%3Dinbox%26th%3D1085ab8ed25d733c%26lvp%3D-1%26cvp%3D9%26qt%3D%26fs%3D1%26tf%3D1&source=googletalk
 						"https://www.google.com/accounts/ServiceLoginAuth?service=mail&Email=%s&Passwd=%s&continue=http%%3A%%2F%%2Fmail.google.com%%2Fmail%%3Fview%%3Dcv%%26search%%3Dinbox%%26th%%3D%x%x%%26lvp%%3D-1%%26cvp%%3D9%%26qt%%3D%%26fs%%3D1%%26tf%%3D1&source=googletalk",
 						mpd->username,
 						mpd->password,
@@ -479,12 +479,12 @@ void JabberUserConfigRequest(ThreadData *info){
 	if (saveChatsToServer!=-1) {
 		//send the option
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberDummyResult );
-		JabberSend( info->s, "<iq type='set' to='%s@%s' id='"JABBER_IQID"%d'><usersetting xmlns='google:setting'><archivingenabled value=\"%s\"/></usersetting></iq>", info->username, info->server, iqId, saveChatsToServer?"false":"true");
+        JabberSend( info->s, "<iq type=\"set\" to=\"%s@%s\" id=\""JABBER_IQID"%d\"><usersetting xmlns=\"google:setting\"><archivingenabled value=\"%s\"/></usersetting></iq>", info->username, info->server, iqId, saveChatsToServer?"false":"true");
 //		saveChatsToServer = saveChatsToServer?0:1;
 		iqId = JabberSerialNext(); //we already used the initial one
 	}
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberUserConfigResult );
-	JabberSend( info->s, "<iq type='get' to='%s@%s' id='"JABBER_IQID"%d'><usersetting xmlns='google:setting'/></iq>", info->username, info->server, iqId);
+    JabberSend( info->s, "<iq type=\"get\" to=\"%s@%s\" id=\""JABBER_IQID"%d\"><usersetting xmlns=\"google:setting\"/></iq>", info->username, info->server, iqId);
 }
 
 BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam ){
@@ -543,7 +543,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 		SetDlgItemInt(hwndDlg, IDC_EDIT_DEBUGTIMEOUT,((i&0xFFFF)==0xFFFF)?-1:(i&0xFFFF),TRUE);
 		SetDlgItemInt(hwndDlg, IDC_EDIT_ERRORTIMEOUT,((i>>16)==0xFFFF)?-1:(i>>16),TRUE);
 		SetDlgItemText(hwndDlg, IDC_SAVECHATS, (saveChatsToServer==-1)?TranslateT("Unknown"):(saveChatsToServer?TranslateT("Enabled"):TranslateT("Disabled")));
-			
+
 		return TRUE;
 	}
 	case WM_COMMAND:
@@ -578,11 +578,11 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 
 					{ // show the error popup
 						ppd.lchIcon = iconList[11];
-						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName, 
+						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName,
 							"500",
 							"wait");
 						mir_snprintf(sendersList,150,"Unable to access mailbox for %s",jabberJID);
-						int l = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Message: %s\n", 
+						int l = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Message: %s\n",
 							sendersList
 						);
 						l = makeHead(ppd.lpzText+l,MAX_SECONDLINE-5-l,maxtid,maxtime);
@@ -604,7 +604,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						ppd.lchIcon = iconList[12];
 						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox result: Matched %s",
 							jabberProtoName,
-							"1" 
+							"1"
 						);
 						ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURTEXT,CPM_GETCOLOUR,0,0);
 						ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,255,128);
@@ -635,11 +635,11 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 					mir_snprintf(ppd.lpzContactName,150,"%s: New mail from ",jabberProtoName);
 					strncat(ppd.lpzContactName,"Some One, Me Myself",150);
 					StringFromUnixTime(sendersList,50,time(NULL));
-					mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s", 
+					mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s",
 						"(3)",
 						"A GMail notify test",
 						sendersList,
-						"Hi, I am trying the e-mail notification in JGmail.dll"						
+						"Hi, I am trying the e-mail notification in JGmail.dll"
 						);
 					ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_COLOURTEXT,CPM_GETCOLOUR,0,0);
 					ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_COLOURBACK,CPM_GETCOLOUR,0,0);

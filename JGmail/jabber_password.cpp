@@ -82,7 +82,7 @@ static BOOL CALLBACK JabberChangePasswordDlgProc( HWND hwndDlg, UINT msg, WPARAM
 							strncpy( jabberThreadInfo->newPassword, newPasswd, sizeof( jabberThreadInfo->newPassword ));
 							iqId = JabberSerialNext();
 							JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultSetPassword );
-							JabberSend( jabberThreadInfo->s, "<iq type='set' id='"JABBER_IQID"%d' to='%s'><query xmlns='jabber:iq:register'><username>%s</username><password>%s</password></query></iq>", iqId, server, username, password );
+                            JabberSend( jabberThreadInfo->s, "<iq type=\"set\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"jabber:iq:register\"><username>%s</username><password>%s</password></query></iq>", iqId, server, username, password );
 							free( password );
 						}
 						free( username );

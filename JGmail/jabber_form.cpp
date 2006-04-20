@@ -251,7 +251,7 @@ char* JabberFormGetData( HWND hwndStatic, XmlNode *xNode )
 	regStr = ( char* )malloc( regStrSize );
 	regStr[0] = '\0';
 	id = 0;
-	strcpy( regStr, "<x xmlns='jabber:x:data' type='submit'>" );
+    strcpy( regStr, "<x xmlns=\"jabber:x:data\" type=\"submit\">" );
 	for ( i=0; i<xNode->numChild; i++ ) {
 		n = xNode->child[i];
 		fieldStr = NULL;
@@ -291,7 +291,7 @@ char* JabberFormGetData( HWND hwndStatic, XmlNode *xNode )
 					}
 					if (( p=JabberTextEncode( varName )) != NULL ) {
 						fieldStr = ( char* )malloc( strlen( p ) + strlen( str2 ) + 38 );
-						sprintf( fieldStr, "<field var='%s'>%s</field>", p, str2 );
+                        sprintf( fieldStr, "<field var=\"%s\">%s</field>", p, str2 );
 						free( p );
 					}
 					free( str2 );
@@ -301,7 +301,7 @@ char* JabberFormGetData( HWND hwndStatic, XmlNode *xNode )
 				else if ( !strcmp( type, "boolean" )) {
 					if (( p=JabberTextEncode( varName )) != NULL ) {
 						fieldStr = ( char* )malloc( strlen( p ) + 40 );
-						sprintf( fieldStr, "<field var='%s'><value>%d</value></field>", p, IsDlgButtonChecked( hFrame, id )==BST_CHECKED?1:0 );
+                        sprintf( fieldStr, "<field var=\"%s\"><value>%d</value></field>", p, IsDlgButtonChecked( hFrame, id )==BST_CHECKED?1:0 );
 						free( p );
 					}
 					id++;
@@ -330,7 +330,7 @@ char* JabberFormGetData( HWND hwndStatic, XmlNode *xNode )
 						if (( p=JabberTextEncode( varName )) != NULL ) {
 							if (( q=JabberTextEncode( v->text )) != NULL ) {
 								fieldStr = ( char* )malloc( strlen( p ) + strlen( q ) + 38 );
-								sprintf( fieldStr, "<field var='%s'><value>%s</value></field>", p, q );
+                                sprintf( fieldStr, "<field var=\"%s\"><value>%s</value></field>", p, q );
 								free( q );
 							}
 							free( p );
@@ -342,8 +342,8 @@ char* JabberFormGetData( HWND hwndStatic, XmlNode *xNode )
 				else if ( !strcmp( type, "list-multi" )) {
 					if (( p=JabberTextEncode( varName )) != NULL ) {
 						size = strlen( p ) + 23;
-						fieldStr = ( char* )malloc( size );	// <field var='xxx'></field>
-						sprintf( fieldStr, "<field var='%s'>", p );
+                        fieldStr = ( char* )malloc( size ); // <field var=\"xxx\"></field>
+                        sprintf( fieldStr, "<field var=\"%s\">", p );
 						free( p );
 
 						count = SendMessage( hCtrl, LB_GETCOUNT, 0, 0 );
@@ -387,13 +387,13 @@ char* JabberFormGetData( HWND hwndStatic, XmlNode *xNode )
 						if ( v!=NULL && v->text!=NULL ) {
 							if (( q=JabberTextEncode( v->text )) != NULL ) {
 								fieldStr = ( char* )malloc( strlen( p ) + strlen( q ) + 38 );
-								sprintf( fieldStr, "<field var='%s'><value>%s</value></field>", p, q );
+                                sprintf( fieldStr, "<field var=\"%s\"><value>%s</value></field>", p, q );
 								free( q );
 							}
 						}
 						else {
 							fieldStr = ( char* )malloc( strlen( p ) + 16 );
-							sprintf( fieldStr, "<field var='%s'/>", p );
+                            sprintf( fieldStr, "<field var=\"%s\"/>", p );
 						}
 						free( p );
 					}
@@ -405,7 +405,7 @@ char* JabberFormGetData( HWND hwndStatic, XmlNode *xNode )
 					if (( p=JabberTextEncode( varName )) != NULL ) {
 						if (( q=JabberTextEncode( str )) != NULL ) {
 							fieldStr = ( char* )malloc( strlen( p ) + strlen( q ) + 38 );
-							sprintf( fieldStr, "<field var='%s'><value>%s</value></field>", p, q );
+                            sprintf( fieldStr, "<field var=\"%s\"><value>%s</value></field>", p, q );
 							free( q );
 						}
 						free( p );

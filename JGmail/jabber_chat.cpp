@@ -211,7 +211,7 @@ void JabberGcQuit( JABBER_LIST_ITEM* item, int code, XmlNode* reason )
 	item->bChatActive = FALSE;
 
 	if ( jabberOnline ) {
-		JabberSend( jabberThreadInfo->s, "<presence to='%s' type='unavailable'/>", item->jid );
+        JabberSend( jabberThreadInfo->s, "<presence to=\"%s\" type=\"unavailable\"/>", item->jid );
 		JabberListRemove( LIST_CHATROOM, item->jid );
 }	}
 
@@ -354,7 +354,7 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 					if ( pUser != NULL ) {
 						GetDlgItemTextA( hwndDlg, IDC_REASON, text, sizeof( text ));
 						iqId = JabberSerialNext();
-						JabberSend( jabberThreadInfo->s, "<message id='"JABBER_IQID"%d' to='%s'><x xmlns='http://jabber.org/protocol/muc#user'><invite to='%s'><reason>%s</reason></invite></x></message>",
+                        JabberSend( jabberThreadInfo->s, "<message id=\""JABBER_IQID"%d\" to=\"%s\"><x xmlns=\"http://jabber.org/protocol/muc#user\"><invite to=\"%s\"><reason>%s</reason></invite></x></message>",
 							iqId, TXT(room), TXT(pUser), TXT(text));
 			}	}	}
 			// Fall through
@@ -385,7 +385,7 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 
 static void JabberAdminSet( const char* to, const char* ns, const char* item, const char* itemVal, const char* var, const char* varVal )
 {
-	JabberSend( jabberThreadInfo->s, "<iq type='set' to='%s'>%s<item %s='%s' %s='%s'/></query></iq>",
+    JabberSend( jabberThreadInfo->s, "<iq type=\"set\" to=\"%s\">%s<item %s=\"%s\" %s=\"%s\"/></query></iq>",
 		to, ns, item, itemVal, var, varVal );
 }
 
@@ -394,7 +394,7 @@ static void JabberAdminGet( const char* to, const char* ns, const char* var, con
 	int id = JabberSerialNext();
 	JabberIqAdd( id, IQ_PROC_NONE, foo );
 	JabberSend( jabberThreadInfo->s,
-		"<iq type='get' id='"JABBER_IQID"%d' to='%s'>%s<item %s='%s'/></query></iq>",
+        "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\">%s<item %s=\"%s\"/></query></iq>",
 		id, to, ns, var, varVal );
 }
 
@@ -421,14 +421,14 @@ static void sttNickListHook( JABBER_LIST_ITEM* item, GCHOOK* gch )
 	case IDM_KICK:
 		mir_snprintf( szBuffer, sizeof szBuffer, "%s %s", JTranslate( "Reason to kick" ), dispNick );
 		if ( JabberEnterString( szBuffer, sizeof szBuffer ))
-			JabberSend( jabberThreadInfo->s, "<iq type='set' to='%s'>%s<item nick='%s' role='none'><reason>%s</reason></item></query></iq>",
+            JabberSend( jabberThreadInfo->s, "<iq type=\"set\" to=\"%s\">%s<item nick=\"%s\" role=\"none\"><reason>%s</reason></item></query></iq>",
 				item->jid, xmlnsAdmin, him->resourceName, TXT(szBuffer));
 		break;
 
 	case IDM_BAN:
 		mir_snprintf( szBuffer, sizeof szBuffer, "%s %s", JTranslate( "Reason to ban" ), dispNick );
 		if ( JabberEnterString( szBuffer, sizeof szBuffer ))
-			JabberSend( jabberThreadInfo->s, "<iq type='set' to='%s'>%s<item nick='%s' affiliation='outcast'><reason>%s</reason></item></query></iq>",
+            JabberSend( jabberThreadInfo->s, "<iq type=\"set\" to=\"%s\">%s<item nick=\"%s\" affiliation=\"outcast\"><reason>%s</reason></item></query></iq>",
 				item->jid, xmlnsAdmin, him->resourceName, TXT(szBuffer));
 		break;
 
@@ -485,7 +485,7 @@ static void sttLogListHook( JABBER_LIST_ITEM* item, GCHOOK* gch )
 	case IDM_TOPIC:
 		mir_snprintf( szBuffer, sizeof szBuffer, "%s %s", JTranslate( "Set topic for" ), gch->pDest->pszID );
 		if ( JabberEnterString( szBuffer, sizeof szBuffer ))
-			JabberSend( jabberThreadInfo->s, "<message to='%s' type='groupchat'><subject>%s</subject></message>",
+            JabberSend( jabberThreadInfo->s, "<message to=\"%s\" type=\"groupchat\"><subject>%s</subject></message>",
 				gch->pDest->pszID, TXT(szBuffer));
 		break;
 
@@ -508,7 +508,7 @@ static void sttLogListHook( JABBER_LIST_ITEM* item, GCHOOK* gch )
 	{
 		int iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetMuc );
-		JabberSend( jabberThreadInfo->s, "<iq type='get' id='"JABBER_IQID"%d' to='%s'>%s</query></iq>",
+        JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\">%s</query></iq>",
 			iqId, gch->pDest->pszID, xmlnsOwner );
 		break;
 	}
@@ -517,7 +517,7 @@ static void sttLogListHook( JABBER_LIST_ITEM* item, GCHOOK* gch )
 		if ( !JabberEnterString( szBuffer, sizeof szBuffer ))
 			break;
 
-		JabberSend( jabberThreadInfo->s, "<iq type='set' to='%s'>%s<destroy><reason>%s</reason></destroy></query></iq>",
+        JabberSend( jabberThreadInfo->s, "<iq type=\"set\" to=\"%s\">%s<destroy><reason>%s</reason></destroy></query></iq>",
 			gch->pDest->pszID, xmlnsOwner, TXT(szBuffer));
 
 	case IDM_LEAVE:
@@ -565,7 +565,7 @@ int JabberGcEventHook(WPARAM wParam,LPARAM lParam)
 				char* str = JabberTextEncode( gch->pszText );
 				if ( str != NULL ) {
 					UnEscapeChatTags( str );
-					JabberSend( jabberThreadInfo->s, "<message to='%s' type='groupchat'><body>%s</body></message>", item->jid, str );
+                    JabberSend( jabberThreadInfo->s, "<message to=\"%s\" type=\"groupchat\"><body>%s</body></message>", item->jid, str );
 					free( str );
 		}	}	}
 		break;

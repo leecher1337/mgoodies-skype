@@ -117,15 +117,15 @@ void JabberFtInitiate( char* jid, filetransfer* ft )
 		filename = p+1;
 
 	JabberSend( jabberThreadInfo->s,
-		"<iq type='set' id='"JABBER_IQID"%d' to='%s/%s'>"
-			"<si xmlns='http://jabber.org/protocol/si' id='%s' mime-type='binary/octet-stream' profile='http://jabber.org/protocol/si/profile/file-transfer'>"
-				"<file xmlns='http://jabber.org/protocol/si/profile/file-transfer' name='%s' size='%d'>"
+        "<iq type=\"set\" id=\""JABBER_IQID"%d\" to=\"%s/%s\">"
+            "<si xmlns=\"http://jabber.org/protocol/si\" id=\"%s\" mime-type=\"binary/octet-stream\" profile=\"http://jabber.org/protocol/si/profile/file-transfer\">"
+                "<file xmlns=\"http://jabber.org/protocol/si/profile/file-transfer\" name=\"%s\" size=\"%d\">"
 					"<desc>%s</desc>"
 					//"<range/>"
 				"</file>"
-				"<feature xmlns='http://jabber.org/protocol/feature-neg'>"
-					"<x xmlns='jabber:x:data' type='form'>"
-						"<field var='stream-method' type='list-single'>"
+                "<feature xmlns=\"http://jabber.org/protocol/feature-neg\">"
+                    "<x xmlns=\"jabber:x:data\" type=\"form\">"
+                        "<field var=\"stream-method\" type=\"list-single\">"
 							"<option><value>http://jabber.org/protocol/bytestreams</value></option>"
 						"</field>"
 					"</x>"
@@ -170,8 +170,8 @@ static void JabberFtSiResult( XmlNode *iqNode, void *userdata )
 								// Start Bytestream session
 								jbt = ( JABBER_BYTE_TRANSFER * ) malloc( sizeof( JABBER_BYTE_TRANSFER ));
 								ZeroMemory( jbt, sizeof( JABBER_BYTE_TRANSFER ));
-								jbt->srcJID = _strdup( JabberUrlDecode( to ));
-								jbt->dstJID = _strdup( JabberUrlDecode( from ));
+								jbt->srcJID = JabberUrlDecodeNew( to );
+								jbt->dstJID = JabberUrlDecodeNew( from );
 								jbt->sid = _strdup( item->ft->sid );
 								jbt->pfnSend = JabberFtSend;
 								jbt->pfnFinal = JabberFtSendFinal;
@@ -308,7 +308,7 @@ void JabberFtHandleSiRequest( XmlNode *iqNode )
 				if ( desc != NULL ) {
 					if (( localFilename=JabberTextDecode( filename )) != NULL ) {
 						filetransfer* ft = new filetransfer;
-						ft->jid = _strdup( JabberUrlDecode( from ));
+						ft->jid = JabberUrlDecodeNew( from );
 						ft->std.hContact = JabberHContactFromJID( from );
 						ft->sid = _strdup( sid );
 						ft->iqId = ( szId )?_strdup( szId ):NULL;
@@ -337,12 +337,12 @@ void JabberFtHandleSiRequest( XmlNode *iqNode )
 			}
 			else {
 				// No known stream mechanism
-				JabberSend( jabberThreadInfo->s, "<iq type='error' to='%s'%s%s%s><error code='400' type='cancel'><bad-request xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/><no-valid-streams xmlns='http://jabber.org/protocol/si'/></error></iq>", from, ( szId )?" id='":"", ( szId )?szId:"", ( szId )?"'":"" );
+                JabberSend( jabberThreadInfo->s, "<iq type=\"error\" to=\"%s\"%s%s%s><error code=\"400\" type=\"cancel\"><bad-request xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\"/><no-valid-streams xmlns=\"http://jabber.org/protocol/si\"/></error></iq>", from, ( szId )?" id=\"":"", ( szId )?szId:"", ( szId )?"\"":"" );
 				return;
 	}	}	}
 
 	// Bad stream initiation, reply with bad-profile
-	JabberSend( jabberThreadInfo->s, "<iq type='error' to='%s'%s%s%s><error code='400' type='cancel'><bad-request xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/><bad-profile xmlns='http://jabber.org/protocol/si'/></error></iq>", from, ( szId )?" id='":"", ( szId )?szId:"", ( szId )?"'":"" );
+    JabberSend( jabberThreadInfo->s, "<iq type=\"error\" to=\"%s\"%s%s%s><error code=\"400\" type=\"cancel\"><bad-request xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\"/><bad-profile xmlns=\"http://jabber.org/protocol/si\"/></error></iq>", from, ( szId )?" id=\"":"", ( szId )?szId:"", ( szId )?"\"":"" );
 }
 
 void JabberFtAcceptSiRequest( filetransfer* ft )
@@ -356,19 +356,19 @@ void JabberFtAcceptSiRequest( filetransfer* ft )
 		item->ft = ft;
 		szId = ft->iqId;
 		JabberSend( jabberThreadInfo->s,
-			"<iq type='result'  to='%s'%s%s%s>"
-				"<si xmlns='http://jabber.org/protocol/si'>"
-					//"<file xmlns='http://jabber.org/protocol/si/profile/file-transfer' name='%s' size='%d'>"
+            "<iq type=\"result\"  to=\"%s\"%s%s%s>"
+                "<si xmlns=\"http://jabber.org/protocol/si\">"
+                    //"<file xmlns=\"http://jabber.org/protocol/si/profile/file-transfer\" name=\"%s\" size=\"%d\">"
 						//"<range/>"
 					//"</file>"
-					"<feature xmlns='http://jabber.org/protocol/feature-neg'>"
-						"<x xmlns='jabber:x:data' type='submit'>"
-							"<field var='stream-method'><value>%s</value></field>"
+                    "<feature xmlns=\"http://jabber.org/protocol/feature-neg\">"
+                        "<x xmlns=\"jabber:x:data\" type=\"submit\">"
+                            "<field var=\"stream-method\"><value>%s</value></field>"
 						"</x>"
 					"</feature>"
 				"</si>"
 			"</iq>",
-			ft->jid, ( szId )?" id='":"", ( szId )?szId:"", ( szId )?"'":"",
+            ft->jid, ( szId )?" id=\"":"", ( szId )?szId:"", ( szId )?"\"":"",
 			/*( ft->type==FT_BYTESTREAM )?*/"http://jabber.org/protocol/bytestreams"
 		 );
 	}

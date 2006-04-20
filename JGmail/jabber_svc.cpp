@@ -167,7 +167,7 @@ int JabberAuthAllow( WPARAM wParam, LPARAM lParam )
 	jid = lastName + strlen( lastName ) + 1;
 
 	JabberLog( "Send 'authorization allowed' to %s", jid );
-	JabberSend( jabberThreadInfo->s, "<presence to='%s' type='subscribed'/>", jid );
+    JabberSend( jabberThreadInfo->s, "<presence to=\"%s\" type=\"subscribed\"/>", jid );
 
 	// Automatically add this user to my roster if option is enabled
 	if ( JGetByte( "AutoAdd", TRUE ) == TRUE ) {
@@ -223,7 +223,7 @@ int JabberAuthDeny( WPARAM wParam, LPARAM lParam )
 	jid = lastName + strlen( lastName ) + 1;
 
 	JabberLog( "Send 'authorization denied' to %s", jid );
-	JabberSend( jabberThreadInfo->s, "<presence to='%s' type='unsubscribed'/>", jid );
+    JabberSend( jabberThreadInfo->s, "<presence to=\"%s\" type=\"unsubscribed\"/>", jid );
 
 	free( dbei.pBlob );
 	return 0;
@@ -300,7 +300,7 @@ int JabberContactDeleted( WPARAM wParam, LPARAM lParam )
 		}
 		if ( JabberListExist( LIST_ROSTER, jid )) {
 			// Remove from roster, server also handles the presence unsubscription process.
-			JabberSend( jabberThreadInfo->s, "<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' subscription='remove'/></query></iq>", jid );
+            JabberSend( jabberThreadInfo->s, "<iq type=\"set\"><query xmlns=\"jabber:iq:roster\"><item jid=\"%s\" subscription=\"remove\"/></query></iq>", jid );
 		}
 
 		JFreeVariant( &dbv );
@@ -415,7 +415,7 @@ void sttAddContactForever( DBCONTACTWRITESETTING* cws, HANDLE hContact )
 		JFreeVariant( &dbv );
 	}
 	else JabberAddContactToRoster( jid.pszVal, nick, NULL );
-	JabberSend( jabberThreadInfo->s, "<presence to='%s' type='subscribe'/>", jid.pszVal );
+    JabberSend( jabberThreadInfo->s, "<presence to=\"%s\" type=\"subscribe\"/>", jid.pszVal );
 
 	free( nick );
 	DBDeleteContactSetting( hContact, "CList", "Hidden" );
@@ -511,10 +511,10 @@ int JabberFileDeny( WPARAM wParam, LPARAM lParam )
 	char* szId = ft->iqId;
 	switch ( ft->type ) {
 	case FT_OOB:
-		JabberSend( jabberThreadInfo->s, "<iq type='error' to='%s'%s%s%s><error code='406'>File transfer refused</error></iq>", ft->jid, ( szId )?" id='":"", ( szId )?szId:"", ( szId )?"'":"" );
+        JabberSend( jabberThreadInfo->s, "<iq type=\"error\" to=\"%s\"%s%s%s><error code=\"406\">File transfer refused</error></iq>", ft->jid, ( szId )?" id=\"":"", ( szId )?szId:"", ( szId )?"\"":"" );
 		break;
 	case FT_BYTESTREAM:
-		JabberSend( jabberThreadInfo->s, "<iq type='error' to='%s'%s%s%s><error code='403' type='cancel'><forbidden xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/><text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>File transfer refused</text></error></iq>", ft->jid, ( szId )?" id='":"", ( szId )?szId:"", ( szId )?"'":"" );
+        JabberSend( jabberThreadInfo->s, "<iq type=\"error\" to=\"%s\"%s%s%s><error code=\"403\" type=\"cancel\"><forbidden xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\"/><text xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\">File transfer refused</text></error></iq>", ft->jid, ( szId )?" id=\"":"", ( szId )?szId:"", ( szId )?"\"":"" );
 		break;
 	}
 	delete ft;
@@ -577,9 +577,11 @@ static int JabberGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 			JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, dbv.pszVal );
 			if ( item != NULL ) {
 				char szJid[ 512 ];
-				if ( item->resourceCount != NULL )
-					mir_snprintf( szJid, sizeof( szJid ), "%s/%s", dbv.pszVal, item->resource[0].resourceName );
-				else
+				if ( item->resourceCount != NULL ){
+					char *resTemp = JabberUrlDecodeNew(item->resource[0].resourceName);
+					mir_snprintf( szJid, sizeof( szJid ), "%s/%s", dbv.pszVal, resTemp );
+					if (resTemp) free(resTemp);
+				}else
 					lstrcpynA( szJid, dbv.pszVal, sizeof( szJid ));
 
 				JabberLog( "Rereading avatar for %s", dbv.pszVal );
@@ -587,7 +589,7 @@ static int JabberGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 				int iqId = JabberSerialNext();
 				JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetAvatar );
 				JabberSend( jabberThreadInfo->s,
-					"<iq type='get' to='%s' id='"JABBER_IQID"%d'><query xmlns='jabber:iq:avatar'/></iq>",
+                    "<iq type=\"get\" to=\"%s\" id=\""JABBER_IQID"%d\"><query xmlns=\"jabber:iq:avatar\"/></iq>",
 					szJid, iqId );
 				JFreeVariant( &dbv );
 				return GAIR_WAITFOR;
@@ -618,7 +620,9 @@ static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 				for ( i=0; i<item->resourceCount; i++ ) {
 					if ( r[i].statusMessage ) {
 						msgCount++;
-						len += ( strlen( r[i].resourceName ) + strlen( r[i].statusMessage ) + 8 );
+						char *resNameTemp = JabberUrlDecodeNew(r[i].resourceName);
+						len += ( strlen( resNameTemp ) + strlen( r[i].statusMessage ) + 8 );
+						if (resNameTemp) free(resNameTemp);
 					}
 				}
 				if (( str=( char* )malloc( len + 1 )) != NULL ) {
@@ -627,14 +631,16 @@ static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 						if ( r[i].statusMessage ) {
 							if ( str[0] != '\0' ) strcat( str, "\r\n" );
 							if ( msgCount > 1 ) {
-								int templen = strlen(r[i].resourceName)+1;
+								char *resNameTemp = JabberUrlDecodeNew(r[i].resourceName);
+								int templen = strlen(resNameTemp)+1;
 								char *temp = (char *)mir_alloc(templen);
 								strcat( str, "( " );
-								strncpy(temp,r[i].resourceName, templen);
+								strncpy(temp,resNameTemp, templen);
 								JabberUtf8Decode(temp,NULL);
 								strcat( str, temp);
 								strcat( str, " ): " );
 								mir_free(temp);
+								if (resNameTemp) free(resNameTemp);
 							}
 							strcat( str, r[i].statusMessage );
 						}
@@ -798,7 +804,7 @@ int JabberSearchByEmail( WPARAM wParam, LPARAM lParam )
 	int iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_GETSEARCH, JabberIqResultSetSearch );
 	JabberSend( jabberThreadInfo->s,
-		"<iq type='set' id='"JABBER_IQID"%d' to='%s'><query xmlns='jabber:iq:search'><email>%s</email></query></iq>",
+        "<iq type=\"set\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"jabber:iq:search\"><email>%s</email></query></iq>",
 		iqId, szServerName, TXT(( char* )lParam));
 	return iqId;
 }
@@ -817,21 +823,21 @@ int JabberSearchByName( WPARAM wParam, LPARAM lParam )
 
 	if ( psbn->pszNick[0] != '\0' ) {
 		if ( bIsExtFormat )
-			len += mir_snprintf( text, 1024-len, "<field var='user'><value>%s</value></field>", TXT(psbn->pszNick));
+            len += mir_snprintf( text, 1024-len, "<field var=\"user\"><value>%s</value></field>", TXT(psbn->pszNick));
 		else
 			len += mir_snprintf( text, 1024-len, "<nick>%s</nick>", TXT(psbn->pszNick));
 	}
 
 	if ( psbn->pszFirstName[0] != '\0' ) {
 		if ( bIsExtFormat )
-			len += mir_snprintf( text+len, 1024-len, "<field var='fn'><value>%s</value></field>", TXT(psbn->pszFirstName));
+            len += mir_snprintf( text+len, 1024-len, "<field var=\"fn\"><value>%s</value></field>", TXT(psbn->pszFirstName));
 		else
 			len += mir_snprintf( text+len, 1024-len, "<first>%s</first>", TXT(psbn->pszFirstName));
 	}
 
 	if ( psbn->pszLastName[0] != '\0' ) {
 		if ( bIsExtFormat )
-			len += mir_snprintf( text+len, 1024-len, "<field var='given'><value>%s</value></field>", TXT(psbn->pszLastName));
+            len += mir_snprintf( text+len, 1024-len, "<field var=\"given\"><value>%s</value></field>", TXT(psbn->pszLastName));
 		else
 			len += mir_snprintf( text+len, 1024-len, "<last>%s</last>", TXT(psbn->pszLastName));
 	}
@@ -844,14 +850,14 @@ int JabberSearchByName( WPARAM wParam, LPARAM lParam )
 	if ( bIsExtFormat ) {
 		JabberIqAdd( iqId, IQ_PROC_GETSEARCH, JabberIqResultExtSearch );
 		JabberSend( jabberThreadInfo->s,
-			"<iq type='set' id='"JABBER_IQID"%d' to='%s' xml:lang='en'>"
-			"<query xmlns='jabber:iq:search'><x xmlns='jabber:x:data' type='submit'>%s</x></query></iq>",
+            "<iq type=\"set\" id=\""JABBER_IQID"%d\" to=\"%s\" xml:lang=\"en\">"
+            "<query xmlns=\"jabber:iq:search\"><x xmlns=\"jabber:x:data\" type=\"submit\">%s</x></query></iq>",
 			iqId, szServerName, text );
 	}
 	else {
 		JabberIqAdd( iqId, IQ_PROC_GETSEARCH, JabberIqResultSetSearch );
 		JabberSend( jabberThreadInfo->s,
-			"<iq type='set' id='"JABBER_IQID"%d' to='%s'><query xmlns='jabber:iq:search'>%s</query></iq>",
+            "<iq type=\"set\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"jabber:iq:search\">%s</query></iq>",
 			iqId, szServerName, text );
 	}
 	return iqId;
@@ -913,7 +919,7 @@ int JabberSendFile( WPARAM wParam, LPARAM lParam )
 			item->ft = ft;
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultDiscoClientInfo );
-			JabberSend( jabberThreadInfo->s, "<iq type='get' id='"JABBER_IQID"%d' to='%s/%s'><query xmlns='http://jabber.org/protocol/disco#info'/></iq>", iqId, item->jid, rs );
+            JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s/%s\"><query xmlns=\"http://jabber.org/protocol/disco#info\"/></iq>", iqId, item->jid, rs );
 		}
 	}
 	else if (( item->cap & CLIENT_CAP_FILE ) && ( item->cap & CLIENT_CAP_BYTESTREAM ))
@@ -981,22 +987,20 @@ int JabberSendMessage( WPARAM wParam, LPARAM lParam )
 		if ( !strcmp( msgType, "groupchat" ) || JGetByte( "MsgAck", FALSE ) == FALSE ) {
 			if ( !strcmp( msgType, "groupchat" )) {
 				if ( !isEncrypted )
-					JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s'><body>%s</body></message>", dbv.pszVal, msgType, msg );
+                    JabberSend( jabberThreadInfo->s, "<message to=\"%s\" type=\"%s\"><body>%s</body></message>", dbv.pszVal, msgType, msg );
 				else
-               JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s'><body>[This message is encrypted.]</body><x xmlns='jabber:x:encrypted'>%s</x></message>",
+               JabberSend( jabberThreadInfo->s, "<message to=\"%s\" type=\"%s\"><body>[This message is encrypted.]</body><x xmlns=\"jabber:x:encrypted\">%s</x></message>",
 						dbv.pszVal, msgType, msg );
 			}
 			else {
 				id = JabberSerialNext();
 				char szClientJid[ 256 ];
 				JabberGetClientJID( dbv.pszVal, szClientJid, sizeof( szClientJid ));
-				char *szClientJidEncoded = JabberUrlEncode(szClientJid);
 				if ( !isEncrypted )
-					JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s' id='"JABBER_IQID"%d'><body>%s</body><x xmlns='jabber:x:event'><composing/></x></message>", szClientJidEncoded, msgType, id, msg );
+                    JabberSend( jabberThreadInfo->s, "<message to=\"%s\" type=\"%s\" id=\""JABBER_IQID"%d\"><body>%s</body><x xmlns=\"jabber:x:event\"><composing/></x></message>", szClientJid, msgType, id, msg );
 				else
-					JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s' id='"JABBER_IQID"%d'><body>[This message is encrypted.]</body><x xmlns='jabber:x:encrypted'>%s</x><x xmlns='jabber:x:event'><composing/></x></message>",
-						szClientJidEncoded, msgType, id, msg );
-				free (szClientJidEncoded);
+                    JabberSend( jabberThreadInfo->s, "<message to=\"%s\" type=\"%s\" id=\""JABBER_IQID"%d\"><body>[This message is encrypted.]</body><x xmlns=\"jabber:x:encrypted\">%s</x><x xmlns=\"jabber:x:event\"><composing/></x></message>",
+						szClientJid, msgType, id, msg );
 			}
 			JabberForkThread( JabberSendMessageAckThread, 0, ( void* )ccs->hContact );
 		}
@@ -1006,14 +1010,12 @@ int JabberSendMessage( WPARAM wParam, LPARAM lParam )
 				item->idMsgAckPending = id;
 
 			char szClientJid[ 256 ];
-			char *szClientJidEncoded = JabberUrlEncode(szClientJid);
 			JabberGetClientJID( dbv.pszVal, szClientJid, sizeof( szClientJid ));
 			if ( !isEncrypted )
-				JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s' id='"JABBER_IQID"%d'><body>%s</body><x xmlns='jabber:x:event'><offline/><delivered/><composing/></x></message>", szClientJidEncoded, msgType, id, msg );
+                JabberSend( jabberThreadInfo->s, "<message to=\"%s\" type=\"%s\" id=\""JABBER_IQID"%d\"><body>%s</body><x xmlns=\"jabber:x:event\"><offline/><delivered/><composing/></x></message>", szClientJid, msgType, id, msg );
 			else
-            JabberSend( jabberThreadInfo->s, "<message to='%s' type='%s' id='"JABBER_IQID"%d'><body>[This message is encrypted.]</body><x xmlns='jabber:x:encrypted'>%s</x><x xmlns='jabber:x:event'><offline/><delivered/><composing/></x></message>",
-					szClientJidEncoded, msgType, id, msg );
-			free (szClientJidEncoded);
+            JabberSend( jabberThreadInfo->s, "<message to=\"%s\" type=\"%s\" id=\""JABBER_IQID"%d\"><body>[This message is encrypted.]</body><x xmlns=\"jabber:x:encrypted\">%s</x><x xmlns=\"jabber:x:event\"><offline/><delivered/><composing/></x></message>",
+					szClientJid, msgType, id, msg );
 		}
 		free( msg );
 	}
@@ -1043,7 +1045,7 @@ int JabberSetApparentMode( WPARAM wParam, LPARAM lParam )
 		switch ( ccs->wParam ) {
 		case ID_STATUS_ONLINE:
 			if ( jabberStatus == ID_STATUS_INVISIBLE || oldMode == ID_STATUS_OFFLINE )
-				JabberSend( jabberThreadInfo->s, "<presence to='%s'/>", jid );
+                JabberSend( jabberThreadInfo->s, "<presence to=\"%s\"/>", jid );
 			break;
 		case ID_STATUS_OFFLINE:
 			if ( jabberStatus != ID_STATUS_INVISIBLE || oldMode == ID_STATUS_ONLINE )
@@ -1181,17 +1183,15 @@ int JabberUserIsTyping( WPARAM wParam, LPARAM lParam )
 		if (( item=JabberListGetItemPtr( LIST_ROSTER, dbv.pszVal ))!=NULL && item->wantComposingEvent==TRUE ) {
 			char szClientJid[ 256 ];
 			JabberGetClientJID( dbv.pszVal, szClientJid, sizeof( szClientJid ));
-			char *szClientJidEncoded = JabberUrlEncode(szClientJid);
+
 			switch ( lParam ){
 			case PROTOTYPE_SELFTYPING_OFF:
-				JabberSend( jabberThreadInfo->s, "<message to='%s'><x xmlns='jabber:x:event'><id>%s</id></x></message>", szClientJidEncoded, ( item->messageEventIdStr==NULL )?"":item->messageEventIdStr );
+                JabberSend( jabberThreadInfo->s, "<message to=\"%s\"><x xmlns=\"jabber:x:event\"><id>%s</id></x></message>", szClientJid, ( item->messageEventIdStr==NULL )?"":item->messageEventIdStr );
 				break;
 			case PROTOTYPE_SELFTYPING_ON:
-				JabberSend( jabberThreadInfo->s, "<message to='%s'><x xmlns='jabber:x:event'><composing/><id>%s</id></x></message>", szClientJidEncoded, ( item->messageEventIdStr==NULL )?"":item->messageEventIdStr );
+                JabberSend( jabberThreadInfo->s, "<message to=\"%s\"><x xmlns=\"jabber:x:event\"><composing/><id>%s</id></x></message>", szClientJid, ( item->messageEventIdStr==NULL )?"":item->messageEventIdStr );
 				break;
-			}
-			free(szClientJidEncoded);
-		}	
+		}	}
 
 		JFreeVariant( &dbv );
 	}

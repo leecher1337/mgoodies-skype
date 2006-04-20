@@ -88,7 +88,7 @@ int JabberMenuHandleRequestAuth( WPARAM wParam, LPARAM lParam )
 
 	if (( hContact=( HANDLE ) wParam )!=NULL && jabberOnline ) {
 		if ( !JGetStringUtf( hContact, "jid", &dbv )) {
-			JabberSend( jabberThreadInfo->s, "<presence to='%s' type='subscribe'/>", dbv.pszVal );
+            JabberSend( jabberThreadInfo->s, "<presence to=\"%s\" type=\"subscribe\"/>", dbv.pszVal );
 			JFreeVariant( &dbv );
 	}	}
 
@@ -102,7 +102,7 @@ int JabberMenuHandleGrantAuth( WPARAM wParam, LPARAM lParam )
 
 	if (( hContact=( HANDLE ) wParam )!=NULL && jabberOnline ) {
 		if ( !JGetStringUtf( hContact, "jid", &dbv )) {
-			JabberSend( jabberThreadInfo->s, "<presence to='%s' type='subscribed'/>", dbv.pszVal );
+            JabberSend( jabberThreadInfo->s, "<presence to=\"%s\" type=\"subscribed\"/>", dbv.pszVal );
 			JFreeVariant( &dbv );
 	}	}
 

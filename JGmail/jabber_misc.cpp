@@ -39,13 +39,13 @@ void JabberAddContactToRoster( const char* jid, const char* nick, const char* gr
 	if ( grpName != NULL ) {
 		char* szGroup = JabberUrlEncode( grpName );
 		JabberSend( jabberThreadInfo->s,
-			"<iq type='set'><query xmlns='jabber:iq:roster'><item name='%s' jid='%s'><group>%s</group></item></query></iq>",
+            "<iq type=\"set\"><query xmlns=\"jabber:iq:roster\"><item name=\"%s\" jid=\"%s\"><group>%s</group></item></query></iq>",
 			szNick, szJid, szGroup );
 		free( szGroup );
 	}
 	else
 		JabberSend( jabberThreadInfo->s,
-			"<iq type='set'><query xmlns='jabber:iq:roster'><item name='%s' jid='%s'/></query></iq>",
+            "<iq type=\"set\"><query xmlns=\"jabber:iq:roster\"><item name=\"%s\" jid=\"%s\"/></query></iq>",
 			szNick, szJid );
 
 	free( szNick );
