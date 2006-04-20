@@ -816,6 +816,7 @@ IDI_GCVOICE             ICON                    "icos\\gcvoice.ico"
 IDI_MAIL_NEW		ICON			"icos\\mail-new.ico"
 IDI_MAIL_STOP		ICON			"icos\\mail-stop.ico"
 IDI_MAIL_INFO		ICON			"icos\\mail-info.ico"
+IDI_MAIL_CLOCK		ICON			"icos\\mail-clock.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

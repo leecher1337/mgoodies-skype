@@ -51,6 +51,7 @@
 #define IDI_MAIL_NEW			186
 #define IDI_MAIL_STOP			187
 #define IDI_MAIL_INFO			188
+#define IDI_MAIL_CLOCK			189
 #define IDC_EDIT_USERNAME               1000
 #define IDC_SAVE                        1000
 #define IDC_EDIT_PASSWORD               1001

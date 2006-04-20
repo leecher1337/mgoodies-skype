@@ -93,6 +93,10 @@ LINK32=link.exe
 # PROP BASE Intermediate_Dir "jabberg___Win32_Release_Unicode"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
+SOURCE=.\gmail.cpp
+# End Source File
+# Begin Source File
+
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir ".\Release_Unicode"
@@ -154,9 +158,6 @@ LINK32=link.exe
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
-# Begin Source File
-SOURCE=.\gmail.cpp
-# End Source File
 # Begin Source File
 
 SOURCE=.\jabber.cpp
