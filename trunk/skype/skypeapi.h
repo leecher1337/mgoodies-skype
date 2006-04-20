@@ -50,5 +50,5 @@ int SkypeAnswerCall(WPARAM wParam, LPARAM lParam);
 int SkypeMsgCollectGarbage(time_t age);
 int SkypeSendFile(WPARAM wParam, LPARAM lParam);
 int SkypeSetAvatar(WPARAM wParam, LPARAM lParam);
+int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam);
 char *SkypeGet(char *szWhat, char *szWho, char *szProperty);
-int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam);

@@ -58,6 +58,8 @@ DWORD WINAPI ThreadFunc(VOID);
 void GetInfoThread(HANDLE);
 int OnDetailsInit( WPARAM, LPARAM );
 BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam);
+int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam);
 
 // Structs
 
