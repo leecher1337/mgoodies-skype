@@ -54,7 +54,7 @@ static unsigned char *make_utf8_string(const wchar_t *unicode)
         c = unicode[index++];
     }   
 
-    out = malloc(size + 1);
+    out = (unsigned char *) malloc(size + 1);
     if (out == NULL)
         return NULL;
     index = 0;
@@ -99,7 +99,7 @@ static wchar_t *make_unicode_string(const unsigned char *utf8)
         c = utf8[index++];
     }   
 
-    out = malloc((size + 1) * sizeof(wchar_t));
+    out = (wchar_t *) malloc((size + 1) * sizeof(wchar_t));
     if (out == NULL)
         return NULL;
     index = 0;
@@ -141,7 +141,7 @@ int utf8_encode(const char *from, char **to)
       return -1;
    }
 
-   unicode = calloc(wchars + 1, sizeof(unsigned short));
+   unicode = (wchar_t *) calloc(wchars + 1, sizeof(unsigned short));
    if(unicode == NULL)
    {
 //      fprintf(stderr, "Out of memory processing string to UTF8\n");
@@ -160,7 +160,7 @@ int utf8_encode(const char *from, char **to)
    /* On NT-based windows systems, we could use WideCharToMultiByte(), but
     * MS doesn't actually have a consistent API across win32.
     */
-   *to = make_utf8_string(unicode);
+   *to = (char *) make_utf8_string(unicode);
 
    free(unicode);
    return 0;
@@ -174,7 +174,7 @@ int utf8_decode(const char *from, char **to)
     /* On NT-based windows systems, we could use MultiByteToWideChar(CP_UTF8), but
      * MS doesn't actually have a consistent API across win32.
      */
-    unicode = make_unicode_string(from);
+    unicode = make_unicode_string( (const unsigned char *)from);
     if(unicode == NULL)
     {
         fprintf(stderr, "Out of memory processing string from UTF8 to UNICODE16\n");
@@ -191,7 +191,7 @@ int utf8_decode(const char *from, char **to)
         return -1;
     }
 
-    *to = calloc(chars + 1, sizeof(unsigned char));
+    *to = (char *) calloc(chars + 1, sizeof(unsigned char));
     if(*to == NULL)
     {
         fprintf(stderr, "Out of memory processing string to local charset\n");
