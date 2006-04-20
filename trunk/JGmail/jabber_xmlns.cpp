@@ -42,11 +42,11 @@ void JabberXmlnsBrowse( XmlNode *iqNode, void *userdata )
 	if (( iqId=JabberXmlGetAttrValue( iqNode, "id" )) == NULL )
 		idStr[0] = '\0';
 	else
-		mir_snprintf( idStr, sizeof( idStr ), " id='%s'", iqId );
+        mir_snprintf( idStr, sizeof( idStr ), " id=\"%s\"", iqId );
 
 	if ( !strcmp( iqType, "get" )) {
-		JabberSend( jabberThreadInfo->s, "<iq type='result' to='%s'%s>"
-			"<user jid='%s' type='client' name='Miranda' xmlns='%s'>"
+        JabberSend( jabberThreadInfo->s, "<iq type=\"result\" to=\"%s\"%s>"
+            "<user jid=\"%s\" type=\"client\" name=\"Miranda\" xmlns=\"%s\">"
 			"<ns>http://jabber.org/protocol/disco#info</ns>"
 			"<ns>http://jabber.org/protocol/muc</ns>"
 			"<ns>jabber:iq:agents</ns>"
@@ -72,9 +72,9 @@ void JabberXmlnsDisco( XmlNode *iqNode, void *userdata )
 	if (( queryNode = JabberXmlGetChild( iqNode, "query" )) == NULL ) return;
 	if (( xmlns = JabberXmlGetAttrValue( queryNode, "xmlns" )) == NULL ) return;
 
-	JabberUrlDecode( iqFrom );
+	//JabberUrlDecode( iqFrom ); this fsck-up the output xml stream
 
-	p = strrchr( xmlns, '/' );
+    p = strrchr( xmlns, '/' );
 	discoType = strrchr( xmlns, '#' );
 
 	if ( p==NULL || discoType==NULL || discoType<p ) return;
@@ -82,25 +82,25 @@ void JabberXmlnsDisco( XmlNode *iqNode, void *userdata )
 	if (( iqId=JabberXmlGetAttrValue( iqNode, "id" )) == NULL )
 		idStr[0] = '\0';
 	else
-		mir_snprintf( idStr, sizeof( idStr ), " id='%s'", iqId );
+        mir_snprintf( idStr, sizeof( idStr ), " id=\"%s\"", iqId );
 
 	if ( !strcmp( iqType, "get" )) {
 		if ( !strcmp( discoType, "#info" )) {
-			JabberSend( jabberThreadInfo->s, "<iq type='result' to='%s'%s><query xmlns='%s'>"
-				"<identity category='user' type='client' name='Miranda'/>"
-				"<feature var='http://jabber.org/protocol/disco#info'/>"
-				"<feature var='http://jabber.org/protocol/muc'/>"
-				"<feature var='http://jabber.org/protocol/si'/>"
-				"<feature var='http://jabber.org/protocol/si/profile/file-transfer'/>"
-				"<feature var='http://jabber.org/protocol/bytestreams'/>"
-				"<feature var='jabber:iq:agents'/>"
-				"<feature var='jabber:iq:browse'/>"
-				"<feature var='jabber:iq:oob'/>"
-				"<feature var='jabber:iq:version'/>"
-				"<feature var='jabber:x:data'/>"
-				"<feature var='jabber:x:event'/>"
-				"<feature var='vcard-temp'/>"
+            JabberSend( jabberThreadInfo->s, "<iq type=\"result\" to=\"%s\"%s><query xmlns=\"%s\">"
+                "<identity category=\"user\" type=\"client\" name=\"Miranda\"/>"
+                "<feature var=\"http://jabber.org/protocol/disco#info\"/>"
+                "<feature var=\"http://jabber.org/protocol/muc\"/>"
+                "<feature var=\"http://jabber.org/protocol/si\"/>"
+                "<feature var=\"http://jabber.org/protocol/si/profile/file-transfer\"/>"
+                "<feature var=\"http://jabber.org/protocol/bytestreams\"/>"
+                "<feature var=\"jabber:iq:agents\"/>"
+                "<feature var=\"jabber:iq:browse\"/>"
+                "<feature var=\"jabber:iq:oob\"/>"
+                "<feature var=\"jabber:iq:version\"/>"
+                "<feature var=\"jabber:x:data\"/>"
+                "<feature var=\"jabber:x:event\"/>"
+                "<feature var=\"vcard-temp\"/>"
 				"</query></iq>", iqFrom, idStr, xmlns );
 		}
-		else JabberSend( jabberThreadInfo->s, "<iq type='result'%s><query xmlns='%s'/></iq>", idStr, xmlns );
+        else JabberSend( jabberThreadInfo->s, "<iq type=\"result\"%s><query xmlns=\"%s\"/></iq>", idStr, xmlns );
 }	}

@@ -50,7 +50,7 @@ static void JabberRegisterAgent( HWND hwndDlg, char* jid )
 {
 	int iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_GETREGISTER, JabberIqResultGetRegister );
-	JabberSend( jabberThreadInfo->s, "<iq type='get' id='"JABBER_IQID"%d' to='%s'><query xmlns='jabber:iq:register'/></iq>", iqId, jid );
+    JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"jabber:iq:register\"/></iq>", iqId, jid );
 	hwndAgentRegInput = CreateDialogParam( hInst, MAKEINTRESOURCE( IDD_FORM ), hwndDlg, JabberAgentRegInputDlgProc, 0 );
 }
 
@@ -97,7 +97,7 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			JabberListRemoveList( LIST_AGENT );
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_DISCOAGENTS, JabberIqResultDiscoAgentItems );
-			JabberSend( jabberThreadInfo->s, "<iq type='get' id='"JABBER_IQID"%d' to='%s'><query xmlns='http://jabber.org/protocol/disco#items'/></iq>", iqId, TXT(jabberThreadInfo->server));
+            JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"http://jabber.org/protocol/disco#items\"/></iq>", iqId, TXT(jabberThreadInfo->server));
 
 			SendMessage( hwndDlg, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
 		}
@@ -267,7 +267,7 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			JabberListRemoveList( LIST_AGENT );
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_DISCOAGENTS, JabberIqResultDiscoAgentItems );
-			JabberSend( jabberThreadInfo->s, "<iq type='get' id='"JABBER_IQID"%d' to='%s'><query xmlns='http://jabber.org/protocol/disco#items'/></iq>", iqId, TXT(text));
+            JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"http://jabber.org/protocol/disco#items\"/></iq>", iqId, TXT(text));
 			return TRUE;
 		case IDC_AGENT_LOGON:
 		case IDC_AGENT_LOGOFF:
@@ -283,9 +283,9 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 				SendMessageA( lv, LVM_GETITEMA, 0, (LPARAM)&lvItem );
 				if (( item=JabberListGetItemPtr( LIST_ROSTER, lvItem.pszText )) != NULL ) {
 					if ( LOWORD( wParam )==IDC_AGENT_LOGON )
-						JabberSend( jabberThreadInfo->s, "<presence to='%s'/>", item->jid );
+                        JabberSend( jabberThreadInfo->s, "<presence to=\"%s\"/>", item->jid );
 					else
-						JabberSend( jabberThreadInfo->s, "<presence to='%s' type='unavailable'/>", item->jid );
+                        JabberSend( jabberThreadInfo->s, "<presence to=\"%s\" type=\"unavailable\"/>", item->jid );
 			}	}
 			return TRUE;
 		case IDC_AGENT_UNREGISTER:
@@ -304,8 +304,8 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 					strcpy( text, item->jid );
 					//if (( p=strchr( text, '/' )) != NULL ) *p = '\0';
 					if (( p=JabberTextEncode( text )) != NULL ) {
-						JabberSend( jabberThreadInfo->s, "<iq type='set' to='%s'><query xmlns='jabber:iq:register'><remove/></query></iq>", p );
-						JabberSend( jabberThreadInfo->s, "<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s' subscription='remove'></item></query></iq>", p );
+                        JabberSend( jabberThreadInfo->s, "<iq type=\"set\" to=\"%s\"><query xmlns=\"jabber:iq:register\"><remove/></query></iq>", p );
+                        JabberSend( jabberThreadInfo->s, "<iq type=\"set\"><query xmlns=\"jabber:iq:roster\"><item jid=\"%s\" subscription=\"remove\"></item></query></iq>", p );
 						free( p );
 			}	}	}
 			return TRUE;
@@ -402,7 +402,7 @@ BOOL CALLBACK JabberAgentRegInputDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_SETREGISTER, JabberIqResultSetRegister );
-			JabberSend( jabberThreadInfo->s, "<iq type='set' id='"JABBER_IQID"%d' to='%s'><query xmlns='jabber:iq:register'>%s</query></iq>", iqId, from, regStr );
+            JabberSend( jabberThreadInfo->s, "<iq type=\"set\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"jabber:iq:register\">%s</query></iq>", iqId, from, regStr );
 			free( str );
 			free( str2 );
 			free( regStr );

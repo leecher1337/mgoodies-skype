@@ -86,8 +86,8 @@ HMODULE hLibSSL = NULL;
 #endif
 PVOID jabberSslCtx;
 
-const char xmlnsAdmin[]  = "<query xmlns='http://jabber.org/protocol/muc#admin'>";
-const char xmlnsOwner[]  = "<query xmlns='http://jabber.org/protocol/muc#owner'>";
+const char xmlnsAdmin[]  = "<query xmlns=\"http://jabber.org/protocol/muc#admin\">";
+const char xmlnsOwner[]  = "<query xmlns=\"http://jabber.org/protocol/muc#owner\">";
 
 HWND hwndJabberAgents = NULL;
 HWND hwndJabberGroupchat = NULL;

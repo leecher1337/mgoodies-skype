@@ -164,7 +164,7 @@ char* __stdcall JabberNickFromJID( const char* jid )
 
 	return nick;
 }
-char* __stdcall JabberUrlDecode( char* str )
+char* __stdcall JabberUrlDecodeOld( char* str )
 {
 	char* p, *q;
 
@@ -187,8 +187,14 @@ char* __stdcall JabberUrlDecode( char* str )
 	*q = '\0';
 	return str;
 }
+char* __stdcall JabberUrlDecodeNew(const char* str )
+{
+	if (str == NULL ) return NULL;
+	char *res = strdup(str);
+	return JabberUrlDecodeOld(res);
+}
 
-void __stdcall JabberUrlDecodeW( WCHAR* str )
+void __stdcall JabberUrlDecodeOldW( WCHAR* str )
 {
 	if ( str == NULL )
 		return;
@@ -208,6 +214,13 @@ void __stdcall JabberUrlDecodeW( WCHAR* str )
 		}
 	}
 	*q = '\0';
+}
+WCHAR* __stdcall JabberUrlDecodeNewW( const WCHAR* str )
+{
+	if (str == NULL) return NULL;
+	WCHAR *res = wcsdup(str);
+	JabberUrlDecodeOldW(res);
+	return res;
 }
 
 char* __stdcall JabberUrlEncode( const char* str )
@@ -567,7 +580,7 @@ void __stdcall JabberSendVisibleInvisiblePresence( BOOL invisible )
 
 		WORD apparentMode = JGetWord( hContact, "ApparentMode", 0 );
 		if ( invisible==TRUE && apparentMode==ID_STATUS_OFFLINE )
-			JabberSend( jabberThreadInfo->s, "<presence to='%s' type='invisible'/>", item->jid );
+            JabberSend( jabberThreadInfo->s, "<presence to=\"%s\" type=\"invisible\"/>", item->jid );
 		else if ( invisible==FALSE && apparentMode==ID_STATUS_ONLINE )
 			JabberSendPresenceTo( jabberStatus, item->jid, NULL );
 }	}
@@ -662,7 +675,7 @@ char* __stdcall JabberTextDecode( const char* str )
 	strcpy( s1, str );
 
 	JabberUtf8Decode( s1, NULL );
-	JabberUrlDecode( s1 );
+	JabberUrlDecodeOld( s1 );
 	if (( s2 = JabberUnixToDos( s1 )) == NULL )
 		return NULL;
 
@@ -898,12 +911,12 @@ void __stdcall JabberSendPresenceTo( int status, char* to, char* extra )
 	{
 		char hashValue[ 50 ];
 		if ( !JGetStaticString( "AvatarHash", NULL, hashValue, sizeof hashValue ))
-			mir_snprintf( priorityStr+bytes, sizeof(priorityStr)-bytes, "<x xmlns='jabber:x:avatar'><hash>%s</hash></x>", hashValue );
+            mir_snprintf( priorityStr+bytes, sizeof(priorityStr)-bytes, "<x xmlns=\"jabber:x:avatar\"><hash>%s</hash></x>", hashValue );
 	}
 
 	char toStr[ 512 ];
 	if ( to != NULL )
-		mir_snprintf( toStr, sizeof toStr, " to='%s'", to );
+        mir_snprintf( toStr, sizeof toStr, " to=\"%s\"", to );
 	else
 		toStr[0] = '\0';
 
@@ -918,7 +931,7 @@ void __stdcall JabberSendPresenceTo( int status, char* to, char* extra )
 			JabberSend( jabberThreadInfo->s, "<presence%s>%s%s</presence>", toStr, priorityStr, extra );
 		break;
 	case ID_STATUS_INVISIBLE:
-		JabberSend( jabberThreadInfo->s, "<presence type='%s'%s>%s%s</presence>", JGetByte(NULL,"InvAsUnavail",TRUE)?"unavailable":"invisible",toStr, priorityStr, extra );
+        JabberSend( jabberThreadInfo->s, "<presence type=\"%s\"%s>%s%s</presence>", JGetByte(NULL,"InvAsUnavail",TRUE)?"unavailable":"invisible",toStr, priorityStr, extra );
 		break;
 	case ID_STATUS_AWAY:
 	case ID_STATUS_ONTHEPHONE:

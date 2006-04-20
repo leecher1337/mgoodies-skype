@@ -46,7 +46,7 @@ int JabberMenuHandleGroupchat( WPARAM wParam, LPARAM lParam )
 			SendMessage( hwndJabberGroupchat, WM_JABBER_ACTIVATE, 0, lParam );	// Just to update the IDC_SERVER and clear the list
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_DISCOROOMSERVER, JabberIqResultDiscoRoomItems );
-			JabberSend( jabberThreadInfo->s, "<iq type='get' id='"JABBER_IQID"%d' to='%s'><query xmlns='http://jabber.org/protocol/disco#items'/></iq>", iqId, ( char* )lParam );
+            JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"http://jabber.org/protocol/disco#items\"/></iq>", iqId, ( char* )lParam );
 			// <iq/> result will send WM_JABBER_REFRESH to update the list with real data
 		}
 	}
@@ -126,7 +126,7 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 				SetDlgItemTextA( hwndDlg, IDC_SERVER, ( char* )lParam );
 				int iqId = JabberSerialNext();
 				JabberIqAdd( iqId, IQ_PROC_DISCOROOMSERVER, JabberIqResultDiscoRoomItems );
-				JabberSend( jabberThreadInfo->s, "<iq type='get' id='"JABBER_IQID"%d' to='%s'><query xmlns='http://jabber.org/protocol/disco#items'/></iq>", iqId, ( char* )lParam );
+                JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"http://jabber.org/protocol/disco#items\"/></iq>", iqId, ( char* )lParam );
 			}
 			else {
 				DBVARIANT dbv;
@@ -287,8 +287,8 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 					CallService( MS_GC_NEWSESSION, 0, ( LPARAM )&gcw );
 				}
 
-				JabberSend( jabberThreadInfo->s, "<iq type='set'><query xmlns='jabber:iq:roster'><item jid='%s'/></query></iq>", jid );
-				JabberSend( jabberThreadInfo->s, "<presence to='%s' type='subscribe'/>", jid );
+                JabberSend( jabberThreadInfo->s, "<iq type=\"set\"><query xmlns=\"jabber:iq:roster\"><item jid=\"%s\"/></query></iq>", jid );
+                JabberSend( jabberThreadInfo->s, "<presence to=\"%s\" type=\"subscribe\"/>", jid );
 			}
 			break;
 		case IDC_SERVER:
@@ -305,7 +305,7 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 				if (( p=JabberTextEncode( text )) != NULL ) {
 					int iqId = JabberSerialNext();
 					JabberIqAdd( iqId, IQ_PROC_DISCOROOMSERVER, JabberIqResultDiscoRoomItems );
-					JabberSend( jabberThreadInfo->s, "<iq type='get' id='"JABBER_IQID"%d' to='%s'><query xmlns='http://jabber.org/protocol/disco#items'/></iq>", iqId, p );
+                    JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"http://jabber.org/protocol/disco#items\"/></iq>", iqId, p );
 					free( p );
 				}
 			}
@@ -345,10 +345,10 @@ void JabberGroupchatJoinRoom( const char* server, const char* room, const char* 
 	int status = ( jabberStatus == ID_STATUS_INVISIBLE ) ? ID_STATUS_ONLINE : jabberStatus;
 	if ( password && password[0]!='\0' ) {
 		char passwordText[256];
-		mir_snprintf( passwordText, sizeof( passwordText ), "<x xmlns='http://jabber.org/protocol/muc'><password>%s</password></x>", password );
+        mir_snprintf( passwordText, sizeof( passwordText ), "<x xmlns=\"http://jabber.org/protocol/muc\"><password>%s</password></x>", password );
 		JabberSendPresenceTo( status, text, passwordText );
 	}
-	else JabberSendPresenceTo( status, text, "<x xmlns='http://jabber.org/protocol/muc'/>" );
+    else JabberSendPresenceTo( status, text, "<x xmlns=\"http://jabber.org/protocol/muc\"/>" );
 }
 
 static BOOL CALLBACK JabberGroupchatJoinDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -541,7 +541,7 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 
 		if (( statusNode=JabberXmlGetChild( node, "status" ))!=NULL && statusNode->text!=NULL )
 			str = JabberTextDecode( statusNode->text );
-		else 
+		else
 			str = NULL;
 		newRes = ( JabberListAddResource( LIST_CHATROOM, from, status, str ) == 0 ) ? 0 : GC_EVENT_JOIN;
 		if ( str ) free( str );
@@ -598,7 +598,7 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 			// Request room config
 			int iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetMuc );
-			JabberSend( jabberThreadInfo->s, "<iq type='get' id='"JABBER_IQID"%d' to='%s'>%s</query></iq>",
+            JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\">%s</query></iq>",
 				iqId, item->jid, xmlnsOwner );
 		}
 

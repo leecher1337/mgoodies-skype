@@ -278,13 +278,13 @@ void __cdecl JabberFileServerThread( filetransfer* ft )
 						else myAddr = _strdup( inet_ntoa( in ));
 					}
 					else myAddr = _strdup( inet_ntoa( in ));
-					JabberSend( jabberThreadInfo->s, "<iq type='set' to='%s/%s' id='"JABBER_IQID"%d'><query xmlns='jabber:iq:oob'><url>http://%s:%d/%s</url><desc>%s</desc></query></iq>", ft->jid, resource, id, myAddr, nlb.wPort, pFileName, pDescription );
+                    JabberSend( jabberThreadInfo->s, "<iq type=\"set\" to=\"%s/%s\" id=\""JABBER_IQID"%d\"><query xmlns=\"jabber:iq:oob\"><url>http://%s:%d/%s</url><desc>%s</desc></query></iq>", ft->jid, resource, id, myAddr, nlb.wPort, pFileName, pDescription );
 					free( myAddr );
 					free( pDescription );
 				}
 				else {
 					id = JabberSerialNext();
-					JabberSend( jabberThreadInfo->s, "<iq type='set' to='%s/%s' id='"JABBER_IQID"%d'><query xmlns='jabber:iq:oob'><url>http://%s:%d/%s</url><desc/></query></iq>", ft->jid, resource, id, inet_ntoa( in ), nlb.wPort, pFileName );
+                    JabberSend( jabberThreadInfo->s, "<iq type=\"set\" to=\"%s/%s\" id=\""JABBER_IQID"%d\"><query xmlns=\"jabber:iq:oob\"><url>http://%s:%d/%s</url><desc/></query></iq>", ft->jid, resource, id, inet_ntoa( in ), nlb.wPort, pFileName );
 				}
 				JabberLog( "Waiting for the file to be sent..." );
 				WaitForSingleObject( hEvent, INFINITE );
@@ -385,7 +385,7 @@ static void JabberFileServerConnection( JABBER_SOCKET hConnection, DWORD dwRemot
 			break;
 		datalen += recvResult;
 
-		buffer[datalen] = '\0';
+        buffer[datalen] = '\0';
 		JabberLog( "RECV:%s", buffer );
 
 		bytesParsed = JabberFileSendParse( hConnection, ft, buffer, datalen );

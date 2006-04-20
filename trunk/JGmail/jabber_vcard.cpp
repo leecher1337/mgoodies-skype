@@ -58,7 +58,7 @@ int JabberSendGetVcard( const char* jid )
 	int iqId = JabberSerialNext();
 	JabberIqAdd( iqId, ( jid == jabberJID ) ? IQ_PROC_GETVCARD : IQ_PROC_NONE, JabberIqResultGetVcard );
 	JabberSend( jabberThreadInfo->s,
-		"<iq type='get' id='"JABBER_IQID"%d' to='%s'><vCard xmlns='vcard-temp' prodid='-//HandGen//NONSGML vGen v1.0//EN' version='2.0' /></iq>",
+        "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><vCard xmlns=\"vcard-temp\" prodid=\"-//HandGen//NONSGML vGen v1.0//EN\" version=\"2.0\" /></iq>",
 		iqId, jid );
 	return 0;
 }
@@ -1028,7 +1028,7 @@ static void SetServerVcard()
 	if ( text != NULL ) {
 		iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_SETVCARD, JabberIqResultSetVcard );
-		JabberSend( jabberThreadInfo->s, "<iq type='set' id='"JABBER_IQID"%d'><vCard xmlns='vcard-temp'>%s</vCard></iq>", iqId, text );
+        JabberSend( jabberThreadInfo->s, "<iq type=\"set\" id=\""JABBER_IQID"%d\"><vCard xmlns=\"vcard-temp\">%s</vCard></iq>", iqId, text );
 		free( text );
 }	}
 
@@ -1053,11 +1053,11 @@ static BOOL CALLBACK JabberVcardDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, 
 	case WM_INITDIALOG:
 	{
 		SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )iconBigList[2] );
-		SendDlgItemMessage(hwndDlg,  // dialog box window handle 
-               IDC_LOGO,              // icon identifier 
-               STM_SETIMAGE,          // message to send 
-               (WPARAM) IMAGE_ICON,   // image type 
-               (LPARAM) iconBigList[2]); // new icon handle 
+		SendDlgItemMessage(hwndDlg,  // dialog box window handle
+               IDC_LOGO,              // icon identifier
+               STM_SETIMAGE,          // message to send
+               (WPARAM) IMAGE_ICON,   // image type
+               (LPARAM) iconBigList[2]); // new icon handle
 
 		TranslateDialogDefault( hwndDlg );
 		EnableWindow( GetDlgItem( hwndDlg, IDC_UPDATE ), jabberOnline );
