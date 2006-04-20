@@ -27,6 +27,11 @@ Last change by : $Author: ghazan $
 #ifndef _JABBER_SSL_H_
 #define _JABBER_SSL_H_
 
+#ifdef STATICSSL
+#include <openssl\ssl.h>
+#endif
+
+
 typedef int ( *PFN_SSL_int_void ) ( void );
 typedef PVOID ( *PFN_SSL_pvoid_void ) ( void );
 typedef PVOID ( *PFN_SSL_pvoid_pvoid ) ( PVOID );

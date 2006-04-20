@@ -111,8 +111,13 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 			JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
 			JabberSend( info->s, "<iq type='get' id='"JABBER_IQID"%d'><query xmlns='jabber:iq:agents'/></iq>", iqId );
 		}
-		JabberEnableNotifications(info);
-		JabberRequestMailBox(info->s);
+		{
+			int i = JGetByte(NULL,"EnableGMail",1);
+			if (i & 1) {
+				JabberEnableNotifications(info);
+				if ((i & 2) == 0) JabberRequestMailBox(info->s);
+			}
+		}
 	}
 	// What to do if password error? etc...
 	else if ( !strcmp( type, "error" )) {

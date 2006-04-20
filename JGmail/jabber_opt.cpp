@@ -421,7 +421,6 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 
 static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-	char text[256];
 	BOOL bChecked;
 
 	switch ( msg ) {
@@ -502,6 +501,8 @@ static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 	}
 	case WM_NOTIFY:
 		if (( ( LPNMHDR ) lParam )->code == PSN_APPLY ) {
+			BOOL bChecked;
+			char text[256];
 			// File transfer options
 			JSetByte( "BsDirect", ( BYTE ) IsDlgButtonChecked( hwndDlg, IDC_DIRECT ));
 			JSetByte( "BsDirectManual", ( BYTE ) IsDlgButtonChecked( hwndDlg, IDC_DIRECT_MANUAL ));
@@ -538,13 +539,122 @@ static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			JSetByte( "EnableAvatars",       ( BYTE )IsDlgButtonChecked( hwndDlg, IDC_ENABLE_AVATARS ));
 			JSetByte( "AutoAcceptMUC",       ( BYTE )IsDlgButtonChecked( hwndDlg, IDC_AUTO_ACCEPT_MUC ));
 			JSetByte( "AutoJoinConferences", ( BYTE )IsDlgButtonChecked( hwndDlg, IDC_AUTOJOIN ));
-			return TRUE;
 		}
 		break;
-	}
+	}//switch
 
 	return FALSE;
 }
+
+BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam );
+long AdvOptsDlg, GMailOptsDlg;
+ BOOL CALLBACK JabberExpOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+//	char str[MAXMODULELABELLENGTH];
+	switch (msg)
+	{
+		case WM_INITDIALOG: 
+		{	
+			short int t;
+            TCITEMA tci;
+			RECT theTabSpace;
+			RECT rcClient;
+			{
+				RECT rcTab, rcDlg;
+				TabCtrl_GetItemRect(GetDlgItem(hwndDlg, IDC_OPT_EXPERT_TAB),0,&rcTab);
+				theTabSpace.top = rcTab.bottom; // the size of the tab
+				GetWindowRect(GetDlgItem(hwndDlg, IDC_OPT_EXPERT_TAB), &rcTab);
+				GetWindowRect(hwndDlg, &rcDlg);
+				theTabSpace.bottom = rcTab.bottom -rcTab.top  -theTabSpace.top;
+				theTabSpace.top =  rcTab.top -rcDlg.top +theTabSpace.top;
+				theTabSpace.left = rcTab.left - rcDlg.left;
+				theTabSpace.right = rcTab.right-rcTab.left;
+			}
+
+			TranslateDialogDefault(hwndDlg);
+			t = (short)JGetByte("ActiveTab",0);
+
+			tci.mask = TCIF_PARAM|TCIF_TEXT;
+			GMailOptsDlg = tci.lParam = (long)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_JGMAIL), hwndDlg, JabberGmailOptDlgProc);
+			GetClientRect((HWND)tci.lParam,&rcClient);
+			tci.pszText = Translate("GMail");
+			SendMessage(GetDlgItem(hwndDlg, IDC_OPT_EXPERT_TAB), TCM_INSERTITEMA, (WPARAM)0, (LPARAM)&tci);
+			MoveWindow((HWND)tci.lParam,theTabSpace.left+(theTabSpace.right-rcClient.right)/2,
+				theTabSpace.top+(theTabSpace.bottom-rcClient.bottom)/2,
+				rcClient.right,rcClient.bottom,1);
+			ShowWindow((HWND)tci.lParam, (t==1)?SW_SHOW:SW_HIDE);
+
+			AdvOptsDlg = tci.lParam = (long)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_JABBER2), hwndDlg, JabberAdvOptDlgProc);
+			tci.pszText = Translate("Standard");
+			GetClientRect((HWND)tci.lParam,&rcClient);
+			SendMessage(GetDlgItem(hwndDlg, IDC_OPT_EXPERT_TAB), TCM_INSERTITEMA, (WPARAM)0, (LPARAM)&tci);
+			MoveWindow((HWND)tci.lParam,theTabSpace.left+(theTabSpace.right-rcClient.right)/2,
+				theTabSpace.top+(theTabSpace.bottom-rcClient.bottom)/2,
+				rcClient.right,rcClient.bottom,1);
+			ShowWindow((HWND)tci.lParam, (t==0)?SW_SHOW:SW_HIDE);
+
+			TabCtrl_SetCurSel(GetDlgItem(hwndDlg, IDC_OPT_EXPERT_TAB),t);
+
+
+//			SendDlgItemMessage(hwndDlg, IDC_AAPROTOCOL, CB_ADDSTRING, 0, (LPARAM)Translate("All") );
+//         return FALSE;
+		return TRUE;
+		}
+		case PSM_CHANGED:
+#ifdef _DEBUG
+			MessageBox(hwndDlg,"Child dialog changed","EventHapened",0);
+#endif
+			SendMessage(GetParent(hwndDlg), PSM_CHANGED, (unsigned int)hwndDlg, 0);
+			break;
+		case WM_NOTIFY:
+		{
+		  switch(((LPNMHDR)lParam)->idFrom) {
+            case 0:	{
+			  BOOL CommandApply = FALSE;
+			  if ( (CommandApply = lParam && ((LPNMHDR)lParam)->code == PSN_APPLY) || (lParam && ((LPNMHDR)lParam)->code == PSN_RESET) ) {
+#ifdef _DEBUG
+				MessageBox(hwndDlg,CommandApply?"Apply":"Cancel","EventHapened",0);
+#endif
+				if (CommandApply) {
+					SendMessage((HWND)AdvOptsDlg, WM_NOTIFY, wParam, lParam);
+					SendMessage((HWND)GMailOptsDlg, WM_NOTIFY, wParam, lParam);
+					return TRUE;
+				} else {
+				}
+			  } //if PSN_APPLY
+			}
+            break;
+            case IDC_OPT_EXPERT_TAB:
+               switch (((LPNMHDR)lParam)->code)
+               {
+                  case TCN_SELCHANGING:
+                     {
+                        TCITEM tci;
+                        tci.mask = TCIF_PARAM;
+                        TabCtrl_GetItem(GetDlgItem(hwndDlg,IDC_OPT_EXPERT_TAB),TabCtrl_GetCurSel(GetDlgItem(hwndDlg,IDC_OPT_EXPERT_TAB)),&tci);
+                        ShowWindow((HWND)tci.lParam,SW_HIDE);                     
+                     }
+                  break;
+                  case TCN_SELCHANGE:
+                     {
+                        TCITEM tci;
+						short int t;
+                        tci.mask = TCIF_PARAM;
+						t = TabCtrl_GetCurSel(GetDlgItem(hwndDlg,IDC_OPT_EXPERT_TAB));
+                        TabCtrl_GetItem(GetDlgItem(hwndDlg,IDC_OPT_EXPERT_TAB),t,&tci);
+						JSetByte("ActiveTab", t);
+                        ShowWindow((HWND)tci.lParam,SW_SHOW);                     
+                     }
+                  break;
+               }
+			   break;
+			}
+		  }//end case(LPNMHDR)lParam)->idFrom
+		  break;			
+	}
+	return FALSE;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // JabberOptInit - initializes all options dialogs
@@ -568,7 +678,7 @@ int JabberOptInit( WPARAM wParam, LPARAM lParam )
 	mir_snprintf( str, sizeof( str ), "%s %s", jabberModuleName, JTranslate( "Advanced" ));
 	str[sizeof( str )-1] = '\0';
 	odp.pszTitle = str;
-	odp.pfnDlgProc = JabberAdvOptDlgProc;
+	odp.pfnDlgProc = JabberExpOptDlgProc;
 	odp.flags = ODPF_BOLDGROUPS|ODPF_EXPERTONLY;
 	odp.nIDBottomSimpleControl = 0;
 	JCallService( MS_OPT_ADDPAGE, wParam, ( LPARAM )&odp );

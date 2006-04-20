@@ -19,6 +19,7 @@ CFG=jabberg - Win32 Debug Unicode
 !MESSAGE 
 !MESSAGE "jabberg - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "jabberg - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "jabberg - Win32 Static" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "jabberg - Win32 Release Unicode" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "jabberg - Win32 Debug Unicode" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
@@ -83,11 +84,45 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/debug/plugins/JGmail.dll" /pdbtype:sept
+
+!ELSEIF  "$(CFG)" == "jabberg - Win32 Static"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "jabberg___Win32_Static"
+# PROP BASE Intermediate_Dir "jabberg___Win32_Static"
+# PROP BASE Ignore_Export_Lib 1
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Release_Static"
+# PROP Intermediate_Dir "Release_Static"
+# PROP Ignore_Export_Lib 1
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /Yu"jabber.h" /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20051212\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /FAcs /Yu"jabber.h" /FD /c
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/release/plugins/JGmail.dll" /ALIGN:4096 /ignore:4108
+# SUBTRACT BASE LINK32 /pdb:none
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/release/plugins/staticssl/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"z:\temp\openssl\openssl-0.9.8-stable-SNAP-20051212\out32\\" /ALIGN:4096 /ignore:4108
+# SUBTRACT LINK32 /pdb:none
+# Begin Special Build Tool
+SOURCE="$(InputPath)"
+PostBuild_Cmds=upx --best --force ../../bin/release/plugins/staticssl/JGmail.dll
+# End Special Build Tool
 # SUBTRACT LINK32 /pdb:none /incremental:no
 
 !ELSEIF  "$(CFG)" == "jabberg - Win32 Release Unicode"
 
 # PROP BASE Use_MFC 0
+# Name "jabberg - Win32 Static"
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "jabberg___Win32_Release_Unicode"
 # PROP BASE Intermediate_Dir "jabberg___Win32_Release_Unicode"
@@ -328,6 +363,10 @@ SOURCE=.\jabber_list.h
 
 SOURCE=.\jabber_proxy.h
 # End Source File
+# End Source File
+# Begin Source File
+
+SOURCE=".\icos\mail-clock.ico"
 # End Source File
 # Begin Source File
 
