@@ -68,19 +68,34 @@ int makeHead(char *target, int tSize, __int64 tid, __int64 time){
 	return l;
 }
 
+void JabberEnableNotificationsResult( XmlNode *iqNode, void *userdata ){
+	JabberLog( "Received EnableNotificationsResult");
+}
 void JabberEnableNotifications(ThreadData *info){
-	if(CallService(MS_POPUP_QUERY, PUQS_GETSTATUS, 0)){//will enable notifications only if we have popups
-		JabberSend( info->s, "<iq type='set' to='%s@%s' id='EnMailNotify'><usersetting xmlns='google:setting'><mailnotifications value='true'/></usersetting></iq>", info->username, info->server );
-	}
+	int iqId = JabberSerialNext();
+	JabberIqAdd( iqId, IQ_PROC_NONE, JabberEnableNotificationsResult );
+	JabberSend( info->s, "<iq type='set' to='%s@%s' id='"JABBER_IQID"%d'><usersetting xmlns='google:setting'><mailnotifications value='true'/></usersetting></iq>", info->username, info->server, iqId);
 }
 
 
+void MyNotification(POPUPDATAEX *ppd){
+	BOOL usePopUps = (JGetByte( NULL, "GMailUse",1) & 1) & ( ServiceExists(MS_POPUP_QUERY) != 0);
+	if (usePopUps) {
+        CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)ppd, 0);
+	} else {
+		JabberLog( "Show PopUp: %s", ppd->lpzContactName);
+		JabberLog( "Text PopUp: %s", ppd->lpzText);
+	}
+}
+
 static __int64 maxtid = 0;
 static __int64 maxtime = 0;
+char soundname[64];
+
 
 void JabberRequestMailBox(HANDLE hConn){
 
-	if(CallService(MS_POPUP_QUERY, PUQS_GETSTATUS, 0)){//will request mailbox only if popup is working
+//	if(CallService(MS_POPUP_QUERY, PUQS_GETSTATUS, 0)){//will request mailbox only if popup is working
 		int iqId = JabberSerialNext();
 		if (!maxtid) maxtid = ((__int64)DBGetContactSettingDword( NULL, jabberProtoName,"MaxTidHi",0)<<32)+
 			             ((__int64)DBGetContactSettingDword( NULL, jabberProtoName,"MaxTidLo",0));
@@ -105,9 +120,9 @@ void JabberRequestMailBox(HANDLE hConn){
 			ppd.colorBack = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
 			ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)&0xFFFF);
 			makeHead(ppd.lpzText, MAX_SECONDLINE - 5,maxtid,maxtime);
-			CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+			MyNotification(&ppd);
 		}
-	}
+//	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -119,6 +134,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 	XmlNode *queryNode;
 	char* type;
 	char* str;
+
 	// RECVED: mailbox info
 	// ACTION: show popups with the received e-mails
 	JabberLog( "<iq/> mailbox" );
@@ -151,7 +167,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 		ppd.colorBack = JGetDword(NULL,"ColErrorBack",RGB(255,128,128));
 		ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)>>16);
 		JabberLog( "Notify error: %s\n%s", ppd.lpzContactName, ppd.lpzText);
-        CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+		MyNotification(&ppd);
 
 		return;
 	}
@@ -178,7 +194,6 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				POPUPDATAEX ppd;
 				ZeroMemory((void *)&ppd, sizeof(ppd));
 				ppd.lchContact = 0;
-//				ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
 				ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_INFO ));
 				mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox result: Matched %s",
 					jabberProtoName,
@@ -197,7 +212,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				  );
 				  if (syncTimeResult) mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"; Synchronized.");
 				}
-				CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+				MyNotification(&ppd);
 			} else {
 				if (drift) if ((0x2 & JGetByte(NULL,"SyncTime",0))==0){
 					POPUPDATAEX ppd;
@@ -209,11 +224,11 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					);
 					ppd.colorText = JGetDword(NULL,"ColClockText",0);
 					ppd.colorBack = JGetDword(NULL,"ColClockBack",0);
-					ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeout",0xFFFF0000)>>16);
+					ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeout",0x0000FFFF)>>16);
 					mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5,"LocalDrift: %d seconds",
 					  drift
 					);
-					CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+					MyNotification(&ppd);
 				}
 			}
 			XmlNode *threadNode;
@@ -258,19 +273,21 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 						);
 					ppd.colorText = JGetDword(NULL,"ColMsgText",0);
 					ppd.colorBack = JGetDword(NULL,"ColMsgBack",0);
-					ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeout",0xFFFF0000)&0xFFFF);
+					ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeout",0x0000FFFF)&0xFFFF);
 					POPUP_ACCINFO * acci = NULL;
 					if (JGetByte("OnClick",1)){
-						acci = (POPUP_ACCINFO*)malloc(sizeof(POPUP_ACCINFO));
-						ZeroMemory(acci, sizeof(acci)); //This is always a good thing to do.
-						ppd.PluginWindowProc = (WNDPROC)PopupDlgProc;
-						acci->username = info->username;
-						acci->password = info->password;
-						acci->tid = gtstamp;
-						ppd.PluginData = (void *)acci;
-					}
-			        CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+						if ((JGetByte( NULL, "GMailUse",1) & 1) & ( ServiceExists(MS_POPUP_QUERY) != 0)){
+							acci = (POPUP_ACCINFO*)malloc(sizeof(POPUP_ACCINFO));
+							ZeroMemory(acci, sizeof(acci)); //This is always a good thing to do.
+							ppd.PluginWindowProc = (WNDPROC)PopupDlgProc;
+							acci->username = info->username;
+							acci->password = info->password;
+							acci->tid = gtstamp;
+							ppd.PluginData = (void *)acci;
+					}	}
+					MyNotification(&ppd);
 			    }
+				SkinPlaySound(soundname);
 			}
 			JSetDword(NULL,"MaxTidLo",(DWORD)maxtid);
 			JSetDword(NULL,"MaxTidHi",(DWORD)(maxtid>>32));
@@ -328,26 +345,21 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 	case WM_INITDIALOG:
 	{
 		TranslateDialogDefault( hwndDlg );
+		int gmailuse = JGetByte( NULL, "GMailUse",1);
 		BOOL popupavail = ServiceExists(MS_POPUP_QUERY);
-		ShowWindow(GetDlgItem(hwndDlg, IDC_POPUPLABEL), (popupavail)?SW_HIDE:SW_SHOW);
-		ShowWindow(GetDlgItem(hwndDlg, IDC_ENGMAIL),(popupavail)?SW_SHOW:SW_HIDE);
-		ShowWindow(GetDlgItem(hwndDlg, IDC_ENGMAILSTARTUP),(popupavail)?SW_SHOW:SW_HIDE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_USEPOPUP),popupavail);
+		CheckDlgButton( hwndDlg, IDC_USEPOPUP, (0x1 & gmailuse));
+		popupavail &= gmailuse;
 		int i = JGetByte(NULL,"EnableGMail",1);
-		EnableWindow( GetDlgItem( hwndDlg, IDC_ENGMAILSTARTUP ), popupavail && (0x1 & i));
 		CheckDlgButton( hwndDlg, IDC_ENGMAIL, (0x1 & i));
 		popupavail &= (0x1 & i);
 		CheckDlgButton( hwndDlg, IDC_ENGMAILSTARTUP, (0x2 & i));
-		EnableWindow( GetDlgItem( hwndDlg, IDC_SHOWREQUEST ), popupavail );
-		EnableWindow( GetDlgItem( hwndDlg, IDC_PREVIEW ), popupavail );
-		EnableWindow( GetDlgItem( hwndDlg, IDC_FORCECHECK ), popupavail );
 		CheckDlgButton( hwndDlg, IDC_SHOWREQUEST, JGetByte(NULL,"ShowRequest",0));
-		EnableWindow( GetDlgItem( hwndDlg, IDC_SHOWRESULT ), popupavail );
 		CheckDlgButton( hwndDlg, IDC_SHOWRESULT, JGetByte(NULL,"ShowResult",0));
 		i = JGetByte(NULL,"SyncTime",0);
 		CheckDlgButton( hwndDlg, IDC_SYNCHRONIZE, (0x1 & i));
-		EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZE ), popupavail );
-		CheckDlgButton( hwndDlg, IDC_SYNCHRONIZESILENT, (0x2 & i));
-		EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZESILENT ), popupavail && (0x1 & i));
+		CheckDlgButton( hwndDlg, IDC_SYNCHRONIZESILENT, (0x2 & i)!=0);
+		EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZESILENT ),  (0x1 & i));
 		CheckDlgButton( hwndDlg, IDC_VISITGMAIL, JGetByte("OnClick",1));
 		EnableWindow( GetDlgItem( hwndDlg, IDC_VISITGMAIL ), popupavail );
 		CheckDlgButton( hwndDlg, IDC_INVASUNAVAIL, JGetByte(NULL,"InvAsUnavail",TRUE));
@@ -372,18 +384,22 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 	case WM_COMMAND:
 		switch ( LOWORD( wParam )) {
 		case IDC_ENGMAIL:
-			bChecked = IsDlgButtonChecked( hwndDlg, IDC_ENGMAIL );
+			bChecked = IsDlgButtonChecked( hwndDlg, LOWORD( wParam ) );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_ENGMAILSTARTUP ), bChecked );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_USEPOPUP ), bChecked );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_FORCECHECK ), bChecked );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZE ), bChecked );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_SHOWREQUEST ), bChecked );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_SHOWRESULT ), bChecked );
-			EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZE ), bChecked );
-			EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZESILENT ), bChecked && IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE ));
-			EnableWindow( GetDlgItem( hwndDlg, IDC_VISITGMAIL ), bChecked );
-			EnableWindow( GetDlgItem( hwndDlg, IDC_FORCECHECK ), bChecked );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_PREVIEW ), bChecked );
-			goto LBL_Apply;
+			EnableWindow( GetDlgItem( hwndDlg, IDC_VISITGMAIL ), bChecked );
 		case IDC_SYNCHRONIZE:
-			EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZESILENT ), IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE ) );
+			bChecked = IsDlgButtonChecked( hwndDlg, LOWORD( wParam ) );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZESILENT), bChecked );
+			goto LBL_Apply;
+		case IDC_USEPOPUP:
+			bChecked = IsDlgButtonChecked( hwndDlg, LOWORD( wParam ) );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_VISITGMAIL ), bChecked );
 			goto LBL_Apply;
 		case IDC_PREVIEW: {
 				if (IsDlgButtonChecked( hwndDlg, IDC_ENGMAIL )){
@@ -392,7 +408,6 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 					char sendersList[150];
 
 					ZeroMemory(&ppd, sizeof(ppd));
-//					ppd.iSeconds = JGetDword(NULL,"PopUpTimeout",-1);
 					{ // show the error popup
 						ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_STOP ));
 						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName, 
@@ -406,18 +421,16 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_ERRORCOLOURTEXT,CPM_GETCOLOUR,0,0);
 						ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_ERRORCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,128,128);
 						ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_ERRORTIMEOUT, NULL, TRUE);
-						CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+						MyNotification(&ppd);
 					}
 					if (IsDlgButtonChecked( hwndDlg, IDC_SHOWREQUEST ) ){
 						ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_INFO ));
 						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox request",jabberProtoName);
 						ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURTEXT,CPM_GETCOLOUR,0,0);
 						ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,255,128);
-//						ppd.colorText = NULL;
-//						ppd.colorBack = RGB(255,255,128);
 						makeHead(ppd.lpzText, MAX_SECONDLINE - 5,maxtid,maxtime);
 						ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_DEBUGTIMEOUT, NULL, TRUE);
-						CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+						MyNotification(&ppd);
 					}
 					if (IsDlgButtonChecked( hwndDlg, IDC_SHOWRESULT ) ){
 						ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_INFO ));
@@ -427,8 +440,6 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						);
 						ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURTEXT,CPM_GETCOLOUR,0,0);
 						ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,255,128);
-//						ppd.colorText = NULL;
-//						ppd.colorBack = RGB(255,255,128);
 						ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_DEBUGTIMEOUT, NULL, TRUE);
 						int pos = makeHead(ppd.lpzText, MAX_SECONDLINE - 5,
 							-1,
@@ -436,7 +447,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						);
 						pos += mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"\nLocalDrift: %d seconds",	5);
 						if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE )) mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"; Synchronized.");
-						CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+						MyNotification(&ppd);
 					} else { // the clock syncronisation will be shown only if the result popup is disabled
 						if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE ) && (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZESILENT )==0)){
 							ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_CLOCK ));
@@ -445,13 +456,11 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 							);
 							ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_CLOCKCOLOURTEXT,CPM_GETCOLOUR,0,0);
 							ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_CLOCKCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,255,128);
-//							ppd.colorText = NULL;
-//							ppd.colorBack = NULL;
 							ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_CLOCKTIMEOUT, NULL, TRUE);
 							mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5,"LocalDrift: %d seconds",
 							  5
 							);
-							CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+							MyNotification(&ppd);
 						}
 					}
 					ppd.lchIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_MAIL_NEW ));
@@ -466,10 +475,9 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						);
 					ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_COLOURTEXT,CPM_GETCOLOUR,0,0);
 					ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_COLOURBACK,CPM_GETCOLOUR,0,0);
-//					ppd.colorText = NULL;
-//					ppd.colorBack = NULL;
 					ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_TIMEOUT, NULL, TRUE);
-					CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd,0);
+					MyNotification(&ppd);
+					SkinPlaySound(soundname);
 				}
 			}
 			break;
@@ -487,7 +495,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 					ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_ERRORCOLOURTEXT,CPM_GETCOLOUR,0,0);
 					ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_ERRORCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,128,128);
 					ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_ERRORTIMEOUT, NULL, TRUE);
-					CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+					MyNotification(&ppd);
 				}
 				maxtid = tmptid;
 				maxtime = tmptime;
@@ -532,11 +540,13 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 			if (ServiceExists(MS_POPUP_QUERY)&&(bChecked & 1)){
 				JSetByte( "ShowRequest", ( BYTE ) IsDlgButtonChecked( hwndDlg, IDC_SHOWREQUEST ));
 				JSetByte( "ShowResult", ( BYTE ) IsDlgButtonChecked( hwndDlg, IDC_SHOWRESULT ));
-				i = IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE );
-				if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZESILENT )) i |= 2;
-				JSetByte( "SyncTime",i);
 				JSetByte( "OnClick", ( BYTE ) IsDlgButtonChecked( hwndDlg, IDC_VISITGMAIL ));
 			}
+			bChecked = IsDlgButtonChecked( hwndDlg, IDC_USEPOPUP );
+			JSetByte( "GMailUse",bChecked);
+			i = IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE );
+			if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZESILENT )) i |= 2;
+			JSetByte( "SyncTime",i);
 			JSetByte( "InvAsUnavail", ( BYTE ) IsDlgButtonChecked( hwndDlg, IDC_INVASUNAVAIL ));
 			JSetDword(NULL, "ColMsgText", SendDlgItemMessage(hwndDlg,IDC_COLOURTEXT,CPM_GETCOLOUR,0,0));
 			JSetDword(NULL, "ColMsgBack", SendDlgItemMessage(hwndDlg,IDC_COLOURBACK,CPM_GETCOLOUR,0,0));

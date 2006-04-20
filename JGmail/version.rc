@@ -31,10 +31,10 @@ BEGIN
         BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Miranda\0"
-            VALUE "FileDescription", "Jabber Protocol Plugin for Miranda IM\0"
+            VALUE "FileDescription", "Jabber Protocol Plugin (GMail mod) for Miranda IM\0"
             VALUE "FileVersion", __VERSION_STRING
             VALUE "InternalName", "jabber\0"
-            VALUE "LegalCopyright", "Copyright ( c) 2002-04 Santithorn Bunchua, 2005 George Hazan \0"
+            VALUE "LegalCopyright", "Copyright ( c) 2002-04 Santithorn Bunchua, 2005 George Hazan, 2006 YB(GMail mod)\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "JGmail.dll\0"
             VALUE "PrivateBuild", "\0"

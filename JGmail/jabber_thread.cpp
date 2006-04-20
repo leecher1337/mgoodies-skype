@@ -1385,15 +1385,13 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 	}
 	// RECVED: <iq type='set'><new-mail ' ...
 	else if ( !strcmp( type, "set" ) && ( newMailNode=JabberXmlGetChild( node, "new-mail" ) ) ) {
-
 		// RECVED: new-mail notify
 		// ACTION: Reply & request 
 		if (JGetByte(NULL,"EnableGMail",1) & 1) {
 			idStr = JabberXmlGetAttrValue( node, "id" );
 			JabberSend( jabberThreadInfo->s, "<iq type='result' id='%s'/>",idStr );
 			JabberRequestMailBox( info->s );
-		}
-	}
+	}	}
 	// RECVED: <iq type='error'> ...
 	else if ( !strcmp( type, "error" )) {
 
