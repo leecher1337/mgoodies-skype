@@ -139,11 +139,26 @@ void MyNotification(POPUPDATAEX *ppd){
 static __int64 maxtid = 0;
 static __int64 maxtime = 0;
 char soundname[64];
+void __cdecl JabberRerequestMailBoxThread( JABBER_SOCKET s ){
+	JabberLog("Re-requestMailBoxThread: %s","Entering");
+	NETLIBSELECT nls = {0};
 
+	nls.cbSize = sizeof( NETLIBSELECT );
+	nls.dwTimeout = 60000;	// in 1 min in milliseconds
+	nls.hExceptConns[0] = s;
+	if ( JCallService( MS_NETLIB_SELECT, 0, ( LPARAM )&nls ) == 0 )
+		JabberRequestMailBox(s);
+	JabberLog("Re-requestMailBoxThread: %s","Exitting");
+}
 
+static HWND hWndPopupError = 0;
 void JabberRequestMailBox(HANDLE hConn){
 
 //	if(CallService(MS_POPUP_QUERY, PUQS_GETSTATUS, 0)){//will request mailbox only if popup is working
+		if (hWndPopupError) {
+			PUDeletePopUp(hWndPopupError);
+		}
+
 		int iqId = JabberSerialNext();
 		if (!maxtid) maxtid = ((__int64)DBGetContactSettingDword( NULL, jabberProtoName,"MaxTidHi",0)<<32)+
 			             ((__int64)DBGetContactSettingDword( NULL, jabberProtoName,"MaxTidLo",0));
@@ -173,6 +188,24 @@ void JabberRequestMailBox(HANDLE hConn){
 //	}
 }
 
+LRESULT CALLBACK PopupErrorDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+	switch(message) {
+		case UM_INITPOPUP:
+			hWndPopupError = hWnd;
+			break;
+		case WM_COMMAND:
+			if (HIWORD(wParam) != STN_CLICKED) break;
+		case WM_CONTEXTMENU: 
+			PUDeletePopUp(hWnd);
+			break;
+		case UM_FREEPLUGINDATA:
+			hWndPopupError = 0;
+		default:
+			break;
+	}
+	return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // JabberIqResultMailNotify - Receive the e-mails from gmail:mail:notify
 
@@ -185,7 +218,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 
 	// RECVED: mailbox info
 	// ACTION: show popups with the received e-mails
-	JabberLog( "<iq/> mailbox" );
+	//JabberLog( "<iq/> mailbox" );
 	if (( type=JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) return;
 
 	if (( queryNode=JabberXmlGetChild( iqNode, "error" )) ){ // error situation
@@ -193,33 +226,42 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 		char *errtype = JabberXmlGetAttrValue( queryNode, "type" );
 		if (((byte)JGetByte( NULL, "GMailUse",1) & 2)==2){ // we use Fake Contact
 			if (!fakeContact) fakeContact = fakeContactFindCreate();
-			JSetWord( fakeContact, "Status", ID_STATUS_AWAY );
+			JSetWord( fakeContact, "Status", ID_STATUS_NA );
 		}
-		POPUPDATAEX ppd;
-		ZeroMemory((void *)&ppd, sizeof(ppd));
-        ppd.lchContact = 0;
-//        ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
-		ppd.lchIcon = iconList[11];
-        mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName, 
-			errcode?errcode:"Unknown",
-			errtype?errtype:"Unknown");
-		XmlNode *textNode = JabberXmlGetChild( queryNode, "text" );
-        int l = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Message: %s\n", 
-			textNode?JabberUtf8Decode( textNode->text, 0 ):"none"
-		);
-		textNode = JabberXmlGetChild( iqNode, "query" );
-		if (textNode) {
-			__int64 tid = _atoi64(JabberXmlGetAttrValue( textNode, "newer-than-tid" ));
-			__int64 time = _atoi64(JabberXmlGetAttrValue( textNode, "newer-than-time" ));
-			l = makeHead(ppd.lpzText+l,MAX_SECONDLINE-5-l,tid,time);
+		int showresult = JGetByte(NULL,"ShowResult",0);
+		if (!(showresult & 2)){ // we do not suppress errors
+			POPUPDATAEX ppd;
+			ZeroMemory((void *)&ppd, sizeof(ppd));
+			ppd.lchContact = 0;
+			//ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
+			ppd.lchIcon = iconList[11];
+			mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName, 
+				errcode?errcode:"Unknown",
+				errtype?errtype:"Unknown");
+			XmlNode *textNode = JabberXmlGetChild( queryNode, "text" );
+			int l = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Message: %s: %s\n",
+				queryNode->numChild?queryNode->child[0]->name:"none",
+				textNode?JabberUtf8Decode( textNode->text, 0 ):"none"
+			);
+			textNode = JabberXmlGetChild( iqNode, "query" );
+			if (textNode) {
+				__int64 tid = _atoi64(JabberXmlGetAttrValue( textNode, "newer-than-tid" ));
+				__int64 time = _atoi64(JabberXmlGetAttrValue( textNode, "newer-than-time" ));
+				l = makeHead(ppd.lpzText+l,MAX_SECONDLINE-5-l,tid,time);
+			}
+			
+			ppd.colorText = JGetDword(NULL,"ColErrorText",0);
+			ppd.colorBack = JGetDword(NULL,"ColErrorBack",RGB(255,128,128));
+			ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)>>16);
+			ppd.PluginWindowProc = (WNDPROC)PopupErrorDlgProc;
+			//JabberLog( "Notify error: %s\n%s", ppd.lpzContactName, ppd.lpzText);
+			MyNotification(&ppd);
 		}
-		
-		ppd.colorText = JGetDword(NULL,"ColErrorText",0);
-		ppd.colorBack = JGetDword(NULL,"ColErrorBack",RGB(255,128,128));
-		ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)>>16);
-		JabberLog( "Notify error: %s\n%s", ppd.lpzContactName, ppd.lpzText);
-		MyNotification(&ppd);
-
+		if (!(showresult & 4)){ // we do not suppress automatic re-request
+			if (strcmp(errtype,"cancel")) { // errortype <> cancel: We re-request the mailbox
+				JabberForkThread( JabberRerequestMailBoxThread, 0, info->s );
+			}
+		}
 		return;
 	}
 	
@@ -227,7 +269,10 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 		//hm... returned result with no data... it happens some time
 		if (((byte)JGetByte( NULL, "GMailUse",1) & 2)==2){ // we use Fake Contact
 			if (!fakeContact) fakeContact = fakeContactFindCreate();
-			JSetWord( fakeContact, "Status", ID_STATUS_NA );
+			JSetWord( fakeContact, "Status", ID_STATUS_AWAY );
+		}
+		if (!(JGetByte(NULL,"ShowResult",0) & 4)){ // we do not suppress automatic re-request
+			JabberForkThread( JabberRerequestMailBoxThread, 0, info->s );
 		}
 		return;
 	}
@@ -359,7 +404,6 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 	}
 }	
 
-
 LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	POPUP_ACCINFO * mpd = NULL;
 	switch(message) {
@@ -409,14 +453,6 @@ void JabberUserConfigResult( XmlNode *iqNode, void *userdata ){
 	int tempSaveChatsToServer = saveChatsToServer;
 	saveChatsToServer = -1;
 	JabberLog( "Received JabberUserConfigResult");
-//<iq to="xxx@gmail.com/Miranda-Home" from="xxx@gmail.com" id="mir_XX" type="result">
-//	 <usersetting xmlns="google:setting">
-//	   <autoacceptsuggestions value="true"/>
-//	   <autoacceptrequests value="false"/>
-//	   <mailnotifications value="true"/>
-//	   <archivingenabled value="false"/>
-//	 </usersetting>
-//	</iq>
 	if (( type=JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) goto LBLEnd;
 	if (( queryNode=JabberXmlGetChild( iqNode, "error" )) )goto LBLEnd; // error situation
 	/*if ( !strcmp( type, "result" ))*/ {
@@ -453,31 +489,44 @@ void JabberUserConfigRequest(ThreadData *info){
 
 BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam ){
 	BOOL bChecked;
+	BOOL popupavail;
 
 	switch ( msg ) {
 	case WM_INITDIALOG:
 	{
 		TranslateDialogDefault( hwndDlg );
 		int gmailuse = JGetByte( NULL, "GMailUse",1);
-		BOOL popupavail = ServiceExists(MS_POPUP_QUERY);
-		EnableWindow(GetDlgItem(hwndDlg, IDC_USEPOPUP),popupavail);
-//		EnableWindow(GetDlgItem(hwndDlg, IDC_USEFAKE),popupavail);
+		popupavail = ServiceExists(MS_POPUP_QUERY);
 		CheckDlgButton( hwndDlg, IDC_USEPOPUP, (0x1 & gmailuse));
 		CheckDlgButton( hwndDlg, IDC_USEFAKE, (0x2 & gmailuse)==2);
-		popupavail &= gmailuse;
-		int i = JGetByte(NULL,"EnableGMail",1);
+		int i;
+		int engmail = (i = JGetByte(NULL,"EnableGMail",1))&1;
 		CheckDlgButton( hwndDlg, IDC_ENGMAIL, (0x1 & i));
+		EnableWindow(GetDlgItem(hwndDlg, IDC_USEPOPUP),popupavail );
+		popupavail &= gmailuse;
 		popupavail &= (0x1 & i);
 		CheckDlgButton( hwndDlg, IDC_ENGMAILSTARTUP, (0x2 & i));
 		CheckDlgButton( hwndDlg, IDC_SHOWREQUEST, JGetByte(NULL,"ShowRequest",0));
-		CheckDlgButton( hwndDlg, IDC_SHOWRESULT, JGetByte(NULL,"ShowResult",0));
+		i = JGetByte(NULL,"ShowResult",0);
+		CheckDlgButton( hwndDlg, IDC_SHOWRESULT, 0x1 & i);
+		CheckDlgButton( hwndDlg, IDC_SUPERR, 0x2 & i);
+		CheckDlgButton( hwndDlg, IDC_SUPREREQUEST, 0x4 & i);
 		i = JGetByte(NULL,"SyncTime",0);
 		CheckDlgButton( hwndDlg, IDC_SYNCHRONIZE, (0x1 & i));
 		CheckDlgButton( hwndDlg, IDC_SYNCHRONIZESILENT, (0x2 & i)!=0);
-		EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZESILENT ),  (0x1 & i));
+		EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZESILENT ), engmail &&  (0x1 & i));
 		CheckDlgButton( hwndDlg, IDC_VISITGMAIL, JGetByte("OnClick",1));
-		EnableWindow( GetDlgItem( hwndDlg, IDC_VISITGMAIL ), popupavail );
+		EnableWindow( GetDlgItem( hwndDlg, IDC_VISITGMAIL ), engmail &&  popupavail );
 		CheckDlgButton( hwndDlg, IDC_INVASUNAVAIL, JGetByte(NULL,"InvAsUnavail",TRUE));
+		EnableWindow( GetDlgItem( hwndDlg, IDC_ENGMAILSTARTUP ), engmail );
+		EnableWindow( GetDlgItem( hwndDlg, IDC_USEFAKE ), engmail );
+		EnableWindow( GetDlgItem( hwndDlg, IDC_FORCECHECK ), engmail );
+		EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZE ), engmail );
+		EnableWindow( GetDlgItem( hwndDlg, IDC_SHOWREQUEST ), engmail );
+		EnableWindow( GetDlgItem( hwndDlg, IDC_SHOWRESULT ), engmail );
+		EnableWindow( GetDlgItem( hwndDlg, IDC_PREVIEW ), engmail );
+		EnableWindow( GetDlgItem( hwndDlg, IDC_SUPERR ), engmail );
+		EnableWindow( GetDlgItem( hwndDlg, IDC_SUPREREQUEST ), engmail );
 
 		SendDlgItemMessage(hwndDlg,IDC_COLOURTEXT,CPM_SETCOLOUR,0,JGetDword(NULL,"ColMsgText",0));
 		SendDlgItemMessage(hwndDlg,IDC_COLOURBACK,CPM_SETCOLOUR,0,JGetDword(NULL,"ColMsgBack",0));
@@ -501,15 +550,18 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 		switch ( LOWORD( wParam )) {
 		case IDC_ENGMAIL:
 			bChecked = IsDlgButtonChecked( hwndDlg, LOWORD( wParam ) );
+			popupavail = ServiceExists(MS_POPUP_QUERY);
 			EnableWindow( GetDlgItem( hwndDlg, IDC_ENGMAILSTARTUP ), bChecked );
-			EnableWindow( GetDlgItem( hwndDlg, IDC_USEPOPUP ), bChecked );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_USEPOPUP ), bChecked && popupavail);
 			EnableWindow( GetDlgItem( hwndDlg, IDC_USEFAKE ), bChecked );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_FORCECHECK ), bChecked );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZE ), bChecked );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_SHOWREQUEST ), bChecked );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_SHOWRESULT ), bChecked );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_PREVIEW ), bChecked );
-			EnableWindow( GetDlgItem( hwndDlg, IDC_VISITGMAIL ), bChecked );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_VISITGMAIL ), bChecked && popupavail);
+			EnableWindow( GetDlgItem( hwndDlg, IDC_SUPERR ), bChecked );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_SUPREREQUEST ), bChecked );
 		case IDC_SYNCHRONIZE:
 			bChecked = IsDlgButtonChecked( hwndDlg, LOWORD( wParam ) );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZESILENT), bChecked );
@@ -524,7 +576,6 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 					POPUPDATAEX ppd = { 0 };
 					char sendersList[150];
 
-					ZeroMemory(&ppd, sizeof(ppd));
 					{ // show the error popup
 						ppd.lchIcon = iconList[11];
 						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName, 
@@ -563,7 +614,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 							((_int64)time(NULL)*1000+784)
 						);
 						pos += mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"\nLocalDrift: %d seconds",	5);
-						if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE )) strncat(ppd.lpzText+pos,"; Synchronized.", MAX_SECONDLINE - 5);
+						if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE )) strncat(ppd.lpzText,"; Synchronized.", MAX_SECONDLINE - 5);
 						MyNotification(&ppd);
 					} else { // the clock syncronisation will be shown only if the result popup is disabled
 						if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE ) && (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZESILENT )==0)){
@@ -657,9 +708,12 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 			if (IsDlgButtonChecked( hwndDlg, IDC_ENGMAIL )) bChecked += 1;
 			if (IsDlgButtonChecked( hwndDlg, IDC_ENGMAILSTARTUP )) bChecked += 2;
 			JSetByte( "EnableGMail",bChecked);
-			if (ServiceExists(MS_POPUP_QUERY)&&(bChecked & 1)){
+			if (bChecked & 1){
 				JSetByte( "ShowRequest", ( BYTE ) IsDlgButtonChecked( hwndDlg, IDC_SHOWREQUEST ));
-				JSetByte( "ShowResult", ( BYTE ) IsDlgButtonChecked( hwndDlg, IDC_SHOWRESULT ));
+				i = IsDlgButtonChecked( hwndDlg, IDC_SHOWRESULT );
+				if (IsDlgButtonChecked( hwndDlg, IDC_SUPERR )) i |= 2;
+				if (IsDlgButtonChecked( hwndDlg, IDC_SUPREREQUEST )) i |= 4;
+				JSetByte( "ShowResult", ( BYTE ) i);
 				JSetByte( "OnClick", ( BYTE ) IsDlgButtonChecked( hwndDlg, IDC_VISITGMAIL ));
 			}
 			bChecked = IsDlgButtonChecked( hwndDlg, IDC_USEPOPUP );
