@@ -12,13 +12,44 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Neutral resources
+// German (Germany) resources
 
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
 #ifdef _WIN32
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-#pragma code_page(1251)
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+#pragma code_page(1252)
 #endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include <windows.h>\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
 IDD_OPTIONS DIALOGEX 0, 0, 300, 232
 STYLE DS_3DLOOK | DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
@@ -79,7 +110,7 @@ IDD_HISTORY DIALOGEX 0, 0, 200, 120
 STYLE DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | WS_POPUP | 
     WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     PUSHBUTTON      "Variablestest",IDC_TEST,5,5,52,13,NOT WS_VISIBLE
     PUSHBUTTON      "6",IDC_USERMENU,146,5,15,13
@@ -92,6 +123,53 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,75,101,50,14
 END
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_OPTIONS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 293
+        VERTGUIDE, 18
+        VERTGUIDE, 149
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 225
+        HORZGUIDE, 22
+    END
+
+    IDD_USERINFO, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 215
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 125
+    END
+
+    IDD_MISSED, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 153
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 64
+    END
+
+    IDD_HISTORY, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 195
+        TOPMARGIN, 5
+        BOTTOMMARGIN, 115
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -99,8 +177,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 5,0,2,1
- PRODUCTVERSION 5,0,2,1
+ FILEVERSION 5,0,2,3
+ PRODUCTVERSION 5,0,2,3
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -118,14 +196,14 @@ BEGIN
             VALUE "Comments", "Last Seen Mod Plugin for Miranda IM\0"
             VALUE "CompanyName", "Heiko Schillinger, YB\0"
             VALUE "FileDescription", "Last Seen Plugin\0"
-            VALUE "FileVersion", "5.0.2.1\0"
+            VALUE "FileVersion", "5.0.2.3\0"
             VALUE "InternalName", "Last Seen\0"
-            VALUE "LegalCopyright", "© 2001-2002 by Heiko Schillinger, 2003 by Bruno Rino\0"
+            VALUE "LegalCopyright", "© 2001-2002 by Heiko Schillinger, 2003 by Bruno Rino, 2005 by YB\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "seenplugin.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", " Last Seen Plugin Mod\0"
-            VALUE "ProductVersion", "5.0.2.1\0"
+            VALUE "ProductVersion", "5.0.2.3\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -137,7 +215,10 @@ END
 
 #endif    // !_MAC
 
-#endif    // Neutral resources
+#endif    // German (Germany) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
 
 #ifndef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
