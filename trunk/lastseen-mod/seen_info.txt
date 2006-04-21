@@ -1,0 +1,108 @@
+Last Seen plugin
+****************
+This plugin logs when a contact was last seen online.
+You can choose between contactmenu item, userinfo page and file output.
+Second feature is to show which users were online while you were away.
+
+micron-x
+
+Questions and comments to:
+micron@nexgo.de
+
+
+
+Langpack strings
+****************
+
+see seen_langpack.txt
+
+
+
+Version history
+***************
+5.0.1.1:
+		- FIX: The protocol list now uses more uuser friendly names
+		- FIX: The "Missed Ones" feature options weren't saved correctly
+		- FIX: The "Offline" setting was added even to contacts whose protocol wasn't "watched" 
+		- FIX: Minor cosmetics (icons and tooltips)
+		- UPDATE: seen_langpack.txt
+5.0.1.0:
+		- FIX: Some protocols added an offline entry for every contact when the user logoff the network
+		- FIX: An extra character (0 or 1) was added to each line of the file log.
+		- UPDATE: seen_langpack.txt now contains the strings added on version 5.0.0.0
+5.0.0.1:
+		- FIX: Removed some code that flooded the network with requests (see http://miranda-icq.sourceforge.net/forums/viewtopic.php?t=11579)
+		- CHANGE: History now defaults to a "pretier" format.
+5.0.0.0:	
+		- FIX: Last statusmode icon displayed according to the contact's protocol
+		- NEW: Support for all protocols (user selectable)
+		- NEW: Added dialog showing the recent "seen history" of an user
+		- NEW: Added option to display an alert when a specified user changes its status
+
+4.1.6.2:	- prevent plugin not loading & new base address
+
+4.1.6.1:	- Silly bug with 4.1.6.0 fixed
+
+4.1.6.0:	- Directory access fix
+
+4.1.5.0:	- fixed 0AM/PM bug
+		- 'Missed Ones' window doesn't steal focus anymore
+		- 'Missed Ones' bugfixes
+
+4.1.4.0:	- removed Miranda 0.1.2.0 support
+
+4.1.3.0:	- 'Missed Ones' dismisses ignored contacts (online notification)
+		- reduced file size
+
+4.1.2.0:	- Added support for Plugin sweeper
+
+4.1.1.0:	- New option: count times a user was online while you were away
+		- Bug crashing Miranda on open userdetails fixed
+
+4.1.0.0:	- 'Missed Ones' should finally work now
+
+4.0.9.0:	- works now with Miranda v0.1.2.0
+		- unknown values grayed out
+
+4.0.8.0:	- fixed bug crashing miranda on status change
+
+4.0.7.0:	- two new variables: %E - name of month and %e abrreviated name of month
+		- empty userinfo page fixed
+
+4.0.6.0:	- attempted fix for bad userinfo page
+		- two new variables: %W - weekday and %w - abbr. weekday
+
+4.0.5.0:	- Two new variables: %h - 12 hour time and %p - AM/PM
+		- New 'Missed Ones' popup (Dialog instead of MessageBox)
+
+4.0.4.0:	- Option to show last statusmode icon
+
+4.0.3.0:	- 'Missed Ones' feature reimplemented
+		- Miranda crashing on close fixed
+
+4.0.2.0:	- Option to keep track of contacts going offline
+		- fixed crashing when %u was used
+		- file output implemented
+		- one new langpack string
+
+4.0.1.0:	- IP/RealIP variables working now
+
+4.0.0.0:	- Initial release of the totally rewritten version
+		  Please mail me any bug reports
+
+
+
+Rebase information
+******************
+seenplugin.dll		0x67300000
+
+enotify.dll		0x67700000
+dbviewer.dll		0x67600000
+hotkey.dll		0x67500000
+pluginsweeper.dll	0x67400000
+tipinfo.dll		0x67200000
+visibility.dll		0x67100000
+
+
+
+Licence: GPL (see gpl.txt in the miranda directory)
