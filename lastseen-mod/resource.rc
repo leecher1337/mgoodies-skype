@@ -56,10 +56,13 @@ EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "Last seen menuitem",IDC_MENUITEM,"Button",
-                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,6,12,140,10
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,6,12,79,10
     CONTROL         "Show icon",IDC_SHOWICON,"Button",BS_AUTOCHECKBOX | 
-                    WS_GROUP | WS_TABSTOP,149,12,100,10
-    EDITTEXT        IDC_MENUSTAMP,18,23,275,12,ES_AUTOHSCROLL | WS_GROUP
+                    WS_GROUP | WS_TABSTOP,87,12,56,10
+    EDITTEXT        IDC_MENUSTAMP,18,23,120,12,ES_AUTOHSCROLL | WS_GROUP
+    CONTROL         "Use popups",IDC_POPUPS,"Button",BS_AUTOCHECKBOX | 
+                    WS_GROUP | WS_TABSTOP,149,11,140,10
+    EDITTEXT        IDC_POPUPSTAMP,161,22,121,12,ES_AUTOHSCROLL | WS_GROUP
     CONTROL         "Userinfo tab",IDC_USERINFO,"Button",BS_AUTOCHECKBOX | 
                     WS_GROUP | WS_TABSTOP,6,42,140,10
     EDITTEXT        IDC_USERSTAMP,18,52,275,12,ES_AUTOHSCROLL | WS_GROUP
@@ -110,7 +113,7 @@ IDD_HISTORY DIALOGEX 0, 0, 200, 120
 STYLE DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | WS_POPUP | 
     WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     PUSHBUTTON      "Variablestest",IDC_TEST,5,5,52,13,NOT WS_VISIBLE
     PUSHBUTTON      "6",IDC_USERMENU,146,5,15,13
@@ -177,8 +180,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 5,0,2,5
- PRODUCTVERSION 5,0,2,5
+ FILEVERSION 5,0,2,6
+ PRODUCTVERSION 5,0,2,6
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -196,14 +199,14 @@ BEGIN
             VALUE "Comments", "Last Seen Mod Plugin for Miranda IM\0"
             VALUE "CompanyName", "Heiko Schillinger, YB\0"
             VALUE "FileDescription", "Last Seen Plugin\0"
-            VALUE "FileVersion", "5.0.2.5\0"
+            VALUE "FileVersion", "5.0.2.6\0"
             VALUE "InternalName", "Last Seen\0"
-            VALUE "LegalCopyright", "© 2001-2002 by Heiko Schillinger, 2003 by Bruno Rino, 2005 by YB\0"
+            VALUE "LegalCopyright", "© 2001-2002 by Heiko Schillinger, 2003 by Bruno Rino, 2006 by YB\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "seenplugin.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", " Last Seen Plugin Mod\0"
-            VALUE "ProductVersion", "5.0.2.5\0"
+            VALUE "ProductVersion", "5.0.2.6\0"
             VALUE "SpecialBuild", "\0"
         END
     END

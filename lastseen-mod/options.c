@@ -28,10 +28,12 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 
 	switch(msg)
 	{
-		case WM_INITDIALOG:
+		case WM_INITDIALOG:{
+			BOOL hasPopups = (ServiceExists(MS_POPUP_QUERY) != 0);
 			TranslateDialogDefault(hdlg);
 
 			CheckDlgButton(hdlg,IDC_MENUITEM,DBGetContactSettingByte(NULL,S_MOD,"MenuItem",1));
+			CheckDlgButton(hdlg,IDC_POPUPS,DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)&hasPopups);
 			CheckDlgButton(hdlg,IDC_USERINFO,DBGetContactSettingByte(NULL,S_MOD,"UserinfoTab",1));
 			CheckDlgButton(hdlg,IDC_FILE,DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0));
 			CheckDlgButton(hdlg,IDC_HISTORY,DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0));
@@ -41,6 +43,8 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 			CheckDlgButton(hdlg,IDC_COUNT,DBGetContactSettingByte(NULL,S_MOD,"MissedOnes_Count",0));
 
 			EnableWindow(GetDlgItem(hdlg,IDC_MENUSTAMP),IsDlgButtonChecked(hdlg,IDC_MENUITEM));
+			EnableWindow(GetDlgItem(hdlg,IDC_POPUPS),hasPopups);
+			EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMP),IsDlgButtonChecked(hdlg,IDC_POPUPS));
 			EnableWindow(GetDlgItem(hdlg,IDC_SHOWICON),IsDlgButtonChecked(hdlg,IDC_MENUITEM));
 			EnableWindow(GetDlgItem(hdlg,IDC_USERSTAMP),IsDlgButtonChecked(hdlg,IDC_USERINFO));
 			EnableWindow(GetDlgItem(hdlg,IDC_FILESTAMP),IsDlgButtonChecked(hdlg,IDC_FILE));
@@ -50,6 +54,8 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 			EnableWindow(GetDlgItem(hdlg,IDC_COUNT),IsDlgButtonChecked(hdlg,IDC_MISSEDONES));
 
 			SetDlgItemText(hdlg,IDC_MENUSTAMP,!DBGetContactSetting(NULL,S_MOD,"MenuStamp",&dbv)?dbv.pszVal:DEFAULT_MENUSTAMP);
+			DBFreeVariant(&dbv);
+			SetDlgItemText(hdlg,IDC_POPUPSTAMP,!DBGetContactSetting(NULL,S_MOD,"PopupStamp",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMP);
 			DBFreeVariant(&dbv);
 			SetDlgItemText(hdlg,IDC_USERSTAMP,!DBGetContactSetting(NULL,S_MOD,"UserStamp",&dbv)?dbv.pszVal:DEFAULT_USERSTAMP);
 			DBFreeVariant(&dbv);
@@ -92,7 +98,7 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 
 				}
 			}
-
+		   }
 			break; //case WM_INITDIALOG
 
 		case WM_COMMAND:
@@ -120,6 +126,9 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 					case IDC_MISSEDONES:
 						EnableWindow(GetDlgItem(hdlg,IDC_COUNT),IsDlgButtonChecked(hdlg,IDC_MISSEDONES));
 						break;
+					case IDC_POPUPS:
+						EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMP),IsDlgButtonChecked(hdlg,IDC_POPUPS));
+						break;
 				}
 			}
 			
@@ -145,6 +154,9 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 							GetDlgItemText(hdlg,IDC_MENUSTAMP,szstamp,256);
 							DBWriteContactSettingString(NULL,S_MOD,"MenuStamp",szstamp);
 
+							GetDlgItemText(hdlg,IDC_POPUPSTAMP,szstamp,256);
+							DBWriteContactSettingString(NULL,S_MOD,"PopupStamp",szstamp);
+
 							GetDlgItemText(hdlg,IDC_USERSTAMP,szstamp,256);
 							DBWriteContactSettingString(NULL,S_MOD,"UserStamp",szstamp);
 
@@ -165,6 +177,11 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 								if(hmenuitem==NULL && checkValue) {
 									InitMenuitem();
 								}
+							}
+
+							checkValue = (BYTE)IsDlgButtonChecked(hdlg,IDC_POPUPS);
+							if (DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0) != checkValue) {
+								DBWriteContactSettingByte(NULL,S_MOD,"UsePopups",checkValue);
 							}
 
 							checkValue = (BYTE)IsDlgButtonChecked(hdlg,IDC_USERINFO);

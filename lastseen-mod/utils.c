@@ -348,7 +348,19 @@ void DBWriteTime(SYSTEMTIME *st,HANDLE hcontact)
 
 }
 
-
+void ShowPopup(HANDLE hcontact){
+	if (ServiceExists(MS_POPUP_QUERY)){
+		if (DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
+			POPUPDATAEX ppd = {0};
+			DBVARIANT dbv = {0};
+			ppd.lchContact = hcontact;
+			ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
+			strcpy(ppd.lpzContactName,"Status Change");
+			strncpy(ppd.lpzText,ParseString(!DBGetContactSetting(NULL,S_MOD,"PopupStamp",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMP,hcontact,0),MAX_SECONDLINE);
+			CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+		}
+	}
+}
 
 int UpdateValues(WPARAM wparam,LPARAM lparam)
 {
@@ -382,6 +394,9 @@ int UpdateValues(WPARAM wparam,LPARAM lparam)
 			if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0))
 				FileWrite(hContact);
 
+			if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0))
+				ShowPopup(hContact);
+
 			if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0))
 				HistoryWrite(hContact);
 
@@ -401,6 +416,9 @@ int UpdateValues(WPARAM wparam,LPARAM lparam)
 
 		if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0))
 			FileWrite(hContact);
+
+		if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0))
+				ShowPopup(hContact);
 
 		if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0))
 			HistoryWrite(hContact);
