@@ -7,9 +7,9 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 		sizeof(PLUGININFO),
 		"Last seen plugin mod",
-		PLUGIN_MAKE_VERSION(5,0,2,5),
+		PLUGIN_MAKE_VERSION(5,0,2,6),
 		"Log when a user was last seen online and which users were online while you were away",
-		"Heiko Schillinger",
+		"Heiko Schillinger, YB",
 		"",
 		"© 2001-2002 Heiko Schillinger, 2003 modified by Bruno Rino, 2005 Modified by YB",
 		"http://forums.miranda-im.org/showthread.php?t=2822",
