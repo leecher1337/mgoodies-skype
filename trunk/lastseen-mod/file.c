@@ -8,6 +8,7 @@
 Prepares the log file:
 - calculates the absolute path (and store it in the db)
 - creates the directory
+
 */
 int InitFileOutput(void)
 {
@@ -33,7 +34,8 @@ int InitFileOutput(void)
 	str=strrchr(szmpath,'\\');
 	if(str!=NULL)
 		*++str=0;
-
+/*
+//we dont need this anylonger. the directory is created in filewrite 
 	if(!CreateDirectory(szmpath,NULL))
 	{
 		if(!(GetFileAttributes(szmpath) & FILE_ATTRIBUTE_DIRECTORY))
@@ -43,12 +45,26 @@ int InitFileOutput(void)
 			return 0;
 		}
 	}
-
+*/
 	DBWriteContactSettingString(NULL,S_MOD,"PathToFile",szfpath);
 
 	return 0;
 }
 
+//borrowed from netliblog.c
+static void CreateDirectoryTree(char *szDir)
+{
+	DWORD dwAttributes;
+	char *pszLastBackslash,szTestDir[MAX_PATH];
+
+	lstrcpynA(szTestDir,szDir,sizeof(szTestDir));
+	if((dwAttributes=GetFileAttributesA(szTestDir))!=0xffffffff && dwAttributes&FILE_ATTRIBUTE_DIRECTORY) return;
+	pszLastBackslash=strrchr(szTestDir,'\\');
+	if(pszLastBackslash==NULL) return;
+	*pszLastBackslash='\0';
+	CreateDirectoryTree(szTestDir);
+	CreateDirectoryA(szTestDir,NULL);
+}
 
 /*
 Writes a line into the log.
@@ -63,6 +79,11 @@ void FileWrite(HANDLE hcontact)
 	DBGetContactSetting(NULL,S_MOD,"PathToFile",&dbv);
 	strcpy(szout,ParseString(dbv.pszVal,hcontact,1));
 	fhout=CreateFile(szout,GENERIC_WRITE,0,NULL,OPEN_ALWAYS,0,NULL);
+	if (fhout==INVALID_HANDLE_VALUE){
+		CreateDirectoryTree(szout);
+		fhout=CreateFile(szout,GENERIC_WRITE,0,NULL,OPEN_ALWAYS,0,NULL);
+		if (fhout==INVALID_HANDLE_VALUE) return;
+	}
 	DBFreeVariant(&dbv);
 	SetFilePointer(fhout,0,0,FILE_END);
 

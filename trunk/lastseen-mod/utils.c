@@ -210,6 +210,16 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 						strcat(sztemp,wantempty?"":Translate("<unknown>"));
 					}
 					break;
+				case 'G':
+					{
+						DBVARIANT dbv;
+						if (!DBGetContactSetting(hcontact,"CList","Group",&dbv)){
+							strcpy(szdbsetting,dbv.pszVal);
+							DBFreeVariant(&dbv);
+							strcat(sztemp,szdbsetting);
+						} else; //do nothing
+					}
+					break;
 
 				case 'u':
 					ci.dwFlag=CNF_UNIQUEID;
