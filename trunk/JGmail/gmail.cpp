@@ -340,7 +340,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			}
 			XmlNode *threadNode;
 			int i;
-			for ( i=0; i<queryNode->numChild; i++ ) {
+			for ( i=queryNode->numChild-1;i>=0; i-- ) {
 				threadNode = queryNode->child[i];
 				__int64 gtstamp = _atoi64(JabberXmlGetAttrValue( threadNode, "tid" ));
 				if (gtstamp>maxtid)maxtid=gtstamp;
@@ -359,8 +359,8 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				mir_snprintf(sendersList,150,"%s: New mail from ",jabberProtoName);
 				if (sendersNode) for ( k=0; k<sendersNode->numChild; k++ ) {
 					strncat(sendersList,k?", ":"",150);
-					char * senderName = JabberXmlGetAttrValue(sendersNode->child[k],"name");
-					if (!senderName) senderName = JabberXmlGetAttrValue(sendersNode->child[k],"address");
+					char * senderName = JabberXmlGetAttrValue(sendersNode->child[sendersNode->numChild-1-k],"name");
+					if (!senderName) senderName = JabberXmlGetAttrValue(sendersNode->child[sendersNode->numChild-1-k],"address");
 					strncat(sendersList,JabberUtf8Decode(senderName,0),150);
 				}
 //				JabberLog( "Senders: %s",sendersList );
@@ -374,9 +374,9 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					XmlNode *snippetNode = JabberXmlGetChild( threadNode, "snippet" );
 			        mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s",
 						mesgs,
-						sendersNode?JabberUtf8Decode( sendersNode->text, 0 ):"none",
+						sendersNode?JabberUrlDecodeOld(JabberUtf8Decode( sendersNode->text, 0 )):"none",
 						sttime,
-						snippetNode?JabberUtf8Decode( snippetNode->text, 0 ):"none"
+						snippetNode?JabberUrlDecodeOld(JabberUtf8Decode( snippetNode->text, 0 )):"none"
 						);
 					ppd.colorText = JGetDword(NULL,"ColMsgText",0);
 					ppd.colorBack = JGetDword(NULL,"ColMsgBack",0);
