@@ -62,16 +62,16 @@ int IsWatchedProtocol(const char* szProto)
 }
 
 BOOL isYahoo(char * protoname){
-	return ((strstr(protoname,"YAHOO") > 0) || (strstr(protoname,"yahoo") > 0));
+	if (protoname) return ((strstr(protoname,"YAHOO") > 0) || (strstr(protoname,"yahoo") > 0)); else return FALSE;
 }
 BOOL isJabber(char * protoname){
-	return ((strstr(protoname,"JABBER") > 0));
+	if (protoname) return ((strstr(protoname,"JABBER") > 0)); else return FALSE;
 }
 BOOL isICQ(char * protoname){
-	return ((strstr(protoname,"ICQ") > 0));
+	if (protoname) return ((strstr(protoname,"ICQ") > 0)); else return FALSE;
 }
 BOOL isMSN(char * protoname){
-	return ((strstr(protoname,"MSN") > 0));
+	if (protoname) return ((strstr(protoname,"MSN") > 0)); else return FALSE;
 }
 
 char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
@@ -254,14 +254,14 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 						else if (isJabber(ci.szProto)) // hard-wired JABBER support
 						{
 							DBVARIANT dbv;
-							DBGetContactSetting(hcontact,ci.szProto,"LoginName",&dbv);
+							if (DBGetContactSetting(hcontact,ci.szProto,"LoginName",&dbv)) goto LBL_ERR;
 							strcpy(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
 							DBGetContactSetting(hcontact,ci.szProto,"LoginServer",&dbv);
 							strcat(szdbsetting,"@");
 							strcat(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
-						} else strcpy(szdbsetting,wantempty?"":Translate("<unknown>"));
+						} else LBL_ERR: strcpy(szdbsetting,wantempty?"":Translate("<unknown>"));
 					}
 					else
 					{
