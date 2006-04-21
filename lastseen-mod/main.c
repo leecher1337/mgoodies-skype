@@ -7,7 +7,7 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 		sizeof(PLUGININFO),
 		"Last seen plugin mod",
-		PLUGIN_MAKE_VERSION(5,0,2,1),
+		PLUGIN_MAKE_VERSION(5,0,2,3),
 		"Log when a user was last seen online and which users were online while you were away",
 		"Heiko Schillinger",
 		"",

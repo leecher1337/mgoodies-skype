@@ -61,6 +61,19 @@ int IsWatchedProtocol(const char* szProto)
 	return retval;
 }
 
+BOOL isYahoo(char * protoname){
+	return ((strstr(protoname,"YAHOO") > 0) || (strstr(protoname,"yahoo") > 0));
+}
+BOOL isJabber(char * protoname){
+	return ((strstr(protoname,"JABBER") > 0));
+}
+BOOL isICQ(char * protoname){
+	return ((strstr(protoname,"ICQ") > 0));
+}
+BOOL isMSN(char * protoname){
+	return ((strstr(protoname,"MSN") > 0));
+}
+
 char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 {
 	static char sztemp[1024];
@@ -74,6 +87,7 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 	char *monthnames[]={"January","February","March","April","May","June","July","August","September","October","November","December"};
 	char *mnames_short[]={"Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."};
 	CONTACTINFO ci;
+	BOOL wantempty;
 
 	ci.cbSize=sizeof(CONTACTINFO);
 	ci.hContact=hcontact;
@@ -82,7 +96,7 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 	
 	for(;loop<strlen(szstring);loop++)
 	{
-		if(szstring[loop]!='%')
+		if((szstring[loop]!='%')&(szstring[loop]!='#'))
 		{
 			strncat(sztemp,szstring+loop,1);
 			continue;
@@ -90,31 +104,32 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 
 		else
 		{
+			wantempty = (szstring[loop]=='#');
 			switch(szstring[++loop]){
 				case 'Y':
 					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0)))
-						return Translate("<unknown>");
+						return wantempty?"":Translate("<unknown>");
 					wsprintf(szdbsetting,"%04i",isetting);
 					strcat(sztemp,szdbsetting);
 					break;
 
 				case 'y':
 					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0)))
-						return Translate("<unknown>");
+						return wantempty?"":Translate("<unknown>");
 					wsprintf(szdbsetting,"%04i",isetting);
 					strcat(sztemp,szdbsetting+2);
 					break;
 
 				case 'm':
 					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))
-						return Translate("<unknown>");
+						return wantempty?"":Translate("<unknown>");
 					wsprintf(szdbsetting,"%02i",isetting);
 					strcat(sztemp,szdbsetting);
 					break;
 
 				case 'd':
 					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Day",0)))
-						return Translate("<unknown>");
+						return wantempty?"":Translate("<unknown>");
 					wsprintf(szdbsetting,"%02i",isetting);
 					strcat(sztemp,szdbsetting);
 					break;
@@ -135,26 +150,26 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 
 				case 'E':
 					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))
-						return Translate("<unknown>");
+						return wantempty?"":Translate("<unknown>");
 					strcat(sztemp,Translate(monthnames[isetting-1]));
 					break;
 
 				case 'e':
 					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))
-						return Translate("<unknown>");
+						return wantempty?"":Translate("<unknown>");
 					strcat(sztemp,Translate(mnames_short[isetting-1]));
 					break;
 
 				case 'H':
 					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)
-						return Translate("<unknown>");
+						return wantempty?"":Translate("<unknown>");
 					wsprintf(szdbsetting,"%02i",isetting);
 					strcat(sztemp,szdbsetting);
 					break;
 
 				case 'h':
 					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)
-						return Translate("<unknown>");
+						return wantempty?"":Translate("<unknown>");
 
 					if(!isetting) isetting=12;
 					
@@ -164,7 +179,7 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 
 				case 'p':
 					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)
-						return Translate("<unknown>");
+						return wantempty?"":Translate("<unknown>");
 					if(isetting>12)
 						strcat(sztemp,"PM");
 					else strcat(sztemp,"AM");
@@ -172,27 +187,27 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 
 				case 'M':
 					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Minutes",-1))==-1)
-						return Translate("<unknown>");
+						return wantempty?"":Translate("<unknown>");
 					wsprintf(szdbsetting,"%02i",isetting);
 					strcat(sztemp,szdbsetting);
 					break;
 
 				case 'S':
 					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Seconds",-1))==-1)
-						return Translate("<unknown>");
+						return wantempty?"":Translate("<unknown>");
 					wsprintf(szdbsetting,"%02i",isetting);
 					strcat(sztemp,szdbsetting);
 					break;
 
 				case 'n':
-					strcat(sztemp,hcontact?(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hcontact,0):"---");
+					strcat(sztemp,hcontact?(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hcontact,0):(wantempty?"":"---"));
 					break;
 				case 'N':
 					ci.dwFlag=CNF_NICK;
 					if(!CallService(MS_CONTACT_GETCONTACTINFO,(WPARAM)0,(LPARAM)&ci)){
 						strcat(sztemp,ci.pszVal);
 					} else {
-						strcat(sztemp,Translate("<unknown>"));
+						strcat(sztemp,wantempty?"":Translate("<unknown>"));
 					}
 					break;
 
@@ -219,35 +234,28 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 					}
 					else if (ci.szProto != NULL) 
 					{
-						if (strstr(ci.szProto,"YAHOO")) // hard-wired YAHOO support
+						if (isYahoo(ci.szProto)) // hard-wired YAHOO support
 						{
 							DBVARIANT dbv;
-							DBGetContactSetting(hcontact,"YAHOO","id",&dbv);
+							DBGetContactSetting(hcontact,ci.szProto,"id",&dbv);
 							strcpy(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
 						}
-						else if (strstr(ci.szProto,"yahoo")) // hard-wired YAHOO support (2)
+						else if (isJabber(ci.szProto)) // hard-wired JABBER support
 						{
 							DBVARIANT dbv;
-							DBGetContactSetting(hcontact,"yahoo","id",&dbv);
+							DBGetContactSetting(hcontact,ci.szProto,"LoginName",&dbv);
 							strcpy(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
-						}
-						else if (strstr(ci.szProto,"JABBER")) // hard-wired JABBER support
-						{
-							DBVARIANT dbv;
-							DBGetContactSetting(hcontact,"JABBER","LoginName",&dbv);
-							strcpy(szdbsetting,dbv.pszVal);
-							DBFreeVariant(&dbv);
-							DBGetContactSetting(hcontact,"JABBER","LoginServer",&dbv);
+							DBGetContactSetting(hcontact,ci.szProto,"LoginServer",&dbv);
 							strcat(szdbsetting,"@");
 							strcat(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
-						} else strcpy(szdbsetting,Translate("<unknown>"));
+						} else strcpy(szdbsetting,wantempty?"":Translate("<unknown>"));
 					}
 					else
 					{
-						strcpy(szdbsetting,Translate("<unknown>"));
+						strcpy(szdbsetting,wantempty?"":Translate("<unknown>"));
 					}
 					strcat(sztemp,szdbsetting);
 					break;
@@ -260,22 +268,46 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 
 				case 'i':
 				case 'r':
-//					dwsetting=DBGetContactSettingDword(hcontact,S_MOD,szstring[loop]=='i'?"IP":"RealIP",0);
 					dwsetting=DBGetContactSettingDword(hcontact,ci.szProto,szstring[loop]=='i'?"IP":"RealIP",0);
 					if(!dwsetting)
-						strcat(sztemp,Translate("<unknown>"));
+						strcat(sztemp,wantempty?"":Translate("<unknown>"));
 					else
 					{
 						ia.S_un.S_addr=htonl(dwsetting);
 						strcat(sztemp,inet_ntoa(ia));
 					}
 					break;
-				case 'P':if (ci.szProto) strcat(sztemp,ci.szProto); else strcat(sztemp,"ProtoUnknown");
+				case 'P':if (ci.szProto) strcat(sztemp,ci.szProto); else strcat(sztemp,wantempty?"":"ProtoUnknown");
 					break;
 				case 'b':
 					strcat(sztemp,/*"\n"*/"\x0D\x0A");
 					break;
-
+				case 'C': // Get Client Info
+					if (isMSN(ci.szProto)) {
+						if (hcontact) {
+							dwsetting = (int)DBGetContactSettingDword(hcontact,ci.szProto,"FlagBits",0);
+							wsprintf(szdbsetting,"MSNC%i",(dwsetting&0x70000000)>>28);
+							if (dwsetting & 0x00000001) strcat(szdbsetting," MobD"); //Mobile Device
+							if (dwsetting & 0x00000004) strcat(szdbsetting," InkR"); //Ink Viewing
+							if (dwsetting & 0x00000008) strcat(szdbsetting," InkW"); //Ink Creating
+							if (dwsetting & 0x00000010) strcat(szdbsetting," WCam"); //Webcam
+							if (dwsetting & 0x00000020) strcat(szdbsetting," MPkt"); //Multi-Packeting
+							if (dwsetting & 0x00000040) strcat(szdbsetting," SMSr"); //Paging
+							if (dwsetting & 0x00000080) strcat(szdbsetting," DSMS"); //Direct-Paging
+							if (dwsetting & 0x00000200) strcat(szdbsetting," WebM"); //WebMessenger
+							if (dwsetting & 0x00001000) strcat(szdbsetting," MS7+"); //Unknown (Msgr 7 always[?] sets it)
+							if (dwsetting & 0x00004000) strcat(szdbsetting," DirM"); //DirectIM
+							if (dwsetting & 0x00008000) strcat(szdbsetting," Wink"); //Winks
+						} else strcpy(szdbsetting,"Miranda");
+					} else {
+						DBVARIANT dbv;
+						if (!DBGetContactSetting(hcontact,ci.szProto,"MirVer",&dbv)){
+							strcpy(szdbsetting,dbv.pszVal);
+							DBFreeVariant(&dbv);
+						} else strcpy(szdbsetting,wantempty?"":Translate("<unknown>"));
+					}
+					strcat(sztemp,szdbsetting);
+					break;
 				case 't':
 					strcat(sztemp,"\t");
 					break;
@@ -315,7 +347,7 @@ int UpdateValues(WPARAM wparam,LPARAM lparam)
 	
 	hContact = (HANDLE)wparam;
 	cws=(DBCONTACTWRITESETTING *)lparam;
-	if(CallProtoService(cws->szModule,PS_GETSTATUS,0,0)==ID_STATUS_OFFLINE) return 0;
+//	if(CallProtoService(cws->szModule,PS_GETSTATUS,0,0)==ID_STATUS_OFFLINE) return 0;
 	if(hContact==NULL || strcmp(cws->szSetting,"Status") || !IsWatchedProtocol(cws->szModule)) 
 		return 0;
 
@@ -378,6 +410,7 @@ int ModeChange(WPARAM wparam,LPARAM lparam)
 	ACKDATA *ack;
 	int isetting=0;
 	SYSTEMTIME time;
+
 	ack=(ACKDATA *)lparam;
 
 	if(ack->type!=ACKTYPE_STATUS || ack->result!=ACKRESULT_SUCCESS || ack->hContact!=NULL) return 0;
@@ -396,16 +429,17 @@ int ModeChange(WPARAM wparam,LPARAM lparam)
 	if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0))
 		FileWrite(NULL);
 
-//Remove this - so other contacts will be logged only if the status differs
-//	if(isetting==ID_STATUS_OFFLINE)
+//	if(isetting==ID_STATUS_OFFLINE) //this is removed 'cause I want other contacts to be logged only if the status changed while I was offline
 //		SetOffline();
+
 	courProtoName = NULL;
+
 	return 0;
 }
 
 
-/*
-int GetInfoAck(WPARAM wparam,LPARAM lparam)
+
+/*int GetInfoAck(WPARAM wparam,LPARAM lparam)
 {
 	ACKDATA *ack;
 	DWORD dwsetting=0;
@@ -418,19 +452,17 @@ int GetInfoAck(WPARAM wparam,LPARAM lparam)
 	dwsetting=DBGetContactSettingDword(ack->hContact,ack->szModule,"IP",0);
 	if(dwsetting)
 		DBWriteContactSettingDword(ack->hContact,S_MOD,"IP",dwsetting);
-	else DBDeleteContactSetting(ack->hContact,S_MOD,"IP");
 
 	dwsetting=DBGetContactSettingDword(ack->hContact,ack->szModule,"RealIP",0);
 	if(dwsetting)
 		DBWriteContactSettingDword(ack->hContact,S_MOD,"RealIP",dwsetting);
-	else DBDeleteContactSetting(ack->hContact,S_MOD,"RealIP");
 
 	return 0;
-}
-*/
+}*/
 
-/*
-void SetOffline(void)
+
+
+/*void SetOffline(void)
 {
 	HANDLE hcontact=NULL;
 	char * szProto;
@@ -444,7 +476,7 @@ void SetOffline(void)
 		}
 		hcontact=(HANDLE)CallService(MS_DB_CONTACT_FINDNEXT,(WPARAM)hcontact,0);
 	}
-}
-*/
+}*/
+
 
 

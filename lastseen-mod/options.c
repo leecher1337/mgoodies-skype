@@ -178,7 +178,7 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 							}
 
 							checkValue = (BYTE)IsDlgButtonChecked(hdlg,IDC_FILE);
-							if (DBGetContactSettingByte(NULL,S_MOD,"FileOutput",1) != checkValue) {
+							if (DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0) != checkValue) {
 								DBWriteContactSettingByte(NULL,S_MOD,"FileOutput",checkValue);
 								if(checkValue) {
 									InitFileOutput();
