@@ -4,9 +4,10 @@
 
 void FileWrite(HANDLE);
 void HistoryWrite(HANDLE hcontact);
-void SetOffline(void);
+//void SetOffline(void);
 void ShowHistory(HANDLE hContact, BYTE isAlert);
 
+char * courProtoName = 0;
 
 //copied from ..\..\miranda32\protocols\protocols\protocols.c
 PROTOCOLDESCRIPTOR* Proto_IsProtocolLoaded(const char* szProto)
@@ -46,14 +47,14 @@ int IsWatchedProtocol(const char* szProto)
 	} 
 	else 
 	{
-		szProtoPointer = strstr(szWatched, szProto);
+		char sTemp [MAXMODULELABELLENGTH+1]="";
+		strcat(sTemp,szProto);
+		strcat(sTemp," ");
+		szProtoPointer = strstr(szWatched, sTemp);
 		if (szProtoPointer == NULL)
 			retval=0;
-		else if ((szProtoPointer == szWatched || *(szProtoPointer-1) == ' ')
-			&& (szProtoPointer+iProtoLen == szWatched+iWatchedLen || *(szProtoPointer+iProtoLen) == ' '))
+		else 
 			retval=1;
-		else
-			retval=0;
 	}
 
 	DBFreeVariant(&dbv);
@@ -76,7 +77,7 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 
 	ci.cbSize=sizeof(CONTACTINFO);
 	ci.hContact=hcontact;
-	ci.szProto=(char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hcontact,0);
+	ci.szProto=hcontact?(char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hcontact,0):courProtoName;
 	*sztemp = '\0';
 	
 	for(;loop<strlen(szstring);loop++)
@@ -184,7 +185,15 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 					break;
 
 				case 'n':
-					strcat(sztemp,(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hcontact,0));
+					strcat(sztemp,hcontact?(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hcontact,0):"---");
+					break;
+				case 'N':
+					ci.dwFlag=CNF_NICK;
+					if(!CallService(MS_CONTACT_GETCONTACTINFO,(WPARAM)0,(LPARAM)&ci)){
+						strcat(sztemp,ci.pszVal);
+					} else {
+						strcat(sztemp,Translate("<unknown>"));
+					}
 					break;
 
 				case 'u':
@@ -210,20 +219,31 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 					}
 					else if (ci.szProto != NULL) 
 					{
-						if (!strcmp(ci.szProto,"YAHOO")) // hard-wired YAHOO support
+						if (strstr(ci.szProto,"YAHOO")) // hard-wired YAHOO support
 						{
 							DBVARIANT dbv;
 							DBGetContactSetting(hcontact,"YAHOO","id",&dbv);
 							strcpy(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
 						}
-						else if (!strcmp(ci.szProto,"yahoo")) // hard-wired YAHOO support (2)
+						else if (strstr(ci.szProto,"yahoo")) // hard-wired YAHOO support (2)
 						{
 							DBVARIANT dbv;
 							DBGetContactSetting(hcontact,"yahoo","id",&dbv);
 							strcpy(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
 						}
+						else if (strstr(ci.szProto,"JABBER")) // hard-wired JABBER support
+						{
+							DBVARIANT dbv;
+							DBGetContactSetting(hcontact,"JABBER","LoginName",&dbv);
+							strcpy(szdbsetting,dbv.pszVal);
+							DBFreeVariant(&dbv);
+							DBGetContactSetting(hcontact,"JABBER","LoginServer",&dbv);
+							strcat(szdbsetting,"@");
+							strcat(szdbsetting,dbv.pszVal);
+							DBFreeVariant(&dbv);
+						} else strcpy(szdbsetting,Translate("<unknown>"));
 					}
 					else
 					{
@@ -233,14 +253,15 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 					break;
 
 				case 's':
-					isetting=DBGetContactSettingWord(hcontact,S_MOD,"Status",ID_STATUS_OFFLINE);
+					isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"Status":courProtoName,ID_STATUS_OFFLINE);
 					strcpy(szdbsetting,(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0));
 					strcat(sztemp,Translate(szdbsetting));
 					break;
 
 				case 'i':
 				case 'r':
-					dwsetting=DBGetContactSettingDword(hcontact,S_MOD,szstring[loop]=='i'?"IP":"RealIP",0);
+//					dwsetting=DBGetContactSettingDword(hcontact,S_MOD,szstring[loop]=='i'?"IP":"RealIP",0);
+					dwsetting=DBGetContactSettingDword(hcontact,ci.szProto,szstring[loop]=='i'?"IP":"RealIP",0);
 					if(!dwsetting)
 						strcat(sztemp,Translate("<unknown>"));
 					else
@@ -249,7 +270,8 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 						strcat(sztemp,inet_ntoa(ia));
 					}
 					break;
-
+				case 'P':if (ci.szProto) strcat(sztemp,ci.szProto); else strcat(sztemp,"ProtoUnknown");
+					break;
 				case 'b':
 					strcat(sztemp,/*"\n"*/"\x0D\x0A");
 					break;
@@ -293,15 +315,16 @@ int UpdateValues(WPARAM wparam,LPARAM lparam)
 	
 	hContact = (HANDLE)wparam;
 	cws=(DBCONTACTWRITESETTING *)lparam;
+	if(CallProtoService(cws->szModule,PS_GETSTATUS,0,0)==ID_STATUS_OFFLINE) return 0;
 	if(hContact==NULL || strcmp(cws->szSetting,"Status") || !IsWatchedProtocol(cws->szModule)) 
 		return 0;
 
 	prevStatus=DBGetContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
 	
-	if(cws->value.wVal==ID_STATUS_OFFLINE)
+	if(cws->value.wVal<=ID_STATUS_OFFLINE)
 	{
 		// avoid repeating the offline status
-		if (prevStatus==ID_STATUS_OFFLINE) 
+		if (prevStatus<=ID_STATUS_OFFLINE) 
 			return 0;
 
 		DBWriteContactSettingByte(hContact,S_MOD,"Offline",1);
@@ -355,30 +378,33 @@ int ModeChange(WPARAM wparam,LPARAM lparam)
 	ACKDATA *ack;
 	int isetting=0;
 	SYSTEMTIME time;
-
 	ack=(ACKDATA *)lparam;
 
 	if(ack->type!=ACKTYPE_STATUS || ack->result!=ACKRESULT_SUCCESS || ack->hContact!=NULL) return 0;
 	
+	courProtoName = (char *)ack->szModule;
 	GetLocalTime(&time);
 
 	DBWriteTime(&time,NULL);
 
 	isetting=CallProtoService(ack->szModule,PS_GETSTATUS,0,0);
-	DBWriteContactSettingWord(NULL,S_MOD,"Status",(WORD)isetting);
+	if (isetting<ID_STATUS_OFFLINE) isetting = ID_STATUS_OFFLINE;
+	if (isetting==DBGetContactSettingWord(NULL,S_MOD,courProtoName,ID_STATUS_OFFLINE)) return 0;
+	DBWriteContactSettingWord(NULL,S_MOD,courProtoName,(WORD)isetting);
 
 	// log "myself"
 	if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0))
 		FileWrite(NULL);
 
-	if(isetting==ID_STATUS_OFFLINE)
-		SetOffline();
-
+//Remove this - so other contacts will be logged only if the status differs
+//	if(isetting==ID_STATUS_OFFLINE)
+//		SetOffline();
+	courProtoName = NULL;
 	return 0;
 }
 
 
-
+/*
 int GetInfoAck(WPARAM wparam,LPARAM lparam)
 {
 	ACKDATA *ack;
@@ -392,16 +418,18 @@ int GetInfoAck(WPARAM wparam,LPARAM lparam)
 	dwsetting=DBGetContactSettingDword(ack->hContact,ack->szModule,"IP",0);
 	if(dwsetting)
 		DBWriteContactSettingDword(ack->hContact,S_MOD,"IP",dwsetting);
+	else DBDeleteContactSetting(ack->hContact,S_MOD,"IP");
 
 	dwsetting=DBGetContactSettingDword(ack->hContact,ack->szModule,"RealIP",0);
 	if(dwsetting)
 		DBWriteContactSettingDword(ack->hContact,S_MOD,"RealIP",dwsetting);
+	else DBDeleteContactSetting(ack->hContact,S_MOD,"RealIP");
 
 	return 0;
 }
+*/
 
-
-
+/*
 void SetOffline(void)
 {
 	HANDLE hcontact=NULL;
@@ -417,6 +445,6 @@ void SetOffline(void)
 		hcontact=(HANDLE)CallService(MS_DB_CONTACT_FINDNEXT,(WPARAM)hcontact,0);
 	}
 }
-
+*/
 
 

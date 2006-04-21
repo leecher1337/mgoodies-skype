@@ -36,11 +36,10 @@ RSC=rc.exe
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "release"
 # PROP Intermediate_Dir "release"
-# PROP Ignore_Export_Lib 1
+# PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MP_SEEN_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /Gi /GX /O1 /YX /FD /c
-# SUBTRACT CPP /Fr
+# ADD CPP /nologo /MD /W3 /Gi /GX /O1 /I "..\..\SDK\headers_c\\" /Fr /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /win32
 # SUBTRACT MTL /mktyplib203
@@ -51,7 +50,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib winmm.lib version.lib /nologo /base:"0x67400000" /dll /machine:I386 /out:"C:/Program Files/Miranda IM/Plugins/seenplugin.dll" /filealign:0x200
+# ADD LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib winmm.lib version.lib /nologo /base:"0x67400000" /dll /machine:I386 /out:"../../bin/release/Plugins/seenplugin.dll" /filealign:0x200
 # SUBTRACT LINK32 /pdb:none /map
 # Begin Target
 

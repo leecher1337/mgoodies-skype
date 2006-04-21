@@ -1,27 +1,28 @@
 #include <windows.h>
-#include <wingdi.h>
-#include <winuser.h>
 #include <commctrl.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "resource.h"
-#include "..\..\miranda32\random\plugins\newpluginapi.h"
-#include "..\..\miranda32\database\m_database.h"
-#include "..\..\miranda32\random\langpack\m_langpack.h"
+#include <newpluginapi.h>
+#include <m_database.h>
+#include <m_langpack.h>
 
-#include "..\..\miranda32\core\m_system.h"
-#include "..\..\miranda32\random\skin\m_skin.h"
-#include "..\..\miranda32\random\utils\m_utils.h"
-#include "..\..\miranda32\ui\options\m_options.h"
-#include "..\..\miranda32\ui\userinfo\m_userinfo.h"
-#include "..\..\miranda32\ui\contactlist\m_clist.h"
-#include "..\..\miranda32\ui\userinfo\m_userinfo.h"
-#include "..\..\miranda32\random\contacts\m_contacts.h"
-#include "..\..\miranda32\sendrecv\message\m_message.h"
-#include "..\..\miranda32\protocols\protocols\m_protosvc.h"
-#include "..\..\miranda32\protocols\protocols\m_protocols.h"
+#include <m_system.h>
+#include <m_skin.h>
+#include <m_utils.h>
+#include <m_options.h>
+#include <m_userinfo.h>
+#include <m_clist.h>
+#include <m_userinfo.h>
+#include <m_contacts.h>
+#include <m_message.h>
+#include <m_protosvc.h>
+#include <m_protocols.h>
 
 
 
-#pragma optimize("gsy",on)
+//#pragma optimize("gsy",on)
 
 #define S_MOD "SeenModule"
 
@@ -42,12 +43,12 @@
 
 #define DEFAULT_MENUSTAMP          "%d.%m.%Y - %H:%M [%s]"
 #define DEFAULT_USERSTAMP          "Date: %d.%m.%Y%b%bTime: %H:%M:%S%b%bStatus: %s"
-#define DEFAULT_FILESTAMP          "%d.%m.%Y @ %H:%M:%S   %n[%u | %i] new status: %s"
-#define DEFAULT_FILENAME           "logs\\seen.txt"
+#define DEFAULT_FILESTAMP          "%d.%m.%Y %H:%M:%S%t%n%t%s%t%u%t%r | %i%t%N"
+#define DEFAULT_FILENAME           "logs\\%P.txt"
 #define DEFAULT_HISTORYSTAMP       "%d.%m.%Y - %H:%M [%s]"
-#define DEFAULT_WATCHEDPROTOCOLS   "ICQ "
+#define DEFAULT_WATCHEDPROTOCOLS   ""
 
-#define VARIABLE_LIST "%s       \n%%Y: \t %s                    \n%%y: \t %s                    \n%%m: \t %s                    \n%%E: \t %s                    \n%%e: \t %s                    \n%%d: \t %s                    \n%%W: \t %s                    \n%%w: \t %s                    \n\n%s                          \n%%H: \t %s                    \n%%h: \t %s                    \n%%p: \t %s                    \n%%M: \t %s                    \n%%S: \t %s                    \n\n%s                          \n%%n: \t %s                    \n%%u: \t %s                    \n%%s: \t %s                    \n%%i: \t %s                    \n%%r: \t %s                    \n\n%s                          \n%%t: \t %s                    \n%%b: \t %s",                Translate("-- Date --"),      Translate("year (4 digits)"),     Translate("year (2 digits)"),       Translate("month"),              Translate("name of month"),         Translate("short name of month"),   Translate("day"),                Translate("weekday (full)"),        Translate("weekday (abbreviated)"), Translate("-- Time --"),         Translate("hours (24)"),            Translate("hours (12)"),          Translate("AM/PM"),                Translate("minutes"),             Translate("seconds"),             Translate("-- User --"),            Translate("username"),             Translate("UIN/handle"),            Translate("status"),               Translate("external IP"),           Translate("internal IP"),           Translate("-- Format --"),          Translate("tabulator"),           Translate("line break")
+#define VARIABLE_LIST "%s       \n%%Y: \t %s                    \n%%y: \t %s                    \n%%m: \t %s                    \n%%E: \t %s                    \n%%e: \t %s                    \n%%d: \t %s                    \n%%W: \t %s                    \n%%w: \t %s                    \n\n%s                          \n%%H: \t %s                    \n%%h: \t %s                    \n%%p: \t %s                    \n%%M: \t %s                    \n%%S: \t %s                    \n\n%s                          \n%%n: \t %s                    \n%%N: \t %s                    \n%%u: \t %s                    \n%%s: \t %s                    \n%%i: \t %s                    \n%%r: \t %s                    \n%%P: \t %s                    \n\n%s                          \n%%t: \t %s                    \n%%b: \t %s",                Translate("-- Date --"),      Translate("year (4 digits)"),     Translate("year (2 digits)"),       Translate("month"),              Translate("name of month"),         Translate("short name of month"),   Translate("day"),                Translate("weekday (full)"),        Translate("weekday (abbreviated)"), Translate("-- Time --"),         Translate("hours (24)"),            Translate("hours (12)"),          Translate("AM/PM"),                Translate("minutes"),             Translate("seconds"),             Translate("-- User --"),            Translate("username"),            Translate("nick"),             Translate("UIN/handle"),            Translate("status"),               Translate("external IP"),           Translate("internal IP"),Translate("Protocol"),           Translate("-- Format --"),          Translate("tabulator"),           Translate("line break")
 
 typedef struct{
 	int count;

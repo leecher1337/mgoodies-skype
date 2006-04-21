@@ -6,13 +6,13 @@ HANDLE ehdb,ehproto[2],ehmissed=NULL,ehuserinfo,ehmissed_proto=NULL;
 PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 		sizeof(PLUGININFO),
-		"Last seen plugin",
-		PLUGIN_MAKE_VERSION(5,0,1,1),
+		"Last seen plugin mod",
+		PLUGIN_MAKE_VERSION(5,0,2,1),
 		"Log when a user was last seen online and which users were online while you were away",
 		"Heiko Schillinger",
-		"micron@nexgo.de",
-		"© 2001-2002 Heiko Schillinger, 2003 modified by Bruno Rino",
-		"http://miranda-im.org/download/details.php?action=viewfile&id=202",
+		"",
+		"© 2001-2002 Heiko Schillinger, 2003 modified by Bruno Rino, 2005 Modified by YB",
+		"http://forums.miranda-im.org/showthread.php?t=2822",
 		0,
 		0
 };
@@ -25,7 +25,7 @@ int InitFileOutput(void);
 void InitMenuitem(void);
 int UpdateValues(WPARAM,LPARAM);
 int ModeChange(WPARAM,LPARAM);
-int GetInfoAck(WPARAM,LPARAM);
+//int GetInfoAck(WPARAM,LPARAM);
 void SetOffline(void);
 int ModeChange_mo(WPARAM,LPARAM);
 int CheckIfOnline(void);
@@ -49,11 +49,11 @@ int MainInit(WPARAM wparam,LPARAM lparam)
 	if(DBGetContactSettingByte(NULL,S_MOD,"MissedOnes",0))
 		ehmissed_proto=HookEvent(ME_PROTO_ACK,ModeChange_mo);
 
-	SetOffline();
+//	SetOffline();
 
 	ehdb=HookEvent(ME_DB_CONTACT_SETTINGCHANGED,UpdateValues);
 	ehproto[0]=HookEvent(ME_PROTO_ACK,ModeChange);
-	ehproto[1]=HookEvent(ME_PROTO_ACK,GetInfoAck);
+//	ehproto[1]=HookEvent(ME_PROTO_ACK,GetInfoAck);
 
 	SkinAddNewSound("LastSeenTrackedStatusChange",Translate("LastSeen: User status change"),"global.wav");
 	DBWriteContactSettingString(NULL,"Uninstall",Translate("Last seen"),S_MOD);

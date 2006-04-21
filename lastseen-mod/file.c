@@ -61,7 +61,8 @@ void FileWrite(HANDLE hcontact)
 	DBVARIANT dbv;
 
 	DBGetContactSetting(NULL,S_MOD,"PathToFile",&dbv);
-	fhout=CreateFile(dbv.pszVal,GENERIC_WRITE,0,NULL,OPEN_ALWAYS,0,NULL);
+	strcpy(szout,ParseString(dbv.pszVal,hcontact,1));
+	fhout=CreateFile(szout,GENERIC_WRITE,0,NULL,OPEN_ALWAYS,0,NULL);
 	DBFreeVariant(&dbv);
 	SetFilePointer(fhout,0,0,FILE_END);
 
