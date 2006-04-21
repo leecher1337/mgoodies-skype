@@ -288,16 +288,18 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 							dwsetting = (int)DBGetContactSettingDword(hcontact,ci.szProto,"FlagBits",0);
 							wsprintf(szdbsetting,"MSNC%i",(dwsetting&0x70000000)>>28);
 							if (dwsetting & 0x00000001) strcat(szdbsetting," MobD"); //Mobile Device
-							if (dwsetting & 0x00000004) strcat(szdbsetting," InkR"); //Ink Viewing
-							if (dwsetting & 0x00000008) strcat(szdbsetting," InkW"); //Ink Creating
+							if (dwsetting & 0x00000004) strcat(szdbsetting," InkG"); //GIF Ink Send/Receive
+							if (dwsetting & 0x00000008) strcat(szdbsetting," InkI"); //ISF Ink Send/Receive
 							if (dwsetting & 0x00000010) strcat(szdbsetting," WCam"); //Webcam
-							if (dwsetting & 0x00000020) strcat(szdbsetting," MPkt"); //Multi-Packeting
+							if (dwsetting & 0x00000020) strcat(szdbsetting," MPkt"); //Multi packet messages
 							if (dwsetting & 0x00000040) strcat(szdbsetting," SMSr"); //Paging
-							if (dwsetting & 0x00000080) strcat(szdbsetting," DSMS"); //Direct-Paging
+							if (dwsetting & 0x00000080) strcat(szdbsetting," DSMS"); //Using MSN Direct
 							if (dwsetting & 0x00000200) strcat(szdbsetting," WebM"); //WebMessenger
 							if (dwsetting & 0x00001000) strcat(szdbsetting," MS7+"); //Unknown (Msgr 7 always[?] sets it)
 							if (dwsetting & 0x00004000) strcat(szdbsetting," DirM"); //DirectIM
-							if (dwsetting & 0x00008000) strcat(szdbsetting," Wink"); //Winks
+							if (dwsetting & 0x00008000) strcat(szdbsetting," Wink"); //Send/Receive Winks
+							if (dwsetting & 0x00010000) strcat(szdbsetting," MSrc"); //MSN Search ??
+							if (dwsetting & 0x00040000) strcat(szdbsetting," VoiC"); //Voice Clips
 						} else strcpy(szdbsetting,"Miranda");
 					} else {
 						DBVARIANT dbv;
