@@ -19,6 +19,7 @@
 #include <m_message.h>
 #include <m_protosvc.h>
 #include <m_protocols.h>
+#include <m_popup.h>
 
 
 
@@ -42,6 +43,7 @@
 #define	ICON_INVIS			20
 
 #define DEFAULT_MENUSTAMP          "%d.%m.%Y - %H:%M [%s]"
+#define DEFAULT_POPUPSTAMP         "%n is %s%b"
 #define DEFAULT_USERSTAMP          "Date: %d.%m.%Y%b%bTime: %H:%M:%S%b%bStatus: %s"
 #define DEFAULT_FILESTAMP          "%d.%m.%Y %H:%M:%S%t%n%t%s%t%u%t%r | %i%t%N"
 #define DEFAULT_FILENAME           "logs\\%P.txt"
