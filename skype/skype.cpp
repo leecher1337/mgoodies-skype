@@ -295,10 +295,7 @@ void GetInfoThread(HANDLE hContact) {
 	strcat(str, "MOOD_TEXT");
 	if (!SkypeSend(str) && (ptr=SkypeRcv(str+4, INFINITE))) {
 		if (ptr[strlen(str+3)]) {
-			if (utf8_decode(strtok(ptr+strlen(str+3), " "), &utfdstr)!=-1 && utfdstr) {
-				DBWriteContactSettingString(hContact, "CList", "StatusMsg", utfdstr);
-				free(utfdstr);
-			}
+			DBWriteContactSettingString(hContact, "CList", "StatusMsg", (ptr+25));
 		}
 		free(ptr);
 	}
@@ -1211,6 +1208,7 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 //						break;
 					} else
 						DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Status", (WORD)SkypeStatusToMiranda(ptr+13));
+						SkypeSend("GET USER %s MOOD_TEXT", nick);
 /*						free(buf);
 					if (SkypeInitialized==FALSE) { // Prevent flooding on startup
 						SkypeMsgAdd(szSkypeMsg);
@@ -1218,6 +1216,13 @@ LONG APIENTRY WndProc(HWND hWnd, UINT message, UINT wParam, LONG lParam)
 					}
 					break;
 */				}
+				if (!strcmp(ptr, "MOOD_TEXT")){
+					if (!(hContact=find_contact(nick)))
+						SkypeSend("GET USER %s BUDDYSTATUS", nick);
+					else
+						DBWriteContactSettingString(hContact, "CList", "StatusMsg", (ptr+10));
+
+				}
 				if (!strcmp(ptr, "DISPLAYNAME")) {
 					// Skype Bug? -> If nickname isn't customised in the Skype-App, this won't return anything :-(
 					if (ptr[12]) DBWriteContactSettingString(find_contact(nick), pszSkypeProtoName, "Nick", ptr+12);
@@ -1546,10 +1551,34 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 
    return SetUserStatus(); 
 }
+int __stdcall SendBroadcast( HANDLE hContact, int type, int result, HANDLE hProcess, LPARAM lParam )
+{
+	ACKDATA ack = {0};
+	ack.cbSize = sizeof( ACKDATA );
+	ack.szModule = pszSkypeProtoName;
+	ack.hContact = hContact;
+	ack.type = type;
+	ack.result = result;
+	ack.hProcess = hProcess;
+	ack.lParam = lParam;
+	return CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
+}
+
+static void __cdecl SkypeGetAwayMessageThread( HANDLE hContact )
+{
+	DBVARIANT dbv;
+	if ( !DBGetContactSetting( hContact, "CList", "StatusMsg", &dbv )) {
+		SendBroadcast( hContact, ACKTYPE_AWAYMSG, ACKRESULT_SUCCESS, ( HANDLE )1, ( LPARAM )dbv.pszVal );
+		DBFreeVariant( &dbv );
+	}
+	else SendBroadcast( hContact, ACKTYPE_AWAYMSG, ACKRESULT_SUCCESS, ( HANDLE )1, ( LPARAM )0 );
+}
 
 int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam)
 {
-	return 0;
+	CCSDATA* ccs = ( CCSDATA* )lParam;
+	pthread_create( SkypeGetAwayMessageThread, ccs->hContact );
+	return 1;
 }
 
 /* SkypeGetAvatarInfo
@@ -2320,7 +2349,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETAWAYMSG);
 		CreateServiceFunction(pszServiceName , SkypeSetAwayMessage);
-		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETSTATUS);
+		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PSS_GETAWAYMSG);
 		CreateServiceFunction(pszServiceName , SkypeGetAwayMessage);
 
 	}
