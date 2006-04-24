@@ -1159,7 +1159,8 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		SetTextColor(hdc, font_colour[FONT_NICK]);
 
 		DrawTextWithRect(hdc, proto->nickname, DEFAULT_NICKNAME, rc, uFormat, 
-						 data->mouse_over_nick && proto->CanSetNick(), proto);
+						 data->mouse_over_nick && proto->CanSetNick() && 
+						 !nickname_dialog_open, proto);
 
 		// Clipping rgn
 		SelectClipRgn(hdc, NULL);
@@ -1252,7 +1253,8 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		SetTextColor(hdc, font_colour[FONT_AWAY_MSG]);
 
 		DrawTextWithRect(hdc, proto->status_message, DEFAULT_STATUS_MESSAGE, rc, uFormat, 
-						 data->mouse_over_away_msg && proto->CanSetStatusMsg(), proto);
+						 data->mouse_over_away_msg && proto->CanSetStatusMsg() && 
+						 !status_msg_dialog_open, proto);
 
 		// Clipping rgn
 		SelectClipRgn(hdc, NULL);

@@ -30,7 +30,7 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,0,40),
+	PLUGIN_MAKE_VERSION(0,0,0,41),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -46,6 +46,9 @@ HANDLE hTTB = NULL;
 // Hooks
 HANDLE hModulesLoadedHook = NULL;
 HANDLE hTopToolBarLoadedHook = NULL;
+
+long nickname_dialog_open;
+long status_msg_dialog_open;
 
 
 // Hook called after init
@@ -91,6 +94,9 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 	// Hook event to load messages and show first one
 	hModulesLoadedHook = HookEvent(ME_SYSTEM_MODULESLOADED, MainInit);
 	hTopToolBarLoadedHook = NULL;
+
+	nickname_dialog_open = 0;
+	status_msg_dialog_open = 0;
 
 	// Options
 	InitOptions();
@@ -210,11 +216,11 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://geocities.yahoo.com.br/ricardo_pescuma/mydetails_version.txt";
-		upd.szBetaChangelogURL = "http://geocities.yahoo.com.br/ricardo_pescuma/mydetails_version.txt";
+		upd.szBetaVersionURL = "http://br.geocities.com/ricardo_pescuma/mydetails_version.txt";
+		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/mydetails_version.txt";
 		upd.pbBetaVersionPrefix = (BYTE *)"My Details ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
-		upd.szBetaUpdateURL = "http://geocities.yahoo.com.br/ricardo_pescuma/mydetails.zip";
+		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/mydetails.zip";
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
@@ -350,6 +356,7 @@ static BOOL CALLBACK DlgProcSetNickname(HWND hwndDlg, UINT msg, WPARAM wParam, L
 			break;
 
 		case WM_CLOSE:
+			InterlockedExchange(&nickname_dialog_open, 0);
 			DestroyWindow(hwndDlg);
 			break;
 	}
@@ -381,12 +388,17 @@ static int PluginCommand_SetMyNicknameUI(WPARAM wParam,LPARAM lParam)
 
 	}
 
-	HWND hwndSetNickname = CreateDialog(hInst, MAKEINTRESOURCE( IDD_SETNICKNAME ), NULL, DlgProcSetNickname );
-	
-	SendMessage(hwndSetNickname, WMU_SETDATA, proto_num, 0);
-	SetForegroundWindow( hwndSetNickname );
-	SetFocus( hwndSetNickname );
- 	ShowWindow( hwndSetNickname, SW_SHOW );
+	if (!nickname_dialog_open) 
+	{
+		InterlockedExchange(&nickname_dialog_open, 1);
+
+		HWND hwndSetNickname = CreateDialog(hInst, MAKEINTRESOURCE( IDD_SETNICKNAME ), NULL, DlgProcSetNickname );
+		
+		SendMessage(hwndSetNickname, WMU_SETDATA, proto_num, 0);
+		SetForegroundWindow( hwndSetNickname );
+		SetFocus( hwndSetNickname );
+ 		ShowWindow( hwndSetNickname, SW_SHOW );
+	}
 
 	return 0;
 }
@@ -663,6 +675,7 @@ static BOOL CALLBACK DlgProcSetStatusMessage(HWND hwndDlg, UINT msg, WPARAM wPar
 			break;
 
 		case WM_CLOSE:
+			InterlockedExchange(&status_msg_dialog_open, 0);
 			DestroyWindow(hwndDlg);
 			break;
 	}
@@ -710,7 +723,7 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 		if (proto != NULL)
 		{
 			// Has to get the unparsed message
-			NAS_PROTOINFO pi, *pii;
+			NAS_PROTOINFO pi;
 
 			ZeroMemory(&pi, sizeof(pi));
 			pi.cbSize = sizeof(NAS_PROTOINFO);
@@ -718,27 +731,56 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 			pi.status = proto->status;
 			pi.szMsg = NULL;
 
-			pii = &pi;
-
-			if (CallService(MS_NAS_GETSTATE, (WPARAM) &pii, 1) == 0)
+			if (ServiceExists(MS_NAS_GETSTATE))
 			{
-				if (pi.szMsg == NULL)
+				if (CallService(MS_NAS_GETSTATE, (WPARAM) &pi, 1) == 0)
 				{
-					pi.szProto = NULL;
-
-					if (CallService(MS_NAS_GETSTATE, (WPARAM) &pii, 1) == 0)
+					if (pi.szMsg == NULL)
 					{
-						if (pi.szMsg != NULL)
+						pi.szProto = NULL;
+
+						if (CallService(MS_NAS_GETSTATE, (WPARAM) &pi, 1) == 0)
 						{
-							lstrcpyn(status_message, pi.szMsg, MAX_REGS(status_message));
-							mir_free(pi.szMsg);
+							if (pi.szMsg != NULL)
+							{
+								lstrcpyn(status_message, pi.szMsg, MAX_REGS(status_message));
+								mir_free(pi.szMsg);
+							}
 						}
 					}
+					else // if (pi.szMsg != NULL)
+					{
+						lstrcpyn(status_message, pi.szMsg, MAX_REGS(status_message));
+						mir_free(pi.szMsg);
+					}
 				}
-				else // if (pi.szMsg != NULL)
+			}
+			// TODO: Remove when removing old NAS services support
+			else
+			{
+				NAS_PROTOINFO *pii = &pi;
+
+				// Old services
+				if (CallService("NewAwaySystem/GetState", (WPARAM) &pii, 1) == 0)
 				{
-					lstrcpyn(status_message, pi.szMsg, MAX_REGS(status_message));
-					mir_free(pi.szMsg);
+					if (pi.szMsg == NULL)
+					{
+						pi.szProto = NULL;
+
+						if (CallService(MS_NAS_GETSTATE, (WPARAM) &pii, 1) == 0)
+						{
+							if (pi.szMsg != NULL)
+							{
+								lstrcpyn(status_message, pi.szMsg, MAX_REGS(status_message));
+								mir_free(pi.szMsg);
+							}
+						}
+					}
+					else // if (pi.szMsg != NULL)
+					{
+						lstrcpyn(status_message, pi.szMsg, MAX_REGS(status_message));
+						mir_free(pi.szMsg);
+					}
 				}
 			}
 
@@ -771,12 +813,17 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 	}
 	else
 	{
-		HWND hwndSet = CreateDialog(hInst, MAKEINTRESOURCE( IDD_SETSTATUSMESSAGE ), NULL, DlgProcSetStatusMessage );
-		
-		SendMessage(hwndSet, WMU_SETDATA, proto ? proto->status : 0, 0);
-		SetForegroundWindow( hwndSet );
-		SetFocus( hwndSet );
- 		ShowWindow( hwndSet, SW_SHOW );
+		if (!status_msg_dialog_open)
+		{
+			InterlockedExchange(&status_msg_dialog_open, 1);
+
+			HWND hwndSet = CreateDialog(hInst, MAKEINTRESOURCE( IDD_SETSTATUSMESSAGE ), NULL, DlgProcSetStatusMessage );
+			
+			SendMessage(hwndSet, WMU_SETDATA, proto ? proto->status : 0, 0);
+			SetForegroundWindow( hwndSet );
+			SetFocus( hwndSet );
+ 			ShowWindow( hwndSet, SW_SHOW );
+		}
 
 		return 0;
 	}

@@ -293,6 +293,46 @@ void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
 
 	if (ServiceExists(MS_NAS_GETSTATE))
 	{
+		NAS_PROTOINFO pi;
+
+		ZeroMemory(&pi, sizeof(pi));
+		pi.cbSize = sizeof(NAS_PROTOINFO);
+		pi.szProto = name;
+		pi.status = aStatus;
+		pi.szMsg = NULL;
+
+		if (CallService(MS_NAS_GETSTATE, (WPARAM) &pi, 1) == 0)
+		{
+			if (pi.szMsg == NULL)
+			{
+				pi.szProto = NULL;
+
+				if (CallService(MS_NAS_GETSTATE, (WPARAM) &pi, 1) == 0)
+				{
+					if (pi.szMsg != NULL)
+					{
+						lcopystr(msg, pi.szMsg, msg_size);
+						mir_free(pi.szMsg);
+					}
+				}
+			}
+			else // if (pi.szMsg != NULL)
+			{
+				lcopystr(msg, pi.szMsg, msg_size);
+				mir_free(pi.szMsg);
+			}
+		}
+
+		if (ServiceExists(MS_VARS_FORMATSTRING))
+		{
+			char *tmp = variables_parse(msg, NULL, NULL);
+			lcopystr(msg, tmp, msg_size);
+			variables_free(tmp);
+		}
+	}
+	// TODO: Remove when removing old NAS services support
+	else if (ServiceExists("NewAwaySystem/GetState"))
+	{
 		NAS_PROTOINFO pi, *pii;
 
 		ZeroMemory(&pi, sizeof(pi));

@@ -46,7 +46,7 @@ public:
 	TCHAR nickname[256];
 	TCHAR status_name[256];
 	TCHAR *custom_status_name;
-	TCHAR status_message[256];
+	TCHAR status_message[1024];
 	TCHAR *custom_status_message;
 	AVATARCACHEENTRY *ace;
 	TCHAR avatar_file[1024];
