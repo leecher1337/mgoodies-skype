@@ -1,6 +1,12 @@
-My Details 0.0.0.40
+My Details 0.0.0.41
 
 Changelog:
+
+. 0.0.0.41
+  + Added support to new NAS services
+  + Open only one dialog (for dialogs that t handles - does not include NAS / avs)
+  * Bigger buffer for status messages
+  + First release build (dll is 200k smaller)
 
 . 0.0.0.40
   * Changed text [Top: ] to [Top:]
