@@ -19,6 +19,7 @@
 #include "../../include/m_clist.h"
 #include "../../include/m_system.h"
 #include "../../include/m_updater.h"
+#include "../../include/m_folders.h"
 
 // MyDetails defines
 
