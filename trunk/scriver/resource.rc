@@ -31,7 +31,7 @@ BEGIN
                     TVS_NOTOOLTIPS | TVS_NONEVENHEIGHT | WS_BORDER |
                     WS_TABSTOP,163,8,98,23
     CONTROL         "Stay minimized",IDC_STAYMINIMIZED,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,22,22,141,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,20,22,141,10
     CONTROL         "Close the message window on send",IDC_AUTOCLOSE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,8,33,140,10
     CONTROL         "Minimize the message window on send",IDC_AUTOMIN,"Button",
@@ -40,23 +40,23 @@ BEGIN
                     IDC_STATUSWIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,44,
                     292,10
     CONTROL         "Use tabbed mode",IDC_USETABS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,8,55,126,10
+                    WS_TABSTOP,8,55,140,10
     CONTROL         "Hide tab bar if there is only one tab",IDC_HIDEONETAB,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,55,152,10
     CONTROL         "Tabs at bottom",IDC_TABSATBOTTOM,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,22,66,126,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,20,66,126,10
     CONTROL         "Limit names on tabs to 20 characters",IDC_LIMITNAMES,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,148,66,152,10
     CONTROL         "Automatically switch to active tab",IDC_SWITCHTOACTIVE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,77,152,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,77,152,10
     CONTROL         "Cascade new windows",IDC_CASCADE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,88,292,10
-    CONTROL         "Save the window size and location individually for each contact",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,88,140,10
+    CONTROL         "Save size and location for each contact",
                     IDC_SAVEPERCONTACT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    8,99,292,10
+                    148,88,152,10
     CONTROL         "Save the splitter position individually for each contact",
                     IDC_SAVESPLITTERPERCONTACT,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,8,110,292,10
+                    WS_TABSTOP,8,99,292,10
     CONTROL         "Support control up/down in message area to show previously sent messages",
                     IDC_CTRLSUPPORT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,
                     121,298,10
@@ -78,7 +78,7 @@ BEGIN
                     IDC_AVATARSUPPORT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     8,176,292,10
     CONTROL         "Limit avatar height to min.",IDC_LIMITAVATARH,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,22,187,106,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,20,187,106,10
     EDITTEXT        IDC_AVATARHEIGHTMIN,148,185,28,13,ES_AUTOHSCROLL
     LTEXT           "and max.",IDC_AVATARTEXT1,188,187,35,8
     EDITTEXT        IDC_AVATARHEIGHT,230,185,28,13,ES_AUTOHSCROLL
