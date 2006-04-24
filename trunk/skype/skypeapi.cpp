@@ -801,9 +801,42 @@ int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
  */
 int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 	int retval;
+	char drive[_MAX_DRIVE];
+	char dir[_MAX_DIR];
+	char fname[_MAX_FNAME];
+	char ext[_MAX_EXT];
+	char AvatarsFolder[MAX_PATH];
+	int hProtocolAvatarsFolder;
+
+	_splitpath((char*)lParam, drive, dir, fname, ext );
 	
-	DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", (char*)lParam);
-	retval = SkypeSend("SET AVATAR 1 %s", lParam);
+	// Folders plugin support
+	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
+	{
+		FOLDERSDATA fd;
+		strncpy(fd.szSection, Translate("Avatars"), sizeof(fd.szSection));
+		fd.szSection[sizeof(fd.szSection)-1] = '\0';
+		strncpy(fd.szName, Translate("Protocol Avatars Cache"), sizeof(fd.szName));
+		fd.szName[sizeof(fd.szName)-1] = '\0';
+
+		// TODO Default should be FOLDER_AVATARS
+		hProtocolAvatarsFolder = (int) CallService(MS_FOLDERS_REGISTER_PATH, (WPARAM) PROFILE_PATH, (LPARAM) &fd);
+
+		if(!hProtocolAvatarsFolder)
+			CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
+		else
+			CallService(MS_FOLDERS_GET_PATH,hProtocolAvatarsFolder,(LPARAM)AvatarsFolder);
+	}
+	else
+		CallService(MS_DB_GETPROFILEPATH, (WPARAM) 0, (LPARAM)AvatarsFolder);
+
+	//sprintf(AvatarsFolder,"%s\\SKYPE\\%s",AvatarsFolder,fname);
+	sprintf(AvatarsFolder,"%s\\SKYPE\\%s avatar.png",AvatarsFolder,pszSkypeProtoName);
+
+	CopyFile((char*)lParam,AvatarsFolder,0);
+
+	DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", AvatarsFolder);
+	retval = SkypeSend("SET AVATAR 1 %s", AvatarsFolder);
 	
 	return retval;
 }
