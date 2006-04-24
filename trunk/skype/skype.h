@@ -20,6 +20,29 @@
 #include "../../include/m_system.h"
 #include "../../include/m_updater.h"
 
+// MyDetails defines
+
+// wParam=NULL
+// lParam=(char *) new nickname - do not free
+// return=0 for sucess
+#define PS_SETMYNICKNAME "/SetNickname"
+
+// Optional, default value is 1024
+// wParam=NULL
+// lParam=NULL
+// return= <=0 for error, >0 the max length of the nick
+#define PS_GETMYNICKNAMEMAXLENGTH "/GetMyNicknameMaxLength"
+
+// wParam=(char *)Buffer to file name
+// lParam=(int)Buffer size
+// return=0 for sucess
+#define PS_GETMYAVATAR "/GetMyAvatar"
+
+// wParam=0
+// lParam=(const char *)Avatar file name
+// return=0 for sucess
+#define PS_SETMYAVATAR "/SetMyAvatar"
+
 
 // Program defines
 #define SKYPE_NAME		"Username"

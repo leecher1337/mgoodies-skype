@@ -1581,6 +1581,23 @@ int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam)
 	return 1;
 }
 
+/* SkypeGetAvatar
+ * 
+ * Purpose: Return the avatar file name
+ * Params : wParam=0
+ *			lParam=0
+ * Returns: 0 - Success
+ *		   -1 - Failure
+ */
+int SkypeGetAvatar(WPARAM wParam,LPARAM lParam)
+{	DBVARIANT dbv;
+	if (!DBGetContactSetting(NULL,pszSkypeProtoName, "AvatarFile", &dbv)){
+		lstrcpynA((char*)wParam, dbv.pszVal, (int)lParam);
+		DBFreeVariant(&dbv);
+	}
+	return 0;
+}
+
 /* SkypeGetAvatarInfo
  * 
  * Purpose: Set user avatar in profile
@@ -2347,10 +2364,18 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETAVATARINFO);
 		CreateServiceFunction(pszServiceName , SkypeGetAvatarInfo);
 
+		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETMYAVATAR);
+		CreateServiceFunction(pszServiceName , SkypeGetAvatar);
+		
+		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETMYAVATAR);
+		CreateServiceFunction(pszServiceName , SkypeSetAvatar);
+
 		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETAWAYMSG);
 		CreateServiceFunction(pszServiceName , SkypeSetAwayMessage);
 		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PSS_GETAWAYMSG);
 		CreateServiceFunction(pszServiceName , SkypeGetAwayMessage);
+		strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETMYNICKNAME);
+		CreateServiceFunction(pszServiceName , SkypeSetNick);
 
 	}
 	hStatusHookContact = HookEvent(ME_DB_CONTACT_ADDED,HookContactAdded);
