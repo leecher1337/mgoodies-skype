@@ -279,7 +279,7 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			EnableWindow(GetDlgItem(hwndDlg, IDC_TABSATBOTTOM), bChecked );
 			EnableWindow(GetDlgItem(hwndDlg, IDC_LIMITNAMES), bChecked );
 			EnableWindow(GetDlgItem(hwndDlg, IDC_HIDEONETAB), bChecked );
-			EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !bChecked  && !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
+			EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !bChecked  );//&& !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_SAVEPERCONTACT), !bChecked );
 			return TRUE;
 		}
@@ -300,7 +300,7 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 						EnableWindow(GetDlgItem(hwndDlg, IDC_TABSATBOTTOM), bChecked);
 						EnableWindow(GetDlgItem(hwndDlg, IDC_LIMITNAMES), bChecked);
 						EnableWindow(GetDlgItem(hwndDlg, IDC_HIDEONETAB), bChecked);
-						EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !bChecked && !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
+						EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !bChecked );//&& !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
 						EnableWindow(GetDlgItem(hwndDlg, IDC_SAVEPERCONTACT), !bChecked);
 					}
 					break;
@@ -314,8 +314,12 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				case IDC_SENDONDBLENTER:
 					CheckDlgButton(hwndDlg, IDC_SENDONENTER, BST_UNCHECKED);
 					break;
+				case IDC_CASCADE:
+					CheckDlgButton(hwndDlg, IDC_SAVEPERCONTACT, BST_UNCHECKED);
+					break;
 				case IDC_SAVEPERCONTACT:
-					EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
+					CheckDlgButton(hwndDlg, IDC_CASCADE, BST_UNCHECKED);
+					//EnableWindow(GetDlgItem(hwndDlg, IDC_CASCADE), !IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
 					break;
 				case IDC_SECONDS:
 					if (HIWORD(wParam) != EN_CHANGE || (HWND) lParam != GetFocus())
