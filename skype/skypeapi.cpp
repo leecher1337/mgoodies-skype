@@ -757,7 +757,23 @@ int SkypeAnswerCall(WPARAM wParam, LPARAM lParam) {
 	CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_CALLSTAT), NULL, CallstatDlgProc, (LPARAM)((CLISTEVENT*)lParam)->hContact);
 	return 0;
 }
+/* SkypeSetNick
+ * 
+ * Purpose: Set Full Name in profile
+ * Params : wParam=0
+ *			lParam=(LPARAM)(const char*)Nick text
+ * Returns: 0 - Success
+ *		   -1 - Failure
+ */
+int SkypeSetNick(WPARAM wParam, LPARAM lParam) {
+	int retval;
+	
+	DBWriteContactSettingString(NULL, pszSkypeProtoName, "Nick", (char*)lParam);
+	retval = SkypeSend("SET PROFILE FULLNAME %s", lParam);
+	
+	return retval;
 
+}
 /* SkypeSetAwayMessage
  * 
  * Purpose: Set Mood message in profile

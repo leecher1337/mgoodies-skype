@@ -36,6 +36,7 @@ HISTORY
            * Updater support (BETA ONLY)
            * DBeEditor known module support
            * Mods to avoid warning in VC++ 8
+           * Implement the MyDetail requested services
            
 0.0.0.18 - * HOTFIX - Double File-Transfer icon removed. Please note that you can't send files
              via drag & drop, because of the nature of Skype API - Skype wants to open its own
