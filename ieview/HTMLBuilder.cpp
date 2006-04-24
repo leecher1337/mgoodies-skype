@@ -259,6 +259,10 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 								if ((text[k]>='0' && text[k]<='9') ||
 									(text[k]>='A' && text[k]<='Z') ||
 									(text[k]>='a' && text[k]<='z') ||
+									(text[k]=='.' || text[k]=='/') ||
+									(text[k]=='-' || text[k]=='_') ||
+									(text[k]==':' || text[k]=='\\') ||
+									(text[k]=='?' || text[k]==',') ||
 									(text[k]=='#')) continue;
 								break;
 							}
