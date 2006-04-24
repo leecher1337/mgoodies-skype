@@ -19,7 +19,7 @@ CNudge GlobalNudge;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,1,7),
+	PLUGIN_MAKE_VERSION(0,0,1,8),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -80,6 +80,8 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 		{
 			if(!strcmp(protoName,n->item.ProtocolName))
 			{
+				if(n->item.showPopup)
+					Nudge_ShowPopup(n->item, (HANDLE) wParam, true);
 				if(n->item.showEvent)
 					Nudge_SentEvent(n->item, (HANDLE) wParam);
 				if(n->item.showStatus)
@@ -89,6 +91,8 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 	}
 	else
 	{
+		if(DefaultNudge.showPopup)
+			Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, true);
 		if(DefaultNudge.showEvent)
 			Nudge_SentEvent(DefaultNudge, (HANDLE) wParam);
 		if(DefaultNudge.showStatus)
@@ -138,9 +142,9 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 						((n->item.statusFlags & NUDGE_ACC_ST8) && (Status==ID_STATUS_ONTHEPHONE)) ||
 						((n->item.statusFlags & NUDGE_ACC_ST9) && (Status==ID_STATUS_OUTTOLUNCH)))
 					{
-						SkinPlaySound( n->item.NudgeSoundname );
+						
 						if(n->item.showPopup)
-							Nudge_ShowPopup(n->item, (HANDLE) wParam);
+							Nudge_ShowPopup(n->item, (HANDLE) wParam, false);
 						if(n->item.shakeClist)
 							ShakeClist(wParam,lParam);
 						if(n->item.shakeChat)
@@ -149,6 +153,8 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 							Nudge_ShowEvent(n->item, (HANDLE) wParam);
 						if(n->item.showStatus)
 							Nudge_ShowStatus(n->item, (HANDLE) wParam);
+
+						SkinPlaySound( n->item.NudgeSoundname );
 					}
 				}
 			}		
@@ -209,9 +215,9 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 				((DefaultNudge.statusFlags & NUDGE_ACC_ST8) && (Status==ID_STATUS_ONTHEPHONE)) ||
 				((DefaultNudge.statusFlags & NUDGE_ACC_ST9) && (Status==ID_STATUS_OUTTOLUNCH)))
 			{
-				SkinPlaySound( DefaultNudge.NudgeSoundname );
+				
 				if(DefaultNudge.showPopup)
-					Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam);
+					Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, false);
 				if(DefaultNudge.shakeClist)
 					ShakeClist(wParam,lParam);
 				if(DefaultNudge.shakeChat)
@@ -220,6 +226,8 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 					Nudge_ShowEvent(DefaultNudge, (HANDLE) wParam);
 				if(DefaultNudge.showStatus)
 					Nudge_ShowStatus(DefaultNudge, (HANDLE) wParam);
+
+				SkinPlaySound( DefaultNudge.NudgeSoundname );
 			}
 		}
 	}
@@ -465,7 +473,7 @@ int Preview()
 			{
 				SkinPlaySound( n->item.NudgeSoundname );
 				if(n->item.showPopup)
-					Nudge_ShowPopup(n->item, NULL);
+					Nudge_ShowPopup(n->item, NULL, false);
 				if(n->item.shakeClist)
 					ShakeClist(0,0);
 			}
@@ -477,7 +485,7 @@ int Preview()
 		{
 			SkinPlaySound( DefaultNudge.NudgeSoundname );
 			if(DefaultNudge.showPopup)
-				Nudge_ShowPopup(DefaultNudge, NULL);
+				Nudge_ShowPopup(DefaultNudge, NULL, false);
 			if(DefaultNudge.shakeClist)
 				ShakeClist(0,0);
 		}
@@ -485,7 +493,7 @@ int Preview()
 	return 0;
 }
 
-void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont)
+void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont, bool isSent)
 {
 	POPUPDATAEX NudgePopUp;
 	HANDLE hContact;
@@ -505,7 +513,11 @@ void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont)
 
 	char * lpzContactName = (char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,0);
 	
-	sprintf(NudgePopUp.lpzText, Translate("You received a nudge"));
+	if(isSent) 
+		sprintf(NudgePopUp.lpzText, Translate("You sent a nudge"));
+	else
+		sprintf(NudgePopUp.lpzText, Translate("You received a nudge"));
+
 	lstrcpy(NudgePopUp.lpzContactName, lpzContactName);
 
 	CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NudgePopUp,0);
