@@ -20,6 +20,10 @@
 #include "../../include/m_system.h"
 #include "../../include/m_updater.h"
 #include "../../include/m_folders.h"
+#include "../../include/m_options.h"
+#include "../../include/m_langpack.h"
+#include "../../include/m_userinfo.h"
+#include "../../include/m_avatars.h"
 
 // MyDetails defines
 
@@ -89,6 +93,26 @@ int OnDetailsInit( WPARAM, LPARAM );
 BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam);
 int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam);
+int HookContactAdded(WPARAM wParam, LPARAM lParam);
+int HookContactDeleted(WPARAM wParam, LPARAM lParam);
+int ImportHistory(WPARAM wParam, LPARAM lParam);
+int CreateTopToolbarButton(WPARAM wParam, LPARAM lParam);
+int OnModulesLoaded(WPARAM wParam, LPARAM lParam);
+int SkypeSetStatus(WPARAM wParam, LPARAM lParam);
+int SkypeGetStatus(WPARAM wParam, LPARAM lParam);
+int SkypeGetInfo(WPARAM wParam,LPARAM lParam);
+int SkypeAddToList(WPARAM wParam, LPARAM lParam);
+int SkypeBasicSearch(WPARAM wParam, LPARAM lParam);
+int SkypeSendMessage(WPARAM wParam, LPARAM lParam);
+int SkypeRecvMessage(WPARAM wParam, LPARAM lParam);
+int SkypeSendAuthRequest(WPARAM wParam, LPARAM lParam);
+int SkypeRecvAuth(WPARAM wParam, LPARAM lParam);
+int SkypeAuthAllow(WPARAM wParam, LPARAM lParam);
+int SkypeAuthDeny(WPARAM wParam, LPARAM lParam);
+int SkypeAddToListByEvent(WPARAM wParam, LPARAM lParam);
+int OkToExit(WPARAM wParam, LPARAM lParam);
+int __stdcall EnterBitmapFileName( char* szDest );
+void CleanupNicknames(char *dummy);
 
 // Structs
 

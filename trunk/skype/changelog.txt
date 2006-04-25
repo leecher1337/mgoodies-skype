@@ -29,6 +29,9 @@ CODE
 
 HISTORY
 -------
+0.0.0.20 - * Split service and options in two new cpp file.
+           * Put the default attemps number to 10
+
 0.0.0.19 - * Add avatar support for own user only (no api to ge contacts avatar)
            * Add set status message.
            * Add Get status message for contact where viewing contact details
