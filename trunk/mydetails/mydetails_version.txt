@@ -1,6 +1,10 @@
-My Details 0.0.0.41
+My Details 0.0.0.42
 
 Changelog:
+
+. 0.0.0.42
+  * Fixed code to open only one dialog
+  + CTRL-Enter on status message dialog
 
 . 0.0.0.41
   + Added support to new NAS services
