@@ -71,6 +71,7 @@ struct ParentWindowData
 	int		nFlash;
 	int		nFlashMax;
 	int		bMinimized;
+	int		bVMaximized;
 	int		bTopmost;
 	int		windowWasCascaded;
 	struct TabCtrlData *tabCtrlDat;
