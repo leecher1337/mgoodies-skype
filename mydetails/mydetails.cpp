@@ -30,7 +30,7 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,0,41),
+	PLUGIN_MAKE_VERSION(0,0,0,42),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -48,7 +48,10 @@ HANDLE hModulesLoadedHook = NULL;
 HANDLE hTopToolBarLoadedHook = NULL;
 
 long nickname_dialog_open;
+HWND hwndSetNickname;
+
 long status_msg_dialog_open;
+HWND hwndSetStatusMsg;
 
 
 // Hook called after init
@@ -326,6 +329,7 @@ static BOOL CALLBACK DlgProcSetNickname(HWND hwndDlg, UINT msg, WPARAM wParam, L
 
 			return TRUE;
 		}
+
 		case WM_COMMAND:
 			switch(wParam)
 			{
@@ -356,8 +360,11 @@ static BOOL CALLBACK DlgProcSetNickname(HWND hwndDlg, UINT msg, WPARAM wParam, L
 			break;
 
 		case WM_CLOSE:
-			InterlockedExchange(&nickname_dialog_open, 0);
 			DestroyWindow(hwndDlg);
+			break;
+
+		case WM_DESTROY:
+			InterlockedExchange(&nickname_dialog_open, 0);
 			break;
 	}
 	
@@ -392,13 +399,14 @@ static int PluginCommand_SetMyNicknameUI(WPARAM wParam,LPARAM lParam)
 	{
 		InterlockedExchange(&nickname_dialog_open, 1);
 
-		HWND hwndSetNickname = CreateDialog(hInst, MAKEINTRESOURCE( IDD_SETNICKNAME ), NULL, DlgProcSetNickname );
+		hwndSetNickname = CreateDialog(hInst, MAKEINTRESOURCE( IDD_SETNICKNAME ), NULL, DlgProcSetNickname );
 		
 		SendMessage(hwndSetNickname, WMU_SETDATA, proto_num, 0);
-		SetForegroundWindow( hwndSetNickname );
-		SetFocus( hwndSetNickname );
- 		ShowWindow( hwndSetNickname, SW_SHOW );
 	}
+
+	SetForegroundWindow( hwndSetNickname );
+	SetFocus( hwndSetNickname );
+ 	ShowWindow( hwndSetNickname, SW_SHOW );
 
 	return 0;
 }
@@ -609,6 +617,23 @@ static int PluginCommand_GetMyAvatar(WPARAM wParam,LPARAM lParam)
 	return -1;
 }
 
+static LRESULT CALLBACK StatusMsgEditSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (msg) {
+        case WM_CHAR:
+		{
+            if(wParam == 0x0a && (GetKeyState(VK_CONTROL) & 0x8000) != 0) {
+				PostMessage(GetParent(hwnd), WM_COMMAND, IDOK, 0);
+				return 0;
+			}
+			
+			break;
+		}
+	}
+
+    return CallWindowProc((WNDPROC) GetWindowLong(hwnd, GWL_USERDATA), hwnd, msg, wParam, lParam);
+}
+
 static BOOL CALLBACK DlgProcSetStatusMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch ( msg )
@@ -618,6 +643,11 @@ static BOOL CALLBACK DlgProcSetStatusMessage(HWND hwndDlg, UINT msg, WPARAM wPar
 			TranslateDialogDefault(hwndDlg);
 			SendMessage(GetDlgItem(hwndDlg, IDC_STATUSMESSAGE), EM_LIMITTEXT, 
 					MS_MYDETAILS_GETMYSTATUSMESSAGE_BUFFER_SIZE - 1, 0);
+
+			WNDPROC old_proc = (WNDPROC) SetWindowLong(GetDlgItem(hwndDlg, IDC_STATUSMESSAGE), 
+														GWL_WNDPROC, (LONG) StatusMsgEditSubclassProc);
+
+			SetWindowLong(GetDlgItem(hwndDlg, IDC_STATUSMESSAGE), GWL_USERDATA, (long) old_proc);
 
 			return TRUE;
 		}
@@ -675,8 +705,13 @@ static BOOL CALLBACK DlgProcSetStatusMessage(HWND hwndDlg, UINT msg, WPARAM wPar
 			break;
 
 		case WM_CLOSE:
-			InterlockedExchange(&status_msg_dialog_open, 0);
 			DestroyWindow(hwndDlg);
+			break;
+
+		case WM_DESTROY:
+			SetWindowLong(GetDlgItem(hwndDlg, IDC_STATUSMESSAGE), GWL_WNDPROC, 
+						  GetWindowLong(GetDlgItem(hwndDlg, IDC_STATUSMESSAGE), GWL_USERDATA));
+			InterlockedExchange(&status_msg_dialog_open, 0);
 			break;
 	}
 	
@@ -811,22 +846,25 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 
 		return 0;
 	}
-	else
+	else if (proto == NULL || proto->status != ID_STATUS_OFFLINE)
 	{
 		if (!status_msg_dialog_open)
 		{
 			InterlockedExchange(&status_msg_dialog_open, 1);
 
-			HWND hwndSet = CreateDialog(hInst, MAKEINTRESOURCE( IDD_SETSTATUSMESSAGE ), NULL, DlgProcSetStatusMessage );
+			hwndSetStatusMsg = CreateDialog(hInst, MAKEINTRESOURCE( IDD_SETSTATUSMESSAGE ), NULL, DlgProcSetStatusMessage );
 			
-			SendMessage(hwndSet, WMU_SETDATA, proto ? proto->status : 0, 0);
-			SetForegroundWindow( hwndSet );
-			SetFocus( hwndSet );
- 			ShowWindow( hwndSet, SW_SHOW );
+			SendMessage(hwndSetStatusMsg, WMU_SETDATA, proto ? proto->status : 0, 0);
 		}
+
+		SetForegroundWindow( hwndSetStatusMsg );
+		SetFocus( hwndSetStatusMsg );
+ 		ShowWindow( hwndSetStatusMsg, SW_SHOW );
 
 		return 0;
 	}
+
+	return -3;
 }
 
 

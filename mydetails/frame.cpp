@@ -1159,8 +1159,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		SetTextColor(hdc, font_colour[FONT_NICK]);
 
 		DrawTextWithRect(hdc, proto->nickname, DEFAULT_NICKNAME, rc, uFormat, 
-						 data->mouse_over_nick && proto->CanSetNick() && 
-						 !nickname_dialog_open, proto);
+						 data->mouse_over_nick && proto->CanSetNick(), proto);
 
 		// Clipping rgn
 		SelectClipRgn(hdc, NULL);
@@ -1253,8 +1252,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		SetTextColor(hdc, font_colour[FONT_AWAY_MSG]);
 
 		DrawTextWithRect(hdc, proto->status_message, DEFAULT_STATUS_MESSAGE, rc, uFormat, 
-						 data->mouse_over_away_msg && proto->CanSetStatusMsg() && 
-						 !status_msg_dialog_open, proto);
+						 data->mouse_over_away_msg && proto->CanSetStatusMsg(), proto);
 
 		// Clipping rgn
 		SelectClipRgn(hdc, NULL);
@@ -1610,7 +1608,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 				HMENU menu = CreatePopupMenu();
 
-				for (int i = 0 ; i < protocols->GetSize() ; i++)
+				for (int i = protocols->GetSize() - 1 ; i >= 0 ; i--)
 				{
 					MENUITEMINFO mii = {0};
 					mii.cbSize = sizeof(mii);
@@ -1776,7 +1774,8 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				if (protocols->CanSetStatusMsgPerProtocol())
 				{
 					// Add this proto to menu
-					mir_snprintf(tmp, sizeof(tmp), Translate("Set My Status Message for %s..."), proto->description);
+					mir_snprintf(tmp, sizeof(tmp), Translate("Set My Status Message for %s..."), 
+								 proto->description);
 
 					MENUITEMINFO mii = {0};
 					mii.cbSize = sizeof(mii);
@@ -1792,7 +1791,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 						mii.fState = MFS_DISABLED;
 					}
 
-					InsertMenuItem(submenu, 0, TRUE, &mii);;
+					InsertMenuItem(submenu, 0, TRUE, &mii);
 				}
 				else
 				{
@@ -1807,6 +1806,12 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					mii.dwTypeData = tmp;
 					mii.cch = strlen(tmp);
 					mii.wID = 1;
+
+					if (proto->status == ID_STATUS_OFFLINE)
+					{
+						mii.fMask |= MIIM_STATE;
+						mii.fState = MFS_DISABLED;
+					}
 
 					InsertMenuItem(submenu, 0, TRUE, &mii);
 				}
@@ -1877,7 +1882,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 						mii.fState = MFS_DISABLED;
 					}
 
-					InsertMenuItem(submenu, 0, TRUE, &mii);;
+					InsertMenuItem(submenu, 0, TRUE, &mii);
 				}
 				else
 				{
@@ -1892,6 +1897,12 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					mii.dwTypeData = tmp;
 					mii.cch = strlen(tmp);
 					mii.wID = 3;
+
+					if (proto->status == ID_STATUS_OFFLINE)
+					{
+						mii.fMask |= MIIM_STATE;
+						mii.fState = MFS_DISABLED;
+					}
 
 					InsertMenuItem(submenu, 0, TRUE, &mii);
 				}
