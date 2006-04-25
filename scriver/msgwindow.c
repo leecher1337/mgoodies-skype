@@ -368,6 +368,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			dat->mouseLBDown = 0;
 			dat->windowWasCascaded = 0;
 			dat->bMinimized = 0;
+			dat->bVMaximized = 0;
 			dat->hwndStatus = CreateWindowEx(0, STATUSCLASSNAME, NULL, WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwndDlg, NULL, g_hInst, NULL);
 			{
 				int statwidths[4];
@@ -450,12 +451,17 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	{
 		MINMAXINFO *mmi = (MINMAXINFO *) lParam;
 		SIZE size;
-		if (GetKeyState(VK_CONTROL) & 0x8000) {
+		if ((GetKeyState(VK_CONTROL) & 0x8000) || dat->bVMaximized) {
+			MONITORINFO mi;
+			HMONITOR hMonitor;
 			WINDOWPLACEMENT wp;
 			RECT rcDesktop;
 			wp.length = sizeof(wp);
 			GetWindowPlacement(hwndDlg, &wp);
-			SystemParametersInfo(SPI_GETWORKAREA, 0, &rcDesktop, 0);
+			hMonitor = MonitorFromRect(&wp.rcNormalPosition, MONITOR_DEFAULTTONEAREST);
+			mi.cbSize = sizeof(mi);
+			GetMonitorInfo(hMonitor, &mi);
+			rcDesktop = mi.rcWork;
 			mmi->ptMaxSize.x = wp.rcNormalPosition.right - wp.rcNormalPosition.left;
 			mmi->ptMaxSize.y = rcDesktop.bottom - rcDesktop.top;
 			mmi->ptMaxPosition.x = wp.rcNormalPosition.left;
@@ -464,7 +470,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			} else {
 				mmi->ptMaxPosition.y = 0;
 			}
-		}
+			dat->bVMaximized = 1;
+		} 
 		GetMinimunWindowSize(dat, &size);
 		mmi->ptMinTrackSize.x = size.cx;
 		mmi->ptMinTrackSize.y = size.cy;
@@ -472,9 +479,11 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	}
 
 	case WM_SIZE:
+		if (wParam == SIZE_MAXIMIZED && !(GetKeyState(VK_CONTROL) & 0x8000)) {
+			dat->bVMaximized = 0;
+		}
 		if (wParam == SIZE_MINIMIZED) {
 			dat->bMinimized = 1;
-
 		}
 		if (IsIconic(hwndDlg))	{
 			MoveWindow(dat->hwndActive, dat->childRect.left, dat->childRect.top, dat->childRect.right-dat->childRect.left, dat->childRect.bottom - dat->childRect.top, TRUE);
