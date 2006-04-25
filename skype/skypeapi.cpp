@@ -983,7 +983,7 @@ char SendSkypeproxyCommand(char command) {
  */
 int ConnectToSkypeAPI(char *path) {
 	BOOL SkypeLaunched=FALSE;
-	int counter=0, i, j, maxattempts=DBGetContactSettingWord(NULL, pszSkypeProtoName, "ConnectionAttempts", 5);
+	int counter=0, i, j, maxattempts=DBGetContactSettingWord(NULL, pszSkypeProtoName, "ConnectionAttempts", 10);
 	char *args[5];
 	char *SkypeOptions[]={"/notray", "/nosplash", "/minimized"};
 	const int SkypeDefaults[]={0, 1, 1};
