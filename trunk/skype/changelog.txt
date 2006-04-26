@@ -13,6 +13,7 @@ CODE
 
 HISTORY
 -------
+0.0.0.22 - * Options page redesigned
 0.0.0.21 - * Some minor bugfixes
 		   * Severe bugfix: Message sending routine worked incorrectly (no errors were shown
 		     even if there were sending-errors)

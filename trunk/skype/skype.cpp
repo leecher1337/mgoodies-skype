@@ -62,7 +62,7 @@ extern status_map status_codes[];
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,21),
+	PLUGIN_MAKE_VERSION(0,0,0,22),
 	"Support for Skype network",
 	"leecher",
 	"leecher@dose.0wnz.at",

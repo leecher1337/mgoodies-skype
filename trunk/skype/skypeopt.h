@@ -15,6 +15,10 @@ int RegisterOptions(WPARAM wParam, LPARAM lParam);
  */
 int CALLBACK OptionsDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int CALLBACK OptionsProxyDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+
 /*
 * Procedure to call when the option page is asked
 *
