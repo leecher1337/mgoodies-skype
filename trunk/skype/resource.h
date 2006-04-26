@@ -11,9 +11,6 @@
 #define IDI_NA                          131
 #define IDI_DND                         158
 #define IDI_OCCUPIED                    159
-#define IDI_PHONE                       1002
-//#define IDI_OUTLUNCH                       1003
-
 #define IDI_ADD                         160
 #define IDI_IMPORT                      161
 #define IDI_ERRORS                      162
@@ -23,13 +20,15 @@
 #define IDI_HOLD                        166
 #define IDI_RESUME                      167
 #define IDI_HANGUP                      168
-
 #define IDI_AVATAR                      169
 #define IDD_OPTIONS                     170
+#define IDI_INVITE                      170
 #define IDD_DIAL                        171
 #define IDB_CALL                        172
+#define IDD_INPUTBOX                    172
 #define IDD_CALLSTAT                    173
 #define IDD_SETAVATAR                   174
+#define IDI_PHONE                       1002
 #define IDC_SHUTDOWN                    1004
 #define IDC_ENABLEMENU                  1005
 #define IDC_UNLOADOFFLINE               1006
@@ -57,15 +56,15 @@
 #define IDC_NOTRAY                      1030
 #define IDC_NOSPLASH                    1031
 #define IDC_MINIMIZED                   1032
-
+#define IDC_TEXT                        1033
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        169
+#define _APS_NEXT_RESOURCE_VALUE        173
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1033
+#define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

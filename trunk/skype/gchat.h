@@ -1,5 +1,7 @@
 #include "m_chat.h"
 
+#define MAX_BUF 256    // Buffer for topic-string
+
 typedef struct {
 	char*		   szChatName;		 // name of chat session
 	HANDLE*		   mJoinedContacts;  //	contacts

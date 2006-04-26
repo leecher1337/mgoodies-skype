@@ -56,6 +56,61 @@ BEGIN
 END
 #endif    // APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_INVITE              ICON    DISCARDABLE     "res\\Invite.ico"
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,0,0,21
+ PRODUCTVERSION 0,0,0,21
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "Miranda IM community\0"
+            VALUE "FileDescription", "Skype\0"
+            VALUE "FileVersion", "0, 0, 0, 21\0"
+            VALUE "InternalName", "Skype\0"
+            VALUE "LegalCopyright", "Copyright © 2006\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "Skype.dll\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "Skype_protocol for Miranda IM\0"
+            VALUE "ProductVersion", "0, 0, 0, 21\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END
+
+#endif    // !_MAC
+
 #endif    // French (Belgium) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -162,6 +217,16 @@ BEGIN
                     200,11
 END
 
+IDD_INPUTBOX DIALOG DISCARDABLE  0, 0, 186, 52
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,25,31,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,100,31,50,14
+    EDITTEXT        IDC_TEXT,7,13,172,13,ES_AUTOHSCROLL
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -193,6 +258,14 @@ BEGIN
         RIGHTMARGIN, 207
         TOPMARGIN, 7
         BOTTOMMARGIN, 62
+    END
+
+    IDD_INPUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 45
     END
 END
 #endif    // APSTUDIO_INVOKED

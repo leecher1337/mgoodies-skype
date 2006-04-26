@@ -5,23 +5,7 @@ NOTES
   currently no function in the API to do this
   Got to File/Options/Instant messages and disable the checkboxes there
 
-TODO
-----
-  * Make an option for the autoimport of History
-  * Under heavy load launching Skype startup may fail
-  * Implement renaming of a contact so that the renamed contact will also be renamed in 
-    Skype --> not supported by Skype API
-  * Implement conference calls
-  * Check if sending a message fails because message is too long (?)
-  * .. 
-  * lots of more stuff
 
-
-BUGS
-----
-
-  Still a lot I guess...
-  rand
 CODE
 ----
   Currently a real mess. At least I splitted it up a bit now.
@@ -29,6 +13,16 @@ CODE
 
 HISTORY
 -------
+0.0.0.21 - * Some minor bugfixes
+		   * Severe bugfix: Message sending routine worked incorrectly (no errors were shown
+		     even if there were sending-errors)
+		   * Removed PingPong - thread in favour of WM_TIMER
+		   * Fixed critical section unlocking in skypeapi.c. In certain cases, critical sections 
+		     were not left correctly.
+		   * Fixed a bug that caused Miranda to crash on exit with Newstatusnotify plugin
+		     (thanks to TioDuke for reporting)
+		   * Hopefully fixed the nasty bug that caused Miranda to lockup on exit.
+
 0.0.0.20 - * Split service and options in two new cpp file.
            * Put the default attemps number to 10
 

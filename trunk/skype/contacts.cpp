@@ -18,7 +18,7 @@ extern BOOL bSkypeOut;
 extern char protocol;
 
 // Handles
-static HANDLE hMenuCallItem, hMenuSkypeOutCallItem, hMenuHoldCallItem, hMenuFileTransferItem;
+static HANDLE hMenuCallItem, hMenuSkypeOutCallItem, hMenuHoldCallItem, hMenuFileTransferItem, hMenuChatInitItem;
 
 // Check if alpha blending icons are supported
 // Seems to be not neccessary
@@ -132,6 +132,19 @@ CLISTMENUITEM FileTransferItem(void) {
 	return mi;
 }
 
+CLISTMENUITEM ChatInitItem(void) {
+	CLISTMENUITEM mi={0};
+
+	mi.cbSize=sizeof(mi);
+	mi.position=-2000020000;
+	mi.flags=CMIF_HIDDEN|CMIF_NOTOFFLINE;
+	mi.hIcon=LoadIcon( hInst, MAKEINTRESOURCE( IDI_INVITE ));
+	mi.pszName=Translate("&Open groupchat");
+	mi.pszContactOwner=pszSkypeProtoName;
+	mi.pszService=SKYPE_CHATNEW;
+	return mi;
+}
+
 HANDLE add_contextmenu(HANDLE hContact) {
 	CLISTMENUITEM mi=CallItem();
 
@@ -147,6 +160,10 @@ HANDLE add_contextmenu(HANDLE hContact) {
 	// sendfile-Dialog.
 	mi=FileTransferItem();
 	hMenuFileTransferItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0,(LPARAM)&mi);
+    
+   	mi=ChatInitItem();
+	hMenuChatInitItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0,(LPARAM)&mi);
+
 
 	ZeroMemory(&mi,sizeof(mi));
 	mi.cbSize=sizeof(mi);
@@ -195,6 +212,10 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 			mi=HupItem();
 			DBFreeVariant(&dbv);
 		} else mi=CallItem();
+        
+        if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "ChatRoom", 0)!=0) 
+			mi.flags |= CMIF_HIDDEN;
+        
 		mi.flags|=CMIM_ALL;
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuCallItem,(LPARAM)&mi);
 
@@ -203,12 +224,20 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 		mi.flags|=CMIM_ALL;
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuSkypeOutCallItem,(LPARAM)&mi);
 
-		// File sending works starting with protocol version 5
+		// File sending and groupchat-creation works starting with protocol version 5
 		if (protocol>=5) {
 			mi=FileTransferItem();
-			mi.flags ^= CMIF_HIDDEN;
+            if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "ChatRoom", 0)==0)
+			    mi.flags ^= CMIF_HIDDEN;
 			mi.flags |= CMIM_FLAGS;
 			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuFileTransferItem,(LPARAM)&mi);
+            
+            mi=ChatInitItem();
+			if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0) &&
+				DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "ChatRoom", 0)==0)
+					mi.flags ^= CMIF_HIDDEN;
+			mi.flags |= CMIM_FLAGS;
+			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuChatInitItem,(LPARAM)&mi);
 		}
 
 	} else if (bSkypeOut) {
