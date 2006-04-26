@@ -145,7 +145,7 @@ BEGIN
                     0x18000000L
     CONTROL         "&D",IDC_DETAILS,"MButtonClass",0x0,17,31,16,14,
                     0x18000000L
-    CONTROL         "",IDC_SMILEYS,"MButtonClass",0x0,41,31,16,14,
+    CONTROL         "&E",IDC_SMILEYS,"MButtonClass",0x0,41,31,16,14,
                     0x18000000L
     CONTROL         "",IDC_ADD,"MButtonClass",0x0,110,31,16,14,0x18000000L
     CONTROL         "&H",IDC_HISTORY,"MButtonClass",0x0,130,31,16,14,
