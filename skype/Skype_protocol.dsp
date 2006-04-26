@@ -112,6 +112,14 @@ SOURCE=.\skypeapi.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\skypeopt.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\skypesvc.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\utf8.cpp
 # End Source File
 # End Group
@@ -153,6 +161,14 @@ SOURCE=.\skype.h
 # Begin Source File
 
 SOURCE=.\skypeapi.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\skypeopt.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\skypesvc.h
 # End Source File
 # Begin Source File
 
@@ -229,6 +245,10 @@ SOURCE=.\res\import.ico
 # Begin Source File
 
 SOURCE=.\res\invisible.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\Invite.ico
 # End Source File
 # Begin Source File
 

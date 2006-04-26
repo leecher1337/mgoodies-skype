@@ -8,13 +8,14 @@
 #include "contacts.h"
 #include "skypeproxy.h"
 #include "pthread.h"
+#include "gchat.h"
 #include "../../include/m_utils.h"
 #include "../../include/m_langpack.h"
 #include "m_toptoolbar.h"
 
 // Imported Globals
 extern HWND hSkypeWnd, hWnd;
-extern BOOL SkypeInitialized, UseSockets;
+extern BOOL SkypeInitialized, UseSockets, MirandaShuttingDown;
 extern int SkypeStatus, receivers;
 extern HANDLE SkypeReady, SkypeMsgReceived, httbButton;
 extern char pszSkypeProtoName[MAX_PATH+30];
@@ -40,7 +41,7 @@ status_map status_codes[] = {
 	{0, NULL}
 };
 
-CRITICAL_SECTION MsgQueueMutex;
+CRITICAL_SECTION MsgQueueMutex, ConnectMutex;
 BOOL rcvThreadRunning=FALSE;
 SOCKET ClientSocket=INVALID_SOCKET;
 
@@ -93,7 +94,7 @@ void rcvThread(char *dummy) {
 
 /* SkypeMsgInit
  * 
- * Purpose: Initializes the Skype Message queue
+ * Purpose: Initializes the Skype Message queue and API
  * Returns: 0 - Success
  *         -1 - Memory allocation failure
  */
@@ -104,6 +105,7 @@ int SkypeMsgInit(void) {
 	SkypeMsgs->tAdded=0;
 	SkypeMsgs->next=NULL;
 	InitializeCriticalSection(&MsgQueueMutex);
+    InitializeCriticalSection(&ConnectMutex);
 	return 0;
 }
 
@@ -119,9 +121,15 @@ int SkypeMsgAdd(char *msg) {
 
 	EnterCriticalSection(&MsgQueueMutex);
 	ptr=SkypeMsgs;
-	if (!ptr) return -1;
+	if (!ptr) {
+		LeaveCriticalSection(&MsgQueueMutex);
+		return -1;
+	}
 	while (ptr->next!=NULL) ptr=ptr->next;
-	if ((ptr->next=(struct MsgQueue*)malloc(sizeof(struct MsgQueue)))==NULL) return -1;
+	if ((ptr->next=(struct MsgQueue*)malloc(sizeof(struct MsgQueue)))==NULL) {
+		LeaveCriticalSection(&MsgQueueMutex);
+		return -1;
+	}
 	ptr=ptr->next;
 	ptr->message = _strdup(msg); // Don't forget to free!
 	ptr->tAdded = time(NULL);
@@ -136,9 +144,21 @@ int SkypeMsgAdd(char *msg) {
  */
 void SkypeMsgCleanup(void) {
 	struct MsgQueue *ptr;
+	int i;
 
 	LOG("SkypeMsgCleanup", "Cleaning up message queue..");
+	if (receivers>1)
+	{
+		LOGL ("SkypeMsgCleanup Releasing receivers: ", receivers);
+		for (i=0;i<receivers; i++)
+		{
+			SkypeMsgAdd ("ERROR Semaphore was blocked");
+		}
+		ReleaseSemaphore (SkypeMsgReceived, receivers, NULL);	
+	}
+
 	EnterCriticalSection(&MsgQueueMutex);
+	EnterCriticalSection(&ConnectMutex);
 	if (SkypeMsgs) SkypeMsgs->message=NULL; //First message is free()d by user
 	while (SkypeMsgs) {
 		ptr=SkypeMsgs;
@@ -147,6 +167,9 @@ void SkypeMsgCleanup(void) {
 		free(ptr);
 	}
 	LeaveCriticalSection(&MsgQueueMutex);
+	LeaveCriticalSection(&ConnectMutex);
+	DeleteCriticalSection(&MsgQueueMutex);
+	DeleteCriticalSection(&ConnectMutex);
 	LOG("SkypeMsgCleanup", "Done.");
 }
 
@@ -206,11 +229,14 @@ int __sendMsg(char *szMsg) {
    }
    if (!SendResult) {
 	  SkypeInitialized=FALSE;
+      AttachStatus=-1;
+	  ResetEvent(SkypeReady);
+	  if (hWnd) KillTimer (hWnd, 1);
   	  if (SkypeStatus!=ID_STATUS_OFFLINE) {
 		// Go offline
 		logoff_contacts();
 		oldstatus=SkypeStatus;
-		SkypeStatus=ID_STATUS_OFFLINE;
+		InterlockedExchange((long *)&SkypeStatus, (int)ID_STATUS_OFFLINE);
 		ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldstatus, SkypeStatus);
 	  }
 	  // Reconnect to Skype
@@ -289,7 +315,10 @@ int SkypeSend(char *szFmt, ...) {
  *		    or there was an error and return it
  * Params : what	- Wait for this string-part at the beginning of a received string
  *					  If the first character of the string is NULL, the rest after the NULL
- *					  character will be searched in the entire received message-string
+ *					  character will be searched in the entire received message-string.
+ *                    You can tokenize the string by using NULL characters.
+ *                    You HAVE TO end the string with a extra \0, otherwise the tokenizer
+ *                    will run amok in memory!
  *		    maxwait - Wait this time before returning, if nothing was received,
  *					  can be INFINITE
  * Returns: The received message containing "what" or a ERROR-Message or NULL if 
@@ -297,16 +326,30 @@ int SkypeSend(char *szFmt, ...) {
  * Warning: Don't forget to free() return value!
  */
 char *SkypeRcv(char *what, DWORD maxwait) {
-	char *msg;
+    char *msg, *token=NULL;
 	struct MsgQueue *ptr, *ptr_;
+	DWORD dwWaitStat;
 
+	LOG ("SkypeRcv - Requesting answer: ", what);
 	do {
 		EnterCriticalSection(&MsgQueueMutex);
 		ptr_=SkypeMsgs;
 		ptr=ptr_->next;
 		while (ptr!=NULL) {
-			if (what==NULL || !strncmp(ptr->message, what, strlen(what)) ||
-				(what[0]==0 && strstr(ptr->message, what+1)) || 
+			if (what && what[0]==0) {
+				// Tokenizer syntax active
+				token=what+1;
+				while (*token) {
+					if (!strstr (ptr->message, token)) {
+						token=NULL;
+						break;
+					}
+					token+=strlen(token)+1;
+				}
+			}
+
+			if (what==NULL || token || 
+				(what[0] && !strncmp(ptr->message, what, strlen(what))) ||
 				!strncmp(ptr->message, "ERROR", 5)) 
 			{
 				msg=ptr->message;
@@ -320,11 +363,14 @@ char *SkypeRcv(char *what, DWORD maxwait) {
 			ptr=ptr_->next;
 		}
 		LeaveCriticalSection(&MsgQueueMutex);
-		receivers++;
-		if (WaitForSingleObject(SkypeMsgReceived, maxwait)!=WAIT_OBJECT_0) break;
-		if (receivers>1) receivers--;
+		InterlockedIncrement ((long *)&receivers); //receivers++;
+		dwWaitStat = WaitForSingleObject(SkypeMsgReceived, maxwait);
+		if (receivers>1) InterlockedDecrement ((long *)&receivers); //  receivers--;
+		if (receivers>1) {LOGL ("SkypeRcv: receivers still waiting: ", receivers);}
 		
-	} while(1);	
+	} while(dwWaitStat == WAIT_OBJECT_0 && !MirandaShuttingDown);	
+	InterlockedDecrement ((long *)&receivers);
+	LOG("<SkypeRcv:", "(empty)");	
 	return NULL;
 }
 /*
@@ -614,6 +660,7 @@ static int CALLBACK CallstatDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 				if (msg=(char *)malloc(strlen(dbv.pszVal)+23)) {
 					sprintf(msg, "SET %s STATUS INPROGRESS", dbv.pszVal);
 					SkypeSend(msg);
+                    testfor ("ERROR", 200);
 					free(msg);
 				}
 				DBFreeVariant(&dbv);
@@ -861,6 +908,36 @@ int SkypeSendFile(WPARAM wParam, LPARAM lParam) {
 	return retval;
 }
 
+/* SkypeChatCreate
+ * 
+ * Purpose: Creates a groupchat with the user
+ * Params : wParam - Handle to the User 
+ *          lParam - Not used
+ * Returns: 0 - Success
+ *		   -1 - Failure
+ */
+int SkypeChatCreate(WPARAM wParam, LPARAM lParam) {
+	DBVARIANT dbv;
+	HANDLE hContact=(HANDLE)wParam;
+	char *ptr, *ptr2;
+
+	if (!hContact || DBGetContactSetting(hContact, pszSkypeProtoName, SKYPE_NAME, &dbv))
+		return -1;
+	// Flush old messages
+	while (testfor("\0CHAT \0 STATUS \0", 0));
+	if (SkypeSend("CHAT CREATE %s", dbv.pszVal) || !(ptr=SkypeRcv ("\0CHAT \0 STATUS \0", INFINITE)))
+	{
+		DBFreeVariant(&dbv);
+		return -1;
+	}
+	DBFreeVariant(&dbv);
+    if (ptr2=strstr (ptr, "STATUS")) {
+		*(ptr2-1)=0;
+		ChatStart (ptr+5);
+	}
+	free(ptr);
+	return 0;
+}
 
 /* SkypeAdduserDlg
  * 
@@ -922,6 +999,7 @@ char *MirandaStatusToSkype(int id) {
 char *GetSkypeErrorMsg(char *str) {
 	char *pos, *reason, *msg;
 
+    LOG ("GetSkypeErrorMsg received error: ", str);
 	if (!strncmp(str, "ERROR", 5)) {
 		reason=_strdup(str);
 		return reason;
@@ -988,7 +1066,8 @@ int ConnectToSkypeAPI(char *path) {
 	char *SkypeOptions[]={"/notray", "/nosplash", "/minimized"};
 	const int SkypeDefaults[]={0, 1, 1};
 
-	AttachStatus=-1;
+	// Prevent reentrance
+	LOG("ConnectToSkypeAPI", "started.");
 	if (UseSockets) {
 		SOCKADDR_IN service;
 		DBVARIANT dbv;
@@ -996,8 +1075,7 @@ int ConnectToSkypeAPI(char *path) {
 		struct hostent *hp;
 
 		LOG("ConnectToSkypeAPI", "Connecting to Skype2socket socket...");
-		if ((ClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))==INVALID_SOCKET)
-			return -1;
+        if ((ClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))==INVALID_SOCKET) return -1;
 
 		if (!DBGetContactSetting(NULL, pszSkypeProtoName, "Host", &dbv)) {
 			if ((inet=inet_addr(dbv.pszVal))==-1) {
@@ -1019,9 +1097,8 @@ int ConnectToSkypeAPI(char *path) {
 		service.sin_addr.s_addr = inet;
 		service.sin_port = htons((unsigned short)DBGetContactSettingWord(NULL, pszSkypeProtoName, "Port", 1401));
 	
-		if ( connect( ClientSocket, (SOCKADDR*) &service, sizeof(service) ) == SOCKET_ERROR)
-			return -1;
-
+		if ( connect( ClientSocket, (SOCKADDR*) &service, sizeof(service) ) == SOCKET_ERROR) return -1;
+            
 		if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "RequiresPassword", 0) && 
 			!DBGetContactSetting(NULL, pszSkypeProtoName, "Password", &dbv)) {
 				char reply=0;
@@ -1061,20 +1138,21 @@ int ConnectToSkypeAPI(char *path) {
 
 
 		if (!rcvThreadRunning)
-			if(_beginthread(( pThreadFunc )rcvThread, 0, NULL)==-1)
-				return -1;
+			if(_beginthread(( pThreadFunc )rcvThread, 0, NULL)==-1) return -1;
+                
 		AttachStatus=SKYPECONTROLAPI_ATTACH_SUCCESS;
 		return 0;
 	}
 
 	do {
+        int retval;
 		/*	To initiate communication, Client should broadcast windows message
 			('SkypeControlAPIDiscover') to all windows in the system, specifying its own
 			window handle in wParam parameter.
 		 */
-		LOG("ConnectToSkypeAPI", "Sending discover message..");
-		SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
-		LOG("ConnectToSkypeAPI", "Discover message sent, waiting for Skype to become ready..");
+		LOGL("ConnectToSkypeAPI sending discover message.. hWnd=", (long)hWnd);
+		retval=SendMessageTimeout(HWND_BROADCAST, ControlAPIDiscover, (WPARAM)hWnd, 0, SMTO_ABORTIFHUNG, 3000, NULL);
+		LOGL("ConnectToSkypeAPI sent discover message returning", retval);
 
 		/*	In response, Skype responds with
 			message 'SkypeControlAPIAttach' to the handle specified, and indicates
@@ -1090,7 +1168,8 @@ int ConnectToSkypeAPI(char *path) {
 				continue;
 			}
 			if (!SkypeLaunched && path) {
-				if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1)) {
+				//if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1))
+				{
 					LOG("ConnectToSkypeAPI", "Starting Skype, as it's not running");
 					args[0]=path;
 					j=1;
@@ -1113,7 +1192,7 @@ int ConnectToSkypeAPI(char *path) {
 				if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) && !path) return -1;
 				LOGL("Trying to attach: #", counter);
 				counter++;
-				if (counter==maxattempts) {
+				if (counter>=maxattempts && AttachStatus==-1) {
 					OUTPUT("ERROR: Skype not running / too old / working!");
 					return -1;
 				}
@@ -1142,4 +1221,31 @@ int ConnectToSkypeAPI(char *path) {
 	}
 	
 	return 0;
+}
+
+/* ConnectToSkypeAPI
+ * 
+ * Purpose: Establish a connection to the Skype API
+ * Params : path - Path to the Skype application
+ * Returns: 0 - Connecting succeeded
+ *		   -1 - Something went wrong
+ */
+int __connectAPI(char *path) {
+  int retval;
+  
+  EnterCriticalSection(&ConnectMutex);
+  if (AttachStatus!=-1) {
+	  LeaveCriticalSection(&ConnectMutex);
+	  return -1;
+  }
+  InterlockedExchange((long *)&SkypeStatus, ID_STATUS_CONNECTING);
+  ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_OFFLINE, SkypeStatus);
+  retval=__connectAPI(path);
+  if (retval==-1) {
+	logoff_contacts();
+	InterlockedExchange((long *)&SkypeStatus, ID_STATUS_OFFLINE);
+	ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) ID_STATUS_CONNECTING, SkypeStatus);
+  }
+  LeaveCriticalSection(&ConnectMutex);
+  return retval;
 }

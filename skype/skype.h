@@ -24,6 +24,7 @@
 #include "../../include/m_langpack.h"
 #include "../../include/m_userinfo.h"
 #include "../../include/m_avatars.h"
+#include "../../include/m_contacts.h"
 
 // MyDetails defines
 
@@ -70,24 +71,25 @@
 #define SKYPE_HOLDCALL "Skype_protocol/HoldCall"
 #define SKYPE_SENDFILE "Skype_protocol/SendFile"
 #define SKYPE_SETAVATAR "Skype_protocol/SetAvatar"
+#define SKYPE_CHATNEW "Skype_protocol/ChatNew"
 #define EVENTTYPE_CALL 2000
 
 // Common used code-pieces
 #define OUTPUT(a) ShowMessage(IDI_ERRORS, a, 1);
-#define ERRCHK 	if (!strncmp(ptr, "ERROR", 5)) { OUTPUT(ptr); free(ptr); SetEvent(SkypeMsgFetched); return; }
+#define ERRCHK 	if (!strncmp(ptr, "ERROR", 5)) { OUTPUT(ptr); free(ptr); SetEvent(SkypeMsgFetched); LOG("FetchMessageThread", "terminated."); return; }
 
 typedef void ( __cdecl* pThreadFunc )( void* );
 
 // Prototypes
 
 void __cdecl SkypeSystemInit(char *);
+void __cdecl MsgPump (char *dummy);
 int HookContactAdded(WPARAM wParam, LPARAM lParam);
 void PingPong(void);
 void CheckIfApiIsResponding(char *);
 void TellError(DWORD err);
 int ShowMessage(int, char*, int);
 void EndCallThread(char *);
-DWORD WINAPI ThreadFunc(VOID);
 void GetInfoThread(HANDLE);
 int OnDetailsInit( WPARAM, LPARAM );
 BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);

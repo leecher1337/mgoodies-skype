@@ -9,6 +9,7 @@
 	void log_write(char *prfx, char *text);
 	void log_long(char *prfx, long text);
 	void init_debug(void);
+    void end_debug (void);
 	#define DEBUG_OUT(a) OUTPUT(a)
 	#define LOG(a, b) log_write(a, b)
 	#define LOGL(a, b) log_long(a, b)
