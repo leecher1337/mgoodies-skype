@@ -28,6 +28,8 @@
 #define IDD_INPUTBOX                    172
 #define IDD_CALLSTAT                    173
 #define IDD_SETAVATAR                   174
+#define IDD_OPT_DEFAULT                 175
+#define IDD_OPT_PROXY                   176
 #define IDI_PHONE                       1002
 #define IDC_SHUTDOWN                    1004
 #define IDC_ENABLEMENU                  1005
@@ -57,14 +59,15 @@
 #define IDC_NOSPLASH                    1031
 #define IDC_MINIMIZED                   1032
 #define IDC_TEXT                        1033
+#define IDC_OPTIONSTAB                  1034
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        173
+#define _APS_NEXT_RESOURCE_VALUE        177
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1034
+#define _APS_NEXT_CONTROL_VALUE         1035
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

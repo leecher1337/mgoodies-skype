@@ -23,12 +23,153 @@ int RegisterOptions(WPARAM wParam, LPARAM lParam) {
    return 0;
 }
 
-int CALLBACK OptionsDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	const int StartControls[]={IDC_NOSPLASH, IDC_MINIMIZED, IDC_NOTRAY};
+static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	static int iInit = TRUE;
+   
+   switch(msg)
+   {
+      case WM_INITDIALOG:
+      {
+         TCITEM tci;
+         RECT rcClient;
+         GetClientRect(hwnd, &rcClient);
+
+		 iInit = TRUE;
+         tci.mask = TCIF_PARAM|TCIF_TEXT;
+         tci.lParam = (LPARAM)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_DEFAULT), hwnd, OptionsDefaultDlgProc);
+         tci.pszText = TranslateT("Skype default");
+		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
+         MoveWindow((HWND)tci.lParam,1,26,rcClient.right-3,rcClient.bottom-29,1);
+
+         tci.lParam = (LPARAM)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_PROXY),hwnd,OptionsProxyDlgProc);
+         tci.pszText = TranslateT("Skype proxy");
+         TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
+         MoveWindow((HWND)tci.lParam,1,26,rcClient.right-3,rcClient.bottom-29,1);
+         ShowWindow((HWND)tci.lParam, SW_HIDE);
+         iInit = FALSE;
+         return FALSE;
+      }
+
+      case PSM_CHANGED: // used so tabs dont have to call SendMessage(GetParent(GetParent(hwnd)), PSM_CHANGED, 0, 0);
+         if(!iInit)
+             SendMessage(GetParent(hwnd), PSM_CHANGED, 0, 0);
+         break;
+      case WM_NOTIFY:
+         switch(((LPNMHDR)lParam)->idFrom) {
+            case 0:
+               switch (((LPNMHDR)lParam)->code)
+               {
+                  case PSN_APPLY:
+                     {
+                        TCITEM tci;
+                        int i,count;
+                        tci.mask = TCIF_PARAM;
+                        count = TabCtrl_GetItemCount(GetDlgItem(hwnd,IDC_OPTIONSTAB));
+                        for (i=0;i<count;i++)
+                        {
+                           TabCtrl_GetItem(GetDlgItem(hwnd,IDC_OPTIONSTAB),i,&tci);
+                           SendMessage((HWND)tci.lParam,WM_NOTIFY,0,lParam);
+                        }						
+                     }
+                  break;
+               }
+            break;
+            case IDC_OPTIONSTAB:
+               switch (((LPNMHDR)lParam)->code)
+               {
+                  case TCN_SELCHANGING:
+                     {
+                        TCITEM tci;
+                        tci.mask = TCIF_PARAM;
+                        TabCtrl_GetItem(GetDlgItem(hwnd,IDC_OPTIONSTAB),TabCtrl_GetCurSel(GetDlgItem(hwnd,IDC_OPTIONSTAB)),&tci);
+                        ShowWindow((HWND)tci.lParam,SW_HIDE);                     
+                     }
+                  break;
+                  case TCN_SELCHANGE:
+                     {
+                        TCITEM tci;
+                        tci.mask = TCIF_PARAM;
+                        TabCtrl_GetItem(GetDlgItem(hwnd,IDC_OPTIONSTAB),TabCtrl_GetCurSel(GetDlgItem(hwnd,IDC_OPTIONSTAB)),&tci);
+                        ShowWindow((HWND)tci.lParam,SW_SHOW);                     
+                     }
+                  break;
+               }
+            break;
+
+         }
+      break;
+   }
+   return FALSE;
+}
+
+int CALLBACK OptionsProxyDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	const int Skype2SocketControls[]={IDC_HOST, IDC_PORT, IDC_REQPASS, IDC_PASSWORD};
 	static BOOL initDlg=FALSE;
-	static int statusModes[]={ID_STATUS_OFFLINE,ID_STATUS_ONLINE,ID_STATUS_AWAY,ID_STATUS_NA,ID_STATUS_OCCUPIED,ID_STATUS_DND,ID_STATUS_FREECHAT,ID_STATUS_INVISIBLE,ID_STATUS_OUTTOLUNCH,ID_STATUS_ONTHEPHONE};
 	DBVARIANT dbv;
+	int i;
+	
+	switch (uMsg){
+		case WM_INITDIALOG:	
+			initDlg=TRUE;
+			TranslateDialogDefault(hwndDlg);
+			if (!DBGetContactSetting(NULL, pszSkypeProtoName, "Host", &dbv)) {
+				SetDlgItemText(hwndDlg, IDC_HOST, dbv.pszVal);
+				DBFreeVariant(&dbv);
+			} else SetDlgItemText(hwndDlg, IDC_HOST, "localhost");
+			SetDlgItemInt(hwndDlg, IDC_PORT, DBGetContactSettingWord(NULL, pszSkypeProtoName, "Port", 1401), FALSE);
+			CheckDlgButton(hwndDlg, IDC_REQPASS, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "RequiresPassword", 0));
+			CheckDlgButton(hwndDlg, IDC_USES2S, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseSkype2Socket", 0));
+			if (!DBGetContactSetting(NULL, pszSkypeProtoName, "Password", &dbv)) {
+				CallService(MS_DB_CRYPT_DECODESTRING, strlen(dbv.pszVal)+1, (LPARAM)dbv.pszVal);
+				SetDlgItemText(hwndDlg, IDC_PASSWORD, dbv.pszVal);
+				DBFreeVariant(&dbv);
+			}
+			SendMessage(hwndDlg, WM_COMMAND, IDC_USES2S, 0);
+			SendMessage(hwndDlg, WM_COMMAND, IDC_REQPASS, 0);
+			initDlg=FALSE;
+			return TRUE;
+		case WM_NOTIFY: {
+			NMHDR* nmhdr = (NMHDR*)lParam;
+
+			switch (nmhdr->code){
+				case PSN_APPLY:
+				case PSN_KILLACTIVE:
+					char buf[1024];
+					GetDlgItemText(hwndDlg, IDC_HOST, buf, sizeof(buf));
+					DBWriteContactSettingString(NULL, pszSkypeProtoName, "Host", buf);
+					DBWriteContactSettingWord(NULL, pszSkypeProtoName, "Port", (unsigned short)GetDlgItemInt(hwndDlg, IDC_PORT, NULL, FALSE));
+					DBWriteContactSettingByte(NULL, pszSkypeProtoName, "RequiresPassword", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_REQPASS), BM_GETCHECK,0,0)));
+					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UseSkype2Socket", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_USES2S), BM_GETCHECK,0,0)));
+					ZeroMemory(buf, sizeof(buf));
+					GetDlgItemText(hwndDlg, IDC_PASSWORD, buf, sizeof(buf));
+					CallService(MS_DB_CRYPT_ENCODESTRING, sizeof(buf), (LPARAM)buf);
+					DBWriteContactSettingString(NULL, pszSkypeProtoName, "Password", buf);
+					return TRUE;
+			}			
+			break; 
+		}
+		case WM_COMMAND: {
+			switch (LOWORD(wParam)) {
+				case IDC_USES2S:
+					for (i=0; i<sizeof(Skype2SocketControls)/sizeof(Skype2SocketControls[0]); i++) EnableWindow(GetDlgItem(hwndDlg, Skype2SocketControls[i]), SendMessage(GetDlgItem(hwndDlg, LOWORD(wParam)), BM_GETCHECK,0,0));
+					if (SendMessage(GetDlgItem(hwndDlg, LOWORD(wParam)), BM_GETCHECK,0,0)) SendMessage(hwndDlg, WM_COMMAND, IDC_REQPASS, 0);
+					break;
+				case IDC_REQPASS:
+					EnableWindow(GetDlgItem(hwndDlg, IDC_PASSWORD), SendMessage(GetDlgItem(hwndDlg, LOWORD(wParam)), BM_GETCHECK,0,0));
+					break;
+
+			}
+			if (!initDlg) SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+		}
+	}
+	return 0;
+}
+
+int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	const int StartControls[]={IDC_NOSPLASH, IDC_MINIMIZED, IDC_NOTRAY};
+	static BOOL initDlg=FALSE;
+	static int statusModes[]={ID_STATUS_OFFLINE,ID_STATUS_ONLINE,ID_STATUS_AWAY,ID_STATUS_NA,ID_STATUS_OCCUPIED,ID_STATUS_DND,ID_STATUS_FREECHAT,ID_STATUS_INVISIBLE,ID_STATUS_OUTTOLUNCH,ID_STATUS_ONTHEPHONE};
 	int i, j;
 	
 	switch (uMsg){
@@ -42,7 +183,6 @@ int CALLBACK OptionsDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			CheckDlgButton(hwndDlg, IDC_SHUTDOWN, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "Shutdown", 0));
 			CheckDlgButton(hwndDlg, IDC_ENABLEMENU, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "EnableMenu", 1));
 			CheckDlgButton(hwndDlg, IDC_UNLOADOFFLINE, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0));
-			CheckDlgButton(hwndDlg, IDC_USES2S, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseSkype2Socket", 0));
 			CheckDlgButton(hwndDlg, IDC_NOERRORS, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "SuppressErrors", 0));
 			CheckDlgButton(hwndDlg, IDC_KEEPSTATE, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "KeepState", 0));
 			SetDlgItemInt (hwndDlg, IDC_CONNATTEMPTS, DBGetContactSettingWord(NULL, pszSkypeProtoName, "ConnectionAttempts", 10), FALSE);
@@ -65,26 +205,12 @@ int CALLBACK OptionsDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 				SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_SETITEMDATA,k,statusModes[i]);
 				if (statusModes[i]==j) SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_SETCURSEL,i,0);
 			}
-
-			if (!DBGetContactSetting(NULL, pszSkypeProtoName, "Host", &dbv)) {
-				SetDlgItemText(hwndDlg, IDC_HOST, dbv.pszVal);
-				DBFreeVariant(&dbv);
-			} else SetDlgItemText(hwndDlg, IDC_HOST, "localhost");
-			SetDlgItemInt(hwndDlg, IDC_PORT, DBGetContactSettingWord(NULL, pszSkypeProtoName, "Port", 1401), FALSE);
-			CheckDlgButton(hwndDlg, IDC_REQPASS, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "RequiresPassword", 0));
-			if (!DBGetContactSetting(NULL, pszSkypeProtoName, "Password", &dbv)) {
-				CallService(MS_DB_CRYPT_DECODESTRING, strlen(dbv.pszVal)+1, (LPARAM)dbv.pszVal);
-				SetDlgItemText(hwndDlg, IDC_PASSWORD, dbv.pszVal);
-				DBFreeVariant(&dbv);
-			}
 			SendMessage(hwndDlg, WM_COMMAND, IDC_STARTSKYPE, 0);
-			SendMessage(hwndDlg, WM_COMMAND, IDC_USES2S, 0);
-			SendMessage(hwndDlg, WM_COMMAND, IDC_REQPASS, 0);
 			initDlg=FALSE;
 			return TRUE;
+
 		case WM_NOTIFY: {
 			NMHDR* nmhdr = (NMHDR*)lParam;
-			char buf[1024];
 
 			switch (nmhdr->code){
 				case PSN_APPLY:
@@ -97,20 +223,11 @@ int CALLBACK OptionsDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "EnableMenu", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_ENABLEMENU), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UnloadOnOffline", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_UNLOADOFFLINE), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UsePopup", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_USEPOPUP), BM_GETCHECK,0,0)));
-					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UseSkype2Socket", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_USES2S), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UseGroupchat", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_GROUPCHAT), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "SuppressErrors", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_NOERRORS), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "KeepState", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_KEEPSTATE), BM_GETCHECK,0,0)));
 					DBWriteContactSettingWord (NULL, pszSkypeProtoName, "ConnectionAttempts", (unsigned short)GetDlgItemInt(hwndDlg, IDC_CONNATTEMPTS, NULL, FALSE));
 					DBWriteContactSettingDword(NULL, pszSkypeProtoName, "SkypeOutStatusMode", SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_GETITEMDATA,SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_GETCURSEL,0,0),0));
-					GetDlgItemText(hwndDlg, IDC_HOST, buf, sizeof(buf));
-					DBWriteContactSettingString(NULL, pszSkypeProtoName, "Host", buf);
-					DBWriteContactSettingWord(NULL, pszSkypeProtoName, "Port", (unsigned short)GetDlgItemInt(hwndDlg, IDC_PORT, NULL, FALSE));
-					DBWriteContactSettingByte(NULL, pszSkypeProtoName, "RequiresPassword", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_REQPASS), BM_GETCHECK,0,0)));
-					ZeroMemory(buf, sizeof(buf));
-					GetDlgItemText(hwndDlg, IDC_PASSWORD, buf, sizeof(buf));
-					CallService(MS_DB_CRYPT_ENCODESTRING, sizeof(buf), (LPARAM)buf);
-					DBWriteContactSettingString(NULL, pszSkypeProtoName, "Password", buf);
 					return TRUE;
 			}			
 			break; 
@@ -119,13 +236,6 @@ int CALLBACK OptionsDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			switch (LOWORD(wParam)) {
 				case IDC_STARTSKYPE:
 					for (i=0; i<sizeof(StartControls)/sizeof(StartControls[0]); i++) EnableWindow(GetDlgItem(hwndDlg, StartControls[i]), SendMessage(GetDlgItem(hwndDlg, LOWORD(wParam)), BM_GETCHECK,0,0));
-					break;
-				case IDC_USES2S:
-					for (i=0; i<sizeof(Skype2SocketControls)/sizeof(Skype2SocketControls[0]); i++) EnableWindow(GetDlgItem(hwndDlg, Skype2SocketControls[i]), SendMessage(GetDlgItem(hwndDlg, LOWORD(wParam)), BM_GETCHECK,0,0));
-					if (SendMessage(GetDlgItem(hwndDlg, LOWORD(wParam)), BM_GETCHECK,0,0)) SendMessage(hwndDlg, WM_COMMAND, IDC_REQPASS, 0);
-					break;
-				case IDC_REQPASS:
-					EnableWindow(GetDlgItem(hwndDlg, IDC_PASSWORD), SendMessage(GetDlgItem(hwndDlg, LOWORD(wParam)), BM_GETCHECK,0,0));
 					break;
 				case IDC_CLEANUP:
 					pthread_create(( pThreadFunc )CleanupNicknames, NULL);
