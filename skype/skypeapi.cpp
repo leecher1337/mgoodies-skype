@@ -882,6 +882,7 @@ int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 
 	CopyFile((char*)lParam,AvatarsFolder,0);
 
+	DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", "");
 	DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", AvatarsFolder);
 	retval = SkypeSend("SET AVATAR 1 %s", AvatarsFolder);
 	

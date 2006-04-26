@@ -14,6 +14,8 @@ CODE
 HISTORY
 -------
 0.0.0.22 - * Options page redesigned
+           * Work around to force refresh of avatar in MyDetail (w8 the avatar change service)
+           
 0.0.0.21 - * Some minor bugfixes
 		   * Severe bugfix: Message sending routine worked incorrectly (no errors were shown
 		     even if there were sending-errors)
