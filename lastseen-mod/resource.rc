@@ -62,7 +62,9 @@ BEGIN
     EDITTEXT        IDC_MENUSTAMP,18,23,120,12,ES_AUTOHSCROLL | WS_GROUP
     CONTROL         "Use popups",IDC_POPUPS,"Button",BS_AUTOCHECKBOX | 
                     WS_GROUP | WS_TABSTOP,149,11,140,10
-    EDITTEXT        IDC_POPUPSTAMP,161,22,121,12,ES_AUTOHSCROLL | WS_GROUP
+    EDITTEXT        IDC_POPUPSTAMP,161,22,50,12,ES_AUTOHSCROLL | WS_GROUP
+    EDITTEXT        IDC_POPUPSTAMPTEXT,223,22,70,12,ES_AUTOHSCROLL | 
+                    WS_GROUP
     CONTROL         "Userinfo tab",IDC_USERINFO,"Button",BS_AUTOCHECKBOX | 
                     WS_GROUP | WS_TABSTOP,6,42,140,10
     EDITTEXT        IDC_USERSTAMP,18,52,275,12,ES_AUTOHSCROLL | WS_GROUP
@@ -141,6 +143,7 @@ BEGIN
         RIGHTMARGIN, 293
         VERTGUIDE, 18
         VERTGUIDE, 149
+        VERTGUIDE, 161
         TOPMARGIN, 7
         BOTTOMMARGIN, 225
         HORZGUIDE, 22
@@ -180,8 +183,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 5,0,2,6
- PRODUCTVERSION 5,0,2,6
+ FILEVERSION 5,0,3,0
+ PRODUCTVERSION 5,0,3,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -199,14 +202,14 @@ BEGIN
             VALUE "Comments", "Last Seen Mod Plugin for Miranda IM\0"
             VALUE "CompanyName", "Heiko Schillinger, YB\0"
             VALUE "FileDescription", "Last Seen Plugin\0"
-            VALUE "FileVersion", "5.0.2.6\0"
+            VALUE "FileVersion", "5.0.3.0\0"
             VALUE "InternalName", "Last Seen\0"
             VALUE "LegalCopyright", "© 2001-2002 by Heiko Schillinger, 2003 by Bruno Rino, 2006 by YB\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "seenplugin.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", " Last Seen Plugin Mod\0"
-            VALUE "ProductVersion", "5.0.2.6\0"
+            VALUE "ProductVersion", "5.0.3.0\0"
             VALUE "SpecialBuild", "\0"
         END
     END

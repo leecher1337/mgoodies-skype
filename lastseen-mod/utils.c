@@ -65,7 +65,7 @@ BOOL isYahoo(char * protoname){
 	if (protoname) return ((strstr(protoname,"YAHOO") > 0) || (strstr(protoname,"yahoo") > 0)); else return FALSE;
 }
 BOOL isJabber(char * protoname){
-	if (protoname) return ((strstr(protoname,"JABBER") > 0)); else return FALSE;
+	if (protoname) return ((strstr(protoname,"JABBER") > 0) || (strstr(protoname,"JGMAIL") > 0)); else return FALSE;
 }
 BOOL isICQ(char * protoname){
 	if (protoname) return ((strstr(protoname,"ICQ") > 0)); else return FALSE;
@@ -275,6 +275,11 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 					strcpy(szdbsetting,(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0));
 					strcat(sztemp,Translate(szdbsetting));
 					break;
+				case 'o':
+					isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"OldStatus":courProtoName,ID_STATUS_OFFLINE);
+					strcpy(szdbsetting,(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0));
+					strcat(sztemp,Translate(szdbsetting));
+					break;
 
 				case 'i':
 				case 'r':
@@ -348,15 +353,15 @@ void DBWriteTime(SYSTEMTIME *st,HANDLE hcontact)
 
 }
 
-void ShowPopup(HANDLE hcontact){
+void ShowPopup(HANDLE hcontact, const char * lpzProto, int newStatus){
 	if (ServiceExists(MS_POPUP_QUERY)){
 		if (DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
 			POPUPDATAEX ppd = {0};
 			DBVARIANT dbv = {0};
 			ppd.lchContact = hcontact;
-			ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
-			strcpy(ppd.lpzContactName,"Status Change");
-			strncpy(ppd.lpzText,ParseString(!DBGetContactSetting(NULL,S_MOD,"PopupStamp",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMP,hcontact,0),MAX_SECONDLINE);
+			ppd.lchIcon = LoadSkinnedProtoIcon(lpzProto, newStatus);
+			strncpy(ppd.lpzContactName,ParseString(!DBGetContactSetting(NULL,S_MOD,"PopupStamp",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMP,hcontact,0),MAX_CONTACTNAME);
+			strncpy(ppd.lpzText,ParseString(!DBGetContactSetting(NULL,S_MOD,"PopupStampText",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMPTEXT,hcontact,0),MAX_SECONDLINE);
 			CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
 		}
 	}
@@ -367,16 +372,16 @@ int UpdateValues(WPARAM wparam,LPARAM lparam)
 	DBCONTACTWRITESETTING *cws;
 	SYSTEMTIME time;
 	HANDLE hContact;
-	int prevStatus;
+	WORD prevStatus;
 	
 	hContact = (HANDLE)wparam;
 	cws=(DBCONTACTWRITESETTING *)lparam;
 //	if(CallProtoService(cws->szModule,PS_GETSTATUS,0,0)==ID_STATUS_OFFLINE) return 0;
 	if(hContact==NULL || strcmp(cws->szSetting,"Status") || !IsWatchedProtocol(cws->szModule)) 
 		return 0;
-
-	prevStatus=DBGetContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
 	
+	prevStatus=DBGetContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
+	DBWriteContactSettingWord(hContact,S_MOD,"OldStatus",prevStatus);
 	if(cws->value.wVal<=ID_STATUS_OFFLINE)
 	{
 		// avoid repeating the offline status
@@ -394,8 +399,11 @@ int UpdateValues(WPARAM wparam,LPARAM lparam)
 			if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0))
 				FileWrite(hContact);
 
-			if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0))
-				ShowPopup(hContact);
+			if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
+				//To avoid bunch of popups when we are logging off
+				if (CallProtoService(cws->szModule,PS_GETSTATUS,0,0)>ID_STATUS_OFFLINE)	
+					ShowPopup(hContact,cws->szModule,cws->value.wVal);
+			}
 
 			if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0))
 				HistoryWrite(hContact);
@@ -418,7 +426,7 @@ int UpdateValues(WPARAM wparam,LPARAM lparam)
 			FileWrite(hContact);
 
 		if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0))
-				ShowPopup(hContact);
+			if (prevStatus != cws->value.wVal) ShowPopup(hContact,cws->szModule,cws->value.wVal);
 
 		if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0))
 			HistoryWrite(hContact);

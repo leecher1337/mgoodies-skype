@@ -31,6 +31,7 @@
 #define IDC_DELCHARHELP                 1021
 #define IDC_POPUPSTAMP                  1022
 #define IDC_MENUGROUP                   1023
+#define IDC_POPUPSTAMPTEXT              1023
 #define IDC_MENUTIME                    1024
 #define IDC_MENUSTATUS                  1025
 #define IDC_MENUSTAMP                   1026
