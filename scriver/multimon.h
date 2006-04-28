@@ -65,11 +65,13 @@ typedef struct tagMONITORINFOEX : public tagMONITORINFO
   TCHAR       szDevice[CCHDEVICENAME];
 } MONITORINFOEX, *LPMONITORINFOEX;
 #else
+#ifndef DISPLAY_DEVICE_ATTACHED_TO_DESKTOP
 typedef struct
 {
   MONITORINFO;
   TCHAR       szDevice[CCHDEVICENAME];
 } MONITORINFOEX, *LPMONITORINFOEX;
+#endif
 #endif
 
 
