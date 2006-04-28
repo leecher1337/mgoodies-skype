@@ -304,9 +304,9 @@ void TabSRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
                 szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNick, ENF_NAMESMILEYS);
 			}
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
-				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, ENF_ALL);
+				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
    			} else {
-                szText = encodeUTF8(event->hContact, szRealProto, eventData->pszText, event->codepage, ENF_ALL);
+                szText = encodeUTF8(event->hContact, szRealProto, eventData->pszText, event->codepage, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
 			}
 			/* TabSRMM-specific formatting */
 			if ((dwFlags & MWF_LOG_GRID) && isGroupBreak && getLastEventType()!=-1) {
