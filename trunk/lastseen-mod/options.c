@@ -45,6 +45,7 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 			EnableWindow(GetDlgItem(hdlg,IDC_MENUSTAMP),IsDlgButtonChecked(hdlg,IDC_MENUITEM));
 			EnableWindow(GetDlgItem(hdlg,IDC_POPUPS),hasPopups);
 			EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMP),IsDlgButtonChecked(hdlg,IDC_POPUPS));
+			EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMPTEXT),IsDlgButtonChecked(hdlg,IDC_POPUPS));
 			EnableWindow(GetDlgItem(hdlg,IDC_SHOWICON),IsDlgButtonChecked(hdlg,IDC_MENUITEM));
 			EnableWindow(GetDlgItem(hdlg,IDC_USERSTAMP),IsDlgButtonChecked(hdlg,IDC_USERINFO));
 			EnableWindow(GetDlgItem(hdlg,IDC_FILESTAMP),IsDlgButtonChecked(hdlg,IDC_FILE));
@@ -56,6 +57,8 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 			SetDlgItemText(hdlg,IDC_MENUSTAMP,!DBGetContactSetting(NULL,S_MOD,"MenuStamp",&dbv)?dbv.pszVal:DEFAULT_MENUSTAMP);
 			DBFreeVariant(&dbv);
 			SetDlgItemText(hdlg,IDC_POPUPSTAMP,!DBGetContactSetting(NULL,S_MOD,"PopupStamp",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMP);
+			DBFreeVariant(&dbv);
+			SetDlgItemText(hdlg,IDC_POPUPSTAMPTEXT,!DBGetContactSetting(NULL,S_MOD,"PopupStampText",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMPTEXT);
 			DBFreeVariant(&dbv);
 			SetDlgItemText(hdlg,IDC_USERSTAMP,!DBGetContactSetting(NULL,S_MOD,"UserStamp",&dbv)?dbv.pszVal:DEFAULT_USERSTAMP);
 			DBFreeVariant(&dbv);
@@ -128,6 +131,7 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 						break;
 					case IDC_POPUPS:
 						EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMP),IsDlgButtonChecked(hdlg,IDC_POPUPS));
+						EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMPTEXT),IsDlgButtonChecked(hdlg,IDC_POPUPS));
 						break;
 				}
 			}
@@ -156,6 +160,8 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 
 							GetDlgItemText(hdlg,IDC_POPUPSTAMP,szstamp,256);
 							DBWriteContactSettingString(NULL,S_MOD,"PopupStamp",szstamp);
+							GetDlgItemText(hdlg,IDC_POPUPSTAMPTEXT,szstamp,256);
+							DBWriteContactSettingString(NULL,S_MOD,"PopupStampText",szstamp);
 
 							GetDlgItemText(hdlg,IDC_USERSTAMP,szstamp,256);
 							DBWriteContactSettingString(NULL,S_MOD,"UserStamp",szstamp);
