@@ -256,7 +256,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	if (szNickIn!=NULL) delete szNickIn;
 	if (szNickOut!=NULL) delete szNickOut;
 	if (szStatusMsg!=NULL) delete szStatusMsg;
-	view->scrollToBottom();
+	//view->scrollToBottom();
 	groupTemplate = NULL;
 	iLastEventType = -1;
 }
@@ -428,14 +428,14 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
                 szName = encodeUTF8(eventData->pszNick, szRealProto, ENF_NAMESMILEYS);
 			}*/
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
-				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, ENF_ALL);
+				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
    			} else {
-                szText = encodeUTF8(event->hContact, szRealProto, eventData->pszText, event->codepage, ENF_ALL);
+                szText = encodeUTF8(event->hContact, szRealProto, eventData->pszText, event->codepage, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
 			}
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT2) {
-				szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2W, ENF_ALL);
+				szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2W, 0);
    			} else {
-                szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2, event->codepage, ENF_ALL);
+                szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2, event->codepage, 0);
 			}
 			if (eventData->iType == IEED_EVENT_MESSAGE) {
                 if (isGrouping && (getFlags(protoSettings) & Options::LOG_GROUP_MESSAGES)) {
