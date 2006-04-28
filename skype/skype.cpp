@@ -1238,6 +1238,8 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 						SkypeSend("GET USER %s BUDDYSTATUS", nick);
 					else
 						DBWriteContactSettingString(hContact, "CList", "StatusMsg", (ptr+10));
+					free(buf);
+					break;
 
 				}
 				if (!strcmp(ptr, "DISPLAYNAME")) {

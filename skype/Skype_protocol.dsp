@@ -116,6 +116,10 @@ SOURCE=.\skypeopt.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\skypeprofile.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\skypesvc.cpp
 # End Source File
 # Begin Source File
@@ -165,6 +169,10 @@ SOURCE=.\skypeapi.h
 # Begin Source File
 
 SOURCE=.\skypeopt.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\skypeprofile.h
 # End Source File
 # Begin Source File
 

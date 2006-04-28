@@ -30,6 +30,7 @@
 #define IDD_SETAVATAR                   174
 #define IDD_OPT_DEFAULT                 175
 #define IDD_OPT_PROXY                   176
+#define IDD_SETDETAILS                  177
 #define IDI_PHONE                       1002
 #define IDC_SHUTDOWN                    1004
 #define IDC_ENABLEMENU                  1005
@@ -60,14 +61,24 @@
 #define IDC_MINIMIZED                   1032
 #define IDC_TEXT                        1033
 #define IDC_OPTIONSTAB                  1034
+#define IDC_FULLNAME                    1035
+#define IDC_BIRTHDAY                    1036
+#define IDC_SEX                         1037
+#define IDC_CITY                        1038
+#define IDC_COUNTRY                     1039
+#define IDC_PROVINCE                    1040
+#define IDC_HOMEPHONE                   1041
+#define IDC_OFFICEPHONE                 1042
+#define IDC_HOMEPAGE                    1043
+#define IDC_SAVEDETAILS                 1044
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        177
+#define _APS_NEXT_RESOURCE_VALUE        178
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1035
+#define _APS_NEXT_CONTROL_VALUE         1045
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

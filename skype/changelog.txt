@@ -15,6 +15,9 @@ HISTORY
 -------
 0.0.0.22 - * Options page redesigned
            * Work around to force refresh of avatar in MyDetail (w8 the avatar change service)
+		   * Change Skype protocol to Skype in options->Network
+		   * Free buffer in status message retrieve
+		   * First step to a details info page.
            
 0.0.0.21 - * Some minor bugfixes
 		   * Severe bugfix: Message sending routine worked incorrectly (no errors were shown

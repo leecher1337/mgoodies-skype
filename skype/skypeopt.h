@@ -31,3 +31,10 @@ int OnDetailsInit( WPARAM wParam, LPARAM lParam );
 *
 */
 BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+
+/*
+* Dialog to change infos in user details.
+*
+*
+*/
+BOOL CALLBACK DetailsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);

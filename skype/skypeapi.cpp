@@ -403,6 +403,45 @@ char *SkypeGet(char *szWhat, char *szWho, char *szProperty) {
   return ptr;
 }
 
+/* SkypeGetProfile
+ *
+ * Issues a SET PROFILE szProperty szValue and waits until the answer is received
+ * Returns the answer or NULL on failure
+ * BEWARE: Don't forget to free() return value!
+ *
+ * For example:  SkypeGetProfile("FULLNAME", "Tweety");
+*/ 
+char *SkypeGetProfile(char *szProperty) {
+  char *str, *ptr;
+  int retval, len;
+
+  if (!(str=(char *)malloc(strlen(szProperty)+13))) return NULL;
+  sprintf(str, "GET PROFILE %s", szProperty);
+  retval=__sendMsg(str);
+  if (retval) {
+	  free(str);
+	  return NULL;
+  }
+  len=strlen(str+3);
+  if (!szProperty[0]) len--;
+  ptr = SkypeRcv(str+4, INFINITE);
+  LOG("SkypeGetProfile - Request", str);
+  free(str);
+  if (ptr) memmove(ptr, ptr+len, strlen(ptr)-len+1);
+  LOG("SkypeGetProfile - Answer", ptr);
+  return ptr;
+}
+
+/* SkypeSetProfile
+ *
+ * 
+*/ 
+int SkypeSetProfile(char *szProperty, char *szValue) {
+  int retval;
+  retval= SkypeSend("SET PROFILE %s %s", szProperty, szValue);
+  return retval;
+}
+
 /* SkypeMsgCollectGarbage
  * 
  * Purpose: Runs the garbage collector on the Skype Message-Queue to throw out old 
