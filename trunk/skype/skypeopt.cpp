@@ -2,10 +2,14 @@
 #include "skypeopt.h"
 #include "pthread.h"
 #include "gchat.h"
+#include "skypeprofile.h"
 
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
 extern char pszSkypeProtoName[MAX_PATH+30],protocol;
+extern BOOL SkypeInitialized;
+
+CSkypeProfile myProfile;
 
 static HBITMAP hAvatar = NULL;
 
@@ -17,7 +21,7 @@ int RegisterOptions(WPARAM wParam, LPARAM lParam) {
    odp.hInstance = hInst;
    odp.pszTemplate = MAKEINTRESOURCE(IDD_OPTIONS);
    odp.pszGroup = Translate("Network");
-   odp.pszTitle = pluginInfo.shortName;
+   odp.pszTitle = "Skype";
    odp.pfnDlgProc = OptionsDlgProc;
    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
    return 0;
@@ -269,7 +273,16 @@ int OnDetailsInit( WPARAM wParam, LPARAM lParam )
 		odp.pszTemplate = MAKEINTRESOURCEA(IDD_SETAVATAR);
 		odp.pszTitle = szTitle;
 		CallService(MS_USERINFO_ADDPAGE, wParam, (LPARAM)&odp);
+
+		mir_snprintf( szTitle, sizeof( szTitle ), "Skype %s", Translate( "Details" ));
+	
+		odp.pfnDlgProc = DetailsDlgProc;
+		odp.position = 1900000000;
+		odp.pszTemplate = MAKEINTRESOURCEA(IDD_SETDETAILS);
+		odp.pszTitle = szTitle;
+		CallService(MS_USERINFO_ADDPAGE, wParam, (LPARAM)&odp);
 	}
+
 	return 0;
 }
 
@@ -325,6 +338,91 @@ BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam
 				InvalidateRect( hwndDlg, NULL, TRUE );
 				break;
 		}	}
+		break;
+
+	case WM_DESTROY:
+		if ( hAvatar != NULL )
+			DeleteObject( hAvatar );
+		break;
+	}
+
+	return 0;
+}
+/*DetailsDlgProc
+*
+* For setting the skype infos
+*
+*/
+BOOL CALLBACK DetailsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	static RECT r;
+	static int sexM = 0,sexF = 0, sex;
+
+	switch ( msg ) {
+	case WM_INITDIALOG:
+		TranslateDialogDefault( hwndDlg );
+
+		strcpy(myProfile.SkypeProtoName,pszSkypeProtoName);
+
+		myProfile.Load();
+		if(SkypeInitialized)
+			myProfile.LoadFromSkype();
+
+		SendDlgItemMessage(hwndDlg,IDC_SEX,CB_ADDSTRING,0,(LPARAM)"");
+		sexM = SendDlgItemMessage(hwndDlg,IDC_SEX,CB_ADDSTRING,0,(LPARAM)Translate("MALE"));
+		sexF = SendDlgItemMessage(hwndDlg,IDC_SEX,CB_ADDSTRING,0,(LPARAM)Translate("FEMALE"));
+		
+		if(myProfile.Sex == 0x4D){
+			SendDlgItemMessage(hwndDlg,IDC_SEX,CB_SETCURSEL, sexM, (LPARAM) Translate("MALE"));
+		}
+		if(myProfile.Sex == 0x46){
+			SendDlgItemMessage(hwndDlg,IDC_SEX,CB_SETCURSEL, sexF, (LPARAM) Translate("FEMALE"));
+		}
+
+		SetDlgItemText(hwndDlg, IDC_FULLNAME, myProfile.FullName);
+		SetDlgItemText(hwndDlg, IDC_HOMEPAGE, myProfile.HomePage);
+		SetDlgItemText(hwndDlg, IDC_HOMEPHONE, myProfile.HomePhone);
+		SetDlgItemText(hwndDlg, IDC_OFFICEPHONE, myProfile.OfficePhone);
+		SetDlgItemText(hwndDlg, IDC_CITY, myProfile.City);
+		SetDlgItemText(hwndDlg, IDC_PROVINCE, myProfile.Province);
+		return TRUE;
+
+	case WM_COMMAND:
+		if ( HIWORD( wParam ) == BN_CLICKED ) {
+			switch( LOWORD( wParam )) {
+			case IDC_SAVEDETAILS:
+
+				char text[256];
+				GetDlgItemText(hwndDlg,IDC_FULLNAME,text,sizeof(text));
+				strcpy(myProfile.FullName,text);
+
+				GetDlgItemText(hwndDlg,IDC_HOMEPAGE,text,sizeof(text));
+				strcpy(myProfile.HomePage,text);
+
+				GetDlgItemText(hwndDlg,IDC_HOMEPHONE,text,sizeof(text));
+				strcpy(myProfile.HomePhone,text);
+
+				GetDlgItemText(hwndDlg,IDC_OFFICEPHONE,text,sizeof(text));
+				strcpy(myProfile.OfficePhone,text);
+
+				GetDlgItemText(hwndDlg,IDC_CITY,text,sizeof(text));
+				strcpy(myProfile.City,text);
+
+				GetDlgItemText(hwndDlg,IDC_PROVINCE,text,sizeof(text));
+				strcpy(myProfile.Province,text);
+
+				sex = SendMessage(GetDlgItem(hwndDlg,IDC_SEX),CB_GETCURSEL,0,0);
+				
+				myProfile.Sex = 0;
+				if(sex == sexF) myProfile.Sex = 0x46;
+				if(sex == sexM) myProfile.Sex = 0x4D;
+
+				myProfile.Save();
+				if(SkypeInitialized)
+					myProfile.SaveToSkype();
+				break;
+			}	
+		}
 		break;
 
 	case WM_DESTROY:

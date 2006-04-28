@@ -53,4 +53,6 @@ int SkypeSetAvatar(WPARAM wParam, LPARAM lParam);
 int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam);
 int SkypeSetNick(WPARAM wParam, LPARAM lParam);
 int SkypeChatCreate(WPARAM wParam, LPARAM lParam);
+int SkypeSetProfile(char *szProperty, char *szValue);
 char *SkypeGet(char *szWhat, char *szWho, char *szProperty);
+char *SkypeGetProfile(char *szProperty);

@@ -92,7 +92,6 @@ int ShowMessage(int, char*, int);
 void EndCallThread(char *);
 void GetInfoThread(HANDLE);
 int OnDetailsInit( WPARAM, LPARAM );
-BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam);
 int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam);
 int HookContactAdded(WPARAM wParam, LPARAM lParam);
