@@ -1,0 +1,45 @@
+; Status Message Retriever 1.0.0.0
+; Author: Pescuma
+
+; Contact Menu
+
+[Enable Status Message Check]
+[Disable Status Message Check]
+
+
+; Group in options
+
+[Status Msg Retrieve]
+
+
+; Options
+
+[General]
+
+[ Retrieve ]
+[Retrieve status messages every]
+[minutes]
+[Retrieve on status change]
+[Also retrieve after]
+[seconds after status change]
+
+[ Clear ]
+[Clear message on status change]
+[Always clear message if status does not support messages]
+[(even for contacts with msg check disabled)]
+
+[ XStatus ]
+[If contact has XStatus set:]
+[Retrieve as usual]
+[Clear]
+[Clear only if XStatus message is set]
+[Set to XStatus Name]
+[Set to XStatus Message]
+[Set to XStatus Name: XStatus Message]
+
+
+[Protocols]
+
+[Get status messages for these protocols:]
+[This feature is mainly for use with protocols that store status messages on server rather then in database (like ICQ). Uncheck any other protocol - status messages will be read in a standard way then.]
+
