@@ -79,7 +79,10 @@ int ProtoAck(WPARAM wParam, LPARAM lParam)
 		{
 mlogC(MODULE_NAME, "ProtoAck", ack->hContact, "Status msg changed");
 			PollReceivedContactMessage(ack->hContact, TRUE);
-			SetStatusMessage(ack->hContact, (const TCHAR *) ack->lParam);
+
+			// Only set if neede
+			if (ProtocolStatusCheckMsg(ack->hContact, proto) == Retrieve)
+				SetStatusMessage(ack->hContact, (const TCHAR *) ack->lParam);
 		}
 	}
 

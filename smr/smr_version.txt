@@ -1,6 +1,11 @@
-Status Message Retriever 0.0.1.6
+Status Message Retriever 1.0.0.0
 
 Changelog:
+
+. 1.0.0.0
+  * Only save retrieved status message if needed
+  + Langpack file
+  + Changed version number to reflect that the plugin is ready
 
 . 0.0.1.6
   * Bugfix to freezing

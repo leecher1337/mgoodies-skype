@@ -55,7 +55,7 @@ BEGIN
     LTEXT           "minutes",IDC_STATIC,173,21,37,10
     CONTROL         "Retrieve on status change",IDC_CHECK_ONSTATUS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,15,34,216,10
-    CONTROL         "Also retrieve after ",IDC_CHECK_ONSTATUSTIMER,"Button",
+    CONTROL         "Also retrieve after",IDC_CHECK_ONSTATUSTIMER,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,15,48,76,8
     EDITTEXT        IDC_CHECK_ONSTATUSTIMER_TIMER,93,47,31,12,ES_NUMBER | 
                     NOT WS_BORDER,WS_EX_STATICEDGE
