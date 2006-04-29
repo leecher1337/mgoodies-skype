@@ -394,16 +394,15 @@ int UpdateValues(WPARAM wparam,LPARAM lparam)
 
 		if(!DBGetContactSettingByte(NULL,S_MOD,"IgnoreOffline",1))
 		{
-			DBWriteContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
 
 			if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0))
 				FileWrite(hContact);
 
-			if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
-				//To avoid bunch of popups when we are logging off
-				if (CallProtoService(cws->szModule,PS_GETSTATUS,0,0)>ID_STATUS_OFFLINE)	
+			if (CallProtoService(cws->szModule,PS_GETSTATUS,0,0)>ID_STATUS_OFFLINE)	{
+				DBWriteContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
+				if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
 					ShowPopup(hContact,cws->szModule,cws->value.wVal);
-			}
+			}	}
 
 			if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0))
 				HistoryWrite(hContact);
