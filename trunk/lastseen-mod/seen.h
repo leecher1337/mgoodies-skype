@@ -21,6 +21,7 @@
 #include <m_protocols.h>
 #include <m_popup.h>
 
+#include "..\..\protocols\IcqOscarJ\forkthread.h"
 
 
 #pragma optimize("gsy",on)
