@@ -282,15 +282,23 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 					break;
 
 				case 'i':
-				case 'r':
-					dwsetting=DBGetContactSettingDword(hcontact,ci.szProto,szstring[loop]=='i'?"IP":"RealIP",0);
-					if(!dwsetting)
-						strcat(sztemp,wantempty?"":Translate("<unknown>"));
-					else
-					{
-						ia.S_un.S_addr=htonl(dwsetting);
-						strcat(sztemp,inet_ntoa(ia));
-					}
+				case 'r': if (isJabber(ci.szProto)){
+							DBVARIANT dbv;
+							if (!DBGetContactSetting(hcontact,ci.szProto,szstring[loop]=='i'?"Resource":"System",&dbv)){
+								strcpy(szdbsetting,dbv.pszVal);
+								DBFreeVariant(&dbv);
+								strcat(sztemp,szdbsetting);
+							} else strcat(sztemp,wantempty?"":Translate("<unknown>"));
+						  } else {
+							dwsetting=DBGetContactSettingDword(hcontact,ci.szProto,szstring[loop]=='i'?"IP":"RealIP",0);
+							if(!dwsetting)
+								strcat(sztemp,wantempty?"":Translate("<unknown>"));
+							else
+							{
+								ia.S_un.S_addr=htonl(dwsetting);
+								strcat(sztemp,inet_ntoa(ia));
+							}
+						  }
 					break;
 				case 'P':if (ci.szProto) strcat(sztemp,ci.szProto); else strcat(sztemp,wantempty?"":"ProtoUnknown");
 					break;
@@ -477,13 +485,13 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 static DWORD __stdcall cleanThread(logthread_info* infoParam)
 {
 	HANDLE hcontact=NULL;
-	char str[MAXMODULELABELLENGTH];
-	sprintf(str,"In Clean: %s; %s; %s\n",
-		infoParam->sProtoName,
-		(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)infoParam->hContact,0),
-		(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)infoParam->courStatus,0)
-	);
-	OutputDebugStringA(str);
+//	char str[MAXMODULELABELLENGTH];
+//	sprintf(str,"In Clean: %s; %s; %s\n",
+//		infoParam->sProtoName,
+//		(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)infoParam->hContact,0),
+//		(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)infoParam->courStatus,0)
+//	);
+//	OutputDebugStringA(str);
 	Sleep(2000); // I hope in 2 secons all logged-in contacts will be listed
 	//Searching for contact marked as online but now are offline
 
@@ -498,7 +506,6 @@ static DWORD __stdcall cleanThread(logthread_info* infoParam)
 					if (DBGetContactSettingWord(hcontact,contactProto,"Status",ID_STATUS_OFFLINE)==ID_STATUS_OFFLINE){
 						DBWriteContactSettingWord(hcontact,S_MOD,"OldStatus",oldStatus);
 						DBWriteContactSettingWord(hcontact,S_MOD,"Status",ID_STATUS_OFFLINE);
-					//	DBWriteContactSettingWord(infoParam->hContact,S_MOD,"Status",infoParam->courStatus);
 					}
 				}
 			}
@@ -506,13 +513,13 @@ static DWORD __stdcall cleanThread(logthread_info* infoParam)
 		hcontact=(HANDLE)CallService(MS_DB_CONTACT_FINDNEXT,(WPARAM)hcontact,0);
 	}
 
-	sprintf(str,"OutClean: %s; %s; %s\n",
-		infoParam->sProtoName,
-		(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)infoParam->hContact,0),
-		(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)infoParam->courStatus,0)
-	);
+//	sprintf(str,"OutClean: %s; %s; %s\n",
+//		infoParam->sProtoName,
+//		(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)infoParam->hContact,0),
+//		(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)infoParam->courStatus,0)
+//	);
 	free(infoParam);
-	OutputDebugStringA(str);
+//	OutputDebugStringA(str);
 	return 0;
 }
 
