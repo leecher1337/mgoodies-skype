@@ -367,76 +367,109 @@ void ShowPopup(HANDLE hcontact, const char * lpzProto, int newStatus){
 	}
 }
 
-int UpdateValues(WPARAM wparam,LPARAM lparam)
+typedef struct logthread_info {
+  char sProtoName[MAXMODULELABELLENGTH];
+  HANDLE hContact;
+  WORD courStatus;
+} logthread_info;
+
+static DWORD __stdcall waitThread(logthread_info* infoParam)
+{
+//	char str[MAXMODULELABELLENGTH];
+//	sprintf(str,"In Thread: %s; %s; %s\n",
+//		infoParam->sProtoName,
+//		(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)infoParam->hContact,0),
+//		(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)infoParam->courStatus,0)
+//	);
+//	OutputDebugStringA(str);
+	Sleep(500); // I hope in 0.5 secons all the needed info will be set
+	DBWriteContactSettingWord(infoParam->hContact,S_MOD,"Status",infoParam->courStatus);
+//	sprintf(str,"OutThread: %s; %s; %s\n",
+//		infoParam->sProtoName,
+//		(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)infoParam->hContact,0),
+//		(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)infoParam->courStatus,0)
+//	);
+	free(infoParam);
+//	OutputDebugStringA(str);
+	return 0;
+}
+
+int UpdateValues(HANDLE hContact,LPARAM lparam)
 {
 	DBCONTACTWRITESETTING *cws;
 	SYSTEMTIME time;
-	HANDLE hContact;
-	WORD prevStatus;
-	
-	hContact = (HANDLE)wparam;
+//	HANDLE hContact;
+	// to make this code faster
+	if (!hContact) return 0; // this is hContact
+//	hContact = (HANDLE)wparam;
 	cws=(DBCONTACTWRITESETTING *)lparam;
-//	if(CallProtoService(cws->szModule,PS_GETSTATUS,0,0)==ID_STATUS_OFFLINE) return 0;
-	if(hContact==NULL || strcmp(cws->szSetting,"Status") || !IsWatchedProtocol(cws->szModule)) 
-		return 0;
-	
-	prevStatus=DBGetContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
-	DBWriteContactSettingWord(hContact,S_MOD,"OldStatus",prevStatus);
-	if(cws->value.wVal<=ID_STATUS_OFFLINE)
-	{
-		// avoid repeating the offline status
-		if (prevStatus<=ID_STATUS_OFFLINE) 
-			return 0;
-
-		DBWriteContactSettingByte(hContact,S_MOD,"Offline",1);
-		GetLocalTime(&time);
-		DBWriteTime(&time,hContact);
-
-		if(!DBGetContactSettingByte(NULL,S_MOD,"IgnoreOffline",1))
+	if (strcmp(cws->szSetting,"Status")) return 0;
+	if (!strcmp(cws->szModule,S_MOD)){
+		//here we will come when Settings/SeenModule/Status is changed
+		WORD prevStatus=DBGetContactSettingWord(hContact,S_MOD,"OldStatus",ID_STATUS_OFFLINE);
+		if(cws->value.wVal<=ID_STATUS_OFFLINE)
 		{
+			// avoid repeating the offline status
+			if (prevStatus<=ID_STATUS_OFFLINE) 
+				return 0;
 
-			if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0))
-				FileWrite(hContact);
+			DBWriteContactSettingByte(hContact,S_MOD,"Offline",1);
+			GetLocalTime(&time);
+			DBWriteTime(&time,hContact);
 
-			if (CallProtoService(cws->szModule,PS_GETSTATUS,0,0)>ID_STATUS_OFFLINE)	{
-				DBWriteContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
-				if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
-					ShowPopup(hContact,cws->szModule,cws->value.wVal);
-			}	}
+			if(!DBGetContactSettingByte(NULL,S_MOD,"IgnoreOffline",1))
+			{
+				char * sProto;
+				if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0))
+					FileWrite(hContact);
 
-			if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0))
-				HistoryWrite(hContact);
+				if (CallProtoService(sProto = 
+					(char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hContact,0),
+					PS_GETSTATUS,0,0
+					)>ID_STATUS_OFFLINE)	{
+					//DBWriteContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
+					if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
+						ShowPopup(hContact,sProto,cws->value.wVal);
+				}	}
 
-			if(DBGetContactSettingByte(hContact,S_MOD,"OnlineAlert",0)) 
-				ShowHistory(hContact, 1);
+				if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0))
+					HistoryWrite(hContact);
+
+				if(DBGetContactSettingByte(hContact,S_MOD,"OnlineAlert",0)) 
+					ShowHistory(hContact, 1);
+			}
+
+		} else {
+
+			if(cws->value.wVal==prevStatus && !DBGetContactSettingByte(hContact,S_MOD,"Offline",0)) 
+				return 0;
+
+			GetLocalTime(&time);
+			DBWriteTime(&time,hContact);
+
+			DBWriteContactSettingWord(hContact,S_MOD,"Status",(WORD)cws->value.wVal);
+
+			if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0)) FileWrite(hContact);
+			if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0))
+				if (prevStatus != cws->value.wVal) ShowPopup(hContact,(char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hContact,0),cws->value.wVal);
+
+			if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0)) HistoryWrite(hContact);
+			if(DBGetContactSettingByte(hContact,S_MOD,"OnlineAlert",0)) ShowHistory(hContact, 1);
+			DBWriteContactSettingByte(hContact,S_MOD,"Offline",0);
 		}
-
-	} else {
-
-		if(cws->value.wVal==prevStatus && !DBGetContactSettingByte(hContact,S_MOD,"Offline",0)) 
-			return 0;
-
-		GetLocalTime(&time);
-		DBWriteTime(&time,hContact);
-
-		DBWriteContactSettingWord(hContact,S_MOD,"Status",(WORD)cws->value.wVal);
-
-		if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0))
-			FileWrite(hContact);
-
-		if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0))
-			if (prevStatus != cws->value.wVal) ShowPopup(hContact,cws->szModule,cws->value.wVal);
-
-		if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0))
-			HistoryWrite(hContact);
-
-		if(DBGetContactSettingByte(hContact,S_MOD,"OnlineAlert",0)) 
-			ShowHistory(hContact, 1);
-
-	//	CallContactService(hContact,PSS_GETINFO,0,0);
-
-		DBWriteContactSettingByte(hContact,S_MOD,"Offline",0);
-	}
+	} else if (IsWatchedProtocol(cws->szModule)){
+		//here we will come when <User>/<module>/Status is changed and if <module> is watched
+		if (CallProtoService(cws->szModule,PS_GETSTATUS,0,0)>ID_STATUS_OFFLINE){
+			logthread_info *info;
+			WORD prevStatus;
+			info = (logthread_info *)malloc(sizeof(logthread_info));
+			strncpy(info->sProtoName,cws->szModule,MAXMODULELABELLENGTH);
+			info->hContact = hContact;
+			info->courStatus = cws->value.wVal;
+			forkthreadex(NULL, 0, waitThread, info, 0, 0);
+			prevStatus=DBGetContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
+			DBWriteContactSettingWord(hContact,S_MOD,"OldStatus",prevStatus);
+	}	}
 	return 0;
 }
 
