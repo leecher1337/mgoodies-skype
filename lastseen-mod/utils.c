@@ -356,13 +356,15 @@ void DBWriteTime(SYSTEMTIME *st,HANDLE hcontact)
 void ShowPopup(HANDLE hcontact, const char * lpzProto, int newStatus){
 	if (ServiceExists(MS_POPUP_QUERY)){
 		if (DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
-			POPUPDATAEX ppd = {0};
-			DBVARIANT dbv = {0};
-			ppd.lchContact = hcontact;
-			ppd.lchIcon = LoadSkinnedProtoIcon(lpzProto, newStatus);
-			strncpy(ppd.lpzContactName,ParseString(!DBGetContactSetting(NULL,S_MOD,"PopupStamp",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMP,hcontact,0),MAX_CONTACTNAME);
-			strncpy(ppd.lpzText,ParseString(!DBGetContactSetting(NULL,S_MOD,"PopupStampText",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMPTEXT,hcontact,0),MAX_SECONDLINE);
-			CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+			if (!DBGetContactSettingByte(hcontact,"CList","Hidden",0)){
+				POPUPDATAEX ppd = {0};
+				DBVARIANT dbv = {0};
+				ppd.lchContact = hcontact;
+				ppd.lchIcon = LoadSkinnedProtoIcon(lpzProto, newStatus);
+				strncpy(ppd.lpzContactName,ParseString(!DBGetContactSetting(NULL,S_MOD,"PopupStamp",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMP,hcontact,0),MAX_CONTACTNAME);
+				strncpy(ppd.lpzText,ParseString(!DBGetContactSetting(NULL,S_MOD,"PopupStampText",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMPTEXT,hcontact,0),MAX_SECONDLINE);
+				CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+			}
 		}
 	}
 }
@@ -427,9 +429,8 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 					(char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hContact,0),
 					PS_GETSTATUS,0,0
 					)>ID_STATUS_OFFLINE)	{
-					//DBWriteContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
 					if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
-						ShowPopup(hContact,sProto,cws->value.wVal);
+						ShowPopup(hContact,sProto,ID_STATUS_OFFLINE);
 				}	}
 
 				if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0))
@@ -473,6 +474,47 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 	return 0;
 }
 
+static DWORD __stdcall cleanThread(logthread_info* infoParam)
+{
+	HANDLE hcontact=NULL;
+	char str[MAXMODULELABELLENGTH];
+	sprintf(str,"In Clean: %s; %s; %s\n",
+		infoParam->sProtoName,
+		(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)infoParam->hContact,0),
+		(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)infoParam->courStatus,0)
+	);
+	OutputDebugStringA(str);
+	Sleep(2000); // I hope in 2 secons all logged-in contacts will be listed
+	//Searching for contact marked as online but now are offline
+
+	hcontact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+	while(hcontact!=NULL)
+	{
+		char * contactProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hcontact,0);
+		if (contactProto) {
+			if (!strcmp(infoParam->sProtoName,contactProto)){
+				WORD oldStatus;
+				if ((oldStatus = DBGetContactSettingWord(hcontact,S_MOD,"Status",ID_STATUS_OFFLINE))>ID_STATUS_OFFLINE){
+					if (DBGetContactSettingWord(hcontact,contactProto,"Status",ID_STATUS_OFFLINE)==ID_STATUS_OFFLINE){
+						DBWriteContactSettingWord(hcontact,S_MOD,"OldStatus",oldStatus);
+						DBWriteContactSettingWord(hcontact,S_MOD,"Status",ID_STATUS_OFFLINE);
+					//	DBWriteContactSettingWord(infoParam->hContact,S_MOD,"Status",infoParam->courStatus);
+					}
+				}
+			}
+		}
+		hcontact=(HANDLE)CallService(MS_DB_CONTACT_FINDNEXT,(WPARAM)hcontact,0);
+	}
+
+	sprintf(str,"OutClean: %s; %s; %s\n",
+		infoParam->sProtoName,
+		(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)infoParam->hContact,0),
+		(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)infoParam->courStatus,0)
+	);
+	free(infoParam);
+	OutputDebugStringA(str);
+	return 0;
+}
 
 
 int ModeChange(WPARAM wparam,LPARAM lparam)
@@ -484,14 +526,25 @@ int ModeChange(WPARAM wparam,LPARAM lparam)
 	ack=(ACKDATA *)lparam;
 
 	if(ack->type!=ACKTYPE_STATUS || ack->result!=ACKRESULT_SUCCESS || ack->hContact!=NULL) return 0;
-	
 	courProtoName = (char *)ack->szModule;
+	if (!IsWatchedProtocol(courProtoName)) return 0;
 	GetLocalTime(&time);
 
 	DBWriteTime(&time,NULL);
 
-	isetting=CallProtoService(ack->szModule,PS_GETSTATUS,0,0);
+//	isetting=CallProtoService(ack->szModule,PS_GETSTATUS,0,0);
+	isetting=ack->lParam;
 	if (isetting<ID_STATUS_OFFLINE) isetting = ID_STATUS_OFFLINE;
+	if ((isetting>ID_STATUS_OFFLINE)&&((WORD)ack->hProcess<=ID_STATUS_OFFLINE)){
+		//we have just loged-in
+		if (IsWatchedProtocol(ack->szModule)){
+			logthread_info *info;
+			info = (logthread_info *)malloc(sizeof(logthread_info));
+			strncpy(info->sProtoName,courProtoName,MAXMODULELABELLENGTH);
+			info->hContact = 0;
+			info->courStatus = 0;
+			forkthreadex(NULL, 0, cleanThread, info, 0, 0);
+	}	}
 	if (isetting==DBGetContactSettingWord(NULL,S_MOD,courProtoName,ID_STATUS_OFFLINE)) return 0;
 	DBWriteContactSettingWord(NULL,S_MOD,courProtoName,(WORD)isetting);
 
