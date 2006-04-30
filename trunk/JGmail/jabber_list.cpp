@@ -385,3 +385,16 @@ JABBER_LIST_ITEM *JabberListGetItemPtrFromIndex( int index )
 	LeaveCriticalSection( &csLists );
 	return NULL;
 }
+
+void putResAsMirVer(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
+		char mirver[255];
+		int pos;
+		char *p=r->software?strstr( r->software, "Miranda IM" ):NULL;
+		pos = mir_snprintf(mirver,255,"%s",p?p:r->software);
+		if (p) pos--;
+		mirver[pos]='\0';
+		pos += mir_snprintf(mirver+pos,255-pos," (%s)",r->version);
+		JSetStringUtf( hContact, "MirVer", mirver );
+		mir_snprintf(mirver,255,"%s",r->system);
+		JSetStringUtf( hContact, "System", mirver );
+}

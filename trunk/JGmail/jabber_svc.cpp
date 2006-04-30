@@ -422,6 +422,33 @@ void sttAddContactForever( DBCONTACTWRITESETTING* cws, HANDLE hContact )
 	JFreeVariant( &jid );
 }
 
+void sttStatusChanged( DBCONTACTWRITESETTING* cws, HANDLE hContact ){
+	
+	DBVARIANT jid;
+	if ( JGetStringUtf( hContact, "jid", &jid ))
+		return;
+	JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, jid.pszVal );
+	//if ( item == NULL )
+	//	return;
+	//(item->defaultResource<0)?NULL:item->resource[item->defaultResource].resourceName;
+	char *courRes = JabberListGetBestClientResourceNamePtr(jid.pszVal);
+	JabberLog("Status Changed: %s, Best Resource: %s",jid.pszVal,
+		(courRes)?courRes:"none");
+	if (courRes) {
+		JSetStringUtf(hContact,"Resource",courRes);
+		for (int i=0;i<item->resourceCount;i++){
+			if (!strcmp(courRes,item->resource[i].resourceName)){
+				putResAsMirVer(hContact,&item->resource[i]);
+				JabberLog("Software: %s (%s)",item->resource[i].software,item->resource[i].version);
+				break;
+			}
+		}
+	}
+	else JDeleteSetting(hContact,"Resource");
+	JFreeVariant( &jid );
+	
+}
+
 int JabberDbSettingChanged( WPARAM wParam, LPARAM lParam )
 {
 	HANDLE hContact = ( HANDLE ) wParam;
@@ -429,8 +456,12 @@ int JabberDbSettingChanged( WPARAM wParam, LPARAM lParam )
 		return 0;
 
 	DBCONTACTWRITESETTING* cws = ( DBCONTACTWRITESETTING* )lParam;
-	if ( strcmp( cws->szModule, "CList" ))
+	if ( strcmp( cws->szModule, "CList" )){
+		if (!strcmp( cws->szModule, jabberProtoName )){
+			if ( !strcmp( cws->szSetting, "Status")) sttStatusChanged( cws, hContact );
+		}
 		return 0;
+	}
 
 	char* szProto = ( char* )JCallService( MS_PROTO_GETCONTACTBASEPROTO, ( WPARAM ) hContact, 0 );
 	if ( szProto == NULL || strcmp( szProto, jabberProtoName ))
