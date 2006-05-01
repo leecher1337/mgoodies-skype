@@ -183,8 +183,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 5,0,3,0
- PRODUCTVERSION 5,0,3,0
+ FILEVERSION 5,0,3,1
+ PRODUCTVERSION 5,0,3,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -202,14 +202,14 @@ BEGIN
             VALUE "Comments", "Last Seen Mod Plugin for Miranda IM\0"
             VALUE "CompanyName", "Heiko Schillinger, YB\0"
             VALUE "FileDescription", "Last Seen Plugin\0"
-            VALUE "FileVersion", "5.0.3.0\0"
+            VALUE "FileVersion", "5.0.3.1\0"
             VALUE "InternalName", "Last Seen\0"
             VALUE "LegalCopyright", "© 2001-2002 by Heiko Schillinger, 2003 by Bruno Rino, 2006 by YB\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "seenplugin.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", " Last Seen Plugin Mod\0"
-            VALUE "ProductVersion", "5.0.3.0\0"
+            VALUE "ProductVersion", "5.0.3.1\0"
             VALUE "SpecialBuild", "\0"
         END
     END

@@ -62,16 +62,36 @@ int IsWatchedProtocol(const char* szProto)
 }
 
 BOOL isYahoo(char * protoname){
-	if (protoname) return ((strstr(protoname,"YAHOO") > 0) || (strstr(protoname,"yahoo") > 0)); else return FALSE;
+	if (protoname) {
+		char *pszUniqueSetting = (char*)CallProtoService(protoname, PS_GETCAPS, PFLAG_UNIQUEIDSETTING, 0);
+		if (pszUniqueSetting){
+			return (!strcmp(pszUniqueSetting,"yahoo_id"));
+	}	}
+	return FALSE;
 }
 BOOL isJabber(char * protoname){
-	if (protoname) return ((strstr(protoname,"JABBER") > 0) || (strstr(protoname,"JGMAIL") > 0)); else return FALSE;
+	if (protoname) {
+		char *pszUniqueSetting = (char*)CallProtoService(protoname, PS_GETCAPS, PFLAG_UNIQUEIDSETTING, 0);
+		if (pszUniqueSetting){
+			return (!strcmp(pszUniqueSetting,"jid"));
+	}	}
+	return FALSE;
 }
 BOOL isICQ(char * protoname){
-	if (protoname) return ((strstr(protoname,"ICQ") > 0)); else return FALSE;
+	if (protoname) {
+		char *pszUniqueSetting = (char*)CallProtoService(protoname, PS_GETCAPS, PFLAG_UNIQUEIDSETTING, 0);
+		if (pszUniqueSetting){
+			return (!strcmp(pszUniqueSetting,"UIN"));
+	}	}
+	return FALSE;
 }
 BOOL isMSN(char * protoname){
-	if (protoname) return ((strstr(protoname,"MSN") > 0)); else return FALSE;
+	if (protoname) {
+		char *pszUniqueSetting = (char*)CallProtoService(protoname, PS_GETCAPS, PFLAG_UNIQUEIDSETTING, 0);
+		if (pszUniqueSetting){
+			return (!strcmp(pszUniqueSetting,"e-mail"));
+	}	}
+	return FALSE;
 }
 
 char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
@@ -244,14 +264,14 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 					}
 					else if (ci.szProto != NULL) 
 					{
-						if (isYahoo(ci.szProto)) // hard-wired YAHOO support
+						if (isYahoo(ci.szProto)) // YAHOO support
 						{
 							DBVARIANT dbv;
 							DBGetContactSetting(hcontact,ci.szProto,"id",&dbv);
 							strcpy(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
 						}
-						else if (isJabber(ci.szProto)) // hard-wired JABBER support
+						else if (isJabber(ci.szProto)) // JABBER support
 						{
 							DBVARIANT dbv;
 							if (DBGetContactSetting(hcontact,ci.szProto,"LoginName",&dbv)) goto LBL_ERR;
