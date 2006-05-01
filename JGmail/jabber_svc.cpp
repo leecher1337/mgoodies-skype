@@ -607,11 +607,9 @@ static int JabberGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 			JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, dbv.pszVal );
 			if ( item != NULL ) {
 				char szJid[ 512 ];
-				if ( item->resourceCount != NULL ){
-					char *resTemp = JabberUrlDecodeNew(item->resource[0].resourceName);
-					mir_snprintf( szJid, sizeof( szJid ), "%s/%s", dbv.pszVal, resTemp );
-					if (resTemp) free(resTemp);
-				}else
+				if ( item->resourceCount != NULL )
+					mir_snprintf( szJid, sizeof( szJid ), "%s/%s", dbv.pszVal, item->resource[0].resourceName );
+				else
 					lstrcpynA( szJid, dbv.pszVal, sizeof( szJid ));
 
 				JabberLog( "Rereading avatar for %s", dbv.pszVal );
