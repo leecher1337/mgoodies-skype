@@ -202,7 +202,10 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 		if ( jabberVcardPhotoFileName ) {
 			if ( GetTempPathA( sizeof( szTempPath ), szTempPath ) <= 0 )
 				strcpy( szTempPath, ".\\" );
-			if ( GetTempFileNameA( szTempPath, "jab", 0, szTempFileName ) > 0 ) {
+			if ( GetTempFileNameA( szTempPath, jabberProtoName, GetTickCount(), szTempFileName ) > 0 ) {
+				//put correct extension to make MS_UTILS_LOADBITMAP happy
+				szTempFileName[strlen(szTempFileName)-3]='\0';
+				strcat(szTempFileName,strrchr(jabberVcardPhotoType,'/')+1);
 				JabberLog( "Temp file = %s", szTempFileName );
 				if ( CopyFileA( jabberVcardPhotoFileName, szTempFileName, FALSE ) == TRUE ) {
 					if (( hBitmap=( HBITMAP ) JCallService( MS_UTILS_LOADBITMAP, 0, ( LPARAM )szTempFileName )) != NULL ) {
@@ -261,7 +264,10 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 					}
 					if ( GetTempPathA( sizeof( szTempPath ), szTempPath ) <= 0 )
 						strcpy( szTempPath, ".\\" );
-					if ( GetTempFileNameA( szTempPath, "jab", 0, szTempFileName ) > 0 ) {
+					if ( GetTempFileNameA( szTempPath, jabberProtoName, GetTickCount(), szTempFileName ) > 0 ) {
+						//put correct extension to make MS_UTILS_LOADBITMAP happy
+						szTempFileName[strlen(szTempFileName)-3]='\0';
+						strcat(szTempFileName,strrchr(szFileName,'.')+1);
 						JabberLog( "Temp file = %s", szTempFileName );
 						if ( CopyFileA( szFileName, szTempFileName, FALSE ) == TRUE ) {
 							if (( hNewBitmap=( HBITMAP ) JCallService( MS_UTILS_LOADBITMAP, 0, ( LPARAM )szTempFileName )) != NULL ) {
@@ -274,6 +280,8 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 										strcpy( szPhotoType, "image/bmp" );
 									else if ( !stricmp( p, ".gif" ))
 										strcpy( szPhotoType, "image/gif" );
+									else if ( !stricmp( p, ".png" ))
+										strcpy( szPhotoType, "image/png" );
 									else
 										strcpy( szPhotoType, "image/jpeg" );
 								}
@@ -1008,7 +1016,10 @@ static void SetServerVcard()
 
 								if ( GetTempPathA( sizeof( szTempPath ), szTempPath ) <= 0 )
 									strcpy( szTempPath, ".\\" );
-								if ( GetTempFileNameA( szTempPath, "jab", 0, szTempFileName ) > 0 ) {
+								if ( GetTempFileNameA( szTempPath, jabberProtoName, GetTickCount(), szTempFileName ) > 0 ) {
+									//put correct extension to make MS_UTILS_LOADBITMAP happy
+									szTempFileName[strlen(szTempFileName)-3]='\0';
+									strcat(szTempFileName,strrchr(szFileType,'/')+1);
 									JabberLog( "New global file is %s", szTempFileName );
 									if ( CopyFileA( szFileName, szTempFileName, FALSE ) == TRUE ) {
 										jabberVcardPhotoFileName = _strdup( szTempFileName );
