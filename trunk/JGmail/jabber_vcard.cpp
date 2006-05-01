@@ -235,9 +235,9 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 				p = szFilter;
 				n = sizeof( szFilter );
 				strncpy( p, JTranslate( "All Bitmaps" ), n ); n = sizeof( szFilter )-strlen( szFilter );
-				strncat( p, " ( *.bmp;*.jpg;*.jpeg;*.gif )", n ); n = sizeof( szFilter )-strlen( szFilter );
+				strncat( p, " ( *.bmp;*.png;*.jpg;*.jpeg;*.gif )", n ); n = sizeof( szFilter )-strlen( szFilter );
 				p += strlen( p )+1; n = sizeof( szFilter )-( p-szFilter );
-				strncpy( p, "*.BMP;*.JPG;*.JPEG;*.GIF", n );
+				strncpy( p, "*.BMP;*.PNG;*.JPG;*.JPEG;*.GIF", n );
 				szFilter[512-1] = '\0';
 
 
