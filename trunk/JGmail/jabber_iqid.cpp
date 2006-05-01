@@ -488,12 +488,15 @@ LBL_NoTypeSpecified:
 
 	if ( GetTempPathA( sizeof( szTempPath ), szTempPath ) <= 0 )
 		lstrcpyA( szTempPath, ".\\" );
-	if ( !GetTempFileNameA( szTempPath, "jab", 0, szTempFileName )) {
+	
+	if ( !GetTempFileNameA( szTempPath, jabberProtoName, GetTickCount(), szTempFileName )) {
 LBL_Ret:
 		free( buffer );
 		return;
 	}
-
+	//put correct extension to make MS_UTILS_LOADBITMAP happy
+	szTempFileName[strlen(szTempFileName)-3]='\0';
+	strcat(szTempFileName,strrchr(jabberVcardPhotoType,'/')+1);
 	JabberLog( "Picture file name set to %s", szTempFileName );
 
 	HANDLE hFile = CreateFileA( szTempFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
@@ -509,7 +512,8 @@ LBL_Ret:
 		hasPhoto = TRUE;
 		if ( jabberVcardPhotoFileName ) {
 			DeleteFileA( jabberVcardPhotoFileName );
-			free( jabberVcardPhotoFileName );
+			free( jabberVcardPhotoFileName ); 
+			jabberVcardPhotoFileName = NULL;
 		}
 		replaceStr( jabberVcardPhotoFileName, szTempFileName );
 		JabberLog( "My picture saved to %s", szTempFileName );
