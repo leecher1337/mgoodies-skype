@@ -1533,7 +1533,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 								char *bestRes = JabberListGetBestClientResourceNamePtr(item->jid);
 								if (bestRes){
 									if (!strcmp(bestRes,r->resourceName)){
-										putResAsMirVer(hContact,r);
+										putResUserSett(hContact,r);
 									}
 								}
 							}
