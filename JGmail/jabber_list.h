@@ -168,6 +168,6 @@ int   JabberListAddResource( JABBER_LIST list, const char* jid, int status, cons
 void  JabberListRemoveResource( JABBER_LIST list, const char* jid );
 char* JabberListGetBestResourceNamePtr( const char* jid );
 char* JabberListGetBestClientResourceNamePtr( const char* jid );
-void  putResAsMirVer(HANDLE hContact, JABBER_RESOURCE_STATUS *r);
+void  putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r);
 
 #endif

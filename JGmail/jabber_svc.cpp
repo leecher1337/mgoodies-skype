@@ -435,16 +435,15 @@ void sttStatusChanged( DBCONTACTWRITESETTING* cws, HANDLE hContact ){
 	JabberLog("Status Changed: %s, Best Resource: %s",jid.pszVal,
 		(courRes)?courRes:"none");
 	if (courRes) {
-		JSetStringUtf(hContact,"Resource",courRes);
 		for (int i=0;i<item->resourceCount;i++){
 			if (!strcmp(courRes,item->resource[i].resourceName)){
-				putResAsMirVer(hContact,&item->resource[i]);
+				putResUserSett(hContact,&item->resource[i]);
 				JabberLog("Software: %s (%s)",item->resource[i].software,item->resource[i].version);
 				break;
 			}
 		}
 	}
-	else JDeleteSetting(hContact,"Resource");
+	//else JSetStringUtf(hContact,"Resource","");
 	JFreeVariant( &jid );
 	
 }
