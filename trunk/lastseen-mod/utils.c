@@ -381,12 +381,75 @@ void DBWriteTime(SYSTEMTIME *st,HANDLE hcontact)
 
 }
 
+void GetColorsFromDWord(LPCOLORREF First, LPCOLORREF Second, DWORD colDword){
+	WORD temp;
+	COLORREF res=0;
+	temp = (WORD)(colDword>>16);
+	res |= ((temp & 0x1F) <<3);
+	res |= ((temp & 0x3E0) <<6);
+	res |= ((temp & 0x7C00) <<9);
+	if (First) *First = res;
+	res = 0;
+	temp = (WORD)colDword;
+	res |= ((temp & 0x1F) <<3);
+	res |= ((temp & 0x3E0) <<6);
+	res |= ((temp & 0x7C00) <<9);
+	if (Second) *Second = res;
+}
+
+DWORD StatusColors15bits[] = {
+	0x63180000, // 0x00C0C0C0, 0x00000000, Offline - LightGray
+	0x7B350000, // 0x00F0C8A8, 0x00000000, Online  - LightBlue
+	0x431C0000, // 0x0080C0E0, 0x00000000, Away -LightOrange
+	0x295C0000, // 0x005050E0, 0x00000000, DND  -DarkRed
+	0x5EFD0000, // 0x00B8B8E8, 0x00000000, NA   -LightRed
+	0x295C0000, // 0x005050E0, 0x00000000, Occupied
+	0x43900000, // 0x0080E080, 0x00000000, Free for chat - LightGreen
+	0x76AF0000, // 0x00E8A878, 0x00000000, Invisible
+	0x431C0000, // 0x0080C0E0, 0x00000000, On the phone
+	0x5EFD0000, // 0x00B8B8E8, 0x00000000, Out to lunch
+};
+
+DWORD GetDWordFromColors(COLORREF First, COLORREF Second){
+	DWORD res = 0;
+	res |= (First&0xF8)>>3;
+	res |= (First&0xF800)>>6;
+	res |= (First&0xF80000)>>9;
+	res <<= 16;
+	res |= (Second&0xF8)>>3;
+	res |= (Second&0xF800)>>6;
+	res |= (Second&0xF80000)>>9;
+	return res;
+}
+
 void ShowPopup(HANDLE hcontact, const char * lpzProto, int newStatus){
+/*	int i;
+	for (i=0;i<10;i++){
+		DWORD f,s,rf,rs;
+		char log[256];
+
+		GetColorsFromDWord(&f,&s,StatusColors15bits[i]);
+		rf = 0;
+		rf |= (f&0xFF)<<16;
+		rf |= (f&0xFF00);
+		rf |= (f&0xFF0000)>>16;
+		rs = 0;
+		rs |= (s&0xFF)<<16;
+		rs |= (s&0xFF00);
+		rs |= (s&0xFF0000)>>16;
+		sprintf(log,"\t0x%08X, // 0x%08X, 0x%08X, %s\n",
+			GetDWordFromColors(rf,rs),rf,rs,
+			CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,i+ID_STATUS_OFFLINE,0)
+			);
+		OutputDebugStringA(log);
+	}
+*/
 	if (ServiceExists(MS_POPUP_QUERY)){
 		if (DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
 			if (!DBGetContactSettingByte(hcontact,"CList","Hidden",0)){
 				POPUPDATAEX ppd = {0};
 				DBVARIANT dbv = {0};
+				GetColorsFromDWord(&ppd.colorBack,&ppd.colorText,StatusColors15bits[newStatus-ID_STATUS_OFFLINE]);
 				ppd.lchContact = hcontact;
 				ppd.lchIcon = LoadSkinnedProtoIcon(lpzProto, newStatus);
 				strncpy(ppd.lpzContactName,ParseString(!DBGetContactSetting(NULL,S_MOD,"PopupStamp",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMP,hcontact,0),MAX_CONTACTNAME);
