@@ -440,91 +440,11 @@ SOURCE=.\icos\16x16.bmp
 # End Source File
 # Begin Source File
 
-SOURCE=.\icos\addcontact.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\block.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\delete.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\gcadmin.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\gcmodera.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\gcowner.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\gcvoice.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\grant.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\group.ico
-# End Source File
-# Begin Source File
-
 SOURCE=.\icos\jabber.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\icos\key.ico
-# End Source File
-# Begin Source File
-
-SOURCE=".\icos\mail-clock.ico"
-# End Source File
-# Begin Source File
-
-SOURCE=".\icos\mail-info.ico"
-# End Source File
-# Begin Source File
-
-SOURCE=".\icos\mail-new.ico"
-# End Source File
-# Begin Source File
-
-SOURCE=".\icos\mail-stop.ico"
-# End Source File
-# Begin Source File
-
 SOURCE=.\msvc6.rc
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\open.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\pages.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\rename.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\request.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\save.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\icos\write.ico
 # End Source File
 # End Group
 # Begin Source File

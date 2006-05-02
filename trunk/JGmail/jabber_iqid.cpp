@@ -159,16 +159,12 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 			jabberThreadInfo = NULL;	// To disallow auto reconnect
 		}
 	}
-	{
-		int i = JGetByte(NULL,"EnableGMail",1);
-		if (i & 1) {
-			JabberEnableNotifications(info);
-			if ((i & 2) == 0) JabberRequestMailBox(info->s);
-		}
-	}
+	int enableGmailSetting = JGetByte(NULL,"EnableGMail",1);
+	if (enableGmailSetting & 1) JabberEnableNotifications(info);
 	iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
     JabberSend( info->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\"><query xmlns=\"jabber:iq:roster\"/></iq>", iqId );
+	if ((enableGmailSetting & 3) == 1) JabberRequestMailBox(info->s);
 	if ( hwndJabberAgents ) {
 		// Retrieve agent information
 		iqId = JabberSerialNext();
