@@ -1202,12 +1202,25 @@ static void JabberProcessIqVersion( char* idStr, XmlNode* node )
 	if ( os == NULL ) os = JabberTextEncode( JTranslate( "Windows" ));
 
 	char mversion[64];
+#ifdef UNICODE
+#  ifdef STATICSSL
+	char JGmailSTR[] = "JGmail (W,St)";
+#  else 
+	char JGmailSTR[] = "JGmail (W)";
+#  endif
+#else 
+#  ifdef STATICSSL
+	char JGmailSTR[] = "JGmail (A,St)";
+#  else 
+	char JGmailSTR[] = "JGmail (A)";
+#  endif
+#endif
 	JCallService( MS_SYSTEM_GETVERSIONTEXT, sizeof( mversion ), ( LPARAM )mversion );
 	if (( resultId = JabberTextEncode( idStr )) != NULL ) {
-        JabberSend( jabberThreadInfo->s, "<iq type=\"result\" id=\"%s\" to=\"%s\"><query xmlns=\"jabber:iq:version\"><name>Jabber Protocol Plugin ( Miranda IM %s )</name><version>%s</version><os>%s</os></query></iq>", resultId, from, mversion, version?version:"", os?os:"" );
+        JabberSend( jabberThreadInfo->s, "<iq type=\"result\" id=\"%s\" to=\"%s\"><query xmlns=\"jabber:iq:version\"><name>Jabber Protocol Plugin ( Miranda IM %s (%s) )</name><version>%s</version><os>%s</os></query></iq>", resultId, from, mversion, JGmailSTR, version?version:"", os?os:"" );
 		free( resultId );
 	}
-    else JabberSend( jabberThreadInfo->s, "<iq type=\"result\" to=\"%s\"><query xmlns=\"jabber:iq:version\"><name>Jabber Protocol Plugin ( Miranda IM %s )</name><version>%s</version><os>%s</os></query></iq>", from, mversion, version?version:"", os?os:"" );
+    else JabberSend( jabberThreadInfo->s, "<iq type=\"result\" to=\"%s\"><query xmlns=\"jabber:iq:version\"><name>Jabber Protocol Plugin ( Miranda IM %s (%s) )</name><version>%s</version><os>%s</os></query></iq>", from, mversion, JGmailSTR, version?version:"", os?os:"" );
 
 	if ( str ) free( str );
 	if ( version ) free( version );
