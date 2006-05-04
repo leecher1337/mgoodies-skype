@@ -66,8 +66,10 @@ struct EventData {
 		const char *pszNick;		// Nick, usage depends on type of event
 		const wchar_t *pszNickW;    // Nick - Unicode
 	};
-	char *	pszText;
-	wchar_t* pszTextW;
+	union {
+		const char *pszText;			// Text, usage depends on type of event
+		const wchar_t *pszTextW;			// Text - Unicode
+	};
 	DWORD	time;
 	DWORD	eventType;
 	HANDLE	hContact;
@@ -129,11 +131,21 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	memset(event, 0, sizeof(struct EventData));
 	event->hContact = hContact;
 	event->eventType = dbei.eventType;
-	event->dwFlags = dbei.flags;
+	event->dwFlags = (dbei.flags & DBEF_READ ? IEEDF_READ : 0) | (dbei.flags & DBEF_SENT ? IEEDF_SENT : 0);
+	if (dbei.flags & DBEF_SENT) {
+//		eventData->pszNickW = getContactName(NULL, szProto);
+//		event->bIsMe = TRUE;
+	} else {
+//		eventData->pszNickW = getContactName(event->hContact, szProto);
+//		event->bIsMe = FALSE;
+	}
 	event->time = dbei.timestamp;
+	event->pszNick = NULL;
 #if defined( _UNICODE )
+	event->dwFlags |= IEEDF_UNICODE_TEXT | IEEDF_UNICODE_NICK | IEEDF_UNICODE_TEXT2;
 	if (event->eventType == EVENTTYPE_FILE) {
-		event->pszText = strdup(((char *) dbei.pBlob) + sizeof(DWORD));
+		int msglen = strlen(((char *) dbei.pBlob) + sizeof(DWORD)) + 1;
+		event->pszTextW = strToWcs(((char *) dbei.pBlob) + sizeof(DWORD), msglen, CP_ACP);//dat->codePage); 
 	} else { //if (event->eventType == EVENTTYPE_MESSAGE) {
 		int msglen = strlen((char *) dbei.pBlob) + 1;
 		event->pszText = strdup((char *) dbei.pBlob);
@@ -148,9 +160,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 		} else {
 			event->pszTextW = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
 		}
-	}/* else {
-		event->pszText = strdup((char *) dbei.pBlob);
-	}*/
+	}
 #else
 	if (event->eventType == EVENTTYPE_FILE) {
 		event->pszText = strdup(((char *) dbei.pBlob) + sizeof(DWORD));
@@ -164,7 +174,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 
 static void freeEvent(struct EventData *event) {
 	if (event->pszText != NULL) free (event->pszText);
-	if (event->pszTextW != NULL) free (event->pszTextW);
+	if (event->pszNick != NULL) free (event->pszNick);
 	free(event);
 }
 
@@ -530,7 +540,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 	  && event->eventType == EVENTTYPE_MESSAGE && HIWORD(dat->lastEventType) == EVENTTYPE_MESSAGE
 	  && (isSameDate(event->time, dat->lastEventTime))
 //	  && ((dbei.timestamp - dat->lastEventTime) < 86400)
-	  && ((((int)event->time < dat->startTime) == (dat->lastEventTime < dat->startTime)) || !(event->dwFlags & DBEF_READ))) {
+	  && ((((int)event->time < dat->startTime) == (dat->lastEventTime < dat->startTime)) || !(event->dwFlags & IEEDF_READ))) {
 		isGroupBreak = FALSE;
 	}
 	if (!firstEvent && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
@@ -538,7 +548,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\par\\sl0", msgDlgFontCount + 4);
 	}
 	if (event->eventType == EVENTTYPE_MESSAGE) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 2 + ((event->dwFlags & DBEF_SENT) ? 1 : 0));
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 2 + ((event->dwFlags & IEEDF_SENT) ? 1 : 0));
 	} else {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1);
 	}
@@ -548,7 +558,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 
 		switch (event->eventType) {
 			case EVENTTYPE_MESSAGE:
-				if (event->dwFlags & DBEF_SENT) {
+				if (event->dwFlags & IEEDF_SENT) {
 					i = LOGICON_MSG_OUT;
 				}
 				else {
@@ -575,26 +585,26 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		!(g_dat->flags & SMF_GROUPMESSAGES) ||
 		(isGroupBreak && !(g_dat->flags & SMF_MARKFOLLOWUPS)) ||  (!isGroupBreak && (g_dat->flags & SMF_MARKFOLLOWUPS))))
 	{
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & DBEF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
 		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", TimestampToString(g_dat->flags, event->time, isGroupBreak));
 		if (event->eventType != EVENTTYPE_MESSAGE) {
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s : ", SetToStyle(event->dwFlags & DBEF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s : ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
 		}
 		showColon = 1;
 	}
 	if ((!(g_dat->flags&SMF_HIDENAMES) && event->eventType == EVENTTYPE_MESSAGE && isGroupBreak) || event->eventType == EVENTTYPE_STATUSCHANGE) {
 		if (event->eventType == EVENTTYPE_MESSAGE) {
 			if (showColon) {
-				AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->dwFlags & DBEF_SENT ? MSGFONTID_MYNAME : MSGFONTID_YOURNAME));
+				AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYNAME : MSGFONTID_YOURNAME));
 			} else {
-				AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & DBEF_SENT ? MSGFONTID_MYNAME : MSGFONTID_YOURNAME));
+				AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYNAME : MSGFONTID_YOURNAME));
 			}
 		} else {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(MSGFONTID_NOTICE));
 		}
 		{
 			TCHAR *szName;
-			if (event->dwFlags & DBEF_SENT) {
+			if (event->dwFlags & IEEDF_SENT) {
 				szName = GetNickname(NULL, dat->szProto);
 			} else {
 				szName = GetNickname(event->hContact, dat->szProto);
@@ -614,22 +624,22 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 	}
 	if (g_dat->flags&SMF_SHOWTIME && g_dat->flags & SMF_GROUPMESSAGES && g_dat->flags & SMF_MARKFOLLOWUPS
 		&& event->eventType == EVENTTYPE_MESSAGE && isGroupBreak) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->dwFlags & DBEF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
 		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", TimestampToString(g_dat->flags, event->time, isGroupBreak));
 		showColon = 1;
 	}
 	if (showColon && event->eventType == EVENTTYPE_MESSAGE) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s : ", SetToStyle(event->dwFlags & DBEF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s : ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
 	}
 	switch (event->eventType) {
 		case EVENTTYPE_MESSAGE:
 		if (g_dat->flags & SMF_MSGONNEWLINE && showColon) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 		}
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & DBEF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
 
 #if defined( _UNICODE )
-		if (event->pszTextW != NULL) {
+		if (event->dwFlags & IEEDF_UNICODE_TEXT) {
 			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszTextW);
 		} else {
 			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->pszText);
@@ -644,13 +654,13 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		{
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(MSGFONTID_NOTICE));
 			if (event->eventType == EVENTTYPE_FILE) {
-				if (event->dwFlags & DBEF_SENT) {
+				if (event->dwFlags & IEEDF_SENT) {
 					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File sent"), event->pszText);
 				} else {
 					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File received"), event->pszText);
 				}
 			} else if (event->eventType == EVENTTYPE_URL) {
-				if (event->dwFlags & DBEF_SENT) {
+				if (event->dwFlags & IEEDF_SENT) {
 					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL sent"), event->pszText);
 				} else {
 					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL received"), event->pszText);
