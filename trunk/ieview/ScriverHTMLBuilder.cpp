@@ -276,7 +276,7 @@ void ScriverHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
  		  	if ((dwFlags & SMF_LOG_GROUPMESSAGES) && eventData->dwFlags == LOWORD(getLastEventType())
 			  && eventData->iType == IEED_EVENT_MESSAGE && HIWORD(getLastEventType()) == IEED_EVENT_MESSAGE
 			  && (isSameDate(eventData->time, getLastEventTime()))
-			  && (((eventData->time < startedTime) == (getLastEventTime() < startedTime)) || eventData->dwFlags & IEEDF_UNREAD)) {
+			  && (((eventData->time < startedTime) == (getLastEventTime() < startedTime)) || !(eventData->dwFlags & IEEDF_READ))) {
 		        isGroupBreak = FALSE;
 		    }
 			char *szName = NULL;

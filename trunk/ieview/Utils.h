@@ -29,6 +29,8 @@ public:
 	static char *UTF8Encode(const char *text);
 	static void  UTF8Encode(const char *text, char *output, int maxLen);
 	static int   detectURL(const wchar_t *text);
+	static unsigned long forkThread(void (__cdecl *threadcode)(void*),unsigned long stacksize,void *arg);
+
 };
 
 #endif
