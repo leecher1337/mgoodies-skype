@@ -17,9 +17,143 @@ int ModeChange_mo(WPARAM,LPARAM);
 int CheckIfOnline(void);
 int ResetMissed(void);
 
+BOOL CALLBACK OptsPopUpsDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
+{
+	DBVARIANT dbv;
+	int i;
+	char szstamp[256];
+	BOOL hasPopups;
+	switch(msg)
+	{
+		case WM_INITDIALOG:{
+			if (hasPopups = (ServiceExists(MS_POPUP_QUERY) != 0))
+				hasPopups = CallService(MS_POPUP_QUERY,PUQS_GETSTATUS,0);
+			TranslateDialogDefault(hdlg);
+			ShowWindow(GetDlgItem(hdlg,IDC_MISSPOPUP),hasPopups?SW_HIDE:SW_SHOW);
+			ShowWindow(GetDlgItem(hdlg,IDC_POPUPS),hasPopups?SW_SHOW:SW_HIDE);
+			ShowWindow(GetDlgItem(hdlg,IDC_POPUPSTAMP),hasPopups?SW_SHOW:SW_HIDE);
+			ShowWindow(GetDlgItem(hdlg,IDC_LABTEXT),hasPopups?SW_SHOW:SW_HIDE);
+			ShowWindow(GetDlgItem(hdlg,IDC_LABTTITLE),hasPopups?SW_SHOW:SW_HIDE);
+			ShowWindow(GetDlgItem(hdlg,IDC_POPUPSTAMPTEXT),hasPopups?SW_SHOW:SW_HIDE);
+			CheckDlgButton(hdlg,IDC_POPUPS,DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)&hasPopups);
+			EnableWindow(GetDlgItem(hdlg,IDC_POPUPS),hasPopups);
+			hasPopups = IsDlgButtonChecked(hdlg,IDC_POPUPS);
+			EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMP),hasPopups);
+			EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMPTEXT),hasPopups);
+			for (i=ID_STATUS_OFFLINE;i<=ID_STATUS_OUTTOLUNCH;i++){
+				DWORD sett;
+				COLORREF back, text;
+				sprintf(szstamp, "Col_%d",i-ID_STATUS_OFFLINE);
+				sett = DBGetContactSettingDword(NULL,S_MOD,szstamp,StatusColors15bits[i-ID_STATUS_OFFLINE]);
+				GetColorsFromDWord(&back, &text, sett);
+				SendDlgItemMessage(hdlg,i,CPM_SETCOLOUR,0,back);
+				SendDlgItemMessage(hdlg,i+20,CPM_SETCOLOUR,0,text);
+				EnableWindow(GetDlgItem(hdlg,i),hasPopups);
+				EnableWindow(GetDlgItem(hdlg,i+20),hasPopups);
+			}
+
+			SetDlgItemText(hdlg,IDC_POPUPSTAMP,!DBGetContactSetting(NULL,S_MOD,"PopupStamp",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMP);
+			DBFreeVariant(&dbv);
+			SetDlgItemText(hdlg,IDC_POPUPSTAMPTEXT,!DBGetContactSetting(NULL,S_MOD,"PopupStampText",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMPTEXT);
+			DBFreeVariant(&dbv);
+		}
+		break; //case WM_INITDIALOG
+		case WM_COMMAND:
+			if((HIWORD(wparam)==BN_CLICKED || HIWORD(wparam)==EN_CHANGE) && GetFocus()==(HWND)lparam)
+				SendMessage(GetParent(hdlg),PSM_CHANGED,0,0);
+			else if (HIWORD(wparam)==CPN_COLOURCHANGED){
+				WORD idText, idBack;
+				POPUPDATAEX ppd = {0};
+				DBVARIANT dbv = {0};
+				DWORD temp;
+				if (LOWORD(wparam)>ID_STATUS_OUTTOLUNCH){ // we have clicked a text color
+					idText = wparam; idBack = wparam-20;
+				} else {idText = wparam+20; idBack = wparam;}
+				ppd.colorBack = SendDlgItemMessage(hdlg,idBack,CPM_GETCOLOUR,0,0);
+				ppd.colorText = SendDlgItemMessage(hdlg,idText,CPM_GETCOLOUR,0,0);
+				temp = GetDWordFromColors(ppd.colorBack,ppd.colorText);
+				GetColorsFromDWord(&ppd.colorBack,&ppd.colorText,temp);
+				SendDlgItemMessage(hdlg,idBack,CPM_SETCOLOUR,0,ppd.colorBack);
+				SendDlgItemMessage(hdlg,idText,CPM_SETCOLOUR,0,ppd.colorText);
+				ppd.lchIcon = LoadSkinnedProtoIcon(NULL, idBack);
+				GetDlgItemText(hdlg,IDC_POPUPSTAMP,szstamp,255);
+				strncpy(ppd.lpzContactName,ParseString(szstamp,NULL,0),MAX_CONTACTNAME);
+				GetDlgItemText(hdlg,IDC_POPUPSTAMPTEXT,szstamp,255);
+				strncpy(ppd.lpzText,ParseString(szstamp,NULL,0),MAX_SECONDLINE);
+				CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
+
+				SendMessage(GetParent(hdlg),PSM_CHANGED,0,0);
+			} 
+			if(HIWORD(wparam)==BN_CLICKED)
+			{
+				switch(LOWORD(wparam)){
+					case IDC_POPUPS:
+						hasPopups = IsDlgButtonChecked(hdlg,IDC_POPUPS);
+						EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMP),hasPopups);
+						EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMPTEXT),hasPopups);
+						for (i=ID_STATUS_OFFLINE;i<=ID_STATUS_OUTTOLUNCH;i++){
+							EnableWindow(GetDlgItem(hdlg,i),hasPopups);
+							EnableWindow(GetDlgItem(hdlg,i+20),hasPopups);
+						}
+						break;
+					case IDC_DEFAULTCOL:
+						for (i=ID_STATUS_OFFLINE;i<=ID_STATUS_OUTTOLUNCH;i++){
+							DWORD sett;
+							COLORREF back, text;
+							sprintf(szstamp, "Col_%d",i-ID_STATUS_OFFLINE);
+							sett = StatusColors15bits[i-ID_STATUS_OFFLINE];
+							GetColorsFromDWord(&back, &text, sett);
+							SendDlgItemMessage(hdlg,i,CPM_SETCOLOUR,0,back);
+							SendDlgItemMessage(hdlg,i+20,CPM_SETCOLOUR,0,text);
+						}
+						break;
+				}
+			}
+			break; //case WM_COMMAND
+
+		case WM_NOTIFY:
+			switch(((LPNMHDR)lparam)->idFrom) 
+			{
+				case 0: 
+					switch (((LPNMHDR)lparam)->code)
+					{
+						BYTE checkValue;
+
+						case PSN_APPLY:
+							GetDlgItemText(hdlg,IDC_POPUPSTAMP,szstamp,256);
+							DBWriteContactSettingString(NULL,S_MOD,"PopupStamp",szstamp);
+							GetDlgItemText(hdlg,IDC_POPUPSTAMPTEXT,szstamp,256);
+							DBWriteContactSettingString(NULL,S_MOD,"PopupStampText",szstamp);
+
+							checkValue = (BYTE)IsDlgButtonChecked(hdlg,IDC_POPUPS);
+							if (DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0) != checkValue) {
+								DBWriteContactSettingByte(NULL,S_MOD,"UsePopups",checkValue);
+							}
+							for (i=ID_STATUS_OFFLINE;i<=ID_STATUS_OUTTOLUNCH;i++){
+								DWORD sett;
+								COLORREF back=0, text=0;
+								sprintf(szstamp, "Col_%d",i-ID_STATUS_OFFLINE);
+								back = SendDlgItemMessage(hdlg,i,CPM_GETCOLOUR,0,0);
+								text = SendDlgItemMessage(hdlg,i+20,CPM_GETCOLOUR,0,0);
+								sett=GetDWordFromColors(back,text);
+								if (sett!=StatusColors15bits[i-ID_STATUS_OFFLINE])
+									DBWriteContactSettingDword(NULL,S_MOD,szstamp,sett);
+								else DBDeleteContactSetting(NULL,S_MOD,szstamp);
+							}
 
 
-BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
+							break; //case PSN_APPLY
+					}
+					break; //case 0
+			}
+			break;//case WM_NOTIFY
+       
+	}
+
+	return 0;
+}
+
+BOOL CALLBACK OptsSettingsDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 {
 	DBVARIANT dbv;
 	char szstamp[256];
@@ -29,11 +163,9 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 	switch(msg)
 	{
 		case WM_INITDIALOG:{
-			BOOL hasPopups = (ServiceExists(MS_POPUP_QUERY) != 0);
 			TranslateDialogDefault(hdlg);
 
 			CheckDlgButton(hdlg,IDC_MENUITEM,DBGetContactSettingByte(NULL,S_MOD,"MenuItem",1));
-			CheckDlgButton(hdlg,IDC_POPUPS,DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)&hasPopups);
 			CheckDlgButton(hdlg,IDC_USERINFO,DBGetContactSettingByte(NULL,S_MOD,"UserinfoTab",1));
 			CheckDlgButton(hdlg,IDC_FILE,DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0));
 			CheckDlgButton(hdlg,IDC_HISTORY,DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0));
@@ -43,9 +175,6 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 			CheckDlgButton(hdlg,IDC_COUNT,DBGetContactSettingByte(NULL,S_MOD,"MissedOnes_Count",0));
 
 			EnableWindow(GetDlgItem(hdlg,IDC_MENUSTAMP),IsDlgButtonChecked(hdlg,IDC_MENUITEM));
-			EnableWindow(GetDlgItem(hdlg,IDC_POPUPS),hasPopups);
-			EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMP),IsDlgButtonChecked(hdlg,IDC_POPUPS));
-			EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMPTEXT),IsDlgButtonChecked(hdlg,IDC_POPUPS));
 			EnableWindow(GetDlgItem(hdlg,IDC_SHOWICON),IsDlgButtonChecked(hdlg,IDC_MENUITEM));
 			EnableWindow(GetDlgItem(hdlg,IDC_USERSTAMP),IsDlgButtonChecked(hdlg,IDC_USERINFO));
 			EnableWindow(GetDlgItem(hdlg,IDC_FILESTAMP),IsDlgButtonChecked(hdlg,IDC_FILE));
@@ -55,10 +184,6 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 			EnableWindow(GetDlgItem(hdlg,IDC_COUNT),IsDlgButtonChecked(hdlg,IDC_MISSEDONES));
 
 			SetDlgItemText(hdlg,IDC_MENUSTAMP,!DBGetContactSetting(NULL,S_MOD,"MenuStamp",&dbv)?dbv.pszVal:DEFAULT_MENUSTAMP);
-			DBFreeVariant(&dbv);
-			SetDlgItemText(hdlg,IDC_POPUPSTAMP,!DBGetContactSetting(NULL,S_MOD,"PopupStamp",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMP);
-			DBFreeVariant(&dbv);
-			SetDlgItemText(hdlg,IDC_POPUPSTAMPTEXT,!DBGetContactSetting(NULL,S_MOD,"PopupStampText",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMPTEXT);
 			DBFreeVariant(&dbv);
 			SetDlgItemText(hdlg,IDC_USERSTAMP,!DBGetContactSetting(NULL,S_MOD,"UserStamp",&dbv)?dbv.pszVal:DEFAULT_USERSTAMP);
 			DBFreeVariant(&dbv);
@@ -106,7 +231,7 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 
 		case WM_COMMAND:
 			if((HIWORD(wparam)==BN_CLICKED || HIWORD(wparam)==EN_CHANGE) && GetFocus()==(HWND)lparam)
-				SendMessage(GetParent(hdlg),PSM_CHANGED,0,0);
+				if (LOWORD(wparam)!=IDC_VARIABLES)SendMessage(GetParent(hdlg),PSM_CHANGED,0,0);
 
 			if(HIWORD(wparam)==BN_CLICKED)
 			{
@@ -128,10 +253,6 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 						break;
 					case IDC_MISSEDONES:
 						EnableWindow(GetDlgItem(hdlg,IDC_COUNT),IsDlgButtonChecked(hdlg,IDC_MISSEDONES));
-						break;
-					case IDC_POPUPS:
-						EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMP),IsDlgButtonChecked(hdlg,IDC_POPUPS));
-						EnableWindow(GetDlgItem(hdlg,IDC_POPUPSTAMPTEXT),IsDlgButtonChecked(hdlg,IDC_POPUPS));
 						break;
 				}
 			}
@@ -158,11 +279,6 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 							GetDlgItemText(hdlg,IDC_MENUSTAMP,szstamp,256);
 							DBWriteContactSettingString(NULL,S_MOD,"MenuStamp",szstamp);
 
-							GetDlgItemText(hdlg,IDC_POPUPSTAMP,szstamp,256);
-							DBWriteContactSettingString(NULL,S_MOD,"PopupStamp",szstamp);
-							GetDlgItemText(hdlg,IDC_POPUPSTAMPTEXT,szstamp,256);
-							DBWriteContactSettingString(NULL,S_MOD,"PopupStampText",szstamp);
-
 							GetDlgItemText(hdlg,IDC_USERSTAMP,szstamp,256);
 							DBWriteContactSettingString(NULL,S_MOD,"UserStamp",szstamp);
 
@@ -185,11 +301,6 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 								}
 							}
 
-							checkValue = (BYTE)IsDlgButtonChecked(hdlg,IDC_POPUPS);
-							if (DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0) != checkValue) {
-								DBWriteContactSettingByte(NULL,S_MOD,"UsePopups",checkValue);
-							}
-
 							checkValue = (BYTE)IsDlgButtonChecked(hdlg,IDC_USERINFO);
 							if (DBGetContactSettingByte(NULL,S_MOD,"UserinfoTab",1) != checkValue) {
 								DBWriteContactSettingByte(NULL,S_MOD,"UserinfoTab",checkValue);
@@ -207,7 +318,6 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 									InitFileOutput();
 								}
 							}
-
 
 							checkValue = (BYTE)IsDlgButtonChecked(hdlg,IDC_HISTORY);
 							if (DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0) != checkValue) {
@@ -325,6 +435,107 @@ BOOL CALLBACK OptDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 	return 0;
 }
 
+long OptsSettingsDlg, OptsPopUpsDlg;
+
+ BOOL CALLBACK OptTabDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+		case WM_INITDIALOG: 
+		{	
+			TCITEMA tci;
+			RECT theTabSpace;
+			RECT rcClient;
+			{
+				RECT rcTab, rcDlg;
+				HWND hwndTab = GetDlgItem(hwndDlg, IDC_OPTIONSTAB);
+				TabCtrl_GetItemRect(hwndTab,0,&rcTab);
+				TabCtrl_DeleteAllItems(hwndTab);
+				theTabSpace.top = rcTab.bottom; // the size of the tab
+				GetWindowRect(GetDlgItem(hwndDlg, IDC_OPTIONSTAB), &rcTab);
+				GetWindowRect(hwndDlg, &rcDlg);
+				theTabSpace.bottom = rcTab.bottom -rcTab.top  -theTabSpace.top;
+				theTabSpace.top =  rcTab.top -rcDlg.top +theTabSpace.top;
+				theTabSpace.left = rcTab.left - rcDlg.left;
+				theTabSpace.right = rcTab.right-rcTab.left;
+			}
+			tci.mask = TCIF_PARAM|TCIF_TEXT;
+			if (!OptsPopUpsDlg) OptsPopUpsDlg = (long)CreateDialog(hInstance,MAKEINTRESOURCE(IDD_POPUPS), hwndDlg, OptsPopUpsDlgProc);
+			tci.lParam = OptsPopUpsDlg;
+			GetClientRect((HWND)tci.lParam,&rcClient);
+			tci.pszText = Translate("Popups");
+			SendMessage(GetDlgItem(hwndDlg, IDC_OPTIONSTAB), TCM_INSERTITEMA, (WPARAM)0, (LPARAM)&tci);
+			MoveWindow((HWND)tci.lParam,theTabSpace.left+(theTabSpace.right-rcClient.right)/2,
+				theTabSpace.top+(theTabSpace.bottom-rcClient.bottom)/2,
+				rcClient.right,rcClient.bottom,1);
+			ShowWindow((HWND)tci.lParam, SW_HIDE);
+
+			if (!OptsSettingsDlg) OptsSettingsDlg = (long)CreateDialog(hInstance,MAKEINTRESOURCE(IDD_SETTINGS), hwndDlg, OptsSettingsDlgProc);
+			tci.lParam = OptsSettingsDlg;
+			tci.pszText = Translate("Settings");
+			GetClientRect((HWND)tci.lParam,&rcClient);
+			SendMessage(GetDlgItem(hwndDlg, IDC_OPTIONSTAB), TCM_INSERTITEMA, (WPARAM)0, (LPARAM)&tci);
+			MoveWindow((HWND)tci.lParam,theTabSpace.left+(theTabSpace.right-rcClient.right)/2,
+				theTabSpace.top+(theTabSpace.bottom-rcClient.bottom)/2,
+				rcClient.right,rcClient.bottom,1);
+			ShowWindow((HWND)tci.lParam, SW_SHOW);
+			TabCtrl_SetCurSel(GetDlgItem(hwndDlg, IDC_OPTIONSTAB),0);
+			return TRUE;
+		}
+		case PSM_CHANGED:
+			SendMessage(GetParent(hwndDlg), PSM_CHANGED, (unsigned int)hwndDlg, 0);
+			break;
+		case WM_DESTROY:
+			OptsSettingsDlg = OptsPopUpsDlg = 0;
+			break;
+		case WM_NOTIFY:
+		{
+		  switch(((LPNMHDR)lParam)->idFrom) {
+            case 0:	{
+			  BOOL CommandApply = FALSE;
+			  if ( (CommandApply = lParam && ((LPNMHDR)lParam)->code == PSN_APPLY) || (lParam && ((LPNMHDR)lParam)->code == PSN_RESET) ) {
+#ifdef _DEBUG
+				MessageBoxA(hwndDlg,CommandApply?"Apply":"Cancel","EventHapened",0);
+#endif
+				if (CommandApply) {
+					SendMessage((HWND)OptsSettingsDlg, WM_NOTIFY, wParam, lParam);
+					SendMessage((HWND)OptsPopUpsDlg, WM_NOTIFY, wParam, lParam);
+					return TRUE;
+				} else {
+				}
+			  } //if PSN_APPLY
+			}
+            break;
+            case IDC_OPTIONSTAB:
+               switch (((LPNMHDR)lParam)->code)
+               {
+                  case TCN_SELCHANGING:
+                     {
+                        TCITEM tci;
+                        tci.mask = TCIF_PARAM;
+                        TabCtrl_GetItem(GetDlgItem(hwndDlg,IDC_OPTIONSTAB),TabCtrl_GetCurSel(GetDlgItem(hwndDlg,IDC_OPTIONSTAB)),&tci);
+                        ShowWindow((HWND)tci.lParam,SW_HIDE);                     
+                     }
+                  break;
+                  case TCN_SELCHANGE:
+                     {
+                        TCITEM tci;
+						short int t;
+                        tci.mask = TCIF_PARAM;
+						t = TabCtrl_GetCurSel(GetDlgItem(hwndDlg,IDC_OPTIONSTAB));
+                        TabCtrl_GetItem(GetDlgItem(hwndDlg,IDC_OPTIONSTAB),t,&tci);
+                        ShowWindow((HWND)tci.lParam,SW_SHOW);                     
+                     }
+                  break;
+               }
+			   break;
+			}
+		  }//end case(LPNMHDR)lParam)->idFrom
+		  break;			
+	}
+	return FALSE;
+}
+
 
 
 int OptionsInit(WPARAM wparam,LPARAM lparam)
@@ -337,7 +548,7 @@ int OptionsInit(WPARAM wparam,LPARAM lparam)
 	odp.hInstance=hInstance;
 	odp.pszTemplate=MAKEINTRESOURCE(IDD_OPTIONS);
 	odp.pszTitle=Translate("Last seen");
-	odp.pfnDlgProc=OptDlgProc;
+	odp.pfnDlgProc=OptTabDlgProc;
 	odp.flags=ODPF_BOLDGROUPS;
 	CallService(MS_OPT_ADDPAGE,wparam,(LPARAM)&odp);
 	return 0;
