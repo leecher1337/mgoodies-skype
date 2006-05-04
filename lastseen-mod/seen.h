@@ -46,7 +46,7 @@
 #define DEFAULT_MENUSTAMP          "%d.%m.%Y - %H:%M [%s]"
 #define DEFAULT_POPUPSTAMP         "%n is %s (%u)"
 #define DEFAULT_POPUPSTAMPTEXT     "%i(%r)%bWas %o"
-#define DEFAULT_USERSTAMP          "Date: %d.%m.%Y%b%bTime: %H:%M:%S%b%bStatus: %s"
+#define DEFAULT_USERSTAMP          "Name:%t%N%bStatus:%t%s%bDay:%t%d.%m.%Y%bTime:%t%H:%M:%S%bPrevious Status:%t%o%b%b%P ID:%t%u%bExternal IP:%t%i%bInternal IP:%t%r%bClientID: %t%C%b"
 #define DEFAULT_FILESTAMP          "%d.%m.%Y %H:%M:%S%t%n%t%s%t%u%t%r | %i%t%N"
 #define DEFAULT_FILENAME           "logs\\%P.txt"
 #define DEFAULT_HISTORYSTAMP       "%d.%m.%Y - %H:%M [%s]"
@@ -63,5 +63,7 @@ typedef struct{
 /* utils.c */
 int IsWatchedProtocol(const char* szProto);
 char *ParseString(char *,HANDLE,BYTE);
-
+extern DWORD StatusColors15bits[];
+void GetColorsFromDWord(LPCOLORREF First, LPCOLORREF Second, DWORD colDword);
+DWORD GetDWordFromColors(COLORREF First, COLORREF Second);
 
