@@ -65,8 +65,8 @@ typedef struct {
 #define IEEDF_FORMAT_COLOR	0x00000400 // if set color is valid and should be used
 #define IEEDF_FORMAT_STYLE	0x00000800 // if set fontSize is valid and should be used
 
-#define IEEDF_UNREAD		0x00001000 // if set
 #define IEEDF_SENT			0x00002000 // if set
+#define IEEDF_READ			0x00001000 // if set
 
 #define IEED_EVENT_MESSAGE			0x0001 // message
 #define IEED_EVENT_STATUSCHANGE		0x0002 // status change

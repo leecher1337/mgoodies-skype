@@ -284,3 +284,35 @@ char *Utils::escapeString(const char *a) {
 	return out;
 }
 
+struct FORK_ARG {
+	HANDLE hEvent;
+	void (__cdecl *threadcode)(void*);
+	void *arg;
+};
+
+static void __cdecl forkthread_r(struct FORK_ARG *fa)
+{	
+	void (*callercode)(void*) = fa->threadcode;
+	void *arg = fa->arg;
+	CallService(MS_SYSTEM_THREAD_PUSH, 0, 0);
+	SetEvent(fa->hEvent);
+	callercode(arg);
+	CallService(MS_SYSTEM_THREAD_POP, 0, 0);
+	return;
+}
+
+unsigned long Utils::forkThread(void (__cdecl *threadcode)(void*), unsigned long stacksize,	void *arg) {
+
+	unsigned long rc;
+	struct FORK_ARG fa;
+	
+	fa.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	fa.threadcode = threadcode;
+	fa.arg = arg;
+	rc = _beginthread((void (__cdecl *)(void*))forkthread_r, stacksize, &fa);
+	if ((unsigned long) -1L != rc) {
+		WaitForSingleObject(fa.hEvent, INFINITE);
+	}
+	CloseHandle(fa.hEvent);
+	return rc;
+}
