@@ -1120,6 +1120,32 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						nmh.code = TCN_SELCHANGE;
 						SendMessage(GetParent(hwnd), WM_NOTIFY, nmh.idFrom, (LPARAM)&nmh);
 						UpdateWindow(hwnd);
+					} else if (GetKeyState(VK_CONTROL) & 0x8000) {
+						struct MessageWindowData *mwd;
+						TCITEM tci;
+						POINT pt;
+						RECT rc;
+						struct NewMessageWindowLParam newData = { 0 };
+						tci.mask = TCIF_PARAM;
+						TabCtrl_GetItem(hwnd, dat->srcTab, &tci);
+						mwd = (struct MessageWindowData *) tci.lParam;
+						if (mwd != NULL) {
+							int x, y, cx, cy;
+							HWND hParent = (HWND)CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+							GetWindowRect(hParent, &rc);
+							GetCursorPos(&pt);
+							cx = (rc.right - rc.left);
+							cy = (rc.bottom - rc.top);
+							x = pt.x - cx / 2;
+							y = pt.y - cy / 2;
+							MoveWindow(hParent, x, y , cx, cy, FALSE);
+							SendMessage(GetParent(hwnd), DM_REMOVECHILD, 0, (LPARAM) mwd->hwnd);
+							SetParent(mwd->hwnd, hParent);
+							SendMessage(mwd->hwnd, DM_SETPARENT, 0, (LPARAM) hParent);
+							SendMessage(hParent, DM_ADDCHILD, 0, (LPARAM) mwd);
+							SendMessage(hParent, DM_ACTIVATECHILD, 0, (LPARAM) mwd->hwnd);
+							ShowWindow(hParent, SW_SHOWNA);
+						}
 					}
 				} else {
 					SendMessage(hwnd, WM_LBUTTONDOWN, dat->clickWParam, dat->clickLParam);
