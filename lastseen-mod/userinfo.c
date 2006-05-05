@@ -38,7 +38,8 @@ BOOL CALLBACK UserinfoDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 			szout=strdup(ParseString((!DBGetContactSetting(NULL,S_MOD,"UserStamp",&dbv)?dbv.pszVal:DEFAULT_USERSTAMP),(HANDLE)lparam,0));
 			SetDlgItemText(hdlg,IDC_INFOTEXT,szout);
 			if(!strcmp(szout,Translate("<unknown>")))
-				EnableWindow(GetDlgItem(hdlg,IDC_INFOTEXT),FALSE);
+			EnableWindow(GetDlgItem(hdlg,IDC_INFOTEXT),FALSE);
+			free(szout);
 			DBFreeVariant(&dbv);
 			break;
 
