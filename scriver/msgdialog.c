@@ -938,8 +938,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			dat->hwnd = hwndDlg;
 			dat->hwndParent = GetParent(hwndDlg);
-			dat->hwndLog = NULL;
 			dat->parent = (struct ParentWindowData *) GetWindowLong(dat->hwndParent, GWL_USERDATA);
+			dat->hwndLog = NULL;
 			dat->szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dat->hContact, 0);
 	//		RichUtil_SubClass(GetDlgItem(hwndDlg, IDC_LOG));
 			{ // avatar stuff
@@ -1202,6 +1202,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			TrackPopupMenu(hMenu, 0, pt.x, pt.y, 0, hwndDlg, NULL);
 			DestroyMenu(hMenu);
 		} 
+		break;
+	case WM_LBUTTONDBLCLK:
+			
 		break;
 	case WM_RBUTTONUP:
 		{
@@ -1698,6 +1701,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM)hwndDlg);
 		PostMessage(hwndDlg, DM_SETFOCUS, 0, 0);
 //		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
+		return TRUE;
+	case DM_SETPARENT:
+		dat->hwndParent = GetParent(hwndDlg);
+		dat->parent = (struct ParentWindowData *) GetWindowLong(dat->hwndParent, GWL_USERDATA);
 		return TRUE;
 	case WM_GETMINMAXINFO:
 		{
