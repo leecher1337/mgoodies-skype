@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_iqid.cpp,v $
-Revision       : $Revision: 1.38 $
-Last change on : $Date: 2006/05/01 13:28:09 $
+Revision       : $Revision: 1.39 $
+Last change on : $Date: 2006/05/03 20:08:15 $
 Last change by : $Author: ghazan $
 
 */
@@ -208,7 +208,7 @@ void sttGroupchatJoinByHContact( HANDLE hContact )
 		free( jidnick );
 	}
 
-	JabberGroupchatJoinRoom( server, room, nick, "" );
+	JabberGroupchatJoinRoom( server, room, TXT(nick), "" );
 	free( roomjid );
 }
 

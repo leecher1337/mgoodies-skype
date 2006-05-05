@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_thread.cpp,v $
-Revision       : $Revision: 1.48 $
-Last change on : $Date: 2006/03/16 19:08:24 $
+Revision       : $Revision: 1.49 $
+Last change on : $Date: 2006/05/01 18:13:18 $
 Last change by : $Author: ghazan $
 
 */
