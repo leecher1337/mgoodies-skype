@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_menu.cpp,v $
-Revision       : $Revision: 1.14 $
-Last change on : $Date: 2005/10/23 18:55:58 $
+Revision       : $Revision: 1.15 $
+Last change on : $Date: 2006/05/01 13:28:09 $
 Last change by : $Author: ghazan $
 
 */
@@ -28,8 +28,6 @@ Last change by : $Author: ghazan $
 #include "jabber.h"
 #include "jabber_list.h"
 #include "resource.h"
-
-void JabberGroupchatJoinRoom( const char* server, const char* room, const char* nick, const char* password );
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // module data

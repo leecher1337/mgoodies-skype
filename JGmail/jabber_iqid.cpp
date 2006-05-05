@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_iqid.cpp,v $
-Revision       : $Revision: 1.37 $
-Last change on : $Date: 2006/01/22 20:05:00 $
+Revision       : $Revision: 1.38 $
+Last change on : $Date: 2006/05/01 13:28:09 $
 Last change by : $Author: ghazan $
 
 */
@@ -98,11 +98,13 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 
 	if ( !strcmp( type, "result" )) {
 		DBVARIANT dbv;
-
 		if ( DBGetContactSetting( NULL, jabberProtoName, "Nick", &dbv ))
 			JSetString( NULL, "Nick", info->username );
 		else
 			JFreeVariant( &dbv );
+
+		jabberOnline = TRUE;
+
 		iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
         JabberSend( info->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\"><query xmlns=\"jabber:iq:roster\"/></iq>", iqId );
@@ -159,6 +161,7 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 			jabberThreadInfo = NULL;	// To disallow auto reconnect
 		}
 	}
+	jabberOnline = TRUE;
 	int enableGmailSetting = JGetByte(NULL,"EnableGMail",1);
 	if (enableGmailSetting & 1) JabberEnableNotifications(info);
 	iqId = JabberSerialNext();
@@ -171,6 +174,42 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 		JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
         JabberSend( info->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\"><query xmlns=\"jabber:iq:agents\"/></iq>", iqId );
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// JabberIqResultGetRoster - populates LIST_ROSTER and creates contact for any new rosters
+
+void sttGroupchatJoinByHContact( HANDLE hContact )
+{
+	DBVARIANT dbv;
+	if( DBGetContactSetting( hContact, jabberProtoName, "ChatRoomID", &dbv ))
+		return;
+	if( dbv.type != DBVT_ASCIIZ )
+		return;
+
+	char* roomjid = _strdup( dbv.pszVal );
+	JFreeVariant( &dbv );
+	if( !roomjid ) return;
+	
+	char* room = roomjid;
+	char* server = strchr( roomjid, '@' );
+	if( !server ) return;
+	server[0] = '\0'; server++;
+
+	char nick[ 256 ];
+	if ( JGetStaticString( "MyNick", hContact, nick, sizeof( nick ))) {
+		char* jidnick = JabberNickFromJID( jabberJID );
+		if( !jidnick ) {
+			free( jidnick );
+			free( roomjid );
+			return;
+		}
+		strncpy( nick, jidnick, sizeof nick );
+		free( jidnick );
+	}
+
+	JabberGroupchatJoinRoom( server, room, nick, "" );
+	free( roomjid );
 }
 
 void CALLBACK sttCreateRoom( ULONG dwParam )
@@ -188,9 +227,6 @@ void CALLBACK sttCreateRoom( ULONG dwParam )
 	CallService( MS_GC_NEWSESSION, 0, ( LPARAM )&gcw );
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
-// JabberIqResultGetRoster - populates LIST_ROSTER and creates contact for any new rosters
-
 void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 {
 	JabberLog( "<iq/> iqIdGetRoster" );
@@ -207,6 +243,8 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 
 	char* name, *nick;
 	int i;
+	SortedList chatRooms = {0};
+	chatRooms.increment = 10;
 
 	for ( i=0; i < queryNode->numChild; i++ ) {
 		XmlNode* itemNode = queryNode->child[i];
@@ -256,9 +294,6 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 			hContact = JabberDBCreateContact( jidNew, nick, FALSE, TRUE );
 		}
 
-		if ( JGetByte( hContact, "ChatRoom", 0 ))
-			QueueUserAPC( sttCreateRoom, hMainThread, ( unsigned long )jidNew );
-
       DBVARIANT dbNick;
 		if ( !JGetStringUtf( hContact, "Nick", &dbNick )) {
 			if ( strcmp( nick, dbNick.pszVal ) != 0 )
@@ -269,8 +304,11 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 		}
 		else DBWriteContactSettingStringUtf( hContact, "CList", "MyHandle", nick );
 
-		if ( JGetByte( hContact, "ChatRoom", 0 ))
+		if ( JGetByte( hContact, "ChatRoom", 0 )) {
 			DBDeleteContactSetting( hContact, "CList", "Hidden" );
+			QueueUserAPC( sttCreateRoom, hMainThread, ( unsigned long )jidNew );
+			li.List_Insert( &chatRooms, hContact, chatRooms.realCount );
+		}
 
 		if ( item->group != NULL ) {
 			JabberContactListCreateGroup( item->group );
@@ -323,7 +361,6 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 			free( list );
 	}
 
-	jabberOnline = TRUE;
 	JabberEnableMenuItems( TRUE );
 
 	if ( hwndJabberGroupchat )
@@ -334,6 +371,12 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 	JabberLog( "Status changed via THREADSTART" );
 	modeMsgStatusChangePending = FALSE;
 	JabberSetServerStatus( jabberDesiredStatus );
+
+	if ( JGetByte( "AutoJoinConferences", 0 )) {
+		for ( int i=0; i < chatRooms.realCount; i++ )
+			sttGroupchatJoinByHContact(( HANDLE )chatRooms.items[i] );
+	}
+	li.List_Destroy( &chatRooms );
 
 	if ( hwndJabberAgents )
 		SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
