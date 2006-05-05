@@ -369,6 +369,7 @@ BOOL JabberFtHandleBytestreamRequest( XmlNode *iqNode );
 //---- jabber_groupchat.c -------------------------------------------
 
 int JabberMenuHandleGroupchat( WPARAM wParam, LPARAM lParam );
+void JabberGroupchatJoinRoom( const char* server, const char* room, const char* nick, const char* password );
 void JabberGroupchatProcessPresence( XmlNode *node, void *userdata );
 void JabberGroupchatProcessMessage( XmlNode *node, void *userdata );
 void JabberGroupchatProcessInvite( char* roomJid, char* from, char* reason, char* password );
@@ -524,10 +525,11 @@ public:
 // memory interface
 
 extern MM_INTERFACE memoryManagerInterface;
-
 #define mir_alloc(n) memoryManagerInterface.mmi_malloc(n)
 #define mir_free(ptr) memoryManagerInterface.mmi_free(ptr)
 #define mir_realloc(ptr,size) memoryManagerInterface.mmi_realloc(ptr,size)
+
+extern LIST_INTERFACE li;
 
 extern HICON iconBigList[3];
 extern HICON iconList[14];

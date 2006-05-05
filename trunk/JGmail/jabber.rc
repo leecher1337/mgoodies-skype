@@ -493,8 +493,7 @@ BEGIN
     CONTROL         "Enable avatars",IDC_ENABLE_AVATARS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,9,153,201,10
     CONTROL         "Automatically join conferences on login",IDC_AUTOJOIN,
-                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,9,97,
-                    202,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,97,202,10
     CONTROL         "Autoaccept multiuser chat invitations",
                     IDC_AUTO_ACCEPT_MUC,"Button",BS_AUTOCHECKBOX | 
                     WS_DISABLED | WS_TABSTOP,9,109,202,9

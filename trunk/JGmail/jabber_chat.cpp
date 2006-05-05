@@ -386,7 +386,7 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 static void JabberAdminSet( const char* to, const char* ns, const char* item, const char* itemVal, const char* var, const char* varVal )
 {
     JabberSend( jabberThreadInfo->s, "<iq type=\"set\" to=\"%s\">%s<item %s=\"%s\" %s=\"%s\"/></query></iq>",
-		to, ns, item, itemVal, var, varVal );
+		TXT(to), ns, item, TXT(itemVal), var, varVal );
 }
 
 static void JabberAdminGet( const char* to, const char* ns, const char* var, const char* varVal, JABBER_IQ_PFUNC foo )
@@ -395,7 +395,7 @@ static void JabberAdminGet( const char* to, const char* ns, const char* var, con
 	JabberIqAdd( id, IQ_PROC_NONE, foo );
 	JabberSend( jabberThreadInfo->s,
         "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\">%s<item %s=\"%s\"/></query></iq>",
-		id, to, ns, var, varVal );
+		id, TXT(to), ns, var, varVal );
 }
 
 static void sttNickListHook( JABBER_LIST_ITEM* item, GCHOOK* gch )
