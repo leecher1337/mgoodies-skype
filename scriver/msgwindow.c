@@ -393,7 +393,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			if (g_dat->hTabIconList != NULL) {
 				TabCtrl_SetImageList(dat->hwndTabs, g_dat->hTabIconList);
 			}
-			WindowList_Add(g_dat->hParentWindowList, hwndDlg, 0);
+			WindowList_Add(g_dat->hParentWindowList, hwndDlg, hwndDlg);
 			dat->tabCtrlDat = (struct TabCtrlData *) malloc(sizeof(struct TabCtrlData));
 			dat->tabCtrlDat->bDragging = FALSE;
 			SetWindowLong(dat->hwndTabs, GWL_USERDATA, (LONG) dat->tabCtrlDat);
@@ -1130,21 +1130,28 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						TabCtrl_GetItem(hwnd, dat->srcTab, &tci);
 						mwd = (struct MessageWindowData *) tci.lParam;
 						if (mwd != NULL) {
+							HWND hParent;
 							int x, y, cx, cy;
-							HWND hParent = (HWND)CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
-							GetWindowRect(hParent, &rc);
 							GetCursorPos(&pt);
-							cx = (rc.right - rc.left);
-							cy = (rc.bottom - rc.top);
-							x = pt.x - cx / 2;
-							y = pt.y - cy / 2;
-							MoveWindow(hParent, x, y , cx, cy, FALSE);
-							SendMessage(GetParent(hwnd), DM_REMOVECHILD, 0, (LPARAM) mwd->hwnd);
-							SetParent(mwd->hwnd, hParent);
-							SendMessage(mwd->hwnd, DM_SETPARENT, 0, (LPARAM) hParent);
-							SendMessage(hParent, DM_ADDCHILD, 0, (LPARAM) mwd);
-							SendMessage(hParent, DM_ACTIVATECHILD, 0, (LPARAM) mwd->hwnd);
-							ShowWindow(hParent, SW_SHOWNA);
+							hParent = WindowFromPoint(pt);
+							hParent = WindowList_Find(g_dat->hParentWindowList, hParent);
+							if (hParent != GetParent(hwnd)) {
+								if (hParent == NULL) {
+									hParent = (HWND)CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+								}
+								GetWindowRect(hParent, &rc);
+								cx = (rc.right - rc.left);
+								cy = (rc.bottom - rc.top);
+								x = pt.x - cx / 2;
+								y = pt.y - cy / 2;
+								MoveWindow(hParent, x, y , cx, cy, FALSE);
+								SendMessage(GetParent(hwnd), DM_REMOVECHILD, 0, (LPARAM) mwd->hwnd);
+								SetParent(mwd->hwnd, hParent);
+								SendMessage(mwd->hwnd, DM_SETPARENT, 0, (LPARAM) hParent);
+								SendMessage(hParent, DM_ADDCHILD, 0, (LPARAM) mwd);
+								SendMessage(hParent, DM_ACTIVATECHILD, 0, (LPARAM) mwd->hwnd);
+								ShowWindow(hParent, SW_SHOWNA);
+							}
 						}
 					}
 				} else {
