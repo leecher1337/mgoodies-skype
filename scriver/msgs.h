@@ -59,6 +59,7 @@ struct ParentWindowData
 	HWND	hwnd;
 	HANDLE	hContact;
 	HWND *	children;
+	HWND 	sibling;
 	int	    childrenCount;
 	HWND	hwndActive;
 	HWND	hwndStatus;

@@ -75,109 +75,6 @@ struct EventData {
 	HANDLE	hContact;
 };
 
-int DbEventIsShown(DBEVENTINFO * dbei, struct MessageWindowData *dat)
-{
-	switch (dbei->eventType) {
-		case EVENTTYPE_MESSAGE:
-			return 1;
-		case EVENTTYPE_STATUSCHANGE:
-			if (!DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSCH, SRMSGDEFSET_SHOWSTATUSCH)) {
-//			if (dbei->flags & DBEF_READ)
-				return 0;
-			}
-			return 1;
-		case EVENTTYPE_FILE:
-		case EVENTTYPE_URL:
-//			if (dat->hwndLog != NULL)
-				return 1;
-	}
-	return 0;
-}
-
-TCHAR *strToWcs(const char *text, int textlen, int cp) {
-#if defined ( _UNICODE )
-	wchar_t *wtext;
-	if (textlen == -1) {
-		textlen = strlen(text) + 1;
-	}
-	wtext = (wchar_t *) malloc(sizeof(wchar_t) * textlen);
-	MultiByteToWideChar(cp, 0, text, -1, wtext, textlen);
-	return wtext;
-#else
-	return _tcsdup(text);
-#endif
-}
-
-struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact, HANDLE hDbEvent) {
-	DBEVENTINFO dbei = { 0 };
-	struct EventData *event;
-	dbei.cbSize = sizeof(dbei);
-	dbei.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM) hDbEvent, 0);
-	if (dbei.cbBlob == -1) return NULL;
-	dbei.pBlob = (PBYTE) malloc(dbei.cbBlob);
-	CallService(MS_DB_EVENT_GET, (WPARAM) hDbEvent, (LPARAM) & dbei);
-	if (!DbEventIsShown(&dbei, dat)) {
-		free(dbei.pBlob);
-		return NULL;
-	}
-	if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL)) {
-		CallService(MS_DB_EVENT_MARKREAD, (WPARAM) hContact, (LPARAM) hDbEvent);
-		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) hContact, (LPARAM) hDbEvent);
-	}
-	else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-		CallService(MS_DB_EVENT_MARKREAD, (WPARAM) hContact, (LPARAM) hDbEvent);
-	}
-	event = (struct EventData *) malloc(sizeof(struct EventData));
-	memset(event, 0, sizeof(struct EventData));
-	event->hContact = hContact;
-	event->eventType = dbei.eventType;
-	event->dwFlags = (dbei.flags & DBEF_READ ? IEEDF_READ : 0) | (dbei.flags & DBEF_SENT ? IEEDF_SENT : 0);
-	if (dbei.flags & DBEF_SENT) {
-//		eventData->pszNickW = getContactName(NULL, szProto);
-//		event->bIsMe = TRUE;
-	} else {
-//		eventData->pszNickW = getContactName(event->hContact, szProto);
-//		event->bIsMe = FALSE;
-	}
-	event->time = dbei.timestamp;
-	event->pszNick = NULL;
-#if defined( _UNICODE )
-	event->dwFlags |= IEEDF_UNICODE_TEXT | IEEDF_UNICODE_NICK | IEEDF_UNICODE_TEXT2;
-	if (event->eventType == EVENTTYPE_FILE) {
-		int msglen = strlen(((char *) dbei.pBlob) + sizeof(DWORD)) + 1;
-		event->pszTextW = strToWcs(((char *) dbei.pBlob) + sizeof(DWORD), msglen, CP_ACP);//dat->codePage); 
-	} else { //if (event->eventType == EVENTTYPE_MESSAGE) {
-		int msglen = strlen((char *) dbei.pBlob) + 1;
-		event->pszText = strdup((char *) dbei.pBlob);
-		if (msglen != (int) dbei.cbBlob && !(dat->flags & SMF_DISABLE_UNICODE)) {
-			int wlen;
-			wlen = safe_wcslen((wchar_t*) &dbei.pBlob[msglen], (dbei.cbBlob - msglen) / 2);
-			if (wlen > 0 && wlen < msglen) {
-				event->pszTextW = wcsdup((wchar_t*) &dbei.pBlob[msglen]);
-			} else {
-				event->pszTextW = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
-			}
-		} else {
-			event->pszTextW = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
-		}
-	}
-#else
-	if (event->eventType == EVENTTYPE_FILE) {
-		event->pszText = strdup(((char *) dbei.pBlob) + sizeof(DWORD));
-	} else {
-		event->pszText = strdup((char *) dbei.pBlob);
-	}
-#endif
-	free(dbei.pBlob);
-	return event;
-}
-
-static void freeEvent(struct EventData *event) {
-	if (event->pszText != NULL) free (event->pszText);
-	if (event->pszNick != NULL) free (event->pszNick);
-	free(event);
-}
-
 int safe_wcslen(wchar_t *msg, int maxLen) {
     int i;
 	for (i = 0; i < maxLen; i++) {
@@ -195,6 +92,19 @@ enum MIMFLAGS {
 	MIM_UNICODE = 2
 };
 
+TCHAR *strToWcs(const char *text, int textlen, int cp) {
+#if defined ( _UNICODE )
+	wchar_t *wtext;
+	if (textlen == -1) {
+		textlen = strlen(text) + 1;
+	}
+	wtext = (wchar_t *) malloc(sizeof(wchar_t) * textlen);
+	MultiByteToWideChar(cp, 0, text, -1, wtext, textlen);
+	return wtext;
+#else
+	return _tcsdup(text);
+#endif
+}
 
 static int IsUnicodeMIM() {
 	if (!(mimFlags & MIM_CHECKED)) {
@@ -262,6 +172,106 @@ TCHAR *GetNickname(HANDLE hContact, const char* szProto) {
 #endif
 	}
     return _tcsdup(TranslateT("Unknown Contact"));
+}
+
+int DbEventIsShown(DBEVENTINFO * dbei, struct MessageWindowData *dat)
+{
+	switch (dbei->eventType) {
+		case EVENTTYPE_MESSAGE:
+			return 1;
+		case EVENTTYPE_STATUSCHANGE:
+			if (!DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSCH, SRMSGDEFSET_SHOWSTATUSCH)) {
+//			if (dbei->flags & DBEF_READ)
+				return 0;
+			}
+			return 1;
+		case EVENTTYPE_FILE:
+		case EVENTTYPE_URL:
+//			if (dat->hwndLog != NULL)
+				return 1;
+	}
+	return 0;
+}
+
+
+struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact, HANDLE hDbEvent) {
+	DBEVENTINFO dbei = { 0 };
+	struct EventData *event;
+	dbei.cbSize = sizeof(dbei);
+	dbei.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM) hDbEvent, 0);
+	if (dbei.cbBlob == -1) return NULL;
+	dbei.pBlob = (PBYTE) malloc(dbei.cbBlob);
+	CallService(MS_DB_EVENT_GET, (WPARAM) hDbEvent, (LPARAM) & dbei);
+	if (!DbEventIsShown(&dbei, dat)) {
+		free(dbei.pBlob);
+		return NULL;
+	}
+	if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL)) {
+		CallService(MS_DB_EVENT_MARKREAD, (WPARAM) hContact, (LPARAM) hDbEvent);
+		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) hContact, (LPARAM) hDbEvent);
+	}
+	else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
+		CallService(MS_DB_EVENT_MARKREAD, (WPARAM) hContact, (LPARAM) hDbEvent);
+	}
+	event = (struct EventData *) malloc(sizeof(struct EventData));
+	memset(event, 0, sizeof(struct EventData));
+	event->hContact = hContact;
+	event->eventType = dbei.eventType;
+	event->dwFlags = (dbei.flags & DBEF_READ ? IEEDF_READ : 0) | (dbei.flags & DBEF_SENT ? IEEDF_SENT : 0);
+	if (dbei.flags & DBEF_SENT) {
+//		eventData->pszNickW = getContactName(NULL, szProto);
+//		event->bIsMe = TRUE;
+	} else {
+//		eventData->pszNickW = getContactName(event->hContact, szProto);
+//		event->bIsMe = FALSE;
+	}
+	event->time = dbei.timestamp;
+	event->pszNick = NULL;
+#if defined( _UNICODE )
+	event->dwFlags |= IEEDF_UNICODE_TEXT | IEEDF_UNICODE_NICK | IEEDF_UNICODE_TEXT2;
+	if (event->dwFlags & IEEDF_SENT) {
+		event->pszNickW = GetNickname(NULL, dat->szProto);
+	} else {
+		event->pszNickW = GetNickname(event->hContact, dat->szProto);
+	}
+	if (event->eventType == EVENTTYPE_FILE) {
+		int msglen = strlen(((char *) dbei.pBlob) + sizeof(DWORD)) + 1;
+		event->pszTextW = strToWcs(((char *) dbei.pBlob) + sizeof(DWORD), msglen, CP_ACP);//dat->codePage);
+	} else { //if (event->eventType == EVENTTYPE_MESSAGE) {
+		int msglen = strlen((char *) dbei.pBlob) + 1;
+		event->pszText = _strdup((char *) dbei.pBlob);
+		if (msglen != (int) dbei.cbBlob && !(dat->flags & SMF_DISABLE_UNICODE)) {
+			int wlen;
+			wlen = safe_wcslen((wchar_t*) &dbei.pBlob[msglen], (dbei.cbBlob - msglen) / 2);
+			if (wlen > 0 && wlen < msglen) {
+				event->pszTextW = wcsdup((wchar_t*) &dbei.pBlob[msglen]);
+			} else {
+				event->pszTextW = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
+			}
+		} else {
+			event->pszTextW = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
+		}
+	}
+#else
+	if (event->dwFlags & IEEDF_SENT) {
+		event->pszNick = GetNickname(NULL, dat->szProto);
+	} else {
+		event->pszNick = GetNickname(event->hContact, dat->szProto);
+	}
+	if (event->eventType == EVENTTYPE_FILE) {
+		event->pszText = strdup(((char *) dbei.pBlob) + sizeof(DWORD));
+	} else {
+		event->pszText = strdup((char *) dbei.pBlob);
+	}
+#endif
+	free(dbei.pBlob);
+	return event;
+}
+
+static void freeEvent(struct EventData *event) {
+	if (event->pszText != NULL) free (event->pszText);
+	if (event->pszNick != NULL) free (event->pszNick);
+	free(event);
 }
 
 static void AppendToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, const char *fmt, ...)
@@ -510,7 +520,7 @@ char *TimestampToString(DWORD dwFlags, time_t check, int groupStart)
     return szResult;
 }
 
-int isSameDate(DWORD time1, DWORD time2)
+int isSameDate(time_t time1, time_t time2)
 {
     struct tm tm_t1, tm_t2;
     tm_t1 = *localtime((time_t *)(&time1));
@@ -602,20 +612,15 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		} else {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(MSGFONTID_NOTICE));
 		}
-		{
-			TCHAR *szName;
-			if (event->dwFlags & IEEDF_SENT) {
-				szName = GetNickname(NULL, dat->szProto);
-			} else {
-				szName = GetNickname(event->hContact, dat->szProto);
-			}
 #if defined( _UNICODE )
-			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, szName);
-#else
-			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", szName);
-#endif
-			free(szName);
+		if (event->dwFlags & IEEDF_UNICODE_NICK) {
+			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszNickW);
+		} else {
+			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->pszNick);
 		}
+#else
+		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->pszNick);
+#endif
 		showColon = 1;
 		if (event->eventType == EVENTTYPE_MESSAGE && g_dat->flags & SMF_GROUPMESSAGES) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");

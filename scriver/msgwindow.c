@@ -358,6 +358,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			struct NewMessageWindowLParam *newData = (struct NewMessageWindowLParam *) lParam;
 			dat = (struct ParentWindowData *) malloc(sizeof(struct ParentWindowData));
 			dat->foregroundWindow = GetForegroundWindow();
+			dat->sibling = g_dat->hParent;
 			dat->hContact = newData->hContact;
 			dat->nFlash = 0;
 			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
@@ -471,7 +472,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				mmi->ptMaxPosition.y = 0;
 			}
 			dat->bVMaximized = 1;
-		} 
+		}
 		GetMinimunWindowSize(dat, &size);
 		mmi->ptMinTrackSize.x = size.cx;
 		mmi->ptMinTrackSize.y = size.cy;
@@ -639,7 +640,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			}
 			else
 				SendMessage(dat->hwndActive, WM_CONTEXTMENU, (WPARAM)hwndDlg, 0);
-		} 
+		}
 		break;
 	}
 
@@ -761,7 +762,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		{
 			WINDOWPLACEMENT wp = { 0 };
 			HANDLE hContact;
-			g_dat->hParent = NULL;
+			if (g_dat->hParent == hwndDlg) {
+				g_dat->hParent = dat->sibling;
+			}
 			SetWindowLong(hwndDlg, GWL_USERDATA, 0);
 			WindowList_Remove(g_dat->hParentWindowList, hwndDlg);
 			if (dat->children!=NULL) free (dat->children);
@@ -1131,22 +1134,38 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						mwd = (struct MessageWindowData *) tci.lParam;
 						if (mwd != NULL) {
 							HWND hParent;
-							int x, y, cx, cy;
 							GetCursorPos(&pt);
 							hParent = WindowFromPoint(pt);
+							while (GetParent(hParent) != NULL) {
+								hParent = GetParent(hParent);
+							}
 							hParent = WindowList_Find(g_dat->hParentWindowList, hParent);
 							if (hParent != GetParent(hwnd)) {
 								if (hParent == NULL) {
-									hParent = (HWND)CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+									MONITORINFO mi;
+									HMONITOR hMonitor;
+									RECT rc, rcDesktop;
+									hParent = g_dat->hParent = (HWND)CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+									GetWindowRect(hParent, &rc);
+									rc.right = (rc.right - rc.left);
+									rc.bottom = (rc.bottom - rc.top);
+									rc.left = pt.x - rc.right / 2;
+									rc.top = pt.y - rc.bottom / 2;
+									hMonitor = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
+									mi.cbSize = sizeof(mi);
+									GetMonitorInfo(hMonitor, &mi);
+									rcDesktop = mi.rcWork;
+									if (rc.left < rcDesktop.left) {
+										rc.left = rcDesktop.left;
+									}
+									if (rc.top < rcDesktop.top) {
+										rc.top = rcDesktop.top;
+									}
+									MoveWindow(hParent, rc.left, rc.top, rc.right, rc.bottom, FALSE);
+
 								}
-								GetWindowRect(hParent, &rc);
-								cx = (rc.right - rc.left);
-								cy = (rc.bottom - rc.top);
-								x = pt.x - cx / 2;
-								y = pt.y - cy / 2;
-								MoveWindow(hParent, x, y , cx, cy, FALSE);
-								SendMessage(GetParent(hwnd), DM_REMOVECHILD, 0, (LPARAM) mwd->hwnd);
 								SetParent(mwd->hwnd, hParent);
+								SendMessage(GetParent(hwnd), DM_REMOVECHILD, 0, (LPARAM) mwd->hwnd);
 								SendMessage(mwd->hwnd, DM_SETPARENT, 0, (LPARAM) hParent);
 								SendMessage(hParent, DM_ADDCHILD, 0, (LPARAM) mwd);
 								SendMessage(hParent, DM_ACTIVATECHILD, 0, (LPARAM) mwd->hwnd);
