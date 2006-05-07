@@ -1204,7 +1204,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		} 
 		break;
 	case WM_LBUTTONDBLCLK:
-			
+		SendMessage(dat->hwndParent, WM_SYSCOMMAND, SC_MINIMIZE, 0);
 		break;
 	case WM_RBUTTONUP:
 		{
