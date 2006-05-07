@@ -1127,7 +1127,6 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						struct MessageWindowData *mwd;
 						TCITEM tci;
 						POINT pt;
-						RECT rc;
 						struct NewMessageWindowLParam newData = { 0 };
 						tci.mask = TCIF_PARAM;
 						TabCtrl_GetItem(hwnd, dat->srcTab, &tci);
