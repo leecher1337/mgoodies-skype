@@ -20,11 +20,12 @@ Keyboard shortcuts:
 -------------------
 ALT+D - user's details
 ALT+H - view user's history
+ALT+E - select smiley
 ALT+Q - quote
 ALT+U - user menu
 ALT+S - send
-CTRL+TAB, ALT+RIGHT - next tab
-CTRL+SHIFT+TAB, ALT+LEFT - previous tab
+CTRL+TAB, ALT+RIGHT, CTRL+PAGE DOWN - next tab
+CTRL+SHIFT+TAB, ALT+LEFT, CTRL+PAGE UP - previous tab
 CTRL+SHIFT+M - switch title bar on/off
 CTRL+SHIFT+R - switch RTL mode on/off
 CTRL+SHIFT+S - switch status bar on/off
@@ -32,12 +33,17 @@ CTRL+SHIFT+T - switch tool bar on/off
 CTRL+A - select all
 CTRL+L - clear logs
 CTRL+W - close tab/window
-CTRL+ALT+ENTER - send to all open tabs
+CTRL+SHIFt+ENTER - send to all open tabs
 SHIFT+ESC - minimize window
 ESC - close tab/window
 
 4. FAQ
 ------
+Q:How to use multiple containers ?
+A: Drag&drop tabs while holding down CTRL key. If a tab is dropped on an existing container
+it will be added to it. If a tab is dropped outside any existing cotainer a new one will be
+created. CTRL key needs to be pressed only when a tab is being dropped.
+
 Q: Where can I find new versions of Scriver, report bugs or request new features ?
 A: http://developer.berlios.de/projects/mgoodies.
 
@@ -66,6 +72,11 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.3.2.3
++ experimental support for multiple containers
++ minimize on double click
+* bugfix: #007167 vertical maximize
+* logging API improvements
 2.3.2.2
 * bugfix: removed usage of incompatible MS_LANGPACK_TRANSLATEMENU service
 2.3.2.1
