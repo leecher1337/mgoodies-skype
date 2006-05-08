@@ -165,18 +165,14 @@ BOOL CALLBACK HistoryDlgProc(HWND hwndDlg, UINT Message, WPARAM wparam, LPARAM l
 
 			if (DBGetContactSettingByte(hContact,S_MOD,"OnlineAlert",0))
 				SendDlgItemMessage(hwndDlg, IDC_STATUSCHANGE, BM_SETCHECK, (WPARAM)BST_CHECKED, 0);
-			
-			SendDlgItemMessage(hwndDlg,IDC_DETAILS,BM_SETIMAGE,IMAGE_ICON,
-					(LPARAM)LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_USERDETAILS),IMAGE_ICON,GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),0));
-			SendDlgItemMessage(hwndDlg,IDC_SENDMSG,BM_SETIMAGE,IMAGE_ICON,
-					(LPARAM)LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
-			{	
-				LOGFONT lf;
-				HFONT hFont;
-				hFont=(HFONT)SendDlgItemMessage(hwndDlg,IDC_USERMENU,WM_GETFONT,0,0);
-				GetObject(hFont,sizeof(lf),&lf);
-				hFont=CreateFont(lf.lfHeight*3/2,0,0,0,FW_NORMAL,0,0,0,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_DONTCARE,"Marlett");
-				SendDlgItemMessage(hwndDlg,IDC_USERMENU,WM_SETFONT,(WPARAM)hFont,0);
+			{	HIMAGELIST hIml;
+				hIml=ImageList_Create(GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),ILC_COLOR16|ILC_MASK,3,3);
+				ImageList_AddIcon(hIml,LoadIcon(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_USERDETAILS)));
+				ImageList_AddIcon(hIml,LoadIcon(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_DOWNARROW)));
+				ImageList_AddIcon(hIml,LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
+				SendDlgItemMessage(hwndDlg,IDC_DETAILS,BM_SETIMAGE,IMAGE_ICON,(WPARAM)ImageList_GetIcon(hIml,0,ILD_NORMAL));
+				SendDlgItemMessage(hwndDlg,IDC_USERMENU,BM_SETIMAGE,IMAGE_ICON,(WPARAM)ImageList_GetIcon(hIml,1,ILD_NORMAL));
+				SendDlgItemMessage(hwndDlg,IDC_SENDMSG,BM_SETIMAGE,IMAGE_ICON,(WPARAM)ImageList_GetIcon(hIml,2,ILD_NORMAL));
 			}
 
 			//set-up tooltips

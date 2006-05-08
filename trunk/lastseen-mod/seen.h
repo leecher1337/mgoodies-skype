@@ -33,6 +33,8 @@
 #define debug(a) MessageBox(NULL,a,"Debug",MB_OK)
 
 #define IDI_USERDETAILS                 160
+#define IDI_DOWNARROW                   264
+#define IDI_RECVMSG                     136
 
 #define ICON_OFFLINE		13
 #define ICON_ONLINE			14
