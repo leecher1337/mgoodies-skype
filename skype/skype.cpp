@@ -195,7 +195,7 @@ void GetInfoThread(HANDLE hContact) {
 		{"CITY", "City"},
 		{"PHONE_HOME", "Phone"},
 		{"PHONE_OFFICE", "CompanyPhone"},
-		{"PHONE_MOBILE", "Cellucar"},
+		{"PHONE_MOBILE", "Cellular"},
 		{"HOMEPAGE", "Homepage"},
 		{"ABOUT", "About"},
 		{NULL, NULL}
