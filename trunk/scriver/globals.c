@@ -281,7 +281,7 @@ void InitGlobals() {
     EnumSystemCodePagesA(LangAddCallback, CP_INSTALLED);
 	g_hAck = HookEvent(ME_PROTO_ACK, ackevent);
 	ReloadGlobals();
-	g_dat->hParent = NULL;
+	g_dat->lastParent = NULL;
 	g_dat->protoNum = 0;
 	g_dat->protoNames = NULL;
 	g_dat->hTabIconList = NULL;

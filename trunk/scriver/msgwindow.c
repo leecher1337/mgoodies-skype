@@ -358,7 +358,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			struct NewMessageWindowLParam *newData = (struct NewMessageWindowLParam *) lParam;
 			dat = (struct ParentWindowData *) malloc(sizeof(struct ParentWindowData));
 			dat->foregroundWindow = GetForegroundWindow();
-			dat->sibling = g_dat->hParent;
 			dat->hContact = newData->hContact;
 			dat->nFlash = 0;
 			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
@@ -393,6 +392,12 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) dat);
 			if (g_dat->hTabIconList != NULL) {
 				TabCtrl_SetImageList(dat->hwndTabs, g_dat->hTabIconList);
+			}
+			dat->prev = g_dat->lastParent;
+			dat->next = NULL;
+			g_dat->lastParent = dat;
+			if (dat->prev != NULL) {
+				dat->prev->next = dat;
 			}
 			WindowList_Add(g_dat->hParentWindowList, hwndDlg, hwndDlg);
 			dat->tabCtrlDat = (struct TabCtrlData *) malloc(sizeof(struct TabCtrlData));
@@ -762,9 +767,15 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		{
 			WINDOWPLACEMENT wp = { 0 };
 			HANDLE hContact;
-			if (g_dat->hParent == hwndDlg) {
-				g_dat->hParent = dat->sibling;
+			if (g_dat->lastParent == dat) {
+				g_dat->lastParent = dat->prev;
 			}
+			if (dat->prev != NULL) {
+				dat->prev->next = dat->next;
+			}
+			if (dat->next != NULL) {
+				dat->next->prev = dat->prev;
+			} 
 			SetWindowLong(hwndDlg, GWL_USERDATA, 0);
 			WindowList_Remove(g_dat->hParentWindowList, hwndDlg);
 			if (dat->children!=NULL) free (dat->children);
@@ -1139,12 +1150,12 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 								hParent = GetParent(hParent);
 							}
 							hParent = WindowList_Find(g_dat->hParentWindowList, hParent);
-							if (hParent != GetParent(hwnd)) {
+							if ((hParent != NULL && hParent != GetParent(hwnd)) || (hParent == NULL && mwd->parent->childrenCount > 1)) {
 								if (hParent == NULL) {
 									MONITORINFO mi;
 									HMONITOR hMonitor;
 									RECT rc, rcDesktop;
-									hParent = g_dat->hParent = (HWND)CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+									hParent = (HWND)CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
 									GetWindowRect(hParent, &rc);
 									rc.right = (rc.right - rc.left);
 									rc.bottom = (rc.bottom - rc.top);

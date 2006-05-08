@@ -66,13 +66,16 @@ static int ReadMessageCommand(WPARAM wParam, LPARAM lParam)
 {
 	struct NewMessageWindowLParam newData = { 0 };
 	HWND hwndExisting;
+	HWND hParent;
 
 	hwndExisting = WindowList_Find(g_dat->hMessageWindowList, ((CLISTEVENT *) lParam)->hContact);
 	newData.hContact = ((CLISTEVENT *) lParam)->hContact;
- 	if (g_dat->hParent == NULL || !(g_dat->flags & SMF_USETABS)) {
-		g_dat->hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+	if (g_dat->lastParent == NULL || !(g_dat->flags & SMF_USETABS)) {
+		hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+	} else {
+		hParent = g_dat->lastParent->hwnd;
 	}
-	CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), g_dat->hParent, DlgProcMessage, (LPARAM) & newData);
+	CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), hParent, DlgProcMessage, (LPARAM) & newData);
 //		CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), NULL, DlgProcMessage, (LPARAM) & newData);
 	return 0;
 }
@@ -109,13 +112,16 @@ static int MessageEventAdded(WPARAM wParam, LPARAM lParam)
 	if (g_dat->flags2 & SMF2_AUTOPOPUP) {
 		char *szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) wParam, 0);
 		if (szProto && (g_dat->openFlags & SRMMStatusToPf2(CallProtoService(szProto, PS_GETSTATUS, 0, 0)))) {
+			HWND hParent;
 			struct NewMessageWindowLParam newData = { 0 };
 			newData.hContact = (HANDLE) wParam;
-			if (g_dat->hParent == NULL || !(g_dat->flags & SMF_USETABS)) {
-				g_dat->hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+			if (g_dat->lastParent == NULL || !(g_dat->flags & SMF_USETABS)) {
+				hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+			} else {
+				hParent = g_dat->lastParent->hwnd;
 			}
 			newData.flags = NMWLP_INCOMING;
-			CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), g_dat->hParent, DlgProcMessage, (LPARAM) & newData);
+			CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), hParent, DlgProcMessage, (LPARAM) & newData);
 			return 0;
 		}
 	}
@@ -165,12 +171,15 @@ static int SendMessageCommand(WPARAM wParam, LPARAM lParam)
 		SetForegroundWindow(GetParent(hwnd));
 		SetFocus(hwnd);
 	} else {
+		HWND hParent;
 		newData.hContact = (HANDLE) wParam;
 		newData.szInitialText = (const char *) lParam;
-		if (g_dat->hParent == NULL || !(g_dat->flags & SMF_USETABS)) {
-			g_dat->hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+		if (g_dat->lastParent == NULL || !(g_dat->flags & SMF_USETABS)) {
+			hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+		} else {
+			hParent = g_dat->lastParent->hwnd;
 		}
-		CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), g_dat->hParent, DlgProcMessage, (LPARAM) & newData);
+		CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), hParent, DlgProcMessage, (LPARAM) & newData);
 	}
 	return 0;
 }
