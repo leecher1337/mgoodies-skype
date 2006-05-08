@@ -283,8 +283,7 @@ static void AppendToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced
 	*cbBufferEnd += charsDone;
 }
 
-#if defined( _UNICODE )
-static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, TCHAR * line)
+static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, WCHAR * line)
 {
 	DWORD textCharsCount = 0;
 	char *d;
@@ -330,7 +329,6 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 	*cbBufferEnd = (int) (d - *buffer);
 	return textCharsCount;
 }
-#endif
 
 //same as above but does "\r\n"->"\\par " and "\t"->"\\tab " too
 static int AppendToBufferWithRTF(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, const char *fmt, ...)
