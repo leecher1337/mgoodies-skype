@@ -13,6 +13,8 @@ CODE
 
 HISTORY
 -------
+0.0.0.23 - ! Wrong db entry name for cellular (cellucar)
+
 0.0.0.22 - * Options page redesigned
            * Work around to force refresh of avatar in MyDetail (w8 the avatar change service)
 		   * Change Skype protocol to Skype in options->Network
