@@ -831,6 +831,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		smre.rangeToReplace = NULL;
 		smre.disableRedraw = TRUE;
 		smre.hContact = dat->hContact;
+		smre.flags = 0;
 		CallService(MS_SMILEYADD_REPLACESMILEYS, 0, (LPARAM) &smre);
 	}
 //	if (GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_STYLE) & WS_VSCROLL)

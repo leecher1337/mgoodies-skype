@@ -89,7 +89,7 @@ struct GlobalMessageData
 	HANDLE hMessageWindowList;
 	DWORD openFlags;
 	HANDLE hParentWindowList;
-	HWND	hParent;
+	struct ParentWindowData *lastParent;
 	int		protoNum;
 	char **	protoNames;
 	int		limitAvatarMaxH;
