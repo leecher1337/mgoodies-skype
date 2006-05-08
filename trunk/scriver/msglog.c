@@ -63,12 +63,12 @@ struct EventData {
 	int         fontStyle;
 	COLORREF	color;
 	union {
-		const char *pszNick;		// Nick, usage depends on type of event
-		const wchar_t *pszNickW;    // Nick - Unicode
+		char *pszNick;		// Nick, usage depends on type of event
+		wchar_t *pszNickW;    // Nick - Unicode
 	};
 	union {
-		const char *pszText;			// Text, usage depends on type of event
-		const wchar_t *pszTextW;			// Text - Unicode
+		char *pszText;			// Text, usage depends on type of event
+		wchar_t *pszTextW;			// Text - Unicode
 	};
 	DWORD	time;
 	DWORD	eventType;
@@ -218,13 +218,6 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	event->hContact = hContact;
 	event->eventType = dbei.eventType;
 	event->dwFlags = (dbei.flags & DBEF_READ ? IEEDF_READ : 0) | (dbei.flags & DBEF_SENT ? IEEDF_SENT : 0);
-	if (dbei.flags & DBEF_SENT) {
-//		eventData->pszNickW = getContactName(NULL, szProto);
-//		event->bIsMe = TRUE;
-	} else {
-//		eventData->pszNickW = getContactName(event->hContact, szProto);
-//		event->bIsMe = FALSE;
-	}
 	event->time = dbei.timestamp;
 	event->pszNick = NULL;
 #if defined( _UNICODE )
@@ -239,7 +232,6 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 		event->pszTextW = strToWcs(((char *) dbei.pBlob) + sizeof(DWORD), msglen, CP_ACP);//dat->codePage);
 	} else { //if (event->eventType == EVENTTYPE_MESSAGE) {
 		int msglen = strlen((char *) dbei.pBlob) + 1;
-		event->pszText = _strdup((char *) dbei.pBlob);
 		if (msglen != (int) dbei.cbBlob && !(dat->flags & SMF_DISABLE_UNICODE)) {
 			int wlen;
 			wlen = safe_wcslen((wchar_t*) &dbei.pBlob[msglen], (dbei.cbBlob - msglen) / 2);
@@ -643,15 +635,11 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		}
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
 
-#if defined( _UNICODE )
 		if (event->dwFlags & IEEDF_UNICODE_TEXT) {
 			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszTextW);
 		} else {
 			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->pszText);
 		}
-#else
-		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->pszText);
-#endif
 		break;
 		case EVENTTYPE_STATUSCHANGE:
 		case EVENTTYPE_URL:
@@ -660,16 +648,20 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(MSGFONTID_NOTICE));
 			if (event->eventType == EVENTTYPE_FILE) {
 				if (event->dwFlags & IEEDF_SENT) {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File sent"), event->pszText);
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s:", Translate("File sent"));
 				} else {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("File received"), event->pszText);
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s:", Translate("File received"));
 				}
 			} else if (event->eventType == EVENTTYPE_URL) {
 				if (event->dwFlags & IEEDF_SENT) {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL sent"), event->pszText);
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s:", Translate("URL sent"));
 				} else {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s: %s", Translate("URL received"), event->pszText);
+					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s:", Translate("URL received"));
 				}
+			}
+			if (event->dwFlags & IEEDF_UNICODE_TEXT) {
+				AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, L" ");
+				AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszTextW);
 			} else {
 				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, " %s", event->pszText);
 			}
@@ -796,11 +788,10 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
         GETTEXTLENGTHEX gtxl = {0};
 #if defined( _UNICODE )
         gtxl.codepage = 1200;
-        gtxl.flags = GTL_DEFAULT | GTL_PRECISE | GTL_NUMCHARS;
 #else
         gtxl.codepage = CP_ACP;
-        gtxl.flags = GTL_DEFAULT | GTL_PRECISE;
 #endif
+        gtxl.flags = GTL_DEFAULT | GTL_PRECISE | GTL_NUMCHARS;
         sel.cpMin = sel.cpMax = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
         SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & sel);
         fi.chrg.cpMin = SendDlgItemMessage(hwndDlg, IDC_LOG, EM_GETTEXTLENGTHEX, (WPARAM)&gtxl, 0);
