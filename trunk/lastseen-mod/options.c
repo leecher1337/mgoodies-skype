@@ -56,6 +56,9 @@ BOOL CALLBACK OptsPopUpsDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 			DBFreeVariant(&dbv);
 			SetDlgItemText(hdlg,IDC_POPUPSTAMPTEXT,!DBGetContactSetting(NULL,S_MOD,"PopupStampText",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMPTEXT);
 			DBFreeVariant(&dbv);
+			i = DBGetContactSettingByte(NULL,S_MOD,"SuppCListOnline",3);
+			CheckDlgButton(hdlg,IDC_DISWATCHED,i&1);
+			CheckDlgButton(hdlg,IDC_DISNONWATCHED,i&2);
 		}
 		break; //case WM_INITDIALOG
 		case WM_COMMAND:
@@ -140,8 +143,10 @@ BOOL CALLBACK OptsPopUpsDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 									DBWriteContactSettingDword(NULL,S_MOD,szstamp,sett);
 								else DBDeleteContactSetting(NULL,S_MOD,szstamp);
 							}
-
-
+							checkValue = (BYTE)IsDlgButtonChecked(hdlg,IDC_DISNONWATCHED)<<1;
+							checkValue |= (BYTE)IsDlgButtonChecked(hdlg,IDC_DISWATCHED);
+							if (3 == checkValue) DBDeleteContactSetting(NULL,S_MOD,"SuppCListOnline");
+							else DBWriteContactSettingByte(NULL,S_MOD,"SuppCListOnline",checkValue);
 							break; //case PSN_APPLY
 					}
 					break; //case 0

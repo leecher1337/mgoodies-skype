@@ -107,7 +107,7 @@ BEGIN
     RTEXT           "Text",IDC_LABTTITLE,155,11,25,10
     EDITTEXT        IDC_POPUPSTAMPTEXT,185,9,88,12,ES_AUTOHSCROLL | 
                     WS_GROUP
-    GROUPBOX        "PopUp Colors",IDC_STATIC,0,30,280,176,WS_GROUP
+    GROUPBOX        "PopUp Colors",IDC_STATIC,0,30,280,136,WS_GROUP
     RTEXT           "Online",IDC_STATIC,10,43,60,10
     CONTROL         "",ID_STATUS_ONLINE,"ColourPicker",WS_TABSTOP,80,40,20,14
     CONTROL         "",ID_STATUS_ONLINE+20,"ColourPicker",WS_TABSTOP,105,40,20,14
@@ -140,6 +140,9 @@ BEGIN
     CONTROL         "",ID_STATUS_OFFLINE,"ColourPicker",WS_TABSTOP,210,120,20,14
     CONTROL         "",ID_STATUS_OFFLINE+20,"ColourPicker",WS_TABSTOP,235,120,20,14
     PUSHBUTTON      "Reset colors",IDC_DEFAULTCOL,115,145,50,13
+    GROUPBOX        "Disable CList Notifications",IDC_STATIC,0,170,280,38,WS_GROUP
+    CONTROL         "For watched protocols",IDC_DISWATCHED,"Button", BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,180,100,10
+    CONTROL         "For non-watched protocols",IDC_DISNONWATCHED,"Button", BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,193,100,10
 END
 
 IDD_USERINFO DIALOGEX 0, 0, 222, 132
@@ -235,8 +238,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 5,0,3,2
- PRODUCTVERSION 5,0,3,2
+ FILEVERSION 5,0,4,0
+ PRODUCTVERSION 5,0,4,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -254,14 +257,14 @@ BEGIN
             VALUE "Comments", "Last Seen Mod Plugin for Miranda IM\0"
             VALUE "CompanyName", "Heiko Schillinger, YB\0"
             VALUE "FileDescription", "Last Seen Plugin\0"
-            VALUE "FileVersion", "5.0.3.2\0"
+            VALUE "FileVersion", "5.0.4.0\0"
             VALUE "InternalName", "Last Seen\0"
             VALUE "LegalCopyright", "© 2001-2002 by Heiko Schillinger, 2003 by Bruno Rino, 2006 by YB\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "seenplugin.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", " Last Seen Plugin Mod\0"
-            VALUE "ProductVersion", "5.0.3.2\0"
+            VALUE "ProductVersion", "5.0.4.0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
