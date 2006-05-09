@@ -264,7 +264,7 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 									(text[k]==':' || text[k]=='\\') ||
 									(text[k]=='?' || text[k]==',') ||
 									(text[k]=='&' || text[k]=='%') ||
-									(text[k]=='#')) continue;
+									(text[k]=='#' || text[k]==' ')) continue;
 								break;
 							}
 							tagArgEnd = k;
