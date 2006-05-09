@@ -1358,7 +1358,7 @@ LBL_ErrFormat:
 	AI.format = pictureType;
 	AI.hContact = hContact;
 
-	if ( JGetByte( hContact, "AvatarType", PA_FORMAT_UNKNOWN ) != pictureType ) {
+	if ( JGetByte( hContact, "AvatarType", PA_FORMAT_UNKNOWN ) != (unsigned char)pictureType ) {
 		JabberGetAvatarFileName( hContact, AI.filename, sizeof AI.filename );
 		DeleteFileA( AI.filename );
 	}

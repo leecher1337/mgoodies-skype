@@ -723,6 +723,7 @@ void JabberGroupchatProcessMessage( XmlNode *node, void *userdata )
 
 	char* dispNick = NEWSTR_ALLOCA( nick );
 	JabberUtf8Decode( dispNick, NULL );
+	JabberUrlDecodeOld( dispNick);
 
 	GCEVENT gce = {0};
 	gce.cbSize = sizeof(GCEVENT);
