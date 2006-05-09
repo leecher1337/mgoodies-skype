@@ -1,4 +1,5 @@
 #include "seen.h"
+#include <m_ignore.h>
 
 
 
@@ -492,15 +493,16 @@ static DWORD __stdcall waitThread(logthread_info* infoParam)
 	return 0;
 }
 
+static int uniqueEventId=0;
+
 int UpdateValues(HANDLE hContact,LPARAM lparam)
 {
 	DBCONTACTWRITESETTING *cws;
 	SYSTEMTIME time;
-//	HANDLE hContact;
 	// to make this code faster
-	if (!hContact) return 0; // this is hContact
-//	hContact = (HANDLE)wparam;
+	if (!hContact) return 0;
 	cws=(DBCONTACTWRITESETTING *)lparam;
+	if(CallService(MS_IGNORE_ISIGNORED,(WPARAM)hContact,IGNOREEVENT_USERONLINE)) return 0;
 	if (strcmp(cws->szSetting,"Status")) return 0;
 	if (!strcmp(cws->szModule,S_MOD)){
 		//here we will come when Settings/SeenModule/Status is changed
@@ -580,6 +582,46 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 			prevStatus=DBGetContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
 			DBWriteContactSettingWord(hContact,S_MOD,"OldStatus",prevStatus);
 	}	}
+	//Some useronline.c functionality
+	{
+		int newStatus,oldStatus;
+		newStatus=cws->value.wVal;
+		oldStatus=DBGetContactSettingWord(hContact,"UserOnline","OldStatus",ID_STATUS_OFFLINE);
+		DBWriteContactSettingWord(hContact,"UserOnline","OldStatus",(WORD)newStatus);
+		if(DBGetContactSettingByte(hContact,"CList","Hidden",0)) return 0;
+		if((newStatus==ID_STATUS_ONLINE || newStatus==ID_STATUS_FREECHAT) &&
+		   oldStatus!=ID_STATUS_ONLINE && oldStatus!=ID_STATUS_FREECHAT) {
+			BYTE supp = db_byte_get(NULL, S_MOD, "SuppCListOnline", 3); //By default no online allert :P
+			BOOL willAlert = FALSE;
+			switch (supp) {
+			case 3: willAlert = FALSE; break;
+			case 2: willAlert = !IsWatchedProtocol(cws->szModule); break;
+			case 1: willAlert = IsWatchedProtocol(cws->szModule); break;
+			case 0: willAlert = TRUE; break;
+			}
+			if (willAlert) {
+				DWORD ticked = db_dword_get(NULL, "UserOnline", cws->szModule, GetTickCount());
+				// only play the sound (or show event) if this event happens at least 10 secs after the proto went from offline
+				if ( GetTickCount() - ticked > (1000*10) ) { 
+					CLISTEVENT cle;
+					char tooltip[256];
+
+					ZeroMemory(&cle,sizeof(cle));
+					cle.cbSize=sizeof(cle);
+					cle.flags=CLEF_ONLYAFEW;
+					cle.hContact=hContact;
+					cle.hDbEvent=(HANDLE)(uniqueEventId++);
+					cle.hIcon=LoadSkinnedIcon(SKINICON_OTHER_USERONLINE);
+					cle.pszService="UserOnline/Description";
+					mir_snprintf(tooltip,256,Translate("%s is Online"),(char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,0));
+					cle.pszTooltip=tooltip;
+					CallService(MS_CLIST_ADDEVENT,0,(LPARAM)&cle);
+
+					SkinPlaySound("UserOnline");
+				}
+			}
+		}
+	}
 	return 0;
 }
 
@@ -651,6 +693,7 @@ int ModeChange(WPARAM wparam,LPARAM lparam)
 	if (isetting<ID_STATUS_OFFLINE) isetting = ID_STATUS_OFFLINE;
 	if ((isetting>ID_STATUS_OFFLINE)&&((WORD)ack->hProcess<=ID_STATUS_OFFLINE)){
 		//we have just loged-in
+		db_dword_set(NULL, "UserOnline", ack->szModule, GetTickCount());
 		if (IsWatchedProtocol(ack->szModule)){
 			logthread_info *info;
 			info = (logthread_info *)malloc(sizeof(logthread_info));

@@ -7,14 +7,14 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 		sizeof(PLUGININFO),
 		"Last seen plugin mod",
-		PLUGIN_MAKE_VERSION(5,0,3,2),
+		PLUGIN_MAKE_VERSION(5,0,3,3),
 		"Log when a user was last seen online and which users were online while you were away",
 		"Heiko Schillinger, YB",
 		"",
 		"© 2001-2002 Heiko Schillinger, 2003 modified by Bruno Rino, 2005 Modified by YB",
 		"http://forums.miranda-im.org/showthread.php?t=2822",
 		0,
-		0
+		DEFMOD_RNDUSERONLINE
 };
 
 
@@ -57,6 +57,9 @@ int MainInit(WPARAM wparam,LPARAM lparam)
 
 	SkinAddNewSound("LastSeenTrackedStatusChange",Translate("LastSeen: User status change"),"global.wav");
 	DBWriteContactSettingString(NULL,"Uninstall",Translate("Last seen"),S_MOD);
+
+	SkinAddNewSoundEx("UserOnline",Translate("Alerts"),Translate("Online"));
+
 	return 0;
 }
 
