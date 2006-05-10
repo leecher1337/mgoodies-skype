@@ -938,7 +938,7 @@ wchar_t *HTMLBuilder::getContactName(HANDLE hContact, const char* szProto) {
 	if (szNameStr != NULL) {
    	    return Utils::convertToWCS(szNameStr);
 	}
-    return Utils::convertToWCS(Translate("(Unknown Contact)"));
+    return Utils::convertToWCS(TranslateT("(Unknown Contact)"));
 }
 
 char *HTMLBuilder::getEncodedContactName(HANDLE hContact, const char* szProto, const char* szSmileyProto) {
@@ -966,7 +966,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 		newEvent.codepage = event->codepage;
 	}
 	if (event->cbSize >= IEVIEWEVENT_SIZE_V3 && event->pszProto != NULL) {
-		szProto = Utils::dupString(szProto);
+		szProto = Utils::dupString(event->pszProto);
 	} else {
 		szProto = getProto(event->hContact);
  	}
