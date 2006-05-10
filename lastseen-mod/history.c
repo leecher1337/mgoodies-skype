@@ -147,6 +147,7 @@ BOOL CALLBACK HistoryDlgProc(HWND hwndDlg, UINT Message, WPARAM wparam, LPARAM l
 {
 	HANDLE hContact;
 	char sztemp[1024]="";
+	static HIMAGELIST hIml=NULL;
 	
 	switch(Message)
     {
@@ -165,7 +166,7 @@ BOOL CALLBACK HistoryDlgProc(HWND hwndDlg, UINT Message, WPARAM wparam, LPARAM l
 
 			if (DBGetContactSettingByte(hContact,S_MOD,"OnlineAlert",0))
 				SendDlgItemMessage(hwndDlg, IDC_STATUSCHANGE, BM_SETCHECK, (WPARAM)BST_CHECKED, 0);
-			{	HIMAGELIST hIml;
+			{
 				hIml=ImageList_Create(GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),ILC_COLOR16|ILC_MASK,3,3);
 				ImageList_AddIcon(hIml,LoadIcon(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_USERDETAILS)));
 				ImageList_AddIcon(hIml,LoadIcon(GetModuleHandle(NULL),MAKEINTRESOURCE(IDI_DOWNARROW)));
@@ -283,11 +284,7 @@ BOOL CALLBACK HistoryDlgProc(HWND hwndDlg, UINT Message, WPARAM wparam, LPARAM l
 			break;
 		case WM_DESTROY:
 			Utils_SaveWindowPosition(hwndDlg,NULL,S_MOD,"History_");
-			{	
-				HFONT hFont;
-				hFont=(HFONT)SendDlgItemMessage(hwndDlg,IDC_USERMENU,WM_GETFONT,0,0);
-				DeleteObject(hFont);
-			}
+			ImageList_Destroy(hIml);
 			break;
         default:
             return FALSE;
