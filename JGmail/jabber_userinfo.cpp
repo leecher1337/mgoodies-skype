@@ -257,6 +257,11 @@ static BOOL CALLBACK JabberUserPhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 								n = strlen( szFilter );
 								strncpy( szFilter+n+1, "*.BMP", sizeof( szFilter )-n-2 );
 							}
+							else if ( !strncmp(( char* )buffer, "\x89PN", 3 )) {
+								mir_snprintf( szFilter, sizeof( szFilter ), "PNG %s ( *.png )", JTranslate( "format" ));
+								n = strlen( szFilter );
+								strncpy( szFilter+n+1, "*.PNG", sizeof( szFilter )-n-2 );
+							} 
 							else if ( !strncmp(( char* )buffer, "GIF", 3 )) {
 								mir_snprintf( szFilter, sizeof( szFilter ), "GIF %s ( *.gif )", JTranslate( "format" ));
 								n = strlen( szFilter );
