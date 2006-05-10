@@ -457,7 +457,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	{
 		MINMAXINFO *mmi = (MINMAXINFO *) lParam;
 		SIZE size;
-		if ((GetKeyState(VK_CONTROL) & 0x8000) || dat->bVMaximized) {
+		if (dat->bVMaximized) {
 			MONITORINFO mi;
 			HMONITOR hMonitor;
 			WINDOWPLACEMENT wp;
@@ -476,7 +476,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			} else {
 				mmi->ptMaxPosition.y = 0;
 			}
-			dat->bVMaximized = 1;
 		}
 		GetMinimunWindowSize(dat, &size);
 		mmi->ptMinTrackSize.x = size.cx;
@@ -485,9 +484,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	}
 
 	case WM_SIZE:
-		if (wParam == SIZE_MAXIMIZED && !(GetKeyState(VK_CONTROL) & 0x8000)) {
-			dat->bVMaximized = 0;
-		}
 		if (wParam == SIZE_MINIMIZED) {
 			dat->bMinimized = 1;
 		}
@@ -744,7 +740,14 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 		break;
 	case WM_SYSCOMMAND:
-		if ((wParam & 0xFFF0) == SC_MOVE) {
+		if ((wParam & 0xFFF0) == SC_MAXIMIZE) {
+			if (GetKeyState(VK_CONTROL) & 0x8000) {
+				dat->bVMaximized = 1;
+			} else {
+				dat->bVMaximized = 0;
+			}
+		}
+		else if ((wParam & 0xFFF0) == SC_MOVE) {
 			RECT  rc;
 			GetWindowRect(hwndDlg, &rc);
 			dat->mouseLBDownPos.x = ((LONG) lParam << 16 >> 16) - rc.left;
