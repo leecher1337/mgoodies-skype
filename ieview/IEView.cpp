@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "resource.h"
 #include "Options.h"
 #include "Utils.h"
-#define GECKO
+//#define GECKO
 #define DISPID_BEFORENAVIGATE2      250   // hyperlink clicked on
 
 static const CLSID CLSID_MozillaBrowser=
