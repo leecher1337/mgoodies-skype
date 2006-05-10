@@ -493,7 +493,9 @@ static DWORD __stdcall waitThread(logthread_info* infoParam)
 	return 0;
 }
 
+#ifndef PERMITNSN
 static int uniqueEventId=0;
+#endif
 
 int UpdateValues(HANDLE hContact,LPARAM lparam)
 {
@@ -582,6 +584,7 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 			prevStatus=DBGetContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
 			DBWriteContactSettingWord(hContact,S_MOD,"OldStatus",prevStatus);
 	}	}
+#ifndef PERMITNSN
 	//Some useronline.c functionality
 	{
 		int newStatus,oldStatus;
@@ -622,6 +625,7 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 			}
 		}
 	}
+#endif
 	return 0;
 }
 

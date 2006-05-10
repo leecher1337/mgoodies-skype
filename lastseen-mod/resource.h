@@ -72,8 +72,10 @@
 #define IDC_SENDMSG                     1045
 #define IDC_LABTTITLE                   1046
 #define IDC_OPTIONSTAB                  1047
+#ifndef PERMITNSN
 #define IDC_DISWATCHED                  1048
 #define IDC_DISNONWATCHED               1049
+#endif
 #define IDC_MAINGROUP                   -1
 #define IDC_INFO                        -1
 #define IDC_TEXT                        -1

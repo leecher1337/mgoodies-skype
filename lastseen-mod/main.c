@@ -6,7 +6,11 @@ HANDLE ehdb,ehproto[2],ehmissed=NULL,ehuserinfo,ehmissed_proto=NULL;
 PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 		sizeof(PLUGININFO),
+#ifndef PERMITNSN
 		"Last seen plugin mod",
+#else	
+		"Last seen plugin mod (NSNCompat)",
+#endif
 		PLUGIN_MAKE_VERSION(5,0,4,0),
 		"Log when a user was last seen online and which users were online while you were away",
 		"Heiko Schillinger, YB",
@@ -14,7 +18,11 @@ PLUGININFO pluginInfo={
 		"© 2001-2002 Heiko Schillinger, 2003 modified by Bruno Rino, 2005 Modified by YB",
 		"http://forums.miranda-im.org/showthread.php?t=2822",
 		0,
+#ifndef PERMITNSN
 		DEFMOD_RNDUSERONLINE
+#else	
+		0
+#endif
 };
 
 
@@ -58,8 +66,9 @@ int MainInit(WPARAM wparam,LPARAM lparam)
 	SkinAddNewSound("LastSeenTrackedStatusChange",Translate("LastSeen: User status change"),"global.wav");
 	DBWriteContactSettingString(NULL,"Uninstall",Translate("Last seen"),S_MOD);
 
+#ifndef PERMITNSN
 	SkinAddNewSoundEx("UserOnline",Translate("Alerts"),Translate("Online"));
-
+#endif
 	return 0;
 }
 
