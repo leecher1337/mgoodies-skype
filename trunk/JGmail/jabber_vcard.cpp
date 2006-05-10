@@ -278,10 +278,10 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 								if (( p=strrchr( szFileName, '.' )) != NULL ) {
 									if ( !stricmp( p, ".bmp" ))
 										strcpy( szPhotoType, "image/bmp" );
-									else if ( !stricmp( p, ".gif" ))
-										strcpy( szPhotoType, "image/gif" );
 									else if ( !stricmp( p, ".png" ))
 										strcpy( szPhotoType, "image/png" );
+									else if ( !stricmp( p, ".gif" ))
+										strcpy( szPhotoType, "image/gif" );
 									else
 										strcpy( szPhotoType, "image/jpeg" );
 								}
