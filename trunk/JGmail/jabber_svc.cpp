@@ -470,8 +470,10 @@ int JabberDbSettingChanged( WPARAM wParam, LPARAM lParam )
 		sttRenameGroup( cws, hContact );
 	else if ( !strcmp( cws->szSetting, "MyHandle" ))
 		sttRenameContact( cws, hContact );
-	else if ( !strcmp( cws->szSetting, "NotOnList" ))
-		sttAddContactForever( cws, hContact );
+	else if ( !strcmp( cws->szSetting, "NotOnList" )){
+		if (!DBGetContactSettingByte((HANDLE) wParam, "CList", "Hidden", 0))  // skip hidden contacts!
+			sttAddContactForever( cws, hContact );
+	}
 	return 0;
 }
 
