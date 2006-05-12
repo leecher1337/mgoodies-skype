@@ -184,13 +184,13 @@ static void GetChildWindowRect(struct ParentWindowData *dat, RECT *rcChild)
 	rcChild->right = rc.right;
 	if (dat->flags & SMF_TABSATBOTTOM) {
 		rcChild->top = 2;
-		if (dat->childrenCount > 1 || !(dat->flags & SMF_HIDEONETAB)) {
+		if ((dat->flags & SMF_USETABS) && (dat->childrenCount > 1 || !(dat->flags & SMF_HIDEONETAB))) {
 			rcChild->bottom = rcTabs.bottom + 4;
 		} else {
 			rcChild->bottom = rc.bottom - rc.top - (rcStatus.bottom - rcStatus.top);
 		}
 	} else {
-		if (dat->childrenCount > 1 || !(dat->flags & SMF_HIDEONETAB)) {
+		if ((dat->flags & SMF_USETABS) && (dat->childrenCount > 1 || !(dat->flags & SMF_HIDEONETAB))) {
 			rcChild->top = rcTabs.top;
 		} else {
 			rcChild->top = 2;//rcTabs.top - 2;
