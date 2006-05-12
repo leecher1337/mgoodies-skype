@@ -141,11 +141,11 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 			if (queryNode->text) {
 //				JabberLog("JID has text");
 //				JabberLog("text: %s",queryNode->text);
-				if (!strncmp(info->fullJID,queryNode->text,sizeof (info->fullJID))){
+				if (!_tcsncmp(info->fullJID,queryNode->text,sizeof (info->fullJID))){
 					JabberLog( "Result Bind: %s %s %s",info->fullJID,"confirmed.",NULL);
 				} else {
 					JabberLog( "Result Bind: %s %s %s",info->fullJID,"changed to",queryNode->text);
-					strncpy(info->fullJID,queryNode->text,sizeof (info->fullJID));
+					_tcsncpy(info->fullJID,queryNode->text,sizeof (info->fullJID));
 			}	}
 		} else if (queryNode=JabberXmlGetChild( queryNode, "error" )){
 			//rfc3920 page 39
@@ -1352,7 +1352,7 @@ LBL_ErrFormat:
 	AI.format = pictureType;
 	AI.hContact = hContact;
 
-	if ( JGetByte( hContact, "AvatarType", PA_FORMAT_UNKNOWN ) != pictureType ) {
+	if ( JGetByte( hContact, "AvatarType", PA_FORMAT_UNKNOWN ) != (unsigned char)pictureType ) {
 		JabberGetAvatarFileName( hContact, AI.filename, sizeof AI.filename );
 		DeleteFileA( AI.filename );
 	}

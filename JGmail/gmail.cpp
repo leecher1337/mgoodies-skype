@@ -7,7 +7,7 @@
 
 LRESULT CALLBACK PopupDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 typedef struct {
-	char *username;
+	TCHAR *username;
 	char *password;
 	__int64 tid;
 } POPUP_ACCINFO;
@@ -213,8 +213,8 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 {
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
 	XmlNode *queryNode;
-	char* type;
-	char* str;
+	TCHAR* type;
+	TCHAR* str;
 
 	// RECVED: mailbox info
 	// ACTION: show popups with the received e-mails
@@ -222,8 +222,8 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 	if (( type=JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) return;
 
 	if (( queryNode=JabberXmlGetChild( iqNode, "error" )) ){ // error situation
-		char *errcode = JabberXmlGetAttrValue( queryNode, "code" );
-		char *errtype = JabberXmlGetAttrValue( queryNode, "type" );
+		TCHAR *errcode = JabberXmlGetAttrValue( queryNode, "code" );
+		TCHAR *errtype = JabberXmlGetAttrValue( queryNode, "type" );
 		if (((byte)JGetByte( NULL, "GMailUse",1) & 2)==2){ // we use Fake Contact
 			if (!fakeContact) fakeContact = fakeContactFindCreate();
 			JSetWord( fakeContact, "Status", ID_STATUS_NA );
@@ -236,17 +236,17 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			//ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
 			ppd.lchIcon = iconList[11];
 			mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName,
-				errcode?errcode:"Unknown",
-				errtype?errtype:"Unknown");
+				errcode?errcode:_T("Unknown"),
+				errtype?errtype:_T("Unknown"));
 			XmlNode *textNode = JabberXmlGetChild( queryNode, "text" );
 			int l = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Message: %s: %s\n",
 				queryNode->numChild?queryNode->child[0]->name:"none",
-				textNode?JabberUtf8Decode( textNode->text, 0 ):"none"
+				textNode?textNode->text:_T("none")
 			);
 			textNode = JabberXmlGetChild( iqNode, "query" );
 			if (textNode) {
-				__int64 tid = _atoi64(JabberXmlGetAttrValue( textNode, "newer-than-tid" ));
-				__int64 time = _atoi64(JabberXmlGetAttrValue( textNode, "newer-than-time" ));
+				__int64 tid = _ttoi64(JabberXmlGetAttrValue( textNode, "newer-than-tid" ));
+				__int64 time = _ttoi64(JabberXmlGetAttrValue( textNode, "newer-than-time" ));
 				l = makeHead(ppd.lpzText+l,MAX_SECONDLINE-5-l,tid,time);
 			}
 
@@ -258,7 +258,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			MyNotification(&ppd);
 		}
 		if (!(showresult & 4)){ // we do not suppress automatic re-request
-			if (strcmp(errtype,"cancel")) { // errortype <> cancel: We re-request the mailbox
+			if (_tcscmp(errtype,_T("cancel"))) { // errortype <> cancel: We re-request the mailbox
 				JabberForkThread( JabberRerequestMailBoxThread, 0, info->s );
 			}
 		}
@@ -277,14 +277,14 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 		return;
 	}
 
-	if ( !strcmp( type, "result" )) {
+	if ( !_tcscmp( type, _T("result" ))) {
 		str = JabberXmlGetAttrValue( queryNode, "xmlns" );
-		if ( str!=NULL && !strcmp( str, "google:mail:notify" )) {
+		if ( str!=NULL && !_tcscmp( str, _T("google:mail:notify") )) {
 			if (((byte)JGetByte( NULL, "GMailUse",1) & 2)==2){ // we use Fake Contact
 				if (!fakeContact) fakeContact = fakeContactFindCreate();
 				JSetWord( fakeContact, "Status", ID_STATUS_ONLINE );
 			}
-			__int64 rt = _atoi64(JabberXmlGetAttrValue( queryNode, "result-time" ));
+			__int64 rt = _ttoi64(JabberXmlGetAttrValue( queryNode, "result-time" ));
 			BOOL syncTimeResult = false;
 			int drift = ((unsigned int)(rt/1000)) - time(NULL);
 			if (drift) if ( 0x1 & JGetByte(NULL,"SyncTime",0)){
@@ -342,11 +342,11 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			int i;
 			for ( i=queryNode->numChild-1;i>=0; i-- ) {
 				threadNode = queryNode->child[i];
-				__int64 gtstamp = _atoi64(JabberXmlGetAttrValue( threadNode, "tid" ));
+				__int64 gtstamp = _ttoi64(JabberXmlGetAttrValue( threadNode, "tid" ));
 				if (gtstamp>maxtid)maxtid=gtstamp;
-				__int64 gmstamp = _atoi64(JabberXmlGetAttrValue( threadNode, "date" ));
+				__int64 gmstamp = _ttoi64(JabberXmlGetAttrValue( threadNode, "date" ));
 				if (gmstamp>maxtime)maxtime=gmstamp;
-				int numMesg = atoi(JabberXmlGetAttrValue( threadNode, "messages" ));
+				int numMesg = _ttoi(JabberXmlGetAttrValue( threadNode, "messages" ));
 				char mesgs[10];
                 if (numMesg>1) mir_snprintf(mesgs,10," (%d)",numMesg); else mesgs[0] = '\0';
 				char sttime[50];
@@ -354,14 +354,14 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 //				char stthread[50];
 //				StringFromUnixTime(stthread,50,(long)((gtstamp>>20)/1000));
 				XmlNode *sendersNode = JabberXmlGetChild( threadNode, "senders" );
-				int k; char sendersList[150];
+				int k; TCHAR sendersList[150];
 				sendersList[0] = '\0';
-				mir_snprintf(sendersList,150,"%s: New mail from ",jabberProtoName);
+				mir_sntprintf(sendersList,150,_T("%s: New mail from "),jabberProtoName);
 				if (sendersNode) for ( k=0; k<sendersNode->numChild; k++ ) {
-					strncat(sendersList,k?", ":"",150);
-					char * senderName = JabberXmlGetAttrValue(sendersNode->child[sendersNode->numChild-1-k],"name");
+					if (k) _tcsncat(sendersList,_T(", "),150);
+					TCHAR * senderName = JabberXmlGetAttrValue(sendersNode->child[sendersNode->numChild-1-k],"name");
 					if (!senderName) senderName = JabberXmlGetAttrValue(sendersNode->child[sendersNode->numChild-1-k],"address");
-					strncat(sendersList,JabberUtf8Decode(senderName,0),150);
+					_tcsncat(sendersList,senderName,150);
 				}
 //				JabberLog( "Senders: %s",sendersList );
 				{ //create and show popup
@@ -369,15 +369,37 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					ZeroMemory((void *)&ppd, sizeof(ppd));
 			        ppd.lchContact = 0;
 					ppd.lchIcon = iconList[10];
+#ifdef _UNICODE
+					char *temp = u2a(sendersList);
+					strncpy(ppd.lpzContactName, temp, MAX_CONTACTNAME);
+					mir_free(temp);
+#else
 			        strncpy(ppd.lpzContactName, sendersList, MAX_CONTACTNAME);
+#endif
 					sendersNode = JabberXmlGetChild( threadNode, "subject" );
 					XmlNode *snippetNode = JabberXmlGetChild( threadNode, "snippet" );
+#ifdef _UNICODE
+					temp = u2a(sendersNode?sendersNode->text:_T("none"));
+					char *temp1 = u2a(snippetNode?snippetNode->text:_T("none"));
+#endif
 			        mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s",
 						mesgs,
-						sendersNode?JabberUrlDecodeOld(JabberUtf8Decode( sendersNode->text, 0 )):"none",
+#ifdef _UNICODE
+						temp,
+#else
+						sendersNode?sendersNode->text:"none",
+#endif
 						sttime,
-						snippetNode?JabberUrlDecodeOld(JabberUtf8Decode( snippetNode->text, 0 )):"none"
+#ifdef _UNICODE
+						temp1
+#else
+						snippetNode?snippetNode->text:"none"
+#endif
 						);
+#ifdef _UNICODE
+					mir_free(temp);
+					mir_free(temp1);
+#endif
 					ppd.colorText = JGetDword(NULL,"ColMsgText",0);
 					ppd.colorBack = JGetDword(NULL,"ColMsgBack",0);
 					ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeout",0x0000FFFF)&0xFFFF);
@@ -449,22 +471,22 @@ extern long GMailOptsDlg;
 void JabberUserConfigResult( XmlNode *iqNode, void *userdata ){
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
 	XmlNode *queryNode;
-	char* type;
+	TCHAR* type;
 	int tempSaveChatsToServer = saveChatsToServer;
 	saveChatsToServer = -1;
 	JabberLog( "Received JabberUserConfigResult");
 	if (( type=JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) goto LBLEnd;
 	if (( queryNode=JabberXmlGetChild( iqNode, "error" )) )goto LBLEnd; // error situation
 	/*if ( !strcmp( type, "result" ))*/ {
-		char *str;
+		TCHAR *str;
 		if (( queryNode=JabberXmlGetChild( iqNode, "usersetting" )) == NULL ) goto LBLOK;
 		str = JabberXmlGetAttrValue( queryNode, "xmlns" );
-		if ( str!=NULL && !strcmp( str, "google:setting" )) {
+		if ( str!=NULL && !_tcscmp( str, _T("google:setting") )) {
 			XmlNode *settingNode = JabberXmlGetChild( queryNode, "archivingenabled" );
 			str = JabberXmlGetAttrValue(settingNode,"value");
 			if (str){
-				if ( !strcmp( str, "true" )) tempSaveChatsToServer = 1;
-				if ( !strcmp( str, "false" )) tempSaveChatsToServer = 0;
+				if ( !_tcscmp( str, _T("true") )) tempSaveChatsToServer = 1;
+				if ( !_tcscmp( str, _T("false") )) tempSaveChatsToServer = 0;
 			}
 		}  else goto LBLEnd;
 LBLOK:
