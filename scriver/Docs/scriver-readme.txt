@@ -72,6 +72,8 @@ A: There is a special Unicode icon in the status bar (U),
 
 6. Change Log
 -------------
+2.3.2.5
+* bugfixes: vertical maximize, Unicode texts
 2.3.2.4
 * bugfixes
 2.3.2.3
