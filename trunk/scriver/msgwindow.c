@@ -770,20 +770,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		{
 			WINDOWPLACEMENT wp = { 0 };
 			HANDLE hContact;
-			if (g_dat->lastParent == dat) {
-				g_dat->lastParent = dat->prev;
-			}
-			if (dat->prev != NULL) {
-				dat->prev->next = dat->next;
-			}
-			if (dat->next != NULL) {
-				dat->next->prev = dat->prev;
-			} 
 			SetWindowLong(hwndDlg, GWL_USERDATA, 0);
 			WindowList_Remove(g_dat->hParentWindowList, hwndDlg);
-			if (dat->children!=NULL) free (dat->children);
-			free(dat->tabCtrlDat);
-			free(dat);
 			if (!(dat->flags & SMF_USETABS) && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT))
 				hContact = dat->hContact;
 			else
@@ -797,6 +785,18 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			DBWriteContactSettingDword(hContact, SRMMMOD, "width", wp.rcNormalPosition.right - wp.rcNormalPosition.left);
 			DBWriteContactSettingDword(hContact, SRMMMOD, "height", wp.rcNormalPosition.bottom - wp.rcNormalPosition.top);
 			DBWriteContactSettingByte(hContact, SRMMMOD, SRMSGSET_TOPMOST, (BYTE)dat->bTopmost);
+			if (dat->children!=NULL) free (dat->children);
+			if (g_dat->lastParent == dat) {
+				g_dat->lastParent = dat->prev;
+			}
+			if (dat->prev != NULL) {
+				dat->prev->next = dat->next;
+			}
+			if (dat->next != NULL) {
+				dat->next->prev = dat->prev;
+			} 
+			free(dat->tabCtrlDat);
+			free(dat);
 		}
 		break;
 	case DM_DEACTIVATE:
