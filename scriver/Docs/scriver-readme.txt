@@ -39,11 +39,6 @@ ESC - close tab/window
 
 4. FAQ
 ------
-Q:How to use multiple containers ?
-A: Drag&drop tabs while holding down CTRL key. If a tab is dropped on an existing container
-it will be added to it. If a tab is dropped outside any existing cotainer a new one will be
-created. CTRL key needs to be pressed only when a tab is being dropped.
-
 Q: Where can I find new versions of Scriver, report bugs or request new features ?
 A: http://developer.berlios.de/projects/mgoodies.
 
@@ -66,12 +61,19 @@ Q: How can I disable Unicode or change code page ?
 A: There is a special Unicode icon in the status bar (U),
    left click the icon to enable/disable Unicode and right click to open code page selection menu.
 
+Q: How to use multiple containers ?
+A: Drag&drop tabs while holding down CTRL key. If a tab is dropped on an existing container
+it will be added to it. If a tab is dropped outside any existing cotainer a new one will be
+created. CTRL key needs to be pressed only when a tab is being dropped.
+
 5. Known Issues
 ---------------
 
 
 6. Change Log
 -------------
+2.3.2.6
+* bugfixes: accessing dat after free, hide tab bar when tabs are disabled
 2.3.2.5
 * bugfixes: vertical maximize, Unicode texts
 2.3.2.4
