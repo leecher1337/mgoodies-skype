@@ -39,18 +39,19 @@ int JabberMenuHandleAgents( WPARAM wParam, LPARAM lParam )
 {
 	if ( IsWindow( hwndJabberAgents ))
 		SetForegroundWindow( hwndJabberAgents );
-	else {
+	else
 		CreateDialogParam( hInst, MAKEINTRESOURCE( IDD_AGENTS ), NULL, JabberAgentsDlgProc, ( LPARAM )NULL );
-	}
 
 	return 0;
 }
 
-static void JabberRegisterAgent( HWND hwndDlg, char* jid )
+static void JabberRegisterAgent( HWND hwndDlg, TCHAR* jid )
 {
 	int iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_GETREGISTER, JabberIqResultGetRegister );
-    JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"jabber:iq:register\"/></iq>", iqId, jid );
+	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID(iqId); iq.addAttr( "to", jid );
+	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:register" );
+	JabberSend( jabberThreadInfo->s, iq );
 	hwndAgentRegInput = CreateDialogParam( hInst, MAKEINTRESOURCE( IDD_FORM ), hwndDlg, JabberAgentRegInputDlgProc, 0 );
 }
 
@@ -58,11 +59,11 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 {
 	HWND lv;
 	LVCOLUMN lvCol;
-	LVITEMA lvItem;
+	LVITEM lvItem;
 	JABBER_LIST_ITEM *item;
 	int i;
-	char text[128];
-	char* p;
+	TCHAR text[128];
+	TCHAR* p;
 	int iqId;
 
 	switch ( msg ) {
@@ -97,7 +98,10 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			JabberListRemoveList( LIST_AGENT );
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_DISCOAGENTS, JabberIqResultDiscoAgentItems );
-            JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"http://jabber.org/protocol/disco#items\"/></iq>", iqId, TXT(jabberThreadInfo->server));
+
+			XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", jabberThreadInfo->server );
+			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "http://jabber.org/protocol/disco#items" );
+			JabberSend( jabberThreadInfo->s, iq );
 
 			SendMessage( hwndDlg, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
 		}
@@ -117,8 +121,8 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 							lvItem.iSubItem = 0;
 							lvItem.mask = LVIF_TEXT;
 							lvItem.pszText = text;
-							lvItem.cchTextMax = sizeof( text );
-							SendMessageA( lv, LVM_GETITEMA, 0, (LPARAM)&lvItem );
+							lvItem.cchTextMax = SIZEOF( text );
+							ListView_GetItem( lv, &lvItem );
 							if (( item=JabberListGetItemPtr( LIST_AGENT, lvItem.pszText )) != NULL ) {
 								if ( item->cap & AGENT_CAP_REGISTER )
 									EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_REGISTER ), TRUE );
@@ -146,8 +150,8 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 							lvItem.iSubItem = 0;
 							lvItem.mask = LVIF_TEXT;
 							lvItem.pszText = text;
-							lvItem.cchTextMax = sizeof( text );
-							SendMessageA( lv, LVM_GETITEMA, 0, (LPARAM)&lvItem );
+							lvItem.cchTextMax = SIZEOF( text );
+							ListView_GetItem( lv, &lvItem );
 							if (( item=JabberListGetItemPtr( LIST_ROSTER, lvItem.pszText )) != NULL ) {
 								if ( item->status == ID_STATUS_OFFLINE )
 									EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_LOGON ), TRUE );
@@ -163,7 +167,7 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 	case WM_JABBER_AGENT_REFRESH:
 		// lParam = server from which agent information is obtained
 		if ( lParam )
-			SetDlgItemTextA( hwndDlg, IDC_AGENT_SERVER, ( char* )lParam );
+			SetDlgItemText( hwndDlg, IDC_AGENT_SERVER, ( TCHAR* )lParam );
 		EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_REGISTER ), FALSE );
 		EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_SEARCH ), FALSE );
 		i = 0;
@@ -175,10 +179,10 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 				lvItem.mask = LVIF_TEXT;
 				lvItem.iSubItem = 0;
 				lvItem.pszText = item->jid;
-				SendMessageA( lv, LVM_INSERTITEMA, 0, (LPARAM)&lvItem );
+				ListView_InsertItem( lv, &lvItem );
 				lvItem.iSubItem = 1;
 				lvItem.pszText = item->name;
-				SendMessageA( lv, LVM_SETITEMA, 0, (LPARAM)&lvItem );
+				ListView_SetItem( lv, &lvItem );
 				lvItem.iItem++;
 			}
 			i++;
@@ -195,20 +199,20 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 		lvItem.iItem = 0;
 		while (( i=JabberListFindNext( LIST_ROSTER, i )) >= 0 ) {
 			if (( item=JabberListGetItemPtrFromIndex( i )) != NULL ) {
-				if ( strchr( item->jid, '@' )==NULL && item->subscription!=SUB_NONE ) {
-					strcpy( text, item->jid );
-					if (( p=strchr( text, '/' )) != NULL )
+				if ( _tcschr( item->jid, '@' )==NULL && item->subscription!=SUB_NONE ) {
+					_tcscpy( text, item->jid );
+					if (( p=_tcschr( text, '/' )) != NULL )
 						*p = '\0';
 					lvItem.mask = LVIF_TEXT;
 					lvItem.iSubItem = 0;
 					lvItem.pszText = text;
-					SendMessageA( lv, LVM_INSERTITEMA, 0, (LPARAM)&lvItem );
+					ListView_InsertItem( lv, &lvItem );
 					lvItem.iSubItem = 1;
 					if ( item->status != ID_STATUS_OFFLINE )
-						lvItem.pszText = JTranslate( "Online" );
+						lvItem.pszText = TranslateT( "Online" );
 					else
-						lvItem.pszText = JTranslate( "Offline" );
-					SendMessageA( lv, LVM_SETITEMA, 0, (LPARAM)&lvItem );
+						lvItem.pszText = TranslateT( "Offline" );
+					ListView_SetItem( lv, &lvItem );
 					lvItem.iItem++;
 			}	}
 			i++;
@@ -233,8 +237,8 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 				lvItem.iSubItem = 0;
 				lvItem.mask = LVIF_TEXT;
 				lvItem.pszText = text;
-				lvItem.cchTextMax = sizeof( text );
-				SendMessageA( lv, LVM_GETITEMA, 0, (LPARAM)&lvItem );
+				lvItem.cchTextMax = SIZEOF( text );
+				ListView_GetItem( lv, &lvItem );
 				ListView_SetItemState( lv, lvItem.iItem, 0, LVIS_SELECTED ); // Unselect the item
 				if (( item=JabberListGetItemPtr( LIST_AGENT, lvItem.pszText )) != NULL )
 					JabberRegisterAgent( hwndDlg, item->jid );
@@ -246,29 +250,33 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 				lvItem.iSubItem = 0;
 				lvItem.mask = LVIF_TEXT;
 				lvItem.pszText = text;
-				lvItem.cchTextMax = sizeof( text );
-				SendMessageA( lv, LVM_GETITEMA, 0, (LPARAM)&lvItem );
+				lvItem.cchTextMax = SIZEOF( text );
+				ListView_GetItem( lv, &lvItem );
 				ListView_SetItemState( lv, lvItem.iItem, 0, LVIS_SELECTED ); // Unselect the item
 				if (( item=JabberListGetItemPtr( LIST_AGENT, lvItem.pszText )) != NULL )
 					JabberMenuHandleGroupchat( 0, ( LPARAM )item->jid );
 			}
 			return TRUE;
 		case IDC_AGENT_SERVER:
-			GetDlgItemTextA( hwndDlg, IDC_AGENT_SERVER, text, sizeof( text ));
+			GetDlgItemText( hwndDlg, IDC_AGENT_SERVER, text, SIZEOF( text ));
 			if ( jabberOnline && text[0] )
 				EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_BROWSE ), TRUE );
 			else
 				EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_BROWSE ), FALSE );
 			break;
 		case IDC_AGENT_BROWSE:
-			GetDlgItemTextA( hwndDlg, IDC_AGENT_SERVER, text, sizeof( text ));
+			GetDlgItemText( hwndDlg, IDC_AGENT_SERVER, text, SIZEOF( text ));
 			EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_BROWSE ), FALSE );
 			ListView_DeleteAllItems( GetDlgItem( hwndDlg, IDC_AGENT_LIST ));
 			JabberListRemoveList( LIST_AGENT );
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_DISCOAGENTS, JabberIqResultDiscoAgentItems );
-            JabberSend( jabberThreadInfo->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"http://jabber.org/protocol/disco#items\"/></iq>", iqId, TXT(text));
+			{	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", text );
+				XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "http://jabber.org/protocol/disco#items" );
+				JabberSend( jabberThreadInfo->s, iq );
+			}
 			return TRUE;
+
 		case IDC_AGENT_LOGON:
 		case IDC_AGENT_LOGOFF:
 			EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_UNREGISTER ), FALSE );
@@ -279,13 +287,13 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 				lvItem.iSubItem = 0;
 				lvItem.mask = LVIF_TEXT;
 				lvItem.pszText = text;
-				lvItem.cchTextMax = sizeof( text );
-				SendMessageA( lv, LVM_GETITEMA, 0, (LPARAM)&lvItem );
+				lvItem.cchTextMax = SIZEOF( text );
+				ListView_GetItem( lv, &lvItem );
 				if (( item=JabberListGetItemPtr( LIST_ROSTER, lvItem.pszText )) != NULL ) {
-					if ( LOWORD( wParam )==IDC_AGENT_LOGON )
-                        JabberSend( jabberThreadInfo->s, "<presence to=\"%s\"/>", item->jid );
-					else
-                        JabberSend( jabberThreadInfo->s, "<presence to=\"%s\" type=\"unavailable\"/>", item->jid );
+					XmlNode p( "presence" ); p.addAttr( "to", item->jid );
+					if ( LOWORD( wParam ) != IDC_AGENT_LOGON )
+						p.addAttr( "type", "unavailable" );
+					JabberSend( jabberThreadInfo->s, p );
 			}	}
 			return TRUE;
 		case IDC_AGENT_UNREGISTER:
@@ -297,16 +305,19 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 				lvItem.iSubItem = 0;
 				lvItem.mask = LVIF_TEXT;
 				lvItem.pszText = text;
-				lvItem.cchTextMax = sizeof( text );
-				SendMessageA( lv, LVM_GETITEMA, 0, (LPARAM)&lvItem );
+				lvItem.cchTextMax = SIZEOF( text );
+				ListView_GetItem( lv, &lvItem );
 				if (( item=JabberListGetItemPtr( LIST_ROSTER, lvItem.pszText )) != NULL ) {
-					// strip off resource name if any
-					strcpy( text, item->jid );
-					//if (( p=strchr( text, '/' )) != NULL ) *p = '\0';
-					if (( p=JabberTextEncode( text )) != NULL ) {
-                        JabberSend( jabberThreadInfo->s, "<iq type=\"set\" to=\"%s\"><query xmlns=\"jabber:iq:register\"><remove/></query></iq>", p );
-                        JabberSend( jabberThreadInfo->s, "<iq type=\"set\"><query xmlns=\"jabber:iq:roster\"><item jid=\"%s\" subscription=\"remove\"></item></query></iq>", p );
-						free( p );
+					{	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttr( "to", item->jid );
+						XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:register" );
+						query->addChild( "remove" );
+						JabberSend( jabberThreadInfo->s, iq );
+					}
+					{
+						XmlNode iq( "iq" ); iq.addAttr( "type", "set" );
+						XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
+						XmlNode* itm = query->addChild( "item" ); itm->addAttr( "jid", item->jid ); itm->addAttr( "subscription", "remove" );
+						JabberSend( jabberThreadInfo->s, iq );
 			}	}	}
 			return TRUE;
 
@@ -329,18 +340,12 @@ BOOL CALLBACK JabberAgentRegInputDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 {
 	static XmlNode *agentRegIqNode;
 
-	XmlNode *queryNode, *xNode, *n;
-	HWND hFrame, hCtrl;
-	HFONT hFont;
 	int id, ypos, i;
-	char* from;
-	char* str, *str2, *regStr;
-	LONG frameExStyle;
-	int iqId;
-	char* p;
+	TCHAR *from, *str, *str2;
 
 	switch ( msg ) {
 	case WM_INITDIALOG:
+	{
 		EnableWindow( GetParent( hwndDlg ), FALSE );
 		TranslateDialogDefault( hwndDlg );
 		agentRegIqNode = NULL;
@@ -349,26 +354,35 @@ BOOL CALLBACK JabberAgentRegInputDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 		SetDlgItemText( hwndDlg, IDC_FRAME_TEXT, TranslateT( "Please wait..." ));
 
 		// Enable WS_EX_CONTROLPARENT on IDC_FRAME ( so tab stop goes through all its children )
-		frameExStyle = GetWindowLong( GetDlgItem( hwndDlg, IDC_FRAME ), GWL_EXSTYLE );
+		LONG frameExStyle = GetWindowLong( GetDlgItem( hwndDlg, IDC_FRAME ), GWL_EXSTYLE );
 		frameExStyle |= WS_EX_CONTROLPARENT;
 		SetWindowLong( GetDlgItem( hwndDlg, IDC_FRAME ), GWL_EXSTYLE, frameExStyle );
-
 		return TRUE;
+	}
 	case WM_COMMAND:
 		switch ( LOWORD( wParam )) {
 		case IDC_SUBMIT:
+		{
+			XmlNode *queryNode, *xNode, *n;
+
 			if ( agentRegIqNode == NULL ) return TRUE;
 			if (( from=JabberXmlGetAttrValue( agentRegIqNode, "from" )) == NULL ) return TRUE;
 			if (( queryNode=JabberXmlGetChild( agentRegIqNode, "query" )) == NULL ) return TRUE;
-			hFrame = GetDlgItem( hwndDlg, IDC_FRAME );
-			regStr = ( char* )malloc( 512 );
-			regStr[0] = '\0';
-			str = ( char* )malloc( 128 );
-			str2 = ( char* )malloc( 128 );
+			HWND hFrame = GetDlgItem( hwndDlg, IDC_FRAME );
+
+			str = ( TCHAR* )alloca( sizeof(TCHAR) * 128 );
+			str2 = ( TCHAR* )alloca( sizeof(TCHAR) * 128 );
 			id = 0;
+
+			int iqId = JabberSerialNext();
+			JabberIqAdd( iqId, IQ_PROC_SETREGISTER, JabberIqResultSetRegister );
+
+			XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", from );
+			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:register" );
+
 			if (( xNode=JabberXmlGetChild( queryNode, "x" )) != NULL ) {
 				// use new jabber:x:data form
-				regStr = JabberFormGetData( hFrame, xNode );
+				JabberFormGetData( hFrame, xNode, query );
 			}
 			else {
 				// use old registration information form
@@ -377,40 +391,27 @@ BOOL CALLBACK JabberAgentRegInputDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 					if ( n->name ) {
 						if ( !strcmp( n->name, "key" )) {
 							// field that must be passed along with the registration
-							if ( n->text ) {
-								if (( p=JabberTextEncode( n->text )) != NULL ) {
-									wsprintfA( str, "<%s>%s</%s>", n->name, p, n->name );
-									free( p );
-								}
-							}
+							if ( n->text )
+								query->addChild( n->name, n->text );
 							else
-								wsprintfA( str, "<%s/>", n->name );
-							strcat( regStr, str );
+								query->addChild( n->name );
 						}
 						else if ( !strcmp( n->name, "registered" ) || !strcmp( n->name, "instructions" )) {
 							// do nothing, we will skip these
 						}
 						else {
-							GetDlgItemTextA( hFrame, id, str2, 128 );
-							if (( p=JabberTextEncode( str2 )) != NULL ) {
-								wsprintfA( str, "<%s>%s</%s>", n->name, p, n->name );
-								strcat( regStr, str );
-								free( p );
-							}
+							GetDlgItemText( hFrame, id, str2, 128 );
+							query->addChild( n->name, str2 );
 							id++;
 			}	}	}	}
 
-			iqId = JabberSerialNext();
-			JabberIqAdd( iqId, IQ_PROC_SETREGISTER, JabberIqResultSetRegister );
-            JabberSend( jabberThreadInfo->s, "<iq type=\"set\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"jabber:iq:register\">%s</query></iq>", iqId, from, regStr );
-			free( str );
-			free( str2 );
-			free( regStr );
+			JabberSend( jabberThreadInfo->s, iq );
 			DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_OPT_REGISTER ), hwndDlg, JabberAgentRegDlgProc, 0 );
 			// Fall through to IDCANCEL
+		}
 		case IDCANCEL:
 			if ( agentRegIqNode )
-				JabberXmlFreeNode( agentRegIqNode );
+				delete agentRegIqNode;
 			DestroyWindow( hwndDlg );
 			return TRUE;
 		}
@@ -418,20 +419,20 @@ BOOL CALLBACK JabberAgentRegInputDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 	case WM_JABBER_REGINPUT_ACTIVATE:
 		if ( wParam == 1 ) { // success
 			// lParam = <iq/> node from agent JID as a result of "get jabber:iq:register"
-			hFrame = GetDlgItem( hwndDlg, IDC_FRAME );
-			hFont = ( HFONT ) SendMessage( hFrame, WM_GETFONT, 0, 0 );
+			HWND hFrame = GetDlgItem( hwndDlg, IDC_FRAME );
+			HFONT hFont = ( HFONT ) SendMessage( hFrame, WM_GETFONT, 0, 0 );
 			ShowWindow( GetDlgItem( hwndDlg, IDC_FRAME_TEXT ), SW_HIDE );
+
+			XmlNode *queryNode, *xNode, *n;
 			if (( agentRegIqNode=( XmlNode * ) lParam ) == NULL ) return TRUE;
 			if (( queryNode=JabberXmlGetChild( agentRegIqNode, "query" )) == NULL ) return TRUE;
 			id = 0;
 			ypos = 14;
 			if (( xNode=JabberXmlGetChild( queryNode, "x" )) != NULL ) {
 				// use new jabber:x:data form
-				if (( n=JabberXmlGetChild( xNode, "instructions" ))!=NULL && n->text!=NULL ) {
-					char* str = JabberTextDecode( n->text );
-					SetDlgItemTextA( hwndDlg, IDC_INSTRUCTION, str );
-					free( str );
-				}
+				if (( n=JabberXmlGetChild( xNode, "instructions" ))!=NULL && n->text!=NULL )
+					SetDlgItemText( hwndDlg, IDC_INSTRUCTION, n->text );
+
 				JabberFormCreateUI( hFrame, xNode, &i /*dummy*/ );
 			}
 			else {
@@ -439,31 +440,28 @@ BOOL CALLBACK JabberAgentRegInputDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 				for ( i=0; i<queryNode->numChild; i++ ) {
 					n = queryNode->child[i];
 					if ( n->name ) {
-						str = JabberTextDecode( n->text );
 						if ( !strcmp( n->name, "instructions" )) {
-							if ( str ) SetDlgItemTextA( hwndDlg, IDC_INSTRUCTION, str );
+							SetDlgItemText( hwndDlg, IDC_INSTRUCTION, n->text );
 						}
 						else if ( !strcmp( n->name, "key" ) || !strcmp( n->name, "registered" )) {
 							// do nothing
 						}
 						else if ( !strcmp( n->name, "password" )) {
-							hCtrl = CreateWindowA( "static", n->name, WS_CHILD|WS_VISIBLE|SS_RIGHT, 10, ypos+4, 100, 18, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
+							HWND hCtrl = CreateWindowA( "static", n->name, WS_CHILD|WS_VISIBLE|SS_RIGHT, 10, ypos+4, 100, 18, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
 							SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
-							hCtrl = CreateWindowExA( WS_EX_CLIENTEDGE, "edit", str, WS_CHILD|WS_VISIBLE|WS_BORDER|WS_TABSTOP|ES_LEFT|ES_AUTOHSCROLL|ES_PASSWORD, 120, ypos, 128, 24, hFrame, ( HMENU ) id, hInst, NULL );
+							hCtrl = CreateWindowEx( WS_EX_CLIENTEDGE, _T("edit"), n->text, WS_CHILD|WS_VISIBLE|WS_BORDER|WS_TABSTOP|ES_LEFT|ES_AUTOHSCROLL|ES_PASSWORD, 120, ypos, 128, 24, hFrame, ( HMENU ) id, hInst, NULL );
 							SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 							id++;
 							ypos += 24;
 						}
 						else {	// everything else is a normal text field
-							hCtrl = CreateWindowA( "static", n->name, WS_CHILD|WS_VISIBLE|SS_RIGHT, 10, ypos+4, 100, 18, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
+							HWND hCtrl = CreateWindowA( "static", n->name, WS_CHILD|WS_VISIBLE|SS_RIGHT, 10, ypos+4, 100, 18, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
 							SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
-							hCtrl = CreateWindowExA( WS_EX_CLIENTEDGE, "edit", str, WS_CHILD|WS_VISIBLE|WS_BORDER|WS_TABSTOP|ES_LEFT|ES_AUTOHSCROLL, 120, ypos, 128, 24, hFrame, ( HMENU ) id, hInst, NULL );
+							hCtrl = CreateWindowEx( WS_EX_CLIENTEDGE, _T("edit"), n->text, WS_CHILD|WS_VISIBLE|WS_BORDER|WS_TABSTOP|ES_LEFT|ES_AUTOHSCROLL, 120, ypos, 128, 24, hFrame, ( HMENU ) id, hInst, NULL );
 							SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 							id++;
 							ypos += 24;
-						}
-						if ( str ) free( str );
-			}	}	}
+			}	}	}	}
 
 			EnableWindow( GetDlgItem( hwndDlg, IDC_SUBMIT ), TRUE );
 		}
@@ -495,15 +493,15 @@ static BOOL CALLBACK JabberAgentManualRegDlgProc( HWND hwndDlg, UINT msg, WPARAM
 		return TRUE;
 	case WM_COMMAND:
 		{
-			char jid[256];
+			TCHAR jid[256];
 
 			switch ( LOWORD( wParam )) {
 			case IDC_JID:
-				GetDlgItemTextA( hwndDlg, IDC_JID, jid, sizeof( jid ));
+				GetDlgItemText( hwndDlg, IDC_JID, jid, SIZEOF( jid ));
 				EnableWindow( GetDlgItem( hwndDlg, IDOK ), ( jid[0]=='\0' )?FALSE:TRUE );
 				break;
 			case IDOK:
-				GetDlgItemTextA( hwndDlg, IDC_JID, jid, sizeof( jid ));
+				GetDlgItemText( hwndDlg, IDC_JID, jid, SIZEOF( jid ));
 				JabberRegisterAgent( GetParent( hwndDlg ), jid );
 				dontEnableParent = TRUE;
 				// Fall through

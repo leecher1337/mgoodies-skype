@@ -80,11 +80,11 @@ typedef enum {			// initial default to RSMODE_LASTSEEN
 struct JABBER_RESOURCE_STATUS
 {
 	int status;
-	char* resourceName;	// in UTF-8
-	char* statusMessage;
-	char* software;
-	char* version;
-	char* system;
+	TCHAR* resourceName;
+	TCHAR* statusMessage;
+	TCHAR* software;
+	TCHAR* version;
+	TCHAR* system;
 	unsigned int cap;					// 0 = haven't done disco#info yet, see CLIENT_CAP_*
 	JABBER_GC_AFFILIATION affiliation;
 	JABBER_GC_ROLE role;
@@ -93,11 +93,11 @@ struct JABBER_RESOURCE_STATUS
 struct JABBER_LIST_ITEM
 {
 	JABBER_LIST list;
-	char* jid;
+	TCHAR* jid;
 
 	// LIST_ROSTER
 	// jid = jid of the contact
-	char* nick;
+	TCHAR* nick;
 	int resourceCount;
 	int status;	// Main status, currently useful for transport where no resource information is kept.
 				// On normal contact, this is the same status as shown on contact list.
@@ -105,24 +105,24 @@ struct JABBER_LIST_ITEM
 	int defaultResource;	// index to resource[x] which is the default, negative ( -1 ) means no resource is chosen yet
 	JABBER_RESOURCE_MODE resourceMode;
 	JABBER_SUBSCRIPTION subscription;
-	char* statusMessage;	// Status message when the update is to JID with no resource specified ( e.g. transport user )
-	char* group;
+	TCHAR* statusMessage;	// Status message when the update is to JID with no resource specified ( e.g. transport user )
+	TCHAR* group;
 	char* photoFileName;
 	int idMsgAckPending;
-	char* messageEventIdStr;
+	TCHAR* messageEventIdStr;
 	BOOL wantComposingEvent;
 	WORD cap;	// See CLIENT_CAP_* above
 
 	// LIST_AGENT
 	// jid = jid of the agent
 	// WORD cap;	// See AGENT_CAP_* above
-	char* name;
-	char* service;
+	TCHAR* name;
+	TCHAR* service;
 
 	// LIST_ROOM
 	// jid = room JID
 	// char* name; // room name
-	char* type;	// room type
+	TCHAR* type;	// room type
 
 	// LIST_CHATROOM
 	// jid = room JID
@@ -155,19 +155,19 @@ struct JABBER_LIST_ITEM
 void JabberListInit( void );
 void JabberListUninit( void );
 void JabberListWipe( void );
-int JabberListExist( JABBER_LIST list, const char* jid );
-JABBER_LIST_ITEM *JabberListAdd( JABBER_LIST list, const char* jid );
-void JabberListRemove( JABBER_LIST list, const char* jid );
+int JabberListExist( JABBER_LIST list, const TCHAR* jid );
+JABBER_LIST_ITEM *JabberListAdd( JABBER_LIST list, const TCHAR* jid );
+void JabberListRemove( JABBER_LIST list, const TCHAR* jid );
 void JabberListRemoveList( JABBER_LIST list );
 void JabberListRemoveByIndex( int index );
 int JabberListFindNext( JABBER_LIST list, int fromOffset );
-JABBER_LIST_ITEM *JabberListGetItemPtr( JABBER_LIST list, const char* jid );
+JABBER_LIST_ITEM *JabberListGetItemPtr( JABBER_LIST list, const TCHAR* jid );
 JABBER_LIST_ITEM *JabberListGetItemPtrFromIndex( int index );
 
-int   JabberListAddResource( JABBER_LIST list, const char* jid, int status, const char* statusMessage );
-void  JabberListRemoveResource( JABBER_LIST list, const char* jid );
-char* JabberListGetBestResourceNamePtr( const char* jid );
-char* JabberListGetBestClientResourceNamePtr( const char* jid );
+int    JabberListAddResource( JABBER_LIST list, const TCHAR* jid, int status, const TCHAR* statusMessage );
+void   JabberListRemoveResource( JABBER_LIST list, const TCHAR* jid );
+TCHAR* JabberListGetBestResourceNamePtr( const TCHAR* jid );
+TCHAR* JabberListGetBestClientResourceNamePtr( const TCHAR* jid );
 void  putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r);
 
 #endif

@@ -144,7 +144,7 @@ void JabberSslUninit()
 		hLibSSL = NULL;
 	}
 #endif // ndef STATICSSL
-	if ( sslHandleList ) free( sslHandleList );
+	if ( sslHandleList ) mir_free( sslHandleList );
 	sslHandleCount = 0;
 	DeleteCriticalSection( &sslHandleMutex );
 }
@@ -187,7 +187,7 @@ void JabberSslAddHandle( HANDLE hConn, PVOID ssl )
 		return;
 	}
 
-	sslHandleList = ( JABBER_SSL_MAPPING * ) realloc( sslHandleList, ( sslHandleCount+1 )*sizeof( JABBER_SSL_MAPPING ));
+	sslHandleList = ( JABBER_SSL_MAPPING * ) mir_realloc( sslHandleList, ( sslHandleCount+1 )*sizeof( JABBER_SSL_MAPPING ));
 	sslHandleList[sslHandleCount].h = hConn;
 	sslHandleList[sslHandleCount].ssl = ssl;
 	sslHandleCount++;
@@ -206,6 +206,6 @@ void JabberSslRemoveHandle( HANDLE hConn )
 
 	sslHandleCount--;
 	memmove( sslHandleList+i, sslHandleList+i+1, ( sslHandleCount-i )*sizeof( JABBER_SSL_MAPPING ));
-	sslHandleList = ( JABBER_SSL_MAPPING * ) realloc( sslHandleList, sslHandleCount*sizeof( JABBER_SSL_MAPPING ));
+	sslHandleList = ( JABBER_SSL_MAPPING * ) mir_realloc( sslHandleList, sslHandleCount*sizeof( JABBER_SSL_MAPPING ));
 	LeaveCriticalSection( &sslHandleMutex );
 }

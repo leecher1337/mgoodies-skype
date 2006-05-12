@@ -30,11 +30,11 @@ Last change by : $Author: ghazan $
 typedef enum { JBT_INIT, JBT_AUTH, JBT_CONNECT, JBT_SOCKSERR, JBT_SENDING, JBT_RECVING, JBT_DONE, JBT_ERROR } JABBER_BYTE_STATE;
 
 typedef struct {
-	char* sid;
-	char* srcJID;
-	char* dstJID;
-	char* streamhostJID;
-	char* iqId;
+	TCHAR* sid;
+	TCHAR* srcJID;
+	TCHAR* dstJID;
+	TCHAR* streamhostJID;
+	TCHAR* iqId;
 	JABBER_BYTE_STATE state;
 	HANDLE hConn;
 	HANDLE hEvent;
