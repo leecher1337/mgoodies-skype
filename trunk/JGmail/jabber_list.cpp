@@ -389,9 +389,8 @@ void putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
 		char mirver[256];
 		int pos=0;
 		mir_snprintf(mirver,255,"%s",r->resourceName);
-		JabberUrlDecodeOld(mirver);
 		JSetStringUtf( hContact, "Resource", mirver );
-		char *p=r->software?strstr( r->software, "Miranda IM" ):NULL;
+		TCHAR *p=r->software?_tcsstr( r->software, _T("Miranda IM") ):NULL;
 		if (r->software){
 			pos = mir_snprintf(mirver,255,"%s",p?p:r->software);
 			if (p) pos--;
@@ -399,12 +398,16 @@ void putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
 		}
 		if (r->version) pos += mir_snprintf(mirver+pos,255-pos," (%s)",r->version);
 		if (pos) {
-			JabberUrlDecodeOld(mirver);
 			JSetStringUtf( hContact, "MirVer", mirver );
 		} else JDeleteSetting( hContact, "MirVer" );
 		if (r->system){
+#ifdef _UNICODE
+			char *temp = u2a(r->system);
+			strncpy(mirver,temp,255);
+			mir_free(temp);
+#else
 			strncpy(mirver,r->system,255);
-			JabberUrlDecodeOld(mirver);
+#endif
 			JSetStringUtf( hContact, "System", mirver );
 		} else JDeleteSetting( hContact, "System" );
 }
