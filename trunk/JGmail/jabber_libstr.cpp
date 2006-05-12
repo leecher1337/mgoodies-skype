@@ -31,8 +31,18 @@ void __stdcall replaceStr( char*& dest, const char* src )
 {
 	if ( src != NULL ) {
 		if ( dest != NULL )
-			free( dest );
-		dest = strdup( src );
+			mir_free( dest );
+		dest = mir_strdup( src );
+	}
+	else dest = NULL;
+}
+
+void __stdcall replaceStr( WCHAR*& dest, const WCHAR* src )
+{
+	if ( src != NULL ) {
+		if ( dest != NULL )
+			mir_free( dest );
+		dest = mir_wstrdup( src );
 	}
 	else dest = NULL;
 }

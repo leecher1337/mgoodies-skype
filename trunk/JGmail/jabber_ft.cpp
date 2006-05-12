@@ -82,24 +82,24 @@ static void JabberFtSiResult( XmlNode *iqNode, void *userdata );
 static BOOL JabberFtSend( HANDLE hConn, void *userdata );
 static void JabberFtSendFinal( BOOL success, void *userdata );
 
-void JabberFtInitiate( char* jid, filetransfer* ft )
+void JabberFtInitiate( TCHAR* jid, filetransfer* ft )
 {
 	int iqId;
-	char* rs, *filename, *p;
-	char idStr[32];
+	TCHAR *rs;
+	char *filename, *p;
+	TCHAR idStr[32];
 	JABBER_LIST_ITEM *item;
 	int i;
-	char sid[9];
+	TCHAR sid[9];
 
-	if ( jid==NULL || ft==NULL || !jabberOnline ||
-		( rs=JabberListGetBestClientResourceNamePtr( jid ))==NULL ) {
+	if ( jid==NULL || ft==NULL || !jabberOnline || ( rs=JabberListGetBestClientResourceNamePtr( jid ))==NULL ) {
 		JSendBroadcast( ft->std.hContact, ACKTYPE_FILE, ACKRESULT_FAILED, ft, 0 );
 		delete ft;
 		return;
 	}
 	iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberFtSiResult );
-	mir_snprintf( idStr, sizeof( idStr ), JABBER_IQID"%d", iqId );
+	mir_sntprintf( idStr, SIZEOF( idStr ), _T(JABBER_IQID)_T("%d"), iqId );
 	if (( item=JabberListAdd( LIST_FTSEND, idStr )) == NULL ) {
 		JSendBroadcast( ft->std.hContact, ACKTYPE_FILE, ACKRESULT_FAILED, ft, 0 );
 		delete ft;
@@ -110,35 +110,28 @@ void JabberFtInitiate( char* jid, filetransfer* ft )
 	for ( i=0; i<8; i++ )
 		sid[i] = ( rand()%10 ) + '0';
 	sid[8] = '\0';
-	if ( ft->sid != NULL ) free( ft->sid );
-	ft->sid = _strdup( sid );
+	if ( ft->sid != NULL ) mir_free( ft->sid );
+	ft->sid = mir_tstrdup( sid );
 	filename = ft->std.files[ ft->std.currentFileNumber ];
 	if (( p=strrchr( filename, '\\' )) != NULL )
 		filename = p+1;
 
-	JabberSend( jabberThreadInfo->s,
-        "<iq type=\"set\" id=\""JABBER_IQID"%d\" to=\"%s/%s\">"
-            "<si xmlns=\"http://jabber.org/protocol/si\" id=\"%s\" mime-type=\"binary/octet-stream\" profile=\"http://jabber.org/protocol/si/profile/file-transfer\">"
-                "<file xmlns=\"http://jabber.org/protocol/si/profile/file-transfer\" name=\"%s\" size=\"%d\">"
-					"<desc>%s</desc>"
-					//"<range/>"
-				"</file>"
-                "<feature xmlns=\"http://jabber.org/protocol/feature-neg\">"
-                    "<x xmlns=\"jabber:x:data\" type=\"form\">"
-                        "<field var=\"stream-method\" type=\"list-single\">"
-							"<option><value>http://jabber.org/protocol/bytestreams</value></option>"
-						"</field>"
-					"</x>"
-				"</feature>"
-			"</si>"
-		"</iq>",
-		iqId, jid, rs, sid, UTF8(filename), ft->fileSize[ ft->std.currentFileNumber ], UTF8(ft->szDescription));
+	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", jid );
+	XmlNode* si = iq.addChild( "si" ); si->addAttr( "xmlns", "http://jabber.org/protocol/si" );
+	si->addAttr( "id", sid ); si->addAttr( "mime-type", "binary/octet-stream" );
+	si->addAttr( "profile", "http://jabber.org/protocol/si/profile/file-transfer" );
+	XmlNode* file = si->addChild( "file" ); file->addAttr( "name", filename ); file->addAttr( "size", ft->fileSize[ ft->std.currentFileNumber ] );
+	file->addAttr( "xmlns", "http://jabber.org/protocol/si/profile/file-transfer" );
+	file->addChild( "desc", ft->szDescription );
+	XmlNode* feature = si->addChild( "feature" ); feature->addAttr( "xmlns", "http://jabber.org/protocol/feature-neg" );
+	XmlNode* field = feature->addChild( "field" ); field->addAttr( "var", "stream-method" ); field->addAttr( "type", "list-single" );
+	XmlNode* option = field->addChild( "option" ); option->addChild( "value", "http://jabber.org/protocol/bytestreams" );
+	JabberSend( jabberThreadInfo->s, iq );
 }
 
 static void JabberFtSiResult( XmlNode *iqNode, void *userdata )
 {
-	char* type, *from, *to;
-	char* idStr, *str;
+	TCHAR* type, *from, *to, *idStr, *str;
 	XmlNode *siNode, *fileNode, *rangeNode, *featureNode, *xNode, *fieldNode, *valueNode;
 	JABBER_LIST_ITEM *item;
 	int offset, length;
@@ -150,43 +143,38 @@ static void JabberFtSiResult( XmlNode *iqNode, void *userdata )
 	idStr = JabberXmlGetAttrValue( iqNode, "id" );
 	if (( item=JabberListGetItemPtr( LIST_FTSEND, idStr )) == NULL ) return;
 
-	if ( !strcmp( type, "result" )) {
+	if ( !_tcscmp( type, _T("result"))) {
 		if (( siNode=JabberXmlGetChild( iqNode, "si" )) != NULL ) {
 			if (( fileNode=JabberXmlGetChild( siNode, "file" )) != NULL ) {
 				if (( rangeNode=JabberXmlGetChild( fileNode, "range" )) != NULL ) {
 // ************** Need to store offset/length in ft structure **********************
 // but at this tiem, we should not get <range/> tag since we don't sent <range/> on our request
 					if (( str=JabberXmlGetAttrValue( rangeNode, "offset" )) != NULL )
-						offset = atoi( str );
+						offset = _ttoi( str );
 					if (( str=JabberXmlGetAttrValue( rangeNode, "length" )) != NULL )
-						length = atoi( str );
+						length = _ttoi( str );
 				}
 			}
 			if (( featureNode=JabberXmlGetChild( siNode, "feature" )) != NULL ) {
-				if (( xNode=JabberXmlGetChildWithGivenAttrValue( featureNode, "x", "xmlns", "jabber:x:data" )) != NULL ) {
-					if (( fieldNode=JabberXmlGetChildWithGivenAttrValue( xNode, "field", "var", "stream-method" )) != NULL ) {
+				if (( xNode=JabberXmlGetChildWithGivenAttrValue( featureNode, "x", "xmlns", _T("jabber:x:data"))) != NULL ) {
+					if (( fieldNode=JabberXmlGetChildWithGivenAttrValue( xNode, "field", "var", _T("stream-method"))) != NULL ) {
 						if (( valueNode=JabberXmlGetChild( fieldNode, "value" ))!=NULL && valueNode->text!=NULL ) {
-							if ( !strcmp( valueNode->text, "http://jabber.org/protocol/bytestreams" )) {
+							if ( !_tcscmp( valueNode->text, _T("http://jabber.org/protocol/bytestreams"))) {
 								// Start Bytestream session
-								jbt = ( JABBER_BYTE_TRANSFER * ) malloc( sizeof( JABBER_BYTE_TRANSFER ));
+								jbt = ( JABBER_BYTE_TRANSFER * ) mir_alloc( sizeof( JABBER_BYTE_TRANSFER ));
 								ZeroMemory( jbt, sizeof( JABBER_BYTE_TRANSFER ));
-								jbt->srcJID = JabberUrlDecodeNew( to );
-								jbt->dstJID = JabberUrlDecodeNew( from );
-								jbt->sid = _strdup( item->ft->sid );
+								jbt->srcJID = mir_tstrdup( to );
+								jbt->dstJID = mir_tstrdup( from );
+								jbt->sid = mir_tstrdup( item->ft->sid );
 								jbt->pfnSend = JabberFtSend;
 								jbt->pfnFinal = JabberFtSendFinal;
 								jbt->userdata = item->ft;
 								item->ft->type = FT_BYTESTREAM;
 								item->ft->jbt = jbt;
 								JabberForkThread(( JABBER_THREAD_FUNC )JabberByteSendThread, 0, jbt );
-							}
-						}
-					}
-				}
-			}
-		}
+		}	}	}	}	}	}
 	}
-	else if ( !strcmp( type, "error" )) {
+	else if ( !_tcscmp( type, _T("error"))) {
 		JabberLog( "File transfer stream initiation request denied" );
 		JSendBroadcast( item->ft->std.hContact, ACKTYPE_FILE, ACKRESULT_DENIED, item->ft, 0 );
 		delete item->ft;
@@ -216,10 +204,10 @@ static BOOL JabberFtSend( HANDLE hConn, void *userdata )
 	ft->std.currentFileSize = statbuf.st_size;
 	ft->std.currentFileProgress = 0;
 
-	if (( buffer=( char* )malloc( 2048 )) != NULL ) {
+	if (( buffer=( char* )mir_alloc( 2048 )) != NULL ) {
 		while (( numRead=_read( fd, buffer, 2048 )) > 0 ) {
 			if ( Netlib_Send( hConn, buffer, numRead, 0 ) != numRead ) {
-				free( buffer );
+				mir_free( buffer );
 				_close( fd );
 				return FALSE;
 			}
@@ -227,7 +215,7 @@ static BOOL JabberFtSend( HANDLE hConn, void *userdata )
 			ft->std.totalProgress += numRead;
 			JSendBroadcast( ft->std.hContact, ACKTYPE_FILE, ACKRESULT_DATA, ft, ( LPARAM )&ft->std );
 		}
-		free( buffer );
+		mir_free( buffer );
 	}
 	_close( fd );
 	return TRUE;
@@ -263,34 +251,33 @@ static void JabberFtReceiveFinal( BOOL success, void *userdata );
 
 void JabberFtHandleSiRequest( XmlNode *iqNode )
 {
-	char* from, *sid;
+	TCHAR* from, *sid, *str, *szId, *filename;
 	XmlNode *siNode, *fileNode, *featureNode, *xNode, *fieldNode, *optionNode, *n;
-	char* szId, *str, *filename, *localFilename;
 	int filesize, i;
 	JABBER_FT_TYPE ftType;
 
 	if ( iqNode==NULL ||
 		  ( from=JabberXmlGetAttrValue( iqNode, "from" ))==NULL ||
-		  ( str=JabberXmlGetAttrValue( iqNode, "type" ))==NULL || strcmp( str, "set" ) ||
-		  ( siNode=JabberXmlGetChildWithGivenAttrValue( iqNode, "si", "xmlns", "http://jabber.org/protocol/si" )) == NULL )
+		  ( str=JabberXmlGetAttrValue( iqNode, "type" ))==NULL || _tcscmp( str, _T("set")) ||
+		  ( siNode=JabberXmlGetChildWithGivenAttrValue( iqNode, "si", "xmlns", _T("http://jabber.org/protocol/si"))) == NULL )
 		return;
 
 	szId = JabberXmlGetAttrValue( iqNode, "id" );
 	if (( sid=JabberXmlGetAttrValue( siNode, "id" ))!=NULL &&
-		( fileNode=JabberXmlGetChildWithGivenAttrValue( siNode, "file", "xmlns", "http://jabber.org/protocol/si/profile/file-transfer" ))!=NULL &&
+		( fileNode=JabberXmlGetChildWithGivenAttrValue( siNode, "file", "xmlns", _T("http://jabber.org/protocol/si/profile/file-transfer")))!=NULL &&
 		( filename=JabberXmlGetAttrValue( fileNode, "name" ))!=NULL &&
 		( str=JabberXmlGetAttrValue( fileNode, "size" ))!=NULL ) {
 
-		filesize = atoi( str );
-		if (( featureNode=JabberXmlGetChildWithGivenAttrValue( siNode, "feature", "xmlns", "http://jabber.org/protocol/feature-neg" )) != NULL &&
-			( xNode=JabberXmlGetChildWithGivenAttrValue( featureNode, "x", "xmlns", "jabber:x:data" ))!=NULL &&
-			( fieldNode=JabberXmlGetChildWithGivenAttrValue( xNode, "field", "var", "stream-method" ))!=NULL ) {
+		filesize = _ttoi( str );
+		if (( featureNode=JabberXmlGetChildWithGivenAttrValue( siNode, "feature", "xmlns", _T("http://jabber.org/protocol/feature-neg"))) != NULL &&
+			( xNode=JabberXmlGetChildWithGivenAttrValue( featureNode, "x", "xmlns", _T("jabber:x:data")))!=NULL &&
+			( fieldNode=JabberXmlGetChildWithGivenAttrValue( xNode, "field", "var", _T("stream-method")))!=NULL ) {
 
 			for ( i=0; i<fieldNode->numChild; i++ ) {
 				optionNode = fieldNode->child[i];
 				if ( optionNode->name && !strcmp( optionNode->name, "option" )) {
 					if (( n=JabberXmlGetChild( optionNode, "value" ))!=NULL && n->text ) {
-						if ( !strcmp( n->text, "http://jabber.org/protocol/bytestreams" )) {
+						if ( !_tcscmp( n->text, _T("http://jabber.org/protocol/bytestreams"))) {
 							ftType = FT_BYTESTREAM;
 							break;
 			}	}	}	}
@@ -299,94 +286,89 @@ void JabberFtHandleSiRequest( XmlNode *iqNode )
 				// Found known stream mechanism
 				CCSDATA ccs;
 				PROTORECVEVENT pre;
-				char* szBlob, *desc;
 
-				if (( n=JabberXmlGetChild( fileNode, "desc" ))!=NULL && n->text!=NULL )
-					desc = JabberTextDecode( n->text );
-				else
-					desc = _strdup( "" );
-				if ( desc != NULL ) {
-					if (( localFilename=JabberTextDecode( filename )) != NULL ) {
-						filetransfer* ft = new filetransfer;
-						ft->jid = JabberUrlDecodeNew( from );
-						ft->std.hContact = JabberHContactFromJID( from );
-						ft->sid = _strdup( sid );
-						ft->iqId = ( szId )?_strdup( szId ):NULL;
-						ft->type = ftType;
-						ft->std.totalFiles = 1;
-						ft->std.currentFile = localFilename;
-						ft->std.totalBytes = ft->std.currentFileSize = filesize;
-						szBlob = ( char* )malloc( sizeof( DWORD )+ strlen( localFilename ) + strlen( desc ) + 2 );
-						*(( PDWORD ) szBlob ) = ( DWORD )ft;
-						strcpy( szBlob + sizeof( DWORD ), localFilename );
-						strcpy( szBlob + sizeof( DWORD )+ strlen( localFilename ) + 1, desc );
-						pre.flags = 0;
-						pre.timestamp = time( NULL );
-						pre.szMessage = szBlob;
-						pre.lParam = 0;
-						ccs.szProtoService = PSR_FILE;
-						ccs.hContact = ft->std.hContact;
-						ccs.wParam = 0;
-						ccs.lParam = ( LPARAM )&pre;
-						JCallService( MS_PROTO_CHAINRECV, 0, ( LPARAM )&ccs );
-						free( szBlob );
-					}
-					free( desc );
-					return;
-				}
+				char *localFilename = t2a( filename );
+				char *desc = (( n=JabberXmlGetChild( fileNode, "desc" ))!=NULL && n->text!=NULL ) ? t2a( n->text ) : mir_strdup( "" );
+
+				filetransfer* ft = new filetransfer;
+				ft->jid = mir_tstrdup( from );
+				ft->std.hContact = JabberHContactFromJID( from );
+				ft->sid = mir_tstrdup( sid );
+				ft->iqId = ( szId ) ? mir_tstrdup( szId ):NULL;
+				ft->type = ftType;
+				ft->std.totalFiles = 1;
+				ft->std.currentFile = localFilename;
+				ft->std.totalBytes = ft->std.currentFileSize = filesize;
+				char* szBlob = ( char* )alloca( sizeof( DWORD )+ strlen( localFilename ) + strlen( desc ) + 2 );
+				*(( PDWORD ) szBlob ) = ( DWORD )ft;
+				strcpy( szBlob + sizeof( DWORD ), localFilename );
+				strcpy( szBlob + sizeof( DWORD )+ strlen( localFilename ) + 1, desc );
+				pre.flags = 0;
+				pre.timestamp = time( NULL );
+				pre.szMessage = szBlob;
+				pre.lParam = 0;
+				ccs.szProtoService = PSR_FILE;
+				ccs.hContact = ft->std.hContact;
+				ccs.wParam = 0;
+				ccs.lParam = ( LPARAM )&pre;
+				JCallService( MS_PROTO_CHAINRECV, 0, ( LPARAM )&ccs );
+				mir_free( desc );
+				return;
 			}
 			else {
-				// No known stream mechanism
-                JabberSend( jabberThreadInfo->s, "<iq type=\"error\" to=\"%s\"%s%s%s><error code=\"400\" type=\"cancel\"><bad-request xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\"/><no-valid-streams xmlns=\"http://jabber.org/protocol/si\"/></error></iq>", from, ( szId )?" id=\"":"", ( szId )?szId:"", ( szId )?"\"":"" );
+				// Unknown stream mechanism
+				XmlNode iq( "iq" ); iq.addAttr( "type", "error" ); iq.addAttr( "to", from );
+				if ( szId != NULL )
+					iq.addAttr( "id", szId );
+				XmlNode* e = iq.addChild( "error" ); e->addAttr( "code", 400 ); e->addAttr( "type", "cancel" );
+				XmlNode* br = e->addChild( "bad-request" ); br->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas" );
+				XmlNode* nvs = e->addChild( "no-valid-streams" ); nvs->addAttr( "xmlns", "http://jabber.org/protocol/si" );
+				JabberSend( jabberThreadInfo->s, iq );
 				return;
 	}	}	}
 
 	// Bad stream initiation, reply with bad-profile
-    JabberSend( jabberThreadInfo->s, "<iq type=\"error\" to=\"%s\"%s%s%s><error code=\"400\" type=\"cancel\"><bad-request xmlns=\"urn:ietf:params:xml:ns:xmpp-stanzas\"/><bad-profile xmlns=\"http://jabber.org/protocol/si\"/></error></iq>", from, ( szId )?" id=\"":"", ( szId )?szId:"", ( szId )?"\"":"" );
+	XmlNode iq( "iq" ); iq.addAttr( "type", "error" ); iq.addAttr( "to", from );
+	if ( szId )
+		iq.addAttr( "id", szId );
+	XmlNode* e = iq.addChild( "error" ); e->addAttr( "code", 400 ); e->addAttr( "type", "cancel" );
+	XmlNode* br = e->addChild( "bad-request" ); br->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas" );
+	XmlNode* nvs = e->addChild( "bad-profile" ); nvs->addAttr( "xmlns", "http://jabber.org/protocol/si" );
+	JabberSend( jabberThreadInfo->s, iq );
 }
 
 void JabberFtAcceptSiRequest( filetransfer* ft )
 {
-	JABBER_LIST_ITEM *item;
-	char* szId;
-
 	if ( !jabberOnline || ft==NULL || ft->jid==NULL || ft->sid==NULL ) return;
 
+	JABBER_LIST_ITEM *item;
 	if (( item=JabberListAdd( LIST_FTRECV, ft->sid )) != NULL ) {
 		item->ft = ft;
-		szId = ft->iqId;
-		JabberSend( jabberThreadInfo->s,
-            "<iq type=\"result\"  to=\"%s\"%s%s%s>"
-                "<si xmlns=\"http://jabber.org/protocol/si\">"
-                    //"<file xmlns=\"http://jabber.org/protocol/si/profile/file-transfer\" name=\"%s\" size=\"%d\">"
-						//"<range/>"
-					//"</file>"
-                    "<feature xmlns=\"http://jabber.org/protocol/feature-neg\">"
-                        "<x xmlns=\"jabber:x:data\" type=\"submit\">"
-                            "<field var=\"stream-method\"><value>%s</value></field>"
-						"</x>"
-					"</feature>"
-				"</si>"
-			"</iq>",
-            ft->jid, ( szId )?" id=\"":"", ( szId )?szId:"", ( szId )?"\"":"",
-			/*( ft->type==FT_BYTESTREAM )?*/"http://jabber.org/protocol/bytestreams"
-		 );
-	}
-}
+
+		XmlNode iq( "iq" ); iq.addAttr( "type", "result" ); iq.addAttr( "to", ft->jid );
+		if ( ft->iqId != NULL )
+			iq.addAttr( "id", ft->iqId );
+		XmlNode* si = iq.addChild( "si" ); si->addAttr( "xmlns", "http://jabber.org/protocol/si" );
+		XmlNode* f = si->addChild( "feature" ); f->addAttr( "xmlns", "http://jabber.org/protocol/feature-neg" );
+		XmlNode* x = f->addChild( "x" ); x->addAttr( "xmlns", "jabber:x:data" ); x->addAttr( "type", "submit" );
+		XmlNode* fl = x->addChild( "field" ); fl->addAttr( "var", "stream-method" );
+		fl->addChild( "value", "http://jabber.org/protocol/bytestreams" );
+		JabberSend( jabberThreadInfo->s, iq );
+}	}
 
 BOOL JabberFtHandleBytestreamRequest( XmlNode *iqNode )
 {
 	XmlNode *queryNode;
-	char* sid;
+	TCHAR* sid;
 	JABBER_LIST_ITEM *item;
 	JABBER_BYTE_TRANSFER *jbt;
 
 	if ( iqNode == NULL ) return FALSE;
-	if (( queryNode=JabberXmlGetChildWithGivenAttrValue( iqNode, "query", "xmlns", "http://jabber.org/protocol/bytestreams" ))!=NULL &&
+	if (( queryNode=JabberXmlGetChildWithGivenAttrValue( iqNode, "query", "xmlns", _T("http://jabber.org/protocol/bytestreams")))!=NULL &&
 		( sid=JabberXmlGetAttrValue( queryNode, "sid" ))!=NULL &&
 		( item=JabberListGetItemPtr( LIST_FTRECV, sid ))!=NULL ) {
 		// Start Bytestream session
-		jbt = ( JABBER_BYTE_TRANSFER * ) malloc( sizeof( JABBER_BYTE_TRANSFER ));
+		jbt = ( JABBER_BYTE_TRANSFER * ) mir_alloc( sizeof( JABBER_BYTE_TRANSFER ));
 		ZeroMemory( jbt, sizeof( JABBER_BYTE_TRANSFER ));
 		jbt->iqNode = JabberXmlCopyNode( iqNode );
 		jbt->pfnRecv = JabberFtReceive;

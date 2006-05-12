@@ -53,13 +53,15 @@ int JabberMenuHandleVcard( WPARAM wParam, LPARAM lParam )
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-int JabberSendGetVcard( const char* jid )
+int JabberSendGetVcard( const TCHAR* jid )
 {
 	int iqId = JabberSerialNext();
 	JabberIqAdd( iqId, ( jid == jabberJID ) ? IQ_PROC_GETVCARD : IQ_PROC_NONE, JabberIqResultGetVcard );
-	JabberSend( jabberThreadInfo->s,
-        "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><vCard xmlns=\"vcard-temp\" prodid=\"-//HandGen//NONSGML vGen v1.0//EN\" version=\"2.0\" /></iq>",
-		iqId, jid );
+
+	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", jid );
+	XmlNode* vs = iq.addChild( "vCard" ); vs->addAttr( "xmlns", "vcard-temp" );
+	vs->addAttr( "prodid", "-//HandGen//NONSGML vGen v1.0//EN" ); vs->addAttr( "version", "2.0" );
+	JabberSend( jabberThreadInfo->s, iq );
 	return 0;
 }
 
@@ -89,7 +91,7 @@ static void SetDialogField( HWND hwndDlg, int nDlgItem, char* key )
 	if ( !DBGetContactSetting( NULL, jabberProtoName, key, &dbv )) {
 		char* str = JabberUnixToDos( dbv.pszVal );
 		SetDlgItemTextA( hwndDlg, nDlgItem, str );
-		free( str );
+		mir_free( str );
 		JFreeVariant( &dbv );
 	}
 	else SetDlgItemTextA( hwndDlg, nDlgItem, "" );
@@ -802,158 +804,115 @@ static void SaveVcardToDB( VcardTab *dat )
 	}
 }
 
-static void AppendVcardTextRaw( char* *buffer, int *bufferSize, char* text )
+static void AppendVcardFromDB( XmlNode* n, char* tag, char* key )
 {
-	int size;
-
-	if ( buffer==NULL || *buffer==NULL || bufferSize==NULL || *bufferSize<=0 || text==NULL )
+	if ( n == NULL || tag == NULL || key == NULL )
 		return;
-	size = strlen( *buffer ) + strlen( text ) + 1;
-	if ( size > *bufferSize ) {
-		*bufferSize = size + 1024;
-		*buffer = ( char* )realloc( *buffer, *bufferSize );
-		JabberLog( "Increase buffer size to %d", *bufferSize );
-	}
-	if ( *buffer ) strcat( *buffer, text );
-}
 
-static void AppendVcardText( char* *buffer, int *bufferSize, char* text )
-{
-	char* str;
-	int size;
-
-	if ( buffer==NULL || *buffer==NULL || bufferSize==NULL || *bufferSize<=0 || text==NULL )
-		return;
-	if (( str=JabberTextEncode( text )) == NULL ) return;
-	size = strlen( *buffer ) + strlen( str ) + 1;
-	if ( size > *bufferSize ) {
-		*bufferSize = size + 1024;
-		*buffer = ( char* )realloc( *buffer, *bufferSize );
-	}
-	if ( *buffer ) strcat( *buffer, str );
-	free( str );
-}
-
-static void AppendVcardFromDB( char* *buffer, int *bufferSize, char* tag, char* key )
-{
 	DBVARIANT dbv;
-	char* text, *str;
-
-	if ( buffer==NULL || *buffer==NULL || bufferSize==NULL || *bufferSize<=0 || tag==NULL || key==NULL )
-		return;
-	if ( DBGetContactSetting( NULL, jabberProtoName, key, &dbv )) {
-		if (( text=( char* )malloc( strlen( tag ) + 4 )) == NULL ) return;
-		sprintf( text, "<%s/>", tag );
-	}
+	if ( DBGetContactSettingTString( NULL, jabberProtoName, key, &dbv ))
+		n->addChild( tag );
 	else {
-		str = JabberTextEncode( dbv.pszVal );
-		if (( text=( char* )malloc( 2*strlen( tag ) + strlen( str ) + 6 )) == NULL ) {
-			free( str );
-			JFreeVariant( &dbv );
-			return;
-		}
-		sprintf( text, "<%s>%s</%s>", tag, str, tag );
-		free( str );
+		n->addChild( tag, dbv.ptszVal );
 		JFreeVariant( &dbv );
-	}
-	AppendVcardTextRaw( buffer, bufferSize, text );
-	free( text );
-}
+}	}
 
 static void SetServerVcard()
 {
 	DBVARIANT dbv;
-	int iqId;
-	char* text, *szFileName, *szFileType;
-	int textSize, i;
+	int  iqId;
+	char *szFileName, *szFileType;
+	int  i;
 	char idstr[33];
 	WORD nFlag;
 
-	textSize = 4096;
-	text = ( char* )malloc( textSize );
-	text[0] = '\0';
+	iqId = JabberSerialNext();
+	JabberIqAdd( iqId, IQ_PROC_SETVCARD, JabberIqResultSetVcard );
 
-	AppendVcardFromDB( &text, &textSize, "FN", "FullName" );
+	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId );
+	XmlNode* v = iq.addChild( "vCard" ); v->addAttr( "xmlns", "vcard-temp" );
 
-	AppendVcardTextRaw( &text, &textSize, "<N>" );
-	AppendVcardFromDB( &text, &textSize, "GIVEN", "FirstName" );
-	AppendVcardFromDB( &text, &textSize, "MIDDLE", "MiddleName" );
-	AppendVcardFromDB( &text, &textSize, "FAMILY", "LastName" );
-	AppendVcardTextRaw( &text, &textSize, "</N>" );
+	AppendVcardFromDB( v, "FN", "FullName" );
 
-	AppendVcardFromDB( &text, &textSize, "NICKNAME", "Nick" );
-	AppendVcardFromDB( &text, &textSize, "BDAY", "BirthDate" );
-	AppendVcardFromDB( &text, &textSize, "GENDER", "GenderString" );
+	XmlNode* n = v->addChild( "N" );
+	AppendVcardFromDB( n, "GIVEN", "FirstName" );
+	AppendVcardFromDB( n, "MIDDLE", "MiddleName" );
+	AppendVcardFromDB( n, "FAMILY", "LastName" );
+
+	AppendVcardFromDB( v, "NICKNAME", "Nick" );
+	AppendVcardFromDB( v, "BDAY", "BirthDate" );
+	AppendVcardFromDB( v, "GENDER", "GenderString" );
 
 	for ( i=0;;i++ ) {
 		wsprintfA( idstr, "e-mail%d", i );
-		if ( DBGetContactSetting( NULL, jabberProtoName, idstr, &dbv )) break;
-		AppendVcardTextRaw( &text, &textSize, "<EMAIL>" );
-		AppendVcardText( &text, &textSize, dbv.pszVal );	// for compatibility with client using old vcard format
+		if ( DBGetContactSettingTString( NULL, jabberProtoName, idstr, &dbv ))
+			break;
+
+		XmlNode* e = v->addChild( "<EMAIL>", dbv.ptszVal );
 		JFreeVariant( &dbv );
-		AppendVcardFromDB( &text, &textSize, "USERID", idstr );
+		AppendVcardFromDB( e, "USERID", idstr );
+
 		wsprintfA( idstr, "e-mailFlag%d", i );
 		nFlag = DBGetContactSettingWord( NULL, jabberProtoName, idstr, 0 );
-		if ( nFlag & JABBER_VCEMAIL_HOME ) AppendVcardTextRaw( &text, &textSize, "<HOME/>" );
-		if ( nFlag & JABBER_VCEMAIL_WORK ) AppendVcardTextRaw( &text, &textSize, "<WORK/>" );
-		if ( nFlag & JABBER_VCEMAIL_INTERNET ) AppendVcardTextRaw( &text, &textSize, "<INTERNET/>" );
-		if ( nFlag & JABBER_VCEMAIL_X400 ) AppendVcardTextRaw( &text, &textSize, "<X400/>" );
-		AppendVcardTextRaw( &text, &textSize, "</EMAIL>" );
+		if ( nFlag & JABBER_VCEMAIL_HOME ) e->addChild( "HOME" );
+		if ( nFlag & JABBER_VCEMAIL_WORK ) e->addChild( "WORK" );
+		if ( nFlag & JABBER_VCEMAIL_INTERNET ) e->addChild( "INTERNET" );
+		if ( nFlag & JABBER_VCEMAIL_X400 ) e->addChild( "X400" );
 	}
 
-	AppendVcardTextRaw( &text, &textSize, "<ADR><HOME/>" );
-	AppendVcardFromDB( &text, &textSize, "STREET", "Street" );
-	AppendVcardFromDB( &text, &textSize, "EXTADR", "Street2" );
-	AppendVcardFromDB( &text, &textSize, "EXTADD", "Street2" );	// for compatibility with client using old vcard format
-	AppendVcardFromDB( &text, &textSize, "LOCALITY", "City" );
-	AppendVcardFromDB( &text, &textSize, "REGION", "State" );
-	AppendVcardFromDB( &text, &textSize, "PCODE", "ZIP" );
-	AppendVcardFromDB( &text, &textSize, "CTRY", "CountryName" );
-	AppendVcardFromDB( &text, &textSize, "COUNTRY", "CountryName" );	// for compatibility with client using old vcard format
-	AppendVcardTextRaw( &text, &textSize, "</ADR>" );
+	n = v->addChild( "ADR" );
+	n->addChild( "HOME" );
+	AppendVcardFromDB( n, "STREET", "Street" );
+	AppendVcardFromDB( n, "EXTADR", "Street2" );
+	AppendVcardFromDB( n, "EXTADD", "Street2" );	// for compatibility with client using old vcard format
+	AppendVcardFromDB( n, "LOCALITY", "City" );
+	AppendVcardFromDB( n, "REGION", "State" );
+	AppendVcardFromDB( n, "PCODE", "ZIP" );
+	AppendVcardFromDB( n, "CTRY", "CountryName" );
+	AppendVcardFromDB( n, "COUNTRY", "CountryName" );	// for compatibility with client using old vcard format
 
-	AppendVcardTextRaw( &text, &textSize, "<ADR><WORK/>" );
-	AppendVcardFromDB( &text, &textSize, "STREET", "CompanyStreet" );
-	AppendVcardFromDB( &text, &textSize, "EXTADR", "CompanyStreet2" );
-	AppendVcardFromDB( &text, &textSize, "EXTADD", "CompanyStreet2" );	// for compatibility with client using old vcard format
-	AppendVcardFromDB( &text, &textSize, "LOCALITY", "CompanyCity" );
-	AppendVcardFromDB( &text, &textSize, "REGION", "CompanyState" );
-	AppendVcardFromDB( &text, &textSize, "PCODE", "CompanyZIP" );
-	AppendVcardFromDB( &text, &textSize, "CTRY", "CompanyCountryName" );
-	AppendVcardFromDB( &text, &textSize, "COUNTRY", "CompanyCountryName" );	// for compatibility with client using old vcard format
-	AppendVcardTextRaw( &text, &textSize, "</ADR>" );
+	n = v->addChild( "ADR" );
+	n->addChild( "WORK" );
+	AppendVcardFromDB( n, "STREET", "CompanyStreet" );
+	AppendVcardFromDB( n, "EXTADR", "CompanyStreet2" );
+	AppendVcardFromDB( n, "EXTADD", "CompanyStreet2" );	// for compatibility with client using old vcard format
+	AppendVcardFromDB( n, "LOCALITY", "CompanyCity" );
+	AppendVcardFromDB( n, "REGION", "CompanyState" );
+	AppendVcardFromDB( n, "PCODE", "CompanyZIP" );
+	AppendVcardFromDB( n, "CTRY", "CompanyCountryName" );
+	AppendVcardFromDB( n, "COUNTRY", "CompanyCountryName" );	// for compatibility with client using old vcard format
 
-	AppendVcardTextRaw( &text, &textSize, "<ORG>" );
-	AppendVcardFromDB( &text, &textSize, "ORGNAME", "Company" );
-	AppendVcardFromDB( &text, &textSize, "ORGUNIT", "CompanyDepartment" );
-	AppendVcardTextRaw( &text, &textSize, "</ORG>" );
+	n = v->addChild( "ORG" );
+	AppendVcardFromDB( n, "ORGNAME", "Company" );
+	AppendVcardFromDB( n, "ORGUNIT", "CompanyDepartment" );
 
-	AppendVcardFromDB( &text, &textSize, "TITLE", "CompanyPosition" );
-	AppendVcardFromDB( &text, &textSize, "ROLE", "Role" );
-	AppendVcardFromDB( &text, &textSize, "URL", "Homepage" );
-	AppendVcardFromDB( &text, &textSize, "DESC", "About" );
+	AppendVcardFromDB( v, "TITLE", "CompanyPosition" );
+	AppendVcardFromDB( v, "ROLE", "Role" );
+	AppendVcardFromDB( v, "URL", "Homepage" );
+	AppendVcardFromDB( v, "DESC", "About" );
 
 	for ( i=0;;i++ ) {
 		wsprintfA( idstr, "Phone%d", i );
-		if ( DBGetContactSetting( NULL, jabberProtoName, idstr, &dbv )) break;
+		if ( DBGetContactSettingTString( NULL, jabberProtoName, idstr, &dbv )) break;
 		JFreeVariant( &dbv );
-		AppendVcardTextRaw( &text, &textSize, "<TEL>" );
-		AppendVcardFromDB( &text, &textSize, "NUMBER", idstr );
+
+		n = v->addChild( "TEL" );
+		AppendVcardFromDB( n, "NUMBER", idstr );
+
 		wsprintfA( idstr, "PhoneFlag%d", i );
 		nFlag = JGetWord( NULL, idstr, 0 );
-		if ( nFlag & JABBER_VCTEL_HOME ) AppendVcardTextRaw( &text, &textSize, "<HOME/>" );
-		if ( nFlag & JABBER_VCTEL_WORK ) AppendVcardTextRaw( &text, &textSize, "<WORK/>" );
-		if ( nFlag & JABBER_VCTEL_VOICE ) AppendVcardTextRaw( &text, &textSize, "<VOICE/>" );
-		if ( nFlag & JABBER_VCTEL_FAX ) AppendVcardTextRaw( &text, &textSize, "<FAX/>" );
-		if ( nFlag & JABBER_VCTEL_PAGER ) AppendVcardTextRaw( &text, &textSize, "<PAGER/>" );
-		if ( nFlag & JABBER_VCTEL_MSG ) AppendVcardTextRaw( &text, &textSize, "<MSG/>" );
-		if ( nFlag & JABBER_VCTEL_CELL ) AppendVcardTextRaw( &text, &textSize, "<CELL/>" );
-		if ( nFlag & JABBER_VCTEL_VIDEO ) AppendVcardTextRaw( &text, &textSize, "<VIDEO/>" );
-		if ( nFlag & JABBER_VCTEL_BBS ) AppendVcardTextRaw( &text, &textSize, "<BBS/>" );
-		if ( nFlag & JABBER_VCTEL_MODEM ) AppendVcardTextRaw( &text, &textSize, "<MODEM/>" );
-		if ( nFlag & JABBER_VCTEL_ISDN ) AppendVcardTextRaw( &text, &textSize, "<ISDN/>" );
-		if ( nFlag & JABBER_VCTEL_PCS ) AppendVcardTextRaw( &text, &textSize, "<PCS/>" );
-		AppendVcardTextRaw( &text, &textSize, "</TEL>" );
+		if ( nFlag & JABBER_VCTEL_HOME )  n->addChild( "HOME" );
+		if ( nFlag & JABBER_VCTEL_WORK )  n->addChild( "WORK" );
+		if ( nFlag & JABBER_VCTEL_VOICE ) n->addChild( "VOICE" );
+		if ( nFlag & JABBER_VCTEL_FAX )   n->addChild( "FAX" );
+		if ( nFlag & JABBER_VCTEL_PAGER ) n->addChild( "PAGER" );
+		if ( nFlag & JABBER_VCTEL_MSG )   n->addChild( "MSG" );
+		if ( nFlag & JABBER_VCTEL_CELL )  n->addChild( "CELL" );
+		if ( nFlag & JABBER_VCTEL_VIDEO ) n->addChild( "VIDEO" );
+		if ( nFlag & JABBER_VCTEL_BBS )   n->addChild( "BBS" );
+		if ( nFlag & JABBER_VCTEL_MODEM ) n->addChild( "MODEM" );
+		if ( nFlag & JABBER_VCTEL_ISDN )  n->addChild( "ISDN" );
+		if ( nFlag & JABBER_VCTEL_PCS )   n->addChild( "PCS" );
 	}
 
 	if ( bPhotoChanged ) {
@@ -971,10 +930,10 @@ static void SetServerVcard()
 	// Set photo element, also update the global jabberVcardPhotoFileName to reflect the update
 	JabberLog( "Before update, jabberVcardPhotoFileName = %s", jabberVcardPhotoFileName );
 	if ( szFileName == NULL ) {
-		AppendVcardTextRaw( &text, &textSize, "<PHOTO/>" );
+		v->addChild( "PHOTO" );
 		if ( jabberVcardPhotoFileName ) {
 			DeleteFileA( jabberVcardPhotoFileName );
-			free( jabberVcardPhotoFileName );
+			mir_free( jabberVcardPhotoFileName );
 			jabberVcardPhotoFileName = NULL;
 	}	}
 	else {
@@ -988,29 +947,29 @@ static void SetServerVcard()
 		if ( _stat( szFileName, &st ) >= 0 ) {
 			// Note the FILE_SHARE_READ attribute so that the CopyFile can succeed
 			if (( hFile=CreateFileA( szFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL )) != INVALID_HANDLE_VALUE ) {
-				if (( buffer=( char* )malloc( st.st_size )) != NULL ) {
+				if (( buffer=( char* )mir_alloc( st.st_size )) != NULL ) {
 					if ( ReadFile( hFile, buffer, st.st_size, &nRead, NULL )) {
 						if (( str=JabberBase64Encode( buffer, nRead )) != NULL ) {
-							AppendVcardTextRaw( &text, &textSize, "<PHOTO><TYPE>" );
-							if ( szFileType )
-								AppendVcardTextRaw( &text, &textSize, szFileType );
-							else
-								AppendVcardTextRaw( &text, &textSize, "image/jpeg" );
-							if ( szFileType )
+							n = v->addChild( "PHOTO" );
+							if ( szFileType ) {
+								n->addChild( "TYPE", szFileType );
 								JabberLog( "File type sent is %s", szFileType );
-							else
+							}
+							else {
+								n->addChild( "TYPE", "image/jpeg" );
 								JabberLog( "File type sent is default to image/jpge" );
-							AppendVcardTextRaw( &text, &textSize, "</TYPE><BINVAL>" );
-							AppendVcardTextRaw( &text, &textSize, str );
-							AppendVcardTextRaw( &text, &textSize, "</BINVAL></PHOTO>" );
-							free( str );
+							}
+
+							n->addChild( "BINVAL", str );
+							mir_free( str );
+
 							if ( szFileName != jabberVcardPhotoFileName ) {
 								if ( jabberVcardPhotoFileName ) {
 									DeleteFileA( jabberVcardPhotoFileName );
-									free( jabberVcardPhotoFileName );
+									mir_free( jabberVcardPhotoFileName );
 									jabberVcardPhotoFileName = NULL;
 									if ( jabberVcardPhotoType ) {
-										free( jabberVcardPhotoType );
+										mir_free( jabberVcardPhotoType );
 										jabberVcardPhotoType = NULL;
 								}	}
 
@@ -1022,26 +981,22 @@ static void SetServerVcard()
 									strcat(szTempFileName,strrchr(szFileType,'/')+1);
 									JabberLog( "New global file is %s", szTempFileName );
 									if ( CopyFileA( szFileName, szTempFileName, FALSE ) == TRUE ) {
-										jabberVcardPhotoFileName = _strdup( szTempFileName );
-										if ( jabberVcardPhotoType ) free( jabberVcardPhotoType );
+										jabberVcardPhotoFileName = mir_strdup( szTempFileName );
+										if ( jabberVcardPhotoType ) mir_free( jabberVcardPhotoType );
 										if ( szFileType )
-											jabberVcardPhotoType = _strdup( szFileType );
+											jabberVcardPhotoType = mir_strdup( szFileType );
 										else
 											jabberVcardPhotoType = NULL;
 									}
 									else DeleteFileA( szTempFileName );
 					}	}	}	}
-					free( buffer );
+					mir_free( buffer );
 				}
 				CloseHandle( hFile );
 	}	}	}
 
-	if ( text != NULL ) {
-		iqId = JabberSerialNext();
-		JabberIqAdd( iqId, IQ_PROC_SETVCARD, JabberIqResultSetVcard );
-        JabberSend( jabberThreadInfo->s, "<iq type=\"set\" id=\""JABBER_IQID"%d\"><vCard xmlns=\"vcard-temp\">%s</vCard></iq>", iqId, text );
-		free( text );
-}	}
+	JabberSend( jabberThreadInfo->s, iq );
+}
 
 static void ThemeDialogBackground( HWND hwnd ) {
 	if ( IsWinVerXPPlus()) {
@@ -1051,9 +1006,7 @@ static void ThemeDialogBackground( HWND hwnd ) {
 			HRESULT ( STDAPICALLTYPE *MyEnableThemeDialogTexture )( HWND,DWORD ) = ( HRESULT ( STDAPICALLTYPE* )( HWND,DWORD ))GetProcAddress( hThemeAPI,"EnableThemeDialogTexture" );
 			if ( MyEnableThemeDialogTexture )
 				MyEnableThemeDialogTexture( hwnd,0x00000002|0x00000004 ); //0x00000002|0x00000004=ETDT_ENABLETAB
-		}
-	}
-}
+}	}	}
 
 extern HICON iconBigList[];
 static BOOL CALLBACK JabberVcardDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -1073,14 +1026,14 @@ static BOOL CALLBACK JabberVcardDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, 
 		TranslateDialogDefault( hwndDlg );
 		EnableWindow( GetDlgItem( hwndDlg, IDC_UPDATE ), jabberOnline );
 
-		dat = ( VcardTab * ) malloc( sizeof( VcardTab ));
+		dat = ( VcardTab * ) mir_alloc( sizeof( VcardTab ));
 		memset( dat, 0, sizeof( VcardTab ));
 		dat->pageCount = 6;
 		dat->currentPage = 0;
 		dat->changed = FALSE;
 		dat->updateAnimFrame = 0;
 		dat->animating = FALSE;
-		dat->page = ( VcardPage * ) malloc( dat->pageCount * sizeof( VcardPage ));
+		dat->page = ( VcardPage * ) mir_alloc( dat->pageCount * sizeof( VcardPage ));
 		memset( dat->page, 0, dat->pageCount * sizeof( VcardPage ));
 
 		HWND hwndTabs = GetDlgItem( hwndDlg, IDC_TABS );
@@ -1242,8 +1195,8 @@ static BOOL CALLBACK JabberVcardDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, 
 			if ( dat->page[i].hwnd != NULL )
 				DestroyWindow( dat->page[i].hwnd );
 
-		if ( dat->page ) free( dat->page );
-		if ( dat ) free( dat );
+		if ( dat->page ) mir_free( dat->page );
+		if ( dat ) mir_free( dat );
 		break;
 	}
 	return FALSE;

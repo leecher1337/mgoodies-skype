@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <malloc.h>
 
 #define NEWSTR_ALLOCA(A) (A==NULL)?NULL:strcpy((char*)alloca(strlen(A)+1),A)
+#define NEWTSTR_ALLOCA(A) (A==NULL)?NULL:_tcscpy((TCHAR*)alloca(_tcslen(A)+1),A)
 
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
@@ -162,12 +163,12 @@ struct ThreadData {
 	HANDLE hThread;
 	JABBER_SESSION_TYPE type;
 
-	char username[128];
-	char password[128];
-	char server[128];
-	char manualHost[128];
-	char resource[128];
-	char fullJID[256];
+	TCHAR username[128];
+	char  password[128];
+	char  server[128];
+	char  manualHost[128];
+	TCHAR resource[128];
+	TCHAR fullJID[256];
 	WORD port;
 	JABBER_SOCKET s;
 	BOOL useSSL;
@@ -189,8 +190,8 @@ struct JABBER_MODEMSGS
 
 struct JABBER_REG_ACCOUNT
 {
-	char username[128];
-	char password[128];
+	TCHAR username[128];
+	TCHAR password[128];
 	char server[128];
 	char manualHost[128];
 	WORD port;
@@ -207,7 +208,7 @@ struct filetransfer
 
 	void close();
 	void complete();
-	int  create();	
+	int  create();
 
 	PROTOFILETRANSFERSTATUS std;
 
@@ -215,11 +216,11 @@ struct filetransfer
 	JABBER_FT_TYPE type;
 	JABBER_SOCKET s;
 	JABBER_FILE_STATE state;
-	char* jid;
-	int   fileId;
-	char* iqId;
-	char* sid;
-	int   bCompleted;
+	TCHAR* jid;
+	int    fileId;
+	TCHAR* iqId;
+	TCHAR* sid;
+	int    bCompleted;
 	HANDLE hWaitEvent;
 	WCHAR* wszFileName;
 
@@ -240,7 +241,7 @@ struct filetransfer
 struct JABBER_SEARCH_RESULT
 {
 	PROTOSEARCHRESULT hdr;
-	char jid[256];
+	TCHAR jid[256];
 };
 
 struct JABBER_GCLOG_FONT
@@ -252,13 +253,13 @@ struct JABBER_GCLOG_FONT
 	COLORREF color;
 };
 
-struct JABBER_FIELD_MAP 
+struct JABBER_FIELD_MAP
 {
 	int id;
 	char* name;
 };
 
-enum JABBER_MUC_JIDLIST_TYPE 
+enum JABBER_MUC_JIDLIST_TYPE
 {
 	MUC_VOICELIST,
 	MUC_MEMBERLIST,
@@ -271,13 +272,13 @@ enum JABBER_MUC_JIDLIST_TYPE
 struct JABBER_MUC_JIDLIST_INFO
 {
 	JABBER_MUC_JIDLIST_TYPE type;
-	char* roomJid;	// filled-in by the WM_JABBER_REFRESH code
+	TCHAR* roomJid;	// filled-in by the WM_JABBER_REFRESH code
 	XmlNode *iqNode;
 
-	char* type2str( void ) const;
+	TCHAR* type2str( void ) const;
 };
 
-typedef void ( *JABBER_FORM_SUBMIT_FUNC )( char* submitStr, void *userdata );
+typedef void ( *JABBER_FORM_SUBMIT_FUNC )( XmlNode* values, void *userdata );
 typedef void ( __cdecl *JABBER_THREAD_FUNC )( void * );
 
 #include "jabber_list.h"
@@ -297,13 +298,13 @@ extern HMODULE hLibSSL;
 extern PVOID jabberSslCtx;
 
 extern struct ThreadData *jabberThreadInfo;
-extern char* jabberJID;
-extern char* streamId;
-extern DWORD jabberLocalIP;
-extern BOOL jabberConnected;
-extern BOOL jabberOnline;
-extern int jabberStatus;
-extern int jabberDesiredStatus;
+extern TCHAR* jabberJID;
+extern char*  streamId;
+extern DWORD  jabberLocalIP;
+extern BOOL   jabberConnected;
+extern BOOL   jabberOnline;
+extern int    jabberStatus;
+extern int    jabberDesiredStatus;
 
 extern CRITICAL_SECTION modeMsgMutex;
 extern JABBER_MODEMSGS modeMsgs;
@@ -330,7 +331,7 @@ extern HWND hwndMucBanList;
 extern HWND hwndMucAdminList;
 extern HWND hwndMucOwnerList;
 
-extern const char xmlnsOwner[], xmlnsAdmin[];
+extern const TCHAR xmlnsOwner[], xmlnsAdmin[];
 
 /*******************************************************************
  * Function declarations
@@ -344,7 +345,7 @@ int     __stdcall JabberEnterBitmapName( char* szDest );
 //---- jabber_chat.cpp ----------------------------------------------
 
 void JabberGcLogCreate( JABBER_LIST_ITEM* item );
-void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, char* nick, int action, XmlNode* reason );
+void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, int action, XmlNode* reason );
 void JabberGcQuit( JABBER_LIST_ITEM* jid, int code, XmlNode* reason );
 
 //---- jabber_file.c ------------------------------------------------
@@ -355,13 +356,13 @@ void __cdecl JabberFileServerThread( filetransfer* ft );
 //---- jabber_form.c ------------------------------------------------
 
 void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight );
-char* JabberFormGetData( HWND hwndStatic, XmlNode *xNode );
+void JabberFormGetData( HWND hwndStatic, XmlNode *xNode, XmlNode* result );
 void JabberFormCreateDialog( XmlNode *xNode, char* defTitle, JABBER_FORM_SUBMIT_FUNC pfnSubmit, void *userdata );
 
 //---- jabber_ft.c --------------------------------------------------
 
 void JabberFtCancel( filetransfer* ft );
-void JabberFtInitiate( char* jid, filetransfer* ft );
+void JabberFtInitiate( TCHAR* jid, filetransfer* ft );
 void JabberFtHandleSiRequest( XmlNode *iqNode );
 void JabberFtAcceptSiRequest( filetransfer* ft );
 BOOL JabberFtHandleBytestreamRequest( XmlNode *iqNode );
@@ -369,29 +370,30 @@ BOOL JabberFtHandleBytestreamRequest( XmlNode *iqNode );
 //---- jabber_groupchat.c -------------------------------------------
 
 int JabberMenuHandleGroupchat( WPARAM wParam, LPARAM lParam );
-void JabberGroupchatJoinRoom( const char* server, const char* room, const char* nick, const char* password );
+void JabberGroupchatJoinRoom( const TCHAR* server, const TCHAR* room, const TCHAR* nick, const TCHAR* password );
 void JabberGroupchatProcessPresence( XmlNode *node, void *userdata );
 void JabberGroupchatProcessMessage( XmlNode *node, void *userdata );
-void JabberGroupchatProcessInvite( char* roomJid, char* from, char* reason, char* password );
+void JabberGroupchatProcessInvite( TCHAR* roomJid, TCHAR* from, TCHAR* reason, TCHAR* password );
 
 //---- jabber_libstr.c ----------------------------------------------
 
 void  __stdcall replaceStr( char*& dest, const char* src );
+void  __stdcall replaceStr( WCHAR*& dest, const WCHAR* src );
 char* __stdcall rtrim( char *string );
 
 //---- jabber_misc.c ------------------------------------------------
 
-void   JabberAddContactToRoster( const char* jid, const char* nick, const char* grpName );
+void   JabberAddContactToRoster( const TCHAR* jid, const TCHAR* nick, const TCHAR* grpName );
 void   JabberChatDllError( void );
-int    JabberCompareJids( const char* jid1, const char* jid2 );
-void   JabberContactListCreateGroup( char* groupName );
-void   JabberDBAddAuthRequest( char* jid, char* nick );
-HANDLE JabberDBCreateContact( char* jid, char* nick, BOOL temporary, BOOL stripResource );
+int    JabberCompareJids( const TCHAR* jid1, const TCHAR* jid2 );
+void   JabberContactListCreateGroup( TCHAR* groupName );
+void   JabberDBAddAuthRequest( TCHAR* jid, TCHAR* nick );
+HANDLE JabberDBCreateContact( TCHAR* jid, TCHAR* nick, BOOL temporary, BOOL stripResource );
 ULONG  JabberForkThread( void ( __cdecl *threadcode )( void* ), unsigned long stacksize, void *arg );
 void   JabberGetAvatarFileName( HANDLE hContact, char* pszDest, int cbLen );
 void   JabberSetServerStatus( int iNewStatus );
 char*  EscapeChatTags(char* pszText);
-char* UnEscapeChatTags(char* str_in);
+char*  UnEscapeChatTags(char* str_in);
 
 //---- jabber_svc.c -------------------------------------------------
 
@@ -413,6 +415,7 @@ char*  __stdcall  JGetContactName( HANDLE hContact );
 DWORD  __stdcall  JGetDword( HANDLE hContact, const char* valueName, DWORD parDefltValue );
 int    __stdcall  JGetStaticString( const char* valueName, HANDLE hContact, char* dest, int dest_len );
 int    __stdcall  JGetStringUtf( HANDLE hContact, char* valueName, DBVARIANT* dbv );
+int    __stdcall  JGetStringT( HANDLE hContact, char* valueName, DBVARIANT* dbv );
 WORD   __stdcall  JGetWord( HANDLE hContact, const char* valueName, int parDefltValue );
 void   __fastcall JFreeVariant( DBVARIANT* dbv );
 int    __stdcall  JSendBroadcast( HANDLE hContact, int type, int result, HANDLE hProcess, LPARAM lParam );
@@ -420,6 +423,7 @@ DWORD  __stdcall  JSetByte( const char* valueName, int parValue );
 DWORD  __stdcall  JSetByte( HANDLE hContact, const char* valueName, int parValue );
 DWORD  __stdcall  JSetDword( HANDLE hContact, const char* valueName, DWORD parValue );
 DWORD  __stdcall  JSetString( HANDLE hContact, const char* valueName, const char* parValue );
+DWORD  __stdcall  JSetStringT( HANDLE hContact, const char* valueName, const TCHAR* parValue );
 DWORD  __stdcall  JSetStringUtf( HANDLE hContact, const char* valueName, const char* parValue );
 DWORD  __stdcall  JSetWord( HANDLE hContact, const char* valueName, int parValue );
 char*  __stdcall  JTranslate( const char* str );
@@ -434,15 +438,13 @@ void          __stdcall JabberSerialInit( void );
 void          __stdcall JabberSerialUninit( void );
 unsigned int  __stdcall JabberSerialNext( void );
 int           __stdcall JabberSend( JABBER_SOCKET s, const char* fmt, ... );
-HANDLE        __stdcall JabberHContactFromJID( const char* jid );
+int           __stdcall JabberSend( JABBER_SOCKET s, XmlNode& node );
+HANDLE        __stdcall JabberHContactFromJID( const TCHAR* jid );
 void          __stdcall JabberLog( const char* fmt, ... );
-char*         __stdcall JabberNickFromJID( const char* jid );
-char*         __stdcall JabberUrlDecodeOld( char* str );
-void          __stdcall JabberUrlDecodeOldW( WCHAR* str );
-char*         __stdcall JabberUrlDecodeNew( const char* str );
-WCHAR*          __stdcall JabberUrlDecodeNewW( WCHAR* str );
+TCHAR*        __stdcall JabberNickFromJID( const TCHAR* jid );
+char*         __stdcall JabberUrlDecode( char* str );
+void          __stdcall JabberUrlDecodeW( WCHAR* str );
 char*         __stdcall JabberUrlEncode( const char* str );
-int           __stdcall JabberUtfCompareI( const char* s1, const char* s2 );
 char*         __stdcall JabberUtf8Decode( char*,WCHAR** );
 char*         __stdcall JabberUtf8Encode( const char* str );
 char*         __stdcall JabberSha1( char* str );
@@ -451,27 +453,34 @@ WCHAR*        __stdcall JabberUnixToDosW( const WCHAR* str );
 void          __stdcall JabberHttpUrlDecode( char* str );
 char*         __stdcall JabberHttpUrlEncode( const char* str );
 int           __stdcall JabberCombineStatus( int status1, int status2 );
-char*         __stdcall JabberErrorStr( int errorCode );
-char*         __stdcall JabberErrorMsg( XmlNode *errorNode );
+TCHAR*        __stdcall JabberErrorStr( int errorCode );
+TCHAR*        __stdcall JabberErrorMsg( XmlNode *errorNode );
 void          __stdcall JabberSendVisibleInvisiblePresence( BOOL invisible );
 char*         __stdcall JabberTextEncode( const char* str );
 char*         __stdcall JabberTextEncodeW( const wchar_t *str );
 char*         __stdcall JabberTextDecode( const char* str );
+void          __stdcall JabberUtfToTchar( const char* str, size_t cbLen, LPTSTR& dest );
 char*         __stdcall JabberBase64Encode( const char* buffer, int bufferLen );
-char*         __stdcall JabberBase64Decode( const char* buffer, int *resultLen );
+char*         __stdcall JabberBase64Decode( const TCHAR* buffer, int *resultLen );
 char*         __stdcall JabberGetVersionText();
-time_t        __stdcall JabberIsoToUnixTime( char* stamp );
-int           __stdcall JabberCountryNameToId( char* ctry );
-void          __stdcall JabberSendPresenceTo( int status, char* to, char* extra );
+time_t        __stdcall JabberIsoToUnixTime( TCHAR* stamp );
+int           __stdcall JabberCountryNameToId( TCHAR* ctry );
+void          __stdcall JabberSendPresenceTo( int status, TCHAR* to, XmlNode* extra );
 void          __stdcall JabberSendPresence( int );
 void          __stdcall JabberStringAppend( char* *str, int *sizeAlloced, const char* fmt, ... );
-char*         __stdcall JabberGetClientJID( const char* jid, char*, size_t );
-char*         __stdcall JabberStripJid( const char* jid, char* dest, size_t destLen );
+TCHAR*        __stdcall JabberGetClientJID( const TCHAR* jid, TCHAR*, size_t );
+TCHAR*        __stdcall JabberStripJid( const TCHAR* jid, TCHAR* dest, size_t destLen );
 int           __stdcall JabberGetPictureType( const char* buf );
+
+#if defined( _UNICODE )
+	#define JabberUnixToDosT JabberUnixToDosW
+#else
+	#define JabberUnixToDosT JabberUnixToDos
+#endif
 
 //---- jabber_vcard.c -----------------------------------------------
 
-int JabberSendGetVcard( const char* );
+int JabberSendGetVcard( const TCHAR* jid );
 
 //---- jabber_ws.c -------------------------------------------------
 
@@ -480,6 +489,32 @@ void          JabberWsUninit( void );
 JABBER_SOCKET JabberWsConnect( char* host, WORD port );
 int           JabberWsSend( JABBER_SOCKET s, char* data, int datalen );
 int           JabberWsRecv( JABBER_SOCKET s, char* data, long datalen );
+
+///////////////////////////////////////////////////////////////////////////////
+// memory interface
+
+extern MM_INTERFACE memoryManagerInterface;
+#define mir_alloc(n) memoryManagerInterface.mmi_malloc(n)
+#define mir_free(ptr) memoryManagerInterface.mmi_free(ptr)
+#define mir_realloc(ptr,size) memoryManagerInterface.mmi_realloc(ptr,size)
+
+__forceinline char * mir_strdup(const char *src)
+{
+	return (src == NULL) ? NULL : strcpy(( char* )mir_alloc( strlen(src)+1 ), src );
+}
+
+__forceinline WCHAR* mir_wstrdup(const WCHAR *src)
+{
+	return (src == NULL) ? NULL : wcscpy(( WCHAR* )mir_alloc(( wcslen(src)+1 )*sizeof( WCHAR )), src );
+}
+
+#if defined( _UNICODE )
+	#define mir_tstrdup mir_wstrdup
+#else
+	#define mir_tstrdup mir_strdup
+#endif
+
+extern LIST_INTERFACE li;
 
 ///////////////////////////////////////////////////////////////////////////////
 // TXT encode helper
@@ -493,7 +528,7 @@ public:
 		{}
 
 	__forceinline ~TextEncoder()
-		{  free( m_body );
+		{  mir_free( m_body );
 		}
 
 	__forceinline const char* str() const { return m_body; }
@@ -513,7 +548,7 @@ public:
 		{}
 
 	__forceinline ~Utf8Encoder()
-		{  free( m_body );
+		{  mir_free( m_body );
 		}
 
 	__forceinline const char* str() const { return m_body; }
@@ -521,15 +556,9 @@ public:
 
 #define UTF8(A) Utf8Encoder(A).str()
 
-///////////////////////////////////////////////////////////////////////////////
-// memory interface
-
-extern MM_INTERFACE memoryManagerInterface;
-#define mir_alloc(n) memoryManagerInterface.mmi_malloc(n)
-#define mir_free(ptr) memoryManagerInterface.mmi_free(ptr)
-#define mir_realloc(ptr,size) memoryManagerInterface.mmi_realloc(ptr,size)
-
-extern LIST_INTERFACE li;
+char* t2a( const TCHAR* src );
+char* u2a( const wchar_t* src );
+wchar_t* a2u( const char* src );
 
 extern HICON iconBigList[3];
 extern HICON iconList[14];

@@ -60,12 +60,12 @@ static BOOL CALLBACK JabberRegisterDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 			ShowWindow( GetDlgItem( hwndDlg, IDC_PROGRESS_REG ), SW_SHOW );
 			ShowWindow( GetDlgItem( hwndDlg, IDCANCEL2 ), SW_SHOW );
 			regInfo = ( struct ThreadData * ) GetWindowLong( hwndDlg, GWL_USERDATA );
-			thread = ( struct ThreadData * ) malloc( sizeof( struct ThreadData ));
+			thread = ( struct ThreadData * ) mir_alloc( sizeof( struct ThreadData ));
 			thread->type = JABBER_SESSION_REGISTER;
-			strncpy( thread->username, regInfo->username, sizeof( thread->username ));
-			strncpy( thread->password, regInfo->password, sizeof( thread->password ));
-			strncpy( thread->server, regInfo->server, sizeof( thread->server ));
-			strncpy( thread->manualHost, regInfo->manualHost, sizeof( thread->manualHost ));
+			_tcsncpy( thread->username, regInfo->username, SIZEOF( thread->username ));
+			strncpy( thread->password, regInfo->password, SIZEOF( thread->password ));
+			strncpy( thread->server, regInfo->server, SIZEOF( thread->server ));
+			strncpy( thread->manualHost, regInfo->manualHost, SIZEOF( thread->manualHost ));
 			thread->port = regInfo->port;
 			thread->useSSL = regInfo->useSSL;
 			thread->reg_hwndDlg = hwndDlg;
@@ -264,12 +264,12 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			}
 
 			ThreadData regInfo;
-			GetDlgItemTextA( hwndDlg, IDC_EDIT_USERNAME, regInfo.username, sizeof( regInfo.username ));
-			GetDlgItemTextA( hwndDlg, IDC_EDIT_PASSWORD, regInfo.password, sizeof( regInfo.password ));
-			GetDlgItemTextA( hwndDlg, IDC_EDIT_LOGIN_SERVER, regInfo.server, sizeof( regInfo.server ));
+			GetDlgItemText( hwndDlg, IDC_EDIT_USERNAME, regInfo.username, SIZEOF( regInfo.username ));
+			GetDlgItemTextA( hwndDlg, IDC_EDIT_PASSWORD, regInfo.password, SIZEOF( regInfo.password ));
+			GetDlgItemTextA( hwndDlg, IDC_EDIT_LOGIN_SERVER, regInfo.server, SIZEOF( regInfo.server ));
 			if ( IsDlgButtonChecked( hwndDlg, IDC_MANUAL )) {
 				regInfo.port = ( WORD )GetDlgItemInt( hwndDlg, IDC_HOSTPORT, NULL, FALSE );
-				GetDlgItemTextA( hwndDlg, IDC_HOST, regInfo.manualHost, sizeof( regInfo.manualHost ));
+				GetDlgItemTextA( hwndDlg, IDC_HOST, regInfo.manualHost, SIZEOF( regInfo.manualHost ));
 			}
 			else {
 				regInfo.port = ( WORD )GetDlgItemInt( hwndDlg, IDC_PORT, NULL, FALSE );
@@ -284,11 +284,11 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			ShellExecuteA( hwndDlg, "open", "http://www.jabber.org/network", "", "", SW_SHOW );
 			return TRUE;
 		case IDC_BUTTON_REGISTER:
-			GetDlgItemTextA( hwndDlg, IDC_EDIT_USERNAME, regInfo.username, sizeof( regInfo.username ));
-			GetDlgItemTextA( hwndDlg, IDC_EDIT_PASSWORD, regInfo.password, sizeof( regInfo.password ));
-			GetDlgItemTextA( hwndDlg, IDC_EDIT_LOGIN_SERVER, regInfo.server, sizeof( regInfo.server ));
+			GetDlgItemText( hwndDlg, IDC_EDIT_USERNAME, regInfo.username, SIZEOF( regInfo.username ));
+			GetDlgItemTextA( hwndDlg, IDC_EDIT_PASSWORD, regInfo.password, SIZEOF( regInfo.password ));
+			GetDlgItemTextA( hwndDlg, IDC_EDIT_LOGIN_SERVER, regInfo.server, SIZEOF( regInfo.server ));
 			if ( IsDlgButtonChecked( hwndDlg, IDC_MANUAL )) {
-				GetDlgItemTextA( hwndDlg, IDC_HOST, regInfo.manualHost, sizeof( regInfo.manualHost ));
+				GetDlgItemTextA( hwndDlg, IDC_HOST, regInfo.manualHost, SIZEOF( regInfo.manualHost ));
 				regInfo.port = ( WORD )GetDlgItemInt( hwndDlg, IDC_HOSTPORT, NULL, FALSE );
 			}
 			else {
@@ -520,7 +520,7 @@ static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			while (( index=JabberListFindNext( LIST_ROSTER, index )) >= 0 ) {
 				JABBER_LIST_ITEM* item = JabberListGetItemPtrFromIndex( index );
 				if ( item != NULL ) {
-					if ( strchr( item->jid, '@' ) == NULL ) {
+					if ( _tcschr( item->jid, '@' ) == NULL ) {
 						HANDLE hContact = JabberHContactFromJID( item->jid );
 						if ( hContact != NULL ) {
 							if ( bChecked ) {

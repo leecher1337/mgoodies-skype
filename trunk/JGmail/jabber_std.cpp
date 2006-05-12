@@ -93,6 +93,11 @@ int __stdcall JGetStringUtf( HANDLE hContact, char* valueName, DBVARIANT* dbv )
 	return DBGetContactSettingStringUtf( hContact, jabberProtoName, valueName, dbv );
 }
 
+int __stdcall JGetStringT( HANDLE hContact, char* valueName, DBVARIANT* dbv )
+{
+	return DBGetContactSettingTString( hContact, jabberProtoName, valueName, dbv );
+}
+
 WORD __stdcall JGetWord( HANDLE hContact, const char* valueName, int parDefltValue )
 {
 	return DBGetContactSettingWord( hContact, jabberProtoName, valueName, parDefltValue );
@@ -134,6 +139,11 @@ DWORD __stdcall JSetDword( HANDLE hContact, const char* valueName, DWORD parValu
 DWORD __stdcall JSetString( HANDLE hContact, const char* valueName, const char* parValue )
 {
 	return DBWriteContactSettingString( hContact, jabberProtoName, valueName, parValue );
+}
+
+DWORD __stdcall JSetStringT( HANDLE hContact, const char* valueName, const TCHAR* parValue )
+{
+	return DBWriteContactSettingTString( hContact, jabberProtoName, valueName, parValue );
 }
 
 DWORD __stdcall JSetStringUtf( HANDLE hContact, const char* valueName, const char* parValue )

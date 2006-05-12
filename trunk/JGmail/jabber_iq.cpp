@@ -30,8 +30,8 @@ Last change by : $Author: ghazan $
 #include "jabber_xmlns.h"
 
 static JABBER_IQ_XMLNS_FUNC jabberXmlns[] = {
-	{ "http://jabber.org/protocol/disco", JabberXmlnsDisco, TRUE },
-	{ "jabber:iq:browse", JabberXmlnsBrowse, FALSE }
+	{ _T("http://jabber.org/protocol/disco"), JabberXmlnsDisco, TRUE },
+	{ _T("jabber:iq:browse"), JabberXmlnsBrowse, FALSE }
 };
 
 typedef struct {
@@ -56,7 +56,7 @@ void JabberIqInit()
 
 void JabberIqUninit()
 {
-	if ( iqList ) free( iqList );
+	if ( iqList ) mir_free( iqList );
 	iqList = NULL;
 	iqCount = 0;
 	iqAlloced = 0;
@@ -126,7 +126,7 @@ void JabberIqAdd( unsigned int iqId, JABBER_IQ_PROCID procId, JABBER_IQ_PFUNC fu
 
 	if ( i>=iqCount && iqCount>=iqAlloced ) {
 		iqAlloced = iqCount + 8;
-		iqList = ( JABBER_IQ_FUNC * )realloc( iqList, sizeof( JABBER_IQ_FUNC )*iqAlloced );
+		iqList = ( JABBER_IQ_FUNC * )mir_realloc( iqList, sizeof( JABBER_IQ_FUNC )*iqAlloced );
 	}
 
 	if ( iqList != NULL ) {
@@ -139,29 +139,29 @@ void JabberIqAdd( unsigned int iqId, JABBER_IQ_PROCID procId, JABBER_IQ_PFUNC fu
 	LeaveCriticalSection( &csIqList );
 }
 
-JABBER_IQ_PFUNC JabberIqFetchXmlnsFunc( char* xmlns )
+JABBER_IQ_PFUNC JabberIqFetchXmlnsFunc( TCHAR* xmlns )
 {
 	unsigned int len, count, i;
-	char* p, *q;
+	TCHAR* p, *q;
 
 	if ( xmlns == NULL )
 		return NULL;
 
-	p = strrchr( xmlns, '/' );
-	q = strrchr( xmlns, '#' );
+	p = _tcsrchr( xmlns, '/' );
+	q = _tcsrchr( xmlns, '#' );
 	if ( p!=NULL && q!=NULL && q>p )
 		len = q - xmlns;
 	else
-		len = strlen( xmlns );
+		len = _tcslen( xmlns );
 
 	count = sizeof( jabberXmlns ) / sizeof( jabberXmlns[0] );
 	for ( i=0; i<count; i++ ) {
 		if ( jabberXmlns[i].allowSubNs ) {
-			if ( strlen( jabberXmlns[i].xmlns )==len && !strncmp( jabberXmlns[i].xmlns, xmlns, len ))
+			if ( _tcslen( jabberXmlns[i].xmlns ) == len && !_tcsncmp( jabberXmlns[i].xmlns, xmlns, len ))
 				break;
 		}
 		else {
-			if ( !strcmp( jabberXmlns[i].xmlns, xmlns ))
+			if ( !_tcscmp( jabberXmlns[i].xmlns, xmlns ))
 				break;
 		}
 	}

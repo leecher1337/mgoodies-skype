@@ -61,7 +61,7 @@ JABBER_SOCKET JabberWsConnect( char* host, WORD port )
 	nloc.cbSize = sizeof( nloc );
 	nloc.szHost = host;
 	nloc.wPort = port;
-	return ( HANDLE ) JCallService( MS_NETLIB_OPENCONNECTION, ( WPARAM ) hNetlibUser, ( LPARAM )&nloc );
+	return ( HANDLE )JCallService( MS_NETLIB_OPENCONNECTION, ( WPARAM ) hNetlibUser, ( LPARAM )&nloc );
 }
 
 int JabberWsSend( JABBER_SOCKET hConn, char* data, int datalen )
