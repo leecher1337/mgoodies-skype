@@ -325,7 +325,9 @@ int JabberContactDeleted( WPARAM wParam, LPARAM lParam )
 
 static TCHAR* sttSettingToTchar( DBCONTACTWRITESETTING* cws )
 {
+	#if defined( _UNICODE )
 	TCHAR* result;
+	#endif
 
 	switch( cws->value.type ) {
 	case DBVT_ASCIIZ:
@@ -458,16 +460,16 @@ void sttStatusChanged( DBCONTACTWRITESETTING* cws, HANDLE hContact ){
 	DBVARIANT jid;
 	if ( JGetStringUtf( hContact, "jid", &jid ))
 		return;
-	JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, jid.pszVal );
+	JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, jid.ptszVal );
 	//if ( item == NULL )
 	//	return;
 	//(item->defaultResource<0)?NULL:item->resource[item->defaultResource].resourceName;
-	char *courRes = JabberListGetBestClientResourceNamePtr(jid.pszVal);
-	JabberLog("Status Changed: %s, Best Resource: %s",jid.pszVal,
-		(courRes)?courRes:"none");
+	TCHAR *courRes = JabberListGetBestClientResourceNamePtr(jid.ptszVal);
+	JabberLog("Status Changed: %s, Best Resource: %s",jid.ptszVal,
+		(courRes)?courRes:_T("none"));
 	if (courRes) {
 		for (int i=0;i<item->resourceCount;i++){
-			if (!strcmp(courRes,item->resource[i].resourceName)){
+			if (!_tcscmp(courRes,item->resource[i].resourceName)){
 				putResUserSett(hContact,&item->resource[i]);
 				JabberLog("Software: %s (%s)",item->resource[i].software,item->resource[i].version);
 				break;
@@ -1292,9 +1294,9 @@ static HANDLE hEventSettingChanged = NULL;
 static HANDLE hEventContactDeleted = NULL;
 static HANDLE hEventRebuildCMenu = NULL;
 
-static HANDLE hMenuAgent = NULL;
-static HANDLE hMenuChangePassword = NULL;
-static HANDLE hMenuGroupchat = NULL;
+HANDLE hMenuAgent = NULL;
+HANDLE hMenuChangePassword = NULL;
+HANDLE hMenuGroupchat = NULL;
 HANDLE hMenuVCard = NULL;
 
 int JabberMenuHandleAgents( WPARAM wParam, LPARAM lParam );

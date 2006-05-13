@@ -622,8 +622,8 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 			for (k=0;k<node->child[i]->numChild;k++){
 				if (!strcmp(node->child[i]->child[k]->name,"mechanism"))
 					//JabberLog("Mechanism: %s",node->child[i]->child[k]->text);
-					if (!strcmp(node->child[i]->child[k]->text,"PLAIN")) isPlainAvailable = true;
-					if (!strcmp(node->child[i]->child[k]->text,"X-GOOGLE-TOKEN")) isXGoogleTokenAvailable = true;
+					if (!_tcscmp(node->child[i]->child[k]->text,_T("PLAIN"))) isPlainAvailable = true;
+					if (!_tcscmp(node->child[i]->child[k]->text,_T("X-GOOGLE-TOKEN"))) isXGoogleTokenAvailable = true;
 			}
 		} else if (!strcmp(node->child[i]->name,"register")) isRegisterAvailable = true;
 	}
@@ -633,14 +633,14 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 		if (isPlainAvailable && isXGoogleTokenAvailable)
 			if (info->useSSL ) isXGoogleTokenAvailable = false;//we Prefere plain if SSL
 		if (isXGoogleTokenAvailable){
-			int size = strlen(info->username)+1+strlen(info->server);
+			int size = _tcslen(info->username)+1+strlen(info->server);
 			char *localJid = (char *)mir_alloc(size+1);
 			mir_snprintf(localJid,size+1,"%s@%s",info->username,info->server);
 			X_GOOGLE_TOKEN = getXGoogleToken(localJid,info->password);
 			if (!X_GOOGLE_TOKEN) X_GOOGLE_TOKEN = ""; //Later will show auth failed
 			mir_free(localJid);
 		} else if (isPlainAvailable){
-			int size = strlen(info->username)*2+strlen(info->server)+strlen(info->password)+3;
+			int size = _tcslen(info->username)*2+strlen(info->server)+strlen(info->password)+3;
 			char *toEncode = (char *)mir_alloc(size+1);
 			mir_snprintf(toEncode,size+1,"%s@%s%c%s%c%s",info->username,info->server,0,info->username,0,info->password);
 			PLAIN = JabberBase64Encode( toEncode, size );
@@ -666,22 +666,30 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 		if (PLAIN) free(PLAIN);
 //		if (X_GOOGLE_TOKEN) free(X_GOOGLE_TOKEN);
 	} else { // mechanisms are not defined. We are already logged-in
-		char *str=JabberTextEncode( info->resource );
 		int iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultBind );
-        JabberSend( info->s, "<iq type=\"set\" id=\""JABBER_IQID"%d\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\"><resource>%s</resource></bind></iq>",iqId,str);
+		XmlNode iq( "iq" ); iq.addAttr("type", "set"); iq.addAttrID( iqId );
+		XmlNode* bind = iq.addChild( "bind" ); bind->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-bind" );
+		bind->addChild( "resource", info->resource );
+		JabberSend( info->s, iq );
+
+//        JabberSend( info->s, "
+//		<iq type=\"set\" id=\""JABBER_IQID"%d\">
+//			<bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">
+//				<resource>%s</resource>
+//			</bind>
+//		</iq>",iqId,str);
         JabberSend( info->s, "<iq type=\"set\" id=\"sess_1\"><session xmlns=\"urn:ietf:params:xml:ns:xmpp-session\"/></iq>");
-		free(str);
 	}
 }
 
 static void JabberProcessFailure( XmlNode *node, void *userdata ){
 //	JabberXmlDumpNode( node );
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
-	char* type;
+	TCHAR* type;
 //failure xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"
 	if (( type=JabberXmlGetAttrValue( node, "xmlns" )) == NULL ) return;
-	if ( !strcmp( type, "urn:ietf:params:xml:ns:xmpp-sasl" )){
+	if ( !_tcscmp( type, _T("urn:ietf:params:xml:ns:xmpp-sasl") )){
 		char text[128];
 
 		JabberSend( info->s, "</stream:stream>" );
@@ -715,18 +723,18 @@ static void JabberProcessSuccess( XmlNode *node, void *userdata )
 {
 	//JabberXmlDumpNode( node );
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
-	char* type;
+	TCHAR* type;
 //	int iqId;
 	// RECVED: <success ...
 	// ACTION: if successfully logged in, continue by requesting roster list and set my initial status
 	if (( type=JabberXmlGetAttrValue( node, "xmlns" )) == NULL ) return;
 
-	if ( !strcmp( type, "urn:ietf:params:xml:ns:xmpp-sasl" )){
+	if ( !_tcscmp( type, _T("urn:ietf:params:xml:ns:xmpp-sasl") )){
 		DBVARIANT dbv;
 
 		JabberLog( "Succcess: Logged-in." );
 		if ( DBGetContactSetting( NULL, jabberProtoName, "Nick", &dbv ))
-			JSetString( NULL, "Nick", info->username );
+			JSetStringT( NULL, "Nick", info->username );
 		else
 			JFreeVariant( &dbv );
 		xmlStreamInitialize( "after successful sasl" );
@@ -1591,7 +1599,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 		}	}
 	}
     // RECVED: <iq type=\"set\"><new-mail \" ...
-	else if ( !strcmp( type, "set" ) && ( newMailNode=JabberXmlGetChild( node, "new-mail" ) ) ) {
+	else if ( !_tcscmp( type, _T("set") ) && ( newMailNode=JabberXmlGetChild( node, "new-mail" ) ) ) {
 		// RECVED: new-mail notify
 		// ACTION: Reply & request
 		if (JGetByte(NULL,"EnableGMail",1) & 1) {
@@ -1600,10 +1608,10 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 			JabberRequestMailBox( info->s );
 	}	}
     // RECVED: <iq type=\"set\"><usersetting \" ...
-	else if ( (!strcmp( type, "set" ) || !strcmp( type, "result"))  && ( newMailNode=JabberXmlGetChild( node, "usersetting" ) ) ) {
+	else if ( (!_tcscmp( type, _T("set") ) || !_tcscmp( type, _T("result")))  && ( newMailNode=JabberXmlGetChild( node, "usersetting" ) ) ) {
 		// RECVED: usersettings result/set
 		// ACTION: if "set": reply; parse the settings always.
-		if (!strcmp( type, "set" )) {
+		if (!_tcscmp( type, _T("set"))) {
 			idStr = JabberXmlGetAttrValue( node, "id" );
             JabberSend( jabberThreadInfo->s, "<iq type=\"result\" id=\"%s\"/>",idStr );
 		}
