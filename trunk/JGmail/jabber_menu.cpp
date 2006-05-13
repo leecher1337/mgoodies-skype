@@ -32,9 +32,9 @@ Last change by : $Author: ghazan $
 /////////////////////////////////////////////////////////////////////////////////////////
 // module data
 
-static HANDLE hMenuRequestAuth = NULL;
-static HANDLE hMenuGrantAuth = NULL;
-static HANDLE hMenuJoinLeave = NULL;
+HANDLE hMenuRequestAuth = NULL;
+HANDLE hMenuGrantAuth = NULL;
+HANDLE hMenuJoinLeave = NULL;
 
 static void sttEnableMenuItem( HANDLE hMenuItem, BOOL bEnable )
 {
