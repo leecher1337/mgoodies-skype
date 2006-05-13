@@ -1234,15 +1234,15 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 
 #ifdef UNICODE
 #  ifdef STATICSSL
-	char JGmailSTR[] = "JGmail (W,St)";
+	strncat(mversion," (JGmail (W,St)) ", 99-strlen(mversion));
 #  else 
-	char JGmailSTR[] = "JGmail (W)";
+	strncat(mversion," (JGmail (W)) ", 99-strlen(mversion));
 #  endif
 #else 
 #  ifdef STATICSSL
-	char JGmailSTR[] = "JGmail (A,St)";
+	strncat(mversion," (JGmail (A,St)) ", 99-strlen(mversion));
 #  else 
-	char JGmailSTR[] = "JGmail (A)";
+	strncat(mversion," (JGmail (A))", 99-strlen(mversion));
 #  endif
 #endif
 

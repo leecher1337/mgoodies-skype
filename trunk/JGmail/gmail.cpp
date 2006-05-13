@@ -77,16 +77,15 @@ void JabberDummyResult( XmlNode *iqNode, void *userdata ){
 }
 void JabberEnableNotifications(ThreadData *info){
 	int iqId = JabberSerialNext();
+	TCHAR *localJid = mir_tstrdup( info->fullJID );
+	TCHAR *pos;
+	if (pos = _tcschr( localJid, '/' )) *pos = '\0'; //cut the resource
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberDummyResult );
-	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", info->fullJID );
+	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", localJid );
 	XmlNode* usersetting = iq.addChild( "usersetting" ); usersetting->addAttr( "xmlns", "google:setting" );
 	XmlNode*  mailnotifications = usersetting->addChild( "mailnotifications" ); mailnotifications->addAttr( "value", "true" );
 	JabberSend( jabberThreadInfo->s, iq );
-//    JabberSend( info->s, "<iq type=\"set\" to=\"%s@%s\" id=\""JABBER_IQID"%d\">
-//		<usersetting xmlns=\"google:setting\">
-//			<mailnotifications value=\"true\"/>
-//		</usersetting>
-//	</iq>", info->username, info->server, iqId);
+	mir_free(localJid);
 }
 
 HANDLE fakeContact = NULL;
@@ -368,7 +367,15 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				XmlNode *sendersNode = JabberXmlGetChild( threadNode, "senders" );
 				int k; TCHAR sendersList[150];
 				sendersList[0] = '\0';
+#ifdef _UNICODE
+				{
+					TCHAR *tempprotoname = a2u(jabberProtoName);
+					mir_sntprintf(sendersList,150,_T("%s: New mail from "),tempprotoname);
+					mir_free(tempprotoname);
+				}
+#else
 				mir_sntprintf(sendersList,150,_T("%s: New mail from "),jabberProtoName);
+#endif
 				if (sendersNode) for ( k=0; k<sendersNode->numChild; k++ ) {
 					if (k) _tcsncat(sendersList,_T(", "),150);
 					TCHAR * senderName = JabberXmlGetAttrValue(sendersNode->child[sendersNode->numChild-1-k],"name");
@@ -446,16 +453,26 @@ LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 				char url[MAX_PATH];
 				mpd = (POPUP_ACCINFO * )PUGetPluginData(hWnd);
 				if ((mpd) && (int)mpd!=-1){
+#ifdef _UNICODE
+					char *tempusername = u2a(mpd->username);
+#endif
 					mir_snprintf(url,MAX_PATH,
 //						"https://www.google.com/accounts/ServiceLoginAuth?service=mail&Email=%s&Passwd=%s&continue=https://mail.google.com/mail/",
 //http://mail.google.com/mail/?view=cv&search=inbox&th=10859fac99369d5f&lvp=-1&cvp=9&qt=&fs=1&tf=1
 //http%3A%2F%2Fmail.google.com%2Fmail%3Fview%3Dcv%26search%3Dinbox%26th%3D1085ab8ed25d733c%26lvp%3D-1%26cvp%3D9%26qt%3D%26fs%3D1%26tf%3D1&source=googletalk
 						"https://www.google.com/accounts/ServiceLoginAuth?service=mail&Email=%s&Passwd=%s&continue=http%%3A%%2F%%2Fmail.google.com%%2Fmail%%3Fview%%3Dcv%%26search%%3Dinbox%%26th%%3D%x%x%%26lvp%%3D-1%%26cvp%%3D9%%26qt%%3D%%26fs%%3D1%%26tf%%3D1&source=googletalk",
+#ifdef _UNICODE
+						tempusername,
+#else
 						mpd->username,
+#endif
 						mpd->password,
 						(DWORD)(mpd->tid>>32),
 						(DWORD)(mpd->tid)
 					);
+#ifdef _UNICODE
+					mir_free(tempusername);
+#endif
 //					JabberLog("Redir: %s",url);
 					CallService(MS_UTILS_OPENURL,1,(LPARAM)url);
 				}
@@ -510,10 +527,13 @@ LBLEnd:
 
 void JabberUserConfigRequest(ThreadData *info){
 	int iqId = JabberSerialNext();
+	TCHAR *localJid = mir_tstrdup( info->fullJID );
+	TCHAR *pos;
+	if (pos = _tcschr( localJid, '/' )) *pos = '\0'; //cut the resource
 	if (saveChatsToServer!=-1) {
 		//send the option
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberDummyResult );
-		XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", info->fullJID );
+		XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", localJid );
 		XmlNode* usersetting = iq.addChild( "usersetting" ); usersetting->addAttr( "xmlns", "google:setting" );
 		XmlNode*  archivingenabled = usersetting->addChild( "archivingenabled" ); archivingenabled->addAttr( "value", saveChatsToServer?_T("false"):_T("true") );
 		JabberSend( jabberThreadInfo->s, iq );
@@ -521,11 +541,12 @@ void JabberUserConfigRequest(ThreadData *info){
 	}
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberUserConfigResult );
 	{
-		XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", info->fullJID );
+		XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", localJid );
 		XmlNode* usersetting = iq.addChild( "usersetting" ); usersetting->addAttr( "xmlns", "google:setting" );
 		JabberSend( jabberThreadInfo->s, iq );
 	}
 //    JabberSend( info->s, "<iq type=\"get\" to=\"%s@%s\" id=\""JABBER_IQID"%d\"><usersetting xmlns=\"google:setting\"/></iq>", info->username, info->server, iqId);
+	mir_free(localJid);
 }
 
 BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam ){
