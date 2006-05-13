@@ -444,10 +444,10 @@ char * getXGoogleToken(char * email, char * passwd){
 	char *data = (char *)mir_alloc(SSL_BUF_SIZE);
 	char *temp = JabberHttpUrlEncode(email);
 	int p = mir_snprintf(data,SSL_BUF_SIZE,"Email=%s&",temp);
-	free(temp);
+	mir_free(temp);
 	temp = JabberHttpUrlEncode(passwd);
 	p += mir_snprintf(data+p,SSL_BUF_SIZE-p,"Passwd=%s&PersistentCookie=false&source=JGmail",temp);
-	free(temp);
+	mir_free(temp);
 	SSL_Base *pAgent;
 #ifndef STATICSSL
 	if (!hLibSSL) pAgent = new SSL_WinInet();
@@ -465,7 +465,7 @@ char * getXGoogleToken(char * email, char * passwd){
 		char * base64Encoded = JabberBase64Encode( toEncode, len );
 		mir_free(toEncode);
 		strncpy(data,base64Encoded,SSL_BUF_SIZE);
-		free(base64Encoded);
+		mir_free(base64Encoded);
 	} else data = NULL;
 	delete pAgent;
 	return data;

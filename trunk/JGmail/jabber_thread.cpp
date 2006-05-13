@@ -640,11 +640,13 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 			if (!X_GOOGLE_TOKEN) X_GOOGLE_TOKEN = ""; //Later will show auth failed
 			mir_free(localJid);
 		} else if (isPlainAvailable){
-			int size = _tcslen(info->username)*2+strlen(info->server)+strlen(info->password)+3;
+			char *temp = t2a(info->username);
+			int size = strlen(temp)*2+strlen(info->server)+strlen(info->password)+3;
 			char *toEncode = (char *)mir_alloc(size+1);
-			mir_snprintf(toEncode,size+1,"%s@%s%c%s%c%s",info->username,info->server,0,info->username,0,info->password);
+			mir_snprintf(toEncode,size+1,"%s@%s%c%s%c%s",temp,info->server,0,temp,0,info->password);
 			PLAIN = JabberBase64Encode( toEncode, size );
 			mir_free(toEncode);
+			mir_free(temp);
 			JabberLog( "Never publish the hash below" );
 		} else {
 			MessageBoxA( NULL, JTranslate("No known auth methods available. Giving up."), JTranslate( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
@@ -663,7 +665,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 50, ( LPARAM )JTranslate( "Requesting registration instruction..." ));
 		}
 		else JabberSend( info->s, "</stream:stream>" );
-		if (PLAIN) free(PLAIN);
+		if (PLAIN) mir_free(PLAIN);
 //		if (X_GOOGLE_TOKEN) free(X_GOOGLE_TOKEN);
 	} else { // mechanisms are not defined. We are already logged-in
 		int iqId = JabberSerialNext();
