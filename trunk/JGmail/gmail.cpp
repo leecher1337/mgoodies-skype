@@ -69,12 +69,24 @@ int makeHead(char *target, int tSize, __int64 tid, __int64 time){
 }
 
 void JabberDummyResult( XmlNode *iqNode, void *userdata ){
-	JabberLog( "Received DummyResult. id: \"%s\", type: \"%s\"",JabberXmlGetAttrValue( iqNode, "id" ),JabberXmlGetAttrValue( iqNode, "type" ));
+	char *temp1 = t2a(JabberXmlGetAttrValue( iqNode, "id" ));
+	char *temp2 = t2a(JabberXmlGetAttrValue( iqNode, "type" ));
+	JabberLog( "Received DummyResult. id: \"%s\", type: \"%s\"",temp1, temp2);
+	mir_free(temp1);
+	mir_free(temp2);
 }
 void JabberEnableNotifications(ThreadData *info){
 	int iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberDummyResult );
-    JabberSend( info->s, "<iq type=\"set\" to=\"%s@%s\" id=\""JABBER_IQID"%d\"><usersetting xmlns=\"google:setting\"><mailnotifications value=\"true\"/></usersetting></iq>", info->username, info->server, iqId);
+	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", info->fullJID );
+	XmlNode* usersetting = iq.addChild( "usersetting" ); usersetting->addAttr( "xmlns", "google:setting" );
+	XmlNode*  mailnotifications = usersetting->addChild( "mailnotifications" ); mailnotifications->addAttr( "value", "true" );
+	JabberSend( jabberThreadInfo->s, iq );
+//    JabberSend( info->s, "<iq type=\"set\" to=\"%s@%s\" id=\""JABBER_IQID"%d\">
+//		<usersetting xmlns=\"google:setting\">
+//			<mailnotifications value=\"true\"/>
+//		</usersetting>
+//	</iq>", info->username, info->server, iqId);
 }
 
 HANDLE fakeContact = NULL;
@@ -501,12 +513,19 @@ void JabberUserConfigRequest(ThreadData *info){
 	if (saveChatsToServer!=-1) {
 		//send the option
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberDummyResult );
-        JabberSend( info->s, "<iq type=\"set\" to=\"%s@%s\" id=\""JABBER_IQID"%d\"><usersetting xmlns=\"google:setting\"><archivingenabled value=\"%s\"/></usersetting></iq>", info->username, info->server, iqId, saveChatsToServer?"false":"true");
-//		saveChatsToServer = saveChatsToServer?0:1;
+		XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", info->fullJID );
+		XmlNode* usersetting = iq.addChild( "usersetting" ); usersetting->addAttr( "xmlns", "google:setting" );
+		XmlNode*  archivingenabled = usersetting->addChild( "archivingenabled" ); archivingenabled->addAttr( "value", saveChatsToServer?_T("false"):_T("true") );
+		JabberSend( jabberThreadInfo->s, iq );
 		iqId = JabberSerialNext(); //we already used the initial one
 	}
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberUserConfigResult );
-    JabberSend( info->s, "<iq type=\"get\" to=\"%s@%s\" id=\""JABBER_IQID"%d\"><usersetting xmlns=\"google:setting\"/></iq>", info->username, info->server, iqId);
+	{
+		XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", info->fullJID );
+		XmlNode* usersetting = iq.addChild( "usersetting" ); usersetting->addAttr( "xmlns", "google:setting" );
+		JabberSend( jabberThreadInfo->s, iq );
+	}
+//    JabberSend( info->s, "<iq type=\"get\" to=\"%s@%s\" id=\""JABBER_IQID"%d\"><usersetting xmlns=\"google:setting\"/></iq>", info->username, info->server, iqId);
 }
 
 BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam ){
