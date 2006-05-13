@@ -141,11 +141,11 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 			if (queryNode->text) {
 //				JabberLog("JID has text");
 //				JabberLog("text: %s",queryNode->text);
-				if (!_tcsncmp(info->fullJID,queryNode->text,sizeof (info->fullJID))){
+				if (!_tcsncmp(info->fullJID,queryNode->text,SIZEOF (info->fullJID))){
 					JabberLog( "Result Bind: %s %s %s",info->fullJID,"confirmed.",NULL);
 				} else {
 					JabberLog( "Result Bind: %s %s %s",info->fullJID,"changed to",queryNode->text);
-					_tcsncpy(info->fullJID,queryNode->text,sizeof (info->fullJID));
+					_tcsncpy(info->fullJID,queryNode->text,SIZEOF (info->fullJID));
 			}	}
 		} else if (queryNode=JabberXmlGetChild( queryNode, "error" )){
 			//rfc3920 page 39
@@ -168,14 +168,21 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 	if (enableGmailSetting & 1) JabberEnableNotifications(info);
 	iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
-    JabberSend( info->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\"><query xmlns=\"jabber:iq:roster\"/></iq>", iqId );
-	if ((enableGmailSetting & 3) == 1) JabberRequestMailBox(info->s);
-	if ( hwndJabberAgents ) {
-		// Retrieve agent information
-		iqId = JabberSerialNext();
-		JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
-        JabberSend( info->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\"><query xmlns=\"jabber:iq:agents\"/></iq>", iqId );
+	{	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
+		XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
+		JabberSend( info->s, iq );
 	}
+
+	if ((enableGmailSetting & 3) == 1) JabberRequestMailBox(info->s);
+		if ( hwndJabberAgents ) {
+			// Retrieve agent information
+			iqId = JabberSerialNext();
+			JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
+
+			XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
+			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:agents" );
+			JabberSend( info->s, iq );
+		}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

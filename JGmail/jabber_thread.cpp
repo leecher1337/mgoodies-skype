@@ -633,12 +633,14 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 		if (isPlainAvailable && isXGoogleTokenAvailable)
 			if (info->useSSL ) isXGoogleTokenAvailable = false;//we Prefere plain if SSL
 		if (isXGoogleTokenAvailable){
-			int size = _tcslen(info->username)+1+strlen(info->server);
+			char *temp = t2a(info->username);
+			int size = strlen(temp)+1+strlen(info->server);
 			char *localJid = (char *)mir_alloc(size+1);
-			mir_snprintf(localJid,size+1,"%s@%s",info->username,info->server);
+			mir_snprintf(localJid,size+1,"%s@%s",temp,info->server);
 			X_GOOGLE_TOKEN = getXGoogleToken(localJid,info->password);
 			if (!X_GOOGLE_TOKEN) X_GOOGLE_TOKEN = ""; //Later will show auth failed
 			mir_free(localJid);
+			mir_free(temp);
 		} else if (isPlainAvailable){
 			char *temp = t2a(info->username);
 			int size = strlen(temp)*2+strlen(info->server)+strlen(info->password)+3;
