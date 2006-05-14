@@ -2,7 +2,7 @@
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
-Copyright ( C ) 2005     George Hazan
+Copyright ( C ) 2005-06  George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_groupchat.cpp,v $
-Revision       : $Revision: 1.40 $
-Last change on : $Date: 2006/02/27 21:56:07 $
+Revision       : $Revision: 1.43 $
+Last change on : $Date: 2006/05/12 20:13:35 $
 Last change by : $Author: ghazan $
 
 */
@@ -274,16 +274,18 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 				lvItem.iSubItem = 0;
 				lvItem.mask = LVIF_PARAM;
 				ListView_GetItem( lv, &lvItem );
-				char* jid = ( char* )lvItem.lParam, *p;
+				TCHAR* jid = ( TCHAR* )lvItem.lParam;
 				{	GCSESSION gcw = {0};
 					gcw.cbSize = sizeof(GCSESSION);
 					gcw.iType = GCW_CHATROOM;
-					gcw.pszID = jid;
+					gcw.pszID = t2a(jid);
 					gcw.pszModule = jabberProtoName;
-					gcw.pszName = strcpy(( char* )alloca( strlen(jid)+1 ), jid );
-					if (( p = (char*)strchr( gcw.pszName, '@' )) != NULL )
+					gcw.pszName = NEWSTR_ALLOCA(gcw.pszID);
+					char* p = strchr( gcw.pszName, '@' );
+					if ( p != NULL )
 						*p = 0;
 					CallService( MS_GC_NEWSESSION, 0, ( LPARAM )&gcw );
+					mir_free((void*)gcw.pszID);
 				}
 				{	XmlNode iq( "iq" ); iq.addAttr( "type", "set" );
 					XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
@@ -777,6 +779,7 @@ void JabberGroupchatProcessMessage( XmlNode *node, void *userdata )
 	#if defined( _UNICODE )
 		mir_free( dispNick );
 		mir_free( dispMsg );
+		mir_free( jid );
 	#endif
 	mir_free( (void*)gce.pszText ); // Since we processed msgText and created a new string
 }
