@@ -30,7 +30,7 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,0,42),
+	PLUGIN_MAKE_VERSION(0,0,1,0),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -763,7 +763,7 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 			ZeroMemory(&pi, sizeof(pi));
 			pi.cbSize = sizeof(NAS_PROTOINFO);
 			pi.szProto = proto->name;
-			pi.status = proto->status;
+			pi.status = 0;
 			pi.szMsg = NULL;
 
 			if (ServiceExists(MS_NAS_GETSTATE))
@@ -802,7 +802,7 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 					{
 						pi.szProto = NULL;
 
-						if (CallService(MS_NAS_GETSTATE, (WPARAM) &pii, 1) == 0)
+						if (CallService("NewAwaySystem/GetState", (WPARAM) &pii, 1) == 0)
 						{
 							if (pi.szMsg != NULL)
 							{

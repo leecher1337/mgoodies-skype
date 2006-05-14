@@ -298,7 +298,7 @@ void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
 		ZeroMemory(&pi, sizeof(pi));
 		pi.cbSize = sizeof(NAS_PROTOINFO);
 		pi.szProto = name;
-		pi.status = aStatus;
+		pi.status = aStatus == status ? 0 : aStatus;
 		pi.szMsg = NULL;
 
 		if (CallService(MS_NAS_GETSTATE, (WPARAM) &pi, 1) == 0)
@@ -338,18 +338,18 @@ void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
 		ZeroMemory(&pi, sizeof(pi));
 		pi.cbSize = sizeof(NAS_PROTOINFO);
 		pi.szProto = name;
-		pi.status = aStatus;
+		pi.status = aStatus == status ? 0 : aStatus;
 		pi.szMsg = NULL;
 
 		pii = &pi;
 
-		if (CallService(MS_NAS_GETSTATE, (WPARAM) &pii, 1) == 0)
+		if (CallService("NewAwaySystem/GetState", (WPARAM) &pii, 1) == 0)
 		{
 			if (pi.szMsg == NULL)
 			{
 				pi.szProto = NULL;
 
-				if (CallService(MS_NAS_GETSTATE, (WPARAM) &pii, 1) == 0)
+				if (CallService("NewAwaySystem/GetState", (WPARAM) &pii, 1) == 0)
 				{
 					if (pi.szMsg != NULL)
 					{
