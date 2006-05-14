@@ -2,7 +2,7 @@
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
-Copyright ( C ) 2005     George Hazan
+Copyright ( C ) 2005-06  George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_thread.cpp,v $
-Revision       : $Revision: 1.49 $
-Last change on : $Date: 2006/05/01 18:13:18 $
+Revision       : $Revision: 1.51 $
+Last change on : $Date: 2006/05/12 20:13:35 $
 Last change by : $Author: ghazan $
 
 */

@@ -2,7 +2,7 @@
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
-Copyright ( C ) 2005     George Hazan
+Copyright ( C ) 2005-06  George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -518,12 +518,14 @@ XmlNode::XmlNode( const char* pszName, const TCHAR* ptszText )
 }
 
 #if defined( _UNICODE )
+#if defined( _UNICODE )
 XmlNode::XmlNode( const char* pszName, const char* ptszText )
 {
 	memset( this, 0, sizeof( XmlNode ));
 	name = mir_strdup( pszName );
 	sendText = JabberTextEncode( ptszText );
 }
+#endif
 #endif
 
 XmlNode::~XmlNode()
