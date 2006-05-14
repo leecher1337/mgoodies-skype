@@ -28,6 +28,8 @@ Last change by : $Author: ghazan $
 #ifndef _JABBER_XML_H_
 #define _JABBER_XML_H_
 
+#define NOID (-1)
+
 typedef enum { ELEM_OPEN, ELEM_CLOSE, ELEM_OPENCLOSE, ELEM_TEXT } XmlElemType;
 typedef enum { NODE_OPEN, NODE_CLOSE } XmlNodeType;
 
@@ -71,6 +73,8 @@ struct XmlNode
 		XmlNode* addChild( const char* pszName, const char* pszValue );
 	#endif
 
+	XmlNode* addQuery( const char* szNameSpace );
+
 	int   getTextLen() const;
 	char* getText() const;
 
@@ -89,6 +93,15 @@ struct XmlNode
 	XmlNodeType state;						// internal use by parser
 	char* props;
 	boolean dirtyHack;						// to allow generator to issue the unclosed tag
+};
+
+struct XmlNodeIq : public XmlNode
+{
+	XmlNodeIq( const char* type, int id = NOID, const TCHAR* to = NULL );
+	XmlNodeIq( const char* type, const TCHAR* idStr, const TCHAR* to );
+	#if defined( _UNICODE )
+		XmlNodeIq( const char* type, int id, const char* to );
+	#endif
 };
 
 typedef void ( *JABBER_XML_CALLBACK )( XmlNode*, void* );

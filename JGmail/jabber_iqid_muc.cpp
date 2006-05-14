@@ -88,7 +88,7 @@ void JabberIqResultBrowseRooms( XmlNode *iqNode, void *userdata )
 void JabberSetMucConfig( XmlNode* node, void *from )
 {
 	if ( jabberThreadInfo && from ) {
-		XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttr( "to", ( TCHAR* )from );
+		XmlNodeIq iq( "set", NOID, ( TCHAR* )from );
 		XmlNode* query = iq.addChild( "query" );
 		query->addChild( node );
 		JabberSend( jabberThreadInfo->s, iq );
@@ -152,8 +152,8 @@ void JabberIqResultDiscoRoomItems( XmlNode *iqNode, void *userdata )
 		iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_BROWSEROOMS, JabberIqResultBrowseRooms );
 
-		XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", from );
-		XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:browse" );
+		XmlNodeIq iq( "get", iqId, from );
+		XmlNode* query = iq.addQuery( "jabber:iq:browse" );
 		JabberSend( jabberThreadInfo->s, iq );
 }	}
 

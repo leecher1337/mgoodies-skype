@@ -68,8 +68,8 @@ void __cdecl JabberByteSendThread( JABBER_BYTE_TRANSFER *jbt )
 
 	iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberByteInitiateResult );
-	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttr( "to", jbt->dstJID ); iq.addAttrID( iqId );
-	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "http://jabber.org/protocol/bytestreams" );
+	XmlNodeIq iq( "set", iqId, jbt->dstJID );
+	XmlNode* query = iq.addQuery( "http://jabber.org/protocol/bytestreams" );
 	query->addAttr( "sid", jbt->sid );
 
 	if ( bDirect ) {
@@ -199,7 +199,6 @@ static int JabberByteSendParse( HANDLE hConn, JABBER_BYTE_TRANSFER *jbt, char* b
 {
 	int nMethods;
 	BYTE data[10];
-	char text[256];
 	int i;
 	char* str;
 
@@ -226,8 +225,7 @@ static int JabberByteSendParse( HANDLE hConn, JABBER_BYTE_TRANSFER *jbt, char* b
 			data[0] = 5;
 			Netlib_Send( hConn, ( char* )data, 2, 0 );
 		}
-		else
-			jbt->state = JBT_ERROR;
+		else jbt->state = JBT_ERROR;
 		break;
 	case JBT_CONNECT:
 		// received:
@@ -245,11 +243,14 @@ static int JabberByteSendParse( HANDLE hConn, JABBER_BYTE_TRANSFER *jbt, char* b
 		// 04-07 bnd.addr server bound address
 		// 08-09 bnd.port server bound port
 		if ( datalen==47 && *(( DWORD* )buffer )==0x03000105 && buffer[4]==40 && *(( WORD* )( buffer+45 ))==0 ) {
-			mir_snprintf( text, sizeof( text ), "%s%s%s", jbt->sid, jbt->srcJID, jbt->dstJID );
-			JabberLog( "Auth: '%s'", text );
-			if (( str=JabberSha1( text )) != NULL ) {
+			TCHAR text[256];
+			mir_sntprintf( text, SIZEOF( text ), _T("%s%s%s"), jbt->sid, jbt->srcJID, jbt->dstJID );
+			char* szAuthString = t2a( text );
+			JabberLog( "Auth: '%s'", szAuthString );
+			if (( str = JabberSha1( szAuthString )) != NULL ) {
 				for ( i=0; i<40 && buffer[i+5]==str[i]; i++ );
 				mir_free( str );
+
 				ZeroMemory( data, 10 );
 				data[1] = ( i>=20 )?0:2;
 				data[0] = 5;
@@ -260,6 +261,7 @@ static int JabberByteSendParse( HANDLE hConn, JABBER_BYTE_TRANSFER *jbt, char* b
 				else
 					jbt->state = JBT_ERROR;
 			}
+			mir_free( szAuthString );
 		}
 		else
 			jbt->state = JBT_ERROR;
@@ -302,7 +304,7 @@ void __cdecl JabberByteReceiveThread( JABBER_BYTE_TRANSFER *jbt )
 		if (( buffer=( char* )mir_alloc( JABBER_NETWORK_BUFFER_SIZE )) == NULL ) {
 			JabberLog( "bytestream_send cannot allocate network buffer, connection closed." );
 
-			XmlNode iq( "iq" ); iq.addAttr( "type", "error" ); iq.addAttr( "to", jbt->srcJID ); iq.addAttr( "id", jbt->iqId );
+			XmlNodeIq iq( "error", jbt->iqId, jbt->srcJID );
 			XmlNode* e = iq.addChild( "error" ); e->addAttr( "code", 406 ); e->addAttr( "type", "auth" );
 			XmlNode* na = e->addChild( "not-acceptable" ); na->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas" );
 			JabberSend( jabberThreadInfo->s, iq );
@@ -371,7 +373,7 @@ void __cdecl JabberByteReceiveThread( JABBER_BYTE_TRANSFER *jbt )
 		if ( !validStreamhost ) {
 			JabberLog( "bytestream_recv_connection session not completed" );
 
-			XmlNode iq( "iq" ); iq.addAttr( "type", "error" ); iq.addAttr( "to", jbt->srcJID ); iq.addAttr( "id", jbt->iqId );
+			XmlNodeIq iq( "error", jbt->iqId, jbt->srcJID );
 			XmlNode* e = iq.addChild( "error" ); e->addAttr( "code", 404 ); e->addAttr( "type", _T("cancel"));
 			XmlNode* na = e->addChild( "item-not-found" ); na->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas" );
 			JabberSend( jabberThreadInfo->s, iq );
@@ -383,13 +385,8 @@ void __cdecl JabberByteReceiveThread( JABBER_BYTE_TRANSFER *jbt )
 
 static int JabberByteReceiveParse( HANDLE hConn, JABBER_BYTE_TRANSFER *jbt, char* buffer, int datalen )
 {
-	BYTE data[47];
-	char text[256];
-	char* szHash;
-	int bytesReceived;
-	int num;
+	int bytesReceived, num = datalen;
 
-	num = datalen;
 	switch ( jbt->state ) {
 	case JBT_INIT:
 		// received:
@@ -403,16 +400,21 @@ static int JabberByteReceiveParse( HANDLE hConn, JABBER_BYTE_TRANSFER *jbt, char
 		// 04-44 dst.addr ( 41 bytes: 1-byte length, 40-byte SHA1 hash of [sid,srcJID,dstJID] )
 		// 45-46 dst.port ( 0 )
 		if ( datalen==2 && buffer[0]==5 && buffer[1]==0 ) {
+			BYTE data[47];
 			ZeroMemory( data, sizeof( data ));
 			*(( DWORD* )data ) = 0x03000105;
 			data[4] = 40;
-			mir_snprintf( text, sizeof( text ), "%s%s%s", jbt->sid, jbt->srcJID, jbt->dstJID );
-            JabberLog( "Auth: \"%s\"", text );
-			szHash = JabberSha1( text );
+
+			TCHAR text[256];
+			mir_sntprintf( text, SIZEOF( text ), _T("%s%s%s"), jbt->sid, jbt->srcJID, jbt->dstJID );
+			char* szAuthString = t2a( text );
+			JabberLog( "Auth: '%s'", szAuthString );
+			char* szHash = JabberSha1( szAuthString );
 			strncpy(( char* )( data+5 ), szHash, 40 );
 			mir_free( szHash );
 			Netlib_Send( hConn, ( char* )data, 47, 0 );
 			jbt->state = JBT_CONNECT;
+			mir_free( szAuthString );
 		}
 		else jbt->state = JBT_SOCKSERR;
 		break;
@@ -436,8 +438,8 @@ static int JabberByteReceiveParse( HANDLE hConn, JABBER_BYTE_TRANSFER *jbt, char
 			}
 			jbt->state = JBT_RECVING;
 
-			XmlNode iq( "iq" ); iq.addAttr( "type", "result" ); iq.addAttr( "to", jbt->srcJID ); iq.addAttr( "id", jbt->iqId );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "http://jabber.org/protocol/bytestreams" );
+			XmlNodeIq iq( "result", jbt->iqId, jbt->srcJID );
+			XmlNode* query = iq.addQuery( "http://jabber.org/protocol/bytestreams" );
 			XmlNode* stream = iq.addChild( "streamhost-used" ); stream->addAttr( "jid", jbt->streamhostJID );
 			JabberSend( jabberThreadInfo->s, iq );
 		}

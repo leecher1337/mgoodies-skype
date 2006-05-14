@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber.cpp,v $
-Revision       : $Revision: 1.26 $
-Last change on : $Date: 2006/05/01 13:28:09 $
+Revision       : $Revision: 1.28 $
+Last change on : $Date: 2006/05/12 20:13:35 $
 Last change by : $Author: ghazan $
 
 */
@@ -87,8 +87,8 @@ HMODULE hLibSSL = NULL;
 #endif
 PVOID jabberSslCtx;
 
-const TCHAR xmlnsAdmin[] = _T( "http://jabber.org/protocol/muc#admin" );
-const TCHAR xmlnsOwner[] = _T( "http://jabber.org/protocol/muc#owner" );
+const char xmlnsAdmin[] = "http://jabber.org/protocol/muc#admin";
+const char xmlnsOwner[] = "http://jabber.org/protocol/muc#owner";
 
 HWND hwndJabberAgents = NULL;
 HWND hwndJabberGroupchat = NULL;

@@ -19,7 +19,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_password.cpp,v $
-Revision       : $Revision: 1.9$
+Revision       : $Revision: 1.9 $
 Last change on : $Date: 2006/05/12 20:13:35 $
 Last change by : $Author: ghazan $
 
@@ -73,12 +73,13 @@ static BOOL CALLBACK JabberChangePasswordDlgProc( HWND hwndDlg, UINT msg, WPARAM
 					MessageBox( hwndDlg, TranslateT( "Current password is incorrect." ), TranslateT( "Change Password" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 					break;
 				}
-				int iqId = JabberSerialNext();
-				JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultSetPassword );
 				strncpy( jabberThreadInfo->newPassword, newPasswd, SIZEOF( jabberThreadInfo->newPassword ));
 
-				XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID(iqId); iq.addAttr( "to", jabberThreadInfo->server );
-				XmlNode* q = iq.addChild( "query" ); q->addAttr( "xmlns", "jabber:iq:register" );
+				int iqId = JabberSerialNext();
+				JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultSetPassword );
+
+				XmlNodeIq iq( "set", iqId, jabberThreadInfo->server );
+				XmlNode* q = iq.addQuery( "jabber:iq:register" );
 				q->addChild( "username", jabberThreadInfo->username );
 				q->addChild( "password", newPasswd );
 				JabberSend( jabberThreadInfo->s, iq );

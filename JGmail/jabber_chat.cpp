@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_chat.cpp,v $
-Revision       : $Revision: 1.33 $
-Last change on : $Date: 2006/05/12 20:13:35 $
+Revision       : $Revision: 1.34 $
+Last change on : $Date: 2006/05/14 13:19:26 $
 Last change by : $Author: ghazan $
 
 */
@@ -393,7 +393,7 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 				JABBER_LIST_ITEM* item = JabberListGetItemPtrFromIndex( index );
 				if ( item->status != ID_STATUS_OFFLINE ) {
 					// Add every non-offline users to the combobox
-					int n = SendMessageA( hwndComboBox, CB_ADDSTRING, 0, ( LPARAM )item->jid );
+					int n = SendMessage( hwndComboBox, CB_ADDSTRING, 0, ( LPARAM )item->jid );
 					SendMessage( hwndComboBox, CB_SETITEMDATA, n, ( LPARAM )item->jid );
 				}
 				index++;
@@ -405,28 +405,25 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 		switch ( LOWORD( wParam )) {
 		case IDC_INVITE:
 			{
-				char text[256], user[256], *pUser;
-				char* room;
-				HWND hwndComboBox;
-				int iqId, n;
-
-				hwndComboBox = GetDlgItem( hwndDlg, IDC_USER );
-				if (( room=( char* )GetWindowLong( hwndDlg, GWL_USERDATA )) != NULL ) {
-					n = SendMessage( hwndComboBox, CB_GETCURSEL, 0, 0 );
+				char* room = ( char* )GetWindowLong( hwndDlg, GWL_USERDATA );
+				if ( room != NULL ) {
+					TCHAR text[256], user[256], *pUser;
+					HWND hwndComboBox = GetDlgItem( hwndDlg, IDC_USER );
+					int n = SendMessage( hwndComboBox, CB_GETCURSEL, 0, 0 );
 					if ( n < 0 ) {
-						GetWindowTextA( hwndComboBox, user, sizeof( user ));
+						GetWindowText( hwndComboBox, user, SIZEOF( user ));
 						pUser = user;
 					}
-					else pUser = ( char* )SendMessage( hwndComboBox, CB_GETITEMDATA, n, 0 );
+					else pUser = ( TCHAR* )SendMessage( hwndComboBox, CB_GETITEMDATA, n, 0 );
 
 					if ( pUser != NULL ) {
-						GetDlgItemTextA( hwndDlg, IDC_REASON, text, sizeof( text ));
-						iqId = JabberSerialNext();
+						GetDlgItemText( hwndDlg, IDC_REASON, text, SIZEOF( text ));
+						int iqId = JabberSerialNext();
 
-						XmlNode m( "message" ); m.addAttrID( iqId ); m.addAttr( "to", room );
-						XmlNode* x = m.addChild( "x" ); x->addAttr( "xmlns", "http://jabber.org/protocol/muc#user" );
-						XmlNode* i = m.addChild( "invite" ); i->addAttr( "to", pUser );
-						m.addChild( "reason", text );
+						XmlNode m( "message" ); m.addAttr( "from", room ); m.addAttr( "to", pUser ); m.addAttrID( iqId ); m.addAttr( "type", "normal" );
+						XmlNode* x = m.addChild( "x" ); x->addAttr( "xmlns", _T("http://jabber.org/protocol/muc#user"));
+						XmlNode* i = x->addChild( "invite" ); i->addAttr( "to", pUser ); i->addChild( "reason", text );
+						x = m.addChild( "x", text ); x->addAttr( "xmlns", _T("jabber:x:conference")); x->addAttr( "jid", room );
 						JabberSend( jabberThreadInfo->s, m );
 			}	}	}
 			// Fall through
@@ -455,21 +452,21 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 /////////////////////////////////////////////////////////////////////////////////////////
 // Context menu processing
 
-static void JabberAdminSet( const TCHAR* to, const TCHAR* ns, const char* szItem, const TCHAR* itemVal, const char* var, const TCHAR* varVal )
+static void JabberAdminSet( const TCHAR* to, const char* ns, const char* szItem, const TCHAR* itemVal, const char* var, const TCHAR* varVal )
 {
-	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttr( "to", to );
-	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", ns );
+	XmlNodeIq iq( "set", NOID, to );
+	XmlNode* query = iq.addQuery( ns );
 	XmlNode* item = query->addChild( "item" ); item->addAttr( szItem, itemVal ); item->addAttr( var, varVal );
 	JabberSend( jabberThreadInfo->s, iq );
 }
 
-static void JabberAdminGet( const TCHAR* to, const TCHAR* ns, const char* var, const TCHAR* varVal, JABBER_IQ_PFUNC foo )
+static void JabberAdminGet( const TCHAR* to, const char* ns, const char* var, const TCHAR* varVal, JABBER_IQ_PFUNC foo )
 {
 	int id = JabberSerialNext();
 	JabberIqAdd( id, IQ_PROC_NONE, foo );
 
-	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( id ); iq.addAttr( "to", to );
-	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", ns );
+	XmlNodeIq iq( "get", id, to );
+	XmlNode* query = iq.addQuery( ns );
 	XmlNode* item = query->addChild( "item" ); item->addAttr( var, varVal );
 	JabberSend( jabberThreadInfo->s, iq );
 }
@@ -506,8 +503,8 @@ static void sttNickListHook( JABBER_LIST_ITEM* item, GCHOOK* gch )
 	{
 		mir_sntprintf( szBuffer, SIZEOF(szBuffer), _T("%s %s"), TranslateT( "Reason to kick" ), him->resourceName );
 		if ( JabberEnterString( szBuffer, SIZEOF(szBuffer))) {
-			XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttr( "to", item->jid );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", xmlnsAdmin );
+			XmlNodeIq iq( "set", NOID, item->jid );
+			XmlNode* query = iq.addQuery( xmlnsAdmin );
 			XmlNode* item = query->addChild( "item" ); item->addAttr( "nick", him->resourceName ); item->addAttr( "role", "none" );
 			item->addChild( "reason", szBuffer );
 			JabberSend( jabberThreadInfo->s, iq );
@@ -518,8 +515,8 @@ static void sttNickListHook( JABBER_LIST_ITEM* item, GCHOOK* gch )
 	case IDM_BAN:
 		mir_sntprintf( szBuffer, SIZEOF(szBuffer), _T("%s %s"), TranslateT( "Reason to ban" ), him->resourceName );
 		if ( JabberEnterString( szBuffer, SIZEOF(szBuffer))) {
-			XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttr( "to", item->jid );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", xmlnsAdmin );
+			XmlNodeIq iq( "set", NOID, item->jid );
+			XmlNode* query = iq.addQuery( xmlnsAdmin );
 			XmlNode* item = query->addChild( "item" ); item->addAttr( "nick", him->resourceName ); item->addAttr( "affiliation", "outcast" );
 			item->addChild( "reason", szBuffer );
 			JabberSend( jabberThreadInfo->s, iq );
@@ -610,8 +607,8 @@ static void sttLogListHook( JABBER_LIST_ITEM* item, GCHOOK* gch )
 		int iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetMuc );
 
-		XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", pszID );
-		XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "xmlnsOwner" );
+		XmlNodeIq iq( "get", iqId, pszID );
+		XmlNode* query = iq.addQuery( xmlnsOwner );
 		JabberSend( jabberThreadInfo->s, iq );
 		break;
 	}
@@ -620,8 +617,8 @@ static void sttLogListHook( JABBER_LIST_ITEM* item, GCHOOK* gch )
 		if ( !JabberEnterString( szBuffer, SIZEOF(szBuffer)))
 			break;
 
-		{	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttr( "to", pszID );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", xmlnsOwner );
+		{	XmlNodeIq iq( "set", NOID, pszID );
+			XmlNode* query = iq.addQuery( xmlnsOwner );
 			query->addChild( "destroy" )->addChild( "reason", szBuffer );
 			JabberSend( jabberThreadInfo->s, iq );
 		}

@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_svc.cpp,v $
-Revision       : $Revision: 1.45 $
-Last change on : $Date: 2006/05/12 20:13:35 $
+Revision       : $Revision: 1.46 $
+Last change on : $Date: 2006/05/14 13:19:26 $
 Last change by : $Author: ghazan $
 
 */
@@ -309,8 +309,8 @@ int JabberContactDeleted( WPARAM wParam, LPARAM lParam )
 		}
 		if ( JabberListExist( LIST_ROSTER, jid )) {
 			// Remove from roster, server also handles the presence unsubscription process.
-			XmlNode iq( "iq" ); iq.addAttr( "type", "set" );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
+			XmlNodeIq iq( "set" );
+			XmlNode* query = iq.addQuery( "jabber:iq:roster" );
 			XmlNode* item = query->addChild( "item" ); item->addAttr( "jid", jid ); item->addAttr( "subscription", "remove" );
 			JabberSend( jabberThreadInfo->s, iq );
 		}
@@ -325,10 +325,6 @@ int JabberContactDeleted( WPARAM wParam, LPARAM lParam )
 
 static TCHAR* sttSettingToTchar( DBCONTACTWRITESETTING* cws )
 {
-	#if defined( _UNICODE )
-	TCHAR* result;
-	#endif
-
 	switch( cws->value.type ) {
 	case DBVT_ASCIIZ:
 		#if defined( _UNICODE )
@@ -339,8 +335,10 @@ static TCHAR* sttSettingToTchar( DBCONTACTWRITESETTING* cws )
 
 	case DBVT_UTF8:
 		#if defined( _UNICODE )
+		{	TCHAR* result;
 			JabberUtf8Decode( NEWSTR_ALLOCA(cws->value.pszVal), &result );
 			return result;
+		}
 		#else
 			return mir_strdup( JabberUtf8Decode( NEWSTR_ALLOCA(cws->value.pszVal), NULL ));
 		#endif
@@ -575,9 +573,7 @@ int JabberFileDeny( WPARAM wParam, LPARAM lParam )
 	CCSDATA *ccs = ( CCSDATA * ) lParam;
 	filetransfer* ft = ( filetransfer* )ccs->wParam;
 
-	XmlNode iq( "iq" ); iq.addAttr( "type", "error" ); iq.addAttr( "to", ft->jid );
-	if ( ft->iqId )
-		iq.addAttr( "id", ft->iqId );
+	XmlNodeIq iq( "error", ft->iqId, ft->jid );
 
 	switch ( ft->type ) {
 	case FT_OOB:
@@ -665,8 +661,8 @@ static int JabberGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 				int iqId = JabberSerialNext();
 				JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetAvatar );
 
-				XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", szJid );
-				XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:avatar" );
+				XmlNodeIq iq( "get", iqId, szJid );
+				XmlNode* query = iq.addQuery( "jabber:iq:avatar" );
 				JabberSend( jabberThreadInfo->s, iq );
 
 				JFreeVariant( &dbv );
@@ -877,8 +873,8 @@ int JabberSearchByEmail( WPARAM wParam, LPARAM lParam )
 	int iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_GETSEARCH, JabberIqResultSetSearch );
 
-	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", szServerName );
-	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:search" );
+	XmlNodeIq iq( "set", iqId, szServerName );
+	XmlNode* query = iq.addQuery( "jabber:iq:search" );
 	query->addChild( "email", ( char* )lParam );
 	JabberSend( jabberThreadInfo->s, iq );
 	return iqId;
@@ -899,7 +895,7 @@ int JabberSearchByName( WPARAM wParam, LPARAM lParam )
 		strcpy( szServerName, "users.jabber.org" );
 
 	int iqId = JabberSerialNext();
-	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", szServerName );
+	XmlNodeIq iq( "set", iqId, szServerName );
 	XmlNode* query = iq.addChild( "query" ), *field, *x;
 	query->addAttr( "xmlns", "jabber:iq:search" );
 
@@ -998,8 +994,8 @@ int JabberSendFile( WPARAM wParam, LPARAM lParam )
 
 			TCHAR jid[ 200 ];
 			mir_sntprintf( jid, SIZEOF(jid), _T("%s/%s"), item->jid, rs );
-			XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", jid );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "http://jabber.org/protocol/disco#info" );
+			XmlNodeIq iq( "get", iqId, jid );
+			XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#info" );
 			JabberSend( jabberThreadInfo->s, iq );
 		}
 	}

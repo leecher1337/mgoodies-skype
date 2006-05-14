@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_libstr.cpp,v $
-Revision       : $Revision: 1.5 $
-Last change on : $Date: 2006/05/12 20:13:35 $
+Revision       : $Revision: 1.6 $
+Last change on : $Date: 2006/05/14 09:24:24 $
 Last change by : $Author: ghazan $
 
 */
@@ -51,11 +51,26 @@ char* __stdcall rtrim( char *string )
 {
    char* p = string + strlen( string ) - 1;
 
-   while ( p >= string )
-   {  if ( *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r' )
+   while ( p >= string ) {
+		if ( *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r' )
          break;
 
 		*p-- = 0;
    }
    return string;
 }
+
+#if defined( _UNICODE )
+TCHAR* __stdcall rtrim( TCHAR *string )
+{
+   TCHAR* p = string + _tcslen( string ) - 1;
+
+   while ( p >= string ) {
+		if ( *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r' )
+         break;
+
+		*p-- = 0;
+   }
+   return string;
+}
+#endif

@@ -58,7 +58,7 @@ int JabberSendGetVcard( const TCHAR* jid )
 	int iqId = JabberSerialNext();
 	JabberIqAdd( iqId, ( jid == jabberJID ) ? IQ_PROC_GETVCARD : IQ_PROC_NONE, JabberIqResultGetVcard );
 
-	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", jid );
+	XmlNodeIq iq( "get", iqId, jid );
 	XmlNode* vs = iq.addChild( "vCard" ); vs->addAttr( "xmlns", "vcard-temp" );
 	vs->addAttr( "prodid", "-//HandGen//NONSGML vGen v1.0//EN" ); vs->addAttr( "version", "2.0" );
 	JabberSend( jabberThreadInfo->s, iq );
@@ -829,7 +829,7 @@ static void SetServerVcard()
 	iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_SETVCARD, JabberIqResultSetVcard );
 
-	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId );
+	XmlNodeIq iq( "set", iqId );
 	XmlNode* v = iq.addChild( "vCard" ); v->addAttr( "xmlns", "vcard-temp" );
 
 	AppendVcardFromDB( v, "FN", "FullName" );

@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_list.cpp,v $
-Revision       : $Revision: 1.21 $
-Last change on : $Date: 2006/01/22 20:05:00 $
+Revision       : $Revision: 1.22 $
+Last change on : $Date: 2006/05/14 13:19:26 $
 Last change by : $Author: ghazan $
 
 */
@@ -103,7 +103,7 @@ int JabberListExist( JABBER_LIST list, const TCHAR* jid )
 	for ( int i=0; i<count; i++ ) {
 		if ( lists[i].list == list ) {
 			TCHAR szTempJid[ JABBER_MAX_JID_LEN ];
-			if ( !_tcsicmp( szSrc, JabberStripJid( lists[i].jid, szTempJid, sizeof( szTempJid )))) {
+			if ( !_tcscmp( szSrc, JabberStripJid( lists[i].jid, szTempJid, sizeof( szTempJid )))) {
 			  	LeaveCriticalSection( &csLists );
 				return i+1;
 	}	}	}

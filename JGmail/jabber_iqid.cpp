@@ -51,8 +51,8 @@ void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata )
 		int iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultSetAuth );
 
-		XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId );
-		XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:auth" );
+		XmlNodeIq iq( "set", iqId );
+		XmlNode* query = iq.addQuery( "jabber:iq:auth" );
 		query->addChild( "username", info->username );
 		if ( JabberXmlGetChild( queryNode, "digest" )!=NULL && streamId ) {
 			char* str = JabberUtf8Encode( info->password );
@@ -101,9 +101,10 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 
 		jabberOnline = TRUE;
 
+		iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
-		{	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
+		{	XmlNodeIq iq( "get", iqId ); 
+			XmlNode* query = iq.addQuery( "jabber:iq:roster" );
 			JabberSend( info->s, iq );
 		}
 
@@ -112,8 +113,8 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
 
-			XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:agents" );
+			XmlNodeIq iq( "get", iqId ); 
+			XmlNode* query = iq.addQuery( "jabber:iq:agents" );
 			JabberSend( info->s, iq );
 		}
 	}
@@ -533,7 +534,6 @@ LBL_NoTypeSpecified:
 
 	if ( GetTempPathA( sizeof( szTempPath ), szTempPath ) <= 0 )
 		lstrcpyA( szTempPath, ".\\" );
-	
 	if ( !GetTempFileNameA( szTempPath, jabberProtoName, GetTickCount(), szTempFileName )) {
 LBL_Ret:
 		mir_free( buffer );
@@ -543,9 +543,8 @@ LBL_Ret:
 	szTempFileName[strlen(szTempFileName)-3]='\0';
 	strcat(szTempFileName,strrchr(jabberVcardPhotoType,'/')+1);
 	JabberLog( "Picture file name set to %s", szTempFileName );
-
 	HANDLE hFile = CreateFileA( szTempFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
-   if ( hFile == INVALID_HANDLE_VALUE )
+	if ( hFile == INVALID_HANDLE_VALUE )
 		goto LBL_Ret;
 
 	JabberLog( "Writing %d bytes", bufferLen );
@@ -557,7 +556,7 @@ LBL_Ret:
 		hasPhoto = TRUE;
 		if ( jabberVcardPhotoFileName ) {
 			DeleteFileA( jabberVcardPhotoFileName );
-			free( jabberVcardPhotoFileName ); 
+			mir_free( jabberVcardPhotoFileName ); 
 			jabberVcardPhotoFileName = NULL;
 		}
 		replaceStr( jabberVcardPhotoFileName, szTempFileName );
@@ -1196,8 +1195,8 @@ void JabberIqResultDiscoAgentItems( XmlNode *iqNode, void *userdata )
 							int iqId = JabberSerialNext();
 							JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultDiscoAgentInfo );
 
-							XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", jid );
-							XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "http://jabber.org/protocol/disco#info" );
+							XmlNodeIq iq( "get", iqId, jid );
+							XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#info" );
 							JabberSend( jabberThreadInfo->s, iq );
 		}	}	}	}	}
 
@@ -1213,8 +1212,8 @@ void JabberIqResultDiscoAgentItems( XmlNode *iqNode, void *userdata )
 		int iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
 
-		XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", from );
-		XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:agents" );
+		XmlNodeIq iq( "get", iqId, from );
+		XmlNode* query = iq.addQuery( "jabber:iq:agents" );
 		JabberSend( jabberThreadInfo->s, iq );
 }	}
 
