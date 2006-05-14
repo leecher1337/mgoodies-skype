@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_agent.cpp,v $
 Revision       : $Revision: 1.16 $
-Last change on : $Date: 2006/05/12 20:13:3 $
+Last change on : $Date: 2006/05/12 20:13:35 $
 Last change by : $Author: ghazan $
 
 */
@@ -49,8 +49,8 @@ static void JabberRegisterAgent( HWND hwndDlg, TCHAR* jid )
 {
 	int iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_GETREGISTER, JabberIqResultGetRegister );
-	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID(iqId); iq.addAttr( "to", jid );
-	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:register" );
+	XmlNodeIq iq( "get", iqId, jid );
+	XmlNode* query = iq.addQuery( "jabber:iq:register" );
 	JabberSend( jabberThreadInfo->s, iq );
 	hwndAgentRegInput = CreateDialogParam( hInst, MAKEINTRESOURCE( IDD_FORM ), hwndDlg, JabberAgentRegInputDlgProc, 0 );
 }
@@ -99,8 +99,8 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_DISCOAGENTS, JabberIqResultDiscoAgentItems );
 
-			XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", jabberThreadInfo->server );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "http://jabber.org/protocol/disco#items" );
+			XmlNodeIq iq( "get", iqId, jabberThreadInfo->server );
+			XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
 			JabberSend( jabberThreadInfo->s, iq );
 
 			SendMessage( hwndDlg, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
@@ -271,8 +271,8 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			JabberListRemoveList( LIST_AGENT );
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_DISCOAGENTS, JabberIqResultDiscoAgentItems );
-			{	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", text );
-				XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "http://jabber.org/protocol/disco#items" );
+			{	XmlNodeIq iq( "get", iqId, text );
+				XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
 				JabberSend( jabberThreadInfo->s, iq );
 			}
 			return TRUE;
@@ -308,14 +308,14 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 				lvItem.cchTextMax = SIZEOF( text );
 				ListView_GetItem( lv, &lvItem );
 				if (( item=JabberListGetItemPtr( LIST_ROSTER, lvItem.pszText )) != NULL ) {
-					{	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttr( "to", item->jid );
-						XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:register" );
+					{	XmlNodeIq iq( "set", NOID, item->jid );
+						XmlNode* query = iq.addQuery( "jabber:iq:register" );
 						query->addChild( "remove" );
 						JabberSend( jabberThreadInfo->s, iq );
 					}
 					{
-						XmlNode iq( "iq" ); iq.addAttr( "type", "set" );
-						XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
+						XmlNodeIq iq( "set" );
+						XmlNode* query = iq.addQuery( "jabber:iq:roster" );
 						XmlNode* itm = query->addChild( "item" ); itm->addAttr( "jid", item->jid ); itm->addAttr( "subscription", "remove" );
 						JabberSend( jabberThreadInfo->s, iq );
 			}	}	}
@@ -377,8 +377,8 @@ BOOL CALLBACK JabberAgentRegInputDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			int iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_SETREGISTER, JabberIqResultSetRegister );
 
-			XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", from );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:register" );
+			XmlNodeIq iq( "set", iqId, from );
+			XmlNode* query = iq.addQuery( "jabber:iq:register" );
 
 			if (( xNode=JabberXmlGetChild( queryNode, "x" )) != NULL ) {
 				// use new jabber:x:data form

@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_groupchat.cpp,v $
-Revision       : $Revision: 1.43 $
-Last change on : $Date: 2006/05/12 20:13:35 $
+Revision       : $Revision: 1.44 $
+Last change on : $Date: 2006/05/14 13:19:26 $
 Last change by : $Author: ghazan $
 
 */
@@ -47,8 +47,8 @@ int JabberMenuHandleGroupchat( WPARAM wParam, LPARAM lParam )
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_DISCOROOMSERVER, JabberIqResultDiscoRoomItems );
 
-			XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", ( TCHAR* )lParam );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "http://jabber.org/protocol/disco#items" );
+			XmlNodeIq iq( "get", iqId, ( TCHAR* )lParam );
+			XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
 			JabberSend( jabberThreadInfo->s, iq );
 			// <iq/> result will send WM_JABBER_REFRESH to update the list with real data
 		}
@@ -117,8 +117,8 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 				int iqId = JabberSerialNext();
 				JabberIqAdd( iqId, IQ_PROC_DISCOROOMSERVER, JabberIqResultDiscoRoomItems );
 
-				XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", ( TCHAR* )lParam );
-				XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "http://jabber.org/protocol/disco#items" );
+				XmlNodeIq iq( "get", iqId, ( TCHAR* )lParam );
+				XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
 				JabberSend( jabberThreadInfo->s, iq );
 			}
 			else {
@@ -141,6 +141,7 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 		ListView_DeleteAllItems( GetDlgItem( hwndDlg, IDC_ROOM ));
 		EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), FALSE );
 		return TRUE;
+
 	case WM_JABBER_REFRESH:
 		// lParam = server from which agent information is obtained
 		{
@@ -287,8 +288,8 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 					CallService( MS_GC_NEWSESSION, 0, ( LPARAM )&gcw );
 					mir_free((void*)gcw.pszID);
 				}
-				{	XmlNode iq( "iq" ); iq.addAttr( "type", "set" );
-					XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
+				{	XmlNodeIq iq( "set" );
+					XmlNode* query = iq.addQuery( "jabber:iq:roster" );
 					XmlNode* item = query->addChild( "item" ); item->addAttr( "jid", jid );
 					JabberSend( jabberThreadInfo->s, iq );
 				}
@@ -315,8 +316,8 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 				int iqId = JabberSerialNext();
 				JabberIqAdd( iqId, IQ_PROC_DISCOROOMSERVER, JabberIqResultDiscoRoomItems );
 
-				XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", text );
-				XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "http://jabber.org/protocol/disco#items" );
+				XmlNodeIq iq( "get", iqId, text );
+				XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
 				JabberSend( jabberThreadInfo->s, iq );
 			}
 			return TRUE;
@@ -620,8 +621,8 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 			int iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetMuc );
 
-			XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", item->jid );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", xmlnsOwner );
+			XmlNodeIq iq( "get", iqId, item->jid );
+			XmlNode* query = iq.addQuery( xmlnsOwner );
 			JabberSend( jabberThreadInfo->s, iq );
 		}
 
@@ -784,6 +785,9 @@ void JabberGroupchatProcessMessage( XmlNode *node, void *userdata )
 	mir_free( (void*)gce.pszText ); // Since we processed msgText and created a new string
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// Accepting groupchat invitations
+
 typedef struct {
 	TCHAR* roomJid;
 	TCHAR* from;
@@ -791,6 +795,15 @@ typedef struct {
 	TCHAR* password;
 }
 	JABBER_GROUPCHAT_INVITE_INFO;
+
+static void JabberAcceptGroupchatInvite( TCHAR* roomJid, TCHAR* reason, TCHAR* password )
+{
+	TCHAR room[256], *server, *p;
+	_tcsncpy( room, roomJid, SIZEOF( room ));
+	p = _tcstok( room, _T( "@" ));
+	server = _tcstok( NULL, _T( "@" ));
+	JabberGroupchatJoinRoom( server, p, reason, password );
+}
 
 static BOOL CALLBACK JabberGroupchatInviteAcceptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
 {
@@ -815,16 +828,10 @@ static BOOL CALLBACK JabberGroupchatInviteAcceptDlgProc( HWND hwndDlg, UINT msg,
 		switch ( LOWORD( wParam )) {
 		case IDC_ACCEPT:
 			{
-				JABBER_GROUPCHAT_INVITE_INFO *inviteInfo;
-				TCHAR roomJid[256], text[128];
-				TCHAR* server, *room;
-
-				inviteInfo = ( JABBER_GROUPCHAT_INVITE_INFO * ) GetWindowLong( hwndDlg, GWL_USERDATA );
-				_tcsncpy( roomJid, inviteInfo->roomJid, SIZEOF( roomJid ));
-				room = _tcstok( roomJid, _T( "@" ));
-				server = _tcstok( NULL, _T( "@" ));
+				JABBER_GROUPCHAT_INVITE_INFO *inviteInfo = ( JABBER_GROUPCHAT_INVITE_INFO * ) GetWindowLong( hwndDlg, GWL_USERDATA );
+				TCHAR text[128];
 				GetDlgItemText( hwndDlg, IDC_NICK, text, SIZEOF( text ));
-				JabberGroupchatJoinRoom( server, room, text, inviteInfo->password );
+				JabberAcceptGroupchatInvite( inviteInfo->roomJid, text, inviteInfo->password );
 			}
 			// Fall through
 		case IDCANCEL:
@@ -853,15 +860,16 @@ static void __cdecl JabberGroupchatInviteAcceptThread( JABBER_GROUPCHAT_INVITE_I
 
 void JabberGroupchatProcessInvite( TCHAR* roomJid, TCHAR* from, TCHAR* reason, TCHAR* password )
 {
-	JABBER_GROUPCHAT_INVITE_INFO *inviteInfo;
-
 	if ( roomJid == NULL )
 		return;
 
-	inviteInfo = ( JABBER_GROUPCHAT_INVITE_INFO * ) mir_alloc( sizeof( JABBER_GROUPCHAT_INVITE_INFO ));
-	inviteInfo->roomJid = mir_tstrdup( roomJid );
-	inviteInfo->from = ( from!=NULL ) ? mir_tstrdup( from ):NULL;
-	inviteInfo->reason = ( reason!=NULL ) ? mir_tstrdup( reason ):NULL;
-	inviteInfo->password = ( password!=NULL ) ? mir_tstrdup( password ):NULL;
-	JabberForkThread(( JABBER_THREAD_FUNC )JabberGroupchatInviteAcceptThread, 0, ( void * ) inviteInfo );
+	if ( JGetByte( "AutoAcceptMUC", FALSE ) == FALSE ) {
+		JABBER_GROUPCHAT_INVITE_INFO* inviteInfo = ( JABBER_GROUPCHAT_INVITE_INFO * ) mir_alloc( sizeof( JABBER_GROUPCHAT_INVITE_INFO ));
+		inviteInfo->roomJid  = mir_tstrdup( roomJid );
+		inviteInfo->from     = mir_tstrdup( from );
+		inviteInfo->reason   = mir_tstrdup( reason );
+		inviteInfo->password = mir_tstrdup( password );
+		JabberForkThread(( JABBER_THREAD_FUNC )JabberGroupchatInviteAcceptThread, 0, ( void* )inviteInfo );
+	}
+	else JabberAcceptGroupchatInvite( roomJid, from, password );
 }

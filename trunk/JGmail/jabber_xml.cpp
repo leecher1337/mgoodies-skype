@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_xml.cpp,v $
-Revision       : $Revision: 1.8 $
-Last change on : $Date: 2005/11/20 20:30:20 $
+Revision       : $Revision: 1.12 $
+Last change on : $Date: 2006/05/14 13:19:26 $
 Last change by : $Author: ghazan $
 
 */
@@ -62,7 +62,7 @@ void JabberXmlDestroyState( XmlState *xmlState )
 	// Note: cannot use JabberXmlFreeNode() to mir_free xmlState->root
 	// because it will do mir_free( xmlState->root ) which is not freeable.
 	node = &( xmlState->root );
-
+	
 	// Free all children first
 	for ( i=0; i<node->numChild; i++ )
 		delete node->child[i];
@@ -447,20 +447,19 @@ static void JabberXmlRemoveChild( XmlNode *node, XmlNode *child )
 
 XmlNode *JabberXmlCopyNode( XmlNode *node )
 {
-	XmlNode *n;
-	int i;
+	if ( node == NULL )
+		return NULL;
 
-	if ( node == NULL ) return NULL;
-	n = ( XmlNode * ) mir_alloc( sizeof( XmlNode ));
+	XmlNode *n = new XmlNode( node->name );
 	// Copy attributes
 	if ( node->numAttr > 0 ) {
 		n->attr = ( XmlAttr ** ) mir_alloc( node->numAttr*sizeof( XmlAttr * ));
-		for ( i=0; i<node->numAttr; i++ ) {
-			n->attr[i] = ( XmlAttr * ) mir_alloc( sizeof( XmlAttr ));
-			if ( node->attr[i]->name ) n->attr[i]->name = mir_strdup( node->attr[i]->name );
-			else n->attr[i]->name = NULL;
-			if ( node->attr[i]->value ) n->attr[i]->value = mir_tstrdup( node->attr[i]->value );
-			else n->attr[i]->value = NULL;
+		for ( int i=0; i < node->numAttr; i++ ) {
+			n->attr[i] = new XmlAttr;
+			if ( node->attr[i]->name )
+				n->attr[i]->name = mir_strdup( node->attr[i]->name );
+			if ( node->attr[i]->value )
+				n->attr[i]->value = mir_tstrdup( node->attr[i]->value );
 		}
 	}
 	else
@@ -468,7 +467,7 @@ XmlNode *JabberXmlCopyNode( XmlNode *node )
 	// Recursively copy children
 	if ( node->numChild > 0 ) {
 		n->child = ( XmlNode ** ) mir_alloc( node->numChild*sizeof( XmlNode * ));
-		for ( i=0; i<node->numChild; i++ )
+		for ( int i=0; i<node->numChild; i++ )
 			n->child[i] = JabberXmlCopyNode( node->child[i] );
 	}
 	else
@@ -480,9 +479,7 @@ XmlNode *JabberXmlCopyNode( XmlNode *node )
 	n->maxNumChild = node->numChild;
 	n->depth = node->depth;
 	n->state = node->state;
-	n->name = ( node->name )?mir_strdup( node->name ):NULL;
 	n->text = ( node->text )?mir_tstrdup( node->text ):NULL;
-
 	return n;
 }
 
@@ -498,7 +495,37 @@ XmlNode *JabberXmlAddChild( XmlNode *n, char* name )
 	return n->addChild( result );
 }
 
-//==================================================================================
+/////////////////////////////////////////////////////////////////////////////////////////
+// XmlNodeIq class members
+
+XmlNodeIq::XmlNodeIq( const char* type, int id, const TCHAR* to ) :
+	XmlNode( "iq" )
+{
+	if ( type != NULL ) addAttr( "type", type );
+	if ( to   != NULL ) addAttr( "to",   to );
+	if ( id   != NOID ) addAttrID( id );
+}
+
+XmlNodeIq::XmlNodeIq( const char* type, const TCHAR* idStr, const TCHAR* to ) :
+	XmlNode( "iq" )
+{
+	if ( type  != NULL ) addAttr( "type", type  );
+	if ( to    != NULL ) addAttr( "to",   to    );
+	if ( idStr != NULL ) addAttr( "id",   idStr );
+}
+
+#if defined( _UNICODE )
+XmlNodeIq::XmlNodeIq( const char* type, int id, const char* to ) :
+	XmlNode( "iq" )
+{
+	if ( type != NULL ) addAttr( "type", type );
+	if ( to   != NULL ) addAttr( "to",   to );
+	if ( id   != NOID ) addAttrID( id );
+}
+#endif
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// XmlNode class members
 
 XmlNode::XmlNode( const char* pszName )
 {
@@ -518,14 +545,12 @@ XmlNode::XmlNode( const char* pszName, const TCHAR* ptszText )
 }
 
 #if defined( _UNICODE )
-#if defined( _UNICODE )
 XmlNode::XmlNode( const char* pszName, const char* ptszText )
 {
 	memset( this, 0, sizeof( XmlNode ));
 	name = mir_strdup( pszName );
 	sendText = JabberTextEncode( ptszText );
 }
-#endif
 #endif
 
 XmlNode::~XmlNode()
@@ -619,6 +644,14 @@ XmlNode* XmlNode::addChild( const char* pszName, const char* pszValue )
 	return addChild( new XmlNode( pszName, pszValue ));
 }
 #endif
+
+XmlNode* XmlNode::addQuery( const char* szNameSpace )
+{
+	XmlNode* n = addChild( "query" );
+	if ( n )
+		n->addAttr( "xmlns", szNameSpace );
+	return n;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // text extraction routines

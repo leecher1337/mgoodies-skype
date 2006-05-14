@@ -116,15 +116,19 @@ void JabberFtInitiate( TCHAR* jid, filetransfer* ft )
 	if (( p=strrchr( filename, '\\' )) != NULL )
 		filename = p+1;
 
-	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", jid );
-	XmlNode* si = iq.addChild( "si" ); si->addAttr( "xmlns", "http://jabber.org/protocol/si" );
+	TCHAR tszJid[200];
+	mir_sntprintf( tszJid, SIZEOF(tszJid), _T("%s/%s"), jid, rs );
+
+	XmlNodeIq iq( "set", iqId, tszJid );
+	XmlNode* si = iq.addChild( "si" ); si->addAttr( "xmlns", "http://jabber.org/protocol/si" ); 
 	si->addAttr( "id", sid ); si->addAttr( "mime-type", "binary/octet-stream" );
 	si->addAttr( "profile", "http://jabber.org/protocol/si/profile/file-transfer" );
 	XmlNode* file = si->addChild( "file" ); file->addAttr( "name", filename ); file->addAttr( "size", ft->fileSize[ ft->std.currentFileNumber ] );
 	file->addAttr( "xmlns", "http://jabber.org/protocol/si/profile/file-transfer" );
 	file->addChild( "desc", ft->szDescription );
 	XmlNode* feature = si->addChild( "feature" ); feature->addAttr( "xmlns", "http://jabber.org/protocol/feature-neg" );
-	XmlNode* field = feature->addChild( "field" ); field->addAttr( "var", "stream-method" ); field->addAttr( "type", "list-single" );
+	XmlNode* x = feature->addChild( "x" ); x->addAttr( "xmlns", "jabber:x:data" ); x->addAttr( "type", "form" );
+	XmlNode* field = x->addChild( "field" ); field->addAttr( "var", "stream-method" ); field->addAttr( "type", "list-single" );
 	XmlNode* option = field->addChild( "option" ); option->addChild( "value", "http://jabber.org/protocol/bytestreams" );
 	JabberSend( jabberThreadInfo->s, iq );
 }
@@ -317,9 +321,7 @@ void JabberFtHandleSiRequest( XmlNode *iqNode )
 			}
 			else {
 				// Unknown stream mechanism
-				XmlNode iq( "iq" ); iq.addAttr( "type", "error" ); iq.addAttr( "to", from );
-				if ( szId != NULL )
-					iq.addAttr( "id", szId );
+				XmlNodeIq iq( "error", szId, from );
 				XmlNode* e = iq.addChild( "error" ); e->addAttr( "code", 400 ); e->addAttr( "type", "cancel" );
 				XmlNode* br = e->addChild( "bad-request" ); br->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas" );
 				XmlNode* nvs = e->addChild( "no-valid-streams" ); nvs->addAttr( "xmlns", "http://jabber.org/protocol/si" );
@@ -328,9 +330,7 @@ void JabberFtHandleSiRequest( XmlNode *iqNode )
 	}	}	}
 
 	// Bad stream initiation, reply with bad-profile
-	XmlNode iq( "iq" ); iq.addAttr( "type", "error" ); iq.addAttr( "to", from );
-	if ( szId )
-		iq.addAttr( "id", szId );
+	XmlNodeIq iq( "error", szId, from );
 	XmlNode* e = iq.addChild( "error" ); e->addAttr( "code", 400 ); e->addAttr( "type", "cancel" );
 	XmlNode* br = e->addChild( "bad-request" ); br->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas" );
 	XmlNode* nvs = e->addChild( "bad-profile" ); nvs->addAttr( "xmlns", "http://jabber.org/protocol/si" );
@@ -345,9 +345,7 @@ void JabberFtAcceptSiRequest( filetransfer* ft )
 	if (( item=JabberListAdd( LIST_FTRECV, ft->sid )) != NULL ) {
 		item->ft = ft;
 
-		XmlNode iq( "iq" ); iq.addAttr( "type", "result" ); iq.addAttr( "to", ft->jid );
-		if ( ft->iqId != NULL )
-			iq.addAttr( "id", ft->iqId );
+		XmlNodeIq iq( "result", ft->iqId, ft->jid );
 		XmlNode* si = iq.addChild( "si" ); si->addAttr( "xmlns", "http://jabber.org/protocol/si" );
 		XmlNode* f = si->addChild( "feature" ); f->addAttr( "xmlns", "http://jabber.org/protocol/feature-neg" );
 		XmlNode* x = f->addChild( "x" ); x->addAttr( "xmlns", "jabber:x:data" ); x->addAttr( "type", "submit" );

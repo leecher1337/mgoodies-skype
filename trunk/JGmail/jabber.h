@@ -332,7 +332,7 @@ extern HWND hwndMucBanList;
 extern HWND hwndMucAdminList;
 extern HWND hwndMucOwnerList;
 
-extern const TCHAR xmlnsOwner[], xmlnsAdmin[];
+extern const char xmlnsOwner[], xmlnsAdmin[];
 
 /*******************************************************************
  * Function declarations
@@ -381,6 +381,9 @@ void JabberGroupchatProcessInvite( TCHAR* roomJid, TCHAR* from, TCHAR* reason, T
 void  __stdcall replaceStr( char*& dest, const char* src );
 void  __stdcall replaceStr( WCHAR*& dest, const WCHAR* src );
 char* __stdcall rtrim( char *string );
+#if defined( _UNICODE )
+	TCHAR* __stdcall rtrim( TCHAR *string );
+#endif
 
 //---- jabber_misc.c ------------------------------------------------
 

@@ -33,7 +33,7 @@ Last change by : $Author: ghazan $
 void JabberXmlnsBrowse( XmlNode *iqNode, void *userdata )
 {
 	XmlNode *queryNode;
-	TCHAR *xmlns, *iqFrom, *iqType, *iqId;
+	TCHAR *xmlns, *iqFrom, *iqType;
 
 	if ( iqNode == NULL ) return;
 	if (( iqFrom=JabberXmlGetAttrValue( iqNode, "from" )) == NULL ) return;
@@ -42,9 +42,7 @@ void JabberXmlnsBrowse( XmlNode *iqNode, void *userdata )
 	if (( xmlns=JabberXmlGetAttrValue( queryNode, "xmlns" )) == NULL ) return;
 
 	if ( !_tcscmp( iqType, _T("get"))) {
-		XmlNode iq( "iq" ); iq.addAttr( "type", "result" ); iq.addAttr( "to", iqFrom );
-		if (( iqId=JabberXmlGetAttrValue( iqNode, "id" )) != NULL )
-			iq.addAttr( "id", iqId );
+		XmlNodeIq iq( "result", JabberXmlGetAttrValue( iqNode, "id" ), iqFrom );
 		XmlNode* user = iq.addChild( "user" ); user->addAttr( "jid", jabberJID ); user->addAttr( "type", "client" ); user->addAttr( "xmlns", xmlns );
 		user->addChild( "ns", "http://jabber.org/protocol/disco#info" );
 		user->addChild( "ns", "http://jabber.org/protocol/muc" );
@@ -70,7 +68,7 @@ void JabberXmlnsDisco( XmlNode *iqNode, void *userdata )
 {
 	XmlNode *queryNode;
 	TCHAR *xmlns, *p, *discoType;
-	TCHAR *iqFrom, *iqType, *iqId;
+	TCHAR *iqFrom, *iqType;
 
 	if ( iqNode == NULL ) return;
 	if (( iqFrom = JabberXmlGetAttrValue( iqNode, "from" )) == NULL ) return;
@@ -84,15 +82,10 @@ void JabberXmlnsDisco( XmlNode *iqNode, void *userdata )
 	if ( p==NULL || discoType==NULL || discoType < p )
 		return;
 
-	iqId = JabberXmlGetAttrValue( iqNode, "id" );
-
 	if ( !_tcscmp( iqType, _T("get"))) {
-		XmlNode iq( "iq" ); iq.addAttr( "type", "result" );
-		if ( iqId != NULL )
-			iq.addAttr( "id", iqId );
+		XmlNodeIq iq( "result", JabberXmlGetAttrValue( iqNode, "id" ), iqFrom );
 
 		if ( !_tcscmp( discoType, _T("#info"))) {
-			iq.addAttr( "to", iqFrom );
 			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", xmlns );
 			XmlNode* ident = query->addChild( "identity" ); ident->addAttr( "category", "user" );
 			ident->addAttr( "type", "client" ); ident->addAttr( "name", "Miranda" );

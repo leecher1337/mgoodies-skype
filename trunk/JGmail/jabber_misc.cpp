@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_misc.cpp,v $
-Revision       : $Revision: 1.28 $
-Last change on : $Date: 2006/05/12 20:13:35 $
+Revision       : $Revision: 1.29 $
+Last change on : $Date: 2006/05/14 13:19:26 $
 Last change by : $Author: ghazan $
 
 */
@@ -33,8 +33,8 @@ Last change by : $Author: ghazan $
 
 void JabberAddContactToRoster( const TCHAR* jid, const TCHAR* nick, const TCHAR* grpName )
 {
-	XmlNode iq( "iq" ); iq.addAttr( "type", "set" );
-	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
+	XmlNodeIq iq( "set" );
+	XmlNode* query = iq.addQuery( "jabber:iq:roster" );
 	XmlNode* item = query->addChild( "item" ); item->addAttr( "name", nick ); item->addAttr( "jid", jid );
 	if ( grpName != NULL )
 		item->addChild( "group", grpName );
@@ -189,7 +189,7 @@ HANDLE JabberDBCreateContact( TCHAR* jid, TCHAR* nick, BOOL temporary, BOOL stri
 		szProto = ( char* )JCallService( MS_PROTO_GETCONTACTBASEPROTO, ( WPARAM ) hContact, 0 );
 		if ( szProto!=NULL && !strcmp( jabberProtoName, szProto )) {
 			DBVARIANT dbv;
-			if ( !JGetStringUtf( hContact, "jid", &dbv )) {
+			if ( !JGetStringT( hContact, "jid", &dbv )) {
 				p = dbv.ptszVal;
 				if ( p && ( int )_tcslen( p )>=len && ( p[len]=='\0'||p[len]=='/' ) && !_tcsnicmp( p, s, len )) {
 					JFreeVariant( &dbv );

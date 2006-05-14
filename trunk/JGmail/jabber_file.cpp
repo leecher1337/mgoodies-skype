@@ -284,8 +284,8 @@ void __cdecl JabberFileServerThread( filetransfer* ft )
 				char szAddr[ 256 ];
 				mir_snprintf( szAddr, sizeof(szAddr), "http://%s:%d/%s", myAddr, nlb.wPort, pFileName );
 
-				XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( id ); iq.addAttr( "to", ft->jid );
-				XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:oob" );
+				XmlNodeIq iq( "set", id, ft->jid );
+				XmlNode* query = iq.addQuery( "jabber:iq:oob" );
 				query->addChild( "url", szAddr );
 				query->addChild( "desc", ft->szDescription );
 				JabberSend( jabberThreadInfo->s, iq );
@@ -389,7 +389,7 @@ static void JabberFileServerConnection( JABBER_SOCKET hConnection, DWORD dwRemot
 			break;
 		datalen += recvResult;
 
-        buffer[datalen] = '\0';
+		buffer[datalen] = '\0';
 		JabberLog( "RECV:%s", buffer );
 
 		bytesParsed = JabberFileSendParse( hConnection, ft, buffer, datalen );
