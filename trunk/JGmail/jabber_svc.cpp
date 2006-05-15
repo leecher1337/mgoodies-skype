@@ -456,7 +456,7 @@ void sttAddContactForever( DBCONTACTWRITESETTING* cws, HANDLE hContact )
 void sttStatusChanged( DBCONTACTWRITESETTING* cws, HANDLE hContact ){
 	
 	DBVARIANT jid;
-	if ( JGetStringUtf( hContact, "jid", &jid ))
+	if ( JGetStringT( hContact, "jid", &jid ))
 		return;
 	JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, jid.ptszVal );
 	//if ( item == NULL )
