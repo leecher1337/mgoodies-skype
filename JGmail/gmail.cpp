@@ -8,6 +8,7 @@
 LRESULT CALLBACK PopupDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 typedef struct {
 	TCHAR *username;
+//	char *url;
 	char *password;
 	__int64 tid;
 } POPUP_ACCINFO;
@@ -98,7 +99,7 @@ static HANDLE fakeContactFindCreate(){
 				DBVARIANT dbv;
 				if ( !JGetStringUtf( fcTemp, "FakeContact", &dbv )) {
 					char *p = dbv.pszVal;
-					if (  !strncmp( p, "GMAIL", 5 )) {
+					if (  !strncmp( dbv.pszVal, "GMAIL", 5 )) {
 						JFreeVariant( &dbv );
 						break;
 					}
@@ -109,9 +110,9 @@ static HANDLE fakeContactFindCreate(){
 		if (!fcTemp){ //Still no FakeContact? Ok, Create one!
 			fcTemp = ( HANDLE ) JCallService( MS_DB_CONTACT_ADD, 0, 0 );
 			JCallService( MS_PROTO_ADDTOCONTACT, ( WPARAM ) fcTemp, ( LPARAM )jabberProtoName );
-			JSetString( fcTemp, "FakeContact", "GMAIL" );
-			JSetStringUtf( fcTemp, "Nick", "NewMail" );
-			DBWriteContactSettingStringUtf( fcTemp, "UserInfo", "MyNotes", "This is a dummy contact to collect new e-mail notifications history");
+			JSetStringUtf( fcTemp, "FakeContact", "GMAIL" );
+			JSetStringT( fcTemp, "Nick", _T("NewMail") );
+			DBWriteContactSettingString( fcTemp, "UserInfo", "MyNotes", "This is a dummy contact to collect new e-mail notifications history");
 			JabberLog( "Create Jabber contact jid=%s, nick=%s", jabberProtoName, "NewMail" );
 		}
 		return fcTemp;
@@ -356,6 +357,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				__int64 gtstamp = _ttoi64(JabberXmlGetAttrValue( threadNode, "tid" ));
 				if (gtstamp>maxtid)maxtid=gtstamp;
 				__int64 gmstamp = _ttoi64(JabberXmlGetAttrValue( threadNode, "date" ));
+//				char *url = t2a(JabberXmlGetAttrValue( threadNode, "url" ));
 				if (gmstamp>maxtime)maxtime=gmstamp;
 				int numMesg = _ttoi(JabberXmlGetAttrValue( threadNode, "messages" ));
 				char mesgs[10];
@@ -419,6 +421,11 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					mir_free(temp);
 					mir_free(temp1);
 #endif
+
+//					if (url) {
+//						strncat(ppd.lpzText,"\n",MAX_SECONDLINE - 5-strlen(ppd.lpzText));
+//						strncat(ppd.lpzText,url,MAX_SECONDLINE - 5-strlen(ppd.lpzText));
+//					}
 					ppd.colorText = JGetDword(NULL,"ColMsgText",0);
 					ppd.colorBack = JGetDword(NULL,"ColMsgBack",0);
 					ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeout",0x0000FFFF)&0xFFFF);
@@ -430,6 +437,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 							ppd.PluginWindowProc = (WNDPROC)PopupDlgProc;
 							acci->username = info->username;
 							acci->password = info->password;
+//							acci->url;
 							acci->tid = gtstamp;
 							ppd.PluginData = (void *)acci;
 					}	}
