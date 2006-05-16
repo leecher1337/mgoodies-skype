@@ -341,6 +341,9 @@ TCHAR* JabberListGetBestClientResourceNamePtr( const TCHAR* jid )
 			}
 			if ( foundBetter ) {
 				res = r[i].resourceName;
+#ifndef ORGINALRESOURCEMANAGMENT
+				//LI->defaultResource = i; // this line might be buggy!!!
+#endif
 				status = s;
 	}	}	}
 

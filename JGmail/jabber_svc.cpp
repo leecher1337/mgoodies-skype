@@ -453,6 +453,7 @@ void sttAddContactForever( DBCONTACTWRITESETTING* cws, HANDLE hContact )
 	JFreeVariant( &jid );
 }
 
+#ifdef ORGINALRESOURCEMANAGMENT
 void sttStatusChanged( DBCONTACTWRITESETTING* cws, HANDLE hContact ){
 	
 	DBVARIANT jid;
@@ -463,13 +464,28 @@ void sttStatusChanged( DBCONTACTWRITESETTING* cws, HANDLE hContact ){
 	//	return;
 	//(item->defaultResource<0)?NULL:item->resource[item->defaultResource].resourceName;
 	TCHAR *courRes = JabberListGetBestClientResourceNamePtr(jid.ptszVal);
-	JabberLog("Status Changed: %s, Best Resource: %s",jid.ptszVal,
-		(courRes)?courRes:_T("none"));
+#ifdef _UNICODE
+	char *t1 = u2a(jid.ptszVal);
+	char *t2 = u2a(courRes);
+	JabberLog("Status Changed: %s, Best Resource: %s",t1,t2);
+	mir_free(t1);
+	mir_free(t2);
+#else
+	JabberLog("Status Changed: %s, Best Resource: %s",jid.pszVal,courRes);
+#endif
 	if (courRes) {
 		for (int i=0;i<item->resourceCount;i++){
 			if (!_tcscmp(courRes,item->resource[i].resourceName)){
 				putResUserSett(hContact,&item->resource[i]);
+#ifdef _UNICODE
+				t1 = u2a(item->resource[i].software);
+				t2 = u2a(item->resource[i].version);
+				JabberLog("Software: %s (%s)",t1,t2);
+				mir_free(t1);
+				mir_free(t2);
+#else
 				JabberLog("Software: %s (%s)",item->resource[i].software,item->resource[i].version);
+#endif
 				break;
 			}
 		}
@@ -479,7 +495,7 @@ void sttStatusChanged( DBCONTACTWRITESETTING* cws, HANDLE hContact ){
 	JFreeVariant( &jid );
 	
 }
-
+#endif //ORGINALRESOURCEMANAGMENT
 int JabberDbSettingChanged( WPARAM wParam, LPARAM lParam )
 {
 	HANDLE hContact = ( HANDLE ) wParam;
@@ -487,13 +503,14 @@ int JabberDbSettingChanged( WPARAM wParam, LPARAM lParam )
 		return 0;
 
 	DBCONTACTWRITESETTING* cws = ( DBCONTACTWRITESETTING* )lParam;
+#ifdef ORGINALRESOURCEMANAGMENT
 	if ( strcmp( cws->szModule, "CList" )){
 		if (!strcmp( cws->szModule, jabberProtoName )){
 			if ( !strcmp( cws->szSetting, "Status")) sttStatusChanged( cws, hContact );
 		}
 		return 0;
 	}
-
+#endif
 	char* szProto = ( char* )JCallService( MS_PROTO_GETCONTACTBASEPROTO, ( WPARAM ) hContact, 0 );
 	if ( szProto == NULL || strcmp( szProto, jabberProtoName ))
 		return 0;
