@@ -437,7 +437,7 @@ LBL_Exit:
 			#if defined( _UNICODE )
 				#define PRINT_FORMAT _T("%s@%S")
 			#else
-				#define PRINT_FORMAT _T("%s@%S")
+				#define PRINT_FORMAT _T("%s@%s")
 			#endif
 			mir_sntprintf( jabberJID, len+1, PRINT_FORMAT, info->username, info->server );
 			if ( JGetByte( "KeepAlive", 1 ))
@@ -1124,15 +1124,13 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 
 		if ( _tcschr( from, '@' )==NULL && hwndJabberAgents )
 			SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
+		JabberLog( 
 #ifdef _UNICODE
-		char * t1 = u2a(nick);
-		char * t2 = u2a(from);
-		JabberLog( "%s ( %s ) online, set contact status to \"%s\"", t1, t2, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 ));
-		mir_free(t1);
-		mir_free(t2);
+			"%S ( %S ) online, set contact status to \"%s\"",
 #else
-		JabberLog( "%s ( %s ) online, set contact status to \"%s\"", nick, from, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 );
+			"%s ( %s ) online, set contact status to \"%s\"", 
 #endif
+			nick, from, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 ));
 		mir_free( nick );
 
 		XmlNode* xNode;
@@ -1192,13 +1190,13 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 				if ( JGetWord( hContact, "Status", ID_STATUS_OFFLINE ) != status )
 					JSetWord( hContact, "Status", ( WORD )status );
 
+		JabberLog( 
 #ifdef _UNICODE
-		char * t2 = u2a(from);
-		JabberLog( "%s online, set contact status to \"%s\"", t2, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 ));
-		mir_free(t2);
+			"%S online, set contact status to \"%s\"",
 #else
-		JabberLog( "%s online, set contact status to \"%s\"", from, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 );
+			"%s online, set contact status to \"%s\"", 
 #endif
+			from, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 ));
 		}
 		if ( _tcschr( from, '@' )==NULL && hwndJabberAgents )
 			SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
