@@ -1105,9 +1105,17 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 
 		// Determine status to show for the contact
 		if (( item=JabberListGetItemPtr( LIST_ROSTER, from )) != NULL ) {
+#ifndef ORGINALRESOURCEMANAGMENT
+			if (JabberListGetBestClientResourceNamePtr(from)){ //here the best resource is chosen
+				int resnum = item->resourceCount==1?0:item->defaultResource;
+				status = item->resource[resnum].status;
+				putResUserSett(hContact,&item->resource[resnum]);
+			}
+#else
 			for ( i=0; i < item->resourceCount; i++ )
 				status = JabberCombineStatus( status, item->resource[i].status );
 			item->status = status;
+#endif
 		}
 
 		if ( _tcschr( from, '@' )!=NULL || JGetByte( "ShowTransport", TRUE )==TRUE )
@@ -1116,7 +1124,15 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 
 		if ( _tcschr( from, '@' )==NULL && hwndJabberAgents )
 			SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
-		JabberLog( "%s ( %s ) online, set contact status to %d", nick, from, status );
+#ifdef _UNICODE
+		char * t1 = u2a(nick);
+		char * t2 = u2a(from);
+		JabberLog( "%s ( %s ) online, set contact status to \"%s\"", t1, t2, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 ));
+		mir_free(t1);
+		mir_free(t2);
+#else
+		JabberLog( "%s ( %s ) online, set contact status to \"%s\"", nick, from, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 );
+#endif
 		mir_free( nick );
 
 		XmlNode* xNode;
@@ -1159,16 +1175,30 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		if (( item=JabberListGetItemPtr( LIST_ROSTER, from )) != NULL ) {
 			// Determine status to show for the contact based on the remaining resources
 			status = ID_STATUS_OFFLINE;
+#ifndef ORGINALRESOURCEMANAGMENT
+			if (JabberListGetBestClientResourceNamePtr(from)){ //here the best resource is chosen
+				int resnum = item->resourceCount==1?0:item->defaultResource;
+				status = item->resource[resnum].status;
+				putResUserSett(hContact,&item->resource[resnum]);
+			}
+#else
 			for ( i=0; i < item->resourceCount; i++ )
 				status = JabberCombineStatus( status, item->resource[i].status );
 			item->status = status;
+#endif
 		}
 		if (( hContact=JabberHContactFromJID( from )) != NULL ) {
 			if ( _tcschr( from, '@' )!=NULL || JGetByte( "ShowTransport", TRUE )==TRUE )
 				if ( JGetWord( hContact, "Status", ID_STATUS_OFFLINE ) != status )
 					JSetWord( hContact, "Status", ( WORD )status );
 
-			JabberLog( "%s offline, set contact status to %d", from, status );
+#ifdef _UNICODE
+		char * t2 = u2a(from);
+		JabberLog( "%s online, set contact status to \"%s\"", t2, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 ));
+		mir_free(t2);
+#else
+		JabberLog( "%s online, set contact status to \"%s\"", from, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 );
+#endif
 		}
 		if ( _tcschr( from, '@' )==NULL && hwndJabberAgents )
 			SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
