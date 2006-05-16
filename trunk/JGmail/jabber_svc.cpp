@@ -464,28 +464,24 @@ void sttStatusChanged( DBCONTACTWRITESETTING* cws, HANDLE hContact ){
 	//	return;
 	//(item->defaultResource<0)?NULL:item->resource[item->defaultResource].resourceName;
 	TCHAR *courRes = JabberListGetBestClientResourceNamePtr(jid.ptszVal);
+	JabberLog(
 #ifdef _UNICODE
-	char *t1 = u2a(jid.ptszVal);
-	char *t2 = u2a(courRes);
-	JabberLog("Status Changed: %s, Best Resource: %s",t1,t2);
-	mir_free(t1);
-	mir_free(t2);
+	"Status Changed: %S, Best Resource: %S",
 #else
-	JabberLog("Status Changed: %s, Best Resource: %s",jid.pszVal,courRes);
+	"Status Changed: %s, Best Resource: %s",
 #endif
+	jid.pszVal,courRes);
 	if (courRes) {
 		for (int i=0;i<item->resourceCount;i++){
 			if (!_tcscmp(courRes,item->resource[i].resourceName)){
 				putResUserSett(hContact,&item->resource[i]);
+				JabberLog(
 #ifdef _UNICODE
-				t1 = u2a(item->resource[i].software);
-				t2 = u2a(item->resource[i].version);
-				JabberLog("Software: %s (%s)",t1,t2);
-				mir_free(t1);
-				mir_free(t2);
+				"Software: %S (%S)",
 #else
-				JabberLog("Software: %s (%s)",item->resource[i].software,item->resource[i].version);
+				"Software: %s (%s)",
 #endif
+				item->resource[i].software,item->resource[i].version);
 				break;
 			}
 		}
