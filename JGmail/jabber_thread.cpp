@@ -1067,7 +1067,13 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		if (( hContact = JabberHContactFromJID( from )) == NULL )
 			hContact = JabberDBCreateContact( from, nick, FALSE, TRUE );
 		if ( !JabberListExist( LIST_ROSTER, from )) {
-			JabberLog( "Receive presence online from %s ( who is not in my roster )", from );
+			JabberLog( 
+#ifdef _UNICODE
+				"Receive presence online from %s ( who is not in my roster )", 
+#else
+				"Receive presence online from %S ( who is not in my roster )", 
+#endif
+				from );
 			JabberListAdd( LIST_ROSTER, from );
 		}
 		int status = ID_STATUS_ONLINE;
@@ -1106,8 +1112,25 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		// Determine status to show for the contact
 		if (( item=JabberListGetItemPtr( LIST_ROSTER, from )) != NULL ) {
 #ifndef ORGINALRESOURCEMANAGMENT
-			if (JabberListGetBestClientResourceNamePtr(from)){ //here the best resource is chosen
-				int resnum = item->resourceCount==1?0:item->defaultResource;
+			TCHAR *courres = JabberListGetBestClientResourceNamePtr(from);
+			if (courres){ //here the best resource is chosen
+				int resnum;
+				if (item->resourceCount==1) resnum = 0;
+				else {
+					for (resnum=0;resnum<item->resourceCount;resnum++){
+						if (!_tcscmp(courres,item->resource[resnum].resourceName)){
+							putResUserSett(hContact,&item->resource[resnum]);
+							JabberLog(
+			#ifdef _UNICODE
+							"Software: %S (%S)",
+			#else
+							"Software: %s (%s)",
+			#endif
+							item->resource[resnum].software,item->resource[resnum].version);
+							break;
+						}
+					}
+				}
 				status = item->resource[resnum].status;
 				putResUserSett(hContact,&item->resource[resnum]);
 			}
@@ -1153,7 +1176,13 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 
 	if ( !_tcscmp( type, _T("unavailable"))) {
 		if ( !JabberListExist( LIST_ROSTER, from )) {
-			JabberLog( "Receive presence offline from %s ( who is not in my roster )", from );
+			JabberLog( 
+#ifdef _UNICODE
+				"Receive presence offline from %s ( who is not in my roster )", 
+#else
+				"Receive presence offline from %S ( who is not in my roster )", 
+#endif
+				from );
 			JabberListAdd( LIST_ROSTER, from );
 		}
 		else JabberListRemoveResource( LIST_ROSTER, from );
@@ -1173,17 +1202,17 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		if (( item=JabberListGetItemPtr( LIST_ROSTER, from )) != NULL ) {
 			// Determine status to show for the contact based on the remaining resources
 			status = ID_STATUS_OFFLINE;
-#ifndef ORGINALRESOURCEMANAGMENT
-			if (JabberListGetBestClientResourceNamePtr(from)){ //here the best resource is chosen
-				int resnum = item->resourceCount==1?0:item->defaultResource;
-				status = item->resource[resnum].status;
-				putResUserSett(hContact,&item->resource[resnum]);
-			}
-#else
+//#ifndef ORGINALRESOURCEMANAGMENT
+//			if (JabberListGetBestClientResourceNamePtr(from)){ //here the best resource is chosen
+//				int resnum = item->resourceCount==1?0:item->defaultResource;
+//				status = item->resource[resnum].status;
+//				putResUserSett(hContact,&item->resource[resnum]);
+//			}
+//#else
 			for ( i=0; i < item->resourceCount; i++ )
 				status = JabberCombineStatus( status, item->resource[i].status );
 			item->status = status;
-#endif
+//#endif
 		}
 		if (( hContact=JabberHContactFromJID( from )) != NULL ) {
 			if ( _tcschr( from, '@' )!=NULL || JGetByte( "ShowTransport", TRUE )==TRUE )
@@ -1192,9 +1221,9 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 
 		JabberLog( 
 #ifdef _UNICODE
-			"%S online, set contact status to \"%s\"",
+			"%S offline, set contact status to \"%s\"",
 #else
-			"%s online, set contact status to \"%s\"", 
+			"%s offline, set contact status to \"%s\"", 
 #endif
 			from, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 ));
 		}

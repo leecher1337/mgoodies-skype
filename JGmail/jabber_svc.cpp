@@ -453,7 +453,6 @@ void sttAddContactForever( DBCONTACTWRITESETTING* cws, HANDLE hContact )
 	JFreeVariant( &jid );
 }
 
-#ifdef ORGINALRESOURCEMANAGMENT
 void sttStatusChanged( DBCONTACTWRITESETTING* cws, HANDLE hContact ){
 	
 	DBVARIANT jid;
@@ -471,27 +470,9 @@ void sttStatusChanged( DBCONTACTWRITESETTING* cws, HANDLE hContact ){
 	"Status Changed: %s, Best Resource: %s",
 #endif
 	jid.pszVal,courRes);
-	if (courRes) {
-		for (int i=0;i<item->resourceCount;i++){
-			if (!_tcscmp(courRes,item->resource[i].resourceName)){
-				putResUserSett(hContact,&item->resource[i]);
-				JabberLog(
-#ifdef _UNICODE
-				"Software: %S (%S)",
-#else
-				"Software: %s (%s)",
-#endif
-				item->resource[i].software,item->resource[i].version);
-				break;
-			}
-		}
-
-	}
-	//else JSetStringUtf(hContact,"Resource","");
 	JFreeVariant( &jid );
 	
 }
-#endif //ORGINALRESOURCEMANAGMENT
 int JabberDbSettingChanged( WPARAM wParam, LPARAM lParam )
 {
 	HANDLE hContact = ( HANDLE ) wParam;

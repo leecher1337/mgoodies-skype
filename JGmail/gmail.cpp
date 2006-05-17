@@ -70,11 +70,13 @@ int makeHead(char *target, int tSize, __int64 tid, __int64 time){
 }
 
 void JabberDummyResult( XmlNode *iqNode, void *userdata ){
-	char *temp1 = t2a(JabberXmlGetAttrValue( iqNode, "id" ));
-	char *temp2 = t2a(JabberXmlGetAttrValue( iqNode, "type" ));
-	JabberLog( "Received DummyResult. id: \"%s\", type: \"%s\"",temp1, temp2);
-	mir_free(temp1);
-	mir_free(temp2);
+	JabberLog( 
+#ifdef _UNICODE
+		"Received DummyResult. id: \"%S\", type: \"%S\"",
+#else
+		"Received DummyResult. id: \"%s\", type: \"%s\"",
+#endif
+		JabberXmlGetAttrValue( iqNode, "id"), JabberXmlGetAttrValue( iqNode, "type"));
 }
 void JabberEnableNotifications(ThreadData *info){
 	int iqId = JabberSerialNext();
@@ -97,8 +99,7 @@ static HANDLE fakeContactFindCreate(){
 			char *szProto = ( char* )JCallService( MS_PROTO_GETCONTACTBASEPROTO, ( WPARAM ) fcTemp, 0 );
 			if ( szProto!=NULL && !strcmp( jabberProtoName, szProto )) {
 				DBVARIANT dbv;
-				if ( !JGetStringUtf( fcTemp, "FakeContact", &dbv )) {
-					char *p = dbv.pszVal;
+				if ( !DBGetContactSetting( fcTemp, jabberProtoName, "FakeContact", &dbv )) {
 					if (  !strncmp( dbv.pszVal, "GMAIL", 5 )) {
 						JFreeVariant( &dbv );
 						break;
@@ -110,9 +111,9 @@ static HANDLE fakeContactFindCreate(){
 		if (!fcTemp){ //Still no FakeContact? Ok, Create one!
 			fcTemp = ( HANDLE ) JCallService( MS_DB_CONTACT_ADD, 0, 0 );
 			JCallService( MS_PROTO_ADDTOCONTACT, ( WPARAM ) fcTemp, ( LPARAM )jabberProtoName );
-			JSetStringUtf( fcTemp, "FakeContact", "GMAIL" );
+			JSetString( fcTemp, "FakeContact", "GMAIL" );
 			JSetStringT( fcTemp, "Nick", _T("NewMail") );
-			DBWriteContactSettingString( fcTemp, "UserInfo", "MyNotes", "This is a dummy contact to collect new e-mail notifications history");
+			DBWriteContactSettingTString( fcTemp, "UserInfo", "MyNotes", _T("This is a dummy contact to collect new e-mail notifications history"));
 			JabberLog( "Create Jabber contact jid=%s, nick=%s", jabberProtoName, "NewMail" );
 		}
 		return fcTemp;
