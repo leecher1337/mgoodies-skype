@@ -447,17 +447,5 @@ SOURCE=.\icos\jabber.ico
 SOURCE=.\msvc6.rc
 # End Source File
 # End Group
-# Begin Source File
-
-SOURCE=.\docs\changelog_jabber.txt
-# End Source File
-# Begin Source File
-
-SOURCE=.\docs\readme_jabber.txt
-# End Source File
-# Begin Source File
-
-SOURCE=.\docs\translation_jabber.txt
-# End Source File
 # End Target
 # End Project

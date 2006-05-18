@@ -1003,6 +1003,7 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 					for ( int i=0; i<item->resourceCount; i++ ) {
 						if ( !lstrcmp( item->resource[i].resourceName, fromResource )) {
 							item->defaultResource = i;
+							putResUserSett(hContact,&item->resource[i]);
 							break;
 		}	}	}	}	}
 
@@ -1209,8 +1210,13 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 //				putResUserSett(hContact,&item->resource[resnum]);
 //			}
 //#else
-			for ( i=0; i < item->resourceCount; i++ )
+			int resFromChosenStatus = -1;
+			for ( i=0; i < item->resourceCount; i++ ){
+				int tempStatus = status;
 				status = JabberCombineStatus( status, item->resource[i].status );
+				if (status != tempStatus) resFromChosenStatus = i;
+			}
+			if (resFromChosenStatus>-1) putResUserSett(hContact,&item->resource[resFromChosenStatus]);
 			item->status = status;
 //#endif
 		}
@@ -1608,17 +1614,12 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 						p++;
 						for ( i=0; i<item->resourceCount && _tcscmp( r->resourceName, p ); i++, r++ );
 						if ( i < item->resourceCount ) {
+							hContact=JabberHContactFromJID( item->jid );
 							if ( r->software ) mir_free( r->software );
-							if (( n=JabberXmlGetChild( queryNode, "name" ))!=NULL && n->text ) {
-								if (( hContact=JabberHContactFromJID( item->jid )) != NULL ) {
-									if (( p = _tcsstr( n->text, _T("Miranda IM"))) != NULL )
-										JSetStringT( hContact, "MirVer", p );
-									else
-										JSetStringT( hContact, "MirVer", n->text );
-								}
+							if (( n=JabberXmlGetChild( queryNode, "name" ))!=NULL && n->text ) 
 								r->software = mir_tstrdup( n->text );
-							}
-							else r->software = NULL;
+							else 
+								r->software = NULL;
 							if ( r->version ) mir_free( r->version );
 							if (( n=JabberXmlGetChild( queryNode, "version" ))!=NULL && n->text )
 								r->version = mir_tstrdup( n->text );
@@ -1629,6 +1630,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 								r->system = mir_tstrdup( n->text );
 							else
 								r->system = NULL;
+							if (hContact != NULL) putResUserSett(hContact, r);
 		}	}	}	}	}
 	}
 	// RECVED: <iq type='set'><si xmlns='http://jabber.org/protocol/si' ...

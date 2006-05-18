@@ -389,20 +389,37 @@ JABBER_LIST_ITEM *JabberListGetItemPtrFromIndex( int index )
 }
 
 void putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
-		TCHAR mirver[256];
-		int pos=0;
-		JSetStringT( hContact, "Resource", r->resourceName );
-		TCHAR *p=r->software?_tcsstr( r->software, _T("Miranda IM") ):NULL;
-		if (r->software){
-			pos = mir_sntprintf(mirver,255,_T("%s"),p?p:r->software);
-			if (p) pos--;
-			mirver[pos]='\0';
-		}
-		if (r->version) pos += mir_sntprintf(mirver+pos,255-pos,_T(" (%s)"),r->version);
-		if (pos) {
-			JSetStringT( hContact, "MirVer", mirver );
-		} else JDeleteSetting( hContact, "MirVer" );
-		if (r->system){
-			JSetStringT( hContact, "System", r->system );
-		} else JDeleteSetting( hContact, "System" );
+#define LOG_PRUS 1
+#ifdef LOG_PRUS
+	DBVARIANT dbv;
+	JGetStringT( hContact, "jid", &dbv );
+	JabberLog(
+#ifdef _UNICODE
+		"Updating contact %S:\nResource: %S\nSoftware: %S\nVersion: %S\nSystem: %S",
+#else 
+		"Updating contact %s:\nResource: %s\nSoftware: %s\nVersion: %s\nSystem: %s",
+#endif
+		dbv.ptszVal, r->resourceName, r->software, r->version, r->system);
+	JFreeVariant(&dbv);
+#endif			
+	TCHAR mirver[256];
+	int pos=0;
+	JSetStringT( hContact, "Resource", r->resourceName );
+	TCHAR *p=r->software?_tcsstr( r->software, _T("Miranda IM") ):NULL;
+	if (r->software){
+		pos = mir_sntprintf(mirver,255,
+			_T("%s"),
+			p?p:r->software);
+		if (p) pos--;
+		mirver[pos]='\0';
+	}
+	if (r->version) pos += mir_sntprintf(mirver+pos,255-pos,
+		_T(" (%s)"),
+		r->version);
+	if (pos) {
+		JSetStringT( hContact, "MirVer", mirver );
+	} else JDeleteSetting( hContact, "MirVer" );
+	if (r->system){
+		JSetStringT( hContact, "System", r->system );
+	} else JDeleteSetting( hContact, "System" );
 }

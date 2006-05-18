@@ -1,7 +1,7 @@
 JGmail is an enhancement of the existing JabberG plugin for Miranda-IM that 
 aim better support of the specific XMPP extensions of the Google Talk service.
 
-JGmail is announced and discussed in dedicated “official” thread in Miranda’s 
+JGmail is announced and discussed in dedicated "official" thread in Miranda"s 
 forum located at http://forums.miranda-im.org/showthread.php?t=5730
 
 Below is a short description of JGmail features cropped from the forum:
