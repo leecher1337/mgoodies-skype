@@ -685,23 +685,23 @@ static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 				r = item->resource;
 				len = msgCount = 0;
 				for ( i=0; i<item->resourceCount; i++ ) {
-					if ( r[i].statusMessage ) {
+					//if ( r[i].statusMessage ) { // I want the resource to be listed even if the status message is empty
 						msgCount++;
-						len += ( _tcslen( r[i].resourceName ) + _tcslen( r[i].statusMessage ) + 8 );
-				}	}
+						len += ( _tcslen( r[i].resourceName ) + (r[i].statusMessage?_tcslen( r[i].statusMessage ):_tcslen(TranslateT("none"))) + 8 );
+				}	//}
 
 				TCHAR* str = ( TCHAR* )alloca( sizeof( TCHAR )*( len+1 ));
 				str[0] = str[len] = '\0';
 				for ( i=0; i < item->resourceCount; i++ ) {
-					if ( r[i].statusMessage ) {
+					//if ( r[i].statusMessage ) {  // I want the resource to be listed even if the status message is empty
 						if ( str[0] != '\0' ) _tcscat( str, _T("\r\n" ));
 						if ( msgCount > 1 ) {
 							_tcscat( str, _T("( "));
 							_tcscat( str, r[i].resourceName );
 							_tcscat( str, _T(" ): "));
 						}
-						_tcscat( str, r[i].statusMessage );
-				}	}
+						_tcscat( str, r[i].statusMessage?r[i].statusMessage:TranslateT("none"));
+				}	//}
 
 				#if defined( _UNICODE )
 					char* msg = u2a(str);
