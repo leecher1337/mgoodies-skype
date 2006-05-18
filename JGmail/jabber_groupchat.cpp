@@ -729,7 +729,7 @@ void JabberGroupchatProcessMessage( XmlNode *node, void *userdata )
 
 		msgText = n->text;
 
-		if ( _tcsncmp( msgText, _T("/me"), 3 ) == 0 ) {
+		if ( (_tcsncmp( msgText, _T("/me "), 4 ) == 0) && (_tcslen(msgText)>4) ){
 			msgText += 4;
 			gcd.iType = GC_EVENT_ACTION;
 		}
