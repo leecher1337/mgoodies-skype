@@ -1179,9 +1179,9 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		if ( !JabberListExist( LIST_ROSTER, from )) {
 			JabberLog( 
 #ifdef _UNICODE
-				"Receive presence offline from %s ( who is not in my roster )", 
-#else
 				"Receive presence offline from %S ( who is not in my roster )", 
+#else
+				"Receive presence offline from %s ( who is not in my roster )", 
 #endif
 				from );
 			JabberListAdd( LIST_ROSTER, from );
