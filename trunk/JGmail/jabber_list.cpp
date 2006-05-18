@@ -418,7 +418,7 @@ void putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
 		r->version);
 	if (pos) {
 		JSetStringT( hContact, "MirVer", mirver );
-	} else JDeleteSetting( hContact, "MirVer" );
+	} else JSetStringT( hContact, "MirVer", r->resourceName );
 	if (r->system){
 		JSetStringT( hContact, "System", r->system );
 	} else JDeleteSetting( hContact, "System" );
