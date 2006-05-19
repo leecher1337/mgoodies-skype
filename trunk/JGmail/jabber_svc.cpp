@@ -654,7 +654,13 @@ static int JabberGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 				else
 					lstrcpyn( szJid, dbv.ptszVal, SIZEOF( szJid ));
 
-				JabberLog( "Rereading avatar for %s", dbv.pszVal );
+				JabberLog( 
+#ifdef _UNICODE
+					"Rereading avatar for %S", 
+#else 
+					"Rereading avatar for %s", 
+#endif
+					dbv.ptszVal );
 
 				int iqId = JabberSerialNext();
 				JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetAvatar );

@@ -565,36 +565,30 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 		if (( statusNode=JabberXmlGetChild( node, "status" ))!=NULL && statusNode->text!=NULL )
 			str = statusNode->text;
 		else
-			str = _T("none");
+			str = NULL;
 		newRes = ( JabberListAddResource( LIST_CHATROOM, from, status, str ) == 0 ) ? 0 : GC_EVENT_JOIN;
 
 		roomCreated = FALSE;
 
 		// Check additional MUC info for this user
 		if ( xNode != NULL ) {
-			JabberLog("xNode is not null");
 			if (( itemNode=JabberXmlGetChild( xNode, "item" )) != NULL ) {
-				JabberLog("has itemNode");
 				JABBER_RESOURCE_STATUS* r = item->resource;
 				for ( i=0; i<item->resourceCount && _tcscmp( r->resourceName, nick ); i++, r++ );
 				if ( i < item->resourceCount ) {
-					JabberLog("selected %d out of %d",i+1,item->resourceCount);
 					if (( str=JabberXmlGetAttrValue( itemNode, "affiliation" )) != NULL ) {
-						JabberLog("affiliation: %s",str);
 						if ( !_tcscmp( str, _T("owner")))        r->affiliation = AFFILIATION_OWNER;
 						else if ( !_tcscmp( str, _T("admin")))   r->affiliation = AFFILIATION_ADMIN;
 						else if ( !_tcscmp( str, _T("member")))  r->affiliation = AFFILIATION_MEMBER;
 						else if ( !_tcscmp( str, _T("outcast"))) r->affiliation = AFFILIATION_OUTCAST;
 					}
 					if (( str=JabberXmlGetAttrValue( itemNode, "role" )) != NULL ) {
-						JabberLog("role: %s",str);
 						JABBER_GC_ROLE newRole = r->role;
 
 						if ( !_tcscmp( str, _T("moderator")))        newRole = ROLE_MODERATOR;
 						else if ( !_tcscmp( str, _T("participant"))) newRole = ROLE_PARTICIPANT;
 						else if ( !_tcscmp( str, _T("visitor")))     newRole = ROLE_VISITOR;
 						else                                         newRole = ROLE_NONE;
-						JabberLog("newRole: %d; r->role: %d",newRole,r->role);
 
 						if ( newRole != r->role && r->role != ROLE_NONE ) {
 							JabberGcLogUpdateMemberStatus( item, nick, GC_EVENT_REMOVESTATUS, NULL );
