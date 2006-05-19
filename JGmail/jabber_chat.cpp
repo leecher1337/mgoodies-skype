@@ -190,7 +190,7 @@ void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, int act
 	default:
 		for ( int i=0; i < item->resourceCount; i++ ) {
 			JABBER_RESOURCE_STATUS& JS = item->resource[i];
-			if ( !lstrcmp( myNick, JS.resourceName )) {
+			if ( !lstrcmp( nick, JS.resourceName )) {
 				if ( action != GC_EVENT_JOIN ) {
 					switch( action ) {
 					case 0:
@@ -204,7 +204,7 @@ void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, int act
 				gce.bIsMe = ( lstrcmpA( szNick, dispNick ) == 0 );
 				break;
 	}	}	}
-	JabberLog("ChatEvent: %X; Nick: %s;",action,gce.pszNick);
+
 	JCallService( MS_GC_EVENT, NULL, ( LPARAM )&gce );
 	mir_free( myNick );
 	#if defined( _UNICODE )
