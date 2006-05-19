@@ -89,7 +89,7 @@ void JabberSetMucConfig( XmlNode* node, void *from )
 {
 	if ( jabberThreadInfo && from ) {
 		XmlNodeIq iq( "set", NOID, ( TCHAR* )from );
-		XmlNode* query = iq.addChild( "query" );
+		XmlNode* query = iq.addQuery( xmlnsOwner );
 		query->addChild( node );
 		JabberSend( jabberThreadInfo->s, iq );
 }	}
@@ -112,7 +112,7 @@ void JabberIqResultGetMuc( XmlNode *iqNode, void *userdata )
 				if (( xNode=JabberXmlGetChild( queryNode, "x" )) != NULL ) {
 					str = JabberXmlGetAttrValue( xNode, "xmlns" );
 					if ( !lstrcmp( str, _T("jabber:x:data" )))
-						JabberFormCreateDialog( xNode, "Jabber Conference Room Configuration", JabberSetMucConfig, mir_tstrdup( from ));
+						JabberFormCreateDialog( xNode, _T("Jabber Conference Room Configuration"), JabberSetMucConfig, mir_tstrdup( from ));
 }	}	}	}	}
 
 void JabberIqResultDiscoRoomItems( XmlNode *iqNode, void *userdata )

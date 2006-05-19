@@ -479,7 +479,7 @@ void JabberIqResultSetRegister( XmlNode *iqNode, void *userdata )
 
 	if ( !lstrcmp( type, _T("result"))) {
 		if ( hwndRegProgress )
-			SendMessage( hwndRegProgress, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )JTranslate( "Registration successful" ));
+			SendMessage( hwndRegProgress, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )TranslateT( "Registration successful" ));
 	}
 	else if ( !lstrcmp( type, _T("error"))) {
 		if ( hwndRegProgress ) {

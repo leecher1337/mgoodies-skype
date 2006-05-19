@@ -39,19 +39,27 @@ static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 /////////////////////////////////////////////////////////////////////////////////////////
 // JabberRegisterDlgProc - the dialog proc for registering new account
 
+#if defined( _UNICODE )
+	#define STR_FORMAT _T("%s %s@%S:%d?")
+#else
+	#define STR_FORMAT _T("%s %s@%s:%d?")
+#endif
+
 static BOOL CALLBACK JabberRegisterDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
 {
 	struct ThreadData *thread, *regInfo;
-	char text[128];
 
 	switch ( msg ) {
 	case WM_INITDIALOG:
+	{
 		TranslateDialogDefault( hwndDlg );
 		regInfo = ( struct ThreadData * ) lParam;
-		wsprintfA( text, "%s %s@%s:%d ?", JTranslate( "Register" ), regInfo->username, regInfo->server, regInfo->port );
-		SetDlgItemTextA( hwndDlg, IDC_REG_STATUS, text );
-		SetWindowLong( hwndDlg, GWL_USERDATA, ( LONG ) regInfo );
+		TCHAR text[256];
+		mir_sntprintf( text, SIZEOF(text), STR_FORMAT, TranslateT( "Register" ), regInfo->username, regInfo->server, regInfo->port );
+		SetDlgItemText( hwndDlg, IDC_REG_STATUS, text );
+		SetWindowLong( hwndDlg, GWL_USERDATA, ( LONG )regInfo );
 		return TRUE;
+	}
 	case WM_COMMAND:
 		switch ( LOWORD( wParam )) {
 		case IDOK:
@@ -78,18 +86,17 @@ static BOOL CALLBACK JabberRegisterDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 		}
 		break;
 	case WM_JABBER_REGDLG_UPDATE:	// wParam=progress ( 0-100 ), lparam=status string
-		if (( char* )lParam == NULL )
-			SetDlgItemTextA( hwndDlg, IDC_REG_STATUS, JTranslate( "No message" ));
+		if (( TCHAR* )lParam == NULL )
+			SetDlgItemText( hwndDlg, IDC_REG_STATUS, TranslateT( "No message" ));
 		else
-			SetDlgItemTextA( hwndDlg, IDC_REG_STATUS, ( char* )lParam );
+			SetDlgItemText( hwndDlg, IDC_REG_STATUS, ( TCHAR* )lParam );
 		if ( wParam >= 0 )
 			SendMessage( GetDlgItem( hwndDlg, IDC_PROGRESS_REG ), PBM_SETPOS, wParam, 0 );
 		if ( wParam >= 100 ) {
 			ShowWindow( GetDlgItem( hwndDlg, IDCANCEL2 ), SW_HIDE );
 			ShowWindow( GetDlgItem( hwndDlg, IDOK2 ), SW_SHOW );
 		}
-		else
-			SetFocus( GetDlgItem( hwndDlg, IDC_PROGRESS_REG ));
+		else SetFocus( GetDlgItem( hwndDlg, IDC_PROGRESS_REG ));
 		return TRUE;
 	}
 
@@ -130,8 +137,8 @@ static BOOL CALLBACK JabberMsgLangAdd( LPSTR str )
 			SendMessage( msgLangListBox, CB_SETITEMDATA, ( WPARAM ) index, ( LPARAM )cp );
 			if ( jabberCodePage == cp )
 				SendMessage( msgLangListBox, CB_SETCURSEL, ( WPARAM ) index, 0 );
-		}
-	}
+	}	}
+
 	return TRUE;
 }
 

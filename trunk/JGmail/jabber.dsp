@@ -60,7 +60,6 @@ LINK32=link.exe
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/release/plugins/JGmail.dll" /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
-SOURCE="$(InputPath)"
 PostBuild_Cmds=upx --best --force ../../bin/release/plugins/JGmail.dll
 # End Special Build Tool
 
@@ -120,7 +119,6 @@ LINK32=link.exe
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/Release Unicode/plugins/JGmail.dll" /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
-SOURCE="$(InputPath)"
 PostBuild_Cmds=upx --best --force "../../bin/Release Unicode/plugins/JGmail.dll"
 # End Special Build Tool
 
@@ -182,7 +180,6 @@ LINK32=link.exe
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/Release Unicode/plugins/staticssl/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\out32\\" /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
-SOURCE="$(InputPath)"
 PostBuild_Cmds=upx --best --force "../../bin/Release Unicode/plugins/staticssl/JGmail.dll"
 # End Special Build Tool
 
@@ -215,7 +212,6 @@ LINK32=link.exe
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/release/plugins/staticssl/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\out32\\" /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
-SOURCE="$(InputPath)"
 PostBuild_Cmds=upx --best --force ../../bin/release/plugins/staticssl/JGmail.dll
 # End Special Build Tool
 

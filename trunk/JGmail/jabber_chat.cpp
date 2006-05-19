@@ -204,7 +204,7 @@ void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, int act
 				gce.bIsMe = ( lstrcmpA( szNick, dispNick ) == 0 );
 				break;
 	}	}	}
-
+	JabberLog("ChatEvent: %X; Nick: %s;",action,gce.pszNick);
 	JCallService( MS_GC_EVENT, NULL, ( LPARAM )&gce );
 	mir_free( myNick );
 	#if defined( _UNICODE )

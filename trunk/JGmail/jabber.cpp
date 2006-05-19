@@ -106,6 +106,10 @@ HWND hwndMucAdminList = NULL;
 HWND hwndMucOwnerList = NULL;
 HWND hwndJabberChangePassword = NULL;
 
+// Service and event handles
+HANDLE heventRawXMLIn;
+HANDLE heventRawXMLOut;
+
 int JabberOptInit( WPARAM wParam, LPARAM lParam );
 int JabberUserInfoInit( WPARAM wParam, LPARAM lParam );
 int JabberMsgUserTyping( WPARAM wParam, LPARAM lParam );

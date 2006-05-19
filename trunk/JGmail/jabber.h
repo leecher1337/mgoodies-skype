@@ -149,6 +149,12 @@ enum {
 	JABBER_ICON_TOTAL
 };
 
+// Services and Events
+#define JE_RAWXMLIN "/RawXMLIn"
+#define JE_RAWXMLOUT "/RawXMLOut"
+
+#define JS_SENDXML "/SendXML"
+
 /*******************************************************************
  * Global data structures and data type definitions
  *******************************************************************/
@@ -333,6 +339,9 @@ extern HWND hwndMucAdminList;
 extern HWND hwndMucOwnerList;
 
 extern const char xmlnsOwner[], xmlnsAdmin[];
+// Service and event handles
+extern HANDLE heventRawXMLIn;
+extern HANDLE heventRawXMLOut;
 
 /*******************************************************************
  * Function declarations
@@ -357,8 +366,9 @@ void __cdecl JabberFileServerThread( filetransfer* ft );
 //---- jabber_form.c ------------------------------------------------
 
 void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight );
-void JabberFormGetData( HWND hwndStatic, XmlNode *xNode, XmlNode* result );
-void JabberFormCreateDialog( XmlNode *xNode, char* defTitle, JABBER_FORM_SUBMIT_FUNC pfnSubmit, void *userdata );
+void JabberFormCreateDialog( XmlNode *xNode, TCHAR* defTitle, JABBER_FORM_SUBMIT_FUNC pfnSubmit, void *userdata );
+
+XmlNode* JabberFormGetData( HWND hwndStatic, XmlNode *xNode );
 
 //---- jabber_ft.c --------------------------------------------------
 
@@ -387,7 +397,7 @@ char* __stdcall rtrim( char *string );
 
 //---- jabber_misc.c ------------------------------------------------
 
-void   JabberAddContactToRoster( const TCHAR* jid, const TCHAR* nick, const TCHAR* grpName );
+void   JabberAddContactToRoster( const TCHAR* jid, const TCHAR* nick, const TCHAR* grpName, JABBER_SUBSCRIPTION subscription );
 void   JabberChatDllError( void );
 int    JabberCompareJids( const TCHAR* jid1, const TCHAR* jid2 );
 void   JabberContactListCreateGroup( TCHAR* groupName );
@@ -412,6 +422,7 @@ void JabberEnableMenuItems( BOOL bEnable );
 #endif
 
 HANDLE __stdcall  JCreateServiceFunction( const char* szService, MIRANDASERVICE serviceProc );
+HANDLE __stdcall  JCreateHookableEvent( const char* szService );
 void   __stdcall  JDeleteSetting( HANDLE hContact, const char* valueName );
 DWORD  __stdcall  JGetByte( const char* valueName, int parDefltValue );
 DWORD  __stdcall  JGetByte( HANDLE hContact, const char* valueName, int parDefltValue );
