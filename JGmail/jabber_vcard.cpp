@@ -848,7 +848,7 @@ static void SetServerVcard()
 		if ( DBGetContactSettingTString( NULL, jabberProtoName, idstr, &dbv ))
 			break;
 
-		XmlNode* e = v->addChild( "<EMAIL>", dbv.ptszVal );
+		XmlNode* e = v->addChild( "EMAIL", dbv.ptszVal );
 		JFreeVariant( &dbv );
 		AppendVcardFromDB( e, "USERID", idstr );
 

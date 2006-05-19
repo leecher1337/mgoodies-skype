@@ -1693,7 +1693,7 @@ static void JabberProcessRegIq( XmlNode *node, void *userdata )
 {
 	struct ThreadData *info;
 	XmlNode *errorNode;
-	TCHAR* type, *str;
+	TCHAR *type, *str;
 
 	if ( !node->name || strcmp( node->name, "iq" )) return;
 	if (( info=( struct ThreadData * ) userdata ) == NULL ) return;
@@ -1713,8 +1713,8 @@ static void JabberProcessRegIq( XmlNode *node, void *userdata )
 
 			XmlNodeIq iq( "set", iqIdRegSetReg );
 			XmlNode* query = iq.addQuery( "jabber:iq:register" );
-			iq.addChild( "password", info->password );
-			iq.addChild( "username", info->username );
+			query->addChild( "password", info->password );
+			query->addChild( "username", info->username );
 			JabberSend( info->s, iq );
 
 			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 75, ( LPARAM )TranslateT( "Sending registration information..." ));

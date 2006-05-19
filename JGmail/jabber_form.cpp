@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_form.cpp,v $
-Revision       : $Revision: 1.9 $
-Last change on : $Date: 2006/05/12 20:13:35 $
+Revision       : $Revision$
+Last change on : $Date: 2006-05-16 17:39:40 +0100 (Tue, 16 May 2006) $
 Last change by : $Author: ghazan $
 
 */
@@ -222,7 +222,7 @@ void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight )
 	*formHeight = ypos;
 }
 
-void JabberFormGetData( HWND hwndStatic, XmlNode* xNode, XmlNode* result )
+XmlNode* JabberFormGetData( HWND hwndStatic, XmlNode* xNode )
 {
 	HWND hFrame, hCtrl;
 	XmlNode *n, *v, *o, *x;
@@ -230,11 +230,11 @@ void JabberFormGetData( HWND hwndStatic, XmlNode* xNode, XmlNode* result )
 	TCHAR *varName, *type, *fieldStr, *str, *str2, *p, *q, *labelText;
 
 	if ( xNode==NULL || xNode->name==NULL || strcmp( xNode->name, "x" ) || hwndStatic==NULL )
-		return;
+		return NULL;
 
 	hFrame = hwndStatic;
 	id = 0;
-	x = result->addChild( "x" ); x->addAttr( "xmlns", "jabber:x:data" ); x->addAttr( "type", "submit" );
+	x = new XmlNode( "x" ); x->addAttr( "xmlns", "jabber:x:data" ); x->addAttr( "type", "submit" );
 	for ( int i=0; i<xNode->numChild; i++ ) {
 		n = xNode->child[i];
 		fieldStr = NULL;
@@ -321,11 +321,14 @@ void JabberFormGetData( HWND hwndStatic, XmlNode* xNode, XmlNode* result )
 			field->addChild( "value", str );
 			mir_free( str );
 			id++;
-}	}	}
+	}	}
+
+	return x;
+}
 
 typedef struct {
 	XmlNode *xNode;
-	char defTitle[128];	// Default title if no <title/> in xNode
+	TCHAR defTitle[128];	// Default title if no <title/> in xNode
 	RECT frameRect;		// Clipping region of the frame to scroll
 	int frameHeight;	// Height of the frame ( can be eliminated, redundant to frameRect )
 	int formHeight;		// Actual height of the form
@@ -353,7 +356,7 @@ static BOOL CALLBACK JabberFormDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, L
 				if ( jfi->xNode!=NULL && ( n=JabberXmlGetChild( jfi->xNode, "title" ))!=NULL && n->text!=NULL )
 					SetWindowText( hwndDlg, n->text );
 				else if ( jfi->defTitle != NULL )
-					SetWindowTextA( hwndDlg, JTranslate( jfi->defTitle ));
+					SetWindowText( hwndDlg, TranslateTS( jfi->defTitle ));
 				// Set instruction field
 				if ( jfi->xNode!=NULL && ( n=JabberXmlGetChild( jfi->xNode, "instructions" ))!=NULL && n->text!=NULL )
 					SetDlgItemText( hwndDlg, IDC_INSTRUCTION, n->text );
@@ -431,8 +434,7 @@ static BOOL CALLBACK JabberFormDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, L
 		case IDC_SUBMIT:
 			jfi = ( JABBER_FORM_INFO * ) GetWindowLong( hwndDlg, GWL_USERDATA );
 			if ( jfi != NULL ) {
-				XmlNode* n = new XmlNode( "form" );
-				JabberFormGetData( GetDlgItem( hwndDlg, IDC_FRAME ), jfi->xNode, n );
+				XmlNode* n = JabberFormGetData( GetDlgItem( hwndDlg, IDC_FRAME ), jfi->xNode );
 				( jfi->pfnSubmit )( n, jfi->userdata );
 			}
 			// fall through
@@ -462,7 +464,7 @@ static VOID CALLBACK JabberFormCreateDialogApcProc( DWORD param )
 	CreateDialogParam( hInst, MAKEINTRESOURCE( IDD_FORM ), NULL, JabberFormDlgProc, ( LPARAM )param );
 }
 
-void JabberFormCreateDialog( XmlNode *xNode, char* defTitle, JABBER_FORM_SUBMIT_FUNC pfnSubmit, void *userdata )
+void JabberFormCreateDialog( XmlNode *xNode, TCHAR* defTitle, JABBER_FORM_SUBMIT_FUNC pfnSubmit, void *userdata )
 {
 	JABBER_FORM_INFO *jfi;
 
@@ -470,7 +472,7 @@ void JabberFormCreateDialog( XmlNode *xNode, char* defTitle, JABBER_FORM_SUBMIT_
 	memset( jfi, 0, sizeof( JABBER_FORM_INFO ));
 	jfi->xNode = JabberXmlCopyNode( xNode );
 	if ( defTitle )
-		strncpy( jfi->defTitle, defTitle, sizeof( jfi->defTitle ));
+		_tcsncpy( jfi->defTitle, defTitle, SIZEOF( jfi->defTitle ));
 	jfi->pfnSubmit = pfnSubmit;
 	jfi->userdata = userdata;
 

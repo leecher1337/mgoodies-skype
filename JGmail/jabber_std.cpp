@@ -39,6 +39,15 @@ HANDLE __stdcall JCreateServiceFunction(
 	return CreateServiceFunction( str, serviceProc );
 }
 
+HANDLE __stdcall JCreateHookableEvent(
+	const char* szService )
+{
+	char str[ MAXMODULELABELLENGTH ];
+	strcpy( str, jabberProtoName );
+	strcat( str, szService );
+	return CreateHookableEvent( str );
+}
+
 #if !defined( _DEBUG )
 int __stdcall JCallService( const char* szSvcName, WPARAM wParam, LPARAM lParam )
 {
