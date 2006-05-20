@@ -410,7 +410,7 @@ void putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
 		pos = mir_sntprintf(mirver,255,
 			_T("%s"),
 			p?p:r->software);
-		if (p) pos--;
+		if ((p!=NULL) && ( (mirver[pos-1] == _T(')')) || (mirver[pos-1] == _T(' ')) ) ) pos--;
 		mirver[pos]='\0';
 	}
 	if (r->version) pos += mir_sntprintf(mirver+pos,255-pos,
