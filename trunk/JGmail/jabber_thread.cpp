@@ -828,17 +828,32 @@ static void JabberProcessProceed( XmlNode *node, void *userdata )
 static void JabberProcessMessage( XmlNode *node, void *userdata )
 {
 	struct ThreadData *info;
-	XmlNode *subjectNode, *xNode, *inviteNode, *idNode, *n;
+	XmlNode *subjectNode, *errorNode, *xNode, *inviteNode, *idNode, *n;
 	TCHAR* from, *type, *nick, *p, *idStr, *fromResource;
 	int id;
 
 	if ( !node->name || strcmp( node->name, "message" )) return;
 	if (( info=( struct ThreadData * ) userdata ) == NULL ) return;
 
-	if (( type = JabberXmlGetAttrValue( node, "type" )) != NULL && !lstrcmp( type, _T("error")))
-		return;
 	if (( from = JabberXmlGetAttrValue( node, "from" )) == NULL )
 		return;
+	
+	if ( ( (errorNode = JabberXmlGetChild( node, "error" )) != NULL ) ||
+		(( type = JabberXmlGetAttrValue( node, "type" )) != NULL && !lstrcmp( type, _T("error")))
+		){
+		//we  check if is message delivery failure
+		if ((idStr = JabberXmlGetAttrValue( node, "id" )) != NULL){
+			if ( !_tcsncmp( idStr, _T(JABBER_IQID), strlen( JABBER_IQID )) ){
+				JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, from );
+				if ( item != NULL ){
+					id = _ttoi(( idStr )+strlen( JABBER_IQID ));
+					if ( id == item->idMsgAckPending ){ // yes, it is
+						char *errText = t2a(JabberErrorMsg(errorNode));
+						JSendBroadcast( JabberHContactFromJID( from ), ACKTYPE_MESSAGE, ACKRESULT_FAILED, ( HANDLE ) 1, (LPARAM)errText );
+						mir_free(errText);
+		}	}	}	}
+		return;
+	}
 
 	BOOL isChatRoomJid = JabberListExist( LIST_CHATROOM, from );
 	if ( isChatRoomJid && !lstrcmp( type, _T("groupchat"))) {
