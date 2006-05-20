@@ -1,0 +1,2619 @@
+# Microsoft Developer Studio Generated NMAKE File, Based on jabber.dsp
+!IF "$(CFG)" == ""
+CFG=jgmail - Win32 Release Unicode
+!MESSAGE No configuration specified. Defaulting to jgmail - Win32 Release Unicode.
+!ENDIF 
+
+!IF "$(CFG)" != "jgmail - Win32 Release" && "$(CFG)" != "jgmail - Win32 Debug" && "$(CFG)" != "jgmail - Win32 Release Unicode" && "$(CFG)" != "jgmail - Win32 Debug Unicode" && "$(CFG)" != "jgmail - Win32 Static Unicode" && "$(CFG)" != "jgmail - Win32 Static"
+!MESSAGE Invalid configuration "$(CFG)" specified.
+!MESSAGE You can specify a configuration when running NMAKE
+!MESSAGE by defining the macro CFG on the command line. For example:
+!MESSAGE 
+!MESSAGE NMAKE /f "jabber.mak" CFG="jgmail - Win32 Release Unicode"
+!MESSAGE 
+!MESSAGE Possible choices for configuration are:
+!MESSAGE 
+!MESSAGE "jgmail - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "jgmail - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "jgmail - Win32 Release Unicode" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "jgmail - Win32 Debug Unicode" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "jgmail - Win32 Static Unicode" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "jgmail - Win32 Static" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE 
+!ERROR An invalid configuration is specified.
+!ENDIF 
+
+!IF "$(OS)" == "Windows_NT"
+NULL=
+!ELSE 
+NULL=nul
+!ENDIF 
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+OUTDIR=.\compile/release/ansi
+INTDIR=.\compile/release/ansi
+
+ALL : "..\..\bin\upload\jabber\JGmail.dll"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\gmail.obj"
+	-@erase "$(INTDIR)\google_token.obj"
+	-@erase "$(INTDIR)\icolib.obj"
+	-@erase "$(INTDIR)\jabber.obj"
+	-@erase "$(INTDIR)\jabber.pch"
+	-@erase "$(INTDIR)\jabber_agent.obj"
+	-@erase "$(INTDIR)\jabber_bitmap.obj"
+	-@erase "$(INTDIR)\jabber_byte.obj"
+	-@erase "$(INTDIR)\jabber_chat.obj"
+	-@erase "$(INTDIR)\jabber_file.obj"
+	-@erase "$(INTDIR)\jabber_form.obj"
+	-@erase "$(INTDIR)\jabber_ft.obj"
+	-@erase "$(INTDIR)\jabber_groupchat.obj"
+	-@erase "$(INTDIR)\jabber_iq.obj"
+	-@erase "$(INTDIR)\jabber_iqid.obj"
+	-@erase "$(INTDIR)\jabber_iqid_muc.obj"
+	-@erase "$(INTDIR)\jabber_libstr.obj"
+	-@erase "$(INTDIR)\jabber_list.obj"
+	-@erase "$(INTDIR)\jabber_menu.obj"
+	-@erase "$(INTDIR)\jabber_misc.obj"
+	-@erase "$(INTDIR)\jabber_opt.obj"
+	-@erase "$(INTDIR)\jabber_password.obj"
+	-@erase "$(INTDIR)\jabber_proxy.obj"
+	-@erase "$(INTDIR)\jabber_ssl.obj"
+	-@erase "$(INTDIR)\jabber_std.obj"
+	-@erase "$(INTDIR)\jabber_svc.obj"
+	-@erase "$(INTDIR)\jabber_thread.obj"
+	-@erase "$(INTDIR)\jabber_userinfo.obj"
+	-@erase "$(INTDIR)\jabber_util.obj"
+	-@erase "$(INTDIR)\jabber_vcard.obj"
+	-@erase "$(INTDIR)\jabber_ws.obj"
+	-@erase "$(INTDIR)\jabber_xml.obj"
+	-@erase "$(INTDIR)\jabber_xmlns.obj"
+	-@erase "$(INTDIR)\msvc6.res"
+	-@erase "$(INTDIR)\sha1.obj"
+	-@erase "$(INTDIR)\vc60.idb"
+	-@erase "$(INTDIR)\vc60.pdb"
+	-@erase "$(OUTDIR)\JGmail.exp"
+	-@erase "$(OUTDIR)\JGmail.map"
+	-@erase "$(OUTDIR)\JGmail.pdb"
+	-@erase "..\..\bin\upload\jabber\JGmail.dll"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+CPP=cl.exe
+CPP_PROJ=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC=rc.exe
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\msvc6.res" /d "NDEBUG" 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\jabber.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x32500000" /dll /incremental:no /pdb:"$(OUTDIR)\JGmail.pdb" /map:"$(INTDIR)\JGmail.map" /debug /machine:I386 /out:"../../bin/upload/jabber/JGmail.dll" /implib:"$(OUTDIR)\JGmail.lib" /ALIGN:4096 /ignore:4108 
+LINK32_OBJS= \
+	"$(INTDIR)\gmail.obj" \
+	"$(INTDIR)\google_token.obj" \
+	"$(INTDIR)\icolib.obj" \
+	"$(INTDIR)\jabber.obj" \
+	"$(INTDIR)\jabber_agent.obj" \
+	"$(INTDIR)\jabber_bitmap.obj" \
+	"$(INTDIR)\jabber_byte.obj" \
+	"$(INTDIR)\jabber_chat.obj" \
+	"$(INTDIR)\jabber_file.obj" \
+	"$(INTDIR)\jabber_form.obj" \
+	"$(INTDIR)\jabber_ft.obj" \
+	"$(INTDIR)\jabber_groupchat.obj" \
+	"$(INTDIR)\jabber_iq.obj" \
+	"$(INTDIR)\jabber_iqid.obj" \
+	"$(INTDIR)\jabber_iqid_muc.obj" \
+	"$(INTDIR)\jabber_libstr.obj" \
+	"$(INTDIR)\jabber_list.obj" \
+	"$(INTDIR)\jabber_menu.obj" \
+	"$(INTDIR)\jabber_misc.obj" \
+	"$(INTDIR)\jabber_opt.obj" \
+	"$(INTDIR)\jabber_password.obj" \
+	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_ssl.obj" \
+	"$(INTDIR)\jabber_std.obj" \
+	"$(INTDIR)\jabber_svc.obj" \
+	"$(INTDIR)\jabber_thread.obj" \
+	"$(INTDIR)\jabber_userinfo.obj" \
+	"$(INTDIR)\jabber_util.obj" \
+	"$(INTDIR)\jabber_vcard.obj" \
+	"$(INTDIR)\jabber_ws.obj" \
+	"$(INTDIR)\jabber_xml.obj" \
+	"$(INTDIR)\jabber_xmlns.obj" \
+	"$(INTDIR)\sha1.obj" \
+	"$(INTDIR)\msvc6.res"
+
+"..\..\bin\upload\jabber\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+SOURCE="$(InputPath)"
+DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
+
+ALL : $(DS_POSTBUILD_DEP)
+
+$(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\JGmail.dll"
+   upx --best --force ../../bin/upload/jabber/JGmail.dll
+	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+OUTDIR=.\compile/debug/ansi
+INTDIR=.\compile/debug/ansi
+
+ALL : "..\..\bin\debug\plugins\JGmail.dll"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\gmail.obj"
+	-@erase "$(INTDIR)\google_token.obj"
+	-@erase "$(INTDIR)\icolib.obj"
+	-@erase "$(INTDIR)\jabber.obj"
+	-@erase "$(INTDIR)\jabber.pch"
+	-@erase "$(INTDIR)\jabber_agent.obj"
+	-@erase "$(INTDIR)\jabber_bitmap.obj"
+	-@erase "$(INTDIR)\jabber_byte.obj"
+	-@erase "$(INTDIR)\jabber_chat.obj"
+	-@erase "$(INTDIR)\jabber_file.obj"
+	-@erase "$(INTDIR)\jabber_form.obj"
+	-@erase "$(INTDIR)\jabber_ft.obj"
+	-@erase "$(INTDIR)\jabber_groupchat.obj"
+	-@erase "$(INTDIR)\jabber_iq.obj"
+	-@erase "$(INTDIR)\jabber_iqid.obj"
+	-@erase "$(INTDIR)\jabber_iqid_muc.obj"
+	-@erase "$(INTDIR)\jabber_libstr.obj"
+	-@erase "$(INTDIR)\jabber_list.obj"
+	-@erase "$(INTDIR)\jabber_menu.obj"
+	-@erase "$(INTDIR)\jabber_misc.obj"
+	-@erase "$(INTDIR)\jabber_opt.obj"
+	-@erase "$(INTDIR)\jabber_password.obj"
+	-@erase "$(INTDIR)\jabber_proxy.obj"
+	-@erase "$(INTDIR)\jabber_ssl.obj"
+	-@erase "$(INTDIR)\jabber_std.obj"
+	-@erase "$(INTDIR)\jabber_svc.obj"
+	-@erase "$(INTDIR)\jabber_thread.obj"
+	-@erase "$(INTDIR)\jabber_userinfo.obj"
+	-@erase "$(INTDIR)\jabber_util.obj"
+	-@erase "$(INTDIR)\jabber_vcard.obj"
+	-@erase "$(INTDIR)\jabber_ws.obj"
+	-@erase "$(INTDIR)\jabber_xml.obj"
+	-@erase "$(INTDIR)\jabber_xmlns.obj"
+	-@erase "$(INTDIR)\msvc6.res"
+	-@erase "$(INTDIR)\sha1.obj"
+	-@erase "$(INTDIR)\vc60.idb"
+	-@erase "$(INTDIR)\vc60.pdb"
+	-@erase "$(OUTDIR)\JGmail.exp"
+	-@erase "$(OUTDIR)\JGmail.lib"
+	-@erase "$(OUTDIR)\JGmail.map"
+	-@erase "$(OUTDIR)\JGmail.pdb"
+	-@erase "..\..\bin\debug\plugins\JGmail.dll"
+	-@erase "..\..\bin\debug\plugins\JGmail.ilk"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+CPP=cl.exe
+CPP_PROJ=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
+RSC=rc.exe
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\msvc6.res" /d "_DEBUG" 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\jabber.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x32500000" /dll /incremental:yes /pdb:"$(OUTDIR)\JGmail.pdb" /map:"$(INTDIR)\JGmail.map" /debug /machine:I386 /out:"../../bin/debug/plugins/JGmail.dll" /implib:"$(OUTDIR)\JGmail.lib" /pdbtype:sept 
+LINK32_OBJS= \
+	"$(INTDIR)\gmail.obj" \
+	"$(INTDIR)\google_token.obj" \
+	"$(INTDIR)\icolib.obj" \
+	"$(INTDIR)\jabber.obj" \
+	"$(INTDIR)\jabber_agent.obj" \
+	"$(INTDIR)\jabber_bitmap.obj" \
+	"$(INTDIR)\jabber_byte.obj" \
+	"$(INTDIR)\jabber_chat.obj" \
+	"$(INTDIR)\jabber_file.obj" \
+	"$(INTDIR)\jabber_form.obj" \
+	"$(INTDIR)\jabber_ft.obj" \
+	"$(INTDIR)\jabber_groupchat.obj" \
+	"$(INTDIR)\jabber_iq.obj" \
+	"$(INTDIR)\jabber_iqid.obj" \
+	"$(INTDIR)\jabber_iqid_muc.obj" \
+	"$(INTDIR)\jabber_libstr.obj" \
+	"$(INTDIR)\jabber_list.obj" \
+	"$(INTDIR)\jabber_menu.obj" \
+	"$(INTDIR)\jabber_misc.obj" \
+	"$(INTDIR)\jabber_opt.obj" \
+	"$(INTDIR)\jabber_password.obj" \
+	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_ssl.obj" \
+	"$(INTDIR)\jabber_std.obj" \
+	"$(INTDIR)\jabber_svc.obj" \
+	"$(INTDIR)\jabber_thread.obj" \
+	"$(INTDIR)\jabber_userinfo.obj" \
+	"$(INTDIR)\jabber_util.obj" \
+	"$(INTDIR)\jabber_vcard.obj" \
+	"$(INTDIR)\jabber_ws.obj" \
+	"$(INTDIR)\jabber_xml.obj" \
+	"$(INTDIR)\jabber_xmlns.obj" \
+	"$(INTDIR)\sha1.obj" \
+	"$(INTDIR)\msvc6.res"
+
+"..\..\bin\debug\plugins\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+OUTDIR=.\compile/release/unicode
+INTDIR=.\compile/release/unicode
+
+ALL : "..\..\bin\upload\jabber\u\JGmail.dll"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\gmail.obj"
+	-@erase "$(INTDIR)\google_token.obj"
+	-@erase "$(INTDIR)\icolib.obj"
+	-@erase "$(INTDIR)\jabber.obj"
+	-@erase "$(INTDIR)\jabber.pch"
+	-@erase "$(INTDIR)\jabber_agent.obj"
+	-@erase "$(INTDIR)\jabber_bitmap.obj"
+	-@erase "$(INTDIR)\jabber_byte.obj"
+	-@erase "$(INTDIR)\jabber_chat.obj"
+	-@erase "$(INTDIR)\jabber_file.obj"
+	-@erase "$(INTDIR)\jabber_form.obj"
+	-@erase "$(INTDIR)\jabber_ft.obj"
+	-@erase "$(INTDIR)\jabber_groupchat.obj"
+	-@erase "$(INTDIR)\jabber_iq.obj"
+	-@erase "$(INTDIR)\jabber_iqid.obj"
+	-@erase "$(INTDIR)\jabber_iqid_muc.obj"
+	-@erase "$(INTDIR)\jabber_libstr.obj"
+	-@erase "$(INTDIR)\jabber_list.obj"
+	-@erase "$(INTDIR)\jabber_menu.obj"
+	-@erase "$(INTDIR)\jabber_misc.obj"
+	-@erase "$(INTDIR)\jabber_opt.obj"
+	-@erase "$(INTDIR)\jabber_password.obj"
+	-@erase "$(INTDIR)\jabber_proxy.obj"
+	-@erase "$(INTDIR)\jabber_ssl.obj"
+	-@erase "$(INTDIR)\jabber_std.obj"
+	-@erase "$(INTDIR)\jabber_svc.obj"
+	-@erase "$(INTDIR)\jabber_thread.obj"
+	-@erase "$(INTDIR)\jabber_userinfo.obj"
+	-@erase "$(INTDIR)\jabber_util.obj"
+	-@erase "$(INTDIR)\jabber_vcard.obj"
+	-@erase "$(INTDIR)\jabber_ws.obj"
+	-@erase "$(INTDIR)\jabber_xml.obj"
+	-@erase "$(INTDIR)\jabber_xmlns.obj"
+	-@erase "$(INTDIR)\msvc6.res"
+	-@erase "$(INTDIR)\sha1.obj"
+	-@erase "$(INTDIR)\vc60.idb"
+	-@erase "$(INTDIR)\vc60.pdb"
+	-@erase "$(OUTDIR)\JGmail.exp"
+	-@erase "$(OUTDIR)\JGmail.map"
+	-@erase "$(OUTDIR)\JGmail.pdb"
+	-@erase "..\..\bin\upload\jabber\u\JGmail.dll"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+CPP=cl.exe
+CPP_PROJ=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC=rc.exe
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\msvc6.res" /d "NDEBUG" 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\jabber.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x32500000" /dll /incremental:no /pdb:"$(OUTDIR)\JGmail.pdb" /map:"$(INTDIR)\JGmail.map" /debug /machine:I386 /out:"../../bin/upload/jabber/u/JGmail.dll" /implib:"$(OUTDIR)\JGmail.lib" /ALIGN:4096 /ignore:4108 
+LINK32_OBJS= \
+	"$(INTDIR)\gmail.obj" \
+	"$(INTDIR)\google_token.obj" \
+	"$(INTDIR)\icolib.obj" \
+	"$(INTDIR)\jabber.obj" \
+	"$(INTDIR)\jabber_agent.obj" \
+	"$(INTDIR)\jabber_bitmap.obj" \
+	"$(INTDIR)\jabber_byte.obj" \
+	"$(INTDIR)\jabber_chat.obj" \
+	"$(INTDIR)\jabber_file.obj" \
+	"$(INTDIR)\jabber_form.obj" \
+	"$(INTDIR)\jabber_ft.obj" \
+	"$(INTDIR)\jabber_groupchat.obj" \
+	"$(INTDIR)\jabber_iq.obj" \
+	"$(INTDIR)\jabber_iqid.obj" \
+	"$(INTDIR)\jabber_iqid_muc.obj" \
+	"$(INTDIR)\jabber_libstr.obj" \
+	"$(INTDIR)\jabber_list.obj" \
+	"$(INTDIR)\jabber_menu.obj" \
+	"$(INTDIR)\jabber_misc.obj" \
+	"$(INTDIR)\jabber_opt.obj" \
+	"$(INTDIR)\jabber_password.obj" \
+	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_ssl.obj" \
+	"$(INTDIR)\jabber_std.obj" \
+	"$(INTDIR)\jabber_svc.obj" \
+	"$(INTDIR)\jabber_thread.obj" \
+	"$(INTDIR)\jabber_userinfo.obj" \
+	"$(INTDIR)\jabber_util.obj" \
+	"$(INTDIR)\jabber_vcard.obj" \
+	"$(INTDIR)\jabber_ws.obj" \
+	"$(INTDIR)\jabber_xml.obj" \
+	"$(INTDIR)\jabber_xmlns.obj" \
+	"$(INTDIR)\sha1.obj" \
+	"$(INTDIR)\msvc6.res"
+
+"..\..\bin\upload\jabber\u\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+SOURCE="$(InputPath)"
+DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
+
+ALL : $(DS_POSTBUILD_DEP)
+
+$(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\u\JGmail.dll"
+   upx --best --force "../../bin/upload/jabber/u/JGmail.dll"
+	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+OUTDIR=.\compile/debug/unicode
+INTDIR=.\compile/debug/unicode
+
+ALL : "..\..\bin\Debug Unicode\plugins\JGmail.dll"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\gmail.obj"
+	-@erase "$(INTDIR)\google_token.obj"
+	-@erase "$(INTDIR)\icolib.obj"
+	-@erase "$(INTDIR)\jabber.obj"
+	-@erase "$(INTDIR)\jabber.pch"
+	-@erase "$(INTDIR)\jabber_agent.obj"
+	-@erase "$(INTDIR)\jabber_bitmap.obj"
+	-@erase "$(INTDIR)\jabber_byte.obj"
+	-@erase "$(INTDIR)\jabber_chat.obj"
+	-@erase "$(INTDIR)\jabber_file.obj"
+	-@erase "$(INTDIR)\jabber_form.obj"
+	-@erase "$(INTDIR)\jabber_ft.obj"
+	-@erase "$(INTDIR)\jabber_groupchat.obj"
+	-@erase "$(INTDIR)\jabber_iq.obj"
+	-@erase "$(INTDIR)\jabber_iqid.obj"
+	-@erase "$(INTDIR)\jabber_iqid_muc.obj"
+	-@erase "$(INTDIR)\jabber_libstr.obj"
+	-@erase "$(INTDIR)\jabber_list.obj"
+	-@erase "$(INTDIR)\jabber_menu.obj"
+	-@erase "$(INTDIR)\jabber_misc.obj"
+	-@erase "$(INTDIR)\jabber_opt.obj"
+	-@erase "$(INTDIR)\jabber_password.obj"
+	-@erase "$(INTDIR)\jabber_proxy.obj"
+	-@erase "$(INTDIR)\jabber_ssl.obj"
+	-@erase "$(INTDIR)\jabber_std.obj"
+	-@erase "$(INTDIR)\jabber_svc.obj"
+	-@erase "$(INTDIR)\jabber_thread.obj"
+	-@erase "$(INTDIR)\jabber_userinfo.obj"
+	-@erase "$(INTDIR)\jabber_util.obj"
+	-@erase "$(INTDIR)\jabber_vcard.obj"
+	-@erase "$(INTDIR)\jabber_ws.obj"
+	-@erase "$(INTDIR)\jabber_xml.obj"
+	-@erase "$(INTDIR)\jabber_xmlns.obj"
+	-@erase "$(INTDIR)\msvc6.res"
+	-@erase "$(INTDIR)\sha1.obj"
+	-@erase "$(INTDIR)\vc60.idb"
+	-@erase "$(INTDIR)\vc60.pdb"
+	-@erase "$(OUTDIR)\JGmail.exp"
+	-@erase "$(OUTDIR)\JGmail.map"
+	-@erase "$(OUTDIR)\JGmail.pdb"
+	-@erase "..\..\bin\Debug Unicode\plugins\JGmail.dll"
+	-@erase "..\..\bin\Debug Unicode\plugins\JGmail.ilk"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+CPP=cl.exe
+CPP_PROJ=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
+RSC=rc.exe
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\msvc6.res" /d "_DEBUG" 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\jabber.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x32500000" /dll /incremental:yes /pdb:"$(OUTDIR)\JGmail.pdb" /map:"$(INTDIR)\JGmail.map" /debug /machine:I386 /out:"../../bin/Debug Unicode/plugins/JGmail.dll" /implib:"$(OUTDIR)\JGmail.lib" /pdbtype:sept 
+LINK32_OBJS= \
+	"$(INTDIR)\gmail.obj" \
+	"$(INTDIR)\google_token.obj" \
+	"$(INTDIR)\icolib.obj" \
+	"$(INTDIR)\jabber.obj" \
+	"$(INTDIR)\jabber_agent.obj" \
+	"$(INTDIR)\jabber_bitmap.obj" \
+	"$(INTDIR)\jabber_byte.obj" \
+	"$(INTDIR)\jabber_chat.obj" \
+	"$(INTDIR)\jabber_file.obj" \
+	"$(INTDIR)\jabber_form.obj" \
+	"$(INTDIR)\jabber_ft.obj" \
+	"$(INTDIR)\jabber_groupchat.obj" \
+	"$(INTDIR)\jabber_iq.obj" \
+	"$(INTDIR)\jabber_iqid.obj" \
+	"$(INTDIR)\jabber_iqid_muc.obj" \
+	"$(INTDIR)\jabber_libstr.obj" \
+	"$(INTDIR)\jabber_list.obj" \
+	"$(INTDIR)\jabber_menu.obj" \
+	"$(INTDIR)\jabber_misc.obj" \
+	"$(INTDIR)\jabber_opt.obj" \
+	"$(INTDIR)\jabber_password.obj" \
+	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_ssl.obj" \
+	"$(INTDIR)\jabber_std.obj" \
+	"$(INTDIR)\jabber_svc.obj" \
+	"$(INTDIR)\jabber_thread.obj" \
+	"$(INTDIR)\jabber_userinfo.obj" \
+	"$(INTDIR)\jabber_util.obj" \
+	"$(INTDIR)\jabber_vcard.obj" \
+	"$(INTDIR)\jabber_ws.obj" \
+	"$(INTDIR)\jabber_xml.obj" \
+	"$(INTDIR)\jabber_xmlns.obj" \
+	"$(INTDIR)\sha1.obj" \
+	"$(INTDIR)\msvc6.res"
+
+"..\..\bin\Debug Unicode\plugins\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+OUTDIR=.\compile/staticssl/unicode
+INTDIR=.\compile/staticssl/unicode
+
+ALL : "..\..\bin\upload\jabber\staticssl\u\JGmail.dll"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\gmail.obj"
+	-@erase "$(INTDIR)\google_token.obj"
+	-@erase "$(INTDIR)\icolib.obj"
+	-@erase "$(INTDIR)\jabber.obj"
+	-@erase "$(INTDIR)\jabber.pch"
+	-@erase "$(INTDIR)\jabber_agent.obj"
+	-@erase "$(INTDIR)\jabber_bitmap.obj"
+	-@erase "$(INTDIR)\jabber_byte.obj"
+	-@erase "$(INTDIR)\jabber_chat.obj"
+	-@erase "$(INTDIR)\jabber_file.obj"
+	-@erase "$(INTDIR)\jabber_form.obj"
+	-@erase "$(INTDIR)\jabber_ft.obj"
+	-@erase "$(INTDIR)\jabber_groupchat.obj"
+	-@erase "$(INTDIR)\jabber_iq.obj"
+	-@erase "$(INTDIR)\jabber_iqid.obj"
+	-@erase "$(INTDIR)\jabber_iqid_muc.obj"
+	-@erase "$(INTDIR)\jabber_libstr.obj"
+	-@erase "$(INTDIR)\jabber_list.obj"
+	-@erase "$(INTDIR)\jabber_menu.obj"
+	-@erase "$(INTDIR)\jabber_misc.obj"
+	-@erase "$(INTDIR)\jabber_opt.obj"
+	-@erase "$(INTDIR)\jabber_password.obj"
+	-@erase "$(INTDIR)\jabber_proxy.obj"
+	-@erase "$(INTDIR)\jabber_ssl.obj"
+	-@erase "$(INTDIR)\jabber_std.obj"
+	-@erase "$(INTDIR)\jabber_svc.obj"
+	-@erase "$(INTDIR)\jabber_thread.obj"
+	-@erase "$(INTDIR)\jabber_userinfo.obj"
+	-@erase "$(INTDIR)\jabber_util.obj"
+	-@erase "$(INTDIR)\jabber_vcard.obj"
+	-@erase "$(INTDIR)\jabber_ws.obj"
+	-@erase "$(INTDIR)\jabber_xml.obj"
+	-@erase "$(INTDIR)\jabber_xmlns.obj"
+	-@erase "$(INTDIR)\msvc6.res"
+	-@erase "$(INTDIR)\sha1.obj"
+	-@erase "$(INTDIR)\vc60.idb"
+	-@erase "$(INTDIR)\vc60.pdb"
+	-@erase "$(OUTDIR)\JGmail.exp"
+	-@erase "$(OUTDIR)\JGmail.map"
+	-@erase "$(OUTDIR)\JGmail.pdb"
+	-@erase "..\..\bin\upload\jabber\staticssl\u\JGmail.dll"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+CPP=cl.exe
+CPP_PROJ=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC=rc.exe
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\msvc6.res" /d "NDEBUG" 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\jabber.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /incremental:no /pdb:"$(OUTDIR)\JGmail.pdb" /map:"$(INTDIR)\JGmail.map" /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /implib:"$(OUTDIR)\JGmail.lib" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\out32\\" /ALIGN:4096 /ignore:4108 
+LINK32_OBJS= \
+	"$(INTDIR)\gmail.obj" \
+	"$(INTDIR)\google_token.obj" \
+	"$(INTDIR)\icolib.obj" \
+	"$(INTDIR)\jabber.obj" \
+	"$(INTDIR)\jabber_agent.obj" \
+	"$(INTDIR)\jabber_bitmap.obj" \
+	"$(INTDIR)\jabber_byte.obj" \
+	"$(INTDIR)\jabber_chat.obj" \
+	"$(INTDIR)\jabber_file.obj" \
+	"$(INTDIR)\jabber_form.obj" \
+	"$(INTDIR)\jabber_ft.obj" \
+	"$(INTDIR)\jabber_groupchat.obj" \
+	"$(INTDIR)\jabber_iq.obj" \
+	"$(INTDIR)\jabber_iqid.obj" \
+	"$(INTDIR)\jabber_iqid_muc.obj" \
+	"$(INTDIR)\jabber_libstr.obj" \
+	"$(INTDIR)\jabber_list.obj" \
+	"$(INTDIR)\jabber_menu.obj" \
+	"$(INTDIR)\jabber_misc.obj" \
+	"$(INTDIR)\jabber_opt.obj" \
+	"$(INTDIR)\jabber_password.obj" \
+	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_ssl.obj" \
+	"$(INTDIR)\jabber_std.obj" \
+	"$(INTDIR)\jabber_svc.obj" \
+	"$(INTDIR)\jabber_thread.obj" \
+	"$(INTDIR)\jabber_userinfo.obj" \
+	"$(INTDIR)\jabber_util.obj" \
+	"$(INTDIR)\jabber_vcard.obj" \
+	"$(INTDIR)\jabber_ws.obj" \
+	"$(INTDIR)\jabber_xml.obj" \
+	"$(INTDIR)\jabber_xmlns.obj" \
+	"$(INTDIR)\sha1.obj" \
+	"$(INTDIR)\msvc6.res"
+
+"..\..\bin\upload\jabber\staticssl\u\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+SOURCE="$(InputPath)"
+DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
+
+ALL : $(DS_POSTBUILD_DEP)
+
+$(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\staticssl\u\JGmail.dll"
+   upx --best --force "../../bin/upload/jabber/staticssl/u/JGmail.dll"
+	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+OUTDIR=.\compile/staticssl/ansi
+INTDIR=.\compile/staticssl/ansi
+
+ALL : "..\..\bin\upload\jabber\staticssl\JGmail.dll"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\gmail.obj"
+	-@erase "$(INTDIR)\google_token.obj"
+	-@erase "$(INTDIR)\icolib.obj"
+	-@erase "$(INTDIR)\jabber.obj"
+	-@erase "$(INTDIR)\jabber.pch"
+	-@erase "$(INTDIR)\jabber_agent.obj"
+	-@erase "$(INTDIR)\jabber_bitmap.obj"
+	-@erase "$(INTDIR)\jabber_byte.obj"
+	-@erase "$(INTDIR)\jabber_chat.obj"
+	-@erase "$(INTDIR)\jabber_file.obj"
+	-@erase "$(INTDIR)\jabber_form.obj"
+	-@erase "$(INTDIR)\jabber_ft.obj"
+	-@erase "$(INTDIR)\jabber_groupchat.obj"
+	-@erase "$(INTDIR)\jabber_iq.obj"
+	-@erase "$(INTDIR)\jabber_iqid.obj"
+	-@erase "$(INTDIR)\jabber_iqid_muc.obj"
+	-@erase "$(INTDIR)\jabber_libstr.obj"
+	-@erase "$(INTDIR)\jabber_list.obj"
+	-@erase "$(INTDIR)\jabber_menu.obj"
+	-@erase "$(INTDIR)\jabber_misc.obj"
+	-@erase "$(INTDIR)\jabber_opt.obj"
+	-@erase "$(INTDIR)\jabber_password.obj"
+	-@erase "$(INTDIR)\jabber_proxy.obj"
+	-@erase "$(INTDIR)\jabber_ssl.obj"
+	-@erase "$(INTDIR)\jabber_std.obj"
+	-@erase "$(INTDIR)\jabber_svc.obj"
+	-@erase "$(INTDIR)\jabber_thread.obj"
+	-@erase "$(INTDIR)\jabber_userinfo.obj"
+	-@erase "$(INTDIR)\jabber_util.obj"
+	-@erase "$(INTDIR)\jabber_vcard.obj"
+	-@erase "$(INTDIR)\jabber_ws.obj"
+	-@erase "$(INTDIR)\jabber_xml.obj"
+	-@erase "$(INTDIR)\jabber_xmlns.obj"
+	-@erase "$(INTDIR)\msvc6.res"
+	-@erase "$(INTDIR)\sha1.obj"
+	-@erase "$(INTDIR)\vc60.idb"
+	-@erase "$(INTDIR)\vc60.pdb"
+	-@erase "$(OUTDIR)\JGmail.exp"
+	-@erase "$(OUTDIR)\JGmail.map"
+	-@erase "$(OUTDIR)\JGmail.pdb"
+	-@erase "..\..\bin\upload\jabber\staticssl\JGmail.dll"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+CPP=cl.exe
+CPP_PROJ=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC=rc.exe
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\msvc6.res" /d "NDEBUG" 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\jabber.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /incremental:no /pdb:"$(OUTDIR)\JGmail.pdb" /map:"$(INTDIR)\JGmail.map" /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/JGmail.dll" /implib:"$(OUTDIR)\JGmail.lib" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\out32\\" /ALIGN:4096 /ignore:4108 
+LINK32_OBJS= \
+	"$(INTDIR)\gmail.obj" \
+	"$(INTDIR)\google_token.obj" \
+	"$(INTDIR)\icolib.obj" \
+	"$(INTDIR)\jabber.obj" \
+	"$(INTDIR)\jabber_agent.obj" \
+	"$(INTDIR)\jabber_bitmap.obj" \
+	"$(INTDIR)\jabber_byte.obj" \
+	"$(INTDIR)\jabber_chat.obj" \
+	"$(INTDIR)\jabber_file.obj" \
+	"$(INTDIR)\jabber_form.obj" \
+	"$(INTDIR)\jabber_ft.obj" \
+	"$(INTDIR)\jabber_groupchat.obj" \
+	"$(INTDIR)\jabber_iq.obj" \
+	"$(INTDIR)\jabber_iqid.obj" \
+	"$(INTDIR)\jabber_iqid_muc.obj" \
+	"$(INTDIR)\jabber_libstr.obj" \
+	"$(INTDIR)\jabber_list.obj" \
+	"$(INTDIR)\jabber_menu.obj" \
+	"$(INTDIR)\jabber_misc.obj" \
+	"$(INTDIR)\jabber_opt.obj" \
+	"$(INTDIR)\jabber_password.obj" \
+	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_ssl.obj" \
+	"$(INTDIR)\jabber_std.obj" \
+	"$(INTDIR)\jabber_svc.obj" \
+	"$(INTDIR)\jabber_thread.obj" \
+	"$(INTDIR)\jabber_userinfo.obj" \
+	"$(INTDIR)\jabber_util.obj" \
+	"$(INTDIR)\jabber_vcard.obj" \
+	"$(INTDIR)\jabber_ws.obj" \
+	"$(INTDIR)\jabber_xml.obj" \
+	"$(INTDIR)\jabber_xmlns.obj" \
+	"$(INTDIR)\sha1.obj" \
+	"$(INTDIR)\msvc6.res"
+
+"..\..\bin\upload\jabber\staticssl\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+SOURCE="$(InputPath)"
+DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
+
+ALL : $(DS_POSTBUILD_DEP)
+
+$(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\staticssl\JGmail.dll"
+   upx --best --force ../../bin/upload/jabber/staticssl/JGmail.dll
+	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
+
+!ENDIF 
+
+
+!IF "$(NO_EXTERNAL_DEPS)" != "1"
+!IF EXISTS("jabber.dep")
+!INCLUDE "jabber.dep"
+!ELSE 
+!MESSAGE Warning: cannot find "jabber.dep"
+!ENDIF 
+!ENDIF 
+
+
+!IF "$(CFG)" == "jgmail - Win32 Release" || "$(CFG)" == "jgmail - Win32 Debug" || "$(CFG)" == "jgmail - Win32 Release Unicode" || "$(CFG)" == "jgmail - Win32 Debug Unicode" || "$(CFG)" == "jgmail - Win32 Static Unicode" || "$(CFG)" == "jgmail - Win32 Static"
+SOURCE=.\gmail.cpp
+
+"$(INTDIR)\gmail.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+SOURCE=.\google_token.cpp
+
+"$(INTDIR)\google_token.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+SOURCE=.\icolib.cpp
+
+"$(INTDIR)\icolib.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+SOURCE=.\jabber.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yc"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber.obj"	"$(INTDIR)\jabber.pch" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yc"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber.obj"	"$(INTDIR)\jabber.pch" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yc"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber.obj"	"$(INTDIR)\jabber.pch" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yc"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber.obj"	"$(INTDIR)\jabber.pch" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yc"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber.obj"	"$(INTDIR)\jabber.pch" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yc"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber.obj"	"$(INTDIR)\jabber.pch" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_agent.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_agent.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_agent.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_agent.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_agent.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_agent.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_agent.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_bitmap.cpp
+
+"$(INTDIR)\jabber_bitmap.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+SOURCE=.\jabber_byte.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_byte.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_byte.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_byte.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_byte.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_byte.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_byte.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_chat.cpp
+
+"$(INTDIR)\jabber_chat.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+SOURCE=.\jabber_file.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_file.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_file.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_file.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_file.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_file.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_file.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_form.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_form.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_form.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_form.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_form.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_form.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_form.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_ft.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ft.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_ft.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ft.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_ft.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ft.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ft.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_groupchat.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_groupchat.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_groupchat.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_groupchat.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_groupchat.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_groupchat.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_groupchat.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_iq.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iq.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_iq.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iq.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_iq.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iq.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iq.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_iqid.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iqid.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_iqid.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iqid.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_iqid.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iqid.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iqid.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_iqid_muc.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iqid_muc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_iqid_muc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iqid_muc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_iqid_muc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iqid_muc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_iqid_muc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_libstr.cpp
+
+"$(INTDIR)\jabber_libstr.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+SOURCE=.\jabber_list.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_list.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_list.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_list.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_list.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_list.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_list.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_menu.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_menu.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_menu.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_menu.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_menu.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_menu.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_menu.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_misc.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_misc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_misc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_misc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_misc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_misc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_misc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_opt.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_opt.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_opt.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_opt.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_opt.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_opt.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_opt.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_password.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_password.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_password.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_password.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_password.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_password.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_password.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_proxy.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_proxy.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_proxy.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_proxy.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_proxy.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_proxy.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_proxy.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_ssl.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ssl.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_ssl.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ssl.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_ssl.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ssl.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ssl.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_std.cpp
+
+"$(INTDIR)\jabber_std.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+SOURCE=.\jabber_svc.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_svc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_svc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_svc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_svc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_svc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_svc.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_thread.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_thread.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_thread.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_thread.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_thread.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_thread.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_thread.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_userinfo.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_userinfo.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_userinfo.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_userinfo.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_userinfo.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_userinfo.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_userinfo.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_util.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_util.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_util.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_util.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_util.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_util.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_util.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_vcard.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_vcard.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_vcard.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_vcard.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_vcard.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_vcard.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_vcard.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_ws.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ws.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_ws.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ws.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_ws.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ws.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_ws.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_xml.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_xml.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_xml.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_xml.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_xml.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_xml.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_xml.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\jabber_xmlns.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_xmlns.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_xmlns.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_xmlns.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\jabber_xmlns.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_xmlns.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\jabber_xmlns.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\sha1.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\sha1.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\sha1.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\sha1.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+"$(INTDIR)\sha1.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\sha1.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /I "Z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\inc32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+"$(INTDIR)\sha1.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) @<<
+  $(CPP_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
+SOURCE=.\msvc6.rc
+
+"$(INTDIR)\msvc6.res" : $(SOURCE) "$(INTDIR)"
+	$(RSC) $(RSC_PROJ) $(SOURCE)
+
+
+
+!ENDIF 
+
