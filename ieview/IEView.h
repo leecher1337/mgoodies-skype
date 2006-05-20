@@ -164,10 +164,12 @@ private:
 	IHTMLDocument2 *getDocument();
 	BSTR 			getHrefFromAnchor(IHTMLElement *element);
 	BSTR 			getSelection();
+	void			setBorder();
 public:
 	IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy);
 //	IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, int cy);
 	virtual ~IEView();
+	void			waitWhileBusy();
 	HWND			getHWND();
 	void 			translateAccelerator(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	bool			mouseClick(POINT pt);
@@ -202,6 +204,7 @@ public:
 	static IEView* 	get(HWND);
 	static void 	init();
 	static void 	release();
+	static void		setOptions();
 
 };
 #endif

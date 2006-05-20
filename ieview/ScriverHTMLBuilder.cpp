@@ -75,7 +75,7 @@ bool ScriverHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei)
         case EVENTTYPE_MESSAGE:
             return 1;
         case EVENTTYPE_STATUSCHANGE:
-            if (dbei->flags & DBEF_READ) return 0;
+          //  if (dbei->flags & DBEF_READ) return 0;
             return 1;
         case EVENTTYPE_URL:
             return 1;
