@@ -73,7 +73,7 @@ STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Options",IDC_SIMPLE,5,5,294,105
+    GROUPBOX        "Options",IDC_SIMPLE,5,5,294,125
     CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,19,265,10
     LTEXT           "Currently the following BBCodes are supported: [b][i][u][s][img][size][color][url]",IDC_SIMPLE, 26,31,265,12
@@ -85,6 +85,8 @@ BEGIN
                     WS_TABSTOP,14,76,265,10
     CONTROL         "Replace smileys in user names",IDC_SMILEYS_IN_NAMES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,91,265,10
+    CONTROL         "Hide window border",IDC_NO_BORDER,"Button",BS_AUTOCHECKBOX |
+                    WS_TABSTOP,14,106,265,10
 END
 
 IDD_SRMM_OPTIONS DIALOGEX 2, 15, 306, 228

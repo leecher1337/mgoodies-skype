@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utils.h"
 //#define GECKO
 #define DISPID_BEFORENAVIGATE2      250   // hyperlink clicked on
+#define DISPID_NAVIGATECOMPLETE2    252   // UIActivate new document
+#define DISPID_DOCUMENTCOMPLETE     259   // new document goes ReadyState_Complete
 
 static const CLSID CLSID_MozillaBrowser=
 { 0x1339B54C, 0x3453, 0x11D2,
@@ -123,6 +125,41 @@ void IEView::release() {
     DeleteCriticalSection(&mutex);
 }
 
+#define WM_WAITWHILEBUSY (WM_USER+600)
+
+static void __cdecl StartThread(void *vptr) {
+	IEView *iev = (IEView *) vptr;
+	iev->waitWhileBusy();
+	return;
+}
+
+void IEView::waitWhileBusy() {
+	VARIANT_BOOL busy;
+	pWebBrowser->get_Busy(&busy);
+	while (busy == VARIANT_TRUE) {
+		Sleep(10);
+		pWebBrowser->get_Busy(&busy);
+	}
+	PostMessage(hwnd, WM_WAITWHILEBUSY, 0, 0);
+}
+
+void IEView::setBorder() {
+	LONG style = GetWindowLong(hwnd, GWL_EXSTYLE);
+	LONG oldStyle = style;
+	if (Options::getGeneralFlags() & Options::GENERAL_NO_BORDER) {
+#ifndef GECKO
+		style &= ~(WS_EX_STATICEDGE);
+#endif
+	} else {
+		style |= (WS_EX_STATICEDGE);
+	}
+	if (oldStyle != style) {
+		SetWindowLong(hwnd,GWL_EXSTYLE,style);
+		SetWindowPos(getHWND(), NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
+	}
+//	RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_FRAME | RDW_UPDATENOW);
+}
+
 IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) {
 	MSG msg;
 	IOleObject*   pOleObject = NULL;
@@ -138,7 +175,10 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	m_cRef = 0;
 	selectedText = NULL;
 	getFocus = false;
-	clearRequired = true;
+	rcClient.left = x;
+	rcClient.top = y;
+	rcClient.right = x + cx;
+	rcClient.bottom = y + cy;
 #ifdef GECKO
 	if (SUCCEEDED(CoCreateInstance(CLSID_MozillaBrowser, NULL, CLSCTX_INPROC, IID_IWebBrowser2, (LPVOID*)&pWebBrowser))) {
 #else
@@ -146,12 +186,8 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 #endif
 //		pWebBrowser->put_RegisterAsBrowser(VARIANT_FALSE);
 		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleObject, (void**)&pOleObject))) {
-    		rcClient.left = x;
-    		rcClient.top = y;
-    		rcClient.right = x + cx;
-    		rcClient.bottom = y + cy;
     		pOleObject->SetClientSite(this);
-    		pOleObject->DoVerb(OLEIVERB_INPLACEACTIVATE, &msg, this, 0, parent, &rcClient);
+    		pOleObject->DoVerb(OLEIVERB_INPLACEACTIVATE, &msg, this, 0, this->parent, &rcClient);
     		pOleObject->Release();
    		} else {
   			MessageBoxA(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
@@ -164,11 +200,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
   			MessageBoxA(NULL,"IID_IOleInPlaceObject failed.","RESULT",MB_OK);
 		}
 
-		LONG style = GetWindowLong(hwnd, GWL_EXSTYLE);
-		style |= (WS_EX_STATICEDGE);
-//		style &= ~(WS_EX_ACCEPTFILES);
-		SetWindowLong(hwnd,GWL_EXSTYLE,style);
-
+		setBorder();
    		IConnectionPointContainer* pCPContainer;
 	   // Step 1: Get a pointer to the connection point container.
    		if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IConnectionPointContainer,
@@ -188,6 +220,8 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
    		}
 #ifndef GECKO
 		setMainWndProc((WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) IEViewWindowProcedure));
+#else
+//		setMainWndProc((WNDPROC)SetWindowLong(hwnd, GWL_WNDPROC, (LONG) MozillaWindowProcedure));
 #endif
     }
     EnterCriticalSection(&mutex);
@@ -199,9 +233,6 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	LeaveCriticalSection(&mutex);
 //	clear();
 	pWebBrowser->put_RegisterAsDropTarget(VARIANT_FALSE);
-#ifdef GECKO
-    pWebBrowser->Navigate(L"about:blank", NULL, NULL, NULL, NULL);
-#endif
 }
 
 IEView::~IEView() {
@@ -401,6 +432,8 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 	}
 #ifdef GECKO
 	{
+		return E_NOTIMPL;
+/*
 		HMENU hMenu;
 		hMenu = GetSubMenu(LoadMenu(hInstance, MAKEINTRESOURCE(IDR_CONTEXTMENU)),0);
 		CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)hMenu,0);
@@ -427,6 +460,7 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 		} else {
 			SendMessage(hSPWnd, WM_COMMAND, iSelection, (LPARAM) NULL);
 		}
+*/
 	}
 #else
     if (SUCCEEDED(pcmdTarget->QueryInterface(IID_IOleCommandTarget, (void**)&pOleCommandTarget))) {
@@ -468,7 +502,7 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 STDMETHODIMP IEView::GetHostInfo(DOCHOSTUIINFO *pInfo) {
  	pInfo->dwFlags = DOCHOSTUIFLAG_NO3DBORDER;// | DOCHOSTUIFLAG_DISABLE_SCRIPT_INACTIVE;
 	if (builder == NULL) {
-	pInfo->dwFlags |= DOCHOSTUIFLAG_DIALOG;
+		pInfo->dwFlags |= DOCHOSTUIFLAG_DIALOG;
 	}
  	return S_OK;
 }
@@ -802,6 +836,21 @@ void IEView::appendEvent(IEVIEWEVENT *event) {
 void IEView::clear(IEVIEWEVENT *event) {
 #ifdef GECKO
     pWebBrowser->Navigate(L"about:blank", NULL, NULL, NULL, NULL);
+	Utils::forkThread((void (__cdecl *)(void *))StartThread, 0, (void *) this);
+	MSG msg;
+	BOOL bRet;
+	while( (bRet = GetMessage( &msg, NULL, 0, 0 )) != 0) {
+		if (bRet == -1) {
+			// handle the error and possibly exit
+		} else {
+			if (msg.message == WM_WAITWHILEBUSY) {
+				break;
+			} else {
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+	}
 	{
 		IHTMLDocument2 *document = getDocument();
 		if (document != NULL) {
@@ -884,6 +933,7 @@ void IEView::clear(IEVIEWEVENT *event) {
 	}
 	clearRequired = false;
 	getFocus = false;
+	setBorder();
 }
 
 void* IEView::getSelection(IEVIEWEVENT *event) {
