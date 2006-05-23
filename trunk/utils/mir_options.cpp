@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA.
 #include "mir_memory.h"
 
 #include <commctrl.h>
+#include <stdio.h>
 
 extern "C"
 {
@@ -32,6 +33,34 @@ extern "C"
 #include <m_protocols.h>
 #include <m_protosvc.h>
 #include <tchar.h>
+}
+
+
+// WinXP stuff
+
+HMODULE hUxTheme = NULL;
+
+#ifndef ETDT_ENABLETAB
+# define ETDT_ENABLETAB      0x00000006
+#endif
+
+typedef BOOL (WINAPI *fEnableThemeDialogTexture)(HANDLE, DWORD);
+fEnableThemeDialogTexture pfEnableThemeDialogTexture = NULL;
+
+
+void InitMirOptions()
+{
+	hUxTheme = LoadLibraryA("uxtheme.dll");
+    if(hUxTheme == NULL)
+        return;
+
+    pfEnableThemeDialogTexture = (fEnableThemeDialogTexture) GetProcAddress(hUxTheme, "EnableThemeDialogTexture");
+}
+
+void FreeMirOptions()
+{
+    if(hUxTheme != NULL)
+        FreeLibrary(hUxTheme);
 }
 
 
@@ -48,7 +77,6 @@ struct ItemOptionData
 struct WndItemsData 
 { 
 	ItemOptionData *items;
-	HWND hwndDisplay;
 	int selected_item;
 }; 
 
@@ -110,12 +138,14 @@ static void ChangeTab(HWND hwndDlg, UINT idc_tab, WndItemsData *data, int sel)
 
 	// Fix rc_item
 	rc_item.right -= rc_item.left;	// width
-	rc_item.left = 0;
-	rc_item.bottom -= rc_item.top;	// height
-	rc_item.top = 0;
-
 	rc_item.left = rc_tab.left + (rc_tab.right - rc_tab.left - rc_item.right) / 2;
-	rc_item.top = rc_tab.top + (rc_tab.bottom - rc_tab.top - rc_item.bottom) / 2;
+
+	// Old style (centered)
+	//rc_item.bottom -= rc_item.top;	// height
+	//rc_item.top = rc_tab.top + (rc_tab.bottom - rc_tab.top - rc_item.bottom) / 2;
+	// New style (at top)
+	rc_item.top = rc_tab.top;
+	rc_item.bottom = rc_tab.bottom - rc_tab.top;
 
 	// Set pos
 	SetWindowPos(data->items[sel].hwnd, HWND_TOP, rc_item.left, rc_item.top, 
@@ -134,7 +164,6 @@ BOOL CALLBACK TabsDlgProc(ItemOption *optItens, int optItensSize, HINSTANCE hIns
 			WndItemsData *data;
 			int i;
 			TCITEM tie; 
-			RECT rc_tab;
 			
 			TranslateDialogDefault(hwndDlg);
 
@@ -157,22 +186,15 @@ BOOL CALLBACK TabsDlgProc(ItemOption *optItens, int optItensSize, HINSTANCE hIns
 				templ = DoLockDlgRes(hInst, MAKEINTRESOURCE(optItens[i].id));
 				data->items[i].hwnd = CreateDialogIndirect(hInst, templ, hwndDlg, 
 													 optItens[i].wnd_proc); 
+
+				if (pfEnableThemeDialogTexture != NULL)
+					pfEnableThemeDialogTexture(data->items[i].hwnd, ETDT_ENABLETAB);
+
 				ShowWindow(data->items[i].hwnd, SW_HIDE);
 
 				tie.pszText = TranslateT(optItens[i].name); 
 				TabCtrl_InsertItem(hwndTab, i, &tie);
 			}
-
-			// Get avaible space
-			GetWindowRect(hwndTab, &rc_tab);
-			ScreenToClientRect(hwndTab, &rc_tab);
-			TabCtrl_AdjustRect(hwndTab, FALSE, &rc_tab); 
-
-			// Create big display
-			data->hwndDisplay = CreateWindow("STATIC", "", WS_CHILD|WS_VISIBLE, 
-								rc_tab.left, rc_tab.top, 
-								rc_tab.right-rc_tab.left, rc_tab.bottom-rc_tab.top, 
-								hwndTab, NULL, hInst, NULL); 
 
 			// Show first item
 			ChangeTab(hwndDlg, idc_tab, data, 0);
@@ -224,8 +246,6 @@ BOOL CALLBACK TabsDlgProc(ItemOption *optItens, int optItensSize, HINSTANCE hIns
 		{
 			int i;
 			WndItemsData *data = (WndItemsData *) GetWindowLong(hwndDlg, GWL_USERDATA);
-
-			DestroyWindow(data->hwndDisplay); 
 
 			for (i = 0 ; i < optItensSize ; i++)
 			{
