@@ -1,0 +1,41 @@
+Status Message Retriever 1.0.0.1
+
+Changelog:
+
+. 1.0.0.1
+  * Try to fix bug on thread finish
+  + Don't check contacts on invisible list
+  + Options in XP style
+
+. 1.0.0.0
+  * Only save retrieved status message if needed
+  + Langpack file
+  + Changed version number to reflect that the plugin is ready
+
+. 0.0.1.6
+  * Bugfix to freezing
+
+. 0.0.1.5
+  * Bugfix in poll
+  * Bugfix in xstatus code
+
+. 0.0.1.4
+  + Deal with XStatus
+  * Tabbed options dialog
+
+. 0.0.1.3
+  + Option to always clear status message
+  * Fixed error detection
+  * Online check if check on timer enabled also
+
+. 0.0.1.2
+  + New logic to handle requests. Should work better for ICQ, but messages will take longer to arrive.
+
+. 0.0.1.1
+  + Updater support
+  + More options
+  + A lot of changes in polling code
+  * Bugfix in contact menu option
+
+. 0.0.1.0
+  + Initial version

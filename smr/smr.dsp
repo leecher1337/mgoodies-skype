@@ -110,10 +110,6 @@ SOURCE=..\utils\mir_dblists.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\utils\mir_log.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\utils\mir_memory.h
 # End Source File
 # Begin Source File
@@ -187,10 +183,6 @@ SOURCE=.\resources\url.ico
 # Begin Source File
 
 SOURCE=..\utils\mir_dblists.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\utils\mir_log.cpp
 # End Source File
 # Begin Source File
 
