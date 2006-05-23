@@ -31,7 +31,6 @@ extern "C"
 }
 
 
-
 int mlog(const char *module, const char *function, const char *fmt, ...)
 {
 #ifdef ENABLE_LOG
@@ -85,8 +84,14 @@ int mlogC(const char *module, const char *function, HANDLE hContact, const char 
     va_list va;
     char text[1024];
 	size_t len;
-	char *name = (char*) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0);
-	char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+
+	char *name = NULL;
+	char *proto = NULL;
+	if (hContact != NULL)
+	{
+		name = (char*) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0);
+		proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+	}
 
 	mir_snprintf(text, sizeof(text) - 10, "[%08u - %08u] [%s] [%s] [%08d - %s - %s] ", 
 				 GetCurrentThreadId(), GetTickCount(), module, function,
