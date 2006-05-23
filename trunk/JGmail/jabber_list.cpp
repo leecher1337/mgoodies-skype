@@ -401,7 +401,17 @@ void putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
 #endif
 		dbv.ptszVal, r->resourceName, r->software, r->version, r->system);
 	JFreeVariant(&dbv);
-#endif			
+#endif
+	if (!hContact) {
+		JabberLog(
+#ifdef _UNICODE
+			"Trying to update NULL contact with resource %S",
+#else
+			"Trying to update NULL contact with resource %s",
+#endif
+			r->resourceName);
+		return;
+	}
 	TCHAR mirver[256];
 	int pos=0;
 	JSetStringT( hContact, "Resource", r->resourceName );
