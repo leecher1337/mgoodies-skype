@@ -77,12 +77,16 @@ void InitOptions()
 	LoadOptions();
 
 	hOptHook = HookEvent(ME_OPT_INITIALISE, InitOptionsCallback);
+
+	InitMirOptions();
 }
 
 // Deinitializations needed by options
 void DeInitOptions()
 {
 	UnhookEvent(hOptHook);
+
+	FreeMirOptions();
 }
 
 // Options page

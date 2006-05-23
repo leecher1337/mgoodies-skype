@@ -27,7 +27,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Status Message Retriever",
-	PLUGIN_MAKE_VERSION(1,0,0,0),
+	PLUGIN_MAKE_VERSION(1,0,0,1),
 	"Retrive status message based on timer / status change",
 	"Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
 	"",
@@ -145,7 +145,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
 		upd.szBetaVersionURL = "http://br.geocities.com/ricardo_pescuma/smr_version.txt";
-		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/smr_version.txt";
+		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/smr_changelog.txt";
 		upd.pbBetaVersionPrefix = (BYTE *)"Status Message Retriever ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/smr.zip";
