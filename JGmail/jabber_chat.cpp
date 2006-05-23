@@ -254,7 +254,9 @@ void JabberGcQuit( JABBER_LIST_ITEM* item, int code, XmlNode* reason )
 	item->bChatActive = FALSE;
 
 	if ( jabberOnline ) {
-		XmlNode p( "presence" ); p.addAttr( "to", item->jid ); p.addAttr( "type", "unavailable" );
+		TCHAR text[ 1024 ];
+		mir_sntprintf( text, SIZEOF( text ), _T("%s/%s"), item->jid, item->nick );
+		XmlNode p( "presence" ); p.addAttr( "to", text ); p.addAttr( "type", "unavailable" );
 		JabberSend( jabberThreadInfo->s, p );
 		JabberListRemove( LIST_CHATROOM, item->jid );
 	}
