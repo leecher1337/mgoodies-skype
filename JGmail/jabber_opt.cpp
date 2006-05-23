@@ -29,9 +29,12 @@ Last change by : $Author: ghazan $
 #include "jabber_list.h"
 #include <commctrl.h>
 #include "resource.h"
+#include <uxtheme.h>
 
 extern BOOL jabberSendKeepAlive;
 extern UINT jabberCodePage;
+
+static BOOL (WINAPI *pfnEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
 
 static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam );
 static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam );
@@ -555,7 +558,8 @@ static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 }
 
 BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam );
-long StandardOptsDlg, AdvOptsDlg, GMailOptsDlg;
+static HWND StandardOptsDlg = 0, AdvOptsDlg = 0;
+HWND GMailOptsDlg = 0;
 
 static void reInitTabs(HWND hwndDlg){
 	int iExpert = SendMessage(GetParent(hwndDlg), PSM_ISEXPERT, 0, 0);
@@ -578,8 +582,8 @@ static void reInitTabs(HWND hwndDlg){
 	}
 	tci.mask = TCIF_PARAM|TCIF_TEXT;
 	if (iExpert) {
-		if (!AdvOptsDlg) AdvOptsDlg = (long)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_JABBER2), hwndDlg, JabberAdvOptDlgProc);
-		tci.lParam = AdvOptsDlg;
+		if (!AdvOptsDlg) AdvOptsDlg = CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_JABBER2), hwndDlg, JabberAdvOptDlgProc);
+		tci.lParam = (LPARAM)AdvOptsDlg;
 		tci.pszText = Translate("Expert");
 		GetClientRect((HWND)tci.lParam,&rcClient);
 		SendMessage(GetDlgItem(hwndDlg, IDC_OPT_EXPERT_TAB), TCM_INSERTITEMA, (WPARAM)0, (LPARAM)&tci);
@@ -591,8 +595,8 @@ static void reInitTabs(HWND hwndDlg){
 		if (t>1) t = 1;
 		ShowWindow((HWND) AdvOptsDlg,SW_HIDE);
 	}
-	if (!GMailOptsDlg) GMailOptsDlg = (long)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_JGMAIL), hwndDlg, JabberGmailOptDlgProc);
-	tci.lParam = GMailOptsDlg;
+	if (!GMailOptsDlg) GMailOptsDlg = CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_JGMAIL), hwndDlg, JabberGmailOptDlgProc);
+	tci.lParam = (LPARAM)GMailOptsDlg;
 	GetClientRect((HWND)tci.lParam,&rcClient);
 	tci.pszText = Translate("GMail");
 	SendMessage(GetDlgItem(hwndDlg, IDC_OPT_EXPERT_TAB), TCM_INSERTITEMA, (WPARAM)0, (LPARAM)&tci);
@@ -601,8 +605,8 @@ static void reInitTabs(HWND hwndDlg){
 		rcClient.right,rcClient.bottom,1);
 	ShowWindow((HWND)tci.lParam, (t==1)?SW_SHOW:SW_HIDE);
 
-	if (!StandardOptsDlg) StandardOptsDlg = (long)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_JABBER), hwndDlg, JabberOptDlgProc);
-	tci.lParam = StandardOptsDlg;
+	if (!StandardOptsDlg) StandardOptsDlg = CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_JABBER), hwndDlg, JabberOptDlgProc);
+	tci.lParam = (LPARAM)StandardOptsDlg;
 	tci.pszText = Translate("Standard");
 	GetClientRect((HWND)tci.lParam,&rcClient);
 	SendMessage(GetDlgItem(hwndDlg, IDC_OPT_EXPERT_TAB), TCM_INSERTITEMA, (WPARAM)0, (LPARAM)&tci);
@@ -625,6 +629,14 @@ static void reInitTabs(HWND hwndDlg){
 		}while (hwndEnum && (hwndEnum != GetDlgItem((HWND)StandardOptsDlg,IDC_RESET)));
 	}
 
+	if(pfnEnableThemeDialogTexture) {
+		if(StandardOptsDlg)
+			pfnEnableThemeDialogTexture(StandardOptsDlg, ETDT_ENABLETAB);
+		if(AdvOptsDlg)
+			pfnEnableThemeDialogTexture(AdvOptsDlg, ETDT_ENABLETAB);
+		if(GMailOptsDlg)
+			pfnEnableThemeDialogTexture(GMailOptsDlg, ETDT_ENABLETAB);
+	}
 
 	TabCtrl_SetCurSel(GetDlgItem(hwndDlg, IDC_OPT_EXPERT_TAB),t);
 
@@ -705,28 +717,24 @@ static void reInitTabs(HWND hwndDlg){
 int JabberOptInit( WPARAM wParam, LPARAM lParam )
 {
 	OPTIONSDIALOGPAGE odp = { 0 };
-//	char str[128];
+	HMODULE hUxTheme = 0;
+
+	if(IsWinVerXPPlus()) {
+		hUxTheme = GetModuleHandle(_T("uxtheme.dll"));
+
+		if(hUxTheme)	
+			pfnEnableThemeDialogTexture = (BOOL (WINAPI *)(HANDLE, DWORD))GetProcAddress(hUxTheme, "EnableThemeDialogTexture");
+	}
 
 	odp.cbSize = sizeof( odp );
 	odp.hInstance = hInst;
 	odp.pszGroup = "Network";
-//	odp.pszTemplate = MAKEINTRESOURCEA( IDD_OPT_JABBER );
 	odp.pszTemplate = MAKEINTRESOURCEA( IDD_OPT_EXPERT );
 	odp.pszTitle = jabberModuleName;
 	odp.flags = ODPF_BOLDGROUPS;
-//	odp.pfnDlgProc = JabberOptDlgProc;
 	odp.pfnDlgProc = JabberExpOptDlgProc;
-//	odp.nIDBottomSimpleControl = IDC_SIMPLE;
 	odp.nIDBottomSimpleControl = 0;
 	JCallService( MS_OPT_ADDPAGE, wParam, ( LPARAM )&odp );
 
-//	odp.pszTemplate = MAKEINTRESOURCEA( IDD_OPT_EXPERT );
-//	mir_snprintf( str, sizeof( str ), "%s %s", jabberModuleName, JTranslate( "Advanced" ));
-//	str[sizeof( str )-1] = '\0';
-//	odp.pszTitle = str;
-//	odp.pfnDlgProc = JabberExpOptDlgProc;
-//	odp.flags = ODPF_BOLDGROUPS|ODPF_EXPERTONLY;
-//	odp.nIDBottomSimpleControl = 0;
-//	JCallService( MS_OPT_ADDPAGE, wParam, ( LPARAM )&odp );
 	return 0;
 }

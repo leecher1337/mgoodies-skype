@@ -215,7 +215,13 @@ HANDLE JabberDBCreateContact( TCHAR* jid, TCHAR* nick, BOOL temporary, BOOL stri
 			JSetStringT( hContact, "Nick", nick );
 		if ( temporary )
 			DBWriteContactSettingByte( hContact, "CList", "NotOnList", 1 );
-		JabberLog( "Create Jabber contact jid=%s, nick=%s", s, nick );
+		JabberLog( 
+#ifdef _UNICODE
+			"Create Jabber contact jid=%S, nick=%S",
+#else
+			"Create Jabber contact jid=%s, nick=%s",
+#endif
+			s, nick );
 	}
 
 	mir_free( s );

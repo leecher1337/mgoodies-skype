@@ -62,13 +62,13 @@ static HANDLE hEventPasswdDlg;
 
 static BOOL CALLBACK JabberPasswordDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-	char text[128];
-
 	switch ( msg ) {
 	case WM_INITDIALOG:
 		TranslateDialogDefault( hwndDlg );
-		wsprintfA( text, "%s %s", JTranslate( "Enter password for" ), ( char* )lParam );
-		SetDlgItemTextA( hwndDlg, IDC_JID, text );
+		{	TCHAR text[128];
+			mir_sntprintf( text, SIZEOF(text), _T("%s %s"), TranslateT( "Enter password for" ), ( TCHAR* )lParam );
+			SetDlgItemText( hwndDlg, IDC_JID, text );
+		}
 		return TRUE;
 	case WM_COMMAND:
 		switch ( LOWORD( wParam )) {
@@ -243,6 +243,7 @@ LBL_Exit:
 
 		if ( JGetByte( "SavePassword", TRUE ) == FALSE ) {
 			mir_sntprintf( jidStr, SIZEOF( jidStr ), _T("%s@%s"), info->username, info->server );
+
 			// Ugly hack: continue logging on only the return value is &( onlinePassword[0] )
 			// because if WM_QUIT while dialog box is still visible, p is returned with some
 			// exit code which may not be NULL.
@@ -252,7 +253,7 @@ LBL_Exit:
 			QueueUserAPC( JabberPasswordCreateDialogApcProc, hMainThread, ( DWORD )jidStr );
 			WaitForSingleObject( hEventPasswdDlg, INFINITE );
 			CloseHandle( hEventPasswdDlg );
-			//if (( p=( char* )DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_PASSWORD ), NULL, JabberPasswordDlgProc, ( LPARAM )jidStr )) != onlinePassword ) {
+
 			if ( onlinePassword[0] == ( TCHAR ) -1 ) {
 				JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_BADUSERID );
 				JabberLog( "Thread ended, password request dialog was canceled" );
@@ -487,7 +488,7 @@ LBL_Exit:
 				datalen -= bytesParsed;
 			}
 			else if ( datalen == jabberNetworkBufferSize ) {
-				jabberNetworkBufferSize += 2048;
+				jabberNetworkBufferSize += 65536;
 				JabberLog( "Increasing network buffer size to %d", jabberNetworkBufferSize );
 				if (( buffer=( char* )mir_realloc( buffer, jabberNetworkBufferSize+1 )) == NULL ) {
 					JabberLog( "Cannot reallocate more network buffer, go offline now" );

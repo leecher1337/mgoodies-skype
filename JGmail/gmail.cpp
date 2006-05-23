@@ -505,7 +505,7 @@ LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 }
 
 int saveChatsToServer = -1; //-1: unknown; 0: disabled; 1: enabled
-extern long GMailOptsDlg;
+extern HWND GMailOptsDlg;
 void JabberUserConfigResult( XmlNode *iqNode, void *userdata ){
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
 	XmlNode *queryNode;
