@@ -173,7 +173,9 @@ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 ALL : $(DS_POSTBUILD_DEP)
 
 $(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\JGmail.dll"
-   upx --best --force ../../bin/upload/jabber/JGmail.dll
+   cd ../../bin/upload/
+	upx --best --force "jabber/JGmail.dll"
+	md5 -s -t -ojabber/JGmail.dll.md5 jabber/JGmail.dll
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
@@ -534,7 +536,9 @@ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 ALL : $(DS_POSTBUILD_DEP)
 
 $(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\u\JGmail.dll"
-   upx --best --force "../../bin/upload/jabber/u/JGmail.dll"
+   cd ../../bin/upload/
+	upx --best --force "jabber/u/JGmail.dll"
+	md5 -s -t -ojabber/u/JGmail.dll.md5 jabber/u/JGmail.dll
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
@@ -895,7 +899,9 @@ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 ALL : $(DS_POSTBUILD_DEP)
 
 $(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\staticssl\u\JGmail.dll"
-   upx --best --force "../../bin/upload/jabber/staticssl/u/JGmail.dll"
+   cd ../../bin/upload/
+	upx --best --force "jabber/staticssl/u/JGmail.dll"
+	md5 -s -t -ojabber/staticssl/u/JGmail.dll.md5 jabber/staticssl/u/JGmail.dll
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
@@ -1042,7 +1048,9 @@ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 ALL : $(DS_POSTBUILD_DEP)
 
 $(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\staticssl\JGmail.dll"
-   upx --best --force ../../bin/upload/jabber/staticssl/JGmail.dll
+   cd ../../bin/upload/
+	upx --best --force "jabber/staticssl/JGmail.dll"
+	md5 -s -t -ojabber/staticssl/JGmail.dll.md5 jabber/staticssl/JGmail.dll
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
 
 !ENDIF 

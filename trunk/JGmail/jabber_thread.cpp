@@ -1503,7 +1503,13 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 					else if ( !_tcscmp( str, _T("to"))) item->subscription = SUB_TO;
 					else if ( !_tcscmp( str, _T("from"))) item->subscription = SUB_FROM;
 					else item->subscription = SUB_NONE;
-					JabberLog( "Roster push for jid=%s, set subscription to %s", jid, str );
+					JabberLog( 
+#ifdef _UNICODE
+						"Roster push for jid=%S, set subscription to %S",
+#else
+						"Roster push for jid=%s, set subscription to %s",
+#endif
+						jid, str );
 					// subscription = remove is to remove from roster list
 					// but we will just set the contact to offline and not actually
 					// remove, so that history will be retained.
