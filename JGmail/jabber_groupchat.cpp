@@ -348,9 +348,8 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 
 void JabberGroupchatJoinRoom( const TCHAR* server, const TCHAR* room, const TCHAR* nick, const TCHAR* password )
 {
-	TCHAR text[128];
+	TCHAR text[JABBER_MAX_JID_LEN];
 	mir_sntprintf( text, SIZEOF(text), _T("%s@%s/%s"), room, server, nick );
-
 	JABBER_LIST_ITEM* item = JabberListAdd( LIST_CHATROOM, text );
 	replaceStr( item->nick, nick );
 
