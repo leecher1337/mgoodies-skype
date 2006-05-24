@@ -484,14 +484,14 @@ int JabberDbSettingChanged( WPARAM wParam, LPARAM lParam )
 		return 0;
 
 	DBCONTACTWRITESETTING* cws = ( DBCONTACTWRITESETTING* )lParam;
-#ifdef ORGINALRESOURCEMANAGMENT
 	if ( strcmp( cws->szModule, "CList" )){
+#ifdef ORGINALRESOURCEMANAGMENT
 		if (!strcmp( cws->szModule, jabberProtoName )){
 			if ( !strcmp( cws->szSetting, "Status")) sttStatusChanged( cws, hContact );
 		}
+#endif
 		return 0;
 	}
-#endif
 	char* szProto = ( char* )JCallService( MS_PROTO_GETCONTACTBASEPROTO, ( WPARAM ) hContact, 0 );
 	if ( szProto == NULL || strcmp( szProto, jabberProtoName ))
 		return 0;
