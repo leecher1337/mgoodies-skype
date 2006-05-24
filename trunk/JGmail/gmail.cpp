@@ -454,6 +454,28 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 	}
 }
 
+int JabberMenuVisitGMail( WPARAM wParam, LPARAM lParam )
+{
+	char url[MAX_PATH];
+	DBVARIANT dbv;
+	url[0] = '\0';
+	strcat(url,"https://www.google.com/accounts/ServiceLoginAuth?service=mail&Email=");
+	if ( !DBGetContactSetting( NULL, jabberProtoName, "LoginName", &dbv )) {
+		strcat(url,dbv.pszVal);
+		JFreeVariant( &dbv );
+	} else return 0;
+	strcat(url,"&Passwd=");
+	if ( !DBGetContactSetting( NULL, jabberProtoName, "Password", &dbv )) {
+		JCallService( MS_DB_CRYPT_DECODESTRING, strlen( dbv.pszVal )+1, ( LPARAM )dbv.pszVal );
+		strcat(url,dbv.pszVal);
+		JFreeVariant( &dbv );
+	} else return 0;
+	strcat(url,"&continue=http%3A%2F%2Fmail.google.com%2Fmail%2F");
+
+	CallService(MS_UTILS_OPENURL,1,(LPARAM)url);
+	return 0;
+}
+
 LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	POPUP_ACCINFO * mpd = NULL;
 	switch(message) {

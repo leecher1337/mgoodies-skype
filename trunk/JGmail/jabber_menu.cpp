@@ -38,6 +38,8 @@ HANDLE hMenuJoinLeave = NULL;
 HANDLE hMenuConvert = NULL;
 HANDLE hMenuRosterAdd = NULL;
 
+HANDLE hMenuVisitGMail = NULL;
+
 static void sttEnableMenuItem( HANDLE hMenuItem, BOOL bEnable )
 {
 	CLISTMENUITEM clmi = {0};
@@ -56,10 +58,20 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 	sttEnableMenuItem( hMenuJoinLeave, FALSE );
 	sttEnableMenuItem( hMenuConvert, FALSE );
 	sttEnableMenuItem( hMenuRosterAdd, FALSE );
+	sttEnableMenuItem( hMenuVisitGMail, FALSE );
 
 	HANDLE hContact;
-	if (( hContact=( HANDLE )wParam ) == NULL )
+	if (( hContact=( HANDLE )wParam ) == NULL ){
 		return 0;
+	} else {
+		DBVARIANT dbv;
+		if ( !JGetStringT( hContact, "FakeContact", &dbv )) {
+			if (!_tcsicmp( dbv.ptszVal, _T("GMAIL"))){
+				sttEnableMenuItem( hMenuVisitGMail, TRUE );
+				return 0;
+			}		
+			JFreeVariant( &dbv );
+	}	}
 
 	BYTE chatRoomType = (BYTE)JGetByte( hContact, "ChatRoom", 0 );
 
@@ -280,4 +292,13 @@ void JabberMenuInit()
 	mi.pszContactOwner = jabberProtoName;
 	hMenuRosterAdd = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
+	// "visit GMail for the fake contact"
+	strcpy( tDest, "/VisitGMail" );
+	CreateServiceFunction( text, JabberMenuVisitGMail );
+	mi.pszName = JTranslate( "Visit GMail" );
+	mi.position = -2000100001;
+	mi.hIcon = iconList[10]; // more icons are needed
+	mi.pszService = text;
+	mi.pszContactOwner = jabberProtoName;
+	hMenuVisitGMail = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 }
