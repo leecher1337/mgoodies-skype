@@ -6,6 +6,8 @@ extern HINSTANCE hInst;
 
 /*
 #define IDI_JABBER                      102
+#define IDI_ADDROSTER                   108
+#define IDI_USER2ROOM                   109
 #define IDI_ADDCONTACT                  122
 #define IDI_DELETE                      123
 #define IDI_EDIT                        124
@@ -19,16 +21,15 @@ extern HINSTANCE hInst;
 #define IDI_MAIL_STOP                   187
 #define IDI_MAIL_INFO                   188
 #define IDI_MAIL_CLOCK                  189
+#define IDI_MAIL_GMAIL                  190
 */
-#define NUMICONSSMALL 14
-#define NUMICONSBIG 3
 static char *iconNames[NUMICONSSMALL]={NULL,"vcard","Agents",
 	"Add","Delete","Rename","Request","Grant","Open","Save",
-	"mail-new","mail-stop","mail-info","mail-clock"};
+	"mail-new","mail-stop","mail-info","mail-clock","mail-gmail","addroster","convert"};
 static char *iconDescs[NUMICONSSMALL]={NULL,"VCard Menu",iconNames[2],
 	iconNames[3],iconNames[4],iconNames[5],iconNames[6],iconNames[7],iconNames[8],iconNames[9],
-	"New E-Mail","E-Mail Error","E-Mail Info","E-Mail Clock"};
-static int iconInd[NUMICONSSMALL]={0,155,154,122,123,124,141,142,131,166,186,187,188,189};
+	"New E-Mail","E-Mail Error","E-Mail Info","E-Mail Clock","Visit GMail","Convert Chat / Contact","Add to roster"};
+static int iconInd[NUMICONSSMALL]={0,155,154,122,123,124,141,142,131,166,186,187,188,189,190,109,108};
 HICON iconList[NUMICONSSMALL];
 
 static int iconBigInd[NUMICONSBIG]={147,144,IDC_LOGO};
@@ -39,13 +40,17 @@ HICON iconBigList[NUMICONSBIG];
 	extern HANDLE hMenuRequestAuth;
 	extern HANDLE hMenuGrantAuth;
 	extern HANDLE hMenuJoinLeave;
+	extern HANDLE hMenuConvert;
+	extern HANDLE hMenuRosterAdd;
+
+	extern HANDLE hMenuVisitGMail;
 
 	extern HANDLE hMenuAgent;
 	extern HANDLE hMenuChangePassword;
 	extern HANDLE hMenuGroupchat;
 	extern HANDLE hMenuVCard;
 
-void IcoLibUpdateMenus(){
+static void IcoLibUpdateMenus(){
 	CLISTMENUITEM mi = {0};
 
 	mi.cbSize = sizeof(mi);
@@ -56,6 +61,12 @@ void IcoLibUpdateMenus(){
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuGrantAuth, ( LPARAM )&mi );
 	mi.hIcon = iconBigList[0];
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuJoinLeave, ( LPARAM )&mi );
+	mi.hIcon = iconList[16];// IDI_ADDROSTER;
+	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuRosterAdd, ( LPARAM )&mi );
+	mi.hIcon = iconList[15];// IDI_USER2ROOM;
+	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuConvert, ( LPARAM )&mi );
+	mi.hIcon = iconList[14];// IDI_MAIL_GMAIL;
+	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuVisitGMail, ( LPARAM )&mi );
 
 	mi.hIcon = iconList[2];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_AGENTS ));
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuAgent, ( LPARAM )&mi );
@@ -72,15 +83,15 @@ int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 	HICON temp;
 	char szTemp[MAX_PATH + 128];
 
-	for (int i=0;i<3;i++){ //BigIcons
+	for (int i=0;i<NUMICONSBIG;i++){ //BigIcons
 		mir_snprintf(szTemp, sizeof(szTemp), "%s_%s", jabberProtoName, iconBigNames[i]);
 		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) szTemp))iconBigList[i]=temp; 
 	}
-	for (i=1;i<14;i++){ //BigIcons
+	for (i=1;i<NUMICONSSMALL;i++){ //BigIcons
 		mir_snprintf(szTemp, sizeof(szTemp), "%s_%s", jabberProtoName, iconNames[i]);
 		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) szTemp))iconList[i]=temp; 
 	}
-	CLISTMENUITEM mi = {0};
+/*	CLISTMENUITEM mi = {0};
 	mi.cbSize = sizeof(mi);
 	mi.flags = CMIM_FLAGS | CMIM_ICON;
 	mi.hIcon = iconList[6];// IDI_REQUEST;
@@ -89,6 +100,12 @@ int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuGrantAuth, ( LPARAM )&mi );
 	mi.hIcon = iconBigList[0];
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuJoinLeave, ( LPARAM )&mi );
+	mi.hIcon = iconList[16];// IDI_ADDROSTER;
+	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuRosterAdd, ( LPARAM )&mi );
+	mi.hIcon = iconList[15];// IDI_USER2ROOM;
+	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuConvert, ( LPARAM )&mi );
+	mi.hIcon = iconList[14];// IDI_MAIL_GMAIL;
+	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuVisitGMail, ( LPARAM )&mi );
 
 	mi.hIcon = iconList[2];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_AGENTS ));
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuAgent, ( LPARAM )&mi );
@@ -98,6 +115,7 @@ int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuGroupchat, ( LPARAM )&mi );
 	mi.hIcon = iconList[1];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_VCARD ))
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuVCard, ( LPARAM )&mi );
+*/	IcoLibUpdateMenus();
 	return 0;
 }
 
@@ -108,7 +126,7 @@ void JGmailSetupIcons(){
 		ImageList_AddMasked(CSImages, hScrBM, RGB( 255, 0, 255 ));
 		DeleteObject(hScrBM);    
 	}
-	for (int i=0; i<3; i++){
+	for (int i=0; i<NUMICONSBIG; i++){
 		iconBigList[i] = ImageList_ExtractIcon(NULL, CSImages, i);
 	}
 	ImageList_Destroy(CSImages);
@@ -118,7 +136,7 @@ void JGmailSetupIcons(){
 		ImageList_AddMasked(CSImages, hScrBM, RGB( 255, 0, 255 ));
 		DeleteObject(hScrBM);    
 	}
-	for (i=0; i<14; i++){
+	for (i=0; i<NUMICONSSMALL; i++){
 		iconList[i] = ImageList_ExtractIcon(NULL, CSImages, i);
 	}
 	ImageList_Destroy(CSImages);
@@ -135,7 +153,7 @@ void JGmailSetupIcoLib(){
 		sid.pszSection = jabberProtoName;
 		sid.pszDefaultFile = NULL;
 		sid.iDefaultIndex = 0;
-		for (int i=0;i<14;i++) if (iconInd[i]){
+		for (int i=0;i<NUMICONSSMALL;i++) if (iconInd[i]){
 			sid.pszDescription = iconDescs[i];
 			mir_snprintf(szTemp, sizeof(szTemp), "%s_%s", jabberProtoName, iconNames[i]);
 			sid.pszName = szTemp;
@@ -146,7 +164,7 @@ void JGmailSetupIcoLib(){
 		}
 		sid.cbSize = SKINICONDESC_SIZE_V3;
 		sid.cx=sid.cy=32;
-		for (i=0;i<3;i++){
+		for (i=0;i<NUMICONSBIG;i++){
 			sid.pszDescription = Translate(iconBigDescs[i]);
 			mir_snprintf(szTemp, sizeof(szTemp), "%s_%s", jabberProtoName, iconBigNames[i]);
 			sid.pszName = szTemp;

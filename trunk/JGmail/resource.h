@@ -9,6 +9,8 @@
 #define IDD_OPT_REGISTER                105
 #define IDD_AGENTS                      106
 #define IDD_FORM                        107
+//#define IDI_ADDROSTER                   108
+//#define IDI_USER2ROOM                   109
 #define IDD_PASSWORD                    111
 //#define IDI_TLEN                        121
 #define IDB_ICONSSMALL                  122
@@ -54,6 +56,7 @@
 //#define IDI_MAIL_STOP                   187
 //#define IDI_MAIL_INFO                   188
 //#define IDI_MAIL_CLOCK                  189
+//#define IDI_MAIL_GMAIL                  190
 #define IDD_OPT_EXPERT                  190
 #define IDC_OPT_EXPERT_TAB              191
 #define IDD_OPT_JGMAIL                  192
