@@ -276,8 +276,8 @@ void JabberMenuInit()
 	strcpy( tDest, "/ConvertChatContact" );
 	CreateServiceFunction( text, JabberMenuConvertChatContact );
 	mi.pszName = JTranslate( "Convert" );
-	mi.position = -2000001003;
-	mi.hIcon = NULL; // more icons are needed
+	mi.position = -1999901003;
+	mi.hIcon = iconList[16];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_USER2ROOM ));
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuConvert = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
@@ -286,8 +286,8 @@ void JabberMenuInit()
 	strcpy( tDest, "/AddToRoster" );
 	CreateServiceFunction( text, JabberMenuRosterAdd );
 	mi.pszName = JTranslate( "Add to roster" );
-	mi.position = -2000001004;
-	mi.hIcon = NULL; // more icons are needed
+	mi.position = -1999901004;
+	mi.hIcon = iconList[15];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_ADDROSTER ));
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuRosterAdd = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
@@ -297,7 +297,7 @@ void JabberMenuInit()
 	CreateServiceFunction( text, JabberMenuVisitGMail );
 	mi.pszName = JTranslate( "Visit GMail" );
 	mi.position = -2000100001;
-	mi.hIcon = iconList[10]; // more icons are needed
+	mi.hIcon = iconList[14]; // more icons are needed
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuVisitGMail = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
