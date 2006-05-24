@@ -35,6 +35,8 @@ Last change by : $Author: ghazan $
 HANDLE hMenuRequestAuth = NULL;
 HANDLE hMenuGrantAuth = NULL;
 HANDLE hMenuJoinLeave = NULL;
+HANDLE hMenuConvert = NULL;
+HANDLE hMenuRosterAdd = NULL;
 
 static void sttEnableMenuItem( HANDLE hMenuItem, BOOL bEnable )
 {
@@ -52,12 +54,40 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 	sttEnableMenuItem( hMenuRequestAuth, FALSE );
 	sttEnableMenuItem( hMenuGrantAuth, FALSE );
 	sttEnableMenuItem( hMenuJoinLeave, FALSE );
+	sttEnableMenuItem( hMenuConvert, FALSE );
+	sttEnableMenuItem( hMenuRosterAdd, FALSE );
 
 	HANDLE hContact;
-	if (( hContact=( HANDLE )wParam ) == NULL || !jabberOnline )
+	if (( hContact=( HANDLE )wParam ) == NULL )
 		return 0;
 
-	if ( JGetByte( hContact, "ChatRoom", 0 ) == GCW_CHATROOM ) {
+	BYTE chatRoomType = (BYTE)JGetByte( hContact, "ChatRoom", 0 );
+
+	if ((chatRoomType == GCW_CHATROOM) || chatRoomType == 0 ) {
+		DBVARIANT dbv;
+		if ( !JGetStringT( hContact, chatRoomType?"ChatRoomID":"jid", &dbv )) {
+			JFreeVariant( &dbv );
+			CLISTMENUITEM clmi = { 0 };
+			sttEnableMenuItem( hMenuConvert, TRUE );
+			clmi.cbSize = sizeof( clmi );
+			clmi.pszName = JTranslate( chatRoomType ? "&Convert to Contact" : "&Convert to Chat Room" );
+			clmi.flags = CMIM_NAME | CMIM_FLAGS;
+			JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuConvert, ( LPARAM )&clmi );
+	}	}
+
+	if (!jabberOnline) 
+		return 0;
+
+	if ( chatRoomType ) {
+		DBVARIANT dbv;
+		if ( !JGetStringT( hContact, "ChatRoomID", &dbv )) {
+			if ( JabberListGetItemPtr( LIST_ROSTER, dbv.ptszVal ) == NULL ) {
+				sttEnableMenuItem( hMenuRosterAdd, TRUE );
+			}
+			JFreeVariant( &dbv );
+	}	}
+
+	if ( chatRoomType == GCW_CHATROOM ) {
 		CLISTMENUITEM clmi = { 0 };
 		clmi.cbSize = sizeof( clmi );
 		clmi.pszName = JTranslate(( JGetWord( hContact, "Status", 0 ) == ID_STATUS_ONLINE ) ? "&Leave" : "&Join" );
@@ -76,6 +106,47 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 			return 0;
 	}	}
 
+	return 0;
+}
+
+int JabberMenuConvertChatContact( WPARAM wParam, LPARAM lParam )
+{
+	BYTE chatRoomType = (BYTE)JGetByte( (HANDLE ) wParam, "ChatRoom", 0 );
+	if ((chatRoomType == GCW_CHATROOM) || chatRoomType == 0 ) {
+		DBVARIANT dbv;
+		if ( !JGetStringT( (HANDLE ) wParam, (chatRoomType == GCW_CHATROOM)?"ChatRoomID":"jid", &dbv )) {
+			JDeleteSetting( (HANDLE ) wParam, (chatRoomType == GCW_CHATROOM)?"ChatRoomID":"jid");
+			JSetStringT( (HANDLE ) wParam, (chatRoomType != GCW_CHATROOM)?"ChatRoomID":"jid", dbv.ptszVal);
+			JFreeVariant( &dbv );
+			JSetByte((HANDLE ) wParam, "ChatRoom", (chatRoomType == GCW_CHATROOM)?0:GCW_CHATROOM);
+	}	}
+	return 0;
+}
+
+int JabberMenuRosterAdd( WPARAM wParam, LPARAM lParam )
+{
+	DBVARIANT dbv;
+	if ( !wParam ) return 0; // we do not add ourself to the roster. (buggy situation - should not happen)
+	if ( !JGetStringT( ( HANDLE ) wParam, "ChatRoomID", &dbv )) {
+		TCHAR *roomID = mir_tstrdup(dbv.ptszVal);
+		JFreeVariant( &dbv );
+		if ( JabberListGetItemPtr( LIST_ROSTER, roomID ) == NULL ) {
+			TCHAR *nick = 0;
+			TCHAR *group = 0;
+			if ( !DBGetContactSettingTString( ( HANDLE ) wParam, "CList", "Group", &dbv ) ) {
+				group = mir_tstrdup(dbv.ptszVal);
+				JFreeVariant( &dbv );
+			}
+			if ( !JGetStringT( ( HANDLE ) wParam, "Nick", &dbv ) ) {
+				nick = mir_tstrdup(dbv.ptszVal);
+				JFreeVariant( &dbv );
+			}
+			JabberAddContactToRoster(roomID, nick, group, SUB_NONE);
+			if (nick) mir_free(nick);
+			if (nick) mir_free(group);
+		}
+		mir_free(roomID);
+	}
 	return 0;
 }
 
@@ -148,6 +219,7 @@ LBL_Return:
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // contact menu initialization code
+int JabberMenuVisitGMail( WPARAM wParam, LPARAM lParam );
 
 void JabberMenuInit()
 {
@@ -187,4 +259,25 @@ void JabberMenuInit()
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuJoinLeave = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
+
+	// "Convert Chat/Contact"
+	strcpy( tDest, "/ConvertChatContact" );
+	CreateServiceFunction( text, JabberMenuConvertChatContact );
+	mi.pszName = JTranslate( "Convert" );
+	mi.position = -2000001003;
+	mi.hIcon = NULL; // more icons are needed
+	mi.pszService = text;
+	mi.pszContactOwner = jabberProtoName;
+	hMenuConvert = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
+
+	// "Add to roster"
+	strcpy( tDest, "/AddToRoster" );
+	CreateServiceFunction( text, JabberMenuRosterAdd );
+	mi.pszName = JTranslate( "Add to roster" );
+	mi.position = -2000001004;
+	mi.hIcon = NULL; // more icons are needed
+	mi.pszService = text;
+	mi.pszContactOwner = jabberProtoName;
+	hMenuRosterAdd = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
+
 }
