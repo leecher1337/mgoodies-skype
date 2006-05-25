@@ -248,11 +248,22 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			ppd.lchContact = 0;
 			//ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
 			ppd.lchIcon = iconList[11];
-			mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName,
+			mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, 
+#ifdef _UNICODE
+				"%s: Error Code %S; Type %S.",
+#else
+				"%s: Error Code %s; Type %s.",
+#endif
+				jabberProtoName,
 				errcode?errcode:_T("Unknown"),
 				errtype?errtype:_T("Unknown"));
 			XmlNode *textNode = JabberXmlGetChild( queryNode, "text" );
-			int l = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Message: %s: %s\n",
+			int l = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, 
+#ifdef _UNICODE
+				"Message: %s: %S\n",
+#else
+				"Message: %s: %s\n",
+#endif
 				queryNode->numChild?queryNode->child[0]->name:"none",
 				textNode?textNode->text:_T("none")
 			);
@@ -370,15 +381,13 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				XmlNode *sendersNode = JabberXmlGetChild( threadNode, "senders" );
 				int k; TCHAR sendersList[150];
 				sendersList[0] = '\0';
+				mir_sntprintf(sendersList,150,
 #ifdef _UNICODE
-				{
-					TCHAR *tempprotoname = a2u(jabberProtoName);
-					mir_sntprintf(sendersList,150,_T("%s: New mail from "),tempprotoname);
-					mir_free(tempprotoname);
-				}
+					_T("%S: New mail from "),
 #else
-				mir_sntprintf(sendersList,150,_T("%s: New mail from "),jabberProtoName);
+					_T("%s: New mail from "),
 #endif
+					jabberProtoName);
 				if (sendersNode) for ( k=0; k<sendersNode->numChild; k++ ) {
 					if (k) _tcsncat(sendersList,_T(", "),150);
 					TCHAR * senderName = JabberXmlGetAttrValue(sendersNode->child[sendersNode->numChild-1-k],"name");
