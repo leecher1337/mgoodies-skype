@@ -714,7 +714,7 @@ static void JabberProcessFailure( XmlNode *node, void *userdata ){
 static void JabberProcessError( XmlNode *node, void *userdata ){
 //	JabberXmlDumpNode( node );
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
-	char* buff;
+	char *buff;
 	int i;
 	int pos;
 //failure xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"
@@ -722,7 +722,13 @@ static void JabberProcessError( XmlNode *node, void *userdata ){
 	buff = (char *)mir_alloc(1024);
 	pos=0;
 	for (i=0;i<node->numChild;i++){
-		pos += mir_snprintf(buff+pos,1024-pos,"%s: %s\n",node->child[i]->name,node->child[i]->text);
+		pos += mir_snprintf(buff+pos*SIZEOF(buff),1024-pos,
+#ifdef _UNICODE
+			"%s: %S\n",
+#else
+			"%s: %s\n",
+#endif
+			node->child[i]->name,node->child[i]->text);
 		if (!strcmp(node->child[i]->name,"conflict")) JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_OTHERLOCATION);
 	}
 	MessageBoxA( NULL, buff, JTranslate( "Jabber Error" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
