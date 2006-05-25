@@ -229,7 +229,7 @@ void sttGroupchatJoinByHContact( HANDLE hContact )
 
 void CALLBACK sttCreateRoom( ULONG dwParam )
 {
-	char* jid = ( char* )dwParam, *p;
+	char* jid = t2a(( TCHAR* )dwParam), *p;
 
 	GCSESSION gcw = {0};
 	gcw.cbSize = sizeof(GCSESSION);
@@ -240,6 +240,7 @@ void CALLBACK sttCreateRoom( ULONG dwParam )
 	if (( p = (char*)strchr( gcw.pszName, '@' )) != NULL )
 		*p = 0;
 	CallService( MS_GC_NEWSESSION, 0, ( LPARAM )&gcw );
+	mir_free(jid);
 }
 
 void JabberIqResultGetRoster( XmlNode* iqNode, void* )
@@ -318,8 +319,9 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 		else DBWriteContactSettingTString( hContact, "CList", "MyHandle", nick );
 
 		if ( JGetByte( hContact, "ChatRoom", 0 )) {
-			DBDeleteContactSetting( hContact, "CList", "Hidden" );
+			//DBDeleteContactSetting( hContact, "CList", "Hidden" );
 			QueueUserAPC( sttCreateRoom, hMainThread, ( unsigned long )jid );
+			DBDeleteContactSetting( hContact, "CList", "Hidden" );
 			li.List_Insert( &chatRooms, hContact, chatRooms.realCount );
 		}
 
