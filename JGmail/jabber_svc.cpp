@@ -299,7 +299,7 @@ int JabberContactDeleted( WPARAM wParam, LPARAM lParam )
 	szProto = ( char* )JCallService( MS_PROTO_GETCONTACTBASEPROTO, wParam, 0 );
 	if ( szProto==NULL || strcmp( szProto, jabberProtoName ))
 		return 0;
-	if ( !JGetStringT(( HANDLE ) wParam, "jid", &dbv )) {
+		if ( !JGetStringT(( HANDLE ) wParam, JGetByte( (HANDLE ) wParam, "ChatRoom", 0 )?"ChatRoomID":"jid", &dbv )) {
 		TCHAR* jid, *p, *q;
 
 		jid = dbv.ptszVal;
