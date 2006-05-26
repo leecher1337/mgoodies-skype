@@ -611,6 +611,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 	bool isXGoogleTokenAvailable = false;
 	bool isRegisterAvailable = false;
 	bool areMechanismsDefined = false;
+	bool isSessionAvailable = false;
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
 	for (i=0;i<node->numChild;i++){
 		if (!strcmp(node->child[i]->name,"starttls")){
@@ -634,6 +635,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 					if (!_tcscmp(node->child[i]->child[k]->text,_T("X-GOOGLE-TOKEN"))) isXGoogleTokenAvailable = true;
 			}
 		} else if (!strcmp(node->child[i]->name,"register")) isRegisterAvailable = true;
+		else if (!strcmp(node->child[i]->name,"session")) isSessionAvailable = true;
 	}
 	if (areMechanismsDefined) {
 		char *PLAIN = 0;
@@ -687,7 +689,11 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 		XmlNode* bind = iq.addChild( "bind" ); bind->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-bind" );
 		bind->addChild( "resource", info->resource );
 		JabberSend( info->s, iq );
-//        JabberSend( info->s, "<iq type=\"set\" id=\"sess_1\"><session xmlns=\"urn:ietf:params:xml:ns:xmpp-session\"/></iq>");
+		if (isSessionAvailable) {
+			XmlNodeIq iq("set");
+			XmlNode* sess = iq.addChild( "session" ); sess->addAttr ( "xmlns", "urn:ietf:params:xml:ns:xmpp-session" );
+			JabberSend( info->s, iq );
+		}
 	}
 }
 
