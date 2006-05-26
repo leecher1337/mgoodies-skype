@@ -62,7 +62,7 @@ extern status_map status_codes[];
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,22),
+	PLUGIN_MAKE_VERSION(0,0,0,23),
 	"Support for Skype network",
 	"leecher",
 	"leecher@dose.0wnz.at",
@@ -285,6 +285,18 @@ void GetInfoThread(HANDLE hContact) {
 	if (!SkypeSend(str) && (ptr=SkypeRcv(str+4, INFINITE))) {
 		if (ptr[strlen(str+3)]) {
 			DBWriteContactSettingString(hContact, "CList", "StatusMsg", (ptr+25));
+		}
+		free(ptr);
+	}
+
+	str[eol]=0;
+	strcat(str, "IS_VIDEO_CAPABLE");
+	if (!SkypeSend(str) && (ptr=SkypeRcv(str+4, INFINITE))) {
+		if (ptr[strlen(str+3)]) {
+			if (!_stricmp(ptr+strlen(str+3), "True"))
+				DBWriteContactSettingString(hContact, pszSkypeProtoName, "MirVer", "Skype 2.0");
+			else
+				DBWriteContactSettingString(hContact, pszSkypeProtoName, "MirVer", "Skype");
 		}
 		free(ptr);
 	}
@@ -1226,6 +1238,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					} else
 						DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Status", (WORD)SkypeStatusToMiranda(ptr+13));
 						SkypeSend("GET USER %s MOOD_TEXT", nick);
+						SkypeSend("GET USER %s IS_VIDEO_CAPABLE", nick);
 /*						free(buf);
 					if (SkypeInitialized==FALSE) { // Prevent flooding on startup
 						SkypeMsgAdd(szSkypeMsg);
@@ -1242,6 +1255,21 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					break;
 
 				}
+
+				if (!strcmp(ptr, "IS_VIDEO_CAPABLE")){
+					if (!(hContact=find_contact(nick)))
+						SkypeSend("GET USER %s BUDDYSTATUS", nick);
+					else{
+						if (!_stricmp(ptr + 17, "True"))
+							DBWriteContactSettingString(hContact, pszSkypeProtoName, "MirVer", "Skype 2.0");
+						else
+							DBWriteContactSettingString(hContact, pszSkypeProtoName, "MirVer", "Skype");
+					}
+					free(buf);
+					break;
+
+				}
+
 				if (!strcmp(ptr, "DISPLAYNAME")) {
 					// Skype Bug? -> If nickname isn't customised in the Skype-App, this won't return anything :-(
 					if (ptr[12]) DBWriteContactSettingString(find_contact(nick), pszSkypeProtoName, "Nick", ptr+12);
