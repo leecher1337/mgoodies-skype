@@ -149,6 +149,7 @@ void JabberGcLogCreate( JABBER_LIST_ITEM* item )
 
 void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, int action, XmlNode* reason )
 {
+	int statusToSet = 0;
 	char* szReason = NULL;
 	if ( reason != NULL && reason->text != NULL ) {
 		#if defined( _UNICODE )
@@ -202,10 +203,21 @@ void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, int act
 				}
 				gce.pszStatus = JTranslate( sttRoles[ JS.role ] );
 				gce.bIsMe = ( lstrcmpA( szNick, dispNick ) == 0 );
+				statusToSet = JS.status;
 				break;
 	}	}	}
 
 	JCallService( MS_GC_EVENT, NULL, ( LPARAM )&gce );
+
+	if ( statusToSet != 0 ) {
+		if ( statusToSet == ID_STATUS_AWAY || statusToSet == ID_STATUS_NA )
+			gce.pszText = dispNick;
+		else
+			gce.pszText = "";
+		gcd.iType = GC_EVENT_SETSTATUSEX;
+		JCallService( MS_GC_EVENT, NULL, ( LPARAM )&gce );
+	}
+
 	mir_free( myNick );
 	#if defined( _UNICODE )
 		mir_free( dispNick );
@@ -644,8 +656,13 @@ static void sttSendPrivateMessage( JABBER_LIST_ITEM* item, const TCHAR* nick )
 	mir_sntprintf( szFullJid, SIZEOF(szFullJid), _T("%s/%s"), item->jid, nick );
 	HANDLE hContact = JabberDBCreateContact( szFullJid, NULL, TRUE, FALSE );
 	if ( hContact != NULL ) {
+		for ( int i=0; i < item->resourceCount; i++ ) {
+			if ( _tcsicmp( item->resource[i].resourceName, nick ) == 0 ) {
+				JSetWord( hContact, "Status", item->resource[i].status );
+				break;
+		}	}
+
 		DBWriteContactSettingByte( hContact, "CList", "Hidden", 1 );
-		JSetWord( hContact, "Status", ID_STATUS_ONLINE );
 		JSetStringT( hContact, "Nick", nick );
 		DBWriteContactSettingDword( hContact, "Ignore", "Mask1", 0 );
 		JCallService( MS_MSG_SENDMESSAGE, ( WPARAM )hContact, 0 );
@@ -681,11 +698,10 @@ int JabberGcEventHook(WPARAM wParam,LPARAM lParam)
 			rtrim( gch->pszText );
 
 			if ( jabberOnline ) {
-				char* str = NEWSTR_ALLOCA( gch->pszText );
-				UnEscapeChatTags( str );
-
 				XmlNode m( "message" ); m.addAttr( "to", item->jid ); m.addAttr( "type", "groupchat" );
-				m.addChild( "body", str );
+				XmlNode* b = m.addChild( "body", gch->pszText );
+				if ( b->sendText != NULL )
+					UnEscapeChatTags( b->sendText );
 				JabberSend( jabberThreadInfo->s, m );
 		}	}
 		break;

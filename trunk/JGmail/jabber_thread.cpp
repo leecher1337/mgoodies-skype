@@ -620,7 +620,8 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 				#endif
 					JGetByte( "UseTLS", TRUE )) {
 				JabberLog( "Requesting TLS" );
-                JabberSend( info->s, "<starttls xmlns=\"urn:ietf:params:xml:ns:xmpp-tls\"/>" );
+				XmlNode stls(node->child[i]->name); stls.addAttr("xmlns","urn:ietf:params:xml:ns:xmpp-tls");
+				JabberSend( info->s, stls );
 				return;
 			}
 		} else if (!strcmp(node->child[i]->name,"mechanisms")){
@@ -664,13 +665,16 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 			return;
 		}
 		if ( info->type == JABBER_SESSION_NORMAL ) {
-            JabberSend( info->s, "<auth xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" mechanism=\"%s\">%s</auth>",
-				X_GOOGLE_TOKEN?"X-GOOGLE-TOKEN":"PLAIN",
-				X_GOOGLE_TOKEN?X_GOOGLE_TOKEN:PLAIN);
+			XmlNode auth("auth", X_GOOGLE_TOKEN?X_GOOGLE_TOKEN:PLAIN); 
+			auth.addAttr("xmlns","urn:ietf:params:xml:ns:xmpp-sasl");
+			auth.addAttr("mechanism",X_GOOGLE_TOKEN?"X-GOOGLE-TOKEN":"PLAIN");
+			JabberSend(info->s,auth);
 		}
 		else if ( info->type == JABBER_SESSION_REGISTER ) {
 			iqIdRegGetReg = JabberSerialNext();
-            JabberSend( info->s, "<iq type=\"get\" id=\""JABBER_IQID"%d\" to=\"%s\"><query xmlns=\"jabber:iq:register\"/></iq>", iqIdRegGetReg, TXT(info->server));
+			XmlNodeIq iq("get",iqIdRegGetReg,info->server);
+			XmlNode* query = iq.addQuery("jabber:iq:register");
+			JabberSend(info->s,iq);
 			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 50, ( LPARAM )JTranslate( "Requesting registration instruction..." ));
 		}
 		else JabberSend( info->s, "</stream:stream>" );
@@ -679,18 +683,11 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 	} else { // mechanisms are not defined. We are already logged-in
 		int iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultBind );
-		XmlNode iq( "iq" ); iq.addAttr("type", "set"); iq.addAttrID( iqId );
+		XmlNodeIq iq("set",iqId);
 		XmlNode* bind = iq.addChild( "bind" ); bind->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-bind" );
 		bind->addChild( "resource", info->resource );
 		JabberSend( info->s, iq );
-
-//        JabberSend( info->s, "
-//		<iq type=\"set\" id=\""JABBER_IQID"%d\">
-//			<bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">
-//				<resource>%s</resource>
-//			</bind>
-//		</iq>",iqId,str);
-        JabberSend( info->s, "<iq type=\"set\" id=\"sess_1\"><session xmlns=\"urn:ietf:params:xml:ns:xmpp-session\"/></iq>");
+//        JabberSend( info->s, "<iq type=\"set\" id=\"sess_1\"><session xmlns=\"urn:ietf:params:xml:ns:xmpp-session\"/></iq>");
 	}
 }
 
@@ -1687,8 +1684,8 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 		// RECVED: new-mail notify
 		// ACTION: Reply & request
 		if (JGetByte(NULL,"EnableGMail",1) & 1) {
-			idStr = JabberXmlGetAttrValue( node, "id" );
-            JabberSend( jabberThreadInfo->s, "<iq type=\"result\" id=\"%s\"/>",idStr );
+			XmlNode iq( "iq" ); iq.addAttr( "type", "result" ); iq.addAttr ("id",JabberXmlGetAttrValue( node, "id" ) );
+			JabberSend( jabberThreadInfo->s, iq );
 			JabberRequestMailBox( info->s );
 	}	}
     // RECVED: <iq type=\"set\"><usersetting \" ...
@@ -1696,8 +1693,8 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 		// RECVED: usersettings result/set
 		// ACTION: if "set": reply; parse the settings always.
 		if (!_tcscmp( type, _T("set"))) {
-			idStr = JabberXmlGetAttrValue( node, "id" );
-            JabberSend( jabberThreadInfo->s, "<iq type=\"result\" id=\"%s\"/>",idStr );
+			XmlNode iq( "iq" ); iq.addAttr( "type", "result" ); iq.addAttr ("id",JabberXmlGetAttrValue( node, "id" ) );
+			JabberSend( jabberThreadInfo->s, iq );
 		}
 		JabberUserConfigResult(node,jabberThreadInfo);
 	}
