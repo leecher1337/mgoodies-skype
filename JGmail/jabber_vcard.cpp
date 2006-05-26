@@ -88,10 +88,8 @@ static void SetDialogField( HWND hwndDlg, int nDlgItem, char* key )
 {
 	DBVARIANT dbv;
 
-	if ( !DBGetContactSetting( NULL, jabberProtoName, key, &dbv )) {
-		char* str = JabberUnixToDos( dbv.pszVal );
-		SetDlgItemTextA( hwndDlg, nDlgItem, str );
-		mir_free( str );
+	if ( !DBGetContactSettingTString( NULL, jabberProtoName, key, &dbv )) {
+		SetDlgItemText( hwndDlg, nDlgItem, dbv.ptszVal );
 		JFreeVariant( &dbv );
 	}
 	else SetDlgItemTextA( hwndDlg, nDlgItem, "" );
@@ -428,7 +426,7 @@ static BOOL CALLBACK EditEmailDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 		switch ( LOWORD( wParam )) {
 		case IDOK:
 			{
-				char text[128];
+				TCHAR text[128];
 				char idstr[33];
 				int id = ( int ) GetWindowLong( hwndDlg, GWL_USERDATA );
 				DBVARIANT dbv;
@@ -436,20 +434,20 @@ static BOOL CALLBACK EditEmailDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 
 				if ( id < 0 ) {
 					for ( id=0;;id++ ) {
-						wsprintfA( idstr, "e-mail%d", id );
+						mir_snprintf( idstr, SIZEOF(idstr), "e-mail%d", id );
 						if ( DBGetContactSetting( NULL, jabberProtoName, idstr, &dbv )) break;
 						JFreeVariant( &dbv );
-					}
-				}
-				GetDlgItemTextA( hwndDlg, IDC_EMAIL, text, sizeof( text ));
-				wsprintfA( idstr, "e-mail%d", id );
-				JSetString( NULL, idstr, text );
+				}	}
+				GetDlgItemText( hwndDlg, IDC_EMAIL, text, SIZEOF( text ));
+				mir_snprintf( idstr, SIZEOF(idstr), "e-mail%d", id );
+				JSetStringT( NULL, idstr, text );
+
 				nFlag = 0;
 				if ( IsDlgButtonChecked( hwndDlg, IDC_HOME )) nFlag |= JABBER_VCEMAIL_HOME;
 				if ( IsDlgButtonChecked( hwndDlg, IDC_WORK )) nFlag |= JABBER_VCEMAIL_WORK;
 				if ( IsDlgButtonChecked( hwndDlg, IDC_INTERNET )) nFlag |= JABBER_VCEMAIL_INTERNET;
 				if ( IsDlgButtonChecked( hwndDlg, IDC_X400 )) nFlag |= JABBER_VCEMAIL_X400;
-				wsprintfA( idstr, "e-mailFlag%d", id );
+				mir_snprintf( idstr, SIZEOF(idstr), "e-mailFlag%d", id );
 				JSetWord( NULL, idstr, nFlag );
 			}
 			// fall through
@@ -511,7 +509,7 @@ static BOOL CALLBACK EditPhoneDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 						JFreeVariant( &dbv );
 					}
 				}
-				GetDlgItemTextA( hwndDlg, IDC_PHONE, text, sizeof( text ));
+				GetDlgItemTextA( hwndDlg, IDC_PHONE, text, SIZEOF( text ));
 				wsprintfA( idstr, "Phone%d", id );
 				JSetString( NULL, idstr, text );
 				nFlag = 0;
@@ -732,75 +730,75 @@ static BOOL CALLBACK ContactDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 static void SaveVcardToDB( VcardTab *dat )
 {
 	HWND hwndPage;
-	char text[2048];
+	TCHAR text[2048];
 
 	if ( dat==NULL || dat->page==NULL ) return;
 
 	// Page 0: Personal
 	if (( hwndPage=dat->page[0].hwnd ) != NULL ) {
-		GetDlgItemTextA( hwndPage, IDC_FULLNAME, text, sizeof( text ));
-		JSetString( NULL, "FullName", text );
-		GetDlgItemTextA( hwndPage, IDC_NICKNAME, text, sizeof( text ));
-		JSetString( NULL, "Nick", text );
-		GetDlgItemTextA( hwndPage, IDC_FIRSTNAME, text, sizeof( text ));
-		JSetString( NULL, "FirstName", text );
-		GetDlgItemTextA( hwndPage, IDC_MIDDLE, text, sizeof( text ));
-		JSetString( NULL, "MiddleName", text );
-		GetDlgItemTextA( hwndPage, IDC_LASTNAME, text, sizeof( text ));
-		JSetString( NULL, "LastName", text );
-		GetDlgItemTextA( hwndPage, IDC_BIRTH, text, sizeof( text ));
-		JSetString( NULL, "BirthDate", text );
-		GetDlgItemTextA( hwndPage, IDC_GENDER, text, sizeof( text ));
-		JSetString( NULL, "GenderString", text );
-		GetDlgItemTextA( hwndPage, IDC_OCCUPATION, text, sizeof( text ));
-		JSetString( NULL, "Role", text );
-		GetDlgItemTextA( hwndPage, IDC_HOMEPAGE, text, sizeof( text ));
-		JSetString( NULL, "Homepage", text );
+		GetDlgItemText( hwndPage, IDC_FULLNAME, text, SIZEOF( text ));
+		JSetStringT( NULL, "FullName", text );
+		GetDlgItemText( hwndPage, IDC_NICKNAME, text, SIZEOF( text ));
+		JSetStringT( NULL, "Nick", text );
+		GetDlgItemText( hwndPage, IDC_FIRSTNAME, text, SIZEOF( text ));
+		JSetStringT( NULL, "FirstName", text );
+		GetDlgItemText( hwndPage, IDC_MIDDLE, text, SIZEOF( text ));
+		JSetStringT( NULL, "MiddleName", text );
+		GetDlgItemText( hwndPage, IDC_LASTNAME, text, SIZEOF( text ));
+		JSetStringT( NULL, "LastName", text );
+		GetDlgItemText( hwndPage, IDC_BIRTH, text, SIZEOF( text ));
+		JSetStringT( NULL, "BirthDate", text );
+		GetDlgItemText( hwndPage, IDC_GENDER, text, SIZEOF( text ));
+		JSetStringT( NULL, "GenderString", text );
+		GetDlgItemText( hwndPage, IDC_OCCUPATION, text, SIZEOF( text ));
+		JSetStringT( NULL, "Role", text );
+		GetDlgItemText( hwndPage, IDC_HOMEPAGE, text, SIZEOF( text ));
+		JSetStringT( NULL, "Homepage", text );
 	}
 	// Page 1: Contacts
 	//		no need to save, always in sync with the DB
 	// Page 2: Home
 	if (( hwndPage=dat->page[2].hwnd ) != NULL ) {
-		GetDlgItemTextA( hwndPage, IDC_ADDRESS1, text, sizeof( text ));
-		JSetString( NULL, "Street", text );
-		GetDlgItemTextA( hwndPage, IDC_ADDRESS2, text, sizeof( text ));
-		JSetString( NULL, "Street2", text );
-		GetDlgItemTextA( hwndPage, IDC_CITY, text, sizeof( text ));
-		JSetString( NULL, "City", text );
-		GetDlgItemTextA( hwndPage, IDC_STATE, text, sizeof( text ));
-		JSetString( NULL, "State", text );
-		GetDlgItemTextA( hwndPage, IDC_ZIP, text, sizeof( text ));
-		JSetString( NULL, "ZIP", text );
-		GetDlgItemTextA( hwndPage, IDC_COUNTRY, text, sizeof( text ));
-		JSetString( NULL, "CountryName", text );
+		GetDlgItemText( hwndPage, IDC_ADDRESS1, text, SIZEOF( text ));
+		JSetStringT( NULL, "Street", text );
+		GetDlgItemText( hwndPage, IDC_ADDRESS2, text, SIZEOF( text ));
+		JSetStringT( NULL, "Street2", text );
+		GetDlgItemText( hwndPage, IDC_CITY, text, SIZEOF( text ));
+		JSetStringT( NULL, "City", text );
+		GetDlgItemText( hwndPage, IDC_STATE, text, SIZEOF( text ));
+		JSetStringT( NULL, "State", text );
+		GetDlgItemText( hwndPage, IDC_ZIP, text, SIZEOF( text ));
+		JSetStringT( NULL, "ZIP", text );
+		GetDlgItemText( hwndPage, IDC_COUNTRY, text, SIZEOF( text ));
+		JSetStringT( NULL, "CountryName", text );
 	}
 	// Page 3: Work
 	if (( hwndPage=dat->page[3].hwnd ) != NULL ) {
-		GetDlgItemTextA( hwndPage, IDC_COMPANY, text, sizeof( text ));
-		JSetString( NULL, "Company", text );
-		GetDlgItemTextA( hwndPage, IDC_DEPARTMENT, text, sizeof( text ));
-		JSetString( NULL, "CompanyDepartment", text );
-		GetDlgItemTextA( hwndPage, IDC_TITLE, text, sizeof( text ));
-		JSetString( NULL, "CompanyPosition", text );
-		GetDlgItemTextA( hwndPage, IDC_ADDRESS1, text, sizeof( text ));
-		JSetString( NULL, "CompanyStreet", text );
-		GetDlgItemTextA( hwndPage, IDC_ADDRESS2, text, sizeof( text ));
-		JSetString( NULL, "CompanyStreet2", text );
-		GetDlgItemTextA( hwndPage, IDC_CITY, text, sizeof( text ));
-		JSetString( NULL, "CompanyCity", text );
-		GetDlgItemTextA( hwndPage, IDC_STATE, text, sizeof( text ));
-		JSetString( NULL, "CompanyState", text );
-		GetDlgItemTextA( hwndPage, IDC_ZIP, text, sizeof( text ));
-		JSetString( NULL, "CompanyZIP", text );
-		GetDlgItemTextA( hwndPage, IDC_COUNTRY, text, sizeof( text ));
-		JSetString( NULL, "CompanyCountryName", text );
+		GetDlgItemText( hwndPage, IDC_COMPANY, text, SIZEOF( text ));
+		JSetStringT( NULL, "Company", text );
+		GetDlgItemText( hwndPage, IDC_DEPARTMENT, text, SIZEOF( text ));
+		JSetStringT( NULL, "CompanyDepartment", text );
+		GetDlgItemText( hwndPage, IDC_TITLE, text, SIZEOF( text ));
+		JSetStringT( NULL, "CompanyPosition", text );
+		GetDlgItemText( hwndPage, IDC_ADDRESS1, text, SIZEOF( text ));
+		JSetStringT( NULL, "CompanyStreet", text );
+		GetDlgItemText( hwndPage, IDC_ADDRESS2, text, SIZEOF( text ));
+		JSetStringT( NULL, "CompanyStreet2", text );
+		GetDlgItemText( hwndPage, IDC_CITY, text, SIZEOF( text ));
+		JSetStringT( NULL, "CompanyCity", text );
+		GetDlgItemText( hwndPage, IDC_STATE, text, SIZEOF( text ));
+		JSetStringT( NULL, "CompanyState", text );
+		GetDlgItemText( hwndPage, IDC_ZIP, text, SIZEOF( text ));
+		JSetStringT( NULL, "CompanyZIP", text );
+		GetDlgItemText( hwndPage, IDC_COUNTRY, text, SIZEOF( text ));
+		JSetStringT( NULL, "CompanyCountryName", text );
 	}
 	// Page 4: Photo
 	//		not saved in the database
 	// Page 5: Note
 	if (( hwndPage=dat->page[5].hwnd ) != NULL ) {
-		GetDlgItemTextA( hwndPage, IDC_DESC, text, sizeof( text ));
-		JSetString( NULL, "About", text );
+		GetDlgItemText( hwndPage, IDC_DESC, text, SIZEOF( text ));
+		JSetStringT( NULL, "About", text );
 	}
 }
 

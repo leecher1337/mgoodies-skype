@@ -671,9 +671,9 @@ static char* sttCopyNode( const XmlNode* n, char* dest )
 		*dest++ = ' ';
 		lstrcpyA( dest, n->attr[i]->name ); dest += lstrlenA( n->attr[i]->name );
 		*dest++ = '=';
-		*dest++ = '\'';
+		*dest++ = '"';
 		lstrcpyA( dest, n->attr[i]->sendValue ); dest += lstrlenA( n->attr[i]->sendValue );
-		*dest++ = '\'';
+		*dest++ = '"';
 	}
 
 	if ( n->numChild != 0 || n->sendText != NULL )

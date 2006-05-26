@@ -174,18 +174,25 @@ void JabberRequestMailBox(HANDLE hConn){
 
 		int iqId = JabberSerialNext();
 		if (!maxtid) maxtid = ((__int64)DBGetContactSettingDword( NULL, jabberProtoName,"MaxTidHi",0)<<32)+
-			             ((__int64)DBGetContactSettingDword( NULL, jabberProtoName,"MaxTidLo",0));
+							  ((__int64)DBGetContactSettingDword( NULL, jabberProtoName,"MaxTidLo",0));
 		if (!maxtime) maxtime=((__int64)DBGetContactSettingDword( NULL, jabberProtoName,"MaxTimeHi",0)<<32)+
-			             ((__int64)DBGetContactSettingDword( NULL, jabberProtoName,"MaxTimeLo",0));
+							  ((__int64)DBGetContactSettingDword( NULL, jabberProtoName,"MaxTimeLo",0));
 
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultMailNotify );
 		char stid[21]; sprint64u(stid,maxtid);
 		char stime[21];sprint64u(stime,maxtime);
-        JabberSend( hConn, "<iq type=\"get\" id=\""JABBER_IQID"%d\"><query xmlns=\"google:mail:notify\" newer-than-time=\"%s\" newer-than-tid=\"%s\"/></iq>",
-			iqId,
-			stime,
-			stid
-		);
+		XmlNodeIq iq("get",iqId);
+		XmlNode* query = iq.addQuery("google:mail:notify");
+		query->addAttr("newer-than-time",stime);
+		query->addAttr("newer-than-tid",stid);
+		query->addAttr("q","label:^u ((!label:^s) (!label:^k) (!label:^vm))");
+
+		JabberSend( hConn,iq );
+        //JabberSend( hConn, "<iq type=\"get\" id=\""JABBER_IQID"%d\"><query xmlns=\"google:mail:notify\" newer-than-time=\"%s\" newer-than-tid=\"%s\"/></iq>",
+		//	iqId,
+		//	stime,
+		//	stid
+		//);
 		if (JGetByte(NULL,"ShowRequest",0)) {
 			POPUPDATAEX ppd;
 			ZeroMemory((void *)&ppd, sizeof(ppd));
@@ -373,7 +380,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				if (gmstamp>maxtime)maxtime=gmstamp;
 				int numMesg = _ttoi(JabberXmlGetAttrValue( threadNode, "messages" ));
 				char mesgs[10];
-                if (numMesg>1) mir_snprintf(mesgs,10," (%d)",numMesg); else mesgs[0] = '\0';
+				if (numMesg>1) mir_snprintf(mesgs,10," (%d)",numMesg); else mesgs[0] = '\0';
 				char sttime[50];
 				StringFromUnixTime(sttime,50,(long)(gmstamp/1000));
 //				char stthread[50];
@@ -396,16 +403,16 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				}
 //				JabberLog( "Senders: %s",sendersList );
 				{ //create and show popup
-			        POPUPDATAEX ppd;
+					POPUPDATAEX ppd;
 					ZeroMemory((void *)&ppd, sizeof(ppd));
-			        ppd.lchContact = 0;
+					ppd.lchContact = 0;
 					ppd.lchIcon = iconList[10];
 #ifdef _UNICODE
 					char *temp = u2a(sendersList);
 					strncpy(ppd.lpzContactName, temp, MAX_CONTACTNAME);
 					mir_free(temp);
 #else
-			        strncpy(ppd.lpzContactName, sendersList, MAX_CONTACTNAME);
+					strncpy(ppd.lpzContactName, sendersList, MAX_CONTACTNAME);
 #endif
 					sendersNode = JabberXmlGetChild( threadNode, "subject" );
 					XmlNode *snippetNode = JabberXmlGetChild( threadNode, "snippet" );
@@ -413,7 +420,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					temp = u2a(sendersNode?sendersNode->text:_T("none"));
 					char *temp1 = u2a(snippetNode?snippetNode->text:_T("none"));
 #endif
-			        mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s",
+					mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s",
 						mesgs,
 #ifdef _UNICODE
 						temp,

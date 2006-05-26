@@ -143,9 +143,9 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 //				JabberLog("JID has text");
 //				JabberLog("text: %s",queryNode->text);
 				if (!_tcsncmp(info->fullJID,queryNode->text,SIZEOF (info->fullJID))){
-					JabberLog( "Result Bind: %s %s %s",info->fullJID,"confirmed.",NULL);
+					JabberLog( "Result Bind: %S %s %S",info->fullJID,"confirmed.",NULL);
 				} else {
-					JabberLog( "Result Bind: %s %s %s",info->fullJID,"changed to",queryNode->text);
+					JabberLog( "Result Bind: %S %s %S",info->fullJID,"changed to",queryNode->text);
 					_tcsncpy(info->fullJID,queryNode->text,SIZEOF (info->fullJID));
 			}	}
 		} else if (queryNode=JabberXmlGetChild( queryNode, "error" )){
