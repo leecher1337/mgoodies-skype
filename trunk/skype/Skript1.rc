@@ -40,7 +40,7 @@ END
 IDD_OPT_DEFAULT DIALOGEX 0, 0, 313, 231
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "Start Skype with miranda, if it is not running using the following cmdline options:",
                     IDC_STARTSKYPE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
@@ -133,7 +133,7 @@ END
 IDD_OPT_PROXY DIALOGEX 0, 0, 313, 230
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        "Skypeproxy",-1,0,1,313,95
     CONTROL         "Use Skypeproxy connection over network instead of local Skype API",
@@ -155,7 +155,7 @@ END
 IDD_SETDETAILS DIALOGEX 0, 0, 222, 131
 STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     EDITTEXT        IDC_FULLNAME,73,7,83,12,ES_AUTOHSCROLL
     EDITTEXT        IDC_BIRTHDAY,73,20,83,12,ES_AUTOHSCROLL
@@ -275,8 +275,8 @@ IDI_INVITE              ICON    DISCARDABLE     "res\\Invite.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,22
- PRODUCTVERSION 0,0,0,22
+ FILEVERSION 0,0,0,23
+ PRODUCTVERSION 0,0,0,23
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -294,14 +294,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Miranda IM community\0"
             VALUE "FileDescription", "Skype\0"
-            VALUE "FileVersion", "0, 0, 0, 22\0"
+            VALUE "FileVersion", "0, 0, 0, 23\0"
             VALUE "InternalName", "Skype\0"
             VALUE "LegalCopyright", "Copyright © 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Skype.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Skype_protocol for Miranda IM\0"
-            VALUE "ProductVersion", "0, 0, 0, 22\0"
+            VALUE "ProductVersion", "0, 0, 0, 23\0"
             VALUE "SpecialBuild", "\0"
         END
     END

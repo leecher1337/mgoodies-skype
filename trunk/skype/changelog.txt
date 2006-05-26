@@ -14,6 +14,7 @@ CODE
 HISTORY
 -------
 0.0.0.23 - ! Wrong db entry name for cellular (cellucar)
+           + Set mirver using is video capabale to identify skype 2.0 user
 
 0.0.0.22 - * Options page redesigned
            * Work around to force refresh of avatar in MyDetail (w8 the avatar change service)
