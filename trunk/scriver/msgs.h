@@ -205,7 +205,6 @@ struct CREOleCallback
 
 BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-int InitOptions(void);
 BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 int DbEventIsShown(DBEVENTINFO * dbei, struct MessageWindowData *dat);
 int safe_wcslen(wchar_t *msg, int maxLen);

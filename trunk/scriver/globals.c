@@ -30,7 +30,7 @@ extern PSLWA pSetLayeredWindowAttributes;
 extern HANDLE *hMsgMenuItem;
 extern int hMsgMenuItemCount;
 
-static HANDLE g_hDbEvent = 0, g_hAck = 0;
+static HANDLE g_hAck = 0;
 static int ackevent(WPARAM wParam, LPARAM lParam);
 
 
@@ -109,7 +109,7 @@ int SmileySettingsChanged(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam) 
+int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam) 
 {
 	LoadGlobalIcons();
 	return IconsChanged(wParam, lParam);
@@ -184,7 +184,6 @@ void RegisterIcoLibIcons() {
 		sid.pszDescription = Translate("Notice");
 //		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 	}
-	HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
 }
 
 static int buttonIcons[] = {-1, SMF_ICON_USERDETAILS, SMF_ICON_SMILEY, SMF_ICON_ADD, SMF_ICON_HISTORY, SMF_ICON_QUOTE, SMF_ICON_CANCEL, SMF_ICON_SEND};
@@ -290,7 +289,6 @@ void InitGlobals() {
 }
 
 void FreeGlobals() {
-	if (g_hDbEvent) UnhookEvent(g_hDbEvent);
 	if (g_hAck) UnhookEvent(g_hAck);
 	if (g_dat) {
 		if (g_dat->draftList != NULL) tcmdlist_free(g_dat->draftList);

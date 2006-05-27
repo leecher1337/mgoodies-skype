@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern HINSTANCE g_hInst;
 extern PSLWA pSetLayeredWindowAttributes;
+extern HANDLE hEventOptInitialise, hEventSkin2IconsChanged;
 
 #define FONTF_BOLD   1
 #define FONTF_ITALIC 2
@@ -946,7 +947,7 @@ static BOOL CALLBACK DlgProcTypeOptions(HWND hwndDlg, UINT msg, WPARAM wParam, L
 	return FALSE;
 }
 
-static int OptInitialise(WPARAM wParam, LPARAM lParam)
+int OptInitialise(WPARAM wParam, LPARAM lParam)
 {
 	OPTIONSDIALOGPAGE odp = { 0 };
 
@@ -974,8 +975,3 @@ static int OptInitialise(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-int InitOptions(void)
-{
-	HookEvent(ME_OPT_INITIALISE, OptInitialise);
-	return 0;
-}
