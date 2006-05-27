@@ -86,8 +86,12 @@
 #define IDC_RESET                       217
 #define IDC_FORCECHECK                  218
 #define IDC_SAVECHATS                   219
-#define IDC_SUPERR						220
-#define IDC_SUPREREQUEST				221
+#define IDC_SUPERR                      220
+#define IDC_SUPREREQUEST                221
+#define IDC_CHECKTIMES                  222
+#define IDC_LABELS                      223
+#define IDC_SHOWLABELS                  224
+#define IDC_EXPERTLABELS                225
 #define IDC_EDIT_USERNAME               1000
 #define IDC_SAVE                        1000
 #define IDC_EDIT_PASSWORD               1001
@@ -263,7 +267,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        222
+#define _APS_NEXT_RESOURCE_VALUE        226
 #define _APS_NEXT_COMMAND_VALUE         40017
 #define _APS_NEXT_CONTROL_VALUE         1181
 #define _APS_NEXT_SYMED_VALUE           101

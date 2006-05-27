@@ -653,9 +653,9 @@ static void reInitTabs(HWND hwndDlg){
 			return TRUE;
 		}
 		case PSM_CHANGED:
-#ifdef _DEBUG
-			MessageBoxA(hwndDlg,"Child dialog changed","EventHapened",0);
-#endif
+//#ifdef _DEBUG
+//			MessageBoxA(hwndDlg,"Child dialog changed","EventHapened",0);
+//#endif
 			SendMessage(GetParent(hwndDlg), PSM_CHANGED, (unsigned int)hwndDlg, 0);
 			break;
 		case WM_DESTROY:
@@ -667,9 +667,9 @@ static void reInitTabs(HWND hwndDlg){
             case 0:	{
 			  BOOL CommandApply = FALSE;
 			  if ( (CommandApply = lParam && ((LPNMHDR)lParam)->code == PSN_APPLY) || (lParam && ((LPNMHDR)lParam)->code == PSN_RESET) ) {
-#ifdef _DEBUG
-				MessageBoxA(hwndDlg,CommandApply?"Apply":"Cancel","EventHapened",0);
-#endif
+//#ifdef _DEBUG
+//				MessageBoxA(hwndDlg,CommandApply?"Apply":"Cancel","EventHapened",0);
+//#endif
 				if (CommandApply) {
 					SendMessage((HWND)AdvOptsDlg, WM_NOTIFY, wParam, lParam);
 					SendMessage((HWND)GMailOptsDlg, WM_NOTIFY, wParam, lParam);
