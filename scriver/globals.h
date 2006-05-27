@@ -114,6 +114,7 @@ void RegisterIcoLibIcons();
 void RegisterFontServiceFonts();
 void LoadProtocolIcons();
 void LoadGlobalIcons();
+int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam) ;
 int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,const char *szNamePrefix, int flags, int showCmd);
 
 extern struct GlobalMessageData *g_dat;

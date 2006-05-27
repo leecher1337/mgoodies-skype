@@ -23,10 +23,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
 
+int OptInitialise(WPARAM wParam, LPARAM lParam);
 static void InitREOleCallback(void);
 
 HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand, hDragCursor;
 static HANDLE hEventDbEventAdded, hEventDbSettingChange, hEventContactDeleted;
+static HANDLE hEventClistDoubleClicked, hEventSmileyAddOptionsChanged, hEventIEViewOptionsChanged, hEventMyAvatarChanged, hEventAvatarChanged;
+HANDLE hEventOptInitialise, hEventSkin2IconsChanged;
+
+static HANDLE hSvcSendMessageCommand, hSvcSendMessageCommandW, hSvcGetWindowAPI, hSvcGetWindowClass, hSvcGetWindowData, hSvcReadMessageCommand, hSvcTypingMessageCommand;
+
 HANDLE *hMsgMenuItem = NULL, hHookWinEvt=NULL;
 int hMsgMenuItemCount = 0;
 static HMODULE hDLL;
@@ -388,11 +394,12 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 			hMsgMenuItem[hMsgMenuItemCount++] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM) & mi);
 		}
 	}
-	HookEvent(ME_CLIST_DOUBLECLICKED, SendMessageCommand);
-	HookEvent(ME_SMILEYADD_OPTIONSCHANGED, SmileySettingsChanged);
-	HookEvent(ME_IEVIEW_OPTIONSCHANGED, SmileySettingsChanged);
-	HookEvent(ME_AV_MYAVATARCHANGED, MyAvatarChanged);
-	HookEvent(ME_AV_AVATARCHANGED, AvatarChanged);
+	hEventClistDoubleClicked = HookEvent(ME_CLIST_DOUBLECLICKED, SendMessageCommand);
+	hEventSmileyAddOptionsChanged = HookEvent(ME_SMILEYADD_OPTIONSCHANGED, SmileySettingsChanged);
+	hEventIEViewOptionsChanged = HookEvent(ME_IEVIEW_OPTIONSCHANGED, SmileySettingsChanged);
+	hEventMyAvatarChanged = HookEvent(ME_AV_MYAVATARCHANGED, MyAvatarChanged);
+	hEventAvatarChanged = HookEvent(ME_AV_AVATARCHANGED, AvatarChanged);
+	hEventSkin2IconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
 	RestoreUnreadMessageAlerts();
 	return 0;
 }
@@ -412,6 +419,23 @@ int SplitmsgShutdown(void)
 	UnhookEvent(hEventDbEventAdded);
 	UnhookEvent(hEventDbSettingChange);
 	UnhookEvent(hEventContactDeleted);
+	UnhookEvent(hEventClistDoubleClicked);
+	UnhookEvent(hEventSmileyAddOptionsChanged);
+	UnhookEvent(hEventIEViewOptionsChanged);
+	UnhookEvent(hEventMyAvatarChanged);
+	UnhookEvent(hEventAvatarChanged);
+	UnhookEvent(hEventOptInitialise);
+	UnhookEvent(hEventSkin2IconsChanged);
+	DestroyHookableEvent(hHookWinEvt);
+	DestroyServiceFunction(hSvcSendMessageCommand);
+#if defined(_UNICODE)
+	DestroyServiceFunction(hSvcSendMessageCommandW);
+#endif
+	DestroyServiceFunction(hSvcGetWindowAPI);
+	DestroyServiceFunction(hSvcGetWindowClass);
+	DestroyServiceFunction(hSvcGetWindowData);
+	DestroyServiceFunction(hSvcReadMessageCommand);
+	DestroyServiceFunction(hSvcTypingMessageCommand);
 	FreeMsgLogIcons();
 	FreeLibrary(GetModuleHandleA("riched20"));
 	OleUninitialize();
@@ -442,7 +466,7 @@ int LoadSendRecvMessageModule(void)
 	RichUtil_Load();
 	OleInitialize(NULL);
 	InitREOleCallback();
-	InitOptions();
+	hEventOptInitialise = HookEvent(ME_OPT_INITIALISE, OptInitialise);
 	hEventDbEventAdded = HookEvent(ME_DB_EVENT_ADDED, MessageEventAdded);
 	hEventDbSettingChange = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, MessageSettingChanged);
 	hEventContactDeleted = HookEvent(ME_DB_CONTACT_DELETED, ContactDeleted);
@@ -450,16 +474,16 @@ int LoadSendRecvMessageModule(void)
 	HookEvent(ME_SKIN_ICONSCHANGED, IconsChanged);
 	HookEvent(ME_PROTO_CONTACTISTYPING, TypingMessage);
 	HookEvent(ME_SYSTEM_PRESHUTDOWN, PreshutdownSendRecv);
-	CreateServiceFunction(MS_MSG_SENDMESSAGE, SendMessageCommand);
+	hSvcSendMessageCommand = CreateServiceFunction(MS_MSG_SENDMESSAGE, SendMessageCommand);
 #if defined(_UNICODE)
-	CreateServiceFunction(MS_MSG_SENDMESSAGE "W", SendMessageCommand);
+	hSvcSendMessageCommandW = CreateServiceFunction(MS_MSG_SENDMESSAGE "W", SendMessageCommand);
 #endif
-	CreateServiceFunction(MS_MSG_GETWINDOWAPI, GetWindowAPI);
-	CreateServiceFunction(MS_MSG_GETWINDOWCLASS, GetWindowClass);
-	CreateServiceFunction(MS_MSG_GETWINDOWDATA, GetWindowData);
-	CreateServiceFunction("SRMsg/ReadMessage", ReadMessageCommand);
-	CreateServiceFunction("SRMsg/TypingMessage", TypingMessageCommand);
-	hHookWinEvt=CreateHookableEvent(ME_MSG_WINDOWEVENT);
+	hSvcGetWindowAPI =  CreateServiceFunction(MS_MSG_GETWINDOWAPI, GetWindowAPI);
+	hSvcGetWindowClass = CreateServiceFunction(MS_MSG_GETWINDOWCLASS, GetWindowClass);
+	hSvcGetWindowData = CreateServiceFunction(MS_MSG_GETWINDOWDATA, GetWindowData);
+	hSvcReadMessageCommand = CreateServiceFunction("SRMsg/ReadMessage", ReadMessageCommand);
+	hSvcTypingMessageCommand = CreateServiceFunction("SRMsg/TypingMessage", TypingMessageCommand);
+	hHookWinEvt = CreateHookableEvent(ME_MSG_WINDOWEVENT);
 	SkinAddNewSoundEx("RecvMsgActive", Translate("Messages"), Translate("Incoming (Focused Window)"));
 	SkinAddNewSoundEx("RecvMsgInactive", Translate("Messages"), Translate("Incoming (Unfocused Window)"));
 	SkinAddNewSoundEx("AlertMsg", Translate("Messages"), Translate("Incoming (New Session)"));
