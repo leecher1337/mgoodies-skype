@@ -142,6 +142,8 @@ HANDLE __stdcall JabberHContactFromJID( const TCHAR* jid )
 	if ( jid == NULL )
 		return ( HANDLE )NULL;
 
+	JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_CHATROOM, jid );
+
 	HANDLE hContactMatched = NULL;
 	HANDLE hContact = ( HANDLE ) JCallService( MS_DB_CONTACT_FINDFIRST, 0, 0 );
 	while ( hContact != NULL ) {
@@ -154,7 +156,7 @@ HANDLE __stdcall JabberHContactFromJID( const TCHAR* jid )
 
 			if ( !result ) {
 				int result;
-				if ( JGetByte( hContact, "ChatRoom", 0 ))
+				if ( item != NULL )
 					result = lstrcmpi( jid, dbv.ptszVal );
 				else
 					result = JabberCompareJids( jid, dbv.ptszVal );

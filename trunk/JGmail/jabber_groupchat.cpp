@@ -603,6 +603,10 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 		// Update groupchat log window
 		JabberGcLogUpdateMemberStatus( item, nick, newRes, NULL );
 
+		HANDLE hContact = JabberHContactFromJID( from );
+		if ( hContact != NULL )
+			JSetWord( hContact, "Status", status );
+
 		// Update room status
 		//if ( item->status != ID_STATUS_ONLINE ) {
 		//	item->status = ID_STATUS_ONLINE;

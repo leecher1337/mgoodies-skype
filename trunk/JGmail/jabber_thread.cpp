@@ -534,6 +534,7 @@ LBL_Exit:
 
 			mir_free( jabberJID );
 			jabberJID = NULL;
+			jabberLoggedInTime = 0;
 			JabberListWipe();
 			if ( hwndJabberAgents ) {
 				SendMessage( hwndJabberAgents, WM_JABBER_AGENT_REFRESH, 0, ( LPARAM )"" );
@@ -856,7 +857,8 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 		return;
 	}
 
-	BOOL isChatRoomJid = JabberListExist( LIST_CHATROOM, from );
+	JABBER_LIST_ITEM* chatItem = JabberListGetItemPtr( LIST_CHATROOM, from );
+	BOOL isChatRoomJid = ( chatItem != NULL );
 	if ( isChatRoomJid && !lstrcmp( type, _T("groupchat"))) {
 		JabberGroupchatProcessMessage( node, userdata );
 		return;
@@ -878,9 +880,9 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 
 		if (( szMessage = JabberUnixToDosT( szMessage )) == NULL )
 			szMessage = mir_tstrdup( _T(""));
-	}
+		}
 
-		time_t msgTime = 0, now;
+		time_t msgTime = 0;
 		BOOL  isChatRoomInvitation = FALSE;
 		TCHAR* inviteRoomJid = NULL;
 		TCHAR* inviteFromJid = NULL;
@@ -1031,6 +1033,12 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 				else
 					p = from;
 				hContact = JabberDBCreateContact( from, p, TRUE, FALSE );
+
+				for ( int i=0; i < chatItem->resourceCount; i++ ) {
+					if ( !lstrcmp( chatItem->resource[i].resourceName, p )) {
+						JSetWord( hContact, "Status", chatItem->resource[i].status );
+						break;
+				}	}
 			}
 			else {
 				nick = JabberNickFromJID( from );
@@ -1038,8 +1046,8 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 				mir_free( nick );
 		}	}
 
-		now = time( NULL );
-		if ( msgTime==0 || msgTime > now )
+		time_t now = time( NULL );
+		if ( msgTime == 0 || now - jabberLoggedInTime > 60 )
 			msgTime = now;
 
 		PROTORECVEVENT recv;
@@ -1179,13 +1187,14 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 			JabberListAdd( LIST_ROSTER, from );
 		}
 		else JabberListRemoveResource( LIST_ROSTER, from );
-
+		
+		hContact = JabberHContactFromJID( from );
 		int status = ID_STATUS_OFFLINE;
 		if (( statusNode = JabberXmlGetChild( node, "status" )) != NULL ) {
 			if ( JGetByte( "OfflineAsInvisible", FALSE ) == TRUE )
 				status = ID_STATUS_INVISIBLE;
 
-			if (( hContact = JabberHContactFromJID( from )) != NULL) {
+			if (hContact != NULL) {
 				if ( statusNode->text )
 					DBWriteContactSettingTString(hContact, "CList", "StatusMsg", statusNode->text );
 				else
@@ -1308,6 +1317,28 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 	JabberSend( jabberThreadInfo->s, iq );
 
 	if ( version ) mir_free( version );
+}
+
+static void JabberProcessIqTime( TCHAR* idStr, XmlNode* node ) //added by Rion (jep-0090)
+{
+	TCHAR* from;
+	struct tm *gmt;
+	long ltime;
+	char stime[20],*dtime;
+	if (( from=JabberXmlGetAttrValue( node, "from" )) == NULL )
+		return;
+
+	_tzset();
+	time( &ltime );
+	gmt=gmtime( &ltime );
+	sprintf (stime,"%.4i%.2i%.2iT%.2i:%.2i:%.2i",gmt->tm_year+1900,gmt->tm_mon,gmt->tm_mday,gmt->tm_hour,gmt->tm_min,gmt->tm_sec);
+	dtime=ctime(&ltime);
+	dtime[24]=0;
+
+	XmlNodeIq iq( "result", idStr, from );
+	XmlNode* query = iq.addQuery( "jabber:iq:time" );
+	query->addChild( "utc", stime ); query->addChild( "tz", _tzname[1] ); query->addChild( "display", dtime );
+	JabberSend( jabberThreadInfo->s, iq );
 }
 
 static void JabberProcessIqAvatar( TCHAR* idStr, XmlNode* node )
@@ -1461,10 +1492,6 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 								DBWriteContactSettingTString( hContact, "CList", "Group", item->group );
 							}
 							else DBDeleteContactSetting( hContact, "CList", "Group" );
-
-							if ( !_tcscmp( str, _T("none")) || ( !_tcscmp( str, _T("from")) && _tcschr( jid, '@' )!=NULL ))
-								if ( JGetWord( hContact, "Status", ID_STATUS_OFFLINE ) != ID_STATUS_OFFLINE )
-									JSetWord( hContact, "Status", ID_STATUS_OFFLINE );
 						}
 						else mir_free( nick );
 				}	}
@@ -1583,6 +1610,8 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 			JabberProcessIqVersion( idStr, node );
 		else if ( !_tcscmp( xmlns, _T("jabber:iq:avatar")))
 			JabberProcessIqAvatar( idStr, node );
+		else if ( !_tcscmp( xmlns, _T("jabber:iq:time")))
+			JabberProcessIqTime( idStr, node );
 	}
 	// RECVED: <iq type='result'><query ...
 	else if ( !_tcscmp( type, _T("result")) && queryNode!=NULL && ( xmlns=JabberXmlGetAttrValue( queryNode, "xmlns" ))!=NULL ) {

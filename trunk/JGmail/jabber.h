@@ -318,6 +318,7 @@ extern BOOL   jabberConnected;
 extern BOOL   jabberOnline;
 extern int    jabberStatus;
 extern int    jabberDesiredStatus;
+extern time_t jabberLoggedInTime;
 
 extern CRITICAL_SECTION modeMsgMutex;
 extern JABBER_MODEMSGS modeMsgs;

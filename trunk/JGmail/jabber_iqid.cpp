@@ -100,6 +100,7 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 			JFreeVariant( &dbv );
 
 		jabberOnline = TRUE;
+		jabberLoggedInTime = time(0);
 
 		iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
@@ -165,6 +166,7 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 		}
 	}
 	jabberOnline = TRUE;
+	jabberLoggedInTime = time(0);
 	int enableGmailSetting = JGetByte(NULL,"EnableGMail",1);
 	if (enableGmailSetting & 1) JabberEnableNotifications(info);
 	iqId = JabberSerialNext();

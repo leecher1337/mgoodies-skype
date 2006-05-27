@@ -361,10 +361,13 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			else JDeleteSetting( NULL, "Password" );
 
 			GetDlgItemText( hwndDlg, IDC_EDIT_RESOURCE, textT, SIZEOF( textT ));
-			if ( DBGetContactSettingTString( NULL, jabberProtoName, "Resource", &dbv ) ||  _tcscmp( textT, dbv.ptszVal ))
-				reconnectRequired = TRUE;
-			if ( dbv.pszVal != NULL )	JFreeVariant( &dbv );
-			DBWriteContactSettingTString( NULL, jabberProtoName, "Resource", textT );
+			if ( !JGetStringT( NULL, "Resource", &dbv )) {
+				if ( _tcscmp( textT, dbv.ptszVal ))
+					reconnectRequired = TRUE;
+				JFreeVariant( &dbv );
+			}
+			else reconnectRequired = TRUE;
+			JSetStringT( NULL, "Resource", textT );
 
 			GetDlgItemTextA( hwndDlg, IDC_PRIORITY, text, sizeof( text ));
 			WORD port = ( WORD )atoi( text );
