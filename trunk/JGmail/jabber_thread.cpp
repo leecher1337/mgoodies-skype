@@ -238,11 +238,11 @@ LBL_Exit:
 		else _tcscpy( info->resource, _T("Miranda"));
 
 		TCHAR jidStr[128];
-		mir_sntprintf( jidStr, SIZEOF( jidStr ), _T("%s@%s/%s"), info->username, info->server, info->resource );
+		mir_sntprintf( jidStr, SIZEOF( jidStr ), _T("%s@")_T(TCHAR_STR_PARAM)_T("/%s"), info->username, info->server, info->resource );
 		_tcsncpy( info->fullJID, jidStr, SIZEOF( info->fullJID )-1 );
 
 		if ( JGetByte( "SavePassword", TRUE ) == FALSE ) {
-			mir_sntprintf( jidStr, SIZEOF( jidStr ), _T("%s@%s"), info->username, info->server );
+			mir_sntprintf( jidStr, SIZEOF( jidStr ), _T("%s@")_T(TCHAR_STR_PARAM), info->username, info->server );
 
 			// Ugly hack: continue logging on only the return value is &( onlinePassword[0] )
 			// because if WM_QUIT while dialog box is still visible, p is returned with some
@@ -292,7 +292,7 @@ LBL_Exit:
 		// Multiple thread allowed, although not possible : )
 		// thinking again.. multiple thread should not be allowed
 		info->reg_done = FALSE;
-		SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 25, ( LPARAM )JTranslate( "Connecting..." ));
+		SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 25, ( LPARAM )TranslateT( "Connecting..." ));
 		iqIdRegGetReg = -1;
 		iqIdRegSetReg = -1;
 	}
@@ -327,7 +327,7 @@ LBL_Exit:
 			jabberThreadInfo = NULL;
 		}
 		else if ( info->type == JABBER_SESSION_REGISTER ) {
-			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )JTranslate( "Error: Not enough memory" ));
+			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )TranslateT( "Error: Not enough memory" ));
 		}
 		JabberLog( "Thread ended, network buffer cannot be allocated" );
 		goto LBL_Exit;
@@ -345,7 +345,7 @@ LBL_Exit:
 				jabberThreadInfo = NULL;
 		}	}
 		else if ( info->type == JABBER_SESSION_REGISTER )
-			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )JTranslate( "Error: Cannot connect to the server" ));
+			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )TranslateT( "Error: Cannot connect to the server" ));
 
 		JabberLog( "Thread ended, connection failed" );
 		mir_free( buffer );
@@ -417,7 +417,7 @@ LBL_Exit:
 					jabberThreadInfo = NULL;
 			}
 			else if ( info->type == JABBER_SESSION_REGISTER ) {
-				SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )JTranslate( "Error: Cannot connect to the server" ));
+				SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )TranslateT( "Error: Cannot connect to the server" ));
 			}
 			mir_free( buffer );
 #ifndef STATICSSL
@@ -435,12 +435,7 @@ LBL_Exit:
 			jabberConnected = TRUE;
 			int len = _tcslen( info->username ) + strlen( info->server )+1;
 			jabberJID = ( TCHAR* )mir_alloc( sizeof( TCHAR)*( len+1 ));
-			#if defined( _UNICODE )
-				#define PRINT_FORMAT _T("%s@%S")
-			#else
-				#define PRINT_FORMAT _T("%s@%s")
-			#endif
-			mir_sntprintf( jabberJID, len+1, PRINT_FORMAT, info->username, info->server );
+			mir_sntprintf( jabberJID, len+1, _T("%s@")_T(TCHAR_STR_PARAM), info->username, info->server );
 			if ( JGetByte( "KeepAlive", 1 ))
 				jabberSendKeepAlive = TRUE;
 			else
@@ -548,7 +543,7 @@ LBL_Exit:
 				SendMessage( hwndJabberVcard, WM_JABBER_CHECK_ONLINE, 0, 0 );
 		}
 		else if ( info->type==JABBER_SESSION_REGISTER && !info->reg_done ) {
-			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )JTranslate( "Error: Connection lost" ));
+			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )TranslateT( "Error: Connection lost" ));
 	}	}
 	else {
 		if ( info->type == JABBER_SESSION_NORMAL ) {
@@ -564,7 +559,7 @@ LBL_Exit:
 		JabberSslRemoveHandle( info->s );
 	}
 
-	JabberLog( "Thread ended: type=%d server='%s'", info->type, info->server );
+	JabberLog( "Thread ended: type=%d server='"TCHAR_STR_PARAM"'", info->type, info->server );
 
 	if ( info->type==JABBER_SESSION_NORMAL && jabberThreadInfo==info ) {
 		if ( streamId ) mir_free( streamId );
@@ -677,7 +672,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 			XmlNodeIq iq("get",iqIdRegGetReg,info->server);
 			XmlNode* query = iq.addQuery("jabber:iq:register");
 			JabberSend(info->s,iq);
-			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 50, ( LPARAM )JTranslate( "Requesting registration instruction..." ));
+			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 50, ( LPARAM )TranslateT( "Requesting registration instruction..." ));
 		}
 		else JabberSend( info->s, "</stream:stream>" );
 		if (PLAIN) mir_free(PLAIN);
@@ -704,11 +699,11 @@ static void JabberProcessFailure( XmlNode *node, void *userdata ){
 //failure xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"
 	if (( type=JabberXmlGetAttrValue( node, "xmlns" )) == NULL ) return;
 	if ( !_tcscmp( type, _T("urn:ietf:params:xml:ns:xmpp-sasl") )){
-		char text[128];
+		TCHAR text[128];
 
 		JabberSend( info->s, "</stream:stream>" );
-		mir_snprintf( text, sizeof( text ), "%s %s@%s.", JTranslate( "Authentication failed for" ), info->username, info->server );
-		MessageBoxA( NULL, text, JTranslate( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+		mir_sntprintf( text, sizeof( text ), _T("%s %s@")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
+		MessageBox( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 		jabberThreadInfo = NULL;	// To disallow auto reconnect
 	}
@@ -717,24 +712,20 @@ static void JabberProcessFailure( XmlNode *node, void *userdata ){
 static void JabberProcessError( XmlNode *node, void *userdata ){
 //	JabberXmlDumpNode( node );
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
-	char *buff;
+	TCHAR *buff;
 	int i;
 	int pos;
 //failure xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"
 	if ( !node->numChild ) return;
-	buff = (char *)mir_alloc(1024);
+	buff = (TCHAR *)mir_alloc(1024*SIZEOF(buff));
 	pos=0;
 	for (i=0;i<node->numChild;i++){
-		pos += mir_snprintf(buff+pos*SIZEOF(buff),1024-pos,
-#ifdef _UNICODE
-			"%s: %S\n",
-#else
-			"%s: %s\n",
-#endif
+		pos += mir_sntprintf(buff+pos,1024-pos,
+			_T(TCHAR_STR_PARAM)_T(": %s\n"),
 			node->child[i]->name,node->child[i]->text);
 		if (!strcmp(node->child[i]->name,"conflict")) JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_OTHERLOCATION);
 	}
-	MessageBoxA( NULL, buff, JTranslate( "Jabber Error" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+	MessageBox( NULL, buff, TranslateT( "Jabber Error" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 	mir_free(buff);
 	JabberSend( info->s, "</stream:stream>" );
 }
@@ -760,7 +751,7 @@ static void JabberProcessSuccess( XmlNode *node, void *userdata )
 		xmlStreamInitialize( "after successful sasl" );
 	}
 	else {
-		JabberLog( "Succcess: unknown action %s.",type);
+		JabberLog( "Succcess: unknown action "TCHAR_STR_PARAM".",type);
 }	}
 
 
@@ -812,7 +803,7 @@ static void JabberProcessProceed( XmlNode *node, void *userdata )
 		return;
 
 	if ( !lstrcmp( type, _T("urn:ietf:params:xml:ns:xmpp-tls" ))){
-		JabberLog("Staring TLS...");
+		JabberLog("Starting TLS...");
 		int socket = JCallService( MS_NETLIB_GETSOCKET, ( WPARAM ) info->s, 0 );
 		PVOID ssl;
 		if (( ssl=pfn_SSL_new( jabberSslCtx )) != NULL ) {
@@ -1093,13 +1084,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		if (( hContact = JabberHContactFromJID( from )) == NULL )
 			hContact = JabberDBCreateContact( from, nick, FALSE, TRUE );
 		if ( !JabberListExist( LIST_ROSTER, from )) {
-			JabberLog( 
-#ifdef _UNICODE
-				"Receive presence online from %s ( who is not in my roster )", 
-#else
-				"Receive presence online from %S ( who is not in my roster )", 
-#endif
-				from );
+			JabberLog("Receive presence online from "TCHAR_STR_PARAM" ( who is not in my roster )", from );
 			JabberListAdd( LIST_ROSTER, from );
 		}
 		int status = ID_STATUS_ONLINE;
@@ -1146,13 +1131,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 					for (resnum=0;resnum<item->resourceCount;resnum++){
 						if (!_tcscmp(courres,item->resource[resnum].resourceName)){
 							putResUserSett(hContact,&item->resource[resnum]);
-							JabberLog(
-			#ifdef _UNICODE
-							"Software: %S (%S)",
-			#else
-							"Software: %s (%s)",
-			#endif
-							item->resource[resnum].software,item->resource[resnum].version);
+							JabberLog("Software: " TCHAR_STR_PARAM " (" TCHAR_STR_PARAM ")",item->resource[resnum].software,item->resource[resnum].version);
 							break;
 						}
 					}
@@ -1173,13 +1152,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 
 		if ( _tcschr( from, '@' )==NULL && hwndJabberAgents )
 			SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
-		JabberLog( 
-#ifdef _UNICODE
-			"%S ( %S ) online, set contact status to \"%s\"",
-#else
-			"%s ( %s ) online, set contact status to \"%s\"", 
-#endif
-			nick, from, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 ));
+		JabberLog( TCHAR_STR_PARAM " ( " TCHAR_STR_PARAM " ) online, set contact status to %s", nick, from, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 ));
 		mir_free( nick );
 
 		XmlNode* xNode;
@@ -1202,13 +1175,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 
 	if ( !_tcscmp( type, _T("unavailable"))) {
 		if ( !JabberListExist( LIST_ROSTER, from )) {
-			JabberLog( 
-#ifdef _UNICODE
-				"Receive presence offline from %S ( who is not in my roster )", 
-#else
-				"Receive presence offline from %s ( who is not in my roster )", 
-#endif
-				from );
+			JabberLog( "Receive presence offline from " TCHAR_STR_PARAM " ( who is not in my roster )", from );
 			JabberListAdd( LIST_ROSTER, from );
 		}
 		else JabberListRemoveResource( LIST_ROSTER, from );
@@ -1250,13 +1217,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 				if ( JGetWord( hContact, "Status", ID_STATUS_OFFLINE ) != status )
 					JSetWord( hContact, "Status", ( WORD )status );
 
-		JabberLog( 
-#ifdef _UNICODE
-			"%S offline, set contact status to \"%s\"",
-#else
-			"%s offline, set contact status to \"%s\"", 
-#endif
-			from, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 ));
+			JabberLog( TCHAR_STR_PARAM " offline, set contact status to %s", from, JCallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)status,0 ));
 		}
 		if ( _tcschr( from, '@' )==NULL && hwndJabberAgents )
 			SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
@@ -1270,7 +1231,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 			JabberSend( info->s, p );
 		}
 		else if (( nick=JabberNickFromJID( from )) != NULL ) {
-			JabberLog( "%s ( %s ) requests authorization", nick, from );
+			JabberLog( TCHAR_STR_PARAM " ( " TCHAR_STR_PARAM " ) requests authorization", nick, from );
 			JabberDBAddAuthRequest( from, nick );
 			mir_free( nick );
 		}
@@ -1436,7 +1397,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 	/////////////////////////////////////////////////////////////////////////
 
 	else if (( pfunc=JabberIqFetchXmlnsFunc( xmlns )) != NULL ) {
-		JabberLog( "Handling iq request for xmlns=%s", xmlns );
+		JabberLog( "Handling iq request for xmlns = " TCHAR_STR_PARAM, xmlns );
 		pfunc( node, userdata );
 	}
 
@@ -1513,13 +1474,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 					else if ( !_tcscmp( str, _T("to"))) item->subscription = SUB_TO;
 					else if ( !_tcscmp( str, _T("from"))) item->subscription = SUB_FROM;
 					else item->subscription = SUB_NONE;
-					JabberLog( 
-#ifdef _UNICODE
-						"Roster push for jid=%S, set subscription to %S",
-#else
-						"Roster push for jid=%s, set subscription to %s",
-#endif
-						jid, str );
+					JabberLog( "Roster push for jid=" TCHAR_STR_PARAM ", set subscription to "TCHAR_STR_PARAM, jid, str );
 					// subscription = remove is to remove from roster list
 					// but we will just set the contact to offline and not actually
 					// remove, so that history will be retained.

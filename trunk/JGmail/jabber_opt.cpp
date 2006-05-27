@@ -179,8 +179,8 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 				if ( !dbv.pszVal[0] ) enableRegister = FALSE;
 				JFreeVariant( &dbv );
 			}
-			if ( !DBGetContactSetting( NULL, jabberProtoName, "Resource", &dbv )) {
-				SetDlgItemTextA( hwndDlg, IDC_EDIT_RESOURCE, dbv.pszVal );
+			if ( !DBGetContactSettingTString( NULL, jabberProtoName, "Resource", &dbv )) {
+				SetDlgItemText( hwndDlg, IDC_EDIT_RESOURCE, dbv.ptszVal );
 				JFreeVariant( &dbv );
 			}
 			else SetDlgItemTextA( hwndDlg, IDC_EDIT_RESOURCE, "Miranda" );
@@ -343,6 +343,7 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			DBVARIANT dbv;
 
 			char text[256];
+			TCHAR textT [256];
 			GetDlgItemTextA( hwndDlg, IDC_EDIT_USERNAME, text, sizeof( text ));
 			if ( DBGetContactSetting( NULL, jabberProtoName, "LoginName", &dbv ) || strcmp( text, dbv.pszVal ))
 				reconnectRequired = TRUE;
@@ -359,11 +360,11 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			}
 			else JDeleteSetting( NULL, "Password" );
 
-			GetDlgItemTextA( hwndDlg, IDC_EDIT_RESOURCE, text, sizeof( text ));
-			if ( DBGetContactSetting( NULL, jabberProtoName, "Resource", &dbv ) || strcmp( text, dbv.pszVal ))
+			GetDlgItemText( hwndDlg, IDC_EDIT_RESOURCE, textT, SIZEOF( textT ));
+			if ( DBGetContactSettingTString( NULL, jabberProtoName, "Resource", &dbv ) ||  _tcscmp( textT, dbv.ptszVal ))
 				reconnectRequired = TRUE;
 			if ( dbv.pszVal != NULL )	JFreeVariant( &dbv );
-			JSetString( NULL, "Resource", text );
+			DBWriteContactSettingTString( NULL, jabberProtoName, "Resource", textT );
 
 			GetDlgItemTextA( hwndDlg, IDC_PRIORITY, text, sizeof( text ));
 			WORD port = ( WORD )atoi( text );

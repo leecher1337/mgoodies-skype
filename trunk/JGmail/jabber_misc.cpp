@@ -158,7 +158,7 @@ void JabberDBAddAuthRequest( TCHAR* jid, TCHAR* nick )
 	*pCurBlob = '\0';					//reason
 
 	JCallService( MS_DB_EVENT_ADD, ( WPARAM ) ( HANDLE ) NULL, ( LPARAM )&dbei );
-	JabberLog( "Setup DBAUTHREQUEST with nick='%s' jid='%s'", szNick, szJid );
+	JabberLog( "Setup DBAUTHREQUEST with nick='" TCHAR_STR_PARAM "' jid='" TCHAR_STR_PARAM "'", szNick, szJid );
 
 	#if defined( _UNICODE )
 		mir_free( szJid );
@@ -215,13 +215,7 @@ HANDLE JabberDBCreateContact( TCHAR* jid, TCHAR* nick, BOOL temporary, BOOL stri
 			JSetStringT( hContact, "Nick", nick );
 		if ( temporary )
 			DBWriteContactSettingByte( hContact, "CList", "NotOnList", 1 );
-		JabberLog( 
-#ifdef _UNICODE
-			"Create Jabber contact jid=%S, nick=%S",
-#else
-			"Create Jabber contact jid=%s, nick=%s",
-#endif
-			s, nick );
+		JabberLog( "Create Jabber contact jid=" TCHAR_STR_PARAM ", nick=" TCHAR_STR_PARAM, s, nick );
 	}
 
 	mir_free( s );

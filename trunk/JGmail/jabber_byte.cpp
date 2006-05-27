@@ -156,7 +156,7 @@ static void JabberByteSendConnection( HANDLE hConn, DWORD dwRemoteIP )
 	}
 
 	mir_sntprintf( szPort, SIZEOF( szPort ), _T("%d"), localPort );
-	JabberLog( "bytestream_send_connection incoming connection accepted: local_port=%s", szPort );
+	JabberLog( "bytestream_send_connection incoming connection accepted: local_port=" TCHAR_STR_PARAM, szPort );
 
 	if (( item=JabberListGetItemPtr( LIST_BYTE, szPort )) == NULL ) {
 		JabberLog( "No bytestream session is currently active, connection closed." );
@@ -324,7 +324,7 @@ void __cdecl JabberByteReceiveThread( JABBER_BYTE_TRANSFER *jbt )
 				if ( jbt->streamhostJID ) mir_free( jbt->streamhostJID );
 				jbt->streamhostJID = mir_tstrdup( str );
 
-				JabberLog( "bytestream_recv connecting to %s:%d", szHost, port );
+				JabberLog( "bytestream_recv connecting to " TCHAR_STR_PARAM ":%d", szHost, port );
 				NETLIBOPENCONNECTION nloc = { 0 };
 				nloc.cbSize = sizeof( nloc );
 				#if defined( _UNICODE )

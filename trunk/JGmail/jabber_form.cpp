@@ -202,10 +202,6 @@ void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight )
 						// skip
 					}
 					else { // everything else is considered "text-single"
-#ifdef _DEBUG
-						if ( _tcscmp( type, _T("text-single")))
-							JabberLog( "Non-recognize field type='%s'", type );
-#endif
 						if ( labelStr ) {
 							hCtrl = CreateWindow( _T("static"), labelStr, WS_CHILD|WS_VISIBLE|SS_RIGHT, labelOffset, ypos+4, labelWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
 							SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );

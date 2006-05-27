@@ -71,11 +71,7 @@ int makeHead(char *target, int tSize, __int64 tid, __int64 time){
 
 void JabberDummyResult( XmlNode *iqNode, void *userdata ){
 	JabberLog( 
-#ifdef _UNICODE
-		"Received DummyResult. id: \"%S\", type: \"%S\"",
-#else
-		"Received DummyResult. id: \"%s\", type: \"%s\"",
-#endif
+		"Received DummyResult. id: \""TCHAR_STR_PARAM"\", type: \""TCHAR_STR_PARAM"\"",
 		JabberXmlGetAttrValue( iqNode, "id"), JabberXmlGetAttrValue( iqNode, "type"));
 }
 void JabberEnableNotifications(ThreadData *info){
@@ -188,12 +184,7 @@ void JabberRequestMailBox(HANDLE hConn){
 		query->addAttr("q","label:^u ((!label:^s) (!label:^k) (!label:^vm))");
 
 		JabberSend( hConn,iq );
-        //JabberSend( hConn, "<iq type=\"get\" id=\""JABBER_IQID"%d\"><query xmlns=\"google:mail:notify\" newer-than-time=\"%s\" newer-than-tid=\"%s\"/></iq>",
-		//	iqId,
-		//	stime,
-		//	stid
-		//);
-		if (JGetByte(NULL,"ShowRequest",0)) {
+  		if (JGetByte(NULL,"ShowRequest",0)) {
 			POPUPDATAEX ppd;
 			ZeroMemory((void *)&ppd, sizeof(ppd));
 			ppd.lchContact = 0;
@@ -256,21 +247,13 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			//ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
 			ppd.lchIcon = iconList[11];
 			mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, 
-#ifdef _UNICODE
-				"%s: Error Code %S; Type %S.",
-#else
-				"%s: Error Code %s; Type %s.",
-#endif
+				"%s: Error Code "TCHAR_STR_PARAM"; Type "TCHAR_STR_PARAM".",
 				jabberProtoName,
 				errcode?errcode:_T("Unknown"),
 				errtype?errtype:_T("Unknown"));
 			XmlNode *textNode = JabberXmlGetChild( queryNode, "text" );
 			int l = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, 
-#ifdef _UNICODE
-				"Message: %s: %S\n",
-#else
-				"Message: %s: %s\n",
-#endif
+				"Message: %s: "TCHAR_STR_PARAM"\n",
 				queryNode->numChild?queryNode->child[0]->name:"none",
 				textNode?textNode->text:_T("none")
 			);
@@ -285,7 +268,6 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			ppd.colorBack = JGetDword(NULL,"ColErrorBack",RGB(255,128,128));
 			ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)>>16);
 			ppd.PluginWindowProc = (WNDPROC)PopupErrorDlgProc;
-			//JabberLog( "Notify error: %s\n%s", ppd.lpzContactName, ppd.lpzText);
 			MyNotification(&ppd);
 		}
 		if (!(showresult & 4)){ // we do not suppress automatic re-request
@@ -333,7 +315,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				ZeroMemory((void *)&ppd, sizeof(ppd));
 				ppd.lchContact = 0;
 				ppd.lchIcon = iconList[12];
-				mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox result: Matched %s",
+				mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox result: Matched "TCHAR_STR_PARAM,
 					jabberProtoName,
 					JabberXmlGetAttrValue( queryNode, "total-matched" )
 				);
@@ -389,11 +371,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				int k; TCHAR sendersList[150];
 				sendersList[0] = '\0';
 				mir_sntprintf(sendersList,150,
-#ifdef _UNICODE
-					_T("%S: New mail from "),
-#else
-					_T("%s: New mail from "),
-#endif
+					_T(TCHAR_STR_PARAM)_T(": New mail from "),
 					jabberProtoName);
 				if (sendersNode) for ( k=0; k<sendersNode->numChild; k++ ) {
 					if (k) _tcsncat(sendersList,_T(", "),150);
@@ -592,7 +570,6 @@ void JabberUserConfigRequest(ThreadData *info){
 		XmlNode* usersetting = iq.addChild( "usersetting" ); usersetting->addAttr( "xmlns", "google:setting" );
 		JabberSend( jabberThreadInfo->s, iq );
 	}
-//    JabberSend( info->s, "<iq type=\"get\" to=\"%s@%s\" id=\""JABBER_IQID"%d\"><usersetting xmlns=\"google:setting\"/></iq>", info->username, info->server, iqId);
 	mir_free(localJid);
 }
 
