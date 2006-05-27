@@ -63,6 +63,7 @@ HANDLE hNetlibUser;
 // Main jabber server connection thread global variables
 struct ThreadData *jabberThreadInfo = NULL;
 BOOL   jabberConnected = FALSE;
+time_t jabberLoggedInTime = 0;
 BOOL   jabberOnline = FALSE;
 BOOL   jabberChatDllPresent = FALSE;
 int    jabberStatus = ID_STATUS_OFFLINE;
