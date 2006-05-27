@@ -394,21 +394,13 @@ void putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
 	DBVARIANT dbv;
 	JGetStringT( hContact, "jid", &dbv );
 	JabberLog(
-#ifdef _UNICODE
-		"Updating contact %S:\nResource: %S\nSoftware: %S\nVersion: %S\nSystem: %S",
-#else 
-		"Updating contact %s:\nResource: %s\nSoftware: %s\nVersion: %s\nSystem: %s",
-#endif
+		"Updating contact "TCHAR_STR_PARAM":\nResource: "TCHAR_STR_PARAM"\nSoftware: "TCHAR_STR_PARAM"\nVersion: "TCHAR_STR_PARAM"\nSystem: "TCHAR_STR_PARAM,
 		dbv.ptszVal, r->resourceName, r->software, r->version, r->system);
 	JFreeVariant(&dbv);
 #endif
 	if (!hContact) {
 		JabberLog(
-#ifdef _UNICODE
-			"Trying to update NULL contact with resource %S",
-#else
-			"Trying to update NULL contact with resource %s",
-#endif
+			"Trying to update NULL contact with resource "TCHAR_STR_PARAM,
 			r->resourceName);
 		return;
 	}

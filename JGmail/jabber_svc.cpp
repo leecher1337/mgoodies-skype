@@ -41,12 +41,12 @@ static HANDLE AddToListByJID( const TCHAR* newJid, DWORD flags )
 	HANDLE hContact;
 	TCHAR* jid, *nick;
 
-	JabberLog( "AddToListByJID jid=%s", newJid );
+	JabberLog( "AddToListByJID jid = " TCHAR_STR_PARAM, newJid );
 
 	if (( hContact=JabberHContactFromJID( newJid )) == NULL ) {
 		// not already there: add
 		jid = mir_tstrdup( newJid );
-		JabberLog( "Add new jid to contact jid=%s", jid );
+		JabberLog( "Add new jid to contact jid = " TCHAR_STR_PARAM, jid );
 		hContact = ( HANDLE ) JCallService( MS_DB_CONTACT_ADD, 0, 0 );
 		JCallService( MS_PROTO_ADDTOCONTACT, ( WPARAM ) hContact, ( LPARAM )jabberProtoName );
 		JSetStringT( hContact, "jid", jid );
@@ -159,7 +159,7 @@ int JabberAuthAllow( WPARAM wParam, LPARAM lParam )
 	lastName = firstName + strlen( firstName ) + 1;
 	jid = lastName + strlen( lastName ) + 1;
 
-	JabberLog( "Send 'authorization allowed' to %s", jid );
+	JabberLog( "Send 'authorization allowed' to " TCHAR_STR_PARAM, jid );
 
 	XmlNode presence( "presence" ); presence.addAttr( "to", jid ); presence.addAttr( "type", "subscribed" );
 	JabberSend( jabberThreadInfo->s, presence );
@@ -176,7 +176,7 @@ int JabberAuthAllow( WPARAM wParam, LPARAM lParam )
 		JABBER_LIST_ITEM *item;
 
 		if (( item = JabberListGetItemPtr( LIST_ROSTER, newJid )) == NULL || ( item->subscription != SUB_BOTH && item->subscription != SUB_TO )) {
-			JabberLog( "Try adding contact automatically jid=%s", jid );
+			JabberLog( "Try adding contact automatically jid = " TCHAR_STR_PARAM, jid );
 			if (( hContact=AddToListByJID( newJid, 0 )) != NULL ) {
 				// Trigger actual add by removing the "NotOnList" added by AddToListByJID()
 				// See AddToListByJID() and JabberDbSettingChanged().
@@ -223,7 +223,7 @@ int JabberAuthDeny( WPARAM wParam, LPARAM lParam )
 	lastName = firstName + strlen( firstName ) + 1;
 	jid = lastName + strlen( lastName ) + 1;
 
-	JabberLog( "Send 'authorization denied' to %s", jid );
+	JabberLog( "Send 'authorization denied' to " TCHAR_STR_PARAM, jid );
 
 	XmlNode presence( "presence" ); presence.addAttr( "to", jid ); presence.addAttr( "type", "unsubscribed" );
 	JabberSend( jabberThreadInfo->s, presence );
@@ -266,7 +266,7 @@ static void __cdecl JabberBasicSearchThread( JABBER_SEARCH_BASIC *jsb )
 int JabberBasicSearch( WPARAM wParam, LPARAM lParam )
 {
 	char* szJid = ( char* )lParam;
-	JabberLog( "JabberBasicSearch called with lParam = %s", szJid );
+	JabberLog( "JabberBasicSearch called with lParam = " TCHAR_STR_PARAM, szJid );
 
 	JABBER_SEARCH_BASIC *jsb;
 	if ( !jabberOnline || ( jsb=( JABBER_SEARCH_BASIC * ) mir_alloc( sizeof( JABBER_SEARCH_BASIC )) )==NULL )
@@ -379,7 +379,7 @@ static void sttRenameGroup( DBCONTACTWRITESETTING* cws, HANDLE hContact )
 	else {
 		TCHAR* p = sttSettingToTchar( cws );
 		if ( cws->value.pszVal != NULL && lstrcmp( p, item->group )) {
-			JabberLog( "Group set to %s", cws->value.pszVal );
+			JabberLog( "Group set to " TCHAR_STR_PARAM, p );
 			if ( p )
 				JabberAddContactToRoster( item->jid, nick, p, item->subscription );
 		}
@@ -409,7 +409,7 @@ static void sttRenameContact( DBCONTACTWRITESETTING* cws, HANDLE hContact )
 	TCHAR* newNick = sttSettingToTchar( cws );
 	if ( newNick ) {
 		if ( lstrcmp( item->nick, newNick )) {
-			JabberLog( "Renaming contact %s: %s -> %s", item->jid, item->nick, newNick );
+			JabberLog( "Renaming contact " TCHAR_STR_PARAM ": " TCHAR_STR_PARAM " -> " TCHAR_STR_PARAM, item->jid, item->nick, newNick );
 			JabberAddContactToRoster( item->jid, newNick, item->group, item->subscription );
 		}
 		mir_free( newNick );
@@ -425,7 +425,7 @@ void sttAddContactForever( DBCONTACTWRITESETTING* cws, HANDLE hContact )
 		return;
 
 	TCHAR *nick;
-	JabberLog( "Add %s permanently to list", jid.pszVal );
+	JabberLog( "Add " TCHAR_STR_PARAM " permanently to list", jid.pszVal );
 	if ( !DBGetContactSettingTString( hContact, "CList", "MyHandle", &dbv )) {
 		nick = mir_tstrdup( dbv.ptszVal );
 		JFreeVariant( &dbv );
@@ -458,25 +458,16 @@ void sttAddContactForever( DBCONTACTWRITESETTING* cws, HANDLE hContact )
 }
 
 void sttStatusChanged( DBCONTACTWRITESETTING* cws, HANDLE hContact ){
-	
+
 	DBVARIANT jid;
 	if ( JGetStringT( hContact, "jid", &jid ))
 		return;
 	JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, jid.ptszVal );
-	//if ( item == NULL )
-	//	return;
-	//(item->defaultResource<0)?NULL:item->resource[item->defaultResource].resourceName;
 	TCHAR *courRes = JabberListGetBestClientResourceNamePtr(jid.ptszVal);
-	JabberLog(
-#ifdef _UNICODE
-	"Status Changed: %S, Best Resource: %S",
-#else
-	"Status Changed: %s, Best Resource: %s",
-#endif
-	jid.pszVal,courRes);
+	JabberLog( "Status Changed: " TCHAR_STR_PARAM ", Best Resource: " TCHAR_STR_PARAM, jid.pszVal,courRes);
 	JFreeVariant( &jid );
-	
 }
+
 int JabberDbSettingChanged( WPARAM wParam, LPARAM lParam )
 {
 	HANDLE hContact = ( HANDLE ) wParam;
@@ -654,13 +645,7 @@ static int JabberGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 				else
 					lstrcpyn( szJid, dbv.ptszVal, SIZEOF( szJid ));
 
-				JabberLog( 
-#ifdef _UNICODE
-					"Rereading avatar for %S", 
-#else 
-					"Rereading avatar for %s", 
-#endif
-					dbv.ptszVal );
+				JabberLog( "Rereading avatar for " TCHAR_STR_PARAM, dbv.ptszVal );
 
 				int iqId = JabberSerialNext();
 				JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetAvatar );

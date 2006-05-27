@@ -357,7 +357,7 @@ static void JabberFileServerConnection( JABBER_SOCKET hConnection, DWORD dwRemot
 	}
 
 	mir_sntprintf( szPort, sizeof( szPort ), _T("%d"), localPort );
-	JabberLog( "File server incoming connection accepted: local_port=%s", szPort );
+	JabberLog( "File server incoming connection accepted: local_port=" TCHAR_STR_PARAM, szPort );
 
 	if (( item=JabberListGetItemPtr( LIST_FILE, szPort )) == NULL ) {
 		JabberLog( "No file is currently served, file server connection closed." );

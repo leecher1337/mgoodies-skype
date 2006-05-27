@@ -143,22 +143,22 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 //				JabberLog("JID has text");
 //				JabberLog("text: %s",queryNode->text);
 				if (!_tcsncmp(info->fullJID,queryNode->text,SIZEOF (info->fullJID))){
-					JabberLog( "Result Bind: %S %s %S",info->fullJID,"confirmed.",NULL);
+					JabberLog( "Result Bind: "TCHAR_STR_PARAM" %s "TCHAR_STR_PARAM,info->fullJID,"confirmed.",NULL);
 				} else {
-					JabberLog( "Result Bind: %S %s %S",info->fullJID,"changed to",queryNode->text);
+					JabberLog( "Result Bind: "TCHAR_STR_PARAM" %s "TCHAR_STR_PARAM,info->fullJID,"changed to",queryNode->text);
 					_tcsncpy(info->fullJID,queryNode->text,SIZEOF (info->fullJID));
 			}	}
 		} else if (queryNode=JabberXmlGetChild( queryNode, "error" )){
 			//rfc3920 page 39
-			char errorMessage [256];
+			TCHAR errorMessage [256];
 			int pos=0;
-			pos = mir_snprintf(errorMessage,256,Translate("Resource "));
+			pos = mir_sntprintf(errorMessage,256,TranslateT("Resource "));
 			XmlNode *tempNode;
-			if (tempNode = JabberXmlGetChild( queryNode, "resource" )) pos += mir_snprintf(errorMessage,256-pos,"\"%s\" ",tempNode->text);
-			pos += mir_snprintf(errorMessage,256-pos,Translate("refused by server\n%s: %s"),Translate("Type"),Translate(JabberXmlGetAttrValue( queryNode, "type" )));
-			if (queryNode->numChild) pos += mir_snprintf(errorMessage+pos,256-pos,"\n%s: %s\n",Translate("Reason"),Translate(queryNode->child[0]->name));
-			mir_snprintf( errorMessage,256-pos, "%s %s@%s.", JTranslate( "Authentication failed for" ), info->username, info->server );
-			MessageBoxA( NULL, errorMessage, JTranslate( "Jabber Protocol" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+			if (tempNode = JabberXmlGetChild( queryNode, "resource" )) pos += mir_sntprintf(errorMessage,256-pos,_T("\"%s\" "),tempNode->text);
+			pos += mir_sntprintf(errorMessage+pos,256-pos,TranslateT("refused by server\n%s: %s"),TranslateT("Type"),Translate(JabberXmlGetAttrValue( queryNode, "type" )));
+			if (queryNode->numChild) pos += mir_sntprintf(errorMessage+pos,256-pos,_T("\n%s: ")_T(TCHAR_STR_PARAM)_T("\n"),TranslateT("Reason"),JTranslate(queryNode->child[0]->name));
+			mir_sntprintf( errorMessage,256-pos, _T("%s @")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
+			MessageBox( NULL, errorMessage, TranslateT( "Jabber Protocol" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPROTOCOL );
 			JabberSend( info->s, "</stream:stream>" );
 			jabberThreadInfo = NULL;	// To disallow auto reconnect
@@ -351,7 +351,7 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 				DBVARIANT dbv;
 				if ( !JGetStringT( hContact, "jid", &dbv )) {
 					if ( !JabberListExist( LIST_ROSTER, dbv.ptszVal )) {
-						JabberLog( "Syncing roster: preparing to delete %s ( hContact=0x%x )", dbv.ptszVal, hContact );
+						JabberLog( "Syncing roster: preparing to delete " TCHAR_STR_PARAM " ( hContact=0x%x )", dbv.ptszVal, hContact );
 						if ( listSize >= listAllocSize ) {
 							listAllocSize = listSize + 100;
 							if (( list=( HANDLE * ) mir_realloc( list, listAllocSize * sizeof( HANDLE ))) == NULL ) {
@@ -1060,7 +1060,7 @@ void JabberIqResultSetSearch( XmlNode *iqNode, void *userdata )
 				if (( jid=JabberXmlGetAttrValue( itemNode, "jid" )) != NULL ) {
 					_tcsncpy( jsr.jid, jid, SIZEOF( jsr.jid ));
 					jsr.jid[ SIZEOF( jsr.jid )-1] = '\0';
-					JabberLog( "Result jid=%s", jid );
+					JabberLog( "Result jid = " TCHAR_STR_PARAM, jid );
 					if (( n=JabberXmlGetChild( itemNode, "nick" ))!=NULL && n->text!=NULL )
 						jsr.hdr.nick = t2a( n->text );
 					else
@@ -1127,8 +1127,8 @@ void JabberIqResultExtSearch( XmlNode *iqNode, void *userdata )
 
 				if ( !lstrcmp( fieldName, _T("jid"))) {
 					_tcsncpy( jsr.jid, n->text, sizeof( jsr.jid ));
-					jsr.jid[sizeof( jsr.jid )-1] = '\0';
-					JabberLog( "Result jid=%s", jsr.jid );
+					jsr.jid[SIZEOF( jsr.jid )-1] = '\0';
+					JabberLog( "Result jid = " TCHAR_STR_PARAM, jsr.jid );
 				}
 				else if ( !lstrcmp( fieldName, _T("nickname")))
 					jsr.hdr.nick = ( n->text != NULL ) ? t2a( n->text ) : mir_strdup( "" );
@@ -1141,8 +1141,8 @@ void JabberIqResultExtSearch( XmlNode *iqNode, void *userdata )
 				else if ( !lstrcmp( fieldName, _T("email")))
 					jsr.hdr.email = ( n->text != NULL ) ? t2a(n->text) : mir_strdup( "" );
 
-				JSendBroadcast( NULL, ACKTYPE_SEARCH, ACKRESULT_DATA, ( HANDLE ) id, ( LPARAM )&jsr );
-				mir_free( jsr.hdr.nick );
+  				JSendBroadcast( NULL, ACKTYPE_SEARCH, ACKRESULT_DATA, ( HANDLE ) id, ( LPARAM )&jsr );
+  				mir_free( jsr.hdr.nick );
 				mir_free( jsr.hdr.firstName );
 				mir_free( jsr.hdr.lastName );
 				mir_free( jsr.hdr.email );
@@ -1348,7 +1348,7 @@ void JabberIqResultGetAvatar( XmlNode *iqNode, void *userdata )
 		else if ( !lstrcmp( mimeType, _T("image/bmp"))) pictureType = PA_FORMAT_BMP;
 		else {
 LBL_ErrFormat:
-			JabberLog( "Invalid mime type specified for picture: %s", mimeType );
+			JabberLog( "Invalid mime type specified for picture: " TCHAR_STR_PARAM, mimeType );
 			mir_free( body );
 			return;
 	}	}
