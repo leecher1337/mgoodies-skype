@@ -89,7 +89,7 @@
 #define IDC_SUPERR                      220
 #define IDC_SUPREREQUEST                221
 #define IDC_CHECKTIMES                  222
-#define IDC_LABELS                      223
+#define IDC_EDIT_LABELS                 223
 #define IDC_SHOWLABELS                  224
 #define IDC_EXPERTLABELS                225
 #define IDC_EDIT_USERNAME               1000

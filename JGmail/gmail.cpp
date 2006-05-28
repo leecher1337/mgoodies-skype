@@ -5,6 +5,8 @@
 #include <m_database.h>
 #include "resource.h"
 
+#define DEF_LABELS _T("label:^u ((!label:^s) (!label:^k) (!label:^vm))")
+
 LRESULT CALLBACK PopupDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 typedef struct {
 	TCHAR *username;
@@ -181,7 +183,12 @@ void JabberRequestMailBox(HANDLE hConn){
 		XmlNode* query = iq.addQuery("google:mail:notify");
 		query->addAttr("newer-than-time",stime);
 		query->addAttr("newer-than-tid",stid);
-		query->addAttr("q","label:^u ((!label:^s) (!label:^k) (!label:^vm))");
+		if (JGetByte(NULL,"Labels",0) & 0x80 ){
+			DBVARIANT dbv;
+			int res = JGetStringT(NULL,"LabelsExpr", &dbv);
+			query->addAttr("q",res?DEF_LABELS:dbv.ptszVal);
+			if (!res) JFreeVariant(&dbv);
+		}
 
 		JabberSend( hConn,iq );
   		if (JGetByte(NULL,"ShowRequest",0)) {
@@ -385,7 +392,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					ZeroMemory((void *)&ppd, sizeof(ppd));
 					ppd.lchContact = 0;
 					ppd.lchIcon = iconList[10];
-#ifdef _UNICODE
+#ifdef _UNICODE  //argh... all this juck will be removed when uncode popup support will be done
 					char *temp = u2a(sendersList);
 					strncpy(ppd.lpzContactName, temp, MAX_CONTACTNAME);
 					mir_free(temp);
@@ -398,7 +405,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					temp = u2a(sendersNode?sendersNode->text:_T("none"));
 					char *temp1 = u2a(snippetNode?snippetNode->text:_T("none"));
 #endif
-					mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s",
+					int pos = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s",
 						mesgs,
 #ifdef _UNICODE
 						temp,
@@ -412,6 +419,12 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 						snippetNode?snippetNode->text:"none"
 #endif
 						);
+					if (JGetByte(NULL,"Labels",0)&1){
+						if (snippetNode = JabberXmlGetChild( threadNode, "labels" )){
+							if (char *temp2 = t2a(snippetNode->text)){
+								mir_snprintf(ppd.lpzText+pos,MAX_SECONDLINE -5 -pos,"\nLabels: %s",temp2);
+								mir_free(temp2);
+					}	}	}
 #ifdef _UNICODE
 					mir_free(temp);
 					mir_free(temp1);
@@ -621,6 +634,12 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 		i = JGetByte(NULL,"Labels",0);
 		CheckDlgButton( hwndDlg, IDC_SHOWLABELS, (0x1 & i));
 		CheckDlgButton( hwndDlg, IDC_EXPERTLABELS, (0x80 & i)!=0);
+		EnableWindow(GetDlgItem( hwndDlg, IDC_EDIT_LABELS ), ((0x80 & i)!=0) && engmail);
+		{	DBVARIANT dbv;
+			int res = JGetStringT(NULL,"LabelsExpr", &dbv);
+			SetDlgItemText(hwndDlg, IDC_EDIT_LABELS,res?DEF_LABELS:dbv.ptszVal);
+			if (!res) JFreeVariant(&dbv);
+		}
 
 		SendDlgItemMessage(hwndDlg,IDC_COLOURTEXT,CPM_SETCOLOUR,0,JGetDword(NULL,"ColMsgText",0));
 		SendDlgItemMessage(hwndDlg,IDC_COLOURBACK,CPM_SETCOLOUR,0,JGetDword(NULL,"ColMsgBack",0));
@@ -649,9 +668,9 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 		return TRUE;
 	}
 	case WM_COMMAND:
+		bChecked = IsDlgButtonChecked( hwndDlg, IDC_ENGMAIL );
 		switch ( LOWORD( wParam )) {
 		case IDC_ENGMAIL:
-			bChecked = IsDlgButtonChecked( hwndDlg, LOWORD( wParam ) );
 			popupavail = ServiceExists(MS_POPUP_QUERY);
 			EnableWindow( GetDlgItem( hwndDlg, IDC_ENGMAILSTARTUP ), bChecked );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_USEPOPUP ), bChecked && popupavail);
@@ -668,15 +687,14 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 			EnableWindow( GetDlgItem( hwndDlg, IDC_SHOWLABELS ), bChecked );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_EXPERTLABELS ), bChecked );
 		case IDC_SYNCHRONIZE:
-			bChecked = IsDlgButtonChecked( hwndDlg, LOWORD( wParam ) );
-			EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZESILENT), bChecked );
-			goto LBL_Apply;
+			EnableWindow( GetDlgItem( hwndDlg, IDC_SYNCHRONIZESILENT),IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE ) && bChecked );
+		case IDC_EXPERTLABELS:
+			EnableWindow( GetDlgItem( hwndDlg, IDC_EDIT_LABELS ), IsDlgButtonChecked( hwndDlg, IDC_EXPERTLABELS) && bChecked );
 		case IDC_USEPOPUP:
-			bChecked = IsDlgButtonChecked( hwndDlg, LOWORD( wParam ) );
-			EnableWindow( GetDlgItem( hwndDlg, IDC_VISITGMAIL ), bChecked );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_VISITGMAIL ), IsDlgButtonChecked( hwndDlg, IDC_USEPOPUP ) && bChecked);
 			goto LBL_Apply;
 		case IDC_PREVIEW: {
-				if (IsDlgButtonChecked( hwndDlg, IDC_ENGMAIL )){
+				if (bChecked){
 				//Declarations and initializations
 					POPUPDATAEX ppd = { 0 };
 					char sendersList[150];
@@ -795,6 +813,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 				int i = GetDlgItemInt(hwndDlg, LOWORD( wParam ), NULL, TRUE);
 				SetDlgItemInt(hwndDlg, LOWORD( wParam ),((i<-1)?-1:((i>0xFFFE)?0xFFFE:i)),TRUE);
 			}
+		case IDC_EDIT_LABELS:
 			if (HIWORD(wParam) != EN_CHANGE || (HWND)lParam != GetFocus()) return true;
 			goto LBL_Apply;
 		case IDC_RESET: {
@@ -853,7 +872,12 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 			JSetDword(NULL,"PopUpTimeoutDebug",i);
 			i = IsDlgButtonChecked( hwndDlg, IDC_SHOWLABELS );
 			if (IsDlgButtonChecked( hwndDlg, IDC_EXPERTLABELS )) i |= 0x80;
-			JSetByte(NULL,"Labels",i);
+			if (i)JSetByte(NULL,"Labels",i);else JDeleteSetting(NULL,"Lables");
+			{ TCHAR temp[1024];
+				GetDlgItemText(hwndDlg, IDC_EDIT_LABELS, temp, 1024);
+				if (!_tcscmp(temp,DEF_LABELS)) JDeleteSetting(NULL,"LabelsExpr");
+				else JSetStringT(NULL,"LabelsExpr",temp);
+			}
 		}
 		break;
 	}//switch (msg)
