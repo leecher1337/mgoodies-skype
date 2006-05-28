@@ -392,11 +392,11 @@ void putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
 #define LOG_PRUS 1
 #ifdef LOG_PRUS
 	DBVARIANT dbv;
-	JGetStringT( hContact, "jid", &dbv );
+	int res = JGetStringT( hContact, "jid", &dbv );
 	JabberLog(
 		"Updating contact "TCHAR_STR_PARAM":\nResource: "TCHAR_STR_PARAM"\nSoftware: "TCHAR_STR_PARAM"\nVersion: "TCHAR_STR_PARAM"\nSystem: "TCHAR_STR_PARAM,
-		dbv.ptszVal, r->resourceName, r->software, r->version, r->system);
-	JFreeVariant(&dbv);
+		res?_T("buggy_jid"):dbv.ptszVal, r->resourceName, r->software, r->version, r->system);
+	if (!res) JFreeVariant(&dbv);
 #endif
 	if (!hContact) {
 		JabberLog(
