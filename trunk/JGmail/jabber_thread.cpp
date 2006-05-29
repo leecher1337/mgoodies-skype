@@ -560,7 +560,7 @@ LBL_Exit:
 		JabberSslRemoveHandle( info->s );
 	}
 
-	JabberLog( "Thread ended: type=%d server='"TCHAR_STR_PARAM"'", info->type, info->server );
+	JabberLog( "Thread ended: type=%d server='%s'", info->type, info->server );
 
 	if ( info->type==JABBER_SESSION_NORMAL && jabberThreadInfo==info ) {
 		if ( streamId ) mir_free( streamId );
@@ -599,7 +599,7 @@ static void JabberProcessStreamClosing( XmlNode *node, void *userdata )
 	if ( node->name && !strcmp( node->name, "stream:error" ) && node->text )
 		MessageBox( NULL, TranslateTS( node->text ), TranslateT( "Jabber Connection Error" ), MB_OK|MB_ICONERROR|MB_SETFOREGROUND );
 }
-
+static int isGoogleTokenUsed = 0; // 1: used; 2: retreived; 3: retreived and used
 static void JabberProcessFeatures( XmlNode *node, void *userdata )
 {
 	int i,k;
@@ -636,15 +636,50 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 	if (areMechanismsDefined) {
 		char *PLAIN = 0;
 		char *X_GOOGLE_TOKEN = 0;
+		isGoogleTokenUsed = 0;
 		if (isPlainAvailable && isXGoogleTokenAvailable)
 			if (info->useSSL ) isXGoogleTokenAvailable = false;//we Prefere plain if SSL
 		if (isXGoogleTokenAvailable){
+			isGoogleTokenUsed = 1;
+			DBVARIANT dbv;
 			char *temp = t2a(info->username);
 			int size = strlen(temp)+1+strlen(info->server);
 			char *localJid = (char *)mir_alloc(size+1);
 			mir_snprintf(localJid,size+1,"%s@%s",temp,info->server);
-			X_GOOGLE_TOKEN = getXGoogleToken(localJid,info->password);
-			if (!X_GOOGLE_TOKEN) X_GOOGLE_TOKEN = ""; //Later will show auth failed
+			int res = DBGetContactSetting(NULL,jabberProtoName,"GoogleToken",&dbv);
+			if (!res) {
+				int decodedLen;
+//				TCHAR token[] = _T("AHliaW5ldkBnbWFpbC5jb20ARFFBQUFHb0FBQUI4YklqS0poeFJ0QnVPTmpteDdUME9zOVNSdWtxRlJzYWc0d3VxSjNwcmFXUldrSUlINnJhdG5RN2xlaEFUOTFpTWhUV29XQ2NEd2NVT1JzdG5yaUQ2VldmTFZsTlY2RmFBZHBKU05nak40TVBseWhCbnJuY0VBQVBqTWNnb1otb1RMc25iSDRTOGZMcTQ3TVV3dnF1bw==");
+				TCHAR *token = 
+#ifdef _UNICODE
+				a2u
+#else
+				mir_strdup
+#endif
+				(dbv.pszVal);
+				char *tokenDecoded = JabberBase64Decode(token, &decodedLen);
+				char *jidFromToken = tokenDecoded; 
+				jidFromToken++;// first char is '\0' - some day this may change
+				int notequal = strncmp(jidFromToken,localJid,size);
+				mir_free(tokenDecoded);
+				if(!notequal){
+					X_GOOGLE_TOKEN = mir_strdup(dbv.pszVal);
+					JabberLog("Re-using previous GoogleToken");
+				}
+				JFreeVariant(&dbv);
+				mir_free(token);
+				if(notequal) goto LBL_RequestToken;
+			} else {
+LBL_RequestToken:
+				isGoogleTokenUsed |= 2; // new token is being requested
+				X_GOOGLE_TOKEN = getXGoogleToken(localJid,info->password);
+				if (X_GOOGLE_TOKEN) {
+					JSetString(NULL, "GoogleToken", X_GOOGLE_TOKEN);
+				} else {
+					if (!res) JDeleteSetting(NULL,"GoogleToken"); // we came here from goto LBL_RequestToken
+					X_GOOGLE_TOKEN = ""; //Later will show auth failed
+				}
+			}
 			mir_free(localJid);
 			mir_free(temp);
 		} else if (isPlainAvailable){
@@ -657,7 +692,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 			mir_free(temp);
 			JabberLog( "Never publish the hash below" );
 		} else {
-			MessageBoxA( NULL, JTranslate("No known auth methods available. Giving up."), JTranslate( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+			MessageBox( NULL, TranslateT("No known auth methods available. Giving up."), TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JabberSend( info->s, "</stream:stream>" );
 			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 			return;
@@ -693,6 +728,17 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 	}
 }
 
+static void __cdecl JabberWaitAndReconnectThread( int unused )
+{
+	JabberLog("Reconnecting after with new X-GOOGLE-TOKEN");
+	Sleep(1000);
+	ThreadData* thread = ( ThreadData* ) mir_alloc( sizeof( struct ThreadData ));
+	ZeroMemory( thread, sizeof( struct ThreadData ));
+	thread->type = JABBER_SESSION_NORMAL;
+	thread->hThread = ( HANDLE ) JabberForkThread(( JABBER_THREAD_FUNC )JabberServerThread, 0, thread );
+}
+
+
 static void JabberProcessFailure( XmlNode *node, void *userdata ){
 //	JabberXmlDumpNode( node );
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
@@ -700,13 +746,32 @@ static void JabberProcessFailure( XmlNode *node, void *userdata ){
 //failure xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"
 	if (( type=JabberXmlGetAttrValue( node, "xmlns" )) == NULL ) return;
 	if ( !_tcscmp( type, _T("urn:ietf:params:xml:ns:xmpp-sasl") )){
-		TCHAR text[128];
-
 		JabberSend( info->s, "</stream:stream>" );
-		mir_sntprintf( text, sizeof( text ), _T("%s %s@")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
-		MessageBox( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
-		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
-		jabberThreadInfo = NULL;	// To disallow auto reconnect
+		if ((isGoogleTokenUsed & 3)==1) { //GoogleToken is used but not requested
+			isGoogleTokenUsed |= 2; // new token is being requested
+			char *temp = t2a(info->username);
+			int size = strlen(temp)+1+strlen(info->server);
+			char *localJid = (char *)mir_alloc(size+1);
+			mir_snprintf(localJid,size+1,"%s@%s",temp,info->server);
+			char *X_GOOGLE_TOKEN = getXGoogleToken(localJid,info->password);
+			mir_free(localJid);
+			mir_free(temp);
+			if (X_GOOGLE_TOKEN) {
+				JSetString(NULL, "GoogleToken", X_GOOGLE_TOKEN);
+				JabberForkThread(( JABBER_THREAD_FUNC )JabberWaitAndReconnectThread, 0, NULL );
+			} else {
+				JDeleteSetting(NULL, "GoogleToken");
+				goto LBL_AuthFailed;
+			}
+		} else {
+LBL_AuthFailed:
+			TCHAR text[128];
+
+			mir_sntprintf( text, sizeof( text ), _T("%s %s@")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
+			MessageBox( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
+			jabberThreadInfo = NULL;	// To disallow auto reconnect
+		}
 	}
 }
 
@@ -1323,7 +1388,7 @@ static void JabberProcessIqTime( TCHAR* idStr, XmlNode* node ) //added by Rion (
 {
 	TCHAR* from;
 	struct tm *gmt;
-	long ltime;
+	time_t ltime;
 	char stime[20],*dtime;
 	if (( from=JabberXmlGetAttrValue( node, "from" )) == NULL )
 		return;
