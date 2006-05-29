@@ -291,29 +291,30 @@ int JabberBasicSearch( WPARAM wParam, LPARAM lParam )
 
 int JabberContactDeleted( WPARAM wParam, LPARAM lParam )
 {
-	char* szProto;
-	DBVARIANT dbv;
-
 	if( !jabberOnline )	// should never happen
 		return 0;
-	szProto = ( char* )JCallService( MS_PROTO_GETCONTACTBASEPROTO, wParam, 0 );
+
+	char* szProto = ( char* )JCallService( MS_PROTO_GETCONTACTBASEPROTO, wParam, 0 );
 	if ( szProto==NULL || strcmp( szProto, jabberProtoName ))
 		return 0;
-		if ( !JGetStringT(( HANDLE ) wParam, JGetByte( (HANDLE ) wParam, "ChatRoom", 0 )?"ChatRoomID":"jid", &dbv )) {
-		TCHAR* jid, *p, *q;
+
+	DBVARIANT dbv;
+	if ( !JGetStringT(( HANDLE ) wParam, JGetByte( (HANDLE ) wParam, "ChatRoom", 0 )?"ChatRoomID":"jid", &dbv )) {
+		TCHAR* jid, *p, *q = NULL;
 
 		jid = dbv.ptszVal;
-		if (( p = _tcschr( jid, '@' )) != NULL ) {
+		if (( p = _tcschr( jid, '@' )) != NULL )
 			if (( q = _tcschr( p, '/' )) != NULL )
 				*q = '\0';
-		}
-		if ( JabberListExist( LIST_ROSTER, jid )) {
-			// Remove from roster, server also handles the presence unsubscription process.
-			XmlNodeIq iq( "set" );
-			XmlNode* query = iq.addQuery( "jabber:iq:roster" );
-			XmlNode* item = query->addChild( "item" ); item->addAttr( "jid", jid ); item->addAttr( "subscription", "remove" );
-			JabberSend( jabberThreadInfo->s, iq );
-		}
+
+		if ( !JabberListExist( LIST_CHATROOM, jid ) || q == NULL )
+			if ( JabberListExist( LIST_ROSTER, jid )) {
+				// Remove from roster, server also handles the presence unsubscription process.
+				XmlNodeIq iq( "set" );
+				XmlNode* query = iq.addQuery( "jabber:iq:roster" );
+				XmlNode* item = query->addChild( "item" ); item->addAttr( "jid", jid ); item->addAttr( "subscription", "remove" );
+				JabberSend( jabberThreadInfo->s, iq );
+			}
 
 		JFreeVariant( &dbv );
 	}
