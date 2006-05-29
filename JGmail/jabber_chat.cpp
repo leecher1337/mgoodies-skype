@@ -348,9 +348,8 @@ int JabberGcMenuHook( WPARAM wParam, LPARAM lParam )
 		if ( me != NULL ) {
 			if ( me->role == ROLE_MODERATOR )
 				sttLogListItems[2].bDisabled = FALSE;
-
 			if ( me->affiliation == AFFILIATION_ADMIN )
-				sttLogListItems[3].bDisabled = sttLogListItems[5].bDisabled = FALSE;
+				sttLogListItems[3].bDisabled = sttLogListItems[5].bDisabled = sttLogListItems[6].bDisabled = FALSE;
 			else if ( me->affiliation == AFFILIATION_OWNER )
 				sttLogListItems[3].bDisabled = sttLogListItems[5].bDisabled =
 				sttLogListItems[6].bDisabled = sttLogListItems[7].bDisabled =
