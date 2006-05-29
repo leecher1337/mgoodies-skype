@@ -214,6 +214,7 @@ void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, int act
 			gce.pszText = dispNick;
 		else
 			gce.pszText = "";
+		gce.dwItemData = 1;
 		gcd.iType = GC_EVENT_SETSTATUSEX;
 		JCallService( MS_GC_EVENT, NULL, ( LPARAM )&gce );
 	}
