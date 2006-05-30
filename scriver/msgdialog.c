@@ -22,10 +22,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
-// IEVIew MOD Begin
-#include "m_ieview.h"
 #include "m_metacontacts.h"
-// IEVIew MOD End
 
 #define TIMERID_MSGSEND      0
 #define TIMERID_FLASHWND     1
@@ -1841,33 +1838,33 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		if (dat->parent->hwndActive == hwndDlg) {
 			if (dat->messagesInProgress && (g_dat->flags & SMF_SHOWPROGRESS)) {
 				TCHAR szBuf[256];
-				_sntprintf(szBuf, sizeof(szBuf), TranslateT("Sending in progress: %d message(s) left..."), dat->messagesInProgress);
+				mir_sntprintf(szBuf, SIZEOF(szBuf), TranslateT("Sending in progress: %d message(s) left..."), dat->messagesInProgress);
 				SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 0, (LPARAM) szBuf);
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) g_dat->hIcons[SMF_ICON_DELIVERING]);
 			} else if (dat->nTypeSecs) {
 				TCHAR szBuf[256];
 				TCHAR *szContactName = GetNickname(dat->hContact, dat->szProto);
-				_sntprintf(szBuf, sizeof(szBuf), TranslateT("%s is typing a message..."), szContactName);
+				mir_sntprintf(szBuf, SIZEOF(szBuf), TranslateT("%s is typing a message..."), szContactName);
 				dat->nTypeSecs--;
 				SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 0, (LPARAM) szBuf);
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) g_dat->hIcons[SMF_ICON_TYPING]);
 				free(szContactName);
 			} else if (dat->lastMessage) {
-				DBTIMETOSTRING dbtts;
-				char date[64], time[64], fmt[128];
-				dbtts.szFormat = "d";
-				dbtts.cbDest = sizeof(date);
+				DBTIMETOSTRINGT dbtts;
+				TCHAR date[64], time[64], szBuf[256];
+				dbtts.szFormat = _T("d");
+				dbtts.cbDest = SIZEOF(date);
 				dbtts.szDest = date;
-				CallService(MS_DB_TIME_TIMESTAMPTOSTRING, dat->lastMessage, (LPARAM) & dbtts);
-				dbtts.szFormat = "t";
-				dbtts.cbDest = sizeof(time);
+				CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, dat->lastMessage, (LPARAM) & dbtts);
+				dbtts.szFormat = _T("t");
+				dbtts.cbDest = SIZEOF(time);
 				dbtts.szDest = time;
-				CallService(MS_DB_TIME_TIMESTAMPTOSTRING, dat->lastMessage, (LPARAM) & dbtts);
-				mir_snprintf(fmt, sizeof(fmt), Translate("Last message received on %s at %s."), date, time);
-				SendMessageA(dat->parent->hwndStatus, SB_SETTEXTA, 0, (LPARAM) fmt);
+				CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, dat->lastMessage, (LPARAM) & dbtts);
+				mir_sntprintf(szBuf, SIZEOF(szBuf), TranslateT("Last message received on %s at %s."), date, time);
+				SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 0, (LPARAM) szBuf);
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) NULL);
 			} else {
-				SendMessageA(dat->parent->hwndStatus, SB_SETTEXTA, 0, (LPARAM) "");
+				SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 0, (LPARAM) _T(""));
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) NULL);
 			}
 			SendMessage(dat->parent->hwndStatus, SB_SETICON, 2, (LPARAM) g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON]);
