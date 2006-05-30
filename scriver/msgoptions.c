@@ -22,8 +22,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
-#include "m_ieview.h"
-#include "m_fontservice.h"
 #pragma hdrstop
 
 extern HINSTANCE g_hInst;
@@ -58,7 +56,7 @@ static fontOptionsList[] = {
 };
 const int msgDlgFontCount = sizeof(fontOptionsList) / sizeof(fontOptionsList[0]);
 
-static int FontServiceFontsChanged(WPARAM wParam, LPARAM lParam)
+int FontServiceFontsChanged(WPARAM wParam, LPARAM lParam)
 {
 	WindowList_Broadcast(g_dat->hMessageWindowList, DM_OPTIONSAPPLIED, 0, 0);
 	return 0;
@@ -91,7 +89,6 @@ void RegisterFontServiceFonts() {
 			CallService(MS_FONT_REGISTER, (WPARAM)&fid, 0);
 		}
 	}
-	HookEvent(ME_FONT_RELOAD, FontServiceFontsChanged);
 }
 
 void LoadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour)

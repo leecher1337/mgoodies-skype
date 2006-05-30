@@ -24,12 +24,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "commonheaders.h"
 
 int OptInitialise(WPARAM wParam, LPARAM lParam);
+int FontServiceFontsChanged(WPARAM wParam, LPARAM lParam);
+
 static void InitREOleCallback(void);
 
 HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand, hDragCursor;
 static HANDLE hEventDbEventAdded, hEventDbSettingChange, hEventContactDeleted;
 static HANDLE hEventClistDoubleClicked, hEventSmileyAddOptionsChanged, hEventIEViewOptionsChanged, hEventMyAvatarChanged, hEventAvatarChanged;
-HANDLE hEventOptInitialise, hEventSkin2IconsChanged;
+static HANDLE hEventOptInitialise, hEventSkin2IconsChanged, hEventFontServiceFontsChanged;
 
 static HANDLE hSvcSendMessageCommand, hSvcSendMessageCommandW, hSvcGetWindowAPI, hSvcGetWindowClass, hSvcGetWindowData, hSvcReadMessageCommand, hSvcTypingMessageCommand;
 
@@ -400,6 +402,7 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
 	hEventMyAvatarChanged = HookEvent(ME_AV_MYAVATARCHANGED, MyAvatarChanged);
 	hEventAvatarChanged = HookEvent(ME_AV_AVATARCHANGED, AvatarChanged);
 	hEventSkin2IconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
+	hEventFontServiceFontsChanged = HookEvent(ME_FONT_RELOAD, FontServiceFontsChanged);
 	RestoreUnreadMessageAlerts();
 	return 0;
 }
@@ -426,6 +429,7 @@ int SplitmsgShutdown(void)
 	UnhookEvent(hEventAvatarChanged);
 	UnhookEvent(hEventOptInitialise);
 	UnhookEvent(hEventSkin2IconsChanged);
+	UnhookEvent(hEventFontServiceFontsChanged);
 	DestroyHookableEvent(hHookWinEvt);
 	DestroyServiceFunction(hSvcSendMessageCommand);
 #if defined(_UNICODE)
