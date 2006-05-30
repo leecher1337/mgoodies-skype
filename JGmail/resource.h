@@ -2,6 +2,10 @@
 // Microsoft Developer Studio generated include file.
 // Used by msvc6.rc
 //
+#ifndef _WIN32_IE
+#define _WIN32_IE 0x0400
+#endif
+
 #define IDCANCEL2                       3
 #define IDD_OPT_JABBER                  101
 #define IDI_JABBER                      102

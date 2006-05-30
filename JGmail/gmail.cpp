@@ -6,6 +6,12 @@
 #include "resource.h"
 
 #define DEF_LABELS _T("label:^u ((!label:^s) (!label:^k) (!label:^vm))")
+#ifdef __GNUC__
+#define NUM100NANOSEC  116444736000000000ULL
+#else
+#define NUM100NANOSEC  116444736000000000
+#endif
+
 
 LRESULT CALLBACK PopupDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 typedef struct {
@@ -19,9 +25,9 @@ typedef struct {
 void StringFromUnixTime(char* str, int length, unsigned long t)
 {
 	SYSTEMTIME st;
-    LONGLONG ll;
+    ULONGLONG ll;
 	FILETIME ft;
-    ll = UInt32x32To64(CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,t,0), 10000000) + 116444736000000000;
+    ll = UInt32x32To64(CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,t,0), 10000000) + NUM100NANOSEC;
     ft.dwLowDateTime = (DWORD)ll;
     ft.dwHighDateTime = (DWORD)(ll >> 32);
     FileTimeToSystemTime(&ft, &st);
@@ -311,7 +317,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				SYSTEMTIME st;
 			    LONGLONG ll;
 				FILETIME ft;
-			    ll = (rt*10000) + 116444736000000000;
+			    ll = (rt*10000) + NUM100NANOSEC;
 				ft.dwLowDateTime = (DWORD)ll;
 				ft.dwHighDateTime = (DWORD)(ll >> 32);
 				FileTimeToSystemTime(&ft, &st);
@@ -596,12 +602,12 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 	case WM_INITDIALOG:
 	{
 		TranslateDialogDefault( hwndDlg );
-		int gmailuse = JGetByte( NULL, "GMailUse",1);
+		unsigned int gmailuse = JGetByte( NULL, "GMailUse",1);
 		popupavail = ServiceExists(MS_POPUP_QUERY);
 		CheckDlgButton( hwndDlg, IDC_USEPOPUP, (0x1 & gmailuse));
 		CheckDlgButton( hwndDlg, IDC_USEFAKE, (0x2 & gmailuse)==2);
-		int i;
-		int engmail = (i = JGetByte(NULL,"EnableGMail",1))&1;
+		unsigned int i;
+		unsigned int engmail = (i = JGetByte(NULL,"EnableGMail",1))&1;
 		CheckDlgButton( hwndDlg, IDC_ENGMAIL, (0x1 & i));
 		EnableWindow(GetDlgItem(hwndDlg, IDC_USEPOPUP),popupavail );
 		popupavail &= gmailuse;
@@ -734,7 +740,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_DEBUGTIMEOUT, NULL, TRUE);
 						int pos = makeHead(ppd.lpzText, MAX_SECONDLINE - 5,
 							-1,
-							((_int64)time(NULL)*1000+784)
+							((ULONGLONG)time(NULL)*1000+784)
 						);
 						pos += mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"\nLocalDrift: %d seconds",	5);
 						if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE )) strncat(ppd.lpzText,"; Synchronized.", MAX_SECONDLINE - 5);

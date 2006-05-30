@@ -30,6 +30,9 @@ Last change by : $Author: ghazan $
 #include "jabber_list.h"
 #include "jabber_iq.h"
 #include <commctrl.h>
+#ifdef __GNUC__
+	#define _WIN32_IE 0x0501
+#endif
 
 void JabberAddMucListItem( JABBER_MUC_JIDLIST_INFO* jidListInfo, TCHAR* str );
 void JabberDeleteMucListItem( JABBER_MUC_JIDLIST_INFO* jidListInfo, TCHAR* str );

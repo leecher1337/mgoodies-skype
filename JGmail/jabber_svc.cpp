@@ -32,7 +32,8 @@ Last change by : $Author: ghazan $
 #include "resource.h"
 #include "jabber_list.h"
 #include "jabber_iq.h"
-
+extern char* cidchar;
+extern char* jidchar;
 ////////////////////////////////////////////////////////////////////////////////////////
 // JabberAddToList - adds a contact to the contact list
 
@@ -299,7 +300,7 @@ int JabberContactDeleted( WPARAM wParam, LPARAM lParam )
 		return 0;
 
 	DBVARIANT dbv;
-	if ( !JGetStringT(( HANDLE ) wParam, JGetByte( (HANDLE ) wParam, "ChatRoom", 0 )?"ChatRoomID":"jid", &dbv )) {
+	if ( !JGetStringT(( HANDLE ) wParam, JGetByte( (HANDLE ) wParam, "ChatRoom", 0 )?cidchar:jidchar, &dbv )) {
 		TCHAR* jid, *p, *q = NULL;
 
 		jid = dbv.ptszVal;

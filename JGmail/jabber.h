@@ -43,17 +43,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #include <crtdbg.h>
 #endif
-
 /*******************************************************************
  * Global header files
  *******************************************************************/
-#define _WIN32_WINNT 0x500
+#define _WIN32_WINNT 0x501
 #include <windows.h>
 #include <process.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
 #include <limits.h>
+#ifdef __GNUC__
+	#define _WIN32_IE 0x0501
+	#include <commctrl.h>
+	#include <ctype.h>
+#endif
 #include <newpluginapi.h>
 #include <m_system.h>
 #include <m_netlib.h>
@@ -520,12 +524,12 @@ extern MM_INTERFACE memoryManagerInterface;
 #define mir_free(ptr) memoryManagerInterface.mmi_free(ptr)
 #define mir_realloc(ptr,size) memoryManagerInterface.mmi_realloc(ptr,size)
 
-__forceinline char * mir_strdup(const char *src)
+__inline char * mir_strdup(const char *src)
 {
 	return (src == NULL) ? NULL : strcpy(( char* )mir_alloc( strlen(src)+1 ), src );
 }
 
-__forceinline WCHAR* mir_wstrdup(const WCHAR *src)
+__inline WCHAR* mir_wstrdup(const WCHAR *src)
 {
 	return (src == NULL) ? NULL : wcscpy(( WCHAR* )mir_alloc(( wcslen(src)+1 )*sizeof( WCHAR )), src );
 }
@@ -545,15 +549,15 @@ class TextEncoder {
 	char* m_body;
 
 public:
-	__forceinline TextEncoder( const char* pSrc ) :
+	__inline TextEncoder( const char* pSrc ) :
 		m_body( JabberTextEncode( pSrc ))
 		{}
 
-	__forceinline ~TextEncoder()
+	__inline ~TextEncoder()
 		{  mir_free( m_body );
 		}
 
-	__forceinline const char* str() const { return m_body; }
+	__inline const char* str() const { return m_body; }
 };
 
 #define TXT(A) TextEncoder(A).str()
@@ -565,15 +569,15 @@ class Utf8Encoder {
 	char* m_body;
 
 public:
-	__forceinline Utf8Encoder( const char* pSrc ) :
+	__inline Utf8Encoder( const char* pSrc ) :
 		m_body( JabberUtf8Encode( pSrc ))
 		{}
 
-	__forceinline ~Utf8Encoder()
+	__inline ~Utf8Encoder()
 		{  mir_free( m_body );
 		}
 
-	__forceinline const char* str() const { return m_body; }
+	__inline const char* str() const { return m_body; }
 };
 
 #define UTF8(A) Utf8Encoder(A).str()

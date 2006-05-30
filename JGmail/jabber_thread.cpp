@@ -107,6 +107,9 @@ static VOID CALLBACK JabberOfflineChatWindows( DWORD )
 
 typedef DNS_STATUS (WINAPI *DNSQUERYA)(IN PCSTR pszName, IN WORD wType, IN DWORD Options, IN PIP4_ARRAY aipServers OPTIONAL, IN OUT PDNS_RECORD *ppQueryResults OPTIONAL, IN OUT PVOID *pReserved OPTIONAL);
 typedef void (WINAPI *DNSFREELIST)(IN OUT PDNS_RECORD pRecordList, IN DNS_FREE_TYPE FreeType);
+#ifndef DNS_TYPE_SRV
+# define DNS_TYPE_SRV (33)
+#endif
 
 static int xmpp_client_query( char* domain )
 {

@@ -75,9 +75,19 @@ Last change by : $Author: ghazan $
 #define _SHA1_H_
 
 //#include <stdint.h>
+#ifdef __GNUC__
+typedef unsigned int uint32_t;
+typedef int int_least16_t;
+#else 
 typedef unsigned __int32 uint32_t;
-typedef unsigned __int8 uint8_t;
 typedef __int32 int_least16_t;
+#endif
+#ifdef __GNUC__
+typedef unsigned char uint8_t;
+#else
+typedef unsigned __int8 uint8_t;
+#endif
+
 /*
  * If you do not have the ISO standard stdint.h header file, then you
  * must typdef the following:
