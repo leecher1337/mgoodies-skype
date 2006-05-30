@@ -283,6 +283,54 @@ static void AppendToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced
 	*cbBufferEnd += charsDone;
 }
 
+static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, char * line)
+{
+	DWORD textCharsCount = 0;
+	char *d;
+
+	int lineLen = strlen(line) * 9 + 8;
+	if (*cbBufferEnd + lineLen > *cbBufferAlloced) {
+		cbBufferAlloced[0] += (lineLen + 1024 - lineLen % 1024);
+		*buffer = (char *) realloc(*buffer, *cbBufferAlloced);
+	}
+
+	d = *buffer + *cbBufferEnd;
+	strcpy(d, "{\\uc1 ");
+	d += 6;
+
+	for (; *line; line++, textCharsCount++) {
+		if (*line == '\r' && line[1] == '\n') {
+			CopyMemory(d, "\\par ", 5);
+			line++;
+			d += 5;
+		}
+		else if (*line == '\n') {
+			CopyMemory(d, "\\par ", 5);
+			d += 5;
+		}
+		else if (*line == '\t') {
+			CopyMemory(d, "\\tab ", 5);
+			d += 5;
+		}
+		else if (*line == '\\' || *line == '{' || *line == '}') {
+			*d++ = '\\';
+			*d++ = (char) *line;
+		}
+		else if (*line < 128) {
+			*d++ = (char) *line;
+		}
+		else
+			d += sprintf(d, "\\u%d ?", *line);
+	}
+
+	strcpy(d, "}");
+	d++;
+
+	*cbBufferEnd = (int) (d - *buffer);
+	return textCharsCount;
+}
+
+
 static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, WCHAR * line)
 {
 	DWORD textCharsCount = 0;
@@ -330,62 +378,13 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 	return textCharsCount;
 }
 
-//same as above but does "\r\n"->"\\par " and "\t"->"\\tab " too
-static int AppendToBufferWithRTF(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, const char *fmt, ...)
+static int AppendTToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, TCHAR * line)
 {
-	va_list va;
-	int charsDone, i;
-
-	va_start(va, fmt);
-	for (;;) {
-		charsDone = _vsnprintf(*buffer + *cbBufferEnd, *cbBufferAlloced - *cbBufferEnd, fmt, va);
-		if (charsDone >= 0)
-			break;
-		*cbBufferAlloced += 1024;
-		*buffer = (char *) realloc(*buffer, *cbBufferAlloced);
-	}
-	va_end(va);
-	*cbBufferEnd += charsDone;
-	for (i = *cbBufferEnd - charsDone; (*buffer)[i]; i++) {
-		if ((*buffer)[i] == '\r' && (*buffer)[i + 1] == '\n') {
-			if (*cbBufferEnd + 4 > *cbBufferAlloced) {
-				*cbBufferAlloced += 1024;
-				*buffer = (char *) realloc(*buffer, *cbBufferAlloced);
-			}
-			MoveMemory(*buffer + i + 5, *buffer + i + 2, *cbBufferEnd - i - 1);
-			CopyMemory(*buffer + i, "\\par ", 5);
-			*cbBufferEnd += 3;
-		}
-		else if ((*buffer)[i] == '\n') {
-			if (*cbBufferEnd + 5 > *cbBufferAlloced) {
-				*cbBufferAlloced += 1024;
-				*buffer = (char *) realloc(*buffer, *cbBufferAlloced);
-			}
-			MoveMemory(*buffer + i + 5, *buffer + i + 1, *cbBufferEnd - i);
-			CopyMemory(*buffer + i, "\\par ", 5);
-			*cbBufferEnd += 4;
-		}
-		else if ((*buffer)[i] == '\t') {
-			if (*cbBufferEnd + 5 > *cbBufferAlloced) {
-				*cbBufferAlloced += 1024;
-				*buffer = (char *) realloc(*buffer, *cbBufferAlloced);
-			}
-			MoveMemory(*buffer + i + 5, *buffer + i + 1, *cbBufferEnd - i);
-			CopyMemory(*buffer + i, "\\tab ", 5);
-			*cbBufferEnd += 4;
-		}
-		else if ((*buffer)[i] == '\\' || (*buffer)[i] == '{' || (*buffer)[i] == '}') {
-			if (*cbBufferEnd + 2 > *cbBufferAlloced) {
-				*cbBufferAlloced += 1024;
-				*buffer = (char *) realloc(*buffer, *cbBufferAlloced);
-			}
-			MoveMemory(*buffer + i + 1, *buffer + i, *cbBufferEnd - i + 1);
-			(*buffer)[i] = '\\';
-			++*cbBufferEnd;
-			i++;
-		}
-	}
-	return _mbslen(*buffer + *cbBufferEnd);
+#if defined ( _UNICODE )
+	return AppendUnicodeToBuffer(buffer, cbBufferEnd, cbBufferAlloced, line);
+#else
+	return AppendAnsiToBuffer(buffer, cbBufferEnd, cbBufferAlloced, line);
+#endif
 }
 
 //free() the return value
@@ -472,7 +471,7 @@ TCHAR *TimestampToString(DWORD dwFlags, time_t check, int groupStart)
     DBTIMETOSTRINGT dbtts;
 
     dbtts.cbDest = 70;;
-    dbtts.szDest = (char *)str;
+    dbtts.szDest = str;
 
     if(!groupStart || !(dwFlags & SMF_SHOWDATE)) {
         dbtts.szFormat = (dwFlags & SMF_SHOWSECONDS) ? _T("s") : _T("t");
@@ -586,7 +585,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		(isGroupBreak && !(g_dat->flags & SMF_MARKFOLLOWUPS)) ||  (!isGroupBreak && (g_dat->flags & SMF_MARKFOLLOWUPS))))
 	{
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
-		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", TimestampToString(g_dat->flags, event->time, isGroupBreak));
+		AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, TimestampToString(g_dat->flags, event->time, isGroupBreak));
 		if (event->eventType != EVENTTYPE_MESSAGE) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s : ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
 		}
@@ -606,10 +605,10 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		if (event->dwFlags & IEEDF_UNICODE_NICK) {
 			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszNickW);
 		} else {
-			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->pszNick);
+			AppendAnsiToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszNick);
 		}
 #else
-		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->pszNick);
+		AppendAnsiToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszNick);
 #endif
 		showColon = 1;
 		if (event->eventType == EVENTTYPE_MESSAGE && g_dat->flags & SMF_GROUPMESSAGES) {
@@ -620,7 +619,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 	if (g_dat->flags&SMF_SHOWTIME && g_dat->flags & SMF_GROUPMESSAGES && g_dat->flags & SMF_MARKFOLLOWUPS
 		&& event->eventType == EVENTTYPE_MESSAGE && isGroupBreak) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
-		AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", TimestampToString(g_dat->flags, event->time, isGroupBreak));
+		AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, TimestampToString(g_dat->flags, event->time, isGroupBreak));
 		showColon = 1;
 	}
 	if (showColon && event->eventType == EVENTTYPE_MESSAGE) {
@@ -636,7 +635,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		if (event->dwFlags & IEEDF_UNICODE_TEXT) {
 			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszTextW);
 		} else {
-			AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s", event->pszText);
+			AppendAnsiToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszText);
 		}
 		break;
 		case EVENTTYPE_STATUSCHANGE:
@@ -646,22 +645,24 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(MSGFONTID_NOTICE));
 			if (event->eventType == EVENTTYPE_FILE) {
 				if (event->dwFlags & IEEDF_SENT) {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s:", Translate("File sent"));
+					AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, TranslateT("File sent"));
 				} else {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s:", Translate("File received"));
+					AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, TranslateT("File received"));
 				}
+				AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, _T(":"));
 			} else if (event->eventType == EVENTTYPE_URL) {
 				if (event->dwFlags & IEEDF_SENT) {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s:", Translate("URL sent"));
+					AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, TranslateT("URL sent"));
 				} else {
-					AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, "%s:", Translate("URL received"));
+					AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, TranslateT("URL received"));
 				}
+				AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, _T(":"));
 			}
+			AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, _T(" "));
 			if (event->dwFlags & IEEDF_UNICODE_TEXT) {
-				AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, L" ");
 				AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszTextW);
 			} else {
-				AppendToBufferWithRTF(&buffer, &bufferEnd, &bufferAlloced, " %s", event->pszText);
+				AppendAnsiToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszText);
 			}
 			break;
 		}
