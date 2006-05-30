@@ -275,7 +275,7 @@ void InitGlobals() {
 	g_dat->hMessageWindowList = (HANDLE) CallService(MS_UTILS_ALLOCWINDOWLIST, 0, 0);
 	g_dat->hParentWindowList = (HANDLE) CallService(MS_UTILS_ALLOCWINDOWLIST, 0, 0);
     g_dat->hMenuANSIEncoding = CreatePopupMenu();
-    AppendMenuA(g_dat->hMenuANSIEncoding, MF_STRING, 500, Translate("Default codepage"));
+    AppendMenu(g_dat->hMenuANSIEncoding, MF_STRING, 500, TranslateT("Default codepage"));
     AppendMenuA(g_dat->hMenuANSIEncoding, MF_SEPARATOR, 0, 0);
     EnumSystemCodePagesA(LangAddCallback, CP_INSTALLED);
 	g_hAck = HookEvent(ME_PROTO_ACK, ackevent);
