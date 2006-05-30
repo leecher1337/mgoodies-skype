@@ -1840,17 +1840,18 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	case DM_UPDATESTATUSBAR:
 		if (dat->parent->hwndActive == hwndDlg) {
 			if (dat->messagesInProgress && (g_dat->flags & SMF_SHOWPROGRESS)) {
-				char szBuf[256];
-				mir_snprintf(szBuf, sizeof(szBuf), Translate("Sending in progress: %d message(s) left..."), dat->messagesInProgress);
-				SendMessageA(dat->parent->hwndStatus, SB_SETTEXTA, 0, (LPARAM) szBuf);
+				TCHAR szBuf[256];
+				_sntprintf(szBuf, sizeof(szBuf), TranslateT("Sending in progress: %d message(s) left..."), dat->messagesInProgress);
+				SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 0, (LPARAM) szBuf);
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) g_dat->hIcons[SMF_ICON_DELIVERING]);
 			} else if (dat->nTypeSecs) {
-				char szBuf[256];
-				char *szContactName = (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0);
-				mir_snprintf(szBuf, sizeof(szBuf), Translate("%s is typing a message..."), szContactName);
+				TCHAR szBuf[256];
+				TCHAR *szContactName = GetNickname(dat->hContact, dat->szProto);
+				_sntprintf(szBuf, sizeof(szBuf), TranslateT("%s is typing a message..."), szContactName);
 				dat->nTypeSecs--;
-				SendMessageA(dat->parent->hwndStatus, SB_SETTEXTA, 0, (LPARAM) szBuf);
+				SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 0, (LPARAM) szBuf);
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) g_dat->hIcons[SMF_ICON_TYPING]);
+				free(szContactName);
 			} else if (dat->lastMessage) {
 				DBTIMETOSTRING dbtts;
 				char date[64], time[64], fmt[128];
