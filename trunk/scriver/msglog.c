@@ -504,7 +504,11 @@ TCHAR *TimestampToString(DWORD dwFlags, time_t check, int groupStart)
             szResult[0] = '\0';
         }
     }
+#if defined ( _UNICODE )
 	CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, check, (LPARAM) & dbtts);
+#else
+	CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
+#endif
     _tcsncat(szResult, str, 500);
     return szResult;
 }
