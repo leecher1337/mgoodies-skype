@@ -464,18 +464,18 @@ static char *SetToStyle(int style)
 	return szStyle;
 }
 
-char *TimestampToString(DWORD dwFlags, time_t check, int groupStart)
+TCHAR *TimestampToString(DWORD dwFlags, time_t check, int groupStart)
 {
-    static char szResult[512];
-    char str[80];
+    static TCHAR szResult[512];
+    TCHAR str[80];
 
-    DBTIMETOSTRING dbtts;
+    DBTIMETOSTRINGT dbtts;
 
     dbtts.cbDest = 70;;
-    dbtts.szDest = str;
+    dbtts.szDest = (char *)str;
 
     if(!groupStart || !(dwFlags & SMF_SHOWDATE)) {
-        dbtts.szFormat = (dwFlags & SMF_SHOWSECONDS) ? (char *)"s" : (char *)"t";
+        dbtts.szFormat = (dwFlags & SMF_SHOWSECONDS) ? _T("s") : _T("t");
         szResult[0] = '\0';
     }
     else {
@@ -488,25 +488,25 @@ char *TimestampToString(DWORD dwFlags, time_t check, int groupStart)
         today = mktime(&tm_today);
 
         if(dwFlags & SMF_RELATIVEDATE && check >= today) {
-            dbtts.szFormat = (dwFlags & SMF_SHOWSECONDS) ? (char *)"s" : (char *)"t";
-            strcpy(szResult, Translate("Today"));
-	        strcat(szResult, ", ");
+            dbtts.szFormat = (dwFlags & SMF_SHOWSECONDS) ? _T("s") : _T("t");
+            lstrcpy(szResult, TranslateT("Today"));
+	        lstrcat(szResult, _T(", "));
         }
         else if(dwFlags & SMF_RELATIVEDATE && check > (today - 86400)) {
-            dbtts.szFormat = (dwFlags & SMF_SHOWSECONDS) ? (char *)"s" : (char *)"t";
-            strcpy(szResult, Translate("Yesterday"));
-	        strcat(szResult, ", ");
+            dbtts.szFormat = (dwFlags & SMF_SHOWSECONDS) ? _T("s") : _T("t");
+            lstrcpy(szResult, TranslateT("Yesterday"));
+	        lstrcat(szResult, _T(", "));
         }
         else {
             if(dwFlags & SMF_LONGDATE)
-                dbtts.szFormat = (dwFlags & SMF_SHOWSECONDS) ? (char *)"D s" : (char *)"D t";
+                dbtts.szFormat = (dwFlags & SMF_SHOWSECONDS) ? _T("D s") : _T("D t");
             else
-                dbtts.szFormat = (dwFlags & SMF_SHOWSECONDS) ? (char *)"d s" : (char *)"d t";
+                dbtts.szFormat = (dwFlags & SMF_SHOWSECONDS) ? _T("d s") : _T("d t");
             szResult[0] = '\0';
         }
     }
-	CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
-    strncat(szResult, str, 500);
+	CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, check, (LPARAM) & dbtts);
+    _tcsncat(szResult, str, 500);
     return szResult;
 }
 
