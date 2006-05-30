@@ -82,8 +82,8 @@ int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 {
 	HICON temp;
 	char szTemp[MAX_PATH + 128];
-
-	for (int i=0;i<NUMICONSBIG;i++){ //BigIcons
+	unsigned int i;
+	for (i=0;i<NUMICONSBIG;i++){ //BigIcons
 		mir_snprintf(szTemp, sizeof(szTemp), "%s_%s", jabberProtoName, iconBigNames[i]);
 		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) szTemp))iconBigList[i]=temp; 
 	}
@@ -126,7 +126,8 @@ void JGmailSetupIcons(){
 		ImageList_AddMasked(CSImages, hScrBM, RGB( 255, 0, 255 ));
 		DeleteObject(hScrBM);    
 	}
-	for (int i=0; i<NUMICONSBIG; i++){
+	unsigned int i;
+	for (i=0; i<NUMICONSBIG; i++){
 		iconBigList[i] = ImageList_ExtractIcon(NULL, CSImages, i);
 	}
 	ImageList_Destroy(CSImages);
@@ -145,6 +146,7 @@ void JGmailSetupIcoLib(){
 	if (ServiceExists(MS_SKIN2_GETICON)){
 		HICON temp;
 		SKINICONDESC sid = {0};
+		unsigned int i;
 		char szTemp[MAX_PATH + 128];
 
         HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
@@ -153,7 +155,7 @@ void JGmailSetupIcoLib(){
 		sid.pszSection = jabberProtoName;
 		sid.pszDefaultFile = NULL;
 		sid.iDefaultIndex = 0;
-		for (int i=0;i<NUMICONSSMALL;i++) if (iconInd[i]){
+		for (i=0;i<NUMICONSSMALL;i++) if (iconInd[i]){
 			sid.pszDescription = iconDescs[i];
 			mir_snprintf(szTemp, sizeof(szTemp), "%s_%s", jabberProtoName, iconNames[i]);
 			sid.pszName = szTemp;

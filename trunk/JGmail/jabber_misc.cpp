@@ -27,6 +27,14 @@ Last change by : $Author: ghazan $
 
 #include "jabber.h"
 #include "jabber_list.h"
+#ifdef __GNUC__
+	#define __try
+	#define __except(x) if (0) /* don't execute handler */
+	#define __finally
+	#define _try __try
+	#define _except __except
+	#define _finally __finally 
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // JabberAddContactToRoster() - adds a contact to the roster
