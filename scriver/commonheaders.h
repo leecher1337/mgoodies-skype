@@ -43,13 +43,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SES_EXTENDBACKCOLOR	4
 #define ST_NEWCHARS		4
 #define	CFM_WEIGHT			0x00400000
-#define WinVerMajor()      LOBYTE(LOWORD(GetVersion()))
-#define WinVerMinor()      HIBYTE(LOWORD(GetVersion()))
-#define IsWinVerXPPlus()   (WinVerMajor()>=5 && LOWORD(GetVersion())!=5)
-#else
-#include <win2k.h>
 #endif
-
+#include <win2k.h>
 #include <newpluginapi.h>
 #include <m_system.h>
 #include <m_database.h>
