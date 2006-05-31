@@ -1855,11 +1855,19 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				dbtts.szFormat = _T("d");
 				dbtts.cbDest = SIZEOF(date);
 				dbtts.szDest = date;
+#if defined ( _UNICODE )
 				CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, dat->lastMessage, (LPARAM) & dbtts);
+#else
+				CallService(MS_DB_TIME_TIMESTAMPTOSTRING, dat->lastMessage, (LPARAM) & dbtts);
+#endif
 				dbtts.szFormat = _T("t");
 				dbtts.cbDest = SIZEOF(time);
 				dbtts.szDest = time;
+#if defined ( _UNICODE )
 				CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, dat->lastMessage, (LPARAM) & dbtts);
+#else
+				CallService(MS_DB_TIME_TIMESTAMPTOSTRING, dat->lastMessage, (LPARAM) & dbtts);
+#endif
 				mir_sntprintf(szBuf, SIZEOF(szBuf), TranslateT("Last message received on %s at %s."), date, time);
 				SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 0, (LPARAM) szBuf);
 				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) NULL);
