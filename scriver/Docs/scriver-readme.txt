@@ -72,6 +72,9 @@ created. CTRL key needs to be pressed only when a tab is being dropped.
 
 6. Change Log
 -------------
+2.3.2.7
+* Unicode-related fixes
+* destoying services and hook on unload
 2.3.2.6
 * bugfixes: accessing dat after free, hide tab bar when tabs are disabled
 2.3.2.5
