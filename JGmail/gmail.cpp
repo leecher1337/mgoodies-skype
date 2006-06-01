@@ -1,11 +1,12 @@
 #include "jabber.h"
 #include "jabber_iq.h"
-#include <m_popup.h>
 #include <m_utils.h>
 #include <m_database.h>
+#include "sdk/m_popupt.h"
 #include "resource.h"
 
 #define DEF_LABELS _T("label:^u ((!label:^s) (!label:^k) (!label:^vm))")
+
 #ifdef __GNUC__
 #define NUM100NANOSEC  116444736000000000ULL
 #else
@@ -22,7 +23,7 @@ typedef struct {
 } POPUP_ACCINFO;
 
 
-void StringFromUnixTime(char* str, int length, unsigned long t)
+void StringFromUnixTime(TCHAR* str, int length, unsigned long t)
 {
 	SYSTEMTIME st;
     ULONGLONG ll;
@@ -31,10 +32,10 @@ void StringFromUnixTime(char* str, int length, unsigned long t)
     ft.dwLowDateTime = (DWORD)ll;
     ft.dwHighDateTime = (DWORD)(ll >> 32);
     FileTimeToSystemTime(&ft, &st);
-	GetDateFormatA(LOCALE_USER_DEFAULT, DATE_LONGDATE, &st, NULL, str, length);
-	int l = strlen(str);
+	GetDateFormat(LOCALE_USER_DEFAULT, DATE_LONGDATE, &st, NULL, str, length);
+	int l = _tcslen(str);
 	str[l] = ' ';
-	GetTimeFormatA(LOCALE_USER_DEFAULT, 0, &st, NULL, str+l+1, length-l+1);
+	GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, NULL, str+l+1, length-l+1);
 }
 
 static int sprint64u( char* buffer, unsigned __int64 x) {
@@ -50,27 +51,27 @@ static int sprint64u( char* buffer, unsigned __int64 x) {
   return chars_written;
 }
 
-int makeHead(char *target, int tSize, __int64 tid, __int64 time){
+int makeHead(TCHAR *target, int tSize, __int64 tid, __int64 time){
 //	char sttemp[50];
 	int l = 0;
-	target[0] = '\0';
+	target[0] = 0;
 	if (tid != -1){
-		l = mir_snprintf(target,tSize,"MinTrhd: ");
+		l = mir_sntprintf(target,tSize,_T("MinTrhd: "));
 		StringFromUnixTime(target+l,tSize-l,(long)((tid>>20)/1000));
-		l = strlen(target);
-		l += mir_snprintf(target+l,tSize-l,".%03d",
+		l = _tcslen(target);
+		l += mir_sntprintf(target+l,tSize-l,_T(".%03d"),
 			((tid>>20)%1000)
 		);
-		l += mir_snprintf(target+l,tSize-l," (%05X)",
+		l += mir_sntprintf(target+l,tSize-l,_T(" (%05X)"),
 			(int)(tid&0xFFFFF)
 		);
-		if (time != -1) l += mir_snprintf(target+l,tSize-l,"\n");
+		if (time != -1) l += mir_sntprintf(target+l,tSize-l,_T("\n"));
 	}
 	if (time != -1){
-		l += mir_snprintf(target+l,tSize-l,"MinTime: ");
+		l += mir_sntprintf(target+l,tSize-l,_T("MinTime: "));
 		StringFromUnixTime(target+l,tSize-l,(long)((time)/1000));
-		l = strlen(target);
-		l += mir_snprintf(target+l,tSize-l,".%03d",
+		l = _tcslen(target);
+		l += mir_sntprintf(target+l,tSize-l,_T(".%03d"),
 			((time)%1000)
 		);
 	}
@@ -124,18 +125,21 @@ static HANDLE fakeContactFindCreate(){
 	} else return fakeContact;
 }
 
-void MyNotification(POPUPDATAEX *ppd){
+void MyNotification(POPUPDATAT *ppd){
 	unsigned short int gMailUse = (byte)JGetByte( NULL, "GMailUse",1);
 	BOOL usePopUps = ( gMailUse & 1) & ( ServiceExists(MS_POPUP_QUERY) != 0);
+#ifdef _UNICODE
+	BOOL unicodePopUps = usePopUps & ( ServiceExists(MS_POPUP_ADDPOPUPW) != 0);
+#endif
 	BOOL useFakeContact = (( gMailUse & 2)==2);
 	if (useFakeContact){
 		if (!fakeContact) fakeContact = fakeContactFindCreate();
 		// add the message to the fake contact's history
 		DBEVENTINFO dbei = { 0 };
-		int l = strlen(ppd->lpzContactName)+strlen(ppd->lpzText)+2;
-		char * msg;
-		msg =( char* )mir_alloc(l);
-		mir_snprintf(msg,l,"%s\n%s",ppd->lpzContactName,ppd->lpzText);
+		int l = _tcslen(ppd->lptzContactName)+_tcslen(ppd->lptzText)+2;
+		TCHAR * msg;
+		msg =( TCHAR* )mir_alloc(l*sizeof(TCHAR));
+		mir_sntprintf(msg,l,_T("%s\n%s"),ppd->lptzContactName,ppd->lptzText);
 		dbei.cbSize = sizeof( dbei );
 		dbei.szModule = jabberProtoName;
 		dbei.timestamp = time(NULL);
@@ -146,10 +150,14 @@ void MyNotification(POPUPDATAEX *ppd){
 		JCallService( MS_DB_EVENT_ADD, ( WPARAM ) fakeContact, ( LPARAM )&dbei );
 		mir_free(msg);
 	}
+#ifdef _UNICODE
+	if (usePopUps) CallService(MS_POPUP_ADDPOPUPW, (WPARAM)ppd, 0);
+#else
 	if (usePopUps) CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)ppd, 0);
+#endif
 	if (!gMailUse) {
-		JabberLog( "Show PopUp: %s", ppd->lpzContactName);
-		JabberLog( "Text PopUp: %s", ppd->lpzText);
+		JabberLog( "Show PopUp: "TCHAR_STR_PARAM, ppd->lptzContactName);
+		JabberLog( "Text PopUp: "TCHAR_STR_PARAM, ppd->lptzText);
 	}
 }
 
@@ -198,15 +206,15 @@ void JabberRequestMailBox(HANDLE hConn){
 
 		JabberSend( hConn,iq );
   		if (JGetByte(NULL,"ShowRequest",0)) {
-			POPUPDATAEX ppd;
+			POPUPDATAT ppd;
 			ZeroMemory((void *)&ppd, sizeof(ppd));
 			ppd.lchContact = 0;
 			ppd.lchIcon = iconList[12];
-			mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox request",jabberProtoName);
+			mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": Maibox request"),jabberProtoName);
 			ppd.colorText = JGetDword(NULL,"ColDebugText",0);
 			ppd.colorBack = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
 			ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)&0xFFFF);
-			makeHead(ppd.lpzText, MAX_SECONDLINE - 5,maxtid,maxtime);
+			makeHead(ppd.lptzText, MAX_SECONDLINE - 5,maxtid,maxtime);
 			MyNotification(&ppd);
 		}
 //	}
@@ -254,19 +262,19 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 		}
 		int showresult = JGetByte(NULL,"ShowResult",0);
 		if (!(showresult & 2)){ // we do not suppress errors
-			POPUPDATAEX ppd;
+			POPUPDATAT ppd;
 			ZeroMemory((void *)&ppd, sizeof(ppd));
 			ppd.lchContact = 0;
 			//ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
 			ppd.lchIcon = iconList[11];
-			mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, 
-				"%s: Error Code "TCHAR_STR_PARAM"; Type "TCHAR_STR_PARAM".",
+			mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, 
+				_T("%s: Error Code %s; Type %s."),
 				jabberProtoName,
 				errcode?errcode:_T("Unknown"),
 				errtype?errtype:_T("Unknown"));
 			XmlNode *textNode = JabberXmlGetChild( queryNode, "text" );
-			int l = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, 
-				"Message: %s: "TCHAR_STR_PARAM"\n",
+			int l = mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5, 
+				_T("Message: %s: %s\n"),
 				queryNode->numChild?queryNode->child[0]->name:"none",
 				textNode?textNode->text:_T("none")
 			);
@@ -274,7 +282,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			if (textNode) {
 				__int64 tid = _ttoi64(JabberXmlGetAttrValue( textNode, "newer-than-tid" ));
 				__int64 time = _ttoi64(JabberXmlGetAttrValue( textNode, "newer-than-time" ));
-				l = makeHead(ppd.lpzText+l,MAX_SECONDLINE-5-l,tid,time);
+				l = makeHead(ppd.lptzText+l,MAX_SECONDLINE-5-l,tid,time);
 			}
 
 			ppd.colorText = JGetDword(NULL,"ColErrorText",0);
@@ -324,41 +332,41 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				syncTimeResult = SetSystemTime(&st);
 			}
 			if (JGetByte(NULL,"ShowResult",0)) {
-				POPUPDATAEX ppd;
+				POPUPDATAT ppd;
 				ZeroMemory((void *)&ppd, sizeof(ppd));
 				ppd.lchContact = 0;
 				ppd.lchIcon = iconList[12];
-				mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox result: Matched "TCHAR_STR_PARAM,
+				mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": Maibox result: Matched %s"),
 					jabberProtoName,
 					JabberXmlGetAttrValue( queryNode, "total-matched" )
 				);
 				ppd.colorText = JGetDword(NULL,"ColDebugText",0);
 				ppd.colorBack = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
 				ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)&0xFFFF);
-				int pos = makeHead(ppd.lpzText, MAX_SECONDLINE - 5,
+				int pos = makeHead(ppd.lptzText, MAX_SECONDLINE - 5,
 					-1,
 					rt
 				);
 				if (drift){
-				  pos += mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"\nLocalDrift: %d seconds",
+				  pos += mir_sntprintf(ppd.lptzText+pos, MAX_SECONDLINE - 5,_T("\nLocalDrift: %d seconds"),
 					drift
 				  );
-				  if (syncTimeResult) mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"; Synchronized.");
+				  if (syncTimeResult) mir_sntprintf(ppd.lptzText+pos, MAX_SECONDLINE - 5,_T("; Synchronized."));
 				}
 				MyNotification(&ppd);
 			} else {
 				if (drift) if ((0x2 & JGetByte(NULL,"SyncTime",0))==0){
-					POPUPDATAEX ppd;
+					POPUPDATAT ppd;
 					ZeroMemory((void *)&ppd, sizeof(ppd));
 					ppd.lchContact = 0;
 					ppd.lchIcon = iconList[13];
-					mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: System clock %ssynchronized",
-						jabberProtoName,syncTimeResult?"":"NOT "
+					mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": System clock %ssynchronized"),
+						jabberProtoName,syncTimeResult?_T(""):_T("NOT ")
 					);
 					ppd.colorText = JGetDword(NULL,"ColClockText",0);
 					ppd.colorBack = JGetDword(NULL,"ColClockBack",0);
 					ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeout",0x0000FFFF)>>16);
-					mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5,"LocalDrift: %d seconds",
+					mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5,_T("LocalDrift: %d seconds"),
 					  drift
 					);
 					MyNotification(&ppd);
@@ -374,9 +382,9 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 //				char *url = t2a(JabberXmlGetAttrValue( threadNode, "url" ));
 				if (gmstamp>maxtime)maxtime=gmstamp;
 				int numMesg = _ttoi(JabberXmlGetAttrValue( threadNode, "messages" ));
-				char mesgs[10];
-				if (numMesg>1) mir_snprintf(mesgs,10," (%d)",numMesg); else mesgs[0] = '\0';
-				char sttime[50];
+				TCHAR mesgs[10];
+				if (numMesg>1) mir_sntprintf(mesgs,10,_T(" (%d)"),numMesg); else mesgs[0] = '\0';
+				TCHAR sttime[50];
 				StringFromUnixTime(sttime,50,(long)(gmstamp/1000));
 //				char stthread[50];
 //				StringFromUnixTime(stthread,50,(long)((gtstamp>>20)/1000));
@@ -394,47 +402,24 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				}
 //				JabberLog( "Senders: %s",sendersList );
 				{ //create and show popup
-					POPUPDATAEX ppd;
+					POPUPDATAT ppd;
 					ZeroMemory((void *)&ppd, sizeof(ppd));
 					ppd.lchContact = 0;
 					ppd.lchIcon = iconList[10];
-#ifdef _UNICODE  //argh... all this juck will be removed when uncode popup support will be done
-					char *temp = u2a(sendersList);
-					strncpy(ppd.lpzContactName, temp, MAX_CONTACTNAME);
-					mir_free(temp);
-#else
-					strncpy(ppd.lpzContactName, sendersList, MAX_CONTACTNAME);
-#endif
+					_tcsncpy(ppd.lptzContactName, sendersList, MAX_CONTACTNAME);
 					sendersNode = JabberXmlGetChild( threadNode, "subject" );
 					XmlNode *snippetNode = JabberXmlGetChild( threadNode, "snippet" );
-#ifdef _UNICODE
-					temp = u2a(sendersNode?sendersNode->text:_T("none"));
-					char *temp1 = u2a(snippetNode?snippetNode->text:_T("none"));
-#endif
-					int pos = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s",
+					int pos = mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5, _T("Subject%s: %s\n%Time: %s\n%s"),
 						mesgs,
-#ifdef _UNICODE
-						temp,
-#else
-						sendersNode?sendersNode->text:"none",
-#endif
+						sendersNode?sendersNode->text:_T("none"),
 						sttime,
-#ifdef _UNICODE
-						temp1
-#else
-						snippetNode?snippetNode->text:"none"
-#endif
+						snippetNode?snippetNode->text:_T("none")
 						);
 					if (JGetByte(NULL,"Labels",0)&1){
 						if (snippetNode = JabberXmlGetChild( threadNode, "labels" )){
-							if (char *temp2 = t2a(snippetNode->text)){
-								mir_snprintf(ppd.lpzText+pos,MAX_SECONDLINE -5 -pos,"\nLabels: %s",temp2);
-								mir_free(temp2);
+							if (snippetNode->text){
+								mir_sntprintf(ppd.lptzText+pos,MAX_SECONDLINE -5 -pos,_T("\nLabels: %s"),snippetNode->text);
 					}	}	}
-#ifdef _UNICODE
-					mir_free(temp);
-					mir_free(temp1);
-#endif
 
 //					if (url) {
 //						strncat(ppd.lpzText,"\n",MAX_SECONDLINE - 5-strlen(ppd.lpzText));
@@ -702,19 +687,19 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 		case IDC_PREVIEW: {
 				if (bChecked){
 				//Declarations and initializations
-					POPUPDATAEX ppd = { 0 };
-					char sendersList[150];
+					POPUPDATAT ppd = { 0 };
+					TCHAR sendersList[150];
 
 					{ // show the error popup
 						ppd.lchIcon = iconList[11];
-						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Error Code %s; Type %s.",jabberProtoName,
-							"500",
-							"wait");
-						mir_snprintf(sendersList,150,"Unable to access mailbox for %s",jabberJID);
-						int l = mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Message: %s\n",
+						mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": Error Code %s; Type %s."),jabberProtoName,
+							_T("500"),
+							_T("wait"));
+						mir_sntprintf(sendersList,150,_T("Unable to access mailbox for %s"),jabberJID);
+						int l = mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5, _T("Message: %s\n"),
 							sendersList
 						);
-						l = makeHead(ppd.lpzText+l,MAX_SECONDLINE-5-l,maxtid,maxtime);
+						l = makeHead(ppd.lptzText+l,MAX_SECONDLINE-5-l,maxtid,maxtime);
 						ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_ERRORCOLOURTEXT,CPM_GETCOLOUR,0,0);
 						ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_ERRORCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,128,128);
 						ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_ERRORTIMEOUT, NULL, TRUE);
@@ -722,53 +707,53 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 					}
 					if (IsDlgButtonChecked( hwndDlg, IDC_SHOWREQUEST ) ){
 						ppd.lchIcon = iconList[12];
-						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox request",jabberProtoName);
+						mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": Maibox request"),jabberProtoName);
 						ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURTEXT,CPM_GETCOLOUR,0,0);
 						ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,255,128);
-						makeHead(ppd.lpzText, MAX_SECONDLINE - 5,maxtid,maxtime);
+						makeHead(ppd.lptzText, MAX_SECONDLINE - 5,maxtid,maxtime);
 						ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_DEBUGTIMEOUT, NULL, TRUE);
 						MyNotification(&ppd);
 					}
 					if (IsDlgButtonChecked( hwndDlg, IDC_SHOWRESULT ) ){
 						ppd.lchIcon = iconList[12];
-						mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: Maibox result: Matched %s",
+						mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": Maibox result: Matched %s"),
 							jabberProtoName,
 							"1"
 						);
 						ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURTEXT,CPM_GETCOLOUR,0,0);
 						ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,255,128);
 						ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_DEBUGTIMEOUT, NULL, TRUE);
-						int pos = makeHead(ppd.lpzText, MAX_SECONDLINE - 5,
+						int pos = makeHead(ppd.lptzText, MAX_SECONDLINE - 5,
 							-1,
 							((ULONGLONG)time(NULL)*1000+784)
 						);
-						pos += mir_snprintf(ppd.lpzText+pos, MAX_SECONDLINE - 5,"\nLocalDrift: %d seconds",	5);
-						if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE )) strncat(ppd.lpzText,"; Synchronized.", MAX_SECONDLINE - 5);
+						pos += mir_sntprintf(ppd.lptzText+pos, MAX_SECONDLINE - 5,_T("\nLocalDrift: %d seconds"), 5);
+						if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE )) _tcsncat(ppd.lptzText,_T("; Synchronized."), MAX_SECONDLINE - 5);
 						MyNotification(&ppd);
 					} else { // the clock syncronisation will be shown only if the result popup is disabled
 						if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE ) && (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZESILENT )==0)){
 							ppd.lchIcon = iconList[13];
-							mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: System clock %ssynchronized",
-								jabberProtoName,""
+							mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": System clock %ssynchronized"),
+								jabberProtoName,_T("")
 							);
 							ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_CLOCKCOLOURTEXT,CPM_GETCOLOUR,0,0);
 							ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_CLOCKCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,255,128);
 							ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_CLOCKTIMEOUT, NULL, TRUE);
-							mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5,"LocalDrift: %d seconds",
+							mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5,_T("LocalDrift: %d seconds"),
 							  5
 							);
 							MyNotification(&ppd);
 						}
 					}
 					ppd.lchIcon = iconList[10];
-					mir_snprintf(ppd.lpzContactName,150,"%s: New mail from ",jabberProtoName);
-					strncat(ppd.lpzContactName,"Some One, Me Myself",150);
+					mir_sntprintf(ppd.lptzContactName,150,_T(TCHAR_STR_PARAM)_T(": New mail from "),jabberProtoName);
+					_tcsncat(ppd.lptzContactName,_T("Some One, Me Myself"),150);
 					StringFromUnixTime(sendersList,50,time(NULL));
-					mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Subject%s: %s\n%Time: %s\n%s",
-						"(3)",
-						"A GMail notify test",
+					mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5, _T("Subject%s: %s\n%Time: %s\n%s"),
+						_T("(3)"),
+						_T("A GMail notify test"),
 						sendersList,
-						"Hi, I am trying the e-mail notification in JGmail.dll"
+						_T("Hi, I am trying the e-mail notification in JGmail.dll")
 						);
 					ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_COLOURTEXT,CPM_GETCOLOUR,0,0);
 					ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_COLOURBACK,CPM_GETCOLOUR,0,0);
@@ -798,10 +783,10 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 					maxtid = tmptid;
 					maxtime = tmptime;
 				} else {
-					POPUPDATAEX ppd = { 0 };
+					POPUPDATAT ppd = { 0 };
 					ppd.lchIcon = iconList[11];
-					mir_snprintf(ppd.lpzContactName, MAX_SECONDLINE - 5, "%s: No connection.",jabberProtoName);
-					mir_snprintf(ppd.lpzText, MAX_SECONDLINE - 5, "Impossible to check");
+					mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": No connection."),jabberProtoName);
+					mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5, _T("Impossible to check"));
 					ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_ERRORCOLOURTEXT,CPM_GETCOLOUR,0,0);
 					ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_ERRORCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,128,128);
 					ppd.iSeconds = GetDlgItemInt(hwndDlg, IDC_EDIT_ERRORTIMEOUT, NULL, TRUE);
