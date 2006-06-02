@@ -77,7 +77,7 @@ Last change by : $Author: ghazan $
 //#include <stdint.h>
 #ifdef __GNUC__
 typedef unsigned int uint32_t;
-typedef int int_least16_t;
+typedef short int_least16_t;
 #else 
 typedef unsigned __int32 uint32_t;
 typedef __int32 int_least16_t;

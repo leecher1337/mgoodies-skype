@@ -9,8 +9,8 @@ typedef struct {
 	WCHAR lptzContactName[MAX_CONTACTNAME];
 	WCHAR lptzText[MAX_SECONDLINE];
 #else
-	char lpzContactName[MAX_CONTACTNAME];
-	char lpzText[MAX_SECONDLINE];
+	char lptzContactName[MAX_CONTACTNAME];
+	char lptzText[MAX_SECONDLINE];
 #endif
 	COLORREF colorBack;                   
 	COLORREF colorText;
