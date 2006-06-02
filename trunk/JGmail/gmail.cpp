@@ -130,6 +130,8 @@ void MyNotification(POPUPDATAT *ppd){
 	BOOL usePopUps = ( gMailUse & 1) & ( ServiceExists(MS_POPUP_QUERY) != 0);
 #ifdef _UNICODE
 	BOOL unicodePopUps = usePopUps & ( ServiceExists(MS_POPUP_ADDPOPUPW) != 0);
+	char *aContact = t2a(ppd->lptzContactName);
+	char *aText = t2a(ppd->lptzText);
 #endif
 	BOOL useFakeContact = (( gMailUse & 2)==2);
 	if (useFakeContact){
@@ -137,28 +139,71 @@ void MyNotification(POPUPDATAT *ppd){
 		// add the message to the fake contact's history
 		DBEVENTINFO dbei = { 0 };
 		int l = _tcslen(ppd->lptzContactName)+_tcslen(ppd->lptzText)+2;
-		TCHAR * msg;
-		msg =( TCHAR* )mir_alloc(l*sizeof(TCHAR));
-		mir_sntprintf(msg,l,_T("%s\n%s"),ppd->lptzContactName,ppd->lptzText);
+		TCHAR * msgT =( TCHAR* )mir_alloc(l*sizeof(TCHAR));
+#ifdef _UNICODE
+		mir_sntprintf(msgT,l,_T("%s\n%s"),ppd->lptzContactName,ppd->lptzText);
+		char * msgA = t2a(msgT);
+		BOOL isUnicodePartNeeded = false;
+		for (int i=0;i<l;i++) if (msgT[i]>127){isUnicodePartNeeded = true; break;}
+		if (isUnicodePartNeeded){
+//		if (false){
+			char *temp = (char *)mir_alloc(l*3);
+			strcpy(temp,msgA);
+			mir_free(msgA);
+			msgA = temp; // because mir_realoc doesnt work here
+			_tcscpy((TCHAR *)(msgA + l),msgT); //add the unicode part
+			dbei.cbBlob = l*3;
+		} else dbei.cbBlob = l;
+		dbei.pBlob = ( PBYTE )msgA;
+#else
+		mir_snprintf(msgT,l,"%s\n%s",ppd->lptzContactName,ppd->lptzText);
+		dbei.pBlob = ( PBYTE )msgT;
+		dbei.cbBlob = l;
+#endif
 		dbei.cbSize = sizeof( dbei );
 		dbei.szModule = jabberProtoName;
 		dbei.timestamp = time(NULL);
 		dbei.flags = usePopUps?DBEF_READ:0; // Do not notify twice
 		dbei.eventType = EVENTTYPE_MESSAGE;
-		dbei.cbBlob = l;
-		dbei.pBlob = ( PBYTE )msg;
 		JCallService( MS_DB_EVENT_ADD, ( WPARAM ) fakeContact, ( LPARAM )&dbei );
-		mir_free(msg);
+		mir_free(msgT);
+#ifdef _UNICODE
+		mir_free(msgA);
+#endif
 	}
 #ifdef _UNICODE
-	if (usePopUps) CallService(MS_POPUP_ADDPOPUPW, (WPARAM)ppd, 0);
+	if (usePopUps) {
+		if (unicodePopUps) CallService(MS_POPUP_ADDPOPUPW, (WPARAM)ppd, 0);
+		else { //create new one with ansi strings
+			POPUPDATAEX ppdA;
+			int s = (unsigned int)&ppdA.lpzContactName-(unsigned int)&ppdA.lchContact;
+			memmove(
+				(void *)&(ppdA.lchContact),
+				(void *)&(ppd->lchContact),s); //noone knows how big will be these in next compile
+			strncpy(ppdA.lpzContactName, aContact, MAX_CONTACTNAME);
+			strncpy(ppdA.lpzText, aText, MAX_SECONDLINE);
+			s = sizeof(ppdA)-((unsigned int)&ppdA.colorBack-(unsigned int)&ppdA.lchContact);
+			memmove(
+				(void *)&(ppdA.colorBack),
+				(void *)&(ppd->colorBack),s);
+			CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppdA, 0);
+	}	}
 #else
 	if (usePopUps) CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)ppd, 0);
 #endif
 	if (!gMailUse) {
-		JabberLog( "Show PopUp: "TCHAR_STR_PARAM, ppd->lptzContactName);
-		JabberLog( "Text PopUp: "TCHAR_STR_PARAM, ppd->lptzText);
+#ifdef _UNICODE
+		JabberLog( "Show PopUp: %s", aContact);
+		JabberLog( "Text PopUp: %s", aText);
+#else
+		JabberLog( "Show PopUp: %s", ppd->lptzContactName);
+		JabberLog( "Text PopUp: %s", ppd->lptzText);
+#endif
 	}
+#ifdef _UNICODE
+	mir_free(aContact);
+	mir_free(aText);
+#endif
 }
 
 static __int64 maxtid = 0;
@@ -210,7 +255,7 @@ void JabberRequestMailBox(HANDLE hConn){
 			ZeroMemory((void *)&ppd, sizeof(ppd));
 			ppd.lchContact = 0;
 			ppd.lchIcon = iconList[12];
-			mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": Maibox request"),jabberProtoName);
+			mir_sntprintf(ppd.lptzContactName, MAX_CONTACTNAME - 5, _T(TCHAR_STR_PARAM)_T(": Maibox request"),jabberProtoName);
 			ppd.colorText = JGetDword(NULL,"ColDebugText",0);
 			ppd.colorBack = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
 			ppd.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)&0xFFFF);
@@ -392,8 +437,9 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				int k; TCHAR sendersList[150];
 				sendersList[0] = '\0';
 				mir_sntprintf(sendersList,150,
-					_T(TCHAR_STR_PARAM)_T(": New mail from "),
-					jabberProtoName);
+					_T(TCHAR_STR_PARAM)_T(": %s: "),
+					jabberProtoName,
+					TranslateT("New mail from"));
 				if (sendersNode) for ( k=0; k<sendersNode->numChild; k++ ) {
 					if (k) _tcsncat(sendersList,_T(", "),150);
 					TCHAR * senderName = JabberXmlGetAttrValue(sendersNode->child[sendersNode->numChild-1-k],"name");
@@ -409,16 +455,17 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					_tcsncpy(ppd.lptzContactName, sendersList, MAX_CONTACTNAME);
 					sendersNode = JabberXmlGetChild( threadNode, "subject" );
 					XmlNode *snippetNode = JabberXmlGetChild( threadNode, "snippet" );
-					int pos = mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5, _T("Subject%s: %s\n%Time: %s\n%s"),
+					int pos = mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5, _T("%s%s: %s\n%s: %s\n%s"),
+						TranslateT("Subject"),
 						mesgs,
-						sendersNode?sendersNode->text:_T("none"),
-						sttime,
-						snippetNode?snippetNode->text:_T("none")
+						sendersNode?sendersNode->text:TranslateT("none"),
+						TranslateT("Time"),sttime,
+						snippetNode?snippetNode->text:TranslateT("none")
 						);
 					if (JGetByte(NULL,"Labels",0)&1){
 						if (snippetNode = JabberXmlGetChild( threadNode, "labels" )){
 							if (snippetNode->text){
-								mir_sntprintf(ppd.lptzText+pos,MAX_SECONDLINE -5 -pos,_T("\nLabels: %s"),snippetNode->text);
+								mir_sntprintf(ppd.lptzText+pos,MAX_SECONDLINE -5 -pos,_T("\n%s: %s"),TranslateT("Labels"),snippetNode->text);
 					}	}	}
 
 //					if (url) {
