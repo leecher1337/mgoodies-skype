@@ -301,7 +301,7 @@ void JabberMenuInit()
 	CreateServiceFunction( text, JabberMenuVisitGMail );
 	mi.pszName = JTranslate( "Visit GMail" );
 	mi.position = -2000100001;
-	mi.hIcon = iconList[14]; // more icons are needed
+	mi.hIcon = iconList[14];
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuVisitGMail = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
