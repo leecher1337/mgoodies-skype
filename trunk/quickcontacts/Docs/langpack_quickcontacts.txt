@@ -1,0 +1,29 @@
+; Quick Contacts 0.0.1.0
+; Author: micron-x, Pescuma
+; http://forums.miranda-im.org/showthread.php?t=5643
+
+[Quick Contacts]
+
+; Hotkey description
+[Show dialog]
+[Show dialog to select contact]
+
+; Menu item
+[Quick Contacts...]
+
+; Tooltips
+[Send message]
+[Send file (Ctrl+F)]
+[Send URL (Ctrl+U)]
+[Open userinfo (Ctrl+I)]
+[Open history (Ctrl+H)]
+
+; Options
+[ Last Sent ]
+[Enable last-sent-to]
+[recognize all messages sent]
+[recognize messages sent with hotkey only]
+[ Contacts ]
+[Show offline contacts to theese protocols:]
+[Hide subcontacts]
+[But keep subcontacts of protocols in above list if meta is hidden]

@@ -1,0 +1,7 @@
+Quick contacts 0.0.1.0
+
+Changelog:
+
+. 0.0.1.0
+  First verion based on Hotkey plugin 
+3.2.1.0
