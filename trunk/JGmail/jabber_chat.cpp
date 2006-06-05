@@ -724,6 +724,15 @@ int JabberGcEventHook(WPARAM wParam,LPARAM lParam)
 	case GC_USER_NICKLISTMENU:
 		sttNickListHook( item, gch );
 		break;
+
+	case GC_USER_CHANMGR:
+		int iqId = JabberSerialNext();
+		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetMuc );
+
+		XmlNodeIq iq( "get", iqId, item->jid );
+		XmlNode* query = iq.addQuery( xmlnsOwner );
+		JabberSend( jabberThreadInfo->s, iq );
+		break;
 	}
 
 	return 0;

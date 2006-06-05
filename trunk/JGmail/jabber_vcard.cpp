@@ -241,11 +241,7 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 				szFilter[512-1] = '\0';
 
 
-#ifndef OPENFILENAME_SIZE_VERSION_400
-				ofn.lStructSize = sizeof( OPENFILENAME );
-#else
 				ofn.lStructSize = OPENFILENAME_SIZE_VERSION_400;
-#endif
 				ofn.hwndOwner = hwndDlg;
 				ofn.lpstrFilter = szFilter;
 				ofn.lpstrCustomFilter = NULL;
