@@ -19,8 +19,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_bitmap.cpp,v $
-Revision       : $Revision: 1.6 $
-Last change on : $Date: 2006/05/12 20:13:35 $
+Revision       : $Revision$
+Last change on : $Date: 2006-06-04 20:07:43 +0100 (Sun, 04 Jun 2006) $
 Last change by : $Author: ghazan $
 
 */
@@ -39,11 +39,7 @@ int __stdcall JabberEnterBitmapName( char* szDest )
 
 	char str[ MAX_PATH ]; str[0] = 0;
 	OPENFILENAMEA ofn = {0};
-#ifndef OPENFILENAME_SIZE_VERSION_400
-	ofn.lStructSize = sizeof( OPENFILENAME );
-#else
 	ofn.lStructSize = OPENFILENAME_SIZE_VERSION_400;
-#endif
 	ofn.lpstrFilter = szFilter;
 	ofn.lpstrFile = szDest;
 	ofn.Flags = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;

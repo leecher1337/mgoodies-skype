@@ -668,11 +668,11 @@ char* __stdcall JabberTextEncodeW( const wchar_t* str )
 	for ( s = str, d = tmp; *s; s++ ) {
 		switch( *s ) {
 		case '\r':	continue;
-		case '&':   wcscpy( d, L"&amp;" );		d += 5;	break;
+		case '&':   wcscpy( d, L"&amp;" );  d += 5;	break;
 		case '\'':  wcscpy( d, L"&apos;" );	d += 6;	break;
-		case '>':   wcscpy( d, L"&gt;" );		d += 4;	break;
-		case '<':	wcscpy( d, L"&lt;" );		d += 4;	break;
-		case '\"':  wcscpy( d, L"&quot;" );	d += 6;	break;
+		case '>':   wcscpy( d, L"&gt;" );   d += 4;	break;
+		case '<':	wcscpy( d, L"&lt;" );   d += 4;	break;
+		case '\"':  wcscpy( d, L"&quot;" ); d += 6;	break;
 		default:
 			if ( *s > 0 && *s < 0x20 && *s != 0x09 && *s != 0x0a && *s != 0x0d )
 				*d++ = ' ';
