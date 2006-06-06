@@ -27,7 +27,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Quick Contacts",
-	PLUGIN_MAKE_VERSION(0,0,1,0),
+	PLUGIN_MAKE_VERSION(0,0,1,1),
 	"Open contact-specific windows by hotkey",
 	"Heiko Schillinger, Ricardo Pescuma Domenecci",
 	"",
@@ -247,7 +247,7 @@ void SortArray(void)
 }
 
 
-void LoadContacts()
+void LoadContacts(BOOL show_all)
 {
 	// Read last-sent-to contact from db and set handle as window-userdata
 	HANDLE hlastsent = (HANDLE)DBGetContactSettingDword(NULL, MODULE_NAME, "LastSentTo", -1);
@@ -263,37 +263,44 @@ void LoadContacts()
 		char *pszProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 		if(pszProto != NULL)
 		{
-			int status = DBGetContactSettingWord(hContact, pszProto, "Status", ID_STATUS_OFFLINE);
-
-			// Check if is offline and have to show
-			if (status <= ID_STATUS_OFFLINE)
+			if (!show_all)
 			{
-				// See if has to show
-				char setting[128];
-				mir_snprintf(setting, sizeof(setting), "ShowOffline%s", pszProto);
-
-				if (!DBGetContactSettingByte(NULL, MODULE_NAME, setting, FALSE))
+				// Check if proto offline
+				if (opts.hide_from_offline_proto && CallProtoService(pszProto, PS_GETSTATUS, 0, 0) 
+														<= ID_STATUS_OFFLINE)
 					continue;
-			}
 
-			// Check if is subcontact
-			if (opts.hide_subcontacts && ServiceExists(MS_MC_GETMETACONTACT))
-			{
-				HANDLE hMeta = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
-				if (hMeta != NULL) 
+				// Check if is offline and have to show
+				int status = DBGetContactSettingWord(hContact, pszProto, "Status", ID_STATUS_OFFLINE);
+				if (status <= ID_STATUS_OFFLINE)
 				{
-					if (opts.keep_subcontacts_from_offline)
-					{
-						int meta_status = DBGetContactSettingWord(hMeta, pszProto, "Status", ID_STATUS_OFFLINE);
+					// See if has to show
+					char setting[128];
+					mir_snprintf(setting, sizeof(setting), "ShowOffline%s", pszProto);
 
-						if (meta_status > ID_STATUS_OFFLINE)
-							continue;
-						else if (DBGetContactSettingByte(NULL, MODULE_NAME, "ShowOfflineMetaContacts", FALSE))
-							continue;
-					}
-					else
-					{
+					if (!DBGetContactSettingByte(NULL, MODULE_NAME, setting, FALSE))
 						continue;
+				}
+
+				// Check if is subcontact
+				if (opts.hide_subcontacts && ServiceExists(MS_MC_GETMETACONTACT))
+				{
+					HANDLE hMeta = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
+					if (hMeta != NULL) 
+					{
+						if (opts.keep_subcontacts_from_offline)
+						{
+							int meta_status = DBGetContactSettingWord(hMeta, "MetaContacts", "Status", ID_STATUS_OFFLINE);
+
+							if (meta_status > ID_STATUS_OFFLINE)
+								continue;
+							else if (DBGetContactSettingByte(NULL, MODULE_NAME, "ShowOfflineMetaContacts", FALSE))
+								continue;
+						}
+						else
+						{
+							continue;
+						}
 					}
 				}
 			}
@@ -313,7 +320,7 @@ void LoadContacts()
 }
 
 // check if the char(s) entered appears in a contacts name
-int CheckText(HWND hdlg,char *sztext)
+int CheckText(HWND hdlg, TCHAR *sztext)
 {
 	int loop;
 
@@ -324,7 +331,7 @@ int CheckText(HWND hdlg,char *sztext)
 	{
 		if(!strnicmp(sztext,ns.contact[loop].szname,lstrlen(sztext)))
 		{
-			int len = SendMessage(hdlg, WM_GETTEXTLENGTH, 0, 0);
+			int len = lstrlen(sztext);
 			SendMessage(hdlg, WM_SETTEXT, 0, (LPARAM)ns.contact[loop].szname);
 			SendMessage(hdlg, EM_SETSEL, (WPARAM)len, (LPARAM)-1);
 			break;
@@ -370,7 +377,7 @@ WNDPROC wpEditMainProc;
 // this was done like ie does it..as far as spy++ could tell ;)
 LRESULT CALLBACK EditProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 {
-	char sztext[120]="";
+	TCHAR sztext[120]="";
 
 	switch(msg)
 	{
@@ -384,7 +391,7 @@ LRESULT CALLBACK EditProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 				SendMessage(hdlg,EM_REPLACESEL,(WPARAM)0,(LPARAM)sztext);
 			}
 
-			SendMessage(hdlg,WM_GETTEXT,(WPARAM)sizeof sztext,(LPARAM)sztext);
+			SendMessage(hdlg,WM_GETTEXT,(WPARAM)MAX_REGS(sztext),(LPARAM)sztext);
 			CheckText(hdlg,sztext);
 			return 1;
 
@@ -403,20 +410,7 @@ LRESULT CALLBACK EditProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 				}
 			}
 
-/*			if(wparam==VK_ESCAPE)
-			{
-				switch(SendMessage(GetParent(hdlg),CB_GETDROPPEDSTATE,0,0))
-				{
-					case FALSE:
-						SendMessage(GetParent(GetParent(hdlg)), WM_CLOSE, 0, 0);
-						break;
-
-					case TRUE:
-						SendMessage(GetParent(hdlg),CB_SHOWDROPDOWN,(WPARAM)FALSE,0);
-						break;
-				}
-			}
-*/			return 0;
+			return 0;
 
 		case WM_GETDLGCODE:
 			return DLGC_WANTCHARS|DLGC_WANTARROWS;
@@ -508,7 +502,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 			Utils_RestoreWindowPosition(hwndDlg, NULL, MODULE_NAME, "window");
 
-			LoadContacts();
+			LoadContacts(FALSE);
 			
 			SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_RESETCONTENT, 0, 0);
 			for(int loop = 0; loop < ns.count; loop++)
@@ -621,6 +615,45 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 					DBWriteContactSettingDword(NULL, MODULE_NAME, "LastSentTo", (DWORD) hContact);
 					SendMessage(hwndDlg, WM_CLOSE, 0, 0);
+					break;
+				}
+				case HOTKEY_ALL_CONTACTS:
+				case IDC_SHOW_ALL_CONTACTS:
+				{
+					// Get old text
+					HWND hEdit = GetWindow(GetWindow(hwndDlg,GW_CHILD),GW_CHILD);
+					TCHAR sztext[120] = "";
+
+					if (SendMessage(hEdit, EM_GETSEL, (WPARAM)NULL, (LPARAM)NULL) != -1)
+					{
+						SendMessage(hEdit, EM_REPLACESEL, (WPARAM)0, (LPARAM)_T(""));
+					}
+
+					SendMessage(hEdit, WM_GETTEXT, (WPARAM)MAX_REGS(sztext), (LPARAM)sztext);
+
+					// Fill combo			
+					BOOL all = IsDlgButtonChecked(hwndDlg, IDC_SHOW_ALL_CONTACTS);
+
+					if (LOWORD(wParam) == HOTKEY_ALL_CONTACTS)
+					{
+						// Toggle checkbox
+						all = !all;
+						CheckDlgButton(hwndDlg, IDC_SHOW_ALL_CONTACTS, all ? BST_CHECKED : BST_UNCHECKED);
+					}
+
+					LoadContacts(all);
+					
+					SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_RESETCONTENT, 0, 0);
+					for(int loop = 0; loop < ns.count; loop++)
+					{
+						SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETITEMDATA, 
+											(WPARAM)SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_ADDSTRING, 0, (LPARAM)ns.contact[loop].szname), 
+											(LPARAM)loop);
+					}
+
+					// Return selection
+					CheckText(hEdit, sztext);
+
 					break;
 				}
 			}

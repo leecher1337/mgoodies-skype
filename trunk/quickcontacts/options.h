@@ -39,6 +39,7 @@ typedef struct
 {
 	BOOL last_sent_enable;
 	int last_sent_msg_type;
+	BOOL hide_from_offline_proto;
 	BOOL hide_subcontacts;
 	BOOL keep_subcontacts_from_offline;
 

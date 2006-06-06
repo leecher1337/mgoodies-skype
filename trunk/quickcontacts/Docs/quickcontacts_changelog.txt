@@ -1,6 +1,11 @@
-Quick contacts 0.0.1.0
+Quick contacts 0.0.1.1
 
 Changelog:
+
+. 0.0.1.1
+  + Checkbox in main dialog works
+  + Option to hide contacts from offline protocols
+  * Fix in getting metacontact status
 
 . 0.0.1.0
   First verion based on Hotkey plugin 
