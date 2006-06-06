@@ -61,7 +61,9 @@
 #define IDC_TAB                         1056
 #define IDC_SUBCONTACTS                 1058
 #define IDC_KEEP_OFFLINE                1059
+#define IDC_HIDE_OFFLINE                1060
 #define IDC_SHOW_OFFLINE                1061
+#define IDC_SHOW_ALL_CONTACTS           1061
 #define IDC_MESSAGE                     1062
 #define IDC_FILE                        1063
 #define IDC_URL                         1064
@@ -74,6 +76,7 @@
 #define HOTKEY_INFO                     40003
 #define HOTKEY_HISTORY                  40004
 #define IDM_M3                          40005
+#define HOTKEY_ALL_CONTACTS             40005
 #define IDM_M5                          40007
 #define IDM_M4                          40008
 #define IDC_STATIC                      -1
@@ -85,7 +88,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        119
-#define _APS_NEXT_COMMAND_VALUE         40004
+#define _APS_NEXT_COMMAND_VALUE         40006
 #define _APS_NEXT_CONTROL_VALUE         1063
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

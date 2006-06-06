@@ -39,8 +39,9 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 // Initializations needed by options
 void LoadOptions()
 {
-	opts.last_sent_enable = DBGetContactSettingByte(NULL, MODULE_NAME, "EnableLastSentTo", FALSE);
+	opts.last_sent_enable = DBGetContactSettingByte(NULL, MODULE_NAME, "EnableLastSentTo", TRUE);
 	opts.last_sent_msg_type = DBGetContactSettingWord(NULL, MODULE_NAME, "MsgTypeRec", TYPE_GLOBAL);
+	opts.hide_from_offline_proto = DBGetContactSettingByte(NULL, MODULE_NAME, "HideFromOfflineProto", TRUE);
 	opts.hide_subcontacts = DBGetContactSettingByte(NULL, MODULE_NAME, "HideSubcontacts", TRUE);
 	opts.keep_subcontacts_from_offline = DBGetContactSettingByte(NULL, MODULE_NAME, "KeepSubcontactsFromOffline", TRUE);
 }
@@ -80,10 +81,11 @@ void DeInitOptions()
 // Options page
 
 static OptPageControl controls[] = { 
-	{ CONTROL_CHECKBOX,			IDC_LASTSENTTO,		"EnableLastSentTo",				(BYTE) FALSE },
+	{ CONTROL_CHECKBOX,			IDC_LASTSENTTO,		"EnableLastSentTo",				(BYTE) TRUE },
 	{ CONTROL_RADIO,			IDC_GLOBAL,			"MsgTypeRec",					(WORD) TYPE_GLOBAL, TYPE_GLOBAL },
 	{ CONTROL_RADIO,			IDC_LOCAL,			"MsgTypeRec",					(WORD) TYPE_GLOBAL, TYPE_LOCAL },
 	{ CONTROL_PROTOCOL_LIST_ALL,IDC_PROTOCOLS,		"ShowOffline%s",				(BYTE) FALSE },
+	{ CONTROL_CHECKBOX,			IDC_HIDE_OFFLINE,	"HideFromOfflineProto",			(BYTE) TRUE },
 	{ CONTROL_CHECKBOX,			IDC_SUBCONTACTS,	"HideSubcontacts",				(BYTE) TRUE },
 	{ CONTROL_CHECKBOX,			IDC_KEEP_OFFLINE,	"KeepSubcontactsFromOffline",	(BYTE) TRUE }
 };
@@ -102,6 +104,12 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			
 			enabled = IsDlgButtonChecked(hwndDlg, IDC_SUBCONTACTS);
 			EnableWindow(GetDlgItem(hwndDlg, IDC_KEEP_OFFLINE), enabled);
+
+			if (!ServiceExists(MS_MC_GETMETACONTACT))
+			{
+				ShowWindow(GetDlgItem(hwndDlg, IDC_SUBCONTACTS), SW_HIDE);
+				ShowWindow(GetDlgItem(hwndDlg, IDC_KEEP_OFFLINE), SW_HIDE);
+			}
 
 			return TRUE;
 		}

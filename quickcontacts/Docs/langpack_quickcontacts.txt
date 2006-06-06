@@ -11,6 +11,10 @@
 ; Menu item
 [Quick Contacts...]
 
+; Main dialog
+[Enter Username:]
+[Show all contacts (Ctrl+A)]
+
 ; Tooltips
 [Send message]
 [Send file (Ctrl+F)]
@@ -24,6 +28,6 @@
 [recognize all messages sent]
 [recognize messages sent with hotkey only]
 [ Contacts ]
-[Show offline contacts to theese protocols:]
+[Show offline contacts for theese protocols:]
 [Hide subcontacts]
 [But keep subcontacts of protocols in above list if meta is hidden]

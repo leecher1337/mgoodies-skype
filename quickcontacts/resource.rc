@@ -27,7 +27,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPT DIALOG DISCARDABLE  0, 0, 257, 219
+IDD_OPT DIALOG DISCARDABLE  0, 0, 257, 239
 STYLE WS_CHILD
 FONT 8, "MS Sans Serif"
 BEGIN
@@ -38,17 +38,19 @@ BEGIN
                     BS_AUTORADIOBUTTON | WS_DISABLED,30,30,209,10
     CONTROL         "recognize messages sent with hotkey only",IDC_LOCAL,
                     "Button",BS_AUTORADIOBUTTON | WS_DISABLED,30,42,209,10
-    GROUPBOX        " Contacts ",IDC_STATIC,3,64,251,150
-    LTEXT           "Show offline contacts to theese protocols:",IDC_STATIC,
+    GROUPBOX        " Contacts ",IDC_STATIC,3,64,251,163
+    LTEXT           "Show offline contacts of theese protocols:",IDC_STATIC,
                     16,77,236,9
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
                     LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,28,88,209,90
     CONTROL         "Hide subcontacts",IDC_SUBCONTACTS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,186,225,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,198,225,8
     CONTROL         "But keep subcontacts of protocols in above list if meta is hidden",
                     IDC_KEEP_OFFLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    28,198,217,9
+                    28,210,217,9
+    CONTROL         "Hide contacts from offline protocols",IDC_HIDE_OFFLINE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,185,225,8
 END
 
 IDD_MAIN DIALOGEX 13, 55, 193, 54
@@ -60,8 +62,9 @@ BEGIN
     COMBOBOX        IDC_USERNAME,8,6,176,130,CBS_DROPDOWN | 
                     CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | 
                     CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Show offline contacts",IDC_SHOW_OFFLINE,"Button",
-                    BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,8,23,176,11
+    CONTROL         "Show all contacts (Ctrl+A)",IDC_SHOW_ALL_CONTACTS,
+                    "Button",BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,8,23,
+                    176,11
     CONTROL         "",IDC_MESSAGE,"MButtonClass",0x0,81,36,17,15,
                     0x18000000L
     CONTROL         "",IDC_FILE,"MButtonClass",0x0,102,36,17,15,0x18000000L
@@ -86,7 +89,7 @@ BEGIN
         LEFTMARGIN, 3
         RIGHTMARGIN, 254
         TOPMARGIN, 3
-        BOTTOMMARGIN, 216
+        BOTTOMMARGIN, 236
     END
 
     IDD_MAIN, DIALOG
@@ -104,6 +107,7 @@ END
 
 ACCEL_TABLE ACCELERATORS DISCARDABLE 
 BEGIN
+    "A",            HOTKEY_ALL_CONTACTS,    VIRTKEY, CONTROL, NOINVERT
     "F",            HOTKEY_FILE,            VIRTKEY, CONTROL, NOINVERT
     "H",            HOTKEY_HISTORY,         VIRTKEY, CONTROL, NOINVERT
     "I",            HOTKEY_INFO,            VIRTKEY, CONTROL, NOINVERT
