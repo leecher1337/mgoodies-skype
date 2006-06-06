@@ -27,7 +27,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPT DIALOG DISCARDABLE  0, 0, 257, 239
+IDD_OPT DIALOG DISCARDABLE  0, 0, 257, 250
 STYLE WS_CHILD
 FONT 8, "MS Sans Serif"
 BEGIN
@@ -38,19 +38,21 @@ BEGIN
                     BS_AUTORADIOBUTTON | WS_DISABLED,30,30,209,10
     CONTROL         "recognize messages sent with hotkey only",IDC_LOCAL,
                     "Button",BS_AUTORADIOBUTTON | WS_DISABLED,30,42,209,10
-    GROUPBOX        " Contacts ",IDC_STATIC,3,64,251,163
+    GROUPBOX        " Contacts ",IDC_STATIC,3,64,251,177
     LTEXT           "Show offline contacts of theese protocols:",IDC_STATIC,
                     16,77,236,9
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
                     LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,28,88,209,90
+    CONTROL         "Append group name to contact name",IDC_APPEND_GROUP,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,185,225,8
+    CONTROL         "Hide contacts from offline protocols",IDC_HIDE_OFFLINE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,198,225,8
     CONTROL         "Hide subcontacts",IDC_SUBCONTACTS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,198,225,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,211,225,8
     CONTROL         "But keep subcontacts of protocols in above list if meta is hidden",
                     IDC_KEEP_OFFLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    28,210,217,9
-    CONTROL         "Hide contacts from offline protocols",IDC_HIDE_OFFLINE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,185,225,8
+                    28,224,217,9
 END
 
 IDD_MAIN DIALOGEX 13, 55, 193, 54
@@ -89,7 +91,7 @@ BEGIN
         LEFTMARGIN, 3
         RIGHTMARGIN, 254
         TOPMARGIN, 3
-        BOTTOMMARGIN, 236
+        BOTTOMMARGIN, 247
     END
 
     IDD_MAIN, DIALOG
