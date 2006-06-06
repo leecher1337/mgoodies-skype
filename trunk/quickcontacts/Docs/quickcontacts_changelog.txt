@@ -1,4 +1,4 @@
-Quick contacts 0.0.1.1
+Quick Contacts 0.0.1.1
 
 Changelog:
 
