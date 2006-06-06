@@ -40,12 +40,13 @@ void FreeMirOptions();
 // Dialog to save options
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define CONTROL_CHECKBOX 0		// Stored as BYTE
-#define CONTROL_SPIN 1			// Stored as WORD
-#define CONTROL_COLOR 2			// Stored as DWORD
-#define CONTROL_RADIO 3			// Stored as WORD
-#define CONTROL_COMBO 4			// Stored as WORD
-#define CONTROL_PROTOCOL_LIST 5	// Stored as BYTEs
+#define CONTROL_CHECKBOX 0			// Stored as BYTE
+#define CONTROL_SPIN 1				// Stored as WORD
+#define CONTROL_COLOR 2				// Stored as DWORD
+#define CONTROL_RADIO 3				// Stored as WORD
+#define CONTROL_COMBO 4				// Stored as WORD
+#define CONTROL_PROTOCOL_LIST 5		// Stored as BYTEs
+#define CONTROL_PROTOCOL_LIST_ALL 6	// Stored as BYTEs
 
 typedef struct {
 	int type;

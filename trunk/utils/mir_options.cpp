@@ -309,6 +309,7 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 						break;
 					}
 					case CONTROL_PROTOCOL_LIST:
+					case CONTROL_PROTOCOL_LIST_ALL:
 					{
 						// Fill list view
 						HWND hwndProtocols = GetDlgItem(hwndDlg, ctrl->nID);
@@ -334,7 +335,9 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 						
 						for (i = 0; i < count; i++)
 						{
-							if (protos[i]->type != PROTOTYPE_PROTOCOL || CallProtoService(protos[i]->szName, PS_GETCAPS, PFLAGNUM_2, 0) == 0)
+							if (protos[i]->type != PROTOTYPE_PROTOCOL 
+									||  (ctrl->type == CONTROL_PROTOCOL_LIST 
+											&& CallProtoService(protos[i]->szName, PS_GETCAPS, PFLAGNUM_2, 0) == 0))
 								continue;
 							
 							CallProtoService(protos[i]->szName, PS_GETNAME, sizeof(szName), (LPARAM)szName);
@@ -430,6 +433,7 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 							break;
 						}
 						case CONTROL_PROTOCOL_LIST:
+						case CONTROL_PROTOCOL_LIST_ALL:
 						{
 							LVITEM lvi = {0};
 							HWND hwndProtocols = GetDlgItem(hwndDlg, ctrl->nID);
@@ -460,7 +464,9 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 				{
 					OptPageControl *ctrl = &controls[i];
 
-					if (ctrl->type == CONTROL_PROTOCOL_LIST && ctrl->nID == lpnmhdr->idFrom)
+					if ((ctrl->type == CONTROL_PROTOCOL_LIST 
+							|| ctrl->type == CONTROL_PROTOCOL_LIST_ALL)
+						&& ctrl->nID == lpnmhdr->idFrom)
 					{
 						NMLISTVIEW *nmlv = (NMLISTVIEW *)lParam;
 						
