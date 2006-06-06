@@ -27,7 +27,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Quick Contacts",
-	PLUGIN_MAKE_VERSION(0,0,1,1),
+	PLUGIN_MAKE_VERSION(0,0,1,2),
 	"Open contact-specific windows by hotkey",
 	"Heiko Schillinger, Ricardo Pescuma Domenecci",
 	"",
@@ -263,6 +263,14 @@ void LoadContacts(BOOL show_all)
 		char *pszProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 		if(pszProto != NULL)
 		{
+			// Get meta
+			HANDLE hMeta = NULL;
+			if ( ( (!show_all && opts.hide_subcontacts) || opts.append_group_name )
+				 && ServiceExists(MS_MC_GETMETACONTACT))
+			{
+				hMeta = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
+			}
+
 			if (!show_all)
 			{
 				// Check if proto offline
@@ -283,32 +291,45 @@ void LoadContacts(BOOL show_all)
 				}
 
 				// Check if is subcontact
-				if (opts.hide_subcontacts && ServiceExists(MS_MC_GETMETACONTACT))
+				if (opts.hide_subcontacts && hMeta != NULL) 
 				{
-					HANDLE hMeta = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
-					if (hMeta != NULL) 
+					if (opts.keep_subcontacts_from_offline)
 					{
-						if (opts.keep_subcontacts_from_offline)
-						{
-							int meta_status = DBGetContactSettingWord(hMeta, "MetaContacts", "Status", ID_STATUS_OFFLINE);
+						int meta_status = DBGetContactSettingWord(hMeta, "MetaContacts", "Status", ID_STATUS_OFFLINE);
 
-							if (meta_status > ID_STATUS_OFFLINE)
-								continue;
-							else if (DBGetContactSettingByte(NULL, MODULE_NAME, "ShowOfflineMetaContacts", FALSE))
-								continue;
-						}
-						else
-						{
+						if (meta_status > ID_STATUS_OFFLINE)
 							continue;
-						}
+						else if (DBGetContactSettingByte(NULL, MODULE_NAME, "ShowOfflineMetaContacts", FALSE))
+							continue;
+					}
+					else
+					{
+						continue;
 					}
 				}
 			}
 
 			// Add to list
-			lstrcpyn(ns.contact[ns.count].szname, 
-					 (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, GCDNF_TCHAR),
-					 MAX_REGS(ns.contact[ns.count].szname));
+			TCHAR *disp = (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, GCDNF_TCHAR);
+
+			if (opts.append_group_name)
+			{
+				DBVARIANT dbv;
+				if (DBGetContactSettingTString(hMeta == NULL ? hContact : hMeta, "CList", "Group", &dbv) == 0)
+				{
+					mir_sntprintf(ns.contact[ns.count].szname, MAX_REGS(ns.contact[ns.count].szname),
+								  _T("%s (%s)"), disp, dbv.ptszVal);
+					DBFreeVariant(&dbv);
+				}
+				else 
+				{
+					lstrcpyn(ns.contact[ns.count].szname, disp, MAX_REGS(ns.contact[ns.count].szname));
+				}
+			}
+			else
+			{
+				lstrcpyn(ns.contact[ns.count].szname, disp, MAX_REGS(ns.contact[ns.count].szname));
+			}
 
 			lstrcpyn(ns.contact[ns.count].proto, pszProto, MAX_REGS(ns.contact[ns.count].proto));
 

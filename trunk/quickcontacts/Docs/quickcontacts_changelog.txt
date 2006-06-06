@@ -1,6 +1,9 @@
-Quick Contacts 0.0.1.1
+Quick Contacts 0.0.1.2
 
 Changelog:
+
+. 0.0.1.2
+  + Option to append group name to contact name
 
 . 0.0.1.1
   + Checkbox in main dialog works

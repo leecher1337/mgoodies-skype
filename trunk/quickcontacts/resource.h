@@ -64,6 +64,7 @@
 #define IDC_HIDE_OFFLINE                1060
 #define IDC_SHOW_OFFLINE                1061
 #define IDC_SHOW_ALL_CONTACTS           1061
+#define IDC_APPEND_GROUP                1061
 #define IDC_MESSAGE                     1062
 #define IDC_FILE                        1063
 #define IDC_URL                         1064

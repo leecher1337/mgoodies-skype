@@ -29,5 +29,7 @@
 [recognize messages sent with hotkey only]
 [ Contacts ]
 [Show offline contacts for theese protocols:]
+[Append group name to contact name]
+[Hide contacts from offline protocols]
 [Hide subcontacts]
 [But keep subcontacts of protocols in above list if meta is hidden]
