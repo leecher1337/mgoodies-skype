@@ -70,3 +70,12 @@ void Nudge_SentStatus(CNudgeElement, HANDLE);
 ****************************/
 int Nudge_AddElement(char*);
 
+/*
+*
+****************************/
+int FreeVSApi();
+
+/*
+*
+****************************/
+int InitVSApi();

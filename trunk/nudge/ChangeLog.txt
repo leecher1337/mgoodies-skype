@@ -1,3 +1,7 @@
+0.0.1.9
+===========
+* Change options dialog (use tabsrmm uxtheme)
+
 0.0.1.8
 ===========
 + Show a popup on sending nudge

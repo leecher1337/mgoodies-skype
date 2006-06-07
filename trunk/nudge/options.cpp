@@ -1,8 +1,10 @@
 #include "headers.h"
+#include "uxtheme.h"
 #include "main.h"
 #include "shake.h"
 #include "options.h"
 
+extern      BOOL (WINAPI *MyEnableThemeDialogTexture)(HANDLE, DWORD);
 
 int NudgeOptInit(WPARAM wParam,LPARAM lParam)
 {
@@ -43,13 +45,17 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
          tci.lParam = (LPARAM)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_NUDGE), hwnd, DlgProcNudgeOpt);
          tci.pszText = TranslateT("Nudge");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
-         MoveWindow((HWND)tci.lParam,1,26,rcClient.right-3,rcClient.bottom-29,1);
+         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-29,1);
+		 if(MyEnableThemeDialogTexture)
+             MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
 
          tci.lParam = (LPARAM)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_SHAKE),hwnd,DlgProcShakeOpt);
          tci.pszText = TranslateT("Window Shaking");
          TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
-         MoveWindow((HWND)tci.lParam,1,26,rcClient.right-3,rcClient.bottom-29,1);
+         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-29,1);
          ShowWindow((HWND)tci.lParam, SW_HIDE);
+		 if(MyEnableThemeDialogTexture)
+             MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
          iInit = FALSE;
          return FALSE;
       }
