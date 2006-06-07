@@ -23,6 +23,7 @@ Boston, MA 02111-1307, USA.
 
 #include <commctrl.h>
 #include <stdio.h>
+#include <tchar.h>
 
 extern "C"
 {
@@ -32,7 +33,6 @@ extern "C"
 #include <m_langpack.h>
 #include <m_protocols.h>
 #include <m_protosvc.h>
-#include <tchar.h>
 }
 
 
@@ -85,7 +85,7 @@ struct WndItemsData
 // Returns the address of the locked resource. 
 // lpszResName - name of the resource 
 
-static DLGTEMPLATE * DoLockDlgRes(HINSTANCE hInst, LPCSTR lpszResName) 
+static DLGTEMPLATE * DoLockDlgRes(HINSTANCE hInst, LPCTSTR lpszResName) 
 { 
 	HRSRC hrsrc = FindResource(hInst, lpszResName, RT_DIALOG); 
 	HGLOBAL hglb = LoadResource(hInst, hrsrc); 
@@ -192,7 +192,7 @@ BOOL CALLBACK TabsDlgProc(ItemOption *optItens, int optItensSize, HINSTANCE hIns
 
 				ShowWindow(data->items[i].hwnd, SW_HIDE);
 
-				tie.pszText = TranslateT(optItens[i].name); 
+				tie.pszText = TranslateTS(optItens[i].name); 
 				TabCtrl_InsertItem(hwndTab, i, &tie);
 			}
 
@@ -348,7 +348,13 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 							BOOL show = (BOOL)DBGetContactSettingByte(NULL, module, setting, ctrl->defValue);
 							
 							lvi.lParam = (LPARAM)setting;
-							lvi.pszText = TranslateT(szName);
+#ifdef UNICODE
+							WCHAR szwName[128];
+							MultiByteToWideChar(CP_ACP, 0, szName, -1, szwName, 128);
+							lvi.pszText = TranslateTS(szwName);
+#else
+							lvi.pszText = TranslateTS(szName);
+#endif
 							lvi.iItem = ListView_InsertItem(hwndProtocols, &lvi);
 							ListView_SetItemState(hwndProtocols, lvi.iItem, INDEXTOSTATEIMAGEMASK(show?2:1), LVIS_STATEIMAGEMASK);
 						}
