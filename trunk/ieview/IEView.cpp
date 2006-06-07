@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "resource.h"
 #include "Options.h"
 #include "Utils.h"
+#define WM_WAITWHILEBUSY (WM_USER+600)
 //#define GECKO
 #define DISPID_BEFORENAVIGATE2      250   // hyperlink clicked on
 #define DISPID_NAVIGATECOMPLETE2    252   // UIActivate new document
@@ -125,13 +126,14 @@ void IEView::release() {
     DeleteCriticalSection(&mutex);
 }
 
-#define WM_WAITWHILEBUSY (WM_USER+600)
+#ifdef GECKO
 
 static void __cdecl StartThread(void *vptr) {
 	IEView *iev = (IEView *) vptr;
 	iev->waitWhileBusy();
 	return;
 }
+#endif
 
 void IEView::waitWhileBusy() {
 	VARIANT_BOOL busy;
