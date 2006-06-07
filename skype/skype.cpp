@@ -57,6 +57,59 @@ char cmdMessage[16]="MESSAGE", cmdPartner[8]="PARTNER";	// Compatibility command
 // Imported Globals
 extern status_map status_codes[];
 
+BOOL (WINAPI *MyEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
+
+HMODULE hUxTheme = 0;
+
+// function pointers, use typedefs for casting to shut up the compiler when using GetProcAddress()
+
+typedef BOOL (WINAPI *PITA)();
+typedef HANDLE (WINAPI *POTD)(HWND, LPCWSTR);
+typedef UINT (WINAPI *PDTB)(HANDLE, HDC, int, int, RECT *, RECT *);
+typedef UINT (WINAPI *PCTD)(HANDLE);
+typedef UINT (WINAPI *PDTT)(HANDLE, HDC, int, int, LPCWSTR, int, DWORD, DWORD, RECT *);
+
+PITA pfnIsThemeActive = 0;
+POTD pfnOpenThemeData = 0;
+PDTB pfnDrawThemeBackground = 0;
+PCTD pfnCloseThemeData = 0;
+PDTT pfnDrawThemeText = 0;
+
+#define FIXED_TAB_SIZE 100                  // default value for fixed width tabs
+
+/*
+ * visual styles support (XP+)
+ * returns 0 on failure
+ */
+
+int InitVSApi()
+{
+    if((hUxTheme = LoadLibraryA("uxtheme.dll")) == 0)
+        return 0;
+
+    pfnIsThemeActive = (PITA)GetProcAddress(hUxTheme, "IsThemeActive");
+    pfnOpenThemeData = (POTD)GetProcAddress(hUxTheme, "OpenThemeData");
+    pfnDrawThemeBackground = (PDTB)GetProcAddress(hUxTheme, "DrawThemeBackground");
+    pfnCloseThemeData = (PCTD)GetProcAddress(hUxTheme, "CloseThemeData");
+    pfnDrawThemeText = (PDTT)GetProcAddress(hUxTheme, "DrawThemeText");
+    
+    MyEnableThemeDialogTexture = (BOOL (WINAPI *)(HANDLE, DWORD))GetProcAddress(hUxTheme, "EnableThemeDialogTexture");
+    if(pfnIsThemeActive != 0 && pfnOpenThemeData != 0 && pfnDrawThemeBackground != 0 && pfnCloseThemeData != 0 && pfnDrawThemeText != 0) {
+        return 1;
+    }
+    return 0;
+}
+
+/*
+ * unload uxtheme.dll
+ */
+
+int FreeVSApi()
+{
+    if(hUxTheme != 0)
+        FreeLibrary(hUxTheme);
+    return 0;
+}
 
 // Plugin Info
 PLUGININFO pluginInfo = {
@@ -2064,6 +2117,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	CreateServices();
 	HookEvents();
+	InitVSApi();
 
 	// Startup Message-pump
     pthread_create (( pThreadFunc )MsgPump, NULL);
@@ -2083,6 +2137,7 @@ extern "C" int __declspec( dllexport ) Unload(void)
 	}
 	SkypeMsgCleanup();
 	WSACleanup();
+	FreeVSApi();
 	if (hOptHook) UnhookEvent(hOptHook);
 	if (hChatEvent) UnhookEvent(hChatEvent);
 	if (hChatMenu) UnhookEvent (hChatMenu);

@@ -114,6 +114,8 @@ int SkypeAddToListByEvent(WPARAM wParam, LPARAM lParam);
 int OkToExit(WPARAM wParam, LPARAM lParam);
 int __stdcall EnterBitmapFileName( char* szDest );
 void CleanupNicknames(char *dummy);
+int InitVSApi();
+int FreeVSApi();
 
 // Structs
 
