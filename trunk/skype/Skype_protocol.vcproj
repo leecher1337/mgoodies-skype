@@ -316,6 +316,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\skypeprofile.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\skypesvc.cpp"
 				>
 			</File>
@@ -382,6 +386,10 @@
 			</File>
 			<File
 				RelativePath=".\skypeopt.h"
+				>
+			</File>
+			<File
+				RelativePath=".\skypeprofile.h"
 				>
 			</File>
 			<File
