@@ -84,6 +84,7 @@ struct ParentWindowData
 struct NewMessageWindowLParam
 {
 	HANDLE	hContact;
+	int		isWchar;
 	const char *szInitialText;
 	int		flags;
 };
