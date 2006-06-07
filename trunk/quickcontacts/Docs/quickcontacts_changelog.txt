@@ -1,6 +1,10 @@
-Quick Contacts 0.0.1.2
+Quick Contacts 0.0.1.3
 
 Changelog:
+
+. 0.0.1.3
+  + Changes in options
+  + Added unicode release
 
 . 0.0.1.2
   + Option to append group name to contact name

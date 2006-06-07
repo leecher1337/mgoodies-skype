@@ -19,6 +19,8 @@ CFG=quickcontacts - Win32 Release
 !MESSAGE 
 !MESSAGE "quickcontacts - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "quickcontacts - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "quickcontacts - Win32 Unicode Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "quickcontacts - Win32 Unicode Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -87,12 +89,72 @@ LINK32=link.exe
 # ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\quickcontacts.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
+!ELSEIF  "$(CFG)" == "quickcontacts - Win32 Unicode Release"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "quickcontacts___Win32_Unicode_Release"
+# PROP BASE Intermediate_Dir "quickcontacts___Win32_Unicode_Release"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Unicode_Release"
+# PROP Intermediate_Dir "Unicode_Release"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G4 /MT /W3 /GX /O2 /Ob0 /I "../../include" /Fr /YX /FD /c
+# ADD CPP /nologo /G4 /MT /W3 /GX /O2 /Ob0 /I "../../include" /D "UNICODE" /D "_UNICODE" /Fr /YX /FD /c
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x417 /d "NDEBUG"
+# ADD RSC /l 0x417 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /map /machine:I386 /out:"..\..\bin\release\Plugins\quickcontacts.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# SUBTRACT BASE LINK32 /profile /pdb:none
+# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /map /machine:I386 /out:"..\..\bin\release\Plugins\quickcontactsW.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# SUBTRACT LINK32 /profile /pdb:none
+
+!ELSEIF  "$(CFG)" == "quickcontacts - Win32 Unicode Debug"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "quickcontacts___Win32_Unicode_Debug"
+# PROP BASE Intermediate_Dir "quickcontacts___Win32_Unicode_Debug"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Unicode_Debug"
+# PROP Intermediate_Dir "Unicode_Debug"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /G4 /MTd /W3 /GX /ZI /Od /I "../../include" /FR /YX /FD /c
+# ADD CPP /nologo /G4 /MTd /W3 /GX /ZI /Od /I "../../include" /D "UNICODE" /D "_UNICODE" /FR /YX /FD /c
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x417 /d "NDEBUG"
+# ADD RSC /l 0x417 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\quickcontacts.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# SUBTRACT BASE LINK32 /profile /pdb:none
+# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\quickcontactsW.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# SUBTRACT LINK32 /profile /pdb:none
+
 !ENDIF 
 
 # Begin Target
 
 # Name "quickcontacts - Win32 Release"
 # Name "quickcontacts - Win32 Debug"
+# Name "quickcontacts - Win32 Unicode Release"
+# Name "quickcontacts - Win32 Unicode Debug"
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"

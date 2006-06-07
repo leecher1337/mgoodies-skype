@@ -1,5 +1,6 @@
 /* 
 Copyright (C) 2006 Ricardo Pescuma Domenecci
+Based on work (C) Heiko Schillinger
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
