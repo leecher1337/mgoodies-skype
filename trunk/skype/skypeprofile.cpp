@@ -25,44 +25,44 @@ void CSkypeProfile::Load(void)
 	this->Sex = DBGetContactSettingByte(NULL, SkypeProtoName, "Gender", 0);
 	if(!DBGetContactSetting(NULL,this->SkypeProtoName,"Nick",&dbv)) 
 	{
-		sprintf_s(this->FullName,"%s",dbv.pszVal);
+		sprintf(this->FullName,"%s",dbv.pszVal);
 		DBFreeVariant(&dbv);
 	}
 	if(!DBGetContactSetting(NULL,this->SkypeProtoName,"HomePage",&dbv)) 
 	{
-		sprintf_s(this->HomePage,"%s",dbv.pszVal);
+		sprintf(this->HomePage,"%s",dbv.pszVal);
 		DBFreeVariant(&dbv);
 	}
 	if(!DBGetContactSetting(NULL,this->SkypeProtoName,"Province",&dbv)) 
 	{
-		sprintf_s(this->Province,"%s",dbv.pszVal);
+		sprintf(this->Province,"%s",dbv.pszVal);
 		DBFreeVariant(&dbv);
 	}
 	if(!DBGetContactSetting(NULL,this->SkypeProtoName,"City",&dbv)) 
 	{
-		sprintf_s(this->City,"%s",dbv.pszVal);
+		sprintf(this->City,"%s",dbv.pszVal);
 		DBFreeVariant(&dbv);
 	}
 	if(!DBGetContactSetting(NULL,this->SkypeProtoName,"OfficePhone",&dbv)) 
 	{
-		sprintf_s(this->OfficePhone,"%s",dbv.pszVal);
+		sprintf(this->OfficePhone,"%s",dbv.pszVal);
 		DBFreeVariant(&dbv);
 	}
 	if(!DBGetContactSetting(NULL,this->SkypeProtoName,"HomePhone",&dbv)) 
 	{
-		sprintf_s(this->HomePhone,"%s",dbv.pszVal);
+		sprintf(this->HomePhone,"%s",dbv.pszVal);
 		DBFreeVariant(&dbv);
 	}
 }
 
 void CSkypeProfile::LoadFromSkype(void)
 {
-	strcpy_s(this->FullName, SkypeGetProfile("FULLNAME"));
-	strcpy_s(this->HomePhone, SkypeGetProfile("PHONE_HOME"));
-	strcpy_s(this->OfficePhone, SkypeGetProfile("PHONE_OFFICE"));
-	strcpy_s(this->HomePage, SkypeGetProfile("HOMEPAGE"));
-	strcpy_s(this->City, SkypeGetProfile("CITY"));
-	strcpy_s(this->Province, SkypeGetProfile("PROVINCE"));
+	strcpy(this->FullName, SkypeGetProfile("FULLNAME"));
+	strcpy(this->HomePhone, SkypeGetProfile("PHONE_HOME"));
+	strcpy(this->OfficePhone, SkypeGetProfile("PHONE_OFFICE"));
+	strcpy(this->HomePage, SkypeGetProfile("HOMEPAGE"));
+	strcpy(this->City, SkypeGetProfile("CITY"));
+	strcpy(this->Province, SkypeGetProfile("PROVINCE"));
 }
 
 void CSkypeProfile::SaveToSkype(void)
