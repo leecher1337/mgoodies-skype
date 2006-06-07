@@ -1,6 +1,11 @@
+0.0.1.8
+============
+* Change options dialog (use tabsrmm uxtheme)
+
 0.0.1.7
 ============
 ! Invert back and text color for no new mail popup in option page.
+* New default icon reworked by Faith Healer.
 
 0.0.1.6
 ============

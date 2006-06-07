@@ -219,11 +219,11 @@ BEGIN
     CONTROL         "Multi popup",IDC_RADIOPOPN,"Button",BS_AUTORADIOBUTTON | 
                     WS_TABSTOP,15,152,95,10
     CONTROL         "Popup if no mail",IDC_CHECKNPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,5,203,94,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,5,201,94,10
     CONTROL         "",IDC_CHECKNCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    114,203,10,10
-    CONTROL         "",IDC_CPNB,"ColourPicker",WS_TABSTOP,124,203,10,10
-    CONTROL         "",IDC_CPNT,"ColourPicker",WS_TABSTOP,135,203,10,10
+                    114,201,10,10
+    CONTROL         "",IDC_CPNB,"ColourPicker",WS_TABSTOP,124,201,10,10
+    CONTROL         "",IDC_CPNT,"ColourPicker",WS_TABSTOP,135,201,10,10
     CONTROL         "Sound notification if failed",IDC_CHECKFSND,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,154,129,135,10
     CONTROL         "Message notification if failed",IDC_CHECKFMSG,"Button",
@@ -256,19 +256,19 @@ BEGIN
     LTEXT           "User:",IDC_STLOGIN,236,20,75,8
     LTEXT           "Password:",IDC_STPASS,236,45,75,9
     EDITTEXT        IDC_EDITPOPS,118,144,20,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDITNPOPS,118,216,20,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDITNPOPS,118,214,20,12,ES_AUTOHSCROLL
     EDITTEXT        IDC_EDITFPOPS,278,175,20,12,ES_AUTOHSCROLL
     LTEXT           "s",IDC_STATIC,140,146,8,8
-    LTEXT           "s",IDC_STATIC,140,217,8,8
+    LTEXT           "s",IDC_STATIC,140,215,8,8
     LTEXT           "s",IDC_STATIC,302,176,8,8
     GROUPBOX        "New mail notifications",IDC_GBNEWMAIL,0,44,149,146
-    GROUPBOX        "No new mail notifications",IDC_GBNONEWMAIL,0,193,149,38
+    GROUPBOX        "No new mail notifications",IDC_GBNONEWMAIL,0,191,149,38
     GROUPBOX        "Connection failure notifications",IDC_GBBADCONNECT,150,
                     118,163,72
     CONTROL         "APOP auth",IDC_CHECKAPOP,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,236,71,71,10
     CONTROL         "Persistant message",IDC_CHECKNMSGP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,5,216,110,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,5,214,110,10
     CONTROL         "Disable STLS",IDC_CHECKNOTLS,"Button",BS_AUTOCHECKBOX | 
                     BS_LEFT | WS_TABSTOP,236,91,75,10
     CONTROL         "Use SSL",IDC_CHECKSSL,"Button",BS_AUTOCHECKBOX | 
@@ -370,8 +370,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,1,6
- PRODUCTVERSION 0,0,1,6
+ FILEVERSION 0,0,1,7
+ PRODUCTVERSION 0,0,1,7
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -389,14 +389,14 @@ BEGIN
             VALUE "Comments", "Yet Another Mail Notifier\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "Yet Another Mail Notifier\0"
-            VALUE "FileVersion", "0, 0, 1, 6\0"
+            VALUE "FileVersion", "0, 0, 1, 7\0"
             VALUE "InternalName", "YAMN\0"
             VALUE "LegalCopyright", "Copyright © 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "YAMN.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "YAMN tweety\0"
-            VALUE "ProductVersion", "0, 0, 1, 6\0"
+            VALUE "ProductVersion", "0, 0, 1, 7\0"
             VALUE "SpecialBuild", "\0"
         END
     END
