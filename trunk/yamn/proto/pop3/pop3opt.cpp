@@ -27,6 +27,7 @@
 #include "../../main.h"
 #include "pop3comm.h"
 #include "pop3opt.h"
+#include "uxtheme.h"
 
 //- imported ---------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -44,6 +45,8 @@ extern LPCRITICAL_SECTION PluginRegCS;
 extern PYAMN_FILTERPLUGINQUEUE FirstFilterPlugin;
 //From protoplugin.cpp
 extern PYAMN_PROTOPLUGINQUEUE FirstProtoPlugin;
+//for XP themes
+extern BOOL (WINAPI *MyEnableThemeDialogTexture)(HANDLE, DWORD);
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -719,13 +722,18 @@ static BOOL CALLBACK DlgOptionsProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lPar
          tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_POP3ACCOUNTOPT), hwnd, DlgProcPOP3AccOpt);
          tci.pszText = TranslateT("Accounts");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
-         MoveWindow((HWND)tci.lParam,1,26,rcClient.right-3,rcClient.bottom-29,1);
+         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-29,1);
+		 if(MyEnableThemeDialogTexture)
+             MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
 
          tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_YAMNOPT),hwnd,DlgProcYAMNOpt);
          tci.pszText = TranslateT("Plugins");
          TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
-         MoveWindow((HWND)tci.lParam,1,26,rcClient.right-3,rcClient.bottom-29,1);
+         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-29,1);
          ShowWindow((HWND)tci.lParam, SW_HIDE);
+		 if(MyEnableThemeDialogTexture)
+             MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
+
          iInit = FALSE;
          return FALSE;
       }
