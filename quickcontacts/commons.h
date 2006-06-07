@@ -1,5 +1,6 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2006 Ricardo Pescuma Domenecci
+Based on work (C) Heiko Schillinger
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -25,7 +26,7 @@ Boston, MA 02111-1307, USA.
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
-
+#include <tchar.h>
 
 
 #ifdef __cplusplus

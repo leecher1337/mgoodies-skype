@@ -1,5 +1,6 @@
 /* 
 Copyright (C) 2006 Ricardo Pescuma Domenecci
+Based on work (C) Heiko Schillinger
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -26,10 +27,14 @@ Boston, MA 02111-1307, USA.
 
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
+#ifdef UNICODE
+	"Quick Contacts (Unicode)",
+#else
 	"Quick Contacts",
-	PLUGIN_MAKE_VERSION(0,0,1,2),
+#endif
+	PLUGIN_MAKE_VERSION(0,0,1,3),
 	"Open contact-specific windows by hotkey",
-	"Heiko Schillinger, Ricardo Pescuma Domenecci",
+	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
 	"",
 	"http://miranda-im.org/",
@@ -119,7 +124,11 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/quickcontacts_changelog.txt";
 		upd.pbBetaVersionPrefix = (BYTE *)"Quick Contacts ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
+#ifdef UNICODE
+		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/quickcontactsW.zip";
+#else
 		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/quickcontacts.zip";
+#endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
@@ -234,7 +243,7 @@ void SortArray(void)
 			}
 			else if(!lstrcmp(ns.contact[loop].szname,ns.contact[doop].szname))
 			{
-				if(lstrcmp(ns.contact[loop].proto,ns.contact[doop].proto)>0)
+				if(strcmp(ns.contact[loop].proto,ns.contact[doop].proto)>0)
 				{
 					cs_temp=ns.contact[loop];
 					ns.contact[loop]=ns.contact[doop];
@@ -273,11 +282,6 @@ void LoadContacts(BOOL show_all)
 
 			if (!show_all)
 			{
-				// Check if proto offline
-				if (opts.hide_from_offline_proto && CallProtoService(pszProto, PS_GETSTATUS, 0, 0) 
-														<= ID_STATUS_OFFLINE)
-					continue;
-
 				// Check if is offline and have to show
 				int status = DBGetContactSettingWord(hContact, pszProto, "Status", ID_STATUS_OFFLINE);
 				if (status <= ID_STATUS_OFFLINE)
@@ -288,6 +292,12 @@ void LoadContacts(BOOL show_all)
 
 					if (!DBGetContactSettingByte(NULL, MODULE_NAME, setting, FALSE))
 						continue;
+
+					// Check if proto offline
+					else if (opts.hide_from_offline_proto 
+							&& CallProtoService(pszProto, PS_GETSTATUS, 0, 0) <= ID_STATUS_OFFLINE)
+						continue;
+
 				}
 
 				// Check if is subcontact
@@ -331,7 +341,8 @@ void LoadContacts(BOOL show_all)
 				lstrcpyn(ns.contact[ns.count].szname, disp, MAX_REGS(ns.contact[ns.count].szname));
 			}
 
-			lstrcpyn(ns.contact[ns.count].proto, pszProto, MAX_REGS(ns.contact[ns.count].proto));
+			strncpy(ns.contact[ns.count].proto, pszProto, sizeof(ns.contact[ns.count].proto)-1);
+			ns.contact[ns.count].proto[sizeof(ns.contact[ns.count].proto)-1] = '\0';
 
 			ns.contact[ns.count++].hcontact = hContact;
 		}
@@ -350,7 +361,7 @@ int CheckText(HWND hdlg, TCHAR *sztext)
 
 	for(loop=0;loop<ns.count;loop++)
 	{
-		if(!strnicmp(sztext,ns.contact[loop].szname,lstrlen(sztext)))
+		if(!_tcsnicmp(sztext,ns.contact[loop].szname,lstrlen(sztext)))
 		{
 			int len = lstrlen(sztext);
 			SendMessage(hdlg, WM_SETTEXT, 0, (LPARAM)ns.contact[loop].szname);
@@ -398,7 +409,7 @@ WNDPROC wpEditMainProc;
 // this was done like ie does it..as far as spy++ could tell ;)
 LRESULT CALLBACK EditProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 {
-	TCHAR sztext[120]="";
+	TCHAR sztext[120] = _T("");
 
 	switch(msg)
 	{
@@ -554,7 +565,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					HANDLE hContact = GetSelectedContact(hwndDlg);
 					if (hContact == NULL)
 					{
-						SetDlgItemText(hwndDlg, IDC_USERNAME, "");
+						SetDlgItemText(hwndDlg, IDC_USERNAME, _T(""));
 						SetFocus(GetDlgItem(hwndDlg, IDC_USERNAME));
 						break;
 					}
@@ -576,7 +587,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					HANDLE hContact = GetSelectedContact(hwndDlg);
 					if (hContact == NULL)
 					{
-						SetDlgItemText(hwndDlg, IDC_USERNAME, "");
+						SetDlgItemText(hwndDlg, IDC_USERNAME, _T(""));
 						SetFocus(GetDlgItem(hwndDlg, IDC_USERNAME));
 						break;
 					}
@@ -593,7 +604,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					HANDLE hContact = GetSelectedContact(hwndDlg);
 					if (hContact == NULL)
 					{
-						SetDlgItemText(hwndDlg, IDC_USERNAME, "");
+						SetDlgItemText(hwndDlg, IDC_USERNAME, _T(""));
 						SetFocus(GetDlgItem(hwndDlg, IDC_USERNAME));
 						break;
 					}
@@ -610,7 +621,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					HANDLE hContact = GetSelectedContact(hwndDlg);
 					if (hContact == NULL)
 					{
-						SetDlgItemText(hwndDlg, IDC_USERNAME, "");
+						SetDlgItemText(hwndDlg, IDC_USERNAME, _T(""));
 						SetFocus(GetDlgItem(hwndDlg, IDC_USERNAME));
 						break;
 					}
@@ -627,7 +638,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					HANDLE hContact = GetSelectedContact(hwndDlg);
 					if (hContact == NULL)
 					{
-						SetDlgItemText(hwndDlg, IDC_USERNAME, "");
+						SetDlgItemText(hwndDlg, IDC_USERNAME, _T(""));
 						SetFocus(GetDlgItem(hwndDlg, IDC_USERNAME));
 						break;
 					}
@@ -643,7 +654,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 				{
 					// Get old text
 					HWND hEdit = GetWindow(GetWindow(hwndDlg,GW_CHILD),GW_CHILD);
-					TCHAR sztext[120] = "";
+					TCHAR sztext[120] = _T("");
 
 					if (SendMessage(hEdit, EM_GETSEL, (WPARAM)NULL, (LPARAM)NULL) != -1)
 					{
@@ -737,14 +748,14 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 				rc_tmp.left = rc.right - min(tm.tmAveCharWidth * 10, (rc.right - rc_tmp.left) / 3);
 
-				DrawText(lpdis->hDC, ns.contact[lpdis->itemData].proto, lstrlen(ns.contact[lpdis->itemData].proto), 
+				DrawTextA(lpdis->hDC, ns.contact[lpdis->itemData].proto, strlen(ns.contact[lpdis->itemData].proto), 
 						 &rc_tmp, DT_END_ELLIPSIS | DT_NOPREFIX);
 
 				rc.right = rc_tmp.left - 5;
 			}
 
 			// Draw text
-			DrawText(lpdis->hDC, ns.contact[lpdis->itemData].szname, strlen(ns.contact[lpdis->itemData].szname),
+			DrawText(lpdis->hDC, ns.contact[lpdis->itemData].szname, lstrlen(ns.contact[lpdis->itemData].szname),
 					 &rc, DT_END_ELLIPSIS | DT_NOPREFIX);
 
 			// Restore old colors

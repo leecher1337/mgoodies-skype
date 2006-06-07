@@ -44,10 +44,10 @@ BEGIN
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
                     LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,28,88,209,90
+    CONTROL         "But hide then if protocol is offline",IDC_HIDE_OFFLINE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,27,182,214,8
     CONTROL         "Append group name to contact name",IDC_APPEND_GROUP,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,185,225,8
-    CONTROL         "Hide contacts from offline protocols",IDC_HIDE_OFFLINE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,198,225,8
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,197,225,8
     CONTROL         "Hide subcontacts",IDC_SUBCONTACTS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,16,211,225,8
     CONTROL         "But keep subcontacts of protocols in above list if meta is hidden",
@@ -59,7 +59,7 @@ IDD_MAIN DIALOGEX 13, 55, 193, 54
 STYLE DS_FIXEDSYS | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
 CAPTION "Enter username:"
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     COMBOBOX        IDC_USERNAME,8,6,176,130,CBS_DROPDOWN | 
                     CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | 
