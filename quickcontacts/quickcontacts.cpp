@@ -169,7 +169,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	mi.cbSize = sizeof(mi);
 	mi.position = 500100001;
 	mi.flags = 0;
-	mi.ptszName = TranslateT("Quick Contacts...");
+	mi.pszName = Translate("Quick Contacts...");
 	mi.pszService = MS_QC_SHOW_DIALOG;
 	CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 
