@@ -16,7 +16,9 @@
 #define IDC_SHOW_ALL_CONTACTS           1061
 #define IDC_APPEND_GROUP                1061
 #define IDC_MESSAGE                     1062
+#define IDC_GROUP_COLUMN                1062
 #define IDC_FILE                        1063
+#define IDC_GROUP_LEFT                  1063
 #define IDC_URL                         1064
 #define IDC_USERINFO                    1065
 #define IDC_HISTORY                     1066

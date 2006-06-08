@@ -1,6 +1,12 @@
-Quick Contacts 0.0.1.3
+Quick Contacts 0.0.1.4
 
 Changelog:
+
+. 0.0.1.4
+  + Option to show group as a column
+  + Act as double click when pressing enter in the combo
+  + Disable buttons that protocol do not allow
+  * Bug fixes
 
 . 0.0.1.3
   + Changes in options

@@ -43,7 +43,9 @@ void LoadOptions()
 	opts.last_sent_enable = DBGetContactSettingByte(NULL, MODULE_NAME, "EnableLastSentTo", TRUE);
 	opts.last_sent_msg_type = DBGetContactSettingWord(NULL, MODULE_NAME, "MsgTypeRec", TYPE_GLOBAL);
 	opts.hide_from_offline_proto = DBGetContactSettingByte(NULL, MODULE_NAME, "HideOfflineFromOfflineProto", TRUE);
-	opts.append_group_name = DBGetContactSettingByte(NULL, MODULE_NAME, "AppendGroupName", FALSE);
+	opts.group_append = DBGetContactSettingByte(NULL, MODULE_NAME, "AppendGroupName", FALSE);
+	opts.group_column = DBGetContactSettingByte(NULL, MODULE_NAME, "GroupColumn", FALSE);
+	opts.group_column_left = DBGetContactSettingByte(NULL, MODULE_NAME, "GroupColumnLeft", FALSE);
 	opts.hide_subcontacts = DBGetContactSettingByte(NULL, MODULE_NAME, "HideSubcontacts", TRUE);
 	opts.keep_subcontacts_from_offline = DBGetContactSettingByte(NULL, MODULE_NAME, "KeepSubcontactsFromOffline", TRUE);
 }
@@ -89,6 +91,8 @@ static OptPageControl controls[] = {
 	{ CONTROL_PROTOCOL_LIST_ALL,IDC_PROTOCOLS,		"ShowOffline%s",				(BYTE) FALSE },
 	{ CONTROL_CHECKBOX,			IDC_HIDE_OFFLINE,	"HideOfflineFromOfflineProto",	(BYTE) TRUE },
 	{ CONTROL_CHECKBOX,			IDC_APPEND_GROUP,	"AppendGroupName",				(BYTE) FALSE },
+	{ CONTROL_CHECKBOX,			IDC_GROUP_COLUMN,	"GroupColumn",					(BYTE) FALSE },
+	{ CONTROL_CHECKBOX,			IDC_GROUP_LEFT,		"GroupColumnLeft",				(BYTE) FALSE },
 	{ CONTROL_CHECKBOX,			IDC_SUBCONTACTS,	"HideSubcontacts",				(BYTE) TRUE },
 	{ CONTROL_CHECKBOX,			IDC_KEEP_OFFLINE,	"KeepSubcontactsFromOffline",	(BYTE) TRUE }
 };

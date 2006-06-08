@@ -32,7 +32,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,3),
+	PLUGIN_MAKE_VERSION(0,0,1,4),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
@@ -205,22 +205,45 @@ int EventAdded(WPARAM wparam, LPARAM lparam)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+#define IDC_ENTER 2000	// Pseudo control to handle enter in the main window
+
+
 #define MAX_CONTACTS	512
 
 // array where the contacts are put into
-struct c_struct{
+struct c_struct {
 	TCHAR szname[120];
+	TCHAR szgroup[50];
 	HANDLE hcontact;
-	char proto[10];
+	char proto[20];
 };
 
-struct CONTACTSTRUCT{
+struct CONTACTSTRUCT {
 	c_struct contact[MAX_CONTACTS];
 	short int count;
+	long max_proto_width;
 };
 
 
 CONTACTSTRUCT ns;
+
+
+// Get the name the contact has in list
+// This was not made to be called by more than one thread!
+TCHAR tmp_list_name[120];
+
+TCHAR *GetListName(c_struct &cs)
+{
+	if (opts.group_append && cs.szgroup[0] != _T('\0'))
+	{
+		mir_sntprintf(tmp_list_name, MAX_REGS(tmp_list_name), _T("%s (%s)"), cs.szname, cs.szgroup);
+		return tmp_list_name;
+	}
+	else
+	{
+		return cs.szname;
+	}
+}
 
 
 
@@ -256,7 +279,7 @@ void SortArray(void)
 }
 
 
-void LoadContacts(BOOL show_all)
+void LoadContacts(HWND hwndDlg, BOOL show_all)
 {
 	// Read last-sent-to contact from db and set handle as window-userdata
 	HANDLE hlastsent = (HANDLE)DBGetContactSettingDword(NULL, MODULE_NAME, "LastSentTo", -1);
@@ -265,6 +288,7 @@ void LoadContacts(BOOL show_all)
 	// enumerate all contacts and write them to the array
 	// item data of listbox-strings is the array position
 	ns.count = 0;
+	ns.max_proto_width = 0;
 	for(HANDLE hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST,0,0); 
 		hContact != NULL; 
 		hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDNEXT,(WPARAM)hContact,0))
@@ -274,7 +298,7 @@ void LoadContacts(BOOL show_all)
 		{
 			// Get meta
 			HANDLE hMeta = NULL;
-			if ( ( (!show_all && opts.hide_subcontacts) || opts.append_group_name )
+			if ( ( (!show_all && opts.hide_subcontacts) || opts.group_append )
 				 && ServiceExists(MS_MC_GETMETACONTACT))
 			{
 				hMeta = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
@@ -320,41 +344,77 @@ void LoadContacts(BOOL show_all)
 			}
 
 			// Add to list
-			TCHAR *disp = (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, GCDNF_TCHAR);
 
-			if (opts.append_group_name)
+			// Get group
+			ns.contact[ns.count].szgroup[0] = _T('\0');
+			if (opts.group_append)
 			{
 				DBVARIANT dbv;
 				if (DBGetContactSettingTString(hMeta == NULL ? hContact : hMeta, "CList", "Group", &dbv) == 0)
 				{
-					mir_sntprintf(ns.contact[ns.count].szname, MAX_REGS(ns.contact[ns.count].szname),
-								  _T("%s (%s)"), disp, dbv.ptszVal);
+					lstrcpyn(ns.contact[ns.count].szgroup, dbv.ptszVal, MAX_REGS(ns.contact[ns.count].szgroup));
 					DBFreeVariant(&dbv);
 				}
-				else 
-				{
-					lstrcpyn(ns.contact[ns.count].szname, disp, MAX_REGS(ns.contact[ns.count].szname));
-				}
 			}
-			else
-			{
-				lstrcpyn(ns.contact[ns.count].szname, disp, MAX_REGS(ns.contact[ns.count].szname));
-			}
+
+			// Make contact name
+			TCHAR *tmp = (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, GCDNF_TCHAR);
+			lstrcpyn(ns.contact[ns.count].szname, tmp, MAX_REGS(ns.contact[ns.count].szname));
 
 			strncpy(ns.contact[ns.count].proto, pszProto, sizeof(ns.contact[ns.count].proto)-1);
 			ns.contact[ns.count].proto[sizeof(ns.contact[ns.count].proto)-1] = '\0';
 
 			ns.contact[ns.count++].hcontact = hContact;
+
 		}
 	}
 
 	SortArray();
+			
+	SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_RESETCONTENT, 0, 0);
+	for(int loop = 0; loop < ns.count; loop++)
+	{
+		SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETITEMDATA, 
+							(WPARAM)SendDlgItemMessage(hwndDlg, IDC_USERNAME, 
+											CB_ADDSTRING, 0, (LPARAM) GetListName(ns.contact[loop])), 
+							(LPARAM)loop);
+	}
 }
+
+
+// Enable buttons for the selected contact
+void EnableButtons(HWND hwndDlg, HANDLE hContact)
+{
+	if (hContact == NULL)
+	{
+		EnableWindow(GetDlgItem(hwndDlg, IDC_MESSAGE), FALSE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_FILE), FALSE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_URL), FALSE);
+	}
+	else
+	{
+		// Is a meta?
+		HANDLE hSub = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
+		if (hSub != NULL)
+			hContact = hSub;
+
+		// Get caps
+		char *pszProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+		int caps = CallProtoService(pszProto, PS_GETCAPS, PFLAGNUM_1, 0);
+
+		EnableWindow(GetDlgItem(hwndDlg, IDC_MESSAGE), caps & PF1_IMSEND ? TRUE : FALSE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_FILE), caps & PF1_FILESEND ? TRUE : FALSE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_URL), caps & PF1_URLSEND ? TRUE : FALSE);
+	}
+}
+
 
 // check if the char(s) entered appears in a contacts name
 int CheckText(HWND hdlg, TCHAR *sztext)
 {
 	int loop;
+
+	EnableButtons(hwndMain, NULL);
 
 	if(!sztext[0])
 		return 0;
@@ -364,8 +424,9 @@ int CheckText(HWND hdlg, TCHAR *sztext)
 		if(!_tcsnicmp(sztext,ns.contact[loop].szname,lstrlen(sztext)))
 		{
 			int len = lstrlen(sztext);
-			SendMessage(hdlg, WM_SETTEXT, 0, (LPARAM)ns.contact[loop].szname);
-			SendMessage(hdlg, EM_SETSEL, (WPARAM)len, (LPARAM)-1);
+			SendMessage(hdlg, WM_SETTEXT, 0, (LPARAM) GetListName(ns.contact[loop]));
+			SendMessage(hdlg, EM_SETSEL, (WPARAM) len, (LPARAM) -1);
+			EnableButtons(hwndMain, ns.contact[loop].hcontact);
 			break;
 		}
 	}
@@ -381,7 +442,7 @@ HANDLE GetSelectedContact(HWND hwndDlg)
 			
 	for(int loop = 0; loop < ns.count; loop++)
 	{
-		if(!lstrcmpi(cname, ns.contact[loop].szname))
+		if(!lstrcmpi(cname, GetListName(ns.contact[loop])))
 			return ns.contact[loop].hcontact;
 	}
 
@@ -433,7 +494,7 @@ LRESULT CALLBACK EditProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 				switch(SendMessage(GetParent(hdlg),CB_GETDROPPEDSTATE,0,0))
 				{
 					case FALSE:
-						SendMessage(GetParent(GetParent(hdlg)),WM_COMMAND,MAKEWPARAM(IDC_MESSAGE,STN_CLICKED),0);
+						SendMessage(GetParent(GetParent(hdlg)),WM_COMMAND,MAKEWPARAM(IDC_ENTER,STN_CLICKED),0);
 						break;
 
 					case TRUE:
@@ -506,24 +567,23 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 			// Combo
 			SendMessage(GetDlgItem(hwndDlg, IDC_USERNAME), EM_LIMITTEXT, (WPARAM)119,0);
-			wpEditMainProc = (WNDPROC) SetWindowLong(GetWindow(GetWindow(hwndDlg,GW_CHILD),GW_CHILD), GWL_WNDPROC, (LONG)EditProc);
+			wpEditMainProc = (WNDPROC) SetWindowLong(GetWindow(GetDlgItem(hwndDlg, IDC_USERNAME),GW_CHILD), GWL_WNDPROC, (LONG)EditProc);
 
 			// Buttons
 			SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), BUTTONSETASFLATBTN, 0, 0);
-			SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), BUTTONADDTOOLTIP, (LPARAM) TranslateT("Send message"), 0);
+			SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), BUTTONADDTOOLTIP, (LPARAM) Translate("Send message"), 0);
 			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
-			SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), BUTTONSETDEFAULT, 0, 0);
 
 			SendMessage(GetDlgItem(hwndDlg, IDC_FILE), BUTTONSETASFLATBTN, 0, 0);
-			SendMessage(GetDlgItem(hwndDlg, IDC_FILE), BUTTONADDTOOLTIP, (LPARAM) TranslateT("Send file (Ctrl+F)"), 0);
+			SendMessage(GetDlgItem(hwndDlg, IDC_FILE), BUTTONADDTOOLTIP, (LPARAM) Translate("Send file (Ctrl+F)"), 0);
 			SendDlgItemMessage(hwndDlg, IDC_FILE, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_FILE));
 
 			SendMessage(GetDlgItem(hwndDlg, IDC_URL), BUTTONSETASFLATBTN, 0, 0);
-			SendMessage(GetDlgItem(hwndDlg, IDC_URL), BUTTONADDTOOLTIP, (LPARAM) TranslateT("Send URL (Ctrl+U)"), 0);
+			SendMessage(GetDlgItem(hwndDlg, IDC_URL), BUTTONADDTOOLTIP, (LPARAM) Translate("Send URL (Ctrl+U)"), 0);
 			SendDlgItemMessage(hwndDlg, IDC_URL, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_URL));
 
 			SendMessage(GetDlgItem(hwndDlg, IDC_USERINFO), BUTTONSETASFLATBTN, 0, 0);
-			SendMessage(GetDlgItem(hwndDlg, IDC_USERINFO), BUTTONADDTOOLTIP, (LPARAM) TranslateT("Open userinfo (Ctrl+I)"), 0);
+			SendMessage(GetDlgItem(hwndDlg, IDC_USERINFO), BUTTONADDTOOLTIP, (LPARAM) Translate("Open userinfo (Ctrl+I)"), 0);
 			SendDlgItemMessage(hwndDlg, IDC_USERINFO, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(160),IMAGE_ICON,16,16,LR_DEFAULTCOLOR));
 
 			SendMessage(GetDlgItem(hwndDlg, IDC_HISTORY), BUTTONSETASFLATBTN, 0, 0);
@@ -534,21 +594,16 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 			Utils_RestoreWindowPosition(hwndDlg, NULL, MODULE_NAME, "window");
 
-			LoadContacts(FALSE);
-			
-			SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_RESETCONTENT, 0, 0);
-			for(int loop = 0; loop < ns.count; loop++)
-			{
-				SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETITEMDATA, 
-									(WPARAM)SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_ADDSTRING, 0, (LPARAM)ns.contact[loop].szname), 
-									(LPARAM)loop);
-			}
+			LoadContacts(hwndDlg, FALSE);
 
-			if(DBGetContactSettingByte(NULL, MODULE_NAME, "EnableLastSentTo", 0))
+			if (DBGetContactSettingByte(NULL, MODULE_NAME, "EnableLastSentTo", 0))
 			{
-				SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETCURSEL,
-						(WPARAM)GetItemPos((HANDLE) DBGetContactSettingDword(NULL, MODULE_NAME, "LastSentTo", -1)), 
-											0);
+				int pos = GetItemPos((HANDLE) DBGetContactSettingDword(NULL, MODULE_NAME, "LastSentTo", -1));
+
+				SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETCURSEL, (WPARAM) pos, 0);
+
+				if (pos < ns.count)
+					EnableButtons(hwndDlg, ns.contact[pos].hcontact);
 			}
 
 			SetFocus(GetDlgItem(hwndDlg, IDC_USERNAME));
@@ -560,6 +615,29 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 		{
 			switch(LOWORD(wParam))
 			{
+				case IDC_USERNAME:
+				{
+					if (HIWORD(wParam) == CBN_SELCHANGE)
+					{
+						int pos = SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_GETCURSEL, 0, 0);
+						EnableButtons(hwndDlg, pos < ns.count ? ns.contact[pos].hcontact : NULL);
+					}
+					break;
+				}
+				case IDC_ENTER:
+				{
+					HANDLE hContact = GetSelectedContact(hwndDlg);
+					if (hContact == NULL)
+						break;
+
+					CallService(MS_CLIST_CONTACTDOUBLECLICKED, (WPARAM) hContact, 0);
+
+					DBWriteContactSettingDword(NULL, MODULE_NAME, "LastSentTo", (DWORD) hContact);
+					SendMessage(hwndDlg, WM_CLOSE, 0, 0);
+					break;
+
+					break;
+				}
 				case IDC_MESSAGE:
 				{
 					HANDLE hContact = GetSelectedContact(hwndDlg);
@@ -569,6 +647,10 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 						SetFocus(GetDlgItem(hwndDlg, IDC_USERNAME));
 						break;
 					}
+
+					// Is button enabled?
+					if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDC_MESSAGE)))
+						break;
 
 					// don't know why it doesn't work with MS_MSG_SENDMESSAGE
 					// when convers is enabled
@@ -592,6 +674,10 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 						break;
 					}
 
+					// Is button enabled?
+					if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDC_FILE)))
+						break;
+
 					CallService(MS_FILE_SENDFILE, (WPARAM) hContact, 0);
 
 					DBWriteContactSettingDword(NULL, MODULE_NAME, "LastSentTo", (DWORD) hContact);
@@ -608,6 +694,10 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 						SetFocus(GetDlgItem(hwndDlg, IDC_USERNAME));
 						break;
 					}
+
+					// Is button enabled?
+					if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDC_URL)))
+						break;
 
 					CallService(MS_URL_SENDURL, (WPARAM) hContact, 0);
 
@@ -626,6 +716,10 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 						break;
 					}
 
+					// Is button enabled?
+					if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDC_USERINFO)))
+						break;
+
 					CallService(MS_USERINFO_SHOWDIALOG, (WPARAM) hContact, 0);
 
 					DBWriteContactSettingDword(NULL, MODULE_NAME, "LastSentTo", (DWORD) hContact);
@@ -643,6 +737,10 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 						break;
 					}
 
+					// Is button enabled?
+					if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDC_HISTORY)))
+						break;
+
 					CallService(MS_HISTORY_SHOWCONTACTHISTORY, (WPARAM) hContact, 0);
 
 					DBWriteContactSettingDword(NULL, MODULE_NAME, "LastSentTo", (DWORD) hContact);
@@ -657,9 +755,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					TCHAR sztext[120] = _T("");
 
 					if (SendMessage(hEdit, EM_GETSEL, (WPARAM)NULL, (LPARAM)NULL) != -1)
-					{
 						SendMessage(hEdit, EM_REPLACESEL, (WPARAM)0, (LPARAM)_T(""));
-					}
 
 					SendMessage(hEdit, WM_GETTEXT, (WPARAM)MAX_REGS(sztext), (LPARAM)sztext);
 
@@ -673,15 +769,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 						CheckDlgButton(hwndDlg, IDC_SHOW_ALL_CONTACTS, all ? BST_CHECKED : BST_UNCHECKED);
 					}
 
-					LoadContacts(all);
-					
-					SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_RESETCONTENT, 0, 0);
-					for(int loop = 0; loop < ns.count; loop++)
-					{
-						SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETITEMDATA, 
-											(WPARAM)SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_ADDSTRING, 0, (LPARAM)ns.contact[loop].szname), 
-											(LPARAM)loop);
-					}
+					LoadContacts(hwndDlg, all);
 
 					// Return selection
 					CheckText(hEdit, sztext);
@@ -744,19 +832,66 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			// Draw Protocol
 			if (opts.num_protos > 1)
 			{
+				if (ns.max_proto_width == 0)
+				{
+					// Has to be done, else the DC isnt the right one
+					// Dont ask me why
+					for(int loop = 0; loop < ns.count; loop++)
+					{
+						RECT rcc = { 0, 0, 0x7FFF, 0x7FFF };
+
+						DrawTextA(lpdis->hDC, ns.contact[loop].proto, strlen(ns.contact[loop].proto), 
+								 &rcc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE | DT_CALCRECT);
+						ns.max_proto_width = max(ns.max_proto_width, rcc.right - rcc.left);
+					}
+
+					// Fix max_proto_width
+					if (opts.group_append && opts.group_column)
+						ns.max_proto_width = min(ns.max_proto_width, (rc.right - rc.left) / 5);
+					else if (opts.group_append)
+						ns.max_proto_width = min(ns.max_proto_width, (rc.right - rc.left) / 4);
+					else
+						ns.max_proto_width = min(ns.max_proto_width, (rc.right - rc.left) / 3);
+				}
+
 				RECT rc_tmp = rc;
 
-				rc_tmp.left = rc.right - min(tm.tmAveCharWidth * 10, (rc.right - rc_tmp.left) / 3);
+				rc_tmp.left = rc_tmp.right - ns.max_proto_width;
 
 				DrawTextA(lpdis->hDC, ns.contact[lpdis->itemData].proto, strlen(ns.contact[lpdis->itemData].proto), 
-						 &rc_tmp, DT_END_ELLIPSIS | DT_NOPREFIX);
+						 &rc_tmp, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
 
 				rc.right = rc_tmp.left - 5;
 			}
 
+			// Draw group
+			if (opts.group_append && opts.group_column)
+			{
+				RECT rc_tmp = rc;
+
+				if (opts.group_column_left)
+				{
+					rc_tmp.right = rc_tmp.left + (rc.right - rc.left) / 3;
+					rc.left = rc_tmp.right + 5;
+				}
+				else
+				{
+					rc_tmp.left = rc_tmp.right - (rc.right - rc.left) / 3;
+					rc.right = rc_tmp.left - 5;
+				}
+
+				DrawText(lpdis->hDC, ns.contact[lpdis->itemData].szgroup, lstrlen(ns.contact[lpdis->itemData].szgroup),
+						 &rc_tmp, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
+			}
+
 			// Draw text
-			DrawText(lpdis->hDC, ns.contact[lpdis->itemData].szname, lstrlen(ns.contact[lpdis->itemData].szname),
-					 &rc, DT_END_ELLIPSIS | DT_NOPREFIX);
+			TCHAR *name;
+			if (opts.group_append && !opts.group_column)
+				name = GetListName(ns.contact[lpdis->itemData]);
+			else
+				name = ns.contact[lpdis->itemData].szname;
+
+			DrawText(lpdis->hDC, name, lstrlen(name), &rc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
 
 			// Restore old colors
 			SetTextColor(lpdis->hDC, clrfore);
