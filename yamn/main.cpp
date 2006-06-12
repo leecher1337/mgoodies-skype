@@ -334,7 +334,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		
 //Create thread for hotkey
 	WORD HotKey = MAKEWORD((BYTE)vk,(BYTE)mod);
-	CloseHandle(CreateThread(NULL,0,YAMNHotKeyThread,(LPVOID)&HotKey,0,&HotKeyThreadID));
+	CloseHandle(CreateThread(NULL,0,YAMNHotKeyThread,(LPVOID)HotKey,0,&HotKeyThreadID));
 //Create thread that will be executed every second
 	if(!(SecTimer=SetTimer(NULL,0,1000,(TIMERPROC)TimerProc)))
 		return 1;
