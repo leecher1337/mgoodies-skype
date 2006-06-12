@@ -9,6 +9,12 @@
  * When you got errors, try to comment the #define <stdio.h> and compile, then
  * put it back to uncommented and compile again :)
  */
+#ifndef _WIN32_IE
+	#define _WIN32_IE 0x0400
+#endif
+#ifndef _WIN32_WINNT
+	#define _WIN32_WINNT 0x0501
+#endif
 
  
 #include <windows.h>
@@ -30,6 +36,7 @@
 #include "../mails/m_mails.h"
 #include "../m_yamn.h"
 #include "../resources/resource.h"
+#include <win2k.h>
 
 #undef UNICODE
 #include "m_browser.h"
@@ -240,6 +247,17 @@ int RunMailBrowserSvc(WPARAM,LPARAM);
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
+
+LPARAM readItemLParam(HWND hwnd,DWORD iItem)
+{
+	LVITEM item;
+
+	item.mask = LVIF_PARAM;
+	item.iItem = iItem;
+	item.iSubItem = 0;
+	SendMessage(hwnd,LVM_GETITEM,0,(LPARAM)&item);
+	return item.lParam;
+}
 
 inline HACCOUNT GetWindowAccount(HWND hDlg)
 {
@@ -492,7 +510,7 @@ int UpdateMails(HWND hDlg,HACCOUNT ActualAccount,DWORD nflags,DWORD nnflags)
 int ChangeExistingMailStatus(HWND hListView,HACCOUNT ActualAccount,struct CMailNumbers *MN)
 {
 	int i,in;
-	LV_ITEM item;
+	LVITEMW item;
 	HYAMNMAIL mail,msgq;
 
 	in=ListView_GetItemCount(hListView);
@@ -526,13 +544,14 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 	WCHAR *FromStr;
 	WCHAR SizeStr[20];
 
-	LV_ITEMW item;
+	LVITEMW item;
 	LVFINDINFO fi; 
 
 	int foundi,lfoundi;
 	struct CHeader UnicodeHeader;
 	BOOL Loaded,Extracted,FromStrNew=FALSE;
 
+	ZeroMemory(&item,sizeof(item));
 	ZeroMemory(&UnicodeHeader,sizeof(UnicodeHeader));
 
 	if(hListView!=NULL)
@@ -601,59 +620,32 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 			else if(UnicodeHeader.ReturnPath!=NULL)
 				FromStr=UnicodeHeader.ReturnPath;
 
-			item.pszText=FromStr;
-			
-			if(NULL!=FromStr)
-				item.cchTextMax=wcslen(item.pszText);
-			else
-				item.cchTextMax=0;
+			if(NULL==FromStr)
+			{
+				FromStr=L"";
+				FromStrNew=FALSE;
+			}
 		}
 
 
 		if((hListView!=NULL) && (msgq->Flags & YAMN_MSG_DISPLAY))
 		{
-			WCHAR *Temp=item.pszText;
-
-			item.pszText=NULL;
 			item.iSubItem=0;
+			item.pszText=FromStr;
+			item.iItem=SendMessageW(hListView,LVM_INSERTITEMW,(WPARAM)0,(LPARAM)&item);
 
-			item.iItem = SendMessageW(hListView,LVM_INSERTITEM,(WPARAM)0,(LPARAM)&item);
-
-			item.pszText=Temp;
-			item.iSubItem=0;
-			SendMessageW(hListView,LVM_SETITEMTEXT,(WPARAM)item.iItem,(LPARAM)&item);
-			
 			item.iSubItem=1;
-			if(NULL!=UnicodeHeader.Subject)
-			{
-				item.pszText=UnicodeHeader.Subject;
-				item.cchTextMax=wcslen(item.pszText);
-			}
-			else
-			{
-				item.pszText=L"";
-				item.cchTextMax=1;
-			}
-			SendMessageW(hListView,LVM_SETITEMTEXT,(WPARAM)item.iItem,(LPARAM)&item);
+			item.pszText=(NULL!=UnicodeHeader.Subject ? UnicodeHeader.Subject : (WCHAR*)L"");
+			SendMessageW(hListView,LVM_SETITEMTEXTW,(WPARAM)item.iItem,(LPARAM)&item);
 
 			item.iSubItem=2;
 			swprintf(SizeStr,L"%d kB",msgq->MailData->Size/1024);
 			item.pszText=SizeStr;
-			item.cchTextMax=wcslen(SizeStr);
-			SendMessageW(hListView,LVM_SETITEMTEXT,(WPARAM)item.iItem,(LPARAM)&item);
+			SendMessageW(hListView,LVM_SETITEMTEXTW,(WPARAM)item.iItem,(LPARAM)&item);
 
 			item.iSubItem=3;
-			if(NULL!=UnicodeHeader.Date)
-			{
-				item.pszText=UnicodeHeader.Date;
-				item.cchTextMax=wcslen(item.pszText);
-			}
-			else
-			{
-				item.pszText=L"";
-				item.cchTextMax=1;
-			}
-			SendMessageW(hListView,LVM_SETITEMTEXT,(WPARAM)item.iItem,(LPARAM)&item);
+			item.pszText=(NULL!=UnicodeHeader.Date ? UnicodeHeader.Date : (WCHAR*)L"");
+			SendMessageW(hListView,LVM_SETITEMTEXTW,(WPARAM)item.iItem,(LPARAM)&item);
 		}
 
 		if((nflags & YAMN_ACC_POP) && (ActualAccount->Flags & YAMN_ACC_POPN) && (msgq->Flags & YAMN_MSG_POPUP) && (msgq->Flags & YAMN_MSG_NEW))
@@ -763,7 +755,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 	else 
 		if(hDlg!=NULL)								//else insert icon and set window if new mails
 		{
-			SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_SCROLL,(WPARAM)0,(LPARAM)0x7ffffff);
+			SendMessageW(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_SCROLL,(WPARAM)0,(LPARAM)0x7ffffff);
 
 			if((nflags & YAMN_ACC_ICO) && (MN->Real.SysTrayUC+MN->Virtual.SysTrayUC))
 			{
@@ -914,7 +906,7 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 				else
 					DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read enter failed\n");
 				#endif
-				SendMessage(hWnd,UM_DESTROYPOPUP,0,0);
+				SendMessageW(hWnd,UM_DESTROYPOPUP,0,0);
 			}
 
 			break;
@@ -927,7 +919,7 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 			{
 				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)hContact,(LPARAM)"yamn new mail");
 			}
-			SendMessage(hWnd,UM_DESTROYPOPUP,0,0);
+			SendMessageW(hWnd,UM_DESTROYPOPUP,0,0);
 			break;			
 		case UM_FREEPLUGINDATA:
 			//Here we'd free our own data, if we had it.
@@ -1021,12 +1013,12 @@ LRESULT CALLBACK NoNewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lPar
 				else
 					DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read enter failed\n");
 				#endif
-				SendMessage(hWnd,UM_DESTROYPOPUP,0,0);
+				SendMessageW(hWnd,UM_DESTROYPOPUP,0,0);
 			}
 			break;
 	
 		case WM_CONTEXTMENU:
-			SendMessage(hWnd,UM_DESTROYPOPUP,0,0);
+			SendMessageW(hWnd,UM_DESTROYPOPUP,0,0);
 			break;
 
 		case UM_FREEPLUGINDATA:
@@ -1257,6 +1249,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			struct MailBrowserWinParam *MyParam=(struct MailBrowserWinParam *)lParam;
 			struct CMailWinUserInfo *mwui;
 
+			ListView_SetUnicodeFormat(GetDlgItem(hDlg,IDC_LISTMAILS),TRUE);
 			ListView_SetExtendedListViewStyle(GetDlgItem(hDlg,IDC_LISTMAILS),LVS_EX_FULLROWSELECT);
 
 			ActualAccount=MyParam->account;
@@ -1310,14 +1303,14 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			SendMessageW(GetDlgItem(hDlg,IDC_BTNAPP),WM_SETTEXT,(WPARAM)0,(LPARAM)iRunAppW);
 			SendMessageW(GetDlgItem(hDlg,IDC_BTNDEL),WM_SETTEXT,(WPARAM)0,(LPARAM)iDeleteMailsW);
 
-			LV_COLUMNW lvc0={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM,LVCFMT_LEFT,FromWidth,iFromW,wcslen(iFromW)+1,0};
-			LV_COLUMNW lvc1={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM,LVCFMT_LEFT,SubjectWidth,iSubjectW,wcslen(iSubjectW)+1,1};
-			LV_COLUMNW lvc2={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM,LVCFMT_LEFT,SizeWidth,iSizeW,wcslen(iSizeW)+1,2};
-			LV_COLUMNW lvc3={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM,LVCFMT_LEFT,SizeDate,iDateW,wcslen(iDateW)+1,3};
-			SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMN,(WPARAM)0,(LPARAM)&lvc0);
-			SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMN,(WPARAM)1,(LPARAM)&lvc1);
-			SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMN,(WPARAM)2,(LPARAM)&lvc2);
-			SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMN,(WPARAM)3,(LPARAM)&lvc3);
+			LVCOLUMNW lvc0={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,FromWidth,iFromW,0,0};
+			LVCOLUMNW lvc1={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,SubjectWidth,iSubjectW,0,0};
+			LVCOLUMNW lvc2={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,SizeWidth,iSizeW,0,0};
+			LVCOLUMNW lvc3={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,SizeDate,iDateW,0,0};
+			SendMessageW(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMNW,(WPARAM)0,(LPARAM)&lvc0);
+			SendMessageW(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMNW,(WPARAM)1,(LPARAM)&lvc1);
+			SendMessageW(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMNW,(WPARAM)2,(LPARAM)&lvc2);
+			SendMessageW(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMNW,(WPARAM)3,(LPARAM)&lvc3);
 			if(NULL!=iFromW)
 				delete[] iFromW;
 			if(NULL!=iSubjectW)
@@ -1362,7 +1355,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 		{
 			HACCOUNT ActualAccount;
 			RECT coord;
-			LVCOLUMN ColInfo;
+			LVCOLUMNW ColInfo;
 			NOTIFYICONDATA nid;
 			HYAMNMAIL Parser;
 			struct CMailWinUserInfo *mwui;
@@ -1377,6 +1370,8 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				SubjectWidth=ColInfo.cx;
 			if(ListView_GetColumn(GetDlgItem(hDlg,IDC_LISTMAILS),2,&ColInfo))
 				SizeWidth=ColInfo.cx;
+			if(ListView_GetColumn(GetDlgItem(hDlg,IDC_LISTMAILS),3,&ColInfo))
+				SizeDate=ColInfo.cx;
 
 			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"MailBrowser:DESTROY:save window position\n");
@@ -1658,7 +1653,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 					break;
 				case IDC_BTNDEL:
 				{
-					LV_ITEMW item;
+					LVITEMW item;
 					HYAMNMAIL FirstMail=NULL,ActualMail;
 					HANDLE ThreadRunningEV;
 					DWORD tid,Total=0;
@@ -1854,7 +1849,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 									default:
 										break;
 								}
-								ListView_SortItems(pNMListView->hdr.hwndFrom,ListViewCompareProc,pNMListView->iSubItem,);
+								ListView_SortItems(pNMListView->hdr.hwndFrom,ListViewCompareProc,pNMListView->iSubItem);
 								#ifdef DEBUG_SYNCHRO
 								DebugLog(SynchroFile,"MailBrowser:BTNAPP:ActualAccountSO-read done\n");
 								#endif
@@ -1892,6 +1887,8 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 										umma= mwui->UpdateMailsMessagesAccess;
 									}
 									ActualMail=(HYAMNMAIL)cd->nmcd.lItemlParam;
+									if(!ActualMail) 
+										ActualMail=(HYAMNMAIL)readItemLParam(cd->nmcd.hdr.hwndFrom,cd->nmcd.dwItemSpec);
 									#ifdef DEBUG_SYNCHRO
 									DebugLog(SynchroFile,"MailBrowser:DRAWITEM:ActualAccountMsgsSO-read wait\n");
 									#endif
@@ -2003,8 +2000,8 @@ DWORD WINAPI MailBrowser(LPVOID Param)
 		if((hMailBrowser==NULL) && ((MyParam.nflags & YAMN_ACC_MSG) || (MyParam.nflags & YAMN_ACC_ICO) || (MyParam.nnflags & YAMN_ACC_MSG)))
 		{
 			hMailBrowser=CreateDialogParamW(YAMNVar.hInst,MAKEINTRESOURCEW(IDD_DLGVIEWMESSAGES),NULL,(DLGPROC)DlgProcYAMNMailBrowser,(LPARAM)&MyParam);
-			SendMessage(hMailBrowser,WM_SETICON,(WPARAM)ICON_BIG,(LPARAM)hNewMailIcon);
-			SendMessage(hMailBrowser,WM_SETICON,(WPARAM)ICON_SMALL,(LPARAM)hNewMailIcon);
+			SendMessageW(hMailBrowser,WM_SETICON,(WPARAM)ICON_BIG,(LPARAM)hNewMailIcon);
+			SendMessageW(hMailBrowser,WM_SETICON,(WPARAM)ICON_SMALL,(LPARAM)hNewMailIcon);
 			MoveWindow(hMailBrowser,PosX,PosY,SizeX,SizeY,TRUE);
 		}
 
@@ -2012,7 +2009,7 @@ DWORD WINAPI MailBrowser(LPVOID Param)
 		{
 			struct CChangeContent Params={MyParam.nflags,MyParam.nnflags};	//if this thread created window, just post message to update mails
 
-			SendMessage(hMailBrowser,WM_YAMN_CHANGECONTENT,(WPARAM)ActualAccount,(LPARAM)&Params);	//we ensure this will do the thread who created the browser window
+			SendMessageW(hMailBrowser,WM_YAMN_CHANGECONTENT,(WPARAM)ActualAccount,(LPARAM)&Params);	//we ensure this will do the thread who created the browser window
 		}
 		else
 			UpdateMails(NULL,ActualAccount,MyParam.nflags,MyParam.nnflags);	//update mails without displaying or refreshing any window

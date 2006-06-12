@@ -55,7 +55,7 @@ int WINAPI SetFilterPluginFcnImportFcn(HYAMNFILTERPLUGIN Plugin,DWORD Importance
 
 struct CExportedFunctions FilterPluginExportedFcn[]=
 {
-	{YAMN_SETFILTERPLUGINFCNIMPORTID,SetFilterPluginFcnImportFcn},
+	{YAMN_SETFILTERPLUGINFCNIMPORTID,(void *)SetFilterPluginFcnImportFcn},
 };
 
 struct CExportedServices FilterPluginExportedSvc[]=

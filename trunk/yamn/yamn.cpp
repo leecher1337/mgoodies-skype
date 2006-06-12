@@ -141,7 +141,7 @@ int GetVariablesSvc(WPARAM wParam,LPARAM)
 DWORD WINAPI YAMNHotKeyThread(LPVOID Param)
 {
 	MSG WinMessage;
-	WORD HotKey=(WORD)Param;
+	WORD HotKey = *((WORD *)Param);
 	int HotKeyID;
 
 //	register hotkey for main YAMN thread first 

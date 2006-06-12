@@ -196,8 +196,8 @@ void WINAPI SetStatusFcn(HACCOUNT Which,char *Value);
 
 struct CExportedFunctions AccountExportedFcn[]=
 {
-	{YAMN_GETSTATUSID,GetStatusFcn},
-	{YAMN_SETSTATUSID,SetStatusFcn},
+	{YAMN_GETSTATUSID,(void *)GetStatusFcn},
+	{YAMN_SETSTATUSID,(void *)SetStatusFcn},
 };
 
 struct CExportedServices AccountExportedSvc[]=

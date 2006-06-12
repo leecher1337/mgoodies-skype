@@ -66,7 +66,7 @@ int DeleteFileNameSvc(WPARAM,LPARAM);
 
 struct CExportedFunctions ProtoPluginExportedFcn[]=
 {
-	{YAMN_SETPROTOCOLPLUGINFCNIMPORTID,SetProtocolPluginFcnImportFcn},
+	{YAMN_SETPROTOCOLPLUGINFCNIMPORTID,(void *)SetProtocolPluginFcnImportFcn},
 };
 
 struct CExportedServices ProtoPluginExportedSvc[]=

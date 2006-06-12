@@ -23,7 +23,7 @@ public:
 	void Send(const char *query) throw(DWORD);
 	char* Recv(char *buf=NULL,int buflen=65536) throw(DWORD);
 	void Disconnect();
-	void SSLify();
+	void SSLify()throw(DWORD);
 
 	inline BOOL Connected() {return ConEstablished;}
 

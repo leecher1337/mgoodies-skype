@@ -12,7 +12,7 @@
 #include "main.h"
 #include "yamn.h"
 #include "resources/resource.h"
-
+#include <io.h>
 //- imported ---------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
@@ -173,7 +173,21 @@ static void GetProfileDirectory(char *szPath,int cbPath)
 	CreateDirectory(szPath,NULL);
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
+void SetDefaultProtocolIcons()
+{
+	char szFileName[MAX_PATH+1];
+
+	// determine whether external icon file exists
+	lstrcpy(szFileName, szMirandaDir);
+	lstrcat(szFileName, "\\icons\\proto_YAMN.dll");
+
+	if(_access(szFileName, 0) == 0)
+		DBDeleteContactSetting(NULL, "Icons", "YAMN40072");
+	else
+		DBWriteContactSettingString(NULL, "Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
+}
+
+extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
 	char szProfileDir[MAX_PATH+1];
 	OSVERSIONINFO OSversion;
@@ -319,7 +333,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	WordToModAndVk(DBGetContactSettingWord(NULL,YAMN_DBMODULE,YAMN_HKCHECKMAIL,YAMN_DEFAULTHK),&mod,&vk);
 		
 //Create thread for hotkey
-	CloseHandle(CreateThread(NULL,0,YAMNHotKeyThread,(LPVOID)MAKEWORD((BYTE)vk,(BYTE)mod),0,&HotKeyThreadID));
+	WORD HotKey = MAKEWORD((BYTE)vk,(BYTE)mod);
+	CloseHandle(CreateThread(NULL,0,YAMNHotKeyThread,(LPVOID)&HotKey,0,&HotKeyThreadID));
 //Create thread that will be executed every second
 	if(!(SecTimer=SetTimer(NULL,0,1000,(TIMERPROC)TimerProc)))
 		return 1;

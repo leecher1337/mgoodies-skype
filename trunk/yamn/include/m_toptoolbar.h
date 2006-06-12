@@ -103,3 +103,4 @@ returns: 1 on success, -1 on failure.
 #define MS_TTB_SETBUTTONOPTIONS					"TopToolBar/SetOptions"
 
 #endif
+
