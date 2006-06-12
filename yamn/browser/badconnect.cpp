@@ -20,6 +20,7 @@
 #include "../m_yamn.h"
 #include "../resources/resource.h"
 #include "m_browser.h"
+#include <win2k.h>
 
 #define BADCONNECTTITLE "%s - connection error"
 #define BADCONNECTMSG "An error occured. Error code: %d"

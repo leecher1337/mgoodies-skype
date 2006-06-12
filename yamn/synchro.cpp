@@ -89,13 +89,13 @@ DWORD WINAPI SCDecFcn(PSCOUNTER SCounter);
 
 struct CExportedFunctions SynchroExportedFcn[]=
 {
-	{YAMN_WAITTOWRITEID,WaitToWriteFcn},
-	{YAMN_WRITEDONEID,WriteDoneFcn},
-	{YAMN_WAITTOREADID,WaitToReadFcn},
-	{YAMN_READDONEID,ReadDoneFcn},
-	{YAMN_SCGETNUMBERID,SCGetNumberFcn},
-	{YAMN_SCINCID,SCIncFcn},
-	{YAMN_SCDECID,SCDecFcn},
+	{YAMN_WAITTOWRITEID,(void *)WaitToWriteFcn},
+	{YAMN_WRITEDONEID,(void *)WriteDoneFcn},
+	{YAMN_WAITTOREADID,(void *)WaitToReadFcn},
+	{YAMN_READDONEID,(void *)ReadDoneFcn},
+	{YAMN_SCGETNUMBERID,(void *)SCGetNumberFcn},
+	{YAMN_SCINCID,(void *)SCIncFcn},
+	{YAMN_SCDECID,(void *)SCDecFcn},
 };
 
 //--------------------------------------------------------------------------------------------------

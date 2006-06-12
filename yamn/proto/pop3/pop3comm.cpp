@@ -21,6 +21,8 @@
 //- imported ---------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
+//From main.cpp
+void SetDefaultProtocolIcons();
 //From pop3opt.cpp
 extern int POP3OptInit(WPARAM wParam,LPARAM lParam);
 //From netlib.cpp
@@ -152,7 +154,7 @@ YAMN_PROTOREGISTRATION POP3ProtocolRegistration=
 {
 	"POP3 protocol (internal)",
 	YAMN_VERSION_C,
-	"© 2002-2004 majvan | 2005 tweety",
+	"@ 2002-2004 majvan | 2005 tweety",
 	"Mail notifier and browser for Miranda IM. Included POP3 protocol.",
 	"francois.mean@skynet.be",
 	"http://forums.miranda-im.org/showthread.php?t=3035",
@@ -298,12 +300,12 @@ void LoadIcons()
 			DBFreeVariant(&dbv);
 		}
 		else
-			DBWriteContactSettingString(NULL,"Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
+			SetDefaultProtocolIcons();
 	}
 	else
 	{
 		//Icon to show in contact list
-		DBWriteContactSettingString(NULL, "Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
+		SetDefaultProtocolIcons();
 	}
 
 }
@@ -898,7 +900,7 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write wait failed\n");
 			#endif
-			throw (DWORD)ActualAccount->SystemError=EACC_STOPPED;
+			throw (DWORD)(ActualAccount->SystemError=EACC_STOPPED);
 		}
 		#ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write enter\n");
@@ -1692,5 +1694,5 @@ WCHAR* WINAPI GetErrorString(DWORD Code)
 
 void WINAPI DeleteErrorString(LPVOID String)
 {
-	delete String;
+	delete (char *)String;
 }

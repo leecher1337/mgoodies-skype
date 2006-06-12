@@ -94,14 +94,14 @@ void WINAPI SetRemoveFlagsInQueueFcn(HYAMNMAIL From,DWORD FlagsSet,DWORD FlagsNo
 
 struct CExportedFunctions MailExportedFcn[]=
 {
-	{YAMN_SYNCHROMIMEMSGSID,SynchroMessagesFcn},
-	{YAMN_TRANSLATEHEADERID,TranslateHeaderFcn},
-	{YAMN_APPENDQUEUEID,AppendQueueFcn},
-	{YAMN_DELETEMIMEQUEUEID,DeleteMessagesToEndFcn},
-	{YAMN_DELETEMIMEMESSAGEID,DeleteMessageFromQueueFcn},
-	{YAMN_FINDMIMEMESSAGEID,FindMessageByIDFcn},
-	{YAMN_CREATENEWDELETEQUEUEID,CreateNewDeleteQueueFcn},
-	{YAMN_SETREMOVEQUEUEFLAGSID,SetRemoveFlagsInQueueFcn},
+	{YAMN_SYNCHROMIMEMSGSID,(void *)SynchroMessagesFcn},
+	{YAMN_TRANSLATEHEADERID,(void *)TranslateHeaderFcn},
+	{YAMN_APPENDQUEUEID,(void *)AppendQueueFcn},
+	{YAMN_DELETEMIMEQUEUEID,(void *)DeleteMessagesToEndFcn},
+	{YAMN_DELETEMIMEMESSAGEID,(void *)DeleteMessageFromQueueFcn},
+	{YAMN_FINDMIMEMESSAGEID,(void *)FindMessageByIDFcn},
+	{YAMN_CREATENEWDELETEQUEUEID,(void *)CreateNewDeleteQueueFcn},
+	{YAMN_SETREMOVEQUEUEFLAGSID,(void *)SetRemoveFlagsInQueueFcn},
 };
 
 struct CExportedServices MailExportedSvc[]=

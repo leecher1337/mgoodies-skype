@@ -104,7 +104,7 @@ static int Service_LoadIcon(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
  
-static int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
+/*static*/ int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
 {
 	ContactDoubleclicked(((CLISTEVENT*)lParam)->lParam, lParam);
 	return 0;
@@ -246,7 +246,7 @@ static int ContactMailCheck(WPARAM wParam, LPARAM lParam)
 }
 
 
-static void ContactDoubleclicked(WPARAM wParam, LPARAM lParam)
+/*static*/ void ContactDoubleclicked(WPARAM wParam, LPARAM lParam)
 {
 	DBVARIANT dbv;
 	char *szProto;

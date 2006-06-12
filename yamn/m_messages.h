@@ -1,7 +1,7 @@
 #ifndef __MESSAGES_H
 #define __MESSAGES_H
 
-#include "list.h"
+//#include "list.h"
 
 // structure for chained list of handles (window handles, account handles, whatever)
 struct WndHandles

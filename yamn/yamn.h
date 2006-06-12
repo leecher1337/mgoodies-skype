@@ -1,5 +1,11 @@
 #ifndef __YAMN_H
 #define __YAMN_H
+#ifndef _WIN32_IE
+	#define _WIN32_IE 0x0400
+#endif
+#ifndef _WIN32_WINNT
+	#define _WIN32_WINNT 0x0501
+#endif
 #include <wchar.h>
 #include <tchar.h>
 #include <windows.h>
@@ -53,7 +59,7 @@ void UnInitDebug();
 #endif
 
 //From synchro.cpp
-struct CExportedFunctions SynchroExported[];
+//struct CExportedFunctions SynchroExported[];
 
 //From yamn.cpp
 int GetFcnPtrSvc(WPARAM wParam,LPARAM lParam);
@@ -66,7 +72,7 @@ int ForceCheckSvc(WPARAM,LPARAM);
 // int ExitProc(WPARAM,LPARAM);
 
 //From account.cpp
-struct CExportedFunctions AccountExported[];
+//struct CExportedFunctions AccountExported[];
 int CreatePluginAccountSvc(WPARAM wParam,LPARAM lParam);
 int DeletePluginAccountSvc(WPARAM wParam,LPARAM lParam);
 int WriteAccountsToFileASvc(WPARAM wParam,LPARAM lParam);
@@ -78,7 +84,7 @@ int FindAccountByNameSvc(WPARAM wParam,LPARAM lParam);
 int GetNextFreeAccountSvc(WPARAM wParam,LPARAM lParam);
 
 //From protoplugin.cpp
-struct CExportedFunctions ProtoPluginExported[];
+//struct CExportedFunctions ProtoPluginExported[];
 int UnregisterProtoPlugins();
 int RegisterProtocolPluginSvc(WPARAM,LPARAM);
 int UnregisterProtocolPluginSvc(WPARAM,LPARAM);
@@ -87,14 +93,14 @@ int GetFileNameASvc(WPARAM,LPARAM);
 int DeleteFileNameSvc(WPARAM,LPARAM);
 
 //From filterplugin.cpp
-struct CExportedFunctions FilterPluginExported[];
+//struct CExportedFunctions FilterPluginExported[];
 int UnregisterFilterPlugins();
 int RegisterFilterPluginSvc(WPARAM,LPARAM);
 int UnregisterFilterPluginSvc(WPARAM,LPARAM);
 int FilterMailSvc(WPARAM,LPARAM);
 
 //From mails.cpp (MIME)
-struct CExportedFunctions MailExported[];
+//struct CExportedFunctions MailExported[];
 int CreateAccountMailSvc(WPARAM wParam,LPARAM lParam);
 int DeleteAccountMailSvc(WPARAM wParam,LPARAM lParam);
 int LoadMailDataSvc(WPARAM wParam,LPARAM lParam);

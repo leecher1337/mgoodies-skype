@@ -9,11 +9,11 @@ class CNLClient: public CNetClient
 {
 public:
 	CNLClient(): hConnection(NULL) {}
-	void Connect(const char* servername,const int port);
+	void Connect(const char* servername,const int port) throw(DWORD);
 	void Send(const char *query) throw(DWORD);
 	char* Recv(char *buf=NULL,int buflen=65536) throw(DWORD);
 	void Disconnect();
-	void SSLify();
+	void SSLify()throw(DWORD);
 	
 	inline BOOL Connected() {return hConnection!=NULL;}
 

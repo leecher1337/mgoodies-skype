@@ -342,14 +342,14 @@ IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
 //
 // Dialog Info
 //
-
+#ifndef __GNUC__
 IDD_POP3ACCOUNTOPT DLGINIT
 BEGIN
     IDC_COMBOACCOUNT, 0x403, 1, 0
 "\000" 
     0
 END
-
+#endif
 #endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
