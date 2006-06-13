@@ -511,7 +511,7 @@ int JabberFileAllow( WPARAM wParam, LPARAM lParam )
 	filetransfer* ft = ( filetransfer* ) ccs->wParam;
 	ft->std.workingDir = mir_strdup(( char* )ccs->lParam );
 	int len = strlen( ft->std.workingDir )-1;
-	if ( ft->std.workingDir[len] == '//' || ft->std.workingDir[len] == '\\' )
+	if ( ft->std.workingDir[len] == '/' || ft->std.workingDir[len] == '\\' )
 		ft->std.workingDir[len] = 0;
 
 	switch ( ft->type ) {

@@ -1327,6 +1327,20 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 /////////////////////////////////////////////////////////////////////////////////////////
 // Handles various <iq... requests
 
+#ifdef __WINE__
+#include <sys/utsname.h>
+TCHAR *JabberReadLinuxUname()
+{
+	struct utsname sysinfo;
+	static TCHAR str[MAX_PATH+1];
+
+	if( uname( &sysinfo ) ) return NULL;
+
+	mir_sntprintf( str, SIZEOF( str ), _T("%s %s"), sysinfo.sysname, sysinfo.release );
+
+	return str;
+}
+#endif
 static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 {
 	TCHAR* from;
@@ -1335,32 +1349,40 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 
 	char* version = JabberGetVersionText();
 	TCHAR* os = NULL;
+#ifdef __WINE__
+	TCHAR* linuxOS = JabberReadLinuxUname();
+	if (!linuxOS) {
+#endif		
+		OSVERSIONINFO osvi = { 0 };
+		osvi.dwOSVersionInfoSize = sizeof( OSVERSIONINFO );
+		if ( GetVersionEx( &osvi )) {
+			switch ( osvi.dwPlatformId ) {
+			case VER_PLATFORM_WIN32_NT:
+				if ( osvi.dwMajorVersion == 5 ) {
+					if ( osvi.dwMinorVersion == 2 ) os = TranslateT( "Windows Server 2003" );
+					else if ( osvi.dwMinorVersion == 1 ) os = TranslateT( "Windows XP" );
+					else if ( osvi.dwMinorVersion == 0 ) os = TranslateT( "Windows 2000" );
+				}
+				else if ( osvi.dwMajorVersion <= 4 ) {
+					os = TranslateT( "Windows NT" );
+				}
+				break;
+			case VER_PLATFORM_WIN32_WINDOWS:
+				if ( osvi.dwMajorVersion == 4 ) {
+					if ( osvi.dwMinorVersion == 0 ) os = TranslateT( "Windows 95" );
+					if ( osvi.dwMinorVersion == 10 ) os = TranslateT( "Windows 98" );
+					if ( osvi.dwMinorVersion == 90 ) os = TranslateT( "Windows ME" );
+				}
+				break;
+		}	}
 
-	OSVERSIONINFO osvi = { 0 };
-	osvi.dwOSVersionInfoSize = sizeof( OSVERSIONINFO );
-	if ( GetVersionEx( &osvi )) {
-		switch ( osvi.dwPlatformId ) {
-		case VER_PLATFORM_WIN32_NT:
-			if ( osvi.dwMajorVersion == 5 ) {
-				if ( osvi.dwMinorVersion == 2 ) os = TranslateT( "Windows Server 2003" );
-				else if ( osvi.dwMinorVersion == 1 ) os = TranslateT( "Windows XP" );
-				else if ( osvi.dwMinorVersion == 0 ) os = TranslateT( "Windows 2000" );
-			}
-			else if ( osvi.dwMajorVersion <= 4 ) {
-				os = TranslateT( "Windows NT" );
-			}
-			break;
-		case VER_PLATFORM_WIN32_WINDOWS:
-			if ( osvi.dwMajorVersion == 4 ) {
-				if ( osvi.dwMinorVersion == 0 ) os = TranslateT( "Windows 95" );
-				if ( osvi.dwMinorVersion == 10 ) os = TranslateT( "Windows 98" );
-				if ( osvi.dwMinorVersion == 90 ) os = TranslateT( "Windows ME" );
-			}
-			break;
-	}	}
-
-	if ( os == NULL ) os = TranslateT( "Windows" );
-
+		if ( os == NULL ) 
+#ifndef __WINE__
+		os = TranslateT( "Windows" );
+#else
+		os = _T("Wine");
+	}
+#endif
 	char mversion[100];
 	strcpy( mversion, "Miranda IM " );
 	JCallService( MS_SYSTEM_GETVERSIONTEXT, sizeof( mversion )-12, ( LPARAM )&mversion[11] );
@@ -1381,7 +1403,12 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 
 	XmlNodeIq iq( "result", idStr, from );
 	XmlNode* query = iq.addQuery( "jabber:iq:version" );
-	query->addChild( "name", mversion ); query->addChild( "version", version ); query->addChild( "os", os );
+	query->addChild( "name", mversion ); query->addChild( "version", version ); 
+#ifndef __WINE__
+	query->addChild( "os", os );
+#else
+	query->addChild( "os", linuxOS?linuxOS:os );
+#endif
 	JabberSend( jabberThreadInfo->s, iq );
 
 	if ( version ) mir_free( version );

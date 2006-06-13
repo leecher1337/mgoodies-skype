@@ -532,7 +532,18 @@ static BOOL CALLBACK EditPhoneDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 	}
 	return FALSE;
 }
+#ifdef __WINE__
+LPARAM readItemLParam(HWND hwnd,DWORD iItem)
+{
+	LVITEM item;
 
+	item.mask = LVIF_PARAM;
+	item.iItem = iItem;
+	item.iSubItem = 0;
+	SendMessage(hwnd, LVM_GETITEM, 0, (LPARAM)&item);
+	return item.lParam;
+}
+#endif
 #define M_REMAKELISTS  ( WM_USER+1 )
 static BOOL CALLBACK ContactDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
 {
@@ -616,7 +627,11 @@ static BOOL CALLBACK ContactDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 			case NM_CUSTOMDRAW:
 				{
 					NMLVCUSTOMDRAW *nm = ( NMLVCUSTOMDRAW * ) lParam;
-
+					#ifdef __WINE__
+					// this is a wine bug workaround
+					if (!nm->nmcd.lItemlParam)
+						nm->nmcd.lItemlParam = readItemLParam(nm->nmcd.hdr.hwndFrom, nm->nmcd.dwItemSpec);
+					#endif
 					switch ( nm->nmcd.dwDrawStage ) {
 					case CDDS_PREPAINT:
 					case CDDS_ITEMPREPAINT:

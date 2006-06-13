@@ -13,6 +13,19 @@
 #define NUM100NANOSEC  116444736000000000
 #endif
 
+#ifndef _ttoi64
+#ifdef UNICODE
+#define _ttoi64   _wtoi64
+#else
+#define _ttoi64   _atoi64
+#endif
+#endif
+
+#ifndef UInt32x32To64
+#define UInt32x32To64(a, b)   ((DWORDLONG)((DWORD)(a)) * (DWORDLONG)((DWORD)(b)))
+#endif
+
+
 
 LRESULT CALLBACK PopupDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 typedef struct {
