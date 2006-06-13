@@ -684,7 +684,7 @@ static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 				for ( i=0; i<item->resourceCount; i++ ) {
 					//if ( r[i].statusMessage ) { // I want the resource to be listed even if the status message is empty
 						msgCount++;
-						len += ( _tcslen( r[i].resourceName ) + (r[i].statusMessage?_tcslen( r[i].statusMessage ):_tcslen(TranslateT("none"))) + 8 );
+						len += ( _tcslen( r[i].resourceName ) + (r[i].statusMessage?_tcslen( r[i].statusMessage ):0) + 8 );
 				}	//}
 
 				TCHAR* str = ( TCHAR* )alloca( sizeof( TCHAR )*( len+1 ));
@@ -697,7 +697,7 @@ static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 							_tcscat( str, r[i].resourceName );
 							_tcscat( str, _T(" ): "));
 						}
-						_tcscat( str, r[i].statusMessage?r[i].statusMessage:TranslateT("none"));
+						if (r[i].statusMessage) _tcscat( str, r[i].statusMessage);
 				}	//}
 
 				#if defined( _UNICODE )
