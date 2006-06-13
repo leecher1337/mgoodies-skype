@@ -1,5 +1,5 @@
 #include "jabber.h"
-#include <m_icolib.h>
+#include "sdk/m_icolib.h"
 #include <commctrl.h>
 #include "resource.h"
 extern HINSTANCE hInst;

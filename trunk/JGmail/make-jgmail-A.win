@@ -7,7 +7,7 @@ WINDRES = windres.exe
 RES  = MinGW/A/jabber_private.res
 OBJ  = MinGW/A/gmail.o MinGW/A/google_token.o MinGW/A/icolib.o MinGW/A/jabber.o MinGW/A/jabber_agent.o MinGW/A/jabber_bitmap.o MinGW/A/jabber_byte.o MinGW/A/jabber_chat.o MinGW/A/jabber_file.o MinGW/A/jabber_form.o MinGW/A/jabber_ft.o MinGW/A/jabber_groupchat.o MinGW/A/jabber_iq.o MinGW/A/jabber_iqid.o MinGW/A/jabber_iqid_muc.o MinGW/A/jabber_libstr.o MinGW/A/jabber_list.o MinGW/A/jabber_menu.o MinGW/A/jabber_misc.o MinGW/A/jabber_opt.o MinGW/A/jabber_password.o MinGW/A/jabber_proxy.o MinGW/A/jabber_ssl.o MinGW/A/jabber_std.o MinGW/A/jabber_svc.o MinGW/A/jabber_thread.o MinGW/A/jabber_userinfo.o MinGW/A/jabber_util.o MinGW/A/jabber_vcard.o MinGW/A/jabber_ws.o MinGW/A/jabber_xml.o MinGW/A/jabber_xmlns.o MinGW/A/sha1.o $(RES)
 LINKOBJ  = MinGW/A/gmail.o MinGW/A/google_token.o MinGW/A/icolib.o MinGW/A/jabber.o MinGW/A/jabber_agent.o MinGW/A/jabber_bitmap.o MinGW/A/jabber_byte.o MinGW/A/jabber_chat.o MinGW/A/jabber_file.o MinGW/A/jabber_form.o MinGW/A/jabber_ft.o MinGW/A/jabber_groupchat.o MinGW/A/jabber_iq.o MinGW/A/jabber_iqid.o MinGW/A/jabber_iqid_muc.o MinGW/A/jabber_libstr.o MinGW/A/jabber_list.o MinGW/A/jabber_menu.o MinGW/A/jabber_misc.o MinGW/A/jabber_opt.o MinGW/A/jabber_password.o MinGW/A/jabber_proxy.o MinGW/A/jabber_ssl.o MinGW/A/jabber_std.o MinGW/A/jabber_svc.o MinGW/A/jabber_thread.o MinGW/A/jabber_userinfo.o MinGW/A/jabber_util.o MinGW/A/jabber_vcard.o MinGW/A/jabber_ws.o MinGW/A/jabber_xml.o MinGW/A/jabber_xmlns.o MinGW/A/sha1.o $(RES)
-LIBS =  -L"C:/Dev-Cpp/lib" -lkernel32 -luser32 -lgdi32 -lcomctl32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -lwsock32 -lversion --image-base "0x32500000"  -fmessage-length=0 -s 
+LIBS =  -L"C:/Dev-Cpp/lib" -lkernel32 -luser32 -lgdi32 -lcomctl32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -lwsock32 -lversion -fmessage-length=0 -w -s 
 INCS =  -I"C:/Dev-Cpp/include"  -I"../../include" 
 CXXINCS =  -I"C:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"C:/Dev-Cpp/include/c++/3.4.2/backward"  -I"C:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"C:/Dev-Cpp/include/c++/3.4.2"  -I"C:/Dev-Cpp/include"  -I"../../include" 
 BIN  = ../../bin/MinGW/A/jgmail.dll
@@ -28,7 +28,8 @@ DEFFILE=../../bin/MinGW/A/libjgmail.def
 STATICLIB=../../bin/MinGW/A/libjgmail.a
 
 $(BIN): $(LINKOBJ)
-	$(DLLWRAP) --output-def $(DEFFILE) --driver-name c++ --implib $(STATICLIB) $(LINKOBJ) $(LIBS) -o $(BIN)
+#	$(DLLWRAP) --output-def $(DEFFILE) --driver-name c++ --implib $(STATICLIB) $(LINKOBJ) $(LIBS) -o $(BIN)
+	$(CPP) $(LINKOBJ) $(LIBS) -o $(BIN) -mdll
 
 MinGW/A/gmail.o: gmail.cpp
 	$(CPP) -c gmail.cpp -o MinGW/A/gmail.o $(CXXFLAGS)
