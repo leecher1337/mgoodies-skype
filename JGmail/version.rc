@@ -1,5 +1,4 @@
 #include "version.h"
-#include "winres.h"
 
 #ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
