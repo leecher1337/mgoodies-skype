@@ -37,15 +37,6 @@ void init_list_interface()
 }
 
 
-BOOL List_Compare( SortedList* p_list, void *p_value1, void *p_value2 )
-{
-//	if ( p_list->compareFunc == NULL )
-		return p_value1 == p_value2;
-//	else
-//		return p_list->compareFunc( p_value1, p_value2 ) == 0;
-}
-
-
 void List_DestroyFreeContents( SortedList* p_list )
 {
 	if ( p_list == NULL )
@@ -93,7 +84,7 @@ int List_RemoveByValue( SortedList* p_list, void* p_value )
 		int i;
 		for ( i = p_list->realCount - 1 ; i >= 0 ; i-- )
 		{
-			if ( List_Compare( p_list, p_list->items[ i ], p_value ) )
+			if ( p_list->items[ i ] == p_value )
 				ret += List_Remove( p_list, i );
 		}
 	}
@@ -111,7 +102,7 @@ int List_RemoveByValueFreeContents( SortedList* p_list, void* p_value )
 		int i;
 		for ( i = p_list->realCount - 1 ; i >= 0 ; i-- )
 		{
-			if ( List_Compare( p_list, p_list->items[ i ], p_value ) )
+			if ( p_list->items[ i ] == p_value )
 			{
 				mir_free( p_list->items[ i ] );
 				ret += List_Remove( p_list, i );
