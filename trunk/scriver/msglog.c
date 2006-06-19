@@ -217,7 +217,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	memset(event, 0, sizeof(struct EventData));
 	event->hContact = hContact;
 	event->eventType = dbei.eventType;
-	event->dwFlags = (dbei.flags & DBEF_READ ? IEEDF_READ : 0) | (dbei.flags & DBEF_SENT ? IEEDF_SENT : 0);
+	event->dwFlags = (dbei.flags & DBEF_READ ? IEEDF_READ : 0) | (dbei.flags & DBEF_SENT ? IEEDF_SENT : 0) | (dbei.flags & DBEF_RTL ? IEEDF_RTL : 0);
 	event->time = dbei.timestamp;
 	event->pszNick = NULL;
 #if defined( _UNICODE )
@@ -430,10 +430,7 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
     AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
     colour = DBGetContactSettingDword(NULL, SRMMMOD, "LineColour", RGB(224,224,224));
     AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
-	if (dat->flags & SMF_RTL)
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\rtlpar");
-	else
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}\\pard");
+	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}");
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\li30\\ri30\\fi0\\tx0");
 	return buffer;
 }
@@ -526,7 +523,7 @@ int isSameDate(time_t time1, time_t time2)
 }
 
 //free() the return value
-static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventData *event, int prefixParaBreak, int firstEvent, struct LogStreamData *streamData)
+static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventData *event, int prefixParaBreak, struct LogStreamData *streamData)
 {
 	char *buffer;
 	int bufferAlloced, bufferEnd;
@@ -536,9 +533,23 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 	bufferAlloced = 1024;
 	buffer = (char *) malloc(bufferAlloced);
 	buffer[0] = '\0';
-	if (prefixParaBreak) {
+
+    if ( dat->bIsFirstAppend ) {
+		if (event->dwFlags & IEEDF_RTL) {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
+		} else {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\pard");
+		}
+		dat->bIsFirstAppend = FALSE;
+    } else {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
+		if (event->dwFlags & IEEDF_RTL) {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
+		} else {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrpar");
+		}
 	}
+
  	if ((g_dat->flags & SMF_GROUPMESSAGES) && event->dwFlags == LOWORD(dat->lastEventType)
 	  && event->eventType == EVENTTYPE_MESSAGE && HIWORD(dat->lastEventType) == EVENTTYPE_MESSAGE
 	  && (isSameDate(event->time, dat->lastEventTime))
@@ -546,14 +557,19 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 	  && ((((int)event->time < dat->startTime) == (dat->lastEventTime < dat->startTime)) || !(event->dwFlags & IEEDF_READ))) {
 		isGroupBreak = FALSE;
 	}
-	if (!firstEvent && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
-//		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\highlight%d\\line\\sl0", msgDlgFontCount + 3);
+	if (!dat->bIsFirstAppend && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\par\\sl0", msgDlgFontCount + 4);
 	}
+
 	if (event->eventType == EVENTTYPE_MESSAGE) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 2 + ((event->dwFlags & IEEDF_SENT) ? 1 : 0));
 	} else {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1);
+	}
+	if (event->dwFlags & IEEDF_RTL) {
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlmark");
+	} else {
+//		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrmark");
 	}
 
 	if (g_dat->flags&SMF_SHOWICONS && isGroupBreak) {
@@ -633,6 +649,13 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		case EVENTTYPE_MESSAGE:
 		if (g_dat->flags & SMF_MSGONNEWLINE && showColon) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
+			/*
+			if (event->dwFlags & IEEDF_RTL) {
+				AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
+			} else {
+				AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrpar");
+			}
+			*/
 		}
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
 
@@ -672,7 +695,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		}
 	}
 	if (!prefixParaBreak) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
+//		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 	}
 	dat->lastEventTime = event->time;
 	dat->lastEventType = MAKELONG(event->dwFlags, event->eventType);
@@ -698,11 +721,11 @@ static DWORD CALLBACK LogStreamInEvents(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG 
 						struct EventData *event = getEventFromDB(dat->dlgDat, dat->hContact, dat->hDbEvent);
 						dat->buffer = NULL;
 						if (event != NULL) {
-							dat->buffer = CreateRTFFromDbEvent2(dat->dlgDat, event, !dat->isFirst, dat->isEmpty, dat);
+							dat->buffer = CreateRTFFromDbEvent2(dat->dlgDat, event, !dat->isFirst, dat);
 							freeEvent(event);
 						}
 #else
-						dat->buffer = CreateRTFFromDbEvent(dat->dlgDat, dat->hContact, dat->hDbEvent, !dat->isFirst, dat->isEmpty, dat);
+						dat->buffer = CreateRTFFromDbEvent(dat->dlgDat, dat->hContact, dat->hDbEvent, !dat->isFirst, dat);
 #endif
 						if (dat->buffer)
 							dat->hDbEventLast = dat->hDbEvent;
@@ -711,7 +734,7 @@ static DWORD CALLBACK LogStreamInEvents(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG 
 							break;
 					} while (dat->buffer == NULL && dat->hDbEvent);
 					if (dat->buffer) {
-						dat->isEmpty = 0;
+						//dat->isEmpty = 0;
 						break;
 					}
 				}
@@ -798,10 +821,17 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
         sel.cpMin = sel.cpMax = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
         SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & sel);
         fi.chrg.cpMin = SendDlgItemMessage(hwndDlg, IDC_LOG, EM_GETTEXTLENGTHEX, (WPARAM)&gtxl, 0);
-    } else
+		dat->bIsFirstAppend = FALSE;
+    } else {
+		SetDlgItemText(hwndDlg, IDC_LOG, _T(""));
+        sel.cpMin = 0;
+		sel.cpMax = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
+        SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & sel);
         fi.chrg.cpMin = 0;
+		dat->bIsFirstAppend = TRUE;
+	}
 
-	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMIN, fAppend ? SFF_SELECTION | SF_RTF : SF_RTF, (LPARAM) & stream);
+	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMIN, fAppend ? SFF_SELECTION | SF_RTF : SFF_SELECTION | SF_RTF, (LPARAM) & stream);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & oldSel);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_HIDESELECTION, FALSE, 0);
 	if (ServiceExists(MS_SMILEYADD_REPLACESMILEYS)) {

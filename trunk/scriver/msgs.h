@@ -37,6 +37,7 @@ struct ErrorWindowData
 	char *	szDescription;
 	char *	szText;
 	int		textSize;
+	int		flags;
 	HWND	hwndParent;
 };
 
@@ -95,6 +96,7 @@ struct MessageSendInfo
 	int		timeout;
 	char *	sendBuffer;
 	int		sendBufferSize;
+	int		flags;
 };
 
 
@@ -142,6 +144,7 @@ struct MessageWindowData
 	int		messagesInProgress;
 	int		codePage;
 	struct avatarCacheEntry *ace;
+	int bIsFirstAppend;
 };
 
 #define HM_EVENTSENT         (WM_USER+10)
