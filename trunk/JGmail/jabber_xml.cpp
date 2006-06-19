@@ -115,8 +115,6 @@ int JabberXmlParse( XmlState *xmlState, char* buffer, int datalen )
 	char attr[ATTR_MAX_LEN];
 	XmlElemType elemType;
 
-	NotifyEventHooks(heventRawXMLIn, (WPARAM)buffer, datalen);
-
 	eob = buffer + datalen;
 	num = 0;
 	// Skip leading whitespaces

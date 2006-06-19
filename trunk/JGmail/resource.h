@@ -47,10 +47,6 @@
 #define IDD_GROUPCHAT_INPUT             167
 #define IDD_ADVSEARCH_TLEN              169
 #define IDD_JIDLIST                     171
-//#define IDI_GCOWNER                     173
-//#define IDI_GCADMIN                     175
-//#define IDI_GCMODERATOR                 176
-//#define IDI_GCVOICE                     179
 #define IDD_AGENT_MANUAL_REGISTER       182
 #define IDD_GROUPCHAT_INVITE            183
 #define IDD_GROUPCHAT_INVITE_ACCEPT     184
