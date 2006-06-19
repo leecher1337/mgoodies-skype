@@ -246,6 +246,34 @@ static char *MsgServiceName(HANDLE hContact)
     return PSS_MESSAGE;
 }
 
+#if defined(_UNICODE)
+static int RTL_Detect(WCHAR *pszwText)
+{
+    WORD *infoTypeC2;
+    int i;
+    int iLen = lstrlenW(pszwText);
+
+    infoTypeC2 = (WORD *)malloc(sizeof(WORD) * (iLen + 2));
+
+    if(infoTypeC2) {
+        ZeroMemory(infoTypeC2, sizeof(WORD) * (iLen + 2));
+
+        GetStringTypeW(CT_CTYPE2, pszwText, iLen, infoTypeC2);
+
+        for(i = 0; i < iLen; i++) {
+            if(infoTypeC2[i] == C2_RIGHTTOLEFT) {
+                free(infoTypeC2);
+                //_DebugTraceA("RTL text found");
+                return 1;
+            }
+        }
+        free(infoTypeC2);
+        //_DebugTraceA("NO RTL text detected");
+    }
+    return 0;
+}
+#endif
+
 static void AddToFileList(char ***pppFiles,int *totalCount,const char *szFilename) {
 	*pppFiles=(char**)realloc(*pppFiles,(++*totalCount+1)*sizeof(char*));
 	(*pppFiles)[*totalCount]=NULL;
@@ -269,7 +297,7 @@ static void AddToFileList(char ***pppFiles,int *totalCount,const char *szFilenam
 	}
 }
 
-static int GetToolbarWidth() 
+static int GetToolbarWidth()
 {
 	int i, w = 0;
 	for (i = 0; i < sizeof(buttonLineControls) / sizeof(buttonLineControls[0]); i++) {
@@ -889,7 +917,7 @@ static int DrawMenuItem(WPARAM wParam, LPARAM lParam)
 			FillRect(dis->hDC, &rc, hBrush);
 			DeleteObject(hBrush);
 			ImageList_DrawEx(g_dat->hButtonIconList, dis->itemID - 1, dis->hDC, 2, y, 0, 0, CLR_NONE, GetSysColor(COLOR_MENU), ILD_BLEND25);
-		} else 
+		} else
 			ImageList_DrawEx(g_dat->hButtonIconList, dis->itemID - 1, dis->hDC, 2, y, 0, 0, CLR_NONE, CLR_NONE, ILD_NORMAL);
 	}
 	return TRUE;
@@ -977,9 +1005,18 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				pf2.dwMask = PFM_RTLPARA;
 				pf2.wEffects = PFE_RTLPARA;
 				SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
-				SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
+				SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) | WS_EX_LEFTSCROLLBAR);
 				SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
 				dat->flags |= SMF_RTL;
+			} else {
+				PARAFORMAT2 pf2;
+				ZeroMemory((void *)&pf2, sizeof(pf2));
+				pf2.cbSize = sizeof(pf2);
+				pf2.dwMask = PFM_RTLPARA;
+				pf2.wEffects = 0;
+				SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) & ~(WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR));
+				SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) & ~WS_EX_LEFTSCROLLBAR);
+				SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
 			}
 			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "DisableUnicode", (BYTE) 0)) {
 				dat->flags |= SMF_DISABLE_UNICODE;
@@ -1198,7 +1235,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			GetCursorPos(&pt);
 			TrackPopupMenu(hMenu, 0, pt.x, pt.y, 0, hwndDlg, NULL);
 			DestroyMenu(hMenu);
-		} 
+		}
 		break;
 	case WM_LBUTTONDBLCLK:
 		SendMessage(dat->hwndParent, WM_SYSCOMMAND, SC_MINIMIZE, 0);
@@ -1632,11 +1669,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			if (dat->flags&SMF_RTL) {
 				pf2.wEffects = PFE_RTLPARA;
 				SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
-				SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
+				SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) | WS_EX_LEFTSCROLLBAR);
 			} else {
 				pf2.wEffects = 0;
 				SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) &~ (WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR));
-				SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) &~ (WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR));
+				SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) &~ (WS_EX_LEFTSCROLLBAR));
 			}
 			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
 		}
@@ -1913,6 +1950,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 							ewd->szDescription = _strdup(Translate("The message send timed out."));
 							ewd->textSize = dat->sendInfo[i].sendBufferSize;
 							ewd->szText = (char *)malloc(dat->sendInfo[i].sendBufferSize);
+							ewd->flags = dat->sendInfo[i].flags;
 							memcpy(ewd->szText, dat->sendInfo[i].sendBuffer, dat->sendInfo[i].sendBufferSize);
 							ewd->hwndParent = hwndDlg;
 							if (dat->messagesInProgress>0) {
@@ -1970,7 +2008,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (g_dat->flags & SMF_SHOWPROGRESS) {
 					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
 				}
-				hSendId = (HANDLE) CallContactService(dat->hContact, MsgServiceName(dat->hContact), SEND_FLAGS, (LPARAM) dat->sendInfo[dat->sendCount-1].sendBuffer);
+				hSendId = (HANDLE) CallContactService(dat->hContact, MsgServiceName(dat->hContact), msi->flags, (LPARAM) dat->sendInfo[dat->sendCount-1].sendBuffer);
 				if (dat->sendCount>0) {
 					dat->sendInfo[dat->sendCount-1].hSendId = hSendId;
 				}
@@ -1990,6 +2028,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				struct ErrorWindowData *ewd = (struct ErrorWindowData *)lParam;
 				msi.sendBufferSize = ewd->textSize;
 				msi.sendBuffer = ewd->szText;
+				msi.flags = ewd->flags;
 				SendMessage(hwndDlg, DM_SENDMESSAGE, 0, (LPARAM)&msi);
 				/*
 				HANDLE hSendId;
@@ -2080,13 +2119,23 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			//}
 			if (dat->hContact !=NULL) {
 				struct MessageSendInfo msi;
-			//	HANDLE hSendId;
 				int bufSize;
-
 				bufSize = GetWindowTextLengthA(GetDlgItem(hwndDlg, IDC_MESSAGE)) + 1;
 				msi.sendBufferSize = bufSize * (sizeof(TCHAR) + 1);
 				msi.sendBuffer = (char *) malloc(msi.sendBufferSize);
+				msi.flags = SEND_FLAGS;
 				GetDlgItemTextA(hwndDlg, IDC_MESSAGE, msi.sendBuffer, bufSize);
+				{
+					PARAFORMAT2 pf2;
+					ZeroMemory((void *)&pf2, sizeof(pf2));
+					pf2.cbSize = sizeof(pf2);
+					pf2.dwMask = PFM_RTLPARA;
+					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_GETPARAFORMAT, 0, (LPARAM)&pf2);
+					if (pf2.wEffects & PFE_RTLPARA) {
+						msi.flags |= PREF_RTL;
+					}
+				}
+
 		#if defined( _UNICODE )
 				{
 					GETTEXTEX  gt;
@@ -2095,6 +2144,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					gt.codepage = 1200;
 					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_GETTEXTEX, (WPARAM) &gt, (LPARAM) &msi.sendBuffer[bufSize]);
 				}
+
+				if ( RTL_Detect( msi.sendBuffer[bufSize] )) {
+                    msi.flags |= PREF_RTL;
+                }
 		#endif
 				if (msi.sendBuffer[0] == 0)
 					break;
@@ -2498,6 +2551,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					ewd->szDescription = _strdup((char *) ack->lParam);
 					ewd->textSize = dat->sendInfo[i].sendBufferSize;
 					ewd->szText = (char *)malloc(dat->sendInfo[i].sendBufferSize);
+					ewd->flags = dat->sendInfo[i].flags;
 					memcpy(ewd->szText, dat->sendInfo[i].sendBuffer, dat->sendInfo[i].sendBufferSize);
 					ewd->hwndParent = hwndDlg;
 					CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGSENDERROR), hwndDlg, ErrorDlgProc, (LPARAM) ewd);//hwndDlg
@@ -2509,7 +2563,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				break;
 			dbei.cbSize = sizeof(dbei);
 			dbei.eventType = EVENTTYPE_MESSAGE;
-			dbei.flags = DBEF_SENT;
+			dbei.flags = DBEF_SENT | (( dat->flags & SMF_RTL) ? DBEF_RTL : 0 );
 			dbei.szModule = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dat->hContact, 0);
 			dbei.timestamp = time(NULL);
 			dbei.cbBlob = lstrlenA(dat->sendInfo[i].sendBuffer) + 1;
