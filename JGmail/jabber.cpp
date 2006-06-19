@@ -80,7 +80,6 @@ CRITICAL_SECTION modeMsgMutex;
 char* jabberVcardPhotoFileName = NULL;
 char* jabberVcardPhotoType = NULL;
 BOOL  jabberSendKeepAlive;
-HICON jabberIcon[JABBER_ICON_TOTAL];
 
 // SSL-related global variable
 #ifndef STATICSSL
@@ -243,13 +242,6 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 ///////////////////////////////////////////////////////////////////////////////
 // OnLoad - initialize the plugin instance
 
-//static int iconList[] = {
-//	IDI_GCOWNER,
-//	IDI_GCADMIN,
-//	IDI_GCMODERATOR,
-//	IDI_GCVOICE
-//};
-
 extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 {
 	pluginLink = link;
@@ -317,9 +309,6 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 	InitializeCriticalSection( &mutex );
 	InitializeCriticalSection( &modeMsgMutex );
 
-//	for ( int i=0; i < JABBER_ICON_TOTAL; i++ )
-//		jabberIcon[i] = ( HICON )LoadImage( hInst, MAKEINTRESOURCE( iconList[i] ), IMAGE_ICON, 0, 0, 0 );
-
 	srand(( unsigned ) time( NULL ));
 	JabberSerialInit();
 	JabberIqInit();
@@ -367,9 +356,6 @@ extern "C" int __declspec( dllexport ) Unload( void )
 	}
 	if ( jabberVcardPhotoType ) mir_free( jabberVcardPhotoType );
 	if ( streamId ) mir_free( streamId );
-
-	for ( int i=0; i < JABBER_ICON_TOTAL; i++ )
-		DestroyIcon( jabberIcon[i] );
 
 	if ( hMainThread ) CloseHandle( hMainThread );
 	return 0;

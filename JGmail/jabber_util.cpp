@@ -77,8 +77,6 @@ int __stdcall JabberSend( HANDLE hConn, XmlNode& node )
 
 	EnterCriticalSection( &mutex );
 
-	NotifyEventHooks(heventRawXMLOut, (WPARAM)str, 0);
-
 	PVOID ssl;
 	if (( ssl=JabberSslHandleToSsl( hConn )) != NULL ) {
 		if ( DBGetContactSettingByte( NULL, "Netlib", "DumpSent", TRUE ) == TRUE ) {
@@ -113,8 +111,6 @@ int __stdcall JabberSend( HANDLE hConn, const char* fmt, ... )
 	}
 	va_end( vararg );
 
-	NotifyEventHooks(heventRawXMLOut, (WPARAM)str, 0);
-	
 	size = strlen( str );
 	PVOID ssl;
 	if (( ssl=JabberSslHandleToSsl( hConn )) != NULL ) {

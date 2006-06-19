@@ -340,7 +340,6 @@ extern BOOL modeMsgStatusChangePending;
 
 extern BOOL   jabberChangeStatusMessageOnly;
 extern BOOL   jabberSendKeepAlive;
-extern HICON  jabberIcon[JABBER_ICON_TOTAL];
 extern BOOL   jabberChatDllPresent;
 
 extern HWND hwndJabberAgents;

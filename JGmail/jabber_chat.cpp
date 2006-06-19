@@ -210,11 +210,11 @@ void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, int act
 	JCallService( MS_GC_EVENT, NULL, ( LPARAM )&gce );
 
 	if ( statusToSet != 0 ) {
-		if ( statusToSet == ID_STATUS_AWAY || statusToSet == ID_STATUS_NA )
-			gce.pszText = dispNick;
+		gce.pszText = dispNick;
+		if ( statusToSet == ID_STATUS_AWAY || statusToSet == ID_STATUS_NA || statusToSet == ID_STATUS_DND )
+			gce.dwItemData = 3;
 		else
-			gce.pszText = "";
-		gce.dwItemData = 1;
+			gce.dwItemData = 1;
 		gcd.iType = GC_EVENT_SETSTATUSEX;
 		JCallService( MS_GC_EVENT, NULL, ( LPARAM )&gce );
 	}
