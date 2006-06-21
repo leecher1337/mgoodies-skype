@@ -140,10 +140,11 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "List4",IDC_LISTMAILS,"SysListView32",LVS_REPORT | 
                     LVS_EDITLABELS | WS_BORDER | WS_TABSTOP,5,5,450,70
-    DEFPUSHBUTTON   "OK",IDC_BTNOK,156,90,146,15
-    PUSHBUTTON      "",IDC_BTNAPP,307,90,146,15
-    PUSHBUTTON      "",IDC_BTNDEL,5,90,146,15
+    DEFPUSHBUTTON   "OK",IDC_BTNOK,395,90,60,15
+    PUSHBUTTON      "",IDC_BTNAPP,263,90,114,15
+    PUSHBUTTON      "",IDC_BTNDEL,5,90,114,15
     LTEXT           "",IDC_STSTATUS,5,75,450,10
+    PUSHBUTTON      "Select All",IDC_BTNCHECKALL,150,91,92,14
 END
 
 IDD_DLGBADCONNECT DIALOG DISCARDABLE  0, 0, 186, 50
@@ -186,7 +187,7 @@ END
 IDD_POP3ACCOUNTOPT DIALOGEX 0, 0, 315, 234
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     COMBOBOX        IDC_COMBOACCOUNT,4,6,140,65,CBS_DROPDOWN | CBS_SORT | 
                     WS_VSCROLL | WS_TABSTOP
@@ -342,14 +343,14 @@ IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
 //
 // Dialog Info
 //
-#ifndef __GNUC__
+
 IDD_POP3ACCOUNTOPT DLGINIT
 BEGIN
     IDC_COMBOACCOUNT, 0x403, 1, 0
 "\000" 
     0
 END
-#endif
+
 #endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -370,8 +371,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,1,7
- PRODUCTVERSION 0,0,1,7
+ FILEVERSION 0,0,1,8
+ PRODUCTVERSION 0,0,1,8
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -389,14 +390,14 @@ BEGIN
             VALUE "Comments", "Yet Another Mail Notifier\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "Yet Another Mail Notifier\0"
-            VALUE "FileVersion", "0, 0, 1, 7\0"
+            VALUE "FileVersion", "0, 0, 1, 8\0"
             VALUE "InternalName", "YAMN\0"
             VALUE "LegalCopyright", "Copyright © 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "YAMN.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "YAMN tweety\0"
-            VALUE "ProductVersion", "0, 0, 1, 7\0"
+            VALUE "ProductVersion", "0, 0, 1, 8\0"
             VALUE "SpecialBuild", "\0"
         END
     END
