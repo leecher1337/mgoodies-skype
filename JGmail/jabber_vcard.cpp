@@ -255,7 +255,7 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 
 					JabberLog( "File selected is %s", szFileName );
 					if ( _stat( szFileName, &st )<0 || st.st_size>40*1024 ) {
-						MessageBox( hwndDlg, TranslateT( "Only JPG, GIF, and BMP image files smaller than 40 KB are supported." ), TranslateT( "Jabber vCard" ), MB_OK|MB_SETFOREGROUND );
+						MessagePopup( hwndDlg, TranslateT( "Only JPG, GIF, and BMP image files smaller than 40 KB are supported." ), TranslateT( "Jabber vCard" ), MB_OK|MB_SETFOREGROUND );
 						break;
 					}
 					if ( GetTempPathA( sizeof( szTempPath ), szTempPath ) <= 0 )

@@ -125,7 +125,7 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 
 		JabberSend( info->s, "</stream:stream>" );
 		mir_sntprintf( text, SIZEOF( text ), _T("%s %s."), TranslateT( "Authentication failed for" ), info->username );
-		MessageBox( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+		MessagePopup( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 		jabberThreadInfo = NULL;	// To disallow auto reconnect
 }	}
@@ -159,7 +159,7 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 			pos += mir_sntprintf(errorMessage+pos,256-pos,TranslateT("refused by server\n%s: %s"),TranslateT("Type"),Translate(JabberXmlGetAttrValue( queryNode, "type" )));
 			if (queryNode->numChild) pos += mir_sntprintf(errorMessage+pos,256-pos,_T("\n%s: ")_T(TCHAR_STR_PARAM)_T("\n"),TranslateT("Reason"),JTranslate(queryNode->child[0]->name));
 			mir_sntprintf( errorMessage,256-pos, _T("%s @")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
-			MessageBox( NULL, errorMessage, TranslateT( "Jabber Protocol" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+			MessagePopup( NULL, errorMessage, TranslateT( "Jabber Protocol" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPROTOCOL );
 			JabberSend( info->s, "</stream:stream>" );
 			jabberThreadInfo = NULL;	// To disallow auto reconnect
@@ -1167,10 +1167,10 @@ void JabberIqResultSetPassword( XmlNode *iqNode, void *userdata )
 
 	if ( !lstrcmp( type, _T("result"))) {
 		strncpy( jabberThreadInfo->password, jabberThreadInfo->newPassword, SIZEOF( jabberThreadInfo->password ));
-		MessageBox( NULL, TranslateT( "Password is successfully changed. Don't forget to update your password in the Jabber protocol option." ), TranslateT( "Change Password" ), MB_OK|MB_ICONINFORMATION|MB_SETFOREGROUND );
+		MessagePopup( NULL, TranslateT( "Password is successfully changed. Don't forget to update your password in the Jabber protocol option." ), TranslateT( "Change Password" ), MB_OK|MB_ICONINFORMATION|MB_SETFOREGROUND );
 	}
 	else if ( !lstrcmp( type, _T("error")))
-		MessageBox( NULL, TranslateT( "Password cannot be changed." ), TranslateT( "Change Password" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+		MessagePopup( NULL, TranslateT( "Password cannot be changed." ), TranslateT( "Change Password" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 }
 
 void JabberIqResultDiscoAgentItems( XmlNode *iqNode, void *userdata )

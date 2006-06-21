@@ -506,6 +506,7 @@ void          __stdcall JabberStringAppend( char* *str, int *sizeAlloced, const 
 TCHAR*        __stdcall JabberGetClientJID( const TCHAR* jid, TCHAR*, size_t );
 TCHAR*        __stdcall JabberStripJid( const TCHAR* jid, TCHAR* dest, size_t destLen );
 int           __stdcall JabberGetPictureType( const char* buf );
+int           __stdcall MessagePopup(HWND hWnd, TCHAR *lpText, TCHAR *lpCaption, UINT uType);
 
 #if defined( _UNICODE )
 	#define JabberUnixToDosT JabberUnixToDosW

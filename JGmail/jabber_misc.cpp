@@ -61,9 +61,9 @@ void JabberAddContactToRoster( const TCHAR* jid, const TCHAR* nick, const TCHAR*
 
 void JabberChatDllError()
 {
-	MessageBox( NULL,
+	MessagePopup( NULL,
 		TranslateT( "CHAT plugin is required for conferences. Install it before chatting" ),
-		TranslateT( "Jabber Error Message" ), MB_OK|MB_SETFOREGROUND );
+		TranslateT( "Jabber Error Message" ), MB_ICONASTERISK|MB_OK|MB_SETFOREGROUND );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
