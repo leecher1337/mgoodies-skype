@@ -339,18 +339,6 @@ IDI_ICONEUTRAL          ICON    DISCARDABLE     "iconeutral.ico"
 IDI_ICOTTBDW            ICON    DISCARDABLE     "iconttbdown.ico"
 IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog Info
-//
-
-IDD_POP3ACCOUNTOPT DLGINIT
-BEGIN
-    IDC_COMBOACCOUNT, 0x403, 1, 0
-"\000" 
-    0
-END
-
 #endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
