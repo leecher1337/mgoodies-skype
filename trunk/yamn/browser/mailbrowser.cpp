@@ -19,6 +19,7 @@
  
 #include <windows.h>
 #include <stdio.h>
+#include <stddef.h>
 #undef UNICODE
 #include <newpluginapi.h>
 #include <m_utils.h>
@@ -90,6 +91,9 @@ char* s_MonthNames[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
 bool bDate = false,bSub=false,bSize=false,bFrom=false;
 int PosX=0,PosY=0,SizeX=460,SizeY=100;
 static int FromWidth=250,SubjectWidth=280,SizeWidth=50,SizeDate=160;
+
+static WNDPROC OldListViewSubclassProc;
+
 struct CMailNumbersSub
 {
 	int Total;		//any mail
@@ -208,6 +212,8 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 
 //MailBrowser thread function creates window if needed, tray icon and plays sound
 DWORD WINAPI MailBrowser(LPVOID Param);
+
+LRESULT CALLBACK ListViewSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 //Runs mail browser in new thread
 int RunMailBrowserSvc(WPARAM,LPARAM);
@@ -1349,6 +1355,8 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)"yamn new mail");
 			}
 
+			OldListViewSubclassProc = (WNDPROC) SetWindowLong(GetDlgItem(hDlg, IDC_LISTMAILS), GWL_WNDPROC, (LONG) ListViewSubclassProc);
+
 			break;
 		}
 		case WM_DESTROY:
@@ -1588,15 +1596,26 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			}
 		}
 			break;
+
 		case WM_COMMAND:
 		{
 			HACCOUNT ActualAccount;
+			int Items;
 
 			if(NULL==(ActualAccount=GetWindowAccount(hDlg)))
 				break;
 
 			switch(LOWORD(wParam))
 			{
+				case IDC_BTNCHECKALL:
+					ListView_SetItemState(GetDlgItem(hDlg,IDC_LISTMAILS), -1, 0, LVIS_SELECTED); // deselect all items
+					ListView_SetItemState(GetDlgItem(hDlg,IDC_LISTMAILS),-1, LVIS_SELECTED ,LVIS_SELECTED);
+					Items = ListView_GetItemCount(GetDlgItem(hDlg,IDC_LISTMAILS));
+					ListView_RedrawItems(GetDlgItem(hDlg,IDC_LISTMAILS), 0, Items);
+					UpdateWindow(GetDlgItem(hDlg,IDC_LISTMAILS));
+					SetFocus(GetDlgItem(hDlg,IDC_LISTMAILS));
+					break;
+
 				case IDC_BTNOK:
 					DestroyWindow(hDlg);
 					break;
@@ -1755,11 +1774,12 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			{
 				LONG x=LOWORD(lParam);	//((LPRECT)lParam)->right-((LPRECT)lParam)->left;
 				LONG y=HIWORD(lParam);	//((LPRECT)lParam)->bottom-((LPRECT)lParam)->top;
-				MoveWindow(GetDlgItem(hDlg,IDC_BTNDEL),5            ,y-5-25,(x-20)/3,25,TRUE);	//where to put DELETE button while resizing
-				MoveWindow(GetDlgItem(hDlg,IDC_BTNOK), 10+(x-20)/3  ,y-5-25,(x-20)/3,25,TRUE);	//where to put OK button while resizing
-				MoveWindow(GetDlgItem(hDlg,IDC_BTNAPP),15+2*(x-20)/3,y-5-25,(x-20)/3,25,TRUE);	//where to put RUN APP button while resizing
-				MoveWindow(GetDlgItem(hDlg,IDC_LISTMAILS),5         ,5     ,x-10    ,y-55,TRUE);	//where to put list mail window while resizing
-				MoveWindow(GetDlgItem(hDlg,IDC_STSTATUS),5         ,y-5-45     ,x-10    ,15,TRUE);	//where to put account status text while resizing
+				MoveWindow(GetDlgItem(hDlg,IDC_BTNDEL),     5            ,y-5-25,(x-20)/3,25,TRUE);	//where to put DELETE button while resizing
+				MoveWindow(GetDlgItem(hDlg,IDC_BTNCHECKALL),10+  (x-20)/3,y-5-25,(x-20)/6,25,TRUE);	//where to put CHECK ALL button while resizing				
+				MoveWindow(GetDlgItem(hDlg,IDC_BTNAPP),     15+  (x-20)/3 + (x-20)/6,y-5-25,(x-20)/3,25,TRUE);	//where to put RUN APP button while resizing
+				MoveWindow(GetDlgItem(hDlg,IDC_BTNOK),      20+2*(x-20)/3 + (x-20)/6 ,y-5-25,(x-20)/6,25,TRUE);	//where to put OK button while resizing
+				MoveWindow(GetDlgItem(hDlg,IDC_LISTMAILS),  5         ,5     ,x-10    ,y-55,TRUE);	//where to put list mail window while resizing
+				MoveWindow(GetDlgItem(hDlg,IDC_STSTATUS),   5         ,y-5-45     ,x-10    ,15,TRUE);	//where to put account status text while resizing
 			}
 //			break;
 			return 0;
@@ -1947,6 +1967,140 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 	}
 //	return DefWindowProc(hDlg,msg,wParam,lParam);
 	return 0;
+}
+
+LRESULT CALLBACK ListViewSubclassProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	HWND hwndParent = GetParent(hDlg);
+	
+	int Items;
+
+	switch(msg) {
+		case WM_CHAR: case WM_SYSCHAR: case WM_KEYDOWN:
+        {
+			
+            BOOL isCtrl = GetKeyState(VK_CONTROL) & 0x8000;
+            BOOL isShift = GetKeyState(VK_SHIFT) & 0x8000;
+            BOOL isAlt = GetKeyState(VK_MENU) & 0x8000;
+
+			switch (wParam) 
+			{
+				case 1:
+					if(!isAlt && !isShift && isCtrl) 
+					{
+						ListView_SetItemState(hDlg, -1, 0, LVIS_SELECTED); // deselect all items
+						ListView_SetItemState(hDlg,-1, LVIS_SELECTED ,LVIS_SELECTED);
+						Items = ListView_GetItemCount(hDlg);
+						ListView_RedrawItems(hDlg, 0, Items);
+						UpdateWindow(hDlg);
+						SetFocus(hDlg);
+					}
+					break;
+
+				case 46:
+					HACCOUNT ActualAccount;
+					if(NULL==(ActualAccount=GetWindowAccount(hwndParent)))
+						break;
+					LVITEMW item;
+					HYAMNMAIL FirstMail=NULL,ActualMail;
+					HANDLE ThreadRunningEV;
+					DWORD tid,Total=0;
+
+					//	we use event to signal, that running thread has all needed stack parameters copied
+					if(NULL==(ThreadRunningEV=CreateEvent(NULL,FALSE,FALSE,NULL)))
+						break;
+					int Items=ListView_GetItemCount(hDlg);
+
+					item.stateMask=0xFFFFFFFF;
+					#ifdef DEBUG_SYNCHRO
+					DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write wait\n");
+					#endif
+					if(WAIT_OBJECT_0==WaitToWriteFcn(ActualAccount->MessagesAccessSO))
+					{
+						#ifdef DEBUG_SYNCHRO
+						DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write enter\n");
+						#endif
+						for(int i=0;i<Items;i++)
+						{
+							item.iItem=i;
+							item.iSubItem=0;
+							item.mask=LVIF_PARAM | LVIF_STATE;
+							item.stateMask=0xFFFFFFFF;
+							ListView_GetItem(hDlg,&item);
+							ActualMail=(HYAMNMAIL)item.lParam;
+							if(NULL==ActualMail)
+								break;
+							if(item.state & LVIS_SELECTED)
+							{
+								ActualMail->Flags|=YAMN_MSG_USERDELETE;	//set to mail we are going to delete it
+								Total++;
+							}
+						}
+
+						// Enable write-access to mails
+						#ifdef DEBUG_SYNCHRO
+						DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write done\n");
+						#endif
+						WriteDoneFcn(ActualAccount->MessagesAccessSO);
+
+						if(Total)
+						{
+							char DeleteMsg[1024];
+
+							sprintf(DeleteMsg,Translate("Do you really want to delete %d selected mails?"),Total);
+							if(IDOK==MessageBox(hDlg,DeleteMsg,Translate("Delete confirmation"),MB_OKCANCEL | MB_ICONWARNING))
+							{
+								struct DeleteParam ParamToDeleteMails={YAMN_DELETEVERSION,ThreadRunningEV,ActualAccount,NULL};
+
+								// Find if there's mail marked to delete, which was deleted before
+								#ifdef DEBUG_SYNCHRO
+								DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write wait\n");
+								#endif
+								if(WAIT_OBJECT_0==WaitToWriteFcn(ActualAccount->MessagesAccessSO))
+								{
+									#ifdef DEBUG_SYNCHRO
+									DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write enter\n");
+									#endif
+									for(ActualMail=(HYAMNMAIL)ActualAccount->Mails;ActualMail!=NULL;ActualMail=ActualMail->Next)
+									{
+										if((ActualMail->Flags & YAMN_MSG_DELETED) && ((ActualMail->Flags & YAMN_MSG_USERDELETE)))	//if selected mail was already deleted
+										{
+											DeleteMessageFromQueueFcn((HYAMNMAIL *)&ActualAccount->Mails,ActualMail,1);
+											CallService(MS_YAMN_DELETEACCOUNTMAIL,(WPARAM)ActualAccount->Plugin,(LPARAM)ActualMail);	//delete it from memory
+											continue;
+										}
+									}
+									// Set flag to marked mails that they can be deleted
+									SetRemoveFlagsInQueueFcn((HYAMNMAIL)ActualAccount->Mails,YAMN_MSG_DISPLAY | YAMN_MSG_USERDELETE,0,YAMN_MSG_DELETEOK,1);
+									// Create new thread which deletes marked mails.
+									HANDLE NewThread;
+
+									if(NULL!=(NewThread=CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)ActualAccount->Plugin->Fcn->DeleteMailsFcnPtr,(LPVOID)&ParamToDeleteMails,0,&tid)))
+									{
+										WaitForSingleObject(ThreadRunningEV,INFINITE);
+										CloseHandle(NewThread);
+									}
+									// Enable write-access to mails
+									#ifdef DEBUG_SYNCHRO
+									DebugLog(SynchroFile,"MailBrowser:BTNDEL:ActualAccountMsgsSO-write done\n");
+									#endif
+									WriteDoneFcn(ActualAccount->MessagesAccessSO);
+								}
+							}
+							else
+								//else mark messages that they are not to be deleted
+								SetRemoveFlagsInQueueFcn((HYAMNMAIL)ActualAccount->Mails,YAMN_MSG_DISPLAY | YAMN_MSG_USERDELETE,0,YAMN_MSG_USERDELETE,0);
+						}
+					}
+					CloseHandle(ThreadRunningEV);
+					break;
+			}
+			
+			break;
+
+		}
+	}
+	return CallWindowProc(OldListViewSubclassProc, hDlg, msg, wParam, lParam);
 }
 
 DWORD WINAPI MailBrowser(LPVOID Param)

@@ -1,9 +1,12 @@
 0.0.1.8
 ============
-* Change options dialog (use tabsrmm uxtheme)
++ add ctr-A to select all mails
++ del key delete selected mail
++ add a select all button
 
 0.0.1.7
 ============
+* Change options dialog (use tabsrmm uxtheme)
 ! Invert back and text color for no new mail popup in option page.
 * New default icon reworked by Faith Healer.
 
