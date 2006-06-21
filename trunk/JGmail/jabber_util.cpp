@@ -29,6 +29,8 @@ Last change by : $Author: ghazan $
 #include "jabber_ssl.h"
 #include "jabber_list.h"
 #include "sha1.h"
+#include "sdk/m_popupt.h"
+#include "resource.h"
 
 extern CRITICAL_SECTION mutex;
 extern UINT jabberCodePage;
@@ -1127,4 +1129,53 @@ wchar_t* a2u( const char* src )
 	MultiByteToWideChar( codepage, 0, src, -1, result, cbLen );
 	result[ cbLen ] = 0;
 	return result;
+}
+
+
+int __stdcall MessagePopup(HWND hWnd, TCHAR *lpText, TCHAR *lpCaption, UINT uType){
+	unsigned short int gMailUse = (byte)JGetByte( NULL, "GMailUse",1);
+	if ((hWnd != 0)|(JCallService( MS_POPUP_QUERY, PUQS_GETSTATUS, 0 ) == 0)) {
+		return MessageBox(hWnd, lpText, lpCaption, uType);
+	}
+	int iconum=0;
+	switch (uType & MB_ICONMASK) {  //TODO: configure also colors and timeouts
+		case MB_ICONHAND: iconum = 32513; break;
+		case MB_ICONQUESTION: iconum = 32514; break;
+		case MB_ICONEXCLAMATION: iconum = 32515; break;
+		case MB_ICONASTERISK: iconum = 32516; break;
+		case MB_USERICON: iconum = 32517; break;
+	}
+
+#ifdef _UNICODE
+	if ( !ServiceExists(MS_POPUP_ADDPOPUPW)){
+		POPUPDATAEX ppdA;
+		char *aContact = t2a(lpCaption);
+		char *aText = t2a(lpText);
+		ZeroMemory((void *)&ppdA, sizeof(ppdA));
+		ppdA.lchContact = 0;
+		ppdA.lchIcon = iconum?LoadIcon(NULL,MAKEINTRESOURCE(iconum)):LoadIcon(hInst,MAKEINTRESOURCE(IDI_JABBER));
+		mir_snprintf(ppdA.lpzContactName, MAX_CONTACTNAME - 5, "%s: %s",jabberProtoName,aContact);
+		ppdA.colorText = JGetDword(NULL,"ColDebugText",0);
+		ppdA.colorBack = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
+		ppdA.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)&0xFFFF);
+		mir_snprintf(ppdA.lpzText, MAX_SECONDLINE - 5,aText);
+		JCallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppdA, 0);
+		mir_free(aContact);
+		mir_free(aText);
+	} else {
+#endif
+		POPUPDATAT ppdT;
+		ZeroMemory((void *)&ppdT, sizeof(ppdT));
+		ppdT.lchContact = 0;
+		ppdT.lchIcon = iconum?LoadIcon(NULL,MAKEINTRESOURCE(iconum)):LoadIcon(hInst,MAKEINTRESOURCE(IDI_JABBER));
+		mir_sntprintf(ppdT.lptzContactName, MAX_CONTACTNAME - 5, _T(TCHAR_STR_PARAM)_T(": %s"),jabberProtoName,lpCaption);
+		ppdT.colorText = JGetDword(NULL,"ColDebugText",0);
+		ppdT.colorBack = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
+		ppdT.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)&0xFFFF);
+		mir_sntprintf(ppdT.lptzText, MAX_SECONDLINE - 5,lpText);
+		JCallService(MS_POPUP_ADDPOPUPT, (WPARAM)&ppdT, 0);
+#ifdef _UNICODE
+	}
+#endif
+	return 0;
 }

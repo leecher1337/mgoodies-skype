@@ -426,7 +426,7 @@ LBL_Exit:
 #ifndef STATICSSL
 			if ( !hLibSSL )
 #endif
-				MessageBox( NULL, TranslateT( "The connection requires an OpenSSL library, which is not installed." ), TranslateT( "Jabber Connection Error" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+				MessagePopup( NULL, TranslateT( "The connection requires an OpenSSL library, which is not installed." ), TranslateT( "Jabber Connection Error" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JabberLog( "Thread ended, SSL connection failed" );
 			goto LBL_Exit;
 	}	}
@@ -600,7 +600,7 @@ static void JabberProcessStreamClosing( XmlNode *node, void *userdata )
 
 	Netlib_CloseHandle( info->s );
 	if ( node->name && !strcmp( node->name, "stream:error" ) && node->text )
-		MessageBox( NULL, TranslateTS( node->text ), TranslateT( "Jabber Connection Error" ), MB_OK|MB_ICONERROR|MB_SETFOREGROUND );
+		MessagePopup( NULL, TranslateTS( node->text ), TranslateT( "Jabber Connection Error" ), MB_OK|MB_ICONERROR|MB_SETFOREGROUND );
 }
 static int isGoogleTokenUsed = 0; // 1: used; 2: retreived; 3: retreived and used
 static void JabberProcessFeatures( XmlNode *node, void *userdata )
@@ -695,7 +695,7 @@ LBL_RequestToken:
 			mir_free(temp);
 			JabberLog( "Never publish the hash below" );
 		} else {
-			MessageBox( NULL, TranslateT("No known auth methods available. Giving up."), TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+			MessagePopup( NULL, TranslateT("No known auth methods available. Giving up."), TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JabberSend( info->s, "</stream:stream>" );
 			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 			return;
@@ -771,7 +771,7 @@ LBL_AuthFailed:
 			TCHAR text[128];
 
 			mir_sntprintf( text, sizeof( text ), _T("%s %s@")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
-			MessageBox( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+			MessagePopup( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 			jabberThreadInfo = NULL;	// To disallow auto reconnect
 		}
@@ -794,7 +794,7 @@ static void JabberProcessError( XmlNode *node, void *userdata ){
 			node->child[i]->name,node->child[i]->text);
 		if (!strcmp(node->child[i]->name,"conflict")) JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_OTHERLOCATION);
 	}
-	MessageBox( NULL, buff, TranslateT( "Jabber Error" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+	MessagePopup( NULL, buff, TranslateT( "Jabber Error" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 	mir_free(buff);
 	JabberSend( info->s, "</stream:stream>" );
 }

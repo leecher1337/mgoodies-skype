@@ -107,6 +107,12 @@ void JabberEnableNotifications(ThreadData *info){
 	XmlNode*  mailnotifications = usersetting->addChild( "mailnotifications" ); mailnotifications->addAttr( "value", "true" );
 	JabberSend( jabberThreadInfo->s, iq );
 	mir_free(localJid);
+//	MessagePopup(NULL,_T("Text"),_T("Testing 0"),0);
+//	MessagePopup(NULL,_T("Text"),_T("Testing MB_ICONHAND"),MB_ICONHAND);
+//	MessagePopup(NULL,_T("Text"),_T("Testing MB_ICONQUESTION"),MB_ICONQUESTION);
+//	MessagePopup(NULL,_T("Text"),_T("Testing MB_ICONWARNING"),MB_ICONWARNING);
+//	MessagePopup(NULL,_T("Text"),_T("Testing MB_ICONASTERISK"),MB_ICONASTERISK);
+//	MessagePopup(NULL,_T("Text"),_T("Testing MB_USERICON"),MB_USERICON);
 }
 
 HANDLE fakeContact = NULL;

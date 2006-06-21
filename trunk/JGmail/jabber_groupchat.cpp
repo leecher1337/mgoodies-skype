@@ -665,7 +665,7 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 	else if ( !lstrcmp( type, _T("error"))) {
 		errorNode = JabberXmlGetChild( node, "error" );
 		TCHAR* str = JabberErrorMsg( errorNode );
-		MessageBox( NULL, str, TranslateT( "Jabber Error Message" ), MB_OK|MB_SETFOREGROUND );
+		MessagePopup( NULL, str, TranslateT( "Jabber Error Message" ), MB_OK|MB_SETFOREGROUND );
 		//JabberListRemoveResource( LIST_CHATROOM, from );
 		JabberListRemove( LIST_CHATROOM, from );
 		mir_free( str );
