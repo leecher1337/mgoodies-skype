@@ -815,6 +815,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"Options:INITDIALOG:AccountBrowserSO-read enter\n");
 			#endif
+			//SendDlgItemMessage(hDlg,IDC_COMBOACCOUNT,CB_ADDSTRING,0,(LPARAM)""); //this was in YAMN.rc initialisation but seems to be useless
 			if(POP3Plugin->FirstAccount!=NULL)
 				for(ActualAccount=(HPOP3ACCOUNT)POP3Plugin->FirstAccount;ActualAccount!=NULL;ActualAccount=(HPOP3ACCOUNT)ActualAccount->Next)
 					if(ActualAccount->Name!=NULL)
