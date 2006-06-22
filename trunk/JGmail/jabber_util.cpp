@@ -1137,13 +1137,40 @@ int __stdcall MessagePopup(HWND hWnd, TCHAR *lpText, TCHAR *lpCaption, UINT uTyp
 	if ((hWnd != 0)|(JCallService( MS_POPUP_QUERY, PUQS_GETSTATUS, 0 ) == 0)) {
 		return MessageBox(hWnd, lpText, lpCaption, uType);
 	}
-	int iconum=0;
-	switch (uType & MB_ICONMASK) {  //TODO: configure also colors and timeouts
-		case MB_ICONHAND: iconum = 32513; break;
-		case MB_ICONQUESTION: iconum = 32514; break;
-		case MB_ICONEXCLAMATION: iconum = 32515; break;
-		case MB_ICONASTERISK: iconum = 32516; break;
-		case MB_USERICON: iconum = 32517; break;
+	int iconum=0,timeout=0, coltext=0, colback=0;
+	switch (uType & MB_ICONMASK) {  
+		case MB_ICONHAND: 
+			iconum = 32513;
+			timeout = JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000);
+			timeout = ((timeout>>16)==0xFFFF)?-1:(timeout>>16);
+			coltext = JGetDword(NULL,"ColErrorText",0);
+			colback = JGetDword(NULL,"ColErrorBack",RGB(255,128,128));
+			break;
+		case MB_ICONQUESTION: 
+			iconum = 32514; 
+			goto LBL_setDebug;
+		case MB_ICONEXCLAMATION: 
+			iconum = 32515; 
+LBL_setDebug:
+			timeout = JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000);
+			timeout = ((timeout&0xFFFF)==0xFFFF)?-1:(timeout&0xFFFF);
+			coltext = JGetDword(NULL,"ColDebugText",0);
+			colback = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
+			break;
+		case MB_ICONINFORMATION: 
+			iconum = 32516; 
+			goto LBL_setInfo;
+		case MB_USERICON: 
+			iconum = 32517; 
+			goto LBL_setInfo;
+		default:
+			iconum=0;
+LBL_setInfo:
+			coltext = JGetDword(NULL,"ColMsgText",0);
+			colback = JGetDword(NULL,"ColMsgBack",0);
+			timeout = JGetDword(NULL,"PopUpTimeout",0x0000FFFF);
+			timeout = ((timeout>>16)==0xFFFF)?-1:(timeout>>16);
+			break;
 	}
 
 #ifdef _UNICODE
@@ -1155,9 +1182,9 @@ int __stdcall MessagePopup(HWND hWnd, TCHAR *lpText, TCHAR *lpCaption, UINT uTyp
 		ppdA.lchContact = 0;
 		ppdA.lchIcon = iconum?LoadIcon(NULL,MAKEINTRESOURCE(iconum)):LoadIcon(hInst,MAKEINTRESOURCE(IDI_JABBER));
 		mir_snprintf(ppdA.lpzContactName, MAX_CONTACTNAME - 5, "%s: %s",jabberProtoName,aContact);
-		ppdA.colorText = JGetDword(NULL,"ColDebugText",0);
-		ppdA.colorBack = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
-		ppdA.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)&0xFFFF);
+		ppdA.colorText = coltext;
+		ppdA.colorBack = colback;
+		ppdA.iSeconds = timeout;
 		mir_snprintf(ppdA.lpzText, MAX_SECONDLINE - 5,aText);
 		JCallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppdA, 0);
 		mir_free(aContact);
@@ -1169,9 +1196,9 @@ int __stdcall MessagePopup(HWND hWnd, TCHAR *lpText, TCHAR *lpCaption, UINT uTyp
 		ppdT.lchContact = 0;
 		ppdT.lchIcon = iconum?LoadIcon(NULL,MAKEINTRESOURCE(iconum)):LoadIcon(hInst,MAKEINTRESOURCE(IDI_JABBER));
 		mir_sntprintf(ppdT.lptzContactName, MAX_CONTACTNAME - 5, _T(TCHAR_STR_PARAM)_T(": %s"),jabberProtoName,lpCaption);
-		ppdT.colorText = JGetDword(NULL,"ColDebugText",0);
-		ppdT.colorBack = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
-		ppdT.iSeconds = (WORD)(JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000)&0xFFFF);
+		ppdT.colorText = coltext;
+		ppdT.colorBack = colback;
+		ppdT.iSeconds = timeout;
 		mir_sntprintf(ppdT.lptzText, MAX_SECONDLINE - 5,lpText);
 		JCallService(MS_POPUP_ADDPOPUPT, (WPARAM)&ppdT, 0);
 #ifdef _UNICODE
