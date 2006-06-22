@@ -541,8 +541,10 @@ int JabberMenuVisitGMail( WPARAM wParam, LPARAM lParam )
 	strcat(url,"&Passwd=");
 	if ( !DBGetContactSetting( NULL, jabberProtoName, "Password", &dbv )) {
 		JCallService( MS_DB_CRYPT_DECODESTRING, strlen( dbv.pszVal )+1, ( LPARAM )dbv.pszVal );
-		strcat(url,dbv.pszVal);
+		char *passwdUrlEncoded = JabberUrlEncode(dbv.pszVal);
 		JFreeVariant( &dbv );
+		strcat(url,passwdUrlEncoded);
+		mir_free(passwdUrlEncoded);
 	} else return 0;
 	strcat(url,"&continue=http%3A%2F%2Fmail.google.com%2Fmail%2F");
 
@@ -561,6 +563,7 @@ LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 #ifdef _UNICODE
 					char *tempusername = u2a(mpd->username);
 #endif
+					char *passwdUrlEncoded = JabberUrlEncode(mpd->password);
 					mir_snprintf(url,MAX_PATH,
 //						"https://www.google.com/accounts/ServiceLoginAuth?service=mail&Email=%s&Passwd=%s&continue=https://mail.google.com/mail/",
 //http://mail.google.com/mail/?view=cv&search=inbox&th=10859fac99369d5f&lvp=-1&cvp=9&qt=&fs=1&tf=1
@@ -571,10 +574,11 @@ LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 #else
 						mpd->username,
 #endif
-						mpd->password,
+						passwdUrlEncoded,
 						(DWORD)(mpd->tid>>32),
 						(DWORD)(mpd->tid)
 					);
+					mir_free(passwdUrlEncoded);
 #ifdef _UNICODE
 					mir_free(tempusername);
 #endif
