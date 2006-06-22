@@ -27,7 +27,8 @@ static int GetStatusOnlineness(int status) {
 }
 
 static BOOL ListOpenContact(HWND hList, int item) {
-	if (item != -1) {
+	if (item != -1)
+	{
 		LVITEM lvi;
 		LVITEMDAT *lvidat;
 		ZeroMemory(&lvi, sizeof(lvi));
@@ -37,7 +38,8 @@ static BOOL ListOpenContact(HWND hList, int item) {
 		lvi.iSubItem = 0;
 		ListView_GetItem(hList, &lvi);
 		lvidat = (LVITEMDAT*)lvi.lParam;
-		if(lvidat->hContact != NULL) {
+		if(lvidat->hContact != NULL)
+		{
 			CallService(MS_MSG_SENDMESSAGE, (WPARAM)lvidat->hContact, (LONG)NULL);
 			CallService("SRMsg/LaunchMessageWindow", (WPARAM)lvidat->hContact, (LONG)NULL);
 			return TRUE;
@@ -47,7 +49,8 @@ static BOOL ListOpenContact(HWND hList, int item) {
 }
 
 static BOOL ListOpenContactMenu(HWND hDlg, HWND hList, int item, LVDLGDAT *lvdat) {
-	if (item != -1) {
+	if (item != -1)
+	{
 		LVITEM lvi;
 		LVITEMDAT *lvidat;
 		ZeroMemory(&lvi, sizeof(lvi));
@@ -57,9 +60,11 @@ static BOOL ListOpenContactMenu(HWND hDlg, HWND hList, int item, LVDLGDAT *lvdat
 		lvi.iSubItem = 0;
 		ListView_GetItem(hList, &lvi);
 		lvidat = (LVITEMDAT*)lvi.lParam;
-		if (lvidat->hContact != NULL) {
+		if (lvidat->hContact != NULL)
+		{
 			HMENU hCMenu = (HMENU)CallService(MS_CLIST_MENUBUILDCONTACT, (WPARAM)lvidat->hContact, (LONG)NULL);
-			if (hCMenu != NULL) {
+			if (hCMenu != NULL)
+			{
 				POINT p;
 				BOOL ret;
 				GetCursorPos(&p);
@@ -116,14 +121,15 @@ static int CALLBACK ListSortFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSo
 
 BOOL CheckStatusMessage(HANDLE hContact, char str[2048]) {
 	DBVARIANT dbv;
-	char *lpzProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+//	char *lpzProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 	if (DBGetContactSettingByte(hContact, "CList", "Hidden", 0)) return 0;
-	if (DBGetContactSetting(hContact, "CList", "StatusMsg", &dbv) == 0) {
+	if (DBGetContactSetting(hContact, "CList", "StatusMsg", &dbv) == 0)
+	{
 		lstrcpyn(str, dbv.pszVal, lstrlen(dbv.pszVal)+1);
 		DBFreeVariant(&dbv);
 		if (strcmp(str, "") != 0) return 1;
 	}
-	if (DBGetContactSetting(hContact, lpzProto, "StatusDescr", &dbv) == 0) {
+/*	if (DBGetContactSetting(hContact, lpzProto, "StatusDescr", &dbv) == 0) {
 		lstrcpyn(str, dbv.pszVal, lstrlen(dbv.pszVal)+1);
 		DBFreeVariant(&dbv);
 		if (!strcmp(str, "")) return 0;
@@ -134,25 +140,25 @@ BOOL CheckStatusMessage(HANDLE hContact, char str[2048]) {
 		DBFreeVariant(&dbv);
 		if (!strcmp(str, "")) return 0;
 		return 1;
-	}
+	}*/
 	return 0;
 }
 
 static void BuildContactsStatusMsgList(HWND hList) {
 	HIMAGELIST hImgList;
 	LVCOLUMN lvc;
-	// set listview styles
+	//set listview styles
 	ListView_SetExtendedListViewStyleEx(hList,
 		LVS_EX_FULLROWSELECT
 		| 0x00004000 // LVS_EX_LABELTIP
 		//| 0x00008000 // LVS_EX_BORDERSELECT
 		//| LVS_EX_GRIDLINES
 		, -1);
-	// create image list
+	//create image list
 	hImgList = (HIMAGELIST)CallService(MS_CLIST_GETICONSIMAGELIST, 0, 0);
 	if (hImgList != NULL)
 		ListView_SetImageList(hList, hImgList, LVSIL_SMALL);
-	// add header columns to listview
+	//add header columns to listview
 	ZeroMemory(&lvc, sizeof(lvc));
 	lvc.mask = LVCF_FMT | LVCF_SUBITEM | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_IMAGE;
@@ -171,7 +177,7 @@ static void BuildContactsStatusMsgList(HWND hList) {
 	lvc.pszText = Translate("Status Message");
 	lvc.cx = DBGetContactSettingWord(NULL, MODULE, "List_ColWidth2", 250);
 	ListView_InsertColumn(hList, 2, &lvc);
-	// customize
+	//customize
 	ListView_SetTextColor(hList, options.colListText);
 	if (options.bUseBgImage && strcmp(options.listbgimage, "")) {
 		LVBKIMAGE lvbi;
@@ -194,9 +200,9 @@ static void LoadContactsStatusMsgList(HWND hList) {
 	LVITEMDAT *lvidat;
 	int i = 0;
 	char smsg[2048];
-	// add conacts to listview
+	//add conacts to listview
 	ZeroMemory(&lvi, sizeof(lvi));
-	// start looking for status messages
+	//start looking for status messages
 	hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 	while (hContact) {
 		if (CheckStatusMessage(hContact, smsg)) {
@@ -239,7 +245,8 @@ static BOOL CALLBACK ShowListMainDlgProc(HWND hwndDlg, UINT Message, WPARAM wPar
 			Utils_RestoreWindowPosition(hwndDlg, NULL, MODULE, "List_");
 			ListView_SortItems(hList, ListSortFunc, (LPARAM)lvdat);
 			SendMessage(hwndDlg, WM_SIZE, 0, 0);
-			WindowList_Add(hWindowList, hwndDlg, NULL);
+			WindowList_Add(hWindowList, hwndDlg, NULL/*hListDlg*/);
+			ShowWindow(hwndDlg, SW_SHOW);
 			break;
 		}
 		case WM_NOTIFY: {
@@ -320,9 +327,9 @@ static BOOL CALLBACK ShowListMainDlgProc(HWND hwndDlg, UINT Message, WPARAM wPar
 		case WM_GETMINMAXINFO: {
 			MINMAXINFO mmi;
 			CopyMemory (&mmi, (LPMINMAXINFO) lParam, sizeof (MINMAXINFO));
-			// The minimum width in points
+			//The minimum width in points
 			mmi.ptMinTrackSize.x = ListView_GetColumnWidth(hList, 0) + ListView_GetColumnWidth(hList, 1) + 50;//250;
-			// The minimum height in points
+			//The minimum height in points
 			mmi.ptMinTrackSize.y = 150;
 			CopyMemory ((LPMINMAXINFO) lParam, &mmi, sizeof (MINMAXINFO));
 			break;
@@ -357,7 +364,7 @@ static BOOL CALLBACK ShowListMainDlgProc(HWND hwndDlg, UINT Message, WPARAM wPar
 			DBWriteContactSettingByte(NULL, MODULE, "List_LastColSort", (BYTE)lvdat->iLastColumnSortIndex);
 			DBWriteContactSettingByte(NULL, MODULE, "List_LastSortOrder", (BYTE)lvdat->bSortAscending);
 			DBWriteContactSettingByte(NULL, MODULE, "List_LastProtoSort", (BYTE)lvdat->iProtoSort);
-			// Remove entry from Window list
+			//Remove entry from Window list
 			WindowList_Remove(hWindowList, hwndDlg);
 			break;
 		}
@@ -370,6 +377,7 @@ void ShowList() {
 
 	hListDlg = WindowList_Find(hWindowList, (HANDLE)NULL);
 	if (hListDlg == NULL) {
+	//if (hListDlg == NULL || WindowList_Find(hWindowList, (HANDLE)hListDlg) == NULL) {
 		hListDlg = CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_LIST), NULL, ShowListMainDlgProc, (LPARAM)NULL);
 	}
 	else {
