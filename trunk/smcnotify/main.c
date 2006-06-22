@@ -16,22 +16,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "main.h"
 
-// constants for the icons
-char *szIconId[ICONCOUNT] = {"scn_list", "scn_url", "scn_hist", "scn_ext", "scn_int", "scn_pop", "scn_pope", "scn_popd"};
+/*
+Constants for the icons, removed "scn_int", "scn_pop"
+*/
+char *szIconId[ICONCOUNT] = {_T("smcn_list"), _T("smcn_url"), _T("smcn_hist"), _T("smcn_ext"), _T("smcn_pope"), _T("smcn_popd")};
 
 char szStatusMsgURL[1024];
 
-void StatusMsgChanged(WPARAM wParam, DBCONTACTWRITESETTING* cws);
+void StatusMsgChanged(WPARAM wParam, STATUSMSGINFO* smi);
 BOOL CheckStatusMessage(HANDLE hContact, char str[255]);
-void InitStatusUpdate();
-void EndStatusUpdate();
 
 
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"StatusMessageChangeNotify",
-	PLUGIN_MAKE_VERSION(0,0,3,0),
-	"Notify you when someone changes his/her status message",
+	PLUGIN_MAKE_VERSION(0,0,3,5),
+	"Notify you via popup when someone changes his/her status message",
 	"Daniel Vijge, Tomasz S³otwiñski, Ricardo Pescuma Domenecci",
 	"",
 	"",
@@ -40,88 +40,64 @@ PLUGININFO pluginInfo = {
 	0	//doesn't replace anything built-in
 };
 
+/*
+Menu update command, menu items commands
+*/
 void UpdateMenu(BOOL bState) {
 	CLISTMENUITEM mi;
 	ZeroMemory(&mi, sizeof(mi));
-	// main menu item
+	//Main menu item
 	mi.cbSize = sizeof(mi);
-	if (bState) {
-		mi.pszName = Translate("Enable &status message change notification");
+	if (bState)
+	{
+		mi.pszName = TranslateT("Enable &status message change notification");
 		mi.hIcon = ICO_POPUP_D;
 	}
-	else {
-		mi.pszName = Translate("Disable &status message change notification");
+	else
+	{
+		mi.pszName = TranslateT("Disable &status message change notification");
 		mi.hIcon = ICO_POPUP_E;
 	}
 	options.bDisablePopUps = bState;
 	mi.flags = CMIM_ICON | CMIM_NAME;
 	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hEnableDisableMenu, (LPARAM)&mi);
-	// contact menu item
+	//Contact's menu item
 	mi.flags = CMIM_ICON;
-	mi.hIcon = ICO_MENU;
+	mi.hIcon = ICO_HIST;
 	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hContactMenu, (LPARAM)&mi);
 	mi.hIcon = ICO_URL;
 	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hGoToURLMenu, (LPARAM)&mi);
-	// update main menu icon
+	//Update main menu icon
 	mi.hIcon = ICO_LIST;
 	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hShowListMenu, (LPARAM)&mi);
 }
 
-
-/*
-Return TRUE is smcn is enabled for this protocol
-
-wParam: protocol as string
-*/
-static int ServiceEnabledForProtocol(WPARAM wParam, LPARAM lParam) {
-	return HasToGetStatusMsgForProtocol((char *) wParam);
-}
-
-
-/*
-Return TRUE is smcn is enabled for this user and this protocol (smcn can be disabled per user,
-if protocol is enabled)
-
-wParam: protocol as string
-lParam: hContact
-*/
-static int ServiceEnabledForUser(WPARAM wParam, LPARAM lParam) {
-	return HasToGetStatusMsgForProtocol((char *) wParam) && !HasToIgnoreContact((HANDLE) lParam, (char *) wParam);
-}
-
-
-static int MenuItemCmd(WPARAM wParam, LPARAM lParam) {
+static int MenuItemCmd_PopUps(WPARAM wParam, LPARAM lParam) {
 	UpdateMenu(!options.bDisablePopUps);
-	DBWriteContactSettingByte(NULL, MODULE_NAME, OPT_DISPOPUPS, (BYTE)options.bDisablePopUps);
+	DBWriteContactSettingByte(NULL, MODULE, OPT_DISPOPUPS, (BYTE)options.bDisablePopUps);
 	return 0;
 }
 
-static int ContactMenuItemCmd(WPARAM wParam, LPARAM lParam) {
+static int MenuItemCmd_ShowHistory(WPARAM wParam, LPARAM lParam) {
 	ShowHistory((HANDLE)wParam);
 	return 0;
 }
 
-static int ShowListMenuItemCmd(WPARAM wParam, LPARAM lParam) {
+static int MenuItemCmd_ShowList(WPARAM wParam, LPARAM lParam) {
 	ShowList();
-	if(hTopToolbarButtonShowList != NULL)
+	if (hTopToolbarButtonShowList != NULL)
 		CallService(MS_TTB_SETBUTTONSTATE, (WPARAM)hTopToolbarButtonShowList, TTBST_RELEASED);
 	return 0;
 }
 
-static int GoToURLContactMenuItemCmd(WPARAM wParam, LPARAM lParam) {
+static int MenuItemCmd_GoToURL(WPARAM wParam, LPARAM lParam) {
 	CallService(MS_UTILS_OPENURL, 1, (LPARAM)&szStatusMsgURL);
 	return 0;
 }
 
-static int ContactPopUpsMenuItemCmd(WPARAM wParam, LPARAM lParam) {
-	BOOL state = (BOOL)DBGetContactSettingByte((HANDLE)wParam, MODULE_NAME, "Popup", 1);
-	DBWriteContactSettingByte((HANDLE)wParam, MODULE_NAME, "Popup", (BYTE)!state);
-	return 0;
-}
-
-static int ContactIcqCheckMenuItemCmd(WPARAM wParam, LPARAM lParam){
-	BOOL state = (BOOL)DBGetContactSettingByte((HANDLE)wParam, MODULE_NAME, OPT_CONTACT_GETMSG, DEFAULT_ICQCHECK);
-	DBWriteContactSettingByte((HANDLE)wParam, MODULE_NAME, OPT_CONTACT_GETMSG, (BYTE)!state);
+static int MenuItemCmd_ContactPopUps(WPARAM wParam, LPARAM lParam) {
+	DWORD mask = DBGetContactSettingDword((HANDLE)wParam, IGNORE_MODULE, IGNORE_MASK, 0);
+	DBWriteContactSettingDword((HANDLE)wParam, IGNORE_MODULE, IGNORE_MASK, mask ^ IGNORE_POP);
 	return 0;
 }
 
@@ -132,204 +108,256 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam) {
 	ZeroMemory(&clmi, sizeof(clmi));
 	clmi.cbSize = sizeof(clmi);
 	clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
-	if (CheckStatusMessage((HANDLE)wParam, str)) {
-		p = strstr(str, "www.");
-		if (p == NULL) p = strstr(str, "http://");
-		if (p != NULL) {
-			for (c = 0; p[c]!='\n' && p[c]!='\r' && p[c]!='\t' && p[c]!=' ' && p[c]!='\0'; c++);
+	if (CheckStatusMessage((HANDLE)wParam, str))
+	{
+		p = strstr(str, _T("www."));
+		if (p == NULL) p = strstr(str, _T("http://"));
+		if (p != NULL)
+		{
+			for (c = 0; p[c] != _T('\n') && p[c] != _T('\r') && p[c] != _T('\t') && p[c] != _T(' ') && p[c] != _T('\0'); c++);
 			lstrcpyn(szStatusMsgURL, p, min(c + 1, 1024));
 			clmi.flags = CMIM_FLAGS;
 		}
 	}
 	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hGoToURLMenu, (LPARAM)&clmi);
-	// contact smcn popups disable/enable
-	if (!options.bHideSettingsMenu) {
-		clmi.flags = CMIM_FLAGS | CMIM_ICON | CMIM_NAME;
-		if (DBGetContactSettingByte((HANDLE)wParam, MODULE_NAME, "Popup", 1) == 0) {
-			clmi.pszName = Translate("Enable SMCN PopUps");
+	//Contact smcn popups disable/enable
+//	if (!options.bHideSettingsMenu) {
+// removing this option, you can do this with GenMenu
+	clmi.flags = CMIM_FLAGS | CMIM_ICON | CMIM_NAME;
+		if (DBGetContactSettingDword((HANDLE)wParam, IGNORE_MODULE, IGNORE_MASK, 0) & IGNORE_POP)
+		{
+			clmi.pszName = TranslateT("Enable SMCN PopUps");
 			clmi.hIcon = ICO_POPUP_D;
 		}
-		else {
-			clmi.pszName = Translate("Disable SMCN PopUps");
+		else
+		{
+			clmi.pszName = TranslateT("Disable SMCN PopUps");
 			clmi.hIcon = ICO_POPUP_E;
 		}
-	}
-	else clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+//	}
+//	else clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
 	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hContactPopUpsMenu, (LPARAM)&clmi);
-	// retrieve contact's status message disable/enable
-	p = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0);
-	if (p && HasToGetStatusMsgForProtocol(p) && !options.bHideSettingsMenu) 
-	{
-		clmi.flags = CMIM_FLAGS | CMIM_ICON | CMIM_NAME;
-		if (DBGetContactSettingByte((HANDLE)wParam, MODULE_NAME, OPT_CONTACT_GETMSG, DEFAULT_ICQCHECK) == 0) {
-			clmi.pszName = Translate("Enable Status Message Check");
-			clmi.hIcon = LoadSkinnedProtoIcon(p, ID_STATUS_DND);
-		}
-		else {
-			clmi.pszName = Translate("Disable Status Message Check");
-			clmi.hIcon = LoadSkinnedProtoIcon(p, ID_STATUS_AWAY);
-		}
-	}
-	else clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
-	CallService(MS_CLIST_MODIFYMENUITEM,(WPARAM)hContactIcqCheckMenu,(LPARAM)&clmi);
+
 	return 0;
 }
 
+/*
+TopToolbar stuff
+*/
 static int Create_TopToolbarShowList(WPARAM wParam, LPARAM lParam) {
-	//DBVARIANT dbv;
-	//char path[512];
-	if (ServiceExists(MS_TTB_ADDBUTTON)) {
-		TTBButton ttbb;
+	if (ServiceExists(MS_TTB_ADDBUTTON))
+	{
+		TTBButtonV2 ttbb;
 		ZeroMemory(&ttbb, sizeof(ttbb));
 		ttbb.cbSize = sizeof(ttbb);
-	//	ttbb.dwFlags = 0;
-	//	strcpy(path, Translate("List Contacts with Status Message"));
-	//	strcat(path, "_BmpUp");
-	//	if(!DBGetContactSetting(NULL, "TopToolBar", path, &dbv)) {
-	//		if (!strcmp(dbv.pszVal, "")) ttbb.hbBitmapUp = ttbb.hbBitmapDown = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_LIST));
-	//		else ttbb.hbBitmapUp = ttbb.hbBitmapDown = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (LPARAM)dbv.pszVal);
-	//		DBFreeVariant(&dbv);
-	//	}
-	//	else {
-	//		ttbb.hbBitmapUp = ttbb.hbBitmapDown = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_LIST));
-	//	}
-		ttbb.hbBitmapUp = ttbb.hbBitmapDown = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_LIST));
+		ttbb.hIconUp = ttbb.hIconDn = ICO_LIST;
 		ttbb.dwFlags = TTBBF_VISIBLE|TTBBF_SHOWTOOLTIP;
 		ttbb.pszServiceUp = ttbb.pszServiceDown = MS_SMCN_LIST;
-		ttbb.name = Translate("List Contacts with Status Message");
+		ttbb.name = TranslateT("List Contacts with Status Message");
 		hTopToolbarButtonShowList = (HANDLE)CallService(MS_TTB_ADDBUTTON, (WPARAM)&ttbb, 0);
-		if((int)hTopToolbarButtonShowList == -1) {
+		if((int)hTopToolbarButtonShowList == -1)
+		{
 			hTopToolbarButtonShowList = NULL;
 			return 1;
 		}
 		CallService(MS_TTB_SETBUTTONOPTIONS, MAKEWPARAM((WORD)TTBO_TIPNAME, (WORD)hTopToolbarButtonShowList),
-			(LPARAM)Translate("List Contacts with Status Message"));
+			(LPARAM)TranslateT("List Contacts with Status Message"));
 	}
 	return 0;
 }
 
-//---Called when contact's settings has changed
+/*
+Called when contact's settings has changed
+*/
 static int ContactSettingChanged(WPARAM wParam, LPARAM lParam) {
 	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
-	HANDLE hContact = (HANDLE)wParam;
+	STATUSMSGINFO smi;
 
-	//We need to exit from this function as fast as possible, so we'll first check
-	//if the setting regards us (exit) or if it's not related to status (exit).
-	//If we're there, it means it's a status change we *could* notify, so let's see
-	//if we are ignoring that event. This means if *Miranda* ignores it (ignores every
-	//notification) and then if *We* ignore the event.
-	//Lastly, we check if we're offline: this will happen only once per connection, while
-	//the checks above will happen more frequently.
+	//The setting must belong to a contact different from myself (NULL) and needs
+	//to be related to the status. Otherwise, exit as fast as possible.
+	if ((HANDLE)wParam == NULL) return 0;
 
-	// The setting must belong to a contact different from myself (NULL) and needs
-	// to be related to the status. Otherwise, exit as fast as possible.
-	if (hContact == NULL) 
-			return 0;
+	ZeroMemory(&smi, sizeof(smi));
+	smi.proto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)wParam, 0);
 
-	// Check if changed status to get status message and write it to DB
-	if (!lstrcmp(cws->szSetting, "Status")) 
+	//if contact changed status write TickCount to db
+//	if (!lstrcmp(cws->szSetting, "OldStatus"))
+	if (!lstrcmp(cws->szSetting, "Status") && !lstrcmp(cws->szModule, smi.proto))
 	{
-		char *lpzProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, hContact, 0);
-		if (lpzProto != NULL && !lstrcmp(cws->szModule, lpzProto))
-		{
-			if (PoolCheckProtocol(lpzProto))
-			{
-				// Mark time to ignore changes from this contact
-				DBWriteContactSettingDword(hContact, MODULE_NAME, szProtocol, GetTickCount());
-
-				if (options.pool_check_on_status_change && PoolCheckContact(hContact))
-					PoolStatusChangeAddContact(hContact, lpzProto);
-			}
-		}
-	}
-	// Exit if setting changed is not status message
-	else if (lstrcmp(cws->szSetting, "StatusMsg") 
-			&& lstrcmp(cws->szSetting, "StatusDescr") 
-			&& lstrcmp(cws->szSetting, "YMsg"))
-	{
-		StatusMsgChanged(wParam, cws);
+		DBWriteContactSettingDword((HANDLE)wParam, "UserOnline", "LastStatusChange", GetTickCount());
+		//PUShowMessage("Status changed", SM_NOTIFY);
+		return 0;
 	}
 
+	//Exit if setting changed is not status message
+	if (lstrcmp(cws->szSetting, "StatusMsg")/*&& lstrcmp(cws->szSetting, "StatusDescr") && lstrcmp(cws->szSetting, "YMsg")*/)
+	{
+		return 0;
+	}
+
+	//If we're offline (=> we've just switched to offline), exit as fast as possible.
+	if (smi.proto != NULL && CallProtoService(smi.proto, PS_GETSTATUS, 0, 0) != ID_STATUS_OFFLINE)
+	{
+//		if (CallProtoService(smi.proto, PS_GETSTATUS, 0, 0) == ID_STATUS_OFFLINE) return 0;
+		smi.hContact = (HANDLE)wParam;
+		if (cws->value.type == DBVT_DELETED) smi.newstatusmsg = "";
+		else smi.newstatusmsg = _strdup(cws->value.pszVal);
+		smi.bIsEmpty = !lstrcmp(smi.newstatusmsg, "");
+		StatusMsgChanged(wParam, &smi);
+	}
+
+	//free memory
+	if (smi.oldstatusmsg) free(smi.oldstatusmsg);
+	if (smi.newstatusmsg) free(smi.newstatusmsg);
+	if (smi.cust) free(smi.cust);
 	return 0;
 }
 
-//---Called when icon changed from the option
+/*
+Called when icon changed from the option
+*/
 static int HookedSkinIconsChanged(WPARAM wParam,LPARAM lParam) {
 	int i;
-	for (i = 0; i < ICONCOUNT; i++) {
+	for (i = 0; i < ICONCOUNT; i++)
+	{
 		hLibIcons[i] = (HICON)CallService(MS_SKIN2_GETICON, 0, (LPARAM)szIconId[i]);
 	}
-	// update menu icons
+	//Update menu icons
 	UpdateMenu(options.bDisablePopUps);
 	return 0;
 }
 
-//---Called when all the modules are loaded
+/*
+Called when all the modules are loaded
+*/
 static int HookedInit(WPARAM wParam, LPARAM lParam) {
 	hContactSettingChanged = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, ContactSettingChanged);
-	// first time using this version - turn off popup and external logging for ignored contacts
-	if ((int)DBGetContactSettingWord(NULL, MODULE_NAME, "Ver", 1) < 3) {
+
+	//First time using this version - turn off popup and external logging for ignored contacts
+/*	if ((int)DBGetContactSettingWord(NULL, MODULE, "Ver", 1) < 3)
+	{
 		HANDLE hContact;
-		// start looking for other weather stations
+		//Start looking for other weather stations
 		hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
-		while (hContact) {
-			if (CallService(MS_IGNORE_ISIGNORED, (WPARAM)hContact, IGNOREEVENT_USERONLINE) != 0) {
-				DBWriteContactSettingByte(hContact, MODULE_NAME, "Popup", FALSE);
-				DBWriteContactSettingByte(hContact, MODULE_NAME, "External", FALSE);
-				DBWriteContactSettingByte(hContact, MODULE_NAME, "Internal", TRUE);
+		while (hContact)
+		{
+			if (CallService(MS_IGNORE_ISIGNORED, (WPARAM)hContact, IGNOREEVENT_USERONLINE) != 0)
+			{
+				DBWriteContactSettingByte(hContact, MODULE, "Popup", FALSE);
+				DBWriteContactSettingByte(hContact, MODULE, "External", FALSE);
+				DBWriteContactSettingByte(hContact, MODULE, "Internal", TRUE);
 			}
-			else {
-				DBWriteContactSettingByte(hContact, MODULE_NAME, "Popup", TRUE);
-				DBWriteContactSettingByte(hContact, MODULE_NAME, "External", TRUE);
-				DBWriteContactSettingByte(hContact, MODULE_NAME, "Internal", TRUE);
+			else
+			{
+				DBWriteContactSettingByte(hContact, MODULE, "Popup", TRUE);
+				DBWriteContactSettingByte(hContact, MODULE, "External", TRUE);
+				DBWriteContactSettingByte(hContact, MODULE, "Internal", TRUE);
 			}
 			hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0);
 		}
-		DBWriteContactSettingWord(NULL, MODULE_NAME, "Ver", 3);
+		DBWriteContactSettingWord(NULL, MODULE, "Ver", 3);
+	}*/
+	if ((int)DBGetContactSettingWord(NULL, MODULE, "Ver", 1) <= 3)
+	{
+		HANDLE hContact;
+		BOOL bIgnoreOnline;
+		BOOL bFirstRun = 0;
+
+		if (DBGetContactSettingWord(NULL, MODULE, "Ver", 1) == 1) bFirstRun = 1;
+
+		hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
+		while (hContact)
+		{
+			BYTE ignore;
+			bIgnoreOnline = CallService(MS_IGNORE_ISIGNORED, (WPARAM)hContact, IGNOREEVENT_USERONLINE);
+
+			ignore = DBGetContactSettingByte(hContact, MODULE, "Popup", bFirstRun?!bIgnoreOnline:TRUE)?0:IGNORE_POP;
+			ignore = DBGetContactSettingByte(hContact, MODULE, "External", bFirstRun?!bIgnoreOnline:TRUE)?ignore:ignore | IGNORE_EXT;
+			ignore = DBGetContactSettingByte(hContact, MODULE, "Internal", TRUE)?ignore:ignore | IGNORE_INT;
+			DBWriteContactSettingDword(hContact, IGNORE_MODULE, IGNORE_MASK, ignore);
+
+			DBDeleteContactSetting(hContact, MODULE, "Popup");
+			DBDeleteContactSetting(hContact, MODULE, "External");
+			DBDeleteContactSetting(hContact, MODULE, "Internal");
+
+			hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0);
+		}
+		DBWriteContactSettingWord(NULL, MODULE, "Ver", 4);
+
+		//if user set "Show Popups when I connect" change the dbkey to new "format" but preserve
+		//old behaviour so he won't be flooded with popups
+		//if he really wants 1000s of popups let him change the setting himself so he knows that's him who fucked up ;)
+		if (DBGetContactSettingByte(NULL, MODULE, OPT_SHOWONC, 0))
+		{
+			DBWriteContactSettingByte(NULL, MODULE, OPT_SHOWONC, 3);
+			options.bShowOnConnect = options.bOnlyIfChanged = TRUE;
+		}
 	}
-	// add our modules to the KnownModules list
-	CallService("DBEditorpp/RegisterSingleModule", (WPARAM)MODULE_NAME, 0);
+
+	//Add our module to the KnownModules list
+	CallService("DBEditorpp/RegisterSingleModule", (WPARAM)MODULE, 0);
+
 	// register for IcoLib
-	if (!ServiceExists(MS_SKIN2_ADDICON)) {
+	if (!ServiceExists(MS_SKIN2_ADDICON))
+	{
 		hLibIcons[0] = LoadIcon(hInst,MAKEINTRESOURCE(IDI_LIST));
 		hLibIcons[1] = LoadIcon(hInst,MAKEINTRESOURCE(IDI_URL));
 		hLibIcons[2] = LoadIcon(hInst,MAKEINTRESOURCE(IDI_HIST));
 		hLibIcons[3] = LoadIcon(hInst,MAKEINTRESOURCE(IDI_EXT));
-		hLibIcons[4] = LoadIcon(hInst,MAKEINTRESOURCE(IDI_INT));
-		hLibIcons[5] = LoadIcon(hInst,MAKEINTRESOURCE(IDI_POPUP));
-		hLibIcons[6] = LoadIcon(hInst,MAKEINTRESOURCE(IDI_POPUP));
-		hLibIcons[7] = LoadIcon(hInst,MAKEINTRESOURCE(IDI_NOPOPUP));
+		hLibIcons[4] = LoadIcon(hInst,MAKEINTRESOURCE(IDI_POPUP));
+		hLibIcons[5] = LoadIcon(hInst,MAKEINTRESOURCE(IDI_NOPOPUP));
 	}
-	else {
+	else
+	{
 		SKINICONDESC sid;
 		char ModuleName[1024];
-		char *szIconName[ICONCOUNT] = {Translate("List Status Messages"), Translate("Go To URL in Status Message"), Translate("Contact Menu Icon"), Translate("External History"), Translate("Internal History"), Translate("PopUp Notify"), Translate("PopUp Enabled"), Translate("PopUp Disabled")};
-		int iIconId[ICONCOUNT] = {-IDI_LIST, -IDI_URL, -IDI_HIST, -IDI_EXT, -IDI_INT, -IDI_POPUP, -IDI_POPUP, -IDI_NOPOPUP};
+		char *szIconName[ICONCOUNT] = {
+			TranslateT("List Status Messages"),
+			TranslateT("Go To URL in Status Message"),
+			TranslateT("Status Message History"),
+			TranslateT("Log To File"),
+			TranslateT("PopUps Enabled"),
+			TranslateT("PopUps Disabled")
+		};
+		int iIconId[ICONCOUNT] = {IDI_LIST, IDI_URL, IDI_HIST, IDI_EXT, IDI_POPUP, IDI_NOPOPUP};
 		int i;
 		ZeroMemory(&sid, sizeof(sid));
 		sid.cbSize = sizeof(sid);
-		sid.pszSection = Translate("Status Message Change Notify");
+		sid.pszSection = TranslateT("Status Message Change Notify");
 		GetModuleFileName(hInst, ModuleName, sizeof(ModuleName));
 		sid.pszDefaultFile = ModuleName;
-		for (i = 0; i < ICONCOUNT; i++) {
+		for (i = 0; i < ICONCOUNT; i++)
+		{
 			sid.pszName = szIconId[i];
 			sid.pszDescription = szIconName[i];
-			sid.iDefaultIndex = iIconId[i];
+			sid.iDefaultIndex = -iIconId[i];
+//			sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(iIconId[i]));
 			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 			hLibIcons[i] = (HICON)CallService(MS_SKIN2_GETICON, 0, (LPARAM)szIconId[i]);
 		}
 		hHookSkinIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, HookedSkinIconsChanged);
 	}
+
 	UpdateMenu(options.bDisablePopUps);
+
 	hTopToolbarLoaded = HookEvent(ME_TTB_MODULELOADED, Create_TopToolbarShowList);
+
+	hUserInfoInitialise = HookEvent(ME_USERINFO_INITIALISE, HookedUserInfo);
+
 	return 0;
 }
 
-//---Called when an options dialog has to be created
+/*
+Called when an options dialog has to be created
+*/
 static int HookedOptions(WPARAM wParam, LPARAM lParam) {
 	OptionsAdd(wParam);
 	return 0;
 }
+
+/*
+Called when User Info dialog has to be created
+*/
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved) {
 	hInst = hinstDLL;
@@ -337,19 +365,23 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved) {
 }
 
 __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) {
-	if (mirandaVersion < PLUGIN_MAKE_VERSION(0,3,2,0)) {
-		// not translatable
+/*	if (mirandaVersion < PLUGIN_MAKE_VERSION(0,3,2,0))
+	{
+		//not translatable
 		MessageBox(NULL, "StatusMsgChangeNotify requires Miranda 0.3.2.0 or later to run.", "StatusMsgChangeNotify", MB_OK|MB_ICONERROR);
 		return NULL;
 	}
-	return &pluginInfo;
+*/	return &pluginInfo;
 }
 
+/*
+Load
+*/
 int __declspec(dllexport) Load(PLUGINLINK *link) {
 	CLISTMENUITEM mi;
 
 	INITCOMMONCONTROLSEX icex;
-	// Ensure that the common control DLL is loaded.
+	//Ensure that the common control DLL is loaded.
 	ZeroMemory(&icex, sizeof(icex));
 	icex.dwSize = sizeof(icex);
 	icex.dwICC = ICC_LISTVIEW_CLASSES;
@@ -357,85 +389,81 @@ int __declspec(dllexport) Load(PLUGINLINK *link) {
 
 	pluginLink = link;
 
-	// Init thread
-	InitStatusUpdate();
 	OptionsRead();
 	options.hInst = hInst;
 	hWindowList = (HANDLE)CallService(MS_UTILS_ALLOCWINDOWLIST, 0, 0);
 	ZeroMemory(&mi, sizeof(mi));
-	// main menu item - toggle popups
-	CreateServiceFunction(MS_SMCN_TGLPOPUP, MenuItemCmd);
+
+	//Main menu item - toggle popups
+	CreateServiceFunction(MS_SMCN_POPUPS, MenuItemCmd_PopUps);
 	mi.cbSize = sizeof(mi);
 	mi.flags = 0;
 	mi.position = 0;
-	mi.pszPopupName = Translate("PopUps");
-	mi.pszService = MS_SMCN_TGLPOPUP;
+	mi.pszPopupName = TranslateT("PopUps");
+	mi.pszService = MS_SMCN_POPUPS;
 	hEnableDisableMenu = CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
-	// list contacts with status message menu item
-	CreateServiceFunction(MS_SMCN_LIST, ShowListMenuItemCmd);
+	//List contacts with status message menu item
+	CreateServiceFunction(MS_SMCN_LIST, MenuItemCmd_ShowList);
 	mi.position = 500021000;
-	mi.pszName = Translate("List Contacts with Status Message");
+	mi.pszName = TranslateT("List Contacts with Status Message");
 	mi.pszPopupName = NULL;
 	mi.pszService = MS_SMCN_LIST;
 	hShowListMenu = CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
-	// contact menu item - go to url
-	CreateServiceFunction(MS_SMCN_GOTOURL, GoToURLContactMenuItemCmd);
+	//Contact menu item - go to url
+	CreateServiceFunction(MS_SMCN_GOTOURL, MenuItemCmd_GoToURL);
 	mi.position = -2000004000;
-	mi.pszName = Translate("Go To URL in Status Message");
+	mi.pszName = TranslateT("Go To URL in Status Message");
 	mi.pszService = MS_SMCN_GOTOURL;
 	mi.pszContactOwner = NULL;
 	hGoToURLMenu = CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
-	// contact menu item - status msg history
-	CreateServiceFunction(MS_SMCN_HIST, ContactMenuItemCmd);
+	//Contact menu item - status msg history
+	CreateServiceFunction(MS_SMCN_HIST, MenuItemCmd_ShowHistory);
 	mi.position = 1000090200;
-	mi.pszName = Translate("View Status Message History");
+	mi.pszName = TranslateT("View Status Message History");
 	mi.pszService = MS_SMCN_HIST;
 	hContactMenu = CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
-	// contact menu item - disable/enable popups
-	CreateServiceFunction(MS_SMCN_CPOPUP, ContactPopUpsMenuItemCmd);
+	//Contact menu item - disable/enable popups
+	CreateServiceFunction(MS_SMCN_CPOPUP, MenuItemCmd_ContactPopUps);
 	mi.position = 1000100010;
-	mi.pszName = Translate("Disable SMCN PopUps");
+	mi.pszName = TranslateT("Disable SMCN PopUps");
 	mi.pszService = MS_SMCN_CPOPUP;
 	hContactPopUpsMenu = CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
-	// contact menu item - disable/enable ICQ status message check
-	CreateServiceFunction(MS_SMCN_CICQ, ContactIcqCheckMenuItemCmd);
-	mi.position = 1000100020;
-	mi.pszName = Translate("Disable Status Message Check");
-	mi.pszService = MS_SMCN_CICQ;
-	hContactIcqCheckMenu = CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
-	// hooks
+
+	//Hooks
 	hHookedInit = HookEvent(ME_SYSTEM_MODULESLOADED, HookedInit);
 	hHookedOpt = HookEvent(ME_OPT_INITIALISE, HookedOptions);
-	// Protocol status: we use this for "PopUps on Connection".
+	//Protocol status: we use this for "PopUps on Connection".
 	hProtoAck = HookEvent(ME_PROTO_ACK, ProtoAck);
-	// prebuild contact menu
+	//Prebuild contact menu
 	hPreBuildCMenu = HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
-	// add sound event
-	SkinAddNewSound("statusmsgchanged", Translate("Status Message Changed"), "");
-	// window needed for the ICQ status msg check timer routines.
-	hTimerWindow = CreateWindowEx(WS_EX_TOOLWINDOW, "static", "smcn_TimerWindow",0,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, HWND_DESKTOP,
-		NULL, hInst, NULL);
-	// window needed for popup commands
-	hPopupWindow = CreateWindowEx(WS_EX_TOOLWINDOW, "static", "smcn_PopupWindow", 0,
+	//Add sound event
+	SkinAddNewSound("statusmsgchanged", TranslateT("Status Message Changed"), "");
+
+	//Window needed for popup commands
+	hPopupWindow = CreateWindowEx(WS_EX_TOOLWINDOW, _T("static"), _T("smcn_PopupWindow"), 0,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, HWND_DESKTOP,
 		NULL, hInst, NULL);
 	SetWindowLong(hPopupWindow, GWL_WNDPROC, (LONG)(WNDPROC)PopupWndProc);
+
 	return 0;
 }
 
 int __declspec(dllexport) Unload(void) {
-	EndStatusUpdate();
-	if (!ServiceExists(MS_SKIN2_ADDICON)) {
+	if (!ServiceExists(MS_SKIN2_ADDICON))
+	{
 		int i;
-		for (i = 0; i < ICONCOUNT; i++) { DestroyIcon(hLibIcons[i]); }
+		for (i = 0; i < ICONCOUNT; i++)
+		{
+			DestroyIcon(hLibIcons[i]);
+		}
 		UnhookEvent(hHookSkinIconsChanged);
 	}
-	if(hTopToolbarLoaded) UnhookEvent(hTopToolbarLoaded);
+	if (hTopToolbarLoaded) UnhookEvent(hTopToolbarLoaded);
 	UnhookEvent(hContactSettingChanged);
 	UnhookEvent(hHookedOpt);
 	UnhookEvent(hHookedInit);
 	UnhookEvent(hProtoAck);
 	UnhookEvent(hPreBuildCMenu);
+	UnhookEvent(hUserInfoInitialise);
 	return 0;
 }

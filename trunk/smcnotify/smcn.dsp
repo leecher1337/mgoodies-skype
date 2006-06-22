@@ -99,6 +99,10 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=.\dblists.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\history.c
 # End Source File
 # Begin Source File
@@ -115,23 +119,7 @@ SOURCE=.\main.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\utils\mir_dblists.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\utils\mir_memory.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\utils\mir_options.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\options.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\pool.cpp
 # End Source File
 # Begin Source File
 
@@ -147,23 +135,11 @@ SOURCE=.\smc.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=.\dblists.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\main.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\utils\mir_dblists.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\utils\mir_memory.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\utils\mir_options.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\pool.h
 # End Source File
 # Begin Source File
 
