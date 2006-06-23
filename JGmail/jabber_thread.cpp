@@ -1232,20 +1232,37 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		mir_free( nick );
 
 		XmlNode* xNode;
-		for ( int i = 1; ( xNode=JabberXmlGetNthChild( node, "x", i )) != NULL; i++ ) {
-			if ( !lstrcmp( JabberXmlGetAttrValue( xNode, "xmlns" ), _T("jabber:x:avatar"))) {
-				if (( xNode = JabberXmlGetChild( xNode, "hash" )) != NULL && xNode->text != NULL && JGetByte( "EnableAvatars", TRUE )) {
-					JSetStringT( hContact, "AvatarHash", xNode->text );
-
-					DBVARIANT dbv = {0};
-					int result = JGetStringT( hContact, "AvatarSaved", &dbv );
-					if ( !result || lstrcmp( dbv.ptszVal, xNode->text )) {
-						JabberLog( "Avatar was changed" );
-						JSendBroadcast( hContact, ACKTYPE_AVATAR, ACKRESULT_STATUS, NULL, NULL );
-					}
-
-					if ( !result ) JFreeVariant( &dbv );
-		}	}	}
+		BOOL hasXAvatar = false;
+		if (JGetByte( "EnableAvatars", TRUE )){
+			for ( int i = 1; ( xNode=JabberXmlGetNthChild( node, "x", i )) != NULL; i++ ) {
+				if ( !lstrcmp( JabberXmlGetAttrValue( xNode, "xmlns" ), _T("jabber:x:avatar"))) {
+					if (( xNode = JabberXmlGetChild( xNode, "hash" )) != NULL && xNode->text != NULL ) {
+						JSetStringT( hContact, "AvatarHash", xNode->text );
+						JDeleteSetting(hContact,"AvatarXVcard");
+						hasXAvatar = true;
+						DBVARIANT dbv = {0};
+						int result = JGetStringT( hContact, "AvatarSaved", &dbv );
+						if ( !result || lstrcmp( dbv.ptszVal, xNode->text )) {
+							JabberLog( "Avatar was changed" );
+							JSendBroadcast( hContact, ACKTYPE_AVATAR, ACKRESULT_STATUS, NULL, NULL );
+						}
+						if ( !result ) JFreeVariant( &dbv );
+			}	}	}
+			if (!hasXAvatar){ //no jabber:x:avatar. try vcard-temp:x:update
+				for ( int i = 1; ( xNode=JabberXmlGetNthChild( node, "x", i )) != NULL; i++ ) {
+					if ( !lstrcmp( JabberXmlGetAttrValue( xNode, "xmlns" ), _T("vcard-temp:x:update"))) {
+						if (( xNode = JabberXmlGetChild( xNode, "photo" )) != NULL && xNode->text != NULL ) {
+							JSetStringT( hContact, "AvatarHash", xNode->text );
+							JSetByte(hContact,"AvatarXVcard",1);
+							hasXAvatar = true;
+							DBVARIANT dbv = {0};
+							int result = JGetStringT( hContact, "AvatarSaved", &dbv );
+							if ( !result || lstrcmp( dbv.ptszVal, xNode->text )) {
+								JabberLog( "Avatar was changed. Using vcard-temp:x:update" );
+								JSendBroadcast( hContact, ACKTYPE_AVATAR, ACKRESULT_STATUS, NULL, NULL );
+							}
+							if ( !result ) JFreeVariant( &dbv );
+		}	}	}	}	}
 		return;
 	}
 
