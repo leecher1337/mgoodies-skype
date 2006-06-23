@@ -644,7 +644,7 @@ static int JabberGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 				TCHAR szJid[ 512 ];
 				BOOL isXVcard = JGetByte(AI->hContact,"AvatarXVcard",0);
 				if ( (item->resourceCount != NULL) & (!isXVcard))
-					mir_sntprintf( szJid, SIZEOF( szJid ), _T("%s/%s"), dbv.ptszVal, item->resource[0].resourceName );
+					mir_sntprintf( szJid, SIZEOF( szJid ), _T("%s/%s"), dbv.ptszVal, item->resource[0].resourceName ); //ToDo: select better resource name
 				else
 					lstrcpyn( szJid, dbv.ptszVal, SIZEOF( szJid ));
 

@@ -1206,7 +1206,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 				else {
 					for (resnum=0;resnum<item->resourceCount;resnum++){
 						if (!_tcscmp(courres,item->resource[resnum].resourceName)){
-							putResUserSett(hContact,&item->resource[resnum]);
+							//putResUserSett(hContact,&item->resource[resnum]);
 							JabberLog("Software: " TCHAR_STR_PARAM " (" TCHAR_STR_PARAM ")",item->resource[resnum].software,item->resource[resnum].version);
 							break;
 						}
@@ -1237,8 +1237,8 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 			for ( int i = 1; ( xNode=JabberXmlGetNthChild( node, "x", i )) != NULL; i++ ) {
 				if ( !lstrcmp( JabberXmlGetAttrValue( xNode, "xmlns" ), _T("jabber:x:avatar"))) {
 					if (( xNode = JabberXmlGetChild( xNode, "hash" )) != NULL && xNode->text != NULL ) {
-						JSetStringT( hContact, "AvatarHash", xNode->text );
 						JDeleteSetting(hContact,"AvatarXVcard");
+						JSetStringT( hContact, "AvatarHash", xNode->text );
 						hasXAvatar = true;
 						DBVARIANT dbv = {0};
 						int result = JGetStringT( hContact, "AvatarSaved", &dbv );
@@ -1252,9 +1252,8 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 				for ( int i = 1; ( xNode=JabberXmlGetNthChild( node, "x", i )) != NULL; i++ ) {
 					if ( !lstrcmp( JabberXmlGetAttrValue( xNode, "xmlns" ), _T("vcard-temp:x:update"))) {
 						if (( xNode = JabberXmlGetChild( xNode, "photo" )) != NULL && xNode->text != NULL ) {
-							JSetStringT( hContact, "AvatarHash", xNode->text );
 							JSetByte(hContact,"AvatarXVcard",1);
-							hasXAvatar = true;
+							JSetStringT( hContact, "AvatarHash", xNode->text );
 							DBVARIANT dbv = {0};
 							int result = JGetStringT( hContact, "AvatarSaved", &dbv );
 							if ( !result || lstrcmp( dbv.ptszVal, xNode->text )) {

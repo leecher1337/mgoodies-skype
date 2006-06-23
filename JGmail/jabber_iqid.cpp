@@ -1400,6 +1400,7 @@ LBL_ErrFormat:
 		fwrite( body, resultLen, 1, out );
 		fclose( out );
 		JSendBroadcast( hContact, ACKTYPE_AVATAR, ACKRESULT_SUCCESS, HANDLE( &AI ), NULL );
+		JabberLog("Broadcast new avatar: %s",AI.filename);
 	}
 	else JSendBroadcast( hContact, ACKTYPE_AVATAR, ACKRESULT_FAILED, HANDLE( &AI ), NULL );
 
