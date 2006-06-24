@@ -1,6 +1,11 @@
-Quick Contacts 0.0.1.4
+Quick Contacts 0.0.2.0
 
 Changelog:
+
+. 0.0.2.0
+  - First version in FL
+  * Fix for more than one contact wth same name
+  * Fix to always open the dialog inside a monitor
 
 . 0.0.1.4
   + Option to show group as a column
