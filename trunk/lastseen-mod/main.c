@@ -64,6 +64,9 @@ int MainInit(WPARAM wparam,LPARAM lparam)
 //	ehproto[1]=HookEvent(ME_PROTO_ACK,GetInfoAck);
 
 	SkinAddNewSound("LastSeenTrackedStatusChange",Translate("LastSeen: User status change"),"global.wav");
+	// known modules list
+	if (ServiceExists("DBEditorpp/RegisterSingleModule"))
+		CallService("DBEditorpp/RegisterSingleModule", (WPARAM)S_MOD, 0);
 	DBWriteContactSettingString(NULL,"Uninstall",Translate("Last seen"),S_MOD);
 
 #ifndef PERMITNSN

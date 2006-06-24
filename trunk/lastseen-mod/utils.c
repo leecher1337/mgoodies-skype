@@ -523,7 +523,7 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 				mir_snprintf(str,MAXMODULELABELLENGTH+8,"OffTime-%s",proto);
 				if (t = DBGetContactSettingDword(NULL,S_MOD,str,0)){
 					FILETIME ft;
-					LONGLONG ll = UInt32x32To64(CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,t,0), 10000000) + 116444736000000000;
+					LONGLONG ll = UInt32x32To64(CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,t,0), 10000000) + NUM100NANOSEC;
 					ft.dwLowDateTime = (DWORD)ll;
 					ft.dwHighDateTime = (DWORD)(ll >> 32);
 					FileTimeToSystemTime(&ft, &time);
