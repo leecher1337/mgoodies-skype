@@ -32,7 +32,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,4),
+	PLUGIN_MAKE_VERSION(0,0,2,0),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
@@ -436,6 +436,17 @@ int CheckText(HWND hdlg, TCHAR *sztext)
 
 HANDLE GetSelectedContact(HWND hwndDlg)
 {
+	// First try selection
+	int sel = SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_GETCURSEL, 0, 0);
+
+	if (sel != CB_ERR)
+	{
+		int pos = SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_GETITEMDATA, sel, 0);
+		if (pos != CB_ERR)
+			return ns.contact[pos].hcontact;
+	}
+
+	// Now try the name
 	TCHAR cname[120];
 
 	GetDlgItemText(hwndDlg, IDC_USERNAME, cname, MAX_REGS(cname));
@@ -489,7 +500,7 @@ LRESULT CALLBACK EditProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 			return 1;
 
 		case WM_KEYUP:
-			if(wparam==VK_RETURN)
+			if (wparam == VK_RETURN)
 			{
 				switch(SendMessage(GetParent(hdlg),CB_GETDROPPEDSTATE,0,0))
 				{
@@ -547,7 +558,6 @@ LRESULT CALLBACK HookProc(int code, WPARAM wparam, LPARAM lparam)
 				SendMessage(GetDlgItem(hwndMain, IDC_USERNAME), CB_SHOWDROPDOWN, (WPARAM)FALSE, 0);
 				break;
 		}
-		
 	}
 	
 	return 0;
@@ -592,7 +602,9 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 			SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETEXTENDEDUI, (WPARAM)TRUE, 0);
 
-			Utils_RestoreWindowPosition(hwndDlg, NULL, MODULE_NAME, "window");
+			MagneticWindows_AddWindow(hwndDlg);
+
+			Utils_RestoreWindowPositionNoSize(hwndDlg, NULL, MODULE_NAME, "window");
 
 			LoadContacts(hwndDlg, FALSE);
 
@@ -784,6 +796,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 		case WM_CLOSE:
 		{
 			Utils_SaveWindowPosition(hwndDlg, NULL, MODULE_NAME, "window");
+			MagneticWindows_RemoveWindow(hwndDlg);
 			DestroyWindow(hwndDlg);
 			break;
 		}
@@ -796,7 +809,14 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			break;
 		}
 
-
+		/*
+		case WM_NCLBUTTONDBLCLK:
+		{
+			MagneticWindows_SnapWindowToList(hwndDlg, MS_MW_STL_List_Left | MS_MW_STL_List_Top);
+			break;
+		}
+		*/
+		
 		case WM_DRAWITEM:
 		{
 			TEXTMETRIC tm;
@@ -930,6 +950,45 @@ int ShowDialog(WPARAM wParam,LPARAM lParam)
 		hwndMain = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN), NULL, MainDlgProc);
 	}
 
+	// Make sure it is inside screen
+	RECT rc;
+	GetWindowRect(hwndMain, &rc);
+
+	HMONITOR hMonitor = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
+
+	MONITORINFO mi;
+	mi.cbSize = sizeof(mi);
+	GetMonitorInfo(hMonitor, &mi);
+
+	RECT screen_rc = mi.rcWork;
+
+	if (rc.bottom > screen_rc.bottom)
+		OffsetRect(&rc, 0, screen_rc.bottom - rc.bottom);
+
+	if (rc.bottom < screen_rc.top)
+		OffsetRect(&rc, 0, screen_rc.top - rc.top);
+
+	if (rc.top > screen_rc.bottom)
+		OffsetRect(&rc, 0, screen_rc.bottom - rc.bottom);
+
+	if (rc.top < screen_rc.top)
+		OffsetRect(&rc, 0, screen_rc.top - rc.top);
+
+	if (rc.right > screen_rc.right)
+		OffsetRect(&rc, screen_rc.right - rc.right, 0);
+
+	if (rc.right < screen_rc.left)
+		OffsetRect(&rc, screen_rc.left - rc.left, 0);
+
+	if (rc.left > screen_rc.right)
+		OffsetRect(&rc, screen_rc.right - rc.right, 0);
+
+	if (rc.left < screen_rc.left)
+		OffsetRect(&rc, screen_rc.left - rc.left, 0);
+
+	MoveWindow(hwndMain, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
+
+	// Show it
 	SetForegroundWindow(hwndMain);
 	SetFocus(hwndMain);
  	ShowWindow(hwndMain, SW_SHOW);

@@ -23,6 +23,7 @@ Boston, MA 02111-1307, USA.
 # define __COMMONS_H__
 
 
+#define WINVER 0x0500
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
@@ -55,6 +56,7 @@ extern "C"
 #include <m_history.h>
 #include <m_updater.h>
 #include <m_metacontacts.h>
+#include <m_MagneticWindows.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
