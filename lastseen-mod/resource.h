@@ -3,6 +3,10 @@
 // Used by resource.rc
 //
 
+#ifndef TVS_NOTOOLTIPS
+#define TVS_NOTOOLTIPS 128 
+#endif
+
 #define ID_STATUS_OFFLINE               40071
 #define ID_STATUS_ONLINE                40072
 #define ID_STATUS_AWAY                  40073

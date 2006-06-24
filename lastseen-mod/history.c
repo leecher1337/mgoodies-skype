@@ -5,7 +5,7 @@ extern HINSTANCE hInstance;
 
 static HANDLE hWindowList;
 
-char* BuildSetting(historyLast) {
+char* BuildSetting(int historyLast) {
 	static char setting[15];
 	static char sztemp[15];
 	*setting = '\0';
@@ -20,7 +20,7 @@ void HistoryWrite(HANDLE hContact)
 	DBVARIANT dbv;
 
 	historyMax = DBGetContactSettingWord(NULL,S_MOD,"HistoryMax",10);
-	if (historyMax < 0) historyMax; else if (historyMax > 99) historyMax = 99;
+	if (historyMax < 0) historyMax=0; else if (historyMax > 99) historyMax = 99;
 	if (historyMax == 0) return;
 	historyFirst = DBGetContactSettingWord(hContact,S_MOD,"HistoryFirst",0);
 	if (historyFirst >=  historyMax) historyFirst = 0;

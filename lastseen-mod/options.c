@@ -1,6 +1,3 @@
-#include <windows.h>
-#include <commctrl.h>
-
 #include "seen.h"
 
 
