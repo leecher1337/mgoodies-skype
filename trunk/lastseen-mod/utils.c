@@ -132,30 +132,33 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 			wantempty = (szstring[loop]=='#');
 			switch(szstring[++loop]){
 				case 'Y':
-					isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0);
+					if (!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0))) goto LBL_noData;
 					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%04i",isetting);
 					break;
 
 				case 'y':
-					isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0);
+					if (!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0))) goto LBL_noData;
 					wsprintf(szdbsetting,"%04i",isetting);
 					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%s",szdbsetting+2);
 					break;
 
 				case 'm':
-					isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0);
+					if (!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0))) goto LBL_noData;
 LBL_2DigNum:
 					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%02i",isetting);
 					break;
 
 				case 'd':
-					isetting=DBGetContactSettingWord(hcontact,S_MOD,"Day",0);
-					goto LBL_2DigNum;
+					if (isetting=DBGetContactSettingWord(hcontact,S_MOD,"Day",0)) goto LBL_2DigNum;
+					else goto LBL_noData;
 
 				case 'W':
 					isetting=DBGetContactSettingWord(hcontact,S_MOD,"WeekDay",-1);
-					if(isetting==-1)
-						break;
+					if(isetting==-1){
+LBL_noData:
+						charPtr = wantempty?"":Translate("<unknown>");
+						goto LBL_charPtr;
+					}
 					charPtr = Translate(weekdays[isetting]);
 LBL_charPtr:
 					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%s",charPtr);
@@ -163,51 +166,41 @@ LBL_charPtr:
 
 				case 'w':
 					isetting=DBGetContactSettingWord(hcontact,S_MOD,"WeekDay",-1);
-					if(isetting==-1)
-						break;
+					if(isetting==-1)goto LBL_noData;
 					charPtr = Translate(wdays_short[isetting]);
 					goto LBL_charPtr;
 
 				case 'E':
-					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))
-						break;
+					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))goto LBL_noData;
 					charPtr = Translate(monthnames[isetting-1]);
 					goto LBL_charPtr;
 
 				case 'e':
-					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))
-						break;
+					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))goto LBL_noData;
 					charPtr = Translate(mnames_short[isetting-1]);
 					goto LBL_charPtr;
 
 				case 'H':
-					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)
-						break;
+					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)goto LBL_noData;
 					goto LBL_2DigNum;
 
 				case 'h':
-					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)
-						break;
-
+					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)goto LBL_noData;
 					if(!isetting) isetting=12;
-					
 					isetting = isetting-((isetting>12)?12:0);
 					goto LBL_2DigNum;
 
 				case 'p':
-					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)
-						break;
+					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)goto LBL_noData;
 					charPtr = (isetting>12)?"PM":"AM";
 					goto LBL_charPtr;
 
 				case 'M':
-					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Minutes",-1))==-1)
-						break;
+					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Minutes",-1))==-1)goto LBL_noData;
 					goto LBL_2DigNum;
 
 				case 'S':
-					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Seconds",-1))==-1)
-						break;
+					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Seconds",-1))==-1)goto LBL_noData;
 					goto LBL_2DigNum;
 
 				case 'n':
@@ -217,9 +210,7 @@ LBL_charPtr:
 					ci.dwFlag=CNF_NICK;
 					if(!CallService(MS_CONTACT_GETCONTACTINFO,(WPARAM)0,(LPARAM)&ci)){
 						charPtr = ci.pszVal;
-					} else {
-						charPtr = wantempty?"":Translate("<unknown>");
-					}
+					} else goto LBL_noData;
 					goto LBL_charPtr;
 				case 'G':
 					{
@@ -266,19 +257,16 @@ LBL_charPtr:
 						else if (isJabber(ci.szProto)) // JABBER support
 						{
 							DBVARIANT dbv;
-							if (DBGetContactSetting(hcontact,ci.szProto,"LoginName",&dbv)) goto LBL_ERR;
+							if (DBGetContactSetting(hcontact,ci.szProto,"LoginName",&dbv)) goto LBL_noData;
 							strcpy(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
 							DBGetContactSetting(hcontact,ci.szProto,"LoginServer",&dbv);
 							strcat(szdbsetting,"@");
 							strcat(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
-						} else LBL_ERR: strcpy(szdbsetting,wantempty?"":Translate("<unknown>"));
+						} else goto LBL_noData;
 					}
-					else
-					{
-						strcpy(szdbsetting,wantempty?"":Translate("<unknown>"));
-					}
+					else goto LBL_noData;
 					charPtr = szdbsetting;
 					goto LBL_charPtr;
 
@@ -286,23 +274,22 @@ LBL_charPtr:
 					if (isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"Status":courProtoName,0)){
 						strcpy(szdbsetting,(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0));
 						charPtr = Translate(szdbsetting);
-					} else charPtr = wantempty?"":Translate("<unknown>");
+					} else goto LBL_noData;
 					goto LBL_charPtr;
 				case 'T':
 					{
 						DBVARIANT dbv;
 						if (!DBGetContactSetting(hcontact,"CList","StatusMsg",&dbv)){
-							strcpy(szdbsetting,dbv.pszVal);
+							sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%s",dbv.pszVal);
 							DBFreeVariant(&dbv);
-							charPtr = szdbsetting;
-						} else charPtr = wantempty?"":Translate("<unknown>");
+						} else goto LBL_noData;
 					}
-					goto LBL_charPtr;
+					break;
 				case 'o':
 					if (isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"OldStatus":courProtoName,0)){
 						strcpy(szdbsetting,(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0));
 						charPtr = Translate(szdbsetting);
-					} else charPtr = wantempty?"":Translate("<unknown>");
+					} else goto LBL_noData;
 					goto LBL_charPtr;
 
 				case 'i':
@@ -312,16 +299,13 @@ LBL_charPtr:
 								strcpy(szdbsetting,dbv.pszVal);
 								DBFreeVariant(&dbv);
 								charPtr = szdbsetting;
-							} else charPtr = wantempty?"":Translate("<unknown>");
+							} else goto LBL_noData;
 						  } else {
 							dwsetting=DBGetContactSettingDword(hcontact,ci.szProto,szstring[loop]=='i'?"IP":"RealIP",0);
-							if(!dwsetting)
-								charPtr = wantempty?"":Translate("<unknown>");
-							else
-							{
+							if(dwsetting){
 								ia.S_un.S_addr=htonl(dwsetting);
 								charPtr = inet_ntoa(ia);
-							}
+							} else goto LBL_noData;
 						  }
 					goto LBL_charPtr;
 				case 'P':if (ci.szProto) charPtr = ci.szProto; else charPtr = wantempty?"":"ProtoUnknown";
@@ -353,7 +337,7 @@ LBL_charPtr:
 						if (!DBGetContactSetting(hcontact,ci.szProto,"MirVer",&dbv)){
 							strcpy(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
-						} else strcpy(szdbsetting,wantempty?"":Translate("<unknown>"));
+						} else goto LBL_noData;
 					}
 					charPtr = szdbsetting;
 					goto LBL_charPtr;
@@ -426,28 +410,23 @@ DWORD GetDWordFromColors(COLORREF First, COLORREF Second){
 	return res;
 }
 
-void ShowPopup(HANDLE hcontact, const char * lpzProto, int newStatus){
-/*	int i;
-	for (i=0;i<10;i++){
-		DWORD f,s,rf,rs;
-		char log[256];
+LRESULT CALLBACK PopupDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
-		GetColorsFromDWord(&f,&s,StatusColors15bits[i]);
-		rf = 0;
-		rf |= (f&0xFF)<<16;
-		rf |= (f&0xFF00);
-		rf |= (f&0xFF0000)>>16;
-		rs = 0;
-		rs |= (s&0xFF)<<16;
-		rs |= (s&0xFF00);
-		rs |= (s&0xFF0000)>>16;
-		sprintf(log,"\t0x%08X, // 0x%08X, 0x%08X, %s\n",
-			GetDWordFromColors(rf,rs),rf,rs,
-			CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,i+ID_STATUS_OFFLINE,0)
-			);
-		OutputDebugStringA(log);
+	switch(message) {
+		case WM_COMMAND: 
+			if (HIWORD(wParam) == STN_CLICKED){
+				HANDLE hContact = PUGetContact(hwnd);
+				if (hContact > 0) CallService(MS_MSG_SENDMESSAGE,(WPARAM)hContact,0);
+			}
+		case WM_CONTEXTMENU:
+			PUDeletePopUp(hwnd);
+			break;
+		case UM_INITPOPUP: return 0;
 	}
-*/
+	return DefWindowProc(hwnd, message, wParam, lParam);
+};
+
+void ShowPopup(HANDLE hcontact, const char * lpzProto, int newStatus){
 	if (ServiceExists(MS_POPUP_QUERY)){
 		if (DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
 			if (!DBGetContactSettingByte(hcontact,"CList","Hidden",0)){
@@ -464,6 +443,7 @@ void ShowPopup(HANDLE hcontact, const char * lpzProto, int newStatus){
 				DBFreeVariant(&dbv);
 				strncpy(ppd.lpzText,ParseString(!DBGetContactSetting(NULL,S_MOD,"PopupStampText",&dbv)?dbv.pszVal:DEFAULT_POPUPSTAMPTEXT,hcontact,0),MAX_SECONDLINE);
 				DBFreeVariant(&dbv);
+				ppd.PluginWindowProc = (WNDPROC)PopupDlgProc;
 				CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
 			}
 		}
