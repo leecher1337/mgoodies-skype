@@ -4,6 +4,7 @@
 //
 #define IDD_MSGSENDERROR                102
 #define IDD_MSGWIN                      103
+#define IDD_CONFIRM_SENDALL             104
 #define IDI_ADDCONTACT                  120
 #define IDI_USERDETAILS                 121
 #define IDI_HISTORY                     122
@@ -18,9 +19,6 @@
 #define IDI_INCOMING                    132
 #define IDI_OUTGOING                    133
 #define IDI_NOTICE                      134
-#define IDI_TIMESTAMP32                 135
-#define IDI_HISTORY32                   137
-#define IDI_USERDETAILS32               138
 #define IDR_CONTEXT                     180
 #define IDC_HYPERLINKHAND               214
 #define IDC_DRAGCURSOR					215
@@ -75,6 +73,7 @@
 #define IDC_QUOTE						1072
 #define IDC_HISTORY                     1080
 #define IDC_SMILEYS                     1081
+#define IDC_REMEMBER					1082
 #define IDC_BKGCOLOUR                   1269
 #define IDC_BKGINPUT					1270
 #define IDC_BKGINCOMING					1271
