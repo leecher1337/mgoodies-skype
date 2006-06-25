@@ -97,8 +97,11 @@ BOOL isMSN(char * protoname){
 
 char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 {
-	static char sztemp[1024];
+#define MAXSIZE 1024
+	static char sztemp[MAXSIZE+1];
+	int sztemplen = 0;
 	char szdbsetting[128]="";
+	char *charPtr;
 	UINT loop=0;
 	int isetting=0;
 	DWORD dwsetting=0;
@@ -113,12 +116,14 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 	ci.cbSize=sizeof(CONTACTINFO);
 	ci.hContact=hcontact;
 	ci.szProto=hcontact?(char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hcontact,0):courProtoName;
-	*sztemp = '\0';
+	sztemp[0] = '\0';
 	for(;loop<strlen(szstring);loop++)
 	{
+		if (sztemplen == MAXSIZE) break;
 		if((szstring[loop]!='%')&(szstring[loop]!='#'))
 		{
 			strncat(sztemp,szstring+loop,1);
+			sztemplen++;
 			continue;
 		}
 
@@ -127,116 +132,103 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 			wantempty = (szstring[loop]=='#');
 			switch(szstring[++loop]){
 				case 'Y':
-					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0)))
-						return wantempty?"":Translate("<unknown>");
-					wsprintf(szdbsetting,"%04i",isetting);
-					strcat(sztemp,szdbsetting);
+					isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0);
+					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%04i",isetting);
 					break;
 
 				case 'y':
-					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0)))
-						return wantempty?"":Translate("<unknown>");
+					isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0);
 					wsprintf(szdbsetting,"%04i",isetting);
-					strcat(sztemp,szdbsetting+2);
+					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%s",szdbsetting+2);
 					break;
 
 				case 'm':
-					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))
-						return wantempty?"":Translate("<unknown>");
-					wsprintf(szdbsetting,"%02i",isetting);
-					strcat(sztemp,szdbsetting);
+					isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0);
+LBL_2DigNum:
+					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%02i",isetting);
 					break;
 
 				case 'd':
-					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Day",0)))
-						return wantempty?"":Translate("<unknown>");
-					wsprintf(szdbsetting,"%02i",isetting);
-					strcat(sztemp,szdbsetting);
-					break;
+					isetting=DBGetContactSettingWord(hcontact,S_MOD,"Day",0);
+					goto LBL_2DigNum;
 
 				case 'W':
 					isetting=DBGetContactSettingWord(hcontact,S_MOD,"WeekDay",-1);
 					if(isetting==-1)
 						break;
-					strcat(sztemp,Translate(weekdays[isetting]));
+					charPtr = Translate(weekdays[isetting]);
+LBL_charPtr:
+					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%s",charPtr);
 					break;
 
 				case 'w':
 					isetting=DBGetContactSettingWord(hcontact,S_MOD,"WeekDay",-1);
 					if(isetting==-1)
 						break;
-					strcat(sztemp,Translate(wdays_short[isetting]));
-					break;
+					charPtr = Translate(wdays_short[isetting]);
+					goto LBL_charPtr;
 
 				case 'E':
 					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))
-						return wantempty?"":Translate("<unknown>");
-					strcat(sztemp,Translate(monthnames[isetting-1]));
-					break;
+						break;
+					charPtr = Translate(monthnames[isetting-1]);
+					goto LBL_charPtr;
 
 				case 'e':
 					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))
-						return wantempty?"":Translate("<unknown>");
-					strcat(sztemp,Translate(mnames_short[isetting-1]));
-					break;
+						break;
+					charPtr = Translate(mnames_short[isetting-1]);
+					goto LBL_charPtr;
 
 				case 'H':
 					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)
-						return wantempty?"":Translate("<unknown>");
-					wsprintf(szdbsetting,"%02i",isetting);
-					strcat(sztemp,szdbsetting);
-					break;
+						break;
+					goto LBL_2DigNum;
 
 				case 'h':
 					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)
-						return wantempty?"":Translate("<unknown>");
+						break;
 
 					if(!isetting) isetting=12;
 					
-					wsprintf(szdbsetting,"%i",(isetting-((isetting>12)?12:0)));
-					strcat(sztemp,szdbsetting);
-					break;
+					isetting = isetting-((isetting>12)?12:0);
+					goto LBL_2DigNum;
 
 				case 'p':
 					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)
-						return wantempty?"":Translate("<unknown>");
-					if(isetting>12)
-						strcat(sztemp,"PM");
-					else strcat(sztemp,"AM");
-					break;
+						break;
+					charPtr = (isetting>12)?"PM":"AM";
+					goto LBL_charPtr;
 
 				case 'M':
 					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Minutes",-1))==-1)
-						return wantempty?"":Translate("<unknown>");
-					wsprintf(szdbsetting,"%02i",isetting);
-					strcat(sztemp,szdbsetting);
-					break;
+						break;
+					goto LBL_2DigNum;
 
 				case 'S':
 					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Seconds",-1))==-1)
-						return wantempty?"":Translate("<unknown>");
-					wsprintf(szdbsetting,"%02i",isetting);
-					strcat(sztemp,szdbsetting);
-					break;
+						break;
+					goto LBL_2DigNum;
 
 				case 'n':
-					strcat(sztemp,hcontact?(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hcontact,0):(wantempty?"":"---"));
-					break;
+					charPtr = hcontact?(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hcontact,0):(wantempty?"":"---");
+					goto LBL_charPtr;
 				case 'N':
 					ci.dwFlag=CNF_NICK;
 					if(!CallService(MS_CONTACT_GETCONTACTINFO,(WPARAM)0,(LPARAM)&ci)){
-						strcat(sztemp,ci.pszVal);
+						charPtr = ci.pszVal;
 					} else {
-						strcat(sztemp,wantempty?"":Translate("<unknown>"));
+						charPtr = wantempty?"":Translate("<unknown>");
 					}
-					break;
+					goto LBL_charPtr;
 				case 'G':
 					{
 						DBVARIANT dbv;
 						if (!DBGetContactSetting(hcontact,"CList","Group",&dbv)){
 							strcpy(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
-							strcat(sztemp,szdbsetting);
+							charPtr = szdbsetting;
+							goto LBL_charPtr;
 						} else; //do nothing
 					}
 					break;
@@ -287,29 +279,31 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 					{
 						strcpy(szdbsetting,wantempty?"":Translate("<unknown>"));
 					}
-					strcat(sztemp,szdbsetting);
-					break;
+					charPtr = szdbsetting;
+					goto LBL_charPtr;
 
 				case 's':
-					isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"Status":courProtoName,ID_STATUS_OFFLINE);
-					strcpy(szdbsetting,(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0));
-					strcat(sztemp,Translate(szdbsetting));
-					break;
+					if (isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"Status":courProtoName,0)){
+						strcpy(szdbsetting,(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0));
+						charPtr = Translate(szdbsetting);
+					} else charPtr = wantempty?"":Translate("<unknown>");
+					goto LBL_charPtr;
 				case 'T':
 					{
 						DBVARIANT dbv;
 						if (!DBGetContactSetting(hcontact,"CList","StatusMsg",&dbv)){
 							strcpy(szdbsetting,dbv.pszVal);
 							DBFreeVariant(&dbv);
-							strcat(sztemp,szdbsetting);
-						} else strcat(sztemp,wantempty?"":Translate("<unknown>"));
+							charPtr = szdbsetting;
+						} else charPtr = wantempty?"":Translate("<unknown>");
 					}
-					break;
+					goto LBL_charPtr;
 				case 'o':
-					isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"OldStatus":courProtoName,ID_STATUS_OFFLINE);
-					strcpy(szdbsetting,(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0));
-					strcat(sztemp,Translate(szdbsetting));
-					break;
+					if (isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"OldStatus":courProtoName,0)){
+						strcpy(szdbsetting,(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0));
+						charPtr = Translate(szdbsetting);
+					} else charPtr = wantempty?"":Translate("<unknown>");
+					goto LBL_charPtr;
 
 				case 'i':
 				case 'r': if (isJabber(ci.szProto)){
@@ -317,24 +311,24 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 							if (!DBGetContactSetting(hcontact,ci.szProto,szstring[loop]=='i'?"Resource":"System",&dbv)){
 								strcpy(szdbsetting,dbv.pszVal);
 								DBFreeVariant(&dbv);
-								strcat(sztemp,szdbsetting);
-							} else strcat(sztemp,wantempty?"":Translate("<unknown>"));
+								charPtr = szdbsetting;
+							} else charPtr = wantempty?"":Translate("<unknown>");
 						  } else {
 							dwsetting=DBGetContactSettingDword(hcontact,ci.szProto,szstring[loop]=='i'?"IP":"RealIP",0);
 							if(!dwsetting)
-								strcat(sztemp,wantempty?"":Translate("<unknown>"));
+								charPtr = wantempty?"":Translate("<unknown>");
 							else
 							{
 								ia.S_un.S_addr=htonl(dwsetting);
-								strcat(sztemp,inet_ntoa(ia));
+								charPtr = inet_ntoa(ia);
 							}
 						  }
-					break;
-				case 'P':if (ci.szProto) strcat(sztemp,ci.szProto); else strcat(sztemp,wantempty?"":"ProtoUnknown");
-					break;
+					goto LBL_charPtr;
+				case 'P':if (ci.szProto) charPtr = ci.szProto; else charPtr = wantempty?"":"ProtoUnknown";
+					goto LBL_charPtr;
 				case 'b':
-					strcat(sztemp,/*"\n"*/"\x0D\x0A");
-					break;
+					charPtr = /*"\n"*/"\x0D\x0A";
+					goto LBL_charPtr;
 				case 'C': // Get Client Info
 					if (isMSN(ci.szProto)) {
 						if (hcontact) {
@@ -361,15 +355,15 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 							DBFreeVariant(&dbv);
 						} else strcpy(szdbsetting,wantempty?"":Translate("<unknown>"));
 					}
-					strcat(sztemp,szdbsetting);
-					break;
+					charPtr = szdbsetting;
+					goto LBL_charPtr;
 				case 't':
-					strcat(sztemp,"\t");
-					break;
+					charPtr = "\t";
+					goto LBL_charPtr;
 
 				default:
-					strncat(sztemp,szstring+loop-1,2);
-					break;
+					strncpy(szdbsetting,szstring+loop-1,2);
+					goto LBL_charPtr;
 			}
 		}
 	}

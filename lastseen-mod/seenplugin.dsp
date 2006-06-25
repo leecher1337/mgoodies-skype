@@ -56,8 +56,13 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib winmm.lib version.lib /nologo /base:"0x67400000" /dll /machine:I386 /out:"../../bin/release/Plugins/seenplugin.dll" /filealign:0x200
+# ADD LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib winmm.lib version.lib /nologo /base:"0x67400000" /dll /machine:I386 /out:"../../bin/upload/seen/seenplugin.dll" /filealign:0x200
 # SUBTRACT LINK32 /pdb:none /map
+# Begin Special Build Tool
+SOURCE="$(InputPath)"
+PostBuild_Cmds=cd ../../bin/upload/	md5 -s -t -oseen/seenplugin.dll.md5 seen/seenplugin.dll
+# End Special Build Tool
+
 
 !ELSEIF  "$(CFG)" == "seenplugin - Win32 Debug"
 
@@ -111,8 +116,12 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib winmm.lib version.lib /nologo /base:"0x67400000" /dll /machine:I386 /out:"../../bin/release/Plugins/NSNCompat/seenplugin.dll" /filealign:0x200
+# ADD LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib winmm.lib version.lib /nologo /base:"0x67400000" /dll /machine:I386 /out:"../../bin/upload/seen/NSNCompat/seenplugin.dll" /filealign:0x200
 # SUBTRACT LINK32 /pdb:none /map
+# Begin Special Build Tool
+SOURCE="$(InputPath)"
+PostBuild_Cmds=cd ../../bin/upload/	md5 -s -t -oseen/NSNCompat/seenplugin.dll.md5 seen/NSNCompat/seenplugin.dll
+# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "seenplugin - Win32 PermNSN Debug"
 
