@@ -923,6 +923,42 @@ static int DrawMenuItem(WPARAM wParam, LPARAM lParam)
 	return TRUE;
 }
 
+static BOOL CALLBACK ConfirmSendAllDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg) {
+	case WM_INITDIALOG:
+		{
+			RECT rcParent, rcChild;
+			GetWindowRect(GetParent(hwndDlg), &rcParent);
+			GetWindowRect(hwndDlg, &rcChild);
+			rcChild.bottom -= rcChild.top;
+			rcChild.right -= rcChild.left;
+			rcParent.bottom -= rcParent.top;
+			rcParent.right -= rcParent.left;
+			rcChild.left = rcParent.left + (rcParent.right - rcChild.right) / 2;
+			rcChild.top = rcParent.top + (rcParent.bottom - rcChild.bottom) / 2;
+			MoveWindow(hwndDlg, rcChild.left, rcChild.top, rcChild.right, rcChild.bottom, FALSE);
+		}
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDYES:
+		case IDNO:
+			{
+				int result = LOWORD(wParam);
+				if (IsDlgButtonChecked(hwndDlg, IDC_REMEMBER)) {
+					result |= 0x10000;
+				}
+				EndDialog(hwndDlg, result);
+			}
+			return TRUE;
+		}
+		break;
+	}
+
+	return FALSE;
+}
+
 
 BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -991,6 +1027,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->cmdList = 0;
 			dat->cmdListCurrent = 0;
 			dat->cmdListNew = 0;
+			dat->sendAllConfirm = 0;
+			dat->bIsFirstAppend = TRUE;
+			dat->messagesInProgress = 0;
 			dat->nTypeMode = PROTOTYPE_SELFTYPING_OFF;
 			SetTimer(hwndDlg, TIMERID_TYPE, 1000, NULL);
 			dat->lastMessage = 0;
@@ -2110,6 +2149,21 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			break;
 		switch (LOWORD(wParam)) {
 		case IDC_SENDALL:
+			{
+				int result;
+				if (dat->sendAllConfirm == 0) {
+					result = DialogBoxParam(g_hInst, MAKEINTRESOURCE(IDD_CONFIRM_SENDALL), hwndDlg, ConfirmSendAllDlgProc, (LPARAM)hwndDlg);
+					if (result & 0x10000) {
+						dat->sendAllConfirm = result;
+					}
+				} else {
+					result = dat->sendAllConfirm;
+				}
+				if (LOWORD(result) == IDNO) {
+					break;
+				}
+
+			}
 		case IDOK:
 			//this is a 'send' button
 			if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDOK)))
@@ -2145,7 +2199,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_GETTEXTEX, (WPARAM) &gt, (LPARAM) &msi.sendBuffer[bufSize]);
 				}
 
-				if ( RTL_Detect( msi.sendBuffer[bufSize] )) {
+				if ( RTL_Detect((wchar_t *)msi.sendBuffer[bufSize] )) {
                     msi.flags |= PREF_RTL;
                 }
 		#endif

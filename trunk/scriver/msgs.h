@@ -144,7 +144,8 @@ struct MessageWindowData
 	int		messagesInProgress;
 	int		codePage;
 	struct avatarCacheEntry *ace;
-	int bIsFirstAppend;
+	int		bIsFirstAppend;
+	int		sendAllConfirm;
 };
 
 #define HM_EVENTSENT         (WM_USER+10)

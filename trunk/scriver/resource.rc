@@ -259,6 +259,21 @@ BEGIN
                     BS_AUTORADIOBUTTON,44,231,206,10
 END
 
+IDD_CONFIRM_SENDALL DIALOGEX 0, 0, 220, 80
+STYLE DS_SETFONT | DS_3DLOOK | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+CAPTION "Send To All Tabs"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+	ICON			IDI_QUESTION, IDC_STATIC, 10, 10, 21, 21
+    LTEXT           "You are about to send a message to all open tabs.\nAre you sure ?",
+                    IDC_STATIC,42,10,175,20
+    CONTROL         "Remember my answer for this container",
+                    IDC_REMEMBER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,40,
+                    200,10
+    DEFPUSHBUTTON   "Yes",IDYES,20,56,60,14
+    PUSHBUTTON      "No",IDNO,120,56,60,14
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -364,12 +379,11 @@ IDI_SMILEY              ICON    DISCARDABLE     "res/smiley.ico"
 IDI_TYPING              ICON    DISCARDABLE     "res/typing.ico"
 IDI_UNICODEON           ICON    DISCARDABLE     "res/unicodeon.ico"
 IDI_UNICODEOFF          ICON    DISCARDABLE     "res/unicodeoff.ico"
-IDI_TIMESTAMP           ICON    DISCARDABLE     "res/Clock8.ico"
+IDI_TIMESTAMP           ICON    DISCARDABLE     "res/clock.ico"
 IDI_QUOTE               ICON    DISCARDABLE     "res/quote.ico"
 IDI_INCOMING            ICON    DISCARDABLE     "res/incoming.ico"
 IDI_OUTGOING            ICON    DISCARDABLE     "res/outgoing.ico"
 IDI_NOTICE              ICON    DISCARDABLE     "res/notice.ico"
-IDI_TIMESTAMP32         ICON    DISCARDABLE     "res/Clock32.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
