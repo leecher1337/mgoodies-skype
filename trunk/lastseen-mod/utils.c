@@ -295,6 +295,16 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 					strcpy(szdbsetting,(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0));
 					strcat(sztemp,Translate(szdbsetting));
 					break;
+				case 'T':
+					{
+						DBVARIANT dbv;
+						if (!DBGetContactSetting(hcontact,"CList","StatusMsg",&dbv)){
+							strcpy(szdbsetting,dbv.pszVal);
+							DBFreeVariant(&dbv);
+							strcat(sztemp,szdbsetting);
+						} else strcat(sztemp,wantempty?"":Translate("<unknown>"));
+					}
+					break;
 				case 'o':
 					isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"OldStatus":courProtoName,ID_STATUS_OFFLINE);
 					strcpy(szdbsetting,(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0));
