@@ -72,7 +72,7 @@ int FreeVSApi()
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,1,9),
+	PLUGIN_MAKE_VERSION(0,0,1,10),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -120,7 +120,22 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 	{
 		char msg[500];
 		sprintf(msg,Translate("You are not allowed to send too much nudge (only 1 each %d sec, %d sec left)"),GlobalNudge.sendTimeSec, 30 - diff);
-		MessageBox(NULL,msg,NULL,0);
+		//MessageBox(NULL,msg,NULL,0);
+		if(GlobalNudge.useByProtocol)
+		{
+			NudgeElementList *n;
+			for(n = NudgeList;n != NULL; n = n->next)
+			{
+				if(!strcmp(protoName,n->item.ProtocolName))
+				{
+					Nudge_ShowPopup(n->item, (HANDLE) wParam, msg);
+				}		
+			}	
+		}
+		else
+		{
+			Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, msg);
+		}
 		return 0;
 	}
 	
@@ -134,7 +149,7 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 			if(!strcmp(protoName,n->item.ProtocolName))
 			{
 				if(n->item.showPopup)
-					Nudge_ShowPopup(n->item, (HANDLE) wParam, true);
+					Nudge_ShowPopup(n->item, (HANDLE) wParam, "You sent a nudge");
 				if(n->item.showEvent)
 					Nudge_SentEvent(n->item, (HANDLE) wParam);
 				if(n->item.showStatus)
@@ -145,7 +160,7 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 	else
 	{
 		if(DefaultNudge.showPopup)
-			Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, true);
+			Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, "You sent a nudge");
 		if(DefaultNudge.showEvent)
 			Nudge_SentEvent(DefaultNudge, (HANDLE) wParam);
 		if(DefaultNudge.showStatus)
@@ -197,7 +212,7 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 					{
 						
 						if(n->item.showPopup)
-							Nudge_ShowPopup(n->item, (HANDLE) wParam, false);
+							Nudge_ShowPopup(n->item, (HANDLE) wParam, "You received a nudge");
 						if(n->item.shakeClist)
 							ShakeClist(wParam,lParam);
 						if(n->item.shakeChat)
@@ -218,45 +233,6 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 		if(DefaultNudge.enabled)
 		{
 			DWORD Status = CallService(MS_CLIST_GETSTATUSMODE,0,0);
-			/*switch(Status)
-			{
-			case ID_STATUS_OFFLINE:
-				MessageBox(NULL, "status offline\n",NULL,0);
-				break;
-			case ID_STATUS_ONLINE:
-				MessageBox(NULL, "status online\n",NULL,0);
-				break;
-			case ID_STATUS_AWAY:
-				MessageBox(NULL, "status away\n",NULL,0);
-				break;
-			case ID_STATUS_DND:
-				MessageBox(NULL, "status dnd\n",NULL,0);
-				break;
-			case ID_STATUS_NA:
-				MessageBox(NULL, "status na\n",NULL,0);
-				break;
-			case ID_STATUS_OCCUPIED:
-				MessageBox(NULL, "status occupied\n",NULL,0);
-				break;
-			case ID_STATUS_FREECHAT:
-				MessageBox(NULL, "status freechat\n",NULL,0);
-				break;
-			case ID_STATUS_INVISIBLE:
-				MessageBox(NULL, "status invisible\n",NULL,0);
-				break;
-			case ID_STATUS_ONTHEPHONE:
-				MessageBox(NULL, "status onthephone\n",NULL,0);
-				break;
-			case ID_STATUS_OUTTOLUNCH:
-				MessageBox(NULL, "status outtolunch\n",NULL,0);
-				break;
-			default:
-				char msg[500];
-				sprintf(msg," status : %X ", Status); 
-				MessageBox(NULL, msg,NULL,0);
-				break;
-			}*/
-
 			if( ((DefaultNudge.statusFlags & NUDGE_ACC_ST0) && (Status<=ID_STATUS_OFFLINE)) ||
 				((DefaultNudge.statusFlags & NUDGE_ACC_ST1) && (Status==ID_STATUS_ONLINE)) ||
 				((DefaultNudge.statusFlags & NUDGE_ACC_ST2) && (Status==ID_STATUS_AWAY)) ||
@@ -270,7 +246,7 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 			{
 				
 				if(DefaultNudge.showPopup)
-					Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, false);
+					Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, "You received a nudge");
 				if(DefaultNudge.shakeClist)
 					ShakeClist(wParam,lParam);
 				if(DefaultNudge.shakeChat)
@@ -548,34 +524,38 @@ int Preview()
 	return 0;
 }
 
-void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont, bool isSent)
+void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont, char * Message)
 {
-	POPUPDATAEX NudgePopUp;
 	HANDLE hContact;
 
 	hContact = Nudge_GethContact(hCont);
-
-	if(hContact == NULL) //no contact at all
-		NudgePopUp.lchContact = (HANDLE) &n;
-
-	NudgePopUp.lchContact = hContact;
-	NudgePopUp.lchIcon = n.hIcon;
-	NudgePopUp.colorBack = ! n.popupWindowColor ? n.popupBackColor : GetSysColor(COLOR_BTNFACE);
-	NudgePopUp.colorText = ! n.popupWindowColor ? n.popupTextColor : GetSysColor(COLOR_WINDOWTEXT);
-	NudgePopUp.iSeconds = n.popupTimeSec;
-	NudgePopUp.PluginWindowProc = (WNDPROC)NudgePopUpProc;
-	NudgePopUp.PluginData = (void *)1;
-
 	char * lpzContactName = (char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,0);
 	
-	if(isSent) 
-		sprintf(NudgePopUp.lpzText, Translate("You sent a nudge"));
+	if(ServiceExists(MS_POPUP_ADDPOPUPEX)) 
+	{
+		POPUPDATAEX NudgePopUp;
+		
+		if(hContact == NULL) //no contact at all
+			NudgePopUp.lchContact = (HANDLE) &n;
+
+		NudgePopUp.lchContact = hContact;
+		NudgePopUp.lchIcon = n.hIcon;
+		NudgePopUp.colorBack = ! n.popupWindowColor ? n.popupBackColor : GetSysColor(COLOR_BTNFACE);
+		NudgePopUp.colorText = ! n.popupWindowColor ? n.popupTextColor : GetSysColor(COLOR_WINDOWTEXT);
+		NudgePopUp.iSeconds = n.popupTimeSec;
+		NudgePopUp.PluginWindowProc = (WNDPROC)NudgePopUpProc;
+		NudgePopUp.PluginData = (void *)1;
+		
+		lstrcpy(NudgePopUp.lpzText, Translate(Message));
+
+		lstrcpy(NudgePopUp.lpzContactName, lpzContactName);
+
+		CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NudgePopUp,0);
+	}
 	else
-		sprintf(NudgePopUp.lpzText, Translate("You received a nudge"));
-
-	lstrcpy(NudgePopUp.lpzContactName, lpzContactName);
-
-	CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NudgePopUp,0);
+	{
+		MessageBox(NULL,Message,lpzContactName,0);
+	}
 }
 
 BOOL CheckMsgWnd(HANDLE hContact)
