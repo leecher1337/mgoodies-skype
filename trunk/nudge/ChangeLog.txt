@@ -1,3 +1,8 @@
+0.0.1.10
+===========
+* Use popup for warning instead of message box.
++ Check if popup plugin is present if not use messagebox.
+
 0.0.1.9
 ===========
 * Change options dialog (use tabsrmm uxtheme)
