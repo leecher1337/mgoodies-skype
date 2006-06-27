@@ -1,4 +1,9 @@
 /*
+StatusMessageChangeNotify plugin for Miranda IM.
+
+Copyright © 2004-2005 NoName
+Copyright © 2005-2006 Daniel Vijge, Tomasz S³otwiñski, Ricardo Pescuma Domenecci
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
@@ -33,9 +38,9 @@ PLUGININFO pluginInfo = {
 	PLUGIN_MAKE_VERSION(0,0,3,5),
 	"Notify you via popup when someone changes his/her status message",
 	"Daniel Vijge, Tomasz S³otwiñski, Ricardo Pescuma Domenecci",
+	"slotwin@users.berlios.de",
 	"",
-	"",
-	"http://miranda-im.org/",
+	"http://developer.berlios.de/projects/mgoodies",
 	0,	//not transient
 	0	//doesn't replace anything built-in
 };
