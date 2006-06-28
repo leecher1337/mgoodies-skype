@@ -1,3 +1,7 @@
+0.0.1.11
+===========
+! Check for null handle to avoid crash in IRC mod
+
 0.0.1.10
 ===========
 * Use popup for warning instead of message box.
