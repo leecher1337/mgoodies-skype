@@ -49,6 +49,8 @@ int ShakeClist( WPARAM wParam, LPARAM lParam )
 
 int ShakeChat( WPARAM wParam, LPARAM lParam )
 {
+    if(((HANDLE) wParam) == NULL) return -1;
+        
 	DWORD tid;
 	HWND hWnd;
 	char srmmName[100];
@@ -60,9 +62,8 @@ int ShakeChat( WPARAM wParam, LPARAM lParam )
 	mwd.uFlags = MSG_WINDOW_UFLAG_MSG_BOTH;
 
 	mwid.cbSize = sizeof(MessageWindowInputData);
-	mwid.hContact = Nudge_GethContact((HANDLE) wParam);
+	mwid.hContact = mwd.hContact;
 	mwid.uFlags = MSG_WINDOW_UFLAG_MSG_BOTH;
-
 
 
 	CallService( MS_MSG_GETWINDOWDATA, (WPARAM)&mwid, (LPARAM)&mwd );
