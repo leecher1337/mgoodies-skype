@@ -538,11 +538,11 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		if (event->dwFlags & IEEDF_RTL) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
 		} else {
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\pard");
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrpar");
 		}
 		dat->bIsFirstAppend = FALSE;
     } else {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
+//		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par ");
 		if (event->dwFlags & IEEDF_RTL) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
 		} else {
@@ -561,15 +561,11 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\par\\sl0", msgDlgFontCount + 4);
 	}
 
+
 	if (event->eventType == EVENTTYPE_MESSAGE) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 2 + ((event->dwFlags & IEEDF_SENT) ? 1 : 0));
 	} else {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1);
-	}
-	if (event->dwFlags & IEEDF_RTL) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlmark");
-	} else {
-//		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrmark");
 	}
 
 	if (g_dat->flags&SMF_SHOWICONS && isGroupBreak) {
@@ -649,13 +645,6 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		case EVENTTYPE_MESSAGE:
 		if (g_dat->flags & SMF_MSGONNEWLINE && showColon) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
-			/*
-			if (event->dwFlags & IEEDF_RTL) {
-				AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
-			} else {
-				AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrpar");
-			}
-			*/
 		}
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
 
@@ -694,9 +683,9 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 			break;
 		}
 	}
-	if (!prefixParaBreak) {
-//		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
-	}
+//	if (!prefixParaBreak) {
+	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
+//	}
 	dat->lastEventTime = event->time;
 	dat->lastEventType = MAKELONG(event->dwFlags, event->eventType);
 	dat->lastEventContact = event->hContact;

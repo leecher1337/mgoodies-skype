@@ -72,6 +72,10 @@ created. CTRL key needs to be pressed only when a tab is being dropped.
 
 6. Change Log
 -------------
+2.3.2.8
++ support for RTL messages
++ send-to-all confirmation dialog
+* Unicode-related fixes
 2.3.2.7
 * Unicode-related fixes
 * destoying services and hook on unload
