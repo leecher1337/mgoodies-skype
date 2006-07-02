@@ -42,6 +42,7 @@ Avatar History Plugin
 // #include <m_updater.h>
 
 #include "AvatarHistory.h"
+#include "resource.h"
 
 // #define DBGPOPUPS
 
@@ -336,7 +337,7 @@ int ShowPopup(HANDLE hContact, char* title, char* text)
 	char *sProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hContact,0);
 	if(ServiceExists(MS_POPUP_ADDPOPUP))
 	{
-		HICON hIcon = LoadSkinnedProtoIcon(sProto,ID_STATUS_ONLINE); // LoadSkinnedIcon(SKINICON_OTHER_USERONLINE);
+		HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_NEWAVATAR));
 		if(!db_byte_get(NULL, "AvatarHistory", "UsePopupDefault", AVH_DEF_DEFPOPUPS))
 		{
 			colorBack = db_dword_get(NULL, "AvatarHistory", "PopupBG", AVH_DEF_POPUPBG);

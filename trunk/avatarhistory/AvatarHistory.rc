@@ -49,15 +49,15 @@ BEGIN
 END
 
 IDD_AVATARDLG DIALOG DISCARDABLE  0, 0, 216, 130
-STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP | WS_VISIBLE | 
-    WS_CAPTION | WS_SYSMENU
+STYLE DS_SETFOREGROUND | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
 CAPTION "Avatar History"
 FONT 8, "MS Sans Serif"
 BEGIN
     LISTBOX         IDC_AVATARLIST,6,5,120,74,LBS_SORT | 
                     LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     CONTROL         "",IDC_AVATAR,"Static",SS_BITMAP | SS_CENTERIMAGE | 
-                    SS_REALSIZEIMAGE | SS_SUNKEN,130,5,78,74
+                    SS_REALSIZEIMAGE | SS_SUNKEN,131,5,78,74
     PUSHBUTTON      "Save",IDC_SAVE,62,81,31,14
     PUSHBUTTON      "Delete",IDC_DELETE,95,81,31,14
     PUSHBUTTON      "Open Folder",IDC_OPENFOLDER,6,81,49,14
@@ -67,7 +67,7 @@ BEGIN
                     BS_AUTO3STATE | WS_TABSTOP,6,101,86,10
     CONTROL         "Show popups for this user",IDC_POPUPUSER,"Button",
                     BS_AUTO3STATE | WS_TABSTOP,6,113,97,10
-    DEFPUSHBUTTON   "OK",IDOK,158,109,50,14
+    DEFPUSHBUTTON   "OK",IDOK,159,109,50,14
 END
 
 
@@ -123,6 +123,16 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_AVATARHIST          ICON    DISCARDABLE     "AvatarHistory.ico"
+IDI_NEWAVATAR           ICON    DISCARDABLE     "NewAvatar.ico"
 #endif    // English (U.K.) resources
 /////////////////////////////////////////////////////////////////////////////
 

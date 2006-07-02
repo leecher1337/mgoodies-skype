@@ -79,6 +79,8 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 	case WM_INITDIALOG:
 		{
 			data = (struct AvatarDialogData*) lParam;
+			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInst, MAKEINTRESOURCE(IDI_AVATARHIST)));
+			SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM) LoadIcon(hInst, MAKEINTRESOURCE(IDI_AVATARHIST)));
 			FillAvatarList(GetDlgItem(hwnd, IDC_AVATARLIST), data->hContact, data->fn);
 			SetWindowLongPtr(hwnd, GWLP_USERDATA, (ULONG_PTR)data->hContact);
 			UpdateAvatarPic(hwnd, NULL);
@@ -254,7 +256,7 @@ void InitMenuItem()
 	mi.cbSize = sizeof(CLISTMENUITEM);
 	mi.pszName = Translate("Avatar history...");
 	mi.position = 100;
-	mi.hIcon = LoadSkinnedIcon(SKINICON_OTHER_USERONLINE);
+	mi.hIcon = (HICON)LoadIcon(hInst, MAKEINTRESOURCE(IDI_AVATARHIST));
 	mi.pszService = "AvatarHistory/ShowDialog";
 	CreateServiceFunction("AvatarHistory/ShowDialog", ShowDialogSvc);
 	CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
