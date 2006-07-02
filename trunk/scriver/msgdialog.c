@@ -253,6 +253,7 @@ static int RTL_Detect(WCHAR *pszwText)
     int i;
     int iLen = lstrlenW(pszwText);
 
+//	MessageBox(NULL, pszwText, L"RTL detect" , MB_OK);
     infoTypeC2 = (WORD *)malloc(sizeof(WORD) * (iLen + 2));
 
     if(infoTypeC2) {
@@ -263,6 +264,7 @@ static int RTL_Detect(WCHAR *pszwText)
         for(i = 0; i < iLen; i++) {
             if(infoTypeC2[i] == C2_RIGHTTOLEFT) {
                 free(infoTypeC2);
+//				MessageBox(NULL, pszwText, L"RTL found" , MB_OK);
                 //_DebugTraceA("RTL text found");
                 return 1;
             }
@@ -1038,24 +1040,31 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->startTime = time(NULL);
 			dat->flags = 0;
 			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "UseRTL", (BYTE) 0)) {
-				PARAFORMAT2 pf2;
-				ZeroMemory((void *)&pf2, sizeof(pf2));
-				pf2.cbSize = sizeof(pf2);
-				pf2.dwMask = PFM_RTLPARA;
-				pf2.wEffects = PFE_RTLPARA;
-				SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
-				SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) | WS_EX_LEFTSCROLLBAR);
-				SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
 				dat->flags |= SMF_RTL;
-			} else {
+			}
+			{
 				PARAFORMAT2 pf2;
 				ZeroMemory((void *)&pf2, sizeof(pf2));
 				pf2.cbSize = sizeof(pf2);
 				pf2.dwMask = PFM_RTLPARA;
 				pf2.wEffects = 0;
-				SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) & ~(WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR));
-				SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) & ~WS_EX_LEFTSCROLLBAR);
+				if (dat->flags & SMF_RTL) {
+					pf2.wEffects |= PFE_RTLPARA;
+					SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
+				} else {
+					SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) & ~(WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR));
+				}
 				SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
+				ZeroMemory((void *)&pf2, sizeof(pf2));
+				pf2.cbSize = sizeof(pf2);
+				pf2.dwMask = PFM_RTLPARA;
+				pf2.wEffects = PFE_RTLPARA;
+				SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
+				if (dat->flags & SMF_RTL) {
+					SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) | WS_EX_LEFTSCROLLBAR);
+				} else {
+					SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) & ~WS_EX_LEFTSCROLLBAR);
+				}
 			}
 			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "DisableUnicode", (BYTE) 0)) {
 				dat->flags |= SMF_DISABLE_UNICODE;
@@ -1704,7 +1713,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			pf2.cbSize = sizeof(pf2);
 			pf2.dwMask = PFM_RTLPARA;
 			dat->flags ^= SMF_RTL;
-			SetDlgItemText(hwndDlg, IDC_MESSAGE, _T(""));
 			if (dat->flags&SMF_RTL) {
 				pf2.wEffects = PFE_RTLPARA;
 				SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
@@ -1837,6 +1845,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 	case DM_REMAKELOG:
 		if (wParam == 0 || (HANDLE) wParam == dat->hContact) {
+			//StreamInEvents(hwndDlg, dat->hDbEventFirst, 0, 0);
 			StreamInEvents(hwndDlg, dat->hDbEventFirst, -1, 0);
 		}
 		break;
@@ -2040,6 +2049,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				dat->sendInfo = (struct MessageSendInfo *) realloc(dat->sendInfo, sizeof(struct MessageSendInfo) * dat->sendCount);
 				dat->sendInfo[dat->sendCount-1].sendBufferSize = msi->sendBufferSize;
 				dat->sendInfo[dat->sendCount-1].sendBuffer = (char *) malloc(msi->sendBufferSize);
+				dat->sendInfo[dat->sendCount-1].flags = msi->flags;
 				dat->sendInfo[dat->sendCount-1].timeout=0;
 				memcpy(dat->sendInfo[dat->sendCount-1].sendBuffer, msi->sendBuffer, dat->sendInfo[dat->sendCount-1].sendBufferSize);
 				SetTimer(hwndDlg, TIMERID_MSGSEND, 1000, NULL);
@@ -2199,7 +2209,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_GETTEXTEX, (WPARAM) &gt, (LPARAM) &msi.sendBuffer[bufSize]);
 				}
 
-				if ( RTL_Detect((wchar_t *)msi.sendBuffer[bufSize] )) {
+				if ( RTL_Detect((wchar_t *)&msi.sendBuffer[bufSize] )) {
                     msi.flags |= PREF_RTL;
                 }
 		#endif
@@ -2617,7 +2627,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				break;
 			dbei.cbSize = sizeof(dbei);
 			dbei.eventType = EVENTTYPE_MESSAGE;
-			dbei.flags = DBEF_SENT | (( dat->flags & SMF_RTL) ? DBEF_RTL : 0 );
+			dbei.flags = DBEF_SENT | (( dat->sendInfo[i].flags & PREF_RTL) ? DBEF_RTL : 0 );
 			dbei.szModule = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dat->hContact, 0);
 			dbei.timestamp = time(NULL);
 			dbei.cbBlob = lstrlenA(dat->sendInfo[i].sendBuffer) + 1;
