@@ -71,12 +71,12 @@ static int IsEnabled(WPARAM wParam, LPARAM lParam);
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Avatar History",
-	PLUGIN_MAKE_VERSION(0,0,0,7),
+	PLUGIN_MAKE_VERSION(0,0,1,0),
 	"This plugin keeps backups of all your contacts' avatar changes and/or shows popups",
 	"Matthew Wild (MattJ)",
 	"mwild1@gmail.com",
 	"© 2006 Matthew Wild",
-	"http://miranda-im.org/",
+	"http://mattj.xmgfree.com/",
 	0,		//not transient
 	0		//doesn't replace anything built-in
 };
@@ -268,7 +268,7 @@ int GetFileHash(char* fn)
    {
 		ShowPopup(NULL, "AVH Debug", "File opened");
    }
-   long cycles;
+   long cycles = 0;
 #endif
    do
    {
