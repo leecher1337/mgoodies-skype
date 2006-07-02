@@ -81,7 +81,7 @@ PLUGININFO pluginInfo={
 	0		//doesn't replace anything built-in
 };
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
+extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
 	hInst=hinstDLL;
 	return TRUE;
@@ -366,7 +366,7 @@ void InitFolders()
 			strcpy(basedir, "."); // Failed, use current dir
 	
 	strcat(basedir, "\\Avatars History");
-	hFolder = FoldersRegisterCustomPath(Translate("Avatars"), Translate("Avatar History"), basedir);
+	hFolder = (HANDLE)FoldersRegisterCustomPath(Translate("Avatars"), Translate("Avatar History"), basedir);
 	FoldersGetCustomPath(hFolder, basedir, MAX_PATH+1, basedir);
 }
 
