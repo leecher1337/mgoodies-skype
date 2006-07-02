@@ -18,7 +18,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
+#define _WIN32_WINNT  0x0501
 #include <shlobj.h>
+#include <uxtheme.h>
+#include <win2k.h>
 #include "Options.h"
 #include "resource.h"
 //#include "Smiley.h"
@@ -40,6 +43,7 @@ static ProtocolSettings *srmmCurrentProtoItem = NULL;
 static ProtocolSettings *chatCurrentProtoItem = NULL;
 static ProtocolSettings *historyCurrentProtoItem = NULL;
 static HIMAGELIST hProtocolImageList = NULL;
+static BOOL (WINAPI *pfnEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
 
 #ifndef _MSC_VER
 typedef struct tagTVKEYDOWN {
@@ -500,6 +504,11 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 			hwndPages[3] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_HISTORY_OPTIONS), hwndDlg, IEViewHistoryOptDlgProc, (LPARAM) NULL);
 			SetWindowPos(hwndPages[3], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 			hwndCurrentTab = hwndPages[0];
+			if (pfnEnableThemeDialogTexture) {
+				for (int i=0; i<4; i++) {
+					pfnEnableThemeDialogTexture(hwndPages[i], ETDT_ENABLETAB);
+				}
+			}
 			ShowWindow(hwndPages[0], SW_SHOW);
 			return TRUE;
 		}
@@ -1746,6 +1755,14 @@ void Options::init() {
 	if (isInited) return;
 	isInited = true;
 	DBVARIANT dbv;
+
+	HMODULE			  hUxTheme = 0;
+	if(IsWinVerXPPlus()) {
+		hUxTheme = GetModuleHandle(_T("uxtheme.dll"));
+		if(hUxTheme)
+			pfnEnableThemeDialogTexture = (BOOL (WINAPI *)(HANDLE, DWORD))GetProcAddress(hUxTheme, "EnableThemeDialogTexture");
+	}
+
 
 	generalFlags = DBGetContactSettingDword(NULL, ieviewModuleName, DBS_BASICFLAGS, 0);
 

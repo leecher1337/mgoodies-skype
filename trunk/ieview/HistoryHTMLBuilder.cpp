@@ -213,6 +213,7 @@ void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 		char *output;
 		output = NULL;
 		int isSent = eventData->dwFlags & IEEDF_SENT;
+		int isRTL = eventData->dwFlags & IEEDF_RTL;
 		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_STATUSCHANGE
 			|| eventData->iType == IEED_EVENT_URL || eventData->iType == IEED_EVENT_FILE) {
 			char *szName = NULL;

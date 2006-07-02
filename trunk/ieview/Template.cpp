@@ -223,6 +223,39 @@ void TemplateMap::clear() {
 	}
 }
 
+static const char *templateNames[] = {"<!--HTMLStart-->",
+								"<!--MessageIn-->",
+								"<!--MessageOut-->",
+								"<!--hMessageIn-->",
+								"<!--hMessageOut-->",
+								"<!--File-->",
+								"<!--hFile-->",
+								"<!--URL-->",
+								"<!--hURL-->",
+								"<!--Status-->",
+								"<!--hStatus-->",
+								"<!--MessageInGroupStart-->",
+								"<!--MessageInGroupInner-->",
+								"<!--MessageInGroupEnd-->",
+								"<!--hMessageInGroupStart-->",
+								"<!--hMessageInGroupInner-->",
+								"<!--hMessageInGroupEnd-->",
+								"<!--MessageOutGroupStart-->",
+								"<!--MessageOutGroupInner-->",
+								"<!--MessageOutGroupEnd-->",
+								"<!--hMessageOutGroupStart-->",
+								"<!--hMessageOutGroupInner-->",
+								"<!--hMessageOutGroupEnd-->",
+								"<!--FileIn-->",
+								"<!--hFileIn-->",
+								"<!--FileOut-->",
+								"<!--hFileOut-->",
+								"<!--URLIn-->",
+								"<!--hURLIn-->",
+								"<!--URLOut-->",
+								"<!--hURLOut-->"
+};
+
 TemplateMap* TemplateMap::loadTemplateFile(const char *proto, const char *filename, bool onlyInfo) {
 	FILE* fh;
 	char lastTemplate[1024], tmp2[1024];
@@ -254,38 +287,14 @@ TemplateMap* TemplateMap::loadTemplateFile(const char *proto, const char *filena
     	if (sscanf(store, "%s", tmp2) == EOF) continue;
 	    //template start
 	    if (!onlyInfo) {
-            if ( !strncmp(store, "<!--HTMLStart-->", 16) ||
-				 !strncmp(store, "<!--MessageIn-->", 16) ||
-				 !strncmp(store, "<!--MessageOut-->", 17) ||
-				 !strncmp(store, "<!--hMessageIn-->", 17) ||
-				 !strncmp(store, "<!--hMessageOut-->", 18) ||
-				 !strncmp(store, "<!--File-->", 11) ||
-				 !strncmp(store, "<!--hFile-->", 12) ||
-				 !strncmp(store, "<!--URL-->", 10) ||
-				 !strncmp(store, "<!--hURL-->", 11) ||
-				 !strncmp(store, "<!--Status-->", 13) ||
-				 !strncmp(store, "<!--hStatus-->", 14) ||
-				 !strncmp(store, "<!--MessageInGroupStart-->", 26) ||
-				 !strncmp(store, "<!--MessageInGroupInner-->", 26) ||
-				 !strncmp(store, "<!--MessageInGroupEnd-->", 24) ||
-				 !strncmp(store, "<!--hMessageInGroupStart-->", 27) ||
-				 !strncmp(store, "<!--hMessageInGroupInner-->", 27) ||
-				 !strncmp(store, "<!--hMessageInGroupEnd-->", 25) ||
-				 !strncmp(store, "<!--MessageOutGroupStart-->", 27) ||
-				 !strncmp(store, "<!--MessageOutGroupInner-->", 27) ||
-				 !strncmp(store, "<!--MessageOutGroupEnd-->", 25) ||
-				 !strncmp(store, "<!--hMessageOutGroupStart-->", 28) ||
-				 !strncmp(store, "<!--hMessageOutGroupInner-->", 28) ||
-				 !strncmp(store, "<!--hMessageOutGroupEnd-->", 26) ||
-				 !strncmp(store, "<!--FileIn-->", 13) ||
-				 !strncmp(store, "<!--hFileIn-->", 14) ||
-				 !strncmp(store, "<!--FileOut-->", 14) ||
-				 !strncmp(store, "<!--hFileOut-->", 15) ||
-				 !strncmp(store, "<!--URLIn-->", 12) ||
-				 !strncmp(store, "<!--hURLIn-->", 13) ||
-				 !strncmp(store, "<!--URLOut-->", 13) ||
-				 !strncmp(store, "<!--hURLOut-->", 14)
-				 ) {
+	    	bool bFound = false;
+	    	for (int i = 0; i < sizeof(templateNames) / sizeof (templateNames[0]); i++) {
+	    		if (!strcmp(store, templateNames[i])) {
+	    			bFound = true;
+	    			break;
+	    		}
+	    	}
+            if (bFound) {
 				if (wasTemplate) {
 					tmap->addTemplate(lastTemplate, templateText);
 	                //debugView->writef("1. %s<br>%s", lastTemplate, templateText);

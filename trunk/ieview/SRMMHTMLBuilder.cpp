@@ -172,6 +172,7 @@ void SRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		char *output;
 		output = NULL;
 		int isSent = eventData->dwFlags & IEEDF_SENT;
+		int isRTL = eventData->dwFlags & IEEDF_RTL;
 		showColon = false;
 
 		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_STATUSCHANGE) {
