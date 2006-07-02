@@ -534,21 +534,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 	buffer = (char *) malloc(bufferAlloced);
 	buffer[0] = '\0';
 
-    if ( dat->bIsFirstAppend ) {
-		if (event->dwFlags & IEEDF_RTL) {
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
-		} else {
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrpar");
-		}
-		dat->bIsFirstAppend = FALSE;
-    } else {
 //		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par ");
-		if (event->dwFlags & IEEDF_RTL) {
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
-		} else {
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrpar");
-		}
-	}
 
  	if ((g_dat->flags & SMF_GROUPMESSAGES) && event->dwFlags == LOWORD(dat->lastEventType)
 	  && event->eventType == EVENTTYPE_MESSAGE && HIWORD(dat->lastEventType) == EVENTTYPE_MESSAGE
@@ -561,12 +547,32 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\par\\sl0", msgDlgFontCount + 4);
 	}
 
+    if ( dat->bIsFirstAppend ) {
+		if (event->dwFlags & IEEDF_RTL) {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
+		} else {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrpar");
+		}
+		dat->bIsFirstAppend = FALSE;
+    } else {
+		if (event->dwFlags & IEEDF_RTL) {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
+		} else {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrpar");
+		}
+	}
 
 	if (event->eventType == EVENTTYPE_MESSAGE) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 2 + ((event->dwFlags & IEEDF_SENT) ? 1 : 0));
 	} else {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d", msgDlgFontCount + 1);
 	}
+
+	if (event->dwFlags & IEEDF_RTL) {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrch\\rtlch");
+		} else {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlch\\ltrch");
+		}
 
 	if (g_dat->flags&SMF_SHOWICONS && isGroupBreak) {
 		int i = LOGICON_MSG_NOTICE;
@@ -594,7 +600,6 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		bufferEnd += logIconBmpSize[i];
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " ");
 	}
-
 	if (g_dat->flags&SMF_SHOWTIME &&
 		(event->eventType != EVENTTYPE_MESSAGE ||
 		!(g_dat->flags & SMF_GROUPMESSAGES) ||
@@ -647,7 +652,6 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 		}
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
-
 		if (event->dwFlags & IEEDF_UNICODE_TEXT) {
 			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszTextW);
 		} else {
