@@ -32,7 +32,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,0),
+	PLUGIN_MAKE_VERSION(0,0,2,1),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
@@ -49,13 +49,18 @@ HIMAGELIST hIml;
 
 HANDLE hModulesLoaded = NULL;
 HANDLE hEventAdded = NULL;
+HANDLE hHotkeyPressed = NULL;
 
 long main_dialog_open = 0;
 HWND hwndMain = NULL;
 
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int EventAdded(WPARAM wparam, LPARAM lparam);
+int HotkeyPressed(WPARAM wParam, LPARAM lParam);
 int ShowDialog(WPARAM wParam,LPARAM lParam);
+
+int hksModule = 0;
+int hksAction = 0;
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -94,6 +99,9 @@ int __declspec(dllexport) Unload(void)
 
 	UnhookEvent(hModulesLoaded);
 	UnhookEvent(hEventAdded);
+
+	HKS_Unregister(hksAction);
+	HKS_Unregister(hksModule);
 
 	return 0;
 }
@@ -149,16 +157,26 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			opts.num_protos++;
 	}
 
-	// Add hotkey
-	SKINHOTKEYDESCEX hk;
-	ZeroMemory(&hk,sizeof(hk));
-	hk.cbSize = sizeof(hk);
-	hk.pszSection = Translate("Quick Contacts");
-	hk.pszName = Translate("Show dialog");
-	hk.pszDescription = Translate("Show dialog to select contact");
-	hk.pszService = MS_QC_SHOW_DIALOG;
-	hk.DefHotKey = 0;
-	CallService(MS_SKIN_ADDHOTKEY, 0, (LPARAM)&hk);
+	hksModule = HKS_RegisterModule("Quick Contacts");
+	if (hksModule >= 0)
+	{
+		hksAction = HKS_RegisterAction(hksModule, "Open dialog", "Ctrl+Alt+Q", 0);
+
+		hHotkeyPressed = HookEvent(ME_HKS_KEY_PRESSED, HotkeyPressed);
+	}
+	else
+	{
+		// Add hotkey
+		SKINHOTKEYDESCEX hk;
+		ZeroMemory(&hk,sizeof(hk));
+		hk.cbSize = sizeof(hk);
+		hk.pszSection = Translate("Quick Contacts");
+		hk.pszName = Translate("Show dialog");
+		hk.pszDescription = Translate("Show dialog to select contact");
+		hk.pszService = MS_QC_SHOW_DIALOG;
+		hk.DefHotKey = 0;
+		CallService(MS_SKIN_ADDHOTKEY, 0, (LPARAM)&hk);
+	}
 
 	// Get the icons for the listbox
 	hIml = (HIMAGELIST)CallService(MS_CLIST_GETICONSIMAGELIST,0,0);
@@ -327,32 +345,31 @@ void LoadContacts(HWND hwndDlg, BOOL show_all)
 				// Check if is subcontact
 				if (opts.hide_subcontacts && hMeta != NULL) 
 				{
-					if (opts.keep_subcontacts_from_offline)
-					{
-						int meta_status = DBGetContactSettingWord(hMeta, "MetaContacts", "Status", ID_STATUS_OFFLINE);
-
-						if (meta_status > ID_STATUS_OFFLINE)
-							continue;
-						else if (DBGetContactSettingByte(NULL, MODULE_NAME, "ShowOfflineMetaContacts", FALSE))
-							continue;
-					}
-					else
-					{
+					if (!opts.keep_subcontacts_from_offline)
 						continue;
-					}
+
+					int meta_status = DBGetContactSettingWord(hMeta, "MetaContacts", "Status", ID_STATUS_OFFLINE);
+
+					if (meta_status > ID_STATUS_OFFLINE)
+						continue;
+					else if (DBGetContactSettingByte(NULL, MODULE_NAME, "ShowOfflineMetaContacts", FALSE))
+						continue;
 				}
 			}
 
 			// Add to list
 
 			// Get group
-			ns.contact[ns.count].szgroup[0] = _T('\0');
+			memset(&ns.contact[ns.count], 0, sizeof(ns.contact[ns.count]));
+			
 			if (opts.group_append)
 			{
 				DBVARIANT dbv;
 				if (DBGetContactSettingTString(hMeta == NULL ? hContact : hMeta, "CList", "Group", &dbv) == 0)
 				{
-					lstrcpyn(ns.contact[ns.count].szgroup, dbv.ptszVal, MAX_REGS(ns.contact[ns.count].szgroup));
+					if (dbv.ptszVal != NULL)
+						lstrcpyn(ns.contact[ns.count].szgroup, dbv.ptszVal, MAX_REGS(ns.contact[ns.count].szgroup));
+
 					DBFreeVariant(&dbv);
 				}
 			}
@@ -364,8 +381,9 @@ void LoadContacts(HWND hwndDlg, BOOL show_all)
 			strncpy(ns.contact[ns.count].proto, pszProto, sizeof(ns.contact[ns.count].proto)-1);
 			ns.contact[ns.count].proto[sizeof(ns.contact[ns.count].proto)-1] = '\0';
 
-			ns.contact[ns.count++].hcontact = hContact;
+			ns.contact[ns.count].hcontact = hContact;
 
+			ns.count++;
 		}
 	}
 
@@ -399,8 +417,11 @@ void EnableButtons(HWND hwndDlg, HANDLE hContact)
 			hContact = hSub;
 
 		// Get caps
+		int caps = 0;
+
 		char *pszProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
-		int caps = CallProtoService(pszProto, PS_GETCAPS, PFLAGNUM_1, 0);
+		if (pszProto != NULL)
+			caps = CallProtoService(pszProto, PS_GETCAPS, PFLAGNUM_1, 0);
 
 		EnableWindow(GetDlgItem(hwndDlg, IDC_MESSAGE), caps & PF1_IMSEND ? TRUE : FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_FILE), caps & PF1_FILESEND ? TRUE : FALSE);
@@ -412,25 +433,24 @@ void EnableButtons(HWND hwndDlg, HANDLE hContact)
 // check if the char(s) entered appears in a contacts name
 int CheckText(HWND hdlg, TCHAR *sztext)
 {
-	int loop;
-
-	EnableButtons(hwndMain, NULL);
-
-	if(!sztext[0])
+	if(sztext == NULL || sztext[0] == _T('\0'))
 		return 0;
 
+	int len = lstrlen(sztext);
+
+	int loop;
 	for(loop=0;loop<ns.count;loop++)
 	{
-		if(!_tcsnicmp(sztext,ns.contact[loop].szname,lstrlen(sztext)))
+		if(!_tcsnicmp(sztext, ns.contact[loop].szname, len))
 		{
-			int len = lstrlen(sztext);
 			SendMessage(hdlg, WM_SETTEXT, 0, (LPARAM) GetListName(ns.contact[loop]));
 			SendMessage(hdlg, EM_SETSEL, (WPARAM) len, (LPARAM) -1);
 			EnableButtons(hwndMain, ns.contact[loop].hcontact);
-			break;
+			return 0;
 		}
 	}
 
+	EnableButtons(hwndMain, NULL);
 	return 0;
 }
 
@@ -447,7 +467,7 @@ HANDLE GetSelectedContact(HWND hwndDlg)
 	}
 
 	// Now try the name
-	TCHAR cname[120];
+	TCHAR cname[120] = _T("");
 
 	GetDlgItemText(hwndDlg, IDC_USERNAME, cname, MAX_REGS(cname));
 			
@@ -470,7 +490,7 @@ int GetItemPos(HANDLE hcontact)
 		if(hcontact==ns.contact[loop].hcontact)
 			return loop;
 	}
-	return 0;
+	return -1;
 }
 
 
@@ -612,10 +632,11 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			{
 				int pos = GetItemPos((HANDLE) DBGetContactSettingDword(NULL, MODULE_NAME, "LastSentTo", -1));
 
-				SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETCURSEL, (WPARAM) pos, 0);
-
-				if (pos < ns.count)
+				if (pos != -1)
+				{
+					SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETCURSEL, (WPARAM) pos, 0);
 					EnableButtons(hwndDlg, ns.contact[pos].hcontact);
+				}
 			}
 
 			SetFocus(GetDlgItem(hwndDlg, IDC_USERNAME));
@@ -809,13 +830,12 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			break;
 		}
 
-		/*
 		case WM_NCLBUTTONDBLCLK:
 		{
-			MagneticWindows_SnapWindowToList(hwndDlg, MS_MW_STL_List_Left | MS_MW_STL_List_Top);
+			MagneticWindows_SnapWindowToList(hwndDlg, MS_MW_STL_List_Left | MS_MW_STL_List_Top
+													| MS_MW_STL_Wnd_Right | MS_MW_STL_Wnd_Top);
 			break;
 		}
-		*/
 		
 		case WM_DRAWITEM:
 		{
@@ -937,6 +957,17 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 	}
 	
 	return FALSE;
+}
+
+
+int HotkeyPressed(WPARAM wParam, LPARAM lParam) 
+{
+	THKSEvent *ev = (THKSEvent *) wParam;
+
+	if (ev->moduleId == hksModule && ev->itemId == hksAction)
+		ShowDialog(0, 0);
+
+	return 0;
 }
 
 
