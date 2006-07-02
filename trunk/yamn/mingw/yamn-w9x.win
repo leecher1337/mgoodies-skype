@@ -10,14 +10,14 @@ LINKOBJ  = objs9x/badconnect.o objs9x/mailbrowser.o objs9x/decode.o objs9x/mails
 LIBS =  -L"../libs" -lws2_32 -lunicows -lkernel32 -luser32 -lshell32 -lmsvcrt -lcomdlg32 -lgdi32 -s 
 INCS =  -I"../../../include" 
 CXXINCS =  -I"../../../include" 
-BIN  = bin9x/YAMN.dll
+BIN  = bin9x/yamn.dll
 CXXFLAGS = $(CXXINCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -DWIN9X -w  -fexpensive-optimizations -O3
 CFLAGS = $(INCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -DWIN9X -w  -fexpensive-optimizations -O3
 RM = rm -f
 
 .PHONY: all all-before all-after clean clean-custom
 
-all: all-before bin9x/YAMN.dll all-after
+all: all-before bin9x/yamn.dll all-after
 
 
 clean: clean-custom
