@@ -131,8 +131,8 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_AVATARHIST          ICON    DISCARDABLE     "AvatarHistory.ico"
-IDI_NEWAVATAR           ICON    DISCARDABLE     "NewAvatar.ico"
+IDI_AVATARHIST          ICON    DISCARDABLE     "history.ico"
+IDI_AVATAROVERLAY	ICON	DISCARDABLE	"AvatarOverlay.ico"
 #endif    // English (U.K.) resources
 /////////////////////////////////////////////////////////////////////////////
 

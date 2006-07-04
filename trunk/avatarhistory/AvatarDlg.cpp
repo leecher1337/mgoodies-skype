@@ -33,7 +33,7 @@ Avatar History Plugin
 #include "AvatarHistory.h"
 
 extern HINSTANCE hInst;
-
+HANDLE hMenu = 0; 
 int OpenAvatarDialog(HANDLE hContact, char* fn);
 DWORD WINAPI AvatarDialogThread(LPVOID param);
 static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam);
@@ -79,8 +79,8 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 	case WM_INITDIALOG:
 		{
 			data = (struct AvatarDialogData*) lParam;
-			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM) LoadIcon(hInst, MAKEINTRESOURCE(IDI_AVATARHIST)));
-			SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM) LoadIcon(hInst, MAKEINTRESOURCE(IDI_AVATARHIST)));
+			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM) overlayedBigIcon);
+			SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM) overlayedIcon);
 			FillAvatarList(GetDlgItem(hwnd, IDC_AVATARLIST), data->hContact, data->fn);
 			SetWindowLongPtr(hwnd, GWLP_USERDATA, (ULONG_PTR)data->hContact);
 			UpdateAvatarPic(hwnd, NULL);
@@ -256,10 +256,10 @@ void InitMenuItem()
 	mi.cbSize = sizeof(CLISTMENUITEM);
 	mi.pszName = Translate("Avatar history...");
 	mi.position = 100;
-	mi.hIcon = (HICON)LoadIcon(hInst, MAKEINTRESOURCE(IDI_AVATARHIST));
+	mi.hIcon = overlayedIcon;
 	mi.pszService = "AvatarHistory/ShowDialog";
 	CreateServiceFunction("AvatarHistory/ShowDialog", ShowDialogSvc);
-	CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+	hMenu = (HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 }
 
 static int ShowDialogSvc(WPARAM wParam, LPARAM lParam)
