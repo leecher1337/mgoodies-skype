@@ -43,11 +43,11 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		//	}
 			if (ewd != NULL) {
 				if (!ewd->szDescription)
-					ewd->szDescription = strdup(Translate("An unknown error has occured."));
+					ewd->szDescription = _strdup(Translate("An unknown error has occured."));
 				if (!ewd->szText)
-					ewd->szText = strdup("");
+					ewd->szText = _strdup("");
 				if (!ewd->szName)
-					ewd->szName = strdup("");
+					ewd->szName = _strdup("");
 				SetDlgItemTextA(hwndDlg, IDC_ERRORTEXT, ewd->szDescription);
 		#if defined( _UNICODE )
 				SetDlgItemTextW(hwndDlg, IDC_MSGTEXT, (TCHAR *)(ewd->szText + strlen(ewd->szText) + 1));
