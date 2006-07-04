@@ -64,6 +64,10 @@
 [An unknown error has occured.]
 [Send Error]
 [Unknown]
+[You are about to send a message to all open tabs.\nAre you sure ?]
+[Remember my choice for this container]
+[Yes]
+[No]
 
 ;controls
 
