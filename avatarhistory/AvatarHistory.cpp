@@ -40,9 +40,8 @@ Avatar History Plugin
 #include <m_utils.h>
 #include <m_langpack.h>
 // #include <m_updater.h>
-
-#include "AvatarHistory.h"
 #include "resource.h"
+#include "AvatarHistory.h"
 
 // #define DBGPOPUPS
 
@@ -105,10 +104,11 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
 	InitFolders();
-	if(db_byte_get(NULL, "AvatarHistory", "ShowContactMenu", AVH_DEF_SHOWMENU))
-		InitMenuItem();
 	hAvatarChange = HookEvent(ME_AV_AVATARCHANGED, AvatarChanged);
 	hHookoptsinit = HookEvent(ME_OPT_INITIALISE,OptInit);
+	SetupIcoLib();
+	if(db_byte_get(NULL, "AvatarHistory", "ShowContactMenu", AVH_DEF_SHOWMENU))
+		InitMenuItem();
 	return 0;
 }
 
@@ -315,19 +315,24 @@ static int CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 	switch(message)
 	{
 		case WM_COMMAND:
-			if (HIWORD(wParam) == STN_CLICKED)
-			{ //It was a click on the Popup.
+		case WM_CONTEXTMENU:
+			//if (HIWORD(wParam) == STN_CLICKED)
+			//{ //It was a click on the Popup.
 				PUDeletePopUp(hWnd);
-				return TRUE;
-			}
+			//	return TRUE;
+			//}
 			break;
+		case UM_FREEPLUGINDATA:{
+				//here we shall destroy icon that has been created in ShowPopup
+				HICON courIcon = (HICON)PUGetPluginData(hWnd);
+				if ((courIcon) && (int)courIcon!=-1) DestroyIcon(courIcon);
+				return FALSE; //the return value is ignored
+			}
 		default:
 			break;
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
-
-
 
 int ShowPopup(HANDLE hContact, char* title, char* text)
 {
@@ -337,7 +342,6 @@ int ShowPopup(HANDLE hContact, char* title, char* text)
 	char *sProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hContact,0);
 	if(ServiceExists(MS_POPUP_ADDPOPUP))
 	{
-		HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_NEWAVATAR));
 		if(!db_byte_get(NULL, "AvatarHistory", "UsePopupDefault", AVH_DEF_DEFPOPUPS))
 		{
 			colorBack = db_dword_get(NULL, "AvatarHistory", "PopupBG", AVH_DEF_POPUPBG);
@@ -345,14 +349,16 @@ int ShowPopup(HANDLE hContact, char* title, char* text)
 		}
 		ZeroMemory((void*)&ppd, sizeof(ppd)); //This is always a good thing to do.
 		ppd.lchContact = (HANDLE)hContact; //Be sure to use a GOOD handle, since this will not be checked.
-		ppd.lchIcon = hIcon;
+		ppd.lchIcon = getOverlayedIcon(LoadSkinnedProtoIcon(sProto,DBGetContactSettingWord(hContact,sProto,"Status",ID_STATUS_ONLINE)),iconList[1],FALSE);
 		lstrcpy(ppd.lpzContactName, title?title:(char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,0));
 		lstrcpy(ppd.lpzText, text);
 		ppd.colorBack = colorBack;
 		ppd.colorText = colorText;
 		ppd.PluginWindowProc = (WNDPROC)PopupDlgProc;
-		ppd.PluginData = NULL;
-		return CallService(MS_POPUP_ADDPOPUP, (WPARAM)&ppd, 0);
+		ppd.PluginData = (void *)ppd.lchIcon; // will DestroyIcon in the PopupWinDlg
+		int res = CallService(MS_POPUP_ADDPOPUP, (WPARAM)&ppd, 0);
+//		DestroyIcon(hIcon);
+		return res;
 	}
 	else
 	{

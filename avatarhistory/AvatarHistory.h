@@ -7,3 +7,11 @@
 
 char* GetContactFolder(HANDLE hContact, char* fn);
 char* MyDBGetString(HANDLE hContact, char* module, char* setting, char* out, size_t len);
+
+ // from icolib.cpp
+#define NUMICONS 2
+extern HICON iconList[NUMICONS];
+extern HICON overlayedIcon; //will be inited in SetupIcoLib()
+extern HICON overlayedBigIcon; // - || -
+void SetupIcoLib();
+HICON getOverlayedIcon(HICON icon, HICON overlay, BOOL big); // from icolib.cpp
