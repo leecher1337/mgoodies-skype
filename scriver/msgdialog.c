@@ -50,7 +50,7 @@ extern HINSTANCE g_hInst;
 
 static void UpdateReadChars(HWND hwndDlg, struct MessageWindowData * dat);
 
-static WNDPROC OldMessageEditProc, OldSplitterProc;
+static WNDPROC OldMessageEditProc, OldSplitterProc, OldLogEditProc;
 static TCHAR *buttonNames[] = {_T("User Menu"), _T("User Details"), _T("Smiley"), _T("Add Contact"), _T("History"), _T("Quote"), _T("Close"), _T("Send")};
 static const UINT buttonLineControls[] = { IDC_USERMENU, IDC_DETAILS, IDC_SMILEYS, IDC_ADD, IDC_HISTORY, IDC_QUOTE, IDCANCEL, IDOK};
 static char buttonAlignment[] = { 0, 0, 0, 1, 1, 1, 1, 1};
@@ -381,6 +381,20 @@ static void SaveKeyboardMessage(struct MsgEditSubclassData *dat, UINT message, W
 	dat->keyboardMsgQueue[dat->msgQueueCount].lParam = lParam;
 	dat->keyboardMsgQueue[dat->msgQueueCount].keyStates = (GetKeyState(VK_SHIFT) & 0x8000 ? MOD_SHIFT : 0) | (GetKeyState(VK_CONTROL) & 0x8000 ? MOD_CONTROL : 0) | (GetKeyState(VK_MENU) & 0x8000 ? MOD_ALT : 0);
 	dat->msgQueueCount++;
+}
+
+static LRESULT CALLBACK LogEditSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg) {
+		case WM_CHAR:
+			if (!(GetKeyState(VK_CONTROL) & 0x8000)) {
+				SetFocus(GetDlgItem(GetParent(hwnd), IDC_MESSAGE));
+				SendMessage(GetDlgItem(GetParent(hwnd), IDC_MESSAGE), msg, wParam, lParam);
+				return 0;
+			}
+			break;
+	}
+	return CallWindowProc(OldLogEditProc, hwnd, msg, wParam, lParam);
 }
 
 #define EM_REPLAYSAVEDKEYSTROKES  (WM_USER+0x100)
@@ -1145,6 +1159,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					SendDlgItemMessage(hwndDlg, IDC_LOG, EM_LIMITTEXT, (WPARAM) sizeof(TCHAR) * 0x7FFFFFFF, 0);
 				}
 			}
+			OldLogEditProc = (WNDPROC) SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_WNDPROC, (LONG) LogEditSubclassProc);
 			OldMessageEditProc = (WNDPROC) SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE), GWL_WNDPROC, (LONG) MessageEditSubclassProc);
 			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SUBCLASSED, 0, 0);
 			OldSplitterProc = (WNDPROC) SetWindowLong(GetDlgItem(hwndDlg, IDC_SPLITTER), GWL_WNDPROC, (LONG) SplitterSubclassProc);
@@ -2673,6 +2688,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		SetWindowLong(GetDlgItem(hwndDlg, IDC_SPLITTER), GWL_WNDPROC, (LONG) OldSplitterProc);
 		SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_UNSUBCLASSED, 0, 0);
 		SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE), GWL_WNDPROC, (LONG) OldMessageEditProc);
+		SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_WNDPROC, (LONG) OldLogEditProc);
 		{
 			HFONT hFont;
 			hFont = (HFONT) SendDlgItemMessage(hwndDlg, IDC_MESSAGE, WM_GETFONT, 0, 0);
