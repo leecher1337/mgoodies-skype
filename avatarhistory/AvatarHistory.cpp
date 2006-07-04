@@ -71,7 +71,7 @@ static int IsEnabled(WPARAM wParam, LPARAM lParam);
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Avatar History",
-	PLUGIN_MAKE_VERSION(0,0,1,0),
+	PLUGIN_MAKE_VERSION(0,0,1,1),
 	"This plugin keeps backups of all your contacts' avatar changes and/or shows popups",
 	"Matthew Wild (MattJ)",
 	"mwild1@gmail.com",
