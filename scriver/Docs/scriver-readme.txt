@@ -72,6 +72,10 @@ created. CTRL key needs to be pressed only when a tab is being dropped.
 
 6. Change Log
 -------------
+2.3.2.9
++ focus is automaticcaly changed when user starts typing in log window
+* ctrl key has to be pressed for snapping
+* bugfixes: RTL support
 2.3.2.8
 + support for RTL messages
 + send-to-all confirmation dialog

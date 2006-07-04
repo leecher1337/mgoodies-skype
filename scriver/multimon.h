@@ -1,4 +1,4 @@
-#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0500)
+//#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0500)
 
 //=============================================================================
 //
@@ -383,4 +383,4 @@ DISPLAY_DEVICE * pDisplayDevice, DWORD dwFlags)
 }
 #endif    /* __cplusplus */
 
-#endif  /* !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0500) */
+//#endif  /* !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0500) */

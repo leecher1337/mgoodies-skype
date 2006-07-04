@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma message ("_MSC_VER: "STRING(_MSC_VER))
 #endif
 */
-#if (_MSC_VER < 1200)
+#if (_MSC_VER < 1300)
 #include "multimon.h"
 #endif
 
@@ -709,7 +709,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}*/
 		break;
 	case WM_MOVING:
-        if (!(GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
+        if ((GetAsyncKeyState(VK_CONTROL) & 0x8000)) {
 			int snapPixels = 10;
 			RECT rcDesktop;
 			RECT *pRect = (RECT *)lParam;
