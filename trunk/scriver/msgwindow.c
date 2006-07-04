@@ -24,12 +24,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "commonheaders.h"
 
-#ifndef __MINGW32__
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0401
-#define COMPILE_MULTIMON_STUBS
+/* 
+#ifdef _MSC_VER
+#define STRING2(x) #x
+#define STRING(x) STRING2(x)
+#pragma message ("_MSC_VER: "STRING(_MSC_VER))
+#endif
+*/
+#if (_MSC_VER < 1200)
 #include "multimon.h"
 #endif
+
 
 extern HINSTANCE g_hInst;
 extern HCURSOR hDragCursor;
