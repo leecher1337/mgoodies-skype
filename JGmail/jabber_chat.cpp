@@ -436,7 +436,7 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 
 						XmlNode m( "message" ); m.addAttr( "from", room ); m.addAttr( "to", pUser ); m.addAttrID( iqId ); m.addAttr( "type", "normal" );
 						XmlNode* x = m.addChild( "x" ); x->addAttr( "xmlns", _T("http://jabber.org/protocol/muc#user"));
-						XmlNode* i = x->addChild( "invite" ); i->addAttr( "to", pUser ); i->addChild( "reason", text );
+						XmlNode* i = x->addChild( "invite" ); i->addAttr( "from", pUser ); i->addChild( "reason", text );
 						x = m.addChild( "x", text ); x->addAttr( "xmlns", _T("jabber:x:conference")); x->addAttr( "jid", room );
 						JabberSend( jabberThreadInfo->s, m );
 			}	}	}
