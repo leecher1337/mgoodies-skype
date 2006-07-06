@@ -6,8 +6,9 @@ Legend:
 
 Version 0.5.0.1
 ===============
-[!] bug #0002065 fixed: Sends a malformed JID when trying to download my own vCard (in ANSI version only)
 [!] bug #0002045 fixed: MUC: Greyed out away nicknames are not shown in black when contacts return
+[!] bug #0002065 fixed: Sends a malformed JID when trying to download my own vCard (in ANSI version only)
+[!] bug #0002112 fixed: some minor problems with the conference invitations
 
 Version 0.4.3.2
 ===============
