@@ -534,8 +534,6 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 	buffer = (char *) malloc(bufferAlloced);
 	buffer[0] = '\0';
 
-//		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par ");
-
  	if ((g_dat->flags & SMF_GROUPMESSAGES) && event->dwFlags == LOWORD(dat->lastEventType)
 	  && event->eventType == EVENTTYPE_MESSAGE && HIWORD(dat->lastEventType) == EVENTTYPE_MESSAGE
 	  && (isSameDate(event->time, dat->lastEventTime))
@@ -544,7 +542,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		isGroupBreak = FALSE;
 	}
 	if (!dat->bIsFirstAppend && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\par\\sl0", msgDlgFontCount + 4);
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\zwnj\\par\\sl0", msgDlgFontCount + 4);
 	}
 
     if ( dat->bIsFirstAppend ) {
@@ -569,10 +567,10 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 	}
 
 	if (event->dwFlags & IEEDF_RTL) {
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrch\\rtlch");
-		} else {
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlch\\ltrch");
-		}
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlch");
+	} else {
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrch");
+	}
 
 	if (g_dat->flags&SMF_SHOWICONS && isGroupBreak) {
 		int i = LOGICON_MSG_NOTICE;
@@ -637,6 +635,9 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 			showColon = 0;
 		}
 	}
+
+	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\zwnj");
+
 	if (g_dat->flags&SMF_SHOWTIME && g_dat->flags & SMF_GROUPMESSAGES && g_dat->flags & SMF_MARKFOLLOWUPS
 		&& event->eventType == EVENTTYPE_MESSAGE && isGroupBreak) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " %s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
@@ -690,6 +691,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 //	if (!prefixParaBreak) {
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 //	}
+	
 	dat->lastEventTime = event->time;
 	dat->lastEventType = MAKELONG(event->dwFlags, event->eventType);
 	dat->lastEventContact = event->hContact;

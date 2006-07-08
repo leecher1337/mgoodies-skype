@@ -210,6 +210,10 @@ SOURCE=.\msgs.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\multimon.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\resource.h
 # End Source File
 # Begin Source File
