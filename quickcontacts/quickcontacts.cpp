@@ -32,7 +32,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,1),
+	PLUGIN_MAKE_VERSION(0,0,2,2),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
@@ -160,7 +160,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	hksModule = HKS_RegisterModule("Quick Contacts");
 	if (hksModule >= 0)
 	{
-		hksAction = HKS_RegisterAction(hksModule, "Open dialog", "Ctrl+Alt+Q", 0);
+		hksAction = HKS_RegisterAction(hksModule, "Open dialog", MOD_CONTROL | MOD_ALT | MOD_GLOBAL, 'Q', 0);
 
 		hHotkeyPressed = HookEvent(ME_HKS_KEY_PRESSED, HotkeyPressed);
 	}
@@ -408,13 +408,18 @@ void EnableButtons(HWND hwndDlg, HANDLE hContact)
 		EnableWindow(GetDlgItem(hwndDlg, IDC_MESSAGE), FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_FILE), FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_URL), FALSE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_USERINFO), FALSE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_HISTORY), FALSE);
 	}
 	else
 	{
 		// Is a meta?
-		HANDLE hSub = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
-		if (hSub != NULL)
-			hContact = hSub;
+		if (ServiceExists(MS_MC_GETMOSTONLINECONTACT)) 
+		{
+			HANDLE hSub = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
+			if (hSub != NULL)
+				hContact = hSub;
+		}
 
 		// Get caps
 		int caps = 0;
@@ -426,13 +431,17 @@ void EnableButtons(HWND hwndDlg, HANDLE hContact)
 		EnableWindow(GetDlgItem(hwndDlg, IDC_MESSAGE), caps & PF1_IMSEND ? TRUE : FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_FILE), caps & PF1_FILESEND ? TRUE : FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_URL), caps & PF1_URLSEND ? TRUE : FALSE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_USERINFO), TRUE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_HISTORY), TRUE);
 	}
 }
 
 
 // check if the char(s) entered appears in a contacts name
-int CheckText(HWND hdlg, TCHAR *sztext)
+int CheckText(HWND hdlg, TCHAR *sztext, BOOL only_enable = FALSE)
 {
+	EnableButtons(hwndMain, NULL);
+
 	if(sztext == NULL || sztext[0] == _T('\0'))
 		return 0;
 
@@ -441,12 +450,23 @@ int CheckText(HWND hdlg, TCHAR *sztext)
 	int loop;
 	for(loop=0;loop<ns.count;loop++)
 	{
-		if(!_tcsnicmp(sztext, ns.contact[loop].szname, len))
+		if (only_enable)
 		{
-			SendMessage(hdlg, WM_SETTEXT, 0, (LPARAM) GetListName(ns.contact[loop]));
-			SendMessage(hdlg, EM_SETSEL, (WPARAM) len, (LPARAM) -1);
-			EnableButtons(hwndMain, ns.contact[loop].hcontact);
-			return 0;
+			if(!_tcsicmp(sztext, ns.contact[loop].szname) || !_tcsicmp(sztext, GetListName(ns.contact[loop])))
+			{
+				EnableButtons(hwndMain, ns.contact[loop].hcontact);
+				return 0;
+			}
+		}
+		else
+		{
+			if(!_tcsnicmp(sztext, GetListName(ns.contact[loop]), len))
+			{
+				SendMessage(hdlg, WM_SETTEXT, 0, (LPARAM) GetListName(ns.contact[loop]));
+				SendMessage(hdlg, EM_SETSEL, (WPARAM) len, (LPARAM) -1);
+				EnableButtons(hwndMain, ns.contact[loop].hcontact);
+				return 0;
+			}
 		}
 	}
 
@@ -501,25 +521,50 @@ WNDPROC wpEditMainProc;
 // this was done like ie does it..as far as spy++ could tell ;)
 LRESULT CALLBACK EditProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 {
-	TCHAR sztext[120] = _T("");
-
 	switch(msg)
 	{
 		case WM_CHAR:
-			if(wparam<32) break;
+		{
+			if (wparam<32 && wparam != VK_BACK) 
+				break;
 
-			if(SendMessage(hdlg,EM_GETSEL,(WPARAM)NULL,(LPARAM)NULL)!=-1)
-			{
-				sztext[0]=wparam;
-				sztext[1]=0;
-				SendMessage(hdlg,EM_REPLACESEL,(WPARAM)0,(LPARAM)sztext);
-			}
+			TCHAR sztext[120] = _T("");
+			DWORD start;
+			DWORD end;
+
+			int ret = SendMessage(hdlg,EM_GETSEL,(WPARAM)&start,(LPARAM)&end);
 
 			SendMessage(hdlg,WM_GETTEXT,(WPARAM)MAX_REGS(sztext),(LPARAM)sztext);
-			CheckText(hdlg,sztext);
-			return 1;
 
+			BOOL at_end = (lstrlen(sztext) == (int)end);
+
+			if (ret != -1)
+			{
+				if (wparam == VK_BACK)
+				{
+					if (start > 0)
+						SendMessage(hdlg,EM_SETSEL,(WPARAM)start-1,(LPARAM)end);
+
+					sztext[0]=0;
+				}
+				else
+				{
+					sztext[0]=wparam;
+					sztext[1]=0;
+				}
+
+				SendMessage(hdlg,EM_REPLACESEL,(WPARAM)0,(LPARAM)sztext);
+				SendMessage(hdlg,WM_GETTEXT,(WPARAM)MAX_REGS(sztext),(LPARAM)sztext);
+			}
+
+			CheckText(hdlg, sztext, !at_end);
+
+			return 1;
+		}
 		case WM_KEYUP:
+		{
+			TCHAR sztext[120] = _T("");
+
 			if (wparam == VK_RETURN)
 			{
 				switch(SendMessage(GetParent(hdlg),CB_GETDROPPEDSTATE,0,0))
@@ -533,16 +578,20 @@ LRESULT CALLBACK EditProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 						break;
 				}
 			}
+			else if (wparam == VK_DELETE)
+			{
+				SendMessage(hdlg,WM_GETTEXT,(WPARAM)MAX_REGS(sztext),(LPARAM)sztext);
+				CheckText(hdlg, sztext, TRUE);
+			}
 
 			return 0;
-
+		}
 		case WM_GETDLGCODE:
 			return DLGC_WANTCHARS|DLGC_WANTARROWS;
 
 	}
 
 	return CallWindowProc(wpEditMainProc,hdlg,msg,wparam,lparam);
-
 }
 
 
@@ -628,6 +677,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 			LoadContacts(hwndDlg, FALSE);
 
+			EnableButtons(hwndDlg, NULL);
 			if (DBGetContactSettingByte(NULL, MODULE_NAME, "EnableLastSentTo", 0))
 			{
 				int pos = GetItemPos((HANDLE) DBGetContactSettingDword(NULL, MODULE_NAME, "LastSentTo", -1));
