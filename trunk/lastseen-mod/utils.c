@@ -553,7 +553,7 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 		{
 			char * proto;
 			// avoid repeating the offline status
-			if ((cws->value.wVal|0x8000)<=ID_STATUS_OFFLINE) 
+			if ((prevStatus|0x8000)<=ID_STATUS_OFFLINE)
 				return 0;
 			proto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hContact,0);
 			DBWriteContactSettingByte(hContact,S_MOD,"Offline",1);
