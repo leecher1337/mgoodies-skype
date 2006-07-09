@@ -1,6 +1,11 @@
-Quick Contacts 0.0.2.1
+Quick Contacts 0.0.2.2
 
 Changelog:
+
+. 0.0.2.2
+  * Fix for icons
+  * Fix for backspace
+  * -pv- fix
 
 . 0.0.2.1
   * Try to fix error reported
