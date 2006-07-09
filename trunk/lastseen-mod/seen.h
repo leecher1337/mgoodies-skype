@@ -82,3 +82,7 @@ extern DWORD StatusColors15bits[];
 void GetColorsFromDWord(LPCOLORREF First, LPCOLORREF Second, DWORD colDword);
 DWORD GetDWordFromColors(COLORREF First, COLORREF Second);
 
+BOOL includeIdle;
+extern HANDLE *contactQueue;
+extern int contactQueueSize;
+
