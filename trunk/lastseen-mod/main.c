@@ -11,7 +11,7 @@ PLUGININFO pluginInfo={
 #else	
 		"Last seen plugin mod (NSNCompat)",
 #endif
-		PLUGIN_MAKE_VERSION(5,0,4,1),
+		PLUGIN_MAKE_VERSION(5,0,4,2),
 		"Log when a user was last seen online and which users were online while you were away",
 		"Heiko Schillinger, YB",
 		"",
@@ -38,10 +38,17 @@ void SetOffline(void);
 int ModeChange_mo(WPARAM,LPARAM);
 int CheckIfOnline(void);
 
+BOOL includeIdle = 1;
+HANDLE *contactQueue = NULL;
+int contactQueueSize = 0;
 
 
 int MainInit(WPARAM wparam,LPARAM lparam)
 {
+	contactQueue = (HANDLE *)malloc(16*sizeof(contactQueue[0]));
+	contactQueueSize = 16;
+	ZeroMemory(contactQueue, 16*sizeof(contactQueue[0]));
+
 	HookEvent(ME_OPT_INITIALISE,OptionsInit);
 	
 	if(DBGetContactSettingByte(NULL,S_MOD,"MenuItem",1)) {
@@ -92,7 +99,7 @@ __declspec(dllexport)int Unload(void)
 	UnhookEvent(ehproto[0]);
 	UnhookEvent(ehproto[1]);
 	UnhookEvent(ehmissed_proto);
-
+	free(contactQueue);
 	return 0;
 }
 
