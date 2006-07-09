@@ -45,8 +45,8 @@ int contactQueueSize = 0;
 
 int MainInit(WPARAM wparam,LPARAM lparam)
 {
-	contactQueue = (HANDLE *)malloc(16*sizeof(contactQueue[0]));
 	contactQueueSize = 16;
+	contactQueue = (HANDLE *)malloc(16*sizeof(contactQueue[0]));
 	ZeroMemory(contactQueue, 16*sizeof(contactQueue[0]));
 
 	HookEvent(ME_OPT_INITIALISE,OptionsInit);
