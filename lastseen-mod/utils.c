@@ -291,8 +291,8 @@ LBL_charPtr:
 					break;
 				case 'o':
 					if (isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"OldStatus":courProtoName,0)){
-						strcpy(szdbsetting,Translate((const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting|0x8000,0)));
-						if (!(isetting&0x8000)){
+						strcpy(szdbsetting,Translate((const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)isetting,0)));
+						if (includeIdle) if (hcontact) if (DBGetContactSettingByte(hcontact,S_MOD,"OldIdle",0)){
 							strcat(szdbsetting,"/");
 							strcat(szdbsetting,Translate("Idle"));
 						}
@@ -469,7 +469,7 @@ typedef struct logthread_info {
 int isContactQueueActive(HANDLE hContact){
 	int i = 0;
 	if (!hContact) {
-		MessageBox(0,"Is myself to queue: never","LastSeen-Mod",0);
+		MessageBox(0,"Is myself in the queue: never","LastSeen-Mod",0);
 		return 0;
 	}
 	for (i=1;i<contactQueueSize;i++){
@@ -545,6 +545,10 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 	if (!strcmp(cws->szModule,S_MOD)){
 		//here we will come when Settings/SeenModule/Status is changed
 		WORD prevStatus=DBGetContactSettingWord(hContact,S_MOD,"OldStatus",ID_STATUS_OFFLINE);
+		if (includeIdle){
+			if (DBGetContactSettingByte(hContact,S_MOD,"OldIdle",0)) prevStatus &= 0x7FFF;
+			else prevStatus |= 0x8000;
+		}
 		if((cws->value.wVal|0x8000)<=ID_STATUS_OFFLINE)
 		{
 			char * proto;
@@ -610,17 +614,20 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 	} else if (IsWatchedProtocol(cws->szModule)){
 		//here we will come when <User>/<module>/Status is changed or it is idle event and if <module> is watched
 		if (CallProtoService(cws->szModule,PS_GETSTATUS,0,0)>ID_STATUS_OFFLINE){
+			WORD prevStatus;
 			if (!isContactQueueActive(hContact)){
 				logthread_info *info;
-				WORD prevStatus;
 				info = (logthread_info *)malloc(sizeof(logthread_info));
 				strncpy(info->sProtoName,cws->szModule,MAXMODULELABELLENGTH);
 				info->hContact = hContact;
 				info->queueIndex = addContactToQueue(hContact);
 				info->courStatus = isIdleEvent?DBGetContactSettingWord(hContact,cws->szModule,"Status",ID_STATUS_OFFLINE):cws->value.wVal;
 				forkthreadex(NULL, 0, waitThread, info, 0, 0);
-				prevStatus=DBGetContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
-				DBWriteContactSettingWord(hContact,S_MOD,"OldStatus",prevStatus);
+			}
+			prevStatus=DBGetContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
+			DBWriteContactSettingWord(hContact,S_MOD,"OldStatus",(WORD)(prevStatus|0x8000));
+			if (includeIdle){
+				DBWriteContactSettingByte(hContact,S_MOD,"OldIdle",(BYTE)((prevStatus&0x8000)==0));
 	}	}	}
 #ifndef PERMITNSN
 	//Some useronline.c functionality
