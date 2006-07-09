@@ -179,6 +179,7 @@ BOOL CALLBACK OptsSettingsDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam
 			CheckDlgButton(hdlg,IDC_MISSEDONES,DBGetContactSettingByte(NULL,S_MOD,"MissedOnes",0));
 			CheckDlgButton(hdlg,IDC_SHOWICON,DBGetContactSettingByte(NULL,S_MOD,"ShowIcon",1));
 			CheckDlgButton(hdlg,IDC_COUNT,DBGetContactSettingByte(NULL,S_MOD,"MissedOnes_Count",0));
+			CheckDlgButton(hdlg,IDC_IDLESUPPORT,DBGetContactSettingByte(NULL,S_MOD,"IdleSupport",1));
 
 			EnableWindow(GetDlgItem(hdlg,IDC_MENUSTAMP),IsDlgButtonChecked(hdlg,IDC_MENUITEM));
 			EnableWindow(GetDlgItem(hdlg,IDC_SHOWICON),IsDlgButtonChecked(hdlg,IDC_MENUITEM));
@@ -353,6 +354,11 @@ BOOL CALLBACK OptsSettingsDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam
 							checkValue = (BYTE)IsDlgButtonChecked(hdlg,IDC_COUNT);
 							if (DBGetContactSettingByte(NULL,S_MOD,"MissedOnes_Count",0) != checkValue) {
 								DBWriteContactSettingByte(NULL,S_MOD,"MissedOnes_Count",checkValue);
+							}
+
+							includeIdle = (BYTE)IsDlgButtonChecked(hdlg,IDC_IDLESUPPORT);
+							if (DBGetContactSettingByte(NULL,S_MOD,"IdleSupport",1) != includeIdle) {
+								DBWriteContactSettingByte(NULL,S_MOD,"IdleSupport",(BYTE)includeIdle);
 							}
 
 							// save protocol list

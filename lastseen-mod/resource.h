@@ -4,7 +4,7 @@
 //
 
 #ifndef TVS_NOTOOLTIPS
-#define TVS_NOTOOLTIPS 128 
+#define TVS_NOTOOLTIPS 0x0080
 #endif
 
 #define ID_STATUS_OFFLINE               40071
@@ -80,6 +80,7 @@
 #define IDC_DISWATCHED                  1048
 #define IDC_DISNONWATCHED               1049
 #endif
+#define IDC_IDLESUPPORT			1050
 #define IDC_MAINGROUP                   -1
 #define IDC_INFO                        -1
 #define IDC_TEXT                        -1
@@ -91,7 +92,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        112
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1050
+#define _APS_NEXT_CONTROL_VALUE         1051
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

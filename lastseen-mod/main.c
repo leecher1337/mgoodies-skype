@@ -38,7 +38,7 @@ void SetOffline(void);
 int ModeChange_mo(WPARAM,LPARAM);
 int CheckIfOnline(void);
 
-BOOL includeIdle = 1;
+BOOL includeIdle;
 HANDLE *contactQueue = NULL;
 int contactQueueSize = 0;
 
@@ -48,7 +48,7 @@ int MainInit(WPARAM wparam,LPARAM lparam)
 	contactQueueSize = 16;
 	contactQueue = (HANDLE *)malloc(16*sizeof(contactQueue[0]));
 	ZeroMemory(contactQueue, 16*sizeof(contactQueue[0]));
-
+	includeIdle = (BOOL )DBGetContactSettingByte(NULL,S_MOD,"IdleSupport",1);
 	HookEvent(ME_OPT_INITIALISE,OptionsInit);
 	
 	if(DBGetContactSettingByte(NULL,S_MOD,"MenuItem",1)) {
