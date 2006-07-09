@@ -469,7 +469,7 @@ typedef struct logthread_info {
 int isContactQueueActive(HANDLE hContact){
 	int i = 0;
 	if (!hContact) {
-		MessageBox(0,"Is myself in the queue: never","LastSeen-Mod",0);
+//		MessageBox(0,"Is myself in the queue: never","LastSeen-Mod",0);
 		return 0;
 	}
 	for (i=1;i<contactQueueSize;i++){
@@ -482,7 +482,7 @@ int isContactQueueActive(HANDLE hContact){
 int addContactToQueue(HANDLE hContact){
 	int i = 0;
 	if (!hContact) {
-		MessageBox(0,"Adding myself to queue","LastSeen-Mod",0);
+//		MessageBox(0,"Adding myself to queue","LastSeen-Mod",0);
 		return 0;
 	}
 	for (i=1;i<contactQueueSize;i++){
@@ -492,7 +492,7 @@ int addContactToQueue(HANDLE hContact){
 		}
 	}
 	//no free space. Create some
-	MessageBox(0,"Creating more space","LastSeen-Mod",0);
+//	MessageBox(0,"Creating more space","LastSeen-Mod",0);
 	contactQueue = (HANDLE *)realloc(contactQueue,(contactQueueSize+16)*sizeof(contactQueue[0]));
 	ZeroMemory(&contactQueue[contactQueueSize], 16*sizeof(contactQueue[0]));
 	contactQueue[contactQueueSize] = hContact;
