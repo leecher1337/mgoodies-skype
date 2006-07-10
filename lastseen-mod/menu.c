@@ -50,7 +50,7 @@ int BuildContactMenu(WPARAM wparam,LPARAM lparam)
 		else if(DBGetContactSettingByte(NULL,S_MOD,"ShowIcon",1))
 		{
 			isetting=DBGetContactSettingWord((HANDLE)hContact,S_MOD,"Status",-1);
-			cmi.hIcon=LoadSkinnedProtoIcon(szProto,isetting);
+			cmi.hIcon=LoadSkinnedProtoIcon(szProto,isetting|0x8000);
 			
 		}
 	}
