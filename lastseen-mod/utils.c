@@ -271,7 +271,7 @@ LBL_charPtr:
 					goto LBL_charPtr;
 
 				case 's':
-					if (isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"Status":courProtoName,0)){
+					if (isetting=DBGetContactSettingWord(hcontact,S_MOD,hcontact?"StatusTriger":courProtoName,0)){
 						strcpy(szdbsetting,Translate((const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)(isetting|0x8000),0)));
 						if (!(isetting&0x8000)){
 							strcat(szdbsetting,"/");
@@ -514,7 +514,7 @@ static DWORD __stdcall waitThread(logthread_info* infoParam)
 			infoParam->courStatus &=0x7FFF;
 		}
 	}
-	DBWriteContactSettingWord(infoParam->hContact,S_MOD,"Status",infoParam->courStatus);
+	DBWriteContactSettingWord(infoParam->hContact,S_MOD,"StatusTriger",infoParam->courStatus);
 //	sprintf(str,"OutThread: %s; %s; %s\n",
 //		infoParam->sProtoName,
 //		(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)infoParam->hContact,0),
@@ -541,9 +541,9 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 	cws=(DBCONTACTWRITESETTING *)lparam;
 	if(CallService(MS_IGNORE_ISIGNORED,(WPARAM)hContact,IGNOREEVENT_USERONLINE)) return 0;
 	isIdleEvent = includeIdle?(strcmp(cws->szSetting,"IdleTS")==0):0;
-	if (strcmp(cws->szSetting,"Status") && (isIdleEvent==0)) return 0;
+	if (strcmp(cws->szSetting,"Status") && strcmp(cws->szSetting,"StatusTriger") && (isIdleEvent==0)) return 0;
 	if (!strcmp(cws->szModule,S_MOD)){
-		//here we will come when Settings/SeenModule/Status is changed
+		//here we will come when Settings/SeenModule/StatusTriger is changed
 		WORD prevStatus=DBGetContactSettingWord(hContact,S_MOD,"OldStatus",ID_STATUS_OFFLINE);
 		if (includeIdle){
 			if (DBGetContactSettingByte(hContact,S_MOD,"OldIdle",0)) prevStatus &= 0x7FFF;
@@ -601,7 +601,7 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 			GetLocalTime(&time);
 			DBWriteTime(&time,hContact);
 
-			DBWriteContactSettingWord(hContact,S_MOD,"Status",(WORD)cws->value.wVal);
+			DBWriteContactSettingWord(hContact,S_MOD,"StatusTriger",(WORD)cws->value.wVal);
 
 			if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0)) FileWrite(hContact);
 			if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0))
@@ -624,7 +624,7 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 //				MessageBox(0,"Already in contact queue",cws->szModule,0);
 			}
 			contactQueue[index]->courStatus = isIdleEvent?DBGetContactSettingWord(hContact,cws->szModule,"Status",ID_STATUS_OFFLINE):cws->value.wVal;
-			prevStatus=DBGetContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
+			prevStatus=DBGetContactSettingWord(hContact,S_MOD,"StatusTriger",ID_STATUS_OFFLINE);
 			DBWriteContactSettingWord(hContact,S_MOD,"OldStatus",(WORD)(prevStatus|0x8000));
 			if (includeIdle){
 				DBWriteContactSettingByte(hContact,S_MOD,"OldIdle",(BYTE)((prevStatus&0x8000)==0));
@@ -694,10 +694,11 @@ static DWORD __stdcall cleanThread(logthread_info* infoParam)
 		if (contactProto) {
 			if (!strncmp(infoParam->sProtoName,contactProto,MAXMODULELABELLENGTH)){
 				WORD oldStatus;
-				if ((oldStatus = DBGetContactSettingWord(hcontact,S_MOD,"Status",ID_STATUS_OFFLINE))>ID_STATUS_OFFLINE){
+				if ( (oldStatus = (DBGetContactSettingWord(hcontact,S_MOD,"StatusTriger",ID_STATUS_OFFLINE))|0x8000)>ID_STATUS_OFFLINE){
 					if (DBGetContactSettingWord(hcontact,contactProto,"Status",ID_STATUS_OFFLINE)==ID_STATUS_OFFLINE){
-						DBWriteContactSettingWord(hcontact,S_MOD,"OldStatus",oldStatus);
-						DBWriteContactSettingWord(hcontact,S_MOD,"Status",ID_STATUS_OFFLINE);
+						DBWriteContactSettingWord(hcontact,S_MOD,"OldStatus",(WORD)(oldStatus|0x8000));
+						if (includeIdle)DBWriteContactSettingWord(hcontact,S_MOD,"OldIdle",(WORD)((oldStatus&0x8000)?0:1));
+						DBWriteContactSettingWord(hcontact,S_MOD,"StatusTriger",ID_STATUS_OFFLINE);
 					}
 				}
 			}
