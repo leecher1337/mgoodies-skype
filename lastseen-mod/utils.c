@@ -435,6 +435,7 @@ LRESULT CALLBACK PopupDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 };
 
 void ShowPopup(HANDLE hcontact, const char * lpzProto, int newStatus){
+	if(CallService(MS_IGNORE_ISIGNORED,(WPARAM)hcontact,IGNOREEVENT_USERONLINE)) return;
 	if (ServiceExists(MS_POPUP_QUERY)){
 		if (DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
 			if (!DBGetContactSettingByte(hcontact,"CList","Hidden",0)){
@@ -457,6 +458,22 @@ void ShowPopup(HANDLE hcontact, const char * lpzProto, int newStatus){
 		}
 	}
 }
+
+void myPlaySound(HANDLE hcontact, WORD newStatus, WORD oldStatus){
+	if(CallService(MS_IGNORE_ISIGNORED,(WPARAM)hcontact,IGNOREEVENT_USERONLINE)) return;
+	//oldStatus and hcontact are not used yet
+	if (DBGetContactSettingByte(NULL,"Skin","UseSound",1)){
+		char * soundname = ((newStatus==ID_STATUS_ONLINE) || (newStatus==ID_STATUS_FREECHAT))?
+			"LastSeenTrackedStatusOnline":
+				(newStatus==ID_STATUS_OFFLINE)?
+					"LastSeenTrackedStatusOffline":
+					"LastSeenTrackedStatusChange";
+		if (!DBGetContactSettingByte(NULL,"SkinSoundsOff",soundname,0)){
+			DBVARIANT dbv;
+			if (!DBGetContactSetting(NULL,"SkinSounds",soundname,&dbv)){
+				PlaySoundA(dbv.pszVal, NULL, SND_ASYNC | SND_FILENAME | SND_NOWAIT);
+				DBFreeVariant(&dbv);
+}	}	}	}
 
 //will give hContact position or zero
 int isContactQueueActive(HANDLE hContact){
@@ -539,7 +556,7 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 	// to make this code faster
 	if (!hContact) return 0;
 	cws=(DBCONTACTWRITESETTING *)lparam;
-	if(CallService(MS_IGNORE_ISIGNORED,(WPARAM)hContact,IGNOREEVENT_USERONLINE)) return 0;
+	//if(CallService(MS_IGNORE_ISIGNORED,(WPARAM)hContact,IGNOREEVENT_USERONLINE)) return 0;
 	isIdleEvent = includeIdle?(strcmp(cws->szSetting,"IdleTS")==0):0;
 	if (strcmp(cws->szSetting,"Status") && strcmp(cws->szSetting,"StatusTriger") && (isIdleEvent==0)) return 0;
 	if (!strcmp(cws->szModule,S_MOD)){
@@ -582,17 +599,10 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 					(char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hContact,0),
 					PS_GETSTATUS,0,0
 					)>ID_STATUS_OFFLINE)	{
+					myPlaySound(hContact,ID_STATUS_OFFLINE,prevStatus);
 					if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0)){
 						ShowPopup(hContact,sProto,ID_STATUS_OFFLINE);
-					}
-					if (DBGetContactSettingByte(NULL,"Skin","UseSound",1)){
-						if (!DBGetContactSettingByte(NULL,"SkinSoundsOff","LastSeenTrackedStatusOffline",0)){
-							DBVARIANT dbv;
-							if (!DBGetContactSetting(NULL,"SkinSounds","LastSeenTrackedStatusOffline",&dbv)){
-								PlaySoundA(dbv.pszVal, NULL, SND_ASYNC | SND_FILENAME | SND_NOWAIT);
-								DBFreeVariant(&dbv);
-					}	}	}
-				}
+				}	}
 
 				if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0))
 					HistoryWrite(hContact);
@@ -609,19 +619,12 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 			GetLocalTime(&time);
 			DBWriteTime(&time,hContact);
 
-			DBWriteContactSettingWord(hContact,S_MOD,"StatusTriger",(WORD)cws->value.wVal);
+			//DBWriteContactSettingWord(hContact,S_MOD,"StatusTriger",(WORD)cws->value.wVal);
 
 			if(DBGetContactSettingByte(NULL,S_MOD,"FileOutput",0)) FileWrite(hContact);
+			if (prevStatus != cws->value.wVal) myPlaySound(hContact,cws->value.wVal,prevStatus);
 			if(DBGetContactSettingByte(NULL,S_MOD,"UsePopups",0))
 				if (prevStatus != cws->value.wVal) ShowPopup(hContact,(char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hContact,0),cws->value.wVal|0x8000);
-			if (DBGetContactSettingByte(NULL,"Skin","UseSound",1)){
-				BOOL isOnline = (cws->value.wVal==ID_STATUS_ONLINE) || (cws->value.wVal==ID_STATUS_FREECHAT);
-				if (!DBGetContactSettingByte(NULL,"SkinSoundsOff",isOnline?"LastSeenTrackedStatusOnline":"LastSeenTrackedStatusChange",0)){
-					DBVARIANT dbv;
-					if (!DBGetContactSetting(NULL,"SkinSounds",isOnline?"LastSeenTrackedStatusOnline":"LastSeenTrackedStatusChange",&dbv)){
-						PlaySoundA(dbv.pszVal, NULL, SND_ASYNC | SND_FILENAME | SND_NOWAIT);
-						DBFreeVariant(&dbv);
-			}	}	}
 
 			if(DBGetContactSettingByte(NULL,S_MOD,"KeepHistory",0)) HistoryWrite(hContact);
 			if(DBGetContactSettingByte(hContact,S_MOD,"OnlineAlert",0)) ShowHistory(hContact, 1);
