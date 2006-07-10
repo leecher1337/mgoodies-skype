@@ -2,7 +2,7 @@
 
 
 HINSTANCE hInstance;
-HANDLE ehdb,ehproto[2],ehmissed=NULL,ehuserinfo,ehmissed_proto=NULL;
+HANDLE ehdb=NULL,ehproto=NULL,ehmissed=NULL,ehuserinfo=NULL,ehmissed_proto=NULL;
 PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 		sizeof(PLUGININFO),
@@ -11,7 +11,7 @@ PLUGININFO pluginInfo={
 #else	
 		"Last seen plugin mod (NSNCompat)",
 #endif
-		PLUGIN_MAKE_VERSION(5,0,4,2),
+		PLUGIN_MAKE_VERSION(5,0,4,3),
 		"Log when a user was last seen online and which users were online while you were away",
 		"Heiko Schillinger, YB",
 		"",
@@ -39,15 +39,16 @@ int ModeChange_mo(WPARAM,LPARAM);
 int CheckIfOnline(void);
 
 BOOL includeIdle;
-HANDLE *contactQueue = NULL;
+logthread_info **contactQueue = NULL;
 int contactQueueSize = 0;
 
 
 int MainInit(WPARAM wparam,LPARAM lparam)
 {
+	contactQueueSize = 16*sizeof(logthread_info *);
+	contactQueue = (logthread_info **)malloc(contactQueueSize);
+	memset(&contactQueue[0], 0, contactQueueSize);
 	contactQueueSize = 16;
-	contactQueue = (HANDLE *)malloc(16*sizeof(contactQueue[0]));
-	ZeroMemory(contactQueue, 16*sizeof(contactQueue[0]));
 	includeIdle = (BOOL )DBGetContactSettingByte(NULL,S_MOD,"IdleSupport",1);
 	HookEvent(ME_OPT_INITIALISE,OptionsInit);
 	
@@ -67,8 +68,7 @@ int MainInit(WPARAM wparam,LPARAM lparam)
 //	SetOffline();
 
 	ehdb=HookEvent(ME_DB_CONTACT_SETTINGCHANGED,UpdateValues);
-	ehproto[0]=HookEvent(ME_PROTO_ACK,ModeChange);
-//	ehproto[1]=HookEvent(ME_PROTO_ACK,GetInfoAck);
+	ehproto=HookEvent(ME_PROTO_ACK,ModeChange);
 
 	SkinAddNewSound("LastSeenTrackedStatusChange",Translate("LastSeen: User status change"),"global.wav");
 	// known modules list
@@ -94,12 +94,10 @@ __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
 __declspec(dllexport)int Unload(void)
 {
 	UnhookEvent(ehdb);
-	if(ehmissed!=NULL)
-		UnhookEvent(ehmissed);
-	UnhookEvent(ehproto[0]);
-	UnhookEvent(ehproto[1]);
-	UnhookEvent(ehmissed_proto);
-	free(contactQueue);
+	if(ehmissed!=NULL) UnhookEvent(ehmissed);
+	UnhookEvent(ehproto);
+	if(ehmissed_proto)UnhookEvent(ehmissed_proto);
+//	free(contactQueue);
 	return 0;
 }
 

@@ -458,13 +458,6 @@ void ShowPopup(HANDLE hcontact, const char * lpzProto, int newStatus){
 	}
 }
 
-typedef struct logthread_info {
-  char sProtoName[MAXMODULELABELLENGTH];
-  HANDLE hContact;
-  WORD courStatus;
-  int queueIndex;
-} logthread_info;
-
 //will give hContact position or zero
 int isContactQueueActive(HANDLE hContact){
 	int i = 0;
@@ -473,7 +466,8 @@ int isContactQueueActive(HANDLE hContact){
 		return 0;
 	}
 	for (i=1;i<contactQueueSize;i++){
-		if (contactQueue[i]==hContact) return (i);
+		if (contactQueue[i])
+			if (contactQueue[i]->hContact==hContact) return i;
 	}
 	return 0;
 }
@@ -487,17 +481,22 @@ int addContactToQueue(HANDLE hContact){
 	}
 	for (i=1;i<contactQueueSize;i++){
 		if (!contactQueue[i]) {
-			contactQueue[i] = hContact;
-			return (i);
+			contactQueue[i] = malloc(sizeof(logthread_info));
+			contactQueue[i]->queueIndex = i;
+			contactQueue[i]->hContact = hContact;
+			return i;
 		}
 	}
 	//no free space. Create some
-//	MessageBox(0,"Creating more space","LastSeen-Mod",0);
-	contactQueue = (HANDLE *)realloc(contactQueue,(contactQueueSize+16)*sizeof(contactQueue[0]));
-	ZeroMemory(&contactQueue[contactQueueSize], 16*sizeof(contactQueue[0]));
-	contactQueue[contactQueueSize] = hContact;
+	//MessageBox(0,"Creating more space","LastSeen-Mod",0);
+	contactQueue = (logthread_info **)realloc(contactQueue,(contactQueueSize+16)*sizeof(logthread_info *));
+	memset(&contactQueue[contactQueueSize],0, 16*sizeof(logthread_info *));
+	i = contactQueueSize;
+	contactQueue[i] = malloc(sizeof(logthread_info));
+	contactQueue[i]->queueIndex = i;
+	contactQueue[i]->hContact = hContact;
 	contactQueueSize += 16;
-	return 0;
+	return i;
 }
 
 static DWORD __stdcall waitThread(logthread_info* infoParam)
@@ -521,6 +520,7 @@ static DWORD __stdcall waitThread(logthread_info* infoParam)
 //		(char *)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)infoParam->hContact,0),
 //		(const char *)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,(WPARAM)infoParam->courStatus,0)
 //	);
+//	infoParam->hContact = 0; //declare the slot as empty
 	contactQueue[infoParam->queueIndex] = 0;
 	free(infoParam);
 //	OutputDebugStringA(str);
@@ -615,15 +615,15 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 		//here we will come when <User>/<module>/Status is changed or it is idle event and if <module> is watched
 		if (CallProtoService(cws->szModule,PS_GETSTATUS,0,0)>ID_STATUS_OFFLINE){
 			WORD prevStatus;
-			if (!isContactQueueActive(hContact)){
-				logthread_info *info;
-				info = (logthread_info *)malloc(sizeof(logthread_info));
-				strncpy(info->sProtoName,cws->szModule,MAXMODULELABELLENGTH);
-				info->hContact = hContact;
-				info->queueIndex = addContactToQueue(hContact);
-				info->courStatus = isIdleEvent?DBGetContactSettingWord(hContact,cws->szModule,"Status",ID_STATUS_OFFLINE):cws->value.wVal;
-				forkthreadex(NULL, 0, waitThread, info, 0, 0);
+			int index;
+			if (!(index = isContactQueueActive(hContact))){
+				index = addContactToQueue(hContact);
+				strncpy(contactQueue[index]->sProtoName,cws->szModule,MAXMODULELABELLENGTH);
+				forkthreadex(NULL, 0, waitThread, contactQueue[index], 0, 0);
+//			} else {
+//				MessageBox(0,"Already in contact queue",cws->szModule,0);
 			}
+			contactQueue[index]->courStatus = isIdleEvent?DBGetContactSettingWord(hContact,cws->szModule,"Status",ID_STATUS_OFFLINE):cws->value.wVal;
 			prevStatus=DBGetContactSettingWord(hContact,S_MOD,"Status",ID_STATUS_OFFLINE);
 			DBWriteContactSettingWord(hContact,S_MOD,"OldStatus",(WORD)(prevStatus|0x8000));
 			if (includeIdle){
@@ -692,7 +692,7 @@ static DWORD __stdcall cleanThread(logthread_info* infoParam)
 	{
 		char * contactProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hcontact,0);
 		if (contactProto) {
-			if (!strcmp(infoParam->sProtoName,contactProto)){
+			if (!strncmp(infoParam->sProtoName,contactProto,MAXMODULELABELLENGTH)){
 				WORD oldStatus;
 				if ((oldStatus = DBGetContactSettingWord(hcontact,S_MOD,"Status",ID_STATUS_OFFLINE))>ID_STATUS_OFFLINE){
 					if (DBGetContactSettingWord(hcontact,contactProto,"Status",ID_STATUS_OFFLINE)==ID_STATUS_OFFLINE){
