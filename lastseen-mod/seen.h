@@ -83,6 +83,13 @@ void GetColorsFromDWord(LPCOLORREF First, LPCOLORREF Second, DWORD colDword);
 DWORD GetDWordFromColors(COLORREF First, COLORREF Second);
 
 BOOL includeIdle;
-extern HANDLE *contactQueue;
+typedef struct logthread_info {
+  char sProtoName[MAXMODULELABELLENGTH];
+  HANDLE hContact;
+  WORD courStatus;
+  int queueIndex;
+} logthread_info;
+
+extern logthread_info **contactQueue;
 extern int contactQueueSize;
 
