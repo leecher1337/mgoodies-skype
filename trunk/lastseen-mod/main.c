@@ -70,7 +70,9 @@ int MainInit(WPARAM wparam,LPARAM lparam)
 	ehdb=HookEvent(ME_DB_CONTACT_SETTINGCHANGED,UpdateValues);
 	ehproto=HookEvent(ME_PROTO_ACK,ModeChange);
 
-	SkinAddNewSound("LastSeenTrackedStatusChange",Translate("LastSeen: User status change"),"global.wav");
+	SkinAddNewSoundEx("LastSeenTrackedStatusChange",Translate("LastSeen"),Translate("User status change"));
+	SkinAddNewSoundEx("LastSeenTrackedStatusOnline",Translate("LastSeen"),Translate("Changed to Online"));
+	SkinAddNewSoundEx("LastSeenTrackedStatusOffline",Translate("LastSeen"),Translate("Changed to Offline"));
 	// known modules list
 	if (ServiceExists("DBEditorpp/RegisterSingleModule"))
 		CallService("DBEditorpp/RegisterSingleModule", (WPARAM)S_MOD, 0);
