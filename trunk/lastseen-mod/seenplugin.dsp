@@ -87,8 +87,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x67400000" /dll /debug /debugtype:cv /machine:I386 /out:"../../bin/debug/Plugins/seenplugin.dll"
+# ADD BASE LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib winmm.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib winmm.lib /nologo /base:"0x67400000" /dll /debug /debugtype:cv /machine:I386 /out:"../../bin/debug/Plugins/seenplugin.dll"
 # SUBTRACT LINK32 /profile /pdb:none /incremental:no /map
 
 !ELSEIF  "$(CFG)" == "seenplugin - Win32 PermNSN Release"
@@ -115,8 +115,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib winmm.lib version.lib /nologo /base:"0x67400000" /dll /machine:I386 /out:"../../bin/upload/seen/NSNCompat/seenplugin.dll" /filealign:0x200
+# ADD BASE LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib winmm.lib /nologo /dll /machine:I386
+# ADD LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib winmm.lib /nologo /base:"0x67400000" /dll /machine:I386 /out:"../../bin/upload/seen/NSNCompat/seenplugin.dll" /filealign:0x200
 # SUBTRACT LINK32 /pdb:none /map
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
@@ -146,8 +146,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x67400000" /dll /debug /debugtype:cv /machine:I386 /out:"../../bin/debug/Plugins/NSNCompat/seenplugin.dll"
+# ADD BASE LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib winmm.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 ws2_32.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib advapi32.lib winmm.lib /nologo /base:"0x67400000" /dll /debug /debugtype:cv /machine:I386 /out:"../../bin/debug/Plugins/NSNCompat/seenplugin.dll"
 # SUBTRACT LINK32 /profile /pdb:none /incremental:no /map
 
 !ENDIF 
