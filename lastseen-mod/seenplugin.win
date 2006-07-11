@@ -7,9 +7,9 @@ WINDRES = windres.exe
 RES  = objs/resource.res
 OBJ  = objs/file.o objs/forkthread.o objs/history.o objs/main.o objs/menu.o objs/missed.o objs/options.o objs/userinfo.o objs/utils.o $(RES)
 LINKOBJ  = objs/file.o objs/forkthread.o objs/history.o objs/main.o objs/menu.o objs/missed.o objs/options.o objs/userinfo.o objs/utils.o $(RES)
-LIBS =  -L"C:/Dev-Cpp/lib" -lws2_32 -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid -lodbc32 -lodbccp32 -lcomctl32 -lwinmm -lversion  -s 
-INCS =  -I"C:/Dev-Cpp/include"  -I"../../include" 
-CXXINCS =  -I"C:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"C:/Dev-Cpp/include/c++/3.4.2/backward"  -I"C:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"C:/Dev-Cpp/include/c++/3.4.2"  -I"C:/Dev-Cpp/include"  -I"../../include" 
+LIBS =  -lws2_32 -lkernel32 -luser32 -lgdi32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwinmm   -s
+INCS =  -I"../../include"
+CXXINCS =  -I"../../include"
 BIN  = ../../bin/release/plugins/seenplugin.dll
 CXXFLAGS = $(CXXINCS) -D__GNUWIN32__ -W -fexceptions -w  -fexpensive-optimizations -O3
 CFLAGS = $(INCS) -D__GNUWIN32__ -W -fexceptions -w  -fexpensive-optimizations -O3
@@ -59,4 +59,5 @@ objs/utils.o: utils.c
 	$(CC) -c utils.c -o objs/utils.o $(CFLAGS)
 
 objs/resource.res: resource.rc 
-	$(WINDRES) -i resource.rc --input-format=rc -o objs/resource.res -O coff 
+	$(WINDRES) -i resource.rc --input-format=rc -o objs/resource.res -O coff
+

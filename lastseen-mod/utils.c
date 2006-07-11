@@ -1,6 +1,6 @@
 #include "seen.h"
 #include <m_ignore.h>
-
+#include <time.h>
 
 
 void FileWrite(HANDLE);
@@ -365,7 +365,7 @@ LBL_charPtr:
 
 
 
-void DBWriteTime(SYSTEMTIME *st,HANDLE hcontact)
+void _DBWriteTime(SYSTEMTIME *st,HANDLE hcontact)
 {
 	DBWriteContactSettingWord((HANDLE)hcontact,S_MOD,"Day",st->wDay);
 	DBWriteContactSettingWord((HANDLE)hcontact,S_MOD,"Month",st->wMonth);
@@ -377,6 +377,16 @@ void DBWriteTime(SYSTEMTIME *st,HANDLE hcontact)
 
 }
 
+void DBWriteTimeTS(DWORD t, HANDLE hcontact){
+	SYSTEMTIME st;
+	FILETIME ft;
+	LONGLONG ll = UInt32x32To64(CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,t,0), 10000000) + NUM100NANOSEC;
+	ft.dwLowDateTime = (DWORD)ll;
+	ft.dwHighDateTime = (DWORD)(ll >> 32);
+	FileTimeToSystemTime(&ft, &st);
+	DBWriteContactSettingDword(hcontact,S_MOD,"seenTS",t);
+	_DBWriteTime(&st, hcontact);
+}
 void GetColorsFromDWord(LPCOLORREF First, LPCOLORREF Second, DWORD colDword){
 	WORD temp;
 	COLORREF res=0;
@@ -551,7 +561,6 @@ static int uniqueEventId=0;
 int UpdateValues(HANDLE hContact,LPARAM lparam)
 {
 	DBCONTACTWRITESETTING *cws;
-	SYSTEMTIME time;
 	BOOL isIdleEvent;
 	// to make this code faster
 	if (!hContact) return 0;
@@ -578,16 +587,11 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 				DWORD t;
 				char *str = malloc(MAXMODULELABELLENGTH+9);
 				mir_snprintf(str,MAXMODULELABELLENGTH+8,"OffTime-%s",proto);
-				if (t = DBGetContactSettingDword(NULL,S_MOD,str,0)){
-					FILETIME ft;
-					LONGLONG ll = UInt32x32To64(CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,t,0), 10000000) + NUM100NANOSEC;
-					ft.dwLowDateTime = (DWORD)ll;
-					ft.dwHighDateTime = (DWORD)(ll >> 32);
-					FileTimeToSystemTime(&ft, &time);
-				} else GetLocalTime(&time);
+				t = DBGetContactSettingDword(NULL,S_MOD,str,0);
+				if (!t) t = time(NULL);
 				free(str);
+				DBWriteTimeTS(t,hContact);
 			}
-			DBWriteTime(&time,hContact);
 
 			if(!DBGetContactSettingByte(NULL,S_MOD,"IgnoreOffline",1))
 			{
@@ -616,8 +620,7 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 			if(cws->value.wVal==prevStatus && !DBGetContactSettingByte(hContact,S_MOD,"Offline",0)) 
 				return 0;
 
-			GetLocalTime(&time);
-			DBWriteTime(&time,hContact);
+			DBWriteTimeTS(time(NULL),hContact);
 
 			//DBWriteContactSettingWord(hContact,S_MOD,"StatusTriger",(WORD)cws->value.wVal);
 
@@ -746,16 +749,14 @@ int ModeChange(WPARAM wparam,LPARAM lparam)
 {
 	ACKDATA *ack;
 	WORD isetting=0;
-	SYSTEMTIME tm;
 
 	ack=(ACKDATA *)lparam;
 
 	if(ack->type!=ACKTYPE_STATUS || ack->result!=ACKRESULT_SUCCESS || ack->hContact!=NULL) return 0;
 	courProtoName = (char *)ack->szModule;
 	if (!IsWatchedProtocol(courProtoName)) return 0;
-	GetLocalTime(&tm);
 
-	DBWriteTime(&tm,NULL);
+	DBWriteTimeTS(time(NULL),NULL);
 
 //	isetting=CallProtoService(ack->szModule,PS_GETSTATUS,0,0);
 	isetting=(WORD)ack->lParam;
