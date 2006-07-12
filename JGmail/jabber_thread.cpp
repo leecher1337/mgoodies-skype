@@ -369,19 +369,21 @@ LBL_Exit:
 
 	BOOL sslMode = FALSE;
 	if ( info->port==443){ //fake ssl session - Client Hello
-		unsigned int fake[] = {//Long Live Ethereal!
-			0x03014680, 0x002D0001, 0x01100000, 0x00038000,
-			0xC0000780, 0x02400006, 0x00048000, 0x04000080,
-			0x00FFFE00, 0xFE000A00, 0x090000FE, 0x00640000,
-			0x00006200, 0x06000003, 0xA60C171F, 0xFC78002F,
-			0xB12E5546, 0xEAF13983};
-		Netlib_Send( info->s,(char *)fake,sizeof(fake), MSG_NODUMP );
-		char *buff = (char *)mir_alloc(0x100);
-		int i = Netlib_Recv( info->s,buff,0x100, MSG_NODUMP );
-		mir_free(buff);
-		if (!i){
-			JabberLog( "Thread ended, fake HTTPS session failed" );
-			goto LBL_Exit;
+		if ( JGetByte( "EnableGmail", 1 )&1 ) {
+			unsigned int fake[] = {//Long Live Ethereal!
+				0x03014680, 0x002D0001, 0x01100000, 0x00038000,
+				0xC0000780, 0x02400006, 0x00048000, 0x04000080,
+				0x00FFFE00, 0xFE000A00, 0x090000FE, 0x00640000,
+				0x00006200, 0x06000003, 0xA60C171F, 0xFC78002F,
+				0xB12E5546, 0xEAF13983};
+			Netlib_Send( info->s,(char *)fake,sizeof(fake), MSG_NODUMP );
+			char *buff = (char *)mir_alloc(0x100);
+			int i = Netlib_Recv( info->s,buff,0x100, MSG_NODUMP );
+			mir_free(buff);
+			if (!i){
+				JabberLog( "Thread ended, fake HTTPS session failed" );
+				goto LBL_Exit;
+			}
 		}
 	} else if ( info->useSSL ) {
 		JabberLog( "Intializing SSL connection" );
