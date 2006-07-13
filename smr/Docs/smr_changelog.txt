@@ -1,6 +1,9 @@
-Status Message Retriever 1.0.0.1
+Status Message Retriever 1.0.0.2
 
 Changelog:
+
+. 1.0.0.2
+  + If XStatus name and message are the same, show only one (and not Name: message)
 
 . 1.0.0.1
   * Try to fix bug on thread finish

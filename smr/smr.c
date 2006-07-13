@@ -27,7 +27,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Status Message Retriever",
-	PLUGIN_MAKE_VERSION(1,0,0,1),
+	PLUGIN_MAKE_VERSION(1,0,0,2),
 	"Retrive status message based on timer / status change",
 	"Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
 	"",

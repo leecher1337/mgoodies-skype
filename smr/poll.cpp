@@ -592,9 +592,17 @@ void ProcessCheckNotToServer(Check what, HANDLE hContact, const char *protocol)
 			{
 				if (has_xstatus_name && has_xstatus_message)
 				{
-					TCHAR message[512];
-					mir_sntprintf(message, sizeof(message), _T("%s: %s"), name, msg);
-					SetStatusMessage(hContact, message);
+					if (lstrcmp(name, msg) == 0)
+					{
+						// Both are the same, use only one
+						SetStatusMessage(hContact, name);
+					}
+					else
+					{
+						TCHAR message[512];
+						mir_sntprintf(message, sizeof(message), _T("%s: %s"), name, msg);
+						SetStatusMessage(hContact, message);
+					}
 				}
 				else if (has_xstatus_name)
 				{
