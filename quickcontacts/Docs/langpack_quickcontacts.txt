@@ -5,8 +5,8 @@
 [Quick Contacts]
 
 ; Hotkey description
-[Show dialog]
-[Show dialog to select contact]
+[Open dialog]
+[Open Quick Contacts dialog]
 
 ; Menu item
 [Quick Contacts...]
