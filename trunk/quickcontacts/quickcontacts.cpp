@@ -32,7 +32,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,2),
+	PLUGIN_MAKE_VERSION(0,0,2,3),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
@@ -157,6 +157,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			opts.num_protos++;
 	}
 
+	// Add hotkey to multiple services
+
 	hksModule = HKS_RegisterModule("Quick Contacts");
 	if (hksModule >= 0)
 	{
@@ -164,19 +166,22 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		hHotkeyPressed = HookEvent(ME_HKS_KEY_PRESSED, HotkeyPressed);
 	}
-	else
+
+	if (ServiceExists(MS_SKIN_ADDHOTKEY))
 	{
-		// Add hotkey
 		SKINHOTKEYDESCEX hk;
 		ZeroMemory(&hk,sizeof(hk));
 		hk.cbSize = sizeof(hk);
 		hk.pszSection = Translate("Quick Contacts");
-		hk.pszName = Translate("Show dialog");
-		hk.pszDescription = Translate("Show dialog to select contact");
+		hk.pszName = Translate("Open dialog");
+		hk.pszDescription = Translate("Open dialog");
 		hk.pszService = MS_QC_SHOW_DIALOG;
 		hk.DefHotKey = 0;
 		CallService(MS_SKIN_ADDHOTKEY, 0, (LPARAM)&hk);
 	}
+
+	if (ServiceExists(MS_HOTKEYSPLUS_ADDKEY)) 
+		CallService(MS_HOTKEYSPLUS_ADDKEY, (WPARAM) MS_QC_SHOW_DIALOG, (LPARAM) "Open Quick Contacts dialog");
 
 	// Get the icons for the listbox
 	hIml = (HIMAGELIST)CallService(MS_CLIST_GETICONSIMAGELIST,0,0);
