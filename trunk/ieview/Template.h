@@ -5,11 +5,14 @@ class Template;
 
 #include "ieview_common.h"
 
-struct TokenDef {
+class TokenDef {
+public:
 	const char *tokenString;
 	int 		token;
 	int         tokenLen;
 	int         escape;
+	TokenDef(const char *tokenString);
+	TokenDef(const char *tokenString, int token, int escape);
 };
 
 class Token {

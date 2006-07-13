@@ -1,6 +1,20 @@
 #include "Template.h"
 #include "Utils.h"
 
+TokenDef::TokenDef(const char *tokenString) {
+	this->tokenString = tokenString;
+	this->tokenLen = strlen(tokenString);
+	this->token = 0;
+	this->escape = 0;
+}
+
+TokenDef::TokenDef(const char *tokenString, int token, int escape) {
+	this->tokenString = tokenString;
+	this->token = token;
+	this->tokenLen = strlen(tokenString);
+	this->escape = escape;
+}
+
 Token::Token(int type, const char *text, int escape) {
 	next = NULL;
 	this->type = type;
@@ -77,45 +91,45 @@ bool Template::equals(const char *name) {
 }
 
 static TokenDef tokenNames[] = {
-	{"%name%", Token::NAME, 6, 0},
-	{"%time%", Token::TIME, 6, 0},
-	{"%text%", Token::TEXT, 6, 0},
-	{"%date%", Token::DATE, 6, 0},
-	{"%base%", Token::BASE, 6, 0},
-	{"%avatar%", Token::AVATAR, 8, 0},
-	{"%cid%", Token::CID, 5, 0},
-	{"%proto%", Token::PROTO, 7, 0},
-	{"%avatarIn%", Token::AVATARIN, 10, 0},
-	{"%avatarOut%", Token::AVATAROUT, 11, 0},
-	{"%nameIn%", Token::NAMEIN, 8, 0},
-	{"%nameOut%", Token::NAMEOUT, 9, 0},
-	{"%uin%", Token::UIN, 5, 0},
-	{"%uinIn%", Token::UININ, 7, 0},
-	{"%uinOut%", Token::UINOUT, 8, 0},
-	{"%nickIn%", Token::NICKIN, 8, 0},
-	{"%nickOut%", Token::NICKOUT, 9, 1},
-	{"%statusMsg%", Token::STATUSMSG, 11, 0},
-	{"%fileDesc%", Token::FILEDESC, 10, 0},
+	TokenDef("%name%", Token::NAME, 0),
+	TokenDef("%time%", Token::TIME, 0),
+	TokenDef("%text%", Token::TEXT, 0),
+	TokenDef("%date%", Token::DATE, 0),
+	TokenDef("%base%", Token::BASE, 0),
+	TokenDef("%avatar%", Token::AVATAR, 0),
+	TokenDef("%cid%", Token::CID, 0),
+	TokenDef("%proto%", Token::PROTO, 0),
+	TokenDef("%avatarIn%", Token::AVATARIN, 0),
+	TokenDef("%avatarOut%", Token::AVATAROUT, 0),
+	TokenDef("%nameIn%", Token::NAMEIN, 0),
+	TokenDef("%nameOut%", Token::NAMEOUT, 0),
+	TokenDef("%uin%", Token::UIN, 0),
+	TokenDef("%uinIn%", Token::UININ, 0),
+	TokenDef("%uinOut%", Token::UINOUT, 0),
+	TokenDef("%nickIn%", Token::NICKIN, 0),
+	TokenDef("%nickOut%", Token::NICKOUT, 1),
+	TokenDef("%statusMsg%", Token::STATUSMSG, 0),
+	TokenDef("%fileDesc%", Token::FILEDESC, 0),
 
-	{"%\\name%", Token::NAME, 7, 1},
-	{"%\\time%", Token::TIME, 7, 1},
-	{"%\\text%", Token::TEXT, 7, 1},
-	{"%\\date%", Token::DATE, 7, 1},
-	{"%\\base%", Token::BASE, 7, 1},
-	{"%\\avatar%", Token::AVATAR, 9, 1},
-	{"%\\cid%", Token::CID, 6, 1},
-	{"%\\proto%", Token::PROTO, 8, 1},
-	{"%\\avatarIn%", Token::AVATARIN, 11, 1},
-	{"%\\avatarOut%", Token::AVATAROUT, 12, 1},
-	{"%\\nameIn%", Token::NAMEIN, 9, 1},
-	{"%\\nameOut%", Token::NAMEOUT, 10, 1},
-	{"%\\uin%", Token::UIN, 6, 1},
-	{"%\\uinIn%", Token::UININ, 8, 1},
-	{"%\\uinOut%", Token::UINOUT, 9, 1},
-	{"%\\nickIn%", Token::NICKIN, 9, 1},
-	{"%\\nickOut%", Token::NICKOUT, 10, 1},
-	{"%\\statusMsg%", Token::STATUSMSG, 12, 1},
-	{"%\\fileDesc%", Token::FILEDESC, 11, 1}
+	TokenDef("%\\name%", Token::NAME, 1),
+	TokenDef("%\\time%", Token::TIME, 1),
+	TokenDef("%\\text%", Token::TEXT, 1),
+	TokenDef("%\\date%", Token::DATE, 1),
+	TokenDef("%\\base%", Token::BASE, 1),
+	TokenDef("%\\avatar%", Token::AVATAR, 1),
+	TokenDef("%\\cid%", Token::CID, 1),
+	TokenDef("%\\proto%", Token::PROTO, 1),
+	TokenDef("%\\avatarIn%", Token::AVATARIN, 1),
+	TokenDef("%\\avatarOut%", Token::AVATAROUT, 1),
+	TokenDef("%\\nameIn%", Token::NAMEIN, 1),
+	TokenDef("%\\nameOut%", Token::NAMEOUT, 1),
+	TokenDef("%\\uin%", Token::UIN, 1),
+	TokenDef("%\\uinIn%", Token::UININ, 1),
+	TokenDef("%\\uinOut%", Token::UINOUT, 1),
+	TokenDef("%\\nickIn%", Token::NICKIN, 1),
+	TokenDef("%\\nickOut%", Token::NICKOUT, 1),
+	TokenDef("%\\statusMsg%", Token::STATUSMSG, 1),
+	TokenDef("%\\fileDesc%", Token::FILEDESC, 1)
 };
 
 void Template::tokenize() {
@@ -135,7 +149,7 @@ void Template::tokenize() {
 				newTokenEscape = 0;
 			} else {
 				bool found = false;
-				for (unsigned int j=0; j<(sizeof(tokenNames)/sizeof(TokenDef)); j++) {
+				for (unsigned int j=0; j<(sizeof(tokenNames)/sizeof(tokenNames[0])); j++) {
 					if (!strncmp(str+i, tokenNames[j].tokenString, tokenNames[j].tokenLen)) {
 						newTokenType = tokenNames[j].token;
 						newTokenSize = tokenNames[j].tokenLen;
@@ -223,38 +237,40 @@ void TemplateMap::clear() {
 	}
 }
 
-static const char *templateNames[] = {"<!--HTMLStart-->",
-								"<!--MessageIn-->",
-								"<!--MessageOut-->",
-								"<!--hMessageIn-->",
-								"<!--hMessageOut-->",
-								"<!--File-->",
-								"<!--hFile-->",
-								"<!--URL-->",
-								"<!--hURL-->",
-								"<!--Status-->",
-								"<!--hStatus-->",
-								"<!--MessageInGroupStart-->",
-								"<!--MessageInGroupInner-->",
-								"<!--MessageInGroupEnd-->",
-								"<!--hMessageInGroupStart-->",
-								"<!--hMessageInGroupInner-->",
-								"<!--hMessageInGroupEnd-->",
-								"<!--MessageOutGroupStart-->",
-								"<!--MessageOutGroupInner-->",
-								"<!--MessageOutGroupEnd-->",
-								"<!--hMessageOutGroupStart-->",
-								"<!--hMessageOutGroupInner-->",
-								"<!--hMessageOutGroupEnd-->",
-								"<!--FileIn-->",
-								"<!--hFileIn-->",
-								"<!--FileOut-->",
-								"<!--hFileOut-->",
-								"<!--URLIn-->",
-								"<!--hURLIn-->",
-								"<!--URLOut-->",
-								"<!--hURLOut-->"
+static TokenDef templateNames[] = {
+	TokenDef("<!--HTMLStart-->"),
+	TokenDef("<!--MessageIn-->"),
+	TokenDef("<!--MessageOut-->"),
+	TokenDef("<!--hMessageIn-->"),
+	TokenDef("<!--hMessageOut-->"),
+	TokenDef("<!--File-->"),
+	TokenDef("<!--hFile-->"),
+	TokenDef("<!--URL-->"),
+	TokenDef("<!--hURL-->"),
+	TokenDef("<!--Status-->"),
+	TokenDef("<!--hStatus-->"),
+	TokenDef("<!--MessageInGroupStart-->"),
+	TokenDef("<!--MessageInGroupInner-->"),
+	TokenDef("<!--MessageInGroupEnd-->"),
+	TokenDef("<!--hMessageInGroupStart-->"),
+	TokenDef("<!--hMessageInGroupInner-->"),
+	TokenDef("<!--hMessageInGroupEnd-->"),
+	TokenDef("<!--MessageOutGroupStart-->"),
+	TokenDef("<!--MessageOutGroupInner-->"),
+	TokenDef("<!--MessageOutGroupEnd-->"),
+	TokenDef("<!--hMessageOutGroupStart-->"),
+	TokenDef("<!--hMessageOutGroupInner-->"),
+	TokenDef("<!--hMessageOutGroupEnd-->"),
+	TokenDef("<!--FileIn-->"),
+	TokenDef("<!--hFileIn-->"),
+	TokenDef("<!--FileOut-->"),
+	TokenDef("<!--hFileOut-->"),
+	TokenDef("<!--URLIn-->"),
+	TokenDef("<!--hURLIn-->"),
+	TokenDef("<!--URLOut-->"),
+	TokenDef("<!--hURLOut-->")
 };
+
 
 TemplateMap* TemplateMap::loadTemplateFile(const char *proto, const char *filename, bool onlyInfo) {
 	FILE* fh;
@@ -289,7 +305,7 @@ TemplateMap* TemplateMap::loadTemplateFile(const char *proto, const char *filena
 	    if (!onlyInfo) {
 	    	bool bFound = false;
             for (int i = 0; i < sizeof(templateNames) / sizeof (templateNames[0]); i++) {
-	    		if (!strncmp(store, templateNames[i], strlen(templateNames[i]))) {
+	    		if (!strncmp(store, templateNames[i].tokenString, templateNames[i].tokenLen)) {
 	    			bFound = true;
 	    			break;
 	    		}
