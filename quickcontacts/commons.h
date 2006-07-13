@@ -58,6 +58,7 @@ extern "C"
 #include <m_metacontacts.h>
 #include <m_MagneticWindows.h>
 #include <m_hotkeysservice.h>
+#include <m_hotkeysplus.h>
 #include <m_popup.h>
 
 #include "../utils/mir_memory.h"
