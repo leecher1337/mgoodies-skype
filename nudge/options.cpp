@@ -290,6 +290,16 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 			PopulateProtocolList(hwnd);
 			UpdateControls(hwnd);
 			break;
+		case WM_DESTROY:
+		{
+			HIMAGELIST hImList = TreeView_GetImageList(GetDlgItem(hwnd, IDC_PROTOLIST), TVSIL_NORMAL);
+			if (hImList)
+			{
+				TreeView_SetImageList(GetDlgItem(hwnd, IDC_PROTOLIST), NULL, TVSIL_NORMAL); // Avoiding Access Violation in CommonControls DLL
+				ImageList_Destroy(hImList);
+			}
+			break;
+		}
 		case WM_COMMAND:
 		{
 			WORD wNotifyCode = HIWORD(wParam);

@@ -1,6 +1,7 @@
 0.0.1.11
 ===========
 ! Check for null handle to avoid crash in IRC mod
+! gdi leaks in option page (thx tioduke)
 
 0.0.1.10
 ===========
