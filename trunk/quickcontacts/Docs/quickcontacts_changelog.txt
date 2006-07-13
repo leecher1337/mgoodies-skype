@@ -1,6 +1,10 @@
-Quick Contacts 0.0.2.2
+Quick Contacts 0.0.2.3
 
 Changelog:
+
+. 0.0.2.3
+  + Added support for Hotkeys+
+  * Now it will register to all hotkey services if found
 
 . 0.0.2.2
   * Fix for icons
