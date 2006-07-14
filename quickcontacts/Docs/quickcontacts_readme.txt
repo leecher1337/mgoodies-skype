@@ -17,4 +17,5 @@ Available hotkeys
 	Ctrl-U:		Send URL
 	Ctrl-I:		Show userinfo
 	Ctrl-H:		Open history
+	Ctrl-M:		Open contact menu
 	user-defined:	Open hotkey dialog (see options page)

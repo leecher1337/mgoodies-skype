@@ -32,7 +32,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,3),
+	PLUGIN_MAKE_VERSION(0,0,2,5),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
@@ -415,6 +415,7 @@ void EnableButtons(HWND hwndDlg, HANDLE hContact)
 		EnableWindow(GetDlgItem(hwndDlg, IDC_URL), FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_USERINFO), FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_HISTORY), FALSE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_MENU), FALSE);
 	}
 	else
 	{
@@ -438,6 +439,7 @@ void EnableButtons(HWND hwndDlg, HANDLE hContact)
 		EnableWindow(GetDlgItem(hwndDlg, IDC_URL), caps & PF1_URLSEND ? TRUE : FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_USERINFO), TRUE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_HISTORY), TRUE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_MENU), TRUE);
 	}
 }
 
@@ -617,10 +619,12 @@ LRESULT CALLBACK HookProc(int code, WPARAM wparam, LPARAM lparam)
 	htemp = msg->hwnd;
 	msg->hwnd = hwndMain;
 
-	if(!TranslateAccelerator(msg->hwnd, hAcct, msg))
+	if(TranslateAccelerator(msg->hwnd, hAcct, msg))
+		return 1;
+	else
 		msg->hwnd=htemp;
 
-	if (msg->message == WM_KEYUP && msg->wParam == VK_ESCAPE)
+	if (msg->message == WM_KEYDOWN && msg->wParam == VK_ESCAPE)
 	{
 		switch(SendMessage(GetDlgItem(hwndMain, IDC_USERNAME), CB_GETDROPPEDSTATE, 0, 0))
 		{
@@ -674,6 +678,10 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			SendMessage(GetDlgItem(hwndDlg, IDC_HISTORY), BUTTONADDTOOLTIP, (LPARAM) Translate("Open history (Ctrl+H)"), 0);
 			SendDlgItemMessage(hwndDlg, IDC_HISTORY, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(174),IMAGE_ICON,16,16,LR_DEFAULTCOLOR));
 
+			SendMessage(GetDlgItem(hwndDlg, IDC_MENU), BUTTONSETASFLATBTN, 0, 0);
+			SendMessage(GetDlgItem(hwndDlg, IDC_MENU), BUTTONADDTOOLTIP, (LPARAM) Translate("Open contact menu (Ctrl+M)"), 0);
+			SendDlgItemMessage(hwndDlg, IDC_MENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(264),IMAGE_ICON,16,16,LR_DEFAULTCOLOR));
+
 			SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETEXTENDEDUI, (WPARAM)TRUE, 0);
 
 			MagneticWindows_AddWindow(hwndDlg);
@@ -722,8 +730,6 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 					DBWriteContactSettingDword(NULL, MODULE_NAME, "LastSentTo", (DWORD) hContact);
 					SendMessage(hwndDlg, WM_CLOSE, 0, 0);
-					break;
-
 					break;
 				}
 				case IDC_MESSAGE:
@@ -835,6 +841,36 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					SendMessage(hwndDlg, WM_CLOSE, 0, 0);
 					break;
 				}
+				case HOTKEY_MENU:
+				case IDC_MENU:
+				{
+					HANDLE hContact = GetSelectedContact(hwndDlg);
+					if (hContact == NULL)
+					{
+						SetDlgItemText(hwndDlg, IDC_USERNAME, _T(""));
+						SetFocus(GetDlgItem(hwndDlg, IDC_USERNAME));
+						break;
+					}
+
+					// Is button enabled?
+					if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDC_MENU)))
+						break;
+
+                    RECT rc;
+                    GetWindowRect(GetDlgItem(hwndDlg, IDC_MENU), &rc);
+                    HMENU hMenu = (HMENU) CallService(MS_CLIST_MENUBUILDCONTACT, (WPARAM) hContact, 0);
+                    int ret = TrackPopupMenu(hMenu, TPM_TOPALIGN|TPM_RIGHTBUTTON|TPM_RETURNCMD, rc.left, rc.bottom, 0, hwndDlg, NULL);
+                    DestroyMenu(hMenu);
+
+					if(ret)
+					{
+						SendMessage(hwndDlg, WM_CLOSE, 0, 0);
+						CallService(MS_CLIST_MENUPROCESSCOMMAND, MAKEWPARAM(LOWORD(ret),MPCF_CONTACTMENU),(LPARAM) hContact);
+					}
+
+					DBWriteContactSettingDword(NULL, MODULE_NAME, "LastSentTo", (DWORD) hContact);
+					break;
+				}
 				case HOTKEY_ALL_CONTACTS:
 				case IDC_SHOW_ALL_CONTACTS:
 				{
@@ -894,15 +930,25 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 		
 		case WM_DRAWITEM:
 		{
+			// add icons and protocol to listbox
+			LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT)lParam;
+
+			// Handle contact menu
+			if(lpdis->CtlID != IDC_USERNAME) 
+			{
+				if (lpdis->CtlType == ODT_MENU)
+					return CallService(MS_CLIST_MENUDRAWITEM,wParam,lParam);
+				else
+					break;
+			}
+
+			// Handle combo
+			if(lpdis->itemID == -1) 
+				break;
+
 			TEXTMETRIC tm;
 			int icon_width=0, icon_height=0;
 			RECT rc;
-
-			// add icons and protocol to listbox
-			LPDRAWITEMSTRUCT lpdis=(LPDRAWITEMSTRUCT)lParam;
-
-			if(lpdis->itemID == -1) 
-				return 0;
 
 			GetTextMetrics(lpdis->hDC, &tm);
 			ImageList_GetIconSize(hIml, &icon_width, &icon_height);
@@ -997,10 +1043,21 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 		case WM_MEASUREITEM:
 		{
+			LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT)lParam;
+
+			// Handle contact menu
+			if(lpmis->CtlID != IDC_USERNAME) 
+			{
+				if (lpmis->CtlType == ODT_MENU)
+					return CallService(MS_CLIST_MENUMEASUREITEM,wParam,lParam);
+				else
+					break;
+			}
+
+			// Handle combo
+
 			TEXTMETRIC tm;
 			int icon_width = 0, icon_height=0;
-
-			LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT)lParam;
 
 			GetTextMetrics(GetDC(hwndDlg), &tm);
 			ImageList_GetIconSize(hIml, &icon_width, &icon_height);
