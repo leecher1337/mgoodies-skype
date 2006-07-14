@@ -21,6 +21,7 @@
 [Send URL (Ctrl+U)]
 [Open userinfo (Ctrl+I)]
 [Open history (Ctrl+H)]
+[Open contact menu (Ctrl+M)]
 
 ; Options
 [ Last Sent ]

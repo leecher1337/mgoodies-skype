@@ -1,6 +1,12 @@
-Quick Contacts 0.0.2.3
+Quick Contacts 0.0.2.5
 
 Changelog:
+
+. 0.0.2.5
+  + Added contact menu buttom
+
+. 0.0.2.4
+  * Only to fix upload of wrong file to FL
 
 . 0.0.2.3
   + Added support for Hotkeys+
