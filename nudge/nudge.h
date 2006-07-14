@@ -41,6 +41,7 @@ public:
 	bool shakeClist;
 	bool shakeChat;
 	bool enabled;
+	bool autoResend;
 	DWORD statusFlags;
 	unsigned int popupBackColor;
 	unsigned int popupTextColor;

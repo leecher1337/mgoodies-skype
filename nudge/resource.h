@@ -1,5 +1,5 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
+// Microsoft Developer Studio generated include file.
 // Used by resource.rc
 //
 #define IDD_DIALOG1                     101
@@ -66,6 +66,7 @@
 #define IDC_RECVTIME                    1040
 #define IDC_CHECKEVENT2                 1041
 #define IDC_CHECKSTATUS                 1041
+#define IDC_AUTORESEND                  1042
 
 // Next default values for new objects
 // 

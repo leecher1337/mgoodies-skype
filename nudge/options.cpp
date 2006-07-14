@@ -341,10 +341,12 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_CHECKCLIST:
 				case IDC_CHECKCHAT:
 				case IDC_CHECKSTATUS:
+				case IDC_AUTORESEND:
 					ActualNudge->shakeClist = (IsDlgButtonChecked(hwnd,IDC_CHECKCLIST)==BST_CHECKED);
 					ActualNudge->shakeChat = (IsDlgButtonChecked(hwnd,IDC_CHECKCHAT)==BST_CHECKED);
 					ActualNudge->showEvent = (IsDlgButtonChecked(hwnd,IDC_CHECKEVENT)==BST_CHECKED);
 					ActualNudge->showStatus = (IsDlgButtonChecked(hwnd,IDC_CHECKSTATUS)==BST_CHECKED);
+					ActualNudge->autoResend = (IsDlgButtonChecked(hwnd,IDC_AUTORESEND)==BST_CHECKED);
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_CHECKST0:
@@ -491,6 +493,7 @@ void UpdateControls(HWND hwnd)
 	CheckDlgButton(hwnd, IDC_CHECKCHAT, (WPARAM) ActualNudge->shakeChat);
 	CheckDlgButton(hwnd, IDC_CHECKEVENT, (WPARAM) ActualNudge->showEvent);
 	CheckDlgButton(hwnd, IDC_CHECKSTATUS, (WPARAM) ActualNudge->showStatus);
+	CheckDlgButton(hwnd, IDC_AUTORESEND, (WPARAM) ActualNudge->autoResend);
 	SetDlgItemInt(hwnd, IDC_POPUPTIME, ActualNudge->popupTimeSec,FALSE);
 	SetDlgItemInt(hwnd, IDC_SENDTIME, GlobalNudge.sendTimeSec,FALSE);
 	SetDlgItemInt(hwnd, IDC_RECVTIME, GlobalNudge.recvTimeSec,FALSE);
