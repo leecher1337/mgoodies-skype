@@ -221,6 +221,8 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 							Nudge_ShowEvent(n->item, (HANDLE) wParam);
 						if(n->item.showStatus)
 							Nudge_ShowStatus(n->item, (HANDLE) wParam);
+						if(n->item.autoResend)
+							NudgeSend(wParam,lParam);
 
 						SkinPlaySound( n->item.NudgeSoundname );
 					}
@@ -255,6 +257,8 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 					Nudge_ShowEvent(DefaultNudge, (HANDLE) wParam);
 				if(DefaultNudge.showStatus)
 					Nudge_ShowStatus(DefaultNudge, (HANDLE) wParam);
+				if(DefaultNudge.autoResend)
+					NudgeSend(wParam, lParam);
 
 				SkinPlaySound( DefaultNudge.NudgeSoundname );
 			}

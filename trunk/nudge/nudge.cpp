@@ -47,6 +47,8 @@ void CNudgeElement::Save(void)
 	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->shakeChat); 
 	sprintf(SectionName,"%s-enabled", ProtocolName); 
 	DBWriteContactSettingByte(NULL, "Nudge", SectionName, this->enabled);
+	sprintf(SectionName,"%s-autoResend", ProtocolName); 
+	DBWriteContactSettingByte(NULL, "autoResend", SectionName, this->autoResend);
 	sprintf(SectionName,"%s-statusFlags", ProtocolName);
 	DBWriteContactSettingDword(NULL, "Nudge", SectionName, this->statusFlags);
 	sprintf(SectionName,"%s-recText", ProtocolName);
@@ -80,6 +82,8 @@ void CNudgeElement::Load(void)
 	this->shakeChat = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0; 
 	sprintf(SectionName,"%s-enabled", ProtocolName); 
 	this->enabled = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0;
+	sprintf(SectionName,"%s-autoResend", ProtocolName); 
+	this->autoResend = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0;
 	sprintf(SectionName,"%s-statusFlags", ProtocolName);
 	this->statusFlags = DBGetContactSettingDword(NULL, "Nudge", SectionName, 0);
 	sprintf(SectionName,"%s-recText", ProtocolName);

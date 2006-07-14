@@ -96,6 +96,10 @@ SOURCE=.\main.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\nudge.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\options.cpp
 # End Source File
 # Begin Source File
@@ -117,6 +121,10 @@ SOURCE=.\m_nudge.h
 # Begin Source File
 
 SOURCE=.\main.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\nudge.h
 # End Source File
 # Begin Source File
 
