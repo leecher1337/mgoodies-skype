@@ -79,3 +79,13 @@ int FreeVSApi();
 *
 ****************************/
 int InitVSApi();
+
+/*
+*
+****************************/
+int TriggerActionRecv( DWORD actionID, REPORTINFO *ri);
+
+/*
+*
+****************************/
+int TriggerActionSend( DWORD actionID, REPORTINFO *ri);

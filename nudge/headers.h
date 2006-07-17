@@ -21,12 +21,13 @@
 #include "..\..\include\m_skin.h"
 #include "..\..\include\m_database.h"
 #include "..\..\include\m_protosvc.h"
-#include "include\m_trigger.h"
+#include "..\..\include\m_trigger.h"
 #include "include\m_metacontacts.h"
 #include "include\m_updater.h"	
 #include "include\icolib.h"	
 #include "resource.h"
 #include "m_nudge.h"
+
 
 /*
 *

@@ -22,6 +22,9 @@ int NudgeOptInit(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
+
+
+
 int InitOptions()
 {
 	HookEvent(ME_OPT_INITIALISE, NudgeOptInit);
