@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
 #include "m_metacontacts.h"
+#include <commctrl.h>
+
 
 #define TIMERID_MSGSEND      0
 #define TIMERID_FLASHWND     1
@@ -57,6 +59,20 @@ static char buttonAlignment[] = { 0, 0, 0, 1, 1, 1, 1, 1};
 static UINT buttonSpacing[] = { 0, 0, 12, 0, 0, 0, 0, 0};
 static UINT buttonWidth[] = { 24, 24, 24, 24, 24, 24, 24, 38};
 
+/*
+static DWORD CALLBACK EditStreamCallback(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG * pcb)
+{
+    char *szFilename = (char *)dwCookie;
+    FILE *file;
+	file = fopen(szFilename, "ab");
+	if (file != NULL) {
+		*pcb = fwrite(pbBuff, cb, 1, file);
+		fclose(file);
+		return 0;
+	}
+    return 1;
+}
+*/
 static DWORD CALLBACK StreamOutCallback(DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG * pcb)
 {
 	struct MessageSendInfo * msi = (struct MessageSendInfo *) dwCookie;
@@ -1044,7 +1060,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->cmdListCurrent = 0;
 			dat->cmdListNew = 0;
 			dat->sendAllConfirm = 0;
-			dat->bIsFirstAppend = TRUE;
 			dat->messagesInProgress = 0;
 			dat->nTypeMode = PROTOTYPE_SELFTYPING_OFF;
 			SetTimer(hwndDlg, TIMERID_TYPE, 1000, NULL);
@@ -1061,22 +1076,25 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				ZeroMemory((void *)&pf2, sizeof(pf2));
 				pf2.cbSize = sizeof(pf2);
 				pf2.dwMask = PFM_RTLPARA;
-				pf2.wEffects = 0;
-				if (dat->flags & SMF_RTL) {
-					pf2.wEffects |= PFE_RTLPARA;
-					SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
-				} else {
-					SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) & ~(WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR));
-				}
+				pf2.wEffects = PFE_RTLPARA;
 				SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
-				/* Workaround to make Richedit display RTL messages correctly */ 
+				if (!(dat->flags & SMF_RTL)) {
+					pf2.wEffects = 0;
+					SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
+					SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) & ~(WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR));
+				} else {
+					SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE),GWL_EXSTYLE) | WS_EX_RIGHT | WS_EX_RTLREADING | WS_EX_LEFTSCROLLBAR);
+				}
+				/* Workaround to make Richedit display RTL messages correctly */
 				ZeroMemory((void *)&pf2, sizeof(pf2));
 				pf2.cbSize = sizeof(pf2);
-				pf2.dwMask = PFM_RTLPARA;
-				pf2.wEffects = PFE_RTLPARA;
+				pf2.dwMask = PFM_RTLPARA | PFM_OFFSET | PFM_OFFSETINDENT ;
+                pf2.wEffects = PFE_RTLPARA;
+                pf2.dxOffset = 30;
+                pf2.dxStartIndent = 30;
+                SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
+				pf2.wEffects = 0;
 				SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
-				//pf2.wEffects = 0;
-				//SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
 				if (dat->flags & SMF_RTL) {
 					SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) | WS_EX_LEFTSCROLLBAR);
 				} else {
@@ -1862,6 +1880,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			break;
 		}
 	case DM_REMAKELOG:
+		dat->lastEventType = -1;
 		if (wParam == 0 || (HANDLE) wParam == dat->hContact) {
 			//StreamInEvents(hwndDlg, dat->hDbEventFirst, 0, 0);
 			StreamInEvents(hwndDlg, dat->hDbEventFirst, -1, 0);
@@ -2302,6 +2321,29 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			break;
 		case IDC_QUOTE:
+			/*
+			{
+				char szFilename[MAX_PATH];
+				OPENFILENAMEA ofn={0};
+				strcpy(szFilename, "");
+				ofn.lStructSize=sizeof(OPENFILENAME);
+				ofn.hwndOwner=hwndDlg;
+				ofn.lpstrFile = szFilename;
+				ofn.lpstrFilter = "Rich Text File\0*.rtf\0\0";
+				ofn.nMaxFile = MAX_PATH;
+				ofn.nMaxFileTitle = MAX_PATH;
+				ofn.Flags = OFN_HIDEREADONLY;
+				ofn.lpstrDefExt = "rtf";
+				if (GetSaveFileNameA(&ofn)) {
+					//remove(szFilename);
+					EDITSTREAM stream = { 0 };
+					stream.dwCookie = (DWORD_PTR)szFilename;
+					stream.dwError = 0;
+					stream.pfnCallback = EditStreamCallback;
+					SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMOUT, SF_RTF | SF_USECODEPAGE, (LPARAM) & stream);
+				}
+			}
+			*/
 			{
 				DBEVENTINFO dbei = { 0 };
 				SETTEXTEX  st;

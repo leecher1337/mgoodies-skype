@@ -24,17 +24,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "commonheaders.h"
 
-/* 
+/*
 #ifdef _MSC_VER
 #define STRING2(x) #x
 #define STRING(x) STRING2(x)
 #pragma message ("_MSC_VER: "STRING(_MSC_VER))
 #endif
 */
+#ifndef __MINGW32__
 #if (_MSC_VER < 1300)
 #include "multimon.h"
 #endif
-
+#endif
 
 extern HINSTANCE g_hInst;
 extern HCURSOR hDragCursor;
@@ -799,7 +800,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			}
 			if (dat->next != NULL) {
 				dat->next->prev = dat->prev;
-			} 
+			}
 			free(dat->tabCtrlDat);
 			free(dat);
 		}
