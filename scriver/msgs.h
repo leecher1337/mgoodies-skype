@@ -144,7 +144,7 @@ struct MessageWindowData
 	int		messagesInProgress;
 	int		codePage;
 	struct avatarCacheEntry *ace;
-	int		bIsFirstAppend;
+	int		isMixed;
 	int		sendAllConfirm;
 };
 
