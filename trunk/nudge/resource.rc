@@ -173,6 +173,17 @@ BEGIN
     LTEXT           "Static",IDC_LSCALE_CHAT,260,159,25,8
 END
 
+IDD_OPT_TRIGGER DIALOGEX 0, 0, 319, 249
+STYLE DS_FIXEDSYS | DS_CENTER | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL         "Shake the contact list",IDC_TRIGGER_SHAKECLIST,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,20,270,10
+    CONTROL         "Shake the chat window",IDC_TRIGGER_SHAKECHAT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,35,270,10
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -240,6 +251,29 @@ BEGIN
         HORZGUIDE, 184
         HORZGUIDE, 207
         HORZGUIDE, 217
+    END
+
+    IDD_OPT_TRIGGER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 312
+        VERTGUIDE, 13
+        VERTGUIDE, 85
+        VERTGUIDE, 160
+        VERTGUIDE, 307
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 243
+        HORZGUIDE, 5
+        HORZGUIDE, 20
+        HORZGUIDE, 147
+        HORZGUIDE, 157
+        HORZGUIDE, 173
+        HORZGUIDE, 184
+        HORZGUIDE, 207
+        HORZGUIDE, 217
+        HORZGUIDE, 228
+        HORZGUIDE, 239
+        HORZGUIDE, 243
     END
 END
 #endif    // APSTUDIO_INVOKED

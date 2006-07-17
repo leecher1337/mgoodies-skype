@@ -82,6 +82,8 @@ int ShakeChat( WPARAM wParam, LPARAM lParam )
 	return 0;
 }
 
+/*
+
 int TriggerShakeClist( WPARAM wParam, LPARAM lParam )
 {
 	DWORD tid;
@@ -145,6 +147,7 @@ int TriggerShakeChat( WPARAM wParam, LPARAM lParam )
 	CreateThread(NULL,0,ShakeChatWindow,(LPVOID) hWnd,0,&tid);
 	return 0;
 }
+*/
 
 int CShake::ShakeChat(HWND hWnd)
 {

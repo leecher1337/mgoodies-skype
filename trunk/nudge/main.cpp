@@ -2,7 +2,9 @@
 #include "main.h"
 #include "shake.h"
 
+static BOOL CALLBACK DlgProcOptsTrigger(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK NudgePopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam);
+
 int nProtocol = 0;
 static HANDLE hEventOptionsInitialize;
 HINSTANCE hInst;
@@ -284,6 +286,90 @@ int MainInit(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
+static BOOL CALLBACK DlgProcOptsTrigger(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+
+    switch (msg) {
+	case WM_INITDIALOG: {
+		// lParam = (LPARAM)(DWORD)actionID or 0 if this is a new trigger entry
+		DWORD actionID;
+		bool bshakeClist,bshakeChat;
+		
+		actionID = (DWORD)lParam;
+        TranslateDialogDefault(hwnd);
+		// Initialize the dialog according to the action ID
+		bshakeClist = DBGetActionSettingByte(actionID, NULL, "Nudge", "ShakeClist",FALSE);
+		bshakeChat = DBGetActionSettingByte(actionID, NULL, "Nudge", "ShakeChat",FALSE);
+		CheckDlgButton(hwnd, IDC_TRIGGER_SHAKECLIST, (WPARAM) bshakeClist);
+		CheckDlgButton(hwnd, IDC_TRIGGER_SHAKECHAT, (WPARAM) bshakeChat);
+        break;
+						}
+
+	case TM_ADDACTION: {
+		// save your settings
+		// wParam = (WPARAM)(DWORD)actionID
+		DWORD actionID;
+		bool bshakeClist,bshakeChat;
+
+		actionID = (DWORD)wParam;
+		bshakeClist = (IsDlgButtonChecked(hwnd,IDC_TRIGGER_SHAKECLIST)==BST_CHECKED);
+		bshakeChat = (IsDlgButtonChecked(hwnd,IDC_TRIGGER_SHAKECHAT)==BST_CHECKED);
+		DBWriteActionSettingByte(actionID, NULL, "Nudge", "ShakeClist",bshakeClist);
+		DBWriteActionSettingByte(actionID, NULL, "Nudge", "ShakeChat",bshakeChat);
+		break;
+					   }
+	}
+
+    return FALSE;
+}
+
+int TriggerActionRecv( DWORD actionID, REPORTINFO *ri)
+{
+	// check how to process this call
+	if (ri->flags&ACT_PERFORM) {
+		bool bshakeClist,bshakeChat;
+		HANDLE hContact = ((ri->td!=NULL)&&(ri->td->dFlags&DF_CONTACT))?ri->td->hContact:NULL;
+		bshakeClist = DBGetActionSettingByte(actionID, NULL, "Nudge", "ShakeClist",FALSE);
+		bshakeChat = DBGetActionSettingByte(actionID, NULL, "Nudge", "ShakeChat",FALSE);
+
+		if(bshakeClist)
+			ShakeClist(NULL,NULL);
+		if(bshakeChat && (hContact != NULL))
+			ShakeChat((WPARAM)hContact,NULL);
+
+	/*	// Actually show the message box
+		DBVARIANT dbv;
+		TCHAR *tszMsg;
+		
+		// Retrieve the correct settings for this action ID
+		if (!DBGetActionSettingTString(actionID, NULL, MODULENAME, SETTING_TEXT, &dbv)) {
+			// Parse by Variables, if available (notice extratext and subject are given).
+			tszMsg = variables_parsedup(dbv.ptszVal, ((ri->td!=NULL)&&(ri->td->dFlags&DF_TEXT))?ri->td->tszText:NULL, ((ri->td!=NULL)&&(ri->td->dFlags&DF_CONTACT))?ri->td->hContact:NULL);
+			if (tszMsg != NULL) {
+				// Show the message box
+				MessageBox(NULL, tszMsg, TranslateT("ExampleAction"), MB_OK);
+				free(tszMsg);
+			}
+			DBFreeVariant(&dbv);
+		}
+		*/
+	}
+	if (ri->flags&ACT_CLEANUP) { // request to delete all associated settings
+		RemoveAllActionSettings(actionID, "Nudge");
+	}
+	return FALSE;
+}
+
+int TriggerActionSend( DWORD actionID, REPORTINFO *ri)
+{
+	if (ri->flags&ACT_PERFORM) {
+		HANDLE hContact = ((ri->td!=NULL)&&(ri->td->dFlags&DF_CONTACT))?ri->td->hContact:NULL;
+		if(hContact != NULL)
+			NudgeSend((WPARAM)hContact,NULL);
+	}
+	
+	return FALSE;
+}
+
 void LoadProtocols(void)
 {
 	//Load the default nudge
@@ -332,19 +418,22 @@ void RegisterToTrigger(void)
 		ACTIONREGISTER ar;
 		ZeroMemory(&ar, sizeof(ar));
 		ar.cbSize = sizeof(ar);
-		ar.hInstance = NULL;
+		ar.hInstance = hInst;
+		ar.flags = ARF_TCHAR|ARF_FUNCTION;
+		ar.actionFunction = TriggerActionRecv;
+		ar.pfnDlgProc = DlgProcOptsTrigger;
+		ar.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_TRIGGER);
+		ar.pszName = Translate("Nudge : Shake contact list/chat window");
+
+		// register the action 
+		CallService(MS_TRIGGER_REGISTERACTION, 0, (LPARAM)&ar);
+
+		ar.actionFunction = TriggerActionSend;
+		ar.pszName = Translate("Nudge : Send a nudge");
 		ar.pfnDlgProc = NULL;
 		ar.pszTemplate = NULL;
 
-		ar.pszName = Translate("Nudge : Shake contact list");
-		ar.pszService = MS_SHAKE_CLIST_TRIGGER;
-
-		/* register the action */
-		CallService(MS_TRIGGER_REGISTERACTION, 0, (LPARAM)&ar);
-
-		ar.pszName = Translate("Nudge : Shake message window");
-		ar.pszService = MS_SHAKE_CHAT_TRIGGER;
-		/* register the action */
+		// register the action
 		CallService(MS_TRIGGER_REGISTERACTION, 0, (LPARAM)&ar);
 	}
 }
@@ -454,8 +543,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	//Create function for plugins
 	CreateServiceFunction(MS_SHAKE_CLIST,ShakeClist);
 	CreateServiceFunction(MS_SHAKE_CHAT,ShakeChat);
-	CreateServiceFunction(MS_SHAKE_CHAT_TRIGGER,TriggerShakeChat);
-	CreateServiceFunction(MS_SHAKE_CLIST_TRIGGER,TriggerShakeClist);
 	CreateServiceFunction(MS_NUDGE_SEND,NudgeSend);
 	return 0; 
 }

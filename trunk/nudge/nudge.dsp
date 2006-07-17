@@ -128,6 +128,10 @@ SOURCE=.\nudge.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\options.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\shake.h
 # End Source File
 # End Group

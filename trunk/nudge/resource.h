@@ -9,6 +9,7 @@
 #define IDD_OPT_NUDGE                   126
 #define IDD_OPTIONS                     127
 #define IDD_OPT_SHAKE                   128
+#define IDD_OPT_TRIGGER                 129
 #define IDC_BUTTON1                     1000
 #define IDC_PREVIEW                     1000
 #define IDC_EDIT1                       1001
@@ -64,17 +65,19 @@
 #define IDC_POPUPTIME                   1038
 #define IDC_SENDTIME                    1039
 #define IDC_RECVTIME                    1040
+#define IDC_TRIGGER_SHAKECLIST          1040
 #define IDC_CHECKEVENT2                 1041
 #define IDC_CHECKSTATUS                 1041
+#define IDC_TRIGGER_SHAKECHAT           1041
 #define IDC_AUTORESEND                  1042
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        105
+#define _APS_NEXT_RESOURCE_VALUE        106
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1040
+#define _APS_NEXT_CONTROL_VALUE         1041
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
