@@ -11,6 +11,7 @@
 #endif
 //For updater
 //#define YAMN_9x
+#ifndef WIN2IN1
 #ifdef YAMN_9x
 	#define YAMN_SHORTNAME "YAMN tweety win9x"
 	#define YAMN_FILENAME "yamn_9x"
@@ -18,6 +19,10 @@
 	#define YAMN_SHORTNAME "YAMN tweety"
 	#define YAMN_FILENAME "yamn"
 #endif
+#else
+	#define YAMN_SHORTNAME "YAMN tweety 2in1"
+	#define YAMN_FILENAME "yamn_2in1"
+#endif //WIN2IN1
 
 #define	YAMN_VERSION			PLUGIN_MAKE_VERSION(0,0,1,8) 	//ok but do not forget rewrite version for debug release in debug.cpp and POP3 filter in pop3comm.cpp
 #define	YAMN_VERSION_C			"0.0.1.8"
