@@ -299,13 +299,17 @@ static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAllo
 
 	for (; *line; line++, textCharsCount++) {
 		if (*line == '\r' && line[1] == '\n') {
-			CopyMemory(d, "\\par ", 5);
+			if (line[2] != '\0') {
+				CopyMemory(d, "\\par ", 5);
+				d += 5;
+			}
 			line++;
-			d += 5;
 		}
 		else if (*line == '\n') {
-			CopyMemory(d, "\\par ", 5);
-			d += 5;
+			if (line[1] != '\0') {
+				CopyMemory(d, "\\par ", 5);
+				d += 5;
+			}
 		}
 		else if (*line == '\t') {
 			CopyMemory(d, "\\tab ", 5);
@@ -347,13 +351,17 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 
 	for (; *line; line++, textCharsCount++) {
 		if (*line == '\r' && line[1] == '\n') {
-			CopyMemory(d, "\\par ", 5);
+			if (line[2] != '\0') {
+				CopyMemory(d, "\\par ", 5);
+				d += 5;
+			}
 			line++;
-			d += 5;
 		}
 		else if (*line == '\n') {
-			CopyMemory(d, "\\par ", 5);
-			d += 5;
+			if (line[1] != '\0') {
+				CopyMemory(d, "\\par ", 5);
+				d += 5;
+			}
 		}
 		else if (*line == '\t') {
 			CopyMemory(d, "\\tab ", 5);
@@ -829,7 +837,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		dat->isMixed = 0;
 	}
 //SFF_SELECTION | 
-	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMIN, fAppend ? SFF_SELECTION | SF_RTF : SFF_SELECTION |  SF_RTF, (LPARAM) & stream);
+	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMIN, fAppend ? SFF_SELECTION | SF_RTF : SFF_SELECTION |  SF_TEXT, (LPARAM) & stream);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & oldSel);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_HIDESELECTION, FALSE, 0);
 	if (ServiceExists(MS_SMILEYADD_REPLACESMILEYS)) {
