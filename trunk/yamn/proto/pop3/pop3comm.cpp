@@ -339,6 +339,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	mi.pszService = MS_YAMN_CLISTCONTEXTAPP;
 	hMenuItemContApp = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
 
+#ifndef WIN2IN1
 	//Use for the Updater plugin
 	if(ServiceExists(MS_UPDATE_REGISTER)) 
 	{
@@ -349,7 +350,6 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 		update.szComponentName = pluginInfo.shortName;
 		update.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szVersion);
 		update.cpbVersion = strlen((char *)update.pbVersion);
-
 		#ifdef YAMN_9x
 		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2166";
 		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2166";
@@ -363,14 +363,13 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	    update.szBetaUpdateURL = szUrl;
 		update.szBetaVersionURL = "http://www.miranda-fr.net/tweety/yamn/yamn_beta.html";
 		update.pbBetaVersionPrefix = (BYTE *)"YAMN version ";
-
 		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
 		update.cpbBetaVersionPrefix = strlen((char *)update.pbBetaVersionPrefix);
 
 		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
 
 	}
-	
+#endif // WIN2IN1 - no updated support for this version
 
 	//Get YAMN variables we can use
 	if(NULL==(pYAMNVar=(PYAMN_VARIABLES)CallService(MS_YAMN_GETVARIABLES,(WPARAM)YAMN_VARIABLESVERSION,(LPARAM)0)))

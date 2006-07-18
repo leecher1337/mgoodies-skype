@@ -190,6 +190,7 @@ void SetDefaultProtocolIcons()
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
 	char szProfileDir[MAX_PATH+1];
+#ifndef WIN2IN1
 	OSVERSIONINFO OSversion;
 	
 	OSversion.dwOSVersionInfoSize=sizeof(OSVERSIONINFO);
@@ -213,7 +214,7 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvRese
 			break;
 #endif
 	}
-
+#endif // WIN2IN1
 	YAMNVar.hInst=hinstDLL;
 	if(fdwReason==DLL_PROCESS_ATTACH)
 	{

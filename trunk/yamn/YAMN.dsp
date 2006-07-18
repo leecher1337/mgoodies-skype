@@ -20,6 +20,7 @@ CFG=YAMN - Win32 Debug Win9x
 !MESSAGE "YAMN - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "YAMN - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "YAMN - Win32 Release Win9x" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "YAMN - Win32 Release Win2in1" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "YAMN - Win32 Debug Win9x" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
@@ -85,22 +86,22 @@ LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib msvcrt.lib /nologo /base:"0x60010000" /dll /map /debug /machine:I386 /nodefaultlib /out:"../../bin7/Debug/plugins/YAMN.dll" /pdbtype:sept
 
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
+!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "YAMN___Win32_Release_Win9x"
-# PROP BASE Intermediate_Dir "YAMN___Win32_Release_Win9x"
+# PROP BASE Output_Dir "YAMN___Win32_Release_Win2in1"
+# PROP BASE Intermediate_Dir "YAMN___Win32_Release_Win2in1"
 # PROP BASE Ignore_Export_Lib 0
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "Release\Win9x"
-# PROP Intermediate_Dir "Release\Win9x"
+# PROP Output_Dir "Release\Win2in1"
+# PROP Intermediate_Dir "Release\Win2in1"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "YAMN_EXPORTS" /D "DEBUG" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN9X" /FR /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN2IN1" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x405 /d "NDEBUG"
@@ -148,6 +149,7 @@ LINK32=link.exe
 # Name "YAMN - Win32 Release"
 # Name "YAMN - Win32 Debug"
 # Name "YAMN - Win32 Release Win9x"
+# Name "YAMN - Win32 Release Win2in1"
 # Name "YAMN - Win32 Debug Win9x"
 # Begin Group "YAMN"
 
