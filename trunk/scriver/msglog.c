@@ -299,17 +299,13 @@ static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAllo
 
 	for (; *line; line++, textCharsCount++) {
 		if (*line == '\r' && line[1] == '\n') {
-			if (line[2] != '\0') {
-				CopyMemory(d, "\\par ", 5);
-				d += 5;
-			}
+			CopyMemory(d, "\\par\\zwj ", 9);
+			d += 9;
 			line++;
 		}
 		else if (*line == '\n') {
-			if (line[1] != '\0') {
-				CopyMemory(d, "\\par ", 5);
-				d += 5;
-			}
+			CopyMemory(d, "\\par\\zwj ", 9);
+			d += 9;
 		}
 		else if (*line == '\t') {
 			CopyMemory(d, "\\tab ", 5);
@@ -351,17 +347,13 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 
 	for (; *line; line++, textCharsCount++) {
 		if (*line == '\r' && line[1] == '\n') {
-			if (line[2] != '\0') {
-				CopyMemory(d, "\\par ", 5);
-				d += 5;
-			}
+			CopyMemory(d, "\\par\\zwj ", 9);
+			d += 9;
 			line++;
 		}
 		else if (*line == '\n') {
-			if (line[1] != '\0') {
-				CopyMemory(d, "\\par ", 5);
-				d += 5;
-			}
+			CopyMemory(d, "\\par\\zwj ", 9);
+			d += 9;
 		}
 		else if (*line == '\t') {
 			CopyMemory(d, "\\tab ", 5);
@@ -664,7 +656,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		if (g_dat->flags & SMF_MSGONNEWLINE && showColon) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 		}
-		
+
 
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
 		if (event->dwFlags & IEEDF_UNICODE_TEXT) {
@@ -705,7 +697,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 	if (dat->isMixed) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 	}
-	
+
 	dat->lastEventTime = event->time;
 	dat->lastEventType = MAKELONG(event->dwFlags, event->eventType);
 	dat->lastEventContact = event->hContact;
@@ -836,7 +828,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
         fi.chrg.cpMin = 0;
 		dat->isMixed = 0;
 	}
-//SFF_SELECTION | 
+//SFF_SELECTION |
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMIN, fAppend ? SFF_SELECTION | SF_RTF : SFF_SELECTION |  SF_RTF, (LPARAM) & stream);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & oldSel);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_HIDESELECTION, FALSE, 0);
