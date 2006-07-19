@@ -299,13 +299,13 @@ static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAllo
 
 	for (; *line; line++, textCharsCount++) {
 		if (*line == '\r' && line[1] == '\n') {
-			CopyMemory(d, "\\par\\zwj ", 9);
-			d += 9;
+			CopyMemory(d, "\\par\\- ", 7);
+			d += 7;
 			line++;
 		}
 		else if (*line == '\n') {
-			CopyMemory(d, "\\par\\zwj ", 9);
-			d += 9;
+			CopyMemory(d, "\\par\\- ", 7);
+			d += 7;
 		}
 		else if (*line == '\t') {
 			CopyMemory(d, "\\tab ", 5);
@@ -347,13 +347,13 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 
 	for (; *line; line++, textCharsCount++) {
 		if (*line == '\r' && line[1] == '\n') {
-			CopyMemory(d, "\\par\\zwj ", 9);
-			d += 9;
+			CopyMemory(d, "\\par\\- ", 7);
+			d += 7;
 			line++;
 		}
 		else if (*line == '\n') {
-			CopyMemory(d, "\\par\\zwj ", 9);
-			d += 9;
+			CopyMemory(d, "\\par\\- ", 7);
+			d += 7;
 		}
 		else if (*line == '\t') {
 			CopyMemory(d, "\\tab ", 5);
@@ -549,7 +549,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		dat->isMixed = 1;
 	}
 	if (!streamData->isFirst && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\cf%d\\zwnj\\par\\sl0", msgDlgFontCount + 4, msgDlgFontCount + 4);
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\cf%d\\-\\par\\sl0", msgDlgFontCount + 4, msgDlgFontCount + 4);
 	}
     if ( streamData->isFirst ) {
 		if (event->dwFlags & IEEDF_RTL) {
@@ -596,7 +596,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 				i = LOGICON_MSG_NOTICE;
 				break;
 		}
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\f0\\zwnj");//\\f0\\fs14\\-");
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\f0\\-");
 		while (bufferAlloced - bufferEnd < logIconBmpSize[i])
 			bufferAlloced += 1024;
 		buffer = (char *) realloc(buffer, bufferAlloced);
