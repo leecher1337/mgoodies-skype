@@ -72,6 +72,9 @@ created. CTRL key needs to be pressed only when a tab is being dropped.
 
 6. Change Log
 -------------
+2.3.2.10
+* log formatting improvements (RTL, empty lines)
+* code clean-up
 2.3.2.9
 + focus is automaticcaly changed when user starts typing in log window
 * ctrl key has to be pressed for snapping
