@@ -156,8 +156,6 @@ void HistoryLog(HANDLE hNotify, HANDLE hContact, BOOL log, BOOL read)
 
 			event.pBlob = tmp;
 			event.cbBlob = size * 3;
-
-			mir_free(tmp);
 #else
 			event.pBlob = (PBYTE) log_text;
 			event.cbBlob = strlen(log_text) + 1;
@@ -187,6 +185,9 @@ void HistoryLog(HANDLE hNotify, HANDLE hContact, BOOL log, BOOL read)
 
 			CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&event);
 
+#ifdef _UNICODE
+			mir_free(tmp);
+#endif
 			mir_free(log_text);
 		}
 	}
