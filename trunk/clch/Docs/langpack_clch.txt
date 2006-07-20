@@ -1,0 +1,6 @@
+; Contact Left Channel History 0.0.0.1
+; Author: Pescuma
+
+; History
+
+[left channel]
