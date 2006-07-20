@@ -27,7 +27,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Status Message Retriever",
-	PLUGIN_MAKE_VERSION(1,0,0,2),
+	PLUGIN_MAKE_VERSION(1,0,0,3),
 	"Retrive status message based on timer / status change",
 	"Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
 	"",
@@ -79,8 +79,8 @@ int __declspec(dllexport) Load(PLUGINLINK *link) {
 
 	CreateServiceFunction(MS_SMR_DISABLE_CONTACT, DisableContactMsgRetrieval);
 	CreateServiceFunction(MS_SMR_ENABLE_CONTACT, EnableContactMsgRetrieval);
-	CreateServiceFunction(MS_SMR_ENABLE_CONTACT, MsgRetrievalEnabledForProtocol);
-	CreateServiceFunction(MS_SMR_ENABLE_CONTACT, MsgRetrievalEnabledForUser);
+	CreateServiceFunction(MS_SMR_ENABLED_FOR_PROTOCOL, MsgRetrievalEnabledForProtocol);
+	CreateServiceFunction(MS_SMR_ENABLED_FOR_CONTACT, MsgRetrievalEnabledForUser);
 
 	// Add menu item to enable/disable status message check
 	mi.cbSize = sizeof(mi);

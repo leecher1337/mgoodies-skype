@@ -142,39 +142,7 @@ SOURCE=.\status_msg.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\resources\hist.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\resources\list.bmp
-# End Source File
-# Begin Source File
-
-SOURCE=.\resources\list.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\resources\log.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\resources\popup.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\resources\popup_no.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\resources\rename.ico
-# End Source File
-# Begin Source File
-
 SOURCE=.\resource.rc
-# End Source File
-# Begin Source File
-
-SOURCE=.\resources\url.ico
 # End Source File
 # End Group
 # Begin Group "Source Files"
