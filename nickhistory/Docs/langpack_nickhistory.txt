@@ -1,0 +1,12 @@
+; Nick History 0.0.0.1
+; Author: Pescuma
+
+; Contact Menu
+
+[Log Nickname changes]
+[Don't log Nickname changes]
+
+
+; History
+
+[changed his/her nickname to %s]
