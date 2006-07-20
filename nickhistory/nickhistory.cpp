@@ -392,7 +392,35 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 	{
 		if (dbv.type != cws->value.type)
 		{
-			ret = TRUE;
+
+#ifdef UNICODE
+
+			if ( (cws->value.type == DBVT_UTF8 || cws->value.type == DBVT_ASCIIZ || cws->value.type == DBVT_WCHAR)
+				&& (dbv.type == DBVT_UTF8 || dbv.type == DBVT_ASCIIZ || dbv.type == DBVT_WCHAR))
+			{
+				wchar_t tmp_cws[1024];
+				if (cws->value.type == DBVT_ASCIIZ)
+					MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, tmp_cws, MAX_REGS(tmp_cws));
+				else if (cws->value.type == DBVT_UTF8)
+					MultiByteToWideChar(CP_UTF8, 0, cws->value.pszVal, -1, tmp_cws, MAX_REGS(tmp_cws));
+				else if (cws->value.type == DBVT_WCHAR)
+					lstrcpynW(tmp_cws, cws->value.pwszVal, MAX_REGS(tmp_cws));
+
+				wchar_t tmp_dbv[1024];
+				if (dbv.type == DBVT_ASCIIZ)
+					MultiByteToWideChar(CP_ACP, 0, dbv.pszVal, -1, tmp_dbv, MAX_REGS(tmp_dbv));
+				else if (dbv.type == DBVT_UTF8)
+					MultiByteToWideChar(CP_UTF8, 0, dbv.pszVal, -1, tmp_dbv, MAX_REGS(tmp_dbv));
+				else if (dbv.type == DBVT_WCHAR)
+					lstrcpynW(tmp_dbv, dbv.pwszVal, MAX_REGS(tmp_dbv));
+
+				ret = lstrcmpW(tmp_cws, tmp_dbv);
+			}
+			else
+
+#endif
+
+				ret = TRUE;
 		}
 		else if (dbv.type == DBVT_BYTE)
 		{
@@ -406,7 +434,7 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 		{
 			ret = (cws->value.dVal != dbv.dVal);
 		}
-		else if (dbv.type == DBVT_ASCIIZ || dbv.type == DBVT_UTF8)
+		else if (dbv.type == DBVT_ASCIIZ)
 		{
 			ret = strcmp(cws->value.pszVal, dbv.pszVal);
 		}
