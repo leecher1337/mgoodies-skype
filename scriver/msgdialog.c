@@ -831,7 +831,7 @@ void ShowAvatar(HWND hwndDlg, struct MessageWindowData *dat) {
 
 	if (g_dat->avatarServiceExists) {
 		if (dat->ace != NULL) {
-			dat->avatarPic = dat->ace->hbmPic;
+			dat->avatarPic = (dat->ace->dwFlags & AVS_HIDEONCLIST) ? NULL : dat->ace->hbmPic;
 		} else {
 			dat->avatarPic = NULL;
 		}
