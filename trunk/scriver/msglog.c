@@ -612,7 +612,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYTIME : MSGFONTID_YOURTIME));
 		AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, TimestampToString(g_dat->flags, event->time, isGroupBreak));
 		if (event->eventType != EVENTTYPE_MESSAGE) {
-			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\~%s: ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s: ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
 		}
 		showColon = 1;
 	}
@@ -649,7 +649,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		showColon = 1;
 	}
 	if (showColon && event->eventType == EVENTTYPE_MESSAGE) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\~%s: ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s: ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYCOLON : MSGFONTID_YOURCOLON));
 	}
 	switch (event->eventType) {
 		case EVENTTYPE_MESSAGE:
