@@ -141,15 +141,22 @@ int WaitTime()
 	return delay;
 }
 
-
 // Return true if this protocol has to be checked
 BOOL PollCheckProtocol(const char *protocol)
 {
-	char setting[256];
-
 	if (protocol == NULL)
 		return FALSE;
 
+	if (!ProtoServiceExists(protocol, PS_GETSTATUS))
+		return FALSE;
+
+	if (CallProtoService(protocol, PS_GETCAPS, PFLAGNUM_2, 0) == 0)
+		return FALSE;
+
+	if ((CallProtoService(protocol, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGRECV) == 0)
+		return FALSE;
+
+	char setting[256];
 	mir_snprintf(setting, sizeof(setting), OPT_PROTOCOL_GETMSG, protocol);
 
 	return (BOOL) DBGetContactSettingByte(NULL, MODULE_NAME, setting, FALSE);
