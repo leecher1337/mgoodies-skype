@@ -143,9 +143,22 @@ static BOOL CALLBACK GeneralOptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam
 
 // Protocols page
 
+BOOL AllowProtocol(const char *proto)
+{
+	if (!ProtoServiceExists(proto, PS_GETSTATUS))
+		return FALSE;
+
+	if (CallProtoService(proto, PS_GETCAPS, PFLAGNUM_2, 0) == 0)
+		return FALSE;
+
+	if ((CallProtoService(proto, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGRECV) == 0)
+		return FALSE;
+
+	return TRUE;
+}
 
 static OptPageControl protocolControls[] = { 
-	{ CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS, OPT_PROTOCOL_GETMSG, (BYTE) FALSE }
+	{ CONTROL_PROTOCOL_LIST, IDC_PROTOCOLS, OPT_PROTOCOL_GETMSG, FALSE, (int)AllowProtocol }
 };
 
 
