@@ -46,7 +46,9 @@ void FreeMirOptions();
 #define CONTROL_RADIO 3				// Stored as WORD
 #define CONTROL_COMBO 4				// Stored as WORD
 #define CONTROL_PROTOCOL_LIST 5		// Stored as BYTEs
-#define CONTROL_PROTOCOL_LIST_ALL 6	// Stored as BYTEs
+
+
+typedef BOOL (* FPAllowProtocol) (const char *proto);
 
 typedef struct {
 	int type;
@@ -56,6 +58,7 @@ typedef struct {
 	union {
 		int nIDSpin;
 		int value;
+		FPAllowProtocol allowProtocol;
 	};
 	WORD min;
 	WORD max;
