@@ -36,8 +36,8 @@ BEGIN
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
                     LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,10,21,236,90
-    LTEXT           "This feature is mainly for use with protocols that store status messages on server rather then in database (like ICQ). Uncheck any other protocol - status messages will be read in a standard way then.",
-                    IDC_STATIC,10,114,236,36
+    LTEXT           "This feature is mainly for use with protocols that store status messages on server rather then in database (like ICQ). Don't enable it for MSN or Jabber - they already save the status message in database and won't work correctly if you enable this.",
+                    IDC_STATIC,10,114,236,47
 END
 
 IDD_OPT_GENERAL DIALOGEX 0, 0, 271, 167

@@ -4,6 +4,7 @@ Changelog:
 
 . 1.0.0.3
   * Fix for services
+  + Added more info text
 
 . 1.0.0.2
   + If XStatus name and message are the same, show only one (and not Name: message)
