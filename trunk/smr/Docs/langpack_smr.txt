@@ -41,5 +41,5 @@
 [Protocols]
 
 [Get status messages for these protocols:]
-[This feature is mainly for use with protocols that store status messages on server rather then in database (like ICQ). Uncheck any other protocol - status messages will be read in a standard way then.]
+[This feature is mainly for use with protocols that store status messages on server rather then in database (like ICQ). Don't enable it for MSN or Jabber - they already save the status message in database and won't work correctly if you enable this.]
 
