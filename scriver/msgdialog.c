@@ -409,6 +409,19 @@ static LRESULT CALLBACK LogEditSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, 
 				return 0;
 			}
 			break;
+		case WM_KEYDOWN:
+			if (GetKeyState(VK_CONTROL) & 0x8000) {
+				if (wParam == VK_TAB) {	// ctrl-(shift) tab
+					if (GetKeyState(VK_SHIFT) & 0x8000) {
+						SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
+						return 0;
+					} else {
+						SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
+						return 0;
+					}
+				}
+			}
+			break;
 	}
 	return CallWindowProc(OldLogEditProc, hwnd, msg, wParam, lParam);
 }
