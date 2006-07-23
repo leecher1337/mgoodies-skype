@@ -73,8 +73,9 @@ created. CTRL key needs to be pressed only when a tab is being dropped.
 6. Change Log
 -------------
 2.3.2.11
-*bugfix: #008150 (whitespace between timestamp and colon)
-*bugfix: #008111 (hidden avatars showing)
+* bugfix: #008150 (whitespace between timestamp and colon)
+* bugfix: #008111 (hidden avatars showing)
+* bugfix: #006593 (ctrl+tab does not work in log area)
 2.3.2.10
 * log formatting improvements (RTL, empty lines)
 * code clean-up
