@@ -877,5 +877,8 @@ void JabberGroupchatProcessInvite( TCHAR* roomJid, TCHAR* from, TCHAR* reason, T
 		inviteInfo->password = mir_tstrdup( password );
 		JabberForkThread(( JABBER_THREAD_FUNC )JabberGroupchatInviteAcceptThread, 0, ( void* )inviteInfo );
 	}
-	else JabberAcceptGroupchatInvite( roomJid, from, password );
-}
+	else {
+		TCHAR* myNick = JabberNickFromJID( jabberJID );
+		JabberAcceptGroupchatInvite( roomJid, myNick, password );
+		mir_free( myNick );
+}	}
