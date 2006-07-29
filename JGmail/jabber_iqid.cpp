@@ -1112,7 +1112,7 @@ void JabberIqResultExtSearch( XmlNode *iqNode, void *userdata )
 
 			JABBER_SEARCH_RESULT jsr = { 0 };
 			jsr.hdr.cbSize = sizeof( JABBER_SEARCH_RESULT );
-			jsr.hdr.firstName = "";
+//			jsr.hdr.firstName = "";
 
 			for ( int j=0; j < itemNode->numChild; j++ ) {
 				XmlNode* fieldNode = itemNode->child[j];
@@ -1128,27 +1128,31 @@ void JabberIqResultExtSearch( XmlNode *iqNode, void *userdata )
 					continue;
 
 				if ( !lstrcmp( fieldName, _T("jid"))) {
-					_tcsncpy( jsr.jid, n->text, sizeof( jsr.jid ));
-					jsr.jid[SIZEOF( jsr.jid )-1] = '\0';
+					_tcsncpy( jsr.jid, n->text, SIZEOF( jsr.jid ));
+					jsr.jid[sizeof( jsr.jid )-1] = '\0';
 					JabberLog( "Result jid = " TCHAR_STR_PARAM, jsr.jid );
 				}
 				else if ( !lstrcmp( fieldName, _T("nickname")))
 					jsr.hdr.nick = ( n->text != NULL ) ? t2a( n->text ) : mir_strdup( "" );
-				else if ( !lstrcmp( fieldName, _T("fn")))
+				else if ( !lstrcmp( fieldName, _T("fn"))) {
+					mir_free( jsr.hdr.firstName );
 					jsr.hdr.firstName = ( n->text != NULL ) ? t2a(n->text) : mir_strdup( "" );
-				else if ( !lstrcmp( fieldName, _T("given")))
+				}
+				else if ( !lstrcmp( fieldName, _T("given"))) {
+					mir_free( jsr.hdr.firstName );
 					jsr.hdr.firstName = ( n->text != NULL ) ? t2a(n->text) : mir_strdup( "" );
+				}
 				else if ( !lstrcmp( fieldName, _T("family")))
 					jsr.hdr.lastName = ( n->text != NULL ) ? t2a(n->text) : mir_strdup( "" );
 				else if ( !lstrcmp( fieldName, _T("email")))
 					jsr.hdr.email = ( n->text != NULL ) ? t2a(n->text) : mir_strdup( "" );
-
-  				JSendBroadcast( NULL, ACKTYPE_SEARCH, ACKRESULT_DATA, ( HANDLE ) id, ( LPARAM )&jsr );
-  				mir_free( jsr.hdr.nick );
-				mir_free( jsr.hdr.firstName );
-				mir_free( jsr.hdr.lastName );
-				mir_free( jsr.hdr.email );
 			}
+
+			JSendBroadcast( NULL, ACKTYPE_SEARCH, ACKRESULT_DATA, ( HANDLE ) id, ( LPARAM )&jsr );
+			mir_free( jsr.hdr.nick );
+			mir_free( jsr.hdr.firstName );
+			mir_free( jsr.hdr.lastName );
+			mir_free( jsr.hdr.email );
 		}
 
 		JSendBroadcast( NULL, ACKTYPE_SEARCH, ACKRESULT_SUCCESS, ( HANDLE ) id, 0 );
