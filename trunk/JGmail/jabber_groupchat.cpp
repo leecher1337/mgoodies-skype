@@ -19,9 +19,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_groupchat.cpp,v $
-Revision       : $Revision: 1.44 $
-Last change on : $Date: 2006/05/14 13:19:26 $
-Last change by : $Author: ghazan $
+Revision       : $Revision$
+Last change on : $Date$
+Last change by : $Author$
 
 */
 
