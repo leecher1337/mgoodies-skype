@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_userinfo.cpp,v $
+File name      : $URL$
 Revision       : $Revision$
 Last change on : $Date$
 Last change by : $Author$
@@ -254,7 +254,7 @@ static BOOL CALLBACK JabberUserPhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 								mir_snprintf( szFilter, sizeof( szFilter ), "PNG %s ( *.png )", JTranslate( "format" ));
 								n = strlen( szFilter );
 								strncpy( szFilter+n+1, "*.PNG", sizeof( szFilter )-n-2 );
-							} 
+							}
 							else if ( !strncmp(( char* )buffer, "GIF", 3 )) {
 								mir_snprintf( szFilter, sizeof( szFilter ), "GIF %s ( *.gif )", JTranslate( "format" ));
 								n = strlen( szFilter );

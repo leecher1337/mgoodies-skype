@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_thread.cpp,v $
+File name      : $URL$
 Revision       : $Revision$
 Last change on : $Date$
 Last change by : $Author$
@@ -160,9 +160,9 @@ static void xmlStreamInitializeNow(struct ThreadData *info){
 	JabberXmlSetCallback( &xmlState, 1, ELEM_CLOSE, JabberProcessStreamClosing, info );
 	JabberXmlSetCallback( &xmlState, 2, ELEM_CLOSE, JabberProcessProtocol, info );
 	//JabberSend( info->s, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><stream:stream to=\"%s\" xmlns=\"jabber:client\" xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\">", TXT(info->server) );
-	{	XmlNode stream( "stream:stream" ); 
+	{	XmlNode stream( "stream:stream" );
 			stream.props = "<?xml version='1.0' encoding='UTF-8'?>";
-			stream.addAttr( "to", info->server ); 
+			stream.addAttr( "to", info->server );
 			stream.addAttr( "xmlns", "jabber:client" );
 			stream.addAttr( "xmlns:stream", "http://etherx.jabber.org/streams" );
 			stream.addAttr( "version", "1.0" );
@@ -654,8 +654,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 			int res = DBGetContactSetting(NULL,jabberProtoName,"GoogleToken",&dbv);
 			if (!res) {
 				int decodedLen;
-//				TCHAR token[] = _T("AHliaW5ldkBnbWFpbC5jb20ARFFBQUFHb0FBQUI4YklqS0poeFJ0QnVPTmpteDdUME9zOVNSdWtxRlJzYWc0d3VxSjNwcmFXUldrSUlINnJhdG5RN2xlaEFUOTFpTWhUV29XQ2NEd2NVT1JzdG5yaUQ2VldmTFZsTlY2RmFBZHBKU05nak40TVBseWhCbnJuY0VBQVBqTWNnb1otb1RMc25iSDRTOGZMcTQ3TVV3dnF1bw==");
-				TCHAR *token = 
+				TCHAR *token =
 #ifdef _UNICODE
 				a2u
 #else
@@ -663,7 +662,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 #endif
 				(dbv.pszVal);
 				char *tokenDecoded = JabberBase64Decode(token, &decodedLen);
-				char *jidFromToken = tokenDecoded; 
+				char *jidFromToken = tokenDecoded;
 				jidFromToken++;// first char is '\0' - some day this may change
 				int notequal = strncmp(jidFromToken,localJid,size);
 				mir_free(tokenDecoded);
@@ -703,7 +702,7 @@ LBL_RequestToken:
 			return;
 		}
 		if ( info->type == JABBER_SESSION_NORMAL ) {
-			XmlNode auth("auth", X_GOOGLE_TOKEN?X_GOOGLE_TOKEN:PLAIN); 
+			XmlNode auth("auth", X_GOOGLE_TOKEN?X_GOOGLE_TOKEN:PLAIN);
 			auth.addAttr("xmlns","urn:ietf:params:xml:ns:xmpp-sasl");
 			auth.addAttr("mechanism",X_GOOGLE_TOKEN?"X-GOOGLE-TOKEN":"PLAIN");
 			JabberSend(info->s,auth);
@@ -909,7 +908,7 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 
 	if (( from = JabberXmlGetAttrValue( node, "from" )) == NULL )
 		return;
-	
+
 	if ( ( (errorNode = JabberXmlGetChild( node, "error" )) != NULL ) ||
 		(( type = JabberXmlGetAttrValue( node, "type" )) != NULL && !lstrcmp( type, _T("error")))
 		){
@@ -1277,7 +1276,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 			JabberListAdd( LIST_ROSTER, from );
 		}
 		else JabberListRemoveResource( LIST_ROSTER, from );
-		
+
 		hContact = JabberHContactFromJID( from );
 		int status = ID_STATUS_OFFLINE;
 		if (( statusNode = JabberXmlGetChild( node, "status" )) != NULL ) {
@@ -1374,7 +1373,7 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 #ifdef __WINE__
 	TCHAR* linuxOS = JabberReadLinuxUname();
 	if (!linuxOS) {
-#endif		
+#endif
 		OSVERSIONINFO osvi = { 0 };
 		osvi.dwOSVersionInfoSize = sizeof( OSVERSIONINFO );
 		if ( GetVersionEx( &osvi )) {
@@ -1398,7 +1397,7 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 				break;
 		}	}
 
-		if ( os == NULL ) 
+		if ( os == NULL )
 #ifndef __WINE__
 		os = TranslateT( "Windows" );
 #else
@@ -1412,20 +1411,20 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 #ifdef UNICODE
 #  ifdef STATICSSL
 	strncat(mversion," (JGmail (W,St)) ", 99-strlen(mversion));
-#  else 
+#  else
 	strncat(mversion," (JGmail (W)) ", 99-strlen(mversion));
 #  endif
-#else 
+#else
 #  ifdef STATICSSL
 	strncat(mversion," (JGmail (A,St)) ", 99-strlen(mversion));
-#  else 
+#  else
 	strncat(mversion," (JGmail (A)) ", 99-strlen(mversion));
 #  endif
 #endif
 
 	XmlNodeIq iq( "result", idStr, from );
 	XmlNode* query = iq.addQuery( "jabber:iq:version" );
-	query->addChild( "name", mversion ); query->addChild( "version", version ); 
+	query->addChild( "name", mversion ); query->addChild( "version", version );
 #ifndef __WINE__
 	query->addChild( "os", os );
 #else
@@ -1748,9 +1747,9 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 						if ( i < item->resourceCount ) {
 							hContact=JabberHContactFromJID( item->jid );
 							if ( r->software ) mir_free( r->software );
-							if (( n=JabberXmlGetChild( queryNode, "name" ))!=NULL && n->text ) 
+							if (( n=JabberXmlGetChild( queryNode, "name" ))!=NULL && n->text )
 								r->software = mir_tstrdup( n->text );
-							else 
+							else
 								r->software = NULL;
 							if ( r->version ) mir_free( r->version );
 							if (( n=JabberXmlGetChild( queryNode, "version" ))!=NULL && n->text )

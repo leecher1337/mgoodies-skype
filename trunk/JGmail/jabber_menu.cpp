@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_menu.cpp,v $
+File name      : $URL$
 Revision       : $Revision$
 Last change on : $Date$
 Last change by : $Author$
@@ -72,7 +72,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 			if (!_tcsicmp( dbv.ptszVal, _T("GMAIL"))){
 				sttEnableMenuItem( hMenuVisitGMail, TRUE );
 				return 0;
-			}		
+			}
 			JFreeVariant( &dbv );
 	}	}
 
@@ -90,7 +90,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 			JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuConvert, ( LPARAM )&clmi );
 	}	}
 
-	if (!jabberOnline) 
+	if (!jabberOnline)
 		return 0;
 
 	if ( chatRoomType ) {
@@ -129,7 +129,7 @@ int JabberMenuConvertChatContact( WPARAM wParam, LPARAM lParam )
 	BYTE chatRoomType = (BYTE)JGetByte( (HANDLE ) wParam, "ChatRoom", 0 );
 	if ((chatRoomType == GCW_CHATROOM) || chatRoomType == 0 ) {
 		DBVARIANT dbv;
-		
+
 		if ( !JGetStringT( (HANDLE ) wParam, (chatRoomType == GCW_CHATROOM)?cidchar:jidchar, &dbv )) {
 			JDeleteSetting( (HANDLE ) wParam, (chatRoomType == GCW_CHATROOM)?cidchar:jidchar);
 			JSetStringT( (HANDLE ) wParam, (chatRoomType != GCW_CHATROOM)?cidchar:jidchar, dbv.ptszVal);

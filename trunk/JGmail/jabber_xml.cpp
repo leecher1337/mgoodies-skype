@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_xml.cpp,v $
+File name      : $URL$
 Revision       : $Revision$
 Last change on : $Date$
 Last change by : $Author$
@@ -62,7 +62,7 @@ void JabberXmlDestroyState( XmlState *xmlState )
 	// Note: cannot use JabberXmlFreeNode() to mir_free xmlState->root
 	// because it will do mir_free( xmlState->root ) which is not freeable.
 	node = &( xmlState->root );
-	
+
 	// Free all children first
 	for ( i=0; i<node->numChild; i++ )
 		delete node->child[i];

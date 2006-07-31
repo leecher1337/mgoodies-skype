@@ -1,10 +1,8 @@
 /*
 Plugin of Miranda IM for communicating with users of the MSN Messenger protocol.
+Copyright (c) 2006 Y.B (Adapted for JGmail).
 Copyright (c) 2003-5 George Hazan.
 Copyright (c) 2002-3 Richard Hughes (original version).
-
-Miranda IM: the free icq client for MS Windows
-Copyright (C) 2000-2002 Richard Hughes, Roland Rabien & Tristan Van de Vreede
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,6 +17,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+File name      : $URL$
+Revision       : $Rev$
+Last change on : $Date$
+Last change by : $Author$
+
 */
 
 #include "jabber.h"
@@ -286,7 +290,6 @@ LBL_Restart:
 
 char* SSL_WinInet::getSslToken(char * data){
 	char *sslResult = getSslResult("https://www.google.com/accounts/ClientAuth",data);
-//	char *sslResult = getSslResult("https://10.1.93.182:443/accounts/ClientAuth",data);
 	int len = strlen(sslResult);
 	char *temp;
 	char * SID = NULL;
@@ -350,10 +353,7 @@ char* SSL_OpenSsl::getSslToken( char* data )
 	NETLIBOPENCONNECTION tConn = { 0 };
 	tConn.cbSize = sizeof( tConn );
 	tConn.szHost = "www.google.com";
-//	tConn.szHost = "10.1.93.182";
 	tConn.wPort = 443;
-//	tConn.wPort = 4433;
-//	tConn.flags = NLOCF_HTTP;
 	HANDLE h = ( HANDLE )JCallService( MS_NETLIB_OPENCONNECTION, ( WPARAM )hNetlibUser, ( LPARAM )&tConn );
 	if ( h == NULL )
 		return NULL;

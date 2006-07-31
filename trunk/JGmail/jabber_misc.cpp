@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_misc.cpp,v $
+File name      : $URL$
 Revision       : $Revision$
 Last change on : $Date$
 Last change by : $Author$
@@ -33,7 +33,7 @@ Last change by : $Author$
 	#define __finally
 	#define _try __try
 	#define _except __except
-	#define _finally __finally 
+	#define _finally __finally
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -270,8 +270,8 @@ void JabberGetAvatarFileName( HANDLE hContact, char* pszDest, int cbLen )
 		DBVARIANT dbv1, dbv2;
 		BOOL res1 = DBGetContactSetting( NULL, jabberProtoName, "LoginName", &dbv1 );
 		BOOL res2 = DBGetContactSetting( NULL, jabberProtoName, "LoginServer", &dbv2 );
-		mir_snprintf( pszDest + tPathLen, MAX_PATH - tPathLen, "%s@%s avatar.%s", 
-			res1 ? "noname" : dbv1.pszVal, 
+		mir_snprintf( pszDest + tPathLen, MAX_PATH - tPathLen, "%s@%s avatar.%s",
+			res1 ? "noname" : dbv1.pszVal,
 			res2 ? jabberProtoName : dbv2.pszVal,
 			szFileType );
 		if (!res1) JFreeVariant( &dbv1 );

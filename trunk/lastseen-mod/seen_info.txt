@@ -9,6 +9,31 @@ micron-x
 Questions and comments to:
 micron@nexgo.de
 
+Last Seen Mod
+*************
+I did some (quick'n'dirty) modifications to LastSeen plugin to fit better to my taste:
+
+   1. ICQ IPs are logged correctly;
+   2. Variables can be used in the log filename. You could have separate files for different protocols/contacts or create new file each month;
+   3. Rewritten "Protocols to watch". Now selecting/deselecting protocols is easy ;)
+   4. Solved enable/disable file logging bug
+   5. Introduced 6 new variables:
+          * %P - protocol name (ICQ, ICQ1, MSN...);
+          * %N - nick on the server;
+          * %C - Client Info;
+          * %G - Group;
+          * %o - Old status;
+          * %T - Status message
+   6. Option to use # instead of % to get empty strings instead of <unknown>
+   7. extended support of multiple yahoo protocols(not tested);
+   8. extended support for jabber/s.
+   9. popup support
+  10. delayed logging to wait for the protocols to update all the settings
+  11. option to track idle statuses
+
+Y.B.
+http://saaplugin.no-ip.info/
+http://forums.miranda-im.org/showthread.php?t=2822
 
 
 Langpack strings
@@ -20,10 +45,67 @@ see seen_langpack.txt
 
 Version history
 ***************
+
+Last Seen Mod
+*************
+
+    * v. 5.0.4.3
+          o Included seenTS DB setting
+          o "suppress online notification" affects only sounds and popups
+          o Sounds are working now. Two new are added.
+    * v. 5.0.4.2
+          o Implemented Idle support (Will include "/Idle" to the status if contact is idle)
+    * v. 5.0.4.1
+          o Enabled 32bit icons in lastseen history dialog (fixes the "transperancy bug")
+          o New variable: %T: Status Message
+          o Parser rewritten to be safer
+          o Click on popup will open message window
+    * v. 5.0.4.0
+          o Small memory leak in user info dialog fixed (thanks Tio Duke)
+          o Increased the delay to check offline contacts 2->10 seconds
+          o If the contact's status changer while we have been offline the time we went offline will be logged (not the current time)
+          o Fixed visual glitch in the "last seen history" dialog
+          o Suppress the DEFMOD_RNDUSERONLINE core functionality - LastSeenMod is not compatible with NewStatusNotify anylonger
+          o Option to enable clist online notify
+    * v. 5.0.3.2
+          o Better protocol type guessing (based on PFLAG_UNIQUEIDSETTING)
+          o Popups colors are configurable
+          o Tabbed interface of the option page
+    * v. 5.0.3.1 (never released)
+          o Avoid multiple popups on login - only those for contacts with different status before logoff
+          o implemented delayed logging of the status changes using thread
+          o Doesn't show popups is the contact is "hidden"
+          o Better tracking if the contact went offline while we were offline
+          o %i and %r are replaced by "resource" and "system" for Jabber/JGmail
+    * v. 5.0.3.0
+          o Enhanced PopUp support:
+                + separated fields for PopUp title and text
+                + Correct icon is chosen according to the protocol and status
+          o New Variable %o - "Old Status"
+          o JGmail is recognised as Jabber
+    * v. 5.0.2.6
+          o Basic PopUp support
+    * v. 5.0.2.5
+          o Added %G standing for "Group"
+          o Using variables in the path of the log file(s) is possible now
+    * v. 5.0.2.4
+          o Updated MSN capability bits according to this post
+    * v. 5.0.2.3
+          o Solved enable/disable file logging bug (hopefully)
+          o Option to use # instead of % to get empty strings instead of <unknown>
+    * v. 5.0.2.2
+          o Added %C (Client/version for ICQ; ClientID flags for MSN);
+          o Better support for multiple instances of same protocol;
+          o Logging contacts of protocol logon/off is back;
+    * v. 5.0.2.1
+          o Updated plugin info
+
+Last Seen plugin
+****************
 5.0.1.1:
 		- FIX: The protocol list now uses more uuser friendly names
 		- FIX: The "Missed Ones" feature options weren't saved correctly
-		- FIX: The "Offline" setting was added even to contacts whose protocol wasn't "watched" 
+		- FIX: The "Offline" setting was added even to contacts whose protocol wasn't "watched"
 		- FIX: Minor cosmetics (icons and tooltips)
 		- UPDATE: seen_langpack.txt
 5.0.1.0:
@@ -33,7 +115,7 @@ Version history
 5.0.0.1:
 		- FIX: Removed some code that flooded the network with requests (see http://miranda-icq.sourceforge.net/forums/viewtopic.php?t=11579)
 		- CHANGE: History now defaults to a "pretier" format.
-5.0.0.0:	
+5.0.0.0:
 		- FIX: Last statusmode icon displayed according to the contact's protocol
 		- NEW: Support for all protocols (user selectable)
 		- NEW: Added dialog showing the recent "seen history" of an user
@@ -105,4 +187,27 @@ visibility.dll		0x67100000
 
 
 
-Licence: GPL (see gpl.txt in the miranda directory)
+======================================
+"Last Seen mod" plugin for Miranda IM
+Copyright ( C ) 2002-03  micron-x
+Copyright ( C ) 2005-06  Y.B.
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or ( at your option ) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+File name      : $URL$
+Revision       : $Rev$
+Last change on : $Date$
+Last change by : $Author$
+
