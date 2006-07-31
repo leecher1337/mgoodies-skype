@@ -20,8 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_bitmap.cpp,v $
 Revision       : $Revision$
-Last change on : $Date: 2006-06-04 20:07:43 +0100 (Sun, 04 Jun 2006) $
-Last change by : $Author: ghazan $
+Last change on : $Date$
+Last change by : $Author$
 
 */
 
