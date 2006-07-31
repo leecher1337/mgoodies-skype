@@ -134,6 +134,23 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 			DBFreeVariant(&dbv);
 		}
 	}
+    
+    //Check if it is not a flash avatar.
+    if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
+        if (strlen(dbv.pszVal) > 0) {
+            if(strncmp(&dbv.pszVal[strlen(dbv.pszVal) - 4], ".xml",4) or strncmp(&dbv.pszVal[strlen(dbv.pszVal) - 4], ".XML",4))
+            {char tmpPath[MAX_PATH];
+				strcpy (tmpPath, dbv.pszVal);
+				if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+					CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+				}
+				szAvatarIn = Utils::UTF8Encode(tmpPath);
+				Utils::convertPath(szAvatarIn);
+			}
+        }
+        DBFreeVariant(&dbv);
+    }
+    
 	if (szAvatarIn == NULL) {
         szAvatarIn = Utils::dupString(szNoAvatar);
 	}
@@ -158,6 +175,23 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	       	DBFreeVariant(&dbv);
 		}
 	}
+    
+    //Check if it is not a flash avatar.
+    if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
+        if (strlen(dbv.pszVal) > 0) {
+            if(strncmp(&dbv.pszVal[strlen(dbv.pszVal) - 4], ".xml",4) or strncmp(&dbv.pszVal[strlen(dbv.pszVal) - 4], ".XML",4))
+            {char tmpPath[MAX_PATH];
+				strcpy (tmpPath, dbv.pszVal);
+				if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+					CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+				}
+				szAvatarOut = Utils::UTF8Encode(tmpPath);
+				Utils::convertPath(szAvatarOut);
+			}
+        }
+        DBFreeVariant(&dbv);
+    }
+    
 	if (szAvatarOut == NULL) {
         szAvatarOut = Utils::dupString(szNoAvatar);
 	}
