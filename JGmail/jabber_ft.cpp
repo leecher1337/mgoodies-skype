@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_ft.cpp,v $
+File name      : $URL$
 Revision       : $Revision$
 Last change on : $Date$
 Last change by : $Author$
@@ -120,7 +120,7 @@ void JabberFtInitiate( TCHAR* jid, filetransfer* ft )
 	mir_sntprintf( tszJid, SIZEOF(tszJid), _T("%s/%s"), jid, rs );
 
 	XmlNodeIq iq( "set", iqId, tszJid );
-	XmlNode* si = iq.addChild( "si" ); si->addAttr( "xmlns", "http://jabber.org/protocol/si" ); 
+	XmlNode* si = iq.addChild( "si" ); si->addAttr( "xmlns", "http://jabber.org/protocol/si" );
 	si->addAttr( "id", sid ); si->addAttr( "mime-type", "binary/octet-stream" );
 	si->addAttr( "profile", "http://jabber.org/protocol/si/profile/file-transfer" );
 	XmlNode* file = si->addChild( "file" ); file->addAttr( "name", filename ); file->addAttr( "size", ft->fileSize[ ft->std.currentFileNumber ] );

@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_util.cpp,v $
+File name      : $URL$
 Revision       : $Revision$
 Last change on : $Date$
 Last change by : $Author$
@@ -1138,30 +1138,30 @@ int __stdcall MessagePopup(HWND hWnd, TCHAR *lpText, TCHAR *lpCaption, UINT uTyp
 		return MessageBox(hWnd, lpText, lpCaption, uType);
 	}
 	int iconum=0,timeout=0, coltext=0, colback=0;
-	switch (uType & MB_ICONMASK) {  
-		case MB_ICONHAND: 
+	switch (uType & MB_ICONMASK) {
+		case MB_ICONHAND:
 			iconum = 32513;
 			timeout = JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000);
 			timeout = ((timeout>>16)==0xFFFF)?-1:(timeout>>16);
 			coltext = JGetDword(NULL,"ColErrorText",0);
 			colback = JGetDword(NULL,"ColErrorBack",RGB(255,128,128));
 			break;
-		case MB_ICONQUESTION: 
-			iconum = 32514; 
+		case MB_ICONQUESTION:
+			iconum = 32514;
 			goto LBL_setDebug;
-		case MB_ICONEXCLAMATION: 
-			iconum = 32515; 
+		case MB_ICONEXCLAMATION:
+			iconum = 32515;
 LBL_setDebug:
 			timeout = JGetDword(NULL,"PopUpTimeoutDebug",0xFFFF0000);
 			timeout = ((timeout&0xFFFF)==0xFFFF)?-1:(timeout&0xFFFF);
 			coltext = JGetDword(NULL,"ColDebugText",0);
 			colback = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
 			break;
-		case MB_ICONINFORMATION: 
-			iconum = 32516; 
+		case MB_ICONINFORMATION:
+			iconum = 32516;
 			goto LBL_setInfo;
-		case MB_USERICON: 
-			iconum = 32517; 
+		case MB_USERICON:
+			iconum = 32517;
 			goto LBL_setInfo;
 		default:
 			iconum=0;

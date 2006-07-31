@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_iqid.cpp,v $
+File name      : $URL$
 Revision       : $Revision$
 Last change on : $Date$
 Last change by : $Author$
@@ -104,7 +104,7 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 
 		iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
-		{	XmlNodeIq iq( "get", iqId ); 
+		{	XmlNodeIq iq( "get", iqId );
 			XmlNode* query = iq.addQuery( "jabber:iq:roster" );
 			JabberSend( info->s, iq );
 		}
@@ -114,7 +114,7 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
 
-			XmlNodeIq iq( "get", iqId ); 
+			XmlNodeIq iq( "get", iqId );
 			XmlNode* query = iq.addQuery( "jabber:iq:agents" );
 			JabberSend( info->s, iq );
 		}
@@ -560,7 +560,7 @@ LBL_Ret:
 		hasPhoto = TRUE;
 		if ( jabberVcardPhotoFileName ) {
 			DeleteFileA( jabberVcardPhotoFileName );
-			mir_free( jabberVcardPhotoFileName ); 
+			mir_free( jabberVcardPhotoFileName );
 			jabberVcardPhotoFileName = NULL;
 		}
 		replaceStr( jabberVcardPhotoFileName, szTempFileName );
@@ -1354,7 +1354,7 @@ void JabberIqResultGetAvatar( XmlNode *iqNode, void *userdata )
 	}
 	if ( n == NULL )
 		return;
-	
+
 	int resultLen = 0;
 	char* body = JabberBase64Decode( n->text, &resultLen );
 

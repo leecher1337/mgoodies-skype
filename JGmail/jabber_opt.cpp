@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_opt.cpp,v $
+File name      : $URL$
 Revision       : $Revision$
 Last change on : $Date$
 Last change by : $Author$
@@ -650,8 +650,8 @@ static void reInitTabs(HWND hwndDlg){
 //	char str[MAXMODULELABELLENGTH];
 	switch (msg)
 	{
-		case WM_INITDIALOG: 
-		{	
+		case WM_INITDIALOG:
+		{
 			reInitTabs(hwndDlg);
 			return TRUE;
 		}
@@ -692,7 +692,7 @@ static void reInitTabs(HWND hwndDlg){
                         TCITEM tci;
                         tci.mask = TCIF_PARAM;
                         TabCtrl_GetItem(GetDlgItem(hwndDlg,IDC_OPT_EXPERT_TAB),TabCtrl_GetCurSel(GetDlgItem(hwndDlg,IDC_OPT_EXPERT_TAB)),&tci);
-                        ShowWindow((HWND)tci.lParam,SW_HIDE);                     
+                        ShowWindow((HWND)tci.lParam,SW_HIDE);
                      }
                   break;
                   case TCN_SELCHANGE:
@@ -703,14 +703,14 @@ static void reInitTabs(HWND hwndDlg){
 						t = TabCtrl_GetCurSel(GetDlgItem(hwndDlg,IDC_OPT_EXPERT_TAB));
                         TabCtrl_GetItem(GetDlgItem(hwndDlg,IDC_OPT_EXPERT_TAB),t,&tci);
 						JSetByte("ActiveTab", t);
-                        ShowWindow((HWND)tci.lParam,SW_SHOW);                     
+                        ShowWindow((HWND)tci.lParam,SW_SHOW);
                      }
                   break;
                }
 			   break;
 			}
 		  }//end case(LPNMHDR)lParam)->idFrom
-		  break;			
+		  break;
 	}
 	return FALSE;
 }
@@ -726,7 +726,7 @@ int JabberOptInit( WPARAM wParam, LPARAM lParam )
 	if(IsWinVerXPPlus()) {
 		hUxTheme = GetModuleHandle(_T("uxtheme.dll"));
 
-		if(hUxTheme)	
+		if(hUxTheme)
 			pfnEnableThemeDialogTexture = (BOOL (WINAPI *)(HANDLE, DWORD))GetProcAddress(hUxTheme, "EnableThemeDialogTexture");
 	}
 
