@@ -268,7 +268,24 @@ static TokenDef templateNames[] = {
 	TokenDef("<!--URLIn-->"),
 	TokenDef("<!--hURLIn-->"),
 	TokenDef("<!--URLOut-->"),
-	TokenDef("<!--hURLOut-->")
+	TokenDef("<!--hURLOut-->"),
+
+	TokenDef("<!--MessageInRTL-->"),
+	TokenDef("<!--MessageOutRTL-->"),
+	TokenDef("<!--hMessageInRTL-->"),
+	TokenDef("<!--hMessageOutRTL-->"),
+	TokenDef("<!--MessageInGroupStartRTL-->"),
+	TokenDef("<!--MessageInGroupInnerRTL-->"),
+	TokenDef("<!--MessageInGroupEndRTL-->"),
+	TokenDef("<!--hMessageInGroupStartRTL-->"),
+	TokenDef("<!--hMessageInGroupInnerRTL-->"),
+	TokenDef("<!--hMessageInGroupEndRTL-->"),
+	TokenDef("<!--MessageOutGroupStartRTL-->"),
+	TokenDef("<!--MessageOutGroupInnerRTL-->"),
+	TokenDef("<!--MessageOutGroupEndRTL-->"),
+	TokenDef("<!--hMessageOutGroupStartRTL-->"),
+	TokenDef("<!--hMessageOutGroupInnerRTL-->"),
+	TokenDef("<!--hMessageOutGroupEndRTL-->")
 };
 
 

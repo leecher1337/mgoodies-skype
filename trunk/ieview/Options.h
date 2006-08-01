@@ -32,27 +32,21 @@ class Options;
 #define DBS_SRMM_FLAGS          	"SRMMFlags"
 #define DBS_SRMM_BACKGROUND    		"SRMMBackgroundFile"
 #define DBS_SRMM_CSS         		"SRMMCSSFile"
-#define DBS_SRMM_CSS_RTL     		"SRMMCSSFileRTL"
 #define DBS_SRMM_TEMPLATE         	"SRMMTemplateFile"
-#define DBS_SRMM_TEMPLATE_RTL     	"SRMMTemplateFileRTL"
 
 #define DBS_CHAT_ENABLE          	"ChatEnable"
 #define DBS_CHAT_MODE          		"ChatMode"
 #define DBS_CHAT_FLAGS          	"ChatFlags"
 #define DBS_CHAT_BACKGROUND    		"ChatBackgroundFile"
 #define DBS_CHAT_CSS         		"ChatCSSFile"
-#define DBS_CHAT_CSS_RTL     		"ChatCSSFileRTL"
 #define DBS_CHAT_TEMPLATE         	"ChatTemplateFile"
-#define DBS_CHAT_TEMPLATE_RTL     	"ChatTemplateFileRTL"
 
 #define DBS_HISTORY_ENABLE          "HistoryEnable"
 #define DBS_HISTORY_MODE          	"HistoryMode"
 #define DBS_HISTORY_FLAGS          	"HistoryFlags"
 #define DBS_HISTORY_BACKGROUND    	"HistoryBackgroundFile"
 #define DBS_HISTORY_CSS         	"HistoryCSSFile"
-#define DBS_HISTORY_CSS_RTL     	"HistoryCSSFileRTL"
 #define DBS_HISTORY_TEMPLATE        "HistoryTemplateFile"
-#define DBS_HISTORY_TEMPLATE_RTL    "HistoryTemplateFileRTL"
 
 extern int IEViewOptInit(WPARAM wParam, LPARAM lParam);
 
@@ -66,27 +60,21 @@ private:
 	int srmmFlags;
 	char *srmmBackgroundFilename;
 	char *srmmCssFilename;
-	char *srmmCssFilenameRtl;
 	char *srmmTemplateFilename;
-	char *srmmTemplateFilenameRtl;
 
 	bool srmmEnableTemp;
 	int srmmModeTemp;
 	int srmmFlagsTemp;
 	char *srmmBackgroundFilenameTemp;
 	char *srmmCssFilenameTemp;
-	char *srmmCssFilenameRtlTemp;
 	char *srmmTemplateFilenameTemp;
-	char *srmmTemplateFilenameRtlTemp;
 
 	bool chatEnable;
 	int chatMode;
 	int chatFlags;
 	char *chatBackgroundFilename;
 	char *chatCssFilename;
-	char *chatCssFilenameRtl;
 	char *chatTemplateFilename;
-	char *chatTemplateFilenameRtl;
 
 	bool chatEnableTemp;
 	int chatModeTemp;
@@ -95,7 +83,6 @@ private:
 	char *chatCssFilenameTemp;
 	char *chatCssFilenameRtlTemp;
 	char *chatTemplateFilenameTemp;
-	char *chatTemplateFilenameRtlTemp;
 
 	bool historyEnable;
 	int historyMode;
@@ -104,7 +91,6 @@ private:
 	char *historyCssFilename;
 	char *historyCssFilenameRtl;
 	char *historyTemplateFilename;
-	char *historyTemplateFilenameRtl;
 
 	bool historyEnableTemp;
 	int historyModeTemp;
@@ -113,7 +99,6 @@ private:
 	char *historyCssFilenameTemp;
 	char *historyCssFilenameRtlTemp;
 	char *historyTemplateFilenameTemp;
-	char *historyTemplateFilenameRtlTemp;
 
 public:
 	ProtocolSettings(const char *protocolName);
@@ -131,12 +116,8 @@ public:
 	const char *getSRMMBackgroundFilename();
 	void	setSRMMCssFilename(const char *filename);
 	const char *getSRMMCssFilename();
-	void	setSRMMCssFilenameRtl(const char *filename);
-	const char *getSRMMCssFilenameRtl();
 	void	setSRMMTemplateFilename(const char *filename);
 	const char *getSRMMTemplateFilename();
-	void	setSRMMTemplateFilenameRtl(const char *filename);
-	const char *getSRMMTemplateFilenameRtl();
 
 	void	setSRMMEnableTemp(bool enable);
 	bool	isSRMMEnableTemp();
@@ -148,12 +129,8 @@ public:
 	const char *getSRMMBackgroundFilenameTemp();
 	void	setSRMMCssFilenameTemp(const char *filename);
 	const char *getSRMMCssFilenameTemp();
-	void	setSRMMCssFilenameRtlTemp(const char *filename);
-	const char *getSRMMCssFilenameRtlTemp();
 	void	setSRMMTemplateFilenameTemp(const char *filename);
 	const char *getSRMMTemplateFilenameTemp();
-	void	setSRMMTemplateFilenameRtlTemp(const char *filename);
-	const char *getSRMMTemplateFilenameRtlTemp();
 
 	void	setChatEnable(bool enable);
 	bool	isChatEnable();
@@ -169,8 +146,6 @@ public:
 	const char *getChatCssFilenameRtl();
 	void	setChatTemplateFilename(const char *filename);
 	const char *getChatTemplateFilename();
-	void	setChatTemplateFilenameRtl(const char *filename);
-	const char *getChatTemplateFilenameRtl();
 
 	void	setChatEnableTemp(bool enable);
 	bool	isChatEnableTemp();
@@ -182,12 +157,8 @@ public:
 	const char *getChatBackgroundFilenameTemp();
 	void	setChatCssFilenameTemp(const char *filename);
 	const char *getChatCssFilenameTemp();
-	void	setChatCssFilenameRtlTemp(const char *filename);
-	const char *getChatCssFilenameRtlTemp();
 	void	setChatTemplateFilenameTemp(const char *filename);
 	const char *getChatTemplateFilenameTemp();
-	void	setChatTemplateFilenameRtlTemp(const char *filename);
-	const char *getChatTemplateFilenameRtlTemp();
 
 	void	setHistoryEnable(bool enable);
 	bool	isHistoryEnable();
@@ -199,12 +170,8 @@ public:
 	const char *getHistoryBackgroundFilename();
 	void	setHistoryCssFilename(const char *filename);
 	const char *getHistoryCssFilename();
-	void	setHistoryCssFilenameRtl(const char *filename);
-	const char *getHistoryCssFilenameRtl();
 	void	setHistoryTemplateFilename(const char *filename);
 	const char *getHistoryTemplateFilename();
-	void	setHistoryTemplateFilenameRtl(const char *filename);
-	const char *getHistoryTemplateFilenameRtl();
 
 	void	setHistoryEnableTemp(bool enable);
 	bool	isHistoryEnableTemp();
@@ -216,12 +183,8 @@ public:
 	const char *getHistoryBackgroundFilenameTemp();
 	void	setHistoryCssFilenameTemp(const char *filename);
 	const char *getHistoryCssFilenameTemp();
-	void	setHistoryCssFilenameRtlTemp(const char *filename);
-	const char *getHistoryCssFilenameRtlTemp();
 	void	setHistoryTemplateFilenameTemp(const char *filename);
 	const char *getHistoryTemplateFilenameTemp();
-	void	setHistoryTemplateFilenameRtlTemp(const char *filename);
-	const char *getHistoryTemplateFilenameRtlTemp();
 
 	void 	copyToTemp();
 	void	copyFromTemp();

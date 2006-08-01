@@ -121,10 +121,6 @@ const char *HistoryHTMLBuilder::getTemplateFilename(ProtocolSettings * protoSett
 	return protoSettings->getHistoryTemplateFilename();
 }
 
-const char *HistoryHTMLBuilder::getTemplateFilenameRtl(ProtocolSettings * protoSettings) {
-	return protoSettings->getHistoryTemplateFilenameRtl();
-}
-
 int HistoryHTMLBuilder::getFlags(ProtocolSettings * protoSettings) {
 	return protoSettings->getHistoryFlags();
 }
@@ -143,7 +139,7 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		return;
 	}
  	if (protoSettings->getHistoryMode() == Options::MODE_CSS) {
-	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getHistoryCssFilenameRtl() : protoSettings->getHistoryCssFilename();
+	 	const char *externalCSS = protoSettings->getHistoryCssFilename();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n", externalCSS);
 	} else {
 		Utils::appendText(&output, &outputSize, "<html><head>");

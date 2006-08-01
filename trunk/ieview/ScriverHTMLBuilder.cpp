@@ -184,7 +184,7 @@ void ScriverHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		return;
 	}
  	if (protoSettings->getSRMMMode() == Options::MODE_CSS) {
-	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getSRMMCssFilenameRtl() : protoSettings->getSRMMCssFilename();
+	 	const char *externalCSS = protoSettings->getSRMMCssFilename();
 		if (strncmp(externalCSS, "http://", 7)) {
 			Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"file://%s\"/></head><body class=\"body\">\n", externalCSS);
 		} else {
