@@ -154,7 +154,7 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		return;
 	}
  	if (protoSettings->getChatMode() == Options::MODE_CSS) {
-	 	const char *externalCSS = (event->dwFlags & IEEF_RTL) ? protoSettings->getChatCssFilenameRtl() : protoSettings->getChatCssFilename();
+	 	const char *externalCSS = protoSettings->getChatCssFilename();
         Utils::appendText(&output, &outputSize, "<html><head><link rel=\"stylesheet\" href=\"%s\"/></head><body class=\"body\">\n", externalCSS);
 	} else {
 		HDC hdc = GetDC(NULL);

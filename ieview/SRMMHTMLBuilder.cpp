@@ -102,7 +102,7 @@ void SRMMHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	COLORREF color;
 	char *output = NULL;
 	int outputSize;
-	ProtocolSettings *protoSettings = getProtocolSettings(event->hContact);
+	ProtocolSettings *protoSettings = getSRMMProtocolSettings(event->hContact);
 	if (protoSettings == NULL) {
 		return;
 	}
@@ -243,8 +243,12 @@ void SRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 }
 
 void SRMMHTMLBuilder::appendEvent(IEView *view, IEVIEWEVENT *event) {
- 	if (Options::getSRMMFlags() & Options::TEMPLATES_ENABLED) {
-		appendEventTemplate(view, event);
+	ProtocolSettings *protoSettings = getSRMMProtocolSettings(event->hContact);
+	if (protoSettings == NULL) {
+		return;
+	}
+ 	if (protoSettings->getSRMMMode() == Options::MODE_TEMPLATE) {
+		appendEventTemplate(view, event, protoSettings);
 	} else {
 		appendEventNonTemplate(view, event);
 	}

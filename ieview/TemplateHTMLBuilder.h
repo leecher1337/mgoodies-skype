@@ -16,7 +16,6 @@ protected:
 	void buildHeadTemplate(IEView *, IEVIEWEVENT *event, ProtocolSettings* protoSettings);
 	void appendEventTemplate(IEView *, IEVIEWEVENT *event, ProtocolSettings* protoSettings);
 	virtual const char *getTemplateFilename(ProtocolSettings *);
-	virtual const char *getTemplateFilenameRtl(ProtocolSettings *);
 	virtual int getFlags(ProtocolSettings *);
 public:
     TemplateHTMLBuilder();

@@ -17,10 +17,6 @@ const char *TemplateHTMLBuilder::getTemplateFilename(ProtocolSettings * protoSet
 	return protoSettings->getSRMMTemplateFilename();
 }
 
-const char *TemplateHTMLBuilder::getTemplateFilenameRtl(ProtocolSettings * protoSettings) {
-	return protoSettings->getSRMMTemplateFilenameRtl();
-}
-
 int TemplateHTMLBuilder::getFlags(ProtocolSettings * protoSettings) {
 	return protoSettings->getSRMMFlags();
 }
@@ -92,16 +88,19 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 		return;
 	}
 
-    TemplateMap *tmpm = TemplateMap::getTemplateMap((event->dwFlags & IEEF_RTL) ? getTemplateFilenameRtl(protoSettings) : getTemplateFilename(protoSettings));
+    TemplateMap *tmpm = TemplateMap::getTemplateMap(getTemplateFilename(protoSettings));
 
-	if (tmpm!=NULL) {
-		strcpy(tempBase, "file://");
-    	strcat(tempBase, tmpm->getFilename());
-    	char* pathrun = tempBase + strlen(tempBase);
-    	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > tempBase)) pathrun--;
-    	pathrun++;
-    	*pathrun = '\0';
+	if (tmpm==NULL) {
+		return;
 	}
+
+	strcpy(tempBase, "file://");
+	strcat(tempBase, tmpm->getFilename());
+	char* pathrun = tempBase + strlen(tempBase);
+	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > tempBase)) pathrun--;
+	pathrun++;
+	*pathrun = '\0';
+
 	szBase = Utils::UTF8Encode(tempBase);
 	getUINs(event->hContact, szUINIn, szUINOut);
 	if (getFlags(protoSettings) & Options::LOG_SHOW_NICKNAMES) {
@@ -134,23 +133,6 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 			DBFreeVariant(&dbv);
 		}
 	}
-    
-    //Check if it is not a flash avatar.
-    if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
-        if (strlen(dbv.pszVal) > 0) {
-            if(strncmp(&dbv.pszVal[strlen(dbv.pszVal) - 4], ".xml",4) or strncmp(&dbv.pszVal[strlen(dbv.pszVal) - 4], ".XML",4))
-            {char tmpPath[MAX_PATH];
-				strcpy (tmpPath, dbv.pszVal);
-				if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-					CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-				}
-				szAvatarIn = Utils::UTF8Encode(tmpPath);
-				Utils::convertPath(szAvatarIn);
-			}
-        }
-        DBFreeVariant(&dbv);
-    }
-    
 	if (szAvatarIn == NULL) {
         szAvatarIn = Utils::dupString(szNoAvatar);
 	}
@@ -175,23 +157,6 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	       	DBFreeVariant(&dbv);
 		}
 	}
-    
-    //Check if it is not a flash avatar.
-    if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
-        if (strlen(dbv.pszVal) > 0) {
-            if(strncmp(&dbv.pszVal[strlen(dbv.pszVal) - 4], ".xml",4) or strncmp(&dbv.pszVal[strlen(dbv.pszVal) - 4], ".XML",4))
-            {char tmpPath[MAX_PATH];
-				strcpy (tmpPath, dbv.pszVal);
-				if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-					CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-				}
-				szAvatarOut = Utils::UTF8Encode(tmpPath);
-				Utils::convertPath(szAvatarOut);
-			}
-        }
-        DBFreeVariant(&dbv);
-    }
-    
 	if (szAvatarOut == NULL) {
         szAvatarOut = Utils::dupString(szNoAvatar);
 	}
@@ -218,7 +183,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
         szNickOut = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS);
 	}
 
-	Template *tmplt = TemplateMap::getTemplate((event->dwFlags & IEEF_RTL) ? getTemplateFilenameRtl(protoSettings) : getTemplateFilename(protoSettings), "HTMLStart");
+	Template *tmplt = tmpm->getTemplate("HTMLStart");
 
 	if (tmplt!=NULL) {
 		for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
@@ -331,7 +296,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	if (protoSettings == NULL) {
 		return;
 	}
-	TemplateMap *tmpm = TemplateMap::getTemplateMap((event->dwFlags & IEEF_RTL) ? getTemplateFilenameRtl(protoSettings) : getTemplateFilename(protoSettings));
+	TemplateMap *tmpm = TemplateMap::getTemplateMap(getTemplateFilename(protoSettings));
 	if (tmpm!=NULL) {
 		strcpy(tempBase, "file://");
     	strcat(tempBase, tmpm->getFilename());
@@ -473,25 +438,38 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
                 szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2, event->codepage, 0);
 			}
 			if (eventData->iType == IEED_EVENT_MESSAGE) {
-                if (isGrouping && (getFlags(protoSettings) & Options::LOG_GROUP_MESSAGES)) {
-	                if (isGroupBreak) {
-              		    tmpltName[1] = isHistory ? isSent ? "hMessageOutGroupStart" : "hMessageInGroupStart" : isSent ? "MessageOutGroupStart" : "MessageInGroupStart";
-                   	} else {
-                   		tmpltName[0] = isHistory ? isSent ? "hMessageOutGroupInner" : "hMessageInGroupInner" : isSent ? "MessageOutGroupInner" : "MessageInGroupInner";
-                   	}
-               		groupTemplate = isHistory ? isSent ? "hMessageOutGroupEnd" : "hMessageInGroupEnd" : isSent ? "MessageOutGroupEnd" : "MessageInGroupEnd";
-               	} else {
-               		tmpltName[1] = isHistory ? isSent ? "hMessageOut" : "hMessageIn" : isSent ? "MessageOut" : "MessageIn";
-               	}
+				if (!isRTL) {
+					if (isGrouping && (getFlags(protoSettings) & Options::LOG_GROUP_MESSAGES)) {
+						if (isGroupBreak) {
+							tmpltName[1] = isHistory ? isSent ? "hMessageOutGroupStart" : "hMessageInGroupStart" : isSent ? "MessageOutGroupStart" : "MessageInGroupStart";
+						} else {
+							tmpltName[0] = isHistory ? isSent ? "hMessageOutGroupInner" : "hMessageInGroupInner" : isSent ? "MessageOutGroupInner" : "MessageInGroupInner";
+						}
+						groupTemplate = isHistory ? isSent ? "hMessageOutGroupEnd" : "hMessageInGroupEnd" : isSent ? "MessageOutGroupEnd" : "MessageInGroupEnd";
+					} else {
+						tmpltName[1] = isHistory ? isSent ? "hMessageOut" : "hMessageIn" : isSent ? "MessageOut" : "MessageIn";
+					}
+				} else {
+					if (isGrouping && (getFlags(protoSettings) & Options::LOG_GROUP_MESSAGES)) {
+						if (isGroupBreak) {
+							tmpltName[1] = isHistory ? isSent ? "hMessageOutGroupStartRTL" : "hMessageInGroupStartRTL" : isSent ? "MessageOutGroupStartRTL" : "MessageInGroupStartRTL";
+						} else {
+							tmpltName[0] = isHistory ? isSent ? "hMessageOutGroupInnerRTL" : "hMessageInGroupInnerRTL" : isSent ? "MessageOutGroupInnerRTL" : "MessageInGroupInnerRTL";
+						}
+						groupTemplate = isHistory ? isSent ? "hMessageOutGroupEndRTL" : "hMessageInGroupEndRTL" : isSent ? "MessageOutGroupEndRTL" : "MessageInGroupEndRTL";
+					} else {
+						tmpltName[1] = isHistory ? isSent ? "hMessageOutRTL" : "hMessageInRTL" : isSent ? "MessageOutRTL" : "MessageInRTL";
+					}
+				}
 			} else if (eventData->iType == IEED_EVENT_FILE) {
                 tmpltName[1] = isHistory ? isSent ? "hFileOut" : "hFileIn" : isSent ? "FileOut" : "FileIn";
-                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate(getTemplateFilenameRtl(protoSettings), tmpltName[1]) : TemplateMap::getTemplate(getTemplateFilename(protoSettings), tmpltName[1]);
+                Template *tmplt = tmpm->getTemplate(tmpltName[1]);
                 if (tmplt == NULL) {
                 	tmpltName[1] = isHistory ? "hFile" : "File";
 				}
 			} else if (eventData->iType == IEED_EVENT_URL) {
                 tmpltName[1] = isHistory ? isSent ? "hURLOut" : "hURLIn" : isSent ? "URLOut" : "URLIn";
-                Template *tmplt = (event->dwFlags & IEEF_RTL) ? TemplateMap::getTemplate(getTemplateFilenameRtl(protoSettings), tmpltName[1]) : TemplateMap::getTemplate(getTemplateFilename(protoSettings), tmpltName[1]);
+                Template *tmplt = tmpm->getTemplate(tmpltName[1]);
                 if (tmplt == NULL) {
 	                tmpltName[1] = isHistory ? "hURL" : "URL";
 				}
@@ -502,7 +480,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 			for (int i=0;i<2;i++) {
 				Template *tmplt;
 				if (tmpltName[i] == NULL) continue;
-				tmplt = TemplateMap::getTemplate((event->dwFlags & IEEF_RTL) ? getTemplateFilenameRtl(protoSettings) : getTemplateFilename(protoSettings), tmpltName[i]);
+				tmplt = tmpm->getTemplate(tmpltName[i]);
 				if (tmplt == NULL) continue;
 				for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
 					const char *tokenVal;
