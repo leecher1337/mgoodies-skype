@@ -1,6 +1,9 @@
-Contact Left Channel History 0.0.0.1
+Contact Left Channel History 0.0.0.2
 
 Changelog:
+
+. 0.0.0.2
+  + Check for chat
 
 . 0.0.0.1
   + Initial version

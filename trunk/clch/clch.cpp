@@ -27,7 +27,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Contact Left Channel History",
-	PLUGIN_MAKE_VERSION(0,0,0,1),
+	PLUGIN_MAKE_VERSION(0,0,0,2),
 	"Log when contact left channel to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -225,11 +225,17 @@ BOOL MsgWndOpen(HANDLE hContact)
 	return FALSE;
 }
 
-int ContactLeftChannel(WPARAM wParam,LPARAM lParam)
+int ContactLeftChannel(WPARAM wParam, LPARAM lParam)
 {
 	if (!loaded)
 		return 0;
 
+	// See if is a chat
+	int personleft = (int) lParam;
+	if (personleft != 0)
+		return 0;
+
+	// Get contact
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
 		return 0;
