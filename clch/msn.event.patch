@@ -1,0 +1,60 @@
+Index: msn.cpp
+===================================================================
+--- msn.cpp	(revision 3395)
++++ msn.cpp	(working copy)
+@@ -59,6 +59,7 @@
+ HANDLE   hHookOnUserInfoInit = NULL;
+ HANDLE   hGroupAddEvent = NULL;
+ HANDLE	 hMSNNudge = NULL;
++HANDLE	 hMSNContactLeftChannel = NULL;
+ bool		msnHaveChatDll = false;
+ 
+ MYOPTIONS MyOptions;
+@@ -298,9 +299,12 @@
+ 	HookEvent( ME_OPT_INITIALISE, MsnOptInit );
+ 	HookEvent( ME_SYSTEM_PRESHUTDOWN, OnPreShutdown );
+ 
+-	char nudge[250];
+-	sprintf(nudge,"%s/Nudge",protocolname);
+-	hMSNNudge = CreateHookableEvent(nudge);
++	char evtname[250];
++	sprintf(evtname,"%s/Nudge",protocolname);
++	hMSNNudge = CreateHookableEvent(evtname);
++
++	sprintf(evtname,"%s/ContactLeftChannel",protocolname);
++	hMSNContactLeftChannel = CreateHookableEvent(evtname);
+ 	
+ 	MSN_InitThreads();
+ 
+@@ -358,6 +362,9 @@
+ 	if ( hMSNNudge )
+ 		DestroyHookableEvent( hMSNNudge );
+ 
++	if ( hMSNContactLeftChannel )
++		DestroyHookableEvent( hMSNContactLeftChannel );
++
+ 	UninitSsl();
+ 	MSN_FreeGroups();
+ 	Threads_Uninit();
+Index: msn_commands.cpp
+===================================================================
+--- msn_commands.cpp	(revision 3395)
++++ msn_commands.cpp	(working copy)
+@@ -51,6 +51,7 @@
+ char* profileURL = NULL;
+ char* rru = NULL;
+ extern HANDLE	 hMSNNudge;
++extern HANDLE	 hMSNContactLeftChannel;
+ 
+ extern int msnPingTimeout, msnPingTimeoutCurrent;
+ 
+@@ -979,6 +980,9 @@
+ 			// in here, the first contact is the chat ID, starting from the second will be actual contact
+ 			// if only 1 person left in conversation
+ 			int personleft = MSN_ContactLeft( info, MSN_HContactFromEmail( data.userEmail, NULL, 0, 0 ));
++
++			NotifyEventHooks(hMSNContactLeftChannel, (WPARAM) MSN_HContactFromEmail( data.userEmail, NULL, 0, 0 ), personleft);
++
+ 			// see if the session is quit due to idleness
+ 			if ( personleft == 1 && !lstrcmpA( data.isIdle, "1" ) ) {
+ 				GCDEST gcd = {0};
