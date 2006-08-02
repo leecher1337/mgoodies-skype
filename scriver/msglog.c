@@ -286,7 +286,7 @@ static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAllo
 {
 	DWORD textCharsCount = 0;
 	char *d;
-
+	int wasEOL = 0;
 	int lineLen = strlen(line) * 9 + 8;
 	if (*cbBufferEnd + lineLen > *cbBufferAlloced) {
 		cbBufferAlloced[0] += (lineLen + 1024 - lineLen % 1024);
@@ -298,14 +298,17 @@ static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAllo
 	d += 1;
 
 	for (; *line; line++, textCharsCount++) {
+		wasEOL = 0;
 		if (*line == '\r' && line[1] == '\n') {
-			CopyMemory(d, "\\par\\- ", 7);
-			d += 7;
+			CopyMemory(d, "\\par ", 5);
+			wasEOL = 1;
+			d += 5;
 			line++;
 		}
 		else if (*line == '\n') {
-			CopyMemory(d, "\\par\\- ", 7);
-			d += 7;
+			CopyMemory(d, "\\par ", 5);
+			wasEOL = 1;
+			d += 5;
 		}
 		else if (*line == '\t') {
 			CopyMemory(d, "\\tab ", 5);
@@ -321,7 +324,10 @@ static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAllo
 		else
 			d += sprintf(d, "\\'%x", *line);
 	}
-
+	if (wasEOL) {
+		CopyMemory(d, " ", 1);
+		d++;
+	} 
 	strcpy(d, "}");
 	d++;
 
@@ -334,7 +340,7 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 {
 	DWORD textCharsCount = 0;
 	char *d;
-
+	int wasEOL = 0;
 	int lineLen = wcslen(line) * 9 + 8;
 	if (*cbBufferEnd + lineLen > *cbBufferAlloced) {
 		cbBufferAlloced[0] += (lineLen + 1024 - lineLen % 1024);
@@ -346,14 +352,17 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 	d += 6;
 
 	for (; *line; line++, textCharsCount++) {
+		wasEOL = 0;
 		if (*line == '\r' && line[1] == '\n') {
-			CopyMemory(d, "\\par\\- ", 7);
-			d += 7;
+			CopyMemory(d, "\\par ", 5);
+			wasEOL = 1;
+			d += 5;
 			line++;
 		}
 		else if (*line == '\n') {
-			CopyMemory(d, "\\par\\- ", 7);
-			d += 7;
+			CopyMemory(d, "\\par ", 5);
+			wasEOL = 1;
+			d += 5;
 		}
 		else if (*line == '\t') {
 			CopyMemory(d, "\\tab ", 5);
@@ -369,7 +378,10 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 		else
 			d += sprintf(d, "\\u%d ?", *line);
 	}
-
+	if (wasEOL) {
+		CopyMemory(d, " ", 1);
+		d++;
+	} 
 	strcpy(d, "}");
 	d++;
 
@@ -549,7 +561,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		dat->isMixed = 1;
 	}
 	if (!streamData->isFirst && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\cf%d\\-\\par\\sl0", msgDlgFontCount + 4, msgDlgFontCount + 4);
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\cf%d\\fs1  \\par\\sl0", msgDlgFontCount + 4, msgDlgFontCount + 4);
 	}
     if ( streamData->isFirst ) {
 		if (event->dwFlags & IEEDF_RTL) {
@@ -596,7 +608,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 				i = LOGICON_MSG_NOTICE;
 				break;
 		}
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\f0\\-");
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\fs1  ");
 		while (bufferAlloced - bufferEnd < logIconBmpSize[i])
 			bufferAlloced += 1024;
 		buffer = (char *) realloc(buffer, bufferAlloced);
