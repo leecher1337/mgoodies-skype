@@ -26,7 +26,11 @@ Boston, MA 02111-1307, USA.
 
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
+#ifdef UNICODE
+	"Nick History (Unicode)",
+#else
 	"Nick History",
+#endif
 	PLUGIN_MAKE_VERSION(0,0,0,1),
 	"Log nickname changes to history",
 	"Ricardo Pescuma Domenecci",
