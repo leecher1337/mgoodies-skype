@@ -29,7 +29,7 @@ extern "C"
 #endif
 
 
-// Need to be called on ME_SYSTEM_MODULESLOADED
+// Need to be called on ME_SYSTEM_MODULESLOADED or Load
 void init_mir_malloc();
 
 
