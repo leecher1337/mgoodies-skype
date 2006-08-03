@@ -54,7 +54,8 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 extern TCHAR *strToWcs(const char *text, int textlen, int cp);
 extern TCHAR *GetNickname(HANDLE hContact, const char* szProto);
-
+extern void NotifyLocalWinEvent(HANDLE hContact, HWND hwnd, unsigned int type);
+	
 static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 {
 	DBVARIANT dbv;
@@ -1188,6 +1189,10 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 								SendMessage(mwd->hwnd, DM_SETPARENT, 0, (LPARAM) hParent);
 								SendMessage(hParent, DM_ADDCHILD, 0, (LPARAM) mwd);
 								SendMessage(hParent, DM_ACTIVATECHILD, 0, (LPARAM) mwd->hwnd);
+								NotifyLocalWinEvent(mwd->hContact, mwd->hwnd, MSG_WINDOW_EVT_CLOSING);
+								NotifyLocalWinEvent(mwd->hContact, mwd->hwnd, MSG_WINDOW_EVT_CLOSE);
+								NotifyLocalWinEvent(mwd->hContact, mwd->hwnd, MSG_WINDOW_EVT_OPENING);
+								NotifyLocalWinEvent(mwd->hContact, mwd->hwnd, MSG_WINDOW_EVT_OPEN);
 								ShowWindow(hParent, SW_SHOWNA);
 							}
 						}

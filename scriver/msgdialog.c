@@ -234,7 +234,7 @@ static void RemoveSendBuffer(struct MessageWindowData *dat, int i) {
 	}
 }
 
-static void NotifyLocalWinEvent(HANDLE hContact, HWND hwnd, unsigned int type) {
+void NotifyLocalWinEvent(HANDLE hContact, HWND hwnd, unsigned int type) {
 	MessageWindowEventData mwe = { 0 };
 
 	if (hContact==NULL || hwnd==NULL) return;
@@ -1833,8 +1833,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 //		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		return TRUE;
 	case DM_SETPARENT:
-		dat->hwndParent = GetParent(hwndDlg);
+		dat->hwndParent = (HWND) lParam;
 		dat->parent = (struct ParentWindowData *) GetWindowLong(dat->hwndParent, GWL_USERDATA);
+		SetParent(hwndDlg, dat->hwndParent);
 		return TRUE;
 	case WM_GETMINMAXINFO:
 		{
