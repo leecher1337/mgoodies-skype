@@ -1,6 +1,9 @@
-Nick History 0.0.0.2
+Nick History 0.0.0.3
 
 Changelog:
+
+. 0.0.0.3
+  + Better handling of metacontacts
 
 . 0.0.0.2
   + Handle to nick remove

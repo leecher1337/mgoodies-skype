@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Nick History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,2),
+	PLUGIN_MAKE_VERSION(0,0,0,3),
 	"Log nickname changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -215,7 +215,20 @@ int DisableHistory(WPARAM wParam,LPARAM lParam)
 int HistoryEnabled(HANDLE hContact) 
 {
 	if (hContact != NULL)
-		return DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", TRUE);
+	{
+		BYTE def = TRUE;
+
+		// Is a subcontact?
+		if (ServiceExists(MS_MC_GETMETACONTACT)) 
+		{
+			HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
+
+			if (hMetaContact != NULL)
+				def = DBGetContactSettingByte(hMetaContact, MODULE_NAME, "Enabled", def);
+		}
+
+		return DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", def);
+	}
 	else
 		return FALSE;
 }
