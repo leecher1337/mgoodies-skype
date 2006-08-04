@@ -1,0 +1,14 @@
+; Status Message History 0.0.0.1
+; Author: Pescuma
+
+; Contact Menu
+
+[Log Status Message changes]
+[Don't log Status Message changes]
+
+
+; History
+
+[changed his/her status message to %s]
+[removed his/her status message]
+[<no status message>]
