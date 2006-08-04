@@ -162,15 +162,36 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+BOOL ProtocolCanHaveStatusMessages(const char *protocol)
+{
+	if (protocol == NULL)
+		return FALSE;
+
+	if (CallProtoService(protocol, PS_GETCAPS, PFLAGNUM_2, 0) == 0)
+		return FALSE;
+
+	if ((CallProtoService(protocol, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGRECV) == 0)
+		return FALSE;
+
+	return TRUE;
+}
 
 int PreBuildContactMenu(WPARAM wParam,LPARAM lParam) 
 {
 	// See what to show
-
 	CLISTMENUITEM clmi = {0};
 	clmi.cbSize = sizeof(clmi);
 
-	if (HistoryEnabled(wParam, lParam))
+	char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0);
+	if (proto == NULL || !ProtocolCanHaveStatusMessages(proto))
+	{
+		clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu, (LPARAM) &clmi);
+
+		clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu, (LPARAM) &clmi);
+	}
+	else if (HistoryEnabled(wParam, lParam))
 	{
 		clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu, (LPARAM) &clmi);
@@ -215,7 +236,20 @@ int DisableHistory(WPARAM wParam,LPARAM lParam)
 int HistoryEnabled(HANDLE hContact) 
 {
 	if (hContact != NULL)
-		return DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", TRUE);
+	{
+		BYTE def = TRUE;
+
+		// Is a subcontact?
+		if (ServiceExists(MS_MC_GETMETACONTACT)) 
+		{
+			HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
+
+			if (hMetaContact != NULL)
+				def = DBGetContactSettingByte(hMetaContact, MODULE_NAME, "Enabled", def);
+		}
+
+		return DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", def);
+	}
 	else
 		return FALSE;
 }
@@ -524,13 +558,16 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 	if (hContact == NULL)
 		return 0;
 
-	char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
-	if (proto == NULL || (metacontacts_proto != NULL && !strcmp(proto, metacontacts_proto)))
-		return 0;
-
 	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
 	if (!strcmp(cws->szModule, "CList")  && !strcmp(cws->szSetting, "StatusMsg"))
 	{
+		char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+		if (proto == NULL || (metacontacts_proto != NULL && !strcmp(proto, metacontacts_proto)))
+			return 0;
+
+		if (!ProtocolCanHaveStatusMessages(proto))
+			return 0;
+
 		if (!HistoryEnabled(hContact))
 			return 0;
 
