@@ -335,7 +335,7 @@ void AddToHistory(HANDLE hContact, char *nickname)
 	if (!DBGetContactSetting(hContact, MODULE_NAME, 
 		nickname == NULL ? "HistoryTemplateRemove" : "HistoryTemplateChange", &dbv))
 	{
-		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != _T('\0'))
+		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != '\0')
 			strncpy(templ, dbv.pszVal, sizeof(templ));
 		else
 			strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
@@ -370,7 +370,7 @@ void AddToHistory(HANDLE hContact, wchar_t *nickname)
 	if (!DBGetContactSetting(hContact, MODULE_NAME, 
 		nickname == NULL ? "HistoryTemplateRemove" : "HistoryTemplateChange", &dbv))
 	{
-		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != _T('\0'))
+		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != '\0')
 			strncpy(templ, dbv.pszVal, sizeof(templ));
 		else
 			strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
