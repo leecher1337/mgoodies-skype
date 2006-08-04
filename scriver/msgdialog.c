@@ -1014,6 +1014,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
+			int len;
 			int notifyUnread = 0;
 			struct NewMessageWindowLParam *newData = (struct NewMessageWindowLParam *) lParam;
 			//TranslateDialogDefault(hwndDlg);
@@ -1022,25 +1023,56 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->hContact = newData->hContact;
 			NotifyLocalWinEvent(dat->hContact, hwndDlg, MSG_WINDOW_EVT_OPENING);
 			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETTEXTMODE, TM_PLAINTEXT, 0);
+
 			if (newData->szInitialText) {
-				int len;
+	#if defined(_UNICODE)
+				if(newData->isWchar)
+					SetDlgItemText(hwndDlg, IDC_MESSAGE, (TCHAR *)newData->szInitialText);
+				else
+					SetDlgItemTextA(hwndDlg, IDC_MESSAGE, newData->szInitialText);                    
+	#else					
 				SetDlgItemTextA(hwndDlg, IDC_MESSAGE, newData->szInitialText);
-				len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
-				PostMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETSEL, len, len);
+	#endif			
 			} else if (g_dat->flags & SMF_SAVEDRAFTS) {
 				TCmdList *draft = tcmdlist_get2(g_dat->draftList, dat->hContact);
 				if (draft != NULL) {
-					SETTEXTEX  st;
-					st.flags = ST_DEFAULT;
-	#ifdef _UNICODE
-					st.codepage = 1200;
-	#else
-					st.codepage = CP_ACP;
-	#endif
-					SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETTEXTEX, (WPARAM) &st, (LPARAM)draft->szCmd);
+	#if defined(_UNICODE)
+				SetDlgItemText(hwndDlg, IDC_MESSAGE, (TCHAR *)draft->szCmd);
+	#else					
+				SetDlgItemTextA(hwndDlg, IDC_MESSAGE, draft->szCmd);
+	#endif			
+			}
+			len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
+			PostMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETSEL, len, len);
+/*
+			{
+				SETTEXTEX  st;
+				const void * initText = NULL;
+				st.flags = ST_DEFAULT;
+#ifdef _UNICODE
+				st.codepage = 1200;
+#else
+				st.codepage = CP_ACP;
+#endif
+				if (newData->szInitialText) {
+					if (newData->isWchar) {
+						st.codepage = 1200;
+					} else {
+						st.codepage = CP_ACP;
+					}
+					initText = (const void *) newData->szInitialText;
+				} else if (g_dat->flags & SMF_SAVEDRAFTS) {
+					TCmdList *draft = tcmdlist_get2(g_dat->draftList, dat->hContact);
+					if (draft != NULL) {
+						initText = (const void *) draft->szCmd;
+					}
+				}
+				if (initText != NULL) {
+					SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETTEXTEX, (WPARAM) &st, (LPARAM)initText);
 					SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SCROLLCARET, 0,0);
 					SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETSEL, (WPARAM)-1, (LPARAM)-1);
 				}
+			*/
 			}
 			dat->hwnd = hwndDlg;
 			dat->hwndParent = GetParent(hwndDlg);

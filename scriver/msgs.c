@@ -169,8 +169,14 @@ static int SendMessageCommandW(WPARAM wParam, LPARAM lParam)
       if (lParam) {
          HWND hEdit;
          hEdit = GetDlgItem(hwnd, IDC_MESSAGE);
-         SendMessage(hEdit, EM_SETSEL, -1, SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0));
-         SendMessage(hEdit, EM_REPLACESEL, FALSE, (LPARAM) (char *) lParam);
+		 SendMessage(hEdit, EM_SETSEL, -1, SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0));
+/*
+		 SETTEXTEX  st;
+		 st.flags = ST_SELECTION;
+		 st.codepage = 1200;
+		 SendMessage(hEdit, EM_SETTEXTEX, (WPARAM) &st, (LPARAM)lParam);
+*/
+         SendMessage(hEdit, EM_REPLACESEL, FALSE, (LPARAM) (TCHAR *) lParam);
       }
       if (IsIconic(GetParent(hwnd))) {
          ShowWindow(GetParent(hwnd), SW_SHOWNORMAL);
@@ -215,10 +221,16 @@ static int SendMessageCommand(WPARAM wParam, LPARAM lParam)
 
    if ((hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE) wParam))) {
       if (lParam) {
-         HWND hEdit;
+       HWND hEdit;
          hEdit = GetDlgItem(hwnd, IDC_MESSAGE);
-         SendMessage(hEdit, EM_SETSEL, -1, SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0));
-         SendMessage(hEdit, EM_REPLACESEL, FALSE, (LPARAM) (char *) lParam);
+		 SendMessage(hEdit, EM_SETSEL, -1, SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0));
+/*		 
+		 SETTEXTEX  st;
+  		 st.flags = ST_SELECTION;
+		 st.codepage = CP_ACP;
+		 SendMessage(hEdit, EM_SETTEXTEX, (WPARAM) &st, (LPARAM)lParam);
+*/
+         SendMessageA(hEdit, EM_REPLACESEL, FALSE, (LPARAM) (char *) lParam);
       }
       if (IsIconic(GetParent(hwnd))) {
          ShowWindow(GetParent(hwnd), SW_SHOWNORMAL);
