@@ -1,6 +1,13 @@
 @echo off
 
+rem Batch file to build and upload files
+rem 
+rem TODO: Integration with FL
+
 set name=smh
+
+rem To upload, this var must be set here or in other batch
+rem set ftp=ftp://<user>:<password>@<ftp>/<path>
 
 echo Building %name% ...
 
@@ -55,14 +62,16 @@ rmdir Docs
 cd ..
 rmdir src
 
-rem For this to work the ftp settings has to be configured
-rem echo Going to upload files...
-rem pause
-rem 
-rem "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.zip ftp://<user>:<password>@<ftp>/<path> -overwrite -close 
-rem "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%W.zip ftp://<user>:<password>@<ftp>/<path> -overwrite -close 
-rem "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt ftp://<user>:<password>@<ftp>/<path> -overwrite -close 
-rem "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt ftp://<user>:<password>@<ftp>/<path> -overwrite -close 
+if "%ftp%"=="" GOTO END
+
+echo Going to upload files...
+pause
+
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.zip %ftp% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%W.zip %ftp% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt %ftp% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt %ftp% -overwrite -close 
+
+:END
 
 echo Done.
-exit
