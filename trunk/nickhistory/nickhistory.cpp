@@ -373,7 +373,7 @@ void AddToHistory(HANDLE hContact, wchar_t *nickname)
 
 	// Replace template with nick
 	wchar_t log[1024] = L"";
-	mir_sntprintf(log, sizeof(log), wtempl, nickname == NULL ? TranslateT("<no nick>") : nickname);
+	mir_sntprintf(log, sizeof(log), wtempl, nickname == NULL ? TranslateT("<no nickname>") : nickname);
 
 	HistoryLog(hContact, log);
 }
@@ -553,7 +553,7 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 #endif
 		else if (cws->value.type == DBVT_DELETED)
 		{
-			AddToHistory(hContact, (char *) NULL);
+			AddToHistory(hContact, (TCHAR *) NULL);
 		}
 	}
 
