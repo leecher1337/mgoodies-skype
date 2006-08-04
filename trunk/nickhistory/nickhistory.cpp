@@ -64,8 +64,8 @@ int HistoryEnabled(WPARAM wParam, LPARAM lParam);
 int HistoryEnabled(HANDLE hContact);
 
 
-#define DEFAULT_TEMPLATE_CHANGE "changed his/her nickname to %s"
-#define DEFAULT_TEMPLATE_REMOVE "removed his/her nickname"
+#define DEFAULT_TEMPLATE_CHANGE Translate("changed his/her nickname to %s")
+#define DEFAULT_TEMPLATE_REMOVE Translate("removed his/her nickname")
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
