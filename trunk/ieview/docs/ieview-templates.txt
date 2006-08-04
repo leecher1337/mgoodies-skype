@@ -30,6 +30,24 @@ The following templates may be defined:
 <!--hMessageOutGroupInner-->
 <!--hMessageOutGroupEnd-->
 
+<!--MessageInRTL-->
+<!--hMessageInRTL-->
+<!--MessageOutRTL-->
+<!--hMessageOutRTL-->
+<!--MessageInGroupStartRTL-->
+<!--MessageInGroupInnerRTL-->
+<!--MessageInGroupEndRTL-->
+<!--hMessageInGroupStartRTL-->
+<!--hMessageInGroupInnerRTL-->
+<!--hMessageInGroupEndRTL-->
+<!--MessageOutGroupStartRTL-->
+<!--MessageOutGroupInnerRTL-->
+<!--MessageOutGroupEndRTL-->
+<!--hMessageOutGroupStartRTL-->
+<!--hMessageOutGroupInnerRTL-->
+<!--hMessageOutGroupEndRTL-->
+
+
 All templates of which names begin with 'h' are used to display historical events.
 
 If a template is not present the corresponding event will not be shown in the log at all !

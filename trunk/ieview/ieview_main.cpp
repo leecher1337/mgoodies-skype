@@ -37,8 +37,8 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"IEView",
-	PLUGIN_MAKE_VERSION(1,0,9,4),
-	"IE Based Chat Log (1.0.9.4	"__DATE__")",
+	PLUGIN_MAKE_VERSION(1,0,9,5),
+	"IE Based Chat Log (1.0.9.5	"__DATE__")",
 	"Piotr Piastucki",
 	"the_leech@users.berlios.de",
 	"(c) 2005-2006 Piotr Piastucki",

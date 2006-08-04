@@ -50,3 +50,12 @@
 .statusChange {font-family: Tahoma; font-size: 13pt; font-weight: 300; color: #000000; }
 /* NOT USED */
 .dividers {font-family: Tahoma; font-size: 13pt; font-weight: 300; color: #55B9B4; }
+/* RTL-related styles */
+/* this changes the way incoming (received) events look like including timestamp, name, etc. */
+.divInRTL {text-align: right; direction:RTL; unicode-bidi:embed; word-wrap: break-word; background-color: #FFFFFF;}
+/* this changes the way outgoing (sent) events look like including timestamp, name, etc. */
+.divOutRTL {text-align: right; direction:RTL; unicode-bidi:embed; word-wrap: break-word; background-color: #FFFFFF;}
+/* this changes the way incoming (received) events look like including timestamp, name, etc. */
+.divInGridRTL {text-align: right; direction:RTL; unicode-bidi:embed; padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #000000; background-color: #FFFFFF;}
+/* this changes the way outgoing (sent) events look like including timestamp, name, etc. */
+.divOutGridRTL {text-align: right; direction:RTL; unicode-bidi:embed; padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #000000; background-color: #FFFFFF;}
