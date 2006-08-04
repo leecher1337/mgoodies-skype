@@ -10,3 +10,5 @@
 ; History
 
 [changed his/her nickname to %s]
+[removed his/her nickname]
+[<no nickname>]

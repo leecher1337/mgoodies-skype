@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Nick History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,1),
+	PLUGIN_MAKE_VERSION(0,0,0,2),
 	"Log nickname changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -64,7 +64,8 @@ int HistoryEnabled(WPARAM wParam, LPARAM lParam);
 int HistoryEnabled(HANDLE hContact);
 
 
-#define DEFAULT_TEMPLATE "changed his/her nickname to %s"
+#define DEFAULT_TEMPLATE_CHANGE "changed his/her nickname to %s"
+#define DEFAULT_TEMPLATE_REMOVE "removed his/her nickname"
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -313,25 +314,29 @@ void AddToHistory(HANDLE hContact, char *nickname)
 {
 	char templ[1024] = "";
 
+	if (nickname != NULL && nickname[0] == '\0')
+		nickname = NULL;
+
 	// Get template
 	DBVARIANT dbv;
-	if (!DBGetContactSetting(hContact, MODULE_NAME, "HistoryTemplate", &dbv))
+	if (!DBGetContactSetting(hContact, MODULE_NAME, 
+		nickname == NULL ? "HistoryTemplateRemove" : "HistoryTemplateChange", &dbv))
 	{
 		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != _T('\0'))
 			strncpy(templ, dbv.pszVal, sizeof(templ));
 		else
-			strncpy(templ, DEFAULT_TEMPLATE, sizeof(templ));
+			strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
 
 		DBFreeVariant(&dbv);
 	}
 	else
 	{
-		strncpy(templ, DEFAULT_TEMPLATE, sizeof(templ));
+		strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
 	}
 
 	// Replace template with nick
 	char log[1024] = "";
-	mir_snprintf(log, sizeof(log), templ, nickname);
+	mir_snprintf(log, sizeof(log), templ, nickname == NULL ? Translate("<no nickname>") : nickname);
 
 	HistoryLog(hContact, log);
 }
@@ -340,39 +345,45 @@ void AddToHistory(HANDLE hContact, char *nickname)
 
 void AddToHistory(HANDLE hContact, wchar_t *nickname)
 {
+
+	if (nickname != NULL && nickname[0] == L'\0')
+		nickname = NULL;
+
 	char templ[1024] = "";
 	wchar_t wtempl[1024] = L"";
 
 	// Get template
 	DBVARIANT dbv;
-	if (!DBGetContactSetting(hContact, MODULE_NAME, "HistoryTemplate", &dbv))
+	if (!DBGetContactSetting(hContact, MODULE_NAME, 
+		nickname == NULL ? "HistoryTemplateRemove" : "HistoryTemplateChange", &dbv))
 	{
 		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != _T('\0'))
 			strncpy(templ, dbv.pszVal, sizeof(templ));
 		else
-			strncpy(templ, DEFAULT_TEMPLATE, sizeof(templ));
+			strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
 
 		DBFreeVariant(&dbv);
 	}
 	else
 	{
-		strncpy(templ, DEFAULT_TEMPLATE, sizeof(templ));
+		strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
 	}
 
 	MultiByteToWideChar(CP_ACP, 0, templ, -1, wtempl, MAX_REGS(wtempl));
 
 	// Replace template with nick
 	wchar_t log[1024] = L"";
-	mir_sntprintf(log, sizeof(log), wtempl, nickname);
+	mir_sntprintf(log, sizeof(log), wtempl, nickname == NULL ? TranslateT("<no nick>") : nickname);
 
 	HistoryLog(hContact, log);
 }
 
 void AddToHistoryConvert(HANDLE hContact, char *nickname)
 {
-	wchar_t nick[1024];
+	wchar_t nick[1024] = L"";
 
-	MultiByteToWideChar(CP_UTF8, 0, nickname, -1, nick, MAX_REGS(nick));
+	if (nickname != NULL)
+		MultiByteToWideChar(CP_UTF8, 0, nickname, -1, nick, MAX_REGS(nick));
 
 	AddToHistory(hContact, nick);
 }
@@ -390,7 +401,27 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 	DBVARIANT dbv = {0};
 	if (DBGetContactSetting(hContact, cws->szModule, old_setting, &dbv))
 	{
-		ret = TRUE;
+		if (cws->value.type == DBVT_UTF8 || cws->value.type == DBVT_ASCIIZ || cws->value.type == DBVT_WCHAR)
+		{
+			if (cws->value.type == DBVT_ASCIIZ)
+				ret = (cws->value.pszVal[0] != '\0');
+			else if (cws->value.type == DBVT_UTF8)
+				ret = (cws->value.pszVal[0] != '\0');
+
+#ifdef UNICODE
+
+			else if (cws->value.type == DBVT_WCHAR)
+				ret = (cws->value.pwszVal[0] != L'\0');
+
+#endif
+			else
+				ret = TRUE;
+
+		}
+		else
+		{
+			ret = TRUE;
+		}
 	}
 	else
 	{
@@ -399,10 +430,10 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 
 #ifdef UNICODE
 
-			if ( (cws->value.type == DBVT_UTF8 || cws->value.type == DBVT_ASCIIZ || cws->value.type == DBVT_WCHAR)
+			if ( (cws->value.type == DBVT_UTF8 || cws->value.type == DBVT_ASCIIZ || cws->value.type == DBVT_WCHAR || cws->value.type == DBVT_DELETED)
 				&& (dbv.type == DBVT_UTF8 || dbv.type == DBVT_ASCIIZ || dbv.type == DBVT_WCHAR))
 			{
-				wchar_t tmp_cws[1024];
+				wchar_t tmp_cws[1024] = L"";
 				if (cws->value.type == DBVT_ASCIIZ)
 					MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, tmp_cws, MAX_REGS(tmp_cws));
 				else if (cws->value.type == DBVT_UTF8)
@@ -410,7 +441,7 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 				else if (cws->value.type == DBVT_WCHAR)
 					lstrcpynW(tmp_cws, cws->value.pwszVal, MAX_REGS(tmp_cws));
 
-				wchar_t tmp_dbv[1024];
+				wchar_t tmp_dbv[1024] = L"";
 				if (dbv.type == DBVT_ASCIIZ)
 					MultiByteToWideChar(CP_ACP, 0, dbv.pszVal, -1, tmp_dbv, MAX_REGS(tmp_dbv));
 				else if (dbv.type == DBVT_UTF8)
@@ -420,10 +451,17 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 
 				ret = lstrcmpW(tmp_cws, tmp_dbv);
 			}
-			else
+
+#else
+
+			if (cws->value.type == DBVT_DELETED && (dbv.type == DBVT_UTF8 || dbv.type == DBVT_ASCIIZ))
+			{
+				ret = (cws->value.pszVal[0] != '\0');
+			}
 
 #endif
 
+			else
 				ret = TRUE;
 		}
 		else if (dbv.type == DBVT_BYTE)
@@ -442,6 +480,10 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 		{
 			ret = strcmp(cws->value.pszVal, dbv.pszVal);
 		}
+		else if (dbv.type == DBVT_UTF8)
+		{
+			ret = strcmp(cws->value.pszVal, dbv.pszVal);
+		}
 
 #ifdef UNICODE
 
@@ -457,10 +499,17 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 
 	if (ret)
 	{
-		DBCONTACTWRITESETTING cws_old;
-		memmove(&cws_old, cws, sizeof(cws_old));
-		cws_old.szSetting = old_setting;
-		CallService(MS_DB_CONTACT_WRITESETTING, (WPARAM)hContact, (LPARAM)&cws_old);
+		if (cws->value.type == DBVT_DELETED)
+		{
+			DBDeleteContactSetting(hContact, cws->szModule, old_setting);
+		}
+		else
+		{
+			DBCONTACTWRITESETTING cws_old;
+			memmove(&cws_old, cws, sizeof(cws_old));
+			cws_old.szSetting = old_setting;
+			CallService(MS_DB_CONTACT_WRITESETTING, (WPARAM)hContact, (LPARAM)&cws_old);
+		}
 	}
 
 	return ret;
@@ -502,6 +551,10 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 			AddToHistory(hContact, cws->value.pwszVal);
 		}
 #endif
+		else if (cws->value.type == DBVT_DELETED)
+		{
+			AddToHistory(hContact, (char *) NULL);
+		}
 	}
 
 	return 0;
