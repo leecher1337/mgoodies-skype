@@ -40,9 +40,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stddef.h>
 #include <process.h>
 #include "resource.h"
-#ifdef __MINGW32__
+#ifndef IMF_AUTOFONTSIZEADJUST
+#define IMF_AUTOFONTSIZEADJUST	0x0010
+#endif
+#ifndef IMF_AUTOKEYBOARD
+#define IMF_AUTOKEYBOARD		0x0001
+#endif
+#ifndef SES_EXTENDBACKCOLOR
 #define SES_EXTENDBACKCOLOR	4
+#endif
+#ifndef ST_NEWCHARS
 #define ST_NEWCHARS		4
+#endif
+#ifndef CFM_WEIGHT
 #define	CFM_WEIGHT			0x00400000
 #endif
 #include <win2k.h>
