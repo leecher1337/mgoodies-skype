@@ -61,7 +61,7 @@ int SettingChanged(WPARAM wParam,LPARAM lParam);
 int EnableHistory(WPARAM wParam,LPARAM lParam);
 int DisableHistory(WPARAM wParam,LPARAM lParam);
 int HistoryEnabled(WPARAM wParam, LPARAM lParam);
-int HistoryEnabled(HANDLE hContact);
+int HistoryEnabledInternal(HANDLE hContact);
 
 
 #define DEFAULT_TEMPLATE_CHANGE Translate("changed his/her status message to %s")
@@ -164,9 +164,6 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 BOOL ProtocolCanHaveStatusMessages(const char *protocol)
 {
-	if (protocol == NULL)
-		return FALSE;
-
 	if (CallProtoService(protocol, PS_GETCAPS, PFLAGNUM_2, 0) == 0)
 		return FALSE;
 
@@ -233,7 +230,7 @@ int DisableHistory(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-int HistoryEnabled(HANDLE hContact) 
+int HistoryEnabledInternal(HANDLE hContact) 
 {
 	if (hContact != NULL)
 	{
@@ -256,7 +253,7 @@ int HistoryEnabled(HANDLE hContact)
 
 int HistoryEnabled(WPARAM wParam, LPARAM lParam) 
 {
-	return HistoryEnabled((HANDLE) wParam);
+	return HistoryEnabledInternal((HANDLE) wParam);
 }
 
 
@@ -346,17 +343,17 @@ HANDLE HistoryLog(HANDLE hContact, wchar_t *log_text)
 
 void AddToHistory(HANDLE hContact, char *nickname)
 {
-	char templ[1024] = "";
-
 	if (nickname != NULL && nickname[0] == '\0')
 		nickname = NULL;
+
+	char templ[1024] = "";
 
 	// Get template
 	DBVARIANT dbv;
 	if (!DBGetContactSetting(hContact, MODULE_NAME, 
 		nickname == NULL ? "HistoryTemplateRemove" : "HistoryTemplateChange", &dbv))
 	{
-		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != _T('\0'))
+		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != '\0')
 			strncpy(templ, dbv.pszVal, sizeof(templ));
 		else
 			strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
@@ -379,7 +376,6 @@ void AddToHistory(HANDLE hContact, char *nickname)
 
 void AddToHistory(HANDLE hContact, wchar_t *nickname)
 {
-
 	if (nickname != NULL && nickname[0] == L'\0')
 		nickname = NULL;
 
@@ -391,7 +387,7 @@ void AddToHistory(HANDLE hContact, wchar_t *nickname)
 	if (!DBGetContactSetting(hContact, MODULE_NAME, 
 		nickname == NULL ? "HistoryTemplateRemove" : "HistoryTemplateChange", &dbv))
 	{
-		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != _T('\0'))
+		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != '\0')
 			strncpy(templ, dbv.pszVal, sizeof(templ));
 		else
 			strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
@@ -559,7 +555,7 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 		return 0;
 
 	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
-	if (!strcmp(cws->szModule, "CList")  && !strcmp(cws->szSetting, "StatusMsg"))
+	if (!strcmp(cws->szModule, "CList") && !strcmp(cws->szSetting, "StatusMsg"))
 	{
 		char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 		if (proto == NULL || (metacontacts_proto != NULL && !strcmp(proto, metacontacts_proto)))
@@ -568,7 +564,7 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 		if (!ProtocolCanHaveStatusMessages(proto))
 			return 0;
 
-		if (!HistoryEnabled(hContact))
+		if (!HistoryEnabledInternal(hContact))
 			return 0;
 
 		if (!TrackChange(hContact, cws))
@@ -590,7 +586,7 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 #endif
 		else if (cws->value.type == DBVT_DELETED)
 		{
-			AddToHistory(hContact, (TCHAR *) NULL);
+			AddToHistory(hContact, (char *) NULL);
 		}
 	}
 
