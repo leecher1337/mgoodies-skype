@@ -171,6 +171,7 @@ static void xmlStreamInitializeNow(struct ThreadData *info){
 	}
 }
 
+static bool wasSaslPerformed = 0;
 void __cdecl JabberServerThread( struct ThreadData *info )
 {
 	DBVARIANT dbv;
@@ -180,7 +181,7 @@ void __cdecl JabberServerThread( struct ThreadData *info )
 	PVOID ssl;
 
 	JabberLog( "Thread started: type=%d", info->type );
-
+	wasSaslPerformed=false;
 	if ( info->type == JABBER_SESSION_NORMAL ) {
 
 		// Normal server connection, we will fetch all connection parameters
@@ -609,6 +610,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 {
 	int i,k;
 	bool isPlainAvailable = false;
+	bool isAuthAvailable = false;
 	bool isXGoogleTokenAvailable = false;
 	bool isRegisterAvailable = false;
 	bool areMechanismsDefined = false;
@@ -636,6 +638,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 					if (!_tcscmp(node->child[i]->child[k]->text,_T("X-GOOGLE-TOKEN"))) isXGoogleTokenAvailable = true;
 			}
 		} else if (!strcmp(node->child[i]->name,"register")) isRegisterAvailable = true;
+		else if (!strcmp(node->child[i]->name,"auth")) isAuthAvailable = true;
 		else if (!strcmp(node->child[i]->name,"session")) isSessionAvailable = true;
 	}
 	if (areMechanismsDefined) {
@@ -695,8 +698,11 @@ LBL_RequestToken:
 			mir_free(toEncode);
 			mir_free(temp);
 			JabberLog( "Never publish the hash below" );
-		} else {
-			MessagePopup( NULL, TranslateT("No known auth methods available. Giving up."), TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+		} else if (isAuthAvailable){
+				// no known mechanisms but iq_auth is available
+				if (info->type != JABBER_SESSION_REGISTER) goto LBL_TryIqAuth;
+		} else {// no known mechanisms and iq_auth is unavailable
+			MessagePopup( NULL, TranslateT("No known auth mechanisms available. Giving up."), TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JabberSend( info->s, "</stream:stream>" );
 			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 			return;
@@ -706,6 +712,7 @@ LBL_RequestToken:
 			auth.addAttr("xmlns","urn:ietf:params:xml:ns:xmpp-sasl");
 			auth.addAttr("mechanism",X_GOOGLE_TOKEN?"X-GOOGLE-TOKEN":"PLAIN");
 			JabberSend(info->s,auth);
+			wasSaslPerformed = true; //sasl was requested, but we dont know the result
 		}
 		else if ( info->type == JABBER_SESSION_REGISTER ) {
 			iqIdRegGetReg = JabberSerialNext();
@@ -717,13 +724,26 @@ LBL_RequestToken:
 		else JabberSend( info->s, "</stream:stream>" );
 		if (PLAIN) mir_free(PLAIN);
 //		if (X_GOOGLE_TOKEN) free(X_GOOGLE_TOKEN);
-	} else { // mechanisms are not defined. We are already logged-in
-		int iqId = JabberSerialNext();
-		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultBind );
-		XmlNodeIq iq("set",iqId);
-		XmlNode* bind = iq.addChild( "bind" ); bind->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-bind" );
-		bind->addChild( "resource", info->resource );
-		JabberSend( info->s, iq );
+	} else {
+		// mechanisms are not defined.
+		if (wasSaslPerformed) { //We are already logged-in
+			int iqId = JabberSerialNext();
+			JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultBind );
+			XmlNodeIq iq("set",iqId);
+			XmlNode* bind = iq.addChild( "bind" ); bind->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-bind" );
+			bind->addChild( "resource", info->resource );
+			JabberSend( info->s, iq );
+		} else { //mechanisms not available and we are not logged in
+			if (isAuthAvailable){ 
+LBL_TryIqAuth:
+				int iqId = JabberSerialNext();
+				JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetAuth );
+				XmlNodeIq iq( "get", iqId );
+				XmlNode* query = iq.addQuery( "jabber:iq:auth" );
+				query->addChild( "username", info->username );
+				JabberSend( info->s, iq );
+			}
+		}
 		if (isSessionAvailable) {
 			XmlNodeIq iq("set");
 			XmlNode* sess = iq.addChild( "session" ); sess->addAttr ( "xmlns", "urn:ietf:params:xml:ns:xmpp-session" );

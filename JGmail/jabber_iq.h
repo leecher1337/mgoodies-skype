@@ -59,8 +59,8 @@ JABBER_IQ_PFUNC JabberIqFetchXmlnsFunc( TCHAR* xmlns );
 
 void JabberIqResultExtSearch( XmlNode *iqNode, void *userdata );
 void JabberIqResultGetAvatar( XmlNode *iqNode, void *userdata );
-//void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata );
-//void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata );
+void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata );
+void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata );
 void JabberIqResultGetRoster( XmlNode *iqNode, void *userdata );
 void JabberIqResultGetAgents( XmlNode *iqNode, void *userdata );
 void JabberIqResultGetRegister( XmlNode *iqNode, void *userdata );
