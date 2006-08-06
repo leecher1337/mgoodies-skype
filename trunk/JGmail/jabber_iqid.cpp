@@ -34,7 +34,7 @@ Last change by : $Author$
 extern char* jabberVcardPhotoFileName;
 extern char* jabberVcardPhotoType;
 
-/* this is not needed anylonger - new Auth procedure
+// iq_auth is back
 void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata )
 {
 	// RECVED: result of the request for authentication method
@@ -78,7 +78,12 @@ void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata )
 		JabberSend( info->s, iq );
 	}
 	else if ( !lstrcmp( type, _T("error"))) {
+		TCHAR text[128];
 		JabberSend( info->s, "</stream:stream>" );
+		mir_sntprintf( text, SIZEOF( text ), _T("%s %s."), TranslateT( "Authentication failed for" ), info->username );
+		MessagePopup( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
+		jabberThreadInfo = NULL;	// To disallow auto reconnect
 }	}
 
 void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
@@ -129,7 +134,7 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 		jabberThreadInfo = NULL;	// To disallow auto reconnect
 }	}
-*/
+
 void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 {
 //	JabberXmlDumpNode( iqNode );
