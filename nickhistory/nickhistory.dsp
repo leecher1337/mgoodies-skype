@@ -172,6 +172,18 @@ SOURCE=..\utils\mir_memory.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\utils\mir_options.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\options.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\popup.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\resource.h
 # End Source File
 # End Group
@@ -192,7 +204,19 @@ SOURCE=..\utils\mir_memory.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\utils\mir_options.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\nickhistory.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\options.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\popup.cpp
 # End Source File
 # End Group
 # End Target

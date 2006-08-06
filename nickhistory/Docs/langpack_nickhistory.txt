@@ -1,5 +1,53 @@
-; Nick History 0.0.0.1
+; Nick History 0.0.0.5
 ; Author: Pescuma
+
+; Options
+
+[Events]
+[Nick History]
+
+[ History ]
+[Log changes to history]
+[Don't save UNICODE parts for 7bit ANSI history (saves db space)]
+
+[ Templates ]
+[Changed:]
+[Removed:]
+
+[ Protocols ]
+[Enable nickname tracking for theese protocols:]
+
+[Popups]
+[Nick Change]
+
+[Show popups on changes]
+
+[ Colours ]
+[Background colour]
+[Text colour]
+[Use Windows colours]
+[Use default colours]
+
+[ Delay ]
+[From PopUp plugin]
+[Custom]
+[Permanent]
+
+[ Actions ]
+[On Right Click:]
+[On Left Click:]
+[Do Nothing]
+[Close Popup]
+[Show History]
+
+[Preview]
+
+
+; Test popup
+
+[Test Contact]
+[Test description]
+
 
 ; Contact Menu
 
@@ -7,7 +55,7 @@
 [Don't log Nickname changes]
 
 
-; History
+; Template defaults
 
 [changed his/her nickname to %s]
 [removed his/her nickname]
