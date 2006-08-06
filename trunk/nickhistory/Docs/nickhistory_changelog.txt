@@ -1,6 +1,13 @@
-Nick History 0.0.0.3
+Nick History 0.0.0.5
 
 Changelog:
+
+. 0.0.0.5
+  * Small fixes
+
+. 0.0.0.4
+  + Options page
+  + Popups
 
 . 0.0.0.3
   + Better handling of metacontacts
