@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2005 Ricardo Pescuma Domenecci
+Copyright (C) 2006 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -28,7 +28,6 @@ Boston, MA 02111-1307, USA.
 #include <time.h>
 
 
-
 #ifdef __cplusplus
 extern "C" 
 {
@@ -47,11 +46,17 @@ extern "C"
 #include <m_utils.h>
 #include <m_updater.h>
 #include <m_metacontacts.h>
+#include <m_popupw.h>
+#include <m_popup.h>
+#include <m_history.h>
 
 #include "../utils/mir_memory.h"
+#include "../utils/mir_options.h"
 
 #include "resource.h"
 #include "m_smh.h"
+#include "options.h"
+#include "popup.h"
 
 
 #define MODULE_NAME		"SMH"
@@ -64,7 +69,24 @@ extern PLUGINLINK *pluginLink;
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 
+#define DEFAULT_TEMPLATE_CHANGED "changed his/her status message to %s"
+#define DEFAULT_TEMPLATE_REMOVED "removed his/her status message"
 
+
+#ifdef UNICODE
+
+#define TCHAR_TO_CHAR(dest, orig)	mir_snprintf(dest, MAX_REGS(dest), "%S", orig)
+#define CHAR_TO_TCHAR(dest, orig)	mir_sntprintf(dest, MAX_REGS(dest), "%S", orig)
+
+#else
+
+#define TCHAR_TO_CHAR(dest, orig)	lstrcpynA(dest, orig, MAX_REGS(dest))
+#define CHAR_TO_TCHAR(dest, orig)	lstrcpynA(dest, orig, MAX_REGS(dest))
+
+#endif
+
+
+BOOL AllowProtocol(const char *proto);
 
 
 #ifdef __cplusplus
