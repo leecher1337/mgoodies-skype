@@ -31,11 +31,11 @@ PLUGININFO pluginInfo = {
 #else
 	"Status Message History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,1),
+	PLUGIN_MAKE_VERSION(0,0,0,2),
 	"Log status message changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",
-	"",
+	"© 2006 Ricardo Pescuma Domenecci",
 	"http://miranda-im.org/",
 	0,	//not transient
 	0	//doesn't replace anything built-in
@@ -61,11 +61,9 @@ int SettingChanged(WPARAM wParam,LPARAM lParam);
 int EnableHistory(WPARAM wParam,LPARAM lParam);
 int DisableHistory(WPARAM wParam,LPARAM lParam);
 int HistoryEnabled(WPARAM wParam, LPARAM lParam);
-int HistoryEnabledInternal(HANDLE hContact);
 
-
-#define DEFAULT_TEMPLATE_CHANGE Translate("changed his/her status message to %s")
-#define DEFAULT_TEMPLATE_REMOVE Translate("removed his/her status message")
+BOOL ContactEnabled(HANDLE hContact);
+BOOL ProtocolEnabled(const char *protocol);
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -87,6 +85,8 @@ extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVers
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link) 
 {
 	pluginLink = link;
+
+	init_mir_malloc();
 
 	CreateServiceFunction(MS_SMH_DISABLE, DisableHistory);
 	CreateServiceFunction(MS_SMH_ENABLE, EnableHistory);
@@ -111,11 +111,17 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	hPreBuildCMenu = HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
 	hSettingChanged = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, SettingChanged);
 
+	InitOptions();
+	InitPopups();
+
 	return 0;
 }
 
 extern "C" int __declspec(dllexport) Unload(void) 
 {
+	DeInitPopups();
+	DeInitOptions();
+
 	UnhookEvent(hModulesLoaded);
 	UnhookEvent(hPreBuildCMenu);
 	UnhookEvent(hSettingChanged);
@@ -126,8 +132,6 @@ extern "C" int __declspec(dllexport) Unload(void)
 // Called when all the modules are loaded
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
-	init_mir_malloc();
-
 	if (ServiceExists(MS_MC_GETPROTOCOLNAME))
 		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
 
@@ -162,25 +166,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-BOOL ProtocolCanHaveStatusMessages(const char *protocol)
-{
-	if (CallProtoService(protocol, PS_GETCAPS, PFLAGNUM_2, 0) == 0)
-		return FALSE;
-
-	if ((CallProtoService(protocol, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGRECV) == 0)
-		return FALSE;
-
-	return TRUE;
-}
 
 int PreBuildContactMenu(WPARAM wParam,LPARAM lParam) 
 {
-	// See what to show
 	CLISTMENUITEM clmi = {0};
 	clmi.cbSize = sizeof(clmi);
 
 	char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0);
-	if (proto == NULL || !ProtocolCanHaveStatusMessages(proto))
+	if (!ProtocolEnabled(proto))
 	{
 		clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu, (LPARAM) &clmi);
@@ -188,7 +181,7 @@ int PreBuildContactMenu(WPARAM wParam,LPARAM lParam)
 		clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu, (LPARAM) &clmi);
 	}
-	else if (HistoryEnabled(wParam, lParam))
+	else if (HistoryEnabled(wParam, 0))
 	{
 		clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu, (LPARAM) &clmi);
@@ -230,86 +223,112 @@ int DisableHistory(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-int HistoryEnabledInternal(HANDLE hContact) 
-{
-	if (hContact != NULL)
-	{
-		BYTE def = TRUE;
-
-		// Is a subcontact?
-		if (ServiceExists(MS_MC_GETMETACONTACT)) 
-		{
-			HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
-
-			if (hMetaContact != NULL)
-				def = DBGetContactSettingByte(hMetaContact, MODULE_NAME, "Enabled", def);
-		}
-
-		return DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", def);
-	}
-	else
-		return FALSE;
-}
 
 int HistoryEnabled(WPARAM wParam, LPARAM lParam) 
 {
-	return HistoryEnabledInternal((HANDLE) wParam);
+	return ContactEnabled((HANDLE) wParam);
 }
 
 
-HANDLE HistoryLog(HANDLE hContact, char *log_text)
+BOOL AllowProtocol(const char *proto)
+{	
+	if ((CallProtoService(proto, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGRECV) == 0)
+		return FALSE;
+
+	return TRUE;
+}
+
+
+BOOL ProtocolEnabled(const char *proto)
+{
+	if (proto == NULL)
+		return FALSE;
+		
+	if (!AllowProtocol(proto))
+		return FALSE;
+
+	char setting[256];
+	mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
+	return (BOOL) DBGetContactSettingByte(NULL, MODULE_NAME, setting, TRUE);
+}
+
+
+BOOL ContactEnabled(HANDLE hContact) 
+{
+	if (hContact == NULL)
+		return FALSE;
+
+	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+	if (!ProtocolEnabled(proto))
+		return FALSE;
+
+	BYTE def = TRUE;
+
+	// Is a subcontact?
+	if (ServiceExists(MS_MC_GETMETACONTACT)) 
+	{
+		HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
+
+		if (hMetaContact != NULL)
+			def = ContactEnabled(hMetaContact);
+	}
+
+	return DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", def);
+}
+
+
+// Returns true if the unicode buffer only contains 7-bit characters.
+BOOL IsUnicodeAscii(const WCHAR * pBuffer, int nSize)
+{
+	BOOL bResult = TRUE;
+	int nIndex;
+
+	for (nIndex = 0; nIndex < nSize; nIndex++) {
+		if (pBuffer[nIndex] > 0x7F) {
+			bResult = FALSE;
+			break;
+		}
+	}
+	return bResult;
+}
+
+
+HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text)
 {
 	if (log_text != NULL)
 	{
-		DBEVENTINFO event = { 0 };;
+		DBEVENTINFO event = { 0 };
+		BYTE *tmp = NULL;
 
 		event.cbSize = sizeof(event);
+
+#ifdef UNICODE
+
+		size_t needed = WideCharToMultiByte(CP_ACP, 0, log_text, -1, NULL, 0, NULL, NULL);
+		size_t len = lstrlen(log_text);
+		size_t size;
+
+		if (opts.history_only_ansi_if_possible && IsUnicodeAscii(log_text, len))
+			size = needed;
+		else
+			size = needed + (len + 1) * sizeof(WCHAR);
+
+		tmp = (BYTE *) mir_alloc0(size);
+
+		WideCharToMultiByte(CP_ACP, 0, log_text, -1, (char *) tmp, needed, NULL, NULL);
+
+		if (size > needed)
+			lstrcpyn((WCHAR *) &tmp[needed], log_text, len + 1);
+
+		event.pBlob = tmp;
+		event.cbBlob = size;
+
+#else
 
 		event.pBlob = (PBYTE) log_text;
 		event.cbBlob = strlen(log_text) + 1;
 
-		event.eventType = EVENTTYPE_STATUSMESSAGE_CHANGE;
-		event.flags = DBEF_READ;
-		event.timestamp = (DWORD) time(NULL);
-
-		event.szModule = MODULE_NAME;
-		
-		// Is a subcontact?
-		if (ServiceExists(MS_MC_GETMETACONTACT)) 
-		{
-			HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
-
-			if (hMetaContact != NULL)
-				CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&event);
-		}
-
-		return (HANDLE) CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&event);
-	}
-	else
-	{
-		return NULL;
-	}
-}
-
-#ifdef UNICODE
-
-HANDLE HistoryLog(HANDLE hContact, wchar_t *log_text)
-{
-	if (log_text != NULL)
-	{
-		DBEVENTINFO event = { 0 };;
-
-		event.cbSize = sizeof(event);
-
-		size_t size = lstrlenW(log_text) + 1;
-		BYTE *tmp = (BYTE *) mir_alloc0(size * 3);
-
-		WideCharToMultiByte(CP_ACP, 0, log_text, -1, (char *) tmp, size, NULL, NULL);
-
-		lstrcpynW((WCHAR *) &tmp[size], log_text, size);
-
-		event.pBlob = tmp;
-		event.cbBlob = size * 3;
+#endif
 
 		event.eventType = EVENTTYPE_STATUSMESSAGE_CHANGE;
 		event.flags = DBEF_READ;
@@ -322,7 +341,7 @@ HANDLE HistoryLog(HANDLE hContact, wchar_t *log_text)
 		{
 			HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
 
-			if (hMetaContact != NULL)
+			if (hMetaContact != NULL && ContactEnabled(hMetaContact))
 				CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&event);
 		}
 
@@ -338,87 +357,25 @@ HANDLE HistoryLog(HANDLE hContact, wchar_t *log_text)
 	}
 }
 
-#endif
 
-
-void AddToHistory(HANDLE hContact, char *nickname)
+void Notify(HANDLE hContact, TCHAR *status_message)
 {
-	if (nickname != NULL && nickname[0] == '\0')
-		nickname = NULL;
+	if (status_message != NULL && status_message[0] == _T('\0'))
+		status_message = NULL;
 
-	char templ[1024] = "";
+	// Replace template with status_message
+	TCHAR log[1024];
+	mir_sntprintf(log, sizeof(log), 
+		status_message == NULL ? opts.template_removed : opts.template_changed, 
+		status_message == NULL ? TranslateT("<no status message>") : status_message);
 
-	// Get template
-	DBVARIANT dbv;
-	if (!DBGetContactSetting(hContact, MODULE_NAME, 
-		nickname == NULL ? "HistoryTemplateRemove" : "HistoryTemplateChange", &dbv))
-	{
-		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != '\0')
-			strncpy(templ, dbv.pszVal, sizeof(templ));
-		else
-			strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
+	if (opts.history_enable)
+		HistoryLog(hContact, log);
 
-		DBFreeVariant(&dbv);
-	}
-	else
-	{
-		strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
-	}
-
-	// Replace template with nick
-	char log[1024] = "";
-	mir_snprintf(log, sizeof(log), templ, nickname == NULL ? Translate("<no status message>") : nickname);
-
-	HistoryLog(hContact, log);
+	if (opts.popup_enable)
+		ShowPopup(hContact, NULL, log);
 }
 
-#ifdef UNICODE
-
-void AddToHistory(HANDLE hContact, wchar_t *nickname)
-{
-	if (nickname != NULL && nickname[0] == L'\0')
-		nickname = NULL;
-
-	char templ[1024] = "";
-	wchar_t wtempl[1024] = L"";
-
-	// Get template
-	DBVARIANT dbv;
-	if (!DBGetContactSetting(hContact, MODULE_NAME, 
-		nickname == NULL ? "HistoryTemplateRemove" : "HistoryTemplateChange", &dbv))
-	{
-		if (dbv.type == DBVT_ASCIIZ && dbv.pszVal != NULL && dbv.pszVal[0] != '\0')
-			strncpy(templ, dbv.pszVal, sizeof(templ));
-		else
-			strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
-
-		DBFreeVariant(&dbv);
-	}
-	else
-	{
-		strncpy(templ, nickname == NULL ? DEFAULT_TEMPLATE_REMOVE : DEFAULT_TEMPLATE_CHANGE, sizeof(templ));
-	}
-
-	MultiByteToWideChar(CP_ACP, 0, templ, -1, wtempl, MAX_REGS(wtempl));
-
-	// Replace template with nick
-	wchar_t log[1024] = L"";
-	mir_sntprintf(log, sizeof(log), wtempl, nickname == NULL ? TranslateT("<no status message>") : nickname);
-
-	HistoryLog(hContact, log);
-}
-
-void AddToHistoryConvert(HANDLE hContact, char *nickname)
-{
-	wchar_t nick[1024] = L"";
-
-	if (nickname != NULL)
-		MultiByteToWideChar(CP_UTF8, 0, nickname, -1, nick, MAX_REGS(nick));
-
-	AddToHistory(hContact, nick);
-}
-
-#endif
 
 // Return TRUE if changed
 BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
@@ -431,23 +388,26 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 	DBVARIANT dbv = {0};
 	if (DBGetContactSetting(hContact, cws->szModule, old_setting, &dbv))
 	{
-		if (cws->value.type == DBVT_UTF8 || cws->value.type == DBVT_ASCIIZ || cws->value.type == DBVT_WCHAR)
+		// Old value does not exist
+
+		if (cws->value.type == DBVT_DELETED)
 		{
-			if (cws->value.type == DBVT_ASCIIZ)
-				ret = (cws->value.pszVal[0] != '\0');
-			else if (cws->value.type == DBVT_UTF8)
-				ret = (cws->value.pszVal[0] != '\0');
-
-#ifdef UNICODE
-
-			else if (cws->value.type == DBVT_WCHAR)
-				ret = (cws->value.pwszVal[0] != L'\0');
-
-#endif
-			else
-				ret = TRUE;
-
+			ret = FALSE;
 		}
+		else if (cws->value.type == DBVT_ASCIIZ)
+		{
+			ret = (cws->value.pszVal[0] != '\0');
+		}
+#ifdef UNICODE
+		else if (cws->value.type == DBVT_UTF8)
+		{
+			ret = (cws->value.pszVal[0] != '\0');
+		}
+		else if (cws->value.type == DBVT_WCHAR)
+		{
+			ret = (cws->value.pwszVal[0] != L'\0');
+		}
+#endif
 		else
 		{
 			ret = TRUE;
@@ -455,44 +415,49 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 	}
 	else
 	{
+		// Old value exist
+
 		if (dbv.type != cws->value.type)
 		{
-
+			if (cws->value.type == DBVT_DELETED && dbv.type == DBVT_ASCIIZ)
+			{
+				ret = (cws->value.pszVal[0] != '\0');
+			}
 #ifdef UNICODE
-
-			if ( (cws->value.type == DBVT_UTF8 || cws->value.type == DBVT_ASCIIZ || cws->value.type == DBVT_WCHAR || cws->value.type == DBVT_DELETED)
+			else if (cws->value.type == DBVT_DELETED && dbv.type == DBVT_UTF8)
+			{
+				ret = (cws->value.pszVal[0] != '\0');
+			}
+			else if (cws->value.type == DBVT_DELETED && dbv.type == DBVT_WCHAR)
+			{
+				ret = (cws->value.pwszVal[0] != L'\0');
+			}
+			else if ( (cws->value.type == DBVT_UTF8 || cws->value.type == DBVT_ASCIIZ || cws->value.type == DBVT_WCHAR)
 				&& (dbv.type == DBVT_UTF8 || dbv.type == DBVT_ASCIIZ || dbv.type == DBVT_WCHAR))
 			{
-				wchar_t tmp_cws[1024] = L"";
+				WCHAR tmp_cws[1024] = L"";
 				if (cws->value.type == DBVT_ASCIIZ)
 					MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, tmp_cws, MAX_REGS(tmp_cws));
 				else if (cws->value.type == DBVT_UTF8)
 					MultiByteToWideChar(CP_UTF8, 0, cws->value.pszVal, -1, tmp_cws, MAX_REGS(tmp_cws));
 				else if (cws->value.type == DBVT_WCHAR)
-					lstrcpynW(tmp_cws, cws->value.pwszVal, MAX_REGS(tmp_cws));
+					lstrcpyn(tmp_cws, cws->value.pwszVal, MAX_REGS(tmp_cws));
 
-				wchar_t tmp_dbv[1024] = L"";
+				WCHAR tmp_dbv[1024] = L"";
 				if (dbv.type == DBVT_ASCIIZ)
 					MultiByteToWideChar(CP_ACP, 0, dbv.pszVal, -1, tmp_dbv, MAX_REGS(tmp_dbv));
 				else if (dbv.type == DBVT_UTF8)
 					MultiByteToWideChar(CP_UTF8, 0, dbv.pszVal, -1, tmp_dbv, MAX_REGS(tmp_dbv));
 				else if (dbv.type == DBVT_WCHAR)
-					lstrcpynW(tmp_dbv, dbv.pwszVal, MAX_REGS(tmp_dbv));
+					lstrcpyn(tmp_dbv, dbv.pwszVal, MAX_REGS(tmp_dbv));
 
 				ret = lstrcmpW(tmp_cws, tmp_dbv);
 			}
-
-#else
-
-			if (cws->value.type == DBVT_DELETED && (dbv.type == DBVT_UTF8 || dbv.type == DBVT_ASCIIZ))
-			{
-				ret = (cws->value.pszVal[0] != '\0');
-			}
-
 #endif
-
 			else
+			{
 				ret = TRUE;
+			}
 		}
 		else if (dbv.type == DBVT_BYTE)
 		{
@@ -510,18 +475,15 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 		{
 			ret = strcmp(cws->value.pszVal, dbv.pszVal);
 		}
+#ifdef UNICODE
 		else if (dbv.type == DBVT_UTF8)
 		{
 			ret = strcmp(cws->value.pszVal, dbv.pszVal);
 		}
-
-#ifdef UNICODE
-
 		else if (dbv.type == DBVT_WCHAR)
 		{
-			ret = lstrcmpW(cws->value.pwszVal, dbv.pwszVal);
+			ret = lstrcmp(cws->value.pwszVal, dbv.pwszVal);
 		}
-
 #endif
 
 		DBFreeVariant(&dbv);
@@ -545,9 +507,13 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 	return ret;
 }
 
+
 int SettingChanged(WPARAM wParam,LPARAM lParam)
 {
 	if (!loaded)
+		return 0;
+
+	if (!opts.history_enable && !opts.popup_enable)
 		return 0;
 
 	HANDLE hContact = (HANDLE) wParam;
@@ -557,36 +523,56 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
 	if (!strcmp(cws->szModule, "CList") && !strcmp(cws->szSetting, "StatusMsg"))
 	{
-		char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+		char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 		if (proto == NULL || (metacontacts_proto != NULL && !strcmp(proto, metacontacts_proto)))
 			return 0;
-
-		if (!ProtocolCanHaveStatusMessages(proto))
-			return 0;
-
-		if (!HistoryEnabledInternal(hContact))
+	
+		if (!ContactEnabled(hContact))
 			return 0;
 
 		if (!TrackChange(hContact, cws))
 			return 0;
 
+#ifdef UNICODE
 		if (cws->value.type == DBVT_ASCIIZ)
 		{
-			AddToHistory(hContact, cws->value.pszVal);
+			if (cws->value.pszVal != NULL)
+			{
+				WCHAR status_message[1024] = L"";
+				MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, status_message, MAX_REGS(status_message));
+				Notify(hContact, status_message);
+			}
+			else
+			{
+				Notify(hContact, NULL);
+			}
 		}
-#ifdef UNICODE
 		else if (cws->value.type == DBVT_UTF8)
 		{
-			AddToHistoryConvert(hContact, cws->value.pszVal);
+			if (cws->value.pszVal != NULL)
+			{
+				WCHAR status_message[1024] = L"";
+				MultiByteToWideChar(CP_UTF8, 0, cws->value.pszVal, -1, status_message, MAX_REGS(status_message));
+				Notify(hContact, status_message);
+			}
+			else
+			{
+				Notify(hContact, NULL);
+			}
 		}
 		else if (cws->value.type == DBVT_WCHAR)
 		{
-			AddToHistory(hContact, cws->value.pwszVal);
+			Notify(hContact, cws->value.pwszVal);
+		}
+#else
+		if (cws->value.type == DBVT_ASCIIZ)
+		{
+			Notify(hContact, cws->value.pszVal);
 		}
 #endif
 		else if (cws->value.type == DBVT_DELETED)
 		{
-			AddToHistory(hContact, (char *) NULL);
+			Notify(hContact, NULL);
 		}
 	}
 
