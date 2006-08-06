@@ -46,15 +46,20 @@ void FreeMirOptions();
 #define CONTROL_RADIO 3				// Stored as WORD
 #define CONTROL_COMBO 4				// Stored as WORD
 #define CONTROL_PROTOCOL_LIST 5		// Stored as BYTEs
+#define CONTROL_TEXT 6				// Stored as TCHARs, max len 1024
 
 
 typedef BOOL (* FPAllowProtocol) (const char *proto);
 
 typedef struct {
+	void *var;
 	int type;
 	unsigned int nID;
 	char *setting;
-	DWORD defValue;
+	union {
+		DWORD dwDefValue;
+		TCHAR *tszDefValue;
+	};
 	union {
 		int nIDSpin;
 		int value;
@@ -66,6 +71,7 @@ typedef struct {
 
 BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *module, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
+void LoadOpts(OptPageControl *controls, int controlsSize, char *module);
 
 
 
