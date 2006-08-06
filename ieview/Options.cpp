@@ -335,8 +335,11 @@ static void RefreshProtoIcons(HWND hwndDlg) {
 			}
 		}
 		if (hIcon == NULL) {
+			hIcon=(HICON)LoadSkinnedIcon(SKINICON_OTHER_MIRANDA);
+			/*
 			hIcon = (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_SMILEY), IMAGE_ICON,
 							GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+			*/
 		}
 		ImageList_AddIcon(hProtocolImageList, hIcon);
 		DestroyIcon(hIcon);

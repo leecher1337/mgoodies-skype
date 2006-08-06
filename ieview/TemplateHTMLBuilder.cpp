@@ -121,14 +121,19 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	if (szAvatarIn == NULL) {
 		if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
 			if (strlen(dbv.pszVal) > 0) {
-				/* relative -> absolute */
 				char tmpPath[MAX_PATH];
-				strcpy (tmpPath, dbv.pszVal);
-				if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-					CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+				char* ext = strrchr(dbv.pszVal, '.');
+				if (ext && strcmpi(ext, ".xml") == 0) {
+				} else {
+					/* relative -> absolute */
+					char tmpPath[MAX_PATH];
+					strcpy (tmpPath, dbv.pszVal);
+					if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+						CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+					}
+					szAvatarIn = Utils::UTF8Encode(tmpPath);
+					Utils::convertPath(szAvatarIn);
 				}
-				szAvatarIn = Utils::UTF8Encode(tmpPath);
-				Utils::convertPath(szAvatarIn);
 			}
 			DBFreeVariant(&dbv);
 		}
@@ -145,14 +150,19 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	if (szAvatarOut == NULL) {
 		if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 		    if (strlen(dbv.pszVal) > 0) {
-				/* relative -> absolute */
-			    char tmpPath[MAX_PATH];
-			    strcpy (tmpPath, dbv.pszVal);
-			    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-	    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-			   	}
-	            szAvatarOut = Utils::UTF8Encode(tmpPath);
-			    Utils::convertPath(szAvatarOut);
+				char tmpPath[MAX_PATH];
+				char* ext = strrchr(dbv.pszVal, '.');
+				if (ext && strcmpi(ext, ".xml") == 0) {
+				} else {
+					/* relative -> absolute */
+					char tmpPath[MAX_PATH];
+					strcpy (tmpPath, dbv.pszVal);
+					if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+						CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+					}
+					szAvatarOut = Utils::UTF8Encode(tmpPath);
+					Utils::convertPath(szAvatarOut);
+				}
 		    }
 	       	DBFreeVariant(&dbv);
 		}
@@ -326,14 +336,30 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 		if(DBGetContactSettingWord(event->hContact, szProto, "Status", ID_STATUS_OFFLINE) != ID_STATUS_OFFLINE) {
 			if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
 			    if (strlen(dbv.pszVal) > 0) {
-					/* relative -> absolute */
-				    char tmpPath[MAX_PATH];
-				    strcpy (tmpPath, dbv.pszVal);
-				    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-		    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-				   	}
-		       		szAvatarIn = Utils::UTF8Encode(tmpPath);
-				    Utils::convertPath(szAvatarIn);
+					char* ext = strrchr(dbv.pszVal, '.');
+					if (ext && strcmpi(ext, ".xml") == 0) {
+						/*
+						char pBuf[2048];
+						int src = _open(dbv.pszVal, _O_BINARY | _O_RDONLY);
+						if(src != -1) {
+							char* urlBuf;
+							_read(src, pBuf, 2048);
+							_close(src);
+							urlBuf = strstr(pBuf, "<URL>");
+							if(urlBuf)
+							url = strtok(urlBuf + 5, "<");
+						}
+						*/
+					} else {
+						/* relative -> absolute */
+						char tmpPath[MAX_PATH];
+						strcpy (tmpPath, dbv.pszVal);
+						if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+							CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+						}
+						szAvatarIn = Utils::UTF8Encode(tmpPath);
+						Utils::convertPath(szAvatarIn);
+					}
 			    }
 		       	DBFreeVariant(&dbv);
 			}
@@ -350,14 +376,18 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	} else {
 		if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 		    if (strlen(dbv.pszVal) > 0) {
-				/* relative -> absolute */
-			    char tmpPath[MAX_PATH];
-			    strcpy (tmpPath, dbv.pszVal);
-			    if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-	    			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-			   	}
-	       		szAvatarOut = Utils::UTF8Encode(tmpPath);
-			    Utils::convertPath(szAvatarOut);
+				char tmpPath[MAX_PATH];
+				char* ext = strrchr(dbv.pszVal, '.');
+				if (ext && strcmpi(ext, ".xml") == 0) {
+				} else {
+					/* relative -> absolute */
+					strcpy (tmpPath, dbv.pszVal);
+					if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+						CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+					}
+					szAvatarOut = Utils::UTF8Encode(tmpPath);
+					Utils::convertPath(szAvatarOut);
+				}
 		    }
 	       	DBFreeVariant(&dbv);
 		}
