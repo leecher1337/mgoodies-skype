@@ -4,6 +4,8 @@
 ! gdi leaks in option page (thx tioduke)
 + Auto send nudge option when received one.
 * New trigger plugin support (first step)
+* Use the text set in option page in popup.
+* Use find first contact service for popup preview
 
 0.0.1.10
 ===========
