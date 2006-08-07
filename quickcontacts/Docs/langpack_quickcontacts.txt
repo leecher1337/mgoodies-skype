@@ -1,4 +1,4 @@
-; Quick Contacts 0.0.1.0
+; Quick Contacts 0.0.2.6
 ; Author: micron-x, Pescuma
 ; http://forums.miranda-im.org/showthread.php?t=5643
 
