@@ -34,28 +34,37 @@ BEGIN
     GROUPBOX        " History ",IDC_STATIC,3,3,308,44
     CONTROL         "Log changes to history",IDC_HISTORY,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,12,16,291,11
-    CONTROL         "Don't save UNICODE parts for 7bit ANSI history (saves db space)",
+    CONTROL         "Don't save Unicode parts for 7bit ANSI history (saves db space)",
                     IDC_ANSI,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,30,291,
                     11
-    GROUPBOX        " Templates ",IDC_TEMPLATES,3,51,308,49
-    RTEXT           "Changed:",IDC_CHANGED_L,11,65,55,10
-    EDITTEXT        IDC_CHANGED,72,64,233,13,ES_AUTOHSCROLL
-    RTEXT           "Removed:",IDC_REMOVED_L,11,79,55,10
-    EDITTEXT        IDC_REMOVED,72,78,233,13,ES_AUTOHSCROLL
-    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,104,308,125
-    LTEXT           "Enable nickname tracking for theese protocols:",
-                    IDC_PROTOCOLS_L,12,117,291,11
+    GROUPBOX        " Tracking ",IDC_TRACK_G,3,51,308,90
+    CONTROL         "Track when contacts change their status messages",
+                    IDC_TRACK_CHANGE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    12,63,291,11
+    RTEXT           "Template:",IDC_CHANGED_L,11,76,55,10
+    EDITTEXT        IDC_CHANGED,72,75,233,13,ES_AUTOHSCROLL
+    CONTROL         "Track when contacts remove their status messages",
+                    IDC_TRACK_REMOVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    12,92,291,11
+    RTEXT           "Template:",IDC_REMOVED_L,11,106,55,10
+    EDITTEXT        IDC_REMOVED,72,105,233,13,ES_AUTOHSCROLL
+    CONTROL         "Only when the contact is not offline",
+                    IDC_ONLY_NOT_OFFLINE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,12,123,291,11
+    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,144,308,93
+    LTEXT           "Enable tracking for these protocols:",
+                    IDC_PROTOCOLS_L,13,156,291,11
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
-                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,12,130,158,90
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,12,168,158,62
 END
 
 IDD_POPUPS DIALOG DISCARDABLE  0, 0, 314, 240
 STYLE WS_CHILD | WS_VISIBLE
 FONT 8, "Tahoma"
 BEGIN
-    CONTROL         "Show popups on changes",IDC_POPUPS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,3,3,308,12
+    CONTROL         "Enable popups",IDC_POPUPS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,3,3,308,12
     GROUPBOX        " Colours ",IDC_COLOURS_G,3,25,158,75
     CONTROL         "",IDC_BGCOLOR,"ColourPicker",WS_TABSTOP,11,37,35,14
     LTEXT           "Background colour",IDC_BGCOLOR_L,55,41,66,8
@@ -66,7 +75,7 @@ BEGIN
     CONTROL         "Use default colours",IDC_DEFAULTCOLORS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,11,84,107,10
     GROUPBOX        " Delay ",IDC_DELAY_G,166,25,145,75
-    CONTROL         "From PopUp plugin",IDC_DELAYFROMPU,"Button",
+    CONTROL         "From popup plugin",IDC_DELAYFROMPU,"Button",
                     BS_AUTORADIOBUTTON | WS_GROUP,175,38,122,10
     CONTROL         "Custom",IDC_DELAYCUSTOM,"Button",BS_AUTORADIOBUTTON,175,
                     52,54,10
@@ -77,10 +86,10 @@ BEGIN
                     UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
                     UDS_HOTTRACK,268,51,11,11
     GROUPBOX        " Actions ",IDC_ACTIONS_G,3,103,308,47
-    RTEXT           "On Right Click:",IDC_RIGHT_ACTION_L,13,118,62,9
+    RTEXT           "On right click:",IDC_RIGHT_ACTION_L,13,118,62,9
     COMBOBOX        IDC_RIGHT_ACTION,83,116,156,60,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
-    RTEXT           "On Left Click:",IDC_LEFT_ACTION_L,13,132,62,9
+    RTEXT           "On left click:",IDC_LEFT_ACTION_L,13,132,62,9
     COMBOBOX        IDC_LEFT_ACTION,83,132,156,60,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Preview",IDC_PREV,131,161,50,14

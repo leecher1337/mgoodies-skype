@@ -1,6 +1,10 @@
-Status Message History 0.0.0.2
+Status Message History 0.0.0.3	
 
 Changelog:
+
+. 0.0.0.3
+  + Options to what to track
+  * Fix for popups
 
 . 0.0.0.2
   + Options page
