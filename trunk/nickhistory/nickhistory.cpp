@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Nick History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,6),
+	PLUGIN_MAKE_VERSION(0,0,0,7),
 	"Log nickname changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -424,16 +424,16 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 		{
 			if (cws->value.type == DBVT_DELETED && dbv.type == DBVT_ASCIIZ)
 			{
-				ret = (cws->value.pszVal[0] != '\0');
+				ret = (dbv.pszVal[0] != '\0');
 			}
 #ifdef UNICODE
 			else if (cws->value.type == DBVT_DELETED && dbv.type == DBVT_UTF8)
 			{
-				ret = (cws->value.pszVal[0] != '\0');
+				ret = (dbv.pszVal[0] != '\0');
 			}
 			else if (cws->value.type == DBVT_DELETED && dbv.type == DBVT_WCHAR)
 			{
-				ret = (cws->value.pwszVal[0] != L'\0');
+				ret = (dbv.pwszVal[0] != L'\0');
 			}
 			else if ( (cws->value.type == DBVT_UTF8 || cws->value.type == DBVT_ASCIIZ || cws->value.type == DBVT_WCHAR)
 				&& (dbv.type == DBVT_UTF8 || dbv.type == DBVT_ASCIIZ || dbv.type == DBVT_WCHAR))
