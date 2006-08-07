@@ -1,6 +1,9 @@
-Status Message History 0.0.0.3	
+Status Message History 0.0.0.4
 
 Changelog:
+
+. 0.0.0.4
+  * Fix for crash
 
 . 0.0.0.3
   + Options to what to track
