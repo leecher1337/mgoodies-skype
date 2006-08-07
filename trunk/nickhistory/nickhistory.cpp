@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Nick History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,5),
+	PLUGIN_MAKE_VERSION(0,0,0,6),
 	"Log nickname changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -355,16 +355,22 @@ HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text)
 }
 
 
-void Notify(HANDLE hContact, TCHAR *nickname)
+void Notify(HANDLE hContact, TCHAR *text)
 {
-	if (nickname != NULL && nickname[0] == _T('\0'))
-		nickname = NULL;
+	if (text != NULL && text[0] == _T('\0'))
+		text = NULL;
+
+	if (!opts.track_changes && text != NULL)
+		return;
+
+	if (!opts.track_removes && text == NULL)
+		return;
 
 	// Replace template with nick
 	TCHAR log[1024];
 	mir_sntprintf(log, sizeof(log), 
-		nickname == NULL ? opts.template_removed : opts.template_changed, 
-		nickname == NULL ? TranslateT("<no nickname>") : nickname);
+		text == NULL ? opts.template_removed : opts.template_changed, 
+		text == NULL ? TranslateT("<no nickname>") : text);
 
 	if (opts.history_enable)
 		HistoryLog(hContact, log);
@@ -524,6 +530,12 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
 	if (!strcmp(cws->szModule, proto)  && !strcmp(cws->szSetting, "Nick"))
 	{
+		if (opts.track_only_not_offline)
+		{
+			if (DBGetContactSettingWord(hContact, proto, "Status", 0) <= ID_STATUS_OFFLINE)
+				return 0;
+		}
+
 		if (!ContactEnabled(hContact))
 			return 0;
 
@@ -535,9 +547,9 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 		{
 			if (cws->value.pszVal != NULL)
 			{
-				WCHAR nick[1024] = L"";
-				MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, nick, MAX_REGS(nick));
-				Notify(hContact, nick);
+				WCHAR tmp[1024] = L"";
+				MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, tmp, MAX_REGS(tmp));
+				Notify(hContact, tmp);
 			}
 			else
 			{
@@ -548,9 +560,9 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 		{
 			if (cws->value.pszVal != NULL)
 			{
-				WCHAR nick[1024] = L"";
-				MultiByteToWideChar(CP_UTF8, 0, cws->value.pszVal, -1, nick, MAX_REGS(nick));
-				Notify(hContact, nick);
+				WCHAR tmp[1024] = L"";
+				MultiByteToWideChar(CP_UTF8, 0, cws->value.pszVal, -1, tmp, MAX_REGS(tmp));
+				Notify(hContact, tmp);
 			}
 			else
 			{

@@ -34,16 +34,21 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 
 
 static OptPageControl optionsControls[] = { 
-	{ &opts.history_enable,					CONTROL_CHECKBOX,		IDC_HISTORY,	"HistoryEnable", TRUE },
-	{ &opts.history_only_ansi_if_possible,	CONTROL_CHECKBOX,		IDC_ANSI,		"HistoryOnlyANSIIfPossible", TRUE },
-	{ &opts.template_changed,				CONTROL_TEXT,			IDC_CHANGED,	"TemplateChanged", (DWORD) _T(DEFAULT_TEMPLATE_CHANGED) },
-	{ &opts.template_removed,				CONTROL_TEXT,			IDC_REMOVED,	"TemplateRemoved", (DWORD) _T(DEFAULT_TEMPLATE_REMOVED) },
-	{ NULL,									CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,	"%sEnabled", TRUE, (int) AllowProtocol }
+	{ &opts.history_enable,					CONTROL_CHECKBOX,		IDC_HISTORY,		"HistoryEnable", TRUE },
+	{ &opts.history_only_ansi_if_possible,	CONTROL_CHECKBOX,		IDC_ANSI,			"HistoryOnlyANSIIfPossible", TRUE },
+	{ &opts.track_changes,					CONTROL_CHECKBOX,		IDC_TRACK_CHANGE,	"TrackChanges", TRUE },
+	{ &opts.template_changed,				CONTROL_TEXT,			IDC_CHANGED,		"TemplateChanged", (DWORD) _T(DEFAULT_TEMPLATE_CHANGED) },
+	{ &opts.track_removes,					CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,	"TrackRemoves", TRUE },
+	{ &opts.template_removed,				CONTROL_TEXT,			IDC_REMOVED,		"TemplateRemoved", (DWORD) _T(DEFAULT_TEMPLATE_REMOVED) },
+	{ &opts.track_only_not_offline,			CONTROL_CHECKBOX,		IDC_ONLY_NOT_OFFLINE,"TrackOnlyWhenNotOffline", TRUE },
+	{ NULL,									CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,		"%sEnabled", TRUE, (int) AllowProtocol }
 };
 
 static UINT optionsExpertControls[] = { 
+#ifdef UNICODE
 	IDC_ANSI, 
-	IDC_TEMPLATES, IDC_CHANGED_L, IDC_CHANGED, IDC_REMOVED_L, IDC_REMOVED, 
+#endif
+	IDC_TRACK_G, IDC_TRACK_CHANGE, IDC_CHANGED_L, IDC_CHANGED, IDC_TRACK_REMOVE, IDC_REMOVED_L, IDC_REMOVED, IDC_ONLY_NOT_OFFLINE, 
 	IDC_PROTOCOLS_G, IDC_PROTOCOLS_L, IDC_PROTOCOLS 
 };
 
@@ -132,13 +137,54 @@ void LoadOptions()
 }
 
 
-static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+static void OptionsEnableDisableCtrls(HWND hwndDlg)
 {
-	return SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_CHANGED_L), IsDlgButtonChecked(hwndDlg, IDC_TRACK_CHANGE));
+	EnableWindow(GetDlgItem(hwndDlg, IDC_CHANGED), IsDlgButtonChecked(hwndDlg, IDC_TRACK_CHANGE));
+
+	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED_L), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
+	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
 }
 
 
-static void EnableDisableCtrls(HWND hwndDlg)
+static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	BOOL ret = SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+
+	switch (msg) 
+	{
+		case WM_INITDIALOG:
+		{
+			OptionsEnableDisableCtrls(hwndDlg);
+
+#ifndef UNICODE
+			ShowWindow(GetDlgItem(hwndDlg, IDC_ANSI), SW_HIDE);
+#endif
+			break;
+		}
+		case WM_COMMAND:
+		{
+			switch (LOWORD(wParam)) 
+			{
+				case IDC_TRACK_REMOVE:
+				case IDC_TRACK_CHANGE:
+				case IDC_ONLY_NOT_OFFLINE:
+				{
+					if (HIWORD(wParam) == BN_CLICKED)
+						OptionsEnableDisableCtrls(hwndDlg);
+
+					break;
+				}
+			}
+			break;
+		}
+	}
+
+	return ret;
+}
+
+
+static void PopupsEnableDisableCtrls(HWND hwndDlg)
 {
 	BOOL enabled = IsDlgButtonChecked(hwndDlg, IDC_POPUPS);
 
@@ -178,18 +224,18 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 	{
 		case WM_INITDIALOG:
 		{
-			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Do Nothing"));
-			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Close Popup"));
-			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Show History"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Do nothing"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Close popup"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Show history"));
 
-			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Do Nothing"));
-			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Close Popup"));
-			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Show History"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Do nothing"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Close popup"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Show history"));
 
 			// Needs to be called here in this case
 			BOOL ret = SaveOptsDlgProc(popupsControls, MAX_REGS(popupsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 
-			EnableDisableCtrls(hwndDlg);
+			PopupsEnableDisableCtrls(hwndDlg);
 
 			return ret;
 		}
@@ -205,9 +251,8 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 				case IDC_DELAYCUSTOM:
 				{
 					if (HIWORD(wParam) == BN_CLICKED)
-					{
-						EnableDisableCtrls(hwndDlg);
-					}
+						PopupsEnableDisableCtrls(hwndDlg);
+
 					break;
 				}
 				case IDC_PREV: 
