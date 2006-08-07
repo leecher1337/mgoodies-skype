@@ -1003,7 +1003,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
             eventData->pszNickW = getContactName(event->hContact, szProto);
 			eventData->bIsMe = FALSE;
 		}
-		if (dbei.eventType == EVENTTYPE_MESSAGE) {
+		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
 			DWORD aLen = strlen((char *)dbei.pBlob)+1;
 			if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
 				DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
@@ -1015,19 +1015,19 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 			} else {
             	eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
 			}
-			eventData->iType = IEED_EVENT_MESSAGE;
+			if (dbei.eventType == EVENTTYPE_MESSAGE) {
+				eventData->iType = IEED_EVENT_MESSAGE;
+			} else if (dbei.eventType == EVENTTYPE_URL) {
+				eventData->iType = IEED_EVENT_URL;
+			} else {
+				eventData->iType = IEED_EVENT_STATUSCHANGE;
+			}
 		} else if (dbei.eventType == EVENTTYPE_FILE) {
 			//blob is: sequenceid(DWORD),filename(ASCIIZ),description(ASCIIZ)
 			char *ptr =((char *)dbei.pBlob) + sizeof(DWORD);
             eventData->pszTextW = Utils::convertToWCS(ptr, newEvent.codepage);
             eventData->pszText2W = Utils::convertToWCS(ptr + strlen(ptr) + 1, newEvent.codepage);
 			eventData->iType = IEED_EVENT_FILE;
-		} else if (dbei.eventType == EVENTTYPE_URL) {
-            eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
-			eventData->iType = IEED_EVENT_URL;
-		} else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-            eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
-			eventData->iType = IEED_EVENT_STATUSCHANGE;
 		} else if (dbei.eventType == EVENTTYPE_AUTHREQUEST) {
 		    //blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
             eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
