@@ -45,6 +45,11 @@ struct Options {
 	TCHAR template_changed[1024];
 	TCHAR template_removed[1024];
 
+	// Track
+	BYTE track_changes;
+	BYTE track_removes;
+	BYTE track_only_not_offline;
+
 	// History
 	BYTE history_enable;
 	BYTE history_only_ansi_if_possible;

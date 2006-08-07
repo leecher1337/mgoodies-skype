@@ -1,6 +1,10 @@
-Nick History 0.0.0.5
+Nick History 0.0.0.6
 
 Changelog:
+
+. 0.0.0.6
+  + Options to what to track
+  * Fix for popups
 
 . 0.0.0.5
   * Small fixes
