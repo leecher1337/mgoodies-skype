@@ -371,30 +371,29 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 		if (ace!=NULL) {
 			szAvatarIn = Utils::UTF8Encode(ace->szFilename);
 		}
-	} else {
-		if (DBGetContactSettingWord(event->hContact, szProto, "Status", ID_STATUS_OFFLINE) != ID_STATUS_OFFLINE) {
-			if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
-			    if (strlen(dbv.pszVal) > 0) {
-					char* ext = strrchr(dbv.pszVal, '.');
-					if (ext && strcmpi(ext, ".xml") == 0) {
-						const char *flashAvatar = getFlashAvatar(dbv.pszVal, 1);
-						if (flashAvatar != NULL) {
-							szAvatarIn = Utils::UTF8Encode(flashAvatar);
-							Utils::convertPath(szAvatarIn);
-						}
-					} else {
-						/* relative -> absolute */
-						char tmpPath[MAX_PATH];
-						strcpy (tmpPath, dbv.pszVal);
-						if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-							CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-						}
-						szAvatarIn = Utils::UTF8Encode(tmpPath);
+	}
+	if (szAvatarIn == NULL) {
+		if (!DBGetContactSetting(event->hContact, "ContactPhoto", "File",&dbv)) {
+			if (strlen(dbv.pszVal) > 0) {
+				char* ext = strrchr(dbv.pszVal, '.');
+				if (ext && strcmpi(ext, ".xml") == 0) {
+					const char *flashAvatar = getFlashAvatar(dbv.pszVal, 1);
+					if (flashAvatar != NULL) {
+						szAvatarIn = Utils::UTF8Encode(flashAvatar);
 						Utils::convertPath(szAvatarIn);
 					}
-			    }
-		       	DBFreeVariant(&dbv);
+				} else {
+					/* relative -> absolute */
+					char tmpPath[MAX_PATH];
+					strcpy (tmpPath, dbv.pszVal);
+					if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+						CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+					}
+					szAvatarIn = Utils::UTF8Encode(tmpPath);
+					Utils::convertPath(szAvatarIn);
+				}
 			}
+			DBFreeVariant(&dbv);
 		}
 	}
 	if (szAvatarIn == NULL) {
@@ -405,7 +404,8 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 		if (ace!=NULL) {
 			szAvatarOut = Utils::UTF8Encode(ace->szFilename);
 		}
-	} else {
+	} 
+	if (szAvatarOut == NULL) {
 		if (!DBGetContactSetting(NULL, "ContactPhoto", "File",&dbv)) {
 			if (strlen(dbv.pszVal) > 0) {
 				char* ext = strrchr(dbv.pszVal, '.');
