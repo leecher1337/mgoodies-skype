@@ -151,7 +151,7 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 			if(!strcmp(protoName,n->item.ProtocolName))
 			{
 				if(n->item.showPopup)
-					Nudge_ShowPopup(n->item, (HANDLE) wParam, "You sent a nudge");
+					Nudge_ShowPopup(n->item, (HANDLE) wParam, n->item.senText);
 				if(n->item.showEvent)
 					Nudge_SentEvent(n->item, (HANDLE) wParam);
 				if(n->item.showStatus)
@@ -162,7 +162,7 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 	else
 	{
 		if(DefaultNudge.showPopup)
-			Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, "You sent a nudge");
+			Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, DefaultNudge.senText);
 		if(DefaultNudge.showEvent)
 			Nudge_SentEvent(DefaultNudge, (HANDLE) wParam);
 		if(DefaultNudge.showStatus)
@@ -214,7 +214,7 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 					{
 						
 						if(n->item.showPopup)
-							Nudge_ShowPopup(n->item, (HANDLE) wParam, "You received a nudge");
+							Nudge_ShowPopup(n->item, (HANDLE) wParam, n->item.recText);
 						if(n->item.shakeClist)
 							ShakeClist(wParam,lParam);
 						if(n->item.shakeChat)
@@ -250,7 +250,7 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 			{
 				
 				if(DefaultNudge.showPopup)
-					Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, "You received a nudge");
+					Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, DefaultNudge.recText);
 				if(DefaultNudge.shakeClist)
 					ShakeClist(wParam,lParam);
 				if(DefaultNudge.shakeChat)
@@ -589,13 +589,17 @@ int Preview()
 	if( GlobalNudge.useByProtocol )
 	{
 		NudgeElementList *n;
+		HANDLE hContact;
+	
+		hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+
 		for(n = NudgeList;n != NULL; n = n->next)
 		{
 			if(n->item.enabled)
 			{
 				SkinPlaySound( n->item.NudgeSoundname );
 				if(n->item.showPopup)
-					Nudge_ShowPopup(n->item, NULL, false);
+					Nudge_ShowPopup(n->item, hContact, n->item.recText);
 				if(n->item.shakeClist)
 					ShakeClist(0,0);
 			}
@@ -605,9 +609,13 @@ int Preview()
 	{
 		if(DefaultNudge.enabled)
 		{
+			HANDLE hContact;
+	
+			hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+
 			SkinPlaySound( DefaultNudge.NudgeSoundname );
 			if(DefaultNudge.showPopup)
-				Nudge_ShowPopup(DefaultNudge, NULL, false);
+				Nudge_ShowPopup(DefaultNudge, hContact, DefaultNudge.recText);
 			if(DefaultNudge.shakeClist)
 				ShakeClist(0,0);
 		}
@@ -637,7 +645,8 @@ void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont, char * Message)
 		NudgePopUp.PluginWindowProc = (WNDPROC)NudgePopUpProc;
 		NudgePopUp.PluginData = (void *)1;
 		
-		lstrcpy(NudgePopUp.lpzText, Translate(Message));
+		//lstrcpy(NudgePopUp.lpzText, Translate(Message));
+		lstrcpy(NudgePopUp.lpzText, Message);
 
 		lstrcpy(NudgePopUp.lpzContactName, lpzContactName);
 
