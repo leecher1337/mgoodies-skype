@@ -1,6 +1,9 @@
-Nick History 0.0.0.6
+Nick History 0.0.0.7
 
 Changelog:
+
+. 0.0.0.7
+  * Fix for crash
 
 . 0.0.0.6
   + Options to what to track
