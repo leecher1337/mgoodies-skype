@@ -85,16 +85,16 @@ void DeInitOptions()
 // Options page
 
 static OptPageControl controls[] = { 
-	{ CONTROL_CHECKBOX,			IDC_LASTSENTTO,		"EnableLastSentTo",				(BYTE) TRUE },
-	{ CONTROL_RADIO,			IDC_GLOBAL,			"MsgTypeRec",					(WORD) TYPE_GLOBAL, TYPE_GLOBAL },
-	{ CONTROL_RADIO,			IDC_LOCAL,			"MsgTypeRec",					(WORD) TYPE_GLOBAL, TYPE_LOCAL },
-	{ CONTROL_PROTOCOL_LIST_ALL,IDC_PROTOCOLS,		"ShowOffline%s",				(BYTE) FALSE },
-	{ CONTROL_CHECKBOX,			IDC_HIDE_OFFLINE,	"HideOfflineFromOfflineProto",	(BYTE) TRUE },
-	{ CONTROL_CHECKBOX,			IDC_APPEND_GROUP,	"AppendGroupName",				(BYTE) FALSE },
-	{ CONTROL_CHECKBOX,			IDC_GROUP_COLUMN,	"GroupColumn",					(BYTE) FALSE },
-	{ CONTROL_CHECKBOX,			IDC_GROUP_LEFT,		"GroupColumnLeft",				(BYTE) FALSE },
-	{ CONTROL_CHECKBOX,			IDC_SUBCONTACTS,	"HideSubcontacts",				(BYTE) TRUE },
-	{ CONTROL_CHECKBOX,			IDC_KEEP_OFFLINE,	"KeepSubcontactsFromOffline",	(BYTE) TRUE }
+	{ NULL, CONTROL_CHECKBOX,		IDC_LASTSENTTO,		"EnableLastSentTo",				(BYTE) TRUE },
+	{ NULL, CONTROL_RADIO,			IDC_GLOBAL,			"MsgTypeRec",					(WORD) TYPE_GLOBAL, TYPE_GLOBAL },
+	{ NULL, CONTROL_RADIO,			IDC_LOCAL,			"MsgTypeRec",					(WORD) TYPE_GLOBAL, TYPE_LOCAL },
+	{ NULL, CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,		"ShowOffline%s",				(BYTE) FALSE },
+	{ NULL, CONTROL_CHECKBOX,		IDC_HIDE_OFFLINE,	"HideOfflineFromOfflineProto",	(BYTE) TRUE },
+	{ NULL, CONTROL_CHECKBOX,		IDC_APPEND_GROUP,	"AppendGroupName",				(BYTE) FALSE },
+	{ NULL, CONTROL_CHECKBOX,		IDC_GROUP_COLUMN,	"GroupColumn",					(BYTE) FALSE },
+	{ NULL, CONTROL_CHECKBOX,		IDC_GROUP_LEFT,		"GroupColumnLeft",				(BYTE) FALSE },
+	{ NULL, CONTROL_CHECKBOX,		IDC_SUBCONTACTS,	"HideSubcontacts",				(BYTE) TRUE },
+	{ NULL, CONTROL_CHECKBOX,		IDC_KEEP_OFFLINE,	"KeepSubcontactsFromOffline",	(BYTE) TRUE }
 };
 
 static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 

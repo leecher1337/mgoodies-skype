@@ -32,7 +32,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,5),
+	PLUGIN_MAKE_VERSION(0,0,2,6),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
@@ -99,9 +99,6 @@ int __declspec(dllexport) Unload(void)
 
 	UnhookEvent(hModulesLoaded);
 	UnhookEvent(hEventAdded);
-
-	HKS_Unregister(hksAction);
-	HKS_Unregister(hksModule);
 
 	return 0;
 }

@@ -1,6 +1,9 @@
-Quick Contacts 0.0.2.5
+Quick Contacts 0.0.2.6
 
 Changelog:
+
+. 0.0.2.6
+  * Fix for crash on exit
 
 . 0.0.2.5
   + Added contact menu buttom
