@@ -89,7 +89,7 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 
 		ZeroMemory(&ppd, sizeof(ppd)); 
 		ppd.lchContact = hContact; 
-// TODO		ppd.lchIcon = hIconMain;
+		ppd.lchIcon = (HICON) LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(174),IMAGE_ICON,16,16,LR_DEFAULTCOLOR);
 
 		if (title != NULL)
 			lstrcpyn(ppd.lpwzContactName, title, MAX_REGS(ppd.lpwzContactName));
@@ -169,7 +169,7 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 
 		ZeroMemory(&ppd, sizeof(ppd)); 
 		ppd.lchContact = hContact; 
-// TODO		ppd.lchIcon = hIconMain;
+		ppd.lchIcon = (HICON) LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(174),IMAGE_ICON,16,16,LR_DEFAULTCOLOR);
 
 		if (title != NULL)
 			TCHAR_TO_CHAR(ppd.lpzContactName, title);

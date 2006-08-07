@@ -1,4 +1,4 @@
-; Status Message History 0.0.0.2
+; Status Message History 0.0.0.3
 ; Author: Pescuma
 
 ; Options
@@ -8,19 +8,21 @@
 
 [ History ]
 [Log changes to history]
-[Don't save UNICODE parts for 7bit ANSI history (saves db space)]
+[Don't save Unicode parts for 7bit ANSI history (saves db space)]
 
-[ Templates ]
-[Changed:]
-[Removed:]
+[ Tracking ]
+[Track when contacts change their status messages]
+[Track when contacts remove their status messages]
+[Template:]
+[Only when the contact is not offline]
 
 [ Protocols ]
-[Enable nickname tracking for theese protocols:]
+[Enable tracking for these protocols:]
 
 [Popups]
 [Nick Change]
 
-[Show popups on changes]
+[Enable popups]
 
 [ Colours ]
 [Background colour]
@@ -29,16 +31,16 @@
 [Use default colours]
 
 [ Delay ]
-[From PopUp plugin]
+[From popup plugin]
 [Custom]
 [Permanent]
 
 [ Actions ]
-[On Right Click:]
-[On Left Click:]
-[Do Nothing]
-[Close Popup]
-[Show History]
+[On right click:]
+[On left click:]
+[Do nothing]
+[Close popup]
+[Show history]
 
 [Preview]
 

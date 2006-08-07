@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Status Message History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,2),
+	PLUGIN_MAKE_VERSION(0,0,0,3),
 	"Log status message changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -358,16 +358,22 @@ HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text)
 }
 
 
-void Notify(HANDLE hContact, TCHAR *status_message)
+void Notify(HANDLE hContact, TCHAR *text)
 {
-	if (status_message != NULL && status_message[0] == _T('\0'))
-		status_message = NULL;
+	if (text != NULL && text[0] == _T('\0'))
+		text = NULL;
+
+	if (!opts.track_changes && text != NULL)
+		return;
+
+	if (!opts.track_removes && text == NULL)
+		return;
 
 	// Replace template with status_message
 	TCHAR log[1024];
 	mir_sntprintf(log, sizeof(log), 
-		status_message == NULL ? opts.template_removed : opts.template_changed, 
-		status_message == NULL ? TranslateT("<no status message>") : status_message);
+		text == NULL ? opts.template_removed : opts.template_changed, 
+		text == NULL ? TranslateT("<no status message>") : text);
 
 	if (opts.history_enable)
 		HistoryLog(hContact, log);
@@ -527,6 +533,12 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 		if (proto == NULL || (metacontacts_proto != NULL && !strcmp(proto, metacontacts_proto)))
 			return 0;
 	
+		if (opts.track_only_not_offline)
+		{
+			if (DBGetContactSettingWord(hContact, proto, "Status", 0) <= ID_STATUS_OFFLINE)
+				return 0;
+		}
+
 		if (!ContactEnabled(hContact))
 			return 0;
 
@@ -538,9 +550,9 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 		{
 			if (cws->value.pszVal != NULL)
 			{
-				WCHAR status_message[1024] = L"";
-				MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, status_message, MAX_REGS(status_message));
-				Notify(hContact, status_message);
+				WCHAR tmp[1024] = L"";
+				MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, tmp, MAX_REGS(tmp));
+				Notify(hContact, tmp);
 			}
 			else
 			{
@@ -551,9 +563,9 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 		{
 			if (cws->value.pszVal != NULL)
 			{
-				WCHAR status_message[1024] = L"";
-				MultiByteToWideChar(CP_UTF8, 0, cws->value.pszVal, -1, status_message, MAX_REGS(status_message));
-				Notify(hContact, status_message);
+				WCHAR tmp[1024] = L"";
+				MultiByteToWideChar(CP_UTF8, 0, cws->value.pszVal, -1, tmp, MAX_REGS(tmp));
+				Notify(hContact, tmp);
 			}
 			else
 			{
