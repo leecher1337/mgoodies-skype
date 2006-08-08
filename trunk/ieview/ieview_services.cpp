@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ChatHTMLBuilder.h"
 #include "HistoryHTMLBuilder.h"
 #include "IEView.h"
-//#include "Smiley.h"
 #include "m_ieview.h"
 #include "Options.h"
 #include "ieview_common.h"
@@ -54,6 +53,9 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 				break;
 			case IEWM_HISTORY:
 				builder = new HistoryHTMLBuilder();
+				break;
+			case IEWM_BROWSER:
+				builder = NULL;
 				break;
 			default:
 				builder = new ScriverHTMLBuilder();
@@ -97,6 +99,19 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 		} else if (event->iType == IEE_LOG_MEM_EVENTS) {
 			view->appendEvent(event);
 		}
+	}
+	return 0;
+}
+
+int HandleIENavigate(WPARAM wParam, LPARAM lParam) {
+	IEVIEWNAVIGATE *navigate = (IEVIEWNAVIGATE *) lParam;
+	IEView * view = IEView::get(navigate->hwnd);
+	IEView::init();
+	Options::init();
+	if (view != NULL) {
+//		if (navigate->iType == IEE_NAVIGATE) {
+			view->navigate(navigate);
+	//	}
 	}
 	return 0;
 }
