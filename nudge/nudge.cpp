@@ -83,7 +83,7 @@ void CNudgeElement::Load(void)
 	sprintf(SectionName,"%s-enabled", ProtocolName); 
 	this->enabled = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0;
 	sprintf(SectionName,"%s-autoResend", ProtocolName); 
-	this->autoResend = DBGetContactSettingByte(NULL, "Nudge", SectionName, TRUE) != 0;
+	this->autoResend = DBGetContactSettingByte(NULL, "Nudge", SectionName, FALSE) != 0;
 	sprintf(SectionName,"%s-statusFlags", ProtocolName);
 	this->statusFlags = DBGetContactSettingDword(NULL, "Nudge", SectionName, 0);
 	sprintf(SectionName,"%s-recText", ProtocolName);
