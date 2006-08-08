@@ -22,24 +22,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef M_IEVIEW_INCLUDED
 #define M_IEVIEW_INCLUDED
 
-#define MS_IEVIEW_WINDOW  "IEVIEW/NewWindow"
-#define MS_IEVIEW_EVENT	  "IEVIEW/Event"
-#define MS_IEVIEW_UTILS   "IEVIEW/Utils"
+#define MS_IEVIEW_WINDOW   "IEVIEW/NewWindow"
+#define MS_IEVIEW_EVENT    "IEVIEW/Event"
+#define MS_IEVIEW_NAVIGATE "IEVIEW/Navigate"
 
 #define ME_IEVIEW_OPTIONSCHANGED  "IEVIEW/OptionsChanged"
-#define ME_IEVIEW_NOTIFICATION  "IEVIEW/Notification"
 
+/* IEView window commands */
 #define IEW_CREATE  1               // create new window (control)
 #define IEW_DESTROY 2               // destroy control
 #define IEW_SETPOS  3               // set window position and size
 #define IEW_SCROLLBOTTOM 4          // scroll text to bottom
 
-//#define IEWM_SRMM     0             // regular SRMM
+/* IEView window type/mode */
 #define IEWM_TABSRMM  1             // TabSRMM-compatible HTML builder
 #define IEWM_SCRIVER  3             // Scriver-compatible HTML builder
 #define IEWM_MUCC     4             // MUCC group chats GUI
 #define IEWM_CHAT     5             // chat.dll group chats GUI
 #define IEWM_HISTORY  6             // history viewer
+#define IEWM_BROWSER  256           // empty browser window
 
 typedef struct {
 	int			cbSize;             // size of the strusture
@@ -125,16 +126,17 @@ typedef struct tagIEVIEWEVENTDATA {
 		const wchar_t *pszText2W;		// Text - Unicode
 	};
 } IEVIEWEVENTDATA;
-
+ 
+/* IEView events */
 #define IEE_LOG_DB_EVENTS  	1       // log specified number of DB events
 #define IEE_CLEAR_LOG		2       // clear log
 #define IEE_GET_SELECTION	3       // get selected text
 #define IEE_SAVE_DOCUMENT	4       // save current document
 #define IEE_LOG_MEM_EVENTS 	5       // log specified number of IEView events
 
+/* IEView event flags */
 #define IEEF_RTL          1           // turn on RTL support
 #define IEEF_NO_UNICODE   2           // disable Unicode support
-#define IEEF_NO_SCROLLING 4           // do not scroll logs to bottom
 
 #define IEVIEWEVENT_SIZE_V1 28
 #define IEVIEWEVENT_SIZE_V2 32
@@ -172,6 +174,19 @@ typedef struct {
 	LPARAM targetWParam;       //Target WParam to be sent (LParam will be char* to select smiley)
                              //see the example file.
 } IEVIEWSHOWSMILEYSEL;
+
+#define IEN_NAVIGATE 	1       // navigate to the given destination
+
+typedef struct {
+	int			cbSize;             // size of the strusture
+	int			iType;				// one of IEE_* values
+	DWORD		dwFlags;			// one of IEEF_* values
+	HWND		hwnd;               // HWND returned by IEW_CREATE
+	union {
+		const char *url;			// Text, usage depends on type of event
+		const wchar_t *urlW;		// Text - Unicode
+	};
+} IEVIEWNAVIGATE;
 
 #endif
 

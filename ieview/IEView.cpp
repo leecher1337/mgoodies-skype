@@ -1111,3 +1111,7 @@ void IEView::saveDocument() {
 	    document->Release();
 	}
 }
+
+void IEView::navigate(IEVIEWNAVIGATE * nav) {
+	navigate(nav->url);
+}

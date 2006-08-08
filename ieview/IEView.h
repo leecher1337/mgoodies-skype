@@ -165,6 +165,8 @@ private:
 	BSTR 			getHrefFromAnchor(IHTMLElement *element);
 	BSTR 			getSelection();
 	void			setBorder();
+protected:
+	void			navigate(const char *);
 public:
 	IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy);
 //	IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, int cy);
@@ -178,7 +180,6 @@ public:
    	void            setWindowPos(int x, int y, int cx, int cy);
 	HTMLBuilder*    getBuilder();
 
-	void			navigate(const char *);
 	void			write(const wchar_t *text);
 	void			write(const char *text);
 	void            writef(const char *fmt, ...);
@@ -199,6 +200,7 @@ public:
 	void            appendEvent(IEVIEWEVENT * event);
 	void            clear(IEVIEWEVENT * event);
 	void*           getSelection(IEVIEWEVENT * event);
+	void            navigate(IEVIEWNAVIGATE * nav);
 	void            saveDocument();
 
 	static IEView* 	get(HWND);
