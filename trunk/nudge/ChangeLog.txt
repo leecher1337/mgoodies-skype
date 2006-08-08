@@ -6,6 +6,7 @@
 * New trigger plugin support (first step)
 * Use the text set in option page in popup.
 * Use find first contact service for popup preview
+* Set auto resend nudge to false by default
 
 0.0.1.10
 ===========
