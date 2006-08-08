@@ -800,6 +800,9 @@ void IEView::navigate(const char *url) {
 	delete tTemp;
 }
 
+void IEView::navigate(const wchar_t *url) {
+	pWebBrowser->Navigate((WCHAR *)url, NULL, NULL, NULL, NULL);
+}
 
 void IEView::documentClose() {
 
@@ -1113,5 +1116,9 @@ void IEView::saveDocument() {
 }
 
 void IEView::navigate(IEVIEWNAVIGATE * nav) {
-	navigate(nav->url);
+	if (nav->dwFlags & IENF_UNICODE) {
+		navigate(nav->urlW);
+	} else {
+		navigate(nav->url);
+	}
 }
