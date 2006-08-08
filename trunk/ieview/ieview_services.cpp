@@ -109,9 +109,9 @@ int HandleIENavigate(WPARAM wParam, LPARAM lParam) {
 	IEView::init();
 	Options::init();
 	if (view != NULL) {
-//		if (navigate->iType == IEE_NAVIGATE) {
+		if (navigate->iType == IEN_NAVIGATE) {
 			view->navigate(navigate);
-	//	}
+		}
 	}
 	return 0;
 }

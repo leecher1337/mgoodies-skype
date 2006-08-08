@@ -176,10 +176,11 @@ typedef struct {
 } IEVIEWSHOWSMILEYSEL;
 
 #define IEN_NAVIGATE 	1       // navigate to the given destination
+#define IENF_UNICODE	1       // if set pszText is a pointer to wchar_t string instead of char string
 
 typedef struct {
 	int			cbSize;             // size of the strusture
-	int			iType;				// one of IEE_* values
+	int			iType;				// one of IEN_* values
 	DWORD		dwFlags;			// one of IEEF_* values
 	HWND		hwnd;               // HWND returned by IEW_CREATE
 	union {

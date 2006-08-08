@@ -167,6 +167,7 @@ private:
 	void			setBorder();
 protected:
 	void			navigate(const char *);
+	void			navigate(const wchar_t *);
 public:
 	IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy);
 //	IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, int cy);
