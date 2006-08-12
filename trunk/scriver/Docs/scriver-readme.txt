@@ -72,6 +72,8 @@ created. CTRL key needs to be pressed only when a tab is being dropped.
 
 6. Change Log
 -------------
+2.3.2.14
+* bugfixes
 2.3.2.13
 * bugfixes
 2.3.2.12
