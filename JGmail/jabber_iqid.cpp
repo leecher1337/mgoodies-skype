@@ -34,7 +34,6 @@ Last change by : $Author$
 extern char* jabberVcardPhotoFileName;
 extern char* jabberVcardPhotoType;
 
-// iq_auth is back
 void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata )
 {
 	// RECVED: result of the request for authentication method
@@ -68,6 +67,7 @@ void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata )
 			query->addChild( "password", info->password );
 		else {
 			JabberLog( "No known authentication mechanism accepted by the server." );
+
 			JabberSend( info->s, "</stream:stream>" );
 			return;
 		}
@@ -78,8 +78,8 @@ void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata )
 		JabberSend( info->s, iq );
 	}
 	else if ( !lstrcmp( type, _T("error"))) {
-		TCHAR text[128];
 		JabberSend( info->s, "</stream:stream>" );
+		TCHAR text[128];
 		mir_sntprintf( text, SIZEOF( text ), _T("%s %s."), TranslateT( "Authentication failed for" ), info->username );
 		MessagePopup( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
@@ -176,21 +176,19 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 	if (enableGmailSetting & 1) JabberEnableNotifications(info);
 	iqId = JabberSerialNext();
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
-	{	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
-		XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
-		JabberSend( info->s, iq );
-	}
+	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
+	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
+	JabberSend( info->s, iq );
 
 	if ((enableGmailSetting & 3) == 1) JabberRequestMailBox(info->s);
-		if ( hwndJabberAgents ) {
-			// Retrieve agent information
-			iqId = JabberSerialNext();
-			JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
-
-			XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
-			XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:agents" );
-			JabberSend( info->s, iq );
-		}
+	if ( hwndJabberAgents ) {
+		// Retrieve agent information
+		iqId = JabberSerialNext();
+		JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
+		XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
+		XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:agents" );
+		JabberSend( info->s, iq );
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -549,8 +547,10 @@ LBL_Ret:
 		return;
 	}
 	//put correct extension to make MS_UTILS_LOADBITMAP happy
-	szTempFileName[strlen(szTempFileName)-3]='\0';
-	strcat(szTempFileName,strrchr(jabberVcardPhotoType,'/')+1);
+	{	char* p = strrchr( szTempFileName, '.' );
+		if ( p != NULL )
+			lstrcpyA( p+1, strrchr(jabberVcardPhotoType,'/')+1 );
+	}
 	JabberLog( "Picture file name set to %s", szTempFileName );
 	HANDLE hFile = CreateFileA( szTempFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if ( hFile == INVALID_HANDLE_VALUE )
@@ -1359,7 +1359,7 @@ void JabberIqResultGetAvatar( XmlNode *iqNode, void *userdata )
 	}
 	if ( n == NULL )
 		return;
-
+	
 	int resultLen = 0;
 	char* body = JabberBase64Decode( n->text, &resultLen );
 
