@@ -84,10 +84,10 @@ int HandleIEWindow(WPARAM wParam, LPARAM lParam) {
 
 int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 	IEVIEWEVENT *event = (IEVIEWEVENT *) lParam;
+	IEView::init();
+	Options::init();
 	IEView * view = IEView::get(event->hwnd);
 	if (view != NULL) {
-		IEView::init();
-		Options::init();
 		if (event->iType == IEE_LOG_DB_EVENTS) {
 			view->appendEventOld(event);
 		} else if (event->iType == IEE_CLEAR_LOG) {
@@ -105,10 +105,10 @@ int HandleIEEvent(WPARAM wParam, LPARAM lParam) {
 
 int HandleIENavigate(WPARAM wParam, LPARAM lParam) {
 	IEVIEWNAVIGATE *navigate = (IEVIEWNAVIGATE *) lParam;
+	IEView::init();
+	Options::init();
 	IEView * view = IEView::get(navigate->hwnd);
 	if (view != NULL) {
-		IEView::init();
-		Options::init();
 		if (navigate->iType == IEN_NAVIGATE) {
 			view->navigate(navigate);
 		}
