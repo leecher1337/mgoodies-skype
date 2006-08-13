@@ -11,8 +11,8 @@ LIBS =  -lws2_32 -lkernel32 -luser32 -lgdi32 -lcomctl32 -lcomdlg32 -ladvapi32 -l
 INCS =  -I"../../include"
 CXXINCS =  -I"../../include"
 BIN  = ../../bin/release/plugins/seenplugin.dll
-CXXFLAGS = $(CXXINCS) -D__GNUWIN32__ -W -fexceptions -w  -fexpensive-optimizations -O3
-CFLAGS = $(INCS) -D__GNUWIN32__ -W -fexceptions -w  -fexpensive-optimizations -O3
+CXXFLAGS = $(CXXINCS) -D__GNUWIN32__ -W -fexceptions -w -fexpensive-optimizations -Os -fweb -fmessage-length=0
+CFLAGS = $(INCS) -D__GNUWIN32__ -W -fexceptions -w -fexpensive-optimizations -Os -fweb -fmessage-length=0
 RM = rm -f
 
 .PHONY: all all-before all-after clean clean-custom
