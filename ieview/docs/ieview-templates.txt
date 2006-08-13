@@ -2,7 +2,7 @@ Each template begins with template name, which is a special kind of HTML comment
 <!--HTMLStart-->
 or
 <!--MessageIn-->
-The template ends whenever a new template begins or EOF is reached.
+A template ends whenever a new template begins or EOF is reached.
 
 The following templates may be defined:
 
