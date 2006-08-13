@@ -255,6 +255,7 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 		case IDC_HOSTPORT:
 		case IDC_JUD:
 		case IDC_PRIORITY:
+		{
 			if ( LOWORD( wParam ) == IDC_MANUAL ) {
 				if ( IsDlgButtonChecked( hwndDlg, IDC_MANUAL )) {
 					EnableWindow( GetDlgItem( hwndDlg, IDC_HOST ), TRUE );
@@ -290,10 +291,13 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			else
 				EnableWindow( GetDlgItem( hwndDlg, IDC_BUTTON_REGISTER ), FALSE );
 			break;
+		}
 		case IDC_LINK_PUBLIC_SERVER:
 			ShellExecuteA( hwndDlg, "open", "http://www.jabber.org/network", "", "", SW_SHOW );
 			return TRUE;
 		case IDC_BUTTON_REGISTER:
+		{
+			ThreadData regInfo;
 			GetDlgItemText( hwndDlg, IDC_EDIT_USERNAME, regInfo.username, SIZEOF( regInfo.username ));
 			GetDlgItemTextA( hwndDlg, IDC_EDIT_PASSWORD, regInfo.password, SIZEOF( regInfo.password ));
 			GetDlgItemTextA( hwndDlg, IDC_EDIT_LOGIN_SERVER, regInfo.server, SIZEOF( regInfo.server ));
@@ -311,6 +315,7 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 				DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_OPT_REGISTER ), hwndDlg, JabberRegisterDlgProc, ( LPARAM )&regInfo );
 
 			return TRUE;
+		}
 		case IDC_MSGLANG:
 			if ( HIWORD( wParam ) == CBN_SELCHANGE )
 				SendMessage( GetParent( hwndDlg ), PSM_CHANGED, 0, 0 );
@@ -334,7 +339,6 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			break;
 		default:
 			return 0;
-			break;
 		}
 		break;
 	case WM_NOTIFY:
@@ -342,13 +346,13 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			BOOL reconnectRequired = FALSE;
 			DBVARIANT dbv;
 
-			char text[256];
+			char userName[256], text[256];
 			TCHAR textT [256];
-			GetDlgItemTextA( hwndDlg, IDC_EDIT_USERNAME, text, sizeof( text ));
-			if ( DBGetContactSetting( NULL, jabberProtoName, "LoginName", &dbv ) || strcmp( text, dbv.pszVal ))
+			GetDlgItemTextA( hwndDlg, IDC_EDIT_USERNAME, userName, sizeof( userName ));
+			if ( DBGetContactSetting( NULL, jabberProtoName, "LoginName", &dbv ) || strcmp( userName, dbv.pszVal ))
 				reconnectRequired = TRUE;
 			if ( dbv.pszVal != NULL )	JFreeVariant( &dbv );
-			JSetString( NULL, "LoginName", text );
+			JSetString( NULL, "LoginName", userName );
 
 			if ( IsDlgButtonChecked( hwndDlg, IDC_SAVEPASSWORD )) {
 				GetDlgItemTextA( hwndDlg, IDC_EDIT_PASSWORD, text, sizeof( text ));
@@ -384,6 +388,11 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 				reconnectRequired = TRUE;
 			if ( dbv.pszVal != NULL )	JFreeVariant( &dbv );
 			JSetString( NULL, "LoginServer", text );
+			
+			strcat( userName, "@" );
+			strncat( userName, text, sizeof( userName ));
+			userName[ sizeof(userName)-1 ] = 0;
+			JSetString( NULL, "jid", userName );
 
 			port = ( WORD )GetDlgItemInt( hwndDlg, IDC_PORT, NULL, FALSE );
 			if ( JGetWord( NULL, "Port", JABBER_DEFAULT_PORT ) != port )

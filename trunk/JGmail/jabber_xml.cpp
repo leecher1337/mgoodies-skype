@@ -299,7 +299,7 @@ static BOOL JabberXmlProcessElem( XmlState *xmlState, XmlElemType elemType, char
 	text = NEWSTR_ALLOCA( elemText );
 
 	if ( elemAttr )
-		attr = mir_strdup( elemAttr );
+		attr = NEWSTR_ALLOCA( elemAttr );
 	else
 		attr = NULL;
 
@@ -361,7 +361,6 @@ static BOOL JabberXmlProcessElem( XmlState *xmlState, XmlElemType elemType, char
 		}	}
 		else {
 			JabberLog( "XML: Closing </%s> without opening tag", text );
-			if ( attr ) mir_free( attr );
 			return FALSE;
 		}
 		break;
@@ -369,11 +368,8 @@ static BOOL JabberXmlProcessElem( XmlState *xmlState, XmlElemType elemType, char
 		JabberUtfToTchar( text, strlen( text ), node->text );
 		break;
 	default:
-		if ( attr ) mir_free( attr );
 		return FALSE;
 	}
-
-	if ( attr ) mir_free( attr );
 
 	return TRUE;
 }

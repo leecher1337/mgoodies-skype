@@ -168,10 +168,10 @@ static void xmlStreamInitializeNow(struct ThreadData *info){
 			stream.addAttr( "version", "1.0" );
 			stream.dirtyHack = true; // this is to keep the node open - do not send </stream:stream>
 			JabberSend( info->s, stream );
-	}
-}
+}	}
 
 static bool wasSaslPerformed = 0;
+
 void __cdecl JabberServerThread( struct ThreadData *info )
 {
 	DBVARIANT dbv;
@@ -181,7 +181,8 @@ void __cdecl JabberServerThread( struct ThreadData *info )
 	PVOID ssl;
 
 	JabberLog( "Thread started: type=%d", info->type );
-	wasSaslPerformed=false;
+
+	wasSaslPerformed = false;
 	if ( info->type == JABBER_SESSION_NORMAL ) {
 
 		// Normal server connection, we will fetch all connection parameters
@@ -242,11 +243,11 @@ LBL_Exit:
 		else _tcscpy( info->resource, _T("Miranda"));
 
 		TCHAR jidStr[128];
-		mir_sntprintf( jidStr, SIZEOF( jidStr ), _T("%s@")_T(TCHAR_STR_PARAM)_T("/%s"), info->username, info->server, info->resource );
+		mir_sntprintf( jidStr, SIZEOF( jidStr ), _T("%s@") _T(TCHAR_STR_PARAM) _T("/%s"), info->username, info->server, info->resource );
 		_tcsncpy( info->fullJID, jidStr, SIZEOF( info->fullJID )-1 );
 
 		if ( JGetByte( "SavePassword", TRUE ) == FALSE ) {
-			mir_sntprintf( jidStr, SIZEOF( jidStr ), _T("%s@")_T(TCHAR_STR_PARAM), info->username, info->server );
+			mir_sntprintf( jidStr, SIZEOF( jidStr ), _T("%s@") _T(TCHAR_STR_PARAM), info->username, info->server );
 
 			// Ugly hack: continue logging on only the return value is &( onlinePassword[0] )
 			// because if WM_QUIT while dialog box is still visible, p is returned with some
@@ -608,39 +609,42 @@ static void JabberProcessStreamClosing( XmlNode *node, void *userdata )
 static int isGoogleTokenUsed = 0; // 1: used; 2: retreived; 3: retreived and used
 static void JabberProcessFeatures( XmlNode *node, void *userdata )
 {
-	int i,k;
+	struct ThreadData *info = ( struct ThreadData * ) userdata;
 	bool isPlainAvailable = false;
 	bool isAuthAvailable = false;
 	bool isXGoogleTokenAvailable = false;
 	bool isRegisterAvailable = false;
 	bool areMechanismsDefined = false;
 	bool isSessionAvailable = false;
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
-	for (i=0;i<node->numChild;i++){
-		if (!strcmp(node->child[i]->name,"starttls")){
+	int i,k;
+	for (i = 0; i < node->numChild; i++ ) {
+		XmlNode* n = node->child[i];
+		if (!strcmp(n->name,"starttls" )) {
 			if ( !info->useSSL &&
 				#ifndef STATICSSL
 					hLibSSL != NULL &&
 				#endif
 					JGetByte( "UseTLS", TRUE )) {
 				JabberLog( "Requesting TLS" );
-				XmlNode stls(node->child[i]->name); stls.addAttr("xmlns","urn:ietf:params:xml:ns:xmpp-tls");
+				XmlNode stls(n->name); stls.addAttr("xmlns","urn:ietf:params:xml:ns:xmpp-tls");
 				JabberSend( info->s, stls );
 				return;
-			}
-		} else if (!strcmp(node->child[i]->name,"mechanisms")){
+		}	}
+		else if (!strcmp(n->name,"mechanisms" )) {
 			areMechanismsDefined = true;
-			//JabberLog("%d mechanisms\n",node->child[i]->numChild);
-			for (k=0;k<node->child[i]->numChild;k++){
-				if (!strcmp(node->child[i]->child[k]->name,"mechanism"))
+			//JabberLog("%d mechanisms\n",n->numChild);
+			for (k = 0; k < n->numChild; k++ ) {
+				XmlNode* c = n->child[k];
+				if (!strcmp(c->name,"mechanism"))
 					//JabberLog("Mechanism: %s",node->child[i]->child[k]->text);
-					if (!_tcscmp(node->child[i]->child[k]->text,_T("PLAIN"))) isPlainAvailable = true;
-					if (!_tcscmp(node->child[i]->child[k]->text,_T("X-GOOGLE-TOKEN"))) isXGoogleTokenAvailable = true;
-			}
-		} else if (!strcmp(node->child[i]->name,"register")) isRegisterAvailable = true;
-		else if (!strcmp(node->child[i]->name,"auth")) isAuthAvailable = true;
-		else if (!strcmp(node->child[i]->name,"session")) isSessionAvailable = true;
+					if (!_tcscmp(c->text,_T("PLAIN"))) isPlainAvailable = true;
+					if (!_tcscmp(c->text,_T("X-GOOGLE-TOKEN"))) isXGoogleTokenAvailable = true;
+		}	}
+		else if (!strcmp(n->name,"register")) isRegisterAvailable = true;
+		else if (!strcmp(n->name,"auth")) isAuthAvailable = true;
+		else if (!strcmp(n->name,"session")) isSessionAvailable = true;
 	}
+
 	if (areMechanismsDefined) {
 		char *PLAIN = 0;
 		char *X_GOOGLE_TOKEN = 0;
@@ -707,9 +711,10 @@ LBL_RequestToken:
 			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 			return;
 		}
+
 		if ( info->type == JABBER_SESSION_NORMAL ) {
 			XmlNode auth("auth", X_GOOGLE_TOKEN?X_GOOGLE_TOKEN:PLAIN);
-			auth.addAttr("xmlns","urn:ietf:params:xml:ns:xmpp-sasl");
+			auth.addAttr("xmlns","urn:ietf:params:xml:ns:xmpp-sasl" );
 			auth.addAttr("mechanism",X_GOOGLE_TOKEN?"X-GOOGLE-TOKEN":"PLAIN");
 			JabberSend(info->s,auth);
 			wasSaslPerformed = true; //sasl was requested, but we dont know the result
@@ -749,8 +754,8 @@ LBL_TryIqAuth:
 			XmlNode* sess = iq.addChild( "session" ); sess->addAttr ( "xmlns", "urn:ietf:params:xml:ns:xmpp-session" );
 			JabberSend( info->s, iq );
 		}
-	}
-}
+}	}
+
 
 static void __cdecl JabberWaitAndReconnectThread( int unused )
 {
@@ -796,11 +801,10 @@ LBL_AuthFailed:
 			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 			jabberThreadInfo = NULL;	// To disallow auto reconnect
 		}
-	}
-}
+}	}
 
-static void JabberProcessError( XmlNode *node, void *userdata ){
-//	JabberXmlDumpNode( node );
+static void JabberProcessError( XmlNode *node, void *userdata )
+{
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
 	TCHAR *buff;
 	int i;
@@ -822,7 +826,6 @@ static void JabberProcessError( XmlNode *node, void *userdata ){
 
 static void JabberProcessSuccess( XmlNode *node, void *userdata )
 {
-	//JabberXmlDumpNode( node );
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
 	TCHAR* type;
 //	int iqId;
@@ -919,21 +922,21 @@ static void JabberProcessProceed( XmlNode *node, void *userdata )
 static void JabberProcessMessage( XmlNode *node, void *userdata )
 {
 	struct ThreadData *info;
-	XmlNode *subjectNode, *errorNode, *xNode, *inviteNode, *idNode, *n;
+	XmlNode *subjectNode, *xNode, *inviteNode, *idNode, *n;
 	TCHAR* from, *type, *nick, *p, *idStr, *fromResource;
 	int id;
 
 	if ( !node->name || strcmp( node->name, "message" )) return;
 	if (( info=( struct ThreadData * ) userdata ) == NULL ) return;
 
+	type = JabberXmlGetAttrValue( node, "type" );
 	if (( from = JabberXmlGetAttrValue( node, "from" )) == NULL )
 		return;
 
-	if ( ( (errorNode = JabberXmlGetChild( node, "error" )) != NULL ) ||
-		(( type = JabberXmlGetAttrValue( node, "type" )) != NULL && !lstrcmp( type, _T("error")))
-		){
+	XmlNode* errorNode = JabberXmlGetChild( node, "error" );
+	if ( errorNode != NULL || !lstrcmp( type, _T("error"))) {
 		//we  check if is message delivery failure
-		if ((idStr = JabberXmlGetAttrValue( node, "id" )) != NULL){
+		if (( idStr = JabberXmlGetAttrValue( node, "id" )) != NULL ) {
 			if ( !_tcsncmp( idStr, _T(JABBER_IQID), strlen( JABBER_IQID )) ){
 				JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, from );
 				if ( item != NULL ){
@@ -1016,14 +1019,14 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 						if (( hContact = JabberHContactFromJID( from )) != NULL )
  							JCallService( MS_PROTO_CONTACTISTYPING, ( WPARAM ) hContact, 60 );
 
-					if ( xNode->numChild==0 || ( xNode->numChild==1 && idNode!=NULL ))
+					if ( xNode->numChild==0 || ( xNode->numChild==1 && idNode != NULL ))
 						// Maybe a cancel to the previous composing
 						if (( hContact = JabberHContactFromJID( from )) != NULL )
 							JCallService( MS_PROTO_CONTACTISTYPING, ( WPARAM ) hContact, PROTOTYPE_CONTACTTYPING_OFF );
 				}
 				else {
 					// Check whether any event is requested
-					if ( !delivered && ( n=JabberXmlGetChild( xNode, "delivered" ))!=NULL ) {
+					if ( !delivered && ( n=JabberXmlGetChild( xNode, "delivered" )) != NULL ) {
 						delivered = TRUE;
 						idStr = JabberXmlGetAttrValue( node, "id" );
 
@@ -1032,7 +1035,7 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 						x->addChild( "id", ( idStr != NULL ) ? idStr : NULL );
 						JabberSend( info->s, m );
 					}
-					if ( item!=NULL && JabberXmlGetChild( xNode, "composing" )!=NULL ) {
+					if ( item!=NULL && JabberXmlGetChild( xNode, "composing" ) != NULL ) {
 						composing = TRUE;
 						if ( item->messageEventIdStr )
 							mir_free( item->messageEventIdStr );
@@ -1042,7 +1045,7 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 			}
 			else if ( !_tcscmp( p, _T("jabber:x:oob")) && isRss) {
 				XmlNode* rssUrlNode;
-				if ( (rssUrlNode = JabberXmlGetNthChild( xNode, "url", 1 ))!=NULL) {
+				if ( (rssUrlNode = JabberXmlGetNthChild( xNode, "url", 1 )) != NULL) {
 					p = ( TCHAR* )alloca( sizeof(TCHAR)*( _tcslen( subjectNode->text ) + _tcslen( bodyNode->text ) + _tcslen( rssUrlNode->text ) + 14 ));
 					wsprintf( p, _T("Subject: %s\r\n%s\r\n%s"), subjectNode->text, rssUrlNode->text, bodyNode->text );
 					szMessage = p;
