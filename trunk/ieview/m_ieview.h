@@ -126,7 +126,7 @@ typedef struct tagIEVIEWEVENTDATA {
 		const wchar_t *pszText2W;		// Text - Unicode
 	};
 } IEVIEWEVENTDATA;
- 
+
 /* IEView events */
 #define IEE_LOG_DB_EVENTS  	1       // log specified number of DB events
 #define IEE_CLEAR_LOG		2       // clear log
@@ -176,7 +176,7 @@ typedef struct {
 } IEVIEWSHOWSMILEYSEL;
 
 #define IEN_NAVIGATE 	1       // navigate to the given destination
-#define IENF_UNICODE	1       // if set pszText is a pointer to wchar_t string instead of char string
+#define IENF_UNICODE	1       // if set urlW is used instead of urlW
 
 typedef struct {
 	int			cbSize;             // size of the strusture
