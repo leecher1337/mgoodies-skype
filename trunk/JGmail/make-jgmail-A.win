@@ -4,15 +4,15 @@
 CPP  = g++.exe
 CC   = gcc.exe
 WINDRES = windres.exe  -D WINVER=0x0400
-RES  = MinGW/A/jabber_private.res
+RES  = MinGW/A/msvc6.res
 OBJ  = MinGW/A/gmail.o MinGW/A/google_token.o MinGW/A/icolib.o MinGW/A/jabber.o MinGW/A/jabber_agent.o MinGW/A/jabber_bitmap.o MinGW/A/jabber_byte.o MinGW/A/jabber_chat.o MinGW/A/jabber_file.o MinGW/A/jabber_form.o MinGW/A/jabber_ft.o MinGW/A/jabber_groupchat.o MinGW/A/jabber_iq.o MinGW/A/jabber_iqid.o MinGW/A/jabber_iqid_muc.o MinGW/A/jabber_libstr.o MinGW/A/jabber_list.o MinGW/A/jabber_menu.o MinGW/A/jabber_misc.o MinGW/A/jabber_opt.o MinGW/A/jabber_password.o MinGW/A/jabber_proxy.o MinGW/A/jabber_ssl.o MinGW/A/jabber_std.o MinGW/A/jabber_svc.o MinGW/A/jabber_thread.o MinGW/A/jabber_userinfo.o MinGW/A/jabber_util.o MinGW/A/jabber_vcard.o MinGW/A/jabber_ws.o MinGW/A/jabber_xml.o MinGW/A/jabber_xmlns.o MinGW/A/sha1.o $(RES)
 LINKOBJ  = MinGW/A/gmail.o MinGW/A/google_token.o MinGW/A/icolib.o MinGW/A/jabber.o MinGW/A/jabber_agent.o MinGW/A/jabber_bitmap.o MinGW/A/jabber_byte.o MinGW/A/jabber_chat.o MinGW/A/jabber_file.o MinGW/A/jabber_form.o MinGW/A/jabber_ft.o MinGW/A/jabber_groupchat.o MinGW/A/jabber_iq.o MinGW/A/jabber_iqid.o MinGW/A/jabber_iqid_muc.o MinGW/A/jabber_libstr.o MinGW/A/jabber_list.o MinGW/A/jabber_menu.o MinGW/A/jabber_misc.o MinGW/A/jabber_opt.o MinGW/A/jabber_password.o MinGW/A/jabber_proxy.o MinGW/A/jabber_ssl.o MinGW/A/jabber_std.o MinGW/A/jabber_svc.o MinGW/A/jabber_thread.o MinGW/A/jabber_userinfo.o MinGW/A/jabber_util.o MinGW/A/jabber_vcard.o MinGW/A/jabber_ws.o MinGW/A/jabber_xml.o MinGW/A/jabber_xmlns.o MinGW/A/sha1.o $(RES)
-LIBS =  -L"C:/Dev-Cpp/lib" -lkernel32 -luser32 -lgdi32 -lcomctl32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -lwsock32 -lversion -fmessage-length=0 -w -s 
-INCS =  -I"C:/Dev-Cpp/include"  -I"../../include" 
-CXXINCS =  -I"C:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"C:/Dev-Cpp/include/c++/3.4.2/backward"  -I"C:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"C:/Dev-Cpp/include/c++/3.4.2"  -I"C:/Dev-Cpp/include"  -I"../../include" 
-BIN  = ../../bin/MinGW/A/jgmail.dll
-CXXFLAGS = $(CXXINCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_USRDLL -DJABBER_EXPORTS   -w -fexpensive-optimizations -O3 -fmessage-length=0
-CFLAGS = $(INCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_USRDLL -DJABBER_EXPORTS   -w -fexpensive-optimizations -O3 -fmessage-length=0
+LIBS =  -L"C:/Dev-Cpp/lib" -lkernel32 -luser32 -lgdi32 -lcomctl32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -lwsock32 -lversion -s
+INCS =  -I"../../include"
+CXXINCS =  -I"../../include"
+BIN  = ../../bin/MinGW/A/JGmail.dll
+CXXFLAGS = $(CXXINCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_USRDLL -DJABBER_EXPORTS   -w -fexpensive-optimizations -Os -fweb -fmessage-length=0
+CFLAGS = $(INCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -D_USRDLL -DJABBER_EXPORTS   -w -fexpensive-optimizations -Os -fweb -fmessage-length=0
 RM = rm -f
 
 .PHONY: all all-before all-after clean clean-custom
@@ -130,5 +130,5 @@ MinGW/A/jabber_xmlns.o: jabber_xmlns.cpp
 MinGW/A/sha1.o: sha1.cpp
 	$(CPP) -c sha1.cpp -o MinGW/A/sha1.o $(CXXFLAGS)
 
-MinGW/A/jabber_private.res: jabber_private.rc 
-	$(WINDRES) -i jabber_private.rc --input-format=rc -o MinGW/A/jabber_private.res -O coff 
+MinGW/A/msvc6.res: msvc6.rc
+	$(WINDRES) -i msvc6.rc --input-format=rc -o MinGW/A/msvc6.res -O coff
