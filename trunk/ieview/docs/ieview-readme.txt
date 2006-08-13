@@ -41,13 +41,10 @@ included in a separate file called templates_info.txt.
 To install IEView please copy ieview.dll and ieview folder into your
 Miranda's plugins directory. Ohter folders included in the pack are as
 follows:
-emots      - a very simple set of animated emoticons
-css        - examples of CSS files for tabsrmm and srmm
-templates  - examples of HTML templates, which can be used with IEView
+css        - examples of CSS files for tabsrmm, scriver and srmm
+docs	   - information about templates, translations etc.
 
-emots, css and templates folders may be copied anywhere.
-
-In order to use IEView you need Scriver or TabSRMM. Scriver (SRMM mod) project page is located here:
+In order to use IEView you need Scriver or TabSRMM. Scriver project page is located here:
 http://developer.berlios.de/projects/mgoodies. Scriver v2.2.2.9 or later is recommended.
 If IEVIew is among avtive plugins it will be automatically used by Scriver for message log rendering,
 otherwise regular RichEdit control is used.
@@ -61,7 +58,6 @@ check "Activate support for external".
 ----------------
 
 Wallpaper - select any image format supported by Internet Explorer (JPG, GIF etc.)
-Emoticons - just select .asl file(s). They can be located anywhere in any folder.
 
 4. FAQ
 ------
@@ -76,7 +72,7 @@ Q: Does IEView support Unicode ?
 A: Yes, it does.
 
 Q: Does IEView support RTL ?
-A: Yes, it does - in CSS or template mode.
+A: Yes, it does.
 
 Q: What version of Miranda is required to run IEView ?
 A: IEView DOES require Miranda IM 0.4.
@@ -89,23 +85,25 @@ A: Make sure Window Sessions -> Message Window -> Message log -> Activate suppor
 5. Known Issues
 ---------------
 
-A) Animated smiley librabries
-Please avoid using huge number of animated smileys, otherwise Miranda and your system may crash !
-It is not a bug in IEView, but rather known limitation of Internet Explorer, so please be reasonable.
-
-B) Unicode
+A) Unicode
 Unicode support in Miranda is rather poor. IEView tries to determin if a message contains Unicode part or not,
 but this may fail sometimes and you will need to switch Unicode off in such cases. There is a possibility to turn
 Unicode off manually in Scriver.
 
-C) Avatars
+B) Avatars
 Unfortunately each Miranda plugin tends to store avatars in a different way. I am not going to add support
 for all of these possibilities to IEView, because I believe there should be only one standard. As a result
 IEView ALWAYS takes avatars stored in ContactPhoto/File DB entry. TabSRMM, Scriver and mToolTip use this field
 properly and I think authors of other plugins should consider changing their programs in order to use it.
+Alternatively, you may install AvatarService plugin and IEView will automatically detect and use AvatarService.
 
 6. Change Log
 -------------
+1.0.9.5
++ web browser functionality exposed to other plugins
++ experimental support for Flash avatars
+* RTL support completely changed (see example css and template files)
+* bugfix: #007914 (wrong CP conversion)
 1.0.9.4
 + option to hide window border
 * bugfix: duplicate messages when incorrect smiley pack is used
