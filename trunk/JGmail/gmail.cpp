@@ -489,19 +489,22 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 //				char stthread[50];
 //				StringFromUnixTime(stthread,50,(long)((gtstamp>>20)/1000));
 				XmlNode *sendersNode = JabberXmlGetChild( threadNode, "senders" );
-				int k; TCHAR sendersList[150];
-				sendersList[0] = '\0';
-				mir_sntprintf(sendersList,150,
+#define SENDERSLISTSIZE 150
+				int k; TCHAR sendersList[SENDERSLISTSIZE];
+				int pos = mir_sntprintf(sendersList,SENDERSLISTSIZE-1,
 					_T(TCHAR_STR_PARAM)_T(": %s: "),
 					jabberProtoName,
 					TranslateT("New mail from"));
 				if (sendersNode) for ( k=0; k<sendersNode->numChild; k++ ) {
-					if (k) _tcsncat(sendersList,_T(", "),150);
 					TCHAR * senderName = JabberXmlGetAttrValue(sendersNode->child[sendersNode->numChild-1-k],"name");
 					if (!senderName) senderName = JabberXmlGetAttrValue(sendersNode->child[sendersNode->numChild-1-k],"address");
-					_tcsncat(sendersList,senderName,150);
+					int siz = mir_sntprintf(sendersList+pos,SENDERSLISTSIZE-pos,(k?_T(", %s"):_T("%s")),senderName);
+					if (siz == -1) break;
+					pos += siz;
 				}
-//				JabberLog( "Senders: %s",sendersList );
+#ifdef _DEBUG
+				JabberLog( "Senders: "TCHAR_STR_PARAM,sendersList );
+#endif
 				{ //create and show popup
 					POPUPDATAT ppd;
 					ZeroMemory((void *)&ppd, sizeof(ppd));
@@ -510,7 +513,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					_tcsncpy(ppd.lptzContactName, sendersList, MAX_CONTACTNAME);
 					sendersNode = JabberXmlGetChild( threadNode, "subject" );
 					XmlNode *snippetNode = JabberXmlGetChild( threadNode, "snippet" );
-					int pos = mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5, _T("%s%s: %s\n%s: %s\n%s"),
+					pos = mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5, _T("%s%s: %s\n%s: %s\n%s"),
 						TranslateT("Subject"),
 						mesgs,
 						sendersNode?sendersNode->text:TranslateT("none"),
