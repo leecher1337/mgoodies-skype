@@ -37,6 +37,7 @@ void InitMenuitem(void);
 int ModeChange_mo(WPARAM,LPARAM);
 int CheckIfOnline(void);
 int ResetMissed(void);
+static BOOL (WINAPI *pfnEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
 
 BOOL CALLBACK OptsPopUpsDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 {
@@ -497,6 +498,10 @@ long OptsSettingsDlg, OptsPopUpsDlg;
 			}
 			tci.mask = TCIF_PARAM|TCIF_TEXT;
 			if (!OptsPopUpsDlg) OptsPopUpsDlg = (long)CreateDialog(hInstance,MAKEINTRESOURCE(IDD_POPUPS), hwndDlg, OptsPopUpsDlgProc);
+			if(pfnEnableThemeDialogTexture) {
+				if(OptsPopUpsDlg)
+					pfnEnableThemeDialogTexture((HANDLE)OptsPopUpsDlg, ETDT_ENABLETAB);
+			}
 			tci.lParam = OptsPopUpsDlg;
 			GetClientRect((HWND)tci.lParam,&rcClient);
 			tci.pszText = Translate("Popups");
@@ -507,6 +512,10 @@ long OptsSettingsDlg, OptsPopUpsDlg;
 			ShowWindow((HWND)tci.lParam, SW_HIDE);
 
 			if (!OptsSettingsDlg) OptsSettingsDlg = (long)CreateDialog(hInstance,MAKEINTRESOURCE(IDD_SETTINGS), hwndDlg, OptsSettingsDlgProc);
+			if(pfnEnableThemeDialogTexture) {
+				if(OptsSettingsDlg)
+					pfnEnableThemeDialogTexture((HANDLE)OptsSettingsDlg, ETDT_ENABLETAB);
+			}             
 			tci.lParam = OptsSettingsDlg;
 			tci.pszText = Translate("Settings");
 			GetClientRect((HWND)tci.lParam,&rcClient);
@@ -577,6 +586,14 @@ long OptsSettingsDlg, OptsPopUpsDlg;
 int OptionsInit(WPARAM wparam,LPARAM lparam)
 {
 	OPTIONSDIALOGPAGE odp;
+	HMODULE           hUxTheme = 0;
+
+    if(IsWinVerXPPlus()) {
+        hUxTheme = GetModuleHandle(_T("uxtheme.dll"));
+
+        if(hUxTheme)   
+            pfnEnableThemeDialogTexture = (BOOL (WINAPI *)(HANDLE, DWORD))GetProcAddress(hUxTheme, "EnableThemeDialogTexture");
+    }
 
 	ZeroMemory(&odp,sizeof(odp));
 	odp.cbSize=sizeof(odp);
