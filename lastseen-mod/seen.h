@@ -30,6 +30,7 @@ Last change by : $Author$
 #include <commctrl.h>
 #include <stdio.h>
 #include <string.h>
+#include <uxtheme.h>
 
 #include "resource.h"
 #include <newpluginapi.h>
