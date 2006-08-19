@@ -86,8 +86,8 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
     odp.cbSize=sizeof(odp);
     odp.position=0;
 	odp.hInstance=hInst;
-	odp.ptszGroup = TranslateT("Events");
-	odp.ptszTitle = TranslateT("Status Msg History");
+	odp.ptszGroup = TranslateT("History");
+	odp.ptszTitle = TranslateT("Status Message");
 	odp.pfnDlgProc = OptionsDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;

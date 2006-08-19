@@ -1,10 +1,10 @@
-; Status Message History 0.0.0.4
+; Status Message History 0.0.0.6
 ; Author: Pescuma
 
 ; Options
 
-[Events]
-[Nick History]
+[History]
+[Status Message]
 
 [ History ]
 [Log changes to history]
@@ -20,7 +20,7 @@
 [Enable tracking for these protocols:]
 
 [Popups]
-[Nick Change]
+[Status Msg Change]
 
 [Enable popups]
 

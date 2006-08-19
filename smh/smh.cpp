@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Status Message History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,4),
+	PLUGIN_MAKE_VERSION(0,0,0,6),
 	"Log status message changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -153,7 +153,11 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/smh_changelog.txt";
 		upd.pbBetaVersionPrefix = (BYTE *)"Status Message History ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
+#ifdef UNICODE
+		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/smhW.zip";
+#else
 		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/smh.zip";
+#endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
@@ -382,72 +386,105 @@ void Notify(HANDLE hContact, TCHAR *text)
 		ShowPopup(hContact, NULL, log);
 }
 
-
-// Return TRUE if changed
-BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
+int inline CheckStr(char *str, int not_empty, int empty)
 {
-	char old_setting[256];
-	mir_snprintf(old_setting, MAX_REGS(old_setting), "%sOld", cws->szSetting);
+	if (str == NULL || str[0] == '\0')
+		return empty;
+	else
+		return not_empty;
+}
 
-	BOOL ret = FALSE;
+#ifdef UNICODE
+
+int inline CheckStr(TCHAR *str, int not_empty, int empty)
+{
+	if (str == NULL || str[0] == L'\0')
+		return empty;
+	else
+		return not_empty;
+}
+
+#endif
+
+// Return 0 if not changed, 1 if changed, 2 if removed
+int TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws_new, BOOL ignore_remove)
+{
+	char current_setting[256];
+	mir_snprintf(current_setting, MAX_REGS(current_setting), "%sCurrent", cws_new->szSetting);
+
+	int ret = 0;
 
 	DBVARIANT dbv = {0};
-	if (DBGetContactSetting(hContact, cws->szModule, old_setting, &dbv))
+#ifdef UNICODE
+	BOOL found_current = (DBGetContactSettingW(hContact, cws_new->szModule, current_setting, &dbv) == 0);
+#else
+	BOOL found_current = (DBGetContactSetting(hContact, cws_new->szModule, current_setting, &dbv) == 0);
+#endif
+	if (!found_current)
 	{
-		// Old value does not exist
+		// Current value does not exist
 
-		if (cws->value.type == DBVT_DELETED)
+		if (cws_new->value.type == DBVT_DELETED)
 		{
-			ret = FALSE;
+			ret = 0;
 		}
-		else if (cws->value.type == DBVT_ASCIIZ)
+		else if (cws_new->value.type == DBVT_ASCIIZ)
 		{
-			ret = (cws->value.pszVal[0] != '\0');
+			ret = CheckStr(cws_new->value.pszVal, 1, 0);
 		}
 #ifdef UNICODE
-		else if (cws->value.type == DBVT_UTF8)
+		else if (cws_new->value.type == DBVT_UTF8)
 		{
-			ret = (cws->value.pszVal[0] != '\0');
+			ret = CheckStr(cws_new->value.pszVal, 1, 0);
 		}
-		else if (cws->value.type == DBVT_WCHAR)
+		else if (cws_new->value.type == DBVT_WCHAR)
 		{
-			ret = (cws->value.pwszVal[0] != L'\0');
+			ret = CheckStr(cws_new->value.pwszVal, 1, 0);
 		}
 #endif
 		else
 		{
-			ret = TRUE;
+			ret = 1;
 		}
 	}
 	else
 	{
-		// Old value exist
+		// Current value exist
 
-		if (dbv.type != cws->value.type)
+		if (cws_new->value.type == DBVT_DELETED)
 		{
-			if (cws->value.type == DBVT_DELETED && dbv.type == DBVT_ASCIIZ)
+			if (dbv.type == DBVT_ASCIIZ)
 			{
-				ret = (dbv.pszVal[0] != '\0');
+				ret = CheckStr(dbv.pszVal, 2, 0);
 			}
 #ifdef UNICODE
-			else if (cws->value.type == DBVT_DELETED && dbv.type == DBVT_UTF8)
+			else if (dbv.type == DBVT_UTF8)
 			{
-				ret = (dbv.pszVal[0] != '\0');
+				ret = CheckStr(dbv.pszVal, 2, 0);
 			}
-			else if (cws->value.type == DBVT_DELETED && dbv.type == DBVT_WCHAR)
+			else if (dbv.type == DBVT_WCHAR)
 			{
-				ret = (dbv.pwszVal[0] != L'\0');
+				ret = CheckStr(dbv.pwszVal, 2, 0);
 			}
-			else if ( (cws->value.type == DBVT_UTF8 || cws->value.type == DBVT_ASCIIZ || cws->value.type == DBVT_WCHAR)
+#endif
+			else
+			{
+				ret = 2;
+			}
+		}
+		else if (dbv.type != cws_new->value.type)
+		{
+#ifdef UNICODE
+			if ( (cws_new->value.type == DBVT_UTF8 || cws_new->value.type == DBVT_ASCIIZ || cws_new->value.type == DBVT_WCHAR)
 				&& (dbv.type == DBVT_UTF8 || dbv.type == DBVT_ASCIIZ || dbv.type == DBVT_WCHAR))
 			{
-				WCHAR tmp_cws[1024] = L"";
-				if (cws->value.type == DBVT_ASCIIZ)
-					MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, tmp_cws, MAX_REGS(tmp_cws));
-				else if (cws->value.type == DBVT_UTF8)
-					MultiByteToWideChar(CP_UTF8, 0, cws->value.pszVal, -1, tmp_cws, MAX_REGS(tmp_cws));
-				else if (cws->value.type == DBVT_WCHAR)
-					lstrcpyn(tmp_cws, cws->value.pwszVal, MAX_REGS(tmp_cws));
+				WCHAR tmp_cws_new[1024] = L"";
+				if (cws_new->value.type == DBVT_ASCIIZ)
+					MultiByteToWideChar(CP_ACP, 0, cws_new->value.pszVal, -1, tmp_cws_new, MAX_REGS(tmp_cws_new));
+				else if (cws_new->value.type == DBVT_UTF8)
+					MultiByteToWideChar(CP_UTF8, 0, cws_new->value.pszVal, -1, tmp_cws_new, MAX_REGS(tmp_cws_new));
+				else if (cws_new->value.type == DBVT_WCHAR)
+					lstrcpyn(tmp_cws_new, cws_new->value.pwszVal, MAX_REGS(tmp_cws_new));
 
 				WCHAR tmp_dbv[1024] = L"";
 				if (dbv.type == DBVT_ASCIIZ)
@@ -457,58 +494,79 @@ BOOL TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws)
 				else if (dbv.type == DBVT_WCHAR)
 					lstrcpyn(tmp_dbv, dbv.pwszVal, MAX_REGS(tmp_dbv));
 
-				ret = lstrcmpW(tmp_cws, tmp_dbv);
+				ret = (lstrcmpW(tmp_cws_new, tmp_dbv) ? CheckStr(tmp_cws_new, 1, 2) : 0);
 			}
-#endif
 			else
+#endif
 			{
-				ret = TRUE;
+				ret = 1;
 			}
 		}
 		else if (dbv.type == DBVT_BYTE)
 		{
-			ret = (cws->value.bVal != dbv.bVal);
+			ret = (cws_new->value.bVal != dbv.bVal ? 1 : 0);
 		}
 		else if (dbv.type == DBVT_WORD)
 		{
-			ret = (cws->value.wVal != dbv.wVal);
+			ret = (cws_new->value.wVal != dbv.wVal ? 1 : 0);
 		}
 		else if (dbv.type == DBVT_DWORD)
 		{
-			ret = (cws->value.dVal != dbv.dVal);
+			ret = (cws_new->value.dVal != dbv.dVal ? 1 : 0);
 		}
 		else if (dbv.type == DBVT_ASCIIZ)
 		{
-			ret = strcmp(cws->value.pszVal, dbv.pszVal);
+			ret = (strcmp(cws_new->value.pszVal, dbv.pszVal) ? CheckStr(cws_new->value.pszVal, 1, 2) : 0);
 		}
 #ifdef UNICODE
 		else if (dbv.type == DBVT_UTF8)
 		{
-			ret = strcmp(cws->value.pszVal, dbv.pszVal);
+			ret = (strcmp(cws_new->value.pszVal, dbv.pszVal) ? CheckStr(cws_new->value.pszVal, 1, 2) : 0);
 		}
 		else if (dbv.type == DBVT_WCHAR)
 		{
-			ret = lstrcmp(cws->value.pwszVal, dbv.pwszVal);
+			ret = (lstrcmp(cws_new->value.pwszVal, dbv.pwszVal) ? CheckStr(cws_new->value.pwszVal, 1, 2) : 0);
 		}
 #endif
-
-		DBFreeVariant(&dbv);
 	}
 
-	if (ret)
+	if (ret == 1 || (ret == 2 && !ignore_remove))
 	{
-		if (cws->value.type == DBVT_DELETED)
+		// Copy current to old
+		char old_setting[256];
+		mir_snprintf(old_setting, MAX_REGS(old_setting), "%sOld", cws_new->szSetting);
+
+		if (dbv.type == DBVT_DELETED)
 		{
-			DBDeleteContactSetting(hContact, cws->szModule, old_setting);
+			DBDeleteContactSetting(hContact, cws_new->szModule, old_setting);
 		}
 		else
 		{
 			DBCONTACTWRITESETTING cws_old;
-			memmove(&cws_old, cws, sizeof(cws_old));
+			cws_old.szModule = cws_new->szModule;
 			cws_old.szSetting = old_setting;
+			cws_old.value = dbv;
+			CallService(MS_DB_CONTACT_WRITESETTING, (WPARAM)hContact, (LPARAM)&cws_old);
+		}
+
+
+		// Copy new to current
+		if (cws_new->value.type == DBVT_DELETED)
+		{
+			DBDeleteContactSetting(hContact, cws_new->szModule, current_setting);
+		}
+		else
+		{
+			DBCONTACTWRITESETTING cws_old;
+			cws_old.szModule = cws_new->szModule;
+			cws_old.szSetting = current_setting;
+			cws_old.value = cws_new->value;
 			CallService(MS_DB_CONTACT_WRITESETTING, (WPARAM)hContact, (LPARAM)&cws_old);
 		}
 	}
+
+	if (found_current)
+		DBFreeVariant(&dbv);
 
 	return ret;
 }
@@ -542,35 +600,27 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 		if (!ContactEnabled(hContact))
 			return 0;
 
-		if (!TrackChange(hContact, cws))
+		int changed = TrackChange(hContact, cws, !opts.track_removes);
+		if (changed == 0)
 			return 0;
 
+		if (changed == 2)
+		{
+			Notify(hContact, NULL);
+		}
+		else // changed == 1
 #ifdef UNICODE
 		if (cws->value.type == DBVT_ASCIIZ)
 		{
-			if (cws->value.pszVal != NULL)
-			{
-				WCHAR tmp[1024] = L"";
-				MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, tmp, MAX_REGS(tmp));
-				Notify(hContact, tmp);
-			}
-			else
-			{
-				Notify(hContact, NULL);
-			}
+			WCHAR tmp[1024] = L"";
+			MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, tmp, MAX_REGS(tmp));
+			Notify(hContact, tmp);
 		}
 		else if (cws->value.type == DBVT_UTF8)
 		{
-			if (cws->value.pszVal != NULL)
-			{
-				WCHAR tmp[1024] = L"";
-				MultiByteToWideChar(CP_UTF8, 0, cws->value.pszVal, -1, tmp, MAX_REGS(tmp));
-				Notify(hContact, tmp);
-			}
-			else
-			{
-				Notify(hContact, NULL);
-			}
+			WCHAR tmp[1024] = L"";
+			MultiByteToWideChar(CP_UTF8, 0, cws->value.pszVal, -1, tmp, MAX_REGS(tmp));
+			Notify(hContact, tmp);
 		}
 		else if (cws->value.type == DBVT_WCHAR)
 		{
@@ -582,10 +632,6 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 			Notify(hContact, cws->value.pszVal);
 		}
 #endif
-		else if (cws->value.type == DBVT_DELETED)
-		{
-			Notify(hContact, NULL);
-		}
 	}
 
 	return 0;
