@@ -40,7 +40,7 @@ static OptPageControl optionsControls[] = {
 	{ &opts.template_changed,				CONTROL_TEXT,			IDC_CHANGED,		"TemplateChanged", (DWORD) _T(DEFAULT_TEMPLATE_CHANGED) },
 	{ &opts.track_removes,					CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,	"TrackRemoves", TRUE },
 	{ &opts.template_removed,				CONTROL_TEXT,			IDC_REMOVED,		"TemplateRemoved", (DWORD) _T(DEFAULT_TEMPLATE_REMOVED) },
-	{ &opts.track_only_not_offline,			CONTROL_CHECKBOX,		IDC_ONLY_NOT_OFFLINE,"TrackOnlyWhenNotOffline", TRUE },
+	{ &opts.track_only_not_offline,			CONTROL_CHECKBOX,		IDC_ONLY_NOT_OFFLINE,"TrackOnlyWhenNotOffline", FALSE },
 	{ NULL,									CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,		"%sEnabled", TRUE, (int) AllowProtocol }
 };
 
@@ -86,8 +86,8 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
     odp.cbSize=sizeof(odp);
     odp.position=0;
 	odp.hInstance=hInst;
-	odp.ptszGroup = TranslateT("Events");
-	odp.ptszTitle = TranslateT("Nick History");
+	odp.ptszGroup = TranslateT("History");
+	odp.ptszTitle = TranslateT("Nickname");
 	odp.pfnDlgProc = OptionsDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
@@ -100,7 +100,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
     odp.position=0;
 	odp.hInstance=hInst;
 	odp.ptszGroup = TranslateT("Popups");
-	odp.ptszTitle = TranslateT("Nick Change");
+	odp.ptszTitle = TranslateT("Nickname Change");
 	odp.pfnDlgProc = PopupsDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_POPUPS);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;

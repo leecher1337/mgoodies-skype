@@ -1,6 +1,13 @@
-Nick History 0.0.0.7
+Nick History 0.0.0.9
 
 Changelog:
+
+. 0.0.0.9
+  * Fixes for changes tracking
+  * Fixes for updater url
+
+. 0.0.0.8
+  + Changed to History entry in options
 
 . 0.0.0.7
   * Fix for crash

@@ -1,10 +1,10 @@
-; Nick History 0.0.0.7
+; Nick History 0.0.0.9
 ; Author: Pescuma
 
 ; Options
 
-[Events]
-[Nick History]
+[History]
+[Nickname]
 
 [ History ]
 [Log changes to history]
@@ -20,7 +20,7 @@
 [Enable tracking for these protocols:]
 
 [Popups]
-[Nick Change]
+[Nickname Change]
 
 [Enable popups]
 
