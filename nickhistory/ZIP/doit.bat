@@ -26,6 +26,7 @@ mkdir Docs
 cd Docs
 del /Q *.*
 copy ..\..\Docs\langpack_%name%.txt
+copy ..\..\Docs\helppack_%name%.txt
 copy ..\..\m_%name%.h
 cd ..
 mkdir src
