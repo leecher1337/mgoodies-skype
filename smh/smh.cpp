@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Status Message History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,6),
+	PLUGIN_MAKE_VERSION(0,1,0,0),
 	"Log status message changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",

@@ -1,0 +1,33 @@
+Miranda Help Pack Version 1
+Language: English
+Locale: 0809
+Last-Modified-Using: Miranda IM 0.5
+Authors: Pescuma
+Plugins-included: smh
+
+[smh:1061@AyUEAyYEAywEByIEAy0EByMEAy4EDhEE]
+Log changes made by the users to the contact history=
+
+[smh:1062@AyUEAyYEAywEByIEAy0EByMEAy4EDhEE]
+Enable this option to test if the text to log has only ANSI chars and in this case avoid spending some database space=Due to the way miranda store the contact history in unicode the size of an entry can be up to 3 times bigger than the text itself. If the message contains only ANSI chars, then this can be avoided.
+
+[smh:1068@AyUEAyYEAywEByIEAy0EByMEAy4EDhEE]
+Enable this to monitor status message changes=This means that the status message was empty and has beeing filled or that the text has changed (but not to an empty text).<br>This is used to log to history and to show popups.
+
+[smh:1064@AyUEAyYEAywEByIEAy0EByMEAy4EDhEE]
+[smh:1058@AyUEAyYEAywEByIEAy0EByMEAy4EDhEE]
+Template of the text to be used for status message changes=The first %s found is replaced by the contact's new status message.<br>This is used to log to history and to show popups.
+
+[smh:1069@AyUEAyYEAywEByIEAy0EByMEAy4EDhEE]
+Enable this to monitor status message removal=This means that the user had a status message and changed it to an empty text.<br>This is used to log to history and to show popups.
+
+[smh:1065@AyUEAyYEAywEByIEAy0EByMEAy4EDhEE]
+[smh:1059@AyUEAyYEAywEByIEAy0EByMEAy4EDhEE]
+Template of the text to be used for status message removal=This is used to log to history and to show popups.
+
+[smh:1070@AyUEAyYEAywEByIEAy0EByMEAy4EDhEE]
+Enable this to ignore changes/removes when the user is offline=This is used to log to history and to show popups.
+
+[smh:1067@AyUEAyYEAywEByIEAy0EByMEAy4EDhEE]
+[smh:1041@AyUEAyYEAywEByIEAy0EByMEAy4EDhEE]
+List of protocols to be monitored=Status message changes/removes that happens in contacts from protocols that are not in this list will be ignored. Metacontact is a special case: the status message changes/removes is not tracked for metacontacts, but it is copied to the meta if it happens in one of its subcontacts.<br>This is used to log to history and to show popups.
