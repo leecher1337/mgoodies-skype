@@ -26,28 +26,42 @@ TemplateHTMLBuilder::~TemplateHTMLBuilder() {
 	}
 }
 
-char *TemplateHTMLBuilder::getAvatar(HANDLE hContact) {
+char *TemplateHTMLBuilder::getAvatar(HANDLE hContact, const char * szProto) {
 	DBVARIANT dbv;
 	char *result = NULL;
-	if (!DBGetContactSetting(hContact, "ContactPhoto", "File",&dbv)) {
-		if (strlen(dbv.pszVal) > 0) {
-			char* ext = strrchr(dbv.pszVal, '.');
-			if (ext && strcmpi(ext, ".xml") == 0) {
-				const char *flashAvatar = getFlashAvatar(dbv.pszVal, 0);
-				if (flashAvatar != NULL) {
-					result = Utils::UTF8Encode(flashAvatar);
-				}
-			} else {
-				char tmpPath[MAX_PATH];
-				/* relative -> absolute */
-				strcpy (tmpPath, dbv.pszVal);
-				if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
-					CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
-				}
-				result = Utils::UTF8Encode(tmpPath);
-			}
+
+	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
+		struct avatarCacheEntry *ace  = NULL;
+		if (hContact == NULL) {
+			ace = (struct avatarCacheEntry *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)0, (LPARAM)szProto);
+		} else {
+			ace = (struct avatarCacheEntry *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)hContact, (LPARAM)0);
 		}
-		DBFreeVariant(&dbv);
+		if (ace!=NULL) {
+			result = Utils::UTF8Encode(ace->szFilename);
+		}
+	}
+	if (result == NULL) {
+		if (!DBGetContactSetting(hContact, "ContactPhoto", "File",&dbv)) {
+			if (strlen(dbv.pszVal) > 0) {
+				char* ext = strrchr(dbv.pszVal, '.');
+				if (ext && strcmpi(ext, ".xml") == 0) {
+					const char *flashAvatar = getFlashAvatar(dbv.pszVal, 0);
+					if (flashAvatar != NULL) {
+						result = Utils::UTF8Encode(flashAvatar);
+					}
+				} else {
+					char tmpPath[MAX_PATH];
+					/* relative -> absolute */
+					strcpy (tmpPath, dbv.pszVal);
+					if (ServiceExists(MS_UTILS_PATHTOABSOLUTE)&& strncmp(tmpPath, "http://", 7)) {
+						CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)tmpPath);
+					}
+					result = Utils::UTF8Encode(tmpPath);
+				}
+			}
+			DBFreeVariant(&dbv);
+		}
 	}
 	Utils::convertPath(result);
 	return result;
@@ -170,27 +184,11 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	}
 	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
-	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
-		struct avatarCacheEntry *ace = (struct avatarCacheEntry *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)event->hContact, 0);
-		if (ace!=NULL) {
-			szAvatarIn = Utils::UTF8Encode(ace->szFilename);
-		}
-	}
-	if (szAvatarIn == NULL) {
-		szAvatarIn = getAvatar(event->hContact);
-	}
+	szAvatarIn = getAvatar(event->hContact, szRealProto);
 	if (szAvatarIn == NULL) {
 		szAvatarIn = Utils::dupString(szNoAvatar);
 	}
-	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
-		struct avatarCacheEntry *ace = (struct avatarCacheEntry *)CallService(MS_AV_GETMYAVATAR, (WPARAM)0, (LPARAM)szRealProto);
-		if (ace!=NULL) {
-			szAvatarOut = Utils::UTF8Encode(ace->szFilename);
-		}
-	}
-	if (szAvatarOut == NULL) {
-		szAvatarOut = getAvatar(NULL);
-	}
+	szAvatarOut = getAvatar(NULL, szRealProto);
 	if (szAvatarOut == NULL) {
 		szAvatarOut = Utils::dupString(szNoAvatar);
 	}
@@ -351,27 +349,11 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	}
 	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
-	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
-		struct avatarCacheEntry *ace = (struct avatarCacheEntry *)CallService(MS_AV_GETAVATARBITMAP, (WPARAM)event->hContact, 0);
-		if (ace!=NULL) {
-			szAvatarIn = Utils::UTF8Encode(ace->szFilename);
-		}
-	}
-	if (szAvatarIn == NULL) {
-		szAvatarIn = getAvatar(event->hContact);
-	}
+	szAvatarIn = getAvatar(event->hContact, szRealProto);
 	if (szAvatarIn == NULL) {
 		szAvatarIn = Utils::dupString(szNoAvatar);
 	}
-	if (Options::getAvatarServiceFlags() & Options::AVATARSERVICE_PRESENT) {
-		struct avatarCacheEntry *ace = (struct avatarCacheEntry *)CallService(MS_AV_GETMYAVATAR, (WPARAM)0, (LPARAM)szRealProto);
-		if (ace!=NULL) {
-			szAvatarOut = Utils::UTF8Encode(ace->szFilename);
-		}
-	} 
-	if (szAvatarOut == NULL) {
-		szAvatarOut = getAvatar(NULL);
-	}
+	szAvatarOut = getAvatar(NULL, szRealProto);
 	if (szAvatarOut == NULL) {
 		szAvatarOut = Utils::dupString(szNoAvatar);
 	}
