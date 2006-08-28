@@ -68,7 +68,7 @@ const char *TemplateHTMLBuilder::getFlashAvatar(const char *file, int index) {
 			_close(src);
 			urlBuf = strstr(pBuf, "<URL>");
 			if(urlBuf) {
-				flashAvatars[index]  = Utils::dupString(strtok(urlBuf + 5, "<"));
+				flashAvatars[index]  = Utils::dupString(strtok(urlBuf + 5, "<\t\n\r"));
 			}
 		}
 	}
