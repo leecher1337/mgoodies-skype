@@ -38,7 +38,8 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-static HWND hwndCurrentTab, hwndPages[4];
+#define OPTIONS_PAGES 4
+static HWND hwndCurrentTab, hwndPages[OPTIONS_PAGES];
 static ProtocolSettings *srmmCurrentProtoItem = NULL;
 static ProtocolSettings *chatCurrentProtoItem = NULL;
 static ProtocolSettings *historyCurrentProtoItem = NULL;
@@ -462,7 +463,7 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 			SetWindowPos(hwndPages[3], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
 			hwndCurrentTab = hwndPages[0];
 			if (pfnEnableThemeDialogTexture) {
-				for (int i=0; i<4; i++) {
+				for (int i=0; i<OPTIONS_PAGES; i++) {
 					pfnEnableThemeDialogTexture(hwndPages[i], ETDT_ENABLETAB);
 				}
 			}
@@ -489,7 +490,7 @@ static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPA
 				}
 				break;
 			case PSN_APPLY:
-				for (int i = 0; i < 4; i++) {
+				for (int i = 0; i < OPTIONS_PAGES; i++) {
                     SendMessage(hwndPages[i], WM_NOTIFY, wParam, lParam);
 				}
 				Options::saveProtocolSettings();
