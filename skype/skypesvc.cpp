@@ -83,7 +83,8 @@ void HookEvents(void)
 	hStatusHookContact = HookEvent(ME_DB_CONTACT_ADDED,HookContactAdded);
 	hContactDeleted = HookEvent( ME_DB_CONTACT_DELETED, HookContactDeleted );
 	hHookModulesLoaded = HookEvent( ME_SYSTEM_MODULESLOADED, OnModulesLoaded);
-	hHookOkToExit = HookEvent(ME_SYSTEM_OKTOEXIT, OkToExit);
+	//hHookOkToExit = HookEvent(ME_SYSTEM_OKTOEXIT, OkToExit);
+	hHookOkToExit = HookEvent(ME_SYSTEM_PRESHUTDOWN, OkToExit);
 }
 
 int SkypeGetCaps(WPARAM wParam, LPARAM lParam) {

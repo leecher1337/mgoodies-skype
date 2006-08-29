@@ -46,6 +46,8 @@ HANDLE SkypeMsgFetched, hPrebuildCMenu=NULL, hChatEvent=NULL, hChatMenu=NULL;
 HANDLE hEvInitChat=NULL, hBuddyAdded=NULL, hTTBModuleLoadedHook=NULL, hContactDeleted=NULL;
 HANDLE hMenuAddSkypeContact=NULL, hHookOkToExit=NULL;
 
+DWORD msgPumpThreadId = 0;
+
 #ifdef SKYPEBUG_OFFLN
 HANDLE GotUserstatus;
 #endif
@@ -1855,7 +1857,7 @@ int OkToExit(WPARAM wParam, LPARAM lParam) {
 	SetEvent (hBuddyAdded);
 
 	SkypeFlush ();
-	SendMessage (hWnd, WM_CLOSE, 0, 0);
+	PostMessage (hWnd, WM_CLOSE, 0, 0);
 	return 0;
 }
 
@@ -1986,10 +1988,11 @@ void __cdecl MsgPump (char *dummy)
   }
   ShowWindow(hWnd, 0); 
   UpdateWindow(hWnd); 
+  msgPumpThreadId = GetCurrentThreadId();
   SetEvent(MessagePumpReady);
 
   LOG ("Messagepump", "started.");
-  while (GetMessage (&msg, hWnd, 0, 0)) {
+  while (GetMessage (&msg, hWnd, 0, 0) > 0 && !Miranda_Terminated()) {
 	  TranslateMessage (&msg);
 	  DispatchMessage (&msg);
   }
@@ -2012,6 +2015,11 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvRese
 	return TRUE;
 }
 
+
+int PreShutdown(WPARAM wParam, LPARAM lParam) {
+	PostThreadMessage(msgPumpThreadId, WM_QUIT, 0, 0);
+	return 0;
+}
 
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
@@ -2119,11 +2127,12 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	HookEvents();
 	InitVSApi();
 
+	HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
+
 	// Startup Message-pump
     pthread_create (( pThreadFunc )MsgPump, NULL);
 	WaitForSingleObject(MessagePumpReady, INFINITE);
 	return 0;
-
 }
 
 
