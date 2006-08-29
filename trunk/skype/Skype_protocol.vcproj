@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="Skype_protocol"
 	ProjectGUID="{BF1AA628-942C-42F7-A5F3-121E81584A94}"
+	RootNamespace="Skype_protocol"
 	>
 	<Platforms>
 		<Platform
@@ -72,7 +73,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="C:/Stuff/miranda/miranda04_src/miranda/bin/debug/Plugins/Skype.dll"
+				OutputFile="../../bin/debug/Plugins/Skype.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
@@ -168,7 +169,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib comctl32.lib Rpcrt4.lib "
-				OutputFile="Release/Skype.dll"
+				OutputFile="../../bin/Release/plugins/Skype.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateManifest="false"
@@ -230,6 +231,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\debug.cpp"
+				>
 			</File>
 			<File
 				RelativePath="gchat.cpp"
