@@ -60,6 +60,7 @@
 #define IDC_NOSPLASH                    1031
 #define IDC_MINIMIZED                   1032
 #define IDC_TEXT                        1033
+#define IDC_CUSTOMCOMMAND               1033
 #define IDC_OPTIONSTAB                  1034
 #define IDC_FULLNAME                    1035
 #define IDC_BIRTHDAY                    1036
@@ -71,6 +72,7 @@
 #define IDC_OFFICEPHONE                 1042
 #define IDC_HOMEPAGE                    1043
 #define IDC_SAVEDETAILS                 1044
+#define IDC_COMMANDLINE                 1045
 
 // Next default values for new objects
 // 
@@ -78,7 +80,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        178
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1045
+#define _APS_NEXT_CONTROL_VALUE         1046
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

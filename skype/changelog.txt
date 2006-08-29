@@ -13,6 +13,11 @@ CODE
 
 HISTORY
 -------
+0.0.0.26 - + Add a way to use a custom command line to start skype.
+
+0.0.0.25 - ! patch from markcs about timezones.
+           ! shutdown patch by sje
+           
 0.0.0.24 - * Change options dialog (use tabsrmm uxtheme)
 
 0.0.0.23 - ! Wrong db entry name for cellular (cellucar)
