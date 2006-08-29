@@ -1207,20 +1207,34 @@ int ConnectToSkypeAPI(char *path) {
 				LOG("ConnectToSkypeAPI", "hWnd of SkypeDispatchWindow not yet set..");
 				continue;
 			}
-			if (!SkypeLaunched && path) {
+			if (!SkypeLaunched && (path ||  DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0))) {
 				//if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1))
 				{
 					LOG("ConnectToSkypeAPI", "Starting Skype, as it's not running");
-					args[0]=path;
-					j=1;
-					for (i=0; i<3; i++)
-						if (DBGetContactSettingByte(NULL, pszSkypeProtoName, SkypeOptions[i]+1, SkypeDefaults[i])) {
-							args[j]=SkypeOptions[i];
-							LOG("Using Skype parameter: ", args[j]);
-							j++;
+					if(DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0))
+					{
+						DBVARIANT dbv;
+						if(!DBGetContactSetting(NULL,pszSkypeProtoName,"CommandLine",&dbv)) 
+						{
+							args[0] = dbv.pszVal;
+							args[1] = NULL;
+							_spawnv(_P_NOWAIT, dbv.pszVal, args);
+							DBFreeVariant(&dbv);
 						}
-					args[j]=NULL;
-					_spawnv(_P_NOWAIT, path, args);
+					}
+					else
+					{
+						args[0]=path;
+						j=1;
+						for (i=0; i<3; i++)
+							if (DBGetContactSettingByte(NULL, pszSkypeProtoName, SkypeOptions[i]+1, SkypeDefaults[i])) {
+								args[j]=SkypeOptions[i];
+								LOG("Using Skype parameter: ", args[j]);
+								j++;
+							}
+						args[j]=NULL;
+						_spawnv(_P_NOWAIT, path, args);
+					}
 				}
 				ResetEvent(SkypeReady);
 				SkypeLaunched=TRUE;
