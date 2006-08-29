@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "pthread.h"
 #include "gchat.h"
 #include "m_toptoolbar.h"
+#include "time.h"
 
 // Exported Globals
 HWND hSkypeWnd=NULL, hWnd=NULL;
@@ -47,7 +48,6 @@ HANDLE hEvInitChat=NULL, hBuddyAdded=NULL, hTTBModuleLoadedHook=NULL, hContactDe
 HANDLE hMenuAddSkypeContact=NULL, hHookOkToExit=NULL;
 
 DWORD msgPumpThreadId = 0;
-
 #ifdef SKYPEBUG_OFFLN
 HANDLE GotUserstatus;
 #endif
@@ -117,7 +117,7 @@ int FreeVSApi()
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,24),
+	PLUGIN_MAKE_VERSION(0,0,0,25),
 	"Support for Skype network",
 	"leecher",
 	"leecher@dose.0wnz.at",
@@ -339,10 +339,23 @@ void GetInfoThread(HANDLE hContact) {
 	strcat(str, "MOOD_TEXT");
 	if (!SkypeSend(str) && (ptr=SkypeRcv(str+4, INFINITE))) {
 		if (ptr[strlen(str+3)]) {
+			BYTE sex=0;
+			if (!_stricmp(ptr+strlen(str+3), "MALE")) sex=0x4D;
+			if (!_stricmp(ptr+strlen(str+3), "FEMALE")) sex=0x46;
 			DBWriteContactSettingString(hContact, "CList", "StatusMsg", (ptr+25));
 		}
 		free(ptr);
 	}
+
+	str[eol]=0;
+	strcat(str, "TIMEZONE");
+	if (!SkypeSend(str) && (ptr=SkypeRcv(str+4, INFINITE))) {
+		if (ptr[strlen(str+3)]) {
+			DBWriteContactSettingString(hContact, "UserInfo", "Timezone", (ptr+25));
+		}
+		free(ptr);
+	}
+
 
 	str[eol]=0;
 	strcat(str, "IS_VIDEO_CAPABLE");
@@ -1293,6 +1306,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					} else
 						DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Status", (WORD)SkypeStatusToMiranda(ptr+13));
 						SkypeSend("GET USER %s MOOD_TEXT", nick);
+						SkypeSend("GET USER %s TIMEZONE", nick);
 						SkypeSend("GET USER %s IS_VIDEO_CAPABLE", nick);
 /*						free(buf);
 					if (SkypeInitialized==FALSE) { // Prevent flooding on startup
@@ -1310,7 +1324,27 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					break;
 
 				}
+				if (!strcmp(ptr, "TIMEZONE")){
+					time_t temp = time(0);
+					struct tm *tms = localtime(&temp);
+					if (!(hContact=find_contact(nick)))
+						SkypeSend("GET USER %s BUDDYSTATUS", nick);
+					else
+						if (atoi(ptr+9) != 0) {
+							if (atoi(ptr+9) >= 86400 ) timezone=256-((2*(atoi(ptr+9)-86400))/3600);
+							if (atoi(ptr+9) < 86400 ) timezone=((-2*(atoi(ptr+9)-86400))/3600); 
+							if (tms->tm_isdst == 1) {
+								DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (timezone+2));
+							}
+							else 
+								DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (timezone+0));
+						}
+						else 
+							DBDeleteContactSetting(hContact, "UserInfo", "Timezone");
+  		    free(buf);
+					break;
 
+				}
 				if (!strcmp(ptr, "IS_VIDEO_CAPABLE")){
 					if (!(hContact=find_contact(nick)))
 						SkypeSend("GET USER %s BUDDYSTATUS", nick);
@@ -2133,6 +2167,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
     pthread_create (( pThreadFunc )MsgPump, NULL);
 	WaitForSingleObject(MessagePumpReady, INFINITE);
 	return 0;
+
 }
 
 
