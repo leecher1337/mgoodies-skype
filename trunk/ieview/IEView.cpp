@@ -22,6 +22,63 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "resource.h"
 #include "Options.h"
 #include "Utils.h"
+#include <win2k.h>
+
+//#include <Urlmon.h>
+
+#ifndef _INTERNETFEATURELIST_DEFINED
+#define _INTERNETFEATURELIST_DEFINED
+typedef
+enum _tagINTERNETFEATURELIST
+    {   FEATURE_OBJECT_CACHING   = 0,
+   FEATURE_ZONE_ELEVATION   = FEATURE_OBJECT_CACHING + 1,
+   FEATURE_MIME_HANDLING   = FEATURE_ZONE_ELEVATION + 1,
+   FEATURE_MIME_SNIFFING   = FEATURE_MIME_HANDLING + 1,
+   FEATURE_WINDOW_RESTRICTIONS   = FEATURE_MIME_SNIFFING + 1,
+   FEATURE_WEBOC_POPUPMANAGEMENT   = FEATURE_WINDOW_RESTRICTIONS + 1,
+   FEATURE_BEHAVIORS   = FEATURE_WEBOC_POPUPMANAGEMENT + 1,
+   FEATURE_DISABLE_MK_PROTOCOL   = FEATURE_BEHAVIORS + 1,
+   FEATURE_LOCALMACHINE_LOCKDOWN   = FEATURE_DISABLE_MK_PROTOCOL + 1,
+   FEATURE_SECURITYBAND   = FEATURE_LOCALMACHINE_LOCKDOWN + 1,
+   FEATURE_RESTRICT_ACTIVEXINSTALL   = FEATURE_SECURITYBAND + 1,
+   FEATURE_VALIDATE_NAVIGATE_URL   = FEATURE_RESTRICT_ACTIVEXINSTALL + 1,
+   FEATURE_RESTRICT_FILEDOWNLOAD   = FEATURE_VALIDATE_NAVIGATE_URL + 1,
+   FEATURE_ADDON_MANAGEMENT   = FEATURE_RESTRICT_FILEDOWNLOAD + 1,
+   FEATURE_PROTOCOL_LOCKDOWN   = FEATURE_ADDON_MANAGEMENT + 1,
+   FEATURE_HTTP_USERNAME_PASSWORD_DISABLE   = FEATURE_PROTOCOL_LOCKDOWN + 1,
+   FEATURE_SAFE_BINDTOOBJECT   = FEATURE_HTTP_USERNAME_PASSWORD_DISABLE + 1,
+   FEATURE_UNC_SAVEDFILECHECK   = FEATURE_SAFE_BINDTOOBJECT + 1,
+   FEATURE_GET_URL_DOM_FILEPATH_UNENCODED   = FEATURE_UNC_SAVEDFILECHECK + 1,
+   FEATURE_ENTRY_COUNT   = FEATURE_GET_URL_DOM_FILEPATH_UNENCODED + 1
+    }    INTERNETFEATURELIST;
+
+
+// CoInternetSetFeatureEnabled can be used to set/reset features.
+// The following flags control where the feature is set
+
+#define SET_FEATURE_ON_THREAD                       0x00000001
+#define SET_FEATURE_ON_PROCESS                      0x00000002
+#define SET_FEATURE_IN_REGISTRY                     0x00000004
+#define SET_FEATURE_ON_THREAD_LOCALMACHINE          0x00000008
+#define SET_FEATURE_ON_THREAD_INTRANET              0x00000010
+#define SET_FEATURE_ON_THREAD_TRUSTED               0x00000020
+#define SET_FEATURE_ON_THREAD_INTERNET              0x00000040
+#define SET_FEATURE_ON_THREAD_RESTRICTED            0x00000080
+
+// CoInternetIsFeatureEnabled can be used to get features.
+// The following flags control where the feature is obtained from
+// default is from process
+
+#define GET_FEATURE_FROM_THREAD                      0x00000001
+#define GET_FEATURE_FROM_PROCESS                     0x00000002
+#define GET_FEATURE_FROM_REGISTRY                    0x00000004
+#define GET_FEATURE_FROM_THREAD_LOCALMACHINE         0x00000008
+#define GET_FEATURE_FROM_THREAD_INTRANET             0x00000010
+#define GET_FEATURE_FROM_THREAD_TRUSTED              0x00000020
+#define GET_FEATURE_FROM_THREAD_INTERNET             0x00000040
+#define GET_FEATURE_FROM_THREAD_RESTRICTED           0x00000080
+#endif
+
 #define WM_WAITWHILEBUSY (WM_USER+600)
 //#define GECKO
 #define DISPID_BEFORENAVIGATE2      250   // hyperlink clicked on
@@ -32,6 +89,8 @@ static const CLSID CLSID_MozillaBrowser=
 { 0x1339B54C, 0x3453, 0x11D2,
     { 0x93, 0xB9, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00 } };
+
+static HRESULT (WINAPI *pfnCoInternetSetFeatureEnabled)(INTERNETFEATURELIST FeatureEntry, DWORD dwFlags, BOOL fEnable) = 0;
 
 IEView * IEView::list = NULL;
 CRITICAL_SECTION IEView::mutex;
@@ -116,6 +175,16 @@ void IEView::init() {
 	InitializeCriticalSection(&mutex);
 	if (FAILED(OleInitialize(NULL))) {
 		MessageBoxA(NULL,"OleInitialize failed.","RESULT",MB_OK);
+	}
+	HMODULE	  hUrlmon = 0;
+	if(IsWinVerXPPlus()) {
+		hUrlmon = GetModuleHandle(_T("urlmon.dll"));
+		if(hUrlmon) {
+			pfnCoInternetSetFeatureEnabled = (HRESULT (WINAPI *)(INTERNETFEATURELIST, DWORD, BOOL))GetProcAddress(hUrlmon, "CoInternetSetFeatureEnabled");
+			if (pfnCoInternetSetFeatureEnabled) {
+				pfnCoInternetSetFeatureEnabled(FEATURE_LOCALMACHINE_LOCKDOWN, SET_FEATURE_ON_PROCESS, TRUE);
+			}
+		}
 	}
 }
 
