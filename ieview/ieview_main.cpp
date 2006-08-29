@@ -33,12 +33,14 @@ IEView *debugView;
 TCHAR *workingDir;
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 static int PreShutdown(WPARAM wParam, LPARAM lParam);
+static HANDLE hEventOptInitialise;
+static HANDLE hSvcIEWindow, hSvcIEEvent, hSvcIENavigate;
 
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"IEView",
-	PLUGIN_MAKE_VERSION(1,0,9,5),
-	"IE Based Chat Log (1.0.9.5	"__DATE__")",
+	PLUGIN_MAKE_VERSION(1,0,9,6),
+	"IE Based Chat Log (1.0.9.6	"__DATE__")",
 	"Piotr Piastucki",
 	"the_leech@users.berlios.de",
 	"(c) 2005-2006 Piotr Piastucki",
@@ -83,16 +85,14 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	pluginLink = link;
 
-	HookEvent(ME_OPT_INITIALISE, IEViewOptInit);
+	hEventOptInitialise = HookEvent(ME_OPT_INITIALISE, IEViewOptInit);
 	HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
 	HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
-	CreateServiceFunction(MS_IEVIEW_WINDOW, HandleIEWindow);
-	CreateServiceFunction(MS_IEVIEW_EVENT, HandleIEEvent);
-	CreateServiceFunction(MS_IEVIEW_EVENT, HandleIENavigate);
-
+	hSvcIEWindow = CreateServiceFunction(MS_IEVIEW_WINDOW, HandleIEWindow);
+	hSvcIEEvent = CreateServiceFunction(MS_IEVIEW_EVENT, HandleIEEvent);
+	hSvcIENavigate = CreateServiceFunction(MS_IEVIEW_EVENT, HandleIENavigate);
 	hHookOptionsChanged = CreateHookableEvent(ME_IEVIEW_OPTIONSCHANGED);
-
 	return 0;
 }
 
@@ -111,6 +111,11 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 extern "C" int __declspec(dllexport) Unload(void)
 {
+	UnhookEvent(hEventOptInitialise);
+	DestroyHookableEvent(hHookOptionsChanged);
+	DestroyServiceFunction(hSvcIEWindow);
+	DestroyServiceFunction(hSvcIEEvent);
+	DestroyServiceFunction(hSvcIENavigate);
 	delete workingDir;
 	return 0;
 }
