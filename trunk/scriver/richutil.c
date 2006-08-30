@@ -1,10 +1,8 @@
 /*
-Scriver
+SRMM
 
-Copyright 2000-2005 Miranda ICQ/IM project, 
-Copyright 2005 Piotr Piastucki
-
-all portions of this codebase are copyrighted to the people 
+Copyright 2000-2005 Miranda ICQ/IM project,
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -21,9 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#include <windows.h>
-#include <stdio.h>
-#include <richedit.h>
+#include "commonheaders.h"
 #include "richutil.h"
 
 /*
@@ -31,94 +27,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 		RichUtil_Load();
 	Before the application exits, call:
 		RichUtil_Unload();
-	
+
 	Then to use the library (it draws the xp border around it), you need
-	to make sure you control has the WS_EX_CLIENTEDGE flag.  Then you just 
+	to make sure you control has the WS_EX_CLIENTEDGE flag.  Then you just
 	subclass it with:
 		RichUtil_SubClass(hwndEdit);
-	
+
 	If no xptheme is present, the window isn't subclassed the SubClass function
 	just returns.  And if WS_EX_CLIENTEDGE isn't present, the subclass does nothing.
 	Otherwise it removes the border and draws it by itself.
 */
-// list crap
-typedef struct _RList {
-	struct _RList *next;
-	struct _RList *prev;
-	TRichUtil *data;
-} RList;
 
-TRichUtil *rlist_find(RList *list, HWND hwnd);
-RList *rlist_append(RList *list, TRichUtil *data);
-RList *rlist_remove_link(RList *list, const RList *link);
-RList *rlist_remove(RList * list, TRichUtil *data);
-void rlist_free(RList * list);
+static struct LIST_INTERFACE li;
+static SortedList sListInt;
 
-TRichUtil *rlist_find(RList *list, HWND hwnd) {
-	RList *n;
-	
-	if (hwnd==NULL) return NULL;
-	for (n=list; n!=NULL; n=n->next) {
-		if (n->data&&n->data->hwnd==hwnd) return n->data;
-	}
-	return NULL;
-}
-
-RList *rlist_append(RList *list, TRichUtil *data) {
-	RList *n;
-	RList *new_list = malloc(sizeof(RList));
-	RList *attach_to = NULL;
-
-	new_list->next = NULL;
-	new_list->data = data;
-	for (n=list; n!=NULL; n=n->next) {
-		attach_to = n;
-	}
-	if (attach_to==NULL) {
-		new_list->prev = NULL;
-		return new_list;
-	} 
-	else {
-		new_list->prev = attach_to;
-		attach_to->next = new_list;
-		return list;
-	}
-}
-
-RList *rlist_remove_link(RList *list, const RList *link) {
-	if (!link)
-		return list;
-
-	if (link->next)
-		link->next->prev = link->prev;
-	if (link->prev)
-		link->prev->next = link->next;
-	if (link==list)
-		list = link->next;
-	return list;
-}
-
-RList *rlist_remove(RList *list, TRichUtil *data) {
-	RList *n;
-
-	for (n=list; n!=NULL; n=n->next) {
-		if (n->data==data) {
-			RList *newlist = rlist_remove_link(list, n);
-			free(n);
-			return newlist;
-		}
-	}
-	return list;
-}
-
-void rlist_free(RList *list) {
-	RList *n = list;
-
-	while (n!=NULL) {
-		RList *next = n->next;
-		free(n);
-		n = next;
-	}
+static int RichUtil_CmpVal(void *p1, void *p2) {
+	TRichUtil *tp1 = (TRichUtil*)p1;
+	TRichUtil *tp2 = (TRichUtil*)p2;
+	if (tp1->hwnd==tp2->hwnd)
+		return 0;
+	return (int)((int)tp1->hwnd-(int)tp2->hwnd);
 }
 
 // UxTheme Stuff
@@ -131,13 +59,17 @@ static HRESULT (WINAPI *MyGetThemeBackgroundContentRect)(HANDLE,HDC,int,int,cons
 static HRESULT (WINAPI *MyDrawThemeParentBackground)(HWND,HDC,RECT*) = 0;
 static BOOL    (WINAPI *MyIsThemeBackgroundPartiallyTransparent)(HANDLE,int,int) = 0;
 
-static RList *slist = NULL;
 static CRITICAL_SECTION csRich;
 
 static LRESULT CALLBACK RichUtil_Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static void RichUtil_ClearUglyBorder(TRichUtil *ru);
 
 void RichUtil_Load() {
+	li.cbSize = sizeof(li);
+	CallService(MS_SYSTEM_GET_LI,0,(LPARAM)&li);
+	ZeroMemory(&sListInt, sizeof(sListInt));
+	sListInt.increment = 10;
+	sListInt.sortFunc = RichUtil_CmpVal;
 	mTheme = RIsWinVerXPPlus()?LoadLibraryA("uxtheme.dll"):0;
 	InitializeCriticalSection(&csRich);
 	if (!mTheme) return;
@@ -161,6 +93,7 @@ void RichUtil_Load() {
 }
 
 void RichUtil_Unload() {
+	li.List_Destroy(&sListInt);
 	DeleteCriticalSection(&csRich);
 	if (mTheme) {
 		FreeLibrary(mTheme);
@@ -169,13 +102,16 @@ void RichUtil_Unload() {
 
 int RichUtil_SubClass(HWND hwndEdit) {
 	if (IsWindow(hwndEdit)) {
+		int idx;
+
 		TRichUtil *ru = (TRichUtil*)malloc(sizeof(TRichUtil));
-		
+
 		ZeroMemory(ru, sizeof(TRichUtil));
 		ru->hwnd = hwndEdit;
 		ru->hasUglyBorder = 0;
 		EnterCriticalSection(&csRich);
-		slist = rlist_append(slist, ru);
+		if (!li.List_GetIndex(&sListInt, ru, &idx))
+			li.List_Insert(&sListInt, ru, idx);
 		LeaveCriticalSection(&csRich);
 		SetWindowLong(ru->hwnd, GWL_USERDATA, (LONG)ru); // Ugly hack
 		ru->origProc = (WNDPROC)SetWindowLong(ru->hwnd, GWL_WNDPROC, (LONG)&RichUtil_Proc);
@@ -186,10 +122,13 @@ int RichUtil_SubClass(HWND hwndEdit) {
 }
 
 static LRESULT CALLBACK RichUtil_Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-	TRichUtil *ru;
-	
+	TRichUtil *ru = 0, tru;
+	int idx;
+
 	EnterCriticalSection(&csRich);
-	ru = rlist_find(slist, hwnd);
+	tru.hwnd = hwnd;
+	if (li.List_GetIndex(&sListInt, &tru, &idx))
+		ru = (TRichUtil*)sListInt.items[idx];
 	LeaveCriticalSection(&csRich);
 	switch(msg) {
 		case WM_THEMECHANGED:
@@ -238,12 +177,12 @@ static LRESULT CALLBACK RichUtil_Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
 		{
 			LRESULT ret = CallWindowProc(ru->origProc, hwnd, msg, wParam, lParam);
 			NCCALCSIZE_PARAMS *ncsParam = (NCCALCSIZE_PARAMS*)lParam;
-			
+
 			if (ru->hasUglyBorder&&MyIsThemeActive()) {
 				HANDLE hTheme = MyOpenThemeData(hwnd, L"EDIT");
 
 				if (hTheme) {
-					RECT rcClient; 
+					RECT rcClient;
 					HDC hdc = GetDC(GetParent(hwnd));
 
 					ZeroMemory(&rcClient, sizeof(RECT));
@@ -275,7 +214,7 @@ static LRESULT CALLBACK RichUtil_Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
 					SetWindowLong(hwnd, GWL_WNDPROC, (LONG)ru->origProc);
 			}
 			EnterCriticalSection(&csRich);
-			slist = rlist_remove(slist, ru);
+			li.List_Remove(&sListInt, idx);
 			LeaveCriticalSection(&csRich);
 			if (ru) free(ru);
 			return ret;
