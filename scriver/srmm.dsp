@@ -98,7 +98,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SRMM_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /O1 /I "../../include" /D "UNICODE" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SRMM_EXPORTS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /O1 /I "../../include" /D "UNICODE" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SRMM_EXPORTS" /D "_WIN32_IE 0x0500" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /i "../../include" /d "NDEBUG"
@@ -108,7 +108,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib shell32.lib ole32.lib comdlg32.lib /nologo /dll /pdb:none /machine:I386 /out:"../../bin/release/plugins/srmm.dll"
-# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib shell32.lib ole32.lib comdlg32.lib /nologo /dll /pdb:none /machine:I386 /out:"scriver_unicode.dll"
+# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib shell32.lib ole32.lib comdlg32.lib shlwapi.lib Version.lib /nologo /dll /pdb:none /machine:I386 /out:"scriver_unicode.dll"
 
 !ELSEIF  "$(CFG)" == "srmm - Win32 Unicode Debug"
 
@@ -203,6 +203,26 @@ SOURCE=.\commonheaders.h
 # Begin Source File
 
 SOURCE=.\globals.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\IcoLib.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\m_chat.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\m_ieview.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\m_smileyadd.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\m_uninstaller.h
 # End Source File
 # Begin Source File
 
@@ -395,6 +415,63 @@ SOURCE=.\res\unknown.bmp
 # Begin Source File
 
 SOURCE="..\..\Miranda-IM\res\viewdetails.ico"
+# End Source File
+# End Group
+# Begin Group "chat"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\chat\chat.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\chat.rc
+# PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\clist.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\colorchooser.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\log.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\main.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\manager.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\message.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\options.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\resource.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\services.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\tools.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\chat\window.c
 # End Source File
 # End Group
 # End Target

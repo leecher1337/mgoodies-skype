@@ -5,15 +5,15 @@ CC   = gcc.exe
 WINDRES = windres.exe
 RM = rm
 UPX = upx -9 -q --compress-icons=0
-SRC = cmdlist.c globals.c msgdialog.c msglog.c msgoptions.c msgs.c msgtimedout.c msgwindow.c richutil.c srmm.c
+SRC = cmdlist.c globals.c msgdialog.c msglog.c msgoptions.c msgs.c msgtimedout.c msgwindow.c richutil.c srmm.c chat/clist.c chat/colorchooser.c chat/log.c chat/main.c chat/manager.c chat/message.c chat/options.c chat/services.c chat/tools.c chat/window.c
 RES  = resource.res
 OBJ = $(SRC:.c=.o) $(RES)
 INCS =  -I"../../include"
 BIN  = scriver_unicode.dll
-CFLAGS = $(INCS) -DBUILDING_DLL=1 -DUNICODE -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
-CXXFLAGS = $(INCS) -DBUILDING_DLL=1 -DUNICODE -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
+CFLAGS = $(INCS) -DNDEBUG -DBUILDING_DLL=1 -DUNICODE -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
+CXXFLAGS = $(INCS) -DNDEBUG -DBUILDING_DLL=1 -DUNICODE -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
 # -save-temps
-LIBS =  -lversion -lwsock32 -lole32 -lcomctl32 -luuid -loleaut32
+LIBS =  -lshlwapi -lversion -lwsock32 -lole32 -lcomctl32 -luuid -loleaut32
 LFLAGS = -s -mdll -mwindows --add-stdcall-alias
 #LFLAGS = -mdll -mwindows -Wl,-Map,ieview.map --no-export-all-symbols --add-stdcall-alias -g3
 RCFLAGS = -I rc -O coff
