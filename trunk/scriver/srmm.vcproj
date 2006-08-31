@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1250"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="srmm"
 	ProjectGUID="{B8928210-546C-4AE3-956B-E2B724E6B8E5}"
 	>
@@ -270,7 +270,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalDependencies="comctl32.lib"
+				AdditionalDependencies="comctl32.lib shlwapi.lib Version.lib"
 				OutputFile="scriver_unicode.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -809,6 +809,50 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<Filter
+				Name="chat"
+				>
+				<File
+					RelativePath=".\chat\clist.c"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\colorchooser.c"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\log.c"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\main.c"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\manager.c"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\message.c"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\options.c"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\services.c"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\tools.c"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\window.c"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -842,21 +886,53 @@
 				RelativePath="richutil.h"
 				>
 			</File>
+			<Filter
+				Name="chat"
+				>
+				<File
+					RelativePath=".\chat\chat.h"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\IcoLib.h"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\m_chat.h"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\m_ieview.h"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\m_smileyadd.h"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\m_uninstaller.h"
+					>
+				</File>
+				<File
+					RelativePath=".\chat\resource.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="res\addcontact.ico"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\res\addcontact.ico"
 				>
 			</File>
 			<File
 				RelativePath="..\..\Miranda-IM\res\addcontact.ico"
+				>
+			</File>
+			<File
+				RelativePath="res\addcontact.ico"
 				>
 			</File>
 			<File
@@ -868,11 +944,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\res\delete.ico"
+				RelativePath="res\delete.ico"
 				>
 			</File>
 			<File
-				RelativePath="res\delete.ico"
+				RelativePath="..\..\src\res\delete.ico"
 				>
 			</File>
 			<File
@@ -896,11 +972,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\res\dragcopy.cur"
+				RelativePath="res\dragcopy.cur"
 				>
 			</File>
 			<File
-				RelativePath="res\dragcopy.cur"
+				RelativePath="..\..\src\res\dragcopy.cur"
 				>
 			</File>
 			<File

@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int LoadSendRecvMessageModule(void);
 int SplitmsgShutdown(void);
+void Chat_Load(PLUGINLINK *link);
+void Chat_Unload();
 
 PLUGINLINK *pluginLink;
 HINSTANCE g_hInst;
@@ -36,7 +38,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Scriver",
 #endif
-	PLUGIN_MAKE_VERSION(2, 3, 2, 15),
+	PLUGIN_MAKE_VERSION(2, 5, 0, 0),
 #ifdef _UNICODE
 	"Scriver - send and receive instant messages (Unicode)",
 #else
@@ -67,10 +69,12 @@ __declspec(dllexport)
 int __declspec(dllexport) Load(PLUGINLINK * link)
 {
 	pluginLink = link;
+	Chat_Load(link);
 	return LoadSendRecvMessageModule();
 }
 
 int __declspec(dllexport) Unload(void)
 {
+	Chat_Unload();
 	return SplitmsgShutdown();
 }
