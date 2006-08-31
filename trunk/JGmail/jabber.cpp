@@ -196,11 +196,6 @@ void JGmailSetupIcons();
 void JGmailSetupIcoLib();
 static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 {
-	if ( !ServiceExists( MS_DB_CONTACT_GETSETTING_STR )) {
-		MessageBox( NULL, TranslateT( "This plugin requires db3x plugin version 0.5.1.0 or later" ), _T("Jabber"), MB_OK );
-		return 1;
-	}
-
 	JabberWsInit();
 	JabberSslInit();
 	HookEvent( ME_USERINFO_INITIALISE, JabberUserInfoInit );
@@ -257,6 +252,11 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 		return 1;
 	}
 
+	if ( !ServiceExists( MS_DB_CONTACT_GETSETTING_STR )) {
+		MessageBoxA( NULL, "This plugin requires db3x plugin version 0.5.1.0 or later", "Jabber", MB_OK );
+		return 1;
+	}
+
 	char text[_MAX_PATH];
 	char* p, *q;
 
@@ -267,6 +267,9 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 	*q = '\0';
 	jabberProtoName = mir_strdup( p );
 	_strupr( jabberProtoName );
+
+	mir_snprintf( text, sizeof( text ), "%s/Status", jabberProtoName );
+	JCallService( MS_DB_SETSETTINGRESIDENT, TRUE, ( LPARAM )text );
 
 	jabberModuleName = mir_strdup( jabberProtoName );
 	_strlwr( jabberModuleName );

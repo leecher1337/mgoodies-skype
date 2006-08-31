@@ -4,6 +4,11 @@ Legend:
 [-] deleted
 [!] bug fixed
 
+Version 0.5.0.2
+===============
+[!] bug #0002261 fixed: Invitations are sent wrong
+[!] bug #0002474 fixed: WM_CONTEXTMENU not handled correctly
+
 Version 0.5.0.1
 ===============
 [!] bug #0002045 fixed: MUC: Greyed out away nicknames are not shown in black when contacts return

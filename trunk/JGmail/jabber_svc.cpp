@@ -977,7 +977,7 @@ int JabberSendFile( WPARAM wParam, LPARAM lParam )
 	ft->jid = mir_tstrdup( dbv.ptszVal );
 	JFreeVariant( &dbv );
 
-	if ( item->cap == 0 ) {
+	if (( item->cap & CLIENT_CAP_READY ) == 0 ) {
 		int iqId;
 		TCHAR* rs;
 
@@ -1066,6 +1066,8 @@ int JabberSendMessage( WPARAM wParam, LPARAM lParam )
 			XmlNode* x = m.addChild( "x" ); x->addAttr( "xmlns", "jabber:x:encrypted" );
 			x->sendText = msg;
 		}
+
+		XmlNode* active = m.addChild( "active" ); active->addAttr( "xmlns", _T("http://jabber.org/protocol/chatstates"));
 
 		if ( !strcmp( msgType, "groupchat" ) || JGetByte( "MsgAck", FALSE ) == FALSE ) {
 			if ( !strcmp( msgType, "groupchat" ))
@@ -1248,20 +1250,36 @@ int JabberSetStatus( WPARAM wParam, LPARAM lParam )
 
 int JabberUserIsTyping( WPARAM wParam, LPARAM lParam )
 {
+	if ( !jabberOnline ) return 0;
+
 	HANDLE hContact = ( HANDLE ) wParam;
 	DBVARIANT dbv;
+	if ( JGetStringT( hContact, "jid", &dbv )) return 0;
+
 	JABBER_LIST_ITEM *item;
+	if (( item = JabberListGetItemPtr( LIST_ROSTER, dbv.ptszVal )) != NULL ) {
+		TCHAR szClientJid[ 256 ];
+		JabberGetClientJID( dbv.ptszVal, szClientJid, SIZEOF( szClientJid ));
+		XmlNode m( "message" ); m.addAttr( "to", szClientJid );
 
-	if ( !jabberOnline ) return 0;
-	if ( !JGetStringT( hContact, "jid", &dbv )) {
-		if (( item=JabberListGetItemPtr( LIST_ROSTER, dbv.ptszVal ))!=NULL && item->wantComposingEvent==TRUE ) {
-			TCHAR szClientJid[ 256 ];
-			JabberGetClientJID( dbv.ptszVal, szClientJid, SIZEOF( szClientJid ));
-
-			XmlNode m( "message" ); m.addAttr( "to", szClientJid );
+		if ( item->cap & CLIENT_CAP_CHATSTAT ) {
+			m.addAttr( "type", "chat" );
+			m.addAttrID( JabberSerialNext());
+			switch ( lParam ){
+			case PROTOTYPE_SELFTYPING_OFF:
+				m.addChild( "paused" )->addAttr( "xmlns", _T("http://jabber.org/protocol/chatstates"));
+				JabberSend( jabberThreadInfo->s, m );
+				break;
+			case PROTOTYPE_SELFTYPING_ON:
+				m.addChild( "composing" )->addAttr( "xmlns", _T("http://jabber.org/protocol/chatstates"));
+				JabberSend( jabberThreadInfo->s, m );
+				break;
+			}
+		}
+		else if ( item->wantComposingEvent == TRUE ) {
 			XmlNode* x = m.addChild( "x" ); x->addAttr( "xmlns", "jabber:x:event" );
 			if ( item->messageEventIdStr != NULL )
-				x->addAttr( "id", item->messageEventIdStr );
+				x->addChild( "id", item->messageEventIdStr );
 
 			switch ( lParam ){
 			case PROTOTYPE_SELFTYPING_OFF:
@@ -1271,10 +1289,9 @@ int JabberUserIsTyping( WPARAM wParam, LPARAM lParam )
 				x->addChild( "composing" );
 				JabberSend( jabberThreadInfo->s, m );
 				break;
-		}	}
+	}	}	}
 
-		JFreeVariant( &dbv );
-	}
+	JFreeVariant( &dbv );
 	return 0;
 }
 

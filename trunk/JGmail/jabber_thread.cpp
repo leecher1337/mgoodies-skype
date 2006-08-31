@@ -165,7 +165,8 @@ static void xmlStreamInitializeNow(struct ThreadData *info){
 			stream.addAttr( "to", info->server );
 			stream.addAttr( "xmlns", "jabber:client" );
 			stream.addAttr( "xmlns:stream", "http://etherx.jabber.org/streams" );
-			stream.addAttr( "version", "1.0" );
+			if ( !JGetByte( "Disable3920auth", 0 ))
+				stream.addAttr( "version", "1.0" );
 			stream.dirtyHack = true; // this is to keep the node open - do not send </stream:stream>
 			JabberSend( info->s, stream );
 }	}
@@ -584,6 +585,24 @@ static void JabberIqProcessSearch( XmlNode *node, void *userdata )
 {
 }
 
+static void JabberPerformIqAuth( ThreadData* info )
+{
+	if ( info->type == JABBER_SESSION_NORMAL ) {
+		int iqId = JabberSerialNext();
+		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetAuth );
+		XmlNodeIq iq( "get", iqId );
+		XmlNode* query = iq.addQuery( "jabber:iq:auth" );
+		query->addChild( "username", info->username );
+		JabberSend( info->s, iq );
+	}
+	else if ( info->type == JABBER_SESSION_REGISTER ) {
+		iqIdRegGetReg = JabberSerialNext();
+		XmlNodeIq iq("get",iqIdRegGetReg,info->server);
+		XmlNode* query = iq.addQuery("jabber:iq:register");
+		JabberSend(info->s,iq);
+		SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 50, ( LPARAM )TranslateT( "Requesting registration instruction..." ));
+}	}
+
 static void JabberProcessStreamOpening( XmlNode *node, void *userdata )
 {
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
@@ -596,7 +615,11 @@ static void JabberProcessStreamOpening( XmlNode *node, void *userdata )
 		if (( sid=JabberXmlGetAttrValue( node, "id" )) != NULL ) {
 			if ( streamId ) mir_free( streamId );
 			streamId = t2a( sid );
-}	}	}
+	}	}
+
+	if ( JGetByte( "Disable3920auth", 0 ))
+		JabberPerformIqAuth( info );
+}
 
 static void JabberProcessStreamClosing( XmlNode *node, void *userdata )
 {
@@ -611,6 +634,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 {
 	struct ThreadData *info = ( struct ThreadData * ) userdata;
 	bool isPlainAvailable = false;
+	bool isMd5available = false;
 	bool isAuthAvailable = false;
 	bool isXGoogleTokenAvailable = false;
 	bool isRegisterAvailable = false;
@@ -626,27 +650,28 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 				#endif
 					JGetByte( "UseTLS", TRUE )) {
 				JabberLog( "Requesting TLS" );
-				XmlNode stls(n->name); stls.addAttr("xmlns","urn:ietf:params:xml:ns:xmpp-tls");
+				XmlNode stls( n->name ); stls.addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-tls" );
 				JabberSend( info->s, stls );
 				return;
 		}	}
-		else if (!strcmp(n->name,"mechanisms" )) {
+		else if ( !strcmp( n->name, "mechanisms" )) {
 			areMechanismsDefined = true;
 			//JabberLog("%d mechanisms\n",n->numChild);
 			for (k = 0; k < n->numChild; k++ ) {
 				XmlNode* c = n->child[k];
-				if (!strcmp(c->name,"mechanism"))
-					//JabberLog("Mechanism: %s",node->child[i]->child[k]->text);
-					if (!_tcscmp(c->text,_T("PLAIN"))) isPlainAvailable = true;
-					if (!_tcscmp(c->text,_T("X-GOOGLE-TOKEN"))) isXGoogleTokenAvailable = true;
+				if ( !strcmp( c->name, "mechanism" ))
+					//JabberLog("Mechanism: %s",c->text);
+					     if ( !_tcscmp( c->text, _T("PLAIN")))          isPlainAvailable = true;
+					else if ( !_tcscmp( c->text, _T("DIGEST-MD5")))     isMd5available = true;
+					else if ( !_tcscmp( c->text, _T("X-GOOGLE-TOKEN"))) isXGoogleTokenAvailable = true;
 		}	}
-		else if (!strcmp(n->name,"register")) isRegisterAvailable = true;
-		else if (!strcmp(n->name,"auth")) isAuthAvailable = true;
-		else if (!strcmp(n->name,"session")) isSessionAvailable = true;
+		else if ( !strcmp( n->name, "register" )) isRegisterAvailable = true;
+		else if ( !strcmp( n->name, "auth"     )) isAuthAvailable = true;
+		else if ( !strcmp( n->name, "session"  )) isSessionAvailable = true;
 	}
 
 	if (areMechanismsDefined) {
-		char *PLAIN = 0;
+		char *PLAIN = NULL, *mechanism = NULL;
 		char *X_GOOGLE_TOKEN = 0;
 		isGoogleTokenUsed = 0;
 		if (isPlainAvailable && isXGoogleTokenAvailable)
@@ -696,16 +721,19 @@ LBL_RequestToken:
 		} else if (isPlainAvailable){
 			char *temp = t2a(info->username);
 			int size = strlen(temp)*2+strlen(info->server)+strlen(info->password)+3;
-			char *toEncode = (char *)mir_alloc(size+1);
-			mir_snprintf(toEncode,size+1,"%s@%s%c%s%c%s",temp,info->server,0,temp,0,info->password);
+			char *toEncode = ( char* )alloca( size+1 );
+			mir_snprintf( toEncode, size+1, "%s@%s%c%s%c%s", temp, info->server, 0, temp, 0, info->password );
 			PLAIN = JabberBase64Encode( toEncode, size );
-			mir_free(toEncode);
 			mir_free(temp);
 			JabberLog( "Never publish the hash below" );
-		} else if (isAuthAvailable){
-				// no known mechanisms but iq_auth is available
-				if (info->type != JABBER_SESSION_REGISTER) goto LBL_TryIqAuth;
-		} else {// no known mechanisms and iq_auth is unavailable
+			mechanism = NEWSTR_ALLOCA( "PLAIN" );
+		} 
+		else {
+			if ( isAuthAvailable ) { // no known mechanisms but iq_auth is available
+				JabberPerformIqAuth( info );
+				return;
+			}
+
 			MessagePopup( NULL, TranslateT("No known auth mechanisms available. Giving up."), TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JabberSend( info->s, "</stream:stream>" );
 			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
@@ -728,33 +756,30 @@ LBL_RequestToken:
 		}
 		else JabberSend( info->s, "</stream:stream>" );
 		if (PLAIN) mir_free(PLAIN);
-//		if (X_GOOGLE_TOKEN) free(X_GOOGLE_TOKEN);
-	} else {
-		// mechanisms are not defined.
-		if (wasSaslPerformed) { //We are already logged-in
-			int iqId = JabberSerialNext();
-			JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultBind );
-			XmlNodeIq iq("set",iqId);
-			XmlNode* bind = iq.addChild( "bind" ); bind->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-bind" );
-			bind->addChild( "resource", info->resource );
-			JabberSend( info->s, iq );
-		} else { //mechanisms not available and we are not logged in
-			if (isAuthAvailable){ 
-LBL_TryIqAuth:
-				int iqId = JabberSerialNext();
-				JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetAuth );
-				XmlNodeIq iq( "get", iqId );
-				XmlNode* query = iq.addQuery( "jabber:iq:auth" );
-				query->addChild( "username", info->username );
-				JabberSend( info->s, iq );
-			}
-		}
-		if (isSessionAvailable) {
+		return;
+	} 
+
+	// mechanisms are not defined.
+	if ( wasSaslPerformed ) { //We are already logged-in
+		int iqId = JabberSerialNext();
+		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultBind );
+		XmlNodeIq iq("set",iqId);
+		XmlNode* bind = iq.addChild( "bind" ); bind->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-bind" );
+		bind->addChild( "resource", info->resource );
+		JabberSend( info->s, iq );
+
+		if ( isSessionAvailable ) {
 			XmlNodeIq iq("set");
-			XmlNode* sess = iq.addChild( "session" ); sess->addAttr ( "xmlns", "urn:ietf:params:xml:ns:xmpp-session" );
-			JabberSend( info->s, iq );
-		}
-}	}
+			iq.addChild( "session" )->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-session" );
+			JabberSend( info->s, iq );		
+		}	
+		return;
+	}
+	
+	//mechanisms not available and we are not logged in
+	if ( isAuthAvailable )
+		JabberPerformIqAuth( info );
+}
 
 
 static void __cdecl JabberWaitAndReconnectThread( int unused )
@@ -925,6 +950,7 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 	XmlNode *subjectNode, *xNode, *inviteNode, *idNode, *n;
 	TCHAR* from, *type, *nick, *p, *idStr, *fromResource;
 	int id;
+	HANDLE hContact;
 
 	if ( !node->name || strcmp( node->name, "message" )) return;
 	if (( info=( struct ThreadData * ) userdata ) == NULL ) return;
@@ -1014,7 +1040,6 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 								JSendBroadcast( JabberHContactFromJID( from ), ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, ( HANDLE ) 1, 0 );
 					}
 
-					HANDLE hContact;
 					if ( JabberXmlGetChild( xNode, "composing" ) != NULL )
 						if (( hContact = JabberHContactFromJID( from )) != NULL )
  							JCallService( MS_PROTO_CONTACTISTYPING, ( WPARAM ) hContact, 60 );
@@ -1640,7 +1665,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 					else if ( !_tcscmp( str, _T("to"))) item->subscription = SUB_TO;
 					else if ( !_tcscmp( str, _T("from"))) item->subscription = SUB_FROM;
 					else item->subscription = SUB_NONE;
-					JabberLog( "Roster push for jid=" TCHAR_STR_PARAM ", set subscription to "TCHAR_STR_PARAM, jid, str );
+					JabberLog( "Roster push for jid=" TCHAR_STR_PARAM ", set subscription to %s", jid, str );
 					// subscription = remove is to remove from roster list
 					// but we will just set the contact to offline and not actually
 					// remove, so that history will be retained.

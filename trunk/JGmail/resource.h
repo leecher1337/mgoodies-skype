@@ -240,6 +240,7 @@
 #define IDC_DISABLE_MAINMENU            1178
 #define IDC_USE_TLS                     1179
 #define IDC_AUTO_ACCEPT_MUC             1180
+#define IDC_DISABLE_SASL                1182
 #define IDC_WHITERECT                   1221
 #define IDC_UPDATING                    1231
 #define IDC_EMAILS                      1306
@@ -269,7 +270,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        226
 #define _APS_NEXT_COMMAND_VALUE         40017
-#define _APS_NEXT_CONTROL_VALUE         1181
+#define _APS_NEXT_CONTROL_VALUE         1183
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

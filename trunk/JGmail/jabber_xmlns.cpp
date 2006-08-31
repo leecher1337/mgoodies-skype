@@ -94,6 +94,7 @@ void JabberXmlnsDisco( XmlNode *iqNode, void *userdata )
 			sttAddFeature( query, "http://jabber.org/protocol/si" );
 			sttAddFeature( query, "http://jabber.org/protocol/si/profile/file-transfer" );
 			sttAddFeature( query, "http://jabber.org/protocol/bytestreams" );
+			sttAddFeature( query, "http://jabber.org/protocol/chatstates" );
 			sttAddFeature( query, "jabber:iq:agents" );
 			sttAddFeature( query, "jabber:iq:browse" );
 			sttAddFeature( query, "jabber:iq:oob" );
