@@ -946,6 +946,9 @@ void __stdcall JabberSendPresenceTo( int status, TCHAR* to, XmlNode* extra )
 		if ( !JGetStaticString( "AvatarHash", NULL, hashValue, sizeof hashValue )) {
 			XmlNode* x = p.addChild( "x" ); x->addAttr( "xmlns", "jabber:x:avatar" );
 			x->addChild( "hash", hashValue );
+
+			x = p.addChild( "x" ); x->addAttr( "xmlns", "vcard-temp:x:update" );
+			x->addChild( "photo", hashValue );
 	}	}
 
 	switch ( status ) {

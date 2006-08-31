@@ -138,6 +138,8 @@ JABBER_LIST_ITEM *JabberListAdd( JABBER_LIST list, const TCHAR* jid )
 	item->resource = NULL;
 	item->resourceMode = RSMODE_LASTSEEN;
 	item->defaultResource = -1;
+	if ( list == LIST_ROSTER )
+		item->cap = CLIENT_CAP_CHATSTAT;
 	count++;
 	LeaveCriticalSection( &csLists );
 

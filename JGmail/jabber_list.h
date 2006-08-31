@@ -71,6 +71,7 @@ typedef enum {			// initial default to RSMODE_LASTSEEN
 #define CLIENT_CAP_SI			( 1<<1 )		// stream initiation ( si ) profile
 #define CLIENT_CAP_SIFILE		( 1<<2 )		// file transfer si profile
 #define CLIENT_CAP_BYTESTREAM	( 1<<3 )		// socks5 bytestream
+#define CLIENT_CAP_CHATSTAT	( 1<<4 )		// http://jabber.org/protocol/chatstates support (JEP-0085)
 
 #define AGENT_CAP_REGISTER		( 1<<13 )
 #define AGENT_CAP_SEARCH		( 1<<14 )

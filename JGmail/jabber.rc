@@ -61,7 +61,7 @@ STYLE DS_FIXEDSYS | DS_CENTER | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "",IDC_OPT_EXPERT_TAB,"SysTabControl32",0x0,2,3,273,236,0
+    CONTROL         "",IDC_OPT_EXPERT_TAB,"SysTabControl32",WS_TABSTOP,2,3,273,236,0
 END
 
 IDD_OPT_JABBER DIALOGEX 0, 0, 258, 214
@@ -115,7 +115,7 @@ BEGIN
                     WS_VSCROLL | WS_TABSTOP
 END
 
-IDD_OPT_JABBER2 DIALOGEX 0, 0, 222, 173
+IDD_OPT_JABBER2 DIALOGEX 0, 0, 222, 199
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
@@ -134,25 +134,28 @@ BEGIN
     CONTROL         "Specify external address",IDC_DIRECT_MANUAL,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,9,30,101,10
     EDITTEXT        IDC_DIRECT_ADDR,117,29,81,12,ES_AUTOHSCROLL
-    GROUPBOX        "Miscellaneous",IDC_STATIC,2,75,216,93
+    GROUPBOX        "Miscellaneous",IDC_STATIC,2,75,216,116
     CONTROL         "Automatically add contact when accept authorization",
                     IDC_AUTO_ADD,"Button",BS_AUTOCHECKBOX | BS_TOP | 
-                    WS_TABSTOP,9,86,203,12
+                    WS_TABSTOP,9,90,203,12
     CONTROL         "Automatically join conferences on login",IDC_AUTOJOIN,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,97,202,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,102,202,10
     CONTROL         "Autoaccept multiuser chat invitations",
                     IDC_AUTO_ACCEPT_MUC,"Button",BS_AUTOCHECKBOX | 
-                    WS_DISABLED | WS_TABSTOP,9,109,202,9
+                    WS_TABSTOP,9,114,202,10
     CONTROL         "Send messages slower, but with full acknowledgement",
                     IDC_MSG_ACK,"Button",BS_AUTOCHECKBOX | BS_TOP | 
-                    WS_TABSTOP,9,120,203,12
+                    WS_TABSTOP,9,126,203,10
     CONTROL         "Disable main menu",IDC_DISABLE_MAINMENU,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,9,131,202,9
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,138,202,10
     CONTROL         "Show transport agents on contact list",
                     IDC_SHOW_TRANSPORT,"Button",BS_AUTOCHECKBOX | BS_TOP | 
-                    WS_TABSTOP,9,142,202,11
+                    WS_TABSTOP,9,150,202,10
     CONTROL         "Enable avatars",IDC_ENABLE_AVATARS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,9,153,201,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,162,201,10
+    CONTROL         "Disable SASL authentication (for old servers)",
+                    IDC_DISABLE_SASL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    9,174,202,10
 END
 
 IDD_OPT_JGMAIL DIALOGEX 0, 0, 271, 221
@@ -205,26 +208,27 @@ END
 
 IDD_INFO_JABBER DIALOGEX 0, 0, 221, 132
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     LTEXT           "JID:",IDC_STATIC,7,7,19,8
     EDITTEXT        IDC_INFO_JID,31,7,183,12,ES_AUTOHSCROLL | ES_READONLY | 
-                    NOT WS_BORDER | NOT WS_TABSTOP
+                    NOT WS_BORDER
     LTEXT           "Resources:",IDC_STATIC,7,65,81,8
     LISTBOX         IDC_INFO_RESOURCE,7,75,69,50,LBS_SORT | 
                     LBS_NOINTEGRALHEIGHT | WS_VSCROLL
     LTEXT           "Subscription type:",IDC_STATIC,7,20,60,8,NOT WS_GROUP
     EDITTEXT        IDC_SUBSCRIPTION,70,20,144,12,ES_READONLY | NOT 
-                    WS_BORDER | NOT WS_TABSTOP
+                    WS_BORDER 
     LTEXT           "Software:",IDC_STATIC,81,74,35,8
     LTEXT           "Version:",IDC_STATIC,81,103,35,8
     LTEXT           "System:",IDC_STATIC,81,117,35,8
     EDITTEXT        IDC_SOFTWARE,121,74,93,26,ES_MULTILINE | ES_READONLY | 
-                    WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+                    WS_DISABLED | NOT WS_BORDER
     EDITTEXT        IDC_VERSION,121,103,93,12,ES_AUTOHSCROLL | ES_READONLY | 
-                    WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+                    WS_DISABLED | NOT WS_BORDER
     EDITTEXT        IDC_SYSTEM,121,117,93,13,ES_AUTOHSCROLL | ES_READONLY | 
-                    WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+                    WS_DISABLED | NOT WS_BORDER
 END
 
 IDD_OPT_REGISTER DIALOGEX 0, 0, 165, 61
@@ -235,7 +239,7 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     LTEXT           "",IDC_REG_STATUS,18,7,139,19
     CONTROL         "Progress1",IDC_PROGRESS_REG,"msctls_progress32",NOT 
-                    WS_VISIBLE | WS_BORDER,18,27,130,7
+                    WS_VISIBLE | WS_BORDER | WS_TABSTOP,18,27,130,7
     PUSHBUTTON      "OK",IDOK,29,40,50,14
     DEFPUSHBUTTON   "Cancel",IDCANCEL,85,40,50,14
     DEFPUSHBUTTON   "OK",IDOK2,55,40,50,14,NOT WS_VISIBLE
@@ -285,10 +289,10 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     LTEXT           "Instruction:",IDC_STATIC,7,7,243,8,NOT WS_GROUP
     EDITTEXT        IDC_INSTRUCTION,7,17,243,38,ES_MULTILINE | ES_READONLY | 
-                    WS_VSCROLL | NOT WS_TABSTOP
+                    WS_VSCROLL
     LTEXT           "",IDC_FRAME,7,60,243,138,NOT WS_GROUP,WS_EX_CLIENTEDGE
     EDITTEXT        IDC_FRAME_TEXT,18,101,220,33,ES_CENTER | ES_MULTILINE | 
-                    ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+                    ES_READONLY | NOT WS_BORDER
     SCROLLBAR       IDC_VSCROLL,238,61,11,136,SBS_VERT | WS_DISABLED
     DEFPUSHBUTTON   "Submit",IDC_SUBMIT,146,203,50,14,WS_DISABLED
     PUSHBUTTON      "Cancel",IDCANCEL,200,203,50,14
@@ -320,8 +324,8 @@ BEGIN
     LTEXT           "",IDC_NAME,33,5,200,8,0,WS_EX_TRANSPARENT
     CONTROL         "Tab1",IDC_TABS,"SysTabControl32",TCS_HOTTRACK |
                     TCS_MULTILINE | WS_TABSTOP,5,29,228,158
-    LTEXT           "View and update Jabber personal vCard",IDC_DESCRIPTION,44,13,
-                    189,8,0,WS_EX_TRANSPARENT
+    LTEXT           "View and update Jabber personal vCard",IDC_DESCRIPTION,
+                    44,13,189,8,0,WS_EX_TRANSPARENT
     CTEXT           "Updating",IDC_UPDATING,65,194,49,8,SS_NOPREFIX | 
                     SS_CENTERIMAGE | NOT WS_VISIBLE
     PUSHBUTTON      "Update Now",IDC_UPDATE,5,190,55,14,WS_DISABLED
@@ -407,12 +411,12 @@ BEGIN
     LTEXT           "E-mail:",IDC_STATIC,5,5,212,8
     CONTROL         "List1",IDC_EMAILS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_NOLABELWRAP | LVS_AUTOARRANGE | 
-                    LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER,5,14,
+                    LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,5,14,
                     212,50
     LTEXT           "Phone:",IDC_STATIC,5,68,212,8
     CONTROL         "List1",IDC_PHONES,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_NOLABELWRAP | LVS_AUTOARRANGE | 
-                    LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER,5,77,
+                    LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,5,77,
                     212,50
 END
 
@@ -657,7 +661,7 @@ BEGIN
         RIGHTMARGIN, 296
         VERTGUIDE, 9
         TOPMARGIN, 3
-        BOTTOMMARGIN, 174
+        BOTTOMMARGIN, 191
     END
 
     IDD_INFO_JABBER, DIALOG

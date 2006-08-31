@@ -434,10 +434,11 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 						GetDlgItemText( hwndDlg, IDC_REASON, text, SIZEOF( text ));
 						int iqId = JabberSerialNext();
 
-						XmlNode m( "message" ); m.addAttr( "from", room ); m.addAttr( "to", pUser ); m.addAttrID( iqId ); m.addAttr( "type", "normal" );
+						XmlNode m( "message" ); m.addAttr( "from", jabberJID ); m.addAttr( "to", room ); m.addAttrID( iqId );
 						XmlNode* x = m.addChild( "x" ); x->addAttr( "xmlns", _T("http://jabber.org/protocol/muc#user"));
-						XmlNode* i = x->addChild( "invite" ); i->addAttr( "from", pUser ); i->addChild( "reason", text );
-						x = m.addChild( "x", text ); x->addAttr( "xmlns", _T("jabber:x:conference")); x->addAttr( "jid", room );
+						XmlNode* i = x->addChild( "invite" ); i->addAttr( "to", pUser ); 
+						if ( text[0] != 0 )
+							i->addChild( "reason", text );
 						JabberSend( jabberThreadInfo->s, m );
 			}	}	}
 			// Fall through
