@@ -120,7 +120,7 @@ void StatusMsgChanged(WPARAM wParam, STATUSMSGINFO* smi) {
 	}
 	lstrcpy(smi->newstatusmsg, buffer);
 
-	smi->cust = (TCHAR*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, wParam, 0);
+	smi->cust = (TCHAR*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, wParam, GCDNF_TCHAR);
 	smi->dTimeStamp = (DWORD)time(NULL);
 	ignore_mask = DBGetContactSettingDword(smi->hContact, IGNORE_MODULE, IGNORE_MASK, 0);
 

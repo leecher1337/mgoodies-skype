@@ -74,7 +74,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAXPOPUPLEN					2048
 
 #define TMR_CONNECTIONTIMEOUT		6000
-//#define TMR_ICQFIRSTCHECK			TMR_CONNECTIONTIMEOUT // Need to be the same, because of timer
 //#define TMR_AUTOREFRESHDELAY		500
 
 #define TIMERID_STATUSCHECK			1
