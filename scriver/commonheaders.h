@@ -78,9 +78,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "msgs.h"
 #include "globals.h"
 #include "richutil.h"
+#include "msgwindow.h"
+
 #include "IcoLib.h"
 #include "m_smileyadd.h"
 #include "m_metacontacts.h"
 #include "m_ieview.h"
 #include "m_avatars.h"
 #include "m_fontservice.h"
+

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "chat.h"
+#include "../msgwindow.h"
 
 #define __try
 #define __except(x) if (0)
@@ -27,6 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _try __try
 #define _except __except
 #define _finally __finally
+
+#define DM_ADDCHILD          (WM_USER+30)
+#define DM_REMOVECHILD		 (WM_USER+31)
+#define DM_ACTIVATECHILD	 (WM_USER+32)
 
 extern HBRUSH		hEditBkgBrush;
 extern HBRUSH		hListBkgBrush;
@@ -47,6 +52,11 @@ static WNDPROC OldTabProc;
 static WNDPROC OldFilterButtonProc;
 static WNDPROC OldLogProc;
 static HKL hkl = NULL;
+
+extern void SubclassTabCtrl(HWND tabCtrl);
+extern void UnsubclassTabCtrl(HWND tabCtrl);
+extern HWND GetParentWindow(HANDLE hContact, BOOL bChat);
+
 
 typedef struct
 {
@@ -200,10 +210,9 @@ static int RoomWndResize(HWND hwndDlg,LPARAM lParam,UTILRESIZECONTROL *urc)
 
 	switch(urc->wId) {
 		case IDOK:
-			GetWindowRect(si->hwndStatus, &rc);
 			urc->rcItem.left = bSend?315:urc->dlgNewSize.cx ;
 			urc->rcItem.top = urc->dlgNewSize.cy - si->iSplitterY+23;
-			urc->rcItem.bottom = urc->dlgNewSize.cy - (rc.bottom-rc.top)-1;
+			urc->rcItem.bottom = urc->dlgNewSize.cy -1;
 			return RD_ANCHORX_RIGHT|RD_ANCHORY_CUSTOM;
 		case IDC_CHAT_TAB:
 			urc->rcItem.top = 1;
@@ -234,10 +243,9 @@ static int RoomWndResize(HWND hwndDlg,LPARAM lParam,UTILRESIZECONTROL *urc)
 			urc->rcItem.bottom = bToolbar?(urc->dlgNewSize.cy - si->iSplitterY+2):(urc->dlgNewSize.cy - si->iSplitterY+22);
 			return RD_ANCHORX_WIDTH|RD_ANCHORY_CUSTOM;
 		case IDC_CHAT_MESSAGE:
-			GetWindowRect(si->hwndStatus, &rc);
 			urc->rcItem.right = bSend?urc->dlgNewSize.cx - 64:urc->dlgNewSize.cx ;
 			urc->rcItem.top = urc->dlgNewSize.cy - si->iSplitterY+22;
-			urc->rcItem.bottom = urc->dlgNewSize.cy - (rc.bottom-rc.top)-1 ;
+			urc->rcItem.bottom = urc->dlgNewSize.cy -1 ;
 			return RD_ANCHORX_LEFT|RD_ANCHORY_CUSTOM;
 		case IDC_CHAT_SMILEY:
 		case IDC_CHAT_ITALICS:
@@ -1354,7 +1362,7 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 			OldSplitterProc=(WNDPROC)SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_SPLITTERX),GWL_WNDPROC,(LONG)SplitterSubclassProc);
 			SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_SPLITTERY),GWL_WNDPROC,(LONG)SplitterSubclassProc);
 			OldNicklistProc=(WNDPROC)SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_LIST),GWL_WNDPROC,(LONG)NicklistSubclassProc);
-			OldTabProc=(WNDPROC)SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_TAB),GWL_WNDPROC,(LONG)TabSubclassProc);
+			SubclassTabCtrl(GetDlgItem(hwndDlg,IDC_CHAT_TAB));
 			OldLogProc=(WNDPROC)SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_LOG),GWL_WNDPROC,(LONG)LogSubclassProc);
 			OldFilterButtonProc=(WNDPROC)SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_FILTER),GWL_WNDPROC,(LONG)ButtonSubclassProc);
 			SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_COLOR),GWL_WNDPROC,(LONG)ButtonSubclassProc);
@@ -1370,10 +1378,9 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 //			RichUtil_SubClass(GetDlgItem(hwndDlg, IDC_CHAT_MESSAGE));
 //			RichUtil_SubClass(GetDlgItem(hwndDlg, IDC_CHAT_LOG));
 
-			psi->hwndStatus = CreateWindowEx(0, STATUSCLASSNAME, NULL, WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP| SBT_TOOLTIPS , 0, 0, 0, 0, hwndDlg, NULL, g_hInst, NULL);
-			SendMessage(psi->hwndStatus,SB_SETMINHEIGHT,GetSystemMetrics(SM_CYSMICON),0);
 			TabCtrl_SetMinTabWidth(GetDlgItem(hwndDlg, IDC_CHAT_TAB), 80);
 			TabCtrl_SetImageList(GetDlgItem(hwndDlg, IDC_CHAT_TAB), hIconsList);
+
 
 			// restore previous tabs
 			if(g_Settings.TabsEnable && DBGetContactSettingByte(NULL, "Chat", "TabRestore", 0))
@@ -1398,10 +1405,12 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 			SendMessage(GetDlgItem(hwndDlg, IDC_CHAT_LOG), EM_HIDESELECTION, TRUE, 0);
 
 			SendMessage(hwndDlg, GC_SETWNDPROPS, 0, 0);
-			SendMessage(hwndDlg, GC_UPDATESTATUSBAR, 0, 0);
+			SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
 			SendMessage(hwndDlg, GC_UPDATETITLE, 0, 0);
 			SendMessage(hwndDlg, GC_SETWINDOWPOS, 0, 0);
 
+			SendMessage(GetParent(hwndDlg), DM_ADDCHILD, (WPARAM) hwndDlg, (LPARAM) psi->hContact);
+			SendMessage(GetParent(hwndDlg), DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 
 		} break;
 
@@ -1424,7 +1433,6 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 			}
 
 			SendMessage(hwndDlg, GC_FIXTABICONS, 0, 0);
-			SendMessage(si->hwndStatus, SB_SETICON, 0,(LPARAM)hIcon);
 			SendMessage(hwndDlg,WM_SETICON,ICON_BIG,(LPARAM)LoadIconEx(IDI_CHANMGR, "window", 0, 0));
 
 			SendMessage(GetDlgItem(hwndDlg, IDC_CHAT_LOG), EM_SETBKGNDCOLOR , 0, g_Settings.crLogBackground);
@@ -1498,20 +1506,15 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 
 
 
-		case GC_UPDATESTATUSBAR:
+		case DM_UPDATESTATUSBAR:
 		{
+			StatusBarItem sbi;
 			HICON hIcon;
+			TCHAR *tText;
 			int iStatusbarParts[2];
 			char *pszDispName = MM_FindModule(si->pszModule)->pszModDispName;
-			int x = 12;
-
-			x += GetTextPixelSize(pszDispName, (HFONT)SendMessage(si->hwndStatus,WM_GETFONT,0,0), TRUE);
-			x += GetSystemMetrics(SM_CXSMICON);
-			iStatusbarParts[0] = x; iStatusbarParts[1] = -1;
-			SendMessage(si->hwndStatus,SB_SETPARTS,2 ,(LPARAM)&iStatusbarParts);
-
+			char tempStr[512];
 			hIcon = si->wStatus==ID_STATUS_ONLINE?MM_FindModule(si->pszModule)->hOnlineIcon:MM_FindModule(si->pszModule)->hOfflineIcon;
-
 			// stupid hack to make icons show. I dunno why this is needed currently
 			if(!hIcon)
 			{
@@ -1519,15 +1522,14 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 				hIcon = si->wStatus==ID_STATUS_ONLINE?MM_FindModule(si->pszModule)->hOnlineIcon:MM_FindModule(si->pszModule)->hOfflineIcon;
 			}
 
-			SendMessage(si->hwndStatus, SB_SETICON, 0,(LPARAM)hIcon);
+			mir_snprintf(tempStr, SIZEOF(tempStr), "%s : %s", pszDispName, si->pszStatusbarText?si->pszStatusbarText:"");
+			sbi.iItem = 0;
+			sbi.hIcon = hIcon;
+			tText = charToTchar(tempStr, -1, CP_ACP);
+			_tcscpy(sbi.szText, tText);
+			SendMessage(GetParent(hwndDlg), DM_UPDATESTATUSBAR, (WPARAM) &sbi, (LPARAM) hwndDlg);
+			free(tText);
 			SendMessage(hwndDlg, GC_FIXTABICONS, 0, 0);
-
-			SendMessageA(si->hwndStatus, SB_SETTEXTA,0,(LPARAM)pszDispName);
-//			if(si->pszStatusbarText)
-//			{
-				SendMessageA(si->hwndStatus, SB_SETTEXTA,1,(LPARAM)(si->pszStatusbarText?si->pszStatusbarText:""));
-				SendMessageA(si->hwndStatus, SB_SETTIPTEXTA,1,(LPARAM)(si->pszStatusbarText?si->pszStatusbarText:""));
-//			}
 			return TRUE;
 		} break;
 
@@ -1634,7 +1636,6 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 				PostMessage(hwndDlg, GC_SCROLLTOBOTTOM, 0, 0);
 
 			if(IsIconic(hwndDlg)) break;
-			SendMessage(si->hwndStatus, WM_SIZE, 0, 0);
 			ZeroMemory(&urd,sizeof(urd));
 			urd.cbSize=sizeof(urd);
 			urd.hInstance=g_hInst;
@@ -1644,7 +1645,6 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 			urd.pfnResizer=RoomWndResize;
 			CallService(MS_UTILS_RESIZEDIALOG,0,(LPARAM)&urd);
 
-			InvalidateRect(si->hwndStatus, NULL, TRUE);
 			RedrawWindow(GetDlgItem(hwndDlg,IDC_CHAT_MESSAGE), NULL, NULL, RDW_INVALIDATE);
 			RedrawWindow(GetDlgItem(hwndDlg,IDOK), NULL, NULL, RDW_INVALIDATE);
 			SendMessage(hwndDlg,GC_SAVEWNDPOS,0,1);
@@ -2289,14 +2289,14 @@ END_REMOVETAB:
 			{
 			case SESSION_OFFLINE:
 				{
-					SendMessage(hwndDlg, GC_UPDATESTATUSBAR, 0, 0);
+					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
 					SendMessage(si->hWnd, GC_UPDATENICKLIST, (WPARAM)0, (LPARAM)0);
 
 				}
 				return TRUE;
 			case SESSION_ONLINE:
 				{
-					SendMessage(hwndDlg, GC_UPDATESTATUSBAR, 0, 0);
+					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
 				}
 				return TRUE;
 			case WINDOW_HIDDEN:
@@ -2338,7 +2338,7 @@ LABEL_SHOWWINDOW:
 					SendMessage(hwndDlg, WM_SIZE, 0, 0);
 					SendMessage(hwndDlg, GC_REDRAWLOG, 0, 0);
 					SendMessage(hwndDlg, GC_UPDATENICKLIST, 0, 0);
-					SendMessage(hwndDlg, GC_UPDATESTATUSBAR, 0, 0);
+					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
 					ShowWindow(hwndDlg, SW_SHOW);
 					SendMessage(hwndDlg, WM_SIZE, 0, 0);
 					SetForegroundWindow(hwndDlg);
@@ -2631,7 +2631,7 @@ LABEL_SHOWWINDOW:
 												ShowRoom(s, WINDOW_VISIBLE, TRUE);
 											}
 										}
-										for(tabId; tabId >= 0; tabId --)
+										for(; tabId >= 0; tabId --)
 										{
 											if(tabId == i)
 												continue;
@@ -3168,7 +3168,7 @@ LABEL_SHOWWINDOW:
 				TCITEM id = {0};
 				int j = TabCtrl_GetItemCount(GetDlgItem(hwndDlg, IDC_CHAT_TAB)) - 1;
 				id.mask = TCIF_PARAM;
-				for(j; j >= 0; j--)
+				for(; j >= 0; j--)
 				{
 					TabCtrl_GetItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB), j, &id);
 					s = (SESSION_INFO *)id.lParam;
@@ -3198,14 +3198,12 @@ LABEL_SHOWWINDOW:
 			SendMessage(hwndDlg,GC_SAVEWNDPOS,0,0);
 
 			si->hWnd = NULL;
-			DestroyWindow(si->hwndStatus);
-			si->hwndStatus = NULL;
 
 			SetWindowLong(hwndDlg,GWL_USERDATA,0);
 			SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_SPLITTERX),GWL_WNDPROC,(LONG)OldSplitterProc);
 			SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_SPLITTERY),GWL_WNDPROC,(LONG)OldSplitterProc);
  			SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_LIST),GWL_WNDPROC,(LONG)OldNicklistProc);
-  			SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_TAB),GWL_WNDPROC,(LONG)OldTabProc);
+			UnsubclassTabCtrl(GetDlgItem(hwndDlg,IDC_CHAT_TAB));
           SendDlgItemMessage(hwndDlg, IDC_CHAT_MESSAGE, EM_UNSUBCLASSED, 0, 0);
 			SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_MESSAGE),GWL_WNDPROC,(LONG)OldMessageProc);
 			SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_LOG),GWL_WNDPROC,(LONG)OldLogProc);

@@ -18,6 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "chat.h"
+#include "../msgwindow.h"
 
 extern HANDLE		g_hInst;
 extern HIMAGELIST	hImageList;
@@ -565,7 +566,7 @@ static int DoControl(GCEVENT * gce, WPARAM wp)
 			if(si->hWnd)
 			{
 				g_TabSession.pszStatusbarText = si->pszStatusbarText;
-				SendMessage(si->hWnd, GC_UPDATESTATUSBAR, 0, 0);
+				SendMessage(si->hWnd, DM_UPDATESTATUSBAR, 0, 0);
 			}
 		}
 
@@ -675,7 +676,10 @@ void ShowRoom(SESSION_INFO * si, WPARAM wp, BOOL bSetForeground)
 		//Do we need to create a tabbed window?
 		if (g_TabSession.hWnd == NULL)
 		{
-			g_TabSession.hWnd = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_CHANNEL), NULL, RoomWndProc, (LPARAM)&g_TabSession);
+			HWND hParent;
+			hParent = GetParentWindow(NULL, TRUE);
+			g_TabSession.hWnd = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_CHANNEL), hParent, RoomWndProc, (LPARAM)&g_TabSession);
+			ShowWindow(hParent, SW_NORMAL);
 		}
 		SetWindowLong(g_TabSession.hWnd, GWL_EXSTYLE, GetWindowLong(g_TabSession.hWnd, GWL_EXSTYLE) | WS_EX_APPWINDOW);
 
@@ -704,7 +708,7 @@ void ShowRoom(SESSION_INFO * si, WPARAM wp, BOOL bSetForeground)
 			else
 				SendMessage(g_TabSession.hWnd, GC_UPDATETITLE, 0, 0);
 			SendMessage(g_TabSession.hWnd, GC_REDRAWLOG, 0, 0);
-			SendMessage(g_TabSession.hWnd, GC_UPDATESTATUSBAR, 0, 0);
+			SendMessage(g_TabSession.hWnd, DM_UPDATESTATUSBAR, 0, 0);
 			ShowWindow(g_TabSession.hWnd, SW_SHOW);
 			if(bSetForeground)
 				SetForegroundWindow(g_TabSession.hWnd);
@@ -717,7 +721,10 @@ void ShowRoom(SESSION_INFO * si, WPARAM wp, BOOL bSetForeground)
 	//Do we need to create a window?
 	if (si->hWnd == NULL)
 	{
-		si->hWnd = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_CHANNEL), NULL, RoomWndProc, (LPARAM)si);
+		HWND hParent;
+	    hParent = GetParentWindow(NULL, TRUE);
+	    si->hWnd = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_CHANNEL), hParent, RoomWndProc, (LPARAM)si);
+		ShowWindow(hParent, SW_NORMAL);
 	}
 	SetWindowLong(si->hWnd, GWL_EXSTYLE, GetWindowLong(si->hWnd, GWL_EXSTYLE) | WS_EX_APPWINDOW);
 	if(!IsWindowVisible(si->hWnd) || wp == WINDOW_HIDDEN)

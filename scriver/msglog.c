@@ -91,7 +91,7 @@ enum MIMFLAGS {
 	MIM_UNICODE = 2
 };
 
-TCHAR *strToWcs(const char *text, int textlen, int cp) {
+TCHAR *charToTchar(const char *text, int textlen, int cp) {
 #if defined ( _UNICODE )
 	wchar_t *wtext;
 	if (textlen == -1) {
@@ -139,13 +139,13 @@ TCHAR *GetNickname(HANDLE hContact, const char* szProto) {
 					if(!_tcscmp((TCHAR *)ci.pszVal, TranslateW(_T("'(Unknown Contact)'")))) {
 						ci.dwFlag &= ~CNF_UNICODE;
 						if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        	    szName = strToWcs((char *)ci.pszVal, -1, CP_ACP);
+			        	    szName = charToTchar((char *)ci.pszVal, -1, CP_ACP);
 						}
 					} else {
 						szName = _tcsdup((TCHAR *)ci.pszVal);
 					}
 				} else {
-					szName = strToWcs((char *)ci.pszVal, -1, CP_ACP);
+					szName = charToTchar((char *)ci.pszVal, -1, CP_ACP);
 				}
 #else
 				szName = _tcsdup((TCHAR *)ci.pszVal);
@@ -228,7 +228,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	}
 	if (event->eventType == EVENTTYPE_FILE) {
 		int msglen = strlen(((char *) dbei.pBlob) + sizeof(DWORD)) + 1;
-		event->pszTextW = strToWcs(((char *) dbei.pBlob) + sizeof(DWORD), msglen, CP_ACP);//dat->codePage);
+		event->pszTextW = charToTchar(((char *) dbei.pBlob) + sizeof(DWORD), msglen, CP_ACP);//dat->codePage);
 	} else { //if (event->eventType == EVENTTYPE_MESSAGE) {
 		int msglen = strlen((char *) dbei.pBlob) + 1;
 		if (msglen != (int) dbei.cbBlob && !(dat->flags & SMF_DISABLE_UNICODE)) {
@@ -237,10 +237,10 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 			if (wlen > 0 && wlen < msglen) {
 				event->pszTextW = wcsdup((wchar_t*) &dbei.pBlob[msglen]);
 			} else {
-				event->pszTextW = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
+				event->pszTextW = charToTchar((char *) dbei.pBlob, msglen, dat->codePage);
 			}
 		} else {
-			event->pszTextW = strToWcs((char *) dbei.pBlob, msglen, dat->codePage);
+			event->pszTextW = charToTchar((char *) dbei.pBlob, msglen, dat->codePage);
 		}
 	}
 #else
@@ -327,7 +327,7 @@ static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAllo
 	if (wasEOL) {
 		CopyMemory(d, " ", 1);
 		d++;
-	} 
+	}
 	strcpy(d, "}");
 	d++;
 
@@ -381,7 +381,7 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 	if (wasEOL) {
 		CopyMemory(d, " ", 1);
 		d++;
-	} 
+	}
 	strcpy(d, "}");
 	d++;
 
