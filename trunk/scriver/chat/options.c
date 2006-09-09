@@ -1235,7 +1235,7 @@ static int OptionsInitialize(WPARAM wParam, LPARAM lParam)
 	odp.hInstance = g_hInst;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS1);
 	odp.pszTitle = "Chat";
-	odp.pszGroup = "Events";
+	odp.pszGroup = "Message Sessions";
 	odp.pfnDlgProc = DlgProcOptions1;
 	odp.flags = ODPF_BOLDGROUPS;
 	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
@@ -1245,7 +1245,7 @@ static int OptionsInitialize(WPARAM wParam, LPARAM lParam)
 	odp.hInstance = g_hInst;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS2);
 	odp.pszTitle = "Chat Log";
-	odp.pszGroup = "Events";
+	odp.pszGroup = "Message Sessions";
 	odp.pfnDlgProc = DlgProcOptions2;
 	odp.flags = ODPF_BOLDGROUPS;
 	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);

@@ -500,7 +500,7 @@ STATUSINFO * SM_AddStatus(char *pszID, char * pszModule, char * pszStatus)
 			STATUSINFO * ti = TM_AddStatus(&pTemp->pStatuses, pszStatus, &pTemp->iStatusCount);
 			if(ti)
 				pTemp->iStatusCount++;
-			if(g_Settings.TabsEnable && pTemp->hWnd)
+		if(g_Settings.TabsEnable && pTemp->hWnd)
 				g_TabSession.pStatuses = pTemp->pStatuses;
 			return ti;
 		}

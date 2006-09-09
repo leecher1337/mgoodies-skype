@@ -40,8 +40,8 @@ int hMsgMenuItemCount = 0;
 static HMODULE hDLL;
 
 extern PSLWA pSetLayeredWindowAttributes;
-
 extern HINSTANCE g_hInst;
+extern HWND GetParentWindow(HANDLE hContact, BOOL bChat);
 
 static int SRMMStatusToPf2(int status)
 {
@@ -79,7 +79,7 @@ static int ReadMessageCommand(WPARAM wParam, LPARAM lParam)
    hwndExisting = WindowList_Find(g_dat->hMessageWindowList, ((CLISTEVENT *) lParam)->hContact);
    newData.hContact = ((CLISTEVENT *) lParam)->hContact;
    if (g_dat->lastParent == NULL || !(g_dat->flags & SMF_USETABS)) {
-      hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+      hParent = GetParentWindow(newData.hContact, FALSE);
    } else {
       hParent = g_dat->lastParent->hwnd;
    }
@@ -124,7 +124,7 @@ static int MessageEventAdded(WPARAM wParam, LPARAM lParam)
          struct NewMessageWindowLParam newData = { 0 };
          newData.hContact = (HANDLE) wParam;
          if (g_dat->lastParent == NULL || !(g_dat->flags & SMF_USETABS)) {
-            hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+			hParent = GetParentWindow(newData.hContact, FALSE);
          } else {
             hParent = g_dat->lastParent->hwnd;
          }
@@ -191,7 +191,7 @@ static int SendMessageCommandW(WPARAM wParam, LPARAM lParam)
       newData.szInitialText = (const char *) lParam;
       newData.isWchar = 1;
       if (g_dat->lastParent == NULL || !(g_dat->flags & SMF_USETABS)) {
-         hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+		hParent = GetParentWindow(newData.hContact, FALSE);
       } else {
          hParent = g_dat->lastParent->hwnd;
       }
@@ -224,7 +224,7 @@ static int SendMessageCommand(WPARAM wParam, LPARAM lParam)
        HWND hEdit;
          hEdit = GetDlgItem(hwnd, IDC_MESSAGE);
 		 SendMessage(hEdit, EM_SETSEL, -1, SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0));
-/*		 
+/*
 		 SETTEXTEX  st;
   		 st.flags = ST_SELECTION;
 		 st.codepage = CP_ACP;
@@ -238,7 +238,7 @@ static int SendMessageCommand(WPARAM wParam, LPARAM lParam)
          ShowWindow(GetParent(hwnd), SW_SHOW);
       }
       SetForegroundWindow(GetParent(hwnd));
-      SetFocus(hwnd); 
+      SetFocus(hwnd);
    } else {
       HWND hParent;
       newData.hContact = (HANDLE) wParam;
@@ -361,12 +361,12 @@ static void RestoreUnreadMessageAlerts(void)
                }
             }
             if (autoPopup && !windowAlreadyExists) {
-               HWND hwndParent;
+               HWND hParent;
                struct NewMessageWindowLParam newData = { 0 };
                newData.hContact = hContact;
                newData.flags = NMWLP_INCOMING;
-               hwndParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
-               CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), hwndParent, DlgProcMessage, (LPARAM) & newData);
+			   hParent = GetParentWindow(newData.hContact, FALSE);
+               CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), hParent, DlgProcMessage, (LPARAM) & newData);
 //               CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), NULL, DlgProcMessage, (LPARAM) & newData);
             }
             else {

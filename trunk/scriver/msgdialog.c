@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_metacontacts.h"
 #include <commctrl.h>
 
-
 #define TIMERID_MSGSEND      0
 #define TIMERID_FLASHWND     1
 #define TIMERID_TYPE         2
@@ -33,16 +32,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TIMEOUT_ANTIBOMB     4000       //multiple-send bombproofing: send max 3 messages every 4 seconds
 #define ANTIBOMB_COUNT       3
 #define TIMEOUT_TYPEOFF      10000      //send type off after 10 seconds of inactivity
-#define SB_CHAR_WIDTH        45
-#define SB_TYPING_WIDTH      35
 #define VALID_AVATAR(x)      (x==PA_FORMAT_PNG||x==PA_FORMAT_JPEG||x==PA_FORMAT_ICON||x==PA_FORMAT_BMP||x==PA_FORMAT_GIF)
+
+#define EM_REPLAYSAVEDKEYSTROKES  (WM_USER+0x100)
+#define ENTERCLICKTIME   1000   //max time in ms during which a double-tap on enter will cause a send
+#define EDITMSGQUEUE_PASSTHRUCLIPBOARD  //if set the typing queue won't capture ctrl-C etc because people might want to use them on the read only text
 
 #if defined(_UNICODE)
 	#define SEND_FLAGS PREF_UNICODE
 #else
 	#define SEND_FLAGS 0
 #endif
-extern TCHAR *strToWcs(const char *text, int textlen, int cp);
 
 extern HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand, hDragCursor;
 extern HANDLE hHookWinEvt;
@@ -426,11 +426,6 @@ static LRESULT CALLBACK LogEditSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, 
 	return CallWindowProc(OldLogEditProc, hwnd, msg, wParam, lParam);
 }
 
-#define EM_REPLAYSAVEDKEYSTROKES  (WM_USER+0x100)
-#define EM_SUBCLASSED             (WM_USER+0x101)
-#define EM_UNSUBCLASSED           (WM_USER+0x102)
-#define ENTERCLICKTIME   1000   //max time in ms during which a double-tap on enter will cause a send
-#define EDITMSGQUEUE_PASSTHRUCLIPBOARD  //if set the typing queue won't capture ctrl-C etc because people might want to use them on the read only text
                                                   //todo: decide if this should be set or not
 static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -757,6 +752,26 @@ static LRESULT CALLBACK SplitterSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
 	return CallWindowProc(OldSplitterProc, hwnd, msg, wParam, lParam);
 }
 
+static void SubclassMessageEdit(HWND hwnd) {
+	OldMessageEditProc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG) MessageEditSubclassProc);
+	SendMessage(hwnd, EM_SUBCLASSED, 0, 0);
+}
+
+static void UnsubclassMessageEdit(HWND hwnd) {
+	SendMessage(hwnd, EM_UNSUBCLASSED, 0, 0);
+	SetWindowLong(hwnd, GWL_WNDPROC, (LONG) OldMessageEditProc);
+}
+
+static void SubclassLogEdit(HWND hwnd) {
+	OldLogEditProc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG) LogEditSubclassProc);
+	SendMessage(hwnd, EM_SUBCLASSED, 0, 0);
+}
+
+static void UnsubclassLogEdit(HWND hwnd) {
+	SendMessage(hwnd, EM_UNSUBCLASSED, 0, 0);
+	SetWindowLong(hwnd, GWL_WNDPROC, (LONG) OldLogEditProc);
+}
+
 static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int w, int h) {
 	HDWP hdwp;
 	struct ParentWindowData *pdat = dat->parent;
@@ -832,10 +847,12 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
 static void UpdateReadChars(HWND hwndDlg, struct MessageWindowData * dat)
 {
 	if (dat->parent->hwndActive == hwndDlg && dat->parent->hwndStatus) {
-		TCHAR buf[128];
+		StatusBarItem sbi;
+		sbi.iItem = 1;
+		sbi.hIcon = NULL;
 		int len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
-		_sntprintf(buf, sizeof(buf), _T("%d"), len);
-		SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 1, (LPARAM) buf);
+		_sntprintf(sbi.szText, sizeof(sbi.szText), _T("%d"), len);
+		SendMessage(dat->hwndParent, DM_UPDATESTATUSBAR, (WPARAM)&sbi, (LPARAM)hwndDlg);
 	}
 }
 
@@ -1029,18 +1046,18 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if(newData->isWchar)
 					SetDlgItemText(hwndDlg, IDC_MESSAGE, (TCHAR *)newData->szInitialText);
 				else
-					SetDlgItemTextA(hwndDlg, IDC_MESSAGE, newData->szInitialText);                    
-	#else					
+					SetDlgItemTextA(hwndDlg, IDC_MESSAGE, newData->szInitialText);
+	#else
 				SetDlgItemTextA(hwndDlg, IDC_MESSAGE, newData->szInitialText);
-	#endif			
+	#endif
 			} else if (g_dat->flags & SMF_SAVEDRAFTS) {
 				TCmdList *draft = tcmdlist_get2(g_dat->draftList, dat->hContact);
 				if (draft != NULL) {
 	#if defined(_UNICODE)
 				SetDlgItemText(hwndDlg, IDC_MESSAGE, (TCHAR *)draft->szCmd);
-	#else					
+	#else
 				SetDlgItemTextA(hwndDlg, IDC_MESSAGE, draft->szCmd);
-	#endif			
+	#endif
 			}
 			len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
 			PostMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), EM_SETSEL, len, len);
@@ -1227,9 +1244,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					SendDlgItemMessage(hwndDlg, IDC_LOG, EM_LIMITTEXT, (WPARAM) sizeof(TCHAR) * 0x7FFFFFFF, 0);
 				}
 			}
-			OldLogEditProc = (WNDPROC) SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_WNDPROC, (LONG) LogEditSubclassProc);
-			OldMessageEditProc = (WNDPROC) SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE), GWL_WNDPROC, (LONG) MessageEditSubclassProc);
-			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SUBCLASSED, 0, 0);
+			SubclassLogEdit(GetDlgItem(hwndDlg, IDC_LOG));
+			SubclassMessageEdit(GetDlgItem(hwndDlg, IDC_MESSAGE));
 			OldSplitterProc = (WNDPROC) SetWindowLong(GetDlgItem(hwndDlg, IDC_SPLITTER), GWL_WNDPROC, (LONG) SplitterSubclassProc);
 			if (dat->hContact) {
 				int historyMode = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LOADHISTORY, SRMSGDEFSET_LOADHISTORY);
@@ -1299,7 +1315,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				int saveSplitterPerContact = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVESPLITTERPERCONTACT, SRMSGDEFSET_SAVESPLITTERPERCONTACT);
 				dat->splitterPos = (int) DBGetContactSettingDword(saveSplitterPerContact ? dat->hContact : NULL, SRMMMOD, "splitterPos", (DWORD) - 1);
 			}
-			SendMessage(dat->hwndParent, DM_ADDCHILD, 0, (LPARAM) dat);
+			SendMessage(dat->hwndParent, DM_ADDCHILD, (WPARAM) hwndDlg, (LPARAM) dat->hContact);
 			SendMessage(hwndDlg, DM_OPTIONSAPPLIED, 0, 0);
 //			SendMessage(hwndDlg, DM_AVATARCALCSIZE, 0, 0);
 			{
@@ -1567,9 +1583,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->nTypeSecs = (int) lParam > 0 ? (int) lParam : 0;
 			break;
 		}
-	case DM_UPDATEWINICON:
+	case DM_UPDATEICON:
 		{
-			SendMessage(dat->hwndParent, DM_UPDATEWINICON, wParam, (LPARAM)dat);
+			SendMessage(dat->hwndParent, DM_UPDATEICON, wParam, (LPARAM)dat);
 			break;
 		}
     case DM_USERNAMETOCLIP:
@@ -1681,13 +1697,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			SendDlgItemMessageA(hwndDlg, IDC_MESSAGE, EM_SETCHARFORMAT, 0, (LPARAM)&cf2);
 		}
 		SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
-		SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
+		SendMessage(hwndDlg, DM_UPDATEICON, 0, 0);
 		break;
 	case DM_UPDATETITLE:
 		{
 			DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING *) wParam;
 			if (dat->hContact) {
 				if (dat->szProto) {
+					TCHAR *wintitle;
 					CONTACTINFO ci;
 					char buf[128];
 					buf[0] = 0;
@@ -1711,7 +1728,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		//			SetDlgItemTextA(hwndDlg, IDC_NAME, buf[0] ? buf : contactName);
 
 					if (!cws || (!strcmp(cws->szModule, dat->szProto) && !strcmp(cws->szSetting, "Status"))) {
-						SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
+						SendMessage(hwndDlg, DM_UPDATEICON, 0, 0);
 					}
 					// log status change
 					if ((dat->wStatus != dat->wOldStatus || lParam != 0)
@@ -1766,9 +1783,15 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						free(szOldStatus);
 						free(szNewStatus);
 					}
+					wintitle = GetWindowTitle(dat->hContact, dat->szProto);
+					SendMessage(dat->hwndParent, DM_UPDATETITLE, (WPARAM)wintitle, (LPARAM)hwndDlg);
+					free(wintitle);
+					wintitle = GetTabName(dat->hContact);
+					SendMessage(dat->hwndParent, DM_UPDATETABTITLE, (WPARAM)wintitle, (LPARAM)hwndDlg);
+					free(wintitle);
 				}
 			}
-			SendMessage(dat->hwndParent, DM_UPDATETITLE, (WPARAM)hwndDlg, (LPARAM)dat);
+
 			break;
 		}
 	case DM_SWITCHTOOLBAR:
@@ -1783,11 +1806,16 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 		break;
 	case DM_SWITCHUNICODE:
-		dat->flags ^= SMF_DISABLE_UNICODE;
-		SendMessage(dat->parent->hwndStatus, SB_SETICON, 2, (LPARAM) g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON]);
-		RedrawWindow(dat->parent->hwndStatus, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
-		SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
-//		SendMessage(dat->hwndParent, DM_SWITCHSTATUSBAR, 0, 0);
+		{
+			StatusBarItem sbi;
+			dat->flags ^= SMF_DISABLE_UNICODE;
+			sbi.iItem = 2;
+			sbi.hIcon = g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON];
+			_tcscpy(sbi.szText, _T(""));
+			SendMessage(dat->hwndParent, DM_UPDATESTATUSBAR, (WPARAM)&sbi, (LPARAM)hwndDlg);
+//			RedrawWindow(dat->parent->hwndStatus, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
+			SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
+		}
 		break;
 	case DM_SWITCHRTL:
 		{
@@ -1836,7 +1864,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			if (KillTimer(hwndDlg, TIMERID_FLASHWND)) {
 	//			dat->nFlash = 0;
 			}
-			SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
+			SendMessage(hwndDlg, DM_UPDATEICON, 0, 0);
 		}
 		break;
 	case WM_LBUTTONDOWN:
@@ -2006,22 +2034,20 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		break;
 	case DM_UPDATESTATUSBAR:
 		if (dat->parent->hwndActive == hwndDlg) {
+			StatusBarItem sbi;
+			sbi.iItem = 0;
 			if (dat->messagesInProgress && (g_dat->flags & SMF_SHOWPROGRESS)) {
-				TCHAR szBuf[256];
-				mir_sntprintf(szBuf, SIZEOF(szBuf), TranslateT("Sending in progress: %d message(s) left..."), dat->messagesInProgress);
-				SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 0, (LPARAM) szBuf);
-				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) g_dat->hIcons[SMF_ICON_DELIVERING]);
+				sbi.hIcon = g_dat->hIcons[SMF_ICON_DELIVERING];
+				mir_sntprintf(sbi.szText, SIZEOF(sbi.szText), TranslateT("Sending in progress: %d message(s) left..."), dat->messagesInProgress);
 			} else if (dat->nTypeSecs) {
-				TCHAR szBuf[256];
 				TCHAR *szContactName = GetNickname(dat->hContact, dat->szProto);
-				mir_sntprintf(szBuf, SIZEOF(szBuf), TranslateT("%s is typing a message..."), szContactName);
-				dat->nTypeSecs--;
-				SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 0, (LPARAM) szBuf);
-				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) g_dat->hIcons[SMF_ICON_TYPING]);
+				sbi.hIcon = g_dat->hIcons[SMF_ICON_TYPING];
+				mir_sntprintf(sbi.szText, SIZEOF(sbi.szText), TranslateT("%s is typing a message..."), szContactName);
 				free(szContactName);
+				dat->nTypeSecs--;
 			} else if (dat->lastMessage) {
 				DBTIMETOSTRINGT dbtts;
-				TCHAR date[64], time[64], szBuf[256];
+				TCHAR date[64], time[64];
 				dbtts.szFormat = _T("d");
 				dbtts.cbDest = SIZEOF(date);
 				dbtts.szDest = date;
@@ -2038,15 +2064,18 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 #else
 				CallService(MS_DB_TIME_TIMESTAMPTOSTRING, dat->lastMessage, (LPARAM) & dbtts);
 #endif
-				mir_sntprintf(szBuf, SIZEOF(szBuf), TranslateT("Last message received on %s at %s."), date, time);
-				SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 0, (LPARAM) szBuf);
-				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) NULL);
+				mir_sntprintf(sbi.szText, SIZEOF(sbi.szText), TranslateT("Last message received on %s at %s."), date, time);
+				sbi.hIcon = NULL;
 			} else {
-				SendMessage(dat->parent->hwndStatus, SB_SETTEXT, 0, (LPARAM) _T(""));
-				SendMessage(dat->parent->hwndStatus, SB_SETICON, 0, (LPARAM) NULL);
+				sbi.hIcon = NULL;
+				_tcscpy(sbi.szText, _T(""));
 			}
-			SendMessage(dat->parent->hwndStatus, SB_SETICON, 2, (LPARAM) g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON]);
+			SendMessage(dat->hwndParent, DM_UPDATESTATUSBAR, (WPARAM)&sbi, (LPARAM)hwndDlg);
 			UpdateReadChars(hwndDlg, dat);
+			sbi.iItem = 2;
+			sbi.hIcon = g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON];
+			_tcscpy(sbi.szText, _T(""));
+			SendMessage(dat->hwndParent, DM_UPDATESTATUSBAR, (WPARAM)&sbi, (LPARAM)hwndDlg);
 			break;
 		}
 		break;
@@ -2078,7 +2107,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					if (dat->sendInfo[i].timeout < timeout) {
 						dat->sendInfo[i].timeout+=1000;
 						if (dat->sendInfo[i].timeout >= timeout) {
-							struct ErrorWindowData *ewd = (struct ErrorWindowData *) malloc(sizeof(struct ErrorWindowData));
+							ErrorWindowData *ewd = (ErrorWindowData *) malloc(sizeof(ErrorWindowData));
 							ewd->szName = _strdup ((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0));
 							ewd->szDescription = _strdup(Translate("The message send timed out."));
 							ewd->textSize = dat->sendInfo[i].sendBufferSize;
@@ -2101,7 +2130,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 		else if (wParam == TIMERID_FLASHWND) {
 			dat->showUnread++;
-			SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
+			SendMessage(hwndDlg, DM_UPDATEICON, 0, 0);
 		}
 		else if (wParam == TIMERID_TYPE) {
 			if (dat->nTypeMode == PROTOTYPE_SELFTYPING_ON && GetTickCount() - dat->nLastTyping > TIMEOUT_TYPEOFF) {
@@ -2114,14 +2143,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				else {
 					dat->showTyping = 0;
 					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
-					SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
+					SendMessage(hwndDlg, DM_UPDATEICON, 0, 0);
 				}
 			}
 			else {
 				if (dat->nTypeSecs) {
 					dat->showTyping = 1;
 					SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
-					SendMessage(hwndDlg, DM_UPDATEWINICON, 0, 0);
+					SendMessage(hwndDlg, DM_UPDATEICON, 0, 0);
 				}
 			}
 		}
@@ -2159,14 +2188,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		case MSGERROR_RETRY:
 			if (lParam) {
 				struct MessageSendInfo msi;
-				struct ErrorWindowData *ewd = (struct ErrorWindowData *)lParam;
+				ErrorWindowData *ewd = (ErrorWindowData *)lParam;
 				msi.sendBufferSize = ewd->textSize;
 				msi.sendBuffer = ewd->szText;
 				msi.flags = ewd->flags;
 				SendMessage(hwndDlg, DM_SENDMESSAGE, 0, (LPARAM)&msi);
 				/*
 				HANDLE hSendId;
-				struct ErrorWindowData *ewd = (struct ErrorWindowData *)lParam;
+				ErrorWindowData *ewd = (ErrorWindowData *)lParam;
 				dat->sendCount ++;
 				dat->sendInfo = (struct MessageSendInfo *) realloc(dat->sendInfo, sizeof(struct MessageSendInfo) * dat->sendCount);
 				dat->sendInfo[dat->sendCount-1].sendBufferSize = ewd->textSize;
@@ -2441,7 +2470,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						}
 					}
 					if (buffer == NULL) {
-						buffer = strToWcs((char *) dbei.pBlob, aLen, CP_ACP);
+						buffer = charToTchar((char *) dbei.pBlob, aLen, CP_ACP);
 						free(dbei.pBlob);
 						dbei.pBlob = (char *)buffer;
 					}
@@ -2718,7 +2747,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					}
 				}
 				if (i < dat->sendCount) {
-					struct ErrorWindowData *ewd = (struct ErrorWindowData *) malloc(sizeof(struct ErrorWindowData));
+					ErrorWindowData *ewd = (ErrorWindowData *) malloc(sizeof(ErrorWindowData));
 					ewd->szName = _strdup ((char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) dat->hContact, 0));
 					ewd->szDescription = _strdup((char *) ack->lParam);
 					ewd->textSize = dat->sendInfo[i].sendBufferSize;
@@ -2773,14 +2802,12 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		} else {
 			g_dat->draftList = tcmdlist_remove2(g_dat->draftList, dat->hContact);
 		}
-		if (dat->hwndStatus)
-			DestroyWindow(dat->hwndStatus);
 		tcmdlist_free(dat->cmdList);
 		WindowList_Remove(g_dat->hMessageWindowList, hwndDlg);
 		//if (!(g_dat->flags&SMF_AVATAR)||!dat->avatarPic)
 		SetWindowLong(GetDlgItem(hwndDlg, IDC_SPLITTER), GWL_WNDPROC, (LONG) OldSplitterProc);
 		SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_UNSUBCLASSED, 0, 0);
-		SetWindowLong(GetDlgItem(hwndDlg, IDC_MESSAGE), GWL_WNDPROC, (LONG) OldMessageEditProc);
+		UnsubclassMessageEdit(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_WNDPROC, (LONG) OldLogEditProc);
 		{
 			HFONT hFont;

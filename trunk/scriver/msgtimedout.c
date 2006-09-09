@@ -27,14 +27,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	struct ErrorWindowData *ewd = (struct ErrorWindowData *) GetWindowLong(hwndDlg, GWL_USERDATA);
+	ErrorWindowData *ewd = (ErrorWindowData *) GetWindowLong(hwndDlg, GWL_USERDATA);
 	//if (ewd==NULL && msg!=WM_INITDIALOG) return FALSE;
 	switch (msg) {
 		case WM_INITDIALOG:
 		{
 			RECT rc, rcParent;
 			char caption[2048];
-			ewd = (struct ErrorWindowData *) lParam;
+			ewd = (ErrorWindowData *) lParam;
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) ewd);
 			TranslateDialogDefault(hwndDlg);
 		//	if (IsIconic(ewd->hwndParent)) {

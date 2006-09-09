@@ -49,14 +49,23 @@ PSLWA pSetLayeredWindowAttributes;
 #define TIMEOUT_FLASHWND     900
 
 static WNDPROC OldTabCtrlProc;
-
 BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-extern TCHAR *strToWcs(const char *text, int textlen, int cp);
+extern TCHAR *charToTchar(const char *text, int textlen, int cp);
 extern TCHAR *GetNickname(HANDLE hContact, const char* szProto);
 extern void NotifyLocalWinEvent(HANDLE hContact, HWND hwnd, unsigned int type);
-	
-static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
+
+void SubclassTabCtrl(HWND hwnd) {
+	OldTabCtrlProc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG) TabCtrlProc);
+	SendMessage(hwnd, EM_SUBCLASSED, 0, 0);
+}
+
+void UnsubclassTabCtrl(HWND hwnd) {
+	SendMessage(hwnd, EM_UNSUBCLASSED, 0, 0);
+	SetWindowLong(hwnd, GWL_WNDPROC, (LONG) OldTabCtrlProc);
+}
+
+TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 {
 	DBVARIANT dbv;
 	int isTemplate;
@@ -67,12 +76,12 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 	if (hContact && szProto) {
 		szContactName = GetNickname(hContact, szProto);
 		contactNameLen = lstrlen(szContactName);
-		szStatus = strToWcs((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, szProto == NULL ? ID_STATUS_OFFLINE : DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE), 0), -1, CP_ACP);
+		szStatus = charToTchar((char *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, szProto == NULL ? ID_STATUS_OFFLINE : DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE), 0), -1, CP_ACP);
 		statusLen = lstrlen(szStatus);
 		if (!DBGetContactSetting(hContact, "CList", "StatusMsg",&dbv)) {
 			if (strlen(dbv.pszVal) > 0) {
 				int i, j;
-       			szStatusMsg = strToWcs(dbv.pszVal, -1, CP_ACP);
+       			szStatusMsg = charToTchar(dbv.pszVal, -1, CP_ACP);
 				statusMsgLen = lstrlen(szStatusMsg);
 				for (i = j = 0; i < statusMsgLen; i++) {
 					if (szStatusMsg[i] == '\r') {
@@ -91,7 +100,7 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 
 		if (!DBGetContactSetting(NULL, SRMMMOD, SRMSGSET_WINDOWTITLE, &dbv)) {
 			isTemplate = 1;
-			tmplt = strToWcs(dbv.pszVal, -1, CP_ACP);
+			tmplt = charToTchar(dbv.pszVal, -1, CP_ACP);
 			DBFreeVariant(&dbv);
 		} else {
 			int statusIcon = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON);
@@ -161,7 +170,7 @@ static TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 	return title;
 }
 
-static TCHAR* GetTabName(HANDLE *hContact)
+TCHAR* GetTabName(HANDLE *hContact)
 {
 	int len;
 	TCHAR *result = NULL;
@@ -208,15 +217,15 @@ static void GetChildWindowRect(struct ParentWindowData *dat, RECT *rcChild)
 
 static int GetTabFromHWND(struct ParentWindowData *dat, HWND child)
 {
-	struct MessageWindowData * mdat;
+	struct MessageWindowTabData * mwtd;
 	TCITEM tci;
 	int l, i;
 	l = TabCtrl_GetItemCount(dat->hwndTabs);
 	for (i = 0; i < l; i++) {
 		tci.mask = TCIF_PARAM;
 		TabCtrl_GetItem(dat->hwndTabs, i, &tci);
-		mdat = (struct MessageWindowData *) tci.lParam;
-		if (mdat->hwnd == child) {
+		mwtd = (struct MessageWindowTabData *) tci.lParam;
+		if (mwtd->hwnd == child) {
 			return i;
 		}
 	}
@@ -224,26 +233,26 @@ static int GetTabFromHWND(struct ParentWindowData *dat, HWND child)
 
 }
 
-static struct MessageWindowData * GetChildFromTab(HWND hwndTabs, int tabId)
+static struct MessageWindowTabData * GetChildFromTab(HWND hwndTabs, int tabId)
 {
 	TCITEM tci;
 	tci.mask = TCIF_PARAM;
 	TabCtrl_GetItem(hwndTabs, tabId, &tci);
-	return (struct MessageWindowData *) tci.lParam;
+	return (struct MessageWindowTabData *) tci.lParam;
 }
 
-static struct MessageWindowData * GetChildFromHWND(struct ParentWindowData *dat, HWND hwnd)
+static struct MessageWindowTabData * GetChildFromHWND(struct ParentWindowData *dat, HWND hwnd)
 {
-	struct MessageWindowData * mdat;
+	struct MessageWindowTabData * mwtd;
 	TCITEM tci;
 	int l, i;
 	l = TabCtrl_GetItemCount(dat->hwndTabs);
 	for (i = 0; i < l; i++) {
 		tci.mask = TCIF_PARAM;
 		TabCtrl_GetItem(dat->hwndTabs, i, &tci);
-		mdat = (struct MessageWindowData *) tci.lParam;
-		if (mdat->hwnd == hwnd) {
-			return mdat;
+		mwtd = (struct MessageWindowTabData *) tci.lParam;
+		if (mwtd->hwnd == hwnd) {
+			return mwtd;
 		}
 	}
 	return NULL;
@@ -293,21 +302,26 @@ static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 	SendMessage(dat->hwndActive, DM_ACTIVATE, WA_ACTIVE, 0);
 }
 
-static void AddChild(struct ParentWindowData *dat, struct MessageWindowData * mdat)
+static void AddChild(struct ParentWindowData *dat, HWND hwnd, HANDLE hContact)
 {
 	TCHAR *contactName;
 	TCITEM tci;
 	int tabId;
+	struct MessageWindowTabData *mwtd = (struct MessageWindowTabData *) malloc(sizeof(struct MessageWindowTabData));
+	mwtd->hwnd = hwnd;
+	mwtd->hContact = hContact;
+	mwtd->szProto = (const char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+	mwtd->parent = dat;
 	dat->children=(HWND*)realloc(dat->children, sizeof(HWND)*(dat->childrenCount+1));
-	dat->children[dat->childrenCount++] = mdat->hwnd;
-	contactName = GetTabName(mdat->hContact);
+	dat->children[dat->childrenCount++] = hwnd;
+	contactName = GetTabName(hContact);
 	tci.mask = TCIF_TEXT | TCIF_PARAM;
 	tci.pszText = contactName;
-	tci.lParam = (LPARAM) mdat;
+	tci.lParam = (LPARAM) mwtd;
 	tabId = TabCtrl_InsertItem(dat->hwndTabs, dat->childrenCount-1, &tci);
 	free(contactName);
 //	ActivateChild(dat, mdat->hwnd);
-	SetWindowPos(mdat->hwnd, HWND_TOP, dat->childRect.left, dat->childRect.top, dat->childRect.right-dat->childRect.left, dat->childRect.bottom - dat->childRect.top, SWP_HIDEWINDOW);
+	SetWindowPos(mwtd->hwnd, HWND_TOP, dat->childRect.left, dat->childRect.top, dat->childRect.right-dat->childRect.left, dat->childRect.bottom - dat->childRect.top, SWP_HIDEWINDOW);
 	SendMessage(dat->hwnd, WM_SIZE, 0, 0);
 }
 
@@ -407,10 +421,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				dat->prev->next = dat;
 			}
 			WindowList_Add(g_dat->hParentWindowList, hwndDlg, hwndDlg);
-			dat->tabCtrlDat = (struct TabCtrlData *) malloc(sizeof(struct TabCtrlData));
-			dat->tabCtrlDat->bDragging = FALSE;
-			SetWindowLong(dat->hwndTabs, GWL_USERDATA, (LONG) dat->tabCtrlDat);
-			OldTabCtrlProc = (WNDPROC) SetWindowLong(dat->hwndTabs, GWL_WNDPROC, (LONG) TabCtrlProc);
+			SubclassTabCtrl(dat->hwndTabs);
 			ws = GetWindowLong(dat->hwndTabs, GWL_STYLE) & ~(TCS_BOTTOM);
 			if (dat->flags & SMF_TABSATBOTTOM) {
 				ws |= TCS_BOTTOM;
@@ -499,7 +510,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		} else {
 //		}
 //		if (!IsIconic(hwndDlg)) {
-			int i;
 			RECT rc, rcStatus, rcChild, rcWindow;
 			SIZE size;
 			dat->bMinimized = 0;
@@ -529,12 +539,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			}
 			GetChildWindowRect(dat, &rcChild);
 			memcpy(&dat->childRect, &rcChild, sizeof(RECT));
-			for (i=0;i<dat->childrenCount;i++) {
-				if (dat->children[i] == dat->hwndActive) {
-					MoveWindow(dat->children[i], rcChild.left, rcChild.top, rcChild.right-rcChild.left, rcChild.bottom - rcChild.top, TRUE);
-					RedrawWindow(GetDlgItem(dat->children[i], IDC_LOG), NULL, NULL, RDW_INVALIDATE);
-				}
-			}
+			MoveWindow(dat->hwndActive, rcChild.left, rcChild.top, rcChild.right-rcChild.left, rcChild.bottom - rcChild.top, TRUE);
+			RedrawWindow(GetDlgItem(dat->hwndActive, IDC_LOG), NULL, NULL, RDW_INVALIDATE);
 			if (dat->flags & SMF_SHOWSTATUSBAR) {
 				RedrawWindow(dat->hwndStatus, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
 			}
@@ -565,8 +571,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						int iSel = TabCtrl_GetCurSel(dat->hwndTabs);
 						tci.mask = TCIF_PARAM;
 						if (TabCtrl_GetItem(dat->hwndTabs, iSel, &tci)) {
-							struct MessageWindowData * mdat = (struct MessageWindowData *) tci.lParam;
-							ActivateChild(dat, mdat->hwnd);
+							struct MessageWindowTabData * mwtd = (struct MessageWindowTabData *) tci.lParam;
+							ActivateChild(dat, mwtd->hwnd);
 							SetFocus(dat->hwndActive);
 						}
 					}
@@ -581,10 +587,10 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						ScreenToClient(dat->hwndTabs, &thinfo.pt);
 						tabId = TabCtrl_HitTest(dat->hwndTabs, &thinfo);
 						if (tabId != -1) {
-							struct MessageWindowData * mwd = GetChildFromTab(dat->hwndTabs, tabId);
+							struct MessageWindowTabData * mwtd = GetChildFromTab(dat->hwndTabs, tabId);
 							//CallService(MS_USERINFO_SHOWDIALOG, (WPARAM) mwd->hContact, 0);
-							HMENU hMenu = (HMENU) CallService(MS_CLIST_MENUBUILDCONTACT, (WPARAM) mwd->hContact, 0);
-							TrackPopupMenu(hMenu, 0, x, y, 0, mwd->hwnd, NULL);
+							HMENU hMenu = (HMENU) CallService(MS_CLIST_MENUBUILDCONTACT, (WPARAM) mwtd->hContact, 0);
+							TrackPopupMenu(hMenu, 0, x, y, 0, mwtd->hwnd, NULL);
 							DestroyMenu(hMenu);
 						}
 					}
@@ -802,7 +808,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			if (dat->next != NULL) {
 				dat->next->prev = dat->prev;
 			}
-			free(dat->tabCtrlDat);
+			UnsubclassTabCtrl(dat->hwndTabs);
 			free(dat);
 		}
 		break;
@@ -829,8 +835,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		return TRUE;
 	case DM_ADDCHILD:
 		{
-			struct MessageWindowData * mdat = (struct MessageWindowData *) lParam;
-			AddChild(dat, mdat);
+			AddChild(dat, (HWND)wParam, (HANDLE)lParam);
 		}
 		return TRUE;
 	case DM_ACTIVATECHILD:
@@ -892,39 +897,39 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 	case DM_UPDATETITLE:
 		{
-			struct MessageWindowData * mdat = (struct MessageWindowData *) lParam;
-			TCITEM tci;
-			int tabId;
-			TCHAR *tContactName;
-			if (mdat && mdat->hwnd == dat->hwndActive) {
-				TCHAR *newtitle, oldtitle[256];
-#if defined ( _UNICODE )
-				newtitle = GetWindowTitle(mdat->hContact, mdat->szProto);
-#else
-				newtitle = GetWindowTitle(mdat->hContact, mdat->szProto);
-#endif
+			HWND hwnd = (HWND) lParam;
+			TCHAR *newtitle = (TCHAR *) wParam;
+			if (newtitle && dat->hwndActive == hwnd) {
+				TCHAR oldtitle[256];
 				GetWindowText(hwndDlg, oldtitle, sizeof(oldtitle));
 				if (lstrcmp(newtitle, oldtitle)) { //swt() flickers even if the title hasn't actually changed
 					SetWindowText(hwndDlg, newtitle);
 					//SendMessage(hwndDlg, WM_SIZE, 0, 0);
 				}
-				free(newtitle);
 			}
-			tabId = GetTabFromHWND(dat, mdat->hwnd);
-			tContactName = GetTabName(mdat->hContact);
-			tci.mask = TCIF_TEXT;
-			tci.pszText = tContactName;
-			TabCtrl_SetItem(dat->hwndTabs, tabId, &tci);
-			free(tContactName);
 			break;
 		}
-	case DM_UPDATEWINICON:
+	case DM_UPDATETABTITLE:
+		{
+			int tabId = GetTabFromHWND(dat, (HWND) lParam);
+			if (tabId >= 0) {
+				TCITEM tci;
+				tci.mask = TCIF_TEXT;
+				tci.pszText = (TCHAR *) wParam;
+				TabCtrl_SetItem(dat->hwndTabs, tabId, &tci);
+			}
+			break;
+		}
+//	case DM_UPDATEWINICON2:
+
+	//	break;
+	case DM_UPDATEICON:
 		{
 			struct MessageWindowData * mdat = (struct MessageWindowData *) lParam;
 			if (mdat) {
 				if (mdat->szProto) {
+					HICON hIcon = NULL;
 					int i, icoIdx = 0;
-					WORD wStatus;
 					char *szProto = mdat->szProto;
 					HANDLE hContact = mdat->hContact;
 					if (strcmp(mdat->szProto, "MetaContacts") == 0 && DBGetContactSettingByte(NULL,"CLC","Meta",0) == 0) {
@@ -935,26 +940,23 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 							hContact = mdat->hContact;
 						}
 					}
-					wStatus = DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE);
-					mdat->wStatus = wStatus;
-					if (mdat->hwnd == dat->hwndActive) {
-						if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON)) {
-							if (mdat->showTyping && (g_dat->flags&SMF_SHOWTYPINGWIN)) {
-								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) g_dat->hIcons[SMF_ICON_TYPING]);
-							} else if (mdat->showUnread && (GetActiveWindow() != hwndDlg || GetForegroundWindow() != hwndDlg)) {
-								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
-							} else {
-								SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedProtoIcon(szProto, wStatus));
-							}
+					mdat->wStatus = DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE);
+					SendDlgItemMessage(mdat->hwnd, IDC_USERMENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedProtoIcon(szProto, mdat->wStatus));
+					if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON)) {
+						if (mdat->showTyping && (g_dat->flags&SMF_SHOWTYPINGWIN)) {
+							hIcon = g_dat->hIcons[SMF_ICON_TYPING];
+						} else if (mdat->showUnread && (GetActiveWindow() != hwndDlg || GetForegroundWindow() != hwndDlg)) {
+							hIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
 						} else {
-							SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
+							hIcon = LoadSkinnedProtoIcon(szProto, mdat->wStatus);
 						}
+					} else {
+						hIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
 					}
-					SendDlgItemMessage(mdat->hwnd, IDC_USERMENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedProtoIcon(szProto, wStatus));
 					icoIdx = 0;
 					for (i = 0; i < g_dat->protoNum; i++) {
 						if (!strcmp(g_dat->protoNames[i], szProto)) {
-							icoIdx = wStatus - ID_STATUS_OFFLINE + (ID_STATUS_OUTTOLUNCH - ID_STATUS_OFFLINE + 1) * (i +1) + 2;
+							icoIdx = mdat->wStatus - ID_STATUS_OFFLINE + (ID_STATUS_OUTTOLUNCH - ID_STATUS_OFFLINE + 1) * (i +1) + 2;
 							break;
 						}
 					}
@@ -965,6 +967,13 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 							icoIdx = 0;
 						}
 					}
+
+					if (mdat->hwnd == dat->hwndActive) {
+						/* container part */
+						SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) hIcon);
+						/* end of container part */
+					}
+					/* container part */
 					i = GetTabFromHWND(dat, mdat->hwnd);
 					if (i>=0) {
 						TCITEM tci;
@@ -972,12 +981,32 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						tci.iImage = icoIdx;
 						TabCtrl_SetItem(dat->hwndTabs, i, &tci);
 					}
+					/* end of container part */
 				}
 			}
 			break;
 		}
+	case DM_UPDATETABICON:
+		{
+			int tabId = GetTabFromHWND(dat, (HWND) lParam);
+			if (tabId >= 0) {
+				TCITEM tci;
+				tci.mask = TCIF_IMAGE;
+				tci.iImage = (int) wParam;
+				TabCtrl_SetItem(dat->hwndTabs, tabId, &tci);
+			}
+			break;
+		}
 	case DM_UPDATESTATUSBAR:
-		break;
+		{
+			HWND hwnd = (HWND) lParam;
+			StatusBarItem *sbi = (StatusBarItem *) wParam;
+			if (sbi && dat->hwndActive == hwnd) {
+				SendMessage(dat->hwndStatus, SB_SETTEXT, sbi->iItem, (LPARAM) sbi->szText);
+				SendMessage(dat->hwndStatus, SB_SETICON, sbi->iItem, (LPARAM) sbi->hIcon);
+			}
+			break;
+		}
 	case DM_SWITCHSTATUSBAR:
 		dat->flags ^= SMF_SHOWSTATUSBAR;
 		if (!(dat->flags & SMF_SHOWSTATUSBAR)) {
@@ -1035,19 +1064,21 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	return FALSE;
 }
 
-#define INDICATOR_WIDTH 3
-#define INDICATOR_COLOR 26
-
 BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	struct TabCtrlData *dat;
-	dat = (struct TabCtrlData *) GetWindowLong(hwnd, GWL_USERDATA);
+	TabCtrlData *dat;
+	dat = (TabCtrlData *) GetWindowLong(hwnd, GWL_USERDATA);
     switch(msg) {
+    	case EM_SUBCLASSED:
+			dat = (TabCtrlData *) malloc(sizeof(TabCtrlData));
+			SetWindowLong(hwnd, GWL_USERDATA, (LONG) dat);
+			dat->bDragging = FALSE;
+	        return 0;
         case WM_MBUTTONDOWN:
 		{
 			TCITEM tci;
 			int tabId;
-			struct MessageWindowData *mwd;
+			struct MessageWindowTabData *mwtd;
 			TCHITTESTINFO thinfo;
 			thinfo.pt.x = (lParam<<16)>>16;
 			thinfo.pt.y = lParam>>16;
@@ -1055,12 +1086,12 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (tabId >= 0) {
 				tci.mask = TCIF_PARAM;
 				TabCtrl_GetItem(hwnd, tabId, &tci);
-				mwd = (struct MessageWindowData *) tci.lParam;
-				if (mwd != NULL) {
-					SendMessage(mwd->hwnd, WM_CLOSE, 0, 0);
+				mwtd = (struct MessageWindowTabData *) tci.lParam;
+				if (mwtd != NULL) {
+					SendMessage(mwtd->hwnd, WM_CLOSE, 0, 0);
     			}
 			}
-	        return TRUE;
+	        return 0;
         }
 		case WM_LBUTTONDBLCLK:
 		{
@@ -1071,11 +1102,11 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			tabId = TabCtrl_HitTest(hwnd, &thinfo);
 			if (tabId >=0 ) {
 				void * clickChild = GetChildFromTab(hwnd, tabId)->hwnd;
-				if (clickChild == dat->lastClickChild) {
+				if (tabId == dat->lastClickTab) {
 					SendMessage(clickChild, WM_CLOSE, 0, 0);
 				}
 			}
-			dat->lastClickChild = NULL;
+			dat->lastClickTab = -1;//Child = NULL;
 		}
 		break;
 		case WM_LBUTTONDOWN:
@@ -1088,9 +1119,9 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				thinfo.pt.y = lParam>>16;
 				dat->srcTab = dat->destTab = TabCtrl_HitTest(hwnd, &thinfo);
 				if (dat->srcTab >=0 ) {
-					dat->lastClickChild = GetChildFromTab(hwnd, dat->srcTab)->hwnd;
+					dat->lastClickTab = dat->srcTab; //Child = GetChildFromTab(hwnd, dat->srcTab)->hwnd;
 				} else {
-					dat->lastClickChild = NULL;
+					dat->lastClickTab = -1;//Child = NULL;
 				}
 				dat->bDragging = TRUE;
 				dat->bDragged = FALSE;
@@ -1145,14 +1176,14 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						SendMessage(GetParent(hwnd), WM_NOTIFY, nmh.idFrom, (LPARAM)&nmh);
 						UpdateWindow(hwnd);
 					} else if (GetKeyState(VK_CONTROL) & 0x8000) {
-						struct MessageWindowData *mwd;
+						struct MessageWindowTabData *mwtd;
 						TCITEM tci;
 						POINT pt;
 						struct NewMessageWindowLParam newData = { 0 };
 						tci.mask = TCIF_PARAM;
 						TabCtrl_GetItem(hwnd, dat->srcTab, &tci);
-						mwd = (struct MessageWindowData *) tci.lParam;
-						if (mwd != NULL) {
+						mwtd = (struct MessageWindowTabData *) tci.lParam;
+						if (mwtd != NULL) {
 							HWND hParent;
 							GetCursorPos(&pt);
 							hParent = WindowFromPoint(pt);
@@ -1160,7 +1191,7 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 								hParent = GetParent(hParent);
 							}
 							hParent = WindowList_Find(g_dat->hParentWindowList, hParent);
-							if ((hParent != NULL && hParent != GetParent(hwnd)) || (hParent == NULL && mwd->parent->childrenCount > 1)) {
+							if ((hParent != NULL && hParent != GetParent(hwnd)) || (hParent == NULL && mwtd->parent->childrenCount > 1)) {
 								if (hParent == NULL) {
 									MONITORINFO mi;
 									HMONITOR hMonitor;
@@ -1184,15 +1215,15 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 									MoveWindow(hParent, rc.left, rc.top, rc.right, rc.bottom, FALSE);
 
 								}
-								SetParent(mwd->hwnd, hParent);
-								SendMessage(GetParent(hwnd), DM_REMOVECHILD, 0, (LPARAM) mwd->hwnd);
-								SendMessage(mwd->hwnd, DM_SETPARENT, 0, (LPARAM) hParent);
-								SendMessage(hParent, DM_ADDCHILD, 0, (LPARAM) mwd);
-								SendMessage(hParent, DM_ACTIVATECHILD, 0, (LPARAM) mwd->hwnd);
-								NotifyLocalWinEvent(mwd->hContact, mwd->hwnd, MSG_WINDOW_EVT_CLOSING);
-								NotifyLocalWinEvent(mwd->hContact, mwd->hwnd, MSG_WINDOW_EVT_CLOSE);
-								NotifyLocalWinEvent(mwd->hContact, mwd->hwnd, MSG_WINDOW_EVT_OPENING);
-								NotifyLocalWinEvent(mwd->hContact, mwd->hwnd, MSG_WINDOW_EVT_OPEN);
+								SetParent(mwtd->hwnd, hParent);
+								SendMessage(GetParent(hwnd), DM_REMOVECHILD, 0, (LPARAM) mwtd->hwnd);
+								SendMessage(mwtd->hwnd, DM_SETPARENT, 0, (LPARAM) hParent);
+								SendMessage(hParent, DM_ADDCHILD, (WPARAM)mwtd->hwnd, (LPARAM) mwtd->hContact);
+								SendMessage(hParent, DM_ACTIVATECHILD, 0, (LPARAM) mwtd->hwnd);
+								NotifyLocalWinEvent(mwtd->hContact, mwtd->hwnd, MSG_WINDOW_EVT_CLOSING);
+								NotifyLocalWinEvent(mwtd->hContact, mwtd->hwnd, MSG_WINDOW_EVT_CLOSE);
+								NotifyLocalWinEvent(mwtd->hContact, mwtd->hwnd, MSG_WINDOW_EVT_OPENING);
+								NotifyLocalWinEvent(mwtd->hContact, mwtd->hwnd, MSG_WINDOW_EVT_OPEN);
 								ShowWindow(hParent, SW_SHOWNA);
 							}
 						}
@@ -1255,10 +1286,13 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					ImageList_DragMove(pt.x, pt.y);
 				}
 				dat->bDragged = TRUE;
-				return TRUE;
+				return 0;
 			}
 			break;
-    }
+       	case EM_UNSUBCLASSED:
+			free(dat);
+			return 0;
+	}
 	return CallWindowProc(OldTabCtrlProc, hwnd, msg, wParam, lParam);
 }
 
@@ -1302,3 +1336,10 @@ int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,
 	SetWindowPlacement(hwnd,&wp);
 	return 0;
 }
+
+HWND GetParentWindow(HANDLE hContact, BOOL bChat) {
+	struct NewMessageWindowLParam newData = { 0 };
+	newData.hContact = hContact;
+	return CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+}
+

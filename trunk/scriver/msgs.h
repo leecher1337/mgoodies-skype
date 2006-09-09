@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef DWORD (WINAPI *PSLWA)(HWND, DWORD, BYTE, DWORD);
 
-struct ErrorWindowData
+typedef struct ErrorWindowDataStruct
 {
 	char *	szName;
 	char *	szDescription;
@@ -39,21 +39,21 @@ struct ErrorWindowData
 	int		textSize;
 	int		flags;
 	HWND	hwndParent;
-};
+} ErrorWindowData;
 
-struct TabCtrlData
+typedef struct TabCtrlDataStruct
 {
 	int		lastClickTime;
 	WPARAM  clickWParam;
 	LPARAM  clickLParam;
 	POINT	mouseLBDownPos;
-	void *	lastClickChild;
+	int		lastClickTab;
 	HIMAGELIST hDragImageList;
 	int		bDragging;
 	int		bDragged;
 	int		destTab;
 	int		srcTab;
-};
+} TabCtrlData;
 
 struct ParentWindowData
 {
@@ -77,7 +77,15 @@ struct ParentWindowData
 	int		bVMaximized;
 	int		bTopmost;
 	int		windowWasCascaded;
-	struct TabCtrlData *tabCtrlDat;
+	TabCtrlData *tabCtrlDat;
+};
+
+struct MessageWindowTabData
+{
+	HWND	hwnd;
+	HANDLE	hContact;
+	char *szProto;
+	struct ParentWindowData *parent;
 };
 
 #define NMWLP_INCOMING 1
@@ -128,7 +136,6 @@ struct MessageWindowData
 	DWORD nLastTyping;
 	int showTyping;
 	int showUnread;
-	HWND hwndStatus;
 	DWORD lastMessage;
 	char *szProto;
 	WORD wStatus;
@@ -154,12 +161,10 @@ struct MessageWindowData
 #define DM_CASCADENEWWINDOW  (WM_USER+13)
 #define DM_OPTIONSAPPLIED    (WM_USER+14)
 #define DM_SPLITTERMOVED     (WM_USER+15)
-#define DM_UPDATETITLE       (WM_USER+16)
 #define DM_APPENDTOLOG       (WM_USER+17)
 #define DM_ERRORDECIDED      (WM_USER+18)
 #define DM_SCROLLLOGTOBOTTOM (WM_USER+19)
 #define DM_TYPING            (WM_USER+20)
-#define DM_UPDATEWINICON     (WM_USER+21)
 #define DM_UPDATELASTMESSAGE (WM_USER+22)
 #define DM_USERNAMETOCLIP    (WM_USER+23)
 #define DM_CHANGEICONS		 (WM_USER+24)
@@ -174,8 +179,6 @@ struct MessageWindowData
 #define DM_ADDCHILD          (WM_USER+30)
 #define DM_REMOVECHILD		 (WM_USER+31)
 #define DM_ACTIVATECHILD	 (WM_USER+32)
-#define DM_UPDATESTATUSBAR	 (WM_USER+35)
-#define DM_SETPARENT	 	 (WM_USER+38)
 
 #define DM_ACTIVATEPREV		 (WM_USER+40)
 #define DM_ACTIVATENEXT		 (WM_USER+41)
