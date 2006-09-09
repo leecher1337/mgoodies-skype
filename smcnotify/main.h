@@ -71,7 +71,6 @@ typedef struct {
 	int LeftClickAction;
 	int RightClickAction;
 	//general settings
-//	BOOL bHideSettingsMenu;
 	BOOL bLogToFile;
 	DWORD dHistMax;
 	BOOL bShowMsgChanges;
@@ -79,12 +78,12 @@ typedef struct {
 	COLORREF colListBack;
 	COLORREF colListText;
 	//strings
-	/*TCHAR*/char popuptext[MAXPOPUPLEN];
+	TCHAR popuptext[MAXPOPUPLEN];
 	/*TCHAR*/char logfile[MAX_PATH];
-	/*TCHAR*/char log[MAXSTRLEN];
-	/*TCHAR*/char his[MAXSTRLEN];
-	/*TCHAR*/char msgcleared[MAXSTRLEN];
-	/*TCHAR*/char msgchanged[MAXSTRLEN];
+	TCHAR log[MAXSTRLEN];
+	TCHAR his[MAXSTRLEN];
+	TCHAR msgcleared[MAXSTRLEN];
+	TCHAR msgchanged[MAXSTRLEN];
 	/*TCHAR*/char listbgimage[MAX_PATH];
 } PLUGIN_OPTIONS;
 
@@ -93,7 +92,7 @@ typedef struct {
 	TCHAR *cust;
 	TCHAR *oldstatusmsg;
 	TCHAR *newstatusmsg;
-	TCHAR *proto;
+	char *proto;
 	BOOL bIsEmpty;
 	DWORD dTimeStamp;
 } STATUSMSGINFO;
@@ -117,12 +116,8 @@ typedef struct {
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 HANDLE hContactSettingChanged;
-//CLISTMENUITEM menuitem;
-//HANDLE hMenuitemNotify;
-//BOOL bNotify;
 HANDLE hHookedInit;
 HANDLE hHookedOpt;
-//HANDLE hHookedNewEvent;
 HANDLE hHookSkinIconsChanged;
 PLUGIN_OPTIONS options;
 HANDLE hWindowList;
@@ -142,6 +137,7 @@ HANDLE hPreBuildCMenu;
 //HANDLE hStatusMsgProcess;
 
 //declarations
+
 // main.c
 void UpdateMenu(BOOL State);
 

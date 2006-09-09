@@ -276,6 +276,7 @@ static BOOL CALLBACK PopupsOptionsDlgProc(HWND hwndDlg, UINT message, WPARAM wPa
 					break;
 				case IDC_PREVIEW: {
 					STATUSMSGINFO n;
+					ZeroMemory(&n, sizeof(n));
 					n.hContact = NULL;
 					n.cust = malloc(512);
 					lstrcpy(n.cust, TranslateT("Contact"));

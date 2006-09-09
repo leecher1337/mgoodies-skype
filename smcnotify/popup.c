@@ -97,12 +97,11 @@ void ShowPopup(STATUSMSGINFO *smi)
 		int timerOSD = options.bInfiniteDelay ? 2147483647 : (int)(options.dSec * 1000);
 		//char *szOSDText = (char*)smi->cust;
 		//lstrcat(szOSDText, options.popuptext);
-		//CallService("OSD/Announce", (WPARAM)GetStr(smi, szOSDText), (int)options.dSec*1000);
 		CallService("OSD/Announce", (WPARAM)str, timerOSD);
 		return;
 	}
 
-	ZeroMemory(&ppd, sizeof(POPUPDATAEX));
+	ZeroMemory(&ppd, sizeof(ppd));
 	ppd.lchContact = smi->hContact;
 	ppd.lchIcon = LoadSkinnedProtoIcon(smi->proto, DBGetContactSettingWord(smi->hContact, smi->proto, "Status", ID_STATUS_ONLINE));
 	lstrcpy(ppd.lpzContactName, smi->cust);

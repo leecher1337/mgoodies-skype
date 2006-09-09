@@ -22,9 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "main.h"
 
 /*
-Constants for the icons, removed "scn_int", "scn_pop"
+Constants for the icons
 */
-char *szIconId[ICONCOUNT] = {_T("smcn_list"), _T("smcn_url"), _T("smcn_hist"), _T("smcn_ext"), _T("smcn_pope"), _T("smcn_popd")};
+char *szIconId[ICONCOUNT] = {"smcn_list", "smcn_url", "smcn_hist", "smcn_ext", "smcn_pope", "smcn_popd"};
 
 char szStatusMsgURL[1024];
 
@@ -34,9 +34,13 @@ BOOL CheckStatusMessage(HANDLE hContact, char str[255]);
 
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
+#ifdef _UNICODE
+	"StatusMessageChangeNotify (Unicode)",
+#else
 	"StatusMessageChangeNotify",
-	PLUGIN_MAKE_VERSION(0,0,3,5),
-	"Notify you via popup when someone changes his/her status message",
+#endif
+	PLUGIN_MAKE_VERSION(0,0,3,7),
+	"Notifies, logs and stores history of your contacts' status messages changes",
 	"Daniel Vijge, Tomasz S³otwiñski, Ricardo Pescuma Domenecci",
 	"slotwin@users.berlios.de",
 	"",
@@ -126,8 +130,6 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam) {
 	}
 	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hGoToURLMenu, (LPARAM)&clmi);
 	//Contact smcn popups disable/enable
-//	if (!options.bHideSettingsMenu) {
-// removing this option, you can do this with GenMenu
 	clmi.flags = CMIM_FLAGS | CMIM_ICON | CMIM_NAME;
 		if (DBGetContactSettingDword((HANDLE)wParam, IGNORE_MODULE, IGNORE_MASK, 0) & IGNORE_POP)
 		{
@@ -139,8 +141,6 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam) {
 			clmi.pszName = TranslateT("Disable SMCN PopUps");
 			clmi.hIcon = ICO_POPUP_E;
 		}
-//	}
-//	else clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
 	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hContactPopUpsMenu, (LPARAM)&clmi);
 
 	return 0;
@@ -160,7 +160,7 @@ static int Create_TopToolbarShowList(WPARAM wParam, LPARAM lParam) {
 		ttbb.pszServiceUp = ttbb.pszServiceDown = MS_SMCN_LIST;
 		ttbb.name = TranslateT("List Contacts with Status Message");
 		hTopToolbarButtonShowList = (HANDLE)CallService(MS_TTB_ADDBUTTON, (WPARAM)&ttbb, 0);
-		if((int)hTopToolbarButtonShowList == -1)
+		if ((int)hTopToolbarButtonShowList == -1)
 		{
 			hTopToolbarButtonShowList = NULL;
 			return 1;
@@ -185,36 +185,33 @@ static int ContactSettingChanged(WPARAM wParam, LPARAM lParam) {
 	ZeroMemory(&smi, sizeof(smi));
 	smi.proto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)wParam, 0);
 
-	//if contact changed status write TickCount to db
-//	if (!lstrcmp(cws->szSetting, "OldStatus"))
-	if (!lstrcmp(cws->szSetting, "Status") && !lstrcmp(cws->szModule, smi.proto))
-	{
-		DBWriteContactSettingDword((HANDLE)wParam, "UserOnline", "LastStatusChange", GetTickCount());
-		//PUShowMessage("Status changed", SM_NOTIFY);
-		return 0;
-	}
-
 	//Exit if setting changed is not status message
-	if (lstrcmp(cws->szSetting, "StatusMsg")/*&& lstrcmp(cws->szSetting, "StatusDescr") && lstrcmp(cws->szSetting, "YMsg")*/)
+	if (!lstrcmpA(cws->szSetting, "StatusMsg")/*&& lstrcmp(cws->szSetting, "StatusDescr") && lstrcmp(cws->szSetting, "YMsg")*/)
 	{
-		return 0;
+		//If we're offline (=> we've just switched to offline), exit as fast as possible.
+		if (smi.proto != NULL && CallProtoService(smi.proto, PS_GETSTATUS, 0, 0) != ID_STATUS_OFFLINE)
+		{
+			smi.hContact = (HANDLE)wParam;
+			if (cws->value.type == DBVT_DELETED) smi.newstatusmsg = "";
+			else smi.newstatusmsg = _strdup(cws->value.pszVal);
+			smi.bIsEmpty = !lstrcmp(smi.newstatusmsg, "");
+			StatusMsgChanged(wParam, &smi);
+		}
 	}
-
-	//If we're offline (=> we've just switched to offline), exit as fast as possible.
-	if (smi.proto != NULL && CallProtoService(smi.proto, PS_GETSTATUS, 0, 0) != ID_STATUS_OFFLINE)
+	else
 	{
-//		if (CallProtoService(smi.proto, PS_GETSTATUS, 0, 0) == ID_STATUS_OFFLINE) return 0;
-		smi.hContact = (HANDLE)wParam;
-		if (cws->value.type == DBVT_DELETED) smi.newstatusmsg = "";
-		else smi.newstatusmsg = _strdup(cws->value.pszVal);
-		smi.bIsEmpty = !lstrcmp(smi.newstatusmsg, "");
-		StatusMsgChanged(wParam, &smi);
+		//if contact changed status write TickCount to db
+		if (!lstrcmpA(cws->szSetting, "Status") && !lstrcmpA(cws->szModule, smi.proto))
+		{
+			DBWriteContactSettingDword((HANDLE)wParam, "UserOnline", "LastStatusChange", GetTickCount());
+		}
 	}
 
 	//free memory
-	if (smi.oldstatusmsg) free(smi.oldstatusmsg);
-	if (smi.newstatusmsg) free(smi.newstatusmsg);
-	if (smi.cust) free(smi.cust);
+	free(smi.proto); smi.proto = NULL;
+	if (smi.oldstatusmsg) { free(smi.oldstatusmsg); smi.oldstatusmsg = NULL; }
+	if (smi.newstatusmsg) { free(smi.newstatusmsg); smi.newstatusmsg = NULL; }
+	if (smi.cust) { free(smi.cust); smi.cust = NULL; }
 	return 0;
 }
 
@@ -316,7 +313,7 @@ static int HookedInit(WPARAM wParam, LPARAM lParam) {
 	{
 		SKINICONDESC sid;
 		char ModuleName[1024];
-		char *szIconName[ICONCOUNT] = {
+		TCHAR *szIconName[ICONCOUNT] = {
 			TranslateT("List Status Messages"),
 			TranslateT("Go To URL in Status Message"),
 			TranslateT("Status Message History"),
@@ -329,7 +326,7 @@ static int HookedInit(WPARAM wParam, LPARAM lParam) {
 		ZeroMemory(&sid, sizeof(sid));
 		sid.cbSize = sizeof(sid);
 		sid.pszSection = TranslateT("Status Message Change Notify");
-		GetModuleFileName(hInst, ModuleName, sizeof(ModuleName));
+		GetModuleFileNameA(hInst, ModuleName, sizeof(ModuleName));
 		sid.pszDefaultFile = ModuleName;
 		for (i = 0; i < ICONCOUNT; i++)
 		{
@@ -442,7 +439,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link) {
 	//Prebuild contact menu
 	hPreBuildCMenu = HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
 	//Add sound event
-	SkinAddNewSound("statusmsgchanged", TranslateT("Status Message Changed"), "");
+	SkinAddNewSound("statusmsgchanged", Translate("Status Message Changed"), "");
 
 	//Window needed for popup commands
 	hPopupWindow = CreateWindowEx(WS_EX_TOOLWINDOW, _T("static"), _T("smcn_PopupWindow"), 0,
