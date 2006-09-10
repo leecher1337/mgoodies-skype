@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern HANDLE		g_hInst;
 extern HIMAGELIST	hImageList;
 extern HIMAGELIST	hIconsList;
+extern int eventMessageIcon;
+extern int overlayIcon;
 extern BOOL			SmileyAddInstalled;
 extern BOOL			PopUpInstalled;
 extern BOOL			IEviewInstalled;
@@ -54,7 +56,7 @@ static HANDLE     hServiceRegister = NULL,
 void HookEvents(void)
 {
 	InitializeCriticalSection(&cs);
-	g_hModulesLoaded =			HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
+//	g_hModulesLoaded =			HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
 	g_hHookContactDblClick=		HookEvent(ME_CLIST_DOUBLECLICKED, CList_RoomDoubleclicked);
 	g_hSystemPreShutdown =		HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 	g_hIconsChanged =			HookEvent(ME_SKIN_ICONSCHANGED, Chat_IconsChanged);
@@ -123,7 +125,7 @@ void TabsInit(void)
 	return;
 }
 
-int ModulesLoaded(WPARAM wParam,LPARAM lParam)
+int Chat_ModulesLoaded(WPARAM wParam,LPARAM lParam)
 {
 
 	{ //add as a known module in DB Editor ++
@@ -249,6 +251,11 @@ int Service_GetInfo(WPARAM wParam,LPARAM lParam)
 
 	return 1;
 }
+
+void LoadModuleIcons(MODULEINFO * mi) {
+
+}
+
 int Service_Register(WPARAM wParam, LPARAM lParam)
 {
 
@@ -292,13 +299,13 @@ int Service_Register(WPARAM wParam, LPARAM lParam)
 		mi->OnlineIconIndex = ImageList_AddIcon(hIconsList, LoadSkinnedProtoIcon(gcr->pszModule, ID_STATUS_ONLINE));
 		mi->hOnlineIcon = ImageList_GetIcon(hIconsList, mi->OnlineIconIndex, ILD_TRANSPARENT);
 
-		mi->hOnlineTalkIcon = ImageList_GetIcon(hIconsList, mi->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(1));
+		mi->hOnlineTalkIcon = ImageList_GetIcon(hIconsList, mi->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
 		ImageList_AddIcon(hIconsList, mi->hOnlineTalkIcon);
 
 		mi->OfflineIconIndex = ImageList_AddIcon(hIconsList, LoadSkinnedProtoIcon(gcr->pszModule, ID_STATUS_OFFLINE));
 		mi->hOfflineIcon = ImageList_GetIcon(hIconsList, mi->OfflineIconIndex, ILD_TRANSPARENT);
 
-		mi->hOfflineTalkIcon = ImageList_GetIcon(hIconsList, mi->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(1));
+		mi->hOfflineTalkIcon = ImageList_GetIcon(hIconsList, mi->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
 		ImageList_AddIcon(hIconsList, mi->hOfflineTalkIcon);
 
 		mi->pszHeader = Log_CreateRtfHeader(mi);
@@ -511,7 +518,7 @@ static int DoControl(GCEVENT * gce, WPARAM wp)
 			if(si->hWnd)
 			{
 //				g_TabSession.pszName = si->pszName;
-				SendMessage(si->hWnd, GC_UPDATETITLE, 0, 0);
+				SendMessage(si->hWnd, DM_UPDATETITLEBAR, 0, 0);
 			}
 			if(g_TabSession.hWnd && g_Settings.TabsEnable)
 			{
@@ -644,89 +651,17 @@ static void TakeStatus(GCEVENT * gce)
 
 void ShowRoom(SESSION_INFO * si, WPARAM wp, BOOL bSetForeground)
 {
+	HWND hParent;
 	if(!si)
 		return;
-
-	if(g_Settings.TabsEnable)
-	{
-		// the session is not the current tab, so we copy the necessary
-		// details into the SESSION_INFO for the tabbed window
-		if(!si->hWnd)
-		{
-			g_TabSession.iEventCount = si->iEventCount;
-			g_TabSession.iStatusCount = si->iStatusCount;
-			g_TabSession.iType = si->iType;
-			g_TabSession.nUsersInNicklist = si->nUsersInNicklist;
-			g_TabSession.pLog = si->pLog;
-			g_TabSession.pLogEnd = si->pLogEnd;
-			g_TabSession.pMe = si->pMe;
-			g_TabSession.pStatuses = si->pStatuses;
-			g_TabSession.pszID = si->pszID;
-			g_TabSession.pszModule = si->pszModule;
-			g_TabSession.pszName = si->pszName;
-			g_TabSession.pszStatusbarText = si->pszStatusbarText;
-			g_TabSession.pszTopic = si->pszTopic;
-			g_TabSession.pUsers = si->pUsers;
-			g_TabSession.hContact = si->hContact;
-			g_TabSession.wStatus = si->wStatus;
-			g_TabSession.lpCommands = si->lpCommands;
-			g_TabSession.lpCurrentCommand = NULL;
-
-		}
-		//Do we need to create a tabbed window?
-		if (g_TabSession.hWnd == NULL)
-		{
-			HWND hParent;
-			hParent = GetParentWindow(NULL, TRUE);
-			g_TabSession.hWnd = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_CHANNEL), hParent, RoomWndProc, (LPARAM)&g_TabSession);
-			ShowWindow(hParent, SW_NORMAL);
-		}
-		SetWindowLong(g_TabSession.hWnd, GWL_EXSTYLE, GetWindowLong(g_TabSession.hWnd, GWL_EXSTYLE) | WS_EX_APPWINDOW);
-
-		// if the session was not the current tab we need to tell the window to
-		// redraw to show the contents of the current SESSION_INFO
-		if(!si->hWnd)
-		{
-			SM_SetTabbedWindowHwnd(si, g_TabSession.hWnd);
-			SendMessage(g_TabSession.hWnd, GC_ADDTAB, -1, (LPARAM)si);
-			SendMessage(g_TabSession.hWnd, GC_TABCHANGE, 0, (LPARAM)&g_TabSession);
-		}
-
-		SetActiveSession(si->pszID, si->pszModule);
-
-		if(!IsWindowVisible(g_TabSession.hWnd) || wp == WINDOW_HIDDEN)
-			SendMessage(g_TabSession.hWnd, GC_EVENT_CONTROL + WM_USER + 500, wp, 0);
-
-		else
-		{
-			if (IsIconic(g_TabSession.hWnd))
-				ShowWindow(g_TabSession.hWnd, SW_NORMAL);
-
-			PostMessage(g_TabSession.hWnd, WM_SIZE, 0, 0);
-			if(si->iType != GCW_SERVER)
-				SendMessage(g_TabSession.hWnd, GC_UPDATENICKLIST, 0, 0);
-			else
-				SendMessage(g_TabSession.hWnd, GC_UPDATETITLE, 0, 0);
-			SendMessage(g_TabSession.hWnd, GC_REDRAWLOG, 0, 0);
-			SendMessage(g_TabSession.hWnd, DM_UPDATESTATUSBAR, 0, 0);
-			ShowWindow(g_TabSession.hWnd, SW_SHOW);
-			if(bSetForeground)
-				SetForegroundWindow(g_TabSession.hWnd);
-		}
-		SendMessage(g_TabSession.hWnd, WM_MOUSEACTIVATE, 0, 0);
-		SetFocus(GetDlgItem(g_TabSession.hWnd, IDC_CHAT_MESSAGE));
-		return;
-	}
 
 	//Do we need to create a window?
 	if (si->hWnd == NULL)
 	{
-		HWND hParent;
 	    hParent = GetParentWindow(NULL, TRUE);
 	    si->hWnd = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_CHANNEL), hParent, RoomWndProc, (LPARAM)si);
-		ShowWindow(hParent, SW_NORMAL);
 	}
-	SetWindowLong(si->hWnd, GWL_EXSTYLE, GetWindowLong(si->hWnd, GWL_EXSTYLE) | WS_EX_APPWINDOW);
+	SendMessage(si->hWnd, DM_UPDATETABCONTROL, -1, (LPARAM)si);
 	if(!IsWindowVisible(si->hWnd) || wp == WINDOW_HIDDEN)
 		SendMessage(si->hWnd, GC_EVENT_CONTROL + WM_USER + 500, wp, 0);
 	else
@@ -736,6 +671,7 @@ void ShowRoom(SESSION_INFO * si, WPARAM wp, BOOL bSetForeground)
 		ShowWindow(si->hWnd, SW_SHOW);
 		SetForegroundWindow(si->hWnd);
 	}
+	ShowWindow(hParent, SW_NORMAL);
 	SendMessage(si->hWnd, WM_MOUSEACTIVATE, 0, 0);
 	SetFocus(GetDlgItem(si->hWnd, IDC_CHAT_MESSAGE));
 

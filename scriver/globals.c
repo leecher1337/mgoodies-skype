@@ -1,10 +1,10 @@
 /*
 Scriver
 
-Copyright 2000-2005 Miranda ICQ/IM project, 
+Copyright 2000-2005 Miranda ICQ/IM project,
 Copyright 2005 Piotr Piastucki
 
-all portions of this codebase are copyrighted to the people 
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -99,7 +99,7 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 	WindowList_Broadcast(g_dat->hMessageWindowList, DM_REMAKELOG, 0, 0);
 	// change all the icons
 	WindowList_Broadcast(g_dat->hMessageWindowList, DM_CHANGEICONS, 0, 0);
-	WindowList_Broadcast(g_dat->hMessageWindowList, DM_UPDATETITLE, 0, 0);
+	WindowList_Broadcast(g_dat->hMessageWindowList, DM_UPDATETITLEBAR, 0, 0);
 	return 0;
 }
 
@@ -109,7 +109,7 @@ int SmileySettingsChanged(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam) 
+int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 {
 	LoadGlobalIcons();
 	return IconsChanged(wParam, lParam);
@@ -373,7 +373,7 @@ void ReloadGlobals() {
 		g_dat->flags2 |= SMF2_AUTOPOPUP;
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STAYMINIMIZED, SRMSGDEFSET_STAYMINIMIZED))
 		g_dat->flags2 |= SMF2_STAYMINIMIZED;
-	
+
 	g_dat->limitAvatarMaxH = 100000;
 	g_dat->limitAvatarMinH = 0;
 	if (g_dat->flags & SMF_LIMITAVATARH) {

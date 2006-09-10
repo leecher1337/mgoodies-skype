@@ -289,7 +289,7 @@ static void ActivateChild(struct ParentWindowData *dat, HWND child) {
 		HWND prev = dat->hwndActive;
 		dat->hwndActive = child;
 		SendMessage(dat->hwndActive, DM_UPDATESTATUSBAR, 0, 0);
-		SendMessage(dat->hwndActive, DM_UPDATETITLE, 0, 0);
+		SendMessage(dat->hwndActive, DM_UPDATETITLEBAR, 0, 0);
 		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
 		ShowWindow(dat->hwndActive, SW_SHOWNOACTIVATE);
 		SendMessage(dat->hwndActive, DM_SCROLLLOGTOBOTTOM, 0, 0);
@@ -823,7 +823,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			SetTimer(hwndDlg, TIMERID_FLASHWND, TIMEOUT_FLASHWND, NULL);
 		}
 		break;
-	case DM_REMOVECHILD:
+	case CM_REMOVECHILD:
 		{
 			RemoveChild(dat, (HWND) lParam);
 			if (dat->childrenCount != 0) {
@@ -833,21 +833,21 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			}
 		}
 		return TRUE;
-	case DM_ADDCHILD:
+	case CM_ADDCHILD:
 		{
 			AddChild(dat, (HWND)wParam, (HANDLE)lParam);
 		}
 		return TRUE;
-	case DM_ACTIVATECHILD:
+	case CM_ACTIVATECHILD:
 //		if((HWND) lParam != dat->hwndActive) {
 			ActivateChild(dat, (HWND) lParam);
 //		}
 		return TRUE;
-	case DM_ACTIVATEPREV:
+	case CM_ACTIVATEPREV:
 		ActivatePrevChild(dat, (HWND) lParam);
 		SetFocus(dat->hwndActive);
 		return TRUE;
-	case DM_ACTIVATENEXT:
+	case CM_ACTIVATENEXT:
 		ActivateNextChild(dat, (HWND) lParam);
 		SetFocus(dat->hwndActive);
 		return TRUE;
@@ -895,115 +895,56 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			//RedrawWindow(hwndDlg, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 			break;
 		}
-	case DM_UPDATETITLE:
+	case CM_UPDATETITLEBAR:
 		{
 			HWND hwnd = (HWND) lParam;
-			TCHAR *newtitle = (TCHAR *) wParam;
-			if (newtitle && dat->hwndActive == hwnd) {
-				TCHAR oldtitle[256];
-				GetWindowText(hwndDlg, oldtitle, sizeof(oldtitle));
-				if (lstrcmp(newtitle, oldtitle)) { //swt() flickers even if the title hasn't actually changed
-					SetWindowText(hwndDlg, newtitle);
-					//SendMessage(hwndDlg, WM_SIZE, 0, 0);
+			TitleBarData *tbd = (TitleBarData *) wParam;
+			if (tbd != NULL) {
+				if ((tbd->iFlags & TBDF_TEXT) && dat->hwndActive == hwnd) {
+					TCHAR oldtitle[256];
+					GetWindowText(hwndDlg, oldtitle, sizeof(oldtitle));
+					if (lstrcmp(tbd->pszText, oldtitle)) { //swt() flickers even if the title hasn't actually changed
+						SetWindowText(hwndDlg, tbd->pszText);
+						//SendMessage(hwndDlg, WM_SIZE, 0, 0);
+					}
+				}
+				if ((tbd->iFlags & TBDF_ICON) &&  hwnd == dat->hwndActive) {
+					SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) tbd->hIcon);
 				}
 			}
 			break;
 		}
-	case DM_UPDATETABTITLE:
+	case CM_UPDATESTATUSBAR:
 		{
-			int tabId = GetTabFromHWND(dat, (HWND) lParam);
-			if (tabId >= 0) {
-				TCITEM tci;
-				tci.mask = TCIF_TEXT;
-				tci.pszText = (TCHAR *) wParam;
-				TabCtrl_SetItem(dat->hwndTabs, tabId, &tci);
-			}
-			break;
-		}
-//	case DM_UPDATEWINICON2:
-
-	//	break;
-	case DM_UPDATEICON:
-		{
-			struct MessageWindowData * mdat = (struct MessageWindowData *) lParam;
-			if (mdat) {
-				if (mdat->szProto) {
-					HICON hIcon = NULL;
-					int i, icoIdx = 0;
-					char *szProto = mdat->szProto;
-					HANDLE hContact = mdat->hContact;
-					if (strcmp(mdat->szProto, "MetaContacts") == 0 && DBGetContactSettingByte(NULL,"CLC","Meta",0) == 0) {
-						hContact = (HANDLE)CallService(MS_MC_GETMOSTONLINECONTACT,(UINT)mdat->hContact, 0);
-						if (hContact != NULL) {
-							szProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO,(UINT)hContact,0);
-						} else {
-							hContact = mdat->hContact;
-						}
-					}
-					mdat->wStatus = DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE);
-					SendDlgItemMessage(mdat->hwnd, IDC_USERMENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedProtoIcon(szProto, mdat->wStatus));
-					if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON)) {
-						if (mdat->showTyping && (g_dat->flags&SMF_SHOWTYPINGWIN)) {
-							hIcon = g_dat->hIcons[SMF_ICON_TYPING];
-						} else if (mdat->showUnread && (GetActiveWindow() != hwndDlg || GetForegroundWindow() != hwndDlg)) {
-							hIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
-						} else {
-							hIcon = LoadSkinnedProtoIcon(szProto, mdat->wStatus);
-						}
-					} else {
-						hIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
-					}
-					icoIdx = 0;
-					for (i = 0; i < g_dat->protoNum; i++) {
-						if (!strcmp(g_dat->protoNames[i], szProto)) {
-							icoIdx = mdat->wStatus - ID_STATUS_OFFLINE + (ID_STATUS_OUTTOLUNCH - ID_STATUS_OFFLINE + 1) * (i +1) + 2;
-							break;
-						}
-					}
-					if (mdat->hwnd != dat->hwndActive) {
-						if (mdat->showTyping) {
-							icoIdx = 1;
-						} else if (mdat->showUnread & 1) {
-							icoIdx = 0;
-						}
-					}
-
-					if (mdat->hwnd == dat->hwndActive) {
-						/* container part */
-						SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) hIcon);
-						/* end of container part */
-					}
-					/* container part */
-					i = GetTabFromHWND(dat, mdat->hwnd);
-					if (i>=0) {
-						TCITEM tci;
-						tci.mask = TCIF_IMAGE;
-						tci.iImage = icoIdx;
-						TabCtrl_SetItem(dat->hwndTabs, i, &tci);
-					}
-					/* end of container part */
+			HWND hwnd = (HWND) lParam;
+			StatusBarData *sbd = (StatusBarData *) wParam;
+			if (sbd != NULL) {
+				if ((sbd->iFlags & TBDF_TEXT) && dat->hwndActive == hwnd) {
+					SendMessage(dat->hwndStatus, SB_SETTEXT, sbd->iItem, (LPARAM) sbd->pszText);
+				}
+				if ((sbd->iFlags & TBDF_ICON) && dat->hwndActive == hwnd) {
+					SendMessage(dat->hwndStatus, SB_SETICON, sbd->iItem, (LPARAM) sbd->hIcon);
 				}
 			}
 			break;
 		}
-	case DM_UPDATETABICON:
-		{
-			int tabId = GetTabFromHWND(dat, (HWND) lParam);
-			if (tabId >= 0) {
-				TCITEM tci;
-				tci.mask = TCIF_IMAGE;
-				tci.iImage = (int) wParam;
-				TabCtrl_SetItem(dat->hwndTabs, tabId, &tci);
-			}
-			break;
-		}
-	case DM_UPDATESTATUSBAR:
+	case CM_UPDATETABCONTROL:
 		{
 			HWND hwnd = (HWND) lParam;
-			StatusBarItem *sbi = (StatusBarItem *) wParam;
-			if (sbi && dat->hwndActive == hwnd) {
-				SendMessage(dat->hwndStatus, SB_SETTEXT, sbi->iItem, (LPARAM) sbi->szText);
-				SendMessage(dat->hwndStatus, SB_SETICON, sbi->iItem, (LPARAM) sbi->hIcon);
+			TabControlData *tcd = (TabControlData *) wParam;
+			int tabId = GetTabFromHWND(dat, (HWND) lParam);
+			if (tabId >= 0 && tcd != NULL) {
+				TCITEM tci;
+				tci.mask = 0;
+				if (tcd->iFlags & TCDF_TEXT) {
+					tci.mask |= TCIF_TEXT;
+					tci.pszText = tcd->pszText;
+				}
+				if (tcd->iFlags & TCDF_ICON) {
+					tci.mask |= TCIF_IMAGE;
+					tci.iImage = tcd->iconIdx;
+				}
+				TabCtrl_SetItem(dat->hwndTabs, tabId, &tci);
 			}
 			break;
 		}
@@ -1216,10 +1157,10 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 								}
 								SetParent(mwtd->hwnd, hParent);
-								SendMessage(GetParent(hwnd), DM_REMOVECHILD, 0, (LPARAM) mwtd->hwnd);
+								SendMessage(GetParent(hwnd), CM_REMOVECHILD, 0, (LPARAM) mwtd->hwnd);
 								SendMessage(mwtd->hwnd, DM_SETPARENT, 0, (LPARAM) hParent);
-								SendMessage(hParent, DM_ADDCHILD, (WPARAM)mwtd->hwnd, (LPARAM) mwtd->hContact);
-								SendMessage(hParent, DM_ACTIVATECHILD, 0, (LPARAM) mwtd->hwnd);
+								SendMessage(hParent, CM_ADDCHILD, (WPARAM)mwtd->hwnd, (LPARAM) mwtd->hContact);
+								SendMessage(hParent, CM_ACTIVATECHILD, 0, (LPARAM) mwtd->hwnd);
 								NotifyLocalWinEvent(mwtd->hContact, mwtd->hwnd, MSG_WINDOW_EVT_CLOSING);
 								NotifyLocalWinEvent(mwtd->hContact, mwtd->hwnd, MSG_WINDOW_EVT_CLOSE);
 								NotifyLocalWinEvent(mwtd->hContact, mwtd->hwnd, MSG_WINDOW_EVT_OPENING);

@@ -25,8 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int LoadSendRecvMessageModule(void);
 int SplitmsgShutdown(void);
-void Chat_Load(PLUGINLINK *link);
-void Chat_Unload();
+extern void Chat_Load(PLUGINLINK *link);
+extern void Chat_Unload();
 
 PLUGINLINK *pluginLink;
 HINSTANCE g_hInst;

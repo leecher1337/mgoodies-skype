@@ -24,6 +24,8 @@ extern char*	pszActiveWndModule ;
 extern SESSION_INFO	g_TabSession;
 extern HICON	hIcons[30];
 extern HIMAGELIST hIconsList;
+extern int eventMessageIcon;
+extern int overlayIcon;
 extern struct MM_INTERFACE		mmi ;
 
 #define WINDOWS_COMMANDS_MAX 30
@@ -1077,8 +1079,8 @@ MODULEINFO * MM_AddModule(char * pszModule)
 void MM_IconsChanged(void)
 {
 	MODULEINFO *pTemp = m_ModList, *pLast = NULL;
-	ImageList_ReplaceIcon(hIconsList, 0, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
-	ImageList_ReplaceIcon(hIconsList, 1, LoadIconEx(IDI_OVERLAY, "overlay", 0, 0));
+	ImageList_ReplaceIcon(hIconsList, eventMessageIcon, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
+	ImageList_ReplaceIcon(hIconsList, overlayIcon, LoadIconEx(IDI_OVERLAY, "overlay", 0, 0));
 	while (pTemp != NULL)
 	{
 		pTemp->OnlineIconIndex = ImageList_ReplaceIcon(hIconsList, pTemp->OnlineIconIndex, LoadSkinnedProtoIcon(pTemp->pszModule, ID_STATUS_ONLINE));
@@ -1095,10 +1097,10 @@ void MM_IconsChanged(void)
 		pTemp->hOfflineIcon = ImageList_GetIcon(hIconsList, pTemp->OfflineIconIndex, ILD_TRANSPARENT);
 		pTemp->hOnlineIcon = ImageList_GetIcon(hIconsList, pTemp->OnlineIconIndex, ILD_TRANSPARENT);
 
-		pTemp->hOnlineTalkIcon = ImageList_GetIcon(hIconsList, pTemp->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(1));
+		pTemp->hOnlineTalkIcon = ImageList_GetIcon(hIconsList, pTemp->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
 		ImageList_ReplaceIcon(hIconsList, pTemp->OnlineIconIndex+1, pTemp->hOnlineTalkIcon);
 
-		pTemp->hOfflineTalkIcon = ImageList_GetIcon(hIconsList, pTemp->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(1));
+		pTemp->hOfflineTalkIcon = ImageList_GetIcon(hIconsList, pTemp->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
 		ImageList_ReplaceIcon(hIconsList, pTemp->OfflineIconIndex+1, pTemp->hOfflineTalkIcon);
 
 		pLast = pTemp;
