@@ -365,7 +365,7 @@ static void SetDialogToType(HWND hwndDlg)
 	UpdateReadChars(hwndDlg, dat);
 	ShowWindow(GetDlgItem(hwndDlg, IDC_SPLITTER), SW_SHOW);
 	EnableWindow(GetDlgItem(hwndDlg, IDOK), GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE))?TRUE:FALSE);
-	SendMessage(hwndDlg, DM_UPDATETITLE, 0, 0);
+	SendMessage(hwndDlg, DM_UPDATETITLEBAR, 0, 0);
 	SendMessage(hwndDlg, WM_SIZE, 0, 0);
 	pl.length = sizeof(pl);
 	GetWindowPlacement(hwndDlg, &pl);
@@ -413,10 +413,10 @@ static LRESULT CALLBACK LogEditSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, 
 			if (GetKeyState(VK_CONTROL) & 0x8000) {
 				if (wParam == VK_TAB) {	// ctrl-(shift) tab
 					if (GetKeyState(VK_SHIFT) & 0x8000) {
-						SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
+						SendMessage(GetParent(GetParent(hwnd)), CM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
 						return 0;
 					} else {
-						SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
+						SendMessage(GetParent(GetParent(hwnd)), CM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
 						return 0;
 					}
 				}
@@ -617,7 +617,7 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 		}
 		if ((GetKeyState(VK_CONTROL) & 0x8000) && (GetKeyState(VK_SHIFT) & 0x8000)) {
 			if (wParam == VK_TAB) {	// ctrl-shift tab
-				SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
+				SendMessage(GetParent(GetParent(hwnd)), CM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
 				return 0;
 			}
 		}
@@ -627,15 +627,15 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 				return 0;
 			}
 			if (wParam == VK_TAB) { // ctrl tab
-				SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
+				SendMessage(GetParent(GetParent(hwnd)), CM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
 				return 0;
 			}
 			if (wParam == VK_PRIOR) { // page up
-				SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
+				SendMessage(GetParent(GetParent(hwnd)), CM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
 				return 0;
 			}
 			if (wParam == VK_NEXT) { // page down
-				SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
+				SendMessage(GetParent(GetParent(hwnd)), CM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
 				return 0;
 			}
 		}
@@ -685,11 +685,11 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 		break;
 	case WM_SYSKEYDOWN:
 		if ((wParam == VK_LEFT) && GetKeyState(VK_MENU) & 0x8000) {
-			SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
+			SendMessage(GetParent(GetParent(hwnd)), CM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
 			return 0;
 		}
 		if ((wParam == VK_RIGHT) && GetKeyState(VK_MENU) & 0x8000) {
-			SendMessage(GetParent(GetParent(hwnd)), DM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
+			SendMessage(GetParent(GetParent(hwnd)), CM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
 			return 0;
 		}
 		break;
@@ -847,12 +847,15 @@ static void MessageDialogResize(HWND hwndDlg, struct MessageWindowData *dat, int
 static void UpdateReadChars(HWND hwndDlg, struct MessageWindowData * dat)
 {
 	if (dat->parent->hwndActive == hwndDlg && dat->parent->hwndStatus) {
-		StatusBarItem sbi;
-		sbi.iItem = 1;
-		sbi.hIcon = NULL;
+		TCHAR szText[256];
+		StatusBarData sbd;
+		sbd.iItem = 1;
+		sbd.iFlags = SBDF_TEXT | SBDF_ICON;
+		sbd.hIcon = NULL;
+		sbd.pszText = szText;
 		int len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
-		_sntprintf(sbi.szText, sizeof(sbi.szText), _T("%d"), len);
-		SendMessage(dat->hwndParent, DM_UPDATESTATUSBAR, (WPARAM)&sbi, (LPARAM)hwndDlg);
+		_sntprintf(szText, sizeof(szText), _T("%d"), len);
+		SendMessage(dat->hwndParent, CM_UPDATESTATUSBAR, (WPARAM)&sbd, (LPARAM)hwndDlg);
 	}
 }
 
@@ -1315,7 +1318,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				int saveSplitterPerContact = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVESPLITTERPERCONTACT, SRMSGDEFSET_SAVESPLITTERPERCONTACT);
 				dat->splitterPos = (int) DBGetContactSettingDword(saveSplitterPerContact ? dat->hContact : NULL, SRMMMOD, "splitterPos", (DWORD) - 1);
 			}
-			SendMessage(dat->hwndParent, DM_ADDCHILD, (WPARAM) hwndDlg, (LPARAM) dat->hContact);
+			SendMessage(dat->hwndParent, CM_ADDCHILD, (WPARAM) hwndDlg, (LPARAM) dat->hContact);
 			SendMessage(hwndDlg, DM_OPTIONSAPPLIED, 0, 0);
 //			SendMessage(hwndDlg, DM_AVATARCALCSIZE, 0, 0);
 			{
@@ -1340,14 +1343,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			if (newData->flags & NMWLP_INCOMING) {
 				if (dat->parent->childrenCount == 1 && g_dat->flags2 & SMF2_STAYMINIMIZED) {
-					SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
+					SendMessage(dat->hwndParent, CM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 					SendMessage(dat->hwndParent, DM_DEACTIVATE, 0, 0);
 					ShowWindow(dat->hwndParent, SW_SHOWMINNOACTIVE);
 				} else {
 					ShowWindow(dat->hwndParent, SW_SHOWNA);
 					if (dat->parent->childrenCount == 1 ||
 						((g_dat->flags & SMF_SWITCHTOACTIVE) && (IsIconic(dat->hwndParent) || GetForegroundWindow() != dat->hwndParent))) {
-						SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
+						SendMessage(dat->hwndParent, CM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 						if (dat->parent->childrenCount == 1) {
 							SetForegroundWindow(dat->hwndParent);
 							SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
@@ -1360,7 +1363,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				} else {
 					ShowWindow(dat->hwndParent, SW_SHOW);
 				}
-				SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
+				SendMessage(dat->hwndParent, CM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 				SetForegroundWindow(dat->hwndParent);
 				SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 			}
@@ -1585,7 +1588,55 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 	case DM_UPDATEICON:
 		{
-			SendMessage(dat->hwndParent, DM_UPDATEICON, wParam, (LPARAM)dat);
+			if (dat->szProto) {
+				TitleBarData tbd;
+				TabControlData tcd;
+				HICON hIcon = NULL;
+				int i, icoIdx = 0;
+				char *szProto = dat->szProto;
+				HANDLE hContact = dat->hContact;
+				if (strcmp(dat->szProto, "MetaContacts") == 0 && DBGetContactSettingByte(NULL,"CLC","Meta",0) == 0) {
+					hContact = (HANDLE)CallService(MS_MC_GETMOSTONLINECONTACT,(UINT)dat->hContact, 0);
+					if (hContact != NULL) {
+						szProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO,(UINT)hContact,0);
+					} else {
+						hContact = dat->hContact;
+					}
+				}
+				dat->wStatus = DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE);
+				SendDlgItemMessage(hwndDlg, IDC_USERMENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedProtoIcon(szProto, dat->wStatus));
+				if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_STATUSICON, SRMSGDEFSET_STATUSICON)) {
+					if (dat->showTyping && (g_dat->flags&SMF_SHOWTYPINGWIN)) {
+						hIcon = g_dat->hIcons[SMF_ICON_TYPING];
+					} else if (dat->showUnread && (GetActiveWindow() != dat->hwndParent || GetForegroundWindow() != dat->hwndParent)) {
+						hIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
+					} else {
+						hIcon = LoadSkinnedProtoIcon(szProto, dat->wStatus);
+					}
+				} else {
+					hIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
+				}
+				icoIdx = 0;
+				for (i = 0; i < g_dat->protoNum; i++) {
+					if (!strcmp(g_dat->protoNames[i], szProto)) {
+						icoIdx = dat->wStatus - ID_STATUS_OFFLINE + (ID_STATUS_OUTTOLUNCH - ID_STATUS_OFFLINE + 1) * (i +1) + 2;
+						break;
+					}
+				}
+				if (hwndDlg != dat->parent->hwndActive) {
+					if (dat->showTyping) {
+						icoIdx = 1;
+					} else if (dat->showUnread & 1) {
+						icoIdx = 0;
+					}
+				}
+				tbd.iFlags = TBDF_ICON;
+				tbd.hIcon = hIcon;
+				SendMessage(dat->hwndParent, CM_UPDATETITLEBAR, (WPARAM)&tbd, (LPARAM)hwndDlg);
+				tcd.iFlags = TCDF_ICON;
+				tcd.iconIdx = icoIdx;
+				SendMessage(dat->hwndParent, CM_UPDATETABCONTROL, (WPARAM)&tcd, (LPARAM)hwndDlg);
+			}
 			break;
 		}
     case DM_USERNAMETOCLIP:
@@ -1699,12 +1750,13 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 		SendMessage(hwndDlg, DM_UPDATEICON, 0, 0);
 		break;
-	case DM_UPDATETITLE:
+	case DM_UPDATETITLEBAR:
 		{
 			DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING *) wParam;
 			if (dat->hContact) {
 				if (dat->szProto) {
-					TCHAR *wintitle;
+					TitleBarData tbd;
+					TabControlData tcd;
 					CONTACTINFO ci;
 					char buf[128];
 					buf[0] = 0;
@@ -1783,12 +1835,14 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						free(szOldStatus);
 						free(szNewStatus);
 					}
-					wintitle = GetWindowTitle(dat->hContact, dat->szProto);
-					SendMessage(dat->hwndParent, DM_UPDATETITLE, (WPARAM)wintitle, (LPARAM)hwndDlg);
-					free(wintitle);
-					wintitle = GetTabName(dat->hContact);
-					SendMessage(dat->hwndParent, DM_UPDATETABTITLE, (WPARAM)wintitle, (LPARAM)hwndDlg);
-					free(wintitle);
+					tbd.iFlags = TBDF_TEXT;
+					tbd.pszText = GetWindowTitle(dat->hContact, dat->szProto);
+					SendMessage(dat->hwndParent, CM_UPDATETITLEBAR, (WPARAM)&tbd, (LPARAM)hwndDlg);
+					free(tbd.pszText);
+					tcd.iFlags = TCDF_TEXT;
+					tcd.pszText = GetTabName(dat->hContact);
+					SendMessage(dat->hwndParent, CM_UPDATETABCONTROL, (WPARAM)&tcd, (LPARAM)hwndDlg);
+					free(tcd.pszText);
 				}
 			}
 
@@ -1807,12 +1861,13 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		break;
 	case DM_SWITCHUNICODE:
 		{
-			StatusBarItem sbi;
+			StatusBarData sbd;
 			dat->flags ^= SMF_DISABLE_UNICODE;
-			sbi.iItem = 2;
-			sbi.hIcon = g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON];
-			_tcscpy(sbi.szText, _T(""));
-			SendMessage(dat->hwndParent, DM_UPDATESTATUSBAR, (WPARAM)&sbi, (LPARAM)hwndDlg);
+			sbd.iItem = 2;
+			sbd.iFlags = SBDF_TEXT | SBDF_ICON;
+			sbd.hIcon = g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON];
+			sbd.pszText = _T("");
+			SendMessage(dat->hwndParent, CM_UPDATESTATUSBAR, (WPARAM)&sbd, (LPARAM)hwndDlg);
 //			RedrawWindow(dat->parent->hwndStatus, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
 			SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 		}
@@ -1890,7 +1945,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		return TRUE;
 	case WM_SETFOCUS:
-		SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM)hwndDlg);
+		SendMessage(dat->hwndParent, CM_ACTIVATECHILD, 0, (LPARAM)hwndDlg);
 		PostMessage(hwndDlg, DM_SETFOCUS, 0, 0);
 //		SetFocus(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		return TRUE;
@@ -2014,7 +2069,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						SkinPlaySound("RecvMsgActive");
 					else SkinPlaySound("RecvMsgInactive");
 					if ((g_dat->flags & SMF_SWITCHTOACTIVE) && (IsIconic(dat->hwndParent) || GetActiveWindow() != dat->hwndParent)) {
-						SendMessage(dat->hwndParent, DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
+						SendMessage(dat->hwndParent, CM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 					}
 				}
 				if ((HANDLE) lParam != dat->hDbEventFirst && (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, lParam, 0) == NULL)
@@ -2034,15 +2089,19 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		break;
 	case DM_UPDATESTATUSBAR:
 		if (dat->parent->hwndActive == hwndDlg) {
-			StatusBarItem sbi;
-			sbi.iItem = 0;
+			TCHAR szText[256];
+			StatusBarData sbd;
+			sbd.iItem = 0;
+			sbd.iFlags = SBDF_TEXT | SBDF_ICON;
 			if (dat->messagesInProgress && (g_dat->flags & SMF_SHOWPROGRESS)) {
-				sbi.hIcon = g_dat->hIcons[SMF_ICON_DELIVERING];
-				mir_sntprintf(sbi.szText, SIZEOF(sbi.szText), TranslateT("Sending in progress: %d message(s) left..."), dat->messagesInProgress);
+				sbd.hIcon = g_dat->hIcons[SMF_ICON_DELIVERING];
+				sbd.pszText = szText;
+				mir_sntprintf(szText, SIZEOF(szText), TranslateT("Sending in progress: %d message(s) left..."), dat->messagesInProgress);
 			} else if (dat->nTypeSecs) {
 				TCHAR *szContactName = GetNickname(dat->hContact, dat->szProto);
-				sbi.hIcon = g_dat->hIcons[SMF_ICON_TYPING];
-				mir_sntprintf(sbi.szText, SIZEOF(sbi.szText), TranslateT("%s is typing a message..."), szContactName);
+				sbd.hIcon = g_dat->hIcons[SMF_ICON_TYPING];
+				sbd.pszText = szText;
+				mir_sntprintf(szText, SIZEOF(szText), TranslateT("%s is typing a message..."), szContactName);
 				free(szContactName);
 				dat->nTypeSecs--;
 			} else if (dat->lastMessage) {
@@ -2064,18 +2123,19 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 #else
 				CallService(MS_DB_TIME_TIMESTAMPTOSTRING, dat->lastMessage, (LPARAM) & dbtts);
 #endif
-				mir_sntprintf(sbi.szText, SIZEOF(sbi.szText), TranslateT("Last message received on %s at %s."), date, time);
-				sbi.hIcon = NULL;
+				mir_sntprintf(szText, SIZEOF(szText), TranslateT("Last message received on %s at %s."), date, time);
+				sbd.pszText = szText;
+				sbd.hIcon = NULL;
 			} else {
-				sbi.hIcon = NULL;
-				_tcscpy(sbi.szText, _T(""));
+				sbd.hIcon = NULL;
+				sbd.pszText =  _T("");
 			}
-			SendMessage(dat->hwndParent, DM_UPDATESTATUSBAR, (WPARAM)&sbi, (LPARAM)hwndDlg);
+			SendMessage(dat->hwndParent, CM_UPDATESTATUSBAR, (WPARAM)&sbd, (LPARAM)hwndDlg);
 			UpdateReadChars(hwndDlg, dat);
-			sbi.iItem = 2;
-			sbi.hIcon = g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON];
-			_tcscpy(sbi.szText, _T(""));
-			SendMessage(dat->hwndParent, DM_UPDATESTATUSBAR, (WPARAM)&sbi, (LPARAM)hwndDlg);
+			sbd.iItem = 2;
+			sbd.hIcon = g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON];
+			sbd.pszText = _T("");
+			SendMessage(dat->hwndParent, CM_UPDATESTATUSBAR, (WPARAM)&sbd, (LPARAM)hwndDlg);
 			break;
 		}
 		break;
@@ -2845,7 +2905,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		}
 // IEVIew MOD End
 		SetWindowLong(hwndDlg, GWL_USERDATA, 0);
-		SendMessage(dat->hwndParent, DM_REMOVECHILD, 0, (LPARAM) hwndDlg);
+		SendMessage(dat->hwndParent, CM_REMOVECHILD, 0, (LPARAM) hwndDlg);
 		free(dat);
 		break;
 	}

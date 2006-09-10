@@ -87,7 +87,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //defines
 #define OPTIONS_FONTCOUNT 17
-#define GC_UPDATETITLE			(WM_USER+100)
 #define GC_SPLITTERMOVED		(WM_USER+101)
 #define GC_CLOSEWINDOW			(WM_USER+103)
 #define GC_GETITEMDATA			(WM_USER+104)
@@ -112,7 +111,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define GC_UPDATENICKLIST		(WM_USER+125)
 //#define GC_MODECHANGE			(WM_USER+126)
 #define GC_TABCHANGE			(WM_USER+127)
-#define GC_ADDTAB				(WM_USER+128)
 #define GC_SCROLLTOBOTTOM		(WM_USER+129)
 #define GC_REMOVETAB			(WM_USER+130)
 #define GC_SESSIONNAMECHANGE	(WM_USER+131)
@@ -435,7 +433,7 @@ void				CreateServiceFunctions(void);
 void           DestroyServiceFunctions(void);
 void				CreateHookableEvents(void);
 void				TabsInit(void);
-int					ModulesLoaded(WPARAM wParam,LPARAM lParam);
+int					Chat_ModulesLoaded(WPARAM wParam,LPARAM lParam);
 int					SmileyOptionsChanged(WPARAM wParam,LPARAM lParam);
 int					PreShutdown(WPARAM wParam,LPARAM lParam);
 int					Chat_IconsChanged(WPARAM wParam,LPARAM lParam);

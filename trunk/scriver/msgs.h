@@ -176,12 +176,9 @@ struct MessageWindowData
 #define HM_AVATARACK         (WM_USER+28)
 #define HM_ACKEVENT          (WM_USER+29)
 
-#define DM_ADDCHILD          (WM_USER+30)
-#define DM_REMOVECHILD		 (WM_USER+31)
-#define DM_ACTIVATECHILD	 (WM_USER+32)
+#define DM_UPDATETITLE		 (WM_USER+30)
+#define DM_UPDATEICON		 (WM_USER+31)
 
-#define DM_ACTIVATEPREV		 (WM_USER+40)
-#define DM_ACTIVATENEXT		 (WM_USER+41)
 #define DM_STARTFLASHING	 (WM_USER+45)
 #define DM_CLEARLOG			 (WM_USER+46)
 #define DM_SWITCHSTATUSBAR	 (WM_USER+47)
@@ -200,6 +197,9 @@ struct MessageWindowData
 #define DM_PROTOAVATARCHANGED (WM_USER+63)
 #define DM_AVATARCHANGED	 (WM_USER+64)
 #define DM_SETFOCUS			  (WM_USER+65)
+
+#define EM_SUBCLASSED        (WM_USER+0x101)
+#define EM_UNSUBCLASSED      (WM_USER+0x102)
 
 #define EVENTTYPE_STATUSCHANGE 25368
 

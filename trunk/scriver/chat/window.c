@@ -29,10 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _except __except
 #define _finally __finally
 
-#define DM_ADDCHILD          (WM_USER+30)
-#define DM_REMOVECHILD		 (WM_USER+31)
-#define DM_ACTIVATECHILD	 (WM_USER+32)
-
 extern HBRUSH		hEditBkgBrush;
 extern HBRUSH		hListBkgBrush;
 extern HANDLE		hSendEvent;
@@ -44,6 +40,8 @@ extern HMENU		g_hMenu;
 extern BOOL			SmileyAddInstalled;
 extern TABLIST *	g_TabList;
 extern HIMAGELIST	hIconsList;
+extern int eventMessageIcon;
+extern int overlayIcon;
 
 static WNDPROC OldSplitterProc;
 static WNDPROC OldMessageProc;
@@ -51,7 +49,6 @@ static WNDPROC OldNicklistProc;
 static WNDPROC OldTabProc;
 static WNDPROC OldFilterButtonProc;
 static WNDPROC OldLogProc;
-static HKL hkl = NULL;
 
 extern void SubclassTabCtrl(HWND tabCtrl);
 extern void UnsubclassTabCtrl(HWND tabCtrl);
@@ -160,7 +157,7 @@ static void	InitButtons(HWND hwndDlg, SESSION_INFO* si)
 
 static int RoomWndResize(HWND hwndDlg,LPARAM lParam,UTILRESIZECONTROL *urc)
 {
-	RECT rc, rcTabs;
+	RECT rcTabs;
 	SESSION_INFO * si = (SESSION_INFO*)lParam;
 	int			TabHeight;
 	BOOL		bControl = (BOOL)DBGetContactSettingByte(NULL, "Chat", "ShowTopButtons", 1);
@@ -1392,7 +1389,7 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 					SESSION_INFO * s = SM_FindSession(node->pszID, node->pszModule);
 					if(s)
 					{
-						SendMessage(hwndDlg, GC_ADDTAB, -1, (LPARAM)s);
+//						SendMessage(hwndDlg, GC_ADDTAB, -1, (LPARAM)s);
 					}
 					node = node->next;
 				}
@@ -1406,11 +1403,11 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 
 			SendMessage(hwndDlg, GC_SETWNDPROPS, 0, 0);
 			SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
-			SendMessage(hwndDlg, GC_UPDATETITLE, 0, 0);
+			SendMessage(hwndDlg, DM_UPDATETITLEBAR, 0, 0);
 			SendMessage(hwndDlg, GC_SETWINDOWPOS, 0, 0);
 
-			SendMessage(GetParent(hwndDlg), DM_ADDCHILD, (WPARAM) hwndDlg, (LPARAM) psi->hContact);
-			SendMessage(GetParent(hwndDlg), DM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
+			SendMessage(GetParent(hwndDlg), CM_ADDCHILD, (WPARAM) hwndDlg, (LPARAM) psi->hContact);
+			SendMessage(GetParent(hwndDlg), CM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 
 		} break;
 
@@ -1480,12 +1477,9 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 
 		}break;
 
-
-
-
-
-		case GC_UPDATETITLE:
+		case DM_UPDATETITLEBAR:
 		{
+			TitleBarData tbd;
 			char szTemp [100];
 			switch(si->iType)
 			{
@@ -1500,20 +1494,21 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 				break;
 			default:break;
 			}
-			SetWindowTextA(hwndDlg, szTemp);
+			tbd.iFlags = TBDF_TEXT;
+			tbd.pszText = charToTchar(szTemp, -1, CP_ACP);
+			SendMessage(GetParent(hwndDlg), CM_UPDATETITLEBAR, (WPARAM) &tbd, (LPARAM) hwndDlg);
+			free(tbd.pszText);
 		} break;
-
 
 
 
 		case DM_UPDATESTATUSBAR:
 		{
-			StatusBarItem sbi;
+			StatusBarData sbd;
 			HICON hIcon;
-			TCHAR *tText;
 			int iStatusbarParts[2];
 			char *pszDispName = MM_FindModule(si->pszModule)->pszModDispName;
-			char tempStr[512];
+			char szTemp[512];
 			hIcon = si->wStatus==ID_STATUS_ONLINE?MM_FindModule(si->pszModule)->hOnlineIcon:MM_FindModule(si->pszModule)->hOfflineIcon;
 			// stupid hack to make icons show. I dunno why this is needed currently
 			if(!hIcon)
@@ -1522,13 +1517,20 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 				hIcon = si->wStatus==ID_STATUS_ONLINE?MM_FindModule(si->pszModule)->hOnlineIcon:MM_FindModule(si->pszModule)->hOfflineIcon;
 			}
 
-			mir_snprintf(tempStr, SIZEOF(tempStr), "%s : %s", pszDispName, si->pszStatusbarText?si->pszStatusbarText:"");
-			sbi.iItem = 0;
-			sbi.hIcon = hIcon;
-			tText = charToTchar(tempStr, -1, CP_ACP);
-			_tcscpy(sbi.szText, tText);
-			SendMessage(GetParent(hwndDlg), DM_UPDATESTATUSBAR, (WPARAM) &sbi, (LPARAM) hwndDlg);
-			free(tText);
+			mir_snprintf(szTemp, SIZEOF(szTemp), "%s : %s", pszDispName, si->pszStatusbarText?si->pszStatusbarText:"");
+			sbd.iItem = 0;
+			sbd.iFlags = SBDF_TEXT | SBDF_ICON;
+			sbd.hIcon = hIcon;
+			sbd.pszText = charToTchar(szTemp, -1, CP_ACP);
+			SendMessage(GetParent(hwndDlg), CM_UPDATESTATUSBAR, (WPARAM) &sbd, (LPARAM) hwndDlg);
+			free(sbd.pszText);
+			sbd.iItem = 1;
+			sbd.hIcon = NULL;
+			sbd.pszText	= _T("");
+			SendMessage(GetParent(hwndDlg), CM_UPDATESTATUSBAR, (WPARAM) &sbd, (LPARAM) hwndDlg);
+			sbd.iItem = 2;
+			SendMessage(GetParent(hwndDlg), CM_UPDATESTATUSBAR, (WPARAM) &sbd, (LPARAM) hwndDlg);
+
 			SendMessage(hwndDlg, GC_FIXTABICONS, 0, 0);
 			return TRUE;
 		} break;
@@ -1764,8 +1766,6 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 		} break;
 
 
-
-
 		case GC_ADDLOG:
 		{
 			if(si->pLogEnd)
@@ -1774,38 +1774,6 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 				SendMessage(hwndDlg, GC_EVENT_CONTROL + WM_USER+500, WINDOW_CLEARLOG, 0);
 		} break;
 
-
-		case GC_SWITCHNEXTTAB:
-		{
-			int total = TabCtrl_GetItemCount(GetDlgItem(hwndDlg, IDC_CHAT_TAB));
-			int i = TabCtrl_GetCurSel(GetDlgItem(hwndDlg, IDC_CHAT_TAB));
-			if (i != -1 && total != -1 && total != 1)
-			{
-				if(i < total -1)
-					i++;
-				else
-					i=0;
-				TabCtrl_SetCurSel(GetDlgItem(hwndDlg, IDC_CHAT_TAB), i);
-				PostMessage(hwndDlg, GC_TABCLICKED, 0, 0 );
-			}
-
-		}break;
-
-		case GC_SWITCHPREVTAB:
-		{
-			int total = TabCtrl_GetItemCount(GetDlgItem(hwndDlg, IDC_CHAT_TAB));
-			int i = TabCtrl_GetCurSel(GetDlgItem(hwndDlg, IDC_CHAT_TAB));
-			if (i != -1 && total != -1 && total != 1)
-			{
-				if(i > 0)
-					i--;
-				else
-					i=total-1;
-				TabCtrl_SetCurSel(GetDlgItem(hwndDlg, IDC_CHAT_TAB), i);
-				PostMessage(hwndDlg, GC_TABCLICKED, 0, 0 );
-			}
-
-		}break;
 
 		case GC_SWITCHTAB:
 		{
@@ -1873,106 +1841,22 @@ END_REMOVETAB:
 					ShowRoom(s, (WPARAM)WINDOW_VISIBLE, wParam == 1?FALSE:TRUE);
 			}
 		}break;
-		case GC_ADDTAB:
+		case DM_UPDATETABCONTROL:
 		{
-			TCITEMA tci;
-			int tabId;
-			WORD w = 0;
-			int i = 0;
-			int indexfound = -1;
-			int lastlocked = -1;
-			BOOL bFound = FALSE;
-			SESSION_INFO * s2;
-			SESSION_INFO * s1 = (SESSION_INFO *) lParam;
+			TabControlData tcd;
+			char szTemp [30];
+			SESSION_INFO *s1 = (SESSION_INFO *) lParam;
+			lstrcpynA(szTemp, s1->pszName, 21);
+			if(lstrlenA(s1->pszName) >20)
+				lstrcpynA(szTemp+20, "...", 4);
 
-			tci.mask = TCIF_PARAM ;
-			tabId = TabCtrl_GetItemCount(GetDlgItem(hwndDlg, IDC_CHAT_TAB));
+			tcd.iFlags = TCDF_TEXT;
+			tcd.pszText = charToTchar(szTemp, -1, CP_ACP);
+			SendMessage(GetParent(hwndDlg), CM_UPDATETABCONTROL, (WPARAM) &tcd, (LPARAM) hwndDlg);
+			free(tcd.pszText);
 
-			// does the tab already exist?
-			for (i = 0; i < tabId; i++)
-			{
-				TabCtrl_GetItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB), i, &tci);
-				s2 = (SESSION_INFO *)tci.lParam;
-				if(s2)
-				{
-					if (s1 == s2 && !bFound)
-					{
-						if(!bFound)
-						{
-							bFound = TRUE;
-							indexfound = i;
-						}
-					}
+			SendMessage(hwndDlg, GC_FIXTABICONS, 0, (LPARAM)s1);
 
-					w = DBGetContactSettingWord(s2->hContact, s2->pszModule, "TabPosition", 0);
-					if(w)
-						lastlocked = (int)w;
-
-
-				}
-
-
-			}
-
-			w = 0;
-
-			if(!bFound) // create a new tab
-			{
-				int insertat;
-				char szTemp [30];
-
-				lstrcpynA(szTemp, s1->pszName, 21);
-				if(lstrlenA(s1->pszName) >20)
-					lstrcpynA(szTemp+20, "...", 4);
-
-				tci.mask = TCIF_TEXT|TCIF_PARAM ;
-				tci.pszText = szTemp;
-				tci.lParam = lParam;
-
-				// determine insert position
-				w = DBGetContactSettingWord(s1->hContact, s1->pszModule, "TabPosition", 0);
-				if(wParam == -1)
-					insertat = w == 0?tabId:(int)w-1;
-				else
-					insertat = (int)wParam;
-
-/*
-				// move one of the unlocked tabs preceeding "lastlocked", but after "insertat"
-				// to make sure locked tabs are not moved
-				if(w && lastlocked != -1 && insertat < lastlocked-1)
-				{
-					int index = insertat;
-					while(index < lastlocked-1)
-					{
-						SESSION_INFO * st;
-						TCITEM tc2;
-						tc2.mask = TCIF_PARAM;
-						TabCtrl_GetItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB), index, &tc2);
-						st = (SESSION_INFO *) tc2.lParam;
-						if(st)
-						{
-							if(DBGetContactSettingWord(st->hContact, st->pszModule, "TabPosition", 0) == 0)
-							{
-								SendMessage(hwndDlg, GC_DROPPEDTAB, (WPARAM)tabId, (LPARAM)index);
-								break;
-							}
-						}
-
-						index++;
-					}
-				}
-*/
-				w = ( WORD )SendMessageA( GetDlgItem(hwndDlg, IDC_CHAT_TAB), TCM_INSERTITEMA, (WPARAM)insertat, (LPARAM)&tci );
-				SendMessage(hwndDlg, GC_FIXTABICONS, 0, (LPARAM)s1);
-
-			}
-			if(wParam == -1)
-			{
-				if(bFound)
-					TabCtrl_SetCurSel(GetDlgItem(hwndDlg, IDC_CHAT_TAB), indexfound);
-				else
-					TabCtrl_SetCurSel(GetDlgItem(hwndDlg, IDC_CHAT_TAB), w);
-			}
 		}break;
 
 		case GC_FIXTABICONS:
@@ -2079,13 +1963,6 @@ END_REMOVETAB:
 				RedrawWindow(GetDlgItem(hwndDlg, IDC_CHAT_TAB), NULL, NULL, RDW_INVALIDATE);
 		}break;
 
-		case GC_TABCHANGE:
-		{
-			SetWindowLong(hwndDlg,GWL_USERDATA,(LONG)lParam);
-			PostMessage(hwndDlg, GC_SCROLLTOBOTTOM, 0, 0);
-
-		}break;
-
 		case GC_TABCLICKED:
 		{
 			int i;
@@ -2127,44 +2004,6 @@ END_REMOVETAB:
 		}break;
 
 
-
-
-		case GC_DROPPEDTAB:
-		{
-			TCITEM tci;
-			SESSION_INFO * s;
-			int begin = (int)lParam;
-			int end = (int) wParam;
-			int i, tabId;
-			if(begin == end)
-				break;
-//			if(begin < end)
-//				end--;
-//			if(begin == end)
-//				break;
-			tci.mask = TCIF_PARAM ;
-			TabCtrl_GetItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB),begin,  &tci);
-			s = (SESSION_INFO *)tci.lParam;
-			if (s)
-			{
-				TabCtrl_DeleteItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB), begin);
-
-				SendMessage(hwndDlg, GC_ADDTAB, end, (LPARAM)s);
-
-				// fix the "fixed" positions
-				tabId = TabCtrl_GetItemCount(GetDlgItem(hwndDlg, IDC_CHAT_TAB));
-				for(i = 0; i< tabId ; i++)
-				{
-					TabCtrl_GetItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB),i,  &tci);
-					s = (SESSION_INFO *)tci.lParam;
-					if(s && s->hContact && DBGetContactSettingWord(s->hContact, s->pszModule, "TabPosition", 0) != 0)
-						DBWriteContactSettingWord(s->hContact, s->pszModule, "TabPosition", (WORD)(i + 1));
-				}
-
-			}
-
-
-		}break;
 
 		case GC_SESSIONNAMECHANGE:
 		{
@@ -2280,7 +2119,7 @@ END_REMOVETAB:
 			int i = SendMessage(GetDlgItem(hwndDlg, IDC_CHAT_LIST), LB_GETTOPINDEX, 0, 0);
 			SendMessage(GetDlgItem(hwndDlg, IDC_CHAT_LIST), LB_SETCOUNT, si->nUsersInNicklist, 0);
 			SendMessage(GetDlgItem(hwndDlg, IDC_CHAT_LIST), LB_SETTOPINDEX, i, 0);
-			SendMessage(hwndDlg, GC_UPDATETITLE, 0, 0);
+			SendMessage(hwndDlg, DM_UPDATETITLEBAR, 0, 0);
 		}break;
 
 		case GC_EVENT_CONTROL + WM_USER+500:

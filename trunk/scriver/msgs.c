@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
 
+extern int Chat_ModulesLoaded(WPARAM wParam, LPARAM lParam);
+
 int OptInitialise(WPARAM wParam, LPARAM lParam);
 int FontServiceFontsChanged(WPARAM wParam, LPARAM lParam);
 
@@ -466,6 +468,7 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
    hEventSkin2IconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
    hEventFontServiceFontsChanged = HookEvent(ME_FONT_RELOAD, FontServiceFontsChanged);
    RestoreUnreadMessageAlerts();
+   Chat_ModulesLoaded(wParam, lParam);
    return 0;
 }
 
