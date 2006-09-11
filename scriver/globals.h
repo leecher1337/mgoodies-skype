@@ -1,10 +1,10 @@
 /*
 Scriver
 
-Copyright 2000-2005 Miranda ICQ/IM project, 
+Copyright 2000-2005 Miranda ICQ/IM project,
 Copyright 2005 Piotr Piastucki
 
-all portions of this codebase are copyrighted to the people 
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef SRMM_GLOBALS_H
 #define SRMM_GLOBALS_H
+
+#include "cmdlist.h"
 
 
 #define SMF_SHOWBTNS        0x00000001

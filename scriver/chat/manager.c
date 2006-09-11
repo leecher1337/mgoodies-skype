@@ -28,6 +28,8 @@ extern int eventMessageIcon;
 extern int overlayIcon;
 extern struct MM_INTERFACE		mmi ;
 
+extern struct GlobalMessageData *g_dat;
+
 #define WINDOWS_COMMANDS_MAX 30
 #define	STATUSICONCOUNT 6
 
@@ -1079,12 +1081,12 @@ MODULEINFO * MM_AddModule(char * pszModule)
 void MM_IconsChanged(void)
 {
 	MODULEINFO *pTemp = m_ModList, *pLast = NULL;
-	ImageList_ReplaceIcon(hIconsList, eventMessageIcon, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
-	ImageList_ReplaceIcon(hIconsList, overlayIcon, LoadIconEx(IDI_OVERLAY, "overlay", 0, 0));
+	ImageList_ReplaceIcon(g_dat->hTabIconList, eventMessageIcon, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
+	ImageList_ReplaceIcon(g_dat->hTabIconList, overlayIcon, LoadIconEx(IDI_OVERLAY, "overlay", 0, 0));
 	while (pTemp != NULL)
 	{
-		pTemp->OnlineIconIndex = ImageList_ReplaceIcon(hIconsList, pTemp->OnlineIconIndex, LoadSkinnedProtoIcon(pTemp->pszModule, ID_STATUS_ONLINE));
-		pTemp->OfflineIconIndex = ImageList_ReplaceIcon(hIconsList, pTemp->OfflineIconIndex, LoadSkinnedProtoIcon(pTemp->pszModule, ID_STATUS_OFFLINE));
+		pTemp->OnlineIconIndex = ImageList_ReplaceIcon(g_dat->hTabIconList, pTemp->OnlineIconIndex, LoadSkinnedProtoIcon(pTemp->pszModule, ID_STATUS_ONLINE));
+		pTemp->OfflineIconIndex = ImageList_ReplaceIcon(g_dat->hTabIconList, pTemp->OfflineIconIndex, LoadSkinnedProtoIcon(pTemp->pszModule, ID_STATUS_OFFLINE));
 
 		if(pTemp->hOfflineIcon)
 			DestroyIcon(pTemp->hOfflineIcon);
@@ -1094,14 +1096,14 @@ void MM_IconsChanged(void)
 			DestroyIcon(pTemp->hOnlineTalkIcon);
 		if(pTemp->hOfflineTalkIcon)
 			DestroyIcon(pTemp->hOfflineTalkIcon);
-		pTemp->hOfflineIcon = ImageList_GetIcon(hIconsList, pTemp->OfflineIconIndex, ILD_TRANSPARENT);
-		pTemp->hOnlineIcon = ImageList_GetIcon(hIconsList, pTemp->OnlineIconIndex, ILD_TRANSPARENT);
+		pTemp->hOfflineIcon = ImageList_GetIcon(g_dat->hTabIconList, pTemp->OfflineIconIndex, ILD_TRANSPARENT);
+		pTemp->hOnlineIcon = ImageList_GetIcon(g_dat->hTabIconList, pTemp->OnlineIconIndex, ILD_TRANSPARENT);
 
-		pTemp->hOnlineTalkIcon = ImageList_GetIcon(hIconsList, pTemp->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
-		ImageList_ReplaceIcon(hIconsList, pTemp->OnlineIconIndex+1, pTemp->hOnlineTalkIcon);
+		pTemp->hOnlineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, pTemp->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
+		ImageList_ReplaceIcon(g_dat->hTabIconList, pTemp->OnlineIconIndex+1, pTemp->hOnlineTalkIcon);
 
-		pTemp->hOfflineTalkIcon = ImageList_GetIcon(hIconsList, pTemp->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
-		ImageList_ReplaceIcon(hIconsList, pTemp->OfflineIconIndex+1, pTemp->hOfflineTalkIcon);
+		pTemp->hOfflineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, pTemp->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
+		ImageList_ReplaceIcon(g_dat->hTabIconList, pTemp->OfflineIconIndex+1, pTemp->hOfflineTalkIcon);
 
 		pLast = pTemp;
 		pTemp = pTemp->next;

@@ -849,11 +849,11 @@ static void UpdateReadChars(HWND hwndDlg, struct MessageWindowData * dat)
 	if (dat->parent->hwndActive == hwndDlg && dat->parent->hwndStatus) {
 		TCHAR szText[256];
 		StatusBarData sbd;
+		int len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		sbd.iItem = 1;
 		sbd.iFlags = SBDF_TEXT | SBDF_ICON;
 		sbd.hIcon = NULL;
 		sbd.pszText = szText;
-		int len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_MESSAGE));
 		_sntprintf(szText, sizeof(szText), _T("%d"), len);
 		SendMessage(dat->hwndParent, CM_UPDATESTATUSBAR, (WPARAM)&sbd, (LPARAM)hwndDlg);
 	}
@@ -2866,9 +2866,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		WindowList_Remove(g_dat->hMessageWindowList, hwndDlg);
 		//if (!(g_dat->flags&SMF_AVATAR)||!dat->avatarPic)
 		SetWindowLong(GetDlgItem(hwndDlg, IDC_SPLITTER), GWL_WNDPROC, (LONG) OldSplitterProc);
-		SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_UNSUBCLASSED, 0, 0);
 		UnsubclassMessageEdit(GetDlgItem(hwndDlg, IDC_MESSAGE));
-		SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG), GWL_WNDPROC, (LONG) OldLogEditProc);
+		UnsubclassLogEdit(GetDlgItem(hwndDlg, IDC_LOG));
 		{
 			HFONT hFont;
 			hFont = (HFONT) SendDlgItemMessage(hwndDlg, IDC_MESSAGE, WM_GETFONT, 0, 0);
