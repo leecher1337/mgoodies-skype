@@ -63,7 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_ieview.h"
 #include "m_smileyadd.h"
 #include "IcoLib.h"
-//#include "richutil.h"
+#include "../globals.h"
 
 #ifndef TVM_GETITEMSTATE
 #define TVM_GETITEMSTATE        (TV_FIRST + 39)
@@ -99,7 +99,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define GC_CHANGEFILTERFLAG		(WM_USER+112)
 #define GC_SHOWFILTERMENU		(WM_USER+113)
 #define GC_SETWINDOWPOS			(WM_USER+114)
-#define GC_SAVEWNDPOS			(WM_USER+115)
 //#define	GC_NICKLISTCLEAR		(WM_USER+117)
 #define GC_REDRAWWINDOW			(WM_USER+118)
 #define GC_SHOWCOLORCHOOSER		(WM_USER+119)

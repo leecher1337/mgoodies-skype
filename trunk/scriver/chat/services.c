@@ -59,7 +59,7 @@ void HookEvents(void)
 //	g_hModulesLoaded =			HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
 	g_hHookContactDblClick=		HookEvent(ME_CLIST_DOUBLECLICKED, CList_RoomDoubleclicked);
 	g_hSystemPreShutdown =		HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
-	g_hIconsChanged =			HookEvent(ME_SKIN_ICONSCHANGED, Chat_IconsChanged);
+//	g_hIconsChanged =			HookEvent(ME_SKIN_ICONSCHANGED, Chat_IconsChanged);
 	return;
 }
 
@@ -68,8 +68,8 @@ void UnhookEvents(void)
 	UnhookEvent(g_hModulesLoaded);
 	UnhookEvent(g_hSystemPreShutdown);
 	UnhookEvent(g_hHookContactDblClick);
-	UnhookEvent(g_hIconsChanged);
-	UnhookEvent(g_hIconsChanged2);
+//	UnhookEvent(g_hIconsChanged);
+//	UnhookEvent(g_hIconsChanged2);
 	if(g_hSmileyOptionsChanged)
 		UnhookEvent(g_hSmileyOptionsChanged);
 	DeleteCriticalSection(&cs);
@@ -137,7 +137,7 @@ int Chat_ModulesLoaded(WPARAM wParam,LPARAM lParam)
 	AddIcons();
 	LoadIcons();
 
-	g_hIconsChanged2 =	HookEvent(ME_SKIN2_ICONSCHANGED, Chat_IconsChanged);
+//	g_hIconsChanged2 =	HookEvent(ME_SKIN2_ICONSCHANGED, Chat_IconsChanged);
 
 	if(ServiceExists(MS_SMILEYADD_SHOWSELECTION))
 	{
@@ -296,17 +296,17 @@ int Service_Register(WPARAM wParam, LPARAM lParam)
 			mi->crColors = malloc(sizeof(COLORREF) * gcr->nColors);
 			memcpy(mi->crColors, gcr->pColors, sizeof(COLORREF) * gcr->nColors);
 		}
-		mi->OnlineIconIndex = ImageList_AddIcon(hIconsList, LoadSkinnedProtoIcon(gcr->pszModule, ID_STATUS_ONLINE));
-		mi->hOnlineIcon = ImageList_GetIcon(hIconsList, mi->OnlineIconIndex, ILD_TRANSPARENT);
+		mi->OnlineIconIndex = ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(gcr->pszModule, ID_STATUS_ONLINE));
+		mi->hOnlineIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT);
 
-		mi->hOnlineTalkIcon = ImageList_GetIcon(hIconsList, mi->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
-		ImageList_AddIcon(hIconsList, mi->hOnlineTalkIcon);
+		mi->hOnlineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
+		ImageList_AddIcon(g_dat->hTabIconList, mi->hOnlineTalkIcon);
 
-		mi->OfflineIconIndex = ImageList_AddIcon(hIconsList, LoadSkinnedProtoIcon(gcr->pszModule, ID_STATUS_OFFLINE));
-		mi->hOfflineIcon = ImageList_GetIcon(hIconsList, mi->OfflineIconIndex, ILD_TRANSPARENT);
+		mi->OfflineIconIndex = ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(gcr->pszModule, ID_STATUS_OFFLINE));
+		mi->hOfflineIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OfflineIconIndex, ILD_TRANSPARENT);
 
-		mi->hOfflineTalkIcon = ImageList_GetIcon(hIconsList, mi->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
-		ImageList_AddIcon(hIconsList, mi->hOfflineTalkIcon);
+		mi->hOfflineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
+		ImageList_AddIcon(g_dat->hTabIconList, mi->hOfflineTalkIcon);
 
 		mi->pszHeader = Log_CreateRtfHeader(mi);
 

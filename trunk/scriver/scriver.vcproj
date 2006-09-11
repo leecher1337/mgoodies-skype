@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="srmm"
+	Name="scriver"
 	ProjectGUID="{B8928210-546C-4AE3-956B-E2B724E6B8E5}"
 	>
 	<Platforms>
@@ -41,7 +41,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/srmm.tlb"
+				TypeLibraryName=".\Debug/scriver.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -52,7 +52,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/srmm.pch"
+				PrecompiledHeaderFile=".\Debug/scriver.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -95,7 +95,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/srmm.bsc"
+				OutputFile=".\Debug/scriver.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -138,7 +138,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/srmm.tlb"
+				TypeLibraryName=".\Release/scriver.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -150,7 +150,7 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/srmm.pch"
+				PrecompiledHeaderFile=".\Release/scriver.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -190,7 +190,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/srmm.bsc"
+				OutputFile=".\Release/scriver.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -233,7 +233,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Unicode_Release/srmm.tlb"
+				TypeLibraryName=".\Unicode_Release/scriver.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -248,7 +248,7 @@
 				ExceptionHandling="0"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Unicode_Release/srmm.pch"
+				PrecompiledHeaderFile=".\Unicode_Release/scriver.pch"
 				AssemblerListingLocation=".\Unicode_Release/"
 				ObjectFile=".\Unicode_Release/"
 				ProgramDataBaseFileName=".\Unicode_Release/"
@@ -289,7 +289,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Unicode_Release/srmm.bsc"
+				OutputFile=".\Unicode_Release/scriver.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -332,7 +332,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Unicode_Debug/srmm.tlb"
+				TypeLibraryName=".\Unicode_Debug/scriver.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -343,7 +343,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Unicode_Debug/srmm.pch"
+				PrecompiledHeaderFile=".\Unicode_Debug/scriver.pch"
 				AssemblerListingLocation=".\Unicode_Debug/"
 				ObjectFile=".\Unicode_Debug/"
 				ProgramDataBaseFileName=".\Unicode_Debug/"
@@ -386,7 +386,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Unicode_Debug/srmm.bsc"
+				OutputFile=".\Unicode_Debug/scriver.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"

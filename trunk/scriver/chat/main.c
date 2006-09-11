@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "chat.h"
 
+extern struct GlobalMessageData *g_dat;
 //globals
 struct MM_INTERFACE	mmi = {0};					// structure which keeps pointers to mirandas alloc, free and realloc
 HINSTANCE   g_hInst;
@@ -260,9 +261,9 @@ void LoadIcons(void)
 
 	hImageList = ImageList_Create(GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),IsWinVerXPPlus()? ILC_COLOR32 | ILC_MASK : ILC_COLOR16 | ILC_MASK,0,3);
 	hIconsList = ImageList_Create(GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),IsWinVerXPPlus()? ILC_COLOR32 | ILC_MASK : ILC_COLOR16 | ILC_MASK,0,100);
-	eventMessageIcon = ImageList_AddIcon(hIconsList,LoadSkinnedIcon( SKINICON_EVENT_MESSAGE));
-	overlayIcon = ImageList_AddIcon(hIconsList,LoadIconEx(IDI_OVERLAY, "overlay", 0, 0));
-	ImageList_SetOverlayImage(hIconsList, overlayIcon, overlayIcon);
+	eventMessageIcon = ImageList_AddIcon(g_dat->hTabIconList,LoadSkinnedIcon( SKINICON_EVENT_MESSAGE));
+	overlayIcon = ImageList_AddIcon(g_dat->hTabIconList,LoadIconEx(IDI_OVERLAY, "overlay", 0, 0));
+	ImageList_SetOverlayImage(g_dat->hTabIconList, overlayIcon, overlayIcon);
 	ImageList_AddIcon(hImageList,LoadImage(g_hInst,MAKEINTRESOURCE(IDI_BLANK),IMAGE_ICON,0,0,0));
 	ImageList_AddIcon(hImageList,LoadImage(g_hInst,MAKEINTRESOURCE(IDI_BLANK),IMAGE_ICON,0,0,0));
 	return ;

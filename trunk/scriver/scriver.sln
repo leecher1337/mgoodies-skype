@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "srmm", "srmm.vcproj", "{B8928210-546C-4AE3-956B-E2B724E6B8E5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scriver", "scriver.vcproj", "{B8928210-546C-4AE3-956B-E2B724E6B8E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

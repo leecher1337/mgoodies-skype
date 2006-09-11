@@ -96,6 +96,7 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 	FreeMsgLogIcons();
 	LoadMsgLogIcons();
 	LoadProtocolIcons();
+	Chat_IconsChanged();
 	WindowList_Broadcast(g_dat->hMessageWindowList, DM_REMAKELOG, 0, 0);
 	// change all the icons
 	WindowList_Broadcast(g_dat->hMessageWindowList, DM_CHANGEICONS, 0, 0);
