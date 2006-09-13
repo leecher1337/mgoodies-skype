@@ -1200,6 +1200,28 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 		mir_free( szMessage );
 }	}
 
+static void WriteStatusMessage(HANDLE hContact, TCHAR *p) {
+	if (p == NULL) {
+		DBDeleteContactSetting( hContact, "CList", "StatusMsg" );
+		DBDeleteContactSetting( hContact, jabberProtoName, "ListeningTo" );
+		return;
+	}
+
+#ifdef UNICODE
+
+	if (p[0] == 0x266B && p[1] == _T(' ')) {
+		DBWriteContactSettingTString( hContact, "CList", "StatusMsg", _T("") );
+		DBWriteContactSettingTString( hContact, jabberProtoName, "ListeningTo", &p[2] );
+		return;
+	}
+
+#endif
+
+	DBDeleteContactSetting( hContact, jabberProtoName, "ListeningTo" );
+	DBWriteContactSettingTString( hContact, "CList", "StatusMsg", p );
+
+}
+
 static void JabberProcessPresence( XmlNode *node, void *userdata )
 {
 	struct ThreadData *info;
@@ -1256,11 +1278,9 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		else
 			p = NULL;
 		JabberListAddResource( LIST_ROSTER, from, status, p );
-		if ( p ) {
-			DBWriteContactSettingTString( hContact, "CList", "StatusMsg", p );
+		WriteStatusMessage( hContact, p );
+		if ( p )
 			mir_free( p );
-		}
-		else DBDeleteContactSetting( hContact, "CList", "StatusMsg" );
 
 		// Determine status to show for the contact
 		if (( item=JabberListGetItemPtr( LIST_ROSTER, from )) != NULL ) {
@@ -1351,10 +1371,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 				status = ID_STATUS_INVISIBLE;
 
 			if (hContact != NULL) {
-				if ( statusNode->text )
-					DBWriteContactSettingTString(hContact, "CList", "StatusMsg", statusNode->text );
-				else
-					DBDeleteContactSetting(hContact, "CList", "StatusMsg");
+				WriteStatusMessage( hContact, statusNode->text );
 		}	}
 
 		if (( item=JabberListGetItemPtr( LIST_ROSTER, from )) != NULL ) {
