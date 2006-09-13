@@ -37,11 +37,9 @@ HANDLE hMenuGrantAuth = NULL;
 HANDLE hMenuJoinLeave = NULL;
 HANDLE hMenuConvert = NULL;
 HANDLE hMenuRosterAdd = NULL;
+HANDLE hMenuLogin = NULL;
 
 HANDLE hMenuVisitGMail = NULL;
-
-char* cidchar = "ChatRoomID";
-char* jidchar = "jid";
 
 static void sttEnableMenuItem( HANDLE hMenuItem, BOOL bEnable )
 {
@@ -61,6 +59,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 	sttEnableMenuItem( hMenuJoinLeave, FALSE );
 	sttEnableMenuItem( hMenuConvert, FALSE );
 	sttEnableMenuItem( hMenuRosterAdd, FALSE );
+	sttEnableMenuItem( hMenuLogin, FALSE );
 	sttEnableMenuItem( hMenuVisitGMail, FALSE );
 
 	HANDLE hContact;
@@ -76,16 +75,17 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 			JFreeVariant( &dbv );
 	}	}
 
-	BYTE chatRoomType = (BYTE)JGetByte( hContact, "ChatRoom", 0 );
+	BYTE bIsChatRoom  = (BYTE)JGetByte( hContact, "ChatRoom", 0 );
+	BYTE bIsTransport = (BYTE)JGetByte( hContact, "IsTransport", 0 );
 
-	if ((chatRoomType == GCW_CHATROOM) || chatRoomType == 0 ) {
+	if ((bIsChatRoom == GCW_CHATROOM) || bIsChatRoom == 0 ) {
 		DBVARIANT dbv;
-		if ( !JGetStringT( hContact, chatRoomType?cidchar:jidchar, &dbv )) { //cidchar and jidchar are defined above to make gcc happy
+		if ( !JGetStringT( hContact, bIsChatRoom?(char*)"ChatRoomID":(char*)"jid", &dbv )) {
 			JFreeVariant( &dbv );
 			CLISTMENUITEM clmi = { 0 };
 			sttEnableMenuItem( hMenuConvert, TRUE );
 			clmi.cbSize = sizeof( clmi );
-			clmi.pszName = JTranslate( chatRoomType ? "&Convert to Contact" : "&Convert to Chat Room" );
+			clmi.pszName = JTranslate( bIsChatRoom ? "&Convert to Contact" : "&Convert to Chat Room" );
 			clmi.flags = CMIM_NAME | CMIM_FLAGS;
 			JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuConvert, ( LPARAM )&clmi );
 	}	}
@@ -93,7 +93,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 	if (!jabberOnline)
 		return 0;
 
-	if ( chatRoomType ) {
+	if ( bIsChatRoom ) {
 		DBVARIANT dbv;
 		if ( !JGetStringT( hContact, "ChatRoomID", &dbv )) {
 			if ( JabberListGetItemPtr( LIST_ROSTER, dbv.ptszVal ) == NULL ) {
@@ -102,7 +102,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 			JFreeVariant( &dbv );
 	}	}
 
-	if ( chatRoomType == GCW_CHATROOM ) {
+	if ( bIsChatRoom == GCW_CHATROOM ) {
 		CLISTMENUITEM clmi = { 0 };
 		clmi.cbSize = sizeof( clmi );
 		clmi.pszName = JTranslate(( JGetWord( hContact, "Status", 0 ) == ID_STATUS_ONLINE ) ? "&Leave" : "&Join" );
@@ -110,6 +110,9 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 		JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuJoinLeave, ( LPARAM )&clmi );
 		return 0;
 	}
+
+	if ( bIsTransport )
+		sttEnableMenuItem( hMenuLogin, TRUE );
 
 	DBVARIANT dbv;
 	if ( !JGetStringT( hContact, "jid", &dbv )) {
@@ -126,15 +129,14 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 
 int JabberMenuConvertChatContact( WPARAM wParam, LPARAM lParam )
 {
-	BYTE chatRoomType = (BYTE)JGetByte( (HANDLE ) wParam, "ChatRoom", 0 );
-	if ((chatRoomType == GCW_CHATROOM) || chatRoomType == 0 ) {
+	BYTE bIsChatRoom = (BYTE)JGetByte( (HANDLE ) wParam, "ChatRoom", 0 );
+	if ((bIsChatRoom == GCW_CHATROOM) || bIsChatRoom == 0 ) {
 		DBVARIANT dbv;
-
-		if ( !JGetStringT( (HANDLE ) wParam, (chatRoomType == GCW_CHATROOM)?cidchar:jidchar, &dbv )) {
-			JDeleteSetting( (HANDLE ) wParam, (chatRoomType == GCW_CHATROOM)?cidchar:jidchar);
-			JSetStringT( (HANDLE ) wParam, (chatRoomType != GCW_CHATROOM)?cidchar:jidchar, dbv.ptszVal);
+		if ( !JGetStringT( (HANDLE ) wParam, (bIsChatRoom == GCW_CHATROOM)?(char*)"ChatRoomID":(char*)"jid", &dbv )) {
+			JDeleteSetting( (HANDLE ) wParam, (bIsChatRoom == GCW_CHATROOM)?"ChatRoomID":"jid");
+			JSetStringT( (HANDLE ) wParam, (bIsChatRoom != GCW_CHATROOM)?"ChatRoomID":"jid", dbv.ptszVal);
 			JFreeVariant( &dbv );
-			JSetByte((HANDLE ) wParam, "ChatRoom", (chatRoomType == GCW_CHATROOM)?0:GCW_CHATROOM);
+			JSetByte((HANDLE ) wParam, "ChatRoom", (bIsChatRoom == GCW_CHATROOM)?0:GCW_CHATROOM);
 	}	}
 	return 0;
 }
@@ -233,6 +235,28 @@ LBL_Return:
 	return 0;
 }
 
+int JabberMenuTransportLogin( WPARAM wParam, LPARAM lParam )
+{
+	HANDLE hContact = ( HANDLE )wParam;
+	if ( !JGetByte( hContact, "IsTransport", 0 ))
+		return 0;
+
+	DBVARIANT jid;
+	if ( JGetStringT( hContact, "jid", &jid ))
+		return 0;
+
+	JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, jid.ptszVal );
+	if ( item != NULL ) {
+		XmlNode p( "presence" ); p.addAttr( "to", item->jid );
+		if ( item->status == ID_STATUS_ONLINE )
+			p.addAttr( "type", "unavailable" );
+		JabberSend( jabberThreadInfo->s, p );
+	}
+
+	JFreeVariant( &jid );
+	return 0;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // contact menu initialization code
 int JabberMenuVisitGMail( WPARAM wParam, LPARAM lParam );
@@ -295,6 +319,16 @@ void JabberMenuInit()
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuRosterAdd = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
+
+	// Login/logout
+	strcpy( tDest, "/TransportLogin" );
+	CreateServiceFunction( text, JabberMenuTransportLogin );
+	mi.pszName = JTranslate( "Login/logout" );
+	mi.position = -1999901005;
+	mi.hIcon = iconList[17];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_LOGIN ));
+	mi.pszService = text;
+	mi.pszContactOwner = jabberProtoName;
+	hMenuLogin = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
 	// "visit GMail for the fake contact"
 	strcpy( tDest, "/VisitGMail" );

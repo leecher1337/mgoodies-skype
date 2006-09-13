@@ -52,7 +52,7 @@ PLUGININFO pluginInfo = {
 };
 
 MM_INTERFACE memoryManagerInterface;
-LIST_INTERFACE li;
+LIST_INTERFACE_V2 li;
 
 HANDLE hMainThread = NULL;
 DWORD jabberMainThreadId;

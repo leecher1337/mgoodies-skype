@@ -32,8 +32,7 @@ Last change by : $Author$
 #include "resource.h"
 #include "jabber_list.h"
 #include "jabber_iq.h"
-extern char* cidchar;
-extern char* jidchar;
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // JabberAddToList - adds a contact to the contact list
 
@@ -300,7 +299,7 @@ int JabberContactDeleted( WPARAM wParam, LPARAM lParam )
 		return 0;
 
 	DBVARIANT dbv;
-	if ( !JGetStringT(( HANDLE ) wParam, JGetByte( (HANDLE ) wParam, "ChatRoom", 0 )?cidchar:jidchar, &dbv )) {
+	if ( !JGetStringT(( HANDLE ) wParam, JGetByte( (HANDLE ) wParam, "ChatRoom", 0 )?(char*)"ChatRoomID":(char*)"jid", &dbv )) {
 		TCHAR* jid, *p, *q = NULL;
 
 		jid = dbv.ptszVal;
@@ -610,6 +609,32 @@ int JabberFileResume( WPARAM wParam, LPARAM lParam )
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
+// JabberGetAvatar - retrieves the file name of my own avatar
+
+int JabberGetAvatar(WPARAM wParam, LPARAM lParam)
+{
+	char* buf = ( char* )wParam;
+	int  size = ( int )lParam;
+
+	if ( buf == NULL || size <= 0 )
+		return -1;
+
+	if ( !JGetByte( "EnableAvatars", TRUE ))
+		return -2;
+
+	JabberGetAvatarFileName( NULL, buf, size );
+	return 0;
+}	
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// JabberGetAvatarFormatSupported - Jabber supports avatars of virtually all formats
+
+int JabberGetAvatarFormatSupported(WPARAM wParam, LPARAM lParam)
+{
+	return 1;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
 // JabberGetAvatarInfo - retrieves the avatar info
 
 static int JabberGetAvatarInfo(WPARAM wParam,LPARAM lParam)
@@ -668,6 +693,16 @@ static int JabberGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 	return GAIR_NOAVATAR;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// JabberGetAvatarMaxSize - retrieves the optimal avatar size
+
+int JabberGetAvatarMaxSize(WPARAM wParam, LPARAM lParam)
+{
+	if (wParam != 0) *((int*) wParam) = 64;
+	if (lParam != 0) *((int*) lParam) = 64;
+	return 0;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // JabberGetAwayMsg - returns a contact's away message
 
@@ -717,13 +752,21 @@ static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 			}
 
 			if ( item->statusMessage != NULL ) {
-				JSendBroadcast( hContact, ACKTYPE_AWAYMSG, ACKRESULT_SUCCESS, ( HANDLE ) 1, ( LPARAM )item->statusMessage );
+				#if defined( _UNICODE )
+					char* msg = u2a(item->statusMessage);
+				#else
+					char* msg = item->statusMessage;
+				#endif
+				JSendBroadcast( hContact, ACKTYPE_AWAYMSG, ACKRESULT_SUCCESS, ( HANDLE ) 1, ( LPARAM )msg );
+				#if defined( _UNICODE )
+					mir_free(msg);
+				#endif
 				return;
 			}
 		}
 		else JFreeVariant( &dbv );
 	}
-	//JSendBroadcast( hContact, ACKTYPE_AWAYMSG, ACKRESULT_FAILED, ( HANDLE ) 1, ( LPARAM )0 );
+
 	JSendBroadcast( hContact, ACKTYPE_AWAYMSG, ACKRESULT_SUCCESS, ( HANDLE ) 1, ( LPARAM )"" );
 }
 
@@ -1075,7 +1118,7 @@ int JabberSendMessage( WPARAM wParam, LPARAM lParam )
 			else {
 				id = JabberSerialNext();
 				TCHAR szClientJid[ 256 ];
-				JabberGetClientJID( dbv.ptszVal, szClientJid, sizeof( szClientJid ));
+				JabberGetClientJID( dbv.ptszVal, szClientJid, SIZEOF( szClientJid ));
 
 				m.addAttr( "to", szClientJid ); m.addAttrID( id );
 				XmlNode* x = m.addChild( "x" ); x->addAttr( "xmlns", "jabber:x:event" ); x->addChild( "composing" );
@@ -1142,6 +1185,26 @@ int JabberSetApparentMode( WPARAM wParam, LPARAM lParam )
 
 	// TODO: update the zebra list ( jabber:iq:privacy )
 
+	return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+// JabberSetAvatar - sets an avatar without UI
+
+static int JabberSetAvatar( WPARAM wParam, LPARAM lParam )
+{
+	HBITMAP hBitmap = ( HBITMAP )JCallService( MS_UTILS_LOADBITMAP, 0, lParam );
+	if ( hBitmap == NULL )
+		return 1;
+
+	if (( hBitmap = JabberStretchBitmap( hBitmap )) == NULL )
+		return 2;
+
+	JabberBitmapToAvatar( hBitmap );
+	DeleteObject( hBitmap );
+
+	if ( jabberConnected )
+		JabberSendPresence( jabberDesiredStatus );
 	return 0;
 }
 
@@ -1373,6 +1436,10 @@ int JabberSvcInit( void )
 	heventRawXMLIn = JCreateHookableEvent( JE_RAWXMLIN );
 	heventRawXMLOut = JCreateHookableEvent( JE_RAWXMLOUT );
 	JCreateServiceFunction( JS_SENDXML, ServiceSendXML );
+	JCreateServiceFunction( JS_ISAVATARFORMATSUPPORTED, JabberGetAvatarFormatSupported );
+	JCreateServiceFunction( JS_GETMYAVATARMAXSIZE, JabberGetAvatarMaxSize );
+	JCreateServiceFunction( JS_GETMYAVATAR, JabberGetAvatar );
+	JCreateServiceFunction( JS_SETMYAVATAR, JabberSetAvatar );
 
 	// Menu items
 	CLISTMENUITEM mi, clmi;

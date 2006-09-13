@@ -72,6 +72,7 @@ Last change by : $Author$
 #include <newpluginapi.h>
 #include <m_system.h>
 #include <m_netlib.h>
+#include <m_png.h>
 #include <m_protomod.h>
 #include <m_protosvc.h>
 #include <m_clist.h>
@@ -175,10 +176,14 @@ enum {
 };
 
 // Services and Events
-#define JE_RAWXMLIN "/RawXMLIn"
-#define JE_RAWXMLOUT "/RawXMLOut"
+#define JE_RAWXMLIN                "/RawXMLIn"
+#define JE_RAWXMLOUT               "/RawXMLOut"
 
-#define JS_SENDXML "/SendXML"
+#define JS_SENDXML                 "/SendXML"
+#define JS_ISAVATARFORMATSUPPORTED "/IsAvatarFormatSupported"
+#define JS_GETMYAVATARMAXSIZE      "/GetMyAvatarMaxSize"
+#define JS_SETMYAVATAR             "/SetMyAvatar"
+#define JS_GETMYAVATAR             "/GetMyAvatar"
 
 /*******************************************************************
  * Global data structures and data type definitions
@@ -201,14 +206,14 @@ struct ThreadData {
 	char  manualHost[128];
 	TCHAR resource[128];
 	TCHAR fullJID[256];
-	WORD port;
+	WORD  port;
 	JABBER_SOCKET s;
-	BOOL useSSL;
+	BOOL  useSSL;
 
 	char newPassword[128];
 
 	HWND reg_hwndDlg;
-	BOOL reg_done;
+	BOOL reg_done, bIsSessionAvailable;
 };
 
 struct JABBER_MODEMSGS
@@ -374,8 +379,9 @@ extern HANDLE heventRawXMLOut;
 
 //---- jabber_bitmap.cpp ----------------------------------------------
 
-HBITMAP __stdcall JabberBitmapToAvatar( HBITMAP hBitmap );
+int     __stdcall JabberBitmapToAvatar( HBITMAP hBitmap );
 int     __stdcall JabberEnterBitmapName( char* szDest );
+HBITMAP __stdcall JabberStretchBitmap( HBITMAP hBitmap );
 
 //---- jabber_chat.cpp ----------------------------------------------
 
@@ -555,7 +561,7 @@ __forceinline WCHAR* mir_wstrdup(const WCHAR *src)
 	#define mir_tstrdup mir_strdup
 #endif
 
-extern LIST_INTERFACE li;
+extern LIST_INTERFACE_V2 li;
 
 ///////////////////////////////////////////////////////////////////////////////
 // TXT encode helper

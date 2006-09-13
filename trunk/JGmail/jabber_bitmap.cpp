@@ -27,6 +27,133 @@ Last change by : $Author$
 
 #include "jabber.h"
 
+#include "sha1.h"
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Jabber_StretchBitmap - rescales a bitmap to 64x64 pixels and creates a DIB from it
+
+HBITMAP __stdcall JabberStretchBitmap( HBITMAP hBitmap )
+{
+	BITMAPINFO bmStretch = { 0 };
+	bmStretch.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bmStretch.bmiHeader.biWidth = 64;
+	bmStretch.bmiHeader.biHeight = 64;
+	bmStretch.bmiHeader.biPlanes = 1;
+	bmStretch.bmiHeader.biBitCount = 32;
+
+	UINT* ptPixels;
+	HBITMAP hStretchedBitmap = CreateDIBSection( NULL, &bmStretch, DIB_RGB_COLORS, ( void** )&ptPixels, NULL, 0);
+	if ( hStretchedBitmap == NULL ) {
+		JabberLog( "Bitmap creation failed with error %d", GetLastError() );
+		return NULL;
+	}
+
+	BITMAP bmp;
+	HDC hDC = CreateCompatibleDC( NULL );
+	HBITMAP hOldBitmap1 = ( HBITMAP )SelectObject( hDC, hBitmap );
+	GetObject( hBitmap, sizeof( BITMAP ), &bmp );
+
+	HDC hBmpDC = CreateCompatibleDC( hDC );
+	HBITMAP hOldBitmap2 = ( HBITMAP )SelectObject( hBmpDC, hStretchedBitmap );
+	int side, dx, dy;
+
+	if ( bmp.bmWidth > bmp.bmHeight ) {
+		side = bmp.bmHeight;
+		dx = ( bmp.bmWidth - bmp.bmHeight )/2;
+		dy = 0;
+	}
+	else {
+		side = bmp.bmWidth;
+		dx = 0;
+		dy = ( bmp.bmHeight - bmp.bmWidth )/2;
+	}
+
+	SetStretchBltMode( hBmpDC, HALFTONE );
+	StretchBlt( hBmpDC, 0, 0, 64, 64, hDC, dx, dy, side, side, SRCCOPY );
+
+	SelectObject( hDC, hOldBitmap1 );
+	DeleteObject( hBitmap );
+	DeleteDC( hDC );
+
+	SelectObject( hBmpDC, hOldBitmap2 );
+	DeleteDC( hBmpDC );
+	return hStretchedBitmap;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// JabberBitmapToAvatar - updates the avatar database settins and file from a bitmap
+
+int __stdcall JabberBitmapToAvatar( HBITMAP hBitmap )
+{
+	if ( !ServiceExists( MS_DIB2PNG ))
+		return 1;
+
+	HDC hdc = CreateCompatibleDC( NULL );
+	HBITMAP hOldBitmap = ( HBITMAP )SelectObject( hdc, hBitmap );
+
+	BITMAPINFO* bmi = ( BITMAPINFO* )alloca( sizeof( BITMAPINFO ) + sizeof( RGBQUAD )*256 );
+	memset( bmi, 0, sizeof( BITMAPINFO ));
+	bmi->bmiHeader.biSize = 0x28;
+	if ( GetDIBits( hdc, hBitmap, 0, 64, NULL, bmi, DIB_RGB_COLORS ) == 0 ) {
+		DWORD tErrorCode = GetLastError();
+		JabberLog( "Unable to get the bitmap: error %d", tErrorCode );
+		return 2;
+	}
+
+	BITMAPINFOHEADER* pDib;
+	BYTE* pDibBits;
+	pDib = ( BITMAPINFOHEADER* )GlobalAlloc( LPTR, sizeof( BITMAPINFO ) + sizeof( RGBQUAD )*256 + bmi->bmiHeader.biSizeImage );
+	if ( pDib == NULL )
+		return 3;
+
+	memcpy( pDib, bmi, sizeof( BITMAPINFO ) + sizeof( RGBQUAD )*256 );
+	pDibBits = (( BYTE* )pDib ) + sizeof( BITMAPINFO ) + sizeof( RGBQUAD )*256;
+
+	GetDIBits( hdc, hBitmap, 0, pDib->biHeight, pDibBits, ( BITMAPINFO* )pDib, DIB_RGB_COLORS );
+	SelectObject( hdc, hOldBitmap );
+	DeleteDC( hdc );
+
+	long dwPngSize = 0;
+	DIB2PNG convertor;
+	convertor.pbmi = ( BITMAPINFO* )pDib;
+	convertor.pDiData = pDibBits;
+	convertor.pResult = NULL;
+	convertor.pResultLen = &dwPngSize;
+	if ( !CallService( MS_DIB2PNG, 0, (LPARAM)&convertor )) {
+		GlobalFree( pDib );
+		return 2;
+	}
+
+	convertor.pResult = new BYTE[ dwPngSize ];
+	CallService( MS_DIB2PNG, 0, (LPARAM)&convertor );
+	GlobalFree( pDib );
+
+	uint8_t digest[SHA1HashSize];
+	SHA1Context sha1ctx;
+	SHA1Reset( &sha1ctx );
+	SHA1Input( &sha1ctx, (uint8_t*)convertor.pResult, dwPngSize );
+	SHA1Result( &sha1ctx, digest );
+
+	char tFileName[ MAX_PATH ];
+	JabberGetAvatarFileName( NULL, tFileName, MAX_PATH );
+	DeleteFileA( tFileName );
+
+	char buf[SHA1HashSize*2+1];
+	for ( int i=0; i<SHA1HashSize; i++ )
+		sprintf( buf+( i<<1 ), "%02x", digest[i] );
+   JSetString( NULL, "AvatarHash", buf );
+	JSetByte( "AvatarType", PA_FORMAT_PNG );
+
+	JabberGetAvatarFileName( NULL, tFileName, MAX_PATH );
+	FILE* out = fopen( tFileName, "wb" );
+	if ( out != NULL ) {
+		fwrite( convertor.pResult, dwPngSize, 1, out );
+		fclose( out );
+	}
+	delete convertor.pResult;
+	return ERROR_SUCCESS;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // JabberEnterBitmapName - enters the picture filename
 
