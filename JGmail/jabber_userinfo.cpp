@@ -372,51 +372,30 @@ static BOOL CALLBACK JabberUserPhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 // JabberSetAvatarDlgProc - avatar options dialog procedure
 
 static HBITMAP hAvatar;
-static char szFileName[ MAX_PATH ];
 
-static void sttSaveAvatar()
+static void sttSaveAvatar( HWND hwndDlg )
 {
-	char tFileName[ MAX_PATH ];
-	JabberGetAvatarFileName( NULL, tFileName, sizeof tFileName );
-
-	if ( CopyFileA( szFileName, tFileName, FALSE ) == FALSE ) {
-		JabberLog( "Copy failed with error %d", GetLastError() );
-		return;
-	}
-
-	SHA1Context ctx;
-	uint8_t digest[20];
-	SHA1Reset( &ctx );
-
-	FILE* in = fopen( tFileName, "rb" );
-	if ( in == NULL )
+	char szFileName[ MAX_PATH ];
+	if ( JabberEnterBitmapName( szFileName ) != ERROR_SUCCESS )
 		return;
 
-	char buf[ 512 ];
-	bool bIsFirst = true;
-	int  pictureType;
-	while( !feof( in )) {
-		int bytes = fread( buf, 1, sizeof buf, in );
-		if ( bIsFirst ) {
-			pictureType = JabberGetPictureType( buf );
-			bIsFirst = false;
-		}
-		SHA1Input( &ctx, ( const unsigned __int8* )buf, bytes );
-	}
-	fclose( in );
-
-	if ( pictureType == PA_FORMAT_UNKNOWN )
+	HBITMAP hBitmap = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (WPARAM)szFileName );
+	if ( hBitmap == NULL )
 		return;
 
-	SHA1Result( &ctx, digest );
-	for ( int i=0; i<20; i++ )
-		sprintf( buf+( i<<1 ), "%02x", digest[i] );
-   JSetString( NULL, "AvatarHash", buf );
-	JSetByte( "AvatarType", pictureType );
+	if (( hBitmap = JabberStretchBitmap( hBitmap )) == NULL )
+		return;
 
-	JabberGetAvatarFileName( NULL, szFileName, MAX_PATH );
-	if ( strcmp( szFileName, tFileName ))
-		MoveFileA( tFileName, szFileName );
+	JabberBitmapToAvatar( hAvatar = hBitmap );
+
+	hBitmap = ( HBITMAP )SendDlgItemMessage(hwndDlg, IDC_AVATAR, STM_SETIMAGE, IMAGE_BITMAP, (WPARAM)hBitmap );
+	if ( hBitmap )
+		DeleteObject( hBitmap );
+
+	RedrawWindow(GetDlgItem(hwndDlg, IDC_AVATAR), NULL, NULL, RDW_INVALIDATE);
+
+	if ( jabberConnected )
+		JabberSendPresence( jabberDesiredStatus );
 }
 
 static BOOL CALLBACK JabberSetAvatarDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -426,7 +405,6 @@ static BOOL CALLBACK JabberSetAvatarDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 		TranslateDialogDefault( hwndDlg );
 		{
 			hAvatar = NULL;
-			szFileName[0] = 0;
 
 			BOOL tValue = JGetByte( "EnableAvatars", 1 );
 			CheckDlgButton( hwndDlg, IDC_ENABLE_AVATARS,	tValue );
@@ -441,22 +419,10 @@ static BOOL CALLBACK JabberSetAvatarDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 		return TRUE;
 
 	case WM_COMMAND:
-		if ( HIWORD( wParam ) == BN_CLICKED )
+		if ( HIWORD( wParam ) == BN_CLICKED ) {
 			switch( LOWORD( wParam )) {
 			case IDC_SETAVATAR:
-				if ( JabberEnterBitmapName( szFileName ) == ERROR_SUCCESS ) {
-					HBITMAP hBitmap = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (WPARAM)szFileName );
-					if ( hBitmap != NULL ) {
-						hAvatar = hBitmap;
-		            hBitmap = ( HBITMAP )SendDlgItemMessage(hwndDlg, IDC_AVATAR, STM_SETIMAGE, IMAGE_BITMAP, (WPARAM)hBitmap );
-						if ( hBitmap )
-							DeleteObject( hBitmap );
-
-						sttSaveAvatar();
-						if ( jabberConnected )
-							JabberSendPresence( jabberDesiredStatus );
-						RedrawWindow(GetDlgItem(hwndDlg, IDC_AVATAR), NULL, NULL, RDW_INVALIDATE);
-				}	}
+				sttSaveAvatar( hwndDlg );
 				break;
 
 			case IDC_DELETEAVATAR:
@@ -473,8 +439,9 @@ static BOOL CALLBACK JabberSetAvatarDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 
 				if ( jabberConnected )
 					JabberSendPresence( jabberDesiredStatus );
+				RedrawWindow(GetDlgItem(hwndDlg, IDC_AVATAR), NULL, NULL, RDW_INVALIDATE);
 				break;
-			}
+		}	}
 		break;
 
 	case WM_DESTROY:

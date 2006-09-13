@@ -34,13 +34,28 @@ Last change by : $Author$
 extern char* jabberVcardPhotoFileName;
 extern char* jabberVcardPhotoType;
 
+static void JabberOnLoggedIn( ThreadData* info )
+{
+	jabberOnline = TRUE;
+	jabberLoggedInTime = time(0);
+	int enableGmailSetting = JGetByte(NULL,"EnableGMail",1);
+	if (enableGmailSetting & 1) JabberEnableNotifications(info);
+	int iqId = JabberSerialNext();
+	JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
+		
+	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
+	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
+	JabberSend( info->s, iq );
+	if ((enableGmailSetting & 3) == 1) JabberRequestMailBox(info->s);
+}
+
 void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata )
 {
 	// RECVED: result of the request for authentication method
 	// ACTION: send account authentication information to log in
 	JabberLog( "<iq/> iqIdGetAuth" );
 
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	ThreadData* info = ( ThreadData* ) userdata;
 	XmlNode *queryNode;
 	TCHAR* type;
 	if (( type=JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) return;
@@ -88,7 +103,7 @@ void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata )
 
 void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 {
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	ThreadData* info = ( ThreadData* ) userdata;
 	TCHAR* type;
 	int iqId;
 
@@ -137,58 +152,55 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 
 void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 {
-//	JabberXmlDumpNode( iqNode );
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
-	int iqId;
-	XmlNode* queryNode = JabberXmlGetChild( iqNode, "bind" );
-	if (queryNode){
-//		JabberLog("Has query node");
-		if (queryNode=JabberXmlGetChild( queryNode, "jid" )){
-//			JabberLog("Has query jid");
-			if (queryNode->text) {
-//				JabberLog("JID has text");
-//				JabberLog("text: %s",queryNode->text);
-				if (!_tcsncmp(info->fullJID,queryNode->text,SIZEOF (info->fullJID))){
-					JabberLog( "Result Bind: "TCHAR_STR_PARAM" %s "TCHAR_STR_PARAM,info->fullJID,"confirmed.",NULL);
-				} else {
-					JabberLog( "Result Bind: "TCHAR_STR_PARAM" %s "TCHAR_STR_PARAM,info->fullJID,"changed to",queryNode->text);
-					_tcsncpy(info->fullJID,queryNode->text,SIZEOF (info->fullJID));
-			}	}
-		} else if (queryNode=JabberXmlGetChild( queryNode, "error" )){
-			//rfc3920 page 39
-			TCHAR errorMessage [256];
-			int pos=0;
-			pos = mir_sntprintf(errorMessage,256,TranslateT("Resource "));
-			XmlNode *tempNode;
-			if (tempNode = JabberXmlGetChild( queryNode, "resource" )) pos += mir_sntprintf(errorMessage,256-pos,_T("\"%s\" "),tempNode->text);
-			pos += mir_sntprintf(errorMessage+pos,256-pos,TranslateT("refused by server\n%s: %s"),TranslateT("Type"),Translate(JabberXmlGetAttrValue( queryNode, "type" )));
-			if (queryNode->numChild) pos += mir_sntprintf(errorMessage+pos,256-pos,_T("\n%s: ")_T(TCHAR_STR_PARAM)_T("\n"),TranslateT("Reason"),JTranslate(queryNode->child[0]->name));
-			mir_sntprintf( errorMessage,256-pos, _T("%s @")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
-			MessagePopup( NULL, errorMessage, TranslateT( "Jabber Protocol" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
-			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPROTOCOL );
-			JabberSend( info->s, "</stream:stream>" );
-			jabberThreadInfo = NULL;	// To disallow auto reconnect
-		}
-	}
-	jabberOnline = TRUE;
-	jabberLoggedInTime = time(0);
-	int enableGmailSetting = JGetByte(NULL,"EnableGMail",1);
-	if (enableGmailSetting & 1) JabberEnableNotifications(info);
-	iqId = JabberSerialNext();
-	JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
-	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
-	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
-	JabberSend( info->s, iq );
+	ThreadData* info = ( ThreadData* ) userdata;
+	XmlNode* n = JabberXmlGetChild( iqNode, "bind" );
+	if ( n != NULL ) {
+		if ( n = JabberXmlGetChild( n, "jid" )) {
+			if ( n->text ) {
+				if ( !_tcsncmp( info->fullJID, n->text, SIZEOF( info->fullJID )))
+					JabberLog( "Result Bind: "TCHAR_STR_PARAM" %s "TCHAR_STR_PARAM, info->fullJID, "confirmed.", NULL );
+				else {
+					JabberLog( "Result Bind: "TCHAR_STR_PARAM" %s "TCHAR_STR_PARAM, info->fullJID, "changed to", n->text);
+					_tcsncpy( info->fullJID, n->text, SIZEOF( info->fullJID ));
+		}	}	}
 
-	if ((enableGmailSetting & 3) == 1) JabberRequestMailBox(info->s);
-	if ( hwndJabberAgents ) {
-		// Retrieve agent information
-		iqId = JabberSerialNext();
-		JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
-		XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
-		XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:agents" );
-		JabberSend( info->s, iq );
+		if ( info->bIsSessionAvailable ) {
+			int iqId = JabberSerialNext();
+			JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultSession );
+
+			XmlNodeIq iq( "set" ); iq.addAttrID( iqId );
+			iq.addChild( "session" )->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-session" );
+			JabberSend( info->s, iq );
+		}
+		else JabberOnLoggedIn( info );
 	}
+   else if ( n = JabberXmlGetChild( n, "error" )) {
+		//rfc3920 page 39
+		TCHAR errorMessage [256];
+		int pos=0;
+		pos = mir_sntprintf( errorMessage, SIZEOF(errorMessage), TranslateT("Resource "));
+		XmlNode *tempNode;
+		if (tempNode = JabberXmlGetChild( n, "resource" ))
+			pos += mir_sntprintf(errorMessage,256-pos,_T("\"%s\" "),tempNode->text);
+		pos += mir_sntprintf( errorMessage+pos,256-pos,TranslateT("refused by server\n%s: %s"),TranslateT("Type"),Translate(JabberXmlGetAttrValue( n, "type" )));
+		if ( n->numChild )
+			pos += mir_sntprintf( errorMessage+pos,256-pos,_T("\n%s: ")_T(TCHAR_STR_PARAM)_T("\n"),TranslateT("Reason"),JTranslate( n->child[0]->name));
+		mir_sntprintf( errorMessage,256-pos, _T("%s @")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
+		MessageBox( NULL, errorMessage, TranslateT( "Jabber Protocol" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPROTOCOL );
+		JabberSend( info->s, "</stream:stream>" );
+		jabberThreadInfo = NULL;	// To disallow auto reconnect
+}	}
+
+void JabberIqResultSession( XmlNode *iqNode, void *userdata )
+{
+	ThreadData* info = ( ThreadData* )userdata;
+
+	TCHAR* type;
+	if (( type=JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) return;
+
+	if ( !lstrcmp( type, _T("result")))
+		JabberOnLoggedIn( info );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -405,7 +417,7 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 
 void JabberIqResultGetAgents( XmlNode *iqNode, void *userdata )
 {
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	ThreadData* info = ( ThreadData* ) userdata;
 	XmlNode *queryNode;
 	TCHAR* type, *jid, *str;
 
@@ -456,7 +468,7 @@ void JabberIqResultGetRegister( XmlNode *iqNode, void *userdata )
 	// ACTION: activate ( agent ) registration input dialog
 	JabberLog( "<iq/> iqIdGetRegister" );
 
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	ThreadData* info = ( ThreadData* ) userdata;
 	XmlNode *queryNode, *n;
 	TCHAR *type;
 	if (( type=JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) return;
@@ -481,10 +493,15 @@ void JabberIqResultSetRegister( XmlNode *iqNode, void *userdata )
 	// ACTION: notify of successful agent registration
 	JabberLog( "<iq/> iqIdSetRegister" );
 
-	TCHAR *type;
-	if (( type=JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) return;
+	TCHAR *type, *from;
+	if (( type = JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) return;
+	if (( from = JabberXmlGetAttrValue( iqNode, "from" )) == NULL ) return;
 
 	if ( !lstrcmp( type, _T("result"))) {
+		HANDLE hContact = JabberHContactFromJID( from );
+		if ( hContact != NULL )
+			JSetByte( hContact, "IsTransport", TRUE );
+
 		if ( hwndRegProgress )
 			SendMessage( hwndRegProgress, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )TranslateT( "Registration successful" ));
 	}
@@ -1184,7 +1201,7 @@ void JabberIqResultSetPassword( XmlNode *iqNode, void *userdata )
 
 void JabberIqResultDiscoAgentItems( XmlNode *iqNode, void *userdata )
 {
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	ThreadData* info = ( ThreadData* ) userdata;
 	XmlNode *queryNode, *itemNode;
 	TCHAR* type, *jid, *from;
 
@@ -1232,7 +1249,7 @@ void JabberIqResultDiscoAgentItems( XmlNode *iqNode, void *userdata )
 
 void JabberIqResultDiscoAgentInfo( XmlNode *iqNode, void *userdata )
 {
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	ThreadData* info = ( ThreadData* ) userdata;
 	XmlNode *queryNode, *itemNode, *identityNode;
 	TCHAR* type, *from, *var;
 	JABBER_LIST_ITEM *item;
@@ -1271,7 +1288,7 @@ void JabberIqResultDiscoAgentInfo( XmlNode *iqNode, void *userdata )
 
 void JabberIqResultDiscoClientInfo( XmlNode *iqNode, void *userdata )
 {
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	ThreadData* info = ( ThreadData* ) userdata;
 	XmlNode *queryNode, *itemNode;
 	TCHAR* type, *from, *var;
 	JABBER_LIST_ITEM *item;
@@ -1319,7 +1336,7 @@ void JabberIqResultGetAvatar( XmlNode *iqNode, void *userdata )
 	if ( !JGetByte( "EnableAvatars", TRUE ))
 		return;
 
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	ThreadData* info = ( ThreadData* ) userdata;
 	TCHAR* type;
 
 	// RECVED: agent list

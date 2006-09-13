@@ -72,6 +72,7 @@ static BOOL CALLBACK JabberRegisterDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 			ShowWindow( GetDlgItem( hwndDlg, IDCANCEL2 ), SW_SHOW );
 			regInfo = ( struct ThreadData * ) GetWindowLong( hwndDlg, GWL_USERDATA );
 			thread = ( struct ThreadData * ) mir_alloc( sizeof( struct ThreadData ));
+			memset( thread, 0, sizeof( struct ThreadData ));
 			thread->type = JABBER_SESSION_REGISTER;
 			_tcsncpy( thread->username, regInfo->username, SIZEOF( thread->username ));
 			strncpy( thread->password, regInfo->password, SIZEOF( thread->password ));

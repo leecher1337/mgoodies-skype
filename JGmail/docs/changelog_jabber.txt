@@ -6,7 +6,11 @@ Legend:
 
 Version 0.5.0.2
 ===============
+[+] wish #0001921 added: logon/logoff in context menu on jabber-transports in contact list
 [!] bug #0002261 fixed: Invitations are sent wrong
+[!] bug #0002268 fixed: XML parser has a problem with > (greater than) in attributes
+[!] bug #0002288 fixed: Status messages are not delivered correctly via icq transports
+[!] bug #0002435 fixed: a session is being created before logon
 [!] bug #0002474 fixed: WM_CONTEXTMENU not handled correctly
 
 Version 0.5.0.1

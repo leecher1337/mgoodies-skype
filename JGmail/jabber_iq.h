@@ -77,6 +77,7 @@ void JabberIqResultMucGetMemberList( XmlNode *iqNode, void *userdata );
 void JabberIqResultMucGetModeratorList( XmlNode *iqNode, void *userdata );
 void JabberIqResultMucGetOwnerList( XmlNode *iqNode, void *userdata );
 void JabberIqResultMucGetVoiceList( XmlNode *iqNode, void *userdata );
+void JabberIqResultSession( XmlNode *iqNode, void *userdata );
 void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata );
 void JabberIqResultSetPassword( XmlNode *iqNode, void *userdata );
 void JabberIqResultSetRegister( XmlNode *iqNode, void *userdata );
