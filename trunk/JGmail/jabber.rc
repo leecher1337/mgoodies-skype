@@ -64,12 +64,12 @@ BEGIN
     CONTROL         "",IDC_OPT_EXPERT_TAB,"SysTabControl32",WS_TABSTOP,2,3,273,236,0
 END
 
-IDD_OPT_JABBER DIALOGEX 0, 0, 258, 214
+IDD_OPT_JABBER DIALOGEX 0, 0, 258, 221
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Jabber",IDC_SIMPLE,7,7,244,99
+    GROUPBOX        "Jabber",IDC_SIMPLE,7,7,244,111
     LTEXT           "Username:",IDC_STATIC,19,21,45,8
     EDITTEXT        IDC_EDIT_USERNAME,70,19,86,12,ES_AUTOHSCROLL
     LTEXT           "Password:",IDC_STATIC,19,35,45,8
@@ -92,26 +92,29 @@ BEGIN
                     WS_TABSTOP,165,88,80,10
     CONTROL         "Use SSL",IDC_USE_SSL,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,104,88,54,10
+    CONTROL         "Press here to download OpenSSL, required for SSL & TLS support",
+                    IDC_DOWNLOAD_OPENSSL,"Hyperlink",WS_TABSTOP,20,102,225,
+                    11
     PUSHBUTTON      "Register new user",IDC_BUTTON_REGISTER,165,19,78,13
     CONTROL         "List of public servers",IDC_LINK_PUBLIC_SERVER,
                     "Hyperlink",WS_TABSTOP,165,74,79,11
-    GROUPBOX        "Expert",IDC_STATIC,7,108,244,99
+    GROUPBOX        "Expert",IDC_STATIC,7,122,244,99
     CONTROL         "Manually specify connection host",IDC_MANUAL,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,19,121,223,10
-    LTEXT           "Host:",IDC_STATIC,31,134,26,8
-    EDITTEXT        IDC_HOST,62,132,90,12,ES_AUTOHSCROLL | WS_DISABLED
-    LTEXT           "Port:",IDC_STATIC,161,134,21,8
-    EDITTEXT        IDC_HOSTPORT,186,132,31,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    BS_AUTOCHECKBOX | WS_TABSTOP,19,135,223,10
+    LTEXT           "Host:",IDC_STATIC,31,148,26,8
+    EDITTEXT        IDC_HOST,62,146,90,12,ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "Port:",IDC_STATIC,161,148,21,8
+    EDITTEXT        IDC_HOSTPORT,186,146,31,12,ES_AUTOHSCROLL | ES_NUMBER | 
                     WS_DISABLED
     CONTROL         "Keep connection alive",IDC_KEEPALIVE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,19,146,221,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,19,159,221,10
     CONTROL         "Automatically delete contacts not in my roster",
                     IDC_ROSTER_SYNC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,
-                    158,221,10
-    LTEXT           "User directory:",IDC_JUD_LABEL,19,175,68,8
-    EDITTEXT        IDC_JUD,92,172,103,12,ES_AUTOHSCROLL
-    LTEXT           "Messaging language:",IDC_MSGLANG_LABEL,19,189,70,8
-    COMBOBOX        IDC_MSGLANG,92,187,103,69,CBS_DROPDOWNLIST | CBS_SORT | 
+                    172,221,10
+    LTEXT           "User directory:",IDC_JUD_LABEL,19,188,68,8
+    EDITTEXT        IDC_JUD,92,186,103,12,ES_AUTOHSCROLL
+    LTEXT           "Messaging language:",IDC_MSGLANG_LABEL,19,202,70,8
+    COMBOBOX        IDC_MSGLANG,92,201,103,69,CBS_DROPDOWNLIST | CBS_SORT | 
                     WS_VSCROLL | WS_TABSTOP
 END
 
