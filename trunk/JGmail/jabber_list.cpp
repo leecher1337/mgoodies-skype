@@ -434,3 +434,20 @@ void putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
 		JSetStringT( hContact, "System", r->system );
 	} else JDeleteSetting( hContact, "System" );
 }
+
+// if running with pre 0.6 core will use our implementation
+int JList_InsertPtr( SortedList* list, void* p )
+{
+	int idx;
+	li.List_GetIndex( list, p, &idx );
+	return li.List_Insert( list, p, idx );
+}
+int JList_RemovePtr( SortedList* list, void* p )
+{
+	int idx = -1;
+	if ( li.List_GetIndex( list, p, &idx ))
+		li.List_Remove( list, idx );
+
+	return idx;
+}
+// end if running with pre 0.6
