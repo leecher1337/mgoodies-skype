@@ -22,8 +22,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#if defined(UNICODE)
-   #define _UNICODE
+#if defined(UNICODE)	
+	#ifndef _UNICODE
+		#define _UNICODE
+	#endif
 #endif
 #include <wchar.h>
 #include <tchar.h>

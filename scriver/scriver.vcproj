@@ -875,6 +875,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\msgwindow.h"
+				>
+			</File>
+			<File
 				RelativePath=".\multimon.h"
 				>
 			</File>
@@ -924,15 +928,15 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="..\..\src\res\addcontact.ico"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Miranda-IM\res\addcontact.ico"
 				>
 			</File>
 			<File
 				RelativePath="res\addcontact.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\res\addcontact.ico"
 				>
 			</File>
 			<File
@@ -944,11 +948,11 @@
 				>
 			</File>
 			<File
-				RelativePath="res\delete.ico"
+				RelativePath="..\..\src\res\delete.ico"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\res\delete.ico"
+				RelativePath="res\delete.ico"
 				>
 			</File>
 			<File
@@ -972,11 +976,11 @@
 				>
 			</File>
 			<File
-				RelativePath="res\dragcopy.cur"
+				RelativePath="..\..\src\res\dragcopy.cur"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\res\dragcopy.cur"
+				RelativePath="res\dragcopy.cur"
 				>
 			</File>
 			<File

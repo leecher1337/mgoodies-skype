@@ -46,12 +46,9 @@ extern int overlayIcon;
 static WNDPROC OldSplitterProc;
 static WNDPROC OldMessageProc;
 static WNDPROC OldNicklistProc;
-static WNDPROC OldTabProc;
 static WNDPROC OldFilterButtonProc;
 static WNDPROC OldLogProc;
 
-extern void SubclassTabCtrl(HWND tabCtrl);
-extern void UnsubclassTabCtrl(HWND tabCtrl);
 extern HWND GetParentWindow(HANDLE hContact, BOOL bChat);
 
 
@@ -362,38 +359,22 @@ static LRESULT CALLBACK MessageSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, 
 			}
  			if (wParam == VK_TAB && GetKeyState(VK_CONTROL) & 0x8000 && !(GetKeyState(VK_SHIFT) & 0x8000)) // CTRL-TAB (switch tab/window)
 			{
-				if(g_Settings.TabsEnable)
-					SendMessage(GetParent(hwnd), GC_SWITCHNEXTTAB, 0, 0);
-				else
-					ShowRoom(SM_GetNextWindow(Parentsi), WINDOW_VISIBLE, TRUE);
+				SendMessage(GetParent(GetParent(hwnd)), CM_ACTIVATENEXT, 0, (LPARAM)GetParent(hwnd));
 				return TRUE;
 
 			}
  			if (wParam == VK_TAB && GetKeyState(VK_CONTROL) & 0x8000 && GetKeyState(VK_SHIFT) & 0x8000) // CTRL_SHIFT-TAB (switch tab/window)
 			{
-				if(g_Settings.TabsEnable)
-					SendMessage(GetParent(hwnd), GC_SWITCHPREVTAB, 0, 0);
-				else
-					ShowRoom(SM_GetPrevWindow(Parentsi), WINDOW_VISIBLE, TRUE);
+				SendMessage(GetParent(GetParent(hwnd)), CM_ACTIVATEPREV, 0, (LPARAM)GetParent(hwnd));
 				return TRUE;
 
 			}
 			if (wParam <= '9' && wParam >= '1' && GetKeyState(VK_CONTROL) & 0x8000 && !(GetKeyState(VK_MENU) & 0x8000)) // CTRL + 1 -> 9 (switch tab)
 			{
-				if(g_Settings.TabsEnable)
-				{
-					SendMessage(GetParent(hwnd), GC_SWITCHTAB, 0, (LPARAM)((int)wParam - (int)'1'));
-
-				}
 
 			}
 			if (wParam <= VK_NUMPAD9 && wParam >= VK_NUMPAD1 && GetKeyState(VK_CONTROL) & 0x8000 && !(GetKeyState(VK_MENU) & 0x8000)) // CTRL + 1 -> 9 (switch tab)
 			{
-				if(g_Settings.TabsEnable)
-				{
-					SendMessage(GetParent(hwnd), GC_SWITCHTAB, 0, (LPARAM)((int)wParam - (int)VK_NUMPAD1));
-
-				}
 
 			}
 			if (wParam == VK_TAB && !(GetKeyState(VK_CONTROL) & 0x8000) && !(GetKeyState(VK_SHIFT) & 0x8000)) {    //tab-autocomplete
@@ -951,152 +932,6 @@ static LRESULT CALLBACK LogSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 
 }
 
-static LRESULT CALLBACK TabSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	static BOOL bDragging = FALSE;
-	static int iBeginIndex = 0;
-    switch (msg)
-	{
-	case WM_LBUTTONDOWN:
-		{
-			TCHITTESTINFO tci = {0};
-			tci.pt.x=(short)LOWORD(GetMessagePos());
-			tci.pt.y=(short)HIWORD(GetMessagePos());
-			if(DragDetect(hwnd, tci.pt) && TabCtrl_GetItemCount(hwnd) >1 )
-			{
-				int i;
-				tci.flags = TCHT_ONITEM;
-
-				ScreenToClient(hwnd, &tci.pt);
-				i= TabCtrl_HitTest(hwnd, &tci);
-				if(i != -1)
-				{
-					TCITEM tc;
-					SESSION_INFO * s = NULL;
-
-					tc.mask = TCIF_PARAM;
-					TabCtrl_GetItem(hwnd, i, &tc);
-					s = (SESSION_INFO * ) tc.lParam;
-					if(s)
-					{
-						BOOL bOnline = DBGetContactSettingWord(s->hContact, s->pszModule, "Status", ID_STATUS_OFFLINE) == ID_STATUS_ONLINE?TRUE:FALSE;
-						bDragging = TRUE;
-						iBeginIndex = i;
-						ImageList_BeginDrag(hIconsList, bOnline?(MM_FindModule(s->pszModule))->OnlineIconIndex:(MM_FindModule(s->pszModule))->OfflineIconIndex, 8, 8);
-						ImageList_DragEnter(hwnd,tci.pt.x, tci.pt.y);
-						SetCapture(hwnd);
-					}
-
-					return TRUE;
-
-				}
-			}
-			else
-				PostMessage(GetParent(hwnd), GC_TABCLICKED, 0, 0 );
-		}break;
-	case WM_CAPTURECHANGED:
-		{
-				bDragging = FALSE;
-				ImageList_DragLeave(hwnd);
-				ImageList_EndDrag();
-
-		}break;
-	case WM_MOUSEMOVE:
-		{
-			if(bDragging)
-			{
-				TCHITTESTINFO tci = {0};
-				tci.pt.x=(short)LOWORD(GetMessagePos());
-				tci.pt.y=(short)HIWORD(GetMessagePos());
-				ScreenToClient(hwnd, &tci.pt);
-				ImageList_DragMove(tci.pt.x, tci.pt.y);
-
-			}
-		}break;
-	case WM_LBUTTONUP:
-		{
-			if(bDragging && ReleaseCapture())
-			{
-				TCHITTESTINFO tci = {0};
-				int i;
-				tci.pt.x=(short)LOWORD(GetMessagePos());
-				tci.pt.y=(short)HIWORD(GetMessagePos());
-				tci.flags = TCHT_ONITEM;
-				bDragging = FALSE;
-				ImageList_DragLeave(hwnd);
-				ImageList_EndDrag();
-
-				ScreenToClient(hwnd, &tci.pt);
-				i= TabCtrl_HitTest(hwnd, &tci);
-				if(i != -1 && i != iBeginIndex)
-				{
-					SendMessage(GetParent(hwnd), GC_DROPPEDTAB, (WPARAM)i, (LPARAM)iBeginIndex);
-				}
-
-
-			}
-
-		}break;
-/*	case WM_MOUSEMOVE:
-		{
-			int  i = ReleaseCapture();
-			i++;
-
-		}break;
-		*/
-	case WM_LBUTTONDBLCLK:
-		{
-			TCHITTESTINFO tci = {0};
-			int i = 0;
-
-			tci.pt.x=(short)LOWORD(GetMessagePos());
-			tci.pt.y=(short)HIWORD(GetMessagePos());
-			tci.flags = TCHT_ONITEM;
-
-			ScreenToClient(hwnd, &tci.pt);
-			i = TabCtrl_HitTest(hwnd, &tci);
-			if(i != -1 && g_Settings.TabCloseOnDblClick)
-				PostMessage(GetParent(hwnd), WM_COMMAND, MAKEWPARAM(IDC_CHAT_CLOSE, BN_CLICKED), 0);
-
-		}break;
-	case WM_MBUTTONUP:
-		{
-			TCHITTESTINFO tci = {0};
-			int i = 0;
-
-			tci.pt.x=(short)LOWORD(GetMessagePos());
-			tci.pt.y=(short)HIWORD(GetMessagePos());
-			tci.flags = TCHT_ONITEM;
-
-			ScreenToClient(hwnd, &tci.pt);
-			i = TabCtrl_HitTest(hwnd, &tci);
-			if(i != -1 )
-			{
-				TCITEM tc;
-				SESSION_INFO * si ;
-
-				tc.mask = TCIF_PARAM;
-				TabCtrl_GetItem(hwnd, i, &tc);
-				si = (SESSION_INFO * ) tc.lParam;
-				if(si)
-					SendMessage(GetParent(hwnd), GC_REMOVETAB, 1, (LPARAM) si );
-
-/*
-				if(TabCtrl_GetCurSel(GetDlgItem(hwnd, IDC_CHAT_TAB)) == i)
-					PostMessage(GetParent(hwnd), WM_COMMAND, MAKEWPARAM(IDC_CHAT_CLOSE, BN_CLICKED), 0);
-				else
-					TabCtrl_DeleteItem(hwnd, i);
-*/
-			}
-		}break;
-
-		default:break;
-	}
-
-	return CallWindowProc(OldTabProc, hwnd, msg, wParam, lParam);
-
-}
-
 
 static LRESULT CALLBACK NicklistSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -1234,38 +1069,6 @@ static LRESULT CALLBACK NicklistSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
 	return CallWindowProc(OldNicklistProc, hwnd, msg, wParam, lParam);
 
 }
-static int RestoreWindowPosition(HWND hwnd, HANDLE hContact, char * szModule, char * szNamePrefix, UINT showCmd)
-{
-	WINDOWPLACEMENT wp;
-	char szSettingName[64];
-	int x,y, width, height;;
-
-	wp.length=sizeof(wp);
-	GetWindowPlacement(hwnd,&wp);
-//	if (hContact)
-//	{
-		wsprintfA(szSettingName,"%sx",szNamePrefix);
-		x=DBGetContactSettingDword(hContact,szModule,szSettingName,-1);
-		wsprintfA(szSettingName,"%sy",szNamePrefix);
-		y=(int)DBGetContactSettingDword(hContact,szModule,szSettingName,-1);
-		wsprintfA(szSettingName,"%swidth",szNamePrefix);
-		width=DBGetContactSettingDword(hContact,szModule,szSettingName,-1);
-		wsprintfA(szSettingName,"%sheight",szNamePrefix);
-		height=DBGetContactSettingDword(hContact,szModule,szSettingName,-1);
-
-		if(x==-1)
-			return 0;
-		wp.rcNormalPosition.left=x;
-		wp.rcNormalPosition.top=y;
-		wp.rcNormalPosition.right=wp.rcNormalPosition.left+width;
-		wp.rcNormalPosition.bottom=wp.rcNormalPosition.top+height;
-		wp.showCmd = showCmd;
-		SetWindowPlacement(hwnd,&wp);
-		return 1;
-//	}
-	return 0;
-
-}
 int GetTextPixelSize(char * pszText, HFONT hFont, BOOL bWidth)
 {
 	HDC hdc;
@@ -1341,6 +1144,7 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 {
 	SESSION_INFO * si;
 	si = (SESSION_INFO *)GetWindowLong(hwndDlg,GWL_USERDATA);
+	if (!si && uMsg!=WM_INITDIALOG) return FALSE;
 	switch (uMsg)
 	{
 		case WM_INITDIALOG:
@@ -1379,7 +1183,6 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 			SendMessage(hwndDlg, DM_UPDATETITLEBAR, 0, 0);
 
 			SendMessage(GetParent(hwndDlg), CM_ADDCHILD, (WPARAM) hwndDlg, (LPARAM) psi->hContact);
-			SendMessage(GetParent(hwndDlg), CM_ACTIVATECHILD, 0, (LPARAM) hwndDlg);
 
 		} break;
 
@@ -1392,8 +1195,9 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 			LoadGlobalSettings();
 			InitButtons(hwndDlg, si);
 
-			SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, (LPARAM)si);
-			SendMessage(hwndDlg, GC_FIXTABICONS, 0, (LPARAM)si);
+			SendMessage(hwndDlg, DM_UPDATESTATUSBAR, 0, 0);
+			SendMessage(hwndDlg, DM_UPDATETITLEBAR, 0, 0);
+			SendMessage(hwndDlg, GC_FIXTABICONS, 0, 0);
 
 			SendMessage(GetDlgItem(hwndDlg, IDC_CHAT_LOG), EM_SETBKGNDCOLOR , 0, g_Settings.crLogBackground);
 
@@ -1451,6 +1255,7 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 			tbd.pszText = charToTchar(szTemp, -1, CP_ACP);
 			tbd.hIcon = LoadIconEx(IDI_CHANMGR, "window", 0, 0);
 			SendMessage(GetParent(hwndDlg), CM_UPDATETITLEBAR, (WPARAM) &tbd, (LPARAM) hwndDlg);
+			SendMessage(hwndDlg, DM_UPDATETABCONTROL, 0, 0);
 			free(tbd.pszText);
 		} break;
 
@@ -1458,7 +1263,6 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 		{
 			StatusBarData sbd;
 			HICON hIcon;
-			int iStatusbarParts[2];
 			char *pszDispName = MM_FindModule(si->pszModule)->pszModDispName;
 			char szTemp[512];
 			hIcon = si->wStatus==ID_STATUS_ONLINE?MM_FindModule(si->pszModule)->hOnlineIcon:MM_FindModule(si->pszModule)->hOfflineIcon;
@@ -1631,95 +1435,33 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 		} break;
 
 
-		case GC_REMOVETAB:
-		{
-			SESSION_INFO * s2;
-			int i = -1;
-			int tabId = 0;
-			SESSION_INFO * s1 = (SESSION_INFO *) lParam;
-
-			tabId = TabCtrl_GetItemCount(GetDlgItem(hwndDlg, IDC_CHAT_TAB));
-
-			if(s1)
-			{
-
-				if(tabId)
-				{
-					for (i = 0; i < tabId; i++)
-					{
-						int ii;
-						TCITEM tci = {0};
-						tci.mask = TCIF_PARAM ;
-						ii = TabCtrl_GetItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB), i, &tci);
-						if(ii != -1)
-						{
-							s2 = (SESSION_INFO *)tci.lParam;
-							if (s1 == s2)
-							{
-								goto END_REMOVETAB;
-							}
-						}
-					}
-				}
-			}
-			else
-				i = TabCtrl_GetCurSel(GetDlgItem(hwndDlg, IDC_CHAT_TAB));
-END_REMOVETAB:
-			if(i != -1 && i < tabId)
-			{
-				TCITEM id = {0};
-				SESSION_INFO * s;
-				TabCtrl_DeleteItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB), i);
-				id.mask = TCIF_PARAM;
-				if(!TabCtrl_GetItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB), i, &id))
-				{
-					if(!TabCtrl_GetItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB), i-1, &id))
-						{
-							SendMessage(hwndDlg, WM_CLOSE, 0, 0);
-							break;
-						}
-				}
-				s = (SESSION_INFO *)id.lParam;
-				if(s)
-					ShowRoom(s, (WPARAM)WINDOW_VISIBLE, wParam == 1?FALSE:TRUE);
-			}
-		}break;
 		case DM_UPDATETABCONTROL:
 		{
 			TabControlData tcd;
 			char szTemp [30];
-			SESSION_INFO *s = (SESSION_INFO *) lParam;
-			lstrcpynA(szTemp, s->pszName, 21);
-			if(lstrlenA(s->pszName) >20)
+			lstrcpynA(szTemp, si->pszName, 21);
+			if(lstrlenA(si->pszName) >20)
 				lstrcpynA(szTemp+20, "...", 4);
 
 			tcd.iFlags = TCDF_TEXT;
 			tcd.pszText = charToTchar(szTemp, -1, CP_ACP);
 			SendMessage(GetParent(hwndDlg), CM_UPDATETABCONTROL, (WPARAM) &tcd, (LPARAM) hwndDlg);
 			free(tcd.pszText);
-
-			SendMessage(hwndDlg, GC_FIXTABICONS, 0, (LPARAM)s);
-
-		}break;
-
+		}
 		case GC_FIXTABICONS:
 		{
 			TabControlData tcd;
 
-			SESSION_INFO * s = (SESSION_INFO *) lParam;
-			if(s)
+			int image = 0;
+			if(!(si->wState&GC_EVENT_HIGHLIGHT))
 			{
-				int image = 0;
-				if(!(s->wState&GC_EVENT_HIGHLIGHT))
-				{
-					image = s->wStatus==ID_STATUS_ONLINE?MM_FindModule(s->pszModule)->OnlineIconIndex:MM_FindModule(s->pszModule)->OfflineIconIndex;
-					if(s->wState&STATE_TALK)
-						image++;
-				}
-				tcd.iFlags = TCDF_ICON;
-				tcd.iconIdx = image;
-				SendMessage(GetParent(hwndDlg), CM_UPDATETABCONTROL, (WPARAM) &tcd, (LPARAM) hwndDlg);
+				image = si->wStatus==ID_STATUS_ONLINE?MM_FindModule(si->pszModule)->OnlineIconIndex:MM_FindModule(si->pszModule)->OfflineIconIndex;
+				if(si->wState&STATE_TALK)
+					image++;
 			}
+			tcd.iFlags = TCDF_ICON;
+			tcd.iconIdx = image;
+			SendMessage(GetParent(hwndDlg), CM_UPDATETABCONTROL, (WPARAM) &tcd, (LPARAM) hwndDlg);
 		}break;
 		case GC_SETMESSAGEHIGHLIGHT:
 		{
@@ -1742,7 +1484,7 @@ END_REMOVETAB:
 						s2->wState |= GC_EVENT_HIGHLIGHT;
 						if(SM_FindSession(si->pszID, si->pszModule) == s2)
 							si->wState = s2->wState;
-						SendMessage(hwndDlg, GC_FIXTABICONS, 0, (LPARAM)s2);
+						SendMessage(s->hWnd, GC_FIXTABICONS, 0, 0);
 						if(DBGetContactSettingByte(NULL, "Chat", "FlashWindowHighlight", 0) != 0 && GetActiveWindow() != hwndDlg && GetForegroundWindow() != hwndDlg)
 							SetTimer(hwndDlg, TIMERID_FLASHWND, 900, NULL);
 						break;
@@ -1772,7 +1514,7 @@ END_REMOVETAB:
 					s2 = (SESSION_INFO *)tci.lParam;
 					if (s2 && s == s2)
 					{ // highlight
-						SendMessage(hwndDlg, GC_FIXTABICONS, 0, (LPARAM)s2);
+						SendMessage(s->hWnd, GC_FIXTABICONS, 0, 0);
 					if(g_Settings.FlashWindow && GetActiveWindow() != hwndDlg && GetForegroundWindow() != hwndDlg)
 						SetTimer(hwndDlg, TIMERID_FLASHWND, 900, NULL);
 
@@ -1786,43 +1528,28 @@ END_REMOVETAB:
 				RedrawWindow(GetDlgItem(hwndDlg, IDC_CHAT_TAB), NULL, NULL, RDW_INVALIDATE);
 		}break;
 
-		case GC_TABCLICKED:
+		case DM_ACTIVATE:
 		{
-			int i;
-			i = TabCtrl_GetCurSel(GetDlgItem(hwndDlg, IDC_CHAT_TAB));
-			if(i != -1)
+			if(si->wState&STATE_TALK)
 			{
-				SESSION_INFO * s;
-				TCITEM id = {0};
+				si->wState &= ~STATE_TALK;
 
-				id.mask = TCIF_PARAM;
-				TabCtrl_GetItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB), i, &id);
-				s = (SESSION_INFO *)id.lParam;
-				if(s)
-				{
-					if(s->wState&STATE_TALK)
-					{
-						s->wState &= ~STATE_TALK;
+				DBWriteContactSettingWord(si->hContact, si->pszModule ,"ApparentMode",(LPARAM) 0);
+			}
 
-						DBWriteContactSettingWord(s->hContact, s->pszModule ,"ApparentMode",(LPARAM) 0);
-					}
+			if(si->wState&GC_EVENT_HIGHLIGHT)
+			{
+				si->wState &= ~GC_EVENT_HIGHLIGHT;
 
-					if(s->wState&GC_EVENT_HIGHLIGHT)
-					{
-						s->wState &= ~GC_EVENT_HIGHLIGHT;
+				if(CallService(MS_CLIST_GETEVENT, (WPARAM)si->hContact, (LPARAM)0))
+					CallService(MS_CLIST_REMOVEEVENT, (WPARAM)si->hContact, (LPARAM)"chaticon");
+			}
 
-						if(CallService(MS_CLIST_GETEVENT, (WPARAM)s->hContact, (LPARAM)0))
-							CallService(MS_CLIST_REMOVEEVENT, (WPARAM)s->hContact, (LPARAM)"chaticon");
-					}
-
-					SendMessage(hwndDlg, GC_FIXTABICONS, 0, (LPARAM)s);
-					if(!s->hWnd)
-					{
-						ShowRoom(s, (WPARAM)WINDOW_VISIBLE, TRUE);
-						SendMessage(hwndDlg, WM_MOUSEACTIVATE, 0, 0 );
-					}
-				}
-
+			SendMessage(hwndDlg, GC_FIXTABICONS, 0, 0);
+			if(!si->hWnd)
+			{
+				ShowRoom(si, (WPARAM)WINDOW_VISIBLE, TRUE);
+				SendMessage(hwndDlg, WM_MOUSEACTIVATE, 0, 0 );
 			}
 		}break;
 
@@ -2181,28 +1908,6 @@ LABEL_SHOWWINDOW:
 			g_Settings.iY = wp.rcNormalPosition.top;
 			g_Settings.iWidth = wp.rcNormalPosition.right - wp.rcNormalPosition.left;
 			g_Settings.iHeight = wp.rcNormalPosition.bottom - wp.rcNormalPosition.top;
-
-			if(g_Settings.TabsEnable)
-			{
-				int i = TabCtrl_GetCurSel(GetDlgItem(hwndDlg, IDC_CHAT_TAB));
-				if(i != -1)
-				{
-					SESSION_INFO * s;
-					TCITEM tci;
-
-					tci.mask = TCIF_PARAM;
-					TabCtrl_GetItem(GetDlgItem(hwndDlg, IDC_CHAT_TAB), i, &tci);
-					s = (SESSION_INFO *) tci.lParam;
-					if (s)
-					{
-						s->wState &= ~GC_EVENT_HIGHLIGHT;
-						s->wState &= ~STATE_TALK;
-						SendMessage(hwndDlg, GC_FIXTABICONS, 0, (LPARAM)s);
-					}
-
-
-				}
-			}
 
 			if(uMsg != WM_ACTIVATE)
 				SetFocus(GetDlgItem(hwndDlg,IDC_CHAT_MESSAGE));
