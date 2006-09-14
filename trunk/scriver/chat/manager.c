@@ -126,14 +126,6 @@ int SM_RemoveSession(char * pszID, char * pszModule)
 				if(pTemp->hWnd )
 					SendMessage(pTemp->hWnd, GC_EVENT_CONTROL+WM_USER+500, SESSION_TERMINATE, 0);
 			}
-			else
-			{
-				if(g_TabSession.hWnd)
-				{
-					SendMessage(g_TabSession.hWnd, GC_REMOVETAB, 1, (LPARAM)pTemp);
-				}
-
-			}
 
 			if(pTemp->hWnd)
 				g_TabSession.nUsersInNicklist = 0;
@@ -232,8 +224,6 @@ BOOL SM_SetOffline(char *pszID, char * pszModule)
 				g_TabSession.nUsersInNicklist = 0;
 			if(pTemp->iType != GCW_SERVER)
 				pTemp->bInitDone = FALSE;
-			if(g_Settings.TabsEnable && pTemp->hWnd)
-				g_TabSession.pUsers = 0;
 
 			if(pszID)
 				return TRUE;
@@ -504,8 +494,6 @@ STATUSINFO * SM_AddStatus(char *pszID, char * pszModule, char * pszStatus)
 			STATUSINFO * ti = TM_AddStatus(&pTemp->pStatuses, pszStatus, &pTemp->iStatusCount);
 			if(ti)
 				pTemp->iStatusCount++;
-		if(g_Settings.TabsEnable && pTemp->hWnd)
-				g_TabSession.pStatuses = pTemp->pStatuses;
 			return ti;
 		}
 		pLast = pTemp;
@@ -641,8 +629,6 @@ BOOL SM_SetStatus(char *pszID, char * pszModule, int wStatus)
 		if ((!pszID || !lstrcmpiA(pTemp->pszID,pszID)) && !lstrcmpiA(pTemp->pszModule,pszModule))
 		{
 			pTemp->wStatus = wStatus;
-			if(pTemp->hWnd && g_Settings.TabsEnable)
-				g_TabSession.wStatus = wStatus;
 
 			if(pTemp->hContact)
 			{
@@ -655,12 +641,7 @@ BOOL SM_SetStatus(char *pszID, char * pszModule, int wStatus)
 
 			}
 
-			if(g_Settings.TabsEnable && g_TabSession.hWnd)
-			{
-
-				PostMessage(g_TabSession.hWnd, GC_FIXTABICONS, 0, (LPARAM) pTemp);
-			}
-
+			PostMessage(pTemp->hWnd, GC_FIXTABICONS, 0, 0);
 
 			if(pszID)
 				return TRUE;
@@ -1178,57 +1159,6 @@ BOOL MM_RemoveAll (void)
 	return TRUE;
 }
 
-
-
-//---------------------------------------------------
-//		Tab list manager functions
-//
-//		Necessary to keep track of what tabs should
-//		be restored
-//---------------------------------------------------
-
-BOOL TabM_AddTab(char * pszID, char * pszModule)
-{
-	TABLIST *node = NULL;
-	if(!pszID || !pszModule)
-		return FALSE;
-
-	node = (TABLIST*) malloc(sizeof(TABLIST));
-	ZeroMemory(node, sizeof(TABLIST));
-
-	node->pszID = (char *) malloc(lstrlenA(pszID) + 1);
-	lstrcpyA(node->pszID, pszID);
-
-	node->pszModule = (char *) malloc(lstrlenA(pszModule) + 1);
-	lstrcpyA(node->pszModule, pszModule);
-
-	if (g_TabList == NULL) // list is empty
-	{
-		g_TabList = node;
-		node->next = NULL;
-	}
-	else
-	{
-		node->next = g_TabList;
-		g_TabList = node;
-	}
-	return TRUE;
-
-}
-
-BOOL TabM_RemoveAll (void)
-{
-	while (g_TabList != NULL)
-    {
-		TABLIST * pLast = g_TabList->next;
-		free (g_TabList->pszModule);
-		free(g_TabList->pszID);
-		free (g_TabList);
-		g_TabList = pLast;
-    }
-	g_TabList = NULL;
-	return TRUE;
-}
 
 
 //---------------------------------------------------

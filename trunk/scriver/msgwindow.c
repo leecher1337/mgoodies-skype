@@ -167,6 +167,8 @@ TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto)
 	free(szContactName);
 	free(szStatus);
 	free(pszNewTitleEnd);
+	if (szStatusMsg)
+		free(szStatusMsg);
 	return title;
 }
 
@@ -310,7 +312,7 @@ static void AddChild(struct ParentWindowData *dat, HWND hwnd, HANDLE hContact)
 	struct MessageWindowTabData *mwtd = (struct MessageWindowTabData *) malloc(sizeof(struct MessageWindowTabData));
 	mwtd->hwnd = hwnd;
 	mwtd->hContact = hContact;
-	mwtd->szProto = (const char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+	mwtd->szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 	mwtd->parent = dat;
 	dat->children=(HWND*)realloc(dat->children, sizeof(HWND)*(dat->childrenCount+1));
 	dat->children[dat->childrenCount++] = hwnd;
@@ -588,10 +590,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						tabId = TabCtrl_HitTest(dat->hwndTabs, &thinfo);
 						if (tabId != -1) {
 							struct MessageWindowTabData * mwtd = GetChildFromTab(dat->hwndTabs, tabId);
-							//CallService(MS_USERINFO_SHOWDIALOG, (WPARAM) mwd->hContact, 0);
-							HMENU hMenu = (HMENU) CallService(MS_CLIST_MENUBUILDCONTACT, (WPARAM) mwtd->hContact, 0);
-							TrackPopupMenu(hMenu, 0, x, y, 0, mwtd->hwnd, NULL);
-							DestroyMenu(hMenu);
+							SendMessage(mwtd->hwnd, WM_CONTEXTMENU, (WPARAM) hwndDlg, 0);
 						}
 					}
 					break;
@@ -1279,8 +1278,11 @@ int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,
 }
 
 HWND GetParentWindow(HANDLE hContact, BOOL bChat) {
-	struct NewMessageWindowLParam newData = { 0 };
-	newData.hContact = hContact;
-	return CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+	if (g_dat->lastParent == NULL || !(g_dat->flags & SMF_USETABS)) {
+		struct NewMessageWindowLParam newData = { 0 };
+		newData.hContact = hContact;
+		return CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+	} 
+	return g_dat->lastParent->hwnd;
 }
 

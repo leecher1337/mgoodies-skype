@@ -80,11 +80,7 @@ static int ReadMessageCommand(WPARAM wParam, LPARAM lParam)
 
    hwndExisting = WindowList_Find(g_dat->hMessageWindowList, ((CLISTEVENT *) lParam)->hContact);
    newData.hContact = ((CLISTEVENT *) lParam)->hContact;
-   if (g_dat->lastParent == NULL || !(g_dat->flags & SMF_USETABS)) {
-      hParent = GetParentWindow(newData.hContact, FALSE);
-   } else {
-      hParent = g_dat->lastParent->hwnd;
-   }
+   hParent = GetParentWindow(newData.hContact, FALSE);
    CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), hParent, DlgProcMessage, (LPARAM) & newData);
 //      CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), NULL, DlgProcMessage, (LPARAM) & newData);
    return 0;
@@ -125,11 +121,7 @@ static int MessageEventAdded(WPARAM wParam, LPARAM lParam)
          HWND hParent;
          struct NewMessageWindowLParam newData = { 0 };
          newData.hContact = (HANDLE) wParam;
-         if (g_dat->lastParent == NULL || !(g_dat->flags & SMF_USETABS)) {
-			hParent = GetParentWindow(newData.hContact, FALSE);
-         } else {
-            hParent = g_dat->lastParent->hwnd;
-         }
+ 		 hParent = GetParentWindow(newData.hContact, FALSE);
          newData.flags = NMWLP_INCOMING;
          CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), hParent, DlgProcMessage, (LPARAM) & newData);
          return 0;

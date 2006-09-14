@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#if defined(UNICODE)
+#if defined(UNICODE) && !defined(_UNICODE)
 #define _UNICODE
 #endif
 
@@ -490,7 +490,6 @@ void				MM_FontsChanged(void);
 void				MM_IconsChanged(void);
 BOOL				MM_RemoveAll (void);
 BOOL 				TabM_AddTab(char * pszID, char * pszModule);
-BOOL				TabM_RemoveAll (void);
 STATUSINFO *		TM_AddStatus(STATUSINFO** ppStatusList, char * pszStatus, int * iCount);
 STATUSINFO *		TM_FindStatus(STATUSINFO* pStatusList, char* pszStatus);
 WORD				TM_StringToWord(STATUSINFO* pStatusList, char* pszStatus);

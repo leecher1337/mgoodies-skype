@@ -53,7 +53,7 @@ HANDLE CList_AddRoom(char * pszModule, char * pszRoom, char * pszDisplayName, in
 
 		if(pszGroup && lstrlenA(pszGroup) > 0)
 		{
-			for (i = 0;; i++) 
+			for (i = 0;; i++)
 			{
 				itoa(i, str, 10);
 				if (DBGetContactSetting(NULL, "CListGroups", str, &dbv))
@@ -92,13 +92,13 @@ END_GROUPLOOP:
 			DBWriteContactSettingByte(hContact, "CList", "Hidden", 1);
 		return hContact;
 	}
-	
+
 	// here we create a new one since no one is to be found
 	hContact = (HANDLE) CallService(MS_DB_CONTACT_ADD, 0, 0);
 	if (hContact)
 	{
 		CallService(MS_PROTO_ADDTOCONTACT, (WPARAM) hContact, (LPARAM) pszModule);
-		if (pszGroup && lstrlenA(pszGroup) > 0) 
+		if (pszGroup && lstrlenA(pszGroup) > 0)
 			DBWriteContactSettingString(hContact, "CList", "Group", pszGroup);
 		else
 			DBDeleteContactSetting(hContact, "CList", "Group");
@@ -115,13 +115,13 @@ END_GROUPLOOP:
 
 BOOL CList_SetOffline(HANDLE hContact, BOOL bHide)
 {
-	if (hContact ) 
+	if (hContact )
 	{
 		char * szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 		int i = DBGetContactSettingByte(hContact, szProto, "ChatRoom", 0);
 		DBWriteContactSettingWord(hContact, szProto,"ApparentMode",(LPARAM) 0);
 		DBWriteContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE);
-		if (bHide && i != GCW_SERVER) 
+		if (bHide && i != GCW_SERVER)
 			DBWriteContactSettingByte(hContact, "CList", "Hidden", 1);
 		return TRUE;
 	}
@@ -134,17 +134,17 @@ BOOL CList_SetAllOffline(BOOL bHide)
 	char * szProto;
 
     hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
-    while (hContact) 
+    while (hContact)
 	{
        szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
-       if (MM_FindModule(szProto)) 
+       if (MM_FindModule(szProto))
 	   {
 		   int i = DBGetContactSettingByte(hContact, szProto, "ChatRoom", 0);
 			if( i != 0)
 			{
 				DBWriteContactSettingWord(hContact, szProto,"ApparentMode",(LPARAM)(WORD) 0);
 				DBWriteContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE);
-				if (bHide && i == GCW_CHATROOM) 
+				if (bHide && i == GCW_CHATROOM)
 					DBWriteContactSettingByte(hContact, "CList", "Hidden", 1);
 			}
 		}
@@ -163,28 +163,25 @@ int	CList_RoomDoubleclicked(WPARAM wParam,LPARAM lParam)
 	if (!hContact)
 		return 0;
 	szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
-	if (MM_FindModule(szProto)) 
+	if (MM_FindModule(szProto))
 	{
 		if(DBGetContactSettingByte(hContact, szProto, "ChatRoom", 0) == 0)
 			return 0;
 
-		if (!DBGetContactSetting(hContact, szProto, "ChatRoomID", &dbv) && dbv.type == DBVT_ASCIIZ) 
+		if (!DBGetContactSetting(hContact, szProto, "ChatRoomID", &dbv) && dbv.type == DBVT_ASCIIZ)
 		{
 			SESSION_INFO * si = SM_FindSession(dbv.pszVal, szProto);
 
 			if (si)
 			{
 				// is the "toggle visibility option set, so we need to close the window?
-				if (si->hWnd != NULL 
-					&& DBGetContactSettingByte(NULL, "Chat", "ToggleVisibility", 0)==1 
+				if (si->hWnd != NULL
+					&& DBGetContactSettingByte(NULL, "Chat", "ToggleVisibility", 0)==1
 					&& !CallService(MS_CLIST_GETEVENT, (WPARAM)hContact, 0)
 					&& IsWindowVisible(si->hWnd)
 					&& !IsIconic(si->hWnd))
 			{
-					if(g_Settings.TabsEnable)
-						SendMessage(si->hWnd, GC_REMOVETAB, 1, (LPARAM) si );
-					else
-						PostMessage(si->hWnd, GC_CLOSEWINDOW, 0, 0);	
+					PostMessage(si->hWnd, GC_CLOSEWINDOW, 0, 0);
 					DBFreeVariant(&dbv);
 					return 1;
 				}
@@ -211,19 +208,19 @@ void CList_CreateGroup(char *group)
 
 	if (!group)
 		return;
-	for (i = 0;; i++) 
+	for (i = 0;; i++)
 	{
         itoa(i, str, 10);
         if (DBGetContactSetting(NULL, "CListGroups", str, &dbv))
             break;
         if (dbv.type == DBVT_ASCIIZ)
 		{
-			if (dbv.pszVal[0] != '\0' && !lstrcmpiA(dbv.pszVal + 1, group)) 
+			if (dbv.pszVal[0] != '\0' && !lstrcmpiA(dbv.pszVal + 1, group))
 			{
 				DBFreeVariant(&dbv);
 				return;
 			}
-		
+
 	        DBFreeVariant(&dbv);
         }
     }
@@ -236,7 +233,7 @@ void CList_CreateGroup(char *group)
 }
 
 
-BOOL CList_AddEvent(HANDLE hContact, HICON Icon, HANDLE event, int type, char * fmt, ... ) 
+BOOL CList_AddEvent(HANDLE hContact, HICON Icon, HANDLE event, int type, char * fmt, ... )
 {
 	CLISTEVENT cle;
 	va_list marker;
@@ -252,7 +249,7 @@ BOOL CList_AddEvent(HANDLE hContact, HICON Icon, HANDLE event, int type, char * 
 
 	cle.cbSize=sizeof(cle);
 	cle.hContact=(HANDLE)hContact;
-	cle.hDbEvent=(HANDLE)event;	
+	cle.hDbEvent=(HANDLE)event;
 	cle.flags = type;
 	cle.hIcon=Icon;
 	cle.pszService= "GChat/DblClickEvent" ;
@@ -272,21 +269,21 @@ BOOL CList_AddEvent(HANDLE hContact, HICON Icon, HANDLE event, int type, char * 
 }
 
 
-HANDLE CList_FindRoom (char * pszModule, char * pszRoom) 
+HANDLE CList_FindRoom (char * pszModule, char * pszRoom)
 {
 	HANDLE hContact;
 	char *szProto;
 	DBVARIANT dbv;
 
 	hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
-	while (hContact) 
+	while (hContact)
 	{
 		szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
-		if (szProto && !lstrcmpiA(szProto, pszModule)) 
+		if (szProto && !lstrcmpiA(szProto, pszModule))
 		{
 			if(DBGetContactSettingByte(hContact, szProto, "ChatRoom", 0) != 0)
 			{
-				if (!DBGetContactSetting(hContact, szProto, "ChatRoomID", &dbv) && dbv.type == DBVT_ASCIIZ) 
+				if (!DBGetContactSetting(hContact, szProto, "ChatRoomID", &dbv) && dbv.type == DBVT_ASCIIZ)
 				{
 					if(!lstrcmpiA(dbv.pszVal, pszRoom))
 					{
@@ -307,8 +304,8 @@ int WCCmp(char* wild, char *string)
 	char *cp, *mp;
 	if ( wild == NULL || !lstrlenA(wild) || string == NULL || !lstrlenA(string))
 		return 0;
-	
-	while ((*string) && (*wild != '*')) 
+
+	while ((*string) && (*wild != '*'))
 	{
 		if ((*wild != *string) && (*wild != '?')) {
 			return 0;
@@ -316,8 +313,8 @@ int WCCmp(char* wild, char *string)
 		wild++;
 		string++;
 	}
-		
-	while (*string) 
+
+	while (*string)
 	{
 		if (*wild == '*') {
 			if (!*++wild) {
@@ -333,7 +330,7 @@ int WCCmp(char* wild, char *string)
 			string = cp++;
 		}
 	}
-		
+
 	while (*wild == '*') {
 		wild++;
 	}
