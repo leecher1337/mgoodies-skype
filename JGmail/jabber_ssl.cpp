@@ -55,7 +55,6 @@ BOOL JabberSslInit()
 	InitializeCriticalSection( &sslHandleMutex );
 
 	hLibSSL = LoadLibraryA( "SSLEAY32.DLL" );
-
 	if ( !hLibSSL )
 		hLibSSL = LoadLibraryA( "LIBSSL32.DLL" );
 
@@ -84,25 +83,20 @@ BOOL JabberSslInit()
 		if ( error == TRUE ) {
 			FreeLibrary( hLibSSL );
 			hLibSSL = NULL;
-		}
-	}
-
-
-#ifdef _DEBUG
-	if ( hLibSSL )
-		JabberLog( "SSL library load successful" );
-	else
-		JabberLog( "SSL library cannot load" );
-#endif
+	}	}
 
 	if ( hLibSSL ) {
+		JabberLog( "SSL library load successful" );
 		pfn_SSL_library_init();
 		jabberSslCtx = pfn_SSL_CTX_new( pfn_SSLv23_client_method());
 
 		return TRUE;
 	}
-	else
-		return FALSE;
+
+	JabberLog( "SSL library cannot load" );
+	JSetByte( "UseTLS", 0 );
+	JSetByte( "UseSSL", 0 );
+	return FALSE;
 }
 
 #else // ndef STATICSSL
