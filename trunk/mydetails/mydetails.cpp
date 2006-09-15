@@ -30,7 +30,7 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,1,0),
+	PLUGIN_MAKE_VERSION(0,0,1,1),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -45,7 +45,7 @@ HANDLE hTTB = NULL;
 
 // Hooks
 HANDLE hModulesLoadedHook = NULL;
-HANDLE hTopToolBarLoadedHook = NULL;
+HANDLE hPreShutdownHook = NULL;
 
 long nickname_dialog_open;
 HWND hwndSetNickname;
@@ -56,7 +56,7 @@ HWND hwndSetStatusMsg;
 
 // Hook called after init
 static int MainInit(WPARAM wparam,LPARAM lparam);
-static int InitTopToolbarButton(WPARAM wParam, LPARAM lParam) ;
+static int MainUninit(WPARAM wParam, LPARAM lParam);
 
 
 // Services
@@ -96,7 +96,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	// Hook event to load messages and show first one
 	hModulesLoadedHook = HookEvent(ME_SYSTEM_MODULESLOADED, MainInit);
-	hTopToolBarLoadedHook = NULL;
+	hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, MainUninit);
 
 	nickname_dialog_open = 0;
 	status_msg_dialog_open = 0;
@@ -136,9 +136,7 @@ int __declspec(dllexport) Unload(void)
 	DestroyServiceFunction(MS_MYDETAILS_CICLE_THROUGHT_PROTOCOLS);
 
 	if (hModulesLoadedHook) UnhookEvent(hModulesLoadedHook);
-	if (hTopToolBarLoadedHook) UnhookEvent(hTopToolBarLoadedHook);
 
-	DeInitFrames();
 	DeInitProtocolData();
 	DeInitOptions();
 
@@ -202,9 +200,6 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 
 	CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 
-	// TopToolbar support
-	hTopToolBarLoadedHook = HookEvent(ME_TTB_MODULELOADED, InitTopToolbarButton);
-
 	InitFrames();
 
 
@@ -220,7 +215,7 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
 		upd.szBetaVersionURL = "http://br.geocities.com/ricardo_pescuma/mydetails_version.txt";
-		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/mydetails_version.txt";
+		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/mydetails_changelog.txt";
 		upd.pbBetaVersionPrefix = (BYTE *)"My Details ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/mydetails.zip";
@@ -235,22 +230,9 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
     return 0;
 }
 
-// Toptoolbar hook to put an icon in the toolbar
-static int InitTopToolbarButton(WPARAM wParam, LPARAM lParam) 
+static int MainUninit(WPARAM wParam, LPARAM lParam) 
 {
-/*
-	TTBButton ttb;
-
-	ZeroMemory(&ttb,sizeof(ttb));
-	ttb.cbSize = sizeof(ttb);
-	ttb.pszServiceDown = "MyDetails/DoIt";
-	ttb.dwFlags = TTBBF_VISIBLE;
-	ttb.name = "DoIt";
-	
-	hTTB = (HANDLE)CallService(MS_TTB_ADDBUTTON, (WPARAM)&ttb, 0);
-	CallService(MS_TTB_SETBUTTONSTATE, (WPARAM)hTTB, (LPARAM)TTBST_RELEASED);
-*/
-
+	DeInitFrames();
 	return 0;
 }
 

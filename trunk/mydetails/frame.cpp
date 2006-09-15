@@ -177,14 +177,6 @@ void DeInitFrames()
 }
 
 
-int SkinReload(WPARAM wParam, LPARAM lParam) 
-{
-	CreateGlyphedObjectDefColor(Translate("MyDetails/Backgrnd"), GetSysColor(COLOR_BTNFACE));
-	RefreshFrame();
-	return 0;
-}
-
-
 int ReloadFont(WPARAM wParam, LPARAM lParam) 
 {
 	LOGFONT log_font;
@@ -260,13 +252,6 @@ int CreateFrame()
 			hFont[i] = CreateFontIndirect(&lf);
 			font_colour[i] = font_colors[i];
 		}
-	}
-
-
-	if(ServiceExists(MS_SKIN_REGISTERDEFOBJECT)) 
-	{
-		SkinReload(0, 0);
-		HookEvent(ME_SKIN_SERVICESCREATED, SkinReload);
 	}
 
 
@@ -635,8 +620,6 @@ void CalcRectangles(HWND hwnd)
 
 	Protocol *proto = protocols->Get(data->protocol_number);
 
-OutputDebugString("CalcRectangles\n");
-
 	data->recalc_rectangles = false;
 	proto->data_changed = false;
 
@@ -974,24 +957,9 @@ void EraseBackground(HWND hwnd, HDC hdc)
 	RECT r;
 	GetClientRect(hwnd, &r);
 
-	if(ServiceExists(MS_SKIN_DRAWGLYPH)) 
-	{
-		if(FrameIsFloating()) 
-		{
-			SkinDrawGlyph(hdc, &r, &r, Translate("Main Window/Backgrnd"));
-		}
-		else 
-		{
-			SkinDrawWindowBack(hwnd, hdc, &r, Translate("Main Window/Backgrnd"));
-		}
-		SkinDrawGlyph(hdc, &r, &r, Translate("MyDetails/Backgrnd"));
-	}
-	else 
-	{
-		HBRUSH hB = CreateSolidBrush((COLORREF) DBGetContactSettingDword(NULL,"MyDetails","BackgroundColor",GetSysColor(COLOR_BTNFACE)));
-		FillRect(hdc, &r, hB);
-		DeleteObject(hB);
-	}
+	HBRUSH hB = CreateSolidBrush((COLORREF) DBGetContactSettingDword(NULL,"MyDetails","BackgroundColor",GetSysColor(COLOR_BTNFACE)));
+	FillRect(hdc, &r, hB);
+	DeleteObject(hB);
 }
 
 void DrawTextWithRect(HDC hdc, const char *text, const char *def_text, RECT rc, UINT uFormat, 
