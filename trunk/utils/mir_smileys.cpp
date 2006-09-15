@@ -382,12 +382,12 @@ void DestroySmileyList( SortedList* p_list )
 // Generete the list of smileys / text to be drawn
 SortedList * ReplaceSmileys(const char *text, int text_size, const char *protocol, int *max_smiley_height)
 {
-	SMADD_BATCHPARSE sp;
+	SMADD_BATCHPARSE2 sp = {0};
 	SMADD_BATCHPARSERES *spres;
 
 	*max_smiley_height = 0;
 
-	if (text[0] == '\0' || !ServiceExists(MS_SMILEYADD_PARSE))
+	if (text[0] == '\0' || !ServiceExists(MS_SMILEYADD_BATCHPARSE))
 	{
 		return NULL;
 	}
