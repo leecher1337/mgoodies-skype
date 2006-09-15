@@ -29,34 +29,32 @@ extern "C"
 
 #define _WIN32_WINNT 0x0501
 #include <windows.h>
+#include <win2k.h>
 #include <commctrl.h>
+#include <stdio.h>
 #include <newpluginapi.h>
 #include <m_clist.h>
 #include <m_skin.h>
 #include <m_system.h>
 #include <m_protocols.h>
 #include <m_protosvc.h>
-#include <m_toptoolbar.h>
 #include <m_database.h>
 #include <m_utils.h>
 #include <m_langpack.h>
 #include <m_awaymsg.h>
 #include <m_contacts.h>
+#include <m_options.h>
+#include <m_clui.h>
+#include <m_clc.h>
+
 #include <m_NewAwaySys.h>
 #include <m_updater.h>
 #include <m_fontservice.h>
-#include <m_options.h>
 #include <m_smileyadd.h>
 #include <m_variables.h>
-#include <win2k.h>
-//#include <m_avatars.h>
-#include "../avs/m_avatars.h"
-
-#include <m_clui.h>
-#include <m_clc.h>
-#include "../mwclist/CLUIFrames/m_cluiframes.h"
-#include "../mwclist2/m_skin_eng.h"
-#include "../keepstatus/m_statusplugins.h"
+#include <m_avatars.h>
+#include <m_statusplugins.h>
+#include "../modernb/CLUIFrames/m_cluiframes.h"
 #include "../../protocols/IcqOscarJ/m_icq.h"
 #include "m_simpleaway.h"
 

@@ -1,6 +1,10 @@
-My Details 0.0.1.0
+My Details 0.0.1.1
 
 Changelog:
+
+. 0.0.1.1
+  * Fix for crash on exit (thanks ghazan)
+  - Removed clist modern mod support
 
 . 0.0.1.0
   * Fix in call to NAS service
