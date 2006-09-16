@@ -28,6 +28,10 @@ Last change by : $Author$
 #ifndef _JABBER_H_
 #define _JABBER_H_
 
+#ifndef MIRANDA_VER
+	#define MIRANDA_VER 0x0500
+#endif
+
 #if defined(UNICODE) && !defined(_UNICODE)
 	#define _UNICODE
 #endif
@@ -561,7 +565,7 @@ __forceinline WCHAR* mir_wstrdup(const WCHAR *src)
 	#define mir_tstrdup mir_strdup
 #endif
 
-extern LIST_INTERFACE_V2 li;
+extern LIST_INTERFACE li;
 
 ///////////////////////////////////////////////////////////////////////////////
 // TXT encode helper

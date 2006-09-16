@@ -155,7 +155,7 @@ JABBER_LIST_ITEM *JabberListAdd( JABBER_LIST list, const TCHAR* jid )
 	if ( list == LIST_ROSTER )
 		item->cap = CLIENT_CAP_CHATSTAT;
 
-	li.List_InsertPtr(( SortedList* )&roster, item );
+	JList_InsertPtr(( SortedList* )&roster, item );
 	LeaveCriticalSection( &csLists );
 
 	return item;
