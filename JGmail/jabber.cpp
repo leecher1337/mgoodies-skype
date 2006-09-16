@@ -52,7 +52,7 @@ PLUGININFO pluginInfo = {
 };
 
 MM_INTERFACE memoryManagerInterface;
-LIST_INTERFACE_V2 li;
+LIST_INTERFACE li;
 
 HANDLE hMainThread = NULL;
 DWORD jabberMainThreadId;
@@ -247,13 +247,13 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 
 	// set the lists manager;
 	li.cbSize = sizeof( li ); 
-	li.List_InsertPtr = NULL; li.List_RemovePtr = NULL; // Just in case
+//	li.List_InsertPtr = NULL; li.List_RemovePtr = NULL; // Just in case
 	if ( CallService(MS_SYSTEM_GET_LI,0,(LPARAM)&li) == CALLSERVICE_NOTFOUND ) {
 		MessageBoxA( NULL, "This version of plugin requires Miranda 0.4.3 bld#42 or later", "Fatal error", MB_OK );
 		return 1;
 	}
-	if (!li.List_InsertPtr) li.List_InsertPtr = JList_InsertPtr;
-	if (!li.List_RemovePtr) li.List_RemovePtr = JList_RemovePtr;
+//	if (!li.List_InsertPtr) li.List_InsertPtr = JList_InsertPtr;
+//	if (!li.List_RemovePtr) li.List_RemovePtr = JList_RemovePtr;
 
 	if ( !ServiceExists( MS_DB_CONTACT_GETSETTING_STR )) {
 		MessageBoxA( NULL, "This plugin requires db3x plugin version 0.5.1.0 or later", "Jabber", MB_OK );
