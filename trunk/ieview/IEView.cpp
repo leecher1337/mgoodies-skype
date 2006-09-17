@@ -26,58 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //#include <Urlmon.h>
 
-#ifndef _INTERNETFEATURELIST_DEFINED
-#define _INTERNETFEATURELIST_DEFINED
-typedef
-enum _tagINTERNETFEATURELIST
-    {   FEATURE_OBJECT_CACHING   = 0,
-   FEATURE_ZONE_ELEVATION   = FEATURE_OBJECT_CACHING + 1,
-   FEATURE_MIME_HANDLING   = FEATURE_ZONE_ELEVATION + 1,
-   FEATURE_MIME_SNIFFING   = FEATURE_MIME_HANDLING + 1,
-   FEATURE_WINDOW_RESTRICTIONS   = FEATURE_MIME_SNIFFING + 1,
-   FEATURE_WEBOC_POPUPMANAGEMENT   = FEATURE_WINDOW_RESTRICTIONS + 1,
-   FEATURE_BEHAVIORS   = FEATURE_WEBOC_POPUPMANAGEMENT + 1,
-   FEATURE_DISABLE_MK_PROTOCOL   = FEATURE_BEHAVIORS + 1,
-   FEATURE_LOCALMACHINE_LOCKDOWN   = FEATURE_DISABLE_MK_PROTOCOL + 1,
-   FEATURE_SECURITYBAND   = FEATURE_LOCALMACHINE_LOCKDOWN + 1,
-   FEATURE_RESTRICT_ACTIVEXINSTALL   = FEATURE_SECURITYBAND + 1,
-   FEATURE_VALIDATE_NAVIGATE_URL   = FEATURE_RESTRICT_ACTIVEXINSTALL + 1,
-   FEATURE_RESTRICT_FILEDOWNLOAD   = FEATURE_VALIDATE_NAVIGATE_URL + 1,
-   FEATURE_ADDON_MANAGEMENT   = FEATURE_RESTRICT_FILEDOWNLOAD + 1,
-   FEATURE_PROTOCOL_LOCKDOWN   = FEATURE_ADDON_MANAGEMENT + 1,
-   FEATURE_HTTP_USERNAME_PASSWORD_DISABLE   = FEATURE_PROTOCOL_LOCKDOWN + 1,
-   FEATURE_SAFE_BINDTOOBJECT   = FEATURE_HTTP_USERNAME_PASSWORD_DISABLE + 1,
-   FEATURE_UNC_SAVEDFILECHECK   = FEATURE_SAFE_BINDTOOBJECT + 1,
-   FEATURE_GET_URL_DOM_FILEPATH_UNENCODED   = FEATURE_UNC_SAVEDFILECHECK + 1,
-   FEATURE_ENTRY_COUNT   = FEATURE_GET_URL_DOM_FILEPATH_UNENCODED + 1
-    }    INTERNETFEATURELIST;
-
-
-// CoInternetSetFeatureEnabled can be used to set/reset features.
-// The following flags control where the feature is set
-
-#define SET_FEATURE_ON_THREAD                       0x00000001
-#define SET_FEATURE_ON_PROCESS                      0x00000002
-#define SET_FEATURE_IN_REGISTRY                     0x00000004
-#define SET_FEATURE_ON_THREAD_LOCALMACHINE          0x00000008
-#define SET_FEATURE_ON_THREAD_INTRANET              0x00000010
-#define SET_FEATURE_ON_THREAD_TRUSTED               0x00000020
-#define SET_FEATURE_ON_THREAD_INTERNET              0x00000040
-#define SET_FEATURE_ON_THREAD_RESTRICTED            0x00000080
-
-// CoInternetIsFeatureEnabled can be used to get features.
-// The following flags control where the feature is obtained from
-// default is from process
-
-#define GET_FEATURE_FROM_THREAD                      0x00000001
-#define GET_FEATURE_FROM_PROCESS                     0x00000002
-#define GET_FEATURE_FROM_REGISTRY                    0x00000004
-#define GET_FEATURE_FROM_THREAD_LOCALMACHINE         0x00000008
-#define GET_FEATURE_FROM_THREAD_INTRANET             0x00000010
-#define GET_FEATURE_FROM_THREAD_TRUSTED              0x00000020
-#define GET_FEATURE_FROM_THREAD_INTERNET             0x00000040
-#define GET_FEATURE_FROM_THREAD_RESTRICTED           0x00000080
-#endif
 
 #define WM_WAITWHILEBUSY (WM_USER+600)
 //#define GECKO
@@ -85,16 +33,10 @@ enum _tagINTERNETFEATURELIST
 #define DISPID_NAVIGATECOMPLETE2    252   // UIActivate new document
 #define DISPID_DOCUMENTCOMPLETE     259   // new document goes ReadyState_Complete
 
-static const CLSID CLSID_MozillaBrowser=
-{ 0x1339B54C, 0x3453, 0x11D2,
-    { 0x93, 0xB9, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00 } };
-
-static HRESULT (WINAPI *pfnCoInternetSetFeatureEnabled)(INTERNETFEATURELIST FeatureEntry, DWORD dwFlags, BOOL fEnable) = 0;
-
 IEView * IEView::list = NULL;
 CRITICAL_SECTION IEView::mutex;
 bool IEView::isInited = false;
+
 
 static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     IEView *view = IEView::get(GetParent(GetParent(hwnd)));
@@ -169,22 +111,114 @@ static LRESULT CALLBACK IEViewWindowProcedure (HWND hwnd, UINT message, WPARAM w
     return DefWindowProc (hwnd, message, wParam, lParam);
 }
 
+IEViewSink::IEViewSink(IEView *smptr) {
+	ieWindow = smptr;
+}
+
+IEViewSink::~IEViewSink() {}
+
+STDMETHODIMP IEViewSink::QueryInterface(REFIID riid, PVOID *ppv) {
+	*ppv=NULL;
+	if (IID_IUnknown==riid) {
+		*ppv=(IUnknown *)this;
+	}
+	if (IID_IDispatch==riid) {
+		*ppv=(IDispatch *)this;
+	}
+	if (DIID_DWebBrowserEvents2==riid) {
+		*ppv=(DWebBrowserEvents2*)this;
+	}
+	if (NULL!=*ppv) {
+		((LPUNKNOWN)*ppv)->AddRef();
+		return NOERROR;
+	}
+	return E_NOINTERFACE;
+}
+
+STDMETHODIMP_(ULONG) IEViewSink::AddRef(void) {
+	++m_cRef;
+	return m_cRef;
+}
+
+STDMETHODIMP_(ULONG) IEViewSink::Release(void) {
+	--m_cRef;
+	return m_cRef;
+}
+
+STDMETHODIMP IEViewSink::GetTypeInfoCount(UINT *ptr) { return E_NOTIMPL; }
+STDMETHODIMP IEViewSink::GetTypeInfo(UINT iTInfo, LCID lcid, LPTYPEINFO* ppTInfo) { return S_OK; }
+STDMETHODIMP IEViewSink::GetIDsOfNames(REFIID riid, LPOLESTR* rgszNames, UINT cNames, LCID lcid, DISPID* rgDispId) { return S_OK; }
+
+STDMETHODIMP IEViewSink::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid , WORD wFlags,
+							DISPPARAMS* pDispParams, VARIANT* pVarResult, EXCEPINFO*pExcepInfo, UINT*puArgErr) {
+	if (!pDispParams) return E_INVALIDARG;
+ 	switch (dispIdMember) {
+		case DISPID_BEFORENAVIGATE2:
+            BeforeNavigate2(pDispParams->rgvarg[6].pdispVal,
+							pDispParams->rgvarg[5].pvarVal,
+							pDispParams->rgvarg[4].pvarVal,
+            				pDispParams->rgvarg[3].pvarVal,
+            				pDispParams->rgvarg[2].pvarVal,
+            				pDispParams->rgvarg[1].pvarVal,
+            				pDispParams->rgvarg[0].pboolVal);
+	    	return S_OK;
+	}
+	return DISP_E_MEMBERNOTFOUND;
+}
+// DWebBrowserEvents2
+
+void IEViewSink::StatusTextChange(BSTR text) {}
+void IEViewSink::ProgressChange(long progress, long progressMax) {}
+void IEViewSink::CommandStateChange(long command, VARIANT_BOOL enable) {}
+void IEViewSink::DownloadBegin() {}
+void IEViewSink::DownloadComplete() {}
+void IEViewSink::TitleChange(BSTR text) {}
+void IEViewSink::PropertyChange(BSTR text) {}
+void IEViewSink::BeforeNavigate2(IDispatch* pDisp,VARIANT* url,VARIANT* flags, VARIANT* targetFrameName,
+								VARIANT* postData, VARIANT* headers, VARIANT_BOOL* cancel) {
+   	int i = wcslen(url->bstrVal);
+   	char *tTemp = new char[i+1];
+   	WideCharToMultiByte(CP_ACP, 0, url->bstrVal, -1, tTemp, i+1, NULL, NULL);
+#ifndef GECKO
+	if (strcmp(tTemp, "about:blank")) {
+//		if (smileyWindow==NULL) {
+      		CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) tTemp);
+  // 		} else {
+	//		smileyWindow->choose(tTemp);
+	//	}
+    	*cancel = VARIANT_TRUE;
+	}
+#endif
+   	delete tTemp;
+}
+
+void IEViewSink::NewWindow2(IDispatch** ppDisp, VARIANT_BOOL* cancel) {}
+void IEViewSink::NavigateComplete(IDispatch* pDisp, VARIANT* url) {}
+void IEViewSink::DocumentComplete(IDispatch* pDisp, VARIANT* url) {}
+void IEViewSink::OnQuit() {}
+void IEViewSink::OnVisible(VARIANT_BOOL visible) {}
+void IEViewSink::OnToolBar(VARIANT_BOOL visible) {}
+void IEViewSink::OnMenuBar(VARIANT_BOOL visible) {}
+void IEViewSink::OnStatusBar(VARIANT_BOOL visible) {}
+void IEViewSink::OnFullScreen(VARIANT_BOOL visible) {}
+void IEViewSink::OnTheaterMode(VARIANT_BOOL visible) {}
+void IEViewSink::WindowSetResizable(VARIANT_BOOL visible) {}
+void IEViewSink::WindowSetLeft(long val) {}
+void IEViewSink::WindowSetTop(long val) {}
+void IEViewSink::WindowSetWidth(long val) {}
+void IEViewSink::WindowSetHeight(long val) {}
+void IEViewSink::WindowClosing(VARIANT_BOOL isChildWindow, VARIANT_BOOL* cancel) {}
+void IEViewSink::ClientToHostWindow(long *cx, long *cy) {}
+void IEViewSink::SetSecureLockIcon(long val) {}
+void IEViewSink::FileDownload(VARIANT_BOOL* cancel) {}
+
+
 void IEView::init() {
 	if (isInited) return;
 	isInited = true;
 	InitializeCriticalSection(&mutex);
 	if (FAILED(OleInitialize(NULL))) {
 		MessageBoxA(NULL,"OleInitialize failed.","RESULT",MB_OK);
-	}
-	HMODULE	  hUrlmon = 0;
-	if(IsWinVerXPPlus()) {
-		hUrlmon = GetModuleHandle(_T("urlmon.dll"));
-		if(hUrlmon) {
-			pfnCoInternetSetFeatureEnabled = (HRESULT (WINAPI *)(INTERNETFEATURELIST, DWORD, BOOL))GetProcAddress(hUrlmon, "CoInternetSetFeatureEnabled");
-			if (pfnCoInternetSetFeatureEnabled) {
-				pfnCoInternetSetFeatureEnabled(FEATURE_LOCALMACHINE_LOCKDOWN, SET_FEATURE_ON_PROCESS, TRUE);
-			}
-		}
 	}
 }
 
@@ -379,6 +413,11 @@ STDMETHODIMP IEView::QueryInterface(REFIID riid, PVOID *ppv) {
 		*ppv=(IOleInPlaceSite*)this;//m_pIOleIPSite;
 	if (IID_IDocHostUIHandler==riid)
 		*ppv=(IDocHostUIHandler*)this;//m_pIOleIPSite;
+	if (IID_IInternetSecurityManager==riid)
+		*ppv=(IInternetSecurityManager*)this;
+	if (IID_IServiceProvider==riid) {
+		*ppv=(IServiceProvider*)this;
+	}
 	if (NULL!=*ppv) {
 		((LPUNKNOWN)*ppv)->AddRef();
 		return NOERROR;
@@ -603,107 +642,77 @@ STDMETHODIMP IEView::GetExternal(IDispatch **ppDispatch) {
 STDMETHODIMP IEView::TranslateUrl(DWORD dwTranslate, OLECHAR *pchURLIn, OLECHAR **ppchURLOut) { return E_NOTIMPL; }
 STDMETHODIMP IEView::FilterDataObject(IDataObject *pDO, IDataObject **ppDORet) { return E_NOTIMPL; }
 
-IEViewSink::IEViewSink(IEView *smptr) {
-	ieWindow = smptr;
-}
 
-IEViewSink::~IEViewSink() {}
-
-STDMETHODIMP IEViewSink::QueryInterface(REFIID riid, PVOID *ppv) {
-	*ppv=NULL;
-	if (IID_IUnknown==riid) {
-		*ppv=(IUnknown *)this;
-	}
-	if (IID_IDispatch==riid) {
-		*ppv=(IDispatch *)this;
-	}
-	if (DIID_DWebBrowserEvents2==riid) {
-		*ppv=(DWebBrowserEvents2*)this;
-	}
-	if (NULL!=*ppv) {
-		((LPUNKNOWN)*ppv)->AddRef();
-		return NOERROR;
+/* IServiceProvider */
+STDMETHODIMP IEView::QueryService(REFGUID guidService, REFIID riid,	void** ppvObject) {
+	if (guidService == SID_SInternetSecurityManager && riid == IID_IInternetSecurityManager) {
+		return (HRESULT)this->QueryInterface(riid, ppvObject);
+	} else {
+		*ppvObject = NULL;
 	}
 	return E_NOINTERFACE;
 }
 
-STDMETHODIMP_(ULONG) IEViewSink::AddRef(void) {
-	++m_cRef;
-	return m_cRef;
+/* IInternetSecurityManager */
+
+STDMETHODIMP IEView::SetSecuritySite(IInternetSecurityMgrSite *pSite) {
+	return INET_E_DEFAULT_ACTION;
 }
 
-STDMETHODIMP_(ULONG) IEViewSink::Release(void) {
-	--m_cRef;
-	return m_cRef;
+STDMETHODIMP IEView::GetSecuritySite(IInternetSecurityMgrSite **ppSite) {
+	return INET_E_DEFAULT_ACTION;
 }
 
-STDMETHODIMP IEViewSink::GetTypeInfoCount(UINT *ptr) { return E_NOTIMPL; }
-STDMETHODIMP IEViewSink::GetTypeInfo(UINT iTInfo, LCID lcid, LPTYPEINFO* ppTInfo) { return S_OK; }
-STDMETHODIMP IEViewSink::GetIDsOfNames(REFIID riid, LPOLESTR* rgszNames, UINT cNames, LCID lcid, DISPID* rgDispId) { return S_OK; }
+STDMETHODIMP IEView::MapUrlToZone(LPCWSTR pwszUrl, DWORD *pdwZone, DWORD dwFlags) {
+	return INET_E_DEFAULT_ACTION;
+}
 
-STDMETHODIMP IEViewSink::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid , WORD wFlags,
-							DISPPARAMS* pDispParams, VARIANT* pVarResult, EXCEPINFO*pExcepInfo, UINT*puArgErr) {
-	if (!pDispParams) return E_INVALIDARG;
- 	switch (dispIdMember) {
-		case DISPID_BEFORENAVIGATE2:
-            BeforeNavigate2(pDispParams->rgvarg[6].pdispVal,
-							pDispParams->rgvarg[5].pvarVal,
-							pDispParams->rgvarg[4].pvarVal,
-            				pDispParams->rgvarg[3].pvarVal,
-            				pDispParams->rgvarg[2].pvarVal,
-            				pDispParams->rgvarg[1].pvarVal,
-            				pDispParams->rgvarg[0].pboolVal);
-	    	return S_OK;
+STDMETHODIMP IEView::GetSecurityId(LPCWSTR pwszUrl, BYTE *pbSecurityId, DWORD *pcbSecurityId, DWORD_PTR dwReserved) {
+	return INET_E_DEFAULT_ACTION;
+}
+
+STDMETHODIMP IEView::ProcessUrlAction(LPCWSTR pwszUrl, DWORD dwAction, BYTE *pPolicy, DWORD cbPolicy, BYTE *pContext, DWORD cbContext, DWORD dwFlags, DWORD dwReserved) {
+	DWORD dwPolicy=URLPOLICY_ALLOW;
+	if (!wcscmp(pwszUrl, L"about:blank")) {
+//		char str[1024];
+//		sprintf(str, "kod: %08X", dwAction);
+//			MessageBox(NULL,str, "Security", MB_OK);
+		if (dwAction <= URLACTION_ACTIVEX_MAX && dwAction >= URLACTION_ACTIVEX_MIN) {
+			//dwPolicy = URLPOLICY_DISALLOW;
+			dwPolicy = URLPOLICY_ALLOW;
+		} else if ((dwAction <= URLACTION_JAVA_MAX && dwAction >= URLACTION_JAVA_MIN) || URLACTION_HTML_JAVA_RUN == dwAction) {
+			// dwPolicy = URLPOLICY_JAVA_PROHIBIT;
+			return INET_E_DEFAULT_ACTION;
+		} else if (dwAction <= URLACTION_SCRIPT_MAX && dwAction >= URLACTION_SCRIPT_MIN) {
+			//dwPolicy = URLPOLICY_DISALLOW;
+			dwPolicy = URLPOLICY_ALLOW;
+		} else if (dwAction <= URLACTION_HTML_MIN && dwAction >= URLACTION_HTML_MAX) {
+			//dwPolicy = URLPOLICY_DISALLOW;
+			dwPolicy = URLPOLICY_ALLOW;
+		} else {
+			return INET_E_DEFAULT_ACTION;
+		}
+		if ( cbPolicy >= sizeof (DWORD)) {
+			*(DWORD*) pPolicy = dwPolicy;
+			return S_OK;
+		} else {
+			return S_FALSE;
+		}
 	}
-	return DISP_E_MEMBERNOTFOUND;
-}
-// DWebBrowserEvents2
-
-void IEViewSink::StatusTextChange(BSTR text) {}
-void IEViewSink::ProgressChange(long progress, long progressMax) {}
-void IEViewSink::CommandStateChange(long command, VARIANT_BOOL enable) {}
-void IEViewSink::DownloadBegin() {}
-void IEViewSink::DownloadComplete() {}
-void IEViewSink::TitleChange(BSTR text) {}
-void IEViewSink::PropertyChange(BSTR text) {}
-void IEViewSink::BeforeNavigate2(IDispatch* pDisp,VARIANT* url,VARIANT* flags, VARIANT* targetFrameName,
-								VARIANT* postData, VARIANT* headers, VARIANT_BOOL* cancel) {
-   	int i = wcslen(url->bstrVal);
-   	char *tTemp = new char[i+1];
-   	WideCharToMultiByte(CP_ACP, 0, url->bstrVal, -1, tTemp, i+1, NULL, NULL);
-#ifndef GECKO
-	if (strcmp(tTemp, "about:blank")) {
-//		if (smileyWindow==NULL) {
-      		CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) tTemp);
-  // 		} else {
-	//		smileyWindow->choose(tTemp);
-	//	}
-    	*cancel = VARIANT_TRUE;
-	}
-#endif
-   	delete tTemp;
+	return INET_E_DEFAULT_ACTION;
 }
 
-void IEViewSink::NewWindow2(IDispatch** ppDisp, VARIANT_BOOL* cancel) {}
-void IEViewSink::NavigateComplete(IDispatch* pDisp, VARIANT* url) {}
-void IEViewSink::DocumentComplete(IDispatch* pDisp, VARIANT* url) {}
-void IEViewSink::OnQuit() {}
-void IEViewSink::OnVisible(VARIANT_BOOL visible) {}
-void IEViewSink::OnToolBar(VARIANT_BOOL visible) {}
-void IEViewSink::OnMenuBar(VARIANT_BOOL visible) {}
-void IEViewSink::OnStatusBar(VARIANT_BOOL visible) {}
-void IEViewSink::OnFullScreen(VARIANT_BOOL visible) {}
-void IEViewSink::OnTheaterMode(VARIANT_BOOL visible) {}
-void IEViewSink::WindowSetResizable(VARIANT_BOOL visible) {}
-void IEViewSink::WindowSetLeft(long val) {}
-void IEViewSink::WindowSetTop(long val) {}
-void IEViewSink::WindowSetWidth(long val) {}
-void IEViewSink::WindowSetHeight(long val) {}
-void IEViewSink::WindowClosing(VARIANT_BOOL isChildWindow, VARIANT_BOOL* cancel) {}
-void IEViewSink::ClientToHostWindow(long *cx, long *cy) {}
-void IEViewSink::SetSecureLockIcon(long val) {}
-void IEViewSink::FileDownload(VARIANT_BOOL* cancel) {}
+STDMETHODIMP IEView::QueryCustomPolicy(LPCWSTR pwszUrl, REFGUID guidKey, BYTE **ppPolicy, DWORD *pcbPolicy, BYTE *pContext, DWORD cbContext, DWORD dwReserved) {
+	return INET_E_DEFAULT_ACTION;
+}
 
+STDMETHODIMP IEView::SetZoneMapping(DWORD dwZone, LPCWSTR lpszPattern, DWORD dwFlags) {
+	return INET_E_DEFAULT_ACTION;
+}
+
+STDMETHODIMP IEView::GetZoneMappings(DWORD dwZone, IEnumString **ppenumString, DWORD dwFlags) {
+	return INET_E_DEFAULT_ACTION;
+}
 
 
 IHTMLDocument2 *IEView::getDocument() {
