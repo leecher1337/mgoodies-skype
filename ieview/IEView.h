@@ -34,11 +34,113 @@ class IEView;
 //#include <shlobj.h>
 #include <mshtml.h>
 #include <oleauto.h>
+#include <servprov.h>
 #include "ieview_common.h"
 #include "mshtmhst.h"
 
 #include "HTMLBuilder.h"
 //#include "SmileyWindow.h"
+
+static const CLSID CLSID_MozillaBrowser=
+{ 0x1339B54C, 0x3453, 0x11D2,
+    { 0x93, 0xB9, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00 } };
+
+
+#ifndef __IInternetSecurityManager_INTERFACE_DEFINED__
+#define __IInternetSecurityManager_INTERFACE_DEFINED__
+
+	#define URLACTION_ACTIVEX_MIN                                  0x00001200
+	#define URLACTION_ACTIVEX_MAX                                  0x000013ff
+	#define URLACTION_SCRIPT_MIN                                   0x00001400
+	#define URLACTION_SCRIPT_MAX                                   0x000015ff
+	#define URLACTION_HTML_MIN                                     0x00001600
+	#define URLACTION_HTML_JAVA_RUN                                0x00001605 // derive from Java custom policy
+	#define URLACTION_HTML_MAX                                     0x000017ff
+	#define URLACTION_JAVA_MIN                                     0x00001C00
+	#define URLACTION_JAVA_MAX                                     0x00001Cff
+
+	#define INET_E_USE_DEFAULT_PROTOCOLHANDLER 0x800C0011L
+	#define INET_E_USE_DEFAULT_SETTING         0x800C0012L
+	#define INET_E_DEFAULT_ACTION              INET_E_USE_DEFAULT_PROTOCOLHANDLER
+	#define INET_E_QUERYOPTION_UNKNOWN         0x800C0013L
+	#define INET_E_REDIRECTING                 0x800C0014L
+
+	// Permissions
+	#define URLPOLICY_ALLOW                0x00
+	#define URLPOLICY_QUERY                0x01
+	#define URLPOLICY_DISALLOW             0x03
+
+	static const CLSID IID_IInternetSecurityManager=
+	{ 0x79eac9ee, 0xbaf9, 0x11ce,
+    { 0x8c, 0x82, 0x00, 0xaa, 0x00, 0x4b, 0xa9, 0x0b } };
+
+	#define SID_SInternetSecurityManager         IID_IInternetSecurityManager
+
+	MIDL_INTERFACE("79eac9ed-baf9-11ce-8c82-00aa004ba90b")
+    IInternetSecurityMgrSite : public IUnknown
+    {
+    public:
+        virtual HRESULT STDMETHODCALLTYPE GetWindow(
+            /* [out] */ HWND *phwnd) = 0;
+
+        virtual HRESULT STDMETHODCALLTYPE EnableModeless(
+            /* [in] */ BOOL fEnable) = 0;
+
+    };
+
+	MIDL_INTERFACE("79eac9ee-baf9-11ce-8c82-00aa004ba90b")
+	IInternetSecurityManager : public IUnknown
+    {
+    public:
+        virtual HRESULT STDMETHODCALLTYPE SetSecuritySite(
+            /* [unique][in] */ IInternetSecurityMgrSite *pSite) = 0;
+
+        virtual HRESULT STDMETHODCALLTYPE GetSecuritySite(
+            /* [out] */ IInternetSecurityMgrSite **ppSite) = 0;
+
+        virtual HRESULT STDMETHODCALLTYPE MapUrlToZone(
+            /* [in] */ LPCWSTR pwszUrl,
+            /* [out] */ DWORD *pdwZone,
+            /* [in] */ DWORD dwFlags) = 0;
+
+        virtual HRESULT STDMETHODCALLTYPE GetSecurityId(
+            /* [in] */ LPCWSTR pwszUrl,
+            /* [size_is][out] */ BYTE *pbSecurityId,
+            /* [out][in] */ DWORD *pcbSecurityId,
+            /* [in] */ DWORD_PTR dwReserved) = 0;
+
+        virtual HRESULT STDMETHODCALLTYPE ProcessUrlAction(
+            /* [in] */ LPCWSTR pwszUrl,
+            /* [in] */ DWORD dwAction,
+            /* [size_is][out] */ BYTE *pPolicy,
+            /* [in] */ DWORD cbPolicy,
+            /* [in] */ BYTE *pContext,
+            /* [in] */ DWORD cbContext,
+            /* [in] */ DWORD dwFlags,
+            /* [in] */ DWORD dwReserved) = 0;
+
+        virtual HRESULT STDMETHODCALLTYPE QueryCustomPolicy(
+            /* [in] */ LPCWSTR pwszUrl,
+            /* [in] */ REFGUID guidKey,
+            /* [size_is][size_is][out] */ BYTE **ppPolicy,
+            /* [out] */ DWORD *pcbPolicy,
+            /* [in] */ BYTE *pContext,
+            /* [in] */ DWORD cbContext,
+            /* [in] */ DWORD dwReserved) = 0;
+
+        virtual HRESULT STDMETHODCALLTYPE SetZoneMapping(
+            /* [in] */ DWORD dwZone,
+            /* [in] */ LPCWSTR lpszPattern,
+            /* [in] */ DWORD dwFlags) = 0;
+
+        virtual HRESULT STDMETHODCALLTYPE GetZoneMappings(
+            /* [in] */ DWORD dwZone,
+            /* [out] */ IEnumString **ppenumString,
+            /* [in] */ DWORD dwFlags) = 0;
+
+    };
+#endif
 
 class IEViewSink:public  DWebBrowserEvents2 {
 private:
@@ -86,7 +188,7 @@ public:
 	STDMETHODIMP_(void)FileDownload(VARIANT_BOOL*);
 };
 
-class IEView:public IDispatch, public IOleClientSite, public IOleInPlaceSite, public IDocHostUIHandler {
+class IEView:public IDispatch, public IOleClientSite, public IOleInPlaceSite, public IDocHostUIHandler, public IInternetSecurityManager, public IServiceProvider {
 private:
 	static IEView *list;
    	static CRITICAL_SECTION mutex;
@@ -160,6 +262,17 @@ private:
     STDMETHOD(GetExternal)(IDispatch **ppDispatch);
     STDMETHOD(TranslateUrl)(DWORD dwTranslate, OLECHAR *pchURLIn, OLECHAR **ppchURLOut);
     STDMETHOD(FilterDataObject)(IDataObject *pDO, IDataObject **ppDORet);
+    // IServiceProvider
+    STDMETHOD(QueryService)(REFGUID guidService, REFIID riid, void** ppvObject);
+	// IInternetSecurityManager
+	STDMETHOD(SetSecuritySite)(IInternetSecurityMgrSite *pSite);
+	STDMETHOD(GetSecuritySite)(IInternetSecurityMgrSite **ppSite);
+	STDMETHOD(MapUrlToZone)(LPCWSTR pwszUrl, DWORD *pdwZone, DWORD dwFlags);
+	STDMETHOD(GetSecurityId)(LPCWSTR pwszUrl, BYTE *pbSecurityId, DWORD *pcbSecurityId, DWORD_PTR dwReserved);
+	STDMETHOD(ProcessUrlAction)(LPCWSTR pwszUrl, DWORD dwAction, BYTE *pPolicy, DWORD cbPolicy, BYTE *pContext, DWORD cbContext, DWORD dwFlags, DWORD dwReserved);
+	STDMETHOD(QueryCustomPolicy)(LPCWSTR pwszUrl, REFGUID guidKey, BYTE **ppPolicy, DWORD *pcbPolicy, BYTE *pContext, DWORD cbContext, DWORD dwReserved);
+	STDMETHOD(SetZoneMapping)(DWORD dwZone, LPCWSTR lpszPattern, DWORD dwFlags);
+	STDMETHOD(GetZoneMappings)(DWORD dwZone, IEnumString **ppenumString, DWORD dwFlags);
 
 	IHTMLDocument2 *getDocument();
 	BSTR 			getHrefFromAnchor(IHTMLElement *element);
