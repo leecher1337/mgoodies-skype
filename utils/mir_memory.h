@@ -41,13 +41,26 @@ char * mir_dup(const char *ptr);
 WCHAR * mir_dupW(const wchar_t *ptr);
 char *mir_dupToAscii(WCHAR *ptr);
 WCHAR *mir_dupToUnicode(char *ptr);
+int strcmpnull(char *str1, char *str2);
+int strcmpnullW(WCHAR *str1, WCHAR *str2);
 
-#ifdef _UNICODE 
+
+#ifdef _UNICODE
 # define mir_dupT mir_dupW
+# define mir_dupTA mir_dupToUnicode
+# define mir_dupTW mir_dupW
+# define lstrcmpnull strcmpnullW
 #else
 # define mir_dupT mir_dup
+# define mir_dupTA mir_dup
+# define mir_dupTW mir_dupToAscii
+# define lstrcmpnull strcmpnull
 #endif
 
+
+
+// Free memory and set to NULL
+#define MIR_FREE(_x_) if (_x_ != NULL) { mir_free(_x_); _x_ = NULL; }
 
 
 #ifdef __cplusplus

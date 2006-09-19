@@ -122,3 +122,26 @@ WCHAR *mir_dupToUnicode(char *ptr)
 	return tmp;
 }
 
+int strcmpnull(char *str1, char *str2)
+{
+	if ( str1 == NULL && str2 == NULL )
+		return 0;
+	if ( str1 != NULL && str2 == NULL )
+		return 1;
+	if ( str1 == NULL && str2 != NULL )
+		return -1;
+
+   return strcmp(str1, str2);
+}
+
+int strcmpnullW(WCHAR *str1, WCHAR *str2)
+{
+	if ( str1 == NULL && str2 == NULL )
+		return 0;
+	if ( str1 != NULL && str2 == NULL )
+		return 1;
+	if ( str1 == NULL && str2 != NULL )
+		return -1;
+
+   return lstrcmpW(str1, str2);
+}
