@@ -47,6 +47,32 @@ void __stdcall replaceStr( WCHAR*& dest, const WCHAR* src )
 	else dest = NULL;
 }
 
+void __stdcall overrideStr( TCHAR*& dest, const TCHAR* src )
+{
+	if ( dest != NULL ) 
+	{
+		free( dest );
+		dest = NULL;
+	}
+
+	if ( src != NULL )
+		dest = _tcsdup( src );
+}
+
+void __stdcall overrideStr( TCHAR*& dest, const TCHAR* src, const TCHAR* def )
+{
+	if ( dest != NULL ) 
+	{
+		free( dest );
+		dest = NULL;
+	}
+
+	if ( src != NULL )
+		dest = _tcsdup( src );
+	else if ( def != NULL )
+		dest = _tcsdup( def );
+}
+
 char* __stdcall rtrim( char *string )
 {
    char* p = string + strlen( string ) - 1;
@@ -74,3 +100,14 @@ TCHAR* __stdcall rtrim( TCHAR *string )
    return string;
 }
 #endif
+
+TCHAR * mir_lstrdup( const TCHAR* src )
+{
+	if ( src == NULL )
+		return NULL;
+
+	size_t len = lstrlen( src );
+	TCHAR *ret = (TCHAR *) mir_alloc( len * sizeof(TCHAR) );
+	lstrcpy( ret, src );
+	return ret;
+}

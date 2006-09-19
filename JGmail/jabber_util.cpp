@@ -38,6 +38,11 @@ extern UINT jabberCodePage;
 static CRITICAL_SECTION serialMutex;
 static unsigned int serial;
 
+#ifdef _UNICODE
+extern LISTENINGTOINFO listeningToInfo;
+#endif
+
+
 void __stdcall JabberSerialInit( void )
 {
 	InitializeCriticalSection( &serialMutex );
@@ -929,8 +934,6 @@ void __stdcall JabberSendPresenceTo( int status, TCHAR* to, XmlNode* extra )
 
 	// Send <presence/> update for status ( we won't handle ID_STATUS_OFFLINE here )
 	// Note: jabberModeMsg is already encoded using JabberTextEncode()
-	EnterCriticalSection( &modeMsgMutex );
-
 	char szPriority[40];
 	itoa( JGetWord( NULL, "Priority", 0 ), szPriority, 10 );
 
@@ -951,43 +954,77 @@ void __stdcall JabberSendPresenceTo( int status, TCHAR* to, XmlNode* extra )
 			x->addChild( "photo", hashValue );
 	}	}
 
-	switch ( status ) {
-	case ID_STATUS_ONLINE:
-		if ( modeMsgs.szOnline )
-			p.addChild( "status", modeMsgs.szOnline );
-		break;
-	case ID_STATUS_INVISIBLE:
-		p.addAttr( "type", JGetByte(NULL,"InvAsUnavail",TRUE)?"unavailable":"invisible" );
-		break;
-	case ID_STATUS_AWAY:
-	case ID_STATUS_ONTHEPHONE:
-	case ID_STATUS_OUTTOLUNCH:
-		p.addChild( "show", "away" );
-		if ( modeMsgs.szAway )
-			p.addChild( "status", modeMsgs.szAway );
-		break;
-	case ID_STATUS_NA:
-		p.addChild( "show", "xa" );
-		if ( modeMsgs.szNa )
-			p.addChild( "status", modeMsgs.szNa );
-		break;
-	case ID_STATUS_DND:
-	case ID_STATUS_OCCUPIED:
-		p.addChild( "show", "dnd" );
-		if ( modeMsgs.szDnd )
-			p.addChild( "status", modeMsgs.szDnd );
-		break;
-	case ID_STATUS_FREECHAT:
-		p.addChild( "show", "chat" );
-		if ( modeMsgs.szFreechat )
-			p.addChild( "status", modeMsgs.szFreechat );
-		break;
-	default:
-		// Should not reach here
-		break;
+	BOOL usingListening = FALSE;
+#ifdef _UNICODE
+	EnterCriticalSection( &listeningToInfoMutex );
+	if ( listeningToInfo.cbSize > 0 )
+	{
+		TCHAR msg[1024];
+		msg[0] = 0x266B;
+		msg[1] = _T(' ');
+		if ( ServiceExists(MS_LISTENINGTO_GETPARSEDTEXT) ) 
+		{
+			TCHAR *tmp = (TCHAR *)CallService(MS_LISTENINGTO_GETPARSEDTEXT, (WPARAM) _T("%title% - %artist%"), (LPARAM) &listeningToInfo );
+			lstrcpyn(&msg[2], tmp, 1022);
+			p.addChild( "status", msg );
+			mir_free(tmp);
+		}
+		else
+		{
+			mir_sntprintf( &msg[2], 1022, _T("%s - %s"), 
+							( listeningToInfo.szTitle ? listeningToInfo.szTitle : _T("") ), 
+							( listeningToInfo.szArtist ? listeningToInfo.szArtist : _T("") ) );
+
+			p.addChild( "status", msg );
+		}
+
+		usingListening = TRUE;
 	}
+	LeaveCriticalSection( &listeningToInfoMutex );
+#endif
+
+	if (!usingListening)
+	{
+		EnterCriticalSection( &modeMsgMutex );
+		switch ( status ) {
+		case ID_STATUS_ONLINE:
+			if ( modeMsgs.szOnline )
+				p.addChild( "status", modeMsgs.szOnline );
+			break;
+		case ID_STATUS_INVISIBLE:
+			p.addAttr( "type", JGetByte(NULL,"InvAsUnavail",TRUE)?"unavailable":"invisible" );
+			break;
+		case ID_STATUS_AWAY:
+		case ID_STATUS_ONTHEPHONE:
+		case ID_STATUS_OUTTOLUNCH:
+			p.addChild( "show", "away" );
+			if ( modeMsgs.szAway )
+				p.addChild( "status", modeMsgs.szAway );
+			break;
+		case ID_STATUS_NA:
+			p.addChild( "show", "xa" );
+			if ( modeMsgs.szNa )
+				p.addChild( "status", modeMsgs.szNa );
+			break;
+		case ID_STATUS_DND:
+		case ID_STATUS_OCCUPIED:
+			p.addChild( "show", "dnd" );
+			if ( modeMsgs.szDnd )
+				p.addChild( "status", modeMsgs.szDnd );
+			break;
+		case ID_STATUS_FREECHAT:
+			p.addChild( "show", "chat" );
+			if ( modeMsgs.szFreechat )
+				p.addChild( "status", modeMsgs.szFreechat );
+			break;
+		default:
+			// Should not reach here
+			break;
+		}
+		LeaveCriticalSection( &modeMsgMutex );
+	}
+
 	JabberSend( jabberThreadInfo->s, p );
-	LeaveCriticalSection( &modeMsgMutex );
 }
 
 void __stdcall JabberSendPresence( int status )

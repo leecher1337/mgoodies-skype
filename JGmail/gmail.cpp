@@ -1008,3 +1008,30 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 return false;
 }
 
+// This only works with unicode version of status message
+BOOL IsListeningToStatusMessage(TCHAR *p) {
+
+#ifdef UNICODE
+
+	return p != NULL && p[0] == 0x266B && p[1] == _T(' ');
+
+#else
+
+	return FALSE;
+
+#endif
+}
+
+TCHAR *GetListeningToText(TCHAR *p) {
+
+#ifdef UNICODE
+
+	return &p[2];
+
+#else
+
+	return NULL;
+
+#endif
+}
+
