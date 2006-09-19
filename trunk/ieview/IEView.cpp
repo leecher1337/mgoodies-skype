@@ -664,6 +664,10 @@ STDMETHODIMP IEView::GetSecuritySite(IInternetSecurityMgrSite **ppSite) {
 }
 
 STDMETHODIMP IEView::MapUrlToZone(LPCWSTR pwszUrl, DWORD *pdwZone, DWORD dwFlags) {
+	if (!wcscmp(pwszUrl, L"about:blank")) {
+                *pdwZone = URLZONE_LOCAL_MACHINE;
+                return S_OK;
+	}
 	return INET_E_DEFAULT_ACTION;
 }
 
@@ -679,16 +683,16 @@ STDMETHODIMP IEView::ProcessUrlAction(LPCWSTR pwszUrl, DWORD dwAction, BYTE *pPo
 //			MessageBox(NULL,str, "Security", MB_OK);
 		if (dwAction <= URLACTION_ACTIVEX_MAX && dwAction >= URLACTION_ACTIVEX_MIN) {
 			//dwPolicy = URLPOLICY_DISALLOW;
-			dwPolicy = URLPOLICY_ALLOW;
+			//dwPolicy = URLPOLICY_ALLOW;
 		} else if ((dwAction <= URLACTION_JAVA_MAX && dwAction >= URLACTION_JAVA_MIN) || URLACTION_HTML_JAVA_RUN == dwAction) {
 			// dwPolicy = URLPOLICY_JAVA_PROHIBIT;
 			return INET_E_DEFAULT_ACTION;
 		} else if (dwAction <= URLACTION_SCRIPT_MAX && dwAction >= URLACTION_SCRIPT_MIN) {
 			//dwPolicy = URLPOLICY_DISALLOW;
-			dwPolicy = URLPOLICY_ALLOW;
+			//dwPolicy = URLPOLICY_ALLOW;
 		} else if (dwAction <= URLACTION_HTML_MIN && dwAction >= URLACTION_HTML_MAX) {
 			//dwPolicy = URLPOLICY_DISALLOW;
-			dwPolicy = URLPOLICY_ALLOW;
+			//dwPolicy = URLPOLICY_ALLOW;
 		} else {
 			return INET_E_DEFAULT_ACTION;
 		}
