@@ -50,6 +50,19 @@ static const CLSID CLSID_MozillaBrowser=
 #ifndef __IInternetSecurityManager_INTERFACE_DEFINED__
 #define __IInternetSecurityManager_INTERFACE_DEFINED__
 
+	typedef enum tagURLZONE {
+	    URLZONE_INVALID = -1,
+	    URLZONE_PREDEFINED_MIN = 0,
+	    URLZONE_LOCAL_MACHINE = 0,
+	    URLZONE_INTRANET,
+	    URLZONE_TRUSTED,
+	    URLZONE_INTERNET,
+	    URLZONE_UNTRUSTED,
+	    URLZONE_PREDEFINED_MAX = 999,
+	    URLZONE_USER_MIN = 1000,
+	    URLZONE_USER_MAX = 10000
+	} URLZONE;
+
 	#define URLACTION_ACTIVEX_MIN                                  0x00001200
 	#define URLACTION_ACTIVEX_MAX                                  0x000013ff
 	#define URLACTION_SCRIPT_MIN                                   0x00001400
