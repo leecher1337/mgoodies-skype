@@ -1,0 +1,507 @@
+/* 
+Copyright (C) 2006 Ricardo Pescuma Domenecci
+
+This is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+This is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+
+You should have received a copy of the GNU Library General Public
+License along with this file; see the file license.txt.  If
+not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.  
+*/
+
+
+#include "commons.h"
+
+
+// Prototypes ///////////////////////////////////////////////////////////////////////////
+
+/*
+Service called by the main menu
+*/
+#define MS_LISTENINGTO_MAINMENU		"ListeningTo/MainMenu"
+
+
+PLUGININFO pluginInfo = {
+	sizeof(PLUGININFO),
+#ifdef UNICODE
+	"ListeningTo (Unicode)",
+#else
+	"ListeningTo",
+#endif
+	PLUGIN_MAKE_VERSION(0,1,0,0),
+	"Handle listening information to/for contacts",
+	"Ricardo Pescuma Domenecci",
+	"",
+	"© 2006 Ricardo Pescuma Domenecci",
+	"http://miranda-im.org/",
+	0,	//not transient
+	0	//doesn't replace anything built-in
+};
+
+
+HINSTANCE hInst;
+PLUGINLINK *pluginLink;
+
+static HANDLE hModulesLoaded = NULL;
+static HANDLE hPreShutdownHook = NULL;
+
+static char *metacontacts_proto = NULL;
+static BOOL loaded = FALSE;
+static UINT hTimer = 0;
+
+struct MenuItemInfo
+{
+	char *proto;
+	HANDLE hMenu;
+
+} *menu_itens = NULL;
+int menu_itens_num = 0;
+
+
+int ModulesLoaded(WPARAM wParam, LPARAM lParam);
+int PreShutdown(WPARAM wParam, LPARAM lParam);
+int PreBuildContactMenu(WPARAM wParam,LPARAM lParam);
+
+int MainMenuClicked(WPARAM wParam, LPARAM lParam);
+BOOL ListeningToEnabled(char *proto);
+int ListeningToEnabled(WPARAM wParam, LPARAM lParam);
+int EnableListeningTo(WPARAM wParam,LPARAM lParam);
+int GetTextFormat(WPARAM wParam,LPARAM lParam);
+int GetParsedFormat(WPARAM wParam,LPARAM lParam);
+int GetOverrideContactOption(WPARAM wParam,LPARAM lParam);
+
+
+// Functions ////////////////////////////////////////////////////////////////////////////
+
+
+extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
+{
+	hInst = hinstDLL;
+	return TRUE;
+}
+
+
+extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
+{
+	return &pluginInfo;
+}
+
+
+extern "C" int __declspec(dllexport) Load(PLUGINLINK *link) 
+{
+	pluginLink = link;
+
+	init_mir_malloc();
+
+	CoInitialize(NULL);
+
+	CreateServiceFunction(MS_LISTENINGTO_ENABLED, ListeningToEnabled);
+	CreateServiceFunction(MS_LISTENINGTO_ENABLE, EnableListeningTo);
+	CreateServiceFunction(MS_LISTENINGTO_GETTEXTFORMAT, GetTextFormat);
+	CreateServiceFunction(MS_LISTENINGTO_GETPARSEDTEXT, GetParsedFormat);
+	CreateServiceFunction(MS_LISTENINGTO_OVERRIDECONTACTOPTION, GetOverrideContactOption);
+	CreateServiceFunction(MS_LISTENINGTO_MAINMENU, MainMenuClicked);
+	
+	// hooks
+	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
+	hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
+
+	InitOptions();
+
+	return 0;
+}
+
+extern "C" int __declspec(dllexport) Unload(void) 
+{
+	if (menu_itens != NULL) 
+		free(menu_itens);
+
+	CoUninitialize();
+
+	return 0;
+}
+
+
+__inline static int ProtoServiceExists(const char *szModule, const char *szService)
+{
+	char str[MAXMODULELABELLENGTH];
+	strcpy(str,szModule);
+	strcat(str,szService);
+	return ServiceExists(str);
+}
+
+// Called when all the modules are loaded
+int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
+{
+	if (ServiceExists(MS_MC_GETPROTOCOLNAME))
+		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
+
+	// add our modules to the KnownModules list
+	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
+
+    // updater plugin support
+    if(ServiceExists(MS_UPDATE_REGISTER))
+	{
+		Update upd = {0};
+		char szCurrentVersion[30];
+
+		upd.cbSize = sizeof(upd);
+		upd.szComponentName = pluginInfo.shortName;
+
+		upd.szUpdateURL = UPDATER_AUTOREGISTER;
+
+		upd.szBetaVersionURL = "http://br.geocities.com/ricardo_pescuma/listeningto_version.txt";
+		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/listeningto_changelog.txt";
+		upd.pbBetaVersionPrefix = (BYTE *)"Nick History ";
+		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
+#ifdef UNICODE
+		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/listeningtoW.zip";
+#else
+		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/listeningto.zip";
+#endif
+
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.cpbVersion = strlen((char *)upd.pbVersion);
+
+        CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
+	}
+
+	if (opts.enable_menu_item)
+	{
+		CLISTMENUITEM mi;
+		ZeroMemory(&mi,sizeof(mi));
+		mi.cbSize=sizeof(mi);
+		mi.popupPosition = 500080000;
+		mi.pszPopupName = "Listening to";
+		mi.position = 0;
+		mi.pszService = MS_LISTENINGTO_MAINMENU;
+
+		PROTOCOLDESCRIPTOR **protos;
+		int count;
+		CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+
+		int allocated = 10;
+		menu_itens = (MenuItemInfo *) malloc(allocated * sizeof(MenuItemInfo));
+		
+		for (int i = 0; i < count; i++)
+		{
+			if (protos[i]->type != PROTOTYPE_PROTOCOL)
+				continue;
+			
+			if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
+				continue;
+
+			char name[128];
+			CallProtoService(protos[i]->szName, PS_GETNAME, sizeof(name), (LPARAM)name);
+
+			char text[256];
+			mir_snprintf(text, MAX_REGS(text), Translate("Send to %s"), name);
+
+			if (menu_itens_num >= allocated)
+			{
+				allocated += 10;
+				menu_itens = (MenuItemInfo *) realloc(menu_itens, allocated * sizeof(MenuItemInfo));
+			}
+
+			mi.pszName = text;
+			mi.flags = ListeningToEnabled(protos[i]->szName) ? CMIF_CHECKED : 0;
+
+			menu_itens[menu_itens_num].hMenu = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
+			menu_itens[menu_itens_num].proto = protos[i]->szName;
+
+			mi.popupPosition++;
+			menu_itens_num++;
+		}
+	}
+
+	StartTimer();
+
+	loaded = TRUE;
+
+	return 0;
+}
+
+
+int PreShutdown(WPARAM wParam, LPARAM lParam)
+{
+	DeInitOptions();
+
+	UnhookEvent(hModulesLoaded);
+	UnhookEvent(hPreShutdownHook);
+
+	if (hTimer != NULL)
+		KillTimer(NULL, hTimer);
+
+	loaded = FALSE;
+
+	return 0;
+}
+
+
+int MainMenuClicked(WPARAM wParam, LPARAM lParam)
+{
+	if (!loaded)
+		return -1;
+
+	int pos = wParam - 500080000;
+
+	if (pos >= menu_itens_num || pos < 0)
+		return 0;
+
+	EnableListeningTo((WPARAM) menu_itens[pos].proto, (LPARAM) !ListeningToEnabled(menu_itens[pos].proto));
+	return 0;
+}
+
+
+BOOL ListeningToEnabled(char *proto) 
+{
+	if (!opts.enable_sending)
+		return FALSE;
+
+	if (proto == NULL)
+		return FALSE;
+
+	char setting[256];
+	mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
+	return (BOOL) DBGetContactSettingByte(NULL, MODULE_NAME, setting, FALSE);
+}
+
+
+int ListeningToEnabled(WPARAM wParam, LPARAM lParam) 
+{
+	if (!loaded)
+		return -1;
+
+	return ListeningToEnabled((char *)wParam) ;
+}
+
+
+void SetListeningInfo(char *proto, BOOL set)
+{
+	LISTENINGTOINFO lti = {0};
+
+	if (!opts.enable_sending || !set || !GetListeningInfo(&lti))
+	{
+		CallProtoService(proto, PS_SET_LISTENINGTO, 0, NULL);
+	}
+	else
+	{
+		CallProtoService(proto, PS_SET_LISTENINGTO, 0, (LPARAM) &lti);
+	}
+}
+
+
+int EnableListeningTo(WPARAM wParam,LPARAM lParam) 
+{
+	if (!loaded)
+		return -1;
+
+	char *proto = (char *)wParam;
+
+	if (proto == NULL)
+		return -1;
+
+	char setting[256];
+	mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
+	DBWriteContactSettingByte(NULL, MODULE_NAME, setting, (BOOL) lParam);
+
+	if (menu_itens != NULL)
+	{
+		// Modify menu info
+		for (int i = 0; i < menu_itens_num; i++)
+		{
+			if (strcmp(proto, menu_itens[i].proto) == 0)
+			{
+				CLISTMENUITEM clmi = {0};
+				clmi.cbSize = sizeof(clmi);
+				clmi.flags = CMIM_FLAGS | (lParam ? CMIF_CHECKED : 0);
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) menu_itens[i].hMenu, (LPARAM) &clmi);
+				break;
+			}
+		}
+	}
+
+	SetListeningInfo(proto, lParam);
+	StartTimer();
+
+	return 0;
+}
+
+
+int GetTextFormat(WPARAM wParam,LPARAM lParam) 
+{
+	if (!loaded)
+		return NULL;
+
+	return (int) mir_dupT(opts.templ);
+}
+
+
+int GetParsedFormat(WPARAM wParam,LPARAM lParam) 
+{
+	if (!loaded)
+		return NULL;
+
+	LISTENINGTOINFO *lti = (LISTENINGTOINFO *) lParam;
+
+	if (lti == NULL)
+		return NULL;
+
+	TCHAR *ret = mir_dupT( opts.templ );
+
+	TCHAR *fr[] = { 
+		_T("%artist%"), lti->szArtist,
+		_T("%album%"), lti->szAlbum,
+		_T("%title%"), lti->szTitle,
+		_T("%track%"), lti->szTrack,
+		_T("%year%"), lti->szYear,
+		_T("%genre%"), lti->szGenre,
+		_T("%length%"), lti->szLength,
+		_T("%player%"), lti->szPlayer,
+		_T("%type%"), lti->szType
+	};
+
+	for (int i = 0; i < MAX_REGS(fr); i+=2) {
+		TCHAR *find = fr[i];
+		TCHAR *replace = fr[i+1] ? fr[i+1] : _T("");
+
+		size_t len_find = lstrlen(find);
+		size_t len_replace = lstrlen(replace);
+
+		for (TCHAR *p = _tcsstr(ret, find); p != NULL; p = _tcsstr(p + len_replace, find)) {
+			if (len_find < len_replace) {
+				int pos = p - ret;
+				ret = (TCHAR *) mir_realloc(ret, (lstrlen(ret) + len_replace - len_find + 1) * sizeof(TCHAR));
+				p = ret + pos;
+			}
+			memmove(p + len_replace, p + len_find, (lstrlen(p + len_find) + 1) * sizeof(TCHAR));
+			memmove(p, replace, len_replace * sizeof(TCHAR));
+		}
+	}
+
+	return (int) ret;
+}
+
+
+int GetOverrideContactOption(WPARAM wParam,LPARAM lParam) 
+{
+	return opts.override_contact_template;
+}
+
+
+void SetListeningInfos(LISTENINGTOINFO *lti)
+{
+	PROTOCOLDESCRIPTOR **protos;
+	int count;
+	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+
+	for (int i = 0; i < count; i++)
+	{
+		if (protos[i]->type != PROTOTYPE_PROTOCOL)
+			continue;
+		
+		if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
+			continue;
+
+		if (ListeningToEnabled(protos[i]->szName))
+		{
+			CallProtoService(protos[i]->szName, PS_SET_LISTENINGTO, 0, (LPARAM) lti);
+		}
+	}
+}
+
+static void CALLBACK GetInfoTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
+{
+	KillTimer(NULL, hTimer);
+	hTimer = NULL;
+
+	if (!opts.enable_sending)
+	{
+		SetListeningInfos(NULL);
+		return;
+	}
+
+	LISTENINGTOINFO lti = {0};
+
+	int changed = ChangedListeningInfo();
+	if (changed > 0)
+	{
+		// Get new info
+		if (!GetListeningInfo(&lti))
+			changed = -1;
+	}
+
+	// Set it
+	if (changed < 0)
+		SetListeningInfos(NULL);
+	else if (changed > 0)
+		SetListeningInfos(&lti);
+
+	StartTimer();
+}
+
+void StartTimer()
+{
+	// See if any protocol want Listening info
+	BOOL want = FALSE;
+
+	if (opts.enable_sending)
+	{
+		PROTOCOLDESCRIPTOR **protos;
+		int count;
+		CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+
+		for (int i = 0; i < count; i++)
+		{
+			if (protos[i]->type != PROTOTYPE_PROTOCOL)
+				continue;
+			
+			if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
+				continue;
+
+			if (ListeningToEnabled(protos[i]->szName))
+			{
+				want = TRUE;
+				break;
+			}
+		}
+	}
+
+	if (want)
+	{
+		if (hTimer == NULL)
+			hTimer = SetTimer(NULL, NULL, opts.time_to_pool * 1000, GetInfoTimer);
+	}
+	else
+	{
+		if (hTimer != NULL)
+		{
+			KillTimer(NULL, hTimer);
+			hTimer = NULL;
+
+			// To be sure that no one was left behind
+			SetListeningInfos(NULL);
+		}
+	}
+}
+
+void HasNewListeningInfo()
+{
+	if (hTimer != NULL)
+	{
+		KillTimer(NULL, hTimer);
+		hTimer = NULL;
+	}
+
+	hTimer = SetTimer(NULL, NULL, 100, GetInfoTimer);
+}
+
+
