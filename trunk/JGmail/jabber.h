@@ -79,6 +79,7 @@ Last change by : $Author$
 #include <m_png.h>
 #include <m_protomod.h>
 #include <m_protosvc.h>
+#include "sdk/m_proto_listeningto.h"
 #include <m_clist.h>
 #include <m_clui.h>
 #include <m_options.h>
@@ -349,6 +350,9 @@ extern int    jabberDesiredStatus;
 extern time_t jabberLoggedInTime;
 
 extern CRITICAL_SECTION modeMsgMutex;
+#ifdef _UNICODE
+extern CRITICAL_SECTION listeningToInfoMutex;
+#endif
 extern JABBER_MODEMSGS modeMsgs;
 extern BOOL modeMsgStatusChangePending;
 
@@ -425,10 +429,13 @@ void JabberGroupchatProcessInvite( TCHAR* roomJid, TCHAR* from, TCHAR* reason, T
 
 void  __stdcall replaceStr( char*& dest, const char* src );
 void  __stdcall replaceStr( WCHAR*& dest, const WCHAR* src );
+void __stdcall overrideStr( TCHAR*& dest, const TCHAR* src );
+void __stdcall overrideStr( TCHAR*& dest, const TCHAR* src, const TCHAR* def );
 char* __stdcall rtrim( char *string );
 #if defined( _UNICODE )
 	TCHAR* __stdcall rtrim( TCHAR *string );
 #endif
+TCHAR * mir_lstrdup( const TCHAR* src );
 
 //---- jabber_misc.c ------------------------------------------------
 

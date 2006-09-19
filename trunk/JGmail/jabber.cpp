@@ -77,6 +77,10 @@ UINT   jabberCodePage;
 JABBER_MODEMSGS modeMsgs;
 //char* jabberModeMsg;
 CRITICAL_SECTION modeMsgMutex;
+#ifdef _UNICODE
+LISTENINGTOINFO listeningToInfo;
+CRITICAL_SECTION listeningToInfoMutex;
+#endif
 char* jabberVcardPhotoFileName = NULL;
 char* jabberVcardPhotoType = NULL;
 BOOL  jabberSendKeepAlive;
@@ -309,11 +313,17 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 	}
 
 	memset(( char* )&modeMsgs, 0, sizeof( JABBER_MODEMSGS ));
+#ifdef _UNICODE
+	memset(&listeningToInfo, 0, sizeof( listeningToInfo ));
+#endif
 	//jabberModeMsg = NULL;
 	jabberCodePage = JGetWord( NULL, "CodePage", CP_ACP );
 
 	InitializeCriticalSection( &mutex );
 	InitializeCriticalSection( &modeMsgMutex );
+#ifdef _UNICODE
+	InitializeCriticalSection( &listeningToInfoMutex );
+#endif
 
 	srand(( unsigned ) time( NULL ));
 	JabberSerialInit();
@@ -347,6 +357,9 @@ extern "C" int __declspec( dllexport ) Unload( void )
 	JabberIqUninit();
 	JabberSerialUninit();
 	JabberWsUninit();
+#ifdef _UNICODE
+	DeleteCriticalSection( &listeningToInfoMutex );
+#endif
 	DeleteCriticalSection( &modeMsgMutex );
 	DeleteCriticalSection( &mutex );
 	mir_free( modeMsgs.szOnline );

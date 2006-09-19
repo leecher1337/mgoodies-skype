@@ -51,6 +51,9 @@ static void JabberProcessProceed( XmlNode *node, void *userdata );
 static void JabberProcessRegIq( XmlNode *node, void *userdata );
 void JabberUserConfigResult( XmlNode *iqNode, void *userdata );
 
+BOOL IsListeningToStatusMessage(TCHAR *p);
+TCHAR *GetListeningToText(TCHAR *p);
+
 
 static VOID CALLBACK JabberDummyApcFunc( DWORD param )
 {
@@ -1207,15 +1210,11 @@ static void WriteStatusMessage(HANDLE hContact, TCHAR *p) {
 		return;
 	}
 
-#ifdef UNICODE
-
-	if (p[0] == 0x266B && p[1] == _T(' ')) {
+	if (IsListeningToStatusMessage(p)) {
 		DBWriteContactSettingTString( hContact, "CList", "StatusMsg", _T("") );
-		DBWriteContactSettingTString( hContact, jabberProtoName, "ListeningTo", &p[2] );
+		DBWriteContactSettingTString( hContact, jabberProtoName, "ListeningTo", GetListeningToText(p) );
 		return;
 	}
-
-#endif
 
 	DBDeleteContactSetting( hContact, jabberProtoName, "ListeningTo" );
 	DBWriteContactSettingTString( hContact, "CList", "StatusMsg", p );

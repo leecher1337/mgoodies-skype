@@ -33,6 +33,12 @@ Last change by : $Author$
 #include "jabber_list.h"
 #include "jabber_iq.h"
 
+#ifdef _UNICODE
+extern LISTENINGTOINFO listeningToInfo;
+#endif
+BOOL IsListeningToStatusMessage(TCHAR *p);
+
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // JabberAddToList - adds a contact to the contact list
 
@@ -706,12 +712,32 @@ int JabberGetAvatarMaxSize(WPARAM wParam, LPARAM lParam)
 ////////////////////////////////////////////////////////////////////////////////////////
 // JabberGetAwayMsg - returns a contact's away message
 
+static TCHAR * CleanMessageFromListeningTo(TCHAR *msg) {
+	if (msg == NULL || msg[0] == _T('\0') || IsListeningToStatusMessage(msg))
+		return NULL;
+	else
+		return msg;
+}
+
+static int lstrcmpnull(TCHAR *str1, TCHAR *str2)
+{
+	if ( str1 == NULL && str2 == NULL )
+		return 0;
+	if ( str1 != NULL && str2 == NULL )
+		return 1;
+	if ( str1 == NULL && str2 != NULL )
+		return -1;
+	
+   return lstrcmp(str1, str2);
+}
+
 static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 {
 	DBVARIANT dbv;
 	JABBER_LIST_ITEM *item;
 	JABBER_RESOURCE_STATUS *r;
 	int i, len, msgCount;
+	TCHAR *message;
 
 	if ( !JGetStringT( hContact, "jid", &dbv )) {
 		if (( item=JabberListGetItemPtr( LIST_ROSTER, dbv.ptszVal )) != NULL ) {
@@ -720,24 +746,46 @@ static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 				JabberLog( "resourceCount > 0" );
 				r = item->resource;
 				len = msgCount = 0;
+				BOOL sameMsg = TRUE;
+				message = CleanMessageFromListeningTo(r[0].statusMessage);
+				if (IsListeningToStatusMessage(message))
+					message = NULL;
 				for ( i=0; i<item->resourceCount; i++ ) {
-					//if ( r[i].statusMessage ) { // I want the resource to be listed even if the status message is empty
+					TCHAR *thisMsg = CleanMessageFromListeningTo(r[i].statusMessage);
+
+					if (sameMsg)
+						sameMsg = (lstrcmpnull(thisMsg, message) == 0);
+
+					//if ( thisMsg ) { // I want the resource to be listed even if the status message is empty
 						msgCount++;
-						len += ( _tcslen( r[i].resourceName ) + (r[i].statusMessage?_tcslen( r[i].statusMessage ):0) + 8 );
+						len += ( _tcslen( r[i].resourceName ) + (thisMsg?_tcslen( thisMsg ):0) + 8 );
 				}	//}
 
-				TCHAR* str = ( TCHAR* )alloca( sizeof( TCHAR )*( len+1 ));
-				str[0] = str[len] = '\0';
-				for ( i=0; i < item->resourceCount; i++ ) {
-					//if ( r[i].statusMessage ) {  // I want the resource to be listed even if the status message is empty
-						if ( str[0] != '\0' ) _tcscat( str, _T("\r\n" ));
-						if ( msgCount > 1 ) {
-							_tcscat( str, _T("( "));
-							_tcscat( str, r[i].resourceName );
-							_tcscat( str, _T(" ): "));
-						}
-						if (r[i].statusMessage) _tcscat( str, r[i].statusMessage);
-				}	//}
+				TCHAR* str;
+				if (sameMsg) {
+					// Show only the message without resources
+					len = (message?_tcslen( message ):0);
+					str = ( TCHAR* )alloca( sizeof( TCHAR )*( len+1 ));
+					str[0] = '\0';
+					if (message) lstrcpy(str, message);
+
+				} else {
+					// Show message and resources
+					str = ( TCHAR* )alloca( sizeof( TCHAR )*( len+1 ));
+					str[0] = str[len] = '\0';
+					for ( i=0; i < item->resourceCount; i++ ) {
+						TCHAR *thisMsg = CleanMessageFromListeningTo(r[i].statusMessage);
+
+						//if ( thisMsg ) {  // I want the resource to be listed even if the status message is empty
+							if ( str[0] != '\0' ) _tcscat( str, _T("\r\n" ));
+							if ( msgCount > 1 ) {
+								_tcscat( str, _T("( "));
+								_tcscat( str, r[i].resourceName );
+								_tcscat( str, _T(" ): "));
+							}
+							if (thisMsg) _tcscat( str, thisMsg);
+					}	//}
+				}
 
 				#if defined( _UNICODE )
 					char* msg = u2a(str);
@@ -753,9 +801,9 @@ static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 
 			if ( item->statusMessage != NULL ) {
 				#if defined( _UNICODE )
-					char* msg = u2a(item->statusMessage);
+					char* msg = u2a(CleanMessageFromListeningTo(item->statusMessage));
 				#else
-					char* msg = item->statusMessage;
+					char* msg = CleanMessageFromListeningTo(item->statusMessage);
 				#endif
 				JSendBroadcast( hContact, ACKTYPE_AWAYMSG, ACKRESULT_SUCCESS, ( HANDLE ) 1, ( LPARAM )msg );
 				#if defined( _UNICODE )
@@ -778,6 +826,34 @@ int JabberGetAwayMsg( WPARAM wParam, LPARAM lParam )
 	JabberForkThread( JabberGetAwayMsgThread, 0, ( void * ) ccs->hContact );
 	return 1;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// JabberGetListeningTo - returns the user listening info
+
+#ifdef _UNICODE
+
+int JabberGetListeningTo( WPARAM wParam, LPARAM lParam )
+{
+	LISTENINGTOINFO *lti = (LISTENINGTOINFO *)lParam;
+
+	if (lti == NULL || lti->cbSize != sizeof(LISTENINGTOINFO))
+		return -1;
+
+	lti->szArtist = mir_lstrdup( listeningToInfo.szArtist );
+	lti->szAlbum = mir_lstrdup( listeningToInfo.szAlbum );
+	lti->szTitle = mir_lstrdup( listeningToInfo.szTitle );
+	lti->szTrack = mir_lstrdup( listeningToInfo.szTrack );
+	lti->szYear = mir_lstrdup( listeningToInfo.szYear );
+	lti->szGenre = mir_lstrdup( listeningToInfo.szGenre );
+	lti->szLength = mir_lstrdup( listeningToInfo.szLength );
+	lti->szPlayer = mir_lstrdup( listeningToInfo.szPlayer );
+	lti->szType = mir_lstrdup( listeningToInfo.szType );
+
+	return 0;
+}
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // JabberGetCaps - return protocol capabilities bits
@@ -1265,6 +1341,77 @@ int JabberSetAwayMsg( WPARAM wParam, LPARAM lParam )
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
+// JabberSetListeningTos - sets the away status message
+
+#ifdef _UNICODE
+
+int JabberSetListeningTo( WPARAM wParam, LPARAM lParam )
+{
+	JabberLog( "JabberSetListeningTo called" );
+
+	EnterCriticalSection( &listeningToInfoMutex );
+
+	// Clear old info
+	if ( listeningToInfo.szArtist ) free( listeningToInfo.szArtist );
+	if ( listeningToInfo.szAlbum ) free( listeningToInfo.szAlbum );
+	if ( listeningToInfo.szTitle ) free( listeningToInfo.szTitle );
+	if ( listeningToInfo.szTrack ) free( listeningToInfo.szTrack );
+	if ( listeningToInfo.szYear ) free( listeningToInfo.szYear );
+	if ( listeningToInfo.szGenre ) free( listeningToInfo.szGenre );
+	if ( listeningToInfo.szLength ) free( listeningToInfo.szLength );
+	if ( listeningToInfo.szPlayer ) free( listeningToInfo.szPlayer );
+	if ( listeningToInfo.szType ) free( listeningToInfo.szType );
+	ZeroMemory(&listeningToInfo, sizeof(listeningToInfo));
+
+	// Copy new info
+	LISTENINGTOINFO *lti = (LISTENINGTOINFO *)lParam;
+	if (lti != NULL && lti->cbSize == sizeof(LISTENINGTOINFO) && (lti->szArtist != NULL || lti->szTitle != NULL)) 
+	{
+		listeningToInfo.cbSize = sizeof(listeningToInfo);	// Marks that there is info set
+
+		overrideStr( listeningToInfo.szType, lti->szType, _T("Music") );
+		overrideStr( listeningToInfo.szArtist, lti->szArtist );
+		overrideStr( listeningToInfo.szAlbum, lti->szAlbum );
+		overrideStr( listeningToInfo.szTitle, lti->szTitle, _T("No Title") );
+		overrideStr( listeningToInfo.szTrack, lti->szTrack );
+		overrideStr( listeningToInfo.szYear, lti->szYear );
+		overrideStr( listeningToInfo.szGenre, lti->szGenre );
+		overrideStr( listeningToInfo.szLength, lti->szLength );
+		overrideStr( listeningToInfo.szPlayer, lti->szPlayer );
+	} 
+
+	// Set user text
+	if (listeningToInfo.cbSize == 0)
+	{
+		JDeleteSetting( NULL, "ListeningTo" );
+	}
+	else 
+	{
+		TCHAR *text;
+		if (ServiceExists(MS_LISTENINGTO_GETPARSEDTEXT)) 
+		{
+			text = (TCHAR *) CallService(MS_LISTENINGTO_GETPARSEDTEXT, (WPARAM) _T("%title% - %artist%"), (LPARAM) &listeningToInfo );
+		}
+		else 
+		{
+			text = (TCHAR *) mir_alloc( 128 * sizeof(TCHAR) );
+			mir_sntprintf( text, 128, _T("%s - %s"), ( listeningToInfo.szTitle ? listeningToInfo.szTitle : _T("") ), 
+													 ( listeningToInfo.szArtist ? listeningToInfo.szArtist : _T("") ) );
+		}
+		JSetStringT(NULL, "ListeningTo", text);
+		mir_free(text);
+	}
+
+	// Send it
+	JabberSendPresence( jabberStatus );
+
+	LeaveCriticalSection( &listeningToInfoMutex );
+	return 0;
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////
 // JabberSetStatus - sets the protocol status
 
 int JabberSetStatus( WPARAM wParam, LPARAM lParam )
@@ -1418,12 +1565,18 @@ int JabberSvcInit( void )
 	JCreateServiceFunction( PS_GETAVATARINFO, JabberGetAvatarInfo );
 	JCreateServiceFunction( PS_GETSTATUS, JabberGetStatus );
 	JCreateServiceFunction( PS_SETAWAYMSG, JabberSetAwayMsg );
+#ifdef _UNICODE
+	JCreateServiceFunction( PS_SET_LISTENINGTO, JabberSetListeningTo );
+#endif
 	JCreateServiceFunction( PS_FILERESUME, JabberFileResume );
 
 	JCreateServiceFunction( PSS_GETINFO, JabberGetInfo );
 	JCreateServiceFunction( PSS_SETAPPARENTMODE, JabberSetApparentMode );
 	JCreateServiceFunction( PSS_MESSAGE, JabberSendMessage );
 	JCreateServiceFunction( PSS_GETAWAYMSG, JabberGetAwayMsg );
+#ifdef _UNICODE
+	JCreateServiceFunction( PS_GET_LISTENINGTO, JabberGetListeningTo );
+#endif
 	JCreateServiceFunction( PSS_FILEALLOW, JabberFileAllow );
 	JCreateServiceFunction( PSS_FILECANCEL, JabberFileCancel );
 	JCreateServiceFunction( PSS_FILEDENY, JabberFileDeny );
