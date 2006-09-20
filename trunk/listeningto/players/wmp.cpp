@@ -34,7 +34,7 @@ WindowsMediaPlayer *singletron = NULL;
 
 
 
-WindowsMediaPlayer::WindowsMediaPlayer(int anId) : CallbackPlayer(anId)
+WindowsMediaPlayer::WindowsMediaPlayer()
 {
 	WNDCLASSEX wcex;
 	wcex.cbSize = sizeof(WNDCLASSEX);
@@ -117,6 +117,7 @@ void WindowsMediaPlayer::ProcessReceived()
 		if (pCount > 5 && parts[5][0] != '\0') listening_info.szArtist = mir_dupTW(parts[5]);
 		if (pCount > 6 && parts[6][0] != '\0') listening_info.szAlbum = mir_dupTW(parts[6]);
 
+		listening_info.szPlayer = mir_dupT(_T("WindowsMediaPlayer"));
 		listening_info.cbSize = sizeof(listening_info);
 	}
 

@@ -46,7 +46,7 @@ protected:
 	BOOL FillCache();
 
 public:
-	Winamp(int anId);
+	Winamp();
 
 	virtual int ChangedListeningInfo();
 

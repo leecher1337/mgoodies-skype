@@ -5,6 +5,8 @@
 #define IDD_OPTIONS                     119
 #define IDD_POPUPS                      120
 #define IDD_PLAYERS                     120
+#define IDB_TTB_UP_DISABLED             120
+#define IDB_TTB_UP_ENABLED              121
 #define IDC_DELAY                       1001
 #define IDC_WINCOLORS                   1002
 #define IDC_DEFAULTCOLORS               1003
@@ -22,6 +24,7 @@
 #define IDC_REMOVED                     1059
 #define IDC_CHECK1                      1060
 #define IDC_POPUPS                      1060
+#define IDC_WATRACK                     1060
 #define IDC_CHECK2                      1061
 #define IDC_DELAY_SPIN                  1061
 #define IDC_HISTORY                     1061
@@ -60,6 +63,9 @@
 #define IDC_ITUNES                      1086
 #define IDC_POLL_TIMER                  1087
 #define IDC_WMP                         1088
+#define IDC_PLAYERS_L                   1089
+#define IDC_POLL_TIMER_L                1090
+#define IDC_POLL_TIMER_S_L              1091
 #define IDC_POLL_TIMER_SPIN             1625
 #define IDC_STATIC                      -1
 
@@ -69,9 +75,9 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        120
+#define _APS_NEXT_RESOURCE_VALUE        122
 #define _APS_NEXT_COMMAND_VALUE         40004
-#define _APS_NEXT_CONTROL_VALUE         1088
+#define _APS_NEXT_CONTROL_VALUE         1092
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -42,7 +42,7 @@ protected:
 	BOOL FillCache();
 
 public:
-	ITunes(int anId);
+	ITunes();
 
 	virtual int ChangedListeningInfo();
 

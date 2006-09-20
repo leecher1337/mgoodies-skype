@@ -21,11 +21,10 @@ Boston, MA 02111-1307, USA.
 #include "commons.h"
 
 
-
 Player *players[] = { 
-	new Winamp(WINAMP),
-	new WindowsMediaPlayer(WMP),
-	new ITunes(ITUNES)
+	new Winamp(),
+	new WindowsMediaPlayer(),
+	new ITunes()
 };
 
 
@@ -47,7 +46,7 @@ int ChangedListeningInfo()
 {
 	// Find a player playing
 	BOOL removed = FALSE;
-	for (int i = 0; i < MAX_REGS(players); i++) 
+	for (int i = 0; i < NUM_PLAYERS; i++) 
 	{
 		int changed = players[i]->ChangedListeningInfo();
 
@@ -68,7 +67,7 @@ BOOL GetListeningInfo(LISTENINGTOINFO *lti)
 	FreeListeningInfo(lti);
 
 	// Find a player playing
-	for (int i = 0; i < MAX_REGS(players); i++) {
+	for (int i = 0; i < NUM_PLAYERS; i++) {
 		if (players[i]->GetListeningInfo(lti) > 0)
 			return TRUE;
 	}

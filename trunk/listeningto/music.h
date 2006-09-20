@@ -31,10 +31,13 @@ Boston, MA 02111-1307, USA.
 #include "players\\itunes.h"
 #include "players\\wmp.h"
 
+
 #define WINAMP 0
-#define ITUNES 1
-#define WMP 2
+#define WMP 1
+#define ITUNES 2
 #define NUM_PLAYERS 3
+
+extern Player *players[];
 
 
 int ChangedListeningInfo();

@@ -42,9 +42,10 @@ void CopyListeningInfo(LISTENINGTOINFO *dest, const LISTENINGTOINFO * const src)
 
 
 
-Player::Player(int anId) 
+Player::Player() 
 {
-	id = anId;
+	enabled = FALSE;
+	needPoll = FALSE;
 	ZeroMemory(&listening_info, sizeof(listening_info));
 }
 
@@ -62,7 +63,7 @@ void Player::NotifyInfoChanged()
 
 BOOL Player::GetListeningInfo(LISTENINGTOINFO *lti)
 {
-	if (!opts.players[id])
+	if (!enabled)
 	{
 		FreeData();
 		return FALSE;
@@ -83,13 +84,14 @@ void Player::FreeData()
 
 
 
-PollPlayer::PollPlayer(int anId) : Player(anId)
+PollPlayer::PollPlayer()
 {
+	needPoll = TRUE;
 }
 
 
 
-CallbackPlayer::CallbackPlayer(int anId) : Player(anId)
+CallbackPlayer::CallbackPlayer()
 {
 	changed = FALSE;
 	InitializeCriticalSection(&cs);
@@ -106,7 +108,7 @@ int CallbackPlayer::ChangedListeningInfo()
 
 	EnterCriticalSection(&cs);
 
-	if (!opts.players[id])
+	if (!enabled)
 	{
 		if (listening_info.cbSize == 0)
 		{

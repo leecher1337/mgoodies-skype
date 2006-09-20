@@ -24,7 +24,7 @@ protected:
 	HWND hWnd;
 
 public:
-	WindowsMediaPlayer(int anId);
+	WindowsMediaPlayer();
 	virtual ~WindowsMediaPlayer();
 
 	WCHAR received[1024];

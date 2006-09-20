@@ -25,7 +25,7 @@ Boston, MA 02111-1307, USA.
 /*
 Return TRUE if sending listening to is enabled for this protocol
 
-wParam: char * - protocol name
+wParam: char * - protocol name or NULL for all protocols
 lParam: ignored
 */
 #define MS_LISTENINGTO_ENABLED		"ListeningTo/Enabled"
@@ -34,7 +34,7 @@ lParam: ignored
 /*
 Enable/disable sending listening to this protocol
 
-wParam: char * - protocol name
+wParam: char * - protocol name or NULL for all protocols
 lParam: BOOL - TRUE to enable, FALSE to disable
 */
 #define MS_LISTENINGTO_ENABLE		"ListeningTo/Enable"

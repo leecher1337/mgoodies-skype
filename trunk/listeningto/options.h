@@ -48,9 +48,8 @@ struct Options {
 	TCHAR templ[1024];
 	BOOL override_contact_template;
 
+	BOOL get_info_from_watrack;
 	int time_to_pool;
-
-	BOOL players[NUM_PLAYERS];
 };
 
 extern Options opts;

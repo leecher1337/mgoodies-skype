@@ -22,7 +22,7 @@ Boston, MA 02111-1307, USA.
 
 
 
-Winamp::Winamp(int anId) : PollPlayer(anId)
+Winamp::Winamp()
 {
 	filename[0] = '\0';
 
@@ -227,7 +227,7 @@ BOOL Winamp::FillCache()
 // > 0 changed
 int Winamp::ChangedListeningInfo()
 {
-	if (!opts.players[id] || !InitAndGetFilename() || ret[0] == '\0')
+	if (!enabled || !InitAndGetFilename() || ret[0] == '\0')
 	{
 		FreeData();
 		if (filename[0] != '\0')
