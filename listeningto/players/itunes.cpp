@@ -155,7 +155,7 @@ BOOL ITunes::FillCache()
 	if (listening_info.szTitle == NULL)
 	{
 		// Get from filename
-		TCHAR *p = wcsrchr(filename, '\\');
+		WCHAR *p = wcsrchr(filename, '\\');
 		if (p != NULL)
 			p++;
 		else
