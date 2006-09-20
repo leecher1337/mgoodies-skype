@@ -53,6 +53,7 @@ extern "C"
 #include <m_history.h>
 #include <m_proto_listeningto.h>
 #include <m_music.h>
+#include <m_toptoolbar.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"

@@ -28,7 +28,7 @@ extern "C"
 
 
 
-ITunes::ITunes(int anId) : PollPlayer(anId)
+ITunes::ITunes()
 {
 	filename[0] = L'\0';
 
@@ -181,7 +181,7 @@ BOOL ITunes::FillCache()
 // > 0 changed
 int ITunes::ChangedListeningInfo()
 {
-	if (!opts.players[id] || !InitAndGetFilename() || ret == NULL || ret[0] == L'\0')
+	if (!enabled || !InitAndGetFilename() || ret == NULL || ret[0] == L'\0')
 	{
 		FreeData();
 		if (filename[0] != L'\0')

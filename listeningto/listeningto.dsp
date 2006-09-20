@@ -194,6 +194,14 @@ SOURCE=.\resource.h
 
 SOURCE=.\resource.rc
 # End Source File
+# Begin Source File
+
+SOURCE=.\res\ttb_disabled.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\ttb_enabled.bmp
+# End Source File
 # End Group
 # Begin Group "Source Files"
 

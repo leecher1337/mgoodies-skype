@@ -22,12 +22,11 @@ class Player
 {
 protected:
 	LISTENINGTOINFO listening_info;
-	int id;
 
 	void NotifyInfoChanged();
 
 public:
-	Player(int anId);
+	Player();
 	virtual ~Player();
 
 	// Return:
@@ -39,12 +38,15 @@ public:
 	virtual BOOL GetListeningInfo(LISTENINGTOINFO *lti);
 
 	virtual void FreeData();
+
+	BOOL enabled;
+	BOOL needPoll;
 };
 
 class PollPlayer : public Player
 {
 public:
-	PollPlayer(int anId);
+	PollPlayer();
 };
 
 class CallbackPlayer : public Player
@@ -54,7 +56,7 @@ protected:
 	CRITICAL_SECTION cs;
 
 public:
-	CallbackPlayer(int anId);
+	CallbackPlayer();
 	virtual ~CallbackPlayer();
 
 	virtual int ChangedListeningInfo();

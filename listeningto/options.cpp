@@ -47,10 +47,11 @@ static UINT optionsExpertControls[] = {
 };
 
 static OptPageControl playersControls[] = { 
-	{ &opts.time_to_pool,		CONTROL_SPIN,		IDC_POLL_TIMER,	"TimeToPool", (WORD) 5, IDC_POLL_TIMER_SPIN, (WORD) 1, (WORD) 255 },
-	{ &opts.players[WINAMP],	CONTROL_CHECKBOX,	IDC_WINAMP,		"EnableWinamp", TRUE },
-	{ &opts.players[ITUNES],	CONTROL_CHECKBOX,	IDC_ITUNES,		"EnableITunes", TRUE },
-	{ &opts.players[WMP],		CONTROL_CHECKBOX,	IDC_WMP,		"EnableWMP", TRUE }
+	{ &opts.get_info_from_watrack,	CONTROL_CHECKBOX,	IDC_WATRACK,	"GetInfoFromWATrack", TRUE },
+	{ &opts.time_to_pool,			CONTROL_SPIN,		IDC_POLL_TIMER,	"TimeToPool", (WORD) 5, IDC_POLL_TIMER_SPIN, (WORD) 1, (WORD) 255 },
+	{ &players[WINAMP]->enabled,	CONTROL_CHECKBOX,	IDC_WINAMP,		"EnableWinamp", TRUE },
+	{ &players[ITUNES]->enabled,	CONTROL_CHECKBOX,	IDC_ITUNES,		"EnableITunes", TRUE },
+	{ &players[WMP]->enabled,		CONTROL_CHECKBOX,	IDC_WMP,		"EnableWMP", TRUE }
 };
 
 
@@ -104,6 +105,9 @@ void LoadOptions()
 {
 	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
 	LoadOpts(playersControls, MAX_REGS(playersControls), MODULE_NAME);
+
+	if (!ServiceExists(MM_GETMUSICINFO))
+		opts.get_info_from_watrack = FALSE;
 }
 
 
@@ -171,8 +175,71 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 }
 
 
+int playerDlgs[] = {
+	WINAMP, IDC_WINAMP, 
+	WMP, IDC_WMP, 
+	ITUNES, IDC_ITUNES
+};
+
+
+static void PlayersEnableDisableCtrls(HWND hwndDlg)
+{
+	EnableWindow(GetDlgItem(hwndDlg, IDC_WATRACK), ServiceExists(MM_GETMUSICINFO));
+
+	BOOL enabled = IsDlgButtonChecked(hwndDlg, IDC_WATRACK);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_PLAYERS_L), enabled);
+
+	if (enabled)
+	{
+		BOOL needPoll = FALSE;
+		for (int i = 0; i < MAX_REGS(playerDlgs); i += 2)
+		{
+			EnableWindow(GetDlgItem(hwndDlg, playerDlgs[i+1]), enabled);
+			if (players[playerDlgs[i]]->needPoll && IsDlgButtonChecked(hwndDlg, playerDlgs[i+1]))
+			{
+				needPoll = TRUE;
+				break;
+			}
+		}
+
+		EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER_L), needPoll);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER), needPoll);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER_S_L), needPoll);
+	}
+
+}
+
 static BOOL CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
-	return SaveOptsDlgProc(playersControls, MAX_REGS(playersControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+	BOOL ret = SaveOptsDlgProc(playersControls, MAX_REGS(playersControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+
+	switch (msg) 
+	{
+		case WM_INITDIALOG:
+		{
+			PlayersEnableDisableCtrls(hwndDlg);
+
+			break;
+		}
+		case WM_COMMAND:
+		{
+			if (HIWORD(wParam) == BN_CLICKED)
+				PlayersEnableDisableCtrls(hwndDlg);
+			break;
+		}
+		case WM_NOTIFY:
+		{
+			LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+
+			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
+			{
+				StartTimer();
+			}
+
+			break;
+		}
+	}
+
+	return ret;
 }
 

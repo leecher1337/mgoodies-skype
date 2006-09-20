@@ -23,10 +23,11 @@ Boston, MA 02111-1307, USA.
 
 // Prototypes ///////////////////////////////////////////////////////////////////////////
 
-/*
-Service called by the main menu
-*/
+// Service called by the main menu
 #define MS_LISTENINGTO_MAINMENU		"ListeningTo/MainMenu"
+
+// Service called by toptoolbar
+#define MS_LISTENINGTO_TTB		"ListeningTo/TopToolBar"
 
 
 PLUGININFO pluginInfo = {
@@ -52,7 +53,9 @@ PLUGINLINK *pluginLink;
 
 static HANDLE hModulesLoaded = NULL;
 static HANDLE hPreShutdownHook = NULL;
+static HANDLE hTopToolBarLoadedHook = NULL;
 
+HANDLE hTTB = NULL;
 static char *metacontacts_proto = NULL;
 static BOOL loaded = FALSE;
 static UINT hTimer = 0;
@@ -69,6 +72,7 @@ int menu_itens_num = 0;
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int PreShutdown(WPARAM wParam, LPARAM lParam);
 int PreBuildContactMenu(WPARAM wParam,LPARAM lParam);
+int TopToolBarLoaded(WPARAM wParam, LPARAM lParam);
 
 int MainMenuClicked(WPARAM wParam, LPARAM lParam);
 BOOL ListeningToEnabled(char *proto);
@@ -176,21 +180,39 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	if (opts.enable_menu_item)
 	{
-		CLISTMENUITEM mi;
-		ZeroMemory(&mi,sizeof(mi));
-		mi.cbSize=sizeof(mi);
+		CLISTMENUITEM mi = {0};
+		mi.cbSize = sizeof(mi);
 		mi.popupPosition = 500080000;
 		mi.pszPopupName = "Listening to";
 		mi.position = 0;
 		mi.pszService = MS_LISTENINGTO_MAINMENU;
 
+		int allocated = 10;
+		menu_itens = (MenuItemInfo *) malloc(allocated * sizeof(MenuItemInfo));
+		
+		// Add all protos
+
+		mi.pszName = Translate("Send to all protocols");
+		mi.flags = ListeningToEnabled(NULL) ? CMIF_CHECKED : 0;
+		menu_itens[menu_itens_num].hMenu = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
+		menu_itens[menu_itens_num].proto = NULL;
+
+		// clist classic :(
+		mi.flags |= CMIM_FLAGS;
+		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) menu_itens[menu_itens_num].hMenu, (LPARAM) &mi);
+
+
+		mi.popupPosition++;
+		menu_itens_num++;
+
+		mi.position = 100000;
+
+		// Add each proto
+
 		PROTOCOLDESCRIPTOR **protos;
 		int count;
 		CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
 
-		int allocated = 10;
-		menu_itens = (MenuItemInfo *) malloc(allocated * sizeof(MenuItemInfo));
-		
 		for (int i = 0; i < count; i++)
 		{
 			if (protos[i]->type != PROTOTYPE_PROTOCOL)
@@ -217,12 +239,19 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			menu_itens[menu_itens_num].hMenu = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
 			menu_itens[menu_itens_num].proto = protos[i]->szName;
 
+			// clist classic :(
+			mi.flags |= CMIM_FLAGS;
+			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) menu_itens[menu_itens_num].hMenu, (LPARAM) &mi);
+
+			mi.position++;
 			mi.popupPosition++;
 			menu_itens_num++;
 		}
 	}
 
 	StartTimer();
+
+	hTopToolBarLoadedHook = HookEvent(ME_TTB_MODULELOADED, TopToolBarLoaded);
 
 	loaded = TRUE;
 
@@ -236,6 +265,7 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 	UnhookEvent(hModulesLoaded);
 	UnhookEvent(hPreShutdownHook);
+	if (hTopToolBarLoadedHook) UnhookEvent(hTopToolBarLoadedHook);
 
 	if (hTimer != NULL)
 		KillTimer(NULL, hTimer);
@@ -246,12 +276,46 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 }
 
 
+int TopToolBarClick(WPARAM wParam, LPARAM lParam)
+{
+	BOOL enabled = !ListeningToEnabled(NULL);
+
+	EnableListeningTo(NULL, enabled);
+
+	CallService(MS_TTB_SETBUTTONSTATE, (WPARAM) hTTB, (LPARAM) (enabled ? TTBST_PUSHED : TTBST_RELEASED));
+
+	return 0;
+}
+
+
+// Toptoolbar hook to put an icon in the toolbar
+int TopToolBarLoaded(WPARAM wParam, LPARAM lParam) 
+{
+	BOOL enabled = ListeningToEnabled(NULL);
+
+	CreateServiceFunction(MS_LISTENINGTO_TTB, TopToolBarClick);
+
+	TTBButton ttb = {0};
+	ttb.cbSize = sizeof(ttb);
+	ttb.hbBitmapUp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_TTB_UP_DISABLED));
+	ttb.hbBitmapDown = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_TTB_UP_ENABLED));
+	ttb.pszServiceUp = MS_LISTENINGTO_TTB;
+	ttb.pszServiceDown = MS_LISTENINGTO_TTB;
+	ttb.dwFlags = TTBBF_VISIBLE | TTBBF_SHOWTOOLTIP | (enabled ? TTBBF_PUSHED : 0);
+	ttb.name = Translate("Enable/Disable sending Listening To info (to all protocols)");
+	
+	hTTB = (HANDLE)CallService(MS_TTB_ADDBUTTON, (WPARAM)&ttb, 0);
+
+	return 0;
+}
+
+
 int MainMenuClicked(WPARAM wParam, LPARAM lParam)
 {
 	if (!loaded)
 		return -1;
 
-	int pos = wParam - 500080000;
+	int pos = wParam == 0 ? 0 : wParam - 500080000;
 
 	if (pos >= menu_itens_num || pos < 0)
 		return 0;
@@ -267,11 +331,37 @@ BOOL ListeningToEnabled(char *proto)
 		return FALSE;
 
 	if (proto == NULL)
-		return FALSE;
+	{
+		// Check all protocols
+		BOOL enabled = TRUE;
 
-	char setting[256];
-	mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
-	return (BOOL) DBGetContactSettingByte(NULL, MODULE_NAME, setting, FALSE);
+		PROTOCOLDESCRIPTOR **protos;
+		int count;
+		CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+
+		for (int i = 0; i < count; i++)
+		{
+			if (protos[i]->type != PROTOTYPE_PROTOCOL)
+				continue;
+			
+			if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
+				continue;
+
+			if (!ListeningToEnabled(protos[i]->szName))
+			{
+				enabled = FALSE;
+				break;
+			}
+		}
+
+		return enabled;
+	}
+	else
+	{
+		char setting[256];
+		mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
+		return (BOOL) DBGetContactSettingByte(NULL, MODULE_NAME, setting, FALSE);
+	}
 }
 
 
@@ -307,29 +397,60 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 	char *proto = (char *)wParam;
 
 	if (proto == NULL)
-		return -1;
-
-	char setting[256];
-	mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
-	DBWriteContactSettingByte(NULL, MODULE_NAME, setting, (BOOL) lParam);
-
-	if (menu_itens != NULL)
 	{
-		// Modify menu info
-		for (int i = 0; i < menu_itens_num; i++)
+		// For all protocols
+		BOOL enabled = TRUE;
+
+		PROTOCOLDESCRIPTOR **protos;
+		int count;
+		CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+
+		for (int i = 0; i < count; i++)
 		{
-			if (strcmp(proto, menu_itens[i].proto) == 0)
+			if (protos[i]->type != PROTOTYPE_PROTOCOL)
+				continue;
+			
+			if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
+				continue;
+
+			EnableListeningTo((WPARAM) protos[i]->szName, lParam);
+		}
+	}
+	else
+	{
+		char setting[256];
+		mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
+		DBWriteContactSettingByte(NULL, MODULE_NAME, setting, (BOOL) lParam);
+
+		if (menu_itens != NULL)
+		{
+			// Modify menu info
+			for (int i = 1; i < menu_itens_num; i++)
 			{
-				CLISTMENUITEM clmi = {0};
-				clmi.cbSize = sizeof(clmi);
-				clmi.flags = CMIM_FLAGS | (lParam ? CMIF_CHECKED : 0);
-				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) menu_itens[i].hMenu, (LPARAM) &clmi);
-				break;
+				if (strcmp(proto, menu_itens[i].proto) == 0)
+				{
+					CLISTMENUITEM clmi = {0};
+					clmi.cbSize = sizeof(clmi);
+					clmi.flags = CMIM_FLAGS | (lParam ? CMIF_CHECKED : 0);
+					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) menu_itens[i].hMenu, (LPARAM) &clmi);
+
+					SetListeningInfo(proto, lParam);
+					break;
+				}
 			}
+
+			BOOL enabled = (lParam && ListeningToEnabled(NULL));
+
+			CLISTMENUITEM clmi = {0};
+			clmi.cbSize = sizeof(clmi);
+			clmi.flags = CMIM_FLAGS | (enabled ? CMIF_CHECKED : 0);
+			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) menu_itens[0].hMenu, (LPARAM) &clmi);
+
+			if (hTTB != NULL)
+				CallService(MS_TTB_SETBUTTONSTATE, (WPARAM) hTTB, (LPARAM) (enabled ? TTBST_PUSHED : TTBST_RELEASED));
 		}
 	}
 
-	SetListeningInfo(proto, lParam);
 	StartTimer();
 
 	return 0;
@@ -420,8 +541,11 @@ void SetListeningInfos(LISTENINGTOINFO *lti)
 
 static void CALLBACK GetInfoTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-	KillTimer(NULL, hTimer);
-	hTimer = NULL;
+	if (hTimer != NULL)
+	{
+		KillTimer(NULL, hTimer);
+		hTimer = NULL;
+	}
 
 	if (!opts.enable_sending)
 	{
@@ -455,22 +579,38 @@ void StartTimer()
 
 	if (opts.enable_sending)
 	{
-		PROTOCOLDESCRIPTOR **protos;
-		int count;
-		CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
-
-		for (int i = 0; i < count; i++)
+		// See if any player needs it
+		BOOL needPoll = FALSE;
+		int i;
+		for (i = 0; i < NUM_PLAYERS; i++)
 		{
-			if (protos[i]->type != PROTOTYPE_PROTOCOL)
-				continue;
-			
-			if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
-				continue;
-
-			if (ListeningToEnabled(protos[i]->szName))
+			if (players[i]->needPoll)
 			{
-				want = TRUE;
+				needPoll = TRUE;
 				break;
+			}
+		}
+
+		if (needPoll)
+		{
+			// Now see protocols
+			PROTOCOLDESCRIPTOR **protos;
+			int count;
+			CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+
+			for (i = 0; i < count; i++)
+			{
+				if (protos[i]->type != PROTOTYPE_PROTOCOL)
+					continue;
+				
+				if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
+					continue;
+
+				if (ListeningToEnabled(protos[i]->szName))
+				{
+					want = TRUE;
+					break;
+				}
 			}
 		}
 	}
