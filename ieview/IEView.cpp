@@ -664,9 +664,9 @@ STDMETHODIMP IEView::GetSecuritySite(IInternetSecurityMgrSite **ppSite) {
 }
 
 STDMETHODIMP IEView::MapUrlToZone(LPCWSTR pwszUrl, DWORD *pdwZone, DWORD dwFlags) {
-	if (!wcscmp(pwszUrl, L"about:blank")) {
-                *pdwZone = URLZONE_LOCAL_MACHINE;
-                return S_OK;
+	if (pdwZone!=NULL && pwszUrl!=NULL && !wcscmp(pwszUrl, L"about:blank")) {
+		*pdwZone = URLZONE_LOCAL_MACHINE;
+        return S_OK;
 	}
 	return INET_E_DEFAULT_ACTION;
 }
@@ -677,7 +677,7 @@ STDMETHODIMP IEView::GetSecurityId(LPCWSTR pwszUrl, BYTE *pbSecurityId, DWORD *p
 
 STDMETHODIMP IEView::ProcessUrlAction(LPCWSTR pwszUrl, DWORD dwAction, BYTE *pPolicy, DWORD cbPolicy, BYTE *pContext, DWORD cbContext, DWORD dwFlags, DWORD dwReserved) {
 	DWORD dwPolicy=URLPOLICY_ALLOW;
-	if (!wcscmp(pwszUrl, L"about:blank")) {
+	if (pwszUrl!=NULL && !wcscmp(pwszUrl, L"about:blank")) {
 //		char str[1024];
 //		sprintf(str, "kod: %08X", dwAction);
 //			MessageBox(NULL,str, "Security", MB_OK);

@@ -99,6 +99,12 @@ Alternatively, you may install AvatarService plugin and IEView will automaticall
 
 6. Change Log
 -------------
+1.0.9.7
+* workaround for Win2k + IE6
+1.0.9.6
+* workaround for IE7 RC1 security issues
+* better support for flash avatars
+* some fixes related to RTL support
 1.0.9.5
 + web browser functionality exposed to other plugins
 + experimental support for Flash avatars
