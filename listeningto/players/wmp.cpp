@@ -85,6 +85,7 @@ void WindowsMediaPlayer::ProcessReceived()
 	if (received[0] == L'\0')
 	{
 		LeaveCriticalSection(&cs);
+		NotifyInfoChanged();
 		return;
 	}
 

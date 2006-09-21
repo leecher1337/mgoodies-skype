@@ -27,17 +27,25 @@ Boston, MA 02111-1307, USA.
 
 // Players
 #include "players\\player.h"
+#include "players\\watrack.h"
 #include "players\\winamp.h"
 #include "players\\itunes.h"
 #include "players\\wmp.h"
 
 
-#define WINAMP 0
+// First non polling ones
+#define WATRACK 0
 #define WMP 1
-#define ITUNES 2
-#define NUM_PLAYERS 3
+#define WINAMP 2
+#define ITUNES 3
+#define NUM_PLAYERS 4
 
 extern Player *players[];
+
+
+void InitMusic();
+void FreeMusic();
+void EnableDisablePlayers();
 
 
 int ChangedListeningInfo();

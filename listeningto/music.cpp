@@ -21,11 +21,31 @@ Boston, MA 02111-1307, USA.
 #include "commons.h"
 
 
-Player *players[] = { 
-	new Winamp(),
+Player *players[] = {
+	new WATrack(),
 	new WindowsMediaPlayer(),
+	new Winamp(),
 	new ITunes()
 };
+
+
+void InitMusic() 
+{
+}
+
+
+void FreeMusic()
+{
+	for(int i = 0; i < NUM_PLAYERS; i++)
+		delete players[i];
+}
+
+
+void EnableDisablePlayers()
+{
+	for(int i = 0; i < NUM_PLAYERS; i++)
+		players[i]->EnableDisable();
+}
 
 
 void FreeListeningInfo(LISTENINGTOINFO *lti)
@@ -44,20 +64,31 @@ void FreeListeningInfo(LISTENINGTOINFO *lti)
 
 int ChangedListeningInfo()
 {
-	// Find a player playing
-	BOOL removed = FALSE;
-	for (int i = 0; i < NUM_PLAYERS; i++) 
+	if (players[WATRACK]->enabled)
 	{
-		int changed = players[i]->ChangedListeningInfo();
-
-		if (changed < 0)
-			removed = TRUE;
-
-		else if (changed > 0)
-			return 1;
+		return players[WATRACK]->ChangedListeningInfo();
 	}
+	else
+	{
+		// Find a player playing
+		BOOL removed = FALSE;
 
-	return removed ? -1 : 0;;
+		for (int i = WATRACK + 1; i < NUM_PLAYERS; i++) 
+		{
+			if (players[i]->enabled)
+			{
+				int changed = players[i]->ChangedListeningInfo();
+
+				if (changed < 0)
+					removed = TRUE;
+
+				else if (changed > 0)
+					return 1;
+			}
+		}
+
+		return removed ? -1 : 0;;
+	}
 }
 
 
@@ -66,11 +97,18 @@ BOOL GetListeningInfo(LISTENINGTOINFO *lti)
 	// Free old data
 	FreeListeningInfo(lti);
 
-	// Find a player playing
-	for (int i = 0; i < NUM_PLAYERS; i++) {
-		if (players[i]->GetListeningInfo(lti) > 0)
-			return TRUE;
+	if (players[WATRACK]->enabled)
+	{
+		return players[WATRACK]->GetListeningInfo(lti);
 	}
+	else
+	{
+		// Find a player playing
+		for (int i = WATRACK + 1; i < NUM_PLAYERS; i++) {
+			if (players[i]->GetListeningInfo(lti))
+				return TRUE;
+		}
 
-	return FALSE;
+		return FALSE;
+	}
 }

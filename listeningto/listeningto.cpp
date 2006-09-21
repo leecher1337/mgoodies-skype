@@ -37,7 +37,7 @@ PLUGININFO pluginInfo = {
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,0),
+	PLUGIN_MAKE_VERSION(0,1,0,1),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -118,6 +118,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
 	hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
+	InitMusic();
 	InitOptions();
 
 	return 0;
@@ -145,6 +146,8 @@ __inline static int ProtoServiceExists(const char *szModule, const char *szServi
 // Called when all the modules are loaded
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
+	EnableDisablePlayers();
+
 	if (ServiceExists(MS_MC_GETPROTOCOLNAME))
 		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
 
@@ -269,6 +272,8 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 	if (hTimer != NULL)
 		KillTimer(NULL, hTimer);
+
+	FreeMusic();
 
 	loaded = FALSE;
 
@@ -579,37 +584,40 @@ void StartTimer()
 
 	if (opts.enable_sending)
 	{
-		// See if any player needs it
-		BOOL needPoll = FALSE;
-		int i;
-		for (i = 0; i < NUM_PLAYERS; i++)
+		if (!players[WATRACK]->enabled)
 		{
-			if (players[i]->needPoll)
+			// See if any player needs it
+			BOOL needPoll = FALSE;
+			int i;
+			for (i = WATRACK + 1; i < NUM_PLAYERS; i++)
 			{
-				needPoll = TRUE;
-				break;
-			}
-		}
-
-		if (needPoll)
-		{
-			// Now see protocols
-			PROTOCOLDESCRIPTOR **protos;
-			int count;
-			CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
-
-			for (i = 0; i < count; i++)
-			{
-				if (protos[i]->type != PROTOTYPE_PROTOCOL)
-					continue;
-				
-				if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
-					continue;
-
-				if (ListeningToEnabled(protos[i]->szName))
+				if (players[i]->needPoll)
 				{
-					want = TRUE;
+					needPoll = TRUE;
 					break;
+				}
+			}
+
+			if (needPoll)
+			{
+				// Now see protocols
+				PROTOCOLDESCRIPTOR **protos;
+				int count;
+				CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+
+				for (i = 0; i < count; i++)
+				{
+					if (protos[i]->type != PROTOTYPE_PROTOCOL)
+						continue;
+					
+					if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
+						continue;
+
+					if (ListeningToEnabled(protos[i]->szName))
+					{
+						want = TRUE;
+						break;
+					}
 				}
 			}
 		}

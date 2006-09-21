@@ -47,7 +47,7 @@ static UINT optionsExpertControls[] = {
 };
 
 static OptPageControl playersControls[] = { 
-	{ &opts.get_info_from_watrack,	CONTROL_CHECKBOX,	IDC_WATRACK,	"GetInfoFromWATrack", TRUE },
+	{ &players[WATRACK]->enabled,	CONTROL_CHECKBOX,	IDC_WATRACK,	"GetInfoFromWATrack", TRUE },
 	{ &opts.time_to_pool,			CONTROL_SPIN,		IDC_POLL_TIMER,	"TimeToPool", (WORD) 5, IDC_POLL_TIMER_SPIN, (WORD) 1, (WORD) 255 },
 	{ &players[WINAMP]->enabled,	CONTROL_CHECKBOX,	IDC_WINAMP,		"EnableWinamp", TRUE },
 	{ &players[ITUNES]->enabled,	CONTROL_CHECKBOX,	IDC_ITUNES,		"EnableITunes", TRUE },
@@ -105,9 +105,6 @@ void LoadOptions()
 {
 	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
 	LoadOpts(playersControls, MAX_REGS(playersControls), MODULE_NAME);
-
-	if (!ServiceExists(MM_GETMUSICINFO))
-		opts.get_info_from_watrack = FALSE;
 }
 
 
@@ -184,29 +181,23 @@ int playerDlgs[] = {
 
 static void PlayersEnableDisableCtrls(HWND hwndDlg)
 {
-	EnableWindow(GetDlgItem(hwndDlg, IDC_WATRACK), ServiceExists(MM_GETMUSICINFO));
+	EnableWindow(GetDlgItem(hwndDlg, IDC_WATRACK), ServiceExists(MS_WAT_GETMUSICINFO));
 
-	BOOL enabled = IsDlgButtonChecked(hwndDlg, IDC_WATRACK);
+	BOOL enabled = !IsDlgButtonChecked(hwndDlg, IDC_WATRACK);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_PLAYERS_L), enabled);
 
-	if (enabled)
+	BOOL needPoll = FALSE;
+	for (int i = 0; i < MAX_REGS(playerDlgs); i += 2)
 	{
-		BOOL needPoll = FALSE;
-		for (int i = 0; i < MAX_REGS(playerDlgs); i += 2)
-		{
-			EnableWindow(GetDlgItem(hwndDlg, playerDlgs[i+1]), enabled);
-			if (players[playerDlgs[i]]->needPoll && IsDlgButtonChecked(hwndDlg, playerDlgs[i+1]))
-			{
-				needPoll = TRUE;
-				break;
-			}
-		}
-
-		EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER_L), needPoll);
-		EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER), needPoll);
-		EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER_S_L), needPoll);
+		EnableWindow(GetDlgItem(hwndDlg, playerDlgs[i+1]), enabled);
+		if (players[playerDlgs[i]]->needPoll && IsDlgButtonChecked(hwndDlg, playerDlgs[i+1]))
+			needPoll = TRUE;
 	}
 
+	EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER_L), enabled && needPoll);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER), enabled && needPoll);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER_SPIN), enabled && needPoll);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER_S_L), enabled && needPoll);
 }
 
 static BOOL CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
@@ -233,6 +224,7 @@ static BOOL CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
 			{
+				EnableDisablePlayers();
 				StartTimer();
 			}
 
