@@ -102,6 +102,19 @@ CallbackPlayer::~CallbackPlayer()
 	DeleteCriticalSection(&cs);
 }
 
+void CallbackPlayer::FreeData()
+{
+	EnterCriticalSection(&cs);
+
+	if (listening_info.cbSize != 0)
+	{
+		Player::FreeData();
+		changed = TRUE;
+	}
+
+	LeaveCriticalSection(&cs);
+}
+
 int CallbackPlayer::ChangedListeningInfo()
 {
 	int ret;

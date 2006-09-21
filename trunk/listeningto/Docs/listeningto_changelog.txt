@@ -1,6 +1,10 @@
-ListeningTo 0.1.0.0
+ListeningTo 0.1.0.1
 
 Changelog:
+
+. 0.1.0.1
+  + More code to work with WATrack (don't work yet)
+  * Fixes
 
 . 0.1.0.0
   + Initial version

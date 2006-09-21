@@ -18,8 +18,8 @@ echo Generating files for %name% ...
 
 del *.zip
 del *.dll
-copy ..\..\..\bin\release\Plugins\%name%.dll
-copy ..\..\..\bin\release\Plugins\%name%W.dll
+copy "..\..\..\bin\release\Plugins\%name%.dll"
+copy "..\..\..\bin\release unicode\Plugins\%name%W.dll"
 copy ..\Docs\%name%_changelog.txt
 copy ..\Docs\%name%_version.txt
 mkdir Docs
@@ -43,11 +43,16 @@ cd Docs
 del /Q *.*
 copy ..\..\..\Docs\*.*
 cd ..
+mkdir sdk
+cd sdk
+del /Q *.*
+copy ..\..\..\sdk\*.*
+cd ..
 cd ..
 
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip %name%.dll Docs
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip %name%W.dll Docs
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src
 
 del *.dll
 cd Docs
@@ -60,6 +65,10 @@ cd Docs
 del /Q *.*
 cd ..
 rmdir Docs
+cd sdk
+del /Q *.*
+cd ..
+rmdir sdk
 cd ..
 rmdir src
 

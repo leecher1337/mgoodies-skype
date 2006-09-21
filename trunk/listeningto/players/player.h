@@ -39,6 +39,9 @@ public:
 
 	virtual void FreeData();
 
+	// Called everytime options change
+	virtual void EnableDisable() {}
+
 	BOOL enabled;
 	BOOL needPoll;
 };
@@ -60,4 +63,6 @@ public:
 	virtual ~CallbackPlayer();
 
 	virtual int ChangedListeningInfo();
+
+	virtual void FreeData();
 };
