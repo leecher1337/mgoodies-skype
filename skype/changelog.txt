@@ -13,6 +13,9 @@ CODE
 
 HISTORY
 -------
+0.0.0.27 - * Try to fix the start using custom command line
+		   + Close skype using custom command line too
+		   	
 0.0.0.26 - + Add a way to use a custom command line to start skype.
 
 0.0.0.25 - ! patch from markcs about timezones.

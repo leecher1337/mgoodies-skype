@@ -207,9 +207,9 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 				DBFreeVariant(&dbv);
 			}
 			EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-			EnableWindow(GetDlgItem(hwndDlg, IDC_MINIMIZED), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-			EnableWindow(GetDlgItem(hwndDlg, IDC_NOSPLASH), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-			EnableWindow(GetDlgItem(hwndDlg, IDC_NOTRAY), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+			//EnableWindow(GetDlgItem(hwndDlg, IDC_MINIMIZED), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+			//EnableWindow(GetDlgItem(hwndDlg, IDC_NOSPLASH), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+			//EnableWindow(GetDlgItem(hwndDlg, IDC_NOTRAY), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
 
 			SetDlgItemInt (hwndDlg, IDC_CONNATTEMPTS, DBGetContactSettingWord(NULL, pszSkypeProtoName, "ConnectionAttempts", 10), FALSE);
 			if (ServiceExists(MS_GC_NEWCHAT) && atoi(SKYPE_PROTO+strlen(SKYPE_PROTO)-1)>=5)
@@ -272,9 +272,9 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 					break;
 				case IDC_CUSTOMCOMMAND:
 					EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-					EnableWindow(GetDlgItem(hwndDlg, IDC_MINIMIZED), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-					EnableWindow(GetDlgItem(hwndDlg, IDC_NOSPLASH), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-					EnableWindow(GetDlgItem(hwndDlg, IDC_NOTRAY), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+					//EnableWindow(GetDlgItem(hwndDlg, IDC_MINIMIZED), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+					//EnableWindow(GetDlgItem(hwndDlg, IDC_NOSPLASH), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
+					//EnableWindow(GetDlgItem(hwndDlg, IDC_NOTRAY), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
 					break;
 
 			}

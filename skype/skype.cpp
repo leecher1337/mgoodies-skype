@@ -117,7 +117,7 @@ int FreeVSApi()
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,26),
+	PLUGIN_MAKE_VERSION(0,0,0,27),
 	"Support for Skype network",
 	"leecher",
 	"leecher@dose.0wnz.at",
@@ -1548,6 +1548,7 @@ void TellError(DWORD err) {
 int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 {
 	int oldStatus;
+	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
 
 	//if (!SkypeInitialized && !DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0)) return 0;
 
@@ -1568,7 +1569,22 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
    if ((int)wParam==ID_STATUS_OFFLINE) {
        logoff_contacts();
 	   if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0)) {
-		   if (AttachStatus!=-1) _spawnl(_P_NOWAIT, skype_path, skype_path, "/SHUTDOWN", NULL);
+		   if (AttachStatus!=-1) 
+		   {
+			   if(UseCustomCommand)
+			   {
+				   DBVARIANT dbv;
+					if(!DBGetContactSetting(NULL,pszSkypeProtoName,"CommandLine",&dbv)) 
+					{
+						_spawnl(_P_NOWAIT, dbv.pszVal, dbv.pszVal, "/SHUTDOWN", NULL);
+						DBFreeVariant(&dbv);
+					}
+			   }
+			   else
+			   {
+				   _spawnl(_P_NOWAIT, skype_path, skype_path, "/SHUTDOWN", NULL);
+			   }
+		   }
 		   InterlockedExchange((long*)&SkypeStatus, (int)wParam);
 		   ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
 	 	   SkypeInitialized=FALSE;
@@ -2062,6 +2078,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	DWORD Buffsize;
 	HKEY MyKey;
 	BOOL SkypeInstalled;
+	BOOL UseCustomCommand;
 	WSADATA wsaData;
 //	char *path, *protocolname, *fend;
 
@@ -2113,9 +2130,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	// Check if Skype is installed
 	SkypeInstalled=TRUE;
+	UseCustomCommand = (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
 
 	UseSockets=(BOOL)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseSkype2Socket", 0);
-	if (!UseSockets) {
+	if (!UseSockets && !UseCustomCommand) {
 		if (RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Skype\\Phone", 0, KEY_READ, &MyKey)!=ERROR_SUCCESS)
 			if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Skype\\Phone", 0, KEY_READ, &MyKey)!=ERROR_SUCCESS)
 				SkypeInstalled=FALSE;
@@ -2174,10 +2192,27 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 extern "C" int __declspec( dllexport ) Unload(void) 
 {
+	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
+	BOOL Shutdown = DBGetContactSettingByte(NULL, pszSkypeProtoName, "Shutdown", 0);
 		LOG ("Unload", "started");
-	if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "Shutdown", 0) && skype_path && skype_path[0]) {
-		_spawnl(_P_NOWAIT, skype_path, skype_path, "/SHUTDOWN", NULL);
-		LOG ("Unload Sent /shutdown to ", skype_path);
+	if ( Shutdown && ((skype_path && skype_path[0]) ||UseCustomCommand) ) {
+
+		if(UseCustomCommand)
+		{
+			DBVARIANT dbv;
+			if(!DBGetContactSetting(NULL,pszSkypeProtoName,"CommandLine",&dbv)) 
+			{
+				_spawnl(_P_NOWAIT, dbv.pszVal, dbv.pszVal, "/SHUTDOWN", NULL);
+				LOG ("Unload Sent /shutdown to ", dbv.pszVal);
+				DBFreeVariant(&dbv);
+			}
+		}
+		else
+		{
+			_spawnl(_P_NOWAIT, skype_path, skype_path, "/SHUTDOWN", NULL);
+			LOG ("Unload Sent /shutdown to ", skype_path);
+		}
+		
 	}
 	SkypeMsgCleanup();
 	WSACleanup();
