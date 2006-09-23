@@ -152,3 +152,99 @@ int CallbackPlayer::ChangedListeningInfo()
 	return ret;
 }
 
+
+CodeInjectionPlayer::CodeInjectionPlayer()
+{
+	window_class = NULL;
+	window_name = NULL;
+	message_window_class = NULL;
+	next_request_time = 0;
+}
+
+CodeInjectionPlayer::~CodeInjectionPlayer()
+{
+}
+
+int CodeInjectionPlayer::ChangedListeningInfo()
+{
+	if (!enabled || !opts.enable_code_injection || next_request_time > GetTickCount())
+		return 0;
+
+	// Window is opened?
+	HWND hwnd = FindWindow(window_class, window_name);
+	if (hwnd == NULL)
+		return 0;
+
+	// Msg Window is registered? (aka plugin is running?)
+	HWND msgHwnd = FindWindow(message_window_class, NULL);
+	if (msgHwnd != NULL)
+		return 0;
+
+	// Get the dll path
+	char dll_path[1024] = {0};
+	if (!GetModuleFileNameA(hInst, dll_path, MAX_REGS(dll_path)))
+		return 0;
+
+	char *p = strrchr(dll_path, '\\');
+	if (p == NULL)
+		return 0;
+
+	p++;
+	*p = '\0';
+
+	size_t len = p - dll_path;
+
+#ifdef UNICODE
+	mir_snprintf(p, 1024 - len, "listeningto\\mlt_%S.dll", name);
+#else
+	mir_snprintf(p, 1024 - len, "listeningto\\mlt_%s.dll", name);
+#endif
+
+	len = strlen(dll_path);
+
+	// File exists?
+	DWORD attribs = GetFileAttributesA(dll_path);
+	if (attribs == 0xFFFFFFFF || !(attribs & FILE_ATTRIBUTE_ARCHIVE))
+		return 0;
+
+	// Do the code injection
+	unsigned long pid;
+	GetWindowThreadProcessId(hwnd, &pid);
+	HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, pid);
+	if (hProcess == NULL)
+		return 0;
+
+	char *_dll = (char *) VirtualAllocEx(hProcess, NULL, len+1, MEM_COMMIT, PAGE_READWRITE );
+	if (_dll == NULL)
+	{
+		CloseHandle(hProcess);
+		return 0;
+	}
+	WriteProcessMemory(hProcess, _dll, dll_path, len+1, NULL);
+
+	HMODULE hKernel32 = GetModuleHandleA("kernel32");
+	HANDLE hLoadLibraryA = GetProcAddress(hKernel32, "LoadLibraryA");
+	DWORD threadId;
+	HANDLE hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE) hLoadLibraryA, 
+										_dll, 0, &threadId);
+	if (hThread == NULL)
+	{
+		VirtualFreeEx(hProcess, _dll, len+1, MEM_RELEASE);
+		CloseHandle(hProcess);
+		return 0;
+	}
+	WaitForSingleObject(hThread, INFINITE);
+	CloseHandle(hThread);
+	VirtualFreeEx(hProcess, _dll, len+1, MEM_RELEASE);
+	CloseHandle(hProcess);
+
+	next_request_time = GetTickCount() + 11000;
+
+	return 0;
+}
+
+BOOL CodeInjectionPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
+{
+	return FALSE;
+}
+

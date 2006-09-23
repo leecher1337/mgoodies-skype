@@ -54,6 +54,9 @@ extern "C"
 #include <m_music.h>
 #include <m_toptoolbar.h>
 
+#include "../modernb/m_clui.h"
+#include "../modernb/CLUIFrames/m_cluiframes.h"
+
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
 

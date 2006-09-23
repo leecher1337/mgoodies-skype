@@ -23,6 +23,7 @@ Boston, MA 02111-1307, USA.
 
 Player *players[] = {
 	new WATrack(),
+	new GenericPlayer(),
 	new WindowsMediaPlayer(),
 	new Winamp(),
 	new ITunes()
@@ -73,7 +74,7 @@ int ChangedListeningInfo()
 		// Find a player playing
 		BOOL removed = FALSE;
 
-		for (int i = WATRACK + 1; i < NUM_PLAYERS; i++) 
+		for (int i = GENERIC; i < NUM_PLAYERS; i++) 
 		{
 			if (players[i]->enabled)
 			{
@@ -104,7 +105,7 @@ BOOL GetListeningInfo(LISTENINGTOINFO *lti)
 	else
 	{
 		// Find a player playing
-		for (int i = WATRACK + 1; i < NUM_PLAYERS; i++) {
+		for (int i = GENERIC; i < NUM_PLAYERS; i++) {
 			if (players[i]->GetListeningInfo(lti))
 				return TRUE;
 		}

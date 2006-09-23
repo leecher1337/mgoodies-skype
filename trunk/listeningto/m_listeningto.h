@@ -21,6 +21,10 @@ Boston, MA 02111-1307, USA.
 #ifndef __M_LISTENINGTO_H__
 # define __M_LISTENINGTO_H__
 
+// To be used by other plugins to send listening info to miranda
+#define MIRANDA_WINDOWCLASS _T("Miranda.ListeningTo")
+#define MIRANDA_DW_PROTECTION 0x8754
+
 
 /*
 Return TRUE if sending listening to is enabled for this protocol

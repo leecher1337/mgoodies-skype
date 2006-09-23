@@ -37,7 +37,7 @@ PLUGININFO pluginInfo = {
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,1),
+	PLUGIN_MAKE_VERSION(0,1,0,2),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -54,11 +54,14 @@ PLUGINLINK *pluginLink;
 static HANDLE hModulesLoaded = NULL;
 static HANDLE hPreShutdownHook = NULL;
 static HANDLE hTopToolBarLoadedHook = NULL;
+static HANDLE hClistExtraListRebuildHook = NULL;
+static HANDLE hSettingChangedHook = NULL;
 
-HANDLE hTTB = NULL;
+static HANDLE hTTB = NULL;
 static char *metacontacts_proto = NULL;
 static BOOL loaded = FALSE;
 static UINT hTimer = 0;
+static HANDLE hExtraImage = NULL;
 
 struct MenuItemInfo
 {
@@ -73,6 +76,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int PreShutdown(WPARAM wParam, LPARAM lParam);
 int PreBuildContactMenu(WPARAM wParam,LPARAM lParam);
 int TopToolBarLoaded(WPARAM wParam, LPARAM lParam);
+int ClistExtraListRebuild(WPARAM wParam, LPARAM lParam);
+int SettingChanged(WPARAM wParam,LPARAM lParam);
 
 int MainMenuClicked(WPARAM wParam, LPARAM lParam);
 BOOL ListeningToEnabled(char *proto);
@@ -81,6 +86,7 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam);
 int GetTextFormat(WPARAM wParam,LPARAM lParam);
 int GetParsedFormat(WPARAM wParam,LPARAM lParam);
 int GetOverrideContactOption(WPARAM wParam,LPARAM lParam);
+void SetExtraIcon(HANDLE hContact, BOOL set);
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -117,6 +123,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	// hooks
 	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
 	hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
+	hSettingChangedHook = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, SettingChanged);
+
 
 	InitMusic();
 	InitOptions();
@@ -153,6 +161,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
+
+	hClistExtraListRebuildHook = HookEvent(ME_CLIST_EXTRA_LIST_REBUILD, ClistExtraListRebuild);
 
     // updater plugin support
     if(ServiceExists(MS_UPDATE_REGISTER))
@@ -269,6 +279,8 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 	UnhookEvent(hModulesLoaded);
 	UnhookEvent(hPreShutdownHook);
 	if (hTopToolBarLoadedHook) UnhookEvent(hTopToolBarLoadedHook);
+	UnhookEvent(hClistExtraListRebuildHook);
+	UnhookEvent(hSettingChangedHook);
 
 	if (hTimer != NULL)
 		KillTimer(NULL, hTimer);
@@ -589,7 +601,7 @@ void StartTimer()
 			// See if any player needs it
 			BOOL needPoll = FALSE;
 			int i;
-			for (i = WATRACK + 1; i < NUM_PLAYERS; i++)
+			for (i = FIRST_PLAYER; i < NUM_PLAYERS; i++)
 			{
 				if (players[i]->needPoll)
 				{
@@ -653,3 +665,54 @@ void HasNewListeningInfo()
 }
 
 
+int ClistExtraListRebuild(WPARAM wParam, LPARAM lParam)
+{
+	hExtraImage = (HANDLE) CallService(MS_CLIST_EXTRA_ADD_ICON, (WPARAM) LoadIcon(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO)), 0);
+	return 0;
+}
+
+void SetExtraIcon(HANDLE hContact, BOOL set)
+{
+	if (opts.show_adv_icon && hExtraImage != NULL)
+	{
+		IconExtraColumn iec;
+		iec.cbSize = sizeof(iec);
+		iec.hImage = set ? hExtraImage : (HANDLE)-1;
+		if (opts.adv_icon_slot < 2)
+		{
+			iec.ColumnType = opts.adv_icon_slot + EXTRA_ICON_ADV1;
+		}
+		else 
+		{
+			int first = CallService(MS_CLUI_GETCAPS, 0, CLUIF2_USEREXTRASTART);
+			iec.ColumnType = opts.adv_icon_slot - 2 + first;
+		}
+
+		CallService(MS_CLIST_EXTRA_SET_ICON, (WPARAM)hContact, (LPARAM)&iec);
+	}
+}
+
+int SettingChanged(WPARAM wParam,LPARAM lParam)
+{
+	HANDLE hContact = (HANDLE) wParam;
+	if (hContact == NULL)
+		return 0;
+
+	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
+	if (strcmp(cws->szSetting, "ListeningTo") != 0)
+		return 0;
+
+	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+	if (proto == NULL)
+		return 0;
+
+	if (strcmp(cws->szModule, proto) != 0)
+		return 0;
+
+	if (cws->value.type == DBVT_DELETED)
+		SetExtraIcon(hContact, FALSE);
+	else
+		SetExtraIcon(hContact, TRUE);
+
+	return 0;
+}

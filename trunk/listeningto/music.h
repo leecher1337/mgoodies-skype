@@ -28,6 +28,7 @@ Boston, MA 02111-1307, USA.
 // Players
 #include "players\\player.h"
 #include "players\\watrack.h"
+#include "players\\generic.h"
 #include "players\\winamp.h"
 #include "players\\itunes.h"
 #include "players\\wmp.h"
@@ -35,10 +36,13 @@ Boston, MA 02111-1307, USA.
 
 // First non polling ones
 #define WATRACK 0
-#define WMP 1
-#define WINAMP 2
-#define ITUNES 3
-#define NUM_PLAYERS 4
+#define GENERIC 1
+
+#define FIRST_PLAYER 2
+#define WMP 2
+#define WINAMP 3
+#define ITUNES 4
+#define NUM_PLAYERS 5
 
 extern Player *players[];
 

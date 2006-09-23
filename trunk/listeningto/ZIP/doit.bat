@@ -13,6 +13,7 @@ echo Building %name% ...
 
 msdev ..\%name%.dsp /MAKE "%name% - Win32 Release" /REBUILD
 msdev ..\%name%.dsp /MAKE "%name% - Win32 Unicode Release" /REBUILD
+msdev ..\players\mlt_winamp\mlt_winamp.dsp /MAKE "mlt_winamp - Win32 Release" /REBUILD
 
 echo Generating files for %name% ...
 
@@ -28,6 +29,13 @@ del /Q *.*
 rem copy ..\..\Docs\langpack_%name%.txt
 rem copy ..\..\Docs\helppack_%name%.txt
 copy ..\..\m_%name%.h
+cd ..
+mkdir Plugins
+cd Plugins
+mkdir listeningto
+cd listeningto
+copy "..\..\..\..\..\bin\release\Plugins\listeningto\*.dll"
+cd ..
 cd ..
 mkdir src
 cd src
@@ -50,8 +58,8 @@ copy ..\..\..\sdk\*.*
 cd ..
 cd ..
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip %name%.dll Docs
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip %name%W.dll Docs
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip %name%.dll Docs Plugins
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip %name%W.dll Docs Plugins
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src
 
 del *.dll
@@ -59,6 +67,14 @@ cd Docs
 del /Q *.*
 cd ..
 rmdir Docs
+cd Plugins
+cd listeningto
+del /Q *.*
+cd ..
+rmdir listeningto
+del /Q *.*
+cd ..
+rmdir Plugins
 cd src
 del /Q *.*
 cd Docs
