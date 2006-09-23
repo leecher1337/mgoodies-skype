@@ -192,6 +192,10 @@ SOURCE=.\resource.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
+SOURCE=.\res\listening_to.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\resource.rc
 # End Source File
 # Begin Source File
@@ -230,6 +234,14 @@ SOURCE=.\options.cpp
 # Begin Group "Players"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\players\generic.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\players\generic.h
+# End Source File
 # Begin Source File
 
 SOURCE=.\players\itunes.cpp

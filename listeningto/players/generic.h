@@ -18,10 +18,16 @@ Boston, MA 02111-1307, USA.
 */
 
 
-class Winamp : public CodeInjectionPlayer
+class GenericPlayer : public CallbackPlayer
 {
 protected:
+	HWND hWnd;
 
 public:
-	Winamp();
+	GenericPlayer();
+	virtual ~GenericPlayer();
+
+	WCHAR received[1024];
+	WCHAR last_received[1024];
+	void ProcessReceived();
 };

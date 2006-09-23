@@ -18,10 +18,18 @@ Boston, MA 02111-1307, USA.
 */
 
 
-class Winamp : public CodeInjectionPlayer
+class WATrack : public CallbackPlayer
 {
 protected:
+	HANDLE hNewStatusHook;
+
+	void GetData();
 
 public:
-	Winamp();
+	WATrack();
+	virtual ~WATrack();
+
+	void NewStatus(int event, int value);
+
+	virtual void EnableDisable();
 };

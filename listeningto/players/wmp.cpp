@@ -22,12 +22,12 @@ Boston, MA 02111-1307, USA.
 
 
 
-#define WINDOWCLASS _T("MsnMsgrUIManager")
+#define WMP_WINDOWCLASS _T("MsnMsgrUIManager")
 
-LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 
-static UINT hTimer = 0;
+static UINT hTimer = NULL;
 
 
 WindowsMediaPlayer *singletron = NULL;
@@ -36,35 +36,29 @@ WindowsMediaPlayer *singletron = NULL;
 
 WindowsMediaPlayer::WindowsMediaPlayer()
 {
-	WNDCLASSEX wcex;
-	wcex.cbSize = sizeof(WNDCLASSEX);
-
-	wcex.style			= CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc	= ReceiverWndProc;
-	wcex.cbClsExtra		= 0;
-	wcex.cbWndExtra		= 0;
-	wcex.hInstance		= hInst;
-	wcex.hIcon			= NULL;
-	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszMenuName	= NULL;
-	wcex.lpszClassName	= WINDOWCLASS;
-	wcex.hIconSm		= NULL;
-
-	RegisterClassEx(&wcex);
-
-	hWnd = CreateWindowEx(WS_EX_TOOLWINDOW, WINDOWCLASS, _T("Miranda WILT receiver"), WS_POPUP | WS_MINIMIZE,
-		0, 0, 100, 100, NULL, NULL, hInst, NULL);
-
+	name = _T("WindowsMediaPlayer");
 	received[0] = L'\0';
 	singletron = this;
+
+	WNDCLASS wc = {0};
+	wc.lpfnWndProc		= ReceiverWndProc;
+	wc.hInstance		= hInst;
+	wc.lpszClassName	= WMP_WINDOWCLASS;
+
+	RegisterClass(&wc);
+
+	hWnd = CreateWindow(WMP_WINDOWCLASS, _T("Miranda ListeningTo WMP receiver"), 
+						0, 0, 0, 0, 0, HWND_MESSAGE, NULL, hInst, NULL);
 }
 
 
 
 WindowsMediaPlayer::~WindowsMediaPlayer()
 {
-	UnregisterClass(WINDOWCLASS, hInst);
+	if (hTimer != NULL)
+		KillTimer(NULL, hTimer);
+
+	UnregisterClass(WMP_WINDOWCLASS, hInst);
 	singletron = NULL;
 }
 
@@ -74,33 +68,28 @@ void WindowsMediaPlayer::ProcessReceived()
 {
 	EnterCriticalSection(&cs);
 
-	changed = TRUE;
-
 	FreeData();
 
 	// Do the processing
 	// MSNMusicString = L"\\0Music\\0%d\\0%s\\0%s\\0%s\\0%s\\0%s\\0\\0"
 	// MSNMusicString, msn->msncommand, strMSNFormat, msn->title, msn->artist, msn->album, msn->wmcontentid);
 
-	if (received[0] == L'\0')
+	WCHAR *p1 = wcsstr(received, L"\\0");
+
+	if (received[0] == L'\0' || p1 == NULL)
 	{
 		LeaveCriticalSection(&cs);
-		NotifyInfoChanged();
+		if (changed)
+			NotifyInfoChanged();
 		return;
 	}
+
+	changed = TRUE;
 
 	// Process string
 	WCHAR *parts[8];
 	int pCount = 0;
 	WCHAR *p = received;
-	WCHAR *p1 = wcsstr(p, L"\\0");
-
-	if (p1 == NULL)
-	{
-		LeaveCriticalSection(&cs);
-		return;
-	}
-
 	do {
 		*p1 = L'\0';
 		parts[pCount] = p;
@@ -118,7 +107,7 @@ void WindowsMediaPlayer::ProcessReceived()
 		if (pCount > 5 && parts[5][0] != '\0') listening_info.szArtist = mir_dupTW(parts[5]);
 		if (pCount > 6 && parts[6][0] != '\0') listening_info.szAlbum = mir_dupTW(parts[6]);
 
-		listening_info.szPlayer = mir_dupT(_T("WindowsMediaPlayer"));
+		listening_info.szPlayer = mir_dupT(name);
 		listening_info.cbSize = sizeof(listening_info);
 	}
 
@@ -133,10 +122,10 @@ void WindowsMediaPlayer::ProcessReceived()
 
 
 
-VOID CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
+static VOID CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
 	KillTimer(NULL, hTimer);
-	hTimer = 0;
+	hTimer = NULL;
 
 	if (singletron != NULL)
 		singletron->ProcessReceived();
@@ -144,7 +133,7 @@ VOID CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime
 
 
 
-LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
@@ -153,6 +142,8 @@ LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 			COPYDATASTRUCT* pData = (PCOPYDATASTRUCT) lParam;
 			if (pData->dwData != 0x547 || pData->cbData == 0 || pData->lpData == NULL)
 				return false;
+
+			EnterCriticalSection(&singletron->cs);
 
 			if (wcsncmp(singletron->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024)) != 0)
 			{
@@ -163,15 +154,15 @@ LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 				hTimer = SetTimer(NULL, NULL, 5, SendTimerProc); // Do the processing after we return true
 			}
 
+			LeaveCriticalSection(&singletron->cs);
+
 			return TRUE;
 			break;
 		}
 		case WM_DESTROY :
 			PostQuitMessage(0);
 			break;
-
-		default :
-			return DefWindowProc(hWnd, message, wParam, lParam);
 	}
-	return 0;
+
+	return DefWindowProc(hWnd, message, wParam, lParam);
 }

@@ -30,6 +30,8 @@ extern "C"
 
 ITunes::ITunes()
 {
+	name = _T("iTunes");
+
 	filename[0] = L'\0';
 
 	hwnd = NULL;
@@ -168,7 +170,7 @@ BOOL ITunes::FillCache()
 			*p = _T('\0');
 	}
 
-	listening_info.szPlayer = mir_dupT(_T("iTunes"));
+	listening_info.szPlayer = mir_dupT(name);
 
 	listening_info.cbSize = sizeof(listening_info);
 

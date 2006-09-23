@@ -31,51 +31,61 @@ IDD_OPTIONS DIALOG DISCARDABLE  0, 0, 288, 224
 STYLE WS_CHILD | WS_VISIBLE
 FONT 8, "Tahoma"
 BEGIN
-    GROUPBOX        " Listening to information ",IDC_STATIC,3,3,282,44
+    GROUPBOX        " Listening to information ",IDC_STATIC,3,3,282,47
     CONTROL         "Enable sending listening information to contacts",
                     IDC_ENABLE_SEND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,
                     16,262,11
     CONTROL         "Show menu item to select protocols to enable (requires restart)",
                     IDC_ENABLE_MENU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,
                     30,263,11
-    GROUPBOX        " Format ",IDC_FORMAT_G,3,51,282,170
-    RTEXT           "Template:",IDC_TEMPLATE_L,11,63,55,10
-    EDITTEXT        IDC_TEMPLATE,72,62,202,13,ES_AUTOHSCROLL
-    CONTROL         "Apply also for info from contacts (overrides contacts template)",
+    GROUPBOX        " Format ",IDC_FORMAT_G,3,53,282,109
+    LTEXT           "Template:",IDC_TEMPLATE_L,11,67,55,10
+    EDITTEXT        IDC_TEMPLATE,72,65,202,13,ES_AUTOHSCROLL
+    LTEXT           "Variables:",IDC_VARS_L,11,83,260,8
+    LTEXT           "%artist% - Artist name",IDC_ARTIST_L,11,94,129,8
+    LTEXT           "%album% - Album name",IDC_ALBUM_L,148,94,129,8
+    LTEXT           "%title% - Song title",IDC_TITLE_L,11,107,129,8
+    LTEXT           "%track% - Track number",IDC_TRACK_L,148,107,129,8
+    LTEXT           "%year% - Song year",IDC_YEAR_L,11,120,129,8
+    LTEXT           "%genre% - Song genre",IDC_GENRE_L,148,120,129,8
+    LTEXT           "%length% - Song length",IDC_LENGTH_L,11,133,129,8
+    LTEXT           "%player% - Player name",IDC_PLAYER_L,148,133,129,8
+    LTEXT           "%type% - Media type (Music, Video, etc)",IDC_TYPE_L,11,
+                    146,260,8
+    GROUPBOX        " Contacts ",IDC_STATIC,3,165,282,49
+    CONTROL         "Apply template for info from contacts (overrides contacts template)",
                     IDC_OVERRIDE_CONTACTS_TEMPLATE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,12,79,262,11
-    LTEXT           "Variables:",IDC_VARS_L,12,95,260,8
-    LTEXT           "%artist% - Artist name",IDC_ARTIST_L,12,107,260,8
-    LTEXT           "%album% - Album name",IDC_ALBUM_L,12,119,260,8
-    LTEXT           "%title% - Song title",IDC_TITLE_L,12,131,260,8
-    LTEXT           "%track% - Track number",IDC_TRACK_L,12,143,260,8
-    LTEXT           "%year% - Song year",IDC_YEAR_L,12,155,260,8
-    LTEXT           "%genre% - Song genre",IDC_GENRE_L,12,167,260,8
-    LTEXT           "%length% - Song length",IDC_LENGTH_L,12,179,260,8
-    LTEXT           "%player% - Player name",IDC_PLAYER_L,12,191,260,8
-    LTEXT           "%type% - Media type (Music, Video, etc)",IDC_TYPE_L,12,
-                    203,260,8
+                    WS_TABSTOP,12,179,262,11
+    CONTROL         "Show advanced icon in slot",IDC_SHOW_ADV_ICON,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,193,104,13
+    COMBOBOX        IDC_ADV_ICON,122,193,46,15,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
 END
 
 IDD_PLAYERS DIALOG DISCARDABLE  0, 0, 288, 224
 STYLE WS_CHILD | WS_VISIBLE
 FONT 8, "Tahoma"
 BEGIN
-    CONTROL         "Winamp",IDC_WINAMP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,20,45,129,11
-    CONTROL         "iTunes",IDC_ITUNES,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,20,75,129,11
-    EDITTEXT        IDC_POLL_TIMER,97,93,34,13,ES_AUTOHSCROLL
-    LTEXT           "Get info from these players:",IDC_PLAYERS_L,3,31,282,11
-    LTEXT           "Ask for new info every",IDC_POLL_TIMER_L,3,95,87,12
-    LTEXT           "seconds",IDC_POLL_TIMER_S_L,138,95,82,12
-    CONTROL         "",IDC_POLL_TIMER_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
-                    UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
-                    UDS_HOTTRACK,125,92,11,12
-    CONTROL         "Windows Media Player",IDC_WMP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,20,60,129,11
     CONTROL         "Get info from WATrack plugin",IDC_WATRACK,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,3,13,282,11
+    LTEXT           "Get info from these players:",IDC_PLAYERS_L,3,31,282,11
+    CONTROL         "Winamp (*)",IDC_WINAMP,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,20,45,129,11
+    CONTROL         "Windows Media Player",IDC_WMP,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,20,60,129,11
+    CONTROL         "iTunes",IDC_ITUNES,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,20,75,129,11
+    CONTROL         "Other players",IDC_OTHER,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,20,90,129,11
+    LTEXT           "Ask for new info every",IDC_POLL_TIMER_L,3,112,87,12
+    EDITTEXT        IDC_POLL_TIMER,97,110,34,13,ES_AUTOHSCROLL
+    CONTROL         "",IDC_POLL_TIMER_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
+                    UDS_HOTTRACK,125,109,11,12
+    LTEXT           "seconds",IDC_POLL_TIMER_S_L,138,112,82,12
+    CONTROL         "Allow auto-loading plugins into players (affect players with *)",
+                    IDC_CODE_INJECTION,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    3,128,282,11
 END
 
 
@@ -113,6 +123,15 @@ END
 
 IDB_TTB_UP_DISABLED     BITMAP  DISCARDABLE     "res\\ttb_disabled.bmp"
 IDB_TTB_UP_ENABLED      BITMAP  DISCARDABLE     "res\\ttb_enabled.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_LISTENINGTO         ICON    DISCARDABLE     "res\\listening_to.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

@@ -37,7 +37,9 @@ static OptPageControl optionsControls[] = {
 	{ &opts.enable_sending,				CONTROL_CHECKBOX,	IDC_ENABLE_SEND,				"EnableSend", TRUE },
 	{ &opts.enable_menu_item,			CONTROL_CHECKBOX,	IDC_ENABLE_MENU,				"EnableMenu", TRUE },
 	{ &opts.templ,						CONTROL_TEXT,		IDC_TEMPLATE,					"Template", (DWORD) _T("%title% - %artist%") },
-	{ &opts.override_contact_template,	CONTROL_CHECKBOX,	IDC_OVERRIDE_CONTACTS_TEMPLATE,	"OverrideContactsTemplate", FALSE}
+	{ &opts.override_contact_template,	CONTROL_CHECKBOX,	IDC_OVERRIDE_CONTACTS_TEMPLATE,	"OverrideContactsTemplate", FALSE},
+	{ &opts.show_adv_icon,				CONTROL_CHECKBOX,	IDC_SHOW_ADV_ICON,				"ShowAdvancedIcon", FALSE},
+	{ &opts.adv_icon_slot,				CONTROL_COMBO,		IDC_ADV_ICON,					"AdvancedIconSlot", 1}
 };
 
 static UINT optionsExpertControls[] = { 
@@ -47,11 +49,13 @@ static UINT optionsExpertControls[] = {
 };
 
 static OptPageControl playersControls[] = { 
-	{ &players[WATRACK]->enabled,	CONTROL_CHECKBOX,	IDC_WATRACK,	"GetInfoFromWATrack", TRUE },
+	{ &players[WATRACK]->enabled,	CONTROL_CHECKBOX,	IDC_WATRACK,	"GetInfoFromWATrack", FALSE },
 	{ &opts.time_to_pool,			CONTROL_SPIN,		IDC_POLL_TIMER,	"TimeToPool", (WORD) 5, IDC_POLL_TIMER_SPIN, (WORD) 1, (WORD) 255 },
 	{ &players[WINAMP]->enabled,	CONTROL_CHECKBOX,	IDC_WINAMP,		"EnableWinamp", TRUE },
 	{ &players[ITUNES]->enabled,	CONTROL_CHECKBOX,	IDC_ITUNES,		"EnableITunes", TRUE },
-	{ &players[WMP]->enabled,		CONTROL_CHECKBOX,	IDC_WMP,		"EnableWMP", TRUE }
+	{ &players[WMP]->enabled,		CONTROL_CHECKBOX,	IDC_WMP,		"EnableWMP", TRUE },
+	{ &opts.enable_other_players,	CONTROL_CHECKBOX,	IDC_OTHER,		"EnableOtherPlayers", TRUE },
+	{ &opts.enable_code_injection,	CONTROL_CHECKBOX,	IDC_OTHER,		"EnableCodeInjection", TRUE }
 };
 
 
@@ -131,12 +135,33 @@ static void OptionsEnableDisableCtrls(HWND hwndDlg)
 
 static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
-	BOOL ret = SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+	BOOL ret;
+	if (msg != WM_INITDIALOG)
+		ret = SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 
 	switch (msg) 
 	{
 		case WM_INITDIALOG:
 		{
+			// Init combo
+			int total = 0, first = 0;
+			if (ServiceExists(MS_CLUI_GETCAPS))
+			{
+				total = CallService(MS_CLUI_GETCAPS, 0, CLUIF2_EXTRACOLUMNCOUNT);
+				first = CallService(MS_CLUI_GETCAPS, 0, CLUIF2_USEREXTRASTART);
+			}
+
+			SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _T("1"));
+			SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _T("2"));
+
+			if (total > 0)
+			{
+				TCHAR tmp[10];
+				for (int i = first; i <= total; i++)
+					SendDlgItemMessage(hwndDlg, IDC_ADV_ICON, CB_ADDSTRING, 0, (LPARAM) _itot(i - first + 3, tmp, 10));
+			}
+
+			ret = SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 			OptionsEnableDisableCtrls(hwndDlg);
 
 			break;
@@ -181,9 +206,10 @@ int playerDlgs[] = {
 
 static void PlayersEnableDisableCtrls(HWND hwndDlg)
 {
-	EnableWindow(GetDlgItem(hwndDlg, IDC_WATRACK), ServiceExists(MS_WAT_GETMUSICINFO));
+	BOOL watrack_found = ServiceExists(MS_WAT_GETMUSICINFO);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_WATRACK), watrack_found);
 
-	BOOL enabled = !IsDlgButtonChecked(hwndDlg, IDC_WATRACK);
+	BOOL enabled = !IsDlgButtonChecked(hwndDlg, IDC_WATRACK) || !watrack_found;
 	EnableWindow(GetDlgItem(hwndDlg, IDC_PLAYERS_L), enabled);
 
 	BOOL needPoll = FALSE;
@@ -194,10 +220,13 @@ static void PlayersEnableDisableCtrls(HWND hwndDlg)
 			needPoll = TRUE;
 	}
 
+	EnableWindow(GetDlgItem(hwndDlg, IDC_OTHER), enabled);
+
 	EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER_L), enabled && needPoll);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER), enabled && needPoll);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER_SPIN), enabled && needPoll);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_POLL_TIMER_S_L), enabled && needPoll);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_CODE_INJECTION), enabled);
 }
 
 static BOOL CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 

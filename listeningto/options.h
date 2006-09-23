@@ -46,9 +46,14 @@ struct Options {
 	BOOL enable_menu_item;
 
 	TCHAR templ[1024];
+
 	BOOL override_contact_template;
+	BOOL show_adv_icon;
+	int adv_icon_slot;
 
 	BOOL get_info_from_watrack;
+	BOOL enable_other_players;
+	BOOL enable_code_injection;
 	int time_to_pool;
 };
 

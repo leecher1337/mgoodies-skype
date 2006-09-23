@@ -1,6 +1,11 @@
-ListeningTo 0.1.0.1
+ListeningTo 0.1.0.2
 
 Changelog:
+
+. 0.1.0.2
+  + Made external plugin for winamp
+  + Option to auto-load plugin
+  + Listening to extra icon
 
 . 0.1.0.1
   + More code to work with WATrack (don't work yet)

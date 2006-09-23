@@ -26,6 +26,10 @@ protected:
 	void NotifyInfoChanged();
 
 public:
+	BOOL enabled;
+	BOOL needPoll;
+	TCHAR *name; 
+
 	Player();
 	virtual ~Player();
 
@@ -41,9 +45,6 @@ public:
 
 	// Called everytime options change
 	virtual void EnableDisable() {}
-
-	BOOL enabled;
-	BOOL needPoll;
 };
 
 class PollPlayer : public Player
@@ -56,13 +57,31 @@ class CallbackPlayer : public Player
 {
 protected:
 	BOOL changed;
-	CRITICAL_SECTION cs;
 
 public:
+	CRITICAL_SECTION cs;
+
 	CallbackPlayer();
 	virtual ~CallbackPlayer();
 
 	virtual int ChangedListeningInfo();
 
 	virtual void FreeData();
+};
+
+class CodeInjectionPlayer : public PollPlayer
+{
+protected:
+	TCHAR *window_class;
+	TCHAR *window_name;
+	TCHAR *message_window_class;
+	DWORD next_request_time;
+
+public:
+	CodeInjectionPlayer();
+	virtual ~CodeInjectionPlayer();
+
+	virtual int ChangedListeningInfo();
+	
+	virtual BOOL GetListeningInfo(LISTENINGTOINFO *lti);
 };
