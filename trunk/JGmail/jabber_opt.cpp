@@ -220,6 +220,7 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			EnableWindow(GetDlgItem( hwndDlg, IDC_DOWNLOAD_OPENSSL ), FALSE );
 #endif
 			EnableWindow( GetDlgItem( hwndDlg, IDC_BUTTON_REGISTER ), enableRegister );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_UNREGISTER ), jabberConnected );
 
 			if ( JGetByte( "ManualConnect", FALSE ) == TRUE ) {
 				CheckDlgButton( hwndDlg, IDC_MANUAL, TRUE );
@@ -253,7 +254,6 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			WNDPROC oldProc = ( WNDPROC ) GetWindowLong( GetDlgItem( hwndDlg, IDC_EDIT_USERNAME ), GWL_WNDPROC );
 			SetWindowLong( GetDlgItem( hwndDlg, IDC_EDIT_USERNAME ), GWL_USERDATA, ( LONG ) oldProc );
 			SetWindowLong( GetDlgItem( hwndDlg, IDC_EDIT_USERNAME ), GWL_WNDPROC, ( LONG ) JabberValidateUsernameWndProc );
-
 			return TRUE;
 		}
 	case WM_COMMAND:
@@ -332,6 +332,15 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 
 			return TRUE;
 		}
+		case IDC_UNREGISTER:
+			if ( MessageBox( NULL, TranslateT( "This operation will kill your account, roster and all another information stored at the server. Are you ready to do that?"),
+						TranslateT( "Account removal warning" ), MB_YESNOCANCEL ) == IDYES )
+			{
+				XmlNodeIq iq( "set", NOID, jabberJID );
+				iq.addQuery( "jabber:iq:register" )->addChild( "remove" );
+				JabberSend( jabberThreadInfo->s, iq );
+			}
+			break;
 		case IDC_MSGLANG:
 			if ( HIWORD( wParam ) == CBN_SELCHANGE )
 				SendMessage( GetParent( hwndDlg ), PSM_CHANGED, 0, 0 );

@@ -369,7 +369,21 @@ char* __stdcall JabberUtf8EncodeW( const WCHAR* wstr )
 
 void __stdcall JabberUtfToTchar( const char* pszValue, size_t cbLen, LPTSTR& dest )
 {
-	char* pszCopy = ( char* )alloca( cbLen+1 );
+	char* pszCopy = NULL;
+	bool  bNeedsFree = false;
+	__try
+	{
+		// this code can cause access violation when a stack overflow occurs
+		pszCopy = ( char* )alloca( cbLen+1 );
+	}
+	__finally
+	{
+		bNeedsFree = true;
+		pszCopy = ( char* )malloc( cbLen+1 );
+	}
+	if ( pszCopy == NULL )
+		return;
+
 	memcpy( pszCopy, pszValue, cbLen );
 	pszCopy[ cbLen ] = 0;
 
@@ -381,6 +395,9 @@ void __stdcall JabberUtfToTchar( const char* pszValue, size_t cbLen, LPTSTR& des
 		JabberUtf8Decode( pszCopy, NULL );
 		dest = mir_strdup( pszCopy );
 	#endif
+
+	if ( bNeedsFree )
+		free( pszCopy );
 }
 
 char* __stdcall JabberUtf8Encode( const char* str )
@@ -933,7 +950,6 @@ void __stdcall JabberSendPresenceTo( int status, TCHAR* to, XmlNode* extra )
 	if ( !jabberOnline ) return;
 
 	// Send <presence/> update for status ( we won't handle ID_STATUS_OFFLINE here )
-	// Note: jabberModeMsg is already encoded using JabberTextEncode()
 	char szPriority[40];
 	itoa( JGetWord( NULL, "Priority", 0 ), szPriority, 10 );
 

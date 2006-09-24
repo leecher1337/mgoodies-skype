@@ -32,6 +32,8 @@ Last change by : $Author$
 #include "resource.h"
 #include "jabber_list.h"
 #include "jabber_iq.h"
+extern char* cidchar;
+extern char* jidchar;
 
 #ifdef _UNICODE
 extern LISTENINGTOINFO listeningToInfo;
@@ -81,6 +83,8 @@ static HANDLE AddToListByJID( const TCHAR* newJid, DWORD flags )
 			DBWriteContactSettingByte( hContact, "CList", "NotOnList", 1 );
 	}
 
+	if (hContact && newJid)
+		JabberDBCheckIsTransportedContact( newJid, hContact );
 	return hContact;
 }
 

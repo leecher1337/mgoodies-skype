@@ -36,8 +36,6 @@ Last change by : $Author$
 	#define _UNICODE
 #endif
 
-#include <malloc.h>
-
 #define NEWSTR_ALLOCA(A) (A==NULL)?NULL:strcpy((char*)alloca(strlen(A)+1),A)
 #define NEWTSTR_ALLOCA(A) (A==NULL)?NULL:_tcscpy((TCHAR*)alloca(sizeof(TCHAR)*(_tcslen(A)+1)),A)
 
@@ -46,6 +44,8 @@ Last change by : $Author$
 #else
 	#define TCHAR_STR_PARAM "%s"
 #endif
+
+#include <malloc.h>
 
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
@@ -75,6 +75,7 @@ Last change by : $Author$
 #endif
 #include <newpluginapi.h>
 #include <m_system.h>
+#include <m_system_cpp.h>
 #include <m_netlib.h>
 #include <m_png.h>
 #include <m_protomod.h>
@@ -189,6 +190,7 @@ enum {
 #define JS_GETMYAVATARMAXSIZE      "/GetMyAvatarMaxSize"
 #define JS_SETMYAVATAR             "/SetMyAvatar"
 #define JS_GETMYAVATAR             "/GetMyAvatar"
+#define JS_GETADVANCEDSTATUSICON   "/GetAdvancedStatusIcon"
 
 /*******************************************************************
  * Global data structures and data type definitions
@@ -381,6 +383,9 @@ extern const char xmlnsOwner[], xmlnsAdmin[];
 extern HANDLE heventRawXMLIn;
 extern HANDLE heventRawXMLOut;
 
+// Transports list
+extern LIST<TCHAR> jabberTransports;
+
 /*******************************************************************
  * Function declarations
  *******************************************************************/
@@ -424,6 +429,13 @@ void JabberGroupchatJoinRoom( const TCHAR* server, const TCHAR* room, const TCHA
 void JabberGroupchatProcessPresence( XmlNode *node, void *userdata );
 void JabberGroupchatProcessMessage( XmlNode *node, void *userdata );
 void JabberGroupchatProcessInvite( TCHAR* roomJid, TCHAR* from, TCHAR* reason, TCHAR* password );
+
+//---- jabber_icolib.c ----------------------------------------------
+
+void   JabberCheckAllContactsAreTransported( void );
+BOOL   JabberDBCheckIsTransportedContact(const TCHAR* jid, HANDLE hContact);
+int    ReloadIconsEventHook(WPARAM wParam, LPARAM lParam);   
+int    JGetAdvancedStatusIcon(WPARAM wParam, LPARAM lParam);
 
 //---- jabber_libstr.c ----------------------------------------------
 

@@ -168,6 +168,7 @@ static void xmlStreamInitializeNow(struct ThreadData *info){
 			stream.addAttr( "to", info->server );
 			stream.addAttr( "xmlns", "jabber:client" );
 			stream.addAttr( "xmlns:stream", "http://etherx.jabber.org/streams" );
+			stream.addAttr( "xml:lang", "en" );
 			if ( !JGetByte( "Disable3920auth", 0 ))
 				stream.addAttr( "version", "1.0" );
 			stream.dirtyHack = true; // this is to keep the node open - do not send </stream:stream>
@@ -554,15 +555,14 @@ LBL_Exit:
 			if ( hwndJabberVcard )
 				SendMessage( hwndJabberVcard, WM_JABBER_CHECK_ONLINE, 0, 0 );
 		}
-		else if ( info->type==JABBER_SESSION_REGISTER && !info->reg_done ) {
+		else if ( info->type==JABBER_SESSION_REGISTER && !info->reg_done )
 			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )TranslateT( "Error: Connection lost" ));
-	}	}
-	else {
-		if ( info->type == JABBER_SESSION_NORMAL ) {
-			oldStatus = jabberStatus;
-			jabberStatus = ID_STATUS_OFFLINE;
-			JSendBroadcast( NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, ( HANDLE ) oldStatus, jabberStatus );
-	}	}
+	}
+	else if ( info->type == JABBER_SESSION_NORMAL ) {
+		oldStatus = jabberStatus;
+		jabberStatus = ID_STATUS_OFFLINE;
+		JSendBroadcast( NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, ( HANDLE ) oldStatus, jabberStatus );
+	}
 
 	Netlib_CloseHandle( info->s );
 
@@ -1245,11 +1245,19 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		if (( nick=JabberNickFromJID( from )) == NULL )
 			return;
 		if (( hContact = JabberHContactFromJID( from )) == NULL )
-			hContact = JabberDBCreateContact( from, nick, FALSE, TRUE );
+        {
+            if (!JabberListExist( LIST_ROSTER, from ))
+            {                
+                JabberLog("SKIP Receive presence online from "TCHAR_STR_PARAM" ( who is not in my roster and not in list - skiping)", from );
+                return;
+            }
+			hContact = JabberDBCreateContact( from, nick, TRUE, TRUE );
+        }
 		if ( !JabberListExist( LIST_ROSTER, from )) {
 			JabberLog("Receive presence online from "TCHAR_STR_PARAM" ( who is not in my roster )", from );
 			JabberListAdd( LIST_ROSTER, from );
 		}
+        JabberDBCheckIsTransportedContact(from,hContact);
 		int status = ID_STATUS_ONLINE;
 		if (( showNode = JabberXmlGetChild( node, "show" )) != NULL ) {
 			if (( show = showNode->text ) != NULL ) {
@@ -1357,11 +1365,10 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 	}
 
 	if ( !_tcscmp( type, _T("unavailable"))) {
-		if ( !JabberListExist( LIST_ROSTER, from )) {
-			JabberLog( "Receive presence offline from " TCHAR_STR_PARAM " ( who is not in my roster )", from );
-			JabberListAdd( LIST_ROSTER, from );
-		}
-		else JabberListRemoveResource( LIST_ROSTER, from );
+		if ( !JabberListExist( LIST_ROSTER, from ))
+			JabberLog( "SKIP Receive presence offline from " TCHAR_STR_PARAM " ( who is not in my roster )", from );
+		else 
+			JabberListRemoveResource( LIST_ROSTER, from );
 
 		hContact = JabberHContactFromJID( from );
 		int status = ID_STATUS_OFFLINE;
@@ -1402,6 +1409,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		}
 		if ( _tcschr( from, '@' )==NULL && hwndJabberAgents )
 			SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
+        JabberDBCheckIsTransportedContact(from, hContact);
 		return;
 	}
 

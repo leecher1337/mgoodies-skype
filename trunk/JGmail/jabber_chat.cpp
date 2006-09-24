@@ -132,7 +132,6 @@ int JabberGcInit( WPARAM wParam, LPARAM lParam )
 	gcd.iType = GC_EVENT_CONTROL;
 	JCallService(MS_GC_EVENT, SESSION_INITDONE, (LPARAM)&gce);
 	JCallService(MS_GC_EVENT, SESSION_ONLINE, (LPARAM)&gce);
-	JCallService(MS_GC_EVENT, WINDOW_VISIBLE, (LPARAM)&gce);
 	#if defined( _UNICODE )
 		mir_free( jid );
 	#endif
@@ -349,6 +348,7 @@ int JabberGcMenuHook( WPARAM wParam, LPARAM lParam )
 		if ( me != NULL ) {
 			if ( me->role == ROLE_MODERATOR )
 				sttLogListItems[2].bDisabled = FALSE;
+
 			if ( me->affiliation == AFFILIATION_ADMIN )
 				sttLogListItems[3].bDisabled = sttLogListItems[5].bDisabled = sttLogListItems[6].bDisabled = FALSE;
 			else if ( me->affiliation == AFFILIATION_OWNER )
