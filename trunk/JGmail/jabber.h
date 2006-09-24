@@ -75,7 +75,7 @@ Last change by : $Author$
 #endif
 #include <newpluginapi.h>
 #include <m_system.h>
-#include <m_system_cpp.h>
+#include "sdk/m_system_cpp.h"
 #include <m_netlib.h>
 #include <m_png.h>
 #include <m_protomod.h>

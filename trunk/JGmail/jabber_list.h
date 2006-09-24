@@ -172,7 +172,4 @@ TCHAR* JabberListGetBestResourceNamePtr( const TCHAR* jid );
 TCHAR* JabberListGetBestClientResourceNamePtr( const TCHAR* jid );
 void  putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r);
 
-int JList_InsertPtr( SortedList* list, void* p );
-int JList_RemovePtr( SortedList* list, void* p );
-
 #endif
