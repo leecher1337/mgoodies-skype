@@ -242,6 +242,7 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 		hEvInitChat = HookEvent( szEvent, JabberGcInit );
 	}
 	JCreateServiceFunction( JS_GETADVANCEDSTATUSICON, JGetAdvancedStatusIcon );
+	JabberCheckAllContactsAreTransported();
 	JGmailSetupIcoLib();
 	return 0;
 }
