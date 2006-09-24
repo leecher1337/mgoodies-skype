@@ -146,6 +146,7 @@ int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 	mi.hIcon = iconList[1];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_VCARD ))
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuVCard, ( LPARAM )&mi );
 */	IcoLibUpdateMenus();
+	ReloadIconsEventHook(wParam,lParam);
 	return 0;
 }
 
@@ -172,6 +173,7 @@ void JGmailSetupIcons(){
 	}
 	ImageList_Destroy(CSImages);
 }
+extern HANDLE hReloadIcons; // is defined in Jabber.cpp
 void JGmailSetupIcoLib(){
 	if (ServiceExists(MS_SKIN2_GETICON)){
 		HICON temp;
@@ -179,7 +181,7 @@ void JGmailSetupIcoLib(){
 		unsigned int i;
 		char szTemp[MAX_PATH + 128];
 
-        HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
+        hReloadIcons = HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
 
 		sid.cbSize = SKINICONDESC_SIZE_V2;
 		sid.pszSection = jabberProtoName;
