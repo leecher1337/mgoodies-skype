@@ -28,17 +28,7 @@ Last change by : $Author$
 #include "jabber.h"
 #include "jabber_list.h"
 
-struct RosterList
-{
-	JABBER_LIST_ITEM** items;
-	int count, limit, increment;
-	FSortFunc	sortFunc;
-}
-	static roster;
-
-static CRITICAL_SECTION csLists;
-
-static int compareListItems( JABBER_LIST_ITEM* p1, JABBER_LIST_ITEM* p2 )
+static int compareListItems( const JABBER_LIST_ITEM* p1, const JABBER_LIST_ITEM* p2 )
 {
 	if ( p1->list != p2->list )
 		return p1->list - p2->list;
@@ -49,12 +39,11 @@ static int compareListItems( JABBER_LIST_ITEM* p1, JABBER_LIST_ITEM* p2 )
 	return lstrcmpi( szp1, szp2 );
 }
 
+static LIST<JABBER_LIST_ITEM> roster( 50, compareListItems );
+static CRITICAL_SECTION csLists;
+
 void JabberListInit( void )
 {
-	memset( &roster, 0, sizeof( roster ));
-	roster.increment = 50;
-	roster.sortFunc = ( FSortFunc )compareListItems;
-	
 	InitializeCriticalSection( &csLists );
 }
 
@@ -103,10 +92,10 @@ void JabberListWipe( void )
 	int i;
 
 	EnterCriticalSection( &csLists );
-	for( i=0; i < roster.count; i++ )
-		JabberListFreeItemInternal( roster.items[i] );
+	for( i=0; i < roster.getCount(); i++ )
+		JabberListFreeItemInternal( roster[i] );
 
-	li.List_Destroy(( SortedList* )&roster );
+	roster.destroy();
 	LeaveCriticalSection( &csLists );
 }
 
@@ -118,8 +107,8 @@ int JabberListExist( JABBER_LIST list, const TCHAR* jid )
 
 	EnterCriticalSection( &csLists );
 
-	int idx;
-	if ( !li.List_GetIndex(( SortedList* )&roster, &tmp, &idx )) {
+	int idx = roster.getIndex( &tmp );
+	if ( idx == -1 ) {
 		LeaveCriticalSection( &csLists );
 		return 0;
 	}
@@ -133,7 +122,7 @@ JABBER_LIST_ITEM *JabberListAdd( JABBER_LIST list, const TCHAR* jid )
 	JABBER_LIST_ITEM* item;
 
 	EnterCriticalSection( &csLists );
-	if (( item=JabberListGetItemPtr( list, jid )) != NULL ) {
+	if (( item = JabberListGetItemPtr( list, jid )) != NULL ) {
 		LeaveCriticalSection( &csLists );
 		return item;
 	}
@@ -155,7 +144,7 @@ JABBER_LIST_ITEM *JabberListAdd( JABBER_LIST list, const TCHAR* jid )
 	if ( list == LIST_ROSTER )
 		item->cap = CLIENT_CAP_CHATSTAT;
 
-	JList_InsertPtr(( SortedList* )&roster, item );
+	roster.insert( item );
 	LeaveCriticalSection( &csLists );
 
 	return item;
@@ -166,8 +155,8 @@ void JabberListRemove( JABBER_LIST list, const TCHAR* jid )
 	EnterCriticalSection( &csLists );
 	int i = JabberListExist( list, jid );
 	if ( i != 0 ) {
-		JabberListFreeItemInternal( roster.items[ --i ] );
-		li.List_Remove(( SortedList* )&roster, i );
+		JabberListFreeItemInternal( roster[ --i ] );
+		roster.remove( i );
 	}
 	LeaveCriticalSection( &csLists );
 }
@@ -182,9 +171,9 @@ void JabberListRemoveList( JABBER_LIST list )
 void JabberListRemoveByIndex( int index )
 {
 	EnterCriticalSection( &csLists );
-	if ( index >= 0 && index < roster.count ) {
-		JabberListFreeItemInternal( roster.items[index] );
-		li.List_Remove(( SortedList* )&roster, index );
+	if ( index >= 0 && index < roster.getCount() ) {
+		JabberListFreeItemInternal( roster[index] );
+		roster.remove( index );
 	}
 	LeaveCriticalSection( &csLists );
 }
@@ -200,7 +189,7 @@ int JabberListAddResource( JABBER_LIST list, const TCHAR* jid, int status, const
 		LeaveCriticalSection( &csLists );
 		return 0;
 	}
-	JABBER_LIST_ITEM* LI = roster.items[i-1];
+	JABBER_LIST_ITEM* LI = roster[i-1];
 
 	int bIsNewResource = false;
 
@@ -246,7 +235,7 @@ void JabberListRemoveResource( JABBER_LIST list, const TCHAR* jid )
 
 	EnterCriticalSection( &csLists );
 	int i = JabberListExist( list, jid );
-	JABBER_LIST_ITEM* LI = roster.items[i-1];
+	JABBER_LIST_ITEM* LI = roster[i-1];
 	if ( !i || LI == NULL ) {
 		LeaveCriticalSection( &csLists );
 		return;
@@ -295,7 +284,7 @@ TCHAR* JabberListGetBestResourceNamePtr( const TCHAR* jid )
 		return NULL;
 	}
 
-	JABBER_LIST_ITEM* LI = roster.items[i-1];
+	JABBER_LIST_ITEM* LI = roster[i-1];
 	if ( LI->resourceCount == 1 )
 		res = LI->resource[0].resourceName;
 	else {
@@ -318,7 +307,7 @@ TCHAR* JabberListGetBestClientResourceNamePtr( const TCHAR* jid )
 		return NULL;
 	}
 
-	JABBER_LIST_ITEM* LI = roster.items[i-1];
+	JABBER_LIST_ITEM* LI = roster[i-1];
 	TCHAR* res = JabberListGetBestResourceNamePtr( jid );
 	if ( res == NULL ) {
 		JABBER_RESOURCE_STATUS* r = LI->resource;
@@ -364,8 +353,8 @@ int JabberListFindNext( JABBER_LIST list, int fromOffset )
 {
 	EnterCriticalSection( &csLists );
 	int i = ( fromOffset >= 0 ) ? fromOffset : 0;
-	for( ; i<roster.count; i++ )
-		if ( roster.items[i]->list == list ) {
+	for( ; i<roster.getCount(); i++ )
+		if ( roster[i]->list == list ) {
 		  	LeaveCriticalSection( &csLists );
 			return i;
 		}
@@ -383,15 +372,15 @@ JABBER_LIST_ITEM *JabberListGetItemPtr( JABBER_LIST list, const TCHAR* jid )
 	}
 	i--;
 	LeaveCriticalSection( &csLists );
-	return roster.items[i];
+	return roster[i];
 }
 
 JABBER_LIST_ITEM *JabberListGetItemPtrFromIndex( int index )
 {
 	EnterCriticalSection( &csLists );
-	if ( index >= 0 && index < roster.count ) {
+	if ( index >= 0 && index < roster.getCount() ) {
 		LeaveCriticalSection( &csLists );
-		return roster.items[index];
+		return roster[index];
 	}
 	LeaveCriticalSection( &csLists );
 	return NULL;

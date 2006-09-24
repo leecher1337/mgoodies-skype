@@ -289,6 +289,10 @@ SOURCE=.\jabber_groupchat.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\jabber_icolib.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\jabber_iq.cpp
 # ADD CPP /Yu
 # End Source File

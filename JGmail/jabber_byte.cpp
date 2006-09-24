@@ -440,7 +440,7 @@ static int JabberByteReceiveParse( HANDLE hConn, JABBER_BYTE_TRANSFER *jbt, char
 
 			XmlNodeIq iq( "result", jbt->iqId, jbt->srcJID );
 			XmlNode* query = iq.addQuery( "http://jabber.org/protocol/bytestreams" );
-			XmlNode* stream = iq.addChild( "streamhost-used" ); stream->addAttr( "jid", jbt->streamhostJID );
+			XmlNode* stream = query->addChild( "streamhost-used" ); stream->addAttr( "jid", jbt->streamhostJID );
 			JabberSend( jabberThreadInfo->s, iq );
 		}
 		else jbt->state = JBT_SOCKSERR;

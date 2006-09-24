@@ -204,6 +204,9 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 					if ( hContact != NULL )
 						JSetByte( hContact, "IsTransport", TRUE );
 
+					if ( jabberTransports.getIndex( text ) == -1 )
+						jabberTransports.insert( _tcsdup( text ));
+
 					lvItem.mask = LVIF_TEXT;
 					lvItem.iSubItem = 0;
 					lvItem.pszText = text;

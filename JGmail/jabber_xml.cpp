@@ -313,7 +313,7 @@ static BOOL JabberXmlProcessElem( XmlState *xmlState, XmlElemType elemType, char
 {
 	XmlNode *node, *parentNode, *n;
 	BOOL activateCallback = FALSE;
-	char* text, *attr;
+	char* attr;
 
 	if ( elemText == NULL ) return FALSE;
 
@@ -332,8 +332,6 @@ static BOOL JabberXmlProcessElem( XmlState *xmlState, XmlElemType elemType, char
 
 	if ( node->state != NODE_OPEN ) return FALSE;
 
-	text = NEWSTR_ALLOCA( elemText );
-
 	if ( elemAttr )
 		attr = NEWSTR_ALLOCA( elemAttr );
 	else
@@ -345,7 +343,7 @@ static BOOL JabberXmlProcessElem( XmlState *xmlState, XmlElemType elemType, char
 			node->maxNumChild = node->numChild + 20;
 			node->child = ( XmlNode ** ) mir_realloc( node->child, node->maxNumChild*sizeof( XmlNode * ));
 		}
-		n = node->child[node->numChild] = new XmlNode(text);
+		n = node->child[node->numChild] = new XmlNode(elemText);
 		node->numChild++;
 		n->depth = node->depth + 1;
 		n->state = NODE_OPEN;
@@ -365,7 +363,7 @@ static BOOL JabberXmlProcessElem( XmlState *xmlState, XmlElemType elemType, char
 			node->maxNumChild = node->numChild + 20;
 			node->child = ( XmlNode ** ) mir_realloc( node->child, node->maxNumChild*sizeof( XmlNode * ));
 		}
-		n = node->child[node->numChild] = new XmlNode( text );
+		n = node->child[node->numChild] = new XmlNode( elemText );
 		node->numChild++;
 		n->depth = node->depth + 1;
 		n->state = NODE_CLOSE;
@@ -385,7 +383,7 @@ static BOOL JabberXmlProcessElem( XmlState *xmlState, XmlElemType elemType, char
 		}
 		break;
 	case ELEM_CLOSE:
-		if ( node->name!=NULL && !strcmp( node->name, text )) {
+		if ( node->name!=NULL && !strcmp( node->name, elemText )) {
 			node->state = NODE_CLOSE;
 			if ( node->depth==1 && xmlState->callback1_close!=NULL ) {
 				( *( xmlState->callback1_close ))( node, xmlState->userdata1_close );
@@ -396,13 +394,15 @@ static BOOL JabberXmlProcessElem( XmlState *xmlState, XmlElemType elemType, char
 				JabberXmlRemoveChild( parentNode, node );
 		}	}
 		else {
-			JabberLog( "XML: Closing </%s> without opening tag", text );
+			JabberLog( "XML: Closing </%s> without opening tag", elemText );
 			return FALSE;
 		}
 		break;
+
 	case ELEM_TEXT:
-		JabberUtfToTchar( text, strlen( text ), node->text );
+		JabberUtfToTchar( elemText, strlen( elemText ), node->text );
 		break;
+
 	default:
 		return FALSE;
 	}
@@ -412,7 +412,7 @@ static BOOL JabberXmlProcessElem( XmlState *xmlState, XmlElemType elemType, char
 
 TCHAR* JabberXmlGetAttrValue( XmlNode *node, char* key )
 {
-	if ( node==NULL || node->numAttr<=0 || key==NULL || strlen( key )<=0 )
+	if ( node == NULL || node->numAttr <= 0 || key == NULL || strlen( key )<=0 )
 		return NULL;
 
 	for ( int i=0; i<node->numAttr; i++ )
