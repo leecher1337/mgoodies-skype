@@ -129,6 +129,7 @@ int Chat_Load(PLUGINLINK *link)
 //	RichUtil_Load();
 	UpgradeCheck();
 
+	mmi.cbSize = sizeof(mmi);
 	CallService(MS_SYSTEM_GET_MMI, 0, (LPARAM) &mmi);
 	g_hMenu = LoadMenu(g_hInst, MAKEINTRESOURCE(IDR_MENU));
     OleInitialize(NULL);
@@ -263,7 +264,7 @@ void LoadIcons(void)
 	hIconsList = ImageList_Create(GetSystemMetrics(SM_CXSMICON),GetSystemMetrics(SM_CYSMICON),IsWinVerXPPlus()? ILC_COLOR32 | ILC_MASK : ILC_COLOR16 | ILC_MASK,0,100);
 	eventMessageIcon = ImageList_AddIcon(g_dat->hTabIconList,LoadSkinnedIcon( SKINICON_EVENT_MESSAGE));
 	overlayIcon = ImageList_AddIcon(g_dat->hTabIconList,LoadIconEx(IDI_OVERLAY, "overlay", 0, 0));
-	ImageList_SetOverlayImage(g_dat->hTabIconList, overlayIcon, overlayIcon);
+	ImageList_SetOverlayImage(g_dat->hTabIconList, overlayIcon, 1);
 	ImageList_AddIcon(hImageList,LoadImage(g_hInst,MAKEINTRESOURCE(IDI_BLANK),IMAGE_ICON,0,0,0));
 	ImageList_AddIcon(hImageList,LoadImage(g_hInst,MAKEINTRESOURCE(IDI_BLANK),IMAGE_ICON,0,0,0));
 	return ;

@@ -158,7 +158,6 @@ int	CList_RoomDoubleclicked(WPARAM wParam,LPARAM lParam)
 	HANDLE hContact = (HANDLE)wParam;
     DBVARIANT dbv;
     char *szProto;
-	BOOL bRedrawFlag = FALSE;
 
 	if (!hContact)
 		return 0;

@@ -123,9 +123,6 @@ static int CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 					if(CallService(MS_CLIST_GETEVENT, (WPARAM)si->hContact, (LPARAM)0))
 						CallService(MS_CLIST_REMOVEEVENT, (WPARAM)si->hContact, (LPARAM)"chaticon");
 				}
-				if (si->hWnd && KillTimer(si->hWnd, TIMERID_FLASHWND))
-					FlashWindow(si->hWnd, FALSE);
-
 				PUDeletePopUp( hWnd );
 			}
 			break;
@@ -322,7 +319,7 @@ BOOL DoSoundsFlashPopupTrayStuff(SESSION_INFO * si, GCEVENT * gce, BOOL bHighlig
 	if(!gce || !si ||  gce->bIsMe || si->iType == GCW_SERVER)
 		return FALSE;
 
-	bInactive = si->hWnd == NULL || GetForegroundWindow() != si->hWnd;
+	bInactive = si->hWnd == NULL || GetForegroundWindow() != GetParent(si->hWnd);
 	// bInactive |=  GetActiveWindow() != si->hWnd; // Removed this, because it seemed to be FALSE, even when window was focused, causing incorrect notifications
 
 	iEvent = gce->pDest->iType;
@@ -332,16 +329,16 @@ BOOL DoSoundsFlashPopupTrayStuff(SESSION_INFO * si, GCEVENT * gce, BOOL bHighlig
 		gce->pDest->iType |= GC_EVENT_HIGHLIGHT;
 		if(bInactive || !g_Settings.SoundsFocus)
 			SkinPlaySound("ChatHighlight");
-		if(!g_Settings.TabsEnable && bInactive && si->hWnd && DBGetContactSettingByte(NULL, "Chat", "FlashWindowHighlight", 0) != 0)
-			SetTimer(si->hWnd, TIMERID_FLASHWND, 900, NULL);
+		if(bInactive && si->hWnd && DBGetContactSettingByte(NULL, "Chat", "FlashWindowHighlight", 0) != 0) //!g_Settings.TabsEnable &&
+			SendMessage(GetParent(si->hWnd), CM_STARTFLASHING, 0, 0);
 		if(DBGetContactSettingByte(si->hContact, "CList", "Hidden", 0) != 0)
 			DBDeleteContactSetting(si->hContact, "CList", "Hidden");
 		if(bInactive)
 			DoTrayIcon(si, gce);
 		if(bInactive || !g_Settings.PopUpInactiveOnly)
 			DoPopup(si, gce);
-		if(g_Settings.TabsEnable && bInactive && g_TabSession.hWnd)
-			SendMessage(g_TabSession.hWnd, GC_SETMESSAGEHIGHLIGHT, 0, (LPARAM) si);
+		if(bInactive && si->hWnd)
+			SendMessage(si->hWnd, GC_SETMESSAGEHIGHLIGHT, 0, 0);
 		return TRUE;
 	}
 
@@ -383,15 +380,15 @@ BOOL DoSoundsFlashPopupTrayStuff(SESSION_INFO * si, GCEVENT * gce, BOOL bHighlig
 		case GC_EVENT_MESSAGE:
 			if(bInactive || !g_Settings.SoundsFocus)
 				SkinPlaySound("ChatMessage");
-			if(!g_Settings.TabsEnable && bInactive && g_Settings.FlashWindow && si->hWnd)
-				SetTimer(si->hWnd, TIMERID_FLASHWND, 900, NULL);
+			if(bInactive && g_Settings.FlashWindow && si->hWnd) // !g_Settings.TabsEnable &&
+				SendMessage(GetParent(si->hWnd), CM_STARTFLASHING, 0, 0);
 			if(bInactive && !(si->wState&STATE_TALK))
 			{
 				si->wState |= STATE_TALK;
 				DBWriteContactSettingWord(si->hContact, si->pszModule,"ApparentMode",(LPARAM)(WORD) 40071);
 			}
-			if(g_Settings.TabsEnable && bInactive && g_TabSession.hWnd)
-				SendMessage(g_TabSession.hWnd, GC_SETTABHIGHLIGHT, 0, (LPARAM) si);
+			if(bInactive && si->hWnd)
+				SendMessage(si->hWnd, GC_SETTABHIGHLIGHT, 0, 0);
 			break;
 		case GC_EVENT_ACTION:
 			if(bInactive || !g_Settings.SoundsFocus)
@@ -445,7 +442,7 @@ void CheckColorsInModule(char * pszModule)
 	COLORREF crFG;
 	COLORREF crBG = (COLORREF)DBGetContactSettingDword(NULL, "Chat", "ColorMessageBG", GetSysColor(COLOR_WINDOW));
 
-	LoadMsgDlgFont(17, NULL, &crFG);
+	Chat_LoadMsgDlgFont(17, NULL, &crFG);
 
 	if(!pMod)
 		return;

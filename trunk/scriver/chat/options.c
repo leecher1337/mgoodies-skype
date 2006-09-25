@@ -83,9 +83,7 @@ struct branch_t
 };
 static struct branch_t branch0[] = {
 	{_T("Use a tabbed interface"), "Tabs", 0, 1, NULL},
-	{_T("Close tab on doubleclick"), "TabCloseOnDblClick", 0, 0, NULL},
 	{_T("Restore previously open tabs when showing the window"), "TabRestore", 0, 0, NULL},
-	{_T("Show tabs at the bottom"), "TabBottom", 0, 0, NULL},
 
 };
 static struct branch_t branch1[] = {
@@ -305,10 +303,10 @@ static void LoadLogFonts(void)
 	int i;
 
 	for( i = 0; i<OPTIONS_FONTCOUNT; i++)
-		LoadMsgDlgFont(i, &aFonts[i].lf, &aFonts[i].color);
+		Chat_LoadMsgDlgFont(i, &aFonts[i].lf, &aFonts[i].color);
 }
 
-static void LoadMsgDlgFont(int i, LOGFONT* lf, COLORREF* colour)
+void Chat_LoadMsgDlgFont(int i, LOGFONT* lf, COLORREF* colour)
 {
     char str[32];
     int style;
@@ -576,7 +574,7 @@ static void InitSetting(char ** ppPointer, char * pszSetting, char*pszDefault)
 
 }
 #define OPT_FIXHEADINGS (WM_USER+1)
-static BOOL CALLBACK DlgProcOptions1(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
+BOOL CALLBACK DlgProcOptions1(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 {
 	static HTREEITEM hListHeading1 = 0;
 	static HTREEITEM hListHeading2= 0;
@@ -684,8 +682,6 @@ static BOOL CALLBACK DlgProcOptions1(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM
 					{
 						int iLen;
 						char * pszText = NULL;
-						BYTE b;
-
 						iLen = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_CHAT_GROUP));
 						if(iLen > 0)
 						{
@@ -703,7 +699,6 @@ static BOOL CALLBACK DlgProcOptions1(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM
 							DBWriteContactSettingByte(NULL, "Chat", "NicklistRowDist", (BYTE)iLen);
 						else
 							DBDeleteContactSetting(NULL, "Chat", "NicklistRowDist");
-						b = DBGetContactSettingByte(NULL, "Chat", "Tabs", 1);
 						SaveBranch(GetDlgItem(hwndDlg, IDC_CHAT_CHECKBOXES), branch0, sizeof(branch0) / sizeof(branch0[0]));
 						SaveBranch(GetDlgItem(hwndDlg, IDC_CHAT_CHECKBOXES), branch1, sizeof(branch1) / sizeof(branch1[0]));
 						SaveBranch(GetDlgItem(hwndDlg, IDC_CHAT_CHECKBOXES), branch2, sizeof(branch2) / sizeof(branch2[0]));
@@ -721,12 +716,7 @@ static BOOL CALLBACK DlgProcOptions1(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM
 
 						g_Settings.LogIndentEnabled = (DBGetContactSettingByte(NULL, "Chat", "LogIndentEnabled", 1) != 0)?TRUE:FALSE;
 						MM_FontsChanged();
-						if(b != DBGetContactSettingByte(NULL, "Chat", "Tabs", 1))
-						{
-							SM_BroadcastMessage(NULL, GC_CLOSEWINDOW, 0, 1, FALSE);
-							g_Settings.TabsEnable = DBGetContactSettingByte(NULL, "Chat", "Tabs", 1);
-						}
-						else SM_BroadcastMessage(NULL, GC_SETWNDPROPS, 0, 0, TRUE);
+						SM_BroadcastMessage(NULL, GC_SETWNDPROPS, 0, 0, TRUE);
 					}
 					return TRUE;
 				}
@@ -758,7 +748,7 @@ static BOOL CALLBACK DlgProcOptions1(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM
 	return FALSE;
 }
 
-static BOOL CALLBACK DlgProcOptions2(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
+BOOL CALLBACK DlgProcOptions2(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 {
 	static HBRUSH hBkgColourBrush;
 	static HBRUSH hListColourBrush;
@@ -799,7 +789,7 @@ static BOOL CALLBACK DlgProcOptions2(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM
 		{	int i;
 			LOGFONT lf;
 			for (i = 0; i < SIZEOF(fontOptionsList); i++) {
-				LoadMsgDlgFont(i, &lf, &fontOptionsList[i].colour);
+				Chat_LoadMsgDlgFont(i, &lf, &fontOptionsList[i].colour);
 				lstrcpy(fontOptionsList[i].szFace, lf.lfFaceName);
 				fontOptionsList[i].size = (char) lf.lfHeight;
 				fontOptionsList[i].style = (lf.lfWeight >= FW_BOLD ? FONTF_BOLD : 0) | (lf.lfItalic ? FONTF_ITALIC : 0);
@@ -1116,7 +1106,7 @@ static BOOL CALLBACK DlgProcOptions2(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM
 				HFONT hFont;
 				int iText;
 
-				LoadMsgDlgFont(0, &lf, NULL);
+				Chat_LoadMsgDlgFont(0, &lf, NULL);
 				hFont = CreateFontIndirect(&lf);
 				iText = GetTextPixelSize(MakeTimeStamp(g_Settings.pszTimeStamp, time(NULL)),hFont, TRUE);
 				DeleteObject(hFont);
@@ -1229,7 +1219,7 @@ static int OptionsInitialize(WPARAM wParam, LPARAM lParam)
 {
 
 	OPTIONSDIALOGPAGE odp = {0};
-
+/*
 	odp.cbSize = sizeof(odp);
 	odp.position = 910000000;
 	odp.hInstance = g_hInst;
@@ -1249,7 +1239,7 @@ static int OptionsInitialize(WPARAM wParam, LPARAM lParam)
 	odp.pfnDlgProc = DlgProcOptions2;
 	odp.flags = ODPF_BOLDGROUPS;
 	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
-
+*/
 	if(PopUpInstalled)
 	{
 		odp.cbSize = sizeof(odp);
@@ -1262,6 +1252,7 @@ static int OptionsInitialize(WPARAM wParam, LPARAM lParam)
 		odp.flags = ODPF_BOLDGROUPS;
 		CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
 	}
+
 	return 0;
 }
 
@@ -1271,9 +1262,6 @@ void LoadGlobalSettings(void)
 
 	g_Settings.LogLimitNames = DBGetContactSettingByte(NULL, "Chat", "LogLimitNames", 1);
 	g_Settings.ShowTime = DBGetContactSettingByte(NULL, "Chat", "ShowTimeStamp", 1);
-	g_Settings.TabsEnable = DBGetContactSettingByte(NULL, "Chat", "Tabs", 1);
-	g_Settings.TabsAtBottom = DBGetContactSettingByte(NULL, "Chat", "TabBottom", 0);
-	g_Settings.TabCloseOnDblClick = DBGetContactSettingByte(NULL, "Chat", "TabCloseOnDblClick", 0);
 	g_Settings.TabRestore = DBGetContactSettingByte(NULL, "Chat", "TabRestore", 0);
 	g_Settings.SoundsFocus = DBGetContactSettingByte(NULL, "Chat", "SoundsFocus", 0);
 	g_Settings.ShowTimeIfChanged = (BOOL)DBGetContactSettingByte(NULL, "Chat", "ShowTimeStampIfChanged", 0);
@@ -1325,17 +1313,17 @@ void LoadGlobalSettings(void)
 
 	if(g_Settings.MessageBoxFont)
 		DeleteObject(g_Settings.MessageBoxFont);
-	LoadMsgDlgFont(17, &lf, NULL);
+	Chat_LoadMsgDlgFont(17, &lf, NULL);
 	g_Settings.MessageBoxFont = CreateFontIndirect(&lf);
 
 	if(g_Settings.UserListFont)
 		DeleteObject(g_Settings.UserListFont);
-	LoadMsgDlgFont(18, &lf, NULL);
+	Chat_LoadMsgDlgFont(18, &lf, NULL);
 	g_Settings.UserListFont = CreateFontIndirect(&lf);
 
 	if(g_Settings.UserListHeadingsFont)
 		DeleteObject(g_Settings.UserListHeadingsFont);
-	LoadMsgDlgFont(19, &lf, NULL);
+	Chat_LoadMsgDlgFont(19, &lf, NULL);
 	g_Settings.UserListHeadingsFont = CreateFontIndirect(&lf);
 
 
@@ -1364,7 +1352,7 @@ int OptionsInit(void)
 	g_hOptions = HookEvent(ME_OPT_INITIALISE, OptionsInitialize);
 
 	LoadLogFonts();
-	LoadMsgDlgFont(18, &lf, NULL);
+	Chat_LoadMsgDlgFont(18, &lf, NULL);
 	lstrcpy(lf.lfFaceName, _T("MS Shell Dlg"));
 	lf.lfUnderline = lf.lfItalic = lf.lfStrikeOut = 0;
 	lf.lfHeight = -17;
@@ -1406,7 +1394,7 @@ int OptionsInit(void)
 		HFONT hFont;
 		int iText;
 
-		LoadMsgDlgFont(0, &lf, NULL);
+		Chat_LoadMsgDlgFont(0, &lf, NULL);
 		hFont = CreateFontIndirect(&lf);
 		iText = GetTextPixelSize(MakeTimeStamp(g_Settings.pszTimeStamp, time(NULL)),hFont, TRUE);
 		DeleteObject(hFont);

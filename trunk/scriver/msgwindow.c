@@ -43,7 +43,7 @@ PSLWA pSetLayeredWindowAttributes;
 
 #define SB_CHAR_WIDTH		 40
 #define SB_SENDING_WIDTH 	 25
-#define SB_TYPING_WIDTH 	 35
+#define SB_UNICODE_WIDTH 	 35
 
 #define TIMERID_FLASHWND     1
 #define TIMEOUT_FLASHWND     900
@@ -394,6 +394,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			dat->bVMaximized = 0;
 			dat->hwndStatus = CreateWindowEx(0, STATUSCLASSNAME, NULL, WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwndDlg, NULL, g_hInst, NULL);
 			{
+				int statusIconNum = 1;
 				int statwidths[4];
 				RECT rc;
 				SendMessage(dat->hwndStatus, SB_SETMINHEIGHT, GetSystemMetrics(SM_CYSMICON), 0);
@@ -405,10 +406,11 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				statwidths[3] = -1;
 				SendMessage(dat->hwndStatus, SB_SETPARTS, 4, (LPARAM) statwidths);
 				*/
-				statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_TYPING_WIDTH;
-				statwidths[1] = rc.right - rc.left - SB_TYPING_WIDTH;
-				statwidths[2] = -1;
-				SendMessage(dat->hwndStatus, SB_SETPARTS, 3, (LPARAM) statwidths);
+				statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_UNICODE_WIDTH - statusIconNum * (GetSystemMetrics(SM_CXSMICON) + 2);
+				statwidths[1] = rc.right - rc.left - SB_UNICODE_WIDTH - statusIconNum * (GetSystemMetrics(SM_CXSMICON) + 2);
+				statwidths[2] = rc.right - rc.left - SB_UNICODE_WIDTH ;
+				statwidths[3] = -1;
+				SendMessage(dat->hwndStatus, SB_SETPARTS, 4, (LPARAM) statwidths);
 			}
 			dat->hwndTabs = GetDlgItem(hwndDlg, IDC_TABS);
 			dat->hwndActive = NULL;
@@ -512,6 +514,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		} else {
 //		}
 //		if (!IsIconic(hwndDlg)) {
+			int statusIconNum = 1;
 			RECT rc, rcStatus, rcChild, rcWindow;
 			SIZE size;
 			dat->bMinimized = 0;
@@ -521,10 +524,11 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			if (dat->flags & SMF_SHOWSTATUSBAR) {
 				int statwidths[4];
 				GetWindowRect(dat->hwndStatus, &rcStatus);
-				statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_TYPING_WIDTH;
-				statwidths[1] = rc.right - rc.left - SB_TYPING_WIDTH;
-				statwidths[2] = -1;
-				SendMessage(dat->hwndStatus, SB_SETPARTS, 3, (LPARAM) statwidths);
+				statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_UNICODE_WIDTH - statusIconNum * (GetSystemMetrics(SM_CXSMICON) + 2);
+				statwidths[1] = rc.right - rc.left - SB_UNICODE_WIDTH - statusIconNum * (GetSystemMetrics(SM_CXSMICON) + 2);
+				statwidths[2] = rc.right - rc.left - SB_UNICODE_WIDTH ;
+				statwidths[3] = -1;
+				SendMessage(dat->hwndStatus, SB_SETPARTS, 4, (LPARAM) statwidths);
 				SendMessage(dat->hwndStatus, WM_SIZE, 0, 0);
 			}
 			MoveWindow(dat->hwndTabs, 0, 2, (rc.right - rc.left), (rc.bottom - rc.top) - (rcStatus.bottom - rcStatus.top) - 2,	FALSE);
@@ -816,7 +820,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		break;
 	case DM_ERRORDECIDED:
 		break;
-	case DM_STARTFLASHING:
+	case CM_STARTFLASHING:
 		if ((GetActiveWindow() != hwndDlg || GetForegroundWindow() != hwndDlg)) {// && !(g_dat->flags2 & SMF2_STAYMINIMIZED)) {
 			dat->nFlash = 0;
 			SetTimer(hwndDlg, TIMERID_FLASHWND, TIMEOUT_FLASHWND, NULL);
@@ -917,19 +921,22 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		{
 			HWND hwnd = (HWND) lParam;
 			StatusBarData *sbd = (StatusBarData *) wParam;
+			int iItem = sbd->iItem;
+			if (iItem == 2) {
+				iItem = 3;
+			}
 			if (sbd != NULL) {
-				if ((sbd->iFlags & TBDF_TEXT) && dat->hwndActive == hwnd) {
-					SendMessage(dat->hwndStatus, SB_SETTEXT, sbd->iItem, (LPARAM) sbd->pszText);
+				if ((sbd->iFlags & SBDF_TEXT) && dat->hwndActive == hwnd) {
+					SendMessage(dat->hwndStatus, SB_SETTEXT, iItem, (LPARAM) sbd->pszText);
 				}
-				if ((sbd->iFlags & TBDF_ICON) && dat->hwndActive == hwnd) {
-					SendMessage(dat->hwndStatus, SB_SETICON, sbd->iItem, (LPARAM) sbd->hIcon);
+				if ((sbd->iFlags & SBDF_ICON) && dat->hwndActive == hwnd) {
+					SendMessage(dat->hwndStatus, SB_SETICON, iItem, (LPARAM) sbd->hIcon);
 				}
 			}
 			break;
 		}
 	case CM_UPDATETABCONTROL:
 		{
-			HWND hwnd = (HWND) lParam;
 			TabControlData *tcd = (TabControlData *) wParam;
 			int tabId = GetTabFromHWND(dat, (HWND) lParam);
 			if (tabId >= 0 && tcd != NULL) {
@@ -1282,7 +1289,7 @@ HWND GetParentWindow(HANDLE hContact, BOOL bChat) {
 		struct NewMessageWindowLParam newData = { 0 };
 		newData.hContact = hContact;
 		return CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
-	} 
+	}
 	return g_dat->lastParent->hwnd;
 }
 

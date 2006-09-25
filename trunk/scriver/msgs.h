@@ -179,7 +179,6 @@ struct MessageWindowData
 #define DM_UPDATETITLE		 (WM_USER+30)
 #define DM_UPDATEICON		 (WM_USER+31)
 
-#define DM_STARTFLASHING	 (WM_USER+45)
 #define DM_CLEARLOG			 (WM_USER+46)
 #define DM_SWITCHSTATUSBAR	 (WM_USER+47)
 #define DM_SWITCHTOOLBAR	 (WM_USER+48)

@@ -321,12 +321,14 @@ static void AddEventToBuffer(char **buffer, int *bufferEnd, int *bufferAlloced, 
 			if(streamData->lin->pszNick && streamData->lin->pszText)
 				Log_AppendRTF(streamData, buffer, bufferEnd, bufferAlloced, Translate("%s %s"), streamData->lin->pszNick, streamData->lin->pszText);break;
 		case GC_EVENT_JOIN:
-			if(pszNick)
-				if(!streamData->lin->bIsMe)
+			if(pszNick) {
+				if(!streamData->lin->bIsMe) {
 					Log_AppendRTF(streamData, buffer, bufferEnd, bufferAlloced, Translate("%s has joined"), pszNick);
-				else
+				} else {
 					Log_AppendRTF(streamData, buffer, bufferEnd, bufferAlloced, Translate("You have joined %s"), streamData->si->pszName);
-					break;
+				}
+				break;
+			}
 		case GC_EVENT_PART:
 			if(pszNick)
 				Log_AppendRTF(streamData, buffer, bufferEnd, bufferAlloced, Translate("%s has left"), pszNick);
@@ -340,12 +342,14 @@ static void AddEventToBuffer(char **buffer, int *bufferEnd, int *bufferAlloced, 
 				Log_AppendRTF(streamData, buffer, bufferEnd, bufferAlloced, ": %s", streamData->lin->pszText);
 				break;
 		case GC_EVENT_NICK:
-			if(pszNick && streamData->lin->pszText)
-				if(!streamData->lin->bIsMe)
+			if(pszNick && streamData->lin->pszText) {
+				if(!streamData->lin->bIsMe) {
 					Log_AppendRTF(streamData, buffer, bufferEnd, bufferAlloced, Translate("%s is now known as %s"), pszNick, streamData->lin->pszText);
-				else
+				} else {
 					Log_AppendRTF(streamData, buffer, bufferEnd, bufferAlloced, Translate("You are now known as %s"), streamData->lin->pszText);
-					break;
+				}
+				break;
+			}
 		case GC_EVENT_KICK:
 			if(streamData->lin->pszNick && streamData->lin->pszStatus)
 				Log_AppendRTF(streamData, buffer, bufferEnd, bufferAlloced, Translate("%s kicked %s"), streamData->lin->pszStatus, streamData->lin->pszNick);
@@ -387,7 +391,7 @@ char *MakeTimeStamp(char * pszStamp, time_t time)
 static char* Log_CreateRTF(LOGSTREAMDATA *streamData)
 {
  	char *buffer, *header;
-    int bufferAlloced, bufferEnd, i, me = 0;
+    int bufferAlloced, bufferEnd, i;
 	LOGINFO * lin = streamData->lin;
 
 	// guesstimate amount of memory for the RTF

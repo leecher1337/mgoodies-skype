@@ -252,7 +252,17 @@ int Service_GetInfo(WPARAM wParam,LPARAM lParam)
 }
 
 void LoadModuleIcons(MODULEINFO * mi) {
+	mi->OnlineIconIndex = ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(mi->pszModule, ID_STATUS_ONLINE));
+	mi->hOnlineIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT);
 
+	mi->hOnlineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(1));
+	ImageList_AddIcon(g_dat->hTabIconList, mi->hOnlineTalkIcon);
+
+	mi->OfflineIconIndex = ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(mi->pszModule, ID_STATUS_OFFLINE));
+	mi->hOfflineIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OfflineIconIndex, ILD_TRANSPARENT);
+
+	mi->hOfflineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(1));
+	ImageList_AddIcon(g_dat->hTabIconList, mi->hOfflineTalkIcon);
 }
 
 int Service_Register(WPARAM wParam, LPARAM lParam)
@@ -295,18 +305,13 @@ int Service_Register(WPARAM wParam, LPARAM lParam)
 			mi->crColors = malloc(sizeof(COLORREF) * gcr->nColors);
 			memcpy(mi->crColors, gcr->pColors, sizeof(COLORREF) * gcr->nColors);
 		}
-		mi->OnlineIconIndex = ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(gcr->pszModule, ID_STATUS_ONLINE));
-		mi->hOnlineIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT);
 
-		mi->hOnlineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
-		ImageList_AddIcon(g_dat->hTabIconList, mi->hOnlineTalkIcon);
-
-		mi->OfflineIconIndex = ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(gcr->pszModule, ID_STATUS_OFFLINE));
-		mi->hOfflineIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OfflineIconIndex, ILD_TRANSPARENT);
-
-		mi->hOfflineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
-		ImageList_AddIcon(g_dat->hTabIconList, mi->hOfflineTalkIcon);
-
+		mi->OnlineIconIndex = -1;
+		mi->hOnlineIcon = NULL;
+		mi->hOnlineTalkIcon = NULL;
+		mi->OfflineIconIndex = -1;
+		mi->hOfflineIcon = NULL;
+		mi->hOfflineTalkIcon = NULL;
 		mi->pszHeader = Log_CreateRtfHeader(mi);
 
 		CheckColorsInModule((char*)gcr->pszModule);
@@ -322,6 +327,7 @@ int Service_Register(WPARAM wParam, LPARAM lParam)
 int Service_NewChat(WPARAM wParam, LPARAM lParam)
 {
 	GCSESSION *gcw =(GCSESSION *)lParam;
+	MODULEINFO *mi;
 
 	if(gcw== NULL)
 		return GC_NEWSESSION_ERROR;
@@ -330,11 +336,17 @@ int Service_NewChat(WPARAM wParam, LPARAM lParam)
 		return GC_NEWSESSION_WRONGVER;
 
 	EnterCriticalSection(&cs);
+	mi = MM_FindModule((char *)gcw->pszModule);
 
-	if(MM_FindModule((char *)gcw->pszModule))
+	if(mi)
 	{
+		SESSION_INFO *si;
+
+		if (mi->OnlineIconIndex == -1) {
+			LoadModuleIcons(mi);
+		}
 		// create a new session and set the defaults
-		SESSION_INFO * si = SM_AddSession((char *)gcw->pszID, (char *)gcw->pszModule);
+		si = SM_AddSession((char *)gcw->pszID, (char *)gcw->pszModule);
 		if(si)
 		{
 			char szTemp[256];
@@ -394,11 +406,8 @@ int Service_NewChat(WPARAM wParam, LPARAM lParam)
 				si2->iStatusCount = 0;
 				si2->nUsersInNicklist = 0;
 
-				if(!g_Settings.TabsEnable)
-				{
-					if(si2->hWnd )
-						RedrawWindow(GetDlgItem(si2->hWnd, IDC_CHAT_LIST), NULL, NULL, RDW_INVALIDATE);
-				}
+				if(si2->hWnd )
+					RedrawWindow(GetDlgItem(si2->hWnd, IDC_CHAT_LIST), NULL, NULL, RDW_INVALIDATE);
 
 			}
 //			SendMessage(hwnd, GC_NICKLISTREINIT, 0, 0);
@@ -509,11 +518,6 @@ static int DoControl(GCEVENT * gce, WPARAM wp)
 			{
 //				g_TabSession.pszName = si->pszName;
 				SendMessage(si->hWnd, DM_UPDATETITLEBAR, 0, 0);
-			}
-			if(g_TabSession.hWnd && g_Settings.TabsEnable)
-			{
-				g_TabSession.pszName = si->pszName;
-				SendMessage(g_TabSession.hWnd, GC_SESSIONNAMECHANGE, 0, (LPARAM)si);
 			}
 
 		}
@@ -641,7 +645,7 @@ static void TakeStatus(GCEVENT * gce)
 
 void ShowRoom(SESSION_INFO * si, WPARAM wp, BOOL bSetForeground)
 {
-	HWND hParent;
+	HWND hParent = NULL;
 	if(!si)
 		return;
 
@@ -664,14 +668,13 @@ void ShowRoom(SESSION_INFO * si, WPARAM wp, BOOL bSetForeground)
 		SetForegroundWindow(si->hWnd);
 	}
 	*/
-	ShowWindow(hParent, SW_NORMAL);
+	if ( hParent != NULL )
+		ShowWindow(hParent, SW_NORMAL);
 	SendMessage(si->hWnd, WM_MOUSEACTIVATE, 0, 0);
 	SetFocus(GetDlgItem(si->hWnd, IDC_CHAT_MESSAGE));
 
 	return;
 }
-
-
 
 int Service_AddEvent(WPARAM wParam, LPARAM lParam)
 {
@@ -694,22 +697,8 @@ int Service_AddEvent(WPARAM wParam, LPARAM lParam)
 
 	EnterCriticalSection(&cs);
 
-	//remove spaces in UID
-	if(gce->pszUID)
-	{
-		char * p = (char *)gce->pszUID;
-		while (*p)
-		{
-			if(*p == ' ')
-				memmove(p, p+1, lstrlenA(p));
-			p++;
-		}
-
-	}
-
 	// Do different things according to type of event
-	switch(gcd->iType)
-	{
+	switch(gcd->iType) {
 	case GC_EVENT_ADDGROUP:
 		AddStatus(gce);
 		LeaveCriticalSection(&cs);

@@ -58,12 +58,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <m_clist.h>
 #include <m_clui.h>
 #include <m_popup.h>
-#include "resource.h"
+#include "../resource.h"
 #include "m_chat.h"
 #include "m_ieview.h"
 #include "m_smileyadd.h"
 #include "IcoLib.h"
 #include "../globals.h"
+#include "../msgwindow.h"
 
 #ifndef TVM_GETITEMSTATE
 #define TVM_GETITEMSTATE        (TV_FIRST + 39)
@@ -111,14 +112,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //#define GC_MODECHANGE			(WM_USER+126)
 #define GC_TABCHANGE			(WM_USER+127)
 #define GC_SCROLLTOBOTTOM		(WM_USER+129)
-#define GC_REMOVETAB			(WM_USER+130)
-#define GC_SESSIONNAMECHANGE	(WM_USER+131)
 #define GC_FIXTABICONS			(WM_USER+132)
-#define GC_DROPPEDTAB			(WM_USER+133)
-#define GC_TABCLICKED			(WM_USER+134)
-#define GC_SWITCHNEXTTAB		(WM_USER+135)
-#define GC_SWITCHPREVTAB		(WM_USER+136)
-#define GC_SWITCHTAB			(WM_USER+137)
 #define GC_SETTABHIGHLIGHT		(WM_USER+138)
 #define GC_SETMESSAGEHIGHLIGHT	(WM_USER+139)
 #define GC_REDRAWLOG2			(WM_USER+140)
@@ -127,8 +121,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define EM_SUBCLASSED			(WM_USER+200)
 #define EM_UNSUBCLASSED			(WM_USER+201)
 #define EM_ACTIVATE				(WM_USER+202)
-
-#define TIMERID_FLASHWND		205
 
 #define GCW_TABROOM				10
 #define GCW_TABPRIVMSG			11
@@ -348,11 +340,9 @@ struct GlobalLogSettings_t {
 	BOOL		PopUpInactiveOnly;
 	BOOL		TrayIconInactiveOnly;
 	BOOL		AddColonToAutoComplete;
-	BOOL		TabsEnable;
-	BOOL		TabCloseOnDblClick;
 	BOOL		TabRestore;
+	BOOL     TabsEnable;
 	BOOL		LogLimitNames;
-	BOOL		TabsAtBottom;
 	BOOL		TimeStampEventColour;
 	DWORD		dwIconFlags;
 	DWORD		dwTrayIconFlags;
@@ -420,7 +410,7 @@ int					GetTextPixelSize(char * pszText, HFONT hFont, BOOL bWidth);
 //options.c
 int					OptionsInit(void);
 int					OptionsUnInit(void);
-void				LoadMsgDlgFont(int i, LOGFONT * lf, COLORREF * colour);
+void				Chat_LoadMsgDlgFont(int i, LOGFONT * lf, COLORREF * colour);
 void				LoadGlobalSettings(void);
 void				AddIcons(void);
 HICON				LoadIconEx(int iIndex, char * pszIcoLibName, int iX, int iY);
@@ -462,7 +452,7 @@ BOOL				SM_SetOffline(char *pszID, char * pszModule);
 BOOL				SM_SetTabbedWindowHwnd(SESSION_INFO * si, HWND hwnd);
 HICON				SM_GetStatusIcon(SESSION_INFO * si, USERINFO * ui);
 BOOL				SM_SetStatus(char *pszID, char * pszModule, int wStatus);
-BOOL				SM_SetStatusEx(char *pszID, char * pszModule, char * pszText, int onlyMe );
+BOOL				SM_SetStatusEx(char *pszID, char * pszModule, char * pszText, int flags );
 BOOL				SM_SendUserMessage(char *pszID, char * pszModule, char * pszText);
 STATUSINFO *		SM_AddStatus(char *pszID, char * pszModule, char * pszStatus);
 SESSION_INFO *		SM_GetNextWindow(SESSION_INFO * si);
@@ -537,7 +527,5 @@ BOOL				LogToFile(SESSION_INFO * si, GCEVENT * gce);
 // message.c
 char *				Message_GetFromStream(HWND hwndDlg, SESSION_INFO* si);
 BOOL				DoRtfToTags(char * pszText, SESSION_INFO * si);
-
-#pragma comment(lib,"comctl32.lib")
 
 #endif
