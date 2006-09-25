@@ -44,5 +44,13 @@ lParam: BOOL - TRUE to enable, FALSE to disable
 #define MS_LISTENINGTO_ENABLE		"ListeningTo/Enable"
 
 
+/*
+Notification fired when enable state changed
+
+wParam: char * - protocol name or NULL for all protocols
+lParam: BOOL - enabled
+*/
+#define ME_LISTENINGTO_ENABLE_STATE_CHANGED		"ListeningTo/EnableStateChanged"
+
 
 #endif // __M_LISTENINGTO_H__

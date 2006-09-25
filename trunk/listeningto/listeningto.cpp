@@ -37,7 +37,7 @@ PLUGININFO pluginInfo = {
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,2),
+	PLUGIN_MAKE_VERSION(0,1,0,3),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -56,6 +56,7 @@ static HANDLE hPreShutdownHook = NULL;
 static HANDLE hTopToolBarLoadedHook = NULL;
 static HANDLE hClistExtraListRebuildHook = NULL;
 static HANDLE hSettingChangedHook = NULL;
+static HANDLE hEnableStateChangedEvent = NULL;
 
 static HANDLE hTTB = NULL;
 static char *metacontacts_proto = NULL;
@@ -125,6 +126,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 	hSettingChangedHook = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, SettingChanged);
 
+	hEnableStateChangedEvent = CreateHookableEvent(ME_LISTENINGTO_ENABLE_STATE_CHANGED);
 
 	InitMusic();
 	InitOptions();
@@ -275,6 +277,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
 	DeInitOptions();
+
+	DestroyHookableEvent(hEnableStateChangedEvent);
 
 	UnhookEvent(hModulesLoaded);
 	UnhookEvent(hPreShutdownHook);
@@ -469,6 +473,8 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 	}
 
 	StartTimer();
+
+	NotifyEventHooks(hEnableStateChangedEvent, wParam, lParam);
 
 	return 0;
 }
