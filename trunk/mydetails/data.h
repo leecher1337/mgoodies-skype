@@ -34,7 +34,7 @@ protected:
 	bool valid;
 	bool can_set_nick;
 	bool can_have_avatar;
-	bool can_have_status_message;
+	bool can_have_listening_to;
 	int PF3;
 
 	void lcopystr(TCHAR *dest, TCHAR *src, int maxlen);
@@ -48,6 +48,7 @@ public:
 	TCHAR *custom_status_name;
 	TCHAR status_message[1024];
 	TCHAR *custom_status_message;
+	TCHAR listening_to[1024];
 	AVATARCACHEENTRY *ace;
 	TCHAR avatar_file[1024];
 	HBITMAP avatar_bmp;
@@ -83,6 +84,11 @@ public:
 	int GetNickMaxLength();
 	bool CanSetNick();
 	void SetNick(const TCHAR *nick);
+
+	bool CanGetListeningTo();
+	bool CanSetListeningTo();
+	bool ListeningToEnabled();
+	TCHAR * GetListeningTo();	// Copy to cache and return a copy
 
 	bool CanGetStatusMsg();
 	bool CanGetStatusMsg(int aStatus);
@@ -140,6 +146,9 @@ public:
 	void GetDefaultAvatar();	// Copy to cache
 	TCHAR * GetDefaultStatusMsg();	// Copy to cache
 	TCHAR * GetDefaultStatusMsg(int status);
+
+	bool CanSetListeningTo();
+	bool ListeningToEnabled();
 };
 
 extern ProtocolArray *protocols;

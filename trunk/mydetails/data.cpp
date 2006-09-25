@@ -76,6 +76,7 @@ Protocol::Protocol(const char *aName)
 	description[0] = _T('\0');
 	nickname[0] = _T('\0');
 	status_message[0] = _T('\0');
+	listening_to[0] = _T('\0');
 	ace = NULL;
 	avatar_file[0] = _T('\0');
 	avatar_bmp = NULL;
@@ -92,7 +93,7 @@ Protocol::Protocol(const char *aName)
 	if (!valid)
 		return;
 
-	can_have_status_message = (caps & PF1_MODEMSGSEND) != 0;
+	can_have_listening_to = (ProtoServiceExists(name, PS_SET_LISTENINGTO) != 0);
 
 	caps = CallProtoService(name, PS_GETCAPS, PFLAGNUM_4, 0);
 	can_have_avatar = (caps & PF4_AVATARS) != 0;
@@ -267,7 +268,8 @@ bool Protocol::CanGetStatusMsg()
 
 bool Protocol::CanGetStatusMsg(int aStatus)
 {
-	return can_have_status_message && (PF3 & Proto_Status2Flag(aStatus));
+	return (CallProtoService(name, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND) != 0 
+			&& (PF3 & Proto_Status2Flag(aStatus));
 }
 
 
@@ -542,6 +544,44 @@ void Protocol::SetAvatar(const char *file_name)
 	CallService(MS_AV_SETMYAVATAR, (WPARAM) name, (LPARAM) file_name);
 }
 
+bool Protocol::CanGetListeningTo()
+{
+	return can_have_listening_to;
+}
+
+bool Protocol::CanSetListeningTo()
+{
+	return CanGetListeningTo() && ServiceExists(MS_LISTENINGTO_ENABLE);
+}
+
+bool Protocol::ListeningToEnabled()
+{
+	return CanSetListeningTo() && CallService(MS_LISTENINGTO_ENABLED, (WPARAM) name, 0) != 0;
+}
+
+TCHAR * Protocol::GetListeningTo()
+{
+	if (!CanGetListeningTo())
+	{
+		lcopystr(listening_to, "", MAX_REGS(listening_to));
+		return listening_to;
+	}
+
+	DBVARIANT dbv = {0};
+	if (DBGetContactSetting(NULL, name, "ListeningTo", &dbv))
+	{
+		lcopystr(listening_to, "", MAX_REGS(listening_to));
+		return listening_to;
+	}
+
+	lcopystr(listening_to, dbv.pszVal, MAX_REGS(listening_to));
+
+	DBFreeVariant(&dbv);
+
+	return listening_to;
+}
+
+
 
 // ProtocolDataArray Class /////////////////////////////////////////////////////////////////////////////
 
@@ -766,6 +806,15 @@ char * ProtocolArray::GetDefaultStatusMsg(int status)
 	return default_status_message;
 }
 
+bool ProtocolArray::CanSetListeningTo()
+{
+	return ServiceExists(MS_LISTENINGTO_ENABLE) != 0;
+}
+
+bool ProtocolArray::ListeningToEnabled()
+{
+	return CanSetListeningTo() && CallService(MS_LISTENINGTO_ENABLED, 0, 0) != 0;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

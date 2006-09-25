@@ -42,6 +42,11 @@ cd Docs
 del /Q *.*
 copy ..\..\..\..\Docs\*.*
 cd ..
+mkdir sdk
+cd sdk
+del /Q *.*
+copy ..\..\..\..\sdk\*.*
+cd ..
 cd ..
 mkdir utils
 cd utils
@@ -65,6 +70,10 @@ cd Docs
 del /Q *.*
 cd ..
 rmdir Docs
+cd sdk
+del /Q *.*
+cd ..
+rmdir sdk
 cd ..
 rmdir mydetails
 cd utils

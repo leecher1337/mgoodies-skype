@@ -30,7 +30,7 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,1,1),
+	PLUGIN_MAKE_VERSION(0,0,1,2),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci",
 	"",
