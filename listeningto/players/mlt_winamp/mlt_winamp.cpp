@@ -29,6 +29,8 @@ winampGeneralPurposePlugin plugin = {
 
 #define DATA_SIZE 1024
 
+#define WA_STATE_CHANGE 0x0000029A
+
 WNDPROC oldWndProc = NULL;
 HMENU hMenuCreated = NULL;
 HWND hMsgWnd = NULL;
@@ -229,28 +231,51 @@ LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 	return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
-
 // Playlist window message processor
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	static BOOL last_was_stop = TRUE;
+	static BOOL last_was_stop = FALSE;
+	static DWORD last_notification = 0;
 
 	switch(message)
 	{
 		case WM_USER:
 		{
-			if (wParam == 666)
+			if(wParam == WA_STATE_CHANGE)
 			{
-				if (lParam & 0x40000000)
-				{
-					last_was_stop = FALSE;
+				int type = HIWORD(lParam);
+				int track = LOWORD(lParam);
 
-					// Miranda is running?
-					HWND mir_hwnd = FindWindow(MIRANDA_WINDOWCLASS, NULL);
-					if (mir_hwnd != NULL)
-						SendDataToMiranda(mir_hwnd, lParam & 0x0FFFFFFF);
+				if(type == 0x4000)
+				{
+					if (SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_ISPLAYING) == 1)
+					{
+						DWORD now = GetTickCount();
+						if(now > last_notification + 400)
+						{
+							last_notification = now;
+
+							last_was_stop = FALSE;
+
+							// Miranda is running?
+							HWND mir_hwnd = FindWindow(MIRANDA_WINDOWCLASS, NULL);
+							if (mir_hwnd != NULL)
+								SendDataToMiranda(mir_hwnd, track);
+						}
+					}
+					else
+					{
+						if (!last_was_stop)
+						{
+							last_was_stop = TRUE;
+
+							HWND mir_hwnd = FindWindow(MIRANDA_WINDOWCLASS, NULL);
+							if (mir_hwnd != NULL)
+								SendData(mir_hwnd, L"0\\0Winamp\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0");
+						}
+					}
 				}
-				else if (lParam == 0)
+				else if(type == 0)
 				{
 					if (!last_was_stop)
 					{

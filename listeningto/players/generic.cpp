@@ -121,16 +121,15 @@ void GenericPlayer::ProcessReceived()
 
 	FreeData();
 
+	changed = TRUE;
+
 	if (lstrcmpW(L"1", parts[0]) != 0 || parts[1][0] == L'\0' || (parts[3][0] == L'\0' && parts[4][0] == L'\0'))
 	{
 		// Stoped playing or not enought info
 		LeaveCriticalSection(&cs);
-		if (changed)
-			NotifyInfoChanged();
+		NotifyInfoChanged();
 		return;
 	}
-
-	changed = TRUE;
 
 	listening_info.cbSize = sizeof(listening_info);
 

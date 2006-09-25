@@ -1,6 +1,10 @@
-ListeningTo 0.1.0.2
+ListeningTo 0.1.0.3
 
 Changelog:
+
+. 0.1.0.3
+  + Event to help My Details
+  * Fix for winamp stop playing
 
 . 0.1.0.2
   + Made external plugin for winamp
