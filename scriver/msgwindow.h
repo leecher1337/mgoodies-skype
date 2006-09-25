@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define CM_UPDATETITLEBAR    (WM_USER+0x190)
 #define CM_UPDATESTATUSBAR   (WM_USER+0x191)
 #define CM_UPDATETABCONTROL  (WM_USER+0x192)
+#define CM_STARTFLASHING	 (WM_USER+0x1A0)
 /* child window services */
 #define DM_UPDATETITLEBAR    (WM_USER+0x200)
 #define DM_UPDATESTATUSBAR   (WM_USER+0x201)
@@ -40,8 +41,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DM_SETPARENT	 	 (WM_USER+0x203)
 #define DM_ACTIVATE			 (WM_USER+0x206)
 
-#define SBDF_TEXT 1
-#define SBDF_ICON 2
+#define SBDF_TEXT  1
+#define SBDF_ICON  2
 
 typedef struct StatusBarDataStruct
 {

@@ -365,7 +365,6 @@ BOOL SM_AddEvent(char *pszID, char * pszModule, GCEVENT * gce, BOOL bIsHighlight
 			li->time = gce->time;
 			li->bIsHighlighted = bIsHighlighted;
 
-
 			if (g_Settings.iEventLimit > 0 && pTemp->iEventCount > g_Settings.iEventLimit + 20)
 			{
 				LM_TrimLog(&pTemp->pLog, &pTemp->pLogEnd, pTemp->iEventCount - g_Settings.iEventLimit);
@@ -1080,10 +1079,10 @@ void MM_IconsChanged(void)
 		pTemp->hOfflineIcon = ImageList_GetIcon(g_dat->hTabIconList, pTemp->OfflineIconIndex, ILD_TRANSPARENT);
 		pTemp->hOnlineIcon = ImageList_GetIcon(g_dat->hTabIconList, pTemp->OnlineIconIndex, ILD_TRANSPARENT);
 
-		pTemp->hOnlineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, pTemp->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
+		pTemp->hOnlineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, pTemp->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(1));
 		ImageList_ReplaceIcon(g_dat->hTabIconList, pTemp->OnlineIconIndex+1, pTemp->hOnlineTalkIcon);
 
-		pTemp->hOfflineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, pTemp->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(overlayIcon));
+		pTemp->hOfflineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, pTemp->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(1));
 		ImageList_ReplaceIcon(g_dat->hTabIconList, pTemp->OfflineIconIndex+1, pTemp->hOfflineTalkIcon);
 
 		pLast = pTemp;
@@ -1158,8 +1157,6 @@ BOOL MM_RemoveAll (void)
 	m_ModList = NULL;
 	return TRUE;
 }
-
-
 
 //---------------------------------------------------
 //		Status manager functions
@@ -1481,7 +1478,8 @@ USERINFO* UM_GiveStatus(USERINFO* pUserList, char* pszUID, WORD status)
 BOOL UM_SetStatusEx(USERINFO* pUserList, char* pszText, int flags )
 {
 	USERINFO *pTemp = pUserList, *pLast = NULL;
-	int bOnlyMe = ( flags & 1 ) != 0, bSetStatus = ( flags & 2 ) != 0;
+	int bOnlyMe = ( flags & GC_SSE_ONLYLISTED ) != 0, bSetStatus = ( flags & GC_SSE_ONLINE ) != 0;
+	char cDelimiter = ( flags & GC_SSE_TABDELIMITED ) ? '\t' : ' ';
 
 	while (pTemp != NULL)
 	{
@@ -1492,10 +1490,11 @@ BOOL UM_SetStatusEx(USERINFO* pUserList, char* pszText, int flags )
 			char* s = strstr(pszText, pTemp->pszUID);
 			if ( s ) {
 				pTemp->iStatusEx = 0;
-				if ( s == pszText || s[-1] == ' ' )
-					if ( s[lstrlenA(pTemp->pszUID)] == ' ' || s[lstrlenA(pTemp->pszUID)] == '\0' )
+				if ( s == pszText || s[-1] == cDelimiter ) {
+					int len = lstrlenA(pTemp->pszUID);
+					if ( s[len] == cDelimiter || s[len] == '\0' )
 						pTemp->iStatusEx = ( !bOnlyMe || bSetStatus ) ? 1 : 0;
-		}	}
+		}	}	}
 
 		pLast = pTemp;
 		pTemp = pTemp->next;
