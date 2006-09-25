@@ -6,6 +6,7 @@
 #define IDD_OPTS                        102
 #define IDD_SETSTATUSMESSAGE            103
 #define IDR_MENU1                       104
+#define IDI_LISTENINGTO                 105
 #define IDC_NICKNAME                    1000
 #define IDC_SHOW_PROTO_NAME             1001
 #define IDC_CICLE_THROUGHT_PROTOS       1002
@@ -52,13 +53,15 @@
 #define ID_NICKPOPUP_SETMYNICKNAME      40008
 #define ID_STATUSMESSAGEPOPUP_SETMYSTATUSMESSAGE 40009
 #define ID_AVATARPOPUP_SETMYAVATAR      40010
+#define ID_LISTENINGTOPOPUP_SENDLISTENINGTO 40011
+#define ID_CONTEXTPOPUP_ENABLELISTENINGTO 40012
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        105
-#define _APS_NEXT_COMMAND_VALUE         40011
+#define _APS_NEXT_RESOURCE_VALUE        106
+#define _APS_NEXT_COMMAND_VALUE         40013
 #define _APS_NEXT_CONTROL_VALUE         1011
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

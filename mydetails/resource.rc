@@ -290,6 +290,8 @@ BEGIN
         MENUITEM "Set My Nickname...",          ID_NICKPOPUP_SETMYNICKNAME
         MENUITEM "Set My Status Message...",    ID_STATUSMESSAGEPOPUP_SETMYSTATUSMESSAGE
 
+        MENUITEM "Enable Listening To",         ID_CONTEXTPOPUP_ENABLELISTENINGTO
+
         MENUITEM SEPARATOR
         MENUITEM "Show next protocol",          ID_SHOW_NEXT_PROTO
         MENUITEM "Show previous protocol",      ID_SHOW_PREV_PROTO
@@ -315,8 +317,23 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Set My Avatar...",            ID_AVATARPOPUP_SETMYAVATAR
     END
+    POPUP "ListeningTo popup"
+    BEGIN
+        MENUITEM SEPARATOR
+        MENUITEM "Enable Listening To",         ID_LISTENINGTOPOPUP_SENDLISTENINGTO
+
+    END
 END
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_LISTENINGTO         ICON    DISCARDABLE     "res\\listening_to.ico"
 #endif    // Portuguese (Brazil) resources
 /////////////////////////////////////////////////////////////////////////////
 

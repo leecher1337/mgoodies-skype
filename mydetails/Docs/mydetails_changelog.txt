@@ -1,6 +1,9 @@
-My Details 0.0.1.1
+My Details 0.0.1.2
 
 Changelog:
+
+. 0.0.1.2
+  + Added listening to info
 
 . 0.0.1.1
   * Fix for crash on exit (thanks ghazan)

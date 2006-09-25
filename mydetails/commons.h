@@ -46,6 +46,8 @@ extern "C"
 #include <m_options.h>
 #include <m_clui.h>
 #include <m_clc.h>
+#include <m_proto_listeningto.h>
+#include <m_listeningto.h>
 
 #include <m_NewAwaySys.h>
 #include <m_updater.h>

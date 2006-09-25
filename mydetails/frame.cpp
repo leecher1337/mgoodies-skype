@@ -40,6 +40,7 @@ Boston, MA 02111-1307, USA.
 
 #define DEFAULT_NICKNAME		"<no nickname>"
 #define DEFAULT_STATUS_MESSAGE	"<no status message>"
+#define DEFAULT_LISTENING_TO	"<nothing playing>"
 
 
 // Messages
@@ -48,6 +49,7 @@ Boston, MA 02111-1307, USA.
 #define MWM_STATUS_CHANGED		(WM_USER+12)
 #define MWM_STATUS_MSG_CHANGED	(WM_USER+13)
 #define MWM_AVATAR_CHANGED		(WM_USER+14)
+#define MWM_LISTENINGTO_CHANGED	(WM_USER+15)
 
 
 HWND hwnd_frame = NULL;
@@ -57,22 +59,22 @@ int frame_id = -1;
 
 HANDLE hMenuShowHideFrame = 0;
 
-
 #define FONT_NICK 0
 #define FONT_PROTO 1
 #define FONT_STATUS 2
 #define FONT_AWAY_MSG 3
-#define NUM_FONTS 4
+#define FONT_LISTENING_TO 4
+#define NUM_FONTS 5
 
 FontID font_id[NUM_FONTS];
 HFONT hFont[NUM_FONTS];
 COLORREF font_colour[NUM_FONTS];
 
 // Defaults
-char *font_names[] = { "Nickname", "Protocol", "Status", "Status Message" };
-char font_sizes[] = { 13, 8, 8, 8 };
-BYTE font_styles[] = { DBFONTF_BOLD, 0, 0, DBFONTF_ITALIC };
-COLORREF font_colors[] = { RGB(0,0,0), RGB(0,0,0), RGB(0,0,0), RGB(150,150,150) };
+char *font_names[] = { "Nickname", "Protocol", "Status", "Status Message", "Listening To" };
+char font_sizes[] = { 13, 8, 8, 8, 8 };
+BYTE font_styles[] = { DBFONTF_BOLD, 0, 0, DBFONTF_ITALIC, DBFONTF_ITALIC };
+COLORREF font_colors[] = { RGB(0,0,0), RGB(0,0,0), RGB(0,0,0), RGB(150,150,150), RGB(150,150,150) };
 
 
 int CreateFrame();
@@ -98,6 +100,7 @@ int SettingsChangedHook(WPARAM wParam, LPARAM lParam);
 int AvatarChangedHook(WPARAM wParam, LPARAM lParam);
 int ProtoAckHook(WPARAM wParam, LPARAM lParam);
 int SmileyAddOptionsChangedHook(WPARAM wParam,LPARAM lParam);
+int ListeningtoEnableStateChangedHook(WPARAM wParam,LPARAM lParam);
 
 
 #define OUTSIDE_BORDER 6
@@ -135,6 +138,13 @@ struct MyDetailsFrameData
 	bool mouse_over_away_msg;
 	HWND away_msg_tt_hwnd;
 
+	RECT listening_to_rect;
+	RECT listening_to_icon_rect;
+	RECT listening_to_text_rect;
+	bool draw_listening_to;
+	bool mouse_over_listening_to;
+	HWND listening_to_tt_hwnd;
+
 	int protocol_number;
 
 	bool showing_menu;
@@ -157,6 +167,7 @@ void InitFrames()
 	HookEvent(ME_AV_MYAVATARCHANGED, AvatarChangedHook);
 	HookEvent(ME_PROTO_ACK, ProtoAckHook);
 	HookEvent(ME_SMILEYADD_OPTIONSCHANGED,SmileyAddOptionsChangedHook);
+	HookEvent(ME_LISTENINGTO_ENABLE_STATE_CHANGED,ListeningtoEnableStateChangedHook);
 }
 
 
@@ -311,8 +322,7 @@ int CreateFrame()
 		SetWindowLong(hwnd_container, GWL_USERDATA, (LONG)hwnd_frame);
 		SendMessage(hwnd_container, WM_SIZE, 0, 0);
 
-		///////////////////////
-		// create menu item
+		// Create menu item
 		CreateServiceFunction(MODULE_NAME "/ShowHideMyDetails", ShowHideMenuFunc);
 
 		CLISTMENUITEM menu = {0};
@@ -326,8 +336,6 @@ int CreateFrame()
 		menu.pszName = Translate("Show My Details");
 		menu.pszService= MODULE_NAME "/ShowHideMyDetails";
 		hMenuShowHideFrame = (HANDLE)CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&menu);
-		/////////////////////
-
 
 		if(DBGetContactSettingByte(0, MODULE_NAME, SETTING_FRAME_VISIBLE, 1) == 1) 
 		{
@@ -608,6 +616,12 @@ void DeleteTooltipWindows(MyDetailsFrameData *data)
 		DestroyWindow(data->away_msg_tt_hwnd);
 		data->away_msg_tt_hwnd = NULL;
 	}
+
+	if (data->listening_to_tt_hwnd != NULL)
+	{ 
+		DestroyWindow(data->listening_to_tt_hwnd);
+		data->listening_to_tt_hwnd = NULL;
+	}
 }
 
 void CalcRectangles(HWND hwnd)
@@ -628,6 +642,7 @@ void CalcRectangles(HWND hwnd)
 	data->draw_nick = false;
 	data->draw_status = false;
 	data->draw_away_msg = false;
+	data->draw_listening_to = false;
 
 	DeleteTooltipWindows(data);
 
@@ -884,6 +899,86 @@ void CalcRectangles(HWND hwnd)
 
 			next_top = data->away_msg_rect.bottom + SPACE_TEXT_TEXT;
 		}
+
+		// Fits more?
+		if (next_top + 2 * BORDER_SPACE > r.bottom) 
+			goto finish;
+
+		if (next_top > avatar_bottom && opts.use_avatar_space_to_draw_text)
+			text_left = r.left;
+
+		// Listening to
+		if(proto->ListeningToEnabled() && proto->GetStatus() > ID_STATUS_OFFLINE) 
+		{
+			data->draw_listening_to = true;
+
+			if (proto->listening_to[0] == '\0')
+			{
+				SelectObject(hdc, hFont[FONT_LISTENING_TO]);
+
+				data->listening_to_rect = GetRect(hdc, r, proto->listening_to, DEFAULT_LISTENING_TO, proto, uFormat, 
+							  next_top, text_left);
+
+				data->listening_to_text_rect = data->listening_to_rect;
+				ZeroMemory(&data->listening_to_icon_rect, sizeof(data->listening_to_icon_rect));
+
+				next_top = data->listening_to_rect.bottom + SPACE_TEXT_TEXT;
+			}
+			else
+			{
+				SelectObject(hdc, hFont[FONT_LISTENING_TO]);
+
+				// Text size
+				RECT r_tmp = r;
+				DrawText(hdc, proto->listening_to, strlen(proto->listening_to), &r_tmp, 
+						 DT_CALCRECT | (uFormat & ~DT_END_ELLIPSIS));
+
+				SIZE s;
+				s.cy = max(r_tmp.bottom - r_tmp.top, ICON_SIZE);
+				s.cx = ICON_SIZE + SPACE_ICON_TEXT + r_tmp.right - r_tmp.left;
+
+				// listening to global rect
+				data->listening_to_rect = GetRect(hdc, r, s, uFormat, next_top, text_left, true, false);
+
+				data->listening_to_tt_hwnd = CreateTooltip(hwnd, data->listening_to_rect);
+
+				next_top = data->listening_to_rect.bottom + SPACE_TEXT_TEXT;
+
+				RECT rc_inner = data->listening_to_rect;
+				rc_inner.top += BORDER_SPACE;
+				rc_inner.bottom -= BORDER_SPACE;
+				rc_inner.left += BORDER_SPACE;
+				rc_inner.right -= BORDER_SPACE;
+
+				// Icon
+				data->listening_to_icon_rect = rc_inner;
+
+				if (opts.draw_text_align_right || opts.draw_text_rtl)
+					data->listening_to_icon_rect.left = max(data->listening_to_icon_rect.right - ICON_SIZE, rc_inner.left);
+				else
+					data->listening_to_icon_rect.right = min(data->listening_to_icon_rect.left + ICON_SIZE, rc_inner.right);
+
+				if (r_tmp.bottom - r_tmp.top > ICON_SIZE)
+				{
+					data->listening_to_icon_rect.top += (r_tmp.bottom - r_tmp.top - ICON_SIZE) / 2;
+					data->listening_to_icon_rect.bottom = data->listening_to_icon_rect.top + ICON_SIZE;
+				}
+
+				// Text
+				data->listening_to_text_rect = GetInnerRect(rc_inner, r);
+
+				if (opts.draw_text_align_right || opts.draw_text_rtl)
+					data->listening_to_text_rect.right = max(data->listening_to_icon_rect.left - SPACE_ICON_TEXT, rc_inner.left);
+				else
+					data->listening_to_text_rect.left = min(data->listening_to_icon_rect.right + SPACE_ICON_TEXT, rc_inner.right);
+
+				if (ICON_SIZE > r_tmp.bottom - r_tmp.top)
+				{
+					data->listening_to_text_rect.top += (ICON_SIZE - (r_tmp.bottom - r_tmp.top)) / 2;
+					data->listening_to_text_rect.bottom = data->listening_to_text_rect.top + r_tmp.bottom - r_tmp.top;
+				}
+			}
+		}
 	}
 
 	r.bottom = max(next_top - SPACE_TEXT_TEXT, avatar_bottom);
@@ -952,7 +1047,7 @@ HBITMAP CreateBitmap32(int cx, int cy)
     return DirectBitmap;
 }
 
-void EraseBackground(HWND hwnd, HDC hdc)
+ void EraseBackground(HWND hwnd, HDC hdc)
 {
 	RECT r;
 	GetClientRect(hwnd, &r);
@@ -1227,6 +1322,62 @@ void Draw(HWND hwnd, HDC hdc_orig)
 		DeleteObject(rgn);
 	}
 
+	// Listening to
+	if (data->draw_listening_to)
+	{
+		if (data->listening_to_icon_rect.left == 0 && data->listening_to_icon_rect.right == 0)
+		{
+			RECT rc = GetInnerRect(data->listening_to_rect, r);
+			HRGN rgn = CreateRectRgnIndirect(&rc);
+			SelectClipRgn(hdc, rgn);
+
+			SelectObject(hdc, hFont[FONT_LISTENING_TO]);
+			SetTextColor(hdc, font_colour[FONT_LISTENING_TO]);
+
+			DrawTextWithRect(hdc, proto->listening_to, DEFAULT_LISTENING_TO, rc, uFormat, 
+							 data->mouse_over_listening_to && protocols->CanSetListeningTo(), proto);
+
+			// Clipping rgn
+			SelectClipRgn(hdc, NULL);
+			DeleteObject(rgn);
+		}
+		else
+		{
+			RECT rtmp = GetInnerRect(data->listening_to_rect, r);
+			RECT rr = rtmp;
+			rr.top += BORDER_SPACE;
+			rr.bottom -= BORDER_SPACE;
+			rr.left += BORDER_SPACE;
+			rr.right -= BORDER_SPACE;
+
+			RECT rc = GetInnerRect(data->listening_to_icon_rect, rr);
+			HRGN rgn = CreateRectRgnIndirect(&rc);
+			SelectClipRgn(hdc, rgn);
+
+			DrawIconEx(hdc, data->listening_to_icon_rect.left, data->listening_to_icon_rect.top, 
+						LoadIcon(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO)), 
+						ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+			
+			SelectClipRgn(hdc, NULL);
+			DeleteObject(rgn);
+
+			rc = GetInnerRect(data->listening_to_text_rect, rr);
+			rgn = CreateRectRgnIndirect(&rc);
+			SelectClipRgn(hdc, rgn);
+
+			SelectObject(hdc, hFont[FONT_LISTENING_TO]);
+			SetTextColor(hdc, font_colour[FONT_LISTENING_TO]);
+
+			DrawText(hdc, proto->listening_to, strlen(proto->listening_to), &rc, uFormat);
+
+			SelectClipRgn(hdc, NULL);
+			DeleteObject(rgn);
+
+			if (data->mouse_over_listening_to && protocols->CanSetListeningTo())
+				FrameRect(hdc, &rtmp, (HBRUSH) GetStockObject(GRAY_BRUSH));
+		}
+	}
+
 	SelectObject(hdc, old_font);
 	SetTextColor(hdc, old_color);
 	SetBkMode(hdc, old_bk_mode);
@@ -1417,6 +1568,72 @@ void ShowProtocolStatusMenu(HWND hwnd, MyDetailsFrameData *data, Protocol *proto
 	}
 }
 
+void ShowListeningToMenu(HWND hwnd, MyDetailsFrameData *data, Protocol *proto, POINT &p)
+{
+	HMENU menu = LoadMenu(hInst, MAKEINTRESOURCE(IDR_MENU1));
+	HMENU submenu = GetSubMenu(menu, 5);
+	CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)submenu,0);
+
+	// Add this proto to menu
+	char tmp[128];
+	mir_snprintf(tmp, sizeof(tmp), Translate("Enable Listening To for %s"), proto->description);
+
+	MENUITEMINFO mii = {0};
+	mii.cbSize = sizeof(mii);
+	mii.fMask = MIIM_ID | MIIM_TYPE | MIIM_STATE;
+	mii.fType = MFT_STRING;
+	mii.fState = proto->ListeningToEnabled() ? MFS_CHECKED : 0;
+	mii.dwTypeData = tmp;
+	mii.cch = strlen(tmp);
+	mii.wID = 1;
+
+	if (!proto->CanSetListeningTo())
+	{
+		mii.fState |= MFS_DISABLED;
+	}
+
+	InsertMenuItem(submenu, 0, TRUE, &mii);
+
+	ZeroMemory(&mii, sizeof(mii));
+	mii.cbSize = sizeof(mii);
+	mii.fMask = MIIM_STATE;
+	mii.fState = protocols->ListeningToEnabled() ? MFS_CHECKED : 0;
+
+	if (!protocols->CanSetListeningTo())
+	{
+		mii.fState |= MFS_DISABLED;
+	}
+
+	SetMenuItemInfo(submenu, ID_LISTENINGTOPOPUP_SENDLISTENINGTO, FALSE, &mii);
+	
+	if (opts.draw_text_align_right)
+		p.x = data->listening_to_rect.right;
+	else
+		p.x = data->listening_to_rect.left;
+	p.y =  data->listening_to_rect.bottom+1;
+	ClientToScreen(hwnd, &p);
+	
+	int ret = TrackPopupMenu(submenu, TPM_TOPALIGN|TPM_RIGHTBUTTON|TPM_RETURNCMD
+			| (opts.draw_text_align_right ? TPM_RIGHTALIGN : TPM_LEFTALIGN), p.x, p.y, 0, hwnd, NULL);
+	DestroyMenu(menu);
+
+	switch(ret)
+	{
+		case 1:
+		{
+			CallService(MS_LISTENINGTO_ENABLE, (LPARAM) proto->name, !proto->ListeningToEnabled());
+			break;
+		}
+		case ID_LISTENINGTOPOPUP_SENDLISTENINGTO:
+		{
+			CallService(MS_LISTENINGTO_ENABLE, 0, !protocols->ListeningToEnabled());
+			break;
+		}
+	}
+
+}
+
+
 LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 	switch(msg) 
@@ -1510,6 +1727,8 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 					protocols->GetStatuses();
 					protocols->GetStatusMsgs();
+
+					data->recalc_rectangles = true;
 				}
 
 				RedrawFrame();
@@ -1568,6 +1787,11 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					ShowProtocolStatusMenu(hwnd, data, proto, p);
 
 				data->showing_menu = false;
+			}
+			// In listening to?
+			else if (data->draw_listening_to && InsideRect(&p, &data->listening_to_rect) && protocols->CanSetListeningTo())
+			{
+				ShowListeningToMenu(hwnd, data, proto, p);
 			}
 			// In protocol?
 			else if (data->draw_proto && InsideRect(&p, &data->proto_rect))
@@ -1811,6 +2035,11 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				else
 					ShowGlobalStatusMenu(hwnd, data, proto, p);
 			}
+			// In listening to?
+			else if (data->draw_listening_to && InsideRect(&p, &data->listening_to_rect) && protocols->CanSetListeningTo())
+			{
+				ShowListeningToMenu(hwnd, data, proto, p);
+			}
 			// In protocol?
 			else if (data->draw_proto && InsideRect(&p, &data->proto_rect))
 			{
@@ -1830,6 +2059,24 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				// Add this proto to menu
 				char tmp[128];
 				MENUITEMINFO mii = {0};
+
+				mir_snprintf(tmp, sizeof(tmp), Translate("Enable Listening To for %s"), proto->description);
+
+				ZeroMemory(&mii, sizeof(mii));
+				mii.cbSize = sizeof(mii);
+				mii.fMask = MIIM_ID | MIIM_TYPE | MIIM_STATE;
+				mii.fType = MFT_STRING;
+				mii.fState = proto->ListeningToEnabled() ? MFS_CHECKED : 0;
+				mii.dwTypeData = tmp;
+				mii.cch = strlen(tmp);
+				mii.wID = 4;
+
+				if (!proto->CanSetListeningTo())
+				{
+					mii.fState |= MFS_DISABLED;
+				}
+
+				InsertMenuItem(submenu, 0, TRUE, &mii);
 
 				if (protocols->CanSetStatusMsgPerProtocol())
 				{
@@ -1911,6 +2158,18 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 				InsertMenuItem(submenu, 0, TRUE, &mii);
 
+				ZeroMemory(&mii, sizeof(mii));
+				mii.cbSize = sizeof(mii);
+				mii.fMask = MIIM_STATE;
+				mii.fState = protocols->ListeningToEnabled() ? MFS_CHECKED : 0;
+
+				if (!protocols->CanSetListeningTo())
+				{
+					mii.fState |= MFS_DISABLED;
+				}
+
+				SetMenuItemInfo(submenu, ID_CONTEXTPOPUP_ENABLELISTENINGTO, FALSE, &mii);
+
 				ClientToScreen(hwnd, &p);
 	
 				int ret = TrackPopupMenu(submenu, TPM_TOPALIGN|TPM_LEFTALIGN|TPM_RIGHTBUTTON|TPM_RETURNCMD, p.x, p.y, 0, hwnd, NULL);
@@ -1946,6 +2205,16 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					case ID_STATUSMESSAGEPOPUP_SETMYSTATUSMESSAGE:
 					{
 						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, 0, 0);
+						break;
+					}
+					case 4:
+					{
+						CallService(MS_LISTENINGTO_ENABLE, (LPARAM) proto->name, !proto->ListeningToEnabled());
+						break;
+					}
+					case ID_CONTEXTPOPUP_ENABLELISTENINGTO:
+					{
+						CallService(MS_LISTENINGTO_ENABLE, 0, !protocols->ListeningToEnabled());
 						break;
 					}
 					case ID_SHOW_NEXT_PROTO:
@@ -1995,6 +2264,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			MakeHover(hwnd, data->draw_proto, &data->mouse_over_proto, NULL, NULL);
 			MakeHover(hwnd, data->draw_status, &data->mouse_over_status, NULL, NULL);
 			MakeHover(hwnd, data->draw_away_msg, &data->mouse_over_away_msg, NULL, NULL);
+			MakeHover(hwnd, data->draw_listening_to, &data->mouse_over_listening_to, NULL, NULL);
 
 			break;
 		}
@@ -2022,6 +2292,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			MakeHover(hwnd, data->draw_proto, &data->mouse_over_proto, &p, &data->proto_rect);
 			MakeHover(hwnd, data->draw_status, &data->mouse_over_status, &p, &data->status_rect);
 			MakeHover(hwnd, data->draw_away_msg, &data->mouse_over_away_msg, &p, &data->away_msg_rect);
+			MakeHover(hwnd, data->draw_listening_to, &data->mouse_over_listening_to, &p, &data->listening_to_rect);
 
 			break;
 		}
@@ -2047,6 +2318,8 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 						lpttd->lpszText = proto->status_name;
 					else if (lpnmhdr->hwndFrom == data->away_msg_tt_hwnd)
 						lpttd->lpszText = proto->status_message;
+					else if (lpnmhdr->hwndFrom == data->listening_to_tt_hwnd)
+						lpttd->lpszText = proto->listening_to;
 
 					return 0;
 				}
@@ -2126,6 +2399,19 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			data->get_status_messages = true;
 
 			RefreshFrame();
+			break;
+		}
+
+		case MWM_LISTENINGTO_CHANGED:
+		{
+			if (wParam != NULL)
+			{
+				Protocol *proto = protocols->Get((const char *) wParam);
+				if (proto != NULL)
+					proto->GetListeningTo();
+			}
+
+			RefreshFrameAndCalcRects();
 			break;
 		}
 	}
@@ -2334,6 +2620,9 @@ int PluginCommand_ShowProtocol(WPARAM wParam,LPARAM lParam)
 
 int SettingsChangedHook(WPARAM wParam, LPARAM lParam) 
 {
+	if (hwnd_frame == NULL)
+		return 0;
+
 	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
 
 	if ((HANDLE)wParam == NULL)
@@ -2349,11 +2638,8 @@ int SettingsChangedHook(WPARAM wParam, LPARAM lParam)
 					 && !strcmp(cws->szSetting, proto->custom_status_message) ))
 		{
 			// Status changed
-			if (hwnd_frame != NULL)
-			{
-				if (proto != NULL)
-					PostMessage(hwnd_frame, MWM_STATUS_CHANGED, (WPARAM) proto->name, 0);
-			}
+			if (proto != NULL)
+				PostMessage(hwnd_frame, MWM_STATUS_CHANGED, (WPARAM) proto->name, 0);
 		}
 		else if(!strcmp(cws->szSetting,"MyHandle")
 				|| !strcmp(cws->szSetting,"UIN") 
@@ -2364,17 +2650,17 @@ int SettingsChangedHook(WPARAM wParam, LPARAM lParam)
 				|| !strcmp(cws->szSetting,"JID"))
 		{
 			// Name changed
-			if (hwnd_frame != NULL)
-			{
-				if (proto != NULL)
-					PostMessage(hwnd_frame, MWM_NICK_CHANGED, (WPARAM) proto->name, 0);
-			}
+			if (proto != NULL)
+				PostMessage(hwnd_frame, MWM_NICK_CHANGED, (WPARAM) proto->name, 0);
 		}
 		else if (strstr(cws->szModule,"Away"))
 		{
 			// Status message changed
-			if (hwnd_frame != NULL)
-				PostMessage(hwnd_frame, MWM_STATUS_MSG_CHANGED, 0, 0);
+			PostMessage(hwnd_frame, MWM_STATUS_MSG_CHANGED, 0, 0);
+		}
+		else if (proto != NULL && strcmp(cws->szSetting,"ListeningTo") == 0)
+		{
+			PostMessage(hwnd_frame, MWM_LISTENINGTO_CHANGED, (WPARAM) proto->name, 0);
 		}
 	}
 
@@ -2383,41 +2669,49 @@ int SettingsChangedHook(WPARAM wParam, LPARAM lParam)
 
 int AvatarChangedHook(WPARAM wParam, LPARAM lParam) 
 {
-	if (hwnd_frame != NULL)
-	{
-		Protocol *proto = protocols->Get((const char *) wParam);
+	if (hwnd_frame == NULL)
+		return 0;
 
-		if (proto != NULL)
-			PostMessage(hwnd_frame, MWM_AVATAR_CHANGED, (WPARAM) proto->name, 0);
-	}
+	Protocol *proto = protocols->Get((const char *) wParam);
+
+	if (proto != NULL)
+		PostMessage(hwnd_frame, MWM_AVATAR_CHANGED, (WPARAM) proto->name, 0);
 
 	return 0;
 }
 
 int ProtoAckHook(WPARAM wParam, LPARAM lParam)
 {
+	if (hwnd_frame == NULL)
+		return 0;
+
 	ACKDATA *ack = (ACKDATA*)lParam;
 
 	if (ack->type == ACKTYPE_STATUS) 
 	{
-		if (hwnd_frame != NULL)
-		{
-			Protocol *proto = protocols->Get((const char *) ack->szModule);
+		Protocol *proto = protocols->Get((const char *) ack->szModule);
 
-			if (proto != NULL)
-				PostMessage(hwnd_frame, MWM_STATUS_CHANGED, (WPARAM) proto->name, 0);
-		}
+		if (proto != NULL)
+			PostMessage(hwnd_frame, MWM_STATUS_CHANGED, (WPARAM) proto->name, 0);
 	}
 	else if (ack->type == ACKTYPE_AWAYMSG)
 	{
-		if (hwnd_frame != NULL)
-		{
-			Protocol *proto = protocols->Get((const char *) ack->szModule);
+		Protocol *proto = protocols->Get((const char *) ack->szModule);
 
-			if (proto != NULL)
-				PostMessage(hwnd_frame, MWM_STATUS_MSG_CHANGED, (WPARAM) proto->name, 0);
-		}
+		if (proto != NULL)
+			PostMessage(hwnd_frame, MWM_STATUS_MSG_CHANGED, (WPARAM) proto->name, 0);
 	}
+
+	return 0;
+}
+
+int ListeningtoEnableStateChangedHook(WPARAM wParam,LPARAM lParam)
+{
+	if (hwnd_frame == NULL)
+		return 0;
+
+	if (wParam == NULL || protocols->Get((const char *) wParam) != NULL)
+		PostMessage(hwnd_frame, MWM_LISTENINGTO_CHANGED, wParam, 0);
 
 	return 0;
 }
