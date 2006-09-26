@@ -56,7 +56,7 @@ END
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-#pragma code_page(1252)
+#pragma code_page(1251)
 #endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
@@ -80,7 +80,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 179
         TOPMARGIN, 7
-        BOTTOMMARGIN, 43
+        BOTTOMMARGIN, 69
     END
 
     IDD_YAMNOPT, DIALOG
@@ -134,8 +134,8 @@ END
 //
 
 IDD_DLGVIEWMESSAGES DIALOG DISCARDABLE  50, 200, 460, 110
-STYLE DS_3DLOOK | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | 
-    WS_THICKFRAME
+STYLE DS_3DLOOK | DS_CENTER | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU | WS_THICKFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "List4",IDC_LISTMAILS,"SysListView32",LVS_REPORT | 
@@ -147,32 +147,32 @@ BEGIN
     PUSHBUTTON      "Select All",IDC_BTNCHECKALL,150,91,92,14
 END
 
-IDD_DLGBADCONNECT DIALOG DISCARDABLE  0, 0, 186, 50
-STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+IDD_DLGBADCONNECT DIALOG DISCARDABLE  0, 0, 186, 76
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 FONT 8, "MS Shell Dlg"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDC_BTNOK,70,30,50,14
-    LTEXT           "",IDC_STATICMSG,5,7,170,18
+    DEFPUSHBUTTON   "OK",IDC_BTNOK,69,55,50,14
+    LTEXT           "",IDC_STATICMSG,7,7,172,37
 END
 
-IDD_YAMNOPT DIALOGEX 0, 0, 320, 230
-STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
+IDD_YAMNOPT DIALOGEX 0, 0, 320, 231
+STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_BORDER
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "HotKey1",IDC_HKFORCE,"msctls_hotkey32",WS_BORDER | 
                     WS_TABSTOP,169,8,110,12
     LTEXT           "Hotkey for mail check:",IDC_STATIC,7,10,153,10
-    GROUPBOX        "Installed plugins",IDC_STATIC,7,134,305,96
+    GROUPBOX        "Installed plugins",IDC_STATIC,7,135,305,96
     COMBOBOX        IDC_COMBOPLUGINS,13,144,294,58,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     LTEXT           "Version:",IDC_STATIC,13,160,72,11
     LTEXT           "Description:",IDC_STATIC,13,171,72,23
     LTEXT           "Copyright:",IDC_STATIC,13,194,72,10
-    LTEXT           "Contact:",IDC_STATIC,13,204,72,11
-    LTEXT           "WWW:",IDC_STATIC,13,215,72,11
-    CONTROL         "",IDC_STWWW,"Hyperlink",WS_TABSTOP,85,215,222,11
-    EDITTEXT        IDC_STMAIL,85,204,222,12,ES_AUTOHSCROLL | ES_READONLY | 
+    LTEXT           "Contact:",IDC_STATIC,13,207,72,11
+    LTEXT           "WWW:",IDC_STATIC,13,231,72,11
+    CONTROL         "",IDC_STWWW,"Hyperlink",WS_TABSTOP,85,231,222,11
+    EDITTEXT        IDC_STMAIL,85,206,222,12,ES_AUTOHSCROLL | ES_READONLY | 
                     NOT WS_BORDER | WS_GROUP
     EDITTEXT        IDC_STCOPY,85,193,222,12,ES_AUTOHSCROLL | ES_READONLY | 
                     NOT WS_BORDER | WS_GROUP
@@ -338,7 +338,6 @@ IDI_ICOYAMN3            ICON    DISCARDABLE     "icoyamn3.ico"
 IDI_ICONEUTRAL          ICON    DISCARDABLE     "iconeutral.ico"
 IDI_ICOTTBDW            ICON    DISCARDABLE     "iconttbdown.ico"
 IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
-
 #endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
