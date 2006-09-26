@@ -24,8 +24,8 @@
 	#define YAMN_FILENAME "yamn_2in1"
 #endif //WIN2IN1
 
-#define	YAMN_VERSION			PLUGIN_MAKE_VERSION(0,0,1,8) 	//ok but do not forget rewrite version for debug release in debug.cpp and POP3 filter in pop3comm.cpp
-#define	YAMN_VERSION_C			"0.0.1.8"
+#define	YAMN_VERSION			PLUGIN_MAKE_VERSION(0,0,1,9) 	//ok but do not forget rewrite version for debug release in debug.cpp and POP3 filter in pop3comm.cpp
+#define	YAMN_VERSION_C			"0.0.1.9"
 #define YAMN_NEWMAILSNDDESC		"YAMN: new mail"
 #define YAMN_CONNECTFAILSNDDESC	"YAMN: connect failed"
 #define	YAMN_CONNECTFAILSOUND	"YAMN/Sound/ConnectFail"

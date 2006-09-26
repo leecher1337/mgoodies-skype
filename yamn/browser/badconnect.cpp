@@ -331,9 +331,9 @@ DWORD WINAPI BadConnection(LPVOID Param)
 		if(ActualAccount->BadConnectN.Flags & YAMN_ACC_SND)
 			CallService(MS_SKIN_PLAYSOUND,0,(LPARAM)YAMN_CONNECTFAILSOUND);
 		if(ActualAccount->BadConnectN.Flags & YAMN_ACC_MSG)
-			Shell_NotifyIcon(NIM_ADD,&nid);
-		if(ActualAccount->BadConnectN.Flags & YAMN_ACC_ICO)
 			ShowWindow(hBadConnect,SW_SHOWNORMAL);
+		if(ActualAccount->BadConnectN.Flags & YAMN_ACC_ICO)
+			Shell_NotifyIcon(NIM_ADD,&nid);
 #ifdef DEBUG_SYNCHRO
 		DebugLog(SynchroFile,"BadConnect:ActualAccountSO-read done\n");
 #endif
