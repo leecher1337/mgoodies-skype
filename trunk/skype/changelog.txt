@@ -13,6 +13,8 @@ CODE
 
 HISTORY
 -------
+0.0.0.27 - * Improved portable skype integration
+
 0.0.0.27 - * Try to fix the start using custom command line
 		   + Close skype using custom command line too
 		   	
