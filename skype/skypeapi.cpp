@@ -1103,9 +1103,9 @@ int ConnectToSkypeAPI(char *path) {
 	BOOL SkypeLaunched=FALSE;
 	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
 	int counter=0, i, j, maxattempts=DBGetContactSettingWord(NULL, pszSkypeProtoName, "ConnectionAttempts", 10);
-	char *args[5];
-	char *SkypeOptions[]={"/notray", "/nosplash", "/minimized"};
-	const int SkypeDefaults[]={0, 1, 1};
+	char *args[6];
+	char *SkypeOptions[]={"/notray", "/nosplash", "/minimized", "/removable", "/datapath:"};
+	const int SkypeDefaults[]={0, 1, 1, 0, 0};
 
 	// Prevent reentrance
 	LOG("ConnectToSkypeAPI", "started.");
@@ -1214,9 +1214,20 @@ int ConnectToSkypeAPI(char *path) {
 					LOG("ConnectToSkypeAPI", "Starting Skype, as it's not running");
 
 					j=1;
-					for (i=0; i<3; i++)
+					for (i=0; i<5; i++)
 						if (DBGetContactSettingByte(NULL, pszSkypeProtoName, SkypeOptions[i]+1, SkypeDefaults[i])) {
-							args[j]=SkypeOptions[i];
+							if( i == 4)
+							{
+								DBVARIANT dbv;
+								if(!DBGetContactSetting(NULL,pszSkypeProtoName,"datapath",&dbv)) 
+								{
+									args[j]=strcat(SkypeOptions[i], dbv.pszVal);
+									DBFreeVariant(&dbv);
+								}
+
+							}
+							else
+								args[j]=SkypeOptions[i];
 							LOG("Using Skype parameter: ", args[j]);
 							j++;
 						}

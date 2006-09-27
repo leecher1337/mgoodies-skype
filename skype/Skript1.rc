@@ -54,39 +54,25 @@ BEGIN
     CONTROL         "/MINIMIZED - Start Skype minimized",IDC_MINIMIZED,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,35,268,12
     CONTROL         "Shut down Skype when you close Miranda",IDC_SHUTDOWN,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,89,296,10
-    CONTROL         "Enable Skype Menu options (currently: Find/Add user)",
-                    IDC_ENABLEMENU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    103,296,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,149,296,10
     CONTROL         "Unload Skype when you change to status ""offline""",
                     IDC_UNLOADOFFLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    10,116,296,11
-    CONTROL         "Use Popup-Plugin (if installed) for displaying messages ",
-                    IDC_USEPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    131,296,9
-    CONTROL         "Use groupchat interface for conversations - requires chat.dll (Please don't!)",
-                    IDC_GROUPCHAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    156,296,9
-    CONTROL         "Suppress all error-Messages (not recommended, but if it annoys you.. ;)",
-                    IDC_NOERRORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    143,296,9
+                    11,165,296,11
     LTEXT           "Try at least",IDC_STATIC,10,183,39,8
     LTEXT           "times to connect to Skype API before giving up",
                     IDC_STATIC,76,183,231,8
     EDITTEXT        IDC_CONNATTEMPTS,52,182,19,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "SkypeOut contacts are in status",IDC_STATIC,10,196,120,
-                    8
-    COMBOBOX        IDC_SKYPEOUTSTAT,138,194,79,54,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Keep requested online status on startup under every circumstance",
-                    IDC_KEEPSTATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    169,296,9
-    PUSHBUTTON      "Cleanup Nicknames",IDC_CLEANUP,10,206,80,18,
-                    BS_MULTILINE
     GROUPBOX        "Skype",IDC_STATIC,4,1,309,226
-    CONTROL         "Use your custom command line",IDC_CUSTOMCOMMAND,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,36,62,268,10
-    EDITTEXT        IDC_COMMANDLINE,47,74,260,12,ES_AUTOHSCROLL
+    CONTROL         "Use your custom path",IDC_CUSTOMCOMMAND,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,36,110,268,10
+    EDITTEXT        IDC_COMMANDLINE,47,124,260,12,ES_AUTOHSCROLL
+    CONTROL         "/REMOVEABLE - For running portable skype",
+                    IDC_REMOVEABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,
+                    64,268,11
+    CONTROL         "/DATAPATH - Specify the path for portable skype",
+                    IDC_DATAPATHO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,
+                    78,268,11
+    EDITTEXT        IDC_DATAPATH,47,92,260,12,ES_AUTOHSCROLL
 END
 
 IDD_DIAL DIALOG DISCARDABLE  0, 0, 146, 52
@@ -182,6 +168,33 @@ BEGIN
     PUSHBUTTON      "Save",IDC_SAVEDETAILS,168,114,45,14
 END
 
+IDD_OPT_ADVANCED DIALOGEX 0, 0, 313, 230
+STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    GROUPBOX        "Skype Advanced",IDC_STATIC,4,1,309,225
+    CONTROL         "Enable Skype Menu options (currently: Find/Add user)",
+                    IDC_ENABLEMENU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,
+                    14,296,10
+    CONTROL         "Use Popup-Plugin (if installed) for displaying messages ",
+                    IDC_USEPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,31,
+                    296,9
+    CONTROL         "Use groupchat interface for conversations - requires chat.dll (Please don't!)",
+                    IDC_GROUPCHAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,68,
+                    296,9
+    CONTROL         "Suppress all error-Messages (not recommended, but if it annoys you.. ;)",
+                    IDC_NOERRORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,49,
+                    296,9
+    LTEXT           "SkypeOut contacts are in status",IDC_STATIC,9,108,120,8
+    COMBOBOX        IDC_SKYPEOUTSTAT,137,105,79,54,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Keep requested online status on startup under every circumstance",
+                    IDC_KEEPSTATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,86,
+                    296,9
+    PUSHBUTTON      "Cleanup Nicknames",IDC_CLEANUP,9,123,80,18,BS_MULTILINE
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -241,6 +254,11 @@ BEGIN
         TOPMARGIN, 4
         BOTTOMMARGIN, 128
     END
+
+    IDD_OPT_ADVANCED, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 226
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -273,8 +291,8 @@ IDI_INVITE              ICON    DISCARDABLE     "res\\Invite.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,27
- PRODUCTVERSION 0,0,0,27
+ FILEVERSION 0,0,0,28
+ PRODUCTVERSION 0,0,0,28
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -292,14 +310,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Miranda IM community\0"
             VALUE "FileDescription", "Skype\0"
-            VALUE "FileVersion", "0, 0, 0, 27\0"
+            VALUE "FileVersion", "0, 0, 0, 28\0"
             VALUE "InternalName", "Skype\0"
             VALUE "LegalCopyright", "Copyright © 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Skype.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Skype_protocol for Miranda IM\0"
-            VALUE "ProductVersion", "0, 0, 0, 27\0"
+            VALUE "ProductVersion", "0, 0, 0, 28\0"
             VALUE "SpecialBuild", "\0"
         END
     END
