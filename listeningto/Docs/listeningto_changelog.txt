@@ -1,6 +1,11 @@
-ListeningTo 0.1.0.3
+ListeningTo 0.1.0.4
 
 Changelog:
+
+. 0.1.0.4
+  * Fixes in winamp plugin (first song was not set and pause was not handled)
+  + Added help file in listeningto dir
+  * WATrack integration works
 
 . 0.1.0.3
   + Event to help My Details
