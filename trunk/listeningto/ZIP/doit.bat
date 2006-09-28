@@ -35,6 +35,7 @@ cd Plugins
 mkdir listeningto
 cd listeningto
 copy "..\..\..\..\..\bin\release\Plugins\listeningto\*.dll"
+copy ..\..\..\Docs\readme_players.txt
 cd ..
 cd ..
 mkdir src

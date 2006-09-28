@@ -32,8 +32,10 @@ winampGeneralPurposePlugin plugin = {
 #define WA_STATE_CHANGE 0x0000029A
 
 WNDPROC oldWndProc = NULL;
+WNDPROC oldMainWndProc = NULL;
 HMENU hMenuCreated = NULL;
 HWND hMsgWnd = NULL;
+HWND hPlWnd = NULL;
 HINSTANCE hInst = NULL;
 
 // Message window proc
@@ -103,14 +105,33 @@ extern "C" winampGeneralPurposePlugin * winampGetGeneralPurposePlugin()
 	return &plugin; 
 }
 
-
-inline void SendData(HWND hwnd, WCHAR *text) {
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+	// Prepare the struct
+	WCHAR *text = (WCHAR *) lParam;
 	COPYDATASTRUCT cds;
 	cds.dwData = MIRANDA_DW_PROTECTION;
 	cds.lpData = text;
 	cds.cbData = (wcslen(text) + 1) * sizeof(WCHAR);
 
-	SendMessage(hwnd, WM_COPYDATA, (WPARAM) plugin.hwndParent, (LPARAM) &cds);
+	// Find the windows
+	char class_name[1024];
+	if (GetClassName(hwnd, class_name, sizeof(class_name)))
+	{
+		class_name[sizeof(class_name)-1] = '\0';
+
+		if (strcmpi(MIRANDA_WINDOWCLASS, class_name) == 0) 
+		{
+			SendMessage(hwnd, WM_COPYDATA, (WPARAM) plugin.hwndParent, (LPARAM) &cds);
+		}
+	}
+
+	return TRUE;
+}
+
+inline void SendData(WCHAR *text) 
+{
+	EnumWindows(EnumWindowsProc, (LPARAM) text);
 }
 
 
@@ -149,26 +170,14 @@ void GetMetadata(extendedFileInfoStruct *efi, char *field, WCHAR *data, size_t &
 }
 
 
-void SendDataToMiranda(HWND hwnd, long currentSong)
+void SendDataToMiranda(char *filename)
 {
 	extendedFileInfoStruct efi;
 	char tmp[256];
 
 	efi.ret = tmp;
 	efi.retlen = sizeof(tmp);
-
-	// Get filename
-	efi.filename = (char *) SendMessage(plugin.hwndParent, WM_WA_IPC, currentSong, IPC_GETPLAYLISTFILE);
-
-	if (efi.filename == NULL 
-		|| efi.filename[0] == '\0' 
-		// Ignore streams
-		|| strstr(efi.filename, "//") != NULL)
-	{
-		// Send empty data
-		SendData(hwnd, L"0\\0Winamp\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0");
-		return;
-	}
+	efi.filename = filename;
 
 	WCHAR data[DATA_SIZE];
 	size_t size = DATA_SIZE;
@@ -178,7 +187,7 @@ void SendDataToMiranda(HWND hwnd, long currentSong)
 	Concat(data, size, "1");
 	Concat(data, size, "Winamp");
 
-	if (SendMessage(hwnd, WM_WA_IPC, 3, IPC_GETINFO))
+	if (SendMessage(plugin.hwndParent, WM_WA_IPC, 3, IPC_GETINFO))
 		Concat(data, size, "Video");
 	else
 		Concat(data, size, "Music");
@@ -204,24 +213,81 @@ void SendDataToMiranda(HWND hwnd, long currentSong)
 		Concat(data, size, NULL);
 	}
 
-	SendData(hwnd, data);
+	SendData(data);
 }
 
 
 // Message window proc
 LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	static BOOL last_was_stop = TRUE;
+	static DWORD last_notification = 0;
+	static char last_filename[1024] = {0};
+
 	switch(message)
 	{
 		case WM_TIMER:
 		{
-			KillTimer(hwnd, 0);
+			KillTimer(hwnd, wParam);
 
-			if (plugin.hwndParent == NULL)
+			if (wParam == 0)
 			{
-				plugin.hwndParent = FindWindow("Winamp v1.x", NULL);
-				if (plugin.hwndParent != NULL)
-					init();
+				// Startup
+				if (plugin.hwndParent == NULL)
+				{
+					plugin.hwndParent = FindWindow("Winamp v1.x", NULL);
+					if (plugin.hwndParent != NULL) 
+					{
+						init();
+
+						// If playing, show current song
+						if (SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_ISPLAYING) == 1)
+							if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
+								SetTimer(hPlWnd, 0, 500, NULL);
+					}
+				}
+			}
+			else if (wParam == 1)
+			{
+				// Song change
+				if (SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_ISPLAYING) == 1)
+				{
+					int track = SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_GETLISTPOS);
+					char *filename = (char *) SendMessage(plugin.hwndParent, WM_WA_IPC, track, IPC_GETPLAYLISTFILE);
+
+					if (filename == NULL || filename[0] == '\0')
+					{
+						if (!last_was_stop)
+						{
+							last_was_stop = TRUE;
+
+							if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
+								SendData(L"0\\0Winamp\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0");
+						}
+					}
+					else
+					{
+						if (last_was_stop || strcmpi(last_filename, filename) != 0)
+						{
+							last_was_stop = FALSE;
+							lstrcpyn(last_filename, filename, sizeof(last_filename));
+
+							// Miranda is running?
+							if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
+								SendDataToMiranda(filename);
+						}
+					}
+				}
+				else
+				{
+					if (!last_was_stop)
+					{
+						last_was_stop = TRUE;
+
+						if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
+							SendData(L"0\\0Winamp\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0");
+					}
+				}
 			}
 
 			break;
@@ -234,9 +300,6 @@ LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 // Playlist window message processor
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	static BOOL last_was_stop = FALSE;
-	static DWORD last_notification = 0;
-
 	switch(message)
 	{
 		case WM_USER:
@@ -244,60 +307,49 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if(wParam == WA_STATE_CHANGE)
 			{
 				int type = HIWORD(lParam);
-				int track = LOWORD(lParam);
-
-				if(type == 0x4000)
+				if(type == 0x4000 || type == 0)
 				{
-					if (SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_ISPLAYING) == 1)
-					{
-						DWORD now = GetTickCount();
-						if(now > last_notification + 400)
-						{
-							last_notification = now;
-
-							last_was_stop = FALSE;
-
-							// Miranda is running?
-							HWND mir_hwnd = FindWindow(MIRANDA_WINDOWCLASS, NULL);
-							if (mir_hwnd != NULL)
-								SendDataToMiranda(mir_hwnd, track);
-						}
-					}
-					else
-					{
-						if (!last_was_stop)
-						{
-							last_was_stop = TRUE;
-
-							HWND mir_hwnd = FindWindow(MIRANDA_WINDOWCLASS, NULL);
-							if (mir_hwnd != NULL)
-								SendData(mir_hwnd, L"0\\0Winamp\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0");
-						}
-					}
+					SetTimer(hMsgWnd, 1, 100, NULL);
 				}
-				else if(type == 0)
-				{
-					if (!last_was_stop)
-					{
-						last_was_stop = TRUE;
+			}
+			break;
+		}
+	}
 
-						HWND mir_hwnd = FindWindow(MIRANDA_WINDOWCLASS, NULL);
-						if (mir_hwnd != NULL)
-							SendData(mir_hwnd, L"0\\0Winamp\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0");
-					}
+	return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
+}
+
+
+LRESULT CALLBACK MainWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch(message)
+	{
+		case WM_COMMAND:
+		{
+			switch(wParam)
+			{
+				case 40046: // Pause
+				{
+					SetTimer(hMsgWnd, 1, 500, NULL);
+					break;
+				}
+				case 40045: // Play
+				{
+					SetTimer(hMsgWnd, 1, 500, NULL);
+					break;
 				}
 			}
 			break;
 		}
 		case WM_CLOSE:
 		{
+			PostMessage(hMsgWnd, WM_TIMER, 1, 0);
 			PostMessage(hMsgWnd, WM_CLOSE, 0, 0);
 			break;
 		}
-
 	}
 
-	return CallWindowProc(oldWndProc, hwnd, message, wParam, lParam);
+	return CallWindowProc(oldMainWndProc, hwnd, message, wParam, lParam);
 }
 
 
@@ -305,9 +357,10 @@ int init()
 {
 	KillTimer(hMsgWnd, 0);
 
-	HWND hwnd = (HWND) SendMessage(plugin.hwndParent, WM_WA_IPC, IPC_GETWND_PE, IPC_GETWND);
-	if (hwnd != NULL)
-		oldWndProc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG)WndProc);
+	oldMainWndProc = (WNDPROC)SetWindowLong(plugin.hwndParent, GWL_WNDPROC, (LONG) MainWndProc);
+
+	hPlWnd = (HWND) SendMessage(plugin.hwndParent, WM_WA_IPC, IPC_GETWND_PE, IPC_GETWND);
+	oldWndProc = (WNDPROC) SetWindowLong(hPlWnd, GWL_WNDPROC, (LONG)WndProc);
 
 	return 0; 
 } 
@@ -315,4 +368,6 @@ int init()
 
 void quit() 
 {
+	SetWindowLong(plugin.hwndParent, GWL_WNDPROC, (LONG) oldMainWndProc);
+	SetWindowLong(hPlWnd, GWL_WNDPROC, (LONG) oldWndProc);
 } 
