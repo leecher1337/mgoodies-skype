@@ -269,8 +269,8 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			CheckDlgButton(hwndDlg, IDC_NOSPLASH, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "nosplash", 1));
 			CheckDlgButton(hwndDlg, IDC_MINIMIZED, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "minimized", 1));
 			CheckDlgButton(hwndDlg, IDC_NOTRAY, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "notray", 0));
-			CheckDlgButton(hwndDlg, IDC_REMOVEABLE, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "removeable", 0));
-			CheckDlgButton(hwndDlg, IDC_DATAPATHO, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "datapatho", 0));
+			CheckDlgButton(hwndDlg, IDC_REMOVEABLE, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "removable", 0));
+			CheckDlgButton(hwndDlg, IDC_DATAPATHO, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "datapath:", 0));
 			CheckDlgButton(hwndDlg, IDC_SHUTDOWN, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "Shutdown", 0));
 			CheckDlgButton(hwndDlg, IDC_UNLOADOFFLINE, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0));
 			
@@ -310,8 +310,8 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UnloadOnOffline", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_UNLOADOFFLINE), BM_GETCHECK,0,0)));
 					DBWriteContactSettingWord (NULL, pszSkypeProtoName, "ConnectionAttempts", (unsigned short)GetDlgItemInt(hwndDlg, IDC_CONNATTEMPTS, NULL, FALSE));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UseCustomCommand", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0)));
-					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "datapatho", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0)));
-					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "removeable", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_REMOVEABLE), BM_GETCHECK,0,0)));
+					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "datapath:", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0)));
+					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "removable", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_REMOVEABLE), BM_GETCHECK,0,0)));
 					char text[500];
 					GetDlgItemText(hwndDlg,IDC_COMMANDLINE,text,sizeof(text));
 					DBWriteContactSettingString(NULL, pszSkypeProtoName, "CommandLine", text);

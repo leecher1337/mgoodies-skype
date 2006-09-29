@@ -2136,14 +2136,16 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	if (!UseSockets && !UseCustomCommand) {
 		if (RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Skype\\Phone", 0, KEY_READ, &MyKey)!=ERROR_SUCCESS)
 			if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Skype\\Phone", 0, KEY_READ, &MyKey)!=ERROR_SUCCESS)
+			{
 				SkypeInstalled=FALSE;
+			}
 		Buffsize=sizeof(skype_path);
 		if (SkypeInstalled==FALSE || 
 			RegQueryValueEx(MyKey, "SkypePath", NULL, NULL, (unsigned char *)skype_path,  &Buffsize)!=ERROR_SUCCESS) {
-			    OUTPUT("Skype was not found installed :(");
+			    OUTPUT("Skype was not found installed :( \nMaybe you are using portable skype.");
 				RegCloseKey(MyKey);
 				skype_path[0]=0;
-				return 0;
+				//return 0;
 		}
 		RegCloseKey(MyKey);
 	}
