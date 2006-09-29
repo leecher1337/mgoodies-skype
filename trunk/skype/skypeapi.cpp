@@ -1229,6 +1229,7 @@ int ConnectToSkypeAPI(char *path) {
 							else
 								args[j]=SkypeOptions[i];
 							LOG("Using Skype parameter: ", args[j]);
+							//MessageBox(NULL,"Using Skype parameter: ",args[j],0);
 							j++;
 						}
 					args[j]=NULL;
