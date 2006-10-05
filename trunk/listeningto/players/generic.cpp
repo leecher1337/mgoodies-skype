@@ -45,7 +45,7 @@ GenericPlayer::GenericPlayer()
 	RegisterClass(&wc);
 
 	hWnd = CreateWindow(MIRANDA_WINDOWCLASS, _T("Miranda ListeningTo receiver"), 
-						0, 0, 0, 0, 0, HWND_MESSAGE, NULL, hInst, NULL);
+						0, 0, 0, 0, 0, NULL, NULL, hInst, NULL);
 }
 
 

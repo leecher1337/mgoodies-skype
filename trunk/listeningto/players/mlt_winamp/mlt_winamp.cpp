@@ -1,6 +1,8 @@
 #include <windows.h> 
+#include <tchar.h> 
 #include <stdio.h> 
 #include <process.h>
+#include "..\..\m_listeningto.h"
 
 #include "wa_ipc.h" 
 #include "GEN.h" 
@@ -22,7 +24,6 @@ winampGeneralPurposePlugin plugin = {
 // Globals //////////////////////////////////////////////////////////////////////////////
 
 
-#define MIRANDA_WINDOWCLASS "Miranda.ListeningTo"
 #define MIRANDA_DW_PROTECTION 0x8754
 
 #define MESSAGE_WINDOWCLASS MIRANDA_WINDOWCLASS ".Winamp"
@@ -80,6 +81,8 @@ void WindowThread(void *param)
             DispatchMessage(&msg); 
         }
     }
+
+	_endthread();
 }
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hInstDll, DWORD fdwReason, LPVOID lpvReserved) 
@@ -107,13 +110,6 @@ extern "C" winampGeneralPurposePlugin * winampGetGeneralPurposePlugin()
 
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 {
-	// Prepare the struct
-	WCHAR *text = (WCHAR *) lParam;
-	COPYDATASTRUCT cds;
-	cds.dwData = MIRANDA_DW_PROTECTION;
-	cds.lpData = text;
-	cds.cbData = (wcslen(text) + 1) * sizeof(WCHAR);
-
 	// Find the windows
 	char class_name[1024];
 	if (GetClassName(hwnd, class_name, sizeof(class_name)))
@@ -122,7 +118,8 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 
 		if (strcmpi(MIRANDA_WINDOWCLASS, class_name) == 0) 
 		{
-			SendMessage(hwnd, WM_COPYDATA, (WPARAM) plugin.hwndParent, (LPARAM) &cds);
+			COPYDATASTRUCT *cds = (COPYDATASTRUCT *)lParam;
+			SendMessage(hwnd, WM_COPYDATA, (WPARAM) plugin.hwndParent, (LPARAM) cds);
 		}
 	}
 
@@ -131,7 +128,13 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 
 inline void SendData(WCHAR *text) 
 {
-	EnumWindows(EnumWindowsProc, (LPARAM) text);
+	// Prepare the struct
+	COPYDATASTRUCT cds;
+	cds.dwData = MIRANDA_DW_PROTECTION;
+	cds.lpData = text;
+	cds.cbData = (wcslen(text) + 1) * sizeof(WCHAR);
+
+	EnumWindows(EnumWindowsProc, (LPARAM) &cds);
 }
 
 
@@ -274,7 +277,7 @@ LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 
 							// Miranda is running?
 							if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
-								SendDataToMiranda(filename);
+								SendDataToMiranda(last_filename);
 						}
 					}
 				}
@@ -353,6 +356,16 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 }
 
 
+void quit() 
+{
+	if (oldMainWndProc != NULL)
+		SetWindowLong(plugin.hwndParent, GWL_WNDPROC, (LONG) oldMainWndProc);
+
+	if (oldWndProc != NULL)
+		SetWindowLong(hPlWnd, GWL_WNDPROC, (LONG) oldWndProc);
+} 
+
+
 int init() 
 {
 	KillTimer(hMsgWnd, 0);
@@ -363,11 +376,4 @@ int init()
 	oldWndProc = (WNDPROC) SetWindowLong(hPlWnd, GWL_WNDPROC, (LONG)WndProc);
 
 	return 0; 
-} 
-
-
-void quit() 
-{
-	SetWindowLong(plugin.hwndParent, GWL_WNDPROC, (LONG) oldMainWndProc);
-	SetWindowLong(hPlWnd, GWL_WNDPROC, (LONG) oldWndProc);
 } 

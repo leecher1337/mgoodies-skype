@@ -5,7 +5,7 @@ For this to happen 3 things are needed:
 2. The dll name must be: mlt_<playername>.dll
 3. The plugin isn't loaded previously (aka it wasn't installed into player by the user)
 
-One warning: for the auto-loading work, some inter-process messages have to happen (namelly code injection) and some anti-virus or firewalls can complain. Also, I don't know if this works if the user don't have admin rights.
+One warning: for the auto-loading to work, some inter-process messages have to happen (namelly code injection) and some anti-virus or firewalls can complain. Also, I don't know if this works if the user don't have admin rights.
 
 You also can install this plugins into the player yourself (and avoid the above warning). Instructions in how to do that are based on the player:
 
