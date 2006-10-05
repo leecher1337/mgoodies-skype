@@ -1,6 +1,13 @@
-ListeningTo 0.1.0.4
+ListeningTo 0.1.0.6
 
 Changelog:
+
+. 0.1.0.6
+  * More fixes for winamp
+  * Try tp fix (null) in MSN client
+
+. 0.1.0.5
+  * Fixes for WMP and winamp
 
 . 0.1.0.4
   * Fixes in winamp plugin (first song was not set and pause was not handled)

@@ -37,7 +37,7 @@ PLUGININFO pluginInfo = {
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,4),
+	PLUGIN_MAKE_VERSION(0,1,0,6),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -177,14 +177,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://br.geocities.com/ricardo_pescuma/listeningto_version.txt";
-		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/listeningto_changelog.txt";
-		upd.pbBetaVersionPrefix = (BYTE *)"Nick History ";
+		upd.szBetaVersionURL = "http://eth0.dk/files/pescuma/listeningto_version.txt";
+		upd.szBetaChangelogURL = "http://eth0.dk/files/pescuma/listeningto_changelog.txt";
+		upd.pbBetaVersionPrefix = (BYTE *)"ListeningTo ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/listeningtoW.zip";
+		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/listeningtoW.zip";
 #else
-		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/listeningto.zip";
+		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/listeningto.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);

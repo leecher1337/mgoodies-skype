@@ -159,6 +159,7 @@ CodeInjectionPlayer::CodeInjectionPlayer()
 	window_name = NULL;
 	message_window_class = NULL;
 	next_request_time = 0;
+	found_window = FALSE;
 }
 
 CodeInjectionPlayer::~CodeInjectionPlayer()
@@ -173,7 +174,18 @@ int CodeInjectionPlayer::ChangedListeningInfo()
 	// Window is opened?
 	HWND hwnd = FindWindow(window_class, window_name);
 	if (hwnd == NULL)
+	{
+		if (found_window)
+		{
+			found_window = FALSE;
+
+			FreeData();
+			NotifyInfoChanged();
+		}
 		return 0;
+	}
+
+	found_window = TRUE;
 
 	// Msg Window is registered? (aka plugin is running?)
 	HWND msgHwnd = FindWindow(message_window_class, NULL);
@@ -210,7 +222,8 @@ int CodeInjectionPlayer::ChangedListeningInfo()
 	// Do the code injection
 	unsigned long pid;
 	GetWindowThreadProcessId(hwnd, &pid);
-	HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, pid);
+	HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION 
+									| PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, pid);
 	if (hProcess == NULL)
 		return 0;
 

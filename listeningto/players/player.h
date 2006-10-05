@@ -76,6 +76,7 @@ protected:
 	TCHAR *window_name;
 	TCHAR *message_window_class;
 	DWORD next_request_time;
+	BOOL found_window;
 
 public:
 	CodeInjectionPlayer();
