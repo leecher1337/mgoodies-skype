@@ -28,7 +28,8 @@ Last change by : $Author$
 #include "jabber_iq.h"
 #include <m_utils.h>
 #include <m_database.h>
-#include "sdk/m_popupt.h"
+#include <m_popup.h>
+//#include "sdk/m_popupt.h"
 #include "resource.h"
 
 #define DEF_LABELS _T("label:^u ((!label:^s) (!label:^k) (!label:^vm))")

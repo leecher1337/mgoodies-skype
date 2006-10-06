@@ -246,18 +246,18 @@ void sttGroupchatJoinByHContact( HANDLE hContact )
 
 void CALLBACK sttCreateRoom( ULONG dwParam )
 {
-	char* jid = t2a(( TCHAR* )dwParam), *p;
-
 	GCSESSION gcw = {0};
 	gcw.cbSize = sizeof(GCSESSION);
 	gcw.iType = GCW_CHATROOM;
-	gcw.pszID = jid;
 	gcw.pszModule = jabberProtoName;
-	gcw.pszName = strcpy(( char* )alloca( strlen(jid)+1 ), jid );
-	if (( p = (char*)strchr( gcw.pszName, '@' )) != NULL )
-		*p = 0;
+	gcw.dwFlags = GC_TCHAR;
+	gcw.ptszID = ( TCHAR* )dwParam;
+	gcw.ptszName = NEWTSTR_ALLOCA(( TCHAR* )dwParam );
+
+	TCHAR* p = _tcschr( gcw.ptszName, '@' );
+	if ( p ) *p = 0;
+
 	CallService( MS_GC_NEWSESSION, 0, ( LPARAM )&gcw );
-	mir_free(jid);
 }
 
 void JabberIqResultGetRoster( XmlNode* iqNode, void* )
