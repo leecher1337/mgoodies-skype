@@ -39,12 +39,6 @@ Last change by : $Author$
 #define NEWSTR_ALLOCA(A) (A==NULL)?NULL:strcpy((char*)alloca(strlen(A)+1),A)
 #define NEWTSTR_ALLOCA(A) (A==NULL)?NULL:_tcscpy((TCHAR*)alloca(sizeof(TCHAR)*(_tcslen(A)+1)),A)
 
-#if defined( _UNICODE )
-	#define TCHAR_STR_PARAM "%S"
-#else
-	#define TCHAR_STR_PARAM "%s"
-#endif
-
 #include <malloc.h>
 
 #ifdef _DEBUG
@@ -90,6 +84,7 @@ Last change by : $Author$
 #include <m_utils.h>
 #include <m_message.h>
 #include <m_skin.h>
+//#include "sdk/m_chat.h"
 #include <m_chat.h>
 #include <win2k.h>
 
@@ -460,7 +455,7 @@ HANDLE JabberDBCreateContact( TCHAR* jid, TCHAR* nick, BOOL temporary, BOOL stri
 ULONG  JabberForkThread( void ( __cdecl *threadcode )( void* ), unsigned long stacksize, void *arg );
 void   JabberGetAvatarFileName( HANDLE hContact, char* pszDest, int cbLen );
 void   JabberSetServerStatus( int iNewStatus );
-char*  EscapeChatTags(char* pszText);
+TCHAR* EscapeChatTags(TCHAR* pszText);
 char*  UnEscapeChatTags(char* str_in);
 
 //---- jabber_svc.c -------------------------------------------------
@@ -562,7 +557,7 @@ int           JabberWsRecv( JABBER_SOCKET s, char* data, long datalen );
 
 ///////////////////////////////////////////////////////////////////////////////
 // memory interface
-
+/*
 extern MM_INTERFACE memoryManagerInterface;
 #define mir_alloc(n) memoryManagerInterface.mmi_malloc(n)
 #define mir_free(ptr) memoryManagerInterface.mmi_free(ptr)
@@ -585,7 +580,7 @@ __forceinline WCHAR* mir_wstrdup(const WCHAR *src)
 #endif
 
 extern LIST_INTERFACE li;
-
+*/
 ///////////////////////////////////////////////////////////////////////////////
 // TXT encode helper
 

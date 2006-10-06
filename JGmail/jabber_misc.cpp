@@ -356,18 +356,18 @@ void JabberSetServerStatus( int iNewStatus )
 
 // Process a string, and double all % characters, according to chat.dll's restrictions
 // Returns a pointer to the new string (old one is not freed)
-char* EscapeChatTags(char* pszText)
+TCHAR* EscapeChatTags(TCHAR* pszText)
 {
 	int nChars = 0;
-	for ( char* p = pszText; ( p = strchr( p, '%' )) != NULL; p++ )
+	for ( TCHAR* p = pszText; ( p = _tcschr( p, '%' )) != NULL; p++ )
 		nChars++;
 
 	if ( nChars == 0 )
-		return mir_strdup( pszText );
+		return mir_tstrdup( pszText );
 
-	char* pszNewText = (char*)mir_alloc( strlen( pszText ) + 1 + nChars ), *s, *d;
+	TCHAR* pszNewText = (TCHAR*)mir_alloc( sizeof(TCHAR)*(_tcslen( pszText ) + 1 + nChars )), *s, *d;
 	if ( pszNewText == NULL )
-		return mir_strdup( pszText );
+		return mir_tstrdup( pszText );
 
 	for ( s = pszText, d = pszNewText; *s; s++ ) {
 		if ( *s == '%' )

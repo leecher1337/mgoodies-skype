@@ -29,7 +29,7 @@ Last change by : $Author$
 #include "jabber_ssl.h"
 #include "jabber_list.h"
 #include "sha1.h"
-#include "sdk/m_popupt.h"
+#include <m_popup.h>
 #include "resource.h"
 
 extern CRITICAL_SECTION mutex;
