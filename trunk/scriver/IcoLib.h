@@ -7,29 +7,9 @@ typedef struct {
 	int  iDefaultIndex;
 } SKINICONDESC;
 
-typedef struct {
-	int cbSize;
-    char *pszSection;        //section name used to group icons
-	char *pszDescription;	   //description for options dialog
-	char *pszName;		   //name to refer to icon when playing and in db
-    char *pszDefaultFile;    //default icon file to use
-	int  iDefaultIndex;
-	HICON hDefaultIcon;
-} SKINICONDESC2;
-
-typedef struct {
-	int cbSize;
-    char *pszSection;        //section name used to group icons
-	char *pszDescription;	   //description for options dialog
-	char *pszName;		   //name to refer to icon when playing and in db
-    char *pszDefaultFile;    //default icon file to use
-	int  iDefaultIndex;
-	HICON hDefaultIcon;
-	int  cx,cy;
-} SKINICONDESC3;
-
 //
 //  Add a icon into options UI
+//  NB! pszName should be unique, e.g.: clistmw_apply, tabsrmm_history
 //
 //  wParam = (WPARAM)0
 //  lParam = (LPARAM)(SKINICONDESC*)sid;
