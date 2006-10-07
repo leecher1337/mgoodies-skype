@@ -438,6 +438,12 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Select &All",                 IDM_SELECTALL
     END
+    POPUP "Tabs"
+    BEGIN
+//        MENUITEM SEPARATOR
+        MENUITEM "Close Other Tabs",            IDM_CLOSEOTHERTABS
+        MENUITEM "Close Tab",                   IDM_CLOSETAB
+    END
 END
 
 #endif    // English (U.S.) resources

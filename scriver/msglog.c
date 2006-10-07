@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
 #include <ctype.h>
-#include <malloc.h>
 #include <mbstring.h>
 
 #define MIRANDA_0_5
@@ -74,49 +73,6 @@ struct EventData {
 	HANDLE	hContact;
 };
 
-int safe_wcslen(wchar_t *msg, int maxLen) {
-    int i;
-	for (i = 0; i < maxLen; i++) {
-		if (msg[i] == (wchar_t)0)
-			return i;
-	}
-	return 0;
-}
-
-
-static int mimFlags = 0;
-
-enum MIMFLAGS {
-	MIM_CHECKED = 1,
-	MIM_UNICODE = 2
-};
-
-TCHAR *charToTchar(const char *text, int textlen, int cp) {
-#if defined ( _UNICODE )
-	wchar_t *wtext;
-	if (textlen == -1) {
-		textlen = strlen(text) + 1;
-	}
-	wtext = (wchar_t *) malloc(sizeof(wchar_t) * textlen);
-	MultiByteToWideChar(cp, 0, text, -1, wtext, textlen);
-	return wtext;
-#else
-	return _tcsdup(text);
-#endif
-}
-
-static int IsUnicodeMIM() {
-	if (!(mimFlags & MIM_CHECKED)) {
-		char str[512];
-		mimFlags = MIM_CHECKED;
-		CallService(MS_SYSTEM_GETVERSIONTEXT, (WPARAM)500, (LPARAM)(char*)str);
-		if(strstr(str, "Unicode")) {
-			mimFlags |= MIM_UNICODE;
-		}
-	}
-	return (mimFlags & MIM_UNICODE) != 0;
-}
-
 TCHAR *GetNickname(HANDLE hContact, const char* szProto) {
 	char * szBaseNick;
 	TCHAR *szName = NULL;
@@ -139,16 +95,16 @@ TCHAR *GetNickname(HANDLE hContact, const char* szProto) {
 					if(!_tcscmp((TCHAR *)ci.pszVal, TranslateW(_T("'(Unknown Contact)'")))) {
 						ci.dwFlag &= ~CNF_UNICODE;
 						if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-			        	    szName = charToTchar((char *)ci.pszVal, -1, CP_ACP);
+							szName = a2t((char *)ci.pszVal);
 						}
 					} else {
-						szName = _tcsdup((TCHAR *)ci.pszVal);
+						szName = mir_tstrdup((TCHAR *)ci.pszVal);
 					}
 				} else {
-					szName = charToTchar((char *)ci.pszVal, -1, CP_ACP);
+					szName = a2t((char *)ci.pszVal);
 				}
 #else
-				szName = _tcsdup((TCHAR *)ci.pszVal);
+				szName = mir_tstrdup((TCHAR *)ci.pszVal);
 #endif
 				miranda_sys_free(ci.pszVal);
 				if (szName != NULL) {
@@ -162,15 +118,15 @@ TCHAR *GetNickname(HANDLE hContact, const char* szProto) {
 #if defined ( _UNICODE )
 		int len;
 		len = strlen(szBaseNick) + 1;
-		szName = (TCHAR *) malloc(len * 2);
+		szName = (TCHAR *) mir_alloc(len * 2);
 	    MultiByteToWideChar(CP_ACP, 0, szBaseNick, -1, szName, len);
 		szName[len - 1] = 0;
 	    return szName;
 #else
-	    return _tcsdup(szBaseNick);
+	    return mir_tstrdup(szBaseNick);
 #endif
 	}
-    return _tcsdup(TranslateT("Unknown Contact"));
+    return mir_tstrdup(TranslateT("Unknown Contact"));
 }
 
 int DbEventIsShown(DBEVENTINFO * dbei, struct MessageWindowData *dat)
@@ -199,10 +155,10 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	dbei.cbSize = sizeof(dbei);
 	dbei.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM) hDbEvent, 0);
 	if (dbei.cbBlob == -1) return NULL;
-	dbei.pBlob = (PBYTE) malloc(dbei.cbBlob);
+	dbei.pBlob = (PBYTE) mir_alloc(dbei.cbBlob);
 	CallService(MS_DB_EVENT_GET, (WPARAM) hDbEvent, (LPARAM) & dbei);
 	if (!DbEventIsShown(&dbei, dat)) {
-		free(dbei.pBlob);
+		mir_free(dbei.pBlob);
 		return NULL;
 	}
 	if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL)) {
@@ -212,7 +168,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	else if (dbei.eventType == EVENTTYPE_STATUSCHANGE) {
 		CallService(MS_DB_EVENT_MARKREAD, (WPARAM) hContact, (LPARAM) hDbEvent);
 	}
-	event = (struct EventData *) malloc(sizeof(struct EventData));
+	event = (struct EventData *) mir_alloc(sizeof(struct EventData));
 	memset(event, 0, sizeof(struct EventData));
 	event->hContact = hContact;
 	event->eventType = dbei.eventType;
@@ -228,19 +184,19 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 	}
 	if (event->eventType == EVENTTYPE_FILE) {
 		int msglen = strlen(((char *) dbei.pBlob) + sizeof(DWORD)) + 1;
-		event->pszTextW = charToTchar(((char *) dbei.pBlob) + sizeof(DWORD), msglen, CP_ACP);//dat->codePage);
+		event->pszTextW = a2tl(((char *) dbei.pBlob) + sizeof(DWORD), msglen);//dat->codePage);
 	} else { //if (event->eventType == EVENTTYPE_MESSAGE) {
 		int msglen = strlen((char *) dbei.pBlob) + 1;
 		if (msglen != (int) dbei.cbBlob && !(dat->flags & SMF_DISABLE_UNICODE)) {
 			int wlen;
 			wlen = safe_wcslen((wchar_t*) &dbei.pBlob[msglen], (dbei.cbBlob - msglen) / 2);
 			if (wlen > 0 && wlen < msglen) {
-				event->pszTextW = wcsdup((wchar_t*) &dbei.pBlob[msglen]);
+				event->pszTextW = mir_wstrdup((wchar_t*) &dbei.pBlob[msglen]);
 			} else {
-				event->pszTextW = charToTchar((char *) dbei.pBlob, msglen, dat->codePage);
+				event->pszTextW = a2tlcp((char *) dbei.pBlob, msglen, dat->codePage);
 			}
 		} else {
-			event->pszTextW = charToTchar((char *) dbei.pBlob, msglen, dat->codePage);
+			event->pszTextW = a2tlcp((char *) dbei.pBlob, msglen, dat->codePage);
 		}
 	}
 #else
@@ -250,19 +206,19 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 		event->pszNick = GetNickname(event->hContact, dat->szProto);
 	}
 	if (event->eventType == EVENTTYPE_FILE) {
-		event->pszText = strdup(((char *) dbei.pBlob) + sizeof(DWORD));
+		event->pszText = mir_strdup(((char *) dbei.pBlob) + sizeof(DWORD));
 	} else {
-		event->pszText = strdup((char *) dbei.pBlob);
+		event->pszText = mir_strdup((char *) dbei.pBlob);
 	}
 #endif
-	free(dbei.pBlob);
+	mir_free(dbei.pBlob);
 	return event;
 }
 
 static void freeEvent(struct EventData *event) {
-	if (event->pszText != NULL) free (event->pszText);
-	if (event->pszNick != NULL) free (event->pszNick);
-	free(event);
+	if (event->pszText != NULL) mir_free (event->pszText);
+	if (event->pszNick != NULL) mir_free (event->pszNick);
+	mir_free(event);
 }
 
 static void AppendToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, const char *fmt, ...)
@@ -276,7 +232,7 @@ static void AppendToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced
 		if (charsDone >= 0)
 			break;
 		*cbBufferAlloced += 1024;
-		*buffer = (char *) realloc(*buffer, *cbBufferAlloced);
+		*buffer = (char *) mir_realloc(*buffer, *cbBufferAlloced);
 	}
 	va_end(va);
 	*cbBufferEnd += charsDone;
@@ -290,7 +246,7 @@ static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAllo
 	int lineLen = strlen(line) * 9 + 8;
 	if (*cbBufferEnd + lineLen > *cbBufferAlloced) {
 		cbBufferAlloced[0] += (lineLen + 1024 - lineLen % 1024);
-		*buffer = (char *) realloc(*buffer, *cbBufferAlloced);
+		*buffer = (char *) mir_realloc(*buffer, *cbBufferAlloced);
 	}
 
 	d = *buffer + *cbBufferEnd;
@@ -344,7 +300,7 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 	int lineLen = wcslen(line) * 9 + 8;
 	if (*cbBufferEnd + lineLen > *cbBufferAlloced) {
 		cbBufferAlloced[0] += (lineLen + 1024 - lineLen % 1024);
-		*buffer = (char *) realloc(*buffer, *cbBufferAlloced);
+		*buffer = (char *) mir_realloc(*buffer, *cbBufferAlloced);
 	}
 
 	d = *buffer + *cbBufferEnd;
@@ -398,7 +354,7 @@ static int AppendTToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced
 #endif
 }
 
-//free() the return value
+//mir_free() the return value
 static char *CreateRTFHeader(struct MessageWindowData *dat)
 {
 	char *buffer;
@@ -413,7 +369,7 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 	ReleaseDC(NULL, hdc);
 	bufferEnd = 0;
 	bufferAlloced = 1024;
-	buffer = (char *) malloc(bufferAlloced);
+	buffer = (char *) mir_alloc(bufferAlloced);
 	buffer[0] = '\0';
 	if (dat->flags & SMF_RTL)
 		AppendToBuffer(&buffer,&bufferEnd,&bufferAlloced,"{\\rtf1\\ansi\\deff0{\\fonttbl");
@@ -446,7 +402,7 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 	return buffer;
 }
 
-//free() the return value
+//mir_free() the return value
 static char *CreateRTFTail(struct MessageWindowData *dat)
 {
 	char *buffer;
@@ -454,7 +410,7 @@ static char *CreateRTFTail(struct MessageWindowData *dat)
 
 	bufferEnd = 0;
 	bufferAlloced = 1024;
-	buffer = (char *) malloc(bufferAlloced);
+	buffer = (char *) mir_alloc(bufferAlloced);
 	buffer[0] = '\0';
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}");
 	return buffer;
@@ -533,7 +489,7 @@ int isSameDate(time_t time1, time_t time2)
 	return 0;
 }
 
-//free() the return value
+//mir_free() the return value
 static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventData *event, struct LogStreamData *streamData)
 {
 	char *buffer;
@@ -543,7 +499,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 	int highlight = 0;
 	bufferEnd = 0;
 	bufferAlloced = 1024;
-	buffer = (char *) malloc(bufferAlloced);
+	buffer = (char *) mir_alloc(bufferAlloced);
 	buffer[0] = '\0';
 
  	if ((g_dat->flags & SMF_GROUPMESSAGES) && event->dwFlags == LOWORD(dat->lastEventType)
@@ -611,7 +567,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\fs1  ");
 		while (bufferAlloced - bufferEnd < logIconBmpSize[i])
 			bufferAlloced += 1024;
-		buffer = (char *) realloc(buffer, bufferAlloced);
+		buffer = (char *) mir_realloc(buffer, bufferAlloced);
 		CopyMemory(buffer + bufferEnd, pLogIconBmpBits[i], logIconBmpSize[i]);
 		bufferEnd += logIconBmpSize[i];
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, " ");
@@ -770,7 +726,7 @@ static DWORD CALLBACK LogStreamInEvents(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG 
 	CopyMemory(pbBuff, dat->buffer + dat->bufferOffset, *pcb);
 	dat->bufferOffset += *pcb;
 	if (dat->bufferOffset == dat->bufferLen) {
-		free(dat->buffer);
+		mir_free(dat->buffer);
 		dat->buffer = NULL;
 	}
 	return 0;
@@ -915,7 +871,7 @@ void LoadMsgLogIcons(void)
 	hdc = GetDC(NULL);
 	hBmp = CreateCompatibleBitmap(hdc, bih.biWidth, bih.biHeight);
 	hdcMem = CreateCompatibleDC(hdc);
-	pBmpBits = (PBYTE) malloc(widthBytes * bih.biHeight);
+	pBmpBits = (PBYTE) mir_alloc(widthBytes * bih.biHeight);
 	hBrush = hBkgBrush;
 	for (i = 0; i < sizeof(pLogIconBmpBits) / sizeof(pLogIconBmpBits[0]); i++) {
 		switch (i) {
@@ -936,7 +892,7 @@ void LoadMsgLogIcons(void)
 				hBrush = hBkgBrush;
 				break;
 		}
-		pLogIconBmpBits[i] = (PBYTE) malloc(RTFPICTHEADERMAXSIZE + (bih.biSize + widthBytes * bih.biHeight) * 2);
+		pLogIconBmpBits[i] = (PBYTE) mir_alloc(RTFPICTHEADERMAXSIZE + (bih.biSize + widthBytes * bih.biHeight) * 2);
 		//I can't seem to get binary mode working. No matter.
 		rtfHeaderSize = sprintf(pLogIconBmpBits[i], "{\\pict\\dibitmap0\\wbmbitspixel%u\\wbmplanes1\\wbmwidthbytes%u\\picw%u\\pich%u ", bih.biBitCount, widthBytes, (UINT) bih.biWidth, (UINT)bih.biHeight);
 		hoBmp = (HBITMAP) SelectObject(hdcMem, hBmp);
@@ -955,7 +911,7 @@ void LoadMsgLogIcons(void)
 		logIconBmpSize[i] = rtfHeaderSize + (bih.biSize + widthBytes * bih.biHeight) * 2 + 1;
 		pLogIconBmpBits[i][logIconBmpSize[i] - 1] = '}';
 	}
-	free(pBmpBits);
+	mir_free(pBmpBits);
 	DeleteDC(hdcMem);
 	DeleteObject(hBmp);
 	ReleaseDC(NULL, hdc);
@@ -968,7 +924,7 @@ void FreeMsgLogIcons(void)
 {
 	int i;
 	for (i = 0; i < sizeof(pLogIconBmpBits) / sizeof(pLogIconBmpBits[0]); i++)
-		free(pLogIconBmpBits[i]);
+		mir_free(pLogIconBmpBits[i]);
 	ImageList_RemoveAll(g_hImageList);
 	ImageList_Destroy(g_hImageList);
 }

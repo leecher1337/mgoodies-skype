@@ -22,7 +22,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#if defined(UNICODE)	
+#if defined(UNICODE)
 	#ifndef _UNICODE
 		#define _UNICODE
 	#endif
@@ -80,6 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "msgs.h"
 #include "richutil.h"
 #include "msgwindow.h"
+#include "utils.h"
 
 #include "IcoLib.h"
 #include "m_smileyadd.h"
@@ -87,4 +88,5 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_ieview.h"
 #include "m_avatars.h"
 #include "m_fontservice.h"
+
 

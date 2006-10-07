@@ -130,6 +130,8 @@
 #define IDM_OPENNEW                     40014
 #define IDM_OPENEXISTING                40015
 #define IDM_COPYLINK                    40016
+#define IDM_CLOSETAB					40020
+#define IDM_CLOSEOTHERTABS				40021
 #define IDM_TOPMOST						40040
 
 /* chat.dll resources */
