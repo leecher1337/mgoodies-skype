@@ -49,12 +49,12 @@ void LoadProtocolIcons() {
 	if (g_dat->protoNames != NULL) {
 		for(i = 0; i < g_dat->protoNum; i++) {
 			if (g_dat->protoNames[i] != NULL) {
-				free(g_dat->protoNames[i]);
+				mir_free(g_dat->protoNames[i]);
 			}
 		}
-		free(g_dat->protoNames);
+		mir_free(g_dat->protoNames);
 	}
-	g_dat->protoNames = (char **) malloc(sizeof(char*) * g_dat->protoNum);
+	g_dat->protoNames = (char **) mir_alloc(sizeof(char*) * g_dat->protoNum);
 	if (g_dat->hTabIconList == NULL) {
 		g_dat->hTabIconList = ImageList_Create(16, 16, IsWinVerXPPlus() ? ILC_COLOR32 | ILC_MASK : ILC_COLOR8 | ILC_MASK, (g_dat->protoNum + 1) * 12 + 8, 0);
 		ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
@@ -65,7 +65,7 @@ void LoadProtocolIcons() {
 
 		for(i = j = 0; i < allProtoNum; i++) {
 			if (pProtos[i]->type != PROTOTYPE_PROTOCOL) continue;
-			g_dat->protoNames[j] = _strdup(pProtos[i]->szName);
+			g_dat->protoNames[j] = mir_strdup(pProtos[i]->szName);
 			for (k = ID_STATUS_OFFLINE; k <= ID_STATUS_OUTTOLUNCH; k++) {
 				hIcon = LoadSkinnedProtoIcon(pProtos[i]->szName, k);
 				if (hIcon != NULL) {
@@ -264,35 +264,35 @@ void LoadGlobalIcons() {
 static BOOL CALLBACK LangAddCallback(CHAR * str) {
 	int i, count;
 	UINT cp;
-	static struct { UINT cpId; char *cpName; } cpTable[] = {
-		{	874,	"Thai" },
-		{	932,	"Japanese" },
-		{	936,	"Simplified Chinese" },
-		{	949,	"Korean" },
-		{	950,	"Traditional Chinese" },
-		{	1250,	"Central European" },
-		{	1251,	"Cyrillic" },
-		{	1252,	"Latin I" },
-		{	1253,	"Greek" },
-		{	1254,	"Turkish" },
-		{	1255,	"Hebrew" },
-		{	1256,	"Arabic" },
-		{	1257,	"Baltic" },
-		{	1258,	"Vietnamese" },
-		{	1361,	"Korean (Johab)" }
+	static struct { UINT cpId; TCHAR *cpName; } cpTable[] = {
+		{	874,	_T("Thai") },
+		{	932,	_T("Japanese") },
+		{	936,	_T("Simplified Chinese") },
+		{	949,	_T("Korean") },
+		{	950,	_T("Traditional Chinese") },
+		{	1250,	_T("Central European") },
+		{	1251,	_T("Cyrillic") },
+		{	1252,	_T("Latin I") },
+		{	1253,	_T("Greek") },
+		{	1254,	_T("Turkish") },
+		{	1255,	_T("Hebrew") },
+		{	1256,	_T("Arabic") },
+		{	1257,	_T("Baltic") },
+		{	1258,	_T("Vietnamese") },
+		{	1361,	_T("Korean (Johab)") }
 	};
     cp = atoi(str);
 	count = sizeof(cpTable)/sizeof(cpTable[0]);
 	for (i=0; i<count && cpTable[i].cpId!=cp; i++);
 	if (i < count) {
-        AppendMenuA(g_dat->hMenuANSIEncoding, MF_STRING, cp, Translate(cpTable[i].cpName));
+        AppendMenu(g_dat->hMenuANSIEncoding, MF_STRING, cp, TranslateTS(cpTable[i].cpName));
 	}
 	return TRUE;
 }
 
 
 void InitGlobals() {
-	g_dat = (struct GlobalMessageData *)malloc(sizeof(struct GlobalMessageData));
+	g_dat = (struct GlobalMessageData *)mir_alloc(sizeof(struct GlobalMessageData));
 	g_dat->hMessageWindowList = (HANDLE) CallService(MS_UTILS_ALLOCWINDOWLIST, 0, 0);
 	g_dat->hParentWindowList = (HANDLE) CallService(MS_UTILS_ALLOCWINDOWLIST, 0, 0);
     g_dat->hMenuANSIEncoding = CreatePopupMenu();
@@ -322,13 +322,13 @@ void FreeGlobals() {
 		if (g_dat->protoNum && g_dat->protoNames) {
 			int i;
 			for (i=0; i < g_dat->protoNum; i++ )
-				free( g_dat->protoNames[i] );
-			free( g_dat->protoNames );
+				mir_free( g_dat->protoNames[i] );
+			mir_free( g_dat->protoNames );
 		}
 
 		//	for (i=0;i<sizeof(g_dat->hIcons)/sizeof(g_dat->hIcons[0]);i++)
 		//		DestroyIcon(g_dat->hIcons[i]);
-		free(g_dat);
+		mir_free(g_dat);
 	}
 }
 

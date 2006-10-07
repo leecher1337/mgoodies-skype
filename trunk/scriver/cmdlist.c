@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include "commonheaders.h"
 
-static unsigned long tcmdlist_hash(const CMDCHAR *data) {
+static unsigned long tcmdlist_hash(const TCHAR *data) {
 	unsigned long hash = 0;
 	int i, shift = 0;
 
@@ -38,21 +38,17 @@ static unsigned long tcmdlist_hash(const CMDCHAR *data) {
 	return hash;
 }
 
-TCmdList *tcmdlist_append(TCmdList *list, CMDCHAR *data) {
+TCmdList *tcmdlist_append(TCmdList *list, TCHAR *data) {
 	TCmdList *n;
-	TCmdList *new_list = malloc(sizeof(TCmdList));
+	TCmdList *new_list = mir_alloc(sizeof(TCmdList));
 	TCmdList *attach_to = NULL;
 	
 	if (!data) {
-		free(new_list);
+		mir_free(new_list);
 		return list;
 	}
 	new_list->next = NULL;
-#ifdef _UNICODE
-	new_list->szCmd = _tcsdup(data);
-#else
-	new_list->szCmd = _strdup(data);
-#endif
+	new_list->szCmd = mir_tstrdup(data);
 	new_list->hash = tcmdlist_hash(data);
 	for (n=list; n!=NULL; n=n->next) {
 		attach_to = n;
@@ -71,45 +67,48 @@ TCmdList *tcmdlist_append(TCmdList *list, CMDCHAR *data) {
 	}
 }
 
-TCmdList *tcmdlist_remove(TCmdList *list, CMDCHAR *data) {
+TCmdList *tcmdlist_remove_first(TCmdList *list) {
+	TCmdList *n = list;
+	if (n->next) n->next->prev = n->prev;
+	if (n->prev) n->prev->next = n->next;
+	list = n->next;
+	mir_free(n->szCmd);
+	mir_free(n);
+	return list;
+}
+
+
+TCmdList *tcmdlist_remove(TCmdList *list, TCHAR *data) {
 	TCmdList *n;
 	unsigned long hash;
 
 	if (!data) return list;
 	hash = tcmdlist_hash(data);
 	for (n=list; n!=NULL; n=n->next) {
-#ifdef _UNICODE
 		if (n->hash==hash&&!_tcscmp(n->szCmd, data)) {
-#else
-		if (n->hash==hash&&!strcmp(n->szCmd, data)) {
-#endif
 			if (n->next) n->next->prev = n->prev;
 			if (n->prev) n->prev->next = n->next;
 			if (n==list) list = n->next;
-			free(n->szCmd);
-			free(n);
+			mir_free(n->szCmd);
+			mir_free(n);
 			return list;
 		}
 	}
 	return list;
 }
 
-TCmdList *tcmdlist_append2(TCmdList *list, HANDLE hContact, CMDCHAR *data) {
+TCmdList *tcmdlist_append2(TCmdList *list, HANDLE hContact, TCHAR *data) {
 	TCmdList *n;
-	TCmdList *new_list = malloc(sizeof(TCmdList));
+	TCmdList *new_list = mir_alloc(sizeof(TCmdList));
 	TCmdList *attach_to = NULL;
 	
 	if (!data) {
-		free(new_list);
+		mir_free(new_list);
 		return list;
 	}
 	new_list->next = NULL;
 	new_list->hContact = hContact;
-#ifdef _UNICODE
-	new_list->szCmd = _tcsdup(data);
-#else
-	new_list->szCmd = _strdup(data);
-#endif
+	new_list->szCmd = mir_tstrdup(data);
 	new_list->hash = tcmdlist_hash(data);
 	list = tcmdlist_remove2(list, hContact);
 	for (n=list; n!=NULL; n=n->next) {
@@ -133,8 +132,8 @@ TCmdList *tcmdlist_remove2(TCmdList *list, HANDLE hContact) {
 			if (n->next) n->next->prev = n->prev;
 			if (n->prev) n->prev->next = n->next;
 			if (n==list) list = n->next;
-			free(n->szCmd);
-			free(n);
+			mir_free(n->szCmd);
+			mir_free(n);
 			return list;
 		}
 	}
@@ -176,8 +175,8 @@ void tcmdlist_free(TCmdList *list) {
 
 	while (n!=NULL) {
 		next = n->next;
-		free(n->szCmd);
-		free(n);
+		mir_free(n->szCmd);
+		mir_free(n);
 		n = next;
 	}
 }

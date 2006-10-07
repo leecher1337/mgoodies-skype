@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SRMM_GLOBALS_H
 
 #include "cmdlist.h"
-
+#include "msgs.h"
 
 #define SMF_SHOWBTNS        0x00000001
 #define SMF_SHOWSTATUSBAR	0x00000002
@@ -91,7 +91,7 @@ struct GlobalMessageData
 	HANDLE hMessageWindowList;
 	DWORD openFlags;
 	HANDLE hParentWindowList;
-	struct ParentWindowData *lastParent;
+	ParentWindowData *lastParent;
 	int		protoNum;
 	char **	protoNames;
 	int		limitAvatarMaxH;

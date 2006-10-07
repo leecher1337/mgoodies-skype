@@ -28,6 +28,8 @@ int SplitmsgShutdown(void);
 extern void Chat_Load(PLUGINLINK *link);
 extern void Chat_Unload();
 
+struct MM_INTERFACE memoryManagerInterface;
+
 PLUGINLINK *pluginLink;
 HINSTANCE g_hInst;
 
@@ -69,6 +71,10 @@ __declspec(dllexport)
 int __declspec(dllexport) Load(PLUGINLINK * link)
 {
 	pluginLink = link;
+	// set the memory manager
+	memoryManagerInterface.cbSize = sizeof(struct MM_INTERFACE);
+	CallService(MS_SYSTEM_GET_MMI,0,(LPARAM)&memoryManagerInterface);
+
 	Chat_Load(link);
 	return LoadSendRecvMessageModule();
 }

@@ -42,7 +42,7 @@ typedef struct TabDefStruct {
 	BOOL  bChanged;
 } TabDef;
 
-static TabDef tabPages[] = {{NULL, DlgProcOptions, IDD_OPT_MSGDLG, _T("Window"), FALSE},
+static TabDef tabPages[] = {{NULL, DlgProcOptions, IDD_OPT_MSGDLG, _T("Messaging Window"), FALSE},
 						 {NULL, DlgProcLogOptions, IDD_OPT_MSGLOG, _T("Messaging Log"), FALSE},
 						 {NULL, DlgProcOptions1, IDD_OPTIONS1, _T("Chat"), FALSE},
 						 {NULL, DlgProcOptions2, IDD_OPTIONS2, _T("Chat Log"), FALSE}
