@@ -118,7 +118,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 				CheckDlgButton(hwndDlg, IDC_CSTATUSLIST, BST_CHECKED);
 			else
 				EnableWindow(GetDlgItem(hwndDlg, IDC_CICONS1), FALSE);
-				
+
 			if (val & DLG_SHOW_STATUS_ICONS)
 				CheckDlgButton(hwndDlg, IDC_CICONS1, BST_CHECKED);
 			if (val & DLG_SHOW_LIST_ICONS)
@@ -152,7 +152,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 				}
 			}
 			SendMessage(GetDlgItem(hwndDlg, IDC_CBOPTSTATUS), CB_SETCURSEL, (WPARAM)0, 0);
-			SendMessage(hwndDlg, WM_COMMAND, MAKEWPARAM(IDC_CBOPTSTATUS, CBN_SELCHANGE),0); 
+			SendMessage(hwndDlg, WM_COMMAND, MAKEWPARAM(IDC_CBOPTSTATUS, CBN_SELCHANGE),(LPARAM)GetDlgItem(hwndDlg, IDC_CBOPTSTATUS));
 
 			CallService(MS_PROTO_ENUMPROTOCOLS,(WPARAM)&proto_count,(LPARAM)&proto);
 			data->proto_msg = (struct SingleProtoMsg *)malloc(sizeof(struct SingleProtoMsg)*proto_count);
@@ -200,7 +200,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 					}
 				}
 				SendMessage(GetDlgItem(hwndDlg, IDC_CBOPTPROTO), CB_SETCURSEL, (WPARAM)0, 0);
-				SendMessage(hwndDlg, WM_COMMAND, MAKEWPARAM(IDC_CBOPTPROTO, CBN_SELCHANGE), 0); 
+				SendMessage(hwndDlg, WM_COMMAND, MAKEWPARAM(IDC_CBOPTPROTO, CBN_SELCHANGE), (LPARAM)GetDlgItem(hwndDlg, IDC_CBOPTPROTO));
 			}
 
 			if (!DBGetContactSettingWord(NULL, "SimpleAway", "DefMsgCount", 0))
@@ -297,7 +297,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 							val = GetDlgItemInt(hwndDlg, IDC_EMAXLENGTH, &translated, FALSE);
 
 							i = SendMessage(GetDlgItem(hwndDlg, IDC_CBOPTPROTO), CB_GETITEMDATA, (WPARAM)SendMessage(GetDlgItem(hwndDlg, IDC_CBOPTPROTO), CB_GETCURSEL, 0, 0), 0);
-							
+
 							data->proto_msg[i].max_length = val;
 						}
 						break;
@@ -389,6 +389,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 								EnableWindow(GetDlgItem(hwndDlg, IDC_OPTEDIT2), FALSE);
 							}
 						}
+						break;
 					}
 	//			return 0;
 				break;
@@ -454,7 +455,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 						len = GetDlgItemText(hwndDlg, IDC_OPTEDIT2, msg, sizeof(msg));
 						if (len > 0)
-						{	
+						{
 							if (data->proto_msg[i].msg == NULL)
 								data->proto_msg[i].msg = _strdup(msg);
 							else
@@ -519,7 +520,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 								CheckRadioButton(hwndDlg, IDC_ROPTMSG1, IDC_ROPTMSG5, IDC_ROPTMSG5);
 								SetDlgItemText(hwndDlg, IDC_OPTEDIT1, "");
 							}
-							
+
 							if (data->flags[i] & STATUS_PUT_DEF_IN_LIST)
 								CheckDlgButton(hwndDlg, IDC_COPTMSG2, BST_CHECKED);
 							else
