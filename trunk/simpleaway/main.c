@@ -147,7 +147,7 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 				if (SendMessage(hwndWinamp, WM_WA_IPC, 0, IPC_ISPLAYING) == 1)
 				{
 					GetWindowText(hwndWinamp, winamp_title, sizeof(winamp_title));
-				
+
 					p = winamp_title;
 					j=0;
 
@@ -183,7 +183,7 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 		else if(!_strnicmp(msg+i,"%fortunemsg%",12))
 		{
 			char	*FortuneMsg;
-			
+
 			if (!ServiceExists(MS_FORTUNEMSG_GETMESSAGE))
 				continue;
 
@@ -194,13 +194,13 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 
 			MoveMemory(msg+i+lstrlen(FortuneMsg),msg+i+12,lstrlen(msg)-i-11);
 			CopyMemory(msg+i,FortuneMsg,lstrlen(FortuneMsg));
-			
+
 			CallService(MS_FORTUNEMSG_FREEMEMORY, 0, (LPARAM)FortuneMsg);
 		}
 		else if(!_strnicmp(msg+i,"%protofortunemsg%",17))
 		{
 			char	*FortuneMsg;
-			
+
 			if (!ServiceExists(MS_FORTUNEMSG_GETPROTOMSG))
 				continue;
 
@@ -211,13 +211,13 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 
 			MoveMemory(msg+i+lstrlen(FortuneMsg),msg+i+17,lstrlen(msg)-i-16);
 			CopyMemory(msg+i,FortuneMsg,lstrlen(FortuneMsg));
-			
+
 			CallService(MS_FORTUNEMSG_FREEMEMORY, 0, (LPARAM)FortuneMsg);
 		}
 		else if(!_strnicmp(msg+i,"%statusfortunemsg%",18))
 		{
 			char	*FortuneMsg;
-			
+
 			if (!ServiceExists(MS_FORTUNEMSG_GETSTATUSMSG))
 				continue;
 
@@ -228,7 +228,7 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 
 			MoveMemory(msg+i+lstrlen(FortuneMsg),msg+i+18,lstrlen(msg)-i-17);
 			CopyMemory(msg+i,FortuneMsg,lstrlen(FortuneMsg));
-			
+
 			CallService(MS_FORTUNEMSG_FREEMEMORY, 0, (LPARAM)FortuneMsg);
 		}
 		else if(!_strnicmp(msg+i,"%time%",6))
@@ -403,16 +403,16 @@ void DBWriteMessage(char *buff, char *message)
 void SaveMessageToDB(char *proto, char *message, BOOL is_format)
 {
 	char	buff[128];
-		
+
 	if (!proto)
 	{
 		int		i;
-		
+
 		for (i=0; i<ProtoCount; i++)
 		{
 			if (protocols[i]->type != PROTOTYPE_PROTOCOL)
 				continue;
-				
+
 			if (is_format)
 				_snprintf(buff, sizeof(buff), "FCur%sMsg", protocols[i]->szName);
 			else
@@ -586,21 +586,21 @@ int	HasProtoStaticStatusMsg(char *proto, int initial_status, int status)
 
 int ChangeStatusMessage(WPARAM wParam,LPARAM lParam);
 
-void SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam)
+int SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam)
 {
 	int	i, status_modes_msg, pflags;
-	
+
 	if (wParam < ID_STATUS_OFFLINE || wParam > ID_STATUS_OUTTOLUNCH)
-		return;
-		
+		return 0;
+
 	for (i=0; i<ProtoCount; i++)
 	{
 		if (!strcmp(protocols[i]->szName, "mTV"))
 			continue;
-			
+
 		if (protocols[i]->type != PROTOTYPE_PROTOCOL)
 			continue;
-	
+
 		pflags = CallProtoService(protocols[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0);
 
 		if (!(pflags & PF1_MODEMSGSEND) && (pflags & PF1_INDIVMODEMSG))
@@ -608,14 +608,14 @@ void SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam)
 			CallProtoService(protocols[i]->szName, PS_SETSTATUS, wParam, 0);
 			continue;
 		}
-			
+
 		status_modes_msg = CallProtoService(protocols[i]->szName, PS_GETCAPS, PFLAGNUM_3, 0);
 
 		if ((Proto_Status2Flag(wParam) & status_modes_msg) || (wParam == ID_STATUS_OFFLINE && (Proto_Status2Flag(ID_STATUS_INVISIBLE) & status_modes_msg)))
 		{
 			if (HasProtoStaticStatusMsg(protocols[i]->szName, (int)wParam, (int)wParam))
 				continue;
-				
+
 			if (lParam && wParam == ID_STATUS_OFFLINE) //ugly hack to set offline status message
 			{
 				int		status_from_proto_settings;
@@ -629,7 +629,7 @@ void SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam)
 				CallProtoService(protocols[i]->szName, PS_SETSTATUS, wParam, 0);
 				continue;
 			}
-			
+
 			CallProtoService(protocols[i]->szName, PS_SETSTATUS, wParam, 0);
 			EnableKeepStatus(protocols[i]->szName);
 
@@ -644,6 +644,7 @@ void SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam)
 			continue;
 		}
 	}
+	return 0;
 }
 
 void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode, char *message)
@@ -656,7 +657,7 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 			return;
 		if (message)
 			msg = (char *)InsertVarsIntoMsg(message, proto_name, status_mode);
-			
+
 		SaveMessageToDB(proto_name, message, TRUE);
 		SaveMessageToDB(proto_name, msg, FALSE);
 
@@ -758,10 +759,10 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 int TTChangeStatusMessage(WPARAM wParam,LPARAM lParam)
 {
 	struct MsgBoxInitData	*box_data;
-	
+
 	if (terminated)
 		return 0;
-		
+
 	if (ServiceExists(MS_TTB_SETBUTTONSTATE) && TopButton)
 	{
 		CallService(MS_TTB_SETBUTTONSTATE, (WPARAM)TopButton, (LPARAM)TTBST_RELEASED);
@@ -799,7 +800,7 @@ int ChangeStatusMessage(WPARAM wParam,LPARAM lParam)
 	{
 		if (!strcmp((char *)lParam, "mTV"))
 			return 0;
-			
+
 		status_modes = CallProtoService((char *)lParam, PS_GETCAPS, PFLAGNUM_2, 0);
 
 		if ((!status_modes || !(Proto_Status2Flag(wParam) & status_modes)) && (wParam != ID_STATUS_OFFLINE))
@@ -905,7 +906,7 @@ void CALLBACK SATimerProc(HWND timerhwnd, UINT uMsg, UINT_PTR idEvent, DWORD  dw
 	BOOL				winamp_playing = FALSE;
 	HWND				hwndWinamp = FindWindow("Winamp v1.x",NULL);
 	char				winamp_title[2048];
-	
+
 	if (hwndWinamp && !hwndSAMsgDialog)
 	{
 		if (SendMessage(hwndWinamp, WM_WA_IPC, 0, IPC_ISPLAYING) == 1)
@@ -996,7 +997,7 @@ int AddTopToolbarButton(WPARAM wParam, LPARAM lParam)
 
 		CallService(MS_TTB_SETBUTTONOPTIONS, MAKEWPARAM((WORD)TTBO_TIPNAME, (WORD)TopButton), (LPARAM)Translate("Change Status Message"));
 	}
-	
+
 	return 0;
 }
 
@@ -1053,7 +1054,7 @@ int InitAwayModule(WPARAM wParam,LPARAM lParam)
 	int i, val;
 
 	ProtoCount = 0;
-	
+
 	CallService(MS_PROTO_ENUMPROTOCOLS,(WPARAM)&ProtoCount,(LPARAM)&protocols);
 	for(i=0; i<ProtoCount; i++)
 	{
@@ -1085,7 +1086,7 @@ int InitAwayModule(WPARAM wParam,LPARAM lParam)
 			removeCR=TRUE;
 		else
 			removeCR=FALSE;
-			
+
 		if (DBGetContactSettingByte(NULL, "SimpleAway", "ShowCopy", 1))
 			ShowCopy=TRUE;
 		else
@@ -1100,7 +1101,7 @@ int ShutdownSA (WPARAM wParam,LPARAM lParam)
 		free(winampsong);
 	if (is_timer)
 		KillTimer(NULL, SATimer);
-	return 1;
+	return 0;
 }
 
 int	SimpleAwayTerminated(WPARAM wParam,LPARAM lParam)
