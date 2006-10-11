@@ -45,7 +45,7 @@ PLUGINLINK *pluginLink;
 HANDLE hStatusHookContact=NULL, hHookModulesLoaded=NULL, MessagePumpReady;
 HANDLE SkypeMsgFetched, hPrebuildCMenu=NULL, hChatEvent=NULL, hChatMenu=NULL;
 HANDLE hEvInitChat=NULL, hBuddyAdded=NULL, hTTBModuleLoadedHook=NULL, hContactDeleted=NULL;
-HANDLE hMenuAddSkypeContact=NULL, hHookOkToExit=NULL;
+HANDLE hMenuAddSkypeContact=NULL, hHookOkToExit=NULL, hHookMirandaExit=NULL;
 
 DWORD msgPumpThreadId = 0;
 #ifdef SKYPEBUG_OFFLN
@@ -54,7 +54,8 @@ HANDLE GotUserstatus;
 
 BOOL ImportingHistory=FALSE, bModulesLoaded=FALSE;
 char *RequestedStatus=NULL;	// To fix Skype-API Statusmode-bug
-char cmdMessage[16]="MESSAGE", cmdPartner[8]="PARTNER";	// Compatibility commands
+char cmdMessage[12]="CHATMESSAGE", cmdPartner[8]="PARTNER";	// Compatibility commands
+
 
 // Imported Globals
 extern status_map status_codes[];
@@ -117,7 +118,7 @@ int FreeVSApi()
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,28),
+	PLUGIN_MAKE_VERSION(0,0,0,29),
 	"Support for Skype network",
 	"leecher",
 	"leecher@dose.0wnz.at",
@@ -1341,7 +1342,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 						}
 						else 
 							DBDeleteContactSetting(hContact, "UserInfo", "Timezone");
-  		    free(buf);
+  					free(buf);
 					break;
 
 				}
@@ -1463,18 +1464,22 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 				break;
 			}
 
-			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage))
-				 && (ptr=strstr(szSkypeMsg, " STATUS RECEIVED"))!=NULL) {
-			  // If new message is available, fetch it
-			  ptr[0]=0;
-			  if (!(args=(fetchmsg_arg *)malloc(sizeof(*args)))) break;
-			  args->msgnum=_strdup(strchr(szSkypeMsg, ' ')+1);
-			  args->getstatus=FALSE;
-			  pthread_create(( pThreadFunc )FetchMessageThread, args);
-			  break;
+			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " STATUS RECEIVED"))!=NULL) {
+				// If new message is available, fetch it
+				ptr[0]=0;
+				if (!(args=(fetchmsg_arg *)malloc(sizeof(*args)))) break;
+				args->msgnum=_strdup(strchr(szSkypeMsg, ' ')+1);
+				args->getstatus=FALSE;
+				pthread_create(( pThreadFunc )FetchMessageThread, args);
+				break;
 			}
 			if (!strncmp(szSkypeMsg, "MESSAGES", 8) || !strncmp(szSkypeMsg, "CHATMESSAGES", 12)) {
-				if (strlen(szSkypeMsg)<=(UINT)(strchr(szSkypeMsg, ' ')-szSkypeMsg+1)) break;
+				if (strlen(szSkypeMsg)<=(UINT)(strchr(szSkypeMsg, ' ')-szSkypeMsg+1)) 
+				{
+					LOGL( szSkypeMsg,(UINT)(strchr(szSkypeMsg, ' ')-szSkypeMsg+1));
+					LOGL(_strdup(strchr(szSkypeMsg, ' ')), strlen(szSkypeMsg));
+					break;
+				}
 				pthread_create(( pThreadFunc )MessageListProcessingThread, _strdup(strchr(szSkypeMsg, ' ')));
 				break;
 			}
@@ -1547,6 +1552,8 @@ void TellError(DWORD err) {
 // SERVICES //
 int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 {
+	if (MirandaShuttingDown) return 0;
+
 	int oldStatus;
 	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
 
@@ -1565,7 +1572,7 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 #endif
 
    RequestedStatus=MirandaStatusToSkype((int)wParam);
-   if (MirandaShuttingDown) return 0;
+   
    if ((int)wParam==ID_STATUS_OFFLINE) {
        logoff_contacts();
 	   if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0)) {
@@ -1891,6 +1898,10 @@ int __stdcall EnterBitmapFileName( char* szDest )
 	return ERROR_SUCCESS;
 }
 
+int MirandaExit(WPARAM wParam, LPARAM lParam) {
+	MirandaShuttingDown=TRUE;
+	return 0;
+}
 
 int OkToExit(WPARAM wParam, LPARAM lParam) {
 //	logoff_contacts();
@@ -2196,7 +2207,9 @@ extern "C" int __declspec( dllexport ) Unload(void)
 {
 	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
 	BOOL Shutdown = DBGetContactSettingByte(NULL, pszSkypeProtoName, "Shutdown", 0);
-		LOG ("Unload", "started");
+	
+	LOG ("Unload", "started");
+	
 	if ( Shutdown && ((skype_path && skype_path[0]) ||UseCustomCommand) ) {
 
 		if(UseCustomCommand)
@@ -2232,6 +2245,7 @@ extern "C" int __declspec( dllexport ) Unload(void)
 		UnhookEvent(hHookModulesLoaded);
 		UnhookEvent(hPrebuildCMenu);
 		UnhookEvent(hHookOkToExit);
+		UnhookEvent(hHookMirandaExit);
 		//UnhookEvent(ClistDblClick);
 		CloseHandle(SkypeReady);
 		CloseHandle(SkypeMsgReceived);

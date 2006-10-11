@@ -7,7 +7,7 @@
 //From skype.cpp
 extern char pszSkypeProtoName[MAX_PATH+30],protocol;
 extern HINSTANCE hInst;
-extern HANDLE hPrebuildCMenu, hStatusHookContact, hContactDeleted, hHookModulesLoaded, hHookOkToExit, hOptHook;
+extern HANDLE hPrebuildCMenu, hStatusHookContact, hContactDeleted, hHookModulesLoaded, hHookOkToExit, hOptHook, hHookMirandaExit;
 
 void CreateServices(void)
 {
@@ -83,7 +83,7 @@ void HookEvents(void)
 	hStatusHookContact = HookEvent(ME_DB_CONTACT_ADDED,HookContactAdded);
 	hContactDeleted = HookEvent( ME_DB_CONTACT_DELETED, HookContactDeleted );
 	hHookModulesLoaded = HookEvent( ME_SYSTEM_MODULESLOADED, OnModulesLoaded);
-	//hHookOkToExit = HookEvent(ME_SYSTEM_OKTOEXIT, OkToExit);
+	hHookMirandaExit = HookEvent(ME_SYSTEM_OKTOEXIT, MirandaExit);
 	hHookOkToExit = HookEvent(ME_SYSTEM_PRESHUTDOWN, OkToExit);
 }
 

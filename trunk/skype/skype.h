@@ -112,6 +112,7 @@ int SkypeAuthAllow(WPARAM wParam, LPARAM lParam);
 int SkypeAuthDeny(WPARAM wParam, LPARAM lParam);
 int SkypeAddToListByEvent(WPARAM wParam, LPARAM lParam);
 int OkToExit(WPARAM wParam, LPARAM lParam);
+int MirandaExit(WPARAM wParam, LPARAM lParam);
 int __stdcall EnterBitmapFileName( char* szDest );
 void CleanupNicknames(char *dummy);
 int InitVSApi();
