@@ -755,17 +755,16 @@ void JabberGroupchatProcessMessage( XmlNode *node, void *userdata )
 	gce.pDest = &gcd;
 	gce.ptszUID = nick;
 	gce.ptszNick = nick;
-	gce.bAddToLog = TRUE;
 	gce.time = msgTime;
 	gce.ptszText = EscapeChatTags( msgText );
 	gce.bIsMe = lstrcmp( nick, item->nick ) == 0;
-	gce.dwFlags = GC_TCHAR;
+	gce.dwFlags = GC_TCHAR | GCEF_ADDTOLOG;
 	JCallService(MS_GC_EVENT, NULL, (LPARAM)&gce);
 
 	item->bChatActive = 2;
 
 	if ( gcd.iType == GC_EVENT_TOPIC ) {
-		gce.bAddToLog = FALSE;
+		gce.dwFlags &= ~GCEF_ADDTOLOG;
 		gcd.iType = GC_EVENT_SETSBTEXT;
 		JCallService(MS_GC_EVENT, NULL, (LPARAM)&gce);
 	}

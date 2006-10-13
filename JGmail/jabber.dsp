@@ -177,9 +177,9 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\out32\\" /ALIGN:4096 /ignore:4108
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"Z:\temp\openssl\openssl-0.9.8d\out32\\" /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /pdb:none /incremental:yes
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\out32\\" /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"Z:\temp\openssl\openssl-0.9.8d\out32\\" /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
@@ -212,7 +212,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/JGmail.dll" /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /pdb:none /incremental:yes
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"z:\temp\openssl\openssl-0.9.8-stable-SNAP-20060314\out32\\" /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"Z:\temp\openssl\openssl-0.9.8d\out32\\" /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
