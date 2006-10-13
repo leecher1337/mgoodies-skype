@@ -156,7 +156,7 @@ void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, int act
 	gce.ptszText = szReason;
 	gce.dwFlags = GC_TCHAR;
 	gce.pDest = &gcd;
-	if ( item->bChatActive == 2 ) {
+ 	if ( item->bChatActive == 2 ) {
 		gce.dwFlags |= GCEF_ADDTOLOG;
 		gce.time = time(0);
 	}
@@ -173,7 +173,7 @@ void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, int act
 					case 0:
 						gcd.iType = GC_EVENT_ADDSTATUS;
 					case GC_EVENT_REMOVESTATUS:
-						gce.bAddToLog = false;
+						gce.dwFlags &= ~GCEF_ADDTOLOG;
 					}
 					gce.ptszText = TranslateT( "Moderator" );
 				}
@@ -338,7 +338,7 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 		{
 			TranslateDialogDefault( hwndDlg );
 			SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )iconBigList[0]);
-			SetDlgItemTextA( hwndDlg, IDC_ROOM, ( char* )lParam );
+			SetDlgItemText( hwndDlg, IDC_ROOM, ( TCHAR* )lParam );
 			HWND hwndComboBox = GetDlgItem( hwndDlg, IDC_USER );
 			int index = 0;
 			while (( index=JabberListFindNext( LIST_ROSTER, index )) >= 0 ) {
@@ -350,14 +350,14 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 				}
 				index++;
 			}
-			SetWindowLong( hwndDlg, GWL_USERDATA, ( LONG ) mir_strdup(( char* )lParam ));
+			SetWindowLong( hwndDlg, GWL_USERDATA, ( LONG ) mir_tstrdup(( TCHAR* )lParam ));
 		}
 		return TRUE;
 	case WM_COMMAND:
 		switch ( LOWORD( wParam )) {
 		case IDC_INVITE:
 			{
-				char* room = ( char* )GetWindowLong( hwndDlg, GWL_USERDATA );
+				TCHAR* room = ( TCHAR* )GetWindowLong( hwndDlg, GWL_USERDATA );
 				if ( room != NULL ) {
 					TCHAR text[256], user[256], *pUser;
 					HWND hwndComboBox = GetDlgItem( hwndDlg, IDC_USER );
@@ -386,16 +386,13 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 			return TRUE;
 		}
 		break;
+
 	case WM_CLOSE:
 		DestroyWindow( hwndDlg );
 		break;
-	case WM_DESTROY:
-		{
-			char* str;
 
-			if (( str=( char* )GetWindowLong( hwndDlg, GWL_USERDATA )) != NULL )
-				mir_free( str );
-		}
+	case WM_DESTROY:
+		mir_free(( TCHAR* )GetWindowLong( hwndDlg, GWL_USERDATA ));
 		break;
 	}
 
