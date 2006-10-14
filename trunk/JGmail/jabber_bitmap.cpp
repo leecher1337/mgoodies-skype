@@ -52,31 +52,35 @@ HBITMAP __stdcall JabberStretchBitmap( HBITMAP hBitmap )
 	HDC hDC = CreateCompatibleDC( NULL );
 	HBITMAP hOldBitmap1 = ( HBITMAP )SelectObject( hDC, hBitmap );
 	GetObject( hBitmap, sizeof( BITMAP ), &bmp );
+	if (max(bmp.bmWidth,bmp.bmHeight)!=64){// bitmap is not standard size
+		TCHAR temp[25];
+		mir_sntprintf(temp,24,_T(TCHAR_STR_PARAM)_T(" %s"),jabberProtoName,TranslateT( "avatar" ));
+		if (IDYES == MessageBox( NULL,TranslateT( "Bitmap is not suggested size\nResize?" ),temp, MB_YESNO|MB_ICONEXCLAMATION|MB_SETFOREGROUND) ){
+			HDC hBmpDC = CreateCompatibleDC( hDC );
+			HBITMAP hOldBitmap2 = ( HBITMAP )SelectObject( hBmpDC, hStretchedBitmap );
+			int side, dx, dy;
+			if ( bmp.bmWidth > bmp.bmHeight ) {
+				side = bmp.bmHeight;
+				dx = ( bmp.bmWidth - bmp.bmHeight )/2;
+				dy = 0;
+			}
+			else {
+				side = bmp.bmWidth;
+				dx = 0;
+				dy = ( bmp.bmHeight - bmp.bmWidth )/2;
+			}
 
-	HDC hBmpDC = CreateCompatibleDC( hDC );
-	HBITMAP hOldBitmap2 = ( HBITMAP )SelectObject( hBmpDC, hStretchedBitmap );
-	int side, dx, dy;
+			SetStretchBltMode( hBmpDC, HALFTONE );
+			StretchBlt( hBmpDC, 0, 0, 64, 64, hDC, dx, dy, side, side, SRCCOPY );
 
-	if ( bmp.bmWidth > bmp.bmHeight ) {
-		side = bmp.bmHeight;
-		dx = ( bmp.bmWidth - bmp.bmHeight )/2;
-		dy = 0;
-	}
-	else {
-		side = bmp.bmWidth;
-		dx = 0;
-		dy = ( bmp.bmHeight - bmp.bmWidth )/2;
-	}
-
-	SetStretchBltMode( hBmpDC, HALFTONE );
-	StretchBlt( hBmpDC, 0, 0, 64, 64, hDC, dx, dy, side, side, SRCCOPY );
-
+			SelectObject( hBmpDC, hOldBitmap2 );
+			DeleteDC( hBmpDC );
+		} else hStretchedBitmap = hBitmap;
+	} else hStretchedBitmap = hBitmap;
 	SelectObject( hDC, hOldBitmap1 );
-	DeleteObject( hBitmap );
+	if (hStretchedBitmap != hBitmap) DeleteObject( hBitmap );
 	DeleteDC( hDC );
 
-	SelectObject( hBmpDC, hOldBitmap2 );
-	DeleteDC( hBmpDC );
 	return hStretchedBitmap;
 }
 
