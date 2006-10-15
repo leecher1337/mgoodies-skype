@@ -138,18 +138,21 @@ inline void SendData(WCHAR *text)
 }
 
 
-void Concat(WCHAR *data, size_t &size, char *str)
+void Concat(WCHAR *data, size_t &size, char *str, size_t len = 0)
 {
 	if (size < 3 * sizeof(WCHAR))
 		return;
 
 	if (str != NULL)
 	{
-		size_t len = strlen(str);
+		if (len == 0)
+			len = strlen(str);
+
 		if (size >= len + 3)
 		{
-			MultiByteToWideChar(CP_ACP, 0, str, (len+1)  * sizeof(char), &data[DATA_SIZE - size], size * sizeof(WCHAR));
+			MultiByteToWideChar(CP_ACP, 0, str, len  * sizeof(char), &data[DATA_SIZE - size], size * sizeof(WCHAR));
 			size -= len;
+			data[DATA_SIZE - size] = L'\0';
 		}
 	}
 
@@ -162,7 +165,7 @@ void GetMetadata(extendedFileInfoStruct *efi, char *field, WCHAR *data, size_t &
 {
 	efi->ret[0] = '\0';
 	efi->metadata = field;
-	if (SendMessage(plugin.hwndParent, WM_WA_IPC, (WPARAM) efi, IPC_GET_EXTENDED_FILE_INFO_HOOKABLE))
+	if (SendMessage(plugin.hwndParent, WM_WA_IPC, (WPARAM) efi, IPC_GET_EXTENDED_FILE_INFO_HOOKABLE) && efi->ret[0] != '\0')
 	{
 		Concat(data, size, efi->ret);
 	}
@@ -173,7 +176,7 @@ void GetMetadata(extendedFileInfoStruct *efi, char *field, WCHAR *data, size_t &
 }
 
 
-void SendDataToMiranda(char *filename)
+void SendDataToMiranda(char *filename, char *title)
 {
 	extendedFileInfoStruct efi;
 	char tmp[256];
@@ -190,12 +193,39 @@ void SendDataToMiranda(char *filename)
 	Concat(data, size, "1");
 	Concat(data, size, "Winamp");
 
-	if (SendMessage(plugin.hwndParent, WM_WA_IPC, 3, IPC_GETINFO))
+	int video = SendMessage(plugin.hwndParent, WM_WA_IPC, 3, IPC_GETINFO);
+	if (video != 0 && video != 0xFAADF00D)	// Winamp 5.3 return this
 		Concat(data, size, "Video");
 	else
 		Concat(data, size, "Music");
 
-	GetMetadata(&efi, "TITLE", data, size);
+	efi.ret[0] = '\0';
+	efi.metadata = "TITLE";
+	if (SendMessage(plugin.hwndParent, WM_WA_IPC, (WPARAM) &efi, IPC_GET_EXTENDED_FILE_INFO_HOOKABLE) && efi.ret[0] != '\0')
+	{
+		Concat(data, size, efi.ret);
+	}
+	else if (title != NULL && title[0] != '\0' && strcmpi(title, filename) != 0)
+	{
+		Concat(data, size, title);
+	}
+	else
+	{
+		char *name = strrchr(filename, '\\');
+		if (name == NULL)
+			strrchr(filename, '/');
+
+		if (name == NULL)
+		{
+			Concat(data, size, NULL);
+		}
+		else 
+		{
+			char *dot = strrchr(name, '.');
+			Concat(data, size, name + 1, dot == NULL ? 0 : dot - name - 1);
+		}
+	}
+
 	GetMetadata(&efi, "ARTIST", data, size);
 	GetMetadata(&efi, "ALBUM", data, size);
 	GetMetadata(&efi, "TRACK", data, size);
@@ -277,7 +307,7 @@ LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 
 							// Miranda is running?
 							if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
-								SendDataToMiranda(last_filename);
+								SendDataToMiranda(last_filename, (char *) SendMessage(plugin.hwndParent, WM_WA_IPC, track, IPC_GETPLAYLISTTITLE));
 						}
 					}
 				}
@@ -312,7 +342,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 				int type = HIWORD(lParam);
 				if(type == 0x4000 || type == 0)
 				{
-					SetTimer(hMsgWnd, 1, 100, NULL);
+					KillTimer(hMsgWnd, 1);
+					SetTimer(hMsgWnd, 1, 1000, NULL);
 				}
 			}
 			break;
@@ -331,14 +362,24 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 		{
 			switch(wParam)
 			{
+				case 40045: // Play
 				case 40046: // Pause
 				{
-					SetTimer(hMsgWnd, 1, 500, NULL);
+					KillTimer(hMsgWnd, 1);
+					SetTimer(hMsgWnd, 1, 1000, NULL);
 					break;
 				}
-				case 40045: // Play
+			}
+			break;
+		}
+		case WM_WA_IPC:
+		{
+			switch(lParam)
+			{
+				case IPC_PLAYING_FILE:
 				{
-					SetTimer(hMsgWnd, 1, 500, NULL);
+					KillTimer(hMsgWnd, 1);
+					SetTimer(hMsgWnd, 1, 1000, NULL);
 					break;
 				}
 			}
@@ -377,3 +418,4 @@ int init()
 
 	return 0; 
 } 
+

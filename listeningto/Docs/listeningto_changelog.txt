@@ -1,6 +1,10 @@
-ListeningTo 0.1.0.6
+ListeningTo 0.1.0.7
 
 Changelog:
+
+. 0.1.0.7
+  * Fixes for winamp 5.3
+  + Change internal struct. THIS VERSION IS NOT COMPATIBLE WITH PREVIOUS ONE. USE NEW VERSION OF PROTOCOLS.
 
 . 0.1.0.6
   * More fixes for winamp

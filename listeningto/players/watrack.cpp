@@ -116,48 +116,49 @@ void WATrack::GetData()
 	FreeData();
 
 	if (si->album != NULL && si->album[0] != L'\0')
-		listening_info.szAlbum = mir_dupTW(si->album);
+		listening_info.ptszAlbum = mir_dupTW(si->album);
 
 	if (si->artist != NULL && si->artist[0] != L'\0')
-		listening_info.szArtist = mir_dupTW(si->artist);
+		listening_info.ptszArtist = mir_dupTW(si->artist);
 
 	if (si->title != NULL && si->title[0] != L'\0')
-		listening_info.szTitle = mir_dupTW(si->title);
+		listening_info.ptszTitle = mir_dupTW(si->title);
 
 	if (si->year != NULL && si->year[0] != L'\0')
-		listening_info.szYear = mir_dupTW(si->year);
+		listening_info.ptszYear = mir_dupTW(si->year);
 
 	if (si->track > 0)
 	{
-		listening_info.szTrack = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
-		_itot(si->track, listening_info.szTrack, 10);
+		listening_info.ptszTrack = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
+		_itot(si->track, listening_info.ptszTrack, 10);
 	}
 
 	if (si->genre != NULL && si->genre[0] != L'\0')
-		listening_info.szGenre = mir_dupTW(si->genre);
+		listening_info.ptszGenre = mir_dupTW(si->genre);
 
 	if (si->total > 0)
 	{
-		listening_info.szLength = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
+		listening_info.ptszLength = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
 
 		int s = si->total % 60;
 		int m = (si->total / 60) % 60;
 		int h = (si->total / 60) / 60;
 
 		if (h > 0)
-			mir_sntprintf(listening_info.szLength, 9, _T("%d:%02d:%02d"), h, m, s);
+			mir_sntprintf(listening_info.ptszLength, 9, _T("%d:%02d:%02d"), h, m, s);
 		else
-			mir_sntprintf(listening_info.szLength, 9, _T("%d:%02d"), m, s);
+			mir_sntprintf(listening_info.ptszLength, 9, _T("%d:%02d"), m, s);
 	}
 
 	if (si->width > 0)
-		listening_info.szType = mir_dupT(_T("Video"));
+		listening_info.ptszType = mir_dupT(_T("Video"));
 	else
-		listening_info.szType = mir_dupT(_T("Music"));
+		listening_info.ptszType = mir_dupT(_T("Music"));
 
-	listening_info.szPlayer = mir_dupTW(si->player);
+	listening_info.ptszPlayer = mir_dupTW(si->player);
 
 	listening_info.cbSize = sizeof(listening_info);
+	listening_info.dwFlags = LTI_TCHAR;
 
 	NotifyInfoChanged();
 }

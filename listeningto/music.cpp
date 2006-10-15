@@ -51,15 +51,15 @@ void EnableDisablePlayers()
 
 void FreeListeningInfo(LISTENINGTOINFO *lti)
 {
-	MIR_FREE(lti->szArtist);
-	MIR_FREE(lti->szAlbum);
-	MIR_FREE(lti->szTitle);
-	MIR_FREE(lti->szTrack);
-	MIR_FREE(lti->szYear);
-	MIR_FREE(lti->szGenre);
-	MIR_FREE(lti->szLength);
-	MIR_FREE(lti->szPlayer);
-	MIR_FREE(lti->szType);
+	MIR_FREE(lti->ptszArtist);
+	MIR_FREE(lti->ptszAlbum);
+	MIR_FREE(lti->ptszTitle);
+	MIR_FREE(lti->ptszTrack);
+	MIR_FREE(lti->ptszYear);
+	MIR_FREE(lti->ptszGenre);
+	MIR_FREE(lti->ptszLength);
+	MIR_FREE(lti->ptszPlayer);
+	MIR_FREE(lti->ptszType);
 }
 
 
