@@ -988,8 +988,8 @@ void __stdcall JabberSendPresenceTo( int status, TCHAR* to, XmlNode* extra )
 		else
 		{
 			mir_sntprintf( &msg[2], 1022, _T("%s - %s"), 
-							( listeningToInfo.szTitle ? listeningToInfo.szTitle : _T("") ), 
-							( listeningToInfo.szArtist ? listeningToInfo.szArtist : _T("") ) );
+							( listeningToInfo.ptszTitle ? listeningToInfo.ptszTitle : _T("") ), 
+							( listeningToInfo.ptszArtist ? listeningToInfo.ptszArtist : _T("") ) );
 
 			p.addChild( "status", msg );
 		}

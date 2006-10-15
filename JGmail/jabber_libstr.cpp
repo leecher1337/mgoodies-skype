@@ -47,30 +47,18 @@ void __stdcall replaceStr( WCHAR*& dest, const WCHAR* src )
 	else dest = NULL;
 }
 
-void __stdcall overrideStr( TCHAR*& dest, const TCHAR* src )
+void __stdcall overrideStr( TCHAR*& dest, const TCHAR* src, BOOL unicode, const TCHAR* def )
 {
 	if ( dest != NULL ) 
 	{
-		free( dest );
+		mir_free( dest );
 		dest = NULL;
 	}
 
 	if ( src != NULL )
-		dest = _tcsdup( src );
-}
-
-void __stdcall overrideStr( TCHAR*& dest, const TCHAR* src, const TCHAR* def )
-{
-	if ( dest != NULL ) 
-	{
-		free( dest );
-		dest = NULL;
-	}
-
-	if ( src != NULL )
-		dest = _tcsdup( src );
+		dest = a2tf( src, unicode );
 	else if ( def != NULL )
-		dest = _tcsdup( def );
+		dest = mir_tstrdup( def );
 }
 
 char* __stdcall rtrim( char *string )
@@ -101,13 +89,29 @@ TCHAR* __stdcall rtrim( TCHAR *string )
 }
 #endif
 
-TCHAR * mir_lstrdup( const TCHAR* src )
+
+TCHAR* a2tf( const TCHAR* str, BOOL unicode )
 {
-	if ( src == NULL )
+	if ( str == NULL )
 		return NULL;
 
-	size_t len = lstrlen( src );
-	TCHAR *ret = (TCHAR *) mir_alloc( len * sizeof(TCHAR) );
-	lstrcpy( ret, src );
-	return ret;
+	#if defined( _UNICODE )
+		if ( unicode )
+			return mir_tstrdup( str );
+		else {
+			int codepage = CallService( MS_LANGPACK_GETCODEPAGE, 0, 0 );
+
+			int cbLen = MultiByteToWideChar( codepage, 0, (char*)str, -1, 0, 0 );
+			TCHAR* result = ( TCHAR* )mir_alloc( sizeof(TCHAR)*( cbLen+1 ));
+			if ( result == NULL )
+				return NULL;
+
+			MultiByteToWideChar( codepage, 0, (char*)str, -1, result, cbLen );
+			result[ cbLen ] = 0;
+			return result;
+		}
+	#else
+		return mir_strdup( str );
+	#endif
 }
+

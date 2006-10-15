@@ -33,16 +33,55 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef struct {
 	int cbSize;
-	TCHAR *szType;			// Media type: Music, Video, etc...
-	TCHAR *szArtist;		// Artist name
-	TCHAR *szAlbum;			// Algum name
-	TCHAR *szTitle;			// Song name
-	TCHAR *szTrack;			// Track number
-	TCHAR *szYear;			// Song year
-	TCHAR *szGenre;			// Song genre
-	TCHAR *szLength;		// Song length
-	TCHAR *szPlayer;		// Player name
+
+	union {
+		char* pszType;			// Media type: Music, Video, etc...
+		TCHAR* ptszType;
+	};
+	union {
+		char* pszArtist;		// Artist name
+		TCHAR* ptszArtist;
+	};
+	union {
+		char* pszAlbum;			// Algum name
+		TCHAR* ptszAlbum;
+	};
+	union {
+		char* pszTitle;			// Song name
+		TCHAR* ptszTitle;
+	};
+	union {
+		char* pszTrack;			// Track number
+		TCHAR* ptszTrack;
+	};
+	union {
+		char* pszYear;			// Song year
+		TCHAR* ptszYear;
+	};
+	union {
+		char* pszGenre;			// Song genre
+		TCHAR* ptszGenre;
+	};
+	union {
+		char* pszLength;		// Song length
+		TCHAR* ptszLength;
+	};
+	union {
+		char* pszPlayer;		// Player name
+		TCHAR* ptszPlayer;
+	};
+
+	DWORD dwFlags;
+
 } LISTENINGTOINFO;
+
+#define LTI_UNICODE 1
+
+#ifdef UNICODE
+	#define LTI_TCHAR   LTI_UNICODE
+#else
+	#define LTI_TCHAR   0
+#endif
 
 // Set the listening info for the protocol.
 // Pass NULL to remove it.

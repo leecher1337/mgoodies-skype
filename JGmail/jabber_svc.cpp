@@ -844,15 +844,16 @@ int JabberGetListeningTo( WPARAM wParam, LPARAM lParam )
 	if (lti == NULL || lti->cbSize != sizeof(LISTENINGTOINFO))
 		return -1;
 
-	lti->szArtist = mir_lstrdup( listeningToInfo.szArtist );
-	lti->szAlbum = mir_lstrdup( listeningToInfo.szAlbum );
-	lti->szTitle = mir_lstrdup( listeningToInfo.szTitle );
-	lti->szTrack = mir_lstrdup( listeningToInfo.szTrack );
-	lti->szYear = mir_lstrdup( listeningToInfo.szYear );
-	lti->szGenre = mir_lstrdup( listeningToInfo.szGenre );
-	lti->szLength = mir_lstrdup( listeningToInfo.szLength );
-	lti->szPlayer = mir_lstrdup( listeningToInfo.szPlayer );
-	lti->szType = mir_lstrdup( listeningToInfo.szType );
+	lti->ptszArtist = mir_tstrdup( listeningToInfo.ptszArtist );
+	lti->ptszAlbum = mir_tstrdup( listeningToInfo.ptszAlbum );
+	lti->ptszTitle = mir_tstrdup( listeningToInfo.ptszTitle );
+	lti->ptszTrack = mir_tstrdup( listeningToInfo.ptszTrack );
+	lti->ptszYear = mir_tstrdup( listeningToInfo.ptszYear );
+	lti->ptszGenre = mir_tstrdup( listeningToInfo.ptszGenre );
+	lti->ptszLength = mir_tstrdup( listeningToInfo.ptszLength );
+	lti->ptszPlayer = mir_tstrdup( listeningToInfo.ptszPlayer );
+	lti->ptszType = mir_tstrdup( listeningToInfo.ptszType );
+	lti->dwFlags = listeningToInfo.dwFlags;
 
 	return 0;
 }
@@ -1356,32 +1357,35 @@ int JabberSetListeningTo( WPARAM wParam, LPARAM lParam )
 	EnterCriticalSection( &listeningToInfoMutex );
 
 	// Clear old info
-	if ( listeningToInfo.szArtist ) free( listeningToInfo.szArtist );
-	if ( listeningToInfo.szAlbum ) free( listeningToInfo.szAlbum );
-	if ( listeningToInfo.szTitle ) free( listeningToInfo.szTitle );
-	if ( listeningToInfo.szTrack ) free( listeningToInfo.szTrack );
-	if ( listeningToInfo.szYear ) free( listeningToInfo.szYear );
-	if ( listeningToInfo.szGenre ) free( listeningToInfo.szGenre );
-	if ( listeningToInfo.szLength ) free( listeningToInfo.szLength );
-	if ( listeningToInfo.szPlayer ) free( listeningToInfo.szPlayer );
-	if ( listeningToInfo.szType ) free( listeningToInfo.szType );
+	if ( listeningToInfo.ptszArtist ) mir_free( listeningToInfo.ptszArtist );
+	if ( listeningToInfo.ptszAlbum ) mir_free( listeningToInfo.ptszAlbum );
+	if ( listeningToInfo.ptszTitle ) mir_free( listeningToInfo.ptszTitle );
+	if ( listeningToInfo.ptszTrack ) mir_free( listeningToInfo.ptszTrack );
+	if ( listeningToInfo.ptszYear ) mir_free( listeningToInfo.ptszYear );
+	if ( listeningToInfo.ptszGenre ) mir_free( listeningToInfo.ptszGenre );
+	if ( listeningToInfo.ptszLength ) mir_free( listeningToInfo.ptszLength );
+	if ( listeningToInfo.ptszPlayer ) mir_free( listeningToInfo.ptszPlayer );
+	if ( listeningToInfo.ptszType ) mir_free( listeningToInfo.ptszType );
 	ZeroMemory(&listeningToInfo, sizeof(listeningToInfo));
 
 	// Copy new info
 	LISTENINGTOINFO *lti = (LISTENINGTOINFO *)lParam;
-	if (lti != NULL && lti->cbSize == sizeof(LISTENINGTOINFO) && (lti->szArtist != NULL || lti->szTitle != NULL)) 
+	if (lti != NULL && lti->cbSize == sizeof(LISTENINGTOINFO) && (lti->ptszArtist != NULL || lti->ptszTitle != NULL)) 
 	{
-		listeningToInfo.cbSize = sizeof(listeningToInfo);	// Marks that there is info set
+		BOOL unicode = lti->dwFlags & LTI_UNICODE;
 
-		overrideStr( listeningToInfo.szType, lti->szType, _T("Music") );
-		overrideStr( listeningToInfo.szArtist, lti->szArtist );
-		overrideStr( listeningToInfo.szAlbum, lti->szAlbum );
-		overrideStr( listeningToInfo.szTitle, lti->szTitle, _T("No Title") );
-		overrideStr( listeningToInfo.szTrack, lti->szTrack );
-		overrideStr( listeningToInfo.szYear, lti->szYear );
-		overrideStr( listeningToInfo.szGenre, lti->szGenre );
-		overrideStr( listeningToInfo.szLength, lti->szLength );
-		overrideStr( listeningToInfo.szPlayer, lti->szPlayer );
+		listeningToInfo.cbSize = sizeof(listeningToInfo);	// Marks that there is info set
+		listeningToInfo.dwFlags = LTI_TCHAR;
+
+		overrideStr( listeningToInfo.ptszType, lti->ptszType, unicode, _T("Music") );
+		overrideStr( listeningToInfo.ptszArtist, lti->ptszArtist, unicode );
+		overrideStr( listeningToInfo.ptszAlbum, lti->ptszAlbum, unicode );
+		overrideStr( listeningToInfo.ptszTitle, lti->ptszTitle, unicode, _T("No Title") );
+		overrideStr( listeningToInfo.ptszTrack, lti->ptszTrack, unicode );
+		overrideStr( listeningToInfo.ptszYear, lti->ptszYear, unicode );
+		overrideStr( listeningToInfo.ptszGenre, lti->ptszGenre, unicode );
+		overrideStr( listeningToInfo.ptszLength, lti->ptszLength, unicode );
+		overrideStr( listeningToInfo.ptszPlayer, lti->ptszPlayer, unicode );
 	} 
 
 	// Set user text
@@ -1399,8 +1403,8 @@ int JabberSetListeningTo( WPARAM wParam, LPARAM lParam )
 		else 
 		{
 			text = (TCHAR *) mir_alloc( 128 * sizeof(TCHAR) );
-			mir_sntprintf( text, 128, _T("%s - %s"), ( listeningToInfo.szTitle ? listeningToInfo.szTitle : _T("") ), 
-													 ( listeningToInfo.szArtist ? listeningToInfo.szArtist : _T("") ) );
+			mir_sntprintf( text, 128, _T("%s - %s"), ( listeningToInfo.ptszTitle ? listeningToInfo.ptszTitle : _T("") ), 
+													 ( listeningToInfo.ptszArtist ? listeningToInfo.ptszArtist : _T("") ) );
 		}
 		JSetStringT(NULL, "ListeningTo", text);
 		mir_free(text);
