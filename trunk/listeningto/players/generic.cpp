@@ -132,31 +132,32 @@ void GenericPlayer::ProcessReceived()
 	}
 
 	listening_info.cbSize = sizeof(listening_info);
+	listening_info.dwFlags = LTI_TCHAR;
 
-	listening_info.szType = mir_dupTW(parts[2][0] == L'\0' ? L"Music" : parts[2]);
-	listening_info.szArtist = mir_dupTW(parts[4]);
-	listening_info.szAlbum = mir_dupTW(parts[5]);
-	listening_info.szTitle = mir_dupTW(parts[3]);
-	listening_info.szTrack = mir_dupTW(parts[6]);
-	listening_info.szYear = mir_dupTW(parts[7]);
-	listening_info.szGenre = mir_dupTW(parts[8]);
-	listening_info.szPlayer = mir_dupT(players[i]->name);
+	listening_info.ptszType = mir_dupTW(parts[2][0] == L'\0' ? L"Music" : parts[2]);
+	listening_info.ptszArtist = mir_dupTW(parts[4]);
+	listening_info.ptszAlbum = mir_dupTW(parts[5]);
+	listening_info.ptszTitle = mir_dupTW(parts[3]);
+	listening_info.ptszTrack = mir_dupTW(parts[6]);
+	listening_info.ptszYear = mir_dupTW(parts[7]);
+	listening_info.ptszGenre = mir_dupTW(parts[8]);
+	listening_info.ptszPlayer = mir_dupT(players[i]->name);
 
 	if (parts[8] != NULL)
 	{
 		long length = _wtoi(parts[8]);
 		if (length > 0)
 		{
-			listening_info.szLength = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
+			listening_info.ptszLength = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
 
 			int s = length % 60;
 			int m = (length / 60) % 60;
 			int h = (length / 60) / 60;
 
 			if (h > 0)
-				mir_sntprintf(listening_info.szLength, 9, _T("%d:%02d:%02d"), h, m, s);
+				mir_sntprintf(listening_info.ptszLength, 9, _T("%d:%02d:%02d"), h, m, s);
 			else
-				mir_sntprintf(listening_info.szLength, 9, _T("%d:%02d"), m, s);
+				mir_sntprintf(listening_info.ptszLength, 9, _T("%d:%02d"), m, s);
 		}
 	}
 

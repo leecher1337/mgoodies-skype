@@ -29,15 +29,16 @@ void CopyListeningInfo(LISTENINGTOINFO *dest, const LISTENINGTOINFO * const src)
 	FreeListeningInfo(dest);
 
 	dest->cbSize = src->cbSize;
-	dest->szArtist = mir_dupT(src->szArtist);
-	dest->szAlbum = mir_dupT(src->szAlbum);
-	dest->szTitle = mir_dupT(src->szTitle);
-	dest->szTrack = mir_dupT(src->szTrack);
-	dest->szYear = mir_dupT(src->szYear);
-	dest->szGenre = mir_dupT(src->szGenre);
-	dest->szLength = mir_dupT(src->szLength);
-	dest->szPlayer = mir_dupT(src->szPlayer);
-	dest->szType = mir_dupT(src->szType);
+	dest->dwFlags = src->dwFlags;
+	dest->ptszArtist = mir_dupT(src->ptszArtist);
+	dest->ptszAlbum = mir_dupT(src->ptszAlbum);
+	dest->ptszTitle = mir_dupT(src->ptszTitle);
+	dest->ptszTrack = mir_dupT(src->ptszTrack);
+	dest->ptszYear = mir_dupT(src->ptszYear);
+	dest->ptszGenre = mir_dupT(src->ptszGenre);
+	dest->ptszLength = mir_dupT(src->ptszLength);
+	dest->ptszPlayer = mir_dupT(src->ptszPlayer);
+	dest->ptszType = mir_dupT(src->ptszType);
 }
 
 

@@ -502,15 +502,15 @@ int GetParsedFormat(WPARAM wParam,LPARAM lParam)
 	TCHAR *ret = mir_dupT( opts.templ );
 
 	TCHAR *fr[] = { 
-		_T("%artist%"), lti->szArtist,
-		_T("%album%"), lti->szAlbum,
-		_T("%title%"), lti->szTitle,
-		_T("%track%"), lti->szTrack,
-		_T("%year%"), lti->szYear,
-		_T("%genre%"), lti->szGenre,
-		_T("%length%"), lti->szLength,
-		_T("%player%"), lti->szPlayer,
-		_T("%type%"), lti->szType
+		_T("%artist%"), lti->ptszArtist,
+		_T("%album%"), lti->ptszAlbum,
+		_T("%title%"), lti->ptszTitle,
+		_T("%track%"), lti->ptszTrack,
+		_T("%year%"), lti->ptszYear,
+		_T("%genre%"), lti->ptszGenre,
+		_T("%length%"), lti->ptszLength,
+		_T("%player%"), lti->ptszPlayer,
+		_T("%type%"), lti->ptszType
 	};
 
 	for (int i = 0; i < MAX_REGS(fr); i+=2) {

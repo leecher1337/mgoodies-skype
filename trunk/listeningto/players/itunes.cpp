@@ -109,52 +109,52 @@ BOOL ITunes::FillCache()
 
 	CALL( track->get_Album(&ret) );
 	if (ret != NULL && ret[0] != L'\0')
-		listening_info.szAlbum = mir_dupTW(ret);
+		listening_info.ptszAlbum = mir_dupTW(ret);
 
 	CALL( track->get_Artist(&ret) );
 	if (ret != NULL && ret[0] != L'\0')
-		listening_info.szArtist = mir_dupTW(ret);
+		listening_info.ptszArtist = mir_dupTW(ret);
 
 	CALL( track->get_Name(&ret) );
 	if (ret != NULL && ret[0] != L'\0')
-		listening_info.szTitle = mir_dupTW(ret);
+		listening_info.ptszTitle = mir_dupTW(ret);
 
 	CALL( track->get_Year(&lret) );
 	if (lret > 0)
 	{
-		listening_info.szYear = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
-		_itot(lret, listening_info.szYear, 10);
+		listening_info.ptszYear = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
+		_itot(lret, listening_info.ptszYear, 10);
 	}
 
 	CALL( track->get_TrackNumber(&lret) );
 	if (lret > 0)
 	{
-		listening_info.szTrack = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
-		_itot(lret, listening_info.szTrack, 10);
+		listening_info.ptszTrack = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
+		_itot(lret, listening_info.ptszTrack, 10);
 	}
 
 	CALL( track->get_Genre(&ret) );
 	if (ret != NULL && ret[0] != L'\0')
-		listening_info.szGenre = mir_dupTW(ret);
+		listening_info.ptszGenre = mir_dupTW(ret);
 
 	CALL( track->get_Duration(&lret) );
 	if (lret > 0)
 	{
-		listening_info.szLength = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
+		listening_info.ptszLength = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
 
 		int s = lret % 60;
 		int m = (lret / 60) % 60;
 		int h = (lret / 60) / 60;
 
 		if (h > 0)
-			mir_sntprintf(listening_info.szLength, 9, _T("%d:%02d:%02d"), h, m, s);
+			mir_sntprintf(listening_info.ptszLength, 9, _T("%d:%02d:%02d"), h, m, s);
 		else
-			mir_sntprintf(listening_info.szLength, 9, _T("%d:%02d"), m, s);
+			mir_sntprintf(listening_info.ptszLength, 9, _T("%d:%02d"), m, s);
 	}
 
-	listening_info.szType = mir_dupT(_T("Music"));
+	listening_info.ptszType = mir_dupT(_T("Music"));
 
-	if (listening_info.szTitle == NULL)
+	if (listening_info.ptszTitle == NULL)
 	{
 		// Get from filename
 		WCHAR *p = wcsrchr(filename, '\\');
@@ -163,16 +163,17 @@ BOOL ITunes::FillCache()
 		else
 			p = filename;
 		
-		listening_info.szTitle = mir_dupTW(p);
+		listening_info.ptszTitle = mir_dupTW(p);
 
-		TCHAR *pt = _tcsrchr(listening_info.szTitle, '.');
+		TCHAR *pt = _tcsrchr(listening_info.ptszTitle, '.');
 		if (pt != NULL)
 			*p = _T('\0');
 	}
 
-	listening_info.szPlayer = mir_dupT(name);
+	listening_info.ptszPlayer = mir_dupT(name);
 
 	listening_info.cbSize = sizeof(listening_info);
+	listening_info.dwFlags = LTI_TCHAR;
 
 	return TRUE;
 }
