@@ -435,13 +435,12 @@ int    JGetAdvancedStatusIcon(WPARAM wParam, LPARAM lParam);
 
 void  __stdcall replaceStr( char*& dest, const char* src );
 void  __stdcall replaceStr( WCHAR*& dest, const WCHAR* src );
-void __stdcall overrideStr( TCHAR*& dest, const TCHAR* src );
-void __stdcall overrideStr( TCHAR*& dest, const TCHAR* src, const TCHAR* def );
+void __stdcall overrideStr( TCHAR*& dest, const TCHAR* src, BOOL unicode, const TCHAR* def = NULL );
 char* __stdcall rtrim( char *string );
 #if defined( _UNICODE )
 	TCHAR* __stdcall rtrim( TCHAR *string );
 #endif
-TCHAR * mir_lstrdup( const TCHAR* src );
+TCHAR* a2tf( const TCHAR* str, BOOL unicode );
 
 //---- jabber_misc.c ------------------------------------------------
 
