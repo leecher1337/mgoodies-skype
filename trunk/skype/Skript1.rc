@@ -184,15 +184,19 @@ BEGIN
                     IDC_GROUPCHAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,68,
                     296,9
     CONTROL         "Suppress all error-Messages (not recommended, but if it annoys you.. ;)",
-                    IDC_NOERRORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,49,
-                    296,9
-    LTEXT           "SkypeOut contacts are in status",IDC_STATIC,9,108,120,8
-    COMBOBOX        IDC_SKYPEOUTSTAT,137,105,79,54,CBS_DROPDOWNLIST | 
+                    IDC_NOERRORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,48,
+                    296,13
+    LTEXT           "SkypeOut contacts are in status",IDC_STATIC,10,131,120,
+                    8
+    COMBOBOX        IDC_SKYPEOUTSTAT,138,128,79,54,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Keep requested online status on startup under every circumstance",
                     IDC_KEEPSTATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,86,
                     296,9
-    PUSHBUTTON      "Cleanup Nicknames",IDC_CLEANUP,9,123,80,18,BS_MULTILINE
+    PUSHBUTTON      "Cleanup Nicknames",IDC_CLEANUP,10,146,80,18,
+                    BS_MULTILINE
+    CONTROL         "Use time zone patch",IDC_TIMEZONE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,104,296,9
 END
 
 

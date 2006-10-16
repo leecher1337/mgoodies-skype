@@ -201,6 +201,7 @@ int CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 			CheckDlgButton(hwndDlg, IDC_ENABLEMENU, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "EnableMenu", 1));
 			CheckDlgButton(hwndDlg, IDC_NOERRORS, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "SuppressErrors", 0));
 			CheckDlgButton(hwndDlg, IDC_KEEPSTATE, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "KeepState", 0));
+			CheckDlgButton(hwndDlg, IDC_TIMEZONE, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseTimeZonePatch", 0));
 
 			if (ServiceExists(MS_GC_NEWCHAT) && atoi(SKYPE_PROTO+strlen(SKYPE_PROTO)-1)>=5)
 				CheckDlgButton(hwndDlg, IDC_GROUPCHAT, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0));
@@ -237,6 +238,7 @@ int CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "SuppressErrors", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_NOERRORS), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "KeepState", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_KEEPSTATE), BM_GETCHECK,0,0)));
 					DBWriteContactSettingDword(NULL, pszSkypeProtoName, "SkypeOutStatusMode", SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_GETITEMDATA,SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_GETCURSEL,0,0),0));
+					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UseTimeZonePatch", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_TIMEZONE), BM_GETCHECK,0,0)));
 					return TRUE;
 			}			
 			break; 
