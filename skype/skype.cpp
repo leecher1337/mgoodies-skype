@@ -118,7 +118,7 @@ int FreeVSApi()
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,29),
+	PLUGIN_MAKE_VERSION(0,0,0,30),
 	"Support for Skype network",
 	"leecher",
 	"leecher@dose.0wnz.at",
@@ -1334,7 +1334,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 						if (atoi(ptr+9) != 0) {
 							if (atoi(ptr+9) >= 86400 ) timezone=256-((2*(atoi(ptr+9)-86400))/3600);
 							if (atoi(ptr+9) < 86400 ) timezone=((-2*(atoi(ptr+9)-86400))/3600); 
-							if (tms->tm_isdst == 1) {
+							if (tms->tm_isdst == 1 && DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseTimeZonePatch", 0)) {
 								DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (timezone+2));
 							}
 							else 

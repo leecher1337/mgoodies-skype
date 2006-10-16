@@ -51,6 +51,7 @@
 #define IDC_KEEPSTATE                   1021
 #define IDC_CLEANUP                     1022
 #define IDC_JOIN                        1023
+#define IDC_TIMEZONE                    1023
 #define IDC_HOLD                        1024
 #define IDC_HANGUP                      1025
 #define IDC_AVATAR                      1026
