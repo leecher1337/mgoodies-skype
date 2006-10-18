@@ -33,6 +33,7 @@ extern "C"
 #include <m_langpack.h>
 #include <m_protocols.h>
 #include <m_protosvc.h>
+#include <m_system.h>
 }
 
 
