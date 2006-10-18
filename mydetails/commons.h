@@ -126,6 +126,13 @@ static __inline int DRAW_TEXT(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRec
 }
 
 
+//Returns the current status message for yourself
+//wParam=(WPARAM)0
+//lParam=(LPARAM)0
+//returns status msg or NULL if there is none.  Remember to mir_free the return value
+#define PS_GETAWAYMSG  "/GetAwayMsg"
+
+
 
 
 

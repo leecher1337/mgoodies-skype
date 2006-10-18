@@ -294,7 +294,12 @@ void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
 		return;
 	}
 
-	if (ServiceExists(MS_NAS_GETSTATE))
+	if (aStatus == status && ProtoServiceExists(name, PS_GETAWAYMSG) )
+	{
+		char *tmp = (char *) CallProtoService(name, PS_GETAWAYMSG, 0, 0);
+		lcopystr(msg, tmp == NULL ? "" : tmp, msg_size);
+	} 
+	else if (ServiceExists(MS_NAS_GETSTATE))
 	{
 		NAS_PROTOINFO pi;
 
@@ -317,7 +322,9 @@ void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
 						lcopystr(msg, pi.szMsg, msg_size);
 						mir_free(pi.szMsg);
 					}
+					else lcopystr(msg, "", msg_size);
 				}
+				else lcopystr(msg, "", msg_size);
 			}
 			else // if (pi.szMsg != NULL)
 			{
@@ -325,6 +332,7 @@ void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
 				mir_free(pi.szMsg);
 			}
 		}
+		else lcopystr(msg, "", msg_size);
 
 		if (ServiceExists(MS_VARS_FORMATSTRING))
 		{
@@ -359,7 +367,9 @@ void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
 						lcopystr(msg, pi.szMsg, msg_size);
 						mir_free(pi.szMsg);
 					}
+					else lcopystr(msg, "", msg_size);
 				}
+				else lcopystr(msg, "", msg_size);
 			}
 			else // if (pi.szMsg != NULL)
 			{
@@ -367,6 +377,7 @@ void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
 				mir_free(pi.szMsg);
 			}
 		}
+		else lcopystr(msg, "", msg_size);
 
 		if (ServiceExists(MS_VARS_FORMATSTRING))
 		{
@@ -384,10 +395,8 @@ void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
 			lcopystr(msg, tmp, msg_size);
 			mir_free(tmp);
 		}
+		else lcopystr(msg, "", msg_size);
 	}
-
-
-	return;
 }
 
 char * Protocol::GetStatusMsg()
@@ -412,7 +421,7 @@ void Protocol::SetStatusMsg(int aStatus, const char *message)
 
 		pi.cbSize = sizeof(pi);
 		pi.szProto = name;
-		pi.szMsg = mir_dup(message);
+		pi.szMsg = mir_strdup(message);
 		pi.status = aStatus;
 
 		pii = &pi;
