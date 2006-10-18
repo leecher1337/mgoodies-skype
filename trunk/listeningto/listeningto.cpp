@@ -37,7 +37,7 @@ PLUGININFO pluginInfo = {
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,6),
+	PLUGIN_MAKE_VERSION(0,1,0,7),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
