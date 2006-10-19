@@ -56,6 +56,7 @@ extern "C"
 #include <m_variables.h>
 #include <m_avatars.h>
 #include <m_statusplugins.h>
+#include <m_ersatz.h>
 #include "../modernb/CLUIFrames/m_cluiframes.h"
 #include "../../protocols/IcqOscarJ/m_icq.h"
 #include "m_simpleaway.h"
@@ -124,15 +125,6 @@ static __inline int DRAW_TEXT(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRec
 		return DrawText(hDC, lpString, nCount, lpRect, uFormat);
 	}
 }
-
-
-//Returns the current status message for yourself
-//wParam=(WPARAM)0
-//lParam=(LPARAM)0
-//returns status msg or NULL if there is none.  Remember to mir_free the return value
-#define PS_GETAWAYMSG  "/GetAwayMsg"
-
-
 
 
 

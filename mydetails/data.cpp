@@ -283,7 +283,7 @@ bool Protocol::CanSetStatusMsg()
 
 bool Protocol::CanSetStatusMsg(int aStatus)
 {
-	return 	CanGetStatusMsg(aStatus);
+	return CanGetStatusMsg(aStatus);
 }
 
 void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
@@ -294,9 +294,9 @@ void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
 		return;
 	}
 
-	if (aStatus == status && ProtoServiceExists(name, PS_GETAWAYMSG) )
+	if (aStatus == status && ProtoServiceExists(name, PS_GETMYAWAYMSG) )
 	{
-		char *tmp = (char *) CallProtoService(name, PS_GETAWAYMSG, 0, 0);
+		char *tmp = (char *) CallProtoService(name, PS_GETMYAWAYMSG, 0, 0);
 		lcopystr(msg, tmp == NULL ? "" : tmp, msg_size);
 	} 
 	else if (ServiceExists(MS_NAS_GETSTATE))
@@ -659,7 +659,8 @@ Protocol * ProtocolArray::Get(const char *name)
 
 bool ProtocolArray::CanSetStatusMsgPerProtocol()
 {
-	return ServiceExists(MS_NAS_INVOKESTATUSWINDOW) || ServiceExists(MS_SA_CHANGESTATUSMSG);
+	return // TODO: ServiceExists(MS_ERSATZ_ENABLED) || 
+		ServiceExists(MS_NAS_INVOKESTATUSWINDOW) || ServiceExists(MS_SA_CHANGESTATUSMSG);
 }
 
 
