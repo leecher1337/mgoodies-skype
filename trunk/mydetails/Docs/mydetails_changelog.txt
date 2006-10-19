@@ -1,6 +1,10 @@
-My Details 0.0.1.3
+My Details 0.0.1.4
 
 Changelog:
+
+. 0.0.1.4
+  * Fixed crash on protocol connection
+  + Support for new version of ersatz
 
 . 0.0.1.3
   + Support for ersatz plugin by TioDuke. When it is finished, status message will be shown correctly always :)
