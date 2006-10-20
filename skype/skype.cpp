@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_toptoolbar.h"
 #include "time.h"
 
+struct MM_INTERFACE   mmi; 
+
 // Exported Globals
 HWND hSkypeWnd=NULL, hWnd=NULL;
 HANDLE SkypeReady, SkypeMsgReceived, hOptHook,hHookOnUserInfoInit, hInitChat=NULL, httbButton=NULL;
@@ -192,7 +194,7 @@ int ShowMessage(int iconID, char *lpzText, int mustShow) {
 		strncpy(pud.lpzContactName, pluginInfo.shortName, MAX_CONTACTNAME);
 		strncpy(pud.lpzText, lpzText, MAX_SECONDLINE);
 		pud.iSeconds = mustShow==1?-1:0;
-		pud.lpzClass = mustShow==1?POPUP_CLASS_WARNING:POPUP_CLASS_DEFAULT;
+		//pud.lpzClass = mustShow==1?POPUP_CLASS_WARNING:POPUP_CLASS_DEFAULT;
 		if (PUAddPopUpEx(&pud)<0) {
 			if (mustShow==1) MessageBox(NULL,lpzText,pluginInfo.shortName, MB_OK | MB_ICONWARNING);
 			return -1;
@@ -1050,6 +1052,30 @@ HANDLE GetCallerContact(char *szSkypeMsg) {
 	return hContact;
 }
 
+LRESULT CALLBACK InCallPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) 
+{
+	switch(msg)
+	{
+		case WM_COMMAND:
+			break;
+
+		case WM_CONTEXTMENU:
+			SendMessage(hWnd,UM_DESTROYPOPUP,0,0);
+			break;			
+		case UM_FREEPLUGINDATA:
+			//Here we'd free our own data, if we had it.
+			return FALSE;
+		case UM_INITPOPUP:
+			break;
+		case UM_DESTROYPOPUP:
+			break;
+		case WM_NOTIFY:
+		default:
+			break;
+	}
+	return DefWindowProc(hWnd,msg,wParam,lParam);
+}
+
 void RingThread(char *szSkypeMsg) {
 	HANDLE hContact;
 	DBEVENTINFO dbei={0};
@@ -1081,7 +1107,29 @@ void RingThread(char *szSkypeMsg) {
 	dbei.timestamp=time(NULL);
 	dbei.pBlob=(unsigned char*)Translate("Phonecall");
 	dbei.cbBlob=lstrlen((const char*)dbei.pBlob)+1;
-	if (!strncmp(ptr, "INCOMING", 8)) {
+	if (!strncmp(ptr, "INCOMING", 8)) 
+	{
+		if(ServiceExists(MS_POPUP_ADDPOPUPEX)) 
+		{
+			POPUPDATAT InCallPopup;
+			TCHAR * lpzContactName = (TCHAR*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,GCDNF_TCHAR);
+
+			InCallPopup.lchContact = hContact;
+			InCallPopup.lchIcon = LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
+			InCallPopup.colorBack = GetSysColor(COLOR_BTNFACE); //! n.popupWindowColor ? n.popupBackColor : GetSysColor(COLOR_BTNFACE);
+			InCallPopup.colorText = GetSysColor(COLOR_WINDOWTEXT); //! n.popupWindowColor ? n.popupTextColor : GetSysColor(COLOR_WINDOWTEXT);
+			InCallPopup.iSeconds = 5; //n.popupTimeSec;
+			InCallPopup.PluginWindowProc = (WNDPROC)InCallPopUpProc;
+			InCallPopup.PluginData = (void *)1;
+			
+			lstrcpy(InCallPopup.lpzText, TranslateT("Incoming Skype Call"));
+
+			lstrcpy(InCallPopup.lptzContactName, lpzContactName);
+
+			CallService(MS_POPUP_ADDPOPUPT,(WPARAM)&InCallPopup,0);
+
+		}
+
 		CLISTEVENT cle={0};
 		char toolTip[256];
 
@@ -1108,12 +1156,15 @@ void RingThread(char *szSkypeMsg) {
 				return;
 			}
 		}
+		dbei.flags=DBEF_READ;
 		cle.hContact=hContact;
 		cle.hDbEvent=(HANDLE)CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&dbei);
 		_snprintf(toolTip,sizeof(toolTip),Translate("Incoming call from %s"),(char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,0));
 		cle.pszTooltip=toolTip;
 		CallServiceSync(MS_CLIST_ADDEVENT,0,(LPARAM)&cle);
-	} else {
+	} 
+	else 
+	{
 		dbei.flags=DBEF_SENT;
 		CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&dbei);
 	}
@@ -2094,6 +2145,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 //	char *path, *protocolname, *fend;
 
 	pluginLink = link;
+	mir_getMMI( &mmi ); 
 
 /*	GetModuleFileName( hInst, path, sizeof( path ));
 	protocolname = strrchr(path,'\\');

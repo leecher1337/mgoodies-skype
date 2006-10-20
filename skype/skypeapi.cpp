@@ -1202,13 +1202,15 @@ int ConnectToSkypeAPI(char *path) {
 			If there is no answer after 3 seconds, launch Skype as it's propably
 			not running.
 		*/
-		if (WaitForSingleObject(SkypeReady, 3000)==WAIT_TIMEOUT &&
-			AttachStatus!=SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION) {
-			if (hWnd==NULL) {
+		if (WaitForSingleObject(SkypeReady, 3000)==WAIT_TIMEOUT && AttachStatus!=SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION) 
+		{
+			if (hWnd==NULL) 
+			{
 				LOG("ConnectToSkypeAPI", "hWnd of SkypeDispatchWindow not yet set..");
 				continue;
 			}
-			if (!SkypeLaunched && (path ||  UseCustomCommand)) {
+			if (!SkypeLaunched && (path ||  UseCustomCommand)) 
+			{
 				if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1))
 				{
 					LOG("ConnectToSkypeAPI", "Starting Skype, as it's not running");
@@ -1255,9 +1257,11 @@ int ConnectToSkypeAPI(char *path) {
 				LOG("ConnectToSkypeAPI", "Skype process started.");
 				// Skype launching iniciated, keep sending Discover messages until it responds.
 				continue;
-			} else {
+			} 
+			else 
+			{
 				LOG("ConnectToSkypeAPI", "Check if Skype was launchable..");
-				if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) && !path) return -1;
+				if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) && !(path ||  UseCustomCommand)) return -1;
 				LOGL("Trying to attach: #", counter);
 				counter++;
 				if (counter>=maxattempts && AttachStatus==-1) {

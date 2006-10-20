@@ -24,10 +24,48 @@ int RegisterOptions(WPARAM wParam, LPARAM lParam) {
    odp.hInstance = hInst;
    odp.pszTemplate = MAKEINTRESOURCE(IDD_OPTIONS);
    odp.pszGroup = Translate("Network");
-   odp.pszTitle = "Skype";
+   odp.pszTitle = pszSkypeProtoName;
    odp.pfnDlgProc = OptionsDlgProc;
    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
+
+   odp.pszTemplate = MAKEINTRESOURCE(IDD_OPT_POPUP);
+   odp.pszGroup = Translate("Popups");
+   odp.pszTitle = pszSkypeProtoName;
+   odp.pfnDlgProc = OptPopupDlgProc;
+   CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
    return 0;
+}
+
+BOOL CALLBACK OptPopupDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	static RECT r;
+
+	switch ( msg ) 
+	{
+	case WM_INITDIALOG:
+		TranslateDialogDefault( hwndDlg );
+		return TRUE;
+		break;
+
+	case WM_COMMAND:
+		if ( HIWORD( wParam ) == BN_CLICKED ) 
+		{
+			switch( LOWORD( wParam )) 
+			{
+			case IDC_SETAVATAR:
+				break;
+
+			case IDC_DELETEAVATAR:
+				break;
+			}	
+		}
+		break;
+
+	case WM_DESTROY:
+		break;
+	}
+
+	return 0;
 }
 
 static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)

@@ -25,6 +25,7 @@
 #include "../../include/m_userinfo.h"
 #include "../../include/m_avatars.h"
 #include "../../include/m_contacts.h"
+#include "../../include/m_popup.h"
 
 // MyDetails defines
 
