@@ -74,7 +74,7 @@ int FreeVSApi()
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,1,11),
+	PLUGIN_MAKE_VERSION(0,0,1,12),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -120,8 +120,8 @@ int NudgeSend(WPARAM wParam,LPARAM lParam)
 
 	if(diff < GlobalNudge.sendTimeSec)
 	{
-		char msg[500];
-		sprintf(msg,Translate("You are not allowed to send too much nudge (only 1 each %d sec, %d sec left)"),GlobalNudge.sendTimeSec, 30 - diff);
+		TCHAR msg[500];
+		mir_sntprintf(msg,500, TranslateT("You are not allowed to send too much nudge (only 1 each %d sec, %d sec left)"),GlobalNudge.sendTimeSec, 30 - diff);
 		//MessageBox(NULL,msg,NULL,0);
 		if(GlobalNudge.useByProtocol)
 		{
@@ -554,7 +554,8 @@ extern "C" int __declspec(dllexport) Unload(void)
 	while ( p != NULL ) 
 	{
 		NudgeElementList* p1 = p->next;
-		free( p );
+		//free( p );
+		delete p;
 		p = p1;
 	}
 	return 0; 
@@ -623,16 +624,16 @@ int Preview()
 	return 0;
 }
 
-void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont, char * Message)
+void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont, TCHAR * Message)
 {
 	HANDLE hContact;
 
 	hContact = Nudge_GethContact(hCont);
-	char * lpzContactName = (char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,0);
+	TCHAR * lpzContactName = (TCHAR*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,GCDNF_TCHAR);
 	
 	if(ServiceExists(MS_POPUP_ADDPOPUPEX)) 
 	{
-		POPUPDATAEX NudgePopUp;
+		POPUPDATAT NudgePopUp;
 		
 		if(hContact == NULL) //no contact at all
 			NudgePopUp.lchContact = (HANDLE) &n;
@@ -646,11 +647,11 @@ void Nudge_ShowPopup(CNudgeElement n, HANDLE hCont, char * Message)
 		NudgePopUp.PluginData = (void *)1;
 		
 		//lstrcpy(NudgePopUp.lpzText, Translate(Message));
-		lstrcpy(NudgePopUp.lpzText, Message);
+		lstrcpy(NudgePopUp.lptzText, Message);
 
-		lstrcpy(NudgePopUp.lpzContactName, lpzContactName);
+		lstrcpy(NudgePopUp.lptzContactName, lpzContactName);
 
-		CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NudgePopUp,0);
+		CallService(MS_POPUP_ADDPOPUPT,(WPARAM)&NudgePopUp,0);
 	}
 	else
 	{
@@ -802,7 +803,7 @@ int Nudge_AddElement(char *protoName)
 	mi.pszContactOwner = protoName;
 	mi.pszPopupName = protoName;
 	mi.cbSize = sizeof( mi );
-	mi.flags = CMIF_NOTOFFLINE;
+	mi.flags = CMIF_NOTOFFLINE & CMIF_HIDDEN;
 	mi.position = -500050004;
 	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_NUDGE ));
 	mi.pszName = Translate( "Send &Nudge" );
@@ -810,13 +811,14 @@ int Nudge_AddElement(char *protoName)
 	CallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 	
 	//Add a specific sound per protocol
-	char nudgesoundtemp[ 64 ];
+	char nudgesoundtemp[ 512 ];
 	NudgeElementList *newNudge;
-	newNudge = (NudgeElementList*) malloc(sizeof(NudgeElementList));
+	//newNudge = (NudgeElementList*) malloc(sizeof(NudgeElementList));
+	newNudge = new NudgeElementList;
 	strcpy( nudgesoundtemp, protoName );
 	strcat( nudgesoundtemp, ": " );
 	strcat( nudgesoundtemp,  Translate( "Nudge" ));
-	strcpy( newNudge->item.NudgeSoundname, nudgesoundtemp ); 
+	strncpy( newNudge->item.NudgeSoundname, nudgesoundtemp, sizeof(newNudge->item.NudgeSoundname) ); 
 
 	strcpy( newNudge->item.ProtocolName, protoName );
 

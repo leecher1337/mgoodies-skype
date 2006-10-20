@@ -69,14 +69,9 @@ int ShakeChat( WPARAM wParam, LPARAM lParam )
 	CallService( MS_MSG_GETWINDOWDATA, (WPARAM)&mwid, (LPARAM)&mwd );
 	CallService(MS_MSG_GETWINDOWCLASS,(WPARAM)srmmName,(LPARAM)100 );
 
-	if ( !strnicmp( srmmName,"tabSRMM ", 7 ))
-		hWnd = GetParent(GetParent(mwd.hwndWindow));
-	
-	if ( !strnicmp( srmmName,"SRMM ", 4))
-		hWnd = mwd.hwndWindow;
-
-	if ( !strnicmp( srmmName,"Scriver ", 7 ))
-		hWnd = GetParent(mwd.hwndWindow);
+	HWND parent;
+	hWnd = mwd.hwndWindow;
+	while((parent = GetParent(hWnd)) != 0) hWnd = parent; // ensure we have the top level window (need parent window for scriver & tabsrmm)
 
 	CreateThread(NULL,0,ShakeChatWindow,(LPVOID) hWnd,0,&tid);
 	return 0;

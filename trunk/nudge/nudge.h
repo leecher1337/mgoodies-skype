@@ -16,6 +16,8 @@
 // For status log
 #define EVENTTYPE_STATUSCHANGE	25368
 
+#define TEXT_LEN 1024
+
 class CNudge
 {
 public:
@@ -32,8 +34,8 @@ class CNudgeElement
 public:
 	char ProtocolName[64];
 	char NudgeSoundname[100];
-	char recText[300];
-	char senText[300];
+	TCHAR recText[TEXT_LEN];
+	TCHAR senText[TEXT_LEN];
 	bool showPopup;
 	bool showEvent;
 	bool showStatus;

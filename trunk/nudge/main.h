@@ -43,7 +43,7 @@ int ModulesLoaded(WPARAM,LPARAM);
 /*
 *
 ****************************/
-void Nudge_ShowPopup(CNudgeElement, HANDLE, char *);
+void Nudge_ShowPopup(CNudgeElement, HANDLE, TCHAR *);
 
 /*
 *

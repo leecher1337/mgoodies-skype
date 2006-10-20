@@ -257,9 +257,17 @@ void PopulateProtocolList(HWND hWnd)
 	int i = 0;
 	if (GlobalNudge.useByProtocol)
 	{
+		#ifdef _UNICODE
+		wchar_t buff[256];
+		#endif
 		for(n = NudgeList;n != NULL; n = n->next)
 		{
-			tvi.item.pszText = (TCHAR*)n->item.ProtocolName;
+			#ifdef _UNICODE
+				MultiByteToWideChar(CP_ACP, 0, n->item.ProtocolName, -1, buff, 256);
+				tvi.item.pszText = buff;
+			#else
+				tvi.item.pszText = n->item.ProtocolName;
+			#endif
 			tvi.item.iImage  = i;
 			n->item.iProtoNumber = i;
 			tvi.item.iSelectedImage = i;
@@ -270,7 +278,7 @@ void PopulateProtocolList(HWND hWnd)
 	}
 	else
 	{
-		tvi.item.pszText = Translate("Nudge");
+		tvi.item.pszText = TranslateT("Nudge");
 		tvi.item.iImage  = nProtocol;
 		DefaultNudge.iProtoNumber = nProtocol;
 		tvi.item.iSelectedImage = nProtocol;
@@ -399,11 +407,9 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 									((IsDlgButtonChecked(hwnd,IDC_CHECKST7)==BST_CHECKED) ? NUDGE_ACC_ST7 : 0) |
 									((IsDlgButtonChecked(hwnd,IDC_CHECKST8)==BST_CHECKED) ? NUDGE_ACC_ST8 : 0) |
 									((IsDlgButtonChecked(hwnd,IDC_CHECKST9)==BST_CHECKED) ? NUDGE_ACC_ST9 : 0) ;
-							char text[300];
-							GetDlgItemText(hwnd,IDC_SENDTEXT,text,sizeof(text));
-							strcpy(ActualNudge->senText,text);
-							GetDlgItemText(hwnd,IDC_RECVTEXT,text,sizeof(text));
-							strcpy(ActualNudge->recText,text);
+
+							GetDlgItemText(hwnd,IDC_SENDTEXT,ActualNudge->senText,TEXT_LEN);
+							GetDlgItemText(hwnd,IDC_RECVTEXT,ActualNudge->recText,TEXT_LEN);
 							ActualNudge->Save();
 							GlobalNudge.Save();
 						}
@@ -519,9 +525,8 @@ void UpdateControls(HWND hwnd)
 	CheckDlgButton(hwnd,IDC_CHECKST7,ActualNudge->statusFlags & NUDGE_ACC_ST7 ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hwnd,IDC_CHECKST8,ActualNudge->statusFlags & NUDGE_ACC_ST8 ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hwnd,IDC_CHECKST9,ActualNudge->statusFlags & NUDGE_ACC_ST9 ? BST_CHECKED : BST_UNCHECKED);
-	SetWindowTextA(GetDlgItem(hwnd, IDC_SENDTEXT), ActualNudge->senText);
-	SetWindowTextA(GetDlgItem(hwnd, IDC_RECVTEXT), ActualNudge->recText);
-
+	SetWindowText(GetDlgItem(hwnd, IDC_SENDTEXT), ActualNudge->senText);
+	SetWindowText(GetDlgItem(hwnd, IDC_RECVTEXT), ActualNudge->recText);
 }
 
 int GetSelProto(HWND hwnd, HTREEITEM hItem)
