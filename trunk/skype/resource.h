@@ -32,6 +32,7 @@
 #define IDD_OPT_PROXY                   176
 #define IDD_SETDETAILS                  177
 #define IDD_OPT_ADVANCED                178
+#define IDD_OPT_POPUP                   179
 #define IDI_PHONE                       1002
 #define IDC_SHUTDOWN                    1004
 #define IDC_ENABLEMENU                  1005
@@ -78,6 +79,12 @@
 #define IDC_SAVEDETAILS                 1044
 #define IDC_COMMANDLINE                 1045
 #define IDC_DATAPATH                    1046
+#define IDC_POPUPINCOMING               1049
+#define IDC_PREVIEW                     1050
+#define IDC_POPUPTEXTCOLOR              1051
+#define IDC_POPUPTIME                   1052
+#define IDC_POPUPBACKCOLOR              1053
+#define IDC_USEWINCOLORS                1054
 
 // Next default values for new objects
 // 
@@ -85,7 +92,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        179
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1046
+#define _APS_NEXT_CONTROL_VALUE         1055
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

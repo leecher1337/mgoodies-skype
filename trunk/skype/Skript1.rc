@@ -40,7 +40,7 @@ END
 IDD_OPT_DEFAULT DIALOGEX 0, 0, 313, 231
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "Start Skype with miranda, if it is not running using the following cmdline options:",
                     IDC_STARTSKYPE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
@@ -122,7 +122,7 @@ END
 IDD_OPT_PROXY DIALOGEX 0, 0, 313, 230
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        "Skypeproxy",-1,4,1,309,95
     CONTROL         "Use Skypeproxy connection over network instead of local Skype API",
@@ -171,7 +171,7 @@ END
 IDD_OPT_ADVANCED DIALOGEX 0, 0, 313, 230
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        "Skype Advanced",IDC_STATIC,4,1,309,225
     CONTROL         "Enable Skype Menu options (currently: Find/Add user)",
@@ -197,6 +197,31 @@ BEGIN
                     BS_MULTILINE
     CONTROL         "Use time zone patch",IDC_TIMEZONE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,9,104,296,9
+END
+
+IDD_OPT_POPUP DIALOGEX 0, 0, 313, 230
+STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    GROUPBOX        "Skype Popups",IDC_STATIC,2,0,311,230
+    GROUPBOX        "Incoming Calls",IDC_STATIC,8,18,299,62
+    CONTROL         "Show incoming calls popup",IDC_POPUPINCOMING,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,30,278,8
+    PUSHBUTTON      "Preview",IDC_PREVIEW,263,59,39,12
+    EDITTEXT        IDC_POPUPTIME,18,44,20,12,ES_AUTOHSCROLL
+    LTEXT           "s",IDC_STATIC,42,47,8,8
+    LTEXT           "Popup duration",IDC_STATIC,52,47,82,8
+    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_TABSTOP,144,42,
+                    39,12
+    LTEXT           "Background colour",IDC_STATIC,188,44,75,8,
+                    SS_CENTERIMAGE
+    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,144,56,
+                    39,12
+    LTEXT           "Text colour",IDC_STATIC,188,58,71,8,SS_CENTERIMAGE
+    CONTROL         "&Use Windows colours",IDC_USEWINCOLORS,"Button",
+                    BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,18,59,
+                    121,8
 END
 
 
