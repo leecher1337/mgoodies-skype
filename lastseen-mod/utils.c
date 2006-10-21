@@ -823,6 +823,23 @@ int ModeChange(WPARAM wparam,LPARAM lparam)
 	return 0;
 }
 
+WCHAR *any_to_IdleNotidleUnknown(HANDLE hContact, const char *module_name, const char *setting_name, WCHAR *buff, int bufflen) {
+	DBVARIANT dbv;
+	if(!DBGetContactSetting(hContact, module_name, setting_name, &dbv)) {
+		wcsncpy(buff, TranslateW(dbv.bVal?L"Idle":L"Not Idle"), bufflen);
+		DBFreeVariant(&dbv); 
+	} else wcsncpy(buff, TranslateW(L"Unknown"), bufflen);
+	buff[bufflen - 1] = 0;
+	return buff;
+}
+WCHAR *any_to_Idle(HANDLE hContact, const char *module_name, const char *setting_name, WCHAR *buff, int bufflen) {
+	if(DBGetContactSettingByte(hContact, module_name, setting_name, 0)) {
+		buff[0] = L'/';
+		wcsncpy((WCHAR *)&buff[1], TranslateW(L"Idle"), bufflen-1);
+	} else buff[0] = 0;
+	buff[bufflen - 1] = 0;
+	return buff;
+}
 
 
 /*int GetInfoAck(WPARAM wparam,LPARAM lparam)

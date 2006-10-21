@@ -35,7 +35,7 @@ PLUGININFO pluginInfo={
 #else	
 		"Last seen plugin mod (NSNCompat)",
 #endif
-		PLUGIN_MAKE_VERSION(5,0,4,4),
+		PLUGIN_MAKE_VERSION(5,0,4,5),
 		"Log when a user was last seen online and which users were online while you were away",
 		"Heiko Schillinger, YB",
 		"",
@@ -47,6 +47,12 @@ PLUGININFO pluginInfo={
 #else	
 		0
 #endif
+};
+
+#define TRANSNUMBER 2
+DBVTranslation idleTr[TRANSNUMBER]={
+	{(TranslateFunc*)any_to_IdleNotidleUnknown, L"Any to Idle/Not Idle/Unknown",0},
+	{(TranslateFunc*)any_to_Idle, L"Any to /Idle or empty",0}
 };
 
 
@@ -105,6 +111,13 @@ int MainInit(WPARAM wparam,LPARAM lparam)
 #ifndef PERMITNSN
 	SkinAddNewSoundEx("UserOnline",Translate("Alerts"),Translate("Online"));
 #endif
+	if (ServiceExists(MS_TIPPER_ADDTRANSLATION)){
+		int i=0;
+		for (i=0;i<TRANSNUMBER;i++){
+			CallService(MS_TIPPER_ADDTRANSLATION,0,(LPARAM)&idleTr[i]);
+		}
+	}
+
 	return 0;
 }
 
