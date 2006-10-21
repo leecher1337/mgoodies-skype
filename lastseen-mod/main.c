@@ -35,7 +35,7 @@ PLUGININFO pluginInfo={
 #else	
 		"Last seen plugin mod (NSNCompat)",
 #endif
-		PLUGIN_MAKE_VERSION(5,0,4,3),
+		PLUGIN_MAKE_VERSION(5,0,4,4),
 		"Log when a user was last seen online and which users were online while you were away",
 		"Heiko Schillinger, YB",
 		"",
