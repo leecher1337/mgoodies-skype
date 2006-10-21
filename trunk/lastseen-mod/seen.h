@@ -51,6 +51,9 @@ Last change by : $Author$
 #include <m_popup.h>
 
 #include "..\..\protocols\IcqOscarJ\forkthread.h"
+#include "../tipper/docs/m_tipper.h"
+WCHAR *any_to_IdleNotidleUnknown(HANDLE hContact, const char *module_name, const char *setting_name, WCHAR *buff, int bufflen);
+WCHAR *any_to_Idle(HANDLE hContact, const char *module_name, const char *setting_name, WCHAR *buff, int bufflen);
 
 #ifdef __GNUC__
 #define NUM100NANOSEC  116444736000000000ULL
