@@ -80,17 +80,16 @@ BOOL CALLBACK UserinfoDlgProc(HWND hdlg,UINT msg,WPARAM wparam,LPARAM lparam)
 
 int UserinfoInit(WPARAM wparam,LPARAM lparam)
 {
-	OPTIONSDIALOGPAGE uip;
-
-
-	ZeroMemory(&uip,sizeof(uip));
-	uip.cbSize=sizeof(uip);
-	uip.hInstance=hInstance;
-	uip.pszTemplate=MAKEINTRESOURCE(IDD_USERINFO);
-	uip.pszTitle=Translate("Last seen");
-	uip.pfnDlgProc=UserinfoDlgProc;
-
-	
-	CallService(MS_USERINFO_ADDPAGE,wparam,(LPARAM)&uip);
+	char *proto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,lparam,0);
+	if (IsWatchedProtocol(proto)){
+		OPTIONSDIALOGPAGE uip;
+		ZeroMemory(&uip,sizeof(uip));
+		uip.cbSize=sizeof(uip);
+		uip.hInstance=hInstance;
+		uip.pszTemplate=MAKEINTRESOURCE(IDD_USERINFO);
+		uip.pszTitle=Translate("Last seen");
+		uip.pfnDlgProc=UserinfoDlgProc;
+		CallService(MS_USERINFO_ADDPAGE,wparam,(LPARAM)&uip);
+	}
 	return 0;
 }
