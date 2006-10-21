@@ -823,17 +823,34 @@ int ModeChange(WPARAM wparam,LPARAM lparam)
 	return 0;
 }
 
-WCHAR *any_to_IdleNotidleUnknown(HANDLE hContact, const char *module_name, const char *setting_name, WCHAR *buff, int bufflen) {
+short int isDbZero(HANDLE hContact, const char *module_name, const char *setting_name){
 	DBVARIANT dbv;
 	if(!DBGetContactSetting(hContact, module_name, setting_name, &dbv)) {
-		wcsncpy(buff, TranslateW(dbv.bVal?L"Idle":L"Not Idle"), bufflen);
+		short int res = 0;
+		switch (dbv.type) {
+			case DBVT_BYTE: res=dbv.bVal==0; break;
+			case DBVT_WORD: res=dbv.wVal==0; break;
+			case DBVT_DWORD: res=dbv.dVal==0; break;
+			case DBVT_BLOB: res=dbv.cpbVal==0; break;
+			default: res=dbv.pszVal[0]==0; break;
+		}
 		DBFreeVariant(&dbv); 
-	} else wcsncpy(buff, TranslateW(L"Unknown"), bufflen);
+		return res;
+	} else return -1;
+}
+
+WCHAR *any_to_IdleNotidleUnknown(HANDLE hContact, const char *module_name, const char *setting_name, WCHAR *buff, int bufflen) {
+	short int r = isDbZero(hContact, module_name, setting_name);
+	if (r==-1){
+		wcsncpy(buff, TranslateW(L"Unknown"), bufflen);
+	} else {
+		wcsncpy(buff, TranslateW(r?L"Not Idle":L"Idle"), bufflen);
+	};
 	buff[bufflen - 1] = 0;
 	return buff;
 }
 WCHAR *any_to_Idle(HANDLE hContact, const char *module_name, const char *setting_name, WCHAR *buff, int bufflen) {
-	if(DBGetContactSettingByte(hContact, module_name, setting_name, 0)) {
+	if(isDbZero(hContact, module_name, setting_name)==0) { //DB setting is NOT zero and exists
 		buff[0] = L'/';
 		wcsncpy((WCHAR *)&buff[1], TranslateW(L"Idle"), bufflen-1);
 	} else buff[0] = 0;
