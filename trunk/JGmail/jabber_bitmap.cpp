@@ -39,7 +39,7 @@ HBITMAP __stdcall JabberStretchBitmap( HBITMAP hBitmap )
 //	bmStretch.bmiHeader.biWidth = 64;
 //	bmStretch.bmiHeader.biHeight = 64;
 	bmStretch.bmiHeader.biPlanes = 1;
-	bmStretch.bmiHeader.biBitCount = 32;
+//	bmStretch.bmiHeader.biBitCount = 32;
 
 	BITMAP bmp;
 	HDC hDC = CreateCompatibleDC( NULL );
@@ -47,6 +47,7 @@ HBITMAP __stdcall JabberStretchBitmap( HBITMAP hBitmap )
 	GetObject( hBitmap, sizeof( BITMAP ), &bmp );
 	bmStretch.bmiHeader.biWidth = bmp.bmWidth;
 	bmStretch.bmiHeader.biHeight = bmp.bmHeight;
+	bmStretch.bmiHeader.biBitCount = bmp.bmBitsPixel>=32?32:24;
 	if (max(bmp.bmWidth,bmp.bmHeight)!=64){// bitmap is not standard size
 		TCHAR temp[25];
 		mir_sntprintf(temp,24,_T(TCHAR_STR_PARAM)_T(" %s"),jabberProtoName,TranslateT( "avatar" ));
@@ -71,10 +72,18 @@ HBITMAP __stdcall JabberStretchBitmap( HBITMAP hBitmap )
 	HDC hBmpDC = CreateCompatibleDC( hDC );
 	HBITMAP hOldBitmap2 = ( HBITMAP )SelectObject( hBmpDC, hStretchedBitmap );
 
+	//SetBkMode(hBmpDC, TRANSPARENT);
 	SetStretchBltMode( hBmpDC, HALFTONE );
 	StretchBlt( 
 		hBmpDC, 0, 0, bmStretch.bmiHeader.biWidth, bmStretch.bmiHeader.biHeight,
 		hDC,    0, 0, bmp.bmWidth, bmp.bmHeight, SRCCOPY );
+    BLENDFUNCTION bf = {0};
+	bf.AlphaFormat = AC_SRC_ALPHA;
+	bf.BlendOp = AC_SRC_OVER;
+	bf.SourceConstantAlpha = 255;
+	AlphaBlend(
+		hBmpDC, 0, 0, bmStretch.bmiHeader.biWidth, bmStretch.bmiHeader.biHeight,
+		hDC,    0, 0, bmp.bmWidth, bmp.bmHeight, bf);
 
 	SelectObject( hBmpDC, hOldBitmap2 );
 	DeleteDC( hBmpDC );
