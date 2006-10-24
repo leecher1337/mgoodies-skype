@@ -54,18 +54,22 @@ void CNudgeElement::Save(void)
 	mir_snprintf(SectionName,512,"%s-statusFlags", ProtocolName);
 	DBWriteContactSettingDword(NULL, "Nudge", SectionName, this->statusFlags);
 	mir_snprintf(SectionName,512,"%s-recText", ProtocolName);
-	if(DBWriteContactSettingWString(NULL, "Nudge", SectionName, this->recText)) {
-		char buff[TEXT_LEN];
-		WideCharToMultiByte(code_page, 0, this->recText, -1, buff, TEXT_LEN, 0, 0);
-		buff[TEXT_LEN] = 0;
-		DBWriteContactSettingString(0, "Nudge", SectionName, buff);
+	if(DBWriteContactSettingTString(NULL, "Nudge", SectionName, this->recText)) {
+		#if defined( _UNICODE )
+			char buff[TEXT_LEN];
+			WideCharToMultiByte(code_page, 0, this->recText, -1, buff, TEXT_LEN, 0, 0);
+			buff[TEXT_LEN] = 0;
+			DBWriteContactSettingString(0, "Nudge", SectionName, buff);
+		#endif
 	}
 	mir_snprintf(SectionName,512,"%s-senText", ProtocolName);
-	if(DBWriteContactSettingWString(NULL, "Nudge", SectionName, this->senText)) {
-		char buff[TEXT_LEN];
-		WideCharToMultiByte(code_page, 0, this->senText, -1, buff, TEXT_LEN, 0, 0);
-		buff[TEXT_LEN] = 0;
-		DBWriteContactSettingString(0, "Nudge", SectionName, buff);
+	if(DBWriteContactSettingTString(NULL, "Nudge", SectionName, this->senText)) {
+		#if defined( _UNICODE )
+			char buff[TEXT_LEN];
+			WideCharToMultiByte(code_page, 0, this->senText, -1, buff, TEXT_LEN, 0, 0);
+			buff[TEXT_LEN] = 0;
+			DBWriteContactSettingString(0, "Nudge", SectionName, buff);
+		#endif
 	}
 }
 
@@ -101,7 +105,7 @@ void CNudgeElement::Load(void)
 	mir_snprintf(SectionName,512,"%s-recText", ProtocolName);
 	if(!DBGetContactSettingWString(NULL,"Nudge",SectionName,&dbv)) 
 	{
-		_tcsncpy(this->recText,dbv.pwszVal,TEXT_LEN);
+		_tcsncpy(this->recText,dbv.ptszVal,TEXT_LEN);
 		if(_tcsclen(this->recText) < 1)
 			_tcsncpy(this->recText,TranslateT("You received a nudge"),TEXT_LEN);
 		DBFreeVariant(&dbv);
@@ -109,7 +113,7 @@ void CNudgeElement::Load(void)
 	mir_snprintf(SectionName,512,"%s-senText", ProtocolName);
 	if(!DBGetContactSettingWString(NULL,"Nudge",SectionName,&dbv)) 
 	{
-		_tcsncpy(this->senText,dbv.pwszVal,TEXT_LEN);
+		_tcsncpy(this->senText,dbv.ptszVal,TEXT_LEN);
 		if(_tcsclen(this->senText) < 1)
 			_tcsncpy(this->senText,TranslateT("You sent a nudge"),TEXT_LEN);
 		DBFreeVariant(&dbv);
