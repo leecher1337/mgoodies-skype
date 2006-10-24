@@ -1,8 +1,6 @@
 #include "headers.h"
 #include "nudge.h"
 
-int code_page = CP_ACP;
-
 void CNudge::Save(void)
 {
 	char SectionName[512];

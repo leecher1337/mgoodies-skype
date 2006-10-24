@@ -683,18 +683,24 @@ void Nudge_SentEvent(CNudgeElement n, HANDLE hCont)
 	DBEVENTINFO NudgeEvent = { 0 };;
 	HANDLE hContact;
 	HANDLE hMetaContact = NULL;
-	char* EventLog;
 
 	hContact = hCont;
-	EventLog = Translate(n.senText);
 
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
 	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 	NudgeEvent.flags = DBEF_SENT;
 	NudgeEvent.timestamp = ( DWORD )time(NULL);
 	NudgeEvent.eventType = EVENTTYPE_MESSAGE;
-	NudgeEvent.cbBlob = strlen( EventLog )+1;
-	NudgeEvent.pBlob = ( PBYTE )EventLog;
+	#if defined( _UNICODE )
+		char buff[TEXT_LEN];
+		WideCharToMultiByte(code_page, 0, n.senText, -1, buff, TEXT_LEN, 0, 0);
+		buff[TEXT_LEN] = 0;
+		NudgeEvent.cbBlob = strlen(buff) + 1;
+		NudgeEvent.pBlob = ( PBYTE ) buff;
+	#else
+		NudgeEvent.cbBlob = _tcsclen(n.senText) + 1;
+		NudgeEvent.pBlob = ( PBYTE ) n.senText;
+	#endif
 
 	if(ServiceExists(MS_MC_GETMETACONTACT)) //try to retrieve the metacontact if some
 		hMetaContact = (HANDLE) CallService( MS_MC_GETMETACONTACT, (WPARAM)hContact, 0 );
@@ -710,18 +716,24 @@ void Nudge_SentStatus(CNudgeElement n, HANDLE hCont)
 	DBEVENTINFO NudgeEvent = { 0 };;
 	HANDLE hContact;
 	HANDLE hMetaContact = NULL;
-	char* EventLog;
 
 	hContact = hCont;
-	EventLog = Translate("received a nudge");
 
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
 	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 	NudgeEvent.flags = 0;
 	NudgeEvent.timestamp = ( DWORD )time(NULL);
 	NudgeEvent.eventType = EVENTTYPE_STATUSCHANGE;
-	NudgeEvent.cbBlob = strlen( EventLog )+1;
-	NudgeEvent.pBlob = ( PBYTE )EventLog;
+	#if defined( _UNICODE )
+		char buff[TEXT_LEN];
+		WideCharToMultiByte(code_page, 0, n.senText, -1, buff, TEXT_LEN, 0, 0);
+		buff[TEXT_LEN] = 0;
+		NudgeEvent.cbBlob = strlen(buff) + 1;
+		NudgeEvent.pBlob = ( PBYTE ) buff;
+	#else
+		NudgeEvent.cbBlob = _tcsclen(n.senText) + 1;
+		NudgeEvent.pBlob = ( PBYTE ) n.senText;
+	#endif
 
 	if(ServiceExists(MS_MC_GETMETACONTACT)) //try to retrieve the metacontact if some
 		hMetaContact = (HANDLE) CallService( MS_MC_GETMETACONTACT, (WPARAM)hContact, 0 );
@@ -737,18 +749,24 @@ void Nudge_ShowStatus(CNudgeElement n, HANDLE hCont)
 	DBEVENTINFO NudgeEvent = { 0 };;
 	HANDLE hContact;
 	HANDLE hMetaContact = NULL;
-	char* EventLog;
 
 	hContact = hCont;
-	EventLog = Translate("sent a nudge");
 
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
 	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 	NudgeEvent.flags = 0;
 	NudgeEvent.timestamp = ( DWORD )time(NULL);
 	NudgeEvent.eventType = EVENTTYPE_STATUSCHANGE;
-	NudgeEvent.cbBlob = strlen( EventLog )+1;
-	NudgeEvent.pBlob = ( PBYTE )EventLog;
+	#if defined( _UNICODE )
+		char buff[TEXT_LEN];
+		WideCharToMultiByte(code_page, 0, n.recText, -1, buff, TEXT_LEN, 0, 0);
+		buff[TEXT_LEN] = 0;
+		NudgeEvent.cbBlob = strlen(buff) + 1;
+		NudgeEvent.pBlob = ( PBYTE ) buff;
+	#else
+		NudgeEvent.cbBlob = _tcsclen(n.recText) + 1;
+		NudgeEvent.pBlob = ( PBYTE ) n.recText;
+	#endif
 
 	if(ServiceExists(MS_MC_GETMETACONTACT)) //try to retrieve the metacontact if some
 		hMetaContact = (HANDLE) CallService( MS_MC_GETMETACONTACT, (WPARAM)hContact, 0 );
@@ -764,21 +782,28 @@ void Nudge_ShowStatus(CNudgeElement n, HANDLE hCont)
 
 void Nudge_ShowEvent(CNudgeElement n, HANDLE hCont)
 {
-	DBEVENTINFO NudgeEvent = { 0 };;
+	DBEVENTINFO NudgeEvent = { 0 };
 	HANDLE hContact;
 	HANDLE hMetaContact = NULL;
-	char* EventLog;
 
 	hContact = hCont;
-	EventLog = Translate(n.recText);
 
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
 	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 	NudgeEvent.flags = CheckMsgWnd(hContact) ? 0 : DBEF_READ;
 	NudgeEvent.timestamp = ( DWORD )time(NULL);
 	NudgeEvent.eventType = EVENTTYPE_MESSAGE;
-	NudgeEvent.cbBlob = strlen( EventLog )+1;
-	NudgeEvent.pBlob = ( PBYTE )EventLog;
+	#if defined( _UNICODE )
+		char buff[TEXT_LEN];
+		WideCharToMultiByte(code_page, 0, n.recText, -1, buff, TEXT_LEN, 0, 0);
+		buff[TEXT_LEN] = 0;
+		NudgeEvent.cbBlob = strlen(buff) + 1;
+		NudgeEvent.pBlob = ( PBYTE ) buff;
+	#else
+		NudgeEvent.cbBlob = _tcsclen(n.recText) + 1;
+		NudgeEvent.pBlob = ( PBYTE ) n.recText;
+	#endif
+	
 
 	if(ServiceExists(MS_MC_GETMETACONTACT)) //try to retrieve the metacontact if some
 		hMetaContact = (HANDLE) CallService( MS_MC_GETMETACONTACT, (WPARAM)hContact, 0 );
