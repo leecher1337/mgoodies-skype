@@ -29,6 +29,11 @@ Last change by : $Author$
 
 #include "sha1.h"
 
+#ifndef AC_SRC_ALPHA
+#define AC_SRC_ALPHA AC_SRC_NO_PREMULT_ALPHA
+#endif
+typedef bool (__stdcall *PAlphaBlend)(HDC,int,int,int,int,HDC,int,int,int,int,BLENDFUNCTION);
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // Jabber_StretchBitmap - rescales a bitmap to 64x64 pixels and creates a DIB from it
 
@@ -72,19 +77,22 @@ HBITMAP __stdcall JabberStretchBitmap( HBITMAP hBitmap )
 	HDC hBmpDC = CreateCompatibleDC( hDC );
 	HBITMAP hOldBitmap2 = ( HBITMAP )SelectObject( hBmpDC, hStretchedBitmap );
 
-	//SetBkMode(hBmpDC, TRANSPARENT);
 	SetStretchBltMode( hBmpDC, HALFTONE );
 	StretchBlt( 
 		hBmpDC, 0, 0, bmStretch.bmiHeader.biWidth, bmStretch.bmiHeader.biHeight,
 		hDC,    0, 0, bmp.bmWidth, bmp.bmHeight, SRCCOPY );
-    BLENDFUNCTION bf = {0};
-	bf.AlphaFormat = AC_SRC_ALPHA;
-	bf.BlendOp = AC_SRC_OVER;
-	bf.SourceConstantAlpha = 255;
-	AlphaBlend(
-		hBmpDC, 0, 0, bmStretch.bmiHeader.biWidth, bmStretch.bmiHeader.biHeight,
-		hDC,    0, 0, bmp.bmWidth, bmp.bmHeight, bf);
-
+	if (bmStretch.bmiHeader.biBitCount==32){ // there is alpha channel
+		HMODULE hMsImg32 = LoadLibraryA( "MSIMG32.DLL" );
+		if (hMsImg32){ //the dll is there
+			PAlphaBlend pAlphaBlend = ( PAlphaBlend )GetProcAddress( hMsImg32, "AlphaBlend" );
+			if (pAlphaBlend){ // we have the proper function
+				BLENDFUNCTION bf = {AC_SRC_OVER,0,255,0};
+				pAlphaBlend(
+					hBmpDC, 0, 0, bmStretch.bmiHeader.biWidth, bmStretch.bmiHeader.biHeight,
+					hDC,    0, 0, bmp.bmWidth, bmp.bmHeight, bf);
+			}
+			FreeLibrary(hMsImg32);
+	}	}
 	SelectObject( hBmpDC, hOldBitmap2 );
 	DeleteDC( hBmpDC );
 	SelectObject( hDC, hOldBitmap1 );
