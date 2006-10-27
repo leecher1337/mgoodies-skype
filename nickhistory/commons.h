@@ -45,7 +45,6 @@ extern "C"
 #include <m_utils.h>
 #include <m_updater.h>
 #include <m_metacontacts.h>
-#include <m_popupw.h>
 #include <m_popup.h>
 #include <m_history.h>
 
