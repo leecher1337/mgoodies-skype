@@ -1,6 +1,9 @@
-ListeningTo 0.1.0.7
+ListeningTo 0.1.0.8
 
 Changelog:
+
+. 0.1.0.8
+  * Fix for getting video info from winamp
 
 . 0.1.0.7
   * Fixes for winamp 5.3
