@@ -1,6 +1,9 @@
-Nick History 0.1.0.0
+Nick History 0.1.0.1
 
 Changelog:
+
+. 0.1.0.1
+  + Added support for \n in template (represents a line break)
 
 . 0.1.0.0
   + Added to FL

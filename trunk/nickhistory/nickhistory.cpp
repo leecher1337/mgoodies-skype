@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Nick History",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,0),
+	PLUGIN_MAKE_VERSION(0,1,0,1),
 	"Log nickname changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -149,14 +149,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://br.geocities.com/ricardo_pescuma/nickhistory_version.txt";
-		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/nickhistory_changelog.txt";
+		upd.szBetaVersionURL = "http://eth0.dk/files/pescuma/nickhistory_version.txt";
+		upd.szBetaChangelogURL = "http://eth0.dk/files/pescuma/nickhistory_changelog.txt";
 		upd.pbBetaVersionPrefix = (BYTE *)"Nick History ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/nickhistoryW.zip";
+		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/nickhistoryW.zip";
 #else
-		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/nickhistory.zip";
+		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/nickhistory.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
@@ -358,6 +358,15 @@ HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text)
 	}
 }
 
+void ReplaceChars(TCHAR *text) 
+{
+	TCHAR *p;
+	while(p = _tcsstr(text, _T("\\n")))
+	{
+		p[0] = _T('\r');
+		p[1] = _T('\n');
+	}
+}
 
 void Notify(HANDLE hContact, TCHAR *text)
 {
@@ -371,9 +380,12 @@ void Notify(HANDLE hContact, TCHAR *text)
 		return;
 
 	// Replace template with nick
+	TCHAR templ[1024];
+	lstrcpyn(templ, text == NULL ? opts.template_removed : opts.template_changed, MAX_REGS(templ));
+	ReplaceChars(templ);
+
 	TCHAR log[1024];
-	mir_sntprintf(log, sizeof(log), 
-		text == NULL ? opts.template_removed : opts.template_changed, 
+	mir_sntprintf(log, sizeof(log), templ, 
 		text == NULL ? TranslateT("<no nickname>") : text);
 
 	if (opts.history_enable)
