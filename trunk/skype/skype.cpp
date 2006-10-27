@@ -120,12 +120,12 @@ int FreeVSApi()
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,30),
+	PLUGIN_MAKE_VERSION(0,0,0,31),
 	"Support for Skype network",
-	"leecher",
-	"leecher@dose.0wnz.at",
-	"© 2004-2005 leecher",
-	"http://dose.0wnz.at",
+	"leecher - tweety",
+	"leecher@dose.0wnz.at - tweety@user.berlios.de",
+	"© 2004-2006 leecher - tweety",
+	"http://dose.0wnz.at - http://developer.berlios.de/projects/mgoodies/",
 	0,		//not transient
 	0		//doesn't replace anything built-in
 };
@@ -152,14 +152,14 @@ void RegisterToUpdate(void)
 		update.szComponentName = pluginInfo.shortName;
 		update.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szVersion);
 		update.cpbVersion = strlen((char *)update.pbVersion);
-		//update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2708";
-		//update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2708";
-		//update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Nudge ";
+		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=3200";
+		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=3200";
+		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">Skype Protocol ";
 	    update.szBetaUpdateURL = "http://www.miranda-fr.net/tweety/skype/skype.zip";
 		update.szBetaVersionURL = "http://www.miranda-fr.net/tweety/skype/skype_beta.html";
 		update.pbBetaVersionPrefix = (BYTE *)"SKYPE version ";
 
-		//update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
+		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
 		update.cpbBetaVersionPrefix = strlen((char *)update.pbBetaVersionPrefix);
 
 		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
@@ -737,7 +737,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	}
 	ERRCHK
 	str[msgl]=0;
-	if (strncmp(ptr+strlen(ptr)-4, "TEXT", 4) && strncmp(ptr+strlen(ptr)-4, "SAID", 4)) {
+	if (strncmp(ptr+strlen(ptr)-4, "TEXT", 4) && strncmp(ptr+strlen(ptr)-4, "SAID", 4) && !strncmp(ptr+strlen(ptr)-4, "EMOTED", 6)) {
 	  if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0)) {
 		if (!strncmp(ptr+strlen(ptr)-10,"SAWMEMBERS", 10)) {
 			// We have a new Groupchat
@@ -808,8 +808,8 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	  }
 		// Boo,no useful message, ignore it
 #ifdef _DEBUG
-//		OUTPUT(ptr);
-//		OUTPUT("NO TEXT! :(");
+		OUTPUT(ptr);
+		OUTPUT("NO TEXT! :(");
 #endif
 		free(ptr);
 		SetEvent(SkypeMsgFetched);

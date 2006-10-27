@@ -320,8 +320,8 @@ IDI_INVITE              ICON    DISCARDABLE     "res\\Invite.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,29
- PRODUCTVERSION 0,0,0,29
+ FILEVERSION 0,0,0,31
+ PRODUCTVERSION 0,0,0,31
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -339,14 +339,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Miranda IM community\0"
             VALUE "FileDescription", "Skype\0"
-            VALUE "FileVersion", "0, 0, 0, 29\0"
+            VALUE "FileVersion", "0, 0, 0, 31\0"
             VALUE "InternalName", "Skype\0"
             VALUE "LegalCopyright", "Copyright © 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Skype.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Skype_protocol for Miranda IM\0"
-            VALUE "ProductVersion", "0, 0, 0, 29\0"
+            VALUE "ProductVersion", "0, 0, 0, 31\0"
             VALUE "SpecialBuild", "\0"
         END
     END
