@@ -193,8 +193,8 @@ void SendDataToMiranda(char *filename, char *title)
 	Concat(data, size, "1");
 	Concat(data, size, "Winamp");
 
-	int video = SendMessage(plugin.hwndParent, WM_WA_IPC, 3, IPC_GETINFO);
-	if (video != 0 && video != 0xFAADF00D)	// Winamp 5.3 return this
+	int version = SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_GETVERSION);
+	if (WINAMP_VERSION_MAJOR(version) >= 5 && SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_IS_PLAYING_VIDEO))
 		Concat(data, size, "Video");
 	else
 		Concat(data, size, "Music");
