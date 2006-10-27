@@ -175,7 +175,7 @@ static void JabberFtSiResult( XmlNode *iqNode, void *userdata )
 								jbt->userdata = item->ft;
 								item->ft->type = FT_BYTESTREAM;
 								item->ft->jbt = jbt;
-								JabberForkThread(( JABBER_THREAD_FUNC )JabberByteSendThread, 0, jbt );
+								mir_forkthread(( pThreadFunc )JabberByteSendThread, jbt );
 		}	}	}	}	}	}
 	}
 	else if ( !_tcscmp( type, _T("error"))) {
@@ -373,7 +373,7 @@ BOOL JabberFtHandleBytestreamRequest( XmlNode *iqNode )
 		jbt->pfnFinal = JabberFtReceiveFinal;
 		jbt->userdata = item->ft;
 		item->ft->jbt = jbt;
-		JabberForkThread(( JABBER_THREAD_FUNC )JabberByteReceiveThread, 0, jbt );
+		mir_forkthread(( pThreadFunc )JabberByteReceiveThread, jbt );
 		JabberListRemove( LIST_FTRECV, sid );
 		return TRUE;
 	}

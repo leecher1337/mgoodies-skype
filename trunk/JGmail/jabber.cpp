@@ -52,8 +52,9 @@ PLUGININFO pluginInfo = {
 	0
 };
 
-MM_INTERFACE memoryManagerInterface;
+MM_INTERFACE   mmi;
 LIST_INTERFACE li;
+UTF8_INTERFACE utfi;
 
 HANDLE hMainThread = NULL;
 DWORD jabberMainThreadId;
@@ -249,28 +250,28 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 
 ///////////////////////////////////////////////////////////////////////////////
 // OnLoad - initialize the plugin instance
+char* deprecatedUtf8Decode( char* str, WCHAR** ucs2 );
+char* deprecatedUtf8Encode( const char* str );
+char* deprecatedUtf8EncodeW( const WCHAR* wstr );
 
 extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 {
 	pluginLink = link;
 
-	// set the memory manager
-	memoryManagerInterface.cbSize = sizeof(MM_INTERFACE);
-	JCallService(MS_SYSTEM_GET_MMI,0,(LPARAM)&memoryManagerInterface);
-
-	// set the lists manager;
-	li.cbSize = sizeof( li ); 
-//	li.List_InsertPtr = NULL; li.List_RemovePtr = NULL; // Just in case
-	if ( CallService(MS_SYSTEM_GET_LI,0,(LPARAM)&li) == CALLSERVICE_NOTFOUND ) {
+	hasForkThreadService = ServiceExists(MS_SYSTEM_FORK_THREAD);
+	// set the memory, lists & utf8 managers
+	mir_getMMI( &mmi );
+	if (mir_getLI( &li ) == CALLSERVICE_NOTFOUND ) {
 		MessageBoxA( NULL, "This version of plugin requires Miranda 0.4.3 bld#42 or later", "Fatal error", MB_OK );
 		return 1;
 	}
-//	if (!li.List_InsertPtr) li.List_InsertPtr = JList_InsertPtr;
-//	if (!li.List_RemovePtr) li.List_RemovePtr = JList_RemovePtr;
-
-	if ( !ServiceExists( MS_DB_CONTACT_GETSETTING_STR )) {
-		MessageBoxA( NULL, "This plugin requires db3x plugin version 0.5.1.0 or later", "Jabber", MB_OK );
-		return 1;
+	if (mir_getUTFI( &utfi ) == CALLSERVICE_NOTFOUND ) {
+		// older core version. use local functions.
+		utfi.utf8_decode   = deprecatedUtf8Decode;
+		utfi.utf8_decodecp = NULL;
+		utfi.utf8_encode   = deprecatedUtf8Encode;
+		utfi.utf8_encodecp = NULL;
+		utfi.utf8_encodeW  = deprecatedUtf8EncodeW;
 	}
 
 	char text[_MAX_PATH];

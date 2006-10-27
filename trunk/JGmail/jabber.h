@@ -317,7 +317,6 @@ struct JABBER_MUC_JIDLIST_INFO
 };
 
 typedef void ( *JABBER_FORM_SUBMIT_FUNC )( XmlNode* values, void *userdata );
-typedef void ( __cdecl *JABBER_THREAD_FUNC )( void * );
 
 #include "jabber_list.h"
 
@@ -450,7 +449,6 @@ int    JabberCompareJids( const TCHAR* jid1, const TCHAR* jid2 );
 void   JabberContactListCreateGroup( TCHAR* groupName );
 void   JabberDBAddAuthRequest( TCHAR* jid, TCHAR* nick );
 HANDLE JabberDBCreateContact( TCHAR* jid, TCHAR* nick, BOOL temporary, BOOL stripResource );
-ULONG  JabberForkThread( void ( __cdecl *threadcode )( void* ), unsigned long stacksize, void *arg );
 void   JabberGetAvatarFileName( HANDLE hContact, char* pszDest, int cbLen );
 void   JabberSetServerStatus( int iNewStatus );
 TCHAR* EscapeChatTags(TCHAR* pszText);
@@ -507,8 +505,6 @@ TCHAR*        __stdcall JabberNickFromJID( const TCHAR* jid );
 char*         __stdcall JabberUrlDecode( char* str );
 void          __stdcall JabberUrlDecodeW( WCHAR* str );
 char*         __stdcall JabberUrlEncode( const char* str );
-char*         __stdcall JabberUtf8Decode( char*,WCHAR** );
-char*         __stdcall JabberUtf8Encode( const char* str );
 char*         __stdcall JabberSha1( char* str );
 char*         __stdcall JabberUnixToDos( const char* str );
 WCHAR*        __stdcall JabberUnixToDosW( const WCHAR* str );
@@ -554,44 +550,7 @@ int           JabberWsSend( JABBER_SOCKET s, char* data, int datalen );
 int           JabberWsRecv( JABBER_SOCKET s, char* data, long datalen );
 
 ///////////////////////////////////////////////////////////////////////////////
-// TXT encode helper
-
-class TextEncoder {
-	char* m_body;
-
-public:
-	__forceinline TextEncoder( const char* pSrc ) :
-		m_body( JabberTextEncode( pSrc ))
-		{}
-
-	__forceinline ~TextEncoder()
-		{  mir_free( m_body );
-		}
-
-	__forceinline const char* str() const { return m_body; }
-};
-
-#define TXT(A) TextEncoder(A).str()
-
-///////////////////////////////////////////////////////////////////////////////
 // UTF encode helper
-
-class Utf8Encoder {
-	char* m_body;
-
-public:
-	__forceinline Utf8Encoder( const char* pSrc ) :
-		m_body( JabberUtf8Encode( pSrc ))
-		{}
-
-	__forceinline ~Utf8Encoder()
-		{  mir_free( m_body );
-		}
-
-	__forceinline const char* str() const { return m_body; }
-};
-
-#define UTF8(A) Utf8Encoder(A).str()
 
 char* t2a( const TCHAR* src );
 char* u2a( const wchar_t* src );
@@ -601,4 +560,17 @@ wchar_t* a2u( const char* src );
 #define NUMICONSBIG 3
 extern HICON iconBigList[NUMICONSBIG];
 extern HICON iconList[NUMICONSSMALL];
+
+//thread hack
+extern BOOL hasForkThreadService;
+ULONG deprecatedForkThread( void ( __cdecl *threadcode )( void* ), unsigned long stacksize, void *arg );
+#define mir_forkthread fake_to_make_possible_to_redifine
+__forceinline int mir_forkthread( pThreadFunc aFunc, void* arg )
+{
+	return hasForkThreadService?
+		CallService( MS_SYSTEM_FORK_THREAD, (WPARAM)aFunc, (LPARAM)arg ):
+		(int)deprecatedForkThread(aFunc, 0, arg );
+
+}
+
 #endif

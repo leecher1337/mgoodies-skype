@@ -387,7 +387,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 		}
 		if (!(showresult & 4)){ // we do not suppress automatic re-request
 			if (_tcscmp(errtype,_T("cancel"))) { // errortype <> cancel: We re-request the mailbox
-				JabberForkThread( JabberRerequestMailBoxThread, 0, info->s );
+				mir_forkthread( JabberRerequestMailBoxThread, info->s );
 			}
 		}
 		return;
@@ -400,7 +400,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			JSetWord( fakeContact, "Status", ID_STATUS_AWAY );
 		}
 		if (!(JGetByte(NULL,"ShowResult",0) & 4)){ // we do not suppress automatic re-request
-			JabberForkThread( JabberRerequestMailBoxThread, 0, info->s );
+			mir_forkthread( JabberRerequestMailBoxThread, info->s );
 		}
 		return;
 	}

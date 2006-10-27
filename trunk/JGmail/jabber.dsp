@@ -269,6 +269,10 @@ SOURCE=.\jabber_chat.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\jabber_deprecated.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\jabber_file.cpp
 # ADD CPP /Yu
 # End Source File
