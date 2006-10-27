@@ -274,99 +274,6 @@ char* __stdcall JabberUrlEncode( const char* str )
 	return s;
 }
 
-static void __stdcall sttUtf8Decode( const BYTE* str, wchar_t* tempBuf )
-{
-	wchar_t* d = tempBuf;
-	BYTE* s = ( BYTE* )str;
-
-	while( *s )
-	{
-		if (( *s & 0x80 ) == 0 ) {
-			*d++ = *s++;
-			continue;
-		}
-
-		if (( s[0] & 0xE0 ) == 0xE0 && ( s[1] & 0xC0 ) == 0x80 && ( s[2] & 0xC0 ) == 0x80 ) {
-			*d++ = (( WORD )( s[0] & 0x0F ) << 12 ) + ( WORD )(( s[1] & 0x3F ) << 6 ) + ( WORD )( s[2] & 0x3F );
-			s += 3;
-			continue;
-		}
-
-		if (( s[0] & 0xE0 ) == 0xC0 && ( s[1] & 0xC0 ) == 0x80 ) {
-			*d++ = ( WORD )(( s[0] & 0x1F ) << 6 ) + ( WORD )( s[1] & 0x3F );
-			s += 2;
-			continue;
-		}
-
-		*d++ = *s++;
-	}
-
-	*d = 0;
-}
-
-
-char* __stdcall JabberUtf8Decode( char* str, WCHAR** ucs2 )
-{
-	if ( str == NULL )
-		return NULL;
-
-	int len = strlen( str );
-	if ( len < 2 ) {
-		if ( ucs2 != NULL ) {
-			*ucs2 = ( wchar_t* )mir_alloc(( len+1 )*sizeof( wchar_t ));
-			MultiByteToWideChar( CP_ACP, 0, str, len, *ucs2, len );
-			( *ucs2 )[ len ] = 0;
-		}
-		return str;
-	}
-
-	wchar_t* tempBuf = ( wchar_t* )alloca(( len+1 )*sizeof( wchar_t ));
-	sttUtf8Decode(( BYTE* )str, tempBuf );
-
-	if ( ucs2 != NULL ) {
-		int fullLen = ( len+1 )*sizeof( wchar_t );
-		*ucs2 = ( wchar_t* )mir_alloc( fullLen );
-		memcpy( *ucs2, tempBuf, fullLen );
-	}
-
-   WideCharToMultiByte( CP_ACP, 0, tempBuf, -1, str, len, NULL, NULL );
-	return str;
-}
-
-char* __stdcall JabberUtf8EncodeW( const WCHAR* wstr )
-{
-	const WCHAR* w;
-
-	// Convert unicode to utf8
-	int len = 0;
-	for ( w = wstr; *w; w++ ) {
-		if ( *w < 0x0080 ) len++;
-		else if ( *w < 0x0800 ) len += 2;
-		else len += 3;
-	}
-
-	unsigned char* szOut = ( unsigned char* )mir_alloc( len+1 );
-	if ( szOut == NULL )
-		return NULL;
-
-	int i = 0;
-	for ( w = wstr; *w; w++ ) {
-		if ( *w < 0x0080 )
-			szOut[i++] = ( unsigned char ) *w;
-		else if ( *w < 0x0800 ) {
-			szOut[i++] = 0xc0 | (( *w ) >> 6 );
-			szOut[i++] = 0x80 | (( *w ) & 0x3f );
-		}
-		else {
-			szOut[i++] = 0xe0 | (( *w ) >> 12 );
-			szOut[i++] = 0x80 | (( ( *w ) >> 6 ) & 0x3f );
-			szOut[i++] = 0x80 | (( *w ) & 0x3f );
-	}	}
-
-	szOut[ i ] = '\0';
-	return ( char* )szOut;
-}
-
 void __stdcall JabberUtfToTchar( const char* pszValue, size_t cbLen, LPTSTR& dest )
 {
 	char* pszCopy = NULL;
@@ -390,27 +297,14 @@ void __stdcall JabberUtfToTchar( const char* pszValue, size_t cbLen, LPTSTR& des
 	JabberUrlDecode( pszCopy );
 
 	#if defined( _UNICODE )
-		JabberUtf8Decode( pszCopy, &dest );
+		mir_utf8decode( pszCopy, &dest );
 	#else
-		JabberUtf8Decode( pszCopy, NULL );
+		mir_utf8decode( pszCopy, NULL );
 		dest = mir_strdup( pszCopy );
 	#endif
 
 	if ( bNeedsFree )
 		free( pszCopy );
-}
-
-char* __stdcall JabberUtf8Encode( const char* str )
-{
-	if ( str == NULL )
-		return NULL;
-
-	// Convert local codepage to unicode
-	int len = strlen( str );
-	WCHAR* wszTemp = ( WCHAR* )alloca( sizeof( WCHAR )*( len+1 ));
-	MultiByteToWideChar( jabberCodePage, 0, str, -1, wszTemp, len+1 );
-
-	return JabberUtf8EncodeW( wszTemp );
 }
 
 char* __stdcall JabberSha1( char* str )
@@ -656,7 +550,7 @@ char* __stdcall JabberTextEncode( const char* str )
 		*q = '\0';
 	}
 
-	char* s2 = JabberUtf8Encode( s1 );
+	char* s2 = mir_utf8encode( s1 );
 	mir_free( s1 );
 	return s2;
 }
@@ -702,7 +596,7 @@ char* __stdcall JabberTextEncodeW( const wchar_t* str )
 
 	*d = 0;
 
-	return JabberUtf8EncodeW( tmp );
+	return mir_utf8encodeW( tmp );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -716,7 +610,7 @@ char* __stdcall JabberTextDecode( const char* str )
 	char* s1 = ( char* )alloca( strlen( str )+1 ), *s2;
 	strcpy( s1, str );
 
-	JabberUtf8Decode( s1, NULL );
+	mir_utf8decode( s1, NULL );
 	JabberUrlDecode( s1 );
 	if (( s2 = JabberUnixToDos( s1 )) == NULL )
 		return NULL;

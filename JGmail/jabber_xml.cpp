@@ -562,7 +562,8 @@ XmlNodeIq::XmlNodeIq( const char* type, int id, const char* to ) :
 XmlNode::XmlNode( const char* pszName )
 {
 	memset( this, 0, sizeof( XmlNode ));
-	name = mir_strdup( pszName );
+	if ( pszName )
+		name = mir_strdup( pszName );
 }
 
 XmlNode::XmlNode( const char* pszName, const TCHAR* ptszText )

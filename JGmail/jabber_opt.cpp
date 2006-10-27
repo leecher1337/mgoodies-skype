@@ -81,7 +81,7 @@ static BOOL CALLBACK JabberRegisterDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 			thread->port = regInfo->port;
 			thread->useSSL = regInfo->useSSL;
 			thread->reg_hwndDlg = hwndDlg;
-			JabberForkThread(( JABBER_THREAD_FUNC )JabberServerThread, 0, thread );
+			mir_forkthread(( pThreadFunc )JabberServerThread, thread );
 			return TRUE;
 		case IDCANCEL:
 		case IDOK2:
