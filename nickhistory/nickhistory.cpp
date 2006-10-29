@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Nick History",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,1),
+	PLUGIN_MAKE_VERSION(0,1,0,2),
 	"Log nickname changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",
