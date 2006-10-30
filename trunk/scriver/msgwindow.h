@@ -73,8 +73,9 @@ typedef struct TabControlDataStruct
 	int iconIdx;
 } TabControlData;
 
-extern TCHAR *charToTchar(const char *text, int textlen, int cp);
 extern TCHAR* GetWindowTitle(HANDLE *hContact, const char *szProto);
 extern TCHAR* GetTabName(HANDLE *hContact);
+extern HWND GetParentWindow(HANDLE hContact, BOOL bChat);
+extern void NotifyLocalWinEvent(HANDLE hContact, HWND hwnd, unsigned int type);
 
 #endif

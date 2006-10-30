@@ -81,7 +81,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib shell32.lib ole32.lib comdlg32.lib  shlwapi.lib Version.lib /nologo /dll /debug /machine:I386 /out:"d:/mim/plugins/scriver_unicode.dll" /pdbtype:sept
+# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib shell32.lib ole32.lib comdlg32.lib shlwapi.lib Version.lib /nologo /dll /debug /machine:I386 /out:"d:/mim/plugins/scriver_unicode.dll" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "scriver - Win32 Unicode Release"
 
@@ -182,11 +182,15 @@ SOURCE=.\msgwindow.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\richutil.c
+SOURCE=.\srmm.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\srmm.c
+SOURCE=.\statusicon.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\utils.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -238,7 +242,11 @@ SOURCE=.\resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\richutil.h
+SOURCE=.\statusicon.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\utils.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

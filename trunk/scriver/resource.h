@@ -8,7 +8,8 @@
 #define IDD_CONFIRM_SENDALL             103
 #define IDD_OPT_MAIN					110
 #define IDD_OPT_MSGDLG                  111
-#define IDD_OPT_MSGLOG                  113
+#define IDD_OPT_MSGLOG                  112
+#define IDD_OPT_CONTAINER				113
 #define IDD_OPT_MSGTYPE                 114
 #define IDI_ADDCONTACT                  120
 #define IDI_USERDETAILS                 121
@@ -24,6 +25,7 @@
 #define IDI_INCOMING                    132
 #define IDI_OUTGOING                    133
 #define IDI_NOTICE                      134
+#define IDI_CLOSEX                      135
 #define IDR_CONTEXT                     180
 #define IDC_HYPERLINKHAND               214
 #define IDC_DRAGCURSOR					215
@@ -35,6 +37,8 @@
 #define IDC_AUTOMIN                     1005
 #define IDC_STAYMINIMIZED				1006
 #define IDC_SWITCHTOACTIVE				1007
+#define IDC_CHATSCOMMONCONTAINERS		1008
+#define IDC_TABCLOSEBUTTON				1009
 #define IDC_SPLITTER                    1017
 #define IDC_SHOWNAMES                   1020
 #define IDC_SHOWSENDBTN                 1021
@@ -118,6 +122,8 @@
 #define IDC_LINECOLOUR					1630
 #define IDC_SAVEDRAFTS					1631
 #define IDC_POPLIST						1632
+#define IDC_LIMITNAMESLEN	            1633
+#define IDC_CHARS						1634
 #define IDM_CUT                         40000
 #define IDM_COPY                        40001
 #define IDM_PASTE                       40002
@@ -177,7 +183,6 @@
 #define IDI_STATUS1                     456
 #define IDI_STATUS0                     457
 #define IDI_STATUS5                     458
-#define IDI_CLOSE                       459
 #define IDI_OVERLAY                     460
 #define IDI_NICKLIST2                   461
 #define IDI_FILTER2                     462

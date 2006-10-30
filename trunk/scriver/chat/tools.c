@@ -27,7 +27,6 @@ extern FONTINFO     aFonts[OPTIONS_FONTCOUNT];
 extern HMENU        g_hMenu;
 extern HANDLE       hBuildMenuEvent ;
 extern HANDLE       hSendEvent;
-extern SESSION_INFO g_TabSession;
 
 int GetRichTextLength(HWND hwnd)
 {
@@ -626,7 +625,10 @@ BOOL LogToFile(SESSION_INFO* si, GCEVENT * gce)
 			mir_sntprintf(szLine, SIZEOF(szLine), TranslateT("%s %s\n"), szTime, szBuffer);
 
 		if ( szLine[0] ) {
-			_fputts(szLine, hFile);
+			char* p = t2a( szLine );
+			fputs(p, hFile);
+			mir_free( p );
+
 			if ( g_Settings.LoggingLimit > 0 ) {
 				DWORD dwSize;
 				DWORD trimlimit;
@@ -829,9 +831,21 @@ TCHAR* a2tf( const TCHAR* str, int flags )
 	#if defined( _UNICODE )
 		if ( flags & GC_UNICODE )
 			return mir_tstrdup( str );
-	#endif
+		else {
+			int codepage = CallService( MS_LANGPACK_GETCODEPAGE, 0, 0 );
 
-	return (TCHAR*)CallService( MS_LANGPACK_PCHARTOTCHAR, 0, (LPARAM)str);
+			int cbLen = MultiByteToWideChar( codepage, 0, (char*)str, -1, 0, 0 );
+			TCHAR* result = ( TCHAR* )mir_alloc( sizeof(TCHAR)*( cbLen+1 ));
+			if ( result == NULL )
+				return NULL;
+
+			MultiByteToWideChar( codepage, 0, (char*)str, -1, result, cbLen );
+			result[ cbLen ] = 0;
+			return result;
+		}
+	#else
+		return mir_strdup( str );
+	#endif
 }
 
 static char* u2a( const wchar_t* src )

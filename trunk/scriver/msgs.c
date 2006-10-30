@@ -40,11 +40,13 @@ static HANDLE hSvcSendMessageCommand, hSvcSendMessageCommandW, hSvcGetWindowAPI,
 
 HANDLE *hMsgMenuItem = NULL, hHookWinEvt=NULL;
 int hMsgMenuItemCount = 0;
-static HMODULE hDLL;
 
-extern PSLWA pSetLayeredWindowAttributes;
 extern HINSTANCE g_hInst;
 extern HWND GetParentWindow(HANDLE hContact, BOOL bChat);
+
+PSLWA pSetLayeredWindowAttributes;
+BOOL (WINAPI *pfnEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
+BOOL (WINAPI *pfnIsAppThemed)(VOID) = 0;
 
 static int SRMMStatusToPf2(int status)
 {
@@ -75,7 +77,7 @@ static int SRMMStatusToPf2(int status)
 
 static int ReadMessageCommand(WPARAM wParam, LPARAM lParam)
 {
-   struct NewMessageWindowLParam newData = { 0 };
+   NewMessageWindowLParam newData = { 0 };
    HWND hwndExisting;
    HWND hParent;
 
@@ -116,11 +118,11 @@ static int MessageEventAdded(WPARAM wParam, LPARAM lParam)
    }
    /* new message */
    SkinPlaySound("AlertMsg");
-   if (g_dat->flags2 & SMF2_AUTOPOPUP) {
+   if (g_dat->flags & SMF_AUTOPOPUP) {
       char *szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) wParam, 0);
       if (szProto && (g_dat->openFlags & SRMMStatusToPf2(CallProtoService(szProto, PS_GETSTATUS, 0, 0)))) {
          HWND hParent;
-         struct NewMessageWindowLParam newData = { 0 };
+         NewMessageWindowLParam newData = { 0 };
          newData.hContact = (HANDLE) wParam;
  		 hParent = GetParentWindow(newData.hContact, FALSE);
          newData.flags = NMWLP_INCOMING;
@@ -145,7 +147,7 @@ static int MessageEventAdded(WPARAM wParam, LPARAM lParam)
 static int SendMessageCommandW(WPARAM wParam, LPARAM lParam)
 {
    HWND hwnd;
-   struct NewMessageWindowLParam newData = { 0 };
+   NewMessageWindowLParam newData = { 0 };
 
    {
       /* does the HCONTACT's protocol support IM messages? */
@@ -185,11 +187,7 @@ static int SendMessageCommandW(WPARAM wParam, LPARAM lParam)
       newData.hContact = (HANDLE) wParam;
       newData.szInitialText = (const char *) lParam;
       newData.isWchar = 1;
-      if (g_dat->lastParent == NULL || !(g_dat->flags & SMF_USETABS)) {
-		hParent = GetParentWindow(newData.hContact, FALSE);
-      } else {
-         hParent = g_dat->lastParent->hwnd;
-      }
+      hParent = GetParentWindow(newData.hContact, FALSE);
       CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), hParent, DlgProcMessage, (LPARAM) & newData);
    }
    return 0;
@@ -199,7 +197,7 @@ static int SendMessageCommandW(WPARAM wParam, LPARAM lParam)
 static int SendMessageCommand(WPARAM wParam, LPARAM lParam)
 {
    HWND hwnd;
-   struct NewMessageWindowLParam newData = { 0 };
+   NewMessageWindowLParam newData = { 0 };
 
    {
       /* does the HCONTACT's protocol support IM messages? */
@@ -239,11 +237,7 @@ static int SendMessageCommand(WPARAM wParam, LPARAM lParam)
       newData.hContact = (HANDLE) wParam;
       newData.szInitialText = (const char *) lParam;
       newData.isWchar = 0;
-      if (g_dat->lastParent == NULL || !(g_dat->flags & SMF_USETABS)) {
-         hParent = CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
-      } else {
-         hParent = g_dat->lastParent->hwnd;
-      }
+      hParent = GetParentWindow(newData.hContact, FALSE);
       CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSG), hParent, DlgProcMessage, (LPARAM) & newData);
    }
    return 0;
@@ -264,17 +258,17 @@ static int TypingMessage(WPARAM wParam, LPARAM lParam)
    HWND hwnd;
    int foundWin = 0;
 
-   if (!(g_dat->flags&SMF_SHOWTYPING))
+   if (!(g_dat->flags2&SMF2_SHOWTYPING))
       return 0;
    if ((hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE) wParam))) {
       SendMessage(hwnd, DM_TYPING, 0, lParam);
       foundWin = 1;
    }
-   if ((int) lParam && !foundWin && (g_dat->flags&SMF_SHOWTYPINGTRAY)) {
+   if ((int) lParam && !foundWin && (g_dat->flags2&SMF2_SHOWTYPINGTRAY)) {
       char szTip[256];
 
       mir_snprintf(szTip, sizeof(szTip), Translate("%s is typing a message"), (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, wParam, 0));
-      if (ServiceExists(MS_CLIST_SYSTRAY_NOTIFY) && !(g_dat->flags&SMF_SHOWTYPINGCLIST)) {
+      if (ServiceExists(MS_CLIST_SYSTRAY_NOTIFY) && !(g_dat->flags2&SMF2_SHOWTYPINGCLIST)) {
          MIRANDASYSTRAYNOTIFY tn;
          tn.szProto = NULL;
          tn.cbSize = sizeof(tn);
@@ -310,7 +304,7 @@ static int MessageSettingChanged(WPARAM wParam, LPARAM lParam)
    szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0);
    if (lstrcmpA(cws->szModule, "CList") && (szProto == NULL || lstrcmpA(cws->szModule, szProto)))
       return 0;
-   WindowList_Broadcast(g_dat->hMessageWindowList, DM_UPDATETITLE, (WPARAM) cws, 0);
+   WindowList_Broadcast(g_dat->hMessageWindowList, DM_UPDATETITLEBAR, (WPARAM) cws, 0);
    return 0;
 }
 
@@ -349,7 +343,7 @@ static void RestoreUnreadMessageAlerts(void)
             if (windowAlreadyExists)
                continue;
 
-            if (g_dat->flags2 & SMF2_AUTOPOPUP) {
+            if (g_dat->flags & SMF_AUTOPOPUP) {
                char *szProto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
                if (szProto && (g_dat->openFlags & SRMMStatusToPf2(CallProtoService(szProto, PS_GETSTATUS, 0, 0)))) {
                   autoPopup = 1;
@@ -357,7 +351,7 @@ static void RestoreUnreadMessageAlerts(void)
             }
             if (autoPopup && !windowAlreadyExists) {
                HWND hParent;
-               struct NewMessageWindowLParam newData = { 0 };
+               NewMessageWindowLParam newData = { 0 };
                newData.hContact = hContact;
                newData.flags = NMWLP_INCOMING;
 			   hParent = GetParentWindow(newData.hContact, FALSE);
@@ -503,36 +497,43 @@ int SplitmsgShutdown(void)
    FreeLibrary(GetModuleHandleA("riched20"));
    OleUninitialize();
    if (hMsgMenuItem) {
-      free(hMsgMenuItem);
+      mir_free(hMsgMenuItem);
       hMsgMenuItem = NULL;
       hMsgMenuItemCount = 0;
    }
-   RichUtil_Unload();
    FreeGlobals();
    return 0;
 }
 
-int LoadSendRecvMessageModule(void)
-{
-   if (LoadLibraryA("riched20.dll") == NULL) {
-      if (IDYES !=
-         MessageBox(0,
-                  TranslateT
-                  ("Miranda could not load the built-in message module, riched20.dll is missing. If you are using Windows 95 or WINE please make sure you have riched20.dll installed. Press 'Yes' to continue loading Miranda."),
-                  TranslateT("Information"), MB_YESNO | MB_ICONINFORMATION))
-         return 1;
-      return 0;
-   }
-   hDLL = LoadLibraryA("user32");
-   pSetLayeredWindowAttributes = (PSLWA) GetProcAddress(hDLL,"SetLayeredWindowAttributes");
+int LoadSendRecvMessageModule(void) {
+	HMODULE	hDLL = 0;
+	if (LoadLibraryA("riched20.dll") == NULL) {
+		if (IDYES !=
+			MessageBox(0,
+					TranslateT
+					("Miranda could not load the built-in message module, riched20.dll is missing. If you are using Windows 95 or WINE please make sure you have riched20.dll installed. Press 'Yes' to continue loading Miranda."),
+					TranslateT("Information"), MB_YESNO | MB_ICONINFORMATION))
+			return 1;
+		return 0;
+	}
+	hDLL = GetModuleHandle(_T("user32"));
+	pSetLayeredWindowAttributes = (PSLWA) GetProcAddress(hDLL,"SetLayeredWindowAttributes");
+	if (IsWinVerXPPlus()) {
+		hDLL = GetModuleHandle(_T("uxtheme.dll"));
+		if (hDLL) {
+			pfnEnableThemeDialogTexture = (BOOL (WINAPI *)(HANDLE, DWORD))GetProcAddress(hDLL, "EnableThemeDialogTexture");
+			pfnIsAppThemed = (BOOL (WINAPI *)(VOID))GetProcAddress(hDLL, "IsAppThemed");
+		}
+	}
    InitGlobals();
-   RichUtil_Load();
    OleInitialize(NULL);
    InitREOleCallback();
+   InitStatusIcons();
    hEventOptInitialise = HookEvent(ME_OPT_INITIALISE, OptInitialise);
    hEventDbEventAdded = HookEvent(ME_DB_EVENT_ADDED, MessageEventAdded);
    hEventDbSettingChange = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, MessageSettingChanged);
    hEventContactDeleted = HookEvent(ME_DB_CONTACT_DELETED, ContactDeleted);
+   //ME_MSG_ICONPRESSED
    HookEvent(ME_SYSTEM_MODULESLOADED, SplitmsgModulesLoaded);
    HookEvent(ME_SKIN_ICONSCHANGED, IconsChanged);
    HookEvent(ME_PROTO_CONTACTISTYPING, TypingMessage);
@@ -557,7 +558,6 @@ int LoadSendRecvMessageModule(void)
    if (hCurHyperlinkHand == NULL)
       hCurHyperlinkHand = LoadCursor(g_hInst, MAKEINTRESOURCE(IDC_HYPERLINKHAND));
    hDragCursor = LoadCursor(g_hInst,  MAKEINTRESOURCE(IDC_DRAGCURSOR));
-   InitStatusIcons();
    return 0;
 }
 
