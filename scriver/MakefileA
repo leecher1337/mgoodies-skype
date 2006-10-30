@@ -5,7 +5,7 @@ CC   = gcc.exe
 WINDRES = windres.exe
 RM = rm
 UPX = upx -9 -q --compress-icons=0
-SRC = cmdlist.c globals.c msgdialog.c msglog.c msgoptions.c msgs.c msgtimedout.c msgwindow.c richutil.c srmm.c statusicon.c utils.c chat/clist.c chat/colorchooser.c chat/log.c chat/main.c chat/manager.c chat/message.c chat/options.c chat/services.c chat/tools.c chat/window.c
+SRC = cmdlist.c globals.c msgdialog.c msglog.c msgoptions.c msgs.c msgtimedout.c msgwindow.c srmm.c statusicon.c utils.c chat/clist.c chat/colorchooser.c chat/log.c chat/main.c chat/manager.c chat/message.c chat/options.c chat/services.c chat/tools.c chat/window.c
 RES  = resource.res
 OBJ = $(SRC:.c=.o) $(RES)
 INCS =  -I"../../include"

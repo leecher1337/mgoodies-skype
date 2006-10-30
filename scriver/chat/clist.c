@@ -77,7 +77,7 @@ END_GROUPLOOP:
 		return NULL;
 
 		CallService(MS_PROTO_ADDTOCONTACT, (WPARAM) hContact, (LPARAM) pszModule);
-	if ( pszGroup && lstrlen( pszGroup ) > 0 ) 
+	if ( pszGroup && lstrlen( pszGroup ) > 0 )
 		DBWriteContactSettingTString(hContact, "CList", "Group", pszGroup );
 		else
 			DBDeleteContactSetting(hContact, "CList", "Group");
@@ -120,7 +120,7 @@ BOOL CList_SetAllOffline(BOOL bHide)
 				DBWriteContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE);
 				if (bHide && i == GCW_CHATROOM)
 					DBWriteContactSettingByte(hContact, "CList", "Hidden", 1);
-			}	
+			}
 		}
 		hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM) hContact, 0);
 	}
@@ -131,7 +131,6 @@ int	CList_RoomDoubleclicked(WPARAM wParam,LPARAM lParam)
 {
     DBVARIANT dbv;
     char *szProto;
-	BOOL bRedrawFlag = FALSE;
 
 	HANDLE hContact = (HANDLE)wParam;
 	if (!hContact)
@@ -202,7 +201,7 @@ void CList_CreateGroup(TCHAR* group)
     CallService(MS_CLUI_GROUPADDED, i + 1, 0);
 }
 
-BOOL CList_AddEvent(HANDLE hContact, HICON Icon, HANDLE event, int type, TCHAR* fmt, ... ) 
+BOOL CList_AddEvent(HANDLE hContact, HICON Icon, HANDLE event, int type, TCHAR* fmt, ... )
 {
 	CLISTEVENT cle;
 	va_list marker;
@@ -234,7 +233,7 @@ BOOL CList_AddEvent(HANDLE hContact, HICON Icon, HANDLE event, int type, TCHAR* 
 	return TRUE;
 }
 
-HANDLE CList_FindRoom ( const char* pszModule, const TCHAR* pszRoom) 
+HANDLE CList_FindRoom ( const char* pszModule, const TCHAR* pszRoom)
 {
 	HANDLE hContact = ( HANDLE )CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 	while (hContact) {

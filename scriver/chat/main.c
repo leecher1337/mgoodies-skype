@@ -71,12 +71,6 @@ int Chat_Load(PLUGINLINK *link)
 	BOOL bFlag = FALSE;
 	HINSTANCE hDll;
 
-	#ifndef NDEBUG //mem leak detector :-) Thanks Tornado!
-	int flag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG); // Get current flag
-	flag |= _CRTDBG_LEAK_CHECK_DF; // Turn on leak-checking bit
-	_CrtSetDbgFlag(flag); // Set flag to the new value
-	#endif
-
 	// set the memory manager
 	memoryManagerInterface.cbSize = sizeof(struct MM_INTERFACE);
 	CallService(MS_SYSTEM_GET_MMI,0,(LPARAM)&memoryManagerInterface);
@@ -116,7 +110,6 @@ int Chat_Load(PLUGINLINK *link)
 	CreateServiceFunctions();
 	CreateHookableEvents();
 	OptionsInit();
-	TabsInit();
 	return 0;
 }
 
@@ -125,14 +118,9 @@ int Chat_Unload(void)
 {
 	DBWriteContactSettingWord(NULL, "Chat", "SplitterX", (WORD)g_Settings.iSplitterX);
 	DBWriteContactSettingWord(NULL, "Chat", "SplitterY", (WORD)g_Settings.iSplitterY);
-	DBWriteContactSettingDword(NULL, "Chat", "roomx", g_Settings.iX);
-	DBWriteContactSettingDword(NULL, "Chat", "roomy", g_Settings.iY);
-	DBWriteContactSettingDword(NULL, "Chat", "roomwidth" , g_Settings.iWidth);
-	DBWriteContactSettingDword(NULL, "Chat", "roomheight", g_Settings.iHeight);
 
 	CList_SetAllOffline(TRUE);
 
-//	RichUtil_Unload();
 	mir_free( pszActiveWndID );
 	mir_free( pszActiveWndModule );
 

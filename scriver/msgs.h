@@ -30,12 +30,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MSGERROR_RETRY	    1
 
 typedef DWORD (WINAPI *PSLWA)(HWND, DWORD, BYTE, DWORD);
+extern PSLWA pSetLayeredWindowAttributes;
+extern BOOL (WINAPI *pfnEnableThemeDialogTexture)(HANDLE, DWORD);
+extern BOOL (WINAPI *pfnIsAppThemed)(VOID);
 
 typedef struct ErrorWindowDataStruct
 {
-	char *	szName;
-	char *	szDescription;
-	char *	szText;
+	TCHAR*	szName;
+	TCHAR*	szDescription;
+	char*	szText;
 	int		textSize;
 	int		flags;
 	HWND	hwndParent;
@@ -66,7 +69,7 @@ typedef struct ParentWindowDataStruct
 	HWND	hwndStatus;
 	HWND	hwndTabs;
 	HWND	foregroundWindow;
-	DWORD	flags;
+	DWORD	flags2;
 	RECT	childRect;
 	POINT	mouseLBDownPos;
 	int		mouseLBDown;
@@ -77,6 +80,7 @@ typedef struct ParentWindowDataStruct
 	int		bTopmost;
 	int		windowWasCascaded;
 	TabCtrlData *tabCtrlDat;
+	BOOL	isChat;
 }ParentWindowData;
 
 typedef struct MessageWindowTabDataStruct
@@ -89,13 +93,14 @@ typedef struct MessageWindowTabDataStruct
 
 #define NMWLP_INCOMING 1
 
-struct NewMessageWindowLParam
+typedef struct NewMessageWindowLParamStruct
 {
 	HANDLE	hContact;
+	BOOL	isChat;
 	int		isWchar;
 	const char *szInitialText;
 	int		flags;
-};
+} NewMessageWindowLParam;
 
 struct MessageSendInfo
 {
@@ -175,7 +180,6 @@ struct MessageWindowData
 #define HM_AVATARACK         (WM_USER+28)
 #define HM_ACKEVENT          (WM_USER+29)
 
-#define DM_UPDATETITLE		 (WM_USER+30)
 #define DM_UPDATEICON		 (WM_USER+31)
 
 #define DM_CLEARLOG			 (WM_USER+46)
@@ -239,20 +243,31 @@ extern const int msgDlgFontCount;
 
 #define SRMMMOD                    "SRMM"
 
-#define SRMSGSET_SHOWTITLEBAR	   "ShowTitleBar"
-#define SRMSGDEFSET_SHOWTITLEBAR   1
-#define SRMSGSET_SHOWSTATUSBAR	   "ShowStatusBar"
-#define SRMSGDEFSET_SHOWSTATUSBAR  1
-#define SRMSGSET_TOPMOST		   "Topmost"
-#define SRMSGDEFSET_TOPMOST		   0
 #define SRMSGSET_USETABS		   "UseTabs"
 #define SRMSGDEFSET_USETABS		   1
 #define SRMSGSET_TABSATBOTTOM	   "TabsPosition"
 #define SRMSGDEFSET_TABSATBOTTOM   0
+#define SRMSGSET_TABCLOSEBUTTON	   "TabCloseButton"
+#define SRMSGDEFSET_TABCLOSEBUTTON 0
 #define SRMSGSET_LIMITNAMES		   "LimitNamesOnTabs"
 #define SRMSGDEFSET_LIMITNAMES	   1
+#define SRMSGSET_LIMITNAMESLEN	   "LimitNamesLength"
+#define SRMSGDEFSET_LIMITNAMESLEN  20
+#define SRMSGSET_LIMITNAMESLEN_MIN 0
 #define SRMSGSET_HIDEONETAB		   "HideOneTab"
 #define SRMSGDEFSET_HIDEONETAB	   1
+#define SRMSGSET_CHATSCOMMONCONTAINERS "ChatsCommonContainers"
+#define SRMSGDEFSET_CHATSCOMMONCONTAINERS 1
+#define SRMSGSET_SAVEPERCONTACT    "SavePerContact"
+#define SRMSGDEFSET_SAVEPERCONTACT 0
+
+#define SRMSGSET_SHOWTITLEBAR	   "ShowTitleBar"
+#define SRMSGDEFSET_SHOWTITLEBAR   1
+#define SRMSGSET_SHOWSTATUSBAR	   "ShowStatusBar"
+#define SRMSGDEFSET_SHOWSTATUSBAR  1
+
+#define SRMSGSET_TOPMOST		   "Topmost"
+#define SRMSGDEFSET_TOPMOST		   0
 #define SRMSGSET_POPFLAGS          "PopupFlags"
 #define SRMSGDEFSET_POPFLAGS       0
 #define SRMSGSET_SHOWBUTTONLINE    "ShowButtonLine"
@@ -271,8 +286,6 @@ extern const int msgDlgFontCount;
 #define SRMSGDEFSET_AUTOMIN        0
 #define SRMSGSET_AUTOCLOSE         "AutoClose"
 #define SRMSGDEFSET_AUTOCLOSE      0
-#define SRMSGSET_SAVEPERCONTACT    "SavePerContact"
-#define SRMSGDEFSET_SAVEPERCONTACT 0
 #define SRMSGSET_SAVESPLITTERPERCONTACT "SaveSplitterPerContact"
 #define SRMSGDEFSET_SAVESPLITTERPERCONTACT 0
 #define SRMSGSET_CASCADE           "Cascade"

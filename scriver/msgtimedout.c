@@ -33,29 +33,30 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_INITDIALOG:
 		{
 			RECT rc, rcParent;
-			char caption[2048];
+			TCHAR szText[2048];
 			ewd = (ErrorWindowData *) lParam;
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) ewd);
 			TranslateDialogDefault(hwndDlg);
-		//	if (IsIconic(ewd->hwndParent)) {
-				ShowWindow(GetParent(ewd->hwndParent), SW_RESTORE);
-		//		MessageBoxA(NULL, "restoring", "parent", MB_OK);
-		//	}
+			ShowWindow(GetParent(ewd->hwndParent), SW_RESTORE);
 			if (ewd != NULL) {
-				if (!ewd->szDescription)
-					ewd->szDescription = _strdup(Translate("An unknown error has occured."));
-				if (!ewd->szText)
-					ewd->szText = _strdup("");
-				if (!ewd->szName)
-					ewd->szName = _strdup("");
-				SetDlgItemTextA(hwndDlg, IDC_ERRORTEXT, ewd->szDescription);
-		#if defined( _UNICODE )
-				SetDlgItemTextW(hwndDlg, IDC_MSGTEXT, (TCHAR *)(ewd->szText + strlen(ewd->szText) + 1));
-		#else
-				SetDlgItemTextA(hwndDlg, IDC_MSGTEXT, ewd->szText);
-		#endif
-				sprintf(caption, "%s - %s", Translate("Send Error"), ewd->szName);
-				SetWindowTextA(hwndDlg, caption);
+				if (ewd->szDescription) {
+					SetDlgItemText(hwndDlg, IDC_ERRORTEXT, ewd->szDescription);
+				} else {
+					SetDlgItemText(hwndDlg, IDC_ERRORTEXT, TranslateT("An unknown error has occured."));
+				}
+				if (ewd->szText) {
+			#if defined( _UNICODE )
+					SetDlgItemText(hwndDlg, IDC_MSGTEXT, (TCHAR *)(ewd->szText + strlen(ewd->szText) + 1));
+			#else
+					SetDlgItemText(hwndDlg, IDC_MSGTEXT, ewd->szText);
+			#endif
+				}
+				if (ewd->szName) {
+					mir_sntprintf(szText, SIZEOF(szText), _T("%s - %s"), TranslateT("Send Error"), ewd->szName);
+				} else {
+					mir_sntprintf(szText, SIZEOF(szText), _T("%s"), TranslateT("Send Error"));
+				}
+				SetWindowText(hwndDlg, szText);
 				GetWindowRect(hwndDlg, &rc);
 				GetWindowRect(GetParent(ewd->hwndParent), &rcParent);
 				SetWindowPos(hwndDlg, HWND_TOP, rcParent.left + (rcParent.right - rcParent.left - rc.right + rc.left) / 2, rcParent.top + (rcParent.bottom - rcParent.top - rc.bottom + rc.top) / 2, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
@@ -76,10 +77,10 @@ BOOL CALLBACK ErrorDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		case WM_DESTROY:
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) NULL);
-			free(ewd->szName);
-			free(ewd->szDescription);
-			free(ewd->szText);
-			free(ewd);
+			mir_free(ewd->szName);
+			mir_free(ewd->szDescription);
+			mir_free(ewd->szText);
+			mir_free(ewd);
 			break;
 
 	}

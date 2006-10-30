@@ -48,7 +48,7 @@ END
 // Dialog
 //
 
-IDD_OPTIONS1 DIALOGEX 0, 0, 300, 240
+IDD_OPTIONS1 DIALOGEX 4, 0, 302, 232
 STYLE DS_SETFONT | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
@@ -57,13 +57,13 @@ BEGIN
     EDITTEXT        IDC_CHAT_NICKROW,153,206,29,14,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Spin2",IDC_CHAT_SPIN2,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,181,206,11,14
     GROUPBOX        "Options",IDC_STATIC,0,0,300,174
-    GROUPBOX        "Other",IDC_STATIC,0,174,300,65
+    GROUPBOX        "Other",IDC_STATIC,0,174,300,58
     LTEXT           "Userlist row distance (pixels):",IDC_STATIC,10,209,132,8
     EDITTEXT        IDC_CHAT_GROUP,153,185,49,14,ES_AUTOHSCROLL
     LTEXT           "Add new rooms to group:",IDC_STATIC,10,188,132,8
 END
 
-IDD_OPTIONS2 DIALOGEX 0, 0, 300, 240
+IDD_OPTIONS2 DIALOGEX 4, 0, 302, 232
 STYLE DS_SETFONT | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
@@ -85,8 +85,8 @@ BEGIN
     PUSHBUTTON      "...",IDC_CHAT_FONTCHOOSE,221,212,19,14
     EDITTEXT        IDC_CHAT_LIMIT,248,212,38,14,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Spin1",IDC_CHAT_SPIN3,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,281,212,11,14
-    GROUPBOX        "Fonts 'n Colors",IDC_STATIC,1,1,294,107
-    GROUPBOX        "Log Options",IDC_STATIC,1,108,294,130
+    GROUPBOX        "Fonts 'n Colors",IDC_STATIC,0,0,294,107
+    GROUPBOX        "Log Options",IDC_STATIC,0,108,294,123
     LTEXT           "Log background",IDC_STATIC,183,15,80,8
     LTEXT           "Message background",IDC_STATIC,183,31,81,8
     LTEXT           "Userlist background",IDC_STATIC,183,47,81,8
@@ -244,7 +244,6 @@ IDI_STATUS4             ICON                    "chat\\Icons\\5.ico"
 IDI_STATUS1             ICON                    "chat\\Icons\\2.ico"
 IDI_STATUS0             ICON                    "chat\\Icons\\1.ico"
 IDI_STATUS5             ICON                    "chat\\Icons\\6.ico"
-IDI_CLOSE               ICON                    "chat\\Icons\\close.ico"
 IDI_OVERLAY             ICON                    "chat\\Icons\\overlay.ico"
 IDI_NICKLIST2           ICON                    "chat\\Icons\\nicklist2.ico"
 IDI_FILTER2             ICON                    "chat\\Icons\\filter2.ico"

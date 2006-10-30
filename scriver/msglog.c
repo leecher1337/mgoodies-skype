@@ -183,8 +183,7 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 		event->pszNickW = GetNickname(event->hContact, dat->szProto);
 	}
 	if (event->eventType == EVENTTYPE_FILE) {
-		int msglen = strlen(((char *) dbei.pBlob) + sizeof(DWORD)) + 1;
-		event->pszTextW = a2tl(((char *) dbei.pBlob) + sizeof(DWORD), msglen);//dat->codePage);
+		event->pszTextW = a2t(((char *) dbei.pBlob) + sizeof(DWORD));//dat->codePage);
 	} else { //if (event->eventType == EVENTTYPE_MESSAGE) {
 		int msglen = strlen((char *) dbei.pBlob) + 1;
 		if (msglen != (int) dbei.cbBlob && !(dat->flags & SMF_DISABLE_UNICODE)) {
@@ -193,10 +192,10 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 			if (wlen > 0 && wlen < msglen) {
 				event->pszTextW = mir_wstrdup((wchar_t*) &dbei.pBlob[msglen]);
 			} else {
-				event->pszTextW = a2tlcp((char *) dbei.pBlob, msglen, dat->codePage);
+				event->pszTextW = a2tcp((char *) dbei.pBlob, dat->codePage);
 			}
 		} else {
-			event->pszTextW = a2tlcp((char *) dbei.pBlob, msglen, dat->codePage);
+			event->pszTextW = a2tcp((char *) dbei.pBlob, dat->codePage);
 		}
 	}
 #else
