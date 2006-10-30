@@ -41,29 +41,10 @@ extern "C"
 
 
 struct Options {
-	// Templates
-	TCHAR template_changed[1024];
-	TCHAR template_removed[1024];
+	TCHAR default_language[64];
 
-	// Track
-	BYTE track_changes;
-	BYTE track_removes;
-	BYTE track_only_not_offline;
-
-	// History
-	BYTE history_enable;
-	BYTE history_only_ansi_if_possible;
-
-	// Popup
-	BYTE popup_enable;
-	WORD popup_delay_type;
-	WORD popup_timeout;
-	BYTE popup_use_win_colors;
-	BYTE popup_use_default_colors;
-	COLORREF popup_bkg_color;
-	COLORREF popup_text_color;
-	WORD popup_left_click_action;
-	WORD popup_right_click_action;
+	BOOL auto_correct;
+	BOOL auto_srmm_support;
 };
 
 extern Options opts;
