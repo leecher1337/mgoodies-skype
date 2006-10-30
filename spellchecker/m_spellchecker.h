@@ -18,40 +18,55 @@ Boston, MA 02111-1307, USA.
 */
 
 
-#ifndef __M_SMH_H__
-# define __M_SMH_H__
+#ifndef __M_SPELLCHECKER_H__
+# define __M_SPELLCHECKER_H__
 
 
-#define EVENTTYPE_STATUSMESSAGE_CHANGE 9002
+typedef struct {
+	int cbSize;
+	HANDLE hContact;	// The contact to get the settings from, or NULL
+	HWND hwnd;			// The hwnd of the richedit
+	char *window_name;	// A name for this richedit
+} SPELLCHECKER_ITEM;
 
-/*
-Return TRUE is Status Message History is enabled for this contact
-
-wParam: hContact
-lParam: ignored
-*/
-#define MS_SMH_ENABLED		"SMH/Enabled"
-
-
-/*
-Enable Status Message History for a contact
-
-wParam: hContact
-lParam: ignored
-*/
-#define MS_SMH_ENABLE		"SMH/Enable"
+typedef struct {
+	int cbSize;
+	HWND hwnd;			// The hwnd of the richedit
+	HMENU hMenu;		// The handle to the menu
+	POINT pt;			// The point, in screen coords
+} SPELLCHECKER_POPUPMENU;
 
 
 /*
-Disable Status Message History for a contact
+Adds a richedit control for the spell checker to check
 
-wParam: hContact
+wParam: SPELLCHECKER_ITEM *
 lParam: ignored
+return: 0 on success
 */
-#define MS_SMH_DISABLE		"SMH/Disable"
+#define MS_SPELLCHECKER_ADD_RICHEDIT	"SpellChecker/AddRichedit"
+
+
+/*
+Removes a richedit control for the spell checker to check
+
+wParam: HWND
+lParam: ignored
+return: 0 on success
+*/
+#define MS_SPELLCHECKER_REMOVE_RICHEDIT	"SpellChecker/RemoveRichedit"
+
+
+/*
+Show context menu
+
+wParam: SPELLCHECKER_POPUPMENU 
+lParam: ignored
+return: the control id selected by the user, 0 if no one was selected, < 0 on error
+*/
+#define MS_SPELLCHECKER_SHOW_POPUP_MENU	"SpellChecker/ShowPopupMenu"
 
 
 
 
-
-#endif // __M_SMH_H__
+#endif // __M_SPELLCHECKER_H__

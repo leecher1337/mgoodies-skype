@@ -21,9 +21,11 @@
 #define IDC_REMOVED                     1059
 #define IDC_CHECK1                      1060
 #define IDC_POPUPS                      1060
+#define IDC_AUTOCORRECT                 1060
 #define IDC_CHECK2                      1061
 #define IDC_DELAY_SPIN                  1061
 #define IDC_HISTORY                     1061
+#define IDC_SIMULATE_SUPPORT            1061
 #define IDC_ANSI                        1062
 #define IDC_TRACK_G                     1063
 #define IDC_CHANGED_L                   1064
@@ -40,7 +42,8 @@
 #define IDC_ACTIONS_G                   1072
 #define IDC_RIGHT_ACTION_L              1073
 #define IDC_LEFT_ACTION_L               1074
-#define ID_POPUP_DISABLESPELLCHECKINGHERE 40004
+#define IDC_DEF_LANG                    1075
+#define IDC_GETMORE                     1076
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -49,9 +52,9 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        121
+#define _APS_NEXT_RESOURCE_VALUE        122
 #define _APS_NEXT_COMMAND_VALUE         40005
-#define _APS_NEXT_CONTROL_VALUE         1075
+#define _APS_NEXT_CONTROL_VALUE         1077
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

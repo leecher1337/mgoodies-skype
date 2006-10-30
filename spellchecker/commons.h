@@ -27,6 +27,9 @@ Boston, MA 02111-1307, USA.
 #include <stdio.h>
 #include <time.h>
 #include <richedit.h>
+#include <map>
+
+#include "hunspell/hunspell.hxx"
 
 
 #ifdef __cplusplus
@@ -50,6 +53,7 @@ extern "C"
 #include <m_popup.h>
 #include <m_history.h>
 #include <m_message.h>
+#include <m_folders.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
@@ -57,8 +61,10 @@ extern "C"
 #include "resource.h"
 #include "m_spellchecker.h"
 #include "options.h"
-#include "popup.h"
-#include "hunspell/hunspell.hxx"
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #define MODULE_NAME		"SpellChecker"
@@ -70,10 +76,6 @@ extern PLUGINLINK *pluginLink;
 
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
-
-#define DEFAULT_TEMPLATE_CHANGED "changed his/her status message to %s"
-#define DEFAULT_TEMPLATE_REMOVED "removed his/her status message"
-
 
 #ifdef UNICODE
 
@@ -88,11 +90,30 @@ extern PLUGINLINK *pluginLink;
 #endif
 
 
-BOOL AllowProtocol(const char *proto);
+#define LANGUAGE_NOT_LOADED		 1
+#define LANGUAGE_LOADING		-1
+#define LANGUAGE_LOADED			 0
 
+struct Language {
+	char name[64];
+	BOOL loaded;
+	Hunspell *checker;
+};
 
-#ifdef __cplusplus
-}
-#endif
+extern Language *languages;
+extern int num_laguages;
+
+struct Dialog {
+	HWND hwnd;
+	HANDLE hContact;
+	char name[64];
+	Language *lang;
+	WNDPROC old_edit_proc;
+	BOOL enabled;
+
+	BOOL changed;
+	int old_text_len;
+};
+
 
 #endif // __COMMONS_H__

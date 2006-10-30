@@ -42,6 +42,9 @@ PLUGININFO pluginInfo = {
 };
 
 
+#define TIMER_ID 17982
+
+
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 
@@ -49,22 +52,36 @@ HANDLE hEnableMenu = NULL;
 HANDLE hDisableMenu = NULL; 
 HANDLE hModulesLoaded = NULL;
 HANDLE hPreBuildCMenu = NULL;
-HANDLE hSettingChanged = NULL;
+
+HANDLE hDictionariesFolder = NULL;
+TCHAR dictionariesFolder[1024];
+
+HANDLE hCustomDictionariesFolder = NULL;
+TCHAR customDictionariesFolder[1024];
 
 char *metacontacts_proto = NULL;
 BOOL loaded = FALSE;
 
+Language *languages;
+int num_laguages = 0;
+
+std::map<HWND, Dialog *> dialogs;
+
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int PreBuildContactMenu(WPARAM wParam,LPARAM lParam);
-int SettingChanged(WPARAM wParam,LPARAM lParam);
 int MsgWindowEvent(WPARAM wParam, LPARAM lParam);
 
-int EnableHistory(WPARAM wParam,LPARAM lParam);
-int DisableHistory(WPARAM wParam,LPARAM lParam);
-int HistoryEnabled(WPARAM wParam, LPARAM lParam);
+void LoadLanguage(TCHAR *name);
 
-BOOL ContactEnabled(HANDLE hContact);
-BOOL ProtocolEnabled(const char *protocol);
+int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name);
+int RemoveContactTextBox(HWND hwnd);
+int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt);
+void AddToCustomDict(Language *lang, char *word);
+void LoadCustomDict(Language *lang);
+
+int AddContactTextBoxService(WPARAM wParam, LPARAM lParam);
+int RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam);
+int ShowPopupMenuService(WPARAM wParam, LPARAM lParam);
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -92,22 +109,16 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	// hooks
 	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
 	hPreBuildCMenu = HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
-	hSettingChanged = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, SettingChanged);
-
-	InitOptions();
-	InitPopups();
 
 	return 0;
 }
 
 extern "C" int __declspec(dllexport) Unload(void) 
 {
-	DeInitPopups();
 	DeInitOptions();
 
 	UnhookEvent(hModulesLoaded);
 	UnhookEvent(hPreBuildCMenu);
-	UnhookEvent(hSettingChanged);
 	return 0;
 }
 
@@ -132,14 +143,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://eth0.dk/files/pescuma/smh_version.txt";
-		upd.szBetaChangelogURL = "http://eth0.dk/files/pescuma/smh_changelog.txt";
-		upd.pbBetaVersionPrefix = (BYTE *)"Status Message History ";
+		upd.szBetaVersionURL = "http://eth0.dk/files/pescuma/spellchecker_version.txt";
+		upd.szBetaChangelogURL = "http://eth0.dk/files/pescuma/spellchecker_changelog.txt";
+		upd.pbBetaVersionPrefix = (BYTE *)"Spell Checker ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/smhW.zip";
+		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/spellcheckerW.zip";
 #else
-		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/smh.zip";
+		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/spellchecker.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
@@ -148,499 +159,126 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
 	}
 
+    // Folders plugin support
+	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
+	{
+		hDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("Spell Checker"), 
+					Translate("Dictionaries"), 
+					_T(MIRANDA_PATH) _T("\\Dictionaries"));
+
+		FoldersGetCustomPathT(hDictionariesFolder, dictionariesFolder, MAX_REGS(dictionariesFolder), _T("."));
+
+		hCustomDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("Spell Checker"), 
+					Translate("Custom Dictionaries"), 
+					_T(PROFILE_PATH) _T("\\") _T(CURRENT_PROFILE) _T("\\Dictionaries"));
+
+		FoldersGetCustomPathT(hCustomDictionariesFolder, customDictionariesFolder, MAX_REGS(customDictionariesFolder), _T("."));
+	}
+	else
+	{
+		GetModuleFileName(GetModuleHandle(NULL), dictionariesFolder, sizeof(dictionariesFolder));
+
+		TCHAR *p = _tcsrchr(dictionariesFolder, _T('\\'));
+		if (p != NULL)
+			*p = _T('\0');
+		lstrcat(dictionariesFolder, "\\Dictionaries");
+
+		lstrcpy(customDictionariesFolder, dictionariesFolder);
+	}
+
+	// Load the language files and create an array with then
+	TCHAR file[1024];
+	mir_sntprintf(file, MAX_REGS(file), "%s\\*.dic", dictionariesFolder);
+
+	// Lets count the files
+	WIN32_FIND_DATA ffd = {0};
+	HANDLE hFFD = FindFirstFile(file, &ffd);
+	if (hFFD != INVALID_HANDLE_VALUE)
+	{
+		do
+		{
+			TCHAR tmp[1024];
+			mir_sntprintf(tmp, MAX_REGS(tmp), "%s\\%s", dictionariesFolder, ffd.cFileName);
+
+			// Check .dic
+			DWORD attrib = GetFileAttributes(tmp);
+			if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
+				continue;
+
+			// See if .aff exists too
+			lstrcpy(&tmp[lstrlen(tmp) - 4], ".aff");
+			attrib = GetFileAttributes(tmp);
+			if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
+				continue;
+
+			num_laguages++;
+		}
+		while(FindNextFile(hFFD, &ffd));
+
+		FindClose(hFFD);
+	}
+
+	if (num_laguages > 0)
+	{
+		// Oki, lets make our cache struct
+		languages = (Language *) malloc(num_laguages * sizeof(Language));
+		ZeroMemory(languages, num_laguages * sizeof(Language));
+
+		int i = 0;
+		hFFD = FindFirstFile(file, &ffd);
+		if (hFFD != INVALID_HANDLE_VALUE)
+		{
+			do
+			{
+				TCHAR tmp[1024];
+				mir_sntprintf(tmp, MAX_REGS(tmp), "%s\\%s", dictionariesFolder, ffd.cFileName);
+
+				// Check .dic
+				DWORD attrib = GetFileAttributes(tmp);
+				if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
+					continue;
+
+				// See if .aff exists too
+				lstrcpy(&tmp[lstrlen(tmp) - 4], ".aff");
+				attrib = GetFileAttributes(tmp);
+				if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
+					continue;
+
+				ffd.cFileName[lstrlen(ffd.cFileName)-4] = _T('\0');
+
+				lstrcpy(languages[i].name, ffd.cFileName);
+				languages[i].loaded = LANGUAGE_NOT_LOADED;
+				languages[i].checker = NULL;
+
+				i++;
+			}
+			while(i < num_laguages && FindNextFile(hFFD, &ffd));
+
+			FindClose(hFFD);
+		}
+	}
+
+	InitOptions();
+
+	if (opts.default_language[0] != _T('\0'))
+		LoadLanguage(opts.default_language);
 
 	HookEvent(ME_MSG_WINDOWEVENT,&MsgWindowEvent);
+
+	CreateServiceFunction(MS_SPELLCHECKER_ADD_RICHEDIT, AddContactTextBoxService);
+	CreateServiceFunction(MS_SPELLCHECKER_REMOVE_RICHEDIT, RemoveContactTextBoxService);
+	CreateServiceFunction(MS_SPELLCHECKER_SHOW_POPUP_MENU, ShowPopupMenuService);
 
 	loaded = TRUE;
 
 	return 0;
 }
 
-
 int PreBuildContactMenu(WPARAM wParam,LPARAM lParam) 
 {
-	CLISTMENUITEM clmi = {0};
-	clmi.cbSize = sizeof(clmi);
-
-	char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0);
-	if (!ProtocolEnabled(proto))
-	{
-		clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
-		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu, (LPARAM) &clmi);
-
-		clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
-		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu, (LPARAM) &clmi);
-	}
-	else if (HistoryEnabled(wParam, 0))
-	{
-		clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
-		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu, (LPARAM) &clmi);
-
-		clmi.flags = CMIM_FLAGS | CMIM_ICON;
-		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu, (LPARAM) &clmi);
-	}
-	else
-	{
-		clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
-		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu, (LPARAM) &clmi);
-
-		clmi.flags = CMIM_FLAGS | CMIM_ICON;
-		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu, (LPARAM) &clmi);
-	}
-
 	return 0;
 }
 
-
-int EnableHistory(WPARAM wParam,LPARAM lParam) 
-{
-	HANDLE hContact = (HANDLE) wParam;
-
-	if (hContact != NULL)
-		DBWriteContactSettingByte(hContact, MODULE_NAME, "Enabled", TRUE);
-
-	return 0;
-}
-
-
-int DisableHistory(WPARAM wParam,LPARAM lParam) 
-{
-	HANDLE hContact = (HANDLE) wParam;
-
-	if (hContact != NULL)
-		DBWriteContactSettingByte(hContact, MODULE_NAME, "Enabled", FALSE);
-
-	return 0;
-}
-
-
-int HistoryEnabled(WPARAM wParam, LPARAM lParam) 
-{
-	return ContactEnabled((HANDLE) wParam);
-}
-
-
-BOOL AllowProtocol(const char *proto)
-{	
-	if ((CallProtoService(proto, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGRECV) == 0)
-		return FALSE;
-
-	return TRUE;
-}
-
-
-BOOL ProtocolEnabled(const char *proto)
-{
-	if (proto == NULL)
-		return FALSE;
-		
-	if (!AllowProtocol(proto))
-		return FALSE;
-
-	char setting[256];
-	mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
-	return (BOOL) DBGetContactSettingByte(NULL, MODULE_NAME, setting, TRUE);
-}
-
-
-BOOL ContactEnabled(HANDLE hContact) 
-{
-	if (hContact == NULL)
-		return FALSE;
-
-	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
-	if (!ProtocolEnabled(proto))
-		return FALSE;
-
-	BYTE def = TRUE;
-
-	// Is a subcontact?
-	if (ServiceExists(MS_MC_GETMETACONTACT)) 
-	{
-		HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
-
-		if (hMetaContact != NULL)
-			def = ContactEnabled(hMetaContact);
-	}
-
-	return DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", def);
-}
-
-
-// Returns true if the unicode buffer only contains 7-bit characters.
-BOOL IsUnicodeAscii(const WCHAR * pBuffer, int nSize)
-{
-	BOOL bResult = TRUE;
-	int nIndex;
-
-	for (nIndex = 0; nIndex < nSize; nIndex++) {
-		if (pBuffer[nIndex] > 0x7F) {
-			bResult = FALSE;
-			break;
-		}
-	}
-	return bResult;
-}
-
-
-HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text)
-{
-	if (log_text != NULL)
-	{
-		DBEVENTINFO event = { 0 };
-		BYTE *tmp = NULL;
-
-		event.cbSize = sizeof(event);
-
-#ifdef UNICODE
-
-		size_t needed = WideCharToMultiByte(CP_ACP, 0, log_text, -1, NULL, 0, NULL, NULL);
-		size_t len = lstrlen(log_text);
-		size_t size;
-
-		if (opts.history_only_ansi_if_possible && IsUnicodeAscii(log_text, len))
-			size = needed;
-		else
-			size = needed + (len + 1) * sizeof(WCHAR);
-
-		tmp = (BYTE *) mir_alloc0(size);
-
-		WideCharToMultiByte(CP_ACP, 0, log_text, -1, (char *) tmp, needed, NULL, NULL);
-
-		if (size > needed)
-			lstrcpyn((WCHAR *) &tmp[needed], log_text, len + 1);
-
-		event.pBlob = tmp;
-		event.cbBlob = size;
-
-#else
-
-		event.pBlob = (PBYTE) log_text;
-		event.cbBlob = strlen(log_text) + 1;
-
-#endif
-
-		event.eventType = EVENTTYPE_STATUSMESSAGE_CHANGE;
-		event.flags = DBEF_READ;
-		event.timestamp = (DWORD) time(NULL);
-
-		event.szModule = MODULE_NAME;
-		
-		// Is a subcontact?
-		if (ServiceExists(MS_MC_GETMETACONTACT)) 
-		{
-			HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
-
-			if (hMetaContact != NULL && ContactEnabled(hMetaContact))
-				CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&event);
-		}
-
-		HANDLE ret = (HANDLE) CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&event);
-
-		mir_free(tmp);
-
-		return ret;
-	}
-	else
-	{
-		return NULL;
-	}
-}
-
-void ReplaceChars(TCHAR *text) 
-{
-	TCHAR *p;
-	while(p = _tcsstr(text, _T("\\n")))
-	{
-		p[0] = _T('\r');
-		p[1] = _T('\n');
-	}
-}
-
-void Notify(HANDLE hContact, TCHAR *text)
-{
-	if (text != NULL && text[0] == _T('\0'))
-		text = NULL;
-
-	if (!opts.track_changes && text != NULL)
-		return;
-
-	if (!opts.track_removes && text == NULL)
-		return;
-
-	// Replace template with status_message
-	TCHAR templ[1024];
-	lstrcpyn(templ, text == NULL ? opts.template_removed : opts.template_changed, MAX_REGS(templ));
-	ReplaceChars(templ);
-
-	TCHAR log[1024];
-	mir_sntprintf(log, sizeof(log), templ, 
-		text == NULL ? TranslateT("<no status message>") : text);
-
-	if (opts.history_enable)
-		HistoryLog(hContact, log);
-
-	if (opts.popup_enable)
-		ShowPopup(hContact, NULL, log);
-}
-
-int inline CheckStr(char *str, int not_empty, int empty)
-{
-	if (str == NULL || str[0] == '\0')
-		return empty;
-	else
-		return not_empty;
-}
-
-#ifdef UNICODE
-
-int inline CheckStr(TCHAR *str, int not_empty, int empty)
-{
-	if (str == NULL || str[0] == L'\0')
-		return empty;
-	else
-		return not_empty;
-}
-
-#endif
-
-// Return 0 if not changed, 1 if changed, 2 if removed
-int TrackChange(HANDLE hContact, DBCONTACTWRITESETTING *cws_new, BOOL ignore_remove)
-{
-	char current_setting[256];
-	mir_snprintf(current_setting, MAX_REGS(current_setting), "%sCurrent", cws_new->szSetting);
-
-	int ret = 0;
-
-	DBVARIANT dbv = {0};
-#ifdef UNICODE
-	BOOL found_current = (DBGetContactSettingW(hContact, cws_new->szModule, current_setting, &dbv) == 0);
-#else
-	BOOL found_current = (DBGetContactSetting(hContact, cws_new->szModule, current_setting, &dbv) == 0);
-#endif
-	if (!found_current)
-	{
-		// Current value does not exist
-
-		if (cws_new->value.type == DBVT_DELETED)
-		{
-			ret = 0;
-		}
-		else if (cws_new->value.type == DBVT_ASCIIZ)
-		{
-			ret = CheckStr(cws_new->value.pszVal, 1, 0);
-		}
-#ifdef UNICODE
-		else if (cws_new->value.type == DBVT_UTF8)
-		{
-			ret = CheckStr(cws_new->value.pszVal, 1, 0);
-		}
-		else if (cws_new->value.type == DBVT_WCHAR)
-		{
-			ret = CheckStr(cws_new->value.pwszVal, 1, 0);
-		}
-#endif
-		else
-		{
-			ret = 1;
-		}
-	}
-	else
-	{
-		// Current value exist
-
-		if (cws_new->value.type == DBVT_DELETED)
-		{
-			if (dbv.type == DBVT_ASCIIZ)
-			{
-				ret = CheckStr(dbv.pszVal, 2, 0);
-			}
-#ifdef UNICODE
-			else if (dbv.type == DBVT_UTF8)
-			{
-				ret = CheckStr(dbv.pszVal, 2, 0);
-			}
-			else if (dbv.type == DBVT_WCHAR)
-			{
-				ret = CheckStr(dbv.pwszVal, 2, 0);
-			}
-#endif
-			else
-			{
-				ret = 2;
-			}
-		}
-		else if (dbv.type != cws_new->value.type)
-		{
-#ifdef UNICODE
-			if ( (cws_new->value.type == DBVT_UTF8 || cws_new->value.type == DBVT_ASCIIZ || cws_new->value.type == DBVT_WCHAR)
-				&& (dbv.type == DBVT_UTF8 || dbv.type == DBVT_ASCIIZ || dbv.type == DBVT_WCHAR))
-			{
-				WCHAR tmp_cws_new[1024] = L"";
-				if (cws_new->value.type == DBVT_ASCIIZ)
-					MultiByteToWideChar(CP_ACP, 0, cws_new->value.pszVal, -1, tmp_cws_new, MAX_REGS(tmp_cws_new));
-				else if (cws_new->value.type == DBVT_UTF8)
-					MultiByteToWideChar(CP_UTF8, 0, cws_new->value.pszVal, -1, tmp_cws_new, MAX_REGS(tmp_cws_new));
-				else if (cws_new->value.type == DBVT_WCHAR)
-					lstrcpyn(tmp_cws_new, cws_new->value.pwszVal, MAX_REGS(tmp_cws_new));
-
-				WCHAR tmp_dbv[1024] = L"";
-				if (dbv.type == DBVT_ASCIIZ)
-					MultiByteToWideChar(CP_ACP, 0, dbv.pszVal, -1, tmp_dbv, MAX_REGS(tmp_dbv));
-				else if (dbv.type == DBVT_UTF8)
-					MultiByteToWideChar(CP_UTF8, 0, dbv.pszVal, -1, tmp_dbv, MAX_REGS(tmp_dbv));
-				else if (dbv.type == DBVT_WCHAR)
-					lstrcpyn(tmp_dbv, dbv.pwszVal, MAX_REGS(tmp_dbv));
-
-				ret = (lstrcmpW(tmp_cws_new, tmp_dbv) ? CheckStr(tmp_cws_new, 1, 2) : 0);
-			}
-			else
-#endif
-			{
-				ret = 1;
-			}
-		}
-		else if (dbv.type == DBVT_BYTE)
-		{
-			ret = (cws_new->value.bVal != dbv.bVal ? 1 : 0);
-		}
-		else if (dbv.type == DBVT_WORD)
-		{
-			ret = (cws_new->value.wVal != dbv.wVal ? 1 : 0);
-		}
-		else if (dbv.type == DBVT_DWORD)
-		{
-			ret = (cws_new->value.dVal != dbv.dVal ? 1 : 0);
-		}
-		else if (dbv.type == DBVT_ASCIIZ)
-		{
-			ret = (strcmp(cws_new->value.pszVal, dbv.pszVal) ? CheckStr(cws_new->value.pszVal, 1, 2) : 0);
-		}
-#ifdef UNICODE
-		else if (dbv.type == DBVT_UTF8)
-		{
-			ret = (strcmp(cws_new->value.pszVal, dbv.pszVal) ? CheckStr(cws_new->value.pszVal, 1, 2) : 0);
-		}
-		else if (dbv.type == DBVT_WCHAR)
-		{
-			ret = (lstrcmp(cws_new->value.pwszVal, dbv.pwszVal) ? CheckStr(cws_new->value.pwszVal, 1, 2) : 0);
-		}
-#endif
-	}
-
-	if (ret == 1 || (ret == 2 && !ignore_remove))
-	{
-		// Copy current to old
-		char old_setting[256];
-		mir_snprintf(old_setting, MAX_REGS(old_setting), "%sOld", cws_new->szSetting);
-
-		if (dbv.type == DBVT_DELETED)
-		{
-			DBDeleteContactSetting(hContact, cws_new->szModule, old_setting);
-		}
-		else
-		{
-			DBCONTACTWRITESETTING cws_old;
-			cws_old.szModule = cws_new->szModule;
-			cws_old.szSetting = old_setting;
-			cws_old.value = dbv;
-			CallService(MS_DB_CONTACT_WRITESETTING, (WPARAM)hContact, (LPARAM)&cws_old);
-		}
-
-
-		// Copy new to current
-		if (cws_new->value.type == DBVT_DELETED)
-		{
-			DBDeleteContactSetting(hContact, cws_new->szModule, current_setting);
-		}
-		else
-		{
-			DBCONTACTWRITESETTING cws_old;
-			cws_old.szModule = cws_new->szModule;
-			cws_old.szSetting = current_setting;
-			cws_old.value = cws_new->value;
-			CallService(MS_DB_CONTACT_WRITESETTING, (WPARAM)hContact, (LPARAM)&cws_old);
-		}
-	}
-
-	if (found_current)
-		DBFreeVariant(&dbv);
-
-	return ret;
-}
-
-
-int SettingChanged(WPARAM wParam,LPARAM lParam)
-{
-	if (!loaded)
-		return 0;
-
-	if (!opts.history_enable && !opts.popup_enable)
-		return 0;
-
-	HANDLE hContact = (HANDLE) wParam;
-	if (hContact == NULL)
-		return 0;
-
-	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
-	if (!strcmp(cws->szModule, "CList") && !strcmp(cws->szSetting, "StatusMsg"))
-	{
-		char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
-		if (proto == NULL || (metacontacts_proto != NULL && !strcmp(proto, metacontacts_proto)))
-			return 0;
-	
-		if (opts.track_only_not_offline)
-		{
-			if (DBGetContactSettingWord(hContact, proto, "Status", 0) <= ID_STATUS_OFFLINE)
-				return 0;
-		}
-
-		if (!ContactEnabled(hContact))
-			return 0;
-
-		int changed = TrackChange(hContact, cws, !opts.track_removes);
-		if (changed == 0)
-			return 0;
-
-		if (changed == 2)
-		{
-			Notify(hContact, NULL);
-		}
-		else // changed == 1
-#ifdef UNICODE
-		if (cws->value.type == DBVT_ASCIIZ)
-		{
-			WCHAR tmp[1024] = L"";
-			MultiByteToWideChar(CP_ACP, 0, cws->value.pszVal, -1, tmp, MAX_REGS(tmp));
-			Notify(hContact, tmp);
-		}
-		else if (cws->value.type == DBVT_UTF8)
-		{
-			WCHAR tmp[1024] = L"";
-			MultiByteToWideChar(CP_UTF8, 0, cws->value.pszVal, -1, tmp, MAX_REGS(tmp));
-			Notify(hContact, tmp);
-		}
-		else if (cws->value.type == DBVT_WCHAR)
-		{
-			Notify(hContact, cws->value.pwszVal);
-		}
-#else
-		if (cws->value.type == DBVT_ASCIIZ)
-		{
-			Notify(hContact, cws->value.pszVal);
-		}
-#endif
-	}
-
-	return 0;
-}
-
-
-
-#define TIMER_ID 17982
-WNDPROC oldEditProc = NULL;
-int txtlen = 0;
-Hunspell *checker;
 
 void SetAttributes(HWND hRichEdit, int pos_start, int pos_end, DWORD dwMask, DWORD dwEffects, BYTE bUnderlineType, BOOL all = FALSE)
 {
@@ -669,32 +307,98 @@ void SetAttributes(HWND hRichEdit, int pos_start, int pos_end, DWORD dwMask, DWO
 		SendMessage(hRichEdit, EM_EXSETSEL, 0, (LPARAM) &old_sel);
 	}
 }
+
+
 void SetAttributes(HWND hRichEdit, DWORD dwMask, DWORD dwEffects, BYTE bUnderlineType)
 {
 	SetAttributes(hRichEdit, 0, 0, dwMask, dwEffects, bUnderlineType, TRUE);
 }
 
 
-BOOL IsAlpha(TCHAR c)
+
+BOOL IsAlpha(Dialog *dlg, TCHAR c)
 {
 #ifdef UNICODE
 	return iswalpha(c) 
-		|| (c == L'-' && !checker->get_forbidden_compound());
+		|| (c == L'-' && !dlg->lang->checker->get_forbidden_compound());
 #else
 	return (!_istcntrl(c) && !_istdigit(c) && !_istpunct(c) && !_istspace(c)) 
-		|| (c == '-'  && !checker->get_forbidden_compound());
+		|| (c == '-'  && !dlg->lang->checker->get_forbidden_compound());
 #endif
 }
 
-BOOL changed = TRUE;
+
+void ReplaceWord(HWND hwnd, CHARRANGE &sel, char *new_word)
+{
+	CHARRANGE old_sel;
+	SendMessage(hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);
+
+	SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
+
+	SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
+	SendMessage(hwnd, EM_REPLACESEL, TRUE, (LPARAM) new_word);
+
+	// Fix old sel
+	int dif = lstrlen(new_word) - sel.cpMax + sel.cpMin;
+	if (old_sel.cpMin >= sel.cpMax)
+		old_sel.cpMin += dif;
+	if (old_sel.cpMax >= sel.cpMax)
+		old_sel.cpMax += dif;
+
+	SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM) &old_sel);
+
+	SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
+	InvalidateRect(hwnd, NULL, FALSE);
+}
+
+
+void DealWord(Dialog *dlg, TCHAR *line_text, int last_pos, int pos)
+{
+	TCHAR old = line_text[pos];
+	line_text[pos] = _T('\0');
+
+	// TODO: Convert to UTF8
+	BOOL right = dlg->lang->checker->spell(&line_text[last_pos]);
+
+	if (!right)
+	{
+		BOOL mark = TRUE;
+
+		if (opts.auto_correct)
+		{
+			int num_suggestions = 0;
+			char ** suggestions;
+
+			num_suggestions = dlg->lang->checker->suggest_auto(&suggestions, &line_text[last_pos]);
+			if (num_suggestions > 0)
+			{
+				mark = FALSE;
+
+				CHARRANGE sel = { last_pos, pos };
+				ReplaceWord(dlg->hwnd, sel, suggestions[0]);
+			}
+		}
+		
+		if (mark)
+			SetAttributes(dlg->hwnd, last_pos, pos, 
+						CFM_UNDERLINETYPE, 0, CFU_UNDERLINEWAVE | 0x50);
+	}
+	
+	line_text[pos] = old;
+}
+
 LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	Dialog *dlg = dialogs[hwnd];
+	if (dlg == NULL)
+		return -1;
+
 	switch(msg)
 	{
 		case WM_PASTE:
 		case WM_CHAR:
 		{
-			changed = TRUE;
+			dlg->changed = TRUE;
 			break;
 		}
 
@@ -703,17 +407,18 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (wParam != TIMER_ID)
 				break;
 
+			if (!dlg->enabled || dlg->lang->loaded != LANGUAGE_LOADED)
+				break;
+
 			int len = GetWindowTextLength(hwnd);
 			if (len <= 0)
 				break;
 
-			if (len == txtlen && !changed)
+			if (len == dlg->old_text_len && !dlg->changed)
 				break;
 
-			txtlen = len;
-			changed = FALSE;
-
-			OutputDebugString(" **** HERE\n");
+			dlg->old_text_len = len;
+			dlg->changed = FALSE;
 
 			SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
 
@@ -727,25 +432,12 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			int last_pos = -1;
 			for (int pos = 0; pos < len; pos++)
 			{
-				if (!IsAlpha(line_text[pos]))
+				if (!IsAlpha(dlg, line_text[pos]))
 				{
 					if (last_pos != -1)
 					{
 						// We found a word
-						TCHAR old = line_text[pos];
-						line_text[pos] = _T('\0');
-
-						// TODO: Convert to UTF8
-						BOOL right = checker->spell(&line_text[last_pos]);
-
-						line_text[pos] = old;
-
-						if (!right)
-						{
-							SetAttributes(hwnd, last_pos, pos, 
-											CFM_UNDERLINETYPE, 0, CFU_UNDERLINEWAVE | 0x50);
-						}
-
+						DealWord(dlg, line_text, last_pos, pos);
 						last_pos = -1;
 					}
 				}
@@ -758,22 +450,8 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			if (last_pos != -1)
 			{
-				// We found a word
-				TCHAR old = line_text[pos];
-				line_text[pos] = _T('\0');
-
-				// TODO: Convert to UTF8
-				BOOL right = checker->spell(&line_text[last_pos]);
-
-				line_text[pos] = old;
-
-				if (!right)
-				{
-					SetAttributes(hwnd, last_pos, pos, 
-									CFM_UNDERLINETYPE, 0, CFU_UNDERLINEWAVE | 0x50);
-				}
-
-				last_pos = -1;
+				// Last word
+				DealWord(dlg, line_text, last_pos, pos);
 			}
 
 			SetAttributes(hwnd, len, len, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
@@ -786,135 +464,249 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 
+		/*
 		case WM_CONTEXTMENU:
 		{
-			int len = GetWindowTextLength(hwnd);
-			if (len <= 0)
-				break;
-
-			// Get text
-			TCHAR *line_text = (TCHAR *) malloc((len + 1) * sizeof(TCHAR));
-			GetWindowText(hwnd, line_text, len+1);
-
 			// Get cursor pos
 			POINT pt;
             pt.x = LOWORD(lParam);
             pt.y = HIWORD(lParam);
-            ScreenToClient(hwnd, &pt);
 
-            CHARRANGE sel;
-			sel.cpMin = sel.cpMax = LOWORD(SendMessage(hwnd, EM_CHARFROMPOS, 0, (LPARAM) &pt));
-
-			// Find the word
-			while (sel.cpMin >= 0 && IsAlpha(line_text[sel.cpMin]))
-				sel.cpMin--;
-			sel.cpMin++;
-
-			while (IsAlpha(line_text[sel.cpMax]))
-				sel.cpMax++;
-			line_text[sel.cpMax] = _T('\0');
-
-			// Get suggestions
-			char ** suggestions;
-			int num_suggestions = checker->suggest(&suggestions, &line_text[sel.cpMin]);
-
-			free(line_text);
-
-			// Make menu
-            pt.x = LOWORD(lParam);
-            pt.y = HIWORD(lParam);
             HMENU hMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDR_CONTEXT));
 			HMENU hSubMenu = GetSubMenu(hMenu, 0);
             CallService(MS_LANGPACK_TRANSLATEMENU, (WPARAM) hSubMenu, 0);
 
-			if (num_suggestions > 0)
-			{
-				InsertMenu(hSubMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
-				for (int i = num_suggestions - 1; i >= 0; i--) 
-				{
-					InsertMenu(hSubMenu, 0, MF_BYPOSITION, i + 1, suggestions[i]);
-				}
-			}
-
-			// Show menu
-			int opt = TrackPopupMenu(hSubMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hwnd, NULL);
-			if (opt > 0 && opt <= num_suggestions)
-			{
-				opt--;
-
-				// Get old selecton
-				CHARRANGE old_sel;
-				SendMessage(hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);
-
-				SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
-
-				SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
-				SendMessage(hwnd, EM_REPLACESEL, TRUE, (LPARAM) suggestions[opt]);
-
-				// Fix old sel
-				int dif = lstrlen(suggestions[opt]) - sel.cpMax + sel.cpMin;
-				if (old_sel.cpMin >= sel.cpMax)
-					old_sel.cpMin += dif;
-				if (old_sel.cpMax >= sel.cpMax)
-					old_sel.cpMax += dif;
-
-				SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM) &old_sel);
-
-				SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
-				InvalidateRect(hwnd, NULL, FALSE);
-			}
+			ShowPopupMenu(hwnd, hMenu, pt);
 
 			DestroyMenu(hMenu);
 
-			if (num_suggestions > 0)
-			{
-				for (int i = num_suggestions - 1; i >= 0; i--) 
-					free(suggestions[i]);
-				free(suggestions);
-			}
-
 			break;
 		}
+		*/
 	}
 
-	return CallWindowProc(oldEditProc, hwnd, msg, wParam, lParam);
+	return CallWindowProc(dlg->old_edit_proc, hwnd, msg, wParam, lParam);
 }
 
 
-int AddContactTextBox(HANDLE hContact, HWND hwnd) 
+int GetContactLanguage(HANDLE hContact)
 {
-	if (oldEditProc == NULL)
-	{
-		oldEditProc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG) EditProc);
+	if (num_laguages <= 0)
+		return -1;
 
-		checker = new Hunspell("C:/Programas2/VC/Miranda/bin/debug/diticonaries/pt_BR.aff", "C:/Programas2/VC/Miranda/bin/debug/diticonaries/pt_BR.dic");
+	TCHAR lang[64];
+	DBVARIANT dbv = {0};
+
+	if(hContact != NULL && !DBGetContactSettingTString(hContact, MODULE_NAME, "Language", &dbv)) 
+	{
+		lstrcpyn(lang, dbv.ptszVal, MAX_REGS(lang));
+		DBFreeVariant(&dbv);
+	}
+	else
+	{
+		lstrcpyn(lang, opts.default_language, MAX_REGS(lang));
+	}
+
+	for(int i = 0; i < num_laguages; i++)
+	{
+		if (lstrcmp(languages[i].name, lang) == 0)
+			return i;
+	}
+
+	return 0;
+}
+
+
+int AddContactTextBoxService(WPARAM wParam, LPARAM lParam)
+{
+	SPELLCHECKER_ITEM *sci = (SPELLCHECKER_ITEM *) wParam;
+	if (sci == NULL || sci->cbSize != sizeof(SPELLCHECKER_ITEM))
+		return -1;
+
+	return AddContactTextBox(sci->hContact, sci->hwnd, sci->window_name);
+}
+
+int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name) 
+{
+	if (dialogs[hwnd] == NULL)
+	{
+		int l = GetContactLanguage(hContact);
+		if (l < 0)
+			return -1;
+
+		// Fill dialog data
+		Dialog *dlg = (Dialog *) malloc(sizeof(Dialog));
+		ZeroMemory(dlg, sizeof(Dialog));
+
+		dialogs[hwnd] = dlg;
+
+		dlg->hContact = hContact;
+		dlg->hwnd = hwnd;
+		dlg->lang = &languages[l];
+		strncpy(dlg->name, name, sizeof(dlg->name));
+		dlg->enabled = DBGetContactSettingByte(NULL, MODULE_NAME, dlg->name, 1);
+		dlg->old_edit_proc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG) EditProc);
 
 		SetTimer(hwnd, TIMER_ID, 1000, NULL);
+
+		LoadLanguage(dlg->lang->name);
 	}
 
 	return 0;
 }
 
-int RemoveContactTextBox(HANDLE hContact, HWND hwnd) 
+
+int RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam)
 {
-	if (oldEditProc != NULL) {
-		SetWindowLong(hwnd, GWL_WNDPROC, (LONG) oldEditProc);
-		oldEditProc = NULL;
+	HWND hwnd = (HWND) wParam;
+	if (hwnd == NULL)
+		return -1;
 
-		delete checker;
+	return RemoveContactTextBox(hwnd);
+}
 
+int RemoveContactTextBox(HWND hwnd) 
+{
+	Dialog *dlg = dialogs[hwnd];
+
+	if (dlg != NULL) 
+	{
 		KillTimer(hwnd, TIMER_ID);
+
+		SetWindowLong(hwnd, GWL_WNDPROC, (LONG) dlg->old_edit_proc);
+
+		dialogs.erase(hwnd);
+
+		free(dlg);
 	}
 
 	return 0;
 }
 
+
+int ShowPopupMenuService(WPARAM wParam, LPARAM lParam)
+{
+	SPELLCHECKER_POPUPMENU *scp = (SPELLCHECKER_POPUPMENU *) wParam;
+	if (scp == NULL || scp->cbSize != sizeof(SPELLCHECKER_POPUPMENU))
+		return -1;
+
+	return ShowPopupMenu(scp->hwnd, scp->hMenu, scp->pt);
+}
+
+int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt)
+{
+	Dialog *dlg = dialogs[hwnd];
+	if (dlg == NULL) 
+		return -1;
+
+    ScreenToClient(hwnd, &pt);
+
+	// Get text
+	int len = GetWindowTextLength(hwnd);
+
+	int num_suggestions = 0;
+	char ** suggestions;
+	TCHAR *line_text = NULL;
+	CHARRANGE sel;
+
+	if (len > 0 && dlg->lang->loaded == LANGUAGE_LOADED)
+	{
+		line_text = (TCHAR *) malloc((len + 1) * sizeof(TCHAR));
+		GetWindowText(hwnd, line_text, len+1);
+
+		sel.cpMin = sel.cpMax = LOWORD(SendMessage(hwnd, EM_CHARFROMPOS, 0, (LPARAM) &pt));
+
+		// Find the word
+		while (sel.cpMin >= 0 && IsAlpha(dlg, line_text[sel.cpMin]))
+			sel.cpMin--;
+		sel.cpMin++;
+
+		while (IsAlpha(dlg, line_text[sel.cpMax]) && line_text[sel.cpMax] != _T('\0'))
+			sel.cpMax++;
+		line_text[sel.cpMax] = _T('\0');
+
+		// Get suggestions
+		num_suggestions = dlg->lang->checker->suggest(&suggestions, &line_text[sel.cpMin]);
+	}
+
+	// Make menu
+	ClientToScreen(hwnd, &pt);
+
+	InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+
+	InsertMenu(hMenu, 0, MF_BYPOSITION, num_suggestions + 3, TranslateT("Enable spell checking"));
+	CheckMenuItem(hMenu, num_suggestions + 3, MF_BYCOMMAND | (dlg->enabled ? MF_CHECKED : MF_UNCHECKED));
+
+	if (num_suggestions > 0)
+	{
+		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+
+		InsertMenu(hMenu, 0, MF_BYPOSITION, num_suggestions + 2, TranslateT("Ignore all"));
+		InsertMenu(hMenu, 0, MF_BYPOSITION, num_suggestions + 1, TranslateT("Add to dictionary"));
+
+		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+		for (int i = num_suggestions - 1; i >= 0; i--) 
+			InsertMenu(hMenu, 0, MF_BYPOSITION, i + 1, suggestions[i]);
+	}
+
+	// Show menu
+	int opt = TrackPopupMenu(hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hwnd, NULL);
+	if (opt > 0 && opt <= num_suggestions)
+	{
+		opt--;
+
+		// Get old selecton
+		ReplaceWord(hwnd, sel, suggestions[opt]);
+
+		opt = 0;
+	}
+	else if (opt == num_suggestions + 1)
+	{
+		AddToCustomDict(dlg->lang, &line_text[sel.cpMin]);
+		dlg->changed = TRUE;
+
+		opt = 0;
+	}
+	else if (opt == num_suggestions + 2)
+	{
+		dlg->lang->checker->put_word(&line_text[sel.cpMin]);
+		dlg->changed = TRUE;
+
+		opt = 0;
+	}
+	else if (opt == num_suggestions + 3)
+	{
+		dlg->enabled = !dlg->enabled;
+		DBWriteContactSettingByte(NULL, MODULE_NAME, dlg->name, dlg->enabled);
+
+		if (dlg->enabled)
+			dlg->changed = TRUE;
+		else
+			SetAttributes(hwnd, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+
+		opt = 0;
+	}
+
+	if (num_suggestions > 0)
+	{
+		for (int i = num_suggestions - 1; i >= 0; i--) 
+			free(suggestions[i]);
+		free(suggestions);
 		
-// TABSRMM
+		free(line_text);
+	}
+
+	return opt;
+}
+
+
 #define IDC_MESSAGE                     1002
 
 int MsgWindowEvent(WPARAM wParam, LPARAM lParam)
 {
+	if (!opts.auto_srmm_support)
+		return 0;
+
 	MessageWindowEventData *event = (MessageWindowEventData *)lParam;
 	if (event == NULL)
 		return 0;
@@ -925,12 +717,94 @@ int MsgWindowEvent(WPARAM wParam, LPARAM lParam)
 
 	if (event->uType == MSG_WINDOW_EVT_OPEN)
 	{
-		AddContactTextBox(event->hContact, hwnd);
+		AddContactTextBox(event->hContact, hwnd, "DefaultSRMM");
 	}
 	else if (event->uType == MSG_WINDOW_EVT_CLOSING)
 	{
-		RemoveContactTextBox(event->hContact, hwnd);
+		RemoveContactTextBox(hwnd);
 	}
 
 	return 0;
 }
+
+
+DWORD WINAPI LoadLanguageThread(LPVOID pos)
+{
+	TCHAR dic[1024];
+	TCHAR aff[1024];
+
+	int i = (int) pos;
+
+	mir_sntprintf(dic, MAX_REGS(dic), "%s\\%s.dic", dictionariesFolder, languages[i].name);
+	mir_sntprintf(aff, MAX_REGS(aff), "%s\\%s.aff", dictionariesFolder, languages[i].name);
+
+	languages[i].checker = new Hunspell(aff, dic);
+	LoadCustomDict(&languages[i]);
+	languages[i].loaded = LANGUAGE_LOADED;
+
+	return 0;
+}
+
+
+void LoadLanguage(TCHAR *name)
+{
+	DWORD thread_id;
+
+	int i;
+	for(i = 0; i < num_laguages; i++)
+	{
+		if (lstrcmp(name, languages[i].name) == 0)
+		{
+			if (languages[i].loaded == LANGUAGE_NOT_LOADED)
+			{
+				languages[i].loaded = LANGUAGE_LOADING;
+				CreateThread(NULL, 0, LoadLanguageThread, (LPVOID) i, 0, &thread_id);
+			}
+			break;
+		}
+	}
+}
+
+
+void AppendToCustomDict(Language *lang, char *word)
+{
+	char filename[1024];
+	mir_sntprintf(filename, MAX_REGS(filename), "%s\\%s.cdic", customDictionariesFolder, lang->name);
+
+    FILE *file = fopen(filename,"a");
+    if (file != NULL) 
+	{
+		fprintf(file, "%s\n", word);
+	    fclose(file);
+    }
+}
+
+
+void AddToCustomDict(Language *lang, char *word)
+{
+	lang->checker->put_word(word);
+	AppendToCustomDict(lang, word);
+}
+
+
+void LoadCustomDict(Language *lang) 
+{
+	char filename[1024];
+	mir_sntprintf(filename, MAX_REGS(filename), "%s\\%s.cdic", customDictionariesFolder, lang->name);
+
+    FILE *file = fopen(filename,"r");
+	if (file != NULL) 
+	{
+		char word[MAXLNLEN];
+		while(fgets(word, MAXLNLEN, file)) 
+		{
+			size_t len = strlen(word);
+			if (*(word + len - 1) == '\n') 
+				*(word + len - 1) = '\0';
+
+			lang->checker->put_word(word);
+		}
+		fclose(file);
+	}
+}
+
