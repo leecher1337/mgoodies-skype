@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,1),
+	PLUGIN_MAKE_VERSION(0,0,0,2),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -69,7 +69,6 @@ std::map<HWND, Dialog *> dialogs;
 
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int PreBuildContactMenu(WPARAM wParam,LPARAM lParam);
-int MsgWindowEvent(WPARAM wParam, LPARAM lParam);
 
 void LoadLanguage(TCHAR *name);
 
@@ -263,8 +262,6 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	if (opts.default_language[0] != _T('\0'))
 		LoadLanguage(opts.default_language);
 
-	HookEvent(ME_MSG_WINDOWEVENT,&MsgWindowEvent);
-
 	CreateServiceFunction(MS_SPELLCHECKER_ADD_RICHEDIT, AddContactTextBoxService);
 	CreateServiceFunction(MS_SPELLCHECKER_REMOVE_RICHEDIT, RemoveContactTextBoxService);
 	CreateServiceFunction(MS_SPELLCHECKER_SHOW_POPUP_MENU, ShowPopupMenuService);
@@ -398,6 +395,12 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_PASTE:
 		case WM_CHAR:
 		{
+			if (opts.auto_correct)
+			{
+				// Need to do that to avoid changing the word while typing
+				KillTimer(hwnd, TIMER_ID);
+				SetTimer(hwnd, TIMER_ID, 1000, NULL);
+			}
 			dlg->changed = TRUE;
 			break;
 		}
@@ -463,26 +466,6 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			break;
 		}
-
-		/*
-		case WM_CONTEXTMENU:
-		{
-			// Get cursor pos
-			POINT pt;
-            pt.x = LOWORD(lParam);
-            pt.y = HIWORD(lParam);
-
-            HMENU hMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDR_CONTEXT));
-			HMENU hSubMenu = GetSubMenu(hMenu, 0);
-            CallService(MS_LANGPACK_TRANSLATEMENU, (WPARAM) hSubMenu, 0);
-
-			ShowPopupMenu(hwnd, hMenu, pt);
-
-			DestroyMenu(hMenu);
-
-			break;
-		}
-		*/
 	}
 
 	return CallWindowProc(dlg->old_edit_proc, hwnd, msg, wParam, lParam);
@@ -599,7 +582,22 @@ int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt)
 	if (dlg == NULL) 
 		return -1;
 
-    ScreenToClient(hwnd, &pt);
+	if (pt.x == 0xFFFF && pt.y == 0xFFFF)
+	{
+		CHARRANGE sel;
+		SendMessage(hwnd, EM_EXGETSEL, 0, (LPARAM) &sel);
+
+		// Get current cursor pos
+		SendMessage(hwnd, EM_POSFROMCHAR, (WPARAM)&pt, (LPARAM) sel.cpMax);
+	}
+	else
+	{
+		ScreenToClient(hwnd, &pt);
+	}
+
+	BOOL create_menu = (hMenu == NULL);
+	if (create_menu)
+		hMenu = CreatePopupMenu();
 
 	// Get text
 	int len = GetWindowTextLength(hwnd);
@@ -632,7 +630,8 @@ int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt)
 	// Make menu
 	ClientToScreen(hwnd, &pt);
 
-	InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+	if (!create_menu)
+		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
 
 	InsertMenu(hMenu, 0, MF_BYPOSITION, num_suggestions + 3, TranslateT("Enable spell checking"));
 	CheckMenuItem(hMenu, num_suggestions + 3, MF_BYCOMMAND | (dlg->enabled ? MF_CHECKED : MF_UNCHECKED));
@@ -696,35 +695,10 @@ int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt)
 		free(line_text);
 	}
 
+	if (create_menu)
+		DestroyMenu(hMenu);
+
 	return opt;
-}
-
-
-#define IDC_MESSAGE                     1002
-
-int MsgWindowEvent(WPARAM wParam, LPARAM lParam)
-{
-	if (!opts.auto_srmm_support)
-		return 0;
-
-	MessageWindowEventData *event = (MessageWindowEventData *)lParam;
-	if (event == NULL)
-		return 0;
-
-	HWND hwnd = GetDlgItem(event->hwndWindow, IDC_MESSAGE);
-	if (hwnd == NULL)
-		return 0;
-
-	if (event->uType == MSG_WINDOW_EVT_OPEN)
-	{
-		AddContactTextBox(event->hContact, hwnd, "DefaultSRMM");
-	}
-	else if (event->uType == MSG_WINDOW_EVT_CLOSING)
-	{
-		RemoveContactTextBox(hwnd);
-	}
-
-	return 0;
 }
 
 

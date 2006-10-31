@@ -34,9 +34,8 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 
 
 static OptPageControl optionsControls[] = { 
-	{ &opts.default_language,	CONTROL_COMBO_TEXT,	IDC_DEF_LANG,			"DefaultLanguage", NULL, 0, 0, MAX_REGS(opts.default_language) },
-	{ &opts.auto_correct,		CONTROL_CHECKBOX,	IDC_AUTOCORRECT,		"AutoCorrect", FALSE },
-	{ &opts.auto_srmm_support,	CONTROL_CHECKBOX,	IDC_SIMULATE_SUPPORT,	"SimulateSRMMSupport", FALSE }
+	{ &opts.default_language,	CONTROL_COMBO_TEXT,	IDC_DEF_LANG,		"DefaultLanguage", NULL, 0, 0, MAX_REGS(opts.default_language) },
+	{ &opts.auto_correct,		CONTROL_CHECKBOX,	IDC_AUTOCORRECT,	"AutoCorrect", FALSE }
 };
 
 static UINT optionsExpertControls[] = { 

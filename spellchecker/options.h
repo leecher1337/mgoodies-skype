@@ -44,7 +44,6 @@ struct Options {
 	TCHAR default_language[64];
 
 	BOOL auto_correct;
-	BOOL auto_srmm_support;
 };
 
 extern Options opts;
