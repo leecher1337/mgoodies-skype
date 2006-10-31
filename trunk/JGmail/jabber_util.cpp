@@ -937,17 +937,18 @@ void __stdcall JabberSendPresenceTo( int status, TCHAR* to, XmlNode* extra )
 	JabberSend( jabberThreadInfo->s, p );
 }
 
-void __stdcall JabberSendPresence( int status )
+void __stdcall JabberSendPresence( int status, bool bSendToAll )
 {
 	JabberSendPresenceTo( status, NULL, NULL );
 	JabberSendVisibleInvisiblePresence( status == ID_STATUS_INVISIBLE );
 
 	// Also update status in all chatrooms
-	for ( int i = 0; ( i=JabberListFindNext( LIST_CHATROOM, i )) >= 0; i++ ) {
-		JABBER_LIST_ITEM *item = JabberListGetItemPtrFromIndex( i );
-		if ( item != NULL )
-			JabberSendPresenceTo( status, item->jid, NULL );
-}	}
+	if ( bSendToAll ) {
+		for ( int i = 0; ( i=JabberListFindNext( LIST_CHATROOM, i )) >= 0; i++ ) {
+			JABBER_LIST_ITEM *item = JabberListGetItemPtrFromIndex( i );
+			if ( item != NULL )
+				JabberSendPresenceTo( status, item->jid, NULL );
+}	}	}
 
 void __stdcall JabberStringAppend( char* *str, int *sizeAlloced, const char* fmt, ... )
 {

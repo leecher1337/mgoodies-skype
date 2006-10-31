@@ -322,7 +322,11 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 			if ( JGetByte( hContact, "IsTransport", 0 )) {
 				DBVARIANT dbv;
 				if ( !JGetStringT( hContact, "jid", &dbv )) {
-					jabberTransports.insert( _tcsdup( dbv.ptszVal ));
+					TCHAR* domain = NEWTSTR_ALLOCA(dbv.ptszVal);
+					TCHAR* resourcepos = _tcschr( domain, '/' );
+					if ( resourcepos != NULL )
+						*resourcepos = '\0';
+					jabberTransports.insert( _tcsdup( domain ));
 					JFreeVariant( &dbv );
 		}	}	}
 
