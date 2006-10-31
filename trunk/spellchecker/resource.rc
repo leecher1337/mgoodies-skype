@@ -27,20 +27,19 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPTIONS DIALOGEX 0, 0, 314, 240
+IDD_OPTIONS DIALOGEX 0, 0, 252, 86
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Tahoma"
 BEGIN
-    LTEXT           "Default language: ",IDC_STATIC,3,5,91,11
-    COMBOBOX        IDC_DEF_LANG,99,3,108,14,CBS_DROPDOWNLIST | CBS_SORT | 
+    GROUPBOX        " Spell Checker ",IDC_STATIC,1,5,250,80
+    LTEXT           "Default language: ",IDC_STATIC,11,20,91,8
+    COMBOBOX        IDC_DEF_LANG,110,18,130,14,CBS_DROPDOWNLIST | CBS_SORT | 
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Auto-correct words",IDC_AUTOCORRECT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,3,25,308,12
-    CONTROL         "Simulate SRMM support",IDC_SIMULATE_SUPPORT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,3,39,308,13
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,35,230,10
     CONTROL         "Download more dictionaries",IDC_GETMORE,"Hyperlink",
-                    WS_TABSTOP | 0x2,3,225,212,12
+                    WS_TABSTOP | 0x1,10,65,230,12
 END
 
 
@@ -54,10 +53,10 @@ GUIDELINES DESIGNINFO DISCARDABLE
 BEGIN
     IDD_OPTIONS, DIALOG
     BEGIN
-        LEFTMARGIN, 3
-        RIGHTMARGIN, 311
-        TOPMARGIN, 3
-        BOTTOMMARGIN, 237
+        LEFTMARGIN, 1
+        RIGHTMARGIN, 251
+        TOPMARGIN, 1
+        BOTTOMMARGIN, 85
     END
 END
 #endif    // APSTUDIO_INVOKED

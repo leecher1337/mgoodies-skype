@@ -1,6 +1,11 @@
-Spell Checker 0.0.0.1
+Spell Checker 0.0.0.2
 
 Changelog:
+
+. 0.0.0.2
+  + Added support for SRMM
+  * Changes in options dialog (thanks sefo and Chudilo)
+  - Removed auto support for SRMMs (it didn't worked)
 
 . 0.0.0.1
   + Initial version
