@@ -351,6 +351,7 @@ void JabberGroupchatJoinRoom( const TCHAR* server, const TCHAR* room, const TCHA
 {
 	TCHAR text[JABBER_MAX_JID_LEN];
 	mir_sntprintf( text, SIZEOF(text), _T("%s@%s/%s"), room, server, nick );
+
 	JABBER_LIST_ITEM* item = JabberListAdd( LIST_CHATROOM, text );
 	replaceStr( item->nick, nick );
 
@@ -564,7 +565,7 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 		TCHAR* str;
 		if (( statusNode=JabberXmlGetChild( node, "status" ))!=NULL && statusNode->text!=NULL )
 			str = statusNode->text;
-		else
+		else 
 			str = NULL;
 		newRes = ( JabberListAddResource( LIST_CHATROOM, from, status, str ) == 0 ) ? 0 : GC_EVENT_JOIN;
 
@@ -729,7 +730,7 @@ void JabberGroupchatProcessMessage( XmlNode *node, void *userdata )
 
 		msgText = n->text;
 
-		if ( (_tcsncmp( msgText, _T("/me "), 4 ) == 0) && (_tcslen(msgText)>4) ){
+		if ( _tcsncmp( msgText, _T("/me "), 4 ) == 0 && _tcslen( msgText ) > 4 ) {
 			msgText += 4;
 			gcd.iType = GC_EVENT_ACTION;
 		}
@@ -780,7 +781,7 @@ typedef struct {
 	TCHAR* from;
 	TCHAR* reason;
 	TCHAR* password;
-}
+} 
 	JABBER_GROUPCHAT_INVITE_INFO;
 
 static void JabberAcceptGroupchatInvite( TCHAR* roomJid, TCHAR* reason, TCHAR* password )

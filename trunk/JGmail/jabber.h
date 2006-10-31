@@ -427,7 +427,7 @@ void JabberGroupchatProcessInvite( TCHAR* roomJid, TCHAR* from, TCHAR* reason, T
 
 void   JabberCheckAllContactsAreTransported( void );
 BOOL   JabberDBCheckIsTransportedContact(const TCHAR* jid, HANDLE hContact);
-int    ReloadIconsEventHook(WPARAM wParam, LPARAM lParam);   
+int    ReloadIconsEventHook(WPARAM wParam, LPARAM lParam);
 int    JGetAdvancedStatusIcon(WPARAM wParam, LPARAM lParam);
 
 //---- jabber_libstr.c ----------------------------------------------

@@ -2,32 +2,32 @@
 !IF "$(CFG)" == ""
 CFG=jgmail - Win32 Release Unicode
 !MESSAGE No configuration specified. Defaulting to jgmail - Win32 Release Unicode.
-!ENDIF 
+!ENDIF
 
 !IF "$(CFG)" != "jgmail - Win32 Release" && "$(CFG)" != "jgmail - Win32 Debug" && "$(CFG)" != "jgmail - Win32 Release Unicode" && "$(CFG)" != "jgmail - Win32 Debug Unicode" && "$(CFG)" != "jgmail - Win32 Static Unicode" && "$(CFG)" != "jgmail - Win32 Static"
 !MESSAGE Invalid configuration "$(CFG)" specified.
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "jabber.mak" CFG="jgmail - Win32 Release Unicode"
-!MESSAGE 
+!MESSAGE
 !MESSAGE Possible choices for configuration are:
-!MESSAGE 
+!MESSAGE
 !MESSAGE "jgmail - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "jgmail - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "jgmail - Win32 Release Unicode" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "jgmail - Win32 Debug Unicode" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "jgmail - Win32 Static Unicode" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "jgmail - Win32 Static" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE 
+!MESSAGE
 !ERROR An invalid configuration is specified.
-!ENDIF 
+!ENDIF
 
 !IF "$(OS)" == "Windows_NT"
 NULL=
-!ELSE 
+!ELSE
 NULL=nul
-!ENDIF 
+!ENDIF
 
 !IF  "$(CFG)" == "jgmail - Win32 Release"
 

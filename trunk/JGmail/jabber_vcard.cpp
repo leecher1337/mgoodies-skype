@@ -59,7 +59,7 @@ int JabberSendGetVcard( const TCHAR* jid )
 	JabberIqAdd( iqId, ( jid == jabberJID ) ? IQ_PROC_GETVCARD : IQ_PROC_NONE, JabberIqResultGetVcard );
 
 	XmlNodeIq iq( "get", iqId, jid );
-	XmlNode* vs = iq.addChild( "vCard" ); vs->addAttr( "xmlns", "vcard-temp" );
+	XmlNode* vs = iq.addChild( "vCard" ); vs->addAttr( "xmlns", "vcard-temp" ); 
 	vs->addAttr( "prodid", "-//HandGen//NONSGML vGen v1.0//EN" ); vs->addAttr( "version", "2.0" );
 	JabberSend( jabberThreadInfo->s, iq );
 	return 0;
@@ -854,7 +854,7 @@ static void SetServerVcard()
 
 	for ( i=0;;i++ ) {
 		wsprintfA( idstr, "e-mail%d", i );
-		if ( DBGetContactSettingTString( NULL, jabberProtoName, idstr, &dbv ))
+		if ( DBGetContactSettingTString( NULL, jabberProtoName, idstr, &dbv )) 
 			break;
 
 		XmlNode* e = v->addChild( "EMAIL", dbv.ptszVal );
@@ -994,7 +994,7 @@ static void SetServerVcard()
 										if ( jabberVcardPhotoType ) mir_free( jabberVcardPhotoType );
 										if ( szFileType )
 											jabberVcardPhotoType = mir_strdup( szFileType );
-										else
+										else 
 											jabberVcardPhotoType = NULL;
 									}
 									else DeleteFileA( szTempFileName );

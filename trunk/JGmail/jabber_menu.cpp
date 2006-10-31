@@ -63,9 +63,9 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 	sttEnableMenuItem( hMenuVisitGMail, FALSE );
 
 	HANDLE hContact;
-	if (( hContact=( HANDLE )wParam ) == NULL ){
+	if (( hContact=( HANDLE )wParam ) == NULL )
 		return 0;
-	} else {
+	else {
 		DBVARIANT dbv;
 		if ( !JGetStringT( hContact, "FakeContact", &dbv )) {
 			if (!_tcsicmp( dbv.ptszVal, _T("GMAIL"))){
@@ -90,7 +90,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 			JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuConvert, ( LPARAM )&clmi );
 	}	}
 
-	if (!jabberOnline)
+	if (!jabberOnline) 
 		return 0;
 
 	if ( bIsChatRoom ) {

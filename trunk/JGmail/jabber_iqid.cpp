@@ -38,6 +38,7 @@ static void JabberOnLoggedIn( ThreadData* info )
 {
 	jabberOnline = TRUE;
 	jabberLoggedInTime = time(0);
+		
 	int enableGmailSetting = JGetByte(NULL,"EnableGMail",1);
 	if (enableGmailSetting & 1) JabberEnableNotifications(info);
 	int iqId = JabberSerialNext();
@@ -93,7 +94,8 @@ void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata )
 		JabberSend( info->s, iq );
 	}
 	else if ( !lstrcmp( type, _T("error"))) {
-		JabberSend( info->s, "</stream:stream>" );
+ 		JabberSend( info->s, "</stream:stream>" );
+
 		TCHAR text[128];
 		mir_sntprintf( text, SIZEOF( text ), _T("%s %s."), TranslateT( "Authentication failed for" ), info->username );
 		MessagePopup( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
@@ -124,7 +126,7 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 
 		iqId = JabberSerialNext();
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
-		{	XmlNodeIq iq( "get", iqId );
+		{	XmlNodeIq iq( "get", iqId ); 
 			XmlNode* query = iq.addQuery( "jabber:iq:roster" );
 			JabberSend( info->s, iq );
 		}
@@ -134,7 +136,7 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 			iqId = JabberSerialNext();
 			JabberIqAdd( iqId, IQ_PROC_GETAGENTS, JabberIqResultGetAgents );
 
-			XmlNodeIq iq( "get", iqId );
+			XmlNodeIq iq( "get", iqId ); 
 			XmlNode* query = iq.addQuery( "jabber:iq:agents" );
 			JabberSend( info->s, iq );
 		}
@@ -563,11 +565,13 @@ LBL_Ret:
 		mir_free( buffer );
 		return;
 	}
+
 	//put correct extension to make MS_UTILS_LOADBITMAP happy
 	{	char* p = strrchr( szTempFileName, '.' );
 		if ( p != NULL )
 			lstrcpyA( p+1, strrchr(jabberVcardPhotoType,'/')+1 );
 	}
+
 	JabberLog( "Picture file name set to %s", szTempFileName );
 	HANDLE hFile = CreateFileA( szTempFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 	if ( hFile == INVALID_HANDLE_VALUE )

@@ -220,7 +220,6 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 		SkinAddNewSound( soundname, sounddesc, "newmail.wav" );
 	}
 
-
 	if ( ServiceExists( MS_GC_REGISTER )) {
 		jabberChatDllPresent = true;
 
@@ -242,6 +241,7 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 		hInitChat = CreateHookableEvent( szEvent );
 		hEvInitChat = HookEvent( szEvent, JabberGcInit );
 	}
+
 	JCreateServiceFunction( JS_GETADVANCEDSTATUSICON, JGetAdvancedStatusIcon );
 	JabberCheckAllContactsAreTransported();
 	JGmailSetupIcoLib();
@@ -274,6 +274,7 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 		utfi.utf8_encodeW  = deprecatedUtf8EncodeW;
 	}
 
+	// creating the plugins name
 	char text[_MAX_PATH];
 	char* p, *q;
 
