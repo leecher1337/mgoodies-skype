@@ -395,7 +395,7 @@ static void sttSaveAvatar( HWND hwndDlg )
 	RedrawWindow(GetDlgItem(hwndDlg, IDC_AVATAR), NULL, NULL, RDW_INVALIDATE);
 
 	if ( jabberConnected )
-		JabberSendPresence( jabberDesiredStatus );
+		JabberSendPresence( jabberDesiredStatus, false );
 }
 
 static BOOL CALLBACK JabberSetAvatarDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -438,7 +438,7 @@ static BOOL CALLBACK JabberSetAvatarDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 					DeleteObject( hBitmap );
 
 				if ( jabberConnected )
-					JabberSendPresence( jabberDesiredStatus );
+					JabberSendPresence( jabberDesiredStatus, false );
 				RedrawWindow(GetDlgItem(hwndDlg, IDC_AVATAR), NULL, NULL, RDW_INVALIDATE);
 				break;
 		}	}

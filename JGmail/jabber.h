@@ -524,7 +524,7 @@ char*         __stdcall JabberGetVersionText();
 time_t        __stdcall JabberIsoToUnixTime( TCHAR* stamp );
 int           __stdcall JabberCountryNameToId( TCHAR* ctry );
 void          __stdcall JabberSendPresenceTo( int status, TCHAR* to, XmlNode* extra );
-void          __stdcall JabberSendPresence( int );
+void          __stdcall JabberSendPresence( int iStatus, bool bSendToAll );
 void          __stdcall JabberStringAppend( char* *str, int *sizeAlloced, const char* fmt, ... );
 TCHAR*        __stdcall JabberGetClientJID( const TCHAR* jid, TCHAR*, size_t );
 TCHAR*        __stdcall JabberStripJid( const TCHAR* jid, TCHAR* dest, size_t destLen );
