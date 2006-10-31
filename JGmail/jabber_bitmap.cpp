@@ -41,10 +41,7 @@ HBITMAP __stdcall JabberStretchBitmap( HBITMAP hBitmap )
 {
 	BITMAPINFO bmStretch = { 0 };
 	bmStretch.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-//	bmStretch.bmiHeader.biWidth = 64;
-//	bmStretch.bmiHeader.biHeight = 64;
 	bmStretch.bmiHeader.biPlanes = 1;
-//	bmStretch.bmiHeader.biBitCount = 32;
 
 	BITMAP bmp;
 	HDC hDC = CreateCompatibleDC( NULL );

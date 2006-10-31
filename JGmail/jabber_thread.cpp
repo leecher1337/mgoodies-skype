@@ -593,7 +593,7 @@ static void JabberIqProcessSearch( XmlNode *node, void *userdata )
 static void JabberPerformRegistration( ThreadData* info )
 {
 	iqIdRegGetReg = JabberSerialNext();
-	XmlNodeIq iq("get",iqIdRegGetReg,(char*)NULL); 
+	XmlNodeIq iq("get",iqIdRegGetReg,(char*)NULL);
 	XmlNode* query = iq.addQuery("jabber:iq:register");
 	JabberSend(info->s,iq);
 	SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 50, ( LPARAM )TranslateT( "Requesting registration instruction..." ));
@@ -639,10 +639,11 @@ static void JabberProcessStreamClosing( XmlNode *node, void *userdata )
 	if ( node->name && !strcmp( node->name, "stream:error" ) && node->text )
 		MessagePopup( NULL, TranslateTS( node->text ), TranslateT( "Jabber Connection Error" ), MB_OK|MB_ICONERROR|MB_SETFOREGROUND );
 }
+
 static int isGoogleTokenUsed = 0; // 1: used; 2: retreived; 3: retreived and used
 static void JabberProcessFeatures( XmlNode *node, void *userdata )
 {
-	struct ThreadData* info = ( struct ThreadData*  ) userdata;
+	struct ThreadData* info = ( struct ThreadData* ) userdata;
 	bool isPlainAvailable = false;
 	bool isMd5available = false;
 	bool isAuthAvailable = false;
@@ -651,9 +652,10 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 	bool areMechanismsDefined = false;
 	bool isSessionAvailable = false;
 	int i,k;
+
 	for (i = 0; i < node->numChild; i++ ) {
 		XmlNode* n = node->child[i];
-		if (!strcmp(n->name,"starttls" )) {
+		if ( !strcmp( n->name, "starttls" )) {
 			if ( !info->useSSL &&
 				#ifndef STATICSSL
 					hLibSSL != NULL &&
@@ -680,7 +682,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 		else if ( !strcmp( n->name, "session"  )) isSessionAvailable = true;
 	}
 
-	if (areMechanismsDefined) {
+	if ( areMechanismsDefined ) {
 		char *PLAIN = NULL, *mechanism = NULL;
 		char *X_GOOGLE_TOKEN = 0;
 		isGoogleTokenUsed = 0;
@@ -737,7 +739,7 @@ LBL_RequestToken:
 			mir_free(temp);
 			JabberLog( "Never publish the hash below" );
 			mechanism = NEWSTR_ALLOCA( "PLAIN" );
-		} 
+		}
 		else {
 			if ( isAuthAvailable ) { // no known mechanisms but iq_auth is available
 				JabberPerformIqAuth( info );
@@ -751,19 +753,19 @@ LBL_RequestToken:
 		}
 
 		if ( info->type == JABBER_SESSION_NORMAL ) {
-			XmlNode auth("auth", X_GOOGLE_TOKEN?X_GOOGLE_TOKEN:PLAIN);
-			auth.addAttr("xmlns","urn:ietf:params:xml:ns:xmpp-sasl" );
-			auth.addAttr("mechanism",X_GOOGLE_TOKEN?"X-GOOGLE-TOKEN":"PLAIN");
+			XmlNode auth( "auth", X_GOOGLE_TOKEN?X_GOOGLE_TOKEN:PLAIN );
+			auth.addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-sasl" );
+			auth.addAttr( "mechanism",X_GOOGLE_TOKEN?"X-GOOGLE-TOKEN":"PLAIN" );
 			JabberSend(info->s,auth);
 			wasSaslPerformed = true; //sasl was requested, but we dont know the result
 		}
 		else if ( info->type == JABBER_SESSION_REGISTER )
 			JabberPerformRegistration( info );
-		else 
+		else
 			JabberSend( info->s, "</stream:stream>" );
 		if (PLAIN) mir_free(PLAIN);
 		return;
-	} 
+	}
 
 	// mechanisms are not defined.
 	if ( wasSaslPerformed ) { //We are already logged-in
@@ -779,7 +781,7 @@ LBL_RequestToken:
 
 		return;
 	}
-	
+
 	//mechanisms not available and we are not logged in
 	if ( isAuthAvailable )
 		JabberPerformIqAuth( info );
@@ -804,6 +806,7 @@ static void JabberProcessFailure( XmlNode *node, void *userdata ){
 	if (( type=JabberXmlGetAttrValue( node, "xmlns" )) == NULL ) return;
 	if ( !_tcscmp( type, _T("urn:ietf:params:xml:ns:xmpp-sasl") )){
 		JabberSend( info->s, "</stream:stream>" );
+
 		if ((isGoogleTokenUsed & 3)==1) { //GoogleToken is used but not requested
 			isGoogleTokenUsed |= 2; // new token is being requested
 			char *temp = t2a(info->username);
@@ -822,13 +825,12 @@ static void JabberProcessFailure( XmlNode *node, void *userdata ){
 			}
 		} else {
 LBL_AuthFailed:
-			TCHAR text[128];
-
-			mir_sntprintf( text, sizeof( text ), _T("%s %s@")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
-			MessagePopup( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
-			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
-			jabberThreadInfo = NULL;	// To disallow auto reconnect
-		}
+		TCHAR text[128];
+		mir_sntprintf( text, sizeof( text ), _T("%s %s@")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
+		MessagePopup( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
+		jabberThreadInfo = NULL;	// To disallow auto reconnect
+	}
 }	}
 
 static void JabberProcessError( XmlNode *node, void *userdata )
@@ -854,7 +856,7 @@ static void JabberProcessError( XmlNode *node, void *userdata )
 
 static void JabberProcessSuccess( XmlNode *node, void *userdata )
 {
-	struct ThreadData* info = ( struct ThreadData*  ) userdata;
+	struct ThreadData* info = ( struct ThreadData* ) userdata;
 	TCHAR* type;
 //	int iqId;
 	// RECVED: <success ...
@@ -880,7 +882,7 @@ static void JabberProcessProtocol( XmlNode *node, void *userdata )
 {
 	struct ThreadData* info;
 
-	info = ( struct ThreadData*  ) userdata;
+	info = ( struct ThreadData* ) userdata;
 	if ( !strcmp( node->name, "proceed" )){
 		JabberProcessProceed( node, userdata );
 		return;
@@ -919,7 +921,7 @@ static void JabberProcessProceed( XmlNode *node, void *userdata )
 	struct ThreadData* info;
 	TCHAR* type;
 	node = node;
-	if (( info=( struct ThreadData*  ) userdata ) == NULL ) return;
+	if (( info=( struct ThreadData* ) userdata ) == NULL ) return;
 	if (( type = JabberXmlGetAttrValue( node, "xmlns" )) != NULL && !lstrcmp( type, _T("error")))
 		return;
 
@@ -956,7 +958,7 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 	HANDLE hContact;
 
 	if ( !node->name || strcmp( node->name, "message" )) return;
-	if (( info=( struct ThreadData*  ) userdata ) == NULL ) return;
+	if (( info=( struct ThreadData* ) userdata ) == NULL ) return;
 
 	type = JabberXmlGetAttrValue( node, "type" );
 	if (( from = JabberXmlGetAttrValue( node, "from" )) == NULL )
@@ -1136,7 +1138,7 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 
 		WCHAR* wszMessage;
 		char*  szAnsiMsg;
-		int cbAnsiLen, cbWideLen;
+		int    cbAnsiLen, cbWideLen;
 
 		if (( szMessage = JabberUnixToDosT( szMessage )) == NULL )
 			szMessage = mir_tstrdup( _T(""));
@@ -1247,7 +1249,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 	TCHAR* p;
 
 	if ( !node || !node->name || strcmp( node->name, "presence" )) return;
-	if (( info=( struct ThreadData*  ) userdata ) == NULL ) return;
+	if (( info=( struct ThreadData* ) userdata ) == NULL ) return;
 	if (( from = JabberXmlGetAttrValue( node, "from" )) == NULL ) return;
 
 	if ( JabberListExist( LIST_CHATROOM, from )) {
@@ -1257,22 +1259,21 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 
 	TCHAR* type = JabberXmlGetAttrValue( node, "type" );
 	if ( type == NULL || !_tcscmp( type, _T("available"))) {
-		if (( nick=JabberNickFromJID( from )) == NULL )
+		if (( nick = JabberNickFromJID( from )) == NULL )
 			return;
-		if (( hContact = JabberHContactFromJID( from )) == NULL )
-        {
-            if (!JabberListExist( LIST_ROSTER, from ))
-            {                
-                JabberLog("SKIP Receive presence online from "TCHAR_STR_PARAM" ( who is not in my roster and not in list - skiping)", from );
-                return;
-            }
+
+		if (( hContact = JabberHContactFromJID( from )) == NULL ) {
+			if (!JabberListExist( LIST_ROSTER, from )) {
+				JabberLog("SKIP Receive presence online from "TCHAR_STR_PARAM" ( who is not in my roster and not in list - skiping)", from );
+				return;
+			}
 			hContact = JabberDBCreateContact( from, nick, TRUE, TRUE );
-        }
+		}
 		if ( !JabberListExist( LIST_ROSTER, from )) {
 			JabberLog("Receive presence online from "TCHAR_STR_PARAM" ( who is not in my roster )", from );
 			JabberListAdd( LIST_ROSTER, from );
 		}
-        JabberDBCheckIsTransportedContact(from,hContact);
+		JabberDBCheckIsTransportedContact(from,hContact);
 		int status = ID_STATUS_ONLINE;
 		if (( showNode = JabberXmlGetChild( node, "show" )) != NULL ) {
 			if (( show = showNode->text ) != NULL ) {
@@ -1301,9 +1302,9 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 			p = NULL;
 		JabberListAddResource( LIST_ROSTER, from, status, p );
 		WriteStatusMessage( hContact, p );
-		if ( p )
+		if ( p ) {
 			mir_free( p );
-
+		}
 		// Determine status to show for the contact
 		if (( item=JabberListGetItemPtr( LIST_ROSTER, from )) != NULL ) {
 #ifndef ORGINALRESOURCEMANAGMENT
@@ -1382,7 +1383,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 	if ( !_tcscmp( type, _T("unavailable"))) {
 		if ( !JabberListExist( LIST_ROSTER, from ))
 			JabberLog( "SKIP Receive presence offline from " TCHAR_STR_PARAM " ( who is not in my roster )", from );
-		else 
+		else
 			JabberListRemoveResource( LIST_ROSTER, from );
 
 		hContact = JabberHContactFromJID( from );
@@ -1398,22 +1399,15 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		if (( item=JabberListGetItemPtr( LIST_ROSTER, from )) != NULL ) {
 			// Determine status to show for the contact based on the remaining resources
 			status = ID_STATUS_OFFLINE;
-//#ifndef ORGINALRESOURCEMANAGMENT
-//			if (JabberListGetBestClientResourceNamePtr(from)){ //here the best resource is chosen
-//				int resnum = item->resourceCount==1?0:item->defaultResource;
-//				status = item->resource[resnum].status;
-//				putResUserSett(hContact,&item->resource[resnum]);
-//			}
-//#else
 			int resFromChosenStatus = -1;
-			for ( i=0; i < item->resourceCount; i++ ){
+			for ( i=0; i < item->resourceCount; i++ )
+			{
 				int tempStatus = status;
 				status = JabberCombineStatus( status, item->resource[i].status );
 				if (status != tempStatus) resFromChosenStatus = i;
 			}
 			if (resFromChosenStatus>-1) putResUserSett(hContact,&item->resource[resFromChosenStatus]);
 			item->status = status;
-//#endif
 		}
 		if (( hContact=JabberHContactFromJID( from )) != NULL ) {
 			if ( _tcschr( from, '@' )!=NULL || JGetByte( "ShowTransport", TRUE )==TRUE )
@@ -1424,7 +1418,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		}
 		if ( _tcschr( from, '@' )==NULL && hwndJabberAgents )
 			SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
-        JabberDBCheckIsTransportedContact(from, hContact);
+		JabberDBCheckIsTransportedContact(from, hContact);
 		return;
 	}
 
@@ -1434,11 +1428,12 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 			XmlNode p( "presence" ); p.addAttr( "to", from ); p.addAttr( "type", "subscribed" );
 			JabberSend( info->s, p );
 		}
-		else if (( nick=JabberNickFromJID( from )) != NULL ) {
-			JabberLog( TCHAR_STR_PARAM " ( " TCHAR_STR_PARAM " ) requests authorization", nick, from );
-			JabberDBAddAuthRequest( from, nick );
-			mir_free( nick );
-		}
+		else {
+			if (( nick=JabberNickFromJID( from )) != NULL ) {
+				JabberLog( TCHAR_STR_PARAM " ( " TCHAR_STR_PARAM " ) requests authorization", nick, from );
+				JabberDBAddAuthRequest( from, nick );
+				mir_free( nick );
+		}	}
 		return;
 	}
 
@@ -1480,28 +1475,28 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 	TCHAR* linuxOS = JabberReadLinuxUname();
 	if (!linuxOS) {
 #endif
-		OSVERSIONINFO osvi = { 0 };
-		osvi.dwOSVersionInfoSize = sizeof( OSVERSIONINFO );
-		if ( GetVersionEx( &osvi )) {
-			switch ( osvi.dwPlatformId ) {
-			case VER_PLATFORM_WIN32_NT:
-				if ( osvi.dwMajorVersion == 5 ) {
-					if ( osvi.dwMinorVersion == 2 ) os = TranslateT( "Windows Server 2003" );
-					else if ( osvi.dwMinorVersion == 1 ) os = TranslateT( "Windows XP" );
-					else if ( osvi.dwMinorVersion == 0 ) os = TranslateT( "Windows 2000" );
-				}
-				else if ( osvi.dwMajorVersion <= 4 ) {
-					os = TranslateT( "Windows NT" );
-				}
-				break;
-			case VER_PLATFORM_WIN32_WINDOWS:
-				if ( osvi.dwMajorVersion == 4 ) {
-					if ( osvi.dwMinorVersion == 0 ) os = TranslateT( "Windows 95" );
-					if ( osvi.dwMinorVersion == 10 ) os = TranslateT( "Windows 98" );
-					if ( osvi.dwMinorVersion == 90 ) os = TranslateT( "Windows ME" );
-				}
-				break;
-		}	}
+	OSVERSIONINFO osvi = { 0 };
+	osvi.dwOSVersionInfoSize = sizeof( OSVERSIONINFO );
+	if ( GetVersionEx( &osvi )) {
+		switch ( osvi.dwPlatformId ) {
+		case VER_PLATFORM_WIN32_NT:
+			if ( osvi.dwMajorVersion == 5 ) {
+				if ( osvi.dwMinorVersion == 2 ) os = TranslateT( "Windows Server 2003" );
+				else if ( osvi.dwMinorVersion == 1 ) os = TranslateT( "Windows XP" );
+				else if ( osvi.dwMinorVersion == 0 ) os = TranslateT( "Windows 2000" );
+			}
+			else if ( osvi.dwMajorVersion <= 4 ) {
+				os = TranslateT( "Windows NT" );
+			}
+			break;
+		case VER_PLATFORM_WIN32_WINDOWS:
+			if ( osvi.dwMajorVersion == 4 ) {
+				if ( osvi.dwMinorVersion == 0 ) os = TranslateT( "Windows 95" );
+				if ( osvi.dwMinorVersion == 10 ) os = TranslateT( "Windows 98" );
+				if ( osvi.dwMinorVersion == 90 ) os = TranslateT( "Windows ME" );
+			}
+			break;
+	}	}
 
 		if ( os == NULL )
 #ifndef __WINE__
@@ -1680,7 +1675,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 	JABBER_IQ_PFUNC pfunc;
 
 	if ( !node->name || strcmp( node->name, "iq" )) return;
-	if (( info=( struct ThreadData*  ) userdata ) == NULL ) return;
+	if (( info=( struct ThreadData* ) userdata ) == NULL ) return;
 	if (( type=JabberXmlGetAttrValue( node, "type" )) == NULL ) return;
 
 	id = -1;
@@ -1754,7 +1749,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 							}
 							else JSetStringT( hContact, "jid", jid );
 
-							DBVARIANT dbnick;
+                     DBVARIANT dbnick;
 							if ( !JGetStringT( hContact, "Nick", &dbnick )) {
 								if ( _tcscmp( nick, dbnick.ptszVal ) != 0 )
 									DBWriteContactSettingTString( hContact, "CList", "MyHandle", nick );
@@ -1778,7 +1773,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 					else if ( !_tcscmp( str, _T("to"))) item->subscription = SUB_TO;
 					else if ( !_tcscmp( str, _T("from"))) item->subscription = SUB_FROM;
 					else item->subscription = SUB_NONE;
-					JabberLog( "Roster push for jid=" TCHAR_STR_PARAM ", set subscription to "TCHAR_STR_PARAM, jid, str );
+					JabberLog( "Roster push for jid=" TCHAR_STR_PARAM ", set subscription to " TCHAR_STR_PARAM, jid, str );
 					// subscription = remove is to remove from roster list
 					// but we will just set the contact to offline and not actually
 					// remove, so that history will be retained.
@@ -1895,7 +1890,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 
 		// RECVED: software version result
 		// ACTION: update version information for the specified jid/resource
-		if ( !_tcscmp( xmlns, _T("jabber:iq:version"))) 
+		if ( !_tcscmp( xmlns, _T("jabber:iq:version")))
 			JabberProcessIqResultVersion( type, node, queryNode );
 	}
 	// RECVED: <iq type='set'><si xmlns='http://jabber.org/protocol/si' ...
@@ -1965,7 +1960,7 @@ static void JabberProcessRegIq( XmlNode *node, void *userdata )
 	TCHAR *type, *str;
 
 	if ( !node->name || strcmp( node->name, "iq" )) return;
-	if (( info=( struct ThreadData*  ) userdata ) == NULL ) return;
+	if (( info=( struct ThreadData* ) userdata ) == NULL ) return;
 	if (( type=JabberXmlGetAttrValue( node, "type" )) == NULL ) return;
 
 	unsigned int id = -1;

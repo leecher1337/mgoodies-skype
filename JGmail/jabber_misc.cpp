@@ -270,13 +270,13 @@ void JabberGetAvatarFileName( HANDLE hContact, char* pszDest, int cbLen )
 		DBVARIANT dbv1, dbv2;
 		BOOL res1 = DBGetContactSetting( NULL, jabberProtoName, "LoginName", &dbv1 );
 		BOOL res2 = DBGetContactSetting( NULL, jabberProtoName, "LoginServer", &dbv2 );
-		mir_snprintf( pszDest + tPathLen, MAX_PATH - tPathLen, "%s@%s avatar.%s",
-			res1 ? "noname" : dbv1.pszVal,
+		mir_snprintf( pszDest + tPathLen, MAX_PATH - tPathLen, "%s@%s avatar.%s", 
+			res1 ? "noname" : dbv1.pszVal, 
 			res2 ? jabberProtoName : dbv2.pszVal,
 			szFileType );
 		if (!res1) JFreeVariant( &dbv1 );
 		if (!res2) JFreeVariant( &dbv2 );
-	}
+	}	
 }
 
 ///////////////////////////////////////////////////////////////////////////////

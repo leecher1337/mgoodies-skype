@@ -766,13 +766,13 @@ int JabberOptInit( WPARAM wParam, LPARAM lParam )
 			pfnEnableThemeDialogTexture = (BOOL (WINAPI *)(HANDLE, DWORD))GetProcAddress(hUxTheme, "EnableThemeDialogTexture");
 	}
 
-	odp.cbSize = sizeof( odp ); // should work correctly with defined MIRANDA_VER 0x0500
-	odp.hInstance = hInst;
-	odp.pszGroup = "Network";
+	odp.cbSize      = sizeof( odp );
+	odp.hInstance   = hInst;
+	odp.pszGroup    = "Network";
 	odp.pszTemplate = MAKEINTRESOURCEA( IDD_OPT_EXPERT );
-	odp.pszTitle = jabberModuleName;
-	odp.flags = ODPF_BOLDGROUPS;
-	odp.pfnDlgProc = JabberExpOptDlgProc;
+	odp.pszTitle    = jabberModuleName;
+	odp.pfnDlgProc  = JabberExpOptDlgProc;
+	odp.flags       = ODPF_BOLDGROUPS;
 	odp.nIDBottomSimpleControl = 0;
 	JCallService( MS_OPT_ADDPAGE, wParam, ( LPARAM )&odp );
 

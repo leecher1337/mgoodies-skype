@@ -62,7 +62,7 @@ void JabberXmlDestroyState( XmlState *xmlState )
 	// Note: cannot use JabberXmlFreeNode() to mir_free xmlState->root
 	// because it will do mir_free( xmlState->root ) which is not freeable.
 	node = &( xmlState->root );
-
+	
 	// Free all children first
 	for ( i=0; i<node->numChild; i++ )
 		delete node->child[i];

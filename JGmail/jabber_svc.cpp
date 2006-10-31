@@ -802,7 +802,7 @@ static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 				#endif
 				return;
 			}
-
+			
 			if ( item->statusMessage != NULL ) {
 				#if defined( _UNICODE )
 					char* msg = u2a(CleanMessageFromListeningTo(item->statusMessage));
@@ -1413,7 +1413,7 @@ int JabberSetListeningTo( WPARAM wParam, LPARAM lParam )
 	}
 
 	// Send it
-	JabberSendPresence( jabberStatus );
+	JabberSendPresence( jabberStatus, false );
 
 	LeaveCriticalSection( &listeningToInfoMutex );
 	return 0;
