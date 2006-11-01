@@ -28,6 +28,15 @@ Last change by : $Author$
 */
 
 #include "jabber.h"
+#ifdef __GNUC__
+	#define __try
+	#define __except(x) if (0) /* don't execute handler */
+	#define __finally
+	#define _try __try
+	#define _except __except
+	#define _finally __finally
+#endif
+
 extern UINT jabberCodePage;
 
 static void __stdcall sttUtf8Decode( const BYTE* str, wchar_t* tempBuf )
