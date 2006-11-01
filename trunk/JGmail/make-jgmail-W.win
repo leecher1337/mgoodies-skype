@@ -5,8 +5,8 @@ CPP  = g++.exe
 CC   = gcc.exe
 WINDRES = windres.exe  -D WINVER=0x0400
 RES  = MinGW/W/msvc6.res
-OBJ  = MinGW/W/gmail.o MinGW/W/google_token.o MinGW/W/icolib.o MinGW/W/jabber.o MinGW/W/jabber_agent.o MinGW/W/jabber_bitmap.o MinGW/W/jabber_byte.o MinGW/W/jabber_chat.o MinGW/W/jabber_file.o MinGW/W/jabber_form.o MinGW/W/jabber_ft.o MinGW/W/jabber_groupchat.o MinGW/W/jabber_iq.o MinGW/W/jabber_iqid.o MinGW/W/jabber_iqid_muc.o MinGW/W/jabber_libstr.o MinGW/W/jabber_list.o MinGW/W/jabber_menu.o MinGW/W/jabber_misc.o MinGW/W/jabber_opt.o MinGW/W/jabber_password.o MinGW/W/jabber_proxy.o MinGW/W/jabber_ssl.o MinGW/W/jabber_std.o MinGW/W/jabber_svc.o MinGW/W/jabber_thread.o MinGW/W/jabber_userinfo.o MinGW/W/jabber_util.o MinGW/W/jabber_vcard.o MinGW/W/jabber_ws.o MinGW/W/jabber_xml.o MinGW/W/jabber_xmlns.o MinGW/W/sha1.o $(RES)
-LINKOBJ  = MinGW/W/gmail.o MinGW/W/google_token.o MinGW/W/icolib.o MinGW/W/jabber.o MinGW/W/jabber_agent.o MinGW/W/jabber_bitmap.o MinGW/W/jabber_byte.o MinGW/W/jabber_chat.o MinGW/W/jabber_file.o MinGW/W/jabber_form.o MinGW/W/jabber_ft.o MinGW/W/jabber_groupchat.o MinGW/W/jabber_iq.o MinGW/W/jabber_iqid.o MinGW/W/jabber_iqid_muc.o MinGW/W/jabber_libstr.o MinGW/W/jabber_list.o MinGW/W/jabber_menu.o MinGW/W/jabber_misc.o MinGW/W/jabber_opt.o MinGW/W/jabber_password.o MinGW/W/jabber_proxy.o MinGW/W/jabber_ssl.o MinGW/W/jabber_std.o MinGW/W/jabber_svc.o MinGW/W/jabber_thread.o MinGW/W/jabber_userinfo.o MinGW/W/jabber_util.o MinGW/W/jabber_vcard.o MinGW/W/jabber_ws.o MinGW/W/jabber_xml.o MinGW/W/jabber_xmlns.o MinGW/W/sha1.o $(RES)
+OBJ  = MinGW/W/jabber_deprecated.o MinGW/W/gmail.o MinGW/W/google_token.o MinGW/W/jabber_icolib.o MinGW/W/icolib.o MinGW/W/jabber.o MinGW/W/jabber_agent.o MinGW/W/jabber_bitmap.o MinGW/W/jabber_byte.o MinGW/W/jabber_chat.o MinGW/W/jabber_file.o MinGW/W/jabber_form.o MinGW/W/jabber_ft.o MinGW/W/jabber_groupchat.o MinGW/W/jabber_iq.o MinGW/W/jabber_iqid.o MinGW/W/jabber_iqid_muc.o MinGW/W/jabber_libstr.o MinGW/W/jabber_list.o MinGW/W/jabber_menu.o MinGW/W/jabber_misc.o MinGW/W/jabber_opt.o MinGW/W/jabber_password.o MinGW/W/jabber_proxy.o MinGW/W/jabber_ssl.o MinGW/W/jabber_std.o MinGW/W/jabber_svc.o MinGW/W/jabber_thread.o MinGW/W/jabber_userinfo.o MinGW/W/jabber_util.o MinGW/W/jabber_vcard.o MinGW/W/jabber_ws.o MinGW/W/jabber_xml.o MinGW/W/jabber_xmlns.o MinGW/W/sha1.o $(RES)
+LINKOBJ  = MinGW/W/jabber_deprecated.o MinGW/W/gmail.o MinGW/W/google_token.o MinGW/W/jabber_icolib.o MinGW/W/icolib.o MinGW/W/jabber.o MinGW/W/jabber_agent.o MinGW/W/jabber_bitmap.o MinGW/W/jabber_byte.o MinGW/W/jabber_chat.o MinGW/W/jabber_file.o MinGW/W/jabber_form.o MinGW/W/jabber_ft.o MinGW/W/jabber_groupchat.o MinGW/W/jabber_iq.o MinGW/W/jabber_iqid.o MinGW/W/jabber_iqid_muc.o MinGW/W/jabber_libstr.o MinGW/W/jabber_list.o MinGW/W/jabber_menu.o MinGW/W/jabber_misc.o MinGW/W/jabber_opt.o MinGW/W/jabber_password.o MinGW/W/jabber_proxy.o MinGW/W/jabber_ssl.o MinGW/W/jabber_std.o MinGW/W/jabber_svc.o MinGW/W/jabber_thread.o MinGW/W/jabber_userinfo.o MinGW/W/jabber_util.o MinGW/W/jabber_vcard.o MinGW/W/jabber_ws.o MinGW/W/jabber_xml.o MinGW/W/jabber_xmlns.o MinGW/W/sha1.o $(RES)
 LIBS =  -L"C:/Dev-Cpp/lib" -lkernel32 -luser32 -lgdi32 -lcomctl32 -lwinspool -lcomdlg32 -ladvapi32 -lshell32 -lole32 -loleaut32 -lwsock32 -lversion -s
 INCS =  -I"../../include"
 CXXINCS =  -I"../../include"
@@ -31,6 +31,9 @@ $(BIN): $(LINKOBJ)
 #	$(DLLWRAP) --output-def $(DEFFILE) --driver-name c++ --implib $(STATICLIB) $(LINKOBJ) $(LIBS) -o $(BIN)
 	$(CPP) $(LINKOBJ) $(LIBS) -o $(BIN) -mdll
 
+MinGW/W/jabber_deprecated.o: jabber_deprecated.cpp
+	$(CPP) -c jabber_deprecated.cpp -o MinGW/W/jabber_deprecated.o $(CXXFLAGS)
+
 MinGW/W/gmail.o: gmail.cpp
 	$(CPP) -c gmail.cpp -o MinGW/W/gmail.o $(CXXFLAGS)
 
@@ -39,6 +42,9 @@ MinGW/W/google_token.o: google_token.cpp
 
 MinGW/W/icolib.o: icolib.cpp
 	$(CPP) -c icolib.cpp -o MinGW/W/icolib.o $(CXXFLAGS)
+
+MinGW/W/jabber_icolib.o: jabber_icolib.cpp
+	$(CPP) -c jabber_icolib.cpp -o MinGW/W/jabber_icolib.o $(CXXFLAGS)
 
 MinGW/W/jabber.o: jabber.cpp
 	$(CPP) -c jabber.cpp -o MinGW/W/jabber.o $(CXXFLAGS)

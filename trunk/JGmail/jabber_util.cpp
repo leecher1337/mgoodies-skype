@@ -31,6 +31,14 @@ Last change by : $Author$
 #include "sha1.h"
 #include <m_popup.h>
 #include "resource.h"
+#ifdef __GNUC__
+	#define __try
+	#define __except(x) if (0) /* don't execute handler */
+	#define __finally
+	#define _try __try
+	#define _except __except
+	#define _finally __finally
+#endif
 
 extern CRITICAL_SECTION mutex;
 extern UINT jabberCodePage;
