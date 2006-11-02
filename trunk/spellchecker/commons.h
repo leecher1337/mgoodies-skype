@@ -113,6 +113,12 @@ struct Dialog {
 
 	BOOL changed;
 	int old_text_len;
+	TCHAR text[1024];
+
+	// Popup data
+	int num_suggestions;
+	char ** suggestions;
+	TCHAR *word;
 };
 
 

@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,2),
+	PLUGIN_MAKE_VERSION(0,0,0,4),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -52,6 +52,8 @@ HANDLE hEnableMenu = NULL;
 HANDLE hDisableMenu = NULL; 
 HANDLE hModulesLoaded = NULL;
 HANDLE hPreBuildCMenu = NULL;
+HANDLE hMsgWindowEvent = NULL;
+HANDLE hMsgWindowPopup = NULL;
 
 HANDLE hDictionariesFolder = NULL;
 TCHAR dictionariesFolder[1024];
@@ -69,6 +71,8 @@ std::map<HWND, Dialog *> dialogs;
 
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int PreBuildContactMenu(WPARAM wParam,LPARAM lParam);
+int MsgWindowEvent(WPARAM wParam, LPARAM lParam);
+int MsgWindowPopup(WPARAM wParam, LPARAM lParam);
 
 void LoadLanguage(TCHAR *name);
 
@@ -116,6 +120,8 @@ extern "C" int __declspec(dllexport) Unload(void)
 {
 	DeInitOptions();
 
+	UnhookEvent(hMsgWindowPopup);
+	UnhookEvent(hMsgWindowEvent);
 	UnhookEvent(hModulesLoaded);
 	UnhookEvent(hPreBuildCMenu);
 	return 0;
@@ -262,6 +268,9 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	if (opts.default_language[0] != _T('\0'))
 		LoadLanguage(opts.default_language);
 
+	hMsgWindowEvent = HookEvent(ME_MSG_WINDOWEVENT,&MsgWindowEvent);
+	hMsgWindowPopup = HookEvent(ME_MSG_WINDOWPOPUP,&MsgWindowPopup);
+
 	CreateServiceFunction(MS_SPELLCHECKER_ADD_RICHEDIT, AddContactTextBoxService);
 	CreateServiceFunction(MS_SPELLCHECKER_REMOVE_RICHEDIT, RemoveContactTextBoxService);
 	CreateServiceFunction(MS_SPELLCHECKER_SHOW_POPUP_MENU, ShowPopupMenuService);
@@ -292,7 +301,7 @@ void SetAttributes(HWND hRichEdit, int pos_start, int pos_end, DWORD dwMask, DWO
 
 	CHARFORMAT2 CharFormat;
 	CharFormat.cbSize = sizeof(CHARFORMAT2);
-	SendMessage(hRichEdit,EM_GETCHARFORMAT,TRUE,(LPARAM)&CharFormat);
+	SendMessage(hRichEdit, EM_GETCHARFORMAT, TRUE, (LPARAM)&CharFormat);
 	CharFormat.dwMask = dwMask;
 	CharFormat.dwEffects = dwEffects;
 	CharFormat.bUnderlineType = bUnderlineType;
@@ -325,15 +334,14 @@ BOOL IsAlpha(Dialog *dlg, TCHAR c)
 }
 
 
-void ReplaceWord(HWND hwnd, CHARRANGE &sel, char *new_word)
+void ReplaceWord(Dialog *dlg, CHARRANGE &sel, char *new_word)
 {
 	CHARRANGE old_sel;
-	SendMessage(hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);
+	SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);
 
-	SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
-
-	SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
-	SendMessage(hwnd, EM_REPLACESEL, TRUE, (LPARAM) new_word);
+	// Replace in rich edit
+	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
+	SendMessage(dlg->hwnd, EM_REPLACESEL, TRUE, (LPARAM) new_word);
 
 	// Fix old sel
 	int dif = lstrlen(new_word) - sel.cpMax + sel.cpMin;
@@ -342,46 +350,125 @@ void ReplaceWord(HWND hwnd, CHARRANGE &sel, char *new_word)
 	if (old_sel.cpMax >= sel.cpMax)
 		old_sel.cpMax += dif;
 
-	SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM) &old_sel);
-
-	SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
-	InvalidateRect(hwnd, NULL, FALSE);
+	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &old_sel);
 }
 
 
-void DealWord(Dialog *dlg, TCHAR *line_text, int last_pos, int pos)
+// The line of text must be read into dlg->text
+// ini, end are global pos
+// It breaks that string in end pos
+void DealWord(Dialog *dlg, int ini, int end, BOOL auto_correct)
 {
-	TCHAR old = line_text[pos];
-	line_text[pos] = _T('\0');
+	if (ini >= end)
+		return;
+
+	// Fix values to be relative to text
+	int line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) ini, 0);
+	int first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
+
+	dlg->text[end - first_char] = _T('\0');
 
 	// TODO: Convert to UTF8
-	BOOL right = dlg->lang->checker->spell(&line_text[last_pos]);
-
-	if (!right)
+	if (!dlg->lang->checker->spell(&dlg->text[ini - first_char]))
 	{
 		BOOL mark = TRUE;
 
-		if (opts.auto_correct)
+		if (auto_correct)
 		{
 			int num_suggestions = 0;
 			char ** suggestions;
 
-			num_suggestions = dlg->lang->checker->suggest_auto(&suggestions, &line_text[last_pos]);
+			num_suggestions = dlg->lang->checker->suggest_auto(&suggestions, &dlg->text[ini - first_char]);
 			if (num_suggestions > 0)
 			{
 				mark = FALSE;
 
-				CHARRANGE sel = { last_pos, pos };
-				ReplaceWord(dlg->hwnd, sel, suggestions[0]);
+				CHARRANGE sel = { ini, end };
+				ReplaceWord(dlg, sel, suggestions[0]);
 			}
 		}
 		
 		if (mark)
-			SetAttributes(dlg->hwnd, last_pos, pos, 
+			SetAttributes(dlg->hwnd, ini, end, 
 						CFM_UNDERLINETYPE, 0, CFU_UNDERLINEWAVE | 0x50);
 	}
-	
-	line_text[pos] = old;
+}
+
+void GetDlgTextLine(Dialog *dlg, int line)
+{
+	*((WORD*)dlg->text) = MAX_REGS(dlg->text);
+	SendMessage(dlg->hwnd, EM_GETLINE, (WPARAM) line, (LPARAM) dlg->text);
+	dlg->text[MAX_REGS(dlg->text)-1] = _T('\0');
+}
+
+void CheckText(Dialog *dlg, BOOL auto_correct)
+{
+	SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
+
+	POINT old_scroll_pos;
+	SendMessage(dlg->hwnd, EM_GETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
+
+	SetAttributes(dlg->hwnd, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+
+	// Get text
+	int lines = SendMessage(dlg->hwnd, EM_GETLINECOUNT, 0, 0);
+	for(int line = 0; line < lines; line++) 
+	{
+		GetDlgTextLine(dlg, line);
+		int len = lstrlen(dlg->text);
+		int first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
+
+		// Now lets get the words
+		int last_pos = -1;
+		for (int pos = len - 1; pos >= 0; pos--)
+		{
+			if (!IsAlpha(dlg, dlg->text[pos]))
+			{
+				if (last_pos != -1)
+				{
+					// We found a word
+					DealWord(dlg, pos + 1 + first_char, last_pos + 1 + first_char, auto_correct);
+					last_pos = -1;
+				}
+			}
+			else 
+			{
+				if (last_pos == -1)
+					last_pos = pos;
+			}
+		}
+
+		if (last_pos != -1)
+		{
+			// Last word
+			DealWord(dlg, pos + 1 + first_char, last_pos + 1 + first_char, auto_correct);
+		}
+	}
+
+	int len = GetWindowTextLength(dlg->hwnd);
+	SetAttributes(dlg->hwnd, len, len, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+
+	SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
+
+	SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
+	InvalidateRect(dlg->hwnd, NULL, FALSE);
+}
+
+void GetWordCharRange(Dialog *dlg, CHARRANGE &sel)
+{
+	sel.cpMax = sel.cpMin;
+	int line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) sel.cpMin, 0);
+	int first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
+	GetDlgTextLine(dlg, line);
+
+	// Find the word
+	sel.cpMin--;
+	while (sel.cpMin >= first_char && IsAlpha(dlg, dlg->text[sel.cpMin - first_char]))
+		sel.cpMin--;
+	sel.cpMin++;
+
+	while (dlg->text[sel.cpMax - first_char] != _T('\0') && IsAlpha(dlg, dlg->text[sel.cpMax - first_char]))
+		sel.cpMax++;
 }
 
 LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -390,18 +477,88 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	if (dlg == NULL)
 		return -1;
 
+	LRESULT ret = CallWindowProc(dlg->old_edit_proc, hwnd, msg, wParam, lParam);
+
 	switch(msg)
 	{
-		case WM_PASTE:
 		case WM_CHAR:
 		{
-			if (opts.auto_correct)
-			{
-				// Need to do that to avoid changing the word while typing
-				KillTimer(hwnd, TIMER_ID);
-				SetTimer(hwnd, TIMER_ID, 1000, NULL);
-			}
+			// Need to do that to avoid changing the word while typing
+			KillTimer(hwnd, TIMER_ID);
+			SetTimer(hwnd, TIMER_ID, 1000, NULL);
+
 			dlg->changed = TRUE;
+
+			if (!dlg->enabled || dlg->lang->loaded != LANGUAGE_LOADED)
+				break;
+
+			int len = GetWindowTextLength(hwnd);
+			if (len <= 0)
+				break;
+
+			// Handle the current word under cursor
+			CHARRANGE sel;
+			SendMessage(hwnd, EM_EXGETSEL, 0, (LPARAM) &sel);
+			int old_pos = sel.cpMin;
+
+			SetAttributes(dlg->hwnd, old_pos > 0 ? old_pos - 1 : 0, old_pos, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+
+			// Next word
+			if (old_pos < len - 1)
+			{
+				sel.cpMax = sel.cpMin = old_pos + 1;
+				GetWordCharRange(dlg, sel);
+				if (sel.cpMin < sel.cpMax)
+				{
+					SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
+					SetAttributes(dlg->hwnd, sel.cpMin, sel.cpMax, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+
+					DealWord(dlg, sel.cpMin, sel.cpMax, FALSE);
+
+					SetAttributes(dlg->hwnd, old_pos, old_pos, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+					SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
+					InvalidateRect(dlg->hwnd, NULL, FALSE);
+				}
+			}
+
+			// Prev word
+			if (old_pos > 0)
+			{
+				sel.cpMax = sel.cpMin = old_pos - 1;
+				GetWordCharRange(dlg, sel);
+				if (sel.cpMin < sel.cpMax)
+				{
+					SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
+					SetAttributes(dlg->hwnd, sel.cpMin, sel.cpMax, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+
+					DealWord(dlg, sel.cpMin, sel.cpMax, FALSE);
+
+					SetAttributes(dlg->hwnd, old_pos, old_pos, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+					SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
+					InvalidateRect(dlg->hwnd, NULL, FALSE);
+				}
+			}
+
+			break;
+		}
+		case EM_PASTESPECIAL:
+		case WM_PASTE:
+		{
+			// Need to do that to avoid changing the word while typing
+			KillTimer(hwnd, TIMER_ID);
+			SetTimer(hwnd, TIMER_ID, 1000, NULL);
+
+			dlg->changed = TRUE;
+
+			if (!dlg->enabled || dlg->lang->loaded != LANGUAGE_LOADED)
+				break;
+
+			int len = GetWindowTextLength(hwnd);
+			if (len <= 0)
+				break;
+
+			// Parse all text
+			CheckText(dlg, FALSE);
 			break;
 		}
 
@@ -423,52 +580,12 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			dlg->old_text_len = len;
 			dlg->changed = FALSE;
 
-			SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
-
-			SetAttributes(hwnd, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
-
-			// Get text
-			TCHAR *line_text = (TCHAR *) malloc((len + 1) * sizeof(TCHAR));
-			GetWindowText(hwnd, line_text, len+1);
-
-			// Now lets get the words
-			int last_pos = -1;
-			for (int pos = 0; pos < len; pos++)
-			{
-				if (!IsAlpha(dlg, line_text[pos]))
-				{
-					if (last_pos != -1)
-					{
-						// We found a word
-						DealWord(dlg, line_text, last_pos, pos);
-						last_pos = -1;
-					}
-				}
-				else 
-				{
-					if (last_pos == -1)
-						last_pos = pos;
-				}
-			}
-
-			if (last_pos != -1)
-			{
-				// Last word
-				DealWord(dlg, line_text, last_pos, pos);
-			}
-
-			SetAttributes(hwnd, len, len, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
-
-			free(line_text);
-
-			SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
-			InvalidateRect(hwnd, NULL, FALSE);
-
+			CheckText(dlg, opts.auto_correct);
 			break;
 		}
 	}
 
-	return CallWindowProc(dlg->old_edit_proc, hwnd, msg, wParam, lParam);
+	return ret;
 }
 
 
@@ -480,7 +597,7 @@ int GetContactLanguage(HANDLE hContact)
 	TCHAR lang[64];
 	DBVARIANT dbv = {0};
 
-	if(hContact != NULL && !DBGetContactSettingTString(hContact, MODULE_NAME, "Language", &dbv)) 
+	if (hContact != NULL && !DBGetContactSettingTString(hContact, MODULE_NAME, "Language", &dbv)) 
 	{
 		lstrcpyn(lang, dbv.ptszVal, MAX_REGS(lang));
 		DBFreeVariant(&dbv);
@@ -539,6 +656,24 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name)
 }
 
 
+void FreePopupData(Dialog *dlg)
+{
+	if (dlg->word != NULL)
+		free(dlg->word);
+
+	if (dlg->num_suggestions > 0)
+	{
+		for (int i = dlg->num_suggestions - 1; i >= 0; i--) 
+			free(dlg->suggestions[i]);
+		free(dlg->suggestions);
+	}
+
+	dlg->num_suggestions = 0;
+	dlg->suggestions = NULL;
+	dlg->word = NULL;
+}
+
+
 int RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam)
 {
 	HWND hwnd = (HWND) wParam;
@@ -547,6 +682,7 @@ int RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam)
 
 	return RemoveContactTextBox(hwnd);
 }
+
 
 int RemoveContactTextBox(HWND hwnd) 
 {
@@ -560,10 +696,178 @@ int RemoveContactTextBox(HWND hwnd)
 
 		dialogs.erase(hwnd);
 
+		FreePopupData(dlg);
 		free(dlg);
 	}
 
 	return 0;
+}
+
+
+CHARRANGE GetCharRangeUnderPoint(Dialog *dlg, POINT pt)
+{
+	CHARRANGE sel;
+	sel.cpMin = sel.cpMax = LOWORD(SendMessage(dlg->hwnd, EM_CHARFROMPOS, 0, (LPARAM) &pt));
+
+	// Find the word
+	GetWordCharRange(dlg, sel);
+	
+	return sel;
+}
+
+
+TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt)
+{
+	// Get text
+	if (GetWindowTextLength(dlg->hwnd) <= 0)
+		return NULL;
+
+	CHARRANGE sel = GetCharRangeUnderPoint(dlg, pt);
+
+	int line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) sel.cpMin, 0);
+	int first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
+
+	dlg->text[sel.cpMax - first_char] = _T('\0');
+
+	TCHAR *ret;
+	if (dlg->text[sel.cpMin - first_char] == _T('\0'))
+		ret = NULL;
+	else
+		ret = _tcsdup(&dlg->text[sel.cpMin - first_char]);
+
+	return ret;
+}
+
+
+void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
+{
+	FreePopupData(dlg);
+
+	BOOL wrong_word = FALSE;
+
+	// Get text
+	if (dlg->lang->loaded == LANGUAGE_LOADED)
+	{
+		dlg->word = GetWordUnderPoint(dlg, pt);
+		if (dlg->word != NULL) 
+		{
+			wrong_word = !dlg->lang->checker->spell(dlg->word);
+			if (wrong_word)
+			{
+				// Get suggestions
+				dlg->num_suggestions = dlg->lang->checker->suggest(&dlg->suggestions, dlg->word);
+			}
+		}
+	}
+
+	// Make menu
+	if (GetMenuItemCount(hMenu) > 0)
+		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+
+	InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->num_suggestions + 3, TranslateT("Enable spell checking"));
+	CheckMenuItem(hMenu, dlg->num_suggestions + 3, MF_BYCOMMAND | (dlg->enabled ? MF_CHECKED : MF_UNCHECKED));
+
+	if (wrong_word) 
+	{
+		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+
+		InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->num_suggestions + 2, TranslateT("Ignore all"));
+		InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->num_suggestions + 1, TranslateT("Add to dictionary"));
+
+		if (dlg->num_suggestions > 0)
+		{
+			InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+			for (int i = dlg->num_suggestions - 1; i >= 0; i--) 
+				InsertMenu(hMenu, 0, MF_BYPOSITION, i + 1, dlg->suggestions[i]);
+		}
+
+		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+
+		TCHAR text[128];
+		mir_sntprintf(text, MAX_REGS(text), TranslateT("Wrong word: %s"), dlg->word);
+		InsertMenu(hMenu, 0, MF_BYPOSITION, 0, text);
+	}
+}
+
+
+BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
+{
+	BOOL ret = FALSE;
+
+	if (selection > 0 && selection <= dlg->num_suggestions)
+	{
+		selection--;
+
+		// Get text
+		int len = GetWindowTextLength(dlg->hwnd);
+		if (len > 0)
+		{
+			CHARRANGE sel = GetCharRangeUnderPoint(dlg, pt);
+
+			SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
+
+			ReplaceWord(dlg, sel, dlg->suggestions[selection]);
+			
+			SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
+			InvalidateRect(dlg->hwnd, NULL, FALSE);
+		}
+
+		ret = TRUE;
+	}
+	else if (selection == dlg->num_suggestions + 1)
+	{
+		AddToCustomDict(dlg->lang, dlg->word);
+
+		ret = TRUE;
+	}
+	else if (selection == dlg->num_suggestions + 2)
+	{
+		dlg->lang->checker->put_word(dlg->word);
+
+		ret = TRUE;
+	}
+	else if (selection == dlg->num_suggestions + 3)
+	{
+		dlg->enabled = !dlg->enabled;
+		DBWriteContactSettingByte(NULL, MODULE_NAME, dlg->name, dlg->enabled);
+
+		if (!dlg->enabled)
+			SetAttributes(dlg->hwnd, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+
+		ret = TRUE;
+	}
+
+	if (ret)
+		dlg->changed = TRUE;
+
+	FreePopupData(dlg);
+
+	return ret;
+}
+
+
+int MsgWindowPopup(WPARAM wParam, LPARAM lParam)
+{
+	MessageWindowPopupData *mwpd = (MessageWindowPopupData *) lParam;
+	if (mwpd == NULL || mwpd->cbSize < sizeof(MessageWindowPopupData)
+			|| mwpd->uFlags != MSG_WINDOWPOPUP_INPUT)
+		return 0;
+
+	Dialog *dlg = dialogs[mwpd->hwnd];
+	if (dlg == NULL) 
+		return -1;
+
+	POINT pt = mwpd->pt;
+	ScreenToClient(dlg->hwnd, &pt);
+
+	if (mwpd->uType == MSG_WINDOWPOPUP_SHOWING)
+	{
+		AddItemsToMenu(dlg, mwpd->hMenu, pt);
+	}
+	else if (mwpd->uType == MSG_WINDOWPOPUP_SELECTED)
+	{
+		HandleMenuSelection(dlg, pt, mwpd->selection);
+	}
 }
 
 
@@ -575,6 +879,7 @@ int ShowPopupMenuService(WPARAM wParam, LPARAM lParam)
 
 	return ShowPopupMenu(scp->hwnd, scp->hMenu, scp->pt);
 }
+
 
 int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt)
 {
@@ -599,106 +904,43 @@ int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt)
 	if (create_menu)
 		hMenu = CreatePopupMenu();
 
-	// Get text
-	int len = GetWindowTextLength(hwnd);
-
-	int num_suggestions = 0;
-	char ** suggestions;
-	TCHAR *line_text = NULL;
-	CHARRANGE sel;
-
-	if (len > 0 && dlg->lang->loaded == LANGUAGE_LOADED)
-	{
-		line_text = (TCHAR *) malloc((len + 1) * sizeof(TCHAR));
-		GetWindowText(hwnd, line_text, len+1);
-
-		sel.cpMin = sel.cpMax = LOWORD(SendMessage(hwnd, EM_CHARFROMPOS, 0, (LPARAM) &pt));
-
-		// Find the word
-		while (sel.cpMin >= 0 && IsAlpha(dlg, line_text[sel.cpMin]))
-			sel.cpMin--;
-		sel.cpMin++;
-
-		while (IsAlpha(dlg, line_text[sel.cpMax]) && line_text[sel.cpMax] != _T('\0'))
-			sel.cpMax++;
-		line_text[sel.cpMax] = _T('\0');
-
-		// Get suggestions
-		num_suggestions = dlg->lang->checker->suggest(&suggestions, &line_text[sel.cpMin]);
-	}
-
 	// Make menu
-	ClientToScreen(hwnd, &pt);
-
-	if (!create_menu)
-		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
-
-	InsertMenu(hMenu, 0, MF_BYPOSITION, num_suggestions + 3, TranslateT("Enable spell checking"));
-	CheckMenuItem(hMenu, num_suggestions + 3, MF_BYCOMMAND | (dlg->enabled ? MF_CHECKED : MF_UNCHECKED));
-
-	if (num_suggestions > 0)
-	{
-		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
-
-		InsertMenu(hMenu, 0, MF_BYPOSITION, num_suggestions + 2, TranslateT("Ignore all"));
-		InsertMenu(hMenu, 0, MF_BYPOSITION, num_suggestions + 1, TranslateT("Add to dictionary"));
-
-		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
-		for (int i = num_suggestions - 1; i >= 0; i--) 
-			InsertMenu(hMenu, 0, MF_BYPOSITION, i + 1, suggestions[i]);
-	}
+	AddItemsToMenu(dlg, hMenu, pt);
 
 	// Show menu
-	int opt = TrackPopupMenu(hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hwnd, NULL);
-	if (opt > 0 && opt <= num_suggestions)
-	{
-		opt--;
+	ClientToScreen(hwnd, &pt);
+	int selection = TrackPopupMenu(hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hwnd, NULL);
 
-		// Get old selecton
-		ReplaceWord(hwnd, sel, suggestions[opt]);
-
-		opt = 0;
-	}
-	else if (opt == num_suggestions + 1)
-	{
-		AddToCustomDict(dlg->lang, &line_text[sel.cpMin]);
-		dlg->changed = TRUE;
-
-		opt = 0;
-	}
-	else if (opt == num_suggestions + 2)
-	{
-		dlg->lang->checker->put_word(&line_text[sel.cpMin]);
-		dlg->changed = TRUE;
-
-		opt = 0;
-	}
-	else if (opt == num_suggestions + 3)
-	{
-		dlg->enabled = !dlg->enabled;
-		DBWriteContactSettingByte(NULL, MODULE_NAME, dlg->name, dlg->enabled);
-
-		if (dlg->enabled)
-			dlg->changed = TRUE;
-		else
-			SetAttributes(hwnd, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
-
-		opt = 0;
-	}
-
-	if (num_suggestions > 0)
-	{
-		for (int i = num_suggestions - 1; i >= 0; i--) 
-			free(suggestions[i]);
-		free(suggestions);
-		
-		free(line_text);
-	}
+	// Do action
+	if (HandleMenuSelection(dlg, pt, selection))
+		selection = 0;
 
 	if (create_menu)
 		DestroyMenu(hMenu);
 
-	return opt;
+	return selection;
+}
+
+
+int MsgWindowEvent(WPARAM wParam, LPARAM lParam)
+{
+	MessageWindowEventData *event = (MessageWindowEventData *)lParam;
+	if (event == NULL)
+		return 0;
+
+	if (event->cbSize < sizeof(MessageWindowEventData))
+		return 0;
+
+	if (event->uType == MSG_WINDOW_EVT_OPEN)
+	{
+		AddContactTextBox(event->hContact, event->hwndInput, "DefaultSRMM");
+	}
+	else if (event->uType == MSG_WINDOW_EVT_CLOSING)
+	{
+		RemoveContactTextBox(event->hwndInput);
+	}
+
+	return 0;
 }
 
 
