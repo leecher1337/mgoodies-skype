@@ -1,6 +1,16 @@
-Spell Checker 0.0.0.2
+Spell Checker 0.0.0.4
 
 Changelog:
+
+. 0.0.0.4
+  + More changes in srmm interface
+  + Better marking of words
+  * Changed tabSRMM to new interface and made it handle WM_CONTEXTMENU
+
+. 0.0.0.3
+  + Added generic interface for SRMMs
+  * Changed srmm patch to this interface
+  + Created scriver patch using this interface
 
 . 0.0.0.2
   + Added support for SRMM
