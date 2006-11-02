@@ -31,7 +31,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,4),
+	PLUGIN_MAKE_VERSION(0,0,0,5),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -489,7 +489,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			dlg->changed = TRUE;
 
-			if (!dlg->enabled || dlg->lang->loaded != LANGUAGE_LOADED)
+			if (!dlg->enabled || dlg->lang == NULL || dlg->lang->loaded != LANGUAGE_LOADED)
 				break;
 
 			int len = GetWindowTextLength(hwnd);
@@ -550,7 +550,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			dlg->changed = TRUE;
 
-			if (!dlg->enabled || dlg->lang->loaded != LANGUAGE_LOADED)
+			if (!dlg->enabled || dlg->lang == NULL || dlg->lang->loaded != LANGUAGE_LOADED)
 				break;
 
 			int len = GetWindowTextLength(hwnd);
@@ -567,7 +567,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (wParam != TIMER_ID)
 				break;
 
-			if (!dlg->enabled || dlg->lang->loaded != LANGUAGE_LOADED)
+			if (!dlg->enabled || dlg->lang == NULL || dlg->lang->loaded != LANGUAGE_LOADED)
 				break;
 
 			int len = GetWindowTextLength(hwnd);
@@ -588,32 +588,105 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return ret;
 }
 
-
-int GetContactLanguage(HANDLE hContact)
+int GetClosestLanguage(char *lang_name) 
 {
-	if (num_laguages <= 0)
-		return -1;
+	// Search the language by name
+	for(int i = 0; i < num_laguages; i++)
+	{
+		if (strcmpi(languages[i].name, lang_name) == 0)
+		{
+			return i;
+		}
+	}
 
-	TCHAR lang[64];
+	// Try searching by the prefix only
+	char *p = strchr(lang_name, '_');
+	if (p != NULL)
+	{
+		*p = '\0';
+		for(int i = 0; i < num_laguages; i++)
+		{
+			if (strcmpi(languages[i].name, lang_name) == 0)
+			{
+				*p = '_';
+				return i;
+			}
+		}
+		*p = '_';
+	}
+
+	// Try any suffix, if one not provided
+	if (p == NULL)
+	{
+		size_t len = strlen(lang_name);
+		for(int i = 0; i < num_laguages; i++)
+		{
+			if (strnicmp(languages[i].name, lang_name, len) == 0 && languages[i].name[len] == '_')
+			{
+				return i;
+			}
+		}
+	}
+
+	return -1;
+}
+
+void GetContactLanguage(Dialog *dlg)
+{
 	DBVARIANT dbv = {0};
 
-	if (hContact != NULL && !DBGetContactSettingTString(hContact, MODULE_NAME, "Language", &dbv)) 
+	dlg->lang_name[0] = '\0';
+	dlg->using_user_locale = FALSE;
+
+	if (dlg->hContact == NULL) 
 	{
-		lstrcpyn(lang, dbv.ptszVal, MAX_REGS(lang));
-		DBFreeVariant(&dbv);
+		if (!DBGetContactSetting(NULL, MODULE_NAME, dlg->name, &dbv) && dbv.type == DBVT_ASCIIZ)
+		{
+			strncpy(dlg->lang_name, dbv.pszVal, MAX_REGS(dlg->lang_name));
+			DBFreeVariant(&dbv);
+		}
 	}
 	else
 	{
-		lstrcpyn(lang, opts.default_language, MAX_REGS(lang));
+		if (!DBGetContactSetting(dlg->hContact, MODULE_NAME, "TalkLanguage", &dbv) 
+			&& dbv.type == DBVT_ASCIIZ)
+		{
+			strncpy(dlg->lang_name, dbv.pszVal, MAX_REGS(dlg->lang_name));
+			DBFreeVariant(&dbv);
+		}
+
+		if (dlg->user_locale[0] == '\0' 
+			&& !DBGetContactSetting(dlg->hContact, "Tab_SRMsg", "locale", &dbv) 
+			&& dbv.type == DBVT_ASCIIZ)
+		{
+			char *stopped = NULL;
+			USHORT langID = (USHORT)strtol(dbv.pszVal, &stopped, 16);
+			GetLocaleInfoA(MAKELCID(langID, 0), LOCALE_SISO639LANGNAME , dlg->user_locale, MAX_REGS(dlg->lang_name));
+			DBFreeVariant(&dbv);
+		}
+
+		if (dlg->lang_name[0] == '\0')
+		{
+			if (opts.use_locale && dlg->user_locale[0] != '\0')
+			{
+				strncpy(dlg->lang_name, dlg->user_locale, MAX_REGS(dlg->lang_name));
+				dlg->using_user_locale = TRUE;
+			}
+			else
+				strncpy(dlg->lang_name, opts.default_language, MAX_REGS(dlg->lang_name));
+		}
 	}
 
-	for(int i = 0; i < num_laguages; i++)
+	int i = GetClosestLanguage(dlg->lang_name);
+	if (i >= 0)
 	{
-		if (lstrcmp(languages[i].name, lang) == 0)
-			return i;
+		dlg->lang = &languages[i];
+		LoadLanguage(dlg->lang->name);
 	}
-
-	return 0;
+	else 
+	{
+		dlg->lang = NULL;
+	}
 }
 
 
@@ -630,10 +703,6 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name)
 {
 	if (dialogs[hwnd] == NULL)
 	{
-		int l = GetContactLanguage(hContact);
-		if (l < 0)
-			return -1;
-
 		// Fill dialog data
 		Dialog *dlg = (Dialog *) malloc(sizeof(Dialog));
 		ZeroMemory(dlg, sizeof(Dialog));
@@ -642,14 +711,14 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name)
 
 		dlg->hContact = hContact;
 		dlg->hwnd = hwnd;
-		dlg->lang = &languages[l];
 		strncpy(dlg->name, name, sizeof(dlg->name));
 		dlg->enabled = DBGetContactSettingByte(NULL, MODULE_NAME, dlg->name, 1);
+
+		GetContactLanguage(dlg);
+
 		dlg->old_edit_proc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG) EditProc);
 
 		SetTimer(hwnd, TIMER_ID, 1000, NULL);
-
-		LoadLanguage(dlg->lang->name);
 	}
 
 	return 0;
@@ -738,6 +807,7 @@ TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt)
 	return ret;
 }
 
+#define LANGUAGE_MENU_ID_BASE 100
 
 void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 {
@@ -746,7 +816,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 	BOOL wrong_word = FALSE;
 
 	// Get text
-	if (dlg->lang->loaded == LANGUAGE_LOADED)
+	if (dlg->lang != NULL && dlg->lang->loaded == LANGUAGE_LOADED)
 	{
 		dlg->word = GetWordUnderPoint(dlg, pt);
 		if (dlg->word != NULL) 
@@ -763,6 +833,56 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 	// Make menu
 	if (GetMenuItemCount(hMenu) > 0)
 		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+
+	if (num_laguages > 0 || dlg->user_locale[0] != '\0' || dlg->lang_name[0] != '\0')
+	{
+		HMENU hSubMenu = CreatePopupMenu();
+
+		BOOL showing_user_locale = FALSE;
+
+		// First add languages
+		for(int i = 0; i < num_laguages; i++)
+		{
+			BOOL checked = FALSE;
+
+			if (opts.use_locale && strcmpi(languages[i].name, dlg->user_locale) == 0)
+			{
+				showing_user_locale = TRUE;
+
+				if (dlg->using_user_locale)
+					checked = TRUE;
+			}
+			else if (&languages[i] == dlg->lang && (!opts.use_locale || !dlg->using_user_locale))
+				checked = TRUE;
+
+			AppendMenu(hSubMenu, MF_STRING | (checked ? MF_CHECKED : 0), LANGUAGE_MENU_ID_BASE + i, languages[i].name);
+		}
+
+		if (opts.use_locale && !showing_user_locale && dlg->user_locale[0] != '\0')
+		{
+			// Get language relative to it
+			int i = GetClosestLanguage(dlg->user_locale);
+
+			char text[128];
+			if (i >= 0)
+				mir_snprintf(text, MAX_REGS(text), Translate("locale: %s (using %s)"), dlg->user_locale, languages[i].name);
+			else
+				mir_snprintf(text, MAX_REGS(text), Translate("locale: %s (without dict)"), dlg->user_locale);
+
+			AppendMenu(hSubMenu, MF_STRING | (dlg->using_user_locale ? MF_CHECKED : 0), LANGUAGE_MENU_ID_BASE + num_laguages, text);
+		}
+
+		TCHAR *menu_name = TranslateT("Language");
+
+		MENUITEMINFO mii = {0};
+		mii.cbSize = sizeof(MENUITEMINFO);
+		mii.fMask = MIIM_SUBMENU | MIIM_TYPE;
+		mii.fType = MFT_STRING;
+		mii.hSubMenu = hSubMenu;
+		mii.dwTypeData = menu_name;
+		mii.cch = lstrlen(menu_name);
+		int ret = InsertMenuItem(hMenu, 0, TRUE, &mii);
+	}
 
 	InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->num_suggestions + 3, TranslateT("Enable spell checking"));
 	CheckMenuItem(hMenu, dlg->num_suggestions + 3, MF_BYCOMMAND | (dlg->enabled ? MF_CHECKED : MF_UNCHECKED));
@@ -836,6 +956,23 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
 
 		ret = TRUE;
 	}
+	else if (selection >= LANGUAGE_MENU_ID_BASE && selection < LANGUAGE_MENU_ID_BASE + num_laguages)
+	{
+		if (dlg->hContact == NULL)
+			DBWriteContactSettingString(NULL, MODULE_NAME, dlg->name, languages[selection - LANGUAGE_MENU_ID_BASE].name);
+		else
+			DBWriteContactSettingString(dlg->hContact, MODULE_NAME, "TalkLanguage", languages[selection - LANGUAGE_MENU_ID_BASE].name);
+		GetContactLanguage(dlg);
+
+		ret = TRUE;
+	}
+	else if (selection == LANGUAGE_MENU_ID_BASE + num_laguages)
+	{
+		DBDeleteContactSetting(dlg->hContact, MODULE_NAME, "TalkLanguage");
+		GetContactLanguage(dlg);
+
+		ret = TRUE;
+	}
 
 	if (ret)
 		dlg->changed = TRUE;
@@ -868,6 +1005,7 @@ int MsgWindowPopup(WPARAM wParam, LPARAM lParam)
 	{
 		HandleMenuSelection(dlg, pt, mwpd->selection);
 	}
+	return 0;
 }
 
 

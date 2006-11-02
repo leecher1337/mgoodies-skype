@@ -35,11 +35,12 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 
 static OptPageControl optionsControls[] = { 
 	{ &opts.default_language,	CONTROL_COMBO_TEXT,	IDC_DEF_LANG,		"DefaultLanguage", NULL, 0, 0, MAX_REGS(opts.default_language) },
-	{ &opts.auto_correct,		CONTROL_CHECKBOX,	IDC_AUTOCORRECT,	"AutoCorrect", FALSE }
+	{ &opts.auto_correct,		CONTROL_CHECKBOX,	IDC_AUTOCORRECT,	"AutoCorrect", FALSE },
+	{ &opts.use_locale,			CONTROL_CHECKBOX,	IDC_USE_LOCALE,		"UseLocale", FALSE }
 };
 
 static UINT optionsExpertControls[] = { 
-	IDC_SIMULATE_SUPPORT
+	IDC_USE_LOCALE
 };
 
 

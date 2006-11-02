@@ -26,6 +26,7 @@
 #define IDC_DELAY_SPIN                  1061
 #define IDC_HISTORY                     1061
 #define IDC_SIMULATE_SUPPORT            1061
+#define IDC_USE_LOCALE                  1061
 #define IDC_ANSI                        1062
 #define IDC_TRACK_G                     1063
 #define IDC_CHANGED_L                   1064
