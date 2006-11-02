@@ -95,7 +95,7 @@ extern PLUGINLINK *pluginLink;
 #define LANGUAGE_LOADED			 0
 
 struct Language {
-	char name[64];
+	char name[10];
 	BOOL loaded;
 	Hunspell *checker;
 };
@@ -108,6 +108,9 @@ struct Dialog {
 	HANDLE hContact;
 	char name[64];
 	Language *lang;
+	char lang_name[10];
+	char user_locale[10];
+	BOOL using_user_locale;
 	WNDPROC old_edit_proc;
 	BOOL enabled;
 

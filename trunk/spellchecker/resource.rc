@@ -38,6 +38,8 @@ BEGIN
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Auto-correct words",IDC_AUTOCORRECT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,35,230,10
+    CONTROL         "Use keybord locale to get language",IDC_USE_LOCALE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,46,230,10
     CONTROL         "Download more dictionaries",IDC_GETMORE,"Hyperlink",
                     WS_TABSTOP | 0x1,10,65,230,12
 END
@@ -60,20 +62,6 @@ BEGIN
     END
 END
 #endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Menu
-//
-
-IDR_CONTEXT MENU DISCARDABLE 
-BEGIN
-    POPUP "Popup"
-    BEGIN
-        MENUITEM SEPARATOR
-    END
-END
 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////

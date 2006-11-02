@@ -41,9 +41,10 @@ extern "C"
 
 
 struct Options {
-	TCHAR default_language[64];
+	TCHAR default_language[10];
 
 	BOOL auto_correct;
+	BOOL use_locale;
 };
 
 extern Options opts;

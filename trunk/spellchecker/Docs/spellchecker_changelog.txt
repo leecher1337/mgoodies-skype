@@ -1,6 +1,10 @@
-Spell Checker 0.0.0.4
+Spell Checker 0.0.0.5
 
 Changelog:
+
+. 0.0.0.5
+  + Per contact dictionaries
+  + Option to get dict from tabSRMM keyboard locale
 
 . 0.0.0.4
   + More changes in srmm interface
