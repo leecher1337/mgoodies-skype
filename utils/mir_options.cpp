@@ -109,6 +109,36 @@ static TCHAR* MyDBGetContactSettingTString(HANDLE hContact, char* module, char* 
 }
 
 
+static char* MyDBGetContactSettingString(HANDLE hContact, char* module, char* setting, char* out, size_t len, char *def)
+{
+	DBVARIANT dbv;
+
+	out[0] = '\0';
+
+	if (!DBGetContactSetting(hContact, module, setting, &dbv))
+	{
+		if (dbv.type == DBVT_ASCIIZ)
+		{
+			lstrcpyn(out, dbv.pszVal, len);
+		}
+		else
+		{
+			if (def != NULL)
+				strncpy(out, def, len);
+		}
+		
+		DBFreeVariant(&dbv);
+	}
+	else
+	{
+		if (def != NULL)
+			strncpy(out, def, len);
+	}
+
+	return out;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Multiple tabs per dialog
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -353,7 +383,17 @@ void LoadOpts(OptPageControl *controls, int controlsSize, char *module)
 				}
 				case CONTROL_TEXT:
 				{
-					MyDBGetContactSettingTString(NULL, module, ctrl->setting, ((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), TranslateTS(ctrl->tszDefValue));
+					MyDBGetContactSettingTString(NULL, module, ctrl->setting, ((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
+					break;
+				}
+				case CONTROL_COMBO_TEXT:
+				{
+					MyDBGetContactSettingTString(NULL, module, ctrl->setting, ((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
+					break;
+				}
+				case CONTROL_COMBO_ITEMDATA:
+				{
+					MyDBGetContactSettingString(NULL, module, ctrl->setting, ((char *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->szDefValue == NULL ? NULL : TranslateT(ctrl->szDefValue));
 					break;
 				}
 			}
@@ -462,9 +502,31 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 					case CONTROL_TEXT:
 					{
 						TCHAR tmp[1024];
-						SetDlgItemText(hwndDlg, ctrl->nID, MyDBGetContactSettingTString(NULL, module, ctrl->setting, tmp, 1024, TranslateTS(ctrl->tszDefValue)));
+						SetDlgItemText(hwndDlg, ctrl->nID, MyDBGetContactSettingTString(NULL, module, ctrl->setting, tmp, 1024, ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue)));
 
 						SendDlgItemMessage(hwndDlg, ctrl->nID, EM_LIMITTEXT, min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), 0);
+						break;
+					}
+					case CONTROL_COMBO_TEXT:
+					{
+						TCHAR tmp[1024];
+						MyDBGetContactSettingTString(NULL, module, ctrl->setting, tmp, 1024, ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
+						SendDlgItemMessage(hwndDlg, ctrl->nID, CB_SELECTSTRING, 0, (WPARAM) tmp);
+						break;
+					}
+					case CONTROL_COMBO_ITEMDATA:
+					{
+						char tmp[1024];
+						MyDBGetContactSettingString(NULL, module, ctrl->setting, tmp, 1024, ctrl->szDefValue == NULL ? NULL : TranslateTS(ctrl->szDefValue));
+						int count = SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETCOUNT, 0, 0);
+						for(int i = 0; i < count; i++)
+						{
+							char *id = (char *) SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETITEMDATA, (WPARAM) i, 0);
+							if (strcmp(id, tmp))
+								break;
+						}
+						if (i < count)
+							SendDlgItemMessage(hwndDlg, ctrl->nID, CB_SETCURSEL, i, 0);
 						break;
 					}
 				}
@@ -489,6 +551,8 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 
 							break;
 						}
+						case CONTROL_COMBO_ITEMDATA:
+						case CONTROL_COMBO_TEXT:
 						case CONTROL_COMBO:
 						{
 							if (HIWORD(wParam) != CBN_SELCHANGE || (HWND)lParam != GetFocus())
@@ -565,6 +629,19 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 							TCHAR tmp[1024];
 							GetDlgItemText(hwndDlg, ctrl->nID, tmp, 1024);
 							DBWriteContactSettingTString(NULL, module, ctrl->setting, tmp);
+							break;
+						}
+						case CONTROL_COMBO_TEXT:
+						{
+							TCHAR tmp[1024];
+							GetDlgItemText(hwndDlg, ctrl->nID, tmp, 1024);
+							DBWriteContactSettingTString(NULL, module, ctrl->setting, tmp);
+							break;
+						}
+						case CONTROL_COMBO_ITEMDATA:
+						{
+							int sel = SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETCURSEL, 0, 0);
+							DBWriteContactSettingString(NULL, module, ctrl->setting, (char *) SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETITEMDATA, (WPARAM) sel, 0));
 							break;
 						}
 					}
