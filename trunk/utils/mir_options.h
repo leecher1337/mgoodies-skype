@@ -47,6 +47,8 @@ void FreeMirOptions();
 #define CONTROL_COMBO 4				// Stored as WORD
 #define CONTROL_PROTOCOL_LIST 5		// Stored as BYTEs
 #define CONTROL_TEXT 6				// Stored as TCHARs, max len 1024
+#define CONTROL_COMBO_TEXT 7		// Stored as TCHARs, max len 1024
+#define CONTROL_COMBO_ITEMDATA 8	// Stored as TCHARs, max len 1024
 
 
 typedef BOOL (* FPAllowProtocol) (const char *proto);
@@ -59,6 +61,7 @@ typedef struct {
 	union {
 		DWORD dwDefValue;
 		TCHAR *tszDefValue;
+		char *szDefValue;
 	};
 	union {
 		int nIDSpin;
