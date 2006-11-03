@@ -1,6 +1,10 @@
-Spell Checker 0.0.0.5
+Spell Checker 0.0.0.6
 
 Changelog:
+
+. 0.0.0.6
+  + Try to guess contact dict language from spoken language in contact setting
+  * fix for srmm bkg color
 
 . 0.0.0.5
   + Per contact dictionaries

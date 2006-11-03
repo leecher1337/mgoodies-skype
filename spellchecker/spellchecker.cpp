@@ -17,6 +17,9 @@ not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  
 */
 
+// Disable "...truncated to '255' characters in the debug information" warnings
+#pragma warning(disable: 4786)
+
 
 #include "commons.h"
 
@@ -31,7 +34,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,5),
+	PLUGIN_MAKE_VERSION(0,0,0,6),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -65,7 +68,7 @@ char *metacontacts_proto = NULL;
 BOOL loaded = FALSE;
 
 Language *languages;
-int num_laguages = 0;
+int num_languages = 0;
 
 std::map<HWND, Dialog *> dialogs;
 
@@ -127,6 +130,32 @@ extern "C" int __declspec(dllexport) Unload(void)
 	return 0;
 }
 
+
+// To get the names of the languages
+BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
+{
+	char *stopped = NULL;
+	USHORT langID = (USHORT)strtol(lpLocaleString, &stopped, 16);
+
+	char ini[10];
+	char end[10];
+	GetLocaleInfoA(MAKELCID(langID, 0), LOCALE_SISO639LANGNAME , ini, MAX_REGS(ini));
+	GetLocaleInfoA(MAKELCID(langID, 0), LOCALE_SISO3166CTRYNAME , end, MAX_REGS(end));
+
+	char name[10];
+	mir_snprintf(name, sizeof(name), "%s_%s", ini, end);
+
+	for(int i = 0; i < num_languages; i++)
+	{
+		if (strcmpi(languages[i].name, name) == 0)
+		{
+			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLANGUAGE, languages[i].localized_name, MAX_REGS(languages[i].localized_name));
+			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SENGLANGUAGE, languages[i].english_name, MAX_REGS(languages[i].english_name));
+			break;
+		}
+	}
+	return TRUE;
+}
 
 // Called when all the modules are loaded
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
@@ -216,18 +245,18 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
 				continue;
 
-			num_laguages++;
+			num_languages++;
 		}
 		while(FindNextFile(hFFD, &ffd));
 
 		FindClose(hFFD);
 	}
 
-	if (num_laguages > 0)
+	if (num_languages > 0)
 	{
 		// Oki, lets make our cache struct
-		languages = (Language *) malloc(num_laguages * sizeof(Language));
-		ZeroMemory(languages, num_laguages * sizeof(Language));
+		languages = (Language *) malloc(num_languages * sizeof(Language));
+		ZeroMemory(languages, num_languages * sizeof(Language));
 
 		int i = 0;
 		hFFD = FindFirstFile(file, &ffd);
@@ -257,10 +286,12 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 				i++;
 			}
-			while(i < num_laguages && FindNextFile(hFFD, &ffd));
+			while(i < num_languages && FindNextFile(hFFD, &ffd));
 
 			FindClose(hFFD);
 		}
+		
+		EnumSystemLocales(EnumLocalesProc, LCID_SUPPORTED);
 	}
 
 	InitOptions();
@@ -591,7 +622,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 int GetClosestLanguage(char *lang_name) 
 {
 	// Search the language by name
-	for(int i = 0; i < num_laguages; i++)
+	for(int i = 0; i < num_languages; i++)
 	{
 		if (strcmpi(languages[i].name, lang_name) == 0)
 		{
@@ -604,7 +635,7 @@ int GetClosestLanguage(char *lang_name)
 	if (p != NULL)
 	{
 		*p = '\0';
-		for(int i = 0; i < num_laguages; i++)
+		for(int i = 0; i < num_languages; i++)
 		{
 			if (strcmpi(languages[i].name, lang_name) == 0)
 			{
@@ -619,7 +650,7 @@ int GetClosestLanguage(char *lang_name)
 	if (p == NULL)
 	{
 		size_t len = strlen(lang_name);
-		for(int i = 0; i < num_laguages; i++)
+		for(int i = 0; i < num_languages; i++)
 		{
 			if (strnicmp(languages[i].name, lang_name, len) == 0 && languages[i].name[len] == '_')
 			{
@@ -629,6 +660,54 @@ int GetClosestLanguage(char *lang_name)
 	}
 
 	return -1;
+}
+
+void GetUserProtoLanguageSetting(Dialog *dlg, HANDLE hContact, char *proto, char *setting)
+{
+	DBVARIANT dbv = {0};
+
+	if (!DBGetContactSettingTString(hContact, proto, setting, &dbv))
+	{
+		for(int i = 0; i < num_languages; i++)
+		{
+			if (lstrcmpi(languages[i].localized_name, dbv.ptszVal) == 0)
+			{
+				strncpy(dlg->lang_name, languages[i].name, MAX_REGS(dlg->lang_name));
+				break;
+			}
+			if (lstrcmpi(languages[i].english_name, dbv.ptszVal) == 0)
+			{
+				strncpy(dlg->lang_name, languages[i].name, MAX_REGS(dlg->lang_name));
+				break;
+			}
+		}
+		DBFreeVariant(&dbv);
+	}
+}
+
+void GetUserLanguageSetting(Dialog *dlg, char *setting)
+{
+	DBVARIANT dbv = {0};
+
+	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) dlg->hContact, 0);
+	if (proto == NULL)
+		return;
+
+	GetUserProtoLanguageSetting(dlg, dlg->hContact, proto, setting);
+
+	// If not found and is inside meta, try to get from the meta
+	if (dlg->lang_name[0] != '\0')
+		return;
+	
+	// Is a subcontact?
+	if (!ServiceExists(MS_MC_GETMETACONTACT)) 
+		return;
+
+	HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM) dlg->hContact, 0);
+	if (hMetaContact == NULL)
+		return;
+
+	GetUserProtoLanguageSetting(dlg, hMetaContact, metacontacts_proto, setting);
 }
 
 void GetContactLanguage(Dialog *dlg)
@@ -655,6 +734,21 @@ void GetContactLanguage(Dialog *dlg)
 			DBFreeVariant(&dbv);
 		}
 
+		// Try from metacontact
+		if (dlg->lang_name[0] == '\0' && ServiceExists(MS_MC_GETMETACONTACT)) 
+		{
+			HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM) dlg->hContact, 0);
+			if (hMetaContact != NULL)
+			{
+				if (!DBGetContactSetting(hMetaContact, MODULE_NAME, "TalkLanguage", &dbv) 
+					&& dbv.type == DBVT_ASCIIZ)
+				{
+					strncpy(dlg->lang_name, dbv.pszVal, MAX_REGS(dlg->lang_name));
+					DBFreeVariant(&dbv);
+				}
+			}
+		}
+
 		if (dlg->user_locale[0] == '\0' 
 			&& !DBGetContactSetting(dlg->hContact, "Tab_SRMsg", "locale", &dbv) 
 			&& dbv.type == DBVT_ASCIIZ)
@@ -664,6 +758,16 @@ void GetContactLanguage(Dialog *dlg)
 			GetLocaleInfoA(MAKELCID(langID, 0), LOCALE_SISO639LANGNAME , dlg->user_locale, MAX_REGS(dlg->lang_name));
 			DBFreeVariant(&dbv);
 		}
+
+		// Try to get from Language info
+		if (dlg->lang_name[0] == '\0')
+			GetUserLanguageSetting(dlg, "Language");
+		if (dlg->lang_name[0] == '\0')
+			GetUserLanguageSetting(dlg, "Language1");
+		if (dlg->lang_name[0] == '\0')
+			GetUserLanguageSetting(dlg, "Language2");
+		if (dlg->lang_name[0] == '\0')
+			GetUserLanguageSetting(dlg, "Language3");
 
 		if (dlg->lang_name[0] == '\0')
 		{
@@ -834,14 +938,14 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 	if (GetMenuItemCount(hMenu) > 0)
 		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
 
-	if (num_laguages > 0 || dlg->user_locale[0] != '\0' || dlg->lang_name[0] != '\0')
+	if (num_languages > 0 || dlg->user_locale[0] != '\0' || dlg->lang_name[0] != '\0')
 	{
 		HMENU hSubMenu = CreatePopupMenu();
 
 		BOOL showing_user_locale = FALSE;
 
 		// First add languages
-		for(int i = 0; i < num_laguages; i++)
+		for(int i = 0; i < num_languages; i++)
 		{
 			BOOL checked = FALSE;
 
@@ -869,7 +973,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 			else
 				mir_snprintf(text, MAX_REGS(text), Translate("locale: %s (without dict)"), dlg->user_locale);
 
-			AppendMenu(hSubMenu, MF_STRING | (dlg->using_user_locale ? MF_CHECKED : 0), LANGUAGE_MENU_ID_BASE + num_laguages, text);
+			AppendMenu(hSubMenu, MF_STRING | (dlg->using_user_locale ? MF_CHECKED : 0), LANGUAGE_MENU_ID_BASE + num_languages, text);
 		}
 
 		TCHAR *menu_name = TranslateT("Language");
@@ -956,7 +1060,7 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
 
 		ret = TRUE;
 	}
-	else if (selection >= LANGUAGE_MENU_ID_BASE && selection < LANGUAGE_MENU_ID_BASE + num_laguages)
+	else if (selection >= LANGUAGE_MENU_ID_BASE && selection < LANGUAGE_MENU_ID_BASE + num_languages)
 	{
 		if (dlg->hContact == NULL)
 			DBWriteContactSettingString(NULL, MODULE_NAME, dlg->name, languages[selection - LANGUAGE_MENU_ID_BASE].name);
@@ -966,7 +1070,7 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
 
 		ret = TRUE;
 	}
-	else if (selection == LANGUAGE_MENU_ID_BASE + num_laguages)
+	else if (selection == LANGUAGE_MENU_ID_BASE + num_languages)
 	{
 		DBDeleteContactSetting(dlg->hContact, MODULE_NAME, "TalkLanguage");
 		GetContactLanguage(dlg);
@@ -1081,7 +1185,6 @@ int MsgWindowEvent(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-
 DWORD WINAPI LoadLanguageThread(LPVOID pos)
 {
 	TCHAR dic[1024];
@@ -1099,13 +1202,12 @@ DWORD WINAPI LoadLanguageThread(LPVOID pos)
 	return 0;
 }
 
-
 void LoadLanguage(TCHAR *name)
 {
 	DWORD thread_id;
 
 	int i;
-	for(i = 0; i < num_laguages; i++)
+	for(i = 0; i < num_languages; i++)
 	{
 		if (lstrcmp(name, languages[i].name) == 0)
 		{

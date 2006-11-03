@@ -96,12 +96,14 @@ extern PLUGINLINK *pluginLink;
 
 struct Language {
 	char name[10];
+	TCHAR localized_name[128];
+	TCHAR english_name[128];
 	BOOL loaded;
 	Hunspell *checker;
 };
 
 extern Language *languages;
-extern int num_laguages;
+extern int num_languages;
 
 struct Dialog {
 	HWND hwnd;
