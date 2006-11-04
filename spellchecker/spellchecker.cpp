@@ -34,7 +34,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,6),
+	PLUGIN_MAKE_VERSION(0,0,0,7),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -51,10 +51,8 @@ PLUGININFO pluginInfo = {
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 
-HANDLE hEnableMenu = NULL; 
-HANDLE hDisableMenu = NULL; 
 HANDLE hModulesLoaded = NULL;
-HANDLE hPreBuildCMenu = NULL;
+HANDLE hPreShutdownHook = NULL;
 HANDLE hMsgWindowEvent = NULL;
 HANDLE hMsgWindowPopup = NULL;
 
@@ -67,27 +65,25 @@ TCHAR customDictionariesFolder[1024];
 char *metacontacts_proto = NULL;
 BOOL loaded = FALSE;
 
-Language *languages;
-int num_languages = 0;
+Dictionaries languages = {0};
 
 std::map<HWND, Dialog *> dialogs;
 
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
-int PreBuildContactMenu(WPARAM wParam,LPARAM lParam);
+int PreShutdown(WPARAM wParam, LPARAM lParam);
 int MsgWindowEvent(WPARAM wParam, LPARAM lParam);
 int MsgWindowPopup(WPARAM wParam, LPARAM lParam);
-
-void LoadLanguage(TCHAR *name);
 
 int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name);
 int RemoveContactTextBox(HWND hwnd);
 int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt);
-void AddToCustomDict(Language *lang, char *word);
-void LoadCustomDict(Language *lang);
 
 int AddContactTextBoxService(WPARAM wParam, LPARAM lParam);
 int RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam);
 int ShowPopupMenuService(WPARAM wParam, LPARAM lParam);
+
+BOOL GetWordCharRange(Dialog *dlg, CHARRANGE &sel, TCHAR *text, size_t text_len, int &first_char);
+TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel);
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -114,47 +110,18 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	// hooks
 	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
-	hPreBuildCMenu = HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
+	hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
 	return 0;
 }
 
 extern "C" int __declspec(dllexport) Unload(void) 
 {
-	DeInitOptions();
+	DestroyServiceFunction(MS_SPELLCHECKER_ADD_RICHEDIT);
+	DestroyServiceFunction(MS_SPELLCHECKER_REMOVE_RICHEDIT);
+	DestroyServiceFunction(MS_SPELLCHECKER_SHOW_POPUP_MENU);
 
-	UnhookEvent(hMsgWindowPopup);
-	UnhookEvent(hMsgWindowEvent);
-	UnhookEvent(hModulesLoaded);
-	UnhookEvent(hPreBuildCMenu);
 	return 0;
-}
-
-
-// To get the names of the languages
-BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
-{
-	char *stopped = NULL;
-	USHORT langID = (USHORT)strtol(lpLocaleString, &stopped, 16);
-
-	char ini[10];
-	char end[10];
-	GetLocaleInfoA(MAKELCID(langID, 0), LOCALE_SISO639LANGNAME , ini, MAX_REGS(ini));
-	GetLocaleInfoA(MAKELCID(langID, 0), LOCALE_SISO3166CTRYNAME , end, MAX_REGS(end));
-
-	char name[10];
-	mir_snprintf(name, sizeof(name), "%s_%s", ini, end);
-
-	for(int i = 0; i < num_languages; i++)
-	{
-		if (strcmpi(languages[i].name, name) == 0)
-		{
-			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLANGUAGE, languages[i].localized_name, MAX_REGS(languages[i].localized_name));
-			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SENGLANGUAGE, languages[i].english_name, MAX_REGS(languages[i].english_name));
-			break;
-		}
-	}
-	return TRUE;
 }
 
 // Called when all the modules are loaded
@@ -215,89 +182,26 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		TCHAR *p = _tcsrchr(dictionariesFolder, _T('\\'));
 		if (p != NULL)
 			*p = _T('\0');
-		lstrcat(dictionariesFolder, "\\Dictionaries");
+		lstrcat(dictionariesFolder, _T("\\Dictionaries"));
 
 		lstrcpy(customDictionariesFolder, dictionariesFolder);
 	}
 
-	// Load the language files and create an array with then
-	TCHAR file[1024];
-	mir_sntprintf(file, MAX_REGS(file), "%s\\*.dic", dictionariesFolder);
-
-	// Lets count the files
-	WIN32_FIND_DATA ffd = {0};
-	HANDLE hFFD = FindFirstFile(file, &ffd);
-	if (hFFD != INVALID_HANDLE_VALUE)
-	{
-		do
-		{
-			TCHAR tmp[1024];
-			mir_sntprintf(tmp, MAX_REGS(tmp), "%s\\%s", dictionariesFolder, ffd.cFileName);
-
-			// Check .dic
-			DWORD attrib = GetFileAttributes(tmp);
-			if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
-				continue;
-
-			// See if .aff exists too
-			lstrcpy(&tmp[lstrlen(tmp) - 4], ".aff");
-			attrib = GetFileAttributes(tmp);
-			if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
-				continue;
-
-			num_languages++;
-		}
-		while(FindNextFile(hFFD, &ffd));
-
-		FindClose(hFFD);
-	}
-
-	if (num_languages > 0)
-	{
-		// Oki, lets make our cache struct
-		languages = (Language *) malloc(num_languages * sizeof(Language));
-		ZeroMemory(languages, num_languages * sizeof(Language));
-
-		int i = 0;
-		hFFD = FindFirstFile(file, &ffd);
-		if (hFFD != INVALID_HANDLE_VALUE)
-		{
-			do
-			{
-				TCHAR tmp[1024];
-				mir_sntprintf(tmp, MAX_REGS(tmp), "%s\\%s", dictionariesFolder, ffd.cFileName);
-
-				// Check .dic
-				DWORD attrib = GetFileAttributes(tmp);
-				if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
-					continue;
-
-				// See if .aff exists too
-				lstrcpy(&tmp[lstrlen(tmp) - 4], ".aff");
-				attrib = GetFileAttributes(tmp);
-				if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
-					continue;
-
-				ffd.cFileName[lstrlen(ffd.cFileName)-4] = _T('\0');
-
-				lstrcpy(languages[i].name, ffd.cFileName);
-				languages[i].loaded = LANGUAGE_NOT_LOADED;
-				languages[i].checker = NULL;
-
-				i++;
-			}
-			while(i < num_languages && FindNextFile(hFFD, &ffd));
-
-			FindClose(hFFD);
-		}
-		
-		EnumSystemLocales(EnumLocalesProc, LCID_SUPPORTED);
-	}
+	languages = GetAvaibleDictionaries(dictionariesFolder, customDictionariesFolder);
 
 	InitOptions();
 
 	if (opts.default_language[0] != _T('\0'))
-		LoadLanguage(opts.default_language);
+	{
+		for(int i = 0; i < languages.count; i++)
+		{
+			if (lstrcmp(languages.dicts[i]->language, opts.default_language) == 0)
+			{
+				languages.dicts[i]->load();
+				break;
+			}
+		}
+	}
 
 	hMsgWindowEvent = HookEvent(ME_MSG_WINDOWEVENT,&MsgWindowEvent);
 	hMsgWindowPopup = HookEvent(ME_MSG_WINDOWPOPUP,&MsgWindowPopup);
@@ -311,8 +215,16 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-int PreBuildContactMenu(WPARAM wParam,LPARAM lParam) 
+
+int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
+	DeInitOptions();
+
+	UnhookEvent(hMsgWindowPopup);
+	UnhookEvent(hMsgWindowEvent);
+	UnhookEvent(hModulesLoaded);
+	UnhookEvent(hPreShutdownHook);
+
 	return 0;
 }
 
@@ -330,13 +242,13 @@ void SetAttributes(HWND hRichEdit, int pos_start, int pos_end, DWORD dwMask, DWO
 		SendMessage(hRichEdit, EM_EXSETSEL, 0, (LPARAM) &sel);
 	}
 
-	CHARFORMAT2 CharFormat;
-	CharFormat.cbSize = sizeof(CHARFORMAT2);
-	SendMessage(hRichEdit, EM_GETCHARFORMAT, TRUE, (LPARAM)&CharFormat);
-	CharFormat.dwMask = dwMask;
-	CharFormat.dwEffects = dwEffects;
-	CharFormat.bUnderlineType = bUnderlineType;
-	SendMessage(hRichEdit, EM_SETCHARFORMAT, (WPARAM) all ? SCF_ALL : SCF_SELECTION, (LPARAM)&CharFormat);
+	CHARFORMAT2 cf;
+	cf.cbSize = sizeof(CHARFORMAT2);
+	SendMessage(hRichEdit, EM_GETCHARFORMAT, TRUE, (LPARAM)&cf);
+	cf.dwMask = dwMask;
+	cf.dwEffects = dwEffects;
+	cf.bUnderlineType = bUnderlineType;
+	SendMessage(hRichEdit, EM_SETCHARFORMAT, (WPARAM) all ? SCF_ALL : SCF_SELECTION, (LPARAM)&cf);
 
 	if (!all)
 	{
@@ -352,155 +264,153 @@ void SetAttributes(HWND hRichEdit, DWORD dwMask, DWORD dwEffects, BYTE bUnderlin
 }
 
 
-
-BOOL IsAlpha(Dialog *dlg, TCHAR c)
+inline void GetLineOfText(Dialog *dlg, int line, int &first_char, TCHAR *text, size_t text_len)
 {
-#ifdef UNICODE
-	return iswalpha(c) 
-		|| (c == L'-' && !dlg->lang->checker->get_forbidden_compound());
-#else
-	return (!_istcntrl(c) && !_istdigit(c) && !_istpunct(c) && !_istspace(c)) 
-		|| (c == '-'  && !dlg->lang->checker->get_forbidden_compound());
-#endif
+	first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
+
+	*((WORD*)text) = text_len;
+	SendMessage(dlg->hwnd, EM_GETLINE, (WPARAM) line, (LPARAM) text);
+	text[text_len-1] = _T('\0');
 }
 
-
-void ReplaceWord(Dialog *dlg, CHARRANGE &sel, char *new_word)
+// Helper to avoid copy and pastle
+inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, int &pos, 
+					 CHARRANGE &old_sel, BOOL auto_correct)
 {
-	CHARRANGE old_sel;
-	SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);
-
-	// Replace in rich edit
-	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
-	SendMessage(dlg->hwnd, EM_REPLACESEL, TRUE, (LPARAM) new_word);
-
-	// Fix old sel
-	int dif = lstrlen(new_word) - sel.cpMax + sel.cpMin;
-	if (old_sel.cpMin >= sel.cpMax)
-		old_sel.cpMin += dif;
-	if (old_sel.cpMax >= sel.cpMax)
-		old_sel.cpMax += dif;
-
-	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &old_sel);
-}
-
-
-// The line of text must be read into dlg->text
-// ini, end are global pos
-// It breaks that string in end pos
-void DealWord(Dialog *dlg, int ini, int end, BOOL auto_correct)
-{
-	if (ini >= end)
-		return;
-
-	// Fix values to be relative to text
-	int line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) ini, 0);
-	int first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
-
-	dlg->text[end - first_char] = _T('\0');
-
-	// TODO: Convert to UTF8
-	if (!dlg->lang->checker->spell(&dlg->text[ini - first_char]))
+	// Is wrong?
+	text[last_pos + 1] = _T('\0');
+	if (!dlg->lang->spell(&text[pos + 1]))
 	{
 		BOOL mark = TRUE;
 
+		// Has to correct?
 		if (auto_correct)
 		{
-			int num_suggestions = 0;
-			char ** suggestions;
-
-			num_suggestions = dlg->lang->checker->suggest_auto(&suggestions, &dlg->text[ini - first_char]);
-			if (num_suggestions > 0)
+			TCHAR *word = dlg->lang->autoSuggestOne(&text[pos + 1]);
+			if (word != NULL)
 			{
 				mark = FALSE;
 
-				CHARRANGE sel = { ini, end };
-				ReplaceWord(dlg, sel, suggestions[0]);
+				// Replace in rich edit
+				CHARRANGE sel = { first_char + pos + 1, first_char + last_pos + 1 };
+				SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
+				SendMessage(dlg->hwnd, EM_REPLACESEL, TRUE, (LPARAM) word);
+
+				// Fix old sel
+				int dif = lstrlen(word) - sel.cpMax + sel.cpMin;
+				if (old_sel.cpMin >= sel.cpMax)
+					old_sel.cpMin += dif;
+				if (old_sel.cpMax >= sel.cpMax)
+					old_sel.cpMax += dif;
+
+				free(word);
 			}
 		}
 		
+		// Mark
 		if (mark)
-			SetAttributes(dlg->hwnd, ini, end, 
-						CFM_UNDERLINETYPE, 0, CFU_UNDERLINEWAVE | 0x50);
+			SetAttributes(dlg->hwnd, first_char + pos + 1, first_char + last_pos + 1, 
+						CFM_UNDERLINETYPE, 0, (opts.underline_type + CFU_UNDERLINEDOUBLE) | 0x50);
 	}
 }
 
-void GetDlgTextLine(Dialog *dlg, int line)
+// Checks for errors in all text
+void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 {
-	*((WORD*)dlg->text) = MAX_REGS(dlg->text);
-	SendMessage(dlg->hwnd, EM_GETLINE, (WPARAM) line, (LPARAM) dlg->text);
-	dlg->text[MAX_REGS(dlg->text)-1] = _T('\0');
-}
+	BOOL changed = FALSE;
 
-void CheckText(Dialog *dlg, BOOL auto_correct)
-{
 	SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
 
 	POINT old_scroll_pos;
 	SendMessage(dlg->hwnd, EM_GETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
 
+	CHARRANGE old_sel;
+	SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);
+
 	SetAttributes(dlg->hwnd, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
 
-	// Get text
-	int lines = SendMessage(dlg->hwnd, EM_GETLINECOUNT, 0, 0);
-	for(int line = 0; line < lines; line++) 
+	if (GetWindowTextLength(dlg->hwnd) > 0)
 	{
-		GetDlgTextLine(dlg, line);
-		int len = lstrlen(dlg->text);
-		int first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
-
-		// Now lets get the words
-		int last_pos = -1;
-		for (int pos = len - 1; pos >= 0; pos--)
+		// Get text
+		int lines = SendMessage(dlg->hwnd, EM_GETLINECOUNT, 0, 0);
+		for(int line = 0; line < lines; line++) 
 		{
-			if (!IsAlpha(dlg, dlg->text[pos]))
+			TCHAR text[1024];
+			int first_char;
+
+			GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
+
+			// Now lets get the words
+			int last_pos = -1;
+			BOOL found_real_char = FALSE;
+			int len = lstrlen(text);
+			for (int pos = len - 1; pos >= 0; pos--)
 			{
-				if (last_pos != -1)
+				if (!dlg->lang->isWordChar(text[pos]))
 				{
-					// We found a word
-					DealWord(dlg, pos + 1 + first_char, last_pos + 1 + first_char, auto_correct);
-					last_pos = -1;
+					if (last_pos != -1)
+					{
+						// We found a word
+
+						// It has real chars?
+						if (found_real_char)
+						{
+							// Is under cursor?
+							if (check_word_under_cursor 
+								|| !(first_char+pos+1 <= old_sel.cpMax && first_char+last_pos+1 >= old_sel.cpMin))
+							{
+								DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct);
+								changed = TRUE;
+							}
+						}
+
+						last_pos = -1;
+						found_real_char = FALSE;
+					}
+				}
+				else 
+				{
+					if (last_pos == -1)
+						last_pos = pos;
+
+					if (text[pos] != _T('-'))
+						found_real_char = TRUE;
 				}
 			}
-			else 
+
+			// Last word
+			if (last_pos != -1)
 			{
-				if (last_pos == -1)
-					last_pos = pos;
+				// It has real chars?
+				if (found_real_char)
+				{
+					// Is under cursor?
+					if (check_word_under_cursor || !(pos+1 <= old_sel.cpMax && last_pos+1 >= old_sel.cpMin))
+					{
+						DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct);
+						changed = TRUE;
+					}
+				}
 			}
 		}
 
-		if (last_pos != -1)
-		{
-			// Last word
-			DealWord(dlg, pos + 1 + first_char, last_pos + 1 + first_char, auto_correct);
-		}
+		// Fix last char
+		int len = GetWindowTextLength(dlg->hwnd);
+		SetAttributes(dlg->hwnd, len, len, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+
+		SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
+	}
+	else
+	{
+		changed = TRUE;
 	}
 
-	int len = GetWindowTextLength(dlg->hwnd);
-	SetAttributes(dlg->hwnd, len, len, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
-
-	SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
-
 	SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
-	InvalidateRect(dlg->hwnd, NULL, FALSE);
+
+	if (changed)
+		InvalidateRect(dlg->hwnd, NULL, FALSE);
 }
 
-void GetWordCharRange(Dialog *dlg, CHARRANGE &sel)
-{
-	sel.cpMax = sel.cpMin;
-	int line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) sel.cpMin, 0);
-	int first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
-	GetDlgTextLine(dlg, line);
-
-	// Find the word
-	sel.cpMin--;
-	while (sel.cpMin >= first_char && IsAlpha(dlg, dlg->text[sel.cpMin - first_char]))
-		sel.cpMin--;
-	sel.cpMin++;
-
-	while (dlg->text[sel.cpMax - first_char] != _T('\0') && IsAlpha(dlg, dlg->text[sel.cpMax - first_char]))
-		sel.cpMax++;
-}
 
 LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -512,59 +422,62 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	switch(msg)
 	{
+		case WM_KEYDOWN:
+		{
+			if (wParam != 46) // Del
+				break;
+		}
 		case WM_CHAR:
 		{
+			if (lParam & (1 << 28))	// ALT key
+				break;
+
 			// Need to do that to avoid changing the word while typing
 			KillTimer(hwnd, TIMER_ID);
 			SetTimer(hwnd, TIMER_ID, 1000, NULL);
 
 			dlg->changed = TRUE;
 
-			if (!dlg->enabled || dlg->lang == NULL || dlg->lang->loaded != LANGUAGE_LOADED)
+			if ((lParam & 0xFF) > 1)	// Repeat rate
 				break;
 
-			int len = GetWindowTextLength(hwnd);
-			if (len <= 0)
+			if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
 				break;
 
-			// Handle the current word under cursor
-			CHARRANGE sel;
-			SendMessage(hwnd, EM_EXGETSEL, 0, (LPARAM) &sel);
-			int old_pos = sel.cpMin;
-
-			SetAttributes(dlg->hwnd, old_pos > 0 ? old_pos - 1 : 0, old_pos, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
-
-			// Next word
-			if (old_pos < len - 1)
+			TCHAR c = (TCHAR) wParam;
+			if (!dlg->lang->isWordChar(c))
 			{
-				sel.cpMax = sel.cpMin = old_pos + 1;
-				GetWordCharRange(dlg, sel);
-				if (sel.cpMin < sel.cpMax)
-				{
-					SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
-					SetAttributes(dlg->hwnd, sel.cpMin, sel.cpMax, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
-
-					DealWord(dlg, sel.cpMin, sel.cpMax, FALSE);
-
-					SetAttributes(dlg->hwnd, old_pos, old_pos, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
-					SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
-					InvalidateRect(dlg->hwnd, NULL, FALSE);
-				}
+				CheckText(dlg, FALSE, FALSE);
 			}
-
-			// Prev word
-			if (old_pos > 0)
+			else
 			{
-				sel.cpMax = sel.cpMin = old_pos - 1;
-				GetWordCharRange(dlg, sel);
-				if (sel.cpMin < sel.cpMax)
+				// Assert no selection
+				CHARFORMAT2 cf;
+				cf.cbSize = sizeof(CHARFORMAT2);
+				SendMessage(dlg->hwnd, EM_GETCHARFORMAT, TRUE, (LPARAM)&cf);
+
+				if ((cf.dwMask & CFM_UNDERLINETYPE) 
+					&& (cf.dwEffects & 0x0F) >= CFU_UNDERLINEDOUBLE
+					&& (cf.dwEffects & 0x0F) <= CFU_UNDERLINETHICK)
 				{
+					// Stop rich edit
 					SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
-					SetAttributes(dlg->hwnd, sel.cpMin, sel.cpMax, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+					POINT old_scroll_pos;
+					SendMessage(dlg->hwnd, EM_GETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
 
-					DealWord(dlg, sel.cpMin, sel.cpMax, FALSE);
+					// Remove underline of current word
+					TCHAR text[1024];
+					int first_char;
+					CHARRANGE sel;
 
-					SetAttributes(dlg->hwnd, old_pos, old_pos, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+					SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &sel);
+
+					GetWordCharRange(dlg, sel, text, MAX_REGS(text), first_char);
+
+					SetAttributes(dlg->hwnd, sel.cpMin, sel.cpMax, CFM_UNDERLINETYPE, 0, 0);
+
+					// Start rich edit
+					SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
 					SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
 					InvalidateRect(dlg->hwnd, NULL, FALSE);
 				}
@@ -581,15 +494,11 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			dlg->changed = TRUE;
 
-			if (!dlg->enabled || dlg->lang == NULL || dlg->lang->loaded != LANGUAGE_LOADED)
-				break;
-
-			int len = GetWindowTextLength(hwnd);
-			if (len <= 0)
+			if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
 				break;
 
 			// Parse all text
-			CheckText(dlg, FALSE);
+			CheckText(dlg, TRUE, FALSE);
 			break;
 		}
 
@@ -598,20 +507,17 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (wParam != TIMER_ID)
 				break;
 
-			if (!dlg->enabled || dlg->lang == NULL || dlg->lang->loaded != LANGUAGE_LOADED)
+			if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
 				break;
 
 			int len = GetWindowTextLength(hwnd);
-			if (len <= 0)
-				break;
-
 			if (len == dlg->old_text_len && !dlg->changed)
 				break;
 
 			dlg->old_text_len = len;
 			dlg->changed = FALSE;
 
-			CheckText(dlg, opts.auto_correct);
+			CheckText(dlg, TRUE, opts.auto_correct);
 			break;
 		}
 	}
@@ -619,40 +525,41 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return ret;
 }
 
-int GetClosestLanguage(char *lang_name) 
+int GetClosestLanguage(TCHAR *lang_name) 
 {
 	// Search the language by name
-	for(int i = 0; i < num_languages; i++)
+	for(int i = 0; i < languages.count; i++)
 	{
-		if (strcmpi(languages[i].name, lang_name) == 0)
+		if (lstrcmpi(languages.dicts[i]->language, lang_name) == 0)
 		{
 			return i;
 		}
 	}
 
 	// Try searching by the prefix only
-	char *p = strchr(lang_name, '_');
+	TCHAR *p = _tcschr(lang_name, _T('_'));
 	if (p != NULL)
 	{
-		*p = '\0';
-		for(int i = 0; i < num_languages; i++)
+		*p = _T('\0');
+		for(int i = 0; i < languages.count; i++)
 		{
-			if (strcmpi(languages[i].name, lang_name) == 0)
+			if (lstrcmpi(languages.dicts[i]->language, lang_name) == 0)
 			{
 				*p = '_';
 				return i;
 			}
 		}
-		*p = '_';
+		*p = _T('_');
 	}
 
 	// Try any suffix, if one not provided
 	if (p == NULL)
 	{
-		size_t len = strlen(lang_name);
-		for(int i = 0; i < num_languages; i++)
+		size_t len = lstrlen(lang_name);
+		for(int i = 0; i < languages.count; i++)
 		{
-			if (strnicmp(languages[i].name, lang_name, len) == 0 && languages[i].name[len] == '_')
+			if (_tcsnicmp(languages.dicts[i]->language, lang_name, len) == 0 
+				&& languages.dicts[i]->language[len] == _T('_'))
 			{
 				return i;
 			}
@@ -668,16 +575,16 @@ void GetUserProtoLanguageSetting(Dialog *dlg, HANDLE hContact, char *proto, char
 
 	if (!DBGetContactSettingTString(hContact, proto, setting, &dbv))
 	{
-		for(int i = 0; i < num_languages; i++)
+		for(int i = 0; i < languages.count; i++)
 		{
-			if (lstrcmpi(languages[i].localized_name, dbv.ptszVal) == 0)
+			if (lstrcmpi(languages.dicts[i]->localized_name, dbv.ptszVal) == 0)
 			{
-				strncpy(dlg->lang_name, languages[i].name, MAX_REGS(dlg->lang_name));
+				lstrcpyn(dlg->lang_name, languages.dicts[i]->language, MAX_REGS(dlg->lang_name));
 				break;
 			}
-			if (lstrcmpi(languages[i].english_name, dbv.ptszVal) == 0)
+			if (lstrcmpi(languages.dicts[i]->english_name, dbv.ptszVal) == 0)
 			{
-				strncpy(dlg->lang_name, languages[i].name, MAX_REGS(dlg->lang_name));
+				lstrcpyn(dlg->lang_name, languages.dicts[i]->language, MAX_REGS(dlg->lang_name));
 				break;
 			}
 		}
@@ -696,7 +603,7 @@ void GetUserLanguageSetting(Dialog *dlg, char *setting)
 	GetUserProtoLanguageSetting(dlg, dlg->hContact, proto, setting);
 
 	// If not found and is inside meta, try to get from the meta
-	if (dlg->lang_name[0] != '\0')
+	if (dlg->lang_name[0] != _T('\0'))
 		return;
 	
 	// Is a subcontact?
@@ -714,78 +621,58 @@ void GetContactLanguage(Dialog *dlg)
 {
 	DBVARIANT dbv = {0};
 
-	dlg->lang_name[0] = '\0';
-	dlg->using_user_locale = FALSE;
+	dlg->lang_name[0] = _T('\0');
 
 	if (dlg->hContact == NULL) 
 	{
-		if (!DBGetContactSetting(NULL, MODULE_NAME, dlg->name, &dbv) && dbv.type == DBVT_ASCIIZ)
+		if (!DBGetContactSettingTString(NULL, MODULE_NAME, dlg->name, &dbv))
 		{
-			strncpy(dlg->lang_name, dbv.pszVal, MAX_REGS(dlg->lang_name));
+			lstrcpyn(dlg->lang_name, dbv.ptszVal, MAX_REGS(dlg->lang_name));
 			DBFreeVariant(&dbv);
 		}
 	}
 	else
 	{
-		if (!DBGetContactSetting(dlg->hContact, MODULE_NAME, "TalkLanguage", &dbv) 
-			&& dbv.type == DBVT_ASCIIZ)
+		if (!DBGetContactSettingTString(dlg->hContact, MODULE_NAME, "TalkLanguage", &dbv))
 		{
-			strncpy(dlg->lang_name, dbv.pszVal, MAX_REGS(dlg->lang_name));
+			lstrcpyn(dlg->lang_name, dbv.ptszVal, MAX_REGS(dlg->lang_name));
 			DBFreeVariant(&dbv);
 		}
 
 		// Try from metacontact
-		if (dlg->lang_name[0] == '\0' && ServiceExists(MS_MC_GETMETACONTACT)) 
+		if (dlg->lang_name[0] == _T('\0') && ServiceExists(MS_MC_GETMETACONTACT)) 
 		{
 			HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM) dlg->hContact, 0);
 			if (hMetaContact != NULL)
 			{
-				if (!DBGetContactSetting(hMetaContact, MODULE_NAME, "TalkLanguage", &dbv) 
-					&& dbv.type == DBVT_ASCIIZ)
+				if (!DBGetContactSettingTString(hMetaContact, MODULE_NAME, "TalkLanguage", &dbv))
 				{
-					strncpy(dlg->lang_name, dbv.pszVal, MAX_REGS(dlg->lang_name));
+					lstrcpyn(dlg->lang_name, dbv.ptszVal, MAX_REGS(dlg->lang_name));
 					DBFreeVariant(&dbv);
 				}
 			}
 		}
 
-		if (dlg->user_locale[0] == '\0' 
-			&& !DBGetContactSetting(dlg->hContact, "Tab_SRMsg", "locale", &dbv) 
-			&& dbv.type == DBVT_ASCIIZ)
-		{
-			char *stopped = NULL;
-			USHORT langID = (USHORT)strtol(dbv.pszVal, &stopped, 16);
-			GetLocaleInfoA(MAKELCID(langID, 0), LOCALE_SISO639LANGNAME , dlg->user_locale, MAX_REGS(dlg->lang_name));
-			DBFreeVariant(&dbv);
-		}
-
 		// Try to get from Language info
-		if (dlg->lang_name[0] == '\0')
+		if (dlg->lang_name[0] == _T('\0'))
 			GetUserLanguageSetting(dlg, "Language");
-		if (dlg->lang_name[0] == '\0')
+		if (dlg->lang_name[0] == _T('\0'))
 			GetUserLanguageSetting(dlg, "Language1");
-		if (dlg->lang_name[0] == '\0')
+		if (dlg->lang_name[0] == _T('\0'))
 			GetUserLanguageSetting(dlg, "Language2");
-		if (dlg->lang_name[0] == '\0')
+		if (dlg->lang_name[0] == _T('\0'))
 			GetUserLanguageSetting(dlg, "Language3");
 
-		if (dlg->lang_name[0] == '\0')
-		{
-			if (opts.use_locale && dlg->user_locale[0] != '\0')
-			{
-				strncpy(dlg->lang_name, dlg->user_locale, MAX_REGS(dlg->lang_name));
-				dlg->using_user_locale = TRUE;
-			}
-			else
-				strncpy(dlg->lang_name, opts.default_language, MAX_REGS(dlg->lang_name));
-		}
+		// Use default lang
+		if (dlg->lang_name[0] == _T('\0'))
+			lstrcpyn(dlg->lang_name, opts.default_language, MAX_REGS(dlg->lang_name));
 	}
 
 	int i = GetClosestLanguage(dlg->lang_name);
 	if (i >= 0)
 	{
-		dlg->lang = &languages[i];
-		LoadLanguage(dlg->lang->name);
+		dlg->lang = languages.dicts[i];
+		dlg->lang->load();
 	}
 	else 
 	{
@@ -822,7 +709,7 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name)
 
 		dlg->old_edit_proc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG) EditProc);
 
-		SetTimer(hwnd, TIMER_ID, 1000, NULL);
+		SetTimer(hwnd, TIMER_ID, 500, NULL);
 	}
 
 	return 0;
@@ -832,18 +719,18 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name)
 void FreePopupData(Dialog *dlg)
 {
 	if (dlg->word != NULL)
-		free(dlg->word);
-
-	if (dlg->num_suggestions > 0)
 	{
-		for (int i = dlg->num_suggestions - 1; i >= 0; i--) 
-			free(dlg->suggestions[i]);
-		free(dlg->suggestions);
+		free(dlg->word);
+		dlg->word = NULL;
 	}
 
-	dlg->num_suggestions = 0;
-	dlg->suggestions = NULL;
-	dlg->word = NULL;
+	if (dlg->hSubMenu != NULL)
+	{
+		DestroyMenu(dlg->hSubMenu);
+		dlg->hSubMenu = NULL;
+	}
+
+	FreeSuggestions(dlg->suggestions);
 }
 
 
@@ -877,39 +764,79 @@ int RemoveContactTextBox(HWND hwnd)
 }
 
 
-CHARRANGE GetCharRangeUnderPoint(Dialog *dlg, POINT pt)
+void ReplaceWord(Dialog *dlg, CHARRANGE &sel, TCHAR *new_word)
 {
-	CHARRANGE sel;
-	sel.cpMin = sel.cpMax = LOWORD(SendMessage(dlg->hwnd, EM_CHARFROMPOS, 0, (LPARAM) &pt));
+	CHARRANGE old_sel;
+	SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);
 
-	// Find the word
-	GetWordCharRange(dlg, sel);
-	
-	return sel;
+	// Replace in rich edit
+	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
+	SendMessage(dlg->hwnd, EM_REPLACESEL, TRUE, (LPARAM) new_word);
+
+	// Fix old sel
+	int dif = lstrlen(new_word) - sel.cpMax + sel.cpMin;
+	if (old_sel.cpMin >= sel.cpMax)
+		old_sel.cpMin += dif;
+	if (old_sel.cpMax >= sel.cpMax)
+		old_sel.cpMax += dif;
+
+	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &old_sel);
 }
 
 
-TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt)
+BOOL GetWordCharRange(Dialog *dlg, CHARRANGE &sel, TCHAR *text, size_t text_len, int &first_char)
+{
+	// Get line
+	int line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) sel.cpMin, 0);
+
+	// Get text
+	GetLineOfText(dlg, line, first_char, text, text_len);
+
+	// Find the word
+	sel.cpMin--;
+	while (sel.cpMin >= first_char && dlg->lang->isWordChar(text[sel.cpMin - first_char]))
+		sel.cpMin--;
+	sel.cpMin++;
+
+	while (text[sel.cpMax - first_char] != _T('\0') && dlg->lang->isWordChar(text[sel.cpMax - first_char]))
+		sel.cpMax++;
+
+	// Has a word?
+	if (sel.cpMin >= sel.cpMax)
+		return FALSE;
+
+	// See if it has only '-'s
+	BOOL has_valid_char = FALSE;
+	for (int i = sel.cpMin; i < sel.cpMax && !has_valid_char; i++)
+		has_valid_char = ( text[i - first_char] != _T('-') );
+
+	if (!has_valid_char)
+		return FALSE;
+
+	return TRUE;
+}
+
+TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel)
 {
 	// Get text
 	if (GetWindowTextLength(dlg->hwnd) <= 0)
 		return NULL;
 
-	CHARRANGE sel = GetCharRangeUnderPoint(dlg, pt);
+	// Get pos
+	sel.cpMin = sel.cpMax = LOWORD(SendMessage(dlg->hwnd, EM_CHARFROMPOS, 0, (LPARAM) &pt));
 
-	int line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) sel.cpMin, 0);
-	int first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
+	// Get text
+	TCHAR text[1024];
+	int first_char;
 
-	dlg->text[sel.cpMax - first_char] = _T('\0');
+	if (!GetWordCharRange(dlg, sel, text, MAX_REGS(text), first_char))
+		return NULL;
 
-	TCHAR *ret;
-	if (dlg->text[sel.cpMin - first_char] == _T('\0'))
-		ret = NULL;
-	else
-		ret = _tcsdup(&dlg->text[sel.cpMin - first_char]);
-
-	return ret;
+	// copy the word
+	text[sel.cpMax - first_char] = _T('\0');
+	return _tcsdup(&text[sel.cpMin - first_char]);
 }
+
 
 #define LANGUAGE_MENU_ID_BASE 100
 
@@ -920,16 +847,17 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 	BOOL wrong_word = FALSE;
 
 	// Get text
-	if (dlg->lang != NULL && dlg->lang->loaded == LANGUAGE_LOADED)
+	if (dlg->lang != NULL)
 	{
-		dlg->word = GetWordUnderPoint(dlg, pt);
+		CHARRANGE sel;
+		dlg->word = GetWordUnderPoint(dlg, pt, sel);
 		if (dlg->word != NULL) 
 		{
-			wrong_word = !dlg->lang->checker->spell(dlg->word);
+			wrong_word = !dlg->lang->spell(dlg->word);
 			if (wrong_word)
 			{
 				// Get suggestions
-				dlg->num_suggestions = dlg->lang->checker->suggest(&dlg->suggestions, dlg->word);
+				dlg->suggestions = dlg->lang->suggest(dlg->word);
 			}
 		}
 	}
@@ -938,42 +866,26 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 	if (GetMenuItemCount(hMenu) > 0)
 		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
 
-	if (num_languages > 0 || dlg->user_locale[0] != '\0' || dlg->lang_name[0] != '\0')
+	if (languages.count > 0)
 	{
-		HMENU hSubMenu = CreatePopupMenu();
-
-		BOOL showing_user_locale = FALSE;
+		dlg->hSubMenu = CreatePopupMenu();
 
 		// First add languages
-		for(int i = 0; i < num_languages; i++)
+		for(int i = 0; i < languages.count; i++)
 		{
-			BOOL checked = FALSE;
-
-			if (opts.use_locale && strcmpi(languages[i].name, dlg->user_locale) == 0)
+			if (languages.dicts[i]->localized_name[0] != _T('\0'))
 			{
-				showing_user_locale = TRUE;
-
-				if (dlg->using_user_locale)
-					checked = TRUE;
+				TCHAR name[128];
+				mir_sntprintf(name, MAX_REGS(name), _T("%s [%s]"), languages.dicts[i]->localized_name, languages.dicts[i]->language);
+				AppendMenu(dlg->hSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
+					LANGUAGE_MENU_ID_BASE + i, name);
 			}
-			else if (&languages[i] == dlg->lang && (!opts.use_locale || !dlg->using_user_locale))
-				checked = TRUE;
-
-			AppendMenu(hSubMenu, MF_STRING | (checked ? MF_CHECKED : 0), LANGUAGE_MENU_ID_BASE + i, languages[i].name);
-		}
-
-		if (opts.use_locale && !showing_user_locale && dlg->user_locale[0] != '\0')
-		{
-			// Get language relative to it
-			int i = GetClosestLanguage(dlg->user_locale);
-
-			char text[128];
-			if (i >= 0)
-				mir_snprintf(text, MAX_REGS(text), Translate("locale: %s (using %s)"), dlg->user_locale, languages[i].name);
 			else
-				mir_snprintf(text, MAX_REGS(text), Translate("locale: %s (without dict)"), dlg->user_locale);
+			{
+				AppendMenu(dlg->hSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
+					LANGUAGE_MENU_ID_BASE + i, languages.dicts[i]->language);
+			}
 
-			AppendMenu(hSubMenu, MF_STRING | (dlg->using_user_locale ? MF_CHECKED : 0), LANGUAGE_MENU_ID_BASE + num_languages, text);
 		}
 
 		TCHAR *menu_name = TranslateT("Language");
@@ -982,27 +894,27 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 		mii.cbSize = sizeof(MENUITEMINFO);
 		mii.fMask = MIIM_SUBMENU | MIIM_TYPE;
 		mii.fType = MFT_STRING;
-		mii.hSubMenu = hSubMenu;
+		mii.hSubMenu = dlg->hSubMenu;
 		mii.dwTypeData = menu_name;
 		mii.cch = lstrlen(menu_name);
 		int ret = InsertMenuItem(hMenu, 0, TRUE, &mii);
 	}
 
-	InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->num_suggestions + 3, TranslateT("Enable spell checking"));
-	CheckMenuItem(hMenu, dlg->num_suggestions + 3, MF_BYCOMMAND | (dlg->enabled ? MF_CHECKED : MF_UNCHECKED));
+	InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->suggestions.count + 3, TranslateT("Enable spell checking"));
+	CheckMenuItem(hMenu, dlg->suggestions.count + 3, MF_BYCOMMAND | (dlg->enabled ? MF_CHECKED : MF_UNCHECKED));
 
 	if (wrong_word) 
 	{
 		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
 
-		InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->num_suggestions + 2, TranslateT("Ignore all"));
-		InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->num_suggestions + 1, TranslateT("Add to dictionary"));
+		InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->suggestions.count + 2, TranslateT("Ignore all"));
+		InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->suggestions.count + 1, TranslateT("Add to dictionary"));
 
-		if (dlg->num_suggestions > 0)
+		if (dlg->suggestions.count > 0)
 		{
 			InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
-			for (int i = dlg->num_suggestions - 1; i >= 0; i--) 
-				InsertMenu(hMenu, 0, MF_BYPOSITION, i + 1, dlg->suggestions[i]);
+			for (int i = dlg->suggestions.count - 1; i >= 0; i--) 
+				InsertMenu(hMenu, 0, MF_BYPOSITION, i + 1, dlg->suggestions.words[i]);
 		}
 
 		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
@@ -1018,39 +930,36 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
 {
 	BOOL ret = FALSE;
 
-	if (selection > 0 && selection <= dlg->num_suggestions)
+	if (selection > 0 && selection <= dlg->suggestions.count)
 	{
 		selection--;
 
-		// Get text
-		int len = GetWindowTextLength(dlg->hwnd);
-		if (len > 0)
+		// Assert that text hasn't changed
+		CHARRANGE sel;
+		TCHAR *word = GetWordUnderPoint(dlg, pt, sel);
+		if (word != NULL)
 		{
-			CHARRANGE sel = GetCharRangeUnderPoint(dlg, pt);
+			if (lstrcmp(word, dlg->word) == 0)
+				ReplaceWord(dlg, sel, dlg->suggestions.words[selection]);
 
-			SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
-
-			ReplaceWord(dlg, sel, dlg->suggestions[selection]);
-			
-			SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
-			InvalidateRect(dlg->hwnd, NULL, FALSE);
+			free(word);
 		}
 
 		ret = TRUE;
 	}
-	else if (selection == dlg->num_suggestions + 1)
+	else if (selection == dlg->suggestions.count + 1)
 	{
-		AddToCustomDict(dlg->lang, dlg->word);
+		dlg->lang->addWord(dlg->word);
 
 		ret = TRUE;
 	}
-	else if (selection == dlg->num_suggestions + 2)
+	else if (selection == dlg->suggestions.count + 2)
 	{
-		dlg->lang->checker->put_word(dlg->word);
+		dlg->lang->ignoreWord(dlg->word);
 
 		ret = TRUE;
 	}
-	else if (selection == dlg->num_suggestions + 3)
+	else if (selection == dlg->suggestions.count + 3)
 	{
 		dlg->enabled = !dlg->enabled;
 		DBWriteContactSettingByte(NULL, MODULE_NAME, dlg->name, dlg->enabled);
@@ -1060,19 +969,14 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
 
 		ret = TRUE;
 	}
-	else if (selection >= LANGUAGE_MENU_ID_BASE && selection < LANGUAGE_MENU_ID_BASE + num_languages)
+	else if (selection >= LANGUAGE_MENU_ID_BASE && selection < LANGUAGE_MENU_ID_BASE + languages.count)
 	{
 		if (dlg->hContact == NULL)
-			DBWriteContactSettingString(NULL, MODULE_NAME, dlg->name, languages[selection - LANGUAGE_MENU_ID_BASE].name);
+			DBWriteContactSettingTString(NULL, MODULE_NAME, dlg->name, 
+					languages.dicts[selection - LANGUAGE_MENU_ID_BASE]->language);
 		else
-			DBWriteContactSettingString(dlg->hContact, MODULE_NAME, "TalkLanguage", languages[selection - LANGUAGE_MENU_ID_BASE].name);
-		GetContactLanguage(dlg);
-
-		ret = TRUE;
-	}
-	else if (selection == LANGUAGE_MENU_ID_BASE + num_languages)
-	{
-		DBDeleteContactSetting(dlg->hContact, MODULE_NAME, "TalkLanguage");
+			DBWriteContactSettingTString(dlg->hContact, MODULE_NAME, "TalkLanguage", 
+					languages.dicts[selection - LANGUAGE_MENU_ID_BASE]->language);
 		GetContactLanguage(dlg);
 
 		ret = TRUE;
@@ -1183,84 +1087,5 @@ int MsgWindowEvent(WPARAM wParam, LPARAM lParam)
 	}
 
 	return 0;
-}
-
-DWORD WINAPI LoadLanguageThread(LPVOID pos)
-{
-	TCHAR dic[1024];
-	TCHAR aff[1024];
-
-	int i = (int) pos;
-
-	mir_sntprintf(dic, MAX_REGS(dic), "%s\\%s.dic", dictionariesFolder, languages[i].name);
-	mir_sntprintf(aff, MAX_REGS(aff), "%s\\%s.aff", dictionariesFolder, languages[i].name);
-
-	languages[i].checker = new Hunspell(aff, dic);
-	LoadCustomDict(&languages[i]);
-	languages[i].loaded = LANGUAGE_LOADED;
-
-	return 0;
-}
-
-void LoadLanguage(TCHAR *name)
-{
-	DWORD thread_id;
-
-	int i;
-	for(i = 0; i < num_languages; i++)
-	{
-		if (lstrcmp(name, languages[i].name) == 0)
-		{
-			if (languages[i].loaded == LANGUAGE_NOT_LOADED)
-			{
-				languages[i].loaded = LANGUAGE_LOADING;
-				CreateThread(NULL, 0, LoadLanguageThread, (LPVOID) i, 0, &thread_id);
-			}
-			break;
-		}
-	}
-}
-
-
-void AppendToCustomDict(Language *lang, char *word)
-{
-	char filename[1024];
-	mir_sntprintf(filename, MAX_REGS(filename), "%s\\%s.cdic", customDictionariesFolder, lang->name);
-
-    FILE *file = fopen(filename,"a");
-    if (file != NULL) 
-	{
-		fprintf(file, "%s\n", word);
-	    fclose(file);
-    }
-}
-
-
-void AddToCustomDict(Language *lang, char *word)
-{
-	lang->checker->put_word(word);
-	AppendToCustomDict(lang, word);
-}
-
-
-void LoadCustomDict(Language *lang) 
-{
-	char filename[1024];
-	mir_sntprintf(filename, MAX_REGS(filename), "%s\\%s.cdic", customDictionariesFolder, lang->name);
-
-    FILE *file = fopen(filename,"r");
-	if (file != NULL) 
-	{
-		char word[MAXLNLEN];
-		while(fgets(word, MAXLNLEN, file)) 
-		{
-			size_t len = strlen(word);
-			if (*(word + len - 1) == '\n') 
-				*(word + len - 1) = '\0';
-
-			lang->checker->put_word(word);
-		}
-		fclose(file);
-	}
 }
 

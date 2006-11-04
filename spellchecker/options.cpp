@@ -20,6 +20,8 @@ Boston, MA 02111-1307, USA.
 
 #include "commons.h"
 
+#include "options.h"
+
 
 
 // Prototypes /////////////////////////////////////////////////////////////////////////////////////
@@ -36,11 +38,11 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 static OptPageControl optionsControls[] = { 
 	{ &opts.default_language,	CONTROL_COMBO_ITEMDATA,	IDC_DEF_LANG,		"DefaultLanguage", NULL, 0, 0, MAX_REGS(opts.default_language) },
 	{ &opts.auto_correct,		CONTROL_CHECKBOX,		IDC_AUTOCORRECT,	"AutoCorrect", FALSE },
-	{ &opts.use_locale,			CONTROL_CHECKBOX,		IDC_USE_LOCALE,		"UseLocale", FALSE }
+	{ &opts.underline_type,		CONTROL_COMBO,			IDC_UNDERLINE_TYPE,	"UnderlineType", CFU_UNDERLINEWAVE - CFU_UNDERLINEDOUBLE }
 };
 
 static UINT optionsExpertControls[] = { 
-	IDC_USE_LOCALE
+	IDC_ADVANCED, IDC_UNDERLINE_TYPE_L, IDC_UNDERLINE_TYPE
 };
 
 
@@ -61,6 +63,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	odp.pfnDlgProc = OptionsDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
+	odp.nIDBottomSimpleControl = IDC_SPELL_CHECKER;
 	odp.expertOnlyControls = optionsExpertControls;
 	odp.nExpertOnlyControls = MAX_REGS(optionsExpertControls);
     CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
@@ -75,26 +78,24 @@ void InitOptions()
 	
 	hOptHook = HookEvent(ME_OPT_INITIALISE, InitOptionsCallback);
 
-	if (num_languages <= 0)
+	if (languages.count <= 0)
 	{
 		opts.default_language[0] = _T('\0');
 		return;
 	}
 
-	for(int i = 0; i < num_languages; i++)
-		if (lstrcmp(languages[i].name, opts.default_language) == 0)
+	for(int i = 0; i < languages.count; i++)
+		if (lstrcmp(languages.dicts[i]->language, opts.default_language) == 0)
 			break;
 
-	if (i == num_languages)
-		lstrcpy(opts.default_language, languages[0].name);
+	if (i == languages.count)
+		lstrcpy(opts.default_language, languages.dicts[0]->language);
 }
 
 
 void DeInitOptions()
 {
 	UnhookEvent(hOptHook);
-
-	//FreeMirOptions();
 }
 
 
@@ -110,21 +111,30 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 	{
 		case WM_INITDIALOG:
 		{
-			for(int i = 0; i < num_languages; i++)
+			int i;
+			for(i = 0; i < languages.count; i++)
 			{
-				if (languages[i].localized_name[0] != _T('\0'))
+				if (languages.dicts[i]->localized_name[0] != _T('\0'))
 				{
 					TCHAR name[128];
-					mir_sntprintf(name, MAX_REGS(name), "%s [%s]", languages[i].localized_name, languages[i].name);
+					mir_sntprintf(name, MAX_REGS(name), _T("%s [%s]"), languages.dicts[i]->localized_name, languages.dicts[i]->language);
 					SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_ADDSTRING, 0, (LONG) name);
 				}
 				else
 				{
-					SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_ADDSTRING, 0, (LONG) languages[i].name);
+					SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_ADDSTRING, 0, (LONG) languages.dicts[i]->language);
 				}
 
-				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETITEMDATA, i, (DWORD) languages[i].name);
+				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETITEMDATA, i, (DWORD) languages.dicts[i]->language);
 			}
+
+			SendDlgItemMessage(hwndDlg, IDC_UNDERLINE_TYPE, CB_ADDSTRING, 0, (LONG) TranslateT("Line"));
+			SendDlgItemMessage(hwndDlg, IDC_UNDERLINE_TYPE, CB_ADDSTRING, 0, (LONG) TranslateT("Dotted"));
+			SendDlgItemMessage(hwndDlg, IDC_UNDERLINE_TYPE, CB_ADDSTRING, 0, (LONG) TranslateT("Dash"));
+			SendDlgItemMessage(hwndDlg, IDC_UNDERLINE_TYPE, CB_ADDSTRING, 0, (LONG) TranslateT("Dash dot"));
+			SendDlgItemMessage(hwndDlg, IDC_UNDERLINE_TYPE, CB_ADDSTRING, 0, (LONG) TranslateT("Dash dot dot"));
+			SendDlgItemMessage(hwndDlg, IDC_UNDERLINE_TYPE, CB_ADDSTRING, 0, (LONG) TranslateT("Wave"));
+			SendDlgItemMessage(hwndDlg, IDC_UNDERLINE_TYPE, CB_ADDSTRING, 0, (LONG) TranslateT("Thick"));
 
 			break;
 		}

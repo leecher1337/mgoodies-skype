@@ -22,8 +22,6 @@ Boston, MA 02111-1307, USA.
 # define __OPTIONS_H__
 
 
-#include "commons.h"
-
 #include <windows.h>
 
 #ifdef __cplusplus
@@ -44,7 +42,8 @@ struct Options {
 	TCHAR default_language[10];
 
 	BOOL auto_correct;
-	BOOL use_locale;
+
+	WORD underline_type;
 };
 
 extern Options opts;

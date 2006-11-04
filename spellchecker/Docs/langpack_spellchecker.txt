@@ -1,0 +1,34 @@
+; Spell Checker 0.0.0.7
+; Author: Pescuma
+
+; Options
+
+[Message Sessions]
+[Spell Checker]
+
+[Dictionaries]
+[Custom Dictionaries]
+
+[ Spell Checker ]
+[Default language:]
+[Auto-correct words]
+[Download more dictionaries]
+
+[ Advanced ]
+[Underline type:]
+[Line]
+[Dotted]
+[Dash]
+[Dash dot]
+[Dash dot dot]
+[Wave]
+[Thick]
+
+
+; Menu
+
+[Language]
+[Enable spell checking]
+[Ignore all]
+[Add to dictionary]
+[Wrong word: %s]

@@ -45,6 +45,10 @@
 #define IDC_LEFT_ACTION_L               1074
 #define IDC_DEF_LANG                    1075
 #define IDC_GETMORE                     1076
+#define IDC_ADVANCED                    1077
+#define IDC_UNDERLINE_TYPE              1078
+#define IDC_UNDERLINE_TYPE_L            1079
+#define IDC_SPELL_CHECKER               1080
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -55,7 +59,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        122
 #define _APS_NEXT_COMMAND_VALUE         40005
-#define _APS_NEXT_CONTROL_VALUE         1077
+#define _APS_NEXT_CONTROL_VALUE         1081
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

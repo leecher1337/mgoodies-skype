@@ -29,9 +29,6 @@ Boston, MA 02111-1307, USA.
 #include <richedit.h>
 #include <map>
 
-#include "hunspell/hunspell.hxx"
-
-
 #ifdef __cplusplus
 extern "C" 
 {
@@ -67,6 +64,9 @@ extern "C"
 #endif
 
 
+#include "dictionary.h"
+
+
 #define MODULE_NAME		"SpellChecker"
 
 
@@ -77,53 +77,27 @@ extern PLUGINLINK *pluginLink;
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 
-#ifdef UNICODE
-
-#define TCHAR_TO_CHAR(dest, orig)	mir_snprintf(dest, MAX_REGS(dest), "%S", orig)
-#define CHAR_TO_TCHAR(dest, orig)	mir_sntprintf(dest, MAX_REGS(dest), "%S", orig)
-
-#else
-
-#define TCHAR_TO_CHAR(dest, orig)	lstrcpynA(dest, orig, MAX_REGS(dest))
-#define CHAR_TO_TCHAR(dest, orig)	lstrcpynA(dest, orig, MAX_REGS(dest))
-
-#endif
 
 
-#define LANGUAGE_NOT_LOADED		 1
-#define LANGUAGE_LOADING		-1
-#define LANGUAGE_LOADED			 0
 
-struct Language {
-	char name[10];
-	TCHAR localized_name[128];
-	TCHAR english_name[128];
-	BOOL loaded;
-	Hunspell *checker;
-};
-
-extern Language *languages;
-extern int num_languages;
+extern Dictionaries languages;
 
 struct Dialog {
 	HWND hwnd;
 	HANDLE hContact;
 	char name[64];
-	Language *lang;
-	char lang_name[10];
-	char user_locale[10];
-	BOOL using_user_locale;
+	Dictionary *lang;
+	TCHAR lang_name[10];
 	WNDPROC old_edit_proc;
 	BOOL enabled;
 
 	BOOL changed;
 	int old_text_len;
-	TCHAR text[1024];
 
 	// Popup data
-	int num_suggestions;
-	char ** suggestions;
+	Suggestions suggestions;
 	TCHAR *word;
+	HMENU hSubMenu;
 };
 
 
