@@ -1,6 +1,9 @@
-Spell Checker 0.0.0.7
+Spell Checker 0.0.0.8
 
 Changelog:
+
+. 0.0.0.8
+  * Fix for strange things
 
 . 0.0.0.7
   + Unicode version (should fix encoding problems)
