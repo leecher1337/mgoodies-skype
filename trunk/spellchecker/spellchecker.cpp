@@ -34,7 +34,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,7),
+	PLUGIN_MAKE_VERSION(0,0,0,8),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -317,8 +317,6 @@ inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, i
 // Checks for errors in all text
 void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 {
-	BOOL changed = FALSE;
-
 	SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
 
 	POINT old_scroll_pos;
@@ -360,7 +358,6 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 								|| !(first_char+pos+1 <= old_sel.cpMax && first_char+last_pos+1 >= old_sel.cpMin))
 							{
 								DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct);
-								changed = TRUE;
 							}
 						}
 
@@ -388,7 +385,6 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 					if (check_word_under_cursor || !(pos+1 <= old_sel.cpMax && last_pos+1 >= old_sel.cpMin))
 					{
 						DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct);
-						changed = TRUE;
 					}
 				}
 			}
@@ -400,15 +396,10 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 
 		SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
 	}
-	else
-	{
-		changed = TRUE;
-	}
 
 	SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
 
-	if (changed)
-		InvalidateRect(dlg->hwnd, NULL, FALSE);
+	InvalidateRect(dlg->hwnd, NULL, FALSE);
 }
 
 
