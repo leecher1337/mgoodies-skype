@@ -1,6 +1,13 @@
-Spell Checker 0.0.0.6
+Spell Checker 0.0.0.7
 
 Changelog:
+
+. 0.0.0.7
+  + Unicode version (should fix encoding problems)
+  + Better way to handle typing
+  + Underline type
+  + langpack txt
+  * Fixes
 
 . 0.0.0.6
   + Try to guess contact dict language from spoken language in contact setting

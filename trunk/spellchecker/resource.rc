@@ -27,21 +27,23 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPTIONS DIALOGEX 0, 0, 252, 86
+IDD_OPTIONS DIALOGEX 0, 0, 252, 130
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Tahoma"
 BEGIN
-    GROUPBOX        " Spell Checker ",IDC_STATIC,1,5,250,80
-    LTEXT           "Default language: ",IDC_STATIC,11,20,91,8
+    GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,250,80
+    LTEXT           "Default language:",IDC_STATIC,11,20,91,8
     COMBOBOX        IDC_DEF_LANG,110,18,130,14,CBS_DROPDOWNLIST | CBS_SORT | 
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Auto-correct words",IDC_AUTOCORRECT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,35,230,10
-    CONTROL         "Use keybord locale to get language",IDC_USE_LOCALE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,46,230,10
     CONTROL         "Download more dictionaries",IDC_GETMORE,"Hyperlink",
                     WS_TABSTOP | 0x1,10,65,230,12
+    GROUPBOX        " Advanced ",IDC_ADVANCED,1,88,250,38
+    LTEXT           "Underline type:",IDC_UNDERLINE_TYPE_L,11,104,91,8
+    COMBOBOX        IDC_UNDERLINE_TYPE,110,102,130,14,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
 END
 
 
@@ -58,7 +60,7 @@ BEGIN
         LEFTMARGIN, 1
         RIGHTMARGIN, 251
         TOPMARGIN, 1
-        BOTTOMMARGIN, 85
+        BOTTOMMARGIN, 129
     END
 END
 #endif    // APSTUDIO_INVOKED
