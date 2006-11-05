@@ -27,7 +27,14 @@ Boston, MA 02111-1307, USA.
 #include <stdio.h>
 #include <time.h>
 #include <richedit.h>
+
+// Disable "...truncated to '255' characters in the debug information" warnings
+#pragma warning(disable: 4786)
+
 #include <map>
+#include <string>
+using namespace std;
+
 
 #ifdef __cplusplus
 extern "C" 
@@ -97,7 +104,8 @@ struct Dialog {
 	// Popup data
 	Suggestions suggestions;
 	TCHAR *word;
-	HMENU hSubMenu;
+	HMENU hLanguagesSubMenu;
+	HMENU hAutoReplaceSubMenu;
 };
 
 

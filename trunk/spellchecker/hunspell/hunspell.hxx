@@ -93,6 +93,7 @@ public:
   /* other */
 
   char * get_dic_encoding();
+  int get_utf8();
   const char * get_wordchars();
   unsigned short * get_wordchars_utf16(int * len);
   struct cs_info * get_csconv();

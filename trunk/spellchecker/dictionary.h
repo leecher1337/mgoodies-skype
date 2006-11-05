@@ -48,9 +48,13 @@ public:
 	// Return a list of auto suggestions to a word
 	virtual Suggestions autoSuggest(const TCHAR * word) =0;
 
-	// Return a list of auto suggestions to a word
+	// Return a auto suggestions to a word
 	// You have to free the item
 	virtual TCHAR * autoSuggestOne(const TCHAR * word) =0;
+
+	// Return a a auto replace to a word
+	// You have to free the item
+	virtual TCHAR * autoReplace(const TCHAR * word) =0;
 
 	// Return TRUE if the char is a word char
 	virtual BOOL isWordChar(TCHAR c) =0;
@@ -60,6 +64,9 @@ public:
 
 	// Add a word to the list of ignored words
 	virtual void ignoreWord(const TCHAR * word) =0;
+
+	// Add a word to the list of auto-replaced words
+	virtual void addToAutoReplace(const TCHAR * from, const TCHAR * to) =0;
 
 	// Assert that all needed data is loaded
 	virtual void load() =0;

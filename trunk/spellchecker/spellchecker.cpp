@@ -17,10 +17,6 @@ not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  
 */
 
-// Disable "...truncated to '255' characters in the debug information" warnings
-#pragma warning(disable: 4786)
-
-
 #include "commons.h"
 
 
@@ -34,7 +30,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,9),
+	PLUGIN_MAKE_VERSION(0,0,1,0),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -276,7 +272,10 @@ inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, i
 		// Has to correct?
 		if (auto_correct)
 		{
-			TCHAR *word = dlg->lang->autoSuggestOne(&text[pos + 1]);
+			TCHAR *word = dlg->lang->autoReplace(&text[pos + 1]);
+			if (word == NULL)
+				word = dlg->lang->autoSuggestOne(&text[pos + 1]);
+
 			if (word != NULL)
 			{
 				mark = FALSE;
@@ -720,10 +719,16 @@ void FreePopupData(Dialog *dlg)
 		dlg->word = NULL;
 	}
 
-	if (dlg->hSubMenu != NULL)
+	if (dlg->hLanguagesSubMenu != NULL)
 	{
-		DestroyMenu(dlg->hSubMenu);
-		dlg->hSubMenu = NULL;
+		DestroyMenu(dlg->hLanguagesSubMenu);
+		dlg->hLanguagesSubMenu = NULL;
+	}
+
+	if (dlg->hAutoReplaceSubMenu != NULL)
+	{
+		DestroyMenu(dlg->hAutoReplaceSubMenu);
+		dlg->hAutoReplaceSubMenu = NULL;
 	}
 
 	FreeSuggestions(dlg->suggestions);
@@ -835,6 +840,7 @@ TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel)
 
 
 #define LANGUAGE_MENU_ID_BASE 100
+#define AUTOREPLACE_MENU_ID_BASE 150
 
 void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 {
@@ -864,7 +870,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 
 	if (languages.count > 0)
 	{
-		dlg->hSubMenu = CreatePopupMenu();
+		dlg->hLanguagesSubMenu = CreatePopupMenu();
 
 		// First add languages
 		for(int i = 0; i < languages.count; i++)
@@ -873,12 +879,12 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 			{
 				TCHAR name[128];
 				mir_sntprintf(name, MAX_REGS(name), _T("%s [%s]"), languages.dicts[i]->localized_name, languages.dicts[i]->language);
-				AppendMenu(dlg->hSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
+				AppendMenu(dlg->hLanguagesSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
 					LANGUAGE_MENU_ID_BASE + i, name);
 			}
 			else
 			{
-				AppendMenu(dlg->hSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
+				AppendMenu(dlg->hLanguagesSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
 					LANGUAGE_MENU_ID_BASE + i, languages.dicts[i]->language);
 			}
 
@@ -890,7 +896,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 		mii.cbSize = sizeof(MENUITEMINFO);
 		mii.fMask = MIIM_SUBMENU | MIIM_TYPE;
 		mii.fType = MFT_STRING;
-		mii.hSubMenu = dlg->hSubMenu;
+		mii.hSubMenu = dlg->hLanguagesSubMenu;
 		mii.dwTypeData = menu_name;
 		mii.cch = lstrlen(menu_name);
 		int ret = InsertMenuItem(hMenu, 0, TRUE, &mii);
@@ -902,6 +908,26 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 	if (wrong_word) 
 	{
 		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+
+		if (dlg->suggestions.count > 0)
+		{
+			dlg->hAutoReplaceSubMenu = CreatePopupMenu();
+
+			for (int i = dlg->suggestions.count - 1; i >= 0; i--) 
+				InsertMenu(dlg->hAutoReplaceSubMenu, 0, MF_BYPOSITION, 
+						AUTOREPLACE_MENU_ID_BASE + i, dlg->suggestions.words[i]);
+
+			TCHAR *menu_name = TranslateT("Always replace with");
+
+			MENUITEMINFO mii = {0};
+			mii.cbSize = sizeof(MENUITEMINFO);
+			mii.fMask = MIIM_SUBMENU | MIIM_TYPE;
+			mii.fType = MFT_STRING;
+			mii.hSubMenu = dlg->hAutoReplaceSubMenu;
+			mii.dwTypeData = menu_name;
+			mii.cch = lstrlen(menu_name);
+			int ret = InsertMenuItem(hMenu, 0, TRUE, &mii);
+		}
 
 		InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->suggestions.count + 2, TranslateT("Ignore all"));
 		InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->suggestions.count + 1, TranslateT("Add to dictionary"));
@@ -974,6 +1000,26 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
 			DBWriteContactSettingTString(dlg->hContact, MODULE_NAME, "TalkLanguage", 
 					languages.dicts[selection - LANGUAGE_MENU_ID_BASE]->language);
 		GetContactLanguage(dlg);
+
+		ret = TRUE;
+	}
+	else if (selection >= AUTOREPLACE_MENU_ID_BASE && selection < AUTOREPLACE_MENU_ID_BASE + dlg->suggestions.count)
+	{
+		selection -= AUTOREPLACE_MENU_ID_BASE;
+		
+		// Assert that text hasn't changed
+		CHARRANGE sel;
+		TCHAR *word = GetWordUnderPoint(dlg, pt, sel);
+		if (word != NULL)
+		{
+			if (lstrcmp(word, dlg->word) == 0)
+			{
+				ReplaceWord(dlg, sel, dlg->suggestions.words[selection]);
+				dlg->lang->addToAutoReplace(word, dlg->suggestions.words[selection]);
+			}
+
+			free(word);
+		}
 
 		ret = TRUE;
 	}
