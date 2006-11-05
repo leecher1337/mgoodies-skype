@@ -1074,6 +1074,12 @@ char * Hunspell::get_dic_encoding()
   return encoding;
 }
 
+// return utf8
+int Hunspell::get_utf8()
+{
+  return utf8;
+}
+
 const char * Hunspell::get_wordchars()
 {
   return pAMgr->get_wordchars();

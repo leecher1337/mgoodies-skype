@@ -299,5 +299,21 @@ SOURCE=.\options.cpp
 SOURCE=.\spellchecker.cpp
 # End Source File
 # End Group
+# Begin Group "Docs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Docs\langpack_spellchecker.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\spellchecker_changelog.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\spellchecker_version.txt
+# End Source File
+# End Group
 # End Target
 # End Project

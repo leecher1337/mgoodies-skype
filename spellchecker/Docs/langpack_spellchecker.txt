@@ -1,4 +1,4 @@
-; Spell Checker 0.0.0.9
+; Spell Checker 0.0.1.0
 ; Author: Pescuma
 
 ; Options
@@ -29,6 +29,7 @@
 
 [Language]
 [Enable spell checking]
+[Always replace with]
 [Ignore all]
 [Add to dictionary]
 [Wrong word: %s]
