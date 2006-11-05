@@ -231,12 +231,8 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 void SetAttributes(HWND hRichEdit, int pos_start, int pos_end, DWORD dwMask, DWORD dwEffects, BYTE bUnderlineType, BOOL all = FALSE)
 {
-    CHARRANGE old_sel;
 	if (!all)
 	{
-		// Get old selecton
-	    SendMessage(hRichEdit, EM_EXGETSEL, 0, (LPARAM) &old_sel);
-
 		// Select this range
 		CHARRANGE sel = { pos_start, pos_end };
 		SendMessage(hRichEdit, EM_EXSETSEL, 0, (LPARAM) &sel);
@@ -249,12 +245,6 @@ void SetAttributes(HWND hRichEdit, int pos_start, int pos_end, DWORD dwMask, DWO
 	cf.dwEffects = dwEffects;
 	cf.bUnderlineType = bUnderlineType;
 	SendMessage(hRichEdit, EM_SETCHARFORMAT, (WPARAM) all ? SCF_ALL : SCF_SELECTION, (LPARAM)&cf);
-
-	if (!all)
-	{
-		// Back to old selection
-		SendMessage(hRichEdit, EM_EXSETSEL, 0, (LPARAM) &old_sel);
-	}
 }
 
 
@@ -317,31 +307,39 @@ inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, i
 // Checks for errors in all text
 void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 {
+	// Stop rich edit
 	SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
-
 	POINT old_scroll_pos;
 	SendMessage(dlg->hwnd, EM_GETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
-
 	CHARRANGE old_sel;
 	SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);
 
-	SetAttributes(dlg->hwnd, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
-
 	if (GetWindowTextLength(dlg->hwnd) > 0)
 	{
-		// Get text
 		int lines = SendMessage(dlg->hwnd, EM_GETLINECOUNT, 0, 0);
-		for(int line = 0; line < lines; line++) 
+		int line = 0;
+
+		if (!check_word_under_cursor)
+		{
+			// Check only the current line, one up and one down
+			int current_line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) old_sel.cpMin, 0);
+			line = max(line, current_line - 1);
+			lines = min(lines, current_line + 2);
+		}
+
+		for(; line < lines; line++) 
 		{
 			TCHAR text[1024];
 			int first_char;
 
 			GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
+			int len = lstrlen(text);
+
+			SetAttributes(dlg->hwnd, first_char, first_char + len, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
 
 			// Now lets get the words
 			int last_pos = -1;
 			BOOL found_real_char = FALSE;
-			int len = lstrlen(text);
 			for (int pos = len - 1; pos >= 0; pos--)
 			{
 				if (!dlg->lang->isWordChar(text[pos]))
@@ -389,16 +387,16 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 				}
 			}
 		}
-
-		// Fix last char
-		int len = GetWindowTextLength(dlg->hwnd);
-		SetAttributes(dlg->hwnd, len, len, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
-
-		SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
 	}
 
-	SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
+	// Fix last char
+	int len = GetWindowTextLength(dlg->hwnd);
+	SetAttributes(dlg->hwnd, len, len, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
 
+	// Start rich edit
+	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &old_sel);
+	SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
+	SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
 	InvalidateRect(dlg->hwnd, NULL, FALSE);
 }
 
@@ -415,7 +413,11 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		case WM_KEYDOWN:
 		{
-			if (wParam != 46) // Del
+			if (wParam != VK_DELETE
+				&& wParam != VK_UP
+				&& wParam != VK_DOWN
+				&& wParam != VK_HOME
+				&& wParam != VK_END)
 				break;
 		}
 		case WM_CHAR:
@@ -455,6 +457,8 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
 					POINT old_scroll_pos;
 					SendMessage(dlg->hwnd, EM_GETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
+				    CHARRANGE old_sel;
+				    SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);
 
 					// Remove underline of current word
 					TCHAR text[1024];
@@ -468,6 +472,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					SetAttributes(dlg->hwnd, sel.cpMin, sel.cpMax, CFM_UNDERLINETYPE, 0, 0);
 
 					// Start rich edit
+					SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &old_sel);
 					SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
 					SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
 					InvalidateRect(dlg->hwnd, NULL, FALSE);

@@ -1,6 +1,10 @@
-Spell Checker 0.0.0.8
+Spell Checker 0.0.0.9
 
 Changelog:
+
+. 0.0.0.9
+  * Fix for auto-replace
+  + Parse max 3 lines when typing (to speed a little)
 
 . 0.0.0.8
   * Fix for strange things
