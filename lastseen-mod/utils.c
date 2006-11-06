@@ -147,7 +147,7 @@ DWORD isSeen(HANDLE hcontact, SYSTEMTIME *st){
 						ll -= NUM100NANOSEC;
 						ll /= 10000000;
 						//perform LOCALTOTIMESTAMP
-						res = ll - CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,0,0);
+						res = (DWORD)ll - CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,0,0);
 						//nevel look for Year/Month/Day/Hour/Minute/Second again
 						DBWriteContactSettingDword(hcontact,S_MOD,"seenTS",res);
 					}
@@ -260,7 +260,7 @@ LBL_charPtr:
 
 				case 'p':
 					if((isetting=st.wHour)==-1)goto LBL_noData;
-					charPtr = (isetting>12)?"PM":"AM";
+					charPtr = (isetting>=12)?"PM":"AM";
 					goto LBL_charPtr;
 
 				case 'M':
