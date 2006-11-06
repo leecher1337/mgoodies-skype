@@ -119,6 +119,44 @@ BOOL isMSN(char * protoname){
 	return FALSE;
 }
 
+DWORD isSeen(HANDLE hcontact, SYSTEMTIME *st){
+	DWORD res = 0;
+	FILETIME ft;
+	ULONGLONG ll;
+	res = DBGetContactSettingDword(hcontact,S_MOD,"seenTS",0);
+	if (res){
+		if (st) {
+			ll = UInt32x32To64(CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,res,0), 10000000) + NUM100NANOSEC;
+			ft.dwLowDateTime = (DWORD)ll;
+			ft.dwHighDateTime = (DWORD)(ll >> 32);
+			FileTimeToSystemTime(&ft, st);
+		}
+		return res;
+	} else {
+		SYSTEMTIME lst;
+		ZeroMemory(&lst,sizeof(lst));
+		if (lst.wYear = DBGetContactSettingWord(hcontact,S_MOD,"Year",0)) {
+			if (lst.wMonth = DBGetContactSettingWord(hcontact,S_MOD,"Month",0)) {
+				if (lst.wDay = DBGetContactSettingWord(hcontact,S_MOD,"Day",0)) {
+					lst.wDayOfWeek = DBGetContactSettingWord(hcontact,S_MOD,"WeekDay",0);
+					lst.wHour = DBGetContactSettingWord(hcontact,S_MOD,"Hours",0);
+					lst.wMinute = DBGetContactSettingWord(hcontact,S_MOD,"Minutes",0);
+					lst.wSecond = DBGetContactSettingWord(hcontact,S_MOD,"Seconds",0);
+					if (SystemTimeToFileTime(&lst,&ft)){
+						ll = ((LONGLONG)ft.dwHighDateTime<<32)|((LONGLONG)ft.dwLowDateTime);
+						ll -= NUM100NANOSEC;
+						ll /= 10000000;
+						//perform LOCALTOTIMESTAMP
+						res = ll - CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,0,0);
+						//nevel look for Year/Month/Day/Hour/Minute/Second again
+						DBWriteContactSettingDword(hcontact,S_MOD,"seenTS",res);
+					}
+		}	}	}
+		if (st) CopyMemory (st, &lst, sizeof (SYSTEMTIME));
+	}
+	return res;
+}
+
 char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 {
 #define MAXSIZE 1024
@@ -136,11 +174,17 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 	char *mnames_short[]={"Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."};
 	CONTACTINFO ci;
 	BOOL wantempty;
+	SYSTEMTIME st;
+
+	sztemp[0] = '\0';
+	if (!isSeen(hcontact,&st)){
+		strcat(sztemp,Translate("<never seen>"));
+		return sztemp;
+	}
 
 	ci.cbSize=sizeof(CONTACTINFO);
 	ci.hContact=hcontact;
 	ci.szProto=hcontact?(char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hcontact,0):courProtoName;
-	sztemp[0] = '\0';
 	for(;loop<strlen(szstring);loop++)
 	{
 		if (sztemplen == MAXSIZE) break;
@@ -156,28 +200,28 @@ char *ParseString(char *szstring,HANDLE hcontact,BYTE isfile)
 			wantempty = (szstring[loop]=='#');
 			switch(szstring[++loop]){
 				case 'Y':
-					if (!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0))) goto LBL_noData;
-					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%04i",isetting);
+					if (!st.wYear) goto LBL_noData;
+					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%04i",st.wYear);
 					break;
 
 				case 'y':
-					if (!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Year",0))) goto LBL_noData;
-					wsprintf(szdbsetting,"%04i",isetting);
+					if (!st.wYear) goto LBL_noData;
+					wsprintf(szdbsetting,"%04i",st.wYear);
 					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%s",szdbsetting+2);
 					break;
 
 				case 'm':
-					if (!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0))) goto LBL_noData;
+					if (!(isetting=st.wMonth)) goto LBL_noData;
 LBL_2DigNum:
 					sztemplen += mir_snprintf(sztemp+sztemplen,MAXSIZE-sztemplen,"%02i",isetting);
 					break;
 
 				case 'd':
-					if (isetting=DBGetContactSettingWord(hcontact,S_MOD,"Day",0)) goto LBL_2DigNum;
+					if (isetting=st.wDay) goto LBL_2DigNum;
 					else goto LBL_noData;
 
 				case 'W':
-					isetting=DBGetContactSettingWord(hcontact,S_MOD,"WeekDay",-1);
+					isetting=st.wDayOfWeek;
 					if(isetting==-1){
 LBL_noData:
 						charPtr = wantempty?"":Translate("<unknown>");
@@ -189,42 +233,42 @@ LBL_charPtr:
 					break;
 
 				case 'w':
-					isetting=DBGetContactSettingWord(hcontact,S_MOD,"WeekDay",-1);
+					isetting=st.wDayOfWeek;
 					if(isetting==-1)goto LBL_noData;
 					charPtr = Translate(wdays_short[isetting]);
 					goto LBL_charPtr;
 
 				case 'E':
-					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))goto LBL_noData;
+					if(!(isetting=st.wMonth))goto LBL_noData;
 					charPtr = Translate(monthnames[isetting-1]);
 					goto LBL_charPtr;
 
 				case 'e':
-					if(!(isetting=DBGetContactSettingWord(hcontact,S_MOD,"Month",0)))goto LBL_noData;
+					if(!(isetting=st.wMonth))goto LBL_noData;
 					charPtr = Translate(mnames_short[isetting-1]);
 					goto LBL_charPtr;
 
 				case 'H':
-					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)goto LBL_noData;
+					if((isetting=st.wHour)==-1)goto LBL_noData;
 					goto LBL_2DigNum;
 
 				case 'h':
-					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)goto LBL_noData;
+					if((isetting=st.wHour)==-1)goto LBL_noData;
 					if(!isetting) isetting=12;
 					isetting = isetting-((isetting>12)?12:0);
 					goto LBL_2DigNum;
 
 				case 'p':
-					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Hours",-1))==-1)goto LBL_noData;
+					if((isetting=st.wHour)==-1)goto LBL_noData;
 					charPtr = (isetting>12)?"PM":"AM";
 					goto LBL_charPtr;
 
 				case 'M':
-					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Minutes",-1))==-1)goto LBL_noData;
+					if((isetting=st.wMinute)==-1)goto LBL_noData;
 					goto LBL_2DigNum;
 
 				case 'S':
-					if((isetting=DBGetContactSettingWord(hcontact,S_MOD,"Seconds",-1))==-1)goto LBL_noData;
+					if((isetting=st.wHour)==-1)goto LBL_noData;
 					goto LBL_2DigNum;
 
 				case 'n':
@@ -404,7 +448,7 @@ void _DBWriteTime(SYSTEMTIME *st,HANDLE hcontact)
 void DBWriteTimeTS(DWORD t, HANDLE hcontact){
 	SYSTEMTIME st;
 	FILETIME ft;
-	LONGLONG ll = UInt32x32To64(CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,t,0), 10000000) + NUM100NANOSEC;
+	ULONGLONG ll = UInt32x32To64(CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,t,0), 10000000) + NUM100NANOSEC;
 	ft.dwLowDateTime = (DWORD)ll;
 	ft.dwHighDateTime = (DWORD)(ll >> 32);
 	FileTimeToSystemTime(&ft, &st);
