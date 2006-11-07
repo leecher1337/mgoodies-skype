@@ -72,7 +72,7 @@ int MsgWindowPopup(WPARAM wParam, LPARAM lParam);
 
 int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name);
 int RemoveContactTextBox(HWND hwnd);
-int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt);
+int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt, HWND hwndOwner);
 
 int AddContactTextBoxService(WPARAM wParam, LPARAM lParam);
 int RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam);
@@ -1077,11 +1077,11 @@ int ShowPopupMenuService(WPARAM wParam, LPARAM lParam)
 	if (scp == NULL || scp->cbSize != sizeof(SPELLCHECKER_POPUPMENU))
 		return -1;
 
-	return ShowPopupMenu(scp->hwnd, scp->hMenu, scp->pt);
+	return ShowPopupMenu(scp->hwnd, scp->hMenu, scp->pt, scp->hwndOwner == NULL ? scp->hwnd : scp->hwndOwner);
 }
 
 
-int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt)
+int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt, HWND hwndOwner)
 {
 	Dialog *dlg = dialogs[hwnd];
 	if (dlg == NULL) 
@@ -1110,7 +1110,7 @@ int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt)
 	// Show menu
 	POINT client = pt;
 	ClientToScreen(hwnd, &pt);
-	int selection = TrackPopupMenu(hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hwnd, NULL);
+	int selection = TrackPopupMenu(hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hwndOwner, NULL);
 
 	// Do action
 	if (HandleMenuSelection(dlg, client, selection))
