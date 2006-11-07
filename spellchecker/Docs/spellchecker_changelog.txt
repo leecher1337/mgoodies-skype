@@ -4,6 +4,7 @@ Changelog:
 
 . 0.0.1.2
   * Fix in options
+  + Added hwndOwner param into SPELLCHECKER_POPUPMENU struct
 
 . 0.0.1.1
   + Don't check if field is read-only

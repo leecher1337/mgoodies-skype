@@ -34,6 +34,7 @@ typedef struct {
 	HWND hwnd;			// The hwnd of the richedit
 	HMENU hMenu;		// The handle to the menu
 	POINT pt;			// The point, in screen coords
+	HWND hwndOwner;		// The hwnd of owner of the popup menu. If it is null, hwnd is used
 } SPELLCHECKER_POPUPMENU;
 
 
