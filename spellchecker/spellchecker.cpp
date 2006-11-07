@@ -30,7 +30,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,0),
+	PLUGIN_MAKE_VERSION(0,0,1,2),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -436,6 +436,10 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
 				break;
 
+			// Don't check if field is read-only
+			if (GetWindowLong(hwnd, GWL_STYLE) & ES_READONLY)
+				break;
+
 			TCHAR c = (TCHAR) wParam;
 			if (!dlg->lang->isWordChar(c))
 			{
@@ -492,6 +496,10 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
 				break;
 
+			// Don't check if field is read-only
+			if (GetWindowLong(hwnd, GWL_STYLE) & ES_READONLY)
+				break;
+
 			// Parse all text
 			CheckText(dlg, TRUE, FALSE);
 			break;
@@ -503,6 +511,10 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				break;
 
 			if (!dlg->enabled || dlg->lang == NULL || !dlg->lang->isLoaded())
+				break;
+
+			// Don't check if field is read-only
+			if (GetWindowLong(hwnd, GWL_STYLE) & ES_READONLY)
 				break;
 
 			int len = GetWindowTextLength(hwnd);
@@ -1096,11 +1108,12 @@ int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt)
 	AddItemsToMenu(dlg, hMenu, pt);
 
 	// Show menu
+	POINT client = pt;
 	ClientToScreen(hwnd, &pt);
 	int selection = TrackPopupMenu(hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hwnd, NULL);
 
 	// Do action
-	if (HandleMenuSelection(dlg, pt, selection))
+	if (HandleMenuSelection(dlg, client, selection))
 		selection = 0;
 
 	if (create_menu)
