@@ -61,7 +61,6 @@ typedef struct {
 	union {
 		DWORD dwDefValue;
 		TCHAR *tszDefValue;
-		char *szDefValue;
 	};
 	union {
 		int nIDSpin;

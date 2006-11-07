@@ -109,36 +109,6 @@ static TCHAR* MyDBGetContactSettingTString(HANDLE hContact, char* module, char* 
 }
 
 
-static char* MyDBGetContactSettingString(HANDLE hContact, char* module, char* setting, char* out, size_t len, char *def)
-{
-	DBVARIANT dbv;
-
-	out[0] = '\0';
-
-	if (!DBGetContactSetting(hContact, module, setting, &dbv))
-	{
-		if (dbv.type == DBVT_ASCIIZ)
-		{
-			lstrcpyn(out, dbv.pszVal, len);
-		}
-		else
-		{
-			if (def != NULL)
-				strncpy(out, def, len);
-		}
-		
-		DBFreeVariant(&dbv);
-	}
-	else
-	{
-		if (def != NULL)
-			strncpy(out, def, len);
-	}
-
-	return out;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Multiple tabs per dialog
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -387,13 +357,9 @@ void LoadOpts(OptPageControl *controls, int controlsSize, char *module)
 					break;
 				}
 				case CONTROL_COMBO_TEXT:
-				{
-					MyDBGetContactSettingTString(NULL, module, ctrl->setting, ((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
-					break;
-				}
 				case CONTROL_COMBO_ITEMDATA:
 				{
-					MyDBGetContactSettingString(NULL, module, ctrl->setting, ((char *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->szDefValue == NULL ? NULL : TranslateT(ctrl->szDefValue));
+					MyDBGetContactSettingTString(NULL, module, ctrl->setting, ((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
 					break;
 				}
 			}
@@ -516,13 +482,13 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 					}
 					case CONTROL_COMBO_ITEMDATA:
 					{
-						char tmp[1024];
-						MyDBGetContactSettingString(NULL, module, ctrl->setting, tmp, 1024, ctrl->szDefValue == NULL ? NULL : TranslateTS(ctrl->szDefValue));
+						TCHAR tmp[1024];
+						MyDBGetContactSettingTString(NULL, module, ctrl->setting, tmp, 1024, ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
 						int count = SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETCOUNT, 0, 0);
 						for(int i = 0; i < count; i++)
 						{
-							char *id = (char *) SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETITEMDATA, (WPARAM) i, 0);
-							if (strcmp(id, tmp))
+							TCHAR *id = (TCHAR *) SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETITEMDATA, (WPARAM) i, 0);
+							if (lstrcmp(id, tmp) == 0)
 								break;
 						}
 						if (i < count)
@@ -641,7 +607,7 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 						case CONTROL_COMBO_ITEMDATA:
 						{
 							int sel = SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETCURSEL, 0, 0);
-							DBWriteContactSettingString(NULL, module, ctrl->setting, (char *) SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETITEMDATA, (WPARAM) sel, 0));
+							DBWriteContactSettingTString(NULL, module, ctrl->setting, (TCHAR *) SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETITEMDATA, (WPARAM) sel, 0));
 							break;
 						}
 					}
