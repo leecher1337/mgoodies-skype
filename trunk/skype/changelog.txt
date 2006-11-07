@@ -13,9 +13,12 @@ CODE
 
 HISTORY
 -------
+0.0.0.32 - ! Improvemnt of the Action message support.
+		   ! Fix empty message on first chat with a contact.
+
 0.0.0.31 - + First step to Action Message support ( /me )
 		   + Updater support for File Listing.
-		   + First step to a custom popup for call notification.	
+		   + First step to a custom popup for call notification.
 
 0.0.0.30 - + Add an option to enable/disable the timezone patch
 

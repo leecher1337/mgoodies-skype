@@ -120,7 +120,7 @@ int FreeVSApi()
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,31),
+	PLUGIN_MAKE_VERSION(0,0,0,32),
 	"Support for Skype network",
 	"leecher - tweety",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
@@ -711,14 +711,14 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 
 
 void FetchMessageThread(fetchmsg_arg *args) {
-	char str[64], *ptr, *who, *msg;
+	char str[64], *ptr, *who, *msg, *msg_emoted;
 	int msgl, direction=0;
 	DWORD timestamp, lwr=0;
     CCSDATA ccs;
     PROTORECVEVENT pre;
     HANDLE hContact, hDbEvent;
 	DBEVENTINFO dbei={0};
-	BOOL getstatus;
+	BOOL getstatus, bEmoted=false;
 
 	if (!args || !args->msgnum) return;
 	Sleep(200);
@@ -737,80 +737,91 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	}
 	ERRCHK
 	str[msgl]=0;
-	if (strncmp(ptr+strlen(ptr)-4, "TEXT", 4) && strncmp(ptr+strlen(ptr)-4, "SAID", 4) && !strncmp(ptr+strlen(ptr)-4, "EMOTED", 6)) {
-	  if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0)) {
-		if (!strncmp(ptr+strlen(ptr)-10,"SAWMEMBERS", 10)) {
-			// We have a new Groupchat
-			free(ptr);
-			strcat(str, "CHATNAME");
-			if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) {
-				SetEvent(SkypeMsgFetched);
-				return;
-			}
+	if( !strncmp(ptr+strlen(ptr)-6, "EMOTED", 6) ) bEmoted = true;
 
-			ChatStart(ptr+strlen(str+4)+1);
-			free(ptr);
-			SetEvent(SkypeMsgFetched);
-			return;
-		}
-		if (!strncmp(ptr+strlen(ptr)-8,"SETTOPIC", 8)) {
-			GCDEST gcd = {0};
-			GCEVENT gce = {0};
-			char *ptr2;
+	if (strncmp(ptr+strlen(ptr)-4, "TEXT", 4) && strncmp(ptr+strlen(ptr)-4, "SAID", 4) && !bEmoted) 
+	{
+		if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0)) 
+		{
+			if (!strncmp(ptr+strlen(ptr)-10,"SAWMEMBERS", 10)) 
+			{
+				// We have a new Groupchat
+				free(ptr);
+				strcat(str, "CHATNAME");
+				if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) 
+				{
+					SetEvent(SkypeMsgFetched);
+					return;
+				}
 
-			free(ptr);
-			strcat(str, "CHATNAME");
-			if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) {
-				SetEvent(SkypeMsgFetched);
-				return;
-			}
-			str[msgl]=0;
-			gce.cbSize = sizeof(GCEVENT);
-			gcd.pszModule = pszSkypeProtoName;
-			gcd.pszID = ptr+strlen(str+4)+1;
-			gcd.iType = GC_EVENT_TOPIC;
-			gce.pDest = &gcd;
-			strcat(str, cmdPartner);
-			strcat(str, "_HANDLE");
-			if (SkypeSend(str)==-1 || !(who=SkypeRcv(str+4, INFINITE))) {
+				ChatStart(ptr+strlen(str+4)+1);
 				free(ptr);
 				SetEvent(SkypeMsgFetched);
 				return;
 			}
-			gce.pszUID = who+strlen(str+4)+1;
-			sprintf(str, "CHAT %s TOPIC", gcd.pszID);
-			if (ptr2=SkypeRcv(str, INFINITE)) {
-				gce.pszText = ptr2+strlen(str);
-				CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
-				free(ptr2);
-			}
-			free(ptr);
-			free(who);
-			SetEvent(SkypeMsgFetched);
-			return;
-		}
-		if (!strncmp(ptr+strlen(ptr)-4,"LEFT", 4) ||
-			!strncmp(ptr+strlen(ptr)-12,"ADDEDMEMBERS", 12)) {
+			if (!strncmp(ptr+strlen(ptr)-8,"SETTOPIC", 8)) 
+			{
+				GCDEST gcd = {0};
+				GCEVENT gce = {0};
+				char *ptr2;
 
-			free(ptr);
-			strcat(str, "CHATNAME");
-			if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) {
+				free(ptr);
+				strcat(str, "CHATNAME");
+				if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) 
+				{
+					SetEvent(SkypeMsgFetched);
+					return;
+				}
+				str[msgl]=0;
+				gce.cbSize = sizeof(GCEVENT);
+				gcd.pszModule = pszSkypeProtoName;
+				gcd.pszID = ptr+strlen(str+4)+1;
+				gcd.iType = GC_EVENT_TOPIC;
+				gce.pDest = &gcd;
+				strcat(str, cmdPartner);
+				strcat(str, "_HANDLE");
+				if (SkypeSend(str)==-1 || !(who=SkypeRcv(str+4, INFINITE))) 
+				{
+					free(ptr);
+					SetEvent(SkypeMsgFetched);
+					return;
+				}
+				gce.pszUID = who+strlen(str+4)+1;
+				sprintf(str, "CHAT %s TOPIC", gcd.pszID);
+				if (ptr2=SkypeRcv(str, INFINITE)) 
+				{
+					gce.pszText = ptr2+strlen(str);
+					CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
+					free(ptr2);
+				}
+				free(ptr);
+				free(who);
 				SetEvent(SkypeMsgFetched);
 				return;
 			}
-			SkypeSend ("GET CHAT %s MEMBERS", ptr+strlen(str+4)+1);
-			str[msgl]=0;
+			if (!strncmp(ptr+strlen(ptr)-4,"LEFT", 4) || !strncmp(ptr+strlen(ptr)-12,"ADDEDMEMBERS", 12)) 
+			{
 
-			free(ptr);
-			SetEvent(SkypeMsgFetched);
-			return;
+				free(ptr);
+				strcat(str, "CHATNAME");
+				if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) 
+				{
+					SetEvent(SkypeMsgFetched);
+					return;
+				}
+				SkypeSend ("GET CHAT %s MEMBERS", ptr+strlen(str+4)+1);
+				str[msgl]=0;
+
+				free(ptr);
+				SetEvent(SkypeMsgFetched);
+				return;
+			}
 		}
-	  }
 		// Boo,no useful message, ignore it
-#ifdef _DEBUG
-		OUTPUT(ptr);
-		OUTPUT("NO TEXT! :(");
-#endif
+		#ifdef _DEBUG
+			OUTPUT(ptr);
+			OUTPUT("NO TEXT! :(");
+		#endif
 		free(ptr);
 		SetEvent(SkypeMsgFetched);
 		return;
@@ -871,6 +882,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	}
 	free(ptr);
 	str[msgl]=0;
+
 
 	// Aaaand add it..
 	LOG("FetchMessageThread", "Finding contact handle");
@@ -954,6 +966,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 			}
 			gce.time = timestamp>0?timestamp:time(NULL);;
 			gce.bIsMe = FALSE;
+
 			gce.pszText = msg;
 			gce.bAddToLog = TRUE;
 			CallService(MS_GC_EVENT, 0, (LPARAM)&gce);
@@ -987,7 +1000,35 @@ void FetchMessageThread(fetchmsg_arg *args) {
 		ccs.lParam = (LPARAM)&pre;
 		pre.flags = direction;
 		pre.timestamp = timestamp>0?timestamp:time(NULL);
-		pre.szMessage = msg;
+		if( bEmoted )
+		{
+			CONTACTINFO ci = {0};
+			ci.cbSize = sizeof(ci);
+			ci.szProto = pszSkypeProtoName;
+			ci.dwFlag = CNF_DISPLAY;
+			if ((hContact=find_contact(who)))
+			{
+				ci.hContact = hContact;
+				if (!CallService(MS_CONTACT_GETCONTACTINFO,0,(LPARAM)&ci))
+				{
+					msg_emoted = new char[strlen(msg) + strlen(ci.pszVal) + 8];
+					sprintf(msg_emoted,"** %s %s **",ci.pszVal,msg);
+				}
+				else
+				{
+					msg_emoted = new char[strlen(msg) + 6];
+					sprintf(msg_emoted,"** %s **",msg);
+				}
+			}
+			
+			pre.szMessage = msg_emoted;
+
+			if (ci.pszVal) miranda_sys_free (ci.pszVal);
+		}
+		else
+		{
+			pre.szMessage = msg;
+		}
 		pre.lParam = 0;
 		CallServiceSync(MS_PROTO_CHAINRECV, 0, (LPARAM) &ccs);
 
