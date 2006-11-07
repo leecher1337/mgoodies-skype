@@ -34,8 +34,8 @@ FONT 8, "Tahoma"
 BEGIN
     GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,250,80
     LTEXT           "Default language:",IDC_STATIC,11,20,91,8
-    COMBOBOX        IDC_DEF_LANG,110,18,130,14,CBS_DROPDOWNLIST | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_DEF_LANG,110,18,130,14,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
     CONTROL         "Auto-correct words",IDC_AUTOCORRECT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,35,230,10
     CONTROL         "Download more dictionaries",IDC_GETMORE,"Hyperlink",

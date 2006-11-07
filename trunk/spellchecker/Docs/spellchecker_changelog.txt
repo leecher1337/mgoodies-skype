@@ -1,6 +1,13 @@
-Spell Checker 0.0.1.0
+Spell Checker 0.0.1.2
 
 Changelog:
+
+. 0.0.1.2
+  * Fix in options
+
+. 0.0.1.1
+  + Don't check if field is read-only
+  * Fix for services
 
 . 0.0.1.0
   + Auto replace
