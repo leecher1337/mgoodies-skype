@@ -88,8 +88,32 @@ LINK32=link.exe
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
 
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "YAMN___Win32_Release_Win9x"
+# PROP BASE Intermediate_Dir "YAMN___Win32_Release_Win9x"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Release\Win9x"
+# PROP Intermediate_Dir "Release\Win9x"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "YAMN_EXPORTS" /D "DEBUG" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN9X" /FR /YX /FD /c
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x405 /d "NDEBUG"
+# ADD RSC /l 0x405 /d "NDEBUG"
 BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
 LINK32=link.exe
+# ADD BASE LINK32 wsock32.lib kernel32.lib user32.lib shell32.lib msvcrt.lib comdlg32.lib gdi32.lib /nologo /subsystem:windows /dll /machine:I386 /nodefaultlib /filealign:512
+# SUBTRACT BASE LINK32 /pdb:none
+# ADD LINK32 ./libs/unicows.lib wsock32.lib kernel32.lib user32.lib shell32.lib msvcrt.lib comdlg32.lib gdi32.lib /nologo /base:"0x60020000" /subsystem:windows /dll /machine:I386 /nodefaultlib /out:"../../bin7/Release/plugins/YAMN.dll" /filealign:512
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
 
@@ -165,36 +189,10 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE=.\browser\badconnect.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\browser\mailbrowser.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # End Group
 # Begin Group "Mails"
@@ -203,53 +201,14 @@ SOURCE=.\browser\mailbrowser.cpp
 # Begin Source File
 
 SOURCE=.\mails\decode.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\mails\mails.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\mails\mime.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # End Group
 # Begin Group "POP3 plugin"
@@ -258,104 +217,26 @@ SOURCE=.\mails\mime.cpp
 # Begin Source File
 
 SOURCE=.\proto\md5.c
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\proto\netlib.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\proto\pop3\pop3.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\proto\pop3\pop3comm.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\proto\pop3\pop3opt.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\proto\ssl.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # End Group
 # Begin Group "Header"
@@ -417,19 +298,6 @@ SOURCE=.\include\m_updater.h
 # Begin Source File
 
 SOURCE=.\account.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
@@ -438,121 +306,30 @@ SOURCE=.\ChangeLog.txt
 # Begin Source File
 
 SOURCE=.\debug.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\filterplugin.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\main.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\protoplugin.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\services.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\synchro.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=.\yamn.cpp
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -607,123 +384,6 @@ SOURCE=.\resources\ttbfcheck.bmp
 SOURCE=.\resources\YAMN.rc
 # End Source File
 # End Group
-# Begin Group "Documentation"
 
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\docs\changelog.txt
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\docs\language.pop3.txt
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\docs\language.txt
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=".\docs\YAMN-License.txt"
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=".\docs\YAMN-Readme.developers.txt"
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=".\docs\YAMN-Readme.txt"
-
-!IF  "$(CFG)" == "YAMN - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win2in1"
-
-!ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
-
-!ENDIF 
-
-# End Source File
-# End Group
 # End Target
 # End Project

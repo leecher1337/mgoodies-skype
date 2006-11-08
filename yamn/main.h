@@ -36,6 +36,10 @@
 #define YAMN_DBPOSY			"MailBrowserWinY"
 #define YAMN_DBSIZEX		"MailBrowserWinW"
 #define YAMN_DBSIZEY		"MailBrowserWinH"
+#define YAMN_DBMSGPOSX			"MailMessageWinX"
+#define YAMN_DBMSGPOSY			"MailMessageWinY"
+#define YAMN_DBMSGSIZEX		"MailMessageWinW"
+#define YAMN_DBMSGSIZEY		"MailMessageWinH"
 #define YAMN_HKCHECKMAIL	"HKCheckMail"
 #define	YAMN_TTBFCHECK		"ForceCheckTTB"
 
