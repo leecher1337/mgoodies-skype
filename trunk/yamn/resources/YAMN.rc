@@ -147,6 +147,15 @@ BEGIN
     PUSHBUTTON      "Select All",IDC_BTNCHECKALL,150,91,92,14
 END
 
+IDD_DLGSHOWMESSAGE DIALOG DISCARDABLE  50, 200, 460, 110
+STYLE DS_3DLOOK | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | 
+    WS_THICKFRAME
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL         "List5",IDC_LISTHEADERS,"SysListView32",LVS_REPORT | 
+                    LVS_EDITLABELS | WS_BORDER | WS_TABSTOP,5,5,450,70
+END
+
 IDD_DLGBADCONNECT DIALOG DISCARDABLE  0, 0, 186, 76
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 FONT 8, "MS Shell Dlg"
@@ -358,8 +367,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,1,8
- PRODUCTVERSION 0,0,1,8
+ FILEVERSION 0,0,1,9
+ PRODUCTVERSION 0,0,1,9
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -377,14 +386,14 @@ BEGIN
             VALUE "Comments", "Yet Another Mail Notifier\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "Yet Another Mail Notifier\0"
-            VALUE "FileVersion", "0, 0, 1, 8\0"
+            VALUE "FileVersion", "0, 0, 1, 9\0"
             VALUE "InternalName", "YAMN\0"
             VALUE "LegalCopyright", "Copyright © 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "YAMN.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "YAMN tweety\0"
-            VALUE "ProductVersion", "0, 0, 1, 8\0"
+            VALUE "ProductVersion", "0, 0, 1, 9\0"
             VALUE "SpecialBuild", "\0"
         END
     END

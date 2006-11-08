@@ -3,6 +3,7 @@
 // Used by YAMN.rc
 //
 #define IDD_DLGVIEWMESSAGES             107
+#define IDD_DLGSHOWMESSAGE              108
 #define IDI_ICOYAMN2                    112
 #define IDI_ICOYAMN1                    113
 #define IDI_ICOYAMN3                    116
@@ -48,6 +49,7 @@
 #define IDC_CHECKCONTACTNICK            1031
 #define IDC_STTIMELEFT                  1033
 #define IDC_LISTMAILS                   1038
+#define IDC_LISTHEADERS                 1039
 #define IDC_EDITAPPPARAM                1044
 #define IDC_BTNOK                       1047
 #define IDC_COMBOCP                     1050

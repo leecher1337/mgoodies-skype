@@ -90,6 +90,7 @@ void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
 char* s_MonthNames[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 bool bDate = false,bSub=false,bSize=false,bFrom=false;
 int PosX=0,PosY=0,SizeX=460,SizeY=100;
+int HeadSizeX = 0x2b2, HeadSizeY = 0x0b5, HeadPosX = 100, HeadPosY = 100;
 static int FromWidth=250,SubjectWidth=280,SizeWidth=50,SizeDate=160;
 
 static WNDPROC OldListViewSubclassProc;
@@ -1237,6 +1238,174 @@ int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSor
 
 } 
 
+void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode);
+BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+{
+	HYAMNMAIL ActualMail = (HYAMNMAIL)lParam;
+	switch(msg)
+	{
+		case WM_INITDIALOG:
+		{
+//			HIMAGELIST hIcons;
+			WCHAR *iHeaderW=NULL;
+			WCHAR *iValueW=NULL;
+			int StrLen;
+			HWND hListView = GetDlgItem(hDlg,IDC_LISTHEADERS);
+			SendMessageW(hDlg,WM_SETICON,(WPARAM)ICON_BIG,(LPARAM)hNewMailIcon);
+			SendMessageW(hDlg,WM_SETICON,(WPARAM)ICON_SMALL,(LPARAM)hNewMailIcon);
+
+			ListView_SetUnicodeFormat(hListView,TRUE);
+			ListView_SetExtendedListViewStyle(hListView,LVS_EX_FULLROWSELECT);
+
+			StrLen=MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Header"),-1,NULL,0);
+			iHeaderW=new WCHAR[StrLen+1];
+			MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Header"),-1,iHeaderW,StrLen);
+
+			StrLen=MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Value"),-1,NULL,0);
+			iValueW=new WCHAR[StrLen+1];
+			MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Value"),-1,iValueW,StrLen);
+
+			LVCOLUMNW lvc0={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,130,iHeaderW,0,0};
+			LVCOLUMNW lvc1={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,400,iValueW,0,0};
+			SendMessageW(hListView,LVM_INSERTCOLUMNW,(WPARAM)0,(LPARAM)&lvc0);
+			SendMessageW(hListView,LVM_INSERTCOLUMNW,(WPARAM)1,(LPARAM)&lvc1);
+			if(NULL!=iHeaderW)
+				delete[] iHeaderW;
+			if(NULL!=iValueW)
+				delete[] iValueW;
+
+			//WindowList_Add(YAMNVar.MessageWnds,hDlg,NULL);
+			//WindowList_Add(YAMNVar.NewMailAccountWnd,hDlg,ActualAccount);
+			struct CMimeItem *Header;
+			LVITEM item;
+			item.mask=LVIF_TEXT | LVIF_PARAM;
+			WCHAR *From=0,*Subj=0;
+			for(Header=ActualMail->MailData->TranslatedHeader;Header!=NULL;Header=Header->Next)
+			{
+				WCHAR *str1 = 0;
+				WCHAR *str2 = 0;
+
+				ConvertCodedStringToUnicode(Header->name,&str1,ActualMail->MailData->CP,1); 
+				ConvertCodedStringToUnicode(Header->value,&str2,ActualMail->MailData->CP,1); 
+				if (!From) if (!strcmp(Header->name,"From")) {
+					From =new WCHAR[wcslen(str2)+1];
+					wcscpy(From,str2);
+				}
+				if (!Subj) if (!strcmp(Header->name,"Subject")) {
+					Subj =new WCHAR[wcslen(str2)+1];
+					wcscpy(Subj,str2);
+				}
+				int count = 0; WCHAR **split=0;
+				if (str2){
+					int ofs = 0;
+					while (str2[ofs]) {
+						if ((str2[ofs]==0x266A)||(str2[ofs]==0x25D9)||(str2[ofs]==0x25CB)||
+							(str2[ofs]==0x09)||(str2[ofs]==0x0A)||(str2[ofs]==0x0D))count++;
+						ofs++;
+					}
+					split=new WCHAR*[count+1];
+					count=0; ofs=0;
+					split[0]=str2;
+					while (str2[ofs]){
+						if ((str2[ofs]==0x266A)||(str2[ofs]==0x25D9)||(str2[ofs]==0x25CB)||
+							(str2[ofs]==0x09)||(str2[ofs]==0x0A)||(str2[ofs]==0x0D)) {
+							if (str2[ofs-1]){
+								count++;
+							}
+							split[count]=(WCHAR *)(str2+ofs+1);
+							str2[ofs]=0;
+						}
+						ofs++;
+					};
+				}
+				if (!strcmp(Header->name,"From")||!strcmp(Header->name,"To")||!strcmp(Header->name,"Date")||!strcmp(Header->name,"Subject")) 
+					item.iItem = 0;
+				else 
+					item.iItem = 999;
+				for (int i=0;i<=count;i++){
+					item.iSubItem=0;
+					if (i==0){
+						item.pszText=str1;
+					} else {
+						item.iItem++;
+						item.pszText=0;
+					}
+					item.iItem=SendMessageW(hListView,LVM_INSERTITEMW,(WPARAM)0,(LPARAM)&item);
+					item.iSubItem=1;
+					item.pszText=str2?split[i]:0;
+					SendMessageW(hListView,LVM_SETITEMTEXTW,(WPARAM)item.iItem,(LPARAM)&item);
+				} 
+				if (split)delete[] split;
+
+				if (str1) free(str1);
+				if (str2) free(str2);
+			}
+			WCHAR *title=0;
+			title = new WCHAR[(From?wcslen(From):0)+(Subj?wcslen(Subj):0)+4];
+			if (From&&Subj) wsprintfW(title,L"%s (%s)",Subj,From);
+			else if (From)wsprintfW(title,L"%s",From);
+			else if (Subj)wsprintfW(title,L"%s",Subj);
+			else wsprintfW(title,L"none");
+			if (Subj) delete[] Subj;
+			if (From) delete[] From;
+			SendMessageW(hDlg,WM_SETTEXT,(WPARAM)0,(LPARAM)title);
+			delete[] title;
+			MoveWindow(hDlg,HeadPosX,HeadPosY,HeadSizeX,HeadSizeY,0);
+			ShowWindow(hDlg,SW_SHOWNORMAL);
+			break;
+		}
+		case WM_DESTROY:
+		{
+			RECT coord;
+			if(!YAMNVar.Shutdown && GetWindowRect(hDlg,&coord))	//the YAMNVar.Shutdown testing is because M<iranda strange functionality at shutdown phase, when call to DBWriteContactSetting freezes calling thread
+			{
+				HeadPosX=coord.left;
+				HeadSizeX=coord.right-coord.left;
+				HeadPosY=coord.top;
+				HeadSizeY=coord.bottom-coord.top;
+				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSX,HeadPosX);
+				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSY,HeadPosY);
+				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEX,HeadSizeX);
+				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEY,HeadSizeY);
+			}
+		}
+		break;
+		case WM_SYSCOMMAND:
+		{
+			switch(wParam)
+			{
+				case SC_CLOSE:
+					DestroyWindow(hDlg);
+					break;
+			}
+		}
+		break;
+		case WM_MOVE:
+				HeadPosX=LOWORD(lParam);	//((LPRECT)lParam)->right-((LPRECT)lParam)->left;
+				HeadPosY=HIWORD(lParam);	//((LPRECT)lParam)->bottom-((LPRECT)lParam)->top;
+				return 0;
+		case WM_SIZE:
+			if(wParam==SIZE_RESTORED)
+			{
+				HWND hList = GetDlgItem(hDlg,IDC_LISTHEADERS);
+				BOOL changeX = LOWORD(lParam)!=HeadSizeX;
+				HeadSizeX=LOWORD(lParam);	//((LPRECT)lParam)->right-((LPRECT)lParam)->left;
+				HeadSizeY=HIWORD(lParam);	//((LPRECT)lParam)->bottom-((LPRECT)lParam)->top;
+				int localSizeX;
+				RECT coord;
+				MoveWindow(hList,  5         ,5     ,HeadSizeX-10    ,HeadSizeY-10,TRUE);	//where to put list mail window while resizing
+				if (GetClientRect(hList,&coord)){
+					localSizeX=coord.right-coord.left;
+				} else localSizeX=HeadSizeX;
+				LONG iNameWidth =  ListView_GetColumnWidth(hList,0);
+				ListView_SetColumnWidth(hList,1,(localSizeX<=iNameWidth)?0:(localSizeX-iNameWidth));
+			}
+//			break;
+			return 0;
+	}
+	return 0;
+}
+
 BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
 	switch(msg)
@@ -1816,10 +1985,10 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 
 					switch(((LPNMHDR)lParam)->code)
 					{
-					/*	case NM_DBLCLK:
+						case NM_DBLCLK:
 							pNMListView = (NM_LISTVIEW*)lParam;
 							int iSelect;
-							iSelect=SendMessage(hDlg,LVM_GETNEXTITEM,-1,LVNI_FOCUSED); // return item selected
+							iSelect=SendMessage(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_GETNEXTITEM,-1,MAKELPARAM((UINT)LVNI_FOCUSED,0)); // return item selected
 
 							if(iSelect!=-1) 
 							{
@@ -1834,12 +2003,14 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 								ActualMail=(HYAMNMAIL)item.lParam;
 								if(NULL!=ActualMail)
 								{
-									MessageBox(NULL,ActualMail->MailData->Body,Translate("Mail source"),0);
+									//MessageBox(NULL,ActualMail->MailData->Body,Translate("Mail source"),0);
+									CreateDialogParamW(YAMNVar.hInst,MAKEINTRESOURCEW(IDD_DLGSHOWMESSAGE),NULL,(DLGPROC)DlgProcYAMNShowMessage,(LPARAM)ActualMail);
+									//MoveWindow(hShowMessage,PosX,PosY,SizeX,SizeY,TRUE);
 								}
 
 							}
 							break;
-						*/
+						
 
 						case LVN_COLUMNCLICK:
 							HACCOUNT ActualAccount;

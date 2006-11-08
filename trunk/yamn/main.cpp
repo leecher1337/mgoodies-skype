@@ -25,6 +25,7 @@ extern HANDLE ExitEV;
 extern HANDLE WriteToFileEV;
 
 extern int PosX,PosY,SizeX,SizeY;
+extern int HeadPosX,HeadPosY,HeadSizeX,HeadSizeY;
 
 //From account.cpp
 extern LPCRITICAL_SECTION AccountStatusCS;
@@ -306,6 +307,11 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	PosY=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBPOSY,0);
 	SizeX=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBSIZEX,800);
 	SizeY=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBSIZEY,200);
+
+	HeadPosX=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSX,0);
+	HeadPosY=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSY,0);
+	HeadSizeX=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEX,690);
+	HeadSizeY=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEY,300);
 
 //Create new window queues for broadcast messages
 	YAMNVar.MessageWnds=(HANDLE)CallService(MS_UTILS_ALLOCWINDOWLIST,0,0);
