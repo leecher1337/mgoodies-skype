@@ -246,6 +246,11 @@ static int ContactMailCheck(WPARAM wParam, LPARAM lParam)
 }
 
 
+void MainMenuAccountClicked(WPARAM wParam, LPARAM lParam) 
+{
+	
+}
+
 /*static*/ void ContactDoubleclicked(WPARAM wParam, LPARAM lParam)
 {
 	DBVARIANT dbv;

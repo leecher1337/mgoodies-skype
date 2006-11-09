@@ -42,6 +42,7 @@
 #define YAMN_DBMSGSIZEY		"MailMessageWinH"
 #define YAMN_HKCHECKMAIL	"HKCheckMail"
 #define	YAMN_TTBFCHECK		"ForceCheckTTB"
+#define	YAMN_SHOWMAINMENU	"ShowMainMenu"
 
 #define YAMN_DEFAULTHK		MAKEWORD(VK_F12,MOD_CONTROL)
 

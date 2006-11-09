@@ -324,7 +324,8 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	mi.position = 0xb0000000;
 	mi.flags = CMIM_ICON;
 	mi.hIcon = hYamnIcon;
-	mi.pszName = Translate("Check &mail (YAMN)");
+	mi.pszName = Translate("Check &mail (All Account)");
+	mi.pszPopupName = ProtoName;
 	mi.pszService = MS_YAMN_FORCECHECK;
 	hMenuItemMain = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 
@@ -501,6 +502,18 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 			DBWriteContactSettingString(Finder->hContact,ProtoName,"Nick",Finder->Name);
 			DBWriteContactSettingString(Finder->hContact,"Protocol","p",ProtoName);
 			DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", YAMN_STATUS);
+		}
+
+		if((Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
+		{
+			mi.cbSize = sizeof(mi);
+			mi.position = 0xb0000000;
+			mi.flags = CMIM_ICON;
+			mi.hIcon = hYamnIcon;
+			mi.pszName = Finder->Name;
+			mi.pszPopupName = ProtoName;
+			mi.pszService = MS_YAMN_CLISTCONTEXT;
+			hMenuItemMain = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 		}
 
 	}
