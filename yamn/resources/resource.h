@@ -14,6 +14,7 @@
 #define IDB_BMTTB                       127
 #define IDI_ICOTTBDW                    137
 #define IDI_ICOTTBUP                    138
+#define IDD_PLUGINOPT                   141
 #define IDD_CHOOSESTATUSMODES           310
 #define IDD_OPTIONS                     311
 #define IDC_EDITSERVER                  1000
@@ -99,6 +100,8 @@
 #define IDC_BTNSTATUS                   1123
 #define IDC_OPTIONSTAB                  1124
 #define IDC_BTNCHECKALL                 1125
+#define IDC_MAINMENU                    1126
+#define IDC_CLOSEONDELETE               1127
 #define IDC_CHECKAPOP                   1200
 #define IDC_STATUSGROUP                 1338
 
@@ -106,9 +109,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        141
+#define _APS_NEXT_RESOURCE_VALUE        142
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1126
+#define _APS_NEXT_CONTROL_VALUE         1128
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

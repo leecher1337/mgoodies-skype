@@ -200,8 +200,52 @@ BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			{
 				case IDC_CHECKTTB:
 				case IDC_HKFORCE:
+				case IDC_CLOSEONDELETE:
 					SendMessage(GetParent(hDlg),PSM_CHANGED,0,0);
 					break;
+
+			}
+			break;
+		}
+		case WM_NOTIFY:
+			switch(((LPNMHDR)lParam)->idFrom)
+			{
+				case 0:
+					switch(((LPNMHDR)lParam)->code)
+					{
+						case PSN_APPLY:
+						{
+							WORD ForceHotKey=(WORD)SendDlgItemMessage(hDlg,IDC_HKFORCE,HKM_GETHOTKEY,0,0);
+							BYTE TTBFCheck=(BYTE)IsDlgButtonChecked(hDlg,IDC_CHECKTTB);
+							BYTE MainMenu= (BYTE)IsDlgButtonChecked(hDlg,IDC_CLOSEONDELETE);
+							UINT mod,vk;
+
+							DBWriteContactSettingWord(NULL,YAMN_DBMODULE,YAMN_HKCHECKMAIL,ForceHotKey);
+							DBWriteContactSettingByte(NULL,YAMN_DBMODULE,YAMN_TTBFCHECK,TTBFCheck);
+							DBWriteContactSettingByte(NULL,YAMN_DBMODULE,YAMN_SHOWMAINMENU,MainMenu);
+							WordToModAndVk(ForceHotKey,&mod,&vk);
+							PostThreadMessage(HotKeyThreadID,WM_YAMN_CHANGEHOTKEY,(WPARAM)mod,(LPARAM)vk);
+						}
+					}
+			}
+			break;
+	}
+
+	return FALSE;
+}
+
+BOOL CALLBACK DlgProcPluginOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
+{
+	switch(msg)
+	{
+		case WM_INITDIALOG:
+			TranslateDialogDefault(hDlg);
+			break;
+		case WM_COMMAND:
+		{
+			WORD wNotifyCode = HIWORD(wParam);
+			switch(LOWORD(wParam))
+			{
 				case IDC_COMBOPLUGINS:
 					if(wNotifyCode==CBN_SELCHANGE)
 					{
@@ -284,24 +328,6 @@ BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				break;
 			}
 		case WM_NOTIFY:
-			switch(((LPNMHDR)lParam)->idFrom)
-			{
-				case 0:
-					switch(((LPNMHDR)lParam)->code)
-					{
-						case PSN_APPLY:
-						{
-							WORD ForceHotKey=(WORD)SendDlgItemMessage(hDlg,IDC_HKFORCE,HKM_GETHOTKEY,0,0);
-							BYTE TTBFCheck=(BYTE)IsDlgButtonChecked(hDlg,IDC_CHECKTTB);
-							UINT mod,vk;
-
-							DBWriteContactSettingWord(NULL,YAMN_DBMODULE,YAMN_HKCHECKMAIL,ForceHotKey);
-							DBWriteContactSettingByte(NULL,YAMN_DBMODULE,YAMN_TTBFCHECK,TTBFCheck);
-							WordToModAndVk(ForceHotKey,&mod,&vk);
-							PostThreadMessage(HotKeyThreadID,WM_YAMN_CHANGEHOTKEY,(WPARAM)mod,(LPARAM)vk);
-						}
-					}
-			}
 			break;
 	}
 
@@ -719,17 +745,25 @@ BOOL CALLBACK DlgOptionsProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 
 		 iInit = TRUE;
          tci.mask = TCIF_PARAM|TCIF_TEXT;
-         tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_POP3ACCOUNTOPT), hwnd, DlgProcPOP3AccOpt);
-         tci.pszText = TranslateT("Accounts");
+         tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_YAMNOPT), hwnd, DlgProcYAMNOpt);
+         tci.pszText = TranslateT("General");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
-         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-29,1);
+         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-33,1);
 		 if(MyEnableThemeDialogTexture)
              MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
 
-         tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_YAMNOPT),hwnd,DlgProcYAMNOpt);
+		 tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_POP3ACCOUNTOPT), hwnd, DlgProcPOP3AccOpt);
+         tci.pszText = TranslateT("Accounts");
+		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
+         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-33,1);
+		 ShowWindow((HWND)tci.lParam, SW_HIDE);
+		 if(MyEnableThemeDialogTexture)
+             MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
+
+         tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_PLUGINOPT),hwnd,DlgProcPluginOpt);
          tci.pszText = TranslateT("Plugins");
-         TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
-         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-29,1);
+         TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 2, &tci);
+         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-33,1);
          ShowWindow((HWND)tci.lParam, SW_HIDE);
 		 if(MyEnableThemeDialogTexture)
              MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
