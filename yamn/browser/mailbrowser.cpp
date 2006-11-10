@@ -91,7 +91,7 @@ char* s_MonthNames[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
 bool bDate = false,bSub=false,bSize=false,bFrom=false;
 int PosX=0,PosY=0,SizeX=460,SizeY=100;
 int HeadSizeX = 0x2b2, HeadSizeY = 0x0b5, HeadPosX = 100, HeadPosY = 100;
-static int FromWidth=250,SubjectWidth=280,SizeWidth=50,SizeDate=160;
+static int FromWidth=250,SubjectWidth=280,SizeWidth=50,SizeDate=205;
 
 static WNDPROC OldListViewSubclassProc;
 
@@ -543,6 +543,7 @@ int ChangeExistingMailStatus(HWND hListView,HACCOUNT ActualAccount,struct CMailN
 	return TRUE;
 }
 
+void MimeDateToLocalizedDateTime(char *datein, WCHAR *dateout, int lendateout);
 int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWORD nflags)
 {
 	HYAMNMAIL msgq;
@@ -550,6 +551,7 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 
 	WCHAR *FromStr;
 	WCHAR SizeStr[20];
+	WCHAR LocalDateStr[128];
 
 	LVITEMW item;
 	LVFINDINFO fi; 
@@ -651,7 +653,14 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 			SendMessageW(hListView,LVM_SETITEMTEXTW,(WPARAM)item.iItem,(LPARAM)&item);
 
 			item.iSubItem=3;
-			item.pszText=(NULL!=UnicodeHeader.Date ? UnicodeHeader.Date : (WCHAR*)L"");
+			item.pszText=L"";
+			{	CMimeItem *heads;
+				for(heads=msgq->MailData->TranslatedHeader;heads!=NULL;heads=heads->Next)	{
+					if (!_stricmp(heads->name,"Date")){ 
+						MimeDateToLocalizedDateTime(heads->value,LocalDateStr,128);
+						item.pszText=LocalDateStr;
+						break;
+			}	}	}
 			SendMessageW(hListView,LVM_SETITEMTEXTW,(WPARAM)item.iItem,(LPARAM)&item);
 		}
 
@@ -1074,6 +1083,115 @@ LRESULT CALLBACK NoNewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lPar
 	return DefWindowProc(hWnd,msg,wParam,lParam);
 }
 
+#ifdef __GNUC__
+#define NUM100NANOSEC  116444736000000000ULL
+#else
+#define NUM100NANOSEC  116444736000000000
+#endif
+ULONGLONG MimeDateToFileTime(char *datein){
+	char *day, *month, *year, *time, *shift;
+	SYSTEMTIME st;
+	ULONGLONG res=0;
+	int wShiftSeconds = CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,0,0);
+	GetLocalTime(&st);
+	//datein = "Xxx, 1 Jan 2060 5:29:1 +0530 XXX";
+	if (datein){
+		char *tmp = new char[strlen(datein)+1];
+		strcpy(tmp,datein);
+		if (day = strchr(tmp,' ')){	day[0]=0; day++;}
+		if (month = strchr(day,' ')){month[0]=0; month++;}
+		if (year = strchr(month,' ')){year[0] = 0; year++;}
+		if (time = strchr(year,' ')){time[0] = 0; time++;}
+		if (shift=strchr(time,' ')){shift[0]=0; shift++;shift[5]=0;}
+
+		if (year){
+			st.wYear = atoi(year);
+			if (strlen(year)<4)	if (st.wYear<70)st.wYear += 2000; else st.wYear += 1900;
+		};
+		if (month) for(int i=0;i<12;i++) if(strcmp(month,s_MonthNames[i])==0) st.wMonth = i + 1;
+		if (day) st.wDay = atoi(day);
+		if (time) {
+			char *h, *m, *s;
+			h = time;
+			if (m = strchr(h,':')){m[0]=0; m++;}
+			if (s = strchr(m,':')){s[0] = 0; s++;}
+			st.wHour = atoi(h);
+			st.wMinute = m?atoi(m):0;
+			st.wSecond = s?atoi(s):0;
+		} else {st.wHour=st.wMinute=st.wSecond=0;}
+
+		if (shift){
+			if (strlen(shift)<4) {
+				//has only hour
+				wShiftSeconds = (atoi(shift))*3600;
+			} else {
+				char *smin = shift + strlen(shift)-2;
+				int ismin = atoi(smin);
+				smin[0] = 0;
+				int ishour = atoi(shift);
+				wShiftSeconds = (ishour*60+(ishour<0?-1:1)*ismin)*60;
+			}
+		}
+		delete[] tmp;
+	} // if (datein)
+	FILETIME ft;
+	if (SystemTimeToFileTime(&st,&ft)){
+		res = ((ULONGLONG)ft.dwHighDateTime<<32)|((ULONGLONG)ft.dwLowDateTime);
+		LONGLONG w100nano = Int32x32To64((DWORD)wShiftSeconds,10000000);
+		res -=  w100nano;
+	}else{
+		res=0;
+	}
+	//for testing
+	/*{
+		char buffA[1024] = {0};
+		//res=0x7FFF35F4F06C7FFF; // -> Fri, 31 Dec 30827 23:59:59.
+		res = 0xEDCBA9876FEDC9AC;
+		ft.dwLowDateTime = (DWORD)res;
+		ft.dwHighDateTime = (DWORD)(res >> 32);
+		if (!FileTimeToSystemTime(&ft,&st)){
+			int len;
+			len = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
+				NULL, GetLastError(), 0, buffA,
+				sizeof(buffA), NULL);
+		} else {
+			GetDateFormatA(LOCALE_USER_DEFAULT,DATE_LONGDATE,&st,NULL,buffA,sizeof(buffA));
+			buffA[strlen(buffA)] = ' ';
+			GetTimeFormatA(LOCALE_USER_DEFAULT,0,&st,NULL,&buffA[strlen(buffA)],sizeof(buffA));
+		}
+	}*/
+	return res;
+}
+void FileTimeToLocalizedDateTime(LONGLONG filetime, WCHAR *dateout, int lendateout){
+	int localeID = CallService(MS_LANGPACK_GETLOCALE,0,0);
+	//int localeID = MAKELCID(LANG_URDU, SORT_DEFAULT);
+	if (localeID==CALLSERVICE_NOTFOUND) localeID=LOCALE_USER_DEFAULT;
+	//0x7FFF35F4F06C7FFF -> Fri, 31 Dec 30827 23:59:59.9999999 
+	//The biggest time Get[Date|Time]Format can handle
+	if (filetime>0x7FFF35F4F06C7FFF) filetime = 0x7FFF35F4F06C7FFF;
+	else if (filetime<0) filetime=0;
+	SYSTEMTIME st;
+	FILETIME ft;
+	ft.dwLowDateTime = (DWORD)filetime;
+	ft.dwHighDateTime = (DWORD)(filetime >> 32);
+	if (!FileTimeToSystemTime(&ft,&st)){
+		// this should never happen
+		wcsncpy(dateout,L"Incorrect FileTime",lendateout);
+	} else {
+		dateout[lendateout]=0;
+		GetDateFormatW(localeID,DATE_LONGDATE,&st,NULL,dateout,lendateout);
+		int templen = wcslen(dateout);
+		if (templen<(lendateout-1)){
+			dateout[templen] = ' ';
+			GetTimeFormatW(localeID,0,&st,NULL,&dateout[templen+1],lendateout-templen-1);
+		}
+	}
+}
+void MimeDateToLocalizedDateTime(char *datein, WCHAR *dateout, int lendateout){
+	ULONGLONG ft = MimeDateToFileTime(datein);
+	FileTimeToLocalizedDateTime(ft,dateout,lendateout);
+}
+/*
 int FormatMimeDate(char *datein,char *dateout)
 {
 	int i,j,l,max,m;
@@ -1134,7 +1252,7 @@ int FormatMimeDate(char *datein,char *dateout)
 	delete[] tmp;
 	return 0;
 }
-
+*/
 int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSort )
 {
 
@@ -1199,23 +1317,14 @@ int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSor
 				break;
 
 			case 3:
-				char *date1;
-				char *date2;
-
-				date1 = new char[100];
-				date2 = new char[100];
-
-				if(Header1.Date != NULL)
-					FormatMimeDate(Header1.Date,date1);
-
-				if(Header2.Date != NULL)
-					FormatMimeDate(Header2.Date,date2);				
-
-				nResult = strcmp(date1, date2);
-
-				delete[] date1;
-				delete[] date2;
-
+				{
+				ULONGLONG ts1 = 0, ts2 = 0;
+				ts1 = MimeDateToFileTime(Header1.Date);
+				ts2 = MimeDateToFileTime(Header2.Date);
+				if(ts1 > ts2) nResult = 1;
+				else if (ts1 < ts2) nResult = -1;
+				else nResult = 0;
+				}
 				if(bDate) nResult = -nResult;
 				break;
 
