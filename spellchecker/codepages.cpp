@@ -91,6 +91,7 @@ struct {
 	{ "koi8-ru", 21866 },
 	{ "x-mac-cyrillic", 10007 },
 	{ "windows-1251", 1251 },
+	{ "Win1251", 1251 },
 	{ "x-cp1251", 1251 },
 	{ "x-Europa", 29001 },
 	{ "x-IA5-German", 20106 },

@@ -1,4 +1,4 @@
-; Spell Checker 0.0.1.2
+; Spell Checker 0.0.1.4
 ; Author: Pescuma
 
 ; Options
@@ -23,6 +23,8 @@
 [Dash dot dot]
 [Wave]
 [Thick]
+[Show corrections in submenu]
+[Show all corrections]
 
 
 ; Menu

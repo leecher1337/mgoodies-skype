@@ -27,7 +27,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPTIONS DIALOGEX 0, 0, 252, 130
+IDD_OPTIONS DIALOGEX 0, 0, 252, 154
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Tahoma"
@@ -40,10 +40,14 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,35,230,10
     CONTROL         "Download more dictionaries",IDC_GETMORE,"Hyperlink",
                     WS_TABSTOP | 0x1,10,65,230,12
-    GROUPBOX        " Advanced ",IDC_ADVANCED,1,88,250,38
+    GROUPBOX        " Advanced ",IDC_ADVANCED,1,88,250,63
     LTEXT           "Underline type:",IDC_UNDERLINE_TYPE_L,11,104,91,8
     COMBOBOX        IDC_UNDERLINE_TYPE,110,102,130,14,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Show corrections in submenu",IDC_CASCADE_CORRECTIONS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,120,230,10
+    CONTROL         "Show all corrections",IDC_SHOW_ALL_CORRECTIONS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,132,230,10
 END
 
 
@@ -60,7 +64,7 @@ BEGIN
         LEFTMARGIN, 1
         RIGHTMARGIN, 251
         TOPMARGIN, 1
-        BOTTOMMARGIN, 129
+        BOTTOMMARGIN, 153
     END
 END
 #endif    // APSTUDIO_INVOKED

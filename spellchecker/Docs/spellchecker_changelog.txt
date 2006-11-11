@@ -1,6 +1,16 @@
-Spell Checker 0.0.1.2
+Spell Checker 0.0.1.4
 
 Changelog:
+
+. 0.0.1.4
+  + Option to show all wrong words in menu
+  * Fix for check while selecting
+  + Added one more codepage to list of known ones
+
+. 0.0.1.3
+  * Fix for disable in context menu
+  * Fix to not change fnt settings in tabSRMM (only underline is changed - can't do anything about it)
+  * Fix to ignore char when holding CTRL
 
 . 0.0.1.2
   * Fix in options
