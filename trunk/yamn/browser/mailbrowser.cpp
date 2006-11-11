@@ -1096,8 +1096,8 @@ ULONGLONG MimeDateToFileTime(char *datein){
 	GetLocalTime(&st);
 	//datein = "Xxx, 1 Jan 2060 5:29:1 +0530 XXX";
 	if (datein){
-		char *tmp = new char[strlen(datein)+1];
-		strcpy(tmp,datein);
+		char tmp [64];
+		strncpy(tmp,datein,63); tmp [63]=0;
 		if (day = strchr(tmp,' ')){	day[0]=0; day++;}
 		if (month = strchr(day,' ')){month[0]=0; month++;}
 		if (year = strchr(month,' ')){year[0] = 0; year++;}
@@ -1108,7 +1108,7 @@ ULONGLONG MimeDateToFileTime(char *datein){
 			st.wYear = atoi(year);
 			if (strlen(year)<4)	if (st.wYear<70)st.wYear += 2000; else st.wYear += 1900;
 		};
-		if (month) for(int i=0;i<12;i++) if(strcmp(month,s_MonthNames[i])==0) st.wMonth = i + 1;
+		if (month) for(int i=0;i<12;i++) if(strncmp(month,s_MonthNames[i],3)==0) st.wMonth = i + 1;
 		if (day) st.wDay = atoi(day);
 		if (time) {
 			char *h, *m, *s;
@@ -1132,7 +1132,6 @@ ULONGLONG MimeDateToFileTime(char *datein){
 				wShiftSeconds = (ishour*60+(ishour<0?-1:1)*ismin)*60;
 			}
 		}
-		delete[] tmp;
 	} // if (datein)
 	FILETIME ft;
 	if (SystemTimeToFileTime(&st,&ft)){

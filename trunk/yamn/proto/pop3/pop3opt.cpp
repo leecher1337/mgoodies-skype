@@ -192,6 +192,7 @@ BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 		case WM_INITDIALOG:
 			TranslateDialogDefault(hDlg);
 			CheckDlgButton(hDlg,IDC_CHECKTTB,DBGetContactSettingByte(NULL,YAMN_DBMODULE,YAMN_TTBFCHECK,1) ? BST_CHECKED : BST_UNCHECKED);
+			SendDlgItemMessage(hDlg,IDC_HKFORCE,HKM_SETHOTKEY,DBGetContactSettingWord(NULL,YAMN_DBMODULE,YAMN_HKCHECKMAIL,YAMN_DEFAULTHK),0);
 			break;
 		case WM_COMMAND:
 		{
@@ -300,8 +301,6 @@ BOOL CALLBACK DlgProcPluginOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				PYAMN_FILTERPLUGINQUEUE FParser;
 				int index;
 			
-				SendDlgItemMessage(hDlg,IDC_HKFORCE,HKM_SETHOTKEY,DBGetContactSettingWord(NULL,YAMN_DBMODULE,YAMN_HKCHECKMAIL,YAMN_DEFAULTHK),0);
-
 				EnterCriticalSection(PluginRegCS);
 				for(PParser=FirstProtoPlugin;PParser!=NULL;PParser=PParser->Next)
 				{
@@ -745,15 +744,15 @@ BOOL CALLBACK DlgOptionsProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 
 		 iInit = TRUE;
          tci.mask = TCIF_PARAM|TCIF_TEXT;
-         tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_YAMNOPT), hwnd, DlgProcYAMNOpt);
-         tci.pszText = TranslateT("General");
+         tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_POP3ACCOUNTOPT), hwnd, DlgProcPOP3AccOpt);
+         tci.pszText = TranslateT("Accounts");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
          MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-33,1);
 		 if(MyEnableThemeDialogTexture)
              MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
 
-		 tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_POP3ACCOUNTOPT), hwnd, DlgProcPOP3AccOpt);
-         tci.pszText = TranslateT("Accounts");
+         tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_YAMNOPT), hwnd, DlgProcYAMNOpt);
+         tci.pszText = TranslateT("General");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
          MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-33,1);
 		 ShowWindow((HWND)tci.lParam, SW_HIDE);
