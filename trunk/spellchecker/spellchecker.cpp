@@ -30,7 +30,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,2),
+	PLUGIN_MAKE_VERSION(0,0,1,4),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -80,6 +80,8 @@ int ShowPopupMenuService(WPARAM wParam, LPARAM lParam);
 
 BOOL GetWordCharRange(Dialog *dlg, CHARRANGE &sel, TCHAR *text, size_t text_len, int &first_char);
 TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel);
+
+typedef void (*FoundWrongWordCallback)(TCHAR *word, CHARRANGE pos, void *param);
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -225,7 +227,7 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 }
 
 
-void SetAttributes(HWND hRichEdit, int pos_start, int pos_end, DWORD dwMask, DWORD dwEffects, BYTE bUnderlineType, BOOL all = FALSE)
+void SetUnderline(HWND hRichEdit, int pos_start, int pos_end, BOOL all = FALSE, BOOL disable = FALSE)
 {
 	if (!all)
 	{
@@ -236,17 +238,21 @@ void SetAttributes(HWND hRichEdit, int pos_start, int pos_end, DWORD dwMask, DWO
 
 	CHARFORMAT2 cf;
 	cf.cbSize = sizeof(CHARFORMAT2);
-	SendMessage(hRichEdit, EM_GETCHARFORMAT, TRUE, (LPARAM)&cf);
-	cf.dwMask = dwMask;
-	cf.dwEffects = dwEffects;
-	cf.bUnderlineType = bUnderlineType;
+	cf.dwMask = CFM_UNDERLINE | CFM_UNDERLINETYPE;
+	cf.dwEffects = disable ? 0 : CFE_UNDERLINE;
+	cf.bUnderlineType = disable ? 0 : ((opts.underline_type + CFU_UNDERLINEDOUBLE) | 0x50);
 	SendMessage(hRichEdit, EM_SETCHARFORMAT, (WPARAM) all ? SCF_ALL : SCF_SELECTION, (LPARAM)&cf);
 }
 
 
-void SetAttributes(HWND hRichEdit, DWORD dwMask, DWORD dwEffects, BYTE bUnderlineType)
+void SetNoUnderline(HWND hRichEdit, int pos_start, int pos_end)
 {
-	SetAttributes(hRichEdit, 0, 0, dwMask, dwEffects, bUnderlineType, TRUE);
+	SetUnderline(hRichEdit, pos_start, pos_end, FALSE, TRUE);
+}
+
+void SetNoUnderline(HWND hRichEdit)
+{
+	SetUnderline(hRichEdit, 0, 0, TRUE, TRUE);
 }
 
 
@@ -261,12 +267,14 @@ inline void GetLineOfText(Dialog *dlg, int line, int &first_char, TCHAR *text, s
 
 // Helper to avoid copy and pastle
 inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, int &pos, 
-					 CHARRANGE &old_sel, BOOL auto_correct)
+					 CHARRANGE &old_sel, BOOL auto_correct, 
+					 FoundWrongWordCallback callback, void *param)
 {
 	// Is wrong?
 	text[last_pos + 1] = _T('\0');
 	if (!dlg->lang->spell(&text[pos + 1]))
 	{
+		CHARRANGE sel = { first_char + pos + 1, first_char + last_pos + 1 };
 		BOOL mark = TRUE;
 
 		// Has to correct?
@@ -281,7 +289,6 @@ inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, i
 				mark = FALSE;
 
 				// Replace in rich edit
-				CHARRANGE sel = { first_char + pos + 1, first_char + last_pos + 1 };
 				SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
 				SendMessage(dlg->hwnd, EM_REPLACESEL, TRUE, (LPARAM) word);
 
@@ -298,13 +305,18 @@ inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, i
 		
 		// Mark
 		if (mark)
-			SetAttributes(dlg->hwnd, first_char + pos + 1, first_char + last_pos + 1, 
-						CFM_UNDERLINETYPE, 0, (opts.underline_type + CFU_UNDERLINEDOUBLE) | 0x50);
+		{
+			SetUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
+				
+			if (callback != NULL)
+				callback(&text[pos + 1], sel, param);
+		}
 	}
 }
 
 // Checks for errors in all text
-void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
+void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct, 
+			   FoundWrongWordCallback callback = NULL, void *param = NULL)
 {
 	// Stop rich edit
 	SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);
@@ -312,6 +324,9 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 	SendMessage(dlg->hwnd, EM_GETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
 	CHARRANGE old_sel;
 	SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);
+	POINT caretPos;
+	GetCaretPos(&caretPos);
+	BOOL inverse = (old_sel.cpMin >= LOWORD(SendMessage(dlg->hwnd, EM_CHARFROMPOS, 0, (LPARAM) &caretPos)));
 
 	if (GetWindowTextLength(dlg->hwnd) > 0)
 	{
@@ -334,7 +349,7 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 			GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
 			int len = lstrlen(text);
 
-			SetAttributes(dlg->hwnd, first_char, first_char + len, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+			SetNoUnderline(dlg->hwnd, first_char, first_char + len);
 
 			// Now lets get the words
 			int last_pos = -1;
@@ -354,7 +369,7 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 							if (check_word_under_cursor 
 								|| !(first_char+pos+1 <= old_sel.cpMax && first_char+last_pos+1 >= old_sel.cpMin))
 							{
-								DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct);
+								DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct, callback, param);
 							}
 						}
 
@@ -381,7 +396,7 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 					// Is under cursor?
 					if (check_word_under_cursor || !(pos+1 <= old_sel.cpMax && last_pos+1 >= old_sel.cpMin))
 					{
-						DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct);
+						DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct, callback, param);
 					}
 				}
 			}
@@ -390,9 +405,15 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct)
 
 	// Fix last char
 	int len = GetWindowTextLength(dlg->hwnd);
-	SetAttributes(dlg->hwnd, len, len, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+	SetNoUnderline(dlg->hwnd, len, len);
 
 	// Start rich edit
+	if (inverse) 
+	{
+		LONG tmp = old_sel.cpMin;
+		old_sel.cpMin = old_sel.cpMax;
+		old_sel.cpMax = tmp;
+	}
 	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &old_sel);
 	SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
 	SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
@@ -422,6 +443,9 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_CHAR:
 		{
 			if (lParam & (1 << 28))	// ALT key
+				break;
+
+			if (GetKeyState(VK_CONTROL) & 0x8000)	// CTRL key
 				break;
 
 			// Need to do that to avoid changing the word while typing
@@ -462,6 +486,9 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					SendMessage(dlg->hwnd, EM_GETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
 				    CHARRANGE old_sel;
 				    SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);
+					POINT caretPos;
+					GetCaretPos(&caretPos);
+					BOOL inverse = (old_sel.cpMin >= LOWORD(SendMessage(dlg->hwnd, EM_CHARFROMPOS, 0, (LPARAM) &caretPos)));
 
 					// Remove underline of current word
 					TCHAR text[1024];
@@ -472,9 +499,15 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 					GetWordCharRange(dlg, sel, text, MAX_REGS(text), first_char);
 
-					SetAttributes(dlg->hwnd, sel.cpMin, sel.cpMax, CFM_UNDERLINETYPE, 0, 0);
+					SetNoUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
 
 					// Start rich edit
+					if (inverse) 
+					{
+						LONG tmp = old_sel.cpMin;
+						old_sel.cpMin = old_sel.cpMax;
+						old_sel.cpMax = tmp;
+					}
 					SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &old_sel);
 					SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);
 					SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);
@@ -722,28 +755,30 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name)
 	return 0;
 }
 
+#define DESTROY_MENY(_m_)	if (_m_ != NULL) { DestroyMenu(_m_); _m_ = NULL; }
+#define FREE(_m_)			if (_m_ != NULL) { free(_m_); _m_ = NULL; }
 
 void FreePopupData(Dialog *dlg)
 {
-	if (dlg->word != NULL)
-	{
-		free(dlg->word);
-		dlg->word = NULL;
-	}
+	DESTROY_MENY(dlg->hLanguageSubMenu)
+	DESTROY_MENY(dlg->hWrongWordsSubMenu)
 
-	if (dlg->hLanguagesSubMenu != NULL)
+	if (dlg->wrong_words != NULL)
 	{
-		DestroyMenu(dlg->hLanguagesSubMenu);
-		dlg->hLanguagesSubMenu = NULL;
-	}
+		for (int i = 0; i < dlg->wrong_words->size(); i++)
+		{
+			FREE((*dlg->wrong_words)[i].word)
 
-	if (dlg->hAutoReplaceSubMenu != NULL)
-	{
-		DestroyMenu(dlg->hAutoReplaceSubMenu);
-		dlg->hAutoReplaceSubMenu = NULL;
-	}
+			DESTROY_MENY((*dlg->wrong_words)[i].hMeSubMenu)
+			DESTROY_MENY((*dlg->wrong_words)[i].hCorrectSubMenu)
+			DESTROY_MENY((*dlg->wrong_words)[i].hReplaceSubMenu)
 
-	FreeSuggestions(dlg->suggestions);
+			FreeSuggestions((*dlg->wrong_words)[i].suggestions);
+		}
+
+		delete dlg->wrong_words;
+		dlg->wrong_words = NULL;
+	}
 }
 
 
@@ -851,8 +886,104 @@ TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel)
 }
 
 
-#define LANGUAGE_MENU_ID_BASE 100
-#define AUTOREPLACE_MENU_ID_BASE 150
+void InsertSubmenu(HMENU hMenu, HMENU hSubMenu, TCHAR *name) 
+{
+	MENUITEMINFO mii = {0};
+	mii.cbSize = sizeof(MENUITEMINFO);
+	mii.fMask = MIIM_SUBMENU | MIIM_TYPE;
+	mii.fType = MFT_STRING;
+	mii.hSubMenu = hSubMenu;
+	mii.dwTypeData = name;
+	mii.cch = lstrlen(name);
+	int ret = InsertMenuItem(hMenu, 0, TRUE, &mii);
+
+}
+
+
+#define LANGUAGE_MENU_ID_BASE 10
+#define WORD_MENU_ID_BASE 100
+#define AUTOREPLACE_MENU_ID_BASE 50
+
+void AddMenuForWord(Dialog *dlg, TCHAR *word, CHARRANGE &pos, HMENU hMenu, BOOL in_submenu, UINT base)
+{
+	if (dlg->wrong_words == NULL)
+		dlg->wrong_words = new vector<WrongWordPopupMenuData>(1);
+	else
+		dlg->wrong_words->resize(dlg->wrong_words->size() + 1);
+
+	WrongWordPopupMenuData &data = (*dlg->wrong_words)[dlg->wrong_words->size() - 1];
+	ZeroMemory(&data, sizeof(WrongWordPopupMenuData));
+
+	// Get suggestions
+	data.word = word;
+	data.pos = pos;
+	data.suggestions = dlg->lang->suggest(word);
+
+	Suggestions &suggestions = data.suggestions;
+
+	if (in_submenu)
+	{
+		data.hMeSubMenu = CreatePopupMenu();
+		InsertSubmenu(hMenu, data.hMeSubMenu, word);
+		hMenu = data.hMeSubMenu;
+	}
+
+	if (suggestions.count > 0)
+	{
+		data.hReplaceSubMenu = CreatePopupMenu();
+
+		for (int i = suggestions.count - 1; i >= 0; i--) 
+			InsertMenu(data.hReplaceSubMenu, 0, MF_BYPOSITION, 
+					base + AUTOREPLACE_MENU_ID_BASE + i, suggestions.words[i]);
+
+		InsertSubmenu(hMenu, data.hReplaceSubMenu, TranslateT("Always replace with"));
+	}
+
+	InsertMenu(hMenu, 0, MF_BYPOSITION, base + suggestions.count + 1, TranslateT("Ignore all"));
+	InsertMenu(hMenu, 0, MF_BYPOSITION, base + suggestions.count, TranslateT("Add to dictionary"));
+
+	if (suggestions.count > 0)
+	{
+		HMENU hSubMenu;
+		if (opts.cascade_corrections)
+		{
+			hSubMenu = data.hCorrectSubMenu = CreatePopupMenu();
+			InsertSubmenu(hMenu, hSubMenu, TranslateT("Corrections"));
+		}
+		else
+		{
+			InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+			hSubMenu = hMenu;
+		}
+
+		for (int i = suggestions.count - 1; i >= 0; i--) 
+			InsertMenu(hSubMenu, 0, MF_BYPOSITION, base + i, suggestions.words[i]);
+	}
+
+	if (!in_submenu)
+	{
+		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+
+		TCHAR text[128];
+		mir_sntprintf(text, MAX_REGS(text), TranslateT("Wrong word: %s"), word);
+		InsertMenu(hMenu, 0, MF_BYPOSITION, 0, text);
+	}
+}
+
+
+struct FoundWrongWordParam {
+	Dialog *dlg;
+	int count;
+};
+
+void FoundWrongWord(TCHAR *word, CHARRANGE pos, void *param)
+{
+	FoundWrongWordParam *p = (FoundWrongWordParam*) param;
+
+	p->count ++;
+
+	AddMenuForWord(p->dlg, _tcsdup(word), pos, p->dlg->hWrongWordsSubMenu, TRUE, WORD_MENU_ID_BASE * p->count);
+}
 
 void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 {
@@ -860,29 +991,13 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 
 	BOOL wrong_word = FALSE;
 
-	// Get text
-	if (dlg->lang != NULL)
-	{
-		CHARRANGE sel;
-		dlg->word = GetWordUnderPoint(dlg, pt, sel);
-		if (dlg->word != NULL) 
-		{
-			wrong_word = !dlg->lang->spell(dlg->word);
-			if (wrong_word)
-			{
-				// Get suggestions
-				dlg->suggestions = dlg->lang->suggest(dlg->word);
-			}
-		}
-	}
-
 	// Make menu
 	if (GetMenuItemCount(hMenu) > 0)
 		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
 
-	if (languages.count > 0)
+	if (languages.count > 0 && dlg->enabled)
 	{
-		dlg->hLanguagesSubMenu = CreatePopupMenu();
+		dlg->hLanguageSubMenu = CreatePopupMenu();
 
 		// First add languages
 		for(int i = 0; i < languages.count; i++)
@@ -891,71 +1006,47 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 			{
 				TCHAR name[128];
 				mir_sntprintf(name, MAX_REGS(name), _T("%s [%s]"), languages.dicts[i]->localized_name, languages.dicts[i]->language);
-				AppendMenu(dlg->hLanguagesSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
+				AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
 					LANGUAGE_MENU_ID_BASE + i, name);
 			}
 			else
 			{
-				AppendMenu(dlg->hLanguagesSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
+				AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
 					LANGUAGE_MENU_ID_BASE + i, languages.dicts[i]->language);
 			}
 
 		}
 
-		TCHAR *menu_name = TranslateT("Language");
-
-		MENUITEMINFO mii = {0};
-		mii.cbSize = sizeof(MENUITEMINFO);
-		mii.fMask = MIIM_SUBMENU | MIIM_TYPE;
-		mii.fType = MFT_STRING;
-		mii.hSubMenu = dlg->hLanguagesSubMenu;
-		mii.dwTypeData = menu_name;
-		mii.cch = lstrlen(menu_name);
-		int ret = InsertMenuItem(hMenu, 0, TRUE, &mii);
+		InsertSubmenu(hMenu, dlg->hLanguageSubMenu, TranslateT("Language"));
 	}
 
-	InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->suggestions.count + 3, TranslateT("Enable spell checking"));
-	CheckMenuItem(hMenu, dlg->suggestions.count + 3, MF_BYCOMMAND | (dlg->enabled ? MF_CHECKED : MF_UNCHECKED));
+	InsertMenu(hMenu, 0, MF_BYPOSITION, 1, TranslateT("Enable spell checking"));
+	CheckMenuItem(hMenu, 1, MF_BYCOMMAND | (dlg->enabled ? MF_CHECKED : MF_UNCHECKED));
 
-	if (wrong_word) 
+	// Get text
+	if (dlg->lang != NULL && dlg->enabled)
 	{
-		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
-
-		if (dlg->suggestions.count > 0)
+		if (opts.show_all_corrections)
 		{
-			dlg->hAutoReplaceSubMenu = CreatePopupMenu();
+			dlg->hWrongWordsSubMenu = CreatePopupMenu(); 
 
-			for (int i = dlg->suggestions.count - 1; i >= 0; i--) 
-				InsertMenu(dlg->hAutoReplaceSubMenu, 0, MF_BYPOSITION, 
-						AUTOREPLACE_MENU_ID_BASE + i, dlg->suggestions.words[i]);
+			FoundWrongWordParam p = { dlg, 0 };
+			CheckText(dlg, TRUE, opts.auto_correct, FoundWrongWord, &p);
 
-			TCHAR *menu_name = TranslateT("Always replace with");
-
-			MENUITEMINFO mii = {0};
-			mii.cbSize = sizeof(MENUITEMINFO);
-			mii.fMask = MIIM_SUBMENU | MIIM_TYPE;
-			mii.fType = MFT_STRING;
-			mii.hSubMenu = dlg->hAutoReplaceSubMenu;
-			mii.dwTypeData = menu_name;
-			mii.cch = lstrlen(menu_name);
-			int ret = InsertMenuItem(hMenu, 0, TRUE, &mii);
+			if (p.count > 0)
+				InsertSubmenu(hMenu, dlg->hWrongWordsSubMenu, TranslateT("Wrong words"));
 		}
-
-		InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->suggestions.count + 2, TranslateT("Ignore all"));
-		InsertMenu(hMenu, 0, MF_BYPOSITION, dlg->suggestions.count + 1, TranslateT("Add to dictionary"));
-
-		if (dlg->suggestions.count > 0)
+		else
 		{
-			InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
-			for (int i = dlg->suggestions.count - 1; i >= 0; i--) 
-				InsertMenu(hMenu, 0, MF_BYPOSITION, i + 1, dlg->suggestions.words[i]);
+			CHARRANGE sel;
+			TCHAR *word = GetWordUnderPoint(dlg, pt, sel);
+			if (word != NULL && !dlg->lang->spell(word))
+			{
+				InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
+
+				AddMenuForWord(dlg, word, sel, hMenu, FALSE, WORD_MENU_ID_BASE);
+			}
 		}
-
-		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
-
-		TCHAR text[128];
-		mir_sntprintf(text, MAX_REGS(text), TranslateT("Wrong word: %s"), dlg->word);
-		InsertMenu(hMenu, 0, MF_BYPOSITION, 0, text);
 	}
 }
 
@@ -964,42 +1055,13 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
 {
 	BOOL ret = FALSE;
 
-	if (selection > 0 && selection <= dlg->suggestions.count)
-	{
-		selection--;
-
-		// Assert that text hasn't changed
-		CHARRANGE sel;
-		TCHAR *word = GetWordUnderPoint(dlg, pt, sel);
-		if (word != NULL)
-		{
-			if (lstrcmp(word, dlg->word) == 0)
-				ReplaceWord(dlg, sel, dlg->suggestions.words[selection]);
-
-			free(word);
-		}
-
-		ret = TRUE;
-	}
-	else if (selection == dlg->suggestions.count + 1)
-	{
-		dlg->lang->addWord(dlg->word);
-
-		ret = TRUE;
-	}
-	else if (selection == dlg->suggestions.count + 2)
-	{
-		dlg->lang->ignoreWord(dlg->word);
-
-		ret = TRUE;
-	}
-	else if (selection == dlg->suggestions.count + 3)
+	if (selection == 1)
 	{
 		dlg->enabled = !dlg->enabled;
 		DBWriteContactSettingByte(NULL, MODULE_NAME, dlg->name, dlg->enabled);
 
 		if (!dlg->enabled)
-			SetAttributes(dlg->hwnd, CFM_UNDERLINE | CFM_UNDERLINETYPE, 0, 0);
+			SetNoUnderline(dlg->hwnd);
 
 		ret = TRUE;
 	}
@@ -1015,25 +1077,45 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
 
 		ret = TRUE;
 	}
-	else if (selection >= AUTOREPLACE_MENU_ID_BASE && selection < AUTOREPLACE_MENU_ID_BASE + dlg->suggestions.count)
+	else if (selection > 0 && dlg->wrong_words != NULL 
+			 && selection >= WORD_MENU_ID_BASE
+			 && selection < (dlg->wrong_words->size() + 1) * WORD_MENU_ID_BASE)
 	{
-		selection -= AUTOREPLACE_MENU_ID_BASE;
-		
-		// Assert that text hasn't changed
-		CHARRANGE sel;
-		TCHAR *word = GetWordUnderPoint(dlg, pt, sel);
-		if (word != NULL)
+		int pos = selection / WORD_MENU_ID_BASE;
+		selection -=  pos * WORD_MENU_ID_BASE;
+		pos--; // 0 based
+		WrongWordPopupMenuData &data = (*dlg->wrong_words)[pos];
+
+		if (selection < data.suggestions.count)
 		{
-			if (lstrcmp(word, dlg->word) == 0)
-			{
-				ReplaceWord(dlg, sel, dlg->suggestions.words[selection]);
-				dlg->lang->addToAutoReplace(word, dlg->suggestions.words[selection]);
-			}
+			// TODO Assert that text hasn't changed
+			ReplaceWord(dlg, data.pos, data.suggestions.words[selection]);
 
-			free(word);
+			ret = TRUE;
 		}
+		else if (selection == data.suggestions.count)
+		{
+			dlg->lang->addWord(data.word);
 
-		ret = TRUE;
+			ret = TRUE;
+		}
+		else if (selection == data.suggestions.count + 1)
+		{
+			dlg->lang->ignoreWord(data.word);
+
+			ret = TRUE;
+		}
+		else if (selection >= AUTOREPLACE_MENU_ID_BASE 
+				 && selection < AUTOREPLACE_MENU_ID_BASE + data.suggestions.count)
+		{
+			selection -= AUTOREPLACE_MENU_ID_BASE;
+			
+			// TODO Assert that text hasn't changed
+			ReplaceWord(dlg, data.pos, data.suggestions.words[selection]);
+			dlg->lang->addToAutoReplace(data.word, data.suggestions.words[selection]);
+
+			ret = TRUE;
+		}
 	}
 
 	if (ret)

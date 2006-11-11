@@ -40,10 +40,11 @@ extern "C"
 
 struct Options {
 	TCHAR default_language[10];
-
 	BOOL auto_correct;
 
 	WORD underline_type;
+	BOOL cascade_corrections;
+	BOOL show_all_corrections;
 };
 
 extern Options opts;

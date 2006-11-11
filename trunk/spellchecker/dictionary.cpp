@@ -310,6 +310,14 @@ public:
 		if (hunspell->get_utf8())
 		{
 			codePage = CP_UTF8;
+
+#ifdef UNICODE
+			int len;
+			wordChars = _tcsdup(hunspell->get_wordchars_utf16(&len));
+#else
+			// No option
+			wordChars = _tcsdup("qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM");
+#endif
 		}
 		else
 		{
@@ -322,12 +330,11 @@ public:
 					break;
 				}
 			}
+			wordChars = fromHunspell(hunspell->get_wordchars());
 		}
 
 		loadCustomDict();
 		loadAutoReplaceMap();
-
-		wordChars = fromHunspell(hunspell->get_wordchars());
 
 		loaded = LANGUAGE_LOADED;
 	}

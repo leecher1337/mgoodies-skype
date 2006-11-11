@@ -32,6 +32,7 @@ Boston, MA 02111-1307, USA.
 #pragma warning(disable: 4786)
 
 #include <map>
+#include <vector>
 #include <string>
 using namespace std;
 
@@ -89,6 +90,15 @@ extern PLUGINLINK *pluginLink;
 
 extern Dictionaries languages;
 
+struct WrongWordPopupMenuData {
+	Suggestions suggestions;
+	TCHAR *word;
+	CHARRANGE pos;
+	HMENU hMeSubMenu;
+	HMENU hCorrectSubMenu;
+	HMENU hReplaceSubMenu;
+};
+
 struct Dialog {
 	HWND hwnd;
 	HANDLE hContact;
@@ -102,10 +112,9 @@ struct Dialog {
 	int old_text_len;
 
 	// Popup data
-	Suggestions suggestions;
-	TCHAR *word;
-	HMENU hLanguagesSubMenu;
-	HMENU hAutoReplaceSubMenu;
+	HMENU hLanguageSubMenu;
+	HMENU hWrongWordsSubMenu;
+	vector<WrongWordPopupMenuData> *wrong_words;
 };
 
 
