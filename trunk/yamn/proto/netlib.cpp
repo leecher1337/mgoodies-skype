@@ -184,9 +184,14 @@ int CNLClient::LocalNetlib_Recv(HANDLE hConn,char *buf,int len,int flags) {
 	if (isTLSed) 
 	{
 //		SSL_DebugLog("SSL(%08X) recving",ssl);
-		int res = SSL_read(ssl,buf,len);
-		SSL_DebugLog("TLS(%08X) recv: %s",ssl,buf);
-		return res;
+		if (ssl){
+			int res = SSL_read(ssl,buf,len);
+			SSL_DebugLog("TLS(%08X) recv: %s",ssl,buf);
+			return res;
+		} else {
+			SSL_DebugLog("TLS(%08X) no SSL available",ssl);
+			return 0;
+		}
 	} 
 	else 
 	{
