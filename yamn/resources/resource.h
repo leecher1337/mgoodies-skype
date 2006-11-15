@@ -102,6 +102,9 @@
 #define IDC_BTNCHECKALL                 1125
 #define IDC_MAINMENU                    1126
 #define IDC_CLOSEONDELETE               1127
+#define IDC_LONGDATE                    1128
+#define IDC_SMARTDATE                   1129
+#define IDC_NOSECONDS                   1130
 #define IDC_CHECKAPOP                   1200
 #define IDC_STATUSGROUP                 1338
 
@@ -111,7 +114,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        142
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1128
+#define _APS_NEXT_CONTROL_VALUE         1131
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

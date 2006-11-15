@@ -384,6 +384,5 @@ SOURCE=.\resources\ttbfcheck.bmp
 SOURCE=.\resources\YAMN.rc
 # End Source File
 # End Group
-
 # End Target
 # End Project

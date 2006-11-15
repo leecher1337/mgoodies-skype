@@ -92,6 +92,7 @@ bool bDate = false,bSub=false,bSize=false,bFrom=false;
 int PosX=0,PosY=0,SizeX=460,SizeY=100;
 int HeadSizeX = 0x2b2, HeadSizeY = 0x0b5, HeadPosX = 100, HeadPosY = 100;
 static int FromWidth=250,SubjectWidth=280,SizeWidth=50,SizeDate=205;
+unsigned char optDateTime =  (SHOWDATELONG | SHOWDATENOTODAY);
 
 static WNDPROC OldListViewSubclassProc;
 
@@ -1154,19 +1155,30 @@ void FileTimeToLocalizedDateTime(LONGLONG filetime, WCHAR *dateout, int lendateo
 	if (filetime>MAXFILETIME) filetime = MAXFILETIME;
 	else if (filetime<0) filetime=0;
 	SYSTEMTIME st;
+	WORD wTodayYear, wTodayMonth, wTodayDay;
 	FILETIME ft;
+	BOOL willShowDate = !(optDateTime&SHOWDATENOTODAY);
+	if (!willShowDate){
+		GetLocalTime(&st);
+		wTodayYear = st.wYear;
+		wTodayMonth = st.wMonth;
+		wTodayDay = st.wDay;
+	}
 	ft.dwLowDateTime = (DWORD)filetime;
 	ft.dwHighDateTime = (DWORD)(filetime >> 32);
 	if (!FileTimeToSystemTime(&ft,&st)){
 		// this should never happen
 		wcsncpy(dateout,L"Incorrect FileTime",lendateout);
 	} else {
-		dateout[lendateout]=0;
-		GetDateFormatW(localeID,DATE_LONGDATE,&st,NULL,dateout,lendateout);
-		int templen = wcslen(dateout);
+		dateout[lendateout-1]=0;
+		int templen = 0;
+		if (!willShowDate) willShowDate = (wTodayYear!=st.wYear)||(wTodayMonth!=st.wMonth)||(wTodayDay!=st.wDay);
+		if (willShowDate){
+			templen = GetDateFormatW(localeID,(optDateTime&SHOWDATELONG)?DATE_LONGDATE:DATE_SHORTDATE,&st,NULL,dateout,lendateout-2);
+			dateout[templen-1] = ' ';
+		}
 		if (templen<(lendateout-1)){
-			dateout[templen] = ' ';
-			GetTimeFormatW(localeID,0,&st,NULL,&dateout[templen+1],lendateout-templen-1);
+			GetTimeFormatW(localeID,(optDateTime&SHOWDATENOSECONDS)?TIME_NOSECONDS:0,&st,NULL,&dateout[templen],lendateout-templen-1);
 		}
 	}
 }
