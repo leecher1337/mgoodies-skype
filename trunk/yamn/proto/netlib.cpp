@@ -189,7 +189,7 @@ int CNLClient::LocalNetlib_Recv(HANDLE hConn,char *buf,int len,int flags) {
 			SSL_DebugLog("TLS(%08X) recv: %s",ssl,buf);
 			return res;
 		} else {
-			SSL_DebugLog("TLS(%08X) no SSL available",ssl);
+			SSL_DebugLog("TLS(%08X) SSL connection is lost",ssl);
 			return 0;
 		}
 	} 
