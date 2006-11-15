@@ -276,7 +276,12 @@ char* CSSLClient::Recv(char *buf,int buflen) throw(DWORD)
 		if(buf==NULL)
 			throw NetworkError=(DWORD)ESSL_RECVALLOC;
 		ZeroMemory(buf,buflen);
-		Rcv=SSL_read(hConnection,buf,buflen);
+		if (hConnection){
+			Rcv=SSL_read(hConnection,buf,buflen);
+		} else {
+			Rcv=0;
+			SSL_DebugLog("SSL connection is lost");
+		}
 		if(Rcv<1)
 		{
 			SystemError=SSL_get_error(hConnection,Rcv);
