@@ -313,6 +313,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	HeadSizeX=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEX,690);
 	HeadSizeY=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEY,300);
 
+	optDateTime=DBGetContactSettingByte(NULL,YAMN_DBMODULE,YAMN_DBTIMEOPTIONS,optDateTime);
+
 //Create new window queues for broadcast messages
 	YAMNVar.MessageWnds=(HANDLE)CallService(MS_UTILS_ALLOCWINDOWLIST,0,0);
 	YAMNVar.NewMailAccountWnd=(HANDLE)CallService(MS_UTILS_ALLOCWINDOWLIST,0,0);

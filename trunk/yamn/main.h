@@ -24,8 +24,8 @@
 	#define YAMN_FILENAME "yamn_2in1"
 #endif //WIN2IN1
 
-#define	YAMN_VERSION			PLUGIN_MAKE_VERSION(0,0,1,9) 	//ok but do not forget rewrite version for debug release in debug.cpp and POP3 filter in pop3comm.cpp
-#define	YAMN_VERSION_C			"0.0.1.9"
+#define	YAMN_VERSION			PLUGIN_MAKE_VERSION(0,0,1,10) 	//ok but do not forget rewrite version for debug release in debug.cpp and POP3 filter in pop3comm.cpp
+#define	YAMN_VERSION_C			"0.0.1.10"
 #define YAMN_NEWMAILSNDDESC		"YAMN: new mail"
 #define YAMN_CONNECTFAILSNDDESC	"YAMN: connect failed"
 #define	YAMN_CONNECTFAILSOUND	"YAMN/Sound/ConnectFail"
@@ -43,8 +43,15 @@
 #define YAMN_HKCHECKMAIL	"HKCheckMail"
 #define	YAMN_TTBFCHECK		"ForceCheckTTB"
 #define	YAMN_SHOWMAINMENU	"ShowMainMenu"
+#define	YAMN_DBTIMEOPTIONS	"MailBrowserTimeOpts"
 
 #define YAMN_DEFAULTHK		MAKEWORD(VK_F12,MOD_CONTROL)
+
+#define SHOWDATELONG		0x01
+#define SHOWDATENOTODAY		0x02
+#define SHOWDATENOSECONDS	0x04
+
+extern unsigned char optDateTime;
 
 #endif
 
