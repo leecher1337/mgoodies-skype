@@ -1084,9 +1084,13 @@ LRESULT CALLBACK NoNewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lPar
 }
 
 #ifdef __GNUC__
+//number of 100 ns periods between FILETIME 0 (1601/01/01 00:00:00.0000000) and TIMESTAMP 0 (1970/01/01 00:00:00)
 #define NUM100NANOSEC  116444736000000000ULL
+//The biggest time Get[Date|Time]Format can handle (Fri, 31 Dec 30827 23:59:59.9999999)
+#define MAXFILETIME 0x7FFF35F4F06C7FFFULL
 #else
 #define NUM100NANOSEC  116444736000000000
+#define MAXFILETIME 0x7FFF35F4F06C7FFF
 #endif
 ULONGLONG MimeDateToFileTime(char *datein){
 	char *day, *month, *year, *time, *shift;
@@ -1141,33 +1145,13 @@ ULONGLONG MimeDateToFileTime(char *datein){
 	}else{
 		res=0;
 	}
-	//for testing
-	/*{
-		char buffA[1024] = {0};
-		//res=0x7FFF35F4F06C7FFF; // -> Fri, 31 Dec 30827 23:59:59.
-		res = 0xEDCBA9876FEDC9AC;
-		ft.dwLowDateTime = (DWORD)res;
-		ft.dwHighDateTime = (DWORD)(res >> 32);
-		if (!FileTimeToSystemTime(&ft,&st)){
-			int len;
-			len = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
-				NULL, GetLastError(), 0, buffA,
-				sizeof(buffA), NULL);
-		} else {
-			GetDateFormatA(LOCALE_USER_DEFAULT,DATE_LONGDATE,&st,NULL,buffA,sizeof(buffA));
-			buffA[strlen(buffA)] = ' ';
-			GetTimeFormatA(LOCALE_USER_DEFAULT,0,&st,NULL,&buffA[strlen(buffA)],sizeof(buffA));
-		}
-	}*/
 	return res;
 }
 void FileTimeToLocalizedDateTime(LONGLONG filetime, WCHAR *dateout, int lendateout){
 	int localeID = CallService(MS_LANGPACK_GETLOCALE,0,0);
 	//int localeID = MAKELCID(LANG_URDU, SORT_DEFAULT);
 	if (localeID==CALLSERVICE_NOTFOUND) localeID=LOCALE_USER_DEFAULT;
-	//0x7FFF35F4F06C7FFF -> Fri, 31 Dec 30827 23:59:59.9999999 
-	//The biggest time Get[Date|Time]Format can handle
-	if (filetime>0x7FFF35F4F06C7FFF) filetime = 0x7FFF35F4F06C7FFF;
+	if (filetime>MAXFILETIME) filetime = MAXFILETIME;
 	else if (filetime<0) filetime=0;
 	SYSTEMTIME st;
 	FILETIME ft;
@@ -1190,68 +1174,7 @@ void MimeDateToLocalizedDateTime(char *datein, WCHAR *dateout, int lendateout){
 	ULONGLONG ft = MimeDateToFileTime(datein);
 	FileTimeToLocalizedDateTime(ft,dateout,lendateout);
 }
-/*
-int FormatMimeDate(char *datein,char *dateout)
-{
-	int i,j,l,max,m;
-	char *day, *month, *year, *time, *tmp;
 
-	j = 0;
-	l = 0;
-	max = strlen(datein);
-	
-	day = new char[2];
-	month = new char[3];
-	year = new char[4];
-	time = new char[8];
-	tmp = new char[max];
-	
-	for(i=0;i<max;i++,l++)
-	{
-		if(datein[i] == ' ')
-		{
-			j++;
-			l=-1;
-			switch(j)
-			{
-				case 2:
-					sprintf(day,"%c%c",tmp[0],tmp[1]);
-					break;
-				case 3:
-					sprintf(month,"%c%c%c",tmp[0],tmp[1],tmp[2]);
-					break;
-				case 4:
-					sprintf(year,"%c%c%c%c",tmp[0],tmp[1],tmp[2],tmp[3]);
-					break;
-				case 5:
-					sprintf(time,"%c%c%c%c%c%c%c%c",tmp[0],tmp[1],tmp[2],tmp[3],tmp[4],tmp[5],tmp[6],tmp[7]);
-					break;
-				default:
-					break;
-			}
-		}
-		else
-			tmp[l] = datein[i];
-	}
-
-	m = 0;
-	for(i=0;i<12;i++)
-	{
-		if(strcmp(month,s_MonthNames[i])==0)
-		{
-			m = i + 1;
-		}
-	}
-
-	sprintf(dateout,"date = %s-%2d-%s %s",year,m,day,time);
-	delete[] day;
-	delete[] month;
-	delete[] year ;
-	delete[] time;
-	delete[] tmp;
-	return 0;
-}
-*/
 int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSort )
 {
 
