@@ -15,9 +15,9 @@
 #ifdef YAMN_DEBUG
 
 #ifndef WIN9X
-	#define YAMN_VER	"YAMN 0.2.4.7"
+	#define YAMN_VER	"YAMN 0.0.1.10"
 #else
-	#define YAMN_VER	"YAMN 0.2.4.7 (Win9x)"
+	#define YAMN_VER	"YAMN 0.0.1.10 (Win9x)"
 #endif
 
 //--------------------------------------------------------------------------------------------------
