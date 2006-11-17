@@ -2386,8 +2386,11 @@ DWORD WINAPI MailBrowser(LPVOID Param)
 		{
 			while(GetMessage(&msg,NULL,0,0))
 			{
-				TranslateMessage(&msg); 
-				DispatchMessage(&msg);  
+				if(!IsDialogMessage(hMailBrowser, &msg))
+				{
+					TranslateMessage(&msg);
+					DispatchMessage(&msg);
+				}
 			}
 		}
 
