@@ -1,4 +1,4 @@
-; Spell Checker 0.0.1.4
+; Spell Checker 0.0.1.5
 ; Author: Pescuma
 
 ; Options
@@ -8,6 +8,7 @@
 
 [Dictionaries]
 [Custom Dictionaries]
+[Flags]
 
 [ Spell Checker ]
 [Default language:]

@@ -1,6 +1,12 @@
-Spell Checker 0.0.1.4
+Spell Checker 0.0.1.5
 
 Changelog:
+
+. 0.0.1.5
+  * Fix for checking while selecting
+  * Fix for CTRL-Z
+  + Added icon to status bar (needs improviment)
+  + Start adding flags (thanks to famfamfam.com for the icons)
 
 . 0.0.1.4
   + Option to show all wrong words in menu

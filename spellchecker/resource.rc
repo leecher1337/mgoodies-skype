@@ -33,9 +33,9 @@ EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Tahoma"
 BEGIN
     GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,250,80
-    LTEXT           "Default language:",IDC_STATIC,11,20,91,8
-    COMBOBOX        IDC_DEF_LANG,110,18,130,14,CBS_DROPDOWNLIST | WS_VSCROLL | 
-                    WS_TABSTOP
+    LTEXT           "Default language:",IDC_STATIC,11,20,82,8
+    COMBOBOX        IDC_DEF_LANG,95,18,145,14,CBS_DROPDOWNLIST | 
+                    CBS_OWNERDRAWFIXED | WS_VSCROLL | WS_TABSTOP
     CONTROL         "Auto-correct words",IDC_AUTOCORRECT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,35,230,10
     CONTROL         "Download more dictionaries",IDC_GETMORE,"Hyperlink",
@@ -69,6 +69,16 @@ BEGIN
 END
 #endif    // APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_NO_CHECK            ICON    DISCARDABLE     "res\\no_spellcheck.ico"
+IDI_CHECK               ICON    DISCARDABLE     "res\\spellcheck.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

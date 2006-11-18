@@ -5,6 +5,8 @@
 #define IDD_OPTIONS                     119
 #define IDD_POPUPS                      120
 #define IDR_CONTEXT                     120
+#define IDI_NO_CHECK                    122
+#define IDI_CHECK                       123
 #define IDC_DELAY                       1001
 #define IDC_WINCOLORS                   1002
 #define IDC_DEFAULTCOLORS               1003
@@ -59,7 +61,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        122
+#define _APS_NEXT_RESOURCE_VALUE        124
 #define _APS_NEXT_COMMAND_VALUE         40005
 #define _APS_NEXT_CONTROL_VALUE         1081
 #define _APS_NEXT_SYMED_VALUE           101

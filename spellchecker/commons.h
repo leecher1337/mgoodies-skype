@@ -27,6 +27,9 @@ Boston, MA 02111-1307, USA.
 #include <stdio.h>
 #include <time.h>
 #include <richedit.h>
+#include <tom.h>
+#include <richole.h>
+
 
 // Disable "...truncated to '255' characters in the debug information" warnings
 #pragma warning(disable: 4786)
@@ -59,6 +62,7 @@ extern "C"
 #include <m_history.h>
 #include <m_message.h>
 #include <m_folders.h>
+#include <IcoLib.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
@@ -107,6 +111,10 @@ struct Dialog {
 	TCHAR lang_name[10];
 	WNDPROC old_edit_proc;
 	BOOL enabled;
+	BOOL srmm;
+
+	IRichEditOle *ole;
+	ITextDocument *textDocument;
 
 	BOOL changed;
 	int old_text_len;
