@@ -40,11 +40,13 @@ static OptPageControl optionsControls[] = {
 	{ &opts.auto_correct,			CONTROL_CHECKBOX,		IDC_AUTOCORRECT,			"AutoCorrect", FALSE },
 	{ &opts.underline_type,			CONTROL_COMBO,			IDC_UNDERLINE_TYPE,			"UnderlineType", CFU_UNDERLINEWAVE - CFU_UNDERLINEDOUBLE },
 	{ &opts.cascade_corrections,	CONTROL_CHECKBOX,		IDC_CASCADE_CORRECTIONS,	"CascadeCorrections", FALSE },
-	{ &opts.show_all_corrections,	CONTROL_CHECKBOX,		IDC_SHOW_ALL_CORRECTIONS,	"ShjowAllCorrections", FALSE }
+	{ &opts.show_all_corrections,	CONTROL_CHECKBOX,		IDC_SHOW_ALL_CORRECTIONS,	"ShowAllCorrections", FALSE },
+	{ &opts.use_flags,				CONTROL_CHECKBOX,		IDC_USE_FLAGS,				"UseFlags", TRUE }
 };
 
 static UINT optionsExpertControls[] = { 
-	IDC_ADVANCED, IDC_UNDERLINE_TYPE_L, IDC_UNDERLINE_TYPE
+	IDC_ADVANCED, IDC_UNDERLINE_TYPE_L, IDC_UNDERLINE_TYPE, IDC_CASCADE_CORRECTIONS, IDC_SHOW_ALL_CORRECTIONS,
+	IDC_USE_FLAGS
 };
 
 
@@ -173,19 +175,14 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 		case WM_DRAWITEM:
 		{
 			LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT)lParam;
-
-			// Handle contact menu
 			if(lpdis->CtlID != IDC_DEF_LANG) 
 				break;
-
-			// Handle combo
 			if(lpdis->itemID == -1) 
 				break;
 
 			Dictionary *dict = (Dictionary *) lpdis->itemData;
 
 			TEXTMETRIC tm;
-			int icon_width=16, icon_height=16;
 			RECT rc;
 
 			GetTextMetrics(lpdis->hDC, &tm);
@@ -195,26 +192,23 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 			FillRect(lpdis->hDC, &lpdis->rcItem, GetSysColorBrush(lpdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHT : COLOR_WINDOW));
 
-			rc.left = lpdis->rcItem.left + 3;
+			rc.left = lpdis->rcItem.left + 2;
 
-			if (languages.has_flags)
+			// Draw icon
+			if (opts.use_flags)
 			{
-				// Draw icon
-				if (dict->hFlag != NULL)
-				{
-					rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - icon_height) / 2;
-					DrawIconEx(lpdis->hDC, rc.left, rc.top, dict->hFlag, 16, 16, 0, NULL, DI_NORMAL);
-				}
+				HICON hFlag = (dict->hFlag == NULL ? hUnknownFlag : dict->hFlag);
 
-				rc.left += icon_width + 4;
+				rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - ICON_SIZE) / 2;
+				DrawIconEx(lpdis->hDC, rc.left, rc.top, hFlag, 16, 16, 0, NULL, DI_NORMAL);
+
+				rc.left += ICON_SIZE + 4;
 			}
 
-			// Make rect for text
-			rc.right = lpdis->rcItem.right - 3;
+			// Draw text
+			rc.right = lpdis->rcItem.right - 2;
 			rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - tm.tmHeight) / 2;
 			rc.bottom = rc.top + tm.tmHeight;
-
-			// Draw text
 			DrawText(lpdis->hDC, dict->full_name, lstrlen(dict->full_name), &rc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
 
 			// Restore old colors
@@ -227,17 +221,16 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 		case WM_MEASUREITEM:
 		{
 			LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT)lParam;
-
-			// Handle contact menu
 			if(lpmis->CtlID != IDC_DEF_LANG) 
 				break;
-
-			// Handle combo
 
 			TEXTMETRIC tm;
 			GetTextMetrics(GetDC(hwndDlg), &tm);
 
-			lpmis->itemHeight = max(16, tm.tmHeight);
+			if (opts.use_flags)
+				lpmis->itemHeight = max(ICON_SIZE, tm.tmHeight);
+			else
+				lpmis->itemHeight = tm.tmHeight;
 				
 			return TRUE;
 		}

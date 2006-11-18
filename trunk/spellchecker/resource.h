@@ -7,6 +7,7 @@
 #define IDR_CONTEXT                     120
 #define IDI_NO_CHECK                    122
 #define IDI_CHECK                       123
+#define IDI_UNKNOWN_FLAG                124
 #define IDC_DELAY                       1001
 #define IDC_WINCOLORS                   1002
 #define IDC_DEFAULTCOLORS               1003
@@ -33,6 +34,7 @@
 #define IDC_ANSI                        1062
 #define IDC_SHOW_ALL_CORRECTIONS        1062
 #define IDC_TRACK_G                     1063
+#define IDC_USE_FLAGS                   1063
 #define IDC_CHANGED_L                   1064
 #define IDC_REMOVED_L                   1065
 #define IDC_PROTOCOLS_G                 1066
@@ -61,7 +63,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        124
+#define _APS_NEXT_RESOURCE_VALUE        125
 #define _APS_NEXT_COMMAND_VALUE         40005
 #define _APS_NEXT_CONTROL_VALUE         1081
 #define _APS_NEXT_SYMED_VALUE           101

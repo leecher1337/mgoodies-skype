@@ -27,7 +27,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPTIONS DIALOGEX 0, 0, 252, 154
+IDD_OPTIONS DIALOGEX 0, 0, 252, 162
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Tahoma"
@@ -35,12 +35,13 @@ BEGIN
     GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,250,80
     LTEXT           "Default language:",IDC_STATIC,11,20,82,8
     COMBOBOX        IDC_DEF_LANG,95,18,145,14,CBS_DROPDOWNLIST | 
-                    CBS_OWNERDRAWFIXED | WS_VSCROLL | WS_TABSTOP
+                    CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
+                    WS_TABSTOP
     CONTROL         "Auto-correct words",IDC_AUTOCORRECT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,35,230,10
     CONTROL         "Download more dictionaries",IDC_GETMORE,"Hyperlink",
                     WS_TABSTOP | 0x1,10,65,230,12
-    GROUPBOX        " Advanced ",IDC_ADVANCED,1,88,250,63
+    GROUPBOX        " Advanced ",IDC_ADVANCED,1,88,250,72
     LTEXT           "Underline type:",IDC_UNDERLINE_TYPE_L,11,104,91,8
     COMBOBOX        IDC_UNDERLINE_TYPE,110,102,130,14,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
@@ -48,6 +49,8 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,120,230,10
     CONTROL         "Show all corrections",IDC_SHOW_ALL_CORRECTIONS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,132,230,10
+    CONTROL         "Use flags",IDC_USE_FLAGS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,10,144,230,10
 END
 
 
@@ -64,7 +67,7 @@ BEGIN
         LEFTMARGIN, 1
         RIGHTMARGIN, 251
         TOPMARGIN, 1
-        BOTTOMMARGIN, 153
+        BOTTOMMARGIN, 161
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -79,6 +82,7 @@ END
 // remains consistent on all systems.
 IDI_NO_CHECK            ICON    DISCARDABLE     "res\\no_spellcheck.ico"
 IDI_CHECK               ICON    DISCARDABLE     "res\\spellcheck.ico"
+IDI_UNKNOWN_FLAG        ICON    DISCARDABLE     "res\\unknown.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

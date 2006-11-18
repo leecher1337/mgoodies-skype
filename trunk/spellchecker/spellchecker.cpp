@@ -30,7 +30,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,4),
+	PLUGIN_MAKE_VERSION(0,0,1,6),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -65,6 +65,10 @@ TCHAR flagsFolder[1024];
 
 HICON hEnabledIcon;
 HICON hDisabledIcon;
+HICON hUnknownFlag;
+
+HBITMAP hCheckedBmp;
+BITMAP bmpChecked;
 
 char *metacontacts_proto = NULL;
 BOOL loaded = FALSE;
@@ -72,6 +76,7 @@ BOOL loaded = FALSE;
 Dictionaries languages = {0};
 
 map<HWND, Dialog *> dialogs;
+map<HWND, Dialog *> menus;
 
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int PreShutdown(WPARAM wParam, LPARAM lParam);
@@ -80,13 +85,15 @@ int MsgWindowPopup(WPARAM wParam, LPARAM lParam);
 int IconsChanged(WPARAM wParam, LPARAM lParam);
 int IconPressed(WPARAM wParam, LPARAM lParam);
 
-int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm);
+int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hwndOwner);
 int RemoveContactTextBox(HWND hwnd);
 int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt, HWND hwndOwner);
 
 int AddContactTextBoxService(WPARAM wParam, LPARAM lParam);
 int RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam);
 int ShowPopupMenuService(WPARAM wParam, LPARAM lParam);
+
+LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void ModifyIcon(Dialog *dlg);
 BOOL GetWordCharRange(Dialog *dlg, CHARRANGE &sel, TCHAR *text, size_t text_len, int &first_char);
@@ -162,11 +169,17 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
 	hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
+	hCheckedBmp = LoadBitmap(NULL, (LPCTSTR) OBM_CHECK);
+	if (GetObject(hCheckedBmp, sizeof(bmpChecked), &bmpChecked) == 0)
+		bmpChecked.bmHeight = bmpChecked.bmWidth = 10;
+
 	return 0;
 }
 
 extern "C" int __declspec(dllexport) Unload(void) 
 {
+	DeleteObject(hCheckedBmp);
+
 	DestroyServiceFunction(MS_SPELLCHECKER_ADD_RICHEDIT);
 	DestroyServiceFunction(MS_SPELLCHECKER_REMOVE_RICHEDIT);
 	DestroyServiceFunction(MS_SPELLCHECKER_SHOW_POPUP_MENU);
@@ -294,8 +307,16 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		sid.hDefaultIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_NO_CHECK), IMAGE_ICON, 16, 16, 0);
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
+		sid.pszDescription = Translate("Unknown Flag");
+		sid.pszName = "spellchecker_unknown_flag";
+		sid.pszDefaultFile = "spellchecker.dll";
+		sid.iDefaultIndex = 2;
+		sid.hDefaultIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_UNKNOWN_FLAG), IMAGE_ICON, 16, 16, 0);
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
 		hEnabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_enabled");
 		hDisabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_disabled");
+		hUnknownFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_unknown_flag");
 
 		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
 	}
@@ -303,6 +324,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	{		
 		hEnabledIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_CHECK), IMAGE_ICON, 16, 16, 0);
 		hDisabledIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_NO_CHECK), IMAGE_ICON, 16, 16, 0);
+		hUnknownFlag = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_UNKNOWN_FLAG), IMAGE_ICON, 16, 16, 0);
 	}
 
 	if (ServiceExists(MS_MSG_ADDICON))
@@ -326,7 +348,19 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 {
 	hEnabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_enabled");
 	hDisabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_disabled");
+	hUnknownFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_unknown_flag");
 	
+	if (ServiceExists(MS_MSG_MODIFYICON))
+	{
+		StatusIconData sid = {0};
+		sid.cbSize = sizeof(sid);
+		sid.szModule = MODULE_NAME;
+		sid.hIcon = hEnabledIcon;
+		sid.hIconDisabled = hDisabledIcon;
+		sid.szTooltip = Translate("Spell Checker");
+		CallService(MS_MSG_MODIFYICON, 0, (LPARAM) &sid);
+	}
+
 	return 0;
 }
 
@@ -867,10 +901,10 @@ int AddContactTextBoxService(WPARAM wParam, LPARAM lParam)
 	if (sci == NULL || sci->cbSize != sizeof(SPELLCHECKER_ITEM))
 		return -1;
 
-	return AddContactTextBox(sci->hContact, sci->hwnd, sci->window_name, FALSE);
+	return AddContactTextBox(sci->hContact, sci->hwnd, sci->window_name, FALSE, NULL);
 }
 
-int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm) 
+int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hwndOwner) 
 {
 	if (dialogs[hwnd] == NULL)
 	{
@@ -885,6 +919,7 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm)
 		strncpy(dlg->name, name, sizeof(dlg->name));
 		dlg->enabled = DBGetContactSettingByte(NULL, MODULE_NAME, dlg->name, 1);
 		dlg->srmm = srmm;
+		dlg->hwnd_owner = hwndOwner;
 
 		SendMessage(hwnd, EM_GETOLEINTERFACE, 0, (LPARAM)&dlg->ole);
 		if (dlg->ole->QueryInterface(IID_ITextDocument, (void**)&dlg->textDocument) != S_OK)
@@ -910,6 +945,14 @@ void FreePopupData(Dialog *dlg)
 {
 	DESTROY_MENY(dlg->hLanguageSubMenu)
 	DESTROY_MENY(dlg->hWrongWordsSubMenu)
+
+	if (dlg->old_menu_proc != NULL)
+		SetWindowLong(dlg->hwnd_menu_owner, GWL_WNDPROC, (LONG) dlg->old_menu_proc);
+	dlg->old_menu_proc = NULL;
+
+	if (dlg->hwnd_menu_owner != NULL)
+		menus.erase(dlg->hwnd_menu_owner);
+	dlg->hwnd_menu_owner = NULL;
 
 	if (dlg->wrong_words != NULL)
 	{
@@ -1055,6 +1098,26 @@ void AppendSubmenu(HMENU hMenu, HMENU hSubMenu, TCHAR *name)
 
 }
 
+void AppendMenuItem(HMENU hMenu, int id, TCHAR *name, HICON hIcon, BOOL checked) 
+{
+	ICONINFO iconInfo;
+	GetIconInfo(hIcon, & iconInfo);
+
+	MENUITEMINFO mii = {0};
+	mii.cbSize = sizeof(MENUITEMINFO);
+	mii.fMask = MIIM_CHECKMARKS | MIIM_TYPE | MIIM_STATE;
+	mii.fType = MFT_STRING;
+	mii.fState = (checked ? MFS_CHECKED : 0);
+	mii.wID = id;
+	mii.hbmpChecked = iconInfo.hbmColor;
+	mii.hbmpUnchecked = iconInfo.hbmColor;
+	mii.dwTypeData = name;
+	mii.cch = lstrlen(name);
+	int ret = InsertMenuItem(hMenu, 0, TRUE, &mii);
+}
+
+
+
 
 #define LANGUAGE_MENU_ID_BASE 10
 #define WORD_MENU_ID_BASE 100
@@ -1141,9 +1204,14 @@ void FoundWrongWord(TCHAR *word, CHARRANGE pos, void *param)
 	AddMenuForWord(p->dlg, _tcsdup(word), pos, p->dlg->hWrongWordsSubMenu, TRUE, WORD_MENU_ID_BASE * p->count);
 }
 
-void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
+void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 {
 	FreePopupData(dlg);
+	if (opts.use_flags)
+	{
+		dlg->hwnd_menu_owner = hwndOwner;
+		menus[hwndOwner] = dlg;
+	}
 
 	BOOL wrong_word = FALSE;
 
@@ -1155,10 +1223,14 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt)
 	{
 		dlg->hLanguageSubMenu = CreatePopupMenu();
 
+		if (dlg->hwnd_menu_owner != NULL)
+			dlg->old_menu_proc = (WNDPROC) SetWindowLong(dlg->hwnd_menu_owner, GWL_WNDPROC, (LONG) MenuWndProc);
+
 		// First add languages
 		for(int i = 0; i < languages.count; i++)
 		{
-			AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
+			AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0)
+				| (dlg->hwnd_menu_owner != NULL ? MF_OWNERDRAW : 0), 
 				LANGUAGE_MENU_ID_BASE + i, languages.dicts[i]->full_name);
 		}
 
@@ -1300,7 +1372,7 @@ int MsgWindowPopup(WPARAM wParam, LPARAM lParam)
 
 	if (mwpd->uType == MSG_WINDOWPOPUP_SHOWING)
 	{
-		AddItemsToMenu(dlg, mwpd->hMenu, pt);
+		AddItemsToMenu(dlg, mwpd->hMenu, pt, dlg->hwnd_owner);
 	}
 	else if (mwpd->uType == MSG_WINDOWPOPUP_SELECTED)
 	{
@@ -1344,7 +1416,7 @@ int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt, HWND hwndOwner)
 		hMenu = CreatePopupMenu();
 
 	// Make menu
-	AddItemsToMenu(dlg, hMenu, pt);
+	AddItemsToMenu(dlg, hMenu, pt, hwndOwner);
 
 	// Show menu
 	POINT client = pt;
@@ -1373,7 +1445,7 @@ int MsgWindowEvent(WPARAM wParam, LPARAM lParam)
 
 	if (event->uType == MSG_WINDOW_EVT_OPEN)
 	{
-		AddContactTextBox(event->hContact, event->hwndInput, "DefaultSRMM", TRUE);
+		AddContactTextBox(event->hContact, event->hwndInput, "DefaultSRMM", TRUE, event->hwndWindow);
 	}
 	else if (event->uType == MSG_WINDOW_EVT_CLOSING)
 	{
@@ -1412,15 +1484,25 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 
 	if (sicd->flags & MBCF_RIGHTBUTTON)
 	{
+		FreePopupData(dlg);
+
 		// Show the menu
 		HMENU hMenu = CreatePopupMenu();
 
 		if (languages.count > 0 && dlg->enabled)
 		{
+			if (opts.use_flags)
+			{
+				menus[dlg->hwnd] = dlg;
+				dlg->hwnd_menu_owner = dlg->hwnd;
+				dlg->old_menu_proc = (WNDPROC) SetWindowLong(dlg->hwnd_menu_owner, GWL_WNDPROC, (LONG) MenuWndProc);
+			}
+
 			// First add languages
 			for(int i = 0; i < languages.count; i++)
 			{
-				AppendMenu(hMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0), 
+				AppendMenu(hMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0)
+					| (dlg->hwnd_menu_owner != NULL ? MF_OWNERDRAW : 0), 
 					LANGUAGE_MENU_ID_BASE + i, languages.dicts[i]->full_name);
 			}
 
@@ -1431,7 +1513,9 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 		CheckMenuItem(hMenu, 1, MF_BYCOMMAND | (dlg->enabled ? MF_CHECKED : MF_UNCHECKED));
 
 		// Show menu
-		int selection = TrackPopupMenu(hMenu, TPM_RETURNCMD, sicd->clickLocation.x, sicd->clickLocation.y, 0, hwnd, NULL);
+		int selection = TrackPopupMenu(hMenu, TPM_RETURNCMD, sicd->clickLocation.x, sicd->clickLocation.y, 0, 
+									   dlg->hwnd, NULL);
+
 		HandleMenuSelection(dlg, sicd->clickLocation, selection);
 
 		DestroyMenu(hMenu);
@@ -1444,3 +1528,121 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 
 	return 0;
 }
+
+
+LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	Dialog *dlg = menus[hwnd];
+	if (dlg == NULL)
+		return -1;
+
+	switch (msg) 
+	{
+		case WM_DRAWITEM:
+		{
+			LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT)lParam;
+			if(lpdis->itemID < LANGUAGE_MENU_ID_BASE || lpdis->itemID >= LANGUAGE_MENU_ID_BASE + languages.count) 
+				break;
+
+			int pos = lpdis->itemID - LANGUAGE_MENU_ID_BASE;
+
+			Dictionary *dict = languages.dicts[pos];
+
+			COLORREF clrfore = SetTextColor(lpdis->hDC, 
+					GetSysColor(lpdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHTTEXT : COLOR_MENUTEXT));
+			COLORREF clrback = SetBkColor(lpdis->hDC, 
+					GetSysColor(lpdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHT : COLOR_MENU));
+
+			FillRect(lpdis->hDC, &lpdis->rcItem, GetSysColorBrush(lpdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHT : COLOR_MENU));
+
+			RECT rc = lpdis->rcItem;
+			rc.left += 2;
+
+			// Checked?
+			rc.right = rc.left + bmpChecked.bmWidth;
+
+			if (lpdis->itemState & ODS_CHECKED)
+			{
+				rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - bmpChecked.bmHeight) / 2;
+				rc.bottom = rc.top + bmpChecked.bmHeight;
+
+				HDC hdcTemp = CreateCompatibleDC(lpdis->hDC);
+				HBITMAP oldBmp = (HBITMAP) SelectObject(hdcTemp, hCheckedBmp);
+
+				BitBlt(lpdis->hDC, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, hdcTemp, 0, 0, SRCCOPY);
+
+				SelectObject(hdcTemp, oldBmp);
+				DeleteDC(hdcTemp);
+			}
+
+			rc.left += bmpChecked.bmWidth + 2;
+
+			// Draw icon
+			if (opts.use_flags)
+			{
+				HICON hFlag = (dict->hFlag == NULL ? hUnknownFlag : dict->hFlag);
+
+				rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - ICON_SIZE) / 2;
+				DrawIconEx(lpdis->hDC, rc.left, rc.top, hFlag, 16, 16, 0, NULL, DI_NORMAL);
+
+				rc.left += ICON_SIZE + 4;
+			}
+
+			// Draw text
+			RECT rc_text = { 0, 0, 0xFFFF, 0xFFFF };
+			DrawText(lpdis->hDC, dict->full_name, lstrlen(dict->full_name), &rc_text, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE | DT_CALCRECT);
+
+			rc.right = lpdis->rcItem.right - 2;
+			rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - (rc_text.bottom - rc_text.top)) / 2;
+			rc.bottom = rc.top + rc_text.bottom - rc_text.top;
+			DrawText(lpdis->hDC, dict->full_name, lstrlen(dict->full_name), &rc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
+
+			// Restore old colors
+			SetTextColor(lpdis->hDC, clrfore);
+			SetBkColor(lpdis->hDC, clrback);
+
+			return TRUE;
+		}
+
+		case WM_MEASUREITEM:
+		{
+			LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT)lParam;
+			if(lpmis->itemID < LANGUAGE_MENU_ID_BASE || lpmis->itemID >= LANGUAGE_MENU_ID_BASE + languages.count) 
+				break;
+
+			int pos = lpmis->itemID - LANGUAGE_MENU_ID_BASE;
+
+			Dictionary *dict = languages.dicts[pos];
+
+			HDC hdc = GetDC(hwnd);
+
+			NONCLIENTMETRICS info;
+			info.cbSize = sizeof(info);
+			SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(info), &info, 0);
+			HFONT hFont = CreateFontIndirect(&info.lfMenuFont);
+			HFONT hFontOld = (HFONT) SelectObject(hdc, hFont);
+
+			RECT rc = { 0, 0, 0xFFFF, 0xFFFF };
+
+			DrawText(hdc, dict->full_name, lstrlen(dict->full_name), &rc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE | DT_CALCRECT);
+
+			lpmis->itemHeight = max(bmpChecked.bmHeight, rc.bottom);
+			lpmis->itemWidth = 2 + bmpChecked.bmWidth + 2 + rc.right + 2;
+
+			if (opts.use_flags)
+			{
+				lpmis->itemHeight = max(ICON_SIZE, lpmis->itemHeight);
+				lpmis->itemWidth += ICON_SIZE + 4;
+			}
+
+			SelectObject(hdc, hFontOld);
+			DeleteObject(hFont);
+			ReleaseDC(hwnd, hdc);
+			
+			return TRUE;
+		}
+	}
+
+	return CallWindowProc(dlg->old_menu_proc, hwnd, msg, wParam, lParam);
+}
+
