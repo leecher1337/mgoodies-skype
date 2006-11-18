@@ -36,7 +36,7 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 
 
 static OptPageControl optionsControls[] = { 
-	{ &opts.default_language,		CONTROL_COMBO_ITEMDATA,	IDC_DEF_LANG,				"DefaultLanguage", NULL, 0, 0, MAX_REGS(opts.default_language) },
+//	{ &opts.default_language,		CONTROL_COMBO_ITEMDATA,	IDC_DEF_LANG,				"DefaultLanguage", NULL, 0, 0, MAX_REGS(opts.default_language) },
 	{ &opts.auto_correct,			CONTROL_CHECKBOX,		IDC_AUTOCORRECT,			"AutoCorrect", FALSE },
 	{ &opts.underline_type,			CONTROL_COMBO,			IDC_UNDERLINE_TYPE,			"UnderlineType", CFU_UNDERLINEWAVE - CFU_UNDERLINEDOUBLE },
 	{ &opts.cascade_corrections,	CONTROL_CHECKBOX,		IDC_CASCADE_CORRECTIONS,	"CascadeCorrections", FALSE },
@@ -79,19 +79,6 @@ void InitOptions()
 	LoadOptions();
 	
 	hOptHook = HookEvent(ME_OPT_INITIALISE, InitOptionsCallback);
-
-	if (languages.count <= 0)
-	{
-		opts.default_language[0] = _T('\0');
-		return;
-	}
-
-	for(int i = 0; i < languages.count; i++)
-		if (lstrcmp(languages.dicts[i]->language, opts.default_language) == 0)
-			break;
-
-	if (i == languages.count)
-		lstrcpy(opts.default_language, languages.dicts[0]->language);
 }
 
 
@@ -104,6 +91,26 @@ void DeInitOptions()
 void LoadOptions()
 {
 	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
+	
+	if (languages.count <= 0)
+	{
+		opts.default_language[0] = _T('\0');
+		return;
+	}
+
+	DBVARIANT dbv;
+	if (!DBGetContactSettingTString(NULL, MODULE_NAME, "DefaultLanguage", &dbv))
+	{
+		lstrcpyn(opts.default_language, dbv.ptszVal, MAX_REGS(opts.default_language));
+		DBFreeVariant(&dbv);
+	}
+
+	for(int i = 0; i < languages.count; i++)
+		if (lstrcmp(languages.dicts[i]->language, opts.default_language) == 0)
+			break;
+
+	if (i >= languages.count)
+		lstrcpy(opts.default_language, languages.dicts[0]->language);
 }
 
 
@@ -113,22 +120,17 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 	{
 		case WM_INITDIALOG:
 		{
-			int i;
+			int i, sel = -1;
 			for(i = 0; i < languages.count; i++)
 			{
-				if (languages.dicts[i]->localized_name[0] != _T('\0'))
-				{
-					TCHAR name[128];
-					mir_sntprintf(name, MAX_REGS(name), _T("%s [%s]"), languages.dicts[i]->localized_name, languages.dicts[i]->language);
-					SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_ADDSTRING, 0, (LONG) name);
-				}
-				else
-				{
-					SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_ADDSTRING, 0, (LONG) languages.dicts[i]->language);
-				}
+				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_ADDSTRING, 0, (LONG) languages.dicts[i]->full_name);
+				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETITEMDATA, i, (DWORD) languages.dicts[i]);
 
-				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETITEMDATA, i, (DWORD) languages.dicts[i]->language);
+				if (lstrcmp(opts.default_language, languages.dicts[i]->language) == 0)
+					sel = i;
 			}
+			if (sel > -1)
+				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETCURSEL, sel, 0);
 
 			SendDlgItemMessage(hwndDlg, IDC_UNDERLINE_TYPE, CB_ADDSTRING, 0, (LONG) TranslateT("Line"));
 			SendDlgItemMessage(hwndDlg, IDC_UNDERLINE_TYPE, CB_ADDSTRING, 0, (LONG) TranslateT("Dotted"));
@@ -146,7 +148,98 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			if(LOWORD(wParam) == IDC_GETMORE)
 				CallService(MS_UTILS_OPENURL, 1, (LPARAM) "http://wiki.services.openoffice.org/wiki/Dictionaries");
 
+			if (LOWORD(wParam) == IDC_DEF_LANG
+					&& (HIWORD(wParam) != CBN_SELCHANGE || (HWND)lParam != GetFocus()))
+				return 0;
+
 			break;
+		}
+
+		case WM_NOTIFY:
+		{
+			LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+
+			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
+			{
+				int sel = SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_GETCURSEL, 0, 0);
+				if (sel >= languages.count || sel < 0)
+					sel = 0;
+				DBWriteContactSettingTString(NULL, MODULE_NAME, "DefaultLanguage", 
+					(TCHAR *) languages.dicts[sel]->language);
+				lstrcpy(opts.default_language, languages.dicts[sel]->language);
+			}
+		}
+
+		case WM_DRAWITEM:
+		{
+			LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT)lParam;
+
+			// Handle contact menu
+			if(lpdis->CtlID != IDC_DEF_LANG) 
+				break;
+
+			// Handle combo
+			if(lpdis->itemID == -1) 
+				break;
+
+			Dictionary *dict = (Dictionary *) lpdis->itemData;
+
+			TEXTMETRIC tm;
+			int icon_width=16, icon_height=16;
+			RECT rc;
+
+			GetTextMetrics(lpdis->hDC, &tm);
+
+			COLORREF clrfore = SetTextColor(lpdis->hDC,GetSysColor(lpdis->itemState & ODS_SELECTED?COLOR_HIGHLIGHTTEXT:COLOR_WINDOWTEXT));
+			COLORREF clrback = SetBkColor(lpdis->hDC,GetSysColor(lpdis->itemState & ODS_SELECTED?COLOR_HIGHLIGHT:COLOR_WINDOW));
+
+			FillRect(lpdis->hDC, &lpdis->rcItem, GetSysColorBrush(lpdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHT : COLOR_WINDOW));
+
+			rc.left = lpdis->rcItem.left + 3;
+
+			if (languages.has_flags)
+			{
+				// Draw icon
+				if (dict->hFlag != NULL)
+				{
+					rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - icon_height) / 2;
+					DrawIconEx(lpdis->hDC, rc.left, rc.top, dict->hFlag, 16, 16, 0, NULL, DI_NORMAL);
+				}
+
+				rc.left += icon_width + 4;
+			}
+
+			// Make rect for text
+			rc.right = lpdis->rcItem.right - 3;
+			rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - tm.tmHeight) / 2;
+			rc.bottom = rc.top + tm.tmHeight;
+
+			// Draw text
+			DrawText(lpdis->hDC, dict->full_name, lstrlen(dict->full_name), &rc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
+
+			// Restore old colors
+			SetTextColor(lpdis->hDC, clrfore);
+			SetBkColor(lpdis->hDC, clrback);
+
+			return TRUE;
+		}
+
+		case WM_MEASUREITEM:
+		{
+			LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT)lParam;
+
+			// Handle contact menu
+			if(lpmis->CtlID != IDC_DEF_LANG) 
+				break;
+
+			// Handle combo
+
+			TEXTMETRIC tm;
+			GetTextMetrics(GetDC(hwndDlg), &tm);
+
+			lpmis->itemHeight = max(16, tm.tmHeight);
+				
+			return TRUE;
 		}
 	}
 

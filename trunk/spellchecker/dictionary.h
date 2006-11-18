@@ -36,6 +36,8 @@ public:
 	TCHAR language[128];
 	TCHAR localized_name[128];
 	TCHAR english_name[128];
+	TCHAR full_name[256];
+	HICON hFlag;
 
 	virtual ~Dictionary() {}
 
@@ -78,12 +80,13 @@ public:
 struct Dictionaries {
 	Dictionary ** dicts;
 	size_t count;
+	BOOL has_flags;
 };
 
 
 
 // Return a list of avaible languages
-Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path);
+Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path, TCHAR *flags_path);
 
 // Free the list returned by GetAvaibleDictionaries
 void FreeDictionaries(Dictionaries &dicts);

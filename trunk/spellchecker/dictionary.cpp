@@ -269,11 +269,17 @@ protected:
 	}
 
 public:
-	HunspellDictionary(TCHAR *aLanguage, TCHAR *aPath, TCHAR *aUserPath)
+	HunspellDictionary(TCHAR *aLanguage, TCHAR *aPath, TCHAR *aUserPath, TCHAR *aFlagsPath)
 	{
 		lstrcpyn(language, aLanguage, MAX_REGS(language));
+		lstrcpyn(full_name, aLanguage, MAX_REGS(full_name));
 		lstrcpyn(path, aPath, MAX_REGS(path));
 		lstrcpyn(userPath, aUserPath, MAX_REGS(userPath));
+
+		// Load the flag
+		TCHAR flag_file[1024];
+		mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\%s.ico"), aFlagsPath, language);
+		hFlag = (HICON) LoadImage(NULL, flag_file, IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
 
 		loaded = LANGUAGE_NOT_LOADED;
 		localized_name[0] = _T('\0');
@@ -289,6 +295,8 @@ public:
 			delete hunspell;
 		if (wordChars != NULL)
 			free(wordChars);
+		if (hFlag != NULL)
+			DeleteObject(hFlag);
 	}
 
 	void loadThread()
@@ -333,10 +341,10 @@ public:
 			wordChars = fromHunspell(hunspell->get_wordchars());
 		}
 
+		loaded = LANGUAGE_LOADED;
+
 		loadCustomDict();
 		loadAutoReplaceMap();
-
-		loaded = LANGUAGE_LOADED;
 	}
 
 	// Return TRUE if the word is correct
@@ -508,6 +516,12 @@ BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
 				tmp_dicts->dicts[i]->localized_name, MAX_REGS(tmp_dicts->dicts[i]->localized_name));
 			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SENGLANGUAGE, 
 				tmp_dicts->dicts[i]->english_name, MAX_REGS(tmp_dicts->dicts[i]->english_name));
+
+			if (tmp_dicts->dicts[i]->localized_name[0] != _T('\0'))
+			{
+				mir_sntprintf(tmp_dicts->dicts[i]->full_name, MAX_REGS(tmp_dicts->dicts[i]->full_name), 
+					_T("%s [%s]"), tmp_dicts->dicts[i]->localized_name, tmp_dicts->dicts[i]->language);
+			}
 			break;
 		}
 	}
@@ -516,7 +530,7 @@ BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
 
 
 // Return a list of avaible languages
-Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path)
+Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path, TCHAR *flags_path)
 {
 	Dictionaries dicts = {0};
 
@@ -552,6 +566,7 @@ Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path)
 		FindClose(hFFD);
 	}
 
+	dicts.has_flags = FALSE;
 	if (dicts.count > 0)
 	{
 		// Oki, lets make our cache struct
@@ -580,7 +595,9 @@ Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path)
 
 				ffd.cFileName[lstrlen(ffd.cFileName)-4] = _T('\0');
 
-				dicts.dicts[i] = new HunspellDictionary(ffd.cFileName, path, user_path);
+				dicts.dicts[i] = new HunspellDictionary(ffd.cFileName, path, user_path, flags_path);
+				if (dicts.dicts[i]->hFlag != NULL)
+					dicts.has_flags = TRUE;
 
 				i++;
 			}
