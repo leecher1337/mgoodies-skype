@@ -279,7 +279,7 @@ public:
 		// Load the flag
 		TCHAR flag_file[1024];
 		mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\%s.ico"), aFlagsPath, language);
-		hFlag = (HICON) LoadImage(NULL, flag_file, IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
+		hFlag = (HICON) LoadImage(NULL, flag_file, IMAGE_ICON, ICON_SIZE, ICON_SIZE, LR_LOADFROMFILE);
 
 		loaded = LANGUAGE_NOT_LOADED;
 		localized_name[0] = _T('\0');

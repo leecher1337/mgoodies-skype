@@ -250,6 +250,10 @@ SOURCE=.\resource.rc
 
 SOURCE=.\res\spellcheck.ico
 # End Source File
+# Begin Source File
+
+SOURCE=.\res\unknown.ico
+# End Source File
 # End Group
 # Begin Group "Source Files"
 

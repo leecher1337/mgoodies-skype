@@ -1,10 +1,17 @@
-Spell Checker 0.0.1.5
+Spell Checker 0.0.1.6
 
 Changelog:
+
+. 0.0.1.6
+  + Option to use flags
+  + Unknown flag
+  + Flags in other menus too
+  * Fix in typo in ShowAllCorrections setting. Sorry but the value of this setting will need to be reset
 
 . 0.0.1.5
   * Fix for checking while selecting
   * Fix for CTRL-Z
+  * Fix for add words to dict
   + Added icon to status bar (needs improviment)
   + Start adding flags (thanks to famfamfam.com for the icons)
 

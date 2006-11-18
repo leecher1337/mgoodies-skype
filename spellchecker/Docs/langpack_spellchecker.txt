@@ -1,4 +1,4 @@
-; Spell Checker 0.0.1.5
+; Spell Checker 0.0.1.6
 ; Author: Pescuma
 
 ; Options
@@ -15,6 +15,10 @@
 [Auto-correct words]
 [Download more dictionaries]
 
+[Enabled]
+[Disabled]
+[Unknown Flag]
+
 [ Advanced ]
 [Underline type:]
 [Line]
@@ -26,6 +30,7 @@
 [Thick]
 [Show corrections in submenu]
 [Show all corrections]
+[Use flags]
 
 
 ; Menu

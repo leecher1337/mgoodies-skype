@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA.
 # define __COMMONS_H__
 
 
+#define OEMRESOURCE 
 #include <windows.h>
 #include <tchar.h>
 #include <stdio.h>
@@ -90,6 +91,7 @@ extern PLUGINLINK *pluginLink;
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 
 
+#define ICON_SIZE 16
 
 
 extern Dictionaries languages;
@@ -105,6 +107,7 @@ struct WrongWordPopupMenuData {
 
 struct Dialog {
 	HWND hwnd;
+	HWND hwnd_owner;
 	HANDLE hContact;
 	char name[64];
 	Dictionary *lang;
@@ -116,6 +119,9 @@ struct Dialog {
 	IRichEditOle *ole;
 	ITextDocument *textDocument;
 
+	HWND hwnd_menu_owner;
+	WNDPROC old_menu_proc;
+
 	BOOL changed;
 	int old_text_len;
 
@@ -124,6 +130,12 @@ struct Dialog {
 	HMENU hWrongWordsSubMenu;
 	vector<WrongWordPopupMenuData> *wrong_words;
 };
+
+
+
+extern HICON hEnabledIcon;
+extern HICON hDisabledIcon;
+extern HICON hUnknownFlag;
 
 
 #endif // __COMMONS_H__
