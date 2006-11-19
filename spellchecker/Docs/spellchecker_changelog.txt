@@ -1,6 +1,9 @@
-Spell Checker 0.0.1.6
+Spell Checker 0.0.1.7
 
 Changelog:
+
+. 0.0.1.7
+  * Better handling of poppup menus
 
 . 0.0.1.6
   + Option to use flags
