@@ -1,6 +1,9 @@
-Spell Checker 0.0.1.7
+Spell Checker 0.0.1.8
 
 Changelog:
+
+. 0.0.1.8
+  * Fix for crash
 
 . 0.0.1.7
   * Better handling of poppup menus
