@@ -30,7 +30,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,6),
+	PLUGIN_MAKE_VERSION(0,0,1,7),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -917,7 +917,7 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 		dlg->hContact = hContact;
 		dlg->hwnd = hwnd;
 		strncpy(dlg->name, name, sizeof(dlg->name));
-		dlg->enabled = DBGetContactSettingByte(NULL, MODULE_NAME, dlg->name, 1);
+		dlg->enabled = DBGetContactSettingByte(dlg->hContact, MODULE_NAME, dlg->name, 1);
 		dlg->srmm = srmm;
 		dlg->hwnd_owner = hwndOwner;
 
@@ -1229,8 +1229,8 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 		// First add languages
 		for(int i = 0; i < languages.count; i++)
 		{
-			AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0)
-				| (dlg->hwnd_menu_owner != NULL ? MF_OWNERDRAW : 0), 
+			AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0),
+				//| (dlg->hwnd_menu_owner != NULL ? MF_OWNERDRAW : 0), 
 				LANGUAGE_MENU_ID_BASE + i, languages.dicts[i]->full_name);
 		}
 
@@ -1275,7 +1275,7 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
 	if (selection == 1)
 	{
 		dlg->enabled = !dlg->enabled;
-		DBWriteContactSettingByte(NULL, MODULE_NAME, dlg->name, dlg->enabled);
+		DBWriteContactSettingByte(dlg->hContact, MODULE_NAME, dlg->name, dlg->enabled);
 
 		if (!dlg->enabled)
 		{
@@ -1501,8 +1501,8 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 			// First add languages
 			for(int i = 0; i < languages.count; i++)
 			{
-				AppendMenu(hMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0)
-					| (dlg->hwnd_menu_owner != NULL ? MF_OWNERDRAW : 0), 
+				AppendMenu(hMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0),
+					//| (dlg->hwnd_menu_owner != NULL ? MF_OWNERDRAW : 0), 
 					LANGUAGE_MENU_ID_BASE + i, languages.dicts[i]->full_name);
 			}
 
@@ -1538,6 +1538,28 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	switch (msg) 
 	{
+		case WM_INITMENUPOPUP:
+		{
+			HMENU hMenu = (HMENU) wParam;
+
+			int count = GetMenuItemCount(hMenu);
+			for(int i = 0; i < count; i++)
+			{
+				int id = GetMenuItemID(hMenu, i);
+				if (id < LANGUAGE_MENU_ID_BASE || id >= LANGUAGE_MENU_ID_BASE + languages.count) 
+					continue;
+
+				MENUITEMINFO mii = {0};
+				mii.cbSize = sizeof(MENUITEMINFO);
+				mii.fMask = MIIM_STATE;
+				GetMenuItemInfo(hMenu, id, FALSE, &mii);
+
+				// Make ownerdraw
+				ModifyMenu(hMenu, id, mii.fState | MF_BYCOMMAND | MF_OWNERDRAW, id, NULL);
+			}
+
+			break;
+		}
 		case WM_DRAWITEM:
 		{
 			LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT)lParam;
@@ -1578,15 +1600,12 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			rc.left += bmpChecked.bmWidth + 2;
 
 			// Draw icon
-			if (opts.use_flags)
-			{
-				HICON hFlag = (dict->hFlag == NULL ? hUnknownFlag : dict->hFlag);
+			HICON hFlag = (dict->hFlag == NULL ? hUnknownFlag : dict->hFlag);
 
-				rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - ICON_SIZE) / 2;
-				DrawIconEx(lpdis->hDC, rc.left, rc.top, hFlag, 16, 16, 0, NULL, DI_NORMAL);
+			rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - ICON_SIZE) / 2;
+			DrawIconEx(lpdis->hDC, rc.left, rc.top, hFlag, 16, 16, 0, NULL, DI_NORMAL);
 
-				rc.left += ICON_SIZE + 4;
-			}
+			rc.left += ICON_SIZE + 4;
 
 			// Draw text
 			RECT rc_text = { 0, 0, 0xFFFF, 0xFFFF };
@@ -1626,14 +1645,8 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			DrawText(hdc, dict->full_name, lstrlen(dict->full_name), &rc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE | DT_CALCRECT);
 
-			lpmis->itemHeight = max(bmpChecked.bmHeight, rc.bottom);
-			lpmis->itemWidth = 2 + bmpChecked.bmWidth + 2 + rc.right + 2;
-
-			if (opts.use_flags)
-			{
-				lpmis->itemHeight = max(ICON_SIZE, lpmis->itemHeight);
-				lpmis->itemWidth += ICON_SIZE + 4;
-			}
+			lpmis->itemHeight = max(ICON_SIZE, max(bmpChecked.bmHeight, rc.bottom));
+			lpmis->itemWidth = 2 + bmpChecked.bmWidth + 2 + ICON_SIZE + 4 + rc.right + 2;
 
 			SelectObject(hdc, hFontOld);
 			DeleteObject(hFont);
