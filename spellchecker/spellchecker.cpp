@@ -30,7 +30,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,7),
+	PLUGIN_MAKE_VERSION(0,0,1,8),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -867,12 +867,16 @@ void ModifyIcon(Dialog *dlg)
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.hIcon = dlg->lang->hFlag;
+		sid.hIcon = (dlg->lang == NULL || dlg->lang->hFlag == NULL ? hUnknownFlag : dlg->lang->hFlag);
 		sid.hIconDisabled = hDisabledIcon;
 		sid.flags = (dlg->enabled ? 0 : MBF_DISABLED);
 
 		char tooltip[1024];
-		if (dlg->lang->localized_name[0] != _T('\0'))
+		if (dlg->lang == NULL)
+		{
+			strncpy(tooltip, Translate("Spell Checker: No language found"), MAX_REGS(tooltip));
+		}
+		else if (dlg->lang->localized_name[0] != _T('\0'))
 		{
 #ifdef UNICODE
 			mir_snprintf(tooltip, MAX_REGS(tooltip), "%S: %S [%S]", TranslateT("Spell Checker"), dlg->lang->localized_name, dlg->lang->language);
