@@ -502,10 +502,9 @@ int JabberDbSettingChanged( WPARAM wParam, LPARAM lParam )
 		sttRenameGroup( cws, hContact );
 	else if ( !strcmp( cws->szSetting, "MyHandle" ))
 		sttRenameContact( cws, hContact );
-	else if ( !strcmp( cws->szSetting, "NotOnList" )){
+	else if ( !strcmp( cws->szSetting, "NotOnList" ))
 		if (!DBGetContactSettingByte((HANDLE) wParam, "CList", "Hidden", 0))  // skip hidden contacts!
 			sttAddContactForever( cws, hContact );
-	}
 	return 0;
 }
 
@@ -634,7 +633,7 @@ int JabberGetAvatar(WPARAM wParam, LPARAM lParam)
 
 	JabberGetAvatarFileName( NULL, buf, size );
 	return 0;
-}	
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // JabberGetAvatarFormatSupported - Jabber supports avatars of virtually all formats
@@ -802,7 +801,7 @@ static void __cdecl JabberGetAwayMsgThread( HANDLE hContact )
 				#endif
 				return;
 			}
-			
+
 			if ( item->statusMessage != NULL ) {
 				#if defined( _UNICODE )
 					char* msg = u2a(CleanMessageFromListeningTo(item->statusMessage));
@@ -827,7 +826,7 @@ int JabberGetAwayMsg( WPARAM wParam, LPARAM lParam )
 	CCSDATA *ccs = ( CCSDATA * ) lParam;
 	if ( ccs == NULL )
 		return 0;
-		
+
 	JabberLog( "GetAwayMsg called, wParam=%d lParam=%d", wParam, lParam );
 	mir_forkthread( JabberGetAwayMsgThread, ccs->hContact );
 	return 1;
@@ -948,7 +947,7 @@ int JabberRecvFile( WPARAM wParam, LPARAM lParam )
 	dbei.cbSize = sizeof( dbei );
 	dbei.szModule = jabberProtoName;
 	dbei.timestamp = pre->timestamp;
-	dbei.flags = pre->flags & ( PREF_CREATEREAD ? DBEF_READ : 0 );
+	dbei.flags = ( pre->flags & PREF_CREATEREAD ) ? DBEF_READ : 0;
 	dbei.eventType = EVENTTYPE_FILE;
 	dbei.cbBlob = sizeof( DWORD )+ strlen( szFile ) + strlen( szDesc ) + 2;
 	dbei.pBlob = ( PBYTE ) pre->szMessage;
@@ -1195,7 +1194,7 @@ int JabberSendMessage( WPARAM wParam, LPARAM lParam )
 
 		XmlNode* active = m.addChild( "active" ); active->addAttr( "xmlns", _T("http://jabber.org/protocol/chatstates"));
 
-		if ( !strcmp( msgType, "groupchat" ) || JGetByte( "MsgAck", FALSE ) == FALSE ) {
+		if ( !strcmp( msgType, "groupchat" ) || !JGetByte( "MsgAck", FALSE ) || !JGetByte( ccs->hContact, "MsgAck", TRUE )) {
 			if ( !strcmp( msgType, "groupchat" ))
 				m.addAttr( "to", dbv.ptszVal );
 			else {

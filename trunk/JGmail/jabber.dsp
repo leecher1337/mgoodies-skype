@@ -346,6 +346,10 @@ SOURCE=.\jabber_proxy.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\jabber_secur.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\jabber_ssl.cpp
 # ADD CPP /Yu
 # End Source File
@@ -395,6 +399,10 @@ SOURCE=.\jabber_xmlns.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\md5c.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\sha1.cpp
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
@@ -424,6 +432,10 @@ SOURCE=.\jabber_proxy.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\jabber_secur.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\jabber_ssl.h
 # End Source File
 # Begin Source File
@@ -433,6 +445,10 @@ SOURCE=.\jabber_xml.h
 # Begin Source File
 
 SOURCE=.\jabber_xmlns.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\md5.h
 # End Source File
 # Begin Source File
 

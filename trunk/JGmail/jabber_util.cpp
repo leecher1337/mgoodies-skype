@@ -1165,3 +1165,53 @@ LBL_setInfo:
 #endif
 	return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// TStringPairs class members
+
+TStringPairs::TStringPairs( char* buffer ) :
+	elems( NULL )
+{
+   TStringPairsElem tempElem[ 100 ];
+   
+	for ( numElems=0; *buffer; numElems++ ) {
+		char* p = strchr( buffer, '=' );
+		if ( p == NULL )
+			break;
+
+		tempElem[ numElems ].name = buffer;
+		*p = 0;
+		if (( p = strchr( ++p, '\"' )) == NULL )
+			break;
+
+		char* p1 = strchr( p+1, '\"' );
+		if ( p1 == NULL )
+			break;
+
+		*p1++ = 0;
+		tempElem[ numElems ].value = p+1;
+		if ( *p1 == ',' )
+			p1++;
+
+		buffer = p1;
+	}
+
+	if ( numElems ) {
+		elems = new TStringPairsElem[ numElems ];
+		memcpy( elems, tempElem, sizeof(tempElem[0]) * numElems );
+}	}
+
+TStringPairs::~TStringPairs()
+{
+	delete elems;
+}
+
+const char* TStringPairs::operator[]( const char* key ) const
+{
+	for ( int i = 0; i < numElems; i++ )
+		if ( !strcmp( elems[i].name, key ))
+			return elems[i].value;
+
+	return "";
+}
+

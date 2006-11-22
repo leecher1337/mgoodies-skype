@@ -121,7 +121,7 @@ static int JabberFileReceiveParse( filetransfer* ft, char* buffer, int datalen )
 	eob = buffer + datalen;
 	p = buffer;
 	num = 0;
-	for ( ;; ) {
+	while ( true ) {
 		if ( ft->state==FT_CONNECTING || ft->state==FT_INITIALIZING ) {
 			for ( q=p; q+1<eob && ( *q!='\r' || *( q+1 )!='\n' ); q++ );
 			if ( q+1 < eob ) {
@@ -151,13 +151,13 @@ static int JabberFileReceiveParse( filetransfer* ft, char* buffer, int datalen )
 								break;
 							}
 							ft->state = FT_RECEIVING;
-							ft->std.currentFileSize = 0;
+							ft->std.currentFileProgress = 0;
 							JabberLog( "Change to FT_RECEIVING" );
 						}
 						else if (( s=strchr( str, ':' )) != NULL ) {
 							*s = '\0';
 							if ( !strcmp( str, "Content-Length" ))
-								ft->std.totalBytes = strtol( s+1, NULL, 10 );
+								ft->std.totalBytes = ft->std.currentFileSize = strtol( s+1, NULL, 10 );
 					}	}
 
 					mir_free( str );
@@ -199,9 +199,7 @@ static int JabberFileReceiveParse( filetransfer* ft, char* buffer, int datalen )
 			num = datalen;
 			break;
 		}
-		else {
-			break;
-		}
+		else break;
 	}
 
 	return num;
@@ -209,27 +207,15 @@ static int JabberFileReceiveParse( filetransfer* ft, char* buffer, int datalen )
 
 void __cdecl JabberFileServerThread( filetransfer* ft )
 {
-	NETLIBBIND nlb = {0};
-	JABBER_SOCKET s;
-	int i;
-	JABBER_LIST_ITEM *item;
-	struct in_addr in;
-	HANDLE hEvent;
-	TCHAR *p, *resource;
-	char *myAddr;
-	char *pFileName;
-	DBVARIANT dbv;
-	TCHAR szPort[20];
-	int id;
-
 	JabberLog( "Thread started: type=file_send" );
 
 	ft->type = FT_OOB;
 
+	NETLIBBIND nlb = {0};
 	nlb.cbSize = sizeof( NETLIBBIND );
 	nlb.pfnNewConnection = JabberFileServerConnection;
 	nlb.wPort = 0;	// Use user-specified incoming port ranges, if available
-	s = ( HANDLE ) JCallService( MS_NETLIB_BINDPORT, ( WPARAM ) hNetlibUser, ( LPARAM )&nlb );
+	HANDLE s = ( HANDLE ) JCallService( MS_NETLIB_BINDPORT, ( WPARAM ) hNetlibUser, ( LPARAM )&nlb );
 	if ( s == NULL ) {
 		JabberLog( "Cannot allocate port to bind for file server thread, thread ended." );
 		JSendBroadcast( ft->std.hContact, ACKTYPE_FILE, ACKRESULT_FAILED, ft, 0 );
@@ -240,21 +226,18 @@ void __cdecl JabberFileServerThread( filetransfer* ft )
 	ft->s = s;
 	JabberLog( "ft->s = %d", s );
 
-	hEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
+	HANDLE hEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
 	ft->hFileEvent = hEvent;
 
+	TCHAR szPort[20];
 	mir_sntprintf( szPort, SIZEOF( szPort ), _T("%d"), nlb.wPort );
-	item = JabberListAdd( LIST_FILE, szPort );
+	JABBER_LIST_ITEM *item = JabberListAdd( LIST_FILE, szPort );
 	item->ft = ft;
 
-	if (( p=JabberListGetBestClientResourceNamePtr( ft->jid )) == NULL )
-		resource = NULL;
-	else
-		resource = mir_tstrdup( p );
-
-	if ( resource != NULL ) {
+	TCHAR* ptszResource = JabberListGetBestClientResourceNamePtr( ft->jid );
+	if ( ptszResource != NULL ) {
 		ft->state = FT_CONNECTING;
-		for ( i=0; i < ft->std.totalFiles && ft->state!=FT_ERROR && ft->state!=FT_DENIED; i++ ) {
+		for ( int i=0; i < ft->std.totalFiles && ft->state != FT_ERROR && ft->state != FT_DENIED; i++ ) {
 			ft->std.currentFileNumber = i;
 			ft->state = FT_CONNECTING;
 			if ( ft->httpPath ) mir_free( ft->httpPath );
@@ -265,13 +248,19 @@ void __cdecl JabberFileServerThread( filetransfer* ft )
 				p++;
 			else
 				p = ft->std.files[i];
+
+			in_addr in;
 			in.S_un.S_addr = jabberLocalIP;
-			if (( pFileName=JabberHttpUrlEncode( p )) != NULL ) {
-				id = JabberSerialNext();
+		
+			char* pFileName = JabberHttpUrlEncode( p );
+			if ( pFileName != NULL ) {
+				int id = JabberSerialNext();
 				if ( ft->iqId ) mir_free( ft->iqId );
 				ft->iqId = ( TCHAR* )mir_alloc( sizeof(TCHAR)*( strlen( JABBER_IQID )+20 ));
 				wsprintf( ft->iqId, _T(JABBER_IQID)_T("%d"), id );
 
+				char *myAddr;
+				DBVARIANT dbv;
 				if ( JGetByte( "BsDirect", TRUE ) && JGetByte( "BsDirectManual", FALSE )) {
 					if ( !DBGetContactSetting( NULL, jabberProtoName, "BsDirectAddr", &dbv )) {
 						myAddr = NEWSTR_ALLOCA( dbv.pszVal );
@@ -284,7 +273,10 @@ void __cdecl JabberFileServerThread( filetransfer* ft )
 				char szAddr[ 256 ];
 				mir_snprintf( szAddr, sizeof(szAddr), "http://%s:%d/%s", myAddr, nlb.wPort, pFileName );
 
-				XmlNodeIq iq( "set", id, ft->jid );
+				int len = lstrlen(ptszResource) + lstrlen(ft->jid) + 2;
+				TCHAR* fulljid = ( TCHAR* )alloca( sizeof( TCHAR )*len );
+				wsprintf( fulljid, _T("%s/%s"), ft->jid, ptszResource );
+				XmlNodeIq iq( "set", id, fulljid );
 				XmlNode* query = iq.addQuery( "jabber:iq:oob" );
 				query->addChild( "url", szAddr );
 				query->addChild( "desc", ft->szDescription );
@@ -302,8 +294,6 @@ void __cdecl JabberFileServerThread( filetransfer* ft )
 		JabberLog( "Finish all files" );
 
 		Netlib_CloseHandle( s );
-
-		mir_free( resource );
 	}
 
 	ft->s = NULL;
@@ -326,26 +316,16 @@ void __cdecl JabberFileServerThread( filetransfer* ft )
 	}
 
 	JabberLog( "Thread ended: type=file_send" );
-
 	delete ft;
 }
 
 static void JabberFileServerConnection( JABBER_SOCKET hConnection, DWORD dwRemoteIP )
 {
-	SOCKET s;
-	JABBER_SOCKET slisten;
-	SOCKADDR_IN saddr;
-	int len;
-	WORD localPort;
-	JABBER_LIST_ITEM *item;
-	char* buffer;
-	int datalen;
-	filetransfer* ft;
-	TCHAR szPort[20];
-
-	localPort = 0;
-	if (( s=JCallService( MS_NETLIB_GETSOCKET, ( WPARAM ) hConnection, 0 )) != INVALID_SOCKET ) {
-		len = sizeof( saddr );
+	WORD localPort = 0;
+	SOCKET s = JCallService( MS_NETLIB_GETSOCKET, ( WPARAM ) hConnection, 0 ); 
+	if ( s != INVALID_SOCKET ) {
+		SOCKADDR_IN saddr;
+		int len = sizeof( saddr );
 		if ( getsockname( s, ( SOCKADDR * ) &saddr, &len ) != SOCKET_ERROR ) {
 			localPort = ntohs( saddr.sin_port );
 		}
@@ -356,21 +336,24 @@ static void JabberFileServerConnection( JABBER_SOCKET hConnection, DWORD dwRemot
 		return;
 	}
 
-	mir_sntprintf( szPort, sizeof( szPort ), _T("%d"), localPort );
+	TCHAR szPort[20];
+	mir_sntprintf( szPort, SIZEOF( szPort ), _T("%d"), localPort );
 	JabberLog( "File server incoming connection accepted: local_port=" TCHAR_STR_PARAM, szPort );
 
-	if (( item=JabberListGetItemPtr( LIST_FILE, szPort )) == NULL ) {
+	JABBER_LIST_ITEM *item = JabberListGetItemPtr( LIST_FILE, szPort );
+	if ( item == NULL ) {
 		JabberLog( "No file is currently served, file server connection closed." );
 		Netlib_CloseHandle( hConnection );
 		return;
 	}
 
-	ft = item->ft;
-	slisten = ft->s;
+	filetransfer* ft = item->ft;
+	JABBER_SOCKET slisten = ft->s;
 	ft->s = hConnection;
 	JabberLog( "Set ft->s to %d ( saving %d )", hConnection, slisten );
 
-	if (( buffer=( char* )mir_alloc( JABBER_NETWORK_BUFFER_SIZE+1 )) == NULL ) {
+	char* buffer = ( char* )mir_alloc( JABBER_NETWORK_BUFFER_SIZE+1 );
+	if ( buffer  == NULL ) {
 		JabberLog( "Cannot allocate network buffer, file server connection closed." );
 		Netlib_CloseHandle( hConnection );
 		ft->state = FT_ERROR;
@@ -378,12 +361,12 @@ static void JabberFileServerConnection( JABBER_SOCKET hConnection, DWORD dwRemot
 			SetEvent( ft->hFileEvent );
 		return;
 	}
+
 	JabberLog( "Entering recv loop for this file connection... ( ft->s is hConnection )" );
-	datalen = 0;
+	int datalen = 0;
 	while ( ft->state!=FT_DONE && ft->state!=FT_ERROR ) {
 		int recvResult, bytesParsed;
 
-		//recvResult = JabberWsRecv( hConnection, buffer+datalen, JABBER_NETWORK_BUFFER_SIZE-datalen );
 		recvResult = Netlib_Recv( hConnection, buffer+datalen, JABBER_NETWORK_BUFFER_SIZE-datalen, 0 );
 		if ( recvResult <= 0 )
 			break;

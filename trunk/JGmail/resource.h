@@ -72,6 +72,7 @@
 #define IDC_EDIT_LABELS                 223
 #define IDC_SHOWLABELS                  224
 #define IDC_EXPERTLABELS                225
+#define IDI_AUTHREVOKE                  187
 #define IDC_EDIT_USERNAME               1000
 #define IDC_SAVE                        1000
 #define IDC_EDIT_PASSWORD               1001
@@ -248,7 +249,7 @@
 #define IDM_INVITE                      10016
 
 // Next default values for new objects
-// 
+//
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        226
