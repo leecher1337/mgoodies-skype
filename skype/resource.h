@@ -85,6 +85,12 @@
 #define IDC_POPUPTIME                   1052
 #define IDC_POPUPBACKCOLOR              1053
 #define IDC_USEWINCOLORS                1054
+#define IDC_POPUPERROR                  1055
+#define IDC_PREVIEWERR                  1056
+#define IDC_POPUPTIMEERR                1057
+#define IDC_POPUPBACKCOLORERR           1058
+#define IDC_POPUPTEXTCOLORERR           1059
+#define IDC_USEWINCOLORSERR             1060
 
 // Next default values for new objects
 // 

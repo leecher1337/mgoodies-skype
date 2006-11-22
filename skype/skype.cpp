@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 struct MM_INTERFACE   mmi; 
 
+POPUPDATAT MessagePopup;
+
 // Exported Globals
 HWND hSkypeWnd=NULL, hWnd=NULL;
 HANDLE SkypeReady, SkypeMsgReceived, hOptHook,hHookOnUserInfoInit, hInitChat=NULL, httbButton=NULL;
@@ -180,36 +182,46 @@ void RegisterToUpdate(void)
  *
  */
 int ShowMessage(int iconID, char *lpzText, int mustShow) {
-#ifdef USEPOPUP
-    POPUPDATAEX pud={0};
-#endif
+
+
 
 	if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "SuppressErrors", 0)) return -1;
 	lpzText=Translate(lpzText);
-#ifdef USEPOPUP
-	if (bModulesLoaded && ServiceExists(MS_POPUP_ADDPOPUP) &&
-        DBGetContactSettingByte(NULL, pszSkypeProtoName, "UsePopup", 0) && !MirandaShuttingDown
-	   ) {
-		pud.lchIcon = LoadIcon(hInst, MAKEINTRESOURCE(iconID));
-		strncpy(pud.lpzContactName, pluginInfo.shortName, MAX_CONTACTNAME);
-		strncpy(pud.lpzText, lpzText, MAX_SECONDLINE);
-		pud.iSeconds = mustShow==1?-1:0;
-		//pud.lpzClass = mustShow==1?POPUP_CLASS_WARNING:POPUP_CLASS_DEFAULT;
-		if (PUAddPopUpEx(&pud)<0) {
-			if (mustShow==1) MessageBox(NULL,lpzText,pluginInfo.shortName, MB_OK | MB_ICONWARNING);
-			return -1;
-		}
-		if (mustShow==1) MessageBeep(-1);
+
+	if (bModulesLoaded && ServiceExists(MS_POPUP_ADDPOPUPT) && DBGetContactSettingByte(NULL, pszSkypeProtoName, "UsePopup", 0) && !MirandaShuttingDown) {
+		bool showPopup, popupWindowColor;
+		unsigned int popupBackColor, popupTextColor;
+		int popupTimeSec;
+
+		popupTimeSec = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTimeSecErr", 4);
+		popupTextColor = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTextColorErr", GetSysColor(COLOR_WINDOWTEXT));
+		popupBackColor = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupBackColorErr", GetSysColor(COLOR_BTNFACE));
+		popupWindowColor = DBGetContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColorErr", TRUE);
+		showPopup = DBGetContactSettingByte(NULL, pszSkypeProtoName, "showPopupErr", TRUE);
+
+		MessagePopup.lchContact = NULL;
+		MessagePopup.lchIcon = LoadIcon(hInst,MAKEINTRESOURCE(iconID));
+		MessagePopup.colorBack = ! popupWindowColor ? popupBackColor : GetSysColor(COLOR_BTNFACE);
+		MessagePopup.colorText = ! popupWindowColor ? popupTextColor : GetSysColor(COLOR_WINDOWTEXT);
+		MessagePopup.iSeconds = popupTimeSec;
+		MessagePopup.PluginData = (void *)1;
+		
+		lstrcpy(MessagePopup.lpzText, TranslateT(lpzText));
+
+		lstrcpy(MessagePopup.lptzContactName, TranslateT(pszSkypeProtoName));
+
+		if(showPopup)
+			CallService(MS_POPUP_ADDPOPUPT,(WPARAM)&MessagePopup,0);
+
 		return 0;
-	} else {
-#endif
+	} 
+	else {
+
 		if (mustShow==1) MessageBox(NULL,lpzText,pluginInfo.shortName, MB_OK | MB_ICONWARNING);
-#ifdef USEPOPUP
-		return 0;
+			return 0;
 	}
-#else
 	return -1;
-#endif
+
 
 }
 
@@ -1152,14 +1164,23 @@ void RingThread(char *szSkypeMsg) {
 	{
 		if(ServiceExists(MS_POPUP_ADDPOPUPEX)) 
 		{
+			bool showPopup, popupWindowColor;
+			unsigned int popupBackColor, popupTextColor;
+			int popupTimeSec;
 			POPUPDATAT InCallPopup;
 			TCHAR * lpzContactName = (TCHAR*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,GCDNF_TCHAR);
 
+			popupTimeSec = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTimeSec", 4);
+			popupTextColor = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTextColor", GetSysColor(COLOR_WINDOWTEXT));
+			popupBackColor = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupBackColor", GetSysColor(COLOR_BTNFACE));
+			popupWindowColor = DBGetContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColor", TRUE);
+			showPopup = DBGetContactSettingByte(NULL, pszSkypeProtoName, "showPopup", TRUE);
+
 			InCallPopup.lchContact = hContact;
 			InCallPopup.lchIcon = LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
-			InCallPopup.colorBack = GetSysColor(COLOR_BTNFACE); //! n.popupWindowColor ? n.popupBackColor : GetSysColor(COLOR_BTNFACE);
-			InCallPopup.colorText = GetSysColor(COLOR_WINDOWTEXT); //! n.popupWindowColor ? n.popupTextColor : GetSysColor(COLOR_WINDOWTEXT);
-			InCallPopup.iSeconds = 5; //n.popupTimeSec;
+			InCallPopup.colorBack = ! popupWindowColor ? popupBackColor : GetSysColor(COLOR_BTNFACE);
+			InCallPopup.colorText = ! popupWindowColor ? popupTextColor : GetSysColor(COLOR_WINDOWTEXT);
+			InCallPopup.iSeconds = popupTimeSec;
 			InCallPopup.PluginWindowProc = (WNDPROC)InCallPopUpProc;
 			InCallPopup.PluginData = (void *)1;
 			
@@ -1167,7 +1188,8 @@ void RingThread(char *szSkypeMsg) {
 
 			lstrcpy(InCallPopup.lptzContactName, lpzContactName);
 
-			CallService(MS_POPUP_ADDPOPUPT,(WPARAM)&InCallPopup,0);
+			if(showPopup)
+				CallService(MS_POPUP_ADDPOPUPT,(WPARAM)&InCallPopup,0);
 
 		}
 
