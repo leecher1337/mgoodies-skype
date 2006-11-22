@@ -112,6 +112,32 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+// checks if a file with the same hash already exists in the direcory
+// returns (char *) to the full path if found or NULL
+// result must be free()-ed if not NULL
+static char * CheckIfHashExists( char * dir, int hash){
+	char patt[MAX_PATH+1];
+	WIN32_FIND_DATA finddata;
+	HANDLE hFind = NULL;
+	int dirlen = strlen(dir);
+	strncpy(patt, dir, MAX_PATH-4);
+	strncpy(&patt[dirlen], "\\*.*", MAX_PATH-dirlen);
+	if ((hFind = FindFirstFile(patt, &finddata)) != INVALID_HANDLE_VALUE){
+		do{
+			if(finddata.cFileName[0] != '.') if (!(finddata.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_DEVICE))){
+				strncpy(&patt[dirlen+1],finddata.cFileName,MAX_PATH-dirlen-1);
+				if (GetFileHash(patt)==hash){
+					char * result = strdup(patt);
+					FindClose(hFind);
+					return result;
+				}
+			}
+		} while (FindNextFile(hFind, &finddata));
+	};
+	FindClose(hFind);
+	return 0;
+}
+
 // fired when the contacts avatar changes
 // wParam = hContact
 // lParam = struct avatarCacheEntry *cacheEntry
@@ -170,8 +196,9 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 		GetContactFolder((HANDLE)wParam, fn);
 	
 		GetLocalTime(&curtime);
+		char *fileExists = CheckIfHashExists(fn,newhash);
 		sprintf(fn, "%s\\%04d-%02d-%02d %02dh%02dm%02ds.%s",fn, curtime.wYear, curtime.wMonth, curtime.wDay, curtime.wHour, curtime.wMinute, curtime.wSecond, ext);
-		if(CopyFile(avatar->szFilename, fn, TRUE) == 0)
+		if((fileExists?MoveFile(fileExists,fn):CopyFile(avatar->szFilename, fn, TRUE)) == 0)
 		{
 			MessageBox(NULL, fn, "Unable to save avatar", MB_OK);
 		}
@@ -181,6 +208,7 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 			ShowPopup(NULL, "AVH Debug", "File copied successfully");
 		}
 #endif
+		if (fileExists) free(fileExists);
 	}
 
 	userpref = db_byte_get((HANDLE)wParam, "AvatarHistory", "PopupUser", BST_INDETERMINATE);
