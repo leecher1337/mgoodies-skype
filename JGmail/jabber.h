@@ -215,6 +215,7 @@ struct ThreadData {
 
 	HWND reg_hwndDlg;
 	BOOL reg_done, bIsSessionAvailable;
+	class TJabberAuth* auth;
 };
 
 struct JABBER_MODEMSGS
@@ -493,6 +494,22 @@ char*  __stdcall  JTranslate( const char* str );
 void __cdecl JabberServerThread( struct ThreadData *info );
 
 //---- jabber_util.c ----------------------------------------------
+
+struct TStringPairsElem
+{
+	const char *name, *value; 
+};
+
+struct TStringPairs
+{
+	TStringPairs( char* );
+	~TStringPairs();
+
+	const char* operator[]( const char* name ) const;
+
+	int numElems;
+	TStringPairsElem* elems;
+};
 
 void          __stdcall JabberSerialInit( void );
 void          __stdcall JabberSerialUninit( void );

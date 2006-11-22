@@ -150,12 +150,13 @@ static LRESULT CALLBACK JabberValidateUsernameWndProc( HWND hwndEdit, UINT msg, 
 {
 	WNDPROC oldProc = ( WNDPROC ) GetWindowLong( hwndEdit, GWL_USERDATA );
 
-	switch ( msg ) {
-	case WM_CHAR:
-		if ( strchr( "\"&'/:<>@", wParam&0xff ) != NULL )
+	if ( msg == WM_CHAR ) {
+		switch( wParam ) {
+		case '\"':  case '&':	case '\'':	case '/':
+		case ':':	case '<':	case '>':	case '@':
 			return 0;
-		break;
-	}
+	}	}
+
 	return CallWindowProc( oldProc, hwndEdit, msg, wParam, lParam );
 }
 

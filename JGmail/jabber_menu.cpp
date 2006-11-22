@@ -34,6 +34,7 @@ Last change by : $Author$
 
 HANDLE hMenuRequestAuth = NULL;
 HANDLE hMenuGrantAuth = NULL;
+HANDLE hMenuRevokeAuth = NULL;
 HANDLE hMenuJoinLeave = NULL;
 HANDLE hMenuConvert = NULL;
 HANDLE hMenuRosterAdd = NULL;
@@ -56,6 +57,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 {
 	sttEnableMenuItem( hMenuRequestAuth, FALSE );
 	sttEnableMenuItem( hMenuGrantAuth, FALSE );
+	sttEnableMenuItem( hMenuRevokeAuth, FALSE );
 	sttEnableMenuItem( hMenuJoinLeave, FALSE );
 	sttEnableMenuItem( hMenuConvert, FALSE );
 	sttEnableMenuItem( hMenuRosterAdd, FALSE );
@@ -121,6 +123,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 		if ( item != NULL ) {
 			sttEnableMenuItem( hMenuRequestAuth, item->subscription == SUB_FROM || item->subscription == SUB_NONE );
 			sttEnableMenuItem( hMenuGrantAuth, item->subscription == SUB_TO || item->subscription == SUB_NONE );
+			sttEnableMenuItem( hMenuRevokeAuth, item->subscription == SUB_FROM || item->subscription == SUB_BOTH );
 			return 0;
 	}	}
 
@@ -191,6 +194,21 @@ int JabberMenuHandleGrantAuth( WPARAM wParam, LPARAM lParam )
 	if (( hContact=( HANDLE ) wParam )!=NULL && jabberOnline ) {
 		if ( !JGetStringT( hContact, "jid", &dbv )) {
 			XmlNode presence( "presence" ); presence.addAttr( "to", dbv.ptszVal ); presence.addAttr( "type", "subscribed" );
+			JabberSend( jabberThreadInfo->s, presence );
+			JFreeVariant( &dbv );
+	}	}
+
+	return 0;
+}
+
+int JabberMenuRevokeAuth( WPARAM wParam, LPARAM lParam )
+{
+	HANDLE hContact;
+	DBVARIANT dbv;
+
+	if (( hContact=( HANDLE ) wParam )!=NULL && jabberOnline ) {
+		if ( !JGetStringT( hContact, "jid", &dbv )) {
+			XmlNode presence( "presence" ); presence.addAttr( "to", dbv.ptszVal ); presence.addAttr( "type", "unsubscribed" );
 			JabberSend( jabberThreadInfo->s, presence );
 			JFreeVariant( &dbv );
 	}	}
@@ -274,7 +292,7 @@ void JabberMenuInit()
 	strcpy( tDest, "/RequestAuth" );
 	CreateServiceFunction( text, JabberMenuHandleRequestAuth );
 	mi.pszName = JTranslate( "Request authorization" );
-	mi.position = -2000001001;
+	mi.position = -2000001000;
 	mi.hIcon = iconList[6];// IDI_REQUEST;
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
@@ -284,17 +302,27 @@ void JabberMenuInit()
 	strcpy( tDest, "/GrantAuth" );
 	CreateServiceFunction( text, JabberMenuHandleGrantAuth );
 	mi.pszName = JTranslate( "Grant authorization" );
-	mi.position = -2000001000;
+	mi.position = -2000001001;
 	mi.hIcon = iconList[7];// IDI_GRANT;
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuGrantAuth = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
+	// Revoke auth
+	strcpy( tDest, "/RevokeAuth" );
+	CreateServiceFunction( text, JabberMenuRevokeAuth );
+	mi.pszName = JTranslate( "Revoke authorization" );
+	mi.position = -2000001002;
+	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_AUTHREVOKE ));
+	mi.pszService = text;
+	mi.pszContactOwner = jabberProtoName;
+	hMenuRevokeAuth = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
+
 	// "Grant authorization"
 	strcpy( tDest, "/JoinChat" );
 	CreateServiceFunction( text, JabberMenuJoinLeave );
 	mi.pszName = JTranslate( "Join chat" );
-	mi.position = -2000001002;
+	mi.position = -2000001003;
 	mi.hIcon = iconBigList[0];
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
@@ -304,7 +332,7 @@ void JabberMenuInit()
 	strcpy( tDest, "/ConvertChatContact" );
 	CreateServiceFunction( text, JabberMenuConvertChatContact );
 	mi.pszName = JTranslate( "Convert" );
-	mi.position = -1999901003;
+	mi.position = -1999901004;
 	mi.hIcon = iconList[16];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_USER2ROOM ));
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
@@ -314,7 +342,7 @@ void JabberMenuInit()
 	strcpy( tDest, "/AddToRoster" );
 	CreateServiceFunction( text, JabberMenuRosterAdd );
 	mi.pszName = JTranslate( "Add to roster" );
-	mi.position = -1999901004;
+	mi.position = -1999901005;
 	mi.hIcon = iconList[15];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_ADDROSTER ));
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
@@ -324,7 +352,7 @@ void JabberMenuInit()
 	strcpy( tDest, "/TransportLogin" );
 	CreateServiceFunction( text, JabberMenuTransportLogin );
 	mi.pszName = JTranslate( "Login/logout" );
-	mi.position = -1999901005;
+	mi.position = -1999901006;
 	mi.hIcon = iconList[17];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_LOGIN ));
 	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;

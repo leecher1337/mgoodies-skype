@@ -1,4 +1,4 @@
-/*
+	/*
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
@@ -115,7 +115,7 @@ static char* skipSpaces( char* p, int* num = NULL )
       p++;
 
 	if ( num != NULL )
-		num += i;
+		*num += i;
 	return p;
 }
 
