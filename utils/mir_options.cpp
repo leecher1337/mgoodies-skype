@@ -485,7 +485,8 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 						TCHAR tmp[1024];
 						MyDBGetContactSettingTString(NULL, module, ctrl->setting, tmp, 1024, ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
 						int count = SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETCOUNT, 0, 0);
-						for(int i = 0; i < count; i++)
+						int i;
+						for(i = 0; i < count; i++)
 						{
 							TCHAR *id = (TCHAR *) SendDlgItemMessage(hwndDlg, ctrl->nID, CB_GETITEMDATA, (WPARAM) i, 0);
 							if (lstrcmp(id, tmp) == 0)
