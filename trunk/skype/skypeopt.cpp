@@ -10,6 +10,13 @@ extern PLUGININFO pluginInfo;
 extern char pszSkypeProtoName[MAX_PATH+30],protocol;
 extern BOOL SkypeInitialized;
 
+bool showPopup, showPopupErr, popupWindowColor, popupWindowColorErr;
+unsigned int popupBackColor, popupBackColorErr;
+unsigned int popupTextColor, popupTextColorErr;
+int popupTimeSec, popupTimeSecErr;
+POPUPDATAT InCallPopup;
+POPUPDATAT ErrorPopup;
+
 CSkypeProfile myProfile;
 
 static HBITMAP hAvatar = NULL;
@@ -36,33 +43,170 @@ int RegisterOptions(WPARAM wParam, LPARAM lParam) {
    return 0;
 }
 
-BOOL CALLBACK OptPopupDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK OptPopupDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static RECT r;
 
 	switch ( msg ) 
 	{
-	case WM_INITDIALOG:
-		TranslateDialogDefault( hwndDlg );
-		return TRUE;
-		break;
+		case WM_INITDIALOG:
+			TranslateDialogDefault( hwnd );
+			// Message Popup
+			popupTimeSec = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTimeSec", 4);
+			popupTextColor = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTextColor", GetSysColor(COLOR_WINDOWTEXT));
+			popupBackColor = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupBackColor", GetSysColor(COLOR_BTNFACE));
+			popupWindowColor = DBGetContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColor", FALSE);
+			showPopup = DBGetContactSettingByte(NULL, pszSkypeProtoName, "showPopup", TRUE);
+			// ERROR Message Popup
+			popupTimeSecErr = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTimeSecErr", 4);
+			popupTextColorErr = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTextColorErr", GetSysColor(COLOR_WINDOWTEXT));
+			popupBackColorErr = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupBackColorErr", GetSysColor(COLOR_BTNFACE));
+			popupWindowColorErr = DBGetContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColorErr", FALSE);
+			showPopupErr = DBGetContactSettingByte(NULL, pszSkypeProtoName, "showPopupErr", TRUE);
 
-	case WM_COMMAND:
-		if ( HIWORD( wParam ) == BN_CLICKED ) 
-		{
+			EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORS),showPopup);
+			EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR),showPopup && ! popupWindowColor);
+			EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR),showPopup && ! popupWindowColor);
+			EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIME),showPopup);
+			EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORSERR),showPopupErr);
+			EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLORERR),showPopupErr && ! popupWindowColorErr);
+			EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLORERR),showPopupErr && ! popupWindowColorErr);
+			EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIMEERR),showPopupErr);
+			CheckDlgButton(hwnd, IDC_POPUPINCOMING, (WPARAM) showPopup);
+			CheckDlgButton(hwnd, IDC_USEWINCOLORS, (WPARAM) popupWindowColor);
+			CheckDlgButton(hwnd, IDC_POPUPERROR, (WPARAM) showPopupErr);
+			CheckDlgButton(hwnd, IDC_USEWINCOLORSERR, (WPARAM) popupWindowColorErr);
+			SetDlgItemInt(hwnd, IDC_POPUPTIME, popupTimeSec,FALSE);
+			SetDlgItemInt(hwnd, IDC_POPUPTIMEERR, popupTimeSecErr,FALSE);
+			SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETCOLOUR,0, popupBackColor);
+			SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETDEFAULTCOLOUR, 0, GetSysColor(COLOR_BTNFACE));
+			SendDlgItemMessage(hwnd, IDC_POPUPTEXTCOLOR, CPM_SETCOLOUR,0, popupTextColor);
+			SendDlgItemMessage(hwnd, IDC_POPUPTEXTCOLOR, CPM_SETDEFAULTCOLOUR, 0, GetSysColor(COLOR_WINDOWTEXT));
+			SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLORERR, CPM_SETCOLOUR,0, popupBackColorErr);
+			SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLORERR, CPM_SETDEFAULTCOLOUR, 0, GetSysColor(COLOR_BTNFACE));
+			SendDlgItemMessage(hwnd, IDC_POPUPTEXTCOLORERR, CPM_SETCOLOUR,0, popupTextColorErr);
+			SendDlgItemMessage(hwnd, IDC_POPUPTEXTCOLORERR, CPM_SETDEFAULTCOLOUR, 0, GetSysColor(COLOR_WINDOWTEXT));
+
+
+			return TRUE;
+			break;
+
+		case WM_NOTIFY:
+			switch(((LPNMHDR)lParam)->idFrom)
+			{
+				case 0:
+					switch (((LPNMHDR)lParam)->code)
+					{
+						case PSN_APPLY:
+							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupBackColor", popupBackColor);
+							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupTextColor", popupTextColor);
+							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupTimeSec", popupTimeSec);
+							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColor", popupWindowColor);
+							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "showPopup", showPopup);
+							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupBackColorErr", popupBackColorErr);
+							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupTextColorErr", popupTextColorErr);
+							DBWriteContactSettingDword(NULL, pszSkypeProtoName, "popupTimeSecErr", popupTimeSecErr);
+							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColorErr", popupWindowColorErr);
+							DBWriteContactSettingByte(NULL, pszSkypeProtoName, "showPopupErr", showPopupErr);
+							break;
+					}
+			}
+			break;
+
+		
+
+		case WM_COMMAND:
 			switch( LOWORD( wParam )) 
 			{
-			case IDC_SETAVATAR:
-				break;
+				case IDC_PREVIEW:
+					HANDLE hContact;
+					TCHAR * lpzContactName;
 
-			case IDC_DELETEAVATAR:
-				break;
+					hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+					lpzContactName = (TCHAR*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,GCDNF_TCHAR);
+					InCallPopup.lchContact = hContact;
+					InCallPopup.lchIcon = LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
+					InCallPopup.colorBack = ! popupWindowColor ? popupBackColor : GetSysColor(COLOR_BTNFACE);
+					InCallPopup.colorText = ! popupWindowColor ? popupTextColor : GetSysColor(COLOR_WINDOWTEXT);
+					InCallPopup.iSeconds = popupTimeSec;
+					InCallPopup.PluginData = (void *)1;
+					
+					lstrcpy(InCallPopup.lpzText, TranslateT("Incoming Skype Call"));
+
+					lstrcpy(InCallPopup.lptzContactName, lpzContactName);
+
+					CallService(MS_POPUP_ADDPOPUPT,(WPARAM)&InCallPopup,0);
+
+
+					break;
+				case IDC_PREVIEWERR:					
+					ErrorPopup.lchContact = NULL;
+					ErrorPopup.lchIcon = LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
+					ErrorPopup.colorBack = ! popupWindowColorErr ? popupBackColorErr : GetSysColor(COLOR_BTNFACE);
+					ErrorPopup.colorText = ! popupWindowColorErr ? popupTextColorErr : GetSysColor(COLOR_WINDOWTEXT);
+					ErrorPopup.iSeconds = popupTimeSecErr;
+					ErrorPopup.PluginData = (void *)1;
+					
+					lstrcpy(ErrorPopup.lpzText, TranslateT("Preview Error Message"));
+
+					lstrcpy(ErrorPopup.lptzContactName, "Error Message");
+
+
+					CallService(MS_POPUP_ADDPOPUPT,(WPARAM)&ErrorPopup,0);
+
+					break;
+
+				case IDC_POPUPTIME:
+				case IDC_POPUPTIMEERR:
+					BOOL Translated;
+					popupTimeSec = GetDlgItemInt(hwnd,IDC_POPUPTIME,&Translated,FALSE);
+					popupTimeSecErr = GetDlgItemInt(hwnd,IDC_POPUPTIMEERR,&Translated,FALSE);
+					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
+					break;
+				case IDC_POPUPTEXTCOLOR:
+				case IDC_POPUPBACKCOLOR:
+				case IDC_POPUPTEXTCOLORERR:
+				case IDC_POPUPBACKCOLORERR:
+					popupBackColor = SendDlgItemMessage(hwnd,IDC_POPUPBACKCOLOR,CPM_GETCOLOUR,0,0);
+					popupTextColor = SendDlgItemMessage(hwnd,IDC_POPUPTEXTCOLOR,CPM_GETCOLOUR,0,0);
+					popupBackColorErr = SendDlgItemMessage(hwnd,IDC_POPUPBACKCOLORERR,CPM_GETCOLOUR,0,0);
+					popupTextColorErr = SendDlgItemMessage(hwnd,IDC_POPUPTEXTCOLORERR,CPM_GETCOLOUR,0,0);
+					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
+					break;
+				case IDC_USEWINCOLORS:
+					popupWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR), showPopup && ! popupWindowColor);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR), showPopup && ! popupWindowColor);
+					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
+					break;
+				case IDC_POPUPINCOMING:
+					showPopup = (IsDlgButtonChecked(hwnd,IDC_POPUPINCOMING)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORS),showPopup);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLOR),showPopup && ! popupWindowColor);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLOR),showPopup && ! popupWindowColor);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIME),showPopup);
+					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
+					break;
+				case IDC_USEWINCOLORSERR:
+					popupWindowColorErr = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORSERR)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLORERR), showPopupErr && ! popupWindowColorErr);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLORERR), showPopupErr && ! popupWindowColorErr);
+					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
+					break;
+				case IDC_POPUPERROR:
+					showPopupErr = (IsDlgButtonChecked(hwnd,IDC_POPUPERROR)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hwnd,IDC_USEWINCOLORSERR),showPopupErr);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPBACKCOLORERR),showPopupErr && ! popupWindowColorErr);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTEXTCOLORERR),showPopupErr && ! popupWindowColorErr);
+					EnableWindow(GetDlgItem(hwnd,IDC_POPUPTIMEERR),showPopupErr);
+					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
+					break;
 			}	
-		}
-		break;
+			
+			break;
 
-	case WM_DESTROY:
-		break;
+		case WM_DESTROY:
+			break;
 	}
 
 	return 0;
@@ -233,7 +377,6 @@ int CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 	switch (uMsg){
 		case WM_INITDIALOG:	
 			initDlg=TRUE;
-			DBVARIANT dbv;
 
 			TranslateDialogDefault(hwndDlg);
 			CheckDlgButton(hwndDlg, IDC_ENABLEMENU, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "EnableMenu", 1));
@@ -297,7 +440,7 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 	const int StartControls[]={IDC_NOSPLASH, IDC_MINIMIZED, IDC_NOTRAY};
 	static BOOL initDlg=FALSE;
 	static int statusModes[]={ID_STATUS_OFFLINE,ID_STATUS_ONLINE,ID_STATUS_AWAY,ID_STATUS_NA,ID_STATUS_OCCUPIED,ID_STATUS_DND,ID_STATUS_FREECHAT,ID_STATUS_INVISIBLE,ID_STATUS_OUTTOLUNCH,ID_STATUS_ONTHEPHONE};
-	int i, j;
+	int i;
 	
 	switch (uMsg){
 		case WM_INITDIALOG:	
