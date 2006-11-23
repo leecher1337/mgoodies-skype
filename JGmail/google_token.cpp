@@ -27,6 +27,7 @@ Last change by : $Author$
 
 #include "jabber.h"
 #include "version.h"
+#include "jabber_secur.h"
 
 void __stdcall JabberLog( const char* fmt, ... );
 #define respString "Step %d: Responce is %stive: %s"
@@ -469,4 +470,58 @@ char * getXGoogleToken(char * email, char * passwd){
 	} else data = NULL;
 	delete pAgent;
 	return data;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// X-Google-Token auth class
+
+TGoogleAuth::TGoogleAuth( ThreadData* info ) :
+	TJabberAuth( info )
+{
+	szName = "X-GOOGLE-TOKEN";
+	bWasGoogleTokenRequested = false;
+}
+
+TGoogleAuth::~TGoogleAuth()
+{
+}
+
+
+//char * getXGoogleToken(char * email, char * passwd){
+char* TGoogleAuth::getInitialRequest()
+{
+	DBVARIANT dbv;
+	char *result=0;
+	char *temp = t2a(info->username);
+	int size = strlen(temp)+1+strlen(info->server);
+	char *localJid = (char *)mir_alloc(size+1);
+	mir_snprintf(localJid,size+1,"%s@%s",temp,info->server);
+	int res = JGetStringT(NULL,"GoogleToken",&dbv);
+	if (!res) {
+		int decodedLen;
+		char *tokenDecoded = JabberBase64Decode(dbv.ptszVal, &decodedLen);
+		char *jidFromToken = tokenDecoded;
+		jidFromToken++;// first char is '\0' - some day this may change
+		int notequal = strncmp(jidFromToken,localJid,size);
+		mir_free(tokenDecoded);
+		if(!notequal){
+			result = t2a(dbv.ptszVal);
+			JabberLog("Re-using previous GoogleToken");
+		}
+		JFreeVariant(&dbv);
+		if(notequal) goto LBL_RequestToken;
+	} else {
+LBL_RequestToken:
+		bWasGoogleTokenRequested = true; // new token is being requested
+		result = getXGoogleToken(localJid,info->password);
+		if (result) {
+			JSetString(NULL, "GoogleToken", result);
+		} else {
+			if (!res) JDeleteSetting(NULL,"GoogleToken"); // we came here from goto LBL_RequestToken
+			//res = ""; //Later will show auth failed
+		}
+	}
+	mir_free(localJid);
+	mir_free(temp);
+	return result;
 }

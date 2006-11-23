@@ -36,8 +36,10 @@ TNtlmAuth::TNtlmAuth( ThreadData* info ) :
 	TJabberAuth( info )
 {
 	szName = "NTLM";
-	if (( hProvider = Netlib_InitSecurityProvider( "NTLM" )) == NULL )
-		bIsValid = false;
+	switch ((int)(hProvider = Netlib_InitSecurityProvider( "NTLM" ))){
+	case CALLSERVICE_NOTFOUND: hProvider = NULL;
+	case NULL: bIsValid = false;
+	}
 }
 
 TNtlmAuth::~TNtlmAuth()

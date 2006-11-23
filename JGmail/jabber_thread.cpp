@@ -639,7 +639,7 @@ static void JabberProcessStreamClosing( XmlNode *node, void *userdata )
 		MessagePopup( NULL, TranslateTS( node->text ), TranslateT( "Jabber Connection Error" ), MB_OK|MB_ICONERROR|MB_SETFOREGROUND );
 }
 
-static int isGoogleTokenUsed = 0; // 1: used; 2: retreived; 3: retreived and used
+//static int isGoogleTokenUsed = 0; // 1: used; 2: retreived; 3: retreived and used
 static void JabberProcessFeatures( XmlNode *node, void *userdata )
 {
 	ThreadData* info = ( ThreadData* ) userdata;
@@ -696,6 +696,9 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 
 		if ( auth == NULL && isMd5available )
 			auth = new TMD5Auth( info );
+
+		//if ( auth == NULL && isXGoogleTokenAvailable )
+		//	auth = new TGoogleAuth( info );
 
 		if ( auth == NULL && isPlainAvailable )
 			auth = new TPlainAuth( info );
@@ -766,22 +769,21 @@ static void JabberProcessFailure( XmlNode *node, void *userdata ) {
 	if (( type=JabberXmlGetAttrValue( node, "xmlns" )) == NULL ) return;
 	if ( !_tcscmp( type, _T("urn:ietf:params:xml:ns:xmpp-sasl") )) {
 		JabberSend( info->s, "</stream:stream>" );
-
-		if ((isGoogleTokenUsed & 3)==1) { //GoogleToken is used but not requested
-			isGoogleTokenUsed |= 2; // new token is being requested
-			char *temp = t2a(info->username);
-			int size = strlen(temp)+1+strlen(info->server);
-			char *localJid = (char *)mir_alloc(size+1);
-			mir_snprintf(localJid,size+1,"%s@%s",temp,info->server);
-			char *X_GOOGLE_TOKEN = getXGoogleToken(localJid,info->password);
-			mir_free(localJid);
-			mir_free(temp);
-			if (X_GOOGLE_TOKEN) {
-				JSetString(NULL, "GoogleToken", X_GOOGLE_TOKEN);
-				mir_forkthread( ( pThreadFunc )JabberWaitAndReconnectThread, NULL );
-			} else {
+		if (!strcmp(info->auth->getName(),"X-GOOGLE-TOKEN")){
+			if (!info->auth->wasGoogleTokenRequested()) { //GoogleToken is used but not requested
+				//Old GoogleToken exists, but has expired or invalid
 				JDeleteSetting(NULL, "GoogleToken");
-				goto LBL_AuthFailed;
+				//Request new one. 
+				char * googletoken = info->auth->getInitialRequest();
+				if (googletoken) {
+					// if it is successful it is written to DB/NULL/GoogleToken
+					// wait 1 sec and retry
+					mir_forkthread( ( pThreadFunc )JabberWaitAndReconnectThread, NULL );
+					mir_free(googletoken);
+				} else {
+					// request failed. wrong passowrd?
+					goto LBL_AuthFailed;
+				}
 			}
 		} else {
 LBL_AuthFailed:
