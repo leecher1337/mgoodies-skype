@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_proxy.cpp,v $
+File name      : $URL$
 Revision       : $Revision: 2866 $
 Last change on : $Date: 2006-05-16 20:39:40 +0400 (Вт, 16 май 2006) $
 Last change by : $Author: ghazan $
@@ -34,7 +34,8 @@ class TJabberAuth
 
 protected:  bool        bIsValid;
             char*       szName;
-				ThreadData* info;
+			ThreadData* info;
+			bool        bWasGoogleTokenRequested;
 
 public:
             TJabberAuth( ThreadData* );
@@ -50,8 +51,21 @@ public:
 	inline   bool isValid() const
    			{	return bIsValid;
    			}
+	inline   bool wasGoogleTokenRequested() const
+			{	return bWasGoogleTokenRequested; 
+			}
 };
 
+// plain auth - the most simple one
+
+class TGoogleAuth : public TJabberAuth
+{
+
+public:		TGoogleAuth( ThreadData* );
+	virtual ~TGoogleAuth();
+
+	virtual	char* getInitialRequest();
+};
 // plain auth - the most simple one
 
 class TPlainAuth : public TJabberAuth
