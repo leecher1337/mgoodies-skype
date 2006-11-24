@@ -476,22 +476,10 @@ char * getXGoogleToken(char * email, char * passwd){
 // X-Google-Token auth class
 
 TGoogleAuth::TGoogleAuth( ThreadData* info ) :
-	TJabberAuth( info )
+	TJabberAuth( info ), currentToken (NULL), bWasGoogleTokenRequested (false)
 {
 	szName = "X-GOOGLE-TOKEN";
-	bWasGoogleTokenRequested = false;
-}
-
-TGoogleAuth::~TGoogleAuth()
-{
-}
-
-
-//char * getXGoogleToken(char * email, char * passwd){
-char* TGoogleAuth::getInitialRequest()
-{
 	DBVARIANT dbv;
-	char *result=0;
 	char *temp = t2a(info->username);
 	int size = strlen(temp)+1+strlen(info->server);
 	char *localJid = (char *)mir_alloc(size+1);
@@ -505,23 +493,38 @@ char* TGoogleAuth::getInitialRequest()
 		int notequal = strncmp(jidFromToken,localJid,size);
 		mir_free(tokenDecoded);
 		if(!notequal){
-			result = t2a(dbv.ptszVal);
+			currentToken = t2a(dbv.ptszVal);
 			JabberLog("Re-using previous GoogleToken");
+			bIsValid = true;
 		}
 		JFreeVariant(&dbv);
 		if(notequal) goto LBL_RequestToken;
 	} else {
 LBL_RequestToken:
 		bWasGoogleTokenRequested = true; // new token is being requested
-		result = getXGoogleToken(localJid,info->password);
-		if (result) {
-			JSetString(NULL, "GoogleToken", result);
+		currentToken = getXGoogleToken(localJid,info->password);
+		if (currentToken) {
+			JSetString(NULL, "GoogleToken", currentToken);
+			bIsValid = true;
 		} else {
 			if (!res) JDeleteSetting(NULL,"GoogleToken"); // we came here from goto LBL_RequestToken
+			bIsValid = false;
 			//res = ""; //Later will show auth failed
 		}
 	}
 	mir_free(localJid);
 	mir_free(temp);
-	return result;
+}
+
+TGoogleAuth::~TGoogleAuth()
+{
+	if (currentToken) mir_free(currentToken);
+}
+
+bool TGoogleAuth::wasTokenRequested(){
+	return bWasGoogleTokenRequested;
+}
+char* TGoogleAuth::getInitialRequest()
+{
+	return mir_strdup(currentToken);
 }
