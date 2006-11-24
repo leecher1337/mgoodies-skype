@@ -2,6 +2,8 @@
 ===========
 ! Unicode patch by Ghazan
 ! Fix options dialog size
+! Fix nudge text in unicode
+! Use DBGetContactSettingTString to read data
 
 0.0.1.12
 ===========
