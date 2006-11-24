@@ -101,7 +101,7 @@ void CNudgeElement::Load(void)
 	mir_snprintf(SectionName,512,"%s-statusFlags", ProtocolName);
 	this->statusFlags = DBGetContactSettingDword(NULL, "Nudge", SectionName, 967);
 	mir_snprintf(SectionName,512,"%s-recText", ProtocolName);
-	if(!DBGetContactSettingWString(NULL,"Nudge",SectionName,&dbv)) 
+	if(!DBGetContactSettingTString(NULL,"Nudge",SectionName,&dbv)) 
 	{
 		_tcsncpy(this->recText,dbv.ptszVal,TEXT_LEN);
 		if(_tcsclen(this->recText) < 1)
@@ -109,7 +109,7 @@ void CNudgeElement::Load(void)
 		DBFreeVariant(&dbv);
 	}
 	mir_snprintf(SectionName,512,"%s-senText", ProtocolName);
-	if(!DBGetContactSettingWString(NULL,"Nudge",SectionName,&dbv)) 
+	if(!DBGetContactSettingTString(NULL,"Nudge",SectionName,&dbv)) 
 	{
 		_tcsncpy(this->senText,dbv.ptszVal,TEXT_LEN);
 		if(_tcsclen(this->senText) < 1)
