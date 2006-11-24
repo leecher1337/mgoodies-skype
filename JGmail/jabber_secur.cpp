@@ -201,6 +201,10 @@ char* TJabberAuth::getInitialRequest()
 {
 	return NULL;
 }
+bool TJabberAuth::wasTokenRequested()
+{
+	return false;
+}
 
 char* TJabberAuth::getChallenge( const TCHAR* challenge )
 {

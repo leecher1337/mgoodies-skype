@@ -697,8 +697,14 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 		if ( auth == NULL && isMd5available )
 			auth = new TMD5Auth( info );
 
-		//if ( auth == NULL && isXGoogleTokenAvailable )
-		//	auth = new TGoogleAuth( info );
+		if ( auth == NULL && isXGoogleTokenAvailable ){
+			auth = new TGoogleAuth( info ); // here we request it
+			if ( !auth->isValid()){
+				//ToDo: here we fall either when the password is wrong 
+				//or failed to connect to the GoogleToken server
+				delete auth;
+				auth = NULL;
+		}	}
 
 		if ( auth == NULL && isPlainAvailable )
 			auth = new TPlainAuth( info );
@@ -769,31 +775,20 @@ static void JabberProcessFailure( XmlNode *node, void *userdata ) {
 	if (( type=JabberXmlGetAttrValue( node, "xmlns" )) == NULL ) return;
 	if ( !_tcscmp( type, _T("urn:ietf:params:xml:ns:xmpp-sasl") )) {
 		JabberSend( info->s, "</stream:stream>" );
-		if (!strcmp(info->auth->getName(),"X-GOOGLE-TOKEN")){
-			if (!info->auth->wasGoogleTokenRequested()) { //GoogleToken is used but not requested
-				//Old GoogleToken exists, but has expired or invalid
-				JDeleteSetting(NULL, "GoogleToken");
-				//Request new one. 
-				char * googletoken = info->auth->getInitialRequest();
-				if (googletoken) {
-					// if it is successful it is written to DB/NULL/GoogleToken
-					// wait 1 sec and retry
-					mir_forkthread( ( pThreadFunc )JabberWaitAndReconnectThread, NULL );
-					mir_free(googletoken);
-				} else {
-					// request failed. wrong passowrd?
-					goto LBL_AuthFailed;
-				}
-			}
+		if (!strcmp(info->auth->getName(),"X-GOOGLE-TOKEN") && !info->auth->wasTokenRequested()) { //GoogleToken is used but not requested
+			//Old GoogleToken exists, but has expired or invalid
+			JDeleteSetting(NULL, "GoogleToken");
+			// wait 1 sec and retry
+			mir_forkthread( ( pThreadFunc )JabberWaitAndReconnectThread, NULL );
 		} else {
-LBL_AuthFailed:
-		TCHAR text[128];
-		mir_sntprintf( text, sizeof( text ), _T("%s %s@")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
-		MessagePopup( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
-		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
-		jabberThreadInfo = NULL;	// To disallow auto reconnect
-	}
-}	}
+			TCHAR text[128];
+			mir_sntprintf( text, sizeof( text ), _T("%s %s@")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
+			MessagePopup( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
+			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
+			jabberThreadInfo = NULL;	// To disallow auto reconnect
+		}
+	} else JabberLog( "Unknown failure. Ignoring" );
+}	
 
 static void JabberProcessError( XmlNode *node, void *userdata )
 {

@@ -35,7 +35,6 @@ class TJabberAuth
 protected:  bool        bIsValid;
             char*       szName;
 			ThreadData* info;
-			bool        bWasGoogleTokenRequested;
 
 public:
             TJabberAuth( ThreadData* );
@@ -51,9 +50,7 @@ public:
 	inline   bool isValid() const
    			{	return bIsValid;
    			}
-	inline   bool wasGoogleTokenRequested() const
-			{	return bWasGoogleTokenRequested; 
-			}
+	bool wasTokenRequested();
 };
 
 // plain auth - the most simple one
@@ -65,6 +62,11 @@ public:		TGoogleAuth( ThreadData* );
 	virtual ~TGoogleAuth();
 
 	virtual	char* getInitialRequest();
+	virtual bool wasTokenRequested();
+private: 
+	char *currentToken;
+	bool bWasGoogleTokenRequested;
+
 };
 // plain auth - the most simple one
 
@@ -75,6 +77,7 @@ public:		TPlainAuth( ThreadData* );
 	virtual ~TPlainAuth();
 
 	virtual	char* getInitialRequest();
+
 };
 
 // md5 auth - digest-based authorization
