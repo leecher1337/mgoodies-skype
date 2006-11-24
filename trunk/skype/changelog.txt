@@ -13,6 +13,10 @@ CODE
 
 HISTORY
 -------
+0.0.0.33 - ! Fix for flags of event and metacontact (thanks SJE)
+           * Next step to custom popup support (in popup option page)
+		   ! Fix infinite for error popup 
+
 0.0.0.32 - ! Improvemnt of the Action message support.
 		   ! Fix empty message on first chat with a contact.
 

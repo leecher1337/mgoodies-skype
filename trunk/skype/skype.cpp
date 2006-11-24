@@ -122,7 +122,7 @@ int FreeVSApi()
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,32),
+	PLUGIN_MAKE_VERSION(0,0,0,33),
 	"Support for Skype network",
 	"leecher - tweety",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
@@ -1863,7 +1863,7 @@ int SkypeRecvMessage(WPARAM wParam, LPARAM lParam)
     dbei.cbSize = sizeof(dbei);
     dbei.szModule = pszSkypeProtoName;
     dbei.timestamp = pre->timestamp;
-    dbei.flags = pre->flags & (PREF_CREATEREAD ? DBEF_READ : 0);
+    dbei.flags = ((pre->flags & PREF_CREATEREAD) ? DBEF_READ : 0);
     dbei.eventType = EVENTTYPE_MESSAGE;
     dbei.cbBlob = strlen(pre->szMessage) + 1;
     dbei.pBlob = (PBYTE) pre->szMessage;
@@ -1893,7 +1893,7 @@ int SkypeRecvAuth(WPARAM wParam, LPARAM lParam) {
 	dbei.cbSize    = sizeof(dbei);
 	dbei.szModule  = pszSkypeProtoName;
 	dbei.timestamp = pre->timestamp;
-	dbei.flags     = pre->flags & (PREF_CREATEREAD?DBEF_READ:0);
+	dbei.flags     = ((pre->flags & PREF_CREATEREAD)?DBEF_READ:0);
 	dbei.eventType = EVENTTYPE_AUTHREQUEST;
 	dbei.cbBlob	   = pre->lParam;
 	dbei.pBlob     = (PBYTE)pre->szMessage;
