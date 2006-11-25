@@ -324,6 +324,10 @@ SOURCE=.\Docs\spellchecker_changelog.txt
 # End Source File
 # Begin Source File
 
+SOURCE=.\Docs\spellchecker_readme.txt
+# End Source File
+# Begin Source File
+
 SOURCE=.\Docs\spellchecker_version.txt
 # End Source File
 # End Group

@@ -36,6 +36,7 @@
 #define IDC_TRACK_G                     1063
 #define IDC_USE_FLAGS                   1063
 #define IDC_CHANGED_L                   1064
+#define IDC_SHOW_WRONG_WORD             1064
 #define IDC_REMOVED_L                   1065
 #define IDC_PROTOCOLS_G                 1066
 #define IDC_PROTOCOLS_L                 1067

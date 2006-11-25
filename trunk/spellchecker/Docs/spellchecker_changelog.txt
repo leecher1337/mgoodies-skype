@@ -1,6 +1,12 @@
-Spell Checker 0.0.1.8
+Spell Checker 0.0.1.9
 
 Changelog:
+
+. 0.0.1.9
+  * New icons for status bar (thanks Angeli-Ka)
+  * Changed links to new site
+  + Option to show wrong word
+  + Load flags from flags.dll (thanks Faith Healer)
 
 . 0.0.1.8
   * Fix for crash

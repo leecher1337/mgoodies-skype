@@ -30,7 +30,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,8),
+	PLUGIN_MAKE_VERSION(0,0,1,9),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -62,6 +62,8 @@ TCHAR customDictionariesFolder[1024];
 
 HANDLE hFlagsFolder = NULL;
 TCHAR flagsFolder[1024];
+
+HINSTANCE hFlagsDll = NULL;
 
 HICON hEnabledIcon;
 HICON hDisabledIcon;
@@ -109,16 +111,16 @@ typedef void (*FoundWrongWordCallback)(TCHAR *word, CHARRANGE pos, void *param);
 DEFINE_GUIDXXX(IID_ITextDocument,0x8CC497C0,0xA1DF,0x11CE,0x80,0x98,
                 0x00,0xAA,0x00,0x47,0xBE,0x5D);
 
-#define SUSPEND_UNDO(dlg)															\
+#define SUSPEND_UNDO(dlg)														\
 	if (dlg->textDocument != NULL)												\
 		dlg->textDocument->Undo(tomSuspend, NULL)
 
-#define RESUME_UNDO(dlg)															\
+#define RESUME_UNDO(dlg)														\
 	if (dlg->textDocument != NULL)												\
 		dlg->textDocument->Undo(tomResume, NULL)
 
-#define	STOP_RICHEDIT(dlg)															\
-	SUSPEND_UNDO(dlg);																\
+#define	STOP_RICHEDIT(dlg)														\
+	SUSPEND_UNDO(dlg);															\
 	SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);								\
 	POINT old_scroll_pos;														\
 	SendMessage(dlg->hwnd, EM_GETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);		\
@@ -184,6 +186,9 @@ extern "C" int __declspec(dllexport) Unload(void)
 	DestroyServiceFunction(MS_SPELLCHECKER_REMOVE_RICHEDIT);
 	DestroyServiceFunction(MS_SPELLCHECKER_SHOW_POPUP_MENU);
 
+	if (hFlagsDll != NULL)
+		FreeLibrary(hFlagsDll);
+
 	return 0;
 }
 
@@ -207,14 +212,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://eth0.dk/files/pescuma/spellchecker_version.txt";
-		upd.szBetaChangelogURL = "http://eth0.dk/files/pescuma/spellchecker_changelog.txt";
+		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/spellchecker_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/?p=spellchecker#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Spell Checker ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/spellcheckerW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/spellcheckerW.zip";
 #else
-		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/spellchecker.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/spellchecker.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
@@ -261,7 +266,100 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		lstrcpy(customDictionariesFolder, dictionariesFolder);
 	}
 
+	if (ServiceExists(MS_SKIN2_ADDICON)) 
+	{
+		SKINICONDESC2 sid;
+		ZeroMemory(&sid, sizeof(sid));
+		sid.cbSize = sizeof(SKINICONDESC2);
+		sid.pszSection = Translate("Spell Checker");
+
+		sid.pszDescription = Translate("Enabled");
+		sid.pszName = "spellchecker_enabled";
+		sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_CHECK), IMAGE_ICON, 16, 16, 0);
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		sid.pszDescription = Translate("Disabled");
+		sid.pszName = "spellchecker_disabled";
+		sid.hDefaultIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_NO_CHECK), IMAGE_ICON, 16, 16, 0);
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		sid.pszDescription = Translate("Unknown Flag");
+		sid.pszName = "spellchecker_unknown_flag";
+		sid.hDefaultIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_UNKNOWN_FLAG), IMAGE_ICON, 16, 16, 0);
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		hEnabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_enabled");
+		hDisabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_disabled");
+		hUnknownFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_unknown_flag");
+
+		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
+	}
+	else
+	{		
+		hEnabledIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_CHECK), IMAGE_ICON, 16, 16, 0);
+		hDisabledIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_NO_CHECK), IMAGE_ICON, 16, 16, 0);
+		hUnknownFlag = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_UNKNOWN_FLAG), IMAGE_ICON, 16, 16, 0);
+	}
+
 	languages = GetAvaibleDictionaries(dictionariesFolder, customDictionariesFolder, flagsFolder);
+
+	{
+		// Load flags dll
+		TCHAR * dll_rel_path = _T("\\Icons\\flags.dll");
+		TCHAR flag_file[1024];
+		GetModuleFileName(GetModuleHandle(NULL), flag_file, MAX_REGS(flag_file) - lstrlen(dll_rel_path));
+		
+		TCHAR *p = _tcsrchr(flag_file, _T('\\'));
+		if (p != NULL)
+			*p = _T('\0');
+
+		lstrcat(flag_file, dll_rel_path);
+
+		hFlagsDll = LoadLibrary(flag_file);
+
+		// Get language flags
+		for(int i = 0; i < languages.count; i++)
+		{
+			// First from dll
+			if (hFlagsDll != NULL) {
+				languages.dicts[i]->hFlag = (HICON) LoadImage(hFlagsDll, languages.dicts[i]->language, IMAGE_ICON, 16, 16, 0);
+
+				// Oki, lets add to IcoLib, then
+				if (languages.dicts[i]->hFlag != NULL && ServiceExists(MS_SKIN2_ADDICON)) 
+				{
+					SKINICONDESC2 sid;
+					ZeroMemory(&sid, sizeof(sid));
+					sid.cbSize = sizeof(SKINICONDESC2);
+					sid.pszSection = Translate("Spell Checker/Flags");
+#ifdef UNICODE
+					char lang[10];
+					mir_snprintf(lang, MAX_REGS(lang), "%S", languages.dicts[i]->language);
+					sid.pszDescription = lang;
+					sid.pszName = lang;
+#else
+					sid.pszDescription = languages.dicts[i]->language;
+					sid.pszName = languages.dicts[i]->language;
+#endif
+					sid.hDefaultIcon = languages.dicts[i]->hFlag;
+					CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+#ifdef UNICODE
+					languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) lang);
+#else
+					languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) languages.dicts[i]->language);
+#endif
+					languages.dicts[i]->using_icolib = TRUE;
+				}
+			}
+
+			if (languages.dicts[i]->hFlag == NULL) {
+				// Now from ico
+				TCHAR flag_file[1024];
+				mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\%s.ico"), flagsFolder, languages.dicts[i]->language);
+				languages.dicts[i]->hFlag = (HICON) LoadImage(NULL, flag_file, IMAGE_ICON, ICON_SIZE, ICON_SIZE, LR_LOADFROMFILE);
+			}
+		}
+	}
 
 	InitOptions();
 
@@ -284,48 +382,6 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	CreateServiceFunction(MS_SPELLCHECKER_ADD_RICHEDIT, AddContactTextBoxService);
 	CreateServiceFunction(MS_SPELLCHECKER_REMOVE_RICHEDIT, RemoveContactTextBoxService);
 	CreateServiceFunction(MS_SPELLCHECKER_SHOW_POPUP_MENU, ShowPopupMenuService);
-
-	if (ServiceExists(MS_SKIN2_ADDICON)) 
-	{
-		SKINICONDESC2 sid;
-
-		sid.cbSize = sizeof(SKINICONDESC2);
-		sid.pszSection = Translate("Spell Checker");
-		sid.hDefaultIcon = 0;
-
-		sid.pszDescription = Translate("Enabled");
-		sid.pszName = "spellchecker_enabled";
-		sid.pszDefaultFile = "spellchecker.dll";
-		sid.iDefaultIndex = 0;
-		sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_CHECK), IMAGE_ICON, 16, 16, 0);
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		sid.pszDescription = Translate("Disabled");
-		sid.pszName = "spellchecker_disabled";
-		sid.pszDefaultFile = "spellchecker.dll";
-		sid.iDefaultIndex = 1;
-		sid.hDefaultIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_NO_CHECK), IMAGE_ICON, 16, 16, 0);
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		sid.pszDescription = Translate("Unknown Flag");
-		sid.pszName = "spellchecker_unknown_flag";
-		sid.pszDefaultFile = "spellchecker.dll";
-		sid.iDefaultIndex = 2;
-		sid.hDefaultIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_UNKNOWN_FLAG), IMAGE_ICON, 16, 16, 0);
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		hEnabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_enabled");
-		hDisabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_disabled");
-		hUnknownFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_unknown_flag");
-
-		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
-	}
-	else
-	{		
-		hEnabledIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_CHECK), IMAGE_ICON, 16, 16, 0);
-		hDisabledIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_NO_CHECK), IMAGE_ICON, 16, 16, 0);
-		hUnknownFlag = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_UNKNOWN_FLAG), IMAGE_ICON, 16, 16, 0);
-	}
 
 	if (ServiceExists(MS_MSG_ADDICON))
 	{
@@ -350,6 +406,19 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 	hDisabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_disabled");
 	hUnknownFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_unknown_flag");
 	
+	for(int i = 0; i < languages.count; i++)
+	{
+		if (languages.dicts[i]->using_icolib) {
+#ifdef UNICODE
+			char lang[10];
+			mir_snprintf(lang, MAX_REGS(lang), "%S", languages.dicts[i]->language);
+			languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) lang);
+#else
+			languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) languages.dicts[i]->language);
+#endif
+		}
+	}
+
 	if (ServiceExists(MS_MSG_MODIFYICON))
 	{
 		StatusIconData sid = {0};
@@ -1183,7 +1252,7 @@ void AddMenuForWord(Dialog *dlg, TCHAR *word, CHARRANGE &pos, HMENU hMenu, BOOL 
 			InsertMenu(hSubMenu, 0, MF_BYPOSITION, base + i, suggestions.words[i]);
 	}
 
-	if (!in_submenu)
+	if (!in_submenu && opts.show_wrong_word)
 	{
 		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
 

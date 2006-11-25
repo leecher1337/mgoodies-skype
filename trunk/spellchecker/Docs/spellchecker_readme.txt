@@ -21,7 +21,7 @@ PS: This path is read only at startup, so changing it needs a restart of miranda
 
 It has an options page to set the default dictionary and some other options. It is at Message Sessions/Spell Checker
 
-Also, new versions support showing flags to represent the dicts. An inicial set of flags are at http://pescuma.mirandaim.ru/miranda/flags.zip. These must be copied to <miranda path>\Icons\Flags in order to spell checker to find then. Suppport for it will be extended in next vers. Please note that they need a lot of renaming, so if you find a wrong name, please post it here. The flag icon has to have the same name of the dict with .ico as extension. For example: pt_BR.ico
+Also, new versions support showing flags to represent the dicts. The flags can be in a file called flags.dll inside <miranda path>\Icons dir or, on a per flag base, in <miranda path>\Icons\Flags. An inicial set of flags are at http://pescuma.mirandaim.ru/miranda/flags.zip. Suppport for it will be extended in next vers. Please note that they need a lot of renaming, so if you find a wrong name, please post it here. The flag icon has to have the same name of the dict with .ico as extension. For example: pt_BR.ico
 
 Many thanks to the Hunspell team and to Vladimir Vainer that made an initial version of the plugin. And thanks to the famfamfam.com site for the icons I'm using for the flags.
 
