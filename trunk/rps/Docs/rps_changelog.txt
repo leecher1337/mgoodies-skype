@@ -1,0 +1,17 @@
+Remove Personal Settings 0.1.0.3
+
+Changelog:
+
+. 0.1.0.3
++ Added option to delete modules based on a sufix of the protocol name
++ Added * to delete module names
++ Added config to delete alarms and sent files
+
+. 0.1.0.2
++ Added SetProtocolsOffline
+* Bugfixes
+
+. 0.1.0.1
++ Added RemoveWholeProtocolModule
++ Added DisabledProtocols to delete settings from these
++ Added deletion of events from DB
