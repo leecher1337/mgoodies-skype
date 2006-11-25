@@ -137,5 +137,6 @@ extern HICON hEnabledIcon;
 extern HICON hDisabledIcon;
 extern HICON hUnknownFlag;
 
+extern HINSTANCE hFlagsDll;
 
 #endif // __COMMONS_H__

@@ -41,6 +41,7 @@ static OptPageControl optionsControls[] = {
 	{ &opts.underline_type,			CONTROL_COMBO,			IDC_UNDERLINE_TYPE,			"UnderlineType", CFU_UNDERLINEWAVE - CFU_UNDERLINEDOUBLE },
 	{ &opts.cascade_corrections,	CONTROL_CHECKBOX,		IDC_CASCADE_CORRECTIONS,	"CascadeCorrections", FALSE },
 	{ &opts.show_all_corrections,	CONTROL_CHECKBOX,		IDC_SHOW_ALL_CORRECTIONS,	"ShowAllCorrections", FALSE },
+	{ &opts.show_wrong_word,		CONTROL_CHECKBOX,		IDC_SHOW_WRONG_WORD,		"ShowWrongWord", TRUE },
 	{ &opts.use_flags,				CONTROL_CHECKBOX,		IDC_USE_FLAGS,				"UseFlags", TRUE }
 };
 

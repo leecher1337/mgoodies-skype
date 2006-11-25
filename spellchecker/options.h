@@ -45,6 +45,7 @@ struct Options {
 	WORD underline_type;
 	BOOL cascade_corrections;
 	BOOL show_all_corrections;
+	BOOL show_wrong_word;
 	BOOL use_flags;
 };
 
