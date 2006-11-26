@@ -211,10 +211,13 @@ struct ThreadData {
 	JABBER_SOCKET s;
 	BOOL  useSSL;
 
-	char newPassword[128];
+	int    resolveID;
+	HANDLE resolveContact;
 
-	HWND reg_hwndDlg;
-	BOOL reg_done, bIsSessionAvailable;
+	char  newPassword[128];
+
+	HWND  reg_hwndDlg;
+	BOOL  reg_done, bIsSessionAvailable;
 	class TJabberAuth* auth;
 };
 
@@ -335,7 +338,7 @@ extern HMODULE hLibSSL;
 #endif
 extern PVOID jabberSslCtx;
 
-extern struct ThreadData *jabberThreadInfo;
+extern ThreadData* jabberThreadInfo;
 extern TCHAR* jabberJID;
 extern char*  streamId;
 extern DWORD  jabberLocalIP;
@@ -451,6 +454,7 @@ void   JabberContactListCreateGroup( TCHAR* groupName );
 void   JabberDBAddAuthRequest( TCHAR* jid, TCHAR* nick );
 HANDLE JabberDBCreateContact( TCHAR* jid, TCHAR* nick, BOOL temporary, BOOL stripResource );
 void   JabberGetAvatarFileName( HANDLE hContact, char* pszDest, int cbLen );
+void   JabberResolveTransportNicks( TCHAR* jid );
 void   JabberSetServerStatus( int iNewStatus );
 TCHAR* EscapeChatTags(TCHAR* pszText);
 char*  UnEscapeChatTags(char* str_in);
@@ -491,7 +495,7 @@ char*  __stdcall  JTranslate( const char* str );
 
 //---- jabber_thread.cpp -------------------------------------------
 
-void __cdecl JabberServerThread( struct ThreadData *info );
+void __cdecl JabberServerThread( ThreadData* info );
 
 //---- jabber_util.c ----------------------------------------------
 

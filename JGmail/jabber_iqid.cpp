@@ -1046,7 +1046,16 @@ void JabberIqResultGetVcard( XmlNode *iqNode, void *userdata )
 			jabberVcardPhotoFileName = NULL;
 		}
 
-		if ( hContact != NULL )
+		int id = 0;
+		TCHAR* str = JabberXmlGetAttrValue( iqNode, "id" );
+		if ( str != NULL )
+         id = _ttoi( str+strlen( JABBER_IQID ));
+
+		if ( id == jabberThreadInfo->resolveID ) {
+			TCHAR* p = _tcschr( jid, '@' );
+			JabberResolveTransportNicks(( p != NULL ) ?  p+1 : jid );
+		}
+		else if ( hContact != NULL )
 			JSendBroadcast( hContact, ACKTYPE_GETINFO, ACKRESULT_SUCCESS, ( HANDLE ) 1, 0 );
 		else if ( hwndJabberVcard )
 			SendMessage( hwndJabberVcard, WM_JABBER_REFRESH, 0, 0 );

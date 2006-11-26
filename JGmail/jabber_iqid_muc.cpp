@@ -40,7 +40,7 @@ BOOL JabberEnterString( TCHAR* result, size_t resultLen );
 
 void JabberIqResultBrowseRooms( XmlNode *iqNode, void *userdata )
 {
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	ThreadData* info = ( ThreadData* ) userdata;
 	XmlNode *confNode, *roomNode;
 	TCHAR* type, *category, *jid, *str;
 	JABBER_LIST_ITEM *item;
@@ -120,7 +120,7 @@ void JabberIqResultGetMuc( XmlNode *iqNode, void *userdata )
 
 void JabberIqResultDiscoRoomItems( XmlNode *iqNode, void *userdata )
 {
-	struct ThreadData *info = ( struct ThreadData * ) userdata;
+	ThreadData* info = ( ThreadData* ) userdata;
 	XmlNode *queryNode, *itemNode;
 	TCHAR* type, *jid, *from;
 	JABBER_LIST_ITEM *item;

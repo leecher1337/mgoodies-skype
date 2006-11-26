@@ -522,7 +522,7 @@ void sttRenameParticipantNick( JABBER_LIST_ITEM* item, TCHAR* oldNick, XmlNode *
 
 void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 {
-	struct ThreadData *info;
+	ThreadData* info;
 	XmlNode *showNode, *statusNode, *errorNode, *itemNode, *n;
 	TCHAR* from;
 	int status, newRes;
@@ -530,7 +530,7 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 	BOOL roomCreated;
 
 	if ( !node || !node->name || strcmp( node->name, "presence" )) return;
-	if (( info=( struct ThreadData * ) userdata ) == NULL ) return;
+	if (( info=( ThreadData* ) userdata ) == NULL ) return;
 	if (( from=JabberXmlGetAttrValue( node, "from" )) == NULL ) return;
 
 	TCHAR* nick = _tcschr( from, '/' );
@@ -684,13 +684,13 @@ void strdel( char* parBuffer, int len )
 
 void JabberGroupchatProcessMessage( XmlNode *node, void *userdata )
 {
-	struct ThreadData *info;
+	ThreadData* info;
 	XmlNode *n, *xNode;
 	TCHAR* from, *type, *p, *nick, *msgText;
 	JABBER_LIST_ITEM *item;
 
 	if ( !node->name || strcmp( node->name, "message" )) return;
-	if (( info=( struct ThreadData * ) userdata ) == NULL ) return;
+	if (( info=( ThreadData* ) userdata ) == NULL ) return;
 	if (( from = JabberXmlGetAttrValue( node, "from" )) == NULL ) return;
 	if (( item = JabberListGetItemPtr( LIST_CHATROOM, from )) == NULL ) return;
 

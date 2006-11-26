@@ -50,13 +50,13 @@ static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 
 static BOOL CALLBACK JabberRegisterDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-	struct ThreadData *thread, *regInfo;
+	ThreadData *thread, *regInfo;
 
 	switch ( msg ) {
 	case WM_INITDIALOG:
 	{
 		TranslateDialogDefault( hwndDlg );
-		regInfo = ( struct ThreadData * ) lParam;
+		regInfo = ( ThreadData* ) lParam;
 		TCHAR text[256];
 		mir_sntprintf( text, SIZEOF(text), STR_FORMAT, TranslateT( "Register" ), regInfo->username, regInfo->server, regInfo->port );
 		SetDlgItemText( hwndDlg, IDC_REG_STATUS, text );
@@ -70,9 +70,9 @@ static BOOL CALLBACK JabberRegisterDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 			ShowWindow( GetDlgItem( hwndDlg, IDCANCEL ), SW_HIDE );
 			ShowWindow( GetDlgItem( hwndDlg, IDC_PROGRESS_REG ), SW_SHOW );
 			ShowWindow( GetDlgItem( hwndDlg, IDCANCEL2 ), SW_SHOW );
-			regInfo = ( struct ThreadData * ) GetWindowLong( hwndDlg, GWL_USERDATA );
-			thread = ( struct ThreadData * ) mir_alloc( sizeof( struct ThreadData ));
-			memset( thread, 0, sizeof( struct ThreadData ));
+			regInfo = ( ThreadData* ) GetWindowLong( hwndDlg, GWL_USERDATA );
+			thread = ( ThreadData* ) mir_alloc( sizeof( ThreadData ));
+			memset( thread, 0, sizeof( ThreadData ));
 			thread->type = JABBER_SESSION_REGISTER;
 			_tcsncpy( thread->username, regInfo->username, SIZEOF( thread->username ));
 			strncpy( thread->password, regInfo->password, SIZEOF( thread->password ));

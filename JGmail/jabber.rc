@@ -888,6 +888,7 @@ IDI_MAIL_CLOCK		ICON			"icos\\mail-clock.ico"
 IDB_ICONSBIG		BITMAP	DISCARDABLE	"icos\\32x32.bmp"
 IDB_ICONSSMALL		BITMAP	DISCARDABLE	"icos\\16x16.bmp"
 IDI_AUTHREVOKE          ICON                    "icos\\auth_revoke.ico" 
+IDI_REFRESH             ICON                    "icos\\refresh.ico" 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
