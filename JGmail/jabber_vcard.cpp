@@ -186,7 +186,7 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 	case WM_INITDIALOG:
 		TranslateDialogDefault( hwndDlg );
 		hBitmap = NULL;
-		SendMessage( GetDlgItem( hwndDlg, IDC_LOAD ), BM_SETIMAGE, IMAGE_ICON, ( LPARAM )iconList[8]);
+		SendMessage( GetDlgItem( hwndDlg, IDC_LOAD ), BM_SETIMAGE, IMAGE_ICON, ( LPARAM )iconList[9]);
 		SendMessage( GetDlgItem( hwndDlg, IDC_DELETE ), BM_SETIMAGE, IMAGE_ICON, ( LPARAM )iconList[4]);
 		ShowWindow( GetDlgItem( hwndDlg, IDC_SAVE ), SW_HIDE );
 		SendMessage( hwndDlg, WM_JABBER_REFRESH, 0, 0 );

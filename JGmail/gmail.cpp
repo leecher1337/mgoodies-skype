@@ -300,7 +300,7 @@ void JabberRequestMailBox(HANDLE hConn){
 			POPUPDATAT ppd;
 			ZeroMemory((void *)&ppd, sizeof(ppd));
 			ppd.lchContact = 0;
-			ppd.lchIcon = iconList[12];
+			ppd.lchIcon = iconList[13];
 			mir_sntprintf(ppd.lptzContactName, MAX_CONTACTNAME - 5, _T(TCHAR_STR_PARAM)_T(": %s"),jabberProtoName,TranslateT("Mailbox request"));
 			ppd.colorText = JGetDword(NULL,"ColDebugText",0);
 			ppd.colorBack = JGetDword(NULL,"ColDebugBack",RGB(255,255,128));
@@ -357,7 +357,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 			ZeroMemory((void *)&ppd, sizeof(ppd));
 			ppd.lchContact = 0;
 			//ppd.lchIcon = LoadSkinnedIcon(SKINICON_EVENT_MESSAGE);
-			ppd.lchIcon = iconList[11];
+			ppd.lchIcon = iconList[12];
 			mir_sntprintf(ppd.lptzContactName, MAX_CONTACTNAME - 5, 
 				_T(TCHAR_STR_PARAM)_T(": %s \"%s\"; %s \"%s\"."),
 				jabberProtoName,
@@ -429,7 +429,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 				POPUPDATAT ppd;
 				ZeroMemory((void *)&ppd, sizeof(ppd));
 				ppd.lchContact = 0;
-				ppd.lchIcon = iconList[12];
+				ppd.lchIcon = iconList[13];
 				mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": %s: %s %s"),
 					jabberProtoName,
 					TranslateT("Maibox result"),TranslateT("Matched"),
@@ -456,7 +456,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					POPUPDATAT ppd;
 					ZeroMemory((void *)&ppd, sizeof(ppd));
 					ppd.lchContact = 0;
-					ppd.lchIcon = iconList[13];
+					ppd.lchIcon = iconList[14];
 					mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": %s %s%s."),
 						jabberProtoName,TranslateT("System clock"),
 						syncTimeResult?_T(""):TranslateT("NOT "),
@@ -510,7 +510,7 @@ void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata )
 					POPUPDATAT ppd;
 					ZeroMemory((void *)&ppd, sizeof(ppd));
 					ppd.lchContact = 0;
-					ppd.lchIcon = iconList[10];
+					ppd.lchIcon = iconList[11];
 					_tcsncpy(ppd.lptzContactName, sendersList, MAX_CONTACTNAME);
 					sendersNode = JabberXmlGetChild( threadNode, "subject" );
 					XmlNode *snippetNode = JabberXmlGetChild( threadNode, "snippet" );
@@ -801,7 +801,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 					TCHAR sendersList[150];
 
 					{ // show the error popup
-						ppd.lchIcon = iconList[11];
+						ppd.lchIcon = iconList[12];
 						mir_sntprintf(ppd.lptzContactName, MAX_CONTACTNAME - 5, 
 							_T(TCHAR_STR_PARAM)_T(": %s \"%s\"; %s \"%s\"."),
 							jabberProtoName,
@@ -823,7 +823,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						MyNotification(&ppd);
 					}
 					if (IsDlgButtonChecked( hwndDlg, IDC_SHOWREQUEST ) ){
-						ppd.lchIcon = iconList[12];
+						ppd.lchIcon = iconList[13];
 						mir_sntprintf(ppd.lptzContactName, MAX_CONTACTNAME - 5, _T(TCHAR_STR_PARAM)_T(": %s"),jabberProtoName,TranslateT("Mailbox request"));
 						ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURTEXT,CPM_GETCOLOUR,0,0);
 						ppd.colorBack = SendDlgItemMessage(hwndDlg,IDC_DEBUGCOLOURBACK,CPM_GETCOLOUR,0,0);//RGB(255,255,128);
@@ -832,7 +832,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						MyNotification(&ppd);
 					}
 					if (IsDlgButtonChecked( hwndDlg, IDC_SHOWRESULT ) ){
-						ppd.lchIcon = iconList[12];
+						ppd.lchIcon = iconList[13];
 						mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": %s: %s %s"),
 							jabberProtoName,
 							TranslateT("Maibox result"),TranslateT("Matched"),
@@ -854,7 +854,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 						MyNotification(&ppd);
 					} else { // the clock syncronisation will be shown only if the result popup is disabled
 						if (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE ) && (IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZESILENT )==0)){
-							ppd.lchIcon = iconList[13];
+							ppd.lchIcon = iconList[14];
 							mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": %s %s%s."),
 								jabberProtoName,TranslateT("System clock"),
 								IsDlgButtonChecked( hwndDlg, IDC_SYNCHRONIZE )?_T(""):TranslateT("NOT "),
@@ -871,7 +871,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 							MyNotification(&ppd);
 						}
 					}
-					ppd.lchIcon = iconList[10];
+					ppd.lchIcon = iconList[11];
 					mir_sntprintf(ppd.lptzContactName,150,
 						_T(TCHAR_STR_PARAM)_T(": %s: %s, %s"),
 						jabberProtoName,
@@ -918,7 +918,7 @@ BOOL CALLBACK JabberGmailOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 					maxtime = tmptime;
 				} else {
 					POPUPDATAT ppd = { 0 };
-					ppd.lchIcon = iconList[11];
+					ppd.lchIcon = iconList[12];
 					mir_sntprintf(ppd.lptzContactName, MAX_SECONDLINE - 5, _T(TCHAR_STR_PARAM)_T(": %s."),jabberProtoName,TranslateT("No connection"));
 					mir_sntprintf(ppd.lptzText, MAX_SECONDLINE - 5, TranslateT("Impossible to check"));
 					ppd.colorText = SendDlgItemMessage(hwndDlg,IDC_ERRORCOLOURTEXT,CPM_GETCOLOUR,0,0);

@@ -184,7 +184,7 @@ static BOOL CALLBACK JabberUserPhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 		photoInfo->hContact = ( HANDLE ) lParam;
 		photoInfo->hBitmap = NULL;
 		SetWindowLong( hwndDlg, GWL_USERDATA, ( LONG ) photoInfo );
-		SendMessage( GetDlgItem( hwndDlg, IDC_SAVE ), BM_SETIMAGE, IMAGE_ICON, ( LPARAM )iconList[9]);
+		SendMessage( GetDlgItem( hwndDlg, IDC_SAVE ), BM_SETIMAGE, IMAGE_ICON, ( LPARAM )iconList[10]);
 		ShowWindow( GetDlgItem( hwndDlg, IDC_LOAD ), SW_HIDE );
 		ShowWindow( GetDlgItem( hwndDlg, IDC_DELETE ), SW_HIDE );
 		SendMessage( hwndDlg, WM_JABBER_REFRESH, 0, 0 );

@@ -13,7 +13,6 @@
 #define IDD_OPT_REGISTER                105
 #define IDD_AGENTS                      106
 #define IDD_FORM                        107
-#define IDI_REFRESH                     110
 #define IDD_PASSWORD                    111
 #define IDB_ICONSSMALL                  122
 #define IDB_ICONSBIG                    123
@@ -36,7 +35,6 @@
 #define IDD_AGENT_MANUAL_REGISTER       182
 #define IDD_GROUPCHAT_INVITE            183
 #define IDD_GROUPCHAT_INVITE_ACCEPT     184
-#define IDD_OPT_JABBER3                 185
 #define IDD_OPT_SETAVATAR               185
 #define IDD_OPT_EXPERT                  190
 #define IDC_OPT_EXPERT_TAB              191
@@ -73,7 +71,6 @@
 #define IDC_EDIT_LABELS                 223
 #define IDC_SHOWLABELS                  224
 #define IDC_EXPERTLABELS                225
-#define IDI_AUTHREVOKE                  187
 #define IDC_EDIT_USERNAME               1000
 #define IDC_SAVE                        1000
 #define IDC_EDIT_PASSWORD               1001

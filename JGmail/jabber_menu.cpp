@@ -330,7 +330,7 @@ void JabberMenuInit()
 	CreateServiceFunction( text, JabberMenuRevokeAuth );
 	mi.pszName = JTranslate( "Revoke authorization" );
 	mi.position = -2000001002;
-	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_AUTHREVOKE ));
+	mi.hIcon = iconList[8];//IDI_AUTHREVOKE;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuRevokeAuth = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
@@ -348,7 +348,7 @@ void JabberMenuInit()
 	CreateServiceFunction( text, JabberMenuConvertChatContact );
 	mi.pszName = JTranslate( "Convert" );
 	mi.position = -1999901004;
-	mi.hIcon = iconList[16];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_USER2ROOM ));
+	mi.hIcon = iconList[17];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_USER2ROOM ));
 	mi.pszContactOwner = jabberProtoName;
 	hMenuConvert = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
@@ -357,7 +357,7 @@ void JabberMenuInit()
 	CreateServiceFunction( text, JabberMenuRosterAdd );
 	mi.pszName = JTranslate( "Add to roster" );
 	mi.position = -1999901005;
-	mi.hIcon = iconList[15];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_ADDROSTER ));
+	mi.hIcon = iconList[16];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_ADDROSTER ));
 	mi.pszContactOwner = jabberProtoName;
 	hMenuRosterAdd = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
@@ -366,7 +366,7 @@ void JabberMenuInit()
 	CreateServiceFunction( text, JabberMenuTransportLogin );
 	mi.pszName = JTranslate( "Login/logout" );
 	mi.position = -1999901006;
-	mi.hIcon = iconList[17];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_LOGIN ));
+	mi.hIcon = iconList[18];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_LOGIN ));
 	mi.pszContactOwner = jabberProtoName;
 	hMenuLogin = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
@@ -375,7 +375,7 @@ void JabberMenuInit()
 	CreateServiceFunction( text, JabberMenuVisitGMail );
 	mi.pszName = JTranslate( "Visit GMail" );
 	mi.position = -2000100001;
-	mi.hIcon = iconList[14];
+	mi.hIcon = iconList[15];
 	mi.pszContactOwner = jabberProtoName;
 	hMenuVisitGMail = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
@@ -385,7 +385,7 @@ void JabberMenuInit()
 	CreateServiceFunction( text, JabberMenuTransportResolve );
 	mi.pszName = JTranslate( "Resolve nicks" );
 	mi.position = -1999901007;
-	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_REFRESH ));
+	mi.hIcon = iconList[19];//IDI_REFRESH;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuRefresh = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 }
