@@ -21,7 +21,16 @@ PS: This path is read only at startup, so changing it needs a restart of miranda
 
 It has an options page to set the default dictionary and some other options. It is at Message Sessions/Spell Checker
 
-Also, new versions support showing flags to represent the dicts. The flags can be in a file called flags.dll inside <miranda path>\Icons dir or, on a per flag base, in <miranda path>\Icons\Flags. An inicial set of flags are at http://pescuma.mirandaim.ru/miranda/flags.zip. Suppport for it will be extended in next vers. Please note that they need a lot of renaming, so if you find a wrong name, please post it here. The flag icon has to have the same name of the dict with .ico as extension. For example: pt_BR.ico
+The flags: new versions support showing flags to represent the dicts. This is done to have an visual way to represent the dict. To load the flags, the following steps are done:
+1. Try to load from file Icons\flags.dll - in this case an icon resource must exist with same name as language (for ex: pt_BR). If this is found, the icon is also added to IconLib to allow further customizing.
+2. Try to load from Icons\Flags\<lang>.ico - where <lang> is the language name (for ex: pt_BR). This path can be changed with foldes plugin.
+3. Load unknown flag. It can be customized thorught IconLib
+Currently there are 2 sets of flags, one from Angeli-Ka and one from the famfamfam.com site:
+- famfamfam's icons as .ico: http://pescuma.mirandaim.ru/miranda/flags-famfamfam.zip (note that there are a lot of files inside this zip with wrong names. It happens because I don't know which languages they represent - and if they represent a language or not. So, if you think some file name must change, please tell me)
+- famfamfam's icons as .dll: http://pescuma.mirandaim.ru/miranda/flags-dll-famfamfam.zip
+- Angeli-Ka's icons as .ico: http://pescuma.mirandaim.ru/miranda/flags-angelika.zip
+- Angeli-Ka's icons as .ico with language names: http://pescuma.mirandaim.ru/miranda/flags-angelika-name.zip
+- Angeli-Ka's icons as .dll: http://pescuma.mirandaim.ru/miranda/flags-dll-angelika.zip
 
 Many thanks to the Hunspell team and to Vladimir Vainer that made an initial version of the plugin. And thanks to the famfamfam.com site for the icons I'm using for the flags.
 

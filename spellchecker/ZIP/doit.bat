@@ -11,7 +11,6 @@ rem set ftp=ftp://<user>:<password>@<ftp>/<path>
 
 echo Building %name% ...
 
-msdev ..\flags.dsp /MAKE "flags - Win32 Release" /REBUILD
 msdev ..\%name%.dsp /MAKE "%name% - Win32 Release" /REBUILD
 msdev ..\%name%.dsp /MAKE "%name% - Win32 Unicode Release" /REBUILD
 
@@ -24,11 +23,6 @@ copy ..\..\..\bin\release\Plugins\%name%W.dll
 copy ..\Docs\%name%_changelog.txt
 copy ..\Docs\%name%_version.txt
 copy ..\Docs\%name%_readme.txt
-mkdir Icons
-cd Icons
-del /Q *.*
-copy ..\..\Release\flags.dll
-cd ..
 mkdir Docs
 cd Docs
 del /Q *.*
@@ -53,15 +47,11 @@ copy ..\..\..\Docs\*.*
 cd ..
 cd ..
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip %name%.dll Docs Icons
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip %name%W.dll Docs Icons
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip %name%.dll Docs
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip %name%W.dll Docs
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
 
 del *.dll
-cd Icons
-del /Q *.*
-cd ..
-rmdir Icons
 cd Docs
 del /Q *.*
 cd ..
