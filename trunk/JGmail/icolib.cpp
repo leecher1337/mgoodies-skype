@@ -42,21 +42,32 @@ extern HINSTANCE hInst;
 #define IDI_AGENTS                      154
 #define IDI_VCARD                       155
 #define IDI_SAVE                        166
-#define IDI_MAIL_NEW                    186
-#define IDI_MAIL_STOP                   187
-#define IDI_MAIL_INFO                   188
-#define IDI_MAIL_CLOCK                  189
+#define IDI_MAIL_NEW                    301
+#define IDI_MAIL_STOP                   302
+#define IDI_MAIL_INFO                   303
+#define IDI_MAIL_CLOCK                  304
 #define IDI_MAIL_GMAIL                  190
+#define IDI_AUTHREVOKE                  187
+#define IDI_REFRESH                     110
+
 */
-static char *iconNames[NUMICONSSMALL]={NULL,"vcard","Agents",
-	"Add","Delete","Rename","Request","Grant","Open","Save",
-	"mail-new","mail-stop","mail-info","mail-clock","mail-gmail","addroster","convert",
-	"trlogonoff"};
-static char *iconDescs[NUMICONSSMALL]={NULL,"VCard Menu",iconNames[2],
-	iconNames[3],iconNames[4],iconNames[5],iconNames[6],iconNames[7],iconNames[8],iconNames[9],
-	"New E-Mail","E-Mail Error","E-Mail Info","E-Mail Clock","Visit GMail","Convert Chat / Contact","Add to roster",
-	"Transport Logon/Off"};
-static int iconInd[NUMICONSSMALL]={0,155,154,122,123,124,141,142,131,166,186,187,188,189,190,109,108,191};
+static char *iconNames[NUMICONSSMALL]={
+	NULL,"vcard","Agents","Add","Delete","Rename",
+    "Request","Grant","Revoke","Open","Save",
+	"mail-new","mail-stop","mail-info","mail-clock","mail-gmail",
+	"convert","addroster",
+	"trlogonoff","trresolve"};
+static char *iconDescs[NUMICONSSMALL]={
+	NULL,"VCard Menu",iconNames[2],iconNames[3],iconNames[4],iconNames[5],
+	iconNames[6],iconNames[7],iconNames[8],iconNames[9],iconNames[10],
+	"New E-Mail","E-Mail Error","E-Mail Info","E-Mail Clock","Visit GMail",
+	"Convert Chat / Contact","Add to roster",
+	"Transport Logon/Off", "Transport Resolve"};
+static int iconInd[NUMICONSSMALL]={
+	0,155,154,122,123,124,
+	141,142,187,131,166,
+	301,302,303,304,305,
+	109,108,191,110};
 HICON iconList[NUMICONSSMALL];
 
 static int iconBigInd[NUMICONSBIG]={147,144,IDC_LOGO};
@@ -89,13 +100,13 @@ static void IcoLibUpdateMenus(){
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuGrantAuth, ( LPARAM )&mi );
 	mi.hIcon = iconBigList[0];
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuJoinLeave, ( LPARAM )&mi );
-	mi.hIcon = iconList[16];// IDI_ADDROSTER;
+	mi.hIcon = iconList[17];// IDI_ADDROSTER;
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuRosterAdd, ( LPARAM )&mi );
-	mi.hIcon = iconList[15];// IDI_USER2ROOM;
+	mi.hIcon = iconList[16];// IDI_USER2ROOM;
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuConvert, ( LPARAM )&mi );
-	mi.hIcon = iconList[14];// IDI_MAIL_GMAIL;
+	mi.hIcon = iconList[15];// IDI_MAIL_GMAIL;
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuVisitGMail, ( LPARAM )&mi );
-	mi.hIcon = iconList[17];// IDI_LOGIN;
+	mi.hIcon = iconList[18];// IDI_LOGIN;
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuLogin, ( LPARAM )&mi );
 
 	mi.hIcon = iconList[2];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_AGENTS ));
@@ -130,11 +141,11 @@ int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuGrantAuth, ( LPARAM )&mi );
 	mi.hIcon = iconBigList[0];
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuJoinLeave, ( LPARAM )&mi );
-	mi.hIcon = iconList[16];// IDI_ADDROSTER;
+	mi.hIcon = iconList[17];// IDI_ADDROSTER;
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuRosterAdd, ( LPARAM )&mi );
-	mi.hIcon = iconList[15];// IDI_USER2ROOM;
+	mi.hIcon = iconList[16];// IDI_USER2ROOM;
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuConvert, ( LPARAM )&mi );
-	mi.hIcon = iconList[14];// IDI_MAIL_GMAIL;
+	mi.hIcon = iconList[15];// IDI_MAIL_GMAIL;
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuVisitGMail, ( LPARAM )&mi );
 
 	mi.hIcon = iconList[2];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_AGENTS ));

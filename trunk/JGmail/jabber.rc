@@ -884,11 +884,11 @@ IDI_MAIL_NEW		ICON			"icos\\mail-new.ico"
 IDI_MAIL_STOP		ICON			"icos\\mail-stop.ico"
 IDI_MAIL_INFO		ICON			"icos\\mail-info.ico"
 IDI_MAIL_CLOCK		ICON			"icos\\mail-clock.ico"
+IDI_AUTHREVOKE          ICON                    "icos\\auth_revoke.ico" 
+IDI_REFRESH             ICON                    "icos\\refresh.ico" 
 */
 IDB_ICONSBIG		BITMAP	DISCARDABLE	"icos\\32x32.bmp"
 IDB_ICONSSMALL		BITMAP	DISCARDABLE	"icos\\16x16.bmp"
-IDI_AUTHREVOKE          ICON                    "icos\\auth_revoke.ico" 
-IDI_REFRESH             ICON                    "icos\\refresh.ico" 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

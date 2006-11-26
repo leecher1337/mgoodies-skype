@@ -577,7 +577,7 @@ char* t2a( const TCHAR* src );
 char* u2a( const wchar_t* src );
 wchar_t* a2u( const char* src );
 
-#define NUMICONSSMALL 18
+#define NUMICONSSMALL 20
 #define NUMICONSBIG 3
 extern HICON iconBigList[NUMICONSBIG];
 extern HICON iconList[NUMICONSSMALL];
