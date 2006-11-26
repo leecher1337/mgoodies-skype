@@ -1366,6 +1366,10 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
 	}
 	else if (selection >= LANGUAGE_MENU_ID_BASE && selection < LANGUAGE_MENU_ID_BASE + languages.count)
 	{
+		STOP_RICHEDIT(dlg);
+		SetNoUnderline(dlg->hwnd);
+		START_RICHEDIT(dlg);
+
 		if (dlg->hContact == NULL)
 			DBWriteContactSettingTString(NULL, MODULE_NAME, dlg->name, 
 					languages.dicts[selection - LANGUAGE_MENU_ID_BASE]->language);
