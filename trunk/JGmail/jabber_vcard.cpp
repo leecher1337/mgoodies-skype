@@ -62,7 +62,7 @@ int JabberSendGetVcard( const TCHAR* jid )
 	XmlNode* vs = iq.addChild( "vCard" ); vs->addAttr( "xmlns", "vcard-temp" ); 
 	vs->addAttr( "prodid", "-//HandGen//NONSGML vGen v1.0//EN" ); vs->addAttr( "version", "2.0" );
 	JabberSend( jabberThreadInfo->s, iq );
-	return 0;
+	return iqId;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

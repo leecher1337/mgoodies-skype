@@ -1,4 +1,4 @@
-	/*
+/*
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua

@@ -280,6 +280,52 @@ void JabberGetAvatarFileName( HANDLE hContact, char* pszDest, int cbLen )
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// JabberResolveTransportNicks - massive vcard update
+
+void JabberResolveTransportNicks( TCHAR* jid )
+{
+	// Set all contacts to offline
+	HANDLE hContact = jabberThreadInfo->resolveContact;
+	if ( hContact == NULL )
+		hContact = ( HANDLE ) JCallService( MS_DB_CONTACT_FINDFIRST, 0, 0 );
+
+	for ( ; hContact != NULL; hContact = ( HANDLE )JCallService( MS_DB_CONTACT_FINDNEXT, ( WPARAM ) hContact, 0 )) {
+		char* szProto = ( char* )JCallService( MS_PROTO_GETCONTACTBASEPROTO, ( WPARAM ) hContact, 0 );
+		if ( lstrcmpA( szProto, jabberProtoName ))
+			continue;
+
+		if ( !JGetByte( hContact, "IsTransported", 0 ))
+			continue;
+
+		DBVARIANT dbv, nick;
+		if ( JGetStringT( hContact, "jid", &dbv ))
+			continue;
+		if ( JGetStringT( hContact, "Nick", &nick )) {
+			JFreeVariant( &dbv );
+			continue;
+		}
+
+		TCHAR* p = _tcschr( dbv.ptszVal, '@' );
+		if ( p ) {
+			*p = 0;
+			if ( !lstrcmp( jid, p+1 ) && !lstrcmp( dbv.ptszVal, nick.ptszVal )) {
+				*p = '@';
+				jabberThreadInfo->resolveID = JabberSendGetVcard( dbv.ptszVal );
+				jabberThreadInfo->resolveContact = hContact;
+				JFreeVariant( &dbv );
+				JFreeVariant( &nick );
+				return;
+		}	}
+
+		JFreeVariant( &dbv );
+		JFreeVariant( &nick );
+	}
+
+	jabberThreadInfo->resolveID = -1;
+	jabberThreadInfo->resolveContact = NULL;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // JabberSetServerStatus()
 
 void JabberSetServerStatus( int iNewStatus )

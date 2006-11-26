@@ -63,7 +63,7 @@ char* jabberModuleName;	// "Jabber"
 CRITICAL_SECTION mutex;
 HANDLE hNetlibUser;
 // Main jabber server connection thread global variables
-struct ThreadData *jabberThreadInfo = NULL;
+ThreadData* jabberThreadInfo = NULL;
 BOOL   jabberConnected = FALSE;
 time_t jabberLoggedInTime = 0;
 BOOL   jabberOnline = FALSE;

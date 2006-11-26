@@ -13,6 +13,7 @@
 #define IDD_OPT_REGISTER                105
 #define IDD_AGENTS                      106
 #define IDD_FORM                        107
+#define IDI_REFRESH                     110
 #define IDD_PASSWORD                    111
 #define IDB_ICONSSMALL                  122
 #define IDB_ICONSBIG                    123

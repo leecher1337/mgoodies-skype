@@ -4,12 +4,13 @@ Legend:
 [-] deleted
 [!] bug fixed
 
-Version 0.6.0.1
+Version 0.6.0.2
 ===============
-[+] added separate icons for different transports
+[+] wish #0002532 fixed: Add command "Resolve Nicknames" in context menu for transports
 
 Version 0.5.0.3
 ===============
+[+] added separate icons for different transports
 [+] wish #0001921 added: logon/logoff in context menu on jabber-transports in contact list
 [+] wish #0002541 added: Options - Account: Removal of account from the server
 [!] bug  #0002530 fixed: Miranda crashes on large avatars

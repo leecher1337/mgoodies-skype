@@ -895,8 +895,9 @@ int JabberGetInfo( WPARAM wParam, LPARAM lParam )
 	int result = 1;
 	DBVARIANT dbv;
 	if ( !JGetStringT( ccs->hContact, "jid", &dbv )) {
-		result = JabberSendGetVcard( dbv.ptszVal );
+		JabberSendGetVcard( dbv.ptszVal );
 		JFreeVariant( &dbv );
+		result = 0;
 	}
 
 	return result;
@@ -1448,9 +1449,9 @@ int JabberSetStatus( WPARAM wParam, LPARAM lParam )
 		if ( jabberConnected )
 			return 0;
 
-		ThreadData* thread = ( ThreadData* ) mir_alloc( sizeof( struct ThreadData ));
+		ThreadData* thread = ( ThreadData* ) mir_alloc( sizeof( ThreadData ));
 
-		ZeroMemory( thread, sizeof( struct ThreadData ));
+		ZeroMemory( thread, sizeof( ThreadData ));
 		thread->type = JABBER_SESSION_NORMAL;
 		jabberDesiredStatus = desiredStatus;
 

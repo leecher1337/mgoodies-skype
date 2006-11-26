@@ -39,6 +39,7 @@ HANDLE hMenuJoinLeave = NULL;
 HANDLE hMenuConvert = NULL;
 HANDLE hMenuRosterAdd = NULL;
 HANDLE hMenuLogin = NULL;
+HANDLE hMenuRefresh = NULL;
 
 HANDLE hMenuVisitGMail = NULL;
 
@@ -63,6 +64,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 	sttEnableMenuItem( hMenuRosterAdd, FALSE );
 	sttEnableMenuItem( hMenuLogin, FALSE );
 	sttEnableMenuItem( hMenuVisitGMail, FALSE );
+	sttEnableMenuItem( hMenuRefresh, FALSE );
 
 	HANDLE hContact;
 	if (( hContact=( HANDLE )wParam ) == NULL )
@@ -113,8 +115,10 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 		return 0;
 	}
 
-	if ( bIsTransport )
+	if ( bIsTransport ) {
 		sttEnableMenuItem( hMenuLogin, TRUE );
+		sttEnableMenuItem( hMenuRefresh, TRUE );
+	}
 
 	DBVARIANT dbv;
 	if ( !JGetStringT( hContact, "jid", &dbv )) {
@@ -275,6 +279,20 @@ int JabberMenuTransportLogin( WPARAM wParam, LPARAM lParam )
 	return 0;
 }
 
+int JabberMenuTransportResolve( WPARAM wParam, LPARAM lParam )
+{
+	HANDLE hContact = ( HANDLE )wParam;
+	if ( !JGetByte( hContact, "IsTransport", 0 ))
+		return 0;
+
+	DBVARIANT jid;
+	if ( !JGetStringT( hContact, "jid", &jid )) {
+		JabberResolveTransportNicks( jid.ptszVal );
+		JFreeVariant( &jid );
+	}
+	return 0;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // contact menu initialization code
 int JabberMenuVisitGMail( WPARAM wParam, LPARAM lParam );
@@ -304,7 +322,6 @@ void JabberMenuInit()
 	mi.pszName = JTranslate( "Grant authorization" );
 	mi.position = -2000001001;
 	mi.hIcon = iconList[7];// IDI_GRANT;
-	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuGrantAuth = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
@@ -314,7 +331,6 @@ void JabberMenuInit()
 	mi.pszName = JTranslate( "Revoke authorization" );
 	mi.position = -2000001002;
 	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_AUTHREVOKE ));
-	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuRevokeAuth = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
@@ -324,7 +340,6 @@ void JabberMenuInit()
 	mi.pszName = JTranslate( "Join chat" );
 	mi.position = -2000001003;
 	mi.hIcon = iconBigList[0];
-	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuJoinLeave = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
@@ -334,7 +349,6 @@ void JabberMenuInit()
 	mi.pszName = JTranslate( "Convert" );
 	mi.position = -1999901004;
 	mi.hIcon = iconList[16];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_USER2ROOM ));
-	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuConvert = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
@@ -344,7 +358,6 @@ void JabberMenuInit()
 	mi.pszName = JTranslate( "Add to roster" );
 	mi.position = -1999901005;
 	mi.hIcon = iconList[15];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_ADDROSTER ));
-	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuRosterAdd = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
@@ -354,7 +367,6 @@ void JabberMenuInit()
 	mi.pszName = JTranslate( "Login/logout" );
 	mi.position = -1999901006;
 	mi.hIcon = iconList[17];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_LOGIN ));
-	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuLogin = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
@@ -364,7 +376,16 @@ void JabberMenuInit()
 	mi.pszName = JTranslate( "Visit GMail" );
 	mi.position = -2000100001;
 	mi.hIcon = iconList[14];
-	mi.pszService = text;
 	mi.pszContactOwner = jabberProtoName;
 	hMenuVisitGMail = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
+
+
+	// Retrieve nicks
+	strcpy( tDest, "/TransportGetNicks" );
+	CreateServiceFunction( text, JabberMenuTransportResolve );
+	mi.pszName = JTranslate( "Resolve nicks" );
+	mi.position = -1999901007;
+	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_REFRESH ));
+	mi.pszContactOwner = jabberProtoName;
+	hMenuRefresh = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 }

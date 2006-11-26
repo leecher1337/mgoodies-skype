@@ -186,6 +186,7 @@ void __cdecl JabberServerThread( ThreadData* info )
 
 	JabberLog( "Thread started: type=%d", info->type );
 
+	info->resolveID = -1;
 	info->auth = NULL;
 	if ( info->type == JABBER_SESSION_NORMAL ) {
 
