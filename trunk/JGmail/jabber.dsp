@@ -464,10 +464,6 @@ SOURCE=.\icos\16x16.bmp
 # End Source File
 # Begin Source File
 
-SOURCE=.\icos\auth_revoke.ico
-# End Source File
-# Begin Source File
-
 SOURCE=.\icos\jabber.ico
 # End Source File
 # Begin Source File
