@@ -21,9 +21,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_misc.cpp,v $
-Revision       : $Revision: 3322 $
+Revision       : $Revision$
 Last change on : $Date: 2006-07-13 16:11:29 +0400 
-Last change by : $Author: rainwater $
+Last change by : $Author$
 
 */
 
@@ -31,7 +31,7 @@ Last change by : $Author: rainwater $
 #include "jabber_list.h"
 
 #include <commctrl.h>
-#include "sdk/m_icolib.h"
+#include <m_icolib.h>
 
 #define IDI_ONLINE                      104
 #define IDI_OFFLINE                     105
