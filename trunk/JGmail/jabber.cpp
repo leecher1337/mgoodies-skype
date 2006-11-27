@@ -30,8 +30,8 @@ Last change by : $Author$
 #include "jabber_iq.h"
 #include "resource.h"
 #include "version.h"
-#include "sdk/m_icolib.h"
-#include "../tipper/sdk/m_updater.h"
+#include <m_icolib.h>
+#include "../updater/Docs/m_updater.h"
 //updater defines
 #ifndef STATICSSL
   #ifdef _UNICODE
