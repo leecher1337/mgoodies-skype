@@ -1330,6 +1330,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 
 				ConvertCodedStringToUnicode(Header->name,&str1,ActualMail->MailData->CP,1); 
 				ConvertCodedStringToUnicode(Header->value,&str2,ActualMail->MailData->CP,1); 
+				if (!str2) { str2 = (WCHAR *)malloc(2); str2[0] = 0; }// the header value may be NULL
 				if (!From) if (!strcmp(Header->name,"From")) {
 					From =new WCHAR[wcslen(str2)+1];
 					wcscpy(From,str2);
