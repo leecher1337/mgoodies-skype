@@ -31,6 +31,23 @@ Last change by : $Author$
 #include "resource.h"
 #include "version.h"
 #include "sdk/m_icolib.h"
+#include "../tipper/sdk/m_updater.h"
+//updater defines
+#ifndef STATICSSL
+  #ifdef _UNICODE
+    #define BETAURL "http://saaplugin.no-ip.info/jabber/u/JGmail.dll"
+    #define FLNAME "Jabber - GMail Unicode"
+  #else
+    #define BETAURL "http://saaplugin.no-ip.info/jabber/JGmail.dll"
+    #define FLNAME "Jabber - GMail ANSI"
+  #endif
+#else 
+  #ifdef _UNICODE
+    #define BETAURL "http://saaplugin.no-ip.info/jabber/staticssl/u/JGmail.dll"
+  #else
+    #define BETAURL "http://saaplugin.no-ip.info/jabber/staticssl/JGmail.dll"
+  #endif
+#endif  
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
@@ -220,6 +237,40 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 		SkinAddNewSound( soundname, sounddesc, "newmail.wav" );
 	}
 
+	if(ServiceExists(MS_UPDATE_REGISTER)) {
+		// register with updater
+		Update update = {0};
+		char szVersion[16];
+
+		update.cbSize = sizeof(Update);
+
+		update.szComponentName = pluginInfo.shortName;
+		update.pbVersion = (BYTE *)CreateVersionString(pluginInfo.version, szVersion);
+		update.cpbVersion = strlen((char *)update.pbVersion);
+#ifndef STATICSSL
+		update.pbVersionPrefix = (unsigned char *)FLNAME;
+		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
+	#if defined( _UNICODE )
+		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=3228";
+		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=3228";
+	#else 
+		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=3227";
+		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=3227";
+	#endif		
+#else
+    // there are no "stable" versions for StaticSSL builds.
+#endif
+		update.pbBetaVersionPrefix = (unsigned char *)pluginInfo.shortName;
+		update.cpbBetaVersionPrefix = strlen((char *)update.pbBetaVersionPrefix);
+		update.szBetaUpdateURL = BETAURL;
+		char *betaVersionUrl = (char *)mir_alloc(strlen( update.szBetaUpdateURL ));
+		strcpy(betaVersionUrl,update.szBetaUpdateURL);
+		strcat(betaVersionUrl,".md5");
+		update.szBetaVersionURL = betaVersionUrl;
+
+		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
+		mir_free(betaVersionUrl);
+	}
 	if ( ServiceExists( MS_GC_REGISTER )) {
 		jabberChatDllPresent = true;
 
