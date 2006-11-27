@@ -260,16 +260,21 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 #else
     // there are no "stable" versions for StaticSSL builds.
 #endif
-		update.pbBetaVersionPrefix = (unsigned char *)pluginInfo.shortName;
-		update.cpbBetaVersionPrefix = strlen((char *)update.pbBetaVersionPrefix);
+		int size = strlen( pluginInfo.shortName );
+		char *betaPrefix = (char *)mir_alloc(size + 2);
+		strcpy(betaPrefix, pluginInfo.shortName); betaPrefix[size] = ' '; betaPrefix[size+1] = 0;
+		update.pbBetaVersionPrefix = (unsigned char *)betaPrefix;
+		update.cpbBetaVersionPrefix = size+1;
 		update.szBetaUpdateURL = BETAURL;
-		char *betaVersionUrl = (char *)mir_alloc(strlen( update.szBetaUpdateURL ));
+		size = strlen( update.szBetaUpdateURL );
+		char *betaVersionUrl = (char *)mir_alloc(size+5);
 		strcpy(betaVersionUrl,update.szBetaUpdateURL);
-		strcat(betaVersionUrl,".md5");
+		strcpy(&betaVersionUrl[size],".md5");
 		update.szBetaVersionURL = betaVersionUrl;
 
 		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
 		mir_free(betaVersionUrl);
+		mir_free(betaPrefix);
 	}
 	if ( ServiceExists( MS_GC_REGISTER )) {
 		jabberChatDllPresent = true;
