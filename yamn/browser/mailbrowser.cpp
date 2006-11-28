@@ -1100,26 +1100,37 @@ ULONGLONG MimeDateToFileTime(char *datein){
 	int wShiftSeconds = CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,0,0);
 	GetLocalTime(&st);
 	//datein = "Xxx, 1 Jan 2060 5:29:1 +0530 XXX";
+	//datein = "Xxx,  1 Jan 2060 05:29:10 ";
+	//datein = "      ManySpaces  1.5   Jan 2060 05::";
+	//datein = "Xxx,  35 February 20 :29:10 ";
 	if (datein){
 		char tmp [64];
+		while (  datein[0]==' ')  datein++; // eat leading spaces
 		strncpy(tmp,datein,63); tmp [63]=0;
-		if (day = strchr(tmp,' ')){	day[0]=0; day++;}
-		if (month = strchr(day,' ')){month[0]=0; month++;}
-		if (year = strchr(month,' ')){year[0] = 0; year++;}
-		if (time = strchr(year,' ')){time[0] = 0; time++;}
-		if (shift=strchr(time,' ')){shift[0]=0; shift++;shift[5]=0;}
+		if (atoi(tmp)) { // Parseable integer on DayOfWeek field? Buggy mime date.
+			day = tmp;
+		} else {
+			int i = 0;
+			while (tmp[i]==' ')i++; if (day = strchr(&tmp[i],' ')){day[0]=0; day++;}
+		}
+		while (  day[0]==' ')  day++;if (month= strchr(day,  ' ')){month[0]=0; month++;}
+		while (month[0]==' ')month++;if (year = strchr(month,' ')){ year[0]=0; year++;}
+		while ( year[0]==' ') year++;if (time = strchr(year, ' ')){ time[0]=0; time++;}
+		while ( time[0]==' ') time++;if (shift= strchr(time, ' ')){shift[0]=0; shift++;shift[5]=0;}
 
 		if (year){
 			st.wYear = atoi(year);
 			if (strlen(year)<4)	if (st.wYear<70)st.wYear += 2000; else st.wYear += 1900;
 		};
-		if (month) for(int i=0;i<12;i++) if(strncmp(month,s_MonthNames[i],3)==0) st.wMonth = i + 1;
+		if (month) for(int i=0;i<12;i++) if(strncmp(month,s_MonthNames[i],3)==0) {st.wMonth = i + 1; break;}
 		if (day) st.wDay = atoi(day);
 		if (time) {
 			char *h, *m, *s;
 			h = time;
-			if (m = strchr(h,':')){m[0]=0; m++;}
-			if (s = strchr(m,':')){s[0] = 0; s++;}
+			if (m = strchr(h,':')){
+				m[0]=0; m++;
+				if (s = strchr(m,':')){s[0] = 0; s++;}
+			} else s=0;
 			st.wHour = atoi(h);
 			st.wMinute = m?atoi(m):0;
 			st.wSecond = s?atoi(s):0;
@@ -1153,7 +1164,10 @@ void FileTimeToLocalizedDateTime(LONGLONG filetime, WCHAR *dateout, int lendateo
 	//int localeID = MAKELCID(LANG_URDU, SORT_DEFAULT);
 	if (localeID==CALLSERVICE_NOTFOUND) localeID=LOCALE_USER_DEFAULT;
 	if (filetime>MAXFILETIME) filetime = MAXFILETIME;
-	else if (filetime<0) filetime=0;
+	else if (filetime<=0) {
+		wcsncpy(dateout,TranslateW(L"Invalid"),lendateout);
+		return;
+	}
 	SYSTEMTIME st;
 	WORD wTodayYear, wTodayMonth, wTodayDay;
 	FILETIME ft;
