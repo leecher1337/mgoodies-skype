@@ -4,10 +4,10 @@
 	Version="7.10"
 	Name="Scriver"
 	ProjectGUID="{B8928210-546C-4AE3-956B-E2B724E6B8E5}"
-	SccProjectName="SAK"
-	SccAuxPath="SAK"
-	SccLocalPath="SAK"
-	SccProvider="SAK">
+	SccProjectName="&quot;$/Miranda/miranda/plugins/Scriver&quot;, GLIAAAAA"
+	SccAuxPath=""
+	SccLocalPath="."
+	SccProvider="MSSCCI:Microsoft Visual SourceSafe">
 	<Platforms>
 		<Platform
 			Name="Win32"/>
@@ -918,13 +918,13 @@
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 			<File
-				RelativePath="..\..\src\res\addcontact.ico">
-			</File>
-			<File
 				RelativePath="..\..\Miranda-IM\res\addcontact.ico">
 			</File>
 			<File
 				RelativePath="res\addcontact.ico">
+			</File>
+			<File
+				RelativePath="..\..\src\res\addcontact.ico">
 			</File>
 			<File
 				RelativePath="res\Clock32.ico">
@@ -933,10 +933,10 @@
 				RelativePath="res\Clock8.ico">
 			</File>
 			<File
-				RelativePath="res\delete.ico">
+				RelativePath="..\..\src\res\delete.ico">
 			</File>
 			<File
-				RelativePath="..\..\src\res\delete.ico">
+				RelativePath="res\delete.ico">
 			</File>
 			<File
 				RelativePath="res\Details32.ico">
@@ -954,10 +954,10 @@
 				RelativePath="res\Downarrow8.ico">
 			</File>
 			<File
-				RelativePath="res\dragcopy.cur">
+				RelativePath="..\..\src\res\dragcopy.cur">
 			</File>
 			<File
-				RelativePath="..\..\src\res\dragcopy.cur">
+				RelativePath="res\dragcopy.cur">
 			</File>
 			<File
 				RelativePath="res\emptyblo.ico">

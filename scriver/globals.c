@@ -86,7 +86,7 @@ void LoadProtocolIcons() {
 
 		for(i = j = 0; i < allProtoNum; i++) {
 			if (pProtos[i]->type != PROTOTYPE_PROTOCOL) continue;
-			g_dat->protoNames[j] = _strdup(pProtos[i]->szName);
+			g_dat->protoNames[j] = mir_strdup(pProtos[i]->szName);
 			for (k = ID_STATUS_OFFLINE; k <= ID_STATUS_OUTTOLUNCH; k++) {
 				hIcon = LoadSkinnedProtoIcon(pProtos[i]->szName, k);
 				if (hIcon != NULL) {
@@ -412,10 +412,14 @@ void ReloadGlobals() {
 		g_dat->flags2 |= SMF2_LIMITNAMES;
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_HIDEONETAB, SRMSGDEFSET_HIDEONETAB))
 		g_dat->flags2 |= SMF2_HIDEONETAB;
-	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CHATSCOMMONCONTAINERS, SRMSGDEFSET_CHATSCOMMONCONTAINERS))
-		g_dat->flags2 |= SMF2_CHATSCOMMONCONTAINERS;
+	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SEPARATECHATSCONTAINERS, SRMSGDEFSET_SEPARATECHATSCONTAINERS))
+		g_dat->flags2 |= SMF2_SEPARATECHATSCONTAINERS;
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_TABCLOSEBUTTON, SRMSGDEFSET_TABCLOSEBUTTON))
 		g_dat->flags2 |= SMF2_TABCLOSEBUTTON;
+	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITTABS, SRMSGDEFSET_LIMITTABS))
+		g_dat->flags2 |= SMF2_LIMITTABS;
+	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITCHATSTABS, SRMSGDEFSET_LIMITCHATSTABS))
+		g_dat->flags2 |= SMF2_LIMITCHATSTABS;
 
 	if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSBAR, SRMSGDEFSET_SHOWSTATUSBAR))
 		g_dat->flags2 |= SMF2_SHOWSTATUSBAR;
@@ -454,6 +458,8 @@ void ReloadGlobals() {
 	g_dat->buttonVisibility = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_BUTTONVISIBILITY, SRMSGDEFSET_BUTTONVISIBILITY);
 
 	g_dat->limitNamesLength = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_LIMITNAMESLEN, SRMSGDEFSET_LIMITNAMESLEN);
+	g_dat->limitTabsNum = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_LIMITTABSNUM, SRMSGDEFSET_LIMITTABSNUM);
+	g_dat->limitChatsTabsNum = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_LIMITCHATSTABSNUM, SRMSGDEFSET_LIMITCHATSTABSNUM);
 
 }
 

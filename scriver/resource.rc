@@ -5,6 +5,14 @@
 	#define _WIN32_IE 0x500
 #endif
 #include <windows.h>
+
+#undef RICHEDIT_CLASS
+#if defined ( UNICODE )
+#define RICHEDIT_CLASS "RichEdit20W"
+#else
+#define RICHEDIT_CLASS "RichEdit20A"
+#endif
+
 #ifndef IDC_STATIC
 #define IDC_STATIC (-1)
 #endif
@@ -106,9 +114,9 @@ BEGIN
                     8,203,292,10
     CONTROL         "Limit avatar height to min.",IDC_LIMITAVATARH,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,20,216,106,10
-    EDITTEXT        IDC_AVATARHEIGHTMIN,148,214,28,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_AVATARHEIGHTMIN,148,215,28,12,ES_AUTOHSCROLL
     LTEXT           "and max.",IDC_AVATARTEXT1,188,216,35,8
-    EDITTEXT        IDC_AVATARHEIGHT,230,214,28,13,ES_AUTOHSCROLL
+    EDITTEXT        IDC_AVATARHEIGHT,230,215,28,12,ES_AUTOHSCROLL
     LTEXT           "pixels.",IDC_AVATARTEXT2,263,216,35,8
 	/*
 	CONTROL         "Enable transparency",IDC_TRANSPARENCY,"Button",
@@ -203,7 +211,7 @@ STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Tabs",IDC_STATIC,0,0,304,116
+    GROUPBOX        "Tabs",IDC_STATIC,0,0,304,138
     CONTROL         "Use tabbed mode",IDC_USETABS,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,8,12,260,10
     CONTROL         "Hide tab bar if there is only one tab",IDC_HIDEONETAB,
@@ -212,35 +220,45 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,20,34,252,10
     CONTROL         "Limit names on tabs to",IDC_LIMITNAMES,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,45,126,10
-    EDITTEXT        IDC_LIMITNAMESLEN,148,43,20,13,ES_RIGHT | ES_NUMBER
+    EDITTEXT        IDC_LIMITNAMESLEN,148,44,20,12,ES_RIGHT | ES_NUMBER
     LTEXT           "characters",IDC_CHARS,172,45,90,8,WS_DISABLED
 	CONTROL         "Show close button on each tab ",IDC_TABCLOSEBUTTON,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,56,252,10
 	CONTROL         "Automatically switch to active tab",IDC_SWITCHTOACTIVE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,67,252,10
-	CONTROL         "Use common containers for chats",IDC_CHATSCOMMONCONTAINERS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,78,252,10
+
+    CONTROL         "Limit number of tabs per container to",IDC_LIMITTABS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,78,180,10
+    EDITTEXT        IDC_LIMITTABSNUM,200,77,20,12,ES_RIGHT | ES_NUMBER
+
+	CONTROL         "Use separate containers for chats",IDC_SEPARATECHATSCONTAINERS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,89,252,10
+
+    CONTROL         "Limit number of chats tabs per container to",IDC_LIMITCHATSTABS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,32,100,180,10
+    EDITTEXT        IDC_LIMITCHATSTABSNUM,212,99,20,12,ES_RIGHT | ES_NUMBER
+
 	CONTROL         "Cascade new windows",IDC_CASCADE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,89,260,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,111,260,10
     CONTROL         "Save size and location for each contact",
                     IDC_SAVEPERCONTACT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    8,100,260,10
+                    8,122,260,10
 
-    GROUPBOX        "Look And Feel",IDC_STATIC,0,128,304,60
+    GROUPBOX        "Look And Feel",IDC_STATIC,0,138,304,60
 	CONTROL         "Show title bar",IDC_SHOWTITLEBAR,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,140,140,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,150,140,10
     CONTROL         "Show status bar",IDC_SHOWSTATUSBAR,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,151,138,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,161,138,10
     CONTROL         "Enable transparency",IDC_TRANSPARENCY,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,169,140,10
-    LTEXT           "active",IDC_TRANSPARENCYTEXT1,148,165,40,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,179,140,10
+    LTEXT           "active",IDC_TRANSPARENCYTEXT1,148,175,40,8
     CONTROL         "Slider1",IDC_ATRANSPARENCYVALUE,"msctls_trackbar32",
-                    TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,194,165,70,11
-    LTEXT           "100%",IDC_ATRANSPARENCYPERC,264,165,22,8
-    LTEXT           "inactive",IDC_TRANSPARENCYTEXT2,148,176,40,8
+                    TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,194,175,70,11
+    LTEXT           "100%",IDC_ATRANSPARENCYPERC,264,175,22,8
+    LTEXT           "inactive",IDC_TRANSPARENCYTEXT2,148,186,40,8
     CONTROL         "Slider1",IDC_ITRANSPARENCYVALUE,"msctls_trackbar32",
-                    TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,194,176,70,11
-    LTEXT           "100%",IDC_ITRANSPARENCYPERC,264,176,22,8
+                    TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,194,186,70,11
+    LTEXT           "100%",IDC_ITRANSPARENCYPERC,264,186,22,8
 END
 
 IDD_OPT_MSGTYPE DIALOGEX 0, 0, 283, 252
@@ -302,9 +320,9 @@ STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
 EXSTYLE WS_EX_ACCEPTFILES
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "",IDC_LOG,"RichEdit20A",WS_CLIPSIBLINGS | WS_VSCROLL |
+    CONTROL         "",IDC_LOG,RICHEDIT_CLASS,WS_CLIPSIBLINGS | WS_VSCROLL |
                     WS_TABSTOP | 0x844,1,1,181,28,WS_EX_STATICEDGE
-    CONTROL         "",IDC_MESSAGE,"RichEdit20A",WS_VSCROLL | WS_TABSTOP |
+    CONTROL         "",IDC_MESSAGE,RICHEDIT_CLASS,WS_VSCROLL | WS_TABSTOP |
                     0x1144,0,47,181,13,WS_EX_ACCEPTFILES | WS_EX_STATICEDGE
     CONTROL         "&U",IDC_USERMENU,"MButtonClass",0x0,1,31,16,14,
                     0x18000000L

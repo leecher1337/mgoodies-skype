@@ -39,6 +39,8 @@ HANDLE				g_hSmileyOptionsChanged = NULL;
 HANDLE				g_hIconsChanged2;
 CRITICAL_SECTION	cs;
 
+void RegisterFonts( void );
+
 static HANDLE     hServiceRegister = NULL,
                   hServiceNewChat = NULL,
                   hServiceAddEvent = NULL,
@@ -109,6 +111,7 @@ int Chat_ModulesLoaded(WPARAM wParam,LPARAM lParam)
 	CallService( "DBEditorpp/RegisterModule", (WPARAM)mods, 2 );
 
 	AddIcons();
+	RegisterFonts();
 	LoadIcons();
 
 //	g_hIconsChanged2 =	HookEvent(ME_SKIN2_ICONSCHANGED, Chat_IconsChanged);
@@ -140,6 +143,28 @@ int PreShutdown(WPARAM wParam,LPARAM lParam)
 
 	SM_RemoveAll();
 	MM_RemoveAll();
+	return 0;
+}
+
+int Chat_FontsChanged(WPARAM wParam,LPARAM lParam)
+{
+	LoadLogFonts();
+	{
+		LOGFONT lf;
+		HFONT hFont;
+		int iText;
+
+		LoadMsgDlgFont(0, &lf, NULL);
+		hFont = CreateFontIndirect(&lf);
+		iText = GetTextPixelSize(MakeTimeStamp(g_Settings.pszTimeStamp, time(NULL)),hFont, TRUE);
+		DeleteObject(hFont);
+		g_Settings.LogTextIndent = iText;
+		g_Settings.LogTextIndent = g_Settings.LogTextIndent*12/10;
+		g_Settings.LogIndentEnabled = (DBGetContactSettingByte(NULL, "Chat", "LogIndentEnabled", 1) != 0)?TRUE:FALSE;
+	}
+	MM_FontsChanged();
+	MM_FixColors();
+	SM_BroadcastMessage(NULL, GC_SETWNDPROPS, 0, 0, TRUE);
 	return 0;
 }
 

@@ -463,9 +463,11 @@ BOOL SM_TakeStatus(const TCHAR* pszID, const char* pszModule, const TCHAR* pszUI
 	while ( pTemp != NULL ) {
 		if ( !lstrcmpi( pTemp->ptszID, pszID ) && !lstrcmpiA( pTemp->pszModule, pszModule )) {
 			USERINFO* ui = UM_TakeStatus(pTemp->pUsers, pszUID, TM_StringToWord(pTemp->pStatuses, pszStatus));
-			SM_MoveUser(pTemp->ptszID, pTemp->pszModule, ui->pszUID);
-			if ( pTemp->hWnd )
-				SendMessage(pTemp->hWnd, GC_UPDATENICKLIST, (WPARAM)0, (LPARAM)0);
+			if ( ui ) {
+				SM_MoveUser(pTemp->ptszID, pTemp->pszModule, ui->pszUID);
+				if ( pTemp->hWnd )
+					SendMessage(pTemp->hWnd, GC_UPDATENICKLIST, (WPARAM)0, (LPARAM)0);
+			}
 			return TRUE;
 		}
 		pLast = pTemp;

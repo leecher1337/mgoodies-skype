@@ -64,8 +64,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SMF2_TABSATBOTTOM			0x00000004
 #define SMF2_LIMITNAMES				0x00000008
 #define SMF2_SWITCHTOACTIVE  		0x00000010
-#define SMF2_CHATSCOMMONCONTAINERS 	0x00000020
+#define SMF2_SEPARATECHATSCONTAINERS 	0x00000020
 #define SMF2_TABCLOSEBUTTON  		0x00000040
+
+#define SMF2_LIMITTABS				0x00000080
+#define SMF2_LIMITCHATSTABS			0x00000100
 
 #define SMF2_SHOWSTATUSBAR			0x00010000
 #define SMF2_SHOWTITLEBAR			0x00020000
@@ -118,6 +121,8 @@ struct GlobalMessageData
 	int		avatarServiceExists;
 	int		smileyServiceExists;
 	int		buttonVisibility;
+	int		limitTabsNum;
+	int		limitChatsTabsNum;
 };
 
 int IconsChanged(WPARAM wParam, LPARAM lParam);

@@ -359,7 +359,7 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 	char *buffer;
 	int bufferAlloced, bufferEnd;
 	int i;
-	LOGFONTA lf;
+	LOGFONT lf;
 	COLORREF colour;
 	HDC hdc;
 
@@ -374,12 +374,12 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 		AppendToBuffer(&buffer,&bufferEnd,&bufferAlloced,"{\\rtf1\\ansi\\deff0{\\fonttbl");
 	else
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "{\\rtf1\\ansi\\deff0{\\fonttbl");
-	for (i = 0; i < msgDlgFontCount; i++) {
+	for (i = 0; i < fontOptionsListSize; i++) {
 		LoadMsgDlgFont(i, &lf, NULL);
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "{\\f%u\\fnil\\fcharset%u %s;}", i, lf.lfCharSet, lf.lfFaceName);
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "{\\f%u\\fnil\\fcharset%u " TCHAR_STR_PARAM ";}", i, lf.lfCharSet, lf.lfFaceName);
 	}
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}{\\colortbl ");
-	for (i = 0; i < msgDlgFontCount; i++) {
+	for (i = 0; i < fontOptionsListSize; i++) {
 		LoadMsgDlgFont(i, NULL, &colour);
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
 	}
@@ -388,13 +388,13 @@ static char *CreateRTFHeader(struct MessageWindowData *dat)
 	else
 		colour = GetSysColor(COLOR_HOTLIGHT);
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
-	colour = DBGetContactSettingDword(NULL, SRMMMOD, "BkgColour", RGB(224,224,224));
+	colour = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_BKGCOLOUR, RGB(224,224,224));
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
-	colour = DBGetContactSettingDword(NULL, SRMMMOD, "IncomingBkgColour", RGB(224,224,224));
+	colour = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_INCOMINGBKGCOLOUR, RGB(224,224,224));
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
-	colour = DBGetContactSettingDword(NULL, SRMMMOD, "OutgoingBkgColour", RGB(224,224,224));
+	colour = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_OUTGOINGBKGCOLOUR, RGB(224,224,224));
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
-	colour = DBGetContactSettingDword(NULL, SRMMMOD, "LineColour", RGB(224,224,224));
+	colour = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_LINECOLOUR, RGB(224,224,224));
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\red%u\\green%u\\blue%u;", GetRValue(colour), GetGValue(colour), GetBValue(colour));
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "}");
 //	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\li30\\ri30\\fi0\\tx0");
@@ -419,7 +419,7 @@ static char *CreateRTFTail(struct MessageWindowData *dat)
 static char *SetToStyle(int style)
 {
 	static char szStyle[128];
-	LOGFONTA lf;
+	LOGFONT lf;
 
 	LoadMsgDlgFont(style, &lf, NULL);
 	wsprintfA(szStyle, "\\f%u\\cf%u\\b%d\\i%d\\fs%u", style, style, lf.lfWeight >= FW_BOLD ? 1 : 0, lf.lfItalic, 2 * abs(lf.lfHeight) * 74 / logPixelSY);
@@ -516,7 +516,7 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		dat->isMixed = 1;
 	}
 	if (!streamData->isFirst && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\cf%d\\fs1  \\par\\sl0", msgDlgFontCount + 4, msgDlgFontCount + 4);
+		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\cf%d\\fs1  \\par\\sl0", fontOptionsListSize + 4, fontOptionsListSize + 4);
 	}
     if ( streamData->isFirst ) {
 		if (event->dwFlags & IEEDF_RTL) {
@@ -532,9 +532,9 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		}
 	}
 	if (event->eventType == EVENTTYPE_MESSAGE) {
-		highlight = msgDlgFontCount + 2 + ((event->dwFlags & IEEDF_SENT) ? 1 : 0);
+		highlight = fontOptionsListSize + 2 + ((event->dwFlags & IEEDF_SENT) ? 1 : 0);
 	} else {
-		highlight = msgDlgFontCount + 1;
+		highlight = fontOptionsListSize + 1;
 	}
 	AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\highlight%d\\cf%d", highlight , highlight );
 	streamData->isFirst = FALSE;
@@ -787,6 +787,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 #else
         gtxl.codepage = CP_ACP;
 #endif
+        gtxl.codepage = 1200;
         gtxl.flags = GTL_DEFAULT | GTL_PRECISE | GTL_NUMCHARS;
         fi.chrg.cpMin = SendDlgItemMessage(hwndDlg, IDC_LOG, EM_GETTEXTLENGTHEX, (WPARAM)&gtxl, 0);
         sel.cpMin = sel.cpMax = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
@@ -821,7 +822,7 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 		} else {
 			smre.rangeToReplace = NULL;
 		}
-		smre.rangeToReplace = NULL;
+		//smre.rangeToReplace = NULL;
 		smre.disableRedraw = TRUE;
 		smre.hContact = dat->hContact;
 		smre.flags = 0;
