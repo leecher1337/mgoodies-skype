@@ -27,6 +27,7 @@ Boston, MA 02111-1307, USA.
 #include <time.h>
 #include <win2k.h>
 #include <tchar.h>
+#include <stdio.h>
 
 
 #ifdef __cplusplus
