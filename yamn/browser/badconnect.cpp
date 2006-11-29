@@ -29,7 +29,6 @@
 //--------------------------------------------------------------------------------------------------
 
 extern YAMN_VARIABLES YAMNVar;
-extern HICON hConnectFailIcon;
 
 //From synchro.cpp
 extern DWORD WINAPI WaitToWriteFcn(PSWMRG SObject,PSCOUNTER SCounter=NULL);
@@ -38,6 +37,9 @@ extern DWORD WINAPI WaitToReadFcn(PSWMRG SObject);
 extern void WINAPI ReadDoneFcn(PSWMRG SObject);
 extern DWORD WINAPI SCIncFcn(PSCOUNTER SCounter);
 extern DWORD WINAPI SCDecFcn(PSCOUNTER SCounter);
+
+
+extern HICON hYamnIcons[];
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -172,7 +174,7 @@ LRESULT CALLBACK DlgProcYAMNBadConnection(HWND hDlg,UINT msg,WPARAM wParam,LPARA
 			if(ShowPopUp)
 			{
 				BadConnectPopUp.lchContact=ActualAccount;
-				BadConnectPopUp.lchIcon=hConnectFailIcon;
+				BadConnectPopUp.lchIcon=hYamnIcons[3];
 				BadConnectPopUp.colorBack=ActualAccount->BadConnectN.Flags & YAMN_ACC_POPC ? ActualAccount->BadConnectN.PopUpB : GetSysColor(COLOR_BTNFACE);
 				BadConnectPopUp.colorText=ActualAccount->BadConnectN.Flags & YAMN_ACC_POPC ? ActualAccount->BadConnectN.PopUpT : GetSysColor(COLOR_WINDOWTEXT);
 				BadConnectPopUp.iSeconds=ActualAccount->BadConnectN.PopUpTime;
@@ -300,13 +302,13 @@ DWORD WINAPI BadConnection(LPVOID Param)
 	__try
 	{
 		hBadConnect=CreateDialogParam(YAMNVar.hInst,MAKEINTRESOURCE(IDD_DLGBADCONNECT),NULL,(DLGPROC)DlgProcYAMNBadConnection,(LPARAM)&MyParam);
-		SendMessage(hBadConnect,WM_SETICON,ICON_BIG,(LPARAM)hConnectFailIcon);
-		SendMessage(hBadConnect,WM_SETICON,ICON_SMALL,(LPARAM)hConnectFailIcon);
+		SendMessage(hBadConnect,WM_SETICON,ICON_BIG,(LPARAM)hYamnIcons[3]);
+		SendMessage(hBadConnect,WM_SETICON,ICON_SMALL,(LPARAM)hYamnIcons[3]);
 
 		ZeroMemory(&nid,sizeof(nid));
 		nid.cbSize=sizeof(NOTIFYICONDATA);
 		nid.hWnd=hBadConnect;
-		nid.hIcon=hConnectFailIcon;
+		nid.hIcon=hYamnIcons[3];
 		nid.uID=0;
 		nid.uFlags=NIF_ICON | NIF_MESSAGE | NIF_TIP;
 		nid.uCallbackMessage=WM_YAMN_NOTIFYICON;

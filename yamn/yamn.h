@@ -6,6 +6,7 @@
 #ifndef _WIN32_WINNT
 	#define _WIN32_WINNT 0x0501
 #endif
+#include "filter/simple/AggressiveOptimize.h"	
 #include <wchar.h>
 #include <tchar.h>
 #include <windows.h>
@@ -43,7 +44,12 @@
 #include "m_protoplugin.h"	//Protocol registration and so on
 #include "m_synchro.h"	//Synchronization
 #include "debug.h"
-#include "filter/simple/AggressiveOptimize.h"	
+
+//icons definitions
+#define ICONSNUMBER 7
+#define ICONSDESCS "Neutral","YAMN","New Mail","Connect Fail","Launch Application","TopToolBar UP","TopToolBar Down"
+#define ICONSNAMES "YAMN_Neutral",iconDescs[1],"YAMN_NewMail","YAMN_ConnectFail","YAMN_ApplExec","YAMN_TopToolBarUp","YAMN_TopToolBarDown"
+#define ICONSINDS 119,113,112,116,139,138,137
 
 //From services.cpp
 void CreateServiceFunctions(void);

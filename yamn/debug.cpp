@@ -46,8 +46,9 @@ HANDLE DecodeFile;
 
 void InitDebug()
 {
+#if defined (DEBUG_SYNCHRO) || defined (DEBUG_COMM) || defined (DEBUG_DECODE)
 	TCHAR DebugFileName[MAX_PATH];
-
+#endif
 	if(FileAccessCS==NULL)
 	{
 		FileAccessCS=new CRITICAL_SECTION;

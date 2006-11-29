@@ -1,5 +1,13 @@
 0.0.1.10
 ============
+! Icons are based on single bitmap image (y_b)
+* Show full feaders on double click in mailbrowser (y_b)
+* Dates are shown localized and sorted correctly (y_b)
+* To show long/short date and seconds (y_b)
+! Solved a rare/random crash on unstable connection (y_b)
+! Enabled tabstop on new tabcontrol and reordered tabstop in option pages (y_b)
+* Enable TAB selection in mailbrowser dialog (patch by -pv-)
++ introducing 2in1 build - can be used both in win9x and NT/XP
 * Options redesign.
 
 0.0.1.9

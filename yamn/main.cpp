@@ -76,13 +76,6 @@ SKINSOUNDDESC ConnectFailureSound={
 	"",	   		//default sound file to use, without path
 };
 
-HICON hYamnIcon;
-HICON hNeutralIcon;
-HICON hNewMailIcon;
-HICON hConnectFailIcon;
-HICON hTopToolBarUp;
-HICON hTopToolBarDown;
-
 HANDLE hNewMailHook;
 //HANDLE hUninstallPluginsHook;
 
@@ -93,6 +86,26 @@ HANDLE hTTButton;		//TopToolBar button
 DWORD HotKeyThreadID;
 
 UINT SecTimer;
+
+HICON hYamnIcons[ICONSNUMBER];
+char *iconDescs[ICONSNUMBER]={ICONSDESCS};
+char *iconNames[ICONSNUMBER]={ICONSNAMES};
+//#define IDI_ICOYAMN2                    112
+//#define IDI_ICOYAMN1                    113
+//#define IDI_ICOYAMN3                    116
+//#define IDI_ICONEUTRAL                  119
+//#define IDI_??                          139
+//#define IDI_ICOTTBDW                    137
+//#define IDI_ICOTTBUP                    138
+ int iconIndexes[ICONSNUMBER]={ICONSINDS};
+
+//HICON hYamnIconOrg, hYamnIcon;
+//HICON hNeutralIconOrg, hNeutralIcon;
+//HICON hNewMailIconOrg, hNewMailIcon;
+//HICON hConnectFailIconOrg, hConnectFailIcon;
+//HICON hTopToolBarUpOrg, hTopToolBarUp;
+//HICON hTopToolBarDownOrg, hTopToolBarDown;
+
 
 BOOL     (WINAPI *MyEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
 HMODULE hUxTheme = 0;
@@ -246,6 +259,17 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	ProtoName = "YAMN";
 	YAMN_STATUS = ID_STATUS_ONLINE;
 
+
+	HIMAGELIST CSImages = ImageList_Create(16, 16, ILC_COLOR8|ILC_MASK, 0, ICONSNUMBER);
+	{// workarround of 4bit forced images
+		HBITMAP hScrBM   = (HBITMAP)LoadImage(YAMNVar.hInst,MAKEINTRESOURCE(IDB_ICONS), IMAGE_BITMAP, 0, 0,LR_SHARED);
+		ImageList_AddMasked(CSImages, hScrBM, RGB( 255, 0, 255 ));
+		DeleteObject(hScrBM);    
+	}
+	for (int i=0; i<ICONSNUMBER; i++){
+		hYamnIcons[i] = ImageList_ExtractIcon(NULL, CSImages, i);
+	}
+	ImageList_Destroy(CSImages);
 	if(ServiceExists(MS_SKIN2_ADDICON))
 	{
 		//Icon to show in contact list
@@ -567,8 +591,8 @@ int AddTopToolbarIcon(WPARAM,LPARAM)
 	
 	Button.name=Translate("Check mail");
 	
-	Button.hbBitmapUp = LoadBmpFromIcon(hTopToolBarUp);
-	Button.hbBitmapDown = LoadBmpFromIcon(hTopToolBarDown); //LoadBitmap(YAMNVar.hInst,MAKEINTRESOURCE(IDB_BMTTB));
+	Button.hbBitmapUp = LoadBmpFromIcon(hYamnIcons[5]);
+	Button.hbBitmapDown = LoadBmpFromIcon(hYamnIcons[6]); //LoadBitmap(YAMNVar.hInst,MAKEINTRESOURCE(IDB_BMTTB));
 	
 	if((HANDLE)-1==(hTTButton=(HANDLE)CallService(MS_TTB_ADDBUTTON,(WPARAM)&Button,(LPARAM)0)))
 		return 1;
