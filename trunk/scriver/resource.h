@@ -1,7 +1,3 @@
-//{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
-// Used by resource.rc
-//
 #define IDD_MSGWIN                      100
 #define IDD_MSG                         101
 #define IDD_MSGSENDERROR                102
@@ -37,8 +33,12 @@
 #define IDC_AUTOMIN                     1005
 #define IDC_STAYMINIMIZED				1006
 #define IDC_SWITCHTOACTIVE				1007
-#define IDC_CHATSCOMMONCONTAINERS		1008
+#define IDC_SEPARATECHATSCONTAINERS		1008
 #define IDC_TABCLOSEBUTTON				1009
+#define IDC_LIMITTABS					1010
+#define IDC_LIMITTABSNUM				1011
+#define IDC_LIMITCHATSTABS				1012
+#define IDC_LIMITCHATSTABSNUM			1013
 #define IDC_SPLITTER                    1017
 #define IDC_SHOWNAMES                   1020
 #define IDC_SHOWSENDBTN                 1021

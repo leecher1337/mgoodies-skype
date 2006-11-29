@@ -244,8 +244,10 @@ typedef struct SESSION_INFO_TYPE
 	STATUSINFO*    pStatuses;
 
 	struct SESSION_INFO_TYPE *next;
-}
-	SESSION_INFO;
+
+	HWND        hwndTooltip;
+	int         iOldItemID;
+}SESSION_INFO;
 
 typedef struct
 {
@@ -340,6 +342,7 @@ void   Chat_LoadMsgDlgFont(int i, LOGFONT * lf, COLORREF * colour);
 void   LoadGlobalSettings(void);
 void   AddIcons(void);
 HICON  LoadIconEx(int iIndex, char * pszIcoLibName, int iX, int iY);
+void   LoadLogFonts(void);
 
 //services.c
 void   HookEvents(void);
@@ -348,6 +351,7 @@ void   CreateServiceFunctions(void);
 void   DestroyServiceFunctions(void);
 void   CreateHookableEvents(void);
 int    Chat_ModulesLoaded(WPARAM wParam,LPARAM lParam);
+int    Chat_FontsChanged(WPARAM wParam,LPARAM lParam);
 int    SmileyOptionsChanged(WPARAM wParam,LPARAM lParam);
 int    PreShutdown(WPARAM wParam,LPARAM lParam);
 int    Chat_IconsChanged(WPARAM wParam,LPARAM lParam);
@@ -456,7 +460,6 @@ TCHAR*        DoRtfToTags( char* pszRtfText, SESSION_INFO* si);
 
 //////////////////////////////////////////////////////////////////////////////////
 
-char*  t2a( const TCHAR* str );
 TCHAR* a2tf( const TCHAR* str, int flags );
 TCHAR* replaceStr( TCHAR** dest, const TCHAR* src );
 char*  replaceStrA( char** dest, const char* src );

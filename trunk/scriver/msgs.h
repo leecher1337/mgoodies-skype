@@ -234,8 +234,8 @@ TCHAR *GetNickname(HANDLE hContact, const char* szProto);
 #define MSGFONTID_MESSAGEAREA 8
 #define MSGFONTID_NOTICE      9
 
-void LoadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour);
-extern const int msgDlgFontCount;
+void LoadMsgDlgFont(int i, LOGFONT * lf, COLORREF * colour);
+extern int fontOptionsListSize;
 
 #define LOADHISTORY_UNREAD    0
 #define LOADHISTORY_COUNT     1
@@ -256,8 +256,19 @@ extern const int msgDlgFontCount;
 #define SRMSGSET_LIMITNAMESLEN_MIN 0
 #define SRMSGSET_HIDEONETAB		   "HideOneTab"
 #define SRMSGDEFSET_HIDEONETAB	   1
-#define SRMSGSET_CHATSCOMMONCONTAINERS "ChatsCommonContainers"
-#define SRMSGDEFSET_CHATSCOMMONCONTAINERS 1
+#define SRMSGSET_SEPARATECHATSCONTAINERS "SeparateChatsContainers"
+#define SRMSGDEFSET_SEPARATECHATSCONTAINERS 0
+#define SRMSGSET_LIMITTABS		   "LimitTabs"
+#define SRMSGDEFSET_LIMITTABS	   0
+#define SRMSGSET_LIMITTABSNUM      "LimitTabsNum"
+#define SRMSGDEFSET_LIMITTABSNUM   10
+#define SRMSGSET_LIMITCHATSTABS		  "LimitChatsTabs"
+#define SRMSGDEFSET_LIMITCHATSTABS	   0
+#define SRMSGSET_LIMITCHATSTABSNUM	   "LimitChatsTabsNum"
+#define SRMSGDEFSET_LIMITCHATSTABSNUM  10
+
+#define SRMSGSET_CASCADE           "Cascade"
+#define SRMSGDEFSET_CASCADE        1
 #define SRMSGSET_SAVEPERCONTACT    "SavePerContact"
 #define SRMSGDEFSET_SAVEPERCONTACT 0
 
@@ -288,8 +299,6 @@ extern const int msgDlgFontCount;
 #define SRMSGDEFSET_AUTOCLOSE      0
 #define SRMSGSET_SAVESPLITTERPERCONTACT "SaveSplitterPerContact"
 #define SRMSGDEFSET_SAVESPLITTERPERCONTACT 0
-#define SRMSGSET_CASCADE           "Cascade"
-#define SRMSGDEFSET_CASCADE        1
 #define SRMSGSET_SENDONENTER       "SendOnEnter"
 #define SRMSGDEFSET_SENDONENTER    1
 #define SRMSGSET_SENDONDBLENTER    "SendOnDblEnter"

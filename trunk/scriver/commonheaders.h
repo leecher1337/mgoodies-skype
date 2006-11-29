@@ -69,6 +69,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <m_addcontact.h>
 #include <m_message.h>
 #include <m_file.h>
+#include <m_fontservice.h>
 #include "globals.h"
 #include "msgs.h"
 #include "msgwindow.h"
@@ -79,7 +80,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_metacontacts.h"
 #include "m_ieview.h"
 #include "m_avatars.h"
-#include "m_fontservice.h"
 
 #ifndef IMF_AUTOFONTSIZEADJUST
 #define IMF_AUTOFONTSIZEADJUST	0x0010

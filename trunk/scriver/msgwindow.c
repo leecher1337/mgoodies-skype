@@ -54,7 +54,7 @@ static void DrawTab(HWND hwnd, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 extern TCHAR *GetNickname(HANDLE hContact, const char* szProto);
-extern void NotifyLocalWinEvent(HANDLE hContact, HWND hwnd, unsigned int type);
+
 
 void SubclassTabCtrl(HWND hwnd) {
 	OldTabCtrlProc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG) TabCtrlProc);
@@ -278,15 +278,33 @@ static void GetMinimunWindowSize(ParentWindowData *dat, SIZE *size)
 	}
 }
 
+static void SetupStatusBar(ParentWindowData *dat)
+{
+	int statusIconNum = GetStatusIconsCount(dat->hContact);
+	int statwidths[4];
+	RECT rc;
+	GetClientRect(dat->hwnd, &rc);
+	statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_UNICODE_WIDTH - 2 * (statusIconNum > 0) - statusIconNum * (GetSystemMetrics(SM_CXSMICON) + 2);
+	statwidths[1] = rc.right - rc.left - SB_UNICODE_WIDTH - 2 * (statusIconNum > 0) - statusIconNum * (GetSystemMetrics(SM_CXSMICON) + 2);
+	statwidths[2] = rc.right - rc.left - SB_UNICODE_WIDTH ;
+	statwidths[3] = -1;
+	SendMessage(dat->hwndStatus, SB_SETPARTS, 4, (LPARAM) statwidths);
+	SendMessage(dat->hwndStatus, SB_SETTEXT, (WPARAM)(SBT_OWNERDRAW) | 2, (LPARAM)0);
+}
+
 static void ActivateChild(ParentWindowData *dat, HWND child) {
 	int i;
 	RECT rcChild;
 	MessageWindowTabData *mwtd;
 	GetChildWindowRect(dat, &rcChild);
 	SetWindowPos(child, HWND_TOP, rcChild.left, rcChild.top, rcChild.right-rcChild.left, rcChild.bottom - rcChild.top, SWP_NOSIZE);
+	i = GetTabFromHWND(dat, child);
+	mwtd = GetChildFromTab(dat->hwndTabs, i);
+	dat->hContact = mwtd->hContact;
 	if(child != dat->hwndActive) {
 		HWND prev = dat->hwndActive;
 		dat->hwndActive = child;
+		SetupStatusBar(dat);
 		SendMessage(dat->hwndActive, DM_UPDATESTATUSBAR, 0, 0);
 		SendMessage(dat->hwndActive, DM_UPDATETITLEBAR, 0, 0);
 		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
@@ -296,11 +314,8 @@ static void ActivateChild(ParentWindowData *dat, HWND child) {
 	} else {
 		SendMessage(dat->hwnd, WM_SIZE, 0, 0);
 	}
-	i = GetTabFromHWND(dat, child);
 	TabCtrl_SetCurSel(dat->hwndTabs, i);
 	SendMessage(dat->hwndActive, DM_ACTIVATE, WA_ACTIVE, 0);
-	mwtd = GetChildFromTab(dat->hwndTabs, i);
-	dat->hContact = mwtd->hContact;
 }
 
 static void AddChild(ParentWindowData *dat, HWND hwnd, HANDLE hContact)
@@ -369,19 +384,6 @@ static void ActivatePrevChild(ParentWindowData *dat, HWND child)
 	ActivateChild(dat, GetChildFromTab(dat->hwndTabs, i)->hwnd);
 }
 
-static void SetupStatusBar(ParentWindowData *dat)
-{
-	int statusIconNum = GetStatusIconsCount();
-	int statwidths[4];
-	RECT rc;
-	GetClientRect(dat->hwnd, &rc);
-	statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_UNICODE_WIDTH - 2 * (statusIconNum > 0) - statusIconNum * (GetSystemMetrics(SM_CXSMICON) + 2);
-	statwidths[1] = rc.right - rc.left - SB_UNICODE_WIDTH - 2 * (statusIconNum > 0) - statusIconNum * (GetSystemMetrics(SM_CXSMICON) + 2);
-	statwidths[2] = rc.right - rc.left - SB_UNICODE_WIDTH ;
-	statwidths[3] = -1;
-	SendMessage(dat->hwndStatus, SB_SETPARTS, 4, (LPARAM) statwidths);
-	SendMessage(dat->hwndStatus, SB_SETTEXT, (WPARAM)(SBT_OWNERDRAW) | 2, (LPARAM)0);
-}
 
 static void SetContainerWindowStyle(ParentWindowData *dat)
 {
@@ -471,7 +473,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 
 			SetContainerWindowStyle(dat);
 
-			hSContact = !(dat->flags2 & SMF2_USETABS) && savePerContact ? dat->hContact : NULL;
+//			hSContact = !(dat->flags2 & SMF2_USETABS) && savePerContact ? dat->hContact : NULL;
+			hSContact = savePerContact ? dat->hContact : NULL;
 			dat->bTopmost = DBGetContactSettingByte(hSContact, SRMMMOD, SRMSGSET_TOPMOST, SRMSGDEFSET_TOPMOST);
 			if (ScriverRestoreWindowPosition(hwndDlg, hSContact, SRMMMOD, "", 0, SW_HIDE)) {
 				if (ScriverRestoreWindowPosition(hwndDlg, hSContact, SRMMMOD, "", RWPF_NOSIZE, SW_HIDE)) {
@@ -480,10 +483,10 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 					SetWindowPos(hwndDlg, 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE | SWP_HIDEWINDOW);
 				}
 			}
-			if (!(dat->flags2 & SMF2_USETABS)) {
+//			if (!(dat->flags2 & SMF2_USETABS)) {
 				if (!savePerContact && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CASCADE, SRMSGDEFSET_CASCADE))
 					WindowList_Broadcast(g_dat->hParentWindowList, DM_CASCADENEWWINDOW, (WPARAM) hwndDlg, (LPARAM) & dat->windowWasCascaded);
-			}
+	//		}
 			hMenu = GetSystemMenu( hwndDlg, FALSE );
 			InsertMenu( hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
 			if (dat->bTopmost) {
@@ -659,11 +662,10 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			} else if (pNMHDR->hwndFrom == dat->hwndStatus)  {
 				switch (pNMHDR->code) {
 				case NM_CLICK:
-				case NM_RCLICK:
+//				case NM_RCLICK:
 					{
 						NMMOUSE *nm=(NMMOUSE*)lParam;
 						RECT rc;
-//						SendMessage(dat->hwndStatus, SB_GETRECT, SendMessage(dat->hwndStatus, SB_GETPARTS, 0, 0) - 1, (LPARAM)&rc);
 						SendMessage(dat->hwndStatus, SB_GETRECT, SendMessage(dat->hwndStatus, SB_GETPARTS, 0, 0) - 2, (LPARAM)&rc);
 						if (nm->pt.x >= rc.left && nm->pt.x <= rc.right) {
 							MessageWindowTabData *mwtd = GetChildFromHWND(dat, dat->hwndActive);
@@ -702,9 +704,14 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			pt2.y = pt.y;
 			ScreenToClient(dat->hwndStatus, &pt);
 
-			// no popup menu for status icons - this is handled via NM_RCLICK notification and the plugins that added the icons
 			SendMessage(dat->hwndStatus, SB_GETRECT, SendMessage(dat->hwndStatus, SB_GETPARTS, 0, 0) - 2, (LPARAM)&rc);
-			if(pt.x >= rc.left && pt.x <= rc.right) break;
+			if(pt.x >= rc.left && pt.x <= rc.right) {
+				MessageWindowTabData *mwtd = GetChildFromHWND(dat, dat->hwndActive);
+				if (mwtd != NULL) {
+					CheckStatusIconClick(mwtd->hContact, dat->hwndStatus, pt, rc, 2, MBCF_RIGHTBUTTON);
+				}
+				break;
+			}
 
 			SendMessage(dat->hwndStatus, SB_GETRECT, SendMessage(dat->hwndStatus, SB_GETPARTS, 0, 0) - 1, (LPARAM)&rc);
 			if (pt.x >= rc.left && dat->hwndActive != NULL) {
@@ -856,7 +863,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			HANDLE hContact;
 			SetWindowLong(hwndDlg, GWL_USERDATA, 0);
 			WindowList_Remove(g_dat->hParentWindowList, hwndDlg);
-			if (!(dat->flags2 & SMF2_USETABS) && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT))
+			if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT))
+//			if (!(dat->flags2 & SMF2_USETABS) && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT))
 				hContact = dat->hContact;
 			else
 				hContact = NULL;
@@ -923,6 +931,9 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 	case CM_ACTIVATENEXT:
 		ActivateNextChild(dat, (HWND) lParam);
 		SetFocus(dat->hwndActive);
+		return TRUE;
+	case CM_GETCHILDCOUNT:
+		SetWindowLong(hwndDlg, DWL_MSGRESULT, (LONG)GetChildCount(dat));
 		return TRUE;
 	case DM_SENDMESSAGE:
 		{
@@ -997,8 +1008,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						int len = lstrlen(tcd->pszText);
 						if (len > g_dat->limitNamesLength ) {
 							ptszTemp = mir_alloc(sizeof(TCHAR) * (len + 4));
-							lstrcpyn(ptszTemp, tcd->pszText, g_dat->limitNamesLength + 1);
-							lstrcpyn(ptszTemp + g_dat->limitNamesLength, _T("..."), 4);
+							_tcsncpy(ptszTemp, tcd->pszText, g_dat->limitNamesLength + 1);
+							_tcsncpy(ptszTemp + g_dat->limitNamesLength, _T("..."), 4);
 							tci.pszText = ptszTemp;
 						}
 					}
@@ -1083,7 +1094,7 @@ static void DrawTab(HWND hwnd, WPARAM wParam, LPARAM lParam)
 		tci.dwStateMask = TCIS_HIGHLIGHTED;
 		if (TabCtrl_GetItem(hwnd, iTabIndex, &tci)) {
 			IMAGEINFO info;
-			RECT rIcon;
+			RECT rIcon = lpDIS->rcItem;
 			RECT rect = lpDIS->rcItem;
 			int bSelected = lpDIS->itemState & ODS_SELECTED;
 			int	iOldBkMode = SetBkMode(lpDIS->hDC, TRANSPARENT);
@@ -1104,7 +1115,6 @@ static void DrawTab(HWND hwnd, WPARAM wParam, LPARAM lParam)
 					ImageList_DrawEx(g_dat->hTabIconList, tci.iImage, lpDIS->hDC, rIcon.left, rIcon.top, 0, 0, CLR_NONE, CLR_NONE, ILD_NORMAL);
 					rect.left = rIcon.left + (info.rcImage.right - info.rcImage.left);
 				}
-
 				ImageList_GetImageInfo(g_dat->hButtonIconList, 0, &info);
 				rIcon.left = rect.right - GetSystemMetrics(SM_CXEDGE) - (bSelected ? 6 : 2) - (info.rcImage.right - info.rcImage.left);
 				ImageList_DrawEx(g_dat->hButtonIconList, 0, lpDIS->hDC, rIcon.left, rIcon.top, 0, 0, CLR_NONE, CLR_NONE, ILD_NORMAL);
@@ -1299,18 +1309,41 @@ BOOL CALLBACK TabCtrlProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 							}
 						}
 					}
-				} else if (dat->lastClickTab >= 0) {
+				} else if (dat->lastClickTab >= 0 && g_dat->flags2 & SMF2_TABCLOSEBUTTON) {
 					IMAGEINFO info;
 					POINT pt;
 					RECT rect;
-					int rm;
+					int atTop = (GetWindowLong(hwnd, GWL_STYLE) & TCS_BOTTOM) == 0;
 					TabCtrl_GetItemRect(hwnd, dat->lastClickTab, &rect);
 					pt.x = (lParam<<16)>>16;
 					pt.y = lParam>>16;
 					ImageList_GetImageInfo(g_dat->hButtonIconList, 0, &info);
-					rm = rect.right - GetSystemMetrics(SM_CXEDGE) - (dat->lastClickTab == TabCtrl_GetCurSel(hwnd) ? 6 : 2);
-					if (pt.x > rm - (info.rcImage.right - info.rcImage.left) + 1 && pt.x < rm - 1) {
-						SendMessage(GetChildFromTab(hwnd, dat->lastClickTab)->hwnd, WM_CLOSE, 0, 0);
+					rect.left = rect.right - (info.rcImage.right - info.rcImage.left) - 6;
+					if (!atTop) {
+						rect.top = rect.bottom - (info.rcImage.bottom - info.rcImage.top);
+					}
+					if (pt.x >= rect.left && pt.x < rect.left + (info.rcImage.right - info.rcImage.left) && pt.y >= rect.top && pt.y < rect.top + (info.rcImage.bottom - info.rcImage.top)) {
+						HBITMAP hOldBitmap, hBmp;
+						COLORREF color1, color2;
+						HDC hdc = GetDC(NULL);
+						HDC hdcMem = CreateCompatibleDC(hdc);
+						pt.x -= rect.left;
+						pt.y -= rect.top;
+						hBmp = CreateCompatibleBitmap(hdc, info.rcImage.right - info.rcImage.left + 1, info.rcImage.bottom - info.rcImage.top + 1);
+						hOldBitmap = SelectObject(hdcMem, hBmp);
+						SetPixel(hdcMem, pt.x, pt.y, 0x000000);
+						ImageList_DrawEx(g_dat->hButtonIconList, 0, hdcMem, 0, 0, 0, 0, CLR_NONE, CLR_NONE, ILD_NORMAL);
+						color1 = GetPixel(hdcMem, pt.x, pt.y);
+						SetPixel(hdcMem, pt.x, pt.y, 0xFFFFFF);
+						ImageList_DrawEx(g_dat->hButtonIconList, 0, hdcMem, 0, 0, 0, 0, CLR_NONE, CLR_NONE, ILD_NORMAL);
+						color2 = GetPixel(hdcMem, pt.x, pt.y);
+						SelectObject(hdcMem, hOldBitmap);
+						DeleteDC(hdcMem);
+						DeleteObject(hBmp);
+						ReleaseDC(NULL, hdc);
+						if (color1 != 0x000000 || color2 != 0xFFFFFF) {
+							SendMessage(GetChildFromTab(hwnd, dat->lastClickTab)->hwnd, WM_CLOSE, 0, 0);
+						}
 					} else {
 						SendMessage(hwnd, WM_LBUTTONDOWN, dat->clickWParam, dat->clickLParam);
 					}
@@ -1427,21 +1460,25 @@ HWND GetParentWindow(HANDLE hContact, BOOL bChat) {
 	NewMessageWindowLParam newData = { 0 };
 	newData.hContact = hContact;
 	newData.isChat = bChat;
-	if (!bChat) {
-		if (g_dat->lastParent == NULL || !(g_dat->flags2 & SMF2_USETABS)) {
-			return CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
-		}
-		return g_dat->lastParent->hwnd;
-	} else {
-		if (g_dat->flags2 & SMF2_USETABS && g_dat->flags2 & SMF2_CHATSCOMMONCONTAINERS) {
-			if (g_dat->lastParent == NULL) {
-				newData.isChat =FALSE;
-				return CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+	if (g_dat->flags2 & SMF2_USETABS) {
+		if (!bChat || !(g_dat->flags2 & SMF2_SEPARATECHATSCONTAINERS)) {
+			if (g_dat->lastParent != NULL) {
+				DWORD tabsNum = (DWORD) SendMessage(g_dat->lastParent->hwnd, CM_GETCHILDCOUNT, 0, 0);
+				if (!(g_dat->flags2 & SMF2_LIMITTABS) || tabsNum < g_dat->limitTabsNum) {
+					return g_dat->lastParent->hwnd;
+				}
 			}
-			return g_dat->lastParent->hwnd;
-		} else if (g_dat->lastChatParent == NULL || !(g_dat->flags2 & SMF2_USETABS)) {
-			return CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
+		} else {
+			if (g_dat->lastChatParent != NULL) {
+				DWORD tabsNum = (DWORD) SendMessage(g_dat->lastChatParent->hwnd, CM_GETCHILDCOUNT, 0, 0);
+				if (!(g_dat->flags2 & SMF2_LIMITCHATSTABS) || tabsNum < g_dat->limitChatsTabsNum) {
+					return g_dat->lastChatParent->hwnd;
+				}
+			}
 		}
-		return g_dat->lastChatParent->hwnd;
 	}
+	if (!(g_dat->flags2 & SMF2_SEPARATECHATSCONTAINERS)) {
+		newData.isChat =FALSE;
+	}
+	return CreateDialogParam(g_hInst, MAKEINTRESOURCE(IDD_MSGWIN), NULL, DlgProcParentWindow, (LPARAM) & newData);
 }
