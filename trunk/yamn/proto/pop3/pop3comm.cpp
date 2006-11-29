@@ -287,7 +287,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 	mi.pszService = MS_YAMN_CLISTCONTEXTAPP;
 	hMenuItemContApp = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
 
-#ifndef WIN2IN1
+//#ifndef WIN2IN1
 	//Use for the Updater plugin
 	if(ServiceExists(MS_UPDATE_REGISTER)) 
 	{
@@ -317,7 +317,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
 
 	}
-#endif // WIN2IN1 - no updated support for this version
+//#endif // WIN2IN1 - no updated support for this version
 
 	//Get YAMN variables we can use
 	if(NULL==(pYAMNVar=(PYAMN_VARIABLES)CallService(MS_YAMN_GETVARIABLES,(WPARAM)YAMN_VARIABLESVERSION,(LPARAM)0)))
