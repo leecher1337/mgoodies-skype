@@ -18,6 +18,7 @@
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1252)
 #endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
@@ -323,7 +324,7 @@ END
 IDD_YAMNOPT DIALOGEX 0, 0, 320, 216
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_BORDER
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "HotKey1",IDC_HKFORCE,"msctls_hotkey32",WS_BORDER | 
                     WS_TABSTOP,169,15,110,12
@@ -354,10 +355,13 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICONEUTRAL          ICON    DISCARDABLE     "iconeutral.ico"
-IDB_ICONS               BITMAP  DISCARDABLE     "yamn.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
 
+IDB_ICONS               BITMAP  DISCARDABLE     "yamn.bmp"
 
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
