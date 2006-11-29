@@ -2,15 +2,6 @@
 #include "main.h"
 #include "yamn.h"
 // External icon var for icolib support
-extern HICON hYamnIcon;
-extern HICON hNeutralIcon;
-extern HICON hNewMailIcon;
-extern HICON hConnectFailIcon;
-extern HICON hTopToolBarUp;
-extern HICON hTopToolBarDown;
-extern HANDLE hMenuItemMain;
-extern HANDLE hMenuItemCont;
-extern HANDLE hMenuItemContApp;
 
 
 //MessageWndCS
@@ -35,6 +26,13 @@ extern HANDLE ExitEV;
 //If this is signaled, write accounts to file is performed. Set this event if you want to actualize your accounts and messages
 extern HANDLE WriteToFileEV;
 
+//extern HICON hYamnIconsOrg[];
+extern HICON hYamnIcons[];
+extern char *iconDescs[];
+extern char *iconNames[];
+extern HIMAGELIST CSImages;
+
+extern void __stdcall	SSL_DebugLog( const char *fmt, ... );
 
 extern char *ProtoName;
 extern int YAMN_STATUS;
@@ -78,8 +76,8 @@ static int Service_SetStatus(WPARAM wParam,LPARAM lParam)
 		break;
 	}
 
-	//char t[150];
-	//sprintf(t,"%i",wParam);
+//	char t[150];
+//	sprintf(t,"%i",wParam);
 	//MessageBox(NULL,t,"Test",0);
 	return 0;
 
@@ -93,15 +91,15 @@ static int Service_GetName(WPARAM wParam, LPARAM lParam)
 
 static int Service_LoadIcon(WPARAM wParam,LPARAM lParam)
 {
-
-	switch(wParam&0xFFFF) 
-	{
-		case PLI_PROTOCOL: 
-			return (int)(HICON)hNeutralIcon;
-		default:	
-			return (int)(HICON)hNeutralIcon;	
-	}
-	return 0;
+	return (int)(HICON)hYamnIcons[0];
+//	switch(wParam&0xFFFF) 
+//	{
+//		case PLI_PROTOCOL: 
+//			return (int)(HICON)hYamnIcons[0];
+//		default:	
+//			return (int)(HICON)hYamnIcons[0];	
+//	}
+//	return 0;
 }
  
 /*static*/ int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
@@ -300,45 +298,26 @@ void MainMenuAccountClicked(WPARAM wParam, LPARAM lParam)
 	}
 }
 
-
-static int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
+int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 {
 	HICON temp;
-
-	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Neutral")) hNeutralIcon = temp;
-	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_NewMail")) hNewMailIcon = temp;
-	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_ConnectFail")) hConnectFailIcon = temp;
-	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarUp")) hTopToolBarUp = temp;
-	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_TopToolBarDown")) hTopToolBarDown = temp;
-	if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "YAMN_Yamn")) 
-	{	
-		CLISTMENUITEM mi = {0};
-
-		hYamnIcon = temp;
+	for (int i=0;i<ICONSNUMBER;i++){
+		if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconNames[i]))hYamnIcons[i]=temp; 
+	}
+	{	CLISTMENUITEM mi = {0};
+		extern HANDLE hMenuItemMain;
+		extern HANDLE hMenuItemCont;
+		extern HANDLE hMenuItemContApp;
 
 		mi.cbSize = sizeof(mi);
 		mi.flags = CMIM_FLAGS | CMIM_ICON;
 
-		mi.hIcon = hYamnIcon;
+		mi.hIcon = hYamnIcons[5];
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemMain, (LPARAM)&mi);
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemCont, (LPARAM)&mi);
+		mi.hIcon = hYamnIcons[4];
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemContApp, (LPARAM)&mi);
-
-		//Icon to show in contact list
-		DBVARIANT dbv;
-		if(!DBGetContactSetting(NULL,"SkinIcons","YAMN_Neutral",&dbv)) 
-		{
-			DBWriteContactSettingString(NULL, "Icons", "YAMN40072", (char *)dbv.pszVal);			
-			DBFreeVariant(&dbv);
-		}
-		else
-			DBWriteContactSettingString(NULL,"Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
-
-		CallService(ME_SKIN_ICONSCHANGED,0,0);
-
-	
 	}
-
 	return 0;
 }
 

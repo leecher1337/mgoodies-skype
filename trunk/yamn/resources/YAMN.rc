@@ -13,12 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Czech resources
+// Neutral resources
 
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CSY)
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
-LANGUAGE LANG_CZECH, SUBLANG_DEFAULT
-#pragma code_page(1250)
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
@@ -46,18 +45,6 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-#endif    // Czech resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// Neutral resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
-#ifdef _WIN32
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-#pragma code_page(1251)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -80,7 +67,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 179
         TOPMARGIN, 7
-        BOTTOMMARGIN, 69
+        BOTTOMMARGIN, 43
     END
 
     IDD_PLUGINOPT, DIALOG
@@ -366,24 +353,11 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICOYAMN2            ICON    DISCARDABLE     "icoyamn2.ico"
-IDI_ICOYAMN1            ICON    DISCARDABLE     "icoyamn1.ico"
-IDI_ICOYAMN3            ICON    DISCARDABLE     "icoyamn3.ico"
 IDI_ICONEUTRAL          ICON    DISCARDABLE     "iconeutral.ico"
-IDI_ICOTTBDW            ICON    DISCARDABLE     "iconttbdown.ico"
-IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
-#endif    // Neutral resources
-/////////////////////////////////////////////////////////////////////////////
-
+IDB_ICONS               BITMAP  DISCARDABLE     "yamn.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
-// French (Belgium) resources
 
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_FRB)
-#ifdef _WIN32
-LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
-#pragma code_page(1252)
-#endif //_WIN32
 
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
@@ -430,7 +404,7 @@ END
 
 #endif    // !_MAC
 
-#endif    // French (Belgium) resources
+#endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
 

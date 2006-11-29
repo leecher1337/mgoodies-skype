@@ -2,7 +2,7 @@
  * This code implements POP3 options window handling
  *
  * (c) majvan 2002-2003
- */
+*/
 
 /*
 #include <tchar.h>
@@ -37,6 +37,8 @@ extern PYAMN_VARIABLES pYAMNVar;
 extern HYAMNPROTOPLUGIN POP3Plugin;
 extern struct YAMNExportedFcns *pYAMNFcn;
 extern YAMN_VARIABLES YAMNVar;
+
+extern HICON hYamnIcons[];
 
 extern DWORD WINAPI WritePOP3Accounts();
 extern DWORD HotKeyThreadID;
@@ -1067,9 +1069,6 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_CHECKFCOL:
 				case IDC_CHECKNCOL:
 				{
-					extern HICON hYamnIcon;
-					extern HICON hNewMailIcon;
-					extern HICON hConnectFailIcon;
 					POPUPDATA Tester;
 					POPUPDATA TesterF;
 					POPUPDATA TesterN;
@@ -1083,9 +1082,9 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					Tester.lchContact=NULL;
 					TesterF.lchContact=NULL;
 					TesterN.lchContact=NULL;
-					Tester.lchIcon=hNewMailIcon;
-					TesterF.lchIcon=hConnectFailIcon;
-					TesterN.lchIcon=hYamnIcon;
+					Tester.lchIcon=hYamnIcons[2];
+					TesterF.lchIcon=hYamnIcons[3];
+					TesterN.lchIcon=hYamnIcons[1];
 
 					lstrcpy(Tester.lpzContactName,Translate("Account Test"));
 					lstrcpy(TesterF.lpzContactName,Translate("Account Test (failed)"));
@@ -1473,7 +1472,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 								ActualAccount->Flags=
 									(Check ? YAMN_ACC_ENA : 0) |
 					        			(CheckSSL ? YAMN_ACC_SSL23 : 0) |
-										(CheckNoTLS ? YAMN_ACC_NOTLS : 0) |
+					        			(CheckNoTLS ? YAMN_ACC_NOTLS : 0) |
 					        			(CheckAPOP ? YAMN_ACC_APOP : 0) |
 									(CheckPopN ? YAMN_ACC_POPN : 0);
 				        

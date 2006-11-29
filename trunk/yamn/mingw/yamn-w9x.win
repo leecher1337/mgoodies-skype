@@ -7,12 +7,12 @@ WINDRES = windres.exe
 RES  = objs9x/YAMN.res
 OBJ  = objs9x/badconnect.o objs9x/mailbrowser.o objs9x/decode.o objs9x/mails.o objs9x/mime.o objs9x/md5.o objs9x/netlib.o objs9x/pop3.o objs9x/pop3comm.o objs9x/pop3opt.o objs9x/ssl.o objs9x/account.o objs9x/debug.o objs9x/filterplugin.o objs9x/main.o objs9x/protoplugin.o objs9x/services.o objs9x/synchro.o objs9x/yamn.o $(RES)
 LINKOBJ  = objs9x/badconnect.o objs9x/mailbrowser.o objs9x/decode.o objs9x/mails.o objs9x/mime.o objs9x/md5.o objs9x/netlib.o objs9x/pop3.o objs9x/pop3comm.o objs9x/pop3opt.o objs9x/ssl.o objs9x/account.o objs9x/debug.o objs9x/filterplugin.o objs9x/main.o objs9x/protoplugin.o objs9x/services.o objs9x/synchro.o objs9x/yamn.o $(RES)
-LIBS =  -L"../libs" -lunicows -lkernel32 -luser32 -lshell32 -lmsvcrt -lcomdlg32 -lgdi32 -lwsock32 -s 
+LIBS =  -L"../libs" -lunicows -lkernel32 -luser32 -lshell32 -lmsvcrt -lcomdlg32 -lcomctl32 -lgdi32 -lwsock32 -s 
 INCS =  -I"../../../include" 
 CXXINCS =  -I"../../../include" 
 BIN  = bin9x/yamn.dll
-CXXFLAGS = $(CXXINCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -DWIN9X -w -fexpensive-optimizations -Os -fweb -fmessage-length=0
-CFLAGS = $(INCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -DWIN9X -w -fexpensive-optimizations -Os -fweb -fmessage-length=0
+CXXFLAGS = $(CXXINCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -DWIN9X -w -fweb -frename-registers -Os
+CFLAGS = $(INCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -DWIN9X -w -fweb -frename-registers -Os
 RM = rm -f
 
 .PHONY: all all-before all-after clean clean-custom

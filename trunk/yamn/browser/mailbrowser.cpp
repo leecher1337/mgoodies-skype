@@ -67,7 +67,7 @@ extern HYAMNPROTOPLUGIN POP3Plugin;
 extern HANDLE hNewMailHook;
 extern HANDLE WriteToFileEV;
 extern YAMN_VARIABLES YAMNVar;
-extern HICON hYamnIcon,hNewMailIcon,hNeutralIcon;
+extern HICON hYamnIcons[];
 //From synchro.cpp
 extern DWORD WINAPI WaitToWriteFcn(PSWMRG SObject,PSCOUNTER SCounter=NULL);
 extern void WINAPI WriteDoneFcn(PSWMRG SObject,PSCOUNTER SCounter=NULL);
@@ -574,7 +574,7 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 	}
 
 	NewMailPopUp.lchContact=(ActualAccount->hContact != NULL) ? ActualAccount->hContact : ActualAccount;
-	NewMailPopUp.lchIcon=hNewMailIcon;
+	NewMailPopUp.lchIcon=hYamnIcons[2];
 	NewMailPopUp.colorBack=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpB : GetSysColor(COLOR_BTNFACE);
 	NewMailPopUp.colorText=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpT : GetSysColor(COLOR_WINDOWTEXT);
 	NewMailPopUp.iSeconds=ActualAccount->NewMailN.PopUpTime;
@@ -716,7 +716,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		CLISTEVENT cEvent;
 		cEvent.cbSize = sizeof(CLISTEVENT);
 		cEvent.hContact = ActualAccount->hContact;
-		cEvent.hIcon = hNewMailIcon;
+		cEvent.hIcon = hYamnIcons[2];
 		cEvent.hDbEvent = (HANDLE)"yamn new mail";
 		cEvent.lParam = (LPARAM) ActualAccount->hContact;
 		cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
@@ -739,7 +739,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		POPUPDATAEX NewMailPopUp;
 
 		NewMailPopUp.lchContact=(ActualAccount->hContact != NULL) ? ActualAccount->hContact : ActualAccount;
-		NewMailPopUp.lchIcon=hNewMailIcon;
+		NewMailPopUp.lchIcon=hYamnIcons[2];
 		NewMailPopUp.colorBack=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpB : GetSysColor(COLOR_BTNFACE);
 		NewMailPopUp.colorText=nflags & YAMN_ACC_POPC ? ActualAccount->NewMailN.PopUpT : GetSysColor(COLOR_WINDOWTEXT);
 		NewMailPopUp.iSeconds=ActualAccount->NewMailN.PopUpTime;
@@ -784,7 +784,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 				*dest=(TCHAR)0;
 				nid.cbSize=sizeof(NOTIFYICONDATA);
 				nid.hWnd=hDlg;
-				nid.hIcon=hNewMailIcon;
+				nid.hIcon=hYamnIcons[2];
 				nid.uID=0;
 				nid.uFlags=NIF_ICON | NIF_MESSAGE | NIF_TIP;
 				nid.uCallbackMessage=WM_YAMN_NOTIFYICON;
@@ -835,7 +835,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		POPUPDATAEX NoNewMailPopUp;
 
 		NoNewMailPopUp.lchContact=(ActualAccount->hContact != NULL) ? ActualAccount->hContact : ActualAccount;
-		NoNewMailPopUp.lchIcon=hYamnIcon;
+		NoNewMailPopUp.lchIcon=hYamnIcons[1];
 		NoNewMailPopUp.colorBack=ActualAccount->NoNewMailN.Flags & YAMN_ACC_POPC ? ActualAccount->NoNewMailN.PopUpB : GetSysColor(COLOR_BTNFACE);
 		NoNewMailPopUp.colorText=ActualAccount->NoNewMailN.Flags & YAMN_ACC_POPC ? ActualAccount->NoNewMailN.PopUpT : GetSysColor(COLOR_WINDOWTEXT);
 		NoNewMailPopUp.iSeconds=ActualAccount->NoNewMailN.PopUpTime;
@@ -1308,8 +1308,8 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			WCHAR *iValueW=NULL;
 			int StrLen;
 			HWND hListView = GetDlgItem(hDlg,IDC_LISTHEADERS);
-			SendMessageW(hDlg,WM_SETICON,(WPARAM)ICON_BIG,(LPARAM)hNewMailIcon);
-			SendMessageW(hDlg,WM_SETICON,(WPARAM)ICON_SMALL,(LPARAM)hNewMailIcon);
+			SendMessageW(hDlg,WM_SETICON,(WPARAM)ICON_BIG,(LPARAM)hYamnIcons[2]);
+			SendMessageW(hDlg,WM_SETICON,(WPARAM)ICON_SMALL,(LPARAM)hYamnIcons[2]);
 
 			ListView_SetUnicodeFormat(hListView,TRUE);
 			ListView_SetExtendedListViewStyle(hListView,LVS_EX_FULLROWSELECT);
@@ -1343,7 +1343,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				WCHAR *str2 = 0;
 
 				ConvertCodedStringToUnicode(Header->name,&str1,ActualMail->MailData->CP,1); 
-				ConvertCodedStringToUnicode(Header->value,&str2,ActualMail->MailData->CP,1); 
+				ConvertCodedStringToUnicode(Header->value,&str2,ActualMail->MailData->CP,1);
 				if (!str2) { str2 = (WCHAR *)malloc(2); str2[0] = 0; }// the header value may be NULL
 				if (!From) if (!strcmp(Header->name,"From")) {
 					From =new WCHAR[wcslen(str2)+1];
@@ -2025,9 +2025,9 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			nid.uID=0;
 			nid.uFlags=NIF_ICON;
 			if(mwui->TrayIconState==0)
-				nid.hIcon=hNeutralIcon;
+				nid.hIcon=hYamnIcons[0];
 			else
-				nid.hIcon=hNewMailIcon;
+				nid.hIcon=hYamnIcons[2];
 			Shell_NotifyIcon(NIM_MODIFY,&nid);
 			mwui->TrayIconState=!mwui->TrayIconState;
 //			UpdateWindow(hDlg);
@@ -2383,8 +2383,8 @@ DWORD WINAPI MailBrowser(LPVOID Param)
 		if((hMailBrowser==NULL) && ((MyParam.nflags & YAMN_ACC_MSG) || (MyParam.nflags & YAMN_ACC_ICO) || (MyParam.nnflags & YAMN_ACC_MSG)))
 		{
 			hMailBrowser=CreateDialogParamW(YAMNVar.hInst,MAKEINTRESOURCEW(IDD_DLGVIEWMESSAGES),NULL,(DLGPROC)DlgProcYAMNMailBrowser,(LPARAM)&MyParam);
-			SendMessageW(hMailBrowser,WM_SETICON,(WPARAM)ICON_BIG,(LPARAM)hNewMailIcon);
-			SendMessageW(hMailBrowser,WM_SETICON,(WPARAM)ICON_SMALL,(LPARAM)hNewMailIcon);
+			SendMessageW(hMailBrowser,WM_SETICON,(WPARAM)ICON_BIG,(LPARAM)hYamnIcons[2]);
+			SendMessageW(hMailBrowser,WM_SETICON,(WPARAM)ICON_SMALL,(LPARAM)hYamnIcons[2]);
 			MoveWindow(hMailBrowser,PosX,PosY,SizeX,SizeY,TRUE);
 		}
 
