@@ -730,7 +730,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
     PROTORECVEVENT pre;
     HANDLE hContact, hDbEvent;
 	DBEVENTINFO dbei={0};
-	BOOL getstatus, bEmoted=false;
+	BOOL getstatus, bEmoted=false, isGroupChat=false;
 
 	if (!args || !args->msgnum) return;
 	Sleep(200);
@@ -935,12 +935,34 @@ void FetchMessageThread(fetchmsg_arg *args) {
 			CallServiceSync(MS_DB_EVENT_ADD, (WPARAM)(HANDLE)hContact, (LPARAM)&dbei);
 		}
 	}
+	
+	// Is it a groupchat message?
+	char *ptr3;
+	strcat(str, "CHATNAME");
+	if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) {
+		free(who);
+		free(msg);
+		SetEvent(SkypeMsgFetched);
+		return;
+	}
+	if (!(ptr3=SkypeGet("CHAT", ptr+strlen(str+4)+1, "STATUS"))) {
+		free(ptr);
+		free(who);
+		free(msg);
+		SetEvent(SkypeMsgFetched);
+		return;
+	}
+
+	if (!strcmp(ptr3, "MULTI_SUBSCRIBED"))
+		isGroupChat = true;
+
+	free(ptr);
+	free(ptr3);
 
 	if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0)) {
-		// Is it a groupchat message?
-		char *ptr3;
+		
 
-		strcat(str, "CHATNAME");
+		/*strcat(str, "CHATNAME");
 		if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) {
 			free(who);
 			free(msg);
@@ -953,8 +975,8 @@ void FetchMessageThread(fetchmsg_arg *args) {
 			free(msg);
 			SetEvent(SkypeMsgFetched);
 			return;
-		}
-		if (!strcmp(ptr3, "MULTI_SUBSCRIBED")) {
+		}*/
+		if (isGroupChat) {
 			GCDEST gcd = {0};
 			GCEVENT gce = {0};
 			DBVARIANT dbv = {0};
@@ -1011,6 +1033,10 @@ void FetchMessageThread(fetchmsg_arg *args) {
 		ccs.wParam = 0;
 		ccs.lParam = (LPARAM)&pre;
 		pre.flags = direction;
+		
+		if(isGroupChat && DBGetContactSettingByte(NULL, pszSkypeProtoName, "MarkGroupchatRead", 0))
+			pre.flags = PREF_CREATEREAD;
+
 		pre.timestamp = timestamp>0?timestamp:time(NULL);
 		if( bEmoted )
 		{
@@ -1351,7 +1377,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
     switch (message) 
     { 
         case WM_COPYDATA: 
-//		 LOG("WM_COPYDATA", "start");
+		 LOG("WM_COPYDATA", "start");
 		 if(hSkypeWnd==(HWND)wParam) { 
 			CopyData=(PCOPYDATASTRUCT)lParam;
 			szSkypeMsg=_strdup((char*)CopyData->lpData);
@@ -1516,7 +1542,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 			}
 			if (!strncmp(szSkypeMsg, "CHAT ", 5)) {
 				// Currently we only process these notifications
-				if (!DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0)) break;
+				//if (!DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0)) break;
 				// Throw away old unseen messages to reduce memory-usage
 				if (ptr=strstr(szSkypeMsg, " TOPIC")) {
 					ptr[6]=0;
@@ -1526,12 +1552,13 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 				if (ptr=strstr(szSkypeMsg, " MEMBERS")) {
 					AddMembers (szSkypeMsg);
 					break;
-				} else
+				}
+				/*else
 				if (ptr=strstr(szSkypeMsg, " STATUS")) {
 					ptr[7]=0;
 					while (testfor(szSkypeMsg, 0));
 					ptr[7]=' ';
-				} else break;
+				} else break;*/
 			}
 			if (!strncmp(szSkypeMsg, "CALL ",5)) {
 				// incoming calls are already processed by Skype, so no need for us

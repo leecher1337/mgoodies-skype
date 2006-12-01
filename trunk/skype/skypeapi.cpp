@@ -348,9 +348,7 @@ char *SkypeRcv(char *what, DWORD maxwait) {
 				}
 			}
 
-			if (what==NULL || token || 
-				(what[0] && !strncmp(ptr->message, what, strlen(what))) ||
-				!strncmp(ptr->message, "ERROR", 5)) 
+			if (what==NULL || token || 	(what[0] && !strncmp(ptr->message, what, strlen(what))) || !strncmp(ptr->message, "ERROR", 5)) 
 			{
 				msg=ptr->message;
 				ptr_->next=ptr->next;
