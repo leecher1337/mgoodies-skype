@@ -698,6 +698,9 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 		if ( auth == NULL && isMd5available )
 			auth = new TMD5Auth( info );
 
+		if ( auth == NULL && isPlainAvailable )
+			auth = new TPlainAuth( info );
+		
 		if ( auth == NULL && isXGoogleTokenAvailable ){
 			auth = new TGoogleAuth( info ); // here we request it
 			if ( !auth->isValid()){
@@ -707,9 +710,6 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 				auth = NULL;
 		}	}
 
-		if ( auth == NULL && isPlainAvailable )
-			auth = new TPlainAuth( info );
-		
 		if ( auth == NULL ) {
 			if ( isAuthAvailable ) { // no known mechanisms but iq_auth is available
 				JabberPerformIqAuth( info );
