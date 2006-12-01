@@ -46,6 +46,7 @@
 #define IDC_GROUPCHAT                   1014
 #define IDC_NOERRORS                    1015
 #define IDC_CONNATTEMPTS                1016
+#define IDC_GROUPCHATREAD               1016
 #define IDC_SKYPEOUTSTAT                1018
 #define IDC_NUMBER                      1019
 #define IDDIAL                          1020

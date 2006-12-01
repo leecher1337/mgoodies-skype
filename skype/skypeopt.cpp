@@ -389,6 +389,12 @@ int CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 			else
 				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHAT), FALSE);
 
+			if (ServiceExists(MS_GC_NEWCHAT) && atoi(SKYPE_PROTO+strlen(SKYPE_PROTO)-1)>=5)
+				CheckDlgButton(hwndDlg, IDC_GROUPCHATREAD, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "MarkGroupchatRead", 0));
+			else
+				EnableWindow(GetDlgItem(hwndDlg, IDC_GROUPCHATREAD), FALSE);
+
+
 #ifdef USEPOPUP
 			if (ServiceExists(MS_POPUP_ADDPOPUP))
 				CheckDlgButton(hwndDlg, IDC_USEPOPUP, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UsePopup", 0));
@@ -416,6 +422,7 @@ int CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "EnableMenu", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_ENABLEMENU), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UsePopup", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_USEPOPUP), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UseGroupchat", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_GROUPCHAT), BM_GETCHECK,0,0)));
+					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "MarkGroupchatRead", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_GROUPCHATREAD), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "SuppressErrors", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_NOERRORS), BM_GETCHECK,0,0)));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "KeepState", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_KEEPSTATE), BM_GETCHECK,0,0)));
 					DBWriteContactSettingDword(NULL, pszSkypeProtoName, "SkypeOutStatusMode", SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_GETITEMDATA,SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_GETCURSEL,0,0),0));

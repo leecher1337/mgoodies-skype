@@ -171,7 +171,7 @@ END
 IDD_OPT_ADVANCED DIALOGEX 0, 0, 313, 230
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        "Skype Advanced",IDC_STATIC,4,1,309,225
     CONTROL         "Enable Skype Menu options (currently: Find/Add user)",
@@ -181,22 +181,25 @@ BEGIN
                     IDC_USEPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,31,
                     296,9
     CONTROL         "Use groupchat interface for conversations - requires chat.dll (Please don't!)",
-                    IDC_GROUPCHAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,68,
+                    IDC_GROUPCHAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,64,
                     296,9
     CONTROL         "Suppress all error-Messages (not recommended, but if it annoys you.. ;)",
-                    IDC_NOERRORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,48,
+                    IDC_NOERRORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,46,
                     296,13
-    LTEXT           "SkypeOut contacts are in status",IDC_STATIC,10,131,120,
+    LTEXT           "SkypeOut contacts are in status",IDC_STATIC,10,143,120,
                     8
-    COMBOBOX        IDC_SKYPEOUTSTAT,138,128,79,54,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_SKYPEOUTSTAT,138,140,79,54,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Keep requested online status on startup under every circumstance",
-                    IDC_KEEPSTATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,86,
+                    IDC_KEEPSTATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,98,
                     296,9
-    PUSHBUTTON      "Cleanup Nicknames",IDC_CLEANUP,10,146,80,18,
+    PUSHBUTTON      "Cleanup Nicknames",IDC_CLEANUP,10,158,80,18,
                     BS_MULTILINE
     CONTROL         "Use time zone patch",IDC_TIMEZONE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,9,104,296,9
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,116,296,9
+    CONTROL         "Mark groupchat message as read to avoid notification.",
+                    IDC_GROUPCHATREAD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    9,81,296,9
 END
 
 IDD_OPT_POPUP DIALOGEX 0, 0, 313, 230

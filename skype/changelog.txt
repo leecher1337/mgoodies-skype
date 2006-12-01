@@ -13,6 +13,9 @@ CODE
 
 HISTORY
 -------
+0.0.0.34 - + Try to identify if chat message comes from a group chat or not
+           + Add a option to flag group chat message as read if not using chat.dll for group chat.
+
 0.0.0.33 - ! Fix for flags of event and metacontact (thanks SJE)
            * Next step to custom popup support (in popup option page)
 		   ! Fix infinite for error popup 

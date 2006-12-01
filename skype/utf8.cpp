@@ -132,8 +132,7 @@ int utf8_encode(const char *from, char **to)
    wchar_t *unicode;
    int wchars, err;
 
-   wchars = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, from,
-         lstrlen(from), NULL, 0);
+   wchars = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, from, lstrlen(from), NULL, 0);
 
    if(wchars == 0)
    {
@@ -148,8 +147,7 @@ int utf8_encode(const char *from, char **to)
       return -1;
    }
 
-   err = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, from,
-         lstrlen(from), unicode, wchars);
+   err = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, from, lstrlen(from), unicode, wchars);
    if(err != wchars)
    {
       free(unicode);
@@ -170,6 +168,7 @@ int utf8_decode(const char *from, char **to)
 {
     wchar_t *unicode;
     int chars, err;
+	LPCPINFO lpCPInfo;
    
     /* On NT-based windows systems, we could use MultiByteToWideChar(CP_UTF8), but
      * MS doesn't actually have a consistent API across win32.
@@ -181,8 +180,15 @@ int utf8_decode(const char *from, char **to)
         return -1;
     }
 
-    chars = WideCharToMultiByte(GetConsoleCP(), WC_COMPOSITECHECK, unicode,
-            -1, NULL, 0, NULL, NULL);
+	//if(GetCPInfo(CP_ACP,lpCPInfo))
+	{
+
+		chars = WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, unicode, -1, NULL, 0, NULL, NULL);
+	}
+	/*else
+	{
+		chars = WideCharToMultiByte(GetConsoleCP(), WC_COMPOSITECHECK, unicode, -1, NULL, 0, NULL, NULL);
+	}*/
 
     if(chars == 0)
     {
@@ -199,8 +205,8 @@ int utf8_decode(const char *from, char **to)
         return -1;
     }
 
-    err = WideCharToMultiByte(GetConsoleCP(), WC_COMPOSITECHECK, unicode,
-            -1, *to, chars, NULL, NULL);
+    //err = WideCharToMultiByte(GetConsoleCP(), WC_COMPOSITECHECK, unicode, -1, *to, chars, NULL, NULL);
+	err = WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, unicode, -1, *to, chars, NULL, NULL);
     if(err != chars)
     {
         fprintf(stderr, "Unicode translation error %ld\n", GetLastError());
