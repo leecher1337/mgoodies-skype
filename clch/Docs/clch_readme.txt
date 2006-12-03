@@ -9,3 +9,4 @@ It requires a modified MSN version to work. It can be found here:
 Unicode: http://pescuma.mirandaim.ru/miranda/msnW.clch.zip
 ASCII: http://pescuma.mirandaim.ru/miranda/msn.clch.zip
 Patch: http://pescuma.mirandaim.ru/miranda/msn.clch.patch
+Note that this version is my personal mod, and is totally unsuported. USE AT YOUR OWN RISK
