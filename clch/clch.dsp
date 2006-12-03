@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /O1 /YX /FD /c
 # SUBTRACT BASE CPP /Fr
-# ADD CPP /nologo /G4 /MT /W3 /GX /O2 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /Fr /YX /FD /c
+# ADD CPP /nologo /G4 /MT /W3 /O2 /Ob0 /I "../../include" /I "sdk" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /Fr /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x417 /d "NDEBUG"
@@ -73,7 +73,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /G4 /MT /W3 /GX /O2 /Ob0 /I "../../include" /FR /YX /FD /c
-# ADD CPP /nologo /G4 /MTd /W3 /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /FR /YX /FD /c
+# ADD CPP /nologo /G4 /MTd /W3 /GX /ZI /Od /I "../../include" /I "sdk" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x417 /d "NDEBUG"
@@ -104,18 +104,10 @@ SOURCE=.\commons.h
 
 SOURCE=.\m_clch.h
 # End Source File
-# Begin Source File
-
-SOURCE=.\resource.h
-# End Source File
 # End Group
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-# Begin Source File
-
-SOURCE=.\resource.rc
-# End Source File
 # End Group
 # Begin Group "Source Files"
 
@@ -123,6 +115,26 @@ SOURCE=.\resource.rc
 # Begin Source File
 
 SOURCE=.\clch.cpp
+# End Source File
+# End Group
+# Begin Group "Docs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Docs\clch_changelog.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\clch_readme.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\clch_version.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\langpack_clch.txt
 # End Source File
 # End Group
 # End Target
