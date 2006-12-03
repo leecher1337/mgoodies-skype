@@ -1,6 +1,14 @@
-Spell Checker 0.0.1.9
+Spell Checker
 
 Changelog:
+
+. 0.0.2.0
+  + Now ignores URLs and email addresses
+  + Added option to ignore words in UPPER CASE
+  + Added custom folder for flags.dll
+  * Use number as part of words too
+  * Changed text of show all corrections
+  * Fix for interation with srmm icon API
 
 . 0.0.1.9
   * New icons for status bar (thanks Angeli-Ka)

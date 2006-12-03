@@ -38,6 +38,7 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 static OptPageControl optionsControls[] = { 
 //	{ &opts.default_language,		CONTROL_COMBO_ITEMDATA,	IDC_DEF_LANG,				"DefaultLanguage", NULL, 0, 0, MAX_REGS(opts.default_language) },
 	{ &opts.auto_correct,			CONTROL_CHECKBOX,		IDC_AUTOCORRECT,			"AutoCorrect", FALSE },
+	{ &opts.ignore_uppercase,		CONTROL_CHECKBOX,		IDC_IGNORE_UPPERCASE,		"IgnoreUppercase", FALSE },
 	{ &opts.underline_type,			CONTROL_COMBO,			IDC_UNDERLINE_TYPE,			"UnderlineType", CFU_UNDERLINEWAVE - CFU_UNDERLINEDOUBLE },
 	{ &opts.cascade_corrections,	CONTROL_CHECKBOX,		IDC_CASCADE_CORRECTIONS,	"CascadeCorrections", FALSE },
 	{ &opts.show_all_corrections,	CONTROL_CHECKBOX,		IDC_SHOW_ALL_CORRECTIONS,	"ShowAllCorrections", FALSE },

@@ -283,7 +283,6 @@ public:
 		wordChars = NULL;
 		codePage = CP_ACP;
 		hFlag = NULL;
-		using_icolib = FALSE;
 	}
 
 	virtual ~HunspellDictionary()
@@ -292,8 +291,6 @@ public:
 			delete hunspell;
 		if (wordChars != NULL)
 			free(wordChars);
-		if (hFlag != NULL && !using_icolib)
-			DeleteObject(hFlag);
 	}
 
 	void loadThread()

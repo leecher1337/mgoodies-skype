@@ -1,4 +1,4 @@
-; Spell Checker 0.0.1.9
+; Spell Checker 0.0.2.0
 ; Author: Pescuma
 
 ; Options
@@ -8,17 +8,18 @@
 
 [Dictionaries]
 [Custom Dictionaries]
-[Flags]
-
-[ Spell Checker ]
-[Default language:]
-[Auto-correct words]
-[Download more dictionaries]
+[Flag icons]
+[Flags DLL]
 
 [Enabled]
 [Disabled]
 [Unknown Flag]
 [Spell Checker: No language found]
+
+[ Spell Checker ]
+[Default language:]
+[Auto-correct words]
+[Download more dictionaries]
 
 [ Advanced ]
 [Underline type:]
@@ -30,7 +31,8 @@
 [Wave]
 [Thick]
 [Show corrections in submenu]
-[Show all corrections]
+[Show all corrections in context menu (takes more time to show)]
+[Show wrong word]
 [Use flags]
 
 
