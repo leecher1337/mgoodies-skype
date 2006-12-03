@@ -8,7 +8,6 @@ This is a plugin that removes personal settings from database.
 It can remove all users, remove some files and directories from miranda dir (but only if these aren't beeing used), call services and disable plugins. To do that it is based in a configuration .ini file. If you need some especial configuration (and probabily you will need, because I just put some settings there, but I bet I forgot some), just edit the file RemovePersonalSettings.ini
 
 The idea for using this plugin is to allow sending a copy of you miranda with your actual configuration, but without your personal settings. To use it, you should:
-
 1) Copy the hole miranda dir to other location
 2) Enable the plugin (if it isn't enabled)
 4) Set global status to offline
