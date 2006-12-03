@@ -48,7 +48,6 @@ extern "C"
 #include <m_updater.h>
 #include <m_metacontacts.h>
 
-#include "resource.h"
 #include "m_clch.h"
 
 

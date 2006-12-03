@@ -1,6 +1,10 @@
-Contact Left Channel History 0.0.0.2
+Contact Left Channel History
 
 Changelog:
+
+. 0.0.0.3
+  * Changed for new site
+  + Updated msn build
 
 . 0.0.0.2
   + Check for chat

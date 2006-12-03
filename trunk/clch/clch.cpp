@@ -27,7 +27,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Contact Left Channel History",
-	PLUGIN_MAKE_VERSION(0,0,0,2),
+	PLUGIN_MAKE_VERSION(0,0,0,3),
 	"Log when contact left channel to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -127,11 +127,11 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://br.geocities.com/ricardo_pescuma/clch_version.txt";
-		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/clch_changelog.txt";
+		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/clch_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/clch_changelog.txt";
 		upd.pbBetaVersionPrefix = (BYTE *)"Contact Left Channel History ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
-		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/clch.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/clch.zip";
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
