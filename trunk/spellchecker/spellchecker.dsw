@@ -3,31 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "flags"=".\flags.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
-Project: "flags-angelika"=".\flags-angelika.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
-Project: "spellchecker"=".\spellchecker.dsp" - Package Owner=<4>
+Project: "spellchecker"=.\spellchecker.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

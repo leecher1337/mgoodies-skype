@@ -63,7 +63,7 @@ extern "C"
 #include <m_history.h>
 #include <m_message.h>
 #include <m_folders.h>
-#include <IcoLib.h>
+#include <m_icolib.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"

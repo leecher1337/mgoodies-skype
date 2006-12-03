@@ -30,7 +30,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,9),
+	PLUGIN_MAKE_VERSION(0,0,2,0),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -62,6 +62,9 @@ TCHAR customDictionariesFolder[1024];
 
 HANDLE hFlagsFolder = NULL;
 TCHAR flagsFolder[1024];
+
+HANDLE hFlagsDllFolder = NULL;
+TCHAR flagsDllFolder[1024];
 
 HINSTANCE hFlagsDll = NULL;
 
@@ -244,10 +247,16 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		FoldersGetCustomPathT(hCustomDictionariesFolder, customDictionariesFolder, MAX_REGS(customDictionariesFolder), _T("."));
 
 		hFlagsFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("Spell Checker"), 
-					Translate("Flags"), 
+					Translate("Flag icons"), 
 					_T(PROFILE_PATH) _T("\\Icons\\Flags"));
 
 		FoldersGetCustomPathT(hFlagsFolder, flagsFolder, MAX_REGS(flagsFolder), _T("."));
+
+		hFlagsDllFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("Spell Checker"), 
+					Translate("Flags DLL"), 
+					_T(PROFILE_PATH) _T("\\Icons"));
+
+		FoldersGetCustomPathT(hFlagsDllFolder, flagsDllFolder, MAX_REGS(flagsDllFolder), _T("."));
 	}
 	else
 	{
@@ -262,35 +271,36 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		// Set paths
 		mir_sntprintf(flagsFolder, MAX_REGS(flagsFolder), _T("%s\\Icons\\Flags"), customDictionariesFolder);
+		mir_sntprintf(flagsDllFolder, MAX_REGS(flagsDllFolder), _T("%s\\Icons"), customDictionariesFolder);
 		mir_sntprintf(dictionariesFolder, MAX_REGS(dictionariesFolder), _T("%s\\Dictionaries"), customDictionariesFolder);
 		lstrcpy(customDictionariesFolder, dictionariesFolder);
 	}
 
 	if (ServiceExists(MS_SKIN2_ADDICON)) 
 	{
-		SKINICONDESC2 sid;
-		ZeroMemory(&sid, sizeof(sid));
-		sid.cbSize = sizeof(SKINICONDESC2);
-		sid.pszSection = Translate("Spell Checker");
+		SKINICONDESC sid = {0};
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.flags = SIDF_TCHAR;
+		sid.ptszSection = TranslateT("Spell Checker");
 
-		sid.pszDescription = Translate("Enabled");
+		sid.ptszDescription = TranslateT("Enabled");
 		sid.pszName = "spellchecker_enabled";
 		sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_CHECK), IMAGE_ICON, 16, 16, 0);
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
-		sid.pszDescription = Translate("Disabled");
+		sid.ptszDescription = TranslateT("Disabled");
 		sid.pszName = "spellchecker_disabled";
 		sid.hDefaultIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_NO_CHECK), IMAGE_ICON, 16, 16, 0);
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
-		sid.pszDescription = Translate("Unknown Flag");
+		sid.ptszDescription = TranslateT("Unknown Flag");
 		sid.pszName = "spellchecker_unknown_flag";
 		sid.hDefaultIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_UNKNOWN_FLAG), IMAGE_ICON, 16, 16, 0);
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
-		hEnabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_enabled");
-		hDisabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_disabled");
-		hUnknownFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_unknown_flag");
+		hEnabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_enabled");
+		hDisabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_disabled");
+		hUnknownFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_unknown_flag");
 
 		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
 	}
@@ -305,15 +315,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	{
 		// Load flags dll
-		TCHAR * dll_rel_path = _T("\\Icons\\flags.dll");
 		TCHAR flag_file[1024];
-		GetModuleFileName(GetModuleHandle(NULL), flag_file, MAX_REGS(flag_file) - lstrlen(dll_rel_path));
-		
-		TCHAR *p = _tcsrchr(flag_file, _T('\\'));
-		if (p != NULL)
-			*p = _T('\0');
-
-		lstrcat(flag_file, dll_rel_path);
+		mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\flags.dll"), flagsDllFolder);
 
 		hFlagsDll = LoadLibrary(flag_file);
 
@@ -321,42 +324,40 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		for(int i = 0; i < languages.count; i++)
 		{
 			// First from dll
-			if (hFlagsDll != NULL) {
+			if (hFlagsDll != NULL)
 				languages.dicts[i]->hFlag = (HICON) LoadImage(hFlagsDll, languages.dicts[i]->language, IMAGE_ICON, 16, 16, 0);
-
-				// Oki, lets add to IcoLib, then
-				if (languages.dicts[i]->hFlag != NULL && ServiceExists(MS_SKIN2_ADDICON)) 
-				{
-					SKINICONDESC2 sid;
-					ZeroMemory(&sid, sizeof(sid));
-					sid.cbSize = sizeof(SKINICONDESC2);
-					sid.pszSection = Translate("Spell Checker/Flags");
-#ifdef UNICODE
-					char lang[10];
-					mir_snprintf(lang, MAX_REGS(lang), "%S", languages.dicts[i]->language);
-					sid.pszDescription = lang;
-					sid.pszName = lang;
-#else
-					sid.pszDescription = languages.dicts[i]->language;
-					sid.pszName = languages.dicts[i]->language;
-#endif
-					sid.hDefaultIcon = languages.dicts[i]->hFlag;
-					CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-#ifdef UNICODE
-					languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) lang);
-#else
-					languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) languages.dicts[i]->language);
-#endif
-					languages.dicts[i]->using_icolib = TRUE;
-				}
-			}
 
 			if (languages.dicts[i]->hFlag == NULL) {
 				// Now from ico
 				TCHAR flag_file[1024];
 				mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\%s.ico"), flagsFolder, languages.dicts[i]->language);
 				languages.dicts[i]->hFlag = (HICON) LoadImage(NULL, flag_file, IMAGE_ICON, ICON_SIZE, ICON_SIZE, LR_LOADFROMFILE);
+			}
+
+			// Oki, lets add to IcoLib, then
+			if (ServiceExists(MS_SKIN2_ADDICON)) 
+			{
+				SKINICONDESC sid = {0};
+				sid.cbSize = sizeof(SKINICONDESC);
+				sid.flags = SIDF_TCHAR | SIDF_SORTED;
+				sid.ptszSection = TranslateT("Spell Checker/Flags");
+				sid.ptszDescription = languages.dicts[i]->full_name;
+#ifdef UNICODE
+				char lang[10];
+				mir_snprintf(lang, MAX_REGS(lang), "%S", languages.dicts[i]->language);
+				sid.pszName = lang;
+#else
+				sid.pszName = languages.dicts[i]->language;
+#endif
+
+				sid.hDefaultIcon = languages.dicts[i]->hFlag;
+				CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+#ifdef UNICODE
+				languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) lang);
+#else
+				languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) languages.dicts[i]->language);
+#endif
 			}
 		}
 	}
@@ -388,8 +389,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.hIcon = hEnabledIcon;
-		sid.hIconDisabled = hDisabledIcon;
+		sid.hIcon = CopyIcon(hEnabledIcon);
+		sid.hIconDisabled = CopyIcon(hDisabledIcon);
 		sid.szTooltip = Translate("Spell Checker");
 		CallService(MS_MSG_ADDICON, 0, (LPARAM) &sid);
 	}
@@ -402,21 +403,19 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 int IconsChanged(WPARAM wParam, LPARAM lParam) 
 {
-	hEnabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_enabled");
-	hDisabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_disabled");
-	hUnknownFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"spellchecker_unknown_flag");
+	hEnabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_enabled");
+	hDisabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_disabled");
+	hUnknownFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_unknown_flag");
 	
 	for(int i = 0; i < languages.count; i++)
 	{
-		if (languages.dicts[i]->using_icolib) {
 #ifdef UNICODE
-			char lang[10];
-			mir_snprintf(lang, MAX_REGS(lang), "%S", languages.dicts[i]->language);
-			languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) lang);
+		char lang[10];
+		mir_snprintf(lang, MAX_REGS(lang), "%S", languages.dicts[i]->language);
+		languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) lang);
 #else
-			languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) languages.dicts[i]->language);
+		languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) languages.dicts[i]->language);
 #endif
-		}
 	}
 
 	if (ServiceExists(MS_MSG_MODIFYICON))
@@ -424,8 +423,8 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.hIcon = hEnabledIcon;
-		sid.hIconDisabled = hDisabledIcon;
+		sid.hIcon = CopyIcon(hEnabledIcon);
+		sid.hIconDisabled = CopyIcon(hDisabledIcon);
 		sid.szTooltip = Translate("Spell Checker");
 		CallService(MS_MSG_MODIFYICON, 0, (LPARAM) &sid);
 	}
@@ -446,8 +445,26 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 		CallService(MS_MSG_REMOVEICON, 0, (LPARAM) &sid);
 	}
 
-	if (hIconsChanged != NULL)
+	if (hIconsChanged != NULL) 
+	{
 		UnhookEvent(hIconsChanged);
+
+		CallService(MS_SKIN2_RELEASEICON, (WPARAM) hEnabledIcon, 0);
+		CallService(MS_SKIN2_RELEASEICON, (WPARAM) hDisabledIcon, 0);
+		CallService(MS_SKIN2_RELEASEICON, (WPARAM) hUnknownFlag, 0);
+		
+		for(int i = 0; i < languages.count; i++)
+			CallService(MS_SKIN2_RELEASEICON, (WPARAM) languages.dicts[i]->hFlag, 0);
+	}
+	else 
+	{
+		DestroyIcon(hEnabledIcon);
+		DestroyIcon(hDisabledIcon);
+		DestroyIcon(hUnknownFlag);
+		
+		for(int i = 0; i < languages.count; i++)
+			DestroyIcon(languages.dicts[i]->hFlag);
+	}
 
 	if (hMsgWindowPopup != NULL)
 		UnhookEvent(hMsgWindowPopup);
@@ -455,12 +472,6 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 	UnhookEvent(hMsgWindowEvent);
 	UnhookEvent(hModulesLoaded);
 	UnhookEvent(hPreShutdownHook);
-
-	if (!ServiceExists(MS_SKIN2_ADDICON)) 
-	{
-		DestroyIcon(hEnabledIcon);
-		DestroyIcon(hDisabledIcon);
-	}
 
 	return 0;
 }
@@ -506,22 +517,34 @@ inline void GetLineOfText(Dialog *dlg, int line, int &first_char, TCHAR *text, s
 
 // Helper to avoid copy and pastle
 inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, int &pos, 
-					 CHARRANGE &old_sel, BOOL auto_correct, 
+					 CHARRANGE &old_sel, BOOL auto_correct, int &diff,
 					 FoundWrongWordCallback callback, void *param)
 {
-	// Is wrong?
-	text[last_pos + 1] = _T('\0');
-	if (!dlg->lang->spell(&text[pos + 1]))
+	text[pos] = _T('\0');
+
+	// Is upper?
+	if (opts.ignore_uppercase)
 	{
-		CHARRANGE sel = { first_char + pos + 1, first_char + last_pos + 1 };
+		BOOL upper = TRUE;
+		for(int i = last_pos; i < pos && upper; i++)
+			upper = IsCharUpper(text[i]);
+
+		if (upper)
+			return;
+	}
+
+	// Is wrong?
+	if (!dlg->lang->spell(&text[last_pos]))
+	{
+		CHARRANGE sel = { first_char + last_pos + diff, first_char + pos + diff };
 		BOOL mark = TRUE;
 
 		// Has to correct?
 		if (auto_correct)
 		{
-			TCHAR *word = dlg->lang->autoReplace(&text[pos + 1]);
+			TCHAR *word = dlg->lang->autoReplace(&text[last_pos]);
 			if (word == NULL)
-				word = dlg->lang->autoSuggestOne(&text[pos + 1]);
+				word = dlg->lang->autoSuggestOne(&text[last_pos]);
 
 			if (word != NULL)
 			{
@@ -542,6 +565,7 @@ inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, i
 					old_sel.cpMin += dif;
 				if (old_sel.cpMax >= sel.cpMax)
 					old_sel.cpMax += dif;
+				diff += dif;
 
 				free(word);
 			}
@@ -553,7 +577,7 @@ inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, i
 			SetUnderline(dlg->hwnd, sel.cpMin, sel.cpMax);
 				
 			if (callback != NULL)
-				callback(&text[pos + 1], sel, param);
+				callback(&text[last_pos], sel, param);
 		}
 	}
 }
@@ -582,6 +606,7 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct,
 		{
 			TCHAR text[1024];
 			int first_char;
+			int diff = 0;
 
 			GetLineOfText(dlg, line, first_char, text, MAX_REGS(text));
 			int len = lstrlen(text);
@@ -591,22 +616,62 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct,
 			// Now lets get the words
 			int last_pos = -1;
 			BOOL found_real_char = FALSE;
-			for (int pos = len - 1; pos >= 0; pos--)
+			for (int pos = 0; pos < len; pos++)
 			{
-				if (!dlg->lang->isWordChar(text[pos]))
+				if (!dlg->lang->isWordChar(text[pos]) && !(text[pos] >= _T('0') && text[pos] <= _T('9')))
 				{
 					if (last_pos != -1)
 					{
 						// We found a word
 
+						// Is this an URL?
+						if (found_real_char && text[pos] == _T(':') && text[pos+1] == _T('/') && text[pos+2] == _T('/')) {
+							// May be
+							TCHAR *url_protos[] = { _T("http"), _T("https"), _T("feed"), _T("ftp") };
+							for (int u = 0; u < MAX_REGS(url_protos); u++) 
+							{
+								size_t len_proto = lstrlen(url_protos[u]);
+								if (len_proto == pos - last_pos && _tcsncmp(&text[last_pos], url_protos[u], len_proto) == 0) 
+								{
+									// It is! So lets found where it ends
+									pos += 3;
+									for(;  (text[pos] >= _T('a') && text[pos] <= _T('z'))
+										|| (text[pos] >= _T('A') && text[pos] <= _T('Z'))
+										|| (text[pos] >= _T('0') && text[pos] <= _T('9'))
+										|| text[pos] == _T('.') || text[pos] == _T('/')
+										|| text[pos] == _T('\\') || text[pos] == _T('?')
+										|| text[pos] == _T('=') || text[pos] == _T('&')
+										|| text[pos] == _T('%') || text[pos] == _T('-')
+										|| text[pos] == _T('_'); pos++) 
+									{}
+
+									found_real_char = FALSE;
+								}
+							}
+						}
+
+						// Is this an email?
+						if (found_real_char && text[pos] == _T('@')) {
+							// Well, it is
+							// It is! So lets found where it ends
+							pos ++;
+							for(;  (text[pos] >= _T('a') && text[pos] <= _T('z'))
+								|| (text[pos] >= _T('A') && text[pos] <= _T('Z'))
+								|| (text[pos] >= _T('0') && text[pos] <= _T('9'))
+								|| text[pos] == _T('.') || text[pos] == _T('-')
+								|| text[pos] == _T('_'); pos++) 
+							{}
+
+							found_real_char = FALSE;
+						}
+
 						// It has real chars?
 						if (found_real_char)
 						{
 							// Is under cursor?
-							if (check_word_under_cursor 
-								|| !(first_char+pos+1 <= old_sel.cpMax && first_char+last_pos+1 >= old_sel.cpMin))
+							if (check_word_under_cursor || !(first_char+last_pos <= old_sel.cpMax && first_char+pos >= old_sel.cpMin))
 							{
-								DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct, callback, param);
+								DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct, diff, callback, param);
 							}
 						}
 
@@ -619,7 +684,7 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct,
 					if (last_pos == -1)
 						last_pos = pos;
 
-					if (text[pos] != _T('-'))
+					if (text[pos] != _T('-') && !(text[pos] >= _T('0') && text[pos] <= _T('9')))
 						found_real_char = TRUE;
 				}
 			}
@@ -631,9 +696,9 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct,
 				if (found_real_char)
 				{
 					// Is under cursor?
-					if (check_word_under_cursor || !(pos+1 <= old_sel.cpMax && last_pos+1 >= old_sel.cpMin))
+					if (check_word_under_cursor || !(first_char+last_pos <= old_sel.cpMax && first_char+pos >= old_sel.cpMin))
 					{
-						DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct, callback, param);
+						DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct, diff, callback, param);
 					}
 				}
 			}
@@ -1114,11 +1179,13 @@ BOOL GetWordCharRange(Dialog *dlg, CHARRANGE &sel, TCHAR *text, size_t text_len,
 
 	// Find the word
 	sel.cpMin--;
-	while (sel.cpMin >= first_char && dlg->lang->isWordChar(text[sel.cpMin - first_char]))
+	while (sel.cpMin >= first_char && (dlg->lang->isWordChar(text[sel.cpMin - first_char]) 
+										|| (text[sel.cpMin - first_char] >= _T('0') && text[sel.cpMin - first_char] <= _T('9'))))
 		sel.cpMin--;
 	sel.cpMin++;
 
-	while (text[sel.cpMax - first_char] != _T('\0') && dlg->lang->isWordChar(text[sel.cpMax - first_char]))
+	while (text[sel.cpMax - first_char] != _T('\0') && (dlg->lang->isWordChar(text[sel.cpMax - first_char])
+														|| (text[sel.cpMax - first_char] >= _T('0') && text[sel.cpMax - first_char] <= _T('9'))))
 		sel.cpMax++;
 
 	// Has a word?

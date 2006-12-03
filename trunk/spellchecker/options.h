@@ -41,6 +41,7 @@ extern "C"
 struct Options {
 	TCHAR default_language[10];
 	BOOL auto_correct;
+	BOOL ignore_uppercase;
 
 	WORD underline_type;
 	BOOL cascade_corrections;

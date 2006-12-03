@@ -37,10 +37,7 @@ public:
 	TCHAR localized_name[128];
 	TCHAR english_name[128];
 	TCHAR full_name[256];
-
-	// Data handled by miranda
 	HICON hFlag;
-	BOOL using_icolib;
 
 	virtual ~Dictionary() {}
 
