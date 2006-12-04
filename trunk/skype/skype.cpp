@@ -122,7 +122,7 @@ int FreeVSApi()
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,33),
+	PLUGIN_MAKE_VERSION(0,0,0,34),
 	"Support for Skype network",
 	"leecher - tweety",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
@@ -724,6 +724,7 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 
 void FetchMessageThread(fetchmsg_arg *args) {
 	char str[64], *ptr, *who, *msg, *msg_emoted;
+	char *ptr3,strChat[64];
 	int msgl, direction=0;
 	DWORD timestamp, lwr=0;
     CCSDATA ccs;
@@ -937,15 +938,15 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	}
 	
 	// Is it a groupchat message?
-	char *ptr3;
-	strcat(str, "CHATNAME");
-	if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) {
+	strcpy(strChat,str);
+	strcat(strChat, "CHATNAME");
+	if (SkypeSend(strChat)==-1 || !(ptr=SkypeRcv(strChat+4, INFINITE))) {
 		free(who);
 		free(msg);
 		SetEvent(SkypeMsgFetched);
 		return;
 	}
-	if (!(ptr3=SkypeGet("CHAT", ptr+strlen(str+4)+1, "STATUS"))) {
+	if (!(ptr3=SkypeGet("CHAT", ptr+strlen(strChat+4)+1, "STATUS"))) {
 		free(ptr);
 		free(who);
 		free(msg);
