@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MS_MC_GETDEFAULTCONTACTNUM			"MetaContacts/GetDefaultNum"
 
 //gets the handle for the 'most online' contact
-//wParam=(HANDLE)hMetaContact
+//wParam=(HANDLE)hMetaContact192.168.10.
 //lParam=0
 //returns a handle to the 'most online' contact
 #define MS_MC_GETMOSTONLINECONTACT			"MetaContacts/GetMostOnline"

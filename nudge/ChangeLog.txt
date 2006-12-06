@@ -1,3 +1,7 @@
+0.0.1.14
+===========
+* Fix visual option
+
 0.0.1.13
 ===========
 ! Unicode patch by Ghazan
