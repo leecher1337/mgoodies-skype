@@ -52,7 +52,6 @@ extern "C"
 #include <m_NewAwaySys.h>
 #include <m_updater.h>
 #include <m_fontservice.h>
-#include <m_smileyadd.h>
 #include <m_variables.h>
 #include <m_avatars.h>
 #include <m_statusplugins.h>
@@ -60,6 +59,11 @@ extern "C"
 #include "../modernb/CLUIFrames/m_cluiframes.h"
 #include "../../protocols/IcqOscarJ/m_icq.h"
 #include "m_simpleaway.h"
+
+#ifndef CHARRANGE
+#  define CHARRANGE void
+#endif
+#include <m_smileyadd.h>
 
 #include <io.h>
 
