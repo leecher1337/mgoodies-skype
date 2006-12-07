@@ -23,9 +23,7 @@ Boston, MA 02111-1307, USA.
 
 extern "C"
 {
-#ifndef CHARRANGE
-#  define CHARRANGE void
-#endif
+#include <richedit.h>
 #include <m_smileyadd.h>
 #include <newpluginapi.h>
 #include <m_langpack.h>
