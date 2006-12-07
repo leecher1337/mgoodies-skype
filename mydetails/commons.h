@@ -60,9 +60,7 @@ extern "C"
 #include "../../protocols/IcqOscarJ/m_icq.h"
 #include "m_simpleaway.h"
 
-#ifndef CHARRANGE
-#  define CHARRANGE void
-#endif
+#include <richedit.h>
 #include <m_smileyadd.h>
 
 #include <io.h>
