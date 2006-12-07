@@ -22,16 +22,16 @@ Boston, MA 02111-1307, USA.
 
 extern "C"
 {
+#define MIRANDA_VER 0x0600
 #include <newpluginapi.h>
 #include <m_system.h>
 }
 
-struct MM_INTERFACE memoryManagerInterface;
+struct MM_INTERFACE mmi;
 
 void init_mir_malloc()
 {
-	memoryManagerInterface.cbSize = sizeof(memoryManagerInterface);
-	CallService(MS_SYSTEM_GET_MMI, 0, (LPARAM)&memoryManagerInterface);
+	mir_getMMI(&mmi);
 }
 
 

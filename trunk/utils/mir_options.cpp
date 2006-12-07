@@ -27,6 +27,7 @@ Boston, MA 02111-1307, USA.
 
 extern "C"
 {
+#define MIRANDA_VER 0x0600
 #include <newpluginapi.h>
 #include <m_database.h>
 #include <m_utils.h>
