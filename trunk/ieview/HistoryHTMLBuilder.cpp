@@ -127,6 +127,7 @@ int HistoryHTMLBuilder::getFlags(ProtocolSettings * protoSettings) {
 
 void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	LOGFONTA lf;
+	int i;
 	COLORREF color, bkgColor;
 	char *output = NULL;
 	int outputSize;
@@ -156,7 +157,7 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 		}
 		Utils::appendText(&output, &outputSize, ".link {color: #0000FF; text-decoration: underline;}\n");
 		Utils::appendText(&output, &outputSize, ".img {float: left; vertical-align: middle;}\n");
-	 	for(int i = 0; i < DIV_FONT_NUM; i++) {
+	 	for(i = 0; i < DIV_FONT_NUM; i++) {
 			loadMsgDlgFont(dbDivSettingNames[i], &lf, &color, &bkgColor);
 			if (protoSettings->getHistoryFlags() & Options::LOG_IMAGE_ENABLED) {
 				Utils::appendText(&output, &outputSize, "%s {float: left; padding-left: 2px; padding-right: 2px; word-wrap: break-word; border-top: 1px solid #%06X; font-family: %s; font-size: %dpt; font-weight: %s; color: #%06X; %s}\n",
@@ -179,7 +180,7 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 					lf.lfItalic ? "font-style: italic;" : "");
 			}
 		}
-	 	for(int i = 0; i < SPAN_FONT_NUM; i++) {
+	 	for(i = 0; i < SPAN_FONT_NUM; i++) {
 			loadMsgDlgFont(dbSpanSettingNames[i], &lf, &color, NULL);
 			Utils::appendText(&output, &outputSize, "%s {float: %s; font-family: %s; font-size: %dpt; font-weight: %s; color: #%06X; %s }\n",
 			spanClassNames[i],

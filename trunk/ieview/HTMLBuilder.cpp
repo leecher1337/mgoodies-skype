@@ -681,7 +681,7 @@ HTMLBuilder::HTMLBuilder() {
 
 HTMLBuilder::~HTMLBuilder() {
 	if (lastIEViewEvent.pszProto != NULL) {
-		delete lastIEViewEvent.pszProto;
+		delete (void*)lastIEViewEvent.pszProto;
 	}
 }
 
@@ -1055,13 +1055,13 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 	for ( IEVIEWEVENTDATA* eventData2 = newEvent.eventData; eventData2 != NULL; eventData2 = eventData) {
 		eventData = eventData2->next;
 		if (eventData2->pszTextW != NULL) {
-			delete eventData2->pszTextW;
+			delete (void*)eventData2->pszTextW;
 		}
 		if (eventData2->pszText2W != NULL) {
-			delete eventData2->pszText2W;
+			delete (void*)eventData2->pszText2W;
 		}
 		if (eventData2->pszNickW != NULL) {
-			delete eventData2->pszNickW;
+			delete (void*)eventData2->pszNickW;
 		}
 		delete eventData2;
 	}
