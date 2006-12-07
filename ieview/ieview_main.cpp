@@ -84,6 +84,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	_strupr(ieviewModuleName);
 
 	pluginLink = link;
+	mir_getMMI( &mmi ); 
 
 	hEventOptInitialise = HookEvent(ME_OPT_INITIALISE, IEViewOptInit);
 	HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
