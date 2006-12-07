@@ -37,6 +37,7 @@ static OptPageControl optionsControls[] = {
 	{ &opts.enable_sending,				CONTROL_CHECKBOX,	IDC_ENABLE_SEND,				"EnableSend", TRUE },
 	{ &opts.enable_menu_item,			CONTROL_CHECKBOX,	IDC_ENABLE_MENU,				"EnableMenu", TRUE },
 	{ &opts.templ,						CONTROL_TEXT,		IDC_TEMPLATE,					"Template", (DWORD) _T("%title% - %artist%") },
+	{ &opts.unknown,					CONTROL_TEXT,		IDC_UNKNOWN,					"Unknown", (DWORD) _T("<Unknown>"), 0, 0, 128 },
 	{ &opts.override_contact_template,	CONTROL_CHECKBOX,	IDC_OVERRIDE_CONTACTS_TEMPLATE,	"OverrideContactsTemplate", FALSE},
 	{ &opts.show_adv_icon,				CONTROL_CHECKBOX,	IDC_SHOW_ADV_ICON,				"ShowAdvancedIcon", FALSE},
 	{ &opts.adv_icon_slot,				CONTROL_COMBO,		IDC_ADV_ICON,					"AdvancedIconSlot", 1}
@@ -45,7 +46,7 @@ static OptPageControl optionsControls[] = {
 static UINT optionsExpertControls[] = { 
 	IDC_FORMAT_G, IDC_TEMPLATE_L, IDC_TEMPLATE, IDC_OVERRIDE_CONTACTS_TEMPLATE,
 	IDC_VARS_L, IDC_ARTIST_L, IDC_ALBUM_L, IDC_TITLE_L, IDC_TRACK_L, IDC_YEAR_L, IDC_GENRE_L, IDC_LENGTH_L,
-	IDC_PLAYER_L, IDC_TYPE_L
+	IDC_PLAYER_L, IDC_TYPE_L, IDC_UNKNOWN_L, IDC_UNKNOWN, IDC_CONTACTS_G, IDC_SHOW_ADV_ICON, IDC_ADV_ICON
 };
 
 static OptPageControl playersControls[] = { 
@@ -79,6 +80,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
 	odp.expertOnlyControls = optionsExpertControls;
 	odp.nExpertOnlyControls = MAX_REGS(optionsExpertControls);
+	odp.nIDBottomSimpleControl = IDC_LISTENING_G;
     CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
 	odp.ptszTab = TranslateT("Players");

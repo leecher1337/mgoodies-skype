@@ -132,6 +132,12 @@ typedef struct {
 // Returns a BOOL
 #define MS_LISTENINGTO_OVERRIDECONTACTOPTION	"ListeningTo/OverrideContactOption"
 
+// Get the text to show if some info of the contact is empty.
+// wParam = NULL
+// lParam = NULL
+// Returns a TCHAR *. Don't free
+#define MS_LISTENINGTO_GETUNKNOWNTEXT	"ListeningTo/GetUnknownText"
+
 
 #endif  // M_PROTO_LISTENINGTO_H__
 

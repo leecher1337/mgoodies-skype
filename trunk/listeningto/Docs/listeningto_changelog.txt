@@ -1,6 +1,12 @@
-ListeningTo 0.1.0.8
+ListeningTo
 
 Changelog:
+
+. 0.1.0.9
+  + Option to set string to show when info is not avaible
+  * Changed host of files
+  * Changes for miranda 0.6 mmi
+  * fix for pressing configure in winamp
 
 . 0.1.0.8
   * Fix for getting video info from winamp

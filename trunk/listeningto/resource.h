@@ -23,6 +23,7 @@
 #define IDC_CHANGED                     1058
 #define IDC_TEMPLATE                    1058
 #define IDC_REMOVED                     1059
+#define IDC_UNKNOWN                     1059
 #define IDC_CHECK1                      1060
 #define IDC_POPUPS                      1060
 #define IDC_WATRACK                     1060
@@ -39,6 +40,7 @@
 #define IDC_CHANGED_L                   1064
 #define IDC_TEMPLATE_L                  1064
 #define IDC_REMOVED_L                   1065
+#define IDC_UNKNOWN_L                   1065
 #define IDC_PROTOCOLS_G                 1066
 #define IDC_PROTOCOLS_L                 1067
 #define IDC_COLOURS_G                   1068
@@ -71,8 +73,9 @@
 #define IDC_POLL_TIMER_S_L              1091
 #define IDC_OTHER                       1092
 #define IDC_ADV_ICON                    1092
+#define IDC_CONTACTS_G                  1093
+#define IDC_LISTENING_G                 1094
 #define IDC_POLL_TIMER_SPIN             1625
-#define IDC_STATIC                      -1
 
 // Next default values for new objects
 // 
@@ -82,7 +85,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        123
 #define _APS_NEXT_COMMAND_VALUE         40004
-#define _APS_NEXT_CONTROL_VALUE         1093
+#define _APS_NEXT_CONTROL_VALUE         1095
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

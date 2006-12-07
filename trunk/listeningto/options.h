@@ -46,6 +46,7 @@ struct Options {
 	BOOL enable_menu_item;
 
 	TCHAR templ[1024];
+	TCHAR unknown[128];
 
 	BOOL override_contact_template;
 	BOOL show_adv_icon;

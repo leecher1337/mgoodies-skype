@@ -37,7 +37,7 @@ PLUGININFO pluginInfo = {
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,8),
+	PLUGIN_MAKE_VERSION(0,1,0,9),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -87,6 +87,7 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam);
 int GetTextFormat(WPARAM wParam,LPARAM lParam);
 int GetParsedFormat(WPARAM wParam,LPARAM lParam);
 int GetOverrideContactOption(WPARAM wParam,LPARAM lParam);
+int GetUnknownText(WPARAM wParam,LPARAM lParam);
 void SetExtraIcon(HANDLE hContact, BOOL set);
 
 
@@ -119,6 +120,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	CreateServiceFunction(MS_LISTENINGTO_GETTEXTFORMAT, GetTextFormat);
 	CreateServiceFunction(MS_LISTENINGTO_GETPARSEDTEXT, GetParsedFormat);
 	CreateServiceFunction(MS_LISTENINGTO_OVERRIDECONTACTOPTION, GetOverrideContactOption);
+	CreateServiceFunction(MS_LISTENINGTO_GETUNKNOWNTEXT, GetUnknownText);
 	CreateServiceFunction(MS_LISTENINGTO_MAINMENU, MainMenuClicked);
 	
 	// hooks
@@ -177,14 +179,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://eth0.dk/files/pescuma/listeningto_version.txt";
-		upd.szBetaChangelogURL = "http://eth0.dk/files/pescuma/listeningto_changelog.txt";
+		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/listeningto_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/listeningto_changelog.txt";
 		upd.pbBetaVersionPrefix = (BYTE *)"ListeningTo ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/listeningtoW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/listeningtoW.zip";
 #else
-		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/listeningto.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/listeningto.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
@@ -516,6 +518,8 @@ int GetParsedFormat(WPARAM wParam,LPARAM lParam)
 	for (int i = 0; i < MAX_REGS(fr); i+=2) {
 		TCHAR *find = fr[i];
 		TCHAR *replace = fr[i+1] ? fr[i+1] : _T("");
+		if (replace[0] == _T('\0'))
+			replace = opts.unknown;
 
 		size_t len_find = lstrlen(find);
 		size_t len_replace = lstrlen(replace);
@@ -537,7 +541,13 @@ int GetParsedFormat(WPARAM wParam,LPARAM lParam)
 
 int GetOverrideContactOption(WPARAM wParam,LPARAM lParam) 
 {
-	return opts.override_contact_template;
+	return (int) opts.override_contact_template;
+}
+
+
+int GetUnknownText(WPARAM wParam,LPARAM lParam) 
+{
+	return (int) opts.unknown;
 }
 
 

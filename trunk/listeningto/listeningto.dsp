@@ -283,5 +283,25 @@ SOURCE=.\players\wmp.cpp
 SOURCE=.\players\wmp.h
 # End Source File
 # End Group
+# Begin Group "Docs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Docs\listeningto_changelog.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\listeningto_readme.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\listeningto_version.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\readme_players.txt
+# End Source File
+# End Group
 # End Target
 # End Project
