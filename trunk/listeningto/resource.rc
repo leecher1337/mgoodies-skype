@@ -27,68 +27,97 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPTIONS DIALOG DISCARDABLE  0, 0, 288, 218
-STYLE WS_CHILD | WS_VISIBLE
+IDD_OPTIONS DIALOG DISCARDABLE  0, 0, 288, 193
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Tahoma"
 BEGIN
-    GROUPBOX        " Listening to information ",IDC_LISTENING_G,3,3,282,47
+    GROUPBOX        " Listening to information ",IDC_LISTENING_G,3,12,282,45
     CONTROL         "Enable sending listening information to contacts",
                     IDC_ENABLE_SEND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,
-                    16,262,11
-    CONTROL         "Show menu item to select protocols to enable (requires restart)",
-                    IDC_ENABLE_MENU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,
-                    30,263,11
-    GROUPBOX        " Format ",IDC_FORMAT_G,3,53,282,109
-    LTEXT           "Template:",IDC_TEMPLATE_L,11,67,55,10
-    EDITTEXT        IDC_TEMPLATE,72,65,202,13,ES_AUTOHSCROLL
-    LTEXT           "Variables:",IDC_VARS_L,11,83,129,8
-    LTEXT           "%type% - Media type (Music, Video, etc)",IDC_TYPE_L,148,
-                    83,129,8
-    LTEXT           "%artist% - Artist name",IDC_ARTIST_L,11,95,129,8
-    LTEXT           "%album% - Album name",IDC_ALBUM_L,148,95,129,8
-    LTEXT           "%title% - Song title",IDC_TITLE_L,11,107,129,8
-    LTEXT           "%track% - Track number",IDC_TRACK_L,148,107,129,8
-    LTEXT           "%year% - Song year",IDC_YEAR_L,11,119,129,8
-    LTEXT           "%genre% - Song genre",IDC_GENRE_L,148,119,129,8
-    LTEXT           "%length% - Song length",IDC_LENGTH_L,11,131,129,8
-    LTEXT           "%player% - Player name",IDC_PLAYER_L,148,131,129,8
-    LTEXT           "When variable not found, use:",IDC_UNKNOWN_L,11,146,108,
-                    10
-    EDITTEXT        IDC_UNKNOWN,122,144,152,13,ES_AUTOHSCROLL
-    GROUPBOX        " Contacts ",IDC_CONTACTS_G,3,165,282,49
+                    26,262,11
+    LTEXT           "You also have to enable it per protocol in the main menu",
+                    IDC_STATIC,12,41,262,13
+    GROUPBOX        " XStatus ",IDC_XSTATUS_G,3,60,282,75
+    LTEXT           "For protocols that don't support listening to but support XStatus:",
+                    IDC_XSTATUS_L,12,74,263,11
+    CONTROL         "Set XStatus to Music and show listening info as message",
+                    IDC_SET_XSTATUS,"Button",BS_AUTORADIOBUTTON,19,87,257,12
+    CONTROL         "If XStatus is Music, show listening info as message",
+                    IDC_CHECK_XSTATUS,"Button",BS_AUTORADIOBUTTON,19,101,257,
+                    12
+    CONTROL         "Do nothing",IDC_IGNORE_XSTATUS,"Button",
+                    BS_AUTORADIOBUTTON,19,115,257,12
+    GROUPBOX        " Contacts ",IDC_CONTACTS_G,3,139,282,49
     CONTROL         "Apply template for info from contacts (overrides contacts template)",
                     IDC_OVERRIDE_CONTACTS_TEMPLATE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,12,179,262,11
+                    WS_TABSTOP,12,153,262,11
     CONTROL         "Show advanced icon in slot",IDC_SHOW_ADV_ICON,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,193,104,13
-    COMBOBOX        IDC_ADV_ICON,122,193,46,15,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,166,104,13
+    COMBOBOX        IDC_ADV_ICON,122,166,46,15,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
 END
 
 IDD_PLAYERS DIALOG DISCARDABLE  0, 0, 288, 224
-STYLE WS_CHILD | WS_VISIBLE
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Tahoma"
 BEGIN
     CONTROL         "Get info from WATrack plugin",IDC_WATRACK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,3,13,282,11
-    LTEXT           "Get info from these players:",IDC_PLAYERS_L,3,31,282,11
+                    BS_AUTOCHECKBOX | WS_TABSTOP,3,12,282,11
+    LTEXT           "Get info from these players:",IDC_PLAYERS_L,3,30,282,11
     CONTROL         "Winamp (*)",IDC_WINAMP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,20,45,129,11
+                    WS_TABSTOP,20,44,129,11
     CONTROL         "Windows Media Player",IDC_WMP,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,20,60,129,11
     CONTROL         "iTunes",IDC_ITUNES,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,20,75,129,11
+                    WS_TABSTOP,20,74,129,11
     CONTROL         "Other players",IDC_OTHER,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,20,90,129,11
-    LTEXT           "Ask for new info every",IDC_POLL_TIMER_L,3,112,87,12
+                    WS_TABSTOP,20,89,129,11
+    LTEXT           "Ask for new info every",IDC_POLL_TIMER_L,3,111,87,12
     EDITTEXT        IDC_POLL_TIMER,97,110,34,13,ES_AUTOHSCROLL
     CONTROL         "",IDC_POLL_TIMER_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
                     UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
-                    UDS_HOTTRACK,125,109,11,12
-    LTEXT           "seconds",IDC_POLL_TIMER_S_L,138,112,82,12
+                    UDS_HOTTRACK,125,108,11,12
+    LTEXT           "seconds",IDC_POLL_TIMER_S_L,138,111,82,12
     CONTROL         "Allow auto-loading plugins into players (affect players with *)",
                     IDC_CODE_INJECTION,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    3,128,282,11
+                    3,127,282,11
+END
+
+IDD_FORMAT DIALOG DISCARDABLE  0, 0, 288, 221
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "Tahoma"
+BEGIN
+    GROUPBOX        " Listening to ",IDC_LISTENINGTO_G,3,8,282,125
+    LTEXT           "Template:",IDC_TEMPLATE_L,11,22,55,10
+    EDITTEXT        IDC_TEMPLATE,72,20,202,13,ES_AUTOHSCROLL
+    LTEXT           "Variables:",IDC_VARS_L,11,39,129,8
+    LTEXT           "%artist% - Artist name",IDC_ARTIST_L,11,51,129,8
+    LTEXT           "%album% - Album name",IDC_ALBUM_L,148,51,129,8
+    LTEXT           "%title% - Song title",IDC_TITLE_L,11,63,129,8
+    LTEXT           "%track% - Track number",IDC_TRACK_L,148,63,129,8
+    LTEXT           "%year% - Song year",IDC_YEAR_L,11,75,129,8
+    LTEXT           "%genre% - Song genre",IDC_GENRE_L,148,75,129,8
+    LTEXT           "%length% - Song length",IDC_LENGTH_L,11,87,129,8
+    LTEXT           "%player% - Player name",IDC_PLAYER_L,148,87,129,8
+    LTEXT           "%type% - Media type (Music, Video, etc)",IDC_TYPE_L,11,
+                    99,265,8
+    LTEXT           "When variable not found, use:",IDC_UNKNOWN_L,11,117,108,
+                    10
+    EDITTEXT        IDC_UNKNOWN,122,114,152,13,ES_AUTOHSCROLL
+    GROUPBOX        " XStatus ",IDC_XSTATUS_G,3,137,282,79
+    LTEXT           "Name:",IDC_NAME_L,11,152,55,10
+    EDITTEXT        IDC_XSTATUS_NAME,72,150,202,13,ES_AUTOHSCROLL
+    LTEXT           "Message:",IDC_MESSAGE_L,11,167,55,10
+    EDITTEXT        IDC_XSTATUS_MESSAGE,72,165,202,13,ES_AUTOHSCROLL
+    LTEXT           "Variable:",IDC_VARS2_L,11,183,58,8
+    LTEXT           "%listening% - Listening to info (as set above)",
+                    IDC_LISTENING_L,72,183,201,8
+    LTEXT           "When nothing is playing, replace %listening% with:",
+                    IDC_NOTHING_L,11,199,171,10
+    EDITTEXT        IDC_NOTHING,183,197,91,13,ES_AUTOHSCROLL
 END
 
 
@@ -104,16 +133,24 @@ BEGIN
     BEGIN
         LEFTMARGIN, 3
         RIGHTMARGIN, 285
-        TOPMARGIN, 3
-        BOTTOMMARGIN, 215
+        TOPMARGIN, 12
+        BOTTOMMARGIN, 190
     END
 
     IDD_PLAYERS, DIALOG
     BEGIN
         LEFTMARGIN, 3
         RIGHTMARGIN, 285
-        TOPMARGIN, 3
+        TOPMARGIN, 12
         BOTTOMMARGIN, 221
+    END
+
+    IDD_FORMAT, DIALOG
+    BEGIN
+        LEFTMARGIN, 3
+        RIGHTMARGIN, 285
+        TOPMARGIN, 8
+        BOTTOMMARGIN, 218
     END
 END
 #endif    // APSTUDIO_INVOKED

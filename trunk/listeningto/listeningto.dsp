@@ -288,6 +288,10 @@ SOURCE=.\players\wmp.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=.\Docs\langpack_listeningto.txt
+# End Source File
+# Begin Source File
+
 SOURCE=.\Docs\listeningto_changelog.txt
 # End Source File
 # Begin Source File

@@ -53,6 +53,8 @@ extern "C"
 #include <m_proto_listeningto.h>
 #include <m_music.h>
 #include <m_toptoolbar.h>
+#include <m_icolib.h>
+#include <m_icq.h>
 
 #include "../modernb/m_clui.h"
 #include "../modernb/CLUIFrames/m_cluiframes.h"
@@ -94,6 +96,7 @@ extern PLUGINLINK *pluginLink;
 
 
 void StartTimer();
+int ProtoServiceExists(const char *szModule, const char *szService);
 
 
 #ifdef __cplusplus
