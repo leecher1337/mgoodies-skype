@@ -31,22 +31,30 @@ Options opts;
 
 static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static BOOL CALLBACK FormatDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
 static OptPageControl optionsControls[] = { 
 	{ &opts.enable_sending,				CONTROL_CHECKBOX,	IDC_ENABLE_SEND,				"EnableSend", TRUE },
-	{ &opts.enable_menu_item,			CONTROL_CHECKBOX,	IDC_ENABLE_MENU,				"EnableMenu", TRUE },
-	{ &opts.templ,						CONTROL_TEXT,		IDC_TEMPLATE,					"Template", (DWORD) _T("%title% - %artist%") },
-	{ &opts.unknown,					CONTROL_TEXT,		IDC_UNKNOWN,					"Unknown", (DWORD) _T("<Unknown>"), 0, 0, 128 },
+	{ &opts.xstatus_set,				CONTROL_RADIO,		IDC_SET_XSTATUS,				"XStatusSet", 0, SET_XSTATUS },
+	{ &opts.xstatus_set,				CONTROL_RADIO,		IDC_CHECK_XSTATUS,				"XStatusSet", 0, CHECK_XSTATUS },
+	{ &opts.xstatus_set,				CONTROL_RADIO,		IDC_IGNORE_XSTATUS,				"XStatusSet", 0, IGNORE_XSTATUS },
 	{ &opts.override_contact_template,	CONTROL_CHECKBOX,	IDC_OVERRIDE_CONTACTS_TEMPLATE,	"OverrideContactsTemplate", FALSE},
 	{ &opts.show_adv_icon,				CONTROL_CHECKBOX,	IDC_SHOW_ADV_ICON,				"ShowAdvancedIcon", FALSE},
 	{ &opts.adv_icon_slot,				CONTROL_COMBO,		IDC_ADV_ICON,					"AdvancedIconSlot", 1}
 };
 
 static UINT optionsExpertControls[] = { 
-	IDC_FORMAT_G, IDC_TEMPLATE_L, IDC_TEMPLATE, IDC_OVERRIDE_CONTACTS_TEMPLATE,
-	IDC_VARS_L, IDC_ARTIST_L, IDC_ALBUM_L, IDC_TITLE_L, IDC_TRACK_L, IDC_YEAR_L, IDC_GENRE_L, IDC_LENGTH_L,
-	IDC_PLAYER_L, IDC_TYPE_L, IDC_UNKNOWN_L, IDC_UNKNOWN, IDC_CONTACTS_G, IDC_SHOW_ADV_ICON, IDC_ADV_ICON
+	IDC_XSTATUS_G, IDC_XSTATUS_L, IDC_SET_XSTATUS, IDC_CHECK_XSTATUS, IDC_IGNORE_XSTATUS,
+	IDC_CONTACTS_G, IDC_SHOW_ADV_ICON, IDC_ADV_ICON
+};
+
+static OptPageControl formatControls[] = { 
+	{ &opts.templ,					CONTROL_TEXT,		IDC_TEMPLATE,			"Template", (DWORD) _T("%title% - %artist%") },
+	{ &opts.unknown,				CONTROL_TEXT,		IDC_UNKNOWN,			"Unknown", (DWORD) _T("<Unknown>"), 0, 0, 128 },
+	{ &opts.xstatus_name,			CONTROL_TEXT,		IDC_XSTATUS_NAME,		"XStatusName", (DWORD) _T("Listening to") },
+	{ &opts.xstatus_message,		CONTROL_TEXT,		IDC_XSTATUS_MESSAGE,	"XStatusMessage", (DWORD) _T("%listening%") },
+	{ &opts.nothing,				CONTROL_TEXT,		IDC_NOTHING,			"Nothing", (DWORD) _T("<Nothing>"), 0, 0, 128 }
 };
 
 static OptPageControl playersControls[] = { 
@@ -61,27 +69,34 @@ static OptPageControl playersControls[] = {
 
 
 
+
 // Functions //////////////////////////////////////////////////////////////////////////////////////
 
 
 int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 {
 	OPTIONSDIALOGPAGE odp;
-
 	ZeroMemory(&odp,sizeof(odp));
     odp.cbSize=sizeof(odp);
     odp.position=0;
 	odp.hInstance=hInst;
 	odp.ptszGroup = TranslateT("Status");
 	odp.ptszTitle = TranslateT("Listening info");
+
 	odp.ptszTab = TranslateT("General");
 	odp.pfnDlgProc = OptionsDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
-    odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
+	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
 	odp.expertOnlyControls = optionsExpertControls;
 	odp.nExpertOnlyControls = MAX_REGS(optionsExpertControls);
 	odp.nIDBottomSimpleControl = IDC_LISTENING_G;
-    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+	CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+
+	odp.ptszTab = TranslateT("Format");
+	odp.pfnDlgProc = FormatDlgProc;
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_FORMAT);
+	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR | ODPF_EXPERTONLY;
+	CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
 	odp.ptszTab = TranslateT("Players");
 	odp.pfnDlgProc = PlayersDlgProc;
@@ -110,6 +125,7 @@ void DeInitOptions()
 void LoadOptions()
 {
 	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
+	LoadOpts(formatControls, MAX_REGS(formatControls), MODULE_NAME);
 	LoadOpts(playersControls, MAX_REGS(playersControls), MODULE_NAME);
 }
 
@@ -118,20 +134,15 @@ static void OptionsEnableDisableCtrls(HWND hwndDlg)
 {
 	BOOL enabled = IsDlgButtonChecked(hwndDlg, IDC_ENABLE_SEND);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_ENABLE_MENU), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_FORMAT_G), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATE_L), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_TEMPLATE), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_XSTATUS_G), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_XSTATUS_L), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_SET_XSTATUS), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_CHECK_XSTATUS), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_IGNORE_XSTATUS), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_CONTACTS_G), enabled);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_OVERRIDE_CONTACTS_TEMPLATE), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_VARS_L), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_ARTIST_L), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_ALBUM_L), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_TITLE_L), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_TRACK_L), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_YEAR_L), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_GENRE_L), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_LENGTH_L), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_PLAYER_L), enabled);
-	EnableWindow(GetDlgItem(hwndDlg, IDC_TYPE_L), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_SHOW_ADV_ICON), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_ADV_ICON), enabled);
 }
 
 
@@ -264,5 +275,10 @@ static BOOL CALLBACK PlayersDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 	}
 
 	return ret;
+}
+
+static BOOL CALLBACK FormatDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	return SaveOptsDlgProc(formatControls, MAX_REGS(formatControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
 

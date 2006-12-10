@@ -39,11 +39,13 @@ extern "C"
 #define POPUP_DELAY_CUSTOM 1
 #define POPUP_DELAY_PERMANENT 2
 
+#define SET_XSTATUS 0
+#define CHECK_XSTATUS 1
+#define IGNORE_XSTATUS 2
+
 
 struct Options {
 	BOOL enable_sending;
-
-	BOOL enable_menu_item;
 
 	TCHAR templ[1024];
 	TCHAR unknown[128];
@@ -56,6 +58,11 @@ struct Options {
 	BOOL enable_other_players;
 	BOOL enable_code_injection;
 	int time_to_pool;
+
+	WORD xstatus_set;
+	TCHAR xstatus_name[1024];
+	TCHAR xstatus_message[1024];
+	TCHAR nothing[128];
 };
 
 extern Options opts;

@@ -57,20 +57,25 @@ static HANDLE hTopToolBarLoadedHook = NULL;
 static HANDLE hClistExtraListRebuildHook = NULL;
 static HANDLE hSettingChangedHook = NULL;
 static HANDLE hEnableStateChangedEvent = NULL;
+static HANDLE hIconsChanged = NULL;
 
 static HANDLE hTTB = NULL;
 static char *metacontacts_proto = NULL;
 static BOOL loaded = FALSE;
 static UINT hTimer = 0;
 static HANDLE hExtraImage = NULL;
+static HICON hListeningToIcon = NULL;
 
-struct MenuItemInfo
+struct ProtocolInfo
 {
 	char *proto;
 	HANDLE hMenu;
+	int old_xstatus;
+	TCHAR old_xstatus_name[1024];
+	TCHAR old_xstatus_message[1024];
 
-} *menu_itens = NULL;
-int menu_itens_num = 0;
+} *proto_itens = NULL;
+int proto_itens_num = 0;
 
 
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
@@ -89,6 +94,9 @@ int GetParsedFormat(WPARAM wParam,LPARAM lParam);
 int GetOverrideContactOption(WPARAM wParam,LPARAM lParam);
 int GetUnknownText(WPARAM wParam,LPARAM lParam);
 void SetExtraIcon(HANDLE hContact, BOOL set);
+TCHAR *ReplaceVars(TCHAR *str, TCHAR **fr, int size);
+
+#define XSTATUS_MUSIC 11
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -138,8 +146,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 extern "C" int __declspec(dllexport) Unload(void) 
 {
-	if (menu_itens != NULL) 
-		free(menu_itens);
+	if (proto_itens != NULL) 
+		free(proto_itens);
 
 	CoUninitialize();
 
@@ -147,12 +155,18 @@ extern "C" int __declspec(dllexport) Unload(void)
 }
 
 
-__inline static int ProtoServiceExists(const char *szModule, const char *szService)
+int ProtoServiceExists(const char *szModule, const char *szService)
 {
 	char str[MAXMODULELABELLENGTH];
 	strcpy(str,szModule);
 	strcat(str,szService);
 	return ServiceExists(str);
+}
+
+int IconsChanged(WPARAM wParam, LPARAM lParam) 
+{
+	hListeningToIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON");
+	return 0;
 }
 
 // Called when all the modules are loaded
@@ -165,6 +179,26 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
+
+	if (ServiceExists(MS_SKIN2_ADDICON)) 
+	{
+		SKINICONDESC sid = {0};
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.flags = SIDF_TCHAR;
+		sid.ptszSection = TranslateT("Contact List");
+		sid.ptszDescription = TranslateT("Listening to");
+		sid.pszName = "LISTENING_TO_ICON";
+		sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		IconsChanged(0, 0);
+
+		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
+	}
+	else
+	{		
+		hListeningToIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
+	}
 
 	hClistExtraListRebuildHook = HookEvent(ME_CLIST_EXTRA_LIST_REBUILD, ClistExtraListRebuild);
 
@@ -195,75 +229,79 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
 	}
 
-	if (opts.enable_menu_item)
+	CLISTMENUITEM mi = {0};
+	mi.cbSize = sizeof(mi);
+	mi.popupPosition = 500080000;
+	mi.pszPopupName = "Listening to";
+	mi.position = 0;
+	mi.pszService = MS_LISTENINGTO_MAINMENU;
+
+	int allocated = 10;
+	proto_itens = (ProtocolInfo *) malloc(allocated * sizeof(ProtocolInfo));
+	
+	// Add all protos
+
+	mi.pszName = Translate("Send to all protocols");
+	mi.flags = ListeningToEnabled(NULL) ? CMIF_CHECKED : 0;
+	proto_itens[proto_itens_num].hMenu = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
+	proto_itens[proto_itens_num].proto = NULL;
+	proto_itens[proto_itens_num].old_xstatus = 0;
+	proto_itens[proto_itens_num].old_xstatus_name[0] = _T('\0');
+	proto_itens[proto_itens_num].old_xstatus_message[0] = _T('\0');
+
+	// clist classic :(
+	mi.flags |= CMIM_FLAGS;
+	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) proto_itens[proto_itens_num].hMenu, (LPARAM) &mi);
+
+
+	mi.popupPosition++;
+	proto_itens_num++;
+
+	mi.position = 100000;
+
+	// Add each proto
+
+	PROTOCOLDESCRIPTOR **protos;
+	int count;
+	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+
+	for (int i = 0; i < count; i++)
 	{
-		CLISTMENUITEM mi = {0};
-		mi.cbSize = sizeof(mi);
-		mi.popupPosition = 500080000;
-		mi.pszPopupName = "Listening to";
-		mi.position = 0;
-		mi.pszService = MS_LISTENINGTO_MAINMENU;
-
-		int allocated = 10;
-		menu_itens = (MenuItemInfo *) malloc(allocated * sizeof(MenuItemInfo));
+		if (protos[i]->type != PROTOTYPE_PROTOCOL)
+			continue;
 		
-		// Add all protos
+		if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO) &&
+			!ProtoServiceExists(protos[i]->szName, PS_ICQ_SETCUSTOMSTATUSEX))
+			continue;
 
-		mi.pszName = Translate("Send to all protocols");
-		mi.flags = ListeningToEnabled(NULL) ? CMIF_CHECKED : 0;
-		menu_itens[menu_itens_num].hMenu = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
-		menu_itens[menu_itens_num].proto = NULL;
+		char name[128];
+		CallProtoService(protos[i]->szName, PS_GETNAME, sizeof(name), (LPARAM)name);
+
+		char text[256];
+		mir_snprintf(text, MAX_REGS(text), Translate("Send to %s"), name);
+
+		if (proto_itens_num >= allocated)
+		{
+			allocated += 10;
+			proto_itens = (ProtocolInfo *) realloc(proto_itens, allocated * sizeof(ProtocolInfo));
+		}
+
+		mi.pszName = text;
+		mi.flags = ListeningToEnabled(protos[i]->szName) ? CMIF_CHECKED : 0;
+
+		proto_itens[proto_itens_num].hMenu = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
+		proto_itens[proto_itens_num].proto = protos[i]->szName;
+		proto_itens[proto_itens_num].old_xstatus = 0;
+		proto_itens[proto_itens_num].old_xstatus_name[0] = _T('\0');
+		proto_itens[proto_itens_num].old_xstatus_message[0] = _T('\0');
 
 		// clist classic :(
 		mi.flags |= CMIM_FLAGS;
-		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) menu_itens[menu_itens_num].hMenu, (LPARAM) &mi);
+		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) proto_itens[proto_itens_num].hMenu, (LPARAM) &mi);
 
-
+		mi.position++;
 		mi.popupPosition++;
-		menu_itens_num++;
-
-		mi.position = 100000;
-
-		// Add each proto
-
-		PROTOCOLDESCRIPTOR **protos;
-		int count;
-		CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
-
-		for (int i = 0; i < count; i++)
-		{
-			if (protos[i]->type != PROTOTYPE_PROTOCOL)
-				continue;
-			
-			if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
-				continue;
-
-			char name[128];
-			CallProtoService(protos[i]->szName, PS_GETNAME, sizeof(name), (LPARAM)name);
-
-			char text[256];
-			mir_snprintf(text, MAX_REGS(text), Translate("Send to %s"), name);
-
-			if (menu_itens_num >= allocated)
-			{
-				allocated += 10;
-				menu_itens = (MenuItemInfo *) realloc(menu_itens, allocated * sizeof(MenuItemInfo));
-			}
-
-			mi.pszName = text;
-			mi.flags = ListeningToEnabled(protos[i]->szName) ? CMIF_CHECKED : 0;
-
-			menu_itens[menu_itens_num].hMenu = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
-			menu_itens[menu_itens_num].proto = protos[i]->szName;
-
-			// clist classic :(
-			mi.flags |= CMIM_FLAGS;
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) menu_itens[menu_itens_num].hMenu, (LPARAM) &mi);
-
-			mi.position++;
-			mi.popupPosition++;
-			menu_itens_num++;
-		}
+		proto_itens_num++;
 	}
 
 	StartTimer();
@@ -287,6 +325,7 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 	if (hTopToolBarLoadedHook) UnhookEvent(hTopToolBarLoadedHook);
 	UnhookEvent(hClistExtraListRebuildHook);
 	UnhookEvent(hSettingChangedHook);
+	if (hIconsChanged) UnhookEvent(hIconsChanged);
 
 	if (hTimer != NULL)
 		KillTimer(NULL, hTimer);
@@ -340,10 +379,10 @@ int MainMenuClicked(WPARAM wParam, LPARAM lParam)
 
 	int pos = wParam == 0 ? 0 : wParam - 500080000;
 
-	if (pos >= menu_itens_num || pos < 0)
+	if (pos >= proto_itens_num || pos < 0)
 		return 0;
 
-	EnableListeningTo((WPARAM) menu_itens[pos].proto, (LPARAM) !ListeningToEnabled(menu_itens[pos].proto));
+	EnableListeningTo((WPARAM) proto_itens[pos].proto, (LPARAM) !ListeningToEnabled(proto_itens[pos].proto));
 	return 0;
 }
 
@@ -367,7 +406,8 @@ BOOL ListeningToEnabled(char *proto)
 			if (protos[i]->type != PROTOTYPE_PROTOCOL)
 				continue;
 			
-			if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
+			if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO) &&
+				!ProtoServiceExists(protos[i]->szName, PS_ICQ_SETCUSTOMSTATUSEX))
 				continue;
 
 			if (!ListeningToEnabled(protos[i]->szName))
@@ -397,17 +437,138 @@ int ListeningToEnabled(WPARAM wParam, LPARAM lParam)
 }
 
 
-void SetListeningInfo(char *proto, BOOL set)
+ProtocolInfo *GetProtoInfo(char *proto)
 {
-	LISTENINGTOINFO lti = {0};
+	for (int i = 1; i < proto_itens_num; i++)
+		if (strcmp(proto, proto_itens[i].proto) == 0)
+			return &proto_itens[i];
 
-	if (!opts.enable_sending || !set || !GetListeningInfo(&lti))
+	return NULL;
+}
+
+void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
+{
+	if (ProtoServiceExists(proto, PS_SET_LISTENINGTO))
 	{
-		CallProtoService(proto, PS_SET_LISTENINGTO, 0, NULL);
+		CallProtoService(proto, PS_SET_LISTENINGTO, 0, (LPARAM) lti);
 	}
-	else
+	else if (ProtoServiceExists(proto, PS_ICQ_SETCUSTOMSTATUSEX))
 	{
-		CallProtoService(proto, PS_SET_LISTENINGTO, 0, (LPARAM) &lti);
+		if (opts.xstatus_set == IGNORE_XSTATUS)
+			return;
+
+		int status;
+		ICQ_CUSTOM_STATUS ics = {0};
+		ics.cbSize = sizeof(ICQ_CUSTOM_STATUS);
+		ics.status = &status;
+
+		// Set or reset?
+		if (lti == NULL)
+		{
+			// Reset -> only if is still in music xstatus
+			ics.flags = CSSF_MASK_STATUS;
+			if (CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) || status != XSTATUS_MUSIC)
+			{
+				if (opts.xstatus_set == SET_XSTATUS)
+				{
+					ProtocolInfo *pi = GetProtoInfo(proto);
+					if (pi != NULL) 
+					{
+						pi->old_xstatus = 0;
+						pi->old_xstatus_name[0] = _T('\0');
+						pi->old_xstatus_message[0] = _T('\0');
+					}
+				}
+				return;
+			}
+
+			if (opts.xstatus_set == CHECK_XSTATUS)
+			{
+				// Set text to nothing
+				TCHAR *fr[] = { 
+					_T("%listening%"), opts.nothing
+				};
+
+				ics.flags = CSSF_TCHAR | CSSF_MASK_STATUS |	CSSF_MASK_NAME | CSSF_MASK_MESSAGE;
+				ics.ptszName = ReplaceVars(opts.xstatus_name, fr, MAX_REGS(fr));
+				ics.ptszMessage = ReplaceVars(opts.xstatus_message, fr, MAX_REGS(fr));
+
+				CallProtoService(proto, PS_ICQ_SETCUSTOMSTATUSEX, 0, (LPARAM) &ics);
+
+				mir_free(ics.ptszName);
+				mir_free(ics.ptszMessage);
+			}
+			else
+			{
+				// Set to old text
+				ProtocolInfo *pi = GetProtoInfo(proto);
+				if (pi != NULL) 
+				{
+					ics.flags = CSSF_TCHAR | CSSF_MASK_STATUS |	CSSF_MASK_NAME | CSSF_MASK_MESSAGE;
+					ics.status = &pi->old_xstatus;
+					ics.ptszName = pi->old_xstatus_name;
+					ics.ptszMessage = pi->old_xstatus_message;
+				}
+				else
+				{
+					status = 0;
+					ics.flags = CSSF_MASK_STATUS;
+				}
+
+				CallProtoService(proto, PS_ICQ_SETCUSTOMSTATUSEX, 0, (LPARAM) &ics);
+
+				if (pi != NULL) 
+				{
+					pi->old_xstatus = 0;
+					pi->old_xstatus_name[0] = _T('\0');
+					pi->old_xstatus_message[0] = _T('\0');
+				}
+			}
+		}
+		else
+		{
+			// Set it
+			if (opts.xstatus_set == CHECK_XSTATUS)
+			{
+				ics.flags = CSSF_MASK_STATUS;
+				if (CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) || status != XSTATUS_MUSIC)
+					return;
+			}
+			else 
+			{
+				// Store old data
+				ics.flags = CSSF_MASK_STATUS;
+				if (!CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) && status != XSTATUS_MUSIC)
+				{
+					ProtocolInfo *pi = GetProtoInfo(proto);
+					if (pi != NULL)
+					{
+						ics.flags = CSSF_TCHAR | CSSF_MASK_STATUS |	CSSF_MASK_NAME | CSSF_MASK_MESSAGE;
+						ics.status = &pi->old_xstatus;
+						ics.ptszName = pi->old_xstatus_name;
+						ics.ptszMessage = pi->old_xstatus_message;
+
+						CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics);
+					}
+				}
+			}
+
+			TCHAR *fr[] = { 
+				_T("%listening%"), (TCHAR *) GetParsedFormat(0, (WPARAM) lti)
+			};
+
+			status = XSTATUS_MUSIC;
+			ics.flags = CSSF_TCHAR | CSSF_MASK_STATUS |	CSSF_MASK_NAME | CSSF_MASK_MESSAGE;
+			ics.status = &status;
+			ics.ptszName = ReplaceVars(opts.xstatus_name, fr, MAX_REGS(fr));
+			ics.ptszMessage = ReplaceVars(opts.xstatus_message, fr, MAX_REGS(fr));
+
+			CallProtoService(proto, PS_ICQ_SETCUSTOMSTATUSEX, 0, (LPARAM) &ics);
+
+			mir_free(ics.ptszName);
+			mir_free(ics.ptszMessage);
+			mir_free(fr[1]);
+		}
 	}
 }
 
@@ -422,8 +583,6 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 	if (proto == NULL)
 	{
 		// For all protocols
-		BOOL enabled = TRUE;
-
 		PROTOCOLDESCRIPTOR **protos;
 		int count;
 		CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
@@ -433,7 +592,8 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 			if (protos[i]->type != PROTOTYPE_PROTOCOL)
 				continue;
 			
-			if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
+			if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO) &&
+				!ProtoServiceExists(protos[i]->szName, PS_ICQ_SETCUSTOMSTATUSEX))
 				continue;
 
 			EnableListeningTo((WPARAM) protos[i]->szName, lParam);
@@ -441,37 +601,43 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 	}
 	else
 	{
+		if (!ProtoServiceExists(proto, PS_SET_LISTENINGTO) &&
+			!ProtoServiceExists(proto, PS_ICQ_SETCUSTOMSTATUSEX))
+			return 0;
+
 		char setting[256];
 		mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
 		DBWriteContactSettingByte(NULL, MODULE_NAME, setting, (BOOL) lParam);
 
-		if (menu_itens != NULL)
+		// Modify menu info
+		for (int i = 1; i < proto_itens_num; i++)
 		{
-			// Modify menu info
-			for (int i = 1; i < menu_itens_num; i++)
+			if (strcmp(proto, proto_itens[i].proto) == 0)
 			{
-				if (strcmp(proto, menu_itens[i].proto) == 0)
-				{
-					CLISTMENUITEM clmi = {0};
-					clmi.cbSize = sizeof(clmi);
-					clmi.flags = CMIM_FLAGS | (lParam ? CMIF_CHECKED : 0);
-					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) menu_itens[i].hMenu, (LPARAM) &clmi);
+				CLISTMENUITEM clmi = {0};
+				clmi.cbSize = sizeof(clmi);
+				clmi.flags = CMIM_FLAGS | (lParam ? CMIF_CHECKED : 0);
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) proto_itens[i].hMenu, (LPARAM) &clmi);
 
-					SetListeningInfo(proto, lParam);
-					break;
-				}
+				LISTENINGTOINFO lti = {0};
+				if (!opts.enable_sending || !lParam || !GetListeningInfo(&lti))
+					SetListeningInfo(proto, NULL);
+				else
+					SetListeningInfo(proto, &lti);
+				break;
 			}
-
-			BOOL enabled = (lParam && ListeningToEnabled(NULL));
-
-			CLISTMENUITEM clmi = {0};
-			clmi.cbSize = sizeof(clmi);
-			clmi.flags = CMIM_FLAGS | (enabled ? CMIF_CHECKED : 0);
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) menu_itens[0].hMenu, (LPARAM) &clmi);
-
-			if (hTTB != NULL)
-				CallService(MS_TTB_SETBUTTONSTATE, (WPARAM) hTTB, (LPARAM) (enabled ? TTBST_PUSHED : TTBST_RELEASED));
 		}
+
+		// Set all protos info
+		BOOL enabled = (lParam && ListeningToEnabled(NULL));
+
+		CLISTMENUITEM clmi = {0};
+		clmi.cbSize = sizeof(clmi);
+		clmi.flags = CMIM_FLAGS | (enabled ? CMIF_CHECKED : 0);
+		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) proto_itens[0].hMenu, (LPARAM) &clmi);
+
+		if (hTTB != NULL)
+			CallService(MS_TTB_SETBUTTONSTATE, (WPARAM) hTTB, (LPARAM) (enabled ? TTBST_PUSHED : TTBST_RELEASED));
 	}
 
 	StartTimer();
@@ -501,8 +667,6 @@ int GetParsedFormat(WPARAM wParam,LPARAM lParam)
 	if (lti == NULL)
 		return NULL;
 
-	TCHAR *ret = mir_dupT( opts.templ );
-
 	TCHAR *fr[] = { 
 		_T("%artist%"), lti->ptszArtist,
 		_T("%album%"), lti->ptszAlbum,
@@ -515,7 +679,14 @@ int GetParsedFormat(WPARAM wParam,LPARAM lParam)
 		_T("%type%"), lti->ptszType
 	};
 
-	for (int i = 0; i < MAX_REGS(fr); i+=2) {
+	return (int) ReplaceVars(opts.templ, fr, MAX_REGS(fr));
+}
+
+TCHAR *ReplaceVars(TCHAR *str, TCHAR **fr, int size)
+{
+	TCHAR *ret = mir_dupT( str );
+
+	for (int i = 0; i < size; i+=2) {
 		TCHAR *find = fr[i];
 		TCHAR *replace = fr[i+1] ? fr[i+1] : _T("");
 		if (replace[0] == _T('\0'))
@@ -535,7 +706,7 @@ int GetParsedFormat(WPARAM wParam,LPARAM lParam)
 		}
 	}
 
-	return (int) ret;
+	return ret;
 }
 
 
@@ -562,13 +733,10 @@ void SetListeningInfos(LISTENINGTOINFO *lti)
 		if (protos[i]->type != PROTOTYPE_PROTOCOL)
 			continue;
 		
-		if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
+		if (!ListeningToEnabled(protos[i]->szName))
 			continue;
 
-		if (ListeningToEnabled(protos[i]->szName))
-		{
-			CallProtoService(protos[i]->szName, PS_SET_LISTENINGTO, 0, (LPARAM) lti);
-		}
+		SetListeningInfo(protos[i]->szName, lti);
 	}
 }
 
@@ -638,7 +806,8 @@ void StartTimer()
 					if (protos[i]->type != PROTOTYPE_PROTOCOL)
 						continue;
 					
-					if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO))
+					if (!ProtoServiceExists(protos[i]->szName, PS_SET_LISTENINGTO) &&
+						!ProtoServiceExists(protos[i]->szName, PS_ICQ_SETCUSTOMSTATUSEX))
 						continue;
 
 					if (ListeningToEnabled(protos[i]->szName))
@@ -683,7 +852,7 @@ void HasNewListeningInfo()
 
 int ClistExtraListRebuild(WPARAM wParam, LPARAM lParam)
 {
-	hExtraImage = (HANDLE) CallService(MS_CLIST_EXTRA_ADD_ICON, (WPARAM) LoadIcon(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO)), 0);
+	hExtraImage = (HANDLE) CallService(MS_CLIST_EXTRA_ADD_ICON, (WPARAM) hListeningToIcon, 0);
 	return 0;
 }
 

@@ -2,6 +2,12 @@ ListeningTo
 
 Changelog:
 
+. 0.1.1.0
+  + Added handling of XStatus
+  + Added IcoLib support
+  + Added langpack file
+  - Removed option to remove menu item (use menu order option dialog instead)
+
 . 0.1.0.9
   + Option to set string to show when info is not avaible
   * Changed host of files
