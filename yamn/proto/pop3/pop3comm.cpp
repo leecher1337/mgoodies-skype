@@ -1180,7 +1180,7 @@ DWORD WINAPI DeleteMailsPOP3(struct DeleteParam *WhichTemp)
 		{
 			SetAccountStatus(ActualAccount,Translate("Connecting to server"));
 			
-			DataRX=MyClient->Connect(ActualCopied.ServerName,ActualCopied.ServerPort,ActualCopied.Flags & YAMN_ACC_SSL23);
+			DataRX=MyClient->Connect(ActualCopied.ServerName,ActualCopied.ServerPort,ActualCopied.Flags & YAMN_ACC_SSL23,ActualCopied.Flags & YAMN_ACC_NOTLS);
 
 			char *timestamp=NULL;
 			if(DataRX!=NULL) {
