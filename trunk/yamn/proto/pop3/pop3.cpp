@@ -74,7 +74,12 @@ char *CPop3Client::Connect(const char* servername,const int port,BOOL UseSSL, BO
 		free(temp);
 		temp=RecvRest(NetClient->Recv(),POP3_SEARCHACK);
 		if(AckFlag==POP3_FOK){ // Ok, we are going to tls
-			NetClient->SSLify();
+			try {
+				NetClient->SSLify();
+			} catch (...) {
+				NetClient->Disconnect();
+				return NULL;
+			}
 //			temp = RecvRest(NetClient->Recv(),POP3_SEARCHACK);
 		}
 	} 

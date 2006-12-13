@@ -80,6 +80,7 @@ void CNLClient::SSLify() throw(DWORD){
 			SSL_DebugLog( "TLS(%08X) set fd %s",ssl,"failed" );
 		}
 		SSL_free( ssl );
+		ssl = NULL;  //::Disconnect should not try to SSL_free(ssl) again
 //		SSL_CTX_free(localSSLCtx);
 	} 
 	else 
