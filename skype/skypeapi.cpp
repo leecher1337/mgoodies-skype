@@ -241,7 +241,7 @@ int __sendMsg(char *szMsg) {
 	  }
 	  // Reconnect to Skype
 	  ResetEvent(SkypeReady);
-	  if (ConnectToSkypeAPI(NULL)!=-1) {
+	  if (ConnectToSkypeAPI(NULL,false)!=-1) {
 		  if (UseSockets) {
 		  	   if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
 			   send(ClientSocket, szMsg, length, 0)==SOCKET_ERROR) return -1;
@@ -1094,10 +1094,11 @@ char SendSkypeproxyCommand(char command) {
  * 
  * Purpose: Establish a connection to the Skype API
  * Params : path - Path to the Skype application
+ *          bStart - Need to start skype for status change.
  * Returns: 0 - Connecting succeeded
  *		   -1 - Something went wrong
  */
-int ConnectToSkypeAPI(char *path) {
+int ConnectToSkypeAPI(char *path, bool bStart) {
 	BOOL SkypeLaunched=FALSE;
 	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
 	int counter=0, i, j, maxattempts=DBGetContactSettingWord(NULL, pszSkypeProtoName, "ConnectionAttempts", 10);
@@ -1107,7 +1108,8 @@ int ConnectToSkypeAPI(char *path) {
 
 	// Prevent reentrance
 	LOG("ConnectToSkypeAPI", "started.");
-	if (UseSockets) {
+	if (UseSockets) 
+	{
 		SOCKADDR_IN service;
 		DBVARIANT dbv;
 		long inet;
@@ -1183,7 +1185,8 @@ int ConnectToSkypeAPI(char *path) {
 		return 0;
 	}
 
-	do {
+	do 
+	{
         int retval;
 		/*	To initiate communication, Client should broadcast windows message
 			('SkypeControlAPIDiscover') to all windows in the system, specifying its own
@@ -1209,7 +1212,7 @@ int ConnectToSkypeAPI(char *path) {
 			}
 			if (!SkypeLaunched && (path ||  UseCustomCommand)) 
 			{
-				if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1))
+				if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) || bStart)
 				{
 					LOG("ConnectToSkypeAPI", "Starting Skype, as it's not running");
 
