@@ -638,7 +638,7 @@ void FirstLaunch(char *dummy) {
 	int counter=0;
 
 	LOG ("FirstLaunch", "thread started.");
-	if (!DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) || ConnectToSkypeAPI(skype_path)==-1) {
+	if (!DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) || ConnectToSkypeAPI(skype_path, false)==-1) {
 		int oldstatus=SkypeStatus;
 
 		LOG("OnModulesLoaded", "starting offline..");	
@@ -1354,7 +1354,7 @@ void LaunchSkypeAndSetStatusThread(void *newStatus) {
 */
 	LOG ("LaunchSkypeAndSetStatusThread", "started.");
 	   
-	if (ConnectToSkypeAPI(skype_path)!=-1) {
+	if (ConnectToSkypeAPI(skype_path, true)!=-1) {
 		int oldStatus=SkypeStatus;
 		pthread_create(( pThreadFunc )SkypeSystemInit, NULL);
 		InterlockedExchange((long *)&SkypeStatus, (int)newStatus);
@@ -1715,7 +1715,8 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 
    RequestedStatus=MirandaStatusToSkype((int)wParam);
    
-   if ((int)wParam==ID_STATUS_OFFLINE) {
+   if ((int)wParam==ID_STATUS_OFFLINE) 
+   {
        logoff_contacts();
 	   if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0)) {
 		   if (AttachStatus!=-1) 
@@ -1742,7 +1743,8 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 		   if (hWnd) KillTimer (hWnd, 1);
 		   return 0;
 	   }
-   } else if (AttachStatus==-1) {
+   } else if (AttachStatus==-1) 
+   {
 	   pthread_create(LaunchSkypeAndSetStatusThread, (void *)wParam);
 	   return 0;
    }
