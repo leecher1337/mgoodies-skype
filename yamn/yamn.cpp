@@ -185,8 +185,11 @@ void CALLBACK TimerProc(HWND,UINT,UINT,DWORD)
 //	if we want to close miranda, we get event and do not run checking anymore
 	if(WAIT_OBJECT_0==WaitForSingleObject(ExitEV,0))
 		return;
-//	Get actual status of current user in Miranda
-	Status=CallService(MS_CLIST_GETSTATUSMODE,0,0);
+//	Get actual status of current user in Miranda or of yamn protocol itself if used as protocol
+	if(DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0))
+		Status=CallProtoService(YAMN_DBMODULE,PS_GETSTATUS,0,0);
+	else
+		Status=CallService(MS_CLIST_GETSTATUSMODE,0,0);
 
 	EnterCriticalSection(PluginRegCS);
 	for(ActualPlugin=FirstProtoPlugin;ActualPlugin!=NULL;ActualPlugin=ActualPlugin->Next)

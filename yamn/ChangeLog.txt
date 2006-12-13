@@ -1,3 +1,7 @@
+0.0.1.11
+============
++ Option to use yamn as a protocol.
+
 0.0.1.10
 ============
 ! Icons are based on single bitmap image (y_b)

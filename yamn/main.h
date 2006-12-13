@@ -43,6 +43,7 @@
 #define YAMN_HKCHECKMAIL	"HKCheckMail"
 #define	YAMN_TTBFCHECK		"ForceCheckTTB"
 #define	YAMN_SHOWMAINMENU	"ShowMainMenu"
+#define YAMN_SHOWASPROTO	"ShowAsProtcol"
 #define	YAMN_DBTIMEOPTIONS	"MailBrowserTimeOpts"
 
 #define YAMN_DEFAULTHK		MAKEWORD(VK_F12,MOD_CONTROL)

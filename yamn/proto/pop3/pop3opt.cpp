@@ -198,12 +198,15 @@ BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			CheckDlgButton(hDlg,IDC_LONGDATE,(optDateTime&SHOWDATELONG) ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hDlg,IDC_SMARTDATE,(optDateTime&SHOWDATENOTODAY) ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hDlg,IDC_NOSECONDS,(optDateTime&SHOWDATENOSECONDS) ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg,IDC_YAMNASPROTO,DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0));
+			
 			break;
 		case WM_COMMAND:
 		{
 			WORD wNotifyCode = HIWORD(wParam);
 			switch(LOWORD(wParam))
 			{
+				case IDC_YAMNASPROTO:
 				case IDC_CHECKTTB:
 				case IDC_HKFORCE:
 				case IDC_CLOSEONDELETE:
@@ -227,8 +230,10 @@ BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 							WORD ForceHotKey=(WORD)SendDlgItemMessage(hDlg,IDC_HKFORCE,HKM_GETHOTKEY,0,0);
 							BYTE TTBFCheck=(BYTE)IsDlgButtonChecked(hDlg,IDC_CHECKTTB);
 							BYTE MainMenu= (BYTE)IsDlgButtonChecked(hDlg,IDC_CLOSEONDELETE);
+							BYTE ShowAsProto =  (BYTE)IsDlgButtonChecked(hDlg,IDC_YAMNASPROTO);
 							UINT mod,vk;
 
+							DBWriteContactSettingWord(NULL,YAMN_DBMODULE,YAMN_SHOWASPROTO,ShowAsProto);
 							DBWriteContactSettingWord(NULL,YAMN_DBMODULE,YAMN_HKCHECKMAIL,ForceHotKey);
 							DBWriteContactSettingByte(NULL,YAMN_DBMODULE,YAMN_TTBFCHECK,TTBFCheck);
 							DBWriteContactSettingByte(NULL,YAMN_DBMODULE,YAMN_SHOWMAINMENU,MainMenu);
