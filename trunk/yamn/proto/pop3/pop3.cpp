@@ -312,7 +312,7 @@ char* CPop3Client::Top(int nr)
 
 	char query[128];
 
-	sprintf(query,"TOP %d 0\r\n",nr);
+	sprintf(query,"TOP %d 10\r\n",nr);
 	NetClient->Send(query);
 	return RecvRest(NetClient->Recv(),POP3_SEARCHDOT);
 }
