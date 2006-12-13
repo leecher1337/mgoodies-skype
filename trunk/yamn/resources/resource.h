@@ -5,11 +5,10 @@
 #define IDD_DLGVIEWMESSAGES             107
 #define IDD_DLGSHOWMESSAGE              108
 #define IDD_DLGBADCONNECT               116
+#define IDI_ICONEUTRAL                  119
 #define IDD_POP3ACCOUNTOPT              121
 #define IDD_YAMNOPT                     126
 #define IDB_ICONS                       127
-#define IDI_ICONEUTRAL                  119
-//#define IDI_ICOTTBDW                    137
 #define IDD_PLUGINOPT                   141
 #define IDD_CHOOSESTATUSMODES           310
 #define IDD_OPTIONS                     311
@@ -101,6 +100,7 @@
 #define IDC_LONGDATE                    1128
 #define IDC_SMARTDATE                   1129
 #define IDC_NOSECONDS                   1130
+#define IDC_YAMNASPROTO                 1131
 #define IDC_CHECKAPOP                   1200
 #define IDC_STATUSGROUP                 1338
 

@@ -324,26 +324,29 @@ END
 IDD_YAMNOPT DIALOGEX 0, 0, 320, 216
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_BORDER
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "HotKey1",IDC_HKFORCE,"msctls_hotkey32",WS_BORDER | 
                     WS_TABSTOP,169,15,110,12
     LTEXT           "Hotkey for mail check:",IDC_STATIC,7,16,153,10
     CONTROL         "TopToolBar button ""Check mail""",IDC_CHECKTTB,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,7,28,153,11
-    GROUPBOX        "YAMN General Options",IDC_STATIC,3,2,314,65
+    GROUPBOX        "YAMN General Options",IDC_STATIC,3,2,314,80
     CONTROL         "Enable YAMN Main Menu (Require Restart)",IDC_MAINMENU,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,46,270,9
-    GROUPBOX        "MailBrowser Options",IDC_STATIC,3,77,151,61
+    GROUPBOX        "MailBrowser Options",IDC_STATIC,3,91,151,61
     CONTROL         "Enable Close on Delete Button",IDC_CLOSEONDELETE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,89,143,11
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,103,143,11
     CONTROL         "Show long localised date",IDC_LONGDATE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,170,86,144,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,170,100,144,10
     CONTROL         "Don't show today's date",IDC_SMARTDATE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,170,98,144,10
-    GROUPBOX        "Date/Time Representation",IDC_STATIC,166,77,151,61
+                    BS_AUTOCHECKBOX | WS_TABSTOP,170,112,144,10
+    GROUPBOX        "Date/Time Representation",IDC_STATIC,166,91,151,61
     CONTROL         "Don't show seconds",IDC_NOSECONDS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,170,110,145,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,170,124,145,8
+    CONTROL         "Show YAMN as a Protcol  (Require Restart)",
+                    IDC_YAMNASPROTO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
+                    63,270,9
 END
 
 

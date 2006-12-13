@@ -42,8 +42,11 @@ extern HYAMNPROTOPLUGIN POP3Plugin;
 
 static int Service_GetCaps(WPARAM wParam, LPARAM lParam)
 {
-	/*if(wParam==PFLAGNUM_2)
-		return PF2_ONLINE;*/
+	if(wParam==PFLAGNUM_2 && DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0))
+		return PF2_ONLINE | PF2_INVISIBLE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_LIGHTDND
+						| PF2_HEAVYDND | PF2_FREECHAT | PF2_OUTTOLUNCH | PF2_ONTHEPHONE;
+	if(wParam==PFLAGNUM_3)
+		return 0;
 	if(wParam==PFLAGNUM_4)
 		return PF4_NOCUSTOMAUTH;
 	if(wParam==PFLAG_UNIQUEIDTEXT)
@@ -62,18 +65,20 @@ static int Service_GetStatus(WPARAM wParam, LPARAM lParam)
 
 static int Service_SetStatus(WPARAM wParam,LPARAM lParam)
 {	
-	switch(wParam)
+	switch((int)wParam)
 	{
-	case ID_STATUS_ONLINE:
-		YAMN_STATUS = ID_STATUS_ONLINE;
-		RefreshContact();
-		break;
-	case ID_STATUS_OFFLINE:
-		YAMN_STATUS = ID_STATUS_OFFLINE;
-		RefreshContact();
-		break;
-	default:
-		break;
+		case ID_STATUS_ONLINE:
+			YAMN_STATUS = ID_STATUS_ONLINE;
+			RefreshContact();
+			break;
+		case ID_STATUS_OFFLINE:
+			YAMN_STATUS = ID_STATUS_OFFLINE;
+			RefreshContact();
+			break;
+		default:
+			YAMN_STATUS = wParam;
+			RefreshContact();
+			break;
 	}
 
 //	char t[150];
@@ -91,15 +96,23 @@ static int Service_GetName(WPARAM wParam, LPARAM lParam)
 
 static int Service_LoadIcon(WPARAM wParam,LPARAM lParam)
 {
-	return (int)(HICON)hYamnIcons[0];
-//	switch(wParam&0xFFFF) 
-//	{
-//		case PLI_PROTOCOL: 
-//			return (int)(HICON)hYamnIcons[0];
-//		default:	
-//			return (int)(HICON)hYamnIcons[0];	
-//	}
-//	return 0;
+	
+	switch(wParam&0xFFFF) 
+	{
+		case PLI_ONLINE:
+			return (int)(HICON)hYamnIcons[0];
+			break;
+		case PLI_OFFLINE:
+			return (int)(HICON)hYamnIcons[3];
+			break;
+		case PLI_PROTOCOL: 
+			return (int)(HICON)hYamnIcons[0];
+			break;
+		default:	
+			return (int)(HICON)hYamnIcons[0];
+			break;
+	}
+	return 0;
 }
  
 /*static*/ int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
@@ -354,7 +367,7 @@ void CreateServiceFunctions(void)
 	CreateServiceFunction(temp,Service_GetStatus);
 
 	wsprintf(temp, "%s%s", ProtoName, PS_SETSTATUS);
-	//CreateServiceFunction(temp,Service_SetStatus);
+	CreateServiceFunction(temp,Service_SetStatus);
 	
 	wsprintf(temp, "%s%s", ProtoName, PS_GETNAME);
 	CreateServiceFunction(temp,Service_GetName);
