@@ -1,3 +1,7 @@
+0.0.1.15
+===========
+* Patch by Tioduke (offline nudge)
+
 0.0.1.14
 ===========
 * Fix visual option
