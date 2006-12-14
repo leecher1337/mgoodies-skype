@@ -1,6 +1,7 @@
 0.0.1.11
 ============
 + Option to use yamn as a protocol.
+* Patch by Tioduke (code cleaning)
 
 0.0.1.10
 ============

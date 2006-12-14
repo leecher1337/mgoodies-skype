@@ -65,7 +65,7 @@ extern void DebugLog(HANDLE File,const char *fmt,...);
 extern HANDLE FilterFile;
 #endif
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fwdreason, LPVOID lpvReserved)
+extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fwdreason, LPVOID lpvReserved)
 {
 	hInst=hinstDLL;
 	return true;

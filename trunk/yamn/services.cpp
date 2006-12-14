@@ -76,7 +76,7 @@ static int Service_SetStatus(WPARAM wParam,LPARAM lParam)
 			RefreshContact();
 			break;
 		default:
-			YAMN_STATUS = wParam;
+			YAMN_STATUS = DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0) ? wParam : ID_STATUS_ONLINE;
 			RefreshContact();
 			break;
 	}
@@ -96,23 +96,11 @@ static int Service_GetName(WPARAM wParam, LPARAM lParam)
 
 static int Service_LoadIcon(WPARAM wParam,LPARAM lParam)
 {
-	
-	switch(wParam&0xFFFF) 
-	{
-		case PLI_ONLINE:
-			return (int)(HICON)hYamnIcons[0];
-			break;
-		case PLI_OFFLINE:
-			return (int)(HICON)hYamnIcons[3];
-			break;
-		case PLI_PROTOCOL: 
-			return (int)(HICON)hYamnIcons[0];
-			break;
-		default:	
-			return (int)(HICON)hYamnIcons[0];
-			break;
-	}
-	return 0;
+	if ( LOWORD( wParam ) == PLI_PROTOCOL )
+		return (int)CopyIcon(hYamnIcons[0]);	
+
+	return (int)(HICON)NULL;
+
 }
  
 /*static*/ int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
