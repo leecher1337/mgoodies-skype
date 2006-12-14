@@ -182,12 +182,16 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 	
 	char *protoName = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0);
 
-	int diff = time(NULL) - DBGetContactSettingDword((HANDLE) wParam, "Nudge", "LastReceived", time(NULL)-30);
+	DWORD currentTimestamp = time(NULL);
+	DWORD nudgeSentTimestamp = lParam ? (DWORD)lParam : currentTimestamp;
 
-	if(diff < GlobalNudge.recvTimeSec)
-		return 0;
+	int diff = currentTimestamp - DBGetContactSettingDword((HANDLE) wParam, "Nudge", "LastReceived", currentTimestamp-30);
+	int diff2 = nudgeSentTimestamp - DBGetContactSettingDword((HANDLE) wParam, "Nudge", "LastReceived2", nudgeSentTimestamp-30);
 	
-	DBWriteContactSettingDword((HANDLE) wParam, "Nudge", "LastReceived", time(NULL));
+	if(diff >= GlobalNudge.recvTimeSec)
+		DBWriteContactSettingDword((HANDLE) wParam, "Nudge", "LastReceived", currentTimestamp);
+	if(diff2 >= GlobalNudge.recvTimeSec)
+		DBWriteContactSettingDword((HANDLE) wParam, "Nudge", "LastReceived2", nudgeSentTimestamp);
 
 	if(GlobalNudge.useByProtocol)
 	{
@@ -212,22 +216,28 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 						((n->item.statusFlags & NUDGE_ACC_ST8) && (Status==ID_STATUS_ONTHEPHONE)) ||
 						((n->item.statusFlags & NUDGE_ACC_ST9) && (Status==ID_STATUS_OUTTOLUNCH)))
 					{
-						
-						if(n->item.showPopup)
-							Nudge_ShowPopup(n->item, (HANDLE) wParam, n->item.recText);
-						if(n->item.shakeClist)
-							ShakeClist(wParam,lParam);
-						if(n->item.shakeChat)
-							ShakeChat(wParam,lParam);
-						if(n->item.showEvent)
-							Nudge_ShowEvent(n->item, (HANDLE) wParam);
-						if(n->item.showStatus)
-							Nudge_ShowStatus(n->item, (HANDLE) wParam);
-						if(n->item.autoResend)
-							NudgeSend(wParam,lParam);
+						if(diff >= GlobalNudge.recvTimeSec)
+						{
+							if(n->item.showPopup)
+								Nudge_ShowPopup(n->item, (HANDLE) wParam, n->item.recText);
+							if(n->item.shakeClist)
+								ShakeClist(wParam,lParam);
+							if(n->item.shakeChat)
+								ShakeChat(wParam,lParam);
+							if(n->item.autoResend)
+								NudgeSend(wParam,lParam);
 
-						SkinPlaySound( n->item.NudgeSoundname );
+							SkinPlaySound( n->item.NudgeSoundname );
+						}
 					}
+					if(diff2 >= GlobalNudge.recvTimeSec)
+					{
+						if(n->item.showEvent)
+							Nudge_ShowEvent(n->item, (HANDLE) wParam, nudgeSentTimestamp);
+						if(n->item.showStatus)
+							Nudge_ShowStatus(n->item, (HANDLE) wParam, nudgeSentTimestamp);
+					}
+					
 				}
 			}		
 		}
@@ -248,21 +258,26 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 				((DefaultNudge.statusFlags & NUDGE_ACC_ST8) && (Status==ID_STATUS_ONTHEPHONE)) ||
 				((DefaultNudge.statusFlags & NUDGE_ACC_ST9) && (Status==ID_STATUS_OUTTOLUNCH)))
 			{
-				
-				if(DefaultNudge.showPopup)
-					Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, DefaultNudge.recText);
-				if(DefaultNudge.shakeClist)
-					ShakeClist(wParam,lParam);
-				if(DefaultNudge.shakeChat)
-					ShakeChat(wParam,lParam);
-				if(DefaultNudge.showEvent)
-					Nudge_ShowEvent(DefaultNudge, (HANDLE) wParam);
-				if(DefaultNudge.showStatus)
-					Nudge_ShowStatus(DefaultNudge, (HANDLE) wParam);
-				if(DefaultNudge.autoResend)
-					NudgeSend(wParam, lParam);
+				if(diff >= GlobalNudge.recvTimeSec)
+				{
+					if(DefaultNudge.showPopup)
+						Nudge_ShowPopup(DefaultNudge, (HANDLE) wParam, DefaultNudge.recText);
+					if(DefaultNudge.shakeClist)
+						ShakeClist(wParam,lParam);
+					if(DefaultNudge.shakeChat)
+						ShakeChat(wParam,lParam);
+					if(DefaultNudge.autoResend)
+						NudgeSend(wParam, lParam);
 
-				SkinPlaySound( DefaultNudge.NudgeSoundname );
+					SkinPlaySound( DefaultNudge.NudgeSoundname );
+				}
+			}
+			if(diff2 >= GlobalNudge.recvTimeSec)
+			{
+				if(DefaultNudge.showEvent)
+					Nudge_ShowEvent(DefaultNudge, (HANDLE) wParam, nudgeSentTimestamp);
+				if(DefaultNudge.showStatus)
+					Nudge_ShowStatus(DefaultNudge, (HANDLE) wParam, nudgeSentTimestamp);
 			}
 		}
 	}
@@ -744,7 +759,7 @@ void Nudge_SentStatus(CNudgeElement n, HANDLE hCont)
 	CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&NudgeEvent);
 }
 
-void Nudge_ShowStatus(CNudgeElement n, HANDLE hCont)
+void Nudge_ShowStatus(CNudgeElement n, HANDLE hCont, DWORD timestamp)
 {
 	DBEVENTINFO NudgeEvent = { 0 };;
 	HANDLE hContact;
@@ -755,7 +770,7 @@ void Nudge_ShowStatus(CNudgeElement n, HANDLE hCont)
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
 	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 	NudgeEvent.flags = 0;
-	NudgeEvent.timestamp = ( DWORD )time(NULL);
+	NudgeEvent.timestamp = timestamp;
 	NudgeEvent.eventType = EVENTTYPE_STATUSCHANGE;
 	#if defined( _UNICODE )
 		char buff[TEXT_LEN];
@@ -780,7 +795,7 @@ void Nudge_ShowStatus(CNudgeElement n, HANDLE hCont)
 	CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&NudgeEvent);
 }
 
-void Nudge_ShowEvent(CNudgeElement n, HANDLE hCont)
+void Nudge_ShowEvent(CNudgeElement n, HANDLE hCont, DWORD timestamp)
 {
 	DBEVENTINFO NudgeEvent = { 0 };
 	HANDLE hContact;
@@ -791,7 +806,7 @@ void Nudge_ShowEvent(CNudgeElement n, HANDLE hCont)
 	NudgeEvent.cbSize = sizeof(NudgeEvent);
 	NudgeEvent.szModule = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 	NudgeEvent.flags = CheckMsgWnd(hContact) ? 0 : DBEF_READ;
-	NudgeEvent.timestamp = ( DWORD )time(NULL);
+	NudgeEvent.timestamp = timestamp;
 	NudgeEvent.eventType = EVENTTYPE_MESSAGE;
 	#if defined( _UNICODE )
 		char buff[TEXT_LEN];

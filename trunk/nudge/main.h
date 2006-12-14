@@ -48,7 +48,7 @@ void Nudge_ShowPopup(CNudgeElement, HANDLE, TCHAR *);
 /*
 *
 ****************************/
-void Nudge_ShowEvent(CNudgeElement, HANDLE);
+void Nudge_ShowEvent(CNudgeElement, HANDLE, DWORD timestamp);
 
 /*
 *
@@ -58,7 +58,7 @@ void Nudge_SentEvent(CNudgeElement, HANDLE);
 /*
 *
 ****************************/
-void Nudge_ShowStatus(CNudgeElement, HANDLE);
+void Nudge_ShowStatus(CNudgeElement, HANDLE, DWORD timestamp);
 
 /*
 *
