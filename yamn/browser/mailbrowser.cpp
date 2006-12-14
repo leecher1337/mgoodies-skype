@@ -1991,6 +1991,9 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 						}
 					}
 					CloseHandle(ThreadRunningEV);
+					if(DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_CLOSEDELETE, 0))
+						DestroyWindow(hDlg);
+
 				}
 				break;
 			}

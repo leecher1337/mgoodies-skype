@@ -344,7 +344,7 @@ BEGIN
     GROUPBOX        "Date/Time Representation",IDC_STATIC,166,91,151,61
     CONTROL         "Don't show seconds",IDC_NOSECONDS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,170,124,145,8
-    CONTROL         "Show YAMN as a Protcol  (Require Restart)",
+    CONTROL         "Show YAMN as a Protocol  (Require Restart)",
                     IDC_YAMNASPROTO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,
                     63,270,9
 END

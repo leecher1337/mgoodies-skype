@@ -42,7 +42,7 @@ struct YAMNExportedFcn
 HYAMNFILTERPLUGIN POPFilePlugin;	//handle of this plugin for YAMN
 HINSTANCE hInst;		//handle of this DLL for Windows
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fwdreason, LPVOID lpvReserved)
+extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fwdreason, LPVOID lpvReserved)
 {
 	hInst=hinstDLL;
 	return true;

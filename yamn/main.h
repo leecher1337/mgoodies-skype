@@ -43,6 +43,7 @@
 #define YAMN_HKCHECKMAIL	"HKCheckMail"
 #define	YAMN_TTBFCHECK		"ForceCheckTTB"
 #define	YAMN_SHOWMAINMENU	"ShowMainMenu"
+#define	YAMN_CLOSEDELETE	"CloseOnDelete"
 #define YAMN_SHOWASPROTO	"ShowAsProtcol"
 #define	YAMN_DBTIMEOPTIONS	"MailBrowserTimeOpts"
 
