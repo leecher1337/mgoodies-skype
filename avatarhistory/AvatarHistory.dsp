@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
-CFG=AvatarHistory - Win32 Debug
+CFG=AvatarHistory - Win32 Unicode Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,12 +13,14 @@ CFG=AvatarHistory - Win32 Debug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "AvatarHistory.mak" CFG="AvatarHistory - Win32 Debug"
+!MESSAGE NMAKE /f "AvatarHistory.mak" CFG="AvatarHistory - Win32 Unicode Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
 !MESSAGE "AvatarHistory - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "AvatarHistory - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "AvatarHistory - Win32 Unicode Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "AvatarHistory - Win32 Unicode Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -43,7 +45,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "AvatarHistory_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "AvatarHistory_EXPORTS" /FR /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O1 /I "../../include" /I "sdk" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "AvatarHistory_EXPORTS" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
@@ -53,7 +55,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /machine:I386 /out:"avatarhist.dll"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /machine:I386 /out:"..\..\bin\release\plugins\avatarhist.dll"
 # SUBTRACT LINK32 /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "AvatarHistory - Win32 Debug"
@@ -70,7 +72,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "AvatarHistory_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "AvatarHistory_EXPORTS" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../include" /I "sdk" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "AvatarHistory_EXPORTS" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
@@ -80,7 +82,63 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 winspool.lib ole32.lib oleaut32.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"o:\program files\mim43\plugins\avatarhist.dll" /pdbtype:sept
+# ADD LINK32 winspool.lib ole32.lib oleaut32.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\debug\plugins\avatarhist.dll" /pdbtype:sept
+
+!ELSEIF  "$(CFG)" == "AvatarHistory - Win32 Unicode Debug"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir "AvatarHistory___Win32_Debug_Unicode"
+# PROP BASE Intermediate_Dir "AvatarHistory___Win32_Debug_Unicode"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "Unicode_Debug"
+# PROP Intermediate_Dir "Unicode_Debug"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "AvatarHistory_EXPORTS" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../include" /I "sdk" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_UNICODE" /D "_USRDLL" /D "AvatarHistory_EXPORTS" /FR /YX /FD /GZ /c
+# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x809 /d "_DEBUG"
+# ADD RSC /l 0x809 /d "_DEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 winspool.lib ole32.lib oleaut32.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\debug\plugins\avatarhist.dll" /pdbtype:sept
+# ADD LINK32 winspool.lib ole32.lib oleaut32.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\debug\plugins\avatarhistW.dll" /pdbtype:sept
+
+!ELSEIF  "$(CFG)" == "AvatarHistory - Win32 Unicode Release"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "AvatarHistory___Win32_Release_Unicode"
+# PROP BASE Intermediate_Dir "AvatarHistory___Win32_Release_Unicode"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Unicode_Release"
+# PROP Intermediate_Dir "Unicode_Release"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MD /W3 /GX /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "AvatarHistory_EXPORTS" /FR /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O1 /I "../../include" /I "sdk" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_UNICODE" /D "_USRDLL" /D "AvatarHistory_EXPORTS" /FR /YX /FD /c
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0x809 /d "NDEBUG"
+# ADD RSC /l 0x809 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /machine:I386 /out:"..\..\bin\release\plugins\avatarhist.dll"
+# SUBTRACT BASE LINK32 /nodefaultlib
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /machine:I386 /out:"..\..\bin\release\plugins\avatarhistW.dll"
+# SUBTRACT LINK32 /nodefaultlib
 
 !ENDIF 
 
@@ -88,6 +146,8 @@ LINK32=link.exe
 
 # Name "AvatarHistory - Win32 Release"
 # Name "AvatarHistory - Win32 Debug"
+# Name "AvatarHistory - Win32 Unicode Debug"
+# Name "AvatarHistory - Win32 Unicode Release"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
@@ -105,7 +165,19 @@ SOURCE=.\icolib.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\utils\mir_memory.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\utils\mir_options.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\options.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\popup.cpp
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -117,7 +189,15 @@ SOURCE=.\AvatarHistory.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\libcimpl.h
+SOURCE=..\utils\mir_memory.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\utils\mir_options.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\popup.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -126,6 +206,14 @@ SOURCE=.\libcimpl.h
 # Begin Source File
 
 SOURCE=.\AvatarHistory.rc
+# End Source File
+# Begin Source File
+
+SOURCE=.\AvatarOverlay.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\history.ico
 # End Source File
 # End Group
 # End Target

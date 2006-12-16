@@ -1,10 +1,6 @@
-#include <windows.h>
+#include "AvatarHistory.h"
 #include <commctrl.h> //for ImageList_*
-#include <newpluginapi.h>
-#include <m_clist.h>
-#include <m_langpack.h>
-#include <m_protosvc.h>
-#include <m_skin.h>
+
 //#include "m_icolib.h" We don't need the full header. Will define the needed things here.
 #define SKINICONDESC_SIZE_V2  0x1C
 #define MS_SKIN2_GETICON "Skin2/Icons/GetIcon"
@@ -22,16 +18,13 @@ typedef struct {
   int flags; 
 } SKINICONDESC;
 //end of icolib defines
-#include "resource.h"
-#include "AvatarHistory.h"
-extern HINSTANCE hInst;
+
 static char *iconNames[NUMICONS]={"History","Overlay"};
 static char *iconDescs[NUMICONS]={iconNames[0],"Avatar Overlay"};
 static int iconInd[NUMICONS]={IDI_AVATARHIST,IDI_AVATAROVERLAY};
 HICON iconList[NUMICONS];
 HICON overlayedIcon = NULL;
 HICON overlayedBigIcon = NULL;
-extern HANDLE hMenu;
 
 static void IcoLibUpdateMenus(){
 	CLISTMENUITEM mi = {0};

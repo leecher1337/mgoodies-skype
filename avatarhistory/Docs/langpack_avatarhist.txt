@@ -1,0 +1,86 @@
+; Avatar History 0.0.1.5
+; Author: MattJ and Pescuma
+
+[Avatar History]
+
+; Menu
+
+[Avatar history...]
+
+; Custom folders
+
+[Avatars]
+
+; Template defaults
+
+[changed his/her avatar]
+[removed his/her avatar]
+
+; Options
+
+[History]
+[Avatar]
+
+[Show 'Avatar History' on contacts' menus (takes effect after restart)]
+
+[Logging options]
+[Log avatar changes to disk]
+[Log avatar changes to history]
+
+[ Tracking ]
+[Track when contacts change their status messages]
+[Track when contacts remove their status messages]
+[Template:]
+
+[ Protocols ]
+[Enable tracking for these protocols:]
+
+[Popups]
+[Avatar Change]
+
+[Enable popups]
+
+[ Colours ]
+[Background colour]
+[Text colour]
+[Use Windows colours]
+[Use default colours]
+
+[ Delay ]
+[From popup plugin]
+[Custom]
+[Permanent]
+
+[ Actions ]
+[On right click:]
+[On left click:]
+[Do nothing]
+[Close popup]
+[Show avatar history]
+[Show contact history]
+
+[Preview]
+
+
+; Test popup
+
+[Test Contact]
+[Test description]
+
+
+; Avatar dialog
+
+[Open Folder]
+[Save]
+[Delete]
+[<]
+[>]
+[Log this user's avatars to disk]
+[Log this user's avatars to history]
+[Show popups for this user]
+[OK]
+
+[Please select an avatar from the list]
+[No avatar selected]
+[Are you sure you wish to delete this archived avatar?]
+[Delete avatar?]

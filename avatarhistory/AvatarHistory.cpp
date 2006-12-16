@@ -21,26 +21,6 @@ Avatar History Plugin
  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 */
-#include <windows.h>
-#include <stdio.h>
-
-
-#include <newpluginapi.h>
-#include <m_folders.h>
-#include <m_clist.h>
-#include <m_skin.h>
-#include <m_avatars.h>
-#include <m_database.h>
-#include <m_system.h>
-#include <m_protocols.h>
-#include <m_protosvc.h>
-#include <m_contacts.h>
-#include <m_popup.h>
-#include <m_options.h>
-#include <m_utils.h>
-#include <m_langpack.h>
-// #include <m_updater.h>
-#include "resource.h"
 #include "AvatarHistory.h"
 
 // #define DBGPOPUPS
@@ -53,15 +33,15 @@ HANDLE hHookoptsinit;
 
 HANDLE hFolder;
 
-char basedir[MAX_PATH+1];
+char profilePath[MAX_PATH+1];		// database profile path (read at startup only)
+TCHAR basedir[MAX_PATH+1];
 
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 static int AvatarChanged(WPARAM wParam, LPARAM lParam);
 int OptInit(WPARAM wParam,LPARAM lParam);
 
 int GetFileHash(char* fn);
-int GetUIDFromHContact(HANDLE contact, char* protoout, char* uinout);
-int ShowPopup(HANDLE hContact, char* title, char* text);
+int GetUIDFromHContact(HANDLE contact, char* protoout, TCHAR* uinout, size_t uinout_len);
 void InitFolders();
 void InitMenuItem();
 
@@ -70,10 +50,14 @@ static int IsEnabled(WPARAM wParam, LPARAM lParam);
 
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
+#ifdef UNICODE
+	"Avatar History (Unicode)",
+#else
 	"Avatar History",
-	PLUGIN_MAKE_VERSION(0,0,1,1),
+#endif
+	PLUGIN_MAKE_VERSION(0,0,1,5),
 	"This plugin keeps backups of all your contacts' avatar changes and/or shows popups",
-	"Matthew Wild (MattJ)",
+	"Matthew Wild (MattJ), Ricardo Pescuma Domenecci",
 	"mwild1@gmail.com",
 	"© 2006 Matthew Wild",
 	"http://mattj.xmgfree.com/",
@@ -96,45 +80,160 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	pluginLink=link;
 
+	init_mir_malloc();
+	LoadOptions();
+
 	hModulesHook = HookEvent(ME_SYSTEM_MODULESLOADED,ModulesLoaded);
 	CreateServiceFunction("AvatarHistory/IsEnabled", IsEnabled);
+
+	if(CallService(MS_DB_GETPROFILEPATH, MAX_PATH+1, (LPARAM)profilePath) != 0)
+		strcpy(profilePath, "."); // Failed, use current dir
+    _strlwr(profilePath);
+
 	return 0;
 }
 
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
 	InitFolders();
-	hAvatarChange = HookEvent(ME_AV_AVATARCHANGED, AvatarChanged);
+	hAvatarChange = HookEvent(ME_AV_CONTACTAVATARCHANGED, AvatarChanged);
 	hHookoptsinit = HookEvent(ME_OPT_INITIALISE,OptInit);
 	SetupIcoLib();
-	if(db_byte_get(NULL, "AvatarHistory", "ShowContactMenu", AVH_DEF_SHOWMENU))
+	if(opts.show_menu)
 		InitMenuItem();
 	return 0;
 }
 
-// checks if a file with the same hash already exists in the direcory
-// returns (char *) to the full path if found or NULL
-// result must be free()-ed if not NULL
-static char * CheckIfHashExists( char * dir, int hash){
-	char patt[MAX_PATH+1];
-	WIN32_FIND_DATA finddata;
-	HANDLE hFind = NULL;
-	int dirlen = strlen(dir);
-	strncpy(patt, dir, MAX_PATH-4);
-	strncpy(&patt[dirlen], "\\*.*", MAX_PATH-dirlen);
-	if ((hFind = FindFirstFile(patt, &finddata)) != INVALID_HANDLE_VALUE){
-		do{
-			if(finddata.cFileName[0] != '.') if (!(finddata.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_DEVICE))){
-				strncpy(&patt[dirlen+1],finddata.cFileName,MAX_PATH-dirlen-1);
-				if (GetFileHash(patt)==hash){
-					char * result = strdup(patt);
-					FindClose(hFind);
-					return result;
-				}
-			}
-		} while (FindNextFile(hFind, &finddata));
-	};
-	FindClose(hFind);
+
+BOOL ProtocolEnabled(const char *proto)
+{
+	if (proto == NULL)
+		return FALSE;
+		
+	char setting[256];
+	mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
+	return (BOOL) DBGetContactSettingByte(NULL, MODULE_NAME, setting, TRUE);
+}
+
+
+BOOL ContactEnabled(HANDLE hContact, char *setting, int def) 
+{
+	if (hContact == NULL)
+		return FALSE;
+
+	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+	if (!ProtocolEnabled(proto))
+		return FALSE;
+
+	BYTE globpref = db_byte_get(NULL, MODULE_NAME, setting, def);
+	BYTE userpref = db_byte_get(hContact, MODULE_NAME, setting, BST_INDETERMINATE);
+
+	return (globpref && userpref == BST_INDETERMINATE) || userpref == BST_CHECKED;
+}
+
+
+HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text, char *filename)
+{
+	if (log_text != NULL)
+	{
+		DBEVENTINFO event = { 0 };
+
+		event.cbSize = sizeof(event);
+
+		size_t len = lstrlen(log_text) + 1;
+		size_t size = len;
+#ifdef UNICODE
+		size *= 3;
+#endif
+		if (filename != NULL)
+			size += strlen(filename) + 1;
+
+		BYTE *tmp = (BYTE *) mir_alloc0(size);
+#ifdef UNICODE
+		WideCharToMultiByte(CP_ACP, 0, log_text, -1, (char *) tmp, size, NULL, NULL);
+		lstrcpynW((WCHAR *) &tmp[len], log_text, len);
+		len *= 3;
+#else
+		strcpy((char *) tmp, log_text);
+#endif
+		if (filename != NULL)
+			strcpy((char *) &tmp[len], filename);
+
+		event.pBlob = tmp;
+		event.cbBlob = size;
+
+		event.eventType = EVENTTYPE_AVATAR_CHANGE;
+		event.flags = DBEF_READ;
+		event.timestamp = (DWORD) time(NULL);
+
+		event.szModule = MODULE_NAME;
+		
+		// Is a subcontact?
+		if (ServiceExists(MS_MC_GETMETACONTACT)) 
+		{
+			HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
+
+			if (hMetaContact != NULL && ContactEnabled(hMetaContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
+				CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&event);
+		}
+
+		HANDLE ret = (HANDLE) CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&event);
+
+		mir_free(tmp);
+
+		return ret;
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+static int PathIsAbsolute(const TCHAR *path)
+{
+    if (!path || !(lstrlen(path) > 2)) 
+        return 0;
+    if ((path[1]==_T(':')&&path[2]==_T('\\'))||(path[0]==_T('\\')&&path[1]==_T('\\'))) return 1;
+    return 0;
+}
+
+int PathToRelative(const TCHAR *pSrc, char *pOut)
+{
+    if (!pSrc||!lstrlen(pSrc)||lstrlen(pSrc)>MAX_PATH) return 0;
+    if (!PathIsAbsolute(pSrc)) {
+#ifdef UNICODE
+        mir_snprintf(pOut, MAX_PATH, "%S", pSrc);
+#else
+        mir_snprintf(pOut, MAX_PATH, "%s", pSrc);
+#endif
+        return strlen(pOut);
+    }
+    else {
+        char szTmp[MAX_PATH];
+#ifdef UNICODE
+        mir_snprintf(szTmp, MAX_REGS(szTmp), "%S", pSrc);
+#else
+        mir_snprintf(szTmp, MAX_REGS(szTmp), "%s", pSrc);
+#endif
+        _strlwr(szTmp);
+        if (strstr(szTmp, profilePath)) {
+#ifdef UNICODE
+            mir_snprintf(pOut, MAX_PATH, "%S", pSrc + strlen(profilePath) + 1);
+#else
+            mir_snprintf(pOut, MAX_PATH, "%s", pSrc + strlen(profilePath) + 1);
+#endif
+            return strlen(pOut);
+        }
+        else {
+#ifdef UNICODE
+            mir_snprintf(pOut, MAX_PATH, "%S", pSrc);
+#else
+            mir_snprintf(pOut, MAX_PATH, "%s", pSrc);
+#endif
+            return strlen(pOut);
+        }
+    }
+
 	return 0;
 }
 
@@ -149,112 +248,190 @@ static char * CheckIfHashExists( char * dir, int hash){
 // a protocol picture (pseudo - avatar) has been changed. 
 static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 {
-	SYSTEMTIME curtime;
-	AVATARCACHEENTRY* avatar = (AVATARCACHEENTRY*)lParam;
-	char fn[MAX_PATH+1], ext[11];
-	unsigned int oldhash, newhash;
-	if(wParam == 0||avatar == NULL)
+	HANDLE hContact = (HANDLE)wParam;
+	CONTACTAVATARCHANGEDNOTIFICATION* avatar = (CONTACTAVATARCHANGEDNOTIFICATION*)lParam;
+
+	if (wParam == 0)
 	{
 #ifdef DBGPOPUPS
 		if(wParam == 0)
-			ShowPopup(NULL, "AVH Debug", "Invalid contact... skipping");
-		if(lParam == 0)
-			ShowPopup(NULL, "AVH Debug", "Invalid avatar data... skipping");
+			ShowPopup(NULL, _T("AVH Debug"), _T("Invalid contact... skipping"));
 #endif
 		return 0;
 	}
-	
-	oldhash = db_dword_get((HANDLE)wParam, "AvatarHistory", "AvatarHash", 0);
-	newhash = GetFileHash(avatar->szFilename);
-	if(newhash == 0 || (oldhash !=0 && (newhash == oldhash)))
-	{
-#ifdef DBGPOPUPS
-		if(newhash==0)
-			ShowPopup(NULL, "AVH Debug", "New hash failed... skipping");
-		if(oldhash == 0)
-			ShowPopup(NULL, "AVH Debug", "Old hash does not exist in db... skipping");
-		if(oldhash == newhash)
-			ShowPopup(NULL, "AVH Debug", "Hashes are the same... skipping");
-#endif
-		return 0;
-	}
-	if(oldhash == newhash) // <-- Too scared to remove this atm :P
-	{
-#ifdef DBGPOPUPS
-		ShowPopup(NULL, "AVH Debug", "New hash same as old hash... skipping");
-#endif
-		return 0;
-	}
-	db_dword_set((HANDLE)wParam, "AvatarHistory", "AvatarHash", newhash);
-	
-	char globpref = db_byte_get(NULL, "AvatarHistory", "LogToDisk", AVH_DEF_LOGTODISK);
-	char userpref = db_byte_get((HANDLE)wParam, "AvatarHistory", "LogUser", BST_INDETERMINATE);
-	if(globpref && (userpref != 0) || (userpref == 1) )
-	{
-		strncpy(ext, strrchr(avatar->szFilename, '.')+1, 10);
 
-		GetContactFolder((HANDLE)wParam, fn);
+	if (!opts.track_changes && avatar != NULL)
+		return 0;
+
+	if (!opts.track_removes && avatar == NULL)
+		return 0;
 	
-		GetLocalTime(&curtime);
-		char *fileExists = CheckIfHashExists(fn,newhash);
-		sprintf(fn, "%s\\%04d-%02d-%02d %02dh%02dm%02ds.%s",fn, curtime.wYear, curtime.wMonth, curtime.wDay, curtime.wHour, curtime.wMinute, curtime.wSecond, ext);
-		if((fileExists?MoveFile(fileExists,fn):CopyFile(avatar->szFilename, fn, TRUE)) == 0)
-		{
-			MessageBox(NULL, fn, "Unable to save avatar", MB_OK);
-		}
+	char oldhash[1024] = "";
+	DBVARIANT dbv = {0};
+	if (!db_get(hContact, "AvatarHistory", "AvatarHash", &dbv))
+	{
+		if (dbv.type == DBVT_ASCIIZ)
+			strncpy(oldhash, dbv.pszVal, sizeof(oldhash));
+
+		DBFreeVariant(&dbv);
+	}
+
+	if(
+		(avatar != NULL && !strcmp(oldhash, avatar->hash)) // Changed it
+		|| (avatar == NULL && oldhash[0] == '\0') // Removed it
+		)
+	{
 #ifdef DBGPOPUPS
+		ShowPopup(NULL, "AVH Debug", "Hashes are the same... skipping");
+#endif
+		return 0;
+	}
+
+	if (avatar != NULL)
+	{
+		db_string_set(hContact, "AvatarHistory", "AvatarHash", avatar->hash);
+	}
+	else
+	{
+		DBDeleteContactSetting(hContact, "AvatarHistory", "AvatarHash");
+	}
+
+	TCHAR history_filename[MAX_PATH+1] = _T("");
+
+	if (avatar != NULL)
+	{
+		if (ContactEnabled(hContact, "LogToDisk", AVH_DEF_LOGTODISK))
+		{
+			// Needed because path in event is char*
+#ifdef UNICODE
+			TCHAR file[MAX_PATH+1];
+			MultiByteToWideChar(CP_ACP, 0, avatar->filename, -1, file, MAX_REGS(file));
+#else
+			TCHAR *file = avatar->filename;
+#endif
+			TCHAR ext[11];
+			SYSTEMTIME curtime;
+
+			lstrcpyn(ext, _tcsrchr(file, _T('.'))+1, 10);
+
+			GetContactFolder(hContact, history_filename);
+		
+			GetLocalTime(&curtime);
+			mir_sntprintf(history_filename, MAX_REGS(history_filename), 
+				_T("%s\\%04d-%02d-%02d %02dh%02dm%02ds.%s"), history_filename, 
+				curtime.wYear, curtime.wMonth, curtime.wDay, 
+				curtime.wHour, curtime.wMinute, curtime.wSecond, 
+				ext);
+			if(CopyFile(file, history_filename, TRUE) == 0)
+			{
+				ShowPopup(hContact, _T("Avatar History"), _T("Unable to save avatar"));
+			}
+#ifdef DBGPOPUPS
+			else
+			{
+				ShowPopup(hContact, _T("AVH Debug"), _T("File copied successfully"));
+			}
+#endif
+		}
+	}
+
+	if (ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS))
+	{
+		if (avatar != NULL)
+			ShowPopup(hContact, NULL, opts.template_changed);
 		else
-		{
-			ShowPopup(NULL, "AVH Debug", "File copied successfully");
-		}
-#endif
-		if (fileExists) free(fileExists);
+			ShowPopup(hContact, NULL, opts.template_removed);
 	}
 
-	userpref = db_byte_get((HANDLE)wParam, "AvatarHistory", "PopupUser", BST_INDETERMINATE);
-	globpref = db_byte_get(NULL, "AvatarHistory", "AvatarPopups", AVH_DEF_AVPOPUPS);
-	if(globpref && (userpref != 0) || (userpref == 1) )
-		ShowPopup((HANDLE)wParam, NULL, Translate("changed his/her avatar"));
+	if (ContactEnabled(hContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
+	{
+		if (avatar != NULL)
+		{
+			char file[MAX_PATH];
+			PathToRelative(history_filename, file);
+			HistoryLog(hContact, opts.template_changed, file);
+		}
+		else
+			HistoryLog(hContact, opts.template_removed, NULL);
+	}
 	return 0;
 }
 
-int GetUIDFromHContact(HANDLE contact, char* protoout, char* uinout)
+int GetUIDFromHContact(HANDLE contact, char* protoout, TCHAR* uinout, size_t uinout_len)
 {
-	struct MM_INTERFACE mmi;
 	CONTACTINFO cinfo;
 	char* proto;
 	
 	proto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)contact,0);
 	if(proto)
 		strcpy(protoout, proto);
-	else strcpy(protoout, "NULL");
+	else strcpy(protoout, Translate("Unknown Protocol"));
 
 	ZeroMemory(&cinfo,sizeof(CONTACTINFO));
 	cinfo.cbSize = sizeof(CONTACTINFO);
 	cinfo.hContact = contact;
 	cinfo.dwFlag = CNF_UNIQUEID;
+#ifdef UNICODE
+	cinfo.dwFlag |= CNF_UNICODE;
+#endif
+
+	BOOL found = TRUE;
 	if(CallService(MS_CONTACT_GETCONTACTINFO,0,(LPARAM)&cinfo)==0)
 	{
-		if(cinfo.type==CNFT_ASCIIZ)
+		if(cinfo.type == CNFT_ASCIIZ)
 		{
-			strcpy(uinout,cinfo.pszVal);
+			lstrcpyn(uinout, cinfo.pszVal, uinout_len);
 			// It is up to us to free the string
 			// The catch? We need to use Miranda's free(), not our CRT's :)
-			mmi.cbSize = sizeof(mmi);
-			CallService(MS_SYSTEM_GET_MMI,0,(LPARAM)&mmi);
-			mmi.mmi_free(cinfo.pszVal);
+			mir_free(cinfo.pszVal);
 		}
 		else if(cinfo.type == CNFT_DWORD)
 		{
-			char struin[MAX_PATH+1];
-			_itoa(cinfo.dVal,struin,10);
-			strcpy(uinout,struin);
+			_itot(cinfo.dVal,uinout,10);
 		}
-		else strcpy(uinout,"NULL");
+		else if(cinfo.type == CNFT_WORD)
+		{
+			_itot(cinfo.wVal,uinout,10);
+		}
+		else found = FALSE;
 	}
-	else strcpy(uinout,"NULL");
+	else found = FALSE;
+
+	if (!found)
+	{
+#ifdef UNICODE
+		// Try non unicode ver
+		cinfo.dwFlag = CNF_UNIQUEID;
+
+		found = TRUE;
+		if(CallService(MS_CONTACT_GETCONTACTINFO,0,(LPARAM)&cinfo)==0)
+		{
+			if(cinfo.type == CNFT_ASCIIZ)
+			{
+				MultiByteToWideChar(CP_ACP, 0, (char *) cinfo.pszVal, -1, uinout, uinout_len);
+				// It is up to us to free the string
+				// The catch? We need to use Miranda's free(), not our CRT's :)
+				mir_free(cinfo.pszVal);
+			}
+			else if(cinfo.type == CNFT_DWORD)
+			{
+				_itot(cinfo.dVal,uinout,10);
+			}
+			else if(cinfo.type == CNFT_WORD)
+			{
+				_itot(cinfo.wVal,uinout,10);
+			}
+			else found = FALSE;
+		}
+		else found = FALSE;
+
+		if (!found)
+#endif
+			lstrcpy(uinout, TranslateT("Unknown UIN"));
+	}
 	return 0;
 }
+
 
 extern "C" int __declspec(dllexport) Unload(void)
 {
@@ -262,158 +439,54 @@ extern "C" int __declspec(dllexport) Unload(void)
 }
 
 
-#define POLYNOMIAL (0x488781ED) /* This is the CRC Poly */
-#define TOPBIT (1 << (WIDTH - 1)) /* MSB */
-#define WIDTH 32
-
-int GetFileHash(char* fn)
-{
-   int remainder = 0, byte;
-   char* data = (char*)malloc(1024); int nBytes;
-   DWORD dwRead = 0; HANDLE hFile;
-   unsigned char bit;
-   hFile = CreateFile(fn, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-   if(hFile == INVALID_HANDLE_VALUE || data == NULL)
-   {
-#ifdef DBGPOPUPS
-	LPVOID lpMsgBuf;
-    DWORD dw = GetLastError(); 
-
-    FormatMessage(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-        FORMAT_MESSAGE_FROM_SYSTEM,
-        NULL,
-        dw,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR) &lpMsgBuf,
-        0, NULL );
-	ShowPopup(NULL, "AVH Debug", (char*)lpMsgBuf);
-    LocalFree(lpMsgBuf);
-#endif
-	   return 0;
-   }
-#ifdef DBGPOPUPS
-   else
-   {
-		ShowPopup(NULL, "AVH Debug", "File opened");
-   }
-   long cycles = 0;
-#endif
-   do
-   {
-	   // Read file chunk
-	   ReadFile(hFile, data, 1024, &dwRead, NULL);
-	   nBytes = dwRead;
-#ifdef DBGPOPUPS
-	   cycles++;
-#endif
-		/* loop through each byte of data */
-		for (byte = 0; byte < nBytes; ++byte) {
-		  /* store the next byte into the remainder */
-		  remainder ^= (data[byte] << (WIDTH - 8));
-		  /* calculate for all 8 bits in the byte */
-		  for (bit = 8; bit > 0; --bit) {
-		  /* check if MSB of remainder is a one */
-		    if (remainder & TOPBIT)
-		      remainder = (remainder << 1) ^ POLYNOMIAL;
-		    else
-		      remainder = (remainder << 1);
-		    }
-	       }
-  }while(dwRead == 1024);
-   free(data);
-   CloseHandle(hFile);
-#ifdef DBGPOPUPS
-   char text[MAX_PATH+1];
-   sprintf(text, "Hashing: %d cycles, ending with %d bytes");
-   ShowPopup(NULL, "AVH Debug", text);
-	if(remainder == 0)
-		ShowPopup(NULL, "AVH Debug", "Uh-oh...");
-#endif
-   return (remainder);
-}
-
 static int IsEnabled(WPARAM wParam, LPARAM lParam)
 {
-	return TRUE;
+	HANDLE hContact = (HANDLE) wParam;
+	return ContactEnabled(hContact, "LogToDisk", AVH_DEF_LOGTODISK) 
+		|| ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS)
+		|| ContactEnabled(hContact, "LogToHistory", AVH_DEF_LOGTOHISTORY);
 }
 
-static int CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch(message)
-	{
-		case WM_COMMAND:
-		case WM_CONTEXTMENU:
-			//if (HIWORD(wParam) == STN_CLICKED)
-			//{ //It was a click on the Popup.
-				PUDeletePopUp(hWnd);
-			//	return TRUE;
-			//}
-			break;
-		case UM_FREEPLUGINDATA:{
-				//here we shall destroy icon that has been created in ShowPopup
-				HICON courIcon = (HICON)PUGetPluginData(hWnd);
-				if ((courIcon) && (int)courIcon!=-1) DestroyIcon(courIcon);
-				return FALSE; //the return value is ignored
-			}
-		default:
-			break;
-	}
-	return DefWindowProc(hWnd, message, wParam, lParam);
-}
-
-int ShowPopup(HANDLE hContact, char* title, char* text)
-{
-	POPUPDATA ppd;
-	COLORREF colorBack = 0;
-	COLORREF colorText = 0;
-	char *sProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hContact,0);
-	if(ServiceExists(MS_POPUP_ADDPOPUP))
-	{
-		if(!db_byte_get(NULL, "AvatarHistory", "UsePopupDefault", AVH_DEF_DEFPOPUPS))
-		{
-			colorBack = db_dword_get(NULL, "AvatarHistory", "PopupBG", AVH_DEF_POPUPBG);
-			colorText = db_dword_get(NULL, "AvatarHistory", "PopupFG", AVH_DEF_POPUPFG);
-		}
-		ZeroMemory((void*)&ppd, sizeof(ppd)); //This is always a good thing to do.
-		ppd.lchContact = (HANDLE)hContact; //Be sure to use a GOOD handle, since this will not be checked.
-		ppd.lchIcon = getOverlayedIcon(LoadSkinnedProtoIcon(sProto,DBGetContactSettingWord(hContact,sProto,"Status",ID_STATUS_ONLINE)),iconList[1],FALSE);
-		lstrcpy(ppd.lpzContactName, title?title:(char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,0));
-		lstrcpy(ppd.lpzText, text);
-		ppd.colorBack = colorBack;
-		ppd.colorText = colorText;
-		ppd.PluginWindowProc = (WNDPROC)PopupDlgProc;
-		ppd.PluginData = (void *)ppd.lchIcon; // will DestroyIcon in the PopupWinDlg
-		int res = CallService(MS_POPUP_ADDPOPUP, (WPARAM)&ppd, 0);
-//		DestroyIcon(hIcon);
-		return res;
-	}
-	else
-	{
-		MessageBox(NULL, text, title?title:(char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME,(WPARAM)hContact,0), MB_OK);
-		return 0;
-	}
-}
 
 void InitFolders()
 {
-	if(CallService(MS_DB_GETPROFILEPATH, MAX_PATH+1, (LPARAM)basedir) != 0)
-			strcpy(basedir, "."); // Failed, use current dir
-	
-	strcat(basedir, "\\Avatars History");
-	hFolder = (HANDLE)FoldersRegisterCustomPath(Translate("Avatars"), Translate("Avatar History"), basedir);
-	FoldersGetCustomPath(hFolder, basedir, MAX_PATH+1, basedir);
+#ifdef UNICODE
+	mir_sntprintf(basedir, MAX_REGS(basedir), _T("%S\\Avatars History"), profilePath);
+#else
+	mir_sntprintf(basedir, MAX_REGS(basedir), _T("%s\\Avatars History"), profilePath);
+#endif
+
+	hFolder = (HANDLE)FoldersRegisterCustomPathT(Translate("Avatars"), Translate("Avatar History"), 
+		_T(PROFILE_PATH) _T("\\") _T(CURRENT_PROFILE) _T("\\Avatars History"));
 }
 
-char* GetContactFolder(HANDLE hContact, char* fn)
+
+TCHAR* GetContactFolder(HANDLE hContact, TCHAR* fn)
 {
-	char uin[MAX_PATH+1], proto[50+1];
-		FoldersGetCustomPath(hFolder, fn, MAX_PATH+1, basedir);
-		CreateDirectory(fn, NULL);		
-		GetUIDFromHContact(hContact, proto, uin);
-		sprintf(fn, "%s\\%s", fn, proto);
-		CreateDirectory(fn, NULL);
-		sprintf(fn, "%s\\%s",fn, uin);
-		CreateDirectory(fn, NULL);
-		return fn;
+	TCHAR uin[MAX_PATH+1];
+	char proto[50+1];
+	FoldersGetCustomPathT(hFolder, fn, MAX_PATH+1, basedir);
+	CreateDirectory(fn, NULL);		
+	GetUIDFromHContact(hContact, proto, uin, MAX_REGS(uin));
+#ifdef UNICODE
+	mir_sntprintf(fn, MAX_PATH+1, _T("%s\\%S"), fn, proto);
+#else
+	mir_sntprintf(fn, MAX_PATH+1, _T("%s\\%s"), fn, proto);
+#endif
+	CreateDirectory(fn, NULL);
+	mir_sntprintf(fn, MAX_PATH+1, _T("%s\\%s"), fn, uin);
+	CreateDirectory(fn, NULL);
+	
+#ifdef DBGPOPUPS
+	char log[1024];
+#ifdef UNICODE
+	mir_snprintf(log, MAX_REGS(log), "Path: %S\nProto: %s\nUIN: %S", fn, proto, uin);
+#else
+	mir_snprintf(log, MAX_REGS(log), "Path: %s\nProto: %s\nUIN: %s", fn, proto, uin);
+#endif
+	ShowPopup(NULL, "AVH Debug: GetContactFolder", log);
+#endif
+
+	return fn;
 }
+

@@ -18,37 +18,29 @@ Avatar History Plugin
 
 */
 
-#include <windows.h>
-#include <stdio.h>
+#include "AvatarHistory.h"
+
 #include <commctrl.h>
 #include <prsht.h>
-#include <newpluginapi.h>
-#include <m_database.h>
-#include <m_options.h> // Miranda header
-#include <m_utils.h>
-#include <m_clist.h>
-#include <m_skin.h>
-#include <m_langpack.h>
-#include "resource.h"
-#include "AvatarHistory.h"
+
 
 extern HINSTANCE hInst;
 HANDLE hMenu = 0; 
 int OpenAvatarDialog(HANDLE hContact, char* fn);
 DWORD WINAPI AvatarDialogThread(LPVOID param);
 static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam);
-int ShowSaveDialog(HWND hwnd, char* fn);
+int ShowSaveDialog(HWND hwnd, TCHAR* fn);
 
-int FillAvatarList(HWND list, HANDLE hContact, char* fn);
-int UpdateAvatarPic(HWND hwnd, char* fn);
-char* GetCurrentSelFile(HWND list, char* out);
+int FillAvatarList(HWND list, HANDLE hContact, TCHAR* fn);
+int UpdateAvatarPic(HWND hwnd, TCHAR* fn);
+TCHAR* GetCurrentSelFile(HWND list, TCHAR* out);
 
 static int ShowDialogSvc(WPARAM wParam, LPARAM lParam);
 
 struct AvatarDialogData
 {
 	HANDLE hContact;
-	char fn[MAX_PATH+1];
+	TCHAR fn[MAX_PATH+1];
 	HWND parent;
 };
 
@@ -59,7 +51,19 @@ int OpenAvatarDialog(HANDLE hContact, char* fn)
 	avdlg = (struct AvatarDialogData*)malloc(sizeof(struct AvatarDialogData));
 	ZeroMemory(avdlg, sizeof(struct AvatarDialogData));
 	avdlg->hContact = hContact;
-	strncpy(avdlg->fn, fn?fn:"", MAX_PATH);
+	if (fn == NULL)
+	{
+		avdlg->fn[0] = _T('\0');
+	}
+	else
+	{
+#ifdef UNICODE
+		MultiByteToWideChar(CP_ACP, 0, fn, -1, avdlg->fn, MAX_REGS(avdlg->fn));
+#else
+		lstrcpyn(avdlg->fn, fn, sizeof(avdlg->fn));
+#endif
+	}
+
 	CloseHandle(CreateThread(NULL, 0, AvatarDialogThread, (LPVOID)avdlg, 0, &dwId));
 	return 0;
 }
@@ -69,6 +73,28 @@ DWORD WINAPI AvatarDialogThread(LPVOID param)
 	struct AvatarDialogData* data = (struct AvatarDialogData*)param;
 	DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_AVATARDLG), data->parent, AvatarDlgProc, (LPARAM)param);
 	return 0;
+}
+
+void EnableDisableControls(HWND hwnd)
+{
+	HWND list = GetDlgItem(hwnd, IDC_AVATARLIST);
+	
+	int cursel = SendMessage(list, LB_GETCURSEL, 0, 0);
+	int count = SendMessage(list, LB_GETCOUNT, 0, 0);
+
+	if (cursel == LB_ERR)
+	{
+		EnableWindow(GetDlgItem(hwnd, IDC_BACK), count > 0);
+		EnableWindow(GetDlgItem(hwnd, IDC_NEXT), count > 0);
+	}
+	else
+	{
+		EnableWindow(GetDlgItem(hwnd, IDC_BACK), cursel > 0);
+		EnableWindow(GetDlgItem(hwnd, IDC_NEXT), cursel < count-1);
+	}
+
+	EnableWindow(GetDlgItem(hwnd, IDC_SAVE), cursel != LB_ERR);
+	EnableWindow(GetDlgItem(hwnd, IDC_DELETE), cursel != LB_ERR);
 }
 
 static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam)
@@ -84,9 +110,11 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 			FillAvatarList(GetDlgItem(hwnd, IDC_AVATARLIST), data->hContact, data->fn);
 			SetWindowLongPtr(hwnd, GWLP_USERDATA, (ULONG_PTR)data->hContact);
 			UpdateAvatarPic(hwnd, NULL);
-			CheckDlgButton(hwnd, IDC_LOGUSER, (UINT)db_byte_get(data->hContact, "AvatarHistory", "LogUser", BST_INDETERMINATE));
-			CheckDlgButton(hwnd, IDC_POPUPUSER, (UINT)db_byte_get(data->hContact, "AvatarHistory", "PopupUser", BST_INDETERMINATE));
+			CheckDlgButton(hwnd, IDC_LOGUSER, (UINT)db_byte_get(data->hContact, "AvatarHistory", "LogToDisk", BST_INDETERMINATE));
+			CheckDlgButton(hwnd, IDC_POPUPUSER, (UINT)db_byte_get(data->hContact, "AvatarHistory", "AvatarPopups", BST_INDETERMINATE));
+			CheckDlgButton(hwnd, IDC_HISTORYUSER, (UINT)db_byte_get(data->hContact, "AvatarHistory", "LogToHistory", BST_INDETERMINATE));
 			TranslateDialogDefault(hwnd);
+			EnableDisableControls(hwnd);
 			free(data);
 			data = NULL;	
 		}
@@ -100,29 +128,35 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 		case IDOK:
 			if(HIWORD(wParam) == BN_CLICKED)
 			{
+				HANDLE hContact = (HANDLE) GetWindowLongPtr(hwnd, GWLP_USERDATA);
+
 				if(IsDlgButtonChecked(hwnd, IDC_POPUPUSER) != BST_INDETERMINATE)
 				{
-					db_byte_set((HANDLE)GetWindowLongPtr(hwnd, GWLP_USERDATA), "AvatarHistory", "PopupUser", (char)IsDlgButtonChecked(hwnd, IDC_POPUPUSER));
+					db_byte_set(hContact, "AvatarHistory", "AvatarPopups", (BYTE) IsDlgButtonChecked(hwnd, IDC_POPUPUSER));
 				}
 				else
 				{
-					DBCONTACTGETSETTING dbdcs;
-					dbdcs.szModule = "AvatarHistory";
-					dbdcs.szSetting = "PopupUser";
-					CallService(MS_DB_CONTACT_DELETESETTING, (WPARAM)GetWindowLongPtr(hwnd, GWLP_USERDATA), (LPARAM)&dbdcs);
+					DBDeleteContactSetting(hContact, "AvatarHistory", "AvatarPopups");
 				}
 		
 				if(IsDlgButtonChecked(hwnd, IDC_LOGUSER) != BST_INDETERMINATE)
 				{
-					db_byte_set((HANDLE)GetWindowLongPtr(hwnd, GWLP_USERDATA), "AvatarHistory", "LogUser", (char)IsDlgButtonChecked(hwnd, IDC_LOGUSER));
+					db_byte_set(hContact, "AvatarHistory", "LogToDisk", (BYTE) IsDlgButtonChecked(hwnd, IDC_LOGUSER));
 				}
 				else
 				{
-					DBCONTACTGETSETTING dbdcs;
-					dbdcs.szModule = "AvatarHistory";
-					dbdcs.szSetting = "LogUser";
-					CallService(MS_DB_CONTACT_DELETESETTING, (WPARAM)GetWindowLongPtr(hwnd, GWLP_USERDATA), (LPARAM)&dbdcs);
+					DBDeleteContactSetting(hContact, "AvatarHistory", "LogToDisk");
 				}
+		
+				if(IsDlgButtonChecked(hwnd, IDC_HISTORYUSER) != BST_INDETERMINATE)
+				{
+					db_byte_set(hContact, "AvatarHistory", "LogToHistory", (BYTE) IsDlgButtonChecked(hwnd, IDC_HISTORYUSER));
+				}
+				else
+				{					
+					DBDeleteContactSetting(hContact, "AvatarHistory", "LogToHistory");
+				}
+
 				EndDialog(hwnd, 0);
 				return TRUE;
 			}
@@ -131,6 +165,7 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 			if(HIWORD(wParam) == LBN_SELCHANGE)
 			{
 				UpdateAvatarPic(hwnd, NULL);
+				EnableDisableControls(hwnd);
 				return TRUE;
 			}
 			break;
@@ -140,6 +175,7 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 				HWND list = GetDlgItem(hwnd, IDC_AVATARLIST);
 				SendMessage(list, LB_SETCURSEL, SendMessage(list, LB_GETCURSEL, 0, 0) +1, 0);
 				UpdateAvatarPic(hwnd, NULL);
+				EnableDisableControls(hwnd);
 				return TRUE;
 			}
 			break;
@@ -147,77 +183,89 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 			if(HIWORD(wParam) == BN_CLICKED)
 			{
 				HWND list = GetDlgItem(hwnd, IDC_AVATARLIST);
-				SendMessage(list, LB_SETCURSEL, SendMessage(list, LB_GETCURSEL, 0, 0) -1, 0);
+				int cursel = SendMessage(list, LB_GETCURSEL, 0, 0);
+				if (cursel == LB_ERR)
+					SendMessage(list, LB_SETCURSEL, SendMessage(list, LB_GETCOUNT, 0, 0) -1, 0);
+				else
+					SendMessage(list, LB_SETCURSEL, cursel -1, 0);
 				UpdateAvatarPic(hwnd, NULL);
+				EnableDisableControls(hwnd);
 				return TRUE;
 			}
 			break;
 		case IDC_SAVE:
 			if(HIWORD(wParam) == BN_CLICKED)
 			{
-				char avfile[MAX_PATH+1];
+				TCHAR avfile[MAX_PATH+1];
 				HWND list = GetDlgItem(hwnd, IDC_AVATARLIST);
 				GetCurrentSelFile(list, avfile);
-				if(avfile[0]!='\0')
+				if(avfile[0]!=_T('\0'))
 					ShowSaveDialog(hwnd, avfile);
 				else
-					MessageBox(hwnd, Translate("Please select an avatar from the list"), Translate("No avatar selected"), MB_OK|MB_ICONEXCLAMATION);
+					MessageBox(hwnd, TranslateT("Please select an avatar from the list"), TranslateT("No avatar selected"), MB_OK|MB_ICONEXCLAMATION);
 				return TRUE;
 			}
 			break;
 		case IDC_DELETE:
 			if(HIWORD(wParam) == BN_CLICKED)
 			{
-				char avfile[MAX_PATH+1];
+				TCHAR avfile[MAX_PATH+1];
 				HWND list = GetDlgItem(hwnd, IDC_AVATARLIST);
+				int cursel = SendMessage(list, LB_GETCURSEL, 0, 0);
+				if (cursel == LB_ERR)
+					break;
 				GetCurrentSelFile(list, avfile);
-				if(avfile[0] == '\0')
+				if(avfile[0] == _T('\0'))
 				{
-					MessageBox(hwnd, Translate("Please select an avatar from the list"), Translate("No avatar selected"), MB_OK|MB_ICONEXCLAMATION);
+					MessageBox(hwnd, TranslateT("Please select an avatar from the list"), TranslateT("No avatar selected"), MB_OK|MB_ICONEXCLAMATION);
 					return TRUE;
 				}
-				if(MessageBox(hwnd, Translate("Are you sure you wish to delete this archived avatar?"), Translate("Delete avatar?"), MB_YESNO|MB_ICONWARNING|MB_DEFBUTTON2|MB_SETFOREGROUND|MB_TOPMOST) == IDYES)
+				if(MessageBox(hwnd, TranslateT("Are you sure you wish to delete this archived avatar?"), TranslateT("Delete avatar?"), MB_YESNO|MB_ICONWARNING|MB_DEFBUTTON2|MB_SETFOREGROUND|MB_TOPMOST) == IDYES)
 				{
 					DeleteFile(avfile);
 					SendMessage(list, LB_DELETESTRING, SendMessage(list, LB_GETCURSEL, 0, 0), 0);
 				}
+				int count = SendMessage(list, LB_GETCOUNT, 0, 0);
+				if (count > 0)
+				{
+					if (cursel >= count)
+						cursel = count -1;
+					SendMessage(list, LB_SETCURSEL, cursel, 0);
+				}
+				EnableDisableControls(hwnd);
 				return TRUE;
 			}
 			break;
 		case IDC_OPENFOLDER:
 			if(HIWORD(wParam) == BN_CLICKED)
 			{
-				char avfolder[MAX_PATH+1];
+				TCHAR avfolder[MAX_PATH+1];
 				HWND list = GetDlgItem(hwnd, IDC_AVATARLIST);
 				HANDLE hContact = (HANDLE)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 				GetContactFolder(hContact, avfolder);
-				ShellExecute(NULL, db_byte_get(NULL, "AvatarHistory", "OpenFolderMethod", 0)?"explore":"open", avfolder, NULL, NULL, SW_SHOWNORMAL);
+				ShellExecute(NULL, db_byte_get(NULL, "AvatarHistory", "OpenFolderMethod", 0) 
+					? _T("explore") : _T("open"), avfolder, NULL, NULL, SW_SHOWNORMAL);
 				return TRUE;
 			}
 			break;
-		default:
-			break;
 		}
 		break;
-	default:
-		return FALSE;
 	}
 	return FALSE;
 }
 
-int FillAvatarList(HWND list, HANDLE hContact, char* def_sel)
+int FillAvatarList(HWND list, HANDLE hContact, TCHAR* def_sel)
 {
-	char dir[MAX_PATH+1], patt[MAX_PATH+1];
+	TCHAR dir[MAX_PATH+1], patt[MAX_PATH+1];
 	long idx = 0, sel = 0, newsel = 0;
 	WIN32_FIND_DATA finddata;
 	HANDLE hFind = NULL;
 	GetContactFolder(hContact, dir);
-	strcpy(patt, dir);
-	strcat(patt, "\\*.*");
+	mir_sntprintf(patt, MAX_REGS(patt), _T("%s\\*.*"), dir);
 	hFind = FindFirstFile(patt, &finddata);
 	do
 	{
-		if(finddata.cFileName[0] != '.')
+		if(finddata.cFileName[0] != _T('.'))
 		{
 			// Add to list
 			idx = SendMessage(list,LB_ADDSTRING, 0, (LPARAM)finddata.cFileName);
@@ -225,24 +273,37 @@ int FillAvatarList(HWND list, HANDLE hContact, char* def_sel)
 		}
 	}while(FindNextFile(hFind, &finddata));
 	FindClose(hFind);
-	if(def_sel != NULL && def_sel[0] != '\0')
+	if(def_sel != NULL && def_sel[0] != _T('\0'))
 		SendMessage(list, LB_SELECTSTRING, 1, (LPARAM)def_sel);
 	else
 		SendMessage(list, LB_SETCURSEL, 0, 0); // Set to first item
 	return 0;
 }
 
-int UpdateAvatarPic(HWND hwnd, char* fn)
+int UpdateAvatarPic(HWND hwnd, TCHAR* fn)
 {
 	HWND hwndpic = GetDlgItem(hwnd, IDC_AVATAR);
 	HWND list = GetDlgItem(hwnd, IDC_AVATARLIST);
 	HBITMAP avpic = NULL;
-	char avfn[MAX_PATH+1];
+	TCHAR avfn[MAX_PATH+1];
 	if(!hwnd || !hwndpic)
 		return -1;
-	if(!fn || fn[0] == '\0')
+	if(!fn || fn[0] == _T('\0'))
+	{
 		GetCurrentSelFile(list, avfn);
-	avpic = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (LPARAM)(fn?fn:avfn));
+		fn = avfn;
+	}
+
+	// Miranda dont have this service in unicode format
+#ifdef UNICODE
+	char tmp[MAX_PATH+1];
+	WideCharToMultiByte(CP_ACP, 0, fn, -1, tmp, MAX_REGS(tmp), NULL, NULL);
+
+	avpic = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (LPARAM) tmp);
+#else
+	avpic = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (LPARAM) fn);
+#endif
+
 	avpic = (HBITMAP)SendMessage(hwndpic, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)avpic);
 	if(avpic)
 		DeleteObject(avpic);
@@ -268,9 +329,9 @@ static int ShowDialogSvc(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-char* GetCurrentSelFile(HWND list, char* out)
+TCHAR* GetCurrentSelFile(HWND list, TCHAR* out)
 {
-	char contactdir[MAX_PATH+1], file[MAX_PATH+1];
+	TCHAR contactdir[MAX_PATH+1], file[MAX_PATH+1];
 	int cursel = SendMessage(list, LB_GETCURSEL, 0, 0);
 	HANDLE hContact;
 	if(cursel>-1)
@@ -278,43 +339,50 @@ char* GetCurrentSelFile(HWND list, char* out)
 		hContact = (HANDLE)GetWindowLongPtr(GetParent(list), GWLP_USERDATA);
 		GetContactFolder(hContact, contactdir);
 		SendMessage(list, LB_GETTEXT, cursel, (LPARAM)file);
-		sprintf(out, "%s\\%s", contactdir, file);
+		mir_sntprintf(out, MAX_PATH+1, _T("%s\\%s"), contactdir, file);
 	}
 	else
 	{
-		strcpy(out, "");
+		out[0] = _T('\0');
 	}
 	return out;
 }
 
-int ShowSaveDialog(HWND hwnd, char* fn)
+int ShowSaveDialog(HWND hwnd, TCHAR* fn)
 {
-	char initdir[MAX_PATH+1], filter[MAX_PATH+1];
-	char file[MAX_PATH+1];
+	TCHAR initdir[MAX_PATH+1];
+	char filter[MAX_PATH+1];
+	TCHAR file[MAX_PATH+1];
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn, sizeof(OPENFILENAME));
 	MyDBGetString(NULL, "AvatarHistory", "SavedAvatarFolder", initdir, MAX_PATH+1);
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = hwnd;
 	ofn.hInstance = hInst;
-	
+
+	// Miranda dont have the unicode version of this servicce
 	CallService(MS_UTILS_GETBITMAPFILTERSTRINGS, MAX_PATH, (LPARAM)filter);
+#ifdef UNICODE
+	TCHAR filterT[MAX_PATH+1];
+	MultiByteToWideChar(CP_ACP, 0, filter, -1, filterT, MAX_REGS(filterT));
+#else
 	ofn.lpstrFilter = filter;
+#endif
 	
 	ofn.nFilterIndex = 1;
-	strcpy(file, strrchr(fn, '\\')+1);
+	lstrcpy(file, _tcsrchr(fn, '\\')+1);
 	ofn.lpstrFile = file;
 
 	ofn.nMaxFile = MAX_PATH+1;
 	ofn.Flags = OFN_PATHMUSTEXIST;
-	ofn.lpstrDefExt = strrchr(fn, '.')+1;
+	ofn.lpstrDefExt = _tcsrchr(fn, '.')+1;
 	ofn.lpstrInitialDir = initdir[0]?initdir:NULL;
 	if(GetSaveFileName(&ofn))
 		CopyFile(fn, file, FALSE);
 	return 0;
 }
 
-char* MyDBGetString(HANDLE hContact, char* module, char* setting, char* out, size_t len)
+TCHAR* MyDBGetString(HANDLE hContact, char* module, char* setting, TCHAR* out, size_t len)
 {
 	DBCONTACTGETSETTING dbgcs;
 	DBVARIANT dbv;
@@ -322,9 +390,13 @@ char* MyDBGetString(HANDLE hContact, char* module, char* setting, char* out, siz
 	dbgcs.szSetting = setting;
 	dbgcs.pValue = &dbv;
 
+#ifdef UNICODE
+	dbv.type = DBVT_WCHAR;
+#else
 	dbv.type = DBVT_ASCIIZ;
-	dbv.pszVal = out;
-	dbv.cchVal = len-1;
+#endif
+	dbv.ptszVal = out;
+	dbv.cchVal = len;
 	ZeroMemory((void*)out, len);
 	CallService(MS_DB_CONTACT_GETSETTINGSTATIC, (WPARAM)hContact, (LPARAM)&dbgcs);
 	return out;
