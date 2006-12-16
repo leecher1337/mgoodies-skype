@@ -14,6 +14,12 @@ typedef struct MailBrowserWinParam
 	void *Param;
 } YAMN_MAILBROWSERPARAM,*PYAMN_MAILBROWSERPARAM;
 
+typedef struct MailShowMsgWinParam
+{
+	HACCOUNT account;
+	HYAMNMAIL mail;
+} YAMN_MAILSHOWPARAM, *PYAMN_MAILSHOWPARAM;
+
 typedef struct NoNewMailParam
 {
 #define YAMN_NONEWMAILVERSION	1

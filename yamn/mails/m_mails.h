@@ -120,6 +120,8 @@ typedef struct CMimeMsgQueue
 #define YAMN_MSG_AUTODELETE	0x00002000	//this mail is about to delete from server (plugin marks it for deleting)
 #define YAMN_MSG_DELETEOK	0x00001000	//this mail is confirmed to delete (this flag must be set to delete this mail)
 
+#define YAMN_MSG_BODYREQESTED	0x00000800	//user requested (part of) the body. In POP3 it should be (TOP <nr> <lines>)
+#define YAMN_MSG_BODYRECEIVED	0x00000200	//(part of) the body.received;
 #define YAMN_MSG_STAYUNSEEN	0x00000400	//this mail stays unseen while user does not really see it
 
 #define YAMN_MSG_DELETE		(YAMN_MSG_USERDELETE | YAMN_MSG_AUTODELETE)
@@ -139,11 +141,12 @@ typedef struct CMimeMsgQueue
 //Plugins can read mail data, but it can be NULL!!! So plugin should use Load and Save services to load or save data and Unload to release data from memory
 	PMAILDATA MailData;
 //Here YAMN stores its own informations about this mail. Not usefull for plugins...
-	void *YAMNData;
+//	void *YAMNData;
+	HWND MsgWindow;
 //plugins can store here its own data
 	void *PluginData;
 
-	CMimeMsgQueue(): ID(NULL), Number(0), Flags(0), MailData(NULL), YAMNData(NULL), PluginData(NULL), Next(NULL){}
+	CMimeMsgQueue(): ID(NULL), Number(0), Flags(0), MailData(NULL), MsgWindow(NULL), PluginData(NULL), Next(NULL){}
 	~CMimeMsgQueue(){}
 
 	struct CMimeMsgQueue *Next;

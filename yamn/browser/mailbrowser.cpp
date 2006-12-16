@@ -1298,16 +1298,17 @@ int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSor
 void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode);
 BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
-	HYAMNMAIL ActualMail = (HYAMNMAIL)lParam;
 	switch(msg)
 	{
 		case WM_INITDIALOG:
 		{
 //			HIMAGELIST hIcons;
+			PYAMN_MAILSHOWPARAM MailParam = (PYAMN_MAILSHOWPARAM)lParam;
 			WCHAR *iHeaderW=NULL;
 			WCHAR *iValueW=NULL;
 			int StrLen;
 			HWND hListView = GetDlgItem(hDlg,IDC_LISTHEADERS);
+			SetWindowLong(hDlg,DWL_USER,(LONG)MailParam);
 			SendMessageW(hDlg,WM_SETICON,(WPARAM)ICON_BIG,(LPARAM)hYamnIcons[2]);
 			SendMessageW(hDlg,WM_SETICON,(WPARAM)ICON_SMALL,(LPARAM)hYamnIcons[2]);
 
@@ -1333,17 +1334,31 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 
 			//WindowList_Add(YAMNVar.MessageWnds,hDlg,NULL);
 			//WindowList_Add(YAMNVar.NewMailAccountWnd,hDlg,ActualAccount);
+			SendMessage(hDlg,WM_YAMN_CHANGECONTENT,0,(LPARAM)MailParam);
+			MoveWindow(hDlg,HeadPosX,HeadPosY,HeadSizeX,HeadSizeY,0);
+			ShowWindow(hDlg,SW_SHOWNORMAL);
+			break;
+		}
+		case WM_YAMN_CHANGECONTENT:
+			{
+			PYAMN_MAILSHOWPARAM MailParam  = (PYAMN_MAILSHOWPARAM)
+				(lParam?lParam:GetWindowLong(hDlg,DWL_USER));
+			HWND hListView = GetDlgItem(hDlg,IDC_LISTHEADERS);
+			//do not redraw
+			SendMessage(hListView, WM_SETREDRAW, 0, 0);
+			ListView_DeleteAllItems(hListView);
 			struct CMimeItem *Header;
 			LVITEM item;
 			item.mask=LVIF_TEXT | LVIF_PARAM;
 			WCHAR *From=0,*Subj=0;
-			for(Header=ActualMail->MailData->TranslatedHeader;Header!=NULL;Header=Header->Next)
+			//bool hasBody = 0;
+			for(Header=MailParam->mail->MailData->TranslatedHeader;Header!=NULL;Header=Header->Next)
 			{
 				WCHAR *str1 = 0;
 				WCHAR *str2 = 0;
 
-				ConvertCodedStringToUnicode(Header->name,&str1,ActualMail->MailData->CP,1); 
-				ConvertCodedStringToUnicode(Header->value,&str2,ActualMail->MailData->CP,1);
+				ConvertCodedStringToUnicode(Header->name,&str1,MailParam->mail->MailData->CP,1); 
+				ConvertCodedStringToUnicode(Header->value,&str2,MailParam->mail->MailData->CP,1);
 				if (!str2) { str2 = (WCHAR *)malloc(2); str2[0] = 0; }// the header value may be NULL
 				if (!From) if (!strcmp(Header->name,"From")) {
 					From =new WCHAR[wcslen(str2)+1];
@@ -1353,6 +1368,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 					Subj =new WCHAR[wcslen(str2)+1];
 					wcscpy(Subj,str2);
 				}
+				//if (!hasBody) if (!strcmp(Header->name,"Body")) hasBody = true;
 				int count = 0; WCHAR **split=0;
 				if (str2){
 					int ofs = 0;
@@ -1398,6 +1414,10 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				if (str1) free(str1);
 				if (str2) free(str2);
 			}
+			if (!(MailParam->mail->Flags & YAMN_MSG_BODYRECEIVED)) {
+				MailParam->mail->Flags |= YAMN_MSG_BODYREQESTED;
+				CallService(MS_YAMN_ACCOUNTCHECK,(WPARAM)MailParam->account,0);
+			}
 			WCHAR *title=0;
 			title = new WCHAR[(From?wcslen(From):0)+(Subj?wcslen(Subj):0)+4];
 			if (From&&Subj) wsprintfW(title,L"%s (%s)",Subj,From);
@@ -1408,10 +1428,9 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			if (From) delete[] From;
 			SendMessageW(hDlg,WM_SETTEXT,(WPARAM)0,(LPARAM)title);
 			delete[] title;
-			MoveWindow(hDlg,HeadPosX,HeadPosY,HeadSizeX,HeadSizeY,0);
-			ShowWindow(hDlg,SW_SHOWNORMAL);
-			break;
-		}
+			// turn on redrawing
+			SendMessage(hListView, WM_SETREDRAW, 1, 0);
+			} break;
 		case WM_DESTROY:
 		{
 			RECT coord;
@@ -1426,6 +1445,9 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEX,HeadSizeX);
 				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEY,HeadSizeY);
 			}
+			PYAMN_MAILSHOWPARAM MailParam  = (PYAMN_MAILSHOWPARAM)(GetWindowLong(hDlg,DWL_USER));
+			MailParam->mail->MsgWindow = NULL;
+			delete MailParam;
 		}
 		break;
 		case WM_SYSCOMMAND:
@@ -2064,9 +2086,14 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 								ActualMail=(HYAMNMAIL)item.lParam;
 								if(NULL!=ActualMail)
 								{
-									//MessageBox(NULL,ActualMail->MailData->Body,Translate("Mail source"),0);
-									CreateDialogParamW(YAMNVar.hInst,MAKEINTRESOURCEW(IDD_DLGSHOWMESSAGE),NULL,(DLGPROC)DlgProcYAMNShowMessage,(LPARAM)ActualMail);
-									//MoveWindow(hShowMessage,PosX,PosY,SizeX,SizeY,TRUE);
+									if (ActualMail->MsgWindow) {
+										if (!BringWindowToTop(ActualMail->MsgWindow)) DestroyWindow(ActualMail->MsgWindow);
+									} else {
+										PYAMN_MAILSHOWPARAM MailParam = new YAMN_MAILSHOWPARAM;
+										MailParam->account = GetWindowAccount(hDlg);
+										MailParam->mail = ActualMail;
+										ActualMail->MsgWindow = CreateDialogParamW(YAMNVar.hInst,MAKEINTRESOURCEW(IDD_DLGSHOWMESSAGE),NULL,(DLGPROC)DlgProcYAMNShowMessage,(LPARAM)MailParam);
+									}
 								}
 
 							}

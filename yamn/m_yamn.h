@@ -86,6 +86,12 @@ struct CExportedServices
 //LPARAM- not used
 #define MS_YAMN_FORCECHECK		"YAMN/Service/ForceCheck"
 
+//AccountCheck Service
+//Check mail on individual account
+//WPARAM- HACCOUNT
+//LPARAM- not used
+#define MS_YAMN_ACCOUNTCHECK	"YAMN/Service/AccountCheck"
+
 //Contact List Context Menu Click
 //wParam=(WPARAM)hContact
 //lParam=0

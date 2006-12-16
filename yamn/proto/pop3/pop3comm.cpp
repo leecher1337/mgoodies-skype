@@ -866,6 +866,64 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 		DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write enter\n");
 		#endif
 		ActualAccount->LastChecked=now;
+		for(MsgQueuePtr=(HYAMNMAIL)ActualAccount->Mails;MsgQueuePtr!=NULL;MsgQueuePtr=MsgQueuePtr->Next){
+			if (MsgQueuePtr->Flags&YAMN_MSG_BODYREQESTED){
+				HYAMNMAIL NewMsgsPtr=NULL;
+				for(NewMsgsPtr=(HYAMNMAIL)NewMails;NewMsgsPtr!=NULL;NewMsgsPtr=NewMsgsPtr->Next){
+					if (!strcmp(MsgQueuePtr->ID,NewMsgsPtr->ID)){
+						char accstatus[512];
+						sprintf(accstatus,Translate("Reading body %s"),NewMsgsPtr->ID);
+						SetAccountStatus(ActualAccount,accstatus);
+						DataRX=MyClient->Top(MsgQueuePtr->Number,100);
+						#ifdef DEBUG_DECODE
+						DebugLog(DecodeFile,"<Reading body>\n");
+						DebugLog(DecodeFile,"<Header>%s</Header>\n",DataRX);
+						#endif
+						if(DataRX!=NULL)
+						{
+							Temp=DataRX;
+							while((Temp<DataRX+MyClient->NetClient->Rcv) && (WS(Temp) || ENDLINE(Temp))) Temp++;
+						
+							if(OKLINE(DataRX))
+								for(Temp=DataRX;(Temp<DataRX+MyClient->NetClient->Rcv) && (!ENDLINE(Temp));Temp++);
+							while((Temp<DataRX+MyClient->NetClient->Rcv) && ENDLINE(Temp)) Temp++;
+						}
+						else
+							continue;
+						//delete all the headers of the old mail MsgQueuePtr->MailData->TranslatedHeader
+						struct CMimeItem *TH = MsgQueuePtr->MailData->TranslatedHeader;
+						if (TH) for(;MsgQueuePtr->MailData->TranslatedHeader!=NULL;)
+						{
+							TH=TH->Next;
+							if(MsgQueuePtr->MailData->TranslatedHeader->name!=NULL)
+								delete[] MsgQueuePtr->MailData->TranslatedHeader->name;
+							if(MsgQueuePtr->MailData->TranslatedHeader->value!=NULL)
+								delete[] MsgQueuePtr->MailData->TranslatedHeader->value;
+							delete MsgQueuePtr->MailData->TranslatedHeader;
+							MsgQueuePtr->MailData->TranslatedHeader=TH;
+						}
+
+						TranslateHeader(Temp,MyClient->NetClient->Rcv-(Temp-DataRX),&MsgQueuePtr->MailData->TranslatedHeader);
+						
+
+						#ifdef DEBUG_DECODE
+						DebugLog(DecodeFile,"</Reading body>\n");
+						#endif
+						MsgQueuePtr->Flags&=~YAMN_MSG_BODYREQESTED;
+						MsgQueuePtr->Flags|=YAMN_MSG_BODYRECEIVED;
+
+						if(DataRX!=NULL)
+							free(DataRX);
+						DataRX=NULL;
+						if (MsgQueuePtr->MsgWindow){
+							SendMessage(MsgQueuePtr->MsgWindow,WM_YAMN_CHANGECONTENT,0,0);
+						}
+						break;
+					}
+				}
+			}
+		}
+
 		SynchroMessages(ActualAccount,(HYAMNMAIL *)&ActualAccount->Mails,NULL,(HYAMNMAIL *)&NewMails,NULL);		//we get only new mails on server!
 //		NewMails=NULL;
 

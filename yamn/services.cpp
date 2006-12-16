@@ -43,8 +43,7 @@ extern HYAMNPROTOPLUGIN POP3Plugin;
 static int Service_GetCaps(WPARAM wParam, LPARAM lParam)
 {
 	if(wParam==PFLAGNUM_2 && DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0))
-		return PF2_ONLINE | PF2_INVISIBLE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_LIGHTDND
-						| PF2_HEAVYDND | PF2_FREECHAT | PF2_OUTTOLUNCH | PF2_ONTHEPHONE;
+		return PF2_ONLINE | PF2_SHORTAWAY;
 	if(wParam==PFLAGNUM_3)
 		return 0;
 	if(wParam==PFLAGNUM_4)
@@ -175,6 +174,58 @@ static int ContactApplication(WPARAM wParam, LPARAM lParam)
 			}
 			DBFreeVariant(&dbv);
 		}
+	}
+	return 0;
+}
+
+static int AccountMailCheck(WPARAM wParam, LPARAM lParam){
+	//This service will check/sincronize the account pointed by wParam
+	HACCOUNT ActualAccount = (HACCOUNT)wParam;
+	HANDLE ThreadRunningEV;
+	DWORD tid;
+	// copy/paste make mistakes
+	if(ActualAccount != NULL)
+	{
+		//we use event to signal, that running thread has all needed stack parameters copied
+		if(NULL==(ThreadRunningEV=CreateEvent(NULL,FALSE,FALSE,NULL)))
+			return 0;
+		//if we want to close miranda, we get event and do not run pop3 checking anymore
+		if(WAIT_OBJECT_0==WaitForSingleObject(ExitEV,0))
+			return 0;
+		EnterCriticalSection(PluginRegCS);
+		#ifdef DEBUG_SYNCHRO
+		DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read wait\n");
+		#endif
+		if(WAIT_OBJECT_0!=WaitToReadFcn(ActualAccount->AccountAccessSO))
+		{
+			#ifdef DEBUG_SYNCHRO
+			DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read wait failed\n");
+			#endif
+		}
+		else
+		{
+			#ifdef DEBUG_SYNCHRO
+			DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read enter\n");
+			#endif
+			if((ActualAccount->Flags & YAMN_ACC_ENA) && (ActualAccount->StatusFlags & YAMN_ACC_FORCE))			//account cannot be forced to check
+			{
+				if(ActualAccount->Plugin->Fcn->ForceCheckFcnPtr==NULL)
+				{
+					ReadDoneFcn(ActualAccount->AccountAccessSO);
+				}
+				struct CheckParam ParamToPlugin={YAMN_CHECKVERSION,ThreadRunningEV,ActualAccount,YAMN_FORCECHECK,(void *)0,NULL};
+
+				if(NULL==CreateThread(NULL,0,(YAMN_STANDARDFCN)ActualAccount->Plugin->Fcn->ForceCheckFcnPtr,&ParamToPlugin,0,&tid))
+				{
+					ReadDoneFcn(ActualAccount->AccountAccessSO);
+				}
+				else
+					WaitForSingleObject(ThreadRunningEV,INFINITE);
+			}
+			ReadDoneFcn(ActualAccount->AccountAccessSO);
+		}
+		LeaveCriticalSection(PluginRegCS);
+		CloseHandle(ThreadRunningEV);
 	}
 	return 0;
 }
@@ -437,6 +488,9 @@ void CreateServiceFunctions(void)
 
 	//Function contact list double click
 	CreateServiceFunction(MS_YAMN_CLISTDBLCLICK,ClistContactDoubleclicked);
+
+	//Function to check individual account
+	CreateServiceFunction(MS_YAMN_ACCOUNTCHECK,AccountMailCheck);
 
 	//Function contact list context menu click
 	CreateServiceFunction(MS_YAMN_CLISTCONTEXT,ContactMailCheck);

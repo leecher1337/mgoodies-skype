@@ -305,14 +305,14 @@ char* CPop3Client::List()
 
 //Performs "TOP" pop query and returns server response
 //sets AckFlag
-char* CPop3Client::Top(int nr)
+char* CPop3Client::Top(int nr, int lines)
 {
 	if(NetClient->Stopped)			//check if we can work with this POP3 client session
 		throw POP3Error=(DWORD)EPOP3_STOPPED;
 
 	char query[128];
 
-	sprintf(query,"TOP %d 10\r\n",nr);
+	sprintf(query,"TOP %d %d\r\n",nr,lines);
 	NetClient->Send(query);
 	return RecvRest(NetClient->Recv(),POP3_SEARCHDOT);
 }
