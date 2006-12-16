@@ -32,7 +32,7 @@ public:
 	char* Quit();
 	char* Stat();
 	char* List();
-	char* Top(int nr);
+	char* Top(int nr, int lines=0);
 	char* Uidl(int nr=0);
 	char* Dele(int nr);
 	char* Retr(int nr);
