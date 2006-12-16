@@ -26,49 +26,119 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 // Dialog
 //
 
-IDD_OPTIONS DIALOG DISCARDABLE  0, 0, 312, 246
-STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
-EXSTYLE WS_EX_CONTROLPARENT
+IDD_OPTIONS_OLD DIALOG DISCARDABLE  0, 0, 312, 246
+STYLE WS_CHILD | WS_VISIBLE
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "Logging options",IDC_STATIC,19,40,179,25
-    CONTROL         "Log avatar changes to disk",IDC_LOGTODISK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,23,52,126,10
-    GROUPBOX        "Popup options",IDC_STATIC,19,72,180,82
-    CONTROL         "Show popup when user changes their avatar",
-                    IDC_AVATARPOPUPS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    29,86,157,10
-    CONTROL         "",IDC_POPUPFG,"ColourPicker",WS_TABSTOP,42,116,20,14
-    LTEXT           "Popup text colour",IDC_PUFGTEXT,66,120,56,8
-    CONTROL         "",IDC_POPUPBG,"ColourPicker",WS_TABSTOP,42,136,20,14
-    LTEXT           "Popup background colour",IDC_PUBGTEXT,65,139,83,8
-    CONTROL         "Use default colours for popups",IDC_DEFPOPUPS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,29,102,112,10
     CONTROL         "Show 'Avatar History' on contacts' menus (takes effect after restart)",
                     IDC_SHOWMENU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,20,
-                    227,10
+                    263,10
+    GROUPBOX        "Logging options",IDC_STATIC,19,41,238,42
+    CONTROL         "Log avatar changes to disk",IDC_LOGTODISK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,27,53,220,10
+    CONTROL         "Log avatar changes to history",IDC_LOGTOHISTORY,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,27,66,220,10
+    GROUPBOX        "Popup options",IDC_STATIC,19,97,238,85
+    CONTROL         "Show popup when user changes their avatar",
+                    IDC_AVATARPOPUPS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    27,111,220,10
+    CONTROL         "Use default colours for popups",IDC_DEFPOPUPS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,27,127,220,10
+    CONTROL         "",IDC_POPUPFG,"ColourPicker",WS_TABSTOP,42,141,20,14
+    LTEXT           "Popup text colour",IDC_PUFGTEXT,66,145,56,8
+    CONTROL         "",IDC_POPUPBG,"ColourPicker",WS_TABSTOP,42,161,20,14
+    LTEXT           "Popup background colour",IDC_PUBGTEXT,65,164,83,8
 END
 
-IDD_AVATARDLG DIALOG DISCARDABLE  0, 0, 216, 130
+IDD_AVATARDLG DIALOG DISCARDABLE  0, 0, 216, 142
 STYLE DS_SETFOREGROUND | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
     WS_SYSMENU
 CAPTION "Avatar History"
 FONT 8, "MS Sans Serif"
 BEGIN
-    LISTBOX         IDC_AVATARLIST,6,5,120,74,LBS_SORT | 
+    LISTBOX         IDC_AVATARLIST,7,7,120,74,LBS_SORT | 
                     LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     CONTROL         "",IDC_AVATAR,"Static",SS_BITMAP | SS_CENTERIMAGE | 
-                    SS_REALSIZEIMAGE | SS_SUNKEN,131,5,78,74
+                    SS_REALSIZEIMAGE | SS_SUNKEN,131,7,78,74
+    PUSHBUTTON      "Open Folder",IDC_OPENFOLDER,7,81,49,14
     PUSHBUTTON      "Save",IDC_SAVE,62,81,31,14
     PUSHBUTTON      "Delete",IDC_DELETE,95,81,31,14
-    PUSHBUTTON      "Open Folder",IDC_OPENFOLDER,6,81,49,14
-    PUSHBUTTON      "<",IDC_BACK,137,81,31,10,BS_CENTER | BS_VCENTER
-    PUSHBUTTON      ">",IDC_NEXT,171,81,31,10,BS_CENTER | BS_VCENTER
-    CONTROL         "Log this user's avatars",IDC_LOGUSER,"Button",
-                    BS_AUTO3STATE | WS_TABSTOP,6,101,86,10
+    PUSHBUTTON      "<",IDC_BACK,138,82,31,10,BS_CENTER | BS_VCENTER
+    PUSHBUTTON      ">",IDC_NEXT,172,82,31,10,BS_CENTER | BS_VCENTER
+    CONTROL         "Log this user's avatars to disk",IDC_LOGUSER,"Button",
+                    BS_AUTO3STATE | WS_TABSTOP,7,100,147,10
+    CONTROL         "Log this user's avatars to history",IDC_HISTORYUSER,
+                    "Button",BS_AUTO3STATE | WS_TABSTOP,7,112,147,10
     CONTROL         "Show popups for this user",IDC_POPUPUSER,"Button",
-                    BS_AUTO3STATE | WS_TABSTOP,6,113,97,10
-    DEFPUSHBUTTON   "OK",IDOK,159,109,50,14
+                    BS_AUTO3STATE | WS_TABSTOP,7,124,147,10
+    DEFPUSHBUTTON   "OK",IDOK,159,121,50,14
+END
+
+IDD_OPTIONS DIALOG DISCARDABLE  0, 0, 314, 240
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "Tahoma"
+BEGIN
+    GROUPBOX        " Logging options ",IDC_STATIC,3,19,308,44
+    CONTROL         "Log changes to disk",IDC_LOG_DISK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,32,291,11
+    CONTROL         "Log changes to history",IDC_LOG_HISTORY,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,46,291,11
+    GROUPBOX        " Tracking ",IDC_TRACK_G,3,67,308,73
+    CONTROL         "Track when contacts change their avatars",
+                    IDC_TRACK_CHANGE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    12,79,291,11
+    RTEXT           "Template:",IDC_CHANGED_L,11,92,55,10
+    EDITTEXT        IDC_CHANGED,72,91,233,13,ES_AUTOHSCROLL
+    CONTROL         "Track when contacts remove their avatars",
+                    IDC_TRACK_REMOVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    12,108,291,11
+    RTEXT           "Template:",IDC_REMOVED_L,11,122,55,10
+    EDITTEXT        IDC_REMOVED,72,121,233,13,ES_AUTOHSCROLL
+    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,144,308,93
+    LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,
+                    13,156,291,11
+    CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,12,168,158,62
+    CONTROL         "Show 'Avatar History' on contacts' menus (takes effect after restart)",
+                    IDC_SHOWMENU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,3,5,
+                    308,10
+END
+
+IDD_POPUPS DIALOG DISCARDABLE  0, 0, 314, 240
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "Tahoma"
+BEGIN
+    CONTROL         "Enable popups",IDC_POPUPS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,3,3,308,12
+    GROUPBOX        " Colours ",IDC_COLOURS_G,3,25,158,75
+    CONTROL         "",IDC_BGCOLOR,"ColourPicker",WS_TABSTOP,11,37,35,14
+    LTEXT           "Background colour",IDC_BGCOLOR_L,55,41,66,8
+    CONTROL         "",IDC_TEXTCOLOR,"ColourPicker",WS_TABSTOP,11,55,35,14
+    LTEXT           "Text colour",IDC_TEXTCOLOR_L,55,59,66,8
+    CONTROL         "Use Windows colours",IDC_WINCOLORS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,74,108,10
+    CONTROL         "Use default colours",IDC_DEFAULTCOLORS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,84,107,10
+    GROUPBOX        " Delay ",IDC_DELAY_G,166,25,145,75
+    CONTROL         "From popup plugin",IDC_DELAYFROMPU,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,175,38,122,10
+    CONTROL         "Custom",IDC_DELAYCUSTOM,"Button",BS_AUTORADIOBUTTON,175,
+                    52,54,10
+    CONTROL         "Permanent",IDC_DELAYPERMANENT,"Button",
+                    BS_AUTORADIOBUTTON,175,66,122,10
+    EDITTEXT        IDC_DELAY,233,50,31,14,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Spin1",IDC_DELAY_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
+                    UDS_HOTTRACK,268,51,11,11
+    GROUPBOX        " Actions ",IDC_ACTIONS_G,3,103,308,47
+    RTEXT           "On right click:",IDC_RIGHT_ACTION_L,13,118,62,9
+    COMBOBOX        IDC_RIGHT_ACTION,83,116,156,60,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    RTEXT           "On left click:",IDC_LEFT_ACTION_L,13,132,62,9
+    COMBOBOX        IDC_LEFT_ACTION,83,132,156,60,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Preview",IDC_PREV,131,161,50,14
 END
 
 
@@ -80,7 +150,7 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO DISCARDABLE 
 BEGIN
-    IDD_OPTIONS, DIALOG
+    IDD_OPTIONS_OLD, DIALOG
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 305
@@ -93,7 +163,23 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 209
         TOPMARGIN, 7
-        BOTTOMMARGIN, 123
+        BOTTOMMARGIN, 135
+    END
+
+    IDD_OPTIONS, DIALOG
+    BEGIN
+        LEFTMARGIN, 3
+        RIGHTMARGIN, 311
+        TOPMARGIN, 3
+        BOTTOMMARGIN, 237
+    END
+
+    IDD_POPUPS, DIALOG
+    BEGIN
+        LEFTMARGIN, 3
+        RIGHTMARGIN, 311
+        TOPMARGIN, 3
+        BOTTOMMARGIN, 237
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -133,7 +219,7 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_AVATARHIST          ICON    DISCARDABLE     "history.ico"
-IDI_AVATAROVERLAY	ICON	DISCARDABLE	"AvatarOverlay.ico"
+IDI_AVATAROVERLAY       ICON    DISCARDABLE     "AvatarOverlay.ico"
 #endif    // English (U.K.) resources
 /////////////////////////////////////////////////////////////////////////////
 

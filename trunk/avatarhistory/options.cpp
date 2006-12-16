@@ -18,102 +18,245 @@ Avatar History Plugin
 
 */
 
-#include <windows.h>
-#include <stdio.h>
+#include "AvatarHistory.h"
 #include <commctrl.h>
 #include <prsht.h>
-#include <newpluginapi.h>
-#include <m_database.h>
-#include <m_options.h> // Miranda header
-#include <m_utils.h>
-#include <m_langpack.h>
-#include "resource.h"
-#include "AvatarHistory.h"
+#include "../utils/mir_options.h"
 
-extern HINSTANCE hInst;
 
-static BOOL CALLBACK OptionsDialogProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam);
+
+// Prototypes /////////////////////////////////////////////////////////////////////////////////////
+
+Options opts;
+
+
+static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+
+
+static OptPageControl optionsControls[] = { 
+	{ &opts.show_menu,						CONTROL_CHECKBOX,		IDC_SHOWMENU,		"ShowContactMenu", AVH_DEF_SHOWMENU },
+	{ NULL,									CONTROL_CHECKBOX,		IDC_LOG_DISK,		"LogToDisk", AVH_DEF_LOGTODISK },
+	{ NULL,									CONTROL_CHECKBOX,		IDC_LOG_HISTORY,	"LogToHistory", AVH_DEF_LOGTOHISTORY },
+	{ &opts.track_changes,					CONTROL_CHECKBOX,		IDC_TRACK_CHANGE,	"TrackChanges", TRUE },
+	{ &opts.template_changed,				CONTROL_TEXT,			IDC_CHANGED,		"TemplateChanged", (DWORD) _T(DEFAULT_TEMPLATE_CHANGED) },
+	{ &opts.track_removes,					CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,	"TrackRemoves", TRUE },
+	{ &opts.template_removed,				CONTROL_TEXT,			IDC_REMOVED,		"TemplateRemoved", (DWORD) _T(DEFAULT_TEMPLATE_REMOVED) },
+	{ NULL,									CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,		"%sEnabled", TRUE }
+};
+
+static UINT optionsExpertControls[] = { 
+	IDC_TRACK_G, IDC_TRACK_CHANGE, IDC_CHANGED_L, IDC_CHANGED, IDC_TRACK_REMOVE, IDC_REMOVED_L, IDC_REMOVED, 
+	IDC_PROTOCOLS_G, IDC_PROTOCOLS_L, IDC_PROTOCOLS 
+};
+
+
+static OptPageControl popupsControls[] = { 
+	{ NULL,									CONTROL_CHECKBOX,	IDC_POPUPS,			"AvatarPopups", AVH_DEF_AVPOPUPS },
+	{ &opts.popup_bkg_color,				CONTROL_COLOR,		IDC_BGCOLOR,		"PopupsBgColor", AVH_DEF_POPUPBG },
+	{ &opts.popup_text_color,				CONTROL_COLOR,		IDC_TEXTCOLOR,		"PopupsTextColor", AVH_DEF_POPUPFG },
+	{ &opts.popup_use_win_colors,			CONTROL_CHECKBOX,	IDC_WINCOLORS,		"PopupsWinColors", FALSE },
+	{ &opts.popup_use_default_colors,		CONTROL_CHECKBOX,	IDC_DEFAULTCOLORS,	"PopupsDefaultColors", AVH_DEF_DEFPOPUPS },
+	{ &opts.popup_delay_type,				CONTROL_RADIO,		IDC_DELAYFROMPU,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_DEFAULT },
+	{ NULL,									CONTROL_RADIO,		IDC_DELAYCUSTOM,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_CUSTOM },
+	{ NULL,									CONTROL_RADIO,		IDC_DELAYPERMANENT,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_PERMANENT },
+	{ &opts.popup_timeout,					CONTROL_SPIN,		IDC_DELAY,			"PopupsTimeout", 10, IDC_DELAY_SPIN, (WORD) 1, (WORD) 255 },
+	{ &opts.popup_right_click_action,		CONTROL_COMBO,		IDC_RIGHT_ACTION,	"PopupsRightClick", POPUP_ACTION_CLOSEPOPUP },
+	{ &opts.popup_left_click_action,		CONTROL_COMBO,		IDC_LEFT_ACTION,	"PopupsLeftClick", POPUP_ACTION_OPENAVATARHISTORY }
+};
+
+static UINT popupsExpertControls[] = { 
+	IDC_COLOURS_G, IDC_BGCOLOR, IDC_BGCOLOR_L, IDC_TEXTCOLOR, IDC_TEXTCOLOR_L, IDC_WINCOLORS, IDC_DEFAULTCOLORS, 
+	IDC_DELAY_G, IDC_DELAYFROMPU, IDC_DELAYCUSTOM, IDC_DELAYPERMANENT, IDC_DELAY, IDC_DELAY_SPIN,
+	IDC_ACTIONS_G, IDC_RIGHT_ACTION_L, IDC_RIGHT_ACTION, IDC_LEFT_ACTION_L, IDC_LEFT_ACTION,
+	IDC_PREV
+};
+
+
+// Functions //////////////////////////////////////////////////////////////////////////////////////
+
 
 int OptInit(WPARAM wParam,LPARAM lParam)
 {
 	OPTIONSDIALOGPAGE odp;
 
 	ZeroMemory(&odp,sizeof(odp));
-	odp.cbSize=sizeof(odp);
-	odp.position=0;
+    odp.cbSize=sizeof(odp);
+    odp.position=0;
 	odp.hInstance=hInst;
-	odp.pszTemplate=MAKEINTRESOURCE(IDD_OPTIONS);
-	odp.pszGroup= Translate("Events"); // group to put your item under
-	odp.pszTitle=Translate("Avatar History"); // name of the item
-	odp.pfnDlgProc=OptionsDialogProc; // dlg proc of the dialog
-	odp.expertOnlyControls=NULL;
-	CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
-	
+	odp.ptszGroup = TranslateT("History"); // group to put your item under
+	odp.ptszTitle = TranslateT("Avatar"); // name of the item
+	odp.pfnDlgProc = OptionsDlgProc;
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
+    odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
+	odp.expertOnlyControls = optionsExpertControls;
+	odp.nExpertOnlyControls = MAX_REGS(optionsExpertControls);
+    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+
+	ZeroMemory(&odp,sizeof(odp));
+    odp.cbSize=sizeof(odp);
+    odp.position=0;
+	odp.hInstance=hInst;
+	odp.ptszGroup = TranslateT("Popups");
+	odp.ptszTitle = TranslateT("Avatar Change");
+	odp.pfnDlgProc = PopupsDlgProc;
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_POPUPS);
+    odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
+	odp.expertOnlyControls = popupsExpertControls;
+	odp.nExpertOnlyControls = MAX_REGS(popupsExpertControls);
+    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+
 	return 0;
 }
 
-static BOOL CALLBACK OptionsDialogProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam)
+
+void LoadOptions()
 {
-	 switch(uMsg)
-	 {
-	 case WM_INITDIALOG:
-		 {
-			 SendMessage(GetDlgItem(hwnd, IDC_POPUPFG), CPM_SETCOLOUR, 0, db_dword_get(NULL, "AvatarHistory", "PopupFG", AVH_DEF_POPUPFG ));
-			 SendMessage(GetDlgItem(hwnd, IDC_POPUPBG), CPM_SETCOLOUR, 0, db_dword_get(NULL, "AvatarHistory", "PopupBG", AVH_DEF_POPUPBG ));
-			 CheckDlgButton(hwnd, IDC_AVATARPOPUPS, (UINT)db_byte_get(NULL, "AvatarHistory", "AvatarPopups", AVH_DEF_AVPOPUPS));
-			 CheckDlgButton(hwnd, IDC_LOGTODISK, (UINT)db_byte_get(NULL, "AvatarHistory", "LogToDisk", AVH_DEF_LOGTODISK));
-			 CheckDlgButton(hwnd, IDC_DEFPOPUPS, (UINT)db_byte_get(NULL, "AvatarHistory", "UsePopupDefault", AVH_DEF_DEFPOPUPS));
-			 CheckDlgButton(hwnd, IDC_SHOWMENU, (UINT)db_byte_get(NULL, "AvatarHistory", "ShowContactMenu", AVH_DEF_SHOWMENU));
-			 EnableWindow(GetDlgItem(hwnd, IDC_POPUPFG), !IsDlgButtonChecked(hwnd, IDC_DEFPOPUPS));
-			 EnableWindow(GetDlgItem(hwnd, IDC_POPUPBG), !IsDlgButtonChecked(hwnd, IDC_DEFPOPUPS));
-			 EnableWindow(GetDlgItem(hwnd, IDC_PUFGTEXT), !IsDlgButtonChecked(hwnd, IDC_DEFPOPUPS));
-			 EnableWindow(GetDlgItem(hwnd, IDC_PUBGTEXT), !IsDlgButtonChecked(hwnd, IDC_DEFPOPUPS));
-			 TranslateDialogDefault(hwnd);
-		 }
-		 break;
-	 case WM_COMMAND:
-		 SendMessage(GetParent(hwnd), PSM_CHANGED, 0, 0);
-		 if(LOWORD(wParam) == IDC_DEFPOPUPS && HIWORD(wParam) == BN_CLICKED)
-		 {
-			 int chkstate = IsDlgButtonChecked(hwnd, IDC_DEFPOPUPS);
-			 EnableWindow(GetDlgItem(hwnd, IDC_POPUPFG),  !chkstate);
-			 EnableWindow(GetDlgItem(hwnd, IDC_POPUPBG),  !chkstate);
-			 EnableWindow(GetDlgItem(hwnd, IDC_PUFGTEXT), !chkstate);
-			 EnableWindow(GetDlgItem(hwnd, IDC_PUBGTEXT), !chkstate);
-			 return TRUE;
-		 }
-		 break;
-	 case WM_NOTIFY:
-		 {
-				//Here we have pressed either the OK or the APPLY button.
-				switch(((LPNMHDR)lParam)->idFrom)
+	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
+	LoadOpts(popupsControls, MAX_REGS(popupsControls), MODULE_NAME);
+}
+
+
+static void OptionsEnableDisableCtrls(HWND hwndDlg)
+{
+	EnableWindow(GetDlgItem(hwndDlg, IDC_CHANGED_L), IsDlgButtonChecked(hwndDlg, IDC_TRACK_CHANGE));
+	EnableWindow(GetDlgItem(hwndDlg, IDC_CHANGED), IsDlgButtonChecked(hwndDlg, IDC_TRACK_CHANGE));
+
+	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED_L), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
+	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
+}
+
+
+static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	BOOL ret = SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+
+	switch (msg) 
+	{
+		case WM_INITDIALOG:
+		{
+			OptionsEnableDisableCtrls(hwndDlg);
+			break;
+		}
+		case WM_COMMAND:
+		{
+			switch (LOWORD(wParam)) 
+			{
+				case IDC_TRACK_REMOVE:
+				case IDC_TRACK_CHANGE:
 				{
-				case 0:
-					switch (((LPNMHDR)lParam)->code)
-					{
-					case PSN_APPLY:
-						{
-							// Here be dragons (no, just kididng: here you put your ok/apply code)
-							DWORD colour = SendMessage(GetDlgItem(hwnd, IDC_POPUPFG), CPM_GETCOLOUR, 0, 0);
-							if(colour != AVH_DEF_POPUPFG)
-								db_dword_set(NULL, "AvatarHistory", "PopupFG", colour);
-							
-							colour = SendMessage(GetDlgItem(hwnd, IDC_POPUPBG), CPM_GETCOLOUR, 0, 0);
-							if(colour != AVH_DEF_POPUPBG)
-								db_dword_set(NULL, "AvatarHistory", "PopupBG", colour);
-							db_byte_set(NULL, "AvatarHistory", "AvatarPopups", (char)IsDlgButtonChecked(hwnd, IDC_AVATARPOPUPS));
-							db_byte_set(NULL, "AvatarHistory", "LogToDisk", (char)IsDlgButtonChecked(hwnd, IDC_LOGTODISK));
-							db_byte_set(NULL, "AvatarHistory", "UsePopupDefault", (char)IsDlgButtonChecked(hwnd, IDC_DEFPOPUPS));
-							db_byte_set(NULL, "AvatarHistory", "ShowContactMenu", (char)IsDlgButtonChecked(hwnd, IDC_SHOWMENU));
-							return TRUE;
-						}
-					} // switch code
+					if (HIWORD(wParam) == BN_CLICKED)
+						OptionsEnableDisableCtrls(hwndDlg);
+
 					break;
-				} //switch idFrom
-		 }
-		 break;
-	 default:
-		 return FALSE;
-	 }
-	 return FALSE;
+				}
+			}
+			break;
+		}
+	}
+
+	return ret;
+}
+
+
+static void PopupsEnableDisableCtrls(HWND hwndDlg)
+{
+	BOOL enabled = IsDlgButtonChecked(hwndDlg, IDC_POPUPS);
+
+	EnableWindow(GetDlgItem(hwndDlg, IDC_COLOURS_G), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_BGCOLOR_L), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_TEXTCOLOR_L), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_DELAY_G), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_DELAYFROMPU), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_DELAYCUSTOM), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_DELAYPERMANENT), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_ACTIONS_G), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_RIGHT_ACTION_L), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_RIGHT_ACTION), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_LEFT_ACTION_L), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_LEFT_ACTION), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_PREV), enabled);
+	
+	EnableWindow(GetDlgItem(hwndDlg, IDC_BGCOLOR), enabled &&
+			!IsDlgButtonChecked(hwndDlg, IDC_WINCOLORS) && 
+			!IsDlgButtonChecked(hwndDlg, IDC_DEFAULTCOLORS));
+	EnableWindow(GetDlgItem(hwndDlg, IDC_TEXTCOLOR), enabled &&
+			!IsDlgButtonChecked(hwndDlg, IDC_WINCOLORS) && 
+			!IsDlgButtonChecked(hwndDlg, IDC_DEFAULTCOLORS));
+	EnableWindow(GetDlgItem(hwndDlg, IDC_DEFAULTCOLORS), enabled &&
+			!IsDlgButtonChecked(hwndDlg, IDC_WINCOLORS));
+	EnableWindow(GetDlgItem(hwndDlg, IDC_WINCOLORS), enabled &&
+			!IsDlgButtonChecked(hwndDlg, IDC_DEFAULTCOLORS));
+
+	EnableWindow(GetDlgItem(hwndDlg, IDC_DELAY), enabled &&
+			IsDlgButtonChecked(hwndDlg, IDC_DELAYCUSTOM));
+}
+
+
+static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	switch (msg) 
+	{
+		case WM_INITDIALOG:
+		{
+			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Do nothing"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Close popup"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Show avatar history"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Show contact history"));
+
+			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Do nothing"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Close popup"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Show avatar history"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Show contact history"));
+
+			// Needs to be called here in this case
+			BOOL ret = SaveOptsDlgProc(popupsControls, MAX_REGS(popupsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+
+			PopupsEnableDisableCtrls(hwndDlg);
+
+			return ret;
+		}
+		case WM_COMMAND:
+		{
+			switch (LOWORD(wParam)) 
+			{
+				case IDC_POPUPS:
+				case IDC_WINCOLORS:
+				case IDC_DEFAULTCOLORS:
+				case IDC_DELAYFROMPU:
+				case IDC_DELAYPERMANENT:
+				case IDC_DELAYCUSTOM:
+				{
+					if (HIWORD(wParam) == BN_CLICKED)
+						PopupsEnableDisableCtrls(hwndDlg);
+
+					break;
+				}
+				case IDC_PREV: 
+				{
+					Options op = opts;
+
+					if (IsDlgButtonChecked(hwndDlg, IDC_DELAYFROMPU))
+						op.popup_delay_type = POPUP_DELAY_DEFAULT;
+					else if (IsDlgButtonChecked(hwndDlg, IDC_DELAYCUSTOM))
+						op.popup_delay_type = POPUP_DELAY_CUSTOM;
+					else if (IsDlgButtonChecked(hwndDlg, IDC_DELAYPERMANENT))
+						op.popup_delay_type = POPUP_DELAY_PERMANENT;
+
+					op.popup_timeout = GetDlgItemInt(hwndDlg,IDC_DELAY, NULL, FALSE);
+					op.popup_bkg_color = SendDlgItemMessage(hwndDlg,IDC_BGCOLOR,CPM_GETCOLOUR,0,0);
+					op.popup_text_color = SendDlgItemMessage(hwndDlg,IDC_TEXTCOLOR,CPM_GETCOLOUR,0,0);
+					op.popup_use_win_colors = IsDlgButtonChecked(hwndDlg, IDC_WINCOLORS) != 0;
+					op.popup_use_default_colors = IsDlgButtonChecked(hwndDlg, IDC_DEFAULTCOLORS) != 0;
+
+					ShowTestPopup(TranslateT("Test Contact"), TranslateT("Test description"), &op);
+
+					break;
+				}
+			}
+			break;
+		}
+	}
+
+	return SaveOptsDlgProc(popupsControls, MAX_REGS(popupsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
