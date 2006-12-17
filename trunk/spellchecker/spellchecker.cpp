@@ -30,7 +30,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,0),
+	PLUGIN_MAKE_VERSION(0,0,2,1),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -625,28 +625,53 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct,
 						// We found a word
 
 						// Is this an URL?
-						if (found_real_char && text[pos] == _T(':') && text[pos+1] == _T('/') && text[pos+2] == _T('/')) {
-							// May be
-							TCHAR *url_protos[] = { _T("http"), _T("https"), _T("feed"), _T("ftp") };
-							for (int u = 0; u < MAX_REGS(url_protos); u++) 
-							{
-								size_t len_proto = lstrlen(url_protos[u]);
-								if (len_proto == pos - last_pos && _tcsncmp(&text[last_pos], url_protos[u], len_proto) == 0) 
-								{
-									// It is! So lets found where it ends
-									pos += 3;
-									for(;  (text[pos] >= _T('a') && text[pos] <= _T('z'))
-										|| (text[pos] >= _T('A') && text[pos] <= _T('Z'))
-										|| (text[pos] >= _T('0') && text[pos] <= _T('9'))
-										|| text[pos] == _T('.') || text[pos] == _T('/')
-										|| text[pos] == _T('\\') || text[pos] == _T('?')
-										|| text[pos] == _T('=') || text[pos] == _T('&')
-										|| text[pos] == _T('%') || text[pos] == _T('-')
-										|| text[pos] == _T('_'); pos++) 
-									{}
+						if (found_real_char 
+							&& text[pos] == _T(':') && text[pos+1] == _T('/') && text[pos+2] == _T('/')
+							&& pos - last_pos >= 3 && pos - last_pos <=4) 
+						{
+							// May be, lets check
+							int p = last_pos;
+							for(;  (text[p] >= _T('a') && text[p] <= _T('z'))
+								|| (text[p] >= _T('A') && text[p] <= _T('Z'))
+								|| (text[p] >= _T('0') && text[p] <= _T('9'))
+								|| text[p] == _T('.') || text[p] == _T('/')
+								|| text[p] == _T('\\') || text[p] == _T('?')
+								|| text[p] == _T('=') || text[p] == _T('&')
+								|| text[p] == _T('%') || text[p] == _T('-')
+								|| text[p] == _T('_')|| text[p] == _T(':'); p++) 
+							{}
 
-									found_real_char = FALSE;
-								}
+							if (p > pos)
+							{
+								// Found ya
+								pos = p;
+								found_real_char = FALSE;
+							}
+						}
+
+						// Or at least a site?
+						if (found_real_char && text[pos] == _T('.')) {
+							// Let's see if fits in the description
+							int p = last_pos;
+							int num_ids = 0;
+							for(;  (text[p] >= _T('a') && text[p] <= _T('z'))
+								|| (text[p] >= _T('A') && text[p] <= _T('Z'))
+								|| (text[p] >= _T('0') && text[p] <= _T('9'))
+								|| text[p] == _T('.') || text[p] == _T('/')
+								|| text[p] == _T('\\') || text[p] == _T('?')
+								|| text[p] == _T('=') || text[p] == _T('&')
+								|| text[p] == _T('%') || text[p] == _T('-')
+								|| text[p] == _T('_'); p++) 
+							{
+								if (text[p] == _T('.') || text[p] == _T('/'))
+									num_ids++;
+							}
+							
+							if (p > pos && num_ids >= 2)
+							{
+								// Found ya
+								pos = p;
+								found_real_char = FALSE;
 							}
 						}
 

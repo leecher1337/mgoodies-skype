@@ -2,6 +2,9 @@ Spell Checker
 
 Changelog:
 
+. 0.0.2.1
+  + Better handling of URLs
+
 . 0.0.2.0
   + Now ignores URLs and email addresses
   + Added option to ignore words in UPPER CASE
