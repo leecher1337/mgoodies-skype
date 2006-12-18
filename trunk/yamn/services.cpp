@@ -178,6 +178,7 @@ static int ContactApplication(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+DWORD WINAPI SWMRGWaitToRead(PSWMRG pSWMRG, DWORD dwTimeout);
 static int AccountMailCheck(WPARAM wParam, LPARAM lParam){
 	//This service will check/sincronize the account pointed by wParam
 	HACCOUNT ActualAccount = (HACCOUNT)wParam;
@@ -194,9 +195,9 @@ static int AccountMailCheck(WPARAM wParam, LPARAM lParam){
 			return 0;
 		EnterCriticalSection(PluginRegCS);
 		#ifdef DEBUG_SYNCHRO
-		DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read wait\n");
+		DebugLog(SynchroFile,"AccountCheck:ActualAccountSO-read wait\n");
 		#endif
-		if(WAIT_OBJECT_0!=WaitToReadFcn(ActualAccount->AccountAccessSO))
+		if(WAIT_OBJECT_0!=SWMRGWaitToRead(ActualAccount->AccountAccessSO,0))
 		{
 			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read wait failed\n");
@@ -207,20 +208,22 @@ static int AccountMailCheck(WPARAM wParam, LPARAM lParam){
 			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"ForceCheck:ActualAccountSO-read enter\n");
 			#endif
-			if((ActualAccount->Flags & YAMN_ACC_ENA) && (ActualAccount->StatusFlags & YAMN_ACC_FORCE))			//account cannot be forced to check
+			if((ActualAccount->Flags & YAMN_ACC_ENA) && ActualAccount->Plugin->Fcn->SynchroFcnPtr)
 			{
-				if(ActualAccount->Plugin->Fcn->ForceCheckFcnPtr==NULL)
-				{
-					ReadDoneFcn(ActualAccount->AccountAccessSO);
-				}
 				struct CheckParam ParamToPlugin={YAMN_CHECKVERSION,ThreadRunningEV,ActualAccount,YAMN_FORCECHECK,(void *)0,NULL};
+				HANDLE NewThread;
 
-				if(NULL==CreateThread(NULL,0,(YAMN_STANDARDFCN)ActualAccount->Plugin->Fcn->ForceCheckFcnPtr,&ParamToPlugin,0,&tid))
+				ActualAccount->TimeLeft=ActualAccount->Interval;
+				if(NewThread=CreateThread(NULL,0,(YAMN_STANDARDFCN)ActualAccount->Plugin->Fcn->SynchroFcnPtr,&ParamToPlugin,0,&tid))
 				{
-					ReadDoneFcn(ActualAccount->AccountAccessSO);
+					WaitForSingleObject(ThreadRunningEV,INFINITE);
+					CloseHandle(NewThread);
 				}
 				else
-					WaitForSingleObject(ThreadRunningEV,INFINITE);
+				{
+					//ReadDoneFcn(ActualAccount->AccountAccessSO);
+				}
+
 			}
 			ReadDoneFcn(ActualAccount->AccountAccessSO);
 		}
