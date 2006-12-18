@@ -34,7 +34,7 @@ FONT 8, "Tahoma"
 BEGIN
     GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,250,86
     LTEXT           "Default language:",IDC_STATIC,11,20,82,8
-    COMBOBOX        IDC_DEF_LANG,95,18,145,14,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_DEF_LANG,95,18,145,60,CBS_DROPDOWNLIST | 
                     CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
                     WS_TABSTOP
     CONTROL         "Auto-correct words",IDC_AUTOCORRECT,"Button",
@@ -43,7 +43,7 @@ BEGIN
                     WS_TABSTOP | 0x1,10,71,230,12
     GROUPBOX        " Advanced ",IDC_ADVANCED,1,95,250,85
     LTEXT           "Underline type:",IDC_UNDERLINE_TYPE_L,11,111,91,8
-    COMBOBOX        IDC_UNDERLINE_TYPE,110,109,130,14,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_UNDERLINE_TYPE,110,109,130,60,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Show corrections in submenu",IDC_CASCADE_CORRECTIONS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,127,230,10
