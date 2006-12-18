@@ -2,6 +2,9 @@ ListeningTo
 
 Changelog:
 
+. 0.1.1.1
+  * Fix for IcoLib support
+
 . 0.1.1.0
   + Added handling of XStatus
   + Added IcoLib support

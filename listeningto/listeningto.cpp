@@ -37,7 +37,7 @@ PLUGININFO pluginInfo = {
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,9),
+	PLUGIN_MAKE_VERSION(0,1,1,1),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -180,27 +180,35 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
 
-	if (ServiceExists(MS_SKIN2_ADDICON)) 
+	if (ServiceExists(MS_CLIST_EXTRA_ADD_ICON))
 	{
-		SKINICONDESC sid = {0};
-		sid.cbSize = sizeof(SKINICONDESC);
-		sid.flags = SIDF_TCHAR;
-		sid.ptszSection = TranslateT("Contact List");
-		sid.ptszDescription = TranslateT("Listening to");
-		sid.pszName = "LISTENING_TO_ICON";
-		sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		if (ServiceExists(MS_SKIN2_ADDICON)) 
+		{
+			hListeningToIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON");
 
-		IconsChanged(0, 0);
+			if (hListeningToIcon == NULL) 
+			{
+				SKINICONDESC sid = {0};
+				sid.cbSize = sizeof(SKINICONDESC);
+				sid.flags = SIDF_TCHAR;
+				sid.ptszSection = TranslateT("Contact List");
+				sid.ptszDescription = TranslateT("Listening to");
+				sid.pszName = "LISTENING_TO_ICON";
+				sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
+				CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
-		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
+				hListeningToIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON");
+			}
+
+			hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
+		}
+		else
+		{		
+			hListeningToIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
+		}
+
+		hClistExtraListRebuildHook = HookEvent(ME_CLIST_EXTRA_LIST_REBUILD, ClistExtraListRebuild);
 	}
-	else
-	{		
-		hListeningToIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
-	}
-
-	hClistExtraListRebuildHook = HookEvent(ME_CLIST_EXTRA_LIST_REBUILD, ClistExtraListRebuild);
 
     // updater plugin support
     if(ServiceExists(MS_UPDATE_REGISTER))
