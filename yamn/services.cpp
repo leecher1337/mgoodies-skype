@@ -392,9 +392,6 @@ void HookEvents(void)
 
 	HookEvent(ME_CLIST_DOUBLECLICKED, Service_ContactDoubleclicked);
 
-		//Check if icolib is there
-	if(ServiceExists(MS_SKIN2_ADDICON))
-        HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
 }
 
 void CreateServiceFunctions(void)

@@ -201,6 +201,44 @@ void SetDefaultProtocolIcons()
 		DBWriteContactSettingString(NULL, "Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
 }
 
+void LoadIcons()
+{
+	if(ServiceExists(MS_SKIN2_ADDICON))
+	{
+		//MessageBox(NULL,"Icolib present","test",0);
+		SKINICONDESC sid = {0};
+		HICON temp;
+//		char szFilename[MAX_PATH];
+//		strncpy(szFilename, "plugins\\YAMN.dll", MAX_PATH);
+
+		sid.cbSize = SKINICONDESC_SIZE_V2;
+		sid.pszSection = "YAMN";
+		sid.pszDefaultFile = NULL;
+		for (int i=0; i<ICONSNUMBER; i++){
+			sid.iDefaultIndex = -iconIndexes[i];
+			sid.pszName = iconNames[i];
+			sid.pszDescription = Translate(iconDescs[i]);
+			sid.hDefaultIcon = hYamnIcons[i];
+			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+			if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconNames[i]))hYamnIcons[i]=temp; 
+		}
+		DBVARIANT dbv;
+		if(!DBGetContactSetting(NULL,"SkinIcons","YAMN_Neutral",&dbv)) 
+		{
+			DBWriteContactSettingString(NULL, "Icons", "YAMN40072", (char *)dbv.pszVal);			
+			DBFreeVariant(&dbv);
+		}
+		else
+			SetDefaultProtocolIcons();
+	}
+	else
+	{
+		//Icon to show in contact list
+		SetDefaultProtocolIcons();
+	}
+
+}
+
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
 	char szProfileDir[MAX_PATH+1];
@@ -246,6 +284,8 @@ extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVers
 {
 	return &pluginInfo;
 }
+
+int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam); // implemented in services.cpp
 
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
@@ -359,6 +399,12 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 //	hUninstallPluginsHook=CreateHookableEvent(ME_YAMN_UNINSTALLPLUGINS);
 
 	HookEvents();
+	//Check if icolib is there
+	if(ServiceExists(MS_SKIN2_ADDICON)){
+        HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
+	}
+	//  Loading Icon and checking for icolib 
+	LoadIcons();
 
 	LoadPlugins();
 
