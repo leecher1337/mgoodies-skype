@@ -114,9 +114,6 @@ void ExtractList(char *stream,int len,HYAMNMAIL queue);
 
 void ExtractMail(char *stream,int len,HYAMNMAIL queue);
 
-//  Loading Icon and checking for icolib 
-void LoadIcons();
-
 struct YAMNExportedFcns *pYAMNFcn;
 struct MailExportedFcns *pYAMNMailFcn;
 
@@ -216,53 +213,10 @@ void WINAPI StopPOP3Account(HACCOUNT Which)
 		((HPOP3ACCOUNT)Which)->Client.NetClient->Stopped=TRUE;
 }
 
-
-extern int iconIndexes[];
-void LoadIcons()
-{
-	if(ServiceExists(MS_SKIN2_ADDICON))
-	{
-		//MessageBox(NULL,"Icolib present","test",0);
-		SKINICONDESC sid = {0};
-		HICON temp;
-//		char szFilename[MAX_PATH];
-//		strncpy(szFilename, "plugins\\YAMN.dll", MAX_PATH);
-
-		sid.cbSize = SKINICONDESC_SIZE_V2;
-		sid.pszSection = "YAMN";
-		sid.pszDefaultFile = NULL;
-		for (int i=0; i<ICONSNUMBER; i++){
-			sid.iDefaultIndex = -iconIndexes[i];
-			sid.pszName = iconNames[i];
-			sid.pszDescription = Translate(iconDescs[i]);
-			sid.hDefaultIcon = hYamnIcons[i];
-			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-			if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconNames[i]))hYamnIcons[i]=temp; 
-		}
-		DBVARIANT dbv;
-		if(!DBGetContactSetting(NULL,"SkinIcons","YAMN_Neutral",&dbv)) 
-		{
-			DBWriteContactSettingString(NULL, "Icons", "YAMN40072", (char *)dbv.pszVal);			
-			DBFreeVariant(&dbv);
-		}
-		else
-			SetDefaultProtocolIcons();
-	}
-	else
-	{
-		//Icon to show in contact list
-		SetDefaultProtocolIcons();
-	}
-
-}
-
 //This function is like main function for POP3 internal protocol
 int RegisterPOP3Plugin(WPARAM,LPARAM)
 {
 	CLISTMENUITEM mi;
-
-	//  Loading Icon and checking for icolib 
-	LoadIcons();
 
 	//Insert "Check mail (YAMN)" item to Miranda's menu
 	ZeroMemory(&mi,sizeof(mi));

@@ -1,0 +1,624 @@
+# Microsoft Developer Studio Generated Dependency File, included by YAMN.mak
+
+.\browser\badconnect.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\win2k.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\include\m_popup.h"\
+	".\m_account.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_mails.h"\
+	".\main.h"\
+	
+
+.\browser\mailbrowser.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_clist.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\statusmodes.h"\
+	"..\..\include\win2k.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\include\m_kbdnotify.h"\
+	".\include\m_popup.h"\
+	".\m_account.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_mails.h"\
+	".\main.h"\
+	
+
+.\mails\decode.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_clist.h"\
+	"..\..\include\m_clui.h"\
+	"..\..\include\m_contacts.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_options.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_protocols.h"\
+	"..\..\include\m_protomod.h"\
+	"..\..\include\m_protosvc.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_system.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\statusmodes.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\include\m_icolib.h"\
+	".\include\m_kbdnotify.h"\
+	".\include\m_popup.h"\
+	".\include\m_toptoolbar.h"\
+	".\include\m_uninstaller.h"\
+	".\include\m_updater.h"\
+	".\m_account.h"\
+	".\m_filterplugin.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_decode.h"\
+	".\mails\m_mails.h"\
+	".\yamn.h"\
+	
+
+.\mails\mails.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_clist.h"\
+	"..\..\include\m_clui.h"\
+	"..\..\include\m_contacts.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_options.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_protocols.h"\
+	"..\..\include\m_protomod.h"\
+	"..\..\include\m_protosvc.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_system.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\statusmodes.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\include\m_icolib.h"\
+	".\include\m_kbdnotify.h"\
+	".\include\m_popup.h"\
+	".\include\m_toptoolbar.h"\
+	".\include\m_uninstaller.h"\
+	".\include\m_updater.h"\
+	".\m_account.h"\
+	".\m_filterplugin.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_decode.h"\
+	".\mails\m_mails.h"\
+	".\yamn.h"\
+	
+
+.\mails\mime.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_clist.h"\
+	"..\..\include\m_clui.h"\
+	"..\..\include\m_contacts.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_options.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_protocols.h"\
+	"..\..\include\m_protomod.h"\
+	"..\..\include\m_protosvc.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_system.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\statusmodes.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\include\m_icolib.h"\
+	".\include\m_kbdnotify.h"\
+	".\include\m_popup.h"\
+	".\include\m_toptoolbar.h"\
+	".\include\m_uninstaller.h"\
+	".\include\m_updater.h"\
+	".\m_account.h"\
+	".\m_filterplugin.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_decode.h"\
+	".\mails\m_mails.h"\
+	".\yamn.h"\
+	
+
+.\proto\md5.c : \
+	".\filter\simple\aggressiveoptimize.h"\
+	".\proto\md5.h"\
+	
+
+.\proto\netlib.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_netlib.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\proto\netclient.h"\
+	".\proto\netlib.h"\
+	".\proto\ssl.h"\
+	
+
+.\proto\pop3\pop3.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\proto\md5.h"\
+	".\proto\netclient.h"\
+	".\proto\netlib.h"\
+	".\proto\pop3\pop3.h"\
+	".\proto\ssl.h"\
+	
+
+.\proto\pop3\pop3comm.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_clist.h"\
+	"..\..\include\m_clui.h"\
+	"..\..\include\m_contacts.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_options.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_protocols.h"\
+	"..\..\include\m_protomod.h"\
+	"..\..\include\m_protosvc.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_system.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\statusmodes.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\include\m_icolib.h"\
+	".\include\m_kbdnotify.h"\
+	".\include\m_popup.h"\
+	".\include\m_toptoolbar.h"\
+	".\include\m_uninstaller.h"\
+	".\include\m_updater.h"\
+	".\m_account.h"\
+	".\m_filterplugin.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_decode.h"\
+	".\mails\m_mails.h"\
+	".\main.h"\
+	".\proto\netclient.h"\
+	".\proto\netlib.h"\
+	".\proto\pop3\pop3.h"\
+	".\proto\pop3\pop3comm.h"\
+	".\proto\ssl.h"\
+	".\yamn.h"\
+	
+
+.\proto\pop3\pop3opt.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\uxtheme.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_clist.h"\
+	"..\..\include\m_clui.h"\
+	"..\..\include\m_contacts.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_options.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_protocols.h"\
+	"..\..\include\m_protomod.h"\
+	"..\..\include\m_protosvc.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_system.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\statusmodes.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\include\m_icolib.h"\
+	".\include\m_kbdnotify.h"\
+	".\include\m_popup.h"\
+	".\include\m_toptoolbar.h"\
+	".\include\m_uninstaller.h"\
+	".\include\m_updater.h"\
+	".\m_account.h"\
+	".\m_filterplugin.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_decode.h"\
+	".\mails\m_mails.h"\
+	".\main.h"\
+	".\proto\netclient.h"\
+	".\proto\netlib.h"\
+	".\proto\pop3\pop3.h"\
+	".\proto\pop3\pop3comm.h"\
+	".\proto\pop3\pop3opt.h"\
+	".\proto\ssl.h"\
+	".\yamn.h"\
+	
+
+.\proto\ssl.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_netlib.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\proto\netclient.h"\
+	".\proto\ssl.h"\
+	
+
+.\account.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_clist.h"\
+	"..\..\include\m_clui.h"\
+	"..\..\include\m_contacts.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_options.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_protocols.h"\
+	"..\..\include\m_protomod.h"\
+	"..\..\include\m_protosvc.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_system.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\statusmodes.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\include\m_icolib.h"\
+	".\include\m_kbdnotify.h"\
+	".\include\m_popup.h"\
+	".\include\m_toptoolbar.h"\
+	".\include\m_uninstaller.h"\
+	".\include\m_updater.h"\
+	".\m_account.h"\
+	".\m_filterplugin.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_decode.h"\
+	".\mails\m_mails.h"\
+	".\yamn.h"\
+	
+
+.\debug.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_clist.h"\
+	"..\..\include\m_clui.h"\
+	"..\..\include\m_contacts.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_options.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_protocols.h"\
+	"..\..\include\m_protomod.h"\
+	"..\..\include\m_protosvc.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_system.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\statusmodes.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\include\m_icolib.h"\
+	".\include\m_kbdnotify.h"\
+	".\include\m_popup.h"\
+	".\include\m_toptoolbar.h"\
+	".\include\m_uninstaller.h"\
+	".\include\m_updater.h"\
+	".\m_account.h"\
+	".\m_filterplugin.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_decode.h"\
+	".\mails\m_mails.h"\
+	".\yamn.h"\
+	
+
+.\filterplugin.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\newpluginapi.h"\
+	".\debug.h"\
+	".\m_account.h"\
+	".\m_filterplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_mails.h"\
+	
+
+.\main.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_clist.h"\
+	"..\..\include\m_clui.h"\
+	"..\..\include\m_contacts.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_options.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_protocols.h"\
+	"..\..\include\m_protomod.h"\
+	"..\..\include\m_protosvc.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_system.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\statusmodes.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\include\m_icolib.h"\
+	".\include\m_kbdnotify.h"\
+	".\include\m_popup.h"\
+	".\include\m_toptoolbar.h"\
+	".\include\m_uninstaller.h"\
+	".\include\m_updater.h"\
+	".\m_account.h"\
+	".\m_filterplugin.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_decode.h"\
+	".\mails\m_mails.h"\
+	".\main.h"\
+	".\yamn.h"\
+	
+
+.\protoplugin.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\newpluginapi.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\m_account.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_mails.h"\
+	
+
+.\services.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_clist.h"\
+	"..\..\include\m_clui.h"\
+	"..\..\include\m_contacts.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_options.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_protocols.h"\
+	"..\..\include\m_protomod.h"\
+	"..\..\include\m_protosvc.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_system.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\statusmodes.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\include\m_icolib.h"\
+	".\include\m_kbdnotify.h"\
+	".\include\m_popup.h"\
+	".\include\m_toptoolbar.h"\
+	".\include\m_uninstaller.h"\
+	".\include\m_updater.h"\
+	".\m_account.h"\
+	".\m_filterplugin.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_decode.h"\
+	".\mails\m_mails.h"\
+	".\main.h"\
+	".\yamn.h"\
+	
+
+.\synchro.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	
+
+.\yamn.cpp : \
+	"..\..\..\..\..\program files\microsoft sdk\include\basetsd.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\guiddef.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\propidl.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\reason.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\stralign.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\tvout.h"\
+	"..\..\..\..\..\program files\microsoft sdk\include\winefs.h"\
+	"..\..\include\m_clist.h"\
+	"..\..\include\m_clui.h"\
+	"..\..\include\m_contacts.h"\
+	"..\..\include\m_database.h"\
+	"..\..\include\m_langpack.h"\
+	"..\..\include\m_options.h"\
+	"..\..\include\m_plugins.h"\
+	"..\..\include\m_protocols.h"\
+	"..\..\include\m_protomod.h"\
+	"..\..\include\m_protosvc.h"\
+	"..\..\include\m_skin.h"\
+	"..\..\include\m_system.h"\
+	"..\..\include\m_utils.h"\
+	"..\..\include\newpluginapi.h"\
+	"..\..\include\statusmodes.h"\
+	".\browser\m_browser.h"\
+	".\debug.h"\
+	".\filter\simple\aggressiveoptimize.h"\
+	".\include\m_icolib.h"\
+	".\include\m_kbdnotify.h"\
+	".\include\m_popup.h"\
+	".\include\m_toptoolbar.h"\
+	".\include\m_uninstaller.h"\
+	".\include\m_updater.h"\
+	".\m_account.h"\
+	".\m_filterplugin.h"\
+	".\m_messages.h"\
+	".\m_protoplugin.h"\
+	".\m_synchro.h"\
+	".\m_yamn.h"\
+	".\mails\m_decode.h"\
+	".\mails\m_mails.h"\
+	".\main.h"\
+	".\yamn.h"\
+	
+
+.\resources\YAMN.rc : \
+	".\resources\iconeutral.ico"\
+	".\resources\yamn.bmp"\
+	
