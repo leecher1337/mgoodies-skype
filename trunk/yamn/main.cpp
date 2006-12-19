@@ -266,10 +266,11 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		ImageList_AddMasked(CSImages, hScrBM, RGB( 255, 0, 255 ));
 		DeleteObject(hScrBM);    
 	}
-	for (int i=0; i<ICONSNUMBER; i++){
+	for (int i=0; i<ICONSNUMBER-1; i++){
 		hYamnIcons[i] = ImageList_ExtractIcon(NULL, CSImages, i);
 	}
 	ImageList_Destroy(CSImages);
+	hYamnIcons[6] = hYamnIcons[4];
 	if(ServiceExists(MS_SKIN2_ADDICON))
 	{
 		//Icon to show in contact list
