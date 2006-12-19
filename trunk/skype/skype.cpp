@@ -887,6 +887,17 @@ void FetchMessageThread(fetchmsg_arg *args) {
 		return;
 	}
 	ERRCHK
+
+	wchar_t *unicode;
+	unicode = make_unicode_string( (const unsigned char *)ptr+strlen(str+4)+1);
+    if(unicode == NULL)
+    {
+		free(ptr);
+		free(who);
+		SetEvent(SkypeMsgFetched);
+		return;
+	}
+
 	if (utf8_decode(ptr+strlen(str+4)+1, &msg)==-1) {
 		free(ptr);
 		free(who);
@@ -1034,7 +1045,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 		ccs.wParam = 0;
 		ccs.lParam = (LPARAM)&pre;
 		pre.flags = direction;
-		
+	
 		if(isGroupChat && DBGetContactSettingByte(NULL, pszSkypeProtoName, "MarkGroupchatRead", 0))
 			pre.flags = PREF_CREATEREAD;
 
@@ -1368,7 +1379,7 @@ void LaunchSkypeAndSetStatusThread(void *newStatus) {
 LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam) 
 { 
     PCOPYDATASTRUCT CopyData; 
-	char *ptr, *szSkypeMsg=NULL, *nick, *buf;
+	char *ptr, *szSkypeMsg=NULL, *nick, *buf, *Mood;
 	static char *onlinestatus=NULL;
 	static BOOL RestoreUserStatus=FALSE;
 	int sstat, oldstatus, flag;
@@ -1440,7 +1451,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 				nick=strtok(buf, " ");
 				ptr=strtok(NULL, " ");
 				if (!strcmp(ptr, "ONLINESTATUS")) {
-					//if (SkypeStatus==ID_STATUS_OFFLINE) break;
+					if (SkypeStatus==ID_STATUS_OFFLINE) break;
 					if (!(hContact=find_contact(nick))) {
 
 						SkypeSend("GET USER %s BUDDYSTATUS", nick);
@@ -1461,7 +1472,24 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					if (!(hContact=find_contact(nick)))
 						SkypeSend("GET USER %s BUDDYSTATUS", nick);
 					else
-						DBWriteContactSettingString(hContact, "CList", "StatusMsg", (ptr+10));
+					{
+						TCHAR *unicode = NULL;
+						
+						if(utf8_decode((ptr+10), &Mood)==-1) break;
+
+						//DBWriteContactSettingString(hContact, "CList", "StatusMsg", Mood);
+						if(DBWriteContactSettingTString(hContact, "CList", "StatusMsg", Mood)) 
+						{
+							#if defined( _UNICODE )
+								char buff[TEXT_LEN];
+								WideCharToMultiByte(code_page, 0, Mood, -1, buff, TEXT_LEN, 0, 0);
+								buff[TEXT_LEN] = 0;
+								DBWriteContactSettingString(hContact, "CList", "StatusMsg", buff);
+							#endif
+						}
+												
+						
+					}
 					free(buf);
 					break;
 
@@ -1503,7 +1531,11 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 
 				if (!strcmp(ptr, "DISPLAYNAME")) {
 					// Skype Bug? -> If nickname isn't customised in the Skype-App, this won't return anything :-(
-					if (ptr[12]) DBWriteContactSettingString(find_contact(nick), pszSkypeProtoName, "Nick", ptr+12);
+					if (ptr[12]) 
+					{
+						if(utf8_decode((ptr+12), &nick)==-1) break;
+						DBWriteContactSettingString(find_contact(nick), pszSkypeProtoName, "Nick", nick);
+					}
 					free(buf);
 					break;
 				}

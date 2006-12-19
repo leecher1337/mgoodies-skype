@@ -13,6 +13,9 @@ CODE
 
 HISTORY
 -------
+0.0.0.35 - * Use unicode nick, status message, city and country in skype profile.
+           ! Fix for sending status change when offline
+           
 0.0.0.34 - + Try to identify if chat message comes from a group chat or not
            + Add a option to flag group chat message as read if not using chat.dll for group chat.
 		   ! Fix the check of message type (group chat or normal)

@@ -1,15 +1,40 @@
 #include "skypeprofile.h"
 #include "skypeapi.h"
+#include "utf8.h"
 
 void CSkypeProfile::Save(void)
 {
 	DBWriteContactSettingByte(NULL, this->SkypeProtoName, "Gender", this->Sex);
-	DBWriteContactSettingString(NULL, this->SkypeProtoName, "Nick", this->FullName);
 	DBWriteContactSettingString(NULL, this->SkypeProtoName, "HomePhone", this->HomePhone);
 	DBWriteContactSettingString(NULL, this->SkypeProtoName, "OfficePhone", this->OfficePhone);
-	DBWriteContactSettingString(NULL, this->SkypeProtoName, "City", this->City);
-	DBWriteContactSettingString(NULL, this->SkypeProtoName, "Province", this->Province);
 	DBWriteContactSettingString(NULL, this->SkypeProtoName, "HomePage", this->HomePage);
+
+	if(DBWriteContactSettingTString(NULL, this->SkypeProtoName, "Nick", this->FullName)) {
+		#if defined( _UNICODE )
+			char buff[TEXT_LEN];
+			WideCharToMultiByte(code_page, 0, this->FullName, -1, buff, TEXT_LEN, 0, 0);
+			buff[TEXT_LEN] = 0;
+			DBWriteContactSettingString(0, this->SkypeProtoName, "Nick", buff);
+		#endif
+	}
+	
+	if(DBWriteContactSettingTString(NULL, this->SkypeProtoName, "City", this->City)) {
+		#if defined( _UNICODE )
+			char buff[TEXT_LEN];
+			WideCharToMultiByte(code_page, 0, this->City, -1, buff, TEXT_LEN, 0, 0);
+			buff[TEXT_LEN] = 0;
+			DBWriteContactSettingString(0, this->SkypeProtoName, "City", buff);
+		#endif
+	}
+	
+	if(DBWriteContactSettingTString(NULL, this->SkypeProtoName, "Province", this->Province)) {
+		#if defined( _UNICODE )
+			char buff[TEXT_LEN];
+			WideCharToMultiByte(code_page, 0, this->Province, -1, buff, TEXT_LEN, 0, 0);
+			buff[TEXT_LEN] = 0;
+			DBWriteContactSettingString(0, this->SkypeProtoName, "Province", buff);
+		#endif
+	}
 }
 
 
@@ -23,9 +48,9 @@ void CSkypeProfile::Load(void)
 	memset(this->HomePhone,0,sizeof(this->HomePhone));
 
 	this->Sex = DBGetContactSettingByte(NULL, SkypeProtoName, "Gender", 0);
-	if(!DBGetContactSetting(NULL,this->SkypeProtoName,"Nick",&dbv)) 
+	if(!DBGetContactSettingTString(NULL,this->SkypeProtoName,"Nick",&dbv)) 
 	{
-		sprintf(this->FullName,"%s",dbv.pszVal);
+		_tcsncpy(this->FullName,dbv.ptszVal,TEXT_LEN);
 		DBFreeVariant(&dbv);
 	}
 	if(!DBGetContactSetting(NULL,this->SkypeProtoName,"HomePage",&dbv)) 
@@ -33,14 +58,14 @@ void CSkypeProfile::Load(void)
 		sprintf(this->HomePage,"%s",dbv.pszVal);
 		DBFreeVariant(&dbv);
 	}
-	if(!DBGetContactSetting(NULL,this->SkypeProtoName,"Province",&dbv)) 
+	if(!DBGetContactSettingTString(NULL,this->SkypeProtoName,"Province",&dbv)) 
 	{
-		sprintf(this->Province,"%s",dbv.pszVal);
+		_tcsncpy(this->Province,dbv.ptszVal,TEXT_LEN);
 		DBFreeVariant(&dbv);
 	}
-	if(!DBGetContactSetting(NULL,this->SkypeProtoName,"City",&dbv)) 
+	if(!DBGetContactSettingTString(NULL,this->SkypeProtoName,"City",&dbv)) 
 	{
-		sprintf(this->City,"%s",dbv.pszVal);
+		_tcsncpy(this->City,dbv.ptszVal,TEXT_LEN);
 		DBFreeVariant(&dbv);
 	}
 	if(!DBGetContactSetting(NULL,this->SkypeProtoName,"OfficePhone",&dbv)) 
@@ -67,10 +92,20 @@ void CSkypeProfile::LoadFromSkype(void)
 
 void CSkypeProfile::SaveToSkype(void)
 {
-	SkypeSetProfile("FULLNAME", this->FullName);
+	char *tmp;
+
 	SkypeSetProfile("PHONE_HOME", this->HomePhone);
+
 	SkypeSetProfile("PHONE_OFFICE", this->OfficePhone);
+
 	SkypeSetProfile("HOMEPAGE", this->HomePage);
-	SkypeSetProfile("CITY", this->City);
-	SkypeSetProfile("PROVINCE", this->Province);
+
+	if(utf8_encode((const char *)this->FullName, &tmp) != -1 )
+		SkypeSetProfile("FULLNAME", tmp);
+
+	if(utf8_encode((const char *)this->City, &tmp) != -1 )
+		SkypeSetProfile("CITY", tmp);
+
+	if(utf8_encode((const char *)this->Province, &tmp) != -1 )
+		SkypeSetProfile("PROVINCE", tmp);
 }

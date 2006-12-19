@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <windows.h>
 
-static unsigned char *make_utf8_string(const wchar_t *unicode)
+unsigned char *make_utf8_string(const wchar_t *unicode)
 {
     int size = 0, index = 0, out_index = 0;
     unsigned char *out;
@@ -79,7 +79,7 @@ static unsigned char *make_utf8_string(const wchar_t *unicode)
     return out;
 }
 
-static wchar_t *make_unicode_string(const unsigned char *utf8)
+wchar_t *make_unicode_string(const unsigned char *utf8)
 {
     int size = 0, index = 0, out_index = 0;
     wchar_t *out;

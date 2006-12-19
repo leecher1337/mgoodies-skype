@@ -27,6 +27,8 @@ void convert_set_charset(const char *charset);
 
 int utf8_encode(const char *from, char **to);
 int utf8_decode(const char *from, char **to);
+wchar_t *make_unicode_string(const unsigned char *utf8);
+unsigned char *make_utf8_string(const wchar_t *unicode);
 
 #ifdef   __cplusplus
 }
