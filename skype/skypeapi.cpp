@@ -4,6 +4,7 @@
 
 #include "skype.h"
 #include "skypeapi.h"
+#include "utf8.h"
 #include "debug.h"
 #include "contacts.h"
 #include "skypeproxy.h"
@@ -851,10 +852,21 @@ int SkypeAnswerCall(WPARAM wParam, LPARAM lParam) {
  */
 int SkypeSetNick(WPARAM wParam, LPARAM lParam) {
 	int retval;
+	char *Nick;
 	
-	DBWriteContactSettingString(NULL, pszSkypeProtoName, "Nick", (char*)lParam);
-	retval = SkypeSend("SET PROFILE FULLNAME %s", lParam);
+	if(DBWriteContactSettingTString(NULL, pszSkypeProtoName, "Nick", (const char *)lParam)) {
+		#if defined( _UNICODE )
+			char buff[TEXT_LEN];
+			WideCharToMultiByte(code_page, 0, (const char *)lParam, -1, buff, TEXT_LEN, 0, 0);
+			buff[TEXT_LEN] = 0;
+			DBWriteContactSettingString(0, pszSkypeProtoName, "Nick", buff);
+		#endif
+	}
+
+	if(utf8_encode((const char *)lParam, &Nick) == -1 ) return -1;
 	
+	retval = SkypeSend("SET PROFILE FULLNAME %s", Nick);
+
 	return retval;
 
 }
@@ -868,10 +880,22 @@ int SkypeSetNick(WPARAM wParam, LPARAM lParam) {
  */
 int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
 	int retval;
+	char *Mood;
 	
-	DBWriteContactSettingString(NULL, pszSkypeProtoName, "MoodText", (char*)lParam);
-	retval = SkypeSend("SET PROFILE MOOD_TEXT %s", lParam);
+	if(DBWriteContactSettingTString(NULL, pszSkypeProtoName, "MoodText", (const char *)lParam)) {
+		#if defined( _UNICODE )
+			char buff[TEXT_LEN];
+			WideCharToMultiByte(code_page, 0, (const char *)lParam, -1, buff, TEXT_LEN, 0, 0);
+			buff[TEXT_LEN] = 0;
+			DBWriteContactSettingString(0, pszSkypeProtoName, "MoodText", buff);
+		#endif
+	}
+
+
+	if(utf8_encode((const char *)lParam, &Mood) == -1 ) return -1;
 	
+	retval = SkypeSend("SET PROFILE MOOD_TEXT %s", Mood);
+
 	return retval;
 
 }

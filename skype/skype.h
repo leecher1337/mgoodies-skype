@@ -1,4 +1,11 @@
+#pragma once
+
 #define _CRT_SECURE_NO_DEPRECATE 1
+#define TEXT_LEN	1024
+#define CP_ACP		0 
+
+static int code_page = CP_ACP;
+
 
 // System includes
 #include <stdio.h>
@@ -7,6 +14,8 @@
 #include <process.h>
 #include <time.h>
 #include "resource.h"
+#include <stdlib.h>
+#include <stddef.h>
 
 // Miranda Includes
 #include "../../include/newpluginapi.h"

@@ -5,6 +5,7 @@
 #include <process.h>
 #include <time.h>
 #include "resource.h"
+#include "skype.h"
 
 // Miranda database access
 #include "../../include/newpluginapi.h"
@@ -14,12 +15,12 @@ class CSkypeProfile
 {
 public:
 	char SkypeProtoName[256];
-	char FullName[256];
+	TCHAR FullName[TEXT_LEN];
 	char HomePhone[256];
 	char OfficePhone[256];
 	char HomePage[256];
-	char City[256];
-	char Province[256];
+	TCHAR City[TEXT_LEN];
+	TCHAR Province[TEXT_LEN];
 	BYTE Sex;
 
 	void Load(void);
