@@ -32,6 +32,7 @@ extern HANDLE hMenu;
 }
 
 #include "resource.h"
+#include "m_avatarhistory.h"
 
 #include "../utils/mir_memory.h"
 
@@ -48,10 +49,8 @@ extern HANDLE hMenu;
 #define DEFAULT_TEMPLATE_REMOVED "removed his/her avatar"
 #define DEFAULT_TEMPLATE_CHANGED "changed his/her avatar"
 
-#define EVENTTYPE_AVATAR_CHANGE 9003
-
-TCHAR* GetContactFolder(HANDLE hContact, TCHAR* fn);
-TCHAR* MyDBGetString(HANDLE hContact, char* module, char* setting, TCHAR* out, size_t len);
+TCHAR * MyDBGetStringT(HANDLE hContact, char* module, char* setting, TCHAR* out, size_t len);
+char * MyDBGetString(HANDLE hContact, char* module, char* setting, char * out, size_t len);
 void LoadOptions();
 
  // from icolib.cpp
@@ -75,14 +74,11 @@ HICON getOverlayedIcon(HICON icon, HICON overlay, BOOL big); // from icolib.cpp
 
 
 struct Options {
-	BYTE show_menu;
-
 	// Templates
 	TCHAR template_changed[1024];
 	TCHAR template_removed[1024];
 
 	// Track
-	BYTE track_changes;
 	BYTE track_removes;
 
 	// Popup
@@ -113,3 +109,6 @@ extern Options opts;
 #define CHAR_TO_TCHAR(dest, orig)	lstrcpynA(dest, orig, MAX_REGS(dest))
 
 #endif
+
+
+int PathToAbsolute(char *pSrc, char *pOut);

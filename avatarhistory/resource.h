@@ -9,6 +9,7 @@
 #define IDI_AVATARHIST                  104
 #define IDI_NEWAVATAR                   105
 #define IDI_AVATAROVERLAY               106
+#define IDR_MENU1                       108
 #define IDD_OPTIONS                     119
 #define IDD_POPUPS                      120
 #define IDC_CUSTOM1                     1000
@@ -38,6 +39,7 @@
 #define IDC_HISTORYUSER                 1016
 #define IDC_PUBGTEXT                    1017
 #define IDC_SHOWMENU                    1019
+#define IDC_LOGGING_G                   1020
 #define IDC_RIGHT_ACTION                1022
 #define IDC_LEFT_ACTION                 1023
 #define IDC_PROTOCOLS                   1041
@@ -61,14 +63,16 @@
 #define IDC_ACTIONS_G                   1072
 #define IDC_RIGHT_ACTION_L              1073
 #define IDC_LEFT_ACTION_L               1074
+#define ID_AVATARLISTPOPUP_SAVEAS       40001
+#define ID_AVATARLISTPOPUP_DELETE       40002
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        107
-#define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1020
+#define _APS_NEXT_RESOURCE_VALUE        109
+#define _APS_NEXT_COMMAND_VALUE         40003
+#define _APS_NEXT_CONTROL_VALUE         1021
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif

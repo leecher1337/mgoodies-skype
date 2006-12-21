@@ -1,23 +1,7 @@
 #include "AvatarHistory.h"
 #include <commctrl.h> //for ImageList_*
 
-//#include "m_icolib.h" We don't need the full header. Will define the needed things here.
-#define SKINICONDESC_SIZE_V2  0x1C
-#define MS_SKIN2_GETICON "Skin2/Icons/GetIcon"
-#define MS_SKIN2_ADDICON "Skin2/Icons/AddIcon"
-#define ME_SKIN2_ICONSCHANGED "Skin2/IconsChanged"
-typedef struct {
-  int cbSize;
-  char *pszSection;         // section name used to group icons
-  char *pszDescription;     // description for options dialog
-  char *pszName;              // name to refer to icon when playing and in db
-  char *pszDefaultFile;       // default icon file to use
-  int  iDefaultIndex;         // index of icon in default file
-  HICON hDefaultIcon;         // handle to default icon
-  int cx,cy;                  // dimensions of icon
-  int flags; 
-} SKINICONDESC;
-//end of icolib defines
+#include <m_icolib.h>
 
 static char *iconNames[NUMICONS]={"History","Overlay"};
 static char *iconDescs[NUMICONS]={iconNames[0],"Avatar Overlay"};

@@ -276,7 +276,7 @@ static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	switch(message) {
 		case WM_COMMAND:
 		{
-			SendMessage(hPopupWindow, WMU_ACTION, (WPARAM)PUGetPluginData(hWnd), opts.popup_left_click_action);
+			PostMessage(hPopupWindow, WMU_ACTION, (WPARAM)PUGetPluginData(hWnd), opts.popup_left_click_action);
 
 			if (opts.popup_left_click_action != POPUP_ACTION_DONOTHING)
 				PUDeletePopUp(hWnd);
@@ -286,7 +286,7 @@ static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 		case WM_CONTEXTMENU: 
 		{
-			SendMessage(hPopupWindow, WMU_ACTION, (WPARAM)PUGetPluginData(hWnd), opts.popup_right_click_action);
+			PostMessage(hPopupWindow, WMU_ACTION, (WPARAM)PUGetPluginData(hWnd), opts.popup_right_click_action);
 
 			if (opts.popup_right_click_action != POPUP_ACTION_DONOTHING)
 				PUDeletePopUp(hWnd);

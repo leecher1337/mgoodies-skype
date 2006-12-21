@@ -109,7 +109,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 winspool.lib ole32.lib oleaut32.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\debug\plugins\avatarhist.dll" /pdbtype:sept
-# ADD LINK32 winspool.lib ole32.lib oleaut32.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\debug\plugins\avatarhistW.dll" /pdbtype:sept
+# ADD LINK32 winspool.lib ole32.lib oleaut32.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\debug unicode\plugins\avatarhistW.dll" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "AvatarHistory - Win32 Unicode Release"
 
@@ -186,6 +186,10 @@ SOURCE=.\popup.cpp
 # Begin Source File
 
 SOURCE=.\AvatarHistory.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\m_avatarhistory.h
 # End Source File
 # Begin Source File
 
