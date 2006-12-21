@@ -35,19 +35,12 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 
 
 static OptPageControl optionsControls[] = { 
-	{ &opts.show_menu,						CONTROL_CHECKBOX,		IDC_SHOWMENU,		"ShowContactMenu", AVH_DEF_SHOWMENU },
-	{ NULL,									CONTROL_CHECKBOX,		IDC_LOG_DISK,		"LogToDisk", AVH_DEF_LOGTODISK },
-	{ NULL,									CONTROL_CHECKBOX,		IDC_LOG_HISTORY,	"LogToHistory", AVH_DEF_LOGTOHISTORY },
-	{ &opts.track_changes,					CONTROL_CHECKBOX,		IDC_TRACK_CHANGE,	"TrackChanges", TRUE },
-	{ &opts.template_changed,				CONTROL_TEXT,			IDC_CHANGED,		"TemplateChanged", (DWORD) _T(DEFAULT_TEMPLATE_CHANGED) },
-	{ &opts.track_removes,					CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,	"TrackRemoves", TRUE },
-	{ &opts.template_removed,				CONTROL_TEXT,			IDC_REMOVED,		"TemplateRemoved", (DWORD) _T(DEFAULT_TEMPLATE_REMOVED) },
-	{ NULL,									CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,		"%sEnabled", TRUE }
-};
-
-static UINT optionsExpertControls[] = { 
-	IDC_TRACK_G, IDC_TRACK_CHANGE, IDC_CHANGED_L, IDC_CHANGED, IDC_TRACK_REMOVE, IDC_REMOVED_L, IDC_REMOVED, 
-	IDC_PROTOCOLS_G, IDC_PROTOCOLS_L, IDC_PROTOCOLS 
+	{ NULL,						CONTROL_CHECKBOX,		IDC_LOG_DISK,		"LogToDisk", AVH_DEF_LOGTODISK },
+	{ NULL,						CONTROL_CHECKBOX,		IDC_LOG_HISTORY,	"LogToHistory", AVH_DEF_LOGTOHISTORY },
+	{ &opts.template_changed,	CONTROL_TEXT,			IDC_CHANGED,		"TemplateChanged", (DWORD) _T(DEFAULT_TEMPLATE_CHANGED) },
+	{ &opts.track_removes,		CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,	"TrackRemoves", TRUE },
+	{ &opts.template_removed,	CONTROL_TEXT,			IDC_REMOVED,		"TemplateRemoved", (DWORD) _T(DEFAULT_TEMPLATE_REMOVED) },
+	{ NULL,						CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,		"%sEnabled", TRUE }
 };
 
 
@@ -88,9 +81,7 @@ int OptInit(WPARAM wParam,LPARAM lParam)
 	odp.ptszTitle = TranslateT("Avatar"); // name of the item
 	odp.pfnDlgProc = OptionsDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
-    odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
-	odp.expertOnlyControls = optionsExpertControls;
-	odp.nExpertOnlyControls = MAX_REGS(optionsExpertControls);
+    odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR | ODPF_EXPERTONLY;
     CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
 	ZeroMemory(&odp,sizeof(odp));
@@ -104,6 +95,8 @@ int OptInit(WPARAM wParam,LPARAM lParam)
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
 	odp.expertOnlyControls = popupsExpertControls;
 	odp.nExpertOnlyControls = MAX_REGS(popupsExpertControls);
+	odp.nIDBottomSimpleControl = IDC_POPUPS;
+	odp.nIDRightSimpleControl = IDC_POPUPS;
     CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
 	return 0;
@@ -119,9 +112,6 @@ void LoadOptions()
 
 static void OptionsEnableDisableCtrls(HWND hwndDlg)
 {
-	EnableWindow(GetDlgItem(hwndDlg, IDC_CHANGED_L), IsDlgButtonChecked(hwndDlg, IDC_TRACK_CHANGE));
-	EnableWindow(GetDlgItem(hwndDlg, IDC_CHANGED), IsDlgButtonChecked(hwndDlg, IDC_TRACK_CHANGE));
-
 	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED_L), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
 	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
 }
@@ -143,7 +133,6 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			switch (LOWORD(wParam)) 
 			{
 				case IDC_TRACK_REMOVE:
-				case IDC_TRACK_CHANGE:
 				{
 					if (HIWORD(wParam) == BN_CLICKED)
 						OptionsEnableDisableCtrls(hwndDlg);
