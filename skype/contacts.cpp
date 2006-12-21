@@ -279,10 +279,10 @@ HANDLE find_contact(char *name) {
 	DBVARIANT dbv;
 
 	// already on list?
-	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) {
+	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) 
+	{
 		szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
-		if (szProto!=NULL && !strcmp(szProto, pszSkypeProtoName) &&
-			DBGetContactSettingByte(hContact, pszSkypeProtoName, "ChatRoom", 0)==0)	
+		if (szProto!=NULL && !strcmp(szProto, pszSkypeProtoName) &&	DBGetContactSettingByte(hContact, pszSkypeProtoName, "ChatRoom", 0)==0)	
 		{
 			if (DBGetContactSetting(hContact, pszSkypeProtoName, SKYPE_NAME, &dbv)) continue;
             tCompareResult = strcmp(dbv.pszVal, name);

@@ -638,7 +638,8 @@ void FirstLaunch(char *dummy) {
 	int counter=0;
 
 	LOG ("FirstLaunch", "thread started.");
-	if (!DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) || ConnectToSkypeAPI(skype_path, false)==-1) {
+	if (!DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) || ConnectToSkypeAPI(skype_path, false)==-1) 
+	{
 		int oldstatus=SkypeStatus;
 
 		LOG("OnModulesLoaded", "starting offline..");	
@@ -691,7 +692,8 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 	RegisterToDbeditorpp();
 	
 	add_contextmenu(NULL);
-	if ( ServiceExists( MS_GC_REGISTER )) {
+	if ( ServiceExists( MS_GC_REGISTER )) 
+	{
 		GCREGISTER gcr = {0};
 		static COLORREF crCols[1] = {0};
 		char *szEvent;
@@ -700,15 +702,18 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 		gcr.dwFlags = GC_CHANMGR; // |GC_ACKMSG; // TODO: Not implemented yet
         gcr.pszModuleDispName = pszSkypeProtoName;
 		gcr.pszModule = pszSkypeProtoName;
-		if (CallService(MS_GC_REGISTER, 0, (LPARAM)&gcr)) {
+		if (CallService(MS_GC_REGISTER, 0, (LPARAM)&gcr)) 
+		{
 			OUTPUT("Unable to register with Groupchat module!");
 		}
-		if (szEvent=(char*)malloc(strlen(pszSkypeProtoName)+10)) {
+		if (szEvent=(char*)malloc(strlen(pszSkypeProtoName)+10)) 
+		{
 			_snprintf(szEvent, sizeof szEvent, "%s\\ChatInit", pszSkypeProtoName);
 			hInitChat = CreateHookableEvent(szEvent);
 			hEvInitChat = HookEvent(szEvent, ChatInit);
 			free(szEvent);
-		} else { OUTPUT("Out of memory!"); }
+		} 
+		else { OUTPUT("Out of memory!"); }
 
 		hChatEvent = HookEvent(ME_GC_EVENT, GCEventHook);
 		hChatMenu = HookEvent(ME_GC_BUILDMENU, GCMenuHook);
@@ -1495,22 +1500,40 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 
 				}
 				if (!strcmp(ptr, "TIMEZONE")){
-					time_t temp = time(0);
-					struct tm *tms = localtime(&temp);
-					if (!(hContact=find_contact(nick)))
+					time_t temp;
+					struct tm tms;
+					
+					hContact=find_contact(nick);
+					LOG("WndProc", "TIMEZONE");
+					LOG("WndProc", nick);
+					if (hContact==NULL)
+					{
+						LOG("WndProc", "No contact found");
 						SkypeSend("GET USER %s BUDDYSTATUS", nick);
+					}
 					else
 						if (atoi(ptr+9) != 0) {
+							temp = time(0);
+							memcpy(&tms,localtime(&temp), sizeof(tm));
+							//tms = localtime(&temp);
 							if (atoi(ptr+9) >= 86400 ) timezone=256-((2*(atoi(ptr+9)-86400))/3600);
 							if (atoi(ptr+9) < 86400 ) timezone=((-2*(atoi(ptr+9)-86400))/3600); 
-							if (tms->tm_isdst == 1 && DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseTimeZonePatch", 0)) {
+							if (tms.tm_isdst == 1 && DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseTimeZonePatch", 0)) 
+							{
+								LOG("WndProc", "Using the TimeZonePatch");
 								DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (timezone+2));
 							}
-							else 
+							else
+							{
+								LOG("WndProc", "Not using the TimeZonePatch");
 								DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (timezone+0));
+							}
 						}
 						else 
+						{
+							LOG("WndProc", "Deleting the TimeZone in UserInfo Section");
 							DBDeleteContactSetting(hContact, "UserInfo", "Timezone");
+						}
   					free(buf);
 					break;
 
@@ -1730,6 +1753,7 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 
 	int oldStatus;
 	BOOL UseCustomCommand = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
+	BOOL UnloadOnOffline = DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0);
 
 	//if (!SkypeInitialized && !DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0)) return 0;
 
@@ -1740,8 +1764,7 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 
 	if ((int)wParam==ID_STATUS_CONNECTING) return 0;
 #ifdef MAPDND
-	if ((int)wParam==ID_STATUS_OCCUPIED || 
-		(int)wParam==ID_STATUS_ONTHEPHONE) wParam=ID_STATUS_DND;
+	if ((int)wParam==ID_STATUS_OCCUPIED || (int)wParam==ID_STATUS_ONTHEPHONE) wParam=ID_STATUS_DND;
 	if ((int)wParam==ID_STATUS_OUTTOLUNCH) wParam=ID_STATUS_NA;
 #endif
 
@@ -1750,7 +1773,7 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
    if ((int)wParam==ID_STATUS_OFFLINE) 
    {
        logoff_contacts();
-	   if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UnloadOnOffline", 0)) {
+	   if (UnloadOnOffline) {
 		   if (AttachStatus!=-1) 
 		   {
 			   if(UseCustomCommand)
@@ -2319,17 +2342,22 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	// Check if Skype is installed
 	SkypeInstalled=TRUE;
 	UseCustomCommand = (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseCustomCommand", 0);
+	UseSockets = (BOOL)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseSkype2Socket", 0);
 
-	UseSockets=(BOOL)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseSkype2Socket", 0);
-	if (!UseSockets && !UseCustomCommand) {
+	if (!UseSockets && !UseCustomCommand) 
+	{
 		if (RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Skype\\Phone", 0, KEY_READ, &MyKey)!=ERROR_SUCCESS)
+		{
 			if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Skype\\Phone", 0, KEY_READ, &MyKey)!=ERROR_SUCCESS)
 			{
 				SkypeInstalled=FALSE;
 			}
+		}
+		
 		Buffsize=sizeof(skype_path);
-		if (SkypeInstalled==FALSE || 
-			RegQueryValueEx(MyKey, "SkypePath", NULL, NULL, (unsigned char *)skype_path,  &Buffsize)!=ERROR_SUCCESS) {
+		
+		if (SkypeInstalled==FALSE || RegQueryValueEx(MyKey, "SkypePath", NULL, NULL, (unsigned char *)skype_path,  &Buffsize)!=ERROR_SUCCESS) 
+		{
 			    OUTPUT("Skype was not found installed :( \nMaybe you are using portable skype.");
 				RegCloseKey(MyKey);
 				skype_path[0]=0;
@@ -2340,8 +2368,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	WSAStartup(MAKEWORD(2,2), &wsaData);
 
 	// Start Skype connection 
-	if (!(ControlAPIAttach=RegisterWindowMessage("SkypeControlAPIAttach")) ||
-		!(ControlAPIDiscover=RegisterWindowMessage("SkypeControlAPIDiscover"))) {
+	if (!(ControlAPIAttach=RegisterWindowMessage("SkypeControlAPIAttach")) || !(ControlAPIDiscover=RegisterWindowMessage("SkypeControlAPIDiscover"))) 
+	{
 			OUTPUT("Cannot register Window message.");
 			return 0;
 	}
