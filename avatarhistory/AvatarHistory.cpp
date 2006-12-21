@@ -325,11 +325,15 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 		return 0;
 	}
 
-	if (!opts.track_removes && avatar == NULL)
+	BOOL removed = (avatar == NULL && DBGetContactSettingWord(hContact, "ContactPhoto", "Format", 0) == 0);
+
+	if (!opts.track_removes && removed)
 		return 0;
 	
 	char oldhash[1024] = "";
-	MyDBGetString(hContact, "AvatarHistory", "AvatarHash", oldhash, sizeof(oldhash));
+	char * ret = MyDBGetString(hContact, "AvatarHistory", "AvatarHash", oldhash, sizeof(oldhash));
+
+	BOOL first_time = (ret == NULL);
 
 	if(
 		(avatar != NULL && !strcmp(oldhash, avatar->hash)) // Changed it
@@ -342,15 +346,26 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 		return 0;
 	}
 
-	if (avatar == NULL)
+	if (removed)
 	{
 		db_string_set(hContact, "AvatarHistory", "AvatarHash", "");
 
-		if (ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS))
+		if (!first_time && ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS))
 			ShowPopup(hContact, NULL, opts.template_removed);
 
 		if (ContactEnabled(hContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
 			HistoryLog(hContact, opts.template_removed, NULL);
+	}
+	else if (avatar == NULL)
+	{
+		// Is a flash avatar or avs could not load it
+		db_string_set(hContact, "AvatarHistory", "AvatarHash", "-");
+
+		if (!first_time && ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS))
+			ShowPopup(hContact, NULL, opts.template_changed);
+
+		if (ContactEnabled(hContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
+			HistoryLog(hContact, opts.template_changed, NULL);
 	}
 	else
 	{
@@ -437,7 +452,7 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 		}
 
 
-		if (ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS))
+		if (!first_time && ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS))
 			ShowPopup(hContact, NULL, opts.template_changed);
 
 		if (ContactEnabled(hContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
