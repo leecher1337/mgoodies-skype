@@ -15,6 +15,7 @@ HISTORY
 -------
 0.0.0.35 - * Use unicode nick, status message, city and country in skype profile.
            ! Fix for sending status change when offline
+		   * Do not send message to skype if not attached (avoid trying to connect to api at startup)
            
 0.0.0.34 - + Try to identify if chat message comes from a group chat or not
            + Add a option to flag group chat message as read if not using chat.dll for group chat.

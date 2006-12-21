@@ -16,7 +16,7 @@
 
 // Imported Globals
 extern HWND hSkypeWnd, hWnd;
-extern BOOL SkypeInitialized, UseSockets, MirandaShuttingDown;
+extern BOOL SkypeInitialized, UseSockets, MirandaShuttingDown ;
 extern int SkypeStatus, receivers;
 extern HANDLE SkypeReady, SkypeMsgReceived, httbButton;
 extern char pszSkypeProtoName[MAX_PATH+30];
@@ -228,12 +228,14 @@ int __sendMsg(char *szMsg) {
 	   SendResult=SendMessage(hSkypeWnd, WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&CopyData);
        LOGL("SkypeSend: SendMessage returned ", SendResult);
    }
-   if (!SendResult) {
+   if (!SendResult) 
+   {
 	  SkypeInitialized=FALSE;
       AttachStatus=-1;
 	  ResetEvent(SkypeReady);
 	  if (hWnd) KillTimer (hWnd, 1);
-  	  if (SkypeStatus!=ID_STATUS_OFFLINE) {
+  	  if (SkypeStatus!=ID_STATUS_OFFLINE) 
+	  {
 		// Go offline
 		logoff_contacts();
 		oldstatus=SkypeStatus;
@@ -242,7 +244,8 @@ int __sendMsg(char *szMsg) {
 	  }
 	  // Reconnect to Skype
 	  ResetEvent(SkypeReady);
-	  if (ConnectToSkypeAPI(NULL,false)!=-1) {
+	  if (ConnectToSkypeAPI(NULL,false)!=-1) 
+	  {
 		  if (UseSockets) {
 		  	   if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
 			   send(ClientSocket, szMsg, length, 0)==SOCKET_ERROR) return -1;
@@ -865,7 +868,8 @@ int SkypeSetNick(WPARAM wParam, LPARAM lParam) {
 
 	if(utf8_encode((const char *)lParam, &Nick) == -1 ) return -1;
 	
-	retval = SkypeSend("SET PROFILE FULLNAME %s", Nick);
+	if(AttachStatus == SKYPECONTROLAPI_ATTACH_SUCCESS)
+		retval = SkypeSend("SET PROFILE FULLNAME %s", Nick);
 
 	return retval;
 
@@ -893,8 +897,9 @@ int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
 
 
 	if(utf8_encode((const char *)lParam, &Mood) == -1 ) return -1;
-	
-	retval = SkypeSend("SET PROFILE MOOD_TEXT %s", Mood);
+	 
+	if(AttachStatus == SKYPECONTROLAPI_ATTACH_SUCCESS)
+		retval = SkypeSend("SET PROFILE MOOD_TEXT %s", Mood);
 
 	return retval;
 
@@ -945,7 +950,9 @@ int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 
 	DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", "");
 	DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", AvatarsFolder);
-	retval = SkypeSend("SET AVATAR 1 %s", AvatarsFolder);
+	
+	if(AttachStatus == SKYPECONTROLAPI_ATTACH_SUCCESS)
+		retval = SkypeSend("SET AVATAR 1 %s", AvatarsFolder);
 	
 	return retval;
 }
@@ -1164,12 +1171,13 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 	
 		if ( connect( ClientSocket, (SOCKADDR*) &service, sizeof(service) ) == SOCKET_ERROR) return -1;
             
-		if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "RequiresPassword", 0) && 
-			!DBGetContactSetting(NULL, pszSkypeProtoName, "Password", &dbv)) {
+		if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "RequiresPassword", 0) && !DBGetContactSetting(NULL, pszSkypeProtoName, "Password", &dbv)) 
+		{
 				char reply=0;
 
 				CallService(MS_DB_CRYPT_DECODESTRING, strlen(dbv.pszVal)+1, (LPARAM)dbv.pszVal);
-				if ((reply=SendSkypeproxyCommand(AUTHENTICATE))==-1) {
+				if ((reply=SendSkypeproxyCommand(AUTHENTICATE))==-1) 
+				{
 						DBFreeVariant(&dbv);
 						return -1;
 				}
@@ -1180,18 +1188,22 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 					unsigned int length=strlen(dbv.pszVal);
 					if (send(ClientSocket, (char *)&length, sizeof(length), 0)==SOCKET_ERROR ||
 						send(ClientSocket, dbv.pszVal, length, 0)==SOCKET_ERROR ||
-						recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR) {
+						recv(ClientSocket, (char *)&reply, sizeof(reply), 0)==SOCKET_ERROR) 
+					{
 							DBFreeVariant(&dbv);
 							return -1;
 					}
-					if (!reply) {
+					if (!reply) 
+					{
 						OUTPUT("Authentication failed for this server, connection was not successful. Verify that your password is correct!");
 						DBFreeVariant(&dbv);
 						return -1;
 					}
 				}
 				DBFreeVariant(&dbv);
-		} else {
+		} 
+		else 
+		{
 			char reply=0;
 
 			if ((reply=SendSkypeproxyCommand(CAPABILITIES))==-1) return -1;
@@ -1289,16 +1301,15 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 				if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "StartSkype", 1) && !(path ||  UseCustomCommand)) return -1;
 				LOGL("Trying to attach: #", counter);
 				counter++;
-				if (counter>=maxattempts && AttachStatus==-1) {
+				if (counter>=maxattempts && AttachStatus==-1) 
+				{
 					OUTPUT("ERROR: Skype not running / too old / working!");
 					return -1;
 				}
 			}
 		}
 		LOGL("Attachstatus", AttachStatus);
-	} while (AttachStatus==SKYPECONTROLAPI_ATTACH_NOT_AVAILABLE ||
-			 AttachStatus==SKYPECONTROLAPI_ATTACH_API_AVAILABLE || 
-			 AttachStatus==-1);
+	} while (AttachStatus==SKYPECONTROLAPI_ATTACH_NOT_AVAILABLE || AttachStatus==SKYPECONTROLAPI_ATTACH_API_AVAILABLE || AttachStatus==-1);
 	
 	while (AttachStatus==SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION) Sleep(1000);
 	LOGL("Attachstatus", AttachStatus);
