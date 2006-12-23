@@ -32,7 +32,7 @@ extern HANDLE hMenu;
 }
 
 #include "resource.h"
-#include "m_avatarhistory.h"
+#include "m_avatarhist.h"
 
 #include "../utils/mir_memory.h"
 

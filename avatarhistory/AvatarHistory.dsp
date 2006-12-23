@@ -189,7 +189,7 @@ SOURCE=.\AvatarHistory.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\m_avatarhistory.h
+SOURCE=.\m_avatarhist.h
 # End Source File
 # Begin Source File
 
@@ -218,6 +218,26 @@ SOURCE=.\AvatarOverlay.ico
 # Begin Source File
 
 SOURCE=.\history.ico
+# End Source File
+# End Group
+# Begin Group "Docs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Docs\avatarhist_changelog.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\avatarhist_readme.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\avatarhist_version.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\langpack_avatarhist.txt
 # End Source File
 # End Group
 # End Target
