@@ -116,6 +116,34 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	SetupIcoLib();
 	InitMenuItem();
 	InitPopups();
+
+    // updater plugin support
+    if(ServiceExists(MS_UPDATE_REGISTER))
+	{
+		Update upd = {0};
+		char szCurrentVersion[30];
+
+		upd.cbSize = sizeof(upd);
+		upd.szComponentName = pluginInfo.shortName;
+
+		upd.szUpdateURL = UPDATER_AUTOREGISTER;
+
+		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/avatarhist_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/?p=avatarhist#Changelog";
+		upd.pbBetaVersionPrefix = (BYTE *)"Avatar History ";
+		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
+#ifdef UNICODE
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/avatarhistW.zip";
+#else
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/avatarhist.zip";
+#endif
+
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.cpbVersion = strlen((char *)upd.pbVersion);
+
+        CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
+	}
+
 	return 0;
 }
 

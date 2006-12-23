@@ -1,0 +1,8 @@
+Avatar History
+
+Changelog:
+
+. 0.0.2.0
+  * Changed to store avatars in a proto dir (lost compatibility with old version)
+  * Changes in options and avatar dialog
+  + Keep only one copy of an image (even if contact switchs back to it)

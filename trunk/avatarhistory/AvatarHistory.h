@@ -22,7 +22,7 @@ extern "C"
 #include <m_langpack.h>
 #include <m_metacontacts.h>
 #include <m_history.h>
-// #include <m_updater.h>
+#include <m_updater.h>
 
 // Globals
 extern HINSTANCE hInst;
