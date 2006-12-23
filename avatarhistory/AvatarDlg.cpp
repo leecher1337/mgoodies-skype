@@ -31,7 +31,7 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 int ShowSaveDialog(HWND hwnd, TCHAR* fn);
 
 int FillAvatarList(HWND list, HANDLE hContact);
-int UpdateAvatarPic(HWND hwnd);
+BOOL UpdateAvatarPic(HWND hwnd);
 TCHAR* GetCurrentSelFile(HWND list);
 
 static int ShowDialogSvc(WPARAM wParam, LPARAM lParam);
@@ -42,6 +42,7 @@ struct AvatarDialogData
 	TCHAR fn[MAX_PATH+1];
 	HWND parent;
 };
+
 
 class ListEntry
 {
@@ -116,12 +117,11 @@ void EnableDisableControls(HWND hwnd)
 
 static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam)
 {
-	static struct AvatarDialogData* data;
 	switch(uMsg)
 	{
 		case WM_INITDIALOG:
 		{
-			data = (struct AvatarDialogData*) lParam;
+			AvatarDialogData *data = (struct AvatarDialogData*) lParam;
 			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM) overlayedBigIcon);
 			SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM) overlayedIcon);
 			FillAvatarList(GetDlgItem(hwnd, IDC_AVATARLIST), data->hContact);
@@ -152,32 +152,46 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 		case WM_CONTEXTMENU:
 		{
 			HWND list = GetDlgItem(hwnd, IDC_AVATARLIST);
-			if ((HANDLE) wParam != list)
+			HWND pic = GetDlgItem(hwnd, IDC_AVATAR);
+			int pos;
+
+			if ((HANDLE) wParam == list)
+			{
+				POINT p;
+				p.x = LOWORD(lParam); 
+				p.y = HIWORD(lParam); 
+
+				ScreenToClient(list, &p);
+
+				pos = SendMessage(list, LB_ITEMFROMPOINT, 0, MAKELONG(p.x, p.y));
+				if (HIWORD(pos))
+					break;
+				pos = LOWORD(pos);
+
+				int count = SendMessage(list, LB_GETCOUNT, 0, 0);
+				if (pos >= count)
+					break;
+
+				SendMessage(list, LB_SETCURSEL, pos, 0);
+				EnableDisableControls(hwnd);
+			}
+			else if ((HANDLE) wParam == pic)
+			{
+				pos = SendMessage(list, LB_GETCURSEL, 0, 0);
+				if (pos == LB_ERR)
+					break;
+			}
+			else
 				break;
 
-			POINT p;
-			p.x = LOWORD(lParam); 
-			p.y = HIWORD(lParam); 
-
-			ScreenToClient(list, &p);
-
-			int pos = SendMessage(list, LB_ITEMFROMPOINT, 0, MAKELONG(p.x, p.y));
-			if (HIWORD(pos))
+			if (!UpdateAvatarPic(hwnd))
 				break;
-			pos = LOWORD(pos);
-
-			int count = SendMessage(list, LB_GETCOUNT, 0, 0);
-			if (pos >= count)
-				break;
-
-			SendMessage(list, LB_SETCURSEL, pos, 0);
-			UpdateAvatarPic(hwnd);
-			EnableDisableControls(hwnd);
 
 			HMENU menu = LoadMenu(hInst, MAKEINTRESOURCE(IDR_MENU1));
 			HMENU submenu = GetSubMenu(menu, 0);
 			CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)submenu,0);
 
+			POINT p;
 			p.x = LOWORD(lParam); 
 			p.y = HIWORD(lParam); 
 			int ret = TrackPopupMenu(submenu, TPM_TOPALIGN|TPM_LEFTALIGN|TPM_RIGHTBUTTON|TPM_RETURNCMD, p.x, p.y, 0, list, NULL);
@@ -317,7 +331,7 @@ int FillAvatarList(HWND list, HANDLE hContact)
 			int i = dbei.cbBlob - 2;
 			for(; i >= 0 && dbei.pBlob[i] != 0; i--) ;
 
-			if (i != dbei.cbBlob - 2 && i >= 0)
+			if (i != (int) dbei.cbBlob - 2 && i >= 0)
 			{
 				// Oki, found one
 
@@ -355,7 +369,7 @@ int FillAvatarList(HWND list, HANDLE hContact)
 	return 0;
 }
 
-int UpdateAvatarPic(HWND hwnd)
+BOOL UpdateAvatarPic(HWND hwnd)
 {
 	HWND hwndpic = GetDlgItem(hwnd, IDC_AVATAR);
 	if (!hwnd || !hwndpic)
@@ -374,10 +388,13 @@ int UpdateAvatarPic(HWND hwnd)
 	HBITMAP avpic = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (LPARAM) filename);
 #endif
 
+	BOOL found_image = (avpic != NULL);
+
 	avpic = (HBITMAP)SendMessage(hwndpic, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)avpic);
 	if (avpic)
 		DeleteObject(avpic);
-	return 0;
+
+	return found_image;
 }
 
 void InitMenuItem()
