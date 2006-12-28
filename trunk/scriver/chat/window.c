@@ -1250,10 +1250,28 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
          SendMessage(GetParent(hwndDlg), CM_UPDATESTATUSBAR, (WPARAM) &sbd, (LPARAM) hwndDlg);
          sbd.iItem = 2;
          SendMessage(GetParent(hwndDlg), CM_UPDATESTATUSBAR, (WPARAM) &sbd, (LPARAM) hwndDlg);
+		 sbd.iItem = 3;
+		 sbd.iFlags = SBDF_TEXT | SBDF_ICON;
+   #if defined( _UNICODE )
+		 sbd.hIcon = g_dat->hIcons[SMF_ICON_UNICODEON];
+   #else
+		 sbd.hIcon = g_dat->hIcons[SMF_ICON_UNICODEOFF];
+   #endif
+		 sbd.pszText = _T("");
+         SendMessage(GetParent(hwndDlg), CM_UPDATESTATUSBAR, (WPARAM) &sbd, (LPARAM) hwndDlg);
          mir_free( ptszDispName );
       //   SendMessage(hwndDlg, GC_FIXTABICONS, 0, (LPARAM)si);
       }
       break;
+
+	case DM_GETCODEPAGE:
+		SetWindowLong(hwndDlg, DWL_MSGRESULT, si->codePage);
+		return TRUE;
+	case DM_SETCODEPAGE:
+		si->codePage = (int) lParam;
+		si->pszHeader = Log_CreateRtfHeader(MM_FindModule(si->pszModule), si);
+        SendMessage(hwndDlg, GC_REDRAWLOG2, 0, 0);
+		break;
 
    case WM_SIZE:
       {
@@ -1947,17 +1965,17 @@ LABEL_SHOWWINDOW:
             GetWindowRect(GetDlgItem(hwndDlg, IDC_CHAT_SMILEY), &rc);
 
             smaddInfo.cbSize = sizeof(SMADD_SHOWSEL3);
+			smaddInfo.hwndParent = GetParent(hwndDlg);
             smaddInfo.hwndTarget = GetDlgItem(hwndDlg, IDC_CHAT_MESSAGE);
             smaddInfo.targetMessage = EM_REPLACESEL;
             smaddInfo.targetWParam = TRUE;
             smaddInfo.Protocolname = si->pszModule;
-            smaddInfo.Direction = 3;
-            smaddInfo.xPosition = rc.left+3;
-            smaddInfo.yPosition = rc.top-1;
+            //smaddInfo.Direction = 3;
+			smaddInfo.Direction = 0;
+            smaddInfo.xPosition = rc.left;
+            smaddInfo.yPosition = rc.bottom;
             smaddInfo.hContact = si->hContact;
-
-            if (SmileyAddInstalled)
-               CallService(MS_SMILEYADD_SHOWSELECTION, 0, (LPARAM) &smaddInfo);
+			CallService(MS_SMILEYADD_SHOWSELECTION, 0, (LPARAM) &smaddInfo);
          }
          break;
 

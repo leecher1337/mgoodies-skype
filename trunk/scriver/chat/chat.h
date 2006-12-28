@@ -117,7 +117,6 @@ typedef struct  MODULE_INFO_TYPE
 {
 	char*		pszModule;
 	char*		pszModDispName;
-	char*		pszHeader;
 	BOOL		bBold;
 	BOOL		bUnderline;
 	BOOL		bItalics;
@@ -206,6 +205,7 @@ typedef struct SESSION_INFO_TYPE
 	BOOL        bInitDone;
 
 	char*       pszModule;
+	char*		pszHeader;
 	TCHAR*      ptszID;
 	TCHAR*      ptszName;
 	TCHAR*      ptszStatusbarText;
@@ -247,6 +247,7 @@ typedef struct SESSION_INFO_TYPE
 
 	HWND        hwndTooltip;
 	int         iOldItemID;
+	int			codePage;
 }SESSION_INFO;
 
 typedef struct
@@ -329,7 +330,7 @@ void   LoadMsgLogBitmaps(void);
 void   FreeMsgLogBitmaps(void);
 void   ValidateFilename (char * filename);
 TCHAR* MakeTimeStamp(TCHAR* pszStamp, time_t time);
-char*  Log_CreateRtfHeader(MODULEINFO * mi);
+char*  Log_CreateRtfHeader(MODULEINFO * mi, SESSION_INFO* si);
 
 //window.c
 BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam);

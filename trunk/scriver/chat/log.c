@@ -255,8 +255,22 @@ static void AddEventToBuffer(char **buffer, int *bufferEnd, int *bufferAlloced, 
 	if ( streamData && streamData->lin ) {
 		switch ( streamData->lin->iType ) {
 		case GC_EVENT_MESSAGE:
-			if ( streamData->lin->ptszText )
-				Log_AppendRTF( streamData, buffer, bufferEnd, bufferAlloced, _T("%s"), streamData->lin->ptszText );
+			if ( streamData->lin->ptszText ) {
+				TCHAR *ptszText = streamData->lin->ptszText;
+				/* TODO: convert code page */
+				//streamData->si
+		#if defined( _UNICODE )
+				if (streamData->si->codePage != CP_ACP) {
+					char *aText = t2acp(streamData->lin->ptszText, CP_ACP);
+					TCHAR *wText = a2tcp(aText, streamData->si->codePage);
+					Log_AppendRTF( streamData, buffer, bufferEnd, bufferAlloced, _T("%s"), wText );
+					mir_free(aText);
+					mir_free(wText);
+					break;
+				}
+		#endif
+				Log_AppendRTF( streamData, buffer, bufferEnd, bufferAlloced, _T("%s"), ptszText );
+			}
 			break;
 		case GC_EVENT_ACTION:
 			if ( streamData->lin->ptszNick && streamData->lin->ptszText)
@@ -341,7 +355,7 @@ static char* Log_CreateRTF(LOGSTREAMDATA *streamData)
 	buffer[0] = '\0';
 
 	// ### RTF HEADER
-	header = mi->pszHeader;
+	header = streamData->si->pszHeader;
 
 	if (header)
 		Log_Append(&buffer, &bufferEnd, &bufferAlloced, header);
@@ -586,17 +600,27 @@ void Log_StreamInEvent(HWND hwndDlg,  LOGINFO* lin, SESSION_INFO* si, BOOL bRedr
 			InvalidateRect(hwndRich, NULL, TRUE);
 }	}	}
 
-char * Log_CreateRtfHeader(MODULEINFO * mi)
+char * Log_CreateRtfHeader(MODULEINFO * mi, SESSION_INFO* si)
 {
 	char *buffer;
 	int bufferAlloced, bufferEnd, i = 0;
+	int charset = 0;
+	BOOL forceCharset = FALSE;
 
+#if !defined ( _UNICODE )
+		if (si->codePage != CP_ACP) {
+			CHARSETINFO csi;
+ 			if(TranslateCharsetInfo((DWORD*)si->codePage, &csi, TCI_SRCCODEPAGE)) {
+				forceCharset = TRUE;
+				charset = csi.ciCharset;
+			}
+		}
+#endif
 	// guesstimate amount of memory for the RTF header
 	bufferEnd = 0;
 	bufferAlloced = 4096;
-	buffer = (char *) mir_realloc(mi->pszHeader, bufferAlloced);
+	buffer = (char *) mir_realloc(si->pszHeader, bufferAlloced);
 	buffer[0] = '\0';
-
 
 	//get the number of pixels per logical inch
 	{
@@ -611,9 +635,9 @@ char * Log_CreateRtfHeader(MODULEINFO * mi)
 
 	// font table
 	Log_Append(&buffer, &bufferEnd, &bufferAlloced, "{\\rtf1\\ansi\\deff0{\\fonttbl");
-	for (i = 0; i < OPTIONS_FONTCOUNT; i++)
-		Log_Append(&buffer, &bufferEnd, &bufferAlloced, "{\\f%u\\fnil\\fcharset%u" TCHAR_STR_PARAM ";}", i, aFonts[i].lf.lfCharSet, aFonts[i].lf.lfFaceName);
-
+	for (i = 0; i < OPTIONS_FONTCOUNT; i++) {
+		Log_Append(&buffer, &bufferEnd, &bufferAlloced, "{\\f%u\\fnil\\fcharset%u" TCHAR_STR_PARAM ";}", i, (!forceCharset) ? aFonts[i].lf.lfCharSet : charset, aFonts[i].lf.lfFaceName);
+	}
 	// colour table
 	Log_Append(&buffer, &bufferEnd, &bufferAlloced, "}{\\colortbl ;");
 

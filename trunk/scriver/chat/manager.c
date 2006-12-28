@@ -134,6 +134,7 @@ int SM_RemoveSession( const TCHAR* pszID, const char* pszModule)
 			mir_free( pTemp->ptszName );
 			mir_free( pTemp->ptszStatusbarText );
 			mir_free( pTemp->ptszTopic );
+			mir_free( pTemp->pszHeader );
 			#if defined( _UNICODE )
 				mir_free( pTemp->pszID );
 				mir_free( pTemp->pszName );
@@ -733,6 +734,7 @@ BOOL SM_RemoveAll (void)
 		mir_free( m_WndList->ptszName );
 		mir_free( m_WndList->ptszStatusbarText );
 		mir_free( m_WndList->ptszTopic );
+		mir_free( m_WndList->pszHeader);
 
 		while (m_WndList->lpCommands != NULL) {
 			COMMAND_INFO *pNext = m_WndList->lpCommands->next;
@@ -968,10 +970,10 @@ void MM_IconsChanged(void)
 }
 void MM_FontsChanged(void)
 {
-	MODULEINFO *pTemp = m_ModList;
+	SESSION_INFO* pTemp = m_WndList;
 	while (pTemp != NULL)
 	{
-		pTemp->pszHeader = Log_CreateRtfHeader(pTemp);
+		pTemp->pszHeader = Log_CreateRtfHeader(MM_FindModule(pTemp->pszModule), pTemp);
 		pTemp = pTemp->next;
 	}
 	return;
@@ -1013,7 +1015,6 @@ BOOL MM_RemoveAll (void)
 		MODULEINFO *pLast = m_ModList->next;
 		mir_free(m_ModList->pszModule);
 		mir_free(m_ModList->pszModDispName);
-		mir_free(m_ModList->pszHeader);
 		mir_free(m_ModList->crColors);
 
 		if (m_ModList->hOfflineIcon)
