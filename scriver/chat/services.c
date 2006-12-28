@@ -293,7 +293,6 @@ int Service_Register(WPARAM wParam, LPARAM lParam)
 		mi->OfflineIconIndex = -1;
 		mi->hOfflineIcon = NULL;
 		mi->hOfflineTalkIcon = NULL;
-		mi->pszHeader = Log_CreateRtfHeader(mi);
 
 		CheckColorsInModule((char*)gcr->pszModule);
 		CList_SetAllOffline(TRUE);
@@ -361,6 +360,8 @@ int Service_NewChat(WPARAM wParam, LPARAM lParam)
 			else
 				mir_sntprintf(szTemp, SIZEOF(szTemp), _T("%s"), si->ptszName);
 			si->hContact = CList_AddRoom( gcw->pszModule, ptszID, szTemp, si->iType);
+			si->codePage = DBGetContactSettingWord(si->hContact, si->pszModule, "CodePage", (WORD) CP_ACP);
+			si->pszHeader = Log_CreateRtfHeader(mi, si);
 			DBWriteContactSettingString(si->hContact, si->pszModule , "Topic", "");
 			DBDeleteContactSetting(si->hContact, "CList", "StatusMsg");
 			if (si->ptszStatusbarText)

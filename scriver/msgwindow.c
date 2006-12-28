@@ -449,6 +449,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			dat->bVMaximized = 0;
 			dat->flags2 = g_dat->flags2;
 			dat->hwndStatus = CreateWindowEx(0, STATUSCLASSNAME, NULL, WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0, 0, 0, 0, hwndDlg, NULL, g_hInst, NULL);
+			dat->isChat = newData->isChat;
 			SendMessage(dat->hwndStatus, SB_SETMINHEIGHT, GetSystemMetrics(SM_CYSMICON), 0);
 			//SetupStatusBar(dat);
 			dat->hwndTabs = GetDlgItem(hwndDlg, IDC_TABS);
@@ -476,8 +477,8 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 //			hSContact = !(dat->flags2 & SMF2_USETABS) && savePerContact ? dat->hContact : NULL;
 			hSContact = savePerContact ? dat->hContact : NULL;
 			dat->bTopmost = DBGetContactSettingByte(hSContact, SRMMMOD, SRMSGSET_TOPMOST, SRMSGDEFSET_TOPMOST);
-			if (ScriverRestoreWindowPosition(hwndDlg, hSContact, SRMMMOD, "", 0, SW_HIDE)) {
-				if (ScriverRestoreWindowPosition(hwndDlg, hSContact, SRMMMOD, "", RWPF_NOSIZE, SW_HIDE)) {
+			if (ScriverRestoreWindowPosition(hwndDlg, hSContact, SRMMMOD, (newData->isChat && !savePerContact) ? "chat" : "", 0, SW_HIDE)) {
+				if (ScriverRestoreWindowPosition(hwndDlg, hSContact, SRMMMOD, (newData->isChat && !savePerContact) ? "chat" : "", RWPF_NOSIZE, SW_HIDE)) {
 					SetWindowPos(GetParent(hwndDlg), 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_HIDEWINDOW);
 				} else {
 					SetWindowPos(hwndDlg, 0, 0, 0, 450, 300, SWP_NOZORDER | SWP_NOMOVE | SWP_HIDEWINDOW);
@@ -485,7 +486,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			}
 //			if (!(dat->flags2 & SMF2_USETABS)) {
 				if (!savePerContact && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CASCADE, SRMSGDEFSET_CASCADE))
-					WindowList_Broadcast(g_dat->hParentWindowList, DM_CASCADENEWWINDOW, (WPARAM) hwndDlg, (LPARAM) & dat->windowWasCascaded);
+					WindowList_Broadcast(g_dat->hParentWindowList, DM_CASCADENEWWINDOW, (WPARAM) hwndDlg, (LPARAM) &dat->windowWasCascaded);
 	//		}
 			hMenu = GetSystemMenu( hwndDlg, FALSE );
 			InsertMenu( hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
@@ -716,19 +717,21 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			SendMessage(dat->hwndStatus, SB_GETRECT, SendMessage(dat->hwndStatus, SB_GETPARTS, 0, 0) - 1, (LPARAM)&rc);
 			if (pt.x >= rc.left && dat->hwndActive != NULL) {
 				int codePage = (int) SendMessage(dat->hwndActive, DM_GETCODEPAGE, 0, 0);
-				int i, iSel;
-				for(i = 0; i < GetMenuItemCount(g_dat->hMenuANSIEncoding); i++) {
-					CheckMenuItem (g_dat->hMenuANSIEncoding, i, MF_BYPOSITION | MF_UNCHECKED);
-				}
-				if(codePage == CP_ACP) {
-					CheckMenuItem(g_dat->hMenuANSIEncoding, 0, MF_BYPOSITION | MF_CHECKED);
-				} else {
-					CheckMenuItem(g_dat->hMenuANSIEncoding, codePage, MF_BYCOMMAND | MF_CHECKED);
-				}
-				iSel = TrackPopupMenu(g_dat->hMenuANSIEncoding, TPM_RETURNCMD, pt2.x, pt2.y, 0, hwndDlg, NULL);
-				if (iSel >= 500) {
-					if (iSel == 500) iSel = CP_ACP;
-					SendMessage(dat->hwndActive, DM_SETCODEPAGE, 0, iSel);
+				if (codePage != 1200) {
+					int i, iSel;
+					for(i = 0; i < GetMenuItemCount(g_dat->hMenuANSIEncoding); i++) {
+						CheckMenuItem (g_dat->hMenuANSIEncoding, i, MF_BYPOSITION | MF_UNCHECKED);
+					}
+					if(codePage == CP_ACP) {
+						CheckMenuItem(g_dat->hMenuANSIEncoding, 0, MF_BYPOSITION | MF_CHECKED);
+					} else {
+						CheckMenuItem(g_dat->hMenuANSIEncoding, codePage, MF_BYCOMMAND | MF_CHECKED);
+					}
+					iSel = TrackPopupMenu(g_dat->hMenuANSIEncoding, TPM_RETURNCMD, pt2.x, pt2.y, 0, hwndDlg, NULL);
+					if (iSel >= 500) {
+						if (iSel == 500) iSel = CP_ACP;
+						SendMessage(dat->hwndActive, DM_SETCODEPAGE, 0, iSel);
+					}
 				}
 			}
 			else
@@ -861,21 +864,37 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		{
 			WINDOWPLACEMENT wp = { 0 };
 			HANDLE hContact;
+			int i;
+			char szSettingName[64];
+			char *szNamePrefix;
+			int savePerContact = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT);
+			for (i=dat->childrenCount;--i>=0;) {
+				TCITEM tci;
+				tci.mask = TCIF_PARAM;
+				TabCtrl_GetItem(dat->hwndTabs, i, &tci);
+				TabCtrl_DeleteItem(dat->hwndTabs, i);
+				mir_free((MessageWindowTabData *) tci.lParam);
+			}
 			SetWindowLong(hwndDlg, GWL_USERDATA, 0);
 			WindowList_Remove(g_dat->hParentWindowList, hwndDlg);
-			if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT))
+			if (savePerContact)
 //			if (!(dat->flags2 & SMF2_USETABS) && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, SRMSGDEFSET_SAVEPERCONTACT))
 				hContact = dat->hContact;
 			else
 				hContact = NULL;
 			wp.length = sizeof(wp);
 			GetWindowPlacement(hwndDlg, &wp);
+			szNamePrefix = (!savePerContact && dat->isChat) ? "chat" : "";
 			if (!dat->windowWasCascaded) {
-				DBWriteContactSettingDword(hContact, SRMMMOD, "x", wp.rcNormalPosition.left);
-				DBWriteContactSettingDword(hContact, SRMMMOD, "y", wp.rcNormalPosition.top);
+				wsprintfA(szSettingName,"%sx",szNamePrefix);
+				DBWriteContactSettingDword(hContact, SRMMMOD, szSettingName, wp.rcNormalPosition.left);
+				wsprintfA(szSettingName,"%sy",szNamePrefix);
+				DBWriteContactSettingDword(hContact, SRMMMOD, szSettingName, wp.rcNormalPosition.top);
 			}
-			DBWriteContactSettingDword(hContact, SRMMMOD, "width", wp.rcNormalPosition.right - wp.rcNormalPosition.left);
-			DBWriteContactSettingDword(hContact, SRMMMOD, "height", wp.rcNormalPosition.bottom - wp.rcNormalPosition.top);
+			wsprintfA(szSettingName,"%swidth",szNamePrefix);
+			DBWriteContactSettingDword(hContact, SRMMMOD, szSettingName, wp.rcNormalPosition.right - wp.rcNormalPosition.left);
+			wsprintfA(szSettingName,"%sheight",szNamePrefix);
+			DBWriteContactSettingDword(hContact, SRMMMOD, szSettingName, wp.rcNormalPosition.bottom - wp.rcNormalPosition.top);
 			DBWriteContactSettingByte(hContact, SRMMMOD, SRMSGSET_TOPMOST, (BYTE)dat->bTopmost);
 			if (g_dat->lastParent == dat) {
 				g_dat->lastParent = dat->prev;

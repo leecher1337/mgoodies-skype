@@ -514,7 +514,7 @@ BOOL LogToFile(SESSION_INFO* si, GCEVENT * gce)
 	char szFile[MAX_PATH];
 	char szName[MAX_PATH];
 	char szFolder[MAX_PATH];
-	char p = '\0';
+	char p = '\0', *pszSessionName;
 	szBuffer[0] = '\0';
 
 	if (!si || !gce)
@@ -531,8 +531,10 @@ BOOL LogToFile(SESSION_INFO* si, GCEVENT * gce)
 	if (!PathIsDirectoryA(szFolder))
 		CreateDirectoryA(szFolder, NULL);
 
-	mir_snprintf(szName, MAX_PATH,"%s.log",si->ptszID);
+	pszSessionName = t2a( si->ptszID );
+	mir_snprintf( szName, MAX_PATH,"%s.log", pszSessionName );
 	ValidateFilename(szName);
+	mir_free( pszSessionName );
 
 	mir_snprintf(szFile, MAX_PATH,"%s\\%s", szFolder, szName );
 	lstrcpyn(szTime, MakeTimeStamp(g_Settings.pszTimeStampLog, gce->time), 99);

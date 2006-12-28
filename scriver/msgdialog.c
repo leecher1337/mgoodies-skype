@@ -1732,8 +1732,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					if ((dat->wStatus != dat->wOldStatus || lParam != 0)
 						&& DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSCH, SRMSGDEFSET_SHOWSTATUSCH)) {
 						DBEVENTINFO dbei;
-						TCHAR buffer[450];
-						char blob[1000];
+						TCHAR buffer[512];
+						char blob[2048];
 						HANDLE hNewEvent;
 						int iLen;
 						TCHAR *szOldStatus = mir_tstrdup((TCHAR *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM) dat->wOldStatus, GCMDF_TCHAR));
@@ -2374,7 +2374,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				GetWindowRect(GetDlgItem(hwndDlg, IDC_SMILEYS), &rc);
 				smaddInfo.Direction = 0;
 				smaddInfo.xPosition = rc.left;
-				smaddInfo.yPosition = rc.top + 24;
+				smaddInfo.yPosition = rc.bottom;
 				smaddInfo.hContact = dat->hContact;
 				CallService(MS_SMILEYADD_SHOWSELECTION, 0, (LPARAM) &smaddInfo);
 			}
