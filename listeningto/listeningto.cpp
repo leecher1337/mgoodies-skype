@@ -37,12 +37,12 @@ PLUGININFO pluginInfo = {
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,1,1),
+	PLUGIN_MAKE_VERSION(0,1,1,3),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
-	"http://miranda-im.org/",
+	"http://pescuma.mirandaim.ru/miranda/listeningto",
 	0,	//not transient
 	0	//doesn't replace anything built-in
 };
@@ -95,6 +95,18 @@ int GetOverrideContactOption(WPARAM wParam,LPARAM lParam);
 int GetUnknownText(WPARAM wParam,LPARAM lParam);
 void SetExtraIcon(HANDLE hContact, BOOL set);
 TCHAR *ReplaceVars(TCHAR *str, TCHAR **fr, int size);
+
+TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai);
+TCHAR* VariablesParseType(ARGUMENTSINFO *ai);
+TCHAR* VariablesParseArtist(ARGUMENTSINFO *ai);
+TCHAR* VariablesParseAlbum(ARGUMENTSINFO *ai);
+TCHAR* VariablesParseTitle(ARGUMENTSINFO *ai);
+TCHAR* VariablesParseTrack(ARGUMENTSINFO *ai);
+TCHAR* VariablesParseYear(ARGUMENTSINFO *ai);
+TCHAR* VariablesParseGenre(ARGUMENTSINFO *ai);
+TCHAR* VariablesParseLength(ARGUMENTSINFO *ai);
+TCHAR* VariablesParsePlayer(ARGUMENTSINFO *ai);
+
 
 #define XSTATUS_MUSIC 11
 
@@ -222,7 +234,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
 		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/listeningto_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/listeningto_changelog.txt";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/listeningto#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"ListeningTo ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
@@ -315,6 +327,65 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	StartTimer();
 
 	hTopToolBarLoadedHook = HookEvent(ME_TTB_MODULELOADED, TopToolBarLoaded);
+
+	// Variables support
+	if (ServiceExists(MS_VARS_REGISTERTOKEN))
+	{
+		TOKENREGISTER tr = {0};
+		tr.cbSize = sizeof(TOKENREGISTER);
+		tr.memType = TR_MEM_MIRANDA;
+		tr.flags = TRF_FREEMEM | TRF_PARSEFUNC | TRF_FIELD | TRF_TCHAR;
+
+		tr.tszTokenString = _T("listening_info");
+		tr.parseFunctionT = VariablesParseInfo;
+		tr.szHelpText = "Listening info\tListening info as set in the options";
+		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
+
+		tr.tszTokenString = _T("listening_type");
+		tr.parseFunctionT = VariablesParseType;
+		tr.szHelpText = "Listening info\tMedia type: Music, Video, etc";
+		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
+
+		tr.tszTokenString = _T("listening_artist");
+		tr.parseFunctionT = VariablesParseArtist;
+		tr.szHelpText = "Listening info\tArtist name";
+		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
+
+		tr.tszTokenString = _T("listening_album");
+		tr.parseFunctionT = VariablesParseAlbum;
+		tr.szHelpText = "Listening info\tAlbum name";
+		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
+
+		tr.tszTokenString = _T("listening_title");
+		tr.parseFunctionT = VariablesParseTitle;
+		tr.szHelpText = "Listening info\tSong name";
+		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
+
+		tr.tszTokenString = _T("listening_track");
+		tr.parseFunctionT = VariablesParseTrack;
+		tr.szHelpText = "Listening info\tTrack number";
+		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
+
+		tr.tszTokenString = _T("listening_year");
+		tr.parseFunctionT = VariablesParseYear;
+		tr.szHelpText = "Listening info\tSong year";
+		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
+
+		tr.tszTokenString = _T("listening_genre");
+		tr.parseFunctionT = VariablesParseGenre;
+		tr.szHelpText = "Listening info\tSong genre";
+		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
+
+		tr.tszTokenString = _T("listening_length");
+		tr.parseFunctionT = VariablesParseLength;
+		tr.szHelpText = "Listening info\tSong length";
+		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
+
+		tr.tszTokenString = _T("listening_player");
+		tr.parseFunctionT = VariablesParsePlayer;
+		tr.szHelpText = "Listening info\tPlayer name";
+		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
+	}
 
 	loaded = TRUE;
 
@@ -490,7 +561,7 @@ void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 				return;
 			}
 
-			if (opts.xstatus_set == CHECK_XSTATUS)
+			if (opts.xstatus_set == CHECK_XSTATUS_MUSIC)
 			{
 				// Set text to nothing
 				TCHAR *fr[] = { 
@@ -505,6 +576,13 @@ void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 
 				mir_free(ics.ptszName);
 				mir_free(ics.ptszMessage);
+			}
+			else if (opts.xstatus_set == CHECK_XSTATUS)
+			{
+				status = 0;
+				ics.flags = CSSF_MASK_STATUS;
+
+				CallProtoService(proto, PS_ICQ_SETCUSTOMSTATUSEX, 0, (LPARAM) &ics);
 			}
 			else
 			{
@@ -536,13 +614,19 @@ void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 		else
 		{
 			// Set it
-			if (opts.xstatus_set == CHECK_XSTATUS)
+			if (opts.xstatus_set == CHECK_XSTATUS_MUSIC)
 			{
 				ics.flags = CSSF_MASK_STATUS;
 				if (CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) || status != XSTATUS_MUSIC)
 					return;
 			}
-			else 
+			else if (opts.xstatus_set == CHECK_XSTATUS)
+			{
+				ics.flags = CSSF_MASK_STATUS;
+				if (!CallProtoService(proto, PS_ICQ_GETCUSTOMSTATUSEX, 0, (LPARAM) &ics) && status != XSTATUS_MUSIC && status != 0)
+					return;
+			}
+			else
 			{
 				// Store old data
 				ics.flags = CSSF_MASK_STATUS;
@@ -661,7 +745,7 @@ int GetTextFormat(WPARAM wParam,LPARAM lParam)
 	if (!loaded)
 		return NULL;
 
-	return (int) mir_dupT(opts.templ);
+	return (int) mir_tstrdup(opts.templ);
 }
 
 
@@ -692,7 +776,7 @@ int GetParsedFormat(WPARAM wParam,LPARAM lParam)
 
 TCHAR *ReplaceVars(TCHAR *str, TCHAR **fr, int size)
 {
-	TCHAR *ret = mir_dupT( str );
+	TCHAR *ret = mir_tstrdup( str );
 
 	for (int i = 0; i < size; i+=2) {
 		TCHAR *find = fr[i];
@@ -909,3 +993,141 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 
 	return 0;
 }
+
+
+TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai)
+{
+	if (ai->cbSize < sizeof(ARGUMENTSINFO))
+		return NULL;
+
+	LISTENINGTOINFO lti = {0};
+	if (!GetListeningInfo(&lti))
+	{
+		ai->flags = AIF_FALSE;
+		return mir_tstrdup(_T(""));
+	}
+
+	TCHAR *fr[] = { 
+		_T("%artist%"), lti.ptszArtist,
+		_T("%album%"), lti.ptszAlbum,
+		_T("%title%"), lti.ptszTitle,
+		_T("%track%"), lti.ptszTrack,
+		_T("%year%"), lti.ptszYear,
+		_T("%genre%"), lti.ptszGenre,
+		_T("%length%"), lti.ptszLength,
+		_T("%player%"), lti.ptszPlayer,
+		_T("%type%"), lti.ptszType
+	};
+
+	return ReplaceVars(opts.templ, fr, MAX_REGS(fr));
+}
+
+TCHAR* VariablesParseType(ARGUMENTSINFO *ai)
+{
+	if (ai->cbSize < sizeof(ARGUMENTSINFO))
+		return NULL;
+
+	LISTENINGTOINFO lti = {0};
+	if (!GetListeningInfo(&lti))
+		ai->flags = AIF_FALSE;
+
+	return mir_tstrdup(lti.ptszType == NULL ? _T("") : lti.ptszType);
+}
+
+TCHAR* VariablesParseArtist(ARGUMENTSINFO *ai)
+{
+	if (ai->cbSize < sizeof(ARGUMENTSINFO))
+		return NULL;
+
+	LISTENINGTOINFO lti = {0};
+	if (!GetListeningInfo(&lti))
+		ai->flags = AIF_FALSE;
+
+	return mir_tstrdup(lti.ptszArtist == NULL ? _T("") : lti.ptszArtist);
+}
+
+TCHAR* VariablesParseAlbum(ARGUMENTSINFO *ai)
+{
+	if (ai->cbSize < sizeof(ARGUMENTSINFO))
+		return NULL;
+
+	LISTENINGTOINFO lti = {0};
+	if (!GetListeningInfo(&lti))
+		ai->flags = AIF_FALSE;
+
+	return mir_tstrdup(lti.ptszAlbum == NULL ? _T("") : lti.ptszAlbum);
+}
+
+TCHAR* VariablesParseTitle(ARGUMENTSINFO *ai)
+{
+	if (ai->cbSize < sizeof(ARGUMENTSINFO))
+		return NULL;
+
+	LISTENINGTOINFO lti = {0};
+	if (!GetListeningInfo(&lti))
+		ai->flags = AIF_FALSE;
+
+	return mir_tstrdup(lti.ptszTitle == NULL ? _T("") : lti.ptszTitle);
+}
+
+TCHAR* VariablesParseTrack(ARGUMENTSINFO *ai)
+{
+	if (ai->cbSize < sizeof(ARGUMENTSINFO))
+		return NULL;
+
+	LISTENINGTOINFO lti = {0};
+	if (!GetListeningInfo(&lti))
+		ai->flags = AIF_FALSE;
+
+	return mir_tstrdup(lti.ptszTrack == NULL ? _T("") : lti.ptszTrack);
+}
+
+TCHAR* VariablesParseYear(ARGUMENTSINFO *ai)
+{
+	if (ai->cbSize < sizeof(ARGUMENTSINFO))
+		return NULL;
+
+	LISTENINGTOINFO lti = {0};
+	if (!GetListeningInfo(&lti))
+		ai->flags = AIF_FALSE;
+
+	return mir_tstrdup(lti.ptszYear == NULL ? _T("") : lti.ptszYear);
+}
+
+TCHAR* VariablesParseGenre(ARGUMENTSINFO *ai)
+{
+	if (ai->cbSize < sizeof(ARGUMENTSINFO))
+		return NULL;
+
+	LISTENINGTOINFO lti = {0};
+	if (!GetListeningInfo(&lti))
+		ai->flags = AIF_FALSE;
+
+	return mir_tstrdup(lti.ptszGenre == NULL ? _T("") : lti.ptszGenre);
+}
+
+TCHAR* VariablesParseLength(ARGUMENTSINFO *ai)
+{
+	if (ai->cbSize < sizeof(ARGUMENTSINFO))
+		return NULL;
+
+	LISTENINGTOINFO lti = {0};
+	if (!GetListeningInfo(&lti))
+		ai->flags = AIF_FALSE;
+
+	return mir_tstrdup(lti.ptszLength == NULL ? _T("") : lti.ptszLength);
+}
+
+TCHAR* VariablesParsePlayer(ARGUMENTSINFO *ai)
+{
+	if (ai->cbSize < sizeof(ARGUMENTSINFO))
+		return NULL;
+
+	LISTENINGTOINFO lti = {0};
+	if (!GetListeningInfo(&lti))
+		ai->flags = AIF_FALSE;
+
+	return mir_tstrdup(lti.ptszPlayer == NULL ? _T("") : lti.ptszPlayer);
+}
+
+

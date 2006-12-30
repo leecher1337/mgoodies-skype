@@ -151,9 +151,9 @@ void WATrack::GetData()
 	}
 
 	if (si->width > 0)
-		listening_info.ptszType = mir_dupT(_T("Video"));
+		listening_info.ptszType = mir_tstrdup(_T("Video"));
 	else
-		listening_info.ptszType = mir_dupT(_T("Music"));
+		listening_info.ptszType = mir_tstrdup(_T("Music"));
 
 	listening_info.ptszPlayer = mir_dupTW(si->player);
 

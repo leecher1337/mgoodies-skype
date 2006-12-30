@@ -152,7 +152,7 @@ BOOL ITunes::FillCache()
 			mir_sntprintf(listening_info.ptszLength, 9, _T("%d:%02d"), m, s);
 	}
 
-	listening_info.ptszType = mir_dupT(_T("Music"));
+	listening_info.ptszType = mir_tstrdup(_T("Music"));
 
 	if (listening_info.ptszTitle == NULL)
 	{
@@ -170,7 +170,7 @@ BOOL ITunes::FillCache()
 			*p = _T('\0');
 	}
 
-	listening_info.ptszPlayer = mir_dupT(name);
+	listening_info.ptszPlayer = mir_tstrdup(name);
 
 	listening_info.cbSize = sizeof(listening_info);
 	listening_info.dwFlags = LTI_TCHAR;
