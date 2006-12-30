@@ -38,6 +38,7 @@ static OptPageControl optionsControls[] = {
 	{ &opts.enable_sending,				CONTROL_CHECKBOX,	IDC_ENABLE_SEND,				"EnableSend", TRUE },
 	{ &opts.xstatus_set,				CONTROL_RADIO,		IDC_SET_XSTATUS,				"XStatusSet", 0, SET_XSTATUS },
 	{ &opts.xstatus_set,				CONTROL_RADIO,		IDC_CHECK_XSTATUS,				"XStatusSet", 0, CHECK_XSTATUS },
+	{ &opts.xstatus_set,				CONTROL_RADIO,		IDC_CHECK_XSTATUS_MUSIC,		"XStatusSet", 0, CHECK_XSTATUS_MUSIC },
 	{ &opts.xstatus_set,				CONTROL_RADIO,		IDC_IGNORE_XSTATUS,				"XStatusSet", 0, IGNORE_XSTATUS },
 	{ &opts.override_contact_template,	CONTROL_CHECKBOX,	IDC_OVERRIDE_CONTACTS_TEMPLATE,	"OverrideContactsTemplate", FALSE},
 	{ &opts.show_adv_icon,				CONTROL_CHECKBOX,	IDC_SHOW_ADV_ICON,				"ShowAdvancedIcon", FALSE},
@@ -45,7 +46,7 @@ static OptPageControl optionsControls[] = {
 };
 
 static UINT optionsExpertControls[] = { 
-	IDC_XSTATUS_G, IDC_XSTATUS_L, IDC_SET_XSTATUS, IDC_CHECK_XSTATUS, IDC_IGNORE_XSTATUS,
+	IDC_XSTATUS_G, IDC_XSTATUS_L, IDC_SET_XSTATUS, IDC_CHECK_XSTATUS, IDC_CHECK_XSTATUS_MUSIC, IDC_IGNORE_XSTATUS,
 	IDC_CONTACTS_G, IDC_SHOW_ADV_ICON, IDC_ADV_ICON
 };
 

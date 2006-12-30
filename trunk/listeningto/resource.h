@@ -69,6 +69,7 @@
 #define IDC_CHECK_XSTATUS               1098
 #define IDC_IGNORE_XSTATUS              1099
 #define IDC_XSTATUS_NAME                1100
+#define IDC_CHECK_XSTATUS_MUSIC         1100
 #define IDC_NAME_L                      1101
 #define IDC_POLL_TIMER_SPIN             1625
 #define IDC_STATIC                      -1

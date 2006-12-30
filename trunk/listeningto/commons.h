@@ -55,6 +55,7 @@ extern "C"
 #include <m_toptoolbar.h>
 #include <m_icolib.h>
 #include <m_icq.h>
+#include <m_variables.h>
 
 #include "../modernb/m_clui.h"
 #include "../modernb/CLUIFrames/m_cluiframes.h"

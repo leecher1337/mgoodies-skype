@@ -2,6 +2,14 @@ ListeningTo
 
 Changelog:
 
+. 0.1.1.3
+  + Added variables to variables plugin. Now listening info can be used in away messages.
+  + Winamp plugin will reload info for current song at each 3s. This will make radio station names be handled better.
+
+. 0.1.1.2
+  + Added 'If other XStatus is not set, set XStatus to Music and show listening info'
+  * Changes in options dialog strings
+
 . 0.1.1.1
   * Fix for IcoLib support
 

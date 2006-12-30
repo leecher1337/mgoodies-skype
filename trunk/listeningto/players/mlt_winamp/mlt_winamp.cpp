@@ -331,6 +331,9 @@ LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 								SendDataToMiranda(last_filename, (char *) SendMessage(plugin.hwndParent, WM_WA_IPC, track, IPC_GETPLAYLISTTITLE));
 						}
 					}
+
+					// To try to get info from radio stations
+					SetTimer(hMsgWnd, 1, 3000, NULL);
 				}
 				else
 				{

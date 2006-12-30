@@ -27,7 +27,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPTIONS DIALOG DISCARDABLE  0, 0, 288, 193
+IDD_OPTIONS DIALOGEX 0, 0, 288, 205
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Tahoma"
@@ -38,23 +38,26 @@ BEGIN
                     26,262,11
     LTEXT           "You also have to enable it per protocol in the main menu",
                     IDC_STATIC,12,41,262,13
-    GROUPBOX        " XStatus ",IDC_XSTATUS_G,3,60,282,75
+    GROUPBOX        " XStatus ",IDC_XSTATUS_G,3,60,282,88
     LTEXT           "For protocols that don't support listening to but support XStatus:",
                     IDC_XSTATUS_L,12,74,263,11
-    CONTROL         "Set XStatus to Music and show listening info as message",
+    CONTROL         "Set XStatus to Music and show listening info",
                     IDC_SET_XSTATUS,"Button",BS_AUTORADIOBUTTON,19,87,257,12
-    CONTROL         "If XStatus is Music, show listening info as message",
+    CONTROL         "If other XStatus is not set, set XStatus to Music and show listening info",
                     IDC_CHECK_XSTATUS,"Button",BS_AUTORADIOBUTTON,19,101,257,
                     12
+    CONTROL         "If XStatus is Music, show listening info",
+                    IDC_CHECK_XSTATUS_MUSIC,"Button",BS_AUTORADIOBUTTON,19,
+                    115,257,12
     CONTROL         "Do nothing",IDC_IGNORE_XSTATUS,"Button",
-                    BS_AUTORADIOBUTTON,19,115,257,12
-    GROUPBOX        " Contacts ",IDC_CONTACTS_G,3,139,282,49
+                    BS_AUTORADIOBUTTON,19,129,257,12
+    GROUPBOX        " Contacts ",IDC_CONTACTS_G,3,152,282,49
     CONTROL         "Apply template for info from contacts (overrides contacts template)",
                     IDC_OVERRIDE_CONTACTS_TEMPLATE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,12,153,262,11
+                    WS_TABSTOP,12,166,262,11
     CONTROL         "Show advanced icon in slot",IDC_SHOW_ADV_ICON,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,166,104,13
-    COMBOBOX        IDC_ADV_ICON,122,166,46,15,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,179,104,13
+    COMBOBOX        IDC_ADV_ICON,122,179,46,15,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
 END
 
@@ -85,7 +88,7 @@ BEGIN
                     3,127,282,11
 END
 
-IDD_FORMAT DIALOG DISCARDABLE  0, 0, 288, 221
+IDD_FORMAT DIALOGEX 0, 0, 288, 221
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "Tahoma"
@@ -108,7 +111,7 @@ BEGIN
                     10
     EDITTEXT        IDC_UNKNOWN,122,114,152,13,ES_AUTOHSCROLL
     GROUPBOX        " XStatus ",IDC_XSTATUS_G,3,137,282,79
-    LTEXT           "Name:",IDC_NAME_L,11,152,55,10
+    LTEXT           "Title:",IDC_NAME_L,11,152,55,10
     EDITTEXT        IDC_XSTATUS_NAME,72,150,202,13,ES_AUTOHSCROLL
     LTEXT           "Message:",IDC_MESSAGE_L,11,167,55,10
     EDITTEXT        IDC_XSTATUS_MESSAGE,72,165,202,13,ES_AUTOHSCROLL
@@ -134,7 +137,7 @@ BEGIN
         LEFTMARGIN, 3
         RIGHTMARGIN, 285
         TOPMARGIN, 12
-        BOTTOMMARGIN, 190
+        BOTTOMMARGIN, 202
     END
 
     IDD_PLAYERS, DIALOG

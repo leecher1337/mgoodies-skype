@@ -43,7 +43,7 @@ typedef struct {
 		TCHAR* ptszArtist;
 	};
 	union {
-		char* pszAlbum;			// Algum name
+		char* pszAlbum;			// Album name
 		TCHAR* ptszAlbum;
 	};
 	union {

@@ -23,3 +23,5 @@ Known bugs:
 - In clist classic you can't select one protocol - it allways select all. This is because a limitation of the clist (that don't send the current position in list to the service). So, unless someone patch the clist, it wont work. Clist modern and nicer works fine.
 
 To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=10912
+
+This plugin requires at least miranda 0.6, but is fully functional only in miranda 0.7

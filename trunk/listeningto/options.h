@@ -41,7 +41,8 @@ extern "C"
 
 #define SET_XSTATUS 0
 #define CHECK_XSTATUS 1
-#define IGNORE_XSTATUS 2
+#define CHECK_XSTATUS_MUSIC 2
+#define IGNORE_XSTATUS 3
 
 
 struct Options {

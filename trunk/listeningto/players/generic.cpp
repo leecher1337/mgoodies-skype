@@ -141,11 +141,11 @@ void GenericPlayer::ProcessReceived()
 	listening_info.ptszTrack = mir_dupTW(parts[6]);
 	listening_info.ptszYear = mir_dupTW(parts[7]);
 	listening_info.ptszGenre = mir_dupTW(parts[8]);
-	listening_info.ptszPlayer = mir_dupT(players[i]->name);
+	listening_info.ptszPlayer = mir_tstrdup(players[i]->name);
 
-	if (parts[8] != NULL)
+	if (parts[9] != NULL)
 	{
-		long length = _wtoi(parts[8]);
+		long length = _wtoi(parts[9]);
 		if (length > 0)
 		{
 			listening_info.ptszLength = (TCHAR*) mir_alloc(10 * sizeof(TCHAR));
