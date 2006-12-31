@@ -106,22 +106,39 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			col.cx=100;
 			ListView_InsertColumn(hwndList,0,&col);
 			
-			col.pszText=TranslateT("Version");			
+			col.pszText=TranslateT("Version");
 			col.cx=60;
 			ListView_InsertColumn(hwndList,1,&col);
+
 		
-			col.pszText=TranslateT("Update URL");
+			col.pszText=TranslateT("Version URL");
 			col.cx=200;
 			ListView_InsertColumn(hwndList,2,&col);
 		
-			col.pszText=TranslateT("Beta Download URL");
+			col.pszText=TranslateT("Version Prefix");
+			col.cx=100;
 			ListView_InsertColumn(hwndList,3,&col);
 		
-			col.pszText=TranslateT("Beta Version URL");
+			col.pszText=TranslateT("Update URL");
+			col.cx=200;
 			ListView_InsertColumn(hwndList,4,&col);
+
+		
+			col.pszText=TranslateT("Beta Version URL");
+			col.cx=200;
+			ListView_InsertColumn(hwndList,5,&col);
+		
+			col.pszText=TranslateT("Beta Version Prefix");
+			col.cx=100;
+			ListView_InsertColumn(hwndList,6,&col);
+		
+			col.pszText=TranslateT("Beta Update URL");
+			col.cx=200;
+			ListView_InsertColumn(hwndList,7,&col);
+
 		
 			col.pszText=TranslateT("Beta Changelog URL");
-			ListView_InsertColumn(hwndList,5,&col);
+			ListView_InsertColumn(hwndList,8,&col);
 			
 			// XXX: Won't work on windows 95 without IE3+ or 4.70
 			ListView_SetExtendedListViewStyleEx(hwndList, 0, LVS_EX_FULLROWSELECT );
@@ -132,22 +149,30 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				it.mask = LVIF_TEXT;
 				it.pszText = plugins[i].szComponentName;
 				int iRow = SendMessageA( hwndList, LVM_INSERTITEMA, 0, (LPARAM)&it );
-
 				if (plugins[i].pbVersion != NULL)
 					ListView_SetItemTextA(hwndList, iRow, 1, (char *) plugins[i].pbVersion);
+
+				if (plugins[i].szVersionURL != NULL)
+					ListView_SetItemTextA(hwndList, iRow, 2, plugins[i].szVersionURL);
+				if (plugins[i].pbVersionPrefix != NULL)
+					ListView_SetItemTextA(hwndList, iRow, 3, (char *) plugins[i].pbVersionPrefix);
 				if (plugins[i].szUpdateURL != NULL)
 				{
 					if (strcmp(plugins[i].szUpdateURL, UPDATER_AUTOREGISTER) == 0)
-						ListView_SetItemTextA(hwndList, iRow, 2, "<From FL XML>");
+						ListView_SetItemTextA(hwndList, iRow, 4, "<From FL XML>");
 					else
-						ListView_SetItemTextA(hwndList, iRow, 2, plugins[i].szUpdateURL);
+						ListView_SetItemTextA(hwndList, iRow, 4, plugins[i].szUpdateURL);
 				}
-				if (plugins[i].szBetaUpdateURL != NULL)
-					ListView_SetItemTextA(hwndList, iRow, 3, plugins[i].szBetaUpdateURL);
+
 				if (plugins[i].szBetaVersionURL != NULL)
-					ListView_SetItemTextA(hwndList, iRow, 4, plugins[i].szBetaVersionURL);
+					ListView_SetItemTextA(hwndList, iRow, 5, plugins[i].szBetaVersionURL);
+				if (plugins[i].pbBetaVersionPrefix != NULL)
+					ListView_SetItemTextA(hwndList, iRow, 6, (char *) plugins[i].pbBetaVersionPrefix);
+				if (plugins[i].szBetaUpdateURL != NULL)
+					ListView_SetItemTextA(hwndList, iRow, 7, plugins[i].szBetaUpdateURL);
+
 				if (plugins[i].szBetaChangelogURL != NULL)
-					ListView_SetItemTextA(hwndList, iRow, 5, plugins[i].szBetaChangelogURL);
+					ListView_SetItemTextA(hwndList, iRow, 8, plugins[i].szBetaChangelogURL);
 			}
 
 			// sort out the headers

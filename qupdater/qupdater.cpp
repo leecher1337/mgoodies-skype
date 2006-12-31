@@ -107,10 +107,15 @@ int UpdateRegister(WPARAM wParam, LPARAM lParam)
 
 	Update updt = {0};
 	updt.szComponentName = mir_strdup(in->szComponentName);
-	updt.pbVersion = (BYTE *) mir_strdup((char *) in->pbVersion);
+	updt.szVersionURL = mir_strdup(in->szVersionURL);
+	updt.pbVersionPrefix = (BYTE *) mir_strdup((char *) in->pbVersionPrefix);
 	updt.szUpdateURL = mir_strdup(in->szUpdateURL);
-	updt.szBetaUpdateURL = mir_strdup(in->szBetaUpdateURL);
+
 	updt.szBetaVersionURL = mir_strdup(in->szBetaVersionURL);
+	updt.pbBetaVersionPrefix = (BYTE *) mir_strdup((char *) in->pbBetaVersionPrefix);
+	updt.szBetaUpdateURL = mir_strdup(in->szBetaUpdateURL);
+
+	updt.pbVersion = (BYTE *) mir_strdup((char *) in->pbVersion);
 
 	if (in->cbSize >= sizeof(Update))
 		updt.szBetaChangelogURL = mir_strdup(in->szBetaChangelogURL);
@@ -133,10 +138,17 @@ void DumpFile()
 	{
 		fprintf(arq, "\"");
 		fprintf(arq, plugins[i].szComponentName);
-		fprintf(arq, "\";\"");
+		fprintf(arq, "\",\"");
 		if (plugins[i].pbVersion != NULL)
 			fprintf(arq, (char *) plugins[i].pbVersion);
-		fprintf(arq, "\";\"");
+		fprintf(arq, "\",\"");
+
+		if (plugins[i].szVersionURL != NULL)
+			fprintf(arq, plugins[i].szVersionURL);
+		fprintf(arq, "\",\"");
+		if (plugins[i].pbVersionPrefix != NULL)
+			fprintf(arq, (char *) plugins[i].pbVersionPrefix);
+		fprintf(arq, "\",\"");
 		if (plugins[i].szUpdateURL != NULL)
 		{
 			if (strcmp(plugins[i].szUpdateURL, UPDATER_AUTOREGISTER) == 0)
@@ -144,13 +156,18 @@ void DumpFile()
 			else
 				fprintf(arq, plugins[i].szUpdateURL);
 		}
-		fprintf(arq, "\";\"");
-		if (plugins[i].szBetaUpdateURL != NULL)
-			fprintf(arq, plugins[i].szBetaUpdateURL);
-		fprintf(arq, "\";\"");
+		fprintf(arq, "\",\"");
+
 		if (plugins[i].szBetaVersionURL != NULL)
 			fprintf(arq, plugins[i].szBetaVersionURL);
-		fprintf(arq, "\";\"");
+		fprintf(arq, "\",\"");
+		if (plugins[i].pbBetaVersionPrefix != NULL)
+			fprintf(arq, (char *) plugins[i].pbBetaVersionPrefix);
+		fprintf(arq, "\",\"");
+		if (plugins[i].szBetaUpdateURL != NULL)
+			fprintf(arq, plugins[i].szBetaUpdateURL);
+		fprintf(arq, "\",\"");
+
 		if (plugins[i].szBetaChangelogURL != NULL)
 			fprintf(arq, plugins[i].szBetaChangelogURL);
 		fprintf(arq, "\"\n");
