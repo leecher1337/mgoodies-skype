@@ -2087,8 +2087,13 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 								if(NULL!=ActualMail)
 								{
 									if (ActualMail->MsgWindow) {
-										if (!BringWindowToTop(ActualMail->MsgWindow)) DestroyWindow(ActualMail->MsgWindow);
+										if (!BringWindowToTop(ActualMail->MsgWindow)) {
+											SendMessage(ActualMail->MsgWindow,WM_DESTROY,0,0);
+											ActualMail->MsgWindow = 0;
+											goto CREADTEVIEWMESSAGEWINDOW;
+										}
 									} else {
+CREADTEVIEWMESSAGEWINDOW:
 										PYAMN_MAILSHOWPARAM MailParam = new YAMN_MAILSHOWPARAM;
 										MailParam->account = GetWindowAccount(hDlg);
 										MailParam->mail = ActualMail;
