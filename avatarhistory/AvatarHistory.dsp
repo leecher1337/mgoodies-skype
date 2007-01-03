@@ -55,7 +55,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /machine:I386 /out:"..\..\bin\release\plugins\avatarhist.dll"
+# ADD LINK32 kernel32.lib user32.lib comctl32.lib comdlg32.lib ole32.lib gdi32.lib /nologo /dll /machine:I386 /out:"..\..\bin\release\plugins\avatarhist.dll"
 # SUBTRACT LINK32 /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "AvatarHistory - Win32 Debug"
@@ -82,7 +82,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 winspool.lib ole32.lib oleaut32.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\debug\plugins\avatarhist.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib comctl32.lib comdlg32.lib ole32.lib gdi32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\debug\plugins\avatarhist.dll" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "AvatarHistory - Win32 Unicode Debug"
 
@@ -109,7 +109,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 winspool.lib ole32.lib oleaut32.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\debug\plugins\avatarhist.dll" /pdbtype:sept
-# ADD LINK32 winspool.lib ole32.lib oleaut32.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\debug unicode\plugins\avatarhistW.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib comctl32.lib comdlg32.lib ole32.lib gdi32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\debug unicode\plugins\avatarhistW.dll" /pdbtype:sept
 
 !ELSEIF  "$(CFG)" == "AvatarHistory - Win32 Unicode Release"
 
@@ -137,7 +137,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /machine:I386 /out:"..\..\bin\release\plugins\avatarhist.dll"
 # SUBTRACT BASE LINK32 /nodefaultlib
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib shell32.lib uuid.lib comctl32.lib /nologo /dll /machine:I386 /out:"..\..\bin\release\plugins\avatarhistW.dll"
+# ADD LINK32 kernel32.lib user32.lib comctl32.lib comdlg32.lib ole32.lib gdi32.lib /nologo /dll /machine:I386 /out:"..\..\bin\release\plugins\avatarhistW.dll"
 # SUBTRACT LINK32 /nodefaultlib
 
 !ENDIF 
