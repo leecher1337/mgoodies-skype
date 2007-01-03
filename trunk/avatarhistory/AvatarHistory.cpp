@@ -51,6 +51,8 @@ void InitMenuItem();
 static int IsEnabled(WPARAM wParam, LPARAM lParam);
 static int GetCachedAvatar(WPARAM wParam, LPARAM lParam);
 TCHAR * GetCachedAvatar(char *proto, char *hash);
+TCHAR* GetOldStyleContactFolder(HANDLE hContact, TCHAR* fn);
+BOOL CreateShortcut(TCHAR *file, TCHAR *shortcut);
 
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
@@ -129,7 +131,7 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
 		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/avatarhist_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/?p=avatarhist#Changelog";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/avatarhist#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Avatar History ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
@@ -322,6 +324,36 @@ void ConvertToFilename(char *str, size_t size) {
 }
 
 
+void CreateOldStyleShortcut(HANDLE hContact, char *proto, TCHAR *history_filename)
+{
+	TCHAR shortcut[MAX_PATH+1] = _T("");
+	TCHAR ext[11];
+	SYSTEMTIME curtime;
+
+	lstrcpyn(ext, _tcsrchr(history_filename, _T('.'))+1, 10);
+
+	GetOldStyleContactFolder(hContact, shortcut);
+
+	GetLocalTime(&curtime);
+	mir_sntprintf(shortcut, MAX_REGS(shortcut), 
+		_T("%s\\%04d-%02d-%02d %02dh%02dm%02ds.%s.lnk"), shortcut, 
+		curtime.wYear, curtime.wMonth, curtime.wDay, 
+		curtime.wHour, curtime.wMinute, curtime.wSecond, 
+		ext);
+
+	if (!CreateShortcut(history_filename, shortcut))
+	{
+		ShowPopup(hContact, _T("Avatar History"), _T("Unable to create shortcut"));
+	}
+#ifdef DBGPOPUPS
+	else
+	{
+		ShowPopup(hContact, _T("AVH Debug"), _T("Shortcut created successfully"));
+	}
+#endif
+}
+
+
 // fired when the contacts avatar changes
 // wParam = hContact
 // lParam = struct avatarCacheEntry *cacheEntry
@@ -386,6 +418,14 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 	}
 	else if (avatar == NULL)
 	{
+		if (!strcmp(oldhash, "-"))
+		{
+#ifdef DBGPOPUPS
+			ShowPopup(NULL, "AVH Debug", "Changed from a flash avatar to a flash avatar... skipping");
+#endif
+			return 0;
+		}
+
 		// Is a flash avatar or avs could not load it
 		db_string_set(hContact, "AvatarHistory", "AvatarHash", "-");
 
@@ -477,6 +517,9 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 #endif
 				}
 			}
+
+			if (opts.log_old_style)
+				CreateOldStyleShortcut(hContact, proto, history_filename);
 		}
 
 
@@ -586,4 +629,147 @@ TCHAR * GetCachedAvatar(char *proto, char *hash)
 	FindClose(hFind);
 
 	return ret;
+}
+
+
+int GetUIDFromHContact(HANDLE contact, char* protoout, TCHAR* uinout, size_t uinout_len)
+{
+	CONTACTINFO cinfo;
+	char* proto;
+	
+	proto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)contact,0);
+	if(proto)
+		strcpy(protoout, proto);
+	else strcpy(protoout, Translate("Unknown Protocol"));
+
+	ZeroMemory(&cinfo,sizeof(CONTACTINFO));
+	cinfo.cbSize = sizeof(CONTACTINFO);
+	cinfo.hContact = contact;
+	cinfo.dwFlag = CNF_UNIQUEID;
+#ifdef UNICODE
+	cinfo.dwFlag |= CNF_UNICODE;
+#endif
+
+	BOOL found = TRUE;
+	if(CallService(MS_CONTACT_GETCONTACTINFO,0,(LPARAM)&cinfo)==0)
+	{
+		if(cinfo.type == CNFT_ASCIIZ)
+		{
+			lstrcpyn(uinout, cinfo.pszVal, uinout_len);
+			// It is up to us to free the string
+			// The catch? We need to use Miranda's free(), not our CRT's :)
+			mir_free(cinfo.pszVal);
+		}
+		else if(cinfo.type == CNFT_DWORD)
+		{
+			_itot(cinfo.dVal,uinout,10);
+		}
+		else if(cinfo.type == CNFT_WORD)
+		{
+			_itot(cinfo.wVal,uinout,10);
+		}
+		else found = FALSE;
+	}
+	else found = FALSE;
+
+	if (!found)
+	{
+#ifdef UNICODE
+		// Try non unicode ver
+		cinfo.dwFlag = CNF_UNIQUEID;
+
+		found = TRUE;
+		if(CallService(MS_CONTACT_GETCONTACTINFO,0,(LPARAM)&cinfo)==0)
+		{
+			if(cinfo.type == CNFT_ASCIIZ)
+			{
+				MultiByteToWideChar(CP_ACP, 0, (char *) cinfo.pszVal, -1, uinout, uinout_len);
+				// It is up to us to free the string
+				// The catch? We need to use Miranda's free(), not our CRT's :)
+				mir_free(cinfo.pszVal);
+			}
+			else if(cinfo.type == CNFT_DWORD)
+			{
+				_itot(cinfo.dVal,uinout,10);
+			}
+			else if(cinfo.type == CNFT_WORD)
+			{
+				_itot(cinfo.wVal,uinout,10);
+			}
+			else found = FALSE;
+		}
+		else found = FALSE;
+
+		if (!found)
+#endif
+			lstrcpy(uinout, TranslateT("Unknown UIN"));
+	}
+	return 0;
+}
+
+
+TCHAR* GetOldStyleContactFolder(HANDLE hContact, TCHAR* fn)
+{
+	TCHAR uin[MAX_PATH+1];
+	char proto[50+1];
+	FoldersGetCustomPathT(hFolder, fn, MAX_PATH+1, basedir);
+	CreateDirectory(fn, NULL);		
+	GetUIDFromHContact(hContact, proto, uin, MAX_REGS(uin));
+#ifdef UNICODE
+	mir_sntprintf(fn, MAX_PATH+1, _T("%s\\%S"), fn, proto);
+#else
+	mir_sntprintf(fn, MAX_PATH+1, _T("%s\\%s"), fn, proto);
+#endif
+	CreateDirectory(fn, NULL);
+	mir_sntprintf(fn, MAX_PATH+1, _T("%s\\%s"), fn, uin);
+	CreateDirectory(fn, NULL);
+	
+#ifdef DBGPOPUPS
+	char log[1024];
+#ifdef UNICODE
+	mir_snprintf(log, MAX_REGS(log), "Path: %S\nProto: %s\nUIN: %S", fn, proto, uin);
+#else
+	mir_snprintf(log, MAX_REGS(log), "Path: %s\nProto: %s\nUIN: %s", fn, proto, uin);
+#endif
+	ShowPopup(NULL, "AVH Debug: GetContactFolder", log);
+#endif
+
+	return fn;
+}
+
+
+#include <ShObjIdl.h>
+#include <ShlGuid.h>
+
+BOOL CreateShortcut(TCHAR *file, TCHAR *shortcut)
+{
+	CoInitialize(NULL) ;
+
+    IShellLink* psl = NULL;
+
+    HRESULT hr = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (void **) &psl);
+
+    if (SUCCEEDED(hr)) 
+    {
+        psl->SetPath(file); 
+
+        IPersistFile* ppf = NULL; 
+        hr = psl->QueryInterface(IID_IPersistFile,  (void **) &ppf); 
+
+        if (SUCCEEDED(hr))
+        {
+#ifdef UNICODE
+			hr = ppf->Save(shortcut, TRUE); 
+#else
+			WCHAR tmp[MAX_PATH]; 
+            MultiByteToWideChar(CP_ACP, 0, shortcut, -1, tmp, MAX_PATH); 
+            hr = ppf->Save(tmp, TRUE); 
+#endif
+            ppf->Release(); 
+        }
+
+        psl->Release(); 
+    } 
+
+	return SUCCEEDED(hr);
 }

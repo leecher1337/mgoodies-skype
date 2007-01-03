@@ -36,6 +36,7 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 
 static OptPageControl optionsControls[] = { 
 	{ NULL,						CONTROL_CHECKBOX,		IDC_LOG_DISK,		"LogToDisk", AVH_DEF_LOGTODISK },
+	{ &opts.log_old_style,		CONTROL_CHECKBOX,		IDC_OLD_STYLE,		"LogOldStyle", AVH_DEF_LOGOLDSTYLE },
 	{ NULL,						CONTROL_CHECKBOX,		IDC_LOG_HISTORY,	"LogToHistory", AVH_DEF_LOGTOHISTORY },
 	{ &opts.template_changed,	CONTROL_TEXT,			IDC_CHANGED,		"TemplateChanged", (DWORD) _T(DEFAULT_TEMPLATE_CHANGED) },
 	{ &opts.track_removes,		CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,	"TrackRemoves", TRUE },
@@ -114,6 +115,8 @@ static void OptionsEnableDisableCtrls(HWND hwndDlg)
 {
 	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED_L), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
 	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
+
+	EnableWindow(GetDlgItem(hwndDlg, IDC_OLD_STYLE), IsDlgButtonChecked(hwndDlg, IDC_LOG_DISK));
 }
 
 
@@ -132,6 +135,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 		{
 			switch (LOWORD(wParam)) 
 			{
+				case IDC_LOG_DISK:
 				case IDC_TRACK_REMOVE:
 				{
 					if (HIWORD(wParam) == BN_CLICKED)
