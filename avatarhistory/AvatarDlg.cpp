@@ -24,7 +24,7 @@ Avatar History Plugin
 #include <prsht.h>
 
 extern HINSTANCE hInst;
-HANDLE hMenu = 0; 
+HANDLE hMenu = NULL; 
 int OpenAvatarDialog(HANDLE hContact, char* fn);
 DWORD WINAPI AvatarDialogThread(LPVOID param);
 static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam);
@@ -64,6 +64,9 @@ public:
 
 int OpenAvatarDialog(HANDLE hContact, char* fn)
 {
+	if (!ContactEnabled(hContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
+		return -1;
+
 	DWORD dwId;
 	struct AvatarDialogData* avdlg;
 	avdlg = (struct AvatarDialogData*)malloc(sizeof(struct AvatarDialogData));

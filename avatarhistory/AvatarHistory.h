@@ -42,6 +42,7 @@ extern HANDLE hMenu;
 #define AVH_DEF_POPUPBG 0x2DB6FF
 #define AVH_DEF_AVPOPUPS 0
 #define AVH_DEF_LOGTODISK 1
+#define AVH_DEF_LOGOLDSTYLE 0
 #define AVH_DEF_LOGTOHISTORY 0
 #define AVH_DEF_DEFPOPUPS 0
 #define AVH_DEF_SHOWMENU 1
@@ -78,6 +79,9 @@ struct Options {
 	TCHAR template_changed[1024];
 	TCHAR template_removed[1024];
 
+	// Log
+	BOOL log_old_style;
+
 	// Track
 	BYTE track_removes;
 
@@ -112,3 +116,4 @@ extern Options opts;
 
 
 int PathToAbsolute(char *pSrc, char *pOut);
+BOOL ContactEnabled(HANDLE hContact, char *setting, int def);

@@ -56,6 +56,7 @@
 #define IDC_PROTOCOLS_L                 1067
 #define IDC_TRACK_CHANGE                1068
 #define IDC_COLOURS_G                   1068
+#define IDC_OLD_STYLE                   1068
 #define IDC_TRACK_REMOVE                1069
 #define IDC_BGCOLOR_L                   1069
 #define IDC_TEXTCOLOR_L                 1070

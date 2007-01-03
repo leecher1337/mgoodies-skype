@@ -96,7 +96,7 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 		if (title != NULL)
 			lstrcpyn(ppd.lpwzContactName, title, MAX_REGS(ppd.lpwzContactName));
 		else if (hContact != NULL)
-			lstrcpyn(ppd.lpwzContactName, (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, GCDNF_TCHAR), 
+			lstrcpyn(ppd.lpwzContactName, (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, GCDNF_TCHAR | GCDNF_NOCACHE), 
 					MAX_REGS(ppd.lpwzContactName));
 
 		if (description != NULL)
@@ -148,7 +148,7 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 					ppd.iSeconds = -1;
 					break;
 
-				//case POPUP_DELAY_DEFAULT:
+				case POPUP_DELAY_DEFAULT:
 				default:
 					ppd.iSeconds = 0;
 					break;
@@ -176,7 +176,7 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 		if (title != NULL)
 			TCHAR_TO_CHAR(ppd.lpzContactName, title);
 		else
-			lstrcpynA(ppd.lpzContactName, (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, 0), 
+			lstrcpynA(ppd.lpzContactName, (char *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, GCDNF_NOCACHE), 
 					MAX_REGS(ppd.lpzContactName));
 
 		if (description != NULL)
@@ -228,7 +228,7 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 					ppd.iSeconds = -1;
 					break;
 
-				//case POPUP_DELAY_DEFAULT:
+				case POPUP_DELAY_DEFAULT:
 				default:
 					ppd.iSeconds = 0;
 					break;
