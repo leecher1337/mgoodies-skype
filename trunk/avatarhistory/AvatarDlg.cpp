@@ -64,9 +64,6 @@ public:
 
 int OpenAvatarDialog(HANDLE hContact, char* fn)
 {
-	if (!ContactEnabled(hContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
-		return -1;
-
 	DWORD dwId;
 	struct AvatarDialogData* avdlg;
 	avdlg = (struct AvatarDialogData*)malloc(sizeof(struct AvatarDialogData));
