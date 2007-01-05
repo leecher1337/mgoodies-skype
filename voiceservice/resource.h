@@ -4,6 +4,15 @@
 //
 #define IDR_MENUS                       101
 #define IDD_CALLS                       102
+#define IDI_TALKING                     102
+#define IDI_RINGING                     103
+#define IDI_ON_HOLD                     104
+#define IDI_ENDED                       105
+#define IDI_ACTION_CALL                 106
+#define IDI_ACTION_ANSWER               107
+#define IDI_ACTION_HOLD                 108
+#define IDI_ACTION_DROP                 109
+#define IDI_MAIN                        110
 #define IDD_POPUPS                      120
 #define IDC_CALLS                       1000
 #define IDC_DELAY                       1001
@@ -34,7 +43,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        102
+#define _APS_NEXT_RESOURCE_VALUE        111
 #define _APS_NEXT_COMMAND_VALUE         40004
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
