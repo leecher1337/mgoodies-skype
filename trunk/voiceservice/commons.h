@@ -55,6 +55,9 @@ extern "C"
 #include <m_updater.h>
 #include <m_popup.h>
 #include <m_cluiframes.h>
+#include <m_icolib.h>
+#include <m_metacontacts.h>
+#include <m_fontservice.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
@@ -81,10 +84,30 @@ extern PLUGINLINK *pluginLink;
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 
 
+#define TALKING 0
 #define RINGING 1
-#define TALKING 2
+#define ON_HOLD 2
 #define ENDED 3
-#define ON_HOLD 4
+
+#define NUM_STATES 4
+
+#define ACTION_CALL 0
+#define ACTION_ANSWER 1
+#define ACTION_HOLD 2
+#define ACTION_DROP 3
+
+#define NUM_ACTIONS 4
+
+#define MAIN_ICON (NUM_STATES + NUM_ACTIONS)
+#define NUM_ICONS (NUM_STATES + NUM_ACTIONS + 1)
+
+#define NUM_FONTS NUM_STATES
+
+extern HICON icons[NUM_ICONS];
+extern HFONT fonts[NUM_FONTS];
+extern COLORREF font_colors[NUM_FONTS];
+extern int font_max_height;
+
 
 
 typedef struct {
@@ -93,7 +116,7 @@ typedef struct {
 	char *id;				// Protocol especific ID for this call
 	int flags;				// Can be VOICE_CALL_CONTACT or VOICE_CALL_STRING
 	HANDLE hContact;
-	TCHAR *ptszContact;
+	TCHAR ptszContact[128];
 	int state;
 } VOICE_CALL_INTERNAL;
 
@@ -124,5 +147,16 @@ __inline static int ProtoServiceExists(const char *szModule,const char *szServic
 	strcat(str,szService);
 	return ServiceExists(str);
 }
+
+
+#define ICON_SIZE 16
+
+#ifdef UNICODE
+# define _S "%S"
+# define _SI "%s"
+#else
+# define _S "%s"
+# define _SI "%S"
+#endif
 
 #endif // __COMMONS_H__

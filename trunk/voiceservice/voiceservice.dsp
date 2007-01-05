@@ -196,7 +196,43 @@ SOURCE=.\resource.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
+SOURCE=.\res\Answer.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\Call.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\Drop.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\ended.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\Hold.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\Main.ico
+# End Source File
+# Begin Source File
+
+SOURCE=".\res\On hold.ico"
+# End Source File
+# Begin Source File
+
 SOURCE=.\resource.rc
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\Rinning.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\Talking.ico
 # End Source File
 # End Group
 # Begin Group "Source Files"

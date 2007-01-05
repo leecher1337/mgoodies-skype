@@ -46,6 +46,9 @@ PLUGINLINK *pluginLink;
 
 HANDLE hModulesLoaded = NULL;
 HANDLE hPreShutdownHook = NULL;
+HANDLE hIconsChanged = NULL;
+
+char *metacontacts_proto = NULL;
 
 
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
@@ -56,9 +59,25 @@ static int VoiceEndedCall(WPARAM wParam, LPARAM lParam);
 static int VoiceStartedCall(WPARAM wParam, LPARAM lParam);
 static int VoiceHoldedCall(WPARAM wParam, LPARAM lParam);
 
+TCHAR *GetStateName(int state);
+TCHAR *GetActionName(int action);
 
 vector<VOICE_CALL_INTERNAL> calls;
 CURRENT_CALL currentCall = {0};
+
+HFONT fonts[NUM_FONTS] = {0};
+COLORREF font_colors[NUM_FONTS] = {0};
+int font_max_height;
+
+HICON icons[NUM_ICONS] = {0};
+char *icon_names[NUM_ICONS] = { "vc_talking", "vc_ringing", "vc_on_hold", "vc_ended", 
+					 "vca_call", "vca_answer" , "vca_hold", "vca_drop",
+					 "vc_main"};
+
+#define IDI_BASE IDI_TALKING 
+
+static int IconsChanged(WPARAM wParam, LPARAM lParam);
+static int ReloadFont(WPARAM wParam, LPARAM lParam);
 
 
 
@@ -102,6 +121,9 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
 
+	if (ServiceExists(MS_MC_GETPROTOCOLNAME))
+		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
+
     // updater plugin support
     if(ServiceExists(MS_UPDATE_REGISTER))
 	{
@@ -127,6 +149,65 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
+	}
+
+	// Init icons
+	if (ServiceExists(MS_SKIN2_ADDICON)) 
+	{
+		SKINICONDESC sid = {0};
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.flags = SIDF_TCHAR;
+		sid.ptszSection = TranslateT("Voice Calls");
+
+		int p = 0, i;
+		for(i = 0; i < NUM_STATES; i++, p++)
+		{
+			sid.ptszDescription = GetStateName(i);
+			sid.pszName = icon_names[p];
+			sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_BASE + p), IMAGE_ICON, ICON_SIZE, ICON_SIZE, 0);
+			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		}
+
+		for(i = 0; i < NUM_ACTIONS; i++, p++)
+		{
+			sid.ptszDescription = GetActionName(i);
+			sid.pszName = icon_names[p];
+			sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_BASE + p), IMAGE_ICON, ICON_SIZE, ICON_SIZE, 0);
+			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		}
+
+		sid.ptszDescription = TranslateT("Main");
+		sid.pszName = icon_names[p];
+		sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_BASE + p), IMAGE_ICON, ICON_SIZE, ICON_SIZE, 0);
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+		IconsChanged(0, 0);
+		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
+	}
+	else
+	{		
+		for(int i = 0; i < NUM_ICONS; i++)
+			icons[i] = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_BASE + i), IMAGE_ICON, ICON_SIZE, ICON_SIZE, 0);
+	}
+
+	// Init fonts
+	{
+		FontIDT fi = {0};
+		fi.cbSize = sizeof(fi);
+		lstrcpyn(fi.group, TranslateT("Voice Calls"), MAX_REGS(fi.group));
+		strncpy(fi.dbSettingsGroup, MODULE_NAME, MAX_REGS(fi.dbSettingsGroup));
+
+		for (int i = 0; i < NUM_FONTS; i++)
+		{
+			fi.order = i;
+			lstrcpyn(fi.name, GetStateName(i), MAX_REGS(fi.name));
+			strncpy(fi.prefix, icon_names[i], MAX_REGS(fi.prefix));
+
+			CallService(MS_FONT_REGISTERT, (WPARAM) &fi, 0);
+		}
+
+		ReloadFont(0,0);
+		HookEvent(ME_FONT_RELOAD, ReloadFont);
 	}
 
 	InitOptions();
@@ -177,6 +258,7 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 	UnhookEvent(hModulesLoaded);
 	UnhookEvent(hPreShutdownHook);
+	UnhookEvent(hIconsChanged);
 
 	return 0;
 }
@@ -190,23 +272,32 @@ static void CopyVoiceCallData(VOICE_CALL_INTERNAL *out, VOICE_CALL *in)
 	else
 		out->flags = VOICE_CALL_STRING | VOICE_TCHAR;
 
-	if (out->ptszContact != NULL)
-		mir_free(out->ptszContact);
+	char description[128];
+	if (ProtoServiceExists(in->szModule, PS_GETNAME))
+		CallProtoService(in->szModule, PS_GETNAME, MAX_REGS(description),(LPARAM) description);
+	else
+		strncpy(description, in->szModule, MAX_REGS(description));
 
 	if (in->flags & VOICE_CALL_CONTACT)
 	{
 		out->hContact = in->hContact;
-		out->ptszContact = mir_tstrdup((TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) in->hContact, GCDNF_TCHAR));
+		mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T("%s (") _T(_S) _T(")"), 
+			(TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) in->hContact, GCDNF_TCHAR),
+			description);
 	}
 	else if (in->flags & VOICE_UNICODE)
 	{
 		out->hContact = NULL;
-		out->ptszContact = mir_dupTW(in->pwszContact);
+		mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T(_SI) _T(" (") _T(_S) _T(")"), 
+			in->pwszContact,
+			description);
 	}
 	else
 	{
 		out->hContact = NULL;
-		out->ptszContact = mir_dupTA(in->pszContact);
+		mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T(_S) _T(" (") _T(_S) _T(")"), 
+			in->pszContact,
+			description);
 	}
 }
 
@@ -256,9 +347,24 @@ TCHAR *GetStateName(int state)
 		case TALKING: return TranslateT("Talking");
 		case ENDED: return TranslateT("Ended");
 		case ON_HOLD: return TranslateT("On Hold");
-		case RINGING: 
-		default: return TranslateT("Ringing");
+		case RINGING: return TranslateT("Ringing");
 	}
+
+	return NULL;
+}
+
+
+TCHAR *GetActionName(int state)
+{
+	switch(state)
+	{
+		case ACTION_CALL: return TranslateT("Call");
+		case ACTION_ANSWER: return TranslateT("Answer");
+		case ACTION_HOLD: return TranslateT("Hold");
+		case ACTION_DROP: return TranslateT("Drop");
+	}
+
+	return NULL;
 }
 
 
@@ -293,7 +399,7 @@ static int VoiceEndedCall(WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	// Check if the call is aready in list
-	VOICE_CALL_INTERNAL *vc = FindVoiceCall(in->szModule, in->id, FALSE);
+	VOICE_CALL_INTERNAL *vc = FindVoiceCall(in->szModule, in->id, TRUE);
 	if (vc == NULL)
 		return 0;
 
@@ -316,7 +422,7 @@ static int VoiceEndedCall(WPARAM wParam, LPARAM lParam)
 	mir_sntprintf(text, MAX_REGS(text), TranslateT("Call from %s has ended"), vc->ptszContact);
 	ShowPopup(NULL, TranslateT("Voice call ended"), text);
 
-	RemoveVoiceCall(in->szModule, in->id);
+	// RemoveVoiceCall(in->szModule, in->id);
 
 	// Need to answer other one?
 	if (currentCall.hungry_call != NULL)
@@ -406,7 +512,7 @@ BOOL CanHoldCall(const VOICE_CALL_INTERNAL * vc)
 void DropCall(VOICE_CALL_INTERNAL * vc)
 {
 	// Sanity check
-	if (vc->state == ENDED)
+	if (vc == NULL || vc->state == ENDED)
 		return;
 
 	CallProtoService(vc->szModule, PS_VOICE_DROPCALL, (WPARAM) vc->id, 0);
@@ -418,7 +524,7 @@ void DropCall(VOICE_CALL_INTERNAL * vc)
 void AnswerCall(VOICE_CALL_INTERNAL * vc)
 {
 	// Sanity check
-	if (vc->state != RINGING && vc->state != ON_HOLD)
+	if (vc == NULL || vc->state != RINGING && vc->state != ON_HOLD)
 		return;
 
 	if (currentCall.call != NULL && currentCall.call != vc)
@@ -448,11 +554,43 @@ void AnswerCall(VOICE_CALL_INTERNAL * vc)
 void HoldCall(VOICE_CALL_INTERNAL * vc)
 {
 	// Sanity check
-	if (vc->state != TALKING)
+	if (vc == NULL || vc->state != TALKING)
 		return;
 
 	CallProtoService(vc->szModule, PS_VOICE_HOLDCALL, (WPARAM) vc->id, 0);
 
 	if (currentCall.call == vc)
 		currentCall.stopping = TRUE;
+}
+
+
+
+static int IconsChanged(WPARAM wParam, LPARAM lParam)
+{
+	for(int i = 0; i < NUM_ICONS; i++)
+		icons[i] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) icon_names[i]);
+
+	return 0;
+}
+
+static int ReloadFont(WPARAM wParam, LPARAM lParam) 
+{
+	LOGFONT log_font;
+	FontIDT fi = {0};
+	fi.cbSize = sizeof(fi);
+	lstrcpyn(fi.group, TranslateT("Voice Calls"), MAX_REGS(fi.group));
+
+	font_max_height = 0;
+	for (int i = 0; i < NUM_FONTS; i++)
+	{
+		if (fonts[i] != 0) DeleteObject(fonts[i]);
+
+		lstrcpyn(fi.name, GetStateName(i), MAX_REGS(fi.name));
+		font_colors[i] = CallService(MS_FONT_GETT, (WPARAM) &fi, (LPARAM) &log_font);
+		fonts[i] = CreateFontIndirect(&log_font);
+
+		font_max_height = max(font_max_height, log_font.lfHeight);
+	}
+	
+	return 0;
 }
