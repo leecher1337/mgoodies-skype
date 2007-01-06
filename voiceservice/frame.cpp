@@ -201,7 +201,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			if (calls[pos].state == TALKING)
 				DeleteMenu(menu, ID_FRAMEPOPUP_ANSWERCALL, MF_BYCOMMAND);
 			
-			if (calls[pos].state != TALKING || !CanHoldCall(&calls[pos]))
+			if (calls[pos].state != TALKING || !(calls[pos].module->flags & VOICE_CAN_HOLD))
 				DeleteMenu(menu, ID_FRAMEPOPUP_HOLDCALL, MF_BYCOMMAND);
 
 			p.x = LOWORD(lParam); 
@@ -282,9 +282,12 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 					rc.left = rc.right - ICON_SIZE;
 					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_DROP], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
 
-					rc.right -= ICON_SIZE + H_SPACE;
-					rc.left = rc.right - ICON_SIZE;
-					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_HOLD], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+					if (vc->module->flags & VOICE_CAN_HOLD)
+					{
+						rc.right -= ICON_SIZE + H_SPACE;
+						rc.left = rc.right - ICON_SIZE;
+						DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_HOLD], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+					}
 
 					break;
 				}
