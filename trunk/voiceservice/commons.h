@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA.
 #include <windows.h>
 #include <tchar.h>
 #include <stdio.h>
+#include <time.h>
 
 
 // Disable "...truncated to '255' characters in the debug information" warnings
@@ -111,13 +112,24 @@ extern int font_max_height;
 
 
 typedef struct {
-	int cbSize;				// Struct size
-	const char *szModule;	// The name of the protocol module (used only in notifications)
-	char *id;				// Protocol especific ID for this call
-	int flags;				// Can be VOICE_CALL_CONTACT or VOICE_CALL_STRING
+	const char *name;
+	int flags;
+	BOOL is_protocol;
+	HANDLE hooks[4];
+
+} MODULE_INTERNAL;
+
+
+typedef struct {
+	MODULE_INTERNAL *module;
+	char *id;					// Protocol especific ID for this call
+	int flags;					// Can be VOICE_CALL_CONTACT or VOICE_CALL_STRING
 	HANDLE hContact;
 	TCHAR ptszContact[128];
 	int state;
+	DWORD end_time;
+	HANDLE last_dbe;
+
 } VOICE_CALL_INTERNAL;
 
 
@@ -128,11 +140,12 @@ typedef struct {
 	
 } CURRENT_CALL;
 
+
+extern vector<MODULE_INTERNAL> modules;
 extern vector<VOICE_CALL_INTERNAL> calls;
 extern CURRENT_CALL currentCall;
 
 TCHAR *GetStateName(int state);
-BOOL CanHoldCall(const VOICE_CALL_INTERNAL * vc);
 
 void AnswerCall(VOICE_CALL_INTERNAL * vc);
 void DropCall(VOICE_CALL_INTERNAL * vc);
@@ -151,6 +164,9 @@ __inline static int ProtoServiceExists(const char *szModule,const char *szServic
 
 #define ICON_SIZE 16
 
+#define TIME_TO_SHOW_ENDED_CALL		5000 // ms
+
+
 #ifdef UNICODE
 # define _S "%S"
 # define _SI "%s"
@@ -158,5 +174,18 @@ __inline static int ProtoServiceExists(const char *szModule,const char *szServic
 # define _S "%s"
 # define _SI "%S"
 #endif
+
+
+
+#define MS_VOICESERVICE_CLIST_DBLCLK "VoiceService/CListRingingDblClk"
+
+
+
+
+
+
+
+
+
 
 #endif // __COMMONS_H__

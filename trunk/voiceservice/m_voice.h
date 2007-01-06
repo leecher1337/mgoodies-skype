@@ -22,6 +22,11 @@ Boston, MA 02111-1307, USA.
 # define __M_VOICE_H__
 
 
+#define EVENTTYPE_VOICE_CALL 8739
+
+
+
+
 #define VOICE_UNICODE	0x80000000
 
 #ifdef UNICODE
@@ -82,11 +87,12 @@ return: 0 on success
 #define PE_VOICE_HOLDEDCALL				"/Voice/HoldedCall"
 
 
-#define VOICE_SUPPORTED			1	// Set if proto support voice calls. Probabilly will be 1 ;)
-#define VOICE_CALL_CONTACT		2	// Set if a call can be made to a hContact
-#define VOICE_CALL_STRING		4	// Set if a call can be made to some string (PS_VOICE_CALL_STRING_VALID is used to validate the string)
-#define VOICE_CAN_SET_DEVICE	8	// Set if the devices to mic in and sound out can be set (or the protocol will handle it internally)
-#define VOICE_CAN_HOLD			16	// Set if a call can be put on hold
+#define VOICE_SUPPORTED					1	// Set if proto support voice calls. Probabilly will be 1 ;)
+#define VOICE_CALL_CONTACT				2	// Set if a call can be made to a hContact
+#define VOICE_CALL_CONTACT_NEED_TEST	4	// Set if the contact need to be tested with PS_VOICE_CALL_CONTACT_VALID (needs VOICE_CALL_CONTACT set to work)
+#define VOICE_CALL_STRING				8	// Set if a call can be made to some string (PS_VOICE_CALL_STRING_VALID is used to validate the string)
+#define VOICE_CAN_SET_DEVICE			16	// Set if the devices to mic in and sound out can be set (or the protocol will handle it internally)
+#define VOICE_CAN_HOLD					32	// Set if a call can be put on hold
 /*
 Get protocol voice support flags
 
@@ -143,6 +149,17 @@ lParam: ignored
 return: 0 if wrong, 1 if correct
 */
 #define PS_VOICE_CALL_STRING_VALID		"/Voice/CallStringValid"
+
+/*
+Used if protocol support VOICE_CALL_CONTACT and VOICE_CALL_CONTACT_NEED_TEST. 
+The hContact is passed as wParam and the proto should tell if this contact can be 
+called. 
+
+wParam: (HANDLE) hContact
+lParam: ignored
+return: 0 if can't be called, 1 if can
+*/
+#define PS_VOICE_CALL_CONTACT_VALID		"/Voice/CallContactValid"
 
 
 
