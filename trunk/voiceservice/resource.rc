@@ -29,12 +29,11 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 IDD_CALLS DIALOGEX 0, 0, 195, 127
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     LISTBOX         IDC_CALLS,0,0,195,126,LBS_SORT | LBS_OWNERDRAWFIXED | 
-                    LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | 
-                    LBS_NOSEL | NOT WS_BORDER | 
-                    WS_VSCROLL | WS_TABSTOP,WS_EX_TRANSPARENT
+                    LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | LBS_NOSEL | NOT 
+                    WS_BORDER | WS_VSCROLL | WS_TABSTOP,WS_EX_TRANSPARENT
 END
 
 IDD_POPUPS DIALOG DISCARDABLE  0, 0, 314, 240
@@ -126,6 +125,7 @@ IDI_ACTION_ANSWER       ICON    DISCARDABLE     "res\\Answer.ico"
 IDI_ACTION_HOLD         ICON    DISCARDABLE     "res\\Hold.ico"
 IDI_ACTION_DROP         ICON    DISCARDABLE     "res\\Drop.ico"
 IDI_MAIN                ICON    DISCARDABLE     "res\\Main.ico"
+IDI_CALLING             ICON    DISCARDABLE     "res\\Calling.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

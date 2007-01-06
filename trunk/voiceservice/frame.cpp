@@ -98,7 +98,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			for(int i = 0; i < calls.size(); i++)
 			{
 				TCHAR text[512];
-				mir_sntprintf(text, MAX_REGS(text), _T("%d %s"), calls[i].state, calls[i].ptszContact);
+				mir_sntprintf(text, MAX_REGS(text), _T("%d %s"), calls[i]->state, calls[i]->ptszContact);
 
 				int pos = SendMessage(list, LB_ADDSTRING, 0, (LPARAM) text);
 				if (pos == LB_ERR)
@@ -164,6 +164,12 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 						DropCall(vc);
 					break;
 				}
+				case CALLING:
+				{
+					if (action == 2)
+						DropCall(vc);
+					break;
+				}
 			}
 
 			break;
@@ -188,7 +194,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			if (pos >= calls.size())
 				break;
 
-			if (calls[pos].state == ENDED)
+			if (calls[pos]->state == ENDED)
 				break;
 
 			// Just to get things strait
@@ -198,11 +204,22 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			HMENU submenu = GetSubMenu(menu, 0);
 			CallService(MS_LANGPACK_TRANSLATEMENU, (WPARAM)submenu, 0);
 
-			if (calls[pos].state == TALKING)
-				DeleteMenu(menu, ID_FRAMEPOPUP_ANSWERCALL, MF_BYCOMMAND);
-			
-			if (calls[pos].state != TALKING || !(calls[pos].module->flags & VOICE_CAN_HOLD))
-				DeleteMenu(menu, ID_FRAMEPOPUP_HOLDCALL, MF_BYCOMMAND);
+			switch (calls[pos]->state)
+			{
+				case CALLING:
+				{
+					DeleteMenu(menu, ID_FRAMEPOPUP_ANSWERCALL, MF_BYCOMMAND);
+					DeleteMenu(menu, ID_FRAMEPOPUP_HOLDCALL, MF_BYCOMMAND);
+					break;
+				}
+				case TALKING:
+				{
+					DeleteMenu(menu, ID_FRAMEPOPUP_ANSWERCALL, MF_BYCOMMAND);
+					if (!(calls[pos]->module->flags & VOICE_CAN_HOLD))
+						DeleteMenu(menu, ID_FRAMEPOPUP_HOLDCALL, MF_BYCOMMAND);
+					break;
+				}
+			}
 
 			p.x = LOWORD(lParam); 
 			p.y = HIWORD(lParam); 
@@ -213,17 +230,17 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			{
 				case ID_FRAMEPOPUP_DROPCALL:
 				{
-					DropCall(&calls[pos]);
+					DropCall(calls[pos]);
 					break;
 				}
 				case ID_FRAMEPOPUP_ANSWERCALL:
 				{
-					AnswerCall(&calls[pos]);
+					AnswerCall(calls[pos]);
 					break;
 				}
 				case ID_FRAMEPOPUP_HOLDCALL:
 				{
-					HoldCall(&calls[pos]);
+					HoldCall(calls[pos]);
 					break;
 				}
 			}
@@ -248,7 +265,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			if (dis->CtlID != IDC_CALLS || dis->itemID == -1) 
 				break;
 
-			VOICE_CALL_INTERNAL *vc = (VOICE_CALL_INTERNAL *)dis->itemData;
+			VOICE_CALL_INTERNAL *vc = (VOICE_CALL_INTERNAL *) dis->itemData;
 
 			RECT rc = dis->rcItem;
 			rc.left += H_SPACE;
@@ -277,6 +294,12 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 			switch (vc->state)
 			{
+				case CALLING:
+				{
+					rc.left = rc.right - ICON_SIZE;
+					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_DROP], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+					break;
+				}
 				case TALKING:
 				{
 					rc.left = rc.right - ICON_SIZE;

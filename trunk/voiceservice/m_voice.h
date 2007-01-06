@@ -60,6 +60,15 @@ return: 0 on success
 #define PE_VOICE_RINGING				"/Voice/Ringing"
 
 /*
+Notifies that the user is calling someone
+
+wParam: const VOICE_CALL *
+lParam: ignored
+return: 0 on success
+*/
+#define PE_VOICE_CALLING				"/Voice/Calling"
+
+/*
 Notifies that a call has ended
 
 wParam: const VOICE_CALL *
@@ -101,6 +110,15 @@ lParam: ignored
 return: 0 on success
 */
 #define PS_VOICE_GETINFO				"/Voice/GetInfo"
+
+/*
+Request to the protocol a voice call to hContact.
+
+wParam: (HANDLE) hContact
+lParam: ignored
+return: 0 on success
+*/
+#define PS_VOICE_CALL				"/Voice/Call"
 
 /*
 Service called to make the protocol answer a call.
