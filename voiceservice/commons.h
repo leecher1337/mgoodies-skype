@@ -87,10 +87,11 @@ extern PLUGINLINK *pluginLink;
 
 #define TALKING 0
 #define RINGING 1
-#define ON_HOLD 2
-#define ENDED 3
+#define CALLING 2
+#define ON_HOLD 3
+#define ENDED 4
 
-#define NUM_STATES 4
+#define NUM_STATES 5
 
 #define ACTION_CALL 0
 #define ACTION_ANSWER 1
@@ -111,16 +112,17 @@ extern int font_max_height;
 
 
 
-typedef struct {
+struct MODULE_INTERNAL
+{
 	const char *name;
 	int flags;
 	BOOL is_protocol;
-	HANDLE hooks[4];
+	HANDLE hooks[NUM_STATES];
+};
 
-} MODULE_INTERNAL;
 
-
-typedef struct {
+struct VOICE_CALL_INTERNAL 
+{
 	MODULE_INTERNAL *module;
 	char *id;					// Protocol especific ID for this call
 	int flags;					// Can be VOICE_CALL_CONTACT or VOICE_CALL_STRING
@@ -130,7 +132,11 @@ typedef struct {
 	DWORD end_time;
 	HANDLE last_dbe;
 
-} VOICE_CALL_INTERNAL;
+	~VOICE_CALL_INTERNAL()
+	{
+		mir_free(id);
+	}
+};
 
 
 typedef struct {
@@ -142,7 +148,7 @@ typedef struct {
 
 
 extern vector<MODULE_INTERNAL> modules;
-extern vector<VOICE_CALL_INTERNAL> calls;
+extern vector<VOICE_CALL_INTERNAL *> calls;
 extern CURRENT_CALL currentCall;
 
 TCHAR *GetStateName(int state);
@@ -177,8 +183,12 @@ __inline static int ProtoServiceExists(const char *szModule,const char *szServic
 
 
 
-#define MS_VOICESERVICE_CLIST_DBLCLK "VoiceService/CListRingingDblClk"
+#define MS_VOICESERVICE_CLIST_DBLCLK "VoiceService/CList/RingingDblClk"
 
+#define MS_VOICESERVICE_CM_CALL "VoiceService/ContactMenu/Call"
+#define MS_VOICESERVICE_CM_ANSWER "VoiceService/ContactMenu/Answer"
+#define MS_VOICESERVICE_CM_HOLD "VoiceService/ContactMenu/Hold"
+#define MS_VOICESERVICE_CM_DROP "VoiceService/ContactMenu/Drop"
 
 
 
