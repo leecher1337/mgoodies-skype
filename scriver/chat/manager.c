@@ -169,7 +169,7 @@ int SM_RemoveSession( const TCHAR* pszID, const char* pszModule)
 
 SESSION_INFO* SM_FindSession(const TCHAR* pszID, const char* pszModule)
 {
-	SESSION_INFO *pTemp = m_WndList, *pLast = NULL;
+	SESSION_INFO *pTemp = m_WndList;
 
 	if ( !pszID || !pszModule )
 		return NULL;
@@ -178,7 +178,19 @@ SESSION_INFO* SM_FindSession(const TCHAR* pszID, const char* pszModule)
 		if ( !lstrcmpi( pTemp->ptszID, pszID ) && !lstrcmpiA(pTemp->pszModule,pszModule))
 			return pTemp;
 
-		pLast = pTemp;
+		pTemp = pTemp->next;
+	}
+	return NULL;
+}
+
+HWND SM_FindWindowByContact(HANDLE hContact)
+{
+	SESSION_INFO *pTemp = m_WndList;
+
+	while ( pTemp != NULL ) {
+		if ( pTemp->hContact == hContact)
+			return pTemp->hWnd;
+
 		pTemp = pTemp->next;
 	}
 	return NULL;
@@ -589,59 +601,6 @@ BOOL SM_SendUserMessage(const TCHAR* pszID, const char* pszModule, const TCHAR* 
 	return TRUE;
 }
 
-SESSION_INFO* SM_GetPrevWindow(SESSION_INFO* si)
-{
-	BOOL bFound = FALSE;
-	SESSION_INFO* pTemp = m_WndList;
-
-	if ( !si )
-		return NULL;
-
-	while (pTemp != NULL)
-	{
-		if (si == pTemp)
-		{
-			if (bFound)
-				return NULL;
-			else
-				bFound = TRUE;
-		}
-		else if (bFound == TRUE && pTemp->hWnd)
-			return pTemp;
-		pTemp = pTemp->next;
-		if (pTemp == NULL && bFound)
-			pTemp = m_WndList;
-	}
-	return NULL;
-}
-
-SESSION_INFO* SM_GetNextWindow(SESSION_INFO* si)
-{
-	SESSION_INFO *pTemp = m_WndList, *pLast = NULL;
-
-	if (!si)
-		return NULL;
-
-	while (pTemp != NULL)
-	{
-		if (si == pTemp)
-		{
-			if (pLast)
-			{
-				if (pLast != pTemp)
-					return pLast;
-				else
-					return NULL;
-			}
-		}
-		if (pTemp->hWnd)
-			pLast = pTemp;
-		pTemp = pTemp->next;
-		if (pTemp == NULL)
-			pTemp = m_WndList;
-	}
-	return NULL;
-}
 
 BOOL SM_ChangeUID(const TCHAR* pszID, const char* pszModule, const TCHAR* pszUID, const TCHAR* pszNewUID)
 {
@@ -666,23 +625,6 @@ BOOL SM_ChangeUID(const TCHAR* pszID, const char* pszModule, const TCHAR* pszUID
 }
 
 
-BOOL SM_SetTabbedWindowHwnd(SESSION_INFO* si, HWND hwnd)
-{
-	SESSION_INFO *pTemp = m_WndList, *pLast = NULL;
-
-	while (pTemp != NULL)
-	{
-		if (si && si == pTemp)
-		{
-			pTemp->hWnd = hwnd;
-		}
-		else
-			pTemp->hWnd = NULL;
-		pLast = pTemp;
-		pTemp = pTemp->next;
-	}
-	return TRUE;
-}
 BOOL SM_ChangeNick(const TCHAR* pszID, const char* pszModule, GCEVENT * gce)
 {
 	SESSION_INFO *pTemp = m_WndList, *pLast = NULL;

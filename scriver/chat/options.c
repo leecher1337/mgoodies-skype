@@ -1256,37 +1256,17 @@ static int OptionsInitialize(WPARAM wParam, LPARAM lParam)
 {
 
 	OPTIONSDIALOGPAGE odp = {0};
-/*
-	odp.cbSize = sizeof(odp);
-	odp.position = 910000000;
-	odp.hInstance = g_hInst;
-	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS1);
-	odp.pszTitle = "Chat";
-	odp.pszGroup = "Message Sessions";
-	odp.pfnDlgProc = DlgProcOptions1;
-	odp.flags = ODPF_BOLDGROUPS;
-	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
-
-	odp.cbSize = sizeof(odp);
-	odp.position = 910000001;
-	odp.hInstance = g_hInst;
-	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS2);
-	odp.pszTitle = "Chat Log";
-	odp.pszGroup = "Message Sessions";
-	odp.pfnDlgProc = DlgProcOptions2;
-	odp.flags = ODPF_BOLDGROUPS;
-	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
-*/
 	if(PopUpInstalled)
 	{
 		odp.cbSize = sizeof(odp);
 		odp.position = 910000002;
 		odp.hInstance = g_hInst;
 		odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONSPOPUP);
-		odp.pszTitle = "Chat";
-		odp.pszGroup = "Popups";
+		odp.ptszTitle = _T("Chat");
+		odp.ptszGroup = _T("Popups");
 		odp.pfnDlgProc = DlgProcOptionsPopup;
-		odp.flags = ODPF_BOLDGROUPS;
+		odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
+		odp.ptszTab = NULL;
 		CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
 	}
 

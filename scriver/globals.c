@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "commonheaders.h"
 #include "m_ieview.h"
 
+extern void ChangeStatusIcons();
 struct GlobalMessageData *g_dat=NULL;
 extern HINSTANCE g_hInst;
 extern PSLWA pSetLayeredWindowAttributes;
@@ -116,6 +117,7 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 	FreeMsgLogIcons();
 	LoadMsgLogIcons();
 	LoadProtocolIcons();
+	ChangeStatusIcons();
 	WindowList_Broadcast(g_dat->hMessageWindowList, DM_REMAKELOG, 0, 0);
 	// change all the icons
 	WindowList_Broadcast(g_dat->hMessageWindowList, DM_CHANGEICONS, 0, 0);

@@ -277,7 +277,9 @@ static LRESULT CALLBACK MessageSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, 
       return 0;
 
    case WM_MOUSEWHEEL:
-      SendMessage(GetDlgItem(GetParent(hwnd), IDC_CHAT_LOG), WM_MOUSEWHEEL, wParam, lParam);
+	  if ((GetWindowLong(hwnd, GWL_STYLE) & WS_VSCROLL) == 0) {
+		SendMessage(GetDlgItem(GetParent(hwnd), IDC_CHAT_LOG), WM_MOUSEWHEEL, wParam, lParam);
+	  }
       dat->lastEnterTime = 0;
       return TRUE;
 
@@ -1011,7 +1013,7 @@ static LRESULT CALLBACK NicklistSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
             return TRUE;
       }   }
       break;
-	  
+
 	case WM_MOUSEMOVE:
 		{
 			SESSION_INFO* parentdat =(SESSION_INFO*)GetWindowLong(GetParent(hwnd),GWL_USERDATA);
@@ -1110,6 +1112,7 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 
 			TranslateDialogDefault(hwndDlg);
 			SetWindowLong(hwndDlg,GWL_USERDATA,(LONG)psi);
+			si = psi;
 			OldSplitterProc=(WNDPROC)SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_SPLITTERX),GWL_WNDPROC,(LONG)SplitterSubclassProc);
 			SetWindowLong(GetDlgItem(hwndDlg,IDC_CHAT_SPLITTERY),GWL_WNDPROC,(LONG)SplitterSubclassProc);
 			OldNicklistProc=(WNDPROC)SetWindowLong(hNickList,GWL_WNDPROC,(LONG)NicklistSubclassProc);
@@ -1233,6 +1236,7 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 
    case DM_UPDATESTATUSBAR:
       {
+	     StatusIconData sid;
          StatusBarData sbd;
          HICON hIcon;
          TCHAR* ptszDispName = a2tf((TCHAR*)MM_FindModule(si->pszModule)->pszModDispName, 0);
@@ -1248,18 +1252,16 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
          sbd.hIcon = NULL;
          sbd.pszText   = _T("");
          SendMessage(GetParent(hwndDlg), CM_UPDATESTATUSBAR, (WPARAM) &sbd, (LPARAM) hwndDlg);
-         sbd.iItem = 2;
-         SendMessage(GetParent(hwndDlg), CM_UPDATESTATUSBAR, (WPARAM) &sbd, (LPARAM) hwndDlg);
-		 sbd.iItem = 3;
-		 sbd.iFlags = SBDF_TEXT | SBDF_ICON;
-   #if defined( _UNICODE )
-		 sbd.hIcon = g_dat->hIcons[SMF_ICON_UNICODEON];
-   #else
-		 sbd.hIcon = g_dat->hIcons[SMF_ICON_UNICODEOFF];
-   #endif
-		 sbd.pszText = _T("");
-         SendMessage(GetParent(hwndDlg), CM_UPDATESTATUSBAR, (WPARAM) &sbd, (LPARAM) hwndDlg);
          mir_free( ptszDispName );
+		 sid.cbSize = sizeof(sid);
+		 sid.szModule = SRMMMOD;
+		 sid.dwId = 0;
+   #if defined( _UNICODE )
+		 sid.flags = 0;
+   #else
+		 sid.flags = MBF_DISABLED;
+   #endif
+		 CallService(MS_MSG_MODIFYICON, (WPARAM)si->hContact, (LPARAM) &sid);
       //   SendMessage(hwndDlg, GC_FIXTABICONS, 0, (LPARAM)si);
       }
       break;
@@ -1860,7 +1862,7 @@ LABEL_SHOWWINDOW:
 					if ( ui != NULL ) {
 						static TCHAR ptszBuf[ 1024 ];
 						mir_sntprintf( ptszBuf, SIZEOF(ptszBuf), _T("%s: %s\r\n%s: %s\r\n%s: %s"),
-							TranslateT( "Nick name" ), ui->pszNick, 
+							TranslateT( "Nick name" ), ui->pszNick,
 							TranslateT( "Unique id" ), ui->pszUID,
 							TranslateT( "Status" ), TM_WordToString( parentdat->pStatuses, ui->Status ));
 						lpttd->lpszText = ptszBuf;
@@ -1984,18 +1986,21 @@ LABEL_SHOWWINDOW:
             char szFile[MAX_PATH];
             char szName[MAX_PATH];
             char szFolder[MAX_PATH];
+			char *pszSessionName;
             MODULEINFO * pInfo = MM_FindModule(si->pszModule);
 
             if (!IsWindowEnabled(GetDlgItem(hwndDlg,IDC_CHAT_HISTORY)))
                break;
 
             if ( pInfo ) {
-               mir_snprintf(szName, MAX_PATH, "%s", pInfo->pszModDispName ? pInfo->pszModDispName : si->pszModule);
+               mir_snprintf(szName, MAX_PATH, "%s", pInfo->pszModDispName);
                ValidateFilename(szName);
                mir_snprintf(szFolder, MAX_PATH,"%s\\%s", g_Settings.pszLogDir, szName );
 
-               mir_snprintf(szName, MAX_PATH,"%s.log",si->ptszID);
-               ValidateFilename(szName);
+				pszSessionName = t2a( si->ptszID );
+				mir_snprintf( szName, MAX_PATH,"%s.log", pszSessionName );
+				ValidateFilename(szName);
+				mir_free( pszSessionName );
 
                mir_snprintf(szFile, MAX_PATH,"%s\\%s", szFolder, szName );
 

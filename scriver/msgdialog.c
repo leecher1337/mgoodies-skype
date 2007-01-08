@@ -590,7 +590,10 @@ static LRESULT CALLBACK MessageEditSubclassProc(HWND hwnd, UINT msg, WPARAM wPar
 		break;
 		//fall through
 	case WM_MOUSEWHEEL:
-		SendMessage(GetDlgItem(GetParent(hwnd), IDC_LOG), WM_MOUSEWHEEL, wParam, lParam);
+		if ((GetWindowLong(hwnd, GWL_STYLE) & WS_VSCROLL) == 0) {
+			SendMessage(GetDlgItem(GetParent(hwnd), IDC_LOG), WM_MOUSEWHEEL, wParam, lParam);
+		}
+		break;
 	case WM_LBUTTONDOWN:
 	case WM_RBUTTONDOWN:
 	case WM_MBUTTONDOWN:
@@ -1806,16 +1809,18 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 		break;
 	case DM_SWITCHUNICODE:
+#if defined( _UNICODE )
 		{
-			StatusBarData sbd;
+			StatusIconData sid;
 			dat->flags ^= SMF_DISABLE_UNICODE;
-			sbd.iItem = 2;
-			sbd.iFlags = SBDF_TEXT | SBDF_ICON;
-			sbd.hIcon = g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON];
-			sbd.pszText = _T("");
-			SendMessage(dat->hwndParent, CM_UPDATESTATUSBAR, (WPARAM)&sbd, (LPARAM)hwndDlg);
+			sid.cbSize = sizeof(sid);
+			sid.szModule = SRMMMOD;
+			sid.dwId = 0;
+			sid.flags = (dat->flags & SMF_DISABLE_UNICODE) ? MBF_DISABLED : 0;
+			CallService(MS_MSG_MODIFYICON, (WPARAM)dat->hContact, (LPARAM) &sid);
 			SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
 		}
+#endif
 		break;
 	case DM_SWITCHRTL:
 		{
@@ -2033,6 +2038,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		if (dat->parent->hwndActive == hwndDlg) {
 			TCHAR szText[256];
 			StatusBarData sbd;
+			StatusIconData sid;
 			sbd.iItem = 0;
 			sbd.iFlags = SBDF_TEXT | SBDF_ICON;
 			if (dat->messagesInProgress && (g_dat->flags & SMF_SHOWPROGRESS)) {
@@ -2074,10 +2080,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			SendMessage(dat->hwndParent, CM_UPDATESTATUSBAR, (WPARAM)&sbd, (LPARAM)hwndDlg);
 			UpdateReadChars(hwndDlg, dat);
-			sbd.iItem = 2;
-			sbd.hIcon = g_dat->hIcons[(dat->flags & SMF_DISABLE_UNICODE) ? SMF_ICON_UNICODEOFF : SMF_ICON_UNICODEON];
-			sbd.pszText = _T("");
-			SendMessage(dat->hwndParent, CM_UPDATESTATUSBAR, (WPARAM)&sbd, (LPARAM)hwndDlg);
+			sid.cbSize = sizeof(sid);
+			sid.szModule = SRMMMOD;
+			sid.dwId = 0;
+			sid.flags = (dat->flags & SMF_DISABLE_UNICODE) ? MBF_DISABLED : 0;
+			CallService(MS_MSG_MODIFYICON, (WPARAM)dat->hContact, (LPARAM) &sid);
 		}
 		break;
 	case DM_CLEARLOG:
