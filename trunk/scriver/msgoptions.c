@@ -98,7 +98,6 @@ void RegisterFontServiceFonts() {
 		FontIDT fid = {0};
 		ColourIDT cid = {0};
 		fid.cbSize = sizeof(fid);
-
 		_tcsncpy(fid.group, _T("Scriver"), SIZEOF(fid.group));
 		strncpy(fid.dbSettingsGroup, (SRMMMOD), SIZEOF(fid.dbSettingsGroup));
 		fid.flags = FIDF_DEFAULTVALID;
@@ -252,7 +251,7 @@ static DWORD MakeCheckBoxTreeFlags(HWND hwndTree)
 
 static void SetOptionsDlgToType(HWND hwnd, int iExpert)
 {
-	int i;
+	DWORD i;
     HWND tc;
 	RECT rc;
 	TCITEM tci;
@@ -1430,13 +1429,26 @@ int OptInitialise(WPARAM wParam, LPARAM lParam)
 	odp.cbSize = sizeof(odp);
 	odp.position = 910000000;
 	odp.hInstance = g_hInst;
+	odp.ptszTitle = TranslateT("Messaging");
+	odp.ptszGroup = TranslateT("Message Sessions"); //Events
+	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_MAIN);
-	odp.pszTitle = Translate("Messaging");
-	odp.pszGroup = Translate("Message Sessions"); //Events
 	odp.pfnDlgProc = DlgProcOptionsMain;
-	odp.flags = ODPF_BOLDGROUPS;
-	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) & odp);
+	odp.ptszTab = NULL;
 /*
+	odp.pszTemplate = MAKEINTRESOURCEA(tabPages[0].dlgId);
+	odp.pfnDlgProc = tabPages[0].dlgProc;
+	odp.ptszTab = tabPages[0].tabName;
+
+	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) & odp);
+
+	odp.pszTemplate = MAKEINTRESOURCEA(tabPages[1].dlgId);
+	odp.pfnDlgProc = tabPages[1].dlgProc;
+	odp.ptszTab = tabPages[1].tabName;
+*/
+	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) & odp);
+
+	/*
 
 	odp.cbSize = sizeof(odp);
 	odp.position = 910000000;
@@ -1456,9 +1468,10 @@ int OptInitialise(WPARAM wParam, LPARAM lParam)
 
 */
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_MSGTYPE);
-	odp.pszTitle = Translate("Typing Notify");
+	odp.pszTitle = TranslateT("Typing Notify");
 	odp.pfnDlgProc = DlgProcTypeOptions;
 	odp.nIDBottomSimpleControl = 0;
+	odp.ptszTab = NULL;
 	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) & odp);
 
 	return 0;

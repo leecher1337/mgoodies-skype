@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "statusicon.h"
 
 extern int Chat_ModulesLoaded(WPARAM wParam, LPARAM lParam);
-
+extern HWND SM_FindWindowByContact(HANDLE hContact);
 extern int OptInitialise(WPARAM wParam, LPARAM lParam);
 extern int FontServiceFontsChanged(WPARAM wParam, LPARAM lParam);
 int StatusIconPressed(WPARAM wParam, LPARAM lParam);
@@ -441,11 +441,54 @@ static void RegisterStatusIcons() {
 	sid.hIconDisabled = g_dat->hIcons[SMF_ICON_UNICODEOFF];
 	sid.flags = 0;
 	sid.szTooltip = NULL;
-//	CallService(MS_MSG_ADDICON, (WPARAM) 0, (LPARAM) &sid);
+	AddStickyStatusIcon((WPARAM) 0, (LPARAM) &sid);
+}
+
+void ChangeStatusIcons() {
+	StatusIconData sid;
+	sid.cbSize = sizeof(sid);
+	sid.szModule = SRMMMOD;
+	sid.dwId = 0;
+	sid.hIcon = g_dat->hIcons[SMF_ICON_UNICODEON];
+	sid.hIconDisabled = g_dat->hIcons[SMF_ICON_UNICODEOFF];
+	sid.flags = 0;
+	sid.szTooltip = NULL;
+	CallService(MS_MSG_MODIFYICON, (WPARAM)NULL, (LPARAM) &sid);
 }
 
 int StatusIconPressed(WPARAM wParam, LPARAM lParam) {
+	HANDLE hContact = (HANDLE) wParam;
+	StatusIconClickData *sicd = (StatusIconClickData *) lParam;
+    HWND hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE)wParam);
+	if (hwnd == NULL) {
+		hwnd = SM_FindWindowByContact((HANDLE)wParam);
 
+	}
+	if (hwnd != NULL) {
+		if (sicd->dwId == 0 && !strcmp(SRMMMOD, sicd->szModule)) {
+			if (sicd->flags & MBCF_RIGHTBUTTON) {
+				int codePage = (int) SendMessage(hwnd, DM_GETCODEPAGE, 0, 0);
+				if (codePage != 1200) {
+					int i, iSel;
+					for (i = 0; i < GetMenuItemCount(g_dat->hMenuANSIEncoding); i++) {
+						CheckMenuItem (g_dat->hMenuANSIEncoding, i, MF_BYPOSITION | MF_UNCHECKED);
+					}
+					if (codePage == CP_ACP) {
+						CheckMenuItem(g_dat->hMenuANSIEncoding, 0, MF_BYPOSITION | MF_CHECKED);
+					} else {
+						CheckMenuItem(g_dat->hMenuANSIEncoding, codePage, MF_BYCOMMAND | MF_CHECKED);
+					}
+					iSel = TrackPopupMenu(g_dat->hMenuANSIEncoding, TPM_RETURNCMD, sicd->clickLocation.x, sicd->clickLocation.y, 0, GetParent(hwnd), NULL);
+					if (iSel >= 500) {
+						if (iSel == 500) iSel = CP_ACP;
+						SendMessage(hwnd, DM_SETCODEPAGE, 0, iSel);
+					}
+				}
+			} else {
+				SendMessage(hwnd, DM_SWITCHUNICODE, 0, 0);
+			}
+		}
+	}
 	return 0;
 }
 

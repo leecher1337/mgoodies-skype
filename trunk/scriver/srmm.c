@@ -40,7 +40,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Scriver",
 #endif
-	PLUGIN_MAKE_VERSION(2, 5, 9, 12),
+	PLUGIN_MAKE_VERSION(2, 5, 9, 14),
 #ifdef _UNICODE
 	"Scriver - send and receive instant messages (Unicode)",
 #else
@@ -63,7 +63,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 __declspec(dllexport)
 	 PLUGININFO *MirandaPluginInfo(DWORD mirandaVersion)
 {
-	if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 4, 0, 0))
+	if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 6, 0, 0))
 		return NULL;
 	return &pluginInfo;
 }

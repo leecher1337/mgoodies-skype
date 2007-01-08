@@ -9,7 +9,7 @@ SRC = cmdlist.c globals.c msgdialog.c msglog.c msgoptions.c msgs.c msgtimedout.c
 RES  = resource.res
 OBJ = $(SRC:.c=.o) $(RES)
 INCS =  -I"../../include"
-BIN  = scriver_unicode.dll
+BIN  = scriver.dll
 CFLAGS = $(INCS) -DNDEBUG -DBUILDING_DLL=1 -DUNICODE -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
 CXXFLAGS = $(INCS) -DNDEBUG -DBUILDING_DLL=1 -DUNICODE -fexpensive-optimizations -O3 -Os -fno-exceptions -Wno-error -Wall
 # -save-temps

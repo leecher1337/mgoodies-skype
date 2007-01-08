@@ -13,7 +13,6 @@ static int status_icon_list_size = 0;
 static int AddStatusIcon(WPARAM wParam, LPARAM lParam) {
 	StatusIconData *sid = (StatusIconData *)lParam;
 	struct StatusIconListNode *siln = (struct StatusIconListNode *)mir_alloc(sizeof(struct StatusIconListNode));
-	struct StatusIconListNode *siln2 = NULL;
 
 	siln->sid.cbSize = sid->cbSize;
 	siln->sid.szModule = mir_strdup(sid->szModule);
@@ -26,6 +25,36 @@ static int AddStatusIcon(WPARAM wParam, LPARAM lParam) {
 
 	siln->next = status_icon_list;
 	status_icon_list = siln;
+	status_icon_list_size++;
+
+	WindowList_Broadcast(g_dat->hParentWindowList, DM_STATUSICONCHANGE, 0, 0);
+	return 0;
+}
+
+int AddStickyStatusIcon(WPARAM wParam, LPARAM lParam) {
+	StatusIconData *sid = (StatusIconData *)lParam;
+	struct StatusIconListNode *siln = (struct StatusIconListNode *)mir_alloc(sizeof(struct StatusIconListNode));
+	struct StatusIconListNode *siln2 = status_icon_list;
+
+	siln->sid.cbSize = sid->cbSize;
+	siln->sid.szModule = mir_strdup(sid->szModule);
+	siln->sid.dwId = sid->dwId;
+	siln->sid.hIcon = DuplicateIcon(NULL, sid->hIcon);
+	siln->sid.hIconDisabled = DuplicateIcon(NULL, sid->hIconDisabled);
+	siln->sid.flags = sid->flags;
+	if(sid->szTooltip) siln->sid.szTooltip = mir_strdup(sid->szTooltip);
+	else siln->sid.szTooltip = 0;
+	siln->next = NULL;
+
+	while(siln2 && siln2->next) {
+		siln2 = siln2->next;
+	}
+	if (siln2) {
+		siln2->next = siln;
+	} else {
+		status_icon_list = siln;
+	}
+
 	status_icon_list_size++;
 
 	WindowList_Broadcast(g_dat->hParentWindowList, DM_STATUSICONCHANGE, 0, 0);

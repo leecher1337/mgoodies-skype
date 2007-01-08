@@ -44,7 +44,7 @@ extern HCURSOR hDragCursor;
 
 #define SB_CHAR_WIDTH		 40
 #define SB_SENDING_WIDTH 	 25
-#define SB_UNICODE_WIDTH 	 35
+#define SB_UNICODE_WIDTH 	 18
 
 #define TIMERID_FLASHWND     1
 #define TIMEOUT_FLASHWND     900
@@ -286,10 +286,11 @@ static void SetupStatusBar(ParentWindowData *dat)
 	GetClientRect(dat->hwnd, &rc);
 	statwidths[0] = rc.right - rc.left - SB_CHAR_WIDTH - SB_UNICODE_WIDTH - 2 * (statusIconNum > 0) - statusIconNum * (GetSystemMetrics(SM_CXSMICON) + 2);
 	statwidths[1] = rc.right - rc.left - SB_UNICODE_WIDTH - 2 * (statusIconNum > 0) - statusIconNum * (GetSystemMetrics(SM_CXSMICON) + 2);
-	statwidths[2] = rc.right - rc.left - SB_UNICODE_WIDTH ;
+	statwidths[2] = rc.right - rc.left - SB_UNICODE_WIDTH;
 	statwidths[3] = -1;
 	SendMessage(dat->hwndStatus, SB_SETPARTS, 4, (LPARAM) statwidths);
 	SendMessage(dat->hwndStatus, SB_SETTEXT, (WPARAM)(SBT_OWNERDRAW) | 2, (LPARAM)0);
+	SendMessage(dat->hwndStatus, SB_SETTEXT, (WPARAM)(SBT_NOBORDERS) | 3, (LPARAM)0);
 }
 
 static void ActivateChild(ParentWindowData *dat, HWND child) {
@@ -667,15 +668,14 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 					{
 						NMMOUSE *nm=(NMMOUSE*)lParam;
 						RECT rc;
+						char str[1024];
 						SendMessage(dat->hwndStatus, SB_GETRECT, SendMessage(dat->hwndStatus, SB_GETPARTS, 0, 0) - 2, (LPARAM)&rc);
-						if (nm->pt.x >= rc.left && nm->pt.x <= rc.right) {
+						if (nm->pt.x >= rc.left) {
 							MessageWindowTabData *mwtd = GetChildFromHWND(dat, dat->hwndActive);
 							if (mwtd != NULL) {
 								CheckStatusIconClick(mwtd->hContact, dat->hwndStatus, nm->pt, rc, 2, (pNMHDR->code == NM_RCLICK ? MBCF_RIGHTBUTTON : 0));
 							}
-						} else if (nm->pt.x >= rc.left && pNMHDR->code == NM_CLICK) {
-							SendMessage(dat->hwndActive, DM_SWITCHUNICODE, 0, 0);
- 						}
+						}
  						return TRUE;
 					}
 				}
@@ -706,35 +706,13 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			ScreenToClient(dat->hwndStatus, &pt);
 
 			SendMessage(dat->hwndStatus, SB_GETRECT, SendMessage(dat->hwndStatus, SB_GETPARTS, 0, 0) - 2, (LPARAM)&rc);
-			if(pt.x >= rc.left && pt.x <= rc.right) {
+			if(pt.x >= rc.left) {
 				MessageWindowTabData *mwtd = GetChildFromHWND(dat, dat->hwndActive);
 				if (mwtd != NULL) {
 					CheckStatusIconClick(mwtd->hContact, dat->hwndStatus, pt, rc, 2, MBCF_RIGHTBUTTON);
 				}
 				break;
-			}
-
-			SendMessage(dat->hwndStatus, SB_GETRECT, SendMessage(dat->hwndStatus, SB_GETPARTS, 0, 0) - 1, (LPARAM)&rc);
-			if (pt.x >= rc.left && dat->hwndActive != NULL) {
-				int codePage = (int) SendMessage(dat->hwndActive, DM_GETCODEPAGE, 0, 0);
-				if (codePage != 1200) {
-					int i, iSel;
-					for(i = 0; i < GetMenuItemCount(g_dat->hMenuANSIEncoding); i++) {
-						CheckMenuItem (g_dat->hMenuANSIEncoding, i, MF_BYPOSITION | MF_UNCHECKED);
-					}
-					if(codePage == CP_ACP) {
-						CheckMenuItem(g_dat->hMenuANSIEncoding, 0, MF_BYPOSITION | MF_CHECKED);
-					} else {
-						CheckMenuItem(g_dat->hMenuANSIEncoding, codePage, MF_BYCOMMAND | MF_CHECKED);
-					}
-					iSel = TrackPopupMenu(g_dat->hMenuANSIEncoding, TPM_RETURNCMD, pt2.x, pt2.y, 0, hwndDlg, NULL);
-					if (iSel >= 500) {
-						if (iSel == 500) iSel = CP_ACP;
-						SendMessage(dat->hwndActive, DM_SETCODEPAGE, 0, iSel);
-					}
-				}
-			}
-			else
+			} else
 				SendMessage(dat->hwndActive, WM_CONTEXTMENU, (WPARAM)hwndDlg, 0);
 		}
 		break;
@@ -995,9 +973,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			HWND hwnd = (HWND) lParam;
 			StatusBarData *sbd = (StatusBarData *) wParam;
 			int iItem = sbd->iItem;
-			if (iItem == 2) {
-				iItem = 3;
-			}
 			if (sbd != NULL) {
 				if ((sbd->iFlags & SBDF_TEXT) && dat->hwndActive == hwnd) {
 					SendMessage(dat->hwndStatus, SB_SETTEXT, iItem, (LPARAM) sbd->pszText);
