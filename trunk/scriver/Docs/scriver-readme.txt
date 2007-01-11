@@ -49,13 +49,13 @@ Q: Does Scriver support RTL ?
 A: Yes, it does.
 
 Q: What version of Miranda is required to run Scriver ?
-A: Scriver requires Miranda IM 0.4.
+A: Scriver requires Miranda IM 0.6.
 
 Q: How to hide avatar on the right hand side without disabling avatar support ?
 A: Just set max. avatar height to 0.
 
 Q: Is it possible to send the same message to all contacts in open tabs ?
-A: Yes, there is a special shortcut - ctrl+alt+enter.
+A: Yes, there is a special shortcut - ctrl+shift+enter.
 
 Q: How can I disable Unicode or change code page ?
 A: There is a special Unicode icon in the status bar (U),
@@ -72,6 +72,13 @@ created. CTRL key needs to be pressed only when a tab is being dropped.
 
 6. Change Log
 -------------
+2.5.9.14
+* bugfixes (mainly visual glitches)
+* docs updated
+2.5.9.13
+* status bar clean-up
+* bugfixes
+! requires Miranda 0.6 or later
 2.5.9.12
 + bugfixes
 2.5.9.11

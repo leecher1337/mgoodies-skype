@@ -1447,28 +1447,8 @@ int OptInitialise(WPARAM wParam, LPARAM lParam)
 	odp.ptszTab = tabPages[1].tabName;
 */
 	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) & odp);
-
-	/*
-
-	odp.cbSize = sizeof(odp);
-	odp.position = 910000000;
-	odp.hInstance = g_hInst;
-	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_MSGDLG);
-	odp.pszTitle = Translate("Messaging");
-	odp.pszGroup = Translate("Message Sessions"); //Events
-	odp.pfnDlgProc = DlgProcOptions;
-	odp.flags = 0;
-	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) & odp);
-
-	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_MSGLOG);
-	odp.pszTitle = Translate("Messaging Log");
-	odp.pfnDlgProc = DlgProcLogOptions;
-	odp.nIDBottomSimpleControl = IDC_STMSGLOGGROUP;
-	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) & odp);
-
-*/
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_MSGTYPE);
-	odp.pszTitle = TranslateT("Typing Notify");
+	odp.ptszTitle = TranslateT("Typing Notify");
 	odp.pfnDlgProc = DlgProcTypeOptions;
 	odp.nIDBottomSimpleControl = 0;
 	odp.ptszTab = NULL;

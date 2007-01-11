@@ -668,7 +668,6 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 					{
 						NMMOUSE *nm=(NMMOUSE*)lParam;
 						RECT rc;
-						char str[1024];
 						SendMessage(dat->hwndStatus, SB_GETRECT, SendMessage(dat->hwndStatus, SB_GETPARTS, 0, 0) - 2, (LPARAM)&rc);
 						if (nm->pt.x >= rc.left) {
 							MessageWindowTabData *mwtd = GetChildFromHWND(dat, dat->hwndActive);
@@ -986,7 +985,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 		}
 	case DM_STATUSICONCHANGE:
 		SendMessage(dat->hwndStatus, SB_SETTEXT, (WPARAM)(SBT_OWNERDRAW) | 2, (LPARAM)0);
-		return 0;
+		break;
 	case CM_UPDATETABCONTROL:
 		{
 			TCHAR *ptszTemp = NULL;
@@ -1457,14 +1456,14 @@ HWND GetParentWindow(HANDLE hContact, BOOL bChat) {
 	if (g_dat->flags2 & SMF2_USETABS) {
 		if (!bChat || !(g_dat->flags2 & SMF2_SEPARATECHATSCONTAINERS)) {
 			if (g_dat->lastParent != NULL) {
-				DWORD tabsNum = (DWORD) SendMessage(g_dat->lastParent->hwnd, CM_GETCHILDCOUNT, 0, 0);
+				int tabsNum = (int) SendMessage(g_dat->lastParent->hwnd, CM_GETCHILDCOUNT, 0, 0);
 				if (!(g_dat->flags2 & SMF2_LIMITTABS) || tabsNum < g_dat->limitTabsNum) {
 					return g_dat->lastParent->hwnd;
 				}
 			}
 		} else {
 			if (g_dat->lastChatParent != NULL) {
-				DWORD tabsNum = (DWORD) SendMessage(g_dat->lastChatParent->hwnd, CM_GETCHILDCOUNT, 0, 0);
+				int tabsNum = (int) SendMessage(g_dat->lastChatParent->hwnd, CM_GETCHILDCOUNT, 0, 0);
 				if (!(g_dat->flags2 & SMF2_LIMITCHATSTABS) || tabsNum < g_dat->limitChatsTabsNum) {
 					return g_dat->lastChatParent->hwnd;
 				}

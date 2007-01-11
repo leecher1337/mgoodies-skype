@@ -1,11 +1,11 @@
-# Project: scriver
+# Project: scriver_icons
 
 CPP  = g++.exe
 CC   = gcc.exe
 WINDRES = windres.exe
 RM = rm
 UPX = upx -9 -q --compress-icons=0
-SRC = 
+SRC =
 RES  = icons.res
 OBJ = $(SRC:.c=.o) $(RES)
 INCS =  -I"../../include"
