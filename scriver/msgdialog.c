@@ -2083,7 +2083,11 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			sid.cbSize = sizeof(sid);
 			sid.szModule = SRMMMOD;
 			sid.dwId = 0;
+#if defined ( _UNICODE )
 			sid.flags = (dat->flags & SMF_DISABLE_UNICODE) ? MBF_DISABLED : 0;
+#else
+			sid.flags = MBF_DISABLED;
+#endif
 			CallService(MS_MSG_MODIFYICON, (WPARAM)dat->hContact, (LPARAM) &sid);
 		}
 		break;

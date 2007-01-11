@@ -135,7 +135,12 @@ static int ModifyStatusIcon(WPARAM wParam, LPARAM lParam) {
 				HWND hwnd;
 				sprintf(buff, "SRMMStatusIconFlags%d", (int)sid->dwId);
 				DBWriteContactSettingByte(hContact, sid->szModule, buff, (BYTE)sid->flags);
-				if ((hwnd = WindowList_Find(g_dat->hMessageWindowList, hContact))) {
+				hwnd = WindowList_Find(g_dat->hMessageWindowList, hContact);
+				if (hwnd == NULL) {
+					hwnd = SM_FindWindowByContact(hContact);
+
+				}
+				if (hwnd != NULL) {
 					PostMessage(GetParent(hwnd), DM_STATUSICONCHANGE, 0, 0);
 				}
 			}

@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "statusicon.h"
 
 extern int Chat_ModulesLoaded(WPARAM wParam, LPARAM lParam);
-extern HWND SM_FindWindowByContact(HANDLE hContact);
 extern int OptInitialise(WPARAM wParam, LPARAM lParam);
 extern int FontServiceFontsChanged(WPARAM wParam, LPARAM lParam);
 int StatusIconPressed(WPARAM wParam, LPARAM lParam);

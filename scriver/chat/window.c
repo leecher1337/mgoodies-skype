@@ -1292,6 +1292,7 @@ BOOL CALLBACK RoomWndProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
          urd.pfnResizer=RoomWndResize;
          CallService(MS_UTILS_RESIZEDIALOG,0,(LPARAM)&urd);
 
+         RedrawWindow(GetDlgItem(hwndDlg,IDC_CHAT_LOG), NULL, NULL, RDW_INVALIDATE);
          RedrawWindow(GetDlgItem(hwndDlg,IDC_CHAT_LIST), NULL, NULL, RDW_INVALIDATE);
          RedrawWindow(GetDlgItem(hwndDlg,IDC_CHAT_MESSAGE), NULL, NULL, RDW_INVALIDATE);
          RedrawWindow(GetDlgItem(hwndDlg,IDOK), NULL, NULL, RDW_INVALIDATE);
