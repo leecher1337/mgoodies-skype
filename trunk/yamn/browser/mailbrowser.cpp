@@ -1094,7 +1094,7 @@ LRESULT CALLBACK NoNewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lPar
 #define MAXFILETIME 0x7FFF35F4F06C7FFF
 #endif
 ULONGLONG MimeDateToFileTime(char *datein){
-	char *day, *month, *year, *time, *shift;
+	char *day=0, *month=0, *year=0, *time=0, *shift=0;
 	SYSTEMTIME st;
 	ULONGLONG res=0;
 	int wShiftSeconds = CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,0,0);
@@ -1103,6 +1103,7 @@ ULONGLONG MimeDateToFileTime(char *datein){
 	//datein = "Xxx,  1 Jan 2060 05:29:10 ";
 	//datein = "      ManySpaces  1.5   Jan 2060 05::";
 	//datein = "Xxx,  35 February 20 :29:10 ";
+	//datein = "01.12.2007 (22:38:17)"; //
 	if (datein){
 		char tmp [64];
 		while (  datein[0]==' ')  datein++; // eat leading spaces
@@ -1113,10 +1114,10 @@ ULONGLONG MimeDateToFileTime(char *datein){
 			int i = 0;
 			while (tmp[i]==' ')i++; if (day = strchr(&tmp[i],' ')){day[0]=0; day++;}
 		}
-		while (  day[0]==' ')  day++;if (month= strchr(day,  ' ')){month[0]=0; month++;}
-		while (month[0]==' ')month++;if (year = strchr(month,' ')){ year[0]=0; year++;}
-		while ( year[0]==' ') year++;if (time = strchr(year, ' ')){ time[0]=0; time++;}
-		while ( time[0]==' ') time++;if (shift= strchr(time, ' ')){shift[0]=0; shift++;shift[5]=0;}
+		if (day) {while (day[0]==' ')  day++;if (month= strchr(day,  ' ')){month[0]=0; month++;}}
+		if (month) {while (month[0]==' ')month++;if (year = strchr(month,' ')){ year[0]=0; year++;}}
+		if (year) {while ( year[0]==' ') year++;if (time = strchr(year, ' ')){ time[0]=0; time++;}}
+		if (time) {while ( time[0]==' ') time++;if (shift= strchr(time, ' ')){shift[0]=0; shift++;shift[5]=0;}}
 
 		if (year){
 			st.wYear = atoi(year);
