@@ -31,6 +31,7 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 int ShowSaveDialog(HWND hwnd, TCHAR* fn);
 
 int FillAvatarList(HWND list, HANDLE hContact);
+int CleanupAvatarPic(HWND hwnd);
 BOOL UpdateAvatarPic(HWND hwnd);
 TCHAR* GetCurrentSelFile(HWND list);
 
@@ -138,6 +139,7 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 		}
 		case WM_CLOSE:
 		{
+			CleanupAvatarPic(hwnd);
 			EndDialog(hwnd, 0);
 			return TRUE;
 		}
@@ -270,6 +272,7 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 						DBDeleteContactSetting(hContact, "AvatarHistory", "LogToHistory");
 					}
 
+					CleanupAvatarPic(hwnd);
 					EndDialog(hwnd, 0);
 					return TRUE;
 				}
@@ -395,6 +398,18 @@ BOOL UpdateAvatarPic(HWND hwnd)
 		DeleteObject(avpic);
 
 	return found_image;
+}
+
+int CleanupAvatarPic(HWND hwnd)
+{
+	HWND hwndpic = GetDlgItem(hwnd, IDC_AVATAR);
+	if (!hwnd || !hwndpic)
+		return -1;
+
+	HBITMAP avpic = (HBITMAP)SendMessage(hwndpic, STM_GETIMAGE, 0, 0);
+	if(avpic)
+		DeleteObject(avpic);
+	return 0;
 }
 
 void InitMenuItem()
