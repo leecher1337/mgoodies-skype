@@ -203,7 +203,11 @@ void HistoryHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 
 	DWORD dwFlags = DBGetContactSettingByte(NULL, HPPMOD, SRMSGSET_SHOWICONS, 0) ? SMF_LOG_SHOWICONS : 0;
-	char *szRealProto = getRealProto(event->hContact);
+	
+	char *szRealProto = NULL;
+	if(event->hContact != NULL)
+		szRealProto = getRealProto(event->hContact);
+
 	IEVIEWEVENTDATA* eventData = event->eventData;
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
 		int outputSize;

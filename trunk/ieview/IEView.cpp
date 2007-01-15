@@ -916,6 +916,8 @@ void IEView::appendEvent(IEVIEWEVENT *event) {
 	if (clearRequired) {
 		clear(event);
 	}
+	if (event->eventData == NULL) {return; }
+
 	if (builder!=NULL) {
 		builder->appendEvent(this, event);
 	}

@@ -1094,9 +1094,15 @@ ProtocolSettings* HTMLBuilder::getHistoryProtocolSettings(const char *protocolNa
 }
 
 ProtocolSettings* HTMLBuilder::getHistoryProtocolSettings(HANDLE hContact) {
-	char *szRealProto = getRealProto(hContact);
+	char szRealProto[MAXMODULELABELLENGTH];
+	
+	if(hContact != NULL)
+		sprintf(szRealProto, getRealProto(hContact));
+	else
+		sprintf(szRealProto,"_default_");
+
 	ProtocolSettings *protoSettings =  getHistoryProtocolSettings(szRealProto);
-    delete szRealProto;
+    //delete szRealProto;
 	return protoSettings;
 }
 

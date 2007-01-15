@@ -290,13 +290,18 @@ void TabSRMMHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 	dwFlags2 |= MWF_SHOW_MICROLF;
     dwFlags2 |= DBGetContactSettingByte(NULL, SRMSGMOD_T, "followupts", 1) ? MWF_SHOW_MARKFOLLOWUPTS : 0;
 
-	char *szRealProto = getRealProto(event->hContact);
+	
+	char *szRealProto = NULL;
+	if(event->hContact != NULL)
+		szRealProto = getRealProto(event->hContact);
+
 	IEVIEWEVENTDATA* eventData = event->eventData;
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
 		int outputSize;
 		char *output;
 		output = NULL;
-		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_FILE || eventData->iType == IEED_EVENT_URL || eventData->iType == IEED_EVENT_STATUSCHANGE) {
+		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_FILE || eventData->iType == IEED_EVENT_URL || eventData->iType == IEED_EVENT_STATUSCHANGE) 
+		{
 			int isGroupBreak = TRUE;
 			int isSent = (eventData->dwFlags & IEEDF_SENT);
 			int isRTL = eventData->dwFlags & IEEDF_RTL;
