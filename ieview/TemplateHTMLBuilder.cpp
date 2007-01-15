@@ -319,9 +319,12 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	bool isGrouping = false;
 //	DWORD today = (DWORD)time(NULL);
 //	today = today - today % 86400;
-	hRealContact = getRealContact(event->hContact);
-	szRealProto = getProto(hRealContact);
-	szProto = getProto(event->pszProto, event->hContact);
+	if(event->hContact != NULL)
+	{
+		hRealContact = getRealContact(event->hContact);
+		szRealProto = getProto(hRealContact);
+		szProto = getProto(event->pszProto, event->hContact);
+	}
 	tempBase[0]='\0';
 	if (protoSettings == NULL) {
 		return;
@@ -337,17 +340,35 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 		isGrouping = tmpm->isGrouping();
 	}
 	szBase = Utils::UTF8Encode(tempBase);
-	getUINs(event->hContact, szUINIn, szUINOut);
-	if (getFlags(protoSettings) & Options::LOG_SHOW_NICKNAMES) {
+	
+	if(event->hContact != NULL)
+		getUINs(event->hContact, szUINIn, szUINOut);
+
+	if (getFlags(protoSettings) & Options::LOG_SHOW_NICKNAMES) 
+	{
 		szNameOut = getEncodedContactName(NULL, szProto, szRealProto);
-		szNameIn = getEncodedContactName(event->hContact, szProto, szRealProto);
-	} else {
+		if(event->hContact != NULL)
+			szNameIn = getEncodedContactName(event->hContact, szProto, szRealProto);
+		else
+		{
+			if (event->eventData->dwFlags & IEEDF_UNICODE_NICK) {
+				szNameIn = encodeUTF8(event->hContact, szRealProto, event->eventData->pszNickW, ENF_NAMESMILEYS);
+   			} else {
+                szNameIn = encodeUTF8(event->hContact, szRealProto, event->eventData->pszNick, ENF_NAMESMILEYS);
+			}
+		}
+	} 
+	else 
+	{
 		szNameOut = Utils::dupString("&nbsp;");
 		szNameIn = Utils::dupString("&nbsp;");
 	}
 	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
-	szAvatarIn = getAvatar(event->hContact, szRealProto);
+	
+	if(event->hContact != NULL)
+		szAvatarIn = getAvatar(event->hContact, szRealProto);
+
 	if (szAvatarIn == NULL) {
 		szAvatarIn = Utils::dupString(szNoAvatar);
 	}
@@ -355,11 +376,14 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	if (szAvatarOut == NULL) {
 		szAvatarOut = Utils::dupString(szNoAvatar);
 	}
-	if (!DBGetContactSetting(event->hContact, "CList", "StatusMsg",&dbv)) {
-		if (strlen(dbv.pszVal) > 0) {
-			szStatusMsg = Utils::UTF8Encode(dbv.pszVal);
+	if(event->hContact != NULL)
+	{
+		if (!DBGetContactSetting(event->hContact, "CList", "StatusMsg",&dbv)) {
+			if (strlen(dbv.pszVal) > 0) {
+				szStatusMsg = Utils::UTF8Encode(dbv.pszVal);
+			}
+			DBFreeVariant(&dbv);
 		}
-		DBFreeVariant(&dbv);
 	}
 	ZeroMemory(&ci, sizeof(ci));
 	ci.cbSize = sizeof(ci);
@@ -417,6 +441,11 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
    			} else {
                 szName = encodeUTF8(eventData->pszNick, szRealProto, ENF_NAMESMILEYS);
 			}*/
+			if (event->eventData->dwFlags & IEEDF_UNICODE_NICK) {
+				szName = encodeUTF8(event->hContact, szRealProto, event->eventData->pszNickW, ENF_NAMESMILEYS);
+   			} else {
+                szName = encodeUTF8(event->hContact, szRealProto, event->eventData->pszNick, ENF_NAMESMILEYS);
+			}
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
 				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
    			} else {
