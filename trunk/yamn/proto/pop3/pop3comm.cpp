@@ -863,15 +863,11 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 						#ifdef DEBUG_DECODE
 						DebugLog(DecodeFile,"</Reading body>\n");
 						#endif
-						MsgQueuePtr->Flags&=~YAMN_MSG_BODYREQESTED;
 						MsgQueuePtr->Flags|=YAMN_MSG_BODYRECEIVED;
 
 						if(DataRX!=NULL)
 							free(DataRX);
 						DataRX=NULL;
-						if (MsgQueuePtr->MsgWindow){
-							SendMessage(MsgQueuePtr->MsgWindow,WM_YAMN_CHANGECONTENT,0,0);
-						}
 						break;
 					}
 				}
@@ -885,6 +881,14 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 		DebugLog(SynchroFile,"CheckPOP3:ActualAccountMsgsSO-write done\n");
 		#endif
 		MsgsWriteDone(ActualAccount);
+		for(MsgQueuePtr=(HYAMNMAIL)ActualAccount->Mails;MsgQueuePtr!=NULL;MsgQueuePtr=MsgQueuePtr->Next){
+			if ((MsgQueuePtr->Flags&YAMN_MSG_BODYREQESTED) && (MsgQueuePtr->Flags&YAMN_MSG_BODYRECEIVED)){
+				MsgQueuePtr->Flags&=~YAMN_MSG_BODYREQESTED;
+				if (MsgQueuePtr->MsgWindow){
+					SendMessage(MsgQueuePtr->MsgWindow,WM_YAMN_CHANGECONTENT,0,0);
+				}
+			}
+		}
 
 		for(msgs=0,MsgQueuePtr=NewMails;MsgQueuePtr!=NULL;MsgQueuePtr=MsgQueuePtr->Next,msgs++);			//get number of new mails
 
