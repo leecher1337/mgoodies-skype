@@ -347,7 +347,7 @@ void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head)
 	}
 }
 
-void ExtractHeader(struct CMimeItem *items,int CP,struct CHeader *head)
+void ExtractHeader(struct CMimeItem *items,int &CP,struct CHeader *head)
 {
 	struct CShortHeader ShortHeader;
 

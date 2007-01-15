@@ -148,7 +148,7 @@ extern DWORD WINAPI SCDecFcn(PSCOUNTER SCounter);
 extern void WINAPI DeleteMessageFromQueueFcn(HYAMNMAIL *From,HYAMNMAIL Which,int mode);
 extern void WINAPI SetRemoveFlagsInQueueFcn(HYAMNMAIL From,DWORD FlagsSet,DWORD FlagsNotSet,DWORD FlagsToSet,int mode);
 //From mime.cpp
-void ExtractHeader(struct CMimeItem *items,int CP,struct CHeader *head);
+void ExtractHeader(struct CMimeItem *items,int &CP,struct CHeader *head);
 void DeleteHeaderContent(struct CHeader *head);
 //From account.cpp
 void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
