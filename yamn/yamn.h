@@ -115,6 +115,17 @@ int SaveMailDataSvc(WPARAM wParam,LPARAM lParam);
 
 //From mime.cpp
 //void WINAPI ExtractHeaderFcn(char *,int,WORD,HYAMNMAIL);	//already in MailExported
+struct _tcptable
+{
+	char *NameBase,*NameSub,*Desc;
+	unsigned int CP;
+};
+extern struct _tcptable CodePageNamesAll[]; // in mime/decode.cpp
+extern int CPLENALL;
+extern struct _tcptable *CodePageNamesSupp; // in mime/decode.cpp
+extern int CPLENSUPP;
+//#define CPDEFINDEX	63	//ISO-8859-1
+#define CPDEFINDEX	0	//ACP
 
 //From pop3comm.cpp
 int RegisterPOP3Plugin(WPARAM,LPARAM);

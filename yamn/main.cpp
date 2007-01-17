@@ -285,6 +285,31 @@ extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVers
 	return &pluginInfo;
 }
 
+// The callback function
+BOOL CALLBACK EnumSystemCodePagesProc(LPTSTR cpStr)
+{
+    //Convert code page string to number
+    UINT cp = _ttoi(cpStr);
+    if (!IsValidCodePage(cp))
+        return TRUE;
+
+    //Get Code Page name
+    CPINFOEX info;
+    if(GetCPInfoEx(cp,0,&info)){
+		//Add string and page number to List of CodePages
+		for (int i=1;i<CPLENALL;i++) if (CodePageNamesAll[i].CP==cp) {
+			int len = strlen(info.CodePageName+7);
+			CodePageNamesAll[i].Desc=(char *)malloc(len);
+			strncpy(CodePageNamesAll[i].Desc,info.CodePageName+7,len-1);
+			CodePageNamesAll[i].Desc[len-1]=0;
+			CPLENSUPP++;
+			break;
+		}
+	}
+    //strcat(cpList, cpStr);
+    return TRUE;
+}
+
 int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam); // implemented in services.cpp
 
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
@@ -293,12 +318,23 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	UINT mod,vk;
 	char pn[MAX_PATH+1];
 	char *fc;
+	int i,k;
 
 	pluginLink=link;
 
 	ProtoName = "YAMN";
 	YAMN_STATUS = ID_STATUS_ONLINE;
 
+	// Enumerate all the code pages available for the System Locale
+	EnumSystemCodePages(EnumSystemCodePagesProc, CP_INSTALLED);
+	CodePageNamesSupp = new _tcptable[CPLENSUPP];
+	for (i=0,k=0;i<CPLENALL;i++) {
+		if (CodePageNamesAll[i].Desc){
+			CodePageNamesSupp[k]=CodePageNamesAll[i];
+			k++;
+		}
+	}
+    //MessageBox( NULL,cpList, TEXT("Code Page List"), MB_OK);
 
 	HIMAGELIST CSImages = ImageList_Create(16, 16, ILC_COLOR8|ILC_MASK, 0, ICONSNUMBER);
 	{// workarround of 4bit forced images
@@ -306,7 +342,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		ImageList_AddMasked(CSImages, hScrBM, RGB( 255, 0, 255 ));
 		DeleteObject(hScrBM);    
 	}
-	for (int i=0; i<ICONSNUMBER-1; i++){
+	for (i=0; i<ICONSNUMBER-1; i++){
 		hYamnIcons[i] = ImageList_ExtractIcon(NULL, CSImages, i);
 	}
 	ImageList_Destroy(CSImages);
@@ -499,6 +535,9 @@ extern "C" int __declspec(dllexport) Unload(void)
 
 	delete AccountStatusCS;
 	delete PluginRegCS;
+
+	for (int i=1;i<CPLENALL;i++) if (CodePageNamesAll[i].Desc) free(CodePageNamesAll[i].Desc);
+	delete CodePageNamesSupp;
 
 	return 0;
 }

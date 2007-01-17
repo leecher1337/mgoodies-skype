@@ -8,83 +8,116 @@
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
-struct cptable codepages[]=
+struct _tcptable CodePageNamesAll[]=
 {
-	{"ibm037",37},
-	{"ibm290",290},
-	{"ibm437",437},
-	{"ibm500",500},
-	{"iso88596",708},
-	{"asmo449",709},
-	{"ibm775",775},
-	{"ibm850",850},
-	{"ibm852",852},
-	{"ibm855",855},
-	{"ibm857",857},
-	{"ibm860",860},
-	{"ibm861",861},
-	{"ibm862",862},
-	{"ibm863",863},
-	{"ibm864",864},
-	{"ibm865",865},
-	{"ibm866",866},
-	{"ibm869",869},
-	{"ibm870",870},
-	{"ibm423",875},
-	{"gb231280",936},
-	{"ksc5601",949},
-	{"big5",950},
-	{"ibm1026",1026},
-	{"iso10646usc2",1200},
-	{"windows1250",1250},
-	{"windows1251",1251},
-	{"windows1252",1252},
-	{"windows1253",1253},
-	{"windows1254",1254},
-	{"windows1255",1255},
-	{"windows1256",1256},
-	{"windows1257",1257},
-	{"windows1258",1258},
-	{"ksc5601",1361},
-	{"din66003",20105},
-	{"din66003",20106},
-	{"sen850200b",20107},
-	{"t618bit",20261},
-	{"ibm273",20273},
-	{"ibm277",20277},
-	{"ibm277",20278},
-	{"ibm278",20277},
-	{"ibm280",20280},
-	{"ibm284",20284},
-	{"ibm285",20285},
-	{"ibm290",20290},
-	{"ibm297",20297},
-	{"ibm420",20420},
-	{"ibm423",20423},
-	{"ibm297",20297},
-	{"ibmthai",20838},
-	{"koi8r",20866},
-	{"ibm871",20871},
-	{"ibm880",20880},
-	{"ibm905",20905},
-	{"koi8u",21866},
-	{"iso88591",28591},
-	{"iso88592",28592},
-	{"iso88593",28593},
-	{"iso88594",28594},
-	{"iso88595",28595},
-	{"iso88596",28596},
-	{"iso88597",28597},
-	{"iso88598",28598},
-	{"iso88599",28599},
-	{"iso2022jp",50220},
-	{"iso2022kr",50225},
-	{"eucjp",51932},
-	{"euckr",51949},
-	{"hzgb2312",52936},
-	{"utf7",CP_UTF7},
-	{"utf8",CP_UTF8},
+	{_T("ANSI"),_T(""),"ANSI Default",CP_ACP},
+	{_T("WINDOWS-"),_T("1250"),0,1250},
+	{_T("WINDOWS-"),_T("1251"),0,1251},
+	{_T("WINDOWS-"),_T("1252"),0,1252},
+	{_T("WINDOWS-"),_T("1253"),0,1253},
+	{_T("WINDOWS-"),_T("1254"),0,1254},
+	{_T("WINDOWS-"),_T("1255"),0,1255},
+	{_T("WINDOWS-"),_T("1256"),0,1256},
+	{_T("WINDOWS-"),_T("1257"),0,1257},
+	{_T("WINDOWS-"),_T("1258"),0,1258},
+	{_T("KOI8-"),_T("R"),0,20866},
+	{_T("KOI8-"),_T("U"),0,21866},
+	{_T("ISO-"),_T("8859-1"),0,28591},
+	{_T("ISO-"),_T("8859-2"),0,28592},
+	{_T("ISO-"),_T("8859-3"),0,28593},
+	{_T("ISO-"),_T("8859-4"),0,28594},
+	{_T("ISO-"),_T("8859-5"),0,28595},
+	{_T("ISO-"),_T("8859-6"),0,28596},
+	{_T("ISO-"),_T("8859-7"),0,28597},
+	{_T("ISO-"),_T("8859-8"),0,28598},
+	{_T("ISO-"),_T("8859-9"),0,28599},
+	{_T("ISO-"),_T("10646-USC2"),0,1200},
+	{_T("ISO-"),_T("2022/2-JP"),0,50220},
+	{_T("ISO-"),_T("2022-JP"),0,50221},
+	{_T("ISO-"),_T("2022/JIS-JP"),0,50222},
+	{_T("ISO-"),_T("2022-KR"),0,50225},
+	{_T("ISO-"),_T("2022-CH(SP)"),0,50227},
+	{_T("ISO-"),_T("2022-CH(TR)"),0,50229},
+	{_T("UTF-"),_T("7"),0,65000},
+	{_T("UTF-"),_T("8"),0,65001},
+	{_T("ARAB-"),_T("TRANSPARENT"),0,710},
+	{_T("ASMO-"),_T("TRANSPARENT"),0,720},
+	{_T("ASMO-"),_T("449"),0,709},
+	{_T("ASMO-"),_T("708"),0,708},
+	{_T("BIG5"),_T(""),0,950},
+	{_T("EUC-"),_T("CH(SP)"),0,51936},
+	{_T("EUC-"),_T("CH(TR)"),0,51950},
+	{_T("EUC-"),_T("JP"),0,51932},
+	{_T("EUC-"),_T("KR"),0,51949},
+	{_T("GB-"),_T("2312"),0,20936},
+	{_T("HZGB-"),_T("2312"),0,52936},
+	{_T("IBM-"),_T("037"),0,37},
+	{_T("IBM-"),_T("290"),0,290},
+	{_T("IBM-"),_T("437"),0,437},
+	{_T("IBM-"),_T("500"),0,500},
+	{_T("IBM-"),_T("775"),0,775},
+	{_T("IBM-"),_T("850"),0,850},
+	{_T("IBM-"),_T("852"),0,852},
+	{_T("IBM-"),_T("855"),0,855},
+	{_T("IBM-"),_T("857"),0,857},
+	{_T("IBM-"),_T("860"),0,860},
+	{_T("IBM-"),_T("861"),0,861},
+	{_T("IBM-"),_T("862"),0,862},
+	{_T("IBM-"),_T("863"),0,863},
+	{_T("IBM-"),_T("864"),0,864},
+	{_T("IBM-"),_T("865"),0,865},
+	{_T("IBM-"),_T("866"),0,866},
+	{_T("IBM-"),_T("869"),0,869},
+	{_T("IBM-"),_T("870"),0,870},
+	{_T("IBM-"),_T("875"),0,875},
+	{_T("IBM-"),_T("1026"),0,1026},
+	{_T("IBM-"),_T("273"),0,20273},
+	{_T("IBM-"),_T("277"),0,20277},
+	{_T("IBM-"),_T("278"),0,20278},
+	{_T("IBM-"),_T("280"),0,20280},
+	{_T("IBM-"),_T("284"),0,20284},
+	{_T("IBM-"),_T("285"),0,20285},
+	{_T("IBM-"),_T("290"),0,20290},
+	{_T("IBM-"),_T("297"),0,20297},
+	{_T("IBM-"),_T("420"),0,20420},
+	{_T("IBM-"),_T("423"),0,20423},
+	{_T("IBM-"),_T("871"),0,20871},
+	{_T("IBM-"),_T("880"),0,20880},
+	{_T("IBM-"),_T("905"),0,20905},
+	{_T("IBM-"),_T("THAI"),0,20838},
+	{_T("ISCII-"),_T("DEVANAGARI"),0,57002},
+	{_T("ISCII-"),_T("BENGALI"),0,57003},
+	{_T("ISCII-"),_T("TAMIL"),0,57004},
+	{_T("ISCII-"),_T("TELUGU"),0,57005},
+	{_T("ISCII-"),_T("ASSAMESE"),0,57006},
+	{_T("ISCII-"),_T("ORIYA"),0,57007},
+	{_T("ISCII-"),_T("KANNADA"),0,57008},
+	{_T("ISCII-"),_T("MALAYALAM"),0,57009},
+	{_T("ISCII-"),_T("GUJARATI"),0,57010},
+	{_T("ISCII-"),_T("PUNJABI"),0,57011},
+	{_T("KOR-"),_T("JOHAB"),0,1361},
+	{_T("KSC-"),_T("5601"),0,1361},
+	{_T("MAC-"),_T("ROMAN"),0,10000},
+	{_T("MAC-"),_T("JP"),0,10001},
+	{_T("MAC-"),_T("CH(SP)(BIG5)"),0,10002},
+	{_T("MAC-"),_T("KR"),0,10003},
+	{_T("MAC-"),_T("AR"),0,10004}, 
+	{_T("MAC-"),_T("HW"),0,10005},
+	{_T("MAC-"),_T("GR"),0,10006},
+	{_T("MAC-"),_T("CY"),0,10007},
+	{_T("MAC-"),_T("CH(SP)(GB2312)"),0,10008},
+	{_T("MAC-"),_T("ROMANIA"),0,10010},
+	{_T("MAC-"),_T("UA"),0,10017},
+	{_T("MAC-"),_T("TH"),0,10021},
+	{_T("MAC-"),_T("LAT2"),0,10029},
+	{_T("MAC-"),_T("ICE"),0,10079},
+	{_T("MAC-"),_T("TR"),0,10081},
+	{_T("MAC-"),_T("CR"),0,10082},
 };
+
+int CPLENALL = (sizeof(CodePageNamesAll)/sizeof(CodePageNamesAll[0]));
+struct _tcptable *CodePageNamesSupp;
+int CPLENSUPP = 1;
 
 //Gets codepage ID from string representing charset such as "iso-8859-1"
 // input- the string
@@ -134,7 +167,7 @@ void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode)
 //--------------------------------------------------------------------------------------------------
 
 int GetCharsetFromString(char *input,int size)
-//Converts "ISO-8859-1" to "iso88591" and then return ID from table
+//"ISO-8859-1" to ID from table
 {
 	char *pin=input;
 	char *pout,*parser;
@@ -143,11 +176,10 @@ int GetCharsetFromString(char *input,int size)
 		return -1;
 	while((*pin!=0) && (pin-input<size))
 	{
-		if ((*pin>='A') && (*pin<='Z'))
-			*parser++=*(pin++)+('a'-'A');
-		else if((*pin>='0') && (*pin<='9') || (*pin>='a') && (*pin<='z'))
+		if ((*pin>='a') && (*pin<='z'))
+			*parser++=*(pin++)-('a'-'A'); // make it capital
+		else 
 			*parser++=*pin++;
-		else pin++;
 	}
 
 	*parser=(char)0;
@@ -155,12 +187,15 @@ int GetCharsetFromString(char *input,int size)
 #ifdef DEBUG_DECODECODEPAGE
 	DebugLog(DecodeFile,"<CodePage>%s</CodePage>",pout);
 #endif
-	for(int i=0;i<sizeof(codepages)/sizeof(codepages[0]);i++)
-		if(0==strncmp(pout,codepages[i].name,strlen(codepages[i].name)))
-		{
-			delete[] pout;
-			return codepages[i].ID;
+	for(int i=0;i<CPLENALL;i++){
+		int len = strlen(CodePageNamesAll[i].NameBase);
+		if(0==strncmp(pout,CodePageNamesAll[i].NameBase,len)){
+			if (0==strcmp(pout+len,CodePageNamesAll[i].NameSub)){
+				delete[] pout;
+				return CodePageNamesAll[i].CP;
+			}
 		}
+	}
 	delete[] pout;
 	return -1;		//not found
 }
