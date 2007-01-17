@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA.
 #define EVENTTYPE_VOICE_CALL 8739
 
 
+#define PROTOTYPE_VOICE (PROTOTYPE_ENCRYPTION-9)
 
 
 #define VOICE_UNICODE	0x80000000
@@ -34,6 +35,12 @@ Boston, MA 02111-1307, USA.
 #else
 # define VOICE_TCHAR 0
 #endif
+
+#define VOICE_STATE_TALKING 0
+#define VOICE_STATE_RINGING 1
+#define VOICE_STATE_CALLING 2
+#define VOICE_STATE_ON_HOLD 3
+#define VOICE_STATE_ENDED 4
 
 typedef struct {
 	int cbSize;				// Struct size
@@ -46,54 +53,19 @@ typedef struct {
 		char *pszContact;
 		WCHAR *pwszContact;
 	};
+	int state;				// VOICE_STATE_*
 
 } VOICE_CALL;
 
 
 /*
-Notifies that someone wants to call the user
+Notifies that a voice call changed state
 
 wParam: const VOICE_CALL *
 lParam: ignored
 return: 0 on success
 */
-#define PE_VOICE_RINGING				"/Voice/Ringing"
-
-/*
-Notifies that the user is calling someone
-
-wParam: const VOICE_CALL *
-lParam: ignored
-return: 0 on success
-*/
-#define PE_VOICE_CALLING				"/Voice/Calling"
-
-/*
-Notifies that a call has ended
-
-wParam: const VOICE_CALL *
-lParam: ignored
-return: 0 on success
-*/
-#define PE_VOICE_ENDEDCALL				"/Voice/EndedCall"
-
-/*
-Notifies that a call has started
-
-wParam: const VOICE_CALL *
-lParam: ignored
-return: 0 on success
-*/
-#define PE_VOICE_STARTEDCALL			"/Voice/StartedCall"
-
-/*
-Notifies that a call has been put on hold
-
-wParam: const VOICE_CALL *
-lParam: ignored
-return: 0 on success
-*/
-#define PE_VOICE_HOLDEDCALL				"/Voice/HoldedCall"
+#define PE_VOICE_CALL_STATE				"/Voice/State"
 
 
 #define VOICE_SUPPORTED					1	// Set if proto support voice calls. Probabilly will be 1 ;)

@@ -63,8 +63,10 @@ extern "C"
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
 
-#include "resource.h"
 #include "m_voice.h"
+#include "m_voiceservice.h"
+
+#include "resource.h"
 #include "options.h"
 #include "frame.h"
 #include "popup.h"
@@ -84,12 +86,6 @@ extern PLUGINLINK *pluginLink;
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 
-
-#define TALKING 0
-#define RINGING 1
-#define CALLING 2
-#define ON_HOLD 3
-#define ENDED 4
 
 #define NUM_STATES 5
 
@@ -117,7 +113,7 @@ struct MODULE_INTERNAL
 	const char *name;
 	int flags;
 	BOOL is_protocol;
-	HANDLE hooks[NUM_STATES];
+	HANDLE state_hook;
 };
 
 
