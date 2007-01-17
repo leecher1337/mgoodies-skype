@@ -29,7 +29,7 @@ void DeInitFrames();
 extern HWND hwnd_frame;
 
 
-#define WMU_REFRESH (WM_USER + 1)
+#define WMU_REFRESH (WM_USER + 25)
 
 
 #endif // __FRAME_H__

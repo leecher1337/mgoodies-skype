@@ -105,7 +105,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 					// TODO Show error
 					break;
 
-				SendMessage(list, LB_SETITEMDATA, pos, (LPARAM) &calls[i]);
+				SendMessage(list, LB_SETITEMDATA, pos, (LPARAM) calls[i]);
 			}
 
 			break;
@@ -147,7 +147,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			VOICE_CALL_INTERNAL *vc = (VOICE_CALL_INTERNAL *) SendMessage(list, LB_GETITEMDATA, pos, 0);
 			switch (vc->state)
 			{
-				case TALKING:
+				case VOICE_STATE_TALKING:
 				{
 					if (action == 1)
 						HoldCall(vc);
@@ -155,8 +155,8 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 						DropCall(vc);
 					break;
 				}
-				case RINGING:
-				case ON_HOLD:
+				case VOICE_STATE_RINGING:
+				case VOICE_STATE_ON_HOLD:
 				{
 					if (action == 1)
 						AnswerCall(vc);
@@ -164,7 +164,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 						DropCall(vc);
 					break;
 				}
-				case CALLING:
+				case VOICE_STATE_CALLING:
 				{
 					if (action == 2)
 						DropCall(vc);
@@ -194,7 +194,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			if (pos >= calls.size())
 				break;
 
-			if (calls[pos]->state == ENDED)
+			if (calls[pos]->state == VOICE_STATE_ENDED)
 				break;
 
 			// Just to get things strait
@@ -206,13 +206,13 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 			switch (calls[pos]->state)
 			{
-				case CALLING:
+				case VOICE_STATE_CALLING:
 				{
 					DeleteMenu(menu, ID_FRAMEPOPUP_ANSWERCALL, MF_BYCOMMAND);
 					DeleteMenu(menu, ID_FRAMEPOPUP_HOLDCALL, MF_BYCOMMAND);
 					break;
 				}
-				case TALKING:
+				case VOICE_STATE_TALKING:
 				{
 					DeleteMenu(menu, ID_FRAMEPOPUP_ANSWERCALL, MF_BYCOMMAND);
 					if (!(calls[pos]->module->flags & VOICE_CAN_HOLD))
@@ -294,13 +294,13 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 			switch (vc->state)
 			{
-				case CALLING:
+				case VOICE_STATE_CALLING:
 				{
 					rc.left = rc.right - ICON_SIZE;
 					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_DROP], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
 					break;
 				}
-				case TALKING:
+				case VOICE_STATE_TALKING:
 				{
 					rc.left = rc.right - ICON_SIZE;
 					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_DROP], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
@@ -314,8 +314,8 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 					break;
 				}
-				case RINGING:
-				case ON_HOLD:
+				case VOICE_STATE_RINGING:
+				case VOICE_STATE_ON_HOLD:
 				{
 					rc.left = rc.right - ICON_SIZE;
 					DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[NUM_STATES + ACTION_DROP], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
@@ -327,7 +327,6 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 					break;
 				}
 			}
-
 			
 			return TRUE;
 		}
