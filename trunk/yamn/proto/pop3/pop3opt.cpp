@@ -53,116 +53,6 @@ extern BOOL (WINAPI *MyEnableThemeDialogTexture)(HANDLE, DWORD);
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
-struct _tcptable CodePageNames[]=
-{
-	{_T("OEM"),CP_OEMCP},
-	{_T("ARAB-TRANSPARENT"),710},
-	{_T("ASMO-TRANSPARENT"),720},
-	{_T("ASMO-449"),709},
-	{_T("ASMO-708"),708},
-	{_T("BIG5"),950},
-	{_T("EUC-CH(SP)"),51936},
-	{_T("EUC-CH(TR)"),51950},
-	{_T("EUC-JP"),51932},
-	{_T("EUC-KR"),51949},
-	{_T("GB-2312"),20936},
-	{_T("HZGB-2312"),52936},
-	{_T("IBM-037"),37},
-	{_T("IBM-290"),290},
-	{_T("IBM-437"),437},
-	{_T("IBM-500"),500},
-	{_T("IBM-775"),775},
-	{_T("IBM-850"),850},
-	{_T("IBM-852"),852},
-	{_T("IBM-855"),855},
-	{_T("IBM-857"),857},
-	{_T("IBM-860"),860},
-	{_T("IBM-861"),861},
-	{_T("IBM-862"),862},
-	{_T("IBM-863"),863},
-	{_T("IBM-864"),864},
-	{_T("IBM-865"),865},
-	{_T("IBM-866"),866},
-	{_T("IBM-869"),869},
-	{_T("IBM-870"),870},
-	{_T("IBM-875"),875},
-	{_T("IBM-1026"),1026},
-	{_T("IBM-273"),20273},
-	{_T("IBM-277"),20277},
-	{_T("IBM-277"),20278},
-	{_T("IBM-278"),20277},
-	{_T("IBM-280"),20280},
-	{_T("IBM-284"),20284},
-	{_T("IBM-285"),20285},
-	{_T("IBM-290"),20290},
-	{_T("IBM-297"),20297},
-	{_T("IBM-420"),20420},
-	{_T("IBM-423"),20423},
-	{_T("IBM-871"),20871},
-	{_T("IBM-880"),20880},
-	{_T("IBM-905"),20905},
-	{_T("IBM-THAI"),20838},
-	{_T("ISCII-DEVANAGARI"),57002},
-	{_T("ISCII-BENGALI"),57003},
-	{_T("ISCII-TAMIL"),57004},
-	{_T("ISCII-TELUGU"),57005},
-	{_T("ISCII-ASSAMESE"),57006},
-	{_T("ISCII-ORIYA"),57007},
-	{_T("ISCII-KANNADA"),57008},
-	{_T("ISCII-MALAYALAM"),57009},
-	{_T("ISCII-GUJARATI"),57010},
-	{_T("ISCII-PUNJABI"),57011},
-	{_T("ISO-2022/2-JP"),50220},
-	{_T("ISO-2022-JP"),50221},
-	{_T("ISO-2022/JIS-JP"),50222},
-	{_T("ISO-2022-KR"),50225},
-	{_T("ISO-2022-CH(SP)"),50227},
-	{_T("ISO-2022-CH(TR)"),50229},
-	{_T("ISO-8859-1"),28591},
-	{_T("ISO-8859-2"),28592},
-	{_T("ISO-8859-3"),28593},
-	{_T("ISO-8859-4"),28594},
-	{_T("ISO-8859-5"),28595},
-	{_T("ISO-8859-6"),28596},
-	{_T("ISO-8859-7"),28597},
-	{_T("ISO-8859-8"),28598},
-	{_T("ISO-8859-9"),28599},
-	{_T("ISO-10646-USC2"),1200},
-	{_T("KOI8-R"),20866},
-	{_T("KOI8-U"),21866},
-	{_T("KOR-JOHAB"),1361},
-	{_T("KSC-5601"),1361},
-	{_T("MAC-ROMAN"),10000},
-	{_T("MAC-JP"),10001},
-	{_T("MAC-CH(SP)(BIG5)"),10002},
-	{_T("MAC-KR"),10003},
-	{_T("MAC-AR"),10004}, 
-	{_T("MAC-HW"),10005},
-	{_T("MAC-GR"),10006},
-	{_T("MAC-CY"),10007},
-	{_T("MAC-CH(SP)(GB2312)"),10008},
-	{_T("MAC-ROMANIA"),10010},
-	{_T("MAC-UA"),10017},
-	{_T("MAC-TH"),10021},
-	{_T("MAC-LAT2"),10029},
-	{_T("MAC-ICE"),10079},
-	{_T("MAC-TR"),10081},
-	{_T("MAC-CR"),10082},
-	{_T("UTF-7"),65000},
-	{_T("UTF-8"),65001},
-	{_T("WINDOWS-1250"),1250},
-	{_T("WINDOWS-1251"),1251},
-	{_T("WINDOWS-1252"),1252},
-	{_T("WINDOWS-1253"),1253},
-	{_T("WINDOWS-1254"),1254},
-	{_T("WINDOWS-1255"),1255},
-	{_T("WINDOWS-1256"),1256},
-	{_T("WINDOWS-1257"),1257},
-	{_T("WINDOWS-1258"),1258},
-};
-
-#define CPLEN	(sizeof(CodePageNames)/sizeof(CodePageNames[0]))
-#define CPDEFINDEX	63	//ISO-8859-1
 
 BOOL Check0,Check1,Check2,Check3,Check4,Check5,Check6,Check7,Check8,Check9;
 TCHAR DlgInput[MAX_PATH];
@@ -522,13 +412,13 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		SetDlgItemInt(hDlg,IDC_EDITPOPS,ActualAccount->NewMailN.PopUpTime,FALSE);
 		SetDlgItemInt(hDlg,IDC_EDITNPOPS,ActualAccount->NoNewMailN.PopUpTime,FALSE);
 		SetDlgItemInt(hDlg,IDC_EDITFPOPS,ActualAccount->BadConnectN.PopUpTime,FALSE);
-		for(i=0;i<=CPLEN;i++)
-			if((i<CPLEN) && (CodePageNames[i].CP==ActualAccount->CP))
+		for(i=0;i<=CPLENSUPP;i++)
+			if((i<CPLENSUPP) && (CodePageNamesSupp[i].CP==ActualAccount->CP))
 			{
 				SendMessage(GetDlgItem(hDlg,IDC_COMBOCP),CB_SETCURSEL,(WPARAM)i,(LPARAM)0);
 				break;
 			}
-		if(i==CPLEN)
+		if(i==CPLENSUPP)
 			SendMessage(GetDlgItem(hDlg,IDC_COMBOCP),CB_SETCURSEL,(WPARAM)CPDEFINDEX,(LPARAM)0);
 
 		CheckDlgButton(hDlg,IDC_CHECK,ActualAccount->Flags & YAMN_ACC_ENA ? BST_CHECKED : BST_UNCHECKED); 
@@ -881,8 +771,8 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			DebugLog(SynchroFile,"Options:INITDIALOG:AccountBrowserSO-read done\n");
 			#endif
 			ReadDoneSO(POP3Plugin->AccountBrowserSO);
-			for(i=0;i<CPLEN;i++)
-				SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_ADDSTRING,0,(LPARAM)CodePageNames[i].Name);
+			for(i=0;i<CPLENSUPP;i++)
+				SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_ADDSTRING,0,(LPARAM)CodePageNamesSupp[i].Desc);
 
 			SendMessage(GetDlgItem(hDlg,IDC_COMBOCP),CB_SETCURSEL,(WPARAM)CPDEFINDEX,(LPARAM)0);
 			ActualAccount=NULL;
@@ -1457,7 +1347,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 //								Beep(1000,100);Sleep(200);
 								if(CB_ERR==(index=SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_GETCURSEL,0,0)))
 									index=CPDEFINDEX;
-								ActualAccount->CP=CodePageNames[index].CP;
+								ActualAccount->CP=CodePageNamesSupp[index].CP;
 				        
 //								Beep(1000,100);Sleep(200);
 								if(NewAcc)

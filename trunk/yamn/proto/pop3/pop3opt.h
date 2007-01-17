@@ -4,12 +4,6 @@
 #define M_SHOWACTUAL	0
 #define M_SHOWDEFAULT	1
 
-struct _tcptable
-{
-	TCHAR *Name;
-	unsigned int CP;
-};
-
 //Enables account in options
 BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam);
 
