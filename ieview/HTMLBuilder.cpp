@@ -681,7 +681,7 @@ HTMLBuilder::HTMLBuilder() {
 
 HTMLBuilder::~HTMLBuilder() {
 	if (lastIEViewEvent.pszProto != NULL) {
-		delete (void*)lastIEViewEvent.pszProto;
+		delete (char*)lastIEViewEvent.pszProto;
 	}
 }
 
@@ -786,15 +786,18 @@ char *HTMLBuilder::getProto(const char *proto, HANDLE hContact) {
 }
 
 char *HTMLBuilder::getRealProto(HANDLE hContact) {
-    char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
-	if (szProto!=NULL && !strcmp(szProto,"MetaContacts")) {
-		hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
-		if (hContact!=NULL) {
-			delete szProto;
-			szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+	if (hContact != NULL) {
+		char *szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+		if (szProto!=NULL && !strcmp(szProto,"MetaContacts")) {
+			hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, 0);
+			if (hContact!=NULL) {
+				delete szProto;
+				szProto = Utils::dupString((char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0));
+			}
 		}
+		return szProto;
 	}
-	return szProto;
+	return NULL;
 }
 
 char *HTMLBuilder::getRealProto(HANDLE hContact, const char *szProto) {
@@ -944,9 +947,9 @@ char *HTMLBuilder::getEncodedContactName(HANDLE hContact, const char* szProto, c
 }
 
 void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
-    IEVIEWEVENT newEvent;
-    IEVIEWEVENTDATA* eventData;
-    IEVIEWEVENTDATA* prevEventData = NULL;
+	IEVIEWEVENT newEvent;
+	IEVIEWEVENTDATA* eventData;
+	IEVIEWEVENTDATA* prevEventData = NULL;
 	char *szProto = NULL;
 	HANDLE hDbEvent = event->hDbEventFirst;
 	event->hDbEventFirst = NULL;
@@ -969,14 +972,14 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 	newEvent.eventData = NULL;
 	for (int eventIdx = 0; hDbEvent!=NULL && (eventIdx < event->count || event->count==-1); eventIdx++) {
 		DBEVENTINFO dbei = { 0 };
-        dbei.cbSize = sizeof(dbei);
-        dbei.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM) hDbEvent, 0);
-        if (dbei.cbBlob == 0xFFFFFFFF) {
-	   		hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
-            continue;
+		dbei.cbSize = sizeof(dbei);
+		dbei.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM) hDbEvent, 0);
+		if (dbei.cbBlob == 0xFFFFFFFF) {
+			hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
+			continue;
 		}
-        dbei.pBlob = (PBYTE) malloc(dbei.cbBlob);
-        CallService(MS_DB_EVENT_GET, (WPARAM)  hDbEvent, (LPARAM) & dbei);
+		dbei.pBlob = (PBYTE) malloc(dbei.cbBlob);
+		CallService(MS_DB_EVENT_GET, (WPARAM)  hDbEvent, (LPARAM) & dbei);
 		if (!(dbei.flags & DBEF_SENT) && (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL)) {
 			CallService(MS_DB_EVENT_MARKREAD, (WPARAM) event->hContact, (LPARAM) hDbEvent);
 			CallService(MS_CLIST_REMOVEEVENT, (WPARAM) event->hContact, (LPARAM) hDbEvent);
@@ -1003,7 +1006,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 			eventData->pszNickW = getContactName(NULL, szProto);
 			eventData->bIsMe = TRUE;
 		} else {
-            eventData->pszNickW = getContactName(event->hContact, szProto);
+			eventData->pszNickW = getContactName(event->hContact, szProto);
 			eventData->bIsMe = FALSE;
 		}
 		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
@@ -1011,12 +1014,12 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 			if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
 				DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
 				if (wlen > 0 && wlen < aLen) {
-                    eventData->pszTextW = Utils::dupString((wchar_t *)&dbei.pBlob[aLen]);
+					eventData->pszTextW = Utils::dupString((wchar_t *)&dbei.pBlob[aLen]);
 				} else {
-                    eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
+					eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
 				}
 			} else {
-            	eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
+				eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
 			}
 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
 				eventData->iType = IEED_EVENT_MESSAGE;
@@ -1028,26 +1031,26 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 		} else if (dbei.eventType == EVENTTYPE_FILE) {
 			//blob is: sequenceid(DWORD),filename(ASCIIZ),description(ASCIIZ)
 			char *ptr =((char *)dbei.pBlob) + sizeof(DWORD);
-            eventData->pszTextW = Utils::convertToWCS(ptr, newEvent.codepage);
-            eventData->pszText2W = Utils::convertToWCS(ptr + strlen(ptr) + 1, newEvent.codepage);
+			eventData->pszTextW = Utils::convertToWCS(ptr, newEvent.codepage);
+			eventData->pszText2W = Utils::convertToWCS(ptr + strlen(ptr) + 1, newEvent.codepage);
 			eventData->iType = IEED_EVENT_FILE;
 		} else if (dbei.eventType == EVENTTYPE_AUTHREQUEST) {
 		    //blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
-            eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
+			eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
 		} else if (dbei.eventType == EVENTTYPE_ADDED) {
 			//blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
-            eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
+			eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
 		}
-	    free(dbei.pBlob);
+		free(dbei.pBlob);
 		eventData->next = NULL;
 		if (prevEventData != NULL) {
 			prevEventData->next = eventData;
 		} else {
 			newEvent.eventData = eventData;
 		}
-        prevEventData = eventData;
-        newEvent.count++;
-        event->hDbEventFirst = hDbEvent;
+		prevEventData = eventData;
+		newEvent.count++;
+		event->hDbEventFirst = hDbEvent;
    		hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
 	}
 	setLastIEViewEvent(&newEvent);
@@ -1055,13 +1058,13 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 	for ( IEVIEWEVENTDATA* eventData2 = newEvent.eventData; eventData2 != NULL; eventData2 = eventData) {
 		eventData = eventData2->next;
 		if (eventData2->pszTextW != NULL) {
-			delete (void*)eventData2->pszTextW;
+			delete (wchar_t*)eventData2->pszTextW;
 		}
 		if (eventData2->pszText2W != NULL) {
-			delete (void*)eventData2->pszText2W;
+			delete (wchar_t*)eventData2->pszText2W;
 		}
 		if (eventData2->pszNickW != NULL) {
-			delete (void*)eventData2->pszNickW;
+			delete (wchar_t*)eventData2->pszNickW;
 		}
 		delete eventData2;
 	}
@@ -1094,15 +1097,14 @@ ProtocolSettings* HTMLBuilder::getHistoryProtocolSettings(const char *protocolNa
 }
 
 ProtocolSettings* HTMLBuilder::getHistoryProtocolSettings(HANDLE hContact) {
-	char szRealProto[MAXMODULELABELLENGTH];
-	
-	if(hContact != NULL)
-		sprintf(szRealProto, getRealProto(hContact));
-	else
-		sprintf(szRealProto,"_default_");
-
-	ProtocolSettings *protoSettings =  getHistoryProtocolSettings(szRealProto);
-    //delete szRealProto;
+	ProtocolSettings *protoSettings;
+	if (hContact != NULL) {
+		char *szRealProto = getRealProto(hContact);
+		protoSettings =  getHistoryProtocolSettings(szRealProto);
+		delete szRealProto;
+	} else {
+		protoSettings =  Options::getProtocolSettings();
+	}
 	return protoSettings;
 }
 
