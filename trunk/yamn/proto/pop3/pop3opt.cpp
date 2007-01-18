@@ -771,8 +771,13 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			DebugLog(SynchroFile,"Options:INITDIALOG:AccountBrowserSO-read done\n");
 			#endif
 			ReadDoneSO(POP3Plugin->AccountBrowserSO);
-			for(i=0;i<CPLENSUPP;i++)
-				SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_ADDSTRING,0,(LPARAM)CodePageNamesSupp[i].Desc);
+			SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_ADDSTRING,0,(LPARAM)TranslateT("Default"));
+			for(i=1;i<CPLENSUPP;i++){
+				CPINFOEX info; GetCPInfoEx(CodePageNamesSupp[i].CP,0,&info);
+				int len = strlen(info.CodePageName+7);
+				info.CodePageName[len+6]=0;
+				SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_ADDSTRING,0,(LPARAM)info.CodePageName+7);
+			}
 
 			SendMessage(GetDlgItem(hDlg,IDC_COMBOCP),CB_SETCURSEL,(WPARAM)CPDEFINDEX,(LPARAM)0);
 			ActualAccount=NULL;
@@ -917,6 +922,12 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 							break;
 					}
 					break;
+				case IDC_COMBOCP:
+					{
+						int sel = SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_GETCURSEL,0,0);
+						CPINFOEX info; GetCPInfoEx(CodePageNamesSupp[sel].CP,0,&info);
+						DlgSetItemText(hDlg,(WPARAM)IDC_STSTATUS,(LPARAM)info.CodePageName);
+					}
 				case IDC_CHECK:
 				case IDC_CHECKSND:
 				case IDC_CHECKMSG:
@@ -937,7 +948,6 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_CHECKSTART:
 				case IDC_CHECKFORCE:
 				case IDC_EDITAPPPARAM:
-				case IDC_COMBOCP:
 				case IDC_RADIOPOPN:
 				case IDC_RADIOPOP1:
 				case IDC_CHECKAPOP:

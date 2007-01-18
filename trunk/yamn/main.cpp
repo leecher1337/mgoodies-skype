@@ -285,6 +285,9 @@ extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVers
 	return &pluginInfo;
 }
 
+#ifdef YAMN_DEBUG
+static char unknownCP[1500]={0};
+#endif
 // The callback function
 BOOL CALLBACK EnumSystemCodePagesProc(LPTSTR cpStr)
 {
@@ -296,17 +299,24 @@ BOOL CALLBACK EnumSystemCodePagesProc(LPTSTR cpStr)
     //Get Code Page name
     CPINFOEX info;
     if(GetCPInfoEx(cp,0,&info)){
-		//Add string and page number to List of CodePages
+		#ifdef YAMN_DEBUG
+		BOOLEAN found = FALSE;
+		#endif
 		for (int i=1;i<CPLENALL;i++) if (CodePageNamesAll[i].CP==cp) {
-			int len = strlen(info.CodePageName+7);
-			CodePageNamesAll[i].Desc=(char *)malloc(len);
-			strncpy(CodePageNamesAll[i].Desc,info.CodePageName+7,len-1);
-			CodePageNamesAll[i].Desc[len-1]=0;
+			CodePageNamesAll[i].isValid = TRUE;
 			CPLENSUPP++;
+			#ifdef YAMN_DEBUG
+			found = TRUE;
+			#endif
 			break;
 		}
+		#if YAMN_DEBUG
+		if (!found) {
+			strcat(unknownCP,info.CodePageName);
+			strcat(unknownCP,"\n");
+		}
+		#endif
 	}
-    //strcat(cpList, cpStr);
     return TRUE;
 }
 
@@ -329,12 +339,23 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	EnumSystemCodePages(EnumSystemCodePagesProc, CP_INSTALLED);
 	CodePageNamesSupp = new _tcptable[CPLENSUPP];
 	for (i=0,k=0;i<CPLENALL;i++) {
-		if (CodePageNamesAll[i].Desc){
+		if (CodePageNamesAll[i].isValid){
 			CodePageNamesSupp[k]=CodePageNamesAll[i];
 			k++;
 		}
 	}
-    //MessageBox( NULL,cpList, TEXT("Code Page List"), MB_OK);
+	#if YAMN_DEBUG
+//unknownCP	0x6005a734
+//20127 (US-ASCII)
+//20261 (T.61)
+//28605 (ISO 8859-15 Latin 9)
+//737   (OEM - Greek 437G)
+//874   (ANSI/OEM - Thai)
+//932   (ANSI/OEM - Japanese Shift-JIS)
+//936   (ANSI/OEM - Simplified Chinese GBK)
+//949   (ANSI/OEM - Korean)
+    MessageBox( NULL,unknownCP, TEXT("Unkown Code Page"), MB_OK);
+	#endif
 
 	HIMAGELIST CSImages = ImageList_Create(16, 16, ILC_COLOR8|ILC_MASK, 0, ICONSNUMBER);
 	{// workarround of 4bit forced images
@@ -536,7 +557,6 @@ extern "C" int __declspec(dllexport) Unload(void)
 	delete AccountStatusCS;
 	delete PluginRegCS;
 
-	for (int i=1;i<CPLENALL;i++) if (CodePageNamesAll[i].Desc) free(CodePageNamesAll[i].Desc);
 	delete CodePageNamesSupp;
 
 	return 0;
