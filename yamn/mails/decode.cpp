@@ -10,7 +10,7 @@
 
 struct _tcptable CodePageNamesAll[]=
 {
-	{_T("ANSI"),_T(""),"ANSI Default",CP_ACP},
+	{_T("ANSI"),_T(""),TRUE,CP_ACP},
 	{_T("WINDOWS-"),_T("1250"),0,1250},
 	{_T("WINDOWS-"),_T("1251"),0,1251},
 	{_T("WINDOWS-"),_T("1252"),0,1252},
@@ -20,6 +20,15 @@ struct _tcptable CodePageNamesAll[]=
 	{_T("WINDOWS-"),_T("1256"),0,1256},
 	{_T("WINDOWS-"),_T("1257"),0,1257},
 	{_T("WINDOWS-"),_T("1258"),0,1258},
+	{_T("CP"),_T("1250"),0,1250},
+	{_T("CP"),_T("1251"),0,1251},
+	{_T("CP"),_T("1252"),0,1252},
+	{_T("CP"),_T("1253"),0,1253},
+	{_T("CP"),_T("1254"),0,1254},
+	{_T("CP"),_T("1255"),0,1255},
+	{_T("CP"),_T("1256"),0,1256},
+	{_T("CP"),_T("1257"),0,1257},
+	{_T("CP"),_T("1258"),0,1258},
 	{_T("KOI8-"),_T("R"),0,20866},
 	{_T("KOI8-"),_T("U"),0,21866},
 	{_T("ISO-"),_T("8859-1"),0,28591},
@@ -337,7 +346,7 @@ int ConvertStringToUnicode(char *stream,unsigned int cp,WCHAR **out)
 	DWORD CodePagesZeroFlags[]={50220,50221,50222,50225,50227,50229,52936,54936,57002,57003,57004,57005,57006,57007,57008,57009,57010,57011,65000,65001};
 
 	if((cp!=CP_ACP) && (cp!=CP_OEMCP) && (cp!=CP_MACCP) && (cp!=CP_THREAD_ACP) && (cp!=CP_SYMBOL) && (cp!=CP_UTF7) && (cp!=CP_UTF8) && !GetCPInfo(cp,&CPInfo))
-		cp=CP_OEMCP;
+		cp=CP_ACP;
 #ifdef DEBUG_DECODECODEPAGE
 	DebugLog(DecodeFile,"<CodePage #>%d</CodePage #>",cp);
 #endif

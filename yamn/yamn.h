@@ -117,7 +117,8 @@ int SaveMailDataSvc(WPARAM wParam,LPARAM lParam);
 //void WINAPI ExtractHeaderFcn(char *,int,WORD,HYAMNMAIL);	//already in MailExported
 struct _tcptable
 {
-	char *NameBase,*NameSub,*Desc;
+	char *NameBase,*NameSub;
+	BOOL isValid;
 	unsigned int CP;
 };
 extern struct _tcptable CodePageNamesAll[]; // in mime/decode.cpp
