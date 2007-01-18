@@ -118,8 +118,8 @@ int SaveMailDataSvc(WPARAM wParam,LPARAM lParam);
 struct _tcptable
 {
 	char *NameBase,*NameSub;
-	BOOL isValid;
-	unsigned int CP;
+	BOOLEAN isValid;
+	unsigned short int CP;
 };
 extern struct _tcptable CodePageNamesAll[]; // in mime/decode.cpp
 extern int CPLENALL;

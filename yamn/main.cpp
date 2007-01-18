@@ -310,7 +310,7 @@ BOOL CALLBACK EnumSystemCodePagesProc(LPTSTR cpStr)
 			#endif
 			break;
 		}
-		#if YAMN_DEBUG
+		#ifdef YAMN_DEBUG
 		if (!found) {
 			strcat(unknownCP,info.CodePageName);
 			strcat(unknownCP,"\n");
@@ -344,7 +344,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 			k++;
 		}
 	}
-	#if YAMN_DEBUG
+	#ifdef YAMN_DEBUG
 //unknownCP	0x6005a734
 //20127 (US-ASCII)
 //20261 (T.61)
