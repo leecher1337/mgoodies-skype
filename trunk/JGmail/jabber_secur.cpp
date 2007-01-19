@@ -154,6 +154,7 @@ char* TMD5Auth::getChallenge( const TCHAR* challenge )
 	mir_free( uname );
 	mir_free( passw );
 	mir_free( serv );
+	mir_free( text );
 
    return JabberBase64Encode( buf, cbLen );
 }

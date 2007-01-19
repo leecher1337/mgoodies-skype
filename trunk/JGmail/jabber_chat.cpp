@@ -336,6 +336,10 @@ static BOOL CALLBACK JabberGcLogInviteDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 	switch ( msg ) {
 	case WM_INITDIALOG:
 		{
+			RECT dlgRect, scrRect;
+			GetWindowRect( hwndDlg, &dlgRect );
+			SystemParametersInfo( SPI_GETWORKAREA, 0, &scrRect, 0 );
+			SetWindowPos( hwndDlg, HWND_TOPMOST, (scrRect.right/2)-(dlgRect.right/2), (scrRect.bottom/2)-(dlgRect.bottom/2), 0, 0, SWP_NOSIZE );
 			TranslateDialogDefault( hwndDlg );
 			SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )iconBigList[0]);
 			SetDlgItemText( hwndDlg, IDC_ROOM, ( TCHAR* )lParam );

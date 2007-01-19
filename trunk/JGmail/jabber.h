@@ -198,6 +198,9 @@ enum JABBER_SESSION_TYPE
 };
 
 struct ThreadData {
+	ThreadData( JABBER_SESSION_TYPE parType );
+	~ThreadData();
+
 	HANDLE hThread;
 	JABBER_SESSION_TYPE type;
 

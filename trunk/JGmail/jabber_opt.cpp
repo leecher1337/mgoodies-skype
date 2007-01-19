@@ -71,9 +71,7 @@ static BOOL CALLBACK JabberRegisterDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 			ShowWindow( GetDlgItem( hwndDlg, IDC_PROGRESS_REG ), SW_SHOW );
 			ShowWindow( GetDlgItem( hwndDlg, IDCANCEL2 ), SW_SHOW );
 			regInfo = ( ThreadData* ) GetWindowLong( hwndDlg, GWL_USERDATA );
-			thread = ( ThreadData* ) mir_alloc( sizeof( ThreadData ));
-			memset( thread, 0, sizeof( ThreadData ));
-			thread->type = JABBER_SESSION_REGISTER;
+			thread = new ThreadData( JABBER_SESSION_REGISTER );
 			_tcsncpy( thread->username, regInfo->username, SIZEOF( thread->username ));
 			strncpy( thread->password, regInfo->password, SIZEOF( thread->password ));
 			strncpy( thread->server, regInfo->server, SIZEOF( thread->server ));
@@ -288,7 +286,7 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 					SendMessage( GetParent( hwndDlg ), PSM_CHANGED, 0, 0 );
 			}
 
-			ThreadData regInfo;
+			ThreadData regInfo( JABBER_SESSION_NORMAL );
 			GetDlgItemText( hwndDlg, IDC_EDIT_USERNAME, regInfo.username, SIZEOF( regInfo.username ));
 			GetDlgItemTextA( hwndDlg, IDC_EDIT_PASSWORD, regInfo.password, SIZEOF( regInfo.password ));
 			GetDlgItemTextA( hwndDlg, IDC_EDIT_LOGIN_SERVER, regInfo.server, SIZEOF( regInfo.server ));
@@ -314,7 +312,7 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			return TRUE;
 		case IDC_BUTTON_REGISTER:
 		{
-			ThreadData regInfo;
+			ThreadData regInfo( JABBER_SESSION_NORMAL );
 			GetDlgItemText( hwndDlg, IDC_EDIT_USERNAME, regInfo.username, SIZEOF( regInfo.username ));
 			GetDlgItemTextA( hwndDlg, IDC_EDIT_PASSWORD, regInfo.password, SIZEOF( regInfo.password ));
 			GetDlgItemTextA( hwndDlg, IDC_EDIT_LOGIN_SERVER, regInfo.server, SIZEOF( regInfo.server ));
