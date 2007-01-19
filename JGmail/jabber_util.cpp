@@ -827,24 +827,36 @@ static extraCtry[] =
 	{ 44,	_T("England") }
 };
 
-int __stdcall JabberCountryNameToId( TCHAR* ctry )
+int __stdcall JabberCountryNameToId( TCHAR* ptszCountryName )
 {
 	int ctryCount, i;
-	MyCountryListEntry *ctryList;
 
 	// Check for some common strings not present in the country list
 	ctryCount = sizeof( extraCtry )/sizeof( extraCtry[0] );
-	for ( i=0; i<ctryCount && _tcsicmp( extraCtry[i].szName, ctry ); i++ );
+	for ( i=0; i < ctryCount && _tcsicmp( extraCtry[i].szName, ptszCountryName ); i++ );
 	if ( i < ctryCount )
 		return extraCtry[i].id;
 
 	// Check Miranda country list
-	JCallService( MS_UTILS_GETCOUNTRYLIST, ( WPARAM ) &ctryCount, ( LPARAM )&ctryList );
-	for ( i=0; i<ctryCount && _tcsicmp( ctryList[i].szName, ctry ); i++ );
-	if ( i < ctryCount )
-		return ctryList[i].id;
-	else
-		return 0xffff; // Unknown
+	{
+		const char *szName, *p;
+		struct CountryListEntry *countries;
+		JCallService( MS_UTILS_GETCOUNTRYLIST, ( WPARAM )&ctryCount, ( LPARAM )&countries );
+
+		#if defined ( _UNICODE )
+			p = ( const char* )t2a( ptszCountryName );
+			szName = NEWSTR_ALLOCA( p );
+			mir_free(( void* )p );
+		#else
+			szName = ptszCountryName;
+		#endif
+
+		for( i=0; i < ctryCount; i++ )
+			if ( !strcmp( countries[i].szName, szName ))
+				return countries[i].id;
+	}
+
+	return 0xffff;
 }
 
 void __stdcall JabberSendPresenceTo( int status, TCHAR* to, XmlNode* extra )

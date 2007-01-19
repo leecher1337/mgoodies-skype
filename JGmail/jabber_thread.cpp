@@ -221,7 +221,7 @@ LBL_FatalError:
 			jabberStatus = ID_STATUS_OFFLINE;
 			JSendBroadcast( NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, ( HANDLE ) oldStatus, jabberStatus );
 LBL_Exit:
-			mir_free( info );
+			delete info;
 			return;
 		}
 
@@ -761,12 +761,10 @@ static void __cdecl JabberWaitAndReconnectThread( int unused )
 {
 	JabberLog("Reconnecting after with new X-GOOGLE-TOKEN");
 	Sleep(1000);
-	ThreadData* thread = ( ThreadData* ) mir_alloc( sizeof( ThreadData ));
-	ZeroMemory( thread, sizeof( ThreadData ));
-	thread->type = JABBER_SESSION_NORMAL;
+
+	ThreadData* thread = new ThreadData( JABBER_SESSION_NORMAL );
 	thread->hThread = ( HANDLE ) mir_forkthread(( pThreadFunc )JabberServerThread, thread );
 }
-
 
 static void JabberProcessFailure( XmlNode *node, void *userdata ) {
 //	JabberXmlDumpNode( node );
@@ -1987,4 +1985,18 @@ static void __cdecl JabberKeepAliveThread( JABBER_SOCKET s )
 			JabberSend( s, " \t " );
 	}
 	JabberLog( "Exiting KeepAliveThread" );
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// ThreadData constructor & destructor
+
+ThreadData::ThreadData( JABBER_SESSION_TYPE parType )
+{
+	memset( this, 0, sizeof( *this ));
+	type = parType;
+}
+
+ThreadData::~ThreadData()
+{
+	delete auth;
 }

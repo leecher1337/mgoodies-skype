@@ -1449,12 +1449,8 @@ int JabberSetStatus( WPARAM wParam, LPARAM lParam )
 		if ( jabberConnected )
 			return 0;
 
-		ThreadData* thread = ( ThreadData* ) mir_alloc( sizeof( ThreadData ));
-
-		ZeroMemory( thread, sizeof( ThreadData ));
-		thread->type = JABBER_SESSION_NORMAL;
+		ThreadData* thread = new ThreadData( JABBER_SESSION_NORMAL );
 		jabberDesiredStatus = desiredStatus;
-
 		int oldStatus = jabberStatus;
 		jabberStatus = ID_STATUS_CONNECTING;
 		JSendBroadcast( NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, ( HANDLE ) oldStatus, jabberStatus );
