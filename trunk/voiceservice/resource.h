@@ -15,6 +15,8 @@
 #define IDI_ACTION_DROP                 110
 #define IDI_MAIN                        111
 #define IDD_POPUPS                      120
+#define IDI_SMALLDOT                    211
+#define IDD_OPT_AUTO                    215
 #define IDC_CALLS                       1000
 #define IDC_DELAY                       1001
 #define IDC_WINCOLORS                   1002
@@ -36,6 +38,9 @@
 #define IDC_ACTIONS_G                   1072
 #define IDC_RIGHT_ACTION_L              1073
 #define IDC_LEFT_ACTION_L               1074
+#define IDC_LIST                        1079
+#define IDC_ANSWER                      1204
+#define IDC_DROP                        1205
 #define ID_FRAMEPOPUP_ANSWERCALL        40001
 #define ID_FRAMEPOPUP_DROPCALL          40002
 #define ID_FRAMEPOPUP_HOLDCALL          40003

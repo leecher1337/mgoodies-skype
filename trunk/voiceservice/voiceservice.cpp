@@ -294,6 +294,7 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		MODULE_INTERNAL m = {0};
 
 		m.name = protos[i]->szName;
+		m.is_protocol = TRUE;
 		m.flags = CallProtoService(protos[i]->szName, PS_VOICE_GETINFO, 0, 0);
 
 		char notify[128];
@@ -337,24 +338,29 @@ static void CopyVoiceCallData(VOICE_CALL_INTERNAL *out, VOICE_CALL *in)
 
 	if (in->flags & VOICE_CALL_CONTACT)
 	{
-		out->hContact = in->hContact;
-		mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T("%s (") _T(_S) _T(")"), 
-			(TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) in->hContact, GCDNF_TCHAR),
-			description);
+		if (in->hContact != NULL)
+		{
+			out->hContact = in->hContact;
+			mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T("%s (") _T(_S) _T(")"), 
+				(TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) in->hContact, GCDNF_TCHAR),
+				description);
+		}
 	}
 	else if (in->flags & VOICE_UNICODE)
 	{
 		out->hContact = NULL;
-		mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T(_SI) _T(" (") _T(_S) _T(")"), 
-			in->pwszContact,
-			description);
+		if (in->pwszContact[0] != L'\0')
+			mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T(_SI) _T(" (") _T(_S) _T(")"), 
+				in->pwszContact,
+				description);
 	}
 	else
 	{
 		out->hContact = NULL;
-		mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T(_S) _T(" (") _T(_S) _T(")"), 
-			in->pszContact,
-			description);
+		if (in->pszContact[0] != '\0')
+			mir_sntprintf(out->ptszContact, MAX_REGS(out->ptszContact), _T(_S) _T(" (") _T(_S) _T(")"), 
+				in->pszContact,
+				description);
 	}
 }
 
@@ -509,6 +515,7 @@ static int VoiceRegister(WPARAM wParam, LPARAM lParam)
 
 	MODULE_INTERNAL m = {0};
 	m.name = mir_strdup(in->name);
+	m.is_protocol = FALSE;
 	m.flags = in->flags;
 	modules.insert(modules.end(), m);
 
@@ -571,22 +578,34 @@ static int VoiceRinging(VOICE_CALL *in)
 	// history
 	vc->last_dbe = HistoryLog(vc->hContact, text); 
 
-	// clist
-	CLISTEVENT ce = {0};
-	ce.cbSize = sizeof(ce);
-	ce.hContact = vc->hContact;
-	ce.hIcon = icons[VOICE_STATE_RINGING];
-	ce.hDbEvent = vc->last_dbe;
-	ce.pszService = MS_VOICESERVICE_CLIST_DBLCLK;
-	ce.lParam = (LPARAM) vc;
-	CallService(MS_CLIST_ADDEVENT, 0, (LPARAM) &ce);
+	int aut = DBGetContactSettingWord(vc->hContact, MODULE_NAME, "AutoAccept", AUTO_NOTHING);
+	if (aut == AUTO_ACCEPT)
+	{
+		AnswerCall(vc);
+	}
+	else if (aut == AUTO_DROP)
+	{
+		DropCall(vc);
+	}
+	else
+	{
+		// clist
+		CLISTEVENT ce = {0};
+		ce.cbSize = sizeof(ce);
+		ce.hContact = vc->hContact;
+		ce.hIcon = icons[VOICE_STATE_RINGING];
+		ce.hDbEvent = vc->last_dbe;
+		ce.pszService = MS_VOICESERVICE_CLIST_DBLCLK;
+		ce.lParam = (LPARAM) vc;
+		CallService(MS_CLIST_ADDEVENT, 0, (LPARAM) &ce);
+
+		// popup
+		ShowPopup(NULL, TranslateT("Voice call ringing"), text);
+	}
 
 	// frame
 	if (hwnd_frame != NULL)
 		PostMessage(hwnd_frame, WMU_REFRESH, 0, 0);
-
-	// popup
-	ShowPopup(NULL, TranslateT("Voice call ringing"), text);
 
 	return 0;
 }
@@ -924,9 +943,16 @@ static int CMCall(WPARAM wParam,LPARAM lParam)
 		if (!(modules[i].flags & VOICE_CALL_CONTACT))
 			continue;
 
-		if (CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) modules[i].name))
-			// Oki, it can handle
-			break;
+		if (modules[i].is_protocol
+			&& !CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) modules[i].name))
+			continue;
+
+		if ((modules[i].flags & VOICE_CALL_CONTACT_NEED_TEST) 
+			&& !CallProtoService(modules[i].name, PS_VOICE_CALL_CONTACT_VALID, (WPARAM) hContact, TRUE))
+			continue;
+
+		// Oki, can call
+		break;
 	}
 
 	if (i == modules.size())
@@ -984,16 +1010,19 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam)
 	if (hContact == NULL)
 		return -1;
 
-	// Proto can handle it?
+	// Some Module can handle it?
 	int i;
 	for(i = 0; i < modules.size(); i++)
 	{
 		if (!(modules[i].flags & VOICE_CALL_CONTACT))
 			continue;
 
-		if (CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) modules[i].name))
-			// Oki, it can handle
-			break;
+		if (modules[i].is_protocol
+			&& !CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) modules[i].name))
+			continue;
+
+		// Oki, found a module that can handle it
+		break;
 	}
 
 	if (i == modules.size())
@@ -1006,12 +1035,12 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam)
 	VOICE_CALL_INTERNAL *vc = FindVoiceCall(hContact);
 	if (vc == NULL)
 	{
-		// Just call contact
+		// Check if can call
 		if ((modules[i].flags & VOICE_CALL_CONTACT_NEED_TEST) 
-			&& (!ProtoServiceExists(modules[i].name, PS_VOICE_CALL_CONTACT_VALID)
-				|| !CallProtoService(modules[i].name, PS_VOICE_CALL_CONTACT_VALID, (WPARAM) hContact, 0)))
+			&& !CallProtoService(modules[i].name, PS_VOICE_CALL_CONTACT_VALID, (WPARAM) hContact, TRUE))
 			return 0;
 
+		// Just call contact
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hCMCall, (LPARAM) &mi);
 	}
 	else
