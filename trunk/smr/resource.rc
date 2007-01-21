@@ -29,7 +29,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 IDD_OPT_PROTOCOLS DIALOG DISCARDABLE  0, 0, 257, 164
 STYLE WS_CHILD
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT           "Get status messages for these protocols:",IDC_STATIC,10,
                     9,236,9
@@ -42,7 +42,7 @@ END
 
 IDD_OPT_GENERAL DIALOGEX 0, 0, 271, 167
 STYLE WS_CHILD
-FONT 8, "MS Sans Serif", 0, 0, 0x1
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " Retrieve ",IDC_STATIC,7,7,257,60
     CONTROL         "Retrieve status messages every",IDC_CHECK_ONTIMER,
@@ -80,7 +80,7 @@ END
 
 IDD_OPTS DIALOG DISCARDABLE  0, 0, 299, 246
 STYLE WS_CHILD
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Tab2",IDC_TAB,"SysTabControl32",0x0,7,7,285,232
 END
