@@ -26,6 +26,7 @@ Boston, MA 02111-1307, USA.
 #include <tchar.h>
 #include <stdio.h>
 #include <time.h>
+#include <commctrl.h>
 
 
 // Disable "...truncated to '255' characters in the debug information" warnings
@@ -42,12 +43,14 @@ extern "C"
 #endif
 
 // Miranda headers
+#include <win2k.h>
 #include <newpluginapi.h>
 #include <m_system.h>
 #include <m_protocols.h>
 #include <m_protosvc.h>
 #include <m_clist.h>
 #include <m_clui.h>
+#include <m_clc.h>
 #include <m_contacts.h>
 #include <m_langpack.h>
 #include <m_database.h>
@@ -101,10 +104,15 @@ extern PLUGINLINK *pluginLink;
 
 #define NUM_FONTS NUM_STATES
 
+#define AUTO_NOTHING 0
+#define AUTO_ACCEPT 1
+#define AUTO_DROP 2
+
 extern HICON icons[NUM_ICONS];
 extern HFONT fonts[NUM_FONTS];
 extern COLORREF font_colors[NUM_FONTS];
 extern int font_max_height;
+
 
 
 

@@ -146,7 +146,7 @@ The hContact is passed as wParam and the proto should tell if this contact can b
 called. 
 
 wParam: (HANDLE) hContact
-lParam: ignored
+lParam: (BOOL) TRUE if it is a test for 'can call now?', FALSE if is a test for 'will be possible to call someday?'
 return: 0 if can't be called, 1 if can
 */
 #define PS_VOICE_CALL_CONTACT_VALID		"/Voice/CallContactValid"

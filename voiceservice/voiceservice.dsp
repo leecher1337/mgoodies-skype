@@ -57,7 +57,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 user32.lib shell32.lib wininet.lib gdi32.lib /nologo /base:"0x67100000" /dll /machine:I386 /filealign:0x200
 # SUBTRACT BASE LINK32 /pdb:none /map
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib /nologo /base:"0x3EC40000" /dll /map /debug /debugtype:both /machine:I386 /out:"..\..\bin\release\Plugins\voiceservice.dll" /pdbtype:sept /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib /nologo /base:"0x3EC40000" /dll /map /debug /debugtype:both /machine:I386 /out:"..\..\bin\release\Plugins\voiceservice.dll" /pdbtype:sept /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ELSEIF  "$(CFG)" == "voiceservice - Win32 Debug"
@@ -86,7 +86,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"..\..bin\release\Plugins\voiceservice.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib /nologo /base:"0x3EC40000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\voiceservice.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib /nologo /base:"0x3EC40000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\voiceservice.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ELSEIF  "$(CFG)" == "voiceservice - Win32 Unicode Debug"
@@ -115,7 +115,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\voiceservice.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib /nologo /base:"0x3EC40000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug unicode\Plugins\voiceserviceW.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib /nologo /base:"0x3EC40000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug unicode\Plugins\voiceserviceW.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ELSEIF  "$(CFG)" == "voiceservice - Win32 Unicode Release"
@@ -144,7 +144,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /map /machine:I386 /out:"..\..\bin\release\Plugins\voiceservice.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib /nologo /base:"0x3EC40000" /dll /map /debug /debugtype:both /machine:I386 /out:"..\..\bin\release\Plugins\voiceserviceW.dll" /pdbtype:sept /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib /nologo /base:"0x3EC40000" /dll /map /debug /debugtype:both /machine:I386 /out:"..\..\bin\release\Plugins\voiceserviceW.dll" /pdbtype:sept /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ENDIF 
@@ -204,6 +204,10 @@ SOURCE=.\res\Call.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\Calling.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\res\Drop.ico
 # End Source File
 # Begin Source File
@@ -229,6 +233,10 @@ SOURCE=.\resource.rc
 # Begin Source File
 
 SOURCE=.\res\Rinning.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\smalldot.ico
 # End Source File
 # Begin Source File
 
