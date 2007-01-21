@@ -321,7 +321,7 @@ BOOL CALLBACK EnumSystemCodePagesProc(LPTSTR cpStr)
 }
 
 int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam); // implemented in services.cpp
-
+extern HCURSOR hCurSplitNS, hCurSplitWE;
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	
@@ -442,6 +442,9 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	YAMNVar.NewMailAccountWnd=(HANDLE)CallService(MS_UTILS_ALLOCWINDOWLIST,0,0);
 	YAMNVar.Shutdown=FALSE;
 
+	hCurSplitNS = LoadCursor(NULL, IDC_SIZENS);
+	hCurSplitWE = LoadCursor(NULL, IDC_SIZEWE);
+
 #ifdef YAMN_DEBUG
 	InitDebug();
 #endif
@@ -544,6 +547,9 @@ extern "C" int __declspec(dllexport) Unload(void)
 #ifdef YAMN_DEBUG
 	UnInitDebug();
 #endif
+	DestroyCursor(hCurSplitNS);
+	DestroyCursor(hCurSplitWE);
+
 	CloseHandle(NoWriterEV);
 	CloseHandle(WriteToFileEV);
 	CloseHandle(ExitEV);

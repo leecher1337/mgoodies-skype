@@ -90,7 +90,7 @@ void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
 char* s_MonthNames[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 bool bDate = false,bSub=false,bSize=false,bFrom=false;
 int PosX=0,PosY=0,SizeX=460,SizeY=100;
-int HeadSizeX = 0x2b2, HeadSizeY = 0x0b5, HeadPosX = 100, HeadPosY = 100;
+int HeadSizeX = 0x2b2, HeadSizeY = 0x0b5, HeadSplitPos=80, HeadPosX = 100, HeadPosY = 100;
 static int FromWidth=250,SubjectWidth=280,SizeWidth=50,SizeDate=205;
 unsigned char optDateTime =  (SHOWDATELONG | SHOWDATENOTODAY);
 
@@ -1296,6 +1296,37 @@ int CALLBACK ListViewCompareProc(LPARAM lParam1, LPARAM lParam2,LPARAM lParamSor
 
 } 
 
+HCURSOR hCurSplitNS, hCurSplitWE;
+static WNDPROC OldSplitterProc;
+#define DM_SPLITTERMOVED     (WM_USER+15)
+static LRESULT CALLBACK SplitterSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg) {
+		case WM_NCHITTEST:
+		  return HTCLIENT;
+		case WM_SETCURSOR:
+		{
+				SetCursor(hCurSplitNS);
+				return TRUE;
+		}
+		case WM_LBUTTONDOWN:
+			SetCapture(hwnd);
+			return 0;
+		case WM_MOUSEMOVE:
+			if (GetCapture() == hwnd) {
+				RECT rc;
+				GetClientRect(hwnd, &rc);
+				SendMessage(GetParent(hwnd), DM_SPLITTERMOVED, (short) HIWORD(GetMessagePos()) + rc.bottom / 2, (LPARAM) hwnd);
+			}
+			return 0;
+		case WM_LBUTTONUP:
+			ReleaseCapture();
+			return 0;
+	}
+	return CallWindowProc(OldSplitterProc, hwnd, msg, wParam, lParam);
+}
+
+
 void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode);
 BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
@@ -1309,6 +1340,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			WCHAR *iValueW=NULL;
 			int StrLen;
 			HWND hListView = GetDlgItem(hDlg,IDC_LISTHEADERS);
+			OldSplitterProc = (WNDPROC) SetWindowLong(GetDlgItem(hDlg, IDC_SPLITTER), GWL_WNDPROC, (LONG) SplitterSubclassProc);
 			SetWindowLong(hDlg,DWL_USER,(LONG)MailParam);
 			SendMessageW(hDlg,WM_SETICON,(WPARAM)ICON_BIG,(LPARAM)hYamnIcons[2]);
 			SendMessageW(hDlg,WM_SETICON,(WPARAM)ICON_SMALL,(LPARAM)hYamnIcons[2]);
@@ -1357,7 +1389,11 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			{
 				WCHAR *str1 = 0;
 				WCHAR *str2 = 0;
-
+				if (!strcmp(Header->name,"Body")) {
+					//WCHAR *body
+					SendMessageA(GetDlgItem(hDlg,IDC_EDITBODY),WM_SETTEXT,(WPARAM)0,(LPARAM)Header->value);
+					continue;
+				}
 				ConvertCodedStringToUnicode(Header->name,&str1,MailParam->mail->MailData->CP,1); 
 				ConvertCodedStringToUnicode(Header->value,&str2,MailParam->mail->MailData->CP,1);
 				if (!str2) { str2 = (WCHAR *)malloc(2); str2[0] = 0; }// the header value may be NULL
@@ -1465,6 +1501,18 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				HeadPosX=LOWORD(lParam);	//((LPRECT)lParam)->right-((LPRECT)lParam)->left;
 				HeadPosY=HIWORD(lParam);	//((LPRECT)lParam)->bottom-((LPRECT)lParam)->top;
 				return 0;
+		case DM_SPLITTERMOVED:
+			{
+				if ((HWND) lParam == GetDlgItem(hDlg, IDC_SPLITTER)) {
+					POINT pt;
+					pt.x = 0;
+					pt.y = wParam;
+					ScreenToClient(hDlg, &pt);
+					HeadSplitPos = pt.y;//+rc.bottom-rc.top;
+					SendMessage(hDlg, WM_SIZE, 0, HeadSizeY<<16|HeadSizeX);
+				}
+				return 0;
+			}
 		case WM_SIZE:
 			if(wParam==SIZE_RESTORED)
 			{
@@ -1474,12 +1522,17 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				HeadSizeY=HIWORD(lParam);	//((LPRECT)lParam)->bottom-((LPRECT)lParam)->top;
 				int localSizeX;
 				RECT coord;
-				MoveWindow(hList,  5         ,5     ,HeadSizeX-10    ,HeadSizeY-10,TRUE);	//where to put list mail window while resizing
-				if (GetClientRect(hList,&coord)){
-					localSizeX=coord.right-coord.left;
-				} else localSizeX=HeadSizeX;
-				LONG iNameWidth =  ListView_GetColumnWidth(hList,0);
-				ListView_SetColumnWidth(hList,1,(localSizeX<=iNameWidth)?0:(localSizeX-iNameWidth));
+				MoveWindow(GetDlgItem(hDlg,IDC_SPLITTER),5,HeadSplitPos,HeadSizeX-10,2,TRUE);
+//				MoveWindow(hList,  5         ,5     ,HeadSizeX-10    ,HeadSizeY-10,TRUE);	//where to put list mail window while resizing
+				MoveWindow(hList,  5         ,5     ,HeadSizeX-10    ,HeadSplitPos-10,TRUE);	//where to put list mail window while resizing
+				MoveWindow(GetDlgItem(hDlg,IDC_EDITBODY),5,HeadSplitPos+6,HeadSizeX-10,HeadSizeY-HeadSplitPos-11,TRUE);	//where to put list mail window while resizing
+				if (changeX){
+					if (GetClientRect(hList,&coord)){
+						localSizeX=coord.right-coord.left;
+					} else localSizeX=HeadSizeX;
+					LONG iNameWidth =  ListView_GetColumnWidth(hList,0);
+					ListView_SetColumnWidth(hList,1,(localSizeX<=iNameWidth)?0:(localSizeX-iNameWidth));
+				}
 			}
 //			break;
 			return 0;

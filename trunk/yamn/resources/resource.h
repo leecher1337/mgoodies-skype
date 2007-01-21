@@ -103,6 +103,8 @@
 #define IDC_YAMNASPROTO                 1131
 #define IDC_CHECKAPOP                   1200
 #define IDC_STATUSGROUP                 1338
+#define IDC_SPLITTER                    1400
+#define IDC_EDITBODY                    1401
 
 // Next default values for new objects
 // 
@@ -110,7 +112,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        142
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1131
+#define _APS_NEXT_CONTROL_VALUE         1402
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
