@@ -7,7 +7,7 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include "winres.h"
+#include "afxres.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -18,7 +18,7 @@
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-#pragma code_page(1252)
+#pragma code_page(1251)
 #endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
@@ -139,13 +139,17 @@ BEGIN
     PUSHBUTTON      "Select All",IDC_BTNCHECKALL,150,91,92,14
 END
 
-IDD_DLGSHOWMESSAGE DIALOG DISCARDABLE  50, 200, 460, 110
+IDD_DLGSHOWMESSAGE DIALOGEX 50, 200, 460, 132
 STYLE DS_3DLOOK | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | 
     WS_THICKFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "List5",IDC_LISTHEADERS,"SysListView32",LVS_REPORT | 
                     LVS_EDITLABELS | WS_BORDER | WS_TABSTOP,5,5,450,70
+    CONTROL         "",IDC_SPLITTER,"Static",SS_ENHMETAFILE,0,80,187,2,
+                    WS_EX_STATICEDGE
+    EDITTEXT        IDC_EDITBODY,3,84,454,45,ES_MULTILINE | ES_WANTRETURN | 
+                    WS_VSCROLL | WS_HSCROLL,WS_EX_TRANSPARENT
 END
 
 IDD_DLGBADCONNECT DIALOG DISCARDABLE  0, 0, 186, 76
@@ -324,7 +328,7 @@ END
 IDD_YAMNOPT DIALOGEX 0, 0, 320, 216
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_BORDER
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "HotKey1",IDC_HKFORCE,"msctls_hotkey32",WS_BORDER | 
                     WS_TABSTOP,169,15,110,12

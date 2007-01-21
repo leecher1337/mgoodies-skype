@@ -95,11 +95,12 @@ static int Service_GetName(WPARAM wParam, LPARAM lParam)
 
 static int Service_LoadIcon(WPARAM wParam,LPARAM lParam)
 {
-	if ( LOWORD( wParam ) == PLI_PROTOCOL )
-		return (int)CopyIcon(hYamnIcons[0]);	
-
-	return (int)(HICON)NULL;
-
+	switch LOWORD( wParam ) {
+	case PLI_PROTOCOL: return (int)CopyIcon(hYamnIcons[0]);
+	case PLI_ONLINE: return (int)CopyIcon(hYamnIcons[2]);
+	case PLI_OFFLINE: return (int)CopyIcon(hYamnIcons[3]);
+	default: return (int)(HICON)NULL;
+	}
 }
  
 /*static*/ int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
