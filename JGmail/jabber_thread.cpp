@@ -391,6 +391,7 @@ LBL_Exit:
 				JabberLog( "Thread ended, fake HTTPS session failed" );
 				goto LBL_Exit;
 			}
+			info->useSSL = FALSE; // prevent using SSL in gmail -> port 443. 
 		}
 	} else if ( info->useSSL ) {
 		JabberLog( "Intializing SSL connection" );
