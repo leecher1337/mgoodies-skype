@@ -90,7 +90,8 @@ void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
 char* s_MonthNames[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 bool bDate = false,bSub=false,bSize=false,bFrom=false;
 int PosX=0,PosY=0,SizeX=460,SizeY=100;
-int HeadSizeX = 0x2b2, HeadSizeY = 0x0b5, HeadSplitPos=80, HeadPosX = 100, HeadPosY = 100;
+int HeadSizeX = 0x2b2, HeadSizeY = 0x0b5, HeadPosX = 100, HeadPosY = 100;
+int HeadSplitPos=250; // per-mils of the size 
 static int FromWidth=250,SubjectWidth=280,SizeWidth=50,SizeDate=205;
 unsigned char optDateTime =  (SHOWDATELONG | SHOWDATENOTODAY);
 
@@ -1395,6 +1396,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 					ConvertStringToUnicode(Header->value,MailParam->mail->MailData->CP,&body);
 					SendMessageW(GetDlgItem(hDlg,IDC_EDITBODY),WM_SETTEXT,(WPARAM)0,(LPARAM)body);
 					delete[] body;
+					SendMessage(hDlg, WM_SIZE, 0, HeadSizeY<<16|HeadSizeX);
 					continue;
 				}
 				ConvertCodedStringToUnicode(Header->name,&str1,MailParam->mail->MailData->CP,1); 
@@ -1476,17 +1478,26 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 		case WM_DESTROY:
 		{
 			RECT coord;
-			if(!YAMNVar.Shutdown && GetWindowRect(hDlg,&coord))	//the YAMNVar.Shutdown testing is because M<iranda strange functionality at shutdown phase, when call to DBWriteContactSetting freezes calling thread
+			if(GetWindowRect(hDlg,&coord))	//the YAMNVar.Shutdown testing is because M<iranda strange functionality at shutdown phase, when call to DBWriteContactSetting freezes calling thread
 			{
 				HeadPosX=coord.left;
 				HeadSizeX=coord.right-coord.left;
 				HeadPosY=coord.top;
 				HeadSizeY=coord.bottom-coord.top;
-				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSX,HeadPosX);
-				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSY,HeadPosY);
-				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEX,HeadSizeX);
-				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEY,HeadSizeY);
 			}
+
+			//if(!YAMNVar.Shutdown && GetWindowRect(hDlg,&coord))	//the YAMNVar.Shutdown testing is because M<iranda strange functionality at shutdown phase, when call to DBWriteContactSetting freezes calling thread
+			//{
+			//	//HeadPosX=coord.left;
+			//	//HeadSizeX=coord.right-coord.left;
+			//	//HeadPosY=coord.top;
+			//	//HeadSizeY=coord.bottom-coord.top;
+			//	DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSX,HeadPosX);
+			//	DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSY,HeadPosY);
+			//	DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEX,HeadSizeX);
+			//	DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEY,HeadSizeY);
+			//	DBWriteContactSettingWord(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSSPLIT,HeadSplitPos);
+			//}
 			PYAMN_MAILSHOWPARAM MailParam  = (PYAMN_MAILSHOWPARAM)(GetWindowLong(hDlg,DWL_USER));
 			MailParam->mail->MsgWindow = NULL;
 			delete MailParam;
@@ -1513,8 +1524,10 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 					pt.x = 0;
 					pt.y = wParam;
 					ScreenToClient(hDlg, &pt);
-					HeadSplitPos = pt.y;//+rc.bottom-rc.top;
-					SendMessage(hDlg, WM_SIZE, 0, HeadSizeY<<16|HeadSizeX);
+					HeadSplitPos = (pt.y*1000)/HeadSizeY;//+rc.bottom-rc.top;
+					if (HeadSplitPos>=1000) HeadSplitPos = 999;
+					else if (HeadSplitPos<=0) HeadSplitPos = 1;
+					else SendMessage(hDlg, WM_SIZE, 0, HeadSizeY<<16|HeadSizeX);
 				}
 				return 0;
 			}
@@ -1523,14 +1536,15 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			{
 				HWND hList = GetDlgItem(hDlg,IDC_LISTHEADERS);
 				BOOL changeX = LOWORD(lParam)!=HeadSizeX;
+				BOOL isBodyShown = ((PYAMN_MAILSHOWPARAM)(GetWindowLong(hDlg,DWL_USER)))->mail->Flags & YAMN_MSG_BODYRECEIVED;
 				HeadSizeX=LOWORD(lParam);	//((LPRECT)lParam)->right-((LPRECT)lParam)->left;
 				HeadSizeY=HIWORD(lParam);	//((LPRECT)lParam)->bottom-((LPRECT)lParam)->top;
+				int localSplitPos = (HeadSplitPos*HeadSizeY)/1000;
 				int localSizeX;
 				RECT coord;
-				MoveWindow(GetDlgItem(hDlg,IDC_SPLITTER),5,HeadSplitPos,HeadSizeX-10,2,TRUE);
-//				MoveWindow(hList,  5         ,5     ,HeadSizeX-10    ,HeadSizeY-10,TRUE);	//where to put list mail window while resizing
-				MoveWindow(hList,  5         ,5     ,HeadSizeX-10    ,HeadSplitPos-10,TRUE);	//where to put list mail window while resizing
-				MoveWindow(GetDlgItem(hDlg,IDC_EDITBODY),5,HeadSplitPos+6,HeadSizeX-10,HeadSizeY-HeadSplitPos-11,TRUE);	//where to put list mail window while resizing
+				MoveWindow(GetDlgItem(hDlg,IDC_SPLITTER),5,localSplitPos,HeadSizeX-10,2,TRUE);
+				MoveWindow(GetDlgItem(hDlg,IDC_EDITBODY),5,localSplitPos+6,HeadSizeX-10,HeadSizeY-localSplitPos-11,TRUE);	//where to put text window while resizing
+				MoveWindow(hList,  5         ,5     ,HeadSizeX-10    ,(isBodyShown?localSplitPos:HeadSizeY)-10,TRUE);	//where to put headers list window while resizing
 				if (changeX){
 					if (GetClientRect(hList,&coord)){
 						localSizeX=coord.right-coord.left;

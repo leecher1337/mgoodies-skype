@@ -40,6 +40,7 @@
 #define YAMN_DBMSGPOSY			"MailMessageWinY"
 #define YAMN_DBMSGSIZEX		"MailMessageWinW"
 #define YAMN_DBMSGSIZEY		"MailMessageWinH"
+#define YAMN_DBMSGPOSSPLIT	"MailMessageSplitY"
 #define YAMN_HKCHECKMAIL	"HKCheckMail"
 #define	YAMN_TTBFCHECK		"ForceCheckTTB"
 #define	YAMN_SHOWMAINMENU	"ShowMainMenu"
