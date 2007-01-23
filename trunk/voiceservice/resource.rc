@@ -39,11 +39,11 @@ END
 IDD_POPUPS DIALOGEX 0, 0, 314, 240
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "Tahoma"
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Enable popups",IDC_POPUPS,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,3,3,308,12
-    GROUPBOX        " Colours ",IDC_COLOURS_G,3,25,158,75
+    GROUPBOX        " Colours ",IDC_COLOURS_G,3,25,158,75,NOT WS_VISIBLE
     CONTROL         "",IDC_BGCOLOR,"ColourPicker",WS_TABSTOP,11,37,35,14
     LTEXT           "Background colour",IDC_BGCOLOR_L,55,41,66,8
     CONTROL         "",IDC_TEXTCOLOR,"ColourPicker",WS_TABSTOP,11,55,35,14
@@ -82,10 +82,10 @@ BEGIN
     CONTROL         "",IDC_LIST,"CListControl",WS_TABSTOP | 0x1f0,8,14,297,
                     183,WS_EX_CLIENTEDGE
     ICON            IDI_ACTION_ANSWER,IDC_ANSWER,8,204,20,20
-    LTEXT           "Auto accept this contact's calls",IDC_STATIC,26,205,279,
-                    8,SS_NOPREFIX | SS_CENTERIMAGE
+    LTEXT           "Auto accept this contact calls",IDC_STATIC,26,205,279,8,
+                    SS_NOPREFIX | SS_CENTERIMAGE
     ICON            IDI_ACTION_DROP,IDC_DROP,8,219,20,20
-    LTEXT           "Auto drop this contact's calls",IDC_STATIC,26,220,279,8,
+    LTEXT           "Auto drop this contacts calls",IDC_STATIC,26,220,279,8,
                     SS_NOPREFIX | SS_CENTERIMAGE
 END
 
