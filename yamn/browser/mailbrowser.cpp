@@ -1393,10 +1393,11 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				WCHAR *str2 = 0;
 				if (!strcmp(Header->name,"Body")) {
 					WCHAR *body = 0;
+					HWND hEdit = GetDlgItem(hDlg,IDC_EDITBODY);
 					ConvertStringToUnicode(Header->value,MailParam->mail->MailData->CP,&body);
-					SendMessageW(GetDlgItem(hDlg,IDC_EDITBODY),WM_SETTEXT,(WPARAM)0,(LPARAM)body);
+					SendMessageW(hEdit,WM_SETTEXT,(WPARAM)0,(LPARAM)body);
 					delete[] body;
-					SendMessage(hDlg, WM_SIZE, 0, HeadSizeY<<16|HeadSizeX);
+					SetFocus(hEdit);
 					continue;
 				}
 				ConvertCodedStringToUnicode(Header->name,&str1,MailParam->mail->MailData->CP,1); 
@@ -1474,6 +1475,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			delete[] title;
 			// turn on redrawing
 			SendMessage(hListView, WM_SETREDRAW, 1, 0);
+			SendMessage(hDlg, WM_SIZE, 0, HeadSizeY<<16|HeadSizeX);
 			} break;
 		case WM_DESTROY:
 		{
@@ -1535,6 +1537,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			if(wParam==SIZE_RESTORED)
 			{
 				HWND hList = GetDlgItem(hDlg,IDC_LISTHEADERS);
+				HWND hEdit = GetDlgItem(hDlg,IDC_EDITBODY);
 				BOOL changeX = LOWORD(lParam)!=HeadSizeX;
 				BOOL isBodyShown = ((PYAMN_MAILSHOWPARAM)(GetWindowLong(hDlg,DWL_USER)))->mail->Flags & YAMN_MSG_BODYRECEIVED;
 				HeadSizeX=LOWORD(lParam);	//((LPRECT)lParam)->right-((LPRECT)lParam)->left;
@@ -1543,15 +1546,15 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				int localSizeX;
 				RECT coord;
 				MoveWindow(GetDlgItem(hDlg,IDC_SPLITTER),5,localSplitPos,HeadSizeX-10,2,TRUE);
-				MoveWindow(GetDlgItem(hDlg,IDC_EDITBODY),5,localSplitPos+6,HeadSizeX-10,HeadSizeY-localSplitPos-11,TRUE);	//where to put text window while resizing
+				MoveWindow(hEdit,5,localSplitPos+6,HeadSizeX-10,HeadSizeY-localSplitPos-11,TRUE);	//where to put text window while resizing
 				MoveWindow(hList,  5         ,5     ,HeadSizeX-10    ,(isBodyShown?localSplitPos:HeadSizeY)-10,TRUE);	//where to put headers list window while resizing
-				if (changeX){
+				//if (changeX){
 					if (GetClientRect(hList,&coord)){
 						localSizeX=coord.right-coord.left;
 					} else localSizeX=HeadSizeX;
 					LONG iNameWidth =  ListView_GetColumnWidth(hList,0);
 					ListView_SetColumnWidth(hList,1,(localSizeX<=iNameWidth)?0:(localSizeX-iNameWidth));
-				}
+				//}
 			}
 //			break;
 			return 0;
