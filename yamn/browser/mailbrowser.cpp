@@ -1328,6 +1328,7 @@ static LRESULT CALLBACK SplitterSubclassProc(HWND hwnd, UINT msg, WPARAM wParam,
 
 
 void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode);
+int ConvertStringToUnicode(char *stream,unsigned int cp,WCHAR **out);
 BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
 	switch(msg)
@@ -1390,8 +1391,10 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				WCHAR *str1 = 0;
 				WCHAR *str2 = 0;
 				if (!strcmp(Header->name,"Body")) {
-					//WCHAR *body
-					SendMessageA(GetDlgItem(hDlg,IDC_EDITBODY),WM_SETTEXT,(WPARAM)0,(LPARAM)Header->value);
+					WCHAR *body = 0;
+					ConvertStringToUnicode(Header->value,MailParam->mail->MailData->CP,&body);
+					SendMessageW(GetDlgItem(hDlg,IDC_EDITBODY),WM_SETTEXT,(WPARAM)0,(LPARAM)body);
+					delete[] body;
 					continue;
 				}
 				ConvertCodedStringToUnicode(Header->name,&str1,MailParam->mail->MailData->CP,1); 
@@ -1455,6 +1458,8 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				MailParam->mail->Flags |= YAMN_MSG_BODYREQESTED;
 				CallService(MS_YAMN_ACCOUNTCHECK,(WPARAM)MailParam->account,0);
 			}
+			ShowWindow(GetDlgItem(hDlg, IDC_SPLITTER),(MailParam->mail->Flags & YAMN_MSG_BODYRECEIVED)?SW_SHOW:SW_HIDE);
+			ShowWindow(GetDlgItem(hDlg, IDC_EDITBODY),(MailParam->mail->Flags & YAMN_MSG_BODYRECEIVED)?SW_SHOW:SW_HIDE);
 			WCHAR *title=0;
 			title = new WCHAR[(From?wcslen(From):0)+(Subj?wcslen(Subj):0)+4];
 			if (From&&Subj) wsprintfW(title,L"%s (%s)",Subj,From);
