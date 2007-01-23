@@ -25,7 +25,7 @@ extern HANDLE ExitEV;
 extern HANDLE WriteToFileEV;
 
 extern int PosX,PosY,SizeX,SizeY;
-extern int HeadPosX,HeadPosY,HeadSizeX,HeadSizeY;
+extern int HeadPosX,HeadPosY,HeadSizeX,HeadSizeY,HeadSplitPos;
 
 //From account.cpp
 extern LPCRITICAL_SECTION AccountStatusCS;
@@ -434,6 +434,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	HeadPosY=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSY,0);
 	HeadSizeX=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEX,690);
 	HeadSizeY=DBGetContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEY,300);
+	HeadSplitPos=DBGetContactSettingWord(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSSPLIT,250);
 
 	optDateTime=DBGetContactSettingByte(NULL,YAMN_DBMODULE,YAMN_DBTIMEOPTIONS,optDateTime);
 
@@ -544,6 +545,11 @@ int Shutdown(WPARAM,LPARAM)
 //We undo all things from Load()
 extern "C" int __declspec(dllexport) Unload(void)
 {
+				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSX,HeadPosX);
+				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSY,HeadPosY);
+				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEX,HeadSizeX);
+				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEY,HeadSizeY);
+				DBWriteContactSettingWord(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSSPLIT,HeadSplitPos);
 #ifdef YAMN_DEBUG
 	UnInitDebug();
 #endif
