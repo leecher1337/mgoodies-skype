@@ -75,6 +75,9 @@ void ShowTestPopup(const TCHAR *title, const TCHAR *description, const Options *
 
 void ShowPopup(HANDLE hContact, const TCHAR *title, const TCHAR *description, ...)
 {
+	if (!opts.popup_enable)
+		return;
+
 	TCHAR text[1024];
 
 	va_list va;
