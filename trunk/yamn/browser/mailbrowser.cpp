@@ -84,6 +84,9 @@ void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head);
 void DeleteHeaderContent(struct CHeader *head);
 //From account.cpp
 void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
+//from decode.cpp
+int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen);
+int DecodeBase64(char *Src,char *Dst,int DstLen);
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -1379,6 +1382,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			PYAMN_MAILSHOWPARAM MailParam  = (PYAMN_MAILSHOWPARAM)
 				(lParam?lParam:GetWindowLong(hDlg,DWL_USER));
 			HWND hListView = GetDlgItem(hDlg,IDC_LISTHEADERS);
+			HWND hEdit = GetDlgItem(hDlg,IDC_EDITBODY);
 			//do not redraw
 			SendMessage(hListView, WM_SETREDRAW, 0, 0);
 			ListView_DeleteAllItems(hListView);
@@ -1386,28 +1390,22 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			LVITEM item;
 			item.mask=LVIF_TEXT | LVIF_PARAM;
 			WCHAR *From=0,*Subj=0;
-			//bool hasBody = 0;
+			char *contentType=0, *transEncoding=0, *body=0; //should not be delete[]-ed
 			for(Header=MailParam->mail->MailData->TranslatedHeader;Header!=NULL;Header=Header->Next)
 			{
 				WCHAR *str1 = 0;
 				WCHAR *str2 = 0;
-				if (!strcmp(Header->name,"Body")) {
-					WCHAR *body = 0;
-					HWND hEdit = GetDlgItem(hDlg,IDC_EDITBODY);
-					ConvertStringToUnicode(Header->value,MailParam->mail->MailData->CP,&body);
-					SendMessageW(hEdit,WM_SETTEXT,(WPARAM)0,(LPARAM)body);
-					delete[] body;
-					SetFocus(hEdit);
-					continue;
-				}
+				if (!body) if (!_stricmp(Header->name,"Body")) {body = Header->value; continue;}
+				if (!contentType) if (!_stricmp(Header->name,"Content-Type")) contentType = Header->value;
+				if (!transEncoding) if (!_stricmp(Header->name,"Content-Transfer-Encoding")) transEncoding = Header->value;
 				ConvertCodedStringToUnicode(Header->name,&str1,MailParam->mail->MailData->CP,1); 
 				ConvertCodedStringToUnicode(Header->value,&str2,MailParam->mail->MailData->CP,1);
 				if (!str2) { str2 = (WCHAR *)malloc(2); str2[0] = 0; }// the header value may be NULL
-				if (!From) if (!strcmp(Header->name,"From")) {
+				if (!From) if (!_stricmp(Header->name,"From")) {
 					From =new WCHAR[wcslen(str2)+1];
 					wcscpy(From,str2);
 				}
-				if (!Subj) if (!strcmp(Header->name,"Subject")) {
+				if (!Subj) if (!_stricmp(Header->name,"Subject")) {
 					Subj =new WCHAR[wcslen(str2)+1];
 					wcscpy(Subj,str2);
 				}
@@ -1435,7 +1433,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 						ofs++;
 					};
 				}
-				if (!strcmp(Header->name,"From")||!strcmp(Header->name,"To")||!strcmp(Header->name,"Date")||!strcmp(Header->name,"Subject")) 
+				if (!_stricmp(Header->name,"From")||!_stricmp(Header->name,"To")||!_stricmp(Header->name,"Date")||!_stricmp(Header->name,"Subject")) 
 					item.iItem = 0;
 				else 
 					item.iItem = 999;
@@ -1457,12 +1455,34 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				if (str1) free(str1);
 				if (str2) free(str2);
 			}
+			if (body){
+				WCHAR *bodyDecoded = 0;
+				char *localBody=0;
+				if (contentType && (!_strnicmp(contentType,"text",4))) {
+					if (transEncoding){
+						if (!_stricmp(transEncoding,"base64")){
+							int size = strlen(body)*3/4+5;
+							localBody = new char[size+1];
+							DecodeBase64(body,localBody,size); 
+						} else if (!_stricmp(transEncoding,"quoted-printable")){
+							int size = strlen(body)+2;
+							localBody = new char[size+1];
+							DecodeQuotedPrintable(body,localBody,size); 
+						}
+					}
+				}
+				ConvertStringToUnicode(localBody?localBody:body,MailParam->mail->MailData->CP,&bodyDecoded);
+				SendMessageW(hEdit,WM_SETTEXT,(WPARAM)0,(LPARAM)bodyDecoded);
+				delete[] bodyDecoded;
+				if (localBody) delete[] localBody;
+				SetFocus(hEdit);
+			}
 			if (!(MailParam->mail->Flags & YAMN_MSG_BODYRECEIVED)) {
 				MailParam->mail->Flags |= YAMN_MSG_BODYREQESTED;
 				CallService(MS_YAMN_ACCOUNTCHECK,(WPARAM)MailParam->account,0);
 			}
 			ShowWindow(GetDlgItem(hDlg, IDC_SPLITTER),(MailParam->mail->Flags & YAMN_MSG_BODYRECEIVED)?SW_SHOW:SW_HIDE);
-			ShowWindow(GetDlgItem(hDlg, IDC_EDITBODY),(MailParam->mail->Flags & YAMN_MSG_BODYRECEIVED)?SW_SHOW:SW_HIDE);
+			ShowWindow(hEdit,(MailParam->mail->Flags & YAMN_MSG_BODYRECEIVED)?SW_SHOW:SW_HIDE);
 			WCHAR *title=0;
 			title = new WCHAR[(From?wcslen(From):0)+(Subj?wcslen(Subj):0)+4];
 			if (From&&Subj) wsprintfW(title,L"%s (%s)",Subj,From);
