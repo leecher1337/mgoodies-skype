@@ -85,7 +85,7 @@ void DeleteHeaderContent(struct CHeader *head);
 //From account.cpp
 void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
 //from decode.cpp
-int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen);
+int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen, BOOL isQ);
 int DecodeBase64(char *Src,char *Dst,int DstLen);
 
 //--------------------------------------------------------------------------------------------------
@@ -1467,7 +1467,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 						} else if (!_stricmp(transEncoding,"quoted-printable")){
 							int size = strlen(body)+2;
 							localBody = new char[size+1];
-							DecodeQuotedPrintable(body,localBody,size); 
+							DecodeQuotedPrintable(body,localBody,size,FALSE); 
 						}
 					}
 				}

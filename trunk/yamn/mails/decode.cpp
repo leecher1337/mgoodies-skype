@@ -175,8 +175,9 @@ int FromBase64(char Base64Value,char *DecValue);
 // Src- input string
 // Dst- where to store output string
 // DstLen- how max long should be output string
+// isQ- if is "Q-encoding" modification. should be TRUE in headers
 // always returns 1
-int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen);
+int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen, BOOL isQ);
 
 //Decodes string in base64
 // Src- input string
@@ -292,7 +293,7 @@ int FromBase64(char Base64Value,char *DecValue)
 	return 0;
 }
 
-int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen)
+int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen, BOOL isQ)
 {
 #ifdef DEBUG_DECODEQUOTED
 	char *DstTemp=Dst;
@@ -301,14 +302,16 @@ int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen)
 	for(int Counter=0;((char)*Src!=0) && DstLen && (Counter++<DstLen);Src++,Dst++)
 		if(*Src=='=')
 		{
-			if (Src[1]==0x0D){
-				Src++; Src++;
-				if (Src[0]==0x0A) Src++;
-				goto CopyCharQuotedPrintable;
-			}
-			if (Src[1]==0x0A){
-				Src++; Src++;
-				goto CopyCharQuotedPrintable;
+			if (!isQ){
+				if (Src[1]==0x0D){
+					Src++; Src++;
+					if (Src[0]==0x0A) Src++;
+					goto CopyCharQuotedPrintable;
+				}
+				if (Src[1]==0x0A){
+					Src++; Src++;
+					goto CopyCharQuotedPrintable;
+				}
 			}
 			char First,Second;
 			if(!FromHexa(*(++Src),&First))
@@ -324,6 +327,8 @@ int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen)
 			*Dst=(char)(First)<<4;
 			*Dst+=Second;
 		}
+		else if(isQ && *Src=='_')
+			*Dst=' ';
 		else
 CopyCharQuotedPrintable: // Yeah. Bad programming stile.
 			*Dst=*Src;
@@ -333,41 +338,6 @@ CopyCharQuotedPrintable: // Yeah. Bad programming stile.
 #endif
 	return 1;
 }
-
-//This variant converts underscore "_" as space, which is not described
-//int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen)
-//{
-//#ifdef DEBUG_DECODEQUOTED
-//	char *DstTemp=Dst;
-//	DebugLog(DecodeFile,"<Decode Quoted><Input>%s</Input>",Src);
-//#endif
-//	for(int Counter=0;((char)*Src!=0) && DstLen && (Counter++<DstLen);Src++,Dst++)
-//		if(*Src=='=')
-//		{
-//			char First,Second;
-//			if(!FromHexa(*(++Src),&First))
-//			{
-//				*Dst++='=';Src--;
-//				continue;
-//			}
-//			if(!FromHexa(*(++Src),&Second))
-//			{
-//				*Dst++='=';Src--;Src--;
-//				continue;
-//			}
-//			*Dst=(char)(First)<<4;
-//			*Dst+=Second;
-//		}
-//		else if(*Src=='_')
-//			*Dst=' ';
-//		else
-//			*Dst=*Src;
-//	*Dst=(char)0;
-//#ifdef DEBUG_DECODEQUOTED
-//	DebugLog(DecodeFile,"<Output>%s</Output></Decode Quoted>",DstTemp);
-//#endif
-//	return 1;
-//}
 
 int DecodeBase64(char *Src,char *Dst,int DstLen)
 {
@@ -536,7 +506,7 @@ void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode)
 					{
 						case 'q':
 						case 'Q':
-							DecodeQuotedPrintable(finder,DecodedResult,size);
+							DecodeQuotedPrintable(finder,DecodedResult,size, TRUE);
 							break;
 						case 'b':
 						case 'B':
