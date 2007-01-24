@@ -301,6 +301,15 @@ int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen)
 	for(int Counter=0;((char)*Src!=0) && DstLen && (Counter++<DstLen);Src++,Dst++)
 		if(*Src=='=')
 		{
+			if (Src[1]==0x0D){
+				Src++; Src++;
+				if (Src[0]==0x0A) Src++;
+				goto CopyCharQuotedPrintable;
+			}
+			if (Src[1]==0x0A){
+				Src++; Src++;
+				goto CopyCharQuotedPrintable;
+			}
 			char First,Second;
 			if(!FromHexa(*(++Src),&First))
 			{
@@ -315,9 +324,8 @@ int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen)
 			*Dst=(char)(First)<<4;
 			*Dst+=Second;
 		}
-		else if(*Src=='_')
-			*Dst=' ';
 		else
+CopyCharQuotedPrintable: // Yeah. Bad programming stile.
 			*Dst=*Src;
 	*Dst=(char)0;
 #ifdef DEBUG_DECODEQUOTED
@@ -325,6 +333,41 @@ int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen)
 #endif
 	return 1;
 }
+
+//This variant converts underscore "_" as space, which is not described
+//int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen)
+//{
+//#ifdef DEBUG_DECODEQUOTED
+//	char *DstTemp=Dst;
+//	DebugLog(DecodeFile,"<Decode Quoted><Input>%s</Input>",Src);
+//#endif
+//	for(int Counter=0;((char)*Src!=0) && DstLen && (Counter++<DstLen);Src++,Dst++)
+//		if(*Src=='=')
+//		{
+//			char First,Second;
+//			if(!FromHexa(*(++Src),&First))
+//			{
+//				*Dst++='=';Src--;
+//				continue;
+//			}
+//			if(!FromHexa(*(++Src),&Second))
+//			{
+//				*Dst++='=';Src--;Src--;
+//				continue;
+//			}
+//			*Dst=(char)(First)<<4;
+//			*Dst+=Second;
+//		}
+//		else if(*Src=='_')
+//			*Dst=' ';
+//		else
+//			*Dst=*Src;
+//	*Dst=(char)0;
+//#ifdef DEBUG_DECODEQUOTED
+//	DebugLog(DecodeFile,"<Output>%s</Output></Decode Quoted>",DstTemp);
+//#endif
+//	return 1;
+//}
 
 int DecodeBase64(char *Src,char *Dst,int DstLen)
 {
@@ -340,6 +383,10 @@ int DecodeBase64(char *Src,char *Dst,int DstLen)
 #endif
 	while(*Src!=0 && DstLen && Dst!=End)
 	{
+		if ((*Src==0x0D)||(*Src==0x0A))	{
+			Src++; 
+			continue;
+		}
 		if((!(Result=FromBase64(*Src,MiniResult+Locator)) && (*Src==0)) || Locator++==3)	//end_of_str || end_of_4_bytes
 		{
 			Locator=0;									//next write to the first byte

@@ -15,7 +15,10 @@
  * will fill a supplied 16-byte array with the digest.
  */
 #include "../filter/simple/AggressiveOptimize.h"
-#include <string.h>		/* for memcpy() */
+//#include <string.h>		/* for memcpy() */
+typedef unsigned int size_t;
+void *  __cdecl memcpy(void *, const void *, size_t);
+void *  __cdecl memset(void *, int, size_t);
 #include "md5.h"
 
 #ifndef HIGHFIRST

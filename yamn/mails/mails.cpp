@@ -441,8 +441,8 @@ void WINAPI TranslateHeaderFcn(char *stream,int len,struct CMimeItem **head)
 						Item=Item->Next;
 						Item->Next=NULL;//just in case;
 						Item->name=new char[5]; strncpy(Item->name,"Body",5);
-						Item->value=new char [prev2-prev1+1];
-						lstrcpyn(Item->value,prev1,prev2-prev1);
+						Item->value=new char [prev2-prev1];
+						lstrcpyn(Item->value,prev1,prev2-prev1-1);
 					}
 					break; // there is nothing else
 				}
