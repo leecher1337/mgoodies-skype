@@ -81,6 +81,9 @@ HFONT fonts[NUM_FONTS] = {0};
 COLORREF font_colors[NUM_FONTS] = {0};
 int font_max_height;
 
+COLORREF bkg_color = {0};
+HBRUSH bk_brush = NULL;
+
 HICON icons[NUM_ICONS] = {0};
 char *icon_names[NUM_ICONS] = { "vc_talking", "vc_ringing", "vc_calling", "vc_on_hold", "vc_ended", 
 					 "vca_call", "vca_answer" , "vca_hold", "vca_drop",
@@ -99,6 +102,7 @@ static int CMDrop(WPARAM wParam,LPARAM lParam);
 
 static int IconsChanged(WPARAM wParam, LPARAM lParam);
 static int ReloadFont(WPARAM wParam, LPARAM lParam);
+static int ReloadColor(WPARAM wParam, LPARAM lParam);
 static VOID CALLBACK ClearOldVoiceCalls(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 
 
@@ -137,6 +141,9 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 extern "C" int __declspec(dllexport) Unload(void) 
 {
+	if (bk_brush != NULL)
+		DeleteObject(bk_brush);
+
 	return 0;
 }
 
@@ -233,6 +240,22 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		ReloadFont(0,0);
 		HookEvent(ME_FONT_RELOAD, ReloadFont);
+	}
+
+	// Init bkg color
+	{
+		ColourIDT ci = {0};
+		ci.cbSize = sizeof(ci);
+		lstrcpyn(ci.group, TranslateT("Voice Calls"), MAX_REGS(ci.group));
+		lstrcpyn(ci.name, TranslateT("Background"), MAX_REGS(ci.name));
+		strncpy(ci.dbSettingsGroup, MODULE_NAME, MAX_REGS(ci.dbSettingsGroup));
+		strncpy(ci.setting, "BkgColor", MAX_REGS(ci.setting));
+		ci.defcolour = GetSysColor(COLOR_BTNFACE);
+
+		CallService(MS_COLOUR_REGISTERT, (WPARAM) &ci, 0);
+
+		ReloadColor(0,0);
+		HookEvent(ME_COLOUR_RELOAD, ReloadColor);
 	}
 
 	InitOptions();
@@ -844,6 +867,29 @@ static int ReloadFont(WPARAM wParam, LPARAM lParam)
 
 		font_max_height = max(font_max_height, log_font.lfHeight);
 	}
+	
+	if (hwnd_frame != NULL)
+		InvalidateRect(hwnd_frame, NULL, FALSE);
+
+	return 0;
+}
+
+
+static int ReloadColor(WPARAM wParam, LPARAM lParam) 
+{
+	ColourIDT ci = {0};
+	ci.cbSize = sizeof(ci);
+	lstrcpyn(ci.group, TranslateT("Voice Calls"), MAX_REGS(ci.group));
+	lstrcpyn(ci.name, TranslateT("Background"), MAX_REGS(ci.name));
+
+	bkg_color = CallService(MS_COLOUR_GETT, (WPARAM) &ci, 0);
+
+	if (bk_brush != NULL)
+		DeleteObject(bk_brush);
+	bk_brush = CreateSolidBrush(bkg_color);
+
+	if (hwnd_frame != NULL)
+		InvalidateRect(hwnd_frame, NULL, TRUE);
 	
 	return 0;
 }
