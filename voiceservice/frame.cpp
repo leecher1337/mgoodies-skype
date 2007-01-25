@@ -259,10 +259,16 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			return TRUE;
 		}
 
+		case WM_CTLCOLORLISTBOX:
+		{
+			return (LRESULT) bk_brush;
+		}
+
 		case WM_DRAWITEM:
 		{
 			DRAWITEMSTRUCT *dis = (DRAWITEMSTRUCT *)lParam;
-			if (dis->CtlID != IDC_CALLS || dis->itemID == -1) 
+
+			if (dis->CtlID != IDC_CALLS || dis->itemID == -1)
 				break;
 
 			VOICE_CALL_INTERNAL *vc = (VOICE_CALL_INTERNAL *) dis->itemData;

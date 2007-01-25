@@ -112,6 +112,8 @@ extern HICON icons[NUM_ICONS];
 extern HFONT fonts[NUM_FONTS];
 extern COLORREF font_colors[NUM_FONTS];
 extern int font_max_height;
+extern COLORREF bkg_color;
+extern HBRUSH bk_brush;
 
 
 
