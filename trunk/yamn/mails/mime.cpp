@@ -488,3 +488,8 @@ void inline ToLower(char *string)
 	for(;*string!=0;string++)
 		if(*string>='A' && *string<='Z') *string=*string-'A'+'a';
 }
+
+
+void ParseMultipartBody(char *src, char *bond, WCHAR **dest)
+{
+}

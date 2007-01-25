@@ -82,6 +82,8 @@ extern void WINAPI SetRemoveFlagsInQueueFcn(HYAMNMAIL From,DWORD FlagsSet,DWORD 
 void ExtractHeader(struct CMimeItem *items,int &CP,struct CHeader *head);
 void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head); 
 void DeleteHeaderContent(struct CHeader *head);
+char *ExtractFromContentType(char *ContentType,char *value);
+void ParseMultipartBody(char *src, char *bond, WCHAR **dest);
 //From account.cpp
 void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
 //from decode.cpp
@@ -1458,20 +1460,30 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			if (body){
 				WCHAR *bodyDecoded = 0;
 				char *localBody=0;
-				if (contentType && (!_strnicmp(contentType,"text",4))) {
-					if (transEncoding){
-						if (!_stricmp(transEncoding,"base64")){
-							int size = strlen(body)*3/4+5;
-							localBody = new char[size+1];
-							DecodeBase64(body,localBody,size); 
-						} else if (!_stricmp(transEncoding,"quoted-printable")){
-							int size = strlen(body)+2;
-							localBody = new char[size+1];
-							DecodeQuotedPrintable(body,localBody,size,FALSE); 
+				if (contentType) {
+					if (!_strnicmp(contentType,"text",4)) {
+						if (transEncoding){
+							if (!_stricmp(transEncoding,"base64")){
+								int size = strlen(body)*3/4+5;
+								localBody = new char[size+1];
+								DecodeBase64(body,localBody,size); 
+							} else if (!_stricmp(transEncoding,"quoted-printable")){
+								int size = strlen(body)+2;
+								localBody = new char[size+1];
+								DecodeQuotedPrintable(body,localBody,size,FALSE); 
+							}
 						}
+					} else if (!_strnicmp(contentType,"multipart/",10)) {
+						char *bondary=NULL;
+						if(NULL!=(bondary=ExtractFromContentType(contentType,"boundary=")))
+						{
+							ParseMultipartBody(body,bondary,&bodyDecoded);
+							delete[] bondary;
+						}
+
 					}
 				}
-				ConvertStringToUnicode(localBody?localBody:body,MailParam->mail->MailData->CP,&bodyDecoded);
+				if (!bodyDecoded)ConvertStringToUnicode(localBody?localBody:body,MailParam->mail->MailData->CP,&bodyDecoded);
 				SendMessageW(hEdit,WM_SETTEXT,(WPARAM)0,(LPARAM)bodyDecoded);
 				delete[] bodyDecoded;
 				if (localBody) delete[] localBody;
