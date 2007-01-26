@@ -206,7 +206,7 @@ char *ExtractFromContentType(char *ContentType,char *value)
 		return NULL;
 	temp=finder-1;
 	while((temp>ContentType) && WS(temp)) temp--;			//now we have to find, if the word "Charset=" is located after ';' like "; Charset="
-	if(*temp!=';' && temp!=ContentType)
+	if(*temp!=';' && !ENDLINE(temp) && temp!=ContentType)
 		return NULL;
 	finder=finder+strlen(value);						//jump over value string
 
@@ -215,6 +215,10 @@ char *ExtractFromContentType(char *ContentType,char *value)
 	while(*temp!=0 && *temp!=';') temp++;				//jump to the end of setting (to the next ;)
 	temp--;
 	while(WS(temp))	temp--;						//remove whitespaces from the end
+	if (*finder=='\"'){ //remove heading and tailing quotes
+		finder++;
+		if (*temp=='\"') temp--;
+	}
 	if(NULL==(CopiedString=new char[++temp-finder+1]))
 		return NULL;
 	for(copier=CopiedString;finder!=temp;*copier++=*finder++);			//copy string
