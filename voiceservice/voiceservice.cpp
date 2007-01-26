@@ -30,7 +30,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Voice Service",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,1),
+	PLUGIN_MAKE_VERSION(0,0,0,2),
 	"Provide services for protocols that support voice calls",
 	"Ricardo Pescuma Domenecci",
 	"",
