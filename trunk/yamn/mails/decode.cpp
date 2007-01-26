@@ -215,8 +215,8 @@ int GetCharsetFromString(char *input,int size)
 	{
 		if ((*pin>='a') && (*pin<='z'))
 			*parser++=*(pin++)-('a'-'A'); // make it capital
-		else if(*pin=='\"')
-			*pin++; //skip the quotes if any
+		//else if(*pin=='\"') // this is already done in ExtractFromContentType
+		//	*pin++; //skip the quotes if any
 		else 
 			*parser++=*pin++;
 	}
