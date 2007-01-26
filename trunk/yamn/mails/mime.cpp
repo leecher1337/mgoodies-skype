@@ -198,12 +198,19 @@ void ExtractStringFromLine(char *finder,char **storeto)
 
 char *ExtractFromContentType(char *ContentType,char *value)
 {
-	char *finder=strstr(ContentType,value);
+	char *lowered = _strdup(ContentType);
+	ToLower(lowered);
+	char *finder=strstr(lowered,value);
+	if(finder==NULL){
+		free (lowered);
+		return NULL;
+	}
+	finder = finder-lowered+ContentType;
+	free (lowered);
+
 	char *temp,*copier;
 	char *CopiedString;
 
-	if(finder==NULL)
-		return NULL;
 	temp=finder-1;
 	while((temp>ContentType) && WS(temp)) temp--;			//now we have to find, if the word "Charset=" is located after ';' like "; Charset="
 	if(*temp!=';' && !ENDLINE(temp) && temp!=ContentType)
@@ -494,6 +501,105 @@ void inline ToLower(char *string)
 }
 
 
+void ParseAPart(char *stream, char **ContType, char **TransEncoding, char **body)
+{
+	int len = strlen(stream);
+	try
+	{
+		char *finder=stream;
+		char *prev1,*prev2,*prev3;
+
+		while(finder<=(stream+len))
+		{
+			while(ENDLINEWS(finder)) finder++;
+
+			//at the start of line
+			if (finder>stream){
+				if (*(finder-2)=='\r' || *(finder-2)=='\n') 
+					*(finder-2)=0;
+				if (*(finder-1)=='\r' || *(finder-1)=='\n') 
+					*(finder-1)=0;
+			}
+			prev1=finder;
+
+			while(*finder!=':' && !EOS(finder) && !ENDLINE(finder)) finder++;
+			if (ENDLINE(finder)||EOS(finder)){
+				// no ":" in the line? here the body begins;
+				*body = prev1;
+				break;
+			}
+			prev2=finder++;
+
+			while(WS(finder) && !EOS(finder)) finder++;
+			if(!EOS(finder))
+				prev3=finder;
+			else
+				break;
+
+			do
+			{
+				if(ENDLINEWS(finder)) finder+=2;						//after endline information continues
+				while(!ENDLINE(finder) && !EOS(finder)) finder++;
+			}while(ENDLINEWS(finder));
+
+			if (!_strnicmp(prev1,"Content-type",prev2-prev1)){
+				*ContType = prev3;
+			} else if (!_strnicmp(prev1,"Content-Transfer-Encoding",prev2-prev1)){
+				*TransEncoding = prev3;
+			}
+
+			if(EOS(finder))
+				break;
+			finder++;
+			if(ENDLINE(finder)) {
+				finder++;
+				if(ENDLINE(finder)) {
+					// end of headers. message body begins
+					if (finder>stream){
+						if (*(finder-2)=='\r' || *(finder-2)=='\n') 
+							*(finder-2)=0;
+						if (*(finder-1)=='\r' || *(finder-1)=='\n') 
+							*(finder-1)=0;
+					}
+					finder++;
+					if(ENDLINE(finder))finder++;
+					prev1 = finder;
+					while (!EOS(finder+1))finder++;
+					if (ENDLINE(finder))finder--;
+					prev2 = finder;
+					if (prev2>prev1){ // yes, we have body
+						*body = prev1;
+					}
+					break; // there is nothing else
+				}
+			}
+		}
+	}
+	catch(...)
+	{
+		MessageBox(NULL,"Translate header error","",0);
+	}
+}
+
 void ParseMultipartBody(char *src, char *bond, WCHAR **dest)
 {
+	char *srcback = _strdup(src);
+	int sizebond = strlen(bond);
+	int numparts = 1;
+	int i;
+	char *courbond = srcback;
+	for (;(courbond=strstr(courbond+sizebond,bond));numparts++);
+	char **parts = new char*[numparts];
+	parts[0] = courbond = srcback;
+	for (i=1;(courbond=strstr(courbond+sizebond,bond));i++){
+		*(courbond-2) = 0;
+		parts[i] = courbond+sizebond;
+		while (ENDLINE(parts[i])) parts[i]++;
+	}
+	for (i=0;i<numparts;i++){
+		char *body=0, *ContType=0, *TransEnc=0;
+		ParseAPart(parts[i],&ContType,&TransEnc,&body);
+	}
+	free (srcback);
+	delete[] parts;
 }
