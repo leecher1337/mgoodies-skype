@@ -30,6 +30,7 @@ copy ..\..\Docs\%name%_readme.txt
 copy ..\..\Docs\langpack_%name%.txt
 rem copy ..\..\Docs\helppack_%name%.txt
 copy ..\..\m_%name%.h
+copy ..\..\m_voice.h
 cd ..
 mkdir src
 cd src
