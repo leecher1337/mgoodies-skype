@@ -83,7 +83,7 @@ void ExtractHeader(struct CMimeItem *items,int &CP,struct CHeader *head);
 void ExtractShortHeader(struct CMimeItem *items,struct CShortHeader *head); 
 void DeleteHeaderContent(struct CHeader *head);
 char *ExtractFromContentType(char *ContentType,char *value);
-void ParseMultipartBody(char *src, char *bond, WCHAR **dest);
+WCHAR *ParseMultipartBody(char *src, char *bond);
 //From account.cpp
 void WINAPI GetStatusFcn(HACCOUNT Which,char *Value);
 //from decode.cpp
@@ -1477,7 +1477,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 						char *bondary=NULL;
 						if(NULL!=(bondary=ExtractFromContentType(contentType,"boundary=")))
 						{
-							ParseMultipartBody(body,bondary,&bodyDecoded);
+							bodyDecoded = ParseMultipartBody(body,bondary);
 							delete[] bondary;
 						}
 
