@@ -500,21 +500,36 @@ void inline ToLower(char *string)
 		if(*string>='A' && *string<='Z') *string=*string-'A'+'a';
 }
 
-
-void ParseAPart(char *stream, char **ContType, char **TransEncoding, char **body)
+#define TE_UNKNOWN
+#define TE_QUOTEDPRINTABLE 1
+#define TE_BASE64 2
+struct APartDataType
 {
-	int len = strlen(stream);
+	char *Src;//Input
+	char *ContType;
+	int CodePage;
+	char *TransEnc;
+	BYTE TransEncType; //TE_something
+	char *body;
+	int bodyLen;
+	WCHAR *wBody;
+};
+
+
+void ParseAPart(APartDataType *data)
+{
+	int len = strlen(data->Src);
 	try
 	{
-		char *finder=stream;
+		char *finder=data->Src;
 		char *prev1,*prev2,*prev3;
 
-		while(finder<=(stream+len))
+		while(finder<=(data->Src+len))
 		{
 			while(ENDLINEWS(finder)) finder++;
 
 			//at the start of line
-			if (finder>stream){
+			if (finder>data->Src){
 				if (*(finder-2)=='\r' || *(finder-2)=='\n') 
 					*(finder-2)=0;
 				if (*(finder-1)=='\r' || *(finder-1)=='\n') 
@@ -525,7 +540,7 @@ void ParseAPart(char *stream, char **ContType, char **TransEncoding, char **body
 			while(*finder!=':' && !EOS(finder) && !ENDLINE(finder)) finder++;
 			if (ENDLINE(finder)||EOS(finder)){
 				// no ":" in the line? here the body begins;
-				*body = prev1;
+				data->body = prev1;
 				break;
 			}
 			prev2=finder++;
@@ -543,9 +558,9 @@ void ParseAPart(char *stream, char **ContType, char **TransEncoding, char **body
 			}while(ENDLINEWS(finder));
 
 			if (!_strnicmp(prev1,"Content-type",prev2-prev1)){
-				*ContType = prev3;
+				data->ContType = prev3;
 			} else if (!_strnicmp(prev1,"Content-Transfer-Encoding",prev2-prev1)){
-				*TransEncoding = prev3;
+				data->TransEnc = prev3;
 			}
 
 			if(EOS(finder))
@@ -555,7 +570,7 @@ void ParseAPart(char *stream, char **ContType, char **TransEncoding, char **body
 				finder++;
 				if(ENDLINE(finder)) {
 					// end of headers. message body begins
-					if (finder>stream){
+					if (finder>data->Src){
 						if (*(finder-2)=='\r' || *(finder-2)=='\n') 
 							*(finder-2)=0;
 						if (*(finder-1)=='\r' || *(finder-1)=='\n') 
@@ -568,7 +583,7 @@ void ParseAPart(char *stream, char **ContType, char **TransEncoding, char **body
 					if (ENDLINE(finder))finder--;
 					prev2 = finder;
 					if (prev2>prev1){ // yes, we have body
-						*body = prev1;
+						data->body = prev1;
 					}
 					break; // there is nothing else
 				}
@@ -579,27 +594,106 @@ void ParseAPart(char *stream, char **ContType, char **TransEncoding, char **body
 	{
 		MessageBox(NULL,"Translate header error","",0);
 	}
+	if (data->body) data->bodyLen = strlen(data->body);
 }
 
-void ParseMultipartBody(char *src, char *bond, WCHAR **dest)
+//from decode.cpp
+int DecodeQuotedPrintable(char *Src,char *Dst,int DstLen, BOOL isQ);
+int DecodeBase64(char *Src,char *Dst,int DstLen);
+int ConvertStringToUnicode(char *stream,unsigned int cp,WCHAR **out);
+
+WCHAR *ParseMultipartBody(char *src, char *bond)
 {
 	char *srcback = _strdup(src);
 	int sizebond = strlen(bond);
 	int numparts = 1;
 	int i;
 	char *courbond = srcback;
+	WCHAR *dest;
 	for (;(courbond=strstr(courbond+sizebond,bond));numparts++);
-	char **parts = new char*[numparts];
-	parts[0] = courbond = srcback;
+	APartDataType *partData = new APartDataType[numparts];
+	memset(partData, 0, sizeof(APartDataType)*numparts);
+	partData[0].Src = courbond = srcback;
 	for (i=1;(courbond=strstr(courbond+sizebond,bond));i++){
 		*(courbond-2) = 0;
-		parts[i] = courbond+sizebond;
-		while (ENDLINE(parts[i])) parts[i]++;
+		partData[i].Src = courbond+sizebond;
+		while (ENDLINE(partData[i].Src)) partData[i].Src++;
 	}
+	int resultSize=0;
 	for (i=0;i<numparts;i++){
-		char *body=0, *ContType=0, *TransEnc=0;
-		ParseAPart(parts[i],&ContType,&TransEnc,&body);
+		ParseAPart(&partData[i]);
+		resultSize += sprintf(NULL,"%s %d",Translate("Part"),i);
+		if (partData[i].TransEnc){
+			resultSize += sprintf(NULL,": %s",partData[i].TransEnc);
+			if (!_stricmp(partData[i].TransEnc,"base64")) partData[i].TransEncType=TE_BASE64;
+			else if (!_stricmp(partData[i].TransEnc,"quoted-printable"))partData[i].TransEncType=TE_QUOTEDPRINTABLE;
+		}
+		if (partData[i].ContType){
+			char *CharSetStr;
+			if(NULL!=(CharSetStr=ExtractFromContentType(partData[i].ContType,"charset=")))
+			{
+				partData[i].CodePage=GetCharsetFromString(CharSetStr,strlen(CharSetStr));
+				delete[] CharSetStr;
+			}
+			resultSize += sprintf(NULL,": %s",partData[i].ContType);
+		}
+		resultSize += sprintf(NULL,".\n\r");
+		if (partData[i].ContType && !_strnicmp(partData[i].ContType,"text",4)) {
+			char *localBody=0;
+			switch (partData[i].TransEncType){
+				case TE_BASE64:
+				{
+					int size =partData[i].bodyLen*3/4+5;
+					localBody = new char[size+1];
+					DecodeBase64(partData[i].body,localBody,size); 
+				}break;
+				case TE_QUOTEDPRINTABLE:
+				{
+					int size = partData[i].bodyLen+2;
+					localBody = new char[size+1];
+					DecodeQuotedPrintable(partData[i].body,localBody,size,FALSE); 
+				}break;
+			}
+			ConvertStringToUnicode(localBody?localBody:partData[i].body,partData[i].CodePage,&partData[i].wBody);
+			if (localBody) delete[] localBody;
+		} else ConvertStringToUnicode(partData[i].body,partData[i].CodePage,&partData[i].wBody);
+		resultSize += wcslen(partData[i].wBody);
 	}
+	dest = new WCHAR[resultSize+1];
+	int destpos = 0;
+	//int curSize=0;
+	for (i=0;i<numparts;i++){
+		char infoline[100+1]; int linesize = 0;
+		linesize = _snprintf(infoline,100,"%s %d",Translate("Part"),i+1);
+		if (partData[i].TransEnc){
+			linesize += _snprintf(infoline+linesize,100-linesize,": %s",partData[i].TransEnc);
+		}
+		if (partData[i].ContType){
+			char *CharSetStr;
+			if(NULL!=(CharSetStr=ExtractFromContentType(partData[i].ContType,"charset=")))
+			{
+				delete[] CharSetStr;
+			}
+			linesize += _snprintf(infoline+linesize,100-linesize,": %s",partData[i].ContType);
+		}
+		linesize += _snprintf(infoline+linesize,100-linesize,".\r\n");
+		{WCHAR *temp=0;
+			ConvertStringToUnicode(infoline,CP_ACP,&temp);
+			int wsize = wcslen(temp);
+			wcscpy(&dest[destpos],temp);
+			destpos += wsize;
+			delete[] temp;
+		}
+		int wsize = wcslen(partData[i].wBody);
+		wcscpy(&dest[destpos],partData[i].wBody);
+		destpos += wsize;
+		//memcpy(*dest+(destpos*2),partData[i].wBody,partData[i].
+//		resultSize += wcslen(partData[i].wBody);
+		if (partData[i].wBody) delete[] partData[i].wBody;
+	}
+
 	free (srcback);
-	delete[] parts;
+	delete[] partData;
+	dest[resultSize] = 0;//just in case
+	return dest;
 }
