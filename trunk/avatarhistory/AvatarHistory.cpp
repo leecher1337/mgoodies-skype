@@ -206,59 +206,87 @@ BOOL IsUnicodeAscii(const WCHAR * pBuffer, int nSize)
 
 HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text, char *filename)
 {
-	if (log_text != NULL)
-	{
-		DBEVENTINFO event = { 0 };
+	if (log_text == NULL)
+		return NULL;
 
-		event.cbSize = sizeof(event);
+	DBEVENTINFO event = { 0 };
+	BYTE *tmp = NULL;
 
-		size_t len = lstrlen(log_text) + 1;
-		size_t size = len;
+	event.cbSize = sizeof(event);
+
+	size_t file_len;
+	if (filename != NULL)
+		file_len = strlen(filename) + 1;
+	else
+		file_len = 0;
+
 #ifdef UNICODE
-		size *= 3;
-#endif
-		if (filename != NULL)
-			size += strlen(filename) + 1;
 
-		BYTE *tmp = (BYTE *) mir_alloc0(size);
-#ifdef UNICODE
-		WideCharToMultiByte(CP_ACP, 0, log_text, -1, (char *) tmp, size, NULL, NULL);
-		lstrcpynW((WCHAR *) &tmp[len], log_text, len);
-		len *= 3;
+	size_t needed = WideCharToMultiByte(CP_ACP, 0, log_text, -1, NULL, 0, NULL, NULL);
+	size_t len = lstrlen(log_text) + 1;
+	size_t size;
+	BOOL isAscii = IsUnicodeAscii(log_text, len);
+
+	if (isAscii)
+		size = needed;
+	else
+		size = needed + len * sizeof(WCHAR);
+
+	tmp = (BYTE *) mir_alloc0(size + file_len);
+
+	WideCharToMultiByte(CP_ACP, 0, log_text, -1, (char *) tmp, needed, NULL, NULL);
+
+	if (!isAscii)
+		lstrcpyn((WCHAR *) &tmp[needed], log_text, len);
+
+	if (filename != NULL)
+		strcpy((char *) &tmp[size], filename);
+
+	event.pBlob = tmp;
+	event.cbBlob = size + file_len;
+
 #else
+
+	if (filename != NULL)
+	{
+		size_t len = lstrlen(log_text) + 1;
+		tmp = (BYTE *) mir_alloc0(len + file_len);
+
 		strcpy((char *) tmp, log_text);
-#endif
 		if (filename != NULL)
 			strcpy((char *) &tmp[len], filename);
 
 		event.pBlob = tmp;
-		event.cbBlob = size;
-
-		event.eventType = EVENTTYPE_AVATAR_CHANGE;
-		event.flags = DBEF_READ;
-		event.timestamp = (DWORD) time(NULL);
-
-		event.szModule = MODULE_NAME;
-		
-		// Is a subcontact?
-		if (ServiceExists(MS_MC_GETMETACONTACT)) 
-		{
-			HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
-
-			if (hMetaContact != NULL && ContactEnabled(hMetaContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
-				CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&event);
-		}
-
-		HANDLE ret = (HANDLE) CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&event);
-
-		mir_free(tmp);
-
-		return ret;
+		event.cbBlob = len + file_len;
 	}
 	else
 	{
-		return NULL;
+		event.pBlob = (PBYTE) log_text;
+		event.cbBlob = strlen(log_text) + 1;
 	}
+
+#endif
+
+	event.eventType = EVENTTYPE_AVATAR_CHANGE;
+	event.flags = DBEF_READ;
+	event.timestamp = (DWORD) time(NULL);
+
+	event.szModule = MODULE_NAME;
+	
+	// Is a subcontact?
+	if (ServiceExists(MS_MC_GETMETACONTACT)) 
+	{
+		HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
+
+		if (hMetaContact != NULL && ContactEnabled(hMetaContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
+			CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&event);
+	}
+
+	HANDLE ret = (HANDLE) CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&event);
+
+	mir_free(tmp);
+
+	return ret;
 }
 
 int PathIsAbsolute(const char *path)
