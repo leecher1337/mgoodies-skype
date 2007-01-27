@@ -95,18 +95,25 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	odp.nExpertOnlyControls = MAX_REGS(optionsExpertControls);
     CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
-	ZeroMemory(&odp,sizeof(odp));
-    odp.cbSize=sizeof(odp);
-    odp.position=0;
-	odp.hInstance=hInst;
-	odp.ptszGroup = TranslateT("Popups");
-	odp.ptszTitle = TranslateT("Status Msg Change");
-	odp.pfnDlgProc = PopupsDlgProc;
-	odp.pszTemplate = MAKEINTRESOURCEA(IDD_POPUPS);
-    odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
-	odp.expertOnlyControls = popupsExpertControls;
-	odp.nExpertOnlyControls = MAX_REGS(popupsExpertControls);
-    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+	if(ServiceExists(MS_POPUP_ADDPOPUPEX)
+#ifdef UNICODE
+		|| ServiceExists(MS_POPUP_ADDPOPUPW)
+#endif
+		)
+	{
+		ZeroMemory(&odp,sizeof(odp));
+		odp.cbSize=sizeof(odp);
+		odp.position=0;
+		odp.hInstance=hInst;
+		odp.ptszGroup = TranslateT("Popups");
+		odp.ptszTitle = TranslateT("Status Msg Change");
+		odp.pfnDlgProc = PopupsDlgProc;
+		odp.pszTemplate = MAKEINTRESOURCEA(IDD_POPUPS);
+		odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
+		odp.expertOnlyControls = popupsExpertControls;
+		odp.nExpertOnlyControls = MAX_REGS(popupsExpertControls);
+		CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+	}
 
 	return 0;
 }
