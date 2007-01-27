@@ -6,7 +6,7 @@ struct StatusIconListNode {
 	struct StatusIconListNode *next;
 };
 
-static HANDLE hHookIconPressedEvt;
+HANDLE hHookIconPressedEvt;
 static struct StatusIconListNode *status_icon_list = 0;
 static int status_icon_list_size = 0;
 

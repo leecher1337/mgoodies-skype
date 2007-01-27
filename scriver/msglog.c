@@ -31,6 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define LOGICON_MSG_OUT     1
 #define LOGICON_MSG_NOTICE  2
 
+#if defined ( _UNICODE )
+extern int RTL_Detect(WCHAR *pszwText);
+#endif
 extern HINSTANCE g_hInst;
 static int logPixelSY;
 static PBYTE pLogIconBmpBits[3];
@@ -67,6 +70,10 @@ struct EventData {
 	union {
 		char *pszText;			// Text, usage depends on type of event
 		wchar_t *pszTextW;			// Text - Unicode
+	};
+	union {
+		char *pszText2;			// Text, usage depends on type of event
+		wchar_t *pszText2W;			// Text - Unicode
 	};
 	DWORD	time;
 	DWORD	eventType;
@@ -183,7 +190,12 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 		event->pszNickW = GetNickname(event->hContact, dat->szProto);
 	}
 	if (event->eventType == EVENTTYPE_FILE) {
-		event->pszTextW = a2t(((char *) dbei.pBlob) + sizeof(DWORD));//dat->codePage);
+		char* filename = ((char *)dbei.pBlob) + sizeof(DWORD);
+		char* descr = filename + lstrlenA( filename ) + 1;
+		event->pszTextW = a2t(filename);//dat->codePage);
+		if ( *descr != 0 ) {
+			event->pszText2W = a2t(descr);//dat->codePage);
+		}
 	} else { //if (event->eventType == EVENTTYPE_MESSAGE) {
 		int msglen = strlen((char *) dbei.pBlob) + 1;
 		if (msglen != (int) dbei.cbBlob && !(dat->flags & SMF_DISABLE_UNICODE)) {
@@ -198,6 +210,9 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 			event->pszTextW = a2tcp((char *) dbei.pBlob, dat->codePage);
 		}
 	}
+	if ( RTL_Detect(event->pszTextW)) {
+		event->dwFlags |= IEEDF_RTL;
+	}
 #else
 	if (event->dwFlags & IEEDF_SENT) {
 		event->pszNick = GetNickname(NULL, dat->szProto);
@@ -205,7 +220,12 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 		event->pszNick = GetNickname(event->hContact, dat->szProto);
 	}
 	if (event->eventType == EVENTTYPE_FILE) {
-		event->pszText = mir_strdup(((char *) dbei.pBlob) + sizeof(DWORD));
+		char* filename = ((char *)dbei.pBlob) + sizeof(DWORD);
+		char* descr = filename + lstrlenA( filename ) + 1;
+		event->pszText = mir_strdup(filename);
+		if ( *descr != 0 ) {
+			event->pszText2 = mir_strdup(descr);
+		}
 	} else {
 		event->pszText = mir_strdup((char *) dbei.pBlob);
 	}
@@ -215,8 +235,15 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 }
 
 static void freeEvent(struct EventData *event) {
-	if (event->pszText != NULL) mir_free (event->pszText);
+#if defined( _UNICODE )
+	if (event->pszNickW != NULL) mir_free (event->pszNickW);
+	if (event->pszTextW != NULL) mir_free (event->pszTextW);
+	if (event->pszText2W != NULL) mir_free (event->pszText2W);
+#else
 	if (event->pszNick != NULL) mir_free (event->pszNick);
+	if (event->pszText != NULL) mir_free (event->pszText);
+	if (event->pszText2 != NULL) mir_free (event->pszText2);
+#endif
 	mir_free(event);
 }
 
@@ -530,13 +557,13 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 	if (!streamData->isFirst && isGroupBreak && (g_dat->flags & SMF_DRAWLINES)) {
 		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\sl-1\\slmult0\\highlight%d\\cf%d\\fs1  \\par\\sl0", fontOptionsListSize + 4, fontOptionsListSize + 4);
 	}
-    if ( streamData->isFirst ) {
+	if ( streamData->isFirst ) {
 		if (event->dwFlags & IEEDF_RTL) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
 		} else {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\ltrpar");
 		}
-    } else {
+	} else {
 		if (event->dwFlags & IEEDF_RTL) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\rtlpar");
 		} else {
@@ -673,6 +700,15 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 				AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszTextW);
 			} else {
 				AppendAnsiToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszText);
+			}
+			if (event->pszText2W != NULL) {
+				AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, _T(" ("));
+				if (event->dwFlags & IEEDF_UNICODE_TEXT2) {
+					AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszText2W);
+				} else {
+					AppendAnsiToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszText2);
+				}
+				AppendTToBuffer(&buffer, &bufferEnd, &bufferAlloced, _T(")"));
 			}
 			break;
 		}

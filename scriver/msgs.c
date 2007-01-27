@@ -456,9 +456,9 @@ void ChangeStatusIcons() {
 }
 
 int StatusIconPressed(WPARAM wParam, LPARAM lParam) {
-	HANDLE hContact = (HANDLE) wParam;
+//	HANDLE hContact = (HANDLE) wParam;
 	StatusIconClickData *sicd = (StatusIconClickData *) lParam;
-    HWND hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE)wParam);
+	HWND hwnd = WindowList_Find(g_dat->hMessageWindowList, (HANDLE)wParam);
 	if (hwnd == NULL) {
 		hwnd = SM_FindWindowByContact((HANDLE)wParam);
 

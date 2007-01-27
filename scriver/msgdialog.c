@@ -263,13 +263,12 @@ static char *MsgServiceName(HANDLE hContact)
 }
 
 #if defined(_UNICODE)
-static int RTL_Detect(WCHAR *pszwText)
+int RTL_Detect(WCHAR *pszwText)
 {
     WORD *infoTypeC2;
     int i;
     int iLen = lstrlenW(pszwText);
 
-//	MessageBox(NULL, pszwText, L"RTL detect" , MB_OK);
     infoTypeC2 = (WORD *)mir_alloc(sizeof(WORD) * (iLen + 2));
 
     if(infoTypeC2) {
@@ -280,13 +279,10 @@ static int RTL_Detect(WCHAR *pszwText)
         for(i = 0; i < iLen; i++) {
             if(infoTypeC2[i] == C2_RIGHTTOLEFT) {
                 mir_free(infoTypeC2);
-//				MessageBox(NULL, pszwText, L"RTL found" , MB_OK);
-                //_DebugTraceA("RTL text found");
                 return 1;
             }
         }
         mir_free(infoTypeC2);
-        //_DebugTraceA("NO RTL text detected");
     }
     return 0;
 }
@@ -2317,8 +2313,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				}
 
 				if ( RTL_Detect((wchar_t *)&msi.sendBuffer[bufSize] )) {
-                    msi.flags |= PREF_RTL;
-                }
+					msi.flags |= PREF_RTL;
+				}
 		#endif
 				if (msi.sendBuffer[0] == 0)
 					break;

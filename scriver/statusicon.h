@@ -3,9 +3,6 @@
 
 #include <windows.h>
 
-extern HANDLE hHookIconPressedEvt;
-extern int status_icon_list_size;
-
 int InitStatusIcons();
 int DeinitStatusIcons();
 
