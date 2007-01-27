@@ -50,7 +50,6 @@ static TabDef tabPages[] = {
 						 };
 
 static HWND hwndCurrentTab;
-static BOOL initialized = 0;
 
 #define FONTF_BOLD   1
 #define FONTF_ITALIC 2
