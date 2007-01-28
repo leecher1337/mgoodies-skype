@@ -1480,7 +1480,6 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 							bodyDecoded = ParseMultipartBody(body,bondary);
 							delete[] bondary;
 						}
-
 					}
 				}
 				if (!bodyDecoded)ConvertStringToUnicode(localBody?localBody:body,MailParam->mail->MailData->CP,&bodyDecoded);
