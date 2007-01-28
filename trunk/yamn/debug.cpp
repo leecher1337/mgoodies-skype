@@ -11,13 +11,16 @@
 #include <tchar.h>
 #include <stdio.h>*/
 #include "yamn.h"
+#include "version.h"
 #include "debug.h"
 #ifdef YAMN_DEBUG
 
-#ifndef WIN9X
-	#define YAMN_VER	"YAMN 0.0.1.11"
+#if defined (WIN9X)
+	#define YAMN_VER	"YAMN " YAMN_VERSION_C " (Win9x)"
+#elif defined(WIN2IN1)
+	#define YAMN_VER	"YAMN " YAMN_VERSION_C " (2in1)"
 #else
-	#define YAMN_VER	"YAMN 0.0.1.11 (Win9x)"
+	#define YAMN_VER	"YAMN " YAMN_VERSION_C " WinNT"
 #endif
 
 //--------------------------------------------------------------------------------------------------
@@ -58,21 +61,21 @@ void InitDebug()
 #ifdef DEBUG_SYNCHRO
 	_stprintf(DebugFileName,DebugSynchroFileName2,DebugUserDirectory);
 	
-	SynchroFile=CreateFile(DebugFileName,GENERIC_WRITE,FILE_SHARE_WRITE,NULL,CREATE_ALWAYS,0,NULL);
+	SynchroFile=CreateFile(DebugFileName,GENERIC_WRITE,FILE_SHARE_WRITE|FILE_SHARE_READ,NULL,CREATE_ALWAYS,0,NULL);
 	DebugLog(SynchroFile,"Synchro debug file created by %s\n",YAMN_VER);
 #endif
 
 #ifdef DEBUG_COMM
 	_stprintf(DebugFileName,DebugCommFileName2,DebugUserDirectory);
 
-	CommFile=CreateFile(DebugFileName,GENERIC_WRITE,FILE_SHARE_WRITE,NULL,CREATE_ALWAYS,0,NULL);
+	CommFile=CreateFile(DebugFileName,GENERIC_WRITE,FILE_SHARE_WRITE|FILE_SHARE_READ,NULL,CREATE_ALWAYS,0,NULL);
 	DebugLog(CommFile,"Communication debug file created by %s\n",YAMN_VER);
 #endif
 
 #ifdef DEBUG_DECODE
 	_stprintf(DebugFileName,DebugDecodeFileName2,DebugUserDirectory);
 
-	DecodeFile=CreateFile(DebugFileName,GENERIC_WRITE,FILE_SHARE_WRITE,NULL,CREATE_ALWAYS,0,NULL);
+	DecodeFile=CreateFile(DebugFileName,GENERIC_WRITE,FILE_SHARE_WRITE|FILE_SHARE_READ,NULL,CREATE_ALWAYS,0,NULL);
 	DebugLog(DecodeFile,"Decoding kernel debug file created by %s\n",YAMN_VER);
 #endif
 }
