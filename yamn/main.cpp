@@ -482,21 +482,16 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 
 #ifdef YAMN_VER_BETA
-	#ifndef YAMN_DEBUG
-	#error Configure this YAMN to be debug version
-	#endif
-
-	#ifdef NDEBUG
-	#error Please force compiler to include debug information
-	#endif
-
 	#ifdef YAMN_VER_BETA_CRASHONLY
 	MessageBox(NULL,"This YAMN beta version is intended for testing. After crash, you should send report to author. Please read included readme when available. Thank you.","YAMN beta",MB_OK);
 	#else
 	MessageBox(NULL,"This YAMN beta version is intended for testing. You should inform author if it works or when it does not work. Please read included readme when available. Thank you.","YAMN beta",MB_OK);
 	#endif
 #endif
-	
+#ifdef YAMN_DEBUG
+	MessageBox(NULL,"This YAMN creates extended debug logfiles. It is not intended for general use.","YAMN beta",MB_OK);
+#endif
+
 	return 0;
 }
 

@@ -1,7 +1,18 @@
+0.1.0.1
+============
++ Message body shown in separate edit box.
++ Support for Content-transfer-encoding: Quoted-Printable and base64
++ Recursive Content-type: multipart/ support
++ Option to auto retrieve body
+
 0.0.1.11
 ============
 + Option to use yamn as a protocol.
 * Patch by Tioduke (code cleaning)
+! Fixed the crash parsing invalid "Date" header (SPAMs or silly e-mail client) (y_b)
+! ShowMessage dialog follows Content-type header to chose the codepage (y_b)
++ Only supported codepages are shown in the options (y_b)
++ Enhance codepages support (y_b)
 
 0.0.1.10
 ============

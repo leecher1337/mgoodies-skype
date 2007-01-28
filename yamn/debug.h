@@ -1,9 +1,8 @@
 #ifndef __DEBUG_H
 #define __DEBUG_H
 
-#ifndef YAMN_DEBUG
-	//#define YAMN_DEBUG
-#endif
+//	#define YAMN_DEBUG
+
 //#define YAMN_VER_BETA
 //#define YAMN_VER_BETA_CRASHONLY
 
@@ -11,12 +10,12 @@
 
 #include <stdio.h>
 
-//#define DEBUG_SYNCHRO			//debug synchro to a file
-//#define DEBUG_COMM			//debug communiation to a file
-//#define DEBUG_DECODE			//debug header decoding to a file
-//#define DEBUG_DECODECODEPAGE		//add info about codepage used in conversion
-//#define DEBUG_DECODEBASE64		//add info about base64 result
-//#define DEBUG_DECODEQUOTED		//add info about quoted printable result
+#define DEBUG_SYNCHRO			//debug synchro to a file
+#define DEBUG_COMM			//debug communiation to a file
+#define DEBUG_DECODE			//debug header decoding to a file
+#define DEBUG_DECODECODEPAGE		//add info about codepage used in conversion
+#define DEBUG_DECODEBASE64		//add info about base64 result
+#define DEBUG_DECODEQUOTED		//add info about quoted printable result
 //#define DEBUG_FILEREAD			//debug file reading to message boxes
 //#define DEBUG_FILEREADMESSAGES		//debug file reading messages to message boxes
 
