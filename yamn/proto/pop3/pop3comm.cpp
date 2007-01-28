@@ -898,7 +898,8 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 
 			for(i=0,MsgQueuePtr=NewMails;MsgQueuePtr!=NULL;i++)
 			{
-				DataRX=MyClient->Top(MsgQueuePtr->Number);
+				BOOL autoretr = (ActualAccount->Flags & YAMN_ACC_BODY)!=0;
+				DataRX=MyClient->Top(MsgQueuePtr->Number,autoretr?100:0);
 				sprintf(accstatus,Translate("Reading new mails (%d%% done)"),100*i/msgs);
 				SetAccountStatus(ActualAccount,accstatus);
 
@@ -925,6 +926,7 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 				DebugLog(DecodeFile,"</New mail>\n");
 				#endif
 				MsgQueuePtr->Flags|=YAMN_MSG_NORMALNEW;
+				if (autoretr) MsgQueuePtr->Flags|=YAMN_MSG_BODYRECEIVED;
 
 				//We are going to filter mail. Warning!- we must not be in read access neither write access to mails when calling this service
 				//This is done, because the "NewMails" queue is not synchronised. It is because it is new queue. Only this thread uses new queue yet, it is not

@@ -343,6 +343,7 @@ BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKSSL),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKNOTLS),(IsDlgButtonChecked(hDlg,IDC_CHECKSSL)==BST_UNCHECKED) && wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKAPOP),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_AUTOBODY),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKCONTACT),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKCONTACTNICK),(IsDlgButtonChecked(hDlg,IDC_CHECKCONTACT)==BST_CHECKED) && wParam);
 	return TRUE;
@@ -442,6 +443,7 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		CheckDlgButton(hDlg,IDC_CHECKSSL,ActualAccount->Flags & YAMN_ACC_SSL23 ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKNOTLS,ActualAccount->Flags & YAMN_ACC_NOTLS ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKAPOP,ActualAccount->Flags & YAMN_ACC_APOP ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_AUTOBODY,ActualAccount->Flags & YAMN_ACC_BODY ? BST_CHECKED : BST_UNCHECKED);
 		/*CheckDlgButton(hDlg,IDC_CHECKST0,ActualAccount->StatusFlags & YAMN_ACC_ST0 ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST1,ActualAccount->StatusFlags & YAMN_ACC_ST1 ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKST2,ActualAccount->StatusFlags & YAMN_ACC_ST2 ? BST_CHECKED : BST_UNCHECKED);
@@ -518,6 +520,7 @@ BOOL DlgShowAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 		CheckDlgButton(hDlg,IDC_CHECKSSL,BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKNOTLS,BST_UNCHECKED);
 		CheckDlgButton(hDlg,IDC_CHECKAPOP,BST_UNCHECKED);
+		CheckDlgButton(hDlg,IDC_AUTOBODY,BST_UNCHECKED);
 
 		SetDlgItemText(hDlg,IDC_STSTATUS,Translate("No account selected"));
 	}
@@ -789,6 +792,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			DlgSetItemText(hDlg,(WPARAM)IDC_STLOGIN,(LPARAM)"User:");
 			DlgSetItemText(hDlg,(WPARAM)IDC_STPASS,(LPARAM)"Password:");
 			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKAPOP,(LPARAM)"APOP auth");
+			DlgSetItemText(hDlg,(WPARAM)IDC_AUTOBODY,(LPARAM)"Auto retrieve body");
 
 			DlgSetItemText(hDlg,(WPARAM)IDC_STINTERVAL,(LPARAM)"Check interval [min]:");
 			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKSND,(LPARAM)"Sound notification");
@@ -951,6 +955,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_RADIOPOPN:
 				case IDC_RADIOPOP1:
 				case IDC_CHECKAPOP:
+				case IDC_AUTOBODY:
 				case IDC_CHECKCONTACTNICK:
 				case IDC_CHECKNOTLS:
 					Changed=TRUE;
@@ -1161,7 +1166,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 							BOOL Translated,NewAcc=FALSE,Check,CheckMsg,CheckSnd,CheckIco,CheckPopup,CheckPopupW,CheckApp;
 							BOOL CheckNPopup,CheckNPopupW,CheckNMsgP,CheckFMsg,CheckFSnd,CheckFIco,CheckFPopup,CheckFPopupW;
 							BOOL CheckPopN,CheckKBN, CheckContact,CheckContactNick;
-							BOOL CheckSSL,CheckAPOP, CheckNoTLS;
+							BOOL CheckSSL,CheckAPOP, CheckABody, CheckNoTLS;
 							//BOOL Check0,Check1,Check2,Check3,Check4,Check5,Check6,Check7,Check8,Check9,
 							BOOL CheckStart,CheckForce;
 							int Length,index;
@@ -1173,6 +1178,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 								CheckSSL=(IsDlgButtonChecked(hDlg,IDC_CHECKSSL)==BST_CHECKED);
 								CheckNoTLS=(IsDlgButtonChecked(hDlg,IDC_CHECKNOTLS)==BST_CHECKED);
 								CheckAPOP=(IsDlgButtonChecked(hDlg,IDC_CHECKAPOP)==BST_CHECKED);
+								CheckABody=(IsDlgButtonChecked(hDlg,IDC_AUTOBODY)==BST_CHECKED);
 								CheckMsg=(IsDlgButtonChecked(hDlg,IDC_CHECKMSG)==BST_CHECKED);
 								CheckSnd=(IsDlgButtonChecked(hDlg,IDC_CHECKSND)==BST_CHECKED);
 								CheckIco=(IsDlgButtonChecked(hDlg,IDC_CHECKICO)==BST_CHECKED);
@@ -1381,9 +1387,10 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				        
 								ActualAccount->Flags=
 									(Check ? YAMN_ACC_ENA : 0) |
-					        			(CheckSSL ? YAMN_ACC_SSL23 : 0) |
-					        			(CheckNoTLS ? YAMN_ACC_NOTLS : 0) |
-					        			(CheckAPOP ? YAMN_ACC_APOP : 0) |
+									(CheckSSL ? YAMN_ACC_SSL23 : 0) |
+									(CheckNoTLS ? YAMN_ACC_NOTLS : 0) |
+									(CheckAPOP ? YAMN_ACC_APOP : 0) |
+									(CheckABody ? YAMN_ACC_BODY : 0) |
 									(CheckPopN ? YAMN_ACC_POPN : 0);
 				        
 								ActualAccount->StatusFlags=

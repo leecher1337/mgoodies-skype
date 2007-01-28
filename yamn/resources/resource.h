@@ -55,6 +55,7 @@
 #define IDC_STLOGIN                     1057
 #define IDC_STPASS                      1058
 #define IDC_STINTERVAL                  1059
+#define IDC_AUTOBODY                    1062
 #define IDC_BTNRESET                    1063
 #define IDC_CHECKSTART                  1064
 #define IDC_STWCHECK                    1065
