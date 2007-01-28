@@ -117,6 +117,7 @@ typedef struct CAccount
 #define YAMN_ACC_APOP	0x00000004		//Use APOP authentication
 #define YAMN_ACC_SSL23	0x00000008		//Use SSLv2,3
 #define YAMN_ACC_NOTLS	0x00000010		//Don't try StartTLS (STLS) even available
+#define YAMN_ACC_BODY	0x00000020		//Always retrieve body of the message
 	DWORD Flags;				//access only through AccountAccessSO
 
 //	YAMN account flags (set by plugin)

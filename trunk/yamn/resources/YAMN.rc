@@ -93,7 +93,7 @@ BEGIN
     IDD_POP3ACCOUNTOPT, DIALOG
     BEGIN
         VERTGUIDE, 155
-        VERTGUIDE, 240
+        VERTGUIDE, 236
     END
 
     IDD_CHOOSESTATUSMODES, DIALOG
@@ -238,48 +238,50 @@ BEGIN
     CONTROL         "",IDC_CPNT,"ColourPicker",WS_TABSTOP,135,199,10,10
     EDITTEXT        IDC_EDITNPOPS,118,212,20,12,ES_AUTOHSCROLL
     LTEXT           "",IDC_STSTATUS,147,4,161,8
-    LTEXT           "Server:",IDC_STSERVER,151,18,75,10,SS_CENTERIMAGE
-    EDITTEXT        IDC_EDITSERVER,151,29,75,12,ES_AUTOHSCROLL | WS_GROUP
+    LTEXT           "Server:",IDC_STSERVER,151,18,75,8
+    EDITTEXT        IDC_EDITSERVER,151,28,75,12,ES_AUTOHSCROLL | WS_GROUP
     LTEXT           "User:",IDC_STLOGIN,236,18,75,8
-    EDITTEXT        IDC_EDITLOGIN,236,29,75,12,ES_AUTOHSCROLL | WS_GROUP
-    LTEXT           "Password:",IDC_STPASS,236,43,75,9
-    EDITTEXT        IDC_EDITPASS,236,55,75,12,ES_PASSWORD | ES_AUTOHSCROLL | 
+    EDITTEXT        IDC_EDITLOGIN,236,28,75,12,ES_AUTOHSCROLL | WS_GROUP
+    LTEXT           "Password:",IDC_STPASS,236,42,75,8
+    EDITTEXT        IDC_EDITPASS,236,52,75,12,ES_PASSWORD | ES_AUTOHSCROLL | 
                     WS_GROUP
     LTEXT           "Default codepage:",IDC_STCP,151,42,70,8
-    COMBOBOX        IDC_COMBOCP,151,55,75,130,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_COMBOCP,151,52,75,130,CBS_DROPDOWNLIST | 
                     CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Port:",IDC_STPORT,151,73,45,10,SS_CENTERIMAGE
-    EDITTEXT        IDC_EDITPORT,199,72,27,12,ES_AUTOHSCROLL | ES_NUMBER | 
+    LTEXT           "Port:",IDC_STPORT,151,70,45,10,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDITPORT,199,69,27,12,ES_AUTOHSCROLL | ES_NUMBER | 
                     WS_GROUP
     CONTROL         "APOP auth",IDC_CHECKAPOP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,236,69,71,10
+                    WS_TABSTOP,236,69,75,10
     CONTROL         "Use SSL",IDC_CHECKSSL,"Button",BS_AUTOCHECKBOX | 
                     BS_LEFT | WS_TABSTOP,236,79,75,10
     CONTROL         "Disable STLS",IDC_CHECKNOTLS,"Button",BS_AUTOCHECKBOX | 
                     BS_LEFT | WS_TABSTOP,236,89,75,10
     CONTROL         "Startup check",IDC_CHECKSTART,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,156,89,78,15
+                    BS_NOTIFY | WS_TABSTOP,156,85,78,10
+    CONTROL         "Auto retrieve body",IDC_AUTOBODY,"Button",BS_AUTOCHECKBOX | 
+                    BS_NOTIFY | WS_TABSTOP,156,95,78,10
     CONTROL         "Check from menu",IDC_CHECKFORCE,"Button",
                     BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,156,105,78,8
-    PUSHBUTTON      "Check while...",IDC_BTNSTATUS,240,102,75,13
+    PUSHBUTTON      "Check while...",IDC_BTNSTATUS,236,102,75,13
     GROUPBOX        "Connection failure notifications",IDC_GBBADCONNECT,150,
-                    116,163,72
+                    120,163,68
     CONTROL         "Sound notification if failed",IDC_CHECKFSND,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,154,127,135,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,154,130,135,10
     CONTROL         "Message notification if failed",IDC_CHECKFMSG,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,154,140,135,10
     CONTROL         "Tray icon notification if failed",IDC_CHECKFICO,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,154,152,135,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,154,150,135,10
     CONTROL         "Popup notification if failed",IDC_CHECKFPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,154,163,118,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,154,160,118,10
     CONTROL         "",IDC_CHECKFCOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     277,160,8,10
     CONTROL         "",IDC_CPFB,"ColourPicker",WS_TABSTOP,288,160,10,10
     CONTROL         "",IDC_CPFT,"ColourPicker",WS_TABSTOP,300,160,10,10
     EDITTEXT        IDC_EDITFPOPS,278,173,20,12,ES_AUTOHSCROLL
     PUSHBUTTON      "Reset counter",IDC_BTNRESET,155,191,75,13
-    PUSHBUTTON      "Delete",IDC_BTNDEL,240,191,75,13
-    PUSHBUTTON      "Default",IDC_BTNDEFAULT,240,207,75,13
+    PUSHBUTTON      "Delete",IDC_BTNDEL,236,191,75,13
+    PUSHBUTTON      "Default",IDC_BTNDEFAULT,236,207,75,13
     LTEXT           "",IDC_STTIMELEFT,155,220,142,8
     LTEXT           "s",IDC_STATIC,140,144,8,8
     LTEXT           "s",IDC_STATIC,140,213,8,8
