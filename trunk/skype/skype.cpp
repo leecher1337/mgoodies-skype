@@ -122,7 +122,7 @@ int FreeVSApi()
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,34),
+	PLUGIN_MAKE_VERSION(0,0,0,35),
 	"Support for Skype network",
 	"leecher - tweety",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
@@ -1038,8 +1038,8 @@ void FetchMessageThread(fetchmsg_arg *args) {
 			return;
 		}
 		str[msgl]=0;
-		free(ptr);
-		free(ptr3);
+		//free(ptr);
+		//free(ptr3);
 	}
 
 	if (!QueryMsgDirection || (QueryMsgDirection && timestamp>dbei.timestamp)) {
