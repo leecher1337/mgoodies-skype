@@ -1,3 +1,9 @@
+0.1.0.2
+============
++ Pressing "Space" key will show the selected message
+! Delete message is done by DELETE key, not by '.'
+! removed some repeated code
+
 0.1.0.1
 ============
 + Message body shown in separate edit box.
