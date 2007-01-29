@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="Skype_protocol"
 	ProjectGUID="{BF1AA628-942C-42F7-A5F3-121E81584A94}"
 	RootNamespace="Skype_protocol"
@@ -16,7 +16,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
+			OutputDirectory="E:\Program Files\Miranda\plugins"
 			IntermediateDirectory=".\Debug"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
@@ -73,11 +73,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="../../bin/debug/Plugins/Skype.dll"
+				OutputFile="E:\Program Files\Miranda\plugins\Skype.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/Skype.pdb"
+				ProgramDatabaseFile="E:\Program Files\Miranda\plugins\Skype.pdb"
 				ImportLibrary=".\Debug/Skype.lib"
 				TargetMachine="1"
 			/>
