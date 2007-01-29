@@ -208,8 +208,8 @@ void LoadIcons(void)
 	eventMessageIcon = ImageList_AddIcon(g_dat->hTabIconList,LoadSkinnedIcon( SKINICON_EVENT_MESSAGE));
 	overlayIcon = ImageList_AddIcon(g_dat->hTabIconList,LoadIconEx(IDI_OVERLAY, "overlay", 0, 0));
 	ImageList_SetOverlayImage(g_dat->hTabIconList, overlayIcon, 1);
-	ImageList_AddIcon(hImageList,LoadImage(g_hInst,MAKEINTRESOURCE(IDI_BLANK),IMAGE_ICON,0,0,0));
-	ImageList_AddIcon(hImageList,LoadImage(g_hInst,MAKEINTRESOURCE(IDI_BLANK),IMAGE_ICON,0,0,0));
+	ImageList_AddIcon_Ex2(hImageList,LoadImage(g_hInst,MAKEINTRESOURCE(IDI_BLANK),IMAGE_ICON,0,0,0));
+	ImageList_AddIcon_Ex2(hImageList,LoadImage(g_hInst,MAKEINTRESOURCE(IDI_BLANK),IMAGE_ICON,0,0,0));
 	return ;
 }
 

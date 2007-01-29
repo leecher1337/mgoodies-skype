@@ -406,12 +406,12 @@ void AddIcons(void)
 {
 	if(ServiceExists(MS_SKIN2_ADDICON))
 	{
-		SKINICONDESC3 sid = {0};
+		SKINICONDESC sid = {0};
 		char szFile[MAX_PATH];
 
 		// 16x16 icons
 		sid.cx = sid.cy = 16;
-		sid.cbSize = sizeof(SKINICONDESC3);
+		sid.cbSize = sizeof(SKINICONDESC);
 
 		sid.pszSection = Translate("Chat windows");
 		GetModuleFileNameA(g_hInst, szFile, MAX_PATH);
@@ -605,7 +605,7 @@ HICON LoadIconEx(int iIndex, char * pszIcoLibName, int iX, int iY)
 		return (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)szTemp);
 	}
 
-		return (HICON)LoadImage(g_hInst,MAKEINTRESOURCE(iIndex),IMAGE_ICON,iX,iY,LR_SHARED);
+	return (HICON)LoadImage(g_hInst,MAKEINTRESOURCE(iIndex),IMAGE_ICON,iX,iY,LR_SHARED);
 }
 
 static void InitSetting(TCHAR** ppPointer, char* pszSetting, TCHAR* pszDefault)
