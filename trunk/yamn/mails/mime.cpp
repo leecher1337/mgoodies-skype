@@ -622,49 +622,52 @@ WCHAR *ParseMultipartBody(char *src, char *bond)
 	int resultSize=0;
 	for (i=0;i<numparts;i++){
 		ParseAPart(&partData[i]);
-		if (partData[i].TransEnc){
-			if (!_stricmp(partData[i].TransEnc,"base64")) partData[i].TransEncType=TE_BASE64;
-			else if (!_stricmp(partData[i].TransEnc,"quoted-printable"))partData[i].TransEncType=TE_QUOTEDPRINTABLE;
-		}
-		if (partData[i].ContType){
-			char *CharSetStr;
-			if(NULL!=(CharSetStr=ExtractFromContentType(partData[i].ContType,"charset=")))
-			{
-				partData[i].CodePage=GetCharsetFromString(CharSetStr,strlen(CharSetStr));
-				delete[] CharSetStr;
+		if (partData[i].body){
+			if (partData[i].TransEnc){
+				if (!_stricmp(partData[i].TransEnc,"base64")) partData[i].TransEncType=TE_BASE64;
+				else if (!_stricmp(partData[i].TransEnc,"quoted-printable"))partData[i].TransEncType=TE_QUOTEDPRINTABLE;
 			}
-		}
-		if (partData[i].ContType && !_strnicmp(partData[i].ContType,"text",4)) {
-			char *localBody=0;
-			switch (partData[i].TransEncType){
-				case TE_BASE64:
+			if (partData[i].ContType){
+				char *CharSetStr;
+				if(NULL!=(CharSetStr=ExtractFromContentType(partData[i].ContType,"charset=")))
 				{
-					int size =partData[i].bodyLen*3/4+5;
-					localBody = new char[size+1];
-					DecodeBase64(partData[i].body,localBody,size); 
-				}break;
-				case TE_QUOTEDPRINTABLE:
-				{
-					int size = partData[i].bodyLen+2;
-					localBody = new char[size+1];
-					DecodeQuotedPrintable(partData[i].body,localBody,size,FALSE); 
-				}break;
+					partData[i].CodePage=GetCharsetFromString(CharSetStr,strlen(CharSetStr));
+					delete[] CharSetStr;
+				}
 			}
-			ConvertStringToUnicode(localBody?localBody:partData[i].body,partData[i].CodePage,&partData[i].wBody);
-			if (localBody) delete[] localBody;
-		} else if(partData[i].ContType && !_strnicmp(partData[i].ContType,"multipart/",10)){
-			//Multipart in mulitipart recursive? should be SPAM. Ah well
-			char *bondary=NULL;
-			if(NULL!=(bondary=ExtractFromContentType(partData[i].ContType,"boundary=")))
-			{
-				partData[i].wBody = ParseMultipartBody(partData[i].body,bondary);
-				delete[] bondary;
-			} else goto FailBackRaw; //multipart with no boundary? badly formatted messages.
-		} else {
+			if (partData[i].ContType && !_strnicmp(partData[i].ContType,"text",4)) {
+				char *localBody=0;
+				switch (partData[i].TransEncType){
+					case TE_BASE64:
+					{
+						int size =partData[i].bodyLen*3/4+5;
+						localBody = new char[size+1];
+						DecodeBase64(partData[i].body,localBody,size); 
+					}break;
+					case TE_QUOTEDPRINTABLE:
+					{
+						int size = partData[i].bodyLen+2;
+						localBody = new char[size+1];
+						DecodeQuotedPrintable(partData[i].body,localBody,size,FALSE); 
+					}break;
+				}
+				ConvertStringToUnicode(localBody?localBody:partData[i].body,partData[i].CodePage,&partData[i].wBody);
+				if (localBody) delete[] localBody;
+			} else if(partData[i].ContType && !_strnicmp(partData[i].ContType,"multipart/",10)){
+				//Multipart in mulitipart recursive? should be SPAM. Ah well
+				char *bondary=NULL;
+				if(NULL!=(bondary=ExtractFromContentType(partData[i].ContType,"boundary=")))
+				{
+					partData[i].wBody = ParseMultipartBody(partData[i].body,bondary);
+					delete[] bondary;
+				} else goto FailBackRaw; //multipart with no boundary? badly formatted messages.
+			} else {
 FailBackRaw:
-			ConvertStringToUnicode(partData[i].body,partData[i].CodePage,&partData[i].wBody);
-		}
-		resultSize += wcslen(partData[i].wBody)+100+4+3; //cr+nl+0+ 3*arrow
+				ConvertStringToUnicode(partData[i].body,partData[i].CodePage,&partData[i].wBody);
+			}
+			resultSize += wcslen(partData[i].wBody);
+		}// if (partData[i].body)
+		resultSize += 100+4+3; //cr+nl+100+ 3*bullet
 	}
 	dest = new WCHAR[resultSize+1];
 	int destpos = 0;
@@ -712,12 +715,12 @@ FailBackRaw:
 				delete[] temp;
 			}
 		} // if (i)
-		int wsize = wcslen(partData[i].wBody);
-		wcscpy(&dest[destpos],partData[i].wBody);
-		destpos += wsize;
-		//memcpy(*dest+(destpos*2),partData[i].wBody,partData[i].
-//		resultSize += wcslen(partData[i].wBody);
-		if (partData[i].wBody) delete[] partData[i].wBody;
+		if (partData[i].wBody){
+			int wsize = wcslen(partData[i].wBody);
+			wcscpy(&dest[destpos],partData[i].wBody);
+			destpos += wsize;
+			delete[] partData[i].wBody;
+		}
 	}
 
 	free (srcback);
