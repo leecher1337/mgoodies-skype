@@ -3,6 +3,7 @@
 + Pressing "Space" key will show the selected message
 ! Delete message is done by DELETE key, not by '.'
 ! removed some repeated code
+! "Ok" and "Select All" buttons in mail browser are translatable
 
 0.1.0.1
 ============

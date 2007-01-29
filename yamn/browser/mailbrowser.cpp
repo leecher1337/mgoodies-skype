@@ -1599,15 +1599,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 	{
 		case WM_INITDIALOG:
 		{
-//			HIMAGELIST hIcons;
 			HACCOUNT ActualAccount;
-			WCHAR *iFromW=NULL;
-			WCHAR *iSubjectW=NULL;
-			WCHAR *iSizeW=NULL;
-			WCHAR *iDateW=NULL;
-			WCHAR *iRunAppW=NULL;
-			WCHAR *iDeleteMailsW=NULL;
-			int StrLen;
 			struct MailBrowserWinParam *MyParam=(struct MailBrowserWinParam *)lParam;
 			struct CMailWinUserInfo *mwui;
 
@@ -1638,53 +1630,19 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			DebugLog(SynchroFile,"MailBrowser:INIT:ActualAccountSO-read enter\n");
 			#endif
 
-			StrLen=MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("From"),-1,NULL,0);
-			iFromW=new WCHAR[StrLen+1];
-			MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("From"),-1,iFromW,StrLen);
+			SendMessageW(GetDlgItem(hDlg,IDC_BTNAPP),WM_SETTEXT,(WPARAM)0,(LPARAM)TranslateW(L"Run application"));
+			SendMessageW(GetDlgItem(hDlg,IDC_BTNDEL),WM_SETTEXT,(WPARAM)0,(LPARAM)TranslateW(L"Delete selected"));
+			SendMessageW(GetDlgItem(hDlg,IDC_BTNCHECKALL),WM_SETTEXT,(WPARAM)0,(LPARAM)TranslateW(L"Select All"));
+			SendMessageW(GetDlgItem(hDlg,IDC_BTNOK),WM_SETTEXT,(WPARAM)0,(LPARAM)TranslateW(L"Ok"));
 
-			StrLen=MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Subject"),-1,NULL,0);
-			iSubjectW=new WCHAR[StrLen+1];
-			MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Subject"),-1,iSubjectW,StrLen);
-
-			StrLen=MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Size"),-1,NULL,0);
-			iSizeW=new WCHAR[StrLen+1];
-			MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Size"),-1,iSizeW,StrLen);
-
-			StrLen=MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Date"),-1,NULL,0);
-			iDateW=new WCHAR[StrLen+1];
-			MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Date"),-1,iDateW,StrLen);
-
-			StrLen=MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Run application"),-1,NULL,0);
-			iRunAppW=new WCHAR[StrLen+1];
-			MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Run application"),-1,iRunAppW,StrLen);
-
-			StrLen=MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Delete selected"),-1,NULL,0);
-			iDeleteMailsW=new WCHAR[StrLen+1];
-			MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,Translate("Delete selected"),-1,iDeleteMailsW,StrLen);
-
-			SendMessageW(GetDlgItem(hDlg,IDC_BTNAPP),WM_SETTEXT,(WPARAM)0,(LPARAM)iRunAppW);
-			SendMessageW(GetDlgItem(hDlg,IDC_BTNDEL),WM_SETTEXT,(WPARAM)0,(LPARAM)iDeleteMailsW);
-
-			LVCOLUMNW lvc0={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,FromWidth,iFromW,0,0};
-			LVCOLUMNW lvc1={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,SubjectWidth,iSubjectW,0,0};
-			LVCOLUMNW lvc2={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,SizeWidth,iSizeW,0,0};
-			LVCOLUMNW lvc3={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,SizeDate,iDateW,0,0};
+			LVCOLUMNW lvc0={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,FromWidth,TranslateW(L"From"),0,0};
+			LVCOLUMNW lvc1={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,SubjectWidth,TranslateW(L"Subject"),0,0};
+			LVCOLUMNW lvc2={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,SizeWidth,TranslateW(L"Size"),0,0};
+			LVCOLUMNW lvc3={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,SizeDate,TranslateW(L"Date"),0,0};
 			SendMessageW(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMNW,(WPARAM)0,(LPARAM)&lvc0);
 			SendMessageW(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMNW,(WPARAM)1,(LPARAM)&lvc1);
 			SendMessageW(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMNW,(WPARAM)2,(LPARAM)&lvc2);
 			SendMessageW(GetDlgItem(hDlg,IDC_LISTMAILS),LVM_INSERTCOLUMNW,(WPARAM)3,(LPARAM)&lvc3);
-			if(NULL!=iFromW)
-				delete[] iFromW;
-			if(NULL!=iSubjectW)
-				delete[] iSubjectW;
-			if(NULL!=iSizeW)
-				delete[] iSizeW;
-			if(NULL!=iDateW)
-				delete[] iDateW;
-			if(NULL!=iRunAppW)
-				delete[] iRunAppW;
-			if(NULL!=iDeleteMailsW)
-				delete[] iDeleteMailsW;
 
 			if((ActualAccount->NewMailN.App!=NULL) && (wcslen(ActualAccount->NewMailN.App)))
 				EnableWindow(GetDlgItem(hDlg,IDC_BTNAPP),(WPARAM)TRUE);
