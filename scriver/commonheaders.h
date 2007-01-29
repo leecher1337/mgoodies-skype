@@ -72,12 +72,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <m_message.h>
 #include <m_file.h>
 #include <m_fontservice.h>
+#include <m_icoLib.h>
+
 #include "globals.h"
 #include "msgs.h"
 #include "msgwindow.h"
 #include "utils.h"
 
-#include "IcoLib.h"
 #include "m_smileyadd.h"
 #include "m_metacontacts.h"
 #include "m_ieview.h"
@@ -101,4 +102,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern HWND SM_FindWindowByContact(HANDLE hContact);
 
+extern int ImageList_AddIcon_Ex(HIMAGELIST hIml, HICON hIcon);
+extern int ImageList_AddIcon_Ex2(HIMAGELIST hIml, HICON hIcon);
+extern int ImageList_ReplaceIcon_Ex(HIMAGELIST hIml, int nIndex, HICON hIcon);
 #endif
