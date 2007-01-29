@@ -969,8 +969,7 @@ static int DrawMenuItem(WPARAM wParam, LPARAM lParam)
 			InflateRect(&rc, -1, -1);
 			menuCol = GetSysColor(COLOR_MENU);
 			hiliteCol = GetSysColor(COLOR_3DHIGHLIGHT);
-			hBrush =
-				CreateSolidBrush(RGB
+			hBrush = CreateSolidBrush(RGB
 				((GetRValue(menuCol) + GetRValue(hiliteCol)) / 2, (GetGValue(menuCol) + GetGValue(hiliteCol)) / 2,
 				(GetBValue(menuCol) + GetBValue(hiliteCol)) / 2));
 			FillRect(dis->hDC, &rc, hBrush);
@@ -1092,6 +1091,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "UseRTL", (BYTE) 0)) {
 				dat->flags |= SMF_RTL;
 			}
+			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "DisableUnicode", (BYTE) 0)) {
+				dat->flags |= SMF_DISABLE_UNICODE;
+			}
+			dat->flags |= ServiceExists(MS_IEVIEW_WINDOW) ? g_dat->flags & SMF_USEIEVIEW : 0;
 			{
 				PARAFORMAT2 pf2;
 				ZeroMemory((void *)&pf2, sizeof(pf2));
@@ -1110,10 +1113,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				ZeroMemory((void *)&pf2, sizeof(pf2));
 				pf2.cbSize = sizeof(pf2);
 				pf2.dwMask = PFM_RTLPARA | PFM_OFFSET | PFM_OFFSETINDENT ;
-                pf2.wEffects = PFE_RTLPARA;
-                pf2.dxOffset = 30;
-                pf2.dxStartIndent = 30;
-                SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
+				pf2.wEffects = PFE_RTLPARA;
+				pf2.dxOffset = 30;
+				pf2.dxStartIndent = 30;
+				SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
 				pf2.wEffects = 0;
 				SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
 				if (dat->flags & SMF_RTL) {
@@ -1122,10 +1125,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					SetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE,GetWindowLong(GetDlgItem(hwndDlg, IDC_LOG),GWL_EXSTYLE) & ~WS_EX_LEFTSCROLLBAR);
 				}
 			}
-			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "DisableUnicode", (BYTE) 0)) {
-				dat->flags |= SMF_DISABLE_UNICODE;
-			}
-			dat->flags |= ServiceExists(MS_IEVIEW_WINDOW) ? g_dat->flags & SMF_USEIEVIEW : 0;
 			dat->codePage = DBGetContactSettingWord(dat->hContact, SRMMMOD, "CodePage", (WORD) CP_ACP);
 			dat->ace = NULL;
 //			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
@@ -2220,16 +2219,16 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					HDC hdcMem = CreateCompatibleDC(dis->hDC);
 					HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0,0,0));
 					HBITMAP hbmMem = CreateCompatibleBitmap(dis->hDC, dat->avatarWidth, dat->avatarHeight);
-                    hPen = (HPEN)SelectObject(hdcMem, hPen);
+					hPen = (HPEN)SelectObject(hdcMem, hPen);
 					hbmMem = (HBITMAP) SelectObject(hdcMem, hbmMem);
-                    Rectangle(hdcMem, 0, 0, dat->avatarWidth, dat->avatarHeight);
+					Rectangle(hdcMem, 0, 0, dat->avatarWidth, dat->avatarHeight);
 					if (!g_dat->avatarServiceExists) {
 						BITMAP bminfo;
 						HDC hdcTemp = CreateCompatibleDC(dis->hDC);
-                        HBITMAP hbmTemp = (HBITMAP)SelectObject(hdcTemp, dat->avatarPic);
+						HBITMAP hbmTemp = (HBITMAP)SelectObject(hdcTemp, dat->avatarPic);
 						GetObject(dat->avatarPic, sizeof(bminfo), &bminfo);
 						SetStretchBltMode(hdcMem, HALFTONE);
-                        StretchBlt(hdcMem, 1, 1, dat->avatarWidth-2, dat->avatarHeight-2, hdcTemp, 0, 0, bminfo.bmWidth, bminfo.bmHeight, SRCCOPY);
+						StretchBlt(hdcMem, 1, 1, dat->avatarWidth-2, dat->avatarHeight-2, hdcTemp, 0, 0, bminfo.bmWidth, bminfo.bmHeight, SRCCOPY);
 						hbmTemp = (HBITMAP) SelectObject(hdcTemp, hbmTemp);
 						DeleteDC(hdcTemp);
 					} else {
@@ -2243,16 +2242,15 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 						adr.rcDraw.right = dat->avatarWidth-1;
 						adr.rcDraw.bottom = dat->avatarHeight -1;
 						adr.dwFlags = 0;//AVDRQ_DRAWBORDER;
-
 						adr.alpha = 0;
 						CallService(MS_AV_DRAWAVATAR, (WPARAM)0, (LPARAM)&adr);
 					}
 					BitBlt(dis->hDC, 0, 0, dat->avatarWidth, dat->avatarHeight, hdcMem, 0, 0, SRCCOPY);
 					hPen = (HPEN)SelectObject(hdcMem, hPen);
 					hbmMem = (HBITMAP) SelectObject(hdcMem, hbmMem);
-                    DeleteObject(hPen);
+					DeleteObject(hPen);
 					DeleteObject(hbmMem);
-                    DeleteDC(hdcMem);
+					DeleteDC(hdcMem);
 					return TRUE;
 				}
 				return CallService(MS_CLIST_MENUDRAWITEM, wParam, lParam);
@@ -2345,7 +2343,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		case IDC_USERMENU:
 			{
 				if(GetKeyState(VK_SHIFT) & 0x8000) {    // copy user name
-						SendMessage(hwndDlg, DM_USERNAMETOCLIP, 0, 0);
+					SendMessage(hwndDlg, DM_USERNAMETOCLIP, 0, 0);
 				}
 				else {
 					RECT rc;

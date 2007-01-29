@@ -210,7 +210,9 @@ struct EventData *getEventFromDB(struct MessageWindowData *dat, HANDLE hContact,
 			event->pszTextW = a2tcp((char *) dbei.pBlob, dat->codePage);
 		}
 	}
-	if ( RTL_Detect(event->pszTextW)) {
+	if ( dat->flags & SMF_RTL) {
+		event->dwFlags |= IEEDF_RTL;
+	} else if ( RTL_Detect(event->pszTextW)) {
 		event->dwFlags |= IEEDF_RTL;
 	}
 #else

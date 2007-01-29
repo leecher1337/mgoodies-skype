@@ -36,6 +36,24 @@ static int ackevent(WPARAM wParam, LPARAM lParam);
 
 void Chat_IconsChanged();
 
+int ImageList_AddIcon_Ex(HIMAGELIST hIml, HICON hIcon) {   
+	int res=ImageList_AddIcon(hIml, hIcon);
+	CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
+	return res;
+}
+
+int ImageList_AddIcon_Ex2(HIMAGELIST hIml, HICON hIcon)  {   
+	int res=ImageList_AddIcon(hIml, hIcon);
+	DestroyIcon(hIcon);
+	return res;
+}
+
+int ImageList_ReplaceIcon_Ex(HIMAGELIST hIml, int nIndex, HICON hIcon)  {   
+	int res=ImageList_ReplaceIcon(hIml,nIndex, hIcon);
+	CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
+	return res;
+}
+
 void LoadProtocolIcons() {
 	PROTOCOLDESCRIPTOR **pProtos;
 	int i, j, allProtoNum, k;
@@ -144,6 +162,7 @@ void RegisterIcoLibIcons() {
 		char path[MAX_PATH];
 		GetModuleFileNameA(g_hInst, path, MAX_PATH);
 		sid.cbSize = sizeof(SKINICONDESC);
+		sid.cx = sid.cy = 16;
 		sid.pszSection = "Scriver";
 		sid.pszDefaultFile = path;
 		sid.pszName = (char *) "scriver_ADD";
@@ -200,15 +219,15 @@ void RegisterIcoLibIcons() {
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		sid.pszName = (char *) "scriver_INCOMING";
-		sid.iDefaultIndex = 7;//IDI_INCOMING;
+		sid.iDefaultIndex = -IDI_INCOMING;
 		sid.pszDescription = Translate("Incoming message");
 //		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		sid.pszName = (char *) "scriver_OUTGOING";
-		sid.iDefaultIndex = 8;//IDI_OUTGOING;
+		sid.iDefaultIndex = -IDI_OUTGOING;
 		sid.pszDescription = Translate("Outgoing message");
 //		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 		sid.pszName = (char *) "scriver_NOTICE";
-		sid.iDefaultIndex = 9;//IDI_NOTICE;
+		sid.iDefaultIndex = -IDI_NOTICE;
 		sid.pszDescription = Translate("Notice");
 //		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 	}
