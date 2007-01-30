@@ -1,3 +1,8 @@
+0.1.1.0
+=======
++ Show message is open in new thread
++ Click on individual new e-mail popups shows the message window
+
 0.1.0.2
 ============
 + Pressing "Space" key will show the selected message

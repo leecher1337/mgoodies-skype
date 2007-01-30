@@ -16,6 +16,7 @@ typedef struct MailBrowserWinParam
 
 typedef struct MailShowMsgWinParam
 {
+	HANDLE ThreadRunningEV;
 	HACCOUNT account;
 	HYAMNMAIL mail;
 } YAMN_MAILSHOWPARAM, *PYAMN_MAILSHOWPARAM;
