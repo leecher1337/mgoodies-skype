@@ -586,7 +586,7 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 	NewMailPopUp.iSeconds=ActualAccount->NewMailN.PopUpTime;
 
 	NewMailPopUp.PluginWindowProc=(WNDPROC)NewMailPopUpProc;
-	NewMailPopUp.PluginData=(void *)1;					//it's new mail popup
+	NewMailPopUp.PluginData=(void *)0;					//it's new mail popup
 
 	for(msgq=(HYAMNMAIL)ActualAccount->Mails;msgq!=NULL;msgq=msgq->Next,lfoundi++)
 	{
@@ -676,6 +676,11 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 			WideCharToMultiByte(CP_ACP,0,FromStr,-1,(char *)NewMailPopUp.lpzContactName,sizeof(NewMailPopUp.lpzContactName),NULL,NULL);
 			if(!WideCharToMultiByte(CP_ACP,0,UnicodeHeader.Subject,-1,(char *)NewMailPopUp.lpzText,sizeof(NewMailPopUp.lpzText),NULL,NULL))
 				NewMailPopUp.lpzText[0]=0;
+			YAMN_MAILSHOWPARAM *MailParam = (YAMN_MAILSHOWPARAM*)malloc(sizeof(YAMN_MAILSHOWPARAM));
+			MailParam->account = ActualAccount;
+			MailParam->mail = msgq;
+			MailParam->ThreadRunningEV = 0;
+			NewMailPopUp.PluginData=MailParam;
 			CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NewMailPopUp,0);
 		}
 
@@ -751,7 +756,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		NewMailPopUp.iSeconds=ActualAccount->NewMailN.PopUpTime;
 
 		NewMailPopUp.PluginWindowProc=(WNDPROC)NewMailPopUpProc;
-		NewMailPopUp.PluginData=(void *)1;					//it's new mail popup
+		NewMailPopUp.PluginData=(void *)0;	//multiple popups
 
 		lstrcpyn(NewMailPopUp.lpzContactName,ActualAccount->Name,sizeof(NewMailPopUp.lpzContactName));
 		sprintf(NewMailPopUp.lpzText,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
@@ -879,56 +884,71 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 	return;
 }
 
+DWORD WINAPI ShowEmailThread(LPVOID Param);
 LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam) 
 {
-	DWORD PluginParam;
+	DWORD PluginParam=0;
 	switch(msg)
 	{
 		case WM_COMMAND:
-			if((HIWORD(wParam)==STN_CLICKED) && (msg==WM_COMMAND) && (CallService(MS_POPUP_GETPLUGINDATA,(WPARAM)hWnd,(LPARAM)&PluginParam)))	//if clicked and it's new mail popup window
+			if((HIWORD(wParam)==STN_CLICKED) && (-1!=CallService(MS_POPUP_GETPLUGINDATA,(WPARAM)hWnd,(LPARAM)&PluginParam)))	//if clicked and it's new mail popup window
 			{
-				HACCOUNT ActualAccount;
-				HANDLE hContact;
-				DBVARIANT dbv;
-
-				hContact=(HANDLE)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
-
-				if(!DBGetContactSetting((HANDLE) hContact,ProtoName,"Id",&dbv)) 
-				{
-					ActualAccount=(HACCOUNT) CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
-					DBFreeVariant(&dbv);
-				}
-				else
-					ActualAccount = (HACCOUNT) hContact;
-
-
-				#ifdef DEBUG_SYNCHRO
-				DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read wait\n");
-				#endif
-				if(WAIT_OBJECT_0==WaitToReadFcn(ActualAccount->AccountAccessSO))
-				{
-					#ifdef DEBUG_SYNCHRO
-					DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read enter\n");
-					#endif
-					switch(msg)
-					{
-						case WM_COMMAND:
+				if (PluginParam){
+					PYAMN_MAILSHOWPARAM MailParam = new YAMN_MAILSHOWPARAM;
+					memcpy(MailParam,(PVOID)PluginParam,sizeof(YAMN_MAILSHOWPARAM));
+					if(NULL!=(MailParam->ThreadRunningEV=CreateEvent(NULL,FALSE,FALSE,NULL))){
+						HANDLE NewThread;
+						if(NULL!=(NewThread=CreateThread(NULL,0,ShowEmailThread,(PVOID)MailParam,0,NULL)))
 						{
-							YAMN_MAILBROWSERPARAM Param={(HANDLE)0,ActualAccount,YAMN_ACC_MSG}; //(ActualAccount->NewMailN.Flags & ~YAMN_ACC_POP) | YAMN_ACC_MSGP,(ActualAccount->NoNewMailN.Flags & ~YAMN_ACC_POP) | YAMN_ACC_MSGP};
-
-							RunMailBrowserSvc((WPARAM)&Param,(LPARAM)YAMN_MAILBROWSERVERSION);
+							CloseHandle(NewThread);
 						}
-						break;
+						CloseHandle(MailParam->ThreadRunningEV);
+					}
+					//delete MailParam;
+				} else {
+					HACCOUNT ActualAccount;
+					HANDLE hContact;
+					DBVARIANT dbv;
+
+					hContact=(HANDLE)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
+
+					if(!DBGetContactSetting((HANDLE) hContact,ProtoName,"Id",&dbv)) 
+					{
+						ActualAccount=(HACCOUNT) CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
+						DBFreeVariant(&dbv);
+					}
+					else
+						ActualAccount = (HACCOUNT) hContact;
+
+
+					#ifdef DEBUG_SYNCHRO
+					DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read wait\n");
+					#endif
+					if(WAIT_OBJECT_0==WaitToReadFcn(ActualAccount->AccountAccessSO))
+					{
+						#ifdef DEBUG_SYNCHRO
+						DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read enter\n");
+						#endif
+						switch(msg)
+						{
+							case WM_COMMAND:
+							{
+								YAMN_MAILBROWSERPARAM Param={(HANDLE)0,ActualAccount,YAMN_ACC_MSG}; //(ActualAccount->NewMailN.Flags & ~YAMN_ACC_POP) | YAMN_ACC_MSGP,(ActualAccount->NoNewMailN.Flags & ~YAMN_ACC_POP) | YAMN_ACC_MSGP};
+
+								RunMailBrowserSvc((WPARAM)&Param,(LPARAM)YAMN_MAILBROWSERVERSION);
+							}
+							break;
+						}
+						#ifdef DEBUG_SYNCHRO
+						DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read done\n");
+						#endif
+						ReadDoneFcn(ActualAccount->AccountAccessSO);
 					}
 					#ifdef DEBUG_SYNCHRO
-					DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read done\n");
+					else
+						DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read enter failed\n");
 					#endif
-					ReadDoneFcn(ActualAccount->AccountAccessSO);
 				}
-				#ifdef DEBUG_SYNCHRO
-				else
-					DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read enter failed\n");
-				#endif
 				SendMessageW(hWnd,UM_DESTROYPOPUP,0,0);
 			}
 
@@ -944,9 +964,11 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 			}
 			SendMessageW(hWnd,UM_DESTROYPOPUP,0,0);
 			break;			
-		case UM_FREEPLUGINDATA:
-			//Here we'd free our own data, if we had it.
+		case UM_FREEPLUGINDATA:{
+			PVOID mpd = PUGetPluginData(hWnd);
+			if ((mpd) && (int)mpd!=-1) free(mpd);
 			return FALSE;
+			}
 		case UM_INITPOPUP:
 			//This is the equivalent to WM_INITDIALOG you'd get if you were the maker of dialog popups.
 			WindowList_Add(YAMNVar.MessageWnds,hWnd,NULL);
@@ -1508,6 +1530,21 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			SendMessage(hListView, WM_SETREDRAW, 1, 0);
 			SendMessage(hDlg, WM_SIZE, 0, HeadSizeY<<16|HeadSizeX);
 			} break;
+		case WM_YAMN_STOPACCOUNT:
+		{
+			PYAMN_MAILSHOWPARAM MailParam  = (PYAMN_MAILSHOWPARAM)
+				(lParam?lParam:GetWindowLong(hDlg,DWL_USER));
+
+			if(NULL==MailParam)
+				break;
+			if((HACCOUNT)wParam!=MailParam->account)
+				break;
+			#ifdef DEBUG_SYNCHRO
+			DebugLog(SynchroFile,"ShowMessage:STOPACCOUNT:sending destroy msg\n");
+			#endif
+			DestroyWindow(hDlg);
+		}
+			return 1;
 		case WM_CTLCOLORSTATIC: 
 			//here should be check if this is our edittext control. 
 			//but we have only one static control (for now);
@@ -1537,9 +1574,9 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			//	DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEY,HeadSizeY);
 			//	DBWriteContactSettingWord(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSSPLIT,HeadSplitPos);
 			//}
-			PYAMN_MAILSHOWPARAM MailParam  = (PYAMN_MAILSHOWPARAM)(GetWindowLong(hDlg,DWL_USER));
-			MailParam->mail->MsgWindow = NULL;
-			delete MailParam;
+			//PYAMN_MAILSHOWPARAM MailParam  = (PYAMN_MAILSHOWPARAM)(GetWindowLong(hDlg,DWL_USER));
+			//MailParam->mail->MsgWindow = NULL;
+			PostQuitMessage(1);
 		}
 		break;
 		case WM_SYSCOMMAND:
@@ -1597,6 +1634,44 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			return 0;
 	}
 	return 0;
+}
+
+DWORD WINAPI ShowEmailThread(LPVOID Param){
+	struct MailShowMsgWinParam MyParam;
+	MyParam=*(struct MailShowMsgWinParam *)Param;
+
+	#ifdef DEBUG_SYNCHRO
+	DebugLog(SynchroFile,"MailBrowser:Incrementing \"using threads\" %x (account %x)\n",MyParam.account->UsingThreads,MyParam.account);
+	#endif
+	SCIncFcn(MyParam.account->UsingThreads);
+	SetEvent(MyParam.ThreadRunningEV);
+	if (MyParam.mail->MsgWindow){
+		//if (!BringWindowToTop(MyParam.mail->MsgWindow)) {
+		if (!SetForegroundWindow(MyParam.mail->MsgWindow)) {
+			SendMessage(MyParam.mail->MsgWindow,WM_DESTROY,0,0);
+			MyParam.mail->MsgWindow = 0;
+			goto CREADTEVIEWMESSAGEWINDOW;
+		}else{
+			if (IsIconic(MyParam.mail->MsgWindow)){
+				OpenIcon(MyParam.mail->MsgWindow);
+			}
+		}
+	} else {
+CREADTEVIEWMESSAGEWINDOW:
+		MyParam.mail->MsgWindow = CreateDialogParamW(YAMNVar.hInst,MAKEINTRESOURCEW(IDD_DLGSHOWMESSAGE),NULL,(DLGPROC)DlgProcYAMNShowMessage,(LPARAM)&MyParam);
+		WindowList_Add(YAMNVar.MessageWnds,MyParam.mail->MsgWindow,NULL);
+		MSG msg;
+		while(GetMessage(&msg,NULL,0,0)){
+			if(!IsDialogMessage(MyParam.mail->MsgWindow, &msg)){
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+		}	}
+		WindowList_Remove(YAMNVar.MessageWnds,MyParam.mail->MsgWindow);
+		MyParam.mail->MsgWindow = NULL;
+	}
+	SCDecFcn(MyParam.account->UsingThreads);
+	delete Param;
+	return 1;
 }
 
 BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
@@ -1920,19 +1995,20 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				ActualMail=(HYAMNMAIL)item.lParam;
 				if(NULL!=ActualMail)
 				{
-					if (ActualMail->MsgWindow) {
-						if (!BringWindowToTop(ActualMail->MsgWindow)) {
-							SendMessage(ActualMail->MsgWindow,WM_DESTROY,0,0);
-							ActualMail->MsgWindow = 0;
-							goto CREADTEVIEWMESSAGEWINDOW;
+					//ShowEmailThread
+					PYAMN_MAILSHOWPARAM MailParam = new YAMN_MAILSHOWPARAM;
+					MailParam->account = GetWindowAccount(hDlg);
+					MailParam->mail = ActualMail;
+					if(NULL!=(MailParam->ThreadRunningEV=CreateEvent(NULL,FALSE,FALSE,NULL))){
+						HANDLE NewThread;
+						if(NULL!=(NewThread=CreateThread(NULL,0,ShowEmailThread,MailParam,0,NULL)))
+						{
+							//WaitForSingleObject(MailParam->ThreadRunningEV,INFINITE);
+							CloseHandle(NewThread);
 						}
-					} else {
-CREADTEVIEWMESSAGEWINDOW:
-						PYAMN_MAILSHOWPARAM MailParam = new YAMN_MAILSHOWPARAM;
-						MailParam->account = GetWindowAccount(hDlg);
-						MailParam->mail = ActualMail;
-						ActualMail->MsgWindow = CreateDialogParamW(YAMNVar.hInst,MAKEINTRESOURCEW(IDD_DLGSHOWMESSAGE),NULL,(DLGPROC)DlgProcYAMNShowMessage,(LPARAM)MailParam);
+						CloseHandle(MailParam->ThreadRunningEV);
 					}
+					//delete MailParam;
 				}
 			}
 		} break;
