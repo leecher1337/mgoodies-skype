@@ -1508,10 +1508,16 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			SendMessage(hListView, WM_SETREDRAW, 1, 0);
 			SendMessage(hDlg, WM_SIZE, 0, HeadSizeY<<16|HeadSizeX);
 			} break;
+		case WM_CTLCOLORSTATIC: 
+			//here should be check if this is our edittext control. 
+			//but we have only one static control (for now);
+			SetBkColor((HDC)wParam, GetSysColor(COLOR_WINDOW));
+			SetTextColor((HDC)wParam, GetSysColor(COLOR_WINDOWTEXT));
+			return (BOOL)GetSysColorBrush(COLOR_WINDOW);;
 		case WM_DESTROY:
 		{
 			RECT coord;
-			if(GetWindowRect(hDlg,&coord))	//the YAMNVar.Shutdown testing is because M<iranda strange functionality at shutdown phase, when call to DBWriteContactSetting freezes calling thread
+			if(GetWindowRect(hDlg,&coord))
 			{
 				HeadPosX=coord.left;
 				HeadSizeX=coord.right-coord.left;
