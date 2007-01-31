@@ -231,6 +231,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 		hMenuItemMain = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 
 	mi.flags = mi.flags;
+	mi.pszName = Translate("Check &mail (This Account)");
 	mi.pszContactOwner = ProtoName;
 	mi.pszService = MS_YAMN_CLISTCONTEXT;
 	hMenuItemCont = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
