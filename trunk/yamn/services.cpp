@@ -211,7 +211,7 @@ static int AccountMailCheck(WPARAM wParam, LPARAM lParam){
 			#endif
 			if((ActualAccount->Flags & YAMN_ACC_ENA) && ActualAccount->Plugin->Fcn->SynchroFcnPtr)
 			{
-				struct CheckParam ParamToPlugin={YAMN_CHECKVERSION,ThreadRunningEV,ActualAccount,YAMN_FORCECHECK,(void *)0,NULL};
+				struct CheckParam ParamToPlugin={YAMN_CHECKVERSION,ThreadRunningEV,ActualAccount,lParam?YAMN_FORCECHECK:YAMN_NORMALCHECK,(void *)0,NULL};
 				HANDLE NewThread;
 
 				ActualAccount->TimeLeft=ActualAccount->Interval;

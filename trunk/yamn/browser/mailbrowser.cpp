@@ -1511,8 +1511,19 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				SetFocus(hEdit);
 			}
 			if (!(MailParam->mail->Flags & YAMN_MSG_BODYRECEIVED)) {
-				MailParam->mail->Flags |= YAMN_MSG_BODYREQESTED;
+				MailParam->mail->Flags |= YAMN_MSG_BODYREQUESTED;
 				CallService(MS_YAMN_ACCOUNTCHECK,(WPARAM)MailParam->account,0);
+			} else {
+				if (MailParam->mail->Flags & YAMN_MSG_UNSEEN){
+					MailParam->mail->Flags&=~YAMN_MSG_UNSEEN; //mark the message as seen
+					HWND hMailBrowser;
+					if (hMailBrowser=WindowList_Find(YAMNVar.NewMailAccountWnd,MailParam->account)){
+						struct CChangeContent Params={MailParam->account->NewMailN.Flags,MailParam->account->NoNewMailN.Flags};	//if this thread created window, just post message to update mails
+						SendMessageW(hMailBrowser,WM_YAMN_CHANGECONTENT,(WPARAM)MailParam->account,(LPARAM)&Params);	//we ensure this will do the thread who created the browser window
+					} else {
+						UpdateMails(NULL,MailParam->account,MailParam->account->NewMailN.Flags,MailParam->account->NoNewMailN.Flags);
+					}
+				}
 			}
 			ShowWindow(GetDlgItem(hDlg, IDC_SPLITTER),(MailParam->mail->Flags & YAMN_MSG_BODYRECEIVED)?SW_SHOW:SW_HIDE);
 			ShowWindow(hEdit,(MailParam->mail->Flags & YAMN_MSG_BODYRECEIVED)?SW_SHOW:SW_HIDE);
@@ -1641,7 +1652,7 @@ DWORD WINAPI ShowEmailThread(LPVOID Param){
 	MyParam=*(struct MailShowMsgWinParam *)Param;
 
 	#ifdef DEBUG_SYNCHRO
-	DebugLog(SynchroFile,"MailBrowser:Incrementing \"using threads\" %x (account %x)\n",MyParam.account->UsingThreads,MyParam.account);
+	DebugLog(SynchroFile,"ShowMessage:Incrementing \"using threads\" %x (account %x)\n",MyParam.account->UsingThreads,MyParam.account);
 	#endif
 	SCIncFcn(MyParam.account->UsingThreads);
 	SetEvent(MyParam.ThreadRunningEV);
@@ -1669,6 +1680,9 @@ CREADTEVIEWMESSAGEWINDOW:
 		WindowList_Remove(YAMNVar.MessageWnds,MyParam.mail->MsgWindow);
 		MyParam.mail->MsgWindow = NULL;
 	}
+	#ifdef DEBUG_SYNCHRO
+	DebugLog(SynchroFile,"ShowMessage:Decrementing \"using threads\" %x (account %x)\n",MyParam.account->UsingThreads,MyParam.account);
+	#endif
 	SCDecFcn(MyParam.account->UsingThreads);
 	delete Param;
 	return 1;
