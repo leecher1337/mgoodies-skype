@@ -89,7 +89,7 @@ struct CExportedServices
 //AccountCheck Service
 //Check mail on individual account
 //WPARAM- HACCOUNT
-//LPARAM- not used
+//LPARAM- BOOL: Show Popup on no new mail
 #define MS_YAMN_ACCOUNTCHECK	"YAMN/Service/AccountCheck"
 
 //Contact List Context Menu Click

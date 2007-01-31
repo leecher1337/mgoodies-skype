@@ -120,7 +120,7 @@ typedef struct CMimeMsgQueue
 #define YAMN_MSG_AUTODELETE	0x00002000	//this mail is about to delete from server (plugin marks it for deleting)
 #define YAMN_MSG_DELETEOK	0x00001000	//this mail is confirmed to delete (this flag must be set to delete this mail)
 
-#define YAMN_MSG_BODYREQESTED	0x00000800	//user requested (part of) the body. In POP3 it should be (TOP <nr> <lines>)
+#define YAMN_MSG_BODYREQUESTED	0x00000800	//user requested (part of) the body. In POP3 it should be (TOP <nr> <lines>)
 #define YAMN_MSG_BODYRECEIVED	0x00000200	//(part of) the body.received;
 #define YAMN_MSG_STAYUNSEEN	0x00000400	//this mail stays unseen while user does not really see it
 

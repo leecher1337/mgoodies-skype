@@ -821,7 +821,7 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 		#endif
 		ActualAccount->LastChecked=now;
 		for(MsgQueuePtr=(HYAMNMAIL)ActualAccount->Mails;MsgQueuePtr!=NULL;MsgQueuePtr=MsgQueuePtr->Next){
-			if (MsgQueuePtr->Flags&YAMN_MSG_BODYREQESTED){
+			if (MsgQueuePtr->Flags&YAMN_MSG_BODYREQUESTED){
 				HYAMNMAIL NewMsgsPtr=NULL;
 				for(NewMsgsPtr=(HYAMNMAIL)NewMails;NewMsgsPtr!=NULL;NewMsgsPtr=NewMsgsPtr->Next){
 					if (!strcmp(MsgQueuePtr->ID,NewMsgsPtr->ID)){
@@ -882,8 +882,8 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 		#endif
 		MsgsWriteDone(ActualAccount);
 		for(MsgQueuePtr=(HYAMNMAIL)ActualAccount->Mails;MsgQueuePtr!=NULL;MsgQueuePtr=MsgQueuePtr->Next){
-			if ((MsgQueuePtr->Flags&YAMN_MSG_BODYREQESTED) && (MsgQueuePtr->Flags&YAMN_MSG_BODYRECEIVED)){
-				MsgQueuePtr->Flags&=~YAMN_MSG_BODYREQESTED;
+			if ((MsgQueuePtr->Flags&YAMN_MSG_BODYREQUESTED) && (MsgQueuePtr->Flags&YAMN_MSG_BODYRECEIVED)){
+				MsgQueuePtr->Flags&=~YAMN_MSG_BODYREQUESTED;
 				if (MsgQueuePtr->MsgWindow){
 					SendMessage(MsgQueuePtr->MsgWindow,WM_YAMN_CHANGECONTENT,0,0);
 				}
