@@ -30,7 +30,7 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,1),
+	PLUGIN_MAKE_VERSION(0,0,2,2),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -40,6 +40,19 @@ PLUGININFO pluginInfo = {
 	0	//doesn't replace anything built-in
 };
 
+typedef struct
+{
+	TCHAR* szDescr;
+	char* szName;
+	int   defIconID;
+} IconStruct;
+
+static IconStruct iconList[] =
+{
+	{  _T("Enabled"),       "spellchecker_enabled",       IDI_CHECK         },
+	{  _T("Disabled"),      "spellchecker_disabled",      IDI_NO_CHECK      },
+	{  _T("Unknown Flag"),  "spellchecker_unknown_flag",  IDI_UNKNOWN_FLAG  },
+};
 
 #define TIMER_ID 17982
 
@@ -47,12 +60,10 @@ PLUGININFO pluginInfo = {
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 
-HANDLE hModulesLoaded = NULL;
-HANDLE hPreShutdownHook = NULL;
-HANDLE hMsgWindowEvent = NULL;
-HANDLE hMsgWindowPopup = NULL;
-HANDLE hIconsChanged = NULL;
-HANDLE hIconPressed = NULL;
+HANDLE hHooks[5];
+HANDLE hServices[3];
+
+HANDLE hIconsChanged;
 
 HANDLE hDictionariesFolder = NULL;
 TCHAR dictionariesFolder[1024];
@@ -66,12 +77,6 @@ TCHAR flagsFolder[1024];
 HANDLE hFlagsDllFolder = NULL;
 TCHAR flagsDllFolder[1024];
 
-HINSTANCE hFlagsDll = NULL;
-
-HICON hEnabledIcon;
-HICON hDisabledIcon;
-HICON hUnknownFlag;
-
 HBITMAP hCheckedBmp;
 BITMAP bmpChecked;
 
@@ -80,8 +85,10 @@ BOOL loaded = FALSE;
 
 Dictionaries languages = {0};
 
-map<HWND, Dialog *> dialogs;
-map<HWND, Dialog *> menus;
+typedef map<HWND, Dialog *> DialogMapType;
+
+DialogMapType dialogs;
+DialogMapType menus;
 
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int PreShutdown(WPARAM wParam, LPARAM lParam);
@@ -150,6 +157,41 @@ DEFINE_GUIDXXX(IID_ITextDocument,0x8CC497C0,0xA1DF,0x11CE,0x80,0x98,
 
 // Functions ////////////////////////////////////////////////////////////////////////////
 
+HICON LoadIconEx(char* iconName, bool copy)
+{
+	HICON hIcon = NULL;
+
+	if (hIconsChanged)
+	{
+		hIcon = (HICON)CallService(MS_SKIN2_GETICON, 0, (LPARAM)iconName);
+		if (copy)
+		{
+			hIcon = CopyIcon(hIcon);
+			CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)iconName);
+		}
+
+	}
+	else
+		for (int i = 0; i < MAX_REGS(iconList); ++i)
+		{
+			if (strcmp(iconList[i].szName, iconName) == 0)
+				hIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(iconList[i].defIconID), 
+					IMAGE_ICON, 0, 0, 0);
+		}
+
+	return hIcon;
+}
+
+
+void ReleaseIconEx(HICON hIcon)
+{
+	if (hIconsChanged)
+		CallService(MS_SKIN2_RELEASEICON, (WPARAM)hIcon, 0);
+	else
+		DestroyIcon(hIcon);
+}
+
+
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
 {
@@ -171,10 +213,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	init_mir_malloc();
 
 	// hooks
-	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
-	hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
+	hHooks[0] = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
+	hHooks[1] = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
-	hCheckedBmp = LoadBitmap(NULL, (LPCTSTR) OBM_CHECK);
+	hCheckedBmp = LoadBitmap(NULL, MAKEINTRESOURCE(OBM_CHECK));
 	if (GetObject(hCheckedBmp, sizeof(bmpChecked), &bmpChecked) == 0)
 		bmpChecked.bmHeight = bmpChecked.bmWidth = 10;
 
@@ -183,14 +225,12 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 extern "C" int __declspec(dllexport) Unload(void) 
 {
+	unsigned i;
+
 	DeleteObject(hCheckedBmp);
 
-	DestroyServiceFunction(MS_SPELLCHECKER_ADD_RICHEDIT);
-	DestroyServiceFunction(MS_SPELLCHECKER_REMOVE_RICHEDIT);
-	DestroyServiceFunction(MS_SPELLCHECKER_SHOW_POPUP_MENU);
-
-	if (hFlagsDll != NULL)
-		FreeLibrary(hFlagsDll);
+	for(i=0; i<MAX_REGS(hServices); ++i)
+		DestroyServiceFunction(hServices[i]);
 
 	return 0;
 }
@@ -276,97 +316,82 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		lstrcpy(customDictionariesFolder, dictionariesFolder);
 	}
 
-	if (ServiceExists(MS_SKIN2_ADDICON)) 
+	char path[MAX_PATH];
+
+	SKINICONDESC sid = {0};
+	sid.cbSize = sizeof(SKINICONDESC);
+	sid.flags = SIDF_TCHAR;
+	sid.ptszSection = TranslateT("Spell Checker");
+	sid.pszDefaultFile = path;
+
+	GetModuleFileNameA(hInst, path, sizeof(path));
+
+	for (unsigned i = 0; i < MAX_REGS(iconList); ++i)
 	{
-		SKINICONDESC sid = {0};
-		sid.cbSize = sizeof(SKINICONDESC);
-		sid.flags = SIDF_TCHAR;
-		sid.ptszSection = TranslateT("Spell Checker");
-
-		sid.ptszDescription = TranslateT("Enabled");
-		sid.pszName = "spellchecker_enabled";
-		sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_CHECK), IMAGE_ICON, 16, 16, 0);
+		sid.ptszDescription = TranslateTS(iconList[i].szDescr);
+		sid.pszName = iconList[i].szName;
+		sid.iDefaultIndex = -iconList[i].defIconID;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		sid.ptszDescription = TranslateT("Disabled");
-		sid.pszName = "spellchecker_disabled";
-		sid.hDefaultIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_NO_CHECK), IMAGE_ICON, 16, 16, 0);
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		sid.ptszDescription = TranslateT("Unknown Flag");
-		sid.pszName = "spellchecker_unknown_flag";
-		sid.hDefaultIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_UNKNOWN_FLAG), IMAGE_ICON, 16, 16, 0);
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-		hEnabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_enabled");
-		hDisabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_disabled");
-		hUnknownFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_unknown_flag");
-
-		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
 	}
-	else
-	{		
-		hEnabledIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_CHECK), IMAGE_ICON, 16, 16, 0);
-		hDisabledIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_NO_CHECK), IMAGE_ICON, 16, 16, 0);
-		hUnknownFlag = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_UNKNOWN_FLAG), IMAGE_ICON, 16, 16, 0);
-	}
+
+	hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
 
 	languages = GetAvaibleDictionaries(dictionariesFolder, customDictionariesFolder, flagsFolder);
+
+	InitOptions();
 
 	{
 		// Load flags dll
 		TCHAR flag_file[1024];
 		mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\flags.dll"), flagsDllFolder);
 
-		hFlagsDll = LoadLibrary(flag_file);
+		SKINICONDESC sid = {0};
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.flags = SIDF_TCHAR | SIDF_SORTED;
+		sid.ptszSection = TranslateT("Spell Checker/Flags");
 
-		// Get language flags
-		for(int i = 0; i < languages.count; i++)
+		if (opts.use_flags)
 		{
-			// First from dll
-			if (hFlagsDll != NULL)
-				languages.dicts[i]->hFlag = (HICON) LoadImage(hFlagsDll, languages.dicts[i]->language, IMAGE_ICON, 16, 16, 0);
+			HMODULE hFlagsDll = LoadLibrary(flag_file);
 
-			if (languages.dicts[i]->hFlag == NULL) {
-				// Now from ico
-				TCHAR flag_file[1024];
-				mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\%s.ico"), flagsFolder, languages.dicts[i]->language);
-				languages.dicts[i]->hFlag = (HICON) LoadImage(NULL, flag_file, IMAGE_ICON, ICON_SIZE, ICON_SIZE, LR_LOADFROMFILE);
-			}
-
-			// Oki, lets add to IcoLib, then
-			if (ServiceExists(MS_SKIN2_ADDICON)) 
+			// Get language flags
+			for(unsigned i = 0; i < languages.count; i++)
 			{
-				SKINICONDESC sid = {0};
-				sid.cbSize = sizeof(SKINICONDESC);
-				sid.flags = SIDF_TCHAR | SIDF_SORTED;
-				sid.ptszSection = TranslateT("Spell Checker/Flags");
 				sid.ptszDescription = languages.dicts[i]->full_name;
-#ifdef UNICODE
+	#ifdef UNICODE
 				char lang[10];
 				mir_snprintf(lang, MAX_REGS(lang), "%S", languages.dicts[i]->language);
 				sid.pszName = lang;
-#else
+	#else
 				sid.pszName = languages.dicts[i]->language;
-#endif
+	#endif
 
+				// First from dll
+				if (hFlagsDll != NULL)
+					languages.dicts[i]->hFlag = (HICON) LoadImage(hFlagsDll, languages.dicts[i]->language, IMAGE_ICON, 16, 16, 0);
+
+				if (languages.dicts[i]->hFlag == NULL) {
+					// Now from ico
+					TCHAR flag_file[1024];
+					mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\%s.ico"), flagsFolder, languages.dicts[i]->language);
+					languages.dicts[i]->hFlag = (HICON) LoadImage(NULL, flag_file, IMAGE_ICON, ICON_SIZE, ICON_SIZE, LR_LOADFROMFILE);
+				}
+
+				// Oki, lets add to IcoLib, then
 				sid.hDefaultIcon = languages.dicts[i]->hFlag;
-				CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-#ifdef UNICODE
-				languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) lang);
-#else
-				languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) languages.dicts[i]->language);
-#endif
+				if (CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid) != CALLSERVICE_NOTFOUND)
+				{
+					DestroyIcon(languages.dicts[i]->hFlag);
+					languages.dicts[i]->hFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) sid.pszName);
+				}
 			}
+			FreeLibrary(hFlagsDll);
 		}
 	}
 
-	InitOptions();
-
 	if (opts.default_language[0] != _T('\0'))
 	{
-		for(int i = 0; i < languages.count; i++)
+		for(unsigned i = 0; i < languages.count; i++)
 		{
 			if (lstrcmp(languages.dicts[i]->language, opts.default_language) == 0)
 			{
@@ -376,21 +401,21 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		}
 	}
 
-	hMsgWindowEvent = HookEvent(ME_MSG_WINDOWEVENT,&MsgWindowEvent);
-	hMsgWindowPopup = HookEvent(ME_MSG_WINDOWPOPUP,&MsgWindowPopup);
-	hIconPressed = HookEvent(ME_MSG_ICONPRESSED,&IconPressed);
+	hHooks[2] = HookEvent(ME_MSG_WINDOWEVENT,&MsgWindowEvent);
+	hHooks[3] = HookEvent(ME_MSG_WINDOWPOPUP,&MsgWindowPopup);
+	hHooks[4] = HookEvent(ME_MSG_ICONPRESSED,&IconPressed);
 
-	CreateServiceFunction(MS_SPELLCHECKER_ADD_RICHEDIT, AddContactTextBoxService);
-	CreateServiceFunction(MS_SPELLCHECKER_REMOVE_RICHEDIT, RemoveContactTextBoxService);
-	CreateServiceFunction(MS_SPELLCHECKER_SHOW_POPUP_MENU, ShowPopupMenuService);
+	hServices[0] = CreateServiceFunction(MS_SPELLCHECKER_ADD_RICHEDIT, AddContactTextBoxService);
+	hServices[1] = CreateServiceFunction(MS_SPELLCHECKER_REMOVE_RICHEDIT, RemoveContactTextBoxService);
+	hServices[2] = CreateServiceFunction(MS_SPELLCHECKER_SHOW_POPUP_MENU, ShowPopupMenuService);
 
 	if (ServiceExists(MS_MSG_ADDICON))
 	{
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.hIcon = CopyIcon(hEnabledIcon);
-		sid.hIconDisabled = CopyIcon(hDisabledIcon);
+		sid.hIcon = LoadIconEx("spellchecker_enabled", true);
+		sid.hIconDisabled = LoadIconEx("spellchecker_disabled", true);
 		sid.szTooltip = Translate("Spell Checker");
 		CallService(MS_MSG_ADDICON, 0, (LPARAM) &sid);
 	}
@@ -403,12 +428,10 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 int IconsChanged(WPARAM wParam, LPARAM lParam) 
 {
-	hEnabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_enabled");
-	hDisabledIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_disabled");
-	hUnknownFlag = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "spellchecker_unknown_flag");
-	
-	for(int i = 0; i < languages.count; i++)
+	for(unsigned i = 0; i < languages.count; i++)
 	{
+		ReleaseIconEx(languages.dicts[i]->hFlag);
+		
 #ifdef UNICODE
 		char lang[10];
 		mir_snprintf(lang, MAX_REGS(lang), "%S", languages.dicts[i]->language);
@@ -423,8 +446,8 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.hIcon = CopyIcon(hEnabledIcon);
-		sid.hIconDisabled = CopyIcon(hDisabledIcon);
+		sid.hIcon = LoadIconEx("spellchecker_enabled", true);
+		sid.hIconDisabled = LoadIconEx("spellchecker_disabled", true);
 		sid.szTooltip = Translate("Spell Checker");
 		CallService(MS_MSG_MODIFYICON, 0, (LPARAM) &sid);
 	}
@@ -449,29 +472,17 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 	{
 		UnhookEvent(hIconsChanged);
 
-		CallService(MS_SKIN2_RELEASEICON, (WPARAM) hEnabledIcon, 0);
-		CallService(MS_SKIN2_RELEASEICON, (WPARAM) hDisabledIcon, 0);
-		CallService(MS_SKIN2_RELEASEICON, (WPARAM) hUnknownFlag, 0);
-		
-		for(int i = 0; i < languages.count; i++)
-			CallService(MS_SKIN2_RELEASEICON, (WPARAM) languages.dicts[i]->hFlag, 0);
+		for(unsigned i = 0; i < languages.count; i++)
+			ReleaseIconEx(languages.dicts[i]->hFlag);
 	}
 	else 
 	{
-		DestroyIcon(hEnabledIcon);
-		DestroyIcon(hDisabledIcon);
-		DestroyIcon(hUnknownFlag);
-		
-		for(int i = 0; i < languages.count; i++)
+		for(unsigned i = 0; i < languages.count; i++)
 			DestroyIcon(languages.dicts[i]->hFlag);
 	}
 
-	if (hMsgWindowPopup != NULL)
-		UnhookEvent(hMsgWindowPopup);
-
-	UnhookEvent(hMsgWindowEvent);
-	UnhookEvent(hModulesLoaded);
-	UnhookEvent(hPreShutdownHook);
+	for(unsigned i=0; i<MAX_REGS(hHooks); ++i)
+		UnhookEvent(hHooks[i]);
 
 	return 0;
 }
@@ -740,9 +751,11 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct,
 
 LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	Dialog *dlg = dialogs[hwnd];
-	if (dlg == NULL)
+	DialogMapType::iterator dlgit = dialogs.find(hwnd);
+	if (dlgit == dialogs.end())
 		return -1;
+
+	Dialog* dlg = dlgit->second;
 
 	LRESULT ret = CallWindowProc(dlg->old_edit_proc, hwnd, msg, wParam, lParam);
 
@@ -867,7 +880,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 int GetClosestLanguage(TCHAR *lang_name) 
 {
 	// Search the language by name
-	for(int i = 0; i < languages.count; i++)
+	for(unsigned i = 0; i < languages.count; i++)
 	{
 		if (lstrcmpi(languages.dicts[i]->language, lang_name) == 0)
 		{
@@ -880,7 +893,7 @@ int GetClosestLanguage(TCHAR *lang_name)
 	if (p != NULL)
 	{
 		*p = _T('\0');
-		for(int i = 0; i < languages.count; i++)
+		for(unsigned i = 0; i < languages.count; i++)
 		{
 			if (lstrcmpi(languages.dicts[i]->language, lang_name) == 0)
 			{
@@ -895,7 +908,7 @@ int GetClosestLanguage(TCHAR *lang_name)
 	if (p == NULL)
 	{
 		size_t len = lstrlen(lang_name);
-		for(int i = 0; i < languages.count; i++)
+		for(unsigned i = 0; i < languages.count; i++)
 		{
 			if (_tcsnicmp(languages.dicts[i]->language, lang_name, len) == 0 
 				&& languages.dicts[i]->language[len] == _T('_'))
@@ -914,7 +927,7 @@ void GetUserProtoLanguageSetting(Dialog *dlg, HANDLE hContact, char *proto, char
 
 	if (!DBGetContactSettingTString(hContact, proto, setting, &dbv))
 	{
-		for(int i = 0; i < languages.count; i++)
+		for(unsigned i = 0; i < languages.count; i++)
 		{
 			if (lstrcmpi(languages.dicts[i]->localized_name, dbv.ptszVal) == 0)
 			{
@@ -1026,8 +1039,8 @@ void ModifyIcon(Dialog *dlg)
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.hIcon = (dlg->lang == NULL || dlg->lang->hFlag == NULL ? hUnknownFlag : dlg->lang->hFlag);
-		sid.hIconDisabled = hDisabledIcon;
+		sid.hIcon = (dlg->lang == NULL || dlg->lang->hFlag == NULL ? LoadIconEx("spellchecker_unknown_flag", true) : CopyIcon(dlg->lang->hFlag));
+		sid.hIconDisabled = LoadIconEx("spellchecker_disabled", true);
 		sid.flags = (dlg->enabled ? 0 : MBF_DISABLED);
 
 		char tooltip[1024];
@@ -1069,13 +1082,11 @@ int AddContactTextBoxService(WPARAM wParam, LPARAM lParam)
 
 int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hwndOwner) 
 {
-	if (dialogs[hwnd] == NULL)
+	if (dialogs.find(hwnd) == dialogs.end())
 	{
 		// Fill dialog data
 		Dialog *dlg = (Dialog *) malloc(sizeof(Dialog));
 		ZeroMemory(dlg, sizeof(Dialog));
-
-		dialogs[hwnd] = dlg;
 
 		dlg->hContact = hContact;
 		dlg->hwnd = hwnd;
@@ -1085,12 +1096,20 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 		dlg->hwnd_owner = hwndOwner;
 
 		SendMessage(hwnd, EM_GETOLEINTERFACE, 0, (LPARAM)&dlg->ole);
+		if (dlg->ole == NULL)
+		{
+			free(dlg);
+			return 0;
+		}
+
 		if (dlg->ole->QueryInterface(IID_ITextDocument, (void**)&dlg->textDocument) != S_OK)
 			dlg->textDocument = NULL;
 
 		GetContactLanguage(dlg);
 
 		dlg->old_edit_proc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG) EditProc);
+
+		dialogs[hwnd] = dlg;
 
 		SetTimer(hwnd, TIMER_ID, 500, NULL);
 
@@ -1119,7 +1138,7 @@ void FreePopupData(Dialog *dlg)
 
 	if (dlg->wrong_words != NULL)
 	{
-		for (int i = 0; i < dlg->wrong_words->size(); i++)
+		for (unsigned i = 0; i < dlg->wrong_words->size(); i++)
 		{
 			FREE((*dlg->wrong_words)[i].word)
 
@@ -1148,10 +1167,11 @@ int RemoveContactTextBoxService(WPARAM wParam, LPARAM lParam)
 
 int RemoveContactTextBox(HWND hwnd) 
 {
-	Dialog *dlg = dialogs[hwnd];
-
-	if (dlg != NULL) 
+	DialogMapType::iterator dlgit = dialogs.find(hwnd);
+	if (dlgit != dialogs.end())
 	{
+		Dialog *dlg = dlgit->second;
+		
 		KillTimer(hwnd, TIMER_ID);
 
 		SetWindowLong(hwnd, GWL_WNDPROC, (LONG) dlg->old_edit_proc);
@@ -1392,7 +1412,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 			dlg->old_menu_proc = (WNDPROC) SetWindowLong(dlg->hwnd_menu_owner, GWL_WNDPROC, (LONG) MenuWndProc);
 
 		// First add languages
-		for(int i = 0; i < languages.count; i++)
+		for(unsigned i = 0; i < languages.count; i++)
 		{
 			AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0),
 				//| (dlg->hwnd_menu_owner != NULL ? MF_OWNERDRAW : 0), 
@@ -1433,7 +1453,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 }
 
 
-BOOL HandleMenuSelection(Dialog *dlg, POINT pt, int selection)
+BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 {
 	BOOL ret = FALSE;
 
@@ -1563,9 +1583,11 @@ int ShowPopupMenuService(WPARAM wParam, LPARAM lParam)
 
 int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt, HWND hwndOwner)
 {
-	Dialog *dlg = dialogs[hwnd];
-	if (dlg == NULL) 
+	DialogMapType::iterator dlgit = dialogs.find(hwnd);
+	if (dlgit == dialogs.end())
 		return -1;
+
+	Dialog *dlg = dlgit->second;
 
 	if (pt.x == 0xFFFF && pt.y == 0xFFFF)
 	{
@@ -1638,7 +1660,7 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 	// Find the dialog
 	HWND hwnd = NULL;
 	Dialog *dlg;
-	for(map<HWND, Dialog *>::iterator it = dialogs.begin(); it != dialogs.end(); it++)
+	for(DialogMapType::iterator it = dialogs.begin(); it != dialogs.end(); it++)
 	{
 		dlg = it->second;
 		if (dlg->srmm && dlg->hContact == hContact)
@@ -1668,7 +1690,7 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 			}
 
 			// First add languages
-			for(int i = 0; i < languages.count; i++)
+			for(unsigned i = 0; i < languages.count; i++)
 			{
 				AppendMenu(hMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0),
 					//| (dlg->hwnd_menu_owner != NULL ? MF_OWNERDRAW : 0), 
@@ -1701,9 +1723,11 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 
 LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	Dialog *dlg = menus[hwnd];
-	if (dlg == NULL)
+	DialogMapType::iterator dlgit = menus.find(hwnd);
+	if (dlgit == menus.end())
 		return -1;
+
+	Dialog *dlg = dlgit->second;
 
 	switch (msg) 
 	{
@@ -1714,7 +1738,7 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			int count = GetMenuItemCount(hMenu);
 			for(int i = 0; i < count; i++)
 			{
-				int id = GetMenuItemID(hMenu, i);
+				unsigned id = GetMenuItemID(hMenu, i);
 				if (id < LANGUAGE_MENU_ID_BASE || id >= LANGUAGE_MENU_ID_BASE + languages.count) 
 					continue;
 
@@ -1769,10 +1793,12 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			rc.left += bmpChecked.bmWidth + 2;
 
 			// Draw icon
-			HICON hFlag = (dict->hFlag == NULL ? hUnknownFlag : dict->hFlag);
+			HICON hFlag = (dict->hFlag == NULL ? LoadIconEx("spellchecker_unknown_flag") : dict->hFlag);
 
 			rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - ICON_SIZE) / 2;
 			DrawIconEx(lpdis->hDC, rc.left, rc.top, hFlag, 16, 16, 0, NULL, DI_NORMAL);
+
+			if (dict->hFlag == NULL) ReleaseIconEx(hFlag);
 
 			rc.left += ICON_SIZE + 4;
 
@@ -1827,4 +1853,5 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	return CallWindowProc(dlg->old_menu_proc, hwnd, msg, wParam, lParam);
 }
+
 

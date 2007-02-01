@@ -502,7 +502,7 @@ BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
 	TCHAR name[10];
 	mir_sntprintf(name, MAX_REGS(name), _T("%s_%s"), ini, end);
 
-	for(int i = 0; i < tmp_dicts->count; i++)
+	for(unsigned i = 0; i < tmp_dicts->count; i++)
 	{
 		if (lstrcmpi(tmp_dicts->dicts[i]->language, name) == 0)
 		{

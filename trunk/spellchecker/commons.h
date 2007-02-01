@@ -131,12 +131,8 @@ struct Dialog {
 	vector<WrongWordPopupMenuData> *wrong_words;
 };
 
+HICON LoadIconEx(char* iconName, bool copy = false);
+void ReleaseIconEx(HICON hIcon);
 
-
-extern HICON hEnabledIcon;
-extern HICON hDisabledIcon;
-extern HICON hUnknownFlag;
-
-extern HINSTANCE hFlagsDll;
 
 #endif // __COMMONS_H__
