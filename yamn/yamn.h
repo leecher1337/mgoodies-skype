@@ -53,7 +53,9 @@
 
 //From services.cpp
 void CreateServiceFunctions(void);
+void DestroyServiceFunctions(void);
 void HookEvents(void);
+void UnhookEvents(void);
 void RefreshContact(void);
 void ContactDoubleclicked(WPARAM wParam,LPARAM lParam);
 int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam);
