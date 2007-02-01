@@ -530,9 +530,16 @@ HYAMNMAIL WINAPI CreatePOP3Mail(HACCOUNT Account,DWORD MailDataVersion)
 	return (HYAMNMAIL)NewMail;
 }
 
+static void SetContactStatus(HACCOUNT account, int status){
+	if ((account->hContact) && (account->NewMailN.Flags & YAMN_ACC_CONT)){
+		DBWriteContactSettingWord(account->hContact, ProtoName, "Status", status);
+	}
+}
+
 static void PostErrorProc(HPOP3ACCOUNT ActualAccount,void *ParamToBadConnection,DWORD POP3PluginParam,BOOL UseSSL)
 {
 	char *DataRX;
+
 //We create new structure, that we pass to bad connection dialog procedure. This procedure next calls YAMN imported fuction
 //from POP3 protocol to determine the description of error. We can describe error from our error code structure, because later,
 //when YAMN calls our function, it passes us our error code. This is pointer to structure for POP3 protocol in fact. 
@@ -692,13 +699,13 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 		SCDec(ActualAccount->UsingThreads);
 		return 0;
 	}
-
 	UsingInternet=TRUE;
 
 	GetLocalTime(&now);
 	ActualAccount->SystemError=0;					//now we can use internet for this socket. First, clear errorcode.
 	try
 	{
+		SetContactStatus(ActualAccount,ID_STATUS_OCCUPIED);
 		#ifdef DEBUG_COMM
 		DebugLog(CommFile,"<--------Communication-------->\n");
 		#endif
@@ -1015,6 +1022,7 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 				Param.nnflags=Param.nnflags | (YAMN_ACC_POP | YAMN_ACC_MSGP);				//if force check, show popup anyway and if mailbrowser was opened, do not close
 			CallService(MS_YAMN_MAILBROWSER,(WPARAM)&Param,(LPARAM)YAMN_MAILBROWSERVERSION);
 		}
+		SetContactStatus(ActualAccount,ID_STATUS_ONLINE);
 	}
 	#ifdef DEBUG_COMM
 	catch(DWORD ErrorCode)
@@ -1068,8 +1076,8 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 			#endif
 			SetEvent(ActualAccount->UseInternetFree);
 		}
+		SetContactStatus(ActualAccount,ID_STATUS_NA);
 	}
-
 	free(ActualCopied.ServerName);
 	free(ActualCopied.ServerLogin);
 	free(ActualCopied.ServerPasswd);
