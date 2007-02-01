@@ -225,14 +225,6 @@ void LoadIcons()
 			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 			if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconNames[i]))hYamnIcons[i]=temp; 
 		}
-		{ // for new core
-			char *iconname = "core_status_YAMN1";
-			sid.iDefaultIndex = -104;
-			sid.pszName = iconname;
-			sid.pszDescription = Translate("Offline");
-			sid.hDefaultIcon = hYamnIcons[1];
-			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-		}
 		// <deprecated>
 		DBVARIANT dbv;
 		if(!DBGetContactSetting(NULL,"SkinIcons","YAMN_Neutral",&dbv)) 
