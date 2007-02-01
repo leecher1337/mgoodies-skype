@@ -195,10 +195,13 @@ void SetDefaultProtocolIcons()
 	lstrcpy(szFileName, szMirandaDir);
 	lstrcat(szFileName, "\\icons\\proto_YAMN.dll");
 
-	if(_access(szFileName, 0) == 0)
+	if(_access(szFileName, 0) == 0){
 		DBDeleteContactSetting(NULL, "Icons", "YAMN40072");
-	else
+		DBDeleteContactSetting(NULL, "SkinIcons", "core_status_YAMN1");
+	}else{
 		DBWriteContactSettingString(NULL, "Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
+		DBWriteContactSettingString(NULL, "SkinIcons", "core_status_YAMN1", "plugins\\YAMN.dll,-119");
+	}
 }
 
 void LoadIcons()
@@ -222,18 +225,30 @@ void LoadIcons()
 			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 			if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconNames[i]))hYamnIcons[i]=temp; 
 		}
+		{ // for new core
+			char *iconname = "core_status_YAMN1";
+			sid.iDefaultIndex = -104;
+			sid.pszName = iconname;
+			sid.pszDescription = Translate("Offline");
+			sid.hDefaultIcon = hYamnIcons[1];
+			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		}
+		// <deprecated>
 		DBVARIANT dbv;
 		if(!DBGetContactSetting(NULL,"SkinIcons","YAMN_Neutral",&dbv)) 
 		{
 			DBWriteContactSettingString(NULL, "Icons", "YAMN40072", (char *)dbv.pszVal);			
+			DBWriteContactSettingString(NULL, "SkinIcons", "core_status_YAMN1", (char *)dbv.pszVal);			
 			DBFreeVariant(&dbv);
 		}
 		else
 			SetDefaultProtocolIcons();
+		// </deprecated>
 	}
 	else
 	{
 		//Icon to show in contact list
+		//This is deprecated. We keep it only for core withoud core icolib
 		SetDefaultProtocolIcons();
 	}
 
@@ -368,22 +383,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	}
 	ImageList_Destroy(CSImages);
 	hYamnIcons[6] = hYamnIcons[4];
-	if(ServiceExists(MS_SKIN2_ADDICON))
-	{
-		//Icon to show in contact list
-		DBVARIANT dbv;
-		if(!DBGetContactSetting(NULL,"SkinIcons","YAMN_Neutral",&dbv)) 
-		{
-			DBWriteContactSettingString(NULL, "Icons", "YAMN40072", (char *)dbv.pszVal);			
-			DBFreeVariant(&dbv);
-		}
-		else
-			DBWriteContactSettingString(NULL,"Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
-	}
-	else
-	{
-		DBWriteContactSettingString(NULL, "Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
-	}
 
 	//Registering YAMN as protocol
 	PROTOCOLDESCRIPTOR pd;

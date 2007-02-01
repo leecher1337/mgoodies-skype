@@ -42,8 +42,6 @@ extern HYAMNPROTOPLUGIN POP3Plugin;
 
 static int Service_GetCaps(WPARAM wParam, LPARAM lParam)
 {
-	if(wParam==PFLAGNUM_2 && DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0))
-		return PF2_ONLINE | PF2_SHORTAWAY;
 	if(wParam==PFLAGNUM_3)
 		return 0;
 	if(wParam==PFLAGNUM_4)
@@ -54,6 +52,12 @@ static int Service_GetCaps(WPARAM wParam, LPARAM lParam)
         return 400;
 	if(wParam==PFLAG_UNIQUEIDSETTING)
         return (int) "Id";
+	if(DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0)){
+		if(wParam==PFLAGNUM_2)
+			return PF2_ONLINE;
+		//if (wParam=PFLAGNUM_5) // this crashes miranda
+		//	return PF2_LONGAWAY | PF2_LIGHTDND;
+	}
 	return 0;
 }
 
@@ -66,22 +70,23 @@ static int Service_SetStatus(WPARAM wParam,LPARAM lParam)
 {	
 	switch((int)wParam)
 	{
-		case ID_STATUS_ONLINE:
+		//case ID_STATUS_ONLINE:
+		default:
 			YAMN_STATUS = ID_STATUS_ONLINE;
-			RefreshContact();
+			//RefreshContact();
 			break;
 		case ID_STATUS_OFFLINE:
 			YAMN_STATUS = ID_STATUS_OFFLINE;
-			RefreshContact();
+			//RefreshContact();
 			break;
-		default:
-			YAMN_STATUS = DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0) ? wParam : ID_STATUS_ONLINE;
-			RefreshContact();
-			break;
+		//default:
+		//	YAMN_STATUS = DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0) ? wParam : ID_STATUS_ONLINE;
+		//	RefreshContact();
+		//	break;
 	}
 
-//	char t[150];
-//	sprintf(t,"%i",wParam);
+	//char t[150];
+	//sprintf(t,"%i",wParam);
 	//MessageBox(NULL,t,"Test",0);
 	return 0;
 
@@ -95,12 +100,13 @@ static int Service_GetName(WPARAM wParam, LPARAM lParam)
 
 static int Service_LoadIcon(WPARAM wParam,LPARAM lParam)
 {
-	switch LOWORD( wParam ) {
-	case PLI_PROTOCOL: return (int)CopyIcon(hYamnIcons[0]);
-	case PLI_ONLINE: return (int)CopyIcon(hYamnIcons[2]);
-	case PLI_OFFLINE: return (int)CopyIcon(hYamnIcons[3]);
-	default: return (int)(HICON)NULL;
-	}
+	return (int)CopyIcon(hYamnIcons[0]); // noone cares about other than PLI_PROTOCOL
+	//switch LOWORD( wParam ) {
+	//case PLI_PROTOCOL: return (int)CopyIcon(hYamnIcons[0]);
+	//case PLI_ONLINE: return (int)CopyIcon(hYamnIcons[2]);
+	//case PLI_OFFLINE: return (int)CopyIcon(hYamnIcons[3]);
+	//default: return (int)(HICON)NULL;
+	//}
 }
  
 /*static*/ int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
