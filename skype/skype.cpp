@@ -1769,10 +1769,12 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 #endif
 
    RequestedStatus=MirandaStatusToSkype((int)wParam);
+
+   InterlockedExchange((long*)&SkypeStatus, (int)wParam);
+   ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
    
    if ((int)wParam==ID_STATUS_OFFLINE) 
    {
-       logoff_contacts();
 	   if (UnloadOnOffline) {
 		   if (AttachStatus!=-1) 
 		   {
@@ -1790,9 +1792,8 @@ int SkypeSetStatus(WPARAM wParam, LPARAM lParam)
 				   _spawnl(_P_NOWAIT, skype_path, skype_path, "/SHUTDOWN", NULL);
 			   }
 		   }
-		   InterlockedExchange((long*)&SkypeStatus, (int)wParam);
-		   ProtoBroadcastAck(pszSkypeProtoName, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE) oldStatus, SkypeStatus);
-	 	   SkypeInitialized=FALSE;
+	 	   logoff_contacts();
+		   SkypeInitialized=FALSE;
 		   ResetEvent(SkypeReady);
 		   AttachStatus=-1;
 		   if (hWnd) KillTimer (hWnd, 1);

@@ -13,6 +13,9 @@ CODE
 
 HISTORY
 -------
+0.0.0.36 - ! When settings skype offline, first set proto off then contacts.
+		   * move the broadcast of status change out of if statement in status change.
+
 0.0.0.35 - * Use unicode nick, status message, city and country in skype profile.
            ! Fix for sending status change when offline
 		   * Do not send message to skype if not attached (avoid trying to connect to api at startup)
