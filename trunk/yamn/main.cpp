@@ -35,8 +35,8 @@ extern LPCRITICAL_SECTION FileWritingCS;
 
 WCHAR *ProfileName;		//e.g. "majvan"
 WCHAR *UserDirectory;		//e.g. "F:\WINNT\Profiles\UserXYZ"
-char *ProtoName;
-char *AltProtoName;
+char *ProtoName=YAMN_DBMODULE;
+//char *AltProtoName;
 char *szMirandaDir;
 
 int YAMN_STATUS;
@@ -332,7 +332,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	pluginLink=link;
 
-	ProtoName = "YAMN";
+	//ProtoName = "YAMN";
 	YAMN_STATUS = ID_STATUS_ONLINE;
 
 	// Enumerate all the code pages available for the System Locale
@@ -456,14 +456,17 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	CallService(MS_SKIN_ADDNEWSOUND,0,(LPARAM)&NewMailSound);
 	CallService(MS_SKIN_ADDNEWSOUND,0,(LPARAM)&ConnectFailureSound);
 
+	/*
+	// this does nothing - the event is never fired
 	hNewMailHook=CreateHookableEvent(ME_YAMN_NEWMAIL);
+	*/	
 //	hUninstallPluginsHook=CreateHookableEvent(ME_YAMN_UNINSTALLPLUGINS);
 
 	HookEvents();
 	//Check if icolib is there
-	if(ServiceExists(MS_SKIN2_ADDICON)){
-        HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
-	}
+	//if(ServiceExists(MS_SKIN2_ADDICON)){
+    //    HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
+	//}
 	//  Loading Icon and checking for icolib 
 	LoadIcons();
 
@@ -565,6 +568,9 @@ extern "C" int __declspec(dllexport) Unload(void)
 	delete PluginRegCS;
 
 	delete CodePageNamesSupp;
+
+	UnhookEvents();
+	DestroyServiceFunctions();
 
 	return 0;
 }
