@@ -109,7 +109,7 @@ void LoadOptions()
 		DBFreeVariant(&dbv);
 	}
 
-	for(int i = 0; i < languages.count; i++)
+	for(unsigned i = 0; i < languages.count; i++)
 		if (lstrcmp(languages.dicts[i]->language, opts.default_language) == 0)
 			break;
 
@@ -124,7 +124,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 	{
 		case WM_INITDIALOG:
 		{
-			int i, sel = -1;
+			unsigned i, sel = UINT_MAX;
 			for(i = 0; i < languages.count; i++)
 			{
 				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_ADDSTRING, 0, (LONG) languages.dicts[i]->full_name);
@@ -133,8 +133,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				if (lstrcmp(opts.default_language, languages.dicts[i]->language) == 0)
 					sel = i;
 			}
-			if (sel > -1)
-				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETCURSEL, sel, 0);
+			SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETCURSEL, sel, 0);
 
 			SendDlgItemMessage(hwndDlg, IDC_UNDERLINE_TYPE, CB_ADDSTRING, 0, (LONG) TranslateT("Line"));
 			SendDlgItemMessage(hwndDlg, IDC_UNDERLINE_TYPE, CB_ADDSTRING, 0, (LONG) TranslateT("Dotted"));
@@ -165,8 +164,8 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
 			{
-				int sel = SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_GETCURSEL, 0, 0);
-				if (sel >= languages.count || sel < 0)
+				unsigned sel = SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_GETCURSEL, 0, 0);
+				if (sel >= languages.count)
 					sel = 0;
 				DBWriteContactSettingTString(NULL, MODULE_NAME, "DefaultLanguage", 
 					(TCHAR *) languages.dicts[sel]->language);
@@ -199,12 +198,14 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			// Draw icon
 			if (opts.use_flags)
 			{
-				HICON hFlag = (dict->hFlag == NULL ? hUnknownFlag : dict->hFlag);
+				HICON hFlag = (dict->hFlag == NULL ? LoadIconEx("spellchecker_unknown_flag") : dict->hFlag);
 
 				rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - ICON_SIZE) / 2;
 				DrawIconEx(lpdis->hDC, rc.left, rc.top, hFlag, 16, 16, 0, NULL, DI_NORMAL);
 
 				rc.left += ICON_SIZE + 4;
+				
+				if (dict->hFlag == NULL) ReleaseIconEx(hFlag);
 			}
 
 			// Draw text
@@ -240,4 +241,5 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 	return SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
+
 
