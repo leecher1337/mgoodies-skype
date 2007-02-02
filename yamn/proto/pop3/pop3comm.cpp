@@ -159,13 +159,6 @@ YAMN_PROTOREGISTRATION POP3ProtocolRegistration=
 
 WCHAR *FileName=NULL;
 
-HANDLE hMenuItemMain = 0;
-HANDLE hMenuItemCont = 0;
-HANDLE hMenuItemContApp = 0;
-extern char* iconNames[];
-extern char* iconDescs[];
-extern HICON hYamnIcons[];
-extern YAMN_VARIABLES YAMNVar;
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
@@ -216,64 +209,6 @@ void WINAPI StopPOP3Account(HACCOUNT Which)
 //This function is like main function for POP3 internal protocol
 int RegisterPOP3Plugin(WPARAM,LPARAM)
 {
-	CLISTMENUITEM mi;
-
-	//Insert "Check mail (YAMN)" item to Miranda's menu
-	ZeroMemory(&mi,sizeof(mi));
-	mi.cbSize = sizeof(mi);
-	mi.position = 0xb0000000;
-	mi.flags = CMIM_ICON;
-	mi.hIcon = hYamnIcons[5];
-	mi.pszName = Translate("Check &mail (All Account)");
-	mi.pszPopupName = ProtoName;
-	mi.pszService = MS_YAMN_FORCECHECK;
-	if(DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWMAINMENU, 0))
-		hMenuItemMain = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
-
-	mi.flags = mi.flags;
-	mi.pszName = Translate("Check &mail (This Account)");
-	mi.pszContactOwner = ProtoName;
-	mi.pszService = MS_YAMN_CLISTCONTEXT;
-	hMenuItemCont = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
-
-	mi.flags = mi.flags;
-	mi.hIcon = hYamnIcons[4];
-	mi.pszName = Translate("Launch application");
-	mi.pszContactOwner = ProtoName;
-	mi.pszService = MS_YAMN_CLISTCONTEXTAPP;
-	hMenuItemContApp = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
-
-//#ifndef WIN2IN1
-	//Use for the Updater plugin
-	if(ServiceExists(MS_UPDATE_REGISTER)) 
-	{
-		Update update = {0};
-		char szVersion[16];
-		char szUrl[250];
-
-		update.szComponentName = pluginInfo.shortName;
-		update.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szVersion);
-		update.cpbVersion = strlen((char *)update.pbVersion);
-		#ifdef YAMN_9x
-		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2166";
-		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2166";
-		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">YAMN tweety win9x ";
-		#else
-		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2165";
-		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2165";
-		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">YAMN tweety ";
-		#endif
-		wsprintf(szUrl,"http://www.miranda-fr.net/tweety/yamn/%s.zip",YAMN_FILENAME);
-	    update.szBetaUpdateURL = szUrl;
-		update.szBetaVersionURL = "http://www.miranda-fr.net/tweety/yamn/yamn_beta.html";
-		update.pbBetaVersionPrefix = (BYTE *)"YAMN version ";
-		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
-		update.cpbBetaVersionPrefix = strlen((char *)update.pbBetaVersionPrefix);
-
-		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
-
-	}
-//#endif // WIN2IN1 - no updated support for this version
 
 	//Get YAMN variables we can use
 	if(NULL==(pYAMNVar=(PYAMN_VARIABLES)CallService(MS_YAMN_GETVARIABLES,(WPARAM)YAMN_VARIABLESVERSION,(LPARAM)0)))
@@ -407,17 +342,18 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 			DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", YAMN_STATUS);
 		}
 
-		if((Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT) && DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWMAINMENU, 0))
-		{
-			mi.cbSize = sizeof(mi);
-			mi.position = 0xb0000000;
-			mi.flags = CMIM_ICON;
-			mi.hIcon = hYamnIcons[1];
-			mi.pszName = Finder->Name;
-			mi.pszPopupName = ProtoName;
-			mi.pszService = MS_YAMN_CLISTCONTEXT;
-			hMenuItemMain = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
-		}
+		/*//this doesn't work. the function doesn't know which contact to check
+		//if((Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT) && DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWMAINMENU, 0))
+		//{
+		//	mi.cbSize = sizeof(mi);
+		//	mi.position = 0xb0000000;
+		//	mi.flags = CMIM_ICON;
+		//	mi.hIcon = hYamnIcons[1];
+		//	mi.pszName = Finder->Name;
+		//	mi.pszPopupName = ProtoName;
+		//	mi.pszService = MS_YAMN_CLISTCONTEXT;
+		//	hMenuItemMain = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
+		}*/
 
 	}
 

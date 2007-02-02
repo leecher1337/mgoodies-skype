@@ -46,10 +46,10 @@
 #include "debug.h"
 
 //icons definitions
-#define ICONSNUMBER 7
-#define ICONSDESCS "Neutral","YAMN","New Mail","Connect Fail","Launch Application","TopToolBar UP","TopToolBar Down"
-#define ICONSNAMES "YAMN_Neutral",iconDescs[1],"YAMN_NewMail","YAMN_ConnectFail","YAMN_ApplExec","YAMN_TopToolBarUp","YAMN_TopToolBarDown"
-#define ICONSINDS 119,113,112,116,139,138,137
+#define ICONSNUMBER 8
+#define ICONSDESCS "Neutral","YAMN","New Mail","Connect Fail","Launch Application","TopToolBar UP","TopToolBar Down","Offline"
+#define ICONSNAMES "YAMN_Neutral",iconDescs[1],"YAMN_NewMail","YAMN_ConnectFail","YAMN_ApplExec","YAMN_TopToolBarUp","YAMN_TopToolBarDown","YAMN_Offline"
+#define ICONSINDS IDI_ICONEUTRAL,IDI_ICOYAMN1,IDI_ICOYAMN2,IDI_ICOYAMN3,IDI_ICOTTBDW,IDI_ICOTTBUP,IDI_ICOTTBDW,IDI_ICOOFFLINE
 
 //From services.cpp
 void CreateServiceFunctions(void);
