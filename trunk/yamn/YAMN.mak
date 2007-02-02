@@ -124,7 +124,7 @@ BSC32_SBRS= \
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=wsock32.lib kernel32.lib user32.lib shell32.lib msvcrt.lib comdlg32.lib comctl32.lib gdi32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /nodefaultlib /out:"../../bin/release/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" 
+LINK32_FLAGS=wsock32.lib kernel32.lib user32.lib shell32.lib msvcrt.lib comdlg32.lib.lib gdi32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /nodefaultlib /out:"../../bin/release/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \
@@ -248,7 +248,7 @@ BSC32_SBRS= \
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib comctl32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib msvcrt.lib /nologo /base:"0x60010000" /dll /incremental:yes /pdb:"$(OUTDIR)\YAMN.pdb" /map:"$(INTDIR)\YAMN.map" /debug /machine:I386 /nodefaultlib /out:"../../bin7/Debug/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /pdbtype:sept 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib msvcrt.lib /nologo /base:"0x60010000" /dll /incremental:yes /pdb:"$(OUTDIR)\YAMN.pdb" /map:"$(INTDIR)\YAMN.map" /debug /machine:I386 /nodefaultlib /out:"../../bin7/Debug/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /pdbtype:sept 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \
@@ -368,7 +368,7 @@ BSC32_SBRS= \
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=./libs/unicows.lib wsock32.lib kernel32.lib user32.lib shell32.lib msvcrt.lib comdlg32.lib comctl32.lib gdi32.lib /nologo /base:"0x60020000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /nodefaultlib /out:"../../bin7/Release/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
+LINK32_FLAGS=./libs/unicows.lib wsock32.lib kernel32.lib user32.lib shell32.lib msvcrt.lib comdlg32.lib.lib gdi32.lib /nologo /base:"0x60020000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /nodefaultlib /out:"../../bin7/Release/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \
@@ -488,7 +488,7 @@ BSC32_SBRS= \
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=./libs/unicows.lib wsock32.lib kernel32.lib user32.lib shell32.lib msvcrt.lib comdlg32.lib comctl32.lib gdi32.lib /nologo /base:"0x60020000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /nodefaultlib /out:"../../bin/release/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
+LINK32_FLAGS=./libs/unicows.lib wsock32.lib kernel32.lib user32.lib shell32.lib msvcrt.lib comdlg32.lib.lib gdi32.lib /nologo /base:"0x60020000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /nodefaultlib /out:"../../bin/release/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \
@@ -611,7 +611,7 @@ BSC32_SBRS= \
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib comctl32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib msvcrt.lib /nologo /base:"0x60020000" /dll /incremental:yes /pdb:"$(OUTDIR)\YAMN.pdb" /debug /machine:I386 /nodefaultlib /out:"../../bin7/Debug/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /pdbtype:sept 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib msvcrt.lib /nologo /base:"0x60020000" /dll /incremental:yes /pdb:"$(OUTDIR)\YAMN.pdb" /debug /machine:I386 /nodefaultlib /out:"../../bin7/Debug/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /pdbtype:sept 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \

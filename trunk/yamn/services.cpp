@@ -54,9 +54,9 @@ static int Service_GetCaps(WPARAM wParam, LPARAM lParam)
         return (int) "Id";
 	if(DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0)){
 		if(wParam==PFLAGNUM_2)
-			return PF2_ONLINE;
-		//if (wParam=PFLAGNUM_5) // this crashes miranda
-		//	return PF2_LONGAWAY | PF2_LIGHTDND;
+			return PF2_ONLINE | PF2_LONGAWAY | PF2_LIGHTDND;
+		if (wParam=PFLAGNUM_5) // this crashes miranda
+			return PF2_LONGAWAY | PF2_LIGHTDND;
 	}
 	return 0;
 }
@@ -383,11 +383,11 @@ int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-
+int SystemModulesLoaded(WPARAM,LPARAM); //in main.cpp
 typedef struct { HANDLE hookHandle;	const char *hookName; MIRANDAHOOK mirandaFunction;} HookDataType;
 static HookDataType hookData[]={
 	{0,ME_TTB_MODULELOADED,AddTopToolbarIcon},
-	{0,ME_SYSTEM_MODULESLOADED,RegisterPOP3Plugin}, //pop3 plugin must be included after all miranda modules are loaded
+	{0,ME_SYSTEM_MODULESLOADED,SystemModulesLoaded}, //pop3 plugin must be included after all miranda modules are loaded
 	{0,ME_OPT_INITIALISE,YAMNOptInitSvc},
 	{0,ME_PLUGINUNINSTALLER_UNINSTALL,UninstallQuestionSvc},
 	{0,ME_SYSTEM_PRESHUTDOWN,Shutdown},

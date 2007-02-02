@@ -7,7 +7,12 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include "winres.h"
+#ifdef __GNUC__
+#include <afxres.h>
+#else
+#include <winres.h>
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -364,13 +369,13 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICONEUTRAL          ICON    DISCARDABLE     "iconeutral.ico"
+IDI_ICOYAMN1            ICON    DISCARDABLE     "icoyamn1.ico"
+IDI_ICOYAMN2            ICON    DISCARDABLE     "icoyamn2.ico"
+IDI_ICOYAMN3            ICON    DISCARDABLE     "icoyamn3.ico"
+IDI_ICOTTBDW            ICON    DISCARDABLE     "iconttbdown.ico"
+IDI_ICOTTBUP            ICON    DISCARDABLE     "iconttbup.ico"
+IDI_ICOOFFLINE          ICON    DISCARDABLE     "icooffline.ico"
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Bitmap
-//
-
-IDB_ICONS               BITMAP  DISCARDABLE     "yamn.bmp"
 
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////

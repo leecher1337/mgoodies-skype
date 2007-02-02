@@ -90,13 +90,6 @@ UINT SecTimer;
 HICON hYamnIcons[ICONSNUMBER];
 char *iconDescs[ICONSNUMBER]={ICONSDESCS};
 char *iconNames[ICONSNUMBER]={ICONSNAMES};
-//#define IDI_ICOYAMN2                    112
-//#define IDI_ICOYAMN1                    113
-//#define IDI_ICOYAMN3                    116
-//#define IDI_ICONEUTRAL                  119
-//#define IDI_??                          139
-//#define IDI_ICOTTBDW                    137
-//#define IDI_ICOTTBUP                    138
  int iconIndexes[ICONSNUMBER]={ICONSINDS};
 
 //HICON hYamnIconOrg, hYamnIcon;
@@ -106,6 +99,9 @@ char *iconNames[ICONSNUMBER]={ICONSNAMES};
 //HICON hTopToolBarUpOrg, hTopToolBarUp;
 //HICON hTopToolBarDownOrg, hTopToolBarDown;
 
+HANDLE hMenuItemMain = 0;
+HANDLE hMenuItemCont = 0;
+HANDLE hMenuItemContApp = 0;
 
 BOOL     (WINAPI *MyEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
 HMODULE hUxTheme = 0;
@@ -190,60 +186,40 @@ static void GetProfileDirectory(char *szPath,int cbPath)
 void SetDefaultProtocolIcons()
 {
 	char szFileName[MAX_PATH+1];
+	char oldname[] = YAMN_DBMODULE"4007_"; // the deprecated one
+	char newname[] = "core_status_"YAMN_DBMODULE"_";
+	char dllname[] = "plugins\\"YAMN_DBMODULE".dll,-xxxxx";
 
 	// determine whether external icon file exists
 	lstrcpy(szFileName, szMirandaDir);
-	lstrcat(szFileName, "\\icons\\proto_YAMN.dll");
+	lstrcat(szFileName, "\\icons\\proto_"YAMN_DBMODULE".dll");
+	BOOL isDllPresent = (_access(szFileName, 0) == 0);
 
-	if(_access(szFileName, 0) == 0){
-		DBDeleteContactSetting(NULL, "Icons", "YAMN40072");
-		DBDeleteContactSetting(NULL, "SkinIcons", "core_status_YAMN1");
-	}else{
-		DBWriteContactSettingString(NULL, "Icons", "YAMN40072", "plugins\\YAMN.dll,-119");
-		DBWriteContactSettingString(NULL, "SkinIcons", "core_status_YAMN1", "plugins\\YAMN.dll,-119");
-	}
-}
+	WORD statuses[4] = {ID_STATUS_OFFLINE,ID_STATUS_ONLINE,ID_STATUS_NA,ID_STATUS_OCCUPIED};
+	BYTE  indices[4] = {7,                0,               3,           4};
+	//From skinicons.c skinIconStatusToIdStatus[] 
+	BYTE protoStatusInd[4] = {0,1,3,4};
 
-void LoadIcons()
-{
-	if(ServiceExists(MS_SKIN2_ADDICON))
-	{
-		//MessageBox(NULL,"Icolib present","test",0);
-		SKINICONDESC sid = {0};
-		HICON temp;
-//		char szFilename[MAX_PATH];
-//		strncpy(szFilename, "plugins\\YAMN.dll", MAX_PATH);
-
-		sid.cbSize = SKINICONDESC_SIZE_V2;
-		sid.pszSection = "YAMN";
-		sid.pszDefaultFile = NULL;
-		for (int i=0; i<ICONSNUMBER; i++){
-			sid.iDefaultIndex = -iconIndexes[i];
-			sid.pszName = iconNames[i];
-			sid.pszDescription = Translate(iconDescs[i]);
-			sid.hDefaultIcon = hYamnIcons[i];
-			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-			if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconNames[i]))hYamnIcons[i]=temp; 
+	for (int i=0;i<4;i++){
+		oldname[sizeof(oldname)-2]=protoStatusInd[i]+'1'; // "Out for lunch will not work here"
+		newname[sizeof(newname)-2]=protoStatusInd[i]+'0';
+		if (isDllPresent){ // use the icons in proto_YAMN.dll and delete any user settings
+			DBDeleteContactSetting(NULL, "Icons", oldname);
+			DBDeleteContactSetting(NULL, "SkinIcons", newname);
+		} else {
+			DBVARIANT dbv;
+			if(!DBGetContactSetting(NULL,"SkinIcons",iconNames[indices[i]],&dbv)) 
+			{// user won't be able to set status icons different from those in YAMN section
+				DBWriteContactSettingString(NULL, "Icons", oldname, (char *)dbv.pszVal);			
+				DBWriteContactSettingString(NULL, "SkinIcons", newname, (char *)dbv.pszVal);			
+				DBFreeVariant(&dbv);
+			} else {
+				_snprintf(&dllname[sizeof(dllname)-6],5,"%d",iconIndexes[indices[i]]);
+				DBWriteContactSettingString(NULL, "Icons", oldname, dllname);			
+				DBWriteContactSettingString(NULL, "SkinIcons", newname, dllname);			
+			}
 		}
-		// <deprecated>
-		DBVARIANT dbv;
-		if(!DBGetContactSetting(NULL,"SkinIcons","YAMN_Neutral",&dbv)) 
-		{
-			DBWriteContactSettingString(NULL, "Icons", "YAMN40072", (char *)dbv.pszVal);			
-			DBWriteContactSettingString(NULL, "SkinIcons", "core_status_YAMN1", (char *)dbv.pszVal);			
-			DBFreeVariant(&dbv);
-		}
-		else
-			SetDefaultProtocolIcons();
-		// </deprecated>
 	}
-	else
-	{
-		//Icon to show in contact list
-		//This is deprecated. We keep it only for core withoud core icolib
-		SetDefaultProtocolIcons();
-	}
-
 }
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
@@ -327,11 +303,93 @@ BOOL CALLBACK EnumSystemCodePagesProc(LPTSTR cpStr)
     return TRUE;
 }
 
-int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam); // implemented in services.cpp
+int SystemModulesLoaded(WPARAM,LPARAM){
+	if(ServiceExists(MS_SKIN2_ADDICON))
+	{
+		//MessageBox(NULL,"Icolib present","test",0);
+		SKINICONDESC sid = {0};
+		HICON temp;
+		sid.cbSize = SKINICONDESC_SIZE_V2;
+		sid.pszSection = "YAMN";
+		sid.pszDefaultFile = NULL;
+		for (int i=0; i<ICONSNUMBER; i++){
+			sid.iDefaultIndex = -iconIndexes[i];
+			sid.pszName = iconNames[i];
+			sid.pszDescription = Translate(iconDescs[i]);
+			sid.hDefaultIcon = hYamnIcons[i];
+			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+			if (temp = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconNames[i]))hYamnIcons[i]=temp; 
+		}
+	}
+
+	CLISTMENUITEM mi;
+
+	//Insert "Check mail (YAMN)" item to Miranda's menu
+	ZeroMemory(&mi,sizeof(mi));
+	mi.cbSize = sizeof(mi);
+	mi.position = 0xb0000000;
+	mi.flags = CMIM_ICON;
+	mi.hIcon = hYamnIcons[5];
+	mi.pszName = Translate("Check &mail (All Account)");
+	mi.pszPopupName = NULL;//ProtoName;
+	mi.pszService = MS_YAMN_FORCECHECK;
+	if(DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWMAINMENU, 0))
+		hMenuItemMain = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
+
+	mi.flags = mi.flags;
+	mi.pszName = Translate("Check &mail (This Account)");
+	mi.pszContactOwner = ProtoName;
+	mi.pszService = MS_YAMN_CLISTCONTEXT;
+	hMenuItemCont = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
+
+	mi.flags = mi.flags;
+	mi.hIcon = hYamnIcons[4];
+	mi.pszName = Translate("Launch application");
+	mi.pszContactOwner = ProtoName;
+	mi.pszService = MS_YAMN_CLISTCONTEXTAPP;
+	hMenuItemContApp = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
+
+//#ifndef WIN2IN1
+	//Use for the Updater plugin
+	if(ServiceExists(MS_UPDATE_REGISTER)) 
+	{
+		Update update = {0};
+		char szVersion[16];
+		char szUrl[250];
+
+		update.szComponentName = pluginInfo.shortName;
+		update.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szVersion);
+		update.cpbVersion = strlen((char *)update.pbVersion);
+		#ifdef YAMN_9x
+		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2166";
+		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2166";
+		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">YAMN tweety win9x ";
+		#else
+		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2165";
+		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2165";
+		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">YAMN tweety ";
+		#endif
+		wsprintf(szUrl,"http://www.miranda-fr.net/tweety/yamn/%s.zip",YAMN_FILENAME);
+	    update.szBetaUpdateURL = szUrl;
+		update.szBetaVersionURL = "http://www.miranda-fr.net/tweety/yamn/yamn_beta.html";
+		update.pbBetaVersionPrefix = (BYTE *)"YAMN version ";
+		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
+		update.cpbBetaVersionPrefix = strlen((char *)update.pbBetaVersionPrefix);
+
+		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
+
+	}
+//#endif // WIN2IN1 - no updated support for this version
+
+	
+	RegisterPOP3Plugin(0,0);
+	return 0;
+}
+
+//int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam); // implemented in services.cpp
 extern HCURSOR hCurSplitNS, hCurSplitWE;
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
-	
 	UINT mod,vk;
 	char pn[MAX_PATH+1];
 	char *fc;
@@ -364,17 +422,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
     MessageBox( NULL,unknownCP, TEXT("Unkown Code Page"), MB_OK);
 	#endif
 
-	HIMAGELIST CSImages = ImageList_Create(16, 16, ILC_COLOR8|ILC_MASK, 0, ICONSNUMBER);
-	{// workarround of 4bit forced images
-		HBITMAP hScrBM   = (HBITMAP)LoadImage(YAMNVar.hInst,MAKEINTRESOURCE(IDB_ICONS), IMAGE_BITMAP, 0, 0,LR_SHARED);
-		ImageList_AddMasked(CSImages, hScrBM, RGB( 255, 0, 255 ));
-		DeleteObject(hScrBM);    
+	for (i=0; i<ICONSNUMBER; i++){
+		if (i==6) hYamnIcons[6] = hYamnIcons[4];
+		else hYamnIcons[i] = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(iconIndexes[i])); 
 	}
-	for (i=0; i<ICONSNUMBER-1; i++){
-		hYamnIcons[i] = ImageList_ExtractIcon(NULL, CSImages, i);
-	}
-	ImageList_Destroy(CSImages);
-	hYamnIcons[6] = hYamnIcons[4];
 
 	//Registering YAMN as protocol
 	PROTOCOLDESCRIPTOR pd;
@@ -448,18 +499,14 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	CallService(MS_SKIN_ADDNEWSOUND,0,(LPARAM)&ConnectFailureSound);
 
 	/*
-	// this does nothing - the event is never fired
+	// this does nothing - these event are never fired
 	hNewMailHook=CreateHookableEvent(ME_YAMN_NEWMAIL);
+	hUninstallPluginsHook=CreateHookableEvent(ME_YAMN_UNINSTALLPLUGINS);
 	*/	
-//	hUninstallPluginsHook=CreateHookableEvent(ME_YAMN_UNINSTALLPLUGINS);
 
 	HookEvents();
-	//Check if icolib is there
-	//if(ServiceExists(MS_SKIN2_ADDICON)){
-    //    HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
-	//}
-	//  Loading Icon and checking for icolib 
-	LoadIcons();
+
+	SetDefaultProtocolIcons();
 
 	LoadPlugins();
 
@@ -522,6 +569,11 @@ extern "C" int __declspec(dllexport) UninstallEx(PLUGINUNINSTALLPARAMS* ppup)
 
 int Shutdown(WPARAM,LPARAM)
 {
+	DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSX,HeadPosX);
+	DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSY,HeadPosY);
+	DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEX,HeadSizeX);
+	DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEY,HeadSizeY);
+	DBWriteContactSettingWord(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSSPLIT,HeadSplitPos);
 	YAMNVar.Shutdown=TRUE;
 //	CallService(MS_TTB_REMOVEBUTTON,(WPARAM)hTTButton,0);		//this often leads to deadlock in Miranda (bug in Miranda)
 	KillTimer(NULL,SecTimer);
@@ -534,11 +586,6 @@ int Shutdown(WPARAM,LPARAM)
 //We undo all things from Load()
 extern "C" int __declspec(dllexport) Unload(void)
 {
-				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSX,HeadPosX);
-				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSY,HeadPosY);
-				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEX,HeadSizeX);
-				DBWriteContactSettingDword(NULL,YAMN_DBMODULE,YAMN_DBMSGSIZEY,HeadSizeY);
-				DBWriteContactSettingWord(NULL,YAMN_DBMODULE,YAMN_DBMSGPOSSPLIT,HeadSplitPos);
 #ifdef YAMN_DEBUG
 	UnInitDebug();
 #endif
