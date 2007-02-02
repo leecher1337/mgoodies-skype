@@ -49,7 +49,7 @@
 #define ICONSNUMBER 8
 #define ICONSDESCS "Neutral","YAMN","New Mail","Connect Fail","Launch Application","TopToolBar UP","TopToolBar Down","Offline"
 #define ICONSNAMES "YAMN_Neutral",iconDescs[1],"YAMN_NewMail","YAMN_ConnectFail","YAMN_ApplExec","YAMN_TopToolBarUp","YAMN_TopToolBarDown","YAMN_Offline"
-#define ICONSINDS IDI_ICONEUTRAL,IDI_ICOYAMN1,IDI_ICOYAMN2,IDI_ICOYAMN3,IDI_ICOTTBDW,IDI_ICOTTBUP,IDI_ICOTTBDW,IDI_ICOOFFLINE
+#define ICONSINDS IDI_ICONEUTRAL,IDI_ICOYAMN1,IDI_ICOYAMN2,IDI_ICOYAMN3,IDI_ICOTTBDW,IDI_ICOTTBUP,IDI_ICOTTBDW,IDI_OFFLINE
 
 //From services.cpp
 void CreateServiceFunctions(void);
