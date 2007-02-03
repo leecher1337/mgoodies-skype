@@ -42,6 +42,7 @@ extern HANDLE hMenu;
 #define AVH_DEF_POPUPBG 0x2DB6FF
 #define AVH_DEF_AVPOPUPS 0
 #define AVH_DEF_LOGTODISK 1
+#define AVH_DEF_LOGKEEPSAMEFOLDER 0
 #define AVH_DEF_LOGOLDSTYLE 0
 #define AVH_DEF_LOGTOHISTORY 1
 #define AVH_DEF_DEFPOPUPS 0
@@ -81,6 +82,7 @@ struct Options {
 
 	// Log
 	BOOL log_old_style;
+	BOOL log_keep_same_folder;
 
 	// Track
 	BYTE track_removes;

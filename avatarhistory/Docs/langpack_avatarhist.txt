@@ -11,34 +11,29 @@
 
 [Avatars]
 
-; Template defaults
-
-[changed his/her avatar]
-[removed his/her avatar]
-
 ; Options
 
 [History]
 [Avatar]
 
-[Show 'Avatar History' on contacts' menus (takes effect after restart)]
+[ Logging options ]
+[Store old avatars on disk]
+[Also create per contact folders with shortcuts (simulate old behaviour)]
+[Log avatar changes to history (needed to display Avatar History dialog)]
 
-[Logging options]
-[Log avatar changes to disk]
-[Log avatar changes to history]
-
-[ Tracking ]
-[Track when contacts change their status messages]
-[Track when contacts remove their status messages]
-[Template:]
+[ History templates ]
+[Avatar change:]
+[Track when contacts remove their avatars too]
+[Avatar removal:]
 
 [ Protocols ]
 [Enable tracking for these protocols:]
+[Keep all in same folder]
 
 [Popups]
 [Avatar Change]
 
-[Enable popups]
+[Show popup when a contact change his avatar]
 
 [ Colours ]
 [Background colour]
@@ -75,12 +70,17 @@
 [Delete]
 [<]
 [>]
-[Log this user's avatars to disk]
-[Log this user's avatars to history]
+[Store this user's old avatars in disk]
+[Log this user's avatars changes to history]
 [Show popups for this user]
 [OK]
 
+
+; Others
+
 [Please select an avatar from the list]
 [No avatar selected]
-[Are you sure you wish to delete this archived avatar?]
+[Are you sure you wish to delete this archived avatar?\nThis can affect more than one entry in history!]
 [Delete avatar?]
+[Unknown Protocol]
+[Unknown UIN]
