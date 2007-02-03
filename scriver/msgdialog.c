@@ -83,9 +83,9 @@ static DWORD CALLBACK StreamOutCallback(DWORD dwCookie, LPBYTE pbBuff, LONG cb, 
     return 0;
 }
 
-static TCHAR *GetRichEditSelection(HWND hwndDlg) {
+TCHAR *GetRichEditSelection(HWND hwnd) {
 	CHARRANGE sel;
-	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXGETSEL, 0, (LPARAM)&sel);
+	SendMessage(hwnd, EM_EXGETSEL, 0, (LPARAM)&sel);
 	if (sel.cpMin!=sel.cpMax) {
 		struct MessageSendInfo msi;
 		EDITSTREAM stream;
@@ -100,7 +100,7 @@ static TCHAR *GetRichEditSelection(HWND hwndDlg) {
 #endif
 		msi.sendBuffer = NULL;
 		msi.sendBufferSize = 0;
-		SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMOUT, (WPARAM)dwFlags, (LPARAM) & stream);
+		SendMessage(hwnd, EM_STREAMOUT, (WPARAM)dwFlags, (LPARAM) & stream);
 		return (TCHAR *)msi.sendBuffer;
 	}
 	return NULL;
@@ -1127,25 +1127,17 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			}
 			dat->codePage = DBGetContactSettingWord(dat->hContact, SRMMMOD, "CodePage", (WORD) CP_ACP);
 			dat->ace = NULL;
-//			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
-			{
-				RECT rc;
-				POINT pt;
-				GetWindowRect(GetDlgItem(hwndDlg, IDC_SPLITTER), &rc);
-				pt.y = (rc.top + rc.bottom) / 2;
-				pt.x = 0;
-				ScreenToClient(hwndDlg, &pt);
-				dat->originalSplitterPos = pt.y;
-				if (dat->splitterPos == -1)
-					dat->splitterPos = dat->originalSplitterPos;// + 60;
-				GetWindowRect(GetDlgItem(hwndDlg, IDC_ADD), &rc);
-				dat->toolbarSize.cy = 24 + 2;//rc.bottom - rc.top + 3;
-				dat->toolbarSize.cx = GetToolbarWidth();//g_dat->smileyServiceExists ? 240 : 214;
-			}
-			WindowList_Add(g_dat->hMessageWindowList, hwndDlg, dat->hContact);
 			GetWindowRect(GetDlgItem(hwndDlg, IDC_MESSAGE), &dat->minEditInit);
 			dat->minEditBoxHeight = dat->minEditInit.bottom - dat->minEditInit.top;
 			dat->minLogBoxHeight = dat->minEditBoxHeight;
+			dat->splitterPos = (int) DBGetContactSettingDword((g_dat->flags & SMF_SAVESPLITTERPERCONTACT) ? dat->hContact : NULL, SRMMMOD, "splitterPos", (DWORD) - 1);
+//			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
+			dat->toolbarSize.cy = 24 + 2;//rc.bottom - rc.top + 3;
+			dat->toolbarSize.cx = GetToolbarWidth();
+			if (dat->splitterPos == -1) {
+				dat->splitterPos = dat->minEditBoxHeight;
+			}
+			WindowList_Add(g_dat->hMessageWindowList, hwndDlg, dat->hContact);
 
 			SendMessage(hwndDlg, DM_CHANGEICONS, 0, 0);
 			// Make them flat buttons
@@ -1268,7 +1260,6 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 					}
 				}
 			}
-			dat->splitterPos = (int) DBGetContactSettingDword((g_dat->flags & SMF_SAVESPLITTERPERCONTACT) ? dat->hContact : NULL, SRMMMOD, "splitterPos", (DWORD) - 1);
 			SendMessage(dat->hwndParent, CM_ADDCHILD, (WPARAM) hwndDlg, (LPARAM) dat->hContact);
 			SendMessage(hwndDlg, DM_OPTIONSAPPLIED, 0, 0);
 			{
@@ -2422,7 +2413,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				if (dat->hwndLog != NULL) {
 					buffer = GetIEViewSelection(dat);
 				} else {
-					buffer = GetRichEditSelection(hwndDlg);
+					buffer = GetRichEditSelection(GetDlgItem(hwndDlg, IDC_LOG));
 				}
 				if (buffer!=NULL) {
 					TCHAR *quotedBuffer = GetQuotedTextW(buffer);
