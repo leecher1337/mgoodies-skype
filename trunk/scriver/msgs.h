@@ -123,7 +123,7 @@ struct MessageWindowData
 	HANDLE hDbEventFirst, hDbEventLast;
 	struct MessageSendInfo *sendInfo;
 	int sendCount;
-	int splitterPos, originalSplitterPos;
+	int splitterPos;
 //	char *sendBuffer;
 	SIZE minEditBoxSize;
 	SIZE minTopSize;
@@ -233,6 +233,8 @@ TCHAR *GetNickname(HANDLE hContact, const char* szProto);
 #define MSGFONTID_YOURCOLON	  7
 #define MSGFONTID_MESSAGEAREA 8
 #define MSGFONTID_NOTICE      9
+#define MSGFONTID_MYURL      10
+#define MSGFONTID_YOURURL   11
 
 void LoadMsgDlgFont(int i, LOGFONT * lf, COLORREF * colour);
 extern int fontOptionsListSize;

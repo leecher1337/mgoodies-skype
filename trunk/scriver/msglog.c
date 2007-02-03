@@ -266,9 +266,9 @@ static void AppendToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced
 	*cbBufferEnd += charsDone;
 }
 
-static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, unsigned char * line)
+static int AppendAnsiToBufferL(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, unsigned char * line, int maxLen) 
 {
-	DWORD textCharsCount = 0;
+	int textCharsCount = 0;
 	char *d;
 	int wasEOL = 0;
 	int lineLen = strlen(line) * 9 + 8;
@@ -281,7 +281,7 @@ static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAllo
 	strcpy(d, "{");
 	d += 1;
 
-	for (; *line; line++, textCharsCount++) {
+	for (; *line && (maxLen < 0 || textCharsCount < maxLen); line++, textCharsCount++) {
 		wasEOL = 0;
 		if (*line == '\r' && line[1] == '\n') {
 			CopyMemory(d, "\\par ", 5);
@@ -320,9 +320,9 @@ static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAllo
 }
 
 
-static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, WCHAR * line)
+static int AppendUnicodeToBufferL(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, WCHAR * line, int maxLen) 
 {
-	DWORD textCharsCount = 0;
+	int textCharsCount = 0;
 	char *d;
 	int wasEOL = 0;
 	int lineLen = wcslen(line) * 9 + 8;
@@ -335,7 +335,7 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 	strcpy(d, "{\\uc1 ");
 	d += 6;
 
-	for (; *line; line++, textCharsCount++) {
+	for (; *line && (maxLen < 0 || textCharsCount < maxLen); line++, textCharsCount++) {
 		wasEOL = 0;
 		if (*line == '\r' && line[1] == '\n') {
 			CopyMemory(d, "\\par ", 5);
@@ -371,6 +371,16 @@ static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferA
 
 	*cbBufferEnd = (int) (d - *buffer);
 	return textCharsCount;
+}
+
+static int AppendAnsiToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, unsigned char * line) 
+{
+	return AppendAnsiToBufferL(buffer, cbBufferEnd, cbBufferAlloced, line, -1);
+}
+
+static int AppendUnicodeToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, WCHAR * line) 
+{
+	return AppendUnicodeToBufferL(buffer, cbBufferEnd, cbBufferAlloced, line, -1);
 }
 
 static int AppendTToBuffer(char **buffer, int *cbBufferEnd, int *cbBufferAlloced, TCHAR * line)
@@ -529,6 +539,86 @@ int isSameDate(time_t time1, time_t time2)
 	return 0;
 }
 
+static int DetectURLW(wchar_t *text) {
+	struct prefix_s {
+		wchar_t *text;
+		int length;
+	} prefixes[12] = {
+		{L"http:", 5},
+		{L"file:", 5},
+		{L"mailto:", 7},
+		{L"ftp:", 4},
+		{L"https:", 6},
+		{L"gopher:", 7},
+		{L"nntp:", 5},
+		{L"prospero:", 9},
+		{L"telnet:", 7},
+		{L"news:", 5},
+		{L"wais:", 5},
+		{L"www.", 4}
+	};	
+	int found = 0;
+	int i, len = 0;
+	int prefixlen = SIZEOF(prefixes);
+	for (i = 0; i < prefixlen; i++) {
+		if (!wcsncmp(text, prefixes[i].text, prefixes[i].length)) {
+			len = prefixes[i].length;
+			found = 1;
+			break;
+		}
+	}
+	if (found) {
+		for (; text[len]!='\n' && text[len]!='\r' && text[len]!='\t' && text[len]!=' ' && text[len]!='\0';  len++);
+		for (; len > 0; len --) {
+			if ((text[len-1] >= '0' && text[len-1]<='9') || (text[len-1] >= 'A' && text[len-1]<='Z') || (text[len-1] >= 'a' && text[len-1]<='z')) {
+				break;
+			}
+		}
+		return len;
+	}
+	return 0;
+}
+
+static int DetectURL(const char* text) {
+	struct prefix_s {
+		char *text;
+		int length;
+	} prefixes[12] = {
+		{"http:", 5},
+		{"file:", 5},
+		{"mailto:", 7},
+		{"ftp:", 4},
+		{"https:", 6},
+		{"gopher:", 7},
+		{"nntp:", 5},
+		{"prospero:", 9},
+		{"telnet:", 7},
+		{"news:", 5},
+		{"wais:", 5},
+		{"www.", 4}
+	};	
+	int found = 0;
+	int i, len = 0;
+	int prefixlen = SIZEOF(prefixes);
+	for (i = 0; i < prefixlen; i++) {
+		if (!strncmp(text, prefixes[i].text, prefixes[i].length)) {
+			len = prefixes[i].length;
+			found = 1;
+			break;
+		}
+	}
+	if (found) {
+		for (; text[len]!='\n' && text[len]!='\r' && text[len]!='\t' && text[len]!=' ' && text[len]!='\0';  len++);
+		for (; len > 0; len --) {
+			if ((text[len-1] >= '0' && text[len-1]<='9') || (text[len-1] >= 'A' && text[len-1]<='Z') || (text[len-1] >= 'a' && text[len-1]<='z')) {
+				break;
+			}
+		}
+		return len;
+	}
+	return 0;
+}
+
 //mir_free() the return value
 static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventData *event, struct LogStreamData *streamData)
 {
@@ -668,14 +758,53 @@ static char *CreateRTFFromDbEvent2(struct MessageWindowData *dat, struct EventDa
 		if (g_dat->flags & SMF_MSGONNEWLINE && showColon) {
 			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "\\par");
 		}
-
-
-		AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
-		if (event->dwFlags & IEEDF_UNICODE_TEXT) {
-			AppendUnicodeToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszTextW);
-		} else {
+		{
+			int lasttoken = 0, newtoken = 0;
+			int laststart = 0, newstart =0, newlen = 0;
+			int j, len = wcslen(event->pszTextW);
+			for (j = 0; j < len ; ) {
+				int l;
+				newstart = j;
+				if (event->dwFlags & IEEDF_UNICODE_TEXT) {
+					l = DetectURLW(event->pszTextW+j);
+				} else {
+					l = DetectURL(event->pszText+j);
+				}
+				if (l > 0) {
+					newtoken = 1;
+					newlen = l;
+				} else {
+					newtoken = 0;
+					newlen = 1;
+				}
+				if (j == 0) {
+					lasttoken = newtoken;
+				}
+				j+= newlen;
+				if ((newtoken != lasttoken && j>0) || j >= len) {
+					if (j == len) {
+						newstart = j;
+					} 
+					if (lasttoken == 0) {
+						AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
+					} else {
+						AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYURL : MSGFONTID_YOURURL));
+					}
+					if (event->dwFlags & IEEDF_UNICODE_TEXT) {
+						AppendUnicodeToBufferL(&buffer, &bufferEnd, &bufferAlloced, event->pszTextW + laststart, newstart - laststart);
+					} else {
+						AppendAnsiToBufferL(&buffer, &bufferEnd, &bufferAlloced, event->pszText + laststart, newstart - laststart);
+					}
+					laststart = newstart;
+					lasttoken = newtoken;
+				}
+			}
+		}
+/*		else {
+			AppendToBuffer(&buffer, &bufferEnd, &bufferAlloced, "%s ", SetToStyle(event->dwFlags & IEEDF_SENT ? MSGFONTID_MYMSG : MSGFONTID_YOURMSG));
 			AppendAnsiToBuffer(&buffer, &bufferEnd, &bufferAlloced, event->pszText);
 		}
+		*/
 		break;
 		case EVENTTYPE_STATUSCHANGE:
 		case EVENTTYPE_URL:
@@ -780,7 +909,95 @@ static DWORD CALLBACK LogStreamInEvents(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG 
 	}
 	return 0;
 }
+/*
+#ifndef CFE_LINK
+#define CFE_LINK 32
+#endif
 
+
+static const CLSID IID_ITextDocument=
+{ 0x8CC497C0,0xA1DF,0x11CE,
+    { 0x80,0x98, 0x00,0xAA,
+      0x00,0x47,0xBE,0x5D} };
+
+void AutoURLDetect(HWND hwnd, CHARRANGE* sel) {
+	CHARFORMAT2 cf;
+	long cnt;
+	BSTR btxt = 0;
+	CHARRANGE oldSel;
+	LOGFONT lf;
+	COLORREF colour;
+
+	IRichEditOle* RichEditOle;
+	ITextDocument* TextDocument;
+	ITextRange* TextRange;
+	ITextSelection* TextSelection;
+
+	LoadMsgDlgFont(MSGFONTID_MYMSG, &lf, &colour);
+
+	SendMessage(hwnd, EM_GETOLEINTERFACE, 0, (LPARAM)&RichEditOle);
+	if (RichEditOle->lpVtbl->QueryInterface(RichEditOle, &IID_ITextDocument, (void**)&TextDocument) != S_OK)
+	{
+		RichEditOle->lpVtbl->Release(RichEditOle);
+		return;
+	}
+	// retrieve text range
+	if (TextDocument->lpVtbl->Range(TextDocument,sel->cpMin, sel->cpMax, &TextRange) != S_OK) 
+	{
+		TextDocument->lpVtbl->Release(TextDocument);
+		RichEditOle->lpVtbl->Release(RichEditOle);
+		return;
+	}
+	
+	// retrieve text to parse for URLs 
+	if (TextRange->lpVtbl->GetText(TextRange, &btxt) != S_OK)
+	{
+		TextRange->lpVtbl->Release(TextRange);
+		TextDocument->lpVtbl->Release(TextDocument);
+		RichEditOle->lpVtbl->Release(RichEditOle);
+		return;
+	}
+
+	TextRange->lpVtbl->Release(TextRange);
+	
+	// disable screen updates
+	
+	TextDocument->lpVtbl->Freeze(TextDocument, &cnt);
+	
+	TextDocument->lpVtbl->GetSelection(TextDocument, &TextSelection);
+
+	cf.cbSize = sizeof(cf);
+	cf.dwMask = CFM_LINK | CFM_COLOR | CFM_UNDERLINE | CFM_BOLD | CFM_ITALIC | CFM_FACE | CFM_SIZE;
+	cf.dwEffects = CFE_UNDERLINE | (lf.lfWeight >= FW_BOLD ? CFE_BOLD : 0) | (lf.lfItalic ? CFE_ITALIC : 0);
+	_tcsncpy(cf.szFaceName, lf.lfFaceName, SIZEOF(cf.szFaceName));
+	cf.crTextColor = RGB(255,255,255);//colour;
+	cf.yHeight = 20 * lf.lfHeight;
+	
+	//text = GetRichEditSelection(hwnd);
+	if (btxt!=NULL) {
+		int cpMin = sel->cpMin;
+		int cpMax = sel->cpMax;
+		int i, j, len = _tcslen(btxt);
+		for (j = 0; j < len ; j++) {
+			int l = DetectURL(btxt+j);
+			if (l > 0) {
+				sel->cpMin = cpMin + j;
+				sel->cpMax = cpMin + j + l;
+				TextSelection->lpVtbl->SetRange(TextSelection, cpMin + j, cpMin + j + l);
+				SendMessage(hwnd, EM_SETCHARFORMAT, SCF_SELECTION, (LPARAM)&cf);
+				j+= l-1;
+			}
+		}
+	} 	
+	TextSelection->lpVtbl->SetRange(TextSelection,oldSel.cpMin, oldSel.cpMax);
+	TextSelection->lpVtbl->Release(TextSelection);
+	TextDocument->lpVtbl->Unfreeze(TextDocument,&cnt);
+	SysFreeString(btxt);
+	TextDocument->lpVtbl->Release(TextDocument);
+	RichEditOle->lpVtbl->Release(RichEditOle);
+	UpdateWindow(hwnd);
+}
+*/
 void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 {
 	FINDTEXTEXA fi;
@@ -831,40 +1048,53 @@ void StreamInEvents(HWND hwndDlg, HANDLE hDbEventFirst, int count, int fAppend)
 	stream.dwCookie = (DWORD_PTR) & streamData;
 	sel.cpMin = 0;
 	if (fAppend) {
-        GETTEXTLENGTHEX gtxl = {0};
+		GETTEXTLENGTHEX gtxl = {0};
 #if defined( _UNICODE )
-        gtxl.codepage = 1200;
+		gtxl.codepage = 1200;
 #else
-        gtxl.codepage = CP_ACP;
+		gtxl.codepage = CP_ACP;
 #endif
-        gtxl.codepage = 1200;
-        gtxl.flags = GTL_DEFAULT | GTL_PRECISE | GTL_NUMCHARS;
-        fi.chrg.cpMin = SendDlgItemMessage(hwndDlg, IDC_LOG, EM_GETTEXTLENGTHEX, (WPARAM)&gtxl, 0);
-        sel.cpMin = sel.cpMax = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
-        SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & sel);
-    } else {
+		gtxl.codepage = 1200;
+		gtxl.flags = GTL_DEFAULT | GTL_PRECISE | GTL_NUMCHARS;
+		fi.chrg.cpMin = SendDlgItemMessage(hwndDlg, IDC_LOG, EM_GETTEXTLENGTHEX, (WPARAM)&gtxl, 0);
+		sel.cpMin = sel.cpMax = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
+		SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & sel);
+	} else {
 		SetDlgItemText(hwndDlg, IDC_LOG, _T(""));
-        sel.cpMin = 0;
+		sel.cpMin = 0;
 		sel.cpMax = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
-        SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & sel);
-        fi.chrg.cpMin = 0;
+		SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & sel);
+		fi.chrg.cpMin = 0;
 		dat->isMixed = 0;
 	}
 //SFF_SELECTION |
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_STREAMIN, fAppend ? SFF_SELECTION | SF_RTF : SFF_SELECTION |  SF_RTF, (LPARAM) & stream);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_EXSETSEL, 0, (LPARAM) & oldSel);
 	SendDlgItemMessage(hwndDlg, IDC_LOG, EM_HIDESELECTION, FALSE, 0);
+	/*
+	if (fi.chrg.cpMin > 0) {
+		sel.cpMin = fi.chrg.cpMin;
+	} else {
+		sel.cpMin = 0;
+	}
+	{
+		int len;
+		len = GetWindowTextLength(GetDlgItem(hwndDlg, IDC_LOG));
+		sel.cpMax = len;//100;//-1;
+		//AutoURLDetect(GetDlgItem(hwndDlg, IDC_LOG), &sel);
+	}
+	*/
 	if (ServiceExists(MS_SMILEYADD_REPLACESMILEYS)) {
 		SMADD_RICHEDIT3 smre;
 		smre.cbSize = sizeof(SMADD_RICHEDIT3);
 		smre.hwndRichEditControl = GetDlgItem(hwndDlg, IDC_LOG);
 		smre.Protocolname = dat->szProto;
-        if (dat->szProto!=NULL && strcmp(dat->szProto,"MetaContacts")==0) {
-            HANDLE hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) dat->hContact, 0);
-            if (hContact!=NULL) {
-                smre.Protocolname = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
-            }
-        }
+		if (dat->szProto!=NULL && strcmp(dat->szProto,"MetaContacts")==0) {
+			HANDLE hContact = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) dat->hContact, 0);
+			if (hContact!=NULL) {
+				smre.Protocolname = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+			}
+		}
 		if (fi.chrg.cpMin > 0) {
 			sel.cpMin = fi.chrg.cpMin;
 			sel.cpMax = -1;

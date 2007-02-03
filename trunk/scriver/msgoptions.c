@@ -76,6 +76,8 @@ static fontOptionsList[] = {
 	{_T("Incoming colon"), RGB(215, 0, 0), _T("Arial"), DEFAULT_CHARSET, 0, -11},
 	{_T("Message area"), RGB(0, 0, 0), _T("Arial"), DEFAULT_CHARSET, 0, -12},
 	{_T("Notices"), RGB(90, 90, 160), _T("Arial"), DEFAULT_CHARSET, 0, -12},
+	{_T("Outgoing URL"), RGB(0, 0, 255), _T("Arial"), DEFAULT_CHARSET, 0, -12},
+	{_T("Incoming URL"), RGB(0, 0, 255), _T("Arial"), DEFAULT_CHARSET, 0, -12},
 };
 
 int fontOptionsListSize = SIZEOF(fontOptionsList);
@@ -113,13 +115,14 @@ void RegisterFontServiceFonts() {
 			_tcsncpy(fid.deffontsettings.szFace, lf.lfFaceName, LF_FACESIZE);
 			_tcsncpy(fid.backgroundGroup, _T("Scriver"), SIZEOF(fid.backgroundGroup));
 			switch (i) {
-			case 0:
-			case 2:
-			case 3:
-			case 4:
+			case MSGFONTID_MYMSG:
+			case MSGFONTID_MYNAME:
+			case MSGFONTID_MYTIME:
+			case MSGFONTID_MYCOLON:
+			case MSGFONTID_MYURL:
 				_tcsncpy(fid.backgroundName, _T("Outgoing background"), SIZEOF(fid.backgroundName));
 				break;
-			case 8:
+			case MSGFONTID_MESSAGEAREA:
 				_tcsncpy(fid.backgroundName, _T("Input area background"), SIZEOF(fid.backgroundName));
 				break;
 			default:
@@ -854,48 +857,28 @@ static BOOL CALLBACK DlgProcOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 		case WM_NOTIFY:
 			switch (((LPNMHDR) lParam)->idFrom) {
 				 case IDC_POPLIST:
-                    if (((LPNMHDR) lParam)->code == NM_CLICK) {
-                        TVHITTESTINFO hti;
-                        hti.pt.x = (short) LOWORD(GetMessagePos());
-                        hti.pt.y = (short) HIWORD(GetMessagePos());
-                        ScreenToClient(((LPNMHDR) lParam)->hwndFrom, &hti.pt);
-                        if (TreeView_HitTest(((LPNMHDR) lParam)->hwndFrom, &hti))
-                            if (hti.flags & TVHT_ONITEMSTATEICON) {
-                                TVITEM tvi;
-                                tvi.mask = TVIF_HANDLE | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
-                                tvi.hItem = hti.hItem;
-                                TreeView_GetItem(((LPNMHDR) lParam)->hwndFrom, &tvi);
-                                tvi.iImage = tvi.iSelectedImage = tvi.iImage == 1 ? 2 : 1;
-                                TreeView_SetItem(((LPNMHDR) lParam)->hwndFrom, &tvi);
+					if (((LPNMHDR) lParam)->code == NM_CLICK) {
+						TVHITTESTINFO hti;
+						hti.pt.x = (short) LOWORD(GetMessagePos());
+						hti.pt.y = (short) HIWORD(GetMessagePos());
+						ScreenToClient(((LPNMHDR) lParam)->hwndFrom, &hti.pt);
+						if (TreeView_HitTest(((LPNMHDR) lParam)->hwndFrom, &hti))
+							if (hti.flags & TVHT_ONITEMSTATEICON) {
+								TVITEM tvi;
+								tvi.mask = TVIF_HANDLE | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
+								tvi.hItem = hti.hItem;
+								TreeView_GetItem(((LPNMHDR) lParam)->hwndFrom, &tvi);
+								tvi.iImage = tvi.iSelectedImage = tvi.iImage == 1 ? 2 : 1;
+								TreeView_SetItem(((LPNMHDR) lParam)->hwndFrom, &tvi);
 								SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
-                            }
-                    }
-                    break;
+							}
+					}
+				    break;
 				case 0:
 					switch (((LPNMHDR) lParam)->code) {
 						case PSN_APPLY:
 						{
 							DWORD msgTimeout, avatarHeight;
-							/* moved to container options
-
-							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_USETABS, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_USETABS));
-							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_TABSATBOTTOM, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_TABSATBOTTOM));
-							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_LIMITNAMES, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_LIMITNAMES));
-							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_HIDEONETAB, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_HIDEONETAB));
-							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_SWITCHTOACTIVE, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_SWITCHTOACTIVE));
-
-							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_SAVEPERCONTACT, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_SAVEPERCONTACT));
-							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_CASCADE, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_CASCADE));
-
-							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWSTATUSBAR, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_SHOWSTATUSBAR));
-							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWTITLEBAR, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_SHOWTITLEBAR));
-
-							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_USETRANSPARENCY, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_TRANSPARENCY));
-							DBWriteContactSettingDword(NULL, SRMMMOD, SRMSGSET_ACTIVEALPHA, SendDlgItemMessage(hwndDlg,IDC_ATRANSPARENCYVALUE,TBM_GETPOS,0,0));
-							DBWriteContactSettingDword(NULL, SRMMMOD, SRMSGSET_INACTIVEALPHA, SendDlgItemMessage(hwndDlg,IDC_ITRANSPARENCYVALUE,TBM_GETPOS,0,0));
-
-							*/
-
 							DBWriteContactSettingDword(NULL, SRMMMOD, SRMSGSET_POPFLAGS, MakeCheckBoxTreeFlags(GetDlgItem(hwndDlg, IDC_POPLIST)));
 							DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWBUTTONLINE, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_SHOWBUTTONLINE));
 							//DBWriteContactSettingByte(NULL, SRMMMOD, SRMSGSET_SHOWINFOLINE, (BYTE) IsDlgButtonChecked(hwndDlg, IDC_SHOWINFOLINE));
@@ -1057,23 +1040,19 @@ static BOOL CALLBACK DlgProcLogOptions(HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			int iItem = dis->itemData - 1;
 			COLORREF color = (COLORREF) SendDlgItemMessage(hwndDlg, IDC_BKGCOLOUR, CPM_GETCOLOUR, 0, 0);
 			switch (iItem) {
-			case 1:
-			case 5:
-			case 6:
-			case 7:
-			case 9:
-				color = (COLORREF) SendDlgItemMessage(hwndDlg, IDC_BKGINCOMING, CPM_GETCOLOUR, 0, 0);
-				break;
-			case 0:
-			case 2:
-			case 3:
-			case 4:
+			case MSGFONTID_MYMSG:
+			case MSGFONTID_MYNAME:
+			case MSGFONTID_MYTIME:
+			case MSGFONTID_MYCOLON:
+			case MSGFONTID_MYURL:
 				color = (COLORREF) SendDlgItemMessage(hwndDlg, IDC_BKGOUTGOING, CPM_GETCOLOUR, 0, 0);
 				break;
-			case 8:
+			case MSGFONTID_MESSAGEAREA:
 				color = (COLORREF) SendDlgItemMessage(hwndDlg, IDC_BKGINPUT, CPM_GETCOLOUR, 0, 0);
 				break;
-
+			default:
+				color = (COLORREF) SendDlgItemMessage(hwndDlg, IDC_BKGINCOMING, CPM_GETCOLOUR, 0, 0);
+				break;
 			}
 			hBrush = CreateSolidBrush(color);
 			hFont = CreateFont(fontOptionsList[iItem].size, 0, 0, 0,
