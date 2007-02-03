@@ -68,26 +68,12 @@ static int Service_GetStatus(WPARAM wParam, LPARAM lParam)
 
 static int Service_SetStatus(WPARAM wParam,LPARAM lParam)
 {	
-	switch((int)wParam)
-	{
-		//case ID_STATUS_ONLINE:
-		default:
-			YAMN_STATUS = ID_STATUS_ONLINE;
-			//RefreshContact();
-			break;
-		case ID_STATUS_OFFLINE:
-			YAMN_STATUS = ID_STATUS_OFFLINE;
-			//RefreshContact();
-			break;
-		//default:
-		//	YAMN_STATUS = DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0) ? wParam : ID_STATUS_ONLINE;
-		//	RefreshContact();
-		//	break;
+	int newstatus = (wParam!=ID_STATUS_OFFLINE)?ID_STATUS_ONLINE:ID_STATUS_OFFLINE;
+	if (newstatus != YAMN_STATUS){
+		int oldstatus = YAMN_STATUS;
+		YAMN_STATUS=newstatus;
+		ProtoBroadcastAck(ProtoName,NULL,ACKTYPE_STATUS,ACKRESULT_SUCCESS,(HANDLE)oldstatus,newstatus);
 	}
-
-	//char t[150];
-	//sprintf(t,"%i",wParam);
-	//MessageBox(NULL,t,"Test",0);
 	return 0;
 
 }
