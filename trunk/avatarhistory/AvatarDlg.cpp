@@ -34,6 +34,7 @@ int FillAvatarList(HWND list, HANDLE hContact);
 int CleanupAvatarPic(HWND hwnd);
 BOOL UpdateAvatarPic(HWND hwnd);
 TCHAR* GetCurrentSelFile(HWND list);
+TCHAR* GetOldStyleContactFolder(HANDLE hContact, TCHAR* fn);
 
 static int ShowDialogSvc(WPARAM wParam, LPARAM lParam);
 
@@ -131,6 +132,7 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 			CheckDlgButton(hwnd, IDC_LOGUSER, (UINT)db_byte_get(data->hContact, "AvatarHistory", "LogToDisk", BST_INDETERMINATE));
 			CheckDlgButton(hwnd, IDC_POPUPUSER, (UINT)db_byte_get(data->hContact, "AvatarHistory", "AvatarPopups", BST_INDETERMINATE));
 			CheckDlgButton(hwnd, IDC_HISTORYUSER, (UINT)db_byte_get(data->hContact, "AvatarHistory", "LogToHistory", BST_INDETERMINATE));
+			ShowWindow(GetDlgItem(hwnd, IDC_OPENFOLDER), opts.log_old_style ? SW_SHOW : SW_HIDE);
 			TranslateDialogDefault(hwnd);
 			EnableDisableControls(hwnd);
 			free(data);
@@ -283,6 +285,20 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 					UpdateAvatarPic(hwnd);
 					EnableDisableControls(hwnd);
 					return TRUE;
+				}
+				break;
+			case IDC_OPENFOLDER:
+				if(HIWORD(wParam) == BN_CLICKED)
+				{
+					if (opts.log_old_style)
+					{
+						TCHAR avfolder[MAX_PATH+1];
+						HWND list = GetDlgItem(hwnd, IDC_AVATARLIST);
+						HANDLE hContact = (HANDLE)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+						GetOldStyleContactFolder(hContact, avfolder);
+						ShellExecute(NULL, db_byte_get(NULL, "AvatarHistory", "OpenFolderMethod", 0) ? _T("explore") : _T("open"), avfolder, NULL, NULL, SW_SHOWNORMAL);
+						return TRUE;
+					}
 				}
 				break;
 			case IDC_NEXT:

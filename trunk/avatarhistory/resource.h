@@ -40,6 +40,7 @@
 #define IDC_PUBGTEXT                    1017
 #define IDC_SHOWMENU                    1019
 #define IDC_LOGGING_G                   1020
+#define IDC_SAME_FOLDER                 1021
 #define IDC_RIGHT_ACTION                1022
 #define IDC_LEFT_ACTION                 1023
 #define IDC_PROTOCOLS                   1041
@@ -73,7 +74,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40003
-#define _APS_NEXT_CONTROL_VALUE         1021
+#define _APS_NEXT_CONTROL_VALUE         1022
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif

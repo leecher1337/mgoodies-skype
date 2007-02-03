@@ -64,6 +64,7 @@ BEGIN
     CONTROL         "",IDC_AVATAR,"Static",SS_BITMAP | SS_NOTIFY | 
                     SS_CENTERIMAGE | SS_REALSIZEIMAGE | SS_SUNKEN,131,7,78,
                     74
+    PUSHBUTTON      "Open Folder",IDC_OPENFOLDER,6,81,49,14
     PUSHBUTTON      "<",IDC_BACK,138,82,31,10,BS_CENTER | BS_VCENTER
     PUSHBUTTON      ">",IDC_NEXT,172,82,31,10,BS_CENTER | BS_VCENTER
     CONTROL         "Store this user's old avatars in disk",IDC_LOGUSER,
@@ -79,7 +80,7 @@ END
 IDD_OPTIONS DIALOGEX 0, 0, 314, 238
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " Logging options ",IDC_LOGGING_G,3,3,308,57
     CONTROL         "Store old avatars on disk",IDC_LOG_DISK,"Button",
@@ -100,14 +101,17 @@ BEGIN
     EDITTEXT        IDC_REMOVED,122,109,183,13,ES_AUTOHSCROLL
     GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,133,308,103
     LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,
-                    13,147,291,11
+                    13,147,157,11
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
                     LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,12,159,158,70
+    CONTROL         "Keep all in same folder",IDC_SAME_FOLDER,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,187,147,116,11
 END
 
 IDD_POPUPS DIALOG DISCARDABLE  0, 0, 314, 240
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Show popup when a contact change his avatar",IDC_POPUPS,

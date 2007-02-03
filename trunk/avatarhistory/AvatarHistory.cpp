@@ -65,9 +65,9 @@ PLUGININFO pluginInfo={
 	"This plugin keeps backups of all your contacts' avatar changes and/or shows popups",
 	"Matthew Wild (MattJ), Ricardo Pescuma Domenecci",
 	"mwild1@gmail.com",
-	"© 2006 Matthew Wild",
-	"http://mattj.xmgfree.com/",
-	0,		//not transient
+	"© 2006 Matthew Wild, Ricardo Pescuma Domenecci",
+	"http://pescuma.mirandaim.ru/miranda/avatarhist",
+	UNICODE_AWARE,
 	0		//doesn't replace anything built-in
 };
 
@@ -228,16 +228,26 @@ HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text, char *filename)
 	BOOL isAscii = IsUnicodeAscii(log_text, len);
 
 	if (isAscii)
-		size = needed;
+		size = needed + (filename != NULL ? 2 : 0);
 	else
 		size = needed + len * sizeof(WCHAR);
 
-	tmp = (BYTE *) mir_alloc0(size + file_len);
+	tmp = (BYTE *) malloc(size + file_len);
 
 	WideCharToMultiByte(CP_ACP, 0, log_text, -1, (char *) tmp, needed, NULL, NULL);
 
-	if (!isAscii)
+	if (isAscii)
+	{
+		if (filename != NULL)
+		{
+			tmp[needed] = 0;
+			tmp[needed+1] = 0;
+		}
+	}
+	else
+	{
 		lstrcpyn((WCHAR *) &tmp[needed], log_text, len);
+	}
 
 	if (filename != NULL)
 		strcpy((char *) &tmp[size], filename);
@@ -250,14 +260,15 @@ HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text, char *filename)
 	if (filename != NULL)
 	{
 		size_t len = lstrlen(log_text) + 1;
-		tmp = (BYTE *) mir_alloc0(len + file_len);
+		tmp = (BYTE *) mir_alloc0(len + 2 + file_len);
 
 		strcpy((char *) tmp, log_text);
-		if (filename != NULL)
-			strcpy((char *) &tmp[len], filename);
+		tmp[len] = 0;
+		tmp[len + 1] = 0;
+		strcpy((char *) &tmp[len + 2], filename);
 
 		event.pBlob = tmp;
-		event.cbBlob = len + file_len;
+		event.cbBlob = len + 2 + file_len;
 	}
 	else
 	{
@@ -588,18 +599,21 @@ static int IsEnabled(WPARAM wParam, LPARAM lParam)
 
 TCHAR* GetProtocolFolder(char *proto, TCHAR* fn, size_t size)
 {
-	if (proto == NULL)
-		proto = Translate("Unknown Protocol");
-
 	FoldersGetCustomPathT(hFolder, fn, size, basedir);
 	CreateDirectory(fn, NULL);
 
+	if (!opts.log_keep_same_folder)
+	{
+		if (proto == NULL)
+			proto = Translate("Unknown Protocol");
+
 #ifdef UNICODE
-	mir_sntprintf(fn, size, _T("%s\\%S"), fn, proto);
+		mir_sntprintf(fn, size, _T("%s\\%S"), fn, proto);
 #else
-	mir_sntprintf(fn, size, _T("%s\\%s"), fn, proto);
+		mir_sntprintf(fn, size, _T("%s\\%s"), fn, proto);
 #endif
-	CreateDirectory(fn, NULL);
+		CreateDirectory(fn, NULL);
+	}
 	
 	return fn;
 }
