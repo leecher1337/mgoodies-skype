@@ -38,18 +38,15 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "PROTO_YAMN_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "PROTO_YAMN_EXPORTS" /YX /FD /c
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD MTL /nologo /D "NDEBUG" /win32
-# SUBTRACT MTL /mktyplib203
-# ADD BASE RSC /l 0x402 /d "NDEBUG"
-# ADD RSC /l 0x417 /i "../resource" /d "NDEBUG"
+# ADD BASE CPP /nologo 
+# ADD CPP /nologo 
+# ADD BASE RSC /l 0x417 /d "NDEBUG"
+# ADD RSC /l 0x417 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
+# ADD BASE LINK32 /nologo /subsystem:windows /dll /pdb:none /machine:I386 /nodefaultlib /out:"../../../bin/release/icons/proto_YAMN.dll" /filealign:512 /noentry
 # ADD LINK32 /nologo /subsystem:windows /dll /pdb:none /machine:I386 /nodefaultlib /out:"../../../bin/release/icons/proto_YAMN.dll" /filealign:512 /noentry
 # Begin Target
 

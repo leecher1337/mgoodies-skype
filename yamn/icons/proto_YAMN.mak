@@ -24,9 +24,6 @@ NULL=
 NULL=nul
 !ENDIF 
 
-CPP=cl.exe
-MTL=midl.exe
-RSC=rc.exe
 OUTDIR=.\Release
 INTDIR=.\Release
 
@@ -42,21 +39,8 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\proto_YAMN.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=/nologo /subsystem:windows /dll /pdb:none /machine:I386 /nodefaultlib /out:"../../../bin/release/icons/proto_YAMN.dll" /implib:"$(OUTDIR)\proto_YAMN.lib" /filealign:512 /noentry 
-LINK32_OBJS= \
-	"$(INTDIR)\proto_YAMN.res"
-
-"..\..\..\bin\release\icons\proto_YAMN.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "PROTO_YAMN_EXPORTS" /Fp"$(INTDIR)\proto_YAMN.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP=cl.exe
+CPP_PROJ=/nologo /ML /Fo"$(INTDIR)\\" 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -88,8 +72,24 @@ CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS"
    $(CPP_PROJ) $< 
 <<
 
-MTL_PROJ=/nologo /D "NDEBUG" /win32 
-RSC_PROJ=/l 0x417 /fo"$(INTDIR)\proto_YAMN.res" /i "../resource" /d "NDEBUG" 
+MTL=midl.exe
+MTL_PROJ=
+RSC=rc.exe
+RSC_PROJ=/l 0x417 /fo"$(INTDIR)\proto_YAMN.res" /d "NDEBUG" 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\proto_YAMN.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=/nologo /subsystem:windows /dll /pdb:none /machine:I386 /nodefaultlib /out:"../../../bin/release/icons/proto_YAMN.dll" /implib:"$(OUTDIR)\proto_YAMN.lib" /filealign:512 /noentry 
+LINK32_OBJS= \
+	"$(INTDIR)\proto_YAMN.res"
+
+"..\..\..\bin\release\icons\proto_YAMN.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
 !IF EXISTS("proto_YAMN.dep")

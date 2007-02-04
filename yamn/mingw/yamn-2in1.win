@@ -11,8 +11,8 @@ LIBS =  -L"../libs" -lunicows -lkernel32 -luser32 -lshell32 -lmsvcrt -lcomdlg32 
 INCS =  -I"../../../include" 
 CXXINCS =  -I"../../../include" 
 BIN  = bin2in1/yamn.dll
-CXXFLAGS = $(CXXINCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -DWIN2IN1 -w -fweb -frename-registers -Os
-CFLAGS = $(INCS) -D__GNUWIN32__ -W -DWIN32 -DNDEBUG -D_WINDOWS -DWIN2IN1 -w -fweb -frename-registers -Os
+CXXFLAGS = $(CXXINCS) -D__GNUWIN32__ -W -fno-inline -DWIN32 -DNDEBUG -D_WINDOWS -DWIN2IN1 -w -fweb -frename-registers -Os
+CFLAGS = $(INCS) -D__GNUWIN32__ -W -fno-inline -DWIN32 -DNDEBUG -D_WINDOWS -DWIN2IN1 -w -fweb -frename-registers -Os
 RM = rm -f
 
 .PHONY: all all-before all-after clean clean-custom

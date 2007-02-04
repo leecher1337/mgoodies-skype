@@ -38,30 +38,25 @@ RSC=rc.exe
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release\Win2in1"
-# PROP BASE Intermediate_Dir "YRelease\Win2in1"
-# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Intermediate_Dir "Release\Win2in1"
+# PROP BASE Ignore_Export_Lib 1
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release\Win2in1"
 # PROP Intermediate_Dir "Release\Win2in1"
-# PROP Ignore_Export_Lib 0
+# PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "YAMN_EXPORTS" /D "DEBUG" /YX /FD /c
-# ADD CPP /nologo /Zp4 /MD /W3 /GX /Zi /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN2IN1" /FR /YX /FD /c
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD MTL /nologo /D "NDEBUG" /win32
-# SUBTRACT MTL /mktyplib203
-# ADD BASE RSC /l 0x405 /d "NDEBUG"
+# ADD BASE CPP /nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN2IN1" /YX /FD /c
+# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN2IN1" /YX /FD /c
+# ADD BASE RSC /l 0x417 /d "NDEBUG"
 # ADD RSC /l 0x417 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 wsock32.lib kernel32.lib user32.lib shell32.lib msvcrt.lib comdlg32.lib gdi32.lib /nologo /subsystem:windows /dll /machine:I386 /nodefaultlib /filealign:512
-# SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /pdb:none /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /filealign:512
-# SUBTRACT LINK32 /debug /nodefaultlib
+# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /filealign:512
+# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /filealign:512
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win2in1"
 
@@ -69,27 +64,23 @@ LINK32=link.exe
 # PROP BASE Use_Debug_Libraries 1
 # PROP BASE Output_Dir "Debug\Win2in1"
 # PROP BASE Intermediate_Dir "Debug\Win2in1"
+# PROP BASE Ignore_Export_Lib 1
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "Debug\Win2in1"
 # PROP Intermediate_Dir "Debug\Win2in1"
-# PROP Ignore_Export_Lib 0
+# PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "YAMN_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../include" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_DEBUG" /D "WIN2IN1" /FR /YX /FD /GZ /c
-# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
-# ADD MTL /nologo /D "_DEBUG" /win32
-# SUBTRACT MTL /mktyplib203
-# ADD BASE RSC /l 0x405 /d "_DEBUG"
+# ADD BASE CPP /nologo /G4 /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "WIN2IN1" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /G4 /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "WIN2IN1" /FR /YX /FD /GZ /c
+# ADD BASE RSC /l 0x417 /d "_DEBUG"
 # ADD RSC /l 0x417 /d "_DEBUG"
 BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.libadvapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 libs/unicows.lib winspool.lib advapi32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN.dll"
-# SUBTRACT LINK32 /map /nodefaultlib
+# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN.dll"
+# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN.dll"
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Release"
 
@@ -97,27 +88,24 @@ LINK32=link.exe
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release/WinNT"
 # PROP BASE Intermediate_Dir "Release/WinNT"
+# PROP BASE Ignore_Export_Lib 1
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release/WinNT"
 # PROP Intermediate_Dir "Release/WinNT"
-# PROP Ignore_Export_Lib 0
+# PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "YAMN_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR /YX /FD /c
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD MTL /nologo /D "NDEBUG" /win32
-# SUBTRACT MTL /mktyplib203
+# ADD BASE CPP /nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
 # ADD BASE RSC /l 0x405 /d "NDEBUG"
 # ADD RSC /l 0x417 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /pdb:none /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll"
-# SUBTRACT LINK32 /nodefaultlib
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll" /filealign:512
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll" /filealign:512
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
 
@@ -125,6 +113,7 @@ LINK32=link.exe
 # PROP BASE Use_Debug_Libraries 1
 # PROP BASE Output_Dir "Debug/WinNT"
 # PROP BASE Intermediate_Dir "Debug/WinNT"
+# PROP BASE Ignore_Export_Lib 1
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
@@ -132,20 +121,16 @@ LINK32=link.exe
 # PROP Intermediate_Dir "Debug/WinNT"
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "YAMN_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../include" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_DEBUG" /FR /YX /FD /GZ /c
-# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
-# ADD MTL /nologo /D "_DEBUG" /win32
-# SUBTRACT MTL /mktyplib203
-# ADD BASE RSC /l 0x405 /d "_DEBUG"
+# ADD BASE CPP /nologo /G4 /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /G4 /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FR /YX /FD /GZ /c
+# ADD BASE RSC /l 0x417 /d "_DEBUG"
 # ADD RSC /l 0x417 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.libadvapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 winspool.lib advapi32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-NT/YAMN.dll"
-# SUBTRACT LINK32 /map /nodefaultlib
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-NT/YAMN.dll"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-NT/YAMN.dll"
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
 
@@ -153,29 +138,24 @@ LINK32=link.exe
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release\Win9x"
 # PROP BASE Intermediate_Dir "Release\Win9x"
-# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Ignore_Export_Lib 1
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release\Win9x"
 # PROP Intermediate_Dir "Release\Win9x"
-# PROP Ignore_Export_Lib 0
+# PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "YAMN_EXPORTS" /D "DEBUG" /YX /FD /c
-# ADD CPP /nologo /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN9X" /FR /YX /FD /c
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD MTL /nologo /D "NDEBUG" /win32
-# SUBTRACT MTL /mktyplib203
-# ADD BASE RSC /l 0x405 /d "NDEBUG"
+# ADD BASE CPP /nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN9X" /YX /FD /c
+# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN9X" /YX /FD /c
+# ADD BASE RSC /l 0x417 /d "NDEBUG"
 # ADD RSC /l 0x417 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 wsock32.lib kernel32.lib user32.lib shell32.lib msvcrt.lib comdlg32.lib gdi32.lib /nologo /subsystem:windows /dll /machine:I386 /nodefaultlib /filealign:512
-# SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /pdb:none /machine:I386 /out:"../../bin/Release/plugins/YAMN-9x/YAMN.dll" /filealign:512
-# SUBTRACT LINK32 /nodefaultlib
+# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/Release/plugins/YAMN-9x/YAMN.dll" /filealign:512
+# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/Release/plugins/YAMN-9x/YAMN.dll" /filealign:512
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
 
@@ -183,7 +163,7 @@ LINK32=link.exe
 # PROP BASE Use_Debug_Libraries 1
 # PROP BASE Output_Dir "Debug\Win9x"
 # PROP BASE Intermediate_Dir "Debug\Win9x"
-# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Ignore_Export_Lib 1
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
@@ -191,20 +171,16 @@ LINK32=link.exe
 # PROP Intermediate_Dir "Debug\Win9x"
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "DEBUG" /FR /YX /FD /GZ /c
-# ADD CPP /nologo /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "WIN9X" /D "YAMN_VER_BETA" /FR /YX /FD /GZ /c
-# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
-# ADD MTL /nologo /D "_DEBUG" /win32
-# SUBTRACT MTL /mktyplib203
-# ADD BASE RSC /l 0x405 /d "_DEBUG"
+# ADD BASE CPP /nologo /G4 /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "WIN9X" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /G4 /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "WIN9X" /FR /YX /FD /GZ /c
+# ADD BASE RSC /l 0x417 /d "_DEBUG"
 # ADD RSC /l 0x417 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib msvcrt.lib /nologo /dll /debug /machine:I386 /nodefaultlib /pdbtype:sept
-# ADD LINK32 libs/unicows.lib winspool.lib advapi32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-9x/YAMN.dll"
-# SUBTRACT LINK32 /nodefaultlib
+# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-9x/YAMN.dll"
+# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-9x/YAMN.dll"
 
 !ENDIF 
 
@@ -334,7 +310,6 @@ SOURCE=.\include\m_updater.h
 # Begin Source File
 
 SOURCE=.\account.cpp
-# SUBTRACT CPP /Fr
 # End Source File
 # Begin Source File
 

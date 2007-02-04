@@ -1,7 +1,7 @@
 # Microsoft Developer Studio Generated NMAKE File, Based on Base.dsp
 !IF "$(CFG)" == ""
-CFG=Base - Win32 Debug
-!MESSAGE No configuration specified. Defaulting to Base - Win32 Debug.
+CFG=Base - Win32 Release
+!MESSAGE No configuration specified. Defaulting to Base - Win32 Release.
 !ENDIF 
 
 !IF "$(CFG)" != "Base - Win32 Release" && "$(CFG)" != "Base - Win32 Debug"
@@ -9,7 +9,7 @@ CFG=Base - Win32 Debug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "Base.mak" CFG="Base - Win32 Debug"
+!MESSAGE NMAKE /f "Base.mak" CFG="Base - Win32 Release"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
@@ -25,10 +25,6 @@ NULL=
 NULL=nul
 !ENDIF 
 
-CPP=cl.exe
-MTL=midl.exe
-RSC=rc.exe
-
 !IF  "$(CFG)" == "Base - Win32 Release"
 
 OUTDIR=.\Release
@@ -42,72 +38,13 @@ CLEAN :
 	-@erase "$(INTDIR)\maindll.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(OUTDIR)\Base.exp"
-	-@erase "$(OUTDIR)\Base.lib"
 	-@erase "..\..\..\..\bin\release\plugins\YAMN-filter\Base.dll"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "../../../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /Fp"$(INTDIR)\Base.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\Base.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\Base.pdb" /machine:I386 /out:"../../../../bin/release/plugins/YAMN-filter/Base.dll" /implib:"$(OUTDIR)\Base.lib" 
-LINK32_OBJS= \
-	"$(INTDIR)\debug.obj" \
-	"$(INTDIR)\maindll.obj"
-
-"..\..\..\..\bin\release\plugins\YAMN-filter\Base.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-!ELSEIF  "$(CFG)" == "Base - Win32 Debug"
-
-OUTDIR=.\Debug
-INTDIR=.\Debug
-# Begin Custom Macros
-OutDir=.\Debug
-# End Custom Macros
-
-ALL : "$(OUTDIR)\Base.dll"
-
-
-CLEAN :
-	-@erase "$(INTDIR)\debug.obj"
-	-@erase "$(INTDIR)\maindll.obj"
-	-@erase "$(INTDIR)\vc60.idb"
-	-@erase "$(INTDIR)\vc60.pdb"
-	-@erase "$(OUTDIR)\Base.dll"
-	-@erase "$(OUTDIR)\Base.exp"
-	-@erase "$(OUTDIR)\Base.ilk"
-	-@erase "$(OUTDIR)\Base.lib"
-	-@erase "$(OUTDIR)\Base.pdb"
-
-"$(OUTDIR)" :
-    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
-
-CPP_PROJ=/nologo /MD /W3 /Gm /GX /ZI /Od /I "../../../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "DEBUG_FILTER" /Fp"$(INTDIR)\Base.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
-MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\Base.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\Base.pdb" /debug /machine:I386 /out:"$(OUTDIR)\Base.dll" /implib:"$(OUTDIR)\Base.lib" /pdbtype:sept 
-LINK32_OBJS= \
-	"$(INTDIR)\debug.obj" \
-	"$(INTDIR)\maindll.obj"
-
-"$(OUTDIR)\Base.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-!ENDIF 
+CPP=cl.exe
+CPP_PROJ=/nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /Fp"$(INTDIR)\Base.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -139,6 +76,111 @@ LINK32_OBJS= \
    $(CPP_PROJ) $< 
 <<
 
+MTL=midl.exe
+MTL_PROJ=
+RSC=rc.exe
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\Base.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib user32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\Base.pdb" /machine:I386 /out:"../../../../bin/release/plugins/YAMN-filter/Base.dll" /implib:"$(OUTDIR)\Base.lib" /filealign:512 
+LINK32_OBJS= \
+	"$(INTDIR)\debug.obj" \
+	"$(INTDIR)\maindll.obj"
+
+"..\..\..\..\bin\release\plugins\YAMN-filter\Base.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ELSEIF  "$(CFG)" == "Base - Win32 Debug"
+
+OUTDIR=.\Debug
+INTDIR=.\Debug
+# Begin Custom Macros
+OutDir=.\Debug
+# End Custom Macros
+
+ALL : "..\..\..\..\bin\Debug\plugins\YAMN-filter\Base.dll" "$(OUTDIR)\Base.bsc"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\debug.obj"
+	-@erase "$(INTDIR)\debug.sbr"
+	-@erase "$(INTDIR)\maindll.obj"
+	-@erase "$(INTDIR)\maindll.sbr"
+	-@erase "$(INTDIR)\vc60.idb"
+	-@erase "$(INTDIR)\vc60.pdb"
+	-@erase "$(OUTDIR)\Base.bsc"
+	-@erase "$(OUTDIR)\Base.exp"
+	-@erase "$(OUTDIR)\Base.pdb"
+	-@erase "..\..\..\..\bin\Debug\plugins\YAMN-filter\Base.dll"
+	-@erase "..\..\..\..\bin\Debug\plugins\YAMN-filter\Base.ilk"
+
+"$(OUTDIR)" :
+    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+
+CPP=cl.exe
+CPP_PROJ=/nologo /G4 /Zp4 /MDd /W3 /Gm /Gi /GX /ZI /Od /I "../../../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FR"$(INTDIR)\\" /Fp"$(INTDIR)\Base.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=
+RSC=rc.exe
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\Base.bsc" 
+BSC32_SBRS= \
+	"$(INTDIR)\debug.sbr" \
+	"$(INTDIR)\maindll.sbr"
+
+"$(OUTDIR)\Base.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
+    $(BSC32) @<<
+  $(BSC32_FLAGS) $(BSC32_SBRS)
+<<
+
+LINK32=link.exe
+LINK32_FLAGS=kernel32.lib user32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\Base.pdb" /debug /machine:I386 /out:"../../../../bin/Debug/plugins/YAMN-filter/Base.dll" /implib:"$(OUTDIR)\Base.lib" 
+LINK32_OBJS= \
+	"$(INTDIR)\debug.obj" \
+	"$(INTDIR)\maindll.obj"
+
+"..\..\..\..\bin\Debug\plugins\YAMN-filter\Base.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ENDIF 
+
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
 !IF EXISTS("Base.dep")
@@ -152,13 +194,35 @@ LINK32_OBJS= \
 !IF "$(CFG)" == "Base - Win32 Release" || "$(CFG)" == "Base - Win32 Debug"
 SOURCE=.\debug.cpp
 
+!IF  "$(CFG)" == "Base - Win32 Release"
+
+
 "$(INTDIR)\debug.obj" : $(SOURCE) "$(INTDIR)"
 
 
+!ELSEIF  "$(CFG)" == "Base - Win32 Debug"
+
+
+"$(INTDIR)\debug.obj"	"$(INTDIR)\debug.sbr" : $(SOURCE) "$(INTDIR)"
+
+
+!ENDIF 
+
 SOURCE=.\maindll.cpp
+
+!IF  "$(CFG)" == "Base - Win32 Release"
+
 
 "$(INTDIR)\maindll.obj" : $(SOURCE) "$(INTDIR)"
 
+
+!ELSEIF  "$(CFG)" == "Base - Win32 Debug"
+
+
+"$(INTDIR)\maindll.obj"	"$(INTDIR)\maindll.sbr" : $(SOURCE) "$(INTDIR)"
+
+
+!ENDIF 
 
 
 !ENDIF 
