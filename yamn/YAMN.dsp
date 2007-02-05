@@ -55,8 +55,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /filealign:512
-# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /filealign:512
+# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /filealign:512
+# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /filealign:512
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win2in1"
 
@@ -79,8 +79,8 @@ LINK32=link.exe
 BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN.dll"
-# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN.dll"
+# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN.dll"
+# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN.dll"
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Release"
 
@@ -104,8 +104,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll" /filealign:512
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll" /filealign:512
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll" /filealign:512
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll" /filealign:512
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
 
@@ -129,8 +129,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-NT/YAMN.dll"
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-NT/YAMN.dll"
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-NT/YAMN.dll"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-NT/YAMN.dll"
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Release Win9x"
 
@@ -154,8 +154,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/Release/plugins/YAMN-9x/YAMN.dll" /filealign:512
-# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/Release/plugins/YAMN-9x/YAMN.dll" /filealign:512
+# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/Release/plugins/YAMN-9x/YAMN.dll" /filealign:512
+# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/Release/plugins/YAMN-9x/YAMN.dll" /filealign:512
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win9x"
 
@@ -179,8 +179,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-9x/YAMN.dll"
-# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-9x/YAMN.dll"
+# ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-9x/YAMN.dll"
+# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-9x/YAMN.dll"
 
 !ENDIF 
 
@@ -354,18 +354,6 @@ SOURCE=.\resources\iconeutral.ico
 # Begin Source File
 
 SOURCE=.\resources\iconttbdown.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\resources\iconttbup.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\resources\icoyamn1.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\resources\icoyamn2.ico
 # End Source File
 # Begin Source File
 

@@ -107,7 +107,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\YAMN.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
+LINK32_FLAGS=libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \
@@ -263,7 +263,7 @@ BSC32_SBRS= \
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:yes /pdb:"$(OUTDIR)\YAMN.pdb" /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" 
+LINK32_FLAGS=libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:yes /pdb:"$(OUTDIR)\YAMN.pdb" /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \
@@ -369,7 +369,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\YAMN.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \
@@ -525,7 +525,7 @@ BSC32_SBRS= \
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:yes /pdb:"$(OUTDIR)\YAMN.pdb" /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-NT/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:yes /pdb:"$(OUTDIR)\YAMN.pdb" /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-NT/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \
@@ -631,7 +631,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\YAMN.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /out:"../../bin/Release/plugins/YAMN-9x/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
+LINK32_FLAGS=libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /out:"../../bin/Release/plugins/YAMN-9x/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \
@@ -787,7 +787,7 @@ BSC32_SBRS= \
 <<
 
 LINK32=link.exe
-LINK32_FLAGS=libs/unicows.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:yes /pdb:"$(OUTDIR)\YAMN.pdb" /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-9x/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" 
+LINK32_FLAGS=libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:yes /pdb:"$(OUTDIR)\YAMN.pdb" /debug /machine:I386 /out:"../../bin/Debug/plugins/YAMN-9x/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \

@@ -314,7 +314,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 					if( strcmp((char*)dbv.pszVal, Finder->Name)==0)
 					{
 						Finder->hContact = hContact;
-						DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", YAMN_STATUS);
+						DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", ID_STATUS_ONLINE);
 						DBWriteContactSettingString(Finder->hContact, "CList", "StatusMsg", Translate("No new mail"));
 						if((Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
 						{

@@ -87,17 +87,12 @@ DWORD HotKeyThreadID;
 
 UINT SecTimer;
 
+BOOL bIcolibEmbededInCore = FALSE;
+
 HICON hYamnIcons[ICONSNUMBER];
 char *iconDescs[ICONSNUMBER]={ICONSDESCS};
 char *iconNames[ICONSNUMBER]={ICONSNAMES};
  int iconIndexes[ICONSNUMBER]={ICONSINDS};
-
-//HICON hYamnIconOrg, hYamnIcon;
-//HICON hNeutralIconOrg, hNeutralIcon;
-//HICON hNewMailIconOrg, hNewMailIcon;
-//HICON hConnectFailIconOrg, hConnectFailIcon;
-//HICON hTopToolBarUpOrg, hTopToolBarUp;
-//HICON hTopToolBarDownOrg, hTopToolBarDown;
 
 HANDLE hMenuItemMain = 0;
 HANDLE hMenuItemCont = 0;
@@ -187,7 +182,6 @@ void SetDefaultProtocolIcons()
 {
 	char szFileName[MAX_PATH+1];
 	char oldname[] = YAMN_DBMODULE"4007_"; // the deprecated one
-	char newname[] = "core_status_"YAMN_DBMODULE"_";
 	char dllname[] = "plugins\\"YAMN_DBMODULE".dll,-xxxxx";
 
 	// determine whether external icon file exists
@@ -202,21 +196,17 @@ void SetDefaultProtocolIcons()
 
 	for (int i=0;i<4;i++){
 		oldname[sizeof(oldname)-2]=protoStatusInd[i]+'1'; // "Out for lunch will not work here"
-		newname[sizeof(newname)-2]=protoStatusInd[i]+'0';
 		if (isDllPresent){ // use the icons in proto_YAMN.dll and delete any user settings
 			DBDeleteContactSetting(NULL, "Icons", oldname);
-			DBDeleteContactSetting(NULL, "SkinIcons", newname);
 		} else {
 			DBVARIANT dbv;
 			if(!DBGetContactSetting(NULL,"SkinIcons",iconNames[indices[i]],&dbv)) 
 			{// user won't be able to set status icons different from those in YAMN section
 				DBWriteContactSettingString(NULL, "Icons", oldname, (char *)dbv.pszVal);			
-				DBWriteContactSettingString(NULL, "SkinIcons", newname, (char *)dbv.pszVal);			
 				DBFreeVariant(&dbv);
 			} else {
 				_snprintf(&dllname[sizeof(dllname)-6],5,"%d",iconIndexes[indices[i]]);
 				DBWriteContactSettingString(NULL, "Icons", oldname, dllname);			
-				DBWriteContactSettingString(NULL, "SkinIcons", newname, dllname);			
 			}
 		}
 	}
@@ -265,6 +255,9 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvRese
 
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
 {
+	if (mirandaVersion >= PLUGIN_MAKE_VERSION(0, 7, 0, 3))
+		bIcolibEmbededInCore = TRUE;
+
 	return &pluginInfo;
 }
 
@@ -309,7 +302,7 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 		//MessageBox(NULL,"Icolib present","test",0);
 		SKINICONDESC sid = {0};
 		HICON temp;
-		sid.cbSize = SKINICONDESC_SIZE_V2;
+		sid.cbSize = SKINICONDESC_SIZE_V2; 
 		sid.pszSection = "YAMN";
 		sid.pszDefaultFile = NULL;
 		for (int i=0; i<ICONSNUMBER; i++){
@@ -349,7 +342,6 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 	mi.pszService = MS_YAMN_CLISTCONTEXTAPP;
 	hMenuItemContApp = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
 
-//#ifndef WIN2IN1
 	//Use for the Updater plugin
 	if(ServiceExists(MS_UPDATE_REGISTER)) 
 	{
@@ -370,7 +362,7 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">YAMN tweety ";
 		#endif
 		wsprintf(szUrl,"http://www.miranda-fr.net/tweety/yamn/%s.zip",YAMN_FILENAME);
-	    update.szBetaUpdateURL = szUrl;
+	    	update.szBetaUpdateURL = szUrl;
 		update.szBetaVersionURL = "http://www.miranda-fr.net/tweety/yamn/yamn_beta.html";
 		update.pbBetaVersionPrefix = (BYTE *)"YAMN version ";
 		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);
@@ -379,8 +371,6 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
 
 	}
-//#endif // WIN2IN1 - no updated support for this version
-
 	
 	RegisterPOP3Plugin(0,0);
 	return 0;
@@ -397,8 +387,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	pluginLink=link;
 
-	//ProtoName = "YAMN";
-	YAMN_STATUS = ID_STATUS_ONLINE;
+	YAMN_STATUS = ID_STATUS_OFFLINE;
 
 	// Enumerate all the code pages available for the System Locale
 	EnumSystemCodePages(EnumSystemCodePagesProc, CP_INSTALLED);
@@ -422,10 +411,18 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
     MessageBox( NULL,unknownCP, TEXT("Unkown Code Page"), MB_OK);
 	#endif
 
-	for (i=0; i<ICONSNUMBER; i++){
-		if (i==6) hYamnIcons[6] = hYamnIcons[4];
-		else hYamnIcons[i] = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(iconIndexes[i])); 
+	HIMAGELIST CSImages = ImageList_Create(16, 16, ILC_COLOR8|ILC_MASK, 0, ICONSNUMBER-2);
+	{// workarround of 4bit forced images
+		HBITMAP hScrBM = (HBITMAP)LoadImage(YAMNVar.hInst,MAKEINTRESOURCE(IDB_ICONS), IMAGE_BITMAP, 0, 0,LR_SHARED);
+		ImageList_AddMasked(CSImages, hScrBM, RGB( 255, 0, 255 ));
+		DeleteObject(hScrBM);
 	}
+	for (i=0; i<ICONSNUMBER-2; i++){
+		hYamnIcons[i] = ImageList_ExtractIcon(NULL, CSImages, i);
+	}
+	ImageList_Destroy(CSImages);
+	hYamnIcons[6] = hYamnIcons[4];
+	hYamnIcons[7] = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(iconIndexes[7]));
 
 	//Registering YAMN as protocol
 	PROTOCOLDESCRIPTOR pd;
@@ -506,6 +503,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	HookEvents();
 
+	if (!bIcolibEmbededInCore)
 	SetDefaultProtocolIcons();
 
 	LoadPlugins();
