@@ -42,8 +42,6 @@ extern HYAMNPROTOPLUGIN POP3Plugin;
 
 static int Service_GetCaps(WPARAM wParam, LPARAM lParam)
 {
-	if(wParam==PFLAGNUM_3)
-		return 0;
 	if(wParam==PFLAGNUM_4)
 		return PF4_NOCUSTOMAUTH;
 	if(wParam==PFLAG_UNIQUEIDTEXT)
@@ -52,12 +50,13 @@ static int Service_GetCaps(WPARAM wParam, LPARAM lParam)
         return 400;
 	if(wParam==PFLAG_UNIQUEIDSETTING)
         return (int) "Id";
-	if(DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0)){
 		if(wParam==PFLAGNUM_2)
-			return PF2_ONLINE | PF2_LONGAWAY | PF2_LIGHTDND;
-		if (wParam=PFLAGNUM_5) // this crashes miranda
-			return PF2_LONGAWAY | PF2_LIGHTDND;
-	}
+		return PF2_ONLINE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_LIGHTDND;
+	if(wParam==PFLAGNUM_5)
+		if(DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0))
+			return PF2_SHORTAWAY | PF2_LONGAWAY | PF2_LIGHTDND;
+		else
+			return PF2_ONLINE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_LIGHTDND;
 	return 0;
 }
 
@@ -86,13 +85,11 @@ static int Service_GetName(WPARAM wParam, LPARAM lParam)
 
 static int Service_LoadIcon(WPARAM wParam,LPARAM lParam)
 {
-	return (int)CopyIcon(hYamnIcons[0]); // noone cares about other than PLI_PROTOCOL
-	//switch LOWORD( wParam ) {
-	//case PLI_PROTOCOL: return (int)CopyIcon(hYamnIcons[0]);
-	//case PLI_ONLINE: return (int)CopyIcon(hYamnIcons[2]);
-	//case PLI_OFFLINE: return (int)CopyIcon(hYamnIcons[3]);
-	//default: return (int)(HICON)NULL;
-	//}
+	if ( LOWORD( wParam ) == PLI_PROTOCOL )
+		return (int)CopyIcon(hYamnIcons[0]); // noone cares about other than PLI_PROTOCOL
+
+	return (int)(HICON)NULL;
+
 }
  
 /*static*/ int ClistContactDoubleclicked(WPARAM wParam, LPARAM lParam)
@@ -507,7 +504,7 @@ void DestroyServiceFunctions(void)
 	}
 };
 
-//Function to put all enabled contact with the current status
+//Function to put all enabled contact to the Online status
 void RefreshContact(void)
 {
 	HACCOUNT Finder;
@@ -518,15 +515,11 @@ void RefreshContact(void)
 		{
 			if((Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
 			{
-				DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", YAMN_STATUS);
-				//DBWriteContactSettingString(Finder->hContact, "CList", "StatusMsg", Translate("No new mail"));
 				DBDeleteContactSetting(Finder->hContact, "CList", "Hidden");
 			}
 			else
 			{
-				//CallService(MS_DB_CONTACT_DELETE,(WPARAM)(HANDLE) Finder->Contact, 0);
 				DBWriteContactSettingByte(Finder->hContact, "CList", "Hidden", 1);
-				//Finder->Contact = NULL;
 			}
 		}
 		else
@@ -538,7 +531,7 @@ void RefreshContact(void)
 				DBWriteContactSettingString(Finder->hContact,ProtoName,"Id",Finder->Name);
 				DBWriteContactSettingString(Finder->hContact,ProtoName,"Nick",Finder->Name);
 				DBWriteContactSettingString(Finder->hContact,"Protocol","p",ProtoName);
-				DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", YAMN_STATUS);
+				DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", ID_STATUS_ONLINE);
 				DBWriteContactSettingString(Finder->hContact, "CList", "StatusMsg", Translate("No new mail"));
 			}
 

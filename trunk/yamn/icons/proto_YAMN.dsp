@@ -64,7 +64,7 @@ SOURCE=..\resources\iconttbdown.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\resources\iconttbup.ico
+SOURCE=iconttbup.ico
 # End Source File
 # Begin Source File
 
@@ -72,11 +72,11 @@ SOURCE=..\resources\icooffline.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\resources\icoyamn1.ico
+SOURCE=icoyamn1.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\resources\icoyamn2.ico
+SOURCE=icoyamn2.ico
 # End Source File
 # Begin Source File
 
