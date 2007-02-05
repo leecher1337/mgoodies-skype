@@ -2,6 +2,9 @@ Spell Checker
 
 Changelog:
 
+. 0.0.2.3
+  * Fix for resource leak (thanks borkra)
+
 . 0.0.2.2
   * Better handling of icons (thanks borkra)
   * Don't crash anymore if default SRMM is installed (thanks borkra)

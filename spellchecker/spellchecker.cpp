@@ -30,13 +30,13 @@ PLUGININFO pluginInfo = {
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,2),
+	PLUGIN_MAKE_VERSION(0,0,2,3),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
-	"http://miranda-im.org/",
-	0,	//not transient
+	"http://pescuma.mirandaim.ru/miranda/spellchecker",
+	UNICODE_AWARE,
 	0	//doesn't replace anything built-in
 };
 
@@ -115,7 +115,7 @@ typedef void (*FoundWrongWordCallback)(TCHAR *word, CHARRANGE pos, void *param);
 
 
 #define DEFINE_GUIDXXX(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
-        EXTERN_C const GUID CDECL name \
+        const GUID CDECL name \
                 = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
 
 DEFINE_GUIDXXX(IID_ITextDocument,0x8CC497C0,0xA1DF,0x11CE,0x80,0x98,
@@ -1039,8 +1039,6 @@ void ModifyIcon(Dialog *dlg)
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.hIcon = (dlg->lang == NULL || dlg->lang->hFlag == NULL ? LoadIconEx("spellchecker_unknown_flag", true) : CopyIcon(dlg->lang->hFlag));
-		sid.hIconDisabled = LoadIconEx("spellchecker_disabled", true);
 		sid.flags = (dlg->enabled ? 0 : MBF_DISABLED);
 
 		char tooltip[1024];
@@ -1178,9 +1176,9 @@ int RemoveContactTextBox(HWND hwnd)
 
 		dialogs.erase(hwnd);
 
-		dlg->ole->Release();
 		if (dlg->textDocument != NULL)
 			dlg->textDocument->Release();
+		dlg->ole->Release();
 
 		FreePopupData(dlg);
 		free(dlg);
@@ -1853,5 +1851,6 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	return CallWindowProc(dlg->old_menu_proc, hwnd, msg, wParam, lParam);
 }
+
 
 
