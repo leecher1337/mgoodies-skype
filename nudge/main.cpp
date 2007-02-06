@@ -112,6 +112,20 @@ void RegisterToUpdate(void)
 	}
 }
 
+int NudgeShowMenu(WPARAM wParam,LPARAM lParam)
+{	
+
+	NudgeElementList *n;
+	for(n = NudgeList;n != NULL; n = n->next)
+	{
+		if(!strcmp((char *) wParam,n->item.ProtocolName))
+		{
+			return n->item.ShowContactMenu((bool) lParam);
+		}		
+	}
+	return 0;
+}
+
 int NudgeSend(WPARAM wParam,LPARAM lParam)
 {
 
@@ -559,6 +573,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	CreateServiceFunction(MS_SHAKE_CLIST,ShakeClist);
 	CreateServiceFunction(MS_SHAKE_CHAT,ShakeChat);
 	CreateServiceFunction(MS_NUDGE_SEND,NudgeSend);
+	CreateServiceFunction(MS_NUDGE_SHOWMENU,NudgeShowMenu);
 	return 0; 
 }
 
@@ -848,7 +863,7 @@ int Nudge_AddElement(char *protoName)
 	mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_NUDGE ));
 	mi.pszName = Translate( "Send &Nudge" );
 	mi.pszService = MS_NUDGE_SEND;
-	CallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
+	
 	
 	//Add a specific sound per protocol
 	char nudgesoundtemp[ 512 ];
@@ -861,6 +876,8 @@ int Nudge_AddElement(char *protoName)
 	strncpy( newNudge->item.NudgeSoundname, nudgesoundtemp, sizeof(newNudge->item.NudgeSoundname) ); 
 
 	strcpy( newNudge->item.ProtocolName, protoName );
+
+	newNudge->item.hContactMenu = (HANDLE) CallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 
 	newNudge->item.Load();
 	

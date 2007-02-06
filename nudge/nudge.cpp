@@ -24,6 +24,28 @@ void CNudge::Load(void)
 	this->sendTimeSec = DBGetContactSettingDword(NULL, "Nudge", SectionName, 30);
 }
 
+int CNudgeElement::ShowContactMenu(bool show)
+{
+	if( !show)
+	{
+		CLISTMENUITEM mi;
+		memset( &mi, 0, sizeof( mi ));
+		/*mi.popupPosition = 500085000;
+		mi.pszContactOwner = (char *) wParam;
+		mi.pszPopupName = (char *) wParam;
+		mi.cbSize = sizeof( mi );
+		mi.flags = CMIF_NOTOFFLINE & CMIF_HIDDEN;
+		mi.position = -500050004;
+		mi.hIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_NUDGE ));
+		mi.pszName = Translate( "Send &Nudge" );
+		mi.pszService = MS_NUDGE_SEND;*/
+		mi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hContactMenu, (LPARAM)&mi);
+	}
+
+	return 0;
+}
+
 void CNudgeElement::Save(void)
 {
 	char SectionName[512];
