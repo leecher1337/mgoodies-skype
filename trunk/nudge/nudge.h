@@ -52,9 +52,11 @@ public:
 	int popupTimeSec;
 	int iProtoNumber;
 	HICON hIcon;
+	HANDLE hContactMenu;
 
 	void Load(void);
 	void Save(void);
+	int ShowContactMenu(bool show);
 };
 
 typedef struct NudgeElementList
