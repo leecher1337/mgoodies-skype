@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern TCHAR* pszActiveWndID ;
 extern char*  pszActiveWndModule ;
 extern HICON  hIcons[30];
-extern HIMAGELIST hIconsList;
 extern int eventMessageIcon;
 extern int overlayIcon;
 extern struct MM_INTERFACE		mmi ;
@@ -106,12 +105,12 @@ int SM_RemoveSession( const TCHAR* pszID, const char* pszModule)
 			if (pTemp->hWnd )
 				SendMessage(pTemp->hWnd, GC_EVENT_CONTROL+WM_USER+500, SESSION_TERMINATE, 0);
 
+			DoEventHook(pTemp->ptszID, pTemp->pszModule, GC_SESSION_TERMINATE, NULL, NULL, (DWORD)pTemp->dwItemData);
+			
 			if (pLast == NULL)
 				m_WndList = pTemp->next;
 			else
 				pLast->next = pTemp->next;
-
-			DoEventHook(pTemp->ptszID, pTemp->pszModule, GC_SESSION_TERMINATE, NULL, NULL, (DWORD)pTemp->dwItemData);
 
 			UM_RemoveAll(&pTemp->pUsers);
 			TM_RemoveAll(&pTemp->pStatuses);
@@ -881,13 +880,13 @@ MODULEINFO* MM_AddModule(const char* pszModule)
 void MM_IconsChanged(void)
 {
 	MODULEINFO *pTemp = m_ModList, *pLast = NULL;
-	ImageList_ReplaceIcon(g_dat->hTabIconList, eventMessageIcon, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
+	ImageList_ReplaceIcon_Ex(g_dat->hTabIconList, eventMessageIcon, SKINICON_EVENT_MESSAGE);
 	ImageList_ReplaceIcon(g_dat->hTabIconList, overlayIcon, LoadIconEx(IDI_OVERLAY, "overlay", 0, 0));
 	while (pTemp != NULL)
 	{
-		pTemp->OnlineIconIndex = ImageList_ReplaceIcon(g_dat->hTabIconList, pTemp->OnlineIconIndex, LoadSkinnedProtoIcon(pTemp->pszModule, ID_STATUS_ONLINE));
-		pTemp->OfflineIconIndex = ImageList_ReplaceIcon(g_dat->hTabIconList, pTemp->OfflineIconIndex, LoadSkinnedProtoIcon(pTemp->pszModule, ID_STATUS_OFFLINE));
-
+		pTemp->OnlineIconIndex = ImageList_ReplaceIcon_ProtoEx(g_dat->hTabIconList, pTemp->OnlineIconIndex, pTemp->pszModule, ID_STATUS_ONLINE);
+		pTemp->OfflineIconIndex = ImageList_ReplaceIcon_ProtoEx(g_dat->hTabIconList, pTemp->OfflineIconIndex, pTemp->pszModule, ID_STATUS_OFFLINE);
+		
 		if (pTemp->hOfflineIcon)
 			DestroyIcon(pTemp->hOfflineIcon);
 		if (pTemp->hOnlineIcon)

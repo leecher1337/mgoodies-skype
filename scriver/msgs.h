@@ -157,6 +157,7 @@ struct MessageWindowData
 	struct avatarCacheEntry *ace;
 	int		isMixed;
 	int		sendAllConfirm;
+	HICON   userMenuIcon;
 };
 
 #define HM_EVENTSENT         (WM_USER+10)

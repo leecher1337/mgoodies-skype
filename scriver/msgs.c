@@ -34,7 +34,7 @@ static void InitREOleCallback(void);
 HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand, hDragCursor;
 static HANDLE hEventDbEventAdded, hEventDbSettingChange, hEventContactDeleted;
 static HANDLE hEventClistDoubleClicked, hEventSmileyAddOptionsChanged, hEventIEViewOptionsChanged, hEventMyAvatarChanged, hEventAvatarChanged;
-static HANDLE hEventOptInitialise, hEventSkin2IconsChanged, hEventFontServiceFontsChanged, hEventIconPressed;
+static HANDLE hEventOptInitialise, hEventFontServiceFontsChanged, hEventIconPressed;
 
 static HANDLE hSvcSendMessageCommand, hSvcSendMessageCommandW, hSvcGetWindowAPI, hSvcGetWindowClass, hSvcGetWindowData, hSvcReadMessageCommand, hSvcTypingMessageCommand;
 
@@ -448,8 +448,8 @@ void ChangeStatusIcons() {
 	sid.cbSize = sizeof(sid);
 	sid.szModule = SRMMMOD;
 	sid.dwId = 0;
-	sid.hIcon = g_dat->hIcons[SMF_ICON_UNICODEON];
-	sid.hIconDisabled = g_dat->hIcons[SMF_ICON_UNICODEOFF];
+	sid.hIcon = CopyIcon(g_dat->hIcons[SMF_ICON_UNICODEON]);
+	sid.hIconDisabled = CopyIcon(g_dat->hIcons[SMF_ICON_UNICODEOFF]);
 	sid.flags = 0;
 	sid.szTooltip = NULL;
 	CallService(MS_MSG_MODIFYICON, (WPARAM)NULL, (LPARAM) &sid);
@@ -521,12 +521,13 @@ static int SplitmsgModulesLoaded(WPARAM wParam, LPARAM lParam)
          hMsgMenuItem[hMsgMenuItemCount++] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM) & mi);
       }
    }
+   CallService(MS_SKIN2_RELEASEICON,(WPARAM)mi.hIcon, 0);
+   
    hEventClistDoubleClicked = HookEvent(ME_CLIST_DOUBLECLICKED, SendMessageCommand);
    hEventSmileyAddOptionsChanged = HookEvent(ME_SMILEYADD_OPTIONSCHANGED, SmileySettingsChanged);
    hEventIEViewOptionsChanged = HookEvent(ME_IEVIEW_OPTIONSCHANGED, SmileySettingsChanged);
    hEventMyAvatarChanged = HookEvent(ME_AV_MYAVATARCHANGED, MyAvatarChanged);
    hEventAvatarChanged = HookEvent(ME_AV_AVATARCHANGED, AvatarChanged);
-   hEventSkin2IconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
    hEventFontServiceFontsChanged = HookEvent(ME_FONT_RELOAD, FontServiceFontsChanged);
    hEventIconPressed = HookEvent(ME_MSG_ICONPRESSED, StatusIconPressed);
    RestoreUnreadMessageAlerts();
@@ -557,7 +558,6 @@ int SplitmsgShutdown(void)
    UnhookEvent(hEventMyAvatarChanged);
    UnhookEvent(hEventAvatarChanged);
    UnhookEvent(hEventOptInitialise);
-   UnhookEvent(hEventSkin2IconsChanged);
    UnhookEvent(hEventFontServiceFontsChanged);
    UnhookEvent(hEventIconPressed);
    DestroyHookableEvent(hHookWinEvt);
@@ -572,7 +572,7 @@ int SplitmsgShutdown(void)
    DestroyServiceFunction(hSvcReadMessageCommand);
    DestroyServiceFunction(hSvcTypingMessageCommand);
    FreeMsgLogIcons();
-   FreeLibrary(GetModuleHandleA("riched20"));
+   FreeLibrary(GetModuleHandleA("riched20.dll"));
    OleUninitialize();
    if (hMsgMenuItem) {
       mir_free(hMsgMenuItem);

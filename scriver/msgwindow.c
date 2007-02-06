@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 */
 #ifndef __MINGW32__
-#if (_MSC_VER < 1300)
+#if (_MSC_VER < 1000)
 #include "multimon.h"
 #endif
 #endif
@@ -852,6 +852,7 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				TabCtrl_DeleteItem(dat->hwndTabs, i);
 				mir_free((MessageWindowTabData *) tci.lParam);
 			}
+			ReleaseIconIcoLib((HICON)SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, 0));
 			SetWindowLong(hwndDlg, GWL_USERDATA, 0);
 			WindowList_Remove(g_dat->hParentWindowList, hwndDlg);
 			if (savePerContact)
@@ -961,8 +962,11 @@ BOOL CALLBACK DlgProcParentWindow(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 						//SendMessage(hwndDlg, WM_SIZE, 0, 0);
 					}
 				}
-				if ((tbd->iFlags & TBDF_ICON) &&  hwnd == dat->hwndActive) {
-					SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) tbd->hIcon);
+				if (tbd->iFlags & TBDF_ICON) {
+					if (hwnd == dat->hwndActive)
+						ReleaseIconIcoLib((HICON)SendMessage(hwndDlg, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM) tbd->hIcon));
+					else
+						ReleaseIconIcoLib(tbd->hIcon);				
 				}
 			}
 			break;

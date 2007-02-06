@@ -21,10 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../msgwindow.h"
 
 extern HANDLE		g_hInst;
-extern HIMAGELIST	hImageList;
-extern HIMAGELIST	hIconsList;
 extern int eventMessageIcon;
-extern int overlayIcon;
 extern BOOL			SmileyAddInstalled;
 extern BOOL			PopUpInstalled;
 extern BOOL			IEviewInstalled;
@@ -239,13 +236,11 @@ int Service_GetInfo(WPARAM wParam,LPARAM lParam)
 }
 
 void LoadModuleIcons(MODULEINFO * mi) {
-	mi->OnlineIconIndex = ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(mi->pszModule, ID_STATUS_ONLINE));
-	mi->hOnlineIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT);
-
+	mi->OnlineIconIndex = ImageList_AddIcon_ProtoEx(g_dat->hTabIconList, mi->pszModule, ID_STATUS_ONLINE);	mi->hOnlineIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT);
 	mi->hOnlineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(1));
 	ImageList_AddIcon(g_dat->hTabIconList, mi->hOnlineTalkIcon);
 
-	mi->OfflineIconIndex = ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(mi->pszModule, ID_STATUS_OFFLINE));
+	mi->OfflineIconIndex = ImageList_AddIcon_ProtoEx(g_dat->hTabIconList, mi->pszModule, ID_STATUS_OFFLINE);	
 	mi->hOfflineIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OfflineIconIndex, ILD_TRANSPARENT);
 
 	mi->hOfflineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OfflineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(1));

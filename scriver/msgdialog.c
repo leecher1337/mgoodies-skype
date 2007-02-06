@@ -1087,6 +1087,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->lastEventType = -1;
 			dat->lastEventTime = time(NULL);
 			dat->startTime = time(NULL);
+			dat->userMenuIcon = NULL;
 			dat->flags = 0;
 			if (DBGetContactSettingByte(dat->hContact, SRMMMOD, "UseRTL", (BYTE) 0)) {
 				dat->flags |= SMF_RTL;
@@ -1113,10 +1114,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				ZeroMemory((void *)&pf2, sizeof(pf2));
 				pf2.cbSize = sizeof(pf2);
 				pf2.dwMask = PFM_RTLPARA | PFM_OFFSET | PFM_OFFSETINDENT ;
-				pf2.wEffects = PFE_RTLPARA;
-				pf2.dxOffset = 30;
-				pf2.dxStartIndent = 30;
-				SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
+                pf2.wEffects = PFE_RTLPARA;
+                pf2.dxOffset = 30;
+                pf2.dxStartIndent = 30;
+                SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
 				pf2.wEffects = 0;
 				SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETPARAFORMAT, 0, (LPARAM)&pf2);
 				if (dat->flags & SMF_RTL) {
@@ -1132,7 +1133,7 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 			dat->minLogBoxHeight = dat->minEditBoxHeight;
 			dat->splitterPos = (int) DBGetContactSettingDword((g_dat->flags & SMF_SAVESPLITTERPERCONTACT) ? dat->hContact : NULL, SRMMMOD, "splitterPos", (DWORD) - 1);
 //			dat->nFlashMax = DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_FLASHCOUNT, SRMSGDEFSET_FLASHCOUNT);
-			dat->toolbarSize.cy = 24 + 2;//rc.bottom - rc.top + 3;
+				dat->toolbarSize.cy = 24 + 2;//rc.bottom - rc.top + 3;
 			dat->toolbarSize.cx = GetToolbarWidth();
 			if (dat->splitterPos == -1) {
 				dat->splitterPos = dat->minEditBoxHeight;
@@ -1557,7 +1558,9 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 				}
 			}
 			dat->wStatus = DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_OFFLINE);
-			SendDlgItemMessage(hwndDlg, IDC_USERMENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedProtoIcon(szProto, dat->wStatus));
+			CallService(MS_SKIN2_RELEASEICON,(WPARAM)dat->userMenuIcon, 0);
+			dat->userMenuIcon = LoadSkinnedProtoIcon(szProto, dat->wStatus);
+			SendDlgItemMessage(hwndDlg, IDC_USERMENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM)dat->userMenuIcon);
 			if (g_dat->flags & SMF_STATUSICON) {
 				if (dat->showTyping && (g_dat->flags2&SMF2_SHOWTYPINGWIN)) {
 					hIcon = g_dat->hIcons[SMF_ICON_TYPING];
@@ -1797,11 +1800,10 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	case DM_SWITCHUNICODE:
 #if defined( _UNICODE )
 		{
-			StatusIconData sid;
+			StatusIconData sid = {0};
 			dat->flags ^= SMF_DISABLE_UNICODE;
 			sid.cbSize = sizeof(sid);
 			sid.szModule = SRMMMOD;
-			sid.dwId = 0;
 			sid.flags = (dat->flags & SMF_DISABLE_UNICODE) ? MBF_DISABLED : 0;
 			CallService(MS_MSG_MODIFYICON, (WPARAM)dat->hContact, (LPARAM) &sid);
 			SendMessage(hwndDlg, DM_REMAKELOG, 0, 0);
@@ -2023,9 +2025,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 	case DM_UPDATESTATUSBAR:
 		if (dat->parent->hwndActive == hwndDlg) {
 			TCHAR szText[256];
-			StatusBarData sbd;
-			StatusIconData sid;
-			sbd.iItem = 0;
+			StatusBarData sbd= {0};
+			StatusIconData sid = {0};
 			sbd.iFlags = SBDF_TEXT | SBDF_ICON;
 			if (dat->messagesInProgress && (g_dat->flags & SMF_SHOWPROGRESS)) {
 				sbd.hIcon = g_dat->hIcons[SMF_ICON_DELIVERING];
@@ -2059,16 +2060,13 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 #endif
 				mir_sntprintf(szText, SIZEOF(szText), TranslateT("Last message received on %s at %s."), date, time);
 				sbd.pszText = szText;
-				sbd.hIcon = NULL;
 			} else {
-				sbd.hIcon = NULL;
 				sbd.pszText =  _T("");
 			}
 			SendMessage(dat->hwndParent, CM_UPDATESTATUSBAR, (WPARAM)&sbd, (LPARAM)hwndDlg);
 			UpdateReadChars(hwndDlg, dat);
 			sid.cbSize = sizeof(sid);
 			sid.szModule = SRMMMOD;
-			sid.dwId = 0;
 #if defined ( _UNICODE )
 			sid.flags = (dat->flags & SMF_DISABLE_UNICODE) ? MBF_DISABLED : 0;
 #else
@@ -2734,6 +2732,8 @@ BOOL CALLBACK DlgProcMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lPara
 		if (dat->nTypeMode == PROTOTYPE_SELFTYPING_ON) {
 			NotifyTyping(dat, PROTOTYPE_SELFTYPING_OFF);
 		}
+		CallService(MS_SKIN2_RELEASEICON,(WPARAM)dat->userMenuIcon, 0);
+		dat->userMenuIcon = NULL;		
 		if (dat->sendInfo) {
 			int i;
 			for (i = 0; i < dat->sendCount; i++) {

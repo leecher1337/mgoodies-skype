@@ -46,11 +46,11 @@ PLUGININFO pluginInfo = {
 #else
 	"Scriver - send and receive instant messages",
 #endif
-	"Miranda IM Development Team (SRMM), Piotr Piastucki (Scriver)",
+	"Miranda IM Development Team",
 	"the_leech@users.berlios.de",
-	"Copyright © 2000-2006 Miranda ICQ/IM Project, Piotr Piastucki",
+	"Copyright © 2000-2007 Miranda IM Project",
 	"http://mgoodies.berlios.de",
-	0,
+	UNICODE_AWARE,
 	DEFMOD_SRMESSAGE            // replace internal version (if any)
 };
 

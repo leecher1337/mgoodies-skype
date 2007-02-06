@@ -17,8 +17,8 @@ static int AddStatusIcon(WPARAM wParam, LPARAM lParam) {
 	siln->sid.cbSize = sid->cbSize;
 	siln->sid.szModule = mir_strdup(sid->szModule);
 	siln->sid.dwId = sid->dwId;
-	siln->sid.hIcon = DuplicateIcon(NULL, sid->hIcon);
-	siln->sid.hIconDisabled = DuplicateIcon(NULL, sid->hIconDisabled);
+	siln->sid.hIcon = sid->hIcon;
+	siln->sid.hIconDisabled = sid->hIconDisabled;
 	siln->sid.flags = sid->flags;
 	if(sid->szTooltip) siln->sid.szTooltip = mir_strdup(sid->szTooltip);
 	else siln->sid.szTooltip = 0;
@@ -39,8 +39,8 @@ int AddStickyStatusIcon(WPARAM wParam, LPARAM lParam) {
 	siln->sid.cbSize = sid->cbSize;
 	siln->sid.szModule = mir_strdup(sid->szModule);
 	siln->sid.dwId = sid->dwId;
-	siln->sid.hIcon = DuplicateIcon(NULL, sid->hIcon);
-	siln->sid.hIconDisabled = DuplicateIcon(NULL, sid->hIconDisabled);
+	siln->sid.hIcon = CopyIcon(sid->hIcon);
+	siln->sid.hIconDisabled = CopyIcon(sid->hIconDisabled);
 	siln->sid.flags = sid->flags;
 	if(sid->szTooltip) siln->sid.szTooltip = mir_strdup(sid->szTooltip);
 	else siln->sid.szTooltip = 0;
@@ -73,9 +73,9 @@ static int RemoveStatusIcon(WPARAM wParam, LPARAM lParam) {
 			status_icon_list_size--;
 
 			mir_free(current->sid.szModule);
-			DestroyIcon(current->sid.hIcon);
-			if(current->sid.hIconDisabled) DestroyIcon(current->sid.hIconDisabled);
-			if(current->sid.szTooltip) mir_free(current->sid.szTooltip);
+			ReleaseIconSmart(current->sid.hIcon);
+			ReleaseIconSmart(current->sid.hIconDisabled);
+			mir_free(current->sid.szTooltip);
 			mir_free(current);
 			WindowList_Broadcast(g_dat->hParentWindowList, DM_STATUSICONCHANGE, 0, 0);
 			return 0;
@@ -117,12 +117,12 @@ static int ModifyStatusIcon(WPARAM wParam, LPARAM lParam) {
 			if(!hContact) {
 				current->sid.flags = sid->flags;
 				if(sid->hIcon) {
-					DestroyIcon(current->sid.hIcon);
-					current->sid.hIcon = DuplicateIcon(NULL, sid->hIcon);
+					ReleaseIconSmart(current->sid.hIcon);
+					current->sid.hIcon = sid->hIcon;				
 				}
 				if(sid->hIconDisabled) {
-					DestroyIcon(current->sid.hIconDisabled);
-					current->sid.hIconDisabled = DuplicateIcon(NULL, sid->hIconDisabled);
+					ReleaseIconSmart(current->sid.hIconDisabled);
+					current->sid.hIconDisabled = sid->hIconDisabled;				
 				}
 				if(sid->szTooltip) {
 					if(current->sid.szTooltip) mir_free(current->sid.szTooltip);
