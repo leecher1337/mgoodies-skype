@@ -16,7 +16,7 @@ CXXFLAGS = $(INCS) -DNDEBUG -DBUILDING_DLL=1 -DUNICODE -fexpensive-optimizations
 LIBS =  -lshlwapi -lversion -lwsock32 -lole32 -lcomctl32 -luuid -loleaut32
 LFLAGS = -s -mdll -mwindows --add-stdcall-alias
 #LFLAGS = -mdll -mwindows -Wl,-Map,ieview.map --no-export-all-symbols --add-stdcall-alias -g3
-RCFLAGS = -I rc -O coff -DUNICODE
+RCFLAGS = -J rc -O coff -DUNICODE
 #  --add-stdcall-alias -s  --no-export-all-symbols
 
 .PHONY: all all-before all-after clean clean-custom
