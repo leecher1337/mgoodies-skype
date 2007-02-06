@@ -953,15 +953,19 @@ void FetchMessageThread(fetchmsg_arg *args) {
 		}
 	}
 	
+	LOG("FetchMessageThread", "Check if message if a groupchat or not");
 	// Is it a groupchat message?
 	strcpy(strChat,str);
 	strcat(strChat, "CHATNAME");
+	LOG("FetchMessageThread", "Request the CHAT type");
 	if (SkypeSend(strChat)==-1 || !(ptr=SkypeRcv(strChat+4, INFINITE))) {
 		free(who);
 		free(msg);
 		SetEvent(SkypeMsgFetched);
 		return;
 	}
+
+	LOG("FetchMessageThread", "Request the CHAT STATUS");
 	if (!(ptr3=SkypeGet("CHAT", ptr+strlen(strChat+4)+1, "STATUS"))) {
 		free(ptr);
 		free(who);
@@ -970,13 +974,14 @@ void FetchMessageThread(fetchmsg_arg *args) {
 		return;
 	}
 
+	LOG("FetchMessageThread", "Compare the STATUS to MULTI_SUBSCRIBED");
 	if (!strcmp(ptr3, "MULTI_SUBSCRIBED"))
 		isGroupChat = true;
 
-	free(ptr);
-	free(ptr3);
 
 	if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0)) {
+
+		LOG("FetchMessageThread", "Using groupchat option is checked");
 		
 
 		/*strcat(str, "CHATNAME");
@@ -994,6 +999,9 @@ void FetchMessageThread(fetchmsg_arg *args) {
 			return;
 		}*/
 		if (isGroupChat) {
+
+			LOG("FetchMessageThread", "This is a group chat message");
+
 			GCDEST gcd = {0};
 			GCEVENT gce = {0};
 			DBVARIANT dbv = {0};
@@ -1038,9 +1046,12 @@ void FetchMessageThread(fetchmsg_arg *args) {
 			return;
 		}
 		str[msgl]=0;
-		//free(ptr);
-		//free(ptr3);
 	}
+
+	LOG("FetchMessageThread", "Compare the STATUS to free(ptr);");
+	free(ptr);
+	LOG("FetchMessageThread", "Compare the STATUS to free(ptr3);");
+	free(ptr3);
 
 	if (!QueryMsgDirection || (QueryMsgDirection && timestamp>dbei.timestamp)) {
 		LOG("FetchMessageThread", "Normal message add...");
