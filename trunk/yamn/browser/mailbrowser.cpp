@@ -734,7 +734,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 			cEvent.lParam = (LPARAM) ActualAccount->hContact;
 			cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
 			cEvent.pszTooltip = sMsg;
-
+			cEvent.flags = 0;
 			CallServiceSync(MS_CLIST_ADDEVENT, 0,(LPARAM)&cEvent);
 		}
 		DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", sMsg);

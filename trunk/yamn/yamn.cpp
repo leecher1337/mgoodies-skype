@@ -19,6 +19,8 @@
 extern PYAMN_PROTOPLUGINQUEUE FirstProtoPlugin;
 extern YAMN_VARIABLES YAMNVar;
 
+extern char *ProtoName;
+
 extern HANDLE hTTButton;		//TopToolBar button
 
 extern DWORD WriteAccountsToFile();
@@ -258,6 +260,7 @@ void CALLBACK TimerProc(HWND,UINT,UINT,DWORD)
 				break;
 			}
 #endif
+			BOOL isAccountCounting = 0;
 			if(
 				(ActualAccount->Flags & YAMN_ACC_ENA) &&
 				(((ActualAccount->StatusFlags & YAMN_ACC_ST0) && (Status<=ID_STATUS_OFFLINE)) ||
@@ -274,14 +277,12 @@ void CALLBACK TimerProc(HWND,UINT,UINT,DWORD)
 
 				if((!ActualAccount->Interval && !ActualAccount->TimeLeft) || ActualAccount->Plugin->Fcn->TimeoutFcnPtr==NULL)
 				{
-#ifdef DEBUG_SYNCHRO
-					DebugLog(SynchroFile,"TimerProc:ActualAccountSO-read done\n");
-#endif
-					ReadDoneFcn(ActualAccount->AccountAccessSO);
-					continue;
+					goto ChangeIsCountingStatusLabel;
 				}
-				if(ActualAccount->TimeLeft)
+				if(ActualAccount->TimeLeft){
 					ActualAccount->TimeLeft--;
+					isAccountCounting = TRUE;
+				}
 #ifdef DEBUG_SYNCHRO
 					DebugLog(SynchroFile,"TimerProc:time left : %i\n",ActualAccount->TimeLeft);
 #endif
@@ -308,9 +309,20 @@ void CALLBACK TimerProc(HWND,UINT,UINT,DWORD)
 				}
 
 			}
+ChangeIsCountingStatusLabel:
 #ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"TimerProc:ActualAccountSO-read done\n");
 #endif
+			if (((ActualAccount->isCounting)!=0)!=isAccountCounting){
+				ActualAccount->isCounting=isAccountCounting;
+				WORD cStatus = DBGetContactSettingWord(ActualAccount->hContact,ProtoName,"Status",0);
+				switch (cStatus){
+					case ID_STATUS_ONLINE:
+					case ID_STATUS_OFFLINE:
+						DBWriteContactSettingWord(ActualAccount->hContact, ProtoName, "Status", isAccountCounting?ID_STATUS_ONLINE:ID_STATUS_OFFLINE);
+					default: break;
+				}
+			}
 			ReadDoneFcn(ActualAccount->AccountAccessSO);
 		}
 #ifdef DEBUG_SYNCHRO
