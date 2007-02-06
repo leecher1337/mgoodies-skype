@@ -57,6 +57,7 @@ typedef struct CNotification
 #define YAMN_ACC_KBN	0x00000100  //Use Keyboard notify
 #define YAMN_ACC_CONT	0x00000200  //Use Contact notify
 #define YAMN_ACC_CONTNICK	0x00000400  //Use Contact Nick replacement
+#define YAMN_ACC_CONTNOEVENT	0x00000800  //Suppress event for this contact
 //(1) - usable only in newmail notification
 	DWORD Flags;
 

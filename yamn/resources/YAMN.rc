@@ -230,7 +230,10 @@ BEGIN
                     IDC_CHECKCONTACT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,
                     165,138,10,WS_EX_TRANSPARENT
     CONTROL         "Replace nick name",IDC_CHECKCONTACTNICK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,17,176,126,10,
+                    BS_AUTOCHECKBOX | WS_TABSTOP,5,176,78,10,
+                    WS_EX_TRANSPARENT
+    CONTROL         "Disable Events",IDC_CHECKCONTACTNOEVENT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,84,176,60,10,
                     WS_EX_TRANSPARENT
     GROUPBOX        "No new mail notifications",IDC_GBNONEWMAIL,0,189,149,38
     CONTROL         "Popup if no mail",IDC_CHECKNPOP,"Button",

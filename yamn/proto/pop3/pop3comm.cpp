@@ -955,7 +955,8 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 			YAMN_MAILBROWSERPARAM Param={(HANDLE)0,ActualAccount,ActualCopied.NFlags,ActualCopied.NNFlags,YAMNParam};
 
 			if(CheckFlags & YAMN_FORCECHECK)
-				Param.nnflags=Param.nnflags | (YAMN_ACC_POP | YAMN_ACC_MSGP);				//if force check, show popup anyway and if mailbrowser was opened, do not close
+				Param.nnflags|=YAMN_ACC_POP;				//if force check, show popup anyway and if mailbrowser was opened, do not close
+			Param.nnflags|= YAMN_ACC_MSGP; //do not close browser if already open
 			CallService(MS_YAMN_MAILBROWSER,(WPARAM)&Param,(LPARAM)YAMN_MAILBROWSERVERSION);
 		}
 		SetContactStatus(ActualAccount,ID_STATUS_ONLINE);
@@ -1137,6 +1138,7 @@ DWORD WINAPI DeleteMailsPOP3(struct DeleteParam *WhichTemp)
 
 	try
 	{
+		SetContactStatus(ActualAccount,ID_STATUS_OCCUPIED);
 #ifdef DEBUG_COMM
 		DebugLog(CommFile,"<--------Communication-------->\n");
 #endif
@@ -1357,6 +1359,7 @@ DWORD WINAPI DeleteMailsPOP3(struct DeleteParam *WhichTemp)
 #endif
 			SetEvent(ActualAccount->UseInternetFree);
 		}
+		SetContactStatus(ActualAccount,ID_STATUS_ONLINE);
 	}
 #ifdef DEBUG_COMM
 	catch(DWORD ErrorCode)
