@@ -959,7 +959,7 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 			Param.nnflags|= YAMN_ACC_MSGP; //do not close browser if already open
 			CallService(MS_YAMN_MAILBROWSER,(WPARAM)&Param,(LPARAM)YAMN_MAILBROWSERVERSION);
 		}
-		SetContactStatus(ActualAccount,ID_STATUS_ONLINE);
+		SetContactStatus(ActualAccount,ActualAccount->isCounting?ID_STATUS_ONLINE:ID_STATUS_OFFLINE);
 	}
 	#ifdef DEBUG_COMM
 	catch(DWORD ErrorCode)
@@ -1359,7 +1359,7 @@ DWORD WINAPI DeleteMailsPOP3(struct DeleteParam *WhichTemp)
 #endif
 			SetEvent(ActualAccount->UseInternetFree);
 		}
-		SetContactStatus(ActualAccount,ID_STATUS_ONLINE);
+		SetContactStatus(ActualAccount,ActualAccount->isCounting?ID_STATUS_ONLINE:ID_STATUS_OFFLINE);
 	}
 #ifdef DEBUG_COMM
 	catch(DWORD ErrorCode)

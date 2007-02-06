@@ -188,6 +188,7 @@ typedef struct CAccount
 
 //For clist contact notification
 	HANDLE hContact; 
+	BOOL isCounting;
 
 	struct CAccount *Next;
 } *HACCOUNT;
