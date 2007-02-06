@@ -1,3 +1,16 @@
+0.1.2.1
+=======
+! Don't close MailBrowser when e-mails are updated if it is manually open 
++ Discard the new Event when message is shown or is deleted from the server
++ Option to disable the CList events per account
++ Contact status change also happens when e-mail are being deleted
+
+0.1.2.0
+=======
+! patch by TioDuke for icolib and status and status icons handling. Thanks!
+! code cleaning (properly destroy services and hooks)
++ Contact status changes accordingly the action (Ready, Working, Error)
+
 0.1.1.0
 =======
 + Show message is open in new thread

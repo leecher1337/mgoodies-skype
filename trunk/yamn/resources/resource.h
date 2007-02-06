@@ -52,6 +52,7 @@
 #define IDC_CHECKST9                    1029
 #define IDC_CHECKCONTACT                1030
 #define IDC_CHECKCONTACTNICK            1031
+#define IDC_CHECKCONTACTNOEVENT         1032
 #define IDC_STTIMELEFT                  1033
 #define IDC_LISTMAILS                   1038
 #define IDC_LISTHEADERS                 1039

@@ -724,24 +724,24 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 	if((nflags & YAMN_ACC_CONT) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
 	{
 		char sMsg[250];
-		CLISTEVENT cEvent;
-		cEvent.cbSize = sizeof(CLISTEVENT);
-		cEvent.hContact = ActualAccount->hContact;
-		cEvent.hIcon = hYamnIcons[2];
-		cEvent.hDbEvent = (HANDLE)"yamn new mail";
-		cEvent.lParam = (LPARAM) ActualAccount->hContact;
-		cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
-		cEvent.pszTooltip = new char[250];
+		_snprintf(sMsg,249,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
+		if (!(nflags & YAMN_ACC_CONTNOEVENT)){
+			CLISTEVENT cEvent;
+			cEvent.cbSize = sizeof(CLISTEVENT);
+			cEvent.hContact = ActualAccount->hContact;
+			cEvent.hIcon = hYamnIcons[2];
+			cEvent.hDbEvent = (HANDLE)ActualAccount->hContact;
+			cEvent.lParam = (LPARAM) ActualAccount->hContact;
+			cEvent.pszService = MS_YAMN_CLISTDBLCLICK;
+			cEvent.pszTooltip = sMsg;
 
-		sprintf(cEvent.pszTooltip,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
-		CallServiceSync(MS_CLIST_ADDEVENT, 0,(LPARAM)&cEvent);
-		
-		sprintf(sMsg,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
+			CallServiceSync(MS_CLIST_ADDEVENT, 0,(LPARAM)&cEvent);
+		}
 		DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", sMsg);
 		
 		if(nflags & YAMN_ACC_CONTNICK)
 		{
-			DBWriteContactSettingString(ActualAccount->hContact, ProtoName, "Nick", cEvent.pszTooltip);
+			DBWriteContactSettingString(ActualAccount->hContact, ProtoName, "Nick",sMsg);
 		}
 	}
 
@@ -768,6 +768,9 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		nid.hWnd=hDlg;
 		nid.uID=0;
 		Shell_NotifyIcon(NIM_DELETE,&nid);
+	}
+	if((nflags & YAMN_ACC_CONT) && (!(nflags & YAMN_ACC_CONTNOEVENT)) && (MN->Real.UnSeen + MN->Virtual.UnSeen==0)) {//and remove the event
+		CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)ActualAccount->hContact);
 	}
 
 	if((MN->Real.BrowserUC+MN->Virtual.BrowserUC==0) && (hDlg!=NULL))		
@@ -893,9 +896,13 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 		case WM_COMMAND:
 			if((HIWORD(wParam)==STN_CLICKED) && (-1!=CallService(MS_POPUP_GETPLUGINDATA,(WPARAM)hWnd,(LPARAM)&PluginParam)))	//if clicked and it's new mail popup window
 			{
+				HANDLE hContact = 0;
+				HACCOUNT Account;
 				if (PluginParam){
 					PYAMN_MAILSHOWPARAM MailParam = new YAMN_MAILSHOWPARAM;
 					memcpy(MailParam,(PVOID)PluginParam,sizeof(YAMN_MAILSHOWPARAM));
+					hContact = MailParam->account->hContact;
+					Account = MailParam->account;
 					if(NULL!=(MailParam->ThreadRunningEV=CreateEvent(NULL,FALSE,FALSE,NULL))){
 						HANDLE NewThread;
 						if(NULL!=(NewThread=CreateThread(NULL,0,ShowEmailThread,(PVOID)MailParam,0,NULL)))
@@ -906,25 +913,23 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 					}
 					//delete MailParam;
 				} else {
-					HACCOUNT ActualAccount;
-					HANDLE hContact;
 					DBVARIANT dbv;
 
 					hContact=(HANDLE)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
 
 					if(!DBGetContactSetting((HANDLE) hContact,ProtoName,"Id",&dbv)) 
 					{
-						ActualAccount=(HACCOUNT) CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
+						Account=(HACCOUNT) CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)dbv.pszVal);
 						DBFreeVariant(&dbv);
 					}
 					else
-						ActualAccount = (HACCOUNT) hContact;
+						Account = (HACCOUNT) hContact; //????
 
 
 					#ifdef DEBUG_SYNCHRO
 					DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read wait\n");
 					#endif
-					if(WAIT_OBJECT_0==WaitToReadFcn(ActualAccount->AccountAccessSO))
+					if(WAIT_OBJECT_0==WaitToReadFcn(Account->AccountAccessSO))
 					{
 						#ifdef DEBUG_SYNCHRO
 						DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read enter\n");
@@ -933,7 +938,9 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 						{
 							case WM_COMMAND:
 							{
-								YAMN_MAILBROWSERPARAM Param={(HANDLE)0,ActualAccount,YAMN_ACC_MSG}; //(ActualAccount->NewMailN.Flags & ~YAMN_ACC_POP) | YAMN_ACC_MSGP,(ActualAccount->NoNewMailN.Flags & ~YAMN_ACC_POP) | YAMN_ACC_MSGP};
+								YAMN_MAILBROWSERPARAM Param={(HANDLE)0,Account,
+									(Account->NewMailN.Flags & ~YAMN_ACC_POP) | YAMN_ACC_MSGP | YAMN_ACC_MSG,
+									(Account->NoNewMailN.Flags & ~YAMN_ACC_POP) | YAMN_ACC_MSGP | YAMN_ACC_MSG};
 
 								RunMailBrowserSvc((WPARAM)&Param,(LPARAM)YAMN_MAILBROWSERVERSION);
 							}
@@ -942,32 +949,26 @@ LRESULT CALLBACK NewMailPopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam
 						#ifdef DEBUG_SYNCHRO
 						DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read done\n");
 						#endif
-						ReadDoneFcn(ActualAccount->AccountAccessSO);
+						ReadDoneFcn(Account->AccountAccessSO);
 					}
 					#ifdef DEBUG_SYNCHRO
 					else
 						DebugLog(SynchroFile,"PopUpProc:LEFTCLICK:ActualAccountSO-read enter failed\n");
 					#endif
 				}
-				SendMessageW(hWnd,UM_DESTROYPOPUP,0,0);
+				if ((Account->NewMailN.Flags & YAMN_ACC_CONT) && !(Account->NewMailN.Flags & YAMN_ACC_CONTNOEVENT)){
+					CallService(MS_CLIST_REMOVEEVENT,(WPARAM)hContact,(LPARAM)hContact);
+				}
 			}
-
-			break;
-
+			// fall through
 		case WM_CONTEXTMENU:
-			HANDLE hContact;
-
-			hContact=(HANDLE)CallService(MS_POPUP_GETCONTACT,(WPARAM)hWnd,(LPARAM)0);
-			if(CallService(MS_DB_CONTACT_IS,(WPARAM)hContact,(LPARAM)0))
-			{
-				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)hContact,(LPARAM)"yamn new mail");
-			}
 			SendMessageW(hWnd,UM_DESTROYPOPUP,0,0);
 			break;			
 		case UM_FREEPLUGINDATA:{
-			PVOID mpd = PUGetPluginData(hWnd);
-			if ((mpd) && (int)mpd!=-1) free(mpd);
-			return FALSE;
+				PYAMN_MAILSHOWPARAM mpd = (PYAMN_MAILSHOWPARAM)PUGetPluginData(hWnd);
+				HANDLE hContact = 0;
+				if ((mpd) && (int)mpd!=-1)free(mpd);
+				return FALSE;
 			}
 		case UM_INITPOPUP:
 			//This is the equivalent to WM_INITDIALOG you'd get if you were the maker of dialog popups.
@@ -1518,8 +1519,8 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 					MailParam->mail->Flags&=~YAMN_MSG_UNSEEN; //mark the message as seen
 					HWND hMailBrowser;
 					if (hMailBrowser=WindowList_Find(YAMNVar.NewMailAccountWnd,MailParam->account)){
-						struct CChangeContent Params={MailParam->account->NewMailN.Flags,MailParam->account->NoNewMailN.Flags};	//if this thread created window, just post message to update mails
-						SendMessageW(hMailBrowser,WM_YAMN_CHANGECONTENT,(WPARAM)MailParam->account,(LPARAM)&Params);	//we ensure this will do the thread who created the browser window
+						struct CChangeContent Params={MailParam->account->NewMailN.Flags|YAMN_ACC_MSGP,MailParam->account->NoNewMailN.Flags|YAMN_ACC_MSGP};	
+						SendMessageW(hMailBrowser,WM_YAMN_CHANGECONTENT,(WPARAM)MailParam->account,(LPARAM)&Params);
 					} else {
 						UpdateMails(NULL,MailParam->account,MailParam->account->NewMailN.Flags,MailParam->account->NoNewMailN.Flags);
 					}
