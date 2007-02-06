@@ -31,33 +31,54 @@ extern PSLWA pSetLayeredWindowAttributes;
 extern HANDLE *hMsgMenuItem;
 extern int hMsgMenuItemCount;
 
+HANDLE hEventSkin2IconsChanged;
+
 static HANDLE g_hAck = 0;
 static int ackevent(WPARAM wParam, LPARAM lParam);
 
 void Chat_IconsChanged();
 
-int ImageList_AddIcon_Ex(HIMAGELIST hIml, HICON hIcon) {   
-	int res=ImageList_AddIcon(hIml, hIcon);
+void ReleaseIconSmart(HICON hIcon) {
+	DWORD result = CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
+	if ( result == 1 || result == CALLSERVICE_NOTFOUND)
+		DestroyIcon(hIcon);
+}
+
+void ReleaseIconIcoLib(HICON hIcon) {
+	CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
+}
+
+int ImageList_AddIcon_Ex(HIMAGELIST hIml, int id) {
+	HICON hIcon = LoadSkinnedIcon(id);
+ 	int res = ImageList_AddIcon(hIml, hIcon);
+ 	CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
+ 	return res;
+}
+ 
+int ImageList_ReplaceIcon_Ex(HIMAGELIST hIml, int nIndex, int id) {
+	HICON hIcon = LoadSkinnedIcon(id);
+	int res = ImageList_ReplaceIcon(hIml, nIndex, hIcon);
 	CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
 	return res;
 }
 
-int ImageList_AddIcon_Ex2(HIMAGELIST hIml, HICON hIcon)  {   
-	int res=ImageList_AddIcon(hIml, hIcon);
-	DestroyIcon(hIcon);
-	return res;
-}
-
-int ImageList_ReplaceIcon_Ex(HIMAGELIST hIml, int nIndex, HICON hIcon)  {   
-	int res=ImageList_ReplaceIcon(hIml,nIndex, hIcon);
+int ImageList_AddIcon_ProtoEx(HIMAGELIST hIml, const char* szProto, int status) {
+	HICON hIcon = LoadSkinnedProtoIcon(szProto, status);
+ 	int res = ImageList_AddIcon(hIml, hIcon);
 	CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
-	return res;
+ 	return res;
+}
+ 
+int ImageList_ReplaceIcon_ProtoEx(HIMAGELIST hIml, int nIndex, const char* szProto, int status) {
+	HICON hIcon = LoadSkinnedProtoIcon(szProto, status);
+	int res = ImageList_ReplaceIcon(hIml, nIndex, hIcon);
+ 	CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
+ 	return res;
 }
 
 void LoadProtocolIcons() {
 	PROTOCOLDESCRIPTOR **pProtos;
 	int i, j, allProtoNum, k;
-	HICON hIcon;
 
 	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM) &allProtoNum, (LPARAM) &pProtos);
 	g_dat->protoNum  = 0;
@@ -76,43 +97,39 @@ void LoadProtocolIcons() {
 	g_dat->protoNames = (char **) mir_alloc(sizeof(char*) * g_dat->protoNum);
 	if (g_dat->hTabIconList == NULL) {
 		g_dat->hTabIconList = ImageList_Create(16, 16, IsWinVerXPPlus() ? ILC_COLOR32 | ILC_MASK : ILC_COLOR8 | ILC_MASK, (g_dat->protoNum + 1) * 12 + 8, 0);
-		ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
+		ImageList_AddIcon_Ex(g_dat->hTabIconList, SKINICON_EVENT_MESSAGE);
 		ImageList_AddIcon(g_dat->hTabIconList, g_dat->hIcons[SMF_ICON_TYPING]);
 		for (i = ID_STATUS_OFFLINE; i <= ID_STATUS_OUTTOLUNCH; i++) {
-			ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(NULL, i));
+			ImageList_AddIcon_ProtoEx(g_dat->hTabIconList, NULL, i);
 		}
 
 		for(i = j = 0; i < allProtoNum; i++) {
 			if (pProtos[i]->type != PROTOTYPE_PROTOCOL) continue;
 			g_dat->protoNames[j] = mir_strdup(pProtos[i]->szName);
 			for (k = ID_STATUS_OFFLINE; k <= ID_STATUS_OUTTOLUNCH; k++) {
-				hIcon = LoadSkinnedProtoIcon(pProtos[i]->szName, k);
-				if (hIcon != NULL) {
-					ImageList_AddIcon(g_dat->hTabIconList, hIcon);
-				} else {
-					ImageList_AddIcon(g_dat->hTabIconList, LoadSkinnedProtoIcon(NULL, ID_STATUS_OFFLINE));
+				int id = ImageList_AddIcon_ProtoEx(g_dat->hTabIconList, pProtos[i]->szName, k);
+				if (id == -1 ) {
+					ImageList_AddIcon_ProtoEx(g_dat->hTabIconList, NULL, ID_STATUS_OFFLINE);
 				}
 			}
 			j++;
 		}
 	} else {
 		int index = 0;
-		ImageList_ReplaceIcon(g_dat->hTabIconList, index++, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
+		ImageList_ReplaceIcon_Ex(g_dat->hTabIconList, index++, SKINICON_EVENT_MESSAGE);
 		ImageList_ReplaceIcon(g_dat->hTabIconList, index++, g_dat->hIcons[SMF_ICON_TYPING]);
 		for (i = ID_STATUS_OFFLINE; i <= ID_STATUS_OUTTOLUNCH; i++) {
-			ImageList_ReplaceIcon(g_dat->hTabIconList, index++, LoadSkinnedProtoIcon(NULL, i));
+			ImageList_ReplaceIcon_ProtoEx(g_dat->hTabIconList, index++, NULL, i);
 		}
 
 		for(i = j = 0; i < allProtoNum; i++) {
 			if (pProtos[i]->type != PROTOTYPE_PROTOCOL) continue;
 			g_dat->protoNames[j] = mir_strdup(pProtos[i]->szName);
 			for (k = ID_STATUS_OFFLINE; k <= ID_STATUS_OUTTOLUNCH; k++) {
-				hIcon = LoadSkinnedProtoIcon(pProtos[i]->szName, k);
-				if (hIcon != NULL) {
-					ImageList_ReplaceIcon(g_dat->hTabIconList, index++, hIcon);
-				} else {
-					ImageList_ReplaceIcon(g_dat->hTabIconList, index++, LoadSkinnedProtoIcon(NULL, ID_STATUS_OFFLINE));
-				}
+				int id = ImageList_ReplaceIcon_ProtoEx(g_dat->hTabIconList, index++, pProtos[i]->szName, k);
+				if (id == -1) {
+					ImageList_ReplaceIcon_ProtoEx(g_dat->hTabIconList, index++, NULL, ID_STATUS_OFFLINE);
+ 				}
 			}
 			j++;
 		}
@@ -131,6 +148,7 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 		for (j = 0; j < hMsgMenuItemCount; j++) {
 			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hMsgMenuItem[j], (LPARAM) & mi);
 		}
+		CallService(MS_SKIN2_RELEASEICON,(WPARAM)mi.hIcon, 0);
 	}
 	FreeMsgLogIcons();
 	LoadMsgLogIcons();
@@ -152,13 +170,15 @@ int SmileySettingsChanged(WPARAM wParam, LPARAM lParam)
 
 int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 {
+	ReleaseGlobalIcons();
 	LoadGlobalIcons();
 	return IconsChanged(wParam, lParam);
 }
 
 void RegisterIcoLibIcons() {
-	if (ServiceExists(MS_SKIN2_ADDICON)) {
-		SKINICONDESC sid;
+	hEventSkin2IconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IcoLibIconsChanged);
+	if (hEventSkin2IconsChanged) {
+		SKINICONDESC sid = { 0 };
 		char path[MAX_PATH];
 		GetModuleFileNameA(g_hInst, path, MAX_PATH);
 		sid.cbSize = sizeof(SKINICONDESC);
@@ -237,7 +257,7 @@ static int buttonIcons[] = {SMF_ICON_CLOSEX, -1, SMF_ICON_USERDETAILS, SMF_ICON_
 
 void LoadGlobalIcons() {
 	int i;
-	if (ServiceExists(MS_SKIN2_ADDICON)) {
+	if (hEventSkin2IconsChanged) {
 		g_dat->hIcons[SMF_ICON_ADD] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_ADD");
 		g_dat->hIcons[SMF_ICON_USERDETAILS] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_USERDETAILS");
 		g_dat->hIcons[SMF_ICON_HISTORY] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_HISTORY");
@@ -250,9 +270,9 @@ void LoadGlobalIcons() {
 		g_dat->hIcons[SMF_ICON_DELIVERING] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_DELIVERING");
 		g_dat->hIcons[SMF_ICON_QUOTE] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_QUOTE");
 
-		g_dat->hIcons[SMF_ICON_INCOMING] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_INCOMING));
-		g_dat->hIcons[SMF_ICON_OUTGOING] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_OUTGOING));
-		g_dat->hIcons[SMF_ICON_NOTICE] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_NOTICE));
+		g_dat->hIcons[SMF_ICON_INCOMING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_INCOMING),IMAGE_ICON,0,0,0);
+		g_dat->hIcons[SMF_ICON_OUTGOING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_OUTGOING),IMAGE_ICON,0,0,0);
+		g_dat->hIcons[SMF_ICON_NOTICE] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_NOTICE),IMAGE_ICON,0,0,0);
 
 		g_dat->hIcons[SMF_ICON_CLOSEX] = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)"scriver_CLOSEX");
 	} else {
@@ -268,28 +288,45 @@ void LoadGlobalIcons() {
 		g_dat->hIcons[SMF_ICON_DELIVERING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_TIMESTAMP), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 		g_dat->hIcons[SMF_ICON_QUOTE] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_QUOTE), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 
-		g_dat->hIcons[SMF_ICON_INCOMING] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_INCOMING));
-		g_dat->hIcons[SMF_ICON_OUTGOING] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_OUTGOING));
-		g_dat->hIcons[SMF_ICON_NOTICE] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_NOTICE));
-
-		g_dat->hIcons[SMF_ICON_CLOSEX] = (HICON) LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_CLOSEX));
-	}
-	if (g_dat->hButtonIconList == NULL) {
-		g_dat->hButtonIconList = ImageList_Create(16, 16, IsWinVerXPPlus() ? ILC_COLOR32 | ILC_MASK : ILC_COLOR8 | ILC_MASK, (g_dat->protoNum + 1) * 12 + 8, 0);
-	} else {
-		ImageList_RemoveAll(g_dat->hButtonIconList);
+		g_dat->hIcons[SMF_ICON_INCOMING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_INCOMING),IMAGE_ICON,0,0,0);
+		g_dat->hIcons[SMF_ICON_OUTGOING] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_OUTGOING),IMAGE_ICON,0,0,0);
+		g_dat->hIcons[SMF_ICON_NOTICE] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_NOTICE),IMAGE_ICON,0,0,0);
+		
+		g_dat->hIcons[SMF_ICON_CLOSEX] = (HICON) LoadImage(g_hInst, MAKEINTRESOURCE(IDI_CLOSEX),IMAGE_ICON,0,0,0);
 	}
 	for (i=0; i<sizeof(buttonIcons)/sizeof(int); i++) {
 		if (buttonIcons[i] == -1) {
-			ImageList_AddIcon(g_dat->hButtonIconList, LoadSkinnedProtoIcon(NULL, ID_STATUS_OFFLINE));
+			ImageList_AddIcon_ProtoEx(g_dat->hButtonIconList, NULL, ID_STATUS_OFFLINE);
 		} else {
 			ImageList_AddIcon(g_dat->hButtonIconList, g_dat->hIcons[buttonIcons[i]]);
 		}
 	}
-
-
 }
 
+void ReleaseGlobalIcons() {
+	if (hEventSkin2IconsChanged) {
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_ADD");
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_USERDETAILS");
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_HISTORY");
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_TYPING");
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_SEND");
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_CANCEL");
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_SMILEY");
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_UNICODEON");
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_UNICODEOFF");
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_DELIVERING");
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_QUOTE");
+		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)"scriver_CLOSEX");
+		DestroyIcon(g_dat->hIcons[SMF_ICON_INCOMING]);
+		DestroyIcon(g_dat->hIcons[SMF_ICON_OUTGOING]);
+		DestroyIcon(g_dat->hIcons[SMF_ICON_NOTICE]);
+	} else {
+		int i;
+		for (i=0;i<sizeof(g_dat->hIcons)/sizeof(g_dat->hIcons[0]);i++)
+			DestroyIcon(g_dat->hIcons[i]);
+	}
+	ImageList_RemoveAll(g_dat->hButtonIconList);
+}
 
 static BOOL CALLBACK LangAddCallback(CHAR * str) {
 	int i, count;
@@ -336,7 +373,7 @@ void InitGlobals() {
 	g_dat->protoNum = 0;
 	g_dat->protoNames = NULL;
 	g_dat->hTabIconList = NULL;
-	g_dat->hButtonIconList = NULL;
+	g_dat->hButtonIconList = ImageList_Create(16, 16, IsWinVerXPPlus() ? ILC_COLOR32 | ILC_MASK : ILC_COLOR8 | ILC_MASK, (g_dat->protoNum + 1) * 12 + 8, 0);
 	g_dat->draftList = NULL;
 }
 
@@ -346,7 +383,7 @@ void FreeGlobals() {
 		if (g_dat->draftList != NULL) tcmdlist_free(g_dat->draftList);
 		if (g_dat->hTabIconList)
 			ImageList_Destroy(g_dat->hTabIconList);
-
+		ReleaseGlobalIcons();
 		if (g_dat->hButtonIconList)
 			ImageList_Destroy(g_dat->hButtonIconList);
 
@@ -356,11 +393,9 @@ void FreeGlobals() {
 				mir_free( g_dat->protoNames[i] );
 			mir_free( g_dat->protoNames );
 		}
-
-		//	for (i=0;i<sizeof(g_dat->hIcons)/sizeof(g_dat->hIcons[0]);i++)
-		//		DestroyIcon(g_dat->hIcons[i]);
 		mir_free(g_dat);
 	}
+	UnhookEvent(hEventSkin2IconsChanged);
 }
 
 void ReloadGlobals() {

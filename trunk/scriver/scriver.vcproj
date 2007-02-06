@@ -145,9 +145,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="3"
 				GlobalOptimizations="TRUE"
-				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
+				OmitFramePointers="FALSE"
 				WholeProgramOptimization="FALSE"
+				OptimizeForProcessor="0"
 				AdditionalIncludeDirectories="../../include"
 				PreprocessorDefinitions="UNICODE;WIN32;NDEBUG;_WINDOWS;_USRDLL;SRMM_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="TRUE"
@@ -918,13 +919,13 @@
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 			<File
-				RelativePath="..\..\Miranda-IM\res\addcontact.ico">
-			</File>
-			<File
 				RelativePath="res\addcontact.ico">
 			</File>
 			<File
 				RelativePath="..\..\src\res\addcontact.ico">
+			</File>
+			<File
+				RelativePath="..\..\Miranda-IM\res\addcontact.ico">
 			</File>
 			<File
 				RelativePath="res\Clock32.ico">
@@ -933,10 +934,10 @@
 				RelativePath="res\Clock8.ico">
 			</File>
 			<File
-				RelativePath="..\..\src\res\delete.ico">
+				RelativePath="res\delete.ico">
 			</File>
 			<File
-				RelativePath="res\delete.ico">
+				RelativePath="..\..\src\res\delete.ico">
 			</File>
 			<File
 				RelativePath="res\Details32.ico">
@@ -954,10 +955,10 @@
 				RelativePath="res\Downarrow8.ico">
 			</File>
 			<File
-				RelativePath="..\..\src\res\dragcopy.cur">
+				RelativePath="res\dragcopy.cur">
 			</File>
 			<File
-				RelativePath="res\dragcopy.cur">
+				RelativePath="..\..\src\res\dragcopy.cur">
 			</File>
 			<File
 				RelativePath="res\emptyblo.ico">

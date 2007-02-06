@@ -101,8 +101,4 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 extern HWND SM_FindWindowByContact(HANDLE hContact);
-
-extern int ImageList_AddIcon_Ex(HIMAGELIST hIml, HICON hIcon);
-extern int ImageList_AddIcon_Ex2(HIMAGELIST hIml, HICON hIcon);
-extern int ImageList_ReplaceIcon_Ex(HIMAGELIST hIml, int nIndex, HICON hIcon);
 #endif
