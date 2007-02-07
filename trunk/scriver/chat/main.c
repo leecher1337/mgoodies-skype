@@ -200,7 +200,7 @@ void LoadIcons(void)
 	LoadLogIcons();
 	LoadMsgLogBitmaps();
 
-	eventMessageIcon = ImageList_AddIcon(g_dat->hTabIconList,LoadSkinnedIcon( SKINICON_EVENT_MESSAGE));
+	eventMessageIcon = ImageList_AddIcon_Ex(g_dat->hTabIconList, SKINICON_EVENT_MESSAGE);
 	overlayIcon = ImageList_AddIcon(g_dat->hTabIconList,LoadIconEx(IDI_OVERLAY, "overlay", 0, 0));
 	ImageList_SetOverlayImage(g_dat->hTabIconList, overlayIcon, 1);
 	return ;

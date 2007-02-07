@@ -1868,42 +1868,43 @@ LABEL_SHOWWINDOW:
 				break;
 		}	}
 		break;
-   case WM_COMMAND:
-      switch (LOWORD(wParam)) {
-      case IDC_CHAT_LIST:
-         if (HIWORD(wParam) == LBN_DBLCLK) {
-            TVHITTESTINFO hti;
-            int item;
-            USERINFO * ui;
+		
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDC_CHAT_LIST:
+			if (HIWORD(wParam) == LBN_DBLCLK) {
+				TVHITTESTINFO hti;
+				int item;
+				USERINFO * ui;
 
-            hti.pt.x=(short)LOWORD(GetMessagePos());
-            hti.pt.y=(short)HIWORD(GetMessagePos());
-            ScreenToClient(GetDlgItem(hwndDlg, IDC_CHAT_LIST),&hti.pt);
+				hti.pt.x=(short)LOWORD(GetMessagePos());
+				hti.pt.y=(short)HIWORD(GetMessagePos());
+				ScreenToClient(GetDlgItem(hwndDlg, IDC_CHAT_LIST),&hti.pt);
 
-            item = LOWORD(SendMessage(GetDlgItem(hwndDlg, IDC_CHAT_LIST), LB_ITEMFROMPOINT, 0, MAKELPARAM(hti.pt.x, hti.pt.y)));
-            ui = SM_GetUserFromIndex(si->ptszID, si->pszModule, item);
-            if (ui) {
-               if (GetKeyState(VK_SHIFT) & 0x8000){
-                  LRESULT lResult = (LRESULT)SendMessage(GetDlgItem(hwndDlg, IDC_CHAT_MESSAGE), EM_GETSEL, (WPARAM)NULL, (LPARAM)NULL);
-                  int start = LOWORD(lResult);
-                  TCHAR* pszName = (TCHAR*)alloca(sizeof(TCHAR)*(lstrlen(ui->pszUID) + 3));
-                  if (start == 0)
-                     mir_sntprintf(pszName, lstrlen(ui->pszUID)+3, _T("%s: "), ui->pszUID);
-                  else
-                     mir_sntprintf(pszName, lstrlen(ui->pszUID)+2, _T("%s "), ui->pszUID);
+				item = LOWORD(SendMessage(GetDlgItem(hwndDlg, IDC_CHAT_LIST), LB_ITEMFROMPOINT, 0, MAKELPARAM(hti.pt.x, hti.pt.y)));
+				ui = SM_GetUserFromIndex(si->ptszID, si->pszModule, item);
+				if (ui) {
+					if (GetKeyState(VK_SHIFT) & 0x8000){
+						LRESULT lResult = (LRESULT)SendMessage(GetDlgItem(hwndDlg, IDC_CHAT_MESSAGE), EM_GETSEL, (WPARAM)NULL, (LPARAM)NULL);
+						int start = LOWORD(lResult);
+						TCHAR* pszName = (TCHAR*)alloca(sizeof(TCHAR)*(lstrlen(ui->pszUID) + 3));
+						if (start == 0)
+							mir_sntprintf(pszName, lstrlen(ui->pszUID)+3, _T("%s: "), ui->pszUID);
+						else
+							mir_sntprintf(pszName, lstrlen(ui->pszUID)+2, _T("%s "), ui->pszUID);
 
-                  SendMessageA(GetDlgItem(hwndDlg, IDC_CHAT_MESSAGE), EM_REPLACESEL, FALSE, (LPARAM) pszName);
-                  PostMessage(hwndDlg, WM_MOUSEACTIVATE, 0, 0);
-               }
-               else DoEventHookAsync(hwndDlg, si->ptszID, si->pszModule, GC_USER_PRIVMESS, ui->pszUID, NULL, (LPARAM)NULL);
-            }
+						SendMessage(GetDlgItem(hwndDlg, IDC_CHAT_MESSAGE), EM_REPLACESEL, FALSE, (LPARAM) pszName);
+						PostMessage(hwndDlg, WM_MOUSEACTIVATE, 0, 0);
+					}
+					else DoEventHookAsync(hwndDlg, si->ptszID, si->pszModule, GC_USER_PRIVMESS, ui->pszUID, NULL, (LPARAM)NULL);
+				}
 
-            return TRUE;
-         }
+				return TRUE;
+			}
 
-         if ( HIWORD(wParam) == LBN_KILLFOCUS )
-            RedrawWindow(GetDlgItem(hwndDlg, IDC_CHAT_LIST), NULL, NULL, RDW_INVALIDATE);
-         break;
+			if ( HIWORD(wParam) == LBN_KILLFOCUS )
+				RedrawWindow(GetDlgItem(hwndDlg, IDC_CHAT_LIST), NULL, NULL, RDW_INVALIDATE);
+			break;
 
       case IDOK:
          {

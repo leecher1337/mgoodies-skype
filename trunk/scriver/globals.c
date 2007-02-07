@@ -38,14 +38,22 @@ static int ackevent(WPARAM wParam, LPARAM lParam);
 
 void Chat_IconsChanged();
 
-void ReleaseIconSmart(HICON hIcon) {
-	DWORD result = CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
-	if ( result == 1 || result == CALLSERVICE_NOTFOUND)
-		DestroyIcon(hIcon);
+BOOL IsStaticIcon(HICON hIcon) {
+	int i;
+	for (i=0; i<SIZEOF(g_dat->hIcons); i++) {
+		if (hIcon == g_dat->hIcons[i]) {
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
-void ReleaseIconIcoLib(HICON hIcon) {
-	CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
+void ReleaseIconSmart(HICON hIcon) {
+	if (!IsStaticIcon(hIcon)) {
+		DWORD result = CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
+		if ( result == 1 || result == CALLSERVICE_NOTFOUND)
+			DestroyIcon(hIcon);
+	}
 }
 
 int ImageList_AddIcon_Ex(HIMAGELIST hIml, int id) {
@@ -322,7 +330,7 @@ void ReleaseGlobalIcons() {
 		DestroyIcon(g_dat->hIcons[SMF_ICON_NOTICE]);
 	} else {
 		int i;
-		for (i=0;i<sizeof(g_dat->hIcons)/sizeof(g_dat->hIcons[0]);i++)
+		for (i=0;i<SIZEOF(g_dat->hIcons);i++)
 			DestroyIcon(g_dat->hIcons[i]);
 	}
 	ImageList_RemoveAll(g_dat->hButtonIconList);
