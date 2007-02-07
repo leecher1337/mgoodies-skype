@@ -80,28 +80,31 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SMF2_SHOWTYPINGTRAY  		0x40000000
 #define SMF2_SHOWTYPINGCLIST 		0x80000000
 
-#define SMF_ICON_ADD         0
-#define SMF_ICON_USERDETAILS 1
-#define SMF_ICON_HISTORY     2
-#define SMF_ICON_SEND		 3
-#define SMF_ICON_CANCEL		 4
-#define SMF_ICON_SMILEY		 5
-#define SMF_ICON_TYPING      6
-#define SMF_ICON_UNICODEON	 7
-#define SMF_ICON_UNICODEOFF	 8
-#define SMF_ICON_DELIVERING	 9
-#define SMF_ICON_QUOTE		 10
+#define SMF_ICON_ADD         	0
+#define SMF_ICON_USERDETAILS 	1
+#define SMF_ICON_HISTORY     	2
+#define SMF_ICON_SEND		3
+#define SMF_ICON_CANCEL		4
+#define SMF_ICON_SMILEY		5
+#define SMF_ICON_TYPING      	6
+#define SMF_ICON_UNICODEON	7
+#define SMF_ICON_UNICODEOFF	8
+#define SMF_ICON_DELIVERING	9
+#define SMF_ICON_QUOTE		10
 
-#define SMF_ICON_INCOMING	 11
-#define SMF_ICON_OUTGOING	 12
-#define SMF_ICON_NOTICE		 13
+#define SMF_ICON_INCOMING	11
+#define SMF_ICON_OUTGOING	12
+#define SMF_ICON_NOTICE		13
 
-#define SMF_ICON_CLOSEX		 14
+#define SMF_ICON_CLOSEX		14
+
+#define SMF_ICON_COUNT		15
+
 struct GlobalMessageData
 {
 	unsigned int flags;
 	unsigned int flags2;
-	HICON hIcons[16];
+	HICON hIcons[SMF_ICON_COUNT];
 	HANDLE hMessageWindowList;
 	DWORD openFlags;
 	HANDLE hParentWindowList;
@@ -134,8 +137,15 @@ void RegisterIcoLibIcons();
 void RegisterFontServiceFonts();
 void LoadProtocolIcons();
 void LoadGlobalIcons();
+void ReleaseGlobalIcons();
 int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam) ;
 int ScriverRestoreWindowPosition(HWND hwnd,HANDLE hContact,const char *szModule,const char *szNamePrefix, int flags, int showCmd);
+
+int ImageList_AddIcon_Ex(HIMAGELIST hIml, int id);
+int ImageList_ReplaceIcon_Ex(HIMAGELIST hIml, int nIndex, int id);
+int ImageList_AddIcon_ProtoEx(HIMAGELIST hIml, const char* szProto, int status);
+int ImageList_ReplaceIcon_ProtoEx(HIMAGELIST hIml, int nIndex, const char* szProto, int status);
+void ReleaseIconSmart(HICON hIcon);
 
 extern struct GlobalMessageData *g_dat;
 

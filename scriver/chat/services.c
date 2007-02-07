@@ -236,7 +236,8 @@ int Service_GetInfo(WPARAM wParam,LPARAM lParam)
 }
 
 void LoadModuleIcons(MODULEINFO * mi) {
-	mi->OnlineIconIndex = ImageList_AddIcon_ProtoEx(g_dat->hTabIconList, mi->pszModule, ID_STATUS_ONLINE);	mi->hOnlineIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT);
+	mi->OnlineIconIndex = ImageList_AddIcon_ProtoEx(g_dat->hTabIconList, mi->pszModule, ID_STATUS_ONLINE);	
+	mi->hOnlineIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT);
 	mi->hOnlineTalkIcon = ImageList_GetIcon(g_dat->hTabIconList, mi->OnlineIconIndex, ILD_TRANSPARENT|INDEXTOOVERLAYMASK(1));
 	ImageList_AddIcon(g_dat->hTabIconList, mi->hOnlineTalkIcon);
 
