@@ -50,7 +50,7 @@ static int Service_GetCaps(WPARAM wParam, LPARAM lParam)
         return 400;
 	if(wParam==PFLAG_UNIQUEIDSETTING)
         return (int) "Id";
-		if(wParam==PFLAGNUM_2)
+	if(wParam==PFLAGNUM_2)
 		return PF2_ONLINE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_LIGHTDND;
 	if(wParam==PFLAGNUM_5)
 		if(DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWASPROTO, 0))
@@ -355,7 +355,7 @@ int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
 		extern HANDLE hMenuItemContApp;
 
 		mi.cbSize = sizeof(mi);
-		mi.flags = CMIM_FLAGS | CMIM_ICON;
+		mi.flags = CMIM_ICON;
 
 		mi.hIcon = hYamnIcons[5];
 		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)hMenuItemMain, (LPARAM)&mi);

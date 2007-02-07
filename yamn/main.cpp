@@ -192,7 +192,7 @@ void SetDefaultProtocolIcons()
 	WORD statuses[4] = {ID_STATUS_OFFLINE,ID_STATUS_ONLINE,ID_STATUS_NA,ID_STATUS_OCCUPIED};
 	BYTE  indices[4] = {7,                0,               3,           4};
 	//From skinicons.c skinIconStatusToIdStatus[] 
-	BYTE protoStatusInd[4] = {0,1,3,4};
+	BYTE protoStatusInd[4] = {0,1,4,5};
 
 	for (int i=0;i<4;i++){
 		oldname[sizeof(oldname)-2]=protoStatusInd[i]+'1'; // "Out for lunch will not work here"
@@ -321,7 +321,7 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 	ZeroMemory(&mi,sizeof(mi));
 	mi.cbSize = sizeof(mi);
 	mi.position = 0xb0000000;
-	mi.flags = CMIM_ICON;
+	mi.flags = 0;
 	mi.hIcon = hYamnIcons[5];
 	mi.pszName = Translate("Check &mail (All Account)");
 	mi.pszPopupName = NULL;//ProtoName;
@@ -329,13 +329,11 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 	if(DBGetContactSettingByte(NULL, YAMN_DBMODULE, YAMN_SHOWMAINMENU, 0))
 		hMenuItemMain = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 
-	mi.flags = mi.flags;
 	mi.pszName = Translate("Check &mail (This Account)");
 	mi.pszContactOwner = ProtoName;
 	mi.pszService = MS_YAMN_CLISTCONTEXT;
 	hMenuItemCont = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
 
-	mi.flags = mi.flags;
 	mi.hIcon = hYamnIcons[4];
 	mi.pszName = Translate("Launch application");
 	mi.pszContactOwner = ProtoName;
@@ -411,18 +409,19 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
     MessageBox( NULL,unknownCP, TEXT("Unkown Code Page"), MB_OK);
 	#endif
 
-	HIMAGELIST CSImages = ImageList_Create(16, 16, ILC_COLOR8|ILC_MASK, 0, ICONSNUMBER-2);
+	HIMAGELIST CSImages = ImageList_Create(16, 16, ILC_COLOR8|ILC_MASK, 0, 3);
 	{// workarround of 4bit forced images
 		HBITMAP hScrBM = (HBITMAP)LoadImage(YAMNVar.hInst,MAKEINTRESOURCE(IDB_ICONS), IMAGE_BITMAP, 0, 0,LR_SHARED);
 		ImageList_AddMasked(CSImages, hScrBM, RGB( 255, 0, 255 ));
 		DeleteObject(hScrBM);
 	}
-	for (i=0; i<ICONSNUMBER-2; i++){
-		hYamnIcons[i] = ImageList_ExtractIcon(NULL, CSImages, i);
+	for (i=0,k=0; i<ICONSNUMBER; i++){
+		switch (i){
+			case 0: case 3: case 4: case 7: hYamnIcons[i] = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(iconIndexes[i])); break;
+			case 6: hYamnIcons[i] = hYamnIcons[4]; break;
+			default: hYamnIcons[i] = ImageList_ExtractIcon(NULL, CSImages, k); k++;
+		}
 	}
-	ImageList_Destroy(CSImages);
-	hYamnIcons[6] = hYamnIcons[4];
-	hYamnIcons[7] = LoadIcon(YAMNVar.hInst,MAKEINTRESOURCE(iconIndexes[7]));
 
 	//Registering YAMN as protocol
 	PROTOCOLDESCRIPTOR pd;
