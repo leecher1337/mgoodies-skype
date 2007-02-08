@@ -1260,7 +1260,9 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 								DBVARIANT dbv;
 								if(!DBGetContactSetting(NULL,pszSkypeProtoName,"datapath",&dbv)) 
 								{
-									args[j]=strcat(SkypeOptions[i], dbv.pszVal);
+									int paramSize = strlen(SkypeOptions[i]) + strlen(dbv.pszVal);
+									args[j] = new char[paramSize + 1];
+									sprintf(args[j],"%s%s",SkypeOptions[i],dbv.pszVal);
 									DBFreeVariant(&dbv);
 								}
 
@@ -1279,6 +1281,12 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 						if(!DBGetContactSetting(NULL,pszSkypeProtoName,"CommandLine",&dbv)) 
 						{
 							args[0] = dbv.pszVal;
+							LOG("ConnectToSkypeAPI", "Launch skype using command line");
+							/*for(int i=0;i<j;i++)
+							{
+								if(args[i] != NULL)
+									LOG("ConnectToSkypeAPI", args[i]);
+							}*/
 							_spawnv(_P_NOWAIT, dbv.pszVal, args);
 							DBFreeVariant(&dbv);
 						}
@@ -1286,6 +1294,12 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 					else
 					{
 						args[0]=path;
+						LOG("ConnectToSkypeAPI", "Launch skype");
+						/*for(int i=0;i<j;i++)
+						{
+							if(args[i] != NULL)
+									LOG("ConnectToSkypeAPI", args[i]);
+						}*/
 						_spawnv(_P_NOWAIT, path, args);
 					}
 				}
