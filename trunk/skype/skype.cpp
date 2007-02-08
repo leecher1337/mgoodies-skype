@@ -688,6 +688,8 @@ int CreateTopToolbarButton(WPARAM wParam, LPARAM lParam) {
 int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 	bModulesLoaded=TRUE;
 
+	logoff_contacts();
+
 	RegisterToUpdate();
 	RegisterToDbeditorpp();
 	
@@ -764,6 +766,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 			if (!strncmp(ptr+strlen(ptr)-10,"SAWMEMBERS", 10)) 
 			{
 				// We have a new Groupchat
+				LOG("FetchMessageThread", "CHAT SAWMEMBERS");
 				free(ptr);
 				strcat(str, "CHATNAME");
 				if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) 
@@ -779,6 +782,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 			}
 			if (!strncmp(ptr+strlen(ptr)-8,"SETTOPIC", 8)) 
 			{
+				LOG("FetchMessageThread", "CHAT SETTOPIC");
 				GCDEST gcd = {0};
 				GCEVENT gce = {0};
 				char *ptr2;
@@ -820,6 +824,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 			if (!strncmp(ptr+strlen(ptr)-4,"LEFT", 4) || !strncmp(ptr+strlen(ptr)-12,"ADDEDMEMBERS", 12)) 
 			{
 
+				LOG("FetchMessageThread", "CHAT LEFT or ADDEDMEMBERS");
 				free(ptr);
 				strcat(str, "CHATNAME");
 				if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) 
@@ -1048,9 +1053,9 @@ void FetchMessageThread(fetchmsg_arg *args) {
 		str[msgl]=0;
 	}
 
-	LOG("FetchMessageThread", "Compare the STATUS to free(ptr);");
+	LOG("FetchMessageThread", "free(ptr);");
 	free(ptr);
-	LOG("FetchMessageThread", "Compare the STATUS to free(ptr3);");
+	LOG("FetchMessageThread", "free(ptr3);");
 	free(ptr3);
 
 	if (!QueryMsgDirection || (QueryMsgDirection && timestamp>dbei.timestamp)) {

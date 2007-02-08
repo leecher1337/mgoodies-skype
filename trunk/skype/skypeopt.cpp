@@ -477,9 +477,6 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			}
 			EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_DATAPATH), SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
-			//EnableWindow(GetDlgItem(hwndDlg, IDC_MINIMIZED), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-			//EnableWindow(GetDlgItem(hwndDlg, IDC_NOSPLASH), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-			//EnableWindow(GetDlgItem(hwndDlg, IDC_NOTRAY), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
 
 			SetDlgItemInt (hwndDlg, IDC_CONNATTEMPTS, DBGetContactSettingWord(NULL, pszSkypeProtoName, "ConnectionAttempts", 10), FALSE);
 			SendMessage(hwndDlg, WM_COMMAND, IDC_STARTSKYPE, 0);
@@ -514,7 +511,6 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 		case WM_COMMAND: {
 			switch (LOWORD(wParam)) {
 				case IDC_STARTSKYPE:
-					for (i=0; i<sizeof(StartControls)/sizeof(StartControls[0]); i++) EnableWindow(GetDlgItem(hwndDlg, StartControls[i]), SendMessage(GetDlgItem(hwndDlg, LOWORD(wParam)), BM_GETCHECK,0,0));
 					break;
 				case IDC_CLEANUP:
 					pthread_create(( pThreadFunc )CleanupNicknames, NULL);
@@ -524,9 +520,6 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 					break;
 				case IDC_CUSTOMCOMMAND:
 					EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-					//EnableWindow(GetDlgItem(hwndDlg, IDC_MINIMIZED), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-					//EnableWindow(GetDlgItem(hwndDlg, IDC_NOSPLASH), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
-					//EnableWindow(GetDlgItem(hwndDlg, IDC_NOTRAY), !SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
 					break;
 
 			}

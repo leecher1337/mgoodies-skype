@@ -347,11 +347,11 @@ void logoff_contacts(void) {
 	LOG("logoff_contacts", "Logging off contacts.");
 	for (hContact=(HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);hContact != NULL;hContact=(HANDLE)CallService( MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0)) {
 		szProto = (char*)CallService( MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0 );
-		if (szProto!=NULL && !strcmp(szProto, pszSkypeProtoName) && 
-			DBGetContactSettingByte(hContact, pszSkypeProtoName, "ChatRoom", 0) == 0)
+		if (szProto!=NULL && !strcmp(szProto, pszSkypeProtoName) &&	DBGetContactSettingByte(hContact, pszSkypeProtoName, "ChatRoom", 0) == 0)
 		{
 			if (DBGetContactSettingWord(hContact, pszSkypeProtoName, "Status", ID_STATUS_OFFLINE)!=ID_STATUS_OFFLINE)
 				DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Status", ID_STATUS_OFFLINE);
+
 			DBDeleteContactSetting(hContact, pszSkypeProtoName, "CallId");
 		}
 	}
