@@ -2268,7 +2268,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 							break;
 						case LVN_COLUMNCLICK:
 							HACCOUNT ActualAccount;
-							if(NULL==(ActualAccount=GetWindowAccount(hDlg))){
+							if(NULL!=(ActualAccount=GetWindowAccount(hDlg))){
 								NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)lParam;
 								if(WAIT_OBJECT_0==WaitToReadFcn(ActualAccount->AccountAccessSO))
 								{
