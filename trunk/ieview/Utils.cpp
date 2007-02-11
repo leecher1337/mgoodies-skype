@@ -235,16 +235,16 @@ char * Utils::UTF8Encode(const wchar_t *wtext) {
 }
 
 char *Utils::UTF8Encode(const char *text) {
-    wchar_t *wtext = Utils::convertToWCS(text);
-    char *atext = UTF8Encode(wtext);
+	wchar_t *wtext = Utils::convertToWCS(text);
+	char *atext = UTF8Encode(wtext);
 	delete wtext;
 	return atext;
 }
 
 void Utils::UTF8Encode(const char *text, char *output, int maxLen) {
-    wchar_t *wtext = Utils::convertToWCS(text);
-    char *atext = UTF8Encode(wtext);
-    memcpy(output, atext, min ((int)strlen(atext)+1, maxLen));
+	wchar_t *wtext = Utils::convertToWCS(text);
+	char *atext = UTF8Encode(wtext);
+	memcpy(output, atext, min ((int)strlen(atext)+1, maxLen));
 	delete atext;
 	delete wtext;
 }
@@ -258,6 +258,11 @@ int Utils::detectURL(const wchar_t *text) {
 	}
 	if (i > 0 && text[i]==':' && text[i+1]=='/' && text[i+2]=='/') {
 		i += countNoWhitespace(text+i);
+		for (; i > 0; i --) {
+			if ((text[i-1] >= '0' && text[i-1]<='9') || (text[i-1] >= 'A' && text[i-1]<='Z') || (text[i-1] >= 'a' && text[i-1]<='z')) {
+				break;
+			}
+		}
 		return i;
 	}
 	return 0;
