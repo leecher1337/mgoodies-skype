@@ -635,6 +635,8 @@ static int uniqueEventId=0;
 
 int UpdateValues(HANDLE hContact,LPARAM lparam)
 {
+	FORK_THREADEX_PARAMS params;
+	DWORD dwThreadId;
 	DBCONTACTWRITESETTING *cws;
 	BOOL isIdleEvent;
 	// to make this code faster
@@ -715,7 +717,14 @@ int UpdateValues(HANDLE hContact,LPARAM lparam)
 			if (!(index = isContactQueueActive(hContact))){
 				index = addContactToQueue(hContact);
 				strncpy(contactQueue[index]->sProtoName,cws->szModule,MAXMODULELABELLENGTH);
-				forkthreadex(NULL, 0, waitThread, contactQueue[index], 0, 0);
+				//forkthreadex(NULL, 0, waitThread, contactQueue[index], 0, 0);
+				params.pFunc      = waitThread;
+			    params.arg        = contactQueue[index];
+			    params.iStackSize = 0;
+  			    params.threadID   = &dwThreadId;
+				CallService(MS_SYSTEM_FORK_THREAD_EX, 0, (LPARAM)&params);
+  
+
 //			} else {
 //				MessageBox(0,"Already in contact queue",cws->szModule,0);
 			}
@@ -819,12 +828,18 @@ int ModeChange(WPARAM wparam,LPARAM lparam)
 {
 	ACKDATA *ack;
 	WORD isetting=0;
+	FORK_THREADEX_PARAMS params;
+    DWORD dwThreadId;
 
 	ack=(ACKDATA *)lparam;
 
 	if(ack->type!=ACKTYPE_STATUS || ack->result!=ACKRESULT_SUCCESS || ack->hContact!=NULL) return 0;
 	courProtoName = (char *)ack->szModule;
-	if (!IsWatchedProtocol(courProtoName)) return 0;
+	if (!IsWatchedProtocol(courProtoName) && strncmp(courProtoName,"MetaContacts",12)) 
+	{
+		//MessageBox(NULL,"Protocol not watched",courProtoName,0);
+		return 0;
+	}
 
 	DBWriteTimeTS(time(NULL),NULL);
 
@@ -840,7 +855,13 @@ int ModeChange(WPARAM wparam,LPARAM lparam)
 			strncpy(info->sProtoName,courProtoName,MAXMODULELABELLENGTH);
 			info->hContact = 0;
 			info->courStatus = 0;
-			forkthreadex(NULL, 0, cleanThread, info, 0, 0);
+			//forkthreadex(NULL, 0, cleanThread, info, 0, 0);
+			params.pFunc      = cleanThread;
+			params.arg        = info;
+			params.iStackSize = 0;
+			params.threadID   = &dwThreadId;
+			CallService(MS_SYSTEM_FORK_THREAD_EX, 0, (LPARAM)&params);
+
 		}
 	} else if ((isetting==ID_STATUS_OFFLINE)&&((WORD)ack->hProcess>ID_STATUS_OFFLINE)){
 		//we have just loged-off
