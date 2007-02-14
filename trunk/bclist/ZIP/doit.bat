@@ -12,14 +12,13 @@ rem set ftp=ftp://<user>:<password>@<ftp>/<path>
 echo Building %name% ...
 
 msdev ..\%name%.dsp /MAKE "%name% - Win32 Release" /REBUILD
-msdev ..\%name%.dsp /MAKE "%name% - Win32 Unicode Release" /REBUILD
+msdev ..\%name%.dsp /MAKE "%name% - Win32 Release Unicode" /REBUILD
 
 echo Generating files for %name% ...
 
 del *.zip
 del *.dll
-copy ..\..\..\bin\release\Plugins\%name%.dll
-copy ..\..\..\bin\release\Plugins\%name%W.dll
+copy ..\..\..\bin\release\Plugins\clist_blind.dll
 copy ..\Docs\%name%_changelog.txt
 copy ..\Docs\%name%_version.txt
 copy ..\Docs\%name%_readme.txt
@@ -47,8 +46,12 @@ copy ..\..\..\Docs\*.*
 cd ..
 cd ..
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip %name%.dll Docs
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip %name%W.dll Docs
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip clist_blind.dll Docs
+
+del *.dll
+copy "..\..\..\bin\release unicode\Plugins\clist_blind.dll"
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip clist_blind.dll Docs
+
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
 
 del *.dll
