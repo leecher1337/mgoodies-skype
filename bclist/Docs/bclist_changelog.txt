@@ -1,0 +1,11 @@
+BClist
+
+Changelog:
+
+. 0.0.0.2
+  + Added templates for row types
+  + Added updater support
+  * Fixed rebuild on item data change
+
+. 0.0.0.1
+  + Initial version
