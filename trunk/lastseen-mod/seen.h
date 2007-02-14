@@ -49,9 +49,10 @@ Last change by : $Author$
 #include <m_protosvc.h>
 #include <m_protocols.h>
 #include <m_popup.h>
+#include <m_system.h>
 
-#include "..\..\protocols\IcqOscarJ\forkthread.h"
-#include "../tipper/docs/m_tipper.h"
+//#include "..\..\protocols\IcqOscarJ\forkthread.h"
+#include "..\..\include\m_tipper.h"
 WCHAR *any_to_IdleNotidleUnknown(HANDLE hContact, const char *module_name, const char *setting_name, WCHAR *buff, int bufflen);
 WCHAR *any_to_Idle(HANDLE hContact, const char *module_name, const char *setting_name, WCHAR *buff, int bufflen);
 
