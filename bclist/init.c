@@ -85,7 +85,7 @@ PLUGININFO pluginInfo = {
 	#else
 		"BClist",
 	#endif
-	PLUGIN_MAKE_VERSION(0, 0, 0, 2),
+	PLUGIN_MAKE_VERSION(0, 0, 0, 3),
 
 	"A contact list for blind folks",
 	"Ricardo Pescuma Domenecci",
@@ -583,6 +583,8 @@ void RebuildEntireList(HWND hwnd, struct ClcData *dat)
 	TCHAR template_info[1024];
 	TCHAR *text;
 	size_t size;
+	int selection = dat->selection;
+	BOOL has_focus = (GetFocus() == hwnd_list || GetFocus() == hwnd);
 
 	insideRebuild = TRUE;
 	pfnRebuildEntireList(hwnd, dat);
@@ -709,18 +711,18 @@ void RebuildEntireList(HWND hwnd, struct ClcData *dat)
 
 	SendMessage(hwnd_list, WM_SETREDRAW, TRUE, 0);
 	InvalidateRect(hwnd_list, NULL, TRUE);
+
+	dat->selection = selection;
+	SendMessage(hwnd_list, LB_SETCURSEL, dat->selection, 0);
+	if (has_focus)
+		SetFocus(hwnd_list);
 }
 
 void SetGroupExpand(HWND hwnd, struct ClcData *dat, struct ClcGroup *group, int newState)
 {
-	int selection;
-
 	pfnSetGroupExpand(hwnd, dat, group, newState);
 
-	selection = dat->selection;
 	pcli->pfnRebuildEntireList(hwnd, dat);
-	dat->selection = selection;
-	SendMessage(hwnd_list, LB_SETCURSEL, dat->selection, 0);
 }
 
 void ScrollTo( HWND hwnd, struct ClcData *dat, int desty, int noSmooth )
