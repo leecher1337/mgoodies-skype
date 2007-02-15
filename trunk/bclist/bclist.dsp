@@ -1,4 +1,4 @@
-# Microsoft Developer Studio Project File - Name="clist" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="bclist" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
@@ -8,12 +8,12 @@ CFG=bclist - Win32 Debug Unicode
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "clist.mak".
+!MESSAGE NMAKE /f "bclist.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "clist.mak" CFG="bclist - Win32 Debug Unicode"
+!MESSAGE NMAKE /f "bclist.mak" CFG="bclist - Win32 Debug Unicode"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
