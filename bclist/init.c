@@ -37,6 +37,7 @@ BOOL(WINAPI * MySetLayeredWindowAttributes) (HWND, COLORREF, BYTE, DWORD) = NULL
 LRESULT CALLBACK ContactListWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK ContactListControlWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void RebuildEntireList(HWND hwnd, struct ClcData *dat);
+void RebuildEntireListInternal(HWND hwnd, struct ClcData *dat, BOOL call_orig);
 void SetGroupExpand(HWND hwnd, struct ClcData *dat, struct ClcGroup *group, int newState);
 void ScrollTo( HWND hwnd, struct ClcData *dat, int desty, int noSmooth );
 void RecalcScrollBar( HWND hwnd, struct ClcData *dat );
@@ -85,7 +86,7 @@ PLUGININFO pluginInfo = {
 	#else
 		"BClist",
 	#endif
-	PLUGIN_MAKE_VERSION(0, 0, 0, 3),
+	PLUGIN_MAKE_VERSION(0, 0, 0, 4),
 
 	"A contact list for blind folks",
 	"Ricardo Pescuma Domenecci",
@@ -411,23 +412,39 @@ LRESULT CALLBACK ContactListWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 	return pfnContactListWndProc(hwnd, msg, wParam, lParam);
 }
 
-HWND hwnd_list = 0;
+struct MyClcData
+{
+	union {
+		struct ClcData;
+	};
+	HWND hwnd_list;
+	BOOL need_rebuild;
+};
 
 LRESULT CALLBACK ContactListControlWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	struct ClcData *dat = (struct ClcData *) GetWindowLong(hwnd, 0);
+	struct MyClcData *dat = (struct MyClcData *) GetWindowLong(hwnd, 0);
 
 	switch (msg) {
 		case WM_CREATE:
 		{
 			RECT r;
+			LRESULT ret = pfnContactListControlWndProc(hwnd, msg, wParam, lParam);
 
-			hwnd_list = CreateWindow(_T("LISTBOX"), _T(""),
+			// Fix dat
+			struct ClcData *tmp = (struct ClcData *) GetWindowLong(hwnd, 0);
+			dat = (struct MyClcData *) mir_alloc(sizeof(struct MyClcData));
+			memmove(dat, tmp, sizeof(struct ClcData));
+			mir_free(tmp);
+			SetWindowLong(hwnd, 0, (LONG) dat);
+
+			dat->hwnd_list = CreateWindow(_T("LISTBOX"), _T(""),
 					(WS_VISIBLE | WS_CHILD | LBS_NOINTEGRALHEIGHT | LBS_NOTIFY | LBS_WANTKEYBOARDINPUT | WS_VSCROLL), 
 					0, 0, 0, 0, hwnd, NULL, g_hInst,0);
+			dat->need_rebuild = FALSE;
 
 			GetClientRect(hwnd, &r);
-			SetWindowPos(hwnd_list, 0, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE);
+			SetWindowPos(dat->hwnd_list, 0, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE);
 
 			break;
 		}
@@ -436,12 +453,15 @@ LRESULT CALLBACK ContactListControlWndProc(HWND hwnd, UINT msg, WPARAM wParam, L
 		{
 			RECT r;
 			GetClientRect(hwnd, &r);
-			SetWindowPos(hwnd_list, 0, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE);
+			SetWindowPos(dat->hwnd_list, 0, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE);
 			break;
 		}
 
 		case WM_PRINTCLIENT:
 		case WM_PAINT:
+			if (dat->need_rebuild)
+				RebuildEntireListInternal(hwnd, (struct ClcData *) dat, FALSE);
+			// no break
 		case WM_VSCROLL:
 		case WM_MOUSEWHEEL:
 		case WM_KEYDOWN:
@@ -468,23 +488,23 @@ LRESULT CALLBACK ContactListControlWndProc(HWND hwnd, UINT msg, WPARAM wParam, L
 
 		case WM_COMMAND:
 		{
-			if ((HANDLE) lParam != hwnd_list || HIWORD(wParam) != LBN_SELCHANGE)
+			if ((HANDLE) lParam != dat->hwnd_list || HIWORD(wParam) != LBN_SELCHANGE)
 				break;
 
-			dat->selection = SendMessage(hwnd_list, LB_GETCURSEL, 0, 0);
+			dat->selection = SendMessage(dat->hwnd_list, LB_GETCURSEL, 0, 0);
 
 			KillTimer(hwnd, TIMERID_INFOTIP);
 			KillTimer(hwnd, TIMERID_RENAME);
 			dat->szQuickSearch[0] = 0;
 			pcli->pfnInvalidateRect(hwnd, NULL, FALSE);
-			pcli->pfnEnsureVisible(hwnd, dat, dat->selection, 0);
+			pcli->pfnEnsureVisible(hwnd, (struct ClcData *) dat, dat->selection, 0);
 			UpdateWindow(hwnd);
 			break;
 		}
 
 		case WM_SETFOCUS:
 		case WM_ENABLE:
-			SetFocus(hwnd_list);
+			SetFocus(dat->hwnd_list);
 			break;
 
 	}
@@ -568,11 +588,9 @@ TCHAR *GetProtoName(struct ClcContact *item)
 	return proto_name;
 }
 
-
-BOOL insideRebuild = FALSE;
-
-void RebuildEntireList(HWND hwnd, struct ClcData *dat)
+void RebuildEntireListInternal(HWND hwnd, struct ClcData *tmp_dat, BOOL call_orig)
 {
+	struct MyClcData *dat = (struct MyClcData *) tmp_dat;
 	struct ClcGroup *group;
 	struct ClcContact *item;
 	TCHAR tmp[1024];
@@ -584,24 +602,23 @@ void RebuildEntireList(HWND hwnd, struct ClcData *dat)
 	TCHAR *text;
 	size_t size;
 	int selection = dat->selection;
-	BOOL has_focus = (GetFocus() == hwnd_list || GetFocus() == hwnd);
+	BOOL has_focus = (GetFocus() == dat->hwnd_list || GetFocus() == hwnd);
 
-	insideRebuild = TRUE;
-	pfnRebuildEntireList(hwnd, dat);
-	insideRebuild = FALSE;
+	if (call_orig)
+		pfnRebuildEntireList(hwnd, (struct ClcData *) dat);
 
 	MyDBGetContactSettingTString(NULL, "CLC", "TemplateContact", template_contact, 1024, TranslateT("%name% [%status% %protocol%] %status_message%"));
 	MyDBGetContactSettingTString(NULL, "CLC", "TemplateGroup", template_group, 1024, TranslateT("Group: %name% %count% [%mode%]"));
 	MyDBGetContactSettingTString(NULL, "CLC", "TemplateDivider", template_divider, 1024, TranslateT("Divider: %s"));
 	MyDBGetContactSettingTString(NULL, "CLC", "TemplateInfo", template_info, 1024, TranslateT("Info: %s"));
 
-	SendMessage(hwnd_list, WM_SETREDRAW, FALSE, 0);
+	SendMessage(dat->hwnd_list, WM_SETREDRAW, FALSE, 0);
 
 	// Reset content
-	SendMessage(hwnd_list, LB_RESETCONTENT, 0, 0);
+	SendMessage(dat->hwnd_list, LB_RESETCONTENT, 0, 0);
 
 	// Set font
-	SendMessage(hwnd_list, WM_SETFONT, (WPARAM) dat->fontInfo[FONTID_CONTACTS].hFont, 0);
+	SendMessage(dat->hwnd_list, WM_SETFONT, (WPARAM) dat->fontInfo[FONTID_CONTACTS].hFont, 0);
 
 	// Add all items to the list
 	group = &dat->list;
@@ -627,7 +644,7 @@ void RebuildEntireList(HWND hwnd, struct ClcData *dat)
 		{
 			case CLCIT_GROUP:
 			{
-				char *szCounts = pcli->pfnGetGroupCountsText(dat, item);
+				char *szCounts = pcli->pfnGetGroupCountsText((struct ClcData *) dat, item);
 				TCHAR *t[] = {
 					_T("%name%"),
 					_T("%count%"),
@@ -661,7 +678,7 @@ void RebuildEntireList(HWND hwnd, struct ClcData *dat)
 			}
 			case CLCIT_CONTACT:
 			{
-				char *szCounts = pcli->pfnGetGroupCountsText(dat, item);
+				char *szCounts = pcli->pfnGetGroupCountsText((struct ClcData *) dat, item);
 				TCHAR *t[] = {
 					_T("%name%"),
 					_T("%status%"),
@@ -694,7 +711,7 @@ void RebuildEntireList(HWND hwnd, struct ClcData *dat)
 			}
 		}
 
-		SendMessage(hwnd_list, LB_ADDSTRING, 0, (LPARAM) tmp);
+		SendMessage(dat->hwnd_list, LB_ADDSTRING, 0, (LPARAM) tmp);
 
 		if (item->type == CLCIT_GROUP && item->group->expanded) 
 		{
@@ -709,20 +726,28 @@ void RebuildEntireList(HWND hwnd, struct ClcData *dat)
 		group->scanIndex++;
 	}
 
-	SendMessage(hwnd_list, WM_SETREDRAW, TRUE, 0);
-	InvalidateRect(hwnd_list, NULL, TRUE);
+	SendMessage(dat->hwnd_list, WM_SETREDRAW, TRUE, 0);
+	InvalidateRect(dat->hwnd_list, NULL, TRUE);
 
 	dat->selection = selection;
-	SendMessage(hwnd_list, LB_SETCURSEL, dat->selection, 0);
+	SendMessage(dat->hwnd_list, LB_SETCURSEL, dat->selection, 0);
 	if (has_focus)
-		SetFocus(hwnd_list);
+		SetFocus(dat->hwnd_list);
+
+	dat->need_rebuild = FALSE;
 }
 
-void SetGroupExpand(HWND hwnd, struct ClcData *dat, struct ClcGroup *group, int newState)
+void RebuildEntireList(HWND hwnd, struct ClcData *dat)
 {
-	pfnSetGroupExpand(hwnd, dat, group, newState);
+	RebuildEntireListInternal(hwnd, dat, TRUE);
+}
 
-	pcli->pfnRebuildEntireList(hwnd, dat);
+void SetGroupExpand(HWND hwnd, struct ClcData *tmp_dat, struct ClcGroup *group, int newState)
+{
+	struct MyClcData *dat = (struct MyClcData *) tmp_dat;
+
+	pfnSetGroupExpand(hwnd, tmp_dat, group, newState);
+	dat->need_rebuild = TRUE;
 }
 
 void ScrollTo( HWND hwnd, struct ClcData *dat, int desty, int noSmooth )
@@ -733,25 +758,29 @@ void RecalcScrollBar( HWND hwnd, struct ClcData *dat )
 {
 }
 
-void LoadClcOptions( HWND hwnd, struct ClcData *dat )
+void LoadClcOptions( HWND hwnd, struct ClcData *tmp_dat )
 {
-	pfnLoadClcOptions(hwnd, dat);
-	dat->rowHeight = SendMessage(hwnd_list, LB_GETITEMHEIGHT, 0, 0);
+	struct MyClcData *dat = (struct MyClcData *) tmp_dat;
+
+	pfnLoadClcOptions(hwnd, tmp_dat);
+	dat->rowHeight = SendMessage(dat->hwnd_list, LB_GETITEMHEIGHT, 0, 0);
 }
 
-int GetRowHeight(struct ClcData *dat, int item)
+int GetRowHeight(struct ClcData *tmp_dat, int item)
 {
-	dat->rowHeight = SendMessage(hwnd_list, LB_GETITEMHEIGHT, 0, 0);
+	struct MyClcData *dat = (struct MyClcData *) tmp_dat;
+
+	dat->rowHeight = SendMessage(dat->hwnd_list, LB_GETITEMHEIGHT, 0, 0);
 	return dat->rowHeight;
 }
 
-void SortCLC(HWND hwnd, struct ClcData *dat, int useInsertionSort)
+void SortCLC(HWND hwnd, struct ClcData *tmp_dat, int useInsertionSort)
 {
-	if ( dat->needsResort ) 
+	if ( tmp_dat->needsResort ) 
 	{
-		pfnSortCLC(hwnd, dat, useInsertionSort);
+		struct MyClcData *dat = (struct MyClcData *) tmp_dat;
 
-		if (!insideRebuild)
-			RebuildEntireList(hwnd, dat);
+		pfnSortCLC(hwnd, tmp_dat, useInsertionSort);
+		dat->need_rebuild = TRUE;
 	}
 }
