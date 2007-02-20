@@ -880,7 +880,7 @@ int JabberGetCaps( WPARAM wParam, LPARAM lParam )
 {
 	switch( wParam ) {
 	case PFLAGNUM_1:
-		return PF1_IM|PF1_AUTHREQ|PF1_SERVERCLIST|PF1_MODEMSG|PF1_BASICSEARCH|PF1_SEARCHBYEMAIL|PF1_SEARCHBYNAME|PF1_FILE|PF1_VISLIST|PF1_INVISLIST;
+		return PF1_IM|PF1_AUTHREQ|PF1_SERVERCLIST|PF1_MODEMSG|PF1_BASICSEARCH/*|PF1_SEARCHBYEMAIL |PF1_SEARCHBYNAME|PF1_EXTSEARCHUI*/ | PF1_EXTSEARCH |PF1_FILE|PF1_VISLIST|PF1_INVISLIST;
 	case PFLAGNUM_2:
 		return PF2_ONLINE | PF2_INVISIBLE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_HEAVYDND | PF2_FREECHAT;
 	case PFLAGNUM_3:
@@ -1445,6 +1445,7 @@ int JabberSetStatus( WPARAM wParam, LPARAM lParam )
  	if ( desiredStatus == ID_STATUS_OFFLINE ) {
 		if ( jabberThreadInfo ) {
 			jabberThreadInfo->send( "</stream:stream>" );
+			jabberThreadInfo->close();
 			jabberThreadInfo = NULL;
 			if ( jabberConnected )
 				jabberConnected = jabberOnline = FALSE;
@@ -1599,6 +1600,10 @@ int JabberSvcInit( void )
 	JCreateServiceFunction( PSR_MESSAGE, JabberRecvMessage );
 	JCreateServiceFunction( PSR_FILE, JabberRecvFile );
 	JCreateServiceFunction( PSS_USERISTYPING, JabberUserIsTyping );
+
+	//JEP-055 aware CUSTOM SEARCHING (jabber_search.h)
+	JCreateServiceFunction( PS_CREATEADVSEARCHUI, JabberSearchCreateAdvUI );
+	JCreateServiceFunction( PS_SEARCHBYADVANCED, JabberSearchByAdvanced );
 
 	// Protocol services and events...
 	heventRawXMLIn = JCreateHookableEvent( JE_RAWXMLIN );

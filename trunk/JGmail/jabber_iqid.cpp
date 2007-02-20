@@ -46,6 +46,14 @@ static void JabberOnLoggedIn( ThreadData* info )
 	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
 	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
 	jabberThreadInfo->send( iq );
+
+	char szServerName[ sizeof(info->server) ];
+	if ( JGetStaticString( "LastLoggedServer", NULL, szServerName, sizeof(szServerName)))
+		JabberSendGetVcard( jabberJID );
+	else if ( strcmp( info->server, szServerName ))
+		JabberSendGetVcard( jabberJID );
+	JSetString( NULL, "LastLoggedServer", info->server );
+
 	if ((enableGmailSetting & 3) == 1) JabberRequestMailBox(info->s);
 }
 

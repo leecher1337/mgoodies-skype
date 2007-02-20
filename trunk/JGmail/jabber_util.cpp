@@ -1025,7 +1025,7 @@ TCHAR* a2t( const char* str )
 		return NULL;
 
 	#if defined( _UNICODE )
-		return ( TCHAR* )JCallService( MS_LANGPACK_PCHARTOTCHAR, 0, (LPARAM)str );
+		return a2u( str );
 	#else
 		return mir_strdup( str );
 	#endif

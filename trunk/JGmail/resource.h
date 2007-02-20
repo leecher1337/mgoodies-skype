@@ -26,6 +26,7 @@
 #define IDD_VCARD_PHOTO                 132
 #define IDD_VCARD_NOTE                  133
 #define IDD_CHANGEPASSWORD              136
+#define IDD_SEARCHUSER                  138
 #define IDD_OPT_JABBER2                 140
 #define IDD_GROUPCHAT                   141
 #define IDD_GROUPCHAT_JOIN              148
@@ -227,7 +228,6 @@
 
 #define IDC_DISABLE_SASL                1182
 #define IDC_UNREGISTER                  1183
-#define IDC_CHECK1                      1184
 #define IDC_VALIDATEADD                 1184
 #define IDC_WHITERECT                   1221
 #define IDC_UPDATING                    1231
@@ -235,6 +235,8 @@
 #define IDC_PHONES                      1308
 #define IDC_UPDATE                      1313
 #define IDC_STATUS                      1414
+#define IDC_GO                          1196
+#define IDC_INSTRUCTIONS                1414
 #define IDC_PLAN                        1415
 #define IDC_PERSONALGROUP               1434
 #define IDC_EXTRAGROUP                  1436
