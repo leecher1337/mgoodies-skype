@@ -139,7 +139,7 @@ void JabberDBAddAuthRequest( TCHAR* jid, TCHAR* nick )
 {
 	HANDLE hContact = JabberDBCreateContact( jid, NULL, FALSE, TRUE );
 	JDeleteSetting( hContact, "Hidden" );
-	JSetStringT( hContact, "Nick", nick );
+	//JSetStringT( hContact, "Nick", nick );
 
 	#if defined( _UNICODE )
 		char* szJid = u2a( jid );
@@ -224,8 +224,10 @@ HANDLE JabberDBCreateContact( TCHAR* jid, TCHAR* nick, BOOL temporary, BOOL stri
 			JSetStringT( hContact, "Nick", nick );
 		if ( temporary )
 			DBWriteContactSettingByte( hContact, "CList", "NotOnList", 1 );
+		else
+			JabberSendGetVcard( s );
 		JabberLog( "Create Jabber contact jid=" TCHAR_STR_PARAM ", nick=" TCHAR_STR_PARAM, s, nick );
-        JabberDBCheckIsTransportedContact(s,hContact);
+		JabberDBCheckIsTransportedContact(s,hContact);
 	}
 
 	mir_free( s );

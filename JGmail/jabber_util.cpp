@@ -999,6 +999,21 @@ void __stdcall JabberStringAppend( char* *str, int *sizeAlloced, const char* fmt
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// JabberGetPacketID - converts the xml id attribute into an integer
+
+int __stdcall JabberGetPacketID( XmlNode* n )
+{
+	int result = -1;
+
+	TCHAR* str = JabberXmlGetAttrValue( n, "id" );
+	if ( str )
+		if ( !_tcsncmp( str, _T(JABBER_IQID), SIZEOF( JABBER_IQID )-1 ))
+			result = _ttoi( str + SIZEOF( JABBER_IQID )-1 );
+
+	return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // JabberGetClientJID - adds a resource postfix to a JID
 
 TCHAR* __stdcall JabberGetClientJID( const TCHAR* jid, TCHAR* dest, size_t destLen )
@@ -1063,6 +1078,18 @@ int __stdcall JabberGetPictureType( const char* buf )
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Unicode functions
+
+TCHAR* a2t( const char* str )
+{
+	if ( str == NULL )
+		return NULL;
+
+	#if defined( _UNICODE )
+		return ( TCHAR* )JCallService( MS_LANGPACK_PCHARTOTCHAR, 0, (LPARAM)str );
+	#else
+		return mir_strdup( str );
+	#endif
+}
 
 char* t2a( const TCHAR* src )
 {
@@ -1214,7 +1241,7 @@ TStringPairs::TStringPairs( char* buffer ) :
 
 TStringPairs::~TStringPairs()
 {
-	delete elems;
+	delete[] elems;
 }
 
 const char* TStringPairs::operator[]( const char* key ) const

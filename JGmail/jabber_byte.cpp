@@ -296,7 +296,7 @@ void __cdecl JabberByteReceiveThread( JABBER_BYTE_TRANSFER *jbt )
 		( n=JabberXmlGetChild( queryNode, "streamhost" ))!=NULL ) {
 
 		szId = JabberXmlGetAttrValue( iqNode, "id" );
-		jbt->iqId = ( szId ) ? mir_tstrdup( szId ):NULL;
+		jbt->iqId = mir_tstrdup( szId );
 		jbt->srcJID = mir_tstrdup( from );
 		jbt->dstJID = mir_tstrdup( to );
 		jbt->sid = mir_tstrdup( sid );

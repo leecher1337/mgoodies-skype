@@ -35,10 +35,10 @@ static JABBER_IQ_XMLNS_FUNC jabberXmlns[] = {
 };
 
 typedef struct {
-	int iqId;					// id to match IQ get/set with IQ result
-	JABBER_IQ_PROCID procId;	// must be unique in the list, except for IQ_PROC_NONE which can have multiple entries
-	JABBER_IQ_PFUNC func;		// callback function
-	time_t requestTime;			// time the request was sent, used to remove relinquent entries
+	int iqId;                  // id to match IQ get/set with IQ result
+	JABBER_IQ_PROCID procId;   // must be unique in the list, except for IQ_PROC_NONE which can have multiple entries
+	JABBER_IQ_PFUNC func;      // callback function
+	time_t requestTime;        // time the request was sent, used to remove relinquent entries
 } JABBER_IQ_FUNC;
 
 static CRITICAL_SECTION csIqList;

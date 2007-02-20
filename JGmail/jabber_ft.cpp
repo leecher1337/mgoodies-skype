@@ -298,7 +298,7 @@ void JabberFtHandleSiRequest( XmlNode *iqNode )
 				ft->jid = mir_tstrdup( from );
 				ft->std.hContact = JabberHContactFromJID( from );
 				ft->sid = mir_tstrdup( sid );
-				ft->iqId = ( szId ) ? mir_tstrdup( szId ):NULL;
+				ft->iqId = mir_tstrdup( szId );
 				ft->type = ftType;
 				ft->std.totalFiles = 1;
 				ft->std.currentFile = localFilename;

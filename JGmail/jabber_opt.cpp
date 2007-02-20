@@ -515,6 +515,7 @@ static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 		CheckDlgButton( hwndDlg, IDC_AUTO_ACCEPT_MUC, JGetByte( "AutoAcceptMUC", FALSE ));
 		CheckDlgButton( hwndDlg, IDC_AUTOJOIN, JGetByte( "AutoJoinConferences", FALSE ));
 		CheckDlgButton( hwndDlg, IDC_DISABLE_SASL, JGetByte( "Disable3920auth", FALSE ));
+		CheckDlgButton( hwndDlg, IDC_VALIDATEADD, JGetByte( "ValidateAddition", TRUE ));
 		return TRUE;
 	}
 	case WM_COMMAND:
@@ -588,6 +589,7 @@ static BOOL CALLBACK JabberAdvOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			JSetByte( "EnableAvatars",       ( BYTE )IsDlgButtonChecked( hwndDlg, IDC_ENABLE_AVATARS ));
 			JSetByte( "AutoAcceptMUC",       ( BYTE )IsDlgButtonChecked( hwndDlg, IDC_AUTO_ACCEPT_MUC ));
 			JSetByte( "AutoJoinConferences", ( BYTE )IsDlgButtonChecked( hwndDlg, IDC_AUTOJOIN ));
+			JSetByte( "ValidateAddition",    ( BYTE )IsDlgButtonChecked( hwndDlg, IDC_VALIDATEADD ));
 			return TRUE;
 		}
 		break;
