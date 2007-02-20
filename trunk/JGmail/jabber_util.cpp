@@ -83,66 +83,6 @@ void __stdcall JabberLog( const char* fmt, ... )
 	JCallService( MS_NETLIB_LOG, ( WPARAM )hNetlibUser, ( LPARAM )str );
 }
 
-// Caution: DO NOT use JabberSend() to send binary ( non-string ) data
-int __stdcall JabberSend( HANDLE hConn, XmlNode& node )
-{
-	char* str = node.getText();
-	int size = strlen( str ), result;
-
-	EnterCriticalSection( &mutex );
-
-	PVOID ssl;
-	if (( ssl=JabberSslHandleToSsl( hConn )) != NULL ) {
-		if ( DBGetContactSettingByte( NULL, "Netlib", "DumpSent", TRUE ) == TRUE ) {
-			char* szLogBuffer = ( char* )alloca( size+32 );
-			strcpy( szLogBuffer, "( SSL ) Data sent\n" );
-			memcpy( szLogBuffer+strlen( szLogBuffer ), str, size+1  ); // also copy \0 
-			Netlib_Logf( hNetlibUser, "%s", szLogBuffer );	// %s to protect against when fmt tokens are in szLogBuffer causing crash
-		}
-
-		result = pfn_SSL_write( ssl, str, size );
-	}
-	else result = JabberWsSend( hConn, str, size );
-	LeaveCriticalSection( &mutex );
-
-	mir_free( str );
-	return result;
-}
-
-int __stdcall JabberSend( HANDLE hConn, const char* fmt, ... )
-{
-	int result;
-
-	EnterCriticalSection( &mutex );
-
-	va_list vararg;
-	va_start( vararg,fmt );
-	int size = 512;
-	char* str = ( char* )mir_alloc( size );
-	while ( _vsnprintf( str, size, fmt, vararg ) == -1 ) {
-		size += 512;
-		str = ( char* )mir_realloc( str, size );
-	}
-	va_end( vararg );
-
-	size = strlen( str );
-	PVOID ssl;
-	if (( ssl=JabberSslHandleToSsl( hConn )) != NULL ) {
-		if ( DBGetContactSettingByte( NULL, "Netlib", "DumpSent", TRUE ) == TRUE ) {
-			char* szLogBuffer = ( char* )alloca( size+32 );
-			strcpy( szLogBuffer, "( SSL ) Data sent\n" );
-			memcpy( szLogBuffer+strlen( szLogBuffer ), str, size+1 ); // also copy \0 
-			Netlib_Logf( hNetlibUser, "%s", szLogBuffer );	// %s to protect against when fmt tokens are in szLogBuffer causing crash
-		}
-
-		result = pfn_SSL_write( ssl, str, size );
-	}
-	else result = JabberWsSend( hConn, str, size );
-	LeaveCriticalSection( &mutex );
-
-	mir_free( str );
-	return result;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // JabberHContactFromJID - looks for the HCONTACT with required JID
@@ -522,7 +462,7 @@ void __stdcall JabberSendVisibleInvisiblePresence( BOOL invisible )
 		WORD apparentMode = JGetWord( hContact, "ApparentMode", 0 );
 		if ( invisible==TRUE && apparentMode==ID_STATUS_OFFLINE ) {
 			XmlNode p( "presence" ); p.addAttr( "to", item->jid ); p.addAttr( "type", "invisible" );
-			JabberSend( jabberThreadInfo->s, p );
+			jabberThreadInfo->send( p );
 		}
 		else if ( invisible==FALSE && apparentMode==ID_STATUS_ONLINE )
 			JabberSendPresenceTo( jabberStatus, item->jid, NULL );
@@ -953,7 +893,7 @@ void __stdcall JabberSendPresenceTo( int status, TCHAR* to, XmlNode* extra )
 	LeaveCriticalSection( &modeMsgMutex );
 	}
 
-	JabberSend( jabberThreadInfo->s, p );
+	jabberThreadInfo->send( p );
 }
 
 void __stdcall JabberSendPresence( int status, bool bSendToAll )

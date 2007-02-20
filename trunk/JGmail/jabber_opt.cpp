@@ -27,6 +27,7 @@ Last change by : $Author$
 
 #include "jabber.h"
 #include "jabber_list.h"
+#include "jabber_ssl.h"
 #include <commctrl.h>
 #include "resource.h"
 #include <uxtheme.h>
@@ -205,7 +206,7 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			CheckDlgButton( hwndDlg, IDC_USE_SSL, JGetByte( "UseSSL", FALSE ));
 			CheckDlgButton( hwndDlg, IDC_USE_TLS, JGetByte( "UseTLS", TRUE ));
 #ifndef STATICSSL
-			if ( !hLibSSL ) {
+			if ( !JabberSslInit() ) {
 				EnableWindow(GetDlgItem( hwndDlg, IDC_USE_SSL ), FALSE );
 				EnableWindow(GetDlgItem( hwndDlg, IDC_USE_TLS ), FALSE );
 				EnableWindow(GetDlgItem( hwndDlg, IDC_DOWNLOAD_OPENSSL ), TRUE );
@@ -337,7 +338,7 @@ static BOOL CALLBACK JabberOptDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			{
 				XmlNodeIq iq( "set", NOID, jabberJID );
 				iq.addQuery( "jabber:iq:register" )->addChild( "remove" );
-				JabberSend( jabberThreadInfo->s, iq );
+				jabberThreadInfo->send( iq );
 			}
 			break;
 		case IDC_MSGLANG:

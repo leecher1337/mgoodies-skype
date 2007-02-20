@@ -54,17 +54,8 @@ extern PFN_SSL_int_pvoid_pvoid_int	pfn_SSL_read;				// int SSL_read( SSL *ssl, v
 extern PFN_SSL_int_pvoid_pvoid_int	pfn_SSL_write;				// int SSL_write( SSL *ssl, void *buffer, int bufsize )
 #endif
 
-typedef struct {
-	HANDLE h;
-	PVOID ssl;
-} JABBER_SSL_MAPPING;
-
 BOOL JabberSslInit();
 void JabberSslUninit();
-int JabberSslFindHandle( HANDLE hConn );
-PVOID JabberSslHandleToSsl( HANDLE hConn );
-void JabberSslAddHandle( HANDLE hConn, PVOID ssl );
-void JabberSslRemoveHandle( HANDLE hConn );
 char * getXGoogleToken(char * email, char * passwd);
 
 #endif

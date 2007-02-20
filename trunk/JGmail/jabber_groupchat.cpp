@@ -49,7 +49,7 @@ int JabberMenuHandleGroupchat( WPARAM wParam, LPARAM lParam )
 
 			XmlNodeIq iq( "get", iqId, ( TCHAR* )lParam );
 			XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
-			JabberSend( jabberThreadInfo->s, iq );
+			jabberThreadInfo->send( iq );
 			// <iq/> result will send WM_JABBER_REFRESH to update the list with real data
 		}
 	}
@@ -119,7 +119,7 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 
 				XmlNodeIq iq( "get", iqId, ( TCHAR* )lParam );
 				XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
-				JabberSend( jabberThreadInfo->s, iq );
+				jabberThreadInfo->send( iq );
 			}
 			else {
 				for ( int i=0; i < GC_SERVER_LIST_SIZE; i++ ) {
@@ -291,10 +291,10 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 				{	XmlNodeIq iq( "set" );
 					XmlNode* query = iq.addQuery( "jabber:iq:roster" );
 					XmlNode* item = query->addChild( "item" ); item->addAttr( "jid", jid );
-					JabberSend( jabberThreadInfo->s, iq );
+					jabberThreadInfo->send( iq );
 				}
 				{	XmlNode p( "presence" ); p.addAttr( "to", jid ); p.addAttr( "type", "subscribe" );
-					JabberSend( jabberThreadInfo->s, p );
+					jabberThreadInfo->send( p );
 			}	}
 			break;
 
@@ -318,7 +318,7 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 
 				XmlNodeIq iq( "get", iqId, text );
 				XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
-				JabberSend( jabberThreadInfo->s, iq );
+				jabberThreadInfo->send( iq );
 			}
 			return TRUE;
 		}
@@ -617,7 +617,7 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 
 			XmlNodeIq iq( "get", iqId, item->jid );
 			XmlNode* query = iq.addQuery( xmlnsOwner );
-			JabberSend( jabberThreadInfo->s, iq );
+			jabberThreadInfo->send( iq );
 		}
 
 		mir_free( room );
