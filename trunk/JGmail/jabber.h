@@ -85,6 +85,8 @@ Last change by : $Author$
 #include <m_message.h>
 #include <m_skin.h>
 #include <m_chat.h>
+#include <m_clc.h>
+#include <m_button.h>
 #include <win2k.h>
 
 #include "jabber_xml.h"
@@ -349,6 +351,7 @@ extern BOOL   jabberConnected;
 extern BOOL   jabberOnline;
 extern int    jabberStatus;
 extern int    jabberDesiredStatus;
+extern int    jabberSearchID;
 extern time_t jabberLoggedInTime;
 
 extern CRITICAL_SECTION modeMsgMutex;
@@ -399,7 +402,7 @@ HBITMAP __stdcall JabberStretchBitmap( HBITMAP hBitmap );
 //---- jabber_chat.cpp ----------------------------------------------
 
 void JabberGcLogCreate( JABBER_LIST_ITEM* item );
-void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, int action, XmlNode* reason );
+void JabberGcLogUpdateMemberStatus( JABBER_LIST_ITEM* item, TCHAR* nick, TCHAR* jid, int action, XmlNode* reason );
 void JabberGcQuit( JABBER_LIST_ITEM* jid, int code, XmlNode* reason );
 
 //---- jabber_file.c ------------------------------------------------
@@ -553,6 +556,7 @@ void          __stdcall JabberStringAppend( char* *str, int *sizeAlloced, const 
 TCHAR*        __stdcall JabberGetClientJID( const TCHAR* jid, TCHAR*, size_t );
 TCHAR*        __stdcall JabberStripJid( const TCHAR* jid, TCHAR* dest, size_t destLen );
 int           __stdcall JabberGetPictureType( const char* buf );
+int           __stdcall JabberGetPacketID( XmlNode* n );
 int           __stdcall MessagePopup(HWND hWnd, TCHAR *lpText, TCHAR *lpCaption, UINT uType);
 
 #if defined( _UNICODE )
@@ -579,6 +583,7 @@ int           JabberWsRecv( JABBER_SOCKET s, char* data, long datalen );
 char* t2a( const TCHAR* src );
 char* u2a( const wchar_t* src );
 wchar_t* a2u( const char* src );
+TCHAR* a2t( const char* src );
 
 #define NUMICONSSMALL 20
 #define NUMICONSBIG 3

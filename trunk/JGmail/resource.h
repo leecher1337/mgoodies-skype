@@ -213,16 +213,22 @@
 #define IDC_DATE                        1157
 #define IDC_MANUAL_REGISTER             1167
 #define IDC_REASON                      1171
-#define IDC_USER                        1172
-#define IDC_INVITE                      1173
-#define IDC_ACCEPT                      1174
-#define IDC_FROM                        1175
-#define IDC_AUTOJOIN                    1176
-#define IDC_DISABLE_MAINMENU            1178
-#define IDC_USE_TLS                     1179
-#define IDC_AUTO_ACCEPT_MUC             1180
+
+#define IDC_CLIST                       1172
+#define IDC_NEWJID                      1173
+#define IDC_ADDJID                      1174
+#define IDC_INVITE                      1175
+#define IDC_ACCEPT                      1176
+#define IDC_FROM                        1177
+#define IDC_AUTOJOIN                    1178
+#define IDC_DISABLE_MAINMENU            1179
+#define IDC_USE_TLS                     1180
+#define IDC_AUTO_ACCEPT_MUC             1181
+
 #define IDC_DISABLE_SASL                1182
 #define IDC_UNREGISTER                  1183
+#define IDC_CHECK1                      1184
+#define IDC_VALIDATEADD                 1184
 #define IDC_WHITERECT                   1221
 #define IDC_UPDATING                    1231
 #define IDC_EMAILS                      1306

@@ -191,6 +191,7 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 		ShowWindow( GetDlgItem( hwndDlg, IDC_SAVE ), SW_HIDE );
 		SendMessage( hwndDlg, WM_JABBER_REFRESH, 0, 0 );
 		return TRUE;
+
 	case WM_JABBER_REFRESH:
 		if ( hBitmap ) {
 			DeleteObject( hBitmap );
@@ -221,26 +222,17 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 		InvalidateRect( hwndDlg, NULL, TRUE );
 		UpdateWindow( hwndDlg );
 		break;
+
 	case WM_COMMAND:
 		switch ( LOWORD( wParam )) {
 		case IDC_LOAD:
 			{
-				OPENFILENAMEA ofn = {0};
-				static char szFilter[512];
+				char szFilter[512];
 				char szFileName[_MAX_PATH];
-				char* p;
-				int n;
 
-//				JCallService( MS_UTILS_GETBITMAPFILTERSTRINGS, ( WPARAM ) sizeof( szFilter ), ( LPARAM )szFilter );
-				p = szFilter;
-				n = sizeof( szFilter );
-				strncpy( p, JTranslate( "All Bitmaps" ), n ); n = sizeof( szFilter )-strlen( szFilter );
-				strncat( p, " ( *.bmp;*.png;*.jpg;*.jpeg;*.gif )", n ); n = sizeof( szFilter )-strlen( szFilter );
-				p += strlen( p )+1; n = sizeof( szFilter )-( p-szFilter );
-				strncpy( p, "*.BMP;*.PNG;*.JPG;*.JPEG;*.GIF", n );
-				szFilter[512-1] = '\0';
+				JCallService( MS_UTILS_GETBITMAPFILTERSTRINGS, ( WPARAM ) sizeof( szFilter ), ( LPARAM )szFilter );
 
-
+				OPENFILENAMEA ofn = {0};
 				ofn.lStructSize = OPENFILENAME_SIZE_VERSION_400;
 				ofn.hwndOwner = hwndDlg;
 				ofn.lpstrFilter = szFilter;
@@ -271,7 +263,9 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 									DeleteObject( hBitmap );
 									DeleteFileA( szPhotoFileName );
 								}
-								if (( p=strrchr( szFileName, '.' )) != NULL ) {
+
+								char* p = strrchr( szFileName, '.' );
+								if ( p != NULL ) {
 									if ( !stricmp( p, ".bmp" ))
 										strcpy( szPhotoType, "image/bmp" );
 									else if ( !stricmp( p, ".png" ))
@@ -291,12 +285,9 @@ static BOOL CALLBACK PhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 								UpdateWindow( hwndDlg );
 								SendMessage( GetParent( hwndDlg ), WM_JABBER_CHANGED, 0, 0 );
 							}
-							else {
-								DeleteFileA( szTempFileName );
-							}
+							else DeleteFileA( szTempFileName );
 						}
-						else
-							DeleteFileA( szTempFileName );
+						else DeleteFileA( szTempFileName );
 					}
 				}
 			}

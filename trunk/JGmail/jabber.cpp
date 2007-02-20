@@ -95,6 +95,7 @@ TCHAR* jabberJID = NULL;
 char*  streamId = NULL;
 DWORD  jabberLocalIP;
 UINT   jabberCodePage;
+int    jabberSearchID;
 JABBER_MODEMSGS modeMsgs;
 CRITICAL_SECTION modeMsgMutex;
 #ifdef _UNICODE

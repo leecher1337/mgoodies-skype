@@ -175,8 +175,8 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 					if ( !JGetStringT( NULL, text, &dbv )) {
 						SendDlgItemMessage( hwndDlg, IDC_SERVER, CB_ADDSTRING, 0, ( LPARAM )dbv.ptszVal );
 						JFreeVariant( &dbv );
-					}
-				}
+				}	}
+
 				SetDlgItemText( hwndDlg, IDC_SERVER, ( TCHAR* )lParam );
 			}
 			i = 0;
@@ -487,36 +487,23 @@ void sttRenameParticipantNick( JABBER_LIST_ITEM* item, TCHAR* oldNick, XmlNode *
 					JSetStringT( hContact, "MyNick", newNick );
 			}
 
-			#if defined( _UNICODE )
-				char* jid = u2a( item->jid );
-				char* dispNick = u2a( newNick );
-				char* dispOldNick = u2a( oldNick );
-			#else
-				char* jid = item->jid;
-				char* dispNick = NEWSTR_ALLOCA( newNick );
-				char* dispOldNick = NEWSTR_ALLOCA( oldNick );
-			#endif
+			GCDEST gcd = { jabberProtoName, NULL, GC_EVENT_CHUID };
+			gcd.ptszID = item->jid;
 
-			GCDEST gcd = { jabberProtoName, jid, GC_EVENT_CHUID };
 			GCEVENT gce = {0};
 			gce.cbSize = sizeof(GCEVENT);
 			gce.pDest = &gcd;
-			gce.pszNick = dispOldNick;
-			gce.pszText = dispNick;
+			gce.ptszNick = oldNick;
+			gce.ptszText = newNick;
 			gce.time = time(0);
+			gce.dwFlags = GC_TCHAR;
 			JCallService( MS_GC_EVENT, NULL, ( LPARAM )&gce );
 
 			gcd.iType = GC_EVENT_NICK;
-			gce.pszNick = dispOldNick;
-			gce.pszUID = dispNick;
-			gce.pszText = dispNick;
+			gce.ptszNick = oldNick;
+			gce.ptszUID = newNick;
+			gce.ptszText = newNick;
 			JCallService( MS_GC_EVENT, NULL, ( LPARAM )&gce );
-
-			#if defined( _UNICODE )
-				mir_free( jid );
-				mir_free( dispNick );
-				mir_free( dispOldNick );
-			#endif
 			break;
 }	}	}
 
@@ -592,18 +579,20 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 						else                                         newRole = ROLE_NONE;
 
 						if ( newRole != r->role && r->role != ROLE_NONE ) {
-							JabberGcLogUpdateMemberStatus( item, nick, GC_EVENT_REMOVESTATUS, NULL );
+							JabberGcLogUpdateMemberStatus( item, nick, NULL, GC_EVENT_REMOVESTATUS, NULL );
 							newRes = GC_EVENT_ADDSTATUS;
 						}
 						r->role = newRole;
-			}	}	}
+					}
+					str = JabberXmlGetAttrValue( itemNode, "jid" );
+			}	}
 
 			if ( sttGetStatusCode( xNode ) == 201 )
 				roomCreated = TRUE;
 		}
 
 		// Update groupchat log window
-		JabberGcLogUpdateMemberStatus( item, nick, newRes, NULL );
+		JabberGcLogUpdateMemberStatus( item, nick, str, newRes, NULL );
 
 		HANDLE hContact = JabberHContactFromJID( from );
 		if ( hContact != NULL )
@@ -657,12 +646,16 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 
 				case 307:
 					JabberListRemoveResource( LIST_CHATROOM, from );
-					JabberGcLogUpdateMemberStatus( item, nick, GC_EVENT_KICK, reasonNode );
+					JabberGcLogUpdateMemberStatus( item, nick, NULL, GC_EVENT_KICK, reasonNode );
 					return;
 		}	}	}
 
 		JabberListRemoveResource( LIST_CHATROOM, from );
-		JabberGcLogUpdateMemberStatus( item, nick, GC_EVENT_PART, NULL );
+		JabberGcLogUpdateMemberStatus( item, nick, NULL, GC_EVENT_PART, NULL );
+
+		HANDLE hContact = JabberHContactFromJID( from );
+		if ( hContact != NULL )
+			JSetWord( hContact, "Status", ID_STATUS_OFFLINE );
 	}
 	else if ( !lstrcmp( type, _T("error"))) {
 		errorNode = JabberXmlGetChild( node, "error" );
