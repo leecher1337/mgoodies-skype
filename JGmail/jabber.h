@@ -39,6 +39,7 @@ Last change by : $Author$
 #define NEWSTR_ALLOCA(A) (A==NULL)?NULL:strcpy((char*)alloca(strlen(A)+1),A)
 #define NEWTSTR_ALLOCA(A) (A==NULL)?NULL:_tcscpy((TCHAR*)alloca(sizeof(TCHAR)*(_tcslen(A)+1)),A)
 
+#include <tchar.h>
 #include <malloc.h>
 
 #ifdef _DEBUG
@@ -228,6 +229,7 @@ struct ThreadData {
 	BOOL  reg_done, bIsSessionAvailable;
 	class TJabberAuth* auth;
 
+	void  close( void );
 	int   recv( char* buf, size_t len );
 	int   send( const char* fmt, ... );
 	int   send( struct XmlNode& node );
@@ -473,6 +475,11 @@ char*  UnEscapeChatTags(char* str_in);
 
 void JabberEnableMenuItems( BOOL bEnable );
 
+//---- jabber_search.cpp -------------------------------------------------
+int JabberSearchCreateAdvUI( WPARAM wParam, LPARAM lParam);
+int JabberSearchByAdvanced( WPARAM wParam, LPARAM lParam );
+
+
 //---- jabber_std.cpp ----------------------------------------------
 
 #if defined( _DEBUG )
@@ -582,10 +589,10 @@ int           JabberWsRecv( JABBER_SOCKET s, char* data, long datalen );
 ///////////////////////////////////////////////////////////////////////////////
 // UTF encode helper
 
-char* t2a( const TCHAR* src );
-char* u2a( const wchar_t* src );
+char*    t2a( const TCHAR* src );
+char*    u2a( const wchar_t* src );
 wchar_t* a2u( const char* src );
-TCHAR* a2t( const char* src );
+TCHAR*   a2t( const char* src );
 
 #define NUMICONSSMALL 20
 #define NUMICONSBIG 3

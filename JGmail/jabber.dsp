@@ -346,6 +346,10 @@ SOURCE=.\jabber_proxy.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\jabber_search.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\jabber_secur.cpp
 # End Source File
 # Begin Source File
@@ -420,6 +424,10 @@ SOURCE=.\jabber_list.h
 # Begin Source File
 
 SOURCE=.\jabber_proxy.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\jabber_search.h
 # End Source File
 # Begin Source File
 
