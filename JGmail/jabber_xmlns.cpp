@@ -53,7 +53,7 @@ void JabberXmlnsBrowse( XmlNode *iqNode, void *userdata )
 		user->addChild( "ns", "jabber:x:data" );
 		user->addChild( "ns", "jabber:x:event" );
 		user->addChild( "ns", "vcard-temp" );
-		JabberSend( jabberThreadInfo->s, iq );
+		jabberThreadInfo->send( iq );
 }	}
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -103,5 +103,5 @@ void JabberXmlnsDisco( XmlNode *iqNode, void *userdata )
 			sttAddFeature( query, "jabber:x:event" );
 			sttAddFeature( query, "vcard-temp" );
 		}
-		JabberSend( jabberThreadInfo->s, iq );
+		jabberThreadInfo->send( iq );
 }	}

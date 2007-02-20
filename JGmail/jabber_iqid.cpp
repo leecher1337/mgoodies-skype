@@ -45,7 +45,7 @@ static void JabberOnLoggedIn( ThreadData* info )
 		
 	XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId );
 	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
-	JabberSend( info->s, iq );
+	jabberThreadInfo->send( iq );
 	if ((enableGmailSetting & 3) == 1) JabberRequestMailBox(info->s);
 }
 
@@ -83,17 +83,17 @@ void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata )
 		else {
 			JabberLog( "No known authentication mechanism accepted by the server." );
 
-			JabberSend( info->s, "</stream:stream>" );
+			info->send( "</stream:stream>" );
 			return;
 		}
 
 		if ( JabberXmlGetChild( queryNode, "resource" ) != NULL )
 			query->addChild( "resource", info->resource );
 
-		JabberSend( info->s, iq );
+		info->send( iq );
 	}
 	else if ( !lstrcmp( type, _T("error"))) {
- 		JabberSend( info->s, "</stream:stream>" );
+ 		info->send( "</stream:stream>" );
 
 		TCHAR text[128];
 		mir_sntprintf( text, SIZEOF( text ), _T("%s %s."), TranslateT( "Authentication failed for" ), info->username );
@@ -127,7 +127,7 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
 		{	XmlNodeIq iq( "get", iqId ); 
 			XmlNode* query = iq.addQuery( "jabber:iq:roster" );
-			JabberSend( info->s, iq );
+			info->send( iq );
 		}
 
 		if ( hwndJabberAgents ) {
@@ -137,14 +137,14 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 
 			XmlNodeIq iq( "get", iqId ); 
 			XmlNode* query = iq.addQuery( "jabber:iq:agents" );
-			JabberSend( info->s, iq );
+			info->send( iq );
 		}
 	}
 	// What to do if password error? etc...
 	else if ( !lstrcmp( type, _T("error"))) {
 		TCHAR text[128];
 
-		JabberSend( info->s, "</stream:stream>" );
+		info->send( "</stream:stream>" );
 		mir_sntprintf( text, SIZEOF( text ), _T("%s %s."), TranslateT( "Authentication failed for" ), info->username );
 		MessagePopup( NULL, text, TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
@@ -171,7 +171,7 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 
 			XmlNodeIq iq( "set" ); iq.addAttrID( iqId );
 			iq.addChild( "session" )->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-session" );
-			JabberSend( info->s, iq );
+			info->send( iq );
 		}
 		else JabberOnLoggedIn( info );
 	}
@@ -189,7 +189,7 @@ void JabberIqResultBind( XmlNode *iqNode, void *userdata )
 		mir_sntprintf( errorMessage,256-pos, _T("%s @")_T(TCHAR_STR_PARAM)_T("."), TranslateT( "Authentication failed for" ), info->username, info->server );
 		MessageBox( NULL, errorMessage, TranslateT( "Jabber Protocol" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 		JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPROTOCOL );
-		JabberSend( info->s, "</stream:stream>" );
+		info->send( "</stream:stream>" );
 		jabberThreadInfo = NULL;	// To disallow auto reconnect
 }	}
 
@@ -1266,7 +1266,7 @@ void JabberIqResultDiscoAgentItems( XmlNode *iqNode, void *userdata )
 
 							XmlNodeIq iq( "get", iqId, jid );
 							XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#info" );
-							JabberSend( jabberThreadInfo->s, iq );
+							jabberThreadInfo->send( iq );
 		}	}	}	}	}
 
 		if ( hwndJabberAgents != NULL ) {
@@ -1283,7 +1283,7 @@ void JabberIqResultDiscoAgentItems( XmlNode *iqNode, void *userdata )
 
 		XmlNodeIq iq( "get", iqId, from );
 		XmlNode* query = iq.addQuery( "jabber:iq:agents" );
-		JabberSend( jabberThreadInfo->s, iq );
+		jabberThreadInfo->send( iq );
 }	}
 
 void JabberIqResultDiscoAgentInfo( XmlNode *iqNode, void *userdata )

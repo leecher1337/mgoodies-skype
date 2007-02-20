@@ -102,7 +102,7 @@ void __cdecl JabberByteSendThread( JABBER_BYTE_TRANSFER *jbt )
 		h->addAttr( "jid", jabberThreadInfo->fullJID ); h->addAttr( "host", localAddr ); h->addAttr( "port", nlb.wPort );
 		mir_free( localAddr );
 	}
-	JabberSend( jabberThreadInfo->s, iq );
+	jabberThreadInfo->send( iq );
 
 	if ( bDirect ) {
 		WaitForSingleObject( hEvent, INFINITE );
@@ -307,7 +307,7 @@ void __cdecl JabberByteReceiveThread( JABBER_BYTE_TRANSFER *jbt )
 			XmlNodeIq iq( "error", jbt->iqId, jbt->srcJID );
 			XmlNode* e = iq.addChild( "error" ); e->addAttr( "code", 406 ); e->addAttr( "type", "auth" );
 			XmlNode* na = e->addChild( "not-acceptable" ); na->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas" );
-			JabberSend( jabberThreadInfo->s, iq );
+			jabberThreadInfo->send( iq );
 
 			JabberByteFreeJbt( jbt );
 			return;
@@ -376,7 +376,7 @@ void __cdecl JabberByteReceiveThread( JABBER_BYTE_TRANSFER *jbt )
 			XmlNodeIq iq( "error", jbt->iqId, jbt->srcJID );
 			XmlNode* e = iq.addChild( "error" ); e->addAttr( "code", 404 ); e->addAttr( "type", _T("cancel"));
 			XmlNode* na = e->addChild( "item-not-found" ); na->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas" );
-			JabberSend( jabberThreadInfo->s, iq );
+			jabberThreadInfo->send( iq );
 	}	}
 
 	JabberByteFreeJbt( jbt );
@@ -441,7 +441,7 @@ static int JabberByteReceiveParse( HANDLE hConn, JABBER_BYTE_TRANSFER *jbt, char
 			XmlNodeIq iq( "result", jbt->iqId, jbt->srcJID );
 			XmlNode* query = iq.addQuery( "http://jabber.org/protocol/bytestreams" );
 			XmlNode* stream = query->addChild( "streamhost-used" ); stream->addAttr( "jid", jbt->streamhostJID );
-			JabberSend( jabberThreadInfo->s, iq );
+			jabberThreadInfo->send( iq );
 		}
 		else jbt->state = JBT_SOCKSERR;
 		break;

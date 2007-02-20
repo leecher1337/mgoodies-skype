@@ -65,7 +65,7 @@ char* TNtlmAuth::getChallenge( const TCHAR* challenge )
 	if ( !hProvider )
 		return NULL;
 
-	char *text = t2a( challenge ), *result;
+	char *text = ( !lstrcmp( challenge, _T("="))) ? mir_strdup( "" ) : t2a( challenge ), *result;
 	if ( info->password[0] != 0 ) {
 		char* user = t2a( info->username );
 		result = Netlib_NtlmCreateResponse( hProvider, text, user, info->password );

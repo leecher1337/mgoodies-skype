@@ -79,7 +79,6 @@ HANDLE hMainThread = NULL;
 DWORD jabberMainThreadId;
 char* jabberProtoName;	// "JABBER"
 char* jabberModuleName;	// "Jabber"
-CRITICAL_SECTION mutex;
 HANDLE hNetlibUser;
 // Main jabber server connection thread global variables
 ThreadData* jabberThreadInfo = NULL;
@@ -230,7 +229,6 @@ void JGmailSetupIcoLib();
 static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 {
 	JabberWsInit();
-	JabberSslInit();
 	HookEvent( ME_USERINFO_INITIALISE, JabberUserInfoInit );
 	if (JGetByte(NULL,"EnableGMail",1) & 1) {
 		//Setup the sound
@@ -404,7 +402,6 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 	//jabberModeMsg = NULL;
 	jabberCodePage = JGetWord( NULL, "CodePage", CP_ACP );
 
-	InitializeCriticalSection( &mutex );
 	InitializeCriticalSection( &modeMsgMutex );
 #ifdef _UNICODE
 	InitializeCriticalSection( &listeningToInfoMutex );
@@ -447,7 +444,6 @@ extern "C" int __declspec( dllexport ) Unload( void )
 	DeleteCriticalSection( &listeningToInfoMutex );
 #endif
 	DeleteCriticalSection( &modeMsgMutex );
-	DeleteCriticalSection( &mutex );
 	mir_free( modeMsgs.szOnline );
 	mir_free( modeMsgs.szAway );
 	mir_free( modeMsgs.szNa );
