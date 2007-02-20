@@ -42,6 +42,7 @@ PFN_SSL_int_pvoid_pvoid_int  pfn_SSL_read;              // int SSL_read( SSL *ss
 PFN_SSL_int_pvoid_pvoid_int  pfn_SSL_write;             // int SSL_write( SSL *ssl, void *buffer, int bufsize )
 
 #ifndef STATICSSL
+HMODULE hLibSSL = NULL;
 BOOL JabberSslInit()
 {
 	if ( hLibSSL )
@@ -99,10 +100,6 @@ static BOOL localSLLinitialized = 0;
 BOOL JabberSslInit()
 {
 	if (localSLLinitialized) return TRUE;
-
-	sslHandleList = NULL;
-	sslHandleCount = 0;
-	InitializeCriticalSection( &sslHandleMutex );
 
 	pfn_SSL_library_init=SSL_library_init;
 	pfn_SSLv23_client_method=( PFN_SSL_pvoid_void )SSLv23_client_method;

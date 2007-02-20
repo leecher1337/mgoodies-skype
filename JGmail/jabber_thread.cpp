@@ -431,7 +431,7 @@ LBL_Exit:
 			}
 			mir_free( buffer );
 #ifndef STATICSSL
-			if ( !hLibSSL )
+			if ( !JabberSslInit() )
 #endif
 				MessagePopup( NULL, TranslateT( "The connection requires an OpenSSL library, which is not installed." ), TranslateT( "Jabber Connection Error" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JabberLog( "Thread ended, SSL connection failed" );
@@ -637,11 +637,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 	for (i = 0; i < node->numChild; i++ ) {
 		XmlNode* n = node->child[i];
 		if ( !strcmp( n->name, "starttls" )) {
-			if ( !info->useSSL &&
-				#ifndef STATICSSL
-					hLibSSL != NULL &&
-				#endif
-					JGetByte( "UseTLS", TRUE )) {
+			if ( !info->useSSL && JabberSslInit() && JGetByte( "UseTLS", TRUE )) {
 				JabberLog( "Requesting TLS" );
 				XmlNode stls( n->name ); stls.addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-tls" );
 				info->send( stls );

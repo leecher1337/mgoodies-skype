@@ -105,10 +105,6 @@ char* jabberVcardPhotoFileName = NULL;
 char* jabberVcardPhotoType = NULL;
 BOOL  jabberSendKeepAlive;
 
-// SSL-related global variable
-#ifndef STATICSSL
-HMODULE hLibSSL = NULL;
-#endif
 PVOID jabberSslCtx;
 
 const char xmlnsAdmin[] = "http://jabber.org/protocol/muc#admin";

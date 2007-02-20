@@ -345,9 +345,6 @@ extern DWORD jabberMainThreadId;
 extern char* jabberProtoName;
 extern char* jabberModuleName;
 extern HANDLE hNetlibUser;
-#ifndef STATICSSL
-extern HMODULE hLibSSL;
-#endif
 extern PVOID jabberSslCtx;
 
 extern ThreadData* jabberThreadInfo;
