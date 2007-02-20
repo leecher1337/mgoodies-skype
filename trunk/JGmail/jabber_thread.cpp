@@ -56,6 +56,7 @@ BOOL IsListeningToStatusMessage(TCHAR *p);
 TCHAR *GetListeningToText(TCHAR *p);
 
 
+extern int bSecureIM;
 static VOID CALLBACK JabberDummyApcFunc( DWORD param )
 {
 	return;
@@ -1495,6 +1496,7 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 #  endif
 #endif
 
+	if (bSecureIM) strncat(mversion, " (SecureIM)", 99-strlen(mversion));
 	XmlNodeIq iq( "result", idStr, from );
 	XmlNode* query = iq.addQuery( "jabber:iq:version" );
 	query->addChild( "name", mversion ); query->addChild( "version", version );

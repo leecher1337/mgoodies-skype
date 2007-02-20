@@ -89,7 +89,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 			CLISTMENUITEM clmi = { 0 };
 			sttEnableMenuItem( hMenuConvert, TRUE );
 			clmi.cbSize = sizeof( clmi );
-			clmi.pszName = JTranslate( bIsChatRoom ? "&Convert to Contact" : "&Convert to Chat Room" );
+			clmi.pszName = bIsChatRoom ? "&Convert to Contact" : "&Convert to Chat Room";
 			clmi.flags = CMIM_NAME | CMIM_FLAGS;
 			JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuConvert, ( LPARAM )&clmi );
 	}	}
@@ -109,7 +109,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 	if ( bIsChatRoom == GCW_CHATROOM ) {
 		CLISTMENUITEM clmi = { 0 };
 		clmi.cbSize = sizeof( clmi );
-		clmi.pszName = JTranslate(( JGetWord( hContact, "Status", 0 ) == ID_STATUS_ONLINE ) ? "&Leave" : "&Join" );
+		clmi.pszName = ( JGetWord( hContact, "Status", 0 ) == ID_STATUS_ONLINE ) ? "&Leave" : "&Join";
 		clmi.flags = CMIM_NAME | CMIM_FLAGS;
 		JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuJoinLeave, ( LPARAM )&clmi );
 		return 0;
@@ -309,7 +309,7 @@ void JabberMenuInit()
 	// "Request authorization"
 	strcpy( tDest, "/RequestAuth" );
 	CreateServiceFunction( text, JabberMenuHandleRequestAuth );
-	mi.pszName = JTranslate( "Request authorization" );
+	mi.pszName = "Request authorization";
 	mi.position = -2000001000;
 	mi.hIcon = iconList[6];// IDI_REQUEST;
 	mi.pszService = text;
@@ -319,7 +319,7 @@ void JabberMenuInit()
 	// "Grant authorization"
 	strcpy( tDest, "/GrantAuth" );
 	CreateServiceFunction( text, JabberMenuHandleGrantAuth );
-	mi.pszName = JTranslate( "Grant authorization" );
+	mi.pszName = "Grant authorization";
 	mi.position = -2000001001;
 	mi.hIcon = iconList[7];// IDI_GRANT;
 	mi.pszContactOwner = jabberProtoName;
@@ -328,7 +328,7 @@ void JabberMenuInit()
 	// Revoke auth
 	strcpy( tDest, "/RevokeAuth" );
 	CreateServiceFunction( text, JabberMenuRevokeAuth );
-	mi.pszName = JTranslate( "Revoke authorization" );
+	mi.pszName = "Revoke authorization";
 	mi.position = -2000001002;
 	mi.hIcon = iconList[8];//IDI_AUTHREVOKE;
 	mi.pszContactOwner = jabberProtoName;
@@ -337,7 +337,7 @@ void JabberMenuInit()
 	// "Grant authorization"
 	strcpy( tDest, "/JoinChat" );
 	CreateServiceFunction( text, JabberMenuJoinLeave );
-	mi.pszName = JTranslate( "Join chat" );
+	mi.pszName = "Join chat";
 	mi.position = -2000001003;
 	mi.hIcon = iconBigList[0];
 	mi.pszContactOwner = jabberProtoName;
@@ -346,7 +346,7 @@ void JabberMenuInit()
 	// "Convert Chat/Contact"
 	strcpy( tDest, "/ConvertChatContact" );
 	CreateServiceFunction( text, JabberMenuConvertChatContact );
-	mi.pszName = JTranslate( "Convert" );
+	mi.pszName = "Convert";
 	mi.position = -1999901004;
 	mi.hIcon = iconList[17];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_USER2ROOM ));
 	mi.pszContactOwner = jabberProtoName;
@@ -355,7 +355,7 @@ void JabberMenuInit()
 	// "Add to roster"
 	strcpy( tDest, "/AddToRoster" );
 	CreateServiceFunction( text, JabberMenuRosterAdd );
-	mi.pszName = JTranslate( "Add to roster" );
+	mi.pszName = "Add to roster";
 	mi.position = -1999901005;
 	mi.hIcon = iconList[16];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_ADDROSTER ));
 	mi.pszContactOwner = jabberProtoName;
@@ -364,7 +364,7 @@ void JabberMenuInit()
 	// Login/logout
 	strcpy( tDest, "/TransportLogin" );
 	CreateServiceFunction( text, JabberMenuTransportLogin );
-	mi.pszName = JTranslate( "Login/logout" );
+	mi.pszName = "Login/logout";
 	mi.position = -1999901006;
 	mi.hIcon = iconList[18];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_LOGIN ));
 	mi.pszContactOwner = jabberProtoName;
@@ -373,7 +373,7 @@ void JabberMenuInit()
 	// "visit GMail for the fake contact"
 	strcpy( tDest, "/VisitGMail" );
 	CreateServiceFunction( text, JabberMenuVisitGMail );
-	mi.pszName = JTranslate( "Visit GMail" );
+	mi.pszName = "Visit GMail";
 	mi.position = -2000100001;
 	mi.hIcon = iconList[15];
 	mi.pszContactOwner = jabberProtoName;
@@ -383,7 +383,7 @@ void JabberMenuInit()
 	// Retrieve nicks
 	strcpy( tDest, "/TransportGetNicks" );
 	CreateServiceFunction( text, JabberMenuTransportResolve );
-	mi.pszName = JTranslate( "Resolve nicks" );
+	mi.pszName = "Resolve nicks";
 	mi.position = -1999901007;
 	mi.hIcon = iconList[19];//IDI_REFRESH;
 	mi.pszContactOwner = jabberProtoName;
