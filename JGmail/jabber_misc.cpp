@@ -43,7 +43,9 @@ void JabberAddContactToRoster( const TCHAR* jid, const TCHAR* nick, const TCHAR*
 {
 	XmlNodeIq iq( "set" );
 	XmlNode* query = iq.addQuery( "jabber:iq:roster" );
-	XmlNode* item = query->addChild( "item" ); item->addAttr( "name", nick ); item->addAttr( "jid", jid );
+	XmlNode* item = query->addChild( "item" ); item->addAttr( "jid", jid );
+	if ( nick )
+		item->addAttr( "name", nick );
 	switch( subscription ) {
 		case SUB_BOTH: item->addAttr( "subscription", "both" ); break;
 		case SUB_TO:   item->addAttr( "subscription", "to" );   break;

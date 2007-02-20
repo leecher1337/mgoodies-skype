@@ -218,16 +218,16 @@ BEGIN
     LTEXT           "JID:",IDC_STATIC,7,7,19,8
     EDITTEXT        IDC_INFO_JID,31,7,183,12,ES_AUTOHSCROLL | ES_READONLY | 
                     NOT WS_BORDER
-    LTEXT           "Resources:",IDC_STATIC,7,65,81,8
-    LISTBOX         IDC_INFO_RESOURCE,7,75,69,50,LBS_SORT | 
+    LTEXT           "Resources:",IDC_STATIC,7,49,81,8
+    LISTBOX         IDC_INFO_RESOURCE,7,59,69,66,LBS_SORT | 
                     LBS_NOINTEGRALHEIGHT | WS_VSCROLL
     LTEXT           "Subscription type:",IDC_STATIC,7,20,60,8,NOT WS_GROUP
     EDITTEXT        IDC_SUBSCRIPTION,70,20,144,12,ES_READONLY | NOT 
                     WS_BORDER
-    LTEXT           "Software:",IDC_STATIC,81,74,35,8
+    LTEXT           "Software:",IDC_STATIC,81,58,35,8
     LTEXT           "Version:",IDC_STATIC,81,103,35,8
     LTEXT           "System:",IDC_STATIC,81,117,35,8
-    EDITTEXT        IDC_SOFTWARE,121,74,93,26,ES_MULTILINE | ES_READONLY | 
+    EDITTEXT        IDC_SOFTWARE,121,58,93,40,ES_MULTILINE | ES_READONLY | 
                     WS_DISABLED | NOT WS_BORDER
     EDITTEXT        IDC_VERSION,121,103,93,12,ES_AUTOHSCROLL | ES_READONLY | 
                     WS_DISABLED | NOT WS_BORDER
@@ -903,5 +903,4 @@ IDB_ICONSSMALL		BITMAP	DISCARDABLE	"icos\\16x16.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-
 

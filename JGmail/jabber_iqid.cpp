@@ -29,7 +29,6 @@ Last change by : $Author$
 #include "resource.h"
 #include "jabber_list.h"
 #include "jabber_iq.h"
-#include "sha1.h"
 
 extern char* jabberVcardPhotoFileName;
 extern char* jabberVcardPhotoType;
@@ -1421,11 +1420,11 @@ LBL_ErrFormat:
 	JSetByte( hContact, "AvatarType", pictureType );
 
 	char buffer[ 41 ];
-	uint8_t digest[20];
-	SHA1Context sha;
-	SHA1Reset( &sha );
-	SHA1Input( &sha, ( const unsigned __int8* )body, resultLen );
-	SHA1Result( &sha, digest );
+	mir_sha1_byte_t digest[20];
+	mir_sha1_ctx sha;
+	mir_sha1_init( &sha );
+	mir_sha1_append( &sha, ( mir_sha1_byte_t* )body, resultLen );
+	mir_sha1_finish( &sha, digest );
 	for ( int i=0; i<20; i++ )
 		sprintf( buffer+( i<<1 ), "%02x", digest[i] );
 	JSetString( hContact, "AvatarSaved", buffer );

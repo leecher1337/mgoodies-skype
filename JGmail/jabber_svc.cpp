@@ -60,7 +60,7 @@ static HANDLE AddToListByJID( const TCHAR* newJid, DWORD flags )
 		JSetStringT( hContact, "jid", jid );
 		if (( nick=JabberNickFromJID( newJid )) == NULL )
 			nick = mir_tstrdup( newJid );
-		JSetStringT( hContact, "Nick", nick );
+//		JSetStringT( hContact, "Nick", nick );
 		mir_free( nick );
 		mir_free( jid );
 
@@ -458,7 +458,7 @@ void sttAddContactForever( DBCONTACTWRITESETTING* cws, HANDLE hContact )
 		JabberAddContactToRoster( jid.ptszVal, nick, dbv.ptszVal, subscription );
 		JFreeVariant( &dbv );
 	}
-	else JabberAddContactToRoster( jid.ptszVal, nick, NULL, subscription );
+	else JabberAddContactToRoster( jid.ptszVal, NULL, NULL, subscription );
 
 	XmlNode presence( "presence" ); presence.addAttr( "to", jid.ptszVal ); presence.addAttr( "type", "subscribe" );
 	JabberSend( jabberThreadInfo->s, presence );
@@ -1620,7 +1620,7 @@ int JabberSvcInit( void )
 
 		mi.pszPopupName = jabberModuleName;
 		mi.popupPosition = 500090000;
-		mi.pszName = JTranslate( "Agents..." );
+		mi.pszName = "Agents...";
 		mi.position = 2000050000;
 		mi.hIcon = iconList[2];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_AGENTS ));
 		mi.pszService = text;
@@ -1630,7 +1630,7 @@ int JabberSvcInit( void )
 		// "Change Password..."
 		strcpy( tDest, "/ChangePassword" );
 		CreateServiceFunction( text, JabberMenuHandleChangePassword );
-		mi.pszName = JTranslate( "Change Password..." );
+		mi.pszName ="Change Password...";
 		mi.position = 2000050001;
 		mi.hIcon = iconBigList[1];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_KEYS ));
 		mi.pszService = text;
@@ -1640,7 +1640,7 @@ int JabberSvcInit( void )
 		// "Multi-User Conference..."
 		strcpy( tDest, "/Groupchat" );
 		CreateServiceFunction( text, JabberMenuHandleGroupchat );
-		mi.pszName = JTranslate( "Multi-User Conference..." );
+		mi.pszName = "Multi-User Conference...";
 		mi.position = 2000050002;
 		mi.hIcon = iconBigList[0];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_GROUP ));
 		mi.pszService = text;
@@ -1650,7 +1650,7 @@ int JabberSvcInit( void )
 		// "Personal vCard..."
 		strcpy( tDest,  "/Vcard" );
 		CreateServiceFunction( text, JabberMenuHandleVcard );
-		mi.pszName = JTranslate( "Personal vCard..." );
+		mi.pszName = "Personal vCard...";
 		mi.position = 2000050003;
 		mi.hIcon = iconList[1];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_VCARD ));
 		mi.pszService = text;

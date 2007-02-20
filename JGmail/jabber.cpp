@@ -63,15 +63,17 @@ PLUGININFO pluginInfo = {
  	"Jabber protocol plugin (GMail mod) for Miranda IM ( "__DATE__" )",
  	"George Hazan, YB",
  	"yb@saaplugin.no-ip.info",
- 	"( c ) 2002-05 Santithorn Bunchua, George Hazan, YB",
+ 	"( c ) 2002-07 Santithorn Bunchua, George Hazan, YB",
  	"http://forums.miranda-im.org/showthread.php?p=43865",
-	0,
+ 	UNICODE_AWARE,
 	0
 };
 
-MM_INTERFACE   mmi;
-LIST_INTERFACE li;
-UTF8_INTERFACE utfi;
+MM_INTERFACE    mmi;
+LIST_INTERFACE  li;
+UTF8_INTERFACE  utfi;
+MD5_INTERFACE   md5i;
+SHA1_INTERFACE  sha1i;
 
 HANDLE hMainThread = NULL;
 DWORD jabberMainThreadId;
@@ -145,6 +147,7 @@ void JabberMenuInit( void );
 int JabberSvcInit( void );
 int JabberSvcUninit( void );
 
+int bSecureIM;
 extern "C" BOOL WINAPI DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID lpvReserved )
 {
 	#ifdef _DEBUG
@@ -276,6 +279,7 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 		mir_free(betaVersionUrl);
 		mir_free(betaPrefix);
 	}
+ 	bSecureIM = (ServiceExists("SecureIM/IsContactSecured"));
 	if ( ServiceExists( MS_GC_REGISTER )) {
 		jabberChatDllPresent = true;
 
@@ -329,6 +333,8 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 		utfi.utf8_encodecp = NULL;
 		utfi.utf8_encodeW  = deprecatedUtf8EncodeW;
 	}
+	mir_getMD5I( &md5i );
+	mir_getSHA1I( &sha1i );
 
 	// creating the plugins name
 	char text[_MAX_PATH];

@@ -30,7 +30,6 @@ Last change by : $Author$
 #include <commctrl.h>
 #include "jabber_list.h"
 #include "resource.h"
-#include "sha1.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // JabberUserInfoDlgProc - main user info dialog

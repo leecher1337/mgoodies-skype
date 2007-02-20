@@ -27,8 +27,6 @@ Last change by : $Author$
 
 #include "jabber.h"
 
-#include "sha1.h"
-
 #ifndef AC_SRC_ALPHA
 #define AC_SRC_ALPHA AC_SRC_NO_PREMULT_ALPHA
 #endif
@@ -147,18 +145,18 @@ int __stdcall JabberBitmapToAvatar( HBITMAP hBitmap )
 	CallService( MS_DIB2PNG, 0, (LPARAM)&convertor );
 	GlobalFree( pDib );
 
-	uint8_t digest[SHA1HashSize];
-	SHA1Context sha1ctx;
-	SHA1Reset( &sha1ctx );
-	SHA1Input( &sha1ctx, (uint8_t*)convertor.pResult, dwPngSize );
-	SHA1Result( &sha1ctx, digest );
+	mir_sha1_byte_t digest[MIR_SHA1_HASH_SIZE];
+	mir_sha1_ctx sha1ctx;
+	mir_sha1_init( &sha1ctx );
+	mir_sha1_append( &sha1ctx, (mir_sha1_byte_t*)convertor.pResult, dwPngSize );
+	mir_sha1_finish( &sha1ctx, digest );
 
 	char tFileName[ MAX_PATH ];
 	JabberGetAvatarFileName( NULL, tFileName, MAX_PATH );
 	DeleteFileA( tFileName );
 
-	char buf[SHA1HashSize*2+1];
-	for ( int i=0; i<SHA1HashSize; i++ )
+	char buf[MIR_SHA1_HASH_SIZE*2+1];
+	for ( int i=0; i<MIR_SHA1_HASH_SIZE; i++ )
 		sprintf( buf+( i<<1 ), "%02x", digest[i] );
    JSetString( NULL, "AvatarHash", buf );
 	JSetByte( "AvatarType", PA_FORMAT_PNG );
