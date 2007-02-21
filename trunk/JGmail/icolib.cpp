@@ -49,6 +49,7 @@ extern HINSTANCE hInst;
 #define IDI_MAIL_GMAIL                  190
 #define IDI_AUTHREVOKE                  187
 #define IDI_REFRESH                     110
+#define IDI_BOOKMARKS                   3000
 
 */
 static char *iconNames[NUMICONSSMALL]={
@@ -56,18 +57,18 @@ static char *iconNames[NUMICONSSMALL]={
     "Request","Grant","Revoke","Open","Save",
 	"mail-new","mail-stop","mail-info","mail-clock","mail-gmail",
 	"convert","addroster",
-	"trlogonoff","trresolve"};
+	"trlogonoff","trresolve","bookmarks"};
 static char *iconDescs[NUMICONSSMALL]={
 	NULL,"VCard Menu",iconNames[2],iconNames[3],iconNames[4],iconNames[5],
 	iconNames[6],iconNames[7],iconNames[8],iconNames[9],iconNames[10],
 	"New E-Mail","E-Mail Error","E-Mail Info","E-Mail Clock","Visit GMail",
 	"Convert Chat / Contact","Add to roster",
-	"Transport Logon/Off", "Transport Resolve"};
+	"Transport Logon/Off", "Transport Resolve", "Bookmarks"};
 static int iconInd[NUMICONSSMALL]={
 	0,155,154,122,123,124,
 	141,142,187,131,166,
 	301,302,303,304,305,
-	109,108,186,110};
+	109,108,186,110,3000};
 HICON iconList[NUMICONSSMALL];
 
 static int iconBigInd[NUMICONSBIG]={147,144,IDC_LOGO};

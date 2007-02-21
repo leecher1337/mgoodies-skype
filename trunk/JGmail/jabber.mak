@@ -63,6 +63,7 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_opt.obj"
 	-@erase "$(INTDIR)\jabber_password.obj"
 	-@erase "$(INTDIR)\jabber_proxy.obj"
+	-@erase "$(INTDIR)\jabber_search.obj"
 	-@erase "$(INTDIR)\jabber_secur.obj"
 	-@erase "$(INTDIR)\jabber_ssl.obj"
 	-@erase "$(INTDIR)\jabber_std.obj"
@@ -74,9 +75,7 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_ws.obj"
 	-@erase "$(INTDIR)\jabber_xml.obj"
 	-@erase "$(INTDIR)\jabber_xmlns.obj"
-	-@erase "$(INTDIR)\md5c.obj"
 	-@erase "$(INTDIR)\msvc6.res"
-	-@erase "$(INTDIR)\sha1.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(OUTDIR)\JGmail.exp"
@@ -155,6 +154,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_opt.obj" \
 	"$(INTDIR)\jabber_password.obj" \
 	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_search.obj" \
 	"$(INTDIR)\jabber_secur.obj" \
 	"$(INTDIR)\jabber_ssl.obj" \
 	"$(INTDIR)\jabber_std.obj" \
@@ -166,8 +166,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_ws.obj" \
 	"$(INTDIR)\jabber_xml.obj" \
 	"$(INTDIR)\jabber_xmlns.obj" \
-	"$(INTDIR)\md5c.obj" \
-	"$(INTDIR)\sha1.obj" \
 	"$(INTDIR)\msvc6.res"
 
 "..\..\bin\upload\jabber\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -181,7 +179,7 @@ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 ALL : $(DS_POSTBUILD_DEP)
 
 $(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\JGmail.dll"
-   C:\WINDOWS\system32\cmd.exe /c "cd ../../bin/upload/ && md5 -s -t -ojabber/JGmail.dll.md5 jabber/JGmail.dll"
+   C:\WINDOWS\system32\cmd.exe /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force jabber/JGmail.dll && md5 -s -t -ojabber/JGmail.dll.md5 jabber/JGmail.dll"
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
@@ -245,6 +243,8 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_password.sbr"
 	-@erase "$(INTDIR)\jabber_proxy.obj"
 	-@erase "$(INTDIR)\jabber_proxy.sbr"
+	-@erase "$(INTDIR)\jabber_search.obj"
+	-@erase "$(INTDIR)\jabber_search.sbr"
 	-@erase "$(INTDIR)\jabber_secur.obj"
 	-@erase "$(INTDIR)\jabber_secur.sbr"
 	-@erase "$(INTDIR)\jabber_ssl.obj"
@@ -267,11 +267,7 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_xml.sbr"
 	-@erase "$(INTDIR)\jabber_xmlns.obj"
 	-@erase "$(INTDIR)\jabber_xmlns.sbr"
-	-@erase "$(INTDIR)\md5c.obj"
-	-@erase "$(INTDIR)\md5c.sbr"
 	-@erase "$(INTDIR)\msvc6.res"
-	-@erase "$(INTDIR)\sha1.obj"
-	-@erase "$(INTDIR)\sha1.sbr"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(OUTDIR)\jabber.bsc"
@@ -348,6 +344,7 @@ BSC32_SBRS= \
 	"$(INTDIR)\jabber_opt.sbr" \
 	"$(INTDIR)\jabber_password.sbr" \
 	"$(INTDIR)\jabber_proxy.sbr" \
+	"$(INTDIR)\jabber_search.sbr" \
 	"$(INTDIR)\jabber_secur.sbr" \
 	"$(INTDIR)\jabber_ssl.sbr" \
 	"$(INTDIR)\jabber_std.sbr" \
@@ -358,9 +355,7 @@ BSC32_SBRS= \
 	"$(INTDIR)\jabber_vcard.sbr" \
 	"$(INTDIR)\jabber_ws.sbr" \
 	"$(INTDIR)\jabber_xml.sbr" \
-	"$(INTDIR)\jabber_xmlns.sbr" \
-	"$(INTDIR)\md5c.sbr" \
-	"$(INTDIR)\sha1.sbr"
+	"$(INTDIR)\jabber_xmlns.sbr"
 
 "$(OUTDIR)\jabber.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
     $(BSC32) @<<
@@ -394,6 +389,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_opt.obj" \
 	"$(INTDIR)\jabber_password.obj" \
 	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_search.obj" \
 	"$(INTDIR)\jabber_secur.obj" \
 	"$(INTDIR)\jabber_ssl.obj" \
 	"$(INTDIR)\jabber_std.obj" \
@@ -405,8 +401,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_ws.obj" \
 	"$(INTDIR)\jabber_xml.obj" \
 	"$(INTDIR)\jabber_xmlns.obj" \
-	"$(INTDIR)\md5c.obj" \
-	"$(INTDIR)\sha1.obj" \
 	"$(INTDIR)\msvc6.res"
 
 "..\..\bin\debug\plugins\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -475,6 +469,8 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_password.sbr"
 	-@erase "$(INTDIR)\jabber_proxy.obj"
 	-@erase "$(INTDIR)\jabber_proxy.sbr"
+	-@erase "$(INTDIR)\jabber_search.obj"
+	-@erase "$(INTDIR)\jabber_search.sbr"
 	-@erase "$(INTDIR)\jabber_secur.obj"
 	-@erase "$(INTDIR)\jabber_secur.sbr"
 	-@erase "$(INTDIR)\jabber_ssl.obj"
@@ -497,11 +493,7 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_xml.sbr"
 	-@erase "$(INTDIR)\jabber_xmlns.obj"
 	-@erase "$(INTDIR)\jabber_xmlns.sbr"
-	-@erase "$(INTDIR)\md5c.obj"
-	-@erase "$(INTDIR)\md5c.sbr"
 	-@erase "$(INTDIR)\msvc6.res"
-	-@erase "$(INTDIR)\sha1.obj"
-	-@erase "$(INTDIR)\sha1.sbr"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(OUTDIR)\jabber.bsc"
@@ -577,6 +569,7 @@ BSC32_SBRS= \
 	"$(INTDIR)\jabber_opt.sbr" \
 	"$(INTDIR)\jabber_password.sbr" \
 	"$(INTDIR)\jabber_proxy.sbr" \
+	"$(INTDIR)\jabber_search.sbr" \
 	"$(INTDIR)\jabber_secur.sbr" \
 	"$(INTDIR)\jabber_ssl.sbr" \
 	"$(INTDIR)\jabber_std.sbr" \
@@ -587,9 +580,7 @@ BSC32_SBRS= \
 	"$(INTDIR)\jabber_vcard.sbr" \
 	"$(INTDIR)\jabber_ws.sbr" \
 	"$(INTDIR)\jabber_xml.sbr" \
-	"$(INTDIR)\jabber_xmlns.sbr" \
-	"$(INTDIR)\md5c.sbr" \
-	"$(INTDIR)\sha1.sbr"
+	"$(INTDIR)\jabber_xmlns.sbr"
 
 "$(OUTDIR)\jabber.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
     $(BSC32) @<<
@@ -623,6 +614,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_opt.obj" \
 	"$(INTDIR)\jabber_password.obj" \
 	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_search.obj" \
 	"$(INTDIR)\jabber_secur.obj" \
 	"$(INTDIR)\jabber_ssl.obj" \
 	"$(INTDIR)\jabber_std.obj" \
@@ -634,8 +626,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_ws.obj" \
 	"$(INTDIR)\jabber_xml.obj" \
 	"$(INTDIR)\jabber_xmlns.obj" \
-	"$(INTDIR)\md5c.obj" \
-	"$(INTDIR)\sha1.obj" \
 	"$(INTDIR)\msvc6.res"
 
 "..\..\bin\upload\jabber\u\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -653,7 +643,7 @@ OutDir=.\compile/release/unicode
 # End Custom Macros
 
 $(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\u\JGmail.dll" "$(OUTDIR)\jabber.bsc"
-   C:\WINDOWS\system32\cmd.exe /c "cd ../../bin/upload/ && md5 -s -t -ojabber/u/JGmail.dll.md5 jabber/u/JGmail.dll"
+   C:\WINDOWS\system32\cmd.exe /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force jabber/u/JGmail.dll && md5 -s -t -ojabber/u/JGmail.dll.md5 jabber/u/JGmail.dll"
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
@@ -717,6 +707,8 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_password.sbr"
 	-@erase "$(INTDIR)\jabber_proxy.obj"
 	-@erase "$(INTDIR)\jabber_proxy.sbr"
+	-@erase "$(INTDIR)\jabber_search.obj"
+	-@erase "$(INTDIR)\jabber_search.sbr"
 	-@erase "$(INTDIR)\jabber_secur.obj"
 	-@erase "$(INTDIR)\jabber_secur.sbr"
 	-@erase "$(INTDIR)\jabber_ssl.obj"
@@ -739,11 +731,7 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_xml.sbr"
 	-@erase "$(INTDIR)\jabber_xmlns.obj"
 	-@erase "$(INTDIR)\jabber_xmlns.sbr"
-	-@erase "$(INTDIR)\md5c.obj"
-	-@erase "$(INTDIR)\md5c.sbr"
 	-@erase "$(INTDIR)\msvc6.res"
-	-@erase "$(INTDIR)\sha1.obj"
-	-@erase "$(INTDIR)\sha1.sbr"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(OUTDIR)\jabber.bsc"
@@ -820,6 +808,7 @@ BSC32_SBRS= \
 	"$(INTDIR)\jabber_opt.sbr" \
 	"$(INTDIR)\jabber_password.sbr" \
 	"$(INTDIR)\jabber_proxy.sbr" \
+	"$(INTDIR)\jabber_search.sbr" \
 	"$(INTDIR)\jabber_secur.sbr" \
 	"$(INTDIR)\jabber_ssl.sbr" \
 	"$(INTDIR)\jabber_std.sbr" \
@@ -830,9 +819,7 @@ BSC32_SBRS= \
 	"$(INTDIR)\jabber_vcard.sbr" \
 	"$(INTDIR)\jabber_ws.sbr" \
 	"$(INTDIR)\jabber_xml.sbr" \
-	"$(INTDIR)\jabber_xmlns.sbr" \
-	"$(INTDIR)\md5c.sbr" \
-	"$(INTDIR)\sha1.sbr"
+	"$(INTDIR)\jabber_xmlns.sbr"
 
 "$(OUTDIR)\jabber.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
     $(BSC32) @<<
@@ -866,6 +853,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_opt.obj" \
 	"$(INTDIR)\jabber_password.obj" \
 	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_search.obj" \
 	"$(INTDIR)\jabber_secur.obj" \
 	"$(INTDIR)\jabber_ssl.obj" \
 	"$(INTDIR)\jabber_std.obj" \
@@ -877,8 +865,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_ws.obj" \
 	"$(INTDIR)\jabber_xml.obj" \
 	"$(INTDIR)\jabber_xmlns.obj" \
-	"$(INTDIR)\md5c.obj" \
-	"$(INTDIR)\sha1.obj" \
 	"$(INTDIR)\msvc6.res"
 
 "..\..\bin\Debug Unicode\plugins\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -920,6 +906,7 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_opt.obj"
 	-@erase "$(INTDIR)\jabber_password.obj"
 	-@erase "$(INTDIR)\jabber_proxy.obj"
+	-@erase "$(INTDIR)\jabber_search.obj"
 	-@erase "$(INTDIR)\jabber_secur.obj"
 	-@erase "$(INTDIR)\jabber_ssl.obj"
 	-@erase "$(INTDIR)\jabber_std.obj"
@@ -931,9 +918,7 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_ws.obj"
 	-@erase "$(INTDIR)\jabber_xml.obj"
 	-@erase "$(INTDIR)\jabber_xmlns.obj"
-	-@erase "$(INTDIR)\md5c.obj"
 	-@erase "$(INTDIR)\msvc6.res"
-	-@erase "$(INTDIR)\sha1.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(OUTDIR)\JGmail.exp"
@@ -1012,6 +997,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_opt.obj" \
 	"$(INTDIR)\jabber_password.obj" \
 	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_search.obj" \
 	"$(INTDIR)\jabber_secur.obj" \
 	"$(INTDIR)\jabber_ssl.obj" \
 	"$(INTDIR)\jabber_std.obj" \
@@ -1023,8 +1009,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_ws.obj" \
 	"$(INTDIR)\jabber_xml.obj" \
 	"$(INTDIR)\jabber_xmlns.obj" \
-	"$(INTDIR)\md5c.obj" \
-	"$(INTDIR)\sha1.obj" \
 	"$(INTDIR)\msvc6.res"
 
 "..\..\bin\upload\jabber\staticssl\u\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -1038,7 +1022,7 @@ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 ALL : $(DS_POSTBUILD_DEP)
 
 $(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\staticssl\u\JGmail.dll"
-   C:\WINDOWS\system32\cmd.exe /c "cd ../../bin/upload/ && upx --best --force "jabber/staticssl/u/JGmail.dll" && md5 -s -t -ojabber/staticssl/u/JGmail.dll.md5 jabber/staticssl/u/JGmail.dll"
+   C:\WINDOWS\system32\cmd.exe /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force "jabber/staticssl/u/JGmail.dll" && md5 -s -t -ojabber/staticssl/u/JGmail.dll.md5 jabber/staticssl/u/JGmail.dll"
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
@@ -1075,6 +1059,7 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_opt.obj"
 	-@erase "$(INTDIR)\jabber_password.obj"
 	-@erase "$(INTDIR)\jabber_proxy.obj"
+	-@erase "$(INTDIR)\jabber_search.obj"
 	-@erase "$(INTDIR)\jabber_secur.obj"
 	-@erase "$(INTDIR)\jabber_ssl.obj"
 	-@erase "$(INTDIR)\jabber_std.obj"
@@ -1086,9 +1071,7 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber_ws.obj"
 	-@erase "$(INTDIR)\jabber_xml.obj"
 	-@erase "$(INTDIR)\jabber_xmlns.obj"
-	-@erase "$(INTDIR)\md5c.obj"
 	-@erase "$(INTDIR)\msvc6.res"
-	-@erase "$(INTDIR)\sha1.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(OUTDIR)\JGmail.exp"
@@ -1167,6 +1150,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_opt.obj" \
 	"$(INTDIR)\jabber_password.obj" \
 	"$(INTDIR)\jabber_proxy.obj" \
+	"$(INTDIR)\jabber_search.obj" \
 	"$(INTDIR)\jabber_secur.obj" \
 	"$(INTDIR)\jabber_ssl.obj" \
 	"$(INTDIR)\jabber_std.obj" \
@@ -1178,8 +1162,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\jabber_ws.obj" \
 	"$(INTDIR)\jabber_xml.obj" \
 	"$(INTDIR)\jabber_xmlns.obj" \
-	"$(INTDIR)\md5c.obj" \
-	"$(INTDIR)\sha1.obj" \
 	"$(INTDIR)\msvc6.res"
 
 "..\..\bin\upload\jabber\staticssl\JGmail.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -1193,7 +1175,7 @@ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
 ALL : $(DS_POSTBUILD_DEP)
 
 $(DS_POSTBUILD_DEP) : "..\..\bin\upload\jabber\staticssl\JGmail.dll"
-   C:\WINDOWS\system32\cmd.exe /c "cd ../../bin/upload/ && upx --best --force jabber/staticssl/JGmail.dll && md5 -s -t -ojabber/staticssl/JGmail.dll.md5 jabber/staticssl/JGmail.dll"
+   C:\WINDOWS\system32\cmd.exe /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force jabber/staticssl/JGmail.dll && md5 -s -t -ojabber/staticssl/JGmail.dll.md5 jabber/staticssl/JGmail.dll"
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
 
 !ENDIF 
@@ -2553,6 +2535,46 @@ CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBU
 
 !ENDIF 
 
+SOURCE=.\jabber_search.cpp
+
+!IF  "$(CFG)" == "jgmail - Win32 Release"
+
+
+"$(INTDIR)\jabber_search.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
+
+
+"$(INTDIR)\jabber_search.obj"	"$(INTDIR)\jabber_search.sbr" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
+
+
+"$(INTDIR)\jabber_search.obj"	"$(INTDIR)\jabber_search.sbr" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
+
+
+"$(INTDIR)\jabber_search.obj"	"$(INTDIR)\jabber_search.sbr" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
+
+
+"$(INTDIR)\jabber_search.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
+
+
+"$(INTDIR)\jabber_search.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
+
+
+!ENDIF 
+
 SOURCE=.\jabber_secur.cpp
 
 !IF  "$(CFG)" == "jgmail - Win32 Release"
@@ -3202,110 +3224,6 @@ CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBU
 CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /FAcs /Fa"$(INTDIR)\\" /Fp"$(INTDIR)\jabber.pch" /Yu"jabber.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\jabber_xmlns.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-	$(CPP) @<<
-  $(CPP_SWITCHES) $(SOURCE)
-<<
-
-
-!ENDIF 
-
-SOURCE=.\md5c.cpp
-
-!IF  "$(CFG)" == "jgmail - Win32 Release"
-
-
-"$(INTDIR)\md5c.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
-
-
-"$(INTDIR)\md5c.obj"	"$(INTDIR)\md5c.sbr" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
-
-
-"$(INTDIR)\md5c.obj"	"$(INTDIR)\md5c.sbr" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
-
-
-"$(INTDIR)\md5c.obj"	"$(INTDIR)\md5c.sbr" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
-
-
-"$(INTDIR)\md5c.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
-
-
-"$(INTDIR)\md5c.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-
-
-!ENDIF 
-
-SOURCE=.\sha1.cpp
-
-!IF  "$(CFG)" == "jgmail - Win32 Release"
-
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /Fa"$(INTDIR)\\" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-"$(INTDIR)\sha1.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) @<<
-  $(CPP_SWITCHES) $(SOURCE)
-<<
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
-
-CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /Fa"$(INTDIR)\\" /FR"$(INTDIR)\\" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
-
-"$(INTDIR)\sha1.obj"	"$(INTDIR)\sha1.sbr" : $(SOURCE) "$(INTDIR)"
-	$(CPP) @<<
-  $(CPP_SWITCHES) $(SOURCE)
-<<
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
-
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /Fa"$(INTDIR)\\" /FR"$(INTDIR)\\" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-"$(INTDIR)\sha1.obj"	"$(INTDIR)\sha1.sbr" : $(SOURCE) "$(INTDIR)"
-	$(CPP) @<<
-  $(CPP_SWITCHES) $(SOURCE)
-<<
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
-
-CPP_SWITCHES=/nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /Fa"$(INTDIR)\\" /FR"$(INTDIR)\\" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
-
-"$(INTDIR)\sha1.obj"	"$(INTDIR)\sha1.sbr" : $(SOURCE) "$(INTDIR)"
-	$(CPP) @<<
-  $(CPP_SWITCHES) $(SOURCE)
-<<
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
-
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /FAcs /Fa"$(INTDIR)\\" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-"$(INTDIR)\sha1.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) @<<
-  $(CPP_SWITCHES) $(SOURCE)
-<<
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
-
-CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /FAcs /Fa"$(INTDIR)\\" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-"$(INTDIR)\sha1.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
   $(CPP_SWITCHES) $(SOURCE)
 <<

@@ -778,12 +778,12 @@ int __stdcall JabberCountryNameToId( TCHAR* ptszCountryName )
 
 	// Check Miranda country list
 	{
-		const char *szName, *p;
+		const char *szName;
 		struct CountryListEntry *countries;
 		JCallService( MS_UTILS_GETCOUNTRYLIST, ( WPARAM )&ctryCount, ( LPARAM )&countries );
 
 		#if defined ( _UNICODE )
-			p = ( const char* )t2a( ptszCountryName );
+			const char *p = ( const char* )t2a( ptszCountryName );
 			szName = NEWSTR_ALLOCA( p );
 			mir_free(( void* )p );
 		#else

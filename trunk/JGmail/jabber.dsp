@@ -61,7 +61,7 @@ LINK32=link.exe
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && md5 -s -t -ojabber/JGmail.dll.md5 jabber/JGmail.dll"
+PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force jabber/JGmail.dll && md5 -s -t -ojabber/JGmail.dll.md5 jabber/JGmail.dll"
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
@@ -121,7 +121,7 @@ LINK32=link.exe
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && md5 -s -t -ojabber/u/JGmail.dll.md5 jabber/u/JGmail.dll"
+PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force jabber/u/JGmail.dll && md5 -s -t -ojabber/u/JGmail.dll.md5 jabber/u/JGmail.dll"
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
@@ -183,7 +183,7 @@ LINK32=link.exe
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --best --force "jabber/staticssl/u/JGmail.dll" && md5 -s -t -ojabber/staticssl/u/JGmail.dll.md5 jabber/staticssl/u/JGmail.dll"
+PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force "jabber/staticssl/u/JGmail.dll" && md5 -s -t -ojabber/staticssl/u/JGmail.dll.md5 jabber/staticssl/u/JGmail.dll"
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
@@ -216,7 +216,7 @@ LINK32=link.exe
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --best --force jabber/staticssl/JGmail.dll && md5 -s -t -ojabber/staticssl/JGmail.dll.md5 jabber/staticssl/JGmail.dll"
+PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force jabber/staticssl/JGmail.dll && md5 -s -t -ojabber/staticssl/JGmail.dll.md5 jabber/staticssl/JGmail.dll"
 # End Special Build Tool
 
 !ENDIF 
@@ -452,6 +452,10 @@ SOURCE=.\jabber_xmlns.h
 # Begin Source File
 
 SOURCE=.\icos\16x16.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\icos\32x32.bmp
 # End Source File
 # Begin Source File
 
