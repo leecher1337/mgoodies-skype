@@ -470,6 +470,7 @@ void   JabberResolveTransportNicks( TCHAR* jid );
 void   JabberSetServerStatus( int iNewStatus );
 TCHAR* EscapeChatTags(TCHAR* pszText);
 char*  UnEscapeChatTags(char* str_in);
+void   JabberUpdateMirVer(JABBER_LIST_ITEM *item);
 
 //---- jabber_svc.c -------------------------------------------------
 

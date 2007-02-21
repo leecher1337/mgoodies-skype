@@ -56,6 +56,9 @@ BOOL IsListeningToStatusMessage(TCHAR *p);
 TCHAR *GetListeningToText(TCHAR *p);
 
 
+void JabberMenuHideSrmmIcon(HANDLE hContact);
+void JabberMenuUpdateSrmmIcon(JABBER_LIST_ITEM *item);
+
 extern int bSecureIM;
 static VOID CALLBACK JabberDummyApcFunc( DWORD param )
 {
@@ -232,7 +235,8 @@ LBL_Exit:
 			_tcsncpy( info->username, dbv.ptszVal, SIZEOF( info->username )-1 );
 			JFreeVariant( &dbv );
 		}
-		else {
+
+		if ( *rtrim(info->username) == '\0' ) {
 			DWORD dwSize = SIZEOF( info->username );
 			if ( GetUserName( info->username, &dwSize ))
 				JSetStringT( NULL, "LoginName", info->username );
@@ -545,8 +549,11 @@ LBL_FatalError:
 			HANDLE hContact = ( HANDLE ) JCallService( MS_DB_CONTACT_FINDFIRST, 0, 0 );
 			while ( hContact != NULL ) {
 				if ( !lstrcmpA(( char* )JCallService( MS_PROTO_GETCONTACTBASEPROTO, ( WPARAM ) hContact, 0 ), jabberProtoName ))
+				{
 					if ( JGetWord( hContact, "Status", ID_STATUS_OFFLINE ) != ID_STATUS_OFFLINE )
 						JSetWord( hContact, "Status", ID_STATUS_OFFLINE );
+					JabberMenuHideSrmmIcon(hContact);
+				}
 
 				hContact = ( HANDLE ) JCallService( MS_DB_CONTACT_FINDNEXT, ( WPARAM ) hContact, 0 );
 			}
@@ -1136,12 +1143,15 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 			if ( hContact != NULL )
 				JCallService( MS_PROTO_CONTACTISTYPING, ( WPARAM ) hContact, PROTOTYPE_CONTACTTYPING_OFF );
 
-			if ( item->resourceMode==RSMODE_LASTSEEN && ( fromResource = _tcschr( from, '/' ))!=NULL ) {
+			// no we will monitor last resource in all modes
+			if ( /*item->resourceMode==RSMODE_LASTSEEN &&*/ ( fromResource = _tcschr( from, '/' ))!=NULL ) {
 				fromResource++;
 				if ( *fromResource != '\0' ) {
 					for ( int i=0; i<item->resourceCount; i++ ) {
 						if ( !lstrcmp( item->resource[i].resourceName, fromResource )) {
-							item->defaultResource = i;
+							if ((item->resourceMode==RSMODE_LASTSEEN) && (i != item->lastSeenResource))
+								JabberUpdateMirVer(item);
+							item->lastSeenResource = i;
 							putResUserSett(hContact,&item->resource[i]);
 							break;
 		}	}	}	}	}
@@ -1299,6 +1309,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 				status = JabberCombineStatus( status, item->resource[i].status );
 #endif
 			item->status = status;
+			JabberMenuUpdateSrmmIcon(item);
 		}
 
 		if ( _tcschr( from, '@' )!=NULL || JGetByte( "ShowTransport", TRUE )==TRUE )
@@ -1376,6 +1387,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 			}
 			if (resFromChosenStatus>-1) putResUserSett(hContact,&item->resource[resFromChosenStatus]);
 			item->status = status;
+			JabberMenuUpdateSrmmIcon(item);
 		}
 		if (( hContact=JabberHContactFromJID( from )) != NULL ) {
 			if ( _tcschr( from, '@' )!=NULL || JGetByte( "ShowTransport", TRUE )==TRUE )
