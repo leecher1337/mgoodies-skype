@@ -2,7 +2,7 @@
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
-Copyright ( C ) 2005-06  George Hazan
+Copyright ( C ) 2005-07  George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -1540,6 +1540,7 @@ HANDLE hMenuAgent = NULL;
 HANDLE hMenuChangePassword = NULL;
 HANDLE hMenuGroupchat = NULL;
 HANDLE hMenuVCard = NULL;
+HANDLE hMenuBookmarks = NULL;
 
 int JabberMenuHandleAgents( WPARAM wParam, LPARAM lParam );
 int JabberMenuHandleChangePassword( WPARAM wParam, LPARAM lParam );
@@ -1559,6 +1560,8 @@ void JabberEnableMenuItems( BOOL bEnable )
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuAgent, ( LPARAM )&clmi );
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuChangePassword, ( LPARAM )&clmi );
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuGroupchat, ( LPARAM )&clmi );
+	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuBookmarks, ( LPARAM )&clmi );
+	
 }
 
 int JabberSvcInit( void )
@@ -1669,6 +1672,15 @@ int JabberSvcInit( void )
 		mi.hIcon = iconList[1];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_VCARD ));
 		mi.pszService = text;
 		hMenuVCard = ( HANDLE ) JCallService( MS_CLIST_ADDMAINMENUITEM, 0, ( LPARAM )&mi );
+
+		// "Bookmarks..."
+		strcpy( tDest, "/Bookmarks" );
+		CreateServiceFunction( text, JabberMenuHandleBookmarks);
+		mi.pszName = "Bookmarks...";
+		mi.position = 2000050004;
+		mi.hIcon = iconList[20];//LoadIconEx( "bookmarks" );
+		hMenuBookmarks = ( HANDLE ) JCallService( MS_CLIST_ADDMAINMENUITEM, 0, ( LPARAM )&mi );
+		JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM ) hMenuBookmarks, ( LPARAM )&clmi );
 	}
 	return 0;
 }

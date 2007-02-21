@@ -2,7 +2,7 @@
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
-Copyright ( C ) 2005-06  George Hazan
+Copyright ( C ) 2005-07  George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -533,12 +533,17 @@ LBL_FatalError:
 				QueueUserAPC( JabberOfflineChatWindows, hMainThread, 0 );
 
 			JabberListRemoveList( LIST_CHATROOM );
+			JabberListRemoveList( LIST_BOOKMARK );
 			if ( hwndJabberAgents )
 				SendMessage( hwndJabberAgents, WM_JABBER_CHECK_ONLINE, 0, 0 );
 			if ( hwndJabberGroupchat )
 				SendMessage( hwndJabberGroupchat, WM_JABBER_CHECK_ONLINE, 0, 0 );
 			if ( hwndJabberJoinGroupchat )
 				SendMessage( hwndJabberJoinGroupchat, WM_JABBER_CHECK_ONLINE, 0, 0 );
+			if ( hwndJabberBookmarks )
+				SendMessage( hwndJabberBookmarks, WM_JABBER_CHECK_ONLINE, 0, 0 );
+			if ( hwndJabberAddBookmark)
+				SendMessage( hwndJabberAddBookmark, WM_JABBER_CHECK_ONLINE, 0, 0 );
 
 			// Set status to offline
 			oldStatus = jabberStatus;

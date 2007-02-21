@@ -89,6 +89,7 @@ HICON iconBigList[NUMICONSBIG];
 	extern HANDLE hMenuChangePassword;
 	extern HANDLE hMenuGroupchat;
 	extern HANDLE hMenuVCard;
+	extern HANDLE hMenuBookmarks;
 
 static void IcoLibUpdateMenus(){
 	CLISTMENUITEM mi = {0};
@@ -118,6 +119,8 @@ static void IcoLibUpdateMenus(){
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuGroupchat, ( LPARAM )&mi );
 	mi.hIcon = iconList[1];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_VCARD ))
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuVCard, ( LPARAM )&mi );
+	mi.hIcon = iconList[20];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_VCARD ))
+	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuBookmarks, ( LPARAM )&mi );
 }
 
 int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)

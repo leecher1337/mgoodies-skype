@@ -2,7 +2,7 @@
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
-Copyright ( C ) 2005-06  George Hazan
+Copyright ( C ) 2005-07  George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -386,6 +386,9 @@ extern HWND hwndMucModeratorList;
 extern HWND hwndMucBanList;
 extern HWND hwndMucAdminList;
 extern HWND hwndMucOwnerList;
+extern HWND hwndJabberBookmarks;
+extern HWND hwndJabberAddBookmark;
+
 
 extern const char xmlnsOwner[], xmlnsAdmin[];
 // Service and event handles
@@ -438,6 +441,11 @@ void JabberGroupchatJoinRoom( const TCHAR* server, const TCHAR* room, const TCHA
 void JabberGroupchatProcessPresence( XmlNode *node, void *userdata );
 void JabberGroupchatProcessMessage( XmlNode *node, void *userdata );
 void JabberGroupchatProcessInvite( TCHAR* roomJid, TCHAR* from, TCHAR* reason, TCHAR* password );
+
+
+//---- jabber_bookmarks.c -------------------------------------------
+int JabberMenuHandleBookmarks( WPARAM wParam, LPARAM lParam );
+
 
 //---- jabber_icolib.c ----------------------------------------------
 

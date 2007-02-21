@@ -2,7 +2,7 @@
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
-Copyright ( C ) 2005-06  George Hazan
+Copyright ( C ) 2005-07  George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -36,7 +36,8 @@ typedef enum {
 	LIST_FILE,          // Current file transfer session
 	LIST_BYTE,          // Bytestream sending connection
 	LIST_FTSEND,
-	LIST_FTRECV
+	LIST_FTRECV,
+	LIST_BOOKMARK
 } JABBER_LIST;
 
 typedef enum {
@@ -154,6 +155,14 @@ struct JABBER_LIST_ITEM
 	// LIST_FTRECV
 	// jid = string representation of stream id ( sid )
 	// ft = file transfer data
+
+	//LIST_BOOKMARKS
+	// jid = room JID
+	// TCHAR* nick;	// my nick in this chat room
+	// TCHAR * name   // name of the bookmark
+	TCHAR* password;	// password for room
+	BOOL bAutoJoin;
+    
 };
 
 void JabberListInit( void );

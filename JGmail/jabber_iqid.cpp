@@ -2,7 +2,7 @@
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
-Copyright ( C ) 2005-06  George Hazan
+Copyright ( C ) 2005-07  George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -405,6 +405,12 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 		SendMessage( hwndJabberGroupchat, WM_JABBER_CHECK_ONLINE, 0, 0 );
 	if ( hwndJabberJoinGroupchat )
 		SendMessage( hwndJabberJoinGroupchat, WM_JABBER_CHECK_ONLINE, 0, 0 );
+	if ( hwndJabberBookmarks )
+		SendMessage( hwndJabberBookmarks, WM_JABBER_CHECK_ONLINE, 0, 0 );
+	if ( hwndJabberAddBookmark)
+		SendMessage( hwndJabberAddBookmark, WM_JABBER_CHECK_ONLINE, 0, 0 );
+
+
 
 	JabberLog( "Status changed via THREADSTART" );
 	modeMsgStatusChangePending = FALSE;
@@ -640,7 +646,7 @@ void JabberIqResultGetVcard( XmlNode *iqNode, void *userdata )
 
 	if ( id == jabberSearchID ) {
 		jabberSearchID = -1;
-		
+
 		if (( vCardNode = JabberXmlGetChild( iqNode, "vCard" )) != NULL ) {
 			if ( !lstrcmp( type, _T("result"))) {
 				JABBER_SEARCH_RESULT jsr = { 0 };
@@ -1479,3 +1485,98 @@ LBL_ErrFormat:
 
 	mir_free( body );
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Bookmarks
+
+void JabberIqResultDiscoBookmarks( XmlNode *iqNode, void *userdata )
+{
+	ThreadData* info = ( ThreadData* ) userdata;
+	XmlNode *queryNode, *itemNode, *storageNode, *nickNode, *passNode, *errorNode;
+	TCHAR* type, *jid;
+
+	// RECVED: list of bookmarks
+	// ACTION: refresh bookmarks dialog
+	JabberLog( "<iq/> iqIdGetBookmarks" );
+	if (( type=JabberXmlGetAttrValue( iqNode, "type" )) == NULL ) return;
+
+	if ( !lstrcmp( type, _T("result"))) {
+		if (( queryNode = JabberXmlGetChild( iqNode, "query" )) != NULL )
+			if ((storageNode = JabberXmlGetChild( queryNode, "storage" )) != NULL){
+			JabberListRemoveList( LIST_BOOKMARK );
+			for ( int i=0; i<storageNode->numChild; i++ ) {
+				if (( itemNode = storageNode->child[i] ) != NULL && itemNode->name != NULL && !strcmp( itemNode->name, "conference" )) {
+					if (( jid = JabberXmlGetAttrValue( itemNode, "jid" )) != NULL ) {
+						JABBER_LIST_ITEM* item = JabberListAdd( LIST_BOOKMARK, jid );
+						item->name = mir_tstrdup( JabberXmlGetAttrValue( itemNode, "name" ));
+						if ( JabberXmlGetAttrValue( itemNode, "autojoin" ) != NULL ) {
+							TCHAR* autoJ = JabberXmlGetAttrValue( itemNode, "autojoin" );
+							item->bAutoJoin = ( !lstrcmp( autoJ, _T("true")) || !lstrcmp( autoJ, _T("1"))) ? true : false;
+						}
+						if (( nickNode = JabberXmlGetChild( itemNode, "nick" )) != NULL && nickNode->text != NULL )
+							replaceStr( item->nick, nickNode->text );
+						if (( passNode = JabberXmlGetChild( itemNode, "password" )) != NULL && passNode->text != NULL )
+							replaceStr( item->password, passNode->text );
+		}	}	}	}
+
+		if ( hwndJabberBookmarks != NULL )
+			SendMessage( hwndJabberBookmarks, WM_JABBER_REFRESH, 0, 0);
+	}
+	else if ( !lstrcmp( type, _T("error"))) {
+		errorNode = JabberXmlGetChild( iqNode, "error" );
+		TCHAR* str = JabberErrorMsg( errorNode );
+		MessageBox( NULL, str, TranslateT( "Jabber Error Message" ), MB_OK|MB_SETFOREGROUND );
+		mir_free( str );
+		if ( hwndJabberBookmarks != NULL )
+			SendMessage( hwndJabberBookmarks, WM_JABBER_ACTIVATE, 0, 0);
+}	}
+
+void JabberSetBookmarkRequest (XmlNodeIq& iq)
+{
+	XmlNode* query = iq.addQuery( "jabber:iq:private" );
+	XmlNode* storage = query->addChild( "storage" );
+	storage->addAttr( "xmlns", "storage:bookmarks" );
+
+	for ( int i=0; ( i=JabberListFindNext( LIST_BOOKMARK, i )) >= 0; i++ ) {
+		JABBER_LIST_ITEM* item = JabberListGetItemPtrFromIndex( i );
+		if ( item == NULL )
+			continue;
+
+		if ( item->jid == NULL )
+			continue;
+
+		XmlNode* itemNode = storage->addChild("conference");
+		itemNode->addAttr( "jid", item->jid );
+      if ( item->name )
+			itemNode->addAttr( "name", item->name );
+      if ( item->bAutoJoin )
+			itemNode->addAttr( "autojoin", _T("1") );
+      if ( item->nick )
+			itemNode->addChild( "nick", item->nick );
+      if ( item->password )
+			itemNode->addChild( "password", item->password );
+}	}
+
+void JabberIqResultSetBookmarks( XmlNode *iqNode, void *userdata )
+{
+	// RECVED: server's responce
+	// ACTION: refresh bookmarks list dialog
+
+	JabberLog( "<iq/> iqIdSetBookmarks" );
+
+	TCHAR* type = JabberXmlGetAttrValue( iqNode, "type" );
+	if ( type == NULL )
+		return;
+
+	if ( !lstrcmp( type, _T("result"))) {
+		if ( hwndJabberBookmarks != NULL )
+			SendMessage( hwndJabberBookmarks, WM_JABBER_REFRESH, 0, 0);
+	}
+	else if ( !lstrcmp( type, _T("error"))) {
+		XmlNode* errorNode = JabberXmlGetChild( iqNode, "error" );
+		TCHAR* str = JabberErrorMsg( errorNode );
+		MessageBox( NULL, str, TranslateT( "Jabber Error Message" ), MB_OK|MB_SETFOREGROUND );
+		mir_free( str );
+		if ( hwndJabberBookmarks != NULL )
+			SendMessage( hwndJabberBookmarks, WM_JABBER_ACTIVATE, 0, 0);
+}	}
