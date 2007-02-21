@@ -2,7 +2,7 @@
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
-Copyright ( C ) 2005-06  George Hazan
+Copyright ( C ) 2005-07  George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -125,6 +125,8 @@ HWND hwndMucBanList = NULL;
 HWND hwndMucAdminList = NULL;
 HWND hwndMucOwnerList = NULL;
 HWND hwndJabberChangePassword = NULL;
+HWND hwndJabberBookmarks = NULL;
+HWND hwndJabberAddBookmark = NULL;
 
 // Service and event handles
 HANDLE heventRawXMLIn;
@@ -182,6 +184,8 @@ static int OnPreShutdown( WPARAM wParam, LPARAM lParam )
 	if ( hwndMucAdminList ) SendMessage( hwndMucAdminList, WM_CLOSE, 0, 0 );
 	if ( hwndMucOwnerList ) SendMessage( hwndMucOwnerList, WM_CLOSE, 0, 0 );
 	if ( hwndJabberChangePassword ) SendMessage( hwndJabberChangePassword, WM_CLOSE, 0, 0 );
+	if ( hwndJabberBookmarks ) SendMessage( hwndJabberBookmarks, WM_CLOSE, 0, 0 );
+	if ( hwndJabberAddBookmark ) SendMessage( hwndJabberAddBookmark, WM_CLOSE, 0, 0 );
 
 	hwndJabberAgents = NULL;
 	hwndJabberGroupchat = NULL;
@@ -198,6 +202,8 @@ static int OnPreShutdown( WPARAM wParam, LPARAM lParam )
 	hwndMucAdminList = NULL;
 	hwndMucOwnerList = NULL;
 	hwndJabberChangePassword = NULL;
+	hwndJabberBookmarks = NULL;
+	hwndJabberAddBookmark = NULL;
 	return 0;
 }
 

@@ -2,7 +2,7 @@
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
-Copyright ( C ) 2005-06  George Hazan
+Copyright ( C ) 2005-07  George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -85,6 +85,7 @@ static void JabberListFreeItemInternal( JABBER_LIST_ITEM *item )
 	if ( item->name ) mir_free( item->name );
 	if ( item->type ) mir_free( item->type );
 	if ( item->service ) mir_free( item->service );
+	if ( item->password ) mir_free( item->password );
 	if ( item->list==LIST_ROSTER && item->ft ) delete item->ft;
 	mir_free( item );
 }

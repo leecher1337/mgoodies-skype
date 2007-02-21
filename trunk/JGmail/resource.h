@@ -254,6 +254,20 @@
 #define IDM_MEMBER                      10015
 #define IDM_INVITE                      10016
 
+
+#define IDI_BOOKMARKS                   3000
+#define IDD_BOOKMARKS                   3001
+#define IDC_BM_LIST                     3002
+#define IDC_ADD                         3004
+#define IDC_REMOVE                      3005
+
+#define IDD_BOOKMARK_ADD                3006
+#define IDC_ROOM_JID                    3007
+
+
+
+
+
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED

@@ -22,14 +22,13 @@
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-#pragma code_page(1251)
+#pragma code_page(1252)
 #endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
 //
-
 IDD_SEARCHUSER DIALOGEX 0, 0, 109, 148
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
 EXSTYLE WS_EX_CONTROLPARENT
@@ -47,41 +46,6 @@ BEGIN
                     ES_AUTOVSCROLL | ES_READONLY | NOT WS_BORDER | NOT 
                     WS_TABSTOP
 END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
-BEGIN
-    IDD_SEARCHUSER, DIALOG
-    BEGIN
-        VERTGUIDE, 97
-        HORZGUIDE, 49
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-#endif    // Neutral resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
 
 IDD_OPT_EXPERT DIALOGEX 0, 0, 279, 241
 STYLE DS_FIXEDSYS | DS_CENTER | WS_CHILD
@@ -675,6 +639,42 @@ BEGIN
     PUSHBUTTON      "Delete",IDC_DELETEAVATAR,61,112,41,13
 END
 
+IDD_BOOKMARKS DIALOGEX 0, 0, 400, 209
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
+    WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "Jabber Bookmarks"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "List1",IDC_BM_LIST,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | 
+                    WS_TABSTOP,5,7,330,197
+    PUSHBUTTON      "Close",IDCLOSE,343,190,50,14
+    DEFPUSHBUTTON   "Refresh",IDC_BROWSE,343,7,50,14
+    PUSHBUTTON      "Add",IDC_ADD,343,35,50,14
+    PUSHBUTTON      "Edit",IDC_EDIT,343,55,50,14
+    PUSHBUTTON      "Remove",IDC_REMOVE,343,74,50,14
+END
+
+IDD_BOOKMARK_ADD DIALOGEX 0, 0, 208, 96
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
+    WS_POPUP | WS_VISIBLE | WS_CAPTION
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "Bookmark Details"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Room JID:",IDC_STATIC,7,8,34,8
+    EDITTEXT        IDC_ROOM_JID,74,7,127,12,ES_AUTOHSCROLL
+    LTEXT           "Bookmark Name:",IDC_STATIC,7,22,64,8
+    EDITTEXT        IDC_NAME,74,21,127,12,ES_AUTOHSCROLL
+    LTEXT           "Nick name:",IDC_STATIC,7,36,64,8
+    EDITTEXT        IDC_NICK,74,35,127,12,ES_AUTOHSCROLL
+    LTEXT           "Password:",IDC_STATIC,7,50,64,8
+    EDITTEXT        IDC_PASSWORD,74,49,127,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,51,75,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,106,75,50,14
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -886,6 +886,24 @@ BEGIN
         TOPMARGIN, 3
         BOTTOMMARGIN, 126
     END
+
+    IDD_BOOKMARKS, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 393
+        VERTGUIDE, 335
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 204
+    END
+
+    IDD_BOOKMARK_ADD, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 201
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 89
+    END
+
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -945,6 +963,7 @@ IDI_MAIL_INFO		ICON			"icos\\mail-info.ico"
 IDI_MAIL_CLOCK		ICON			"icos\\mail-clock.ico"
 IDI_AUTHREVOKE          ICON                    "icos\\auth_revoke.ico" 
 IDI_REFRESH             ICON                    "icos\\refresh.ico" 
+IDI_BOOKMARKS           ICON                    "icos\\bookmarks.ico"
 */
 IDB_ICONSBIG		BITMAP	DISCARDABLE	"icos\\32x32.bmp"
 IDB_ICONSSMALL		BITMAP	DISCARDABLE	"icos\\16x16.bmp"
@@ -962,5 +981,6 @@ IDB_ICONSSMALL		BITMAP	DISCARDABLE	"icos\\16x16.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
+
 
 

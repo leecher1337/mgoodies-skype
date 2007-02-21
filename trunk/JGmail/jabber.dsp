@@ -260,6 +260,10 @@ SOURCE=.\jabber_bitmap.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\jabber_bookmarks.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\jabber_byte.cpp
 # ADD CPP /Yu
 # End Source File

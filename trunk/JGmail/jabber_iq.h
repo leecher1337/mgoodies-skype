@@ -2,7 +2,7 @@
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
-Copyright ( C ) 2005-06  George Hazan
+Copyright ( C ) 2005-07  George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -41,7 +41,9 @@ typedef enum {
 	IQ_PROC_GETSEARCHFIELDS,
 	IQ_PROC_BROWSEROOMS,
 	IQ_PROC_DISCOROOMSERVER,
-	IQ_PROC_DISCOAGENTS
+	IQ_PROC_DISCOAGENTS,
+	IQ_PROC_DISCOBOOKMARKS,
+	IQ_PROC_SETBOOKMARKS
 } JABBER_IQ_PROCID;
 
 typedef void ( *JABBER_IQ_PFUNC )( XmlNode *iqNode, void *usedata );
@@ -64,6 +66,8 @@ void JabberIqResultDiscoAgentInfo( XmlNode *iqNode, void *userdata );
 void JabberIqResultDiscoAgentItems( XmlNode *iqNode, void *userdata );
 void JabberIqResultDiscoClientInfo( XmlNode *iqNode, void *userdata );
 void JabberIqResultDiscoRoomItems( XmlNode *iqNode, void *userdata );
+void JabberIqResultDiscoBookmarks( XmlNode *iqNode, void *userdata );
+void JabberIqResultSetBookmarks( XmlNode *iqNode, void *userdata );
 void JabberIqResultExtSearch( XmlNode *iqNode, void *userdata );
 void JabberIqResultGetAgents( XmlNode *iqNode, void *userdata );
 void JabberIqResultGetAuth( XmlNode *iqNode, void *userdata );
@@ -88,5 +92,9 @@ void JabberIqResultSetVcard( XmlNode *iqNode, void *userdata );
 void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata );
 void JabberRequestMailBox(HANDLE hConn);
 void JabberEnableNotifications(ThreadData *info);
+
+void JabberSetBookmarkRequest (XmlNodeIq& iqId);
+
+
 
 #endif
