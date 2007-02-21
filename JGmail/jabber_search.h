@@ -2,7 +2,7 @@ typedef struct _tagJabberSearchFieldsInfo
 {
 	TCHAR * szFieldName;
 	TCHAR * szFieldCaption;
-	HWND hwndCaptionItem;	
+	HWND hwndCaptionItem;
 	HWND hwndValueItem;
 } JabberSearchFieldsInfo;
 
@@ -22,6 +22,9 @@ typedef struct tag_Data
 {
 	TCHAR *Label;
 	TCHAR * Var;
+	TCHAR * defValue;
+	BOOL  bHidden;
+	BOOL  bReadOnly;
 	int Order;
 
 } Data;
@@ -29,9 +32,9 @@ typedef struct tag_Data
 
 typedef struct tagJABBER_CUSTOMSEARCHRESULTS
 {
-	size_t nSize;	
+	size_t nSize;
 	int nFieldCount;
-	TCHAR ** pszFields;	
+	TCHAR ** pszFields;
 	JABBER_SEARCH_RESULT jsr;
 }JABBER_CUSTOMSEARCHRESULTS;
 
@@ -39,7 +42,7 @@ static HWND searchHandleDlg=NULL;
 
 //local functions declarations
 static int JabberSearchFrameProc(HWND hwnd, int msg, WPARAM wParam, LPARAM lParam);
-static int JabberSearchAddField(HWND hwndDlg, TCHAR *Label, TCHAR * Var, int Order );
+static int JabberSearchAddField(HWND hwndDlg, Data* FieldDat );
 static void JabberIqResultGetSearchFields( XmlNode *iqNode, void *userdata );
 static void JabberSearchFreeData(HWND hwndDlg, JabberSearchData * dat);
 static void JabberSearchRefreshFrameScroll(HWND hwndDlg, JabberSearchData * dat);
@@ -48,17 +51,30 @@ static BOOL CALLBACK JabberSearchAdvancedDlgProc(HWND hwndDlg, UINT msg, WPARAM 
 static void JabberSearchDeleteFromRecent(TCHAR * szAddr,BOOL deleteLastFromDB);
 static void JabberSearchAddToRecent(TCHAR * szAddr, HWND hwnd);
 
-// Implementation of MAP class (the list 
-template <typename _KEYTYPE , int (*COMPARATOR)(_KEYTYPE*, _KEYTYPE*) > 
+// Implementation of MAP class (the list
+template <typename _KEYTYPE , int (*COMPARATOR)(_KEYTYPE*, _KEYTYPE*) >
 class UNIQUE_MAP
 {
+
+public:
+	typedef _KEYTYPE* (*COPYKEYPROC)(_KEYTYPE*);
+	typedef void (*DESTROYKEYPROC)(_KEYTYPE*);
+
 private:
 	typedef struct _tagRECORD
 	{
-		_tagRECORD(_KEYTYPE * key, TCHAR * value=NULL)	{ _key=key; _value=value; _order=0;	}
-		_KEYTYPE *_key; 
+		_tagRECORD(_KEYTYPE * key, TCHAR * value=NULL)	{ _key=key; _value=value; _order=0; _destroyKeyProc=NULL;	}
+		~_tagRECORD()
+		{
+			if (_key && _destroyKeyProc)
+				_destroyKeyProc(_key);
+			_key=NULL;
+			_destroyKeyProc=NULL;
+		}
+		_KEYTYPE *_key;
 		TCHAR * _value;
 		int _order;
+		DESTROYKEYPROC _destroyKeyProc;
 	} _RECORD;
 
 	int _nextOrder;
@@ -77,11 +93,12 @@ private:
 		int _itemOrder=p->_order;
 		if (_Records.remove(p))
 		{
+			delete(p);
 			_nextOrder--;
 			for (int i=0; i<_Records.getCount(); i++)
 			{
 				_RECORD * temp=_Records[i];
-				if (temp && temp->_order>_itemOrder) 
+				if (temp && temp->_order>_itemOrder)
 					temp->_order--;
 			}
 			return 1;
@@ -98,7 +115,7 @@ private:
 		return NULL;
 	}
 
-public:		
+public:
 	UNIQUE_MAP(int incr):_Records(incr,_KeysEqual)
 	{
 		_nextOrder=0;
@@ -117,7 +134,7 @@ public:
 		if (index<0)
 		{
 			if(!_Records.insert(rec)) delete rec;
-			else 
+			else
 			{
 				index=_Records.getIndex(rec);
 				rec->_order=_nextOrder++;
@@ -125,7 +142,37 @@ public:
 		}
 		else
 		{
-			_Records[index]->_value=Value;		
+			_Records[index]->_value=Value;
+			delete rec;
+		}
+		return index;
+	}
+	int insertCopyKey(_KEYTYPE* Key, TCHAR *Value, _KEYTYPE** _KeyReturn, COPYKEYPROC CopyProc, DESTROYKEYPROC DestroyProc )
+	{
+		_RECORD * rec= new _RECORD(Key,Value);
+		int index=_Records.getIndex(rec);
+		if (index<0)
+		{
+			_KEYTYPE* newKey=CopyProc(Key);
+			if(!_Records.insert(rec))
+			{
+				delete rec;
+				DestroyProc(newKey);
+				if (_KeyReturn) *_KeyReturn=NULL;
+			}
+			else
+			{
+				rec->_key=newKey;
+				rec->_destroyKeyProc=DestroyProc;
+				index=_Records.getIndex(rec);
+				rec->_order=_nextOrder++;
+				if (_KeyReturn) *_KeyReturn=newKey;
+			}
+		}
+		else
+		{
+			_Records[index]->_value=Value;
+			if (_KeyReturn) *_KeyReturn=_Records[index]->_key;
 			delete rec;
 		}
 		return index;
@@ -134,26 +181,26 @@ public:
 	{
 		_RECORD rec(_KEY);
 		int index=_Records.getIndex(&rec);
-		_RECORD * rv=_Records[index];		
-		if (rv) 
+		_RECORD * rv=_Records[index];
+		if (rv)
 		{
 			if (rv->_value)
 				return rv->_value;
 			else
 				return _T("");
 		}
-		else 
+		else
 			return NULL;
 	}
 	inline TCHAR* operator[]( int index ) const
 	{
-		_RECORD * rv=_Records[index];		
+		_RECORD * rv=_Records[index];
 		if (rv) return rv->_value;
 		else return NULL;
 	}
 	inline _KEYTYPE* getKeyName(int index)
 	{
-		_RECORD * rv=_Records[index];		
+		_RECORD * rv=_Records[index];
 		if (rv) return rv->_key;
 		else return NULL;
 	}
@@ -169,7 +216,7 @@ public:
 		if (rec) return rec->_key;
 		else return NULL;
 	}
-	inline int getCount() 
+	inline int getCount()
 	{
 		return _Records.getCount();
 	}
@@ -191,3 +238,8 @@ public:
 		return _Records.getIndex(&temp);
 	}
 };
+
+inline int TCharKeyCmp(TCHAR* a, TCHAR* b)
+{
+	return (int)(_tcsicmp(a,b));
+}

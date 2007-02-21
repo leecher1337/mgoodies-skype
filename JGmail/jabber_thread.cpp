@@ -42,7 +42,6 @@ Last change by : $Author$
 int iqIdRegGetReg;
 int iqIdRegSetReg;
 
-static void __cdecl JabberKeepAliveThread( ThreadData* owner );
 static void JabberProcessStreamOpening( XmlNode *node, void *userdata );
 static void JabberProcessStreamClosing( XmlNode *node, void *userdata );
 static void JabberProcessProtocol( XmlNode *node, void *userdata );
@@ -107,6 +106,24 @@ static VOID CALLBACK JabberOfflineChatWindows( DWORD )
 	gce.cbSize = sizeof(GCEVENT);
 	gce.pDest = &gcd;
 	CallService( MS_GC_EVENT, SESSION_TERMINATE, (LPARAM)&gce );
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Jabber keep-alive thread
+
+static void __cdecl JabberKeepAliveThread( void* )
+{
+	NETLIBSELECT nls = {0};
+	nls.cbSize = sizeof( NETLIBSELECT );
+	nls.dwTimeout = 60000;	// 60000 millisecond ( 1 minute )
+	nls.hExceptConns[0] = jabberThreadInfo->s;
+	for ( ;; ) {
+		if ( JCallService( MS_NETLIB_SELECT, 0, ( LPARAM )&nls ) != 0 )
+			break;
+		if ( jabberSendKeepAlive )
+			jabberThreadInfo->send( " \t " );
+	}
+	JabberLog( "Exiting KeepAliveThread" );
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -451,7 +468,7 @@ LBL_FatalError:
 				jabberSendKeepAlive = TRUE;
 			else
 				jabberSendKeepAlive = FALSE;
-			mir_forkthread(( pThreadFunc )JabberKeepAliveThread, info );
+			mir_forkthread(( pThreadFunc )JabberKeepAliveThread, info->s );
 		}
 
 		xmlStreamInitializeNow( info );
@@ -1943,22 +1960,6 @@ static void JabberProcessRegIq( XmlNode *node, void *userdata )
 		info->reg_done = TRUE;
 		info->send( "</stream:stream>" );
 }	}
-
-static void __cdecl JabberKeepAliveThread( ThreadData* owner )
-{
-	NETLIBSELECT nls = {0};
-
-	nls.cbSize = sizeof( NETLIBSELECT );
-	nls.dwTimeout = 60000;	// 60000 millisecond ( 1 minute )
-	nls.hExceptConns[0] = owner->s;
-	for ( ;; ) {
-		if ( JCallService( MS_NETLIB_SELECT, 0, ( LPARAM )&nls ) != 0 )
-			break;
-		if ( jabberSendKeepAlive )
-			owner->send( " \t " );
-	}
-	JabberLog( "Exiting KeepAliveThread" );
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // ThreadData constructor & destructor

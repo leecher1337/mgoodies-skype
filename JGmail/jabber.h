@@ -29,7 +29,7 @@ Last change by : $Author$
 #define _JABBER_H_
 
 #ifndef MIRANDA_VER
-	#define MIRANDA_VER 0x0500
+//	#define MIRANDA_VER 0x0500
 #endif
 
 #if defined(UNICODE) && !defined(_UNICODE)
