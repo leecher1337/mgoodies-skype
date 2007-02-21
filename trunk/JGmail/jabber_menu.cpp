@@ -389,3 +389,118 @@ void JabberMenuInit()
 	mi.pszContactOwner = jabberProtoName;
 	hMenuRefresh = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
 }
+
+//////////////////////////////////////////////////////////////////////////
+// resource menu
+static HANDLE hDialogsList = NULL;
+
+void JabberMenuHideSrmmIcon(HANDLE hContact)
+{
+	StatusIconData sid = {0};
+	sid.cbSize = sizeof(sid);
+	sid.szModule = jabberProtoName;
+	sid.flags = MBF_HIDDEN;
+	CallService(MS_MSG_MODIFYICON, (WPARAM)hContact, (LPARAM)&sid);
+}
+
+void JabberMenuUpdateSrmmIcon(JABBER_LIST_ITEM *item)
+{
+	if (!ServiceExists(MS_MSG_MODIFYICON))
+		return;
+
+	HANDLE hContact = JabberHContactFromJID(item->jid);
+	if (!hContact)
+		return;
+
+	StatusIconData sid = {0};
+	sid.cbSize = sizeof(sid);
+	sid.szModule = jabberProtoName;
+	sid.flags = item->resourceCount ? 0 : MBF_HIDDEN;
+	CallService(MS_MSG_MODIFYICON, (WPARAM)hContact, (LPARAM)&sid);
+}
+
+int JabberMenuProcessSrmmEvent( WPARAM wParam, LPARAM lParam )
+{
+	MessageWindowEventData *event = (MessageWindowEventData *)lParam;
+
+    if (event->uType == MSG_WINDOW_EVT_OPEN)
+    {
+		if (!hDialogsList)
+			hDialogsList = (HANDLE)CallService(MS_UTILS_ALLOCWINDOWLIST, 0, 0);
+		WindowList_Add(hDialogsList, event->hwndWindow, event->hContact);
+    } else
+	if (event->uType == MSG_WINDOW_EVT_CLOSING)
+    {
+		if (hDialogsList)
+			WindowList_Remove(hDialogsList, event->hwndWindow);
+    }	
+	
+	return 0;
+}
+
+#define MENUITEM_LASTSEEN	1
+#define MENUITEM_SERVER		2
+#define MENUITEM_RESOURCES	10
+int JabberMenuProcessSrmmIconClick( WPARAM wParam, LPARAM lParam )
+{
+	StatusIconClickData *sicd = (StatusIconClickData *)lParam;
+	if (lstrcmpA(sicd->szModule, jabberProtoName))
+		return 0;
+
+	HANDLE hContact = (HANDLE)wParam;
+	if (!hContact)
+		return 0;
+
+	DBVARIANT dbv;
+	if (JGetStringT(hContact, "jid", &dbv))
+		return 0;
+
+	
+	JABBER_LIST_ITEM *LI = JabberListGetItemPtr(LIST_ROSTER, dbv.ptszVal);
+	JFreeVariant( &dbv );
+
+	if (!LI)
+		return 0;
+
+	HMENU hMenu = CreatePopupMenu();
+	TCHAR buf[256];
+
+	mir_sntprintf(buf, SIZEOF(buf), _T("%s (%s)"), TranslateT("Last Active"),
+		((LI->lastSeenResource>=0) && (LI->lastSeenResource < LI->resourceCount)) ?
+			LI->resource[LI->lastSeenResource].resourceName : TranslateT("No activity yet  use server's choice"));
+	AppendMenu(hMenu, MF_STRING, MENUITEM_LASTSEEN, buf);
+
+	AppendMenu(hMenu, MF_STRING, MENUITEM_SERVER, TranslateT("Highest Priority (Server's Choice)"));
+
+	AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
+	for (int i = 0; i < LI->resourceCount; ++i)
+		AppendMenu(hMenu, MF_STRING, MENUITEM_RESOURCES+i, LI->resource[i].resourceName);
+	if (LI->resourceMode == RSMODE_LASTSEEN)
+		CheckMenuItem(hMenu, MENUITEM_LASTSEEN, MF_BYCOMMAND|MF_CHECKED);
+	else if (LI->resourceMode == RSMODE_SERVER)
+		CheckMenuItem(hMenu, MENUITEM_SERVER, MF_BYCOMMAND|MF_CHECKED);
+	else
+		CheckMenuItem(hMenu, MENUITEM_RESOURCES+LI->manualResource, MF_BYCOMMAND|MF_CHECKED);
+
+	int res = TrackPopupMenu(hMenu, TPM_RETURNCMD, sicd->clickLocation.x, sicd->clickLocation.y, 0, WindowList_Find(hDialogsList, hContact), NULL);
+	if (res == MENUITEM_LASTSEEN)
+	{
+		LI->manualResource = -1;
+		LI->resourceMode = RSMODE_LASTSEEN;
+	} else
+	if (res == MENUITEM_SERVER)
+	{
+		LI->manualResource = -1;
+		LI->resourceMode = RSMODE_SERVER;
+	} else
+	if (res >= MENUITEM_RESOURCES)
+	{
+		LI->manualResource = res - MENUITEM_RESOURCES;
+		LI->resourceMode = RSMODE_MANUAL;
+	}
+
+	JabberUpdateMirVer(LI);
+	JabberMenuUpdateSrmmIcon(LI);
+
+	return 0;
+}

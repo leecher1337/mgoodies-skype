@@ -207,6 +207,9 @@ static int OnPreShutdown( WPARAM wParam, LPARAM lParam )
 int JabberGcEventHook( WPARAM, LPARAM );
 int JabberGcMenuHook( WPARAM, LPARAM );
 int JabberGcInit( WPARAM, LPARAM );
+void JabberMenuHideSrmmIcon(HANDLE hContact);
+int JabberMenuProcessSrmmIconClick( WPARAM wParam, LPARAM lParam );
+int JabberMenuProcessSrmmEvent( WPARAM wParam, LPARAM lParam );
 
 static COLORREF crCols[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 HANDLE hChatEvent = NULL,
@@ -218,7 +221,10 @@ HANDLE hChatEvent = NULL,
 		 hEvModulesLoaded = NULL,
 		 hEvOptInit = NULL,
 		 hEvPreShutdown = NULL,
-		 hEvUserInfoInit = NULL;
+		 hEvUserInfoInit = NULL,
+		 hEvMsgIconPressed = NULL,
+		 hEvMsgWindow = NULL;
+
 
 void JGmailSetupIcons();
 void JGmailSetupIcoLib();
@@ -300,6 +306,27 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 	JCreateServiceFunction( JS_GETADVANCEDSTATUSICON, JGetAdvancedStatusIcon );
 	JabberCheckAllContactsAreTransported();
 	JGmailSetupIcoLib();
+
+	if ( ServiceExists( MS_MSG_ADDICON )) {
+		StatusIconData sid = {0};
+		sid.cbSize = sizeof(sid);
+		sid.szModule = jabberProtoName;
+		sid.hIcon = iconList[2];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_AGENTS ));
+		sid.hIconDisabled = NULL;//LoadIconEx("main");
+		sid.flags = MBF_HIDDEN;
+		sid.szTooltip = "Jabber Resource";
+		CallService(MS_MSG_ADDICON, 0, (LPARAM) &sid);
+		hEvMsgIconPressed = HookEvent( ME_MSG_ICONPRESSED, JabberMenuProcessSrmmIconClick );
+		hEvMsgWindow = HookEvent( ME_MSG_WINDOWEVENT, JabberMenuProcessSrmmEvent );
+
+		HANDLE hContact = ( HANDLE ) JCallService( MS_DB_CONTACT_FINDFIRST, 0, 0 );
+		while ( hContact != NULL ) {
+			char* szProto = ( char* )JCallService( MS_PROTO_GETCONTACTBASEPROTO, ( WPARAM ) hContact, 0 );
+			if ( szProto != NULL && !strcmp( szProto, jabberProtoName ))
+				JabberMenuHideSrmmIcon(hContact);
+			hContact = ( HANDLE ) JCallService( MS_DB_CONTACT_FINDNEXT, ( WPARAM ) hContact, 0 );
+	}	}
+
 	return 0;
 }
 
@@ -426,6 +453,8 @@ extern "C" int __declspec( dllexport ) Unload( void )
 	if ( hEvOptInit  )      UnhookEvent( hEvOptInit );
 	if ( hEvPreShutdown )   UnhookEvent( hEvPreShutdown );
 	if ( hEvUserInfoInit )  UnhookEvent( hEvUserInfoInit );
+	if ( hEvMsgIconPressed )  UnhookEvent( hEvMsgIconPressed );
+	if ( hEvMsgWindow )  UnhookEvent( hEvMsgWindow );
 
 	if ( hInitChat )
 		DestroyHookableEvent( hInitChat );

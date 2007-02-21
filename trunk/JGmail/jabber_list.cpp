@@ -28,6 +28,8 @@ Last change by : $Author$
 #include "jabber.h"
 #include "jabber_list.h"
 
+void JabberMenuUpdateSrmmIcon(JABBER_LIST_ITEM *item);
+
 static int compareListItems( const JABBER_LIST_ITEM* p1, const JABBER_LIST_ITEM* p2 )
 {
 	if ( p1->list != p2->list )
@@ -140,12 +142,15 @@ JABBER_LIST_ITEM *JabberListAdd( JABBER_LIST list, const TCHAR* jid )
 	item->status = ID_STATUS_OFFLINE;
 	item->resource = NULL;
 	item->resourceMode = RSMODE_LASTSEEN;
-	item->defaultResource = -1;
+	item->lastSeenResource = -1;
+	item->manualResource = -1;
 	if ( list == LIST_ROSTER )
 		item->cap = CLIENT_CAP_CHATSTAT;
 
 	roster.insert( item );
 	LeaveCriticalSection( &csLists );
+
+	JabberMenuUpdateSrmmIcon(item);
 
 	return item;
 }
@@ -225,6 +230,9 @@ int JabberListAddResource( JABBER_LIST list, const TCHAR* jid, int status, const
 	}
 
 	LeaveCriticalSection( &csLists );
+
+	JabberMenuUpdateSrmmIcon(LI);
+
 	return bIsNewResource;
 }
 
@@ -251,11 +259,25 @@ void JabberListRemoveResource( JABBER_LIST list, const TCHAR* jid )
 						break;
 				}
 				if ( j < LI->resourceCount ) {
-					// Found resource to be removed
-					if ( LI->defaultResource == j )
-						LI->defaultResource = -1;
-					else if ( LI->defaultResource > j )
-						LI->defaultResource--;
+					// Found last seen resource ID to be removed
+					if ( LI->lastSeenResource == j )
+						LI->lastSeenResource = -1;
+					else if ( LI->lastSeenResource > j )
+						LI->lastSeenResource--;
+					// update manually selected resource ID
+					if (LI->resourceMode == RSMODE_MANUAL)
+					{
+						if ( LI->manualResource == j )
+						{
+							LI->resourceMode = RSMODE_LASTSEEN;
+							LI->manualResource = -1;
+						} else if ( LI->manualResource > j )
+							LI->manualResource--;
+					}
+
+					// Update MirVer due to possible resource changes
+					JabberUpdateMirVer(LI);
+
 					if ( r->resourceName ) mir_free( r->resourceName );
 					if ( r->statusMessage ) mir_free( r->statusMessage );
 					if ( r->software ) mir_free( r->software );
@@ -271,6 +293,8 @@ void JabberListRemoveResource( JABBER_LIST list, const TCHAR* jid )
 	}	}	}	}	}
 
 	LeaveCriticalSection( &csLists );
+
+	JabberMenuUpdateSrmmIcon(LI);
 }
 
 TCHAR* JabberListGetBestResourceNamePtr( const TCHAR* jid )
@@ -289,10 +313,15 @@ TCHAR* JabberListGetBestResourceNamePtr( const TCHAR* jid )
 		res = LI->resource[0].resourceName;
 	else {
 		res = NULL;
-		if ( LI->resourceMode == RSMODE_MANUAL || LI->resourceMode == RSMODE_LASTSEEN ) {
-			if ( LI->defaultResource>=0 && LI->defaultResource < LI->resourceCount )
-				res = LI->resource[ LI->defaultResource ].resourceName;
-	}	}
+		if (LI->resourceMode == RSMODE_LASTSEEN && LI->lastSeenResource>=0 && LI->lastSeenResource < LI->resourceCount)
+		{
+			res = LI->resource[ LI->lastSeenResource ].resourceName;
+		} else
+		if (LI->resourceMode == RSMODE_MANUAL && LI->manualResource>=0 && LI->manualResource < LI->resourceCount)
+		{
+			res = LI->resource[ LI->manualResource ].resourceName;
+		}
+	}
 
 	LeaveCriticalSection( &csLists );
 	return res;
