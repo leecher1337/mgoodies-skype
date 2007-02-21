@@ -341,7 +341,15 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 char* deprecatedUtf8Decode( char* str, WCHAR** ucs2 );
 char* deprecatedUtf8Encode( const char* str );
 char* deprecatedUtf8EncodeW( const WCHAR* wstr );
-
+void deprecated_md5_init(mir_md5_state_t *pms);
+void deprecated_md5_append(mir_md5_state_t *pms, const mir_md5_byte_t *data, int nbytes);
+void deprecated_md5_finish(mir_md5_state_t *pms, mir_md5_byte_t digest[16]);
+void deprecated_md5_hash_string(const mir_md5_byte_t *data, int len, mir_md5_byte_t digest[16]);
+void deprecated_shaInit(mir_sha1_ctx *ctx);
+void deprecated_shaUpdate(mir_sha1_ctx *ctx, mir_sha1_byte_t *dataIn, int len);
+void deprecated_shaFinal(mir_sha1_ctx *ctx, mir_sha1_byte_t hashout[20]);
+void deprecated_shaBlock(mir_sha1_byte_t *dataIn, int len, mir_sha1_byte_t hashout[20]);
+	
 extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 {
 	pluginLink = link;
@@ -361,8 +369,18 @@ extern "C" int __declspec( dllexport ) Load( PLUGINLINK *link )
 		utfi.utf8_encodecp = NULL;
 		utfi.utf8_encodeW  = deprecatedUtf8EncodeW;
 	}
-	mir_getMD5I( &md5i );
-	mir_getSHA1I( &sha1i );
+	if (mir_getMD5I( &md5i ) == CALLSERVICE_NOTFOUND ){
+		md5i.md5_init = deprecated_md5_init;
+		md5i.md5_append = deprecated_md5_append;
+		md5i.md5_finish = deprecated_md5_finish;
+		md5i.md5_hash = deprecated_md5_hash_string;
+	}
+	if (mir_getSHA1I( &sha1i ) == CALLSERVICE_NOTFOUND ){
+		sha1i.sha1_init = deprecated_shaInit;
+		sha1i.sha1_append = deprecated_shaUpdate;
+		sha1i.sha1_finish = deprecated_shaFinal;
+		sha1i.sha1_hash = deprecated_shaBlock;
+	}
 
 	// creating the plugins name
 	char text[_MAX_PATH];
