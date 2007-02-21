@@ -56,8 +56,17 @@ template<class T> struct LIST
 		inline int insert( T* p )          { return li.List_InsertPtr(( SortedList* )this, p ); }
 		inline int remove( T* p )          { return li.List_RemovePtr(( SortedList* )this, p ); }
 	#else
-		inline int insert( T* p )          { int idx; li.List_GetIndex( ( SortedList* )this, p, &idx ); return li.List_Insert( ( SortedList* )this, p, idx ); }
-		inline int remove( T* p )          { int idx = -1; if ( li.List_GetIndex( ( SortedList* )this, p, &idx )) li.List_Remove( ( SortedList* )this, idx ); return idx; }
+		inline int insert( T* p )          { 
+			int idx=0; 
+			li.List_GetIndex( ( SortedList* )this, p, &idx ); 
+			return li.List_Insert( ( SortedList* )this, p, idx ); 
+		}
+		inline int remove( T* p )          { 
+			int idx = -1; 
+			if ( li.List_GetIndex( ( SortedList* )this, p, &idx )) 
+				li.List_Remove( ( SortedList* )this, idx ); 
+			return idx; 
+		}
 	#endif
 
 private:

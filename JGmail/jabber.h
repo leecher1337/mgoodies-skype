@@ -29,7 +29,7 @@ Last change by : $Author$
 #define _JABBER_H_
 
 #ifndef MIRANDA_VER
-//	#define MIRANDA_VER 0x0500
+	#define MIRANDA_VER 0x0500
 #endif
 
 #if defined(UNICODE) && !defined(_UNICODE)
@@ -595,7 +595,7 @@ char*    u2a( const wchar_t* src );
 wchar_t* a2u( const char* src );
 TCHAR*   a2t( const char* src );
 
-#define NUMICONSSMALL 20
+#define NUMICONSSMALL 21
 #define NUMICONSBIG 3
 extern HICON iconBigList[NUMICONSBIG];
 extern HICON iconList[NUMICONSSMALL];
