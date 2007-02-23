@@ -23,7 +23,6 @@ class IEView;
 #ifndef IEVIEW_INCLUDED
 #define IEVIEW_INCLUDED
 
-
 //const IID IID_IDocHostUIHandler ={0xbd3f23c0,0xd43e,0x11CF,{0x89, 0x3b, 0x00, 0xaa, 0x00, 0xbd, 0xce, 0x1a}};
 #include <objbase.h>
 #include <exdisp.h>

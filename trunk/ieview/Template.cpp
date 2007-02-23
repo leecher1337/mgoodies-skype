@@ -321,7 +321,7 @@ TemplateMap* TemplateMap::loadTemplateFile(const char *proto, const char *filena
 	    //template start
 	    if (!onlyInfo) {
 	    	bool bFound = false;
-            for (int i = 0; i < sizeof(templateNames) / sizeof (templateNames[0]); i++) {
+            for (unsigned i = 0; i < sizeof(templateNames) / sizeof (templateNames[0]); i++) {
 	    		if (!strncmp(store, templateNames[i].tokenString, templateNames[i].tokenLen)) {
 	    			bFound = true;
 	    			break;
