@@ -1729,7 +1729,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			SendMessageW(GetDlgItem(hDlg,IDC_BTNAPP),WM_SETTEXT,(WPARAM)0,(LPARAM)TranslateW(L"Run application"));
 			SendMessageW(GetDlgItem(hDlg,IDC_BTNDEL),WM_SETTEXT,(WPARAM)0,(LPARAM)TranslateW(L"Delete selected"));
 			SendMessageW(GetDlgItem(hDlg,IDC_BTNCHECKALL),WM_SETTEXT,(WPARAM)0,(LPARAM)TranslateW(L"Select All"));
-			SendMessageW(GetDlgItem(hDlg,IDC_BTNOK),WM_SETTEXT,(WPARAM)0,(LPARAM)TranslateW(L"Ok"));
+			SendMessageW(GetDlgItem(hDlg,IDC_BTNOK),WM_SETTEXT,(WPARAM)0,(LPARAM)TranslateW(L"OK"));
 
 			LVCOLUMNW lvc0={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,FromWidth,TranslateW(L"From"),0,0};
 			LVCOLUMNW lvc1={LVCF_FMT | LVCF_TEXT | LVCF_WIDTH,LVCFMT_LEFT,SubjectWidth,TranslateW(L"Subject"),0,0};
