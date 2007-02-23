@@ -32,19 +32,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define UM_CHECKSTATECHANGE (WM_USER+100)
 HANDLE hHookOptionsChanged;
-static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-//static BOOL CALLBACK IEViewEmoticonsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 #define OPTIONS_PAGES 4
-static HWND hwndCurrentTab, hwndPages[OPTIONS_PAGES];
 static ProtocolSettings *srmmCurrentProtoItem = NULL;
 static ProtocolSettings *chatCurrentProtoItem = NULL;
 static ProtocolSettings *historyCurrentProtoItem = NULL;
 static HIMAGELIST hProtocolImageList = NULL;
 static BOOL (WINAPI *pfnEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
+
+typedef struct TabDefStruct {
+	DLGPROC dlgProc;
+	DWORD dlgId;
+	TCHAR *tabName;
+} TabDef;
+
+static TabDef tabPages[] = {
+						 {IEViewGeneralOptDlgProc, IDD_GENERAL_OPTIONS, _T("General")},
+						 {IEViewSRMMOptDlgProc, IDD_SRMM_OPTIONS, _T("Message Log")},
+						 {IEViewGroupChatsOptDlgProc, IDD_GROUPCHATS_OPTIONS, _T("Group Chats")},
+						 {IEViewHistoryOptDlgProc, IDD_HISTORY_OPTIONS, _T("History")}
+						 };
 
 #ifndef _MSC_VER
 typedef struct tagTVKEYDOWN {
@@ -317,7 +327,7 @@ static void UpdateHistoryProtoInfo(HWND hwndDlg, ProtocolSettings *proto) {
 	}
 }
 
-static void RefreshProtoIcons(HWND hwndDlg) {
+static void RefreshProtoIcons() {
 	int i;
 	ProtocolSettings *proto;
 	if (hProtocolImageList != NULL) {
@@ -342,7 +352,6 @@ static void RefreshProtoIcons(HWND hwndDlg) {
 			ImageList_AddIcon(hProtocolImageList, hIcon);
 		}
 	}
-//	refreshProtoList(hwndDlg, IsDlgButtonChecked(hwndDlg, IDC_PROTO_SMILEYS));
 }
 
 static void RefreshProtoList(HWND hwndDlg, int mode, bool protoTemplates) {
@@ -413,93 +422,47 @@ static bool BrowseFile(HWND hwndDlg, TCHAR *filter, TCHAR *defExt,  TCHAR *path,
 
 int IEViewOptInit(WPARAM wParam, LPARAM lParam)
 {
-	OPTIONSDIALOGPAGE odp;
-
-	ZeroMemory(&odp, sizeof(odp));
+	DWORD i;
+	OPTIONSDIALOGPAGE odp = { 0 };
 	odp.cbSize = sizeof(odp);
 	odp.position = 0;
 	odp.hInstance = hInstance;
-	odp.pszGroup = Translate("Message Sessions");
-	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
-	odp.pszTitle = Translate("IEView");
-	odp.flags = ODPF_BOLDGROUPS;
-	odp.pfnDlgProc = IEViewOptDlgProc;
+	odp.pszGroup = TranslateT("Message Sessions");
+	odp.pszTitle = TranslateT("IEView");
+	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
 	odp.nIDBottomSimpleControl = 0;
-	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) &odp);
+	for (i = 0; i < SIZEOF(tabPages); i++) {
+		odp.pszTemplate = MAKEINTRESOURCEA(tabPages[i].dlgId);
+		odp.pfnDlgProc = tabPages[i].dlgProc;
+		odp.ptszTab = tabPages[i].tabName;
+		CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) & odp);
+	}
 	return 0;
 }
 
-static BOOL CALLBACK IEViewOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
-	switch (msg) {
-	case WM_INITDIALOG:
-		{
-            HWND tc;
-			TCITEM tci;
-			RefreshProtoIcons(hwndDlg);
-			Options::resetProtocolSettings();
+static int initialized = 0;
+static int changed = 0;
 
-			tc = GetDlgItem(hwndDlg, IDC_TABS);
-			tci.mask = TCIF_TEXT;
-			tci.pszText = TranslateT("General");
-			TabCtrl_InsertItem(tc, 0, &tci);
-			tci.pszText = TranslateT("Message Log");
-			TabCtrl_InsertItem(tc, 1, &tci);
-			tci.pszText = TranslateT("Group Chats");
-			TabCtrl_InsertItem(tc, 2, &tci);
-			tci.pszText = TranslateT("History");
-			TabCtrl_InsertItem(tc, 3, &tci);
-//			hwndEmoticons = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_EMOTICONS_OPTIONS), hwndDlg, IEViewEmoticonsOptDlgProc, (LPARAM) NULL);
-	//		SetWindowPos(hwndEmoticons, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
-			hwndPages[0] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_GENERAL_OPTIONS), hwndDlg, IEViewGeneralOptDlgProc, (LPARAM) NULL);
-			SetWindowPos(hwndPages[0], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
-			hwndPages[1] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_SRMM_OPTIONS), hwndDlg, IEViewSRMMOptDlgProc, (LPARAM) NULL);
-			SetWindowPos(hwndPages[1], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
-			hwndPages[2] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_GROUPCHATS_OPTIONS), hwndDlg, IEViewGroupChatsOptDlgProc, (LPARAM) NULL);
-			SetWindowPos(hwndPages[2], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
-			hwndPages[3] = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_HISTORY_OPTIONS), hwndDlg, IEViewHistoryOptDlgProc, (LPARAM) NULL);
-			SetWindowPos(hwndPages[3], HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_HIDEWINDOW);
-			hwndCurrentTab = hwndPages[0];
-			if (pfnEnableThemeDialogTexture) {
-				for (int i=0; i<OPTIONS_PAGES; i++) {
-					pfnEnableThemeDialogTexture(hwndPages[i], ETDT_ENABLETAB);
-				}
-			}
-			ShowWindow(hwndPages[0], SW_SHOW);
-			return TRUE;
-		}
-	case WM_COMMAND:
-		break;
-	case WM_NOTIFY:
-		{
-			switch (((LPNMHDR) lParam)->code) {
-			case TCN_SELCHANGE:
-                switch (wParam) {
-				case IDC_TABS:
-					{
-						HWND hwnd = hwndPages[TabCtrl_GetCurSel(GetDlgItem(hwndDlg, IDC_TABS))];
-						if (hwnd!=hwndCurrentTab) {
-	                    	ShowWindow(hwnd, SW_SHOW);
-	                    	ShowWindow(hwndCurrentTab, SW_HIDE);
-	                    	hwndCurrentTab = hwnd;
-						}
-					}
-					break;
-				}
-				break;
-			case PSN_APPLY:
-				for (int i = 0; i < OPTIONS_PAGES; i++) {
-                    SendMessage(hwndPages[i], WM_NOTIFY, wParam, lParam);
-				}
-				Options::saveProtocolSettings();
-				NotifyEventHooks(hHookOptionsChanged, 0, 0);
-				return TRUE;
-			}
-		}
-		break;
-	case WM_DESTROY:
-		break;
+static void MarkInitialized(int i) {
+	if (initialized == 0) {
+		Options::resetProtocolSettings();
+		RefreshProtoIcons();
 	}
-	return FALSE;
+	initialized |= i;
+}
+
+static void ApplyChanges(int i) {
+	changed &= ~i;
+	initialized &= ~i;
+	if (changed == 0) {
+		Options::saveProtocolSettings();
+		NotifyEventHooks(hHookOptionsChanged, 0, 0);
+	}
+}
+
+static void MarkChanges(int i, HWND hWnd) {
+	SendMessage(GetParent(hWnd), PSM_CHANGED, 0, 0);
+	changed |= i;
 }
 
 static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -507,6 +470,7 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
+			MarkInitialized(1);
 			TranslateDialogDefault(hwndDlg);
 			if (Options::getGeneralFlags() & Options::GENERAL_ENABLE_BBCODES) {
 				CheckDlgButton(hwndDlg, IDC_ENABLE_BBCODES, TRUE);
@@ -539,7 +503,7 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
             case IDC_ENABLE_PNGHACK:
             case IDC_SMILEYS_IN_NAMES:
             case IDC_NO_BORDER:
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				MarkChanges(1, hwndDlg);
 				break;
 			}
 		}
@@ -568,6 +532,7 @@ static BOOL CALLBACK IEViewGeneralOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 					i |= Options::GENERAL_NO_BORDER;
 				}
 				Options::setGeneralFlags(i);
+				ApplyChanges(1);
 				return TRUE;
 			}
 		}
@@ -584,6 +549,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
+			MarkInitialized(2);
 			TranslateDialogDefault(hwndDlg);
 			srmmCurrentProtoItem = NULL;
 			RefreshProtoList(hwndDlg, 0, true);
@@ -597,7 +563,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
             case IDC_EXTERNALCSS_FILENAME_RTL:
             case IDC_TEMPLATES_FILENAME:
 				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE)
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(2, hwndDlg);
 				break;
 			case IDC_SCROLL_BACKGROUND_IMAGE:
 			case IDC_LOG_SHOW_NICKNAMES:
@@ -607,44 +573,44 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 			case IDC_LOG_LONG_DATE:
 			case IDC_LOG_RELATIVE_DATE:
 			case IDC_LOG_GROUP_MESSAGES:
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				MarkChanges(2, hwndDlg);
 				break;
 			case IDC_BACKGROUND_IMAGE:
                 bChecked = IsDlgButtonChecked(hwndDlg, IDC_MODE_COMPATIBLE) && IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_BACKGROUND_IMAGE), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE), bChecked);
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				MarkChanges(2, hwndDlg);
 				break;
 			case IDC_BROWSE_TEMPLATES:
 				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(2, hwndDlg);
 				}
 				break;
 			case IDC_BROWSE_BACKGROUND_IMAGE:
 				if (BrowseFile(hwndDlg, "All Images (*.jpg,*.gif,*.png,*.bmp)\0*.jpg;*.gif;*.png;*.bmp\0All Files\0*.*\0\0", "jpg", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg,IDC_BACKGROUND_IMAGE_FILENAME,path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(2, hwndDlg);
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS:
 				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(2, hwndDlg);
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS_RTL:
 				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(2, hwndDlg);
 				}
 				break;
 			case IDC_MODE_COMPATIBLE:
 			case IDC_MODE_CSS:
 			case IDC_MODE_TEMPLATE:
 				UpdateControlsState(hwndDlg);
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				MarkChanges(2, hwndDlg);
 				break;
 			}
 		}
@@ -662,7 +628,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 			} else {
 				UpdateSRMMProtoInfo(hwndDlg, proto);
 			}
-			SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+			MarkChanges(2, hwndDlg);
 		}
 		break;
 	case WM_NOTIFY:
@@ -701,6 +667,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 			switch (((LPNMHDR) lParam)->code) {
 			case PSN_APPLY:
 				SaveSRMMProtoSettings(hwndDlg, srmmCurrentProtoItem);
+				ApplyChanges(2);
 				return TRUE;
 			}
 		}
@@ -717,6 +684,7 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
+			MarkInitialized(4);
 			TranslateDialogDefault(hwndDlg);
 			historyCurrentProtoItem = NULL;
 			RefreshProtoList(hwndDlg, 2, true);
@@ -730,7 +698,7 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
             case IDC_EXTERNALCSS_FILENAME_RTL:
             case IDC_TEMPLATES_FILENAME:
 				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE)
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(4, hwndDlg);
 				break;
 			case IDC_SCROLL_BACKGROUND_IMAGE:
 			case IDC_LOG_SHOW_NICKNAMES:
@@ -740,44 +708,44 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			case IDC_LOG_LONG_DATE:
 			case IDC_LOG_RELATIVE_DATE:
 			case IDC_LOG_GROUP_MESSAGES:
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				MarkChanges(4, hwndDlg);
 				break;
 			case IDC_BACKGROUND_IMAGE:
                 bChecked = IsDlgButtonChecked(hwndDlg, IDC_MODE_COMPATIBLE) && IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_BACKGROUND_IMAGE), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE), bChecked);
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				MarkChanges(4, hwndDlg);
 				break;
 			case IDC_BROWSE_TEMPLATES:
 				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(4, hwndDlg);
 				}
 				break;
 			case IDC_BROWSE_BACKGROUND_IMAGE:
 				if (BrowseFile(hwndDlg, "All Images (*.jpg,*.gif,*.png,*.bmp)\0*.jpg;*.gif;*.png;*.bmp\0All Files\0*.*\0\0", "jpg", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg,IDC_BACKGROUND_IMAGE_FILENAME,path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(4, hwndDlg);
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS:
 				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(4, hwndDlg);
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS_RTL:
 				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(4, hwndDlg);
 				}
 				break;
 			case IDC_MODE_COMPATIBLE:
 			case IDC_MODE_CSS:
 			case IDC_MODE_TEMPLATE:
 				UpdateControlsState(hwndDlg);
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				MarkChanges(4, hwndDlg);
 				break;
 			}
 		}
@@ -795,7 +763,7 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			} else {
 				UpdateHistoryProtoInfo(hwndDlg, proto);
 			}
-			SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+			MarkChanges(4, hwndDlg);
 		}
 		break;
 	case WM_NOTIFY:
@@ -834,6 +802,7 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			switch (((LPNMHDR) lParam)->code) {
 			case PSN_APPLY:
 				SaveHistoryProtoSettings(hwndDlg, historyCurrentProtoItem);
+				ApplyChanges(4);
 				return TRUE;
 			}
 		}
@@ -850,6 +819,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
+			MarkInitialized(8);
 			TranslateDialogDefault(hwndDlg);
 			chatCurrentProtoItem = NULL;
 			RefreshProtoList(hwndDlg, 1, true);
@@ -864,7 +834,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
             case IDC_EXTERNALCSS_FILENAME_RTL:
             case IDC_TEMPLATES_FILENAME:
 				if ((HWND)lParam==GetFocus() && HIWORD(wParam)==EN_CHANGE)
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(8, hwndDlg);
 				break;
 			case IDC_SCROLL_BACKGROUND_IMAGE:
 			case IDC_LOG_SHOW_NICKNAMES:
@@ -874,44 +844,44 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 			case IDC_LOG_LONG_DATE:
 			case IDC_LOG_RELATIVE_DATE:
 			case IDC_LOG_GROUP_MESSAGES:
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				MarkChanges(8, hwndDlg);
 				break;
 			case IDC_BACKGROUND_IMAGE:
                 bChecked = IsDlgButtonChecked(hwndDlg, IDC_MODE_COMPATIBLE) && IsDlgButtonChecked(hwndDlg, IDC_BACKGROUND_IMAGE);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BACKGROUND_IMAGE_FILENAME), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_BACKGROUND_IMAGE), bChecked);
 				EnableWindow(GetDlgItem(hwndDlg, IDC_SCROLL_BACKGROUND_IMAGE), bChecked);
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				MarkChanges(8, hwndDlg);
 				break;
 			case IDC_BROWSE_TEMPLATES:
 				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(8, hwndDlg);
 				}
 				break;
 			case IDC_BROWSE_BACKGROUND_IMAGE:
 				if (BrowseFile(hwndDlg, "All Images (*.jpg,*.gif,*.png,*.bmp)\0*.jpg;*.gif;*.png;*.bmp\0All Files\0*.*\0\0", "jpg", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg,IDC_BACKGROUND_IMAGE_FILENAME,path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(8, hwndDlg);
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS:
 				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME, path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(8, hwndDlg);
 				}
 				break;
 			case IDC_BROWSE_EXTERNALCSS_RTL:
 				if (BrowseFile(hwndDlg, "Style Sheet (*.css)\0*.css\0All Files\0*.*\0\0", "css", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_EXTERNALCSS_FILENAME_RTL, path);
-					SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+					MarkChanges(8, hwndDlg);
 				}
 				break;
 			case IDC_MODE_COMPATIBLE:
 			case IDC_MODE_CSS:
 			case IDC_MODE_TEMPLATE:
 				UpdateControlsState(hwndDlg);
-				SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+				MarkChanges(8, hwndDlg);
 				break;
 			}
 		}
@@ -929,7 +899,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 			} else {
 				UpdateChatProtoInfo(hwndDlg, proto);
 			}
-			SendMessage(GetParent(GetParent(hwndDlg)), PSM_CHANGED, 0, 0);
+			MarkChanges(8, hwndDlg);
 		}
 		break;
 	case WM_NOTIFY:
@@ -968,6 +938,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 			switch (((LPNMHDR) lParam)->code) {
 			case PSN_APPLY:
 				SaveChatProtoSettings(hwndDlg, chatCurrentProtoItem);
+				ApplyChanges(8);
 				return TRUE;
 			}
 		}

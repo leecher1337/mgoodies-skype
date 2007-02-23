@@ -1,6 +1,10 @@
 #include "Utils.h"
 
 wchar_t Utils::base_dir[MAX_PATH];
+unsigned Utils::hookNum = 0;
+unsigned Utils::serviceNum = 0;
+HANDLE* Utils::hHooks = NULL;
+HANDLE* Utils::hServices = NULL;
 
 const wchar_t *Utils::getBaseDir() {
 	char temp[MAX_PATH];
@@ -24,7 +28,7 @@ wchar_t* Utils::toAbsolute(wchar_t* relative) {
 	}
 	return result;
 }
- 
+
 static int countNoWhitespace(const wchar_t *str) {
 	int c;
 	for (c=0; *str!='\n' && *str!='\r' && *str!='\t' && *str!=' ' && *str!='\0'; str++, c++);
@@ -94,7 +98,7 @@ void Utils::appendText(wchar_t **str, int *sizeAlloced, const wchar_t *fmt, ...)
 		*str = (wchar_t *) realloc(*str, *sizeAlloced);
 		p = *str + len;
 	}
-	
+
 	va_end(vararg);
 }
 
@@ -300,7 +304,7 @@ struct FORK_ARG {
 };
 
 static void __cdecl forkthread_r(struct FORK_ARG *fa)
-{	
+{
 	void (*callercode)(void*) = fa->threadcode;
 	void *arg = fa->arg;
 	CallService(MS_SYSTEM_THREAD_PUSH, 0, 0);
@@ -314,7 +318,7 @@ unsigned long Utils::forkThread(void (__cdecl *threadcode)(void*), unsigned long
 
 	unsigned long rc;
 	struct FORK_ARG fa;
-	
+
 	fa.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	fa.threadcode = threadcode;
 	fa.arg = arg;
@@ -325,3 +329,42 @@ unsigned long Utils::forkThread(void (__cdecl *threadcode)(void*), unsigned long
 	CloseHandle(fa.hEvent);
 	return rc;
 }
+
+HANDLE Utils::hookEvent_Ex(const char *name, MIRANDAHOOK hook) {
+	hookNum ++;
+	hHooks = (HANDLE *) mir_realloc(hHooks, sizeof(HANDLE) * (hookNum));
+	hHooks[hookNum - 1] = HookEvent(name, hook);
+	return hHooks[hookNum - 1] ;
+}
+
+HANDLE Utils::createServiceFunction_Ex(const char *name, MIRANDASERVICE service) {
+	serviceNum++;
+	hServices = (HANDLE *) mir_realloc(hServices, sizeof(HANDLE) * (serviceNum));
+	hServices[serviceNum - 1] = CreateServiceFunction(name, service);
+	return hServices[serviceNum - 1] ;
+}
+
+void Utils::unhookEvents_Ex() {
+	int i;
+	for (i=0; i<hookNum ; ++i) {
+		if (hHooks[i] != NULL) {
+			UnhookEvent(hHooks[i]);
+		}
+	}
+	mir_free(hHooks);
+	hookNum = 0;
+	hHooks = NULL;
+}
+
+void Utils::destroyServices_Ex() {
+	int i;
+	for (i=0; i<serviceNum; ++i) {
+		if (hServices[i] != NULL) {
+			DestroyServiceFunction(hServices[i]);
+		}
+	}
+	mir_free(hServices);
+	serviceNum = 0;
+	hServices = NULL;
+}
+

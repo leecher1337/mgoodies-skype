@@ -33,8 +33,6 @@ IEView *debugView;
 TCHAR *workingDir;
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 static int PreShutdown(WPARAM wParam, LPARAM lParam);
-static HANDLE hEventOptInitialise;
-static HANDLE hSvcIEWindow, hSvcIEEvent, hSvcIENavigate;
 
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
@@ -84,15 +82,15 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	_strupr(ieviewModuleName);
 
 	pluginLink = link;
-	mir_getMMI( &mmi ); 
+	mir_getMMI( &mmi );
 
-	hEventOptInitialise = HookEvent(ME_OPT_INITIALISE, IEViewOptInit);
-	HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
-	HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
+	Utils::hookEvent_Ex(ME_OPT_INITIALISE, IEViewOptInit);
+	Utils::hookEvent_Ex(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
+	Utils::hookEvent_Ex(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
-	hSvcIEWindow = CreateServiceFunction(MS_IEVIEW_WINDOW, HandleIEWindow);
-	hSvcIEEvent = CreateServiceFunction(MS_IEVIEW_EVENT, HandleIEEvent);
-	hSvcIENavigate = CreateServiceFunction(MS_IEVIEW_EVENT, HandleIENavigate);
+	Utils::createServiceFunction_Ex(MS_IEVIEW_WINDOW, HandleIEWindow);
+	Utils::createServiceFunction_Ex(MS_IEVIEW_EVENT, HandleIEEvent);
+	Utils::createServiceFunction_Ex(MS_IEVIEW_EVENT, HandleIENavigate);
 	hHookOptionsChanged = CreateHookableEvent(ME_IEVIEW_OPTIONSCHANGED);
 	return 0;
 }
@@ -112,11 +110,9 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 extern "C" int __declspec(dllexport) Unload(void)
 {
-	UnhookEvent(hEventOptInitialise);
+	Utils::unhookEvents_Ex();
+	Utils::destroyServices_Ex();
 	DestroyHookableEvent(hHookOptionsChanged);
-	DestroyServiceFunction(hSvcIEWindow);
-	DestroyServiceFunction(hSvcIEEvent);
-	DestroyServiceFunction(hSvcIENavigate);
 	delete workingDir;
 	return 0;
 }
