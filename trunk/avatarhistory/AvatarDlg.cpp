@@ -30,6 +30,7 @@ DWORD WINAPI AvatarDialogThread(LPVOID param);
 static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam);
 int ShowSaveDialog(HWND hwnd, TCHAR* fn);
 
+BOOL ProtocolEnabled(const char *proto);
 int FillAvatarListFromDB(HWND list, HANDLE hContact);
 int FillAvatarListFromFolder(HWND list, HANDLE hContact);
 int CleanupAvatarPic(HWND hwnd);
@@ -40,6 +41,7 @@ BOOL ResolveShortcut(TCHAR *shortcut, TCHAR *file);
 
 static int ShowDialogSvc(WPARAM wParam, LPARAM lParam);
 extern HANDLE hServices[];
+extern HANDLE hHooks[];
 
 struct AvatarDialogData
 {
@@ -540,8 +542,25 @@ int CleanupAvatarPic(HWND hwnd)
 	return 0;
 }
 
+int PreBuildContactMenu(WPARAM wParam,LPARAM lParam) 
+{
+	CLISTMENUITEM clmi = {0};
+	clmi.cbSize = sizeof(clmi);
+	clmi.flags = CMIM_FLAGS;
+
+	char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0);
+	if (!ProtocolEnabled(proto))
+		clmi.flags |= CMIF_HIDDEN;
+
+	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hMenu, (LPARAM) &clmi);
+
+	return 0;
+}
+
 void InitMenuItem()
 {
+	hHooks[5] = HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
+
 	CLISTMENUITEM mi = {0};
 
 	hServices[2] = CreateServiceFunction("AvatarHistory/ShowDialog", ShowDialogSvc);

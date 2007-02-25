@@ -29,10 +29,12 @@ HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 DWORD mirVer;
 
-HANDLE hHooks[5] = {0};
+HANDLE hHooks[6] = {0};
 HANDLE hServices[3] = {0};
 
 HANDLE hFolder = NULL;
+
+char *metacontacts_proto = NULL;
 
 char profilePath[MAX_PATH+1];		// database profile path (read at startup only)
 TCHAR basedir[MAX_PATH+1];
@@ -60,7 +62,7 @@ PLUGININFO pluginInfo={
 #else
 	"Avatar History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,2),
+	PLUGIN_MAKE_VERSION(0,0,2,3),
 	"This plugin keeps backups of all your contacts' avatar changes and/or shows popups",
 	"Matthew Wild (MattJ), Ricardo Pescuma Domenecci",
 	"mwild1@gmail.com",
@@ -118,6 +120,9 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	SetupIcoLib();
 	InitMenuItem();
 	InitPopups();
+
+	if (ServiceExists(MS_MC_GETPROTOCOLNAME))
+		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
 
     // updater plugin support
     if(ServiceExists(MS_UPDATE_REGISTER))
@@ -423,6 +428,13 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 #endif
 		return 0;
 	}
+	else if (metacontacts_proto != NULL && strcmp(metacontacts_proto, proto) == 0)
+	{
+#ifdef DBGPOPUPS
+		ShowPopup(NULL, _T("AVH Debug"), _T("Ignoring metacontacts notification"));
+#endif
+		return 0;
+	}
 
 	BOOL removed = (avatar == NULL && DBGetContactSettingWord(hContact, "ContactPhoto", "Format", 0) == 0);
 
@@ -558,7 +570,17 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 			}
 
 			if (opts.log_old_style)
+			{
 				CreateOldStyleShortcut(hContact, proto, history_filename);
+
+				if (ServiceExists(MS_MC_GETMETACONTACT)) 
+				{
+					HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
+
+					if (hMetaContact != NULL && ContactEnabled(hMetaContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
+						CreateOldStyleShortcut(hMetaContact, metacontacts_proto, history_filename);
+				}
+			}
 		}
 
 
