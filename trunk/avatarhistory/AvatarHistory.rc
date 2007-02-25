@@ -31,7 +31,10 @@ BEGIN
     POPUP "Avatar List Popup"
     BEGIN
         MENUITEM "Save As...",                  ID_AVATARLISTPOPUP_SAVEAS
-        MENUITEM "Delete",                      ID_AVATARLISTPOPUP_DELETE
+        MENUITEM "Delete this entry",           ID_AVATARLISTPOPUP_DELETE
+        MENUITEM "Delete this entry and the bitmap file", 
+                                                ID_AVATARLISTPOPUP_DELETE_BOTH
+
     END
 END
 
@@ -80,17 +83,16 @@ END
 IDD_OPTIONS DIALOGEX 0, 0, 314, 238
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        " Logging options ",IDC_LOGGING_G,3,3,308,57
     CONTROL         "Store old avatars on disk",IDC_LOG_DISK,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,12,16,291,11
-    CONTROL         "Also create per contact folders with shortcuts (simulate old behaviour)",
+    CONTROL         "Also create per contact folders with shortcuts",
                     IDC_OLD_STYLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,
                     29,291,11
-    CONTROL         "Log avatar changes to history (needed to display Avatar History dialog)",
-                    IDC_LOG_HISTORY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,
-                    42,291,11
+    CONTROL         "Log avatar changes to history",IDC_LOG_HISTORY,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,42,291,11
     GROUPBOX        " History templates ",IDC_TRACK_G,3,64,308,66
     LTEXT           "Avatar change:",IDC_CHANGED_L,11,78,105,10
     EDITTEXT        IDC_CHANGED,122,77,183,13,ES_AUTOHSCROLL

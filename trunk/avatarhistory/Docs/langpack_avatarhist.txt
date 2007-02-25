@@ -1,11 +1,11 @@
-; Avatar History 0.0.2.0
+; Avatar History 0.0.2.2
 ; Author: MattJ and Pescuma
 
 [Avatar History]
 
 ; Menu
 
-[Avatar history...]
+[View Avatar History]
 
 ; Custom folders
 
@@ -18,8 +18,8 @@
 
 [ Logging options ]
 [Store old avatars on disk]
-[Also create per contact folders with shortcuts (simulate old behaviour)]
-[Log avatar changes to history (needed to display Avatar History dialog)]
+[Also create per contact folders with shortcuts]
+[Log avatar changes to history]
 
 [ History templates ]
 [Avatar change:]
@@ -74,13 +74,23 @@
 [Log this user's avatars changes to history]
 [Show popups for this user]
 [OK]
+[Save As...]
+[Delete this entry]
+[Delete this entry and the bitmap file]
 
 
 ; Others
 
 [Please select an avatar from the list]
 [No avatar selected]
-[Are you sure you wish to delete this archived avatar?\nThis can affect more than one entry in history!]
+
+[Delete avatar log?]
+[Are you sure you wish to delete this history entry?\nOnly the entry in history will be deleted, bitmap file will be kept!]
+[Are you sure you wish to delete this avatar shortcut?\nOnly shortcut will be deleted, bitmap file will be kept!]
+
 [Delete avatar?]
+[Are you sure you wish to delete this archived avatar?\nThis will delete the history entry and the bitmap file.\nWARNING:This can affect more than one entry in history!]
+[Are you sure you wish to delete this archived avatar?\nThis will delete the shortcut and the bitmap file.\nWARNING:This can affect more than one shortcut!]
+
 [Unknown Protocol]
 [Unknown UIN]

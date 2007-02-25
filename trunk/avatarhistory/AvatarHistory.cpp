@@ -27,11 +27,10 @@ Avatar History Plugin
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
+DWORD mirVer;
 
-HANDLE hModulesLoadedHook = NULL;
-HANDLE hPreShutdownHook = NULL;
-HANDLE hAvatarChange = NULL;
-HANDLE hHookoptsinit = NULL;
+HANDLE hHooks[5] = {0};
+HANDLE hServices[3] = {0};
 
 HANDLE hFolder = NULL;
 
@@ -61,7 +60,7 @@ PLUGININFO pluginInfo={
 #else
 	"Avatar History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,0),
+	PLUGIN_MAKE_VERSION(0,0,2,2),
 	"This plugin keeps backups of all your contacts' avatar changes and/or shows popups",
 	"Matthew Wild (MattJ), Ricardo Pescuma Domenecci",
 	"mwild1@gmail.com",
@@ -79,6 +78,7 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvRese
 
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
 {
+	mirVer = mirandaVersion;
 	return &pluginInfo;
 }
 
@@ -89,11 +89,11 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	init_mir_malloc();
 	LoadOptions();
 
-	hModulesLoadedHook = HookEvent(ME_SYSTEM_MODULESLOADED,ModulesLoaded);
-	hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
+	hHooks[0] = HookEvent(ME_SYSTEM_MODULESLOADED,ModulesLoaded);
+	hHooks[1] = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
-	CreateServiceFunction(MS_AVATARHISTORY_ENABLED, IsEnabled);
-	CreateServiceFunction(MS_AVATARHISTORY_GET_CACHED_AVATAR, GetCachedAvatar);
+	hServices[0] = CreateServiceFunction(MS_AVATARHISTORY_ENABLED, IsEnabled);
+	hServices[1] = CreateServiceFunction(MS_AVATARHISTORY_GET_CACHED_AVATAR, GetCachedAvatar);
 
 	if(CallService(MS_DB_GETPROFILEPATH, MAX_PATH+1, (LPARAM)profilePath) != 0)
 		strcpy(profilePath, "."); // Failed, use current dir
@@ -113,8 +113,8 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	hFolder = (HANDLE)FoldersRegisterCustomPathT(Translate("Avatars"), Translate("Avatar History"), 
 		_T(PROFILE_PATH) _T("\\") _T(CURRENT_PROFILE) _T("\\Avatars History"));
 
-	hAvatarChange = HookEvent(ME_AV_CONTACTAVATARCHANGED, AvatarChanged);
-	hHookoptsinit = HookEvent(ME_OPT_INITIALISE, OptInit);
+	hHooks[2] = HookEvent(ME_AV_CONTACTAVATARCHANGED, AvatarChanged);
+	hHooks[3] = HookEvent(ME_OPT_INITIALISE, OptInit);
 	SetupIcoLib();
 	InitMenuItem();
 	InitPopups();
@@ -151,13 +151,13 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 static int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
-	UnhookEvent(hModulesLoadedHook);
-	UnhookEvent(hPreShutdownHook);
-	UnhookEvent(hAvatarChange);
-	UnhookEvent(hHookoptsinit);
+	int i;
 
-	DestroyServiceFunction(MS_AVATARHISTORY_ENABLED);
-	DestroyServiceFunction(MS_AVATARHISTORY_GET_CACHED_AVATAR);
+	for (i = 0; i < MAX_REGS(hHooks); i++)
+		UnhookEvent(hHooks[i]);
+
+	for (i = 0; i < MAX_REGS(hServices); i++)
+		DestroyServiceFunction(hServices[i]);
 
 	return 0;
 }
@@ -232,7 +232,7 @@ HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text, char *filename)
 	else
 		size = needed + len * sizeof(WCHAR);
 
-	tmp = (BYTE *) malloc(size + file_len);
+	tmp = (BYTE *) mir_alloc0(size + file_len);
 
 	WideCharToMultiByte(CP_ACP, 0, log_text, -1, (char *) tmp, needed, NULL, NULL);
 
@@ -785,7 +785,7 @@ TCHAR* GetOldStyleContactFolder(HANDLE hContact, TCHAR* fn)
 
 BOOL CreateShortcut(TCHAR *file, TCHAR *shortcut)
 {
-	CoInitialize(NULL) ;
+	CoInitialize(NULL);
 
     IShellLink* psl = NULL;
 
@@ -812,6 +812,49 @@ BOOL CreateShortcut(TCHAR *file, TCHAR *shortcut)
 
         psl->Release(); 
     } 
+
+	return SUCCEEDED(hr);
+}
+
+
+BOOL ResolveShortcut(TCHAR *shortcut, TCHAR *file)
+{
+	CoInitialize(NULL);
+
+    IShellLink* psl = NULL;
+
+    HRESULT hr = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (void **) &psl);
+
+    if (SUCCEEDED(hr)) 
+    {
+        IPersistFile* ppf = NULL; 
+		hr = psl->QueryInterface(IID_IPersistFile,  (void **) &ppf); 
+
+        if (SUCCEEDED(hr))
+		{
+#ifdef UNICODE
+			hr = ppf->Load(shortcut, STGM_READ); 
+#else
+			WCHAR tmp[MAX_PATH]; 
+			MultiByteToWideChar(CP_ACP, 0, shortcut, -1, tmp, MAX_PATH); 
+			hr = ppf->Load(tmp, STGM_READ); 
+#endif
+
+			if (SUCCEEDED(hr))
+			{
+				hr = psl->Resolve(NULL, SLR_UPDATE); 
+
+				if (SUCCEEDED(hr))
+				{
+					WIN32_FIND_DATA wfd;
+					hr = psl->GetPath(file, MAX_PATH, &wfd, SLGP_RAWPATH); 
+				}
+			}
+
+            ppf->Release(); 
+		}
+        psl->Release(); 
+    }
 
 	return SUCCEEDED(hr);
 }

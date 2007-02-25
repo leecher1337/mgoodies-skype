@@ -76,22 +76,29 @@ void ShowPopup(HANDLE hContact, const TCHAR *title, const TCHAR *description)
 	ShowPopupEx(hContact, title, description, hContact, POPUP_TYPE_NORMAL, &opts);
 }
 
+typedef struct
+{
+	void* plugin_data;
+	HICON hIcon;
+} 
+PopupDataType;
 
 // Show an popup
 void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description, 
 			   void *plugin_data, int type, const Options *op)
 {
-	char *sProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)hContact,0);
-
 #ifdef UNICODE
 	if(ServiceExists(MS_POPUP_ADDPOPUPW)) 
 	{
 		// Make popup
-		POPUPDATAW ppd;
+		POPUPDATAW ppd = {0};
 
-		ZeroMemory(&ppd, sizeof(ppd)); 
 		ppd.lchContact = hContact; 
-		ppd.lchIcon = getOverlayedIcon(LoadSkinnedProtoIcon(sProto,DBGetContactSettingWord(hContact,sProto,"Status",ID_STATUS_ONLINE)),iconList[1],FALSE);
+		ppd.lchIcon = createProtoOverlayedIcon(hContact);
+		
+		ppd.PluginData = mir_alloc(sizeof(PopupDataType));
+		((PopupDataType*)ppd.PluginData)->plugin_data = plugin_data;
+		((PopupDataType*)ppd.PluginData)->hIcon = ppd.lchIcon;
 
 		if (title != NULL)
 			lstrcpyn(ppd.lpwzContactName, title, MAX_REGS(ppd.lpwzContactName));
@@ -129,7 +136,6 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 		if (type == POPUP_TYPE_NORMAL)
 		{
 			ppd.PluginWindowProc = PopupDlgProc;
-			ppd.PluginData = plugin_data;
 		}
 		else // if (type == POPUP_TYPE_TEST || type == POPUP_TYPE_ERROR)
 		{
@@ -167,11 +173,14 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 	if(ServiceExists(MS_POPUP_ADDPOPUPEX)) 
 	{
 		// Make popup
-		POPUPDATAEX ppd;
+		POPUPDATAEX ppd = {0};
 
-		ZeroMemory(&ppd, sizeof(ppd)); 
 		ppd.lchContact = hContact; 
-		ppd.lchIcon = getOverlayedIcon(LoadSkinnedProtoIcon(sProto,DBGetContactSettingWord(hContact,sProto,"Status",ID_STATUS_ONLINE)),iconList[1],FALSE);
+		ppd.lchIcon = createProtoOverlayedIcon(hContact);
+
+		ppd.PluginData = mir_alloc(sizeof(PopupDataType));
+		((PopupDataType*)ppd.PluginData)->plugin_data = plugin_data;
+		((PopupDataType*)ppd.PluginData)->hIcon = ppd.lchIcon;
 
 		if (title != NULL)
 			TCHAR_TO_CHAR(ppd.lpzContactName, title);
@@ -209,7 +218,6 @@ void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description,
 		if (type == POPUP_TYPE_NORMAL)
 		{
 			ppd.PluginWindowProc = PopupDlgProc;
-			ppd.PluginData = plugin_data;
 		}
 		else // if (type == POPUP_TYPE_TEST || type == POPUP_TYPE_ERROR)
 		{
@@ -276,7 +284,8 @@ static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	switch(message) {
 		case WM_COMMAND:
 		{
-			PostMessage(hPopupWindow, WMU_ACTION, (WPARAM)PUGetPluginData(hWnd), opts.popup_left_click_action);
+			PopupDataType* popup = (PopupDataType*)PUGetPluginData(hWnd);
+			PostMessage(hPopupWindow, WMU_ACTION, (WPARAM)popup->plugin_data, opts.popup_left_click_action);
 
 			if (opts.popup_left_click_action != POPUP_ACTION_DONOTHING)
 				PUDeletePopUp(hWnd);
@@ -286,7 +295,8 @@ static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 		case WM_CONTEXTMENU: 
 		{
-			PostMessage(hPopupWindow, WMU_ACTION, (WPARAM)PUGetPluginData(hWnd), opts.popup_right_click_action);
+			PopupDataType* popup = (PopupDataType*)PUGetPluginData(hWnd);
+			PostMessage(hPopupWindow, WMU_ACTION, (WPARAM)popup->plugin_data, opts.popup_right_click_action);
 
 			if (opts.popup_right_click_action != POPUP_ACTION_DONOTHING)
 				PUDeletePopUp(hWnd);
@@ -296,9 +306,12 @@ static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 		case UM_FREEPLUGINDATA: 
 		{
-			//here we shall destroy icon that has been created in ShowPopup
-			HICON courIcon = (HICON)PUGetPluginData(hWnd);
-			if ((courIcon) && (int)courIcon!=-1) DestroyIcon(courIcon);
+			PopupDataType* popup = (PopupDataType*)PUGetPluginData(hWnd);
+			if ((unsigned)popup != CALLSERVICE_NOTFOUND)
+			{
+				DestroyIcon(popup->hIcon);
+				mir_free(popup);
+			}
 			return FALSE; //the return value is ignored
 		}
 	}
@@ -325,10 +338,17 @@ static LRESULT CALLBACK DumbPopupDlgProc(HWND hWnd, UINT message, WPARAM wParam,
 
 		case UM_FREEPLUGINDATA: 
 		{
-			return TRUE;
+			PopupDataType* popup = (PopupDataType*)PUGetPluginData(hWnd);
+			if ((unsigned)popup != CALLSERVICE_NOTFOUND)
+			{
+				DestroyIcon(popup->hIcon);
+				mir_free(popup);
+			}
+			return FALSE; //the return value is ignored
 		}
 	}
 
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
+
 
