@@ -28,6 +28,7 @@ extern "C"
 extern HINSTANCE hInst;
 extern PLUGINLINK *pluginLink;
 extern HANDLE hMenu;
+extern DWORD mirVer;
 
 }
 
@@ -56,12 +57,11 @@ char * MyDBGetString(HANDLE hContact, char* module, char* setting, char * out, s
 void LoadOptions();
 
  // from icolib.cpp
-#define NUMICONS 2
-extern HICON iconList[NUMICONS];
-extern HICON overlayedIcon; //will be inited in SetupIcoLib()
-extern HICON overlayedBigIcon; // - || -
 void SetupIcoLib();
-HICON getOverlayedIcon(HICON icon, HICON overlay, BOOL big); // from icolib.cpp
+
+HICON createDefaultOverlayedIcon(BOOL big);
+HICON createProtoOverlayedIcon(HANDLE hContact);
+
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 

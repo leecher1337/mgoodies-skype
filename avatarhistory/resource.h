@@ -67,13 +67,14 @@
 #define IDC_LEFT_ACTION_L               1074
 #define ID_AVATARLISTPOPUP_SAVEAS       40001
 #define ID_AVATARLISTPOPUP_DELETE       40002
+#define ID_AVATARLISTPOPUP_DELETE_BOTH  40003
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
-#define _APS_NEXT_COMMAND_VALUE         40003
+#define _APS_NEXT_COMMAND_VALUE         40004
 #define _APS_NEXT_CONTROL_VALUE         1022
 #define _APS_NEXT_SYMED_VALUE           103
 #endif

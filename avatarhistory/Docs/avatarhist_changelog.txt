@@ -2,6 +2,15 @@ Avatar History
 
 Changelog:
 
+. 0.0.2.2
+  * Bug fixes (thanks borkra)
+  + Use shortcuts in avatar history dialog when history log is disabled (thanks Let)
+  + Option to delete only the entry or it and the avatar image
+  * Moved default place of menu entry to bellow View History
+  * Using default Miranda icon for History if possible
+  * Using icon based on avs for overlay
+  * Small changes in options dialog
+
 . 0.0.2.0
   * Changed to store avatars in a proto dir (lost compatibility with old version)
   * Changes in options and avatar dialog
