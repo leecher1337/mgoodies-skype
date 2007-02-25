@@ -2,6 +2,10 @@ Avatar History
 
 Changelog:
 
+. 0.0.2.3
+  + Hide contact menu item for disabled protocols
+  + Create shortcuts for metacontacts if it is a enabled protocol
+
 . 0.0.2.2
   * Bug fixes (thanks borkra)
   + Use shortcuts in avatar history dialog when history log is disabled (thanks Let)

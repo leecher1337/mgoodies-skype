@@ -1,4 +1,4 @@
-; Avatar History 0.0.2.2
+; Avatar History 0.0.2.3
 ; Author: MattJ and Pescuma
 
 [Avatar History]
