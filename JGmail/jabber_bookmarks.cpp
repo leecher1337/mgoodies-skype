@@ -87,7 +87,7 @@ static BOOL CALLBACK JabberAddBookmarkDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 
 				XmlNodeIq iq( "set", iqId);
 				JabberSetBookmarkRequest(iq);
-				jabberThreadInfo->send( iq );
+				JabberSend( jabberThreadInfo->s, iq );
 			}
 			// fall through
 		case IDCANCEL:
@@ -184,7 +184,7 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 			XmlNode* storage = query->addChild("storage");
 			storage->addAttr("xmlns","storage:bookmarks");
 
-			jabberThreadInfo->send( iq );
+			JabberSend( jabberThreadInfo->s, iq );
 		}
 		return TRUE;
 
@@ -330,7 +330,7 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 				XmlNode* storage = query->addChild("storage");
 				storage->addAttr("xmlns","storage:bookmarks");
 
-				jabberThreadInfo->send( iq );
+				JabberSend( jabberThreadInfo->s, iq );
 			}
 			return TRUE;
 
@@ -376,7 +376,7 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 
 					XmlNodeIq iq( "set", iqId );
 					JabberSetBookmarkRequest( iq );
-					jabberThreadInfo->send( iq );
+					JabberSend( jabberThreadInfo->s, iq );
 			}	}
 			return TRUE;
 
@@ -418,7 +418,7 @@ int JabberMenuHandleBookmarks( WPARAM wParam, LPARAM lParam )
 		storage->addAttr("xmlns","storage:bookmarks");
 
 		// <iq/> result will send WM_JABBER_REFRESH to update the list with real data
-		jabberThreadInfo->send( iq );
+		JabberSend( jabberThreadInfo->s, iq );
 	}
 	else CreateDialogParam( hInst, MAKEINTRESOURCE( IDD_BOOKMARKS), NULL, JabberBookmarksDlgProc, lParam );
 

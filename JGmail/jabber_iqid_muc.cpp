@@ -94,7 +94,7 @@ void JabberSetMucConfig( XmlNode* node, void *from )
 		XmlNodeIq iq( "set", NOID, ( TCHAR* )from );
 		XmlNode* query = iq.addQuery( xmlnsOwner );
 		query->addChild( node );
-		jabberThreadInfo->send( iq );
+		JabberSend( jabberThreadInfo->s, iq );
 }	}
 
 void JabberIqResultGetMuc( XmlNode *iqNode, void *userdata )
@@ -157,7 +157,7 @@ void JabberIqResultDiscoRoomItems( XmlNode *iqNode, void *userdata )
 
 		XmlNodeIq iq( "get", iqId, from );
 		XmlNode* query = iq.addQuery( "jabber:iq:browse" );
-		jabberThreadInfo->send( iq );
+		JabberSend( jabberThreadInfo->s, iq );
 }	}
 
 static BOOL CALLBACK JabberMucJidListDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )

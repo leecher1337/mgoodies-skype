@@ -34,7 +34,6 @@ Last change by : $Author$
 #include "jabber_list.h"
 #include "jabber_iq.h"
 #include "jabber_secur.h"
-#include "jabber_ssl.h"
 #include "resource.h"
 
 // <iq/> identification number for various actions
@@ -42,6 +41,7 @@ Last change by : $Author$
 int iqIdRegGetReg;
 int iqIdRegSetReg;
 
+static void __cdecl JabberKeepAliveThread( JABBER_SOCKET s );
 static void JabberProcessStreamOpening( XmlNode *node, void *userdata );
 static void JabberProcessStreamClosing( XmlNode *node, void *userdata );
 static void JabberProcessProtocol( XmlNode *node, void *userdata );
@@ -114,17 +114,17 @@ static VOID CALLBACK JabberOfflineChatWindows( DWORD )
 /////////////////////////////////////////////////////////////////////////////////////////
 // Jabber keep-alive thread
 
-static void __cdecl JabberKeepAliveThread( void* )
+static void __cdecl JabberKeepAliveThread( JABBER_SOCKET s )
 {
 	NETLIBSELECT nls = {0};
 	nls.cbSize = sizeof( NETLIBSELECT );
 	nls.dwTimeout = 60000;	// 60000 millisecond ( 1 minute )
-	nls.hExceptConns[0] = jabberThreadInfo->s;
+	nls.hExceptConns[0] = s;
 	for ( ;; ) {
 		if ( JCallService( MS_NETLIB_SELECT, 0, ( LPARAM )&nls ) != 0 )
 			break;
 		if ( jabberSendKeepAlive )
-			jabberThreadInfo->send( " \t " );
+			JabberSend( s, " \t " );
 	}
 	JabberLog( "Exiting KeepAliveThread" );
 }
@@ -195,7 +195,7 @@ static void xmlStreamInitializeNow(ThreadData* info) {
 		if ( !JGetByte( "Disable3920auth", 0 ))
 			stream.addAttr( "version", "1.0" );
 		stream.dirtyHack = true; // this is to keep the node open - do not send </stream:stream>
-		info->send( stream );
+		JabberSend( info->s, stream );
 }	}
 
 void __cdecl JabberServerThread( ThreadData* info )
@@ -419,7 +419,11 @@ LBL_FatalError:
 		}
 	} else if ( info->useSSL ) {
 		JabberLog( "Intializing SSL connection" );
-		if ( JabberSslInit() && socket!=INVALID_SOCKET ) {
+		if (
+#ifndef STATICSSL
+			hLibSSL!=NULL &&
+#endif
+			socket!=INVALID_SOCKET ) {
 			JabberLog( "SSL using socket = %d", socket );
 			if (( ssl=pfn_SSL_new( jabberSslCtx )) != NULL ) {
 				JabberLog( "SSL create context ok" );
@@ -427,7 +431,8 @@ LBL_FatalError:
 					JabberLog( "SSL set fd ok" );
 					if ( pfn_SSL_connect( ssl ) > 0 ) {
 						JabberLog( "SSL negotiation ok" );
-						info->ssl = ssl;	// This make all communication on this handle use SSL
+						JabberSslAddHandle( info->s, ssl );	// This make all communication on this handle use SSL
+						sslMode = TRUE;		// Used in the receive loop below
 						JabberLog( "SSL enabled for handle = %d", info->s );
 					}
 					else {
@@ -439,7 +444,7 @@ LBL_FatalError:
 					pfn_SSL_free( ssl );
 		}	}	}
 
-		if ( !info->ssl ) {
+		if ( !sslMode ) {
 			if ( info->type == JABBER_SESSION_NORMAL ) {
 				oldStatus = jabberStatus;
 				jabberStatus = ID_STATUS_OFFLINE;
@@ -453,7 +458,7 @@ LBL_FatalError:
 			}
 			mir_free( buffer );
 #ifndef STATICSSL
-			if ( !JabberSslInit() )
+			if ( !hLibSSL )
 #endif
 				MessagePopup( NULL, TranslateT( "The connection requires an OpenSSL library, which is not installed." ), TranslateT( "Jabber Connection Error" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 			JabberLog( "Thread ended, SSL connection failed" );
@@ -461,7 +466,7 @@ LBL_FatalError:
 	}	}
 
 	// User may change status to OFFLINE while we are connecting above
-	if ( jabberDesiredStatus != ID_STATUS_OFFLINE || info->type == JABBER_SESSION_REGISTER ) {
+	if ( jabberDesiredStatus!=ID_STATUS_OFFLINE || info->type==JABBER_SESSION_REGISTER ) {
 
 		if ( info->type == JABBER_SESSION_NORMAL ) {
 			jabberConnected = TRUE;
@@ -481,14 +486,25 @@ LBL_FatalError:
 		datalen = 0;
 
 		for ( ;; ) {
-			int recvResult = info->recv( buffer+datalen, jabberNetworkBufferSize-datalen), bytesParsed;
+			int recvResult, bytesParsed;
+
+			if ( !sslMode ) if (info->useSSL) {
+				ssl = JabberSslHandleToSsl( info->s );
+				sslMode = TRUE;
+			}
+
+			if ( sslMode )
+				recvResult = pfn_SSL_read( ssl, buffer+datalen, jabberNetworkBufferSize-datalen );
+			else
+				recvResult = JabberWsRecv( info->s, buffer+datalen, jabberNetworkBufferSize-datalen );
+
 			JabberLog( "recvResult = %d", recvResult );
 			if ( recvResult <= 0 )
 				break;
 			datalen += recvResult;
 
 			buffer[datalen] = '\0';
-			if ( info->ssl && DBGetContactSettingByte( NULL, "Netlib", "DumpRecv", TRUE ) == TRUE ) {
+			if ( sslMode && DBGetContactSettingByte( NULL, "Netlib", "DumpRecv", TRUE ) == TRUE ) {
 				// Emulate netlib log feature for SSL connection
 				char* szLogBuffer = ( char* )mir_alloc( recvResult+128 );
 				if ( szLogBuffer != NULL ) {
@@ -583,6 +599,13 @@ LBL_FatalError:
 		JSendBroadcast( NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, ( HANDLE ) oldStatus, jabberStatus );
 	}
 
+	Netlib_CloseHandle( info->s );
+
+	if ( sslMode ) {
+		pfn_SSL_free( ssl );
+		JabberSslRemoveHandle( info->s );
+	}
+
 	JabberLog( "Thread ended: type=%d server='%s'", info->type, info->server );
 
 	if ( info->type==JABBER_SESSION_NORMAL && jabberThreadInfo==info ) {
@@ -605,7 +628,7 @@ static void JabberPerformRegistration( ThreadData* info )
 	iqIdRegGetReg = JabberSerialNext();
 	XmlNodeIq iq("get",iqIdRegGetReg,(char*)NULL);
 	XmlNode* query = iq.addQuery("jabber:iq:register");
-	info->send( iq );
+	JabberSend(info->s,iq);
 	SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 50, ( LPARAM )TranslateT( "Requesting registration instruction..." ));
 }
 
@@ -617,7 +640,7 @@ static void JabberPerformIqAuth( ThreadData* info )
 		XmlNodeIq iq( "get", iqId );
 		XmlNode* query = iq.addQuery( "jabber:iq:auth" );
 		query->addChild( "username", info->username );
-		info->send( iq );
+		JabberSend( info->s, iq );
 	}
 	else if ( info->type == JABBER_SESSION_REGISTER )
 		JabberPerformRegistration( info );
@@ -667,10 +690,14 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 	for (i = 0; i < node->numChild; i++ ) {
 		XmlNode* n = node->child[i];
 		if ( !strcmp( n->name, "starttls" )) {
-			if ( !info->useSSL && JabberSslInit() && JGetByte( "UseTLS", TRUE )) {
+			if ( !info->useSSL &&
+				#ifndef STATICSSL
+					hLibSSL != NULL &&
+				#endif
+					JGetByte( "UseTLS", TRUE )) {
 				JabberLog( "Requesting TLS" );
 				XmlNode stls( n->name ); stls.addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-tls" );
-				info->send( stls );
+				JabberSend( info->s, stls );
 				return;
 		}	}
 		else if ( !strcmp( n->name, "mechanisms" )) {
@@ -723,7 +750,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 			}
 
 			MessagePopup( NULL, TranslateT("No known auth mechanisms available. Giving up."), TranslateT( "Jabber Authentication" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
-			jabberThreadInfo->send( "</stream:stream>" );
+			JabberSend( info->s, "</stream:stream>" );
 			JSendBroadcast( NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGINERR_WRONGPASSWORD );
 			return;
 		}
@@ -731,17 +758,15 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 		if ( info->type == JABBER_SESSION_NORMAL ) {
 			info->auth = auth;
 
-			char* request = auth->getInitialRequest();
-			XmlNode n( "auth", request );
+			XmlNode n( "auth", auth->getInitialRequest() );
 			n.addAttr( "xmlns", _T("urn:ietf:params:xml:ns:xmpp-sasl"));
 			n.addAttr( "mechanism", auth->getName() );
-			info->send( n );
-			mir_free( request );
+			JabberSend( info->s, n );
 		}
 		else if ( info->type == JABBER_SESSION_REGISTER )
 			JabberPerformRegistration( info );
 		else
-			info->send( "</stream:stream>" );
+			JabberSend( info->s, "</stream:stream>" );
 		return;
 	}
 
@@ -752,7 +777,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 		XmlNodeIq iq("set",iqId);
 		XmlNode* bind = iq.addChild( "bind" ); bind->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-bind" );
 		bind->addChild( "resource", info->resource );
-		info->send( iq );
+		JabberSend( info->s, iq );
 
 		if ( isSessionAvailable )
 			info->bIsSessionAvailable = TRUE;
@@ -781,7 +806,7 @@ static void JabberProcessFailure( XmlNode *node, void *userdata ) {
 //failure xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"
 	if (( type=JabberXmlGetAttrValue( node, "xmlns" )) == NULL ) return;
 	if ( !_tcscmp( type, _T("urn:ietf:params:xml:ns:xmpp-sasl") )) {
-		jabberThreadInfo->send( "</stream:stream>" );
+		JabberSend( info->s, "</stream:stream>" );
 		if (!strcmp(info->auth->getName(),"X-GOOGLE-TOKEN") && !info->auth->wasTokenRequested()) { //GoogleToken is used but not requested
 			//Old GoogleToken exists, but has expired or invalid
 			JDeleteSetting(NULL, "GoogleToken");
@@ -815,7 +840,7 @@ static void JabberProcessError( XmlNode *node, void *userdata )
 	}
 	MessagePopup( NULL, buff, TranslateT( "Jabber Error" ), MB_OK|MB_ICONSTOP|MB_SETFOREGROUND );
 	mir_free(buff);
-	info->send( "</stream:stream>" );
+	JabberSend( info->s, "</stream:stream>" );
 }
 
 static void JabberProcessSuccess( XmlNode *node, void *userdata )
@@ -855,7 +880,7 @@ static void JabberProcessChallenge( XmlNode *node, void *userdata )
 
 	XmlNode n( "response", response );
 	n.addAttr( "xmlns", _T("urn:ietf:params:xml:ns:xmpp-sasl"));
-	info->send( n );
+	JabberSend( info->s, n );
 
 	mir_free( response );
 }
@@ -906,11 +931,6 @@ static void JabberProcessProceed( XmlNode *node, void *userdata )
 
 	if ( !lstrcmp( type, _T("urn:ietf:params:xml:ns:xmpp-tls" ))) {
 		JabberLog("Starting TLS...");
-		if ( !JabberSslInit() ) {
-			JabberLog( "SSL initialization failed" );
-			return;
-		}
-
 		int socket = JCallService( MS_NETLIB_GETSOCKET, ( WPARAM ) info->s, 0 );
 		PVOID ssl;
 		if (( ssl=pfn_SSL_new( jabberSslCtx )) != NULL ) {
@@ -919,7 +939,7 @@ static void JabberProcessProceed( XmlNode *node, void *userdata )
 				JabberLog( "SSL set fd ok" );
 				if ( pfn_SSL_connect( ssl ) > 0 ) {
 					JabberLog( "SSL negotiation ok" );
-					info->ssl = ssl;
+					JabberSslAddHandle( info->s, ssl );	// This make all communication on this handle use SSL
 					info->useSSL = true;
 					JabberLog( "SSL enabled for handle = %d", info->s );
 					xmlStreamInitialize( "after successful StartTLS" );
@@ -1064,7 +1084,7 @@ static void JabberProcessMessage( XmlNode *node, void *userdata )
 					XmlNode m( "message" ); m.addAttr( "to", from );
 					XmlNode* x = m.addChild( "x" ); x->addAttr( "xmlns", "jabber:x:event" ); x->addChild( "delivered" );
 					x->addChild( "id", ( idStr != NULL ) ? idStr : NULL );
-					info->send( m );
+					JabberSend( info->s, m );
 				}
 				if ( item != NULL && JabberXmlGetChild( xNode, "composing" ) != NULL ) {
 					composing = TRUE;
@@ -1276,7 +1296,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 					if ( i >= item->resourceCount || ( r->version == NULL && r->system == NULL && r->software == NULL )) {
 						XmlNodeIq iq( "get", NOID, from );
 						XmlNode* query = iq.addQuery( "jabber:iq:version" );
-						info->send( iq );
+						JabberSend( info->s, iq );
 		}	}	}	}
 
 		if (( statusNode = JabberXmlGetChild( node, "status" )) != NULL && statusNode->text != NULL )
@@ -1411,7 +1431,7 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 		if ( _tcschr( from, '@' ) == NULL ) {
 			// automatically send authorization allowed to agent/transport
 			XmlNode p( "presence" ); p.addAttr( "to", from ); p.addAttr( "type", "subscribed" );
-			info->send( p );
+			JabberSend( info->s, p );
 		}
 		else {
 			if (( nick=JabberNickFromJID( from )) != NULL ) {
@@ -1517,7 +1537,7 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 #else
 	query->addChild( "os", linuxOS?linuxOS:os );
 #endif
-	jabberThreadInfo->send( iq );
+	JabberSend( jabberThreadInfo->s, iq );
 
 	if ( version ) mir_free( version );
 }
@@ -1541,7 +1561,7 @@ static void JabberProcessIqTime( TCHAR* idStr, XmlNode* node ) //added by Rion (
 	XmlNodeIq iq( "result", idStr, from );
 	XmlNode* query = iq.addQuery( "jabber:iq:time" );
 	query->addChild( "utc", stime ); query->addChild( "tz", _tzname[1] ); query->addChild( "display", dtime );
-	jabberThreadInfo->send( iq );
+	JabberSend( jabberThreadInfo->s, iq );
 }
 
 static void JabberProcessIqAvatar( TCHAR* idStr, XmlNode* node )
@@ -1587,7 +1607,7 @@ static void JabberProcessIqAvatar( TCHAR* idStr, XmlNode* node )
 	XmlNodeIq iq( "result", idStr, from );
 	XmlNode* query = iq.addQuery( "jabber:iq:avatar" );
 	XmlNode* data = query->addChild( "data", str ); data->addAttr( "mimetype", szMimeType );
-	jabberThreadInfo->send( iq );
+	JabberSend( jabberThreadInfo->s, iq );
 	mir_free( str );
 	mir_free( buffer );
 }
@@ -1847,7 +1867,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 					// reject
 					XmlNodeIq iq( "error", idStr, ft->jid );
 					XmlNode* e = iq.addChild( "error", "File transfer refused" ); e->addAttr( "code", 406 );
-					jabberThreadInfo->send( iq );
+					JabberSend( jabberThreadInfo->s, iq );
 					delete ft;
 		}	}	}
 
@@ -1892,7 +1912,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 				XmlNode* error = iq.addChild( "error" ); error->addAttr( "code", "400" ); error->addAttr( "type", "cancel" );
 				XmlNode* brq = error->addChild( "bad-request" ); brq->addAttr( "xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas" );
 				XmlNode* bp = error->addChild( "bad-profile" ); brq->addAttr( "xmlns", "http://jabber.org/protocol/si" );
-				jabberThreadInfo->send( iq );
+				JabberSend( jabberThreadInfo->s, iq );
 		}	}
 	}
     // RECVED: <iq type=\"set\"><new-mail \" ...
@@ -1901,7 +1921,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 		// ACTION: Reply & request
 		if (JGetByte(NULL,"EnableGMail",1) & 1) {
 			XmlNode iq( "iq" ); iq.addAttr( "type", "result" ); iq.addAttr ("id",JabberXmlGetAttrValue( node, "id" ) );
-			jabberThreadInfo->send( iq );
+			JabberSend( jabberThreadInfo->s, iq );
 			JabberRequestMailBox( info->s );
 	}	}
     // RECVED: <iq type=\"set\"><usersetting \" ...
@@ -1910,7 +1930,7 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 		// ACTION: if "set": reply; parse the settings always.
 		if (!_tcscmp( type, _T("set"))) {
 			XmlNode iq( "iq" ); iq.addAttr( "type", "result" ); iq.addAttr ("id",JabberXmlGetAttrValue( node, "id" ) );
-			jabberThreadInfo->send( iq );
+			JabberSend( jabberThreadInfo->s, iq );
 		}
 		JabberUserConfigResult(node,jabberThreadInfo);
 	}
@@ -1957,14 +1977,14 @@ static void JabberProcessRegIq( XmlNode *node, void *userdata )
 			XmlNode* query = iq.addQuery( "jabber:iq:register" );
 			query->addChild( "password", info->password );
 			query->addChild( "username", info->username );
-			info->send( iq );
+			JabberSend( info->s, iq );
 
 			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 75, ( LPARAM )TranslateT( "Sending registration information..." ));
 		}
 		// RECVED: result of the registration process
 		// ACTION: account registration successful
 		else if ( id == iqIdRegSetReg ) {
-			info->send( "</stream:stream>" );
+			JabberSend( info->s, "</stream:stream>" );
 			SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )TranslateT( "Registration successful" ));
 			info->reg_done = TRUE;
 	}	}
@@ -1975,7 +1995,7 @@ static void JabberProcessRegIq( XmlNode *node, void *userdata )
 		SendMessage( info->reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, ( LPARAM )str );
 		mir_free( str );
 		info->reg_done = TRUE;
-		info->send( "</stream:stream>" );
+		JabberSend( info->s, "</stream:stream>" );
 }	}
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1985,93 +2005,13 @@ ThreadData::ThreadData( JABBER_SESSION_TYPE parType )
 {
 	memset( this, 0, sizeof( *this ));
 	type = parType;
-	InitializeCriticalSection( &iomutex );
 }
 
 ThreadData::~ThreadData()
 {
-	delete auth;
-	DeleteCriticalSection( &iomutex );
-}
-
-void ThreadData::close()
-{
-	if ( s ) {
+	if ( s )
 		Netlib_CloseHandle(s);
-		s = NULL;
-}	}
 
-int ThreadData::recv( char* buf, size_t len )
-{
-	if ( this == NULL )
-		return 0;
-
-	if ( ssl )
-		return pfn_SSL_read( ssl, buf, len );
-	
-	return JabberWsRecv( s, buf, len );
+	delete auth;
 }
 
-// Caution: DO NOT use ->send() to send binary ( non-string ) data
-int ThreadData::send( XmlNode& node )
-{
-	if ( this == NULL )
-		return 0;
-
-	char* str = node.getText();
-	int size = strlen( str ), result;
-
-	EnterCriticalSection( &iomutex );
-
-	if ( ssl != NULL ) {
-		if ( DBGetContactSettingByte( NULL, "Netlib", "DumpSent", TRUE ) == TRUE ) {
-			char* szLogBuffer = ( char* )alloca( size+32 );
-			strcpy( szLogBuffer, "( SSL ) Data sent\n" );
-			memcpy( szLogBuffer+strlen( szLogBuffer ), str, size+1  ); // also copy \0
-			Netlib_Logf( hNetlibUser, "%s", szLogBuffer );	// %s to protect against when fmt tokens are in szLogBuffer causing crash
-		}
-
-		result = pfn_SSL_write( ssl, str, size );
-	}
-	else result = JabberWsSend( s, str, size );
-	LeaveCriticalSection( &iomutex );
-
-	mir_free( str );
-	return result;
-}
-
-int ThreadData::send( const char* fmt, ... )
-{
-	int result;
-	if ( this == NULL )
-		return 0;
-
-	EnterCriticalSection( &iomutex );
-
-	va_list vararg;
-	va_start( vararg,fmt );
-	int size = 512;
-	char* str = ( char* )mir_alloc( size );
-	while ( _vsnprintf( str, size, fmt, vararg ) == -1 ) {
-		size += 512;
-		str = ( char* )mir_realloc( str, size );
-	}
-	va_end( vararg );
-
-	size = strlen( str );
-	if ( ssl != NULL ) {
-		if ( DBGetContactSettingByte( NULL, "Netlib", "DumpSent", TRUE ) == TRUE ) {
-			char* szLogBuffer = ( char* )alloca( size+32 );
-			strcpy( szLogBuffer, "( SSL ) Data sent\n" );
-			memcpy( szLogBuffer+strlen( szLogBuffer ), str, size+1 ); // also copy \0
-			Netlib_Logf( hNetlibUser, "%s", szLogBuffer );	// %s to protect against when fmt tokens are in szLogBuffer causing crash
-		}
-
-		result = pfn_SSL_write( ssl, str, size );
-	}
-	else result = JabberWsSend( s, str, size );
-	LeaveCriticalSection( &iomutex );
-
-	mir_free( str );
-	return result;
-}

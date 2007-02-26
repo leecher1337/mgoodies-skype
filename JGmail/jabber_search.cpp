@@ -464,7 +464,7 @@ static int JabbeSearchrRenewFields(HWND hwndDlg, JabberSearchData * dat)
 	XmlNode* query = iq.addChild( "query" );
 	query->addAttr( "xmlns", "jabber:iq:search" );
 	JabberIqAdd( iqId, IQ_PROC_GETSEARCHFIELDS, JabberIqResultGetSearchFields );
-	jabberThreadInfo->send( iq );
+	JabberSend( jabberThreadInfo->s, iq );
 	return iqId;
 }
 
@@ -751,7 +751,7 @@ int JabberSearchByAdvanced( WPARAM wParam, LPARAM lParam )
 		// register search request result handler
 		JabberIqAdd( iqId, IQ_PROC_GETSEARCH, JabberIqResultAdvancedSearch );
 		// send request
-		jabberThreadInfo->send( iq );
+		JabberSend( jabberThreadInfo->s, iq );
 		return iqId;
 	}
 	return 0;

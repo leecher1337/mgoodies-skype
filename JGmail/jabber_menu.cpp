@@ -183,7 +183,7 @@ int JabberMenuHandleRequestAuth( WPARAM wParam, LPARAM lParam )
 	if (( hContact=( HANDLE ) wParam )!=NULL && jabberOnline ) {
 		if ( !JGetStringT( hContact, "jid", &dbv )) {
 			XmlNode presence( "presence" ); presence.addAttr( "to", dbv.ptszVal ); presence.addAttr( "type", "subscribe" );
-			jabberThreadInfo->send( presence );
+			JabberSend( jabberThreadInfo->s, presence );
 			JFreeVariant( &dbv );
 	}	}
 
@@ -198,7 +198,7 @@ int JabberMenuHandleGrantAuth( WPARAM wParam, LPARAM lParam )
 	if (( hContact=( HANDLE ) wParam )!=NULL && jabberOnline ) {
 		if ( !JGetStringT( hContact, "jid", &dbv )) {
 			XmlNode presence( "presence" ); presence.addAttr( "to", dbv.ptszVal ); presence.addAttr( "type", "subscribed" );
-			jabberThreadInfo->send( presence );
+			JabberSend( jabberThreadInfo->s, presence );
 			JFreeVariant( &dbv );
 	}	}
 
@@ -213,7 +213,7 @@ int JabberMenuRevokeAuth( WPARAM wParam, LPARAM lParam )
 	if (( hContact=( HANDLE ) wParam )!=NULL && jabberOnline ) {
 		if ( !JGetStringT( hContact, "jid", &dbv )) {
 			XmlNode presence( "presence" ); presence.addAttr( "to", dbv.ptszVal ); presence.addAttr( "type", "unsubscribed" );
-			jabberThreadInfo->send( presence );
+			JabberSend( jabberThreadInfo->s, presence );
 			JFreeVariant( &dbv );
 	}	}
 
@@ -272,7 +272,7 @@ int JabberMenuTransportLogin( WPARAM wParam, LPARAM lParam )
 		XmlNode p( "presence" ); p.addAttr( "to", item->jid );
 		if ( item->status == ID_STATUS_ONLINE )
 			p.addAttr( "type", "unavailable" );
-		jabberThreadInfo->send( p );
+		JabberSend( jabberThreadInfo->s, p );
 	}
 
 	JFreeVariant( &jid );

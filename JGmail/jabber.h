@@ -214,11 +214,8 @@ struct ThreadData {
 	TCHAR resource[128];
 	TCHAR fullJID[256];
 	WORD  port;
-
 	JABBER_SOCKET s;
 	BOOL  useSSL;
-	PVOID ssl;
-	CRITICAL_SECTION iomutex; // protects i/o operations
 
 	int    resolveID;
 	HANDLE resolveContact;
@@ -229,10 +226,10 @@ struct ThreadData {
 	BOOL  reg_done, bIsSessionAvailable;
 	class TJabberAuth* auth;
 
-	void  close( void );
-	int   recv( char* buf, size_t len );
-	int   send( const char* fmt, ... );
-	int   send( struct XmlNode& node );
+//	void  close( void );
+//	int   recv( char* buf, size_t len );
+//	int   send( const char* fmt, ... );
+//	int   send( struct XmlNode& node );
 };
 
 struct JABBER_MODEMSGS
@@ -347,6 +344,9 @@ extern DWORD jabberMainThreadId;
 extern char* jabberProtoName;
 extern char* jabberModuleName;
 extern HANDLE hNetlibUser;
+#ifndef STATICSSL
+extern HMODULE hLibSSL;
+#endif
 extern PVOID jabberSslCtx;
 
 extern ThreadData* jabberThreadInfo;
@@ -544,6 +544,8 @@ struct TStringPairs
 void          __stdcall JabberSerialInit( void );
 void          __stdcall JabberSerialUninit( void );
 unsigned int  __stdcall JabberSerialNext( void );
+int           __stdcall JabberSend( JABBER_SOCKET s, const char* fmt, ... );
+int           __stdcall JabberSend( JABBER_SOCKET s, XmlNode& node );
 HANDLE        __stdcall JabberHContactFromJID( const TCHAR* jid );
 void          __stdcall JabberLog( const char* fmt, ... );
 TCHAR*        __stdcall JabberNickFromJID( const TCHAR* jid );

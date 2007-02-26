@@ -132,7 +132,7 @@ void JabberEnableNotifications(ThreadData *info){
 	XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", localJid );
 	XmlNode* usersetting = iq.addChild( "usersetting" ); usersetting->addAttr( "xmlns", "google:setting" );
 	XmlNode*  mailnotifications = usersetting->addChild( "mailnotifications" ); mailnotifications->addAttr( "value", "true" );
-	jabberThreadInfo->send( iq );
+	JabberSend( jabberThreadInfo->s, iq );
 	mir_free(localJid);
 //	MessagePopup(NULL,_T("Text"),_T("Testing 0"),0);
 //	MessagePopup(NULL,_T("Text"),_T("Testing MB_ICONHAND"),MB_ICONHAND);
@@ -295,7 +295,7 @@ void JabberRequestMailBox(HANDLE hConn){
 			if (!res) JFreeVariant(&dbv);
 		}
 
-		jabberThreadInfo->send( iq );
+		JabberSend( hConn,iq );
   		if (JGetByte(NULL,"ShowRequest",0)) {
 			POPUPDATAT ppd;
 			ZeroMemory((void *)&ppd, sizeof(ppd));
@@ -675,14 +675,14 @@ void JabberUserConfigRequest(ThreadData *info){
 		XmlNode iq( "iq" ); iq.addAttr( "type", "set" ); iq.addAttrID( iqId ); iq.addAttr( "to", localJid );
 		XmlNode* usersetting = iq.addChild( "usersetting" ); usersetting->addAttr( "xmlns", "google:setting" );
 		XmlNode*  archivingenabled = usersetting->addChild( "archivingenabled" ); archivingenabled->addAttr( "value", saveChatsToServer?_T("false"):_T("true") );
-		jabberThreadInfo->send( iq );
+		JabberSend( jabberThreadInfo->s, iq );
 		iqId = JabberSerialNext(); //we already used the initial one
 	}
 	JabberIqAdd( iqId, IQ_PROC_NONE, JabberUserConfigResult );
 	{
 		XmlNode iq( "iq" ); iq.addAttr( "type", "get" ); iq.addAttrID( iqId ); iq.addAttr( "to", localJid );
 		XmlNode* usersetting = iq.addChild( "usersetting" ); usersetting->addAttr( "xmlns", "google:setting" );
-		jabberThreadInfo->send( iq );
+		JabberSend( jabberThreadInfo->s, iq );
 	}
 	mir_free(localJid);
 }

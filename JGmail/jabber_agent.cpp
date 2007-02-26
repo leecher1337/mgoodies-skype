@@ -97,7 +97,7 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 
 			XmlNodeIq iq( "get", iqId, jabberThreadInfo->server );
 			XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
-			jabberThreadInfo->send( iq );
+			JabberSend( jabberThreadInfo->s, iq );
 
 			SendMessage( hwndDlg, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
 		}
@@ -277,7 +277,7 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			JabberIqAdd( iqId, IQ_PROC_DISCOAGENTS, JabberIqResultDiscoAgentItems );
 			{	XmlNodeIq iq( "get", iqId, text );
 				XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
-				jabberThreadInfo->send( iq );
+				JabberSend( jabberThreadInfo->s, iq );
 			}
 			return TRUE;
 
@@ -297,7 +297,7 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 					XmlNode p( "presence" ); p.addAttr( "to", item->jid );
 					if ( LOWORD( wParam ) != IDC_AGENT_LOGON )
 						p.addAttr( "type", "unavailable" );
-					jabberThreadInfo->send( p );
+					JabberSend( jabberThreadInfo->s, p );
 			}	}
 			return TRUE;
 		case IDC_AGENT_UNREGISTER:
@@ -315,13 +315,13 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 					{	XmlNodeIq iq( "set", NOID, item->jid );
 						XmlNode* query = iq.addQuery( "jabber:iq:register" );
 						query->addChild( "remove" );
-						jabberThreadInfo->send( iq );
+						JabberSend( jabberThreadInfo->s, iq );
 					}
 					{
 						XmlNodeIq iq( "set" );
 						XmlNode* query = iq.addQuery( "jabber:iq:roster" );
 						XmlNode* itm = query->addChild( "item" ); itm->addAttr( "jid", item->jid ); itm->addAttr( "subscription", "remove" );
-						jabberThreadInfo->send( iq );
+						JabberSend( jabberThreadInfo->s, iq );
 			}	}	}
 			return TRUE;
 
@@ -363,7 +363,7 @@ static BOOL CALLBACK JabberAgentRegInputDlgProc( HWND hwndDlg, UINT msg, WPARAM 
 			JabberIqAdd( iqId, IQ_PROC_GETREGISTER, JabberIqResultGetRegister );
 			XmlNodeIq iq( "get", iqId, jid );
 			XmlNode* query = iq.addQuery( "jabber:iq:register" );
-			jabberThreadInfo->send( iq );
+			JabberSend( jabberThreadInfo->s, iq );
 		}
 
 		// Enable WS_EX_CONTROLPARENT on IDC_FRAME ( so tab stop goes through all its children )
@@ -418,7 +418,7 @@ static BOOL CALLBACK JabberAgentRegInputDlgProc( HWND hwndDlg, UINT msg, WPARAM 
 							id++;
 			}	}	}	}
 
-			jabberThreadInfo->send( iq );
+			JabberSend( jabberThreadInfo->s, iq );
 			DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_OPT_REGISTER ), hwndDlg, JabberAgentRegDlgProc, 0 );
 			// Fall through to IDCANCEL
 		}
