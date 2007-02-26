@@ -30,25 +30,29 @@ Last change by : $Author$
 #include "jabber.h"
 #include "jabber_ssl.h"
 
-PFN_SSL_int_void             pfn_SSL_library_init;      // int SSL_library_init()
-PFN_SSL_pvoid_void           pfn_SSLv23_client_method;  // SSL_METHOD *SSLv23_client_method()
-PFN_SSL_pvoid_pvoid          pfn_SSL_CTX_new;           // SSL_CTX *SSL_CTX_new( SSL_METHOD *method )
-PFN_SSL_void_pvoid           pfn_SSL_CTX_free;          // void SSL_CTX_free( SSL_CTX *ctx );
-PFN_SSL_pvoid_pvoid          pfn_SSL_new;               // SSL *SSL_new( SSL_CTX *ctx )
-PFN_SSL_void_pvoid           pfn_SSL_free;              // void SSL_free( SSL *ssl );
-PFN_SSL_int_pvoid_int        pfn_SSL_set_fd;            // int SSL_set_fd( SSL *ssl, int fd );
-PFN_SSL_int_pvoid            pfn_SSL_connect;           // int SSL_connect( SSL *ssl );
-PFN_SSL_int_pvoid_pvoid_int  pfn_SSL_read;              // int SSL_read( SSL *ssl, void *buffer, int bufsize )
-PFN_SSL_int_pvoid_pvoid_int  pfn_SSL_write;             // int SSL_write( SSL *ssl, void *buffer, int bufsize )
+PFN_SSL_int_void			pfn_SSL_library_init;		// int SSL_library_init()
+PFN_SSL_pvoid_void			pfn_SSLv23_client_method;	// SSL_METHOD *SSLv23_client_method()
+PFN_SSL_pvoid_pvoid			pfn_SSL_CTX_new;			// SSL_CTX *SSL_CTX_new( SSL_METHOD *method )
+PFN_SSL_void_pvoid			pfn_SSL_CTX_free;			// void SSL_CTX_free( SSL_CTX *ctx );
+PFN_SSL_pvoid_pvoid			pfn_SSL_new;				// SSL *SSL_new( SSL_CTX *ctx )
+PFN_SSL_void_pvoid			pfn_SSL_free;				// void SSL_free( SSL *ssl );
+PFN_SSL_int_pvoid_int		pfn_SSL_set_fd;				// int SSL_set_fd( SSL *ssl, int fd );
+PFN_SSL_int_pvoid			pfn_SSL_connect;			// int SSL_connect( SSL *ssl );
+PFN_SSL_int_pvoid_pvoid_int	pfn_SSL_read;				// int SSL_read( SSL *ssl, void *buffer, int bufsize )
+PFN_SSL_int_pvoid_pvoid_int	pfn_SSL_write;				// int SSL_write( SSL *ssl, void *buffer, int bufsize )
+
+static CRITICAL_SECTION sslHandleMutex;
+static JABBER_SSL_MAPPING *sslHandleList = NULL;
+static int sslHandleCount = 0;
 
 #ifndef STATICSSL
-HMODULE hLibSSL = NULL;
 BOOL JabberSslInit()
 {
-	if ( hLibSSL )
-		return TRUE;
-
 	BOOL error = FALSE;
+
+	sslHandleList = NULL;
+	sslHandleCount = 0;
+	InitializeCriticalSection( &sslHandleMutex );
 
 	hLibSSL = LoadLibraryA( "SSLEAY32.DLL" );
 	if ( !hLibSSL )
@@ -96,26 +100,29 @@ BOOL JabberSslInit()
 }
 
 #else // ndef STATICSSL
-static BOOL localSLLinitialized = 0;
 BOOL JabberSslInit()
 {
-	if (localSLLinitialized) return TRUE;
+	BOOL error = FALSE;
 
-	pfn_SSL_library_init=SSL_library_init;
-	pfn_SSLv23_client_method=( PFN_SSL_pvoid_void )SSLv23_client_method;
-	pfn_SSL_CTX_new=( PFN_SSL_pvoid_pvoid )SSL_CTX_new;
-	pfn_SSL_CTX_free=( PFN_SSL_void_pvoid )SSL_CTX_free;
-	pfn_SSL_new=( PFN_SSL_pvoid_pvoid )SSL_new;
-	pfn_SSL_free=( PFN_SSL_void_pvoid )SSL_free;
-	pfn_SSL_set_fd=( PFN_SSL_int_pvoid_int )SSL_set_fd;
-	pfn_SSL_connect=( PFN_SSL_int_pvoid )SSL_connect;
-	pfn_SSL_read=( PFN_SSL_int_pvoid_pvoid_int )SSL_read;
-	pfn_SSL_write=( PFN_SSL_int_pvoid_pvoid_int )SSL_write;
+	sslHandleList = NULL;
+	sslHandleCount = 0;
+	InitializeCriticalSection( &sslHandleMutex );
 
-	pfn_SSL_library_init();
-	jabberSslCtx = pfn_SSL_CTX_new( pfn_SSLv23_client_method());
-	localSLLinitialized = TRUE;
-	return TRUE;
+		pfn_SSL_library_init=SSL_library_init;
+		pfn_SSLv23_client_method=( PFN_SSL_pvoid_void )SSLv23_client_method;
+		pfn_SSL_CTX_new=( PFN_SSL_pvoid_pvoid )SSL_CTX_new;
+		pfn_SSL_CTX_free=( PFN_SSL_void_pvoid )SSL_CTX_free;
+		pfn_SSL_new=( PFN_SSL_pvoid_pvoid )SSL_new;
+		pfn_SSL_free=( PFN_SSL_void_pvoid )SSL_free;
+		pfn_SSL_set_fd=( PFN_SSL_int_pvoid_int )SSL_set_fd;
+		pfn_SSL_connect=( PFN_SSL_int_pvoid )SSL_connect;
+		pfn_SSL_read=( PFN_SSL_int_pvoid_pvoid_int )SSL_read;
+		pfn_SSL_write=( PFN_SSL_int_pvoid_pvoid_int )SSL_write;
+
+		pfn_SSL_library_init();
+		jabberSslCtx = pfn_SSL_CTX_new( pfn_SSLv23_client_method());
+
+		return TRUE;
 }
 #endif // ndef STATICSSL
 
@@ -123,8 +130,6 @@ void JabberSslUninit()
 {
 #ifndef STATICSSL
 	if ( hLibSSL ) {
-#else 
-	if (localSLLinitialized)
 #endif // ndef STATICSSL
 		pfn_SSL_CTX_free( jabberSslCtx );
 #ifndef STATICSSL
@@ -133,5 +138,68 @@ void JabberSslUninit()
 		hLibSSL = NULL;
 	}
 #endif // ndef STATICSSL
+	if ( sslHandleList ) mir_free( sslHandleList );
+	sslHandleCount = 0;
+	DeleteCriticalSection( &sslHandleMutex );
 }
 
+int JabberSslFindHandle( HANDLE hConn )
+{
+	int i;
+
+	EnterCriticalSection( &sslHandleMutex );
+	for ( i=0; i<sslHandleCount; i++ ) {
+		if ( sslHandleList[i].h == hConn ) {
+			LeaveCriticalSection( &sslHandleMutex );
+			return i;
+		}
+	}
+	LeaveCriticalSection( &sslHandleMutex );
+	return -1;
+}
+
+PVOID JabberSslHandleToSsl( HANDLE hConn )
+{
+	int i;
+
+	EnterCriticalSection( &sslHandleMutex );
+	for ( i=0; i<sslHandleCount; i++ ) {
+		if ( sslHandleList[i].h == hConn ) {
+			LeaveCriticalSection( &sslHandleMutex );
+			return sslHandleList[i].ssl;
+		}
+	}
+	LeaveCriticalSection( &sslHandleMutex );
+	return NULL;
+}
+
+void JabberSslAddHandle( HANDLE hConn, PVOID ssl )
+{
+	EnterCriticalSection( &sslHandleMutex );
+	if ( JabberSslFindHandle( hConn ) >= 0 ) {
+		LeaveCriticalSection( &sslHandleMutex );
+		return;
+	}
+
+	sslHandleList = ( JABBER_SSL_MAPPING * ) mir_realloc( sslHandleList, ( sslHandleCount+1 )*sizeof( JABBER_SSL_MAPPING ));
+	sslHandleList[sslHandleCount].h = hConn;
+	sslHandleList[sslHandleCount].ssl = ssl;
+	sslHandleCount++;
+	LeaveCriticalSection( &sslHandleMutex );
+}
+
+void JabberSslRemoveHandle( HANDLE hConn )
+{
+	int i;
+
+	EnterCriticalSection( &sslHandleMutex );
+	if (( i=JabberSslFindHandle( hConn )) < 0 ) {
+		LeaveCriticalSection( &sslHandleMutex );
+		return;
+	}
+
+	sslHandleCount--;
+	memmove( sslHandleList+i, sslHandleList+i+1, ( sslHandleCount-i )*sizeof( JABBER_SSL_MAPPING ));
+	sslHandleList = ( JABBER_SSL_MAPPING * ) mir_realloc( sslHandleList, sslHandleCount*sizeof( JABBER_SSL_MAPPING ));
+	LeaveCriticalSection( &sslHandleMutex );
+}

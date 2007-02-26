@@ -451,7 +451,7 @@ char * getXGoogleToken(char * email, char * passwd){
 	mir_free(temp);
 	SSL_Base *pAgent;
 #ifndef STATICSSL
-	if (!JabberSslInit()) pAgent = new SSL_WinInet();
+	if (!hLibSSL) pAgent = new SSL_WinInet();
 	      else
 #endif			  
 			  pAgent = new SSL_OpenSsl();
