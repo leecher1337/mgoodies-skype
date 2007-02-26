@@ -345,7 +345,7 @@ HANDLE Utils::createServiceFunction_Ex(const char *name, MIRANDASERVICE service)
 }
 
 void Utils::unhookEvents_Ex() {
-	int i;
+	unsigned i;
 	for (i=0; i<hookNum ; ++i) {
 		if (hHooks[i] != NULL) {
 			UnhookEvent(hHooks[i]);
@@ -357,7 +357,7 @@ void Utils::unhookEvents_Ex() {
 }
 
 void Utils::destroyServices_Ex() {
-	int i;
+	unsigned i;
 	for (i=0; i<serviceNum; ++i) {
 		if (hServices[i] != NULL) {
 			DestroyServiceFunction(hServices[i]);
