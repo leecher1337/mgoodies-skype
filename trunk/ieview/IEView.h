@@ -89,69 +89,43 @@ static const CLSID CLSID_MozillaBrowser=
 
 	#define SID_SInternetSecurityManager         IID_IInternetSecurityManager
 
-	MIDL_INTERFACE("79eac9ed-baf9-11ce-8c82-00aa004ba90b")
-    IInternetSecurityMgrSite : public IUnknown
-    {
-    public:
-        virtual HRESULT STDMETHODCALLTYPE GetWindow(
-            /* [out] */ HWND *phwnd) = 0;
+#ifdef __cplusplus
+extern "C" {
+#endif	
+#define INTERFACE IInternetSecurityMgrSite
+DECLARE_INTERFACE_(IInternetSecurityMgrSite,IUnknown)
+{
+	STDMETHOD(QueryInterface)(THIS_ REFIID,PVOID*) PURE;
+	STDMETHOD_(ULONG,AddRef)(THIS) PURE;
+	STDMETHOD_(ULONG,Release)(THIS) PURE;	
+	STDMETHOD(GetWindow)(THIS_ HWND*) PURE;
+	STDMETHOD(EnableModeless)(THIS_ BOOL) PURE;
+};	
+#undef INTERFACE
 
-        virtual HRESULT STDMETHODCALLTYPE EnableModeless(
-            /* [in] */ BOOL fEnable) = 0;
+#define INTERFACE IInternetSecurityManager
+DECLARE_INTERFACE_(IInternetSecurityManager,IUnknown)
+{
+	STDMETHOD(QueryInterface)(THIS_ REFIID,PVOID*) PURE;
+	STDMETHOD_(ULONG,AddRef)(THIS) PURE;
+	STDMETHOD_(ULONG,Release)(THIS) PURE;	
 
-    };
+	STDMETHOD(SetSecuritySite)(THIS_ IInternetSecurityMgrSite*) PURE;
+	STDMETHOD(GetSecuritySite)(THIS_ IInternetSecurityMgrSite**) PURE;
+	STDMETHOD(MapUrlToZone)(THIS_ LPCWSTR,DWORD*,DWORD) PURE;
+	STDMETHOD(GetSecurityId)(THIS_ LPCWSTR,BYTE*,DWORD*,DWORD_PTR) PURE;
+	STDMETHOD(ProcessUrlAction)(THIS_ LPCWSTR,DWORD,BYTE*,DWORD,BYTE*,DWORD,DWORD,DWORD) PURE;
+	STDMETHOD(QueryCustomPolicy)(THIS_ LPCWSTR,REFGUID,BYTE**,DWORD*,BYTE*,DWORD,DWORD) PURE;
+	STDMETHOD(SetZoneMapping)(THIS_ DWORD,LPCWSTR,DWORD) PURE;
+	STDMETHOD(GetZoneMappings)(THIS_ DWORD,IEnumString**,DWORD) PURE;
+};	
+#undef INTERFACE
 
-	MIDL_INTERFACE("79eac9ee-baf9-11ce-8c82-00aa004ba90b")
-	IInternetSecurityManager : public IUnknown
-    {
-    public:
-        virtual HRESULT STDMETHODCALLTYPE SetSecuritySite(
-            /* [unique][in] */ IInternetSecurityMgrSite *pSite) = 0;
 
-        virtual HRESULT STDMETHODCALLTYPE GetSecuritySite(
-            /* [out] */ IInternetSecurityMgrSite **ppSite) = 0;
+#ifdef __cplusplus
+}
+#endif
 
-        virtual HRESULT STDMETHODCALLTYPE MapUrlToZone(
-            /* [in] */ LPCWSTR pwszUrl,
-            /* [out] */ DWORD *pdwZone,
-            /* [in] */ DWORD dwFlags) = 0;
-
-        virtual HRESULT STDMETHODCALLTYPE GetSecurityId(
-            /* [in] */ LPCWSTR pwszUrl,
-            /* [size_is][out] */ BYTE *pbSecurityId,
-            /* [out][in] */ DWORD *pcbSecurityId,
-            /* [in] */ DWORD_PTR dwReserved) = 0;
-
-        virtual HRESULT STDMETHODCALLTYPE ProcessUrlAction(
-            /* [in] */ LPCWSTR pwszUrl,
-            /* [in] */ DWORD dwAction,
-            /* [size_is][out] */ BYTE *pPolicy,
-            /* [in] */ DWORD cbPolicy,
-            /* [in] */ BYTE *pContext,
-            /* [in] */ DWORD cbContext,
-            /* [in] */ DWORD dwFlags,
-            /* [in] */ DWORD dwReserved) = 0;
-
-        virtual HRESULT STDMETHODCALLTYPE QueryCustomPolicy(
-            /* [in] */ LPCWSTR pwszUrl,
-            /* [in] */ REFGUID guidKey,
-            /* [size_is][size_is][out] */ BYTE **ppPolicy,
-            /* [out] */ DWORD *pcbPolicy,
-            /* [in] */ BYTE *pContext,
-            /* [in] */ DWORD cbContext,
-            /* [in] */ DWORD dwReserved) = 0;
-
-        virtual HRESULT STDMETHODCALLTYPE SetZoneMapping(
-            /* [in] */ DWORD dwZone,
-            /* [in] */ LPCWSTR lpszPattern,
-            /* [in] */ DWORD dwFlags) = 0;
-
-        virtual HRESULT STDMETHODCALLTYPE GetZoneMappings(
-            /* [in] */ DWORD dwZone,
-            /* [out] */ IEnumString **ppenumString,
-            /* [in] */ DWORD dwFlags) = 0;
-
-    };
 #endif
 
 class IEViewSink:public  DWebBrowserEvents2 {
