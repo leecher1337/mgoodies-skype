@@ -35,8 +35,8 @@ PLUGININFO pluginInfo = {
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
-	"http://pescuma.mirandaim.ru",
-	0,	//not transient
+	"http://pescuma.mirandaim.ru/miranda/voiceservice",
+	UNICODE_AWARE,
 	0	//doesn't replace anything built-in
 };
 
