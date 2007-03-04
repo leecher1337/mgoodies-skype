@@ -36,8 +36,8 @@ PLUGININFO pluginInfo = {
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
-	"http://miranda-im.org/",
-	0,	//not transient
+	"http://pescuma.mirandaim.ru/miranda/nickhistory",
+	UNICODE_AWARE,
 	0	//doesn't replace anything built-in
 };
 
