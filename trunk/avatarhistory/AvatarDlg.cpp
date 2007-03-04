@@ -516,9 +516,9 @@ BOOL UpdateAvatarPic(HWND hwnd)
 	char tmp[1024];
 	WideCharToMultiByte(CP_ACP, 0, filename, -1, tmp, MAX_REGS(tmp), NULL, NULL);
 
-	HBITMAP avpic = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (LPARAM) tmp);
+	HBITMAP avpic = (HBITMAP)CallService(MS_AV_LOADBITMAP32, 0, (LPARAM) tmp);
 #else
-	HBITMAP avpic = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (LPARAM) filename);
+	HBITMAP avpic = (HBITMAP)CallService(MS_AV_LOADBITMAP32, 0, (LPARAM) filename);
 #endif
 
 	BOOL found_image = (avpic != NULL);

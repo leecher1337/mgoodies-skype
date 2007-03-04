@@ -2,6 +2,9 @@ Avatar History
 
 Changelog:
 
+. 0.0.2.4
+  * Try to fix blank images
+
 . 0.0.2.3
   + Hide contact menu item for disabled protocols
   + Create shortcuts for metacontacts if it is a enabled protocol
