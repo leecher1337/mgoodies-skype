@@ -43,7 +43,7 @@ PLUGININFO pluginInfo = {
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
 	"http://pescuma.mirandaim.ru/miranda/listeningto",
-	0,	//not transient
+	UNICODE_AWARE,
 	0	//doesn't replace anything built-in
 };
 
