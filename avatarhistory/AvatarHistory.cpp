@@ -62,7 +62,7 @@ PLUGININFO pluginInfo={
 #else
 	"Avatar History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,3),
+	PLUGIN_MAKE_VERSION(0,0,2,4),
 	"This plugin keeps backups of all your contacts' avatar changes and/or shows popups",
 	"Matthew Wild (MattJ), Ricardo Pescuma Domenecci",
 	"mwild1@gmail.com",
@@ -536,7 +536,7 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 						_T("%s\\%s.png"), history_filename, hash);
 #endif
 
-					HBITMAP hBmp = (HBITMAP) CallService(MS_UTILS_LOADBITMAP, 0, (LPARAM) avatar->filename);
+					HBITMAP hBmp = (HBITMAP) CallService(MS_AV_LOADBITMAP32, 0, (LPARAM) avatar->filename);
 #ifdef UNICODE
 					char tmp[1024];
 					WideCharToMultiByte(CP_ACP, 0, history_filename, -1, tmp, MAX_REGS(tmp), NULL, NULL);
