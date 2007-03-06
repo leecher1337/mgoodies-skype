@@ -1,3 +1,7 @@
+0.1.2.2
+=======
+* using, with updater, the correct file id in file listing (yamn 2in1)
+
 0.1.2.1
 =======
 ! Don't close MailBrowser when e-mails are updated if it is manually open 

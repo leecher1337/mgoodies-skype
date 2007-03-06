@@ -350,7 +350,7 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 		update.szComponentName = pluginInfo.shortName;
 		update.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szVersion);
 		update.cpbVersion = strlen((char *)update.pbVersion);
-		#ifdef YAMN_9x
+		/*#ifdef YAMN_9x
 		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2166";
 		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2166";
 		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">YAMN tweety win9x ";
@@ -358,9 +358,12 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2165";
 		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2165";
 		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">YAMN tweety ";
-		#endif
+		#endif*/
+		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=3411";
+		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=3411";
+		update.pbVersionPrefix = (BYTE *)"<span class=\"fileNameHeader\">YAMN 2in1 ";
 		wsprintf(szUrl,"http://www.miranda-fr.net/tweety/yamn/%s.zip",YAMN_FILENAME);
-	    	update.szBetaUpdateURL = szUrl;
+	    update.szBetaUpdateURL = szUrl;
 		update.szBetaVersionURL = "http://www.miranda-fr.net/tweety/yamn/yamn_beta.html";
 		update.pbBetaVersionPrefix = (BYTE *)"YAMN version ";
 		update.cpbVersionPrefix = strlen((char *)update.pbVersionPrefix);

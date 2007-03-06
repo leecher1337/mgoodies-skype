@@ -357,6 +357,10 @@ SOURCE=.\resources\iconttbdown.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\resources\icooffline.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\resources\icoyamn3.ico
 # End Source File
 # Begin Source File
