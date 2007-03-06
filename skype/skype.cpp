@@ -122,7 +122,7 @@ int FreeVSApi()
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,35),
+	PLUGIN_MAKE_VERSION(0,0,0,36),
 	"Support for Skype network",
 	"leecher - tweety",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
@@ -751,15 +751,19 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	
 	// Was it a message?
 	strcat(str, " TYPE");
+	LOG("FetchMessageThread", "Get the TYPE");
+	LOG("FetchMessageThread", str);
 	if (SkypeSend(str)==-1 || !(ptr=SkypeRcv(str+4, INFINITE))) {
 		SetEvent(SkypeMsgFetched);
 		return;
 	}
 	ERRCHK
 	str[msgl]=0;
+	LOG("FetchMessageThread", ptr);
 	if( !strncmp(ptr+strlen(ptr)-6, "EMOTED", 6) ) bEmoted = true;
+	if( !strncmp(ptr+strlen(ptr)-16, "MULTI_SUBSCRIBED", 16) ) isGroupChat = true;
 
-	if (strncmp(ptr+strlen(ptr)-4, "TEXT", 4) && strncmp(ptr+strlen(ptr)-4, "SAID", 4) && !bEmoted) 
+	if (strncmp(ptr+strlen(ptr)-4, "TEXT", 4) && strncmp(ptr+strlen(ptr)-4, "SAID", 4) && !bEmoted && isGroupChat) 
 	{
 		if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0)) 
 		{
@@ -962,7 +966,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	// Is it a groupchat message?
 	strcpy(strChat,str);
 	strcat(strChat, "CHATNAME");
-	LOG("FetchMessageThread", "Request the CHAT type");
+	LOG("FetchMessageThread", "Request the CHATNAME");
 	if (SkypeSend(strChat)==-1 || !(ptr=SkypeRcv(strChat+4, INFINITE))) {
 		free(who);
 		free(msg);
@@ -980,6 +984,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	}
 
 	LOG("FetchMessageThread", "Compare the STATUS to MULTI_SUBSCRIBED");
+	LOG("FetchMessageThread",ptr3);
 	if (!strcmp(ptr3, "MULTI_SUBSCRIBED"))
 		isGroupChat = true;
 
@@ -1400,7 +1405,7 @@ void LaunchSkypeAndSetStatusThread(void *newStatus) {
 LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam) 
 { 
     PCOPYDATASTRUCT CopyData; 
-	char *ptr, *szSkypeMsg=NULL, *nick, *buf, *Mood;
+	char *ptr, *szSkypeMsg=NULL, *nick, *buf, *Mood, *Avatar;
 	static char *onlinestatus=NULL;
 	static BOOL RestoreUserStatus=FALSE;
 	int sstat, oldstatus, flag;
@@ -1479,9 +1484,12 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 //						break;
 					} else
 						DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Status", (WORD)SkypeStatusToMiranda(ptr+13));
+
 						SkypeSend("GET USER %s MOOD_TEXT", nick);
 						SkypeSend("GET USER %s TIMEZONE", nick);
 						SkypeSend("GET USER %s IS_VIDEO_CAPABLE", nick);
+						//SkypeSend("GET USER %s AVATAR", nick);
+						//SkypeSend("GET AVATAR %s", nick);
 /*						free(buf);
 					if (SkypeInitialized==FALSE) { // Prevent flooding on startup
 						SkypeMsgAdd(szSkypeMsg);
@@ -1490,6 +1498,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					break;
 */				}
 				if (!strcmp(ptr, "MOOD_TEXT")){
+					LOG("WndProc", "MOOD_TEXT");
 					if (!(hContact=find_contact(nick)))
 						SkypeSend("GET USER %s BUDDYSTATUS", nick);
 					else
@@ -1515,6 +1524,33 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					break;
 
 				}
+				if (!strcmp(ptr, "AVATAR")){
+					LOG("WndProc", "AVATAR");
+				/*	if (!(hContact=find_contact(nick)))
+						SkypeSend("GET USER %s BUDDYSTATUS", nick);
+					else
+					{
+						TCHAR *unicode = NULL;
+						
+						if(utf8_decode((ptr+10), &Avatar)==-1) break;
+
+						//DBWriteContactSettingString(hContact, "CList", "StatusMsg", Mood);
+						if(DBWriteContactSettingTString(hContact, "ContactPhoto", "File", Avatar)) 
+						{
+							#if defined( _UNICODE )
+								char buff[TEXT_LEN];
+								WideCharToMultiByte(code_page, 0, Avatar, -1, buff, TEXT_LEN, 0, 0);
+								buff[TEXT_LEN] = 0;
+								DBWriteContactSettingString(hContact, "ContactPhoto", "File", buff);
+							#endif
+						}
+												
+						
+					}
+					free(buf);
+					break;*/
+
+				}
 				if (!strcmp(ptr, "TIMEZONE")){
 					time_t temp;
 					struct tm tms;
@@ -1529,8 +1565,9 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					}
 					else
 						if (atoi(ptr+9) != 0) {
-							temp = time(0);
-							memcpy(&tms,localtime(&temp), sizeof(tm));
+							temp = time(NULL);
+							tms = *localtime(&temp);
+							//memcpy(&tms,localtime(&temp), sizeof(tm));
 							//tms = localtime(&temp);
 							if (atoi(ptr+9) >= 86400 ) timezone=256-((2*(atoi(ptr+9)-86400))/3600);
 							if (atoi(ptr+9) < 86400 ) timezone=((-2*(atoi(ptr+9)-86400))/3600); 
@@ -1614,23 +1651,26 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 			}
 			if (!strncmp(szSkypeMsg, "CHAT ", 5)) {
 				// Currently we only process these notifications
-				//if (!DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0)) break;
-				// Throw away old unseen messages to reduce memory-usage
-				if (ptr=strstr(szSkypeMsg, " TOPIC")) {
-					ptr[6]=0;
-					while (testfor(szSkypeMsg, 0));
-					ptr[6]=' ';
-				} else
-				if (ptr=strstr(szSkypeMsg, " MEMBERS")) {
-					AddMembers (szSkypeMsg);
-					break;
+				if (DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0)) 
+				{
+					// Throw away old unseen messages to reduce memory-usage
+					if (ptr=strstr(szSkypeMsg, " TOPIC")) {
+						ptr[6]=0;
+						while (testfor(szSkypeMsg, 0));
+						ptr[6]=' ';
+					} else
+					if (ptr=strstr(szSkypeMsg, " MEMBERS")) {					
+						LOG("WndProc", "AddMembers");
+						AddMembers (szSkypeMsg);
+						break;
+					}/*
+					else
+					if (ptr=strstr(szSkypeMsg, " STATUS")) {
+						ptr[7]=0;
+						while (testfor(szSkypeMsg, 0));
+						ptr[7]=' ';
+					} //else break;*/
 				}
-				/*else
-				if (ptr=strstr(szSkypeMsg, " STATUS")) {
-					ptr[7]=0;
-					while (testfor(szSkypeMsg, 0));
-					ptr[7]=' ';
-				} else break;*/
 			}
 			if (!strncmp(szSkypeMsg, "CALL ",5)) {
 				// incoming calls are already processed by Skype, so no need for us
