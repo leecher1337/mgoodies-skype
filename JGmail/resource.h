@@ -214,7 +214,6 @@
 #define IDC_DATE                        1157
 #define IDC_MANUAL_REGISTER             1167
 #define IDC_REASON                      1171
-
 #define IDC_CLIST                       1172
 #define IDC_NEWJID                      1173
 #define IDC_ADDJID                      1174
@@ -225,21 +224,33 @@
 #define IDC_DISABLE_MAINMENU            1179
 #define IDC_USE_TLS                     1180
 #define IDC_AUTO_ACCEPT_MUC             1181
-
 #define IDC_DISABLE_SASL                1182
 #define IDC_UNREGISTER                  1183
 #define IDC_VALIDATEADD                 1184
+#define IDC_GO                          1196
 #define IDC_WHITERECT                   1221
 #define IDC_UPDATING                    1231
 #define IDC_EMAILS                      1306
 #define IDC_PHONES                      1308
 #define IDC_UPDATE                      1313
 #define IDC_STATUS                      1414
-#define IDC_GO                          1196
 #define IDC_INSTRUCTIONS                1414
 #define IDC_PLAN                        1415
 #define IDC_PERSONALGROUP               1434
 #define IDC_EXTRAGROUP                  1436
+
+#define IDI_BOOKMARKS                   3000
+#define IDD_BOOKMARKS                   3001
+#define IDC_BM_LIST                     3002
+#define IDC_ADD                         3004
+#define IDC_REMOVE                      3005
+#define IDD_BOOKMARK_ADD                3006
+#define IDC_ROOM_JID                    3007
+#define IDC_ROSTER2BOOKMARK             3008
+#define IDC_ROOM_RADIO                  3009
+#define IDC_URL_RADIO                   3010
+#define IDC_BOOKMARK_TYPE               3011
+
 #define IDM_MESSAGE                     10002
 #define IDM_CLEAR                       10003
 #define IDM_VOICE                       10005
@@ -254,27 +265,13 @@
 #define IDM_MEMBER                      10015
 #define IDM_INVITE                      10016
 
-
-#define IDI_BOOKMARKS                   3000
-#define IDD_BOOKMARKS                   3001
-#define IDC_BM_LIST                     3002
-#define IDC_ADD                         3004
-#define IDC_REMOVE                      3005
-
-#define IDD_BOOKMARK_ADD                3006
-#define IDC_ROOM_JID                    3007
-
-
-
-
-
 // Next default values for new objects
-//
+// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        226
 #define _APS_NEXT_COMMAND_VALUE         40017
-#define _APS_NEXT_CONTROL_VALUE         1184
+#define _APS_NEXT_CONTROL_VALUE         1212
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

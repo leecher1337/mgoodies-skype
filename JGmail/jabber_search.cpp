@@ -150,32 +150,10 @@ static void JabberIqResultGetSearchFields( XmlNode *iqNode, void *userdata )
 		ShowWindow(searchHandleDlg,SW_HIDE);
 		if ( xNode ) {
 			//1. Form
-			int i=1;
-			int Order=0;
+			PostMessage( searchHandleDlg, WM_USER+11, ( WPARAM ) xNode, ( LPARAM )0 );
 			XmlNode*xcNode =JabberXmlGetNthChild(xNode,"instructions",1);
 			if ( xcNode )
 				SetDlgItemText( searchHandleDlg, IDC_INSTRUCTIONS, xcNode->text);
-
-			while ( xcNode = JabberXmlGetNthChild( xNode, "field", i )) {
-				TCHAR* type = JabberXmlGetAttrValue( xcNode, "type" );
-				TCHAR* label = JabberXmlGetAttrValue( xcNode, "label" );
-				TCHAR* var = JabberXmlGetAttrValue( xcNode, "var" );
-				if ( label && var ) {
-					Data* MyData = ( Data* )malloc( sizeof( Data ));
-					memset(MyData,0,sizeof(Data));
-					MyData->Label = mir_tstrdup(label);
-					MyData->Var = mir_tstrdup(var);
-					MyData->Order = Order;
-					if ( !_tcsicmp( type,_T( "hidden" ))) {
-						MyData->bHidden = TRUE;
-						MyData->Order = -1;
-					}
-					PostMessage( searchHandleDlg, WM_USER+10, ( WPARAM )TRUE, ( LPARAM )MyData );
-					if ( MyData->Order >= 0 )
-						Order++;
-				}
-				i++;
-			}
 		}
 		else {
 			int Order=0;
@@ -277,9 +255,27 @@ static void JabberSearchReturnResults( HANDLE  id, void * pvUsersInfo /*LIST<voi
 		   TCHAR* value = pmUserData->operator [](var);
 		   Results.pszFields[j] = value ? value : _T(" ");
 		   if (!_tcsicmp(var,_T("jid")) && value )
-			   _tcsncpy(Results.jsr.jid, value, SIZEOF(Results.jsr.jid));
+			   _tcsncpy(Results.jsr.jid, value, SIZEOF(Results.jsr.jid));	   
+	   }
+	   {
+		   TCHAR * nickfields[]={ _T("nick"),		_T("nickname"), 
+								  _T("fullname"),	_T("name"),
+								  _T("given"),		_T("first"),
+								  _T("jid"), NULL };
+		   TCHAR * nick=NULL;
+		   int i=0;
+		   while (nickfields[i] && !nick)   nick=pmUserData->operator [](nickfields[i++]);
+		   TCHAR buff[200]={0};
+		   if (_tcsicmp(nick, Results.jsr.jid))
+			   _sntprintf(buff,SIZEOF(buff),_T("%s ( %s )"),nick, Results.jsr.jid);
+		   else
+				_tcsncpy(buff, nick, SIZEOF(buff));	   
+		   Results.jsr.hdr.nick=nick ? t2a(buff): NULL;
 	   }
 	   JSendBroadcast( NULL, ACKTYPE_SEARCH, ACKRESULT_SEARCHRESULT, id, (LPARAM) &Results );
+	   if (Results.jsr.hdr.nick) mir_free(Results.jsr.hdr.nick);
+	   Results.jsr.hdr.nick=NULL;
+
 	}
 	mir_free( Results.pszFields );
 }
@@ -396,10 +392,16 @@ static void JabberIqResultAdvancedSearch( XmlNode *iqNode, void *userdata )
 	JSendBroadcast( NULL, ACKTYPE_SEARCH, ACKRESULT_SUCCESS, ( HANDLE ) id, 0 );
 }
 
+static BOOL CALLBACK DeleteChildWindowsProc(HWND hwnd,LPARAM lParam)
+{
+	DestroyWindow(hwnd);
+	return TRUE;
+}
+
 static void JabberSearchFreeData(HWND hwndDlg, JabberSearchData * dat)
 {
 	//lock
-	if ( dat->nJSInfCount && dat->pJSInf ) {
+	if ( !dat->fSearchRequestIsXForm && dat->nJSInfCount && dat->pJSInf ) {
 		for ( int i=0; i < dat->nJSInfCount; i++ ) {
 			if (dat->pJSInf[i].hwndValueItem)
 				DestroyWindow(dat->pJSInf[i].hwndValueItem);
@@ -411,9 +413,17 @@ static void JabberSearchFreeData(HWND hwndDlg, JabberSearchData * dat)
 				free(dat->pJSInf[i].szFieldName);
 		}
 		free(dat->pJSInf);
-		dat->pJSInf=NULL;
-		dat->nJSInfCount=0;
+		dat->pJSInf=NULL;		
+	
 	}
+	else
+	{
+		if (dat->xNode) delete (dat->xNode);
+		dat->xNode=NULL;
+		EnumChildWindows(GetDlgItem(hwndDlg,IDC_FRAME),DeleteChildWindowsProc,0);			
+	}
+	SendMessage(GetDlgItem(hwndDlg,IDC_FRAME), WM_SETFONT, (WPARAM) SendMessage( hwndDlg, WM_GETFONT, 0, 0 ),0 );
+	dat->nJSInfCount=0;
 	ShowWindow(GetDlgItem(hwndDlg,IDC_VSCROLL),SW_HIDE);
 	SetDlgItemText(hwndDlg,IDC_INSTRUCTIONS,TranslateT("Select/type search service URL above and press <Go>"));
 	//unlock
@@ -434,6 +444,7 @@ static void JabberSearchRefreshFrameScroll(HWND hwndDlg, JabberSearchData * dat)
 	else ShowWindow( hwndScroll, SW_HIDE );
 
 	SetScrollRange( hwndScroll, SB_CTL, 0, dat->CurrentHeight-dat->frameHeight, FALSE );
+
 }
 
 static int JabbeSearchrRenewFields(HWND hwndDlg, JabberSearchData * dat)
@@ -443,11 +454,11 @@ static int JabbeSearchrRenewFields(HWND hwndDlg, JabberSearchData * dat)
 	GetDlgItemTextA(hwndDlg,IDC_SERVER,szServerName,sizeof(szServerName));
 	dat->CurrentHeight = 0;
 	dat->curPos = 0;
-	//SetScrollRange( GetDlgItem( hwndDlg, IDC_VSCROLL ), SB_CTL, 0, 0, FALSE );
-	//SetScrollPos( GetDlgItem( hwndDlg, IDC_VSCROLL ), SB_CTL, 0, FALSE );
+	SetScrollPos( GetDlgItem( hwndDlg, IDC_VSCROLL ), SB_CTL, 0, FALSE );
 
-	JabberSearchRefreshFrameScroll( hwndDlg, dat );
 	JabberSearchFreeData( hwndDlg, dat );
+	JabberSearchRefreshFrameScroll( hwndDlg, dat );
+	
 
 	if ( jabberOnline )
 		SetDlgItemText(hwndDlg,IDC_INSTRUCTIONS,TranslateT("Please wait...\r\nConnecting search server..."));
@@ -605,6 +616,15 @@ static BOOL CALLBACK JabberSearchAdvancedDlgProc(HWND hwndDlg, UINT msg, WPARAM 
 		}
 		return TRUE;
 
+	case WM_USER+11:
+		{
+		    dat->fSearchRequestIsXForm=TRUE;
+			dat->xNode=JabberXmlCopyNode( (XmlNode *) wParam );
+			JabberFormCreateUI(GetDlgItem(hwndDlg, IDC_FRAME), dat->xNode, &dat->CurrentHeight,TRUE);
+			ShowWindow(GetDlgItem(hwndDlg, IDC_FRAME), SW_SHOW);
+			dat->nJSInfCount=1;
+			return TRUE;
+		}
 	case WM_USER+10:
 		{
 			Data* MyDat = ( Data* )lParam;
@@ -616,7 +636,13 @@ static BOOL CALLBACK JabberSearchAdvancedDlgProc(HWND hwndDlg, UINT msg, WPARAM 
 				mir_free( MyDat->defValue );
 				free( MyDat );
 			}
-			else JabberSearchRefreshFrameScroll(hwndDlg,dat);
+			else 
+			{
+				JabberSearchRefreshFrameScroll(hwndDlg,dat);
+				ScrollWindow( GetDlgItem( hwndDlg, IDC_FRAME ), 0, dat->curPos - 0, NULL,  &( dat->frameRect ));
+				SetScrollPos( GetDlgItem( hwndDlg, IDC_VSCROLL ), SB_CTL, 0, FALSE );				
+				dat->curPos=0;
+			}
 			return TRUE;
 		}
 	case WM_MOUSEWHEEL:
@@ -714,28 +740,16 @@ int JabberSearchByAdvanced( WPARAM wParam, LPARAM lParam )
 	// formating query
 	int iqId = JabberSerialNext();
 	XmlNodeIq iq( "set", iqId, szServerName );
-	XmlNode* query = iq.addChild( "query" ), *field, *x;
+	XmlNode* query = iq.addChild( "query" ), *field;
 	iq.addAttr( "xml:lang", "en" ); //? not sure is it needed ?
 	query->addAttr( "xmlns", "jabber:iq:search" );
 
 	// next can be 2 cases:
 	// Forms: XEP-0055 Example 7
 	if ( dat->fSearchRequestIsXForm ) {
-		x=query->addChild("x");
-		x->addAttr( "xmlns", "jabber:x:data" );
-		x->addAttr( "type", "submit" );
-
-		// Next will be the cycle through fields
-		for ( int i=0; i<dat->nJSInfCount; i++ ) {
-			char szFieldValue[100];
-			GetWindowTextA(dat->pJSInf[i].hwndValueItem, szFieldValue, sizeof(szFieldValue));
-			if ( szFieldValue[0] != '\0' ) {
-				field = x->addChild( "field" );
-				field->addAttr( "var", dat->pJSInf[i].szFieldName );
-				field->addChild( "value", szFieldValue );
-				fRequestNotEmpty=TRUE;
-		}	}
-	}
+		fRequestNotEmpty=TRUE;
+		query->addChild(JabberFormGetData(GetDlgItem(hwndDlg, IDC_FRAME), dat->xNode));
+    }
 	else { //and Simple fields: XEP-0055 Example 3
 		for ( int i=0; i<dat->nJSInfCount; i++ ) {
 			TCHAR szFieldValue[100];

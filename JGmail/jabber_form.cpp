@@ -43,12 +43,13 @@ static BOOL CALLBACK JabberFormMultiLineWndProc( HWND hwnd, UINT msg, WPARAM wPa
 	return CallWindowProc(( WNDPROC ) GetWindowLong( hwnd, GWL_USERDATA ), hwnd, msg, wParam, lParam );
 }
 
-void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight )
+void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight, BOOL bCompact )
 {
 	HWND hFrame, hCtrl;
 	HFONT hFont;
 	XmlNode *n, *v, *o, *vs;
-	int id, i, j, k, ypos, index, size;
+
+	int id, i, j, k, ypos, index, size, ssright, ctrlHeight, edgeStyle, borderStyle;
 	TCHAR* label, *type, *labelStr, *valueStr, *varStr, *str, *p, *valueText;
 	int labelOffset, labelWidth, labelHeight;
 	int ctrlOffset, ctrlWidth;
@@ -56,16 +57,33 @@ void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight )
 
 	if ( xNode==NULL || xNode->name==NULL || strcmp( xNode->name, "x" ) || hwndStatic==NULL ) return;
 	hFrame = hwndStatic;
-	hFont = ( HFONT ) SendMessage( hFrame, WM_GETFONT, 0, 0 );
-
+	hFont = ( HFONT ) SendMessage( GetParent(hFrame), WM_GETFONT, 0, 0 );
 	GetClientRect( hwndStatic, &frameRect );
-	labelOffset = 10;
-	labelWidth = ( frameRect.right - frameRect.left )/2 - 20 - 20;
-	ctrlOffset = labelWidth + 20;
-	ctrlWidth = frameRect.right - frameRect.left - labelWidth - 20 - 20;
-
+	if (!bCompact)
+	{
+		labelOffset = 10;
+		labelWidth = ( frameRect.right - frameRect.left )/2 - 20 - 20;
+		ctrlOffset = labelWidth + 20;
+		ctrlWidth = frameRect.right - frameRect.left - labelWidth - 20 - 20;
+		ssright = SS_RIGHT; // right aligned labels
+		ctrlHeight = 24;	// height of edit control
+		edgeStyle=WS_EX_CLIENTEDGE;
+		borderStyle = WS_BORDER;
+		ypos = 14;
+	}
+	else
+	{
+		labelOffset = 0;
+		labelWidth = ( frameRect.right - frameRect.left )- labelOffset - 5;
+		ctrlOffset = 10;
+		ctrlWidth = frameRect.right - frameRect.left - ctrlOffset - 5;
+		ctrlHeight = 18;
+		ssright = 0;		
+		edgeStyle = WS_EX_CLIENTEDGE;
+		borderStyle = 0;
+		ypos = 0;
+	}
 	id = 0;
-	ypos = 14;
 	for ( i=0; i<xNode->numChild; i++ ) {
 		n = xNode->child[i];
 		if ( n->name ) {
@@ -78,7 +96,9 @@ void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight )
 					else
 						labelStr = mir_tstrdup( varStr );
 					strRect.top = strRect.left = 0; strRect.right = labelWidth; strRect.bottom = 1;
-					labelHeight = DrawText( GetDC( hFrame ), labelStr, -1, &strRect, DT_CALCRECT|DT_RIGHT|DT_WORDBREAK );
+					HDC hdc = GetDC( hFrame );
+					labelHeight = DrawText( hdc, labelStr, -1, &strRect, DT_CALCRECT|DT_RIGHT|DT_WORDBREAK );
+					ReleaseDC(hFrame, hdc);
 					//labelHeight = labelHeight * 6 / 7;
 					if ( labelHeight < 18 ) labelHeight = 18;
 
@@ -90,19 +110,20 @@ void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight )
 
 					if ( !_tcscmp( type, _T("text-private"))) {
 						if ( labelStr ) {
-							hCtrl = CreateWindow( _T("static"), labelStr, WS_CHILD|WS_VISIBLE|SS_RIGHT, labelOffset, ypos+4, labelWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
+							hCtrl = CreateWindow( _T("static"), labelStr, WS_CHILD|WS_VISIBLE|ssright, labelOffset, ypos+4, labelWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
 							SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 						}
-						hCtrl = CreateWindowEx( WS_EX_CLIENTEDGE, _T("edit"), valueStr, WS_CHILD|WS_VISIBLE|WS_BORDER|WS_TABSTOP|ES_LEFT|ES_AUTOHSCROLL|ES_PASSWORD, ctrlOffset, ypos, ctrlWidth, 24, hFrame, ( HMENU ) id, hInst, NULL );
+						ypos += (bCompact) ? (labelHeight) : 0; 
+						hCtrl = CreateWindowEx( edgeStyle, _T("edit"), valueStr, WS_CHILD|WS_VISIBLE|borderStyle|WS_TABSTOP|ES_LEFT|ES_AUTOHSCROLL|ES_PASSWORD, ctrlOffset, ypos, ctrlWidth, ctrlHeight, hFrame, ( HMENU ) id, hInst, NULL );
 						SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 						id++;
-						ypos += (( labelHeight>24 )?labelHeight:24 );
+						ypos += (bCompact) ? ctrlHeight :(( labelHeight>ctrlHeight )?labelHeight:ctrlHeight );
 					}
 					else if ( !_tcscmp( type, _T("text-multi")) || !_tcscmp( type, _T("jid-multi"))) {
 						WNDPROC oldWndProc;
 
 						if ( labelStr ) {
-							hCtrl = CreateWindow( _T("static"), labelStr, WS_CHILD|WS_VISIBLE|SS_RIGHT, labelOffset, ypos+4, labelWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
+							hCtrl = CreateWindow( _T("static"), labelStr, WS_CHILD|WS_VISIBLE|ssright, labelOffset, ypos+4, labelWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
 							SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 						}
 						size = 1;
@@ -119,33 +140,36 @@ void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight )
 								if ( str[0] )	_tcscat( str, _T("\r\n"));
 								_tcscat( str, v->text );
 						}	}
-
-						hCtrl = CreateWindowEx( WS_EX_CLIENTEDGE, _T("edit"), str, WS_CHILD|WS_VISIBLE|WS_BORDER|WS_TABSTOP|WS_VSCROLL|ES_LEFT|ES_MULTILINE|ES_AUTOVSCROLL|ES_WANTRETURN, ctrlOffset, ypos, ctrlWidth, 24*3, hFrame, ( HMENU ) id, hInst, NULL );
+						ypos += (bCompact) ? (labelHeight) : 0; 
+						hCtrl = CreateWindowEx( edgeStyle, _T("edit"), str, WS_CHILD|WS_VISIBLE|borderStyle|WS_TABSTOP|WS_VSCROLL|ES_LEFT|ES_MULTILINE|ES_AUTOVSCROLL|ES_WANTRETURN, ctrlOffset, ypos, ctrlWidth, ctrlHeight*3, hFrame, ( HMENU ) id, hInst, NULL );
 						SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 						oldWndProc = ( WNDPROC ) SetWindowLong( hCtrl, GWL_WNDPROC, ( LPARAM )JabberFormMultiLineWndProc );
 						SetWindowLong( hCtrl, GWL_USERDATA, ( LONG ) oldWndProc );
 						id++;
-						ypos += (( labelHeight>24*3 )?labelHeight:24*3 );
+						ypos += (bCompact) ? ctrlHeight*3 : (( labelHeight>ctrlHeight*3 )?labelHeight:ctrlHeight*3 );
 						mir_free( str );
 					}
 					else if ( !_tcscmp( type, _T("boolean"))) {
 						strRect.top = strRect.left = 0;
 						strRect.right = ctrlWidth-20; strRect.bottom = 1;
-						labelHeight = DrawText( GetDC( hFrame ), labelStr, -1, &strRect, DT_CALCRECT|DT_WORDBREAK );
-						if ( labelHeight < 24 ) labelHeight = 24;
-						hCtrl = CreateWindowEx( 0, _T("button"), labelStr, WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTOCHECKBOX|BS_MULTILINE, ctrlOffset, ypos, ctrlWidth, ( labelHeight>24 )?labelHeight:24, hFrame, ( HMENU ) id, hInst, NULL );
+						HDC hdc = GetDC( hFrame );
+						labelHeight = DrawText( hdc , labelStr, -1, &strRect, DT_CALCRECT|DT_WORDBREAK );
+						ReleaseDC( hFrame, hdc );
+						if ( labelHeight < ctrlHeight ) labelHeight = ctrlHeight;
+						hCtrl = CreateWindowEx( 0, _T("button"), labelStr, WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_AUTOCHECKBOX|BS_MULTILINE, ctrlOffset, ypos, ctrlWidth, ( labelHeight>ctrlHeight )?labelHeight:ctrlHeight, hFrame, ( HMENU ) id, hInst, NULL );
 						SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 						if ( valueStr && !_tcscmp( valueStr, _T("1")))
 							SendMessage( hCtrl, BM_SETCHECK, 1, 0 );
 						id++;
-						ypos += (( labelHeight>24 )?labelHeight:24 );
+						ypos += (( labelHeight>ctrlHeight )?labelHeight:ctrlHeight );
 					}
 					else if ( !_tcscmp( type, _T("list-single"))) {
 						if ( labelStr ) {
-							hCtrl = CreateWindow( _T("static"), labelStr, WS_CHILD|WS_VISIBLE|SS_RIGHT, labelOffset, ypos+4, labelWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
+							hCtrl = CreateWindow( _T("static"), labelStr, WS_CHILD|WS_VISIBLE|ssright, labelOffset, ypos+4, labelWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
 							SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 						}
-						hCtrl = CreateWindowExA( WS_EX_CLIENTEDGE, "combobox", NULL, WS_CHILD|WS_VISIBLE|WS_BORDER|WS_TABSTOP|CBS_DROPDOWNLIST, ctrlOffset, ypos, ctrlWidth, 24*4, hFrame, ( HMENU ) id, hInst, NULL );
+						ypos += (bCompact) ? (labelHeight) : 0; 
+						hCtrl = CreateWindowExA( edgeStyle, "combobox", NULL, WS_CHILD|WS_VISIBLE|borderStyle|WS_TABSTOP|CBS_DROPDOWNLIST, ctrlOffset, ypos, ctrlWidth, ctrlHeight*4, hFrame, ( HMENU ) id, hInst, NULL );
 						SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 						for ( j=0; j<n->numChild; j++ ) {
 							o = n->child[j];
@@ -160,14 +184,15 @@ void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight )
 											SendMessage( hCtrl, CB_SETCURSEL, index, 0 );
 						}	}	}	}	}
 						id++;
-						ypos += (( labelHeight>24 )?labelHeight:24 );
+						ypos += (bCompact) ? ctrlHeight :(( labelHeight>ctrlHeight )?labelHeight:ctrlHeight );
 					}
 					else if ( !_tcscmp( type, _T("list-multi"))) {
 						if ( labelStr ) {
-							hCtrl = CreateWindow( _T("static"), labelStr, WS_CHILD|WS_VISIBLE|SS_RIGHT, labelOffset, ypos+4, labelWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
+							hCtrl = CreateWindow( _T("static"), labelStr, WS_CHILD|WS_VISIBLE|ssright, labelOffset, ypos+4, labelWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
 							SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 						}
-						hCtrl = CreateWindowExA( WS_EX_CLIENTEDGE, "listbox", NULL, WS_CHILD|WS_VISIBLE|WS_BORDER|WS_TABSTOP|LBS_MULTIPLESEL, ctrlOffset, ypos, ctrlWidth, 24*3, hFrame, ( HMENU ) id, hInst, NULL );
+						ypos += (bCompact) ? (labelHeight) : 0; 
+						hCtrl = CreateWindowExA( edgeStyle, "listbox", NULL, WS_CHILD|WS_VISIBLE|borderStyle|WS_TABSTOP|LBS_MULTIPLESEL, ctrlOffset, ypos, ctrlWidth, ctrlHeight*3, hFrame, ( HMENU ) id, hInst, NULL );
 						SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 						for ( j=0; j<n->numChild; j++ ) {
 							o = n->child[j];
@@ -184,16 +209,18 @@ void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight )
 												SendMessage( hCtrl, LB_SETSEL, TRUE, index );
 						}	}	}	}	}
 						id++;
-						ypos += (( labelHeight>24*3 )?labelHeight:24*3 );
+						ypos +=  (bCompact) ? ctrlHeight*3 :(( labelHeight>ctrlHeight*3 )?labelHeight:ctrlHeight*3 );
 					}
 					else if ( !_tcscmp( type, _T("fixed"))) {
 						if ( valueStr ) {
 							strRect.top = strRect.left = 0;
 							strRect.right = ctrlWidth; strRect.bottom = 1;
-							labelHeight = DrawText( GetDC( hFrame ), labelStr, -1, &strRect, DT_CALCRECT|DT_WORDBREAK );
+							HDC hdc = GetDC( hFrame );
+							labelHeight = DrawText( hdc , labelStr, -1, &strRect, DT_CALCRECT|DT_WORDBREAK );
+							ReleaseDC( hFrame, hdc );							
 							labelHeight = labelHeight * 6 / 7;
-							if ( labelHeight < 24 ) labelHeight = 24;
-							hCtrl = CreateWindow( _T("static"), valueStr, WS_CHILD|WS_VISIBLE|SS_RIGHT, labelOffset, ypos+4, labelWidth+ctrlWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
+							if ( labelHeight < ctrlHeight ) labelHeight = ctrlHeight;
+							hCtrl = CreateWindow( _T("static"), valueStr, WS_CHILD|WS_VISIBLE|ssright, labelOffset, ypos+4, bCompact ? labelWidth : labelWidth+ctrlWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
 							SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 							ypos += labelHeight;
 						}
@@ -203,13 +230,14 @@ void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight )
 					}
 					else { // everything else is considered "text-single"
 						if ( labelStr ) {
-							hCtrl = CreateWindow( _T("static"), labelStr, WS_CHILD|WS_VISIBLE|SS_RIGHT, labelOffset, ypos+4, labelWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
+							hCtrl = CreateWindow( _T("static"), labelStr, WS_CHILD| WS_VISIBLE|ssright, labelOffset, ypos+4, labelWidth, labelHeight, hFrame, ( HMENU ) IDC_STATIC, hInst, NULL );
 							SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 						}
-						hCtrl = CreateWindowEx( WS_EX_CLIENTEDGE, _T("edit"), valueStr, WS_CHILD|WS_VISIBLE|WS_BORDER|WS_TABSTOP|ES_LEFT|ES_AUTOHSCROLL, ctrlOffset, ypos, ctrlWidth, 24, hFrame, ( HMENU ) id, hInst, NULL );
+						ypos += (bCompact) ? (labelHeight) : 0; 
+						hCtrl = CreateWindowEx( edgeStyle, _T("edit"), valueStr, WS_CHILD|WS_VISIBLE|borderStyle|WS_TABSTOP|ES_LEFT|ES_AUTOHSCROLL, ctrlOffset, ypos, ctrlWidth, ctrlHeight, hFrame, ( HMENU ) id, hInst, NULL );
 						SendMessage( hCtrl, WM_SETFONT, ( WPARAM ) hFont, 0 );
 						id++;
-						ypos += (( labelHeight>24 )?labelHeight:24 );
+						ypos += (bCompact) ? ctrlHeight : (( labelHeight>ctrlHeight )?labelHeight:ctrlHeight );
 					}
 					mir_free( labelStr );
 					if ( valueStr ) mir_free( valueStr );

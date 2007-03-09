@@ -200,6 +200,8 @@ enum JABBER_SESSION_TYPE
 	JABBER_SESSION_REGISTER
 };
 
+#define CAPS_BOOKMARK   0x0001
+
 struct ThreadData {
 	ThreadData( JABBER_SESSION_TYPE parType );
 	~ThreadData();
@@ -225,6 +227,7 @@ struct ThreadData {
 	HWND  reg_hwndDlg;
 	BOOL  reg_done, bIsSessionAvailable;
 	class TJabberAuth* auth;
+	int	caps; // capabilities
 
 //	void  close( void );
 //	int   recv( char* buf, size_t len );
@@ -421,7 +424,7 @@ void __cdecl JabberFileServerThread( filetransfer* ft );
 
 //---- jabber_form.c ------------------------------------------------
 
-void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight );
+void JabberFormCreateUI( HWND hwndStatic, XmlNode *xNode, int *formHeight, BOOL bCompact = FALSE );
 void JabberFormCreateDialog( XmlNode *xNode, TCHAR* defTitle, JABBER_FORM_SUBMIT_FUNC pfnSubmit, void *userdata );
 
 XmlNode* JabberFormGetData( HWND hwndStatic, XmlNode *xNode );
@@ -445,6 +448,8 @@ void JabberGroupchatProcessInvite( TCHAR* roomJid, TCHAR* from, TCHAR* reason, T
 
 //---- jabber_bookmarks.c -------------------------------------------
 int JabberMenuHandleBookmarks( WPARAM wParam, LPARAM lParam );
+int JabberAddEditBookmark( WPARAM wParam, LPARAM lParam );
+
 
 
 //---- jabber_icolib.c ----------------------------------------------

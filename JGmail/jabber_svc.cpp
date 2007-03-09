@@ -1543,6 +1543,7 @@ HANDLE hMenuChangePassword = NULL;
 HANDLE hMenuGroupchat = NULL;
 HANDLE hMenuVCard = NULL;
 HANDLE hMenuBookmarks = NULL;
+HANDLE hMenuAddBookmark = NULL;
 
 int JabberMenuHandleAgents( WPARAM wParam, LPARAM lParam );
 int JabberMenuHandleChangePassword( WPARAM wParam, LPARAM lParam );
@@ -1557,11 +1558,14 @@ void JabberEnableMenuItems( BOOL bEnable )
 	clmi.cbSize = sizeof( CLISTMENUITEM );
 	clmi.flags = CMIM_FLAGS;
 	if ( !bEnable )
-		clmi.flags += CMIF_GRAYED;
+		clmi.flags |= CMIF_GRAYED;
 
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuAgent, ( LPARAM )&clmi );
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuChangePassword, ( LPARAM )&clmi );
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuGroupchat, ( LPARAM )&clmi );
+
+	if ( jabberThreadInfo && !( jabberThreadInfo->caps & CAPS_BOOKMARK ))
+		clmi.flags |= CMIF_GRAYED;
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuBookmarks, ( LPARAM )&clmi );
 	
 }

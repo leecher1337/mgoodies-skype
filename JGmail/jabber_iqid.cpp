@@ -47,6 +47,15 @@ static void JabberOnLoggedIn( ThreadData* info )
 	XmlNode* query = iq.addChild( "query" ); query->addAttr( "xmlns", "jabber:iq:roster" );
 	JabberSend( info->s, iq );
 
+	iqId = JabberSerialNext();
+	JabberIqAdd( iqId, IQ_PROC_DISCOBOOKMARKS, JabberIqResultDiscoBookmarks);
+	XmlNodeIq biq( "get", iqId);
+	XmlNode* bquery = biq.addQuery( "jabber:iq:private" );
+	XmlNode* storage = bquery->addChild("storage");
+	storage->addAttr("xmlns","storage:bookmarks");
+
+	JabberSend( jabberThreadInfo->s, biq );
+	
 	char szServerName[ sizeof(info->server) ];
 	if ( JGetStaticString( "LastLoggedServer", NULL, szServerName, sizeof(szServerName)))
 		JabberSendGetVcard( jabberJID );
@@ -1505,27 +1514,44 @@ void JabberIqResultDiscoBookmarks( XmlNode *iqNode, void *userdata )
 			if ((storageNode = JabberXmlGetChild( queryNode, "storage" )) != NULL){
 			JabberListRemoveList( LIST_BOOKMARK );
 			for ( int i=0; i<storageNode->numChild; i++ ) {
-				if (( itemNode = storageNode->child[i] ) != NULL && itemNode->name != NULL && !strcmp( itemNode->name, "conference" )) {
-					if (( jid = JabberXmlGetAttrValue( itemNode, "jid" )) != NULL ) {
-						JABBER_LIST_ITEM* item = JabberListAdd( LIST_BOOKMARK, jid );
-						item->name = mir_tstrdup( JabberXmlGetAttrValue( itemNode, "name" ));
-						if ( JabberXmlGetAttrValue( itemNode, "autojoin" ) != NULL ) {
-							TCHAR* autoJ = JabberXmlGetAttrValue( itemNode, "autojoin" );
-							item->bAutoJoin = ( !lstrcmp( autoJ, _T("true")) || !lstrcmp( autoJ, _T("1"))) ? true : false;
+				if (( itemNode = storageNode->child[i] ) != NULL && itemNode->name != NULL) {
+					if (!strcmp( itemNode->name, "conference" )) {
+						if (( jid = JabberXmlGetAttrValue( itemNode, "jid" )) != NULL ) {
+							JABBER_LIST_ITEM* item = JabberListAdd( LIST_BOOKMARK, jid );
+							item->name = mir_tstrdup( JabberXmlGetAttrValue( itemNode, "name" ));
+							item->type = _T("conference");
+							if ( JabberXmlGetAttrValue( itemNode, "autojoin" ) != NULL ) {
+								TCHAR* autoJ = JabberXmlGetAttrValue( itemNode, "autojoin" );
+								item->bAutoJoin = ( !lstrcmp( autoJ, _T("true")) || !lstrcmp( autoJ, _T("1"))) ? true : false;
+							}
+							if (( nickNode = JabberXmlGetChild( itemNode, "nick" )) != NULL && nickNode->text != NULL )
+								replaceStr( item->nick, nickNode->text );
+							if (( passNode = JabberXmlGetChild( itemNode, "password" )) != NULL && passNode->text != NULL )
+								replaceStr( item->password, passNode->text );
 						}
-						if (( nickNode = JabberXmlGetChild( itemNode, "nick" )) != NULL && nickNode->text != NULL )
-							replaceStr( item->nick, nickNode->text );
-						if (( passNode = JabberXmlGetChild( itemNode, "password" )) != NULL && passNode->text != NULL )
-							replaceStr( item->password, passNode->text );
-		}	}	}	}
+					}
+					if (!strcmp( itemNode->name, "url" )) {
+						if (( jid = JabberXmlGetAttrValue( itemNode, "url" )) != NULL ) {
+							JABBER_LIST_ITEM* item = JabberListAdd( LIST_BOOKMARK, jid );
+							item->name = mir_tstrdup( JabberXmlGetAttrValue( itemNode, "name" ));
+							item->type = _T("url");
+						}
+					}
+				
+		}	}	}
 
 		if ( hwndJabberBookmarks != NULL )
 			SendMessage( hwndJabberBookmarks, WM_JABBER_REFRESH, 0, 0);
 	}
 	else if ( !lstrcmp( type, _T("error"))) {
+		if ( info->caps & CAPS_BOOKMARK ) {
+			info->caps &= ~CAPS_BOOKMARK;
+			JabberEnableMenuItems( TRUE );
+			return;
+		}
 		errorNode = JabberXmlGetChild( iqNode, "error" );
 		TCHAR* str = JabberErrorMsg( errorNode );
-		MessageBox( NULL, str, TranslateT( "Jabber Error Message" ), MB_OK|MB_SETFOREGROUND );
+		MessagePopup( NULL, str, TranslateT( "Jabber Bookmarks Error" ), MB_OK|MB_SETFOREGROUND );
 		mir_free( str );
 		if ( hwndJabberBookmarks != NULL )
 			SendMessage( hwndJabberBookmarks, WM_JABBER_ACTIVATE, 0, 0);
@@ -1544,18 +1570,26 @@ void JabberSetBookmarkRequest (XmlNodeIq& iq)
 
 		if ( item->jid == NULL )
 			continue;
-
-		XmlNode* itemNode = storage->addChild("conference");
-		itemNode->addAttr( "jid", item->jid );
-      if ( item->name )
-			itemNode->addAttr( "name", item->name );
-      if ( item->bAutoJoin )
-			itemNode->addAttr( "autojoin", _T("1") );
-      if ( item->nick )
-			itemNode->addChild( "nick", item->nick );
-      if ( item->password )
-			itemNode->addChild( "password", item->password );
-}	}
+		if (!lstrcmp( item->type, _T("conference") )) {
+			XmlNode* itemNode = storage->addChild("conference");
+			itemNode->addAttr( "jid", item->jid );
+			if ( item->name )
+				itemNode->addAttr( "name", item->name );
+			if ( item->bAutoJoin )
+				itemNode->addAttr( "autojoin", _T("1") );
+			if ( item->nick )
+				itemNode->addChild( "nick", item->nick );
+			if ( item->password )
+				itemNode->addChild( "password", item->password );
+		}
+		if (!lstrcmp( item->type, _T("url") )) {
+			XmlNode* itemNode = storage->addChild("url");
+			itemNode->addAttr( "url", item->jid );
+			if ( item->name )
+				itemNode->addAttr( "name", item->name );
+		}
+	}	
+}
 
 void JabberIqResultSetBookmarks( XmlNode *iqNode, void *userdata )
 {
@@ -1575,7 +1609,7 @@ void JabberIqResultSetBookmarks( XmlNode *iqNode, void *userdata )
 	else if ( !lstrcmp( type, _T("error"))) {
 		XmlNode* errorNode = JabberXmlGetChild( iqNode, "error" );
 		TCHAR* str = JabberErrorMsg( errorNode );
-		MessageBox( NULL, str, TranslateT( "Jabber Error Message" ), MB_OK|MB_SETFOREGROUND );
+		MessagePopup( NULL, str, TranslateT( "Jabber Bookmarks Error" ), MB_OK|MB_SETFOREGROUND );
 		mir_free( str );
 		if ( hwndJabberBookmarks != NULL )
 			SendMessage( hwndJabberBookmarks, WM_JABBER_ACTIVATE, 0, 0);

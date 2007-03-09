@@ -8,7 +8,11 @@ typedef struct _tagJabberSearchFieldsInfo
 
 typedef struct _tagJabberSearchData
 {
-	JabberSearchFieldsInfo *  pJSInf;
+	union
+	{
+		JabberSearchFieldsInfo *  pJSInf;
+		XmlNode * xNode;
+	};
 	int nJSInfCount;
 	int lastRequestIq;
 	int CurrentHeight;
@@ -16,6 +20,7 @@ typedef struct _tagJabberSearchData
 	int frameHeight;
 	RECT frameRect;
 	BOOL fSearchRequestIsXForm;
+	
 }JabberSearchData;
 
 typedef struct tag_Data

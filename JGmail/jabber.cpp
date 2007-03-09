@@ -52,13 +52,9 @@ Last change by : $Author$
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 
-PLUGININFO pluginInfo = {
-	sizeof( PLUGININFO ),
-	#if defined( _UNICODE )
-		"Jabber Protocol (GMail) (Unicode)",
-	#else
-		"Jabber Protocol (GMail)",
-	#endif
+PLUGININFOEX pluginInfo = {
+	sizeof( PLUGININFOEX ),
+	"Jabber Protocol (GMail)",
   	__VERSION_DWORD,
  	"Jabber protocol plugin (GMail mod) for Miranda IM ( "__DATE__" )",
  	"George Hazan, YB",
@@ -66,7 +62,12 @@ PLUGININFO pluginInfo = {
  	"( c ) 2002-07 Santithorn Bunchua, George Hazan, YB",
  	"http://forums.miranda-im.org/showthread.php?p=43865",
  	UNICODE_AWARE,
-	0
+	0,
+#if defined( _UNICODE )
+	{0x1ee5af12, 0x26b0, 0x4290, { 0x8f, 0x97, 0x16, 0x77, 0xcb, 0xe, 0xfd, 0x2b }} //{1EE5AF12-26B0-4290-8F97-1677CB0EFD2B}
+#else
+	{0xf7f5861d, 0x988d, 0x479d, { 0xa5, 0xbb, 0x80, 0xc7, 0xfa, 0x8a, 0xd0, 0xef }} //{F7F5861D-988D-479d-A5BB-80C7FA8AD0EF}
+#endif
 };
 
 MM_INTERFACE    mmi;
@@ -160,14 +161,25 @@ extern "C" BOOL WINAPI DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID lpvRes
 	return TRUE;
 }
 
-extern "C" __declspec( dllexport ) PLUGININFO *MirandaPluginInfo( DWORD mirandaVersion )
+extern "C" __declspec( dllexport ) PLUGININFOEX *MirandaPluginInfo( DWORD mirandaVersion )
 {
 	if ( mirandaVersion < PLUGIN_MAKE_VERSION( 0,4,0,0 )) {
 		MessageBoxA( NULL, "The Jabber protocol plugin cannot be loaded. It requires Miranda IM 0.4 or later.", "Jabber Protocol Plugin", MB_OK|MB_ICONWARNING|MB_SETFOREGROUND|MB_TOPMOST );
 		return NULL;
 	}
-
+	if ( mirandaVersion < PLUGIN_MAKE_VERSION( 0,7,0,17 )) pluginInfo.cbSize = sizeof( PLUGININFO );
 	return &pluginInfo;
+}
+extern "C" __declspec( dllexport ) PLUGININFOEX *MirandaPluginInfoEx( DWORD mirandaVersion )
+{
+	pluginInfo.cbSize = sizeof( PLUGININFOEX );
+	return &pluginInfo;
+}
+
+static const MUUID interfaces[] = {MIID_PROTOCOL, MIID_LAST};
+extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
