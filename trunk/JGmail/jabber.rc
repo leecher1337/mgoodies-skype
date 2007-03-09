@@ -40,11 +40,10 @@ BEGIN
     LTEXT           "Search service",IDC_STATIC,0,1,97,8
     SCROLLBAR       IDC_VSCROLL,97,49,12,99,SBS_BOTTOMALIGN | SBS_VERT | NOT 
                     WS_VISIBLE
-    EDITTEXT        IDC_FRAME,0,49,97,99,ES_AUTOHSCROLL | ES_READONLY | NOT 
-                    WS_BORDER,WS_EX_TRANSPARENT
     EDITTEXT        IDC_INSTRUCTIONS,0,27,105,22,ES_MULTILINE | 
                     ES_AUTOVSCROLL | ES_READONLY | NOT WS_BORDER | NOT 
                     WS_TABSTOP
+    LTEXT           "",IDC_FRAME,0,49,97,99,NOT WS_GROUP
 END
 
 IDD_OPT_EXPERT DIALOGEX 0, 0, 279, 241
@@ -110,49 +109,52 @@ BEGIN
                     WS_VSCROLL | WS_TABSTOP
 END
 
-IDD_OPT_JABBER2 DIALOGEX 0, 0, 222, 213
+IDD_OPT_JABBER2 DIALOGEX 0, 0, 222, 205
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "File Transfer",IDC_STATIC,2,3,216,71
+    GROUPBOX        "File Transfer",IDC_STATIC,2,0,216,63
     CONTROL         "Allow file sending through direct peer-to-peer connection",
-                    IDC_DIRECT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,18,
+                    IDC_DIRECT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,11,
                     202,10
     CONTROL         "Specify proxy server",IDC_PROXY_MANUAL,"Button",
-                    BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,9,54,102,10
+                    BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,9,47,102,10
     CONTROL         "Allow file sending through bytestream proxy server",
                     IDC_PROXY,"Button",BS_AUTOCHECKBOX | WS_DISABLED | 
-                    WS_TABSTOP,9,42,202,10
-    EDITTEXT        IDC_PROXY_ADDR,117,53,81,12,ES_AUTOHSCROLL | WS_DISABLED | 
+                    WS_TABSTOP,9,35,202,10
+    EDITTEXT        IDC_PROXY_ADDR,117,46,81,12,ES_AUTOHSCROLL | WS_DISABLED | 
                     WS_GROUP
     CONTROL         "Specify external address",IDC_DIRECT_MANUAL,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,9,30,101,10
-    EDITTEXT        IDC_DIRECT_ADDR,117,29,81,12,ES_AUTOHSCROLL
-    GROUPBOX        "Miscellaneous",IDC_STATIC,2,75,216,131
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,23,101,10
+    EDITTEXT        IDC_DIRECT_ADDR,117,22,81,12,ES_AUTOHSCROLL
+    GROUPBOX        "Miscellaneous",IDC_STATIC,2,68,216,135
     CONTROL         "Automatically add contact when accept authorization",
                     IDC_AUTO_ADD,"Button",BS_AUTOCHECKBOX | BS_TOP | 
-                    WS_TABSTOP,9,90,203,12
+                    WS_TABSTOP,9,80,203,12
     CONTROL         "Automatically join conferences on login",IDC_AUTOJOIN,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,102,202,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,92,202,10
     CONTROL         "Autoaccept multiuser chat invitations",
                     IDC_AUTO_ACCEPT_MUC,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,9,114,202,10
+                    WS_TABSTOP,9,104,202,10
     CONTROL         "Send messages slower, but with full acknowledgement",
                     IDC_MSG_ACK,"Button",BS_AUTOCHECKBOX | BS_TOP | 
-                    WS_TABSTOP,9,126,203,10
+                    WS_TABSTOP,9,116,203,10
     CONTROL         "Disable main menu",IDC_DISABLE_MAINMENU,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,9,138,202,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,128,202,10
     CONTROL         "Show transport agents on contact list",
                     IDC_SHOW_TRANSPORT,"Button",BS_AUTOCHECKBOX | BS_TOP | 
-                    WS_TABSTOP,9,150,202,10
+                    WS_TABSTOP,9,140,202,10
     CONTROL         "Enable avatars",IDC_ENABLE_AVATARS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,9,162,201,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,152,201,10
     CONTROL         "Disable SASL authentication (for old servers)",
                     IDC_DISABLE_SASL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    9,174,202,10
+                    9,164,202,10
     CONTROL         "Validate contacts being added",IDC_VALIDATEADD,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,9,186,202,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,176,202,10
+    CONTROL         "Add room to Bookmarks when adding to roster",
+                    IDC_ROSTER2BOOKMARK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,9,188,202,10
 END
 
 IDD_OPT_JGMAIL DIALOGEX 0, 0, 271, 221
@@ -639,7 +641,7 @@ BEGIN
     PUSHBUTTON      "Delete",IDC_DELETEAVATAR,61,112,41,13
 END
 
-IDD_BOOKMARKS DIALOGEX 0, 0, 400, 209
+IDD_BOOKMARKS DIALOGEX 0, 0, 295, 180
 STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
     WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_CONTROLPARENT
@@ -648,31 +650,35 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "List1",IDC_BM_LIST,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | 
-                    WS_TABSTOP,5,7,330,197
-    PUSHBUTTON      "Close",IDCLOSE,343,190,50,14
-    DEFPUSHBUTTON   "Refresh",IDC_BROWSE,343,7,50,14
-    PUSHBUTTON      "Add",IDC_ADD,343,35,50,14
-    PUSHBUTTON      "Edit",IDC_EDIT,343,55,50,14
-    PUSHBUTTON      "Remove",IDC_REMOVE,343,74,50,14
+                    WS_TABSTOP,5,7,283,150
+    PUSHBUTTON      "Close",IDCLOSE,238,161,50,14
+    PUSHBUTTON      "Add",IDC_ADD,5,161,50,14
+    PUSHBUTTON      "Edit",IDC_EDIT,58,161,50,14
+    PUSHBUTTON      "Remove",IDC_REMOVE,111,161,50,14
 END
 
-IDD_BOOKMARK_ADD DIALOGEX 0, 0, 208, 96
+IDD_BOOKMARK_ADD DIALOGEX 0, 0, 219, 116
 STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
     WS_POPUP | WS_VISIBLE | WS_CAPTION
 EXSTYLE WS_EX_CONTROLPARENT
 CAPTION "Bookmark Details"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    LTEXT           "Room JID:",IDC_STATIC,7,8,34,8
-    EDITTEXT        IDC_ROOM_JID,74,7,127,12,ES_AUTOHSCROLL
-    LTEXT           "Bookmark Name:",IDC_STATIC,7,22,64,8
-    EDITTEXT        IDC_NAME,74,21,127,12,ES_AUTOHSCROLL
-    LTEXT           "Nick name:",IDC_STATIC,7,36,64,8
-    EDITTEXT        IDC_NICK,74,35,127,12,ES_AUTOHSCROLL
-    LTEXT           "Password:",IDC_STATIC,7,50,64,8
-    EDITTEXT        IDC_PASSWORD,74,49,127,12,ES_AUTOHSCROLL
-    DEFPUSHBUTTON   "OK",IDOK,51,75,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,106,75,50,14
+    LTEXT           "Room JID/ URL:",IDC_STATIC,7,35,52,8
+    EDITTEXT        IDC_ROOM_JID,64,34,148,12,ES_AUTOHSCROLL
+    LTEXT           "Bookmark Name:",IDC_STATIC,7,49,64,8
+    EDITTEXT        IDC_NAME,64,48,148,12,ES_AUTOHSCROLL
+    LTEXT           "Nick name:",IDC_STATIC,7,63,64,8
+    EDITTEXT        IDC_NICK,64,62,148,12,ES_AUTOHSCROLL
+    LTEXT           "Password:",IDC_STATIC,7,77,64,8
+    EDITTEXT        IDC_PASSWORD,64,76,148,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,51,95,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,117,95,50,14
+    CONTROL         "Conference",IDC_ROOM_RADIO,"Button",BS_AUTORADIOBUTTON | 
+                    WS_GROUP,15,16,53,10
+    GROUPBOX        "Bookmark Type",IDC_BOOKMARK_TYPE,7,7,205,24
+    CONTROL         "URL",IDC_URL_RADIO,"Button",BS_AUTORADIOBUTTON,85,16,29,
+                    10
 END
 
 
@@ -698,7 +704,7 @@ BEGIN
         LEFTMARGIN, 1
         RIGHTMARGIN, 296
         VERTGUIDE, 9
-        TOPMARGIN, 3
+        TOPMARGIN, 0
         BOTTOMMARGIN, 205
     END
 
@@ -890,18 +896,17 @@ BEGIN
     IDD_BOOKMARKS, DIALOG
     BEGIN
         LEFTMARGIN, 5
-        RIGHTMARGIN, 393
-        VERTGUIDE, 335
+        RIGHTMARGIN, 288
         TOPMARGIN, 7
-        BOTTOMMARGIN, 204
+        BOTTOMMARGIN, 175
     END
 
     IDD_BOOKMARK_ADD, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 201
+        RIGHTMARGIN, 212
         TOPMARGIN, 7
-        BOTTOMMARGIN, 89
+        BOTTOMMARGIN, 109
     END
 
 END
@@ -981,6 +986,7 @@ IDB_ICONSSMALL		BITMAP	DISCARDABLE	"icos\\16x16.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
+
 
 
 

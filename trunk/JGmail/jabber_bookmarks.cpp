@@ -36,26 +36,50 @@ static BOOL CALLBACK JabberAddBookmarkDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 {
 	TCHAR text[128];
 	JABBER_LIST_ITEM *item;
-	TCHAR* roomJID;
+	TCHAR* roomJID=0;
+	TCHAR* currJID=0;
 
 	switch ( msg ) {
 	case WM_INITDIALOG:
-		// lParam is the room JID ( room@server ) in UTF-8
+		// lParam is the JABBER_BOOKMARK_ITEM*
 		hwndJabberAddBookmark= hwndDlg;
 		TranslateDialogDefault( hwndDlg );
-		if ( lParam ){
-			roomJID = mir_tstrdup((TCHAR*) lParam );
-			SetDlgItemText( hwndDlg, IDC_ROOM_JID, roomJID);
+		if ( item=(JABBER_LIST_ITEM* )lParam ){
+			if (!lstrcmp( item->type, _T("conference") )) SendDlgItemMessage(hwndDlg, IDC_ROOM_RADIO, BM_SETCHECK, BST_CHECKED, 0);
+			else {
+				SendDlgItemMessage(hwndDlg, IDC_URL_RADIO, BM_SETCHECK, BST_CHECKED, 0);
+				EnableWindow( GetDlgItem( hwndDlg, IDC_NICK ), FALSE );
+				EnableWindow( GetDlgItem( hwndDlg, IDC_PASSWORD ), FALSE );
+			}
 
-			item=JabberListGetItemPtr(LIST_BOOKMARK, roomJID);
-			if (item->name != NULL) SetDlgItemText( hwndDlg, IDC_NAME, mir_tstrdup (item->name) );
-			if (item->nick != NULL) SetDlgItemText( hwndDlg, IDC_NICK, mir_tstrdup (item->nick) );
-			if (item->password!= NULL) SetDlgItemText( hwndDlg, IDC_PASSWORD, mir_tstrdup (item->password) );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_ROOM_RADIO), FALSE );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_URL_RADIO), FALSE );
+			
+			currJID = mir_tstrdup(item->jid);
+			SetWindowLong( hwndDlg, GWL_USERDATA, ( LONG ) currJID );
+			if (item->jid) SetDlgItemText( hwndDlg, IDC_ROOM_JID, mir_tstrdup(item->jid));
+			if (item->name) SetDlgItemText( hwndDlg, IDC_NAME, mir_tstrdup (item->name) );
+			if (item->nick) SetDlgItemText( hwndDlg, IDC_NICK, mir_tstrdup (item->nick) );
+			if (item->password) SetDlgItemText( hwndDlg, IDC_PASSWORD, mir_tstrdup (item->password) );
+			
 		}
 		else EnableWindow( GetDlgItem( hwndDlg, IDOK ), FALSE );
 		return TRUE;
-
 	case WM_COMMAND:
+		switch ( HIWORD(wParam) ) {
+			case BN_CLICKED:
+				switch (LOWORD (wParam) ) {
+					case IDC_ROOM_RADIO:
+						EnableWindow( GetDlgItem( hwndDlg, IDC_NICK ), TRUE );
+						EnableWindow( GetDlgItem( hwndDlg, IDC_PASSWORD ), TRUE );
+						break;
+					case IDC_URL_RADIO:
+						EnableWindow( GetDlgItem( hwndDlg, IDC_NICK ), FALSE );
+						EnableWindow( GetDlgItem( hwndDlg, IDC_PASSWORD ), FALSE );
+						break;
+				}
+		}
+//		break;	
 		switch ( LOWORD( wParam )) {
 		case IDC_ROOM_JID:
 			if (( HWND )lParam==GetFocus() && HIWORD( wParam )==EN_CHANGE ) {
@@ -67,12 +91,25 @@ static BOOL CALLBACK JabberAddBookmarkDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 			}
 
 			break;
+
 		case IDOK:
 			GetDlgItemText( hwndDlg, IDC_ROOM_JID, text, SIZEOF( text ));
 			roomJID = mir_tstrdup( text );
 
+			currJID = ( TCHAR* )GetWindowLong( hwndDlg, GWL_USERDATA );
+			
+			if ( currJID) {
+				JabberListRemove(LIST_BOOKMARK, currJID);
+				mir_free( currJID );
+				SetWindowLong( hwndDlg, GWL_USERDATA, ( LONG ) NULL );
+			}
 			item=JabberListAdd(LIST_BOOKMARK, roomJID);
 
+			if (SendDlgItemMessage(hwndDlg, IDC_URL_RADIO, BM_GETSTATE,0, 0) == BST_CHECKED ) {
+				item->type=_T("url");
+			}
+			else item->type=_T("conference");
+			
 			GetDlgItemText( hwndDlg, IDC_NICK, text, SIZEOF( text ));
 			item->nick = mir_tstrdup( text );
 
@@ -82,7 +119,7 @@ static BOOL CALLBACK JabberAddBookmarkDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 			GetDlgItemText( hwndDlg, IDC_NAME, text, SIZEOF( text ));
 			item->name = mir_tstrdup(( text[0] == 0 ) ? roomJID : text );
 			{
-            int iqId = JabberSerialNext();
+				int iqId = JabberSerialNext();
 				JabberIqAdd( iqId, IQ_PROC_SETBOOKMARKS, JabberIqResultSetBookmarks);
 
 				XmlNodeIq iq( "set", iqId);
@@ -102,6 +139,9 @@ static BOOL CALLBACK JabberAddBookmarkDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 		break;
 
 	case WM_DESTROY:
+		char* str = ( char* )GetWindowLong( hwndDlg, GWL_USERDATA );
+		if ( str != NULL )
+			mir_free( str );
 		hwndJabberAddBookmark = NULL;
 		break;
 	}
@@ -122,10 +162,10 @@ static int CALLBACK BookmarkCompare( LPARAM lParam1, LPARAM lParam2, LPARAM lPar
 	item2 = JabberListGetItemPtr( LIST_BOOKMARK, ( TCHAR* )lParam2 );
 	if ( item1!=NULL && item2!=NULL ) {
 		switch ( lParamSort ) {
-		case 0:	// sort by JID column
+		case 1:	// sort by JID column
 			res = lstrcmp( item1->jid, item2->jid );
 			break;
-		case 1: // sort by Name column
+		case 0: // sort by Name column
 			res = lstrcmp( item1->name, item2->name );
 			break;
 		case 2:
@@ -145,6 +185,7 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 	LVCOLUMN lvCol;
 	LVITEM lvItem;
 	JABBER_LIST_ITEM *item;
+	HIMAGELIST hIml;    // A handle to the image list.
 	TCHAR room[256], *server, *p, *ItemNick;
 	TCHAR text[128];
 
@@ -154,23 +195,36 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 		SendMessage( hwndDlg, WM_SETICON, ICON_BIG, ( LPARAM )iconList[20]);//LoadIconEx( "bookmarks" ));
 		hwndJabberBookmarks = hwndDlg;
 
-		EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), FALSE );
+		//EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), FALSE );
 		EnableWindow( GetDlgItem( hwndDlg, IDC_ADD ), FALSE );
 		EnableWindow( GetDlgItem( hwndDlg, IDC_EDIT ), FALSE );
 		EnableWindow( GetDlgItem( hwndDlg, IDC_REMOVE ), FALSE );
 		TranslateDialogDefault( hwndDlg );
 		sortColumn = -1;
-		// Add columns
+
 		lv = GetDlgItem( hwndDlg, IDC_BM_LIST );
+
+		ListView_SetExtendedListViewStyle(lv, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES | LVS_EX_HEADERDRAGDROP );
+		hIml = ImageList_Create(16, 16,	 IsWinVerXPPlus() ? ILC_COLOR32 | ILC_MASK : ILC_COLOR16 | ILC_MASK, 2, 1);
+		if (hIml) {
+			ImageList_AddIcon(hIml, (HICON)JCallService(MS_SKIN_LOADPROTOICON,(WPARAM)jabberProtoName,(LPARAM)ID_STATUS_ONLINE) );
+			ImageList_AddIcon(hIml, (HICON)JCallService(MS_SKIN_LOADICON, SKINICON_EVENT_URL ,0));
+			ListView_SetImageList (lv, hIml, LVSIL_SMALL);
+		}
+
+		// Add columns
 		lvCol.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
-		lvCol.pszText = TranslateT( "Room JID" );
-		lvCol.cx = 210;
+		lvCol.pszText = TranslateT( "Bookmark Name" );
+		lvCol.cx = 120;
 		lvCol.iSubItem = 0;
 		ListView_InsertColumn( lv, 0, &lvCol );
-		lvCol.pszText = TranslateT( "Bookmark Name" );
-		lvCol.cx = 170;
+
+
+		lvCol.pszText = TranslateT( "Room JID / URL" );
+		lvCol.cx = 210;
 		lvCol.iSubItem = 1;
 		ListView_InsertColumn( lv, 1, &lvCol );
+
 		lvCol.pszText = TranslateT( "Nick" );
 		lvCol.cx = 90;
 		lvCol.iSubItem = 2;
@@ -190,7 +244,7 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 
 	case WM_JABBER_ACTIVATE:
 		ListView_DeleteAllItems( GetDlgItem( hwndDlg, IDC_BM_LIST));
-		EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), FALSE );
+		//EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), FALSE );
 		EnableWindow( GetDlgItem( hwndDlg, IDC_ADD ), FALSE );
 		EnableWindow( GetDlgItem( hwndDlg, IDC_EDIT ), FALSE );
 		EnableWindow( GetDlgItem( hwndDlg, IDC_REMOVE ), FALSE );
@@ -206,26 +260,32 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 			for ( int i=0; ( i = JabberListFindNext( LIST_BOOKMARK, i )) >= 0; i++ ) {
 				if (( item = JabberListGetItemPtrFromIndex( i )) != NULL ) {
 					TCHAR szBuffer[256];
-					lvItem.mask = LVIF_PARAM | LVIF_TEXT;
+					lvItem.mask = LVIF_PARAM | LVIF_TEXT | LVIF_IMAGE;
 					lvItem.iSubItem = 0;
-					_tcsncpy( szBuffer, item->jid, SIZEOF(szBuffer));
-					szBuffer[ SIZEOF(szBuffer)-1 ] = 0;
+
+					if(!lstrcmpi(item->type, _T("conference") )) lvItem.iImage = 0;
+					else lvItem.iImage = 1;
+
 					lvItem.lParam = ( LPARAM )item->jid;
-					lvItem.pszText = szBuffer;
+					lvItem.pszText = item->name;
 					ListView_InsertItem( lv, &lvItem );
 
 					lvItem.mask = LVIF_TEXT;
-					lvItem.iSubItem = 1;
-					lvItem.pszText = item->name;
-					ListView_SetItem( lv, &lvItem );
-
-					if(item->nick){lvItem.mask = LVIF_TEXT;
-					lvItem.iSubItem = 2;
-					_tcsncpy( szBuffer, item->nick, SIZEOF(szBuffer));
+					_tcsncpy( szBuffer, item->jid, SIZEOF(szBuffer));
 					szBuffer[ SIZEOF(szBuffer)-1 ] = 0;
-					lvItem.pszText = szBuffer;}
-
+					lvItem.iSubItem = 1;
+					lvItem.pszText = szBuffer;
 					ListView_SetItem( lv, &lvItem );
+
+					if(!lstrcmpi(item->type, _T("conference") )){
+
+						if(item->nick){lvItem.mask = LVIF_TEXT;
+						lvItem.iSubItem = 2;
+						_tcsncpy( szBuffer, item->nick, SIZEOF(szBuffer));
+						szBuffer[ SIZEOF(szBuffer)-1 ] = 0;
+						lvItem.pszText = szBuffer;}
+						ListView_SetItem( lv, &lvItem );
+					}
 
 					lvItem.iItem++;
 			}	}
@@ -234,14 +294,14 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 				EnableWindow( GetDlgItem( hwndDlg, IDC_EDIT ), TRUE );
 				EnableWindow( GetDlgItem( hwndDlg, IDC_REMOVE ), TRUE );
 			}
-			EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), TRUE );
+			//EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), TRUE );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_ADD ), TRUE );
 		}
 		return TRUE;
 
 	case WM_JABBER_CHECK_ONLINE:
 		if ( !jabberOnline ) {
-			EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), FALSE );
+			//EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), FALSE );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_ADD ), FALSE );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_EDIT ), FALSE );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_REMOVE ), FALSE );
@@ -249,7 +309,8 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 			lv = GetDlgItem( hwndDlg, IDC_BM_LIST);
 			ListView_DeleteAllItems( lv );
 		}
-		else EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), TRUE );
+		else //EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), TRUE );
+			SendMessage (hwndDlg, WM_COMMAND, IDC_BROWSE, 0);
 		break;
 
 	case WM_NOTIFY:
@@ -272,39 +333,46 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 				}
 				break;
 			case NM_DBLCLK:
-				if ( jabberChatDllPresent ) {
-					lv = GetDlgItem( hwndDlg, IDC_BM_LIST);
-					if (( lvItem.iItem=ListView_GetNextItem( lv, -1, LVNI_SELECTED )) >= 0 ) {
-						lvItem.iSubItem = 0;
-						lvItem.mask = LVIF_PARAM;
-						ListView_GetItem( lv, &lvItem );
+				lv = GetDlgItem( hwndDlg, IDC_BM_LIST);
+				if (( lvItem.iItem=ListView_GetNextItem( lv, -1, LVNI_SELECTED )) >= 0 ) {
 
-						item = JabberListGetItemPtr(LIST_BOOKMARK, ( TCHAR* )lvItem.lParam);
-						_tcsncpy( text, ( TCHAR* )lvItem.lParam, SIZEOF( text ));
-						_tcsncpy( room, text, SIZEOF( room ));
+					lvItem.iSubItem = 0;
+					lvItem.mask = LVIF_PARAM;
+					ListView_GetItem( lv, &lvItem );
 
-						p = _tcstok( room, _T( "@" ));
-						server = _tcstok( NULL, _T( "@" ));
+					item = JabberListGetItemPtr(LIST_BOOKMARK, ( TCHAR* )lvItem.lParam);
 
-						lvItem.iSubItem = 2;
-						lvItem.mask = LVIF_TEXT;
-						lvItem.cchTextMax = SIZEOF(text);
-						lvItem.pszText = text;
+					if(!lstrcmpi(item->type, _T("conference") )){
+						if ( jabberChatDllPresent ) {
+							_tcsncpy( text, ( TCHAR* )lvItem.lParam, SIZEOF( text ));
+							_tcsncpy( room, text, SIZEOF( room ));
 
-						ListView_GetItem( lv, &lvItem );
-						ItemNick = mir_tstrdup(text);
+							p = _tcstok( room, _T( "@" ));
+							server = _tcstok( NULL, _T( "@" ));
 
-						ListView_SetItemState( lv, lvItem.iItem, 0, LVIS_SELECTED ); // Unselect the item
+							lvItem.iSubItem = 2;
+							lvItem.mask = LVIF_TEXT;
+							lvItem.cchTextMax = SIZEOF(text);
+							lvItem.pszText = text;
 
-						TCHAR *pass;
-						if (item->password && item->password[0]!=_T('\0')) {pass = mir_tstrdup(item->password);}
-						else pass = _T("");
-						if (ItemNick && ItemNick[0]!=_T('\0')) {JabberGroupchatJoinRoom( server, p, ItemNick, pass );}
-						else JabberGroupchatJoinRoom( server, p, JabberNickFromJID(jabberJID), pass );
+							ListView_GetItem( lv, &lvItem );
+							ItemNick = mir_tstrdup(text);
 
+							ListView_SetItemState( lv, lvItem.iItem, 0, LVIS_SELECTED ); // Unselect the item
+
+							TCHAR *pass;
+							if (item->password && item->password[0]!=_T('\0')) {pass = mir_tstrdup(item->password);}
+							else pass = _T("");
+							if (ItemNick && ItemNick[0]!=_T('\0')) {JabberGroupchatJoinRoom( server, p, ItemNick, pass );}
+							else JabberGroupchatJoinRoom( server, p, JabberNickFromJID(jabberJID), pass );
+
+						}
+						else JabberChatDllError();
+					}
+					else {
+						JCallService(MS_UTILS_OPENURL, 1, (LPARAM)t2a((TCHAR*) lvItem.lParam));
 					}
 				}
-				else JabberChatDllError();
 				return TRUE;
 			}
 			break;
@@ -314,7 +382,7 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 		switch ( LOWORD( wParam )) {
 		case IDC_BROWSE:
 			if ( jabberOnline) {
-				EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), FALSE );
+				//EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), FALSE );
 				EnableWindow( GetDlgItem( hwndDlg, IDC_ADD ), FALSE );
 				EnableWindow( GetDlgItem( hwndDlg, IDC_EDIT ), FALSE );
 				EnableWindow( GetDlgItem( hwndDlg, IDC_REMOVE ), FALSE );
@@ -347,7 +415,9 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 					lvItem.mask = LVIF_PARAM;
 					ListView_GetItem( lv, &lvItem );
 
-					DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_BOOKMARK_ADD ), hwndDlg, JabberAddBookmarkDlgProc, lvItem.lParam);
+					item = JabberListGetItemPtr(LIST_BOOKMARK, ( TCHAR* )lvItem.lParam);
+
+					if (item) DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_BOOKMARK_ADD ), hwndDlg, JabberAddBookmarkDlgProc, (LPARAM) item);
 
 					ListView_SetItemState( lv, lvItem.iItem, 0, LVIS_SELECTED ); // Unselect the item
 			}	}
@@ -358,7 +428,7 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 				lv = GetDlgItem( hwndDlg, IDC_BM_LIST);
 				if (( lvItem.iItem=ListView_GetNextItem( lv, -1, LVNI_SELECTED )) >= 0 ) {
 
-					EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), FALSE );
+					//EnableWindow( GetDlgItem( hwndDlg, IDC_BROWSE ), FALSE );
 					EnableWindow( GetDlgItem( hwndDlg, IDC_ADD ), FALSE );
 					EnableWindow( GetDlgItem( hwndDlg, IDC_EDIT ), FALSE );
 					EnableWindow( GetDlgItem( hwndDlg, IDC_REMOVE ), FALSE );
@@ -381,6 +451,7 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 			return TRUE;
 
 		case IDCLOSE:
+		case IDCANCEL:
 			DestroyWindow( hwndDlg );
 			return TRUE;
 		}
@@ -424,3 +495,15 @@ int JabberMenuHandleBookmarks( WPARAM wParam, LPARAM lParam )
 
 	return 0;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Launches the Bookmark details window, lParam is JABBER_BOOKMARK_ITEM*
+int JabberAddEditBookmark( WPARAM wParam, LPARAM lParam )
+{
+	if ( jabberOnline)
+		DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_BOOKMARK_ADD ), NULL, JabberAddBookmarkDlgProc, lParam);
+	return 0;
+}
+
+
