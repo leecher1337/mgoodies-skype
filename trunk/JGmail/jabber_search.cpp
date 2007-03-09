@@ -22,10 +22,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-File name      : $Source: /cvsroot/miranda/miranda/protocols/JabberG/jabber_proxy.cpp,v $
-Revision       : $Revision: 2866 $
-Last change on : $Date: 2006-05-16 20:39:40 +0400 (¬т, 16 май 2006) $
-Last change by : $Author: ghazan $
+File name      : $URL$
+Revision       : $Revision$
+Last change on : $Date$
+Last change by : $Author$
 
 */
 
