@@ -93,7 +93,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 			CLISTMENUITEM clmi = { 0 };
 			sttEnableMenuItem( hMenuConvert, TRUE );
 			clmi.cbSize = sizeof( clmi );
-			clmi.pszName = bIsChatRoom ? "&Convert to Contact" : "&Convert to Chat Room";
+			clmi.pszName = (char *)(bIsChatRoom ? "&Convert to Contact" : "&Convert to Chat Room");
 			clmi.flags = CMIM_NAME | CMIM_FLAGS;
 			JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuConvert, ( LPARAM )&clmi );
 	}	}
@@ -117,7 +117,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 	if ( bIsChatRoom == GCW_CHATROOM ) {
 		CLISTMENUITEM clmi = { 0 };
 		clmi.cbSize = sizeof( clmi );
-		clmi.pszName = ( JGetWord( hContact, "Status", 0 ) == ID_STATUS_ONLINE ) ? "&Leave" : "&Join";
+		clmi.pszName = (char *)(( JGetWord( hContact, "Status", 0 ) == ID_STATUS_ONLINE ) ? "&Leave" : "&Join");
 		clmi.flags = CMIM_NAME | CMIM_FLAGS;
 		JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuJoinLeave, ( LPARAM )&clmi );
 		return 0;
