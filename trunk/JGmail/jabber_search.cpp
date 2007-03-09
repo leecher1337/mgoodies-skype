@@ -29,9 +29,9 @@ Last change by : $Author$
 
 */
 
-#include <CommCtrl.h>
 #include "jabber.h"
 #include "jabber_iq.h"
+#include <CommCtrl.h>
 #include "resource.h"
 #include "jabber_search.h"
 
@@ -253,7 +253,7 @@ static void JabberSearchReturnResults( HANDLE  id, void * pvUsersInfo /*LIST<voi
 	   for ( int j=0; j < nFieldCount; j++ ) {
 		   TCHAR* var = ListOfFields[j];
 		   TCHAR* value = pmUserData->operator [](var);
-		   Results.pszFields[j] = value ? value : _T(" ");
+		   Results.pszFields[j] = value ? value : (TCHAR *)_T(" ");
 		   if (!_tcsicmp(var,_T("jid")) && value )
 			   _tcsncpy(Results.jsr.jid, value, SIZEOF(Results.jsr.jid));	   
 	   }

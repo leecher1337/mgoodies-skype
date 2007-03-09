@@ -1,4 +1,4 @@
-﻿/*
+/*
 
 Jabber Protocol Plugin for Miranda IM
 Copyright ( C ) 2002-04  Santithorn Bunchua
@@ -27,7 +27,6 @@ Last change by : $Author$
 
 #include "jabber.h"
 #include "jabber_secur.h"
-
 /////////////////////////////////////////////////////////////////////////////////////////
 // ntlm auth - LanServer based authorization
 
