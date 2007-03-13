@@ -511,6 +511,7 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 				{
 					switch(ctrl->type)
 					{
+						case CONTROL_TEXT:
 						case CONTROL_SPIN:
 						{
 							// Don't make apply enabled during buddy set
@@ -529,10 +530,10 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 							break;
 						}
 					}
+
+					SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 				}
 			}
-
-			SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 
 			break;
 		}
