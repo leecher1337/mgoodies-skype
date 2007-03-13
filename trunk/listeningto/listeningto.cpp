@@ -30,21 +30,26 @@ Boston, MA 02111-1307, USA.
 #define MS_LISTENINGTO_TTB		"ListeningTo/TopToolBar"
 
 
-PLUGININFO pluginInfo = {
-	sizeof(PLUGININFO),
+PLUGININFOEX pluginInfo={
+	sizeof(PLUGININFOEX),
 #ifdef UNICODE
 	"ListeningTo (Unicode)",
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,1,3),
+	PLUGIN_MAKE_VERSION(0,1,1,4),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
 	"http://pescuma.mirandaim.ru/miranda/listeningto",
 	UNICODE_AWARE,
-	0	//doesn't replace anything built-in
+	0,		//doesn't replace anything built-in
+#ifdef UNICODE
+	{ 0xf981f3f5, 0x35a, 0x444f, { 0x98, 0x92, 0xca, 0x72, 0x2c, 0x19, 0x5a, 0xda } } // {F981F3F5-035A-444f-9892-CA722C195ADA}
+#else
+	{ 0xa4a8ff7a, 0xc48a, 0x4d2a, { 0xb5, 0xa9, 0x46, 0x46, 0x84, 0x43, 0x26, 0x3d } } // {A4A8FF7A-C48A-4d2a-B5A9-46468443263D}
+#endif
 };
 
 
@@ -123,7 +128,21 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRe
 
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
 {
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO*) &pluginInfo;
+}
+
+
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
 	return &pluginInfo;
+}
+
+
+static const MUUID interfaces[] = { MIID_LISTENINGTO, MIID_LAST };
+extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 
@@ -243,7 +262,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/listeningto.zip";
 #endif
 
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
