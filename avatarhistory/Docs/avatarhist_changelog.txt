@@ -2,6 +2,9 @@ Avatar History
 
 Changelog:
 
+. 0.0.2.5
+  + Added support for Miranda 0.8
+
 . 0.0.2.4
   * Try to fix blank images
 
