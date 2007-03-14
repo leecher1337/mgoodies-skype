@@ -25,21 +25,26 @@ Boston, MA 02111-1307, USA.
 // Prototypes ///////////////////////////////////////////////////////////////////////////
 
 
-PLUGININFO pluginInfo = {
-	sizeof(PLUGININFO),
+PLUGININFOEX pluginInfo={
+	sizeof(PLUGININFOEX),
 #ifdef UNICODE
 	"Quick Contacts (Unicode)",
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,6),
+	PLUGIN_MAKE_VERSION(0,0,2,7),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
 	"",
 	"http://pescuma.mirandaim.ru/miranda/quickcontacts",
 	UNICODE_AWARE,
-	0	//doesn't replace anything built-in
+	0,		//doesn't replace anything built-in
+#ifdef UNICODE
+	{ 0xc679e1c9, 0x7967, 0x40ce, { 0x8a, 0x40, 0x95, 0x5b, 0x51, 0xde, 0x64, 0x3b } } // {C679E1C9-7967-40ce-8A40-955B51DE643B}
+#else
+	{ 0xd3cc7943, 0xff2e, 0x4c2a, { 0xb3, 0xac, 0x6c, 0xe9, 0xbc, 0x83, 0x18, 0x78 } } // {D3CC7943-FF2E-4c2a-B3AC-6CE9BC831878}
+#endif
 };
 
 
@@ -66,20 +71,34 @@ int hksAction = 0;
 // Functions ////////////////////////////////////////////////////////////////////////////
 
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
+extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
 {
 	hInst = hinstDLL;
 	return TRUE;
 }
 
 
-__declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
+extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
+{
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO*) &pluginInfo;
+}
+
+
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
 {
 	return &pluginInfo;
 }
 
 
-int __declspec(dllexport) Load(PLUGINLINK *link) {
+static const MUUID interfaces[] = { MIID_QUICKCONTACTS, MIID_LAST };
+extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
+}
+
+
+extern "C" __declspec(dllexport) int Load(PLUGINLINK *link) {
 	CLISTMENUITEM mi = {0};
 	
 	pluginLink = link;
@@ -93,7 +112,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link) {
 	return 0;
 }
 
-int __declspec(dllexport) Unload(void) 
+extern "C" __declspec(dllexport) int Unload(void) 
 {
 	DeInitOptions();
 
@@ -125,17 +144,17 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://br.geocities.com/ricardo_pescuma/quickcontacts_version.txt";
-		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/quickcontacts_changelog.txt";
+		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/quickcontacts_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/quickcontacts#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Quick Contacts ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/quickcontactsW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/quickcontactsW.zip";
 #else
-		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/quickcontacts.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/quickcontacts.zip";
 #endif
 
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);

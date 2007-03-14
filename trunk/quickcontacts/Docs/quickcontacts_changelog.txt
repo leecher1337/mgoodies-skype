@@ -1,6 +1,9 @@
-Quick Contacts 0.0.2.6
+Quick Contacts
 
 Changelog:
+
+. 0.0.2.7
+  + Added support for Miranda 0.8
 
 . 0.0.2.6
   * Fix for crash on exit

@@ -144,7 +144,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\quickcontacts.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\quickcontactsW.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\Debug Unicode\Plugins\quickcontactsW.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ENDIF 
@@ -209,6 +209,26 @@ SOURCE=.\options.cpp
 # Begin Source File
 
 SOURCE=.\quickcontacts.cpp
+# End Source File
+# End Group
+# Begin Group "Docs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Docs\langpack_quickcontacts.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\quickcontacts_changelog.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\quickcontacts_readme.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\quickcontacts_version.txt
 # End Source File
 # End Group
 # End Target

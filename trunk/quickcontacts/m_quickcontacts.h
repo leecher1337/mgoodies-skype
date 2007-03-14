@@ -22,6 +22,9 @@ Boston, MA 02111-1307, USA.
 # define __M_QUICKCONTACTS_H__
 
 
+#define MIID_QUICKCONTACTS { 0x5e638aa7, 0x4989, 0x4dbf, { 0x94, 0xa, 0x1e, 0xcb, 0x6c, 0x52, 0xcc, 0x52 } }
+
+
 /*
 Show the dialog to select the contact
 

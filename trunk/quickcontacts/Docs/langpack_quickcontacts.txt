@@ -1,6 +1,6 @@
-; Quick Contacts 0.0.2.6
+; Quick Contacts
 ; Author: micron-x, Pescuma
-; http://forums.miranda-im.org/showthread.php?t=5643
+; http://pescuma.mirandaim.ru/miranda/quickcontacts
 
 [Quick Contacts]
 
