@@ -103,17 +103,6 @@ typedef struct {
 #define MS_SKIN_ADDHOTKEY      "Skin/HotKeys/AddNew"
 #define MS_SKIN_PLAYHOTKEY		"Skin/HotKeys/Run"
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-// Dll init
-BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved);
-
-// Exports:
-__declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion);
-int __declspec(dllexport) Load(PLUGINLINK *link);
-int __declspec(dllexport) Unload(void);
-
 
 
 #ifdef __cplusplus
