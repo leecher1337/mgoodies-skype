@@ -36,7 +36,7 @@ PLUGININFOEX pluginInfo={
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
-	"",
+	"© 2006 Ricardo Pescuma Domenecci",
 	"http://pescuma.mirandaim.ru/miranda/quickcontacts",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
