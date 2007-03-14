@@ -168,14 +168,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://eth0.dk/files/pescuma/nickhistory_version.txt";
-		upd.szBetaChangelogURL = "http://eth0.dk/files/pescuma/nickhistory_changelog.txt";
+		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/nickhistory_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/nickhistory#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Nick History ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/nickhistoryW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/nickhistoryW.zip";
 #else
-		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/nickhistory.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/nickhistory.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
