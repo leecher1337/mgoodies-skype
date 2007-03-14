@@ -17,7 +17,7 @@ One last thing: when reporting bugs, please post the name and version of the pla
 
 Todo:
 - Better support for iTunes (it is not good now)
-- Support for foobar
+- Support for foobar - currently works only using this plugin in foobar: http://stephan.kochen.nl/proj/foobar2000.html#msn
 
 Known bugs:
 - In clist classic you can't select one protocol - it allways select all. This is because a limitation of the clist (that don't send the current position in list to the service). So, unless someone patch the clist, it wont work. Clist modern and nicer works fine.
