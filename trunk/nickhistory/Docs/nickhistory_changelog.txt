@@ -1,6 +1,9 @@
-Nick History 0.1.0.2
+Nick History
 
 Changelog:
+
+. 0.1.0.3
+  + Added support for Miranda 0.8
 
 . 0.1.0.2
   * -pv- patch

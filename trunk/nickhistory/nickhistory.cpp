@@ -24,21 +24,26 @@ Boston, MA 02111-1307, USA.
 // Prototypes ///////////////////////////////////////////////////////////////////////////
 
 
-PLUGININFO pluginInfo = {
-	sizeof(PLUGININFO),
+PLUGININFOEX pluginInfo={
+	sizeof(PLUGININFOEX),
 #ifdef UNICODE
 	"Nick History (Unicode)",
 #else
 	"Nick History",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,2),
+	PLUGIN_MAKE_VERSION(0,1,0,3),
 	"Log nickname changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
 	"http://pescuma.mirandaim.ru/miranda/nickhistory",
 	UNICODE_AWARE,
-	0	//doesn't replace anything built-in
+	0,		//doesn't replace anything built-in
+#ifdef UNICODE
+	{ 0x1469b29d, 0x8a40, 0x4146, { 0x94, 0xed, 0xe4, 0x26, 0x26, 0xc1, 0x7c, 0x4a } } // {1469B29D-8A40-4146-94ED-E42626C17C4A}
+#else
+	{ 0x9b898d10, 0x1f9c, 0x4948, { 0x87, 0xc1, 0xcb, 0xaf, 0x21, 0xaa, 0x11, 0x8a } } // {9B898D10-1F9C-4948-87C1-CBAF21AA118A}
+#endif
 };
 
 
@@ -78,7 +83,21 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRe
 
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
 {
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO*) &pluginInfo;
+}
+
+
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
 	return &pluginInfo;
+}
+
+
+static const MUUID interfaces[] = { MIID_NICKNAME_CHANGE_LOGGER, MIID_NICKNAME_CHANGE_NOTIFIER, MIID_LAST };
+extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 
@@ -159,7 +178,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/nickhistory.zip";
 #endif
 
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
