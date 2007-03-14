@@ -1,4 +1,4 @@
-; Status Message History 0.1.0.0
+; Status Message History
 ; Author: Pescuma
 
 ; Options
