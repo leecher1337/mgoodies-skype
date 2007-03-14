@@ -24,21 +24,26 @@ Boston, MA 02111-1307, USA.
 // Prototypes ///////////////////////////////////////////////////////////////////////////
 
 
-PLUGININFO pluginInfo = {
-	sizeof(PLUGININFO),
+PLUGININFOEX pluginInfo={
+	sizeof(PLUGININFOEX),
 #ifdef UNICODE
 	"Status Message History (Unicode)",
 #else
 	"Status Message History",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,2),
+	PLUGIN_MAKE_VERSION(0,1,0,3),
 	"Log status message changes to history",
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
 	"http://pescuma.mirandaim.ru/miranda/smh",
 	UNICODE_AWARE,
-	0	//doesn't replace anything built-in
+	0,		//doesn't replace anything built-in
+#ifdef UNICODE
+	{ 0x4f2b331e, 0xd894, 0x4fdc, { 0x8c, 0xb2, 0xd, 0x11, 0x54, 0xe5, 0xf3, 0x4c } } // {4F2B331E-D894-4fdc-8CB2-0D1154E5F34C}
+#else
+	{ 0x9a911bc1, 0xf3f1, 0x4c47, { 0xb2, 0xfd, 0x31, 0x7d, 0xaa, 0x8e, 0x3b, 0xb } } // {9A911BC1-F3F1-4c47-B2FD-317DAA8E3B0B}
+#endif
 };
 
 
@@ -78,7 +83,21 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRe
 
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
 {
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO*) &pluginInfo;
+}
+
+
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
 	return &pluginInfo;
+}
+
+
+static const MUUID interfaces[] = { MIID_STATUS_MESSAGE_CHANGE_LOGGER, MIID_STATUS_MESSAGE_CHANGE_NOTIFIER, MIID_LAST };
+extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 
@@ -149,17 +168,17 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://eth0.dk/files/pescuma/smh_version.txt";
-		upd.szBetaChangelogURL = "http://eth0.dk/files/pescuma/smh_changelog.txt";
+		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/smh_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/smh#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Status Message History ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/smhW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/smhW.zip";
 #else
-		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/smh.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/smh.zip";
 #endif
 
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);

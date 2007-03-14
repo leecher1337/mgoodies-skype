@@ -219,5 +219,29 @@ SOURCE=.\popup.cpp
 SOURCE=.\smh.cpp
 # End Source File
 # End Group
+# Begin Group "Docs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Docs\helppack_smh.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\langpack_smh.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\smh_changelog.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\smh_readme.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\smh_version.txt
+# End Source File
+# End Group
 # End Target
 # End Project
