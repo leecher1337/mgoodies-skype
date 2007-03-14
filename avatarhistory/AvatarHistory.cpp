@@ -75,7 +75,6 @@ PLUGININFOEX pluginInfo={
 #else
 	{ 0x4079923c, 0x8aa1, 0x4a2e, { 0x95, 0x8b, 0x9d, 0xc, 0xd0, 0xe8, 0x2e, 0xb2 } } // {4079923C-8AA1-4a2e-958B-9D0CD0E82EB2}
 #endif
-
 };
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
@@ -94,6 +93,7 @@ extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVers
 extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
 {
 	mirVer = mirandaVersion;
+	pluginInfo.cbSize = sizeof(PLUGININFOEX);
 	return &pluginInfo;
 }
 
