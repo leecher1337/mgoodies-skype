@@ -219,5 +219,29 @@ SOURCE=.\options.cpp
 SOURCE=.\popup.cpp
 # End Source File
 # End Group
+# Begin Group "Docs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Docs\helppack_nickhistory.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\langpack_nickhistory.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\nickhistory_changelog.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\nickhistory_readme.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\nickhistory_version.txt
+# End Source File
+# End Group
 # End Target
 # End Project

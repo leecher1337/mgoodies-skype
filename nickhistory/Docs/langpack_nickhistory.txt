@@ -1,4 +1,4 @@
-; Nick History 0.1.0.0
+; Nick History
 ; Author: Pescuma
 
 ; Options
