@@ -24,17 +24,18 @@ Boston, MA 02111-1307, USA.
 // Prototypes ///////////////////////////////////////////////////////////////////////////
 
 
-PLUGININFO pluginInfo = {
-	sizeof(PLUGININFO),
+PLUGININFOEX pluginInfo={
+	sizeof(PLUGININFOEX),
 	"Status Message Retriever",
-	PLUGIN_MAKE_VERSION(1,0,0,3),
-	"Retrive status message based on timer / status change",
+	PLUGIN_MAKE_VERSION(1,0,0,4),
+	"Retrieve status message based on timer / status change",
 	"Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
 	"",
-	"",
+	"© 2006 Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
 	"http://miranda-im.org/",
-	0,	//not transient
-	0	//doesn't replace anything built-in
+	0, 
+	0,		//doesn't replace anything built-in
+	{ 0x800a5c24, 0x737b, 0x499f, { 0x96, 0xa2, 0x40, 0x46, 0xda, 0xa8, 0x41, 0xb1 } } // {800A5C24-737B-499f-96A2-4046DAA841B1}
 };
 
 
@@ -68,7 +69,22 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
 __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
 {
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO*) &pluginInfo;
+}
+
+
+__declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	pluginInfo.cbSize = sizeof(PLUGININFOEX);
 	return &pluginInfo;
+}
+
+
+static const MUUID interfaces[] = { MIID_STATUS_MESSAGE_RETRIEVER, MIID_LAST };
+__declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 
@@ -144,13 +160,13 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://br.geocities.com/ricardo_pescuma/smr_version.txt";
-		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/smr_changelog.txt";
+		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/smr_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/smr#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Status Message Retriever ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
-		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/smr.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/smr.zip";
 
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);

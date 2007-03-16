@@ -1,6 +1,9 @@
-Status Message Retriever 1.0.0.3
+Status Message Retriever
 
 Changelog:
+
+. 1.0.0.4
+  + Added support for Miranda 0.8
 
 . 1.0.0.3
   * Fix for services

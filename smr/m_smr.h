@@ -22,6 +22,9 @@ Boston, MA 02111-1307, USA.
 # define __M_SMR_H__
 
 
+#define MIID_STATUS_MESSAGE_RETRIEVER { 0xbdfc508a, 0x3c73, 0x40d4, { 0x9f, 0x15, 0xf0, 0xbe, 0xb5, 0xab, 0x72, 0x78 } }
+
+
 /*
 Return TRUE is smr is enabled for this protocol
 If is enabled, status message is kept under CList\StatusMsg db key in user data
