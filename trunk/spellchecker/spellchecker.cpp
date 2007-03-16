@@ -23,8 +23,8 @@ Boston, MA 02111-1307, USA.
 // Prototypes ///////////////////////////////////////////////////////////////////////////
 
 
-PLUGININFO pluginInfo = {
-	sizeof(PLUGININFO),
+PLUGININFOEX pluginInfo={
+	sizeof(PLUGININFOEX),
 #ifdef UNICODE
 	"Spell Checker (Unicode)",
 #else
@@ -37,7 +37,12 @@ PLUGININFO pluginInfo = {
 	"© 2006 Ricardo Pescuma Domenecci",
 	"http://pescuma.mirandaim.ru/miranda/spellchecker",
 	UNICODE_AWARE,
-	0	//doesn't replace anything built-in
+	0,		//doesn't replace anything built-in
+#ifdef UNICODE
+	{ 0x36753ae3, 0x840b, 0x4797, { 0x94, 0xa5, 0xfd, 0x9f, 0x58, 0x52, 0xb9, 0x42 } } // {36753AE3-840B-4797-94A5-FD9F5852B942}
+#else
+	{ 0x3cdbcd92, 0x94d7, 0x466a, { 0x94, 0x7f, 0x4e, 0xe0, 0x1c, 0xca, 0xf4, 0x89 } } // {3CDBCD92-94D7-466a-947F-4EE01CCAF489}
+#endif
 };
 
 typedef struct
@@ -202,7 +207,22 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRe
 
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
 {
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO*) &pluginInfo;
+}
+
+
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	pluginInfo.cbSize = sizeof(PLUGININFOEX);
 	return &pluginInfo;
+}
+
+
+static const MUUID interfaces[] = { MIID_SPELLCHECKER, MIID_LAST };
+extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 
@@ -256,7 +276,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
 		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/spellchecker_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/?p=spellchecker#Changelog";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/spellchecker#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Spell Checker ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
@@ -265,7 +285,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/spellchecker.zip";
 #endif
 
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
@@ -521,9 +541,10 @@ inline void GetLineOfText(Dialog *dlg, int line, int &first_char, TCHAR *text, s
 {
 	first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
 
-	*((WORD*)text) = text_len;
-	SendMessage(dlg->hwnd, EM_GETLINE, (WPARAM) line, (LPARAM) text);
-	text[text_len-1] = _T('\0');
+	*((WORD*)text) = text_len - 1;
+	int size = SendMessage(dlg->hwnd, EM_GETLINE, (WPARAM) line, (LPARAM) text);
+	size = max(0, min(text_len-1, size-1));
+	text[size] = _T('\0');
 }
 
 // Helper to avoid copy and pastle

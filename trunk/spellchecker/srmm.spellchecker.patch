@@ -1,0 +1,238 @@
+Index: msgdialog.c
+===================================================================
+--- msgdialog.c	(revision 4352)
++++ msgdialog.c	(working copy)
+@@ -45,6 +45,7 @@
+ 
+ extern HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand;
+ extern HANDLE hHookWinEvt;
++extern HANDLE hHookWinPopup;
+ extern struct CREOleCallback reOleCallback;
+ extern HINSTANCE g_hInst;
+ 
+@@ -295,24 +296,7 @@
+ 	case WM_CHAR:
+ 		if (GetWindowLong(hwnd, GWL_STYLE) & ES_READONLY)
+ 			break;
+-		//for saved msg queue the keyup/keydowns generate wm_chars themselves
+-		if (wParam == '\n' || wParam == '\r') {
+-			if (((GetKeyState(VK_CONTROL) & 0x8000) != 0) ^ (0 != DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDONENTER, SRMSGDEFSET_SENDONENTER))) {
+-				PostMessage(GetParent(hwnd), WM_COMMAND, IDOK, 0);
+-				return 0;
+-			}
+-			if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDONDBLENTER, SRMSGDEFSET_SENDONDBLENTER)) {
+-				if (dat->lastEnterTime + ENTERCLICKTIME < GetTickCount())
+-					dat->lastEnterTime = GetTickCount();
+-				else {
+-					SendMessage(hwnd, WM_CHAR, '\b', 0);
+-					PostMessage(GetParent(hwnd), WM_COMMAND, IDOK, 0);
+-					return 0;
+-				}
+-			}
+-		}
+-		else
+-			dat->lastEnterTime = 0;
++
+ 		if (wParam == 1 && GetKeyState(VK_CONTROL) & 0x8000) {      //ctrl-a
+ 			SendMessage(hwnd, EM_SETSEL, 0, -1);
+ 			return 0;
+@@ -377,6 +361,26 @@
+ 			SaveKeyboardMessage(dat, msg, wParam, lParam);
+ 			return 0;
+ 		}
++		
++		if (wParam == VK_RETURN) {
++			if (((GetKeyState(VK_CONTROL) & 0x8000) != 0) ^ (0 != DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDONENTER, SRMSGDEFSET_SENDONENTER))) {
++				PostMessage(GetParent(hwnd), WM_COMMAND, IDOK, 0);
++				return 0;
++			}
++			if (DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_SENDONDBLENTER, SRMSGDEFSET_SENDONDBLENTER)) {
++				if (dat->lastEnterTime + ENTERCLICKTIME < GetTickCount())
++					dat->lastEnterTime = GetTickCount();
++				else {
++					SendMessage(hwnd, WM_KEYDOWN, VK_BACK, 0);
++					SendMessage(hwnd, WM_KEYUP, VK_BACK, 0);
++					PostMessage(GetParent(hwnd), WM_COMMAND, IDOK, 0);
++					return 0;
++				}
++			}
++		}
++		else
++			dat->lastEnterTime = 0;
++
+ 		if (wParam == VK_UP && (GetKeyState(VK_CONTROL) & 0x8000) && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CTRLSUPPORT, SRMSGDEFSET_CTRLSUPPORT) && !DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOCLOSE, SRMSGDEFSET_AUTOCLOSE)) {
+ 			if (pdat->cmdList) {
+ 				if (!pdat->cmdListCurrent) {
+@@ -419,8 +423,7 @@
+ 			EnableWindow(GetDlgItem(GetParent(hwnd), IDOK), GetWindowTextLength(GetDlgItem(GetParent(hwnd), IDC_MESSAGE)) != 0);
+ 			UpdateReadChars(GetParent(hwnd), pdat->hwndStatus);
+ 		}
+-		if (wParam == VK_RETURN)
+-			break;
++		break;
+ 		//fall through
+ 	case WM_LBUTTONDOWN:
+ 	case WM_RBUTTONDOWN:
+@@ -444,6 +447,45 @@
+ 			free(dat->keyboardMsgQueue);
+ 		free(dat);
+ 		return 0;
++	case WM_CONTEXTMENU: 
++		{
++			MessageWindowPopupData mwpd;
++			mwpd.cbSize = sizeof(mwpd);
++			mwpd.uType = MSG_WINDOWPOPUP_SHOWING;
++			mwpd.uFlags = MSG_WINDOWPOPUP_INPUT;
++			mwpd.hContact = pdat->hContact;
++			mwpd.hwnd = hwnd;
++			mwpd.hMenu = CreatePopupMenu();
++			mwpd.selection = 0;
++
++			if (lParam == 0xFFFFFFFF) {
++				CHARRANGE sel;
++				SendMessage(hwnd, EM_EXGETSEL, 0, (LPARAM) &sel);
++				SendMessage(hwnd, EM_POSFROMCHAR, (WPARAM)&mwpd.pt, (LPARAM) sel.cpMax);
++
++				ClientToScreen(hwnd, &mwpd.pt);
++			}
++			else {
++				mwpd.pt.x = LOWORD(lParam);
++				mwpd.pt.y = HIWORD(lParam);
++			}
++
++			// First notification
++			NotifyEventHooks(hHookWinPopup, 0, (LPARAM)&mwpd);
++
++			// Someone added items?
++			if (GetMenuItemCount(mwpd.hMenu) > 0) {
++				mwpd.selection = TrackPopupMenu(mwpd.hMenu, TPM_RETURNCMD, mwpd.pt.x, mwpd.pt.y, 0, hwnd, NULL);
++			}
++
++			// Second notification
++			mwpd.uType = MSG_WINDOWPOPUP_SELECTED;
++			NotifyEventHooks(hHookWinPopup, 0, (LPARAM)&mwpd);
++			return 0;
++		}
++	case WM_PASTE:
++		SendMessage(hwnd, EM_PASTESPECIAL, CF_TEXT, 0);
++		return 0;
+ 	}
+ 	return CallWindowProc(OldMessageEditProc, hwnd, msg, wParam, lParam);
+ }
+@@ -727,6 +769,7 @@
+ 			EnableWindow(GetDlgItem(hwndDlg, IDC_AVATAR), FALSE);
+ 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETOLECALLBACK, 0, (LPARAM) & reOleCallback);
+ 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_LINK);
++			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETEVENTMASK, 0,  ENM_CHANGE);
+ 			/* duh, how come we didnt use this from the start? */
+ 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_AUTOURLDETECT, (WPARAM) TRUE, 0);
+ 			if (dat->hContact) {
+@@ -1080,6 +1123,7 @@
+ 			COLORREF colour = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_BKGCOLOUR, SRMSGDEFSET_BKGCOLOUR);
+ 			dat->hBkgBrush = CreateSolidBrush(colour);
+ 			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETBKGNDCOLOR, 0, colour);
++			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETBKGNDCOLOR, 0, colour);
+ 		}
+ 		{ // avatar stuff
+ 			dat->avatarPic = 0;
+@@ -1093,12 +1137,17 @@
+ 		{
+ 			HFONT hFont;
+ 			LOGFONT lf;
++			CHARFORMAT cf = {0};
+ 			hFont = (HFONT) SendDlgItemMessage(hwndDlg, IDC_MESSAGE, WM_GETFONT, 0, 0);
+ 			if (hFont != NULL && hFont != (HFONT) SendDlgItemMessage(hwndDlg, IDOK, WM_GETFONT, 0, 0))
+ 				DeleteObject(hFont);
+-			LoadMsgDlgFont(MSGFONTID_MESSAGEAREA, &lf, NULL);
++			LoadMsgDlgFont(MSGFONTID_MESSAGEAREA, &lf, &cf.crTextColor);
+ 			hFont = CreateFontIndirect(&lf);
+ 			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, WM_SETFONT, (WPARAM) hFont, MAKELPARAM(TRUE, 0));
++
++			cf.cbSize = sizeof(CHARFORMAT);
++			cf.dwMask = CFM_COLOR;
++			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETCHARFORMAT, SCF_ALL, (WPARAM) &cf);
+ 		}
+ 
+         /*
+@@ -1464,18 +1513,9 @@
+ 			SetTimer(hwndDlg, TIMERID_MSGSEND, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_MSGTIMEOUT, SRMSGDEFSET_MSGTIMEOUT), NULL);
+ 			break;
+ 			}
+-			break;
+-		case WM_CTLCOLOREDIT:
+-			{
+-				COLORREF colour;
+-				if ((HWND) lParam != GetDlgItem(hwndDlg, IDC_MESSAGE))
+-					break;
+-				LoadMsgDlgFont(MSGFONTID_MESSAGEAREA, NULL, &colour);
+-				SetTextColor((HDC) wParam, colour);
+-				SetBkColor((HDC) wParam, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_BKGCOLOUR, SRMSGDEFSET_BKGCOLOUR));
+-				return (BOOL) dat->hBkgBrush;
+-			}
+ 		case WM_MEASUREITEM:
++			if (wParam == 0 || lParam == 0)
++				break;
+ 			return CallService(MS_CLIST_MENUMEASUREITEM, wParam, lParam);
+ 		case WM_DRAWITEM:
+ 			{
+Index: msgs.c
+===================================================================
+--- msgs.c	(revision 4352)
++++ msgs.c	(working copy)
+@@ -28,7 +28,7 @@
+ 
+ HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand;
+ static HANDLE hEventDbEventAdded, hEventDbSettingChange, hEventContactDeleted;
+-HANDLE *hMsgMenuItem = NULL, hHookWinEvt=NULL;
++HANDLE *hMsgMenuItem = NULL, hHookWinEvt=NULL, hHookWinPopup=NULL;
+ int hMsgMenuItemCount = 0;
+ 
+ extern HINSTANCE g_hInst;
+@@ -469,6 +469,7 @@
+ 	CreateServiceFunction("SRMsg/ReadMessage", ReadMessageCommand);
+ 	CreateServiceFunction("SRMsg/TypingMessage", TypingMessageCommand);
+ 	hHookWinEvt=CreateHookableEvent(ME_MSG_WINDOWEVENT);
++	hHookWinPopup=CreateHookableEvent(ME_MSG_WINDOWPOPUP);
+ 	SkinAddNewSoundEx("RecvMsgActive", Translate("Messages"), Translate("Incoming (Focused Window)"));
+ 	SkinAddNewSoundEx("RecvMsgInactive", Translate("Messages"), Translate("Incoming (Unfocused Window)"));
+ 	SkinAddNewSoundEx("AlertMsg", Translate("Messages"), Translate("Incoming (New Session)"));
+Index: resource.rc
+===================================================================
+--- resource.rc	(revision 4352)
++++ resource.rc	(working copy)
+@@ -9,6 +9,7 @@
+ //
+ #include <windows.h>
+ #include <winres.h>
++#include "richedit.h"
+ #include "../../include/statusmodes.h"
+ 
+ /////////////////////////////////////////////////////////////////////////////
+@@ -105,8 +106,17 @@
+ CAPTION "Message Session"
+ FONT 8, "MS Shell Dlg", 0, 0, 0x1
+ BEGIN
+-    EDITTEXT        IDC_MESSAGE,1,49,141,13,ES_MULTILINE | ES_AUTOVSCROLL | 
+-                    ES_WANTRETURN | WS_VSCROLL,WS_EX_ACCEPTFILES
++#if defined(UNICODE)
++    CONTROL         "",IDC_MESSAGE,"RichEdit20W",ES_MULTILINE | 
++                    ES_AUTOVSCROLL | ES_NOHIDESEL | ES_WANTRETURN | 
++                    WS_VSCROLL | WS_TABSTOP,1,49,141,13,WS_EX_ACCEPTFILES | 
++                    WS_EX_STATICEDGE
++#else
++    CONTROL         "",IDC_MESSAGE,"RichEdit20A",ES_MULTILINE | 
++                    ES_AUTOVSCROLL | ES_NOHIDESEL | ES_WANTRETURN | 
++                    WS_VSCROLL | WS_TABSTOP,1,49,141,13,WS_EX_ACCEPTFILES | 
++                    WS_EX_STATICEDGE
++#endif                    
+     DEFPUSHBUTTON   "&Send",IDOK,143,48,39,15
+     PUSHBUTTON      "Close",IDCANCEL,129,0,54,15,NOT WS_VISIBLE
+     CONTROL         "",IDC_PROTOCOL,"Button",BS_OWNERDRAW,2,5,12,12
+@@ -265,6 +275,7 @@
+ BEGIN
+     "#include <windows.h>\r\n"
+     "#include <winres.h>\r\n"
++    "#include ""richedit.h""\r\n"
+     "#include ""../../include/statusmodes.h""\r\n"
+     "\0"
+ END
