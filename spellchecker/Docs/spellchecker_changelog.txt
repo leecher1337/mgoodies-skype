@@ -2,6 +2,10 @@ Spell Checker
 
 Changelog:
 
+. 0.0.2.4
+  + Added support for Miranda 0.8
+  * Fixed big bad bug in text reading from richedit
+
 . 0.0.2.3
   * Fix for resource leak (thanks borkra)
 

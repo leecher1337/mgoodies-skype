@@ -1,4 +1,4 @@
-; Spell Checker 0.0.2.3
+; Spell Checker
 ; Author: Pescuma
 
 ; Options
