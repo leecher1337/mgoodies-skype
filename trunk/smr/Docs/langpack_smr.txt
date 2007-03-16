@@ -1,4 +1,4 @@
-; Status Message Retriever 1.0.0.0
+; Status Message Retriever
 ; Author: Pescuma
 
 ; Contact Menu
