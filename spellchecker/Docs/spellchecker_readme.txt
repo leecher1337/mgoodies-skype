@@ -8,7 +8,7 @@ This is a spell checker plugin that uses Hunspell to do the dirty work. Hunspell
 For message window plugins (let's call them all *srmm) it works transparently if those plugins implement the new notification API and have a richedit in the input area. Latest version (from build #0.7) of tabSRMM and scriver already do so. SRMM plugin don't have a rich edit, so you need this moded version:
 Ansi: http://pescuma.mirandaim.ru/miranda/srmm.zip
 Unicode: http://pescuma.mirandaim.ru/miranda/srmmW.zip
-Patch: http://pescuma.mirandaim.ru/miranda/srmm.spellchecker.diff
+Patch: http://pescuma.mirandaim.ru/miranda/srmm.spellchecker.patch
 
 For other plugins, it works throught providing 3 serices for them to interact:
 - one to add handling of a rich edit control

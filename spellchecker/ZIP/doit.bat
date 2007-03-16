@@ -23,6 +23,7 @@ copy ..\..\..\bin\release\Plugins\%name%W.dll
 copy ..\Docs\%name%_changelog.txt
 copy ..\Docs\%name%_version.txt
 copy ..\Docs\%name%_readme.txt
+copy ..\srmm.spellchecker.patch
 mkdir Docs
 cd Docs
 del /Q *.*
@@ -75,6 +76,7 @@ pause
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_readme.txt %ftp% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\srmm.spellchecker.patch %ftp% -overwrite -close 
 
 :END
 
