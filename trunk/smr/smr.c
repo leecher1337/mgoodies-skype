@@ -32,7 +32,7 @@ PLUGININFOEX pluginInfo={
 	"Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
-	"http://miranda-im.org/",
+	"http://pescuma.mirandaim.ru/miranda/smr",
 	0, 
 	0,		//doesn't replace anything built-in
 	{ 0x800a5c24, 0x737b, 0x499f, { 0x96, 0xa2, 0x40, 0x46, 0xda, 0xa8, 0x41, 0xb1 } } // {800A5C24-737B-499f-96A2-4046DAA841B1}
