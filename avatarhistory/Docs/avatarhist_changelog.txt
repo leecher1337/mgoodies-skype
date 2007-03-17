@@ -2,6 +2,9 @@ Avatar History
 
 Changelog:
 
+. 0.0.2.6
+  * Changed to always use online proto icon as base for popup icon
+
 . 0.0.2.5
   + Added support for Miranda 0.8
 

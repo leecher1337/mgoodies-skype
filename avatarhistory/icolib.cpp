@@ -128,8 +128,7 @@ HICON createProtoOverlayedIcon(HANDLE hContact)
 	HICON icon1 = LoadIconEx(I_OVERLAY);
 
 	char *szProto = (char *)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
-	int status = DBGetContactSettingWord(hContact, szProto, "Status", ID_STATUS_ONLINE);
-	HICON icon0 = LoadSkinnedProtoIcon(szProto, status);
+	HICON icon0 = LoadSkinnedProtoIcon(szProto, ID_STATUS_ONLINE);
 
 	HICON resIcon = getOverlayedIcon(icon0, icon1, FALSE);
 
