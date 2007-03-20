@@ -1,0 +1,113 @@
+; plugin name
+[Status Message Change Notify]
+
+; default templates
+[changed his/her status message to %n]
+[removes his/her status message]
+[changes his/her status message to %n]
+[<no status message>]
+
+; main menu items
+[PopUps]
+[Enable status message change notification]
+[Disable status message change notification]
+[List Contacts with Status Message]
+[Go To URL in Status Message]
+
+; skin sound option
+[Status Notify]
+[User has changed status message]
+
+; popup preview
+[Contact]
+[Old status message]
+[New status message]
+
+; IcoLib icons descriptions
+[PopUps Enabled]
+[PopUps Disabled]
+[List Contacts]
+[Go To URL]
+[Status Message History]
+[Log To File]
+
+; contacts with status message list
+[Protocol]
+[Nick]
+[Status Message]
+
+; status message history
+[Status Message History]
+[Clear history]
+; tooltips
+[Enable/Disable popups for this contact]
+[Enable/Disable history for this contact]
+[Enable/Disable logging to file for this contact]
+
+; options
+[Popups]
+[History]
+[General]
+[Advanced]
+[Ignore]
+
+; options page - popups
+[General]
+[Enable PopUps]
+[Show PopUps when I connect]
+[Only if status message has changed]
+[Ignore empty status messages]
+[Use OSD Plugin instead]
+[Colours]
+[From PopUp plugin]
+[Use Windows colours]
+[Custom]
+[Background]
+[Text]
+[Delay]
+[Permanent]
+[Actions]
+[Left click]
+[Right click]
+[Preview]
+
+; options page - general
+[Do not log empty status messages]
+[List]
+[Refresh list automatically]
+[Text colour]
+[Background colour]
+[Use background image]
+[Protocols]
+[Disable protocols which you don't wish to be notified for]
+
+; options page - advanced
+[History]
+[Keep history of up to]
+[status messages]
+[History template]
+[Clear status messages history for all contacts]
+[Message Window]
+[Show status message changes in message window]
+[Message removed]
+[Message changed]
+[Logging]
+[Log to]
+[Log in Ascii]
+;[Use %c in filename if you want to append Contact Custom Nickname]
+[You can use %c with log filename to append nicknames]
+[Log template]
+[Variables]
+
+; options page - ignore
+[Show PopUps]
+[Keep History]
+[Log To File]
+
+; options page - mouse click action select menu
+[Do nothing]
+[Close popup]
+[Open message window]
+[Open contact menu]
+[Open contact details]
+[View status message history]

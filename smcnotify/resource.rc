@@ -1,4 +1,4 @@
-//Microsoft Developer Studio generated resource script.
+//Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -14,32 +14,6 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Neutral resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
-#ifdef _WIN32
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-#pragma code_page(1250)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_HIST                ICON    DISCARDABLE     "resources\\hist.ico"
-IDI_POPUP               ICON    DISCARDABLE     "resources\\popup.ico"
-IDI_NOPOPUP             ICON    DISCARDABLE     "resources\\popup_no.ico"
-IDI_EXT                 ICON    DISCARDABLE     "resources\\log.ico"
-IDI_LIST                ICON    DISCARDABLE     "resources\\list.ico"
-IDI_URL                 ICON    DISCARDABLE     "resources\\url.ico"
-#endif    // Neutral resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
 // English (U.S.) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
@@ -50,141 +24,185 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_POPUP               ICON    DISCARDABLE     "res\\popup.ico"
+IDI_NOPOPUP             ICON    DISCARDABLE     "res\\popup_no.ico"
+IDI_LIST                ICON    DISCARDABLE     "res\\list.ico"
+IDI_URL                 ICON    DISCARDABLE     "res\\url.ico"
+IDI_HISTORY             ICON    DISCARDABLE     "res\\history.ico"
+IDI_LOG                 ICON    DISCARDABLE     "res\\log.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Dialog
 //
 
-IDD_HISTORY DIALOGEX 0, 0, 222, 152
-STYLE WS_CHILD
-FONT 8, "MS Shell Dlg"
-BEGIN
-    PUSHBUTTON      "Clear history",IDC_CLEARHIST,3,132,50,14
-    CONTROL         "H",IDC_DI,"MButtonClass",WS_TABSTOP,167,132,16,14,
-                    0x18000000L
-    CONTROL         "L",IDC_DE,"MButtonClass",WS_TABSTOP,185,132,16,14,
-                    0x18000000L
-    CONTROL         "P",IDC_DP,"MButtonClass",WS_TABSTOP,203,132,16,14,
-                    0x18000000L
-    EDITTEXT        IDC_HISTORYLIST,3,3,216,127,ES_MULTILINE |ES_READONLY |
-                    WS_VSCROLL | NOT WS_BORDER,WS_EX_STATICEDGE
-END
-
-IDD_OPT DIALOGEX 0, 0, 220, 190
-STYLE WS_CHILD
+IDD_HISTORY DIALOGEX 0, 0, 224, 154
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "PopUp",-1,2,2,216,183
-    CONTROL         "Temporarily disable Popups",IDC_CHKDISABLE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,12,202,8
-    CONTROL         "Show PopUps when I connect",IDC_SHOWONC,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,22,202,8
-    CONTROL         "Only if status message has changed",IDC_SHOWONC2,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,20,32,190,8
-    CONTROL         "Ignore empty status messages",IDC_IGNOREPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,42,202,8
-    CONTROL         "Use OSD Plugin instead",IDC_USEOSD,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,52,202,8
-    CONTROL         "",-1,"Static",SS_BLACKFRAME,6,63,208,1,WS_EX_STATICEDGE
-    CONTROL         "",IDC_COLBACK,"ColourPicker",WS_TABSTOP,8,67,19,10
-    LTEXT           "Background colour",-1,31,68,65,8
-    CONTROL         "",IDC_COLTEXT,"ColourPicker",WS_TABSTOP,114,67,19,10
-    LTEXT           "Text colour",-1,135,68,75,8
-    CONTROL         "Use Windows colours",IDC_CHKDEFAULTCOL,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,114,79,96,8
-    CONTROL         "",-1,"Static",SS_BLACKFRAME,6,90,208,1,WS_EX_STATICEDGE
-    LTEXT           "PopUp text",-1,8,96,60,10
-    EDITTEXT        IDC_POPUPTEXT,72,94,138,18,ES_MULTILINE | ES_AUTOHSCROLL |
-                    NOT WS_BORDER,WS_EX_STATICEDGE
-    CONTROL         "",-1,"Static",SS_BLACKFRAME,6,115,208,1,
-                    WS_EX_STATICEDGE
-    LTEXT           "PopUp display time",-1,8,120,71,10
-    EDITTEXT        IDC_DELAY,84,119,33,10,ES_RIGHT | ES_AUTOHSCROLL |
-                    ES_NUMBER | NOT WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "Seconds",-1,123,120,48,9
-    CONTROL         "Infinite popup delay",IDC_DELAYINFINITE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,83,131,127,8
-    LTEXT           "Left Click Actions",-1,8,141,71,8
-    CONTROL         "",IDC_LeftClick,"MButtonClass",WS_TABSTOP,83,141,95,9,
+    PUSHBUTTON      "Clear history",IDC_CHISTORYCLEAR,2,138,50,14
+    EDITTEXT        IDC_HISTORYLIST,2,4,220,131,ES_MULTILINE | ES_READONLY |
+                    WS_VSCROLL | WS_BORDER//,WS_EX_STATICEDGE
+    CONTROL         "&P",IDC_CPOPUP,"MButtonClass",WS_TABSTOP,170,138,16,14,
                     0x18000000L
-    LTEXT           "Right Click Actions",-1,8,152,71,8
-    CONTROL         "",IDC_RightClick,"MButtonClass",WS_TABSTOP,83,152,95,9,
+    CONTROL         "&H",IDC_CHISTORY,"MButtonClass",WS_TABSTOP,188,138,16,14,
                     0x18000000L
-    CONTROL         "",-1,"Static",SS_BLACKFRAME,6,164,208,1,
-                    WS_EX_STATICEDGE
-    PUSHBUTTON      "Preview",IDC_PREVIEW,86,168,47,12
+    CONTROL         "&L",IDC_CLOG,"MButtonClass",WS_TABSTOP,206,138,16,14,
+                    0x18000000L
 END
 
-IDD_LIST DIALOGEX 0, 0, 119, 199
-STYLE DS_SETFOREGROUND | DS_3DLOOK | DS_CENTER | WS_MINIMIZEBOX | 
-    WS_MAXIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+IDD_POPUP DIALOGEX 0, 0, 314, 240
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "General",IDC_STATIC,0,0,314,70
+    CONTROL         "Enable PopUps",IDC_POPUPS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,6,12,202,8
+//    CONTROL         "Use OSD Plugin instead",IDC_USEOSD,"Button",
+//                    BS_AUTOCHECKBOX | WS_TABSTOP,200,12,100,8
+    CONTROL         "Show PopUps when I connect",IDC_ONCONNECT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,6,26,202,8
+    CONTROL         "Only if status message has changed",IDC_IFCHANGED,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,18,40,190,8
+    CONTROL         "Ignore empty status messages",IDC_PUIGNOREREMOVE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,6,54,202,8
+    GROUPBOX        "Colours",IDC_STATIC,0,86,152,70
+    CONTROL         "From PopUp plugin",IDC_COLORFROMPU,"Button",BS_AUTORADIOBUTTON | WS_GROUP,6,98,140,10
+    CONTROL         "Use Windows colours",IDC_COLORWINDOWS,"Button",BS_AUTORADIOBUTTON,6,112,140,10
+    CONTROL         "Custom",IDC_COLORCUSTOM,"Button",BS_AUTORADIOBUTTON,6,126,140,10
+    CONTROL         "",IDC_PUBGCOLOR,"ColourPicker",WS_TABSTOP,6,140,20,12
+    LTEXT           "Background",IDC_STATIC,30,142,45,8
+    CONTROL         "",IDC_PUTEXTCOLOR,"ColourPicker",WS_TABSTOP,76,140,20,12
+    LTEXT           "Text",IDC_STATIC,100,142,45,8
+    GROUPBOX        "Delay",IDC_STATIC,155,86,158,56
+    CONTROL         "From PopUp plugin",IDC_DELAYFROMPU,"Button",BS_AUTORADIOBUTTON | WS_GROUP,161,98,71,10
+    CONTROL         "Custom",IDC_DELAYCUSTOM,"Button",BS_AUTORADIOBUTTON,161,112,48,10
+    EDITTEXT        IDC_DELAY,230,110,30,12,ES_RIGHT | ES_AUTOHSCROLL |
+                    ES_NUMBER | NOT WS_BORDER,WS_EX_STATICEDGE
+    CONTROL         "",IDC_DELAY_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
+                    UDS_HOTTRACK,260,111,10,11
+    CONTROL         "Permanent",IDC_DELAYPERMANENT,"Button",
+                    BS_AUTORADIOBUTTON,161,126,127,8
+    GROUPBOX        "Text",IDC_STATIC,0,158,152,34
+    EDITTEXT        IDC_POPUPTEXT,6,168,140,20,ES_MULTILINE | ES_AUTOHSCROLL |
+                    NOT WS_BORDER,WS_EX_STATICEDGE
+    GROUPBOX        "Actions",IDC_STATIC,155,146,158,46
+    LTEXT           "Left click",IDC_STATIC,161,160,50,8
+    COMBOBOX        IDC_LEFTACTION,213,158,95,60,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Right click",IDC_STATIC,161,176,50,8
+    COMBOBOX        IDC_RIGHTACTION,213,174,95,60,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Preview",IDC_PREVIEW,135,210,44,12
+END
+
+IDD_OPTIONS DIALOGEX 0, 0, 311, 231
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Status Message Change Notify",IDC_STATIC,4,4,302,28
+    CONTROL         "Do not log empty status messages",
+                    IDC_IGNOREREMOVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,18,
+                    200,10
+    GROUPBOX        "List",IDC_STATIC,4,33,302,56
+    CONTROL         "Refresh list automatically",IDC_LISTAUTOREFRESH,"Button",
+                    BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_TABSTOP,10,44,200,10
+    CONTROL         "",IDC_LISTTEXTCOLOR,"ColourPicker",WS_TABSTOP,9,44,18,12
+    CONTROL         "",IDC_LISTBGCOLOR,"ColourPicker",WS_TABSTOP,155,44,18,12
+    LTEXT           "Text colour",IDC_STATIC,30,46,65,10
+    LTEXT           "Background colour",IDC_STATIC,176,46,65,10
+    CONTROL         "Use background image",IDC_USEBGIMG,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,58,200,10
+    EDITTEXT        IDC_BGIMGFILE,10,72,270,12,ES_AUTOHSCROLL | ES_READONLY | WS_BORDER,
+    PUSHBUTTON      "...",IDC_BGIMGBROWSE,284,72,16,12,BS_CENTER
+    GROUPBOX        "Protocols",IDC_STATIC,4,89,302,94
+    CTEXT           "Disable protocols which you don't wish to be notified for",IDC_STATIC,10,100,290,10
+    CONTROL         "",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,100,114,110,64
+END
+
+IDD_ADVANCED DIALOGEX 0, 0, 311, 231
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "History",IDC_STATIC,4,2,302,56
+    CONTROL         "Keep history of up to",IDC_HISTORY."Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,15,100,10
+    EDITTEXT        IDC_HISTORYMAX,112,14,30,12,ES_RIGHT | ES_AUTOHSCROLL | 
+                    ES_NUMBER | NOT WS_BORDER,WS_EX_STATICEDGE
+    CONTROL         "",IDC_HISTORYMAX_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
+                    UDS_HOTTRACK,142,14,10,11
+    LTEXT           "status messages",IDC_STATIC,156,15,60,10
+    LTEXT           "History template",IDC_STATIC,10,29,50,10
+    EDITTEXT        IDC_HISTORYTEXT,75,28,138,24,ES_AUTOHSCROLL | NOT WS_BORDER,
+                    WS_EX_STATICEDGE
+    PUSHBUTTON      "Clear status messages history for all contacts",IDC_HISTORYCLEAR,
+                    220,14,80,36,BS_MULTILINE
+    GROUPBOX        "Message Window",IDC_STATIC,4,58,302,58
+    CONTROL         "Show status message changes in message window",
+                    IDC_MESSAGEWND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,70,
+                    190,10
+    LTEXT           "Message removed",IDC_STATIC,10,85,64,10
+    EDITTEXT        IDC_MSGREMOVED,75,84,225,12,ES_AUTOHSCROLL | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    LTEXT           "Message changed",IDC_STATIC,10,99,64,10
+    EDITTEXT        IDC_MSGCHANGED,75,98,225,12,ES_AUTOHSCROLL | NOT 
+                    WS_BORDER,WS_EX_STATICEDGE
+    GROUPBOX        "Logging",IDC_STATIC,4,116,302,58
+    CONTROL         "Log to",IDC_LOG,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,10,130,64,8
+    EDITTEXT        IDC_LOGFILE,75,128,205,12,ES_AUTOHSCROLL | ES_READONLY | WS_BORDER,
+    PUSHBUTTON      "...",IDC_LOGFILEBROWSE,284,128,16,12,BS_CENTER
+    CTEXT           "You can use %c with log filename to append nicknames",IDC_STATIC,75,144,225,8
+//    CTEXT           "Use %c in filename if you want to append Contact Custom Nickname",IDC_STATIC,18,144,284,8
+    CONTROL         "Log in Ascii",IDC_LOGASCII,"Button",BS_AUTOCHECKBOX | WS_TABSTOP | NOT WS_VISIBLE,18,144,64,8
+    LTEXT           "Log template",IDC_STATIC,10,158,50,10
+    EDITTEXT        IDC_LOGTEXT,75,156,225,12,ES_AUTOHSCROLL | NOT WS_BORDER,
+                    WS_EX_STATICEDGE
+    GROUPBOX        "Variables",IDC_STATIC,4,175,302,52
+    EDITTEXT        IDC_VARS1,10,184,144,40,ES_MULTILINE | ES_READONLY |
+                    NOT WS_BORDER
+    EDITTEXT        IDC_VARS2,156,184,144,40,ES_MULTILINE | ES_READONLY |
+                    NOT WS_BORDER
+END
+
+IDD_IGNORE DIALOGEX 0, 0, 310, 230
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_IGNORELIST,"CListControl",WS_TABSTOP | 0x1d2,4,4,302,170,
+                    WS_EX_CLIENTEDGE
+    ICON            IDI_POPUP,IDC_IGNOREPOPUP,256,178,12,12,SS_CENTERIMAGE | SS_REALSIZEIMAGE
+    RTEXT           "Show PopUps",IDC_STATIC,4,180,238,8
+    ICON            IDI_HISTORY,IDC_IGNOREHISTORY,268,192,12,12,SS_CENTERIMAGE | SS_REALSIZEIMAGE
+    RTEXT           "Keep History",IDC_STATIC,4,194,238,8
+    ICON            IDI_LOG,IDC_IGNORELOG,280,206,12,12,SS_CENTERIMAGE | SS_REALSIZEIMAGE
+    RTEXT           "Log To File",IDC_STATIC,4,208,238,8
+END
+
+IDD_LIST DIALOGEX 0, 0, 200, 300
+STYLE DS_SETFONT | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | 
+	WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 EXSTYLE WS_EX_CONTROLPARENT
 CAPTION "List Contacts with Status Message"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "List Contacts",IDC_LIST,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | 
-                    LVS_ALIGNLEFT | WS_TABSTOP,0,0,119,199
-END
-
-IDD_OPT_NTF DIALOGEX 0, 0, 314, 240
-STYLE WS_CHILD
-FONT 8, "MS Shell Dlg"
-BEGIN
-    GROUPBOX        "Status Message Change Notify",IDC_STATIC,2,1,310,32
-    CONTROL         "Do not log empty status messages",
-                    IDC_IGNOREALL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,11,
-                    298,8
-//    CONTROL         "Hide quick settings from contact menu",
-//                    IDC_HIDECMENUITEMS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-//                    8,21,298,8
-    GROUPBOX        "Logging",IDC_STATIC,2,35,310,38
-    CONTROL         "Log to",IDC_LOGTOFILE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,8,47,64,8
-    EDITTEXT        IDC_LOGTO,77,47,229,10,ES_AUTOHSCROLL | NOT WS_BORDER,
-                    WS_EX_STATICEDGE
-    LTEXT           "Log format",IDC_STATIC,8,59,50,10
-    EDITTEXT        IDC_FLOG,77,59,138,10,ES_AUTOHSCROLL | NOT WS_BORDER,
-                    WS_EX_STATICEDGE
-    GROUPBOX        "History",IDC_STATIC,2,75,310,38
-    LTEXT           "History format",IDC_STATIC,8,87,50,10
-    EDITTEXT        IDC_FHIS,77,87,138,10,ES_AUTOHSCROLL | NOT WS_BORDER,
-                    WS_EX_STATICEDGE
-    LTEXT           "Maximum entries",IDC_STATIC,8,99,64,10
-    EDITTEXT        IDC_HISMAX,77,99,25,10,ES_RIGHT | ES_AUTOHSCROLL | 
-                    ES_NUMBER | NOT WS_BORDER,WS_EX_STATICEDGE
-    GROUPBOX        "Message Window",IDC_STATIC,2,115,310,48
-    CONTROL         "Show status message changes in message window",
-                    IDC_SHOWCH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,125,
-                    190,8
-    LTEXT           "Message cleared",IDC_STATIC,8,137,64,10
-    EDITTEXT        IDC_LOGMSGCL,77,137,138,10,ES_AUTOHSCROLL | NOT 
-                    WS_BORDER,WS_EX_STATICEDGE
-    LTEXT           "Message changed",IDC_STATIC,8,149,64,10
-    EDITTEXT        IDC_LOGMSGCH,77,149,138,10,ES_AUTOHSCROLL | NOT 
-                    WS_BORDER,WS_EX_STATICEDGE
-    GROUPBOX        "List",IDC_STATIC,2,165,186,74
-    CONTROL         "Refresh list automatically",IDC_AUTOREFRESH,"Button",
-                    BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_TABSTOP,8,175,173,
-                    8
-    CONTROL         "",IDC_COLLISTTEXT,"ColourPicker",WS_TABSTOP,8,187,18,10
-    CONTROL         "",IDC_COLLISTBACK,"ColourPicker",WS_TABSTOP,8,200,18,10
-    LTEXT           "Text colour",IDC_STATIC,31,187,63,10
-    LTEXT           "Background colour",IDC_STATIC,31,200,66,10
-    CONTROL         "Use background image",IDC_USEBGIMG,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,8,212,173,8
-    EDITTEXT        IDC_IMGFILENAME,8,223,158,10,ES_AUTOHSCROLL | NOT 
-                    WS_BORDER,WS_EX_STATICEDGE
-    PUSHBUTTON      "...",IDC_BROWSE,169,223,12,9
-    GROUPBOX        "Variables",IDC_STATIC,192,165,120,74
-    LTEXT           "%n New Status Message",IDC_STATIC,198,174,108,8
-    LTEXT           "%o Old Status Message",IDC_STATIC,198,183,108,8
-    LTEXT           "%D/%M/%Y day/month/year",IDC_STATIC,198,192,108,8
-    LTEXT           "%c Custom nickname",IDC_STATIC,198,201,108,8
-    LTEXT           "%H:%m Time (in 24h format)",IDC_STATIC,198,210,108,8
-    LTEXT           "%h:%m %a (in 12h format)",IDC_STATIC,198,219,108,8
-    LTEXT           "\\n line break",IDC_STATIC,198,228,54,8
-    LTEXT           "\\t tab stop",IDC_STATIC,253,228,53,8
-    PUSHBUTTON      "Clear status messages\nhistory for all contacts",IDC_CLEARALLHIS,
-                    221,85,85,20,BS_MULTILINE
+                    LVS_ALIGNLEFT | WS_TABSTOP,0,0,200,300
 END
 
 
@@ -194,7 +212,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+GUIDELINES DESIGNINFO 
 BEGIN
     IDD_HISTORY, DIALOG
     BEGIN
@@ -242,55 +260,25 @@ END
 #endif    // APSTUDIO_INVOKED
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Menu
-//
-
-IDR_PMENU MENU DISCARDABLE 
-BEGIN
-    POPUP "Menu"
-    BEGIN
-        MENUITEM "Dismiss PopUp",               IDM_M1
-        MENUITEM "Open message window",         IDM_M2
-        MENUITEM "View status message history", IDM_M3
-        MENUITEM "Show user detail",            IDM_M4
-        MENUITEM "Show user menu",              IDM_M5
-    END
-END
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (Canada) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENC)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_CAN
-#pragma code_page(1252)
-#endif //_WIN32
-
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE DISCARDABLE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE DISCARDABLE
 BEGIN
     "#include ""resource.h""\r\n"
     "#include ""winresrc.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE DISCARDABLE
 BEGIN
     "\r\n"
     "\0"
@@ -298,7 +286,7 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-#endif    // English (Canada) resources
+#endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

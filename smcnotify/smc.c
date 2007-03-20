@@ -1,5 +1,5 @@
 /*
-StatusMessageChangeNotify plugin for Miranda IM.
+Status Message Change Notify plugin for Miranda IM.
 
 Copyright © 2004-2005 NoName
 Copyright © 2005-2006 Daniel Vijge, Tomasz S³otwiñski, Ricardo Pescuma Domenecci
@@ -19,60 +19,105 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#include "main.h"
-#include <time.h>
+#include "commonheaders.h"
 
-/*static BOOL CheckPopupTimer(WPARAM contact) {
-	char *lpzProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, contact, 0);
-	if (DBGetContactSettingDword(NULL, MODULE, lpzProto, 0) == 1) return TRUE;
-	if ((GetTickCount() - DBGetContactSettingDword(NULL, MODULE, lpzProto, 0)) > TMR_CONNECTIONTIMEOUT)
+
+static void LogToFile(STATUSMSGINFO *smi) {
+	HANDLE hFile;
+	TCHAR filename[MAX_PATH] = _T("");
+	TCHAR *p = NULL;
+
+	p = _tcsstr(opts.logfile, _T("%c"));
+	if (p != NULL)
 	{
-		DBWriteContactSettingDword(NULL, MODULE, lpzProto, 1);
-		return TRUE;
+		p[1] = _T('s');
+		mir_sntprintf(filename, MAX_PATH, opts.logfile, smi->cust);
+		p[1] = _T('c');
 	}
-	return FALSE;
-}*/
-static BOOL CheckPopupTimer(HANDLE hContact, const char *module, const char *setting) {
-	if (DBGetContactSettingDword(hContact, module, setting, 0) == 1) return TRUE;
-	if ((GetTickCount() - DBGetContactSettingDword(hContact, module, setting, 0)) > TMR_CONNECTIONTIMEOUT)
+	else
+		lstrcpyn(filename, opts.logfile, MAX_PATH);
+
+	hFile = CreateFile(filename/*opts.logfile*/, GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		DBWriteContactSettingDword(hContact, module, setting, 1);
-		return TRUE;
+		TCHAR *buffer = GetStr(smi, opts.log);
+
+		if (buffer != NULL && buffer[0] != _T('\0'))
+		{
+			DWORD dwWritten;
+
+			SetFilePointer(hFile, 0, 0, FILE_END);
+#ifdef UNICODE
+			if (opts.bLogAscii)
+			{
+				char *bufferA = mir_dupToAscii(buffer);
+				WriteFile(hFile, bufferA, lstrlenA(bufferA), &dwWritten, NULL);
+				WriteFile(hFile, "\r\n", 2, &dwWritten, NULL);
+				mir_free(bufferA);
+			}
+			else
+#endif
+			{
+				WriteFile(hFile, buffer, lstrlen(buffer) * sizeof(TCHAR), &dwWritten, NULL);
+				WriteFile(hFile, _T("\r\n"), 2 * sizeof(TCHAR), &dwWritten, NULL);
+			}
+
+			mir_free(buffer);
+		}
+		CloseHandle(hFile);
 	}
-	return FALSE;
+
+	return;
 }
 
-static BOOL CheckPopup(STATUSMSGINFO *smi) {
-	if (options.bIgnoreEmptyPopup && smi->bIsEmpty)
-		return FALSE;
-//	if (options.bShowOnConnect)
-//		return TRUE;
-//	else if (CheckPopupTimer(NULL, MODULE, smi->proto)) return TRUE;
-/*	if ((BOOL)DBGetContactSettingByte(NULL, MODULE, "IgnoreAfterStatusChange", 0))
-//		return (GetTickCount() - DBGetContactSettingDword(smi->hContact, "UserOnline", "LastStatusChange", 0)) > TMR_CONNECTIONTIMEOUT;
-		return CheckPopupTimer(smi->hContact, "UserOnline", "LastStatusChange");
-*/
-	if (!CheckPopupTimer(NULL, MODULE, smi->proto))
-	{
-		return (options.bShowOnConnect && (lstrcmp(smi->newstatusmsg, smi->oldstatusmsg) || !options.bOnlyIfChanged));
-	}
-	if ((BOOL)DBGetContactSettingByte(NULL, MODULE, "IgnoreAfterStatusChange", 0))
-		return CheckPopupTimer(smi->hContact, "UserOnline", "LastStatusChange");
+static void AddToHistory(STATUSMSGINFO *smi) {
+	WORD historyFirst, historyLast, historyMax;
+//	TCHAR *p;
 
-	return TRUE;
+	historyMax = DBGetContactSettingWord(smi->hContact, MODULE_NAME, "HistoryMax", opts.dHistoryMax);
+	if (historyMax <= 0)
+		return;
+	else if (historyMax > 99)
+		historyMax = 99;
+
+	historyFirst = DBGetContactSettingWord(smi->hContact, MODULE_NAME, "HistoryFirst", 0);
+	if (historyFirst >=  historyMax)
+		historyFirst = 0;
+	historyLast = DBGetContactSettingWord(smi->hContact, MODULE_NAME, "HistoryLast", 0);
+	if (historyLast >= historyMax)
+		historyLast = historyMax - 1;
+
+	//fix CR/LF from SimpleAway
+//	p = &smi->newstatusmsg[0];
+//	while (p = _tcsstr(p, _T("\n")))
+//	{
+//		if (p == &smi->newstatusmsg[0] || p[-1] != _T('\r'))
+//			p[0] = _T('\r');
+//	}
+
+	//write old status message and its timestamp seperately
+	DBWriteContactSettingTString(smi->hContact, MODULE_NAME, BuildSetting(historyLast, NULL), smi->newstatusmsg);
+	DBWriteContactSettingDword(smi->hContact, MODULE_NAME, BuildSetting(historyLast, "_ts"), smi->dTimeStamp);
+
+	historyLast = (historyLast + 1) % historyMax;
+	DBWriteContactSettingWord(smi->hContact, MODULE_NAME, "HistoryLast", historyLast);
+	if (historyLast == historyFirst)
+		DBWriteContactSettingWord(smi->hContact, MODULE_NAME, "HistoryFirst", (WORD)((historyFirst + 1) % historyMax));
+
+	return;
 }
 
 //return values:
 //	0 - No window found
 //	1 - Window found
-static int CheckMsgWnd(WPARAM contact) {
+static BOOL MsgWindowCheck(HANDLE hContact) {
 	MessageWindowData mwd;
 	MessageWindowInputData mwid;
 	mwid.cbSize = sizeof(MessageWindowInputData);
-	mwid.hContact = (HANDLE)contact;
+	mwid.hContact = hContact;
 	mwid.uFlags = MSG_WINDOW_UFLAG_MSG_BOTH;
 	mwd.cbSize = sizeof(MessageWindowData);
-	mwd.hContact = (HANDLE)contact;
+	mwd.hContact = hContact;
 	if (!CallService(MS_MSG_GETWINDOWDATA, (WPARAM)&mwid, (LPARAM)&mwd))
 	{
 		if (mwd.hwndWindow != NULL && (mwd.uState & MSG_WINDOW_STATE_EXISTS)) return 1;
@@ -80,131 +125,277 @@ static int CheckMsgWnd(WPARAM contact) {
 	return 0;
 }
 
+// Returns true if the unicode buffer only contains 7-bit characters.
+static BOOL IsUnicodeAscii(const WCHAR * pBuffer, int nSize) {
+	BOOL bResult = TRUE;
+	int nIndex;
 
-void StatusMsgChanged(WPARAM wParam, STATUSMSGINFO* smi) {
-	DBVARIANT dbv;
-	int i;
-	DWORD ignore_mask;
-	TCHAR buffer[2048];
-	BOOL bExitAfterPopup = FALSE;
-
-	//ignore empty status messages
-	if (options.bIgnoreEmptyPopup && options.bIgnoreEmptyAll && smi->bIsEmpty) return;
-	//read out old status message
-	if (!DBGetContactSetting(smi->hContact, "UserOnline", "OldStatusMsg", &dbv))
-	{
-		smi->oldstatusmsg = _strdup(dbv.pszVal);
-		DBFreeVariant(&dbv);
+	for (nIndex = 0; nIndex < nSize; nIndex++) {
+		if (pBuffer[nIndex] > 0x7F) {
+			bResult = FALSE;
+			break;
+		}
 	}
-	else smi->oldstatusmsg = "";
-	//If they are the same, you don't need to write to the DB or do anything else.
-	if (!lstrcmp(smi->oldstatusmsg, smi->newstatusmsg))
+	return bResult;
+}
+
+static void AddToDB(STATUSMSGINFO *smi) {
+	TCHAR *buffer = NULL;
+
+	if (smi->compare == 2)
+		buffer = GetStr(smi, opts.msgremoved);
+	else if (smi->compare == 1)
+		buffer = GetStr(smi, opts.msgchanged);
+
+	if (buffer != NULL && buffer[0] != _T('\0'))
 	{
-		if (options.bShowOnConnect && !options.bOnlyIfChanged)
-			bExitAfterPopup = TRUE;
+		DBEVENTINFO dbei = {0};
+#ifdef UNICODE
+		size_t needed, len, size;
+		BYTE *tmp = NULL;
+
+		needed = WideCharToMultiByte(CP_ACP, 0, buffer, -1, NULL, 0, NULL, NULL);
+		len = lstrlen(buffer);
+
+		if (/*opts.history_only_ansi_if_possible && */IsUnicodeAscii(buffer, len))
+			size = needed;
 		else
-			return;
-	}
+			size = needed + (len + 1) * sizeof(WCHAR);
 
-	DBWriteContactSettingString(smi->hContact, "UserOnline", "OldStatusMsg", smi->newstatusmsg);
+		tmp = (BYTE*)mir_alloc0(size);
 
-	//fix CR/LF from SimpleAway
-	lstrcpy(buffer, "");
-	for (i = 0; i < lstrlen(smi->newstatusmsg); i++)
-	{
-		if ((smi->newstatusmsg[i] != 0x0D) && (smi->newstatusmsg[i+1] == 0x0A))
-		{
-			wsprintf(buffer, "%s%c\r", buffer, smi->newstatusmsg[i]);
-		}
-		else wsprintf(buffer, "%s%c", buffer, smi->newstatusmsg[i]);
-	}
-	lstrcpy(smi->newstatusmsg, buffer);
+		WideCharToMultiByte(CP_ACP, 0, buffer, -1, (char*)tmp, needed, NULL, NULL);
 
-	smi->cust = (TCHAR*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, wParam, GCDNF_TCHAR);
-	smi->dTimeStamp = (DWORD)time(NULL);
-	ignore_mask = DBGetContactSettingDword(smi->hContact, IGNORE_MODULE, IGNORE_MASK, 0);
+		if (size > needed)
+			lstrcpyn((WCHAR*)&tmp[needed], buffer, len + 1);
 
-	//ignore not on list and hidden contacts
-	if (!DBGetContactSettingByte(smi->hContact, "CList", "NotOnList", 0) && !DBGetContactSettingByte(smi->hContact, "CList", "Hidden", 0))
-	{
-		//popup
-		if (!options.bDisablePopUps && !(ignore_mask & IGNORE_POP))
-		{
-			if (CheckPopup(smi))
-			{
-				//if this is the first time the plugin runs, don't show popup
-				//if (!DBGetContactSetting(n.hContact,"CList","StatusMsg",&dbv))
-				ShowPopup(smi);
-				//play the sound event
-				SkinPlaySound("statusmsgchanged");
-			}
-		}
-		if (bExitAfterPopup) return;
-		if (options.bIgnoreEmptyAll && smi->bIsEmpty) return;
-
-		//log to file
-		if (options.bLogToFile && lstrcmp(options.logfile, "") && !(ignore_mask & IGNORE_EXT))
-		{
-			HANDLE hFile;
-			unsigned long dwBytesWritten = 0;
-			hFile = CreateFile(options.logfile, GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-			SetFilePointer(hFile, 0, 0, FILE_END);
-			lstrcpy(buffer, GetStr(smi, options.log));
-			lstrcat(buffer, "\r\n");
-			WriteFile(hFile, buffer, strlen(buffer), &dwBytesWritten, NULL);
-			CloseHandle(hFile);
-		}
-	}
-
-	//writing to message window
-	if (options.bShowMsgChanges && CheckMsgWnd(wParam))
-	{
-		DBEVENTINFO dbei;
-		int iLen;
-		if (smi->bIsEmpty)
-		{
-			mir_snprintf(buffer, sizeof(buffer), GetStr(smi, options.msgcleared));
-		}
-		else
-		{
-			mir_snprintf(buffer, sizeof(buffer), GetStr(smi, options.msgchanged));
-		}
-		iLen = strlen(buffer) + 1;
-		MultiByteToWideChar(CP_ACP, 0, buffer, iLen, (LPWSTR)&buffer[iLen], iLen);
+		//ZeroMemory(&dbei, sizeof(dbei));
 		dbei.cbSize = sizeof(dbei);
+		dbei.pBlob = tmp;
+		dbei.cbBlob = size;
+#else
 		dbei.pBlob = (PBYTE)buffer;
-		dbei.cbBlob = (strlen(buffer) + 1) * (sizeof(TCHAR) + 1);
+		dbei.cbBlob = lstrlen(buffer) + 1;
+#endif
+
 		dbei.eventType = EVENTTYPE_STATUSCHANGE;
 		dbei.flags = 0;
 		dbei.timestamp = smi->dTimeStamp;
-		dbei.szModule = smi->proto;//(char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0);
-		CallService(MS_DB_EVENT_ADD, wParam, (LPARAM)&dbei);
+		dbei.szModule = smi->proto;
+		CallService(MS_DB_EVENT_ADD, (WPARAM)smi->hContact, (LPARAM)&dbei);
+#ifdef UNICODE
+		mir_free(tmp);
+#endif
 	}
-
-	//writing to history
-	if (!(ignore_mask & IGNORE_INT)/* && (BOOL)options.dHistMax*/)
-	{
-		short historyFirst, historyLast, historyMax;
-		historyMax = (short)DBGetContactSettingDword(smi->hContact, MODULE, OPT_HISTMAX, options.dHistMax);
-		if (historyMax < 0) historyMax = 0;
-		else if (historyMax > 99) historyMax = 99;
-		if (historyMax > 0)
-		{
-			historyFirst = DBGetContactSettingWord(smi->hContact, MODULE, "HistoryFirst", 0);
-			if (historyFirst >=  historyMax) historyFirst = 0;
-			historyLast = DBGetContactSettingWord(smi->hContact, MODULE, "HistoryLast", 0);
-			if (historyLast >= historyMax) historyLast = historyMax - 1;
-			//write old status message and its timestamp seperately
-			DBWriteContactSettingString(smi->hContact, MODULE, BuildSetting(historyLast, FALSE), smi->newstatusmsg);
-			DBWriteContactSettingDword(smi->hContact, MODULE, BuildSetting(historyLast, TRUE), smi->dTimeStamp);
-			
-			historyLast = (historyLast + 1) % historyMax;
-			DBWriteContactSettingWord(smi->hContact, MODULE, "HistoryLast", historyLast);
-			if (historyLast == historyFirst)
-				DBWriteContactSettingWord(smi->hContact, MODULE, "HistoryFirst", (short)((historyFirst + 1) % historyMax));
-		}
-	}
+	mir_free(buffer);
 
 	return;
 }
 
+static int __inline CheckStr(char *str, int not_empty, int empty) {
+	if (str == NULL || str[0] == '\0')
+		return empty;
+	else
+		return not_empty;
+}
+
+#ifdef UNICODE
+
+static int __inline CheckStrW(WCHAR *str, int not_empty, int empty) {
+	if (str == NULL || str[0] == L'\0')
+		return empty;
+	else
+		return not_empty;
+}
+
+#endif
+
+static int CompareStatusMsg(STATUSMSGINFO *smi, DBCONTACTWRITESETTING *cws_new) {
+	DBVARIANT dbv_old;
+	int ret;
+
+	switch (cws_new->value.type)
+	{
+		case DBVT_DELETED:
+			smi->newstatusmsg = NULL;
+			break;
+		case DBVT_ASCIIZ:
+#ifdef UNICODE
+			smi->newstatusmsg = (CheckStr(cws_new->value.pszVal, 0, 1) ? NULL : mir_dupToUnicodeEx(cws_new->value.pszVal, CP_ACP));
+			break;
+		case DBVT_UTF8:
+			smi->newstatusmsg = (CheckStr(cws_new->value.pszVal, 0, 1) ? NULL : mir_dupToUnicodeEx(cws_new->value.pszVal, CP_UTF8));
+			break;
+		case DBVT_WCHAR:
+			smi->newstatusmsg = (CheckStrW(cws_new->value.pwszVal, 0, 1) ? NULL : mir_wstrdup(cws_new->value.pwszVal));
+#else
+			smi->newstatusmsg = (CheckStr(cws_new->value.pszVal, 0, 1) ? NULL : mir_strdup(cws_new->value.pszVal));
+#endif
+			break;
+		default:
+			smi->newstatusmsg = NULL;
+			break;
+	}
+
+	if (!
+#ifdef UNICODE
+	DBGetContactSettingW(smi->hContact, "UserOnline", "OldStatusMsg", &dbv_old)
+#else
+	DBGetContactSetting(smi->hContact, "UserOnline", "OldStatusMsg", &dbv_old)
+#endif
+	)
+	{
+		switch (dbv_old.type)
+		{
+			case DBVT_ASCIIZ:
+#ifdef UNICODE
+				smi->oldstatusmsg = (CheckStr(dbv_old.pszVal, 0, 1) ? NULL : mir_dupToUnicodeEx(dbv_old.pszVal, CP_ACP));
+				break;
+			case DBVT_UTF8:
+				smi->oldstatusmsg = (CheckStr(dbv_old.pszVal, 0, 1) ? NULL : mir_dupToUnicodeEx(dbv_old.pszVal, CP_UTF8));
+				break;
+			case DBVT_WCHAR:
+				smi->oldstatusmsg = (CheckStrW(dbv_old.pwszVal, 0, 1) ? NULL : mir_wstrdup(dbv_old.pwszVal));
+#else
+				smi->oldstatusmsg = (CheckStr(dbv_old.pszVal, 0, 1) ? NULL : mir_strdup(dbv_old.pszVal));
+#endif
+				break;
+			default:
+				smi->oldstatusmsg = NULL;
+				break;
+		}
+
+		if (cws_new->value.type == DBVT_DELETED)
+			if (
+#ifdef UNICODE
+				dbv_old.type == DBVT_WCHAR)
+				ret = CheckStrW(dbv_old.pwszVal, 2, 0);
+			else if (dbv_old.type == DBVT_UTF8 ||
+#endif
+				dbv_old.type == DBVT_ASCIIZ)
+				ret = CheckStr(dbv_old.pszVal, 2, 0);
+			else
+				ret = 2;
+		else if (dbv_old.type != cws_new->value.type)
+#ifdef UNICODE
+			ret = (lstrcmpW(smi->newstatusmsg, smi->oldstatusmsg) ? CheckStrW(smi->newstatusmsg, 1, 2) : 0);
+#else
+			ret = 1;
+#endif;
+		else if (dbv_old.type == DBVT_ASCIIZ)
+			ret = (lstrcmpA(cws_new->value.pszVal, dbv_old.pszVal) ? CheckStr(cws_new->value.pszVal, 1, 2) : 0);
+#ifdef UNICODE
+		else if (dbv_old.type == DBVT_UTF8)
+			ret = (lstrcmpA(cws_new->value.pszVal, dbv_old.pszVal) ? CheckStr(cws_new->value.pszVal, 1, 2) : 0);
+		else if (dbv_old.type == DBVT_WCHAR)
+			ret = (lstrcmpW(cws_new->value.pwszVal, dbv_old.pwszVal) ? CheckStrW(cws_new->value.pwszVal, 1, 2) : 0);
+#endif
+		DBFreeVariant(&dbv_old);
+	}
+	else
+	{
+		if (cws_new->value.type == DBVT_DELETED)
+			ret = 0;
+		else if (
+#ifdef UNICODE
+			cws_new->value.type == DBVT_WCHAR)
+			ret = CheckStrW(cws_new->value.pwszVal, 1, 0);
+		else if (cws_new->value.type == DBVT_UTF8 ||
+#endif
+			cws_new->value.type == DBVT_ASCIIZ)
+			ret = CheckStr(cws_new->value.pszVal, 1, 0);
+		else
+			ret = 1;
+
+		smi->oldstatusmsg = NULL;
+	}
+
+	return ret;
+}
+
+static BOOL ProtocolEnabled(const char *proto) {
+	char setting[256];
+
+	if (proto == NULL)
+		return FALSE;
+
+	if (!AllowProtocol(proto))
+		return FALSE;
+
+	mir_snprintf(setting, sizeof(setting), "%sEnabled", proto);
+	return (BOOL)DBGetContactSettingByte(NULL, MODULE_NAME, setting, TRUE);
+}
+
+extern int ContactSettingChanged(WPARAM wParam, LPARAM lParam) {
+	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
+	STATUSMSGINFO smi;
+
+	if ((HANDLE)wParam == NULL) return 0;
+
+	ZeroMemory(&smi, sizeof(smi));
+	smi.proto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0);
+	if (!ProtocolEnabled(smi.proto)) return 0;
+
+	if (!lstrcmpA(cws->szModule, "CList") && !lstrcmpA(cws->szSetting, "StatusMsg"))
+	{
+		if (smi.proto != NULL && CallProtoService(smi.proto, PS_GETSTATUS, 0, 0) != ID_STATUS_OFFLINE)
+		{
+			smi.hContact = (HANDLE)wParam;
+			smi.ignore = DBGetContactSettingDword(smi.hContact, "Ignore", MODULE_NAME, 0);
+			if (smi.ignore == SMII_ALL) return 0;
+
+			smi.compare = CompareStatusMsg(&smi, cws);
+			if ((smi.compare == 0) || (opts.bIgnoreRemove && puopts.bIgnoreRemove && (smi.compare == 2)))
+				return FreeSmiStr(&smi);
+
+			if (DBGetContactSettingByte(NULL, MODULE_NAME, "IgnoreTlenAway", 0))
+			{
+				int len = lstrlen(smi.newstatusmsg);
+				if (smi.newstatusmsg[len-13] == _T('[') && smi.newstatusmsg[len-10] == _T(':') && smi.newstatusmsg[len-7] == _T(' ') &&
+					smi.newstatusmsg[len-4] == _T('.') && smi.newstatusmsg[len-1] == _T(']'))
+					return FreeSmiStr(&smi);
+			}
+
+			if (cws->value.type == DBVT_DELETED)
+			{
+				DBDeleteContactSetting(smi.hContact, "UserOnline", "OldStatusMsg");
+			}
+			else
+			{
+				DBCONTACTWRITESETTING cws_old;
+				cws_old.szModule = "UserOnline";
+				cws_old.szSetting = "OldStatusMsg";
+				cws_old.value = cws->value;
+				CallService(MS_DB_CONTACT_WRITESETTING, (WPARAM)smi.hContact, (LPARAM)&cws_old);
+			}
+			smi.cust = (TCHAR*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, wParam, GCDNF_TCHAR);
+			smi.dTimeStamp = (DWORD)time(NULL);
+
+			if (puopts.bEnable && !(smi.ignore & SMII_POPUP))
+				PopupCheck(&smi);
+
+			if (opts.bIgnoreRemove && (smi.ignore == 2))
+				smi.ignore = SMII_ALL;
+
+			if (opts.bDBEnable && MsgWindowCheck(smi.hContact))
+				AddToDB(&smi);
+
+			if (opts.bHistoryEnable && !(smi.ignore & SMII_HISTORY))
+				AddToHistory(&smi);
+
+			if (opts.bLogEnable && !(smi.ignore & SMII_LOG))
+				LogToFile(&smi);
+
+			FreeSmiStr(&smi);
+		}
+	}
+	else
+	{
+		if (!lstrcmpA(cws->szSetting, "Status") && !lstrcmpA(cws->szModule, smi.proto))
+		{
+			DBWriteContactSettingDword((HANDLE)wParam, "UserOnline", "LastStatusChange", GetTickCount());
+		}
+	}
+
+	return 0;
+}

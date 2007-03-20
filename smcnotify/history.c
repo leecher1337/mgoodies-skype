@@ -1,5 +1,5 @@
 /*
-StatusMessageChangeNotify plugin for Miranda IM.
+Status Message Change Notify plugin for Miranda IM.
 
 Copyright © 2004-2005 NoName
 Copyright © 2005-2006 Daniel Vijge, Tomasz S³otwiñski, Ricardo Pescuma Domenecci
@@ -19,59 +19,87 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#include "main.h"
+#include "commonheaders.h"
 
-static void LoadHistoryList(HANDLE hContact, HWND hwnd, int nList) {
-	short historyFirst, historyLast, historyMax;
+
+static void LoadHistory(HANDLE hContact, HWND hwnd, int nList) {
+	WORD historyFirst, historyLast, historyMax;
 	short i;
-	TCHAR *str, tempstr[2048];
+	//size_t size;
+	TCHAR *str, *tempstr;
 	DBVARIANT dbv;
 	STATUSMSGINFO smi;
+
+	historyMax = DBGetContactSettingWord(hContact, MODULE_NAME, "HistoryMax", opts.dHistoryMax);
+	if (historyMax <= 0)
+		return;
+	else if (historyMax > 99)
+		historyMax = 99;
+
+	historyFirst = DBGetContactSettingWord(hContact, MODULE_NAME, "HistoryFirst",0);
+	if (historyFirst >=  historyMax)
+		historyFirst = 0;
+	historyLast = DBGetContactSettingWord(hContact, MODULE_NAME, "HistoryLast",0);
+	if (historyLast >= historyMax)
+		historyLast = historyMax - 1;
+
 	ZeroMemory(&smi, sizeof(smi));
 
-	str = (TCHAR*)malloc(2 * sizeof(TCHAR));
+	//str = (TCHAR*)mir_alloc(3 * sizeof(TCHAR));
+	str = (TCHAR*)mir_alloc(historyMax * 1024 * sizeof(TCHAR));
 	str[0] = _T('\0');
+	tempstr = NULL;
 
-	historyMax = (short)DBGetContactSettingDword(hContact, MODULE, OPT_HISTMAX, options.dHistMax);
-	if (historyMax < 0) historyMax = 0; 
-	else if (historyMax > 99) historyMax = 99;
-	if (historyMax == 0) return;
-	historyFirst = DBGetContactSettingWord(hContact, MODULE, "HistoryFirst",0);
-	if (historyFirst >=  historyMax) historyFirst = 0;
-	historyLast = DBGetContactSettingWord(hContact, MODULE, "HistoryLast",0);
-	if (historyLast >= historyMax) historyLast = historyMax - 1;
-
-	// reading history
 	i = historyLast;
 	while (i != historyFirst)
 	{
 		i = (i - 1 + historyMax) % historyMax;
-		tempstr[0] = _T('\0');
-		dbv.type = 0;
-		//reading old status message and its timestamp separately
-		if (!DBGetContactSetting(hContact, MODULE, BuildSetting(i, FALSE), &dbv))
+
+		if (!DBGetContactSettingTString(hContact, MODULE_NAME, BuildSetting(i, NULL), &dbv))
 		{
-			smi.newstatusmsg = malloc(strlen(dbv.pszVal) + 2);
-			lstrcpy(smi.newstatusmsg, dbv.pszVal);
-			smi.dTimeStamp = DBGetContactSettingDword(hContact, MODULE, BuildSetting(i, TRUE), 0);
-			lstrcpyn(tempstr, GetStr(&smi, options.his), sizeof(tempstr));
+#ifdef UNICODE
+			if (dbv.type == DBVT_ASCIIZ)
+			{
+				smi.newstatusmsg = mir_dupToUnicodeEx(dbv.pszVal, CP_ACP);
+			}
+			else if (dbv.type == DBVT_UTF8)
+			{
+				smi.newstatusmsg = mir_dupToUnicodeEx(dbv.pszVal, CP_UTF8);
+			}
+			else if (dbv.type == DBVT_WCHAR)
+			{
+				smi.newstatusmsg = dbv.pwszVal;
+			}
+#else
+			if (dbv.type == DBVT_ASCIIZ)
+			{
+				smi.newstatusmsg = dbv.pszVal;
+			}
+#endif
+			else
+			{
+				smi.newstatusmsg = NULL;
+			}
+
+			smi.dTimeStamp = DBGetContactSettingDword(hContact, MODULE_NAME, BuildSetting(i, "_ts"), 0);
+			tempstr = GetStr(&smi, opts.history);
+			mir_free(smi.newstatusmsg);
 			DBFreeVariant(&dbv);
 		}
 
-		if (tempstr[0] != _T('\0'))
+		if ((tempstr != NULL) && (tempstr[0] != _T('\0')))
 		{
-			str = realloc(str, (lstrlen(str) + lstrlen(tempstr) + 5) * sizeof(TCHAR));
+			//size = (lstrlen(str) + lstrlen(tempstr) + 2) * sizeof(TCHAR);
+			//str = (TCHAR*)mir_realloc(str, size);
 			lstrcat(str, tempstr);
 			lstrcat(str, _T("\r\n"));
 		}
+		mir_free(tempstr);
 	}
 	SetDlgItemText(hwnd, nList, str);
-	free(str);
-	str = NULL;
-	//free STATUSMSGINFO memory
-	if (smi.oldstatusmsg) free(smi.oldstatusmsg);
-	if (smi.newstatusmsg) free(smi.newstatusmsg);
-	if (smi.cust) free(smi.cust);
+
+	mir_free(str);
+	return;
 }
 
 static void ClearHistory(HANDLE hContact) {
@@ -79,11 +107,11 @@ static void ClearHistory(HANDLE hContact) {
 	BOOL bSettingExists = TRUE;
 	for (i = 0; /*i < (int)options.dHistMax && */bSettingExists; i++)
 	{
-		bSettingExists = !DBDeleteContactSetting(hContact, MODULE, BuildSetting(i, FALSE));
-		DBDeleteContactSetting(hContact, MODULE, BuildSetting(i, TRUE));
+		bSettingExists = !DBDeleteContactSetting(hContact, MODULE_NAME, BuildSetting(i, NULL));
+		DBDeleteContactSetting(hContact, MODULE_NAME, BuildSetting(i, "_ts"));
 	}
-	DBDeleteContactSetting(hContact, MODULE, "HistoryFirst");
-	DBDeleteContactSetting(hContact, MODULE, "HistoryLast");
+	DBDeleteContactSetting(hContact, MODULE_NAME, "HistoryFirst");
+	DBDeleteContactSetting(hContact, MODULE_NAME, "HistoryLast");
 }
 
 void ClearAllHistory() {
@@ -96,98 +124,98 @@ void ClearAllHistory() {
 	}
 }
 
-static BOOL CALLBACK HistoryDlgProc(HWND hwndDlg, UINT Message, WPARAM wParam, LPARAM lParam) {
-	HANDLE hContact;
-	switch(Message)
+static BOOL CALLBACK HistoryDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+	switch(msg)
 	{
-		case WM_INITDIALOG: {
-				DWORD ignore;
-				hContact = (HANDLE)lParam;
+		case WM_INITDIALOG:
+		{
+			DWORD ignore;
+			SetWindowLong(hwndDlg, GWL_USERDATA, lParam);
 
-				SetWindowLong(hwndDlg, GWL_USERDATA, lParam);
+			TranslateDialogDefault(hwndDlg);
 
-				// set buttons
-				SendDlgItemMessage(hwndDlg,IDC_DI,BM_SETIMAGE,IMAGE_ICON, (LPARAM)ICO_HIST);
-				SendDlgItemMessage(hwndDlg,IDC_DE,BM_SETIMAGE,IMAGE_ICON, (LPARAM)ICO_LOG);
-				SendDlgItemMessage(hwndDlg,IDC_DP,BM_SETIMAGE,IMAGE_ICON, (LPARAM)ICO_POPUP_E);
+			// set icons on buttons
+			SendDlgItemMessage(hwndDlg,IDC_CPOPUP,BM_SETIMAGE,IMAGE_ICON, CallService(MS_SKIN2_GETICONBYHANDLE, 0, (LPARAM)ICO_POPUP_E));
+			SendDlgItemMessage(hwndDlg,IDC_CHISTORY,BM_SETIMAGE,IMAGE_ICON, CallService(MS_SKIN2_GETICONBYHANDLE, 0, (LPARAM)ICO_HISTORY));
+			SendDlgItemMessage(hwndDlg,IDC_CLOG,BM_SETIMAGE,IMAGE_ICON, CallService(MS_SKIN2_GETICONBYHANDLE, 0, (LPARAM)ICO_LOG));
 
-				SendMessage(GetDlgItem(hwndDlg,IDC_DI), BUTTONSETASFLATBTN, 0, 0);
-				SendMessage(GetDlgItem(hwndDlg,IDC_DI), BUTTONSETASPUSHBTN, 0, 0);
+			SendMessage(GetDlgItem(hwndDlg,IDC_CPOPUP), BUTTONSETASFLATBTN, 0, 0);
+			SendMessage(GetDlgItem(hwndDlg,IDC_CPOPUP), BUTTONSETASPUSHBTN, 0, 0);
 
-				SendMessage(GetDlgItem(hwndDlg,IDC_DE), BUTTONSETASFLATBTN, 0, 0);
-				SendMessage(GetDlgItem(hwndDlg,IDC_DE), BUTTONSETASPUSHBTN, 0, 0);
+			SendMessage(GetDlgItem(hwndDlg,IDC_CHISTORY), BUTTONSETASFLATBTN, 0, 0);
+			SendMessage(GetDlgItem(hwndDlg,IDC_CHISTORY), BUTTONSETASPUSHBTN, 0, 0);
 
-				SendMessage(GetDlgItem(hwndDlg,IDC_DP), BUTTONSETASFLATBTN, 0, 0);
-				SendMessage(GetDlgItem(hwndDlg,IDC_DP), BUTTONSETASPUSHBTN, 0, 0);
+			SendMessage(GetDlgItem(hwndDlg,IDC_CLOG), BUTTONSETASFLATBTN, 0, 0);
+			SendMessage(GetDlgItem(hwndDlg,IDC_CLOG), BUTTONSETASPUSHBTN, 0, 0);
 
-				ignore = DBGetContactSettingDword(hContact, IGNORE_MODULE, IGNORE_MASK, 0);
-				CheckDlgButton(hwndDlg, IDC_DI, !(ignore & IGNORE_INT));
-				CheckDlgButton(hwndDlg, IDC_DE, !(ignore & IGNORE_EXT));
-				CheckDlgButton(hwndDlg, IDC_DP, !(ignore & IGNORE_POP));
+			ignore = DBGetContactSettingDword((HANDLE)lParam, "Ignore", MODULE_NAME, 0);
+			CheckDlgButton(hwndDlg, IDC_CPOPUP, !(ignore & SMII_POPUP));
+			CheckDlgButton(hwndDlg, IDC_CHISTORY, !(ignore & SMII_HISTORY));
+			CheckDlgButton(hwndDlg, IDC_CLOG, !(ignore & SMII_LOG));
 
-				SendMessage(GetDlgItem(hwndDlg,IDC_DI), BUTTONADDTOOLTIP, (WPARAM)TranslateT("Enable/Disable internal logging for this contact"), 0);
-				SendMessage(GetDlgItem(hwndDlg,IDC_DE), BUTTONADDTOOLTIP, (WPARAM)TranslateT("Enable/Disable external logging for this contact"), 0);
-				SendMessage(GetDlgItem(hwndDlg,IDC_DP), BUTTONADDTOOLTIP, (WPARAM)TranslateT("Enable/Disable popups for this contact"), 0);
+			SendMessage(GetDlgItem(hwndDlg,IDC_CPOPUP), BUTTONADDTOOLTIP, (WPARAM)Translate("Enable/Disable popups for this contact"), 0);
+			SendMessage(GetDlgItem(hwndDlg,IDC_CHISTORY), BUTTONADDTOOLTIP, (WPARAM)Translate("Enable/Disable history for this contact"), 0);
+			SendMessage(GetDlgItem(hwndDlg,IDC_CLOG), BUTTONADDTOOLTIP, (WPARAM)Translate("Enable/Disable logging to file for this contact"), 0);
 
-				//make dialog bigger if UserInfoEx in use [222x132 dlus/340x170 dlus]
-/*				if (ServiceExists("SMR/MsgRetrievalEnabledForProtocol")) 
-				{
-					//SendMessage(hwndDlg, WM_SIZE, SIZE_RESTORED, MAKELPARAM(LOWORD(450), HIWORD(275)));
-				}
-*/
-				TranslateDialogDefault(hwndDlg);
-				LoadHistoryList(hContact, hwndDlg, IDC_HISTORYLIST);
+			//make dialog bigger if UserInfoEx in use [222x132 dlus/340x170 dlus]
+			if (ServiceExists("UserInfo/Reminder/AggrassiveBackup"))
+			{
+				RECT rc, rc0, rcp;
+				rc0.left = 2;rc0.top = 155;rc0.right = 298;rc0.bottom = 148;
+				MapDialogRect(hwndDlg, &rc0);
+				MoveWindow(GetDlgItem(hwndDlg, IDC_HISTORYLIST), rc0.left, 2 * rc0.left, rc0.right, rc0.bottom, TRUE);
+				GetClientRect(GetDlgItem(hwndDlg, IDC_CHISTORYCLEAR), &rc);
+				MoveWindow(GetDlgItem(hwndDlg, IDC_CHISTORYCLEAR), rc0.left, rc0.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
+				rcp.left = 170;rcp.top = 188;rcp.right = 18;rcp.bottom = 148;MapDialogRect(hwndDlg, &rcp);
+				GetClientRect(GetDlgItem(hwndDlg, IDC_CPOPUP), &rc);
+				MoveWindow(GetDlgItem(hwndDlg, IDC_CPOPUP), rcp.left, rc0.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
+				GetClientRect(GetDlgItem(hwndDlg, IDC_CHISTORY), &rc);
+				MoveWindow(GetDlgItem(hwndDlg, IDC_CHISTORY), rcp.left + rcp.right, rc0.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
+				GetClientRect(GetDlgItem(hwndDlg, IDC_CLOG), &rc);
+				MoveWindow(GetDlgItem(hwndDlg, IDC_CLOG), rcp.left + rcp.right + rcp.right, rc0.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
 			}
+
+			LoadHistory((HANDLE)lParam, hwndDlg, IDC_HISTORYLIST);
 			break;
+		}
 		case WM_COMMAND:
-			hContact=(HANDLE)GetWindowLong(hwndDlg, GWL_USERDATA);
 			switch(LOWORD(wParam))
 			{
-				case IDC_CLEARHIST:
-					ClearHistory(hContact);
-					SetDlgItemText(hwndDlg, IDC_HISTORYLIST, "");
+				case IDC_CHISTORYCLEAR:
+					ClearHistory((HANDLE)GetWindowLong(hwndDlg, GWL_USERDATA));
+					SetDlgItemText(hwndDlg, IDC_HISTORYLIST, _T(""));
 					break;
-				case IDC_DP:
-				case IDC_DI:
-				case IDC_DE: {
-					DWORD ignore = IsDlgButtonChecked(hwndDlg, IDC_DP)?0:IGNORE_POP;
-					ignore = IsDlgButtonChecked(hwndDlg, IDC_DI)?ignore:ignore | IGNORE_INT;
-					ignore = IsDlgButtonChecked(hwndDlg, IDC_DE)?ignore:ignore | IGNORE_EXT;
-					DBWriteContactSettingDword(hContact, IGNORE_MODULE, IGNORE_MASK, ignore);
+				case IDC_CPOPUP:
+				case IDC_CLOG:
+				case IDC_CHISTORY:
+				{
+					DWORD ignore = IsDlgButtonChecked(hwndDlg, IDC_CPOPUP)?0:SMII_POPUP;
+					ignore = IsDlgButtonChecked(hwndDlg, IDC_CHISTORY)?ignore:ignore | SMII_HISTORY;
+					ignore = IsDlgButtonChecked(hwndDlg, IDC_CLOG)?ignore:ignore | SMII_LOG;
+					DBWriteContactSettingDword((HANDLE)GetWindowLong(hwndDlg, GWL_USERDATA), "Ignore", MODULE_NAME, ignore);
 					break;
 				}
 			}
 			break;
-//		case WM_CTLCOLORSTATIC:
-//			if ((HWND)lParam == GetDlgItem(hwndDlg, IDC_HISTORYLIST))
-//			{
-//				SetBkMode((HDC)wParam, OPAQUE/*TRANSPARENT*/);
-//				SetBkColor((HDC)wParam, 0x00000000/*GetSysColor(COLOR_WINDOW)*/);
-//				SetTextColor((HDC)wParam, 0x00FFFFFF/*GetSysColor(COLOR_WINDOWTEXT)*/);
-//				return (BOOL)GetSysColorBrush(COLOR_WINDOW);
-//			}
-//			return FALSE;
-/*		case WM_CLOSE:
-			DestroyWindow(hwndDlg);
-			WindowList_Remove(hWindowList, hwndDlg);
-			break;
-		case WM_DESTROY: {
-				HFONT hFont;
-				hFont = (HFONT)SendDlgItemMessage(hwndDlg, IDC_USERMENU, WM_GETFONT, 0, 0);
-				DeleteObject(hFont);
+#ifdef CUSTOMBUILD_COLORHISTORY
+		case WM_CTLCOLORSTATIC:
+			if ((HWND)lParam == GetDlgItem(hwndDlg, IDC_HISTORYLIST))
+			{
+				//SetBkMode((HDC)wParam, OPAQUE/*TRANSPARENT*/);
+				SetBkColor((HDC)wParam, 0x00000000/*GetSysColor(COLOR_WINDOW)*/);
+				SetTextColor((HDC)wParam, 0x00FFFFFF/*GetSysColor(COLOR_WINDOWTEXT)*/);
+				//return (BOOL)GetSysColorBrush(COLOR_WINDOW);
+				break;
 			}
-			break;
-*/		default:
-			return FALSE;
+#endif
 	}
-	return TRUE;
+
+	return 0;
 }
 
-/*
-Called when User Info dialog initilised
-*/
-int HookedUserInfo(WPARAM wParam, LPARAM lParam) {
+extern int UserInfoInit(WPARAM wParam, LPARAM lParam) {
 	OPTIONSDIALOGPAGE odp;
+
 	ZeroMemory(&odp, sizeof(odp));
 
 	if ((HANDLE)lParam == NULL) return 0;
@@ -195,15 +223,11 @@ int HookedUserInfo(WPARAM wParam, LPARAM lParam) {
 	odp.cbSize = sizeof(odp);
 	odp.position = 100000000;
 	odp.hInstance = hInst;
-	odp.pszTemplate = MAKEINTRESOURCE(IDD_HISTORY);
-	odp.pszTitle = TranslateT("Status Message History");
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_HISTORY);
+	odp.ptszTitle = TranslateT("Status Message History");
+	odp.flags = ODPF_TCHAR;
 	odp.pfnDlgProc = HistoryDlgProc;
 	CallService(MS_USERINFO_ADDPAGE, wParam, (LPARAM)&odp);
 
 	return 0;
-}
-
-void ShowHistory(HANDLE hContact) {
-	DBWriteContactSettingTString(NULL, "UserInfo", "LastTab", TranslateT("Status Message History"));
-	CallService(MS_USERINFO_SHOWDIALOG, (WPARAM)hContact, 0);
 }
