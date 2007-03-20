@@ -1,5 +1,5 @@
 /*
-StatusMessageChangeNotify plugin for Miranda IM.
+Status Message Change Notify plugin for Miranda IM.
 
 Copyright © 2004-2005 NoName
 Copyright © 2005-2006 Daniel Vijge, Tomasz S³otwiñski, Ricardo Pescuma Domenecci
@@ -19,440 +19,478 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#include "main.h"
-void ClearAllHistory();
+#include "commonheaders.h"
 
-void OptionsRead() {
-	DBVARIANT dbv;
-	//popups
-	options.bDisablePopUps = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_DISPOPUPS, FALSE);
-	options.bShowOnConnect = (BOOL)(DBGetContactSettingByte(NULL, MODULE, OPT_SHOWONC, FALSE) & 1);
-	options.bOnlyIfChanged = (BOOL)(DBGetContactSettingByte(NULL, MODULE, OPT_SHOWONC, 2) & 2);
-	options.bIgnoreEmptyPopup = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_IGNOREPOP, FALSE);
-	options.bIgnoreEmptyAll = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_IGNOREALL, FALSE);
-	options.bUseOSD = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_USEOSD, FALSE);
-	options.bDefaultColor = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_COLDEFAULT, FALSE);
-	options.colBack = (COLORREF)DBGetContactSettingDword(NULL, MODULE, OPT_COLBACK, DEFAULT_COLBACK);
-	options.colText = (COLORREF)DBGetContactSettingDword(NULL, MODULE, OPT_COLTEXT, DEFAULT_COLTEXT);
-	options.dSec = (DWORD)DBGetContactSettingDword(NULL, MODULE, OPT_DSEC, 0);
-	options.bInfiniteDelay = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_DINFINITE, FALSE);
-	options.LeftClickAction = DBGetContactSettingDword(NULL,MODULE, OPT_LCLKACT, IDM_M1);
-	options.RightClickAction = DBGetContactSettingDword(NULL,MODULE, OPT_RCLKACT, IDM_M1);
-	//general
-//	options.bHideSettingsMenu = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_HIDEMENU, FALSE);
-	options.bLogToFile = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_LOGTOFILE, TRUE);
-	options.dHistMax = (DWORD)DBGetContactSettingDword(NULL, MODULE, OPT_HISTMAX, 20);
-	options.bShowMsgChanges = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_SHOWCH, FALSE);
-	options.bUseBgImage = (BOOL)DBGetContactSettingByte(NULL, MODULE, OPT_USEBGIMG, FALSE);
-	options.colListBack = (COLORREF)DBGetContactSettingDword(NULL, MODULE, OPT_COLLISTBACK, DEFAULT_COLLISTBACK);
-	options.colListText = (COLORREF)DBGetContactSettingDword(NULL, MODULE, OPT_COLLISTTEXT, DEFAULT_COLLISTTEXT);
-	//strings
-	//popup text
-	if (DBGetContactSetting(NULL, MODULE, OPT_POPTXT, &dbv))
+
+BOOL AllowProtocol(const char *proto) {
+	if ((CallProtoService(proto, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGRECV) == 0)
+		return FALSE;
+
+	return TRUE;
+}
+
+static OptPageControl optionsControls[] = {
+	{&opts.bIgnoreRemove,		CONTROL_CHECKBOX,	IDC_IGNOREREMOVE,	"IgnoreRemove", FALSE},
+	{&opts.bListUseBkImage,		CONTROL_CHECKBOX,	IDC_USEBGIMG,		"ListUseBkImage", FALSE},
+	{&opts.colListBack,			CONTROL_COLOR,		IDC_LISTBGCOLOR,	"ListBkColor", RGB(255,255,255)},
+	{&opts.colListText,			CONTROL_COLOR,		IDC_LISTTEXTCOLOR,	"ListTextColor", RGB(0,0,0)},
+	{NULL,						CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,	"%sEnabled", TRUE, (int)AllowProtocol}
+};
+
+static OptPageControl advancedControls[] = {
+	{&opts.bHistoryEnable,		CONTROL_CHECKBOX,	IDC_HISTORY,		"HistoryEnable", TRUE},
+	{&opts.dHistoryMax,			CONTROL_SPIN,		IDC_HISTORYMAX,		"HistoryMax", 20, IDC_HISTORYMAX_SPIN, (WORD)1, (WORD)100},
+	{&opts.history,				CONTROL_TEXT,		IDC_HISTORYTEXT,	"HistoryTemplate", (DWORD)_T(DEFAULT_TEMPLATE_HISTORY)},
+	{&opts.bDBEnable,			CONTROL_CHECKBOX,	IDC_MESSAGEWND,		"DBEnable", TRUE},
+//	{&opts.history_only_ansi_if_possible,	CONTROL_CHECKBOX,	IDC_ANSI,	"HistoryOnlyANSIIfPossible", TRUE},
+	{&opts.msgchanged,			CONTROL_TEXT,		IDC_MSGCHANGED,		"TemplateChanged", (DWORD)_T(DEFAULT_TEMPLATE_CHANGED)},
+	{&opts.msgremoved,			CONTROL_TEXT,		IDC_MSGREMOVED,		"TemplateRemoved", (DWORD)_T(DEFAULT_TEMPLATE_REMOVED)},
+	{&opts.bLogEnable,			CONTROL_CHECKBOX,	IDC_LOG,			"LogEnable", FALSE},
+#ifdef UNICODE
+	{&opts.bLogAscii,			CONTROL_CHECKBOX,	IDC_LOGASCII,		"LogAscii", FALSE},
+#endif
+	{&opts.log,					CONTROL_TEXT,		IDC_LOGTEXT,		"LogTemplate", (DWORD)_T(DEFAULT_TEMPLATE_LOG)}
+};
+
+static OptPageControl popupsControls[] = {
+	{&puopts.bEnable,			CONTROL_CHECKBOX,	IDC_POPUPS,			"PopupsEnable", TRUE},
+	{&puopts.bOnConnect,		CONTROL_CHECKBOX,	IDC_ONCONNECT,		"PopupsOnConnect", FALSE},
+	{&puopts.bIfChanged,		CONTROL_CHECKBOX,	IDC_IFCHANGED,		"PopupsIfChanged", TRUE},
+	{&puopts.bIgnoreRemove,		CONTROL_CHECKBOX,	IDC_PUIGNOREREMOVE,	"PopupsIgnoreRemove", FALSE},
+#ifdef CUSTOMBUILD_OSDSUPPORT
+	{&puopts.bUseOSD,			CONTROL_CHECKBOX,	IDC_USEOSD,			"PopupsUseOSD", TRUE},
+#endif
+	{&puopts.bColorType,		CONTROL_RADIO,		IDC_COLORFROMPU,	"PopupsColorType", POPUP_COLOR_DEFAULT, POPUP_COLOR_DEFAULT},
+	{NULL,						CONTROL_RADIO,		IDC_COLORWINDOWS,	"PopupsColorType", POPUP_COLOR_DEFAULT, POPUP_COLOR_WINDOWS},
+	{NULL,						CONTROL_RADIO,		IDC_COLORCUSTOM,	"PopupsColorType", POPUP_COLOR_DEFAULT, POPUP_COLOR_CUSTOM},
+	{&puopts.colBack,			CONTROL_COLOR,		IDC_PUBGCOLOR,		"PopupsBkColor", RGB(201,125,234)},
+	{&puopts.colText,			CONTROL_COLOR,		IDC_PUTEXTCOLOR,	"PopupsTextColor", RGB(0,0,0)},
+	{&puopts.bDelayType,		CONTROL_RADIO,		IDC_DELAYFROMPU,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_DEFAULT},
+	{NULL,						CONTROL_RADIO,		IDC_DELAYCUSTOM,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_CUSTOM},
+	{NULL,						CONTROL_RADIO,		IDC_DELAYPERMANENT,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_PERMANENT},
+	{&puopts.dDelay,			CONTROL_SPIN,		IDC_DELAY,			"PopupsDelay", 10, IDC_DELAY_SPIN, (WORD)1, (WORD)255},
+	{&puopts.LeftClickAction,	CONTROL_COMBO,		IDC_LEFTACTION,		"PopupsLeftClick", POPUP_ACTION_INFO},
+	{&puopts.RightClickAction,	CONTROL_COMBO,		IDC_RIGHTACTION,	"PopupsRightClick", POPUP_ACTION_CLOSE},
+	{&puopts.text,				CONTROL_TEXT,		IDC_POPUPTEXT,		"PopupsTemplate", (DWORD)_T(DEFAULT_TEMPLATE_POPUP)}
+};
+/*
+static UINT popupsExpertControls[] = {
+	IDC_ONCONNECT, IDC_IFCHANGED, IDC_PUIGNOREREMOVE,
+	IDC_EXPERT, IDC_PUBGCOLOR, IDC_PUTEXTCOLOR, IDC_COLORTYPE,
+	IDC_DELAYFROMPU, IDC_DELAYCUSTOM, IDC_DELAYPERMANENT, IDC_DELAY, IDC_DELAY_SPIN,
+	IDC_RIGHTACTION, IDC_LEFTACTION,
+	IDC_POPUPTEXT, IDC_PREVIEW
+};
+*/
+static OptPageControl fileControls[] = {
+	{&opts.logfile,				CONTROL_TEXT,		IDC_LOGFILE,		"LogFile", (DWORD)_T(DEFAULT_LOG_FILENAME), 0, 0, MAX_PATH},
+	{&opts.listbkimage,			CONTROL_TEXT,		IDC_BGIMGFILE,		"ListBkImage", (DWORD)_T(DEFAULT_BGIMAGE_FILENAME), 0, 0, MAX_PATH}
+};
+
+#define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
+
+void LoadOptions() {
+	TCHAR temp[MAX_PATH];
+
+	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
+	LoadOpts(advancedControls, MAX_REGS(advancedControls), MODULE_NAME);
+	LoadOpts(popupsControls, MAX_REGS(popupsControls), MODULE_NAME);
+
+	LoadOpts(fileControls, MAX_REGS(fileControls), MODULE_NAME);
+	if (opts.listbkimage != NULL && opts.listbkimage[0] != _T('\0'))
 	{
-		TCHAR str[512];
-		mir_sntprintf(str, sizeof(str), "%s%s", TranslateT("changes his/her status message to:"), _T("\r\n%n"));
-		lstrcpy(options.popuptext, str);
+		CallService(MS_UTILS_PATHTOABSOLUTET, (WPARAM)opts.listbkimage, (LPARAM)temp);
+		lstrcpyn(opts.listbkimage, temp, MAX_PATH);
 	}
-	else
+	if (opts.logfile != NULL && opts.logfile[0] != _T('\0'))
 	{
-		lstrcpyn(options.popuptext, dbv.pszVal, min(lstrlen(dbv.pszVal) + 1, MAXPOPUPLEN));
-		DBFreeVariant(&dbv);
-	}
-	//log file
-	if (DBGetContactSetting(NULL, MODULE, OPT_LOGFILE, &dbv))
-		lstrcpy(options.logfile, "");
-	else
-	{
-		if (lstrcmp(dbv.pszVal, ""))
-			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)options.logfile);
-		else lstrcpy(options.logfile, "");
-		DBFreeVariant(&dbv);
-	}
-	//log to file format
-	if (DBGetContactSetting(NULL, MODULE, OPT_LOG, &dbv))
-		lstrcpy(options.log, "[%Y/%M/%D %h:%m %a | %c] %n");
-	else
-	{
-		lstrcpyn(options.log, dbv.pszVal, min(lstrlen(dbv.pszVal) + 1, MAXSTRLEN));
-		DBFreeVariant(&dbv);
-	}
-	//log to history format
-	if (DBGetContactSetting(NULL, MODULE, OPT_HISTORY, &dbv))
-		lstrcpy(options.his, "[%Y/%M/%D %h:%m %a] %n");
-	else
-	{
-		lstrcpyn(options.his, dbv.pszVal, min(lstrlen(dbv.pszVal) + 1, MAXSTRLEN));
-		DBFreeVariant(&dbv);
-	}
-	//status message cleared notification
-	if (DBGetContactSetting(NULL, MODULE, OPT_MSGCLRNTF, &dbv))
-	{
-		lstrcpy(options.msgcleared, TranslateT("cleares his/her status message"));
-	}
-	else
-	{
-		lstrcpyn(options.msgcleared, dbv.pszVal, min(lstrlen(dbv.pszVal) + 1, MAXSTRLEN));
-		DBFreeVariant(&dbv);
-	}
-	//status message changed notofication
-	if (DBGetContactSetting(NULL, MODULE, OPT_MSGCHNNTF, &dbv))
-	{
-		TCHAR str[512];
-		mir_sntprintf(str, sizeof(str), "%s%s", TranslateT("changes his/her status message:"), _T("\\n[%n]"));
-		lstrcpy(options.msgchanged, str);
-	}
-	else
-	{
-		lstrcpyn(options.msgchanged, dbv.pszVal, min(lstrlen(dbv.pszVal) + 1, MAXSTRLEN));
-		DBFreeVariant(&dbv);
-	}
-	//list background image filepath
-	if (DBGetContactSetting(NULL, MODULE, OPT_LISTBG, &dbv))
-		lstrcpy(options.listbgimage, "");
-	else
-	{
-		if (lstrcmp(dbv.pszVal, ""))
-			CallService(MS_UTILS_PATHTOABSOLUTE, (WPARAM)dbv.pszVal, (LPARAM)options.listbgimage);
-		else lstrcpy(options.listbgimage, "");
-		DBFreeVariant(&dbv);
+		CallService(MS_UTILS_PATHTOABSOLUTET, (WPARAM)opts.logfile, (LPARAM)temp);
+		lstrcpyn(opts.logfile, temp, MAX_PATH);
 	}
 }
 
-static void OptionsWrite() {
-	char szPath[MAX_PATH];
-	//popups
-	DBWriteContactSettingByte(NULL, MODULE, OPT_DISPOPUPS, (BYTE)options.bDisablePopUps);
-	DBWriteContactSettingByte(NULL, MODULE, OPT_SHOWONC, (BYTE)(options.bShowOnConnect + (options.bOnlyIfChanged * 2)));
-	DBWriteContactSettingByte(NULL, MODULE, OPT_IGNOREPOP, (BYTE)options.bIgnoreEmptyPopup);
-	DBWriteContactSettingByte(NULL, MODULE, OPT_IGNOREALL, (BYTE)options.bIgnoreEmptyAll);
-	DBWriteContactSettingByte(NULL, MODULE, OPT_USEOSD, (BYTE)options.bUseOSD);
-	DBWriteContactSettingByte(NULL, MODULE, OPT_COLDEFAULT, (BYTE)options.bDefaultColor);
-	DBWriteContactSettingDword(NULL, MODULE, OPT_COLBACK, (DWORD)options.colBack);
-	DBWriteContactSettingDword(NULL, MODULE, OPT_COLTEXT, (DWORD)options.colText);
-	DBWriteContactSettingDword(NULL, MODULE, OPT_DSEC, (DWORD)options.dSec);
-	DBWriteContactSettingByte(NULL, MODULE, OPT_DINFINITE, (BYTE)options.bInfiniteDelay);
-	DBWriteContactSettingDword(NULL, MODULE, OPT_LCLKACT, options.LeftClickAction);
-	DBWriteContactSettingDword(NULL, MODULE, OPT_RCLKACT, options.RightClickAction);
-	//general
-//	DBWriteContactSettingByte(NULL, MODULE, OPT_HIDEMENU, (BYTE)options.bHideSettingsMenu);
-	DBWriteContactSettingByte(NULL, MODULE, OPT_LOGTOFILE, (BYTE)options.bLogToFile);
-	DBWriteContactSettingDword(NULL, MODULE, OPT_HISTMAX, (DWORD)options.dHistMax);
-	DBWriteContactSettingByte(NULL, MODULE, OPT_SHOWCH, (BYTE)options.bShowMsgChanges);
-	DBWriteContactSettingByte(NULL, MODULE, OPT_USEBGIMG, (BYTE)options.bUseBgImage);
-	DBWriteContactSettingDword(NULL, MODULE, OPT_COLLISTBACK, (DWORD)options.colListBack);
-	DBWriteContactSettingDword(NULL, MODULE, OPT_COLLISTTEXT, (DWORD)options.colListText);
-	//strings
-	DBWriteContactSettingString(NULL, MODULE, OPT_POPTXT, options.popuptext);
-	if (strcmp(options.logfile, ""))
-		CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)options.logfile, (LPARAM)szPath);
-	else strcpy_s(szPath, sizeof(szPath), "");
-	DBWriteContactSettingString(NULL, MODULE, OPT_LOGFILE, szPath);
-	DBWriteContactSettingString(NULL, MODULE, OPT_LOG, options.log);
-	DBWriteContactSettingString(NULL, MODULE, OPT_HISTORY, options.his);
-	DBWriteContactSettingString(NULL, MODULE, OPT_MSGCLRNTF, options.msgcleared);
-	DBWriteContactSettingString(NULL, MODULE, OPT_MSGCHNNTF, options.msgchanged);
-	if (strcmp(options.listbgimage, ""))
-		CallService(MS_UTILS_PATHTORELATIVE, (WPARAM)options.listbgimage, (LPARAM)szPath);
-	else strcpy_s(szPath, sizeof(szPath), "");
-	DBWriteContactSettingString(NULL, MODULE, OPT_LISTBG, szPath);
-}
-
-static void UpdateOption(HWND hwndDlg) {
-	options.bDisablePopUps = IsDlgButtonChecked(hwndDlg, IDC_CHKDISABLE);
-	options.bShowOnConnect = IsDlgButtonChecked(hwndDlg, IDC_SHOWONC);
-	options.bOnlyIfChanged = IsDlgButtonChecked(hwndDlg, IDC_SHOWONC2);
-	options.bIgnoreEmptyPopup = IsDlgButtonChecked(hwndDlg, IDC_IGNOREPOP);
-	options.bUseOSD = IsDlgButtonChecked(hwndDlg, IDC_USEOSD);
-	options.bDefaultColor = IsDlgButtonChecked(hwndDlg, IDC_CHKDEFAULTCOL);
-	options.colBack = SendDlgItemMessage(hwndDlg, IDC_COLBACK, CPM_GETCOLOUR, 0, 0);
-	options.colText = SendDlgItemMessage(hwndDlg, IDC_COLTEXT, CPM_GETCOLOUR, 0, 0);
-	options.dSec = (DWORD)GetDlgItemInt(hwndDlg, IDC_DELAY, NULL, FALSE);
-	options.bInfiniteDelay = IsDlgButtonChecked(hwndDlg, IDC_DELAYINFINITE);
-	GetDlgItemText(hwndDlg, IDC_POPUPTEXT, options.popuptext, sizeof(options.popuptext));
-}
-
-//Used to select the menu item for popup action menu (mark selected menu item ??)
-static void SelectMenuItem(HMENU hMenu, int Check) {
-	int i;
-	for (i = 0; i <= GetMenuItemCount(hMenu) - 1; i++)
-		CheckMenuItem(hMenu, i, MF_BYPOSITION | ((int)GetMenuItemID(hMenu, i) == Check)*8);
-}
-
-//PopUp options page
-static BOOL CALLBACK PopupsOptionsDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-	char str[255];
-	int ID;
-	HMENU hMenu;
-	RECT pos;
-	HWND button;
-	switch (message)
-	{
-		case WM_INITDIALOG:
-			TranslateDialogDefault(hwndDlg);
-			SetDlgItemInt(hwndDlg, IDC_DELAY, (int)options.dSec, FALSE);
-			CheckDlgButton(hwndDlg, IDC_DELAYINFINITE, options.bInfiniteDelay?BST_CHECKED:BST_UNCHECKED);
-			SendMessage(hwndDlg, WM_USER + 12, 0, 0);
-			//Make dialog represent the current options
-			SendDlgItemMessage(hwndDlg, IDC_COLBACK, CPM_SETCOLOUR, 0, options.colBack);
-			SendDlgItemMessage(hwndDlg, IDC_COLTEXT, CPM_SETCOLOUR, 0, options.colText);
-			SetDlgItemText(hwndDlg, IDC_POPUPTEXT, options.popuptext);
-			CheckDlgButton(hwndDlg, IDC_CHKDEFAULTCOL, options.bDefaultColor?BST_CHECKED:BST_UNCHECKED);
-			CheckDlgButton(hwndDlg, IDC_CHKDISABLE, options.bDisablePopUps?BST_CHECKED:BST_UNCHECKED);
-			CheckDlgButton(hwndDlg, IDC_SHOWONC, options.bShowOnConnect?BST_CHECKED:BST_UNCHECKED);
-			CheckDlgButton(hwndDlg, IDC_SHOWONC2, options.bOnlyIfChanged?BST_CHECKED:BST_UNCHECKED);
-			CheckDlgButton(hwndDlg, IDC_IGNOREPOP, options.bIgnoreEmptyPopup?BST_CHECKED:BST_UNCHECKED);
-			CheckDlgButton(hwndDlg, IDC_USEOSD, options.bUseOSD?BST_CHECKED:BST_UNCHECKED);
-			//Disable color picker when using default colors
-			EnableWindow(GetDlgItem(hwndDlg, IDC_COLBACK), !options.bDefaultColor);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_COLTEXT), !options.bDefaultColor);
-			//Disable non-OSD controls
-			SendMessage(hwndDlg, WM_USER + 11, 0, 0);
-			//show on connect
-			SendMessage(hwndDlg, WM_USER + 13, 0, 0);
-			//Click actions
-			hMenu = GetSubMenu(LoadMenu(hInst, MAKEINTRESOURCE(IDR_PMENU)), 0);
-			CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)hMenu,0);
-			GetMenuString(hMenu, options.LeftClickAction, str, sizeof(str), MF_BYCOMMAND);
-			SetDlgItemText(hwndDlg, IDC_LeftClick, str);
-			GetMenuString(hMenu, options.RightClickAction, str, sizeof(str), MF_BYCOMMAND);
-			SetDlgItemText(hwndDlg, IDC_RightClick, str);
-			//Set buttons flat
-			SendMessage(GetDlgItem(hwndDlg,IDC_LeftClick), BUTTONSETASFLATBTN, 0, 0);
-			SendMessage(GetDlgItem(hwndDlg,IDC_RightClick), BUTTONSETASFLATBTN, 0, 0);
-			return TRUE;
-		case WM_USER + 10:
-			EnableWindow(GetDlgItem(hwndDlg, IDC_COLBACK), !IsDlgButtonChecked(hwndDlg, IDC_CHKDEFAULTCOL));
-			EnableWindow(GetDlgItem(hwndDlg, IDC_COLTEXT), !IsDlgButtonChecked(hwndDlg, IDC_CHKDEFAULTCOL));
-			break;
-		case WM_USER + 11: {
-			BOOL state = !IsDlgButtonChecked(hwndDlg, IDC_USEOSD);
-			if (state) SendMessage(hwndDlg, WM_USER + 10, 0, 0);
-			else
-			{
-				EnableWindow(GetDlgItem(hwndDlg, IDC_COLBACK), state);
-				EnableWindow(GetDlgItem(hwndDlg, IDC_COLTEXT), state);
-			}
-			EnableWindow(GetDlgItem(hwndDlg, IDC_CHKDEFAULTCOL), state);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LeftClick), state);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_RightClick), state);
-			break;
-		}
-		case WM_USER + 12:
-			EnableWindow(GetDlgItem(hwndDlg, IDC_DELAY), !IsDlgButtonChecked(hwndDlg, IDC_DELAYINFINITE));
-			break;
-		case WM_USER + 13:
-			EnableWindow(GetDlgItem(hwndDlg, IDC_SHOWONC2), IsDlgButtonChecked(hwndDlg, IDC_SHOWONC));
-			break;
-		case WM_COMMAND:
-			if ((LOWORD(wParam) == IDC_POPUPTEXT || LOWORD(wParam) == IDC_DELAY)
-				&& (HIWORD(wParam) != EN_CHANGE || (HWND)lParam != GetFocus()))
-				return 0;
-			switch (LOWORD(wParam))
-			{
-				case IDC_RightClick:
-					//Right click action selection menu
-					button = GetDlgItem(hwndDlg, IDC_RightClick);
-					GetWindowRect(button, &pos); 
-					hMenu = GetSubMenu(LoadMenu(hInst, MAKEINTRESOURCE(IDR_PMENU)), 0);
-					CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)hMenu,0);
-					SelectMenuItem(hMenu, options.RightClickAction);
-					ID = TrackPopupMenu(hMenu, TPM_LEFTBUTTON|TPM_RETURNCMD, pos.left, pos.bottom, 0, hwndDlg, NULL);
-					if (ID) options.RightClickAction = ID;
-					GetMenuString(hMenu, options.RightClickAction, str, sizeof(str), MF_BYCOMMAND);
-					SetDlgItemText(hwndDlg,IDC_RightClick, str);
-					break;
-				case IDC_LeftClick:
-					//Left click action selection menu
-					button = GetDlgItem(hwndDlg, IDC_LeftClick);
-					GetWindowRect(button, &pos);
-					hMenu = GetSubMenu(LoadMenu(hInst, MAKEINTRESOURCE(IDR_PMENU)), 0);
-					CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)hMenu,0);
-					SelectMenuItem(hMenu, options.LeftClickAction);
-					ID = TrackPopupMenu(hMenu, TPM_LEFTBUTTON|TPM_RETURNCMD, pos.left, pos.bottom, 0, hwndDlg, NULL);
-					if (ID) options.LeftClickAction = ID;
-					GetMenuString(hMenu, options.LeftClickAction, str, sizeof(str), MF_BYCOMMAND);
-					SetDlgItemText(hwndDlg,IDC_LeftClick, str);
-					break;
-				case IDC_PREVIEW: {
-					STATUSMSGINFO n;
-					ZeroMemory(&n, sizeof(n));
-					n.hContact = NULL;
-					n.cust = malloc(512);
-					lstrcpy(n.cust, TranslateT("Contact"));
-					n.oldstatusmsg = malloc(512);
-					lstrcpy(n.oldstatusmsg, TranslateT("Old status message"));
-					n.newstatusmsg = malloc(512);
-					lstrcpy(n.newstatusmsg, TranslateT("New status message"));
-					UpdateOption(hwndDlg);
-					ShowPopup(&n);
-					OptionsRead();
-					if (n.cust) free(n.cust);
-					if (n.oldstatusmsg) free(n.oldstatusmsg);
-					if (n.newstatusmsg) free(n.newstatusmsg);
-					return 0;
-				}
-				case IDC_CHKDEFAULTCOL:
-					SendMessage(hwndDlg, WM_USER + 10, 0, 0);
-					break;
-				case IDC_USEOSD:
-					SendMessage(hwndDlg, WM_USER + 11, 0, 0);
-					break;
-				case IDC_DELAYINFINITE:
-					SendMessage(hwndDlg, WM_USER + 12, 0, 0);
-					break;
-				case IDC_SHOWONC:
-					SendMessage(hwndDlg, WM_USER + 13, 0, 0);
-					break;
-			}
-			//Enable "Apply" button
-			SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
-			break;
-		case WM_NOTIFY:
-			switch (((LPNMHDR)lParam)->code)
-			{
-				case PSN_APPLY:
-					UpdateOption(hwndDlg);
-					//Send changes to menuitem
-					UpdateMenu(options.bDisablePopUps);
-					OptionsWrite();
-			}
-			break;
-		default:
-			break;
-	}
-	return FALSE;
-}
-
-static BOOL CALLBACK StatusOptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+	BOOL ret = SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 	switch (msg)
 	{
 		case WM_INITDIALOG:
-			TranslateDialogDefault(hwndDlg);
-			SetDlgItemInt(hwndDlg, IDC_HISMAX, options.dHistMax, FALSE);
-			SendDlgItemMessage(hwndDlg, IDC_COLLISTBACK, CPM_SETCOLOUR, 0, options.colListBack);
-			SendDlgItemMessage(hwndDlg, IDC_COLLISTTEXT, CPM_SETCOLOUR, 0, options.colListText);
-			SetDlgItemText(hwndDlg, IDC_IMGFILENAME, options.listbgimage);
-			CheckDlgButton(hwndDlg, IDC_USEBGIMG, options.bUseBgImage?BST_CHECKED:BST_UNCHECKED);
-			CheckDlgButton(hwndDlg, IDC_LOGTOFILE, options.bLogToFile?BST_CHECKED:BST_UNCHECKED);
-			SetDlgItemText(hwndDlg, IDC_LOGTO, options.logfile);
-			SetDlgItemText(hwndDlg, IDC_FHIS, options.his);
-			SetDlgItemText(hwndDlg, IDC_FLOG, options.log);
-			SetDlgItemText(hwndDlg, IDC_LOGMSGCL, options.msgcleared);
-			SetDlgItemText(hwndDlg, IDC_LOGMSGCH, options.msgchanged);
-			CheckDlgButton(hwndDlg, IDC_IGNOREALL, options.bIgnoreEmptyAll?BST_CHECKED:BST_UNCHECKED);
-			CheckDlgButton(hwndDlg, IDC_SHOWCH, options.bShowMsgChanges?BST_CHECKED:BST_UNCHECKED);
-//			CheckDlgButton(hwndDlg, IDC_HIDECMENUITEMS, options.bHideSettingsMenu?BST_CHECKED:BST_UNCHECKED);
+			SetDlgItemText(hwndDlg, IDC_BGIMGFILE, opts.listbkimage);
 			SendMessage(hwndDlg, WM_USER + 10, 0, 0);
-			SendMessage(hwndDlg, WM_USER + 11, 0, 0);
-			return TRUE;
-		case WM_USER + 10: {
-			BOOL bState = IsDlgButtonChecked(hwndDlg, IDC_USEBGIMG);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_COLLISTBACK), !bState);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_IMGFILENAME), bState);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE), bState);
 			break;
-		}
-		case WM_USER + 11: {
-			BOOL bState = IsDlgButtonChecked(hwndDlg, IDC_LOGTOFILE);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_LOGTO), bState);
-			EnableWindow(GetDlgItem(hwndDlg, IDC_FLOG), bState);
+		case WM_USER + 10:
+		{
+			BOOL enabled = IsDlgButtonChecked(hwndDlg, IDC_USEBGIMG);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LISTBGCOLOR), !enabled);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BGIMGFILE), enabled);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_BGIMGBROWSE), enabled);
 			break;
 		}
 		case WM_COMMAND:
-			if ((LOWORD(wParam) == IDC_IMGFILENAME
-				|| LOWORD(wParam) == IDC_LOGTO
-				|| LOWORD(wParam) == IDC_FLOG
-				|| LOWORD(wParam) == IDC_FHIS
-				|| LOWORD(wParam) == IDC_HISMAX
-				|| LOWORD(wParam) == IDC_LOGMSGCL
-				|| LOWORD(wParam) == IDC_LOGMSGCH)
-				&& (HIWORD(wParam) != EN_CHANGE || (HWND)lParam != GetFocus()))
-				return 0;
 			switch (LOWORD(wParam))
 			{
 				case IDC_USEBGIMG:
 					SendMessage(hwndDlg, WM_USER + 10, 0, 0);
 					break;
-				case IDC_LOGTOFILE:
-					SendMessage(hwndDlg, WM_USER + 11, 0, 0);
-					break;
-				case IDC_CLEARALLHIS:
-					ClearAllHistory();
-					break;
-				case IDC_BROWSE: {
-					char str[MAX_PATH];
+				case IDC_BGIMGBROWSE:
+				{
 					OPENFILENAME ofn;
-					char filter[512];
-					GetDlgItemText(hwndDlg, IDC_IMGFILENAME, str, sizeof(str));
+					TCHAR filepath[MAX_PATH] = _T("");
+					char filter[512] = "";
+#ifdef UNICODE
+					WCHAR filterW[512] = L"";
+					int i;
+#endif
+
+					GetDlgItemText(hwndDlg, IDC_BGIMGFILE, filepath, sizeof(filepath));
+					CallService(MS_UTILS_GETBITMAPFILTERSTRINGS, sizeof(filter), (LPARAM)filter);
+#ifdef UNICODE
+					for (i = 0; i < 512; i++)
+						filterW[i] = filter[i];
+#endif
+
 					ZeroMemory(&ofn, sizeof(ofn));
 					ofn.lStructSize = sizeof(ofn);//OPENFILENAME_SIZE_VERSION_400;
 					ofn.hwndOwner = hwndDlg;
-					ofn.hInstance = NULL;
-					CallService(MS_UTILS_GETBITMAPFILTERSTRINGS, sizeof(filter), (LPARAM)filter);
+#ifdef UNICODE
+					ofn.lpstrFilter = filterW;
+#else
 					ofn.lpstrFilter = filter;
-					ofn.lpstrFile = str;
-					ofn.Flags = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
-					ofn.nMaxFile = sizeof(str);
-					ofn.nMaxFileTitle = MAX_PATH;
-					ofn.lpstrDefExt = "bmp";
-					if (!GetOpenFileName(&ofn))
-						break;
-					SetDlgItemText(hwndDlg, IDC_IMGFILENAME, str);
-				}
-			}
-			SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
-			break;
-		case WM_NOTIFY:
-			switch (((LPNMHDR) lParam)->idFrom)
-			{
-				case 0:
-					switch (((LPNMHDR) lParam)->code)
+#endif
+					ofn.lpstrFile = filepath;
+					ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST;
+					ofn.nMaxFile = MAX_PATH;
+					ofn.lpstrDefExt = _T("bmp");
+
+					if (GetOpenFileName(&ofn))
 					{
-						case PSN_APPLY: {
-							options.dHistMax = GetDlgItemInt(hwndDlg, IDC_HISMAX, NULL, FALSE);
-							options.colListBack = SendDlgItemMessage(hwndDlg, IDC_COLLISTBACK, CPM_GETCOLOUR, 0, 0);
-							options.colListText = SendDlgItemMessage(hwndDlg, IDC_COLLISTTEXT, CPM_GETCOLOUR, 0, 0);
-							GetDlgItemText(hwndDlg, IDC_IMGFILENAME, options.listbgimage, sizeof(options.listbgimage));
-							options.bUseBgImage = IsDlgButtonChecked(hwndDlg, IDC_USEBGIMG);
-							GetDlgItemText(hwndDlg, IDC_LOGTO, options.logfile, sizeof(options.logfile));
-							GetDlgItemText(hwndDlg, IDC_FHIS, options.his, sizeof(options.his));
-							GetDlgItemText(hwndDlg, IDC_FLOG, options.log, sizeof(options.log));
-							GetDlgItemText(hwndDlg, IDC_LOGMSGCL, options.msgcleared, sizeof(options.msgcleared));
-							GetDlgItemText(hwndDlg, IDC_LOGMSGCH, options.msgchanged, sizeof(options.msgchanged));
-							options.bIgnoreEmptyAll = IsDlgButtonChecked(hwndDlg, IDC_IGNOREALL);
-							options.bShowMsgChanges = IsDlgButtonChecked(hwndDlg, IDC_SHOWCH);
-//							options.bHideSettingsMenu = IsDlgButtonChecked(hwndDlg, IDC_HIDECMENUITEMS);
-							options.bLogToFile = IsDlgButtonChecked(hwndDlg, IDC_LOGTOFILE);
-							OptionsWrite();
-							return TRUE;
-						}
+						SetDlgItemText(hwndDlg, IDC_BGIMGFILE, filepath);
+						SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 					}
+
+					break;
+				}
+				case IDC_BGIMGFILE:
+					if (HIWORD(wParam) != EN_CHANGE || (HWND)lParam != GetFocus())
+						return 0;
+//					else
+//						SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 					break;
 			}
 			break;
+		case WM_NOTIFY:
+		{
+			LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+
+			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
+			{
+				TCHAR temp[MAX_PATH]; temp[0] = _T('\0');
+				GetDlgItemText(hwndDlg, IDC_BGIMGFILE, opts.listbkimage, MAX_PATH);
+				if (opts.listbkimage != NULL && opts.listbkimage[0] != _T('\0'))
+					CallService(MS_UTILS_PATHTORELATIVET, (WPARAM)opts.listbkimage, (LPARAM)temp);
+				DBWriteContactSettingTString(NULL, MODULE_NAME, "ListBkImage", temp);
+			}
+			break;
+		}
 	}
-	return FALSE;
+	return ret;
 }
 
+static BOOL CALLBACK AdvancedDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+	BOOL ret = SaveOptsDlgProc(advancedControls, MAX_REGS(advancedControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+	switch (msg)
+	{
+		case WM_INITDIALOG:
+		{
+			TCHAR str[1024];str[0] = _T('\0');
 
-void OptionsAdd(WPARAM addInfo) {
+			SetDlgItemText(hwndDlg, IDC_LOGFILE, opts.logfile);
+#ifdef UNICODE
+			ShowWindow(GetDlgItem(hwndDlg, IDC_LOGASCII), SW_HIDE);
+#endif
+			SendMessage(hwndDlg, WM_USER + 10, 0, 0);
+			SendMessage(hwndDlg, WM_USER + 11, 0, 0);
+			SendMessage(hwndDlg, WM_USER + 12, 0, 0);
+
+			lstrcpy(str, _T("%n\tNew Status Message\r\n%o\tOld Status Message\r\n%c\tCustom Nickname\r\n\\n\tline break\r\n\\t\ttab stop"));
+			SetDlgItemText(hwndDlg, IDC_VARS1, str);
+			lstrcpy(str, _T("%D/%M/%Y\tDay/Month/Year\r\n%H:%m:%s\tTime (in 24h format)\r\n%h:%m:%s %a\t(in 12h format)"));
+			SetDlgItemText(hwndDlg, IDC_VARS2, str);
+			break;
+		}
+		case WM_USER + 10:
+		{
+			BOOL enabled = IsDlgButtonChecked(hwndDlg, IDC_MESSAGEWND);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_MSGCHANGED), enabled);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_MSGREMOVED), enabled);
+			break;
+		}
+		case WM_USER + 11:
+		{
+			BOOL enabled = IsDlgButtonChecked(hwndDlg, IDC_HISTORY);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_HISTORYMAX), enabled);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_HISTORYMAX_SPIN), enabled);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_HISTORYTEXT), enabled);
+			break;
+		}
+		case WM_USER + 12:
+		{
+			BOOL enabled = IsDlgButtonChecked(hwndDlg, IDC_LOG);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LOGTEXT), enabled);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LOGFILE), enabled);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LOGFILEBROWSE), enabled);
+#ifdef UNICODE
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LOGASCII), enabled);
+#endif
+			break;
+		}
+		case WM_COMMAND:
+			if ((LOWORD(wParam) == IDC_LOGFILE
+				|| LOWORD(wParam) == IDC_VARS1
+				|| LOWORD(wParam) == IDC_VARS2)
+				&& (HIWORD(wParam) != EN_CHANGE || (HWND)lParam != GetFocus()))
+				return 0;
+			switch (LOWORD(wParam))
+			{
+				case IDC_MESSAGEWND:
+					SendMessage(hwndDlg, WM_USER + 10, 0, 0);
+					break;
+				case IDC_HISTORY:
+					SendMessage(hwndDlg, WM_USER + 11, 0, 0);
+					break;
+				case IDC_LOG:
+					SendMessage(hwndDlg, WM_USER + 12, 0, 0);
+					break;
+				case IDC_HISTORYCLEAR:
+					ClearAllHistory();
+					return 0;
+				case IDC_LOGFILEBROWSE:
+				{
+					OPENFILENAME ofn;
+					TCHAR filepath[MAX_PATH] = _T("");
+
+					GetDlgItemText(hwndDlg, IDC_LOGFILE, filepath, sizeof(filepath));
+
+					ZeroMemory(&ofn, sizeof(ofn));
+					ofn.lStructSize = sizeof(ofn);//OPENFILENAME_SIZE_VERSION_400;
+					ofn.hwndOwner = hwndDlg;
+					ofn.lpstrFilter = _T("Text Files (*.txt)\0*.txt\0Log Files (*.log)\0*.log\0All Files (*.*)\0*.*\0");
+					ofn.lpstrFile = filepath;
+					ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+					ofn.nMaxFile = MAX_PATH;
+					ofn.lpstrDefExt = _T("txt");
+
+					if (GetSaveFileName(&ofn))
+					{
+						SetDlgItemText(hwndDlg, IDC_LOGFILE, filepath);
+						SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+					}
+
+					break;
+				}
+			}
+			break;
+		case WM_NOTIFY:
+		{
+			LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+
+			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
+			{
+				TCHAR temp[MAX_PATH]; temp[0] = _T('\0');
+				GetDlgItemText(hwndDlg, IDC_LOGFILE, opts.logfile, MAX_PATH);
+				if (opts.logfile != NULL && opts.logfile[0] != _T('\0'))
+					CallService(MS_UTILS_PATHTORELATIVET, (WPARAM)opts.logfile, (LPARAM)temp);
+				DBWriteContactSettingTString(NULL, MODULE_NAME, "LogFile", temp);
+			}
+			break;
+		}
+	}
+
+	return ret;
+}
+
+static BOOL CALLBACK PopupOptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+	switch (msg)
+	{
+		case WM_INITDIALOG:
+		{
+			BOOL ret;
+
+			SendDlgItemMessage(hwndDlg, IDC_RIGHTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Do nothing"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Close popup"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Open message window"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Open contact menu"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Open contact details"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("View status message history"));
+
+			SendDlgItemMessage(hwndDlg, IDC_LEFTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Do nothing"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Close popup"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Open message window"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Open contact menu"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Open contact details"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFTACTION, CB_ADDSTRING, 0, (LONG) TranslateT("View status message history"));
+
+			// Needs to be called here in this case
+			ret = SaveOptsDlgProc(popupsControls, MAX_REGS(popupsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+
+			SendMessage(hwndDlg, WM_USER + 10, 0, 0);
+			SendMessage(hwndDlg, WM_USER + 11, 0, 0);
+			SendMessage(hwndDlg, WM_USER + 12, 0, 0);
+#ifdef CUSTOMBUILD_OSDSUPPORT
+			SendMessage(hwndDlg, WM_USER + 13, 0, 0);
+#endif
+
+			return ret;
+		}
+		case WM_USER + 10:
+			EnableWindow(GetDlgItem(hwndDlg, IDC_PUBGCOLOR), IsDlgButtonChecked(hwndDlg, IDC_COLORCUSTOM));
+			EnableWindow(GetDlgItem(hwndDlg, IDC_PUTEXTCOLOR), IsDlgButtonChecked(hwndDlg, IDC_COLORCUSTOM));
+			break;
+		case WM_USER + 11:
+			EnableWindow(GetDlgItem(hwndDlg, IDC_DELAY), IsDlgButtonChecked(hwndDlg, IDC_DELAYCUSTOM));
+			EnableWindow(GetDlgItem(hwndDlg, IDC_DELAY_SPIN), IsDlgButtonChecked(hwndDlg, IDC_DELAYCUSTOM));
+			break;
+		case WM_USER + 12:
+			EnableWindow(GetDlgItem(hwndDlg, IDC_IFCHANGED), IsDlgButtonChecked(hwndDlg, IDC_ONCONNECT));
+			break;
+#ifdef CUSTOMBUILD_OSDSUPPORT
+		case WM_USER + 13:
+		{
+			BOOL state = !IsDlgButtonChecked(hwndDlg, IDC_USEOSD);
+			if (state) SendMessage(hwndDlg, WM_USER + 10, 0, 0);
+			else
+			{
+				EnableWindow(GetDlgItem(hwndDlg, IDC_PUBGCOLOR), state);
+				EnableWindow(GetDlgItem(hwndDlg, IDC_PUTEXTCOLOR), state);
+			}
+			EnableWindow(GetDlgItem(hwndDlg, IDC_COLORTYPE), state);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_LEFTCLICK), state);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_RIGHTCLICK), state);
+			break;
+		}
+#endif
+		case WM_COMMAND:
+		{
+			if ((LOWORD(wParam) == IDC_POPUPTEXT || LOWORD(wParam) == IDC_DELAY)
+				&& (HIWORD(wParam) != EN_CHANGE || (HWND)lParam != GetFocus()))
+				return 0;
+			switch (LOWORD(wParam)) //(HIWORD(wParam) == BN_CLICKED)
+			{
+#ifdef CUSTOMBUILD_OSDSUPPORT
+				case IDC_USEOSD:
+					SendMessage(hwndDlg, WM_USER + 13, 0, 0);
+					break;
+#endif
+				case IDC_COLORFROMPU:
+				case IDC_COLORWINDOWS:
+				case IDC_COLORCUSTOM:
+					SendMessage(hwndDlg, WM_USER + 10, 0, 0);
+					break;
+				case IDC_DELAYFROMPU:
+				case IDC_DELAYPERMANENT:
+				case IDC_DELAYCUSTOM:
+					SendMessage(hwndDlg, WM_USER + 11, 0, 0);
+					break;
+				case IDC_ONCONNECT:
+					SendMessage(hwndDlg, WM_USER + 12, 0, 0);
+					break;
+				case IDC_PREVIEW: 
+				{
+					STATUSMSGINFO temp_smi;
+					SMCNOTIFY_PUOPTIONS temp_puo;
+
+					ZeroMemory(&temp_smi, sizeof(temp_smi));
+					temp_smi.hContact = NULL;
+					temp_smi.cust = (TCHAR*)mir_alloc0(8 * sizeof(TCHAR));
+					lstrcpy(temp_smi.cust, TranslateT("Contact"));
+					temp_smi.oldstatusmsg = (TCHAR*)mir_alloc0(19 * sizeof(TCHAR));
+					lstrcpy(temp_smi.oldstatusmsg, TranslateT("Old status message"));
+					temp_smi.newstatusmsg = (TCHAR*)mir_alloc0(19 * sizeof(TCHAR));
+					lstrcpy(temp_smi.newstatusmsg, TranslateT("New status message"));
+
+					ZeroMemory(&temp_puo, sizeof(temp_puo));
+					if (IsDlgButtonChecked(hwndDlg, IDC_DELAYFROMPU))
+						temp_puo.bDelayType = POPUP_DELAY_DEFAULT;
+					else if (IsDlgButtonChecked(hwndDlg, IDC_DELAYCUSTOM))
+					{
+						temp_puo.bDelayType = POPUP_DELAY_CUSTOM;
+						temp_puo.dDelay = GetDlgItemInt(hwndDlg,IDC_DELAY, NULL, FALSE);
+					}
+					else if (IsDlgButtonChecked(hwndDlg, IDC_DELAYPERMANENT))
+						temp_puo.bDelayType = POPUP_DELAY_PERMANENT;
+					if (IsDlgButtonChecked(hwndDlg, IDC_COLORFROMPU))
+						temp_puo.bColorType = POPUP_COLOR_DEFAULT;
+					else if (IsDlgButtonChecked(hwndDlg, IDC_COLORWINDOWS))
+						temp_puo.bColorType = POPUP_COLOR_WINDOWS;
+					else if (IsDlgButtonChecked(hwndDlg, IDC_COLORCUSTOM))
+					{
+						temp_puo.bColorType = POPUP_COLOR_CUSTOM;
+						temp_puo.colBack = SendDlgItemMessage(hwndDlg,IDC_PUBGCOLOR,CPM_GETCOLOUR,0,0);
+						temp_puo.colText = SendDlgItemMessage(hwndDlg,IDC_PUTEXTCOLOR,CPM_GETCOLOUR,0,0);
+					}
+					GetDlgItemText(hwndDlg, IDC_POPUPTEXT, temp_puo.text, TEMPLATEMAXLEN);
+
+					PopupNotify(&temp_smi, &temp_puo);
+					MIR_FREE(temp_smi.cust);
+					MIR_FREE(temp_smi.oldstatusmsg);
+					MIR_FREE(temp_smi.newstatusmsg);
+					return 0;
+				}
+			}
+			break;
+		}
+	}
+
+	return SaveOptsDlgProc(popupsControls, MAX_REGS(popupsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+}
+
+extern int OptionsInit(WPARAM wParam, LPARAM lParam) {
 	OPTIONSDIALOGPAGE odp;
+
 	ZeroMemory(&odp, sizeof(odp));
 	odp.cbSize = sizeof(odp);
 	odp.position = 0;
 	odp.hInstance = hInst;
-	odp.pszTemplate = MAKEINTRESOURCE(IDD_OPT);
-	odp.pszTitle = TranslateT("Status Msg Change Notify");
-	odp.pszGroup = TranslateT("PopUps");
-	odp.flags = ODPF_BOLDGROUPS;
-	odp.pfnDlgProc = PopupsOptionsDlgProc;
-	CallService(MS_OPT_ADDPAGE, addInfo, (LPARAM)&odp);
+	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
 
-	odp.pszTemplate = MAKEINTRESOURCE(IDD_OPT_NTF);
-	odp.pszGroup = TranslateT("Status");
-	odp.pfnDlgProc = StatusOptionsDlgProc;
-	CallService(MS_OPT_ADDPAGE, addInfo, (LPARAM)&odp);
+	if(ServiceExists(MS_POPUP_ADDPOPUPEX)
+#ifdef UNICODE
+		|| ServiceExists(MS_POPUP_ADDPOPUPW)
+#endif
+		)
+	{
+		odp.pszTemplate = MAKEINTRESOURCEA(IDD_POPUP);
+		odp.ptszGroup = TranslateT("Popups");
+		odp.ptszTitle = TranslateT(PLUGIN_NAME);
+		odp.pfnDlgProc = PopupOptionsDlgProc;
+//		odp.expertOnlyControls = popupsExpertControls;
+//		odp.nExpertOnlyControls = sizeof(popupsExpertControls);
+		CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
+	}
 
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
+	odp.ptszGroup = TranslateT("History");
+	odp.ptszTitle = TranslateT(PLUGIN_NAME);
+	odp.ptszTab = TranslateT("General");
+	odp.pfnDlgProc = OptionsDlgProc;
+//	odp.expertOnlyControls = optionsExpertControls;
+//	odp.nExpertOnlyControls = sizeof(optionsExpertControls);
+	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
+
+	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR | ODPF_EXPERTONLY;
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_ADVANCED);
+	odp.ptszTab = TranslateT("Advanced");
+	odp.pfnDlgProc = AdvancedDlgProc;
+//	odp.expertOnlyControls = optionsExpertControls;
+//	odp.nExpertOnlyControls = sizeof(optionsExpertControls);
+	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
+
+	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_IGNORE);
+	odp.ptszTab = TranslateT("Ignore");
+	odp.pfnDlgProc = IgnoreDlgProc;
+//	odp.expertOnlyControls = optionsExpertControls;
+//	odp.nExpertOnlyControls = sizeof(optionsExpertControls);
+	CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
+
+	return 0;
 }
-

@@ -1,5 +1,5 @@
 /*
-StatusMessageChangeNotify plugin for Miranda IM.
+Status Message Change Notify plugin for Miranda IM.
 
 Copyright © 2004-2005 NoName
 Copyright © 2005-2006 Daniel Vijge, Tomasz S³otwiñski, Ricardo Pescuma Domenecci
@@ -19,127 +19,113 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#include "main.h"
-#include <time.h>
+#include "commonheaders.h"
 
-// make display and history strings
-TCHAR* GetStr(STATUSMSGINFO *n, const TCHAR *dis)
-{
-	TCHAR chr, *str, tmp[1024/*128*/];
+
+#define TMPMAX	1024
+TCHAR* GetStr(STATUSMSGINFO *n, const TCHAR *tmplt) {
+	TCHAR tmp[TMPMAX];
+	TCHAR *str;
 	int i;
 	int len;
-//	SYSTEMTIME systime;
 	time_t timestamp;
 	struct tm smsgtime;
-	str = (TCHAR*)malloc(2048 * sizeof(TCHAR));
+
+	if (tmplt == NULL || tmplt[0] == _T('\0'))
+		return NULL;
+
+	str = (TCHAR*)mir_alloc0(2048 * sizeof(TCHAR));
 	str[0] = _T('\0');
-	len = lstrlen(dis);
+	len = lstrlen(tmplt);
 
-	//use timestamp from statusmsginfo if present
-//	ZeroMemory(&systime, sizeof(systime));
-	ZeroMemory(&smsgtime, sizeof(smsgtime));
 	if (n->dTimeStamp != 0)
-	{
-//		FILETIME ftime;
-//		LONGLONG llong;
-//		llong = Int32x32To64(n.dTimeStamp, 10000000) + 116444736000000000;
-//		ftime.dwLowDateTime = (DWORD)llong;
-//		ftime.dwHighDateTime = (DWORD)(llong >> 32);
-//		FileTimeToSystemTime(&ftime, &systime);
-
 		timestamp = n->dTimeStamp;
-	}
 	else
-	{
-//		GetLocalTime(&systime);
 		timestamp = time(NULL);
-	}
+	ZeroMemory(&smsgtime, sizeof(smsgtime));
 	localtime_s(&smsgtime, &timestamp);
 
 	for (i = 0; i < len; i++)
 	{
-
 		tmp[0] = _T('\0');
 
-		if (dis[i] == _T('%'))
+		if (tmplt[i] == _T('%'))
 		{
 			i++;
-			chr = dis[i];
-			switch (chr)
+			switch (tmplt[i])
 			{
-				case 'D':
-//					mir_sntprintf(tmp, sizeof(tmp), "%02i", systime.wDay);
-					mir_sntprintf(tmp, sizeof(tmp), "%02i", smsgtime.tm_mday);
-					break;
-				case 'H':
-//					mir_sntprintf(tmp, sizeof(tmp), "%i", systime.wHour);
-					mir_sntprintf(tmp, sizeof(tmp), "%i", smsgtime.tm_hour);
-					break;
-				case 'M':
-//					mir_sntprintf(tmp, sizeof(tmp), "%02i", systime.wMonth);
-					mir_sntprintf(tmp, sizeof(tmp), "%02i", smsgtime.tm_mon + 1);
-					break;
-				case 'Y':
-//					mir_sntprintf(tmp, sizeof(tmp), "%i", systime.wYear);
-					mir_sntprintf(tmp, sizeof(tmp), "%i", smsgtime.tm_year + 1900);
-					break;
-				case 'a':
-//					if (systime.wHour > 11) strcat_s(tmp, sizeof(tmp), "PM");
-					if (smsgtime.tm_hour > 11) strcat_s(tmp, sizeof(tmp), "PM");
-//					if (systime.wHour < 12) strcat_s(tmp, sizeof(tmp), "AM");
-					if (smsgtime.tm_hour < 12) strcat_s(tmp, sizeof(tmp), "AM");
-					break;
-				case 'c':
-					lstrcpyn(tmp, n->cust, sizeof(tmp));
-					break;
-				case 'h':
-					mir_sntprintf(tmp, sizeof(tmp), "%i", smsgtime.tm_hour%12 == 0 ? 12 : smsgtime.tm_hour%12);
-					break;
-				case 'm':
-//					mir_sntprintf(tmp, sizeof(tmp), "%02i", systime.wMinute);
-					mir_sntprintf(tmp, sizeof(tmp), "%02i", smsgtime.tm_min);
-					break;
 				case 'n':
-					if (!strcmp(n->newstatusmsg, "")) strcat_s(tmp, sizeof(tmp), TranslateT("<empty status message>"));
-					else lstrcpyn(tmp, n->newstatusmsg, sizeof(tmp));
+					if (n->compare == 2) lstrcpyn(tmp, TranslateT("<no status message>"), TMPMAX);
+					else lstrcpyn(tmp, n->newstatusmsg, TMPMAX);
 					break;
 				case 'o':
-					if (!strcmp(n->oldstatusmsg, "")) strcat_s(tmp, sizeof(tmp), TranslateT("<empty status message>"));
-					else lstrcpyn(tmp, n->oldstatusmsg, sizeof(tmp));
+					if (n->oldstatusmsg == NULL || n->oldstatusmsg[0] == _T('\0')) lstrcpyn(tmp, TranslateT("<no status message>"), TMPMAX);
+					else lstrcpyn(tmp, n->oldstatusmsg, TMPMAX);
+					break;
+				case 'c':
+					if (n->cust == NULL || n->cust[0] == _T('\0')) lstrcpyn(tmp, TranslateT("Contact"), TMPMAX);
+					else lstrcpyn(tmp, n->cust, TMPMAX);
+					break;
+				case 'D':
+					mir_sntprintf(tmp, 1024, _T("%02i"), smsgtime.tm_mday);
+					break;
+				case 'M':
+					mir_sntprintf(tmp, TMPMAX, _T("%02i"), smsgtime.tm_mon + 1);
+					break;
+				case 'Y':
+					mir_sntprintf(tmp, TMPMAX, _T("%i"), smsgtime.tm_year + 1900);
+					break;
+				case 'H':
+					mir_sntprintf(tmp, TMPMAX, _T("%i"), smsgtime.tm_hour);
+					break;
+				case 'h':
+					mir_sntprintf(tmp, TMPMAX, _T("%i"), smsgtime.tm_hour%12 == 0 ? 12 : smsgtime.tm_hour%12);
+					break;
+				case 'm':
+					mir_sntprintf(tmp, TMPMAX, _T("%02i"), smsgtime.tm_min);
 					break;
 				case 's':
-//					mir_sntprintf(tmp, sizeof(tmp), "%02i", systime.wSecond);
-					mir_sntprintf(tmp, sizeof(tmp), "%02i", smsgtime.tm_sec);
+					mir_sntprintf(tmp, TMPMAX, _T("%02i"), smsgtime.tm_sec);
+					break;
+				case 'a':
+					if (smsgtime.tm_hour > 11) lstrcpyn(tmp, _T("PM"), TMPMAX);
+					if (smsgtime.tm_hour < 12) lstrcpyn(tmp, _T("AM"), TMPMAX);
 					break;
 				default:
-					strcat_s(tmp, sizeof(tmp), "%");
+					//lstrcpyn(tmp, _T("%"), TMPMAX);
 					i--;
+					tmp[0] = tmplt[i]; tmp[1] = _T('\0');
 					break;
 			}
 		}
-		else if (dis[i] == _T('\\'))
+		else if (tmplt[i] == _T('\\'))
+		{
+			i++;
+			switch (tmplt[i])
 			{
-				i++;
-				chr = dis[i];
-				switch (chr)
-				{
-					case 'n':
-						strcat_s(tmp, sizeof(tmp), "\r\n");
-						break;
-					case 't':
-						strcat_s(tmp, sizeof(tmp), "\t");
-						break;
-					default:
-						strcat_s(tmp, sizeof(tmp), "\\");
-						i--;
-						break;
-				}
+				case 'n':
+					//_tcscat_s(tmp, TMPMAX, _T("\r\n"));
+					tmp[0] = _T('\r'); tmp[1] = _T('\n'); tmp[2] = _T('\0');
+					break;
+				case 't':
+					//_tcscat_s(tmp, TMPMAX, _T("\t"));
+					tmp[0] = _T('\t'); tmp[1] = _T('\0');
+					break;
+				default:
+					//lstrcpyn(tmp, _T("\\"), TMPMAX);
+					i--;
+					tmp[0] = tmplt[i]; tmp[1] = _T('\0');
+					break;
 			}
-			else mir_sntprintf(tmp, sizeof(tmp), "%c", dis[i]);
+		}
+		else
+		{
+			tmp[0] = tmplt[i]; tmp[1] = _T('\0');
+		}
 
 		if (tmp[0] != _T('\0'))
 		{
-			if (lstrlen(tmp) + lstrlen(str) < 2044/*508*/)
+			if (lstrlen(tmp) + lstrlen(str) < 2044)
 			{
 				lstrcat(str, tmp);
 			}
@@ -153,50 +139,100 @@ TCHAR* GetStr(STATUSMSGINFO *n, const TCHAR *dis)
 	return str;
 }
 
-//build history setting name
-char* BuildSetting(short historyLast, BOOL bTS)
-{
+char* BuildSetting(WORD index, char *suffix) {
 	static char setting[16];
-	mir_sntprintf(setting, sizeof(setting), "%s%i%s", _T("History_"), historyLast, bTS?_T("_ts"):"");
+	mir_snprintf(setting, sizeof(setting), "History_%i%s", index, (suffix == NULL)?"":suffix);
 	return setting;
 }
 
-int ProtoAck(WPARAM wParam, LPARAM lParam)
+extern BOOL FreeSmiStr(STATUSMSGINFO *smi) {
+	mir_free(smi->newstatusmsg);
+	mir_free(smi->oldstatusmsg);
+	return 0;
+}
+
+extern WCHAR *mir_dupToUnicodeEx(char *ptr, UINT CodePage)
 {
+	size_t size;
+	WCHAR *tmp;
+
+	if (ptr == NULL)
+		return NULL;
+
+	size = strlen(ptr) + 1;
+	tmp = (WCHAR *) mir_alloc0(size * sizeof(WCHAR));
+
+	MultiByteToWideChar(CodePage, 0, ptr, -1, tmp, size * sizeof(WCHAR));
+
+	return tmp;
+}
+
+extern TCHAR* MyDBGetContactSettingTString_dup(HANDLE hContact, const char *szModule, const char *szSetting, TCHAR *out) {
+	DBVARIANT dbv;
+
+	if (!DBGetContactSettingTString(hContact, szModule, szSetting, &dbv))
+	{
+		switch (dbv.type)
+		{
+			case DBVT_ASCIIZ:
+#ifdef UNICODE
+				out = mir_dupToUnicodeEx(dbv.pszVal, CP_ACP);
+				break;
+			case DBVT_UTF8:
+				out = mir_dupToUnicodeEx(dbv.pszVal, CP_UTF8);
+				break;
+			case DBVT_WCHAR:
+				out = mir_wstrdup(dbv.pwszVal);
+#else
+				out = mir_strdup(dbv.pszVal);
+#endif
+				break;
+			default:
+				out = NULL;
+				break;
+		}
+		DBFreeVariant(&dbv);
+	}
+	else
+	{
+		out = NULL;
+	}
+
+	return out;
+}
+
+extern ProtoAck(WPARAM wParam, LPARAM lParam) {
 	ACKDATA *ack = (ACKDATA*)lParam;
 
 	if (ack->type == ACKTYPE_STATUS)
 	{
-		//We get here on a status change, or a status notification (meaning:
-		//old status and new status are just like the same)
 		WORD newStatus = (WORD)ack->lParam;
 		WORD oldStatus = (WORD)ack->hProcess;
-		char *szProtocol = (char*)ack->szModule;
-		//Now we have the statuses and (a pointer to the string representing) the protocol.
-		if (oldStatus == newStatus) return 0; //Useless message.
-		if (newStatus == ID_STATUS_OFFLINE) 
+		char *proto = (char*)ack->szModule;
+
+		if (oldStatus == newStatus) return 0;
+		if (newStatus == ID_STATUS_OFFLINE)
 		{
-			//The protocol switched to offline. Disable the popups for this protocol
-			DBWriteContactSettingDword(NULL, MODULE, szProtocol, 0);
+			DBWriteContactSettingDword(NULL, MODULE_NAME, proto, 0);
 		}
-		else if ((oldStatus < ID_STATUS_ONLINE) && (newStatus >= ID_STATUS_ONLINE)) {
-			//The protocol changed from a disconnected status to a connected status.
-			//Enable the popups for this protocol.
-			DBWriteContactSettingDword(NULL, MODULE, szProtocol, /*(options.bShowOnConnect && !options.bOnlyIfChanged)?1:*/GetTickCount());
+		else if ((oldStatus < ID_STATUS_ONLINE) && (newStatus >= ID_STATUS_ONLINE))
+		{
+			DBWriteContactSettingDword(NULL, MODULE_NAME, proto, GetTickCount());
 		}
 
 		return 0;
 	}
 
-//	if (ack->type == ACKTYPE_AWAYMSG && !lstrcmp(ack->szModule, "ICQ")) {
-//		// Store in db?
-//		if (ack->result == ACKRESULT_SUCCESS && !ServiceExists("SMR/MsgRetrievalEnabledForProtocol"))
-//		{
-//			// Store in db
-//			DBWriteContactSettingString(ack->hContact, "CList", "StatusMsg", (const char*)ack->lParam);
-//		}
-//		return 0;
-//	}
+#ifdef CUSTOMBUILD_CATCHICQSTATUSMSG
+	if (ack->type == ACKTYPE_AWAYMSG && !lstrcmpA(ack->szModule, "ICQ"))
+	{
+		if (ack->result == ACKRESULT_SUCCESS && !ServiceExists("SMR/MsgRetrievalEnabledForProtocol"))
+		{
+			DBWriteContactSettingString(ack->hContact, "CList", "StatusMsg", (const char*)ack->lParam);
+		}
+		return 0;
+	}
+#endif
 
-	return 0; //The protocol changed in a way we don't care.
+	return 0;
 }

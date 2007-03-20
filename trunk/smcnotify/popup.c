@@ -1,5 +1,5 @@
 /*
-StatusMessageChangeNotify plugin for Miranda IM.
+Status Message Change Notify plugin for Miranda IM.
 
 Copyright © 2004-2005 NoName
 Copyright © 2005-2006 Daniel Vijge, Tomasz S³otwiñski, Ricardo Pescuma Domenecci
@@ -19,98 +19,185 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#include "main.h"
+#include "commonheaders.h"
 
-// popup dialog pocess
-// for selecting actions when click on the popup window
-// use for displaying contact menu
-static int CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	DWORD ID;
-	HANDLE hContact;
-	hContact = PUGetContact(hWnd);
-	switch(message)
-	{
-		case WM_COMMAND:
-		case WM_CONTEXTMENU:
-			if (message == WM_COMMAND) // left click
-				ID = options.LeftClickAction;
-			else if (message == WM_CONTEXTMENU) // right click
-				ID = options.RightClickAction;
-			// kill the popup if no menu need to display, otherwise, keep the popup
-			if (ID != IDM_M5) PUDeletePopUp(hWnd);
-			SendMessage(hPopupWindow, ID, (WPARAM)hContact, 0);
-			return TRUE;
-		default:
-			break;
-	}
-	return DefWindowProc(hWnd, message, wParam, lParam);
-}
 
-// process for the popup window
-// containing the code for popup actions
-LRESULT CALLBACK PopupWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	POINT pt;
-	HMENU hMenu;
-	if ((HANDLE)wParam != NULL)
-	{
-		switch (uMsg)
-		{
-			case IDM_M2: // open message window
-				CallService(MS_MSG_SENDMESSAGE, wParam, 0);
-				break;
-			case IDM_M3: // view status message history
-				ShowHistory((HANDLE)wParam);
-				break;
-			case IDM_M4: // display contact detail
-				CallService(MS_USERINFO_SHOWDIALOG, wParam, 0);
-				break;
-			case IDM_M5: // display contact menu
-				hMenu=(HMENU)CallService(MS_CLIST_MENUBUILDCONTACT, wParam, 0);
-				GetCursorPos(&pt);
-				hPopupContact = (HANDLE)wParam;
-				TrackPopupMenu(hMenu, TPM_LEFTALIGN, pt.x, pt.y, 0, hWnd, NULL);
-				DestroyMenu(hMenu);
-				break;
-			case WM_COMMAND: // Needed by the contact's context menu
-				if (CallService(MS_CLIST_MENUPROCESSCOMMAND, MAKEWPARAM(LOWORD(wParam), MPCF_CONTACTMENU), (LPARAM)hPopupContact))
-					break;
-				return FALSE;
-			case WM_MEASUREITEM: // Needed by the contact's context menu
-				return CallService(MS_CLIST_MENUMEASUREITEM, wParam, lParam);
-			case WM_DRAWITEM: // Needed by the contact's context menu
-				return CallService(MS_CLIST_MENUDRAWITEM, wParam, lParam);
-			default:
-				return DefWindowProc(hWnd, uMsg, wParam, lParam);
-		}
-	}
-	return DefWindowProc(hWnd, uMsg, wParam, lParam);
-}
+static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-void ShowPopup(STATUSMSGINFO *smi)
-{
-	POPUPDATAEX ppd;
-	TCHAR *str = GetStr(smi, options.popuptext);
 
-	// OSD
-	if (ServiceExists("OSD/Announce") && options.bUseOSD)
+void PopupNotify(STATUSMSGINFO *smi, SMCNOTIFY_PUOPTIONS *puo) {
+	POPUPDATAT ppd;
+	TCHAR *str = GetStr(smi, puo->text);
+
+#ifdef CUSTOMBUILD_OSDSUPPORT
+	if (ServiceExists("OSD/Announce") && puo->bUseOSD)
 	{
 		int timerOSD = options.bInfiniteDelay ? 2147483647 : (int)(options.dSec * 1000);
 		//char *szOSDText = (char*)smi->cust;
 		//lstrcat(szOSDText, options.popuptext);
 		CallService("OSD/Announce", (WPARAM)str, timerOSD);
+		MIR_FREE(str);
 		return;
 	}
+#endif
 
 	ZeroMemory(&ppd, sizeof(ppd));
 	ppd.lchContact = smi->hContact;
 	ppd.lchIcon = LoadSkinnedProtoIcon(smi->proto, DBGetContactSettingWord(smi->hContact, smi->proto, "Status", ID_STATUS_ONLINE));
-	lstrcpy(ppd.lpzContactName, smi->cust);
-	lstrcpy(ppd.lpzText, str);
-	ppd.colorBack = (options.bDefaultColor)?GetSysColor(COLOR_BTNFACE):options.colBack;
-	ppd.colorText = (options.bDefaultColor)?GetSysColor(COLOR_WINDOWTEXT):options.colText;
+	lstrcpyn(ppd.lptzContactName, smi->cust, MAX_CONTACTNAME);
+	lstrcpyn(ppd.lptzText, str, MAX_SECONDLINE);
+	if (puo->bColorType == POPUP_COLOR_DEFAULT)
+	{
+		ppd.colorBack = 0;
+		ppd.colorText = 0;
+	}
+	else if (puo->bColorType == POPUP_COLOR_WINDOWS)
+	{
+		ppd.colorBack = GetSysColor(COLOR_BTNFACE);
+		ppd.colorText = GetSysColor(COLOR_WINDOWTEXT);
+	}
+	else if (puo->bColorType == POPUP_COLOR_CUSTOM)
+	{
+		ppd.colorBack = puo->colBack;
+		ppd.colorText = puo->colText;
+	}
 	ppd.PluginWindowProc = (WNDPROC)PopupDlgProc;
 	ppd.PluginData = NULL;
-	ppd.iSeconds = options.bInfiniteDelay ? -1 : options.dSec;
-	CallService(MS_POPUP_ADDPOPUPEX, (WPARAM)&ppd, 0);
-	if (str) free(str);
+	if (puo->bDelayType == POPUP_DELAY_DEFAULT)
+		ppd.iSeconds = 0;
+	else if (puo->bDelayType == POPUP_DELAY_CUSTOM)
+		ppd.iSeconds = puo->dDelay;
+	else if (puo->bDelayType == POPUP_DELAY_PERMANENT)
+		ppd.iSeconds = -1;
+	CallService(MS_POPUP_ADDPOPUPT, (WPARAM)&ppd, 0);
+
+	MIR_FREE(str);
+	return;
+}
+
+// return TRUE if timeout is over
+static BOOL TimeoutCheck(HANDLE hContact, const char *module, const char *setting) {
+	if (DBGetContactSettingDword(hContact, module, setting, 0) == 1) return TRUE;
+	if ((GetTickCount() - DBGetContactSettingDword(hContact, module, setting, 0)) > TMR_CONNECTIONTIMEOUT)
+	{
+		DBWriteContactSettingDword(hContact, module, setting, 1);
+		return TRUE;
+	}
+	return FALSE;
+}
+
+void PopupCheck(STATUSMSGINFO *smi) {
+	BOOL ret = TRUE;
+
+	if (puopts.bOnConnect && !puopts.bIfChanged && (smi->compare == 0))
+		smi->ignore = SMII_ALL;
+
+	if (puopts.bIgnoreRemove && (smi->compare == 2))
+		ret = FALSE;
+
+	else if (!TimeoutCheck(NULL, MODULE_NAME, smi->proto))
+		ret = (puopts.bOnConnect && (smi->compare || !puopts.bIfChanged));
+
+	else if ((BOOL)DBGetContactSettingByte(NULL, MODULE_NAME, "IgnoreAfterStatusChange", 0))
+		ret = TimeoutCheck(smi->hContact, "UserOnline", "LastStatusChange");
+
+	if (ret)
+	{
+		PopupNotify(smi, &puopts);
+		SkinPlaySound("smcnotify");
+	}
+
+	return;
+}
+
+static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+	DWORD ID;
+	HANDLE hContact;
+	hContact = PUGetContact(hWnd);
+	switch (msg)
+	{
+		case WM_COMMAND:
+		case WM_CONTEXTMENU:
+			if (msg == WM_COMMAND) // left click
+				ID = puopts.LeftClickAction;
+			else if (msg == WM_CONTEXTMENU) // right click
+				ID = puopts.RightClickAction;
+
+			if (ID == POPUP_ACTION_CLOSE) PUDeletePopUp(hWnd);
+			SendMessage(hPopupWindow, WM_USER + 10 + ID, (WPARAM)hContact, 0);
+			break;
+	}
+
+	return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+static LRESULT CALLBACK PopupWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+	if ((HANDLE)wParam != NULL)
+	{
+		switch (msg - WM_USER - 10)
+		{
+			case POPUP_ACTION_MESSAGE: // open message window
+				CallService(MS_MSG_SENDMESSAGE, wParam, 0);
+				CallService("SRMsg/LaunchMessageWindow", wParam, (LONG)NULL);
+				break;
+			case POPUP_ACTION_MENU: // display contact menu
+			{
+				int retcmd;
+				POINT pt;
+				HMENU hMenu;
+				hMenu = (HMENU)CallService(MS_CLIST_MENUBUILDCONTACT, wParam, 0);
+				GetCursorPos(&pt);
+				retcmd = TrackPopupMenu(hMenu, TPM_NONOTIFY | TPM_RETURNCMD, pt.x, pt.y, 0, hWnd, NULL);
+				CallService(MS_CLIST_MENUPROCESSCOMMAND, MAKEWPARAM(retcmd, MPCF_CONTACTMENU), (LPARAM)wParam);
+				DestroyMenu(hMenu);
+				break;
+			}
+			case POPUP_ACTION_INFO: // display contact detail
+				CallService(MS_USERINFO_SHOWDIALOG, wParam, 0);
+				break;
+			case POPUP_ACTION_HISTORY: // view status message history
+				if (ServiceExists("UserInfo/Reminder/AggrassiveBackup"))
+					DBWriteContactSettingTString(NULL, "UserInfoEx", "LastItem", TranslateT("Status Message History"));
+				else
+					DBWriteContactSettingTString(NULL, "UserInfo", "LastTab", TranslateT("Status Message History"));
+				CallService(MS_USERINFO_SHOWDIALOG, wParam, 0);
+				break;
+		}
+	}
+	if (msg == WM_MEASUREITEM) // Needed by the contact's context menu
+		return CallService(MS_CLIST_MENUMEASUREITEM, wParam, lParam);
+	else if (msg == WM_DRAWITEM) // Needed by the contact's context menu
+		return CallService(MS_CLIST_MENUDRAWITEM, wParam, lParam);
+
+	return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+extern void InitPopups(void) {
+	if(ServiceExists(MS_POPUP_ADDPOPUPEX)
+#ifdef UNICODE
+		|| ServiceExists(MS_POPUP_ADDPOPUPW)
+#endif
+		)
+	{
+		PopupActive = TRUE;
+
+		//Window needed for popup commands
+		hPopupWindow = CreateWindowEx(WS_EX_TOOLWINDOW, _T("static"), _T(MODULE_NAME) _T("_PopupWindow"),
+			0, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, HWND_DESKTOP,
+			NULL, hInst, NULL);
+		SetWindowLong(hPopupWindow, GWL_WNDPROC, (LONG)(WNDPROC)PopupWndProc);
+
+	}
+	else PopupActive = FALSE;
+
+	return;
+}
+
+extern void DeinitPopups(void) {
+	if (hPopupWindow)
+	{
+		SendMessage(hPopupWindow, WM_CLOSE, 0, 0);
+	}
+
+	return;
 }
