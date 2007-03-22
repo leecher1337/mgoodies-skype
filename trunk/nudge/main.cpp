@@ -67,12 +67,14 @@ int FreeVSApi()
     return 0;
 }
 
+DWORD MirVer;
+
 
 //========================
 //  MirandaPluginInfo
 //========================
-PLUGININFO pluginInfo={
-	sizeof(PLUGININFO),
+PLUGININFOEX pluginInfo={
+	sizeof(PLUGININFOEX),
 	"Nudge",
 	PLUGIN_MAKE_VERSION(0,0,1,16),
 	"Plugin to shake the clist and chat window",
@@ -80,8 +82,9 @@ PLUGININFO pluginInfo={
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
 	"copyright to the miranda community",
 	"http://addons.miranda-im.org/details.php?action=viewfile&id=2708",		// www
-	0,		//not transient
-	0		//doesn't replace anything built-in
+	UNICODE_AWARE,
+	0,		//doesn't replace anything built-in
+	{ 0x9ceee701, 0x35cd, 0x4ff7, { 0x8c, 0xc4, 0xef, 0x7d, 0xd2, 0xac, 0x53, 0x5c } }	// {9CEEE701-35CD-4ff7-8CC4-EF7DD2AC535C}
 };
 
 
@@ -95,7 +98,7 @@ void RegisterToUpdate(void)
 		char szVersion[16];
 
 		update.szComponentName = pluginInfo.shortName;
-		update.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szVersion);
+		update.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO *)&pluginInfo, szVersion);
 		update.cpbVersion = strlen((char *)update.pbVersion);
 		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2708";
 		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=2708";
@@ -301,13 +304,27 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
 {
-	return &pluginInfo;
+	MirVer = mirandaVersion;
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO *) &pluginInfo;
 }
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
 	hInst=hinstDLL;
 	return TRUE;
+}
+
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	MirVer = mirandaVersion;
+	return &pluginInfo;
+}
+
+static const MUUID interfaces[] = {MUUID_NUDGE_SEND, MIID_LAST};
+extern "C" __declspec(dllexport) const MUUID * MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 int MainInit(WPARAM wParam,LPARAM lParam)
@@ -480,39 +497,33 @@ void LoadIcons(void)
 	if(ServiceExists(MS_SKIN2_ADDICON))
 	{
 		NudgeElementList *n;
-		for(n = NudgeList;n != NULL; n = n->next)
-		{
-			SKINICONDESC sid;
-			char szFilename[MAX_PATH];
-			char iconName[MAXMODULELABELLENGTH + 10];
-			char iconDesc[MAXMODULELABELLENGTH + 10];
-			strncpy(szFilename, "plugins\\nudge.dll", MAX_PATH);
-
-			sid.cbSize = sizeof(SKINICONDESC);
-			sid.pszSection = Translate("Nudge");
-			sid.pszDefaultFile = szFilename;
-			sprintf(iconName,"Nudge_%s",n->item.ProtocolName);
-			sid.pszName = iconName;
-			sprintf(iconDesc,"Nudge for %s",n->item.ProtocolName);
-			sid.pszDescription = Translate(iconDesc);
-			sid.iDefaultIndex = -IDI_NUDGE;
-			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-			n->item.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
-		}
 		SKINICONDESC sid;
 		char szFilename[MAX_PATH];
 		char iconName[MAXMODULELABELLENGTH + 10];
 		char iconDesc[MAXMODULELABELLENGTH + 10];
 		strncpy(szFilename, "plugins\\nudge.dll", MAX_PATH);
+
 		sid.cbSize = sizeof(SKINICONDESC);
-		sid.pszSection = Translate("Nudge");
+		sid.pszSection = TranslateT("Nudge");
 		sid.pszDefaultFile = szFilename;
+
+		for(n = NudgeList;n != NULL; n = n->next)
+		{			
+			sprintf(iconName,"Nudge_%s",n->item.ProtocolName);
+			sid.pszName = iconName;
+			sprintf(iconDesc,"Nudge for %s",n->item.ProtocolName);
+			sid.pszDescription = iconDesc;
+			//sid.iDefaultIndex = -IDI_NUDGE;
+			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+			n->item.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
+		}
+
 		sprintf(iconName,"Nudge_Default");
 		sid.pszName = iconName;
 		sprintf(iconDesc,"Nudge as Default");
-		sid.pszDescription = Translate(iconDesc);
-		sid.iDefaultIndex = -IDI_NUDGE;
+		sid.pszDescription = iconDesc;
+		//sid.iDefaultIndex = -IDI_NUDGE;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		DefaultNudge.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
@@ -538,12 +549,15 @@ static int LoadChangedIcons(WPARAM wParam, LPARAM lParam)
 	if(ServiceExists(MS_SKIN2_ADDICON))
 	{
 		NudgeElementList *n;
+		char iconName[MAXMODULELABELLENGTH + 10];
+
 		for(n = NudgeList;n != NULL; n = n->next)
 		{
-			char iconName[MAXMODULELABELLENGTH + 10];
 			sprintf(iconName,"Nudge_%s",n->item.ProtocolName);
 			n->item.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
 		}
+		sprintf(iconName,"Nudge_Default");
+		DefaultNudge.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
 	}
 	return 0;
 }
