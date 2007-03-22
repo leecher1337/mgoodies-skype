@@ -1009,9 +1009,9 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					lstrcpy(Tester.lpzContactName,Translate("Account Test"));
 					lstrcpy(TesterF.lpzContactName,Translate("Account Test (failed)"));
 					lstrcpy(TesterN.lpzContactName,Translate("Account Test"));
-					lstrcpy(Tester.lpzText,Translate("You have N new mails"));
+					lstrcpy(Tester.lpzText,Translate("You have N new mail messages"));
 					lstrcpy(TesterF.lpzText,Translate("Connection failed message"));
-					lstrcpy(TesterN.lpzText,Translate("No new mail"));
+					lstrcpy(TesterN.lpzText,Translate("No new mail message"));
 					if(TesterC)
 					{
 						Tester.colorBack=SendDlgItemMessage(hDlg,IDC_CPB,CPM_GETCOLOUR,0,0);
