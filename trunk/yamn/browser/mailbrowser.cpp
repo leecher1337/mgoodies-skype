@@ -388,7 +388,7 @@ void IncrementMailCounters(HYAMNMAIL msgq,struct CMailNumbers *MN)
 
 int UpdateMails(HWND hDlg,HACCOUNT ActualAccount,DWORD nflags,DWORD nnflags)
 {
-#define MAILBROWSERTITLE "%s - %d new mails, %d total"
+#define MAILBROWSERTITLE "%s - %d new mail messages, %d total"
 
 	struct CMailWinUserInfo *mwui;
 	struct CMailNumbers MN;
@@ -708,7 +708,7 @@ int AddNewMailsToListView(HWND hListView,HACCOUNT ActualAccount,struct CMailNumb
 
 void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWORD nflags,DWORD nnflags)
 {
-	TCHAR *NotIconText=Translate("- new mail(s)");
+	TCHAR *NotIconText=Translate("- new mail message(s)");
 	NOTIFYICONDATA nid;
 
 	ZeroMemory(&nid,sizeof(nid));
@@ -724,7 +724,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 	if((nflags & YAMN_ACC_CONT) && (MN->Real.PopUpRun+MN->Virtual.PopUpRun))
 	{
 		char sMsg[250];
-		_snprintf(sMsg,249,Translate("%s : %d new mail(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
+		_snprintf(sMsg,249,Translate("%s : %d new mail message(s), %d total"),ActualAccount->Name,MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
 		if (!(nflags & YAMN_ACC_CONTNOEVENT)){
 			CLISTEVENT cEvent;
 			cEvent.cbSize = sizeof(CLISTEVENT);
@@ -759,7 +759,7 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 		NewMailPopUp.PluginData=(void *)0;	//multiple popups
 
 		lstrcpyn(NewMailPopUp.lpzContactName,ActualAccount->Name,sizeof(NewMailPopUp.lpzContactName));
-		sprintf(NewMailPopUp.lpzText,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
+		sprintf(NewMailPopUp.lpzText,Translate("%d new mail message(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
 		CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NewMailPopUp,0);
 	}
 
@@ -859,9 +859,9 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 
 		lstrcpyn(NoNewMailPopUp.lpzContactName,ActualAccount->Name,sizeof(NoNewMailPopUp.lpzContactName));
 		if(MN->Real.PopUpSL2NC+MN->Virtual.PopUpSL2NC)
-			sprintf(NoNewMailPopUp.lpzText,Translate("No new mail, %d spam(s)"),MN->Real.PopUpSL2NC+MN->Virtual.PopUpSL2NC);
+			sprintf(NoNewMailPopUp.lpzText,Translate("No new mail message, %d spam(s)"),MN->Real.PopUpSL2NC+MN->Virtual.PopUpSL2NC);
 		else
-			lstrcpyn(NoNewMailPopUp.lpzText,Translate("No new mail"),sizeof(NoNewMailPopUp.lpzText));
+			lstrcpyn(NoNewMailPopUp.lpzText,Translate("No new mail message"),sizeof(NoNewMailPopUp.lpzText));
 		CallService(MS_POPUP_ADDPOPUPEX,(WPARAM)&NoNewMailPopUp,0);
 	}
 
@@ -872,11 +872,11 @@ void DoMailActions(HWND hDlg,HACCOUNT ActualAccount,struct CMailNumbers *MN,DWOR
 			if(MN->Real.PopUpTC+MN->Virtual.PopUpTC)
 			{
 				char tmp[255];
-				sprintf(tmp,Translate("%d new mail(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
+				sprintf(tmp,Translate("%d new mail message(s), %d total"),MN->Real.PopUpNC+MN->Virtual.PopUpNC,MN->Real.PopUpTC+MN->Virtual.PopUpTC);
 				DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", tmp);
 			}
 			else
-				DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", Translate("No new mail"));
+				DBWriteContactSettingString(ActualAccount->hContact, "CList", "StatusMsg", Translate("No new mail message"));
 
 			if(nflags & YAMN_ACC_CONTNICK)
 			{
@@ -1762,7 +1762,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 
 			if(ActualAccount->hContact != NULL)
 			{
-				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)"yamn new mail");
+				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)ActualAccount->hContact,(LPARAM)"yamn new mail message");
 			}
 
 			OldListViewSubclassProc = (WNDPROC) SetWindowLong(GetDlgItem(hDlg, IDC_LISTMAILS), GWL_WNDPROC, (LONG) ListViewSubclassProc);

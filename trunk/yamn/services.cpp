@@ -532,7 +532,7 @@ void RefreshContact(void)
 				DBWriteContactSettingString(Finder->hContact,ProtoName,"Nick",Finder->Name);
 				DBWriteContactSettingString(Finder->hContact,"Protocol","p",ProtoName);
 				DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", ID_STATUS_ONLINE);
-				DBWriteContactSettingString(Finder->hContact, "CList", "StatusMsg", Translate("No new mail"));
+				DBWriteContactSettingString(Finder->hContact, "CList", "StatusMsg", Translate("No new mail message"));
 			}
 
 		}

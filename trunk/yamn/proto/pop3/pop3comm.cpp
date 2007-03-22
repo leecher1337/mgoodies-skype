@@ -315,7 +315,7 @@ int RegisterPOP3Plugin(WPARAM,LPARAM)
 					{
 						Finder->hContact = hContact;
 						DBWriteContactSettingWord(Finder->hContact, ProtoName, "Status", ID_STATUS_ONLINE);
-						DBWriteContactSettingString(Finder->hContact, "CList", "StatusMsg", Translate("No new mail"));
+						DBWriteContactSettingString(Finder->hContact, "CList", "StatusMsg", Translate("No new mail message"));
 						if((Finder->Flags & YAMN_ACC_ENA) && (Finder->NewMailN.Flags & YAMN_ACC_CONT))
 						{
 							DBDeleteContactSetting(Finder->hContact, "CList", "Hidden");
@@ -691,7 +691,7 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 				DataRX=NULL;
 			}
 		}
-		SetAccountStatus(ActualAccount,Translate("Searching for new mail"));
+		SetAccountStatus(ActualAccount,Translate("Searching for new mail message"));
 
 		DataRX=MyClient->Stat();
 
@@ -844,7 +844,7 @@ DWORD WINAPI SynchroPOP3(struct CheckParam * WhichTemp)
 			{
 				BOOL autoretr = (ActualAccount->Flags & YAMN_ACC_BODY)!=0;
 				DataRX=MyClient->Top(MsgQueuePtr->Number,autoretr?100:0);
-				sprintf(accstatus,Translate("Reading new mails (%d%% done)"),100*i/msgs);
+				sprintf(accstatus,Translate("Reading new mail messages (%d%% done)"),100*i/msgs);
 				SetAccountStatus(ActualAccount,accstatus);
 
 				#ifdef DEBUG_DECODE
