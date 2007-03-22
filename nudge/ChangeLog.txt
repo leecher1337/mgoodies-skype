@@ -1,3 +1,8 @@
+0.0.1.17
+===========
++ Add unicode aware flag
++ Support for miranda 0.8
+
 0.0.1.16
 ===========
 + Add a service to hide/show "send nudge" context menu (for metacontact)
