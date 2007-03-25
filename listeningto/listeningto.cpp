@@ -37,7 +37,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,1,4),
+	PLUGIN_MAKE_VERSION(0,1,1,5),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -212,33 +212,33 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
 
+	if (ServiceExists(MS_SKIN2_ADDICON)) 
+	{
+		hListeningToIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON");
+
+		if (hListeningToIcon == NULL) 
+		{
+			SKINICONDESC sid = {0};
+			sid.cbSize = sizeof(SKINICONDESC);
+			sid.flags = SIDF_TCHAR;
+			sid.ptszSection = TranslateT("Contact List");
+			sid.ptszDescription = TranslateT("Listening to");
+			sid.pszName = "LISTENING_TO_ICON";
+			sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
+			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+
+			hListeningToIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON");
+		}
+
+		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
+	}
+	else
+	{		
+		hListeningToIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
+	}
+
 	if (ServiceExists(MS_CLIST_EXTRA_ADD_ICON))
 	{
-		if (ServiceExists(MS_SKIN2_ADDICON)) 
-		{
-			hListeningToIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON");
-
-			if (hListeningToIcon == NULL) 
-			{
-				SKINICONDESC sid = {0};
-				sid.cbSize = sizeof(SKINICONDESC);
-				sid.flags = SIDF_TCHAR;
-				sid.ptszSection = TranslateT("Contact List");
-				sid.ptszDescription = TranslateT("Listening to");
-				sid.pszName = "LISTENING_TO_ICON";
-				sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
-				CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-
-				hListeningToIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON");
-			}
-
-			hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
-		}
-		else
-		{		
-			hListeningToIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
-		}
-
 		hClistExtraListRebuildHook = HookEvent(ME_CLIST_EXTRA_LIST_REBUILD, ClistExtraListRebuild);
 	}
 
@@ -271,10 +271,20 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	CLISTMENUITEM mi = {0};
 	mi.cbSize = sizeof(mi);
+
+	// Add main menu item
+	mi.position = 500080000;
+	mi.pszPopupName = (char*) -1;
+	mi.pszName = "Listening to";
+	mi.flags = CMIF_ROOTPOPUP;
+	mi.hIcon = hListeningToIcon;
+	HANDLE popup = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM) &mi);
+
+	mi.pszPopupName = (char *) popup;
 	mi.popupPosition = 500080000;
-	mi.pszPopupName = "Listening to";
 	mi.position = 0;
 	mi.pszService = MS_LISTENINGTO_MAINMENU;
+	mi.hIcon = NULL;
 
 	int allocated = 10;
 	proto_itens = (ProtocolInfo *) malloc(allocated * sizeof(ProtocolInfo));
@@ -282,17 +292,12 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	// Add all protos
 
 	mi.pszName = Translate("Send to all protocols");
-	mi.flags = ListeningToEnabled(NULL) ? CMIF_CHECKED : 0;
+	mi.flags = CMIF_CHILDPOPUP | (ListeningToEnabled(NULL) ? CMIF_CHECKED : 0);
 	proto_itens[proto_itens_num].hMenu = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
 	proto_itens[proto_itens_num].proto = NULL;
 	proto_itens[proto_itens_num].old_xstatus = 0;
 	proto_itens[proto_itens_num].old_xstatus_name[0] = _T('\0');
 	proto_itens[proto_itens_num].old_xstatus_message[0] = _T('\0');
-
-	// clist classic :(
-	mi.flags |= CMIM_FLAGS;
-	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) proto_itens[proto_itens_num].hMenu, (LPARAM) &mi);
-
 
 	mi.popupPosition++;
 	proto_itens_num++;
@@ -327,7 +332,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		}
 
 		mi.pszName = text;
-		mi.flags = ListeningToEnabled(protos[i]->szName) ? CMIF_CHECKED : 0;
+		mi.flags = CMIF_CHILDPOPUP | (ListeningToEnabled(protos[i]->szName) ? CMIF_CHECKED : 0);
 
 		proto_itens[proto_itens_num].hMenu = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM)&mi);
 		proto_itens[proto_itens_num].proto = protos[i]->szName;
@@ -335,12 +340,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		proto_itens[proto_itens_num].old_xstatus_name[0] = _T('\0');
 		proto_itens[proto_itens_num].old_xstatus_message[0] = _T('\0');
 
-		// clist classic :(
-		mi.flags |= CMIM_FLAGS;
-		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) proto_itens[proto_itens_num].hMenu, (LPARAM) &mi);
-
-		mi.position++;
 		mi.popupPosition++;
+		mi.position++;
 		proto_itens_num++;
 	}
 
@@ -1042,112 +1043,71 @@ TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai)
 	return ReplaceVars(opts.templ, fr, MAX_REGS(fr));
 }
 
+#define VARIABLES_PARSE_BODY(__field__) \
+	if (ai->cbSize < sizeof(ARGUMENTSINFO)) \
+		return NULL; \
+	\
+	LISTENINGTOINFO lti = {0}; \
+	if (!GetListeningInfo(&lti)) \
+	{ \
+		ai->flags = AIF_FALSE; \
+		return mir_tstrdup(_T("")); \
+	} \
+	else if (lti.__field__ == NULL  || lti.__field__[0] == _T('\0'))  \
+	{ \
+		ai->flags = AIF_FALSE; \
+		return mir_tstrdup(opts.unknown); \
+	} \
+	else \
+	{ \
+		ai->flags = AIF_DONTPARSE; \
+		return mir_tstrdup(lti.__field__); \
+	}
+
+
 TCHAR* VariablesParseType(ARGUMENTSINFO *ai)
 {
-	if (ai->cbSize < sizeof(ARGUMENTSINFO))
-		return NULL;
-
-	LISTENINGTOINFO lti = {0};
-	if (!GetListeningInfo(&lti))
-		ai->flags = AIF_FALSE;
-
-	return mir_tstrdup(lti.ptszType == NULL ? _T("") : lti.ptszType);
+	VARIABLES_PARSE_BODY(ptszType);
 }
 
 TCHAR* VariablesParseArtist(ARGUMENTSINFO *ai)
 {
-	if (ai->cbSize < sizeof(ARGUMENTSINFO))
-		return NULL;
-
-	LISTENINGTOINFO lti = {0};
-	if (!GetListeningInfo(&lti))
-		ai->flags = AIF_FALSE;
-
-	return mir_tstrdup(lti.ptszArtist == NULL ? _T("") : lti.ptszArtist);
+	VARIABLES_PARSE_BODY(ptszArtist);
 }
 
 TCHAR* VariablesParseAlbum(ARGUMENTSINFO *ai)
 {
-	if (ai->cbSize < sizeof(ARGUMENTSINFO))
-		return NULL;
-
-	LISTENINGTOINFO lti = {0};
-	if (!GetListeningInfo(&lti))
-		ai->flags = AIF_FALSE;
-
-	return mir_tstrdup(lti.ptszAlbum == NULL ? _T("") : lti.ptszAlbum);
+	VARIABLES_PARSE_BODY(ptszAlbum);
 }
 
 TCHAR* VariablesParseTitle(ARGUMENTSINFO *ai)
 {
-	if (ai->cbSize < sizeof(ARGUMENTSINFO))
-		return NULL;
-
-	LISTENINGTOINFO lti = {0};
-	if (!GetListeningInfo(&lti))
-		ai->flags = AIF_FALSE;
-
-	return mir_tstrdup(lti.ptszTitle == NULL ? _T("") : lti.ptszTitle);
+	VARIABLES_PARSE_BODY(ptszTitle);
 }
 
 TCHAR* VariablesParseTrack(ARGUMENTSINFO *ai)
 {
-	if (ai->cbSize < sizeof(ARGUMENTSINFO))
-		return NULL;
-
-	LISTENINGTOINFO lti = {0};
-	if (!GetListeningInfo(&lti))
-		ai->flags = AIF_FALSE;
-
-	return mir_tstrdup(lti.ptszTrack == NULL ? _T("") : lti.ptszTrack);
+	VARIABLES_PARSE_BODY(ptszTrack);
 }
 
 TCHAR* VariablesParseYear(ARGUMENTSINFO *ai)
 {
-	if (ai->cbSize < sizeof(ARGUMENTSINFO))
-		return NULL;
-
-	LISTENINGTOINFO lti = {0};
-	if (!GetListeningInfo(&lti))
-		ai->flags = AIF_FALSE;
-
-	return mir_tstrdup(lti.ptszYear == NULL ? _T("") : lti.ptszYear);
+	VARIABLES_PARSE_BODY(ptszYear);
 }
 
 TCHAR* VariablesParseGenre(ARGUMENTSINFO *ai)
 {
-	if (ai->cbSize < sizeof(ARGUMENTSINFO))
-		return NULL;
-
-	LISTENINGTOINFO lti = {0};
-	if (!GetListeningInfo(&lti))
-		ai->flags = AIF_FALSE;
-
-	return mir_tstrdup(lti.ptszGenre == NULL ? _T("") : lti.ptszGenre);
+	VARIABLES_PARSE_BODY(ptszGenre);
 }
 
 TCHAR* VariablesParseLength(ARGUMENTSINFO *ai)
 {
-	if (ai->cbSize < sizeof(ARGUMENTSINFO))
-		return NULL;
-
-	LISTENINGTOINFO lti = {0};
-	if (!GetListeningInfo(&lti))
-		ai->flags = AIF_FALSE;
-
-	return mir_tstrdup(lti.ptszLength == NULL ? _T("") : lti.ptszLength);
+	VARIABLES_PARSE_BODY(ptszLength);
 }
 
 TCHAR* VariablesParsePlayer(ARGUMENTSINFO *ai)
 {
-	if (ai->cbSize < sizeof(ARGUMENTSINFO))
-		return NULL;
-
-	LISTENINGTOINFO lti = {0};
-	if (!GetListeningInfo(&lti))
-		ai->flags = AIF_FALSE;
-
-	return mir_tstrdup(lti.ptszPlayer == NULL ? _T("") : lti.ptszPlayer);
+	VARIABLES_PARSE_BODY(ptszPlayer);
 }
 
 
