@@ -20,7 +20,7 @@ Todo:
 - Support for foobar - currently works only using this plugin in foobar: http://stephan.kochen.nl/proj/foobar2000.html#msn
 
 Known bugs:
-- In clist classic you can't select one protocol - it allways select all. This is because a limitation of the clist (that don't send the current position in list to the service). So, unless someone patch the clist, it wont work. Clist modern and nicer works fine.
+- (In #0.7 this works fine in classic too) In clist classic you can't select one protocol - it allways select all. This is because a limitation of the clist (that don't send the current position in list to the service). So, unless someone patch the clist, it wont work. Clist modern and nicer works fine.
 
 To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=10912
 
