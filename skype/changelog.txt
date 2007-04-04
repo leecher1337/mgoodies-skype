@@ -13,6 +13,11 @@ CODE
 
 HISTORY
 -------
+0.0.0.37 - ! Avoid empty message from myself on first message received.
+		   + Add the Get user avatar interface
+		   * Change the get user info thread
+		   * code cleanup
+		   	
 0.0.0.36 - ! When settings skype offline, first set proto off then contacts.
 		   * move the broadcast of status change out of if statement in status change.
 		   * Set contacts ofline on plugin load (avoid skype contact to be online if starts skype is not checked)
@@ -250,9 +255,9 @@ HISTORY
 		     restarting Skype on changing to online mode again, as many people requested. 
              
 0.0.0.6  - * Added feature requests from kreisquadratur:
-				* Option to disable Skype-Menuitems
-				* Fixed bug with Apply-Button
-				* Using a nicer Skype-Icon now
+		   * Option to disable Skype-Menuitems
+		   * Fixed bug with Apply-Button
+		   * Using a nicer Skype-Icon now
 		   * Now using Skype-Timestamp for messages
 		   * Implementing importing history from skype (see contextmenu of contact)
 		   * Fixed bug with processing first message of MESSAGES - List

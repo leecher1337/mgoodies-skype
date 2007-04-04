@@ -196,8 +196,8 @@ int ShowMessage(int iconID, char *lpzText, int mustShow) {
 		popupTimeSec = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTimeSecErr", 4);
 		popupTextColor = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTextColorErr", GetSysColor(COLOR_WINDOWTEXT));
 		popupBackColor = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupBackColorErr", GetSysColor(COLOR_BTNFACE));
-		popupWindowColor = DBGetContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColorErr", TRUE);
-		showPopup = DBGetContactSettingByte(NULL, pszSkypeProtoName, "showPopupErr", TRUE);
+		popupWindowColor = ( 0 != DBGetContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColorErr", TRUE));
+		showPopup = ( 0 != DBGetContactSettingByte(NULL, pszSkypeProtoName, "showPopupErr", TRUE));
 
 		MessagePopup.lchContact = NULL;
 		MessagePopup.lchIcon = LoadIcon(hInst,MAKEINTRESOURCE(iconID));
@@ -256,7 +256,7 @@ int HookContactDeleted(WPARAM wParam, LPARAM lParam) {
 void GetInfoThread(HANDLE hContact) {
 	DBVARIANT dbv;
 	int eol, i=0, len;
-	char str[19+MAX_USERLEN], *ptr, buf[5], *nm, *utfdstr=NULL;
+	char str[19+MAX_USERLEN], *ptr, buf[5], *nm, *utfdstr=NULL, strA[500], usr[MAX_USERLEN], Avatar[MAX_PATH];
 	struct CountryListEntry *countries;
 	int countryCount;
 	settings_map settings[]= {
@@ -271,6 +271,30 @@ void GetInfoThread(HANDLE hContact) {
 		{NULL, NULL}
 	};
     
+	char AvatarsFolder[MAX_PATH];
+	int hProtocolAvatarsFolder;
+
+	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
+	
+	// Folders plugin support
+	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
+	{
+		FOLDERSDATA fd;
+		strncpy(fd.szSection, Translate("Avatars"), sizeof(fd.szSection));
+		fd.szSection[sizeof(fd.szSection)-1] = '\0';
+		strncpy(fd.szName, Translate("Protocol Avatars Cache"), sizeof(fd.szName));
+		fd.szName[sizeof(fd.szName)-1] = '\0';
+
+		// TODO Default should be FOLDER_AVATARS
+		hProtocolAvatarsFolder = (int) CallService(MS_FOLDERS_REGISTER_PATH, (WPARAM) PROFILE_PATH, (LPARAM) &fd);
+
+		if(!hProtocolAvatarsFolder)
+			CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
+		else
+			CallService(MS_FOLDERS_GET_PATH,hProtocolAvatarsFolder,(LPARAM)AvatarsFolder);
+	}
+		
+
 	LOG ("GetInfoThread", "started.");
 	if (DBGetContactSetting(hContact, pszSkypeProtoName, SKYPE_NAME, &dbv) ||
 		(len=strlen(dbv.pszVal))>MAX_USERLEN) 
@@ -281,6 +305,13 @@ void GetInfoThread(HANDLE hContact) {
 
 	eol=10+len;
 	sprintf(str, "GET USER %s FULLNAME", dbv.pszVal);
+
+	sprintf(AvatarsFolder,"%s\\SKYPE",AvatarsFolder);
+	sprintf(Avatar,"%s\\%s_tmp.jpg",AvatarsFolder,dbv.pszVal);
+	sprintf(AvatarsFolder,"%s\\%s.jpg",AvatarsFolder,dbv.pszVal);
+	sprintf(strA,"GET USER %s AVATAR 1 %s", dbv.pszVal,Avatar);
+	DeleteFile(Avatar);
+	strcpy(usr, dbv.pszVal);
 	DBFreeVariant(&dbv);
 
 	if (!SkypeSend(str) && (ptr=SkypeRcv(str+4, INFINITE))) {
@@ -354,11 +385,25 @@ void GetInfoThread(HANDLE hContact) {
 	strcat(str, "MOOD_TEXT");
 	if (!SkypeSend(str) && (ptr=SkypeRcv(str+4, INFINITE))) {
 		if (ptr[strlen(str+3)]) {
-			BYTE sex=0;
-			if (!_stricmp(ptr+strlen(str+3), "MALE")) sex=0x4D;
-			if (!_stricmp(ptr+strlen(str+3), "FEMALE")) sex=0x46;
-			DBWriteContactSettingString(hContact, "CList", "StatusMsg", (ptr+25));
+			TCHAR *unicode = NULL;
+			char *Mood = NULL;
+						
+			if(utf8_decode((ptr+strlen(str+3)), &Mood)!=-1)
+			{
+				if(DBWriteContactSettingTString(hContact, "CList", "StatusMsg", Mood)) 
+				{
+					#if defined( _UNICODE )
+						char buff[TEXT_LEN];
+						WideCharToMultiByte(code_page, 0, Mood, -1, buff, TEXT_LEN, 0, 0);
+						buff[TEXT_LEN] = 0;
+						DBWriteContactSettingString(hContact, "CList", "StatusMsg", buff);
+					#endif
+				}
+			}
 		}
+		else
+			DBDeleteContactSetting(hContact, "CList", "StatusMsg");
+
 		free(ptr);
 	}
 
@@ -366,7 +411,31 @@ void GetInfoThread(HANDLE hContact) {
 	strcat(str, "TIMEZONE");
 	if (!SkypeSend(str) && (ptr=SkypeRcv(str+4, INFINITE))) {
 		if (ptr[strlen(str+3)]) {
-			DBWriteContactSettingString(hContact, "UserInfo", "Timezone", (ptr+25));
+			time_t temp;
+			struct tm tms;
+			
+			if (atoi(ptr+strlen(str+3)) != 0) {
+				temp = time(NULL);
+				tms = *localtime(&temp);
+
+				if (atoi(ptr+strlen(str+3)) >= 86400 ) timezone=256-((2*(atoi(ptr+strlen(str+3))-86400))/3600);
+				if (atoi(ptr+strlen(str+3)) < 86400 ) timezone=((-2*(atoi(ptr+strlen(str+3))-86400))/3600); 
+				if (tms.tm_isdst == 1 && DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseTimeZonePatch", 0)) 
+				{
+					LOG("WndProc", "Using the TimeZonePatch");
+					DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (timezone+2));
+				}
+				else
+				{
+					LOG("WndProc", "Not using the TimeZonePatch");
+					DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (timezone+0));
+				}
+			}
+			else 
+			{
+				LOG("WndProc", "Deleting the TimeZone in UserInfo Section");
+				DBDeleteContactSetting(hContact, "UserInfo", "Timezone");
+			}
 		}
 		free(ptr);
 	}
@@ -380,8 +449,71 @@ void GetInfoThread(HANDLE hContact) {
 				DBWriteContactSettingString(hContact, pszSkypeProtoName, "MirVer", "Skype 2.0");
 			else
 				DBWriteContactSettingString(hContact, pszSkypeProtoName, "MirVer", "Skype");
+			
 		}
 		free(ptr);
+	}
+
+	if( protocol >= 7)
+	{
+		str[eol]=0;
+		if (!SkypeSend(strA) && (ptr=SkypeRcv(strA+4, INFINITE))) {
+			if (ptr[strlen(str+3)]) {
+				TCHAR *unicode = NULL;
+				char *Avatartmp  = NULL;
+						
+				if( utf8_decode((ptr+ 5 + strlen(usr) + 10), &Avatartmp)!=-1)
+				{
+
+					if(0 <= (INT_PTR)GetFileAttributesA(Avatartmp))
+					{
+						CopyFile(Avatartmp,AvatarsFolder,0);
+
+						if( ServiceExists(MS_AV_SETAVATAR) )
+						{
+							CallService(MS_AV_SETAVATAR,(WPARAM) hContact,(LPARAM) AvatarsFolder);
+						}
+						else
+						{
+
+							if(DBWriteContactSettingTString(hContact, "ContactPhoto", "File", AvatarsFolder)) 
+							{
+								#if defined( _UNICODE )
+									char buff[TEXT_LEN];
+									WideCharToMultiByte(code_page, 0, Avatar, -1, buff, TEXT_LEN, 0, 0);
+									buff[TEXT_LEN] = 0;
+									DBWriteContactSettingString(hContact, "ContactPhoto", "File", buff);
+								#endif
+							}
+
+						}
+
+						PROTO_AVATAR_INFORMATION AI;
+						AI.cbSize = sizeof( AI );
+						AI.format = PA_FORMAT_JPEG;
+						AI.hContact = hContact;
+						strcpy(AI.filename,AvatarsFolder);
+
+						ACKDATA ack = {0};
+						ack.cbSize = sizeof( ACKDATA );
+						ack.szModule = pszSkypeProtoName;
+						ack.hContact = hContact;
+						ack.type = ACKTYPE_AVATAR;
+						ack.result = ACKRESULT_SUCCESS;
+						ack.hProcess = HANDLE( &AI );
+						ack.lParam = NULL;
+
+						CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
+					}
+					
+				}
+
+				DeleteFile(Avatartmp);
+			}
+			DeleteFile(Avatar);
+			free(ptr);
+		}
+
 	}
 
 	i=0;
@@ -762,6 +894,7 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	LOG("FetchMessageThread", ptr);
 	if( !strncmp(ptr+strlen(ptr)-6, "EMOTED", 6) ) bEmoted = true;
 	if( !strncmp(ptr+strlen(ptr)-16, "MULTI_SUBSCRIBED", 16) ) isGroupChat = true;
+	if( !strncmp(ptr+strlen(ptr)-16, "CREATEDCHATWITH", 15) ) return;
 
 	if (strncmp(ptr+strlen(ptr)-4, "TEXT", 4) && strncmp(ptr+strlen(ptr)-4, "SAID", 4) && !bEmoted && isGroupChat) 
 	{
@@ -1237,8 +1370,8 @@ void RingThread(char *szSkypeMsg) {
 			popupTimeSec = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTimeSec", 4);
 			popupTextColor = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupTextColor", GetSysColor(COLOR_WINDOWTEXT));
 			popupBackColor = DBGetContactSettingDword(NULL, pszSkypeProtoName, "popupBackColor", GetSysColor(COLOR_BTNFACE));
-			popupWindowColor = DBGetContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColor", TRUE);
-			showPopup = DBGetContactSettingByte(NULL, pszSkypeProtoName, "showPopup", TRUE);
+			popupWindowColor = (0 != DBGetContactSettingByte(NULL, pszSkypeProtoName, "popupWindowColor", TRUE));
+			showPopup = (0 != DBGetContactSettingByte(NULL, pszSkypeProtoName, "showPopup", TRUE));
 
 			InCallPopup.lchContact = hContact;
 			InCallPopup.lchIcon = LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
@@ -1405,7 +1538,7 @@ void LaunchSkypeAndSetStatusThread(void *newStatus) {
 LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam) 
 { 
     PCOPYDATASTRUCT CopyData; 
-	char *ptr, *szSkypeMsg=NULL, *nick, *buf, *Mood, *Avatar;
+	char *ptr, *szSkypeMsg=NULL, *nick, *buf;
 	static char *onlinestatus=NULL;
 	static BOOL RestoreUserStatus=FALSE;
 	int sstat, oldstatus, flag;
@@ -1482,21 +1615,66 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 
 						SkypeSend("GET USER %s BUDDYSTATUS", nick);
 //						break;
-					} else
+					} 
+					else
+					{
 						DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Status", (WORD)SkypeStatusToMiranda(ptr+13));
+						if((WORD)SkypeStatusToMiranda(ptr+13) != ID_STATUS_OFFLINE)
+						{
+							LOG("WndProc", "Status is not offline so get user info");
+							pthread_create(GetInfoThread, hContact);
+						}
+					}
 
-						SkypeSend("GET USER %s MOOD_TEXT", nick);
+						
+/*						
 						SkypeSend("GET USER %s TIMEZONE", nick);
+						SkypeSend("GET USER %s MOOD_TEXT", nick);
 						SkypeSend("GET USER %s IS_VIDEO_CAPABLE", nick);
-						//SkypeSend("GET USER %s AVATAR", nick);
-						//SkypeSend("GET AVATAR %s", nick);
+						SkypeSend("GET USER %s AVATAR 1 e:\\skype_%s.jpg", nick, nick);
+*/
 /*						free(buf);
 					if (SkypeInitialized==FALSE) { // Prevent flooding on startup
 						SkypeMsgAdd(szSkypeMsg);
 						ReleaseSemaphore(SkypeMsgReceived, receivers, NULL);
 					}
 					break;
-*/				}
+*/				
+				}
+/*				if (!strcmp(ptr, "AVATAR" )){
+					LOG("WndProc", "AVATAR");
+					if (!(hContact=find_contact(nick)))
+						SkypeSend("GET USER %s BUDDYSTATUS", nick);
+					else
+					{
+						TCHAR *unicode = NULL;
+						
+						if(utf8_decode((ptr+9), &Avatar)==-1) break;
+
+						if( ServiceExists(MS_AV_SETAVATAR) )
+						{
+							CallService(MS_AV_SETAVATAR,(WPARAM) hContact,(LPARAM) Avatar);
+						}
+						else
+						{
+
+							if(DBWriteContactSettingTString(hContact, "ContactPhoto", "File", Avatar)) 
+							{
+								#if defined( _UNICODE )
+									char buff[TEXT_LEN];
+									WideCharToMultiByte(code_page, 0, Avatar, -1, buff, TEXT_LEN, 0, 0);
+									buff[TEXT_LEN] = 0;
+									DBWriteContactSettingString(hContact, "ContactPhoto", "File", buff);
+								#endif
+							}
+
+						}
+													
+						
+					}
+					free(buf);
+					break;
+				}
 				if (!strcmp(ptr, "MOOD_TEXT")){
 					LOG("WndProc", "MOOD_TEXT");
 					if (!(hContact=find_contact(nick)))
@@ -1524,33 +1702,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					break;
 
 				}
-				if (!strcmp(ptr, "AVATAR")){
-					LOG("WndProc", "AVATAR");
-				/*	if (!(hContact=find_contact(nick)))
-						SkypeSend("GET USER %s BUDDYSTATUS", nick);
-					else
-					{
-						TCHAR *unicode = NULL;
-						
-						if(utf8_decode((ptr+10), &Avatar)==-1) break;
 
-						//DBWriteContactSettingString(hContact, "CList", "StatusMsg", Mood);
-						if(DBWriteContactSettingTString(hContact, "ContactPhoto", "File", Avatar)) 
-						{
-							#if defined( _UNICODE )
-								char buff[TEXT_LEN];
-								WideCharToMultiByte(code_page, 0, Avatar, -1, buff, TEXT_LEN, 0, 0);
-								buff[TEXT_LEN] = 0;
-								DBWriteContactSettingString(hContact, "ContactPhoto", "File", buff);
-							#endif
-						}
-												
-						
-					}
-					free(buf);
-					break;*/
-
-				}
 				if (!strcmp(ptr, "TIMEZONE")){
 					time_t temp;
 					struct tm tms;
@@ -1604,6 +1756,8 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					break;
 
 				}
+
+*/
 
 				if (!strcmp(ptr, "DISPLAYNAME")) {
 					// Skype Bug? -> If nickname isn't customised in the Skype-App, this won't return anything :-(
