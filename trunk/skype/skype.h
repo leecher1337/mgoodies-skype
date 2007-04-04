@@ -62,7 +62,7 @@ static int code_page = CP_ACP;
 
 // Program defines
 #define SKYPE_NAME		"Username"
-#define SKYPE_PROTO		"PROTOCOL 5"
+#define SKYPE_PROTO		"PROTOCOL 7"
 #define MAX_MSGS		128		// Maximum messages in queue
 #define MAX_USERLEN     32      // Maximum length of a username in Skype
 #define PING_INTERVAL	10000	// Ping every 10000 msec to see if Skype is still available

@@ -333,7 +333,6 @@ HANDLE add_contact(char *name, DWORD flags) {
 				SkypeSend(str);
 				free(str);
 			} else {LOG("add_contact", "Ouch! Memory allocation failed!");}
-			pthread_create(GetInfoThread, hContact);
 		} else {LOG("add_contact", "Info: The contact added has no name.");}
 	} else {LOG("add_contact", "Ouch! MS_DB_CONTACT_ADD failed for some reason");}
 	LOG("add_contact", "succeeded");

@@ -941,7 +941,7 @@ int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 			CallService(MS_FOLDERS_GET_PATH,hProtocolAvatarsFolder,(LPARAM)AvatarsFolder);
 	}
 	else
-		CallService(MS_DB_GETPROFILEPATH, (WPARAM) 0, (LPARAM)AvatarsFolder);
+		CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
 
 	//sprintf(AvatarsFolder,"%s\\SKYPE\\%s",AvatarsFolder,fname);
 	sprintf(AvatarsFolder,"%s\\SKYPE\\%s avatar.png",AvatarsFolder,pszSkypeProtoName);
