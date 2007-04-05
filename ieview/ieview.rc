@@ -58,12 +58,12 @@ END
 // Dialog
 //
 
-IDD_GENERAL_OPTIONS DIALOGEX 2, 15, 306, 228
+IDD_GENERAL_OPTIONS DIALOGEX 0, 0, 306, 228
 STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Options",IDC_SIMPLE,5,5,294,125
+    GROUPBOX        "Options",IDC_SIMPLE,4,2,297,128
     CONTROL         "Enable BBCodes",IDC_ENABLE_BBCODES,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,14,19,265,10
     LTEXT           "Currently the following BBCodes are supported: [b][i][u][s][img][size][color][url]",IDC_SIMPLE, 26,31,265,12
@@ -79,7 +79,7 @@ BEGIN
                     WS_TABSTOP,14,106,265,10
 END
 
-IDD_SRMM_OPTIONS DIALOGEX 2, 15, 306, 228
+IDD_SRMM_OPTIONS DIALOGEX 0, 0, 306, 228
 STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
@@ -125,7 +125,7 @@ BEGIN
 
 END
 
-IDD_GROUPCHATS_OPTIONS DIALOGEX 2, 15, 306, 228
+IDD_GROUPCHATS_OPTIONS DIALOGEX 0, 0, 306, 228
 STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
@@ -171,7 +171,7 @@ BEGIN
 
 END
 
-IDD_HISTORY_OPTIONS DIALOGEX 2, 15, 306, 228
+IDD_HISTORY_OPTIONS DIALOGEX 0, 0, 306, 228
 STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
@@ -232,8 +232,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,9,7
- PRODUCTVERSION 1,0,9,7
+ FILEVERSION 1,0,9,8
+ PRODUCTVERSION 1,0,9,8
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -251,14 +251,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "http://developer.berlios.de/projects/mgoodies\0"
             VALUE "FileDescription", "IEView Plugin for Miranda IM\0"
-            VALUE "FileVersion", "1.0.9.7\0"
+            VALUE "FileVersion", "1.0.9.8\0"
             VALUE "InternalName", "ieview\0"
             VALUE "LegalCopyright", "Copyright (c) 2005-2006 Piotr Piastucki\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "ieview.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "IEView Plugin\0"
-            VALUE "ProductVersion", "1.0.9.7\0"
+            VALUE "ProductVersion", "1.0.9.8\0"
             VALUE "SpecialBuild", "\0"
         END
     END

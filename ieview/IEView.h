@@ -190,7 +190,7 @@ private:
 	IEViewSink 	*sink;
 	IWebBrowser2* pWebBrowser;
 	HTMLBuilder *builder;
-//	SmileyWindow *smileyWindow;
+
  	WNDPROC    	mainWndProc, docWndProc, serverWndProc;
    	bool        getFocus;
    	bool		clearRequired;
@@ -232,24 +232,24 @@ private:
 	STDMETHOD(RequestNewObjectLayout)(void);
 
 	// IDocHostUIHandler
-    STDMETHOD(ShowContextMenu)(DWORD dwID, POINT *ppt, IUnknown *pcmdtReserved, IDispatch *pdispReserved);
-    STDMETHOD(GetHostInfo)(DOCHOSTUIINFO *pInfo);
-    STDMETHOD(ShowUI)(DWORD dwID, IOleInPlaceActiveObject *pActiveObject, IOleCommandTarget *pCommandTarget,
+	STDMETHOD(ShowContextMenu)(DWORD dwID, POINT *ppt, IUnknown *pcmdtReserved, IDispatch *pdispReserved);
+	STDMETHOD(GetHostInfo)(DOCHOSTUIINFO *pInfo);
+	STDMETHOD(ShowUI)(DWORD dwID, IOleInPlaceActiveObject *pActiveObject, IOleCommandTarget *pCommandTarget,
     				IOleInPlaceFrame *pFrame, IOleInPlaceUIWindow *pDoc);
-    STDMETHOD(HideUI)(void);
-    STDMETHOD(UpdateUI)(void);
-    STDMETHOD(EnableModeless)(BOOL fEnable);
-    STDMETHOD(OnDocWindowActivate)(BOOL fEnable);
-    STDMETHOD(OnFrameWindowActivate)(BOOL fEnable);
-    STDMETHOD(ResizeBorder)(LPCRECT prcBorder, IOleInPlaceUIWindow *pUIWindow, BOOL fRameWindow);
-    STDMETHOD(TranslateAccelerator)(LPMSG lpMsg, const GUID *pguidCmdGroup, DWORD nCmdID);
-    STDMETHOD(GetOptionKeyPath)(LPOLESTR *pchKey, DWORD dw);
-    STDMETHOD(GetDropTarget)(IDropTarget *pDropTarget, IDropTarget **ppDropTarget);
-    STDMETHOD(GetExternal)(IDispatch **ppDispatch);
-    STDMETHOD(TranslateUrl)(DWORD dwTranslate, OLECHAR *pchURLIn, OLECHAR **ppchURLOut);
-    STDMETHOD(FilterDataObject)(IDataObject *pDO, IDataObject **ppDORet);
-    // IServiceProvider
-    STDMETHOD(QueryService)(REFGUID guidService, REFIID riid, void** ppvObject);
+	STDMETHOD(HideUI)(void);
+	STDMETHOD(UpdateUI)(void);
+	STDMETHOD(EnableModeless)(BOOL fEnable);
+	STDMETHOD(OnDocWindowActivate)(BOOL fEnable);
+	STDMETHOD(OnFrameWindowActivate)(BOOL fEnable);
+	STDMETHOD(ResizeBorder)(LPCRECT prcBorder, IOleInPlaceUIWindow *pUIWindow, BOOL fRameWindow);
+	STDMETHOD(TranslateAccelerator)(LPMSG lpMsg, const GUID *pguidCmdGroup, DWORD nCmdID);
+	STDMETHOD(GetOptionKeyPath)(LPOLESTR *pchKey, DWORD dw);
+	STDMETHOD(GetDropTarget)(IDropTarget *pDropTarget, IDropTarget **ppDropTarget);
+	STDMETHOD(GetExternal)(IDispatch **ppDispatch);
+	STDMETHOD(TranslateUrl)(DWORD dwTranslate, OLECHAR *pchURLIn, OLECHAR **ppchURLOut);
+	STDMETHOD(FilterDataObject)(IDataObject *pDO, IDataObject **ppDORet);
+	// IServiceProvider
+	STDMETHOD(QueryService)(REFGUID guidService, REFIID riid, void** ppvObject);
 	// IInternetSecurityManager
 	STDMETHOD(SetSecuritySite)(IInternetSecurityMgrSite *pSite);
 	STDMETHOD(GetSecuritySite)(IInternetSecurityMgrSite **ppSite);
@@ -271,6 +271,7 @@ public:
 	IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy);
 //	IEView::IEView(HWND parent, SmileyWindow* smileyWindow, int x, int y, int cx, int cy);
 	virtual ~IEView();
+
 	void			waitWhileBusy();
 	HWND			getHWND();
 	void 			translateAccelerator(UINT uMsg, WPARAM wParam, LPARAM lParam);
