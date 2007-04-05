@@ -307,6 +307,7 @@ void GetInfoThread(HANDLE hContact) {
 	sprintf(str, "GET USER %s FULLNAME", dbv.pszVal);
 
 	sprintf(AvatarsFolder,"%s\\SKYPE",AvatarsFolder);
+	CreateDirectory(AvatarsFolder,NULL);
 	sprintf(Avatar,"%s\\%s_tmp.jpg",AvatarsFolder,dbv.pszVal);
 	sprintf(AvatarsFolder,"%s\\%s.jpg",AvatarsFolder,dbv.pszVal);
 	sprintf(strA,"GET USER %s AVATAR 1 %s", dbv.pszVal,Avatar);
@@ -894,7 +895,14 @@ void FetchMessageThread(fetchmsg_arg *args) {
 	LOG("FetchMessageThread", ptr);
 	if( !strncmp(ptr+strlen(ptr)-6, "EMOTED", 6) ) bEmoted = true;
 	if( !strncmp(ptr+strlen(ptr)-16, "MULTI_SUBSCRIBED", 16) ) isGroupChat = true;
-	if( !strncmp(ptr+strlen(ptr)-16, "CREATEDCHATWITH", 15) ) return;
+	if( !strncmp(ptr+strlen(ptr)-15, "CREATEDCHATWITH", 15) ) {
+		SetEvent(SkypeMsgFetched);
+		return;
+	}
+	if( !strncmp(ptr+strlen(ptr)-10, "SAWMEMBERS", 10) ) {
+		SetEvent(SkypeMsgFetched);
+		return;
+	}
 
 	if (strncmp(ptr+strlen(ptr)-4, "TEXT", 4) && strncmp(ptr+strlen(ptr)-4, "SAID", 4) && !bEmoted && isGroupChat) 
 	{
