@@ -215,22 +215,6 @@ void IEViewSink::SetSecureLockIcon(long val) {}
 void IEViewSink::FileDownload(VARIANT_BOOL* cancel) {}
 
 
-void IEView::init() {
-	if (isInited) return;
-	isInited = true;
-	InitializeCriticalSection(&mutex);
-	if (FAILED(OleInitialize(NULL))) {
-		MessageBoxA(NULL,"OleInitialize failed.","RESULT",MB_OK);
-	}
-}
-
-void IEView::release() {
-	while (list != NULL) {
-	    delete list;
-	}
-    DeleteCriticalSection(&mutex);
-}
-
 #ifdef GECKO
 
 static void __cdecl StartThread(void *vptr) {
@@ -344,13 +328,7 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 
 IEView::~IEView() {
 	IOleObject*   pOleObject = NULL;
-	if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleObject, (void**)&pOleObject))) {
-		pOleObject->SetClientSite(NULL);
-		pOleObject->Release();
-	} else {
-		MessageBoxA(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
-	}
-    EnterCriticalSection(&mutex);
+	EnterCriticalSection(&mutex);
 	if (list == this) {
 		list = next;
 	} else if (prev!=NULL) {
@@ -359,7 +337,15 @@ IEView::~IEView() {
 	if (next != NULL) {
 		next->prev = prev;
 	}
+	prev = NULL;
+	next = NULL;
 	LeaveCriticalSection(&mutex);
+	if (SUCCEEDED(pWebBrowser->QueryInterface(IID_IOleObject, (void**)&pOleObject))) {
+		pOleObject->SetClientSite(NULL);
+		pOleObject->Release();
+	} else {
+		MessageBoxA(NULL,"IID_IOleObject failed.","RESULT",MB_OK);
+	}
 	if (builder != NULL) {
 		delete builder;
 		builder = NULL;
@@ -378,6 +364,37 @@ IEView::~IEView() {
 	pWebBrowser->Release();
 #endif
 	DestroyWindow(hwnd);
+}
+
+void IEView::init() {
+	if (isInited) return;
+	isInited = true;
+	InitializeCriticalSection(&mutex);
+	if (FAILED(OleInitialize(NULL))) {
+		MessageBoxA(NULL,"OleInitialize failed.","ERROR",MB_OK);
+	}
+}
+
+void IEView::release() {
+	EnterCriticalSection(&mutex);
+	while (list != NULL) {
+	    delete list;
+	}
+	LeaveCriticalSection(&mutex);
+	DeleteCriticalSection(&mutex);
+}
+
+IEView* IEView::get(HWND hwnd) {
+	IEView *ptr;
+	if (list == NULL) return NULL;
+	EnterCriticalSection(&mutex);
+	for (ptr = list; ptr !=NULL; ptr=ptr->next) {
+		if (ptr->hwnd == hwnd) {
+			break;
+		}
+	}
+	LeaveCriticalSection(&mutex);
+	return ptr;
 }
 
 void IEView::setMainWndProc(WNDPROC wndProc) {
@@ -1043,19 +1060,6 @@ void* IEView::getSelection(IEVIEWEVENT *event) {
 	return (void *)selectedText;
 }
 
-
-IEView* IEView::get(HWND hwnd) {
-	IEView *ptr;
-	if (list == NULL) return NULL;
-	EnterCriticalSection(&mutex);
-	for (ptr = list; ptr !=NULL; ptr=ptr->next) {
-		if (ptr->hwnd == hwnd) {
-			break;
-		}
-	}
-	LeaveCriticalSection(&mutex);
-	return ptr;
-}
 
 HWND IEView::getHWND() {
 	return hwnd;

@@ -37,14 +37,28 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"IEView",
-	PLUGIN_MAKE_VERSION(1,0,9,7),
-	"IE Based Chat Log (1.0.9.7	"__DATE__")",
-	"Piotr Piastucki",
+	PLUGIN_MAKE_VERSION(1,0,9,8),
+	"IE Based Chat Log (1.0.9.8 "__DATE__")",
+	"Piotr Piastucki, Francois Mean",
 	"the_leech@users.berlios.de",
-	"(c) 2005-2006 Piotr Piastucki",
+	"(c) 2005-2007 Piotr Piastucki, Francois Mean",
 	"http://developer.berlios.de/projects/mgoodies",
-	0,
+	UNICODE_AWARE,
 	0
+};
+
+PLUGININFOEX pluginInfoEx = {
+	sizeof(PLUGININFOEX),
+	"IEView",
+	PLUGIN_MAKE_VERSION(1,0,9,8),
+	"IE Based Chat Log (1.0.9.8 "__DATE__")",
+	"Piotr Piastucki, Francois Mean",
+	"the_leech@users.berlios.de",
+	"(c) 2005-2007 Piotr Piastucki, Francois Mean",
+	"http://developer.berlios.de/projects/mgoodies",
+	UNICODE_AWARE,
+	0,
+	{0x0495171b,   0x7137,   0x4ded,    {0x97, 0xf8, 0xce, 0x6f, 0xed, 0x67, 0xd6, 0x91}}
 };
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpvReserved)
@@ -55,13 +69,28 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpvRese
 
 extern "C" __declspec(dllexport) PLUGININFO *MirandaPluginInfo(DWORD mirandaVersion)
 {
-	if (mirandaVersion < PLUGIN_MAKE_VERSION(0,4,0,0)) {
-		MessageBoxA(NULL, "The IEView plugin cannot be loaded. It requires Miranda IM 0.4 or later.", "IEView Plugin", MB_OK|MB_ICONWARNING|MB_SETFOREGROUND|MB_TOPMOST);
+	if (mirandaVersion < PLUGIN_MAKE_VERSION(0,6,0,0)) {
 		return NULL;
 	}
 	return &pluginInfo;
 }
 
+extern "C" __declspec(dllexport) PLUGININFOEX *MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 6, 0, 0)) {
+		return NULL;
+	}
+	return &pluginInfoEx;
+}
+
+#define MIID_LOGRENDERER {0xc53afb90, 0xfa44, 0x4304, {0xbc, 0x9d, 0x6a, 0x84, 0x1c, 0x39, 0x05, 0xf5}}
+
+static const MUUID interfaces[] = {MIID_LOGRENDERER, MIID_LAST};
+
+extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
+}
 
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
@@ -104,7 +133,6 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 static int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
-	IEView::release();
 	return 0;
 }
 
@@ -113,6 +141,7 @@ extern "C" int __declspec(dllexport) Unload(void)
 	Utils::unhookEvents_Ex();
 	Utils::destroyServices_Ex();
 	DestroyHookableEvent(hHookOptionsChanged);
+	IEView::release();
 	delete workingDir;
 	return 0;
 }
