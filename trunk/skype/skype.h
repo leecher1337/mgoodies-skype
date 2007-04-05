@@ -142,5 +142,5 @@ typedef struct {
 
 // Optional includes
 #ifdef USEPOPUP
-  #include "m_popup.h"
+  #include "../../include/m_popup.h"
 #endif
