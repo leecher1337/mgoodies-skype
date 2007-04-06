@@ -83,9 +83,7 @@ extern "C" __declspec(dllexport) PLUGININFOEX *MirandaPluginInfoEx(DWORD miranda
 	return &pluginInfoEx;
 }
 
-#define MIID_LOGRENDERER {0xc53afb90, 0xfa44, 0x4304, {0xbc, 0x9d, 0x6a, 0x84, 0x1c, 0x39, 0x05, 0xf5}}
-
-static const MUUID interfaces[] = {MIID_LOGRENDERER, MIID_LAST};
+static const MUUID interfaces[] = {MIID_LOGWINDOW, MIID_LAST};
 
 extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
 {
