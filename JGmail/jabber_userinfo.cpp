@@ -211,7 +211,9 @@ static BOOL CALLBACK JabberUserPhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 			ShowWindow( GetDlgItem( hwndDlg, IDC_SAVE ), SW_HIDE );
 			if ( !JGetStringT( photoInfo->hContact, "jid", &dbv )) {
 				TCHAR* jid = dbv.ptszVal;
-				if (( item=JabberListGetItemPtr( LIST_ROSTER, jid )) != NULL ) {
+				if (( item = JabberListGetItemPtr( LIST_VCARD_TEMP, jid )) == NULL)
+					item = JabberListGetItemPtr( LIST_ROSTER, jid );
+				if ( item != NULL ) {
 					if ( item->photoFileName ) {
 						JabberLog( "Showing picture from %s", item->photoFileName );
 						photoInfo->hBitmap = ( HBITMAP ) JCallService( MS_UTILS_LOADBITMAP, 0, ( LPARAM )item->photoFileName );
@@ -241,7 +243,9 @@ static BOOL CALLBACK JabberUserPhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 					break;
 
 				TCHAR* jid = dbv.ptszVal;
-				if (( item=JabberListGetItemPtr( LIST_ROSTER, jid )) != NULL ) {
+				if (( item = JabberListGetItemPtr( LIST_VCARD_TEMP, jid )) == NULL)
+					item = JabberListGetItemPtr( LIST_ROSTER, jid );
+				if ( item != NULL ) {
 					if (( hFile=CreateFileA( item->photoFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL )) != INVALID_HANDLE_VALUE ) {
 						if ( ReadFile( hFile, buffer, 3, &n, NULL ) && n==3 ) {
 							if ( !strncmp(( char* )buffer, "BM", 2 )) {

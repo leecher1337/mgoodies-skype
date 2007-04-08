@@ -228,6 +228,8 @@
 #define IDC_UNREGISTER                  1183
 #define IDC_VALIDATEADD                 1184
 #define IDC_GO                          1196
+
+
 #define IDC_WHITERECT                   1221
 #define IDC_UPDATING                    1231
 #define IDC_EMAILS                      1306
@@ -248,8 +250,11 @@
 #define IDC_ROOM_JID                    3007
 #define IDC_ROSTER2BOOKMARK             3008
 #define IDC_ROOM_RADIO                  3009
-#define IDC_URL_RADIO                   3010
-#define IDC_BOOKMARK_TYPE               3011
+#define IDC_AUTOJOIN_BOOKMARKS          3010
+#define IDC_URL_RADIO                   3011
+#define IDC_AGENT_RADIO                 3012
+#define IDC_BOOKMARK_TYPE               3013
+#define IDC_CHECK_BM_AUTOJOIN           3014
 
 #define IDM_MESSAGE                     10002
 #define IDM_CLEAR                       10003
@@ -264,6 +269,8 @@
 #define IDM_DESTROY                     10014
 #define IDM_MEMBER                      10015
 #define IDM_INVITE                      10016
+#define IDM_BOOKMARKS                   10017
+#define IDM_VCARD                       10018
 
 // Next default values for new objects
 // 

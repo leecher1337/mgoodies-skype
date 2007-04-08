@@ -58,6 +58,10 @@ static TransportProtoTable[] =
 	{ "yahoo*",     "YAHOO",-1},
 	{ "mrim*",      "MRA",  -1},
 	{ "aim*",       "AIM",  -1},
+	//request #3094
+	{ "gg*",		"GaduGadu",	-1},
+	{ "sms*",       "SMS",  -1},
+	{ "smtp*",      "SMTP", -1},
 };
 
 static int skinIconStatusToResourceId[] = {IDI_OFFLINE,IDI_ONLINE,IDI_AWAY,IDI_DND,IDI_NA,IDI_NA,/*IDI_OCCUPIED,*/IDI_FREE4CHAT,IDI_INVISIBLE,IDI_ONTHEPHONE,IDI_OUTTOLUNCH};
@@ -198,7 +202,7 @@ static int LoadAdvancedIcons(int iID)
 	int first=-1;
 	HICON empty=LoadSmallIcon(NULL,MAKEINTRESOURCE(102));
 
-	_snprintf((char *)Group, sizeof(Group),"%s %s/%s",jabberModuleName,Translate("transports"),proto);
+	_snprintf((char *)Group, sizeof(Group),"%s/%s/%s %s",Translate("Status Icons"), jabberModuleName, proto, Translate("transport"));
 	_snprintf((char *)defFile, sizeof(defFile),"proto_%s.dll",proto);
 	if (!hAdvancedStatusIcon)
 		hAdvancedStatusIcon=(HIMAGELIST)CallService(MS_CLIST_GETICONSIMAGELIST,0,0);

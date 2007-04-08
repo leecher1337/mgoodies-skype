@@ -35,6 +35,7 @@ Last change by : $Author$
 #include "jabber_iq.h"
 #include "jabber_secur.h"
 #include "resource.h"
+#include "version.h"
 
 // <iq/> identification number for various actions
 // for JABBER_REGISTER thread
@@ -1451,6 +1452,27 @@ static void JabberProcessPresence( XmlNode *node, void *userdata )
 					SendMessage( hwndJabberAgents, WM_JABBER_TRANSPORT_REFRESH, 0, 0 );
 }	}	}	}
 
+
+static int JGetMirandaProductText(WPARAM wParam,LPARAM lParam)
+{
+	char filename[MAX_PATH],*productName;
+	DWORD unused;
+	DWORD verInfoSize;
+	UINT blockSize;
+	PVOID pVerInfo;
+	GetModuleFileNameA(NULL,filename,SIZEOF(filename));
+	verInfoSize=GetFileVersionInfoSizeA(filename,&unused);
+	pVerInfo=mir_alloc(verInfoSize);
+	GetFileVersionInfoA(filename,0,verInfoSize,pVerInfo);
+	VerQueryValueA(pVerInfo,"\\StringFileInfo\\000004b0\\ProductName",(void**)&productName,&blockSize);
+#if defined( _UNICODE )
+	mir_snprintf(( char* )lParam, wParam, "%s", productName );
+#else
+	lstrcpynA((char*)lParam,productName,wParam);
+#endif
+	mir_free(pVerInfo);
+	return 0;
+}
 /////////////////////////////////////////////////////////////////////////////////////////
 // Handles various <iq... requests
 
@@ -1511,8 +1533,7 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 	}
 #endif
 	char mversion[100];
-	strcpy( mversion, "Miranda IM " );
-	JCallService( MS_SYSTEM_GETVERSIONTEXT, sizeof( mversion )-12, ( LPARAM )&mversion[11] );
+	JCallService( MS_SYSTEM_GETVERSIONTEXT, sizeof( mversion ), ( LPARAM )mversion );
 
 #ifdef UNICODE
 #  ifdef STATICSSL
@@ -1528,10 +1549,16 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 #  endif
 #endif
 
-	if (bSecureIM) strncat(mversion, " (SecureIM)", 99-strlen(mversion));
+	char mproduct[50];
+	JGetMirandaProductText( sizeof( mproduct ), ( LPARAM )mproduct );
+
+	TCHAR* fullVer = (TCHAR*)alloca(1000 * sizeof( TCHAR ));
+	mir_sntprintf( fullVer, 1000, _T(TCHAR_STR_PARAM) _T(" ") _T(TCHAR_STR_PARAM) _T(" (Jabber v.") _T(TCHAR_STR_PARAM) _T(" [%s])") _T(TCHAR_STR_PARAM),
+		mproduct, mversion, __VERSION_STRING, jabberThreadInfo->resource, bSecureIM ? " (SecureIM)":"" );
+
 	XmlNodeIq iq( "result", idStr, from );	
 	XmlNode* query = iq.addQuery( "jabber:iq:version" );
-	query->addChild( "name", mversion ); query->addChild( "version", version );
+	query->addChild( "name", fullVer ); query->addChild( "version", version );
 #ifndef __WINE__
 	query->addChild( "os", os );
 #else
