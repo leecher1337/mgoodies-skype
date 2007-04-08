@@ -79,14 +79,14 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID reserved)
 /////////////////////////////////////////////////////////////////////////////////////////
 // returns the plugin information
 
-PLUGININFO pluginInfo = {
+PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFO),
 	#if defined( _UNICODE )
 		"BClist (Unicode)",
 	#else
 		"BClist",
 	#endif
-	PLUGIN_MAKE_VERSION(0, 0, 0, 4),
+	PLUGIN_MAKE_VERSION(0, 0, 0, 5),
 
 	"A contact list for blind folks",
 	"Ricardo Pescuma Domenecci",
@@ -94,14 +94,35 @@ PLUGININFO pluginInfo = {
 	"Copyright 2000-2006 Miranda IM project",
 	"http://pescuma.mirandaim.ru/miranda/bclist",
 	UNICODE_AWARE,
-	DEFMOD_CLISTALL
+	DEFMOD_CLISTALL,
+	#if defined( _UNICODE )
+	{ 0x53e095a3, 0x2695, 0x490a, { 0x9d, 0xad, 0xd2, 0x4, 0x79, 0x9, 0x38, 0x31 } } // {53E095A3-2695-490a-9DAD-D20479093831}
+	#else
+	{ 0x924dfbcc, 0x71df, 0x4f46, { 0x81, 0x6, 0x5a, 0xc4, 0x3, 0xca, 0xb2, 0x4b } } // {924DFBCC-71DF-4f46-8106-5AC403CAB24B}
+	#endif
 };
 
 __declspec(dllexport) PLUGININFO *MirandaPluginInfo(DWORD mirandaVersion)
 {
 	if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 4, 3, 0))
 		return NULL;
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO *) &pluginInfo;
+}
+
+__declspec(dllexport) PLUGININFOEX *MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 4, 3, 0))
+		return NULL;
+	pluginInfo.cbSize = sizeof(PLUGININFOEX);
 	return &pluginInfo;
+}
+
+
+static const MUUID interfaces[] = {MIID_CLIST, MIID_LAST};
+__declspec(dllexport) const MUUID * MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +153,7 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/bclist.zip";
 #endif
 
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO *) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
