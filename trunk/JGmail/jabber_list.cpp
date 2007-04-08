@@ -35,6 +35,10 @@ static int compareListItems( const JABBER_LIST_ITEM* p1, const JABBER_LIST_ITEM*
 	if ( p1->list != p2->list )
 		return p1->list - p2->list;
 
+	// don't strip text after "/" for Bookmarks because JID contains URL
+	if ( p1->list == LIST_BOOKMARK || p1->list == LIST_VCARD_TEMP )
+		return lstrcmpi( p1->jid, p2->jid );
+
 	TCHAR szp1[ JABBER_MAX_JID_LEN ], szp2[ JABBER_MAX_JID_LEN ];
 	JabberStripJid( p1->jid, szp1, sizeof( szp1 ));
 	JabberStripJid( p2->jid, szp2, sizeof( szp2 ));
@@ -130,11 +134,14 @@ JABBER_LIST_ITEM *JabberListAdd( JABBER_LIST list, const TCHAR* jid )
 		return item;
 	}
 
+	TCHAR *s = mir_tstrdup( jid );
 	// strip resource name if any
-	TCHAR *p, *q, *s = mir_tstrdup( jid );
-	if (( p = _tcschr( s, '@' )) != NULL )
-		if (( q = _tcschr( p, '/' )) != NULL )
-			*q = '\0';
+	if (list != LIST_VCARD_TEMP) {
+		TCHAR *p, *q = mir_tstrdup( jid );
+		if (( p = _tcschr( s, '@' )) != NULL )
+			if (( q = _tcschr( p, '/' )) != NULL )
+				*q = '\0';
+	}
 
 	item = ( JABBER_LIST_ITEM* )mir_alloc( sizeof( JABBER_LIST_ITEM ));
 	ZeroMemory( item, sizeof( JABBER_LIST_ITEM ));

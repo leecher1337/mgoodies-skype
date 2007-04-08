@@ -37,7 +37,8 @@ typedef enum {
 	LIST_BYTE,          // Bytestream sending connection
 	LIST_FTSEND,
 	LIST_FTRECV,
-	LIST_BOOKMARK
+	LIST_BOOKMARK,
+	LIST_VCARD_TEMP
 } JABBER_LIST;
 
 typedef enum {
@@ -162,7 +163,6 @@ struct JABBER_LIST_ITEM
 	// TCHAR * name   // name of the bookmark
 	TCHAR* password;	// password for room
 	BOOL bAutoJoin;
-    
 };
 
 void JabberListInit( void );

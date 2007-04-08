@@ -266,6 +266,7 @@ int JabberGcMenuHook( WPARAM wParam, LPARAM lParam )
 	if ( gcmi->Type == MENU_ON_LOG ) {
 		static struct gc_item sttLogListItems[] = {
 			{ TranslateT( "&Leave chat session" ),    IDM_LEAVE,     MENU_ITEM, FALSE },
+			{ TranslateT( "Add to Bookmarks" ),       IDM_BOOKMARKS, MENU_ITEM, TRUE },
 			{ NULL, 0, MENU_SEPARATOR, FALSE },
 			{ TranslateT( "&Voice List..." ),         IDM_VOICE,     MENU_ITEM, TRUE  },
 			{ TranslateT( "&Ban List..." ),           IDM_BAN,       MENU_ITEM, TRUE  },
@@ -287,19 +288,21 @@ int JabberGcMenuHook( WPARAM wParam, LPARAM lParam )
 
 		if ( me != NULL ) {
 			if ( me->role == ROLE_MODERATOR )
-				sttLogListItems[2].bDisabled = FALSE;
+				sttLogListItems[3].bDisabled = FALSE;
 
 			if ( me->affiliation == AFFILIATION_ADMIN )
-				sttLogListItems[3].bDisabled = sttLogListItems[5].bDisabled = sttLogListItems[6].bDisabled = FALSE;
+				sttLogListItems[4].bDisabled = sttLogListItems[6].bDisabled = sttLogListItems[7].bDisabled = FALSE;
 			else if ( me->affiliation == AFFILIATION_OWNER )
-				sttLogListItems[3].bDisabled = sttLogListItems[5].bDisabled =
-				sttLogListItems[6].bDisabled = sttLogListItems[7].bDisabled =
-				sttLogListItems[8].bDisabled = sttLogListItems[13].bDisabled =
-				sttLogListItems[15].bDisabled = FALSE;
+				sttLogListItems[4].bDisabled = sttLogListItems[6].bDisabled =
+				sttLogListItems[7].bDisabled = sttLogListItems[8].bDisabled =
+				sttLogListItems[9].bDisabled = sttLogListItems[14].bDisabled =
+				sttLogListItems[16].bDisabled = FALSE;
 		}
+		if ( jabberThreadInfo->caps & CAPS_BOOKMARK ) sttLogListItems[1].bDisabled = FALSE;
 	}
 	else if ( gcmi->Type == MENU_ON_NICKLIST ) {
 		static struct gc_item sttListItems[] = {
+			{ TranslateT( "&User Details" ),          IDM_VCARD,     MENU_ITEM, FALSE },
 			{ TranslateT( "&Leave chat session" ),    IDM_LEAVE,     MENU_ITEM, FALSE },
 			{ NULL, 0, MENU_SEPARATOR, FALSE },
 			{ TranslateT( "Kick" ),                   IDM_KICK,      MENU_ITEM, TRUE },
@@ -316,15 +319,15 @@ int JabberGcMenuHook( WPARAM wParam, LPARAM lParam )
 		if ( me != NULL && him != NULL ) {
 			if ( me->role == ROLE_MODERATOR )
 				if ( him->affiliation != AFFILIATION_ADMIN && him->affiliation != AFFILIATION_OWNER )
-					sttListItems[2].bDisabled = sttListItems[3].bDisabled = FALSE;
+					sttListItems[3].bDisabled = sttListItems[4].bDisabled = FALSE;
 
 			if ( me->affiliation == AFFILIATION_ADMIN ) {
 				if ( him->affiliation != AFFILIATION_ADMIN && him->affiliation != AFFILIATION_OWNER )
-					sttListItems[5].bDisabled = sttListItems[6].bDisabled = FALSE;
+					sttListItems[6].bDisabled = sttListItems[7].bDisabled = FALSE;
 			}
 			else if ( me->affiliation == AFFILIATION_OWNER )
-				sttListItems[5].bDisabled = sttListItems[6].bDisabled =
-				sttListItems[7].bDisabled = sttListItems[8].bDisabled = FALSE;
+				sttListItems[6].bDisabled = sttListItems[7].bDisabled =
+				sttListItems[8].bDisabled = sttListItems[9].bDisabled = FALSE;
 	}	}
 
 	return 0;
@@ -559,7 +562,18 @@ static void sttNickListHook( JABBER_LIST_ITEM* item, GCHOOK* gch )
 	case IDM_LEAVE:
 		JabberGcQuit( item, 0, 0 );
 		break;
-
+	case IDM_VCARD:
+	{
+		HANDLE hContact;
+		JABBER_SEARCH_RESULT jsr;
+//		_tcsncpy(jsr.jid, him->jid, SIZEOF(jsr.jid));
+		mir_sntprintf(jsr.jid, SIZEOF(jsr.jid), _T("%s/%s"), item->jid, him->resourceName );
+		jsr.hdr.cbSize = sizeof(JABBER_SEARCH_RESULT);
+		
+		hContact=(HANDLE)CallProtoService(jabberProtoName, PS_ADDTOLIST, PALF_TEMPORARY,(LPARAM)&jsr);
+		CallService(MS_USERINFO_SHOWDIALOG,(WPARAM)hContact,0);
+		break;
+	}
 	case IDM_KICK:
 	{
 		mir_sntprintf( szBuffer, SIZEOF(szBuffer), _T("%s %s"), TranslateT( "Reason to kick" ), him->resourceName );
@@ -666,6 +680,20 @@ static void sttLogListHook( JABBER_LIST_ITEM* item, GCHOOK* gch )
 		XmlNodeIq iq( "get", iqId, gch->pDest->ptszID );
 		XmlNode* query = iq.addQuery( xmlnsOwner );
 		JabberSend( jabberThreadInfo->s, iq );
+		break;
+	}
+	case IDM_BOOKMARKS:
+	{
+		JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_BOOKMARK, gch->pDest->ptszID );
+		if ( item == NULL ) {
+			item = JabberListGetItemPtr( LIST_CHATROOM, gch->pDest->ptszID );
+			if (item != NULL) {
+				item->type = _T("conference");
+				HANDLE hContact = JabberHContactFromJID( item->jid );
+				item->name = ( TCHAR* )JCallService( MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, GCDNF_TCHAR );
+				JabberAddEditBookmark(NULL, (LPARAM) item);
+			}
+		}
 		break;
 	}
 	case IDM_DESTROY:

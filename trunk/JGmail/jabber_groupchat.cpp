@@ -298,6 +298,24 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 			}	}
 			break;
 
+		case WM_JABBER_ADD_TO_BOOKMARKS:
+			lv = GetDlgItem( hwndDlg, IDC_ROOM );
+			if (( lvItem.iItem=ListView_GetNextItem( lv, -1, LVNI_SELECTED )) >= 0 ) {
+				lvItem.iSubItem = 0;
+				lvItem.mask = LVIF_PARAM;
+				ListView_GetItem( lv, &lvItem );
+
+				JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_BOOKMARK, ( TCHAR* )lvItem.lParam );
+				if ( item == NULL ) {
+					item = JabberListGetItemPtr( LIST_ROOM, ( TCHAR* )lvItem.lParam );
+					if (item != NULL) {
+						item->type = _T("conference");
+						JabberAddEditBookmark(NULL, (LPARAM) item);
+					}
+				}
+			}
+		break;
+
 		case IDC_SERVER:
 		{	TCHAR text[ 128 ];
 			GetDlgItemText( hwndDlg, IDC_SERVER, text, SIZEOF( text ));
@@ -332,6 +350,7 @@ static BOOL CALLBACK JabberGroupchatDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 			HMENU hMenu = CreatePopupMenu();
 			AppendMenu( hMenu, MF_STRING, WM_JABBER_JOIN, TranslateT( "Join" ));
 			AppendMenu( hMenu, MF_STRING, WM_JABBER_ADD_TO_ROSTER, TranslateT( "Add to roster" ));
+			if ( jabberThreadInfo->caps & CAPS_BOOKMARK ) AppendMenu( hMenu, MF_STRING, WM_JABBER_ADD_TO_BOOKMARKS, TranslateT( "Add to Bookmarks" ));
 			TrackPopupMenu( hMenu, TPM_LEFTALIGN | TPM_NONOTIFY, LOWORD(lParam), HIWORD(lParam), 0, hwndDlg, 0 );
 			::DestroyMenu( hMenu );
 			return TRUE;
@@ -552,7 +571,7 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 		TCHAR* str;
 		if (( statusNode=JabberXmlGetChild( node, "status" ))!=NULL && statusNode->text!=NULL )
 			str = statusNode->text;
-		else 
+		else
 			str = NULL;
 		newRes = ( JabberListAddResource( LIST_CHATROOM, from, status, str ) == 0 ) ? 0 : GC_EVENT_JOIN;
 
@@ -644,6 +663,7 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 					sttRenameParticipantNick( item, nick, itemNode );
 					return;
 
+				case 301:
 				case 307:
 					JabberListRemoveResource( LIST_CHATROOM, from );
 					JabberGcLogUpdateMemberStatus( item, nick, NULL, GC_EVENT_KICK, reasonNode );
@@ -774,7 +794,7 @@ typedef struct {
 	TCHAR* from;
 	TCHAR* reason;
 	TCHAR* password;
-} 
+}
 	JABBER_GROUPCHAT_INVITE_INFO;
 
 static void JabberAcceptGroupchatInvite( TCHAR* roomJid, TCHAR* reason, TCHAR* password )
