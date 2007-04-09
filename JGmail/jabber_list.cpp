@@ -136,8 +136,8 @@ JABBER_LIST_ITEM *JabberListAdd( JABBER_LIST list, const TCHAR* jid )
 
 	TCHAR *s = mir_tstrdup( jid );
 	// strip resource name if any
-	if (list != LIST_VCARD_TEMP) {
-		TCHAR *p, *q = mir_tstrdup( jid );
+	if ( list != LIST_VCARD_TEMP ) {
+		TCHAR *p, *q;
 		if (( p = _tcschr( s, '@' )) != NULL )
 			if (( q = _tcschr( p, '/' )) != NULL )
 				*q = '\0';
@@ -159,7 +159,6 @@ JABBER_LIST_ITEM *JabberListAdd( JABBER_LIST list, const TCHAR* jid )
 	LeaveCriticalSection( &csLists );
 
 	JabberMenuUpdateSrmmIcon(item);
-
 	return item;
 }
 

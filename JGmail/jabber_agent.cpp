@@ -45,7 +45,7 @@ int JabberMenuHandleAgents( WPARAM wParam, LPARAM lParam )
 	return 0;
 }
 
-static void JabberRegisterAgent( HWND hwndDlg, TCHAR* jid )
+void JabberRegisterAgent( HWND hwndDlg, TCHAR* jid )
 {
 	CreateDialogParam( hInst, MAKEINTRESOURCE( IDD_FORM ), 
 		hwndDlg, JabberAgentRegInputDlgProc, ( LPARAM )jid );

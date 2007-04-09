@@ -27,6 +27,10 @@ Last change by : $Author$
 
 #include "jabber.h"
 
+#include <fcntl.h>
+#include <io.h>
+#include <sys/stat.h>
+
 #include <commctrl.h>
 #include "jabber_list.h"
 #include "resource.h"
@@ -374,31 +378,18 @@ static BOOL CALLBACK JabberUserPhotoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 /////////////////////////////////////////////////////////////////////////////////////////
 // JabberSetAvatarDlgProc - avatar options dialog procedure
 
-static HBITMAP hAvatar;
+static HWND hAvatarDlg = NULL;
 
-static void sttSaveAvatar( HWND hwndDlg )
+int OnSaveMyAvatar( WPARAM wParam, LPARAM lParam )
 {
-	char szFileName[ MAX_PATH ];
-	if ( JabberEnterBitmapName( szFileName ) != ERROR_SUCCESS )
-		return;
+	if ( !lstrcmpA(( char* )wParam, jabberProtoName ) && hAvatarDlg ) {
+		AVATARCACHEENTRY* ace = ( AVATARCACHEENTRY* )lParam;
+		HBITMAP hAvatar = ( HBITMAP )SendDlgItemMessage( hAvatarDlg, IDC_AVATAR, STM_SETIMAGE, IMAGE_BITMAP, (WPARAM)ace->hbmPic );
+		if ( hAvatar != NULL )
+			DeleteObject( hAvatar );
+	}
 
-	HBITMAP hBitmap = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (WPARAM)szFileName );
-	if ( hBitmap == NULL )
-		return;
-
-	if (( hBitmap = JabberStretchBitmap( hBitmap )) == NULL )
-		return;
-
-	JabberBitmapToAvatar( hAvatar = hBitmap );
-
-	hBitmap = ( HBITMAP )SendDlgItemMessage(hwndDlg, IDC_AVATAR, STM_SETIMAGE, IMAGE_BITMAP, (WPARAM)hBitmap );
-	if ( hBitmap )
-		DeleteObject( hBitmap );
-
-	RedrawWindow(GetDlgItem(hwndDlg, IDC_AVATAR), NULL, NULL, RDW_INVALIDATE);
-
-	if ( jabberConnected )
-		JabberSendPresence( jabberDesiredStatus, false );
+	return 0;
 }
 
 static BOOL CALLBACK JabberSetAvatarDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
@@ -407,14 +398,14 @@ static BOOL CALLBACK JabberSetAvatarDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 	case WM_INITDIALOG:
 		TranslateDialogDefault( hwndDlg );
 		{
-			hAvatar = NULL;
+			hAvatarDlg = hwndDlg;
 
 			BOOL tValue = JGetByte( "EnableAvatars", 1 );
 			CheckDlgButton( hwndDlg, IDC_ENABLE_AVATARS,	tValue );
 			if ( tValue ) {
 				char szAvatar[ MAX_PATH ];
 				JabberGetAvatarFileName( NULL, szAvatar, sizeof szAvatar );
-				hAvatar = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (WPARAM)szAvatar );
+				HBITMAP hAvatar = ( HBITMAP )CallService(MS_UTILS_LOADBITMAP, 0, (WPARAM)szAvatar );
 				if ( hAvatar )
 	            SendDlgItemMessage(hwndDlg, IDC_AVATAR, STM_SETIMAGE, IMAGE_BITMAP, (WPARAM)hAvatar );
 		}	}
@@ -425,32 +416,37 @@ static BOOL CALLBACK JabberSetAvatarDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 		if ( HIWORD( wParam ) == BN_CLICKED ) {
 			switch( LOWORD( wParam )) {
 			case IDC_SETAVATAR:
-				sttSaveAvatar( hwndDlg );
+				JCallService( MS_AV_SETMYAVATAR, ( WPARAM )jabberProtoName, 0 );
 				break;
 
 			case IDC_DELETEAVATAR:
-				char tFileName[ MAX_PATH ];
-				JabberGetAvatarFileName( NULL, tFileName, sizeof tFileName );
-				DeleteFileA( tFileName );
-				JDeleteSetting( NULL, "AvatarHash" );
-				JDeleteSetting( NULL, "AvatarType" );
+				{
+					HBITMAP hAvatar = ( HBITMAP )SendDlgItemMessage(hwndDlg, IDC_AVATAR, STM_SETIMAGE, IMAGE_BITMAP, 0 );
+					if ( hAvatar != NULL )
+						DeleteObject( hAvatar );
 
-				DeleteObject( hAvatar ); hAvatar = NULL;
-            HBITMAP hBitmap = (HBITMAP)SendDlgItemMessage(hwndDlg, IDC_AVATAR, STM_SETIMAGE, IMAGE_BITMAP, (WPARAM)NULL );
-				if ( hBitmap )
-					DeleteObject( hBitmap );
+					char tFileName[ MAX_PATH ];
+					JabberGetAvatarFileName( NULL, tFileName, sizeof tFileName );
+					DeleteFileA( tFileName );
+					JDeleteSetting( NULL, "AvatarHash" );
+					JDeleteSetting( NULL, "AvatarType" );
 
-				if ( jabberConnected )
-					JabberSendPresence( jabberDesiredStatus, false );
-				RedrawWindow(GetDlgItem(hwndDlg, IDC_AVATAR), NULL, NULL, RDW_INVALIDATE);
-				break;
-		}	}
+					if ( jabberConnected )
+						JabberSendPresence( jabberDesiredStatus, false );
+
+					InvalidateRect( hwndDlg, NULL, TRUE );
+					break;
+		}	}	}
 		break;
 
 	case WM_DESTROY:
-		if ( hAvatar )
-			DeleteObject( hAvatar );
-	}
+		{
+			HBITMAP hAvatar = ( HBITMAP )SendDlgItemMessage(hwndDlg, IDC_AVATAR, STM_SETIMAGE, IMAGE_BITMAP, 0 );
+			if ( hAvatar != NULL )
+				DeleteObject( hAvatar );
+
+			hAvatarDlg = NULL;
+	}	}
 
 	return 0;
 }

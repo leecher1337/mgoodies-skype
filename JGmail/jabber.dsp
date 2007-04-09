@@ -256,10 +256,6 @@ SOURCE=.\jabber_agent.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\jabber_bitmap.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\jabber_bookmarks.cpp
 # End Source File
 # Begin Source File
