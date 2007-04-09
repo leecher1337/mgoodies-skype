@@ -787,8 +787,7 @@ static void JabberProcessFeatures( XmlNode *node, void *userdata )
 	}
 
 	//mechanisms not available and we are not logged in
-	if ( isAuthAvailable )
-		JabberPerformIqAuth( info );
+	JabberPerformIqAuth( info );
 }
 
 static void __cdecl JabberWaitAndReconnectThread( int unused )

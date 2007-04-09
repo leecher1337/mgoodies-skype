@@ -294,7 +294,7 @@ int JabberBasicSearch( WPARAM wParam, LPARAM lParam )
 	}
 	else strncpy( jsb->jid, szJid, SIZEOF(jsb->jid));
 
-	if ( JGetByte( "ValidateAddition", TRUE )) {
+	if ( JGetByte( "ValidateAddition", FALSE )) {
 		JabberLog( "Sending basic search validation request for '%s'", jsb->jid );
 		TCHAR* ptszJid = a2t( jsb->jid );
 		jabberSearchID = JabberSendGetVcard( ptszJid );

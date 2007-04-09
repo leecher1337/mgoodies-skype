@@ -109,7 +109,7 @@ BEGIN
                     WS_VSCROLL | WS_TABSTOP
 END
 
-IDD_OPT_JABBER2 DIALOGEX 0, 0, 222, 205
+IDD_OPT_JABBER2 DIALOGEX 0, 0, 222, 217
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
@@ -128,7 +128,7 @@ BEGIN
     CONTROL         "Specify external address",IDC_DIRECT_MANUAL,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,9,23,101,10
     EDITTEXT        IDC_DIRECT_ADDR,117,22,81,12,ES_AUTOHSCROLL
-    GROUPBOX        "Miscellaneous",IDC_STATIC,2,68,216,135
+    GROUPBOX        "Miscellaneous",IDC_STATIC,2,68,216,147
     CONTROL         "Automatically add contact when accept authorization",
                     IDC_AUTO_ADD,"Button",BS_AUTOCHECKBOX | BS_TOP | 
                     WS_TABSTOP,9,80,203,12
@@ -155,6 +155,9 @@ BEGIN
     CONTROL         "Add room to Bookmarks when adding to roster",
                     IDC_ROSTER2BOOKMARK,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,9,188,202,10
+    CONTROL         "Automatically join Bookmarks on login",
+                    IDC_AUTOJOIN_BOOKMARKS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,9,200,202,10
 END
 
 IDD_OPT_JGMAIL DIALOGEX 0, 0, 271, 221
@@ -991,6 +994,3 @@ IDB_ICONSSMALL		BITMAP	DISCARDABLE	"icos\\16x16.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-
-
-

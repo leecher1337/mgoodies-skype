@@ -29,6 +29,9 @@ Last change by : $Author$
 #include "jabber_list.h"
 #include "resource.h"
 
+#include <m_contacts.h>
+
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // module data
 
@@ -338,9 +341,9 @@ int JabberMenuBookmarkAdd( WPARAM wParam, LPARAM lParam )
 			item = ( JABBER_LIST_ITEM* )mir_alloc( sizeof( JABBER_LIST_ITEM ));
 			ZeroMemory( item, sizeof( JABBER_LIST_ITEM ));
 			item->jid = mir_tstrdup(roomID);
-			item->name = mir_tstrdup(nick);
+			item->name = ( TCHAR* )JCallService( MS_CLIST_GETCONTACTDISPLAYNAME, wParam, GCDNF_TCHAR );
 			item->type = _T("conference");
-			if ( !JGetStringT( ( HANDLE ) wParam, "MyNick", &dbv ) ) {
+			if ( !JGetStringT(( HANDLE ) wParam, "MyNick", &dbv ) ) {
 				item->nick = mir_tstrdup(dbv.ptszVal);
 				JFreeVariant( &dbv );
 			}
