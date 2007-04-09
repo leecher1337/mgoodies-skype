@@ -72,7 +72,6 @@ Last change by : $Author$
 #include <m_system.h>
 #include "sdk/m_system_cpp.h"
 #include <m_netlib.h>
-#include <m_png.h>
 #include <m_protomod.h>
 #include <m_protosvc.h>
 #include "sdk/m_proto_listeningto.h"
@@ -88,6 +87,7 @@ Last change by : $Author$
 #include <m_chat.h>
 #include <m_clc.h>
 #include <m_button.h>
+#include <m_avatars.h>
 #include <win2k.h>
 
 #include "jabber_xml.h"
@@ -203,6 +203,7 @@ enum JABBER_SESSION_TYPE
 };
 
 #define CAPS_BOOKMARK   0x0001
+#define CAPS_BOOKMARKS_LOADED 0x8000
 
 struct ThreadData {
 	ThreadData( JABBER_SESSION_TYPE parType );
@@ -406,12 +407,6 @@ extern LIST<TCHAR> jabberTransports;
 /*******************************************************************
  * Function declarations
  *******************************************************************/
-
-//---- jabber_bitmap.cpp ----------------------------------------------
-
-int     __stdcall JabberBitmapToAvatar( HBITMAP hBitmap );
-int     __stdcall JabberEnterBitmapName( char* szDest );
-HBITMAP __stdcall JabberStretchBitmap( HBITMAP hBitmap );
 
 //---- jabber_chat.cpp ----------------------------------------------
 

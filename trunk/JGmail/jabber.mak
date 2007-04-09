@@ -44,7 +44,6 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber.obj"
 	-@erase "$(INTDIR)\jabber.pch"
 	-@erase "$(INTDIR)\jabber_agent.obj"
-	-@erase "$(INTDIR)\jabber_bitmap.obj"
 	-@erase "$(INTDIR)\jabber_bookmarks.obj"
 	-@erase "$(INTDIR)\jabber_byte.obj"
 	-@erase "$(INTDIR)\jabber_chat.obj"
@@ -136,7 +135,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\icolib.obj" \
 	"$(INTDIR)\jabber.obj" \
 	"$(INTDIR)\jabber_agent.obj" \
-	"$(INTDIR)\jabber_bitmap.obj" \
 	"$(INTDIR)\jabber_bookmarks.obj" \
 	"$(INTDIR)\jabber_byte.obj" \
 	"$(INTDIR)\jabber_chat.obj" \
@@ -207,8 +205,6 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber.sbr"
 	-@erase "$(INTDIR)\jabber_agent.obj"
 	-@erase "$(INTDIR)\jabber_agent.sbr"
-	-@erase "$(INTDIR)\jabber_bitmap.obj"
-	-@erase "$(INTDIR)\jabber_bitmap.sbr"
 	-@erase "$(INTDIR)\jabber_bookmarks.obj"
 	-@erase "$(INTDIR)\jabber_bookmarks.sbr"
 	-@erase "$(INTDIR)\jabber_byte.obj"
@@ -329,7 +325,6 @@ BSC32_SBRS= \
 	"$(INTDIR)\icolib.sbr" \
 	"$(INTDIR)\jabber.sbr" \
 	"$(INTDIR)\jabber_agent.sbr" \
-	"$(INTDIR)\jabber_bitmap.sbr" \
 	"$(INTDIR)\jabber_bookmarks.sbr" \
 	"$(INTDIR)\jabber_byte.sbr" \
 	"$(INTDIR)\jabber_chat.sbr" \
@@ -375,7 +370,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\icolib.obj" \
 	"$(INTDIR)\jabber.obj" \
 	"$(INTDIR)\jabber_agent.obj" \
-	"$(INTDIR)\jabber_bitmap.obj" \
 	"$(INTDIR)\jabber_bookmarks.obj" \
 	"$(INTDIR)\jabber_byte.obj" \
 	"$(INTDIR)\jabber_chat.obj" \
@@ -437,8 +431,6 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber.sbr"
 	-@erase "$(INTDIR)\jabber_agent.obj"
 	-@erase "$(INTDIR)\jabber_agent.sbr"
-	-@erase "$(INTDIR)\jabber_bitmap.obj"
-	-@erase "$(INTDIR)\jabber_bitmap.sbr"
 	-@erase "$(INTDIR)\jabber_bookmarks.obj"
 	-@erase "$(INTDIR)\jabber_bookmarks.sbr"
 	-@erase "$(INTDIR)\jabber_byte.obj"
@@ -558,7 +550,6 @@ BSC32_SBRS= \
 	"$(INTDIR)\icolib.sbr" \
 	"$(INTDIR)\jabber.sbr" \
 	"$(INTDIR)\jabber_agent.sbr" \
-	"$(INTDIR)\jabber_bitmap.sbr" \
 	"$(INTDIR)\jabber_bookmarks.sbr" \
 	"$(INTDIR)\jabber_byte.sbr" \
 	"$(INTDIR)\jabber_chat.sbr" \
@@ -604,7 +595,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\icolib.obj" \
 	"$(INTDIR)\jabber.obj" \
 	"$(INTDIR)\jabber_agent.obj" \
-	"$(INTDIR)\jabber_bitmap.obj" \
 	"$(INTDIR)\jabber_bookmarks.obj" \
 	"$(INTDIR)\jabber_byte.obj" \
 	"$(INTDIR)\jabber_chat.obj" \
@@ -679,8 +669,6 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber.sbr"
 	-@erase "$(INTDIR)\jabber_agent.obj"
 	-@erase "$(INTDIR)\jabber_agent.sbr"
-	-@erase "$(INTDIR)\jabber_bitmap.obj"
-	-@erase "$(INTDIR)\jabber_bitmap.sbr"
 	-@erase "$(INTDIR)\jabber_bookmarks.obj"
 	-@erase "$(INTDIR)\jabber_bookmarks.sbr"
 	-@erase "$(INTDIR)\jabber_byte.obj"
@@ -801,7 +789,6 @@ BSC32_SBRS= \
 	"$(INTDIR)\icolib.sbr" \
 	"$(INTDIR)\jabber.sbr" \
 	"$(INTDIR)\jabber_agent.sbr" \
-	"$(INTDIR)\jabber_bitmap.sbr" \
 	"$(INTDIR)\jabber_bookmarks.sbr" \
 	"$(INTDIR)\jabber_byte.sbr" \
 	"$(INTDIR)\jabber_chat.sbr" \
@@ -847,7 +834,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\icolib.obj" \
 	"$(INTDIR)\jabber.obj" \
 	"$(INTDIR)\jabber_agent.obj" \
-	"$(INTDIR)\jabber_bitmap.obj" \
 	"$(INTDIR)\jabber_bookmarks.obj" \
 	"$(INTDIR)\jabber_byte.obj" \
 	"$(INTDIR)\jabber_chat.obj" \
@@ -901,7 +887,6 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber.obj"
 	-@erase "$(INTDIR)\jabber.pch"
 	-@erase "$(INTDIR)\jabber_agent.obj"
-	-@erase "$(INTDIR)\jabber_bitmap.obj"
 	-@erase "$(INTDIR)\jabber_bookmarks.obj"
 	-@erase "$(INTDIR)\jabber_byte.obj"
 	-@erase "$(INTDIR)\jabber_chat.obj"
@@ -993,7 +978,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\icolib.obj" \
 	"$(INTDIR)\jabber.obj" \
 	"$(INTDIR)\jabber_agent.obj" \
-	"$(INTDIR)\jabber_bitmap.obj" \
 	"$(INTDIR)\jabber_bookmarks.obj" \
 	"$(INTDIR)\jabber_byte.obj" \
 	"$(INTDIR)\jabber_chat.obj" \
@@ -1056,7 +1040,6 @@ CLEAN :
 	-@erase "$(INTDIR)\jabber.obj"
 	-@erase "$(INTDIR)\jabber.pch"
 	-@erase "$(INTDIR)\jabber_agent.obj"
-	-@erase "$(INTDIR)\jabber_bitmap.obj"
 	-@erase "$(INTDIR)\jabber_bookmarks.obj"
 	-@erase "$(INTDIR)\jabber_byte.obj"
 	-@erase "$(INTDIR)\jabber_chat.obj"
@@ -1148,7 +1131,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\icolib.obj" \
 	"$(INTDIR)\jabber.obj" \
 	"$(INTDIR)\jabber_agent.obj" \
-	"$(INTDIR)\jabber_bitmap.obj" \
 	"$(INTDIR)\jabber_bookmarks.obj" \
 	"$(INTDIR)\jabber_byte.obj" \
 	"$(INTDIR)\jabber_chat.obj" \
@@ -1453,46 +1435,6 @@ CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBU
 	$(CPP) @<<
   $(CPP_SWITCHES) $(SOURCE)
 <<
-
-
-!ENDIF 
-
-SOURCE=.\jabber_bitmap.cpp
-
-!IF  "$(CFG)" == "jgmail - Win32 Release"
-
-
-"$(INTDIR)\jabber_bitmap.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
-
-
-"$(INTDIR)\jabber_bitmap.obj"	"$(INTDIR)\jabber_bitmap.sbr" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Release Unicode"
-
-
-"$(INTDIR)\jabber_bitmap.obj"	"$(INTDIR)\jabber_bitmap.sbr" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
-
-
-"$(INTDIR)\jabber_bitmap.obj"	"$(INTDIR)\jabber_bitmap.sbr" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Static Unicode"
-
-
-"$(INTDIR)\jabber_bitmap.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
-
-
-!ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
-
-
-"$(INTDIR)\jabber_bitmap.obj" : $(SOURCE) "$(INTDIR)" "$(INTDIR)\jabber.pch"
 
 
 !ENDIF 
