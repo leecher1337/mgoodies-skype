@@ -3,8 +3,11 @@
 // Used by resource.rc
 //
 #define IDD_DIALOG1                     101
-#define IDI_MIRANDAWEBSITE              102
 #define IDI_NUDGE                       102
+#define IDI_NUGDE_YAHOO                 107
+#define IDI_NUDGE_IRC                   109
+#define IDI_NUDGE_MSN                   110
+#define IDI_NUDGE_TLEN                  111
 #define IDD_SHAKEOPT                    126
 #define IDD_OPT_NUDGE                   126
 #define IDD_OPTIONS                     127
@@ -75,7 +78,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        106
+#define _APS_NEXT_RESOURCE_VALUE        112
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1041
 #define _APS_NEXT_SYMED_VALUE           101
