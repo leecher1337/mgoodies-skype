@@ -513,7 +513,7 @@ void LoadIcons(void)
 			sid.pszName = iconName;
 			sprintf(iconDesc,"Nudge for %s",n->item.ProtocolName);
 			sid.pszDescription = iconDesc;
-			//sid.iDefaultIndex = -IDI_NUDGE;
+			sid.iDefaultIndex = -IDI_NUDGE;
 			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 			n->item.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
@@ -523,7 +523,7 @@ void LoadIcons(void)
 		sid.pszName = iconName;
 		sprintf(iconDesc,"Nudge as Default");
 		sid.pszDescription = iconDesc;
-		//sid.iDefaultIndex = -IDI_NUDGE;
+		sid.iDefaultIndex = -IDI_NUDGE;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		DefaultNudge.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);

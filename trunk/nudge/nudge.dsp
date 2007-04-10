@@ -148,6 +148,26 @@ SOURCE=.\nudge.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\resources\Nudge.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\resources\NudgeIRC.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\resources\NudgeMSN.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\resources\NudgeTlen.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\resources\NudgeYahoo.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\resource.rc
 # End Source File
 # End Group
