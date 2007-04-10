@@ -23,6 +23,10 @@ Boston, MA 02111-1307, USA.
 
 #include "m_voice.h"
 
+
+#define MIID_VOICESERVICE  { 0x7d64437, 0xef2e, 0x4f60, { 0xbb, 0x2d, 0x3c, 0x51, 0x8f, 0xe2, 0x4d, 0x63 } }
+
+
 /*
 This services are a mirror of the services/notifications in m_voice.h,
 with the difference that that ones are to be used by protocols, and this ones

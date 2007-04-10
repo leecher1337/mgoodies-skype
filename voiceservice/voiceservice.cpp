@@ -23,21 +23,26 @@ Boston, MA 02111-1307, USA.
 // Prototypes ///////////////////////////////////////////////////////////////////////////
 
 
-PLUGININFO pluginInfo = {
-	sizeof(PLUGININFO),
+PLUGININFOEX pluginInfo = {
+	sizeof(PLUGININFOEX),
 #ifdef UNICODE
 	"Voice Service (Unicode)",
 #else
 	"Voice Service",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,2),
+	PLUGIN_MAKE_VERSION(0,0,0,4),
 	"Provide services for protocols that support voice calls",
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
 	"http://pescuma.mirandaim.ru/miranda/voiceservice",
 	UNICODE_AWARE,
-	0	//doesn't replace anything built-in
+	0,		//doesn't replace anything built-in
+#ifdef UNICODE
+	{ 0x1bfc449d, 0x8f6f, 0x4080, { 0x8f, 0x35, 0xf9, 0x40, 0xb3, 0xde, 0x12, 0x84 } } // {1BFC449D-8F6F-4080-8F35-F940B3DE1284}
+#else
+	{ 0x1bbe5b21, 0x238d, 0x4cbc, { 0xaf, 0xb8, 0xe, 0xef, 0xab, 0x1b, 0xf2, 0x69 } } // {1BBE5B21-238D-4cbc-AFB8-0EEFAB1BF269}
+#endif
 };
 
 
@@ -118,7 +123,22 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRe
 
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
 {
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO*) &pluginInfo;
+}
+
+
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	pluginInfo.cbSize = sizeof(PLUGININFOEX);
 	return &pluginInfo;
+}
+
+
+static const MUUID interfaces[] = { MIID_VOICESERVICE, MIID_LAST };
+extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 
@@ -177,7 +197,7 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/voiceservice.zip";
 #endif
 
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
@@ -694,7 +714,7 @@ static int VoiceStartedCall(VOICE_CALL *in)
 	CopyVoiceCallData(vc, in);
 	vc->state = VOICE_STATE_TALKING;
 
-	if (currentCall.call != NULL)
+	if (currentCall.call != NULL && currentCall.call != vc)
 	{
 		// Well, can't do much more than try to hold/drop the current call
 		if (currentCall.call->module->flags & VOICE_CAN_HOLD)
