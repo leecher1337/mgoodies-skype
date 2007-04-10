@@ -172,6 +172,10 @@ SOURCE=.\m_voice.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\m_voiceservice.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\utils\mir_memory.h
 # End Source File
 # Begin Source File
