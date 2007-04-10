@@ -5,7 +5,7 @@ Changelog:
 . 0.1.1.5
   + Added icon to main menu
   - Removed old hack for clist classic
-  + Changed variables to show unknown text when an info is not available and to, if tested with ?if() return false
+  + Changed variables to show unknown text when an info is not available and to, if tested with ?if(), return false
 
 . 0.1.1.4
   + Added support for Miranda 0.8
