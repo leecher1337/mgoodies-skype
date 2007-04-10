@@ -249,9 +249,10 @@ void JabberGetAvatarFileName( HANDLE hContact, char* pszDest, int cbLen )
 	char* szFileType;
 	switch( JGetByte( hContact, "AvatarType", PA_FORMAT_PNG )) {
 		case PA_FORMAT_JPEG: szFileType = "jpg";   break;
-		case PA_FORMAT_PNG:  szFileType = "png";   break;
 		case PA_FORMAT_GIF:  szFileType = "gif";   break;
 		case PA_FORMAT_BMP:  szFileType = "bmp";   break;
+		case PA_FORMAT_PNG:  szFileType = "png";   break;
+		default: szFileType = "bin";
 	}
 
 	if ( hContact != NULL ) {

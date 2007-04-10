@@ -392,6 +392,40 @@ int OnSaveMyAvatar( WPARAM wParam, LPARAM lParam )
 	return 0;
 }
 
+int JabberSetAvatar( WPARAM wParam, LPARAM lParam );
+static void sttSaveAvatar( HWND hwndDlg ){
+	char szFileName[ MAX_PATH ];
+	char szFilter[512];
+
+	JCallService( MS_UTILS_GETBITMAPFILTERSTRINGS, ( WPARAM ) sizeof( szFilter ), ( LPARAM )szFilter );
+
+	OPENFILENAMEA ofn = {0};
+	ofn.lStructSize = OPENFILENAME_SIZE_VERSION_400;
+	ofn.hwndOwner = hwndDlg;
+	ofn.lpstrFilter = szFilter;
+	ofn.lpstrCustomFilter = NULL;
+	ofn.lpstrFile = szFileName;
+	ofn.nMaxFile = _MAX_PATH;
+	ofn.Flags = OFN_FILEMUSTEXIST;
+	szFileName[0] = '\0';
+	if ( GetOpenFileNameA( &ofn )) {
+		struct _stat st;
+
+		JabberLog( "File selected is %s", szFileName );
+		if ( _stat( szFileName, &st )<0 || st.st_size>40*1024 ) {
+			MessagePopup( hwndDlg, TranslateT( "Only files smaller than 40 KB are supported." ), TranslateT( "Jabber" ), MB_OK|MB_SETFOREGROUND );
+			return;
+		}
+		HBITMAP hBitmap = (HBITMAP)CallService(MS_UTILS_LOADBITMAP, 0, (WPARAM)szFileName );
+		if ( hBitmap == NULL ) return;
+		hBitmap = ( HBITMAP )SendDlgItemMessage(hwndDlg, IDC_AVATAR, STM_SETIMAGE, IMAGE_BITMAP, (WPARAM)hBitmap );
+		if ( hBitmap ) DeleteObject( hBitmap ); 	 
+		RedrawWindow(GetDlgItem(hwndDlg, IDC_AVATAR), NULL, NULL, RDW_INVALIDATE); 	 
+		//JCallService( MS_AV_SETMYAVATAR, ( WPARAM )jabberProtoName, 0 );
+		JabberSetAvatar(0,(LPARAM)szFileName);
+	}
+}
+
 static BOOL CALLBACK JabberSetAvatarDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
 {
 	switch ( msg ) {
@@ -416,7 +450,7 @@ static BOOL CALLBACK JabberSetAvatarDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 		if ( HIWORD( wParam ) == BN_CLICKED ) {
 			switch( LOWORD( wParam )) {
 			case IDC_SETAVATAR:
-				JCallService( MS_AV_SETMYAVATAR, ( WPARAM )jabberProtoName, 0 );
+				sttSaveAvatar( hwndDlg );
 				break;
 
 			case IDC_DELETEAVATAR:

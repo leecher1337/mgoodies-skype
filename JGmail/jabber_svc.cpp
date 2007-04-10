@@ -675,7 +675,7 @@ static int JabberGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 	}
 
 	JabberGetAvatarFileName( AI->hContact, AI->filename, sizeof AI->filename );
-	AI->format = ( AI->hContact == NULL ) ? PA_FORMAT_PNG : JGetByte( AI->hContact, "AvatarType", 0 );
+	AI->format = JGetByte( AI->hContact, "AvatarType", 0 );
 
 	if ( ::access( AI->filename, 0 ) == 0 ) {
 		char szSavedHash[ 256 ];
@@ -1290,7 +1290,7 @@ int JabberSetApparentMode( WPARAM wParam, LPARAM lParam )
 ////////////////////////////////////////////////////////////////////////////////////////
 // JabberSetAvatar - sets an avatar without UI
 
-static int JabberSetAvatar( WPARAM wParam, LPARAM lParam )
+int JabberSetAvatar( WPARAM wParam, LPARAM lParam )
 {
 	char* szFileName = ( char* )lParam;
 	int fileIn = open( szFileName, O_RDWR | O_BINARY, S_IREAD | S_IWRITE );
@@ -1305,21 +1305,22 @@ static int JabberSetAvatar( WPARAM wParam, LPARAM lParam )
 	read( fileIn, pResult, dwPngSize );
 	close( fileIn );
 
+	char tFileName[ MAX_PATH ];
+	JabberGetAvatarFileName( NULL, tFileName, MAX_PATH );
+	DeleteFileA( tFileName );
+
 	mir_sha1_byte_t digest[MIR_SHA1_HASH_SIZE];
 	mir_sha1_ctx sha1ctx;
 	mir_sha1_init( &sha1ctx );
 	mir_sha1_append( &sha1ctx, (mir_sha1_byte_t*)pResult, dwPngSize );
 	mir_sha1_finish( &sha1ctx, digest );
 
-	char tFileName[ MAX_PATH ];
-	JabberGetAvatarFileName( NULL, tFileName, MAX_PATH );
-	DeleteFileA( tFileName );
 
 	char buf[MIR_SHA1_HASH_SIZE*2+1];
 	for ( int i=0; i<MIR_SHA1_HASH_SIZE; i++ )
 		sprintf( buf+( i<<1 ), "%02x", digest[i] );
-   JSetString( NULL, "AvatarHash", buf );
-	JSetByte( "AvatarType", PA_FORMAT_PNG );
+	JSetString( NULL, "AvatarHash", buf );
+	JSetByte( "AvatarType", JabberGetPictureType((char *)pResult) );
 
 	JabberGetAvatarFileName( NULL, tFileName, MAX_PATH );
 	FILE* out = fopen( tFileName, "wb" );
