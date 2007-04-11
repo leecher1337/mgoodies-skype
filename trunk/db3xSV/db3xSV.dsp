@@ -54,9 +54,9 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x5130000" /dll /map /machine:I386 /out:"../../bin/release/plugins/dbx_3xSV.dll" /IGNORE:4089
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x5130000" /dll /map /machine:I386 /out:"../../bin/release/plugins/dbx_3xSV.dll" /IGNORE:4089
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x5130000" /dll /map /machine:I386 /out:"../../bin/release/plugins/dbx_3xSV.dll" /IGNORE:4089
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x5130000" /dll /map /machine:I386 /out:"../../bin/release/plugins/dbx_3xSV.dll" /IGNORE:4089
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "db3xSV - Win32 Debug"
@@ -83,8 +83,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /map /debug /machine:I386 /out:"../../bin/debug/plugins/dbx_3xSV.dll" /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /map /debug /machine:I386 /out:"../../bin/debug/plugins/dbx_3xSV.dll" /pdbtype:sept
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /dll /map /debug /machine:I386 /out:"../../bin/debug/plugins/dbx_3xSV.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comctl32.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /dll /map /debug /machine:I386 /out:"../../bin/debug/plugins/dbx_3xSV.dll" /pdbtype:sept
 
 !ENDIF 
 
@@ -138,6 +138,10 @@ SOURCE=.\dbsettings.c
 # Begin Source File
 
 SOURCE=.\encrypt.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\icos.c
 # End Source File
 # Begin Source File
 

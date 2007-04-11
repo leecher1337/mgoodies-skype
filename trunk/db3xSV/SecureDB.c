@@ -225,8 +225,8 @@ End:
 	LeaveCriticalSection(&csDbAccess);
 
 	if(!g_secured){
-		xModifyMenu(hSetPwdMenu,0,"Set Password");
-		xModifyMenu(hDelPwdMenu,CMIF_GRAYED,NULL);
+		xModifyMenu(hSetPwdMenu,0,"Set Password",NULL);
+		xModifyMenu(hDelPwdMenu,CMIF_GRAYED,NULL,NULL);
 	}
 	return result;
 }
@@ -270,8 +270,8 @@ End:
 	LeaveCriticalSection(&csDbAccess);
 
 	if(g_secured){
-		xModifyMenu(hSetPwdMenu,0,"Change Password");
-		xModifyMenu(hDelPwdMenu,0,NULL);
+		xModifyMenu(hSetPwdMenu,0,"Change Password",NULL);
+		xModifyMenu(hDelPwdMenu,0,NULL,NULL);
 	}
 	return result;
 }
