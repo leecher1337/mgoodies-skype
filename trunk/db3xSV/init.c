@@ -30,8 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <m_plugins.h>
 #include "dblists.h"
 
-struct MM_INTERFACE memoryManagerInterface;
+struct MM_INTERFACE   mmi;
 struct LIST_INTERFACE li;
+struct UTF8_INTERFACE utfi;
+
 extern char szDbPath[MAX_PATH];
 
 HINSTANCE g_hInst=NULL;
@@ -125,6 +127,9 @@ static int grokHeader( char * profile, int * error )
 	return rc;
 }
 
+char* deprecatedUtf8Decode( char* str, WCHAR** ucs2 );
+char* deprecatedUtf8Encode( const char* str );
+char* deprecatedUtf8EncodeW( const WCHAR* wstr );
 // returns 0 if all the APIs are injected otherwise, 1
 int LoadDatabase( char * profile, void * plink )
 {
@@ -142,7 +147,7 @@ int LoadDatabase( char * profile, void * plink )
 	CallService(MS_SYSTEM_GET_MMI,0,(LPARAM)&memoryManagerInterface);
 	// set the lists manager;
 	li.cbSize = sizeof( li );
-	if ( CallService(MS_SYSTEM_GET_LI,0,(LPARAM)&li) == CALLSERVICE_NOTFOUND )
+	if ( mir_getLI( &li ) == CALLSERVICE_NOTFOUND )
 	{		//Will use local Lists implementation
 		li.List_Create   = NULL;
 		li.List_Destroy  = List_Destroy;
@@ -152,6 +157,15 @@ int LoadDatabase( char * profile, void * plink )
 		li.List_Remove   = List_Remove;
 		li.List_IndexOf  = NULL;
 	}
+	mir_getMMI( &mmi );
+	if (mir_getUTFI( &utfi ) == CALLSERVICE_NOTFOUND ) {
+		// older core version. use local functions.
+		utfi.utf8_decode   = deprecatedUtf8Decode;
+		utfi.utf8_decodecp = NULL;
+		utfi.utf8_encode   = deprecatedUtf8Encode;
+		utfi.utf8_encodecp = NULL;
+		utfi.utf8_encodeW  = deprecatedUtf8EncodeW;
+	}
 	{
 		char *p;
 		strncpy(szDbDir,szDbPath,sizeof(szDbDir));
@@ -160,7 +174,7 @@ int LoadDatabase( char * profile, void * plink )
 			*(p+1)=0;
 		uiDbDirLen = strlen(szDbDir);
 
-		szDbDirUtf8 = Utf8Encode(szDbDir);
+		szDbDirUtf8 = mir_utf8encode(szDbDir);
 		uiDbDirLenUtf8 = strlen(szDbDirUtf8);
 	}
 
@@ -208,34 +222,39 @@ static DATABASELINK dblink = {
 	UnloadDatabase,
 };
 
-static PLUGININFO pluginInfo = {
-	sizeof(PLUGININFO),
+static PLUGININFOEX pluginInfo = {
+	sizeof(PLUGININFOEX),
 #ifdef SECUREDB
 	"Miranda Virtualizable SecureDB driver",
 #else
 	"Miranda Virtualizable database driver",
 #endif
-	PLUGIN_MAKE_VERSION(0,5,1,0),
+	PLUGIN_MAKE_VERSION(0,6,0,8),
 #ifdef SECUREDB
 	"Provides Miranda database support: encryption, virtualisation, global settings, contacts, history, settings per contact, optimized paths.",
 	"Miranda-IM project; YB; Piotr Pawluczuk; Pescuma",
 	"yb@saaplugin.no-ip.info",
-	"Copyright 2000-2005 Miranda-IM project; Piotr Pawluczuk; YB; Pescuma",
+	"Copyright 2000-2007 Miranda-IM project; Piotr Pawluczuk; YB; Pescuma",
 #else
 	"Provides Miranda database support: virtualisation, global settings, contacts, history, settings per contact, optimized paths.",
 	"Miranda-IM project; YB; Pescuma",
 	"yb@saaplugin.no-ip.info; piotrek@piopawlu.net",
-	"Copyright 2000-2005 Miranda-IM project; YB; Pescuma",
+	"Copyright 2000-2007 Miranda-IM project; YB; Pescuma",
 #endif
 	"http://saaplugin.no-ip.info/db3xV/",
 	0,
-	DEFMOD_DB
+	DEFMOD_DB,
+#ifdef SECUREDB
+	{0x54f6aa80,0x56de,0x478f,{0x97,0x1b,0x66,0xbf,0x9e,0x65,0x1a,0x0c}} // 54f6aa80-56de-478f-971b-66bf9e651a0c
+#else
+	{0xb0190e91,0x39cf,0x4ee2,{0xb6,0x39,0xf1,0x84,0xae,0x19,0xd4,0xc1}} // b0190e91-39cf-4ee2-b639-f184ae19d4c1
+#endif
 };
 
 
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID reserved)
 {
-	g_hInst=hInstDLL;
+	g_hInst = hInstDLL;
 	return TRUE;
 }
 
@@ -244,10 +263,26 @@ __declspec(dllexport) DATABASELINK* DatabasePluginInfo(void * reserved)
 	return &dblink;
 }
 
-__declspec(dllexport) PLUGININFO * MirandaPluginInfo(DWORD mirandaVersion)
+__declspec(dllexport) PLUGININFOEX * MirandaPluginInfo(DWORD mirandaVersion)
 {
-	if ( mirandaVersion < PLUGIN_MAKE_VERSION(0,4,0,0) ) return NULL;
+	if ( mirandaVersion < PLUGIN_MAKE_VERSION(0,4,0,0)) {
+		MessageBox( NULL, _T("The db3x plugin cannot be loaded. Your Miranda is too old."), _T("db3x Plugin"), MB_OK|MB_ICONWARNING|MB_SETFOREGROUND|MB_TOPMOST );
+		return NULL;
+	}
+	if ( mirandaVersion < PLUGIN_MAKE_VERSION( 0,7,0,17 )) pluginInfo.cbSize = sizeof( PLUGININFO );
 	return &pluginInfo;
+}
+
+__declspec(dllexport) PLUGININFOEX * MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	pluginInfo.cbSize = sizeof( PLUGININFOEX );
+	return &pluginInfo;
+}
+
+static const MUUID interfaces[] = {MIID_DATABASE, MIID_LAST};
+__declspec(dllexport) const MUUID * MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 int __declspec(dllexport) Load(PLUGINLINK * link)

@@ -61,12 +61,7 @@ extern size_t uiMirandaDirLenUtf8;
 extern char *szDbDirUtf8;
 extern size_t uiDbDirLenUtf8;
 
-extern struct MM_INTERFACE memoryManagerInterface;
 extern struct LIST_INTERFACE li;
-
-#define mir_alloc(n) memoryManagerInterface.mmi_malloc(n)
-#define mir_free(ptr) memoryManagerInterface.mmi_free(ptr)
-#define mir_realloc(ptr,size) memoryManagerInterface.mmi_realloc(ptr,size)
 
 #ifdef __GNUC__
 #define mir_i64(x) (x##LL)

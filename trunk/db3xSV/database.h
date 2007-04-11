@@ -198,10 +198,6 @@ int CreateDbHeaders(HANDLE hFile);
 int LoadDatabaseModule(void);
 void UnloadDatabaseModule(void);
 
-void Utf8Decode( char* str, wchar_t** ucs2 );
-char* Utf8Encode( const char* src );
-char* Utf8EncodeUcs2( const wchar_t* src );
-
 #ifdef _DEBUG
 #define MAXCACHEDREADSIZE     512
 #else

@@ -2,8 +2,8 @@
 
 Miranda IM: the free IM client for Microsoft* Windows*
 
-Copyright 2000-2003 Miranda ICQ/IM project, 
-all portions of this codebase are copyrighted to the people 
+Copyright 2000-2003 Miranda ICQ/IM project,
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -74,7 +74,7 @@ static int GetEventCount(WPARAM wParam,LPARAM lParam)
 {
 	int ret;
 	struct DBContact *dbc;
-	
+
 	EnterCriticalSection(&csDbAccess);
 	if(wParam==0) wParam=dbHeader.ofsUser;
 	dbc=(struct DBContact*)DBRead(wParam,sizeof(struct DBContact),NULL);
@@ -182,7 +182,7 @@ static int DeleteEvent(WPARAM wParam,LPARAM lParam)
 	struct DBContact dbc;
 	DWORD ofsContact,ofsThis;
 	struct DBEvent dbe,*dbeNext,*dbePrev;
-	
+
 	EnterCriticalSection(&csDbAccess);
 	if(wParam==0) ofsContact=dbHeader.ofsUser;
 	else ofsContact=wParam;
@@ -262,7 +262,7 @@ static int GetBlobSize(WPARAM wParam,LPARAM lParam)
 {
 	int ret;
 	struct DBEvent *dbe;
-	
+
 	EnterCriticalSection(&csDbAccess);
 	dbe=(struct DBEvent*)DBRead(wParam,sizeof(struct DBEvent),NULL);
 	if(dbe->signature!=DBEVENT_SIGNATURE) ret=-1;
@@ -276,8 +276,12 @@ static int GetEvent(WPARAM wParam,LPARAM lParam)
 	struct DBEvent *dbe;
 	DBEVENTINFO *dbei=(DBEVENTINFO*)lParam;
 	int bytesToCopy,i;
-	
+
 	if(dbei==NULL||dbei->cbSize!=sizeof(DBEVENTINFO)) return 1;
+	if(dbei->cbBlob > 0 && dbei->pBlob == NULL) {
+		dbei->cbBlob = 0;
+		return 1;
+	}
 	EnterCriticalSection(&csDbAccess);
 	dbe=(struct DBEvent*)DBRead(wParam,sizeof(struct DBEvent),NULL);
 	if(dbe->signature!=DBEVENT_SIGNATURE) {
@@ -308,7 +312,7 @@ static int MarkEventRead(WPARAM wParam,LPARAM lParam)
 	struct DBEvent *dbe;
 	struct DBContact dbc;
 	DWORD ofsThis;
-	
+
 	EnterCriticalSection(&csDbAccess);
 	if(wParam==0) wParam=dbHeader.ofsUser;
 	dbc=*(struct DBContact*)DBRead(wParam,sizeof(struct DBContact),NULL);
@@ -352,7 +356,7 @@ static int GetEventContact(WPARAM wParam,LPARAM lParam)
 {
 	int ret;
 	struct DBEvent *dbe;
-	
+
 	EnterCriticalSection(&csDbAccess);
 	dbe=(struct DBEvent*)DBRead(wParam,sizeof(struct DBEvent),NULL);
 	if(dbe->signature!=DBEVENT_SIGNATURE) {
@@ -370,7 +374,7 @@ static int FindFirstEvent(WPARAM wParam,LPARAM lParam)
 {
 	int ret;
 	struct DBContact *dbc;
-	
+
 	EnterCriticalSection(&csDbAccess);
 	if(wParam==0) wParam=dbHeader.ofsUser;
 	dbc=(struct DBContact*)DBRead(wParam,sizeof(struct DBContact),NULL);
@@ -384,7 +388,7 @@ static int FindFirstUnreadEvent(WPARAM wParam,LPARAM lParam)
 {
 	int ret;
 	struct DBContact *dbc;
-	
+
 	EnterCriticalSection(&csDbAccess);
 	if(wParam==0) wParam=dbHeader.ofsUser;
 	dbc=(struct DBContact*)DBRead(wParam,sizeof(struct DBContact),NULL);
@@ -398,7 +402,7 @@ static int FindLastEvent(WPARAM wParam,LPARAM lParam)
 {
 	int ret;
 	struct DBContact *dbc;
-	
+
 	EnterCriticalSection(&csDbAccess);
 	if(wParam==0) wParam=dbHeader.ofsUser;
 	dbc=(struct DBContact*)DBRead(wParam,sizeof(struct DBContact),NULL);
@@ -412,7 +416,7 @@ static int FindNextEvent(WPARAM wParam,LPARAM lParam)
 {
 	int ret;
 	struct DBEvent *dbe;
-	
+
 	EnterCriticalSection(&csDbAccess);
 	dbe=(struct DBEvent*)DBRead(wParam,sizeof(struct DBEvent),NULL);
 	if(dbe->signature!=DBEVENT_SIGNATURE) ret=(int)(HANDLE)NULL;
@@ -425,7 +429,7 @@ static int FindPrevEvent(WPARAM wParam,LPARAM lParam)
 {
 	int ret;
 	struct DBEvent *dbe;
-	
+
 	EnterCriticalSection(&csDbAccess);
 	dbe=(struct DBEvent*)DBRead(wParam,sizeof(struct DBEvent),NULL);
 	if(dbe->signature!=DBEVENT_SIGNATURE) ret=(int)(HANDLE)NULL;
