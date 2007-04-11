@@ -1,4 +1,4 @@
-# Microsoft Developer Studio Project File - Name="db3xV" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="db3xSV" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
@@ -14,12 +14,12 @@ CFG=db3xSV - Win32 Release
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
 !MESSAGE NMAKE /f "db3xSV.mak" CFG="db3xSV - Win32 Release"
-!MESSAGE
+!MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
 !MESSAGE "db3xSV - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "db3xSV - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE
+!MESSAGE 
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0

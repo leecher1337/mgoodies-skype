@@ -65,6 +65,7 @@ static void showResult(HWND hwndDlg, int r){
 		default: mir_snprintf(temp,256,"Unknown error code %d",dbResult.errState);
 	}
 	SendDlgItemMessage(hwndDlg, IDC_LABEL_ERRSTATE, WM_SETTEXT, 0,(LPARAM)temp); 
+	ShowPopup("%s\n%s",dbResult.szFileName,temp);
 	mir_snprintf(temp,256,"%d",r);
 	SendDlgItemMessage(hwndDlg, IDC_LABEL_RESULT, WM_SETTEXT, 0,(LPARAM)temp); 
 }

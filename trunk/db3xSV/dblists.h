@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef int ( *FSortFunc )( void*, void* );
 
+/*
 typedef struct
 {
 	void**		items;
@@ -35,6 +36,7 @@ typedef struct
 	FSortFunc	sortFunc;
 }
 	SortedList;
+*/
 
 SortedList* List_Create( int, int );
 void List_Destroy( SortedList* );

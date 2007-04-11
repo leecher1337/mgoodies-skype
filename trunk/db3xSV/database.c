@@ -120,6 +120,9 @@ unsigned int giMirandaDirLen;
 
 int LoadDatabaseModule(void)
 {
+#ifdef SECUREDB
+	static int sec=0;
+#endif
 	InitializeCriticalSection(&csDbAccess);
 	parseIniSettings();
 	log0("DB logging running");
@@ -129,6 +132,7 @@ int LoadDatabaseModule(void)
 		if ( hDbFile == INVALID_HANDLE_VALUE ) {
 			return 1;
 		}
+
 		if ( !
 #ifdef SECUREDB
 			  EncReadFile
@@ -140,6 +144,17 @@ int LoadDatabaseModule(void)
 			return 1;
 		}
 	}
+
+	CheckDbHeaders(&dbHeader
+#ifdef SECUREDB
+	  ,&sec
+#endif
+	  );
+#ifdef SECUREDB
+	if(sec && EncGetPassword(&dbHeader,szDbPath)){
+		return 1;
+	}
+#endif
 
 	{
 		char *str2;
