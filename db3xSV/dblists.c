@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "dblists.h"
 
 /* a simple sorted list implementation */
-
+/*
 SortedList* List_Create( int p_limit, int p_increment )
 {
 	SortedList* result = ( SortedList* )mir_alloc( sizeof( SortedList ) );
@@ -37,7 +37,7 @@ SortedList* List_Create( int p_limit, int p_increment )
 	result->limit = p_limit;
 	return(result);
 }
-
+*/
 void List_Destroy( SortedList* p_list )
 {
 	if ( p_list == NULL )
@@ -46,7 +46,7 @@ void List_Destroy( SortedList* p_list )
 	if ( p_list->items != NULL )
 		mir_free( p_list->items );
 }
-
+/*
 void* List_Find( SortedList* p_list, void* p_value )
 {
 	int index;
@@ -56,7 +56,7 @@ void* List_Find( SortedList* p_list, void* p_value )
 
 	return(p_list->items[ index ]);
 }
-
+*/
 int List_GetIndex( SortedList* p_list, void* p_value, int* p_index )
 {
    int low = 0, high = p_list->realCount-1, found = 0;

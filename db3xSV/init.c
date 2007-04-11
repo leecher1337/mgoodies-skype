@@ -2,8 +2,8 @@
 
 Miranda IM: the free IM client for Microsoft* Windows*
 
-Copyright 2000-2003 Miranda ICQ/IM project, 
-all portions of this codebase are copyrighted to the people 
+Copyright 2000-2003 Miranda ICQ/IM project,
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -28,8 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include "initmenu.h"
 #include <m_plugins.h>
+#include "dblists.h"
 
 struct MM_INTERFACE memoryManagerInterface;
+struct LIST_INTERFACE li;
 extern char szDbPath[MAX_PATH];
 
 HINSTANCE g_hInst=NULL;
@@ -41,7 +43,7 @@ static int getCapability( int flag )
 }
 
 // returns 0 if the profile is created, EMKPRF*
-static int makeDatabase(char * profile, int * error) 
+static int makeDatabase(char * profile, int * error)
 {
 	HANDLE hFile=CreateFile(profile, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
 	if ( hFile != INVALID_HANDLE_VALUE ) {
@@ -99,7 +101,7 @@ static int grokHeader( char * profile, int * error )
 	} else {
 		// didn't pass at all, or some did.
 		switch ( chk ) {
-			case 1: 
+			case 1:
 			{
 				// "Miranda ICQ DB" wasn't present
 				if ( error != NULL ) *error = EGROKPRF_UNKHEADER;
@@ -132,22 +134,46 @@ int LoadDatabase( char * profile, void * plink )
 #endif
 	// don't need thread notifications
 	strncpy(szDbPath, profile, sizeof(szDbPath));
+	szDbPath[sizeof(szDbPath)-1]=0;
 	// this is like Load()'s pluginLink
 	pluginLink=link;
 	// set the memory manager
 	memoryManagerInterface.cbSize=sizeof(struct MM_INTERFACE);
 	CallService(MS_SYSTEM_GET_MMI,0,(LPARAM)&memoryManagerInterface);
-	// inject all APIs and hooks into the core
+	// set the lists manager;
+	li.cbSize = sizeof( li );
+	if ( CallService(MS_SYSTEM_GET_LI,0,(LPARAM)&li) == CALLSERVICE_NOTFOUND )
+	{		//Will use local Lists implementation
+		li.List_Create   = NULL;
+		li.List_Destroy  = List_Destroy;
+		li.List_Find     = NULL;
+		li.List_GetIndex = List_GetIndex;
+		li.List_Insert   = List_Insert;
+		li.List_Remove   = List_Remove;
+		li.List_IndexOf  = NULL;
+	}
+	{
+		char *p;
+		strncpy(szDbDir,szDbPath,sizeof(szDbDir));
+		p = strrchr(szDbDir, '\\');
+		if ( p != NULL )
+			*(p+1)=0;
+		uiDbDirLen = strlen(szDbDir);
+
+		szDbDirUtf8 = Utf8Encode(szDbDir);
+		uiDbDirLenUtf8 = strlen(szDbDirUtf8);
+	}
 
 	extraOnLoad();
 
+	// inject all APIs and hooks into the core
 	return LoadDatabaseModule();
 }
-
 
 static int UnloadDatabase(int wasLoaded)
 {
 	if ( !wasLoaded) return 0;
+	mir_free(szDbDirUtf8);
 	UnloadDatabaseModule();
 	return 0;
 }
@@ -179,7 +205,7 @@ static DATABASELINK dblink = {
 	makeDatabase,
 	grokHeader,
 	LoadDatabase,
-	UnloadDatabase,	
+	UnloadDatabase,
 };
 
 static PLUGININFO pluginInfo = {

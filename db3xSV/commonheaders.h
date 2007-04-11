@@ -20,7 +20,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#include "../../src/core/AggressiveOptimize.h"
 
 #define _WIN32_WINNT 0x0501
 #include <windows.h>
@@ -53,11 +52,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <m_clist.h>
 
 extern PLUGINLINK *pluginLink;
-extern char gszMirandaDir[MAX_PATH];
-extern unsigned int giMirandaDirLen;
-
+extern char szMirandaDir[MAX_PATH];
+extern size_t uiMirandaDirLen;
+extern char szDbDir[MAX_PATH];
+extern size_t uiDbDirLen;
+extern char *szMirandaDirUtf8;
+extern size_t uiMirandaDirLenUtf8;
+extern char *szDbDirUtf8;
+extern size_t uiDbDirLenUtf8;
 
 extern struct MM_INTERFACE memoryManagerInterface;
+extern struct LIST_INTERFACE li;
 
 #define mir_alloc(n) memoryManagerInterface.mmi_malloc(n)
 #define mir_free(ptr) memoryManagerInterface.mmi_free(ptr)
@@ -70,4 +75,7 @@ extern struct MM_INTERFACE memoryManagerInterface;
 #endif
 
 
-#define DBVT_PATH   250	  //pszVal is valid
+#define DBVT_ASCIIZ_PATH    250	  //pszVal is valid
+#define DBVT_UTF8_PATH	    249	  //pszVal is valid
+#define DBVT_ASCIIZ_DB_PATH 248	  //pszVal is valid
+#define DBVT_UTF8_DB_PATH	247	  //pszVal is valid
