@@ -188,7 +188,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,5,1,6
+ FILEVERSION 0,5,1,7
  PRODUCTVERSION 0,5,1,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
@@ -206,14 +206,14 @@ BEGIN
         BEGIN
 #ifdef SECUREDB
             VALUE "FileDescription", "Miranda Virtualizable Secure db3x"
-            VALUE "FileVersion", "0, 5, 1, 6"
+            VALUE "FileVersion", "0, 5, 1, 7"
             VALUE "InternalName", "db3xVS"
             VALUE "LegalCopyright", "Copyright (C) 2006; Miranda team, Piotr Pawluczuk, YB, Pescuma"
             VALUE "OriginalFilename", "dbx_3xSV.dll"
             VALUE "ProductName", " db3xVS"
 #else
             VALUE "FileDescription", "Miranda Virtualizable db3x"
-            VALUE "FileVersion", "0, 5, 1, 6"
+            VALUE "FileVersion", "0, 5, 1, 7"
             VALUE "InternalName", "db3xV"
             VALUE "LegalCopyright", "Copyright (C) 2006; Miranda team, YB, Pescuma"
             VALUE "OriginalFilename", "dbx_3xV.dll"
@@ -237,9 +237,11 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 #ifdef SECUREDB
-IDI_ICON1               ICON                    "dbsec.ico"
-IDI_ICON2               ICON                    "delpw.ico"
-IDI_ICON3               ICON                    "newpw.ico"
+IDI_ICON1               ICON                    "SecureDB.ico"
+IDB_ICONS               BITMAP	DISCARDABLE	"VdbS.bmp"
+#else 
+IDI_ICON1               ICON                    "DB.ico"
+IDB_ICONS               BITMAP	DISCARDABLE	"Vdb.bmp"
 #endif
 #endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////

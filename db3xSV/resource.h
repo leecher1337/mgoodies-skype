@@ -111,8 +111,12 @@
   #define IDD_DIALOG1                     269
   #define IDI_ICON1                       270
   #define IDD_DIALOG2                     270
-  #define IDI_ICON2                       271
-  #define IDI_ICON3                       272
+  #define IDB_ICONS                        271
+  #define IDI_ICONV1                       271
+  #define IDI_ICONV2                       272
+  #define IDI_ICONV3                       273
+  #define IDI_ICON2                       274
+  #define IDI_ICON3                       275
 #define IDC_SAVE                        1001
 #define IDI_ONTHEPHONE                  1002
 #define IDC_MESSAGE                     1002

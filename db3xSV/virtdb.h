@@ -32,7 +32,16 @@ typedef struct {
 
 
 #define VirtualDBgranularity 4096
+#ifdef SECUREDB
+#define NUMICONS 5
+#define MENUNAME "DB extras"
+#else 
+#define NUMICONS 3
+#define MENUNAME "Virtual DB"
+#endif
 
+extern HICON iconList[NUMICONS];
+extern HICON mainIcon;
 extern BOOL isDBvirtual;
 extern DWORD virtualDBsize;
 extern HANDLE hDbFile;
