@@ -21,23 +21,23 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
+
+
 #include "commonheaders.h"
 #include "database.h"
-
-
-#define CACHESECTIONSIZE   4096
-#define CACHESECTIONCOUNT  32
+#ifdef SECUREDB
+  #include "SecureDB.h"
+#endif
+#include "virtdb.h"
 
 extern HANDLE hDbFile;
 extern CRITICAL_SECTION csDbAccess;
 
 static BOOL safetyMode=TRUE;
-static PBYTE pDbCache;
 static DWORD lastUseCounter;
-struct DBCacheSectionInfo {
-	DWORD ofsBase;
-	DWORD lastUsed;
-} static cacheSectionInfo[CACHESECTIONCOUNT];
+
+PBYTE pDbCache;
+struct DBCacheSectionInfo cacheSectionInfo[CACHESECTIONCOUNT];
 
 static __inline int FindSectionForOffset(const DWORD ofs)
 {
@@ -60,8 +60,13 @@ static __inline void LoadSection(const int i,DWORD ofs)
 {
 	cacheSectionInfo[i].ofsBase=ofs-ofs%CACHESECTIONSIZE;
 	log1("readsect %08x",ofs);
-	SetFilePointer(hDbFile,cacheSectionInfo[i].ofsBase,NULL,FILE_BEGIN);
-	ReadFile(hDbFile,pDbCache+i*CACHESECTIONSIZE,CACHESECTIONSIZE,&ofs,NULL);
+	VirtualSetFilePointer(hDbFile,cacheSectionInfo[i].ofsBase,NULL,FILE_BEGIN);
+#ifdef SECUREDB
+  	EncReadFile
+#else 
+	VirtualReadFile
+#endif
+		(hDbFile,pDbCache+i*CACHESECTIONSIZE,CACHESECTIONSIZE,&ofs,NULL);
 }
 
 static __inline void MoveSection(int *sectId,int dest)
@@ -138,8 +143,14 @@ void DBWrite(DWORD ofs,PVOID pData,int bytes)
 	int i;
 
 	log2("write %d@%08x",bytes,ofs);
-	SetFilePointer(hDbFile,ofs,NULL,FILE_BEGIN);
-	if (WriteFile(hDbFile,pData,bytes,&bytesWritten,NULL)==0)
+	VirtualSetFilePointer(hDbFile,ofs,NULL,FILE_BEGIN);
+	if (
+#ifdef SECUREDB
+  EncWriteFile
+#else
+  VirtualWriteFile
+#endif 
+  (hDbFile,pData,bytes,&bytesWritten,NULL)==0)
 	{
 		DatabaseCorruption();
 	}
@@ -168,8 +179,13 @@ void DBMoveChunk(DWORD ofsDest,DWORD ofsSource,int bytes)
 
 	log3("move %d %08x->%08x",bytes,ofsSource,ofsDest);
 	buf=(PBYTE)mir_alloc(bytes);
-	SetFilePointer(hDbFile,ofsSource,NULL,FILE_BEGIN);
-	ReadFile(hDbFile,buf,bytes,&bytesRead,NULL);
+	VirtualSetFilePointer(hDbFile,ofsSource,NULL,FILE_BEGIN);
+#ifdef SECUREDB
+  	EncReadFile
+#else
+	VirtualReadFile
+#endif
+		(hDbFile,buf,bytes,&bytesRead,NULL);
 	DBWrite(ofsDest,buf,bytes);
 	mir_free(buf);
 	logg();
@@ -180,7 +196,7 @@ static VOID CALLBACK DoBufferFlushTimerProc(HWND hwnd,UINT message,UINT idEvent,
 {
 	KillTimer(NULL,flushBuffersTimerId);
 	log0("tflush1");
-	FlushFileBuffers(hDbFile);
+	VirtualFlushFileBuffers(hDbFile);
 	log0("tflush2");
 }
 
@@ -188,7 +204,7 @@ void DBFlush(int setting)
 {
 	if(!setting) {
 		log0("nflush1");
-		if(safetyMode) FlushFileBuffers(hDbFile);
+		if(safetyMode) VirtualFlushFileBuffers(hDbFile);
 		log0("nflush2");
 		return;
 	}
@@ -201,7 +217,7 @@ static int CacheSetSafetyMode(WPARAM wParam,LPARAM lParam)
 	EnterCriticalSection(&csDbAccess);
 	safetyMode=wParam;
 	LeaveCriticalSection(&csDbAccess);
-	if(safetyMode) FlushFileBuffers(hDbFile);
+	if(safetyMode) VirtualFlushFileBuffers(hDbFile);
 	return 0;
 }
 
@@ -216,8 +232,13 @@ int InitCache(void)
 	for(i=0;i<CACHESECTIONCOUNT;i++) {
 		cacheSectionInfo[i].ofsBase=0;
 		cacheSectionInfo[i].lastUsed=i;
-		SetFilePointer(hDbFile,cacheSectionInfo[i].ofsBase,NULL,FILE_BEGIN);
-		ReadFile(hDbFile,pDbCache+i*CACHESECTIONSIZE,CACHESECTIONSIZE,&bytesRead,NULL);
+		VirtualSetFilePointer(hDbFile,cacheSectionInfo[i].ofsBase,NULL,FILE_BEGIN);
+#ifdef SECUREDB
+  		EncReadFile
+#else
+		VirtualReadFile
+#endif
+			(hDbFile,pDbCache+i*CACHESECTIONSIZE,CACHESECTIONSIZE,&bytesRead,NULL);
 	}
 	return 0;
 }

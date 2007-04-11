@@ -48,7 +48,7 @@ DBHeader
 */
 
 #define DB_RESIZE_GRANULARITY    16384
-#define DB_THIS_VERSION          0x00000700u
+#define DB_THIS_VERSION          (0x00000700u)
 #define DB_SETTINGS_RESIZE_GRANULARITY  128
 
 #include <pshpack1.h>
@@ -161,6 +161,13 @@ typedef struct
 	DBCachedContactValue* first;
 } DBCachedContactValueList;
 
+struct DBCacheSectionInfo {
+	DWORD ofsBase;
+	DWORD lastUsed;
+};
+
+#define CACHESECTIONSIZE   4096
+#define CACHESECTIONCOUNT  32
 
 //databasecorruption: called if any signatures are broken. very very fatal
 void DatabaseCorruption(void);
@@ -173,7 +180,11 @@ void DeleteSpace(DWORD ofs,int bytes);
 void GetProfileDirectory(char *szPath,int cbPath);
 int GetDefaultProfilePath(char *szPath,int cbPath,int *specified);
 int ShouldShowProfileManager(void);
-int CheckDbHeaders(struct DBHeader * hdr);
+#ifdef SECUREDB
+  int CheckDbHeaders(struct DBHeader * hdr,long* secure);
+#else
+  int CheckDbHeaders(struct DBHeader * hdr);
+#endif
 int CreateDbHeaders(HANDLE hFile);
 int LoadDatabaseModule(void);
 void UnloadDatabaseModule(void);

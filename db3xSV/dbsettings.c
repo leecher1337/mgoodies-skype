@@ -267,7 +267,7 @@ static DBVARIANT* GetCachedValuePtr( HANDLE hContact, char* szSetting, int bAllo
 
 #define NeedBytes(n)   if(bytesRemaining<(n)) pBlob=(PBYTE)DBRead(ofsBlobPtr,(n),&bytesRemaining)
 #define MoveAlong(n)   {int x=n; pBlob+=(x); ofsBlobPtr+=(x); bytesRemaining-=(x);}
-#define VLT(n) ((n==DBVT_UTF8)?DBVT_ASCIIZ:n)
+#define VLT(n) (((n==DBVT_UTF8)||(n==DBVT_PATH))?DBVT_ASCIIZ:n)
 static __inline int GetContactSettingWorker(HANDLE hContact,DBCONTACTGETSETTING *dbcgs,int isStatic)
 {
 	struct DBContact dbc;
@@ -356,6 +356,40 @@ static __inline int GetContactSettingWorker(HANDLE hContact,DBCONTACTGETSETTING 
 					case DBVT_BYTE: dbcgs->pValue->bVal=pBlob[1]; break;
 					case DBVT_WORD: dbcgs->pValue->wVal=*(PWORD)(pBlob+1); break;
 					case DBVT_DWORD: dbcgs->pValue->dVal=*(PDWORD)(pBlob+1); break;
+					case DBVT_PATH:
+						// For cache / outter world, this is a asciiz
+						dbcgs->pValue->type=DBVT_ASCIIZ;
+
+						NeedBytes(3+*(PWORD)(pBlob+1));
+						if(isStatic) {
+							dbcgs->pValue->cchVal--;
+
+							if(*(PWORD)(pBlob+1) + giMirandaDirLen < dbcgs->pValue->cchVal)
+									dbcgs->pValue->cchVal = *(PWORD)(pBlob+1) + giMirandaDirLen;
+
+
+							if (dbcgs->pValue->cchVal <= giMirandaDirLen)
+							{
+								CopyMemory(dbcgs->pValue->pszVal, gszMirandaDir, dbcgs->pValue->cchVal);
+							}
+							else
+							{
+								CopyMemory(dbcgs->pValue->pszVal, gszMirandaDir, giMirandaDirLen);
+								CopyMemory(dbcgs->pValue->pszVal + giMirandaDirLen, pBlob+3,
+										dbcgs->pValue->cchVal - giMirandaDirLen);
+							}
+
+							dbcgs->pValue->pszVal[dbcgs->pValue->cchVal]=0;
+							dbcgs->pValue->cchVal=*(PWORD)(pBlob+1) + giMirandaDirLen;
+						}
+						else
+						{
+							dbcgs->pValue->pszVal=(char*)mir_alloc(1+*(PWORD)(pBlob+1)+giMirandaDirLen);
+							CopyMemory(dbcgs->pValue->pszVal,gszMirandaDir,giMirandaDirLen);
+							CopyMemory(dbcgs->pValue->pszVal+giMirandaDirLen,pBlob+3,*(PWORD)(pBlob+1));
+							dbcgs->pValue->pszVal[giMirandaDirLen+*(PWORD)(pBlob+1)]=0;
+						}
+						break;
 					case DBVT_UTF8:
 					case DBVT_ASCIIZ:
 						NeedBytes(3+*(PWORD)(pBlob+1));
@@ -499,6 +533,7 @@ static int FreeVariant(WPARAM wParam,LPARAM lParam)
 	DBVARIANT *dbv=(DBVARIANT*)lParam;
 	if ( dbv == 0 ) return 1;
 	switch ( dbv->type ) {
+		case DBVT_PATH:
 		case DBVT_ASCIIZ:
 		case DBVT_UTF8:
 		case DBVT_WCHAR:
@@ -528,6 +563,7 @@ static int WriteContactSetting(WPARAM wParam,LPARAM lParam)
 	int settingNameLen=0;
 	int moduleNameLen=0;
 	int settingDataLen=0;
+	char szTmpPath[MAX_PATH];
 
 	int bytesRequired,bytesRemaining;
 	DWORD ofsContact,ofsSettingsGroup,ofsBlobPtr;	
@@ -634,11 +670,21 @@ static int WriteContactSetting(WPARAM wParam,LPARAM lParam)
 		return 1;
 	}
 	log0("write setting");
+
+	if ( dbcws->value.type == DBVT_ASCIIZ && strnicmp(gszMirandaDir, dbcws->value.pszVal, giMirandaDirLen) == 0
+		&& strlen(dbcws->value.pszVal) < MAX_PATH )
+	{
+		strcpy(szTmpPath, &dbcws->value.pszVal[giMirandaDirLen]);
+		dbcws->value.pszVal = szTmpPath;
+		dbcws->value.type = DBVT_PATH;
+	}
+
+
 	//make sure the module group exists
 	ofsSettingsGroup=GetSettingsGroupOfsByModuleNameOfs(&dbc,ofsContact,ofsModuleName);
 	if(ofsSettingsGroup==0) {  //module group didn't exist - make it
 		if(dbcws->value.type&DBVTF_VARIABLELENGTH) {
-		  if(dbcws->value.type==DBVT_ASCIIZ || dbcws->value.type==DBVT_UTF8) bytesRequired=strlen(dbcws->value.pszVal)+2;
+ 		  if(dbcws->value.type==DBVT_ASCIIZ || dbcws->value.type==DBVT_UTF8 || dbcws->value.type==DBVT_PATH) bytesRequired=strlen(dbcws->value.pszVal)+2;
 		  else if(dbcws->value.type==DBVT_BLOB) bytesRequired=dbcws->value.cpbVal+2;
 		}
 		else bytesRequired=dbcws->value.type;
@@ -675,7 +721,7 @@ static int WriteContactSetting(WPARAM wParam,LPARAM lParam)
 			MoveAlong(1+settingNameLen);
 			//if different type or variable length and length is different
 			NeedBytes(3);
-			if(pBlob[0]!=dbcws->value.type || ((pBlob[0]==DBVT_ASCIIZ || pBlob[0]==DBVT_UTF8) && *(PWORD)(pBlob+1)!=strlen(dbcws->value.pszVal)) || (pBlob[0]==DBVT_BLOB && *(PWORD)(pBlob+1)!=dbcws->value.cpbVal)) {
+ 			if(pBlob[0]!=dbcws->value.type || ((pBlob[0]==DBVT_ASCIIZ || pBlob[0]==DBVT_UTF8 || pBlob[0]==DBVT_PATH) && *(PWORD)(pBlob+1)!=strlen(dbcws->value.pszVal)) || (pBlob[0]==DBVT_BLOB && *(PWORD)(pBlob+1)!=dbcws->value.cpbVal)) {
 				//bin it
 				int nameLen,valLen;
 				DWORD ofsSettingToCut;
@@ -702,6 +748,7 @@ static int WriteContactSetting(WPARAM wParam,LPARAM lParam)
 					case DBVT_BYTE: DBWrite(ofsBlobPtr,&dbcws->value.bVal,1); break;
 					case DBVT_WORD: DBWrite(ofsBlobPtr,&dbcws->value.wVal,2); break;
 					case DBVT_DWORD: DBWrite(ofsBlobPtr,&dbcws->value.dVal,4); break;
+					case DBVT_PATH:
 					case DBVT_UTF8:
 					case DBVT_ASCIIZ: DBWrite(ofsBlobPtr+2,dbcws->value.pszVal,strlen(dbcws->value.pszVal)); break;
 					case DBVT_BLOB: DBWrite(ofsBlobPtr+2,dbcws->value.pbVal,dbcws->value.cpbVal); break;
@@ -719,7 +766,7 @@ static int WriteContactSetting(WPARAM wParam,LPARAM lParam)
 	//pBlob already points to end of list
 	//see if it fits
 	if(dbcws->value.type&DBVTF_VARIABLELENGTH) {
-	  if(dbcws->value.type==DBVT_ASCIIZ || dbcws->value.type==DBVT_UTF8) bytesRequired=strlen(dbcws->value.pszVal)+2;
+ 	  if(dbcws->value.type==DBVT_ASCIIZ || dbcws->value.type==DBVT_UTF8 || dbcws->value.type==DBVT_PATH) bytesRequired=strlen(dbcws->value.pszVal)+2;
 	  else if(dbcws->value.type==DBVT_BLOB) bytesRequired=dbcws->value.cpbVal+2;
 	}
 	else bytesRequired=dbcws->value.type;
@@ -774,6 +821,7 @@ static int WriteContactSetting(WPARAM wParam,LPARAM lParam)
 		case DBVT_BYTE: DBWrite(ofsBlobPtr,&dbcws->value.bVal,1); MoveAlong(1); break;
 		case DBVT_WORD: DBWrite(ofsBlobPtr,&dbcws->value.wVal,2); MoveAlong(2); break;
 		case DBVT_DWORD: DBWrite(ofsBlobPtr,&dbcws->value.dVal,4); MoveAlong(4); break;
+		case DBVT_PATH:
 		case DBVT_UTF8:
 		case DBVT_ASCIIZ:
 			{	int len=strlen(dbcws->value.pszVal);

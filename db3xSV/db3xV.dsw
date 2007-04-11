@@ -3,7 +3,31 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "db3x"=.\db3x.dsp - Package Owner=<4>
+Project: "db3xV"=".\db3xV.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "db3xSV"=".\db3xSV.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "VDBTest"=".\VDBTest\VDBTest.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{

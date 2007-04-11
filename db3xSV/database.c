@@ -22,6 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "commonheaders.h"
 #include "database.h"
+#ifdef SECUREDB
+  #include "SecureDB.h"
+#endif
+#include "virtdb.h"
 
 int ProfileManager(char *szDbDest,int cbDbDest);
 int ShouldAutoCreate(void);
@@ -49,7 +53,8 @@ char szDbPath[MAX_PATH];
 
 static void UnloadDatabase(void)
 {
-	CloseHandle(hDbFile);
+	if (isDBvirtual) free(virtualdb);
+	else CloseHandle(hDbFile);
 }
 
 DWORD CreateNewSpace(int bytes)
@@ -108,6 +113,11 @@ static int GetProfilePath(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+
+char gszMirandaDir[MAX_PATH];
+unsigned int giMirandaDirLen;
+
+
 int LoadDatabaseModule(void)
 {
 	InitializeCriticalSection(&csDbAccess);
@@ -118,11 +128,30 @@ int LoadDatabaseModule(void)
 		if ( hDbFile == INVALID_HANDLE_VALUE ) {
 			return 1;
 		}
-		if ( !ReadFile(hDbFile,&dbHeader,sizeof(dbHeader),&dummy,NULL) ) {
+		if ( !
+#ifdef SECUREDB
+			  EncReadFile
+#else
+			  ReadFile
+#endif
+			  (hDbFile,&dbHeader,sizeof(dbHeader),&dummy,NULL) ) {
 			CloseHandle(hDbFile);
 			return 1;
 		}
 	}
+
+	{
+		char *str2;
+		GetModuleFileName(GetModuleHandle(NULL),gszMirandaDir,sizeof(gszMirandaDir));
+		str2=strrchr(gszMirandaDir,'\\');
+		if(str2!=NULL)
+		{
+			str2++;
+			*str2=0;
+		}
+		giMirandaDirLen = strlen(gszMirandaDir);
+	}
+
 	//if(ParseCommandLine()) return 1;
 	if(InitCache()) return 1;
 	if(InitModuleNames()) return 1;
@@ -134,6 +163,8 @@ int LoadDatabaseModule(void)
 	//if(InitIni()) return 1;
 	CreateServiceFunction(MS_DB_GETPROFILENAME,GetProfileName);
 	CreateServiceFunction(MS_DB_GETPROFILEPATH,GetProfilePath);
+	parseIniSettings();
+	if (virtOnBoot) virtualizeDB();
 	return 0;
 }
 

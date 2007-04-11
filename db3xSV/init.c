@@ -23,6 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "commonheaders.h"
 #include "database.h"
+#ifdef SECUREDB
+  #include "SecureDB.h"
+#endif
+#include "initmenu.h"
 #include <m_plugins.h>
 
 struct MM_INTERFACE memoryManagerInterface;
@@ -54,22 +58,44 @@ static int grokHeader( char * profile, int * error )
 {
 	int rc=1;
 	int chk=0;
+#ifdef SECUREDB
+  	int sec=0;
+#endif
 	struct DBHeader hdr;
 	HANDLE hFile = INVALID_HANDLE_VALUE;
-	DWORD dummy=0;	
+	DWORD dummy=0;
 
 	hFile = CreateFile(profile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 	if ( hFile == INVALID_HANDLE_VALUE ) { 		
 		if ( error != NULL ) *error=EGROKPRF_CANTREAD;
 		return 1;
 	}
+
 	// read the header, which can fail (for various reasons)
-	if ( !ReadFile(hFile, &hdr, sizeof(struct DBHeader), &dummy, NULL) ) {
+	if ( !
+#ifdef SECUREDB
+		EncReadFile
+#else
+		ReadFile //Yes! Not VirtualReadFile
+#endif
+          (hFile, &hdr, sizeof(struct DBHeader), &dummy, NULL) ) {
 		if ( error != NULL) *error=EGROKPRF_CANTREAD;
 		CloseHandle(hFile);
 		return 1;
 	}
-	chk=CheckDbHeaders(&hdr);
+
+	chk=CheckDbHeaders(&hdr
+#ifdef SECUREDB
+	  ,&sec
+#endif
+	  );
+
+#ifdef SECUREDB
+	if(sec && EncGetPassword(&hdr,profile)){
+		return 1;
+	}
+#endif
+
 	if ( chk == 0 ) {
 		// all the internal tests passed, hurrah
 		rc=0;
@@ -102,22 +128,26 @@ static int grokHeader( char * profile, int * error )
 }
 
 // returns 0 if all the APIs are injected otherwise, 1
-static int LoadDatabase( char * profile, void * plink )
+int LoadDatabase( char * profile, void * plink )
 {
-	PLUGINLINK *link = plink;
 #ifdef _DEBUG
 	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif	
+#endif
+	//PLUGINLINK *link = (PLUGINLINK*)plink;
 	// don't need thread notifications
 	strncpy(szDbPath, profile, sizeof(szDbPath));
 	// this is like Load()'s pluginLink
-	pluginLink=link;
+	pluginLink=plink;
 	// set the memory manager
 	memoryManagerInterface.cbSize=sizeof(struct MM_INTERFACE);
 	CallService(MS_SYSTEM_GET_MMI,0,(LPARAM)&memoryManagerInterface);
 	// inject all APIs and hooks into the core
+
+	extraOnLoad();
+
 	return LoadDatabaseModule();
 }
+
 
 static int UnloadDatabase(int wasLoaded)
 {
@@ -128,7 +158,20 @@ static int UnloadDatabase(int wasLoaded)
 
 static int getFriendlyName( char * buf, size_t cch, int shortName )
 {
-	strncpy(buf,shortName ? "Miranda database" : "Miranda database support",cch);
+	strncpy(buf,shortName ? 
+
+#ifdef SECUREDB
+	"Miranda VirtSecDB"
+#else
+	"Miranda VirtualDB"
+#endif
+	: 
+#ifdef SECUREDB
+	"Miranda Virtualizable SecureDB support"
+#else
+	"Miranda Virtualizable database support"
+#endif
+	,cch);
 	return 0;
 }
 
@@ -145,13 +188,24 @@ static DATABASELINK dblink = {
 
 static PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
-	"Miranda database driver",
+#ifdef SECUREDB
+	"Miranda Virtualizable SecureDB driver",
+#else
+	"Miranda Virtualizable database driver",
+#endif
 	PLUGIN_MAKE_VERSION(0,5,1,0),
-	"Provides Miranda database support: global settings, contacts, history, settings per contact.",
-	"Miranda-IM project",
-	"egodust@users.sourceforge.net",
-	"Copyright 2000-2005 Miranda-IM project",
-	"",
+#ifdef SECUREDB
+	"Provides Miranda database support: encryption, virtualisation, global settings, contacts, history, settings per contact, optimized paths.",
+	"Miranda-IM project; YB; Piotr Pawluczuk; Pescuma",
+	"yb@saaplugin.no-ip.info",
+	"Copyright 2000-2005 Miranda-IM project; Piotr Pawluczuk; YB; Pescuma",
+#else
+	"Provides Miranda database support: virtualisation, global settings, contacts, history, settings per contact, optimized paths.",
+	"Miranda-IM project; YB; Pescuma",
+	"yb@saaplugin.no-ip.info; piotrek@piopawlu.net",
+	"Copyright 2000-2005 Miranda-IM project; YB; Pescuma",
+#endif
+	"http://saaplugin.no-ip.info/db3xV/",
 	0,
 	DEFMOD_DB
 };
