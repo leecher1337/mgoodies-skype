@@ -4,7 +4,7 @@
 	#include "SecureDB.h"
 #endif
 
-#include "../../protocols/IcqOscarJ/m_icolib.h"
+#include <m_icolib.h>
 
 extern HINSTANCE g_hInst;
 static char *iconNames[NUMICONS]={"DB_Virt","DB_Real","DB_Save"

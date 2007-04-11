@@ -167,7 +167,7 @@ int LoadDatabaseModule(void)
 			*(p+1)=0;
 		uiMirandaDirLen = strlen(szMirandaDir);
 
-		szMirandaDirUtf8 = Utf8Encode(szMirandaDir);
+		szMirandaDirUtf8 = mir_utf8encode(szMirandaDir);
 		uiMirandaDirLenUtf8 = strlen(szMirandaDirUtf8);
 	}
 

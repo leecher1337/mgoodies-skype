@@ -2,8 +2,8 @@
 
 Miranda IM: the free IM client for Microsoft* Windows*
 
-Copyright 2000-2003 Miranda ICQ/IM project, 
-all portions of this codebase are copyrighted to the people 
+Copyright 2000-2003 Miranda ICQ/IM project,
+all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
 This program is free software; you can redistribute it and/or
@@ -55,14 +55,35 @@ void UninitContacts(void)
 {
 }
 
+int GetContactSettingStatic(WPARAM wParam,LPARAM lParam);
+
 static int GetContactCount(WPARAM wParam,LPARAM lParam)
 {
 	int ret;
-	
+
 	EnterCriticalSection(&csDbAccess);
 	ret=dbHeader.contactCount;
 	LeaveCriticalSection(&csDbAccess);
 	return ret;
+}
+
+#define proto_module  "Protocol"
+#define proto_setting "p"
+
+static int CheckProto(HANDLE hContact, const char *proto)
+{
+	static char protobuf[MAX_PATH] = {0};
+	static DBVARIANT dbv;
+	static DBCONTACTGETSETTING sVal = {proto_module,proto_setting,&dbv};
+
+ 	dbv.type = DBVT_ASCIIZ;
+	dbv.pszVal = protobuf;
+	dbv.cchVal = sizeof(protobuf);
+
+	if (GetContactSettingStatic((WPARAM)hContact, (LPARAM )&sVal) != 0
+		|| (dbv.type != DBVT_ASCIIZ)) return 0;
+
+	return !strcmp(protobuf,proto);
 }
 
 static int FindFirstContact(WPARAM wParam,LPARAM lParam)
@@ -70,41 +91,50 @@ static int FindFirstContact(WPARAM wParam,LPARAM lParam)
 	int ret = 0;
 	EnterCriticalSection(&csDbAccess);
 	ret = (int)(HANDLE)dbHeader.ofsFirstContact;
+	if (lParam && !CheckProto((HANDLE)ret,(const char*)lParam))
+		ret = FindNextContact((WPARAM)ret,lParam);
 	LeaveCriticalSection(&csDbAccess);
 	return ret;
 }
 
 static int FindNextContact(WPARAM wParam,LPARAM lParam)
 {
-	int ret, index;
+	int index;
 	struct DBContact *dbc;
-	DBCachedContactValueList *VL = NULL;
-	
+	DBCachedContactValueList VLtemp, *VL = NULL;
+	VLtemp.hContact = (HANDLE)wParam;
 	EnterCriticalSection(&csDbAccess);
-	{
-		DBCachedContactValueList VLtemp;
-		VLtemp.hContact = (HANDLE)wParam;
+	while ( VLtemp.hContact ) {
 		if ( li.List_GetIndex(&lContacts,&VLtemp,&index)) {
 			VL = ( DBCachedContactValueList* )lContacts.items[index];
-			if ( VL->hNext != NULL ) {
+			if (VL->hNext != NULL) {
+				if (!lParam || CheckProto(VL->hNext,(const char*)lParam)) {
+					LeaveCriticalSection(&csDbAccess);
+					return (int)VL->hNext;
+				}
+
+				VLtemp.hContact = VL->hNext;
+				continue;
+		}	}
+
+		dbc=(struct DBContact*)DBRead((DWORD)VLtemp.hContact,sizeof(struct DBContact),NULL);
+		if (dbc->signature!=DBCONTACT_SIGNATURE)
+			break;
+		else {
+			if ( VL == NULL ) {
+				VL = (DBCachedContactValueList*)HeapAlloc(hCacheHeap,HEAP_ZERO_MEMORY,sizeof(DBCachedContactValueList));
+				VL->hContact = VLtemp.hContact;
+				li.List_Insert(&lContacts,VL,index);
+			}
+			VL->hNext = (HANDLE)dbc->ofsNext;
+			if (VL->hNext != NULL && (!lParam || CheckProto(VL->hNext,(const char*)lParam))) {
 				LeaveCriticalSection(&csDbAccess);
 				return (int)VL->hNext;
-	}	}	}
-
-	dbc=(struct DBContact*)DBRead(wParam,sizeof(struct DBContact),NULL);
-	if(dbc->signature!=DBCONTACT_SIGNATURE)
-		ret=(int)(HANDLE)NULL;
-	else {
-		if ( VL == NULL ) {
-			VL = (DBCachedContactValueList*)HeapAlloc(hCacheHeap,HEAP_NO_SERIALIZE+HEAP_ZERO_MEMORY,sizeof(DBCachedContactValueList));
-			VL->hContact = (HANDLE)wParam;
-			li.List_Insert(&lContacts,VL,index);
-		}
-		VL->hNext = (HANDLE)dbc->ofsNext;
-		ret=(int)(HANDLE)dbc->ofsNext;
-	}
+			}
+			VLtemp.hContact = VL->hNext;
+	}	}
 	LeaveCriticalSection(&csDbAccess);
-	return ret;
+	return 0;
 }
 
 static int DeleteContact(WPARAM wParam,LPARAM lParam)
@@ -114,7 +144,7 @@ static int DeleteContact(WPARAM wParam,LPARAM lParam)
 	struct DBContactSettings *dbcs;
 	struct DBEvent *dbe;
 	int index;
-	
+
 	if((HANDLE)wParam==NULL) return 1;
 	EnterCriticalSection(&csDbAccess);
 	dbc=(struct DBContact*)DBRead(wParam,sizeof(struct DBContact),NULL);
@@ -143,11 +173,11 @@ static int DeleteContact(WPARAM wParam,LPARAM lParam)
 			while ( V != NULL ) {
 				DBCachedContactValue* V1 = V->next;
 				if ( V->value.type == DBVT_ASCIIZ )
-					HeapFree( hCacheHeap, HEAP_NO_SERIALIZE, V->value.pszVal );
-				HeapFree( hCacheHeap, HEAP_NO_SERIALIZE, V );
+					HeapFree( hCacheHeap, 0, V->value.pszVal );
+				HeapFree( hCacheHeap, 0, V );
 				V = V1;
 			}
-			HeapFree( hCacheHeap, HEAP_NO_SERIALIZE, VL );
+			HeapFree( hCacheHeap, 0, VL );
 
 			li.List_Remove(&lContacts,index);
 	}	}
@@ -230,7 +260,7 @@ static int AddContact(WPARAM wParam,LPARAM lParam)
 
 	{	int index;
 
-		DBCachedContactValueList *VL = (DBCachedContactValueList*)HeapAlloc(hCacheHeap,HEAP_NO_SERIALIZE+HEAP_ZERO_MEMORY,sizeof(DBCachedContactValueList));
+		DBCachedContactValueList *VL = (DBCachedContactValueList*)HeapAlloc(hCacheHeap,HEAP_ZERO_MEMORY,sizeof(DBCachedContactValueList));
 		VL->hContact = (HANDLE)ofsNew;
 
 		li.List_GetIndex(&lContacts,VL,&index);
@@ -240,7 +270,7 @@ static int AddContact(WPARAM wParam,LPARAM lParam)
 	LeaveCriticalSection(&csDbAccess);
 	NotifyEventHooks(hContactAddedEvent,(WPARAM)ofsNew,0);
 	return (int)ofsNew;
-} 
+}
 
 static int IsDbContact(WPARAM wParam,LPARAM lParam)
 {
@@ -260,7 +290,7 @@ static int IsDbContact(WPARAM wParam,LPARAM lParam)
 			ret=dbc.signature==DBCONTACT_SIGNATURE;
 
 			if (ret) {
-				VL = (DBCachedContactValueList*)HeapAlloc(hCacheHeap,HEAP_NO_SERIALIZE+HEAP_ZERO_MEMORY,sizeof(DBCachedContactValueList));
+				VL = (DBCachedContactValueList*)HeapAlloc(hCacheHeap,HEAP_ZERO_MEMORY,sizeof(DBCachedContactValueList));
 				VL->hContact = (HANDLE)wParam;
 				li.List_Insert(&lContacts,VL,index);
 	}	}	}

@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 /////////////////////////////////////////////////////////////////////////////////////////
 // Utf8Decode - converts UTF8-encoded string to the UCS2/MBCS format
 
-void Utf8Decode( char* str, wchar_t** ucs2 )
+void deprecatedUtf8Decode( char* str, wchar_t** ucs2 )
 {
 	int len;
 	wchar_t* tempBuf;
@@ -87,7 +87,7 @@ void Utf8Decode( char* str, wchar_t** ucs2 )
 /////////////////////////////////////////////////////////////////////////////////////////
 // Utf8Encode - converts MBCS string to the UTF8-encoded format
 
-char* Utf8Encode( const char* src )
+char* deprecatedUtf8Encode( const char* src )
 {
 	int len;
 	char* result;
@@ -133,7 +133,7 @@ char* Utf8Encode( const char* src )
 /////////////////////////////////////////////////////////////////////////////////////////
 // Utf8Encode - converts UCS2 string to the UTF8-encoded format
 
-char* Utf8EncodeUcs2( const wchar_t* src )
+char* deprecatedUtf8EncodeW( const wchar_t* src )
 {
 	int len = wcslen( src );
 	char* result = ( char* )mir_alloc( len*3 + 1 );
