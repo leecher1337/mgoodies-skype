@@ -15,6 +15,8 @@ short int virtOnBoot = 1;// - yes
 short int realOnExit = 2;// - ask
 short int disableMenu= 0;// - no
 
+static DB_VIRTUAL_RESULT dbResult;
+
  HANDLE hOnExitHook = NULL;
 
 
@@ -44,26 +46,65 @@ BOOL virtualizeDB()
 BOOL writeMemToFile(char * filename, boolean leaveOpen){
 	DWORD i;
 	DWORD bytesRead;
+	DWORD fileSize;
+	DWORD courFilePos;
+	char buff[VirtualDBgranularity];
 	extern CRITICAL_SECTION csDbAccess;
 	boolean result = TRUE;
-	hDbFile=CreateFile(filename,GENERIC_READ|GENERIC_WRITE,FILE_SHARE_READ,NULL,CREATE_ALWAYS,0,NULL);
+	if (dbResult.cbSize) {
+		strncpy(dbResult.szFileName,filename,dbResult.szFileNameSize);
+		dbResult.blTotal = numVirtualBlocks;
+		dbResult.blWritten = 0;
+		dbResult.imageSize = virtualDBsize;
+		dbResult.errState = DB_VIRTUAL_ERR_SUCCESS;
+	}
+	hDbFile=CreateFile(filename,GENERIC_READ|GENERIC_WRITE,FILE_SHARE_READ,NULL,OPEN_ALWAYS,0,NULL);
 	if (hDbFile == INVALID_HANDLE_VALUE) {
-		char messg[MAX_PATH+200];
-		sprintf(messg,Translate("Unable to realize DB to %s"),filename);
-		MessageBox(NULL,messg,Translate("Miranda IM Profile Virtual Database"),MB_OK|MB_ICONINFORMATION); 
+		if (dbResult.cbSize) {
+			dbResult.blWritten = 0;
+			dbResult.errState = DB_VIRTUAL_ERR_ACCESS; // failed to open file
+		} else {
+			char messg[MAX_PATH+200];
+			sprintf(messg,Translate("Unable to realize DB to %s"),filename);
+			MessageBox(NULL,messg,Translate("Miranda IM Profile Virtual Database"),MB_OK|MB_ICONINFORMATION); 
+		}
 		return FALSE;
 	}
 	EnterCriticalSection(&csDbAccess);
+	fileSize = GetFileSize(hDbFile,&i);
 	for (i=0;i<numVirtualBlocks;i++){
+		boolean willWrite;
+		courFilePos = i*VirtualDBgranularity;
 		bytesRead = ((i+1)*VirtualDBgranularity>virtualDBsize)?(virtualDBsize-i*VirtualDBgranularity):VirtualDBgranularity;
-		if (!WriteFile(hDbFile,virtualdb+i*VirtualDBgranularity,bytesRead, &bytesRead,NULL)) {
-			char messg[MAX_PATH+200];
-			result = FALSE;
-			sprintf(messg,Translate("Error writing DB to %s"),filename);
-			MessageBox(NULL,messg,Translate("Miranda IM Profile Virtual Database"),MB_OK|MB_ICONINFORMATION); 
-			i = numVirtualBlocks; // urgent exit from the cicle ;)
+		if ((courFilePos+bytesRead)<=fileSize){
+			DWORD bytesActuallyRead;
+			ReadFile(hDbFile, buff,bytesRead,&bytesActuallyRead,NULL);
+			if (memcmp(buff,virtualdb+courFilePos,bytesRead)){
+				// the block is not equal. will be overwritten
+				SetFilePointer( hDbFile,courFilePos,NULL,FILE_BEGIN); // turnback the file pointer
+				willWrite= TRUE;
+			} else willWrite=FALSE; // the block is equal;
+		} else willWrite = TRUE;//the file is smaller - will append the data;
+		if (willWrite) {
+			if (!WriteFile(hDbFile,virtualdb+courFilePos,bytesRead, &bytesRead,NULL)) {
+				if (dbResult.cbSize) {
+					dbResult.errState = DB_VIRTUAL_ERR_PARTIAL;
+				} else {
+					char messg[MAX_PATH+200];
+					result = FALSE;
+					sprintf(messg,Translate("Error writing DB to %s"),filename);
+					MessageBox(NULL,messg,Translate("Miranda IM Profile Virtual Database"),MB_OK|MB_ICONINFORMATION); 
+				}
+				i = numVirtualBlocks; // urgent exit from the cicle ;)
+			} else {
+				//the block was successfuly written
+				if (dbResult.cbSize) {
+					dbResult.blWritten++;
+				}
+			}
 		}
 	}
+	if (fileSize>virtualDBsize)SetEndOfFile(hDbFile);// trunkating the file if it was bigger by some reason
 	LeaveCriticalSection(&csDbAccess);
 	if (!leaveOpen) CloseHandle(hDbFile);
 	return result;
@@ -97,6 +138,7 @@ BOOL realizeDB()
 	if (isDBvirtual){
 		if (writeMemToFile (szDbPath, TRUE)){
 			free(virtualdb);
+			virtualDBsize = 0;
 			return isDBvirtual = FALSE;
 		};
 	}
@@ -194,6 +236,13 @@ int virtualizeService(WPARAM wParam, LPARAM lParam){
 	// wParam: else: do nothing.
 	// lParam is not used;
 	// returns the virtual state;
+	if (lParam){
+		memcpy(&dbResult,(DB_VIRTUAL_RESULT *)lParam,sizeof(dbResult));
+		dbResult.blTotal = numVirtualBlocks;
+		dbResult.blWritten = 0;
+		dbResult.errState = DB_VIRTUAL_ERR_SUCCESS;
+		strncpy(dbResult.szFileName,szDbPath,dbResult.szFileNameSize);
+	} else dbResult.cbSize = 0;
 	switch (wParam) {
 		case 0 :
 			if (isDBvirtual){
@@ -206,6 +255,11 @@ int virtualizeService(WPARAM wParam, LPARAM lParam){
 		case 2 : realizeDB(); break;
 	}
 	updateMenus();
+	if (dbResult.cbSize) {
+		dbResult.imageSize = virtualDBsize ;
+		memcpy((DB_VIRTUAL_RESULT *)lParam,&dbResult,dbResult.cbSize);
+	}
+	dbResult.cbSize=0;
 	return isDBvirtual;
 }
 
@@ -215,6 +269,10 @@ int saveFileService(WPARAM wParam, LPARAM lParam){
 // wParam: char *: the filename
 // lParam is not used
 // returns TRUE on success; FALSE on error
+	int ret = 0;
+	if (lParam){
+		memcpy(&dbResult,(DB_VIRTUAL_RESULT *)lParam,sizeof(dbResult));
+	} else dbResult.cbSize = 0;
 	if (isDBvirtual) {
 		if (!wParam){
 		//extern HINSTANCE g_hInst;
@@ -229,15 +287,35 @@ int saveFileService(WPARAM wParam, LPARAM lParam){
 			ofn.nMaxFile = sizeof(str);
 			ofn.nMaxFileTitle = MAX_PATH;
 			ofn.lpstrDefExt = "dat";
-			if(GetSaveFileName(&ofn)) return writeMemToFile(str, FALSE);
-			else return FALSE;
+			if(GetSaveFileName(&ofn)) {
+				ret = writeMemToFile(str, FALSE);
+			} else {
+				ret = FALSE;
+				if (dbResult.cbSize) {
+					dbResult.errState = DB_VIRTUAL_ERR_NOFILE;
+					dbResult.blTotal = numVirtualBlocks;
+					dbResult.blWritten = 0;
+					dbResult.imageSize = virtualDBsize ;
+				}
+			}
 		} else if(wParam==-1) {
-			return writeMemToFile(szDbPath, FALSE);
+			ret = writeMemToFile(szDbPath, FALSE);
 		} else {
-			return writeMemToFile((char *)wParam, FALSE);
+			ret = writeMemToFile((char *)wParam, FALSE);
 		}
+	} else { 
+		if (dbResult.cbSize){
+		  dbResult.errState = DB_VIRTUAL_ERR_NOTVIRTUAL; // DB is not virtual
+		  dbResult.blTotal = numVirtualBlocks;
+		  dbResult.blWritten = 0;
+		  dbResult.imageSize = virtualDBsize ;
+		}
+		ret = FALSE;
 	}
-	else return FALSE;
+
+	if (dbResult.cbSize) memcpy((DB_VIRTUAL_RESULT *)lParam,&dbResult,dbResult.cbSize);
+	dbResult.cbSize=0;
+	return ret;
 }
 
 

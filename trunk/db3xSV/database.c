@@ -121,10 +121,11 @@ unsigned int giMirandaDirLen;
 int LoadDatabaseModule(void)
 {
 	InitializeCriticalSection(&csDbAccess);
+	parseIniSettings();
 	log0("DB logging running");
 	{
 		DWORD dummy=0;
-		hDbFile=CreateFile(szDbPath,GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, 0, NULL);
+		hDbFile=CreateFile(szDbPath,GENERIC_READ|(virtOnBoot?0:GENERIC_WRITE), 0, NULL, OPEN_ALWAYS, 0, NULL);
 		if ( hDbFile == INVALID_HANDLE_VALUE ) {
 			return 1;
 		}
@@ -152,6 +153,8 @@ int LoadDatabaseModule(void)
 		giMirandaDirLen = strlen(gszMirandaDir);
 	}
 
+	if (virtOnBoot) virtualizeDB();
+
 	//if(ParseCommandLine()) return 1;
 	if(InitCache()) return 1;
 	if(InitModuleNames()) return 1;
@@ -163,8 +166,6 @@ int LoadDatabaseModule(void)
 	//if(InitIni()) return 1;
 	CreateServiceFunction(MS_DB_GETPROFILENAME,GetProfileName);
 	CreateServiceFunction(MS_DB_GETPROFILEPATH,GetProfilePath);
-	parseIniSettings();
-	if (virtOnBoot) virtualizeDB();
 	return 0;
 }
 

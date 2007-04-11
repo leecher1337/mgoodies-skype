@@ -26,7 +26,7 @@ LANGUAGE LANG_BULGARIAN, SUBLANG_DEFAULT
 // Dialog
 //
 
-IDD_DIALOG1 DIALOG DISCARDABLE  0, 0, 237, 114
+IDD_DIALOG1 DIALOG DISCARDABLE  0, 0, 237, 157
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Dialog"
 FONT 8, "MS Sans Serif"
@@ -34,15 +34,23 @@ BEGIN
     LTEXT           "Plugin to test the Virtualizable DB services",
                     IDC_STATIC,7,7,133,8
     PUSHBUTTON      "Backup to:",IDC_BUTTON1,7,25,50,14
-    EDITTEXT        IDC_EDIT1,61,27,134,11,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT1,61,27,134,12,ES_AUTOHSCROLL
     PUSHBUTTON      "OverrideDB",IDC_BUTTON2,7,45,50,14
     PUSHBUTTON      "Save as...",IDC_BUTTON3,63,45,50,14
-    LTEXT           "result:",IDC_STATIC,13,92,20,8
-    LTEXT           "Static",IDC_STATIC,43,92,171,8
+    LTEXT           "FileName:",IDC_STATIC,14,93,32,8
     PUSHBUTTON      "Virtualize!",IDC_BUTTON4,7,65,50,14
     PUSHBUTTON      "Realize!",IDC_BUTTON5,64,65,50,14
     PUSHBUTTON      "Virt/Real",IDC_BUTTON6,121,65,50,14
     PUSHBUTTON      "Get Status",IDC_BUTTON7,178,65,50,14
+    LTEXT           "",IDC_LABEL_FN,56,93,139,8
+    LTEXT           "ImageSize:",IDC_STATIC,14,103,36,8
+    LTEXT           "",IDC_LABEL_IMAGESIZE,56,103,139,8
+    LTEXT           "ErrState:",IDC_STATIC,14,112,28,8
+    LTEXT           "",IDC_LABEL_ERRSTATE,56,112,139,8
+    LTEXT           "Blocks:",IDC_STATIC,14,121,24,8
+    LTEXT           "",IDC_LABEL_TOTALBLOCKS,56,121,139,8
+    LTEXT           "Result:",IDC_STATIC,14,135,23,8
+    LTEXT           "",IDC_LABEL_RESULT,56,135,139,8
 END
 
 
@@ -58,8 +66,10 @@ BEGIN
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 230
+        VERTGUIDE, 14
         TOPMARGIN, 7
-        BOTTOMMARGIN, 107
+        BOTTOMMARGIN, 150
+        HORZGUIDE, 97
     END
 END
 #endif    // APSTUDIO_INVOKED

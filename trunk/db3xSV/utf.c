@@ -38,7 +38,7 @@ void Utf8Decode( char* str, wchar_t** ucs2 )
 	len = strlen( str );
 	if ( len < 2 ) {
 		if ( ucs2 != NULL ) {
-			*ucs2 = ( wchar_t* )malloc(( len+1 )*sizeof( wchar_t ));
+			*ucs2 = ( wchar_t* )mir_alloc(( len+1 )*sizeof( wchar_t ));
 			MultiByteToWideChar( CP_ACP, 0, str, len, *ucs2, len );
 			( *ucs2 )[ len ] = 0;
 		}
@@ -77,7 +77,7 @@ void Utf8Decode( char* str, wchar_t** ucs2 )
 
 	if ( ucs2 != NULL ) {
 		int fullLen = ( len+1 )*sizeof( wchar_t );
-		*ucs2 = ( wchar_t* )malloc( fullLen );
+		*ucs2 = ( wchar_t* )mir_alloc( fullLen );
 		memcpy( *ucs2, tempBuf, fullLen );
 	}
 
@@ -97,7 +97,7 @@ char* Utf8Encode( const char* src )
 		return NULL;
 
 	len = strlen( src );
-	result = ( char* )malloc( len*3 + 1 );
+	result = ( char* )mir_alloc( len*3 + 1 );
 	if ( result == NULL )
 		return NULL;
 
@@ -136,7 +136,7 @@ char* Utf8Encode( const char* src )
 char* Utf8EncodeUcs2( const wchar_t* src )
 {
 	int len = wcslen( src );
-	char* result = ( char* )malloc( len*3 + 1 );
+	char* result = ( char* )mir_alloc( len*3 + 1 );
 	if ( result == NULL )
 		return NULL;
 
