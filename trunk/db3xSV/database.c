@@ -50,6 +50,14 @@ HANDLE hDbFile=INVALID_HANDLE_VALUE;
 CRITICAL_SECTION csDbAccess;
 struct DBHeader dbHeader;
 char szDbPath[MAX_PATH];
+char szDbDir[MAX_PATH];
+size_t uiDbDirLen;
+char szMirandaDir[MAX_PATH];
+size_t uiMirandaDirLen;
+char *szMirandaDirUtf8;
+size_t uiMirandaDirLenUtf8;
+char *szDbDirUtf8;
+size_t uiDbDirLenUtf8;
 
 static void UnloadDatabase(void)
 {
@@ -113,11 +121,6 @@ static int GetProfilePath(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-
-char gszMirandaDir[MAX_PATH];
-unsigned int giMirandaDirLen;
-
-
 int LoadDatabaseModule(void)
 {
 #ifdef SECUREDB
@@ -157,15 +160,15 @@ int LoadDatabaseModule(void)
 #endif
 
 	{
-		char *str2;
-		GetModuleFileName(GetModuleHandle(NULL),gszMirandaDir,sizeof(gszMirandaDir));
-		str2=strrchr(gszMirandaDir,'\\');
-		if(str2!=NULL)
-		{
-			str2++;
-			*str2=0;
-		}
-		giMirandaDirLen = strlen(gszMirandaDir);
+		char *p;
+		GetModuleFileName(GetModuleHandle(NULL),szMirandaDir,sizeof(szMirandaDir));
+		p = strrchr(szMirandaDir,'\\');
+		if( p != NULL )
+			*(p+1)=0;
+		uiMirandaDirLen = strlen(szMirandaDir);
+
+		szMirandaDirUtf8 = Utf8Encode(szMirandaDir);
+		uiMirandaDirLenUtf8 = strlen(szMirandaDirUtf8);
 	}
 
 	if (virtOnBoot) virtualizeDB();
@@ -217,6 +220,14 @@ void DatabaseCorruption(void)
 }
 
 #ifdef DBLOGGING
+__inline static int mir_vsnprintf(char *buffer, size_t count, const char* fmt, va_list va) {
+	int len;
+
+	len = _vsnprintf(buffer, count-1, fmt, va);
+	buffer[count-1] = 0;
+	return len;
+}
+
 void DBLog(const char *file,int line,const char *fmt,...)
 {
 	FILE *fp;

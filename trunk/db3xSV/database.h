@@ -140,26 +140,35 @@ struct DBEvent {
 };
 #include <poppack.h>
 
+typedef struct
+{
+	BYTE bIsResident;
+	char name[1];
+}
+	DBCachedSettingName;
 
 typedef struct
 {
 	char* name;
 	DBVARIANT value;
-} DBCachedGlobalValue;
+}
+	DBCachedGlobalValue;
 
 typedef struct DBCachedContactValue_tag
 {
 	char* name;
 	DBVARIANT value;
 	struct DBCachedContactValue_tag* next;
-} DBCachedContactValue;
+}
+	DBCachedContactValue;
 
 typedef struct
 {
 	HANDLE hContact;
 	HANDLE hNext;
 	DBCachedContactValue* first;
-} DBCachedContactValueList;
+}
+	DBCachedContactValueList;
 
 struct DBCacheSectionInfo {
 	DWORD ofsBase;
