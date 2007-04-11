@@ -12,21 +12,50 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// Neutral resources
 
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1251)
 #endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
 //
+#ifdef SECUREDB
+IDD_DIALOG1 DIALOGEX 0, 0, 166, 73
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP |
+    WS_CAPTION | WS_SYSMENU
+CAPTION "Please type in your password"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_EDIT1,46,33,113,13,ES_PASSWORD | ES_AUTOHSCROLL
+    PUSHBUTTON      "OK",IDOK,126,54,33,12
+    PUSHBUTTON      "Cancel",IDCANCEL,92,54,33,12
+    EDITTEXT        IDC_EDIT2,46,14,113,13,ES_AUTOHSCROLL | ES_READONLY |
+                    WS_DISABLED
+    LTEXT           "Database:",IDC_STATIC,7,16,34,8
+    LTEXT           "Password:",IDC_STATIC,7,36,34,8
+END
 
+IDD_DIALOG2 DIALOGEX 0, 0, 166, 73
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP |
+    WS_CAPTION | WS_SYSMENU
+CAPTION "Please type in your new password"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_EDIT2,49,14,110,13,ES_PASSWORD | ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT1,49,33,110,13,ES_PASSWORD | ES_AUTOHSCROLL
+    PUSHBUTTON      "OK",IDOK,126,54,33,12
+    PUSHBUTTON      "Cancel",IDCANCEL,92,54,33,12
+    LTEXT           "Password:",IDC_STATIC,7,16,34,8
+    LTEXT           "Confirm:",IDC_STATIC,7,36,28,8
+END
+#endif
 IDD_INSTALLINI DIALOGEX 0, 0, 212, 102
-STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
+STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER |
     WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_CONTROLPARENT
 CAPTION "Install Database Settings"
@@ -46,7 +75,7 @@ BEGIN
 END
 
 IDD_WARNINICHANGE DIALOGEX 0, 0, 187, 113
-STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
+STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER |
     WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_CONTROLPARENT
 CAPTION "Database Setting Change"
@@ -54,14 +83,14 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     LTEXT           "Database settings are being imported from",IDC_STATIC,5,
                     5,177,8
-    CONTROL         "",IDC_ININAME,"Static",SS_SIMPLE | SS_NOPREFIX | 
+    CONTROL         "",IDC_ININAME,"Static",SS_SIMPLE | SS_NOPREFIX |
                     WS_GROUP,5,13,177,8
     LTEXT           "This file wishes to change the setting",IDC_STATIC,5,24,
                     177,8
-    CONTROL         "",IDC_SETTINGNAME,"Static",SS_SIMPLE | SS_NOPREFIX | 
+    CONTROL         "",IDC_SETTINGNAME,"Static",SS_SIMPLE | SS_NOPREFIX |
                     WS_GROUP,12,33,170,8
     LTEXT           "to the value",IDC_STATIC,5,42,177,8
-    CONTROL         "",IDC_NEWVALUE,"Static",SS_SIMPLE | SS_NOPREFIX | 
+    CONTROL         "",IDC_NEWVALUE,"Static",SS_SIMPLE | SS_NOPREFIX |
                     WS_GROUP,12,51,170,8
     LTEXT           "",IDC_SECURITYINFO,5,60,177,8
     LTEXT           "Do you want to allow this change?",IDC_STATIC,5,71,177,
@@ -75,14 +104,14 @@ BEGIN
 END
 
 IDD_INIIMPORTDONE DIALOGEX 0, 0, 186, 73
-STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
+STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER |
     WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_CONTROLPARENT
 CAPTION "Database Import Complete"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     LTEXT           "The import has completed from",IDC_STATIC,5,5,176,8
-    CONTROL         "",IDC_ININAME,"Static",SS_SIMPLE | SS_NOPREFIX | 
+    CONTROL         "",IDC_ININAME,"Static",SS_SIMPLE | SS_NOPREFIX |
                     WS_GROUP,5,13,176,8
     LTEXT           "What do you want to do with the file now?",IDC_STATIC,5,
                     24,176,8
@@ -100,7 +129,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+GUIDELINES DESIGNINFO DISCARDABLE
 BEGIN
     IDD_INSTALLINI, DIALOG
     BEGIN
@@ -135,17 +164,17 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE DISCARDABLE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE DISCARDABLE
 BEGIN
     "#include <winres.h>\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE DISCARDABLE
 BEGIN
     "\r\n"
     "\0"
@@ -153,7 +182,66 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,5,1,2
+ PRODUCTVERSION 0,5,1,0
+ FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+#ifdef SECUREDB
+            VALUE "FileDescription", "Miranda Virtualizable Secure db3x"
+            VALUE "FileVersion", "0, 5, 1, 2"
+            VALUE "InternalName", "db3xVS"
+            VALUE "LegalCopyright", "Copyright (C) 2005; Miranda team, Piotr Pawluczuk, YB, Pescuma"
+            VALUE "OriginalFilename", "dbx_3xSV.dll"
+            VALUE "ProductName", " db3xVS"
+#else
+            VALUE "FileDescription", "Miranda Virtualizable db3x"
+            VALUE "FileVersion", "0, 5, 1, 2"
+            VALUE "InternalName", "db3xV"
+            VALUE "LegalCopyright", "Copyright (C) 2005; Miranda team, YB, Pescuma"
+            VALUE "OriginalFilename", "dbx_3xV.dll"
+            VALUE "ProductName", " db3xV"
+#endif
+            VALUE "ProductVersion", "0, 5, 1, 0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+#ifdef SECUREDB
+IDI_ICON1               ICON                    "dbsec.ico"
+IDI_ICON2               ICON                    "delpw.ico"
+IDI_ICON3               ICON                    "newpw.ico"
+#endif
+#endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
 

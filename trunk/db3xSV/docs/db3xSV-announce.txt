@@ -1,0 +1,46 @@
+http://forums.miranda-im.org/showthread.php?t=4426
+11 Sep 2005, 3:53 AM
+
+Following up some requests and discussions in another thread 
+(http://forums.miranda-im.org/showthread.php?t=2114) I am presenting alpha 
+versions of "Virtualizable" mod of dbx_3x and SecureDB.
+
+The mod permits the DB be "virtualized" - the whole db is copied to the memory 
+and is accessed only there without performing any disk access. Later, on user 
+request, or automatically the DB can be updated to the real DB file and 
+bounded again to it.
+
+One of the benefits of such approach is avoiding writing history. The user can 
+configure Miranda and to virtualize the DB. The history will be written only to 
+the image in the memory and on exit can be discarded.
+
+When the db is virtualized the memory image can be written to new file - i.e. to 
+create a backup.
+It is possible to load the DB even from read-only media.
+
+This mod is in very alpha stage and should be used with high precautions. Make 
+backup of your DB before installing some of these plugins!
+
+The mod is applied to dbx_3x 0.5.1.0 and to the updated 
+(http://forums.miranda-im.org/showthread.php?p=28752#post28752) SecureDB 
+(http://forums.miranda-im.org/showthread.php?t=2113).
+It also includes Pescuma's PATH patch 
+(http://saaplugin.no-ip.info/db3xV/path.patch) shortly described here 
+(http://forums.miranda-im.org/showpost.php?p=34468&postcount=13) and there 
+(http://forums.miranda-im.org/showpost.php?p=25123&postcount=28).
+
+The behavior can be controlled by mirandaboot.ini. You may want to see a sample 
+(http://saaplugin.no-ip.info/db3xV/mirandaboot.ini).
+
+Downloads
+
+VirtDB (http://saaplugin.no-ip.info/db3xV/dbx_3xV.dll) (MD5 (http://saaplugin.no-ip.info/db3xV/dbx_3xV.dll.md5))
+Secure VirtDB (http://saaplugin.no-ip.info/db3xV/dbx_3xSV.dll) (MD5 (http://saaplugin.no-ip.info/db3xV/dbx_3xSV.dll.md5))
+Sources (http://saaplugin.no-ip.info/db3xV/db3xV.zip) (MD5 (http://saaplugin.no-ip.info/db3xV/db3xV.zip.md5))
+
+
+There are two new services (http://saaplugin.no-ip.info/db3xV/m_virtdb.h) 
+defined that could be used by external plugins.
+I have uploaded sample plugin (http://saaplugin.no-ip.info/db3xV/VDBTest.dll) 
+with sources (http://saaplugin.no-ip.info/db3xV/VDBTest.zip) to demostrate the 
+new services.

@@ -23,6 +23,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "commonheaders.h"
 #include "database.h"
+#ifdef SECUREDB
+  #include "SecureDB.h"
+#endif
+#include "virtdb.h"
+
 
 extern struct DBHeader dbHeader;
 extern HANDLE hDbFile;
@@ -31,7 +36,10 @@ struct DBSignature {
   char name[15];
   BYTE eof;
 };
-static struct DBSignature dbSignature={"Miranda ICQ DB",0x1A};
+struct DBSignature dbSignature={"Miranda ICQ DB",0x1A};
+#ifdef SECUREDB
+  struct DBSignature dbSecSignature={"Miranda SEC DB",0x1A};
+#endif
 
 //the cache has not been loaded when these functions are used
 
@@ -51,23 +59,55 @@ int CreateDbHeaders(HANDLE hFile)
 	//create user
 	dbHeader.ofsUser=dbHeader.ofsFileEnd;
 	dbHeader.ofsFileEnd+=sizeof(struct DBContact);
-	SetFilePointer(hFile,0,NULL,FILE_BEGIN);
-	WriteFile(hFile,&dbHeader,sizeof(dbHeader),&bytesWritten,NULL);
+
+	VirtualSetFilePointer(hFile,0,NULL,FILE_BEGIN);
+#ifdef SECUREDB
+  	EncWriteFile
+#else
+	VirtualWriteFile
+#endif
+		(hFile,&dbHeader,sizeof(dbHeader),&bytesWritten,NULL);
 	user.signature=DBCONTACT_SIGNATURE;
 	user.ofsNext=0;
 	user.ofsFirstSettings=0;
 	user.eventCount=0;
 	user.ofsFirstEvent=user.ofsLastEvent=0;
-	SetFilePointer(hFile,dbHeader.ofsUser,NULL,FILE_BEGIN);
-	WriteFile(hFile,&user,sizeof(struct DBContact),&bytesWritten,NULL);
-	FlushFileBuffers(hFile);
+
+	VirtualSetFilePointer(hFile,dbHeader.ofsUser,NULL,FILE_BEGIN);
+#ifdef SECUREDB
+  	EncWriteFile
+#else
+	VirtualWriteFile
+#endif
+		(hFile,&user,sizeof(struct DBContact),&bytesWritten,NULL);
+	VirtualFlushFileBuffers(hFile);
 	return 0;
 }
 
-int CheckDbHeaders(struct DBHeader * hdr)
+int CheckDbHeaders(struct DBHeader * hdr
+#ifdef SECUREDB
+  	,long* secure
+#endif
+)
 {
+#ifdef SECUREDB
+	if(!memcmp(hdr->signature,&dbSecSignature,sizeof(hdr->signature)))
+	{
+		*secure = 1;
+	}
+	else if(!memcmp(hdr->signature,&dbSignature,sizeof(hdr->signature)))
+	{
+		if(hdr->version!=DB_THIS_VERSION) return 2;
+		*secure = 0;
+	}
+	else
+	{
+		return 1;
+	}
+#else
 	if(memcmp(hdr->signature,&dbSignature,sizeof(hdr->signature))) return 1;
 	if(hdr->version!=DB_THIS_VERSION) return 2;
+#endif
 	if(hdr->ofsUser==0) return 3;
 	return 0;
 }

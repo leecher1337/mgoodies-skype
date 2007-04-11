@@ -20,6 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#include "../../src/core/AggressiveOptimize.h"
 
 #define _WIN32_WINNT 0x0501
 #include <windows.h>
@@ -49,8 +50,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <m_system.h>
 #include <m_database.h>
 #include <m_langpack.h>
+#include <m_clist.h>
 
 extern PLUGINLINK *pluginLink;
+extern char gszMirandaDir[MAX_PATH];
+extern unsigned int giMirandaDirLen;
+
 
 extern struct MM_INTERFACE memoryManagerInterface;
 
@@ -63,3 +68,6 @@ extern struct MM_INTERFACE memoryManagerInterface;
 #else
 #define mir_i64(x) (x##i64)
 #endif
+
+
+#define DBVT_PATH   250	  //pszVal is valid
