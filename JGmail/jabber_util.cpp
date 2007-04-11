@@ -1067,10 +1067,10 @@ TCHAR* __stdcall JabberStripJid( const TCHAR* jid, TCHAR* dest, size_t destLen )
 int __stdcall JabberGetPictureType( const char* buf )
 {
 	if ( buf != NULL ) {
-		if ( memcmp( buf, "GIF89", 5 ) == 0 )   return PA_FORMAT_GIF;
-		if ( memcmp( buf, "\x89PNG", 4 ) == 0 ) return PA_FORMAT_PNG;
-		if ( memcmp( buf, "BM", 2 ) == 0 )      return PA_FORMAT_BMP;
-		if ( memcmp( buf+6, "JFIF", 4 ) == 0 )  return PA_FORMAT_JPEG;
+		if ( memcmp( buf, "GIF89", 5 ) == 0 )    return PA_FORMAT_GIF;
+		if ( memcmp( buf, "\x89PNG", 4 ) == 0 )  return PA_FORMAT_PNG;
+		if ( memcmp( buf, "BM", 2 ) == 0 )       return PA_FORMAT_BMP;
+		if ( memcmp( buf, "\xFF\xD8", 2 ) == 0 ) return PA_FORMAT_JPEG;
 	}
 
 	return PA_FORMAT_UNKNOWN;

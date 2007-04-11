@@ -137,15 +137,7 @@ void JabberIqResultSetAuth( XmlNode *iqNode, void *userdata )
 		else
 			JFreeVariant( &dbv );
 
-		jabberOnline = TRUE;
-		jabberLoggedInTime = time(0);
-
-		iqId = JabberSerialNext();
-		JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultGetRoster );
-		{	XmlNodeIq iq( "get", iqId ); 
-			XmlNode* query = iq.addQuery( "jabber:iq:roster" );
-			JabberSend( info->s, iq );
-		}
+		JabberOnLoggedIn( info );
 
 		if ( hwndJabberAgents ) {
 			// Retrieve agent information

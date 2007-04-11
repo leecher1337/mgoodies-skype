@@ -38,6 +38,7 @@ static BOOL CALLBACK JabberAddBookmarkDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 	TCHAR text[128];
 	JABBER_LIST_ITEM *item;
 	TCHAR* roomJID=0;
+	TCHAR* currJID=0;
 
 	switch ( msg ) {
 	case WM_INITDIALOG:
@@ -66,7 +67,9 @@ static BOOL CALLBACK JabberAddBookmarkDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 			EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_RADIO), FALSE );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_CHECK_BM_AUTOJOIN), FALSE );
 
-			SetWindowLong( hwndDlg, GWL_USERDATA, ( LONG )item );
+			replaceStr(currJID , item->jid);
+			SetWindowLong( hwndDlg, GWL_USERDATA, ( LONG )currJID );
+
 			if ( item->jid ) SetDlgItemText( hwndDlg, IDC_ROOM_JID, item->jid );
 			if ( item->name ) SetDlgItemText( hwndDlg, IDC_NAME, item->name );
 			if ( item->nick ) SetDlgItemText( hwndDlg, IDC_NICK, item->nick );
@@ -99,7 +102,7 @@ static BOOL CALLBACK JabberAddBookmarkDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 						break;
 				}
 		}
-//		break;
+
 		switch ( LOWORD( wParam )) {
 		case IDC_ROOM_JID:
 			if (( HWND )lParam==GetFocus() && HIWORD( wParam )==EN_CHANGE ) {
@@ -116,15 +119,17 @@ static BOOL CALLBACK JabberAddBookmarkDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 			GetDlgItemText( hwndDlg, IDC_ROOM_JID, text, SIZEOF( text ));
 			roomJID = NEWTSTR_ALLOCA( text );
 
-			item = ( JABBER_LIST_ITEM* )GetWindowLong( hwndDlg, GWL_USERDATA );
-			if ( item )
+			currJID = ( TCHAR* )GetWindowLong( hwndDlg, GWL_USERDATA );
+			if ( currJID) {
+				JabberListRemove( LIST_BOOKMARK, currJID );
+				mir_free( currJID );
 				SetWindowLong( hwndDlg, GWL_USERDATA, ( LONG ) NULL );
-			else
-            item = JabberListAdd( LIST_BOOKMARK, roomJID );
+			}
+			item = JabberListAdd(LIST_BOOKMARK, roomJID);
 
 			if ( SendDlgItemMessage(hwndDlg, IDC_URL_RADIO, BM_GETCHECK,0, 0) == BST_CHECKED )
 				replaceStr( item->type, _T( "url" ));
-			else 
+			else
 				replaceStr( item->type, _T( "conference" ));
 
 			GetDlgItemText( hwndDlg, IDC_NICK, text, SIZEOF( text ));
@@ -137,7 +142,6 @@ static BOOL CALLBACK JabberAddBookmarkDlgProc( HWND hwndDlg, UINT msg, WPARAM wP
 			replaceStr( item->name, ( text[0] == 0 ) ? roomJID : text );
 
 			item->bAutoJoin = (SendDlgItemMessage(hwndDlg, IDC_CHECK_BM_AUTOJOIN, BM_GETCHECK,0, 0) == BST_CHECKED );
-
 			{
 				int iqId = JabberSerialNext();
 				JabberIqAdd( iqId, IQ_PROC_SETBOOKMARKS, JabberIqResultSetBookmarks);

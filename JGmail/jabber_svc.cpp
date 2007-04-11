@@ -286,11 +286,15 @@ int JabberBasicSearch( WPARAM wParam, LPARAM lParam )
 		return 0;
 
 	if ( strchr( szJid, '@' ) == NULL ) {
-		char szServer[ 100 ];
-		if ( JGetStaticString( "LoginServer", NULL, szServer, sizeof szServer ))
-			strcpy( szServer, "gmail.com" );
+		const char* p = strstr( szJid, jabberThreadInfo->server );
+		if ( !p ) {
+			char szServer[ 100 ];
+			if ( JGetStaticString( "LoginServer", NULL, szServer, sizeof szServer ))
+				strcpy( szServer, "gmail.com" );
 
-		mir_snprintf( jsb->jid, SIZEOF(jsb->jid), "%s@%s", szJid, szServer );
+			mir_snprintf( jsb->jid, SIZEOF(jsb->jid), "%s@%s", szJid, szServer );
+		}
+		else strncpy( jsb->jid, szJid, SIZEOF(jsb->jid));
 	}
 	else strncpy( jsb->jid, szJid, SIZEOF(jsb->jid));
 
