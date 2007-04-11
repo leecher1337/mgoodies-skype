@@ -59,7 +59,7 @@ static int grokHeader( char * profile, int * error )
 	int rc=1;
 	int chk=0;
 #ifdef SECUREDB
-  	int sec=0;
+	int sec=0;
 #endif
 	struct DBHeader hdr;
 	HANDLE hFile = INVALID_HANDLE_VALUE;
@@ -90,11 +90,7 @@ static int grokHeader( char * profile, int * error )
 #endif
 	  );
 
-#ifdef SECUREDB
-	if(sec && EncGetPassword(&hdr,profile)){
-		return 1;
-	}
-#endif
+
 
 	if ( chk == 0 ) {
 		// all the internal tests passed, hurrah

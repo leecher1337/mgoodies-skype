@@ -633,7 +633,6 @@ static int WriteContactSetting(WPARAM wParam,LPARAM lParam)
 			}
 		}
 	}
-
 	EnterCriticalSection(&csDbAccess);
 	{
 		char* szCachedSettingName = GetCachedSetting(dbcws->szModule, dbcws->szSetting, settingNameLen);
@@ -647,6 +646,7 @@ static int WriteContactSetting(WPARAM wParam,LPARAM lParam)
 						case DBVT_WORD:   bIsIdentical = pCachedValue->wVal == dbcws->value.wVal;  break;
 						case DBVT_DWORD:  bIsIdentical = pCachedValue->dVal == dbcws->value.dVal;  break;
 						case DBVT_UTF8:
+						case DBVT_PATH:
 						case DBVT_ASCIIZ: bIsIdentical = strcmp( pCachedValue->pszVal, dbcws->value.pszVal ) == 0; break;
 					}
 					if ( bIsIdentical ) {
@@ -670,7 +670,6 @@ static int WriteContactSetting(WPARAM wParam,LPARAM lParam)
 		return 1;
 	}
 	log0("write setting");
-
 	if ( dbcws->value.type == DBVT_ASCIIZ && strnicmp(gszMirandaDir, dbcws->value.pszVal, giMirandaDirLen) == 0
 		&& strlen(dbcws->value.pszVal) < MAX_PATH )
 	{
@@ -678,8 +677,6 @@ static int WriteContactSetting(WPARAM wParam,LPARAM lParam)
 		dbcws->value.pszVal = szTmpPath;
 		dbcws->value.type = DBVT_PATH;
 	}
-
-
 	//make sure the module group exists
 	ofsSettingsGroup=GetSettingsGroupOfsByModuleNameOfs(&dbc,ofsContact,ofsModuleName);
 	if(ofsSettingsGroup==0) {  //module group didn't exist - make it
