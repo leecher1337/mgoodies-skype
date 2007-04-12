@@ -1,6 +1,8 @@
 #ifndef NUDGE_H
 #define NUDGE_H
 
+
+
 static int code_page = CP_ACP;
 
 //	NUDGE account status flags
