@@ -42,6 +42,8 @@ int SkypeStatus=ID_STATUS_OFFLINE, hSearchThread=-1, receivers=1;
 UINT ControlAPIAttach, ControlAPIDiscover;
 LONG AttachStatus=-1;
 HINSTANCE hInst;
+HANDLE hProtocolAvatarsFolder;
+
 
 
 // Module Internal Globals
@@ -272,28 +274,11 @@ void GetInfoThread(HANDLE hContact) {
 	};
     
 	char AvatarsFolder[MAX_PATH];
-	int hProtocolAvatarsFolder;
-
-	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
 	
-	// Folders plugin support
-	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
-	{
-		FOLDERSDATA fd;
-		strncpy(fd.szSection, Translate("Avatars"), sizeof(fd.szSection));
-		fd.szSection[sizeof(fd.szSection)-1] = '\0';
-		strncpy(fd.szName, Translate("Protocol Avatars Cache"), sizeof(fd.szName));
-		fd.szName[sizeof(fd.szName)-1] = '\0';
+	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
+	hProtocolAvatarsFolder = FoldersRegisterCustomPath(Translate("Avatars"),Translate("Protocol Avatars Cache"),AvatarsFolder);
 
-		// TODO Default should be FOLDER_AVATARS
-		hProtocolAvatarsFolder = (int) CallService(MS_FOLDERS_REGISTER_PATH, (WPARAM) PROFILE_PATH, (LPARAM) &fd);
-
-		if(!hProtocolAvatarsFolder)
-			CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
-		else
-			CallService(MS_FOLDERS_GET_PATH,hProtocolAvatarsFolder,(LPARAM)AvatarsFolder);
-	}
-		
+	FoldersGetCustomPath(hProtocolAvatarsFolder,  AvatarsFolder, sizeof(AvatarsFolder), AvatarsFolder);		
 
 	LOG ("GetInfoThread", "started.");
 	if (DBGetContactSetting(hContact, pszSkypeProtoName, SKYPE_NAME, &dbv) ||
@@ -857,6 +842,11 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 	// We cannot check for the TTB-service before this event gets fired... :-/
 	hTTBModuleLoadedHook = HookEvent(ME_TTB_MODULELOADED, CreateTopToolbarButton);
 	hHookOnUserInfoInit = HookEvent( ME_USERINFO_INITIALISE, OnDetailsInit );
+
+	char AvatarsFolder[MAX_PATH];
+	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
+	hProtocolAvatarsFolder = FoldersRegisterCustomPath(Translate("Avatars"),Translate("Protocol Avatars Cache"),AvatarsFolder);
+
 	pthread_create(( pThreadFunc )FirstLaunch, NULL);
 	return 0;
 }
@@ -1922,7 +1912,10 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
         case WM_TIMER:
 			SkypeSend("PING");
 			SkypeMsgCollectGarbage(MAX_MSG_AGE);
-			if (receivers>1) LOGL ("Watchdog WARNING: there are still receivers waiting for MSGs: ", receivers);
+			if (receivers>1)
+			{
+				LOGL("Watchdog WARNING: there are still receivers waiting for MSGs: ", receivers);
+			}
 			break;
 
 		case WM_CLOSE:

@@ -24,7 +24,7 @@ extern UINT ControlAPIAttach, ControlAPIDiscover;
 extern LONG AttachStatus;
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
-
+extern HANDLE hProtocolAvatarsFolder;
 
 // -> Skype Message Queue functions //
 
@@ -913,38 +913,18 @@ int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
  *		   -1 - Failure
  */
 int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
-	int retval;
-	char drive[_MAX_DRIVE];
-	char dir[_MAX_DIR];
-	char fname[_MAX_FNAME];
-	char ext[_MAX_EXT];
+	int retval=-1;
 	char AvatarsFolder[MAX_PATH];
-	int hProtocolAvatarsFolder;
-
-	_splitpath((char*)lParam, drive, dir, fname, ext );
 	
-	// Folders plugin support
-	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
-	{
-		FOLDERSDATA fd;
-		strncpy(fd.szSection, Translate("Avatars"), sizeof(fd.szSection));
-		fd.szSection[sizeof(fd.szSection)-1] = '\0';
-		strncpy(fd.szName, Translate("Protocol Avatars Cache"), sizeof(fd.szName));
-		fd.szName[sizeof(fd.szName)-1] = '\0';
+	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
+	hProtocolAvatarsFolder = FoldersRegisterCustomPath(Translate("Avatars"),Translate("Protocol Avatars Cache"),AvatarsFolder);
 
-		// TODO Default should be FOLDER_AVATARS
-		hProtocolAvatarsFolder = (int) CallService(MS_FOLDERS_REGISTER_PATH, (WPARAM) PROFILE_PATH, (LPARAM) &fd);
+	FoldersGetCustomPath(hProtocolAvatarsFolder,  AvatarsFolder, sizeof(AvatarsFolder), AvatarsFolder);	
 
-		if(!hProtocolAvatarsFolder)
-			CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
-		else
-			CallService(MS_FOLDERS_GET_PATH,hProtocolAvatarsFolder,(LPARAM)AvatarsFolder);
-	}
-	else
-		CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
+	sprintf(AvatarsFolder,"%s\\SKYPE",AvatarsFolder);
+	CreateDirectory(AvatarsFolder,NULL);
 
-	//sprintf(AvatarsFolder,"%s\\SKYPE\\%s",AvatarsFolder,fname);
-	sprintf(AvatarsFolder,"%s\\SKYPE\\%s avatar.png",AvatarsFolder,pszSkypeProtoName);
+	sprintf(AvatarsFolder,"%s\\%s avatar.png",AvatarsFolder,pszSkypeProtoName);
 
 	CopyFile((char*)lParam,AvatarsFolder,0);
 
