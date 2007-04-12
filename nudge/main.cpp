@@ -503,8 +503,8 @@ void LoadIcons(void)
 		char iconDesc[MAXMODULELABELLENGTH + 10];
 		strncpy(szFilename, "plugins\\nudge.dll", MAX_PATH);
 
-		sid.cbSize = sizeof(SKINICONDESC);
-		sid.pszSection = TranslateT("Nudge");
+		sid.cbSize = SKINICONDESC_SIZE_V2;
+		sid.pszSection = "Nudge";
 		sid.pszDefaultFile = szFilename;
 
 		for(n = NudgeList;n != NULL; n = n->next)
@@ -514,6 +514,7 @@ void LoadIcons(void)
 			sprintf(iconDesc,"Nudge for %s",n->item.ProtocolName);
 			sid.pszDescription = iconDesc;
 			sid.iDefaultIndex = -IDI_NUDGE;
+			sid.hDefaultIcon =  LoadIcon(hInst,MAKEINTRESOURCE(IDI_NUDGE));
 			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 			n->item.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
@@ -524,6 +525,7 @@ void LoadIcons(void)
 		sprintf(iconDesc,"Nudge as Default");
 		sid.pszDescription = iconDesc;
 		sid.iDefaultIndex = -IDI_NUDGE;
+		sid.hDefaultIcon =  LoadIcon(hInst,MAKEINTRESOURCE(IDI_NUDGE));
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		DefaultNudge.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
