@@ -845,7 +845,8 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 
 	char AvatarsFolder[MAX_PATH];
 	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
-	hProtocolAvatarsFolder = FoldersRegisterCustomPath(Translate("Avatars"),Translate("Protocol Avatars Cache"),AvatarsFolder);
+	sprintf(AvatarsFolder,"%s\\%s",AvatarsFolder,pszSkypeProtoName);
+	hProtocolAvatarsFolder = FoldersRegisterCustomPath(pszSkypeProtoName,"Avatars",AvatarsFolder);
 
 	pthread_create(( pThreadFunc )FirstLaunch, NULL);
 	return 0;

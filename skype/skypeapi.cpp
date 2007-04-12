@@ -917,11 +917,9 @@ int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
 	char AvatarsFolder[MAX_PATH];
 	
 	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
-	hProtocolAvatarsFolder = FoldersRegisterCustomPath(Translate("Avatars"),Translate("Protocol Avatars Cache"),AvatarsFolder);
-
-	FoldersGetCustomPath(hProtocolAvatarsFolder,  AvatarsFolder, sizeof(AvatarsFolder), AvatarsFolder);	
-
-	sprintf(AvatarsFolder,"%s\\SKYPE",AvatarsFolder);
+	sprintf(AvatarsFolder,"%s\\%s",AvatarsFolder,pszSkypeProtoName);
+	
+	FoldersGetCustomPath(hProtocolAvatarsFolder,  AvatarsFolder, sizeof(AvatarsFolder), AvatarsFolder);
 	CreateDirectory(AvatarsFolder,NULL);
 
 	sprintf(AvatarsFolder,"%s\\%s avatar.png",AvatarsFolder,pszSkypeProtoName);
