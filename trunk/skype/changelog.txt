@@ -13,6 +13,8 @@ CODE
 
 HISTORY
 -------
+0.0.0.38 - ! Correct use of folder plugin (using "avatar cache folder"\SKYPE).
+
 0.0.0.37 - ! Avoid empty message from myself on first message received.
 		   + Add the Get user avatar interface
 		   * Change the get user info thread
