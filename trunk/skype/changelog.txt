@@ -13,12 +13,12 @@ CODE
 
 HISTORY
 -------
-0.0.0.38 - ! Correct use of folder plugin (using "avatar cache folder"\SKYPE).
-
 0.0.0.37 - ! Avoid empty message from myself on first message received.
 		   + Add the Get user avatar interface
 		   * Change the get user info thread
 		   * code cleanup
+		   + Support for miranda 0.8
+		   ! Correct use of folder plugin (using "avatar cache folder"\SKYPE).
 		   	
 0.0.0.36 - ! When settings skype offline, first set proto off then contacts.
 		   * move the broadcast of status change out of if statement in status change.
