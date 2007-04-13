@@ -44,6 +44,7 @@
 #include "m_protoplugin.h"	//Protocol registration and so on
 #include "m_synchro.h"	//Synchronization
 #include "debug.h"
+#include "m_folders.h"
 
 //icons definitions
 #define ICONSNUMBER 8

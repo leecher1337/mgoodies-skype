@@ -43,23 +43,29 @@ int YAMN_STATUS;
 
 BOOL UninstallPlugins;
 
+HANDLE hAccountFolder;
+
 HINSTANCE *hDllPlugins;
 static int iDllPlugins=0;
 
 PLUGINLINK *pluginLink;
 YAMN_VARIABLES YAMNVar;
 
-PLUGININFO pluginInfo={
-	sizeof(PLUGININFO),
+static const MUUID interfaces[] = {MUUID_YAMN_FORCECHECK, MIID_LAST};
+
+PLUGININFOEX pluginInfo={
+	sizeof(PLUGININFOEX),
 	YAMN_SHORTNAME,
 	YAMN_VERSION,
 	"Mail notifier and browser for Miranda IM. Included POP3 protocol.",
-	"tweety (majvan)",
+	"y_b tweety (majvan)",
 	"francois.mean@skynet.be",
-	"© (2002-2004 majvan) 2005-2006 tweety",
-	"http://www.miranda-im.org/download/details.php?action=viewfile&id=2165", //"http://www.majvan.host.sk/Projekty/YAMN?fm=soft",
-	0,		//not transient
-	0		//doesn't replace anything built-in
+	"© (2002-2004 majvan) 2005-2007 tweety y_b Miranda community",
+	"http://www.miranda-im.org/download/details.php?action=viewfile&id=3411", //"http://www.majvan.host.sk/Projekty/YAMN?fm=soft",
+	UNICODE_AWARE,
+	0,		//doesn't replace anything built-in
+	{ 0xb047a7e5, 0x27a, 0x4cfc, { 0x8b, 0x18, 0xed, 0xa8, 0x34, 0x5d, 0x27, 0x90 } } // {B047A7E5-027A-4cfc-8B18-EDA8345D2790}
+
 };
 
 SKINSOUNDDESC NewMailSound={
@@ -247,6 +253,7 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvRese
 			return FALSE;
 		GetProfileDirectory(szProfileDir,sizeof(szProfileDir));
 		MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,szProfileDir,-1,UserDirectory,strlen(szProfileDir)+1);
+
 //	we get the user path where our yamn-account.book.ini is stored from mirandaboot.ini file
 	}
 
@@ -258,7 +265,19 @@ extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVers
 	if (mirandaVersion >= PLUGIN_MAKE_VERSION(0, 7, 0, 3))
 		bIcolibEmbededInCore = TRUE;
 
+	return (PLUGININFO *) &pluginInfo;
+}
+
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	if (mirandaVersion >= PLUGIN_MAKE_VERSION(0, 7, 0, 3))
+		bIcolibEmbededInCore = TRUE;
 	return &pluginInfo;
+}
+
+extern "C" __declspec(dllexport) const MUUID * MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 #ifdef YAMN_DEBUG
@@ -348,7 +367,7 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 		char szUrl[250];
 
 		update.szComponentName = pluginInfo.shortName;
-		update.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szVersion);
+		update.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO *)&pluginInfo, szVersion);
 		update.cpbVersion = strlen((char *)update.pbVersion);
 		/*#ifdef YAMN_9x
 		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=2166";
@@ -372,8 +391,17 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
 
 	}
-	
+
+	char AccountFolder[MAX_PATH];
+	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AccountFolder);
+	sprintf(AccountFolder,"%s\\%s",AccountFolder,ProtoName);
+	hAccountFolder = FoldersRegisterCustomPath(ProtoName,"Account Folder",AccountFolder);
+
+	FoldersGetCustomPath(hAccountFolder,  AccountFolder, sizeof(AccountFolder), AccountFolder);
+	MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,AccountFolder,-1,UserDirectory,strlen(AccountFolder)+1);
+
 	RegisterPOP3Plugin(0,0);
+
 	return 0;
 }
 
