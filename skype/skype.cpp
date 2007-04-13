@@ -121,8 +121,8 @@ int FreeVSApi()
 }
 
 // Plugin Info
-PLUGININFO pluginInfo = {
-	sizeof(PLUGININFO),
+PLUGININFOEX pluginInfo = {
+	sizeof(PLUGININFOEX),
 	"Skype protocol",
 	PLUGIN_MAKE_VERSION(0,0,0,36),
 	"Support for Skype network",
@@ -130,8 +130,9 @@ PLUGININFO pluginInfo = {
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
 	"© 2004-2006 leecher - tweety",
 	"http://dose.0wnz.at - http://developer.berlios.de/projects/mgoodies/",
-	0,		//not transient
-	0		//doesn't replace anything built-in
+	UNICODE_AWARE,
+	0,		//doesn't replace anything built-in
+	{ 0xa71f8335, 0x7b87, 0x4432, { 0xb8, 0xa3, 0x81, 0x47, 0x94, 0x31, 0xc6, 0xf5 } } // {A71F8335-7B87-4432-B8A3-81479431C6F5}
 };
 
 #define MAPDND	1	// Map Occupied to DND status and say that you support it
@@ -154,7 +155,7 @@ void RegisterToUpdate(void)
 		char szVersion[16];
 
 		update.szComponentName = pluginInfo.shortName;
-		update.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szVersion);
+		update.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO *)&pluginInfo, szVersion);
 		update.cpbVersion = strlen((char *)update.pbVersion);
 		update.szUpdateURL = "http://addons.miranda-im.org/feed.php?dlfile=3200";
 		update.szVersionURL = "http://addons.miranda-im.org/details.php?action=viewfile&id=3200";
@@ -296,7 +297,6 @@ void GetInfoThread(HANDLE hContact) {
 	sprintf(Avatar,"%s\\%s_tmp.jpg",AvatarsFolder,dbv.pszVal);
 	sprintf(AvatarsFolder,"%s\\%s.jpg",AvatarsFolder,dbv.pszVal);
 	sprintf(strA,"GET USER %s AVATAR 1 %s", dbv.pszVal,Avatar);
-	DeleteFile(Avatar);
 	strcpy(usr, dbv.pszVal);
 	DBFreeVariant(&dbv);
 
@@ -2477,9 +2477,19 @@ void __cdecl MsgPump (char *dummy)
 
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
 {
-		return &pluginInfo;
+		return (PLUGININFO*) &pluginInfo;
 }
 
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	return &pluginInfo;
+}
+
+static const MUUID interfaces[] = {MUUID_SKYPE_CALL, MIID_LAST};
+extern "C" __declspec(dllexport) const MUUID * MirandaPluginInterfaces(void)
+{
+	return interfaces;
+}
 
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)

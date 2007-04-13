@@ -84,6 +84,9 @@ static int code_page = CP_ACP;
 #define SKYPE_CHATNEW "Skype_protocol/ChatNew"
 #define EVENTTYPE_CALL 2000
 
+#define MUUID_SKYPE_CALL { 0x245241eb, 0x178c, 0x4b3f, { 0x91, 0xa, 0x4c, 0x4d, 0xf0, 0xa0, 0xc3, 0xb6 } }
+
+
 // Common used code-pieces
 #define OUTPUT(a) ShowMessage(IDI_ERRORS, a, 1);
 #define ERRCHK 	if (!strncmp(ptr, "ERROR", 5)) { OUTPUT(ptr); free(ptr); SetEvent(SkypeMsgFetched); LOG("FetchMessageThread", "terminated."); return; }
