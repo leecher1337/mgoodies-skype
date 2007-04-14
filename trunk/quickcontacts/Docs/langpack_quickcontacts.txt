@@ -18,6 +18,7 @@
 ; Tooltips
 [Send message]
 [Send file (Ctrl+F)]
+[Make a voice call (Ctrl+V)]
 [Send URL (Ctrl+U)]
 [Open userinfo (Ctrl+I)]
 [Open history (Ctrl+H)]
