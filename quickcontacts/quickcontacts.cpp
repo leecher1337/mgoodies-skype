@@ -32,7 +32,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,7),
+	PLUGIN_MAKE_VERSION(0,0,2,8),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
@@ -428,6 +428,7 @@ void EnableButtons(HWND hwndDlg, HANDLE hContact)
 	if (hContact == NULL)
 	{
 		EnableWindow(GetDlgItem(hwndDlg, IDC_MESSAGE), FALSE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_VOICE), FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_FILE), FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_URL), FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_USERINFO), FALSE);
@@ -451,7 +452,11 @@ void EnableButtons(HWND hwndDlg, HANDLE hContact)
 		if (pszProto != NULL)
 			caps = CallProtoService(pszProto, PS_GETCAPS, PFLAGNUM_1, 0);
 
+		BOOL voice = (ServiceExists(MS_VOICESERVICE_CAN_CALL) 
+			&& CallService(MS_VOICESERVICE_CAN_CALL, (WPARAM)hContact, 0) > 0);
+
 		EnableWindow(GetDlgItem(hwndDlg, IDC_MESSAGE), caps & PF1_IMSEND ? TRUE : FALSE);
+		EnableWindow(GetDlgItem(hwndDlg, IDC_VOICE), voice);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_FILE), caps & PF1_FILESEND ? TRUE : FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_URL), caps & PF1_URLSEND ? TRUE : FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_USERINFO), TRUE);
@@ -658,6 +663,41 @@ LRESULT CALLBACK HookProc(int code, WPARAM wparam, LPARAM lparam)
 	return 0;
 }
 
+BOOL ScreenToClient(HWND hWnd, LPRECT lpRect)
+{
+	BOOL ret;
+
+	POINT pt;
+
+	pt.x = lpRect->left;
+	pt.y = lpRect->top;
+
+	ret = ScreenToClient(hWnd, &pt);
+
+	if (!ret) return ret;
+
+	lpRect->left = pt.x;
+	lpRect->top = pt.y;
+
+
+	pt.x = lpRect->right;
+	pt.y = lpRect->bottom;
+
+	ret = ScreenToClient(hWnd, &pt);
+
+	lpRect->right = pt.x;
+	lpRect->bottom = pt.y;
+
+	return ret;
+}
+
+
+BOOL MoveWindow(HWND hWnd, const RECT &rect, BOOL bRepaint)
+{
+	return MoveWindow(hWnd, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, bRepaint);
+}
+
+
 static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -678,6 +718,21 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), BUTTONSETASFLATBTN, 0, 0);
 			SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), BUTTONADDTOOLTIP, (LPARAM) Translate("Send message"), 0);
 			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
+
+			if (ServiceExists(MS_VOICESERVICE_CAN_CALL))
+			{
+				SendMessage(GetDlgItem(hwndDlg, IDC_VOICE), BUTTONSETASFLATBTN, 0, 0);
+				SendMessage(GetDlgItem(hwndDlg, IDC_VOICE), BUTTONADDTOOLTIP, (LPARAM) Translate("Make a voice call (Ctrl+V)"), 0);
+				SendDlgItemMessage(hwndDlg, IDC_VOICE, BM_SETIMAGE, IMAGE_ICON, (LPARAM) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "vca_call"));
+			}
+			else
+			{
+				RECT rc;
+				GetWindowRect(GetDlgItem(hwndDlg, IDC_VOICE), &rc);
+				ScreenToClient(hwndDlg, &rc);
+				MoveWindow(GetDlgItem(hwndDlg, IDC_MESSAGE), rc, FALSE);
+				ShowWindow(GetDlgItem(hwndDlg, IDC_VOICE), SW_HIDE);
+			}
 
 			SendMessage(GetDlgItem(hwndDlg, IDC_FILE), BUTTONSETASFLATBTN, 0, 0);
 			SendMessage(GetDlgItem(hwndDlg, IDC_FILE), BUTTONADDTOOLTIP, (LPARAM) Translate("Send file (Ctrl+F)"), 0);
@@ -769,6 +824,30 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 						CallService("SRMsg/LaunchMessageWindow", (WPARAM) hContact, 0);
 					else
 						CallService(MS_MSG_SENDMESSAGE, (WPARAM) hContact, 0);
+
+					DBWriteContactSettingDword(NULL, MODULE_NAME, "LastSentTo", (DWORD) hContact);
+					SendMessage(hwndDlg, WM_CLOSE, 0, 0);
+					break;
+				}
+				case HOTKEY_VOICE:
+				case IDC_VOICE:
+				{
+					HANDLE hContact = GetSelectedContact(hwndDlg);
+					if (hContact == NULL)
+					{
+						SetDlgItemText(hwndDlg, IDC_USERNAME, _T(""));
+						SetFocus(GetDlgItem(hwndDlg, IDC_USERNAME));
+						break;
+					}
+
+					// Is button enabled?
+					if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDC_VOICE)))
+						break;
+
+					if (!ServiceExists(MS_VOICESERVICE_CALL))
+						break;
+
+					CallService(MS_VOICESERVICE_CALL, (WPARAM) hContact, 0);
 
 					DBWriteContactSettingDword(NULL, MODULE_NAME, "LastSentTo", (DWORD) hContact);
 					SendMessage(hwndDlg, WM_CLOSE, 0, 0);
