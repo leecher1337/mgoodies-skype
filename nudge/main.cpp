@@ -76,7 +76,7 @@ DWORD MirVer;
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,1,16),
+	PLUGIN_MAKE_VERSION(0,0,1,17),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",

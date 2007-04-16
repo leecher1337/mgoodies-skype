@@ -156,6 +156,10 @@ SOURCE=.\resources\NudgeIRC.ico
 # End Source File
 # Begin Source File
 
+SOURCE=.\resources\NudgeMeta.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\resources\NudgeMSN.ico
 # End Source File
 # Begin Source File
