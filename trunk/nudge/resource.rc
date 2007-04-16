@@ -299,8 +299,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,1,16
- PRODUCTVERSION 0,0,1,16
+ FILEVERSION 0,0,1,17
+ PRODUCTVERSION 0,0,1,17
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -318,14 +318,14 @@ BEGIN
             VALUE "Comments", "Plugin that render nudge events from different protocols\0"
             VALUE "CompanyName", "Miranda community\0"
             VALUE "FileDescription", "Nudge plugin for Miranda-IM\0"
-            VALUE "FileVersion", "0, 0, 1, 16\0"
+            VALUE "FileVersion", "0, 0, 1, 17\0"
             VALUE "InternalName", "Nudge\0"
             VALUE "LegalCopyright", "Copyright © 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "nudge.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "nudge\0"
-            VALUE "ProductVersion", "0, 0, 1, 16\0"
+            VALUE "ProductVersion", "0, 0, 1, 17\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -350,6 +350,7 @@ IDI_NUGDE_YAHOO         ICON    DISCARDABLE     "resources\\NudgeYahoo.ico"
 IDI_NUDGE_IRC           ICON    DISCARDABLE     "resources\\NudgeIRC.ico"
 IDI_NUDGE_MSN           ICON    DISCARDABLE     "resources\\NudgeMSN.ico"
 IDI_NUDGE_TLEN          ICON    DISCARDABLE     "resources\\NudgeTlen.ico"
+IDI_NUDGE_META          ICON    DISCARDABLE     "resources\\NudgeMeta.ico"
 #endif    // French (Belgium) resources
 /////////////////////////////////////////////////////////////////////////////
 

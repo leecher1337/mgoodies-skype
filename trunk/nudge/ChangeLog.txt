@@ -2,6 +2,8 @@
 ===========
 + Add unicode aware flag
 + Support for miranda 0.8
+! Fix for icolib support
++ Added icons from angelika 
 
 0.0.1.16
 ===========
