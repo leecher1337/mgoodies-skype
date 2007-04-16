@@ -264,7 +264,7 @@ extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVers
 {
 	if (mirandaVersion >= PLUGIN_MAKE_VERSION(0, 7, 0, 3))
 		bIcolibEmbededInCore = TRUE;
-
+	pluginInfo.cbSize = sizeof(PLUGININFO);//Miranda pre-0.7.0.17 does not load the plugin if cbSize does not match.
 	return (PLUGININFO *) &pluginInfo;
 }
 
@@ -272,6 +272,7 @@ extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD miranda
 {
 	if (mirandaVersion >= PLUGIN_MAKE_VERSION(0, 7, 0, 3))
 		bIcolibEmbededInCore = TRUE;
+	pluginInfo.cbSize = sizeof(PLUGININFOEX);//Make sure cbSize is correct;
 	return &pluginInfo;
 }
 
@@ -391,14 +392,15 @@ int SystemModulesLoaded(WPARAM,LPARAM){
 		CallService(MS_UPDATE_REGISTER, 0, (WPARAM)&update);
 
 	}
-
-	char AccountFolder[MAX_PATH];
-	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AccountFolder);
-	sprintf(AccountFolder,"%s\\%s",AccountFolder,ProtoName);
-	hAccountFolder = FoldersRegisterCustomPath(ProtoName,"Account Folder",AccountFolder);
-
-	FoldersGetCustomPath(hAccountFolder,  AccountFolder, sizeof(AccountFolder), AccountFolder);
-	MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,AccountFolder,-1,UserDirectory,strlen(AccountFolder)+1);
+	if (ServiceExists(MS_FOLDERS_GET_PATH)){
+		//char AccountFolder[MAX_PATH];
+		//CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AccountFolder);
+		//sprintf(AccountFolder,"%s\\%s",AccountFolder,ProtoName);
+		hAccountFolder = FoldersRegisterCustomPathW(ProtoName,YAMN_DBMODULE" Account Folder",UserDirectory);
+		
+		FoldersGetCustomPathW(hAccountFolder,  UserDirectory, MAX_PATH, UserDirectory);
+		//MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,AccountFolder,-1,UserDirectory,strlen(AccountFolder)+1);
+	}
 
 	RegisterPOP3Plugin(0,0);
 
