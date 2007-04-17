@@ -1643,7 +1643,11 @@ static void JabberProcessIqResultVersion( TCHAR* type, XmlNode* node, XmlNode* q
 	TCHAR* from = JabberXmlGetAttrValue( node, "from" );
 	if ( from == NULL ) return;
 
-	JABBER_LIST_ITEM *item = JabberListGetItemPtr( LIST_ROSTER, from );
+	JABBER_LIST_ITEM *item = NULL;
+
+	if (( item = JabberListGetItemPtr( LIST_VCARD_TEMP, from )) == NULL)
+		item = JabberListGetItemPtr( LIST_ROSTER, from );
+
 	if ( item == NULL ) return;
 
 	JABBER_RESOURCE_STATUS *r = item->resource;
