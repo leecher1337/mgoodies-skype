@@ -69,7 +69,10 @@ static BOOL CALLBACK JabberUserInfoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 				SetDlgItemText( hwndDlg, IDC_INFO_JID, dbv.ptszVal );
 
 				if ( jabberOnline ) {
-					if (( item=JabberListGetItemPtr( LIST_ROSTER, dbv.ptszVal )) != NULL ) {
+					if (( item = JabberListGetItemPtr( LIST_VCARD_TEMP, dbv.ptszVal )) == NULL)
+						item = JabberListGetItemPtr( LIST_ROSTER, dbv.ptszVal );
+					if ( item != NULL )
+					{
 						if (( r=item->resource ) != NULL ) {
 							int count = item->resourceCount;
 							for ( int i=0; i<count; i++ ) {
@@ -125,7 +128,11 @@ static BOOL CALLBACK JabberUserInfoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 						TCHAR* jid = dbv.ptszVal;
 						int nItem = SendMessage( hwndList, LB_GETCURSEL, 0, 0 );
 						TCHAR* szResource = ( TCHAR* )SendMessage( hwndList, LB_GETITEMDATA, ( WPARAM ) nItem, 0 );
-						JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, jid );
+
+						JABBER_LIST_ITEM* item = NULL;
+						if (( item = JabberListGetItemPtr( LIST_VCARD_TEMP, jid )) == NULL)
+							item = JabberListGetItemPtr( LIST_ROSTER, jid );
+						
 						JABBER_RESOURCE_STATUS *r;
 
 						if ( szResource != ( TCHAR* )LB_ERR && item != NULL && ( r=item->resource ) != NULL ) {

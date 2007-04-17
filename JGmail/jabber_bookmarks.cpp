@@ -254,15 +254,18 @@ static BOOL CALLBACK JabberBookmarksDlgProc( HWND hwndDlg, UINT msg, WPARAM wPar
 		lvCol.iSubItem = 2;
 		ListView_InsertColumn( lv, 2, &lvCol );
 		if ( jabberOnline ) {
-			int iqId = JabberSerialNext();
-			JabberIqAdd( iqId, IQ_PROC_DISCOBOOKMARKS, JabberIqResultDiscoBookmarks);
+			if ( !( jabberThreadInfo->caps & CAPS_BOOKMARKS_LOADED )) {
+				int iqId = JabberSerialNext();
+				JabberIqAdd( iqId, IQ_PROC_DISCOBOOKMARKS, JabberIqResultDiscoBookmarks);
 
-			XmlNodeIq iq( "get", iqId);
-			XmlNode* query = iq.addQuery( "jabber:iq:private" );
-			XmlNode* storage = query->addChild("storage");
-			storage->addAttr("xmlns","storage:bookmarks");
+				XmlNodeIq iq( "get", iqId);
+				XmlNode* query = iq.addQuery( "jabber:iq:private" );
+				XmlNode* storage = query->addChild("storage");
+				storage->addAttr("xmlns","storage:bookmarks");
 
-			JabberSend( jabberThreadInfo->s, iq );
+				JabberSend( jabberThreadInfo->s, iq );
+			}
+			else SendMessage( hwndDlg, WM_JABBER_REFRESH, 0, 0);
 		}
 		return TRUE;
 

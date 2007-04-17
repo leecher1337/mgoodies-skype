@@ -490,6 +490,7 @@ static int sttGetStatusCode( XmlNode* node )
 void sttRenameParticipantNick( JABBER_LIST_ITEM* item, TCHAR* oldNick, XmlNode *itemNode )
 {
 	TCHAR* newNick = JabberXmlGetAttrValue( itemNode, "nick" );
+	TCHAR* jid = JabberXmlGetAttrValue( itemNode, "jid" );
 	if ( newNick == NULL )
 		return;
 
@@ -514,6 +515,8 @@ void sttRenameParticipantNick( JABBER_LIST_ITEM* item, TCHAR* oldNick, XmlNode *
 			gce.pDest = &gcd;
 			gce.ptszNick = oldNick;
 			gce.ptszText = newNick;
+			if (jid != NULL)
+				gce.ptszUserInfo = jid;
 			gce.time = time(0);
 			gce.dwFlags = GC_TCHAR;
 			JCallService( MS_GC_EVENT, NULL, ( LPARAM )&gce );
@@ -642,10 +645,11 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 		mir_free( room );
 	}
 	else if ( !lstrcmp( type, _T("unavailable"))) {
+		TCHAR* str = 0;
 		if ( xNode != NULL && item->nick != NULL ) {
 			itemNode = JabberXmlGetChild( xNode, "item" );
 			XmlNode* reasonNode = JabberXmlGetChild( itemNode, "reason" );
-
+			str = JabberXmlGetAttrValue( itemNode, "jid" );
 			if ( !lstrcmp( nick, item->nick )) {
 				int iStatus = sttGetStatusCode( xNode );
 				switch( iStatus ) {
@@ -666,12 +670,12 @@ void JabberGroupchatProcessPresence( XmlNode *node, void *userdata )
 				case 301:
 				case 307:
 					JabberListRemoveResource( LIST_CHATROOM, from );
-					JabberGcLogUpdateMemberStatus( item, nick, NULL, GC_EVENT_KICK, reasonNode );
+					JabberGcLogUpdateMemberStatus( item, nick, str, GC_EVENT_KICK, reasonNode );
 					return;
 		}	}	}
 
 		JabberListRemoveResource( LIST_CHATROOM, from );
-		JabberGcLogUpdateMemberStatus( item, nick, NULL, GC_EVENT_PART, NULL );
+		JabberGcLogUpdateMemberStatus( item, nick, str, GC_EVENT_PART, NULL );
 
 		HANDLE hContact = JabberHContactFromJID( from );
 		if ( hContact != NULL )
