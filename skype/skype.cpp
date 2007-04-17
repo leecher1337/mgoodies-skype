@@ -399,22 +399,25 @@ void GetInfoThread(HANDLE hContact) {
 		if (ptr[strlen(str+3)]) {
 			time_t temp;
 			struct tm tms;
+			long myTimeZone = timezone;
+			int value = atoi(ptr+strlen(str+3));
+
 			
-			if (atoi(ptr+strlen(str+3)) != 0) {
+			if ( value != 0) {
 				temp = time(NULL);
 				tms = *localtime(&temp);
 
-				if (atoi(ptr+strlen(str+3)) >= 86400 ) timezone=256-((2*(atoi(ptr+strlen(str+3))-86400))/3600);
-				if (atoi(ptr+strlen(str+3)) < 86400 ) timezone=((-2*(atoi(ptr+strlen(str+3))-86400))/3600); 
+				if (value >= 86400 ) myTimeZone=256-((2*(value - 86400))/3600);
+				if (value < 86400 ) myTimeZone=((-2*(value - 86400))/3600); 
 				if (tms.tm_isdst == 1 && DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseTimeZonePatch", 0)) 
 				{
 					LOG("WndProc", "Using the TimeZonePatch");
-					DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (timezone+2));
+					DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (myTimeZone+2));
 				}
 				else
 				{
 					LOG("WndProc", "Not using the TimeZonePatch");
-					DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (timezone+0));
+					DBWriteContactSettingByte(hContact, "UserInfo", "Timezone", (myTimeZone+0));
 				}
 			}
 			else 
@@ -2477,6 +2480,7 @@ void __cdecl MsgPump (char *dummy)
 
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
 {
+		pluginInfo.cbSize = sizeof(PLUGININFO);
 		return (PLUGININFO*) &pluginInfo;
 }
 
