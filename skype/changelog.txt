@@ -14,6 +14,7 @@ CODE
 HISTORY
 -------
 0.0.0.38 - ! Fix the load for pre 0.7.0 #17 build
+		   * Patch by pescuma for avatar.
 
 0.0.0.37 - ! Avoid empty message from myself on first message received.
 		   + Add the Get user avatar interface
