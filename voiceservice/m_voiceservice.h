@@ -63,6 +63,23 @@ return: 0 on success
 #define MS_VOICESERVICE_REGISTER		"VoiceService/Register"
 
 
+/*
+Request a voice call to hContact.
+
+wParam: (HANDLE) hContact
+lParam: ignored
+return: the number of option calls for a contact. If > 0, it can be called
+*/
+#define MS_VOICESERVICE_CAN_CALL			"VoiceService/CanCall"
+
+/*
+Request a voice call to hContact.
+
+wParam: (HANDLE) hContact
+lParam: (char *) Protocol or NULL to use any proto avaiable
+return: 0 on success
+*/
+#define MS_VOICESERVICE_CALL				"VoiceService/Call"
 
 
 
