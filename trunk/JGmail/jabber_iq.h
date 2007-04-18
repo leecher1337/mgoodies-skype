@@ -92,6 +92,8 @@ void JabberIqResultSetVcard( XmlNode *iqNode, void *userdata );
 void JabberIqResultMailNotify( XmlNode *iqNode, void *userdata );
 void JabberRequestMailBox(HANDLE hConn);
 void JabberEnableNotifications(ThreadData *info);
+//end gmail specific
+void JabberIqResultEntityTime( XmlNode *iqNode, void *userdata );
 
 void JabberSetBookmarkRequest (XmlNodeIq& iqId);
 
