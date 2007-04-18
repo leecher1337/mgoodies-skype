@@ -43,7 +43,7 @@ UINT ControlAPIAttach, ControlAPIDiscover;
 LONG AttachStatus=-1;
 HINSTANCE hInst;
 HANDLE hProtocolAvatarsFolder;
-
+char DefaultAvatarsFolder[MAX_PATH+1];
 
 
 // Module Internal Globals
@@ -85,6 +85,7 @@ PCTD pfnCloseThemeData = 0;
 PDTT pfnDrawThemeText = 0;
 
 #define FIXED_TAB_SIZE 100                  // default value for fixed width tabs
+
 
 /*
  * visual styles support (XP+)
@@ -259,7 +260,7 @@ int HookContactDeleted(WPARAM wParam, LPARAM lParam) {
 void GetInfoThread(HANDLE hContact) {
 	DBVARIANT dbv;
 	int eol, i=0, len;
-	char str[19+MAX_USERLEN], *ptr, buf[5], *nm, *utfdstr=NULL, strA[500], usr[MAX_USERLEN], Avatar[MAX_PATH];
+	char str[19+MAX_USERLEN], *ptr, buf[5], *nm, *utfdstr=NULL, usr[MAX_USERLEN];
 	struct CountryListEntry *countries;
 	int countryCount;
 	settings_map settings[]= {
@@ -273,13 +274,6 @@ void GetInfoThread(HANDLE hContact) {
 		{"ABOUT", "About"},
 		{NULL, NULL}
 	};
-    
-	char AvatarsFolder[MAX_PATH];
-	
-	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
-	hProtocolAvatarsFolder = FoldersRegisterCustomPath(Translate("Avatars"),Translate("Protocol Avatars Cache"),AvatarsFolder);
-
-	FoldersGetCustomPath(hProtocolAvatarsFolder,  AvatarsFolder, sizeof(AvatarsFolder), AvatarsFolder);		
 
 	LOG ("GetInfoThread", "started.");
 	if (DBGetContactSetting(hContact, pszSkypeProtoName, SKYPE_NAME, &dbv) ||
@@ -292,11 +286,6 @@ void GetInfoThread(HANDLE hContact) {
 	eol=10+len;
 	sprintf(str, "GET USER %s FULLNAME", dbv.pszVal);
 
-	sprintf(AvatarsFolder,"%s\\SKYPE",AvatarsFolder);
-	CreateDirectory(AvatarsFolder,NULL);
-	sprintf(Avatar,"%s\\%s_tmp.jpg",AvatarsFolder,dbv.pszVal);
-	sprintf(AvatarsFolder,"%s\\%s.jpg",AvatarsFolder,dbv.pszVal);
-	sprintf(strA,"GET USER %s AVATAR 1 %s", dbv.pszVal,Avatar);
 	strcpy(usr, dbv.pszVal);
 	DBFreeVariant(&dbv);
 
@@ -443,66 +432,16 @@ void GetInfoThread(HANDLE hContact) {
 		free(ptr);
 	}
 
-	if( protocol >= 7)
-	{
-		str[eol]=0;
-		if (!SkypeSend(strA) && (ptr=SkypeRcv(strA+4, INFINITE))) {
-			if (ptr[strlen(str+3)]) {
-				TCHAR *unicode = NULL;
-				char *Avatartmp  = NULL;
-						
-				if( utf8_decode((ptr+ 5 + strlen(usr) + 10), &Avatartmp)!=-1)
-				{
+	if (protocol >= 7) {
+		// Notify about the possibility of an avatar
+		ACKDATA ack = {0};
+		ack.cbSize = sizeof( ACKDATA );
+		ack.szModule = pszSkypeProtoName;
+		ack.hContact = hContact;
+		ack.type = ACKTYPE_AVATAR;
+		ack.result = ACKRESULT_STATUS;
 
-					if(0 <= (INT_PTR)GetFileAttributesA(Avatartmp))
-					{
-						CopyFile(Avatartmp,AvatarsFolder,0);
-
-						if( ServiceExists(MS_AV_SETAVATAR) )
-						{
-							CallService(MS_AV_SETAVATAR,(WPARAM) hContact,(LPARAM) AvatarsFolder);
-						}
-						else
-						{
-
-							if(DBWriteContactSettingTString(hContact, "ContactPhoto", "File", AvatarsFolder)) 
-							{
-								#if defined( _UNICODE )
-									char buff[TEXT_LEN];
-									WideCharToMultiByte(code_page, 0, Avatar, -1, buff, TEXT_LEN, 0, 0);
-									buff[TEXT_LEN] = 0;
-									DBWriteContactSettingString(hContact, "ContactPhoto", "File", buff);
-								#endif
-							}
-
-						}
-
-						PROTO_AVATAR_INFORMATION AI;
-						AI.cbSize = sizeof( AI );
-						AI.format = PA_FORMAT_JPEG;
-						AI.hContact = hContact;
-						strcpy(AI.filename,AvatarsFolder);
-
-						ACKDATA ack = {0};
-						ack.cbSize = sizeof( ACKDATA );
-						ack.szModule = pszSkypeProtoName;
-						ack.hContact = hContact;
-						ack.type = ACKTYPE_AVATAR;
-						ack.result = ACKRESULT_SUCCESS;
-						ack.hProcess = HANDLE( &AI );
-						ack.lParam = NULL;
-
-						CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
-					}
-					
-				}
-
-				DeleteFile(Avatartmp);
-			}
-			DeleteFile(Avatar);
-			free(ptr);
-		}
-
+		CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
 	}
 
 	i=0;
@@ -846,10 +785,21 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 	hTTBModuleLoadedHook = HookEvent(ME_TTB_MODULELOADED, CreateTopToolbarButton);
 	hHookOnUserInfoInit = HookEvent( ME_USERINFO_INITIALISE, OnDetailsInit );
 
-	char AvatarsFolder[MAX_PATH];
-	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
-	sprintf(AvatarsFolder,"%s\\%s",AvatarsFolder,pszSkypeProtoName);
-	hProtocolAvatarsFolder = FoldersRegisterCustomPath(pszSkypeProtoName,"Avatars",AvatarsFolder);
+	// Try folder service first
+	hProtocolAvatarsFolder = NULL;
+	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
+	{
+		mir_snprintf(DefaultAvatarsFolder, sizeof(DefaultAvatarsFolder), "%s\\%s", PROFILE_PATH, pszSkypeProtoName);
+		hProtocolAvatarsFolder = (HANDLE) FoldersRegisterCustomPath(pszSkypeProtoName, "Avatars Cache", DefaultAvatarsFolder);
+	}
+	
+	if (hProtocolAvatarsFolder == NULL)
+	{
+		// Use defaults
+		CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM) DefaultAvatarsFolder);
+		mir_snprintf(DefaultAvatarsFolder, sizeof(DefaultAvatarsFolder), "%s\\%s", DefaultAvatarsFolder, pszSkypeProtoName);
+		CreateDirectory(DefaultAvatarsFolder, NULL);
+	}
 
 	pthread_create(( pThreadFunc )FirstLaunch, NULL);
 	return 0;
@@ -1839,7 +1789,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					if (!strcmp(ptr, "FAILED") || !strcmp(ptr, "FINISHED") ||
 						!strcmp(ptr, "MISSED") || !strcmp(ptr, "REFUSED")  ||
 						!strcmp(ptr, "BUSY")   || !strcmp(ptr, "CANCELLED"))
-							pthread_create(( pThreadFunc )EndCallThread, _strdup(szSkypeMsg));
+						pthread_create(( pThreadFunc )EndCallThread, _strdup(szSkypeMsg));
 					if (!strcmp(ptr, "ONHOLD") || !strcmp(ptr, "LOCALHOLD") ||
 						!strcmp(ptr, "REMOTEHOLD")) pthread_create(( pThreadFunc )HoldCallThread, _strdup(szSkypeMsg));
 					if (!strcmp(ptr, "INPROGRESS")) pthread_create(( pThreadFunc )ResumeCallThread, _strdup(szSkypeMsg));
@@ -2054,6 +2004,121 @@ int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam)
 }
 
 
+
+/* RetrieveUserAvatar
+ * 
+ * Purpose: Get a user avatar from skype itself
+ * Params : param=(void *)(HANDLE)hContact
+ */
+void RetrieveUserAvatar(void *param)
+{
+	HANDLE hContact = (HANDLE) param;
+	if (hContact == NULL)
+		return;
+
+	// Mount default ack
+	ACKDATA ack = {0};
+	ack.cbSize = sizeof( ACKDATA );
+	ack.szModule = pszSkypeProtoName;
+	ack.hContact = hContact;
+	ack.type = ACKTYPE_AVATAR;
+
+	// Get skype name
+	DBVARIANT dbv;
+	if (DBGetContactSetting(hContact, pszSkypeProtoName, SKYPE_NAME, &dbv)) 
+	{
+		// No skype name ??
+		ack.result = ACKRESULT_FAILED;
+		CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
+		return;
+	}
+
+	size_t len;
+	if (dbv.pszVal == NULL || (len = strlen(dbv.pszVal)) > MAX_USERLEN)
+	{
+		// No skype name ??
+		DBFreeVariant(&dbv);
+		ack.result = ACKRESULT_FAILED;
+		CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
+		return;
+	}
+
+	// Get filename
+	char AvatarFile[MAX_PATH+1], AvatarTmpFile[MAX_PATH+1], command[500];
+
+	FoldersGetCustomPath(hProtocolAvatarsFolder, AvatarFile, sizeof(AvatarFile), DefaultAvatarsFolder);
+	mir_snprintf(AvatarTmpFile, sizeof(AvatarTmpFile), "%s\\%s_tmp.jpg", AvatarFile, dbv.pszVal);
+	mir_snprintf(AvatarFile, sizeof(AvatarFile), "%s\\%s.jpg", AvatarFile, dbv.pszVal);
+
+	mir_snprintf(command, sizeof(command), "GET USER %s AVATAR 1 %s", dbv.pszVal, AvatarTmpFile);
+
+	DBFreeVariant(&dbv);
+
+	// Just to be sure
+	DeleteFile(AvatarTmpFile);
+	HANDLE file = CreateFile(AvatarTmpFile, 0, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (file == INVALID_HANDLE_VALUE)
+	{
+		// Error creating empty file
+		ack.result = ACKRESULT_FAILED;
+		CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
+		return;
+	}
+	CloseHandle(file);
+
+	// Request avatar
+	char *ptr;
+	if (SkypeSend(command) || (ptr=SkypeRcv(command+4, INFINITE))== NULL) 
+	{
+		// Error receiving avatar
+		ack.result = ACKRESULT_FAILED;
+		CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
+
+		DeleteFile(AvatarTmpFile);
+		return;
+	}
+
+
+	if (!strncmp(ptr, "ERROR", 5)) 
+	{
+		// Error receiving avatar
+		ack.result = ACKRESULT_FAILED;
+		CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
+
+		DeleteFile(AvatarTmpFile);
+		free(ptr);
+		return;
+	}
+
+	free(ptr);
+
+	if (GetFileAttributesA(AvatarTmpFile) == INVALID_FILE_ATTRIBUTES)
+	{
+		// Error reading avatar
+		ack.result = ACKRESULT_FAILED;
+		CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
+
+		DeleteFile(AvatarTmpFile);
+		return;
+	}
+
+	// Got it
+
+	CopyFile(AvatarTmpFile, AvatarFile, FALSE);
+	DeleteFile(AvatarTmpFile);
+
+	PROTO_AVATAR_INFORMATION AI;
+	AI.cbSize = sizeof( AI );
+	AI.format = PA_FORMAT_JPEG;
+	AI.hContact = hContact;
+	strcpy(AI.filename, AvatarFile);
+
+	ack.result = ACKRESULT_SUCCESS;
+	ack.hProcess = HANDLE( &AI );
+	CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
+}
+
+
 /* SkypeGetAvatarInfo
  * 
  * Purpose: Set user avatar in profile
@@ -2067,20 +2132,56 @@ int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 
 	DBVARIANT dbv;
 	PROTO_AVATAR_INFORMATION* AI = ( PROTO_AVATAR_INFORMATION* )lParam;	
-	if (!DBGetContactSetting(NULL,pszSkypeProtoName, "AvatarFile", &dbv) && (AI->hContact == NULL)){
-		lstrcpynA(AI->filename, dbv.pszVal, sizeof(AI->filename));
+	if (AI->hContact == NULL) // User
+	{
+		if (!DBGetContactSetting(NULL,pszSkypeProtoName, "AvatarFile", &dbv))
+		{
+			lstrcpynA(AI->filename, dbv.pszVal, sizeof(AI->filename));
+			DBFreeVariant(&dbv);
+			return GAIR_SUCCESS;
+		}
+		else
+			return GAIR_NOAVATAR;
+	}
+	else // Contact 
+	{
+		if (protocol < 7)
+			return GAIR_NOAVATAR;
+
+		if (wParam & GAIF_FORCE)
+		{
+			// Request anyway
+			pthread_create(RetrieveUserAvatar, (void *) AI->hContact);
+			return GAIR_WAITFOR;
+		}
+
+		DBVARIANT dbv;
+		if (DBGetContactSetting(AI->hContact, pszSkypeProtoName, SKYPE_NAME, &dbv)) 
+			// No skype name ??
+			return GAIR_NOAVATAR;
+
+		if (dbv.pszVal == NULL || strlen(dbv.pszVal) > MAX_USERLEN)
+		{
+			// No skype name ??
+			DBFreeVariant(&dbv);
+			return GAIR_NOAVATAR;
+		}
+
+		// Get filename
+		char AvatarFile[MAX_PATH+1];
+		FoldersGetCustomPath(hProtocolAvatarsFolder, AvatarFile, sizeof(AvatarFile), DefaultAvatarsFolder);
+		mir_snprintf(AvatarFile, sizeof(AvatarFile), "%s\\%s.jpg", AvatarFile, dbv.pszVal);
 		DBFreeVariant(&dbv);
+
+		// Check if the file exists
+		if (GetFileAttributesA(AvatarFile) == INVALID_FILE_ATTRIBUTES)
+			return GAIR_NOAVATAR;
+		
+		// Return the avatar
+		AI->format = PA_FORMAT_JPEG;
+		strcpy(AI->filename, AvatarFile);
 		return GAIR_SUCCESS;
 	}
-	else
-		return GAIR_NOAVATAR;
-
-
-	if (( wParam & GAIF_FORCE ) != 0 && AI->hContact != NULL ) {
-		return GAIR_WAITFOR;
-	}
-
-	return GAIR_NOAVATAR;
 }
 
 
