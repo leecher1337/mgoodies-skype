@@ -1631,3 +1631,41 @@ void JabberIqResultSetBookmarks( XmlNode *iqNode, void *userdata )
 		if ( hwndJabberBookmarks != NULL )
 			SendMessage( hwndJabberBookmarks, WM_JABBER_ACTIVATE, 0, 0);
 }	}
+
+// entity time (XEP-0202) support
+void JabberIqResultEntityTime( XmlNode* pIqNode, void* pUserdata )
+{
+	TCHAR* szFrom = JabberXmlGetAttrValue( pIqNode, "from" );
+	if ( !szFrom )
+		return;
+
+	HANDLE hContact = JabberHContactFromJID( szFrom );
+	if ( !hContact )
+		return;
+
+	TCHAR *szType = JabberXmlGetAttrValue( pIqNode, "type" );
+	if ( !szType )
+		return;
+
+	if ( !_tcscmp( szType, _T( "result" ))) {
+		XmlNode* pTimeNode = JabberXmlGetChildWithGivenAttrValue(pIqNode, "time", "xmlns", _T( "urn:xmpp:time" ));
+		if ( pTimeNode ) {
+			XmlNode* pTzo = JabberXmlGetChild(pTimeNode, "tzo");
+			if ( pTzo ) {
+				if ( _tcslen( pTzo->text ) == 6 ) { // +00:00
+					bool bNegative = pTzo->text[0] == _T('-');
+					int nTz = ( _ttoi( pTzo->text+1 ) * 60 + _ttoi( pTzo->text + 4 )) / 30;
+
+					TIME_ZONE_INFORMATION tzinfo;
+					if ( GetTimeZoneInformation( &tzinfo ) == TIME_ZONE_ID_DAYLIGHT )
+						nTz += ( bNegative ? -tzinfo.DaylightBias : tzinfo.DaylightBias ) / 30;
+
+					if ( !bNegative )
+						nTz = 256 - nTz;
+					JSetByte( hContact, "Timezone", nTz );
+					return;
+	}	}	}	}
+
+	JDeleteSetting( hContact, "Timezone" );
+	return;
+}

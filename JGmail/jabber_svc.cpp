@@ -914,6 +914,18 @@ int JabberGetInfo( WPARAM wParam, LPARAM lParam )
 	int result = 1;
 	DBVARIANT dbv;
 	if ( !JGetStringT( ccs->hContact, "jid", &dbv )) {
+		if ( jabberThreadInfo ) {
+			TCHAR jid[ 200 ];
+			JabberGetClientJID( dbv.ptszVal, jid, SIZEOF( jid ));
+
+			int iqId = JabberSerialNext();
+			JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultEntityTime );
+			XmlNodeIq iq( "get", iqId, jid );
+			XmlNode* pReq = iq.addChild( "time" );
+			pReq->addAttr( "xmlns", "urn:xmpp:time" );
+			JabberSend( jabberThreadInfo->s, iq );
+		}
+
 		JabberSendGetVcard( dbv.ptszVal );
 		JFreeVariant( &dbv );
 		result = 0;

@@ -1568,20 +1568,77 @@ static void JabberProcessIqVersion( TCHAR* idStr, XmlNode* node )
 	if ( version ) mir_free( version );
 }
 
+// Returns the current GMT offset in seconds
+int GetGMTOffset(void)
+{
+	TIME_ZONE_INFORMATION tzinfo;
+	int nOffset = 0;
+
+	DWORD dwResult= GetTimeZoneInformation(&tzinfo);
+
+	switch(dwResult) {
+	case TIME_ZONE_ID_STANDARD:
+		nOffset = -(tzinfo.Bias + tzinfo.StandardBias) * 60;
+		break;
+	case TIME_ZONE_ID_DAYLIGHT:
+		nOffset = -(tzinfo.Bias + tzinfo.DaylightBias) * 60;
+		break;
+	case TIME_ZONE_ID_UNKNOWN:
+	case TIME_ZONE_ID_INVALID:
+	default:
+		nOffset = 0;
+		break;
+	}
+
+	return nOffset;
+}
+
+// entity time (XEP-0202) support
+static void JabberProcessIqTime202(TCHAR* idStr, XmlNode* node)
+{
+	TCHAR* from;
+	struct tm *gmt;
+	time_t ltime;
+	char stime[100];
+	char szTZ[10];
+	if (( from = JabberXmlGetAttrValue( node, "from" )) == NULL )
+		return;
+
+	_tzset();
+	time(&ltime);
+	gmt = gmtime(&ltime);
+	sprintf(stime,"%.4i-%.2i-%.2iT%.2i:%.2i:%.2iZ", gmt->tm_year + 1900, gmt->tm_mon, gmt->tm_mday,
+		gmt->tm_hour, gmt->tm_min, gmt->tm_sec);
+
+	int nGmtOffset = GetGMTOffset();
+	ltime = abs(nGmtOffset);
+
+	gmt = gmtime( &ltime );
+	sprintf(szTZ, "%s%.2i:%.2i", nGmtOffset > 0 ? "+" : "-", gmt->tm_hour, gmt->tm_min );
+
+	XmlNodeIq iq( "result", idStr, from );
+	XmlNode* timeNode = iq.addChild( "time" );
+	timeNode->addAttr( "xmlns", "urn:xmpp:time" );
+	timeNode->addChild( "utc", stime);
+	timeNode->addChild( "tzo", szTZ );
+	JabberSend( jabberThreadInfo->s, iq);
+}
+
 static void JabberProcessIqTime( TCHAR* idStr, XmlNode* node ) //added by Rion (jep-0090)
 {
 	TCHAR* from;
 	struct tm *gmt;
 	time_t ltime;
 	char stime[20],*dtime;
-	if (( from=JabberXmlGetAttrValue( node, "from" )) == NULL )
+	if (( from = JabberXmlGetAttrValue( node, "from" )) == NULL )
 		return;
 
 	_tzset();
 	time( &ltime );
 	gmt = gmtime( &ltime );
-	sprintf (stime,"%.4i%.2i%.2iT%.2i:%.2i:%.2i",gmt->tm_year+1900,gmt->tm_mon,gmt->tm_mday,gmt->tm_hour,gmt->tm_min,gmt->tm_sec);
-	dtime = ctime(&ltime);
+	sprintf( stime,"%.4i%.2i%.2iT%.2i:%.2i:%.2i",
+		gmt->tm_year+1900, gmt->tm_mon, gmt->tm_mday, gmt->tm_hour, gmt->tm_min, gmt->tm_sec );
+	dtime = ctime( &ltime );
 	dtime[24]=0;
 
 	XmlNodeIq iq( "result", idStr, from );
@@ -1907,16 +1964,23 @@ static void JabberProcessIq( XmlNode *node, void *userdata )
 			JabberFtHandleBytestreamRequest( node );
 	}
 	// RECVED: <iq type='get'><query ...
-	else if ( !_tcscmp( type, _T("get")) && queryNode!=NULL && xmlns != NULL ) {
-
+	else if ( !_tcscmp( type, _T( "get" ))) {
 		// RECVED: software version query
 		// ACTION: return my software version
-		if ( !_tcscmp( xmlns, _T("jabber:iq:version")))
-			JabberProcessIqVersion( idStr, node );
-		else if ( !_tcscmp( xmlns, _T("jabber:iq:avatar")))
-			JabberProcessIqAvatar( idStr, node );
-		else if ( !_tcscmp( xmlns, _T("jabber:iq:time")))
-			JabberProcessIqTime( idStr, node );
+		if ( queryNode != NULL && xmlns != NULL ) {
+			if ( !_tcscmp( xmlns, _T("jabber:iq:version")))
+				JabberProcessIqVersion( idStr, node );
+			else if ( !_tcscmp( xmlns, _T("jabber:iq:avatar")))
+				JabberProcessIqAvatar( idStr, node );
+			else if ( !_tcscmp( xmlns, _T("jabber:iq:time")))
+				JabberProcessIqTime( idStr, node );	
+		}
+		else {
+			// entity time (XEP-0202) support
+			XmlNode* timeNode = JabberXmlGetChildWithGivenAttrValue( node, "time", "xmlns", _T( "urn:xmpp:time" ));
+			if ( timeNode )
+				JabberProcessIqTime202( idStr, node );
+		}
 	}
 	// RECVED: <iq type='result'><query ...
 	else if ( !_tcscmp( type, _T("result")) && queryNode != NULL && xmlns != NULL ) {

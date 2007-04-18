@@ -102,6 +102,7 @@ void JabberXmlnsDisco( XmlNode *iqNode, void *userdata )
 			sttAddFeature( query, "jabber:x:data" );
 			sttAddFeature( query, "jabber:x:event" );
 			sttAddFeature( query, "vcard-temp" );
+			sttAddFeature( query, "urn:xmpp:time" );
 		}
 		JabberSend( jabberThreadInfo->s, iq );
 }	}
