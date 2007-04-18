@@ -4,6 +4,7 @@ Changelog:
 
 . 0.0.0.7
   + Added dialog on tray icon doubleclick
+  + Handle more than one notification per status
 
 . 0.0.0.6
   + Added sound support

@@ -622,6 +622,10 @@ static int VoiceCalling(VOICE_CALL *in)
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
 
+	if (vc->state == VOICE_STATE_CALLING)
+		// Already here
+		return 0;
+
 	// Remove old notifications
 	if (vc->state == VOICE_STATE_RINGING)
 		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) vc->hContact, (LPARAM) vc->last_dbe);
@@ -662,9 +666,9 @@ static int VoiceRinging(VOICE_CALL *in)
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
 
-	// Remove old notifications
 	if (vc->state == VOICE_STATE_RINGING)
-		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) vc->hContact, (LPARAM) vc->last_dbe);
+		// Already here
+		return 0;
 
 	// Set data
 	CopyVoiceCallData(vc, in);
@@ -723,6 +727,10 @@ static int VoiceEndedCall(VOICE_CALL *in)
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
 
+	if (vc->state == VOICE_STATE_ENDED)
+		// Already here
+		return 0;
+
 	// Remove old notifications
 	if (vc->state == VOICE_STATE_RINGING)
 		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) vc->hContact, (LPARAM) vc->last_dbe);
@@ -775,6 +783,10 @@ static int VoiceStartedCall(VOICE_CALL *in)
 	if (vc->hwnd != NULL)
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
+
+	if (vc->state == VOICE_STATE_TALKING)
+		// Already here
+		return 0;
 
 	// Remove old notifications
 	if (vc->state == VOICE_STATE_RINGING)
@@ -829,6 +841,10 @@ static int VoiceHoldedCall(VOICE_CALL *in)
 	if (vc->hwnd != NULL)
 		// Destroy old window
 		DestroyWindow(vc->hwnd);
+
+	if (vc->state == VOICE_STATE_ON_HOLD)
+		// Already here
+		return 0;
 
 	// Remove old notifications
 	if (vc->state == VOICE_STATE_RINGING)
