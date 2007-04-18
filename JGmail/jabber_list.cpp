@@ -296,7 +296,7 @@ void JabberListRemoveResource( JABBER_LIST list, const TCHAR* jid )
 					}
 					else {
 						memmove( r, r+1, ( LI->resourceCount-j )*sizeof( JABBER_RESOURCE_STATUS ));
-						LI->resource = ( JABBER_RESOURCE_STATUS * )mir_realloc( LI->resource, LI->resourceCount*sizeof( JABBER_RESOURCE_STATUS ));
+						LI->resource = ( JABBER_RESOURCE_STATUS* )mir_realloc( LI->resource, LI->resourceCount*sizeof( JABBER_RESOURCE_STATUS ));
 	}	}	}	}	}
 
 	LeaveCriticalSection( &csLists );
@@ -306,8 +306,6 @@ void JabberListRemoveResource( JABBER_LIST list, const TCHAR* jid )
 
 TCHAR* JabberListGetBestResourceNamePtr( const TCHAR* jid )
 {
-	TCHAR* res;
-
 	EnterCriticalSection( &csLists );
 	int i = JabberListExist( LIST_ROSTER, jid );
 	if ( !i ) {
@@ -315,20 +313,18 @@ TCHAR* JabberListGetBestResourceNamePtr( const TCHAR* jid )
 		return NULL;
 	}
 
+	TCHAR* res = NULL;
+
 	JABBER_LIST_ITEM* LI = roster[i-1];
-	if ( LI->resourceCount == 1 )
-		res = LI->resource[0].resourceName;
-	else {
-		res = NULL;
-		if (LI->resourceMode == RSMODE_LASTSEEN && LI->lastSeenResource>=0 && LI->lastSeenResource < LI->resourceCount)
-		{
+	if ( LI->resourceCount > 1 ) {
+		if ( LI->resourceMode == RSMODE_LASTSEEN && LI->lastSeenResource>=0 && LI->lastSeenResource < LI->resourceCount )
 			res = LI->resource[ LI->lastSeenResource ].resourceName;
-		} else
-		if (LI->resourceMode == RSMODE_MANUAL && LI->manualResource>=0 && LI->manualResource < LI->resourceCount)
-		{
+		else if (LI->resourceMode == RSMODE_MANUAL && LI->manualResource>=0 && LI->manualResource < LI->resourceCount )
 			res = LI->resource[ LI->manualResource ].resourceName;
-		}
 	}
+
+	if ( !res )
+		res = LI->resource[0].resourceName;
 
 	LeaveCriticalSection( &csLists );
 	return res;
