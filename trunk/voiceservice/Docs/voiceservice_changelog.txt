@@ -2,6 +2,16 @@ Voice Service
 
 Changelog:
 
+. 0.0.0.7
+  + Added dialog on tray icon doubleclick
+
+. 0.0.0.6
+  + Added sound support
+
+. 0.0.0.5
+  + Added services for call a contact
+  + Added initial metacontact support
+
 . 0.0.0.4
   + Added support for miranda 0.8
   * Fixed some bugs

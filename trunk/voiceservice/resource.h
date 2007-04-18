@@ -14,14 +14,19 @@
 #define IDI_ACTION_HOLD                 109
 #define IDI_ACTION_DROP                 110
 #define IDI_MAIN                        111
+#define IDD_NEW_CALL                    113
 #define IDD_POPUPS                      120
 #define IDI_SMALLDOT                    211
 #define IDD_OPT_AUTO                    215
 #define IDC_CALLS                       1000
 #define IDC_DELAY                       1001
+#define IDC_TEXT                        1001
 #define IDC_WINCOLORS                   1002
+#define ID_ANSWER                       1002
 #define IDC_DEFAULTCOLORS               1003
+#define ID_DROP                         1003
 #define IDC_BGCOLOR                     1004
+#define IDC_AUTO                        1004
 #define IDC_TEXTCOLOR                   1005
 #define IDC_PREV                        1006
 #define IDC_DELAYFROMPU                 1007
@@ -49,9 +54,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        113
+#define _APS_NEXT_RESOURCE_VALUE        114
 #define _APS_NEXT_COMMAND_VALUE         40004
-#define _APS_NEXT_CONTROL_VALUE         1001
+#define _APS_NEXT_CONTROL_VALUE         1005
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

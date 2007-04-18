@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo = {
 #else
 	"Voice Service",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,4),
+	PLUGIN_MAKE_VERSION(0,0,0,7),
 	"Provide services for protocols that support voice calls",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -100,7 +100,8 @@ static HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text);
 
 static int CListDblClick(WPARAM wParam,LPARAM lParam);
 
-static int CMCall(WPARAM wParam,LPARAM lParam); 
+static int Service_CanCall(WPARAM wParam,LPARAM lParam);
+static int Service_Call(WPARAM wParam,LPARAM lParam); 
 static int CMAnswer(WPARAM wParam,LPARAM lParam); 
 static int CMHold(WPARAM wParam,LPARAM lParam);
 static int CMDrop(WPARAM wParam,LPARAM lParam);
@@ -109,6 +110,8 @@ static int IconsChanged(WPARAM wParam, LPARAM lParam);
 static int ReloadFont(WPARAM wParam, LPARAM lParam);
 static int ReloadColor(WPARAM wParam, LPARAM lParam);
 static VOID CALLBACK ClearOldVoiceCalls(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
+
+static BOOL CALLBACK DlgProcNewCall(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -286,7 +289,7 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	mi.cbSize = sizeof(mi);
 	mi.position = -2000020000;
 
-	CreateServiceFunction(MS_VOICESERVICE_CM_CALL, CMCall);
+	CreateServiceFunction(MS_VOICESERVICE_CM_CALL, Service_Call);
 	mi.pszName = GetActionNameA(ACTION_CALL);
 	mi.hIcon = icons[NUM_STATES + ACTION_CALL];
 	mi.pszService = MS_VOICESERVICE_CM_CALL;
@@ -347,6 +350,36 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		modules.insert(modules.end(), m);
 	}
 
+	// Util services
+	CreateServiceFunction(MS_VOICESERVICE_CALL, Service_Call);
+	CreateServiceFunction(MS_VOICESERVICE_CAN_CALL, Service_CanCall);
+
+	// Sounds
+	SKINSOUNDDESCEX ssd = {0};
+	ssd.cbSize = sizeof(ssd);
+	ssd.pszSection = "Voice Calls";
+
+	ssd.pszName = "voice_calling";
+	ssd.pszDescription = "Calling a contact";
+	CallService(MS_SKIN_ADDNEWSOUND, 0, (LPARAM)&ssd);
+
+	ssd.pszName = "voice_ringing";
+	ssd.pszDescription = "Ringing";
+	CallService(MS_SKIN_ADDNEWSOUND, 0, (LPARAM)&ssd);
+
+	ssd.pszName = "voice_started";
+	ssd.pszDescription = "Started talking";
+	CallService(MS_SKIN_ADDNEWSOUND, 0, (LPARAM)&ssd);
+
+	ssd.pszName = "voice_holded";
+	ssd.pszDescription = "Put a call on Hold";
+	CallService(MS_SKIN_ADDNEWSOUND, 0, (LPARAM)&ssd);
+
+	ssd.pszName = "voice_ended";
+	ssd.pszDescription = "End of a Call";
+	CallService(MS_SKIN_ADDNEWSOUND, 0, (LPARAM)&ssd);
+
+
 	SetTimer(NULL, 0, 1000, ClearOldVoiceCalls);
 
 	return 0;
@@ -363,6 +396,18 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam)
 	UnhookEvent(hIconsChanged);
 
 	return 0;
+}
+
+
+HANDLE ConvertMetacontact(HANDLE hContact)
+{
+	if (ServiceExists(MS_MC_GETMOSTONLINECONTACT))
+	{
+		HANDLE hTmp = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hContact, NULL);
+		if (hTmp != NULL)
+			return hTmp;
+	}
+	return hContact;
 }
 
 
@@ -573,6 +618,10 @@ static int VoiceCalling(VOICE_CALL *in)
 	if (vc == NULL)
 		return 0;
 
+	if (vc->hwnd != NULL)
+		// Destroy old window
+		DestroyWindow(vc->hwnd);
+
 	// Remove old notifications
 	if (vc->state == VOICE_STATE_RINGING)
 		CallService(MS_CLIST_REMOVEEVENT, (WPARAM) vc->hContact, (LPARAM) vc->last_dbe);
@@ -592,8 +641,11 @@ static int VoiceCalling(VOICE_CALL *in)
 	if (hwnd_frame != NULL)
 		PostMessage(hwnd_frame, WMU_REFRESH, 0, 0);
 
+	// sound
+	SkinPlaySound("voice_calling");
+
 	// popup
-	ShowPopup(NULL, TranslateT("Voice call"), text);
+	ShowPopup(NULL, TranslateT("Voice Call"), text);
 
 	return 0;
 }
@@ -605,6 +657,10 @@ static int VoiceRinging(VOICE_CALL *in)
 	VOICE_CALL_INTERNAL *vc = FindVoiceCall(in->szModule, in->id, TRUE);
 	if (vc == NULL)
 		return 0;
+
+	if (vc->hwnd != NULL)
+		// Destroy old window
+		DestroyWindow(vc->hwnd);
 
 	// Remove old notifications
 	if (vc->state == VOICE_STATE_RINGING)
@@ -644,6 +700,9 @@ static int VoiceRinging(VOICE_CALL *in)
 
 		// popup
 		ShowPopup(NULL, TranslateT("Voice call ringing"), text);
+
+		// sound
+		SkinPlaySound("voice_ringing");
 	}
 
 	// frame
@@ -659,6 +718,10 @@ static int VoiceEndedCall(VOICE_CALL *in)
 	VOICE_CALL_INTERNAL *vc = FindVoiceCall(in->szModule, in->id, TRUE);
 	if (vc == NULL)
 		return 0;
+
+	if (vc->hwnd != NULL)
+		// Destroy old window
+		DestroyWindow(vc->hwnd);
 
 	// Remove old notifications
 	if (vc->state == VOICE_STATE_RINGING)
@@ -690,6 +753,9 @@ static int VoiceEndedCall(VOICE_CALL *in)
 	// popup
 	ShowPopup(NULL, TranslateT("Voice call ended"), text);
 
+	// sound
+	SkinPlaySound("voice_ended");
+
 	// RemoveVoiceCall(in->szModule, in->id);
 
 	// Need to answer other one?
@@ -705,6 +771,10 @@ static int VoiceStartedCall(VOICE_CALL *in)
 	VOICE_CALL_INTERNAL *vc = FindVoiceCall(in->szModule, in->id, TRUE);
 	if (vc == NULL)
 		return 0;
+
+	if (vc->hwnd != NULL)
+		// Destroy old window
+		DestroyWindow(vc->hwnd);
 
 	// Remove old notifications
 	if (vc->state == VOICE_STATE_RINGING)
@@ -739,6 +809,9 @@ static int VoiceStartedCall(VOICE_CALL *in)
 	// popup
 	ShowPopup(NULL, TranslateT("Voice call started"), text);
 
+	// sound
+	SkinPlaySound("voice_started");
+
 	if (currentCall.hungry_call == vc)
 		currentCall.hungry_call = NULL;
 	currentCall.stopping = FALSE;
@@ -752,6 +825,10 @@ static int VoiceHoldedCall(VOICE_CALL *in)
 	VOICE_CALL_INTERNAL *vc = FindVoiceCall(in->szModule, in->id, TRUE);
 	if (vc == NULL)
 		return 0;
+
+	if (vc->hwnd != NULL)
+		// Destroy old window
+		DestroyWindow(vc->hwnd);
 
 	// Remove old notifications
 	if (vc->state == VOICE_STATE_RINGING)
@@ -780,7 +857,10 @@ static int VoiceHoldedCall(VOICE_CALL *in)
 		PostMessage(hwnd_frame, WMU_REFRESH, 0, 0);
 
 	// popup
-	ShowPopup(NULL, TranslateT("Voice call on hold"), text);
+	ShowPopup(NULL, TranslateT("Voice Call on hold"), text);
+
+	// sound
+	SkinPlaySound("voice_holded");
 
 	return 0;
 }
@@ -811,6 +891,10 @@ void DropCall(VOICE_CALL_INTERNAL * vc)
 	if (vc == NULL || vc->state == VOICE_STATE_ENDED)
 		return;
 
+	if (vc->hwnd != NULL)
+		// Destroy old window
+		DestroyWindow(vc->hwnd);
+
 	CallProtoService(vc->module->name, PS_VOICE_DROPCALL, (WPARAM) vc->id, 0);
 
 	if (currentCall.call == vc)
@@ -822,6 +906,10 @@ void AnswerCall(VOICE_CALL_INTERNAL * vc)
 	// Sanity check
 	if (vc == NULL || (vc->state != VOICE_STATE_RINGING && vc->state != VOICE_STATE_ON_HOLD))
 		return;
+
+	if (vc->hwnd != NULL)
+		// Destroy old window
+		DestroyWindow(vc->hwnd);
 
 	if (currentCall.call != NULL && currentCall.call != vc)
 	{
@@ -852,6 +940,10 @@ void HoldCall(VOICE_CALL_INTERNAL * vc)
 	// Sanity check
 	if (vc == NULL || vc->state != VOICE_STATE_TALKING || !(vc->module->flags & VOICE_CAN_HOLD))
 		return;
+
+	if (vc->hwnd != NULL)
+		// Destroy old window
+		DestroyWindow(vc->hwnd);
 
 	CallProtoService(vc->module->name, PS_VOICE_HOLDCALL, (WPARAM) vc->id, 0);
 
@@ -990,16 +1082,60 @@ static HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text)
 static int CListDblClick(WPARAM wParam,LPARAM lParam) 
 {
 	CLISTEVENT *ce = (CLISTEVENT *) lParam;
-	AnswerCall((VOICE_CALL_INTERNAL *) ce->lParam);
+	
+	VOICE_CALL_INTERNAL *vc = (VOICE_CALL_INTERNAL *) ce->lParam;
+
+	if (vc->hwnd != NULL)
+		// Destroy old window
+		DestroyWindow(vc->hwnd);
+
+	vc->hwnd = CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_NEW_CALL), NULL, DlgProcNewCall, (LPARAM) vc);
+ 	ShowWindow(vc->hwnd, SW_SHOWNORMAL);
+
 	return 0;
 }
 
 
-static int CMCall(WPARAM wParam,LPARAM lParam) 
+static int Service_CanCall(WPARAM wParam,LPARAM lParam) 
 {
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
 		return -1;
+
+	hContact = ConvertMetacontact(hContact);
+
+	// Find a module that can call that contact
+	// TODO: Add options to call from more than one module
+	int i, avaiable = 0;
+	for(i = 0; i < modules.size(); i++)
+	{
+		if (!(modules[i].flags & VOICE_CALL_CONTACT))
+			continue;
+
+		if (modules[i].is_protocol
+			&& !CallService(MS_PROTO_ISPROTOONCONTACT, (WPARAM) hContact, (LPARAM) modules[i].name))
+			continue;
+
+		if ((modules[i].flags & VOICE_CALL_CONTACT_NEED_TEST) 
+			&& !CallProtoService(modules[i].name, PS_VOICE_CALL_CONTACT_VALID, (WPARAM) hContact, TRUE))
+			continue;
+
+		// Oki, can call
+		avaiable ++;
+		break;
+	}
+
+	return avaiable;
+}
+
+
+static int Service_Call(WPARAM wParam,LPARAM lParam) 
+{
+	HANDLE hContact = (HANDLE) wParam;
+	if (hContact == NULL)
+		return -1;
+
+	hContact = ConvertMetacontact(hContact);
 
 	// Find a module that can call that contact
 	// TODO: Add options to call from more than one module
@@ -1035,6 +1171,8 @@ static int CMAnswer(WPARAM wParam,LPARAM lParam)
 	if (hContact == NULL)
 		return -1;
 
+	hContact = ConvertMetacontact(hContact);
+
 	AnswerCall(FindVoiceCall(hContact));
 	return 0;
 }
@@ -1046,6 +1184,8 @@ static int CMHold(WPARAM wParam,LPARAM lParam)
 	if (hContact == NULL)
 		return -1;
 
+	hContact = ConvertMetacontact(hContact);
+
 	HoldCall(FindVoiceCall(hContact));
 	return 0;
 }
@@ -1056,6 +1196,8 @@ static int CMDrop(WPARAM wParam,LPARAM lParam)
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
 		return -1;
+
+	hContact = ConvertMetacontact(hContact);
 
 	DropCall(FindVoiceCall(hContact));
 	return 0;
@@ -1075,6 +1217,8 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam)
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
 		return -1;
+
+	hContact = ConvertMetacontact(hContact);
 
 	// Some Module can handle it?
 	int i;
@@ -1136,5 +1280,72 @@ static int PreBuildContactMenu(WPARAM wParam,LPARAM lParam)
 	}
 
 	return 0;
+}
+
+
+static BOOL CALLBACK DlgProcNewCall(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+		case WM_INITDIALOG:
+		{
+			VOICE_CALL_INTERNAL *vc = (VOICE_CALL_INTERNAL *) lParam;
+
+			TranslateDialogDefault(hwndDlg);
+
+			TCHAR text[1024];
+			mir_sntprintf(text, MAX_REGS(text), TranslateT("%s wants to start a voice call with you. What you want to do?"),
+				vc->ptszContact);
+
+			SendMessage(GetDlgItem(hwndDlg, IDC_TEXT), WM_SETTEXT, 0, (LPARAM) text);
+
+			SendMessage(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM) icons[VOICE_STATE_RINGING]);
+
+			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) vc);
+
+			return TRUE;
+		}
+
+		case WM_COMMAND:
+		{
+			switch(wParam)
+			{
+				case ID_ANSWER:
+				{
+					VOICE_CALL_INTERNAL *vc = (VOICE_CALL_INTERNAL *) GetWindowLong(hwndDlg, GWL_USERDATA);
+					if (IsDlgButtonChecked(hwndDlg, IDC_AUTO))
+						DBWriteContactSettingWord(vc->hContact, MODULE_NAME, "AutoAccept", AUTO_ACCEPT);
+
+					AnswerCall(vc);
+
+					DestroyWindow(hwndDlg);
+					break;
+				}
+				case ID_DROP:
+				{
+					VOICE_CALL_INTERNAL *vc = (VOICE_CALL_INTERNAL *) GetWindowLong(hwndDlg, GWL_USERDATA);
+					if (IsDlgButtonChecked(hwndDlg, IDC_AUTO))
+						DBWriteContactSettingWord(vc->hContact, MODULE_NAME, "AutoAccept", AUTO_DROP);
+
+					DropCall(vc);
+
+					DestroyWindow(hwndDlg);
+					break;
+				}
+			}
+			break;
+		}
+
+		case WM_CLOSE:
+			DestroyWindow(hwndDlg);
+			break;
+
+		case WM_DESTROY:
+			VOICE_CALL_INTERNAL *vc = (VOICE_CALL_INTERNAL *) GetWindowLong(hwndDlg, GWL_USERDATA);
+			vc->hwnd = NULL;
+			break;
+	}
+	
+	return FALSE;
 }
 

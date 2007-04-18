@@ -62,6 +62,7 @@ extern "C"
 #include <m_icolib.h>
 #include <m_metacontacts.h>
 #include <m_fontservice.h>
+#include <m_skin.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
@@ -137,9 +138,13 @@ struct VOICE_CALL_INTERNAL
 	int state;
 	DWORD end_time;
 	HANDLE last_dbe;
+	HWND hwnd;
 
 	~VOICE_CALL_INTERNAL()
 	{
+		if (hwnd != NULL)
+			DestroyWindow(hwnd);
+
 		mir_free(id);
 	}
 };

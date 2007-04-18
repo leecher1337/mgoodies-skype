@@ -1,2 +1,71 @@
-; Voice Service 0.0.0.1
+; Voice Service
 ; Author: Pescuma
+
+[Voice Calls]
+
+; Dialog
+[New Voice Call]
+[%s wants to start a voice call with you. What you want to do?]
+[Answer]
+[Drop]
+[From now on, repeat this action for this contact]
+
+; Options
+[Background]
+
+[Popups]
+[Enable popups]
+[ Colours ]
+[Background colour]
+[Text colour]
+[Use Windows colours]
+[Use default colours]
+[ Delay ]
+[From popup plugin]
+[Custom]
+[Permanent]
+[ Actions ]
+[On right click:]
+[On left click:]
+[Do nothing]
+[Close popup]
+[Preview]
+
+[Auto actions]
+[ Automatic Actions ]
+[Auto accept this contact calls]
+[Auto drop this contacts calls]
+
+; Test popup
+[Test Contact]
+[Test description]
+
+; Status
+[Talking]
+[Calling]
+[Ended]
+[On Hold]
+[Ringing]
+
+; Actions
+[Voice Call]
+[Answer Voice Call]
+[Hold Voice Call]
+[Drop Voice Call]
+
+; Icons
+[Main]
+
+; Popups
+[Calling %s]
+[Ringing call from %s]
+[Voice call ended]
+[Call from %s started]
+[Voice call started]
+[Call from %s is on hold]
+[Voice call on hold]
+
+; Frame popup menu
+[Answer call]
+[Drop call]
+[Hold call]
