@@ -164,11 +164,17 @@ int FreeVSApi()
 static void GetProfileDirectory(char *szPath,int cbPath)
 //This is copied from Miranda's sources. In 0.2.1.0 it is needed, in newer vesions of Miranda use MS_DB_GETPROFILEPATH service
 {
+	szMirandaDir=new char[MAX_PATH];
+	if (ServiceExists(MS_DB_GETPROFILEPATH)){
+		if (!CallService(MS_DB_GETPROFILEPATH,cbPath,(WPARAM)(UINT)szPath)) {
+			lstrcpy(szMirandaDir,szPath);
+			return; //success
+		}
+	}
 	char *str2;
 	char szMirandaIni[MAX_PATH],szProfileDir[MAX_PATH],szExpandedProfileDir[MAX_PATH];
 	DWORD dwAttributes;
 
-	szMirandaDir=new char[MAX_PATH];
 	GetModuleFileName(GetModuleHandle(NULL),szMirandaDir,MAX_PATH);
 	str2=strrchr(szMirandaDir,'\\');
 	if(str2!=NULL) *str2=0;
@@ -220,7 +226,6 @@ void SetDefaultProtocolIcons()
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
-	char szProfileDir[MAX_PATH+1];
 #ifndef WIN2IN1
 	OSVERSIONINFO OSversion;
 	
@@ -251,12 +256,7 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvRese
 	{
 		if(NULL==(UserDirectory=new WCHAR[MAX_PATH]))
 			return FALSE;
-		GetProfileDirectory(szProfileDir,sizeof(szProfileDir));
-		MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,szProfileDir,-1,UserDirectory,strlen(szProfileDir)+1);
-
-//	we get the user path where our yamn-account.book.ini is stored from mirandaboot.ini file
 	}
-
 	return TRUE;
 }
 
@@ -419,7 +419,13 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	pluginLink=link;
 
 	YAMN_STATUS = ID_STATUS_OFFLINE;
-
+	{
+		char szProfileDir[MAX_PATH+1];
+		GetProfileDirectory(szProfileDir,sizeof(szProfileDir));
+		MultiByteToWideChar(CP_ACP,MB_USEGLYPHCHARS,szProfileDir,-1,UserDirectory,strlen(szProfileDir)+1);
+		//	we get the user path where our yamn-account.book.ini is stored from mirandaboot.ini file
+	}
+	
 	// Enumerate all the code pages available for the System Locale
 	EnumSystemCodePages(EnumSystemCodePagesProc, CP_INSTALLED);
 	CodePageNamesSupp = new _tcptable[CPLENSUPP];
