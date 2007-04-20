@@ -86,6 +86,7 @@ HANDLE hNetlibUser;
 ThreadData* jabberThreadInfo = NULL;
 BOOL   jabberConnected = FALSE;
 time_t jabberLoggedInTime = 0;
+time_t jabberIdleStartTime = 0;
 BOOL   jabberOnline = FALSE;
 BOOL   jabberChatDllPresent = FALSE;
 int    jabberStatus = ID_STATUS_OFFLINE;
@@ -133,6 +134,7 @@ HWND hwndMucOwnerList = NULL;
 HWND hwndJabberChangePassword = NULL;
 HWND hwndJabberBookmarks = NULL;
 HWND hwndJabberAddBookmark = NULL;
+HWND hwndJabberInfo = NULL;
 
 // Service and event handles
 HANDLE heventRawXMLIn;
@@ -230,23 +232,29 @@ static int OnPreShutdown( WPARAM wParam, LPARAM lParam )
 int JabberGcEventHook( WPARAM, LPARAM );
 int JabberGcMenuHook( WPARAM, LPARAM );
 int JabberGcInit( WPARAM, LPARAM );
+
+int JabberContactDeleted( WPARAM wParam, LPARAM lParam );
+int JabberIdleChanged( WPARAM wParam, LPARAM lParam );
+int JabberDbSettingChanged( WPARAM wParam, LPARAM lParam );
+int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam );
 void JabberMenuHideSrmmIcon(HANDLE hContact);
 int JabberMenuProcessSrmmIconClick( WPARAM wParam, LPARAM lParam );
 int JabberMenuProcessSrmmEvent( WPARAM wParam, LPARAM lParam );
 
 static COLORREF crCols[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-HANDLE hChatEvent = NULL,
-       hChatMenu = NULL,
-		 hReloadIcons = NULL,
-		 hChatMess = NULL,
-		 hInitChat = NULL,
-		 hEvInitChat = NULL,
-		 hEvModulesLoaded = NULL,
-		 hEvOptInit = NULL,
-		 hEvPreShutdown = NULL,
-		 hEvUserInfoInit = NULL,
-		 hEvMsgIconPressed = NULL,
-		 hEvMsgWindow = NULL;
+HANDLE	hChatEvent = NULL,
+		hChatMenu = NULL,
+		hReloadIcons = NULL,
+		hChatMess = NULL,
+		hInitChat = NULL,
+		hEvInitChat = NULL,
+		hEvModulesLoaded = NULL,
+		hEvOptInit = NULL,
+		hEvPreShutdown = NULL,
+		hEvUserInfoInit = NULL,
+		hEvMsgIconPressed = NULL,
+		hEvMsgWindow = NULL,
+		hEvIdleChanged = NULL;
 
 
 void JGmailSetupIcons();
@@ -330,6 +338,7 @@ static int OnModulesLoaded( WPARAM wParam, LPARAM lParam )
 	JCreateServiceFunction( JS_GETADVANCEDSTATUSICON, JGetAdvancedStatusIcon );
 	JabberCheckAllContactsAreTransported();
 	JGmailSetupIcoLib();
+	hEvIdleChanged = HookEvent( ME_IDLE_CHANGED, JabberIdleChanged );
 
 	if ( ServiceExists( MS_MSG_ADDICON )) {
 		StatusIconData sid = {0};
@@ -498,6 +507,7 @@ extern "C" int __declspec( dllexport ) Unload( void )
 	if ( hEvUserInfoInit )  UnhookEvent( hEvUserInfoInit );
 	if ( hEvMsgIconPressed )  UnhookEvent( hEvMsgIconPressed );
 	if ( hEvMsgWindow )  UnhookEvent( hEvMsgWindow );
+	if ( hEvIdleChanged )UnhookEvent( hEvIdleChanged );
 
 	if ( hInitChat )
 		DestroyHookableEvent( hInitChat );

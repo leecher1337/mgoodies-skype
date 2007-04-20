@@ -299,11 +299,19 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 			ListView_DeleteAllItems( GetDlgItem( hwndDlg, IDC_AGENT_LIST ));
 			JabberListRemoveList( LIST_AGENT );
 			iqId = JabberSerialNext();
-			JabberIqAdd( iqId, IQ_PROC_DISCOAGENTS, JabberIqResultDiscoAgentItems );
-			{	XmlNodeIq iq( "get", iqId, text );
-				XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
-				JabberSend( jabberThreadInfo->s, iq );
-			}
+			{
+				//remove start and end spaces
+				TCHAR * start=text;
+				while (*start==_T(' ')) start++;
+				TCHAR * end=start;
+				while (*end!=_T(' ')) end++;
+				*end=_T('\0');
+				JabberIqAdd( iqId, IQ_PROC_DISCOAGENTS, JabberIqResultDiscoAgentItems );
+				{
+					XmlNodeIq iq( "get", iqId, start );
+					XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#items" );
+					JabberSend( jabberThreadInfo->s, iq );
+			}	}
 			return TRUE;
 
 		case IDC_AGENT_LOGON:

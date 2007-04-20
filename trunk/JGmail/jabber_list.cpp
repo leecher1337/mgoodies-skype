@@ -47,15 +47,18 @@ static int compareListItems( const JABBER_LIST_ITEM* p1, const JABBER_LIST_ITEM*
 
 static LIST<JABBER_LIST_ITEM> roster( 50, compareListItems );
 static CRITICAL_SECTION csLists;
+static BOOL LIST_INITIALISED = FALSE;
 
 void JabberListInit( void )
 {
 	InitializeCriticalSection( &csLists );
+	LIST_INITIALISED = TRUE;
 }
 
 void JabberListUninit( void )
 {
 	JabberListWipe();
+	LIST_INITIALISED = FALSE;
 	DeleteCriticalSection( &csLists );
 }
 
@@ -419,7 +422,7 @@ JABBER_LIST_ITEM *JabberListGetItemPtrFromIndex( int index )
 }
 
 void putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
-#define LOG_PRUS 1
+#define LOG_PRUS 0
 #ifdef LOG_PRUS
 	DBVARIANT dbv;
 	int res = JGetStringT( hContact, "jid", &dbv );
@@ -454,4 +457,18 @@ void putResUserSett(HANDLE hContact, JABBER_RESOURCE_STATUS *r){
 	if (r->system){
 		JSetStringT( hContact, "System", r->system );
 	} else JDeleteSetting( hContact, "System" );
+}
+
+BOOL JabberListLock()
+{
+	if ( !LIST_INITIALISED ) return FALSE;
+	EnterCriticalSection( &csLists );
+	return TRUE;
+}
+
+BOOL JabberListUnlock()
+{
+	if ( !LIST_INITIALISED ) return FALSE;
+	LeaveCriticalSection( &csLists );
+	return TRUE;
 }

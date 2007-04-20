@@ -349,6 +349,27 @@ int JabberContactDeleted( WPARAM wParam, LPARAM lParam )
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
+// JabberIdleChanged - tracks idle start time for XEP-0012 support
+
+int JabberIdleChanged( WPARAM wParam, LPARAM lParam )
+{
+	// don't report idle time, if user disabled
+	if (lParam & IDF_PRIVACY) {
+		jabberIdleStartTime = 0;
+		return 0;
+	}
+
+	BOOL bIdle = lParam & IDF_ISIDLE;
+
+	// second call, ignore it
+	if (bIdle && jabberIdleStartTime)
+		return 0;
+
+	jabberIdleStartTime = bIdle ? time( 0 ) : 0;
+	return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
 // JabberDbSettingChanged - process database changes
 
 static TCHAR* sttSettingToTchar( DBCONTACTWRITESETTING* cws )
@@ -915,7 +936,7 @@ int JabberGetInfo( WPARAM wParam, LPARAM lParam )
 	DBVARIANT dbv;
 	if ( !JGetStringT( ccs->hContact, "jid", &dbv )) {
 		if ( jabberThreadInfo ) {
-			TCHAR jid[ 200 ];
+			TCHAR jid[ 256 ];
 			JabberGetClientJID( dbv.ptszVal, jid, SIZEOF( jid ));
 
 			int iqId = JabberSerialNext();
@@ -924,7 +945,28 @@ int JabberGetInfo( WPARAM wParam, LPARAM lParam )
 			XmlNode* pReq = iq.addChild( "time" );
 			pReq->addAttr( "xmlns", "urn:xmpp:time" );
 			JabberSend( jabberThreadInfo->s, iq );
-		}
+
+			// XEP-0012, last logoff time
+			iqId = JabberSerialNext();
+			JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultLastActivity );
+			XmlNodeIq iq2( "get", iqId, dbv.ptszVal );
+			iq2.addQuery( "jabber:iq:last" );
+			JabberSend( jabberThreadInfo->s, iq2 );
+
+			JABBER_LIST_ITEM *item = NULL;
+
+			if (( item = JabberListGetItemPtr( LIST_VCARD_TEMP, dbv.ptszVal )) == NULL)
+				item = JabberListGetItemPtr( LIST_ROSTER, dbv.ptszVal );
+
+			if ( item && item->resource ) {
+				for (int i = 0; i < item->resourceCount; i++) {
+					mir_sntprintf( jid, 256, _T("%s/%s"), dbv.ptszVal, item->resource[i].resourceName );
+					iqId = JabberSerialNext();
+					JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultLastActivity );
+					XmlNodeIq iq3( "get", iqId, jid );
+					iq3.addQuery( "jabber:iq:last" );
+					JabberSend( jabberThreadInfo->s, iq3 );
+		}	}	}
 
 		JabberSendGetVcard( dbv.ptszVal );
 		JFreeVariant( &dbv );

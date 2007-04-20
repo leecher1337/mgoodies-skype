@@ -99,6 +99,7 @@ void JabberXmlnsDisco( XmlNode *iqNode, void *userdata )
 			sttAddFeature( query, "jabber:iq:browse" );
 			sttAddFeature( query, "jabber:iq:oob" );
 			sttAddFeature( query, "jabber:iq:version" );
+			sttAddFeature( query, "jabber:iq:last" );
 			sttAddFeature( query, "jabber:x:data" );
 			sttAddFeature( query, "jabber:x:event" );
 			sttAddFeature( query, "vcard-temp" );

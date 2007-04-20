@@ -106,6 +106,7 @@
 #define IDC_FRAME                       1037
 #define IDC_FRAME_TEXT                  1038
 #define IDC_SUBSCRIPTION                1039
+#define IDC_LOGOFF_TIME                 1040
 #define IDC_SIMPLE                      1041
 #define IDC_KEEPALIVE                   1042
 #define IDC_HOST                        1043
@@ -170,6 +171,8 @@
 #define IDC_SYSTEM                      1103
 #define IDC_PRIORITY_SPIN               1104
 #define IDC_PRIORITY                    1105
+#define IDC_SYSTEM2                     1105
+#define IDC_IDLE_SINCE                  1105
 #define IDC_PRIORITY_LABEL              1106
 #define IDC_NEWPASSWD                   1107
 #define IDC_PASS_SERVER                 1112
@@ -235,6 +238,7 @@
 #define IDC_COMMANDS                    1216
 #define IDC_COMMANDS1                   1216
 #define IDC_COMMANDS2                   1217
+#define IDC_STATIC_LOGOFF_TIME_LABEL    1217
 #define IDC_WHITERECT                   1221
 #define IDC_UPDATING                    1231
 #define IDC_EMAILS                      1306
@@ -281,7 +285,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        226
 #define _APS_NEXT_COMMAND_VALUE         40017
-#define _APS_NEXT_CONTROL_VALUE         1217
+#define _APS_NEXT_CONTROL_VALUE         1218
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
