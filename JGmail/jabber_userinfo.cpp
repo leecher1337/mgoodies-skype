@@ -42,11 +42,15 @@ static BOOL CALLBACK JabberUserInfoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 {
 	switch ( msg ) {
 	case WM_INITDIALOG:
+		hwndJabberInfo = hwndDlg;
 		// lParam is hContact
 		TranslateDialogDefault( hwndDlg );
 		SetWindowLong( hwndDlg, GWL_USERDATA, ( LONG )( HANDLE ) lParam );
 		SendMessage( hwndDlg, WM_JABBER_REFRESH, 0, 0 );
 		return TRUE;
+	case WM_DESTROY:
+		hwndJabberInfo = NULL;
+		break;
 	case WM_JABBER_REFRESH:
 		{
 			DBVARIANT dbv;
@@ -54,15 +58,18 @@ static BOOL CALLBACK JabberUserInfoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 			JABBER_RESOURCE_STATUS *r;
 
 			HWND hwndList = GetDlgItem( hwndDlg, IDC_INFO_RESOURCE );
+			int	selectedResource = SendMessage( hwndList, LB_GETCURSEL, 0, 0 );
 			SendMessage( hwndList, LB_RESETCONTENT, 0, 0 );
 			SetDlgItemTextA( hwndDlg, IDC_INFO_JID, "" );
 			SetDlgItemTextA( hwndDlg, IDC_SUBSCRIPTION, "" );
 			SetDlgItemText( hwndDlg, IDC_SOFTWARE, TranslateT( "<click resource to view>" ));
 			SetDlgItemText( hwndDlg, IDC_VERSION, TranslateT( "<click resource to view>" ));
 			SetDlgItemText( hwndDlg, IDC_SYSTEM, TranslateT( "<click resource to view>" ));
+			SetDlgItemText( hwndDlg, IDC_IDLE_SINCE, TranslateT( "<click resource to view>" ));
 			EnableWindow( GetDlgItem( hwndDlg, IDC_SOFTWARE ), FALSE );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_VERSION ), FALSE );
 			EnableWindow( GetDlgItem( hwndDlg, IDC_SYSTEM ), FALSE );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_IDLE_SINCE ), FALSE );
 
 			HANDLE hContact = ( HANDLE ) GetWindowLong( hwndDlg, GWL_USERDATA );
 			if ( !JGetStringT( hContact, "jid", &dbv )) {
@@ -80,6 +87,11 @@ static BOOL CALLBACK JabberUserInfoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 								SendMessage( hwndList, LB_SETITEMDATA, index, ( LPARAM )r[i].resourceName );
 						}	}
 
+						if ( selectedResource != LB_ERR ) {
+							SendMessage( hwndList, LB_SETCURSEL, selectedResource, 0 );
+							PostMessage( hwndDlg, WM_COMMAND, MAKEWPARAM(IDC_INFO_RESOURCE, LBN_SELCHANGE), 0);
+						}
+
 						switch ( item->subscription ) {
 						case SUB_BOTH:
 							SetDlgItemText( hwndDlg, IDC_SUBSCRIPTION, TranslateT( "both" ));
@@ -93,7 +105,25 @@ static BOOL CALLBACK JabberUserInfoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 						default:
 							SetDlgItemText( hwndDlg, IDC_SUBSCRIPTION, TranslateT( "none" ));
 							break;
-					}	}
+						}
+
+						if ( item->logoffTime > 0 ) {
+							TCHAR logoffTime[26];
+							_tcsncpy( logoffTime, _tctime(&item->logoffTime), 24 );
+							logoffTime[24] = _T( '\0' );
+							SetDlgItemText( hwndDlg, IDC_LOGOFF_TIME, logoffTime );
+							EnableWindow( GetDlgItem( hwndDlg, IDC_LOGOFF_TIME ), TRUE );
+						}
+						else if ( !item->logoffTime ) {
+							SetDlgItemText( hwndDlg, IDC_LOGOFF_TIME, TranslateT( "unknown" ));
+							EnableWindow( GetDlgItem( hwndDlg, IDC_LOGOFF_TIME ), FALSE );
+						}
+						else {
+							SetDlgItemText( hwndDlg, IDC_LOGOFF_TIME, TranslateT( "user online now" ));
+							EnableWindow( GetDlgItem( hwndDlg, IDC_LOGOFF_TIME ), FALSE );
+						}
+
+					}
 					else SetDlgItemText( hwndDlg, IDC_SUBSCRIPTION, TranslateT( "none ( not on roster )" ));
 				}
 				else EnableWindow( hwndList, FALSE );
@@ -162,6 +192,21 @@ static BOOL CALLBACK JabberUserInfoDlgProc( HWND hwndDlg, UINT msg, WPARAM wPara
 								else {
 									SetDlgItemText( hwndDlg, IDC_SYSTEM, TranslateT( "<not specified>" ));
 									EnableWindow( GetDlgItem( hwndDlg, IDC_SYSTEM ), FALSE );
+								}
+								if ( r[i].idleStartTime > 0 ) {
+									TCHAR logoffTime[26];
+									_tcsncpy( logoffTime, _tctime(&r[i].idleStartTime), 24 );
+									logoffTime[24] = _T( '\0' );
+									SetDlgItemText( hwndDlg, IDC_IDLE_SINCE, logoffTime );
+									EnableWindow( GetDlgItem( hwndDlg, IDC_IDLE_SINCE ), TRUE );
+								}
+								else if ( !r[i].idleStartTime ) {
+									SetDlgItemText( hwndDlg, IDC_IDLE_SINCE, TranslateT( "<unknown>" ));
+									EnableWindow( GetDlgItem( hwndDlg, IDC_IDLE_SINCE ), FALSE );
+								}
+								else {
+									SetDlgItemText( hwndDlg, IDC_IDLE_SINCE, TranslateT( "<not specified>" ));
+									EnableWindow( GetDlgItem( hwndDlg, IDC_IDLE_SINCE ), FALSE );
 						}	}	}
 						JFreeVariant( &dbv );
 			}	}	}

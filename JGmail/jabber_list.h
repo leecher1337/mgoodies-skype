@@ -91,6 +91,7 @@ struct JABBER_RESOURCE_STATUS
 	TCHAR* software;
 	TCHAR* version;
 	TCHAR* system;
+	time_t idleStartTime;// XEP-0012 support
 	unsigned int cap;					// 0 = haven't done disco#info yet, see CLIENT_CAP_*
 	JABBER_GC_AFFILIATION affiliation;
 	JABBER_GC_ROLE role;
@@ -107,6 +108,7 @@ struct JABBER_LIST_ITEM
 	int resourceCount;
 	int status;	// Main status, currently useful for transport where no resource information is kept.
 				// On normal contact, this is the same status as shown on contact list.
+	time_t logoffTime;// XEP-0012 support, 0 = unknown, -1 = online
 	JABBER_RESOURCE_STATUS *resource;
 	int lastSeenResource;	// index to resource[x] which was last seen active
 	int manualResource;	// manually set index to resource[x]
@@ -171,6 +173,10 @@ void JabberListInit( void );
 void JabberListUninit( void );
 void JabberListWipe( void );
 int JabberListExist( JABBER_LIST list, const TCHAR* jid );
+
+BOOL JabberListLock();
+BOOL JabberListUnlock();
+
 JABBER_LIST_ITEM *JabberListAdd( JABBER_LIST list, const TCHAR* jid );
 void JabberListRemove( JABBER_LIST list, const TCHAR* jid );
 void JabberListRemoveList( JABBER_LIST list );

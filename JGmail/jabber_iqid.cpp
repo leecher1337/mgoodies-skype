@@ -1668,6 +1668,55 @@ void JabberIqResultSetBookmarks( XmlNode *iqNode, void *userdata )
 			SendMessage( hwndJabberBookmarks, WM_JABBER_ACTIVATE, 0, 0);
 }	}
 
+// last activity (XEP-0012) support
+void JabberIqResultLastActivity( XmlNode *iqNode, void *userdata )
+{
+	TCHAR* from = JabberXmlGetAttrValue( iqNode, "from" );
+	if ( !from )
+		return;
+
+	JABBER_LIST_ITEM *item = NULL;
+
+	if (( item = JabberListGetItemPtr( LIST_VCARD_TEMP, from )) == NULL)
+		item = JabberListGetItemPtr( LIST_ROSTER, from );
+
+	if ( item == NULL ) return;
+
+	TCHAR *type = JabberXmlGetAttrValue( iqNode, "type" );
+	if ( !type )
+		return;
+
+	time_t lastActivity = -1;
+	if ( !_tcscmp( type, _T( "result" ))) {
+		XmlNode *queryNode = JabberXmlGetChild( iqNode, "query" );
+		if ( queryNode ) {
+			TCHAR *seconds = JabberXmlGetAttrValue( queryNode, "seconds" );
+			if ( seconds ) {
+				int nSeconds = _ttoi( seconds );
+				if ( nSeconds > 0 ) {
+					lastActivity = time( 0 ) - nSeconds;
+	}	}	}	}
+
+	TCHAR* p = _tcschr( from, '/' );
+	if ( !p ) { // update JID info for offline users
+		item->logoffTime = lastActivity; 
+	}
+	else if ( *++p != '\0' ) { // update resource info for online users
+		JABBER_RESOURCE_STATUS *r = item->resource;
+		if ( r == NULL ) return;
+		
+		int i;
+		for ( i=0; i<item->resourceCount && _tcscmp( r->resourceName, p ); i++, r++ );
+		if ( i >= item->resourceCount )
+			return;
+
+		r->idleStartTime = lastActivity;
+	}
+
+	if ( hwndJabberInfo != NULL )
+		PostMessage( hwndJabberInfo, WM_JABBER_REFRESH, 0, 0);
+}
+
 // entity time (XEP-0202) support
 void JabberIqResultEntityTime( XmlNode* pIqNode, void* pUserdata )
 {

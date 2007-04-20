@@ -88,6 +88,7 @@ Last change by : $Author$
 #include <m_clc.h>
 #include <m_button.h>
 #include <m_avatars.h>
+#include <m_idle.h>
 #include <win2k.h>
 
 #include "jabber_xml.h"
@@ -365,6 +366,7 @@ extern int    jabberStatus;
 extern int    jabberDesiredStatus;
 extern int    jabberSearchID;
 extern time_t jabberLoggedInTime;
+extern time_t jabberIdleStartTime;
 
 extern CRITICAL_SECTION modeMsgMutex;
 #ifdef _UNICODE
@@ -394,6 +396,7 @@ extern HWND hwndMucAdminList;
 extern HWND hwndMucOwnerList;
 extern HWND hwndJabberBookmarks;
 extern HWND hwndJabberAddBookmark;
+extern HWND hwndJabberInfo;
 
 
 extern const char xmlnsOwner[], xmlnsAdmin[];
