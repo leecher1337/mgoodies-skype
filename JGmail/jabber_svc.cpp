@@ -1593,7 +1593,6 @@ HANDLE hMenuChangePassword = NULL;
 HANDLE hMenuGroupchat = NULL;
 HANDLE hMenuVCard = NULL;
 HANDLE hMenuBookmarks = NULL;
-HANDLE hMenuAddBookmark = NULL;
 
 int JabberMenuHandleAgents( WPARAM wParam, LPARAM lParam );
 int JabberMenuHandleChangePassword( WPARAM wParam, LPARAM lParam );

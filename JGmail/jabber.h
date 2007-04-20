@@ -482,6 +482,9 @@ TCHAR* EscapeChatTags(TCHAR* pszText);
 char*  UnEscapeChatTags(char* str_in);
 void   JabberUpdateMirVer(JABBER_LIST_ITEM *item);
 
+//---- jabber_adhoc.cpp	---------------------------------------------
+int JabberContactMenuRunCommands(WPARAM wParam, LPARAM lParam);
+
 //---- jabber_svc.c -------------------------------------------------
 
 void JabberEnableMenuItems( BOOL bEnable );
@@ -607,7 +610,7 @@ char*    u2a( const wchar_t* src );
 wchar_t* a2u( const char* src );
 TCHAR*   a2t( const char* src );
 
-#define NUMICONSSMALL 21
+#define NUMICONSSMALL 22
 #define NUMICONSBIG 3
 extern HICON iconBigList[NUMICONSBIG];
 extern HICON iconList[NUMICONSSMALL];

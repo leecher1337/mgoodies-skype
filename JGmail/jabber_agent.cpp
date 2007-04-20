@@ -30,6 +30,8 @@ Last change by : $Author$
 #include "resource.h"
 #include "jabber_iq.h"
 
+
+
 static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam );
 static BOOL CALLBACK JabberAgentRegInputDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam );
 static BOOL CALLBACK JabberAgentRegDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam );
@@ -53,7 +55,7 @@ void JabberRegisterAgent( HWND hwndDlg, TCHAR* jid )
 
 static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-	HWND lv;
+	HWND lv=NULL;
 	LVCOLUMN lvCol;
 	LVITEM lvItem;
 	JABBER_LIST_ITEM *item;
@@ -125,12 +127,15 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 								//if ( item->canSearch ) EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_SEARCH ), TRUE );
 								if ( item->cap & AGENT_CAP_GROUPCHAT )
 									EnableWindow( GetDlgItem( hwndDlg, IDC_JOIN ), TRUE );
+								if ( item->cap & AGENT_CAP_ADHOC )
+									EnableWindow( GetDlgItem( hwndDlg, IDC_COMMANDS1 ), TRUE );
 							}
 						}
 						else {
 							EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_REGISTER ), FALSE );
 							//EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_SEARCH ), FALSE );
 							EnableWindow( GetDlgItem( hwndDlg, IDC_JOIN ), FALSE );
+							EnableWindow( GetDlgItem( hwndDlg, IDC_COMMANDS1 ), FALSE );
 						}
 						return TRUE;
 					}
@@ -154,7 +159,12 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 								else
 									EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_LOGOFF ), TRUE );
 								EnableWindow( GetDlgItem( hwndDlg, IDC_AGENT_UNREGISTER ), TRUE );
-						}	}
+							}
+							if (( item=JabberListGetItemPtr( LIST_ROSTER, lvItem.pszText )) != NULL )
+								EnableWindow( GetDlgItem( hwndDlg, IDC_COMMANDS2 ), (item->cap & AGENT_CAP_ADHOC)?TRUE:FALSE );
+							else
+								EnableWindow( GetDlgItem( hwndDlg, IDC_COMMANDS2 ), FALSE );
+						}
 						return TRUE;
 			}	}	}
 			break;
@@ -235,6 +245,21 @@ static BOOL CALLBACK JabberAgentsDlgProc( HWND hwndDlg, UINT msg, WPARAM wParam,
 		case IDC_MANUAL_REGISTER:
 			hwndAgentManualReg = CreateDialogParam( hInst, MAKEINTRESOURCE( IDD_AGENT_MANUAL_REGISTER ), hwndDlg, JabberAgentManualRegDlgProc, 0 );
 			return TRUE;
+		case IDC_COMMANDS1:		
+			lv = GetDlgItem( hwndDlg, IDC_AGENT_LIST );
+		case IDC_COMMANDS2:
+			if (!lv) lv = GetDlgItem( hwndDlg, IDC_AGENT_TRANSPORT );
+			if (( lvItem.iItem=ListView_GetNextItem( lv, -1, LVNI_SELECTED )) >= 0 ) {
+				lvItem.iSubItem = 0;
+				lvItem.mask = LVIF_TEXT;
+				lvItem.pszText = text;
+				lvItem.cchTextMax = SIZEOF( text );
+				ListView_GetItem( lv, &lvItem );				
+				if (( item=JabberListGetItemPtr( LIST_AGENT, lvItem.pszText )) != NULL )
+					JabberContactMenuRunCommands(0, LPARAM(item->jid) );
+			}
+			return TRUE;
+
 		case IDC_AGENT_REGISTER:
 			lv = GetDlgItem( hwndDlg, IDC_AGENT_LIST );
 			if (( lvItem.iItem=ListView_GetNextItem( lv, -1, LVNI_SELECTED )) >= 0 ) {

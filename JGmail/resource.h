@@ -97,6 +97,9 @@
 #define IDC_AGENT_SEARCH                1022
 #define IDC_SUBMIT                      1023
 #define IDC_LOGO                        1024
+#define IDC_NEXT                        1025
+#define IDC_PREV                        1026
+#define IDC_COMPLETE                    1027
 #define IDC_AGENT_BROWSE                1029
 #define IDC_INSTRUCTION                 1030
 #define IDC_DESCRIPTION                 1031
@@ -228,8 +231,10 @@
 #define IDC_UNREGISTER                  1183
 #define IDC_VALIDATEADD                 1184
 #define IDC_GO                          1196
-
-
+#define IDC_RADIO1                      1215
+#define IDC_COMMANDS                    1216
+#define IDC_COMMANDS1                   1216
+#define IDC_COMMANDS2                   1217
 #define IDC_WHITERECT                   1221
 #define IDC_UPDATING                    1231
 #define IDC_EMAILS                      1306
@@ -240,7 +245,6 @@
 #define IDC_PLAN                        1415
 #define IDC_PERSONALGROUP               1434
 #define IDC_EXTRAGROUP                  1436
-
 #define IDI_BOOKMARKS                   3000
 #define IDD_BOOKMARKS                   3001
 #define IDC_BM_LIST                     3002
@@ -255,7 +259,6 @@
 #define IDC_AGENT_RADIO                 3012
 #define IDC_BOOKMARK_TYPE               3013
 #define IDC_CHECK_BM_AUTOJOIN           3014
-
 #define IDM_MESSAGE                     10002
 #define IDM_CLEAR                       10003
 #define IDM_VOICE                       10005
@@ -278,7 +281,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        226
 #define _APS_NEXT_COMMAND_VALUE         40017
-#define _APS_NEXT_CONTROL_VALUE         1212
+#define _APS_NEXT_CONTROL_VALUE         1217
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -290,6 +290,8 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 	chatRooms.increment = 10;
 
 	for ( i=0; i < queryNode->numChild; i++ ) {
+		BOOL bIsTransport=FALSE;
+
 		XmlNode* itemNode = queryNode->child[i];
 		if ( strcmp( itemNode->name, "item" ))
 			continue;
@@ -316,6 +318,24 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 			continue;
 
 		JABBER_LIST_ITEM* item = JabberListAdd( LIST_ROSTER, jid );
+		if (_tcschr(jid,_T('@'))==NULL)
+		{
+			//not found @ in jid request info about
+
+			int iqId = JabberSerialNext();
+			JabberIqAdd( iqId, IQ_PROC_NONE, JabberIqResultDiscoAgentInfo );
+
+			XmlNodeIq iq( "get", iqId, jid );
+			XmlNode* query = iq.addQuery( "http://jabber.org/protocol/disco#info" );
+			JabberSend( jabberThreadInfo->s, iq );
+			bIsTransport=TRUE;
+			TCHAR * stripJid=_tcsdup( jid );
+			TCHAR * slash=_tcschr(stripJid,_T('/'));
+			if (slash!=NULL) *slash=_T('\0');
+			if ( jabberTransports.getIndex( stripJid ) == -1 )
+				jabberTransports.insert( _tcsdup( stripJid ));
+			free(stripJid);
+		}
 		item->subscription = sub;
 
 		mir_free( item->nick ); item->nick = nick;
@@ -363,6 +383,10 @@ void JabberIqResultGetRoster( XmlNode* iqNode, void* )
 			else DBWriteContactSettingTString( hContact, "CList", "Group", item->group );
 		}
 		else DBDeleteContactSetting( hContact, "CList", "Group" );
+		if ( hContact != NULL && bIsTransport)
+			JSetByte( hContact, "IsTransport", TRUE );
+		else
+			JSetByte( hContact, "IsTransport", FALSE );
 	}
 
 	// Delete orphaned contacts ( if roster sync is enabled )
@@ -1310,7 +1334,8 @@ void JabberIqResultDiscoAgentInfo( XmlNode *iqNode, void *userdata )
 	XmlNode *queryNode, *itemNode, *identityNode;
 	TCHAR* type, *from, *var;
 	JABBER_LIST_ITEM *item;
-
+	JABBER_LIST_ITEM *rosterItem=NULL;
+	WORD cap=0;
 	// RECVED: info for a specific agent
 	// ACTION: refresh agent list dialog
 	JabberLog( "<iq/> iqIdDiscoAgentInfo" );
@@ -1321,23 +1346,34 @@ void JabberIqResultDiscoAgentInfo( XmlNode *iqNode, void *userdata )
 		if (( queryNode=JabberXmlGetChild( iqNode, "query" )) != NULL ) {
 			TCHAR* str = JabberXmlGetAttrValue( queryNode, "xmlns" );
 			if ( !lstrcmp( str, _T("http://jabber.org/protocol/disco#info"))) {
-				if (( item=JabberListGetItemPtr( LIST_AGENT, from )) != NULL ) {
-					// Use the first <identity/> to set name
-					if (( identityNode=JabberXmlGetChild( queryNode, "identity" )) != NULL ) {
-						if (( str=JabberXmlGetAttrValue( identityNode, "name" )) != NULL )
-							replaceStr( item->name, str );
+				rosterItem=JabberListGetItemPtr( LIST_ROSTER, from );
+				item=JabberListGetItemPtr( LIST_AGENT, from );
+				// Use the first <identity/> to set name
+				if (( identityNode=JabberXmlGetChild( queryNode, "identity" )) != NULL ) {
+					if (( str=JabberXmlGetAttrValue( identityNode, "name" )) != NULL )
+					{
+						if (item) replaceStr( item->name, str );
+						if (rosterItem) replaceStr( rosterItem->name, str );
 					}
-
-					item->cap = 0;
-					for ( int i=0; i<queryNode->numChild; i++ ) {
+				}
+				cap = 0;
+				for ( int i=0; i<queryNode->numChild; i++ ) {
 						if (( itemNode=queryNode->child[i] )!=NULL && itemNode->name!=NULL ) {
 							if ( !strcmp( itemNode->name, "feature" )) {
 								if (( var=JabberXmlGetAttrValue( itemNode, "var" )) != NULL ) {
 									if ( !lstrcmp( var, _T("jabber:iq:register")))
-										item->cap |= AGENT_CAP_REGISTER;
+										cap |= AGENT_CAP_REGISTER;
 									else if ( !lstrcmp( var, _T("http://jabber.org/protocol/muc")))
-										item->cap |= AGENT_CAP_GROUPCHAT;
-		}	}	}	}	}	}	}
+										cap |= AGENT_CAP_GROUPCHAT;
+									else if ( !lstrcmp( var, _T("http://jabber.org/protocol/commands")))
+										cap |= AGENT_CAP_ADHOC;
+								}	
+							}	
+						}	
+					}	
+				if (item) item->cap=cap;
+				if (rosterItem) rosterItem->cap|=cap;
+		}	}
 
 		if ( hwndJabberAgents != NULL )
 			SendMessage( hwndJabberAgents, WM_JABBER_AGENT_REFRESH, 0, ( LPARAM )NULL );

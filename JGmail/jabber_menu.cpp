@@ -43,11 +43,12 @@ HANDLE hMenuConvert = NULL;
 HANDLE hMenuRosterAdd = NULL;
 HANDLE hMenuLogin = NULL;
 HANDLE hMenuRefresh = NULL;
+HANDLE hMenuCommands = NULL;
+HANDLE hMenuAddBookmark = NULL;
 
 HANDLE hMenuVisitGMail = NULL;
 
 extern HANDLE hMenuBookmarks;
-extern HANDLE hMenuAddBookmark;
 
 static void sttEnableMenuItem( HANDLE hMenuItem, BOOL bEnable )
 {
@@ -66,6 +67,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 	sttEnableMenuItem( hMenuGrantAuth, FALSE );
 	sttEnableMenuItem( hMenuRevokeAuth, FALSE );
 	sttEnableMenuItem( hMenuJoinLeave, FALSE );
+	sttEnableMenuItem( hMenuCommands, FALSE );
 	sttEnableMenuItem( hMenuConvert, FALSE );
 	sttEnableMenuItem( hMenuRosterAdd, FALSE );
 	sttEnableMenuItem( hMenuLogin, FALSE );
@@ -133,6 +135,18 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 
 	DBVARIANT dbv;
 	if ( !JGetStringT( hContact, "jid", &dbv )) {
+		JABBER_LIST_ITEM * item;
+		item=JabberListGetItemPtr( LIST_ROSTER, dbv.ptszVal );
+		if ( !bIsTransport ||
+			 (( item != NULL ) && (item->cap & AGENT_CAP_ADHOC) ) ) {
+				sttEnableMenuItem( hMenuCommands, TRUE );				
+		}
+		else 
+			sttEnableMenuItem( hMenuCommands, FALSE );
+		JFreeVariant( &dbv );
+	}
+
+	if ( !JGetStringT( hContact, "jid", &dbv )) {
 		JABBER_LIST_ITEM* item = JabberListGetItemPtr( LIST_ROSTER, dbv.ptszVal );
 		JFreeVariant( &dbv );
 		if ( item != NULL ) {
@@ -140,6 +154,7 @@ int JabberMenuPrebuildContactMenu( WPARAM wParam, LPARAM lParam )
 			sttEnableMenuItem( hMenuRequestAuth, item->subscription == SUB_FROM || item->subscription == SUB_NONE || bCtrlPressed );
 			sttEnableMenuItem( hMenuGrantAuth, item->subscription == SUB_TO || item->subscription == SUB_NONE || bCtrlPressed );
 			sttEnableMenuItem( hMenuRevokeAuth, item->subscription == SUB_FROM || item->subscription == SUB_BOTH || bCtrlPressed );
+			sttEnableMenuItem( hMenuCommands, (!bIsChatRoom && (!bIsTransport || (item->cap & AGENT_CAP_ADHOC))) );
 			return 0;
 	}	}
 
@@ -454,6 +469,15 @@ void JabberMenuInit()
 	mi.position = -1999901007;
 	mi.hIcon = iconList[19];//IDI_REFRESH;
 	hMenuRefresh = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
+
+	// Run Commands
+	strcpy( tDest, "/RunCommands" );
+	CreateServiceFunction( text, JabberContactMenuRunCommands );
+	mi.pszName = "Commands";
+	mi.position = -1999901009;
+	mi.icolibItem = iconList[21];//GetIconHandle( IDI_COMMAND );
+	hMenuCommands = ( HANDLE ) JCallService( MS_CLIST_ADDCONTACTMENUITEM, 0, ( LPARAM )&mi );
+
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -62,6 +62,9 @@ static TransportProtoTable[] =
 	{ "gg*",		"GaduGadu",	-1},
 	{ "sms*",       "SMS",  -1},
 	{ "smtp*",      "SMTP", -1},
+	//j2j 
+	{ "gtalk*",		"GTalk", -1},
+	{ "xmpp*",		"Jabber2Jabber", -1}
 };
 
 static int skinIconStatusToResourceId[] = {IDI_OFFLINE,IDI_ONLINE,IDI_AWAY,IDI_DND,IDI_NA,IDI_NA,/*IDI_OCCUPIED,*/IDI_FREE4CHAT,IDI_INVISIBLE,IDI_ONTHEPHONE,IDI_OUTTOLUNCH};
@@ -206,7 +209,8 @@ static int LoadAdvancedIcons(int iID)
 	_snprintf((char *)defFile, sizeof(defFile),"proto_%s.dll",proto);
 	if (!hAdvancedStatusIcon)
 		hAdvancedStatusIcon=(HIMAGELIST)CallService(MS_CLIST_GETICONSIMAGELIST,0,0);
-
+	
+	EnterCriticalSection( &modeMsgMutex );
 	for (i=0; i<ID_STATUS_ONTHEPHONE-ID_STATUS_OFFLINE; i++) {
 		HICON hicon;        
 		BOOL needFree;
@@ -222,7 +226,7 @@ static int LoadAdvancedIcons(int iID)
 
 	if (TransportProtoTable[iID].startIndex == -1)
 		TransportProtoTable[iID].startIndex = first;
-
+	LeaveCriticalSection( &modeMsgMutex );
 	return 0;
 }
 
@@ -321,7 +325,6 @@ BOOL JabberDBCheckIsTransportedContact(const TCHAR* jid, HANDLE hContact)
 	// strip domain part from jid
 	TCHAR* domain  = _tcschr(( TCHAR* )jid, '@' );
 	BOOL   isAgent = (domain == NULL) ? TRUE : FALSE;
-
 	if ( domain!=NULL )
 		domain = NEWTSTR_ALLOCA(domain+1);
 	else
@@ -330,10 +333,17 @@ BOOL JabberDBCheckIsTransportedContact(const TCHAR* jid, HANDLE hContact)
 	TCHAR* resourcepos = _tcschr( domain, '/' );
 	if ( resourcepos != NULL )
 		*resourcepos = '\0';
-
+	
 	if ( jabberTransports.getIndex( domain ) == -1 )
-		return FALSE;
-
+	{
+		if (isAgent)
+		{
+			jabberTransports.insert( _tcsdup(domain) );	
+			JSetByte( hContact, "IsTransport", 1 );
+		}
+		else
+			return FALSE;
+	}
 	JSetStringT( hContact, "Transport", domain );
 	JSetByte( hContact, "IsTransported", 1 );
 	PushIconLibRegistration( domain );

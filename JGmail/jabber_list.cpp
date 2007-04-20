@@ -323,7 +323,7 @@ TCHAR* JabberListGetBestResourceNamePtr( const TCHAR* jid )
 			res = LI->resource[ LI->manualResource ].resourceName;
 	}
 
-	if ( !res )
+	if ( !res && LI->resource)
 		res = LI->resource[0].resourceName;
 
 	LeaveCriticalSection( &csLists );
