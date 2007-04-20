@@ -2,7 +2,6 @@
 //
 #include "resource.h"
 
-
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -280,6 +279,8 @@ BEGIN
     PUSHBUTTON      "Register with a new service...",IDC_MANUAL_REGISTER,7,
                     233,106,14
     PUSHBUTTON      "Close",IDCLOSE,237,233,50,14
+    PUSHBUTTON      "Command",IDC_COMMANDS1,230,100,50,14,WS_DISABLED
+    PUSHBUTTON      "Command",IDC_COMMANDS2,231,206,50,14,WS_DISABLED
 END
 
 IDD_FORM DIALOGEX 0, 0, 258, 224
@@ -296,9 +297,14 @@ BEGIN
     LTEXT           "",IDC_FRAME,7,60,243,138,NOT WS_GROUP,WS_EX_CLIENTEDGE
     EDITTEXT        IDC_FRAME_TEXT,18,101,220,33,ES_CENTER | ES_MULTILINE | 
                     ES_READONLY | NOT WS_BORDER
-    SCROLLBAR       IDC_VSCROLL,238,61,11,136,SBS_VERT | WS_DISABLED
+    SCROLLBAR       IDC_VSCROLL,238,61,11,136,SBS_VERT
     DEFPUSHBUTTON   "Submit",IDC_SUBMIT,146,203,50,14,WS_DISABLED
     PUSHBUTTON      "Cancel",IDCANCEL,200,203,50,14
+    DEFPUSHBUTTON   "Next",IDC_NEXT,50,203,40,14,NOT WS_VISIBLE | 
+                    WS_DISABLED
+    DEFPUSHBUTTON   "Back",IDC_PREV,6,203,42,14,NOT WS_VISIBLE | WS_DISABLED
+    DEFPUSHBUTTON   "Complete",IDC_COMPLETE,150,203,46,14,NOT WS_VISIBLE | 
+                    WS_DISABLED
 END
 
 IDD_PASSWORD DIALOGEX 0, 0, 286, 63
@@ -598,8 +604,8 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     LTEXT           "Room JID:",IDC_STATIC,5,6,46,8
     EDITTEXT        IDC_ROOM,76,4,122,12,ES_AUTOHSCROLL | ES_READONLY
-    CONTROL         "",IDC_CLIST,"CListControl",WS_TABSTOP|0x01L /*CLS_MANUALUPDATE*/,5,20,193,116,
-                    WS_EX_CLIENTEDGE
+    CONTROL         "",IDC_CLIST,"CListControl",WS_TABSTOP | 0x1,5,20,193,
+                    116,WS_EX_CLIENTEDGE
     LTEXT           "Other JID:",IDC_STATIC,5,142,46,8
     EDITTEXT        IDC_NEWJID,57,140,120,12,ES_AUTOHSCROLL
     CONTROL         "+",IDC_ADDJID,"MButtonClass",WS_TABSTOP,182,139,16,14
@@ -670,8 +676,8 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "Conference",IDC_ROOM_RADIO,"Button",BS_AUTORADIOBUTTON | 
                     WS_GROUP,15,17,59,10
-    CONTROL         "Transport",IDC_AGENT_RADIO,"Button",BS_AUTORADIOBUTTON,79,17,
-					66,10
+    CONTROL         "Transport",IDC_AGENT_RADIO,"Button",BS_AUTORADIOBUTTON,
+                    79,17,66,10
     CONTROL         "URL",IDC_URL_RADIO,"Button",BS_AUTORADIOBUTTON,157,17,
                     48,10
     CONTROL         "Auto-join",IDC_CHECK_BM_AUTOJOIN,"Button",
@@ -977,6 +983,7 @@ IDI_MAIL_INFO		ICON			"icos\\mail-info.ico"
 IDI_MAIL_CLOCK		ICON			"icos\\mail-clock.ico"
 IDI_AUTHREVOKE          ICON                    "icos\\auth_revoke.ico" 
 IDI_REFRESH             ICON                    "icos\\refresh.ico" 
+IDI_COMMAND             ICON                    "icos\\command.ico"
 IDI_BOOKMARKS           ICON                    "icos\\bookmarks.ico"
 */
 IDB_ICONSBIG		BITMAP	DISCARDABLE	"icos\\32x32.bmp"

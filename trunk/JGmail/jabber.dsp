@@ -251,6 +251,10 @@ SOURCE=.\jabber.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\jabber_adhoc.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\jabber_agent.cpp
 # ADD CPP /Yu
 # End Source File

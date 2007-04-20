@@ -50,25 +50,25 @@ extern HINSTANCE hInst;
 #define IDI_AUTHREVOKE                  187
 #define IDI_REFRESH                     110
 #define IDI_BOOKMARKS                   3000
-
+#define IDI_COMMAND                     188
 */
 static char *iconNames[NUMICONSSMALL]={
 	NULL,"vcard","Agents","Add","Delete","Rename",
     "Request","Grant","Revoke","Open","Save",
 	"mail-new","mail-stop","mail-info","mail-clock","mail-gmail",
 	"convert","addroster",
-	"trlogonoff","trresolve","bookmarks"};
+	"trlogonoff","trresolve","bookmarks","adhoc"};
 static char *iconDescs[NUMICONSSMALL]={
 	NULL,"VCard Menu",iconNames[2],iconNames[3],iconNames[4],iconNames[5],
 	iconNames[6],iconNames[7],iconNames[8],iconNames[9],iconNames[10],
 	"New E-Mail","E-Mail Error","E-Mail Info","E-Mail Clock","Visit GMail",
 	"Convert Chat / Contact","Add to roster",
-	"Transport Logon/Off", "Transport Resolve", "Bookmarks"};
+	"Transport Logon/Off", "Transport Resolve", "Bookmarks", "AdHoc Command"};
 static int iconInd[NUMICONSSMALL]={
 	0,155,154,122,123,124,
 	141,142,187,131,166,
 	301,302,303,304,305,
-	109,108,186,110,3000};
+	109,108,186,110,3000,188};
 HICON iconList[NUMICONSSMALL];
 
 static int iconBigInd[NUMICONSBIG]={147,144,IDC_LOGO};
@@ -90,7 +90,8 @@ HICON iconBigList[NUMICONSBIG];
 	extern HANDLE hMenuGroupchat;
 	extern HANDLE hMenuVCard;
 	extern HANDLE hMenuBookmarks;
-
+	extern HANDLE hMenuCommands;
+	
 static void IcoLibUpdateMenus(){
 	CLISTMENUITEM mi = {0};
 
@@ -121,6 +122,8 @@ static void IcoLibUpdateMenus(){
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuVCard, ( LPARAM )&mi );
 	mi.hIcon = iconList[20];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_VCARD ))
 	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuBookmarks, ( LPARAM )&mi );
+	mi.hIcon = iconList[21];//LoadIcon( hInst, MAKEINTRESOURCE( IDI_COMMAND ))
+	JCallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )hMenuCommands, ( LPARAM )&mi );
 }
 
 int IcoLibIconsChanged(WPARAM wParam, LPARAM lParam)
