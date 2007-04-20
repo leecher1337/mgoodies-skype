@@ -33,6 +33,7 @@ int RegisterOptions(WPARAM wParam, LPARAM lParam) {
    odp.pszGroup = Translate("Network");
    odp.pszTitle = pszSkypeProtoName;
    odp.pfnDlgProc = OptionsDlgProc;
+   odp.flags = ODPF_BOLDGROUPS;
    CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
 
    odp.pszTemplate = MAKEINTRESOURCE(IDD_OPT_POPUP);
@@ -229,14 +230,14 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
          tci.lParam = (LPARAM)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_DEFAULT), hwnd, OptionsDefaultDlgProc);
          tci.pszText = TranslateT("Skype default");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
-         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-29,1);
+         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-5,rcClient.bottom-31,1);
 		 if(MyEnableThemeDialogTexture)
              MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
 
          tci.lParam = (LPARAM)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_ADVANCED),hwnd,OptionsAdvancedDlgProc);
          tci.pszText = TranslateT("Skype advanced");
          TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
-         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-29,1);
+         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-5,rcClient.bottom-31,1);
          ShowWindow((HWND)tci.lParam, SW_HIDE);
 		 if(MyEnableThemeDialogTexture)
              MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
@@ -244,7 +245,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
 		 tci.lParam = (LPARAM)CreateDialog(hInst,MAKEINTRESOURCE(IDD_OPT_PROXY),hwnd,OptionsProxyDlgProc);
          tci.pszText = TranslateT("Skype proxy");
          TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 2, &tci);
-         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-29,1);
+         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-5,rcClient.bottom-31,1);
          ShowWindow((HWND)tci.lParam, SW_HIDE);
 		 if(MyEnableThemeDialogTexture)
              MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);

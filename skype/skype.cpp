@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gchat.h"
 #include "m_toptoolbar.h"
 #include "time.h"
+#include "voiceservice.h"
 
 struct MM_INTERFACE   mmi; 
 
@@ -752,6 +753,7 @@ int OnModulesLoaded(WPARAM wParam, LPARAM lParam) {
 
 	RegisterToUpdate();
 	RegisterToDbeditorpp();
+	VoiceServiceModulesLoaded() ;
 	
 	add_contextmenu(NULL);
 	if ( ServiceExists( MS_GC_REGISTER )) 
@@ -1303,6 +1305,42 @@ void RingThread(char *szSkypeMsg) {
         LOG("RingThread", "terminated.");
 		return;
 	}
+
+	if (!strncmp(ptr, "INCOMING", 8))
+		NofifyVoiceService(hContact, szSkypeMsg, VOICE_STATE_RINGING);
+	else
+		NofifyVoiceService(hContact, szSkypeMsg, VOICE_STATE_CALLING);
+
+	if (!strncmp(ptr, "INCOMING", 8)) {
+		if (!hContact) {
+			char *szHandle;
+			
+			if (szHandle=GetCallerHandle(szSkypeMsg)) {
+				if (!(hContact=add_contact(szHandle, PALF_TEMPORARY))) {
+					free(szHandle);
+					free(ptr);
+					free(szSkypeMsg);
+					return;
+				}
+				DBDeleteContactSetting(hContact, "CList", "Hidden");
+				DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Status", (WORD)SkypeStatusToMiranda("SKYPEOUT"));
+				DBWriteContactSettingString(hContact, pszSkypeProtoName, "SkypeOutNr", szHandle);
+				free(szHandle);
+			} else {
+				free(ptr);
+				free(szSkypeMsg);
+				return;
+			}
+		}
+	}
+
+	if (HasVoiceService()) {
+		// Voice service will handle it
+		free(ptr);
+		free(szSkypeMsg);
+		return;
+	}
+
 	dbei.cbSize=sizeof(dbei);
 	dbei.eventType=EVENTTYPE_CALL;
 	dbei.szModule=pszSkypeProtoName;
@@ -1348,26 +1386,6 @@ void RingThread(char *szSkypeMsg) {
 		cle.cbSize=sizeof(cle);
 		cle.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_CALL));
 		cle.pszService=SKYPE_ANSWERCALL;
-		if (!hContact) {
-			char *szHandle;
-			
-			if (szHandle=GetCallerHandle(szSkypeMsg)) {
-				if (!(hContact=add_contact(szHandle, PALF_TEMPORARY))) {
-					free(szHandle);
-					free(ptr);
-					free(szSkypeMsg);
-					return;
-				}
-				DBDeleteContactSetting(hContact, "CList", "Hidden");
-				DBWriteContactSettingWord(hContact, pszSkypeProtoName, "Status", (WORD)SkypeStatusToMiranda("SKYPEOUT"));
-				DBWriteContactSettingString(hContact, pszSkypeProtoName, "SkypeOutNr", szHandle);
-				free(szHandle);
-			} else {
-				free(ptr);
-				free(szSkypeMsg);
-				return;
-			}
-		}
 		dbei.flags=DBEF_READ;
 		cle.hContact=hContact;
 		cle.hDbEvent=(HANDLE)CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&dbei);
@@ -1404,18 +1422,23 @@ void EndCallThread(char *szSkypeMsg) {
 		return;
 	}
 
-	dbei.cbSize=sizeof(dbei);
+	NofifyVoiceService(hContact, szSkypeMsg, VOICE_STATE_ENDED);
+
 	DBDeleteContactSetting(hContact, pszSkypeProtoName, "CallId");
-	hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDFIRSTUNREAD,(WPARAM)hContact,0);
-	while(hDbEvent) {
-		dbei.cbBlob=0;
-		CallService(MS_DB_EVENT_GET,(WPARAM)hDbEvent,(LPARAM)&dbei);
-			if (!(dbei.flags&(DBEF_SENT|DBEF_READ)) && dbei.eventType==EVENTTYPE_CALL) {
-			CallService(MS_DB_EVENT_MARKREAD,(WPARAM)hContact,(LPARAM)hDbEvent);
-			CallService(MS_CLIST_REMOVEEVENT,(WPARAM)hContact,(LPARAM)hDbEvent);
+
+	if (!HasVoiceService()) {
+		dbei.cbSize=sizeof(dbei);
+		hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDFIRSTUNREAD,(WPARAM)hContact,0);
+		while(hDbEvent) {
+			dbei.cbBlob=0;
+			CallService(MS_DB_EVENT_GET,(WPARAM)hDbEvent,(LPARAM)&dbei);
+				if (!(dbei.flags&(DBEF_SENT|DBEF_READ)) && dbei.eventType==EVENTTYPE_CALL) {
+				CallService(MS_DB_EVENT_MARKREAD,(WPARAM)hContact,(LPARAM)hDbEvent);
+				CallService(MS_CLIST_REMOVEEVENT,(WPARAM)hContact,(LPARAM)hDbEvent);
+			}
+			if (dbei.pBlob) free(dbei.pBlob);
+			hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDNEXT,(WPARAM)hDbEvent,0);
 		}
-		if (dbei.pBlob) free(dbei.pBlob);
-		hDbEvent=(HANDLE)CallService(MS_DB_EVENT_FINDNEXT,(WPARAM)hDbEvent,0);
 	}
 
 	if (!DBGetContactSetting(hContact, pszSkypeProtoName, "SkypeOutNr", &dbv)) {
@@ -1436,8 +1459,10 @@ void HoldCallThread(char *szSkypeMsg) {
 		LOG("HoldCallThread", "terminated.");
 		return;
 	}
-	if (hContact=GetCallerContact(szSkypeMsg))
+	if (hContact=GetCallerContact(szSkypeMsg)) {
 		DBWriteContactSettingByte(hContact, pszSkypeProtoName, "OnHold", 1);
+		NofifyVoiceService(hContact, szSkypeMsg, VOICE_STATE_ON_HOLD);
+	}
 	free(szSkypeMsg);
 	LOG("HoldCallThread", "terminated gracefully");
 }
@@ -1450,8 +1475,10 @@ void ResumeCallThread(char *szSkypeMsg) {
 		LOG("ResumeCallThread", "terminated.");
 		return;
 	}
-	if (hContact=GetCallerContact(szSkypeMsg))
+	if (hContact=GetCallerContact(szSkypeMsg)) {
 		DBDeleteContactSetting(hContact, pszSkypeProtoName, "OnHold");
+		NofifyVoiceService(hContact, szSkypeMsg, VOICE_STATE_TALKING);
+	}
 	free(szSkypeMsg);
     LOG("ResumeCallThread", "terminated gracefully.");
 }
@@ -2720,6 +2747,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	pd.szName = pszSkypeProtoName;
 	pd.type   = PROTOTYPE_PROTOCOL;
 	CallService(MS_PROTO_REGISTERMODULE, 0, (LPARAM)&pd);
+
+	VoiceServiceInit();
 
 	CreateServices();
 	HookEvents();
