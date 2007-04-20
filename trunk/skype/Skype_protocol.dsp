@@ -131,6 +131,10 @@ SOURCE=.\skypesvc.cpp
 
 SOURCE=.\utf8.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=.\voiceservice.cpp
+# End Source File
 # End Group
 # Begin Group "Header-Dateien"
 
@@ -186,6 +190,10 @@ SOURCE=.\skypesvc.h
 # Begin Source File
 
 SOURCE=.\utf8.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\voiceservice.h
 # End Source File
 # End Group
 # Begin Group "Ressourcendateien"

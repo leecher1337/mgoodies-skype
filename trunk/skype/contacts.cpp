@@ -6,6 +6,7 @@
 #include "skypeapi.h"
 #include "debug.h"
 #include "pthread.h"
+#include "voiceservice.h"
 #include "../../include/m_langpack.h"
 
 // #include <shlwapi.h>
@@ -146,15 +147,20 @@ CLISTMENUITEM ChatInitItem(void) {
 }
 
 HANDLE add_contextmenu(HANDLE hContact) {
-	CLISTMENUITEM mi=CallItem();
-
-	hMenuCallItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0,(LPARAM)&mi);
+	CLISTMENUITEM mi;
+	
+	if (!HasVoiceService()) {
+		mi=CallItem();
+		hMenuCallItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0,(LPARAM)&mi);
+	}
 	
 	mi=SkypeOutCallItem();
 	hMenuSkypeOutCallItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0,(LPARAM)&mi);
 
-	mi=HoldCallItem();
-	hMenuHoldCallItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0,(LPARAM)&mi);
+	if (!HasVoiceService()) {
+		mi=HoldCallItem();
+		hMenuHoldCallItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0,(LPARAM)&mi);
+	}
 
     // We cannot use flag PF1_FILESEND for sending files, as Skype opens its own
 	// sendfile-Dialog.
@@ -197,27 +203,31 @@ int __cdecl  PrebuildContactMenu(WPARAM wParam, LPARAM lParam) {
 
 	if (!(szProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, wParam, 0))) return 0;
 
-	// Clear hold-Item in case it exists
-	mi=HoldCallItem();
-	mi.flags|=CMIM_ALL;
-	CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuHoldCallItem,(LPARAM)&mi);
+	if (!HasVoiceService()) {
+		// Clear hold-Item in case it exists
+		mi=HoldCallItem();
+		mi.flags|=CMIM_ALL;
+		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuHoldCallItem,(LPARAM)&mi);
+	}
 
 	if (!strcmp(szProto, pszSkypeProtoName)) {
-		if (!DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv)) {
-			if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "OnHold", 0))
-				mi=ResumeCallItem(); else mi=HoldCallItem();
-			mi.flags=CMIM_ALL;
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuHoldCallItem,(LPARAM)&mi);
+		if (!HasVoiceService()) {
+			if (!DBGetContactSetting((HANDLE)wParam, pszSkypeProtoName, "CallId", &dbv)) {
+				if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "OnHold", 0))
+					mi=ResumeCallItem(); else mi=HoldCallItem();
+				mi.flags=CMIM_ALL;
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuHoldCallItem,(LPARAM)&mi);
 
-			mi=HupItem();
-			DBFreeVariant(&dbv);
-		} else mi=CallItem();
+				mi=HupItem();
+				DBFreeVariant(&dbv);
+			} else mi=CallItem();
         
-        if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "ChatRoom", 0)!=0) 
-			mi.flags |= CMIF_HIDDEN;
+			if (DBGetContactSettingByte((HANDLE)wParam, pszSkypeProtoName, "ChatRoom", 0)!=0) 
+				mi.flags |= CMIF_HIDDEN;
         
-		mi.flags|=CMIM_ALL;
-		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuCallItem,(LPARAM)&mi);
+			mi.flags|=CMIM_ALL;
+			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)(HANDLE)hMenuCallItem,(LPARAM)&mi);
+		}
 
 		// Clear SkypeOut menu in case it exists
 		mi=SkypeOutCallItem();
