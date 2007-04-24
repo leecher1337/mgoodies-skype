@@ -32,8 +32,15 @@ HANDLE hOptHook = NULL;
 Options opts;
 
 
+static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK AutoDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+
+
+static OptPageControl optionsControls[] = { 
+	{ &opts.resize_frame,					CONTROL_CHECKBOX,	IDC_FRAME_AUTOSIZE,	"FrameAutoSize", TRUE }
+};
+
 
 static OptPageControl popupsControls[] = { 
 	{ &opts.popup_enable,					CONTROL_CHECKBOX,	IDC_POPUPS,			"PopupsEnable", FALSE },
@@ -69,10 +76,9 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 #endif
 		)
 	{
-		ZeroMemory(&odp,sizeof(odp));
-		odp.cbSize=sizeof(odp);
-		odp.position=0;
-		odp.hInstance=hInst;
+		ZeroMemory(&odp, sizeof(odp));
+		odp.cbSize = sizeof(odp);
+		odp.hInstance = hInst;
 		odp.ptszGroup = TranslateT("Popups");
 		odp.ptszTitle = TranslateT("Voice Calls");
 		odp.pfnDlgProc = PopupsDlgProc;
@@ -83,10 +89,18 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 		CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 	}
 
-	ZeroMemory(&odp,sizeof(odp));
-    odp.cbSize=sizeof(odp);
-    odp.position=0;
-	odp.hInstance=hInst;
+	ZeroMemory(&odp, sizeof(odp));
+    odp.cbSize = sizeof(odp);
+	odp.hInstance = hInst;
+	odp.ptszTitle = TranslateT("Voice Calls");
+	odp.pfnDlgProc = OptionsDlgProc;
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTS);
+    odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
+    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+
+	ZeroMemory(&odp, sizeof(odp));
+    odp.cbSize = sizeof(odp);
+	odp.hInstance = hInst;
 	odp.ptszGroup = TranslateT("Voice Calls");
 	odp.ptszTitle = TranslateT("Auto actions");
 	odp.pfnDlgProc = AutoDlgProc;
@@ -114,7 +128,14 @@ void DeInitOptions()
 
 void LoadOptions()
 {
+	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
 	LoadOpts(popupsControls, MAX_REGS(popupsControls), MODULE_NAME);
+}
+
+
+static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	return SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
 
 

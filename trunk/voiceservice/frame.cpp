@@ -54,6 +54,8 @@ void InitFrames()
 		Frame.hIcon = icons[MAIN_ICON];
 
 		frame_id = CallService(MS_CLIST_FRAMES_ADDFRAME, (WPARAM)&Frame, 0);
+
+		SendMessage(hwnd_frame, WMU_RESIZE_FRAME, 0, 0);
 	}
 }
 
@@ -67,6 +69,66 @@ void DeInitFrames()
 		DestroyWindow(hwnd_frame);
 }
 
+
+static int GetMaxLineHeight() {
+	return max(ICON_SIZE, font_max_height) + 1;
+}
+
+
+BOOL FrameIsFloating(int frame_id) 
+{
+	if (frame_id == -1) 
+		return TRUE; // no frames, always floating
+	
+	return CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS, MAKEWPARAM(FO_FLOATING, frame_id), 0);
+}
+
+void ResizeFrame(int frame_id, HWND hwnd, int height)
+{
+	if (FrameIsFloating(frame_id)) 
+	{
+		HWND parent = GetParent(hwnd);
+		if (parent == NULL)
+			return;
+
+		RECT r_client;
+		GetClientRect(hwnd, &r_client);
+
+		if (r_client.bottom - r_client.top == height)
+			return;
+
+		RECT rp_client, rp_window, r_window;
+		GetClientRect(parent, &rp_client);
+		GetWindowRect(parent, &rp_window);
+		GetWindowRect(hwnd, &r_window);
+		int diff = (rp_window.bottom - rp_window.top) - (rp_client.bottom - rp_client.top);
+		if(ServiceExists(MS_CLIST_FRAMES_ADDFRAME))
+			diff += (r_window.top - rp_window.top);
+
+		SetWindowPos(parent, 0, 0, 0, rp_window.right - rp_window.left, height + diff, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+	}
+	else
+	{
+		int old_height = CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS, MAKEWPARAM(FO_HEIGHT, frame_id), 0);
+		if (old_height == height)
+			return;
+		
+		CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS, MAKEWPARAM(FO_HEIGHT, frame_id), (LPARAM) height);
+		CallService(MS_CLIST_FRAMES_UPDATEFRAME, (WPARAM)frame_id, (LPARAM)(FU_TBREDRAW | FU_FMREDRAW | FU_FMPOS));
+	}
+}
+
+void ShowFrame(int frame_id, HWND hwnd, int show)
+{
+	BOOL is_visible = IsWindowVisible(hwnd);
+	if ((is_visible && show == SW_SHOW) || (!is_visible && show == SW_HIDE))
+		return;
+
+	if (ServiceExists(MS_CLIST_FRAMES_SHFRAME) && frame_id != -1) 
+		CallService(MS_CLIST_FRAMES_SHFRAME, (WPARAM)frame_id, 0);
+	else 
+		ShowWindow(GetParent(hwnd), show);
+}
 
 static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
@@ -106,6 +168,26 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 					break;
 
 				SendMessage(list, LB_SETITEMDATA, pos, (LPARAM) calls[i]);
+			}
+
+			SendMessage(hwnd, WMU_RESIZE_FRAME, 0, 0);
+			break;
+		}
+
+		case WMU_RESIZE_FRAME:
+		{
+			if (opts.resize_frame)
+			{
+				int size = calls.size() * GetMaxLineHeight();
+				if (size <= 0) 
+				{
+					ShowFrame(frame_id, hwnd, SW_HIDE);
+				}
+				else 
+				{
+					ResizeFrame(frame_id, hwnd, size);
+					ShowFrame(frame_id, hwnd, SW_SHOW);
+				}
 			}
 
 			break;
@@ -254,7 +336,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			if (mis->CtlID != IDC_CALLS) 
 				break;
 
-			mis->itemHeight = max(ICON_SIZE, font_max_height) + 1;
+			mis->itemHeight = GetMaxLineHeight();
 			
 			return TRUE;
 		}
@@ -277,6 +359,8 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			rc.left += H_SPACE;
 			rc.right -= H_SPACE;
 			rc.bottom --;
+
+			int old_bk_mode = SetBkMode(dis->hDC, TRANSPARENT);
 
 			// Draw status
 			DrawIconEx(dis->hDC, rc.left, (rc.top + rc.bottom - 16)/2, icons[vc->state], ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
@@ -334,6 +418,7 @@ static LRESULT CALLBACK FrameWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				}
 			}
 			
+			SetBkMode(dis->hDC, old_bk_mode);
 			return TRUE;
 		}
 

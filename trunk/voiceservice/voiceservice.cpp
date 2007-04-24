@@ -30,11 +30,11 @@ PLUGININFOEX pluginInfo = {
 #else
 	"Voice Service",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,7),
+	PLUGIN_MAKE_VERSION(0,0,0,8),
 	"Provide services for protocols that support voice calls",
 	"Ricardo Pescuma Domenecci",
 	"",
-	"© 2006 Ricardo Pescuma Domenecci",
+	"© 2007 Ricardo Pescuma Domenecci",
 	"http://pescuma.mirandaim.ru/miranda/voiceservice",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
