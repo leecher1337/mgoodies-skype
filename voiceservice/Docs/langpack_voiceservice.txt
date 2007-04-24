@@ -36,6 +36,9 @@
 [Auto accept this contact calls]
 [Auto drop this contacts calls]
 
+[ Frame ]
+[Auto-size frame]
+
 ; Test popup
 [Test Contact]
 [Test description]

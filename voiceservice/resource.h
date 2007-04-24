@@ -18,6 +18,7 @@
 #define IDD_POPUPS                      120
 #define IDI_SMALLDOT                    211
 #define IDD_OPT_AUTO                    215
+#define IDD_OPTS                        216
 #define IDC_CALLS                       1000
 #define IDC_DELAY                       1001
 #define IDC_TEXT                        1001
@@ -28,6 +29,7 @@
 #define IDC_BGCOLOR                     1004
 #define IDC_AUTO                        1004
 #define IDC_TEXTCOLOR                   1005
+#define IDC_FRAME_AUTOSIZE              1005
 #define IDC_PREV                        1006
 #define IDC_DELAYFROMPU                 1007
 #define IDC_DELAYCUSTOM                 1008
@@ -56,7 +58,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        114
 #define _APS_NEXT_COMMAND_VALUE         40004
-#define _APS_NEXT_CONTROL_VALUE         1005
+#define _APS_NEXT_CONTROL_VALUE         1006
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -30,6 +30,7 @@ extern HWND hwnd_frame;
 
 
 #define WMU_REFRESH (WM_USER + 25)
+#define WMU_RESIZE_FRAME (WM_USER + 26)
 
 
 #endif // __FRAME_H__
