@@ -62,6 +62,7 @@ TabSRMMHTMLBuilder::TabSRMMHTMLBuilder() {
 	setLastEventType(-1);
 	setLastEventTime(time(NULL));
 	lastEventTime = time(NULL);
+	startedTime = time(NULL);
 }
 
 bool TabSRMMHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)
