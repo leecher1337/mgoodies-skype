@@ -179,6 +179,10 @@ SOURCE=.\hunspell\baseaffix.hxx
 # End Source File
 # Begin Source File
 
+SOURCE=.\hunspell\config.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\hunspell\csutil.hxx
 # End Source File
 # Begin Source File
@@ -192,6 +196,10 @@ SOURCE=.\hunspell\hashmgr.hxx
 # Begin Source File
 
 SOURCE=.\hunspell\htypes.hxx
+# End Source File
+# Begin Source File
+
+SOURCE=.\hunspell\hunspell.h
 # End Source File
 # Begin Source File
 
