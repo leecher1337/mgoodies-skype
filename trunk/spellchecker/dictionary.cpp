@@ -47,28 +47,45 @@ DWORD WINAPI LoadThread(LPVOID hd);
 #define LANGUAGE_LOADED			 0
 
 
-class BaseDictionary : public Dictionary {
+
+class HunspellDictionary : public Dictionary {
 protected:
 	TCHAR path[1024];
 	TCHAR userPath[1024];
 	map<TSTRING, TSTRING> autoReplaceMap;
+	int loaded;
+	Hunspell *hunspell;
+	TCHAR *wordChars;
+	UINT codePage;
 
 	void loadCustomDict()
 	{
 		TCHAR filename[1024];
 		mir_sntprintf(filename, MAX_REGS(filename), _T("%s\\%s.cdic"), userPath, language);
 
-		FILE *file = _tfopen(filename, _T("r"));
+		FILE *file = _tfopen(filename, _T("rb"));
 		if (file != NULL) 
 		{
-			TCHAR word[1024];
-			while(_fgetts(word, MAX_REGS(word), file)) 
+			char tmp[1024];
+			char c;
+			int pos = 0;
+			while((c = fgetc(file)) != EOF) 
 			{
-				size_t len = lstrlen(word);
-				if (*(word + len - 1) == _T('\n')) 
-					*(word + len - 1) = _T('\0');
+				if (c == '\n' || pos >= MAX_REGS(tmp) - 1) 
+				{
+					if (pos > 0)
+					{
+						tmp[pos] = '\0';
+						hunspell->put_word(tmp);
+					}
 
-				addWordInternal(word);
+					pos = 0;
+				}
+				else
+				{
+					tmp[pos] = c;
+					pos ++;
+				}
 			}
 			fclose(file);
 		}
@@ -79,10 +96,12 @@ protected:
 		TCHAR filename[1024];
 		mir_sntprintf(filename, MAX_REGS(filename), _T("%s\\%s.cdic"), userPath, language);
 
-		FILE *file = _tfopen(filename, _T("a"));
+		FILE *file = _tfopen(filename, _T("ab"));
 		if (file != NULL) 
 		{
-			_ftprintf(file, _T("%s\n"), word);
+			char tmp[1024];
+			toHunspell(tmp, word, MAX_REGS(tmp));
+			fprintf(file, "%s\n", tmp);
 			fclose(file);
 		}
 	}
@@ -92,24 +111,41 @@ protected:
 		TCHAR filename[1024];
 		mir_sntprintf(filename, MAX_REGS(filename), _T("%s\\%s.ar"), userPath, language);
 
-		FILE *file = _tfopen(filename, _T("r"));
+		FILE *file = _tfopen(filename, _T("rb"));
 		if (file != NULL) 
 		{
-			TCHAR word[1024];
-			while(_fgetts(word, MAX_REGS(word), file)) 
+			char tmp[1024];
+			char c;
+			int pos = 0;
+			while((c = fgetc(file)) != EOF) 
 			{
-				size_t len = lstrlen(word);
-				if (*(word + len - 1) == _T('\n')) 
-					*(word + len - 1) = _T('\0');
-
-				// Get from
-				TCHAR *p = _tcsstr(word, _T("->"));
-				if (p != NULL)
+				if (c == '\n' || pos >= MAX_REGS(tmp) - 1) 
 				{
-					*p = _T('\0');
-					p += 2;
+					if (pos > 0)
+					{
+						// Get from
+						char *p = strstr(tmp, "->");
+						if (p != NULL)
+						{
+							*p = '\0';
+							p += 2;
 
-					autoReplaceMap[word] = p;
+							TCHAR *from = fromHunspell(tmp);
+							TCHAR *to = fromHunspell(p);
+
+							autoReplaceMap[from] = to;
+
+							free(from);
+							free(to);
+						}
+					}
+
+					pos = 0;
+				}
+				else
+				{
+					tmp[pos] = c;
+					pos ++;
 				}
 			}
 			fclose(file);
@@ -128,10 +164,14 @@ protected:
 		{
 			autoReplaceMap[from] = to;
 
-			FILE *file = _tfopen(filename, _T("a"));
+			FILE *file = _tfopen(filename, _T("ab"));
 			if (file != NULL) 
 			{
-				_ftprintf(file, _T("%s->%s\n"), from, to);
+				char hunspell_from[1024];
+				char hunspell_to[1024];
+				toHunspell(hunspell_from, from, MAX_REGS(hunspell_from));
+				toHunspell(hunspell_to, to, MAX_REGS(hunspell_to));
+				fprintf(file, "%s->%s\n", hunspell_from, hunspell_to);
 				fclose(file);
 			}
 		}
@@ -140,13 +180,17 @@ protected:
 			autoReplaceMap[from] = to;
 
 			// A word changed, so we need to dump all map
-			FILE *file = _tfopen(filename, _T("w"));
+			FILE *file = _tfopen(filename, _T("wb"));
 			if (file != NULL) 
 			{
+				char hunspell_from[1024];
+				char hunspell_to[1024];
 				map<TSTRING,TSTRING>::iterator it = autoReplaceMap.begin();
 				while(it != autoReplaceMap.end())
 				{
-					_ftprintf(file, _T("%s->%s\n"), (it->first).c_str(), (it->second).c_str());
+					toHunspell(hunspell_from, (it->first).c_str(), MAX_REGS(hunspell_from));
+					toHunspell(hunspell_to, (it->second).c_str(), MAX_REGS(hunspell_to));
+					fprintf(file, "%s->%s\n", hunspell_from, hunspell_to);
 					it++;
 				}
 				fclose(file);
@@ -156,83 +200,6 @@ protected:
 		free(from);
 		free(to);
 	}
-
-	virtual void addWordInternal(const TCHAR * word) =0;
-
-public:
-	virtual ~BaseDictionary() {}
-
-	// Add a word to the user custom dict
-	virtual void addWord(const TCHAR * word)
-	{
-		addWordInternal(word);
-		appendToCustomDict(word);
-	}
-	
-	// Add a word to the list of ignored words
-	virtual void ignoreWord(const TCHAR * word)
-	{
-		addWordInternal(word);
-	}
-
-	// Add a word to the list of auto-replaced words
-	virtual void addToAutoReplace(const TCHAR * from, const TCHAR * to)
-	{
-		appendToAutoReplaceMap(from, to);
-	}
-
-	// Return a a auto replace to a word
-	// You have to free the item
-	virtual TCHAR * autoReplace(const TCHAR * word)
-	{
-		TCHAR *from = _tcslwr(_tcsdup(word));
-
-		if (autoReplaceMap.find(from) == autoReplaceMap.end())
-		{
-			free(from);
-			return NULL;
-		}
-		else
-		{
-			TCHAR *to = _tcsdup(autoReplaceMap[from].c_str());
-
-			// Wich case to use?
-			size_t len = lstrlen(word);
-			size_t i;
-			for (i = 0; i < len; i++)
-				if (!IsCharUpper(word[i]))
-					break;
-
-			if (i <= 0)
-			{
-				// All lower
-				return to;
-			}
-			else if (i >= len)
-			{
-				// All upper
-				return CharUpper(to);
-			}
-			else
-			{
-				// First upper
-				TCHAR tmp[2];
-				tmp[0] = to[0];
-				tmp[1] = _T('\0');
-				CharUpper(tmp);
-				to[0] = tmp[0];
-				return to;
-			}
-		}
-	}
-};
-
-class HunspellDictionary : public BaseDictionary {
-protected:
-	int loaded;
-	Hunspell *hunspell;
-	TCHAR *wordChars;
-	UINT codePage;
 
 	virtual void addWordInternal(const TCHAR * word)
 	{
@@ -450,10 +417,7 @@ public:
 		if (loaded != LANGUAGE_LOADED)
 			return TRUE;
 
-		if (c == _T('-'))
-			return !hunspell->get_forbidden_compound();
-		else
-			return _tcschr(wordChars, (_TINT) c) != NULL;
+		return _tcschr(wordChars, (_TINT) c) != NULL;
 	}
 
 	// Assert that all needed data is loaded
@@ -472,6 +436,71 @@ public:
 	virtual BOOL isLoaded()
 	{
 		return loaded == LANGUAGE_LOADED;
+	}
+
+
+	// Add a word to the user custom dict
+	virtual void addWord(const TCHAR * word)
+	{
+		addWordInternal(word);
+		appendToCustomDict(word);
+	}
+	
+	// Add a word to the list of ignored words
+	virtual void ignoreWord(const TCHAR * word)
+	{
+		addWordInternal(word);
+	}
+
+	// Add a word to the list of auto-replaced words
+	virtual void addToAutoReplace(const TCHAR * from, const TCHAR * to)
+	{
+		appendToAutoReplaceMap(from, to);
+	}
+
+	// Return a a auto replace to a word
+	// You have to free the item
+	virtual TCHAR * autoReplace(const TCHAR * word)
+	{
+		TCHAR *from = _tcslwr(_tcsdup(word));
+
+		if (autoReplaceMap.find(from) == autoReplaceMap.end())
+		{
+			free(from);
+			return NULL;
+		}
+		else
+		{
+			TCHAR *to = _tcsdup(autoReplaceMap[from].c_str());
+
+			// Wich case to use?
+			size_t len = lstrlen(word);
+			size_t i;
+			for (i = 0; i < len; i++)
+				if (!IsCharUpper(word[i]))
+					break;
+
+			if (i <= 0)
+			{
+				// All lower
+				return to;
+			}
+			else if (i >= len)
+			{
+				// All upper
+				return CharUpper(to);
+			}
+			else
+			{
+				// First upper
+				TCHAR tmp[2];
+				tmp[0] = to[0];
+				tmp[1] = _T('\0');
+				CharUpper(tmp);
+				to[0] = tmp[0];
+				return to;
+			}
+		}
 	}
 };
 

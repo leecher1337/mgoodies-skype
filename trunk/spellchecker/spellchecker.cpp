@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,4),
+	PLUGIN_MAKE_VERSION(0,0,2,5),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -137,30 +137,66 @@ DEFINE_GUIDXXX(IID_ITextDocument,0x8CC497C0,0xA1DF,0x11CE,0x80,0x98,
 #define	STOP_RICHEDIT(dlg)														\
 	SUSPEND_UNDO(dlg);															\
 	SendMessage(dlg->hwnd, WM_SETREDRAW, FALSE, 0);								\
-	POINT old_scroll_pos;														\
-	SendMessage(dlg->hwnd, EM_GETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);		\
-	CHARRANGE old_sel;															\
-	SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &old_sel);					\
-	POINT caretPos;																\
-	GetCaretPos(&caretPos);														\
-	BOOL inverse = (old_sel.cpMin >= LOWORD(SendMessage(dlg->hwnd, EM_CHARFROMPOS, 0, (LPARAM) &caretPos)))
-
+	POINT __old_scroll_pos;														\
+	SendMessage(dlg->hwnd, EM_GETSCROLLPOS, 0, (LPARAM) &__old_scroll_pos);		\
+	CHARRANGE __old_sel;														\
+	SendMessage(dlg->hwnd, EM_EXGETSEL, 0, (LPARAM) &__old_sel);				\
+	POINT __caretPos;															\
+	GetCaretPos(&__caretPos);													\
+    DWORD __old_mask = SendMessage(dlg->hwnd, EM_GETEVENTMASK, 0, 0);			\
+	SendMessage(dlg->hwnd, EM_SETEVENTMASK, 0, __old_mask & ~ENM_CHANGE);		\
+	BOOL __inverse = (__old_sel.cpMin >= LOWORD(SendMessage(dlg->hwnd, EM_CHARFROMPOS, 0, (LPARAM) &__caretPos)))
 
 #define START_RICHEDIT(dlg)														\
-	if (inverse)																\
+	if (__inverse)																\
 	{																			\
-		LONG tmp = old_sel.cpMin;												\
-		old_sel.cpMin = old_sel.cpMax;											\
-		old_sel.cpMax = tmp;													\
+		LONG __tmp = __old_sel.cpMin;											\
+		__old_sel.cpMin = __old_sel.cpMax;										\
+		__old_sel.cpMax = __tmp;												\
 	}																			\
-	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &old_sel);					\
-	SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &old_scroll_pos);		\
+	SendMessage(dlg->hwnd, EM_SETEVENTMASK, 0, __old_mask);						\
+	SendMessage(dlg->hwnd, EM_EXSETSEL, 0, (LPARAM) &__old_sel);				\
+	SendMessage(dlg->hwnd, EM_SETSCROLLPOS, 0, (LPARAM) &__old_scroll_pos);		\
 	SendMessage(dlg->hwnd, WM_SETREDRAW, TRUE, 0);								\
 	InvalidateRect(dlg->hwnd, NULL, FALSE);										\
 	RESUME_UNDO(dlg)
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
+
+#define mlog
+
+#if 0
+int mlog(const char *function, const char *fmt, ...)
+{
+    va_list va;
+    char text[1024];
+	size_t len;
+	static DWORD tick = GetTickCount();
+
+	mir_snprintf(text, sizeof(text) - 10, "[%08u - %08u] [%8u] [%s] ", 
+				 GetCurrentThreadId(), GetTickCount(), GetTickCount() - tick, function);
+	tick = GetTickCount();
+	len = strlen(text);
+
+    va_start(va, fmt);
+    mir_vsnprintf(&text[len], sizeof(text) - len, fmt, va);
+    va_end(va);
+
+	FILE *fp = fopen("c:\\miranda_spellchecker.log.txt","at");
+
+	if (fp != NULL)
+	{
+		fprintf(fp, "%s\n", text);
+		fclose(fp);
+		return 0;
+	}
+	else
+	{
+		return -1;
+	}
+}
+#endif
 
 HICON LoadIconEx(char* iconName, bool copy)
 {
@@ -619,6 +655,7 @@ inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, i
 void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct, 
 			   FoundWrongWordCallback callback = NULL, void *param = NULL)
 {
+mlog("CheckText", "Start");
 	STOP_RICHEDIT(dlg);
 
 	if (GetWindowTextLength(dlg->hwnd) > 0)
@@ -629,7 +666,7 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct,
 		if (!check_word_under_cursor)
 		{
 			// Check only the current line, one up and one down
-			int current_line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) old_sel.cpMin, 0);
+			int current_line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) __old_sel.cpMin, 0);
 			line = max(line, current_line - 1);
 			lines = min(lines, current_line + 2);
 		}
@@ -726,9 +763,9 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct,
 						if (found_real_char)
 						{
 							// Is under cursor?
-							if (check_word_under_cursor || !(first_char+last_pos <= old_sel.cpMax && first_char+pos >= old_sel.cpMin))
+							if (check_word_under_cursor || !(first_char+last_pos <= __old_sel.cpMax && first_char+pos >= __old_sel.cpMin))
 							{
-								DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct, diff, callback, param);
+								DealWord(dlg, text, first_char, last_pos, pos, __old_sel, auto_correct, diff, callback, param);
 							}
 						}
 
@@ -753,9 +790,9 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct,
 				if (found_real_char)
 				{
 					// Is under cursor?
-					if (check_word_under_cursor || !(first_char+last_pos <= old_sel.cpMax && first_char+pos >= old_sel.cpMin))
+					if (check_word_under_cursor || !(first_char+last_pos <= __old_sel.cpMax && first_char+pos >= __old_sel.cpMin))
 					{
-						DealWord(dlg, text, first_char, last_pos, pos, old_sel, auto_correct, diff, callback, param);
+						DealWord(dlg, text, first_char, last_pos, pos, __old_sel, auto_correct, diff, callback, param);
 					}
 				}
 			}
@@ -767,6 +804,7 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor, BOOL auto_correct,
 	SetNoUnderline(dlg->hwnd, len, len);
 
 	START_RICHEDIT(dlg);
+mlog("CheckText", "End");
 }
 
 
@@ -1224,10 +1262,10 @@ void ReplaceWord(Dialog *dlg, CHARRANGE &sel, TCHAR *new_word)
 
 	// Fix old sel
 	int dif = lstrlen(new_word) - sel.cpMax + sel.cpMin;
-	if (old_sel.cpMin >= sel.cpMax)
-		old_sel.cpMin += dif;
-	if (old_sel.cpMax >= sel.cpMax)
-		old_sel.cpMax += dif;
+	if (__old_sel.cpMin >= sel.cpMax)
+		__old_sel.cpMin += dif;
+	if (__old_sel.cpMax >= sel.cpMax)
+		__old_sel.cpMax += dif;
 
 	START_RICHEDIT(dlg);
 }
@@ -1329,6 +1367,7 @@ void AppendMenuItem(HMENU hMenu, int id, TCHAR *name, HICON hIcon, BOOL checked)
 
 void AddMenuForWord(Dialog *dlg, TCHAR *word, CHARRANGE &pos, HMENU hMenu, BOOL in_submenu, UINT base)
 {
+mlog("AddMenuForWord", "Start");
 	if (dlg->wrong_words == NULL)
 		dlg->wrong_words = new vector<WrongWordPopupMenuData>(1);
 	else
@@ -1340,7 +1379,9 @@ void AddMenuForWord(Dialog *dlg, TCHAR *word, CHARRANGE &pos, HMENU hMenu, BOOL 
 	// Get suggestions
 	data.word = word;
 	data.pos = pos;
+mlog("AddMenuForWord", "suggest start");
 	data.suggestions = dlg->lang->suggest(word);
+mlog("AddMenuForWord", "suggest end");
 
 	Suggestions &suggestions = data.suggestions;
 
@@ -1353,6 +1394,7 @@ void AddMenuForWord(Dialog *dlg, TCHAR *word, CHARRANGE &pos, HMENU hMenu, BOOL 
 
 	if (suggestions.count > 0)
 	{
+mlog("AddMenuForWord", "replace start");
 		data.hReplaceSubMenu = CreatePopupMenu();
 
 		for (int i = suggestions.count - 1; i >= 0; i--) 
@@ -1360,6 +1402,7 @@ void AddMenuForWord(Dialog *dlg, TCHAR *word, CHARRANGE &pos, HMENU hMenu, BOOL 
 					base + AUTOREPLACE_MENU_ID_BASE + i, suggestions.words[i]);
 
 		AppendSubmenu(hMenu, data.hReplaceSubMenu, TranslateT("Always replace with"));
+mlog("AddMenuForWord", "replace end");
 	}
 
 	InsertMenu(hMenu, 0, MF_BYPOSITION, base + suggestions.count + 1, TranslateT("Ignore all"));
@@ -1367,6 +1410,7 @@ void AddMenuForWord(Dialog *dlg, TCHAR *word, CHARRANGE &pos, HMENU hMenu, BOOL 
 
 	if (suggestions.count > 0)
 	{
+mlog("AddMenuForWord", "corrections start");
 		HMENU hSubMenu;
 		if (opts.cascade_corrections)
 		{
@@ -1381,6 +1425,7 @@ void AddMenuForWord(Dialog *dlg, TCHAR *word, CHARRANGE &pos, HMENU hMenu, BOOL 
 
 		for (int i = suggestions.count - 1; i >= 0; i--) 
 			InsertMenu(hSubMenu, 0, MF_BYPOSITION, base + i, suggestions.words[i]);
+mlog("AddMenuForWord", "corrections end");
 	}
 
 	if (!in_submenu && opts.show_wrong_word)
@@ -1391,6 +1436,7 @@ void AddMenuForWord(Dialog *dlg, TCHAR *word, CHARRANGE &pos, HMENU hMenu, BOOL 
 		mir_sntprintf(text, MAX_REGS(text), TranslateT("Wrong word: %s"), word);
 		InsertMenu(hMenu, 0, MF_BYPOSITION, 0, text);
 	}
+mlog("AddMenuForWord", "End");
 }
 
 
@@ -1410,12 +1456,16 @@ void FoundWrongWord(TCHAR *word, CHARRANGE pos, void *param)
 
 void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 {
+mlog("AddItemsToMenu", "Start");
+
 	FreePopupData(dlg);
 	if (opts.use_flags)
 	{
 		dlg->hwnd_menu_owner = hwndOwner;
 		menus[hwndOwner] = dlg;
 	}
+
+mlog("AddItemsToMenu", "Freed");
 
 	BOOL wrong_word = FALSE;
 
@@ -1431,6 +1481,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 			dlg->old_menu_proc = (WNDPROC) SetWindowLong(dlg->hwnd_menu_owner, GWL_WNDPROC, (LONG) MenuWndProc);
 
 		// First add languages
+mlog("AddItemsToMenu", "Languages");
 		for(unsigned i = 0; i < languages.count; i++)
 		{
 			AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0),
@@ -1441,6 +1492,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 		AppendSubmenu(hMenu, dlg->hLanguageSubMenu, TranslateT("Language"));
 	}
 
+mlog("AddItemsToMenu", "Enable");
 	InsertMenu(hMenu, 0, MF_BYPOSITION, 1, TranslateT("Enable spell checking"));
 	CheckMenuItem(hMenu, 1, MF_BYCOMMAND | (dlg->enabled ? MF_CHECKED : MF_UNCHECKED));
 
@@ -1449,6 +1501,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 	{
 		if (opts.show_all_corrections)
 		{
+mlog("AddItemsToMenu", "show_all_corrections");
 			dlg->hWrongWordsSubMenu = CreatePopupMenu(); 
 
 			FoundWrongWordParam p = { dlg, 0 };
@@ -1459,6 +1512,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 		}
 		else
 		{
+mlog("AddItemsToMenu", "Only one");
 			CHARRANGE sel;
 			TCHAR *word = GetWordUnderPoint(dlg, pt, sel);
 			if (word != NULL && !dlg->lang->spell(word))
@@ -1469,6 +1523,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 			}
 		}
 	}
+mlog("AddItemsToMenu", "End");
 }
 
 
@@ -1571,13 +1626,18 @@ int MsgWindowPopup(WPARAM wParam, LPARAM lParam)
 			|| mwpd->uFlags != MSG_WINDOWPOPUP_INPUT)
 		return 0;
 
-	Dialog *dlg = dialogs[mwpd->hwnd];
-	if (dlg == NULL) 
+	DialogMapType::iterator dlgit = dialogs.find(mwpd->hwnd);
+	if (dlgit == dialogs.end())
 		return -1;
+
+mlog("ShowPopupMenu", "Start");
+
+	Dialog *dlg = dlgit->second;
 
 	POINT pt = mwpd->pt;
 	ScreenToClient(dlg->hwnd, &pt);
 
+mlog("MsgWindowPopup", "Pre");
 	if (mwpd->uType == MSG_WINDOWPOPUP_SHOWING)
 	{
 		AddItemsToMenu(dlg, mwpd->hMenu, pt, dlg->hwnd_owner);
@@ -1586,6 +1646,7 @@ int MsgWindowPopup(WPARAM wParam, LPARAM lParam)
 	{
 		HandleMenuSelection(dlg, pt, mwpd->selection);
 	}
+mlog("MsgWindowPopup", "Pos");
 	return 0;
 }
 
@@ -1606,6 +1667,8 @@ int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt, HWND hwndOwner)
 	if (dlgit == dialogs.end())
 		return -1;
 
+mlog("ShowPopupMenu", "Start");
+
 	Dialog *dlg = dlgit->second;
 
 	if (pt.x == 0xFFFF && pt.y == 0xFFFF)
@@ -1621,6 +1684,8 @@ int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt, HWND hwndOwner)
 		ScreenToClient(hwnd, &pt);
 	}
 
+mlog("ShowPopupMenu", "Create");
+
 	BOOL create_menu = (hMenu == NULL);
 	if (create_menu)
 		hMenu = CreatePopupMenu();
@@ -1629,9 +1694,12 @@ int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt, HWND hwndOwner)
 	AddItemsToMenu(dlg, hMenu, pt, hwndOwner);
 
 	// Show menu
+mlog("ShowPopupMenu", "Track");
 	POINT client = pt;
 	ClientToScreen(hwnd, &pt);
 	int selection = TrackPopupMenu(hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hwndOwner, NULL);
+
+mlog("ShowPopupMenu", "Handle");
 
 	// Do action
 	if (HandleMenuSelection(dlg, client, selection))
@@ -1639,6 +1707,9 @@ int ShowPopupMenu(HWND hwnd, HMENU hMenu, POINT pt, HWND hwndOwner)
 
 	if (create_menu)
 		DestroyMenu(hMenu);
+
+
+mlog("ShowPopupMenu", "End");
 
 	return selection;
 }
@@ -1689,8 +1760,13 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 		}
 	}
 
-	if (hwnd == NULL)
+	if (hwnd == NULL) 
+	{
+		MessageBox(NULL, 
+			TranslateT("Could not find the message dialog. This usually means one of two things:\n- In tabSRMM the checkbox 'Enable event API' is disabled or\n- You are using SRMM (which don't support Spell Checker)"),
+			TranslateT("Spell Checker"), MB_OK);
 		return 0;
+	}
 
 	if (sicd->flags & MBCF_RIGHTBUTTON)
 	{
