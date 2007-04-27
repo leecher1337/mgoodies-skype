@@ -337,23 +337,21 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 		isGrouping = tmpm->isGrouping();
 	}
 	szBase = Utils::UTF8Encode(tempBase);
-	
+
 	if (event->hContact != NULL) {
 		getUINs(event->hContact, szUINIn, szUINOut);
 	}
 
-	if (getFlags(protoSettings) & Options::LOG_SHOW_NICKNAMES) {
-		if (event->hContact != NULL) {
-			szNameOut = getEncodedContactName(NULL, szProto, szRealProto);
-			szNameIn = getEncodedContactName(event->hContact, szProto, szRealProto);
-		}
+	if (event->hContact != NULL) {
+		szNameOut = getEncodedContactName(NULL, szProto, szRealProto);
+		szNameIn = getEncodedContactName(event->hContact, szProto, szRealProto);
 	} else {
 		szNameOut = Utils::dupString("&nbsp;");
 		szNameIn = Utils::dupString("&nbsp;");
 	}
 	sprintf(tempStr, "%snoavatar.jpg", tempBase);
 	szNoAvatar = Utils::UTF8Encode(tempStr);
-	
+
 	if(event->hContact != NULL) {
 		szAvatarIn = getAvatar(event->hContact, szRealProto);
 	}
@@ -420,14 +418,10 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 			szName = NULL;
 			szText = NULL;
 			szFileDesc = NULL;
-			if (getFlags(protoSettings) & Options::LOG_SHOW_NICKNAMES) {
-				if (event->eventData->dwFlags & IEEDF_UNICODE_NICK) {
-					szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNickW, ENF_NAMESMILEYS);
-				} else {
-					szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNick, ENF_NAMESMILEYS);
-				}
+			if (event->eventData->dwFlags & IEEDF_UNICODE_NICK) {
+				szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNickW, ENF_NAMESMILEYS);
 			} else {
-				szName = Utils::dupString("&nbsp;");
+				szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNick, ENF_NAMESMILEYS);
 			}
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
 				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
@@ -492,7 +486,11 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 							tokenVal = token->getText();
 							break;
 						case Token::NAME:
-							tokenVal = szName;
+							if (getFlags(protoSettings) & Options::LOG_SHOW_NICKNAMES) {
+								tokenVal = szName;
+							} else {
+								tokenVal = "&nbsp;";
+							}
 							break;
 						case Token::TIME:
 							if (getFlags(protoSettings) & Options::LOG_SHOW_TIME) {
@@ -521,17 +519,25 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 							tokenVal = szBase;
 							break;
 						case Token::NAMEIN:
-							if (event->hContact != NULL) {
-								tokenVal = szNameIn;
+							if (getFlags(protoSettings) & Options::LOG_SHOW_NICKNAMES) {
+								if (event->hContact != NULL) {
+									tokenVal = szNameIn;
+								} else {
+									tokenVal = szName;
+								}
 							} else {
-								tokenVal = szName;
+								tokenVal = "&nbsp;";
 							}
 							break;
 						case Token::NAMEOUT:
-							if (event->hContact != NULL) {
-								tokenVal = szNameOut;
+							if (getFlags(protoSettings) & Options::LOG_SHOW_NICKNAMES) {
+								if (event->hContact != NULL) {
+									tokenVal = szNameOut;
+								} else {
+									tokenVal = szName;
+								}
 							} else {
-								tokenVal = szName;
+								tokenVal = "&nbsp;";
 							}
 							break;
 						case Token::AVATARIN:
@@ -600,7 +606,6 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	if (szNickIn!=NULL) delete szNickIn;
 	if (szNickOut!=NULL) delete szNickOut;
 	if (szStatusMsg!=NULL) delete szStatusMsg;
-	if (szFileDesc!=NULL) delete szFileDesc;
 	view->documentClose();
 }
 

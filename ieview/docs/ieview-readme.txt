@@ -99,6 +99,8 @@ Alternatively, you may install AvatarService plugin and IEView will automaticall
 
 6. Change Log
 -------------
+1.0.9.9
+* bugfixes: TabSRMM compatibility mode, crash on file transfer
 1.0.9.8
 * a lot of bugfixes
 1.0.9.7
