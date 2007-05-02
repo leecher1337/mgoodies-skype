@@ -15,6 +15,7 @@ HISTORY
 -------
 0.0.0.39 - + Voice service support in normall calls - no support for SkypeOut yet (pescuma)
 		   ! Made options dialog a little bit smaller, removed frame and set bold frame for popups (pescuma)
+		   + Add more status to manage for away message
 
 0.0.0.38 - ! Fix the load for pre 0.7.0 #17 build
 		   * Patch by pescuma for avatar.
