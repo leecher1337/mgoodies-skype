@@ -9,6 +9,7 @@ extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
 extern char pszSkypeProtoName[MAX_PATH+30],protocol;
 extern BOOL SkypeInitialized;
+extern DWORD mirandaVersion;
 
 bool showPopup, showPopupErr, popupWindowColor, popupWindowColorErr;
 unsigned int popupBackColor, popupBackColorErr;
@@ -384,6 +385,7 @@ int CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 			CheckDlgButton(hwndDlg, IDC_NOERRORS, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "SuppressErrors", 0));
 			CheckDlgButton(hwndDlg, IDC_KEEPSTATE, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "KeepState", 0));
 			CheckDlgButton(hwndDlg, IDC_TIMEZONE, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseTimeZonePatch", 0));
+			CheckDlgButton(hwndDlg, IDC_SHOWDEFAULTAVATAR, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "ShowDefaultSkypeAvatar", 0));
 
 			if (ServiceExists(MS_GC_NEWCHAT) && atoi(SKYPE_PROTO+strlen(SKYPE_PROTO)-1)>=5)
 				CheckDlgButton(hwndDlg, IDC_GROUPCHAT, (BYTE)DBGetContactSettingByte(NULL, pszSkypeProtoName, "UseGroupchat", 0));
@@ -428,6 +430,7 @@ int CALLBACK OptionsAdvancedDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "KeepState", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_KEEPSTATE), BM_GETCHECK,0,0)));
 					DBWriteContactSettingDword(NULL, pszSkypeProtoName, "SkypeOutStatusMode", SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_GETITEMDATA,SendDlgItemMessage(hwndDlg,IDC_SKYPEOUTSTAT,CB_GETCURSEL,0,0),0));
 					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "UseTimeZonePatch", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_TIMEZONE), BM_GETCHECK,0,0)));
+					DBWriteContactSettingByte (NULL, pszSkypeProtoName, "ShowDefaultSkypeAvatar", (BYTE)(SendMessage(GetDlgItem(hwndDlg, IDC_SHOWDEFAULTAVATAR), BM_GETCHECK,0,0)));
 					return TRUE;
 			}			
 			break; 
@@ -448,7 +451,6 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 	const int StartControls[]={IDC_NOSPLASH, IDC_MINIMIZED, IDC_NOTRAY};
 	static BOOL initDlg=FALSE;
 	static int statusModes[]={ID_STATUS_OFFLINE,ID_STATUS_ONLINE,ID_STATUS_AWAY,ID_STATUS_NA,ID_STATUS_OCCUPIED,ID_STATUS_DND,ID_STATUS_FREECHAT,ID_STATUS_INVISIBLE,ID_STATUS_OUTTOLUNCH,ID_STATUS_ONTHEPHONE};
-	int i;
 	
 	switch (uMsg){
 		case WM_INITDIALOG:	
@@ -544,15 +546,19 @@ int OnDetailsInit( WPARAM wParam, LPARAM lParam )
 	if ( hContact == NULL ) {
 		
 		char szTitle[256];
-		mir_snprintf( szTitle, sizeof( szTitle ), "Skype %s", Translate( "Avatar" ));
+		
+		if (mirandaVersion < PLUGIN_MAKE_VERSION(0, 7, 0, 27))
+		{
+			mir_snprintf( szTitle, sizeof( szTitle ), "%s %s", pszSkypeProtoName, Translate( "Avatar" ));
 
-		odp.pfnDlgProc = AvatarDlgProc;
-		odp.position = 1900000000;
-		odp.pszTemplate = MAKEINTRESOURCEA(IDD_SETAVATAR);
-		odp.pszTitle = szTitle;
-		CallService(MS_USERINFO_ADDPAGE, wParam, (LPARAM)&odp);
+			odp.pfnDlgProc = AvatarDlgProc;
+			odp.position = 1900000000;
+			odp.pszTemplate = MAKEINTRESOURCEA(IDD_SETAVATAR);
+			odp.pszTitle = szTitle;
+			CallService(MS_USERINFO_ADDPAGE, wParam, (LPARAM)&odp);
+		}
 
-		mir_snprintf( szTitle, sizeof( szTitle ), "Skype %s", Translate( "Details" ));
+		mir_snprintf( szTitle, sizeof( szTitle ), "%s %s", pszSkypeProtoName, Translate( "Details" ));
 	
 		odp.pfnDlgProc = DetailsDlgProc;
 		odp.position = 1900000000;
@@ -626,6 +632,7 @@ BOOL CALLBACK AvatarDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam
 
 	return 0;
 }
+
 /*DetailsDlgProc
 *
 * For setting the skype infos

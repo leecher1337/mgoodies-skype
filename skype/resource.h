@@ -55,6 +55,7 @@
 #define IDC_JOIN                        1023
 #define IDC_TIMEZONE                    1023
 #define IDC_HOLD                        1024
+#define IDC_SHOWDEFAULTAVATAR           1024
 #define IDC_HANGUP                      1025
 #define IDC_AVATAR                      1026
 #define IDC_SETAVATAR                   1027

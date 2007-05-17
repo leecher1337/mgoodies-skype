@@ -13,6 +13,10 @@ CODE
 
 HISTORY
 -------
+0.0.0.40 - + Support for new core service: get avatar caps
+		   + Option to show/hide default avatar for contacts
+		   + Hide Skype Avatar page in user details if >= #27
+
 0.0.0.39 - + Voice service support in normall calls - no support for SkypeOut yet (pescuma)
 		   ! Made options dialog a little bit smaller, removed frame and set bold frame for popups (pescuma)
 		   + Add more status to manage for away message
