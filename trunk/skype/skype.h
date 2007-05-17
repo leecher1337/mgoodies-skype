@@ -106,6 +106,7 @@ void EndCallThread(char *);
 void GetInfoThread(HANDLE);
 int OnDetailsInit( WPARAM, LPARAM );
 int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam);
+int SkypeGetAvatarCaps(WPARAM wParam,LPARAM lParam);
 int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam);
 int HookContactAdded(WPARAM wParam, LPARAM lParam);
 int HookContactDeleted(WPARAM wParam, LPARAM lParam);

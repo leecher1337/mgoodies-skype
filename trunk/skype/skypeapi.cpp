@@ -25,6 +25,7 @@ extern LONG AttachStatus;
 extern HINSTANCE hInst;
 extern PLUGININFO pluginInfo;
 extern HANDLE hProtocolAvatarsFolder;
+extern char DefaultAvatarsFolder[MAX_PATH+1];
 
 // -> Skype Message Queue functions //
 
@@ -913,26 +914,90 @@ int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
  *		   -1 - Failure
  */
 int SkypeSetAvatar(WPARAM wParam, LPARAM lParam) {
-	int retval=-1;
-	char AvatarsFolder[MAX_PATH];
-	
-	CallService(MS_DB_GETPROFILEPATH, (WPARAM) MAX_PATH, (LPARAM)AvatarsFolder);
-	sprintf(AvatarsFolder,"%s\\%s",AvatarsFolder,pszSkypeProtoName);
-	
-	FoldersGetCustomPath(hProtocolAvatarsFolder,  AvatarsFolder, sizeof(AvatarsFolder), AvatarsFolder);
-	CreateDirectory(AvatarsFolder,NULL);
+	if (AttachStatus != SKYPECONTROLAPI_ATTACH_SUCCESS)
+		return -3;
 
-	sprintf(AvatarsFolder,"%s\\%s avatar.png",AvatarsFolder,pszSkypeProtoName);
+	char *filename = (char *) lParam;
+	if (filename == NULL)
+		return -1;
+	size_t len = strlen(filename);
+	if (len < 4)
+		return -1;
 
-	CopyFile((char*)lParam,AvatarsFolder,0);
+	char *ext = &filename[len-4];
+	if (stricmp(ext, ".jpg")==0 || stricmp(ext-1, ".jpeg")==0)
+		ext = "jpg";
+	else if (stricmp(ext, ".png")==0)
+		ext = "png";
+	else
+		return -2;
+	
+	char AvatarFile[MAX_PATH+1];
+	FoldersGetCustomPath(hProtocolAvatarsFolder, AvatarFile, sizeof(AvatarFile), DefaultAvatarsFolder);
+	mir_snprintf(AvatarFile, sizeof(AvatarFile), "%s\\%s avatar.%s", AvatarFile, pszSkypeProtoName, ext);
 
-	DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", "");
-	DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", AvatarsFolder);
-	
-	if(AttachStatus == SKYPECONTROLAPI_ATTACH_SUCCESS)
-		retval = SkypeSend("SET AVATAR 1 %s", AvatarsFolder);
-	
-	return retval;
+	// Backup old file
+	DBVARIANT dbv = {0};
+	BOOL hasOldAvatar = (DBGetContactSetting(NULL, pszSkypeProtoName, "AvatarFile", &dbv) == 0 && dbv.type == DBVT_ASCIIZ);
+
+	char OldAvatarFile[1024];
+	if (hasOldAvatar)
+	{
+		strncpy(OldAvatarFile, dbv.pszVal, sizeof(OldAvatarFile)-4);
+		OldAvatarFile[sizeof(OldAvatarFile)-5] = '\0';
+		strcat(OldAvatarFile, "_old");
+		DeleteFile(OldAvatarFile);
+		if (!MoveFile(dbv.pszVal, OldAvatarFile))
+		{
+			DBFreeVariant(&dbv);
+			return -3;
+		}
+	}
+
+	// Copy new file
+	if (!CopyFile(filename, AvatarFile, FALSE))
+	{
+		if (hasOldAvatar)
+		{
+			MoveFile(OldAvatarFile, dbv.pszVal);
+			DBFreeVariant(&dbv);
+		}
+		return -3;
+	}
+
+	// Try to set with skype
+	char *ptr = NULL;
+	int ret;
+
+	char command[500];
+	mir_snprintf(command, sizeof(command), "SET AVATAR 1 %s", AvatarFile);
+	if (SkypeSend(command) || (ptr = SkypeRcv(command+4, INFINITE)) == NULL || !strncmp(ptr, "ERROR", 5))
+	{
+		DeleteFile(AvatarFile);
+
+		if (hasOldAvatar)
+			MoveFile(OldAvatarFile, dbv.pszVal);
+
+		ret = -4;
+	}
+	else
+	{
+		if (hasOldAvatar)
+			DeleteFile(OldAvatarFile);
+
+		DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", "");
+		DBWriteContactSettingString(NULL, pszSkypeProtoName, "AvatarFile", AvatarFile);
+
+		ret = 0;
+	}
+
+	if (ptr != NULL)
+		free(ptr);
+
+	if (hasOldAvatar)
+		DBFreeVariant(&dbv);
+
+	return ret;
 }
 
 

@@ -58,10 +58,10 @@ void CreateServices(void)
 
 	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETAVATARINFO);
 	CreateServiceFunction(pszServiceName , SkypeGetAvatarInfo);
-
+	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETAVATARCAPS);
+	CreateServiceFunction(pszServiceName , SkypeGetAvatarCaps);
 	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_GETMYAVATAR);
 	CreateServiceFunction(pszServiceName , SkypeGetAvatar);
-	
 	strcpy(pszServiceName, pszSkypeProtoName); strcat(pszServiceName, PS_SETMYAVATAR);
 	CreateServiceFunction(pszServiceName , SkypeSetAvatar);
 

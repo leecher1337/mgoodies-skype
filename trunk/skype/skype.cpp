@@ -45,6 +45,7 @@ LONG AttachStatus=-1;
 HINSTANCE hInst;
 HANDLE hProtocolAvatarsFolder;
 char DefaultAvatarsFolder[MAX_PATH+1];
+DWORD mirandaVersion;
 
 
 // Module Internal Globals
@@ -126,7 +127,7 @@ int FreeVSApi()
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,39),
+	PLUGIN_MAKE_VERSION(0,0,0,40),
 	"Support for Skype network",
 	"leecher - tweety",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",
@@ -2030,7 +2031,57 @@ int SkypeGetAwayMessage(WPARAM wParam,LPARAM lParam)
 	return 1;
 }
 
+#define POLYNOMIAL (0x488781ED) /* This is the CRC Poly */
+#define TOPBIT (1 << (WIDTH - 1)) /* MSB */
+#define WIDTH 32
 
+static int GetFileHash(char* filename)
+{
+   HANDLE hFile = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+   if(hFile == INVALID_HANDLE_VALUE)
+	   return 0;
+
+	int remainder = 0;
+	char data[1024];
+	DWORD dwRead;
+	do
+	{
+		// Read file chunk
+		dwRead = 0;
+		ReadFile(hFile, data, 1024, &dwRead, NULL);
+
+		/* loop through each byte of data */
+		for (int byte = 0; byte < (int) dwRead; ++byte) {
+			/* store the next byte into the remainder */
+			remainder ^= (data[byte] << (WIDTH - 8));
+			/* calculate for all 8 bits in the byte */
+			for (int bit = 8; bit > 0; --bit) {
+				/* check if MSB of remainder is a one */
+				if (remainder & TOPBIT)
+					remainder = (remainder << 1) ^ POLYNOMIAL;
+				else
+					remainder = (remainder << 1);
+			}
+		}
+	} while(dwRead == 1024);
+
+	CloseHandle(hFile);
+
+	return remainder;
+}
+
+static int GetFileSize(char* filename)
+{
+	HANDLE hFile = CreateFileA(filename, GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+	if(hFile == INVALID_HANDLE_VALUE)
+		return 0;
+
+	int size = GetFileSize(hFile, NULL);
+
+	CloseHandle(hFile);
+
+	return size;
+}
 
 /* RetrieveUserAvatar
  * 
@@ -2129,6 +2180,26 @@ void RetrieveUserAvatar(void *param)
 		return;
 	}
 
+	// Is no avatar image?
+	if (!DBGetContactSettingByte(NULL, pszSkypeProtoName, "ShowDefaultSkypeAvatar", 0) 
+		&& GetFileHash(AvatarTmpFile) == 0x8d34e05d && GetFileSize(AvatarTmpFile) == 3751)
+	{
+		// Has no avatar
+		PROTO_AVATAR_INFORMATION AI;
+		AI.cbSize = sizeof( AI );
+		AI.format = PA_FORMAT_UNKNOWN;
+		AI.hContact = hContact;
+		AI.filename[0] = '\0';
+
+		ack.result = ACKRESULT_SUCCESS;
+		ack.hProcess = HANDLE( &AI );
+		CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
+
+		DeleteFile(AvatarTmpFile);
+		DeleteFile(AvatarFile);
+		return;
+	}
+
 	// Got it
 
 	CopyFile(AvatarTmpFile, AvatarFile, FALSE);
@@ -2209,6 +2280,47 @@ int SkypeGetAvatarInfo(WPARAM wParam,LPARAM lParam)
 		strcpy(AI->filename, AvatarFile);
 		return GAIR_SUCCESS;
 	}
+}
+
+
+/* SkypeGetAvatarInfo
+ * 
+ * Purpose: Query avatar caps for a protocol
+ * Params : wParam=One of AF_*
+ *			lParam=Depends on wParam
+ * Returns: Depends on wParam
+ */
+int SkypeGetAvatarCaps(WPARAM wParam, LPARAM lParam)
+{
+	switch(wParam)
+	{
+		case AF_MAXSIZE:
+		{
+			POINT *p = (POINT *) lParam;
+			if (p == NULL)
+				return -1;
+
+			p->x = 96;
+			p->y = 96;
+			return 0;
+		}
+		case AF_PROPORTION:
+		{
+			return PIP_NONE;
+		}
+		case AF_FORMATSUPPORTED:
+		{
+			if (lParam == PA_FORMAT_PNG || lParam == PA_FORMAT_JPEG)
+				return TRUE;
+			else
+				return FALSE;
+		}
+		case AF_ENABLED:
+		{
+			return TRUE;
+		}
+	}
+	return 0;
 }
 
 
@@ -2606,14 +2718,18 @@ void __cdecl MsgPump (char *dummy)
 
 // DLL Stuff //
 
-extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
+extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirVersion)
 {
-		pluginInfo.cbSize = sizeof(PLUGININFO);
-		return (PLUGININFO*) &pluginInfo;
+	mirandaVersion = mirVersion;
+
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO*) &pluginInfo;
 }
 
-extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirVersion)
 {
+	mirandaVersion = mirVersion;
+
 	return &pluginInfo;
 }
 
@@ -2638,7 +2754,6 @@ int PreShutdown(WPARAM wParam, LPARAM lParam) {
 
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
-
 	PROTOCOLDESCRIPTOR pd;
 	DWORD Buffsize;
 	HKEY MyKey;

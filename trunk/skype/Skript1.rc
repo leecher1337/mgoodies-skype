@@ -40,7 +40,7 @@ END
 IDD_OPT_DEFAULT DIALOGEX 0, 0, 310, 228
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "Start Skype with miranda, if it is not running using the following cmdline options:",
                     IDC_STARTSKYPE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
@@ -121,7 +121,7 @@ END
 IDD_OPT_PROXY DIALOGEX 0, 0, 310, 228
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "Use Skypeproxy connection over network instead of local Skype API",
                     IDC_USES2S,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,11,
@@ -139,31 +139,31 @@ BEGIN
                     NOT WS_BORDER
 END
 
-IDD_SETDETAILS DIALOGEX 0, 0, 222, 131
+IDD_SETDETAILS DIALOGEX 0, 0, 216, 151
 STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
-    EDITTEXT        IDC_FULLNAME,73,7,83,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_BIRTHDAY,73,20,83,12,ES_AUTOHSCROLL
-    COMBOBOX        IDC_SEX,73,32,83,12,CBS_DROPDOWNLIST | WS_VSCROLL | 
-                    WS_TABSTOP
-    EDITTEXT        IDC_CITY,73,47,83,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_COUNTRY,73,61,83,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_PROVINCE,73,74,83,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_HOMEPHONE,73,87,83,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_OFFICEPHONE,73,101,83,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_HOMEPAGE,73,115,83,12,ES_AUTOHSCROLL
-    LTEXT           "Name :",IDC_STATIC,7,8,61,9
-    LTEXT           "Birthday :",IDC_STATIC,7,20,61,10
+    LTEXT           "Name :",IDC_STATIC,7,6,61,9
+    EDITTEXT        IDC_FULLNAME,73,4,141,12,ES_AUTOHSCROLL
+    LTEXT           "Birthday :",IDC_STATIC,7,20,61,9
+    EDITTEXT        IDC_BIRTHDAY,73,18,141,12,ES_AUTOHSCROLL
     LTEXT           "Sex :",IDC_STATIC,7,34,61,9
+    COMBOBOX        IDC_SEX,73,32,141,12,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
     LTEXT           "City :",IDC_STATIC,7,48,61,9
+    EDITTEXT        IDC_CITY,73,46,141,12,ES_AUTOHSCROLL
     LTEXT           "Country",IDC_STATIC,7,62,61,9
-    LTEXT           "Province :",IDC_STATIC,7,75,61,9
-    LTEXT           "Home phone :",IDC_STATIC,7,88,61,9
-    LTEXT           "Office phone :",IDC_STATIC,7,102,61,9
-    LTEXT           "Homepage :",IDC_STATIC,7,117,61,9
-    PUSHBUTTON      "Save",IDC_SAVEDETAILS,168,114,45,14
+    EDITTEXT        IDC_COUNTRY,73,60,141,12,ES_AUTOHSCROLL
+    LTEXT           "Province :",IDC_STATIC,7,76,61,9
+    EDITTEXT        IDC_PROVINCE,73,74,141,12,ES_AUTOHSCROLL
+    LTEXT           "Home phone :",IDC_STATIC,7,90,61,9
+    EDITTEXT        IDC_HOMEPHONE,73,88,141,12,ES_AUTOHSCROLL
+    LTEXT           "Office phone :",IDC_STATIC,7,104,61,9
+    EDITTEXT        IDC_OFFICEPHONE,73,102,141,12,ES_AUTOHSCROLL
+    LTEXT           "Homepage :",IDC_STATIC,7,118,61,9
+    EDITTEXT        IDC_HOMEPAGE,73,116,141,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Save",IDC_SAVEDETAILS,169,134,45,14
 END
 
 IDD_OPT_ADVANCED DIALOGEX 0, 0, 310, 228
@@ -173,30 +173,33 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Enable Skype Menu options (currently: Find/Add user)",
                     IDC_ENABLEMENU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    14,296,10
+                    14,296,9
     CONTROL         "Use Popup-Plugin (if installed) for displaying messages ",
                     IDC_USEPOPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,31,
+                    296,9
+    CONTROL         "Suppress all error-Messages (not recommended, but if it annoys you.. ;)",
+                    IDC_NOERRORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,46,
                     296,9
     CONTROL         "Use groupchat interface for conversations - requires chat.dll (Please don't!)",
                     IDC_GROUPCHAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
                     64,296,9
-    CONTROL         "Suppress all error-Messages (not recommended, but if it annoys you.. ;)",
-                    IDC_NOERRORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,46,
-                    296,13
-    LTEXT           "SkypeOut contacts are in status",IDC_STATIC,11,143,120,
-                    8
-    COMBOBOX        IDC_SKYPEOUTSTAT,139,140,79,54,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Keep requested online status on startup under every circumstance",
-                    IDC_KEEPSTATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    98,296,9
-    PUSHBUTTON      "Cleanup Nicknames",IDC_CLEANUP,11,158,80,18,
-                    BS_MULTILINE
-    CONTROL         "Use time zone patch",IDC_TIMEZONE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,116,296,9
     CONTROL         "Mark groupchat message as read to avoid notification.",
                     IDC_GROUPCHATREAD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     10,81,296,9
+    CONTROL         "Keep requested online status on startup under every circumstance",
+                    IDC_KEEPSTATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
+                    98,296,9
+    CONTROL         "Use time zone patch",IDC_TIMEZONE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,116,296,9
+    CONTROL         "Show default skype avatar for contacts",
+                    IDC_SHOWDEFAULTAVATAR,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,10,133,296,9
+    LTEXT           "SkypeOut contacts are in status",IDC_STATIC,11,159,120,
+                    8
+    COMBOBOX        IDC_SKYPEOUTSTAT,139,156,79,54,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Cleanup Nicknames",IDC_CLEANUP,11,174,80,18,
+                    BS_MULTILINE
 END
 
 IDD_OPT_POPUP DIALOGEX 0, 0, 313, 230
@@ -296,9 +299,9 @@ BEGIN
     IDD_SETDETAILS, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 220
+        RIGHTMARGIN, 214
         TOPMARGIN, 4
-        BOTTOMMARGIN, 128
+        BOTTOMMARGIN, 148
     END
 
     IDD_OPT_ADVANCED, DIALOG
