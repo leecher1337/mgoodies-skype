@@ -2319,8 +2319,12 @@ int SkypeGetAvatarCaps(WPARAM wParam, LPARAM lParam)
 		{
 			return TRUE;
 		}
+		case AF_DONTNEEDDELAYS:
+		{
+			return FALSE;
+		}
 	}
-	return 0;
+	return -1;
 }
 
 
