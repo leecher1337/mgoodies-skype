@@ -37,7 +37,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,1,5),
+	PLUGIN_MAKE_VERSION(0,1,1,6),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -99,6 +99,7 @@ int GetParsedFormat(WPARAM wParam,LPARAM lParam);
 int GetOverrideContactOption(WPARAM wParam,LPARAM lParam);
 int GetUnknownText(WPARAM wParam,LPARAM lParam);
 void SetExtraIcon(HANDLE hContact, BOOL set);
+void SetListeningInfos(LISTENINGTOINFO *lti);
 TCHAR *ReplaceVars(TCHAR *str, TCHAR **fr, int size);
 
 TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai);
@@ -345,8 +346,6 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		proto_itens_num++;
 	}
 
-	StartTimer();
-
 	hTopToolBarLoadedHook = HookEvent(ME_TTB_MODULELOADED, TopToolBarLoaded);
 
 	// Variables support
@@ -409,6 +408,9 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	}
 
 	loaded = TRUE;
+
+	SetListeningInfos(NULL);
+	StartTimer();
 
 	return 0;
 }
