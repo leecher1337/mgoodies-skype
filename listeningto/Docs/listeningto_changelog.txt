@@ -2,6 +2,10 @@ ListeningTo
 
 Changelog:
 
+. 0.1.1.6
+  * Fix to get info from radio station in winamp
+  * Fix to remove listening to data on startup
+
 . 0.1.1.5
   + Added icon to main menu
   - Removed old hack for clist classic

@@ -149,6 +149,11 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 
 inline void SendData(WCHAR *text) 
 {
+	static WCHAR lastMsg[1024] = L"";
+
+	if (lstrcmpW(lastMsg, text) == 0)
+		return;
+
 	// Prepare the struct
 	COPYDATASTRUCT cds;
 	cds.dwData = MIRANDA_DW_PROTECTION;
@@ -156,6 +161,8 @@ inline void SendData(WCHAR *text)
 	cds.cbData = (wcslen(text) + 1) * sizeof(WCHAR);
 
 	EnumWindows(EnumWindowsProc, (LPARAM) &cds);
+
+	lstrcpynW(lastMsg, text, 1024);
 }
 
 
@@ -297,7 +304,7 @@ LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 						// If playing, show current song
 						if (SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_ISPLAYING) == 1)
 							if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
-								SetTimer(hPlWnd, 0, 500, NULL);
+								SetTimer(hMsgWnd, 1, 500, NULL);
 					}
 				}
 			}
@@ -321,19 +328,21 @@ LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 					}
 					else
 					{
-						if (last_was_stop || strcmpi(last_filename, filename) != 0)
+						BOOL is_radio = (strstr(filename, "://") != 0);
+						if (last_was_stop || is_radio || strcmpi(last_filename, filename) != 0)
 						{
 							last_was_stop = FALSE;
 							lstrcpyn(last_filename, filename, sizeof(last_filename));
 
 							// Miranda is running?
-							if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
+							//if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
 								SendDataToMiranda(last_filename, (char *) SendMessage(plugin.hwndParent, WM_WA_IPC, track, IPC_GETPLAYLISTTITLE));
+
+							if (is_radio)
+								// To try to get info from radio stations
+								SetTimer(hMsgWnd, 1, 3000, NULL);
 						}
 					}
-
-					// To try to get info from radio stations
-					SetTimer(hMsgWnd, 1, 3000, NULL);
 				}
 				else
 				{
@@ -390,7 +399,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				case 40046: // Pause
 				{
 					KillTimer(hMsgWnd, 1);
-					SetTimer(hMsgWnd, 1, 1000, NULL);
+					SetTimer(hMsgWnd, 1, 500, NULL);
 					break;
 				}
 			}
@@ -403,7 +412,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
 				case IPC_PLAYING_FILE:
 				{
 					KillTimer(hMsgWnd, 1);
-					SetTimer(hMsgWnd, 1, 1000, NULL);
+					SetTimer(hMsgWnd, 1, 500, NULL);
 					break;
 				}
 			}
