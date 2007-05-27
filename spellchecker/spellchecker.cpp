@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,5),
+	PLUGIN_MAKE_VERSION(0,0,2,6),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -164,11 +164,10 @@ DEFINE_GUIDXXX(IID_ITextDocument,0x8CC497C0,0xA1DF,0x11CE,0x80,0x98,
 
 // Functions ////////////////////////////////////////////////////////////////////////////
 
-#define mlog
 
-#if 0
 int mlog(const char *function, const char *fmt, ...)
 {
+#if 0
     va_list va;
     char text[1024];
 	size_t len;
@@ -195,8 +194,11 @@ int mlog(const char *function, const char *fmt, ...)
 	{
 		return -1;
 	}
-}
+#else
+	return 0;
 #endif
+}
+
 
 HICON LoadIconEx(char* iconName, bool copy)
 {
