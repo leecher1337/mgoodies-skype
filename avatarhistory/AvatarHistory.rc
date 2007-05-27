@@ -80,35 +80,27 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,159,121,50,14
 END
 
-IDD_OPTIONS DIALOGEX 0, 0, 314, 238
+IDD_OPTIONS DIALOGEX 0, 0, 314, 186
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Logging options ",IDC_LOGGING_G,3,3,308,57
-    CONTROL         "Store old avatars on disk",IDC_LOG_DISK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,16,291,11
-    CONTROL         "Also create per contact folders with shortcuts",
-                    IDC_OLD_STYLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,
-                    29,291,11
-    CONTROL         "Log avatar changes to history",IDC_LOG_HISTORY,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,42,291,11
-    GROUPBOX        " History templates ",IDC_TRACK_G,3,64,308,66
-    LTEXT           "Avatar change:",IDC_CHANGED_L,11,78,105,10
-    EDITTEXT        IDC_CHANGED,122,77,183,13,ES_AUTOHSCROLL
+    GROUPBOX        " History templates ",IDC_TRACK_G,3,3,308,66
+    LTEXT           "Avatar change:",IDC_CHANGED_L,11,17,89,10
+    EDITTEXT        IDC_CHANGED,104,16,201,13,ES_AUTOHSCROLL
     CONTROL         "Track when contacts remove their avatars too",
                     IDC_TRACK_REMOVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    12,94,291,11
-    LTEXT           "Avatar removal:",IDC_REMOVED_L,26,110,90,10
-    EDITTEXT        IDC_REMOVED,122,109,183,13,ES_AUTOHSCROLL
-    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,133,308,103
+                    12,33,291,11
+    LTEXT           "Avatar removal:",IDC_REMOVED_L,26,49,74,10
+    EDITTEXT        IDC_REMOVED,104,48,201,13,ES_AUTOHSCROLL
+    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,72,308,103
     LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,
-                    13,147,157,11
+                    13,86,157,11
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
-                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,12,159,158,70
-    CONTROL         "Keep all in same folder",IDC_SAME_FOLDER,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,187,147,116,11
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,12,98,158,70
+    LTEXT           "MetaContacts have special handling: the info is always copied from subcontacts (notifications from a meta are ignored)",
+                    IDC_STATIC,181,98,124,70
 END
 
 IDD_POPUPS DIALOG DISCARDABLE  0, 0, 314, 240
@@ -148,6 +140,47 @@ BEGIN
     PUSHBUTTON      "Preview",IDC_PREV,131,161,50,14
 END
 
+IDD_FIRST_RUN DIALOG DISCARDABLE  0, 0, 338, 251
+STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP | WS_VISIBLE | 
+    WS_CAPTION | WS_SYSMENU
+CAPTION "Avatar History: Select how to store history avatars"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT           "Please select how the avatar history should be stored. This setting can NOT be changed in future, because it would cause all previous history to be lost.",
+                    IDC_STATIC,7,7,324,25
+    CONTROL         "Store history in miranda history and all history avatars in same folder",
+                    IDC_MIR_SAME,"Button",BS_AUTORADIOBUTTON,7,33,324,11
+    LTEXT           "History is stored inside miranda db. It can be seen by History++ or Avatar History internal viewer.",
+                    IDC_STATIC,20,44,311,10
+    LTEXT           "All avatars are stored as <Profile>\\Avatars History\\<Avatar Hash>",
+                    IDC_STATIC,20,54,311,10
+    CONTROL         "Store history in miranda history and history avatars in per protocol folders",
+                    IDC_MIR_PROTO,"Button",BS_AUTORADIOBUTTON,7,66,324,11
+    LTEXT           "History is stored inside miranda db. It can be seen by History++ or Avatar History internal viewer.",
+                    IDC_STATIC,20,77,311,10
+    LTEXT           "All avatars are stored as <Profile>\\Avatars History\\<Protocol>\\<Avatar Hash>",
+                    IDC_STATIC,20,87,311,10
+    CONTROL         "Store history in miranda history and history avatars in per contact folders using shortcuts",
+                    IDC_MIR_SHORT,"Button",BS_AUTORADIOBUTTON,7,99,324,11
+    LTEXT           "History is stored inside miranda db. It can be seen by History++ or Avatar History internal viewer.",
+                    IDC_STATIC,20,110,311,10
+    LTEXT           "All avatars are stored as <Profile>\\Avatars History\\<Protocol>\\<Avatar Hash> and have a shortcut per history entry in <Profile>\\Avatars History\\<Protocol>\\<Contact ID>\\<Timestamp>",
+                    IDC_STATIC,20,120,311,18
+    CONTROL         "Store history avatars in per contact folders using shortcuts",
+                    IDC_SHORT,"Button",BS_AUTORADIOBUTTON,7,140,324,11
+    LTEXT           "History is stored only in disk. It can be seen by Avatar History internal viewer.",
+                    IDC_STATIC,20,151,311,10
+    LTEXT           "All avatars are stored as <Profile>\\Avatars History\\<Protocol>\\<Avatar Hash> and have a shortcut per history entry in <Profile>\\Avatars History\\<Protocol>\\<Contact ID>\\<Timestamp>",
+                    IDC_STATIC,20,161,311,18
+    CONTROL         "Store history avatars in per contact folders",IDC_DUP,
+                    "Button",BS_AUTORADIOBUTTON,7,181,324,11
+    LTEXT           "History is stored only in disk. It can be seen by Avatar History internal viewer.",
+                    IDC_STATIC,20,192,311,10
+    LTEXT           "All avatars are stored as <Profile>\\Avatars History\\<Protocol>\\<Contact ID>\\<Timestamp> (the same image can be stored lot of times)",
+                    IDC_STATIC,20,202,311,18
+    DEFPUSHBUTTON   "OK",IDOK,151,230,50,14
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -170,7 +203,7 @@ BEGIN
         LEFTMARGIN, 3
         RIGHTMARGIN, 311
         TOPMARGIN, 3
-        BOTTOMMARGIN, 236
+        BOTTOMMARGIN, 184
     END
 
     IDD_POPUPS, DIALOG
@@ -179,6 +212,14 @@ BEGIN
         RIGHTMARGIN, 311
         TOPMARGIN, 3
         BOTTOMMARGIN, 237
+    END
+
+    IDD_FIRST_RUN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 331
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 244
     END
 END
 #endif    // APSTUDIO_INVOKED

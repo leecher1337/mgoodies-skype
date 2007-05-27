@@ -35,10 +35,6 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 
 
 static OptPageControl optionsControls[] = { 
-	{ NULL,							CONTROL_CHECKBOX,		IDC_LOG_DISK,		"LogToDisk", AVH_DEF_LOGTODISK },
-	{ &opts.log_keep_same_folder,	CONTROL_CHECKBOX,		IDC_SAME_FOLDER,	"LogKeepSameFolder", AVH_DEF_LOGKEEPSAMEFOLDER },
-	{ &opts.log_old_style,			CONTROL_CHECKBOX,		IDC_OLD_STYLE,		"LogOldStyle", AVH_DEF_LOGOLDSTYLE },
-	{ NULL,							CONTROL_CHECKBOX,		IDC_LOG_HISTORY,	"LogToHistory", AVH_DEF_LOGTOHISTORY },
 	{ &opts.template_changed,		CONTROL_TEXT,			IDC_CHANGED,		"TemplateChanged", (DWORD) _T(DEFAULT_TEMPLATE_CHANGED) },
 	{ &opts.track_removes,			CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,	"TrackRemoves", TRUE },
 	{ &opts.template_removed,		CONTROL_TEXT,			IDC_REMOVED,		"TemplateRemoved", (DWORD) _T(DEFAULT_TEMPLATE_REMOVED) },
@@ -116,6 +112,10 @@ void LoadOptions()
 {
 	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
 	LoadOpts(popupsControls, MAX_REGS(popupsControls), MODULE_NAME);
+
+	opts.log_per_contact_folders = DBGetContactSettingByte(NULL, MODULE_NAME, "LogPerContactFolders", 0);
+	opts.log_keep_same_folder = DBGetContactSettingByte(NULL, MODULE_NAME, "LogKeepSameFolder", 0);
+	opts.log_store_as_hash = DBGetContactSettingByte(NULL, MODULE_NAME, "StoreAsHash", 1);
 }
 
 
@@ -123,9 +123,6 @@ static void OptionsEnableDisableCtrls(HWND hwndDlg)
 {
 	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED_L), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
 	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
-
-	EnableWindow(GetDlgItem(hwndDlg, IDC_OLD_STYLE), IsDlgButtonChecked(hwndDlg, IDC_LOG_DISK));
-	EnableWindow(GetDlgItem(hwndDlg, IDC_SAME_FOLDER), IsDlgButtonChecked(hwndDlg, IDC_LOG_DISK));
 }
 
 
@@ -144,7 +141,6 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 		{
 			switch (LOWORD(wParam)) 
 			{
-				case IDC_LOG_DISK:
 				case IDC_TRACK_REMOVE:
 				{
 					if (HIWORD(wParam) == BN_CLICKED)

@@ -2,6 +2,9 @@ Avatar History
 
 Changelog:
 
+. 0.0.2.7
+  + Added first run dialog and option to store avatars as version 1
+
 . 0.0.2.6
   * Changed to always use online proto icon as base for popup icon
 

@@ -81,8 +81,9 @@ struct Options {
 	TCHAR template_removed[1024];
 
 	// Log
-	BOOL log_old_style;
+	BOOL log_per_contact_folders;
 	BOOL log_keep_same_folder;
+	BOOL log_store_as_hash;
 
 	// Track
 	BYTE track_removes;
