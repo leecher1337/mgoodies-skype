@@ -8,6 +8,7 @@ This is a mod of the Hotkey plugin by micron-x
 To be able to set the hotkey you need clist_modern (or some other that implements Hotkeys2), Hotkeys+ or HotkeyService.
 
 Available hotkeys:
+- Ctrl-V: Make a voice call
 - Ctrl-F: Send file
 - Ctrl-U: Send URL
 - Ctrl-I: Show userinfo
