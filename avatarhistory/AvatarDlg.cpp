@@ -507,9 +507,7 @@ BOOL UpdateAvatarPic(HWND hwnd)
 	HWND list = GetDlgItem(hwnd, IDC_AVATARLIST);
 	TCHAR *filename = GetCurrentSelFile(list);
 
-	// Miranda dont have this service in unicode format
-	INPLACE_TCHAR_TO_CHAR(tmp, 1024, filename);
-	HBITMAP avpic = (HBITMAP)CallService(MS_AV_LOADBITMAP32, 0, (LPARAM) tmp);
+	HBITMAP avpic = (HBITMAP) CallService(MS_IMG_LOAD, (WPARAM) filename, IMGL_TCHAR);
 
 	BOOL found_image = (avpic != NULL);
 

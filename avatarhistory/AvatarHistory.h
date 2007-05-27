@@ -23,6 +23,7 @@ extern "C"
 #include <m_metacontacts.h>
 #include <m_history.h>
 #include <m_updater.h>
+#include <m_imgsrvc.h>
 
 // Globals
 extern HINSTANCE hInst;
