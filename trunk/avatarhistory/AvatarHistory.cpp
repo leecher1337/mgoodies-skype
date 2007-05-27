@@ -528,23 +528,28 @@ int CopyImageFile(TCHAR *old_file, TCHAR *new_file)
 	TCHAR *ext = GetExtension(old_file);
 
 	if (lstrcmpi(ext, _T("bmp")) == 0 
-		&& ServiceExists(MS_AV_CANSAVEBITMAP)
-		&& CallService(MS_AV_CANSAVEBITMAP, 0, PA_FORMAT_PNG))
+		&& ServiceExists(MS_IMG_SAVE))
 	{
 		// Store as PNG
 		mir_sntprintf(new_file, MAX_PATH, _T("%s.png"), new_file);
 
-		INPLACE_TCHAR_TO_CHAR(tmp_old, MAX_PATH, old_file);
-		HBITMAP hBmp = (HBITMAP) CallService(MS_AV_LOADBITMAP32, 0, (LPARAM) tmp_old);
-
-		INPLACE_TCHAR_TO_CHAR(tmp_new, MAX_PATH, new_file);
-		return CallService(MS_AV_SAVEBITMAP, (WPARAM) hBmp, (LPARAM) tmp_new);
+		IMGSRVC_INFO ii = {0};
+		ii.cbSize = sizeof(ii);
+#ifdef UNICODE
+		ii.wszName = new_file;
+#else
+		ii.szName = new_file;
+#endif
+		ii.hbm = (HBITMAP) CallService(MS_IMG_LOAD, (WPARAM) old_file, IMGL_TCHAR);
+		ii.dwMask = IMGI_HBITMAP;
+		ii.fif = FIF_UNKNOWN;
+		return CallService(MS_IMG_SAVE, (WPARAM) &ii, IMGL_TCHAR) != 1;
 	}
 	else
 	{
 		mir_sntprintf(new_file, MAX_PATH, _T("%s.%s"), new_file, ext);
 
-		return CopyFile(old_file, new_file, TRUE) == 0 ? -1 : 0;
+		return !CopyFile(old_file, new_file, TRUE);
 	}
 }
 
