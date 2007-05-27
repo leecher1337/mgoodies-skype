@@ -302,10 +302,18 @@ public:
 			wordChars = fromHunspell(hunspell->get_wordchars());
 		}
 
-		loaded = LANGUAGE_LOADED;
+		// Make a suggestion to load hunspell internalls
+		char ** words = NULL;
+		int count = hunspell->suggest(&words, "asdf");
+		for (int i = 0; i < count; i++)
+			free(words[i]);
+		if (words != NULL) 
+			free(words);
 
 		loadCustomDict();
 		loadAutoReplaceMap();
+
+		loaded = LANGUAGE_LOADED;
 	}
 
 	// Return TRUE if the word is correct
@@ -333,21 +341,22 @@ public:
 		char hunspell_word[1024];
 		toHunspell(hunspell_word, word, MAX_REGS(hunspell_word));
 
-		char ** words;
-		int count = hunspell->suggest(&words, hunspell_word);
+		char ** words = NULL;
+		ret.count = hunspell->suggest(&words, hunspell_word);
 
-		if (count <= 0)
-			return ret;
-
-		// Oki, lets make our array
-		ret.count = count;
-		ret.words = (TCHAR **) malloc(ret.count * sizeof(TCHAR *));
-		for (int i = 0; i < count; i++)
+		if (ret.count > 0)
 		{
-			ret.words[i] = fromHunspell(words[i]);
-			free(words[i]);
+			// Oki, lets make our array
+			ret.words = (TCHAR **) malloc(ret.count * sizeof(TCHAR *));
+			for (int i = 0; i < ret.count; i++)
+			{
+				ret.words[i] = fromHunspell(words[i]);
+				free(words[i]);
+			}
 		}
-		free(words);
+
+		if (words != NULL)
+			free(words);
 
 		return ret;
 	}

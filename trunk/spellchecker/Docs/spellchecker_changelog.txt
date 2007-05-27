@@ -2,6 +2,9 @@ Spell Checker
 
 Changelog:
 
+. 0.0.2.6
+  * Try to fix freeze when making an suggestion
+
 . 0.0.2.5
   + Updated Hunspell to version 1.1.5
   * Fix to avoid sending typing notification when correcting words
