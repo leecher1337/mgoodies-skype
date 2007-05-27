@@ -41,15 +41,31 @@ int strcmpnullW(WCHAR *str1, WCHAR *str2);
 
 
 #ifdef _UNICODE
-# define mir_dupT mir_wstrdup
 # define mir_dupTA mir_dupToUnicode
 # define mir_dupTW mir_wstrdup
 # define lstrcmpnull strcmpnullW
+
+#define INPLACE_CHAR_TO_TCHAR(_new_var_, _size_, _old_var_)									\
+	TCHAR _new_var_[_size_];																\
+	MultiByteToWideChar(CP_ACP, 0, _old_var_, -1, _new_var_, _size_)
+
+
+#define INPLACE_TCHAR_TO_CHAR(_new_var_, _size_, _old_var_)									\
+	char _new_var_[_size_];																	\
+	WideCharToMultiByte(CP_ACP, 0, _old_var_, -1, _new_var_, _size_, NULL, NULL);
+
 #else
-# define mir_dupT mir_strdup
+
 # define mir_dupTA mir_strdup
 # define mir_dupTW mir_dupToAscii
 # define lstrcmpnull strcmpnull
+
+#define INPLACE_CHAR_TO_TCHAR(_new_var_, _size_, _old_var_)									\
+	TCHAR *_new_var_ = _old_var_
+
+#define INPLACE_TCHAR_TO_CHAR(_new_var_, _size_, _old_var_)									\
+	char *_new_var_ = _old_var_;
+
 #endif
 
 
