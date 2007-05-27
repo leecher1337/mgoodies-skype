@@ -727,7 +727,7 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		lstrcpy(basedir, customdir);
 	}
 
-	log_old_style = DBGetContactSettingByte(NULL, MODULE_NAME, "LogOldStyle", 0);
+	log_old_style = DBGetContactSettingByte(NULL, MODULE_NAME, "LogPerContactFolders", 0);
 	log_keep_same_folder = DBGetContactSettingByte(NULL, MODULE_NAME, "LogKeepSameFolder", 0);
 
 	if (!DBGetContactSettingTString(NULL, MODULE_NAME, "TemplateChanged", &dbv))
