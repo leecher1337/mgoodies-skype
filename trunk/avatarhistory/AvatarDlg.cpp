@@ -36,7 +36,7 @@ int FillAvatarListFromFolder(HWND list, HANDLE hContact);
 int CleanupAvatarPic(HWND hwnd);
 BOOL UpdateAvatarPic(HWND hwnd);
 TCHAR* GetCurrentSelFile(HWND list);
-TCHAR* GetOldStyleContactFolder(HANDLE hContact, TCHAR* fn);
+TCHAR * GetContactFolder(TCHAR *fn, HANDLE hContact);
 BOOL ResolveShortcut(TCHAR *shortcut, TCHAR *file);
 
 static int ShowDialogSvc(WPARAM wParam, LPARAM lParam);
@@ -46,7 +46,7 @@ extern HANDLE hHooks[];
 struct AvatarDialogData
 {
 	HANDLE hContact;
-	TCHAR fn[MAX_PATH+1];
+	TCHAR fn[MAX_PATH];
 	HWND parent;
 };
 
@@ -136,7 +136,7 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 			SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM) createDefaultOverlayedIcon(FALSE));
 			if (db_byte_get(NULL, MODULE_NAME, "LogToHistory", AVH_DEF_LOGTOHISTORY))
 				FillAvatarListFromDB(GetDlgItem(hwnd, IDC_AVATARLIST), data->hContact);
-			else if (opts.log_old_style)
+			else if (opts.log_per_contact_folders)
 				FillAvatarListFromFolder(GetDlgItem(hwnd, IDC_AVATARLIST), data->hContact);
 
 			SetWindowLongPtr(hwnd, GWLP_USERDATA, (ULONG_PTR)data->hContact);
@@ -144,7 +144,7 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 			CheckDlgButton(hwnd, IDC_LOGUSER, (UINT)db_byte_get(data->hContact, "AvatarHistory", "LogToDisk", BST_INDETERMINATE));
 			CheckDlgButton(hwnd, IDC_POPUPUSER, (UINT)db_byte_get(data->hContact, "AvatarHistory", "AvatarPopups", BST_INDETERMINATE));
 			CheckDlgButton(hwnd, IDC_HISTORYUSER, (UINT)db_byte_get(data->hContact, "AvatarHistory", "LogToHistory", BST_INDETERMINATE));
-			ShowWindow(GetDlgItem(hwnd, IDC_OPENFOLDER), opts.log_old_style ? SW_SHOW : SW_HIDE);
+			ShowWindow(GetDlgItem(hwnd, IDC_OPENFOLDER), opts.log_per_contact_folders ? SW_SHOW : SW_HIDE);
 			TranslateDialogDefault(hwnd);
 			EnableDisableControls(hwnd);
 			free(data);
@@ -361,12 +361,12 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 			case IDC_OPENFOLDER:
 				if(HIWORD(wParam) == BN_CLICKED)
 				{
-					if (opts.log_old_style)
+					if (opts.log_per_contact_folders)
 					{
-						TCHAR avfolder[MAX_PATH+1];
+						TCHAR avfolder[MAX_PATH];
 						HWND list = GetDlgItem(hwnd, IDC_AVATARLIST);
 						HANDLE hContact = (HANDLE)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-						GetOldStyleContactFolder(hContact, avfolder);
+						GetContactFolder(avfolder, hContact);
 						ShellExecute(NULL, db_byte_get(NULL, "AvatarHistory", "OpenFolderMethod", 0) ? _T("explore") : _T("open"), avfolder, NULL, NULL, SW_SHOWNORMAL);
 						return TRUE;
 					}
@@ -408,11 +408,11 @@ static BOOL CALLBACK AvatarDlgProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lPar
 int FillAvatarListFromFolder(HWND list, HANDLE hContact)
 {
 	int max_pos = 0;
-	TCHAR dir[MAX_PATH+1], path[MAX_PATH+1], lnk[MAX_PATH+1];
+	TCHAR dir[MAX_PATH], path[MAX_PATH], lnk[MAX_PATH];
 	WIN32_FIND_DATA finddata;
 
-	GetOldStyleContactFolder(hContact, dir);
-	mir_sntprintf(path, MAX_PATH+1, _T("%s\\*.lnk"), dir);
+	GetContactFolder(dir, hContact);
+	mir_sntprintf(path, MAX_PATH, _T("%s\\*.lnk"), dir);
 
 	HANDLE hFind = FindFirstFile(path, &finddata);
 	if (hFind == INVALID_HANDLE_VALUE)
@@ -422,7 +422,7 @@ int FillAvatarListFromFolder(HWND list, HANDLE hContact)
 	{
 		if(finddata.cFileName[0] != '.')
 		{
-			mir_sntprintf(lnk, MAX_PATH+1, _T("%s\\%s"), dir, finddata.cFileName);
+			mir_sntprintf(lnk, MAX_PATH, _T("%s\\%s"), dir, finddata.cFileName);
 			if (ResolveShortcut(lnk, path))
 			{
 				// Add to list
@@ -479,11 +479,7 @@ int FillAvatarListFromDB(HWND list, HANDLE hContact)
 				// Get file in disk
 				char path[MAX_PATH] = "";
 				PathToAbsolute((char *) &dbei.pBlob[i+1], path);
-#ifdef UNICODE
-				TCHAR *filename = mir_dupToUnicode(path);
-#else
-				TCHAR *filename = mir_tstrdup(path);
-#endif
+				TCHAR *filename = mir_dupTA(path);
 
 				// Add to list
 				ListEntry *le = new ListEntry();
@@ -512,14 +508,8 @@ BOOL UpdateAvatarPic(HWND hwnd)
 	TCHAR *filename = GetCurrentSelFile(list);
 
 	// Miranda dont have this service in unicode format
-#ifdef UNICODE
-	char tmp[1024];
-	WideCharToMultiByte(CP_ACP, 0, filename, -1, tmp, MAX_REGS(tmp), NULL, NULL);
-
+	INPLACE_TCHAR_TO_CHAR(tmp, 1024, filename);
 	HBITMAP avpic = (HBITMAP)CallService(MS_AV_LOADBITMAP32, 0, (LPARAM) tmp);
-#else
-	HBITMAP avpic = (HBITMAP)CallService(MS_AV_LOADBITMAP32, 0, (LPARAM) filename);
-#endif
 
 	BOOL found_image = (avpic != NULL);
 
@@ -591,30 +581,26 @@ TCHAR* GetCurrentSelFile(HWND list)
 
 int ShowSaveDialog(HWND hwnd, TCHAR* fn)
 {
-	TCHAR initdir[MAX_PATH+1] = _T(".");
-	char filter[MAX_PATH+1];
-	TCHAR file[MAX_PATH+1];
+	TCHAR initdir[MAX_PATH] = _T(".");
+	char filter[MAX_PATH];
+	TCHAR file[MAX_PATH];
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn, sizeof(OPENFILENAME));
-	MyDBGetStringT(NULL, "AvatarHistory", "SavedAvatarFolder", initdir, MAX_PATH+1);
+	MyDBGetStringT(NULL, "AvatarHistory", "SavedAvatarFolder", initdir, MAX_PATH);
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = hwnd;
 	ofn.hInstance = hInst;
 
 	// Miranda dont have the unicode version of this servicce
 	CallService(MS_UTILS_GETBITMAPFILTERSTRINGS, MAX_PATH, (LPARAM)filter);
-#ifdef UNICODE
-	TCHAR filterT[MAX_PATH+1];
-	MultiByteToWideChar(CP_ACP, 0, filter, -1, filterT, MAX_REGS(filterT));
-#else
-	ofn.lpstrFilter = filter;
-#endif
+	INPLACE_CHAR_TO_TCHAR(filterT, MAX_PATH, filter);
+	ofn.lpstrFilter = filterT;
 	
 	ofn.nFilterIndex = 1;
 	lstrcpy(file, _tcsrchr(fn, '\\')+1);
 	ofn.lpstrFile = file;
 
-	ofn.nMaxFile = MAX_PATH+1;
+	ofn.nMaxFile = MAX_PATH;
 	ofn.Flags = OFN_PATHMUSTEXIST;
 	ofn.lpstrDefExt = _tcsrchr(fn, '.')+1;
 	ofn.lpstrInitialDir = initdir[0]?initdir:NULL;

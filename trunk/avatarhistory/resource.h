@@ -10,6 +10,7 @@
 #define IDI_NEWAVATAR                   105
 #define IDI_AVATAROVERLAY               106
 #define IDR_MENU1                       108
+#define IDD_FIRST_RUN                   109
 #define IDD_OPTIONS                     119
 #define IDD_POPUPS                      120
 #define IDC_CUSTOM1                     1000
@@ -42,7 +43,12 @@
 #define IDC_LOGGING_G                   1020
 #define IDC_SAME_FOLDER                 1021
 #define IDC_RIGHT_ACTION                1022
+#define IDC_MIR_SAME                    1022
 #define IDC_LEFT_ACTION                 1023
+#define IDC_MIR_PROTO                   1023
+#define IDC_MIR_SHORT                   1024
+#define IDC_SHORT                       1025
+#define IDC_DUP                         1026
 #define IDC_PROTOCOLS                   1041
 #define IDC_CHANGED                     1058
 #define IDC_REMOVED                     1059
@@ -73,9 +79,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        109
+#define _APS_NEXT_RESOURCE_VALUE        110
 #define _APS_NEXT_COMMAND_VALUE         40004
-#define _APS_NEXT_CONTROL_VALUE         1022
+#define _APS_NEXT_CONTROL_VALUE         1023
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif
