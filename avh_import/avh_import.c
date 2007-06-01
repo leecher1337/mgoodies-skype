@@ -32,7 +32,7 @@ Avatar History Import
 #include "sdk/m_folders.h"
 #include <m_clist.h>
 #include <m_skin.h>
-#include "../avatarhistory/sdk/m_avatars.h"
+#include <m_avatars.h>
 #include <m_database.h>
 #define _STATIC
 #include <m_system.h>
@@ -46,6 +46,7 @@ Avatar History Import
 #include "sdk/m_metacontacts.h"
 #include <m_history.h>
 #include "sdk/m_avatarhist.h"
+#include "sdk/m_imgsrvc.h"
 
 #ifdef __GNUC__
 #define mir_i64(x) (x##LL)
@@ -409,7 +410,7 @@ TCHAR *Move2NewFile(TCHAR *proto, TCHAR *contactid, TCHAR *history_filename)
 
 	if (!lstrcmpi(ext, _T("bmp")) && ServiceExists(MS_AV_CANSAVEBITMAP) && CallService(MS_AV_CANSAVEBITMAP, 0, PA_FORMAT_PNG))
 	{
-		HBITMAP hBmp;
+		IMGSRVC_INFO ii = {0};
 
 		// Store as PNG
 		if (log_keep_same_folder)
@@ -417,8 +418,16 @@ TCHAR *Move2NewFile(TCHAR *proto, TCHAR *contactid, TCHAR *history_filename)
 		else
 			mir_sntprintf(history_filename_new, MAX_PATH, _T("%s\\%s\\%s.png"), basedir, proto, hash);
 
-		hBmp = (HBITMAP) CallService(MS_AV_LOADBITMAP32, 0, (LPARAM) ConvertToANSI(history_filename));
-		if (CallService(MS_AV_SAVEBITMAP, (WPARAM)hBmp, (LPARAM) ConvertToANSI(history_filename_new)))
+		ii.cbSize = sizeof(ii);
+#ifdef UNICODE
+		ii.wszName = history_filename_new;
+#else
+		ii.szName = history_filename_new;
+#endif
+		ii.hbm = (HBITMAP) CallService(MS_IMG_LOAD, (WPARAM) history_filename, IMGL_TCHAR);
+		ii.dwMask = IMGI_HBITMAP;
+		ii.fif = FIF_UNKNOWN;
+		if (!CallService(MS_IMG_SAVE, (WPARAM) &ii, IMGL_TCHAR))
 			lstrcpy(history_filename_new, history_filename);
 		else
 		{
