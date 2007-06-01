@@ -2,6 +2,9 @@ Avatar History
 
 Changelog:
 
+. 0.0.2.8
+  * Fix for radios in first run dialog
+
 . 0.0.2.7
   + Added first run dialog and option to store avatars as version 1
   * Changed to stop using avs services and use freeiamge services (requires miranda 0.7 #28)
