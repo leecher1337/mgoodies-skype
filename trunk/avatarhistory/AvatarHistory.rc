@@ -83,7 +83,7 @@ END
 IDD_OPTIONS DIALOGEX 0, 0, 314, 186
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " History templates ",IDC_TRACK_G,3,3,308,66
     LTEXT           "Avatar change:",IDC_CHANGED_L,11,17,89,10
@@ -149,31 +149,32 @@ BEGIN
     LTEXT           "Please select how the avatar history should be stored. This setting can NOT be changed in future, because it would cause all previous history to be lost.",
                     IDC_STATIC,7,7,324,25
     CONTROL         "Store history in miranda history and all history avatars in same folder",
-                    IDC_MIR_SAME,"Button",BS_AUTORADIOBUTTON,7,33,324,11
+                    IDC_MIR_SAME,"Button",BS_AUTORADIOBUTTON | WS_GROUP,7,33,
+                    324,11
+    CONTROL         "Store history in miranda history and history avatars in per protocol folders",
+                    IDC_MIR_PROTO,"Button",BS_AUTORADIOBUTTON,7,66,324,11
+    CONTROL         "Store history in miranda history and history avatars in per contact folders using shortcuts",
+                    IDC_MIR_SHORT,"Button",BS_AUTORADIOBUTTON,7,99,324,11
+    CONTROL         "Store history avatars in per contact folders using shortcuts",
+                    IDC_SHORT,"Button",BS_AUTORADIOBUTTON,7,140,324,11
+    CONTROL         "Store history avatars in per contact folders",IDC_DUP,
+                    "Button",BS_AUTORADIOBUTTON,7,181,324,11
     LTEXT           "History is stored inside miranda db. It can be seen by History++ or Avatar History internal viewer.",
                     IDC_STATIC,20,44,311,10
     LTEXT           "All avatars are stored as <Profile>\\Avatars History\\<Avatar Hash>",
                     IDC_STATIC,20,54,311,10
-    CONTROL         "Store history in miranda history and history avatars in per protocol folders",
-                    IDC_MIR_PROTO,"Button",BS_AUTORADIOBUTTON,7,66,324,11
     LTEXT           "History is stored inside miranda db. It can be seen by History++ or Avatar History internal viewer.",
                     IDC_STATIC,20,77,311,10
     LTEXT           "All avatars are stored as <Profile>\\Avatars History\\<Protocol>\\<Avatar Hash>",
                     IDC_STATIC,20,87,311,10
-    CONTROL         "Store history in miranda history and history avatars in per contact folders using shortcuts",
-                    IDC_MIR_SHORT,"Button",BS_AUTORADIOBUTTON,7,99,324,11
     LTEXT           "History is stored inside miranda db. It can be seen by History++ or Avatar History internal viewer.",
                     IDC_STATIC,20,110,311,10
     LTEXT           "All avatars are stored as <Profile>\\Avatars History\\<Protocol>\\<Avatar Hash> and have a shortcut per history entry in <Profile>\\Avatars History\\<Protocol>\\<Contact ID>\\<Timestamp>",
                     IDC_STATIC,20,120,311,18
-    CONTROL         "Store history avatars in per contact folders using shortcuts",
-                    IDC_SHORT,"Button",BS_AUTORADIOBUTTON,7,140,324,11
     LTEXT           "History is stored only in disk. It can be seen by Avatar History internal viewer.",
                     IDC_STATIC,20,151,311,10
     LTEXT           "All avatars are stored as <Profile>\\Avatars History\\<Protocol>\\<Avatar Hash> and have a shortcut per history entry in <Profile>\\Avatars History\\<Protocol>\\<Contact ID>\\<Timestamp>",
                     IDC_STATIC,20,161,311,18
-    CONTROL         "Store history avatars in per contact folders",IDC_DUP,
-                    "Button",BS_AUTORADIOBUTTON,7,181,324,11
     LTEXT           "History is stored only in disk. It can be seen by Avatar History internal viewer.",
                     IDC_STATIC,20,192,311,10
     LTEXT           "All avatars are stored as <Profile>\\Avatars History\\<Protocol>\\<Contact ID>\\<Timestamp> (the same image can be stored lot of times)",

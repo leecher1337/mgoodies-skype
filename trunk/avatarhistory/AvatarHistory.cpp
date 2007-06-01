@@ -72,11 +72,11 @@ PLUGININFOEX pluginInfo={
 #else
 	"Avatar History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,7),
+	PLUGIN_MAKE_VERSION(0,0,2,8),
 	"This plugin keeps backups of all your contacts' avatar changes and/or shows popups",
 	"Matthew Wild (MattJ), Ricardo Pescuma Domenecci",
 	"mwild1@gmail.com",
-	"© 2006 Matthew Wild, Ricardo Pescuma Domenecci",
+	"© 2006-2007 Matthew Wild, Ricardo Pescuma Domenecci",
 	"http://pescuma.mirandaim.ru/miranda/avatarhist",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
