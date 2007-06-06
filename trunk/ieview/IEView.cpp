@@ -37,7 +37,7 @@ IEView * IEView::list = NULL;
 CRITICAL_SECTION IEView::mutex;
 bool IEView::isInited = false;
 
-struct MM_INTERFACE   mmi; 
+struct MM_INTERFACE   mmi;
 
 
 static LRESULT CALLBACK IEViewServerWindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -618,6 +618,8 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			DestroyMenu(hMenu);
 			if (iSelection == ID_MENU_CLEARLOG) {
 				clear(NULL);
+			} else if (iSelection == ID_MENU_SWITCHRTL) {
+
 			} else {
 		    	SendMessage(hSPWnd, WM_COMMAND, iSelection, (LPARAM) NULL);
 			}
