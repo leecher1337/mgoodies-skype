@@ -391,7 +391,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 		int outputSize;
 		char *output;
 		output = NULL;
-		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_STATUSCHANGE || eventData->iType == IEED_EVENT_FILE || eventData->iType == IEED_EVENT_URL) {
+		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_STATUSCHANGE || eventData->iType == IEED_EVENT_FILE || eventData->iType == IEED_EVENT_URL || eventData->iType == IEED_EVENT_SYSTEM) {
 			int isSent = (eventData->dwFlags & IEEDF_SENT);
 			int isRTL = eventData->dwFlags & IEEDF_RTL;
 			int isHistory = (eventData->time < (DWORD)getStartedTime() && (eventData->dwFlags & IEEDF_READ || eventData->dwFlags & IEEDF_SENT));
@@ -433,7 +433,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
    			} else {
 				szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2, event->codepage, 0);
 			}
-			if (eventData->iType == IEED_EVENT_MESSAGE) {
+			if ((eventData->iType == IEED_EVENT_MESSAGE)) {
 				if (!isRTL) {
 					if (isGrouping && (getFlags(protoSettings) & Options::LOG_GROUP_MESSAGES)) {
 						if (isGroupBreak) {
@@ -469,7 +469,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 				if (tmplt == NULL) {
 					tmpltName[1] = isHistory ? "hURL" : "URL";
 				}
-			} else if (eventData->iType == IEED_EVENT_STATUSCHANGE) {
+			} else if (eventData->iType == IEED_EVENT_STATUSCHANGE || (eventData->iType == IEED_EVENT_SYSTEM)) {
 				tmpltName[1] = isHistory ? "hStatus" : "Status";
 			}
 			/* template-specific formatting */
