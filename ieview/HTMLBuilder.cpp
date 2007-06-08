@@ -1013,21 +1013,29 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 			eventData->pszNickW = getContactName(event->hContact, szProto);
 			eventData->bIsMe = FALSE;
 		}
-		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-			DWORD aLen = strlen((char *)dbei.pBlob)+1;
-			if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
-				DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
-				if (wlen > 0 && wlen < aLen) {
-					eventData->pszTextW = Utils::dupString((wchar_t *)&dbei.pBlob[aLen]);
-				} else {
-					eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
-				}
+ 		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
+
+			if ( ServiceExists( MS_DB_EVENT_GETTEXT )) {
+				WCHAR* pwszEventText = DbGetEventTextW( &dbei, newEvent.codepage + (event->dwFlags & IEEF_NO_UNICODE) ? DBVTF_DENYUNICODE : 0 );
+				eventData->pszTextW = Utils::dupString( pwszEventText );
+				mir_free( pwszEventText );
 			} else {
-				eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
-			}
-			if (dbei.eventType == EVENTTYPE_MESSAGE) {
-				eventData->iType = IEED_EVENT_MESSAGE;
-			} else if (dbei.eventType == EVENTTYPE_URL) {
+				DWORD aLen = strlen((char *)dbei.pBlob)+1;
+				if (dbei.cbBlob > aLen && !(event->dwFlags & IEEF_NO_UNICODE)) {
+					DWORD wlen = Utils::safe_wcslen((wchar_t *)&dbei.pBlob[aLen], (dbei.cbBlob - aLen) / 2);
+					if (wlen > 0 && wlen < aLen) {
+						eventData->pszTextW = Utils::dupString((wchar_t *)&dbei.pBlob[aLen]);
+					} else {
+						eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
+					}
+ 				} else {
+ 					eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
+			    }	
+            }
+
+ 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
+ 				eventData->iType = IEED_EVENT_MESSAGE;
+ 			} else if (dbei.eventType == EVENTTYPE_URL) {
 				eventData->iType = IEED_EVENT_URL;
 			} else {
 				eventData->iType = IEED_EVENT_STATUSCHANGE;
@@ -1040,10 +1048,18 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 			eventData->iType = IEED_EVENT_FILE;
 		} else if (dbei.eventType == EVENTTYPE_AUTHREQUEST) {
 		    //blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
-			eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
+			char txtAuth[500];
+			strcpy(txtAuth, Translate("requested authorisation"));
+			eventData->pszTextW = Utils::convertToWCS(txtAuth, newEvent.codepage);
+			eventData->pszNickW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
+			eventData->iType = IEED_EVENT_SYSTEM;
 		} else if (dbei.eventType == EVENTTYPE_ADDED) {
 			//blob is: uin(DWORD), hContact(DWORD), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
-			eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
+			char txtAdd[500];
+			strcpy(txtAdd, Translate(" was added."));
+			eventData->pszTextW = Utils::convertToWCS(txtAdd, newEvent.codepage);
+			eventData->pszNickW = Utils::convertToWCS((char *)dbei.pBlob + 8, newEvent.codepage);
+			eventData->iType = IEED_EVENT_SYSTEM;
 		}
 		free(dbei.pBlob);
 		eventData->next = NULL;
@@ -1153,7 +1169,7 @@ void HTMLBuilder::clear(IEView *view, IEVIEWEVENT *event) {
 	if (event != NULL) {
 		setLastIEViewEvent(event);
 	}
-	if (lastIEViewEvent.pszProto != NULL) {
+	if (lastIEViewEvent.pszProto != NULL || event->hContact == NULL) {
 		buildHead(view, &lastIEViewEvent);
 	}
 }
