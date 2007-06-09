@@ -255,9 +255,9 @@ IEView::IEView(HWND parent, HTMLBuilder* builder, int x, int y, int cx, int cy) 
 	MSG msg;
 	IOleObject*   pOleObject = NULL;
     IOleInPlaceObject *pOleInPlace;
+    isContactSet = false;
 	this->parent = parent;
 	this->builder = builder;
-//	this->smileyWindow = NULL;
 	prev = next = NULL;
 	hwnd = NULL;
 	sink = NULL;
@@ -592,9 +592,9 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 */
 	}
 #else
-    if (SUCCEEDED(pcmdTarget->QueryInterface(IID_IOleCommandTarget, (void**)&pOleCommandTarget))) {
+	if (SUCCEEDED(pcmdTarget->QueryInterface(IID_IOleCommandTarget, (void**)&pOleCommandTarget))) {
 		if (SUCCEEDED(pOleCommandTarget->QueryInterface(IID_IOleWindow, (void**)&pOleWindow))) {
-    		pOleWindow->GetWindow(&hSPWnd);
+			pOleWindow->GetWindow(&hSPWnd);
 			HMENU hMenu;
 			hMenu = GetSubMenu(LoadMenu(hInstance, MAKEINTRESOURCE(IDR_CONTEXTMENU)),0);
 		 	CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)hMenu,0);
@@ -605,7 +605,7 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			} else if (dwID == 1) { // control (image)
 				EnableMenuItem(hMenu, ID_MENU_SAVEIMAGE, MF_BYCOMMAND | MF_ENABLED);
 			}
-            if (builder!=NULL) {
+			if (builder!=NULL) {
 
 			}
 		 	int iSelection = TrackPopupMenu(hMenu,
@@ -618,14 +618,12 @@ STDMETHODIMP IEView::ShowContextMenu(DWORD dwID, POINT *ppt, IUnknown *pcmdTarge
 			DestroyMenu(hMenu);
 			if (iSelection == ID_MENU_CLEARLOG) {
 				clear(NULL);
-			} else if (iSelection == ID_MENU_SWITCHRTL) {
-
 			} else {
-		    	SendMessage(hSPWnd, WM_COMMAND, iSelection, (LPARAM) NULL);
+				SendMessage(hSPWnd, WM_COMMAND, iSelection, (LPARAM) NULL);
 			}
-    		pOleWindow->Release();
+			pOleWindow->Release();
 		}
-	    pOleCommandTarget->Release();
+		pOleCommandTarget->Release();
 	}
 #endif
 	return S_OK;
@@ -938,7 +936,7 @@ void IEView::appendEvent(IEVIEWEVENT *event) {
 	if (event->eventData == NULL) {return; }
 
 	if (builder!=NULL) {
-		builder->appendEvent(this, event);
+		builder->appendEventNew(this, event);
 	}
 	getFocus = false;
 }
@@ -1065,6 +1063,12 @@ void* IEView::getSelection(IEVIEWEVENT *event) {
 
 HWND IEView::getHWND() {
 	return hwnd;
+}
+
+
+void IEView::setContact(HANDLE hContact) {
+	this->hContact = hContact;
+	isContactSet = true;
 }
 
 void IEView::translateAccelerator(UINT uMsg, WPARAM wParam, LPARAM lParam) {

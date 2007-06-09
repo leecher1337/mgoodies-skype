@@ -145,6 +145,7 @@ public:
 	HTMLBuilder();
 	virtual ~HTMLBuilder();
 	void appendEventOld(IEView *, IEVIEWEVENT *event);
+	void appendEventNew(IEView *, IEVIEWEVENT *event);
 	void clear(IEView *, IEVIEWEVENT *event);
 	virtual void appendEvent(IEView *, IEVIEWEVENT *event)=0;
 };

@@ -91,16 +91,16 @@ static const CLSID CLSID_MozillaBrowser=
 
 #ifdef __cplusplus
 extern "C" {
-#endif	
+#endif
 #define INTERFACE IInternetSecurityMgrSite
 DECLARE_INTERFACE_(IInternetSecurityMgrSite,IUnknown)
 {
 	STDMETHOD(QueryInterface)(THIS_ REFIID,PVOID*) PURE;
 	STDMETHOD_(ULONG,AddRef)(THIS) PURE;
-	STDMETHOD_(ULONG,Release)(THIS) PURE;	
+	STDMETHOD_(ULONG,Release)(THIS) PURE;
 	STDMETHOD(GetWindow)(THIS_ HWND*) PURE;
 	STDMETHOD(EnableModeless)(THIS_ BOOL) PURE;
-};	
+};
 #undef INTERFACE
 
 #define INTERFACE IInternetSecurityManager
@@ -108,7 +108,7 @@ DECLARE_INTERFACE_(IInternetSecurityManager,IUnknown)
 {
 	STDMETHOD(QueryInterface)(THIS_ REFIID,PVOID*) PURE;
 	STDMETHOD_(ULONG,AddRef)(THIS) PURE;
-	STDMETHOD_(ULONG,Release)(THIS) PURE;	
+	STDMETHOD_(ULONG,Release)(THIS) PURE;
 
 	STDMETHOD(SetSecuritySite)(THIS_ IInternetSecurityMgrSite*) PURE;
 	STDMETHOD(GetSecuritySite)(THIS_ IInternetSecurityMgrSite**) PURE;
@@ -118,7 +118,7 @@ DECLARE_INTERFACE_(IInternetSecurityManager,IUnknown)
 	STDMETHOD(QueryCustomPolicy)(THIS_ LPCWSTR,REFGUID,BYTE**,DWORD*,BYTE*,DWORD,DWORD) PURE;
 	STDMETHOD(SetZoneMapping)(THIS_ DWORD,LPCWSTR,DWORD) PURE;
 	STDMETHOD(GetZoneMappings)(THIS_ DWORD,IEnumString**,DWORD) PURE;
-};	
+};
 #undef INTERFACE
 
 
@@ -195,6 +195,8 @@ private:
    	bool        getFocus;
    	bool		clearRequired;
    	BSTR		selectedText;
+	bool		isContactSet;
+	HANDLE		hContact;
 
     // IUnknown
 	STDMETHODIMP QueryInterface(REFIID riid, PVOID *ppv);
@@ -303,6 +305,8 @@ public:
 	void*           getSelection(IEVIEWEVENT * event);
 	void            navigate(IEVIEWNAVIGATE * nav);
 	void            saveDocument();
+
+	void			setContact(HANDLE hContact);
 
 	static IEView* 	get(HWND);
 	static void 	init();

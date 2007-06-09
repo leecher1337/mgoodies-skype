@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SRMSGSET_MARKFOLLOWUPS	   "MarkFollowUps"
 #define SRMSGSET_MESSAGEONNEWLINE  "MessageOnNewLine"
 #define SRMSGSET_DRAWLINES		   "DrawLines"
+#define SRMSGSET_USERTL		   	   "UseRTL"
 
 #define FONTF_BOLD   1
 #define FONTF_ITALIC 2

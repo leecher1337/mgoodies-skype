@@ -950,6 +950,11 @@ char *HTMLBuilder::getEncodedContactName(HANDLE hContact, const char* szProto, c
     return encodeUTF8(hContact, szSmileyProto, TranslateT("(Unknown Contact)"), ENF_NAMESMILEYS);
 }
 
+void HTMLBuilder::appendEventNew(IEView *view, IEVIEWEVENT *event) {
+	setLastIEViewEvent(event);
+	appendEvent(view, event);
+}
+
 void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 	IEVIEWEVENT newEvent;
 	IEVIEWEVENTDATA* eventData;
@@ -1030,7 +1035,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 					}
  				} else {
  					eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
-			    }	
+			    }
             }
 
  			if (dbei.eventType == EVENTTYPE_MESSAGE) {
@@ -1073,8 +1078,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 		event->hDbEventFirst = hDbEvent;
    		hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
 	}
-	setLastIEViewEvent(&newEvent);
-	appendEvent(view, &newEvent);
+	appendEventNew(view, &newEvent);
 	for ( IEVIEWEVENTDATA* eventData2 = newEvent.eventData; eventData2 != NULL; eventData2 = eventData) {
 		eventData = eventData2->next;
 		if (eventData2->pszTextW != NULL) {
