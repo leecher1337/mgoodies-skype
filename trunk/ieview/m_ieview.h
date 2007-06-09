@@ -158,23 +158,6 @@ typedef struct {
 	const char *pszProto;			// Name of the protocol
 } IEVIEWEVENT;
 
-typedef struct {
-	int cbSize;                //size of the structure
-	const char* Protocolname;  //protocol to use... if you have defined a protocol, u can
-                             //use your own protocol name. Smiley add wil automatically
-                             //select the smileypack that is defined for your protocol.
-                             //Or, use "Standard" for standard smiley set. Or "ICQ", "MSN"
-                             //if you prefer those icons.
-                             //If not found or NULL: "Standard" will be used
-	int xPosition;             //Postition to place the selectwindow
-	int yPosition;             // "
-	int Direction;             //Direction (i.e. size upwards/downwards/etc) of the window 0, 1, 2, 3
-  	HWND hwndTarget;           //Window, where to send the message when smiley is selected.
-	UINT targetMessage;        //Target message, to be sent.
-	LPARAM targetWParam;       //Target WParam to be sent (LParam will be char* to select smiley)
-                             //see the example file.
-} IEVIEWSHOWSMILEYSEL;
-
 #define IEN_NAVIGATE 	1       // navigate to the given destination
 #define IENF_UNICODE	1       // if set urlW is used instead of urlW
 
