@@ -585,6 +585,8 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 			case IDC_BROWSE_TEMPLATES:
 				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
+					TemplateMap *tmap = TemplateMap::loadTemplates(path, path, true);
+					delete tmap;
 					MarkChanges(2, hwndDlg);
 				}
 				break;
@@ -720,6 +722,8 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			case IDC_BROWSE_TEMPLATES:
 				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
+					TemplateMap *tmap = TemplateMap::loadTemplates(path, path, true);
+					delete tmap;
 					MarkChanges(4, hwndDlg);
 				}
 				break;
@@ -856,6 +860,8 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 			case IDC_BROWSE_TEMPLATES:
 				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
+					TemplateMap *tmap = TemplateMap::loadTemplates(path, path, true);
+					delete tmap;
 					MarkChanges(8, hwndDlg);
 				}
 				break;
@@ -1145,7 +1151,7 @@ void ProtocolSettings::setSRMMTemplateFilename(const char *filename) {
 		delete srmmTemplateFilename;
 	}
 	srmmTemplateFilename = Utils::dupString(filename);
-	TemplateMap::loadTemplates(getSRMMTemplateFilename(), getSRMMTemplateFilename());
+	TemplateMap::loadTemplates(getSRMMTemplateFilename(), getSRMMTemplateFilename(), false);
 }
 
 void ProtocolSettings::setSRMMTemplateFilenameTemp(const char *filename) {
@@ -1262,7 +1268,7 @@ void ProtocolSettings::setChatTemplateFilename(const char *filename) {
 		delete chatTemplateFilename;
 	}
 	chatTemplateFilename = Utils::dupString(filename);
-	TemplateMap::loadTemplates(getChatTemplateFilename(), getChatTemplateFilename());
+	TemplateMap::loadTemplates(getChatTemplateFilename(), getChatTemplateFilename(), false);
 }
 
 void ProtocolSettings::setChatTemplateFilenameTemp(const char *filename) {
@@ -1379,7 +1385,7 @@ void ProtocolSettings::setHistoryTemplateFilename(const char *filename) {
 		delete historyTemplateFilename;
 	}
 	historyTemplateFilename = Utils::dupString(filename);
-	TemplateMap::loadTemplates(getHistoryTemplateFilename(), getHistoryTemplateFilename());
+	TemplateMap::loadTemplates(getHistoryTemplateFilename(), getHistoryTemplateFilename(), false);
 }
 
 void ProtocolSettings::setHistoryTemplateFilenameTemp(const char *filename) {
