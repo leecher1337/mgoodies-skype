@@ -165,7 +165,7 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
     int l = wcslen(text);
 	if (mathTagName[0] != NULL && mathTagName[1] != NULL) {
 	    for (i=0; i<=l;) {
-			int k, tagDataStart=0, newTokenType = 0, newTokenSize = 0;
+			int k = 0, tagDataStart=0, newTokenType = 0, newTokenSize = 0;
             bool mathFound = false;
 			if (!wcsnicmp(text+i, mathTagName[0], mathTagLen[0])) {
 				k = tagDataStart = i + mathTagLen[0];

@@ -142,7 +142,7 @@ void Template::tokenize() {
 		int l = strlen(str);
 		for (int i=0, lastTokenStart=0; i<=l;) {
 			Token *newToken;
-			int newTokenType, newTokenSize, newTokenEscape;
+			int newTokenType = 0, newTokenSize = 0, newTokenEscape = 0;
 			if (str[i]=='\0') {
 				newTokenType = Token::END;
 				newTokenSize = 1;
@@ -205,16 +205,26 @@ TemplateMap::TemplateMap(const char *name) {
 	this->name = Utils::dupString(name);
 }
 
-TemplateMap* TemplateMap::add(const char *proto, const char *filename) {
+TemplateMap::~TemplateMap() {
+	if (name != NULL) {
+		delete name; 
+	}
+	if (filename != NULL) {
+		delete filename;
+	}
+	clear();
+}
+
+TemplateMap* TemplateMap::add(const char *id, const char *filename) {
 	TemplateMap *map;
 	for (map=mapList; map!=NULL; map=map->next) {
-		if (!strcmp(map->name, proto)) {
+		if (!strcmp(map->name, id)) {
 			map->clear();
 			map->setFilename(filename);
 			return map;
 		}
 	}
-	map = new TemplateMap(proto);
+	map = new TemplateMap(id);
 	map->setFilename(filename);
 	map->next = mapList;
 	mapList = map;
@@ -270,6 +280,7 @@ static TokenDef templateNames[] = {
 	TokenDef("<!--URLOut-->"),
 	TokenDef("<!--hURLOut-->"),
 
+	TokenDef("<!--HTMLStartRTL-->"),
 	TokenDef("<!--MessageInRTL-->"),
 	TokenDef("<!--MessageOutRTL-->"),
 	TokenDef("<!--hMessageInRTL-->"),
@@ -289,28 +300,21 @@ static TokenDef templateNames[] = {
 };
 
 
-TemplateMap* TemplateMap::loadTemplateFile(const char *proto, const char *filename, bool onlyInfo) {
+TemplateMap* TemplateMap::loadTemplateFile(const char *id, const char *filename, bool onlyInfo) {
 	FILE* fh;
 	char lastTemplate[1024], tmp2[1024];
-	char pathstring[500];
 	TemplateMap *tmap;
-	tmap = TemplateMap::getTemplateMap(proto);
-	if (tmap!=NULL && !strcmpi(tmap->getFilename(), filename)) {
-		return tmap;
-	}
-	tmap = TemplateMap::add(proto, filename);
 	if (filename == NULL || strlen(filename) == 0) {
 		return NULL;
 	}
-	strcpy(pathstring, filename);
-	char* pathrun = pathstring + strlen(pathstring);
-	while ((*pathrun != '\\' && *pathrun != '/') && (pathrun > pathstring)) pathrun--;
-	pathrun++;
-	*pathrun = '\0';
-
 	fh = fopen(filename, "rt");
 	if (fh == NULL) {
 		return NULL;
+	}
+	if (!onlyInfo) {
+		tmap = TemplateMap::add(id, filename);
+	} else {
+		tmap = new TemplateMap(id);
 	}
 	char store[4096];
 	bool wasTemplate = false;
@@ -319,34 +323,30 @@ TemplateMap* TemplateMap::loadTemplateFile(const char *proto, const char *filena
 	while (fgets(store, sizeof(store), fh) != NULL) {
     	if (sscanf(store, "%s", tmp2) == EOF) continue;
 	    //template start
-	    if (!onlyInfo) {
-	    	bool bFound = false;
-            for (unsigned i = 0; i < sizeof(templateNames) / sizeof (templateNames[0]); i++) {
-	    		if (!strncmp(store, templateNames[i].tokenString, templateNames[i].tokenLen)) {
-	    			bFound = true;
-	    			break;
-	    		}
-	    	}
-            if (bFound) {
-				if (wasTemplate) {
-					tmap->addTemplate(lastTemplate, templateText);
-	                //debugView->writef("1. %s<br>%s", lastTemplate, templateText);
-				}
-				if (templateText!=NULL) {
-					free (templateText);
-				}
-				templateText = NULL;
-				templateTextSize = 0;
-				wasTemplate = true;
-                sscanf(store, "<!--%[^-]", lastTemplate);
-			} else if (wasTemplate) {
-				Utils::appendText(&templateText, &templateTextSize, "%s", store);
+    	bool bFound = false;
+        for (unsigned i = 0; i < sizeof(templateNames) / sizeof (templateNames[0]); i++) {
+    		if (!strncmp(store, templateNames[i].tokenString, templateNames[i].tokenLen)) {
+    			bFound = true;
+    			break;
+    		}
+    	}
+        if (bFound) {
+			if (wasTemplate) {
+				tmap->addTemplate(lastTemplate, templateText);
 			}
+			if (templateText!=NULL) {
+				free (templateText);
+			}
+			templateText = NULL;
+			templateTextSize = 0;
+			wasTemplate = true;
+            sscanf(store, "<!--%[^-]", lastTemplate);
+		} else if (wasTemplate) {
+			Utils::appendText(&templateText, &templateTextSize, "%s", store);
 		}
   	}
   	if (wasTemplate) {
 		tmap->addTemplate(lastTemplate, templateText);
-        //debugView->writef("2. %s<br>%s", lastTemplate, templateText);
 	}
   	fclose(fh);
 	static const char *groupTemplates[] = {"MessageInGroupStart", "MessageInGroupInner",
@@ -360,11 +360,23 @@ TemplateMap* TemplateMap::loadTemplateFile(const char *proto, const char *filena
 			break;
 		}
 	}
+	static const char *rtlTemplates[] = {"MessageInRTL", "MessageOutRTL"};
+	tmap->rtl = true;
+	for (int i=0; i<8; i++) {
+		if (tmap->getTemplate(rtlTemplates[i])== NULL) {
+			tmap->rtl = false;
+			break;
+		}
+	}
 	return tmap;
 }
 
 bool TemplateMap::isGrouping() {
 	return grouping;
+}
+
+bool TemplateMap::isRTL() {
+	return rtl;
 }
 
 Template* TemplateMap::getTemplate(const char *text) {
@@ -409,8 +421,8 @@ void TemplateMap::setFilename(const char *filename) {
 	Utils::convertPath(this->filename);
 }
 
-TemplateMap* TemplateMap::loadTemplates(const char *proto, const char *filename) {
-	return loadTemplateFile(proto, filename, false);
+TemplateMap* TemplateMap::loadTemplates(const char *id, const char *filename, bool onlyInfo) {
+	return loadTemplateFile(id, filename, onlyInfo);
 }
 
 
