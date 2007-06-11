@@ -136,10 +136,12 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 extern "C" int __declspec(dllexport) Unload(void)
 {
+	Options::uninit();
 	Utils::unhookEvents_Ex();
 	Utils::destroyServices_Ex();
 	DestroyHookableEvent(hHookOptionsChanged);
 	IEView::release();
 	delete workingDir;
+	free( ieviewModuleName );
 	return 0;
 }

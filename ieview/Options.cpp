@@ -1002,6 +1002,7 @@ ProtocolSettings::ProtocolSettings(const char *protocolName) {
 }
 
 ProtocolSettings::~ProtocolSettings() {
+	delete protocolName;
 	if (srmmBackgroundFilename != NULL) {
 		delete srmmBackgroundFilename;
 	}
@@ -1624,6 +1625,14 @@ void Options::init() {
 
 
 //	mathModuleFlags = ServiceExists(MTH_GET_HTML_SOURCE) ? GENERAL_ENABLE_MATHMODULE : 0;
+}
+
+void Options::uninit() {
+	ProtocolSettings *p, *p1;
+	for ( p = protocolList; p != NULL; p = p1 ) {
+		p1 = p->getNext();
+		delete p;
+	}
 }
 
 void Options::setGeneralFlags(int flags) {
