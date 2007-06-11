@@ -26,6 +26,10 @@ TemplateHTMLBuilder::~TemplateHTMLBuilder() {
 	}
 }
 
+bool TemplateHTMLBuilder::isRTL(IEVIEWEVENT *event) {
+	return false;
+}
+
 char *TemplateHTMLBuilder::getAvatar(HANDLE hContact, const char * szProto) {
 	DBVARIANT dbv;
 	char tmpPath[MAX_PATH];
@@ -46,7 +50,7 @@ char *TemplateHTMLBuilder::getAvatar(HANDLE hContact, const char * szProto) {
 		if (strlen(dbv.pszVal) > 0) {
 			char* ext = strrchr(dbv.pszVal, '.');
 			if (ext && strcmpi(ext, ".xml") == 0) {
-				result = (char *)getFlashAvatar(dbv.pszVal, 0);
+				result = (char *)getFlashAvatar(dbv.pszVal, (hContact == NULL) ? 1 : 0);
 			} else {
 				if (result == NULL) {
 					/* relative -> absolute */
