@@ -21,6 +21,7 @@ protected:
 		void appendEventTemplate(IEView *, IEVIEWEVENT *event, ProtocolSettings* protoSettings);
 		virtual TemplateMap *getTemplateMap(ProtocolSettings *);
 		virtual int getFlags(ProtocolSettings *);
+		virtual bool isRTL(IEVIEWEVENT *event);
 public:
 		TemplateHTMLBuilder();
 		virtual ~TemplateHTMLBuilder();

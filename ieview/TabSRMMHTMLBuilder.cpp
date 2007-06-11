@@ -44,6 +44,9 @@
 #define SRMSGSET_SHOWFILES         "ShowFiles"
 #define SRMSGSET_SHOWSTATUSCHANGES "ShowFiles"
 
+#define SRMSGSET_RTL			    "RTL"
+#define SRMSGSET_RTLDEFAULT			"rtldefault"
+
 #define MWF_LOG_DEFAULT (MWF_LOG_SHOWTIME | MWF_LOG_SHOWNICK | MWF_LOG_SHOWDATES)
 
 #define FONTF_BOLD   1
@@ -63,6 +66,12 @@ TabSRMMHTMLBuilder::TabSRMMHTMLBuilder() {
 	setLastEventTime(time(NULL));
 	lastEventTime = time(NULL);
 	startedTime = time(NULL);
+}
+
+bool TabSRMMHTMLBuilder::isRTL(IEVIEWEVENT *event) {
+	int defaultRtl = DBGetContactSettingByte(NULL, SRMSGMOD_T, SRMSGSET_RTLDEFAULT, 0);
+	int contactRtl = DBGetContactSettingByte(event->hContact, SRMSGMOD_T, SRMSGSET_RTL, defaultRtl);
+	return contactRtl != 0;
 }
 
 bool TabSRMMHTMLBuilder::isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei)

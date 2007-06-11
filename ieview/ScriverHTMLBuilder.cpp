@@ -70,6 +70,11 @@ ScriverHTMLBuilder::ScriverHTMLBuilder() {
 	startedTime = time(NULL);
 }
 
+bool ScriverHTMLBuilder::isRTL(IEVIEWEVENT *event) {
+	int contactRtl = DBGetContactSettingByte(event->hContact, SRMMMOD, SRMSGSET_USERTL, 0);
+	return contactRtl != 0;
+}
+
 bool ScriverHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei)
 {
     switch (dbei->eventType) {
