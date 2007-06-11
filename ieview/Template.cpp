@@ -303,7 +303,7 @@ static TokenDef templateNames[] = {
 TemplateMap* TemplateMap::loadTemplateFile(const char *id, const char *filename, bool onlyInfo) {
 	FILE* fh;
 	char lastTemplate[1024], tmp2[1024];
-	int i;
+	unsigned int i=0;
 	TemplateMap *tmap;
 	if (filename == NULL || strlen(filename) == 0) {
 		return NULL;
@@ -355,7 +355,7 @@ TemplateMap* TemplateMap::loadTemplateFile(const char *id, const char *filename,
 										   "MessageOutGroupStart", "MessageOutGroupInner",
 	                                       "hMessageOutGroupStart", "hMessageOutGroupInner"};
 	tmap->grouping = true;
-	for (i=0; i<8; i++) {
+	for (i = 0; i<SIZEOF(groupTemplates); i++) {
 		if (tmap->getTemplate(groupTemplates[i])== NULL) {
 			tmap->grouping = false;
 			break;
@@ -363,7 +363,7 @@ TemplateMap* TemplateMap::loadTemplateFile(const char *id, const char *filename,
 	}
 	static const char *rtlTemplates[] = {"MessageInRTL", "MessageOutRTL"};
 	tmap->rtl = true;
-	for (i=0; i<8; i++) {
+	for (i=0; i<SIZEOF(rtlTemplates); i++) {
 		if (tmap->getTemplate(rtlTemplates[i])== NULL) {
 			tmap->rtl = false;
 			break;
