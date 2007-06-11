@@ -229,17 +229,19 @@ public:
 	enum AVATARSERVICEFLAGS {
 		AVATARSERVICE_PRESENT     = 0x0001,
 	};
-   	static void     		setGeneralFlags(int flags);
-   	static int				getGeneralFlags();
 
-   	static bool             isMathModule();
-   	static bool             isSmileyAdd();
-   	static int				getAvatarServiceFlags();
-   	static void      		init();
+	static void     		setGeneralFlags(int flags);
+	static int				getGeneralFlags();
+
+	static bool             isMathModule();
+	static bool             isSmileyAdd();
+	static int				getAvatarServiceFlags();
+	static void      		init();
+	static void      		uninit();
 	static void				saveProtocolSettings();
 	static void				resetProtocolSettings();
-   	static ProtocolSettings*getProtocolSettings();
-   	static ProtocolSettings*getProtocolSettings(const char *protocolName);
+	static ProtocolSettings*getProtocolSettings();
+	static ProtocolSettings*getProtocolSettings(const char *protocolName);
 };
 
 #endif

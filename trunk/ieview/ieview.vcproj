@@ -1,172 +1,208 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="7.10"
 	Name="ieview"
 	ProjectGUID="{B988F96C-F87A-484C-AB15-D0674B22F291}"
-	Keyword="Win32Proj"
-	>
+	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
-			Name="Win32"
-		/>
+			Name="Win32"/>
 	</Platforms>
-	<ToolFiles>
-	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
-			ConfigurationType="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)/Plugins"
+			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)/Obj/$(ProjectName)"
+			ConfigurationType="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;IEVIEW_EXPORTS;"
-				MinimalRebuild="true"
+				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
-			/>
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="4"/>
 			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib"
 				LinkIncremental="2"
-				GenerateDebugInformation="true"
+				GenerateDebugInformation="TRUE"
 				SubSystem="2"
-				TargetMachine="1"
-			/>
+				TargetMachine="1"/>
 			<Tool
-				Name="VCALinkTool"
-			/>
+				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCManifestTool"
-			/>
+				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCXDCMakeTool"
-			/>
+				Name="VCPreBuildEventTool"/>
 			<Tool
-				Name="VCBscMakeTool"
-			/>
+				Name="VCPreLinkEventTool"/>
 			<Tool
-				Name="VCFxCopTool"
-			/>
+				Name="VCResourceCompilerTool"/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
+				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
+				Name="VCXMLDataGeneratorTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"
-			/>
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
-			ConfigurationType="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)/Plugins"
+			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)/Obj/$(ProjectName)"
+			ConfigurationType="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="1"
 				FavorSizeOrSpeed="2"
-				WholeProgramOptimization="false"
+				WholeProgramOptimization="FALSE"
 				AdditionalIncludeDirectories="../../include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IEVIEW_EXPORTS;"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
-			/>
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
 			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib"
 				LinkIncremental="2"
-				GenerateDebugInformation="true"
+				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				TargetMachine="1"
-			/>
+				TargetMachine="1"/>
 			<Tool
-				Name="VCALinkTool"
-			/>
+				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCManifestTool"
-			/>
+				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCXDCMakeTool"
-			/>
+				Name="VCPreBuildEventTool"/>
 			<Tool
-				Name="VCBscMakeTool"
-			/>
+				Name="VCPreLinkEventTool"/>
 			<Tool
-				Name="VCFxCopTool"
-			/>
+				Name="VCResourceCompilerTool"/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
+				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
+				Name="VCXMLDataGeneratorTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"
-			/>
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Debug Unicode|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)/Plugins"
+			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)/Obj/$(ProjectName)"
+			ConfigurationType="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="../../include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;IEVIEW_EXPORTS;"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="0"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="comctl32.lib"
+				LinkIncremental="2"
+				GenerateDebugInformation="TRUE"
+				SubSystem="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release Unicode|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)/Plugins"
+			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)/Obj/$(ProjectName)"
+			ConfigurationType="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="3"
+				GlobalOptimizations="TRUE"
+				FavorSizeOrSpeed="2"
+				WholeProgramOptimization="FALSE"
+				AdditionalIncludeDirectories="../../include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IEVIEW_EXPORTS;"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="comctl32.lib"
+				LinkIncremental="2"
+				GenerateDebugInformation="TRUE"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -175,159 +211,121 @@
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-			>
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
 			<File
-				RelativePath=".\ChatHTMLBuilder.h"
-				>
+				RelativePath=".\ChatHTMLBuilder.h">
 			</File>
 			<File
-				RelativePath=".\HistoryHTMLBuilder.h"
-				>
+				RelativePath=".\HistoryHTMLBuilder.h">
 			</File>
 			<File
-				RelativePath=".\HTMLBuilder.h"
-				>
+				RelativePath=".\HTMLBuilder.h">
 			</File>
 			<File
-				RelativePath=".\IEView.h"
-				>
+				RelativePath=".\IEView.h">
 			</File>
 			<File
-				RelativePath=".\ieview_common.h"
-				>
+				RelativePath=".\ieview_common.h">
 			</File>
 			<File
-				RelativePath=".\ieview_private.h"
-				>
+				RelativePath=".\ieview_private.h">
 			</File>
 			<File
-				RelativePath=".\ieview_services.h"
-				>
+				RelativePath=".\ieview_services.h">
 			</File>
 			<File
-				RelativePath=".\m_avatars.h"
-				>
+				RelativePath=".\m_avatars.h">
 			</File>
 			<File
-				RelativePath=".\m_ieview.h"
-				>
+				RelativePath=".\m_ieview.h">
 			</File>
 			<File
-				RelativePath=".\m_MathModule.h"
-				>
+				RelativePath=".\m_MathModule.h">
 			</File>
 			<File
-				RelativePath=".\m_metacontacts.h"
-				>
+				RelativePath=".\m_metacontacts.h">
 			</File>
 			<File
-				RelativePath=".\m_smileyadd.h"
-				>
+				RelativePath=".\m_smileyadd.h">
 			</File>
 			<File
-				RelativePath=".\mshtmhst.h"
-				>
+				RelativePath=".\mshtmhst.h">
 			</File>
 			<File
-				RelativePath=".\MUCCHTMLBuilder.h"
-				>
+				RelativePath=".\MUCCHTMLBuilder.h">
 			</File>
 			<File
-				RelativePath=".\Options.h"
-				>
+				RelativePath=".\Options.h">
 			</File>
 			<File
-				RelativePath=".\resource.h"
-				>
+				RelativePath=".\resource.h">
 			</File>
 			<File
-				RelativePath=".\ScriverHTMLBuilder.h"
-				>
+				RelativePath=".\ScriverHTMLBuilder.h">
 			</File>
 			<File
-				RelativePath=".\TabSRMMHTMLBuilder.h"
-				>
+				RelativePath=".\TabSRMMHTMLBuilder.h">
 			</File>
 			<File
-				RelativePath=".\Template.h"
-				>
+				RelativePath=".\Template.h">
 			</File>
 			<File
-				RelativePath=".\TemplateHTMLBuilder.h"
-				>
+				RelativePath=".\TemplateHTMLBuilder.h">
 			</File>
 			<File
-				RelativePath=".\Utils.h"
-				>
+				RelativePath=".\Utils.h">
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
-			>
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}">
 			<File
-				RelativePath=".\ieview.rc"
-				>
+				RelativePath=".\ieview.rc">
 			</File>
 		</Filter>
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
-			>
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath=".\ChatHTMLBuilder.cpp"
-				>
+				RelativePath=".\ChatHTMLBuilder.cpp">
 			</File>
 			<File
-				RelativePath=".\HistoryHTMLBuilder.cpp"
-				>
+				RelativePath=".\HistoryHTMLBuilder.cpp">
 			</File>
 			<File
-				RelativePath=".\HTMLBuilder.cpp"
-				>
+				RelativePath=".\HTMLBuilder.cpp">
 			</File>
 			<File
-				RelativePath=".\IEView.cpp"
-				>
+				RelativePath=".\IEView.cpp">
 			</File>
 			<File
-				RelativePath=".\ieview_main.cpp"
-				>
+				RelativePath=".\ieview_main.cpp">
 			</File>
 			<File
-				RelativePath=".\ieview_services.cpp"
-				>
+				RelativePath=".\ieview_services.cpp">
 			</File>
 			<File
-				RelativePath=".\MUCCHTMLBuilder.cpp"
-				>
+				RelativePath=".\MUCCHTMLBuilder.cpp">
 			</File>
 			<File
-				RelativePath=".\Options.cpp"
-				>
+				RelativePath=".\Options.cpp">
 			</File>
 			<File
-				RelativePath=".\ScriverHTMLBuilder.cpp"
-				>
+				RelativePath=".\ScriverHTMLBuilder.cpp">
 			</File>
 			<File
-				RelativePath=".\TabSRMMHTMLBuilder.cpp"
-				>
+				RelativePath=".\TabSRMMHTMLBuilder.cpp">
 			</File>
 			<File
-				RelativePath=".\Template.cpp"
-				>
+				RelativePath=".\Template.cpp">
 			</File>
 			<File
-				RelativePath=".\TemplateHTMLBuilder.cpp"
-				>
+				RelativePath=".\TemplateHTMLBuilder.cpp">
 			</File>
 			<File
-				RelativePath=".\Utils.cpp"
-				>
+				RelativePath=".\Utils.cpp">
 			</File>
 		</Filter>
 	</Files>

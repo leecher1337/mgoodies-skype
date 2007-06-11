@@ -1018,8 +1018,7 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 			eventData->pszNickW = getContactName(event->hContact, szProto);
 			eventData->bIsMe = FALSE;
 		}
- 		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
-
+		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
 			if ( ServiceExists( MS_DB_EVENT_GETTEXT )) {
 				WCHAR* pwszEventText = DbGetEventTextW( &dbei, newEvent.codepage + (event->dwFlags & IEEF_NO_UNICODE) ? DBVTF_DENYUNICODE : 0 );
 				eventData->pszTextW = Utils::dupString( pwszEventText );
@@ -1033,14 +1032,13 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 					} else {
 						eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
 					}
- 				} else {
- 					eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
-			    }
-            }
+				} else {
+					eventData->pszTextW = Utils::convertToWCS((char *)dbei.pBlob, newEvent.codepage);
+			}	}
 
- 			if (dbei.eventType == EVENTTYPE_MESSAGE) {
- 				eventData->iType = IEED_EVENT_MESSAGE;
- 			} else if (dbei.eventType == EVENTTYPE_URL) {
+			if (dbei.eventType == EVENTTYPE_MESSAGE) {
+				eventData->iType = IEED_EVENT_MESSAGE;
+			} else if (dbei.eventType == EVENTTYPE_URL) {
 				eventData->iType = IEED_EVENT_URL;
 			} else {
 				eventData->iType = IEED_EVENT_STATUSCHANGE;
