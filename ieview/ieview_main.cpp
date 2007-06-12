@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 char *ieviewModuleName;
 HINSTANCE hInstance;
 PLUGINLINK *pluginLink;
-IEView *debugView;
 TCHAR *workingDir;
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 static int PreShutdown(WPARAM wParam, LPARAM lParam);
@@ -37,8 +36,8 @@ static int PreShutdown(WPARAM wParam, LPARAM lParam);
 PLUGININFO pluginInfo = {
 	sizeof(PLUGININFO),
 	"IEView",
-	PLUGIN_MAKE_VERSION(1,0,9,9),
-	"IE Based Chat Log (1.0.9.9 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,0,9,10),
+	"IE Based Chat Log (1.0.9.10 "__DATE__")",
 	"Piotr Piastucki, Francois Mean",
 	"the_leech@users.berlios.de",
 	"(c) 2005-2007 Piotr Piastucki, Francois Mean",
@@ -50,8 +49,8 @@ PLUGININFO pluginInfo = {
 PLUGININFOEX pluginInfoEx = {
 	sizeof(PLUGININFOEX),
 	"IEView",
-	PLUGIN_MAKE_VERSION(1,0,9,9),
-	"IE Based Chat Log (1.0.9.9 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,0,9,10),
+	"IE Based Chat Log (1.0.9.10 "__DATE__")",
 	"Piotr Piastucki, Francois Mean",
 	"the_leech@users.berlios.de",
 	"(c) 2005-2007 Piotr Piastucki, Francois Mean",
