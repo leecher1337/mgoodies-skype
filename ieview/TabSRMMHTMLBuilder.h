@@ -14,7 +14,6 @@ protected:
 	time_t 		getStartedTime();
 	virtual bool isDbEventShown(DWORD dwFlags, DBEVENTINFO * dbei);
 	bool isDbEventShown(DBEVENTINFO * dbei);
-	bool isRTL(IEVIEWEVENT *event);
 	void appendEventNonTemplate(IEView *, IEVIEWEVENT *event);
 public:
     TabSRMMHTMLBuilder();

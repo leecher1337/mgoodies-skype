@@ -51,7 +51,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SRMSGSET_MARKFOLLOWUPS	   "MarkFollowUps"
 #define SRMSGSET_MESSAGEONNEWLINE  "MessageOnNewLine"
 #define SRMSGSET_DRAWLINES		   "DrawLines"
-#define SRMSGSET_USERTL		   	   "UseRTL"
 
 #define FONTF_BOLD   1
 #define FONTF_ITALIC 2
@@ -68,11 +67,6 @@ ScriverHTMLBuilder::ScriverHTMLBuilder() {
 	setLastEventType(-1);
 	setLastEventTime(time(NULL));
 	startedTime = time(NULL);
-}
-
-bool ScriverHTMLBuilder::isRTL(IEVIEWEVENT *event) {
-	int contactRtl = DBGetContactSettingByte(event->hContact, SRMMMOD, SRMSGSET_USERTL, 0);
-	return contactRtl != 0;
 }
 
 bool ScriverHTMLBuilder::isDbEventShown(DBEVENTINFO * dbei)
