@@ -37,7 +37,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,1,6),
+	PLUGIN_MAKE_VERSION(0,1,1,7),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -70,6 +70,7 @@ static BOOL loaded = FALSE;
 static UINT hTimer = 0;
 static HANDLE hExtraImage = NULL;
 static HICON hListeningToIcon = NULL;
+static DWORD lastInfoSetTime = 0;
 
 struct ProtocolInfo
 {
@@ -839,6 +840,8 @@ int GetUnknownText(WPARAM wParam,LPARAM lParam)
 
 void SetListeningInfos(LISTENINGTOINFO *lti)
 {
+OutputDebugStringA("SetListeningInfos\n");
+
 	PROTOCOLDESCRIPTOR **protos;
 	int count;
 	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
@@ -862,6 +865,15 @@ static void CALLBACK GetInfoTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTi
 		KillTimer(NULL, hTimer);
 		hTimer = NULL;
 	}
+
+	// Check if we can set it now...
+	DWORD now = GetTickCount();
+	if (now < lastInfoSetTime + MIN_TIME_BEETWEEN_SETS)
+	{
+		hTimer = SetTimer(NULL, NULL, lastInfoSetTime + MIN_TIME_BEETWEEN_SETS - now, GetInfoTimer);
+		return;
+	}
+	lastInfoSetTime = GetTickCount();
 
 	if (!opts.enable_sending)
 	{

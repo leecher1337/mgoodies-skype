@@ -96,6 +96,8 @@ extern PLUGINLINK *pluginLink;
 #endif
 
 
+#define MIN_TIME_BEETWEEN_SETS 10000 // ms
+
 void StartTimer();
 int ProtoServiceExists(const char *szModule, const char *szService);
 

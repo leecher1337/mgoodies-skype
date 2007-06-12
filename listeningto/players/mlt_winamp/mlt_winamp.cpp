@@ -222,7 +222,11 @@ void SendDataToMiranda(char *filename, char *title)
 	Concat(data, size, "Winamp");
 
 	int version = SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_GETVERSION);
-	if (WINAMP_VERSION_MAJOR(version) >= 5 && SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_IS_PLAYING_VIDEO))
+	BOOL is_radio = (strstr(filename, "://") != 0);
+
+	if (is_radio)
+		Concat(data, size, "Radio");
+	else if (WINAMP_VERSION_MAJOR(version) >= 5 && SendMessage(plugin.hwndParent, WM_WA_IPC, 0, IPC_IS_PLAYING_VIDEO))
 		Concat(data, size, "Video");
 	else
 		Concat(data, size, "Music");
@@ -335,7 +339,7 @@ LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 							lstrcpyn(last_filename, filename, sizeof(last_filename));
 
 							// Miranda is running?
-							//if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
+							if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
 								SendDataToMiranda(last_filename, (char *) SendMessage(plugin.hwndParent, WM_WA_IPC, track, IPC_GETPLAYLISTTITLE));
 
 							if (is_radio)

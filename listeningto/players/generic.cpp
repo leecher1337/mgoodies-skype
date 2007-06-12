@@ -121,6 +121,8 @@ void GenericPlayer::ProcessReceived()
 
 	FreeData();
 
+OutputDebugStringA("ProcessReceived\n");
+
 	changed = TRUE;
 
 	if (lstrcmpW(L"1", parts[0]) != 0 || parts[1][0] == L'\0' || (parts[3][0] == L'\0' && parts[4][0] == L'\0'))

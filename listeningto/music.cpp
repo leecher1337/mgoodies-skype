@@ -21,17 +21,16 @@ Boston, MA 02111-1307, USA.
 #include "commons.h"
 
 
-Player *players[] = {
-	new WATrack(),
-	new GenericPlayer(),
-	new WindowsMediaPlayer(),
-	new Winamp(),
-	new ITunes()
-};
+Player *players[NUM_PLAYERS];
 
 
 void InitMusic() 
 {
+	players[WATRACK] = new WATrack();
+	players[GENERIC] = new GenericPlayer();
+	players[WMP] = new WindowsMediaPlayer();
+	players[WINAMP] = new Winamp();
+	players[ITUNES] = new ITunes();
 }
 
 
