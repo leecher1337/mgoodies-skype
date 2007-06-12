@@ -361,7 +361,7 @@ TemplateMap* TemplateMap::loadTemplateFile(const char *id, const char *filename,
 			break;
 		}
 	}
-	static const char *rtlTemplates[] = {"MessageInRTL", "MessageOutRTL"};
+	static const char *rtlTemplates[] = {"HTMLStartRTL", "MessageInRTL", "MessageOutRTL"};
 	tmap->rtl = true;
 	for (i=0; i<SIZEOF(rtlTemplates); i++) {
 		if (tmap->getTemplate(rtlTemplates[i])== NULL) {

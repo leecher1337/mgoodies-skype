@@ -1020,7 +1020,8 @@ void HTMLBuilder::appendEventOld(IEView *view, IEVIEWEVENT *event) {
 		}
 		if (dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_URL || dbei.eventType == EVENTTYPE_STATUSCHANGE) {
 			if ( ServiceExists( MS_DB_EVENT_GETTEXT )) {
-				WCHAR* pwszEventText = DbGetEventTextW( &dbei, newEvent.codepage + (event->dwFlags & IEEF_NO_UNICODE) ? DBVTF_DENYUNICODE : 0 );
+				DBEVENTGETTEXT temp = { &dbei, DBVT_WCHAR + ((event->dwFlags & IEEF_NO_UNICODE) ? DBVTF_DENYUNICODE : 0), newEvent.codepage  };
+				WCHAR* pwszEventText = (WCHAR*)CallService(MS_DB_EVENT_GETTEXT,0,(LPARAM)&temp);
 				eventData->pszTextW = Utils::dupString( pwszEventText );
 				mir_free( pwszEventText );
 			} else {
