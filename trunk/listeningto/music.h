@@ -44,7 +44,7 @@ Boston, MA 02111-1307, USA.
 #define ITUNES 4
 #define NUM_PLAYERS 5
 
-extern Player *players[];
+extern Player *players[NUM_PLAYERS];
 
 
 void InitMusic();

@@ -2,6 +2,10 @@ ListeningTo
 
 Changelog:
 
+. 0.1.1.7
+  * Fix for crash when disabled
+  + Wait at least 10s beetween protocol notifications 
+
 . 0.1.1.6
   * Fix to get info from radio station in winamp
   * Fix to remove listening to data on startup

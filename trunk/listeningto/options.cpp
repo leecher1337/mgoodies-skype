@@ -59,11 +59,11 @@ static OptPageControl formatControls[] = {
 };
 
 static OptPageControl playersControls[] = { 
-	{ &players[WATRACK]->enabled,	CONTROL_CHECKBOX,	IDC_WATRACK,		"GetInfoFromWATrack", FALSE },
+	{ NULL,							CONTROL_CHECKBOX,	IDC_WATRACK,		"GetInfoFromWATrack", FALSE },
 	{ &opts.time_to_pool,			CONTROL_SPIN,		IDC_POLL_TIMER,		"TimeToPool", (WORD) 5, IDC_POLL_TIMER_SPIN, (WORD) 1, (WORD) 255 },
-	{ &players[WINAMP]->enabled,	CONTROL_CHECKBOX,	IDC_WINAMP,			"EnableWinamp", TRUE },
-	{ &players[ITUNES]->enabled,	CONTROL_CHECKBOX,	IDC_ITUNES,			"EnableITunes", TRUE },
-	{ &players[WMP]->enabled,		CONTROL_CHECKBOX,	IDC_WMP,			"EnableWMP", TRUE },
+	{ NULL,							CONTROL_CHECKBOX,	IDC_WINAMP,			"EnableWinamp", TRUE },
+	{ NULL,							CONTROL_CHECKBOX,	IDC_ITUNES,			"EnableITunes", TRUE },
+	{ NULL,							CONTROL_CHECKBOX,	IDC_WMP,			"EnableWMP", TRUE },
 	{ &opts.enable_other_players,	CONTROL_CHECKBOX,	IDC_OTHER,			"EnableOtherPlayers", TRUE },
 	{ &opts.enable_code_injection,	CONTROL_CHECKBOX,	IDC_CODE_INJECTION,	"EnableCodeInjection", TRUE }
 };
@@ -111,6 +111,11 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 
 void InitOptions()
 {
+	playersControls[0].var = &players[WATRACK]->enabled;
+	playersControls[2].var = &players[WINAMP]->enabled;
+	playersControls[3].var = &players[ITUNES]->enabled;
+	playersControls[4].var = &players[WMP]->enabled;
+
 	LoadOptions();
 
 	hOptHook = HookEvent(ME_OPT_INITIALISE, InitOptionsCallback);
