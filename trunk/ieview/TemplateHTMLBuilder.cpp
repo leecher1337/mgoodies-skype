@@ -26,10 +26,6 @@ TemplateHTMLBuilder::~TemplateHTMLBuilder() {
 	}
 }
 
-bool TemplateHTMLBuilder::isRTL(IEVIEWEVENT *event) {
-	return false;
-}
-
 char *TemplateHTMLBuilder::getAvatar(HANDLE hContact, const char * szProto) {
 	DBVARIANT dbv;
 	char tmpPath[MAX_PATH];
@@ -216,8 +212,8 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		szNickOut = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS);
 	}
-
-	Template *tmplt = tmpm->getTemplate((isRTL(event) && tmpm->isRTL()) ? "HTMLStartRTL" : "HTMLStart");
+	
+	Template *tmplt = tmpm->getTemplate(((event->dwFlags & IEEF_RTL) && tmpm->isRTL()) ? "HTMLStartRTL" : "HTMLStart");
 
 	if (tmplt!=NULL) {
 		for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
@@ -397,7 +393,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 		output = NULL;
 		if (eventData->iType == IEED_EVENT_MESSAGE || eventData->iType == IEED_EVENT_STATUSCHANGE || eventData->iType == IEED_EVENT_FILE || eventData->iType == IEED_EVENT_URL || eventData->iType == IEED_EVENT_SYSTEM) {
 			int isSent = (eventData->dwFlags & IEEDF_SENT);
-			int bRTL = (eventData->dwFlags & IEEDF_RTL || isRTL(event)) && tmpm->isRTL();
+			int isRTL = (eventData->dwFlags & IEEDF_RTL) && tmpm->isRTL();
 			int isHistory = (eventData->time < (DWORD)getStartedTime() && (eventData->dwFlags & IEEDF_READ || eventData->dwFlags & IEEDF_SENT));
 			int isGroupBreak = TRUE;
  		  	if ((getFlags(protoSettings) & Options::LOG_GROUP_MESSAGES) && eventData->dwFlags == LOWORD(getLastEventType())
@@ -438,7 +434,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 				szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2, event->codepage, 0);
 			}
 			if ((eventData->iType == IEED_EVENT_MESSAGE)) {
-				if (!bRTL) {
+				if (!isRTL) {
 					if (isGrouping && (getFlags(protoSettings) & Options::LOG_GROUP_MESSAGES)) {
 						if (isGroupBreak) {
 							tmpltName[1] = isHistory ? isSent ? "hMessageOutGroupStart" : "hMessageInGroupStart" : isSent ? "MessageOutGroupStart" : "MessageInGroupStart";

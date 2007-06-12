@@ -32,7 +32,6 @@ protected:
 	char *timestampToString(DWORD dwFlags, time_t check, int groupStart);
 	DWORD startedTime;
 	bool isDbEventShown(DBEVENTINFO * dbei);
-	bool isRTL(IEVIEWEVENT *event);
 	void appendEventNonTemplate(IEView *, IEVIEWEVENT *event);
 public:
     ScriverHTMLBuilder();
