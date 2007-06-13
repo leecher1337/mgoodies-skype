@@ -212,9 +212,11 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
 		szNickOut = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS);
 	}
-	
-	Template *tmplt = tmpm->getTemplate(((event->dwFlags & IEEF_RTL) && tmpm->isRTL()) ? "HTMLStartRTL" : "HTMLStart");
 
+	Template *tmplt = tmpm->getTemplate(((event->dwFlags & IEEF_RTL) && tmpm->isRTL()) ? "HTMLStartRTL" : "HTMLStart");
+	if (tmplt == NULL) {
+		tmplt = tmpm->getTemplate("HTMLStart");
+	}
 	if (tmplt!=NULL) {
 		for (Token *token = tmplt->getTokens();token!=NULL;token=token->getNext()) {
 			const char *tokenVal;

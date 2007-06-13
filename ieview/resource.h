@@ -19,11 +19,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#define IDI_YES							100
+#define IDI_NO                          101
+
 #define IDD_SRMM_OPTIONS	          	153
-//#define IDD_SMILEYSELECTION             154
 #define IDD_GENERAL_OPTIONS             155
-#define IDD_GROUPCHATS_OPTIONS          156
-#define IDD_HISTORY_OPTIONS          	157
 
 #define IDR_CONTEXTMENU                 200
 
@@ -72,9 +72,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define IDC_MODE_TEMPLATE				1062
 #define IDC_PROTOLIST					1063
 
-#define IDC_LIBNAME                     1070
-#define IDC_LIBAUTHOR                   1071
-#define IDC_LIBVERSION                  1072
+#define IDC_RTLSUPPORT                  1070
+#define IDC_GROUPSUPPORT                1071
 
 #define IDC_SIMPLE                      1100
 #define IDC_TABS                        2000

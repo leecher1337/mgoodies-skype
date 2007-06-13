@@ -199,7 +199,6 @@ private:
 	static bool     bSmileyAdd;
 	static int      avatarServiceFlags;
 	static ProtocolSettings* protocolList;
-
 public:
 	enum MODES {
 		MODE_COMPATIBLE = 0,
