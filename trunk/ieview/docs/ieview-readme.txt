@@ -99,6 +99,13 @@ Alternatively, you may install AvatarService plugin and IEView will automaticall
 
 6. Change Log
 -------------
+1.0.9.10
+* support for UTF-8 encoded messages (required by Miranda 0.7 build #30)
+* critical changes in RTL templates (existing template files should be modified and they SHOULD provide HTMLStartRTL, MessageInRTL and MessageOutRTL templates to be recognized as RTL-compliant in the future IEView releases, 
+whole layout (including heading - HTMLStartRTL) will change when switching between LTR and RTL contacts, some changes in both TabSRMM and Scriver will be provided in Miranda 0.7 build #31 to improve RTL support in IEView as well)
+* RTL/Grouping info icons
+* removed some redundant reqources
+* other bugfixes
 1.0.9.9
 * bugfixes: TabSRMM compatibility mode, crash on file transfer
 1.0.9.8

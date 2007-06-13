@@ -52,6 +52,9 @@ BEGIN
 	END
 END
 
+IDI_YES		ICON    DISCARDABLE     "icos/yes.ico"
+IDI_NO		ICON    DISCARDABLE     "icos/no.ico"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -106,52 +109,12 @@ BEGIN
     PUSHBUTTON      "...",IDC_BROWSE_EXTERNALCSS,278,68,15,11
 //    LTEXT         	"Template file",IDC_STATIC,118,112,86,10
  	EDITTEXT        IDC_TEMPLATES_FILENAME,118,122,153,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BROWSE_TEMPLATES,278,122,15,11
-    GROUPBOX        "Template Options",IDC_SIMPLE,10,161,284,57
-    CONTROL         "Use message grouping", IDC_LOG_GROUP_MESSAGES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,20,173,125,10
-    CONTROL         "Show nicknames",IDC_LOG_SHOW_NICKNAMES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,20,183,125,10
-    CONTROL         "Show time",IDC_LOG_SHOW_TIME,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,20,193,125,10
-    CONTROL         "Show seconds",IDC_LOG_SHOW_SECONDS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,30,203,110,10
-    CONTROL         "Show date",IDC_LOG_SHOW_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,145,173,120,10
-    CONTROL         "Use long date format",IDC_LOG_LONG_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,157,183,110,10
-    CONTROL         "Use relative timestamp", IDC_LOG_RELATIVE_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,157,193,110,10
+	PUSHBUTTON      "...",IDC_BROWSE_TEMPLATES,278,122,15,11
 
-END
-
-IDD_GROUPCHATS_OPTIONS DIALOGEX 0, 0, 306, 228
-STYLE DS_FIXEDSYS | WS_CHILD
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
-BEGIN
-    GROUPBOX        "Mode",IDC_SIMPLE,4,2,297,222
-    CONTROL         "Compatibility Mode",IDC_MODE_COMPATIBLE,"Button",BS_AUTORADIOBUTTON,118,15,80,10
-    CONTROL         "Use External CSS",IDC_MODE_CSS,"Button",BS_AUTORADIOBUTTON,118,58,
-                    86,10
-    CONTROL         "Use Templates",IDC_MODE_TEMPLATE,"Button",BS_AUTORADIOBUTTON,118,
-                    112,86,10
-    CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP |
-                    TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER |
-                    WS_TABSTOP,10,15,100,143
-
-    CONTROL         "Background image",IDC_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,118,26,70,10
-    CONTROL         "Scroll with text",IDC_SCROLL_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,190,26,110,10
- 	EDITTEXT        IDC_BACKGROUND_IMAGE_FILENAME,118,36,153,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BROWSE_BACKGROUND_IMAGE,278,36,15,11
-//    LTEXT         	"CSS file",IDC_STATIC,118,63,86,10
- 	EDITTEXT        IDC_EXTERNALCSS_FILENAME,118,68,153,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BROWSE_EXTERNALCSS,278,68,15,11
-//    LTEXT         	"Template file",IDC_STATIC,118,112,86,10
- 	EDITTEXT        IDC_TEMPLATES_FILENAME,118,122,153,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BROWSE_TEMPLATES,278,122,15,11
+	ICON			IDI_NO, IDC_GROUPSUPPORT,118,135,11,11
+	LTEXT         	"Grouping",IDC_STATIC,130,136,86,10
+	ICON			IDI_NO, IDC_RTLSUPPORT,118,146,11,11
+	LTEXT         	"RTL",IDC_STATIC,130,147,86,10
 
     GROUPBOX        "Template Options",IDC_SIMPLE,10,161,284,57
     CONTROL         "Use message grouping", IDC_LOG_GROUP_MESSAGES,"Button",BS_AUTOCHECKBOX |
@@ -169,51 +132,6 @@ BEGIN
     CONTROL         "Use relative timestamp", IDC_LOG_RELATIVE_DATE,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,157,193,110,10
 
-END
-
-IDD_HISTORY_OPTIONS DIALOGEX 0, 0, 306, 228
-STYLE DS_FIXEDSYS | WS_CHILD
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
-BEGIN
-    GROUPBOX        "Mode",IDC_SIMPLE,4,2,297,222
-    CONTROL         "Compatibility Mode",IDC_MODE_COMPATIBLE,"Button",BS_AUTORADIOBUTTON,118,15,80,10
-    CONTROL         "Use External CSS",IDC_MODE_CSS,"Button",BS_AUTORADIOBUTTON,118,58,
-                    86,10
-    CONTROL         "Use Templates",IDC_MODE_TEMPLATE,"Button",BS_AUTORADIOBUTTON,118,
-                    112,86,10
-    CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP |
-                    TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER |
-                    WS_TABSTOP,10,15,100,143
-
-    CONTROL         "Background image",IDC_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,118,26,70,10
-    CONTROL         "Scroll with text",IDC_SCROLL_BACKGROUND_IMAGE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,190,26,110,10
- 	EDITTEXT        IDC_BACKGROUND_IMAGE_FILENAME,118,36,153,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BROWSE_BACKGROUND_IMAGE,278,36,15,11
-//    LTEXT         	"CSS file",IDC_STATIC,118,63,86,10
- 	EDITTEXT        IDC_EXTERNALCSS_FILENAME,118,68,153,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BROWSE_EXTERNALCSS,278,68,15,11
-//    LTEXT         	"Template file",IDC_STATIC,118,112,86,10
- 	EDITTEXT        IDC_TEMPLATES_FILENAME,118,122,153,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BROWSE_TEMPLATES,278,122,15,11
-
-    GROUPBOX        "Template Options",IDC_SIMPLE,10,161,284,57
-    CONTROL         "Use message grouping", IDC_LOG_GROUP_MESSAGES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,20,173,125,10
-    CONTROL         "Show nicknames",IDC_LOG_SHOW_NICKNAMES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,20,183,125,10
-    CONTROL         "Show time",IDC_LOG_SHOW_TIME,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,20,193,125,10
-    CONTROL         "Show seconds",IDC_LOG_SHOW_SECONDS,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,30,203,110,10
-    CONTROL         "Show date",IDC_LOG_SHOW_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,145,173,120,10
-    CONTROL         "Use long date format",IDC_LOG_LONG_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,157,183,110,10
-    CONTROL         "Use relative timestamp", IDC_LOG_RELATIVE_DATE,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,157,193,110,10
 END
 
 /*
@@ -275,6 +193,7 @@ END
 //
 // Icon
 //
+
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.

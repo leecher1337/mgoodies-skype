@@ -203,11 +203,13 @@ TemplateMap::TemplateMap(const char *name) {
 	next = NULL;
 	filename = NULL;
 	this->name = Utils::dupString(name);
+	this->grouping = false;
+	this->rtl = false;
 }
 
 TemplateMap::~TemplateMap() {
 	if (name != NULL) {
-		delete name; 
+		delete name;
 	}
 	if (filename != NULL) {
 		delete filename;
@@ -361,7 +363,7 @@ TemplateMap* TemplateMap::loadTemplateFile(const char *id, const char *filename,
 			break;
 		}
 	}
-	static const char *rtlTemplates[] = {"HTMLStartRTL", "MessageInRTL", "MessageOutRTL"};
+	static const char *rtlTemplates[] = {"MessageInRTL", "MessageOutRTL"}; //"HTMLStartRTL",
 	tmap->rtl = true;
 	for (i=0; i<SIZEOF(rtlTemplates); i++) {
 		if (tmap->getTemplate(rtlTemplates[i])== NULL) {

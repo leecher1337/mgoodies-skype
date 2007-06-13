@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utils.h"
 #include "m_MathModule.h"
 #include "m_avatars.h"
+#include <m_icoLib.h>
 
 #define UM_CHECKSTATECHANGE (WM_USER+100)
 HANDLE hHookOptionsChanged;
@@ -41,6 +42,7 @@ static ProtocolSettings *srmmCurrentProtoItem = NULL;
 static ProtocolSettings *chatCurrentProtoItem = NULL;
 static ProtocolSettings *historyCurrentProtoItem = NULL;
 static HIMAGELIST hProtocolImageList = NULL;
+static HIMAGELIST hImageList = NULL;
 static BOOL (WINAPI *pfnEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
 
 typedef struct TabDefStruct {
@@ -52,8 +54,8 @@ typedef struct TabDefStruct {
 static TabDef tabPages[] = {
 						 {IEViewGeneralOptDlgProc, IDD_GENERAL_OPTIONS, _T("General")},
 						 {IEViewSRMMOptDlgProc, IDD_SRMM_OPTIONS, _T("Message Log")},
-						 {IEViewGroupChatsOptDlgProc, IDD_GROUPCHATS_OPTIONS, _T("Group Chats")},
-						 {IEViewHistoryOptDlgProc, IDD_HISTORY_OPTIONS, _T("History")}
+						 {IEViewGroupChatsOptDlgProc, IDD_SRMM_OPTIONS, _T("Group Chats")},
+						 {IEViewHistoryOptDlgProc, IDD_SRMM_OPTIONS, _T("History")}
 						 };
 
 #ifndef _MSC_VER
@@ -219,6 +221,32 @@ static void UpdateControlsState(HWND hwndDlg) {
 	EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_BACKGROUND_IMAGE), bChecked);
 }
 
+static void SetIcon(HWND hwnd, DWORD id, bool condition) {
+	HICON hIcon;
+	if (condition) {
+		hIcon = ImageList_GetIcon(hImageList,1,ILD_NORMAL);
+	} else {
+		hIcon = ImageList_GetIcon(hImageList,0,ILD_NORMAL);
+	}
+	hIcon = (HICON) SendDlgItemMessage(hwnd, id, STM_SETICON,(WPARAM)hIcon, 0);
+	if (hIcon != NULL) {
+		DestroyIcon(hIcon);
+	}
+}
+
+
+static void UpdateTemplateIcons(HWND hwnd, const char *path) {
+	TemplateMap *tmap = TemplateMap::loadTemplates(path, path, true);
+	if (tmap != NULL) {
+		SetIcon(hwnd, IDC_GROUPSUPPORT, tmap->isGrouping());
+		SetIcon(hwnd, IDC_RTLSUPPORT, tmap->isRTL());
+		delete tmap;
+	} else {
+		SetIcon(hwnd, IDC_GROUPSUPPORT, false);
+		SetIcon(hwnd, IDC_RTLSUPPORT, false);
+	}
+}
+
 static void UpdateSRMMProtoInfo(HWND hwndDlg, ProtocolSettings *proto) {
 	if (proto != NULL) {
 		HWND hProtoList = GetDlgItem(hwndDlg, IDC_PROTOLIST);
@@ -250,6 +278,7 @@ static void UpdateSRMMProtoInfo(HWND hwndDlg, ProtocolSettings *proto) {
 		} else {
 			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, "");
 		}
+		UpdateTemplateIcons(hwndDlg, proto->getSRMMTemplateFilenameTemp());
 		srmmCurrentProtoItem = proto;
 		UpdateControlsState(hwndDlg);
 	}
@@ -286,6 +315,7 @@ static void UpdateChatProtoInfo(HWND hwndDlg, ProtocolSettings *proto) {
 		} else {
 			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, "");
 		}
+		UpdateTemplateIcons(hwndDlg, proto->getChatTemplateFilenameTemp());
 		chatCurrentProtoItem = proto;
 		UpdateControlsState(hwndDlg);
 	}
@@ -322,6 +352,7 @@ static void UpdateHistoryProtoInfo(HWND hwndDlg, ProtocolSettings *proto) {
 		} else {
 			SetDlgItemText(hwndDlg, IDC_TEMPLATES_FILENAME, "");
 		}
+		UpdateTemplateIcons(hwndDlg, proto->getHistoryTemplateFilenameTemp());
 		historyCurrentProtoItem = proto;
 		UpdateControlsState(hwndDlg);
 	}
@@ -350,8 +381,19 @@ static void RefreshProtoIcons() {
 		if (hIcon == NULL) {
 			hIcon=(HICON)LoadSkinnedIcon(SKINICON_OTHER_MIRANDA);
 			ImageList_AddIcon(hProtocolImageList, hIcon);
+			CallService(MS_SKIN2_RELEASEICON,(WPARAM)hIcon, 0);
 		}
 	}
+}
+
+static void RefreshIcons() {
+	if (hImageList != NULL) {
+		ImageList_RemoveAll(hImageList);
+	} else {
+		hImageList = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_MASK | ILC_COLOR32, 0, 0);
+	}
+	ImageList_AddIcon(hImageList, (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_NO),IMAGE_ICON,0,0,0));
+	ImageList_AddIcon(hImageList, (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_YES),IMAGE_ICON,0,0,0));
 }
 
 static void RefreshProtoList(HWND hwndDlg, int mode, bool protoTemplates) {
@@ -447,6 +489,7 @@ static void MarkInitialized(int i) {
 	if (initialized == 0) {
 		Options::resetProtocolSettings();
 		RefreshProtoIcons();
+		RefreshIcons();
 	}
 	initialized |= i;
 }
@@ -585,8 +628,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 			case IDC_BROWSE_TEMPLATES:
 				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
-					TemplateMap *tmap = TemplateMap::loadTemplates(path, path, true);
-					delete tmap;
+					UpdateTemplateIcons(hwndDlg, path);
 					MarkChanges(2, hwndDlg);
 				}
 				break;
@@ -657,8 +699,7 @@ static BOOL CALLBACK IEViewSRMMOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam,
 						break;
 					case TVN_SELCHANGED:
 						{
-							HWND hLstView = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(hLstView, (HTREEITEM) NULL);
+							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(GetDlgItem(hwndDlg, IDC_PROTOLIST), (HTREEITEM) NULL);
 							SaveSRMMProtoSettings(hwndDlg, srmmCurrentProtoItem);
 							UpdateSRMMProtoInfo(hwndDlg, proto);
 						}
@@ -722,8 +763,7 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 			case IDC_BROWSE_TEMPLATES:
 				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
-					TemplateMap *tmap = TemplateMap::loadTemplates(path, path, true);
-					delete tmap;
+					UpdateTemplateIcons(hwndDlg, path);
 					MarkChanges(4, hwndDlg);
 				}
 				break;
@@ -794,8 +834,7 @@ static BOOL CALLBACK IEViewHistoryOptDlgProc(HWND hwndDlg, UINT msg, WPARAM wPar
 						break;
 					case TVN_SELCHANGED:
 						{
-							HWND hLstView = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(hLstView, (HTREEITEM) NULL);
+							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(GetDlgItem(hwndDlg, IDC_PROTOLIST), (HTREEITEM) NULL);
 							SaveHistoryProtoSettings(hwndDlg, historyCurrentProtoItem);
 							UpdateHistoryProtoInfo(hwndDlg, proto);
 						}
@@ -860,8 +899,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 			case IDC_BROWSE_TEMPLATES:
 				if (BrowseFile(hwndDlg, "Template (*.ivt)\0*.ivt\0All Files\0*.*\0\0", "ivt", path, sizeof(path))) {
 					SetDlgItemTextA(hwndDlg, IDC_TEMPLATES_FILENAME, path);
-					TemplateMap *tmap = TemplateMap::loadTemplates(path, path, true);
-					delete tmap;
+					UpdateTemplateIcons(hwndDlg, path);
 					MarkChanges(8, hwndDlg);
 				}
 				break;
@@ -932,8 +970,7 @@ static BOOL CALLBACK IEViewGroupChatsOptDlgProc(HWND hwndDlg, UINT msg, WPARAM w
 						break;
 					case TVN_SELCHANGED:
 						{
-							HWND hLstView = GetDlgItem(hwndDlg, IDC_PROTOLIST);
-							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(hLstView, (HTREEITEM) NULL);
+							ProtocolSettings *proto = (ProtocolSettings *)GetItemParam(GetDlgItem(hwndDlg, IDC_PROTOLIST), (HTREEITEM) NULL);
 							SaveChatProtoSettings(hwndDlg, chatCurrentProtoItem);
 							UpdateChatProtoInfo(hwndDlg, proto);
 						}
@@ -1632,6 +1669,12 @@ void Options::uninit() {
 	for ( p = protocolList; p != NULL; p = p1 ) {
 		p1 = p->getNext();
 		delete p;
+	}
+	if (hImageList != NULL) {
+		ImageList_Destroy(hImageList);
+	}
+	if (hProtocolImageList != NULL) {
+		ImageList_Destroy(hProtocolImageList);
 	}
 }
 
