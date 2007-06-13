@@ -30,6 +30,7 @@ The following templates may be defined:
 <!--hMessageOutGroupInner-->
 <!--hMessageOutGroupEnd-->
 
+<!--HTMLStartRTL-->
 <!--MessageInRTL-->
 <!--hMessageInRTL-->
 <!--MessageOutRTL-->
