@@ -66,6 +66,14 @@ The following variables are available in all templates EXCEPT HTMLStart:
 %nameIn% - contact's name
 %nameOut% - users's name
 %proto% - protocol name
+%uin% - contact's ID or user's ID
+%uinIn% - contact's ID
+%uinOut% - user's ID
+%nick% - contact's nick name or user's nick name
+%nickIn% - contact's nick name
+%nickOut% - user's nick name
+%statusMsg% - contact's status message
+%fileDesc% - file description
 
 The following variables are available in HTMLStart:
 %base%  - base URL (this variable should be used in <base> tag)
@@ -73,5 +81,12 @@ The following variables are available in HTMLStart:
 %avatarOut% - link to user's picture
 %nameIn% - contact's name
 %nameOut% - users's name
+%nickIn% - contact's nick name
+%nickOut% - user's nick name
+%uinIn% - contact's ID
+%uinOut% - user's ID
 %proto% - protocol name
+
+All tokens are also available in Javascript friendly (escaped) form. 
+In that case please use the follwoing token names: %\base%, %\time%, %\name% etc.
 
