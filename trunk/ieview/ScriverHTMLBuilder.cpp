@@ -122,21 +122,20 @@ void ScriverHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour)
     }
 }
 
-char *ScriverHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int groupStart)
-{
+char *ScriverHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int mode) {
     static char szResult[512];
     char str[80];
-
+	char format[20];
     DBTIMETOSTRING dbtts;
+
+    szResult[0] = '\0';
+    format[0] = '\0';
 
     dbtts.cbDest = 70;;
     dbtts.szDest = str;
+	dbtts.szFormat = format;
 
-    if(!groupStart || !(dwFlags & SMF_LOG_SHOWDATE)) {
-        dbtts.szFormat = (dwFlags & SMF_LOG_SHOWSECONDS) ? (char *)"s" : (char *)"t";
-        szResult[0] = '\0';
-    }
-    else {
+    if ((mode == 0 || mode == 1) && (dwFlags & SMF_LOG_SHOWDATE)) {
 		struct tm tm_now, tm_today;
 		time_t now = time(NULL);
 		time_t today;
@@ -146,27 +145,36 @@ char *ScriverHTMLBuilder::timestampToString(DWORD dwFlags, time_t check, int gro
         today = mktime(&tm_today);
 
         if(dwFlags & SMF_LOG_USERELATIVEDATE && check >= today) {
-            dbtts.szFormat = (dwFlags & SMF_LOG_SHOWSECONDS) ? (char *)"s" : (char *)"t";
             strcpy(szResult, Translate("Today"));
-	        strcat(szResult, ", ");
-        }
-        else if(dwFlags & SMF_LOG_USERELATIVEDATE && check > (today - 86400)) {
-            dbtts.szFormat = (dwFlags & SMF_LOG_SHOWSECONDS) ? (char *)"s" : (char *)"t";
+            if (mode == 0) {
+				strcat(szResult, ",");
+            }
+        } else if(dwFlags & SMF_LOG_USERELATIVEDATE && check > (today - 86400)) {
             strcpy(szResult, Translate("Yesterday"));
-	        strcat(szResult, ", ");
-        }
-        else {
+            if (mode == 0) {
+				strcat(szResult, ",");
+            }
+        } else {
             if(dwFlags & SMF_LOG_USELONGDATE)
-                dbtts.szFormat = (dwFlags & SMF_LOG_SHOWSECONDS) ? (char *)"D s" : (char *)"D t";
+				strcpy(format, "D");
             else
-                dbtts.szFormat = (dwFlags & SMF_LOG_SHOWSECONDS) ? (char *)"d s" : (char *)"d t";
-            szResult[0] = '\0';
+				strcpy(format, "d");
         }
     }
-	CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
-    strncat(szResult, str, 500);
+    if (mode == 0 || mode == 2) {
+    	if (mode == 0 && (dwFlags & SMF_LOG_SHOWDATE)) {
+			strcat(format, " ");
+    	}
+		strcat(format, (dwFlags & SMF_LOG_SHOWSECONDS) ? "s" : "t");
+    }
+    if (format[0] != '\0') {
+//		CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, check, (LPARAM) & dbtts);
+		CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
+		//_tcsncat(szResult, str, 500);
+		strncat(szResult, str, 500);
+    }
 	Utils::UTF8Encode(szResult, szResult, 500);
-    return szResult;
+	return szResult;
 }
 
 
@@ -291,19 +299,19 @@ void ScriverHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 			  && eventData->iType == IEED_EVENT_MESSAGE && HIWORD(getLastEventType()) == IEED_EVENT_MESSAGE
 			  && (isSameDate(eventData->time, getLastEventTime()))
 			  && (((eventData->time < startedTime) == (getLastEventTime() < startedTime)) || !(eventData->dwFlags & IEEDF_READ))) {
-		        isGroupBreak = FALSE;
-		    }
+				isGroupBreak = FALSE;
+			}
 			char *szName = NULL;
 			char *szText = NULL;
 			if (eventData->dwFlags & IEEDF_UNICODE_NICK) {
 				szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNickW, ENF_NAMESMILEYS);
-   			} else {
-                szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNick, ENF_NAMESMILEYS);
+			} else {
+				szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNick, ENF_NAMESMILEYS);
 			}
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
 				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
-   			} else {
-                szText = encodeUTF8(event->hContact, szRealProto, eventData->pszText, event->codepage, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
+			} else {
+				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszText, event->codepage, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
 			}
 			/* Scriver-specific formatting */
 			if ((dwFlags & SMF_LOG_DRAWLINES) && isGroupBreak && getLastEventType()!=-1) {
@@ -334,14 +342,27 @@ void ScriverHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 				Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"file://%s/plugins/ieview/%s\"/> ",
 								workingDir, iconFile);
 			}
+
 			if (dwFlags & SMF_LOG_SHOWTIME &&
 				(eventData->iType != IEED_EVENT_MESSAGE ||
-			    !(dwFlags & SMF_LOG_GROUPMESSAGES) ||
-				(isGroupBreak && !(dwFlags & SMF_LOG_MARKFOLLOWUPS)) || (!isGroupBreak && (dwFlags & SMF_LOG_MARKFOLLOWUPS))))
-				{
-				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>",
+				(dwFlags & SMF_LOG_MARKFOLLOWUPS || isGroupBreak || !(dwFlags & SMF_LOG_GROUPMESSAGES)))) {
+				char* timestampString = NULL;
+				if (dwFlags & SMF_LOG_GROUPMESSAGES) {
+					if (isGroupBreak) {
+						if  (!(dwFlags & SMF_LOG_MARKFOLLOWUPS)) {
+							timestampString = timestampToString(dwFlags, eventData->time, 0);
+						} else if (dwFlags & SMF_LOG_SHOWDATE)
+							timestampString = timestampToString(dwFlags, eventData->time, 1);
+					} else if (dwFlags & SMF_LOG_MARKFOLLOWUPS) {
+						timestampString = timestampToString(dwFlags, eventData->time, 2);
+					}
+				} else
+					timestampString = timestampToString(dwFlags, eventData->time, 0);
+				if (timestampString != NULL) {
+					Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>",
 							isSent ? "timeOut" : "timeIn",
-							timestampToString(dwFlags, eventData->time, isGroupBreak));
+							timestampString);
+				}
 				if (eventData->iType != IEED_EVENT_MESSAGE) {
 					Utils::appendText(&output, &outputSize, "<span class=\"%s\">: </span>",
 							isSent ? "colonOut" : "colonIn");
@@ -372,7 +393,7 @@ void ScriverHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 				&& eventData->iType == IEED_EVENT_MESSAGE && isGroupBreak) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s</span>",
 							isSent ? "timeOut" : "timeIn",
-							timestampToString(dwFlags, eventData->time, isGroupBreak));
+							timestampToString(dwFlags, eventData->time, 2));
 				showColon = true;
 			}
 			if (showColon && eventData->iType == IEED_EVENT_MESSAGE) {
