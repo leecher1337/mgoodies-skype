@@ -188,8 +188,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0, 6, 0, 8
- PRODUCTVERSION 0, 6, 0, 8
+ FILEVERSION 0, 6, 0, 9
+ PRODUCTVERSION 0, 6, 0, 9
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -206,20 +206,19 @@ BEGIN
         BEGIN
 #ifdef SECUREDB
             VALUE "FileDescription", "Miranda Virtualizable Secure db3x"
-            VALUE "FileVersion", "0,6,0,8"
             VALUE "InternalName", "db3xVS"
             VALUE "LegalCopyright", "Copyright (C) 2006; Miranda team, Piotr Pawluczuk, YB, Pescuma"
             VALUE "OriginalFilename", "dbx_3xSV.dll"
             VALUE "ProductName", " db3xVS"
 #else
             VALUE "FileDescription", "Miranda Virtualizable db3x"
-            VALUE "FileVersion", "0,6,0,8"
             VALUE "InternalName", "db3xV"
             VALUE "LegalCopyright", "Copyright (C) 2006; Miranda team, YB, Pescuma"
             VALUE "OriginalFilename", "dbx_3xV.dll"
             VALUE "ProductName", " db3xV"
 #endif
-            VALUE "ProductVersion", "0,6,0,8"
+            VALUE "FileVersion", "0,6,0,9"
+            VALUE "ProductVersion", "0,6,0,9"
         END
     END
     BLOCK "VarFileInfo"
