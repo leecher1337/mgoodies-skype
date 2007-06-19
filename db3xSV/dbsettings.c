@@ -105,6 +105,7 @@ static char* InsertCachedSetting( const char* szName, size_t cbNameLen, int inde
 
 static char* GetCachedSetting(const char *szModuleName,const char *szSettingName,int settingNameLen)
 {
+	static char *lastsetting = NULL;
 	int moduleNameLen = strlen(szModuleName),index;
 	char *szFullName = (char*)alloca(moduleNameLen+settingNameLen+3);
 
@@ -112,10 +113,14 @@ static char* GetCachedSetting(const char *szModuleName,const char *szSettingName
 	szFullName[moduleNameLen+1]='/';
 	strcpy(szFullName+moduleNameLen+2,szSettingName);
 
-	if ( li.List_GetIndex(&lSettings, szFullName, &index))
-		return((char*)lSettings.items[index] + 1);
+	if (lastsetting && strcmp(szFullName+1,lastsetting) == 0)
+		return lastsetting;
 
-	return InsertCachedSetting( szFullName, moduleNameLen+settingNameLen+3, index )+1;
+	if ( li.List_GetIndex(&lSettings, szFullName, &index))
+		lastsetting = (char*)lSettings.items[index] + 1;
+	else
+		lastsetting = InsertCachedSetting( szFullName, moduleNameLen+settingNameLen+3, index )+1;
+	return lastsetting;
 }
 
 static void SetCachedVariant( DBVARIANT* s /* new */, DBVARIANT* d /* cached */ )
@@ -445,9 +450,17 @@ static int GetContactSetting(WPARAM wParam,LPARAM lParam)
 		return 1;
 
 	if ( dgs->pValue->type == DBVT_UTF8 ) {
-		mir_utf8decode( dgs->pValue->pszVal, NULL );
-		dgs->pValue->type = DBVT_ASCIIZ;
-	}
+		WCHAR* tmp;
+		char* val = mir_utf8decode( dgs->pValue->pszVal, &tmp );
+		if ( val == NULL ) {
+			dgs->pValue->type = DBVT_WCHAR;
+			mir_free( dgs->pValue->pszVal );
+			dgs->pValue->pwszVal = tmp;
+		}
+		else {
+			dgs->pValue->type = DBVT_ASCIIZ;
+			mir_free( tmp );
+	}	}
 
 	return 0;
 }
