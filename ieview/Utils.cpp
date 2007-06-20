@@ -263,7 +263,7 @@ int Utils::detectURL(const wchar_t *text) {
 	if (i > 0 && text[i]==':' && text[i+1]=='/' && text[i+2]=='/') {
 		i += countNoWhitespace(text+i);
 		for (; i > 0; i --) {
-			if ((text[i-1] >= '0' && text[i-1]<='9') || (text[i-1] >= 'A' && text[i-1]<='Z') || (text[i-1] >= 'a' && text[i-1]<='z')) {
+			if ((text[i-1] >= '0' && text[i-1]<='9') || (text[i-1] >= 'A' && text[i-1]<='Z') || (text[i-1] >= 'a' && text[i-1]<='z') || text[i-1]=='/') {
 				break;
 			}
 		}

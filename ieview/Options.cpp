@@ -221,12 +221,12 @@ static void UpdateControlsState(HWND hwndDlg) {
 	EnableWindow(GetDlgItem(hwndDlg, IDC_BROWSE_BACKGROUND_IMAGE), bChecked);
 }
 
-static void SetIcon(HWND hwnd, DWORD id, bool condition) {
+static void SetIcon(HWND hwnd, DWORD id, int index, bool condition) {
 	HICON hIcon;
 	if (condition) {
-		hIcon = ImageList_GetIcon(hImageList,1,ILD_NORMAL);
+		hIcon = ImageList_GetIcon(hImageList,index + 1,ILD_NORMAL);
 	} else {
-		hIcon = ImageList_GetIcon(hImageList,0,ILD_NORMAL);
+		hIcon = ImageList_GetIcon(hImageList,index + 0,ILD_NORMAL);
 	}
 	hIcon = (HICON) SendDlgItemMessage(hwnd, id, STM_SETICON,(WPARAM)hIcon, 0);
 	if (hIcon != NULL) {
@@ -238,12 +238,12 @@ static void SetIcon(HWND hwnd, DWORD id, bool condition) {
 static void UpdateTemplateIcons(HWND hwnd, const char *path) {
 	TemplateMap *tmap = TemplateMap::loadTemplates(path, path, true);
 	if (tmap != NULL) {
-		SetIcon(hwnd, IDC_GROUPSUPPORT, tmap->isGrouping());
-		SetIcon(hwnd, IDC_RTLSUPPORT, tmap->isRTL());
+		SetIcon(hwnd, IDC_GROUPSUPPORT, 0, tmap->isGrouping());
+		SetIcon(hwnd, IDC_RTLSUPPORT, 2, tmap->isRTL());
 		delete tmap;
 	} else {
-		SetIcon(hwnd, IDC_GROUPSUPPORT, false);
-		SetIcon(hwnd, IDC_RTLSUPPORT, false);
+		SetIcon(hwnd, IDC_GROUPSUPPORT, 0, false);
+		SetIcon(hwnd, IDC_RTLSUPPORT, 2, false);
 	}
 }
 
@@ -392,8 +392,10 @@ static void RefreshIcons() {
 	} else {
 		hImageList = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_MASK | ILC_COLOR32, 0, 0);
 	}
-	ImageList_AddIcon(hImageList, (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_NO),IMAGE_ICON,0,0,0));
-	ImageList_AddIcon(hImageList, (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_YES),IMAGE_ICON,0,0,0));
+	ImageList_AddIcon(hImageList, (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_GROUP_OFF),IMAGE_ICON,0,0,0));
+	ImageList_AddIcon(hImageList, (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_GROUP_ON),IMAGE_ICON,0,0,0));
+	ImageList_AddIcon(hImageList, (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_RTL_OFF),IMAGE_ICON,0,0,0));
+	ImageList_AddIcon(hImageList, (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_RTL_ON),IMAGE_ICON,0,0,0));
 }
 
 static void RefreshProtoList(HWND hwndDlg, int mode, bool protoTemplates) {
