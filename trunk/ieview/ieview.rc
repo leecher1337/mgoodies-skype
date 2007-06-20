@@ -52,9 +52,11 @@ BEGIN
 	END
 END
 
-IDI_YES		ICON    DISCARDABLE     "icos/yes.ico"
-IDI_NO		ICON    DISCARDABLE     "icos/no.ico"
+IDI_RTL_ON		ICON    DISCARDABLE     "icos/rtl_on.ico"
+IDI_RTL_OFF		ICON    DISCARDABLE     "icos/rtl_off.ico"
 
+IDI_GROUP_ON		ICON    DISCARDABLE     "icos/group_on.ico"
+IDI_GROUP_OFF		ICON    DISCARDABLE     "icos/group_off.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -111,10 +113,8 @@ BEGIN
  	EDITTEXT        IDC_TEMPLATES_FILENAME,118,122,153,12,ES_AUTOHSCROLL
 	PUSHBUTTON      "...",IDC_BROWSE_TEMPLATES,278,122,15,11
 
-	ICON			IDI_NO, IDC_GROUPSUPPORT,118,135,11,11
-	LTEXT         	"Grouping",IDC_STATIC,130,136,86,10
-	ICON			IDI_NO, IDC_RTLSUPPORT,118,146,11,11
-	LTEXT         	"RTL",IDC_STATIC,130,147,86,10
+	ICON			IDI_NO, IDC_GROUPSUPPORT,245,135,11,11
+	ICON			IDI_NO, IDC_RTLSUPPORT,260,135,11,11
 
     GROUPBOX        "Template Options",IDC_SIMPLE,10,161,284,57
     CONTROL         "Use message grouping", IDC_LOG_GROUP_MESSAGES,"Button",BS_AUTOCHECKBOX |
