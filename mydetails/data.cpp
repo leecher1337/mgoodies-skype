@@ -659,7 +659,7 @@ Protocol * ProtocolArray::Get(const char *name)
 
 bool ProtocolArray::CanSetStatusMsgPerProtocol()
 {
-	return // TODO: ServiceExists(MS_ERSATZ_ENABLED) || 
+	return ServiceExists(MS_ERSATZ_ENABLED) || 
 		ServiceExists(MS_NAS_INVOKESTATUSWINDOW) || ServiceExists(MS_SA_CHANGESTATUSMSG);
 }
 

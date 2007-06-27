@@ -1986,7 +1986,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 					InsertMenuItem(submenu, 0, TRUE, &mii);
 				}
-				else
+				
 				{
 					// Add this to menu
 					mir_snprintf(tmp, sizeof(tmp), Translate("Set My Status Message for %s..."), 
@@ -1998,7 +1998,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					mii.fType = MFT_STRING;
 					mii.dwTypeData = tmp;
 					mii.cch = strlen(tmp);
-					mii.wID = 1;
+					mii.wID = 2;
 
 					if (proto->status == ID_STATUS_OFFLINE)
 					{
@@ -2019,6 +2019,11 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					case 1:
 					{
 						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, 0, (LPARAM) proto->name);
+						break;
+					}
+					case 2:
+					{
+						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, (WPARAM) proto->status, 0);
 						break;
 					}
 					case ID_STATUSMESSAGEPOPUP_SETMYSTATUSMESSAGE:
@@ -2070,11 +2075,31 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				mii.fState = proto->ListeningToEnabled() ? MFS_CHECKED : 0;
 				mii.dwTypeData = tmp;
 				mii.cch = strlen(tmp);
-				mii.wID = 4;
+				mii.wID = 5;
 
 				if (!proto->CanSetListeningTo())
 				{
 					mii.fState |= MFS_DISABLED;
+				}
+
+				InsertMenuItem(submenu, 0, TRUE, &mii);
+
+				// Add this to menu
+				mir_snprintf(tmp, sizeof(tmp), Translate("Set My Status Message for %s..."), 
+							 CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, proto->status, 0));
+
+				ZeroMemory(&mii, sizeof(mii));
+				mii.cbSize = sizeof(mii);
+				mii.fMask = MIIM_ID | MIIM_TYPE;
+				mii.fType = MFT_STRING;
+				mii.dwTypeData = tmp;
+				mii.cch = strlen(tmp);
+				mii.wID = 4;
+
+				if (proto->status == ID_STATUS_OFFLINE)
+				{
+					mii.fMask |= MIIM_STATE;
+					mii.fState = MFS_DISABLED;
 				}
 
 				InsertMenuItem(submenu, 0, TRUE, &mii);
@@ -2093,28 +2118,6 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					mii.wID = 3;
 
 					if (!proto->CanSetStatusMsg())
-					{
-						mii.fMask |= MIIM_STATE;
-						mii.fState = MFS_DISABLED;
-					}
-
-					InsertMenuItem(submenu, 0, TRUE, &mii);
-				}
-				else
-				{
-					// Add this to menu
-					mir_snprintf(tmp, sizeof(tmp), Translate("Set My Status Message for %s..."), 
-								 CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, proto->status, 0));
-
-					ZeroMemory(&mii, sizeof(mii));
-					mii.cbSize = sizeof(mii);
-					mii.fMask = MIIM_ID | MIIM_TYPE;
-					mii.fType = MFT_STRING;
-					mii.dwTypeData = tmp;
-					mii.cch = strlen(tmp);
-					mii.wID = 3;
-
-					if (proto->status == ID_STATUS_OFFLINE)
 					{
 						mii.fMask |= MIIM_STATE;
 						mii.fState = MFS_DISABLED;
@@ -2203,12 +2206,17 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, 0, (LPARAM) proto->name);
 						break;
 					}
+					case 4:
+					{
+						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, (WPARAM) proto->status, 0);
+						break;
+					}
 					case ID_STATUSMESSAGEPOPUP_SETMYSTATUSMESSAGE:
 					{
 						CallService(MS_MYDETAILS_SETMYSTATUSMESSAGEUI, 0, 0);
 						break;
 					}
-					case 4:
+					case 5:
 					{
 						CallService(MS_LISTENINGTO_ENABLE, (LPARAM) proto->name, !proto->ListeningToEnabled());
 						break;

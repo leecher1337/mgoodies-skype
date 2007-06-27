@@ -57,7 +57,7 @@ extern "C"
 #include <m_statusplugins.h>
 #include <m_ersatz.h>
 #include "../modernb/CLUIFrames/m_cluiframes.h"
-#include "../../protocols/IcqOscarJ/m_icq.h"
+#include <m_icq.h>
 #include "m_simpleaway.h"
 
 #include <richedit.h>
