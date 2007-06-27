@@ -31,7 +31,7 @@ PLUGINLINK *pluginLink;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,1,4),
+	PLUGIN_MAKE_VERSION(0,0,1,5),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -617,6 +617,11 @@ static LRESULT CALLBACK StatusMsgEditSubclassProc(HWND hwnd, UINT msg, WPARAM wP
     return CallWindowProc((WNDPROC) GetWindowLong(hwnd, GWL_USERDATA), hwnd, msg, wParam, lParam);
 }
 
+struct SetStatusMessageData {
+	int status;
+	int proto_num;
+};
+
 static BOOL CALLBACK DlgProcSetStatusMessage(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch ( msg )
@@ -637,20 +642,40 @@ static BOOL CALLBACK DlgProcSetStatusMessage(HWND hwndDlg, UINT msg, WPARAM wPar
 
 		case WMU_SETDATA:
 		{
-			int status = (int)wParam;
+			SetStatusMessageData *data = (SetStatusMessageData *) malloc(sizeof(SetStatusMessageData));
+			data->status = (int)wParam;
+			data->proto_num = (int)lParam;
 
-			SetWindowLong(hwndDlg, GWL_USERDATA, status);
+			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) data);
 
-			if (status != 0)
+			if (data->proto_num >= 0)
 			{
-				SendMessage(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadSkinnedIcon(Status2SkinIcon(status)));
+				Protocol *proto = protocols->Get(data->proto_num);
+
+				HICON hIcon = (HICON)CallProtoService(proto->name, PS_LOADICON, PLI_PROTOCOL, 0);
+				if (hIcon != NULL)
+				{
+					SendMessage(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+					DestroyIcon(hIcon);
+				}
 
 				char title[256];
 				mir_snprintf(title, sizeof(title), Translate("Set My Status Message for %s"), 
-					CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, status, 0));
+					proto->description);
 				SendMessage(hwndDlg, WM_SETTEXT, 0, (LPARAM)title);
 
-				SetDlgItemText(hwndDlg, IDC_STATUSMESSAGE, protocols->GetDefaultStatusMsg(status));
+				SetDlgItemText(hwndDlg, IDC_STATUSMESSAGE, proto->GetStatusMsg());
+			}
+			else if (data->status != 0)
+			{
+				SendMessage(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadSkinnedIcon(Status2SkinIcon(data->status)));
+
+				char title[256];
+				mir_snprintf(title, sizeof(title), Translate("Set My Status Message for %s"), 
+					CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, data->status, 0));
+				SendMessage(hwndDlg, WM_SETTEXT, 0, (LPARAM)title);
+
+				SetDlgItemText(hwndDlg, IDC_STATUSMESSAGE, protocols->GetDefaultStatusMsg(data->status));
 			}
 			else
 			{
@@ -669,12 +694,14 @@ static BOOL CALLBACK DlgProcSetStatusMessage(HWND hwndDlg, UINT msg, WPARAM wPar
 					char tmp[MS_MYDETAILS_GETMYSTATUSMESSAGE_BUFFER_SIZE];
 					GetDlgItemText(hwndDlg, IDC_STATUSMESSAGE, tmp, sizeof(tmp));
 
-					int status = GetWindowLong(hwndDlg, GWL_USERDATA);
+					SetStatusMessageData *data = (SetStatusMessageData *) GetWindowLong(hwndDlg, GWL_USERDATA);
 
-					if (status == 0)
+					if (data->proto_num >= 0)
+						protocols->Get(data->proto_num)->SetStatusMsg(tmp);
+					else if (data->status == 0)
 						protocols->SetStatusMsgs(tmp);
 					else
-						protocols->SetStatusMsgs(status, tmp);
+						protocols->SetStatusMsgs(data->status, tmp);
 
 					DestroyWindow(hwndDlg);
 					break;
@@ -694,6 +721,7 @@ static BOOL CALLBACK DlgProcSetStatusMessage(HWND hwndDlg, UINT msg, WPARAM wPar
 		case WM_DESTROY:
 			SetWindowLong(GetDlgItem(hwndDlg, IDC_STATUSMESSAGE), GWL_WNDPROC, 
 						  GetWindowLong(GetDlgItem(hwndDlg, IDC_STATUSMESSAGE), GWL_USERDATA));
+			free((SetStatusMessageData *) GetWindowLong(hwndDlg, GWL_USERDATA));
 			InterlockedExchange(&status_msg_dialog_open, 0);
 			break;
 	}
@@ -703,6 +731,7 @@ static BOOL CALLBACK DlgProcSetStatusMessage(HWND hwndDlg, UINT msg, WPARAM wPar
 
 static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 {
+	int status = (int)wParam;
 	char * proto_name = (char *)lParam;
 	int proto_num = -1;
 	Protocol *proto = NULL;
@@ -746,7 +775,7 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 			ZeroMemory(&pi, sizeof(pi));
 			pi.cbSize = sizeof(NAS_PROTOINFO);
 			pi.szProto = proto->name;
-			pi.status = 0;
+			pi.status = status;
 			pi.szMsg = NULL;
 
 			if (ServiceExists(MS_NAS_GETSTATE))
@@ -818,13 +847,17 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 	}
 	else if (ServiceExists(MS_SA_CHANGESTATUSMSG))
 	{
-		if (proto == NULL)
+		if (proto == NULL && status == 0)
 		{
 			CallService(MS_SA_CHANGESTATUSMSG, protocols->GetGlobalStatus(), NULL);
 		}
-		else
+		else if (status == 0)
 		{
 			CallService(MS_SA_CHANGESTATUSMSG, proto->status, (LPARAM) proto_name);
+		}
+		else
+		{
+			CallService(MS_SA_CHANGESTATUSMSG, status, (LPARAM) proto_name);
 		}
 
 		return 0;
@@ -837,7 +870,7 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 
 			hwndSetStatusMsg = CreateDialog(hInst, MAKEINTRESOURCE( IDD_SETSTATUSMESSAGE ), NULL, DlgProcSetStatusMessage );
 			
-			SendMessage(hwndSetStatusMsg, WMU_SETDATA, proto ? proto->status : 0, 0);
+			SendMessage(hwndSetStatusMsg, WMU_SETDATA, status, proto_num);
 		}
 
 		SetForegroundWindow( hwndSetStatusMsg );

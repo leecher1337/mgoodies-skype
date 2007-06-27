@@ -8,7 +8,7 @@ What it does:
 
 Some comments:
 1. SimpleAway does not show a dialog to set a message for all protocols. Someones it does not show the dialog (I requested it in the thread http://forums.miranda-im.org/showthread.php?p=47157).
-2. For core away system, only some protocols works (probabily the same as SimpleAway). But for the ones that it works, the message in the frame is the old message. I know, it suck... But if you use ersatz plugin this problem doesn't happen.
+2. For core away system, only some protocols works (probabily the same as SimpleAway). But for the ones that it works, the message in the frame is the old message. I know, it suck... But if you use ersatz plugin this problem doesn't happen: http://pescuma.mirandaim.ru/miranda/ersatz.zip
 3. To allow setting avatar, a protocol must implement the services in http://forums.miranda-im.org/showthread.php?t=5583 (AFAIK now ICQ, Yahoo and MSN does)
 
 Todo:

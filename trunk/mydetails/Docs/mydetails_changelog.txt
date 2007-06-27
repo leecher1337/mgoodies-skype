@@ -1,6 +1,9 @@
-My Details 0.0.1.4
+My Details
 
 Changelog:
+
+. 0.0.1.5:
+  + Added option to set status message per protocol
 
 . 0.0.1.4
   * Fixed crash on protocol connection
