@@ -28,10 +28,12 @@ extern "C"
 }
 
 struct MM_INTERFACE mmi;
+struct UTF8_INTERFACE utfi;
 
 void init_mir_malloc()
 {
 	mir_getMMI(&mmi);
+	mir_getUTFI(&utfi);
 }
 
 
