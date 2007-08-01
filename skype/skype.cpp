@@ -127,7 +127,7 @@ int FreeVSApi()
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 	"Skype protocol",
-	PLUGIN_MAKE_VERSION(0,0,0,40),
+	PLUGIN_MAKE_VERSION(0,0,0,41),
 	"Support for Skype network",
 	"leecher - tweety",
 	"leecher@dose.0wnz.at - tweety@user.berlios.de",

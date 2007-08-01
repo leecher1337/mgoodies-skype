@@ -481,6 +481,20 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			EnableWindow(GetDlgItem(hwndDlg, IDC_COMMANDLINE), SendMessage(GetDlgItem(hwndDlg, IDC_CUSTOMCOMMAND), BM_GETCHECK,0,0));
 			EnableWindow(GetDlgItem(hwndDlg, IDC_DATAPATH), SendMessage(GetDlgItem(hwndDlg, IDC_DATAPATHO), BM_GETCHECK,0,0));
 
+            // LoginUserName
+            if(!DBGetContactSettingWString(NULL,pszSkypeProtoName,"LoginUserName",&dbv)) 
+			{
+				SetWindowTextW(GetDlgItem(hwndDlg, IDC_USERNAME), dbv.pwszVal);
+				DBFreeVariant(&dbv);
+			}
+
+            // LoginPassword
+            if(!DBGetContactSettingWString(NULL,pszSkypeProtoName,"LoginPassword",&dbv)) 
+			{
+				SetWindowTextW(GetDlgItem(hwndDlg, IDC_PASSWORD), dbv.pwszVal);
+				DBFreeVariant(&dbv);
+			}
+
 			SetDlgItemInt (hwndDlg, IDC_CONNATTEMPTS, DBGetContactSettingWord(NULL, pszSkypeProtoName, "ConnectionAttempts", 10), FALSE);
 			SendMessage(hwndDlg, WM_COMMAND, IDC_STARTSKYPE, 0);
 			initDlg=FALSE;
@@ -507,6 +521,19 @@ int CALLBACK OptionsDefaultDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 					DBWriteContactSettingString(NULL, pszSkypeProtoName, "CommandLine", text);
 					GetDlgItemText(hwndDlg,IDC_DATAPATH,text,sizeof(text));
 					DBWriteContactSettingString(NULL, pszSkypeProtoName, "datapath", text);
+
+                    // Wide text
+                    static const unsigned wtextLength = 500;
+                    WCHAR wtext[wtextLength];
+                    
+                    // LoginUserName
+                    GetDlgItemTextW(hwndDlg,IDC_USERNAME,wtext,wtextLength);
+					DBWriteContactSettingWString(NULL, pszSkypeProtoName, "LoginUserName", wtext);
+
+                    // LoginPassword
+                    GetDlgItemTextW(hwndDlg,IDC_PASSWORD,wtext,wtextLength);
+					DBWriteContactSettingWString(NULL, pszSkypeProtoName, "LoginPassword", wtext);
+
 					return TRUE;
 			}			
 			break; 

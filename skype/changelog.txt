@@ -13,6 +13,8 @@ CODE
 
 HISTORY
 -------
+0.0.0.41 - + Added option to enter user name and password. (Patch by NN)
+
 0.0.0.40 - + Support for new core service: get avatar caps
 		   + Option to show/hide default avatar for contacts
 		   + Hide Skype Avatar page in user details if >= #27
