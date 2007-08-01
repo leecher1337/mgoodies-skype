@@ -72,6 +72,10 @@ BEGIN
                     IDC_DATAPATHO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,36,
                     81,268,11
     EDITTEXT        IDC_DATAPATH,47,95,260,12,ES_AUTOHSCROLL
+    LTEXT           "User Name:",IDC_STATIC,11,210,38,8
+    LTEXT           "Password:",IDC_STATIC,149,211,34,8
+    EDITTEXT        IDC_USERNAME,61,209,70,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PASSWORD,190,209,67,12,ES_PASSWORD | ES_AUTOHSCROLL
 END
 
 IDD_DIAL DIALOG DISCARDABLE  0, 0, 146, 52
@@ -142,7 +146,7 @@ END
 IDD_SETDETAILS DIALOGEX 0, 0, 216, 151
 STYLE DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     LTEXT           "Name :",IDC_STATIC,7,6,61,9
     EDITTEXT        IDC_FULLNAME,73,4,141,12,ES_AUTOHSCROLL
@@ -169,7 +173,7 @@ END
 IDD_OPT_ADVANCED DIALOGEX 0, 0, 310, 228
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "Enable Skype Menu options (currently: Find/Add user)",
                     IDC_ENABLEMENU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
@@ -251,7 +255,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+GUIDELINES DESIGNINFO MOVEABLE PURE 
 BEGIN
     IDD_SETAVATAR, DIALOG
     BEGIN
@@ -340,8 +344,8 @@ IDI_INVITE              ICON    DISCARDABLE     "res\\Invite.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,39
- PRODUCTVERSION 0,0,0,39
+ FILEVERSION 0,0,0,41
+ PRODUCTVERSION 0,0,0,41
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -359,14 +363,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Miranda IM community\0"
             VALUE "FileDescription", "Skype\0"
-            VALUE "FileVersion", "0, 0, 0, 39\0"
+            VALUE "FileVersion", "0, 0, 0, 41\0"
             VALUE "InternalName", "Skype\0"
             VALUE "LegalCopyright", "Copyright © 2007\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Skype.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Skype_protocol for Miranda IM\0"
-            VALUE "ProductVersion", "0, 0, 0, 39\0"
+            VALUE "ProductVersion", "0, 0, 0, 41\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -424,18 +428,18 @@ IDI_PHONE               ICON    DISCARDABLE     "res\\phone.ico"
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE MOVEABLE PURE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE MOVEABLE PURE 
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE MOVEABLE PURE 
 BEGIN
     "\r\n"
     "\0"
@@ -449,7 +453,7 @@ END
 // Bitmap
 //
 
-IDB_CALL                BITMAP  DISCARDABLE     "res\\call.bmp"
+IDB_CALL                BITMAP  MOVEABLE PURE   "res\\call.bmp"
 #endif    // German (Austria) resources
 /////////////////////////////////////////////////////////////////////////////
 

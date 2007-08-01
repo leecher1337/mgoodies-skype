@@ -56,3 +56,4 @@ int SkypeChatCreate(WPARAM wParam, LPARAM lParam);
 int SkypeSetProfile(char *szProperty, char *szValue);
 char *SkypeGet(char *szWhat, char *szWho, char *szProperty);
 char *SkypeGetProfile(char *szProperty);
+void SetUserNamePassword();

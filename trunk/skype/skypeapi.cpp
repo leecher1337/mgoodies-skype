@@ -90,6 +90,138 @@ void rcvThread(char *dummy) {
 	}
 }
 
+/**
+ * Purpose: Retrieves class name from window
+ *
+ * Note: This is some sort of hack to return static local variable,
+ * but it works :)
+ */
+const TCHAR* getClassName(HWND wnd)
+{
+	static const long classNameLength = 256;
+    static TCHAR className[classNameLength];
+	className[0] = 0;
+
+	GetClassName(wnd, &className[0], classNameLength);
+
+	return &className[0];
+}
+
+/**
+ * Purpose: Finds a window
+ *
+ * Note: This function relies on Skype window placement.
+ * It should work for Skype 3.x
+ */
+HWND findWindow(HWND parent, const TCHAR* childClassName)
+{
+    // Get child window
+    // This window is not combo box or edit box
+	HWND wnd = GetWindow(parent, GW_CHILD);
+	while(wnd != NULL && _tcscmp(getClassName(wnd), childClassName) != 0)
+		wnd = GetWindow(wnd, GW_HWNDNEXT);
+    
+    return wnd;
+}
+
+extern char pszSkypeProtoName[];
+
+DWORD WINAPI setUserNamePasswordThread(LPVOID)
+{
+	// Check double entrance
+	HANDLE mutex = CreateMutex(NULL, TRUE, _T("setUserNamePasswordMutex"));
+	if(GetLastError() == ERROR_ALREADY_EXISTS)
+		return 0;
+
+	// Since we have to close mutex somewhen, this is small RAII class
+	struct MutexCloser
+	{
+		MutexCloser(HANDLE mutex) : mutex_(mutex){}
+		~MutexCloser()
+		{
+			ReleaseMutex(mutex_);
+			CloseHandle(mutex_);
+		}
+
+		HANDLE mutex_;
+	} mc_(mutex);
+
+	// Find skype
+	HWND skype = NULL;
+	int counter = 0;
+	do
+	{
+		skype = FindWindow("tSkMainForm.UnicodeClass", NULL);
+
+		Sleep(1000);
+		++counter;
+	} while(skype == NULL && counter != 60);
+
+	if(skype == NULL)
+	{
+		LOG("setUserNamePasswordThread", "Skype window was not found!");
+		return 0;
+	}
+
+	LOG("setUserNamePasswordThread", "Skype window found!");
+
+	// Sleep for some time, while Skype is loading
+	// It loads slowly :(
+	Sleep(5000);
+
+    // Check for login control
+    HWND loginControl = GetWindow(skype, GW_CHILD);
+    if(_tcscmp(getClassName(loginControl), _T("TLoginControl")) != 0)
+        return 0;
+
+    // Find user name window
+    HWND userName = findWindow(loginControl, _T("TNavigableTntComboBox.UnicodeClass"));
+    HWND password = findWindow(loginControl, _T("TNavigableTntEdit.UnicodeClass"));
+
+    if(userName == NULL || password == NULL)
+        return 0;
+
+	// Set user name and password
+    DBVARIANT dbv;
+
+    if(!DBGetContactSettingWString(NULL,pszSkypeProtoName,"LoginUserName",&dbv)) 
+    {
+        SendMessageW(userName, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(dbv.pwszVal));
+        DBFreeVariant(&dbv);    
+    }
+
+    if(!DBGetContactSettingWString(NULL,pszSkypeProtoName,"LoginPassword",&dbv)) 
+    {
+        SendMessageW(password, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(dbv.pwszVal));        
+		DBFreeVariant(&dbv);
+	}
+
+	// Press "Sign in" button
+	// WARNING: This ID can change during newer Skype versions
+	const UINT signInID = 0x4a8;
+	SendMessageW(skype,
+				 WM_COMMAND,
+				 signInID, 
+				 reinterpret_cast<LPARAM>(findWindow(loginControl, "TTntButton.UnicodeClass")));
+
+	return 0;
+}
+
+/**
+ * Purpose: Finds Skype window and sets user name and password.
+ *
+ * Note: This function relies on Skype window placement.
+ * It should work for Skype 3.x
+ */
+void setUserNamePassword()
+{
+	DWORD threadId;
+	CreateThread(NULL, 0, &setUserNamePasswordThread, NULL, 0, &threadId);
+
+	// Give time to thread
+	Sleep(100);
+}
+
 /*
  * Skype Messagequeue - Implemented as a linked list 
  */
@@ -884,7 +1016,7 @@ int SkypeSetNick(WPARAM wParam, LPARAM lParam) {
  *		   -1 - Failure
  */
 int SkypeSetAwayMessage(WPARAM wParam, LPARAM lParam) {
-	int retval;
+	int retval = -1;
 	char *Mood;
 	
 	if(DBWriteContactSettingTString(NULL, pszSkypeProtoName, "MoodText", (const char *)lParam)) {
@@ -1332,6 +1464,8 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 							}*/
 							_spawnv(_P_NOWAIT, dbv.pszVal, args);
 							DBFreeVariant(&dbv);
+
+                            setUserNamePassword();
 						}
 					}
 					else
@@ -1344,6 +1478,8 @@ int ConnectToSkypeAPI(char *path, bool bStart) {
 									LOG("ConnectToSkypeAPI", args[i]);
 						}*/
 						_spawnv(_P_NOWAIT, path, args);
+
+                        setUserNamePassword();
 					}
 				}
 				ResetEvent(SkypeReady);
