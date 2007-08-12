@@ -125,6 +125,7 @@ BOOL AskToRealizeProc(WPARAM wParam, LPARAM lParam){
 				HANDLE clhwnd = (HWND)CallService(MS_CLUI_GETHWND, 0, 0);
 				sprintf(messg,"%s\n%s",Translate("Realize DB?"),szDbPath);
 				willRealize = FALSE;
+				if (!IsWindow(clhwnd)) clhwnd = NULL; //Fsck! Someone destroyed Clist window too early!
 				answ = MessageBox(clhwnd,messg,Translate("Miranda IM Profile Virtual Database"),MB_YESNO|MB_ICONQUESTION|MB_SETFOREGROUND|MB_TOPMOST);
 				willRealize= (answ == IDYES);
 			}
