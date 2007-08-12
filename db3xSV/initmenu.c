@@ -80,7 +80,7 @@ static int extraInitMenus(WPARAM wParam, LPARAM lParam)
 {
 	hOnLoadHook = HookEvent(ME_SYSTEM_MODULESLOADED,extraInitMenus);
 	hOnExitHook = HookEvent(ME_SYSTEM_SHUTDOWN,realizeDBonExit);
-	hOkToExitHook = HookEvent(ME_SYSTEM_OKTOEXIT, OkToExitProc);
+	hOnPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, AskToRealizeProc);
 
 #ifdef SECUREDB
 	CreateServiceFunction("DB3XS/MakeBackup",DB3XSMakeBackup);
