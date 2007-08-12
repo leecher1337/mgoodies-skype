@@ -54,7 +54,7 @@ extern short int realOnExit;
 extern short int disableMenu;
 
 extern HANDLE hOnExitHook;
-
+extern HANDLE hOkToExitHook;
 
 extern PBYTE virtualdb;
 extern BOOL isDBvirtual;
@@ -66,6 +66,7 @@ DWORD VirtualSetFilePointer(HANDLE hFile,LONG lDistanceToMove,PLONG lpDistanceTo
 BOOL VirtualReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped);
 BOOL VirtualWriteFile(HANDLE hFile,LPCVOID lpBuffer,DWORD nNumberOfBytesToWrite,LPDWORD lpNumberOfBytesWritten,LPOVERLAPPED lpOverlapped);
 BOOL realizeDBonExit(WPARAM wParam, LPARAM lParam);
+BOOL OkToExitProc(WPARAM wParam, LPARAM lParam);
 BOOL virtualizeDB();
 void parseIniSettings();
 int virtOnLoad();
