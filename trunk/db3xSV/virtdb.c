@@ -18,7 +18,7 @@ short int disableMenu= 0;// - no
 static DB_VIRTUAL_RESULT dbResult;
 
  HANDLE hOnExitHook = NULL;
- HANDLE hOkToExitHook = NULL;
+ HANDLE hOnPreShutdownHook = NULL;
 
 
 BOOL virtualizeDB()
@@ -114,7 +114,7 @@ BOOL writeMemToFile(char * filename, boolean leaveOpen){
 static BOOL willRealize = FALSE;
 #define MS_CLUI_GETHWND     "CLUI/GetHwnd"
 
-BOOL OkToExitProc(WPARAM wParam, LPARAM lParam){
+BOOL AskToRealizeProc(WPARAM wParam, LPARAM lParam){
 	if (isDBvirtual){
 		if (realOnExit) {
 			if (realOnExit==1){
@@ -122,14 +122,16 @@ BOOL OkToExitProc(WPARAM wParam, LPARAM lParam){
 			} else {
 				char messg[MAX_PATH+200];
 				int answ = IDYES;
+				HANDLE clhwnd = (HWND)CallService(MS_CLUI_GETHWND, 0, 0);
 				sprintf(messg,"%s\n%s",Translate("Realize DB?"),szDbPath);
 				willRealize = FALSE;
-				answ = MessageBox((HWND)CallService(MS_CLUI_GETHWND, 0, 0),"Relize DB?","Miranda IM Profile Virtual Database",MB_YESNOCANCEL|MB_ICONQUESTION);
-				if (answ==IDCANCEL) return 1; // cancel shutdown
+				answ = MessageBox(clhwnd,messg,Translate("Miranda IM Profile Virtual Database"),MB_YESNO|MB_ICONQUESTION|MB_SETFOREGROUND|MB_TOPMOST);
 				willRealize= (answ == IDYES);
 			}
 		}
 	}
+	UnhookEvent(hOnPreShutdownHook);
+	hOnPreShutdownHook = NULL;
 	return 0;
 }
 
