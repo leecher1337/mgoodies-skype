@@ -30,11 +30,6 @@ Boston, MA 02111-1307, USA.
 #include <tchar.h>
 
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 // Miranda headers
 #include <newpluginapi.h>
 #include <m_system.h>
@@ -107,9 +102,5 @@ typedef struct {
 #define MS_SKIN_PLAYHOTKEY		"Skin/HotKeys/Run"
 
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __COMMONS_H__

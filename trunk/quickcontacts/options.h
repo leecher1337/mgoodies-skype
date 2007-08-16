@@ -27,11 +27,6 @@ Boston, MA 02111-1307, USA.
 
 #include <windows.h>
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 
 #define TYPE_GLOBAL 0
 #define TYPE_LOCAL 1
@@ -66,8 +61,5 @@ void LoadOptions();
 
 
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __OPTIONS_H__
