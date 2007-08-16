@@ -2,6 +2,10 @@ Quick Contacts
 
 Changelog:
 
+. 0.0.2.9
+  + Added contact icon
+  * Compare strings using locale
+
 . 0.0.2.8
   + Added VoiceService support
 

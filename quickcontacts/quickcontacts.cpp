@@ -32,7 +32,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,8),
+	PLUGIN_MAKE_VERSION(0,0,2,9),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
@@ -66,6 +66,8 @@ int ShowDialog(WPARAM wParam,LPARAM lParam);
 
 int hksModule = 0;
 int hksAction = 0;
+
+#define IDC_ICO 12344
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -434,6 +436,8 @@ void EnableButtons(HWND hwndDlg, HANDLE hContact)
 		EnableWindow(GetDlgItem(hwndDlg, IDC_USERINFO), FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_HISTORY), FALSE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_MENU), FALSE);
+
+		SendMessage(GetDlgItem(hwndDlg, IDC_ICO), STM_SETICON, 0, 0);
 	}
 	else
 	{
@@ -462,9 +466,32 @@ void EnableButtons(HWND hwndDlg, HANDLE hContact)
 		EnableWindow(GetDlgItem(hwndDlg, IDC_USERINFO), TRUE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_HISTORY), TRUE);
 		EnableWindow(GetDlgItem(hwndDlg, IDC_MENU), TRUE);
+
+		HICON ico = ImageList_GetIcon(hIml, CallService(MS_CLIST_GETCONTACTICON, (WPARAM) hContact, 0), ILD_IMAGE);
+		SendMessage(GetDlgItem(hwndDlg, IDC_ICO), STM_SETICON, (WPARAM) ico, 0);
 	}
 }
 
+BOOL lstreq(TCHAR *a, TCHAR *b, size_t len = -1)
+{
+#ifdef UNICODE
+	a = CharLower(_tcsdup(a));
+	b = CharLower(_tcsdup(b));
+	BOOL ret;
+	if (len > 0)
+		ret = !_tcsncmp(a, b, len);
+	else
+		ret = !_tcscmp(a, b);
+	free(a);
+	free(b);
+	return ret;
+#else
+	if (len > 0)
+		return !_tcsnicmp(a, b, len);
+	else
+		return !_tcsicmp(a, b);
+#endif
+}
 
 // check if the char(s) entered appears in a contacts name
 int CheckText(HWND hdlg, TCHAR *sztext, BOOL only_enable = FALSE)
@@ -481,7 +508,7 @@ int CheckText(HWND hdlg, TCHAR *sztext, BOOL only_enable = FALSE)
 	{
 		if (only_enable)
 		{
-			if(!_tcsicmp(sztext, ns.contact[loop].szname) || !_tcsicmp(sztext, GetListName(ns.contact[loop])))
+			if(lstreq(sztext, ns.contact[loop].szname) || lstreq(sztext, GetListName(ns.contact[loop])))
 			{
 				EnableButtons(hwndMain, ns.contact[loop].hcontact);
 				return 0;
@@ -489,7 +516,7 @@ int CheckText(HWND hdlg, TCHAR *sztext, BOOL only_enable = FALSE)
 		}
 		else
 		{
-			if(!_tcsnicmp(sztext, GetListName(ns.contact[loop]), len))
+			if(lstreq(sztext, GetListName(ns.contact[loop]), len))
 			{
 				SendMessage(hdlg, WM_SETTEXT, 0, (LPARAM) GetListName(ns.contact[loop]));
 				SendMessage(hdlg, EM_SETSEL, (WPARAM) len, (LPARAM) -1);
@@ -706,6 +733,14 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 		{
 			TranslateDialogDefault(hwndDlg);
 
+			RECT rc;
+			GetWindowRect(GetDlgItem(hwndDlg, IDC_USERNAME), &rc);
+			ScreenToClient(hwndDlg, &rc);
+
+			HWND icon = CreateWindow(_T("STATIC"), _T(""), WS_CHILD | WS_VISIBLE | SS_ICON | SS_CENTERIMAGE, 
+                    rc.left - 18, rc.top + (rc.bottom - rc.top - 16) / 2, 16, 16, hwndDlg, (HMENU) IDC_ICO, 
+					hInst, NULL);
+
 			hAcct = LoadAccelerators(hInst, MAKEINTRESOURCE(ACCEL_TABLE));
 
 			hHook = SetWindowsHookEx(WH_MSGFILTER, HookProc, hInst, GetCurrentThreadId());
@@ -727,7 +762,6 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			}
 			else
 			{
-				RECT rc;
 				GetWindowRect(GetDlgItem(hwndDlg, IDC_VOICE), &rc);
 				ScreenToClient(hwndDlg, &rc);
 				MoveWindow(GetDlgItem(hwndDlg, IDC_MESSAGE), rc, FALSE);
@@ -1057,7 +1091,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			// Draw icon
 			rc.left = lpdis->rcItem.left + 5;
 			rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - icon_height) / 2;
-			ImageList_Draw(hIml, CallService(MS_CLIST_GETCONTACTICON, (WPARAM)ns.contact[lpdis->itemData].hcontact,0), 
+			ImageList_Draw(hIml, CallService(MS_CLIST_GETCONTACTICON, (WPARAM)ns.contact[lpdis->itemData].hcontact, 0), 
 							lpdis->hDC, rc.left, rc.top, ILD_NORMAL);
 
 			// Make rect for text
