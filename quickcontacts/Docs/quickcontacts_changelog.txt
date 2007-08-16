@@ -4,7 +4,7 @@ Changelog:
 
 . 0.0.2.9
   + Added contact icon
-  * Compare strings using locale
+  * Fix when comparing unicode strings
 
 . 0.0.2.8
   + Added VoiceService support
