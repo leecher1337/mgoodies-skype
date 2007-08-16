@@ -738,7 +738,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			ScreenToClient(hwndDlg, &rc);
 
 			HWND icon = CreateWindow(_T("STATIC"), _T(""), WS_CHILD | WS_VISIBLE | SS_ICON | SS_CENTERIMAGE, 
-                    rc.left - 18, rc.top + (rc.bottom - rc.top - 16) / 2, 16, 16, hwndDlg, (HMENU) IDC_ICO, 
+                    rc.left - 20, rc.top + (rc.bottom - rc.top - 16) / 2, 16, 16, hwndDlg, (HMENU) IDC_ICO, 
 					hInst, NULL);
 
 			hAcct = LoadAccelerators(hInst, MAKEINTRESOURCE(ACCEL_TABLE));
