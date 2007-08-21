@@ -1,3 +1,8 @@
+0.0.1.18
+===========
+! Fix autoresend save setting
++ Add a autoresend delay (must be between 1 and 10 sec)
+
 0.0.1.17
 ===========
 + Add unicode aware flag

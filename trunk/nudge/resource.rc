@@ -67,7 +67,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDD_OPT_NUDGE DIALOGEX 0, 0, 313, 240
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        "Check status for which nudge are allowed",IDC_STATIC,8,
                     131,302,42
@@ -138,6 +138,8 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,132,37,147,8
     CONTROL         "Auto resend nudge",IDC_AUTORESEND,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,132,46,147,8
+    EDITTEXT        IDC_RESENDDELAY,281,44,18,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "s",IDC_STATIC,301,46,8,8
 END
 
 IDD_OPTIONS DIALOGEX 0, 0, 319, 249
@@ -299,8 +301,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH_BELGIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,1,17
- PRODUCTVERSION 0,0,1,17
+ FILEVERSION 0,0,1,18
+ PRODUCTVERSION 0,0,1,18
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -318,14 +320,14 @@ BEGIN
             VALUE "Comments", "Plugin that render nudge events from different protocols\0"
             VALUE "CompanyName", "Miranda community\0"
             VALUE "FileDescription", "Nudge plugin for Miranda-IM\0"
-            VALUE "FileVersion", "0, 0, 1, 17\0"
+            VALUE "FileVersion", "0, 0, 1, 18\0"
             VALUE "InternalName", "Nudge\0"
             VALUE "LegalCopyright", "Copyright © 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "nudge.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "nudge\0"
-            VALUE "ProductVersion", "0, 0, 1, 17\0"
+            VALUE "ProductVersion", "0, 0, 1, 18\0"
             VALUE "SpecialBuild", "\0"
         END
     END

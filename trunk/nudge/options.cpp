@@ -358,6 +358,7 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 					ActualNudge->showEvent = (IsDlgButtonChecked(hwnd,IDC_CHECKEVENT)==BST_CHECKED);
 					ActualNudge->showStatus = (IsDlgButtonChecked(hwnd,IDC_CHECKSTATUS)==BST_CHECKED);
 					ActualNudge->autoResend = (IsDlgButtonChecked(hwnd,IDC_AUTORESEND)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hwnd,IDC_RESENDDELAY),ActualNudge->autoResend);						
 					SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 					break;
 				case IDC_CHECKST0:
@@ -393,6 +394,9 @@ BOOL CALLBACK DlgProcNudgeOpt(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 							BOOL Translated;
 							GlobalNudge.sendTimeSec = GetDlgItemInt(hwnd,IDC_SENDTIME,&Translated,FALSE);
 							GlobalNudge.recvTimeSec  = GetDlgItemInt(hwnd,IDC_RECVTIME,&Translated,FALSE);
+							GlobalNudge.resendDelaySec  = GetDlgItemInt(hwnd,IDC_RESENDDELAY,&Translated,FALSE);
+							if(GlobalNudge.resendDelaySec > 10 ) GlobalNudge.resendDelaySec = 10; 
+							if(GlobalNudge.resendDelaySec < 1 ) GlobalNudge.resendDelaySec = 1;
 							ActualNudge->popupTimeSec = GetDlgItemInt(hwnd,IDC_POPUPTIME,&Translated,FALSE);
 							ActualNudge->popupWindowColor = (IsDlgButtonChecked(hwnd,IDC_USEWINCOLORS)==BST_CHECKED);
 							ActualNudge->showPopup = (IsDlgButtonChecked(hwnd,IDC_CHECKPOP)==BST_CHECKED);
@@ -506,6 +510,7 @@ void UpdateControls(HWND hwnd)
 	SetDlgItemInt(hwnd, IDC_POPUPTIME, ActualNudge->popupTimeSec,FALSE);
 	SetDlgItemInt(hwnd, IDC_SENDTIME, GlobalNudge.sendTimeSec,FALSE);
 	SetDlgItemInt(hwnd, IDC_RECVTIME, GlobalNudge.recvTimeSec,FALSE);
+	SetDlgItemInt(hwnd, IDC_RESENDDELAY, GlobalNudge.resendDelaySec,FALSE);
 	CheckDlgButton(hwnd, IDC_USEBYPROTOCOL, (WPARAM) GlobalNudge.useByProtocol);
 	SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETCOLOUR,0, ActualNudge->popupBackColor);
 	SendDlgItemMessage(hwnd, IDC_POPUPBACKCOLOR, CPM_SETDEFAULTCOLOUR, 0, GetSysColor(COLOR_BTNFACE));
@@ -515,6 +520,7 @@ void UpdateControls(HWND hwnd)
 	EnableWindow(GetDlgItem(hwnd, IDC_POPUPBACKCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
 	EnableWindow(GetDlgItem(hwnd, IDC_POPUPTEXTCOLOR), ActualNudge->showPopup && ! ActualNudge->popupWindowColor);
 	EnableWindow(GetDlgItem(hwnd, IDC_POPUPTIME), ActualNudge->showPopup);
+	EnableWindow(GetDlgItem(hwnd,IDC_RESENDDELAY),ActualNudge->autoResend);	
 	CheckDlgButton(hwnd,IDC_CHECKST0,ActualNudge->statusFlags & NUDGE_ACC_ST0 ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hwnd,IDC_CHECKST1,ActualNudge->statusFlags & NUDGE_ACC_ST1 ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hwnd,IDC_CHECKST2,ActualNudge->statusFlags & NUDGE_ACC_ST2 ? BST_CHECKED : BST_UNCHECKED);

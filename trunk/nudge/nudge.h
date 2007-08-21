@@ -28,6 +28,7 @@ public:
 	bool useByProtocol;
 	int sendTimeSec;
 	int recvTimeSec;
+	int resendDelaySec;
 
 	void Load(void);
 	void Save(void);

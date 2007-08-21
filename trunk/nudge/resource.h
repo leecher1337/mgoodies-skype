@@ -74,6 +74,7 @@
 #define IDC_CHECKSTATUS                 1041
 #define IDC_TRIGGER_SHAKECHAT           1041
 #define IDC_AUTORESEND                  1042
+#define IDC_RESENDDELAY                 1043
 
 // Next default values for new objects
 // 
