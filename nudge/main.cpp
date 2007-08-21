@@ -2,6 +2,7 @@
 #include "main.h"
 #include "shake.h"
 
+
 static BOOL CALLBACK DlgProcOptsTrigger(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK NudgePopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam);
 
@@ -76,7 +77,7 @@ DWORD MirVer;
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Nudge",
-	PLUGIN_MAKE_VERSION(0,0,1,17),
+	PLUGIN_MAKE_VERSION(0,0,1,18),
 	"Plugin to shake the clist and chat window",
 	"Tweety/GouZ",
 	"francois.mean@skynet.be / Sylvain.gougouzian@gmail.com ",
@@ -242,7 +243,7 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 							if(n->item.shakeChat)
 								ShakeChat(wParam,lParam);
 							if(n->item.autoResend)
-								NudgeSend(wParam,lParam);
+								mir_forkthread(AutoResendNudge,(void *)wParam);
 
 							SkinPlaySound( n->item.NudgeSoundname );
 						}
@@ -284,7 +285,7 @@ int NudgeRecieved(WPARAM wParam,LPARAM lParam)
 					if(DefaultNudge.shakeChat)
 						ShakeChat(wParam,lParam);
 					if(DefaultNudge.autoResend)
-						NudgeSend(wParam, lParam);
+						mir_forkthread(AutoResendNudge,(void *)wParam);
 
 					SkinPlaySound( DefaultNudge.NudgeSoundname );
 				}
@@ -917,4 +918,11 @@ HANDLE Nudge_GethContact(HANDLE hCont)
 		hContact = hCont;
 	
 	return hContact;
+}
+
+void AutoResendNudge(void *wParam) 
+{
+
+	Sleep(GlobalNudge.resendDelaySec * 1000);
+	NudgeSend((WPARAM) wParam,NULL);
 }

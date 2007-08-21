@@ -89,3 +89,8 @@ int TriggerActionRecv( DWORD actionID, REPORTINFO *ri);
 *
 ****************************/
 int TriggerActionSend( DWORD actionID, REPORTINFO *ri);
+
+/*
+*
+****************************/
+void AutoResendNudge(void *wParam) ;
