@@ -34,7 +34,7 @@ Boston, MA 02111-1307, USA.
 
 
 struct Options {
-	TCHAR default_language[10];
+	TCHAR default_language[32];
 	BOOL auto_replace_dict;
 	BOOL auto_replace_user;
 	BOOL ignore_uppercase;

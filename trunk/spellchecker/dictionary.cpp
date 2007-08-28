@@ -41,7 +41,8 @@ DWORD WINAPI LoadThread(LPVOID hd);
 
 // Additional languages that i could not find in Windows
 TCHAR *aditionalLanguages[] = {
-	_T("tl_PH"), _T("Tagalog (Philippines)")
+	_T("tl_PH"), _T("Tagalog (Philippines)"),
+	_T("de_frami_neu"), _T("German (Germany)")
 };
 
 
@@ -540,12 +541,12 @@ BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
 	TCHAR *stopped = NULL;
 	USHORT langID = (USHORT) _tcstol(lpLocaleString, &stopped, 16);
 
-	TCHAR ini[10];
-	TCHAR end[10];
+	TCHAR ini[32];
+	TCHAR end[32];
 	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SISO639LANGNAME, ini, MAX_REGS(ini));
 	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SISO3166CTRYNAME, end, MAX_REGS(end));
 
-	TCHAR name[10];
+	TCHAR name[64];
 	mir_sntprintf(name, MAX_REGS(name), _T("%s_%s"), ini, end);
 	for(unsigned i = 0; i < tmp_dicts->count; i++)
 	{
