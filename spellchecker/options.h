@@ -24,11 +24,6 @@ Boston, MA 02111-1307, USA.
 
 #include <windows.h>
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 #define POPUP_ACTION_DONOTHING 0
 #define POPUP_ACTION_CLOSEPOPUP 1
 #define POPUP_ACTION_OPENHISTORY 2
@@ -40,7 +35,8 @@ extern "C"
 
 struct Options {
 	TCHAR default_language[10];
-	BOOL auto_correct;
+	BOOL auto_replace_dict;
+	BOOL auto_replace_user;
 	BOOL ignore_uppercase;
 
 	WORD underline_type;
@@ -65,9 +61,5 @@ void DeInitOptions();
 void LoadOptions();
 
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __OPTIONS_H__

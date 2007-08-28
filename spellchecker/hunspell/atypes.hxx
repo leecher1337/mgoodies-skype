@@ -5,7 +5,8 @@
 #ifdef HUNSPELL_WARNING_ON
 #define HUNSPELL_WARNING fprintf
 #else
-#define HUNSPELL_WARNING
+// empty inline function to switch off warnings (instead of the C99 standard variadic macros)
+static inline void HUNSPELL_WARNING(FILE *, const char *, ...) {}
 #endif
 #endif
 
@@ -70,11 +71,6 @@ struct affentry
 #endif
    unsigned short * contclass;
    short        contclasslen;
-};
-
-struct replentry {
-  char * pattern;
-  char * pattern2;
 };
 
 struct mapentry {

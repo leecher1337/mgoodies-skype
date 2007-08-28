@@ -44,6 +44,16 @@
 [Ignore all]
 [Add to dictionary]
 [Wrong word: %s]
+[Other...]
+
+
+; Add auto-replace word
+[Add auto-replace word]
+[Wrong word:]
+[Wrong word:]
+[The correction can't be an empty word!]
+[The correction can't be the equal to the wrong word!]
+[Wrong Correction]
 
 
 ; Message Box

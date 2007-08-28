@@ -39,6 +39,10 @@ Boston, MA 02111-1307, USA.
 
 DWORD WINAPI LoadThread(LPVOID hd);
 
+// Additional languages that i could not find in Windows
+TCHAR *aditionalLanguages[] = {
+	_T("tl_PH"), _T("Tagalog (Philippines)")
+};
 
 
 
@@ -71,7 +75,7 @@ protected:
 			int pos = 0;
 			while((c = fgetc(file)) != EOF) 
 			{
-				if (c == '\n' || pos >= MAX_REGS(tmp) - 1) 
+				if (c == '\n' || c == '\r' || pos >= MAX_REGS(tmp) - 1) 
 				{
 					if (pos > 0)
 					{
@@ -119,10 +123,12 @@ protected:
 			int pos = 0;
 			while((c = fgetc(file)) != EOF) 
 			{
-				if (c == '\n' || pos >= MAX_REGS(tmp) - 1) 
+				if (c == '\n' || c == '\r' || pos >= MAX_REGS(tmp) - 1) 
 				{
 					if (pos > 0)
 					{
+						tmp[pos] = '\0';
+
 						// Get from
 						char *p = strstr(tmp, "->");
 						if (p != NULL)
@@ -236,20 +242,19 @@ protected:
 	}
 
 public:
-	HunspellDictionary(TCHAR *aLanguage, TCHAR *aPath, TCHAR *aUserPath, TCHAR *aFlagsPath)
+	HunspellDictionary(TCHAR *aLanguage, TCHAR *aPath, TCHAR *aUserPath)
 	{
 		lstrcpyn(language, aLanguage, MAX_REGS(language));
-		lstrcpyn(full_name, aLanguage, MAX_REGS(full_name));
 		lstrcpyn(path, aPath, MAX_REGS(path));
 		lstrcpyn(userPath, aUserPath, MAX_REGS(userPath));
 
 		loaded = LANGUAGE_NOT_LOADED;
 		localized_name[0] = _T('\0');
 		english_name[0] = _T('\0');
+		full_name[0] = _T('\0');
 		hunspell = NULL;
 		wordChars = NULL;
 		codePage = CP_ACP;
-		hFlag = NULL;
 	}
 
 	virtual ~HunspellDictionary()
@@ -465,6 +470,9 @@ public:
 	virtual void addToAutoReplace(const TCHAR * from, const TCHAR * to)
 	{
 		appendToAutoReplaceMap(from, to);
+
+		if (!spell(to))
+			addWord(to);
 	}
 
 	// Return a a auto replace to a word
@@ -539,7 +547,6 @@ BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
 
 	TCHAR name[10];
 	mir_sntprintf(name, MAX_REGS(name), _T("%s_%s"), ini, end);
-
 	for(unsigned i = 0; i < tmp_dicts->count; i++)
 	{
 		if (lstrcmpi(tmp_dicts->dicts[i]->language, name) == 0)
@@ -562,7 +569,7 @@ BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
 
 
 // Return a list of avaible languages
-Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path, TCHAR *flags_path)
+Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path)
 {
 	Dictionaries dicts = {0};
 
@@ -598,7 +605,6 @@ Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path, TCHAR *flags_
 		FindClose(hFFD);
 	}
 
-	dicts.has_flags = FALSE;
 	if (dicts.count > 0)
 	{
 		// Oki, lets make our cache struct
@@ -627,9 +633,7 @@ Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path, TCHAR *flags_
 
 				ffd.cFileName[lstrlen(ffd.cFileName)-4] = _T('\0');
 
-				dicts.dicts[i] = new HunspellDictionary(ffd.cFileName, path, user_path, flags_path);
-				if (dicts.dicts[i]->hFlag != NULL)
-					dicts.has_flags = TRUE;
+				dicts.dicts[i] = new HunspellDictionary(ffd.cFileName, path, user_path);
 
 				i++;
 			}
@@ -642,6 +646,49 @@ Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path, TCHAR *flags_
 		
 		tmp_dicts = &dicts;
 		EnumSystemLocales(EnumLocalesProc, LCID_SUPPORTED);
+
+		// Try to get name from DB
+		for(i = 0; i < dicts.count; i++)
+		{
+			Dictionary *dict = dicts.dicts[i];
+			if (dict->full_name[0] == _T('\0'))
+			{
+				DBVARIANT dbv;
+#ifdef UNICODE
+				char lang[128];
+				WideCharToMultiByte(CP_ACP, 0, dict->language, -1, lang, sizeof(lang), NULL, NULL);
+				if (!DBGetContactSettingTString(NULL, MODULE_NAME, lang, &dbv))
+#else
+				if (!DBGetContactSettingTString(NULL, MODULE_NAME, dict->language, &dbv))
+#endif
+				{
+					lstrcpyn(dict->localized_name, dbv.ptszVal, MAX_REGS(dict->localized_name));
+					DBFreeVariant(&dbv);
+				}
+
+				if (dict->localized_name[0] == _T('\0'))
+				{
+					for(size_t j = 0; j < MAX_REGS(aditionalLanguages); j+=2)
+					{
+						if (lstrcmp(aditionalLanguages[j], dict->language) == 0)
+						{
+							lstrcpyn(dict->localized_name, aditionalLanguages[j+1], MAX_REGS(dict->localized_name));
+							break;
+						}
+					}
+				}
+
+				if (dict->localized_name[0] != _T('\0'))
+				{
+					mir_sntprintf(dict->full_name, MAX_REGS(dict->full_name), 
+						_T("%s [%s]"), dict->localized_name, dict->language);
+				}
+				else
+				{
+					lstrcpyn(dict->full_name, dict->language, MAX_REGS(dict->full_name));
+				}
+			}
+		}
 	}
 
 	return dicts;

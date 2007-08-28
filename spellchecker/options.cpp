@@ -36,8 +36,8 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 
 
 static OptPageControl optionsControls[] = { 
-//	{ &opts.default_language,		CONTROL_COMBO_ITEMDATA,	IDC_DEF_LANG,				"DefaultLanguage", NULL, 0, 0, MAX_REGS(opts.default_language) },
-	{ &opts.auto_correct,			CONTROL_CHECKBOX,		IDC_AUTOCORRECT,			"AutoCorrect", FALSE },
+	{ &opts.auto_replace_dict,		CONTROL_CHECKBOX,		IDC_AUTO_DICT,				"AutoReplaceDict", FALSE },
+	{ &opts.auto_replace_user,		CONTROL_CHECKBOX,		IDC_AUTO_USER,				"AutoReplaceUser", TRUE },
 	{ &opts.ignore_uppercase,		CONTROL_CHECKBOX,		IDC_IGNORE_UPPERCASE,		"IgnoreUppercase", FALSE },
 	{ &opts.underline_type,			CONTROL_COMBO,			IDC_UNDERLINE_TYPE,			"UnderlineType", CFU_UNDERLINEWAVE - CFU_UNDERLINEDOUBLE },
 	{ &opts.cascade_corrections,	CONTROL_CHECKBOX,		IDC_CASCADE_CORRECTIONS,	"CascadeCorrections", FALSE },
@@ -162,7 +162,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 		{
 			LPNMHDR lpnmhdr = (LPNMHDR)lParam;
 
-			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
+			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY && languages.dicts != NULL)
 			{
 				unsigned sel = SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_GETCURSEL, 0, 0);
 				if (sel >= languages.count)
@@ -198,14 +198,14 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			// Draw icon
 			if (opts.use_flags)
 			{
-				HICON hFlag = (dict->hFlag == NULL ? LoadIconEx("spellchecker_unknown_flag") : dict->hFlag);
+				HICON hFlag = LoadIconEx(dict);
 
 				rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - ICON_SIZE) / 2;
 				DrawIconEx(lpdis->hDC, rc.left, rc.top, hFlag, 16, 16, 0, NULL, DI_NORMAL);
 
 				rc.left += ICON_SIZE + 4;
 				
-				if (dict->hFlag == NULL) ReleaseIconEx(hFlag);
+				ReleaseIconEx(hFlag);
 			}
 
 			// Draw text

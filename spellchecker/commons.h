@@ -41,11 +41,6 @@ Boston, MA 02111-1307, USA.
 using namespace std;
 
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 // Miranda headers
 #include <newpluginapi.h>
 #include <m_system.h>
@@ -71,10 +66,6 @@ extern "C"
 #include "resource.h"
 #include "m_spellchecker.h"
 #include "options.h"
-
-#ifdef __cplusplus
-}
-#endif
 
 
 #include "dictionary.h"
@@ -131,7 +122,8 @@ struct Dialog {
 	vector<WrongWordPopupMenuData> *wrong_words;
 };
 
-HICON LoadIconEx(char* iconName, bool copy = false);
+HICON LoadIconEx(char* iconName, BOOL copy = FALSE);
+HICON LoadIconEx(Dictionary *dict, BOOL copy = FALSE);
 void ReleaseIconEx(HICON hIcon);
 
 
