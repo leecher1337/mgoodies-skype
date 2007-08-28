@@ -29,6 +29,7 @@ AffixMgr::AffixMgr(const char * affpath, HashMgr* ptr)
 {
   // register hash manager and load affix data from aff file
   pHMgr = ptr;
+  keystring = NULL;
   trystring = NULL;
   encoding=NULL;
   utf8 = 0;
@@ -43,6 +44,7 @@ AffixMgr::AffixMgr(const char * affpath, HashMgr* ptr)
   numcheckcpd = 0;
   defcpdtable = NULL;
   numdefcpd = 0;
+  phone = NULL;
   compoundflag = FLAG_NULL; // permits word in compound forms
   compoundbegin = FLAG_NULL; // may be first word in compound forms
   compoundmiddle = FLAG_NULL; // may be middle word in compound forms
@@ -144,6 +146,8 @@ AffixMgr::~AffixMgr()
        sStart[j] = NULL;
   }
 
+  if (keystring) free(keystring);
+  keystring=NULL;
   if (trystring) free(trystring);
   trystring=NULL;
   if (encoding) free(encoding);
@@ -168,16 +172,22 @@ AffixMgr::~AffixMgr()
      breaktable = NULL;
   }
   numbreak = 0;
-  if (reptable) {  
+  if (reptable) {
      for (int j=0; j < numrep; j++) {
         free(reptable[j].pattern);
         free(reptable[j].pattern2);
-        reptable[j].pattern = NULL;
-        reptable[j].pattern2 = NULL;
      }
      free(reptable);  
      reptable = NULL;
   }
+  if (phone && phone->rules) {
+     for (int j=0; j < phone->num * 2 + 2; j++) {
+        delete((void *)phone->rules[j]);
+     }
+     free(phone);  
+     phone = NULL;
+  }
+
   if (defcpdtable) {  
      for (int j=0; j < numdefcpd; j++) {
         free(defcpdtable[j].def);
@@ -268,10 +278,18 @@ int  AffixMgr::parse_file(const char * affpath)
        /* remove byte order mark */
        if (firstline) {
          firstline = 0;
-         if (strncmp(line,"﻿",3) == 0) {
+         if (strncmp(line,"\xEF\xBB\xBF",3) == 0) {
             memmove(line, line+3, strlen(line+3)+1);
             HUNSPELL_WARNING(stderr, "warning: affix file begins with byte order mark: possible incompatibility with old Hunspell versions\n");
          }
+       }
+
+       /* parse in the keyboard string */
+       if (strncmp(line,"KEY",3) == 0) {
+          if (parse_string(line, &keystring, "KEY")) {
+             fclose(afflst);
+             return 1;
+          }
        }
 
        /* parse in the try string */
@@ -504,6 +522,14 @@ int  AffixMgr::parse_file(const char * affpath)
           }
        }
 
+       /* parse in the phonetic translation table */
+       if (strncmp(line,"PHONE",5) == 0) {
+          if (parse_phonetable(line, afflst)) {
+             fclose(afflst);
+             return 1;
+          }
+       }
+
        /* parse in the checkcompoundpattern table */
        if (strncmp(line,"CHECKCOMPOUNDPATTERN",20) == 0) {
           if (parse_checkcpdtable(line, afflst)) {
@@ -629,8 +655,7 @@ int  AffixMgr::parse_file(const char * affpath)
     process_pfx_order();
     process_sfx_order();
 
-    // expand wordchars string, based on csutil (for external tokenization)
-
+    /* get encoding for CHECKCOMPOUNDCASE */
     char * enc = get_encoding();
     csconv = get_current_cs(enc);
     free(enc);
@@ -1492,7 +1517,7 @@ short AffixMgr::get_syllable(const char * word, int wlen)
     } else if (cpdvowels_utf16) {
         w_char w[MAXWORDUTF8LEN];
         int i = u8_u16(w, MAXWORDUTF8LEN, word);
-        for (; i; i--) {
+        for (; i > 0; i--) {
             if (flag_bsearch((unsigned short *) cpdvowels_utf16,
                 ((unsigned short *) w)[i - 1], cpdvowels_utf16_len)) num++;
         }
@@ -1758,7 +1783,7 @@ struct hentry * AffixMgr::compound_check(const char * word, int len,
                 && (
                       ((cpdwordmax==-1) || (wordnum+1<cpdwordmax)) || 
                       ((cpdmaxsyllable==0) || 
-                          (numsyllable + get_syllable(rv->word,rv->wlen)<=cpdmaxsyllable))
+                          (numsyllable + get_syllable(rv->word, rv->clen)<=cpdmaxsyllable))
                     )
                 && (
                      (!checkcompounddup || (rv != rv_first))
@@ -1786,6 +1811,7 @@ struct hentry * AffixMgr::compound_check(const char * word, int len,
             if (!rv && numdefcpd && words) {
                 rv = affix_check((word+i),strlen(word+i), 0, IN_CPD_END);
                 if (rv && defcpd_check(&words, wnum + 1, rv, NULL, 1)) return rv;
+                rv = NULL;
             }
 
             // check non_compound flag in suffix and prefix
@@ -2176,7 +2202,7 @@ int AffixMgr::compound_check_morph(const char * word, int len,
                 && (
                       ((cpdwordmax==-1) || (wordnum+1<cpdwordmax)) || 
                       ((cpdmaxsyllable==0) || 
-                          (numsyllable+get_syllable(rv->word,rv->wlen)<=cpdmaxsyllable))
+                          (numsyllable+get_syllable(rv->word,rv->blen)<=cpdmaxsyllable))
                     )
                 && (
                      (!checkcompounddup || (rv != rv_first))
@@ -2781,7 +2807,6 @@ int AffixMgr::expand_rootword(struct guessword * wlst, int maxn, const char * ts
 {
 
     int nh=0;
-
     // first add root word to list
     if ((nh < maxn) && !(al && ((pseudoroot && TESTAFF(ap, pseudoroot, al)) ||
          (onlyincompound && TESTAFF(ap, onlyincompound, al))))) {
@@ -2897,6 +2922,13 @@ struct replentry * AffixMgr::get_reptable()
   return reptable;
 }
 
+// return replacing table
+struct phonetable * AffixMgr::get_phonetable()
+{
+  if (! phone ) return NULL;
+  return phone;
+}
+
 // return length of character map table
 int AffixMgr::get_nummap()
 {
@@ -2958,7 +2990,7 @@ int AffixMgr::get_checksharps()
 char * AffixMgr::get_ignore()
 {
   if (!ignorechars) return NULL;
-  return mystrdup(ignorechars);
+  return ignorechars;
 }
 
 // return the preferred ignore string for suggestions
@@ -2966,6 +2998,13 @@ unsigned short * AffixMgr::get_ignore_utf16(int * len)
 {
   *len = ignorechars_utf16_len;
   return ignorechars_utf16;
+}
+
+// return the keyboard string for suggestions
+char * AffixMgr::get_key_string()
+{
+  if (! keystring ) return NULL;
+  return mystrdup(keystring);
 }
 
 // return the preferred try string for suggestions
@@ -3236,6 +3275,7 @@ int  AffixMgr::parse_reptable(char * line, FILE * af)
                   case 0: {
                              if (strncmp(piece,"REP",3) != 0) {
                                  HUNSPELL_WARNING(stderr, "error: replacement table is corrupt\n");
+                                 numrep = 0;
                                  free(piece);
                                  return 1;
                              }
@@ -3252,9 +3292,97 @@ int  AffixMgr::parse_reptable(char * line, FILE * af)
         }
         if ((!(reptable[j].pattern)) || (!(reptable[j].pattern2))) {
              HUNSPELL_WARNING(stderr, "error: replacement table is corrupt\n");
+             numrep = 0;
              return 1;
         }
    }
+   return 0;
+}
+
+/* parse in the typical fault correcting table */
+int  AffixMgr::parse_phonetable(char * line, FILE * af)
+{
+   if (phone) {
+      HUNSPELL_WARNING(stderr, "error: duplicate PHONE tables used\n");
+      return 1;
+   }
+   char * tp = line;
+   char * piece;
+   int i = 0;
+   int np = 0;
+   piece = mystrsep(&tp, 0);
+   while (piece) {
+       if (*piece != '\0') {
+          switch(i) {
+             case 0: { np++; break; }
+             case 1: { 
+            	       phone = (phonetable *) malloc(sizeof(struct phonetable));
+            	       phone->num = atoi(piece);
+            	       phone->rules = NULL;
+            	       phone->utf8 = utf8;
+                       if (!phone) return 1;
+                       if (phone->num < 1) {
+                          HUNSPELL_WARNING(stderr, "incorrect number of entries in phonelacement table\n");
+                          free(piece);
+                          return 1;
+                       }
+                       phone->rules = (const char * *) malloc(2 * (phone->num + 1) * sizeof(char *));
+                       if (!phone->rules) return 1;
+                       np++;
+                       break;
+                     }
+             default: break;
+          }
+          i++;
+       }
+       free(piece);
+       piece = mystrsep(&tp, 0);
+   }
+   if (np != 2) {
+      HUNSPELL_WARNING(stderr, "error: missing PHONE table information\n");
+      return 1;
+   } 
+ 
+   /* now parse the phone->num lines to read in the remainder of the table */
+   char * nl = line;
+   for (int j=0; j < phone->num; j++) {
+        if (!fgets(nl,MAXLNLEN,af)) return 1;
+        mychomp(nl);
+        tp = nl;
+        i = 0;
+        phone->rules[j * 2] = NULL;
+        phone->rules[j * 2 + 1] = NULL;
+        piece = mystrsep(&tp, 0);
+        while (piece) {
+           if (*piece != '\0') {
+               switch(i) {
+                  case 0: {
+                             if (strncmp(piece,"PHONE",5) != 0) {
+                                 HUNSPELL_WARNING(stderr, "error: PHONE table is corrupt\n");
+                                 phone->num = 0;
+                                 free(piece);
+                                 return 1;
+                             }
+                             break;
+                          }
+                  case 1: { phone->rules[j * 2] = mystrrep(mystrdup(piece),"_",""); break; }
+                  case 2: { phone->rules[j * 2 + 1] = mystrrep(mystrdup(piece),"_",""); break; }
+                  default: break;
+               }
+               i++;
+           }
+           free(piece);
+           piece = mystrsep(&tp, 0);
+        }
+        if ((!(phone->rules[j * 2])) || (!(phone->rules[j * 2 + 1]))) {
+             HUNSPELL_WARNING(stderr, "error: PHONE table is corrupt\n");
+             phone->num = 0;
+             return 1;
+        }
+   }
+   phone->rules[phone->num * 2] = mystrdup("");
+   phone->rules[phone->num * 2 + 1] = mystrdup("");
+   init_phonet_hash(*phone);
    return 0;
 }
 
@@ -3314,6 +3442,7 @@ int  AffixMgr::parse_checkcpdtable(char * line, FILE * af)
                   case 0: {
                              if (strncmp(piece,"CHECKCOMPOUNDPATTERN",20) != 0) {
                                  HUNSPELL_WARNING(stderr, "error: compound pattern table is corrupt\n");
+                                 numcheckcpd = 0;
                                  free(piece);
                                  return 1;
                              }
@@ -3330,7 +3459,8 @@ int  AffixMgr::parse_checkcpdtable(char * line, FILE * af)
         }
         if ((!(checkcpdtable[j].pattern)) || (!(checkcpdtable[j].pattern2))) {
              HUNSPELL_WARNING(stderr, "error: compound pattern table is corrupt\n");
-             return 1;
+	     numcheckcpd = 0;
+	     return 1;
         }
    }
    return 0;
@@ -3392,6 +3522,7 @@ int  AffixMgr::parse_defcpdtable(char * line, FILE * af)
                              if (strncmp(piece, "COMPOUNDRULE", 12) != 0) {
                                  HUNSPELL_WARNING(stderr, "error: compound rule table is corrupt\n");
                                  free(piece);
+                                 numdefcpd = 0;
                                  return 1;
                              }
                              break;
@@ -3410,6 +3541,7 @@ int  AffixMgr::parse_defcpdtable(char * line, FILE * af)
         }
         if (!defcpdtable[j].len) {
              HUNSPELL_WARNING(stderr, "error: compound rule table is corrupt\n");
+             numdefcpd = 0;
              return 1;
         }
    }
@@ -3473,6 +3605,7 @@ int  AffixMgr::parse_maptable(char * line, FILE * af)
                   case 0: {
                              if (strncmp(piece,"MAP",3) != 0) {
                                  HUNSPELL_WARNING(stderr, "error: map table is corrupt\n");
+                                 nummap = 0;
                                  free(piece);
                                  return 1;
                              }
@@ -3506,6 +3639,7 @@ int  AffixMgr::parse_maptable(char * line, FILE * af)
         }
         if ((!(maptable[j].set || maptable[j].set_utf16)) || (!(maptable[j].len))) {
              HUNSPELL_WARNING(stderr, "error: map table is corrupt\n");
+             nummap = 0;
              return 1;
         }
    }
@@ -3567,6 +3701,7 @@ int  AffixMgr::parse_breaktable(char * line, FILE * af)
                              if (strncmp(piece,"BREAK",5) != 0) {
                                  HUNSPELL_WARNING(stderr, "error: BREAK table is corrupt\n");
                                  free(piece);
+                                 numbreak = 0;
                                  return 1;
                              }
                              break;
@@ -3584,6 +3719,7 @@ int  AffixMgr::parse_breaktable(char * line, FILE * af)
         }
         if (!breaktable) {
              HUNSPELL_WARNING(stderr, "error: BREAK table is corrupt\n");
+             numbreak = 0;
              return 1;
         }
    }
@@ -3891,7 +4027,7 @@ int  AffixMgr::parse_affix(char * line, const char at, FILE * af, char * dupflag
    return 0;
 }
 
-int AffixMgr::redundant_condition(char ft, char * strip, int stripl, const char * cond, char * line) {
+int AffixMgr::redundant_condition(char ft, char * strip, int stripl, const char * cond, char * warnvar) {
   int condl = strlen(cond);
   int i;
   int j;
@@ -3904,7 +4040,7 @@ int AffixMgr::redundant_condition(char ft, char * strip, int stripl, const char 
       for (i = 0, j = 0; (i < stripl) && (j < condl); i++, j++) {
         if (cond[j] != '[') {
           if (cond[j] != strip[i]) {
-            HUNSPELL_WARNING(stderr, "warning: incompatible stripping characters and condition:\n%s\n", line);
+            HUNSPELL_WARNING(stderr, "warning: incompatible stripping characters and condition:\n%s\n", warnvar);
           }
         } else {
           neg = (cond[j+1] == '^') ? 1 : 0;
@@ -3914,11 +4050,11 @@ int AffixMgr::redundant_condition(char ft, char * strip, int stripl, const char 
             if (strip[i] == cond[j]) in = 1;
           } while ((j < (condl - 1)) && (cond[j] != ']'));
           if (j == (condl - 1) && (cond[j] != ']')) {
-            HUNSPELL_WARNING(stderr, "error: missing ] in condition:\n%s\n", line);
+            HUNSPELL_WARNING(stderr, "error: missing ] in condition:\n%s\n", warnvar);
             return 0;
           }
           if ((!neg && !in) || (neg && in)) {
-            HUNSPELL_WARNING(stderr, "warning: incompatible stripping characters and condition:\n%s\n", line);
+            HUNSPELL_WARNING(stderr, "warning: incompatible stripping characters and condition:\n%s\n", warnvar);
             return 0;          
           }
         }
@@ -3932,7 +4068,7 @@ int AffixMgr::redundant_condition(char ft, char * strip, int stripl, const char 
       for (i = stripl - 1, j = condl - 1; (i >= 0) && (j >= 0); i--, j--) {
         if (cond[j] != ']') {
           if (cond[j] != strip[i]) {
-            HUNSPELL_WARNING(stderr, "warning: incompatible stripping characters and condition:\n%s\n", line);
+            HUNSPELL_WARNING(stderr, "warning: incompatible stripping characters and condition:\n%s\n", warnvar);
           }
         } else {
           in = 0;
@@ -3941,12 +4077,12 @@ int AffixMgr::redundant_condition(char ft, char * strip, int stripl, const char 
             if (strip[i] == cond[j]) in = 1;
           } while ((j > 0) && (cond[j] != '['));
           if ((j == 0) && (cond[j] != '[')) {
-            HUNSPELL_WARNING(stderr, "error: missing ] in condition:\n%s\n", line);
+            HUNSPELL_WARNING(stderr, "error: missing ] in condition:\n%s\n", warnvar);
             return 0;
           }
           neg = (cond[j+1] == '^') ? 1 : 0;
           if ((!neg && !in) || (neg && in)) {
-            HUNSPELL_WARNING(stderr, "warning: incompatible stripping characters and condition:\n%s\n", line);
+            HUNSPELL_WARNING(stderr, "warning: incompatible stripping characters and condition:\n%s\n", warnvar);
             return 0;          
           }
         }

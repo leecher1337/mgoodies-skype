@@ -295,7 +295,15 @@ SOURCE=.\hunspell\hunspell.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=.\hunspell\phonet.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=.\hunspell\suggestmgr.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=.\hunspell\utf_info.cxx
 # End Source File
 # End Group
 # Begin Source File

@@ -2,6 +2,18 @@ Spell Checker
 
 Changelog:
 
+. 0.0.2.8
+  * Fix for wordchars (you can revert the WORDCHARS to old values)
+  + Option to name the dict changing the db
+
+. 0.0.2.7
+  * Fix to allow editing .ar by hand
+  * Fix for crash in options
+  - Changed how icons are read - now only throught IcoLib or Icons\flags.dll
+  + Option to only replace user-defined words
+  + New dialog to add a word to always auto-replace
+  + Updated to latest version of Hunspell (side-effect: WORDCHARS now have to have all chars)
+
 . 0.0.2.6
   * Try to fix freeze when making an suggestion
 

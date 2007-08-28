@@ -5,7 +5,7 @@ CAUTION: THIS IS AN ALPHA STAGE PLUGIN. IT CAN DO VERY BAD THINGS. USE AT YOUR O
 
 This is a spell checker plugin that uses Hunspell to do the dirty work. Hunspell is the spell checker used by OpenOffice, so it should have a good range of dictionaries.
 
-For message window plugins (let's call them all *srmm) it works transparently if those plugins implement the new notification API and have a richedit in the input area. Latest version (from build #0.7) of tabSRMM and scriver already do so. SRMM plugin don't have a rich edit, so you need this moded version:
+For message window plugins (let's call them all *srmm) it works transparently if those plugins implement the new notification API and have a richedit in the input area. Latest version (from Miranda build #0.7) of tabSRMM and scriver already do so. SRMM plugin don't have a rich edit, so you need this moded version:
 Ansi: http://pescuma.mirandaim.ru/miranda/srmm.zip
 Unicode: http://pescuma.mirandaim.ru/miranda/srmmW.zip
 Patch: http://pescuma.mirandaim.ru/miranda/srmm.spellchecker.patch
@@ -23,8 +23,7 @@ It has an options page to set the default dictionary and some other options. It 
 
 The flags: new versions support showing flags to represent the dicts. This is done to have an visual way to represent the dict. To load the flags, the following steps are done:
 1. Try to load from file Icons\flags.dll - in this case an icon resource must exist with same name as language (for ex: pt_BR). If this is found, the icon is also added to IconLib to allow further customizing.
-2. Try to load from Icons\Flags\<lang>.ico - where <lang> is the language name (for ex: pt_BR). This path can be changed with foldes plugin.
-3. Load unknown flag. It can be customized thorught IconLib
+2. Load unknown flag. It can be customized thorught IconLib
 Currently there are 2 sets of flags, one from Angeli-Ka and one from the famfamfam.com site:
 - famfamfam's icons as .ico: http://pescuma.mirandaim.ru/miranda/flags-famfamfam.zip (note that there are a lot of files inside this zip with wrong names. It happens because I don't know which languages they represent - and if they represent a language or not. So, if you think some file name must change, please tell me)
 - famfamfam's icons as .dll: http://pescuma.mirandaim.ru/miranda/flags-dll-famfamfam.zip

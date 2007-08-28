@@ -8,6 +8,7 @@
 #define IDI_NO_CHECK                    122
 #define IDI_CHECK                       123
 #define IDI_UNKNOWN_FLAG                124
+#define IDD_ADD_REPLACEMENT             125
 #define IDC_DELAY                       1001
 #define IDC_WINCOLORS                   1002
 #define IDC_DEFAULTCOLORS               1003
@@ -25,6 +26,7 @@
 #define IDC_CHECK1                      1060
 #define IDC_POPUPS                      1060
 #define IDC_AUTOCORRECT                 1060
+#define IDC_AUTO_DICT                   1060
 #define IDC_CHECK2                      1061
 #define IDC_DELAY_SPIN                  1061
 #define IDC_HISTORY                     1061
@@ -40,6 +42,7 @@
 #define IDC_REMOVED_L                   1065
 #define IDC_IGNORE_UPPERCASE            1065
 #define IDC_PROTOCOLS_G                 1066
+#define IDC_AUTO_USER                   1066
 #define IDC_PROTOCOLS_L                 1067
 #define IDC_COLOURS_G                   1068
 #define IDC_TRACK_CHANGE                1068
@@ -57,6 +60,8 @@
 #define IDC_UNDERLINE_TYPE              1078
 #define IDC_UNDERLINE_TYPE_L            1079
 #define IDC_SPELL_CHECKER               1080
+#define IDC_NEW                         1082
+#define IDC_OLD                         1083
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -65,9 +70,9 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        125
+#define _APS_NEXT_RESOURCE_VALUE        126
 #define _APS_NEXT_COMMAND_VALUE         40005
-#define _APS_NEXT_CONTROL_VALUE         1081
+#define _APS_NEXT_CONTROL_VALUE         1084
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
