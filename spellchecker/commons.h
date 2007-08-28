@@ -102,7 +102,7 @@ struct Dialog {
 	HANDLE hContact;
 	char name[64];
 	Dictionary *lang;
-	TCHAR lang_name[10];
+	TCHAR lang_name[32];
 	WNDPROC old_edit_proc;
 	BOOL enabled;
 	BOOL srmm;

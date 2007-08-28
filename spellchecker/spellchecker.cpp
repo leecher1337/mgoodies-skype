@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,8),
+	PLUGIN_MAKE_VERSION(0,0,2,9),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -73,6 +73,9 @@ TCHAR dictionariesFolder[1024];
 
 HANDLE hCustomDictionariesFolder = NULL;
 TCHAR customDictionariesFolder[1024];
+
+HANDLE hFlagsDllFolder = NULL;
+TCHAR flagsDllFolder[1024];
 
 HBITMAP hCheckedBmp;
 BITMAP bmpChecked;
@@ -197,7 +200,7 @@ int mlog(const char *function, const char *fmt, ...)
 HICON LoadIconEx(Dictionary *dict, BOOL copy)
 {
 #ifdef UNICODE
-	char lang[10];
+	char lang[32];
 	WideCharToMultiByte(CP_ACP, 0, dict->language, -1, lang, sizeof(lang), NULL, NULL);
 	return LoadIconEx(lang, copy);
 #else
@@ -336,6 +339,12 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 					_T(PROFILE_PATH) _T("\\") _T(CURRENT_PROFILE) _T("\\Dictionaries"));
 
 		FoldersGetCustomPathT(hCustomDictionariesFolder, customDictionariesFolder, MAX_REGS(customDictionariesFolder), _T("."));
+		
+		hFlagsDllFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("Spell Checker"), 
+					Translate("Flags DLL"), 
+					_T(MIRANDA_PATH) _T("\\Icons"));
+
+		FoldersGetCustomPathT(hFlagsDllFolder, flagsDllFolder, MAX_REGS(flagsDllFolder), _T("."));
 	}
 	else
 	{
@@ -349,6 +358,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 #else
 		mir_sntprintf(customDictionariesFolder, MAX_REGS(customDictionariesFolder), _T("%s\\Dictionaries"), profileFolder);
 #endif
+
+		mir_sntprintf(flagsDllFolder, MAX_REGS(flagsDllFolder), _T("%s\\Icons"), mirandaFolder);
 	}
 
 	char path[1024];
@@ -376,7 +387,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	{
 		// Load flags dll
 		TCHAR flag_file[1024];
-		mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\Icons\\flags.dll"), mirandaFolder);
+		mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\flags.dll"), flagsDllFolder);
 		HMODULE hFlagsDll = LoadLibrary(flag_file);
 
 		sid.flags = SIDF_TCHAR | SIDF_SORTED;
@@ -387,7 +398,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		{
 			sid.ptszDescription = languages.dicts[i]->full_name;
 #ifdef UNICODE
-			char lang[10];
+			char lang[32];
 			mir_snprintf(lang, MAX_REGS(lang), "%S", languages.dicts[i]->language);
 			sid.pszName = lang;
 #else
@@ -1836,7 +1847,6 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			// Draw text
 			RECT rc_text = { 0, 0, 0xFFFF, 0xFFFF };
 			DrawText(lpdis->hDC, dict->full_name, lstrlen(dict->full_name), &rc_text, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE | DT_CALCRECT);
-mlog("MENU", "DRAW %d %d\n", rc_text.right, rc_text.bottom);
 
 			rc.right = lpdis->rcItem.right - 2;
 			rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - (rc_text.bottom - rc_text.top)) / 2;
@@ -1871,7 +1881,6 @@ mlog("MENU", "DRAW %d %d\n", rc_text.right, rc_text.bottom);
 			RECT rc = { 0, 0, 0xFFFF, 0xFFFF };
 
 			DrawText(hdc, dict->full_name, lstrlen(dict->full_name), &rc, DT_NOPREFIX | DT_SINGLELINE | DT_CALCRECT);
-mlog("MENU", "MEASURE %d %d\n", rc.right, rc.bottom);
 
 			lpmis->itemHeight = max(ICON_SIZE, max(bmpChecked.bmHeight, rc.bottom));
 			lpmis->itemWidth = 2 + bmpChecked.bmWidth + 2 + ICON_SIZE + 4 + rc.right + 2;

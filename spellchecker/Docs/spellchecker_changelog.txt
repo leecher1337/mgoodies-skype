@@ -2,6 +2,11 @@ Spell Checker
 
 Changelog:
 
+. 0.0.2.9
+  * Fix for big dict names
+  + Put back folders support for flags.dll
+  + Added de_frami_neu to list of known dict names
+
 . 0.0.2.8
   * Fix for wordchars (you can revert the WORDCHARS to old values)
   + Option to name the dict changing the db
