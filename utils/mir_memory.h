@@ -23,11 +23,6 @@ Boston, MA 02111-1307, USA.
 
 #include <windows.h>
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 
 // Need to be called on ME_SYSTEM_MODULESLOADED or Load
 void init_mir_malloc();
@@ -74,8 +69,5 @@ int strcmpnullW(WCHAR *str1, WCHAR *str2);
 #define MIR_FREE(_x_) if (_x_ != NULL) { mir_free(_x_); _x_ = NULL; }
 
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __MIR_MEMORY_H__

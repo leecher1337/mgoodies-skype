@@ -20,12 +20,10 @@ Boston, MA 02111-1307, USA.
 
 #include "mir_memory.h"
 
-extern "C"
-{
 #define MIRANDA_VER 0x0600
 #include <newpluginapi.h>
 #include <m_system.h>
-}
+
 
 struct MM_INTERFACE mmi;
 struct UTF8_INTERFACE utfi;

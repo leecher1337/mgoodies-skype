@@ -23,11 +23,6 @@ Boston, MA 02111-1307, USA.
 
 #include <windows.h>
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 
 // Init / free functions
 
@@ -94,10 +89,5 @@ BOOL CALLBACK TabsDlgProc(ItemOption *optItens, int optItensSize, HINSTANCE hIns
 
 
 
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __MIR_OPTIONS_H__
