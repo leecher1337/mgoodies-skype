@@ -8,17 +8,15 @@
 
 [Dictionaries]
 [Custom Dictionaries]
-[Flag icons]
 [Flags DLL]
 
 [Enabled]
 [Disabled]
-[Unknown Flag]
-[Spell Checker: No language found]
 
 [ Spell Checker ]
 [Default language:]
-[Auto-correct words]
+[Auto-replace words with dictionary suggestions]
+[Auto-replace words with user defined replacements]
 [Download more dictionaries]
 
 [ Advanced ]

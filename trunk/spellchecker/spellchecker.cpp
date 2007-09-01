@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,9),
+	PLUGIN_MAKE_VERSION(0,0,3,0),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -277,7 +277,7 @@ extern "C" int __declspec(dllexport) Unload(void)
 {
 	DeleteObject(hCheckedBmp);
 
-	for(int i = 0; i < MAX_REGS(hServices); ++i)
+	for(unsigned i = 0; i < MAX_REGS(hServices); ++i)
 		DestroyServiceFunction(hServices[i]);
 
 	return 0;
@@ -371,7 +371,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	sid.ptszSection = TranslateT("Spell Checker");
 	sid.pszDefaultFile = path;
 
-	for (int i = 0; i < MAX_REGS(iconList); ++i)
+	for (unsigned i = 0; i < MAX_REGS(iconList); ++i)
 	{
 		sid.ptszDescription = TranslateTS(iconList[i].szDescr);
 		sid.pszName = iconList[i].szName;
@@ -405,7 +405,6 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			sid.pszName = languages.dicts[i]->language;
 #endif
 
-			// First from dll
 			HICON hFlag;
 			if (hFlagsDll != NULL)
 				hFlag = (HICON) LoadImage(hFlagsDll, languages.dicts[i]->language, IMAGE_ICON, 16, 16, 0);
@@ -460,10 +459,25 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.hIcon = LoadIconEx("spellchecker_enabled", TRUE);
 		sid.hIconDisabled = LoadIconEx("spellchecker_disabled", TRUE);
-		sid.szTooltip = Translate("Spell Checker");
-		CallService(MS_MSG_ADDICON, 0, (LPARAM) &sid);
+		sid.flags = MBF_HIDDEN;
+
+		for(unsigned i = 0; i < languages.count; i++)
+		{
+			sid.dwId = i;
+
+			char tmp[128];
+			mir_snprintf(tmp, MAX_REGS(tmp), "%s - " TCHAR_STR_PARAM, 
+				Translate("Spell Checker"), languages.dicts[i]->full_name);
+			sid.szTooltip = tmp;
+
+			if (opts.use_flags)
+				sid.hIcon = LoadIconEx(languages.dicts[i], TRUE);
+			else
+				sid.hIcon = LoadIconEx("spellchecker_enabled", TRUE);
+
+			CallService(MS_MSG_ADDICON, 0, (LPARAM) &sid);
+		}
 	}
 
 	loaded = TRUE;
@@ -479,10 +493,26 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.hIcon = LoadIconEx("spellchecker_enabled", TRUE);
 		sid.hIconDisabled = LoadIconEx("spellchecker_disabled", TRUE);
-		sid.szTooltip = Translate("Spell Checker");
-		CallService(MS_MSG_MODIFYICON, 0, (LPARAM) &sid);
+		sid.flags = MBF_HIDDEN;
+		
+
+		for(unsigned i = 0; i < languages.count; i++)
+		{
+			sid.dwId = i;
+
+			char tmp[128];
+			mir_snprintf(tmp, MAX_REGS(tmp), "%s - " TCHAR_STR_PARAM, 
+				Translate("Spell Checker"), languages.dicts[i]->full_name);
+			sid.szTooltip = tmp;
+
+			if (opts.use_flags)
+				sid.hIcon = LoadIconEx(languages.dicts[i], TRUE);
+			else
+				sid.hIcon = LoadIconEx("spellchecker_enabled", TRUE);
+
+			CallService(MS_MSG_MODIFYICON, 0, (LPARAM) &sid);
+		}
 	}
 
 	return 0;
@@ -1055,6 +1085,13 @@ void GetContactLanguage(Dialog *dlg)
 	}
 
 	int i = GetClosestLanguage(dlg->lang_name);
+	if(i < 0)
+	{
+		// Lost a dict?
+		lstrcpyn(dlg->lang_name, opts.default_language, MAX_REGS(dlg->lang_name));
+		i = GetClosestLanguage(dlg->lang_name);
+	}
+
 	if (i >= 0)
 	{
 		dlg->lang = languages.dicts[i];
@@ -1073,33 +1110,18 @@ void ModifyIcon(Dialog *dlg)
 		StatusIconData sid = {0};
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
-		sid.flags = (dlg->enabled ? 0 : MBF_DISABLED);
 
-		char tooltip[1024];
-		if (dlg->lang == NULL)
+		for(unsigned i = 0; i < languages.count; i++)
 		{
-			strncpy(tooltip, Translate("Spell Checker: No language found"), MAX_REGS(tooltip));
+			sid.dwId = i;
+			
+			if (languages.dicts[i] == dlg->lang)
+				sid.flags = (dlg->enabled ? 0 : MBF_DISABLED);
+			else
+				sid.flags = MBF_HIDDEN;
+			
+			CallService(MS_MSG_MODIFYICON, (WPARAM) dlg->hContact, (LPARAM) &sid);
 		}
-		else if (dlg->lang->localized_name[0] != _T('\0'))
-		{
-#ifdef UNICODE
-			mir_snprintf(tooltip, MAX_REGS(tooltip), "%S: %S [%S]", TranslateT("Spell Checker"), dlg->lang->localized_name, dlg->lang->language);
-#else
-			mir_snprintf(tooltip, MAX_REGS(tooltip), "%s: %s [%s]", TranslateT("Spell Checker"), dlg->lang->localized_name, dlg->lang->language);
-#endif
-		}
-		else
-		{
-#ifdef UNICODE
-			mir_snprintf(tooltip, MAX_REGS(tooltip), "%S: %S", TranslateT("Spell Checker"), dlg->lang->language);
-#else
-			mir_snprintf(tooltip, MAX_REGS(tooltip), "%s: %s", TranslateT("Spell Checker"), dlg->lang->language);
-#endif
-		}
-
-		sid.szTooltip = tooltip;
-
-		CallService(MS_MSG_MODIFYICON, (WPARAM) dlg->hContact, (LPARAM) &sid);
 	}
 }
 
@@ -1114,6 +1136,9 @@ int AddContactTextBoxService(WPARAM wParam, LPARAM lParam)
 
 int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hwndOwner) 
 {
+	if (languages.count <= 0)
+		return 0;
+
 	if (dialogs.find(hwnd) == dialogs.end())
 	{
 		// Fill dialog data
@@ -1723,7 +1748,7 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 		// Show the menu
 		HMENU hMenu = CreatePopupMenu();
 
-		if (languages.count > 0 && dlg->enabled)
+		if (languages.count > 0)
 		{
 			if (opts.use_flags)
 			{

@@ -1,8 +1,8 @@
 Index: msgdialog.c
 ===================================================================
---- msgdialog.c	(revision 5109)
+--- msgdialog.c	(revision 6386)
 +++ msgdialog.c	(working copy)
-@@ -45,6 +45,7 @@
+@@ -39,6 +39,7 @@
  
  extern HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand;
  extern HANDLE hHookWinEvt;
@@ -10,7 +10,7 @@ Index: msgdialog.c
  extern struct CREOleCallback reOleCallback;
  extern HINSTANCE g_hInst;
  
-@@ -312,24 +313,7 @@
+@@ -318,22 +319,6 @@
  	case WM_CHAR:
  		if (GetWindowLong(hwnd, GWL_STYLE) & ES_READONLY)
  			break;
@@ -27,16 +27,13 @@ Index: msgdialog.c
 -					SendMessage(hwnd, WM_CHAR, '\b', 0);
 -					PostMessage(GetParent(hwnd), WM_COMMAND, IDOK, 0);
 -					return 0;
--				}
--			}
+-			}	}
 -		}
--		else
--			dat->lastEnterTime = 0;
-+
+-		else dat->lastEnterTime = 0;
+ 
  		if (wParam == 1 && GetKeyState(VK_CONTROL) & 0x8000) {      //ctrl-a
  			SendMessage(hwnd, EM_SETSEL, 0, -1);
- 			return 0;
-@@ -394,6 +378,26 @@
+@@ -403,6 +388,25 @@
  			SaveKeyboardMessage(dat, msg, wParam, lParam);
  			return 0;
  		}
@@ -59,21 +56,21 @@ Index: msgdialog.c
 +		}
 +		else
 +			dat->lastEnterTime = 0;
-+
+ 
  		if (wParam == VK_UP && (GetKeyState(VK_CONTROL) & 0x8000) && DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_CTRLSUPPORT, SRMSGDEFSET_CTRLSUPPORT) && !DBGetContactSettingByte(NULL, SRMMMOD, SRMSGSET_AUTOCLOSE, SRMSGDEFSET_AUTOCLOSE)) {
  			if (pdat->cmdList) {
- 				if (!pdat->cmdListCurrent) {
-@@ -436,8 +440,7 @@
+@@ -446,9 +450,7 @@
  			EnableWindow(GetDlgItem(GetParent(hwnd), IDOK), GetWindowTextLength(GetDlgItem(GetParent(hwnd), IDC_MESSAGE)) != 0);
  			UpdateReadChars(GetParent(hwnd), pdat->hwndStatus);
  		}
 -		if (wParam == VK_RETURN)
 -			break;
+-		//fall through
 +		break;
- 		//fall through
  	case WM_LBUTTONDOWN:
  	case WM_RBUTTONDOWN:
-@@ -461,6 +464,45 @@
+ 	case WM_MBUTTONDOWN:
+@@ -473,6 +475,45 @@
  			free(dat->keyboardMsgQueue);
  		free(dat);
  		return 0;
@@ -119,15 +116,15 @@ Index: msgdialog.c
  	}
  	return CallWindowProc(OldMessageEditProc, hwnd, msg, wParam, lParam);
  }
-@@ -746,6 +788,7 @@
+@@ -778,6 +819,7 @@
  			EnableWindow(GetDlgItem(hwndDlg, IDC_AVATAR), FALSE);
  			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETOLECALLBACK, 0, (LPARAM) & reOleCallback);
  			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_LINK);
 +			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, EM_SETEVENTMASK, 0,  ENM_CHANGE);
  			/* duh, how come we didnt use this from the start? */
  			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_AUTOURLDETECT, (WPARAM) TRUE, 0);
- 			if (dat->hContact) {
-@@ -1095,6 +1138,7 @@
+ 			if (dat->hContact && dat->szProto) {
+@@ -1120,6 +1162,7 @@
  			COLORREF colour = DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_BKGCOLOUR, SRMSGDEFSET_BKGCOLOUR);
  			dat->hBkgBrush = CreateSolidBrush(colour);
  			SendDlgItemMessage(hwndDlg, IDC_LOG, EM_SETBKGNDCOLOR, 0, colour);
@@ -135,7 +132,7 @@ Index: msgdialog.c
  		}
  		{ // avatar stuff
  			dat->avatarPic = 0;
-@@ -1108,12 +1152,17 @@
+@@ -1133,12 +1176,17 @@
  		{
  			HFONT hFont;
  			LOGFONT lf;
@@ -154,41 +151,43 @@ Index: msgdialog.c
  		}
  
          /*
-@@ -1489,18 +1538,9 @@
+@@ -1528,20 +1576,10 @@
  			SetTimer(hwndDlg, TIMERID_MSGSEND, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_MSGTIMEOUT, SRMSGDEFSET_MSGTIMEOUT), NULL);
  			break;
- 			}
--			break;
--		case WM_CTLCOLOREDIT:
--			{
--				COLORREF colour;
--				if ((HWND) lParam != GetDlgItem(hwndDlg, IDC_MESSAGE))
--					break;
--				LoadMsgDlgFont(MSGFONTID_MESSAGEAREA, NULL, &colour);
--				SetTextColor((HDC) wParam, colour);
--				SetBkColor((HDC) wParam, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_BKGCOLOUR, SRMSGDEFSET_BKGCOLOUR));
--				return (BOOL) dat->hBkgBrush;
--			}
- 		case WM_MEASUREITEM:
+ 		}
+-		break;
+ 
+-	case WM_CTLCOLOREDIT:
+-		{
+-			COLORREF colour;
+-			if ((HWND) lParam != GetDlgItem(hwndDlg, IDC_MESSAGE))
++	case WM_MEASUREITEM:
 +			if (wParam == 0 || lParam == 0)
-+				break;
- 			return CallService(MS_CLIST_MENUMEASUREITEM, wParam, lParam);
- 		case WM_DRAWITEM:
- 			{
+ 				break;
+-			LoadMsgDlgFont(MSGFONTID_MESSAGEAREA, NULL, &colour);
+-			SetTextColor((HDC) wParam, colour);
+-			SetBkColor((HDC) wParam, DBGetContactSettingDword(NULL, SRMMMOD, SRMSGSET_BKGCOLOUR, SRMSGDEFSET_BKGCOLOUR));
+-			return (BOOL) dat->hBkgBrush;
+-		}
+-
+-	case WM_MEASUREITEM:
+ 		return CallService(MS_CLIST_MENUMEASUREITEM, wParam, lParam);
+ 
+ 	case WM_DRAWITEM:
 Index: msgs.c
 ===================================================================
---- msgs.c	(revision 5109)
+--- msgs.c	(revision 6386)
 +++ msgs.c	(working copy)
 @@ -28,7 +28,7 @@
  
  HCURSOR hCurSplitNS, hCurSplitWE, hCurHyperlinkHand;
  static HANDLE hEventDbEventAdded, hEventDbSettingChange, hEventContactDeleted;
--HANDLE *hMsgMenuItem = NULL, hHookWinEvt=NULL;
-+HANDLE *hMsgMenuItem = NULL, hHookWinEvt=NULL, hHookWinPopup=NULL;
- int hMsgMenuItemCount = 0;
+-HANDLE hHookWinEvt = NULL;
++HANDLE hHookWinEvt = NULL, hHookWinPopup=NULL;
  
  extern HINSTANCE g_hInst;
-@@ -470,6 +470,7 @@
+ 
+@@ -451,6 +451,7 @@
  	CreateServiceFunction("SRMsg/ReadMessage", ReadMessageCommand);
  	CreateServiceFunction("SRMsg/TypingMessage", TypingMessageCommand);
  	hHookWinEvt=CreateHookableEvent(ME_MSG_WINDOWEVENT);
@@ -198,7 +197,7 @@ Index: msgs.c
  	SkinAddNewSoundEx("AlertMsg", Translate("Messages"), Translate("Incoming (New Session)"));
 Index: resource.rc
 ===================================================================
---- resource.rc	(revision 5109)
+--- resource.rc	(revision 6386)
 +++ resource.rc	(working copy)
 @@ -9,6 +9,7 @@
  //
@@ -238,9 +237,9 @@ Index: resource.rc
  END
 Index: srmm.c
 ===================================================================
---- srmm.c	(revision 5109)
+--- srmm.c	(revision 6386)
 +++ srmm.c	(working copy)
-@@ -32,7 +32,11 @@
+@@ -34,7 +34,11 @@
  
  PLUGININFOEX pluginInfo = {
  	sizeof(PLUGININFOEX),
@@ -253,7 +252,7 @@ Index: srmm.c
  	PLUGIN_MAKE_VERSION(0, 7, 0, 0),
  	"Send and receive instant messages",
  	"Miranda IM Development Team",
-@@ -42,9 +46,9 @@
+@@ -44,9 +48,9 @@
  	UNICODE_AWARE,
  	DEFMOD_SRMESSAGE,            // replace internal version (if any)
  #ifdef _UNICODE
@@ -265,37 +264,3 @@ Index: srmm.c
  #endif
  };
  
-Index: srmm.dsp
-===================================================================
---- srmm.dsp	(revision 5109)
-+++ srmm.dsp	(working copy)
-@@ -252,10 +252,18 @@
- # End Source File
- # Begin Source File
- 
-+SOURCE=.\res\dragcopy.cur
-+# End Source File
-+# Begin Source File
-+
- SOURCE=..\..\src\res\dragcopy.cur
- # End Source File
- # Begin Source File
- 
-+SOURCE=.\res\dropuser.cur
-+# End Source File
-+# Begin Source File
-+
- SOURCE=..\..\src\res\dropuser.cur
- # End Source File
- # Begin Source File
-@@ -264,6 +272,10 @@
- # End Source File
- # Begin Source File
- 
-+SOURCE=.\res\hyperlin.cur
-+# End Source File
-+# Begin Source File
-+
- SOURCE=..\..\src\res\hyperlin.cur
- # End Source File
- # Begin Source File

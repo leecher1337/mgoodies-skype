@@ -2,6 +2,9 @@ Spell Checker
 
 Changelog:
 
+. 0.0.3.0
+  + Show dict flag on *srmm status bar
+
 . 0.0.2.9
   * Fix for big dict names
   + Put back folders support for flags.dll
