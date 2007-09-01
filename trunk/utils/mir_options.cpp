@@ -25,8 +25,6 @@ Boston, MA 02111-1307, USA.
 #include <stdio.h>
 #include <tchar.h>
 
-extern "C"
-{
 #define MIRANDA_VER 0x0600
 #include <newpluginapi.h>
 #include <m_database.h>
@@ -35,7 +33,6 @@ extern "C"
 #include <m_protocols.h>
 #include <m_protosvc.h>
 #include <m_system.h>
-}
 
 
 // WinXP stuff
