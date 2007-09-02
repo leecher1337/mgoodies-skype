@@ -36,6 +36,7 @@ Based on work by nullbie
 #include <m_utils.h>
 #include <m_database.h>
 
+#define MIID_REMOVEPERSONALSETTINGS { 0x5eaec989, 0x8ff, 0x4820, { 0xb8, 0x6c, 0x2b, 0x6e, 0xf0, 0x8e, 0x33, 0x73 } }
 
 #define INI_FILE_NAME  "RemovePersonalSettings.ini"
 
@@ -50,17 +51,18 @@ char gIniFile[MAX_PATH];
 char gMirandaDir[MAX_PATH];
 
 
-PLUGININFO pluginInfo={
+PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFO),
 	"Remove Personal Settings",
-	PLUGIN_MAKE_VERSION(0,1,0,3),
+	PLUGIN_MAKE_VERSION(0,1,0,4),
 	"Remove personal settings to allow to send a profile to other user(s) without sending personal data.",
-	"Pescuma",
+	"Ricardo Pescuma Domenecci",
 	"",
-	"© 2005 Ricardo Pescuma Domenecci",
-	"http://www.miranda-im.org/",
+	"© 2007 Ricardo Pescuma Domenecci",
+	"http://pescuma.mirandaim.ru/miranda/rps",
 	0,		//not transient
-	0		//doesn't replace anything built-in
+	0,		//doesn't replace anything built-in
+	{ 0x60e94b84, 0xa799, 0x4021, { 0x94, 0x49, 0x5b, 0x83, 0x8f, 0xc0, 0x6a, 0x7c } } // {60E94B84-A799-4021-9449-5B838FC06A7C}
 };
 
 
@@ -91,10 +93,35 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 	return TRUE;
 }
 
-__declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
+
+__declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
 {
+    // Are we running under Unicode Windows version ?
+    if ((GetVersion() & 0x80000000) == 0)
+		pluginInfo.flags = 1; // UNICODE_AWARE
+    
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO*) &pluginInfo;
+}
+
+
+__declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+    // Are we running under Unicode Windows version ?
+    if ((GetVersion() & 0x80000000) == 0)
+		pluginInfo.flags = 1; // UNICODE_AWARE
+    
+	pluginInfo.cbSize = sizeof(PLUGININFOEX);
 	return &pluginInfo;
 }
+
+
+static const MUUID interfaces[] = { MIID_REMOVEPERSONALSETTINGS, MIID_LAST };
+__declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
+}
+
 
 int __declspec(dllexport) Load(PLUGINLINK *link)
 {
@@ -145,6 +172,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	return 0;
 }
+
 
 int __declspec(dllexport) Unload(void)
 {
@@ -396,7 +424,7 @@ void RemoveSettings()
 				*(value-1) = '\0';
 			}
 
-			// Disable it
+			// Delete it
 			if (name[0] != '\0')
 				DeleteSetting(name);
 
@@ -671,66 +699,88 @@ BOOL isMetaContact(HANDLE hContact)
 typedef struct {
 	char buffer[10000];
 	int pos;
+	const char *filter;
+	size_t lenFilterMinusOne;
 } DeleteModuleStruct;
 
 
-int EnumProc(const char *szSetting, LPARAM lParam)
+int EnumProc(const char *szName, LPARAM lParam)
 {
 	DeleteModuleStruct *dms = (DeleteModuleStruct *) lParam;
-	size_t len = strlen(szSetting);
+	size_t len = strlen(szName);
+
+	if (dms->filter != NULL && dms->lenFilterMinusOne > 0)
+	{
+		if (len >= dms->lenFilterMinusOne)
+		{
+			if (dms->filter[0] == '*')
+			{
+				if (strcmp(&dms->filter[1], &szName[len - dms->lenFilterMinusOne]) != 0)
+					return 0;
+			}
+			else // if (dms->filter[dms->lenFilterMinusOne] == '*')
+			{
+				if (strncmp(dms->filter, szName, dms->lenFilterMinusOne) != 0)
+					return 0;
+			}
+		}
+	}
 
 	// Add to the struct
 	if (len > 0 && len < sizeof(dms->buffer) - dms->pos - 2)
 	{
-		strcpy(&dms->buffer[dms->pos], szSetting);
+		strcpy(&dms->buffer[dms->pos], szName);
 		dms->pos += len + 1;
 	}
 
 	return 0;
 }
 
+int ModuleEnumProc(const char *szName, DWORD ofsModuleName, LPARAM lParam)
+{
+	return EnumProc(szName, lParam);
+}
 
 void DeleteSettingEx(const char *szModule, const char *szSetting)
 {
-	// Do it
+	size_t lenModule;
+
 	if (szModule == NULL)
-	{
 		return;
-	}
-	else if (szSetting == NULL)
+
+	lenModule = strlen(szModule);
+	if (szModule[0] == '*' || szModule[lenModule-1] == '*')
 	{
 		DeleteModuleStruct dms;
-		DBCONTACTENUMSETTINGS dbces;
-
 		ZeroMemory(&dms, sizeof(dms));
 
-		dbces.pfnEnumProc = EnumProc;
-		dbces.lParam = (LPARAM) &dms;
-		dbces.szModule = szModule;
-		dbces.ofsSettings = 0;
+		dms.filter = szModule;
+		dms.lenFilterMinusOne = lenModule-1;
 
-		CallService(MS_DB_CONTACT_ENUMSETTINGS, 0, (LPARAM) &dbces);
+		CallService(MS_DB_MODULES_ENUM, (WPARAM) &dms, (LPARAM) &ModuleEnumProc);
 
 		// Delete then
-		szSetting = dms.buffer;
-		while(szSetting[0] != '\0')
+		szModule = dms.buffer;
+		while(szModule[0] != '\0')
 		{
-			DBDeleteContactSetting(NULL, szModule, szSetting);
+			DeleteSettingEx(szModule, szSetting);
 
 			// Get next one
-			szSetting += strlen(szSetting) + 1;
+			szModule += strlen(szModule) + 1;
 		}
 	}
 	else
 	{
-		size_t len = strlen(szSetting);
-		if (szSetting[0] == '*' || szSetting[len-1] == '*')
+		size_t lenSetting = szSetting == NULL ? 0 : strlen(szSetting);
+		if (szSetting == NULL || szSetting[0] == '*' || szSetting[lenSetting-1] == '*')
 		{
 			DeleteModuleStruct dms;
 			DBCONTACTENUMSETTINGS dbces;
-			char *s;
 
 			ZeroMemory(&dms, sizeof(dms));
+
+			dms.filter = szSetting;
+			dms.lenFilterMinusOne = lenSetting-1;
 
 			dbces.pfnEnumProc = EnumProc;
 			dbces.lParam = (LPARAM) &dms;
@@ -740,32 +790,13 @@ void DeleteSettingEx(const char *szModule, const char *szSetting)
 			CallService(MS_DB_CONTACT_ENUMSETTINGS, 0, (LPARAM) &dbces);
 
 			// Delete then
-			s = dms.buffer;
-			while(s[0] != '\0')
+			szSetting = dms.buffer;
+			while(szSetting[0] != '\0')
 			{
-				size_t lenS = strlen(s);
-
-				if (lenS >= len-1)
-				{
-					if (szSetting[0] == '*')
-					{
-						if (strcmp(&szSetting[1], &s[lenS-(len-1)]) == 0)
-						{
-							DBDeleteContactSetting(NULL, szModule, s);
-						}
-					}
-					else // if (szSetting[len-1] == '*')
-					{
-						if (strncmp(szSetting, s, len-1) == 0)
-						{
-							DBDeleteContactSetting(NULL, szModule, s);
-						}
-					}
-				}
-				
+				DBDeleteContactSetting(NULL, szModule, szSetting);
 
 				// Get next one
-				s += strlen(s) + 1;
+				szSetting += strlen(szSetting) + 1;
 			}
 		}
 		else
@@ -795,5 +826,7 @@ void DeleteSetting(const char *setting)
 	}
 
 	DeleteSettingEx(szModule, szSetting);
+
+	free(szModule);
 }
 

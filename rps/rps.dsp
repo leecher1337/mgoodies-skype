@@ -103,5 +103,25 @@ SOURCE=.\rps.c
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # End Group
+# Begin Group "Docs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\RemovePersonalSettings.ini
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\rps_changelog.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\rps_readme.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\rps_version.txt
+# End Source File
+# End Group
 # End Target
 # End Project
