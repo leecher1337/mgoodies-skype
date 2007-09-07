@@ -222,6 +222,14 @@ static DATABASELINK dblink = {
 	UnloadDatabase,
 };
 
+#define EMAILYB "y_b@saaplugin" \
+	/*these fscking spammers gather even from source code */ \
+	".no-ip.info"
+
+#define EMAILP "piotrek@pio" \
+	/*these fscking spammers gather even from source code */ \
+	"pawlu.net"
+
 static PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 #ifdef SECUREDB
@@ -229,16 +237,16 @@ static PLUGININFOEX pluginInfo = {
 #else
 	"Miranda Virtualizable database driver",
 #endif
-	PLUGIN_MAKE_VERSION(0,6,0,10),
+	PLUGIN_MAKE_VERSION(0,6,0,11),
 #ifdef SECUREDB
 	"Provides Miranda database support: encryption, virtualisation, global settings, contacts, history, settings per contact, optimized paths.",
 	"Miranda-IM project; YB; Piotr Pawluczuk; Pescuma",
-	"yb@saaplugin.no-ip.info",
+	EMAILYB"; "EMAILP,
 	"Copyright 2000-2007 Miranda-IM project; Piotr Pawluczuk; YB; Pescuma",
 #else
 	"Provides Miranda database support: virtualisation, global settings, contacts, history, settings per contact, optimized paths.",
 	"Miranda-IM project; YB; Pescuma",
-	"yb@saaplugin.no-ip.info; piotrek@piopawlu.net",
+	EMAILYB,
 	"Copyright 2000-2007 Miranda-IM project; YB; Pescuma",
 #endif
 	"http://saaplugin.no-ip.info/db3xV/",
