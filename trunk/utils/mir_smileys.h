@@ -23,10 +23,6 @@ Boston, MA 02111-1307, USA.
 
 #include <windows.h>
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
 
 /*
 To use this files mir_dblists.h/.c are needed
@@ -65,8 +61,5 @@ int Smileys_DrawText(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRect, UINT u
 // int Smileys_DrawTextW(HDC hDC, LPCWSTR lpString, int nCount, LPRECT lpRect, UINT uFormat, const char *protocol, SmileysParseInfo parseInfo);
 
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __MIR_SMILEYS_H__

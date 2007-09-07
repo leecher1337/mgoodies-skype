@@ -22,15 +22,14 @@ Boston, MA 02111-1307, USA.
 # define __MIR_DBLISTS_H__
 
 #include <windows.h>
+#include <newpluginapi.h>
+#include <m_system.h>
 
 
 #ifdef __cplusplus
 extern "C" 
 {
 #endif
-
-#include <newpluginapi.h>
-#include <m_system.h>
 
 
 extern struct LIST_INTERFACE list_interface;

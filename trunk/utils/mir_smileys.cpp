@@ -21,14 +21,11 @@ Boston, MA 02111-1307, USA.
 #include "mir_smileys.h"
 #include "mir_memory.h"
 
-extern "C"
-{
 #include <richedit.h>
 #include <m_smileyadd.h>
 #include <newpluginapi.h>
 #include <m_langpack.h>
 #include <tchar.h>
-}
 
 
 
