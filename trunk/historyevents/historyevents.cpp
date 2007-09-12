@@ -68,6 +68,7 @@ int ServiceGetFlags(WPARAM wParam, LPARAM lParam);
 int ServiceGetText(WPARAM wParam, LPARAM lParam);
 int ServiceReleaseText(WPARAM wParam, LPARAM lParam);
 int ServiceAddToHistory(WPARAM wParam, LPARAM lParam);
+int ServiceIsEnabledTemplate(WPARAM wParam, LPARAM lParam);
 
 DWORD WINAPI DeleteThread(LPVOID vParam);
 static CRITICAL_SECTION cs;
@@ -162,6 +163,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	CreateServiceFunction(MS_HISTORYEVENTS_GET_TEXT, ServiceGetText);
 	CreateServiceFunction(MS_HISTORYEVENTS_RELEASE_TEXT, ServiceReleaseText);
 	CreateServiceFunction(MS_HISTORYEVENTS_ADD_TO_HISTORY, ServiceAddToHistory);
+	CreateServiceFunction(MS_HISTORYEVENTS_IS_ENABLED_TEMPLATE, ServiceIsEnabledTemplate);
 	
 	// hooks
 	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
@@ -310,7 +312,7 @@ void RegisterDefaultEventType(char *name, char *description, WORD eventType, int
 	HISTORY_EVENT_HANDLER *heh = & handlers[eventType];
 	memset(heh, 0, sizeof(HISTORY_EVENT_HANDLER));
 	heh->name = name;
-	heh->description = description;
+	heh->description = Translate(description);
 	heh->eventType = eventType;
 	heh->defaultIcon = (HICON) icon;
 	heh->supports = HISTORYEVENTS_FORMAT_CHAR | HISTORYEVENTS_FORMAT_WCHAR | HISTORYEVENTS_FORMAT_RICH_TEXT;
@@ -327,7 +329,7 @@ void RegisterDefaultEventType(char *name, char *description, WORD eventType, int
 		sid.cbSize = sizeof(SKINICONDESC);
 		sid.flags = SIDF_SORTED;
 		sid.pszSection = Translate("History/Events");
-		sid.pszDescription = Translate(heh->description);
+		sid.pszDescription = heh->description;
 		sid.pszName = heh->defaultIconName;
 		sid.hDefaultIcon = heh->defaultIcon;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM) &sid);
@@ -356,6 +358,10 @@ int ServiceRegister(WPARAM wParam, LPARAM lParam)
 	// Lets add it
 	HISTORY_EVENT_HANDLER &tmp = handlers[heh->eventType];
 	tmp = *heh;
+	tmp.name = strdup(heh->name);
+	tmp.description = Translate(heh->description);
+	if (tmp.description == heh->description)
+		tmp.description = strdup(heh->description);
 	tmp.flags = GetSettingDword(heh, FLAGS, tmp.flags);
 	char name[128];
 	mir_snprintf(name, sizeof(name), "historyevent_%s", heh->name);
@@ -366,7 +372,7 @@ int ServiceRegister(WPARAM wParam, LPARAM lParam)
 	sid.cbSize = sizeof(SKINICONDESC);
 	sid.flags = SIDF_SORTED;
 	sid.pszSection = Translate("History/Events");
-	sid.pszDescription = Translate(heh->description);
+	sid.pszDescription = tmp.description;
 	sid.pszName = tmp.defaultIconName;
 	sid.hDefaultIcon = heh->defaultIcon;
 	CallService(MS_SKIN2_ADDICON, 0, (LPARAM) &sid);
@@ -602,6 +608,11 @@ void ReplaceVars(Buffer<TCHAR> *buffer, HISTORY_EVENT_ADD * hea)
 			if (i == 0)
 				break;
 		}
+		else if (buffer->str[i] == _T('\\') && i+1 <= buffer->len-1 && buffer->str[i+1] == _T('n')) 
+		{
+			buffer->str[i] = _T('\r');
+			buffer->str[i+1] = _T('\n');
+		}
 	}
 }
 
@@ -614,6 +625,9 @@ int ServiceAddToHistory(WPARAM wParam, LPARAM lParam)
 
 	HISTORY_EVENT_HANDLER *heh = GetHandler(hea->eventType);
 	if (heh == NULL || heh->numTemplates < 1 || heh->numTemplates < hea->templateNum)
+		return NULL;
+
+	if (!GetSettingBool(heh, hea->templateNum, TEMPLATE_ENABLED, TRUE))
 		return NULL;
 
 	Buffer<TCHAR> buffer;
@@ -650,6 +664,18 @@ int ServiceAddToHistory(WPARAM wParam, LPARAM lParam)
 	mir_free(text);
 
 	return (int) ret;
+}
+
+int ServiceIsEnabledTemplate(WPARAM wParam, LPARAM lParam)
+{
+	WORD eventType = wParam;
+	int templateNum = lParam;
+
+	HISTORY_EVENT_HANDLER *heh = GetHandler(eventType);
+	if (heh == NULL || heh->numTemplates < 1 || heh->numTemplates < templateNum)
+		return FALSE;
+
+	return GetSettingBool(heh, templateNum, TEMPLATE_ENABLED, TRUE);
 }
 
 
