@@ -239,7 +239,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 				SendMessage(icon, STM_SETICON, (WPARAM) LoadIconEx(heh, TRUE), 0);
 
-				HWND tmp = CreateWindowA("STATIC", Translate(heh->description), WS_CHILD | WS_VISIBLE, 
+				HWND tmp = CreateWindowA("STATIC", heh->description, WS_CHILD | WS_VISIBLE, 
                         x, pt.y + (height - font.tmHeight) / 2, width - (x - pt.x), font.tmHeight, 
 						hwndDlg, NULL, hInst, NULL);
 				SendMessage(tmp, WM_SETFONT, (WPARAM) hFont, FALSE);
