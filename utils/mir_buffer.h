@@ -96,6 +96,11 @@ class Buffer
 			size = len = __blen(in);
 		}
 
+		~Buffer()
+		{
+			free();
+		}
+
 		void pack() 
 		{
 			if (str != NULL)
