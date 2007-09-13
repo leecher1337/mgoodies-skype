@@ -51,10 +51,7 @@ PLUGINLINK *pluginLink;
 
 map<WORD, HISTORY_EVENT_HANDLER> handlers;
 
-static HANDLE hModulesLoaded = NULL;
-static HANDLE hPreShutdownHook = NULL;
-static HANDLE hDbEventFilterAdd = NULL;
-static HANDLE hDbEventAdded = NULL;
+static HANDLE hHooks[4] = {0};
 
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int PreShutdown(WPARAM wParam, LPARAM lParam);
@@ -70,8 +67,10 @@ int ServiceReleaseText(WPARAM wParam, LPARAM lParam);
 int ServiceAddToHistory(WPARAM wParam, LPARAM lParam);
 int ServiceIsEnabledTemplate(WPARAM wParam, LPARAM lParam);
 
+HANDLE hDeleteThreadEvent;
 DWORD WINAPI DeleteThread(LPVOID vParam);
 static CRITICAL_SECTION cs;
+int shuttingDown = 0;
 
 HISTORY_EVENT_HANDLER *GetHandler(WORD eventType);
 void RegisterDefaultEventType(char *name, char *description, WORD eventType, int flags = 0, char *icon = NULL, fGetHistoryEventText pfGetHistoryEventText = NULL);
@@ -136,6 +135,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	init_mir_malloc();
 
+	hDeleteThreadEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
 	// Default events
 	RegisterDefaultEventType("message", "Message", EVENTTYPE_MESSAGE, 
 							 HISTORYEVENTS_FLAG_SHOW_IM_SRMM 
@@ -166,10 +167,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	CreateServiceFunction(MS_HISTORYEVENTS_IS_ENABLED_TEMPLATE, ServiceIsEnabledTemplate);
 	
 	// hooks
-	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
-	hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
-	hDbEventFilterAdd = HookEvent(ME_DB_EVENT_FILTER_ADD, DbEventFilterAdd);
-	hDbEventAdded = HookEvent(ME_DB_EVENT_ADDED, DbEventAdded);
+	hHooks[0] = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
+	hHooks[1] = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
+	hHooks[2] = HookEvent(ME_DB_EVENT_FILTER_ADD, DbEventFilterAdd);
+	hHooks[3] = HookEvent(ME_DB_EVENT_ADDED, DbEventAdded);
 
 	InitOptions();
 
@@ -224,7 +225,18 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
+	if (shuttingDown == 0)
+		shuttingDown = 1;
+	SetEvent(hDeleteThreadEvent);
+	int count = 0;
+	while(shuttingDown != 2 && ++count < 10)
+		Sleep(10);
+
 	DeInitOptions();
+
+	for(int i = 0; i < MAX_REGS(hHooks); i++)
+		if (hHooks[i] != NULL)
+			UnhookEvent(hHooks[i]);
 
 	return 0;
 }
@@ -956,6 +968,10 @@ BOOL ItsTimeToDelete(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe)
 		{
 			return dbe->timestamp + 7 * 24 * 60 * 60 < (DWORD) time(NULL);
 		}
+		case HISTORYEVENTS_FLAG_KEEP_ONE_DAY:
+		{
+			return dbe->timestamp + 24 * 60 * 60 < (DWORD) time(NULL);
+		}
 		case HISTORYEVENTS_FLAG_KEEP_FOR_SRMM:
 		{
 			// If it is open, let it be
@@ -1019,37 +1035,54 @@ BOOL ItsTimeToDelete(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe)
 }
 
 
+void wait(int time)
+{
+	if (!shuttingDown)
+		WaitForSingleObject(hDeleteThreadEvent, time);
+}
+
+
 void DoFullPass()
 {
 	DWORD lastFulPass = DBGetContactSettingDword(NULL, MODULE_NAME, "LastFullPass", 0);
 	DWORD now = (DWORD) time(NULL);
-	if (now < lastFulPass + 5 * 24 * 60 * 60)
+	if (now < lastFulPass + 12 * 60 * 60) // 1/2 day
 		return;
 
+	// Start after 1 minute
+	wait(60 * 1000);
+
+	int count = 0;
 	HANDLE hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
-	while (hContact != NULL)
+	while (hContact != NULL && !shuttingDown)
 	{
 		HANDLE hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDFIRST, (WPARAM) hContact, 0);
 
-		while(hDbEvent != NULL)
+		while(hDbEvent != NULL && !shuttingDown)
 		{
 			if (ItsTimeToDelete(hContact, hDbEvent))
 			{
 				HANDLE tmp = hDbEvent;
 				hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
 				CallService(MS_DB_EVENT_DELETE, (WPARAM) hContact, (LPARAM) tmp);
+
+				wait(100);
 			}
 			else
 				hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
 
-			Sleep(1);
+			if (++count > 100)
+			{
+				count = 0;
+				wait(10);
+			}
 		}
 		
 		hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM) hContact, 0);
 	}
 
-
-	DBWriteContactSettingDword(NULL, MODULE_NAME, "LastFullPass", now);
+	if (!shuttingDown)
+		DBWriteContactSettingDword(NULL, MODULE_NAME, "LastFullPass", now);
 }
 
 
@@ -1105,6 +1138,8 @@ void AppendHistoryEvent(HANDLE hContact, HANDLE hDbEvent)
 		lastHistoryEvent = lastHistoryEvent->next = node;
 
 	LeaveCriticalSection(&cs);
+
+	SetEvent(hDeleteThreadEvent);
 }
 
 
@@ -1117,13 +1152,9 @@ DWORD WINAPI DeleteThread(LPVOID vParam)
 	HistoryEventNode *prev = NULL;
 
 	// Now delete the new events added
-	while(1)
+	while(!shuttingDown)
 	{
-		// Breath baby, breath
-		Sleep(1);
-
 		// Process next
-		prev = node;
 		if (node == NULL)
 			node = GetFirstHistoryEvent();
 		else
@@ -1131,16 +1162,21 @@ DWORD WINAPI DeleteThread(LPVOID vParam)
 
 		if (node == NULL)
 		{
-			Sleep(60 * 1000);
+			wait(INFINITE);
 		}
 		else if (ItsTimeToDelete(node->hContact, node->hDBEvent))
 		{
 			int ret = CallService(MS_DB_EVENT_DELETE, (WPARAM) node->hContact, (LPARAM) node->hDBEvent);
 			DeleteHistoryEvent(node, prev);
 			node = prev;
+
+			// Breath baby, breath
+			wait(100);
 		}
+		prev = node;
 	}
 
+	shuttingDown = 2;
 	return 0;
 }
 

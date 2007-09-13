@@ -336,6 +336,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("Forever"));
 				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("For 1 month"));
 				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("For 1 week"));
+				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("For 1 day"));
 				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("Only to view in message window"));
 
 				if (!(heh->flags & HISTORYEVENTS_FLAG_DEFAULT))
