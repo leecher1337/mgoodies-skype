@@ -9,7 +9,7 @@ It also provides options to remove events from history in some pre-configured in
 
 This plugin requires at least Miranda 0.7
 
-To report bugs/make suggestions, go to the forum thread: 
+To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=15467
 
 To do:
  - Change some plugins to use this service
