@@ -84,10 +84,10 @@ BOOL ClientEquals(TCHAR *a, TCHAR *b)
 
 
 HISTORY_TYPE types[] = {
-	{ "ClientHistory",	"Client",			IDI_NICK,	EVENTTYPE_CLIENT_CHANGE,		NULL,				ClientEquals,	ClientFormat,	(char *) -1,	"MirVer",		TRUE,	NULL,				TRUE,	FALSE },
-	{ "NickHistory",	"Nickname",			IDI_NICK,	EVENTTYPE_NICKNAME_CHANGE,		NULL,				NULL,			NULL,			(char *) -1,	"Nick",			TRUE,	NULL,				FALSE,	FALSE },
-	{ "StatusHistory",	"Status",			IDI_STATUS, EVENTTYPE_STATUSCHANGE,			NULL,				NULL,			StatusFormat,	(char *) -1,	"Status",		FALSE,	ID_STATUS_OFFLINE,	FALSE,	TRUE },
-	{ "SMH",			"Status Message",	IDI_SMH,	EVENTTYPE_STATUSMESSAGE_CHANGE,	SMHAllowProtocol,	NULL,			NULL,			"CList",		"StatusMsg",	TRUE,	NULL,				TRUE,	FALSE },
+	{ "ClientHistory",	"Client",			IDI_CLIENT,	EVENTTYPE_CLIENT_CHANGE,		NULL,				ClientEquals,	ClientFormat,	0,									(char *) -1,	"MirVer",		TRUE,	NULL,				TRUE,	FALSE },
+	{ "NickHistory",	"Nickname",			IDI_NICK,	EVENTTYPE_NICKNAME_CHANGE,		NULL,				NULL,			NULL,			0, 									(char *) -1,	"Nick",			TRUE,	NULL,				FALSE,	FALSE },
+	{ "StatusHistory",	"Status",			IDI_STATUS, EVENTTYPE_STATUSCHANGE,			NULL,				NULL,			StatusFormat,	HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	(char *) -1,	"Status",		FALSE,	ID_STATUS_OFFLINE,	FALSE,	TRUE },
+	{ "SMH",			"Status Message",	IDI_SMH,	EVENTTYPE_STATUSMESSAGE_CHANGE,	SMHAllowProtocol,	NULL,			NULL,			0, 									"CList",		"StatusMsg",	TRUE,	NULL,				TRUE,	FALSE },
 };
 
 

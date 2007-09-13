@@ -32,6 +32,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDI_NICK                ICON    DISCARDABLE     "res\\nick_change.ico"
 IDI_SMH                 ICON    DISCARDABLE     "res\\sm_change.ico"
 IDI_STATUS              ICON    DISCARDABLE     "res\\status_change.ico"
+IDI_CLIENT              ICON    DISCARDABLE     "res\\client_change.ico"
 #endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -70,7 +71,7 @@ END
 IDD_POPUPS DIALOGEX 0, 0, 314, 240
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " Tracking ",IDC_TRACK_G,3,3,308,86
     CONTROL         "Show when contacts change their %s",IDC_TRACK_CHANGE,
