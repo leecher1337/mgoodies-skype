@@ -36,8 +36,9 @@ Boston, MA 02111-1307, USA.
 #define HISTORYEVENTS_FLAG_EXPECT_CONTACT_NAME_BEFORE	(1 << 3) // Means that who is drawing this should draw the contact name before the text
 #define HISTORYEVENTS_FLAG_KEEP_ONE_MONTH 				(1 << 8) // By default store in db for 1 month
 #define HISTORYEVENTS_FLAG_KEEP_ONE_WEEK 				(2 << 8) // By default store in db for 1 week
-#define HISTORYEVENTS_FLAG_KEEP_FOR_SRMM 				(3 << 8) // By default store in db only enought for message log
-#define HISTORYEVENTS_FLAG_KEEP_DONT					(4 << 8) // By default don't store in db (aka ignore it)
+#define HISTORYEVENTS_FLAG_KEEP_ONE_DAY					(3 << 8) // By default store in db until restart
+#define HISTORYEVENTS_FLAG_KEEP_FOR_SRMM 				(4 << 8) // By default store in db only enought for message log
+#define HISTORYEVENTS_FLAG_KEEP_DONT					(5 << 8) // By default don't store in db (aka ignore it)
 
 
 // This function must be implemented by subscribers. It must return a pointer or NULL
