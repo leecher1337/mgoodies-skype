@@ -17,7 +17,7 @@ This plugin requires at least Miranda 0.7
 
 The icons were copied/based on the icons from History++.
 
-To report bugs/make suggestions, go to the forum thread: 
+To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=15468
 
 To do:
  - XStatus change notification
