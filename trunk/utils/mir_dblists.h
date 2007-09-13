@@ -26,11 +26,6 @@ Boston, MA 02111-1307, USA.
 #include <m_system.h>
 
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 
 extern struct LIST_INTERFACE list_interface;
 
@@ -63,9 +58,5 @@ void* List_Pop( SortedList* p_list );
 void* List_Peek( SortedList* p_list );
 
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __MIR_DBLISTS_H__
