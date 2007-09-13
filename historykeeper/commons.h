@@ -79,6 +79,7 @@ struct HISTORY_TYPE {
 	pfAllowProtocol fAllowProtocol;
 	pfEquals fEquals;
 	pfFormat fFormat;
+	int historyFlags;
 
 	struct {
 		struct {

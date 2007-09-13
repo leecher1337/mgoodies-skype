@@ -167,7 +167,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 		HICON hIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(types[i].icon), IMAGE_ICON, 16, 16, 0);
 		HistoryEvents_RegisterMessageStyle(MODULE_NAME, types[i].name, desc, types[i].eventType, 
-			hIcon, HISTORYEVENTS_FLAG_SHOW_IM_SRMM | HISTORYEVENTS_FLAG_EXPECT_CONTACT_NAME_BEFORE,
+			hIcon, HISTORYEVENTS_FLAG_SHOW_IM_SRMM | HISTORYEVENTS_FLAG_EXPECT_CONTACT_NAME_BEFORE | types[i].historyFlags,
 			templates, MAX_REGS(templates));
 		DestroyIcon(hIcon);
 
