@@ -622,8 +622,8 @@ void TrackChangeNumber(int typeNum, HANDLE hContact)
 			switch(new_.type)
 			{
 				case DBVT_BYTE: DBWriteContactSettingByte(hContact, module, current_setting, new_.bVal); break;
-				case DBVT_WORD: DBGetContactSettingWord(hContact, module, current_setting, new_.wVal); break;
-				case DBVT_DWORD: DBGetContactSettingDword(hContact, module, current_setting, new_.dVal); break;
+				case DBVT_WORD: DBWriteContactSettingWord(hContact, module, current_setting, new_.wVal); break;
+				case DBVT_DWORD: DBWriteContactSettingDword(hContact, module, current_setting, new_.dVal); break;
 			}
 		}
 

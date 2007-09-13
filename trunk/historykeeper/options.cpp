@@ -59,7 +59,7 @@ static BOOL MyAllowProtocol(const char *proto, void *param)
 #define OPTIONS_CONTROLS_SIZE 2
 static OptPageControl optionsControls[NUM_TYPES][OPTIONS_CONTROLS_SIZE];
 
-#define POPUPS_CONTROLS_SIZE 16
+#define POPUPS_CONTROLS_SIZE 15
 static OptPageControl popupsControls[NUM_TYPES][POPUPS_CONTROLS_SIZE];
 
 static UINT popupsExpertControls[] = { 
