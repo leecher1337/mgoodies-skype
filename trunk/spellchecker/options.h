@@ -44,6 +44,7 @@ struct Options {
 	BOOL show_all_corrections;
 	BOOL show_wrong_word;
 	BOOL use_flags;
+	BOOL auto_locale;
 };
 
 extern Options opts;

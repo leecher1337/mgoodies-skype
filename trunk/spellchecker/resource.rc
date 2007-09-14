@@ -27,39 +27,42 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPTIONS DIALOGEX 0, 0, 252, 190
+IDD_OPTIONS DIALOGEX 0, 0, 252, 210
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,250,94
+    GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,250,99
     LTEXT           "Default language:",IDC_STATIC,11,20,82,8
     COMBOBOX        IDC_DEF_LANG,95,18,145,60,CBS_DROPDOWNLIST | 
                     CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
                     WS_TABSTOP
     CONTROL         "Auto-replace words with dictionary suggestions",
                     IDC_AUTO_DICT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    35,230,10
+                    40,230,10
     CONTROL         "Auto-replace words with user defined replacements",
                     IDC_AUTO_USER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    47,230,10
+                    52,230,10
     CONTROL         "Ignore words in UPPER CASE",IDC_IGNORE_UPPERCASE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,59,230,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,64,230,10
     CONTROL         "Download more dictionaries",IDC_GETMORE,"Hyperlink",
-                    WS_TABSTOP | 0x1,10,80,230,12
-    GROUPBOX        " Advanced ",IDC_ADVANCED,1,102,250,85
-    LTEXT           "Underline type:",IDC_UNDERLINE_TYPE_L,11,118,91,8
-    COMBOBOX        IDC_UNDERLINE_TYPE,110,116,130,60,CBS_DROPDOWNLIST | 
+                    WS_TABSTOP | 0x1,10,85,230,12
+    GROUPBOX        " Advanced ",IDC_ADVANCED,1,107,250,100
+    LTEXT           "Underline type:",IDC_UNDERLINE_TYPE_L,11,123,91,8
+    COMBOBOX        IDC_UNDERLINE_TYPE,110,121,130,60,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Show corrections in submenu",IDC_CASCADE_CORRECTIONS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,134,230,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,143,230,10
     CONTROL         "Show all corrections in context menu (takes more time to show)",
                     IDC_SHOW_ALL_CORRECTIONS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,146,230,10
-    CONTROL         "Use flags",IDC_USE_FLAGS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,170,230,10
+                    WS_TABSTOP,10,155,230,10
     CONTROL         "Show wrong word",IDC_SHOW_WRONG_WORD,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,158,230,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,167,230,10
+    CONTROL         "Use flags",IDC_USE_FLAGS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,10,179,230,10
+    CONTROL         "Use keyboard locale to select dictionary",
+                    IDC_AUTO_LOCALE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
+                    191,230,10
 END
 
 
@@ -76,7 +79,7 @@ BEGIN
         LEFTMARGIN, 1
         RIGHTMARGIN, 251
         TOPMARGIN, 1
-        BOTTOMMARGIN, 189
+        BOTTOMMARGIN, 209
     END
 END
 #endif    // APSTUDIO_INVOKED

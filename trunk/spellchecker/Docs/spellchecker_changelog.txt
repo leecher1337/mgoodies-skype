@@ -2,6 +2,9 @@ Spell Checker
 
 Changelog:
 
+. 0.0.3.1
+  + Option to use keyboard locale to select dictionary (disabled by default)
+
 . 0.0.3.0
   + Show dict flag on *srmm status bar
 

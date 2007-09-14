@@ -61,6 +61,7 @@ static IconStruct iconList[] =
 
 #define TIMER_ID 17982
 #define WMU_DICT_CHANGED (WM_USER+1)
+#define WMU_KBDL_CHANGED (WM_USER+2)
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
@@ -112,6 +113,8 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void ModifyIcon(Dialog *dlg);
 BOOL GetWordCharRange(Dialog *dlg, CHARRANGE &sel, TCHAR *text, size_t text_len, int &first_char);
 TCHAR *GetWordUnderPoint(Dialog *dlg, POINT pt, CHARRANGE &sel);
+
+int GetClosestLanguage(TCHAR *lang_name);
 
 typedef void (*FoundWrongWordCallback)(TCHAR *word, CHARRANGE pos, void *param);
 
@@ -804,13 +807,49 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor,
 }
 
 
+void ToLocaleID(TCHAR *szKLName, size_t size)
+{
+	TCHAR *stopped = NULL;
+	USHORT langID = (USHORT) _tcstol(szKLName, &stopped, 16);
+
+	TCHAR ini[32];
+	TCHAR end[32];
+	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SISO639LANGNAME, ini, MAX_REGS(ini));
+	GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SISO3166CTRYNAME, end, MAX_REGS(end));
+
+	mir_sntprintf(szKLName, size, _T("%s_%s"), ini, end);
+}
+
+
+void LoadDictFromKbdl(Dialog *dlg)
+{
+	if (opts.auto_locale) {
+		TCHAR szKLName[KL_NAMELENGTH + 1];
+		GetKeyboardLayoutName(szKLName);
+		ToLocaleID(szKLName, MAX_REGS(szKLName));
+
+		int d = GetClosestLanguage(szKLName);
+		if (d >= 0)
+		{
+			dlg->lang = languages.dicts[d];
+			dlg->lang->load();
+
+			if (dlg->srmm)
+				ModifyIcon(dlg);
+		}
+
+//				GetLocaleID(dat, szKLName);
+	}
+}
+
+
 LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	DialogMapType::iterator dlgit = dialogs.find(hwnd);
 	if (dlgit == dialogs.end())
 		return -1;
 
-	Dialog* dlg = dlgit->second;
+	Dialog *dlg = dlgit->second;
 
 	LRESULT ret = CallWindowProc(dlg->old_edit_proc, hwnd, msg, wParam, lParam);
 
@@ -934,6 +973,20 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			SetTimer(hwnd, TIMER_ID, 10, NULL);
 
 			dlg->changed = TRUE;
+			break;
+		}
+
+		case WMU_KBDL_CHANGED:
+		{
+			LoadDictFromKbdl(dlg);
+
+			break;
+		}
+
+		case WM_INPUTLANGCHANGE:
+		{
+			// Allow others to process this message and we get only the result
+			PostMessage(hwnd, WMU_KBDL_CHANGED, 0, 0);
 			break;
 		}
 	}
@@ -1163,6 +1216,7 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 			dlg->textDocument = NULL;
 
 		GetContactLanguage(dlg);
+		LoadDictFromKbdl(dlg);
 
 		dlg->old_edit_proc = (WNDPROC) SetWindowLong(hwnd, GWL_WNDPROC, (LONG) EditProc);
 
