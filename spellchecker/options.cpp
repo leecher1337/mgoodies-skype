@@ -43,7 +43,8 @@ static OptPageControl optionsControls[] = {
 	{ &opts.cascade_corrections,	CONTROL_CHECKBOX,		IDC_CASCADE_CORRECTIONS,	"CascadeCorrections", FALSE },
 	{ &opts.show_all_corrections,	CONTROL_CHECKBOX,		IDC_SHOW_ALL_CORRECTIONS,	"ShowAllCorrections", FALSE },
 	{ &opts.show_wrong_word,		CONTROL_CHECKBOX,		IDC_SHOW_WRONG_WORD,		"ShowWrongWord", TRUE },
-	{ &opts.use_flags,				CONTROL_CHECKBOX,		IDC_USE_FLAGS,				"UseFlags", TRUE }
+	{ &opts.use_flags,				CONTROL_CHECKBOX,		IDC_USE_FLAGS,				"UseFlags", TRUE },
+	{ &opts.auto_locale,			CONTROL_CHECKBOX,		IDC_AUTO_LOCALE,			"AutoLocale", FALSE },
 };
 
 static UINT optionsExpertControls[] = { 
@@ -151,8 +152,11 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				CallService(MS_UTILS_OPENURL, 1, (LPARAM) "http://wiki.services.openoffice.org/wiki/Dictionaries");
 
 			if (LOWORD(wParam) == IDC_DEF_LANG
-					&& (HIWORD(wParam) != CBN_SELCHANGE || (HWND)lParam != GetFocus()))
+					&& (HIWORD(wParam) == CBN_SELCHANGE && (HWND)lParam == GetFocus()))
+			{
+				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 				return 0;
+			}
 
 			break;
 		}

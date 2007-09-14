@@ -44,6 +44,7 @@
 #define IDC_PROTOCOLS_G                 1066
 #define IDC_AUTO_USER                   1066
 #define IDC_PROTOCOLS_L                 1067
+#define IDC_AUTO_LOCALE                 1067
 #define IDC_COLOURS_G                   1068
 #define IDC_TRACK_CHANGE                1068
 #define IDC_BGCOLOR_L                   1069
