@@ -2,6 +2,9 @@ Spell Checker
 
 Changelog:
 
+. 0.0.3.2
+  * Renamed to Use input language to select dictionary
+
 . 0.0.3.1
   + Option to use keyboard locale to select dictionary (disabled by default)
 

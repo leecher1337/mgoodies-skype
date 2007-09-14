@@ -32,7 +32,7 @@
 [Show all corrections in context menu (takes more time to show)]
 [Show wrong word]
 [Use flags]
-[Use keyboard locale to select dictionary]
+[Use input language to select dictionary]
 
 
 ; Menu
