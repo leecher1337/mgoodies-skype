@@ -38,6 +38,13 @@ Boston, MA 02111-1307, USA.
 struct Options {
 	BYTE track_only_not_offline;
 
+	// File
+	TCHAR file_name[1024];
+	BYTE file_track_changes;
+	BYTE file_track_removes;
+	TCHAR file_template_changed[1024];
+	TCHAR file_template_removed[1024];
+
 	// Popup
 	BYTE popup_track_changes;
 	BYTE popup_track_removes;

@@ -46,6 +46,8 @@ struct PopupData
 static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK DumbPopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+void ReplaceVars(Buffer<TCHAR> *buffer, HANDLE hContact, TCHAR **variables, int numVariables);
+
 
 
 // Functions //////////////////////////////////////////////////////////////////////////////////////
@@ -81,47 +83,6 @@ void ShowTestPopup(int typeNum, const TCHAR *title, const TCHAR *description, co
 }
 
 
-void ReplaceVars(Buffer<TCHAR> *buffer, TCHAR **variables, int numVariables)
-{
-	if (buffer->len < 3)
-		return;
-
-	for(size_t i = buffer->len - 1; i > 0; i--)
-	{
-		if (buffer->str[i] == _T('%'))
-		{
-			// Find previous
-			for(size_t j = i - 1; j > 0 && ((buffer->str[j] >= _T('a') && buffer->str[j] <= _T('z'))
-										    || (buffer->str[j] >= _T('A') && buffer->str[j] <= _T('Z'))
-											|| buffer->str[j] == _T('-')
-											|| buffer->str[j] == _T('_')); j--) ;
-
-			if (buffer->str[j] == _T('%'))
-			{
-				size_t foundLen = i - j + 1;
-				for(int k = 0; k < numVariables; k += 2)
-				{
-					if (_tcsncmp(&buffer->str[j], variables[k], foundLen) == 0)
-					{
-						buffer->replace(j, i + 1, variables[k + 1]);
-						break;
-					}
-				}
-			}
-
-			i = j;
-			if (i == 0)
-				break;
-		}
-		else if (buffer->str[i] == _T('\\') && i+1 <= buffer->len-1 && buffer->str[i+1] == _T('n')) 
-		{
-			buffer->str[i] = _T('\r');
-			buffer->str[i+1] = _T('\n');
-		}
-	}
-}
-
-
 void ShowPopup(HANDLE hContact, int typeNum, int templateNum, TCHAR **variables, int numVariables)
 {
 	// Only some time after creation
@@ -145,7 +106,7 @@ void ShowPopup(HANDLE hContact, int typeNum, int templateNum, TCHAR **variables,
 
 	Buffer<TCHAR> txt;
 	txt.append(templateNum == 1 ? opts[typeNum].popup_template_removed : opts[typeNum].popup_template_changed);
-	ReplaceVars(&txt, variables, numVariables);
+	ReplaceVars(&txt, hContact, variables, numVariables);
 	txt.pack();
 
 	ShowPopupEx(hContact, NULL, txt.str, new PopupData(hContact, typeNum), POPUP_TYPE_NORMAL, &opts[typeNum], typeNum);

@@ -22,6 +22,7 @@ Boston, MA 02111-1307, USA.
 
 #include "commons.h"
 
+#include <crtdbg.h>
 
 
 // Prototypes /////////////////////////////////////////////////////////////////////////////////////
@@ -40,6 +41,10 @@ static BOOL CALLBACK PopupsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wPar
 		static BOOL CALLBACK PopupsDlgProc ## i (HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) \
 		{ \
 			return PopupsDlgProc(i, hwndDlg, msg, wParam, lParam); \
+		} \
+		static BOOL AllowProtocol ## i(const char *proto) \
+		{ \
+			return AllowProtocol(i, proto); \
 		}
 
 HACK(0);
@@ -49,18 +54,15 @@ HACK(3);
 
 DLGPROC OptionsDlgProcArr[] = { OptionsDlgProc0, OptionsDlgProc1, OptionsDlgProc2, OptionsDlgProc3 };
 DLGPROC PopupsDlgProcArr[] = { PopupsDlgProc0, PopupsDlgProc1, PopupsDlgProc2, PopupsDlgProc3 };
+FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProtocol2, AllowProtocol3 };
 
 
-static BOOL MyAllowProtocol(const char *proto, void *param)
-{
-	return AllowProtocol((int) param, proto);
-}
 
-#define OPTIONS_CONTROLS_SIZE 2
-static OptPageControl optionsControls[NUM_TYPES][OPTIONS_CONTROLS_SIZE];
+#define OPTIONS_CONTROLS_SIZE 7
+static OptPageControl optionsControls[NUM_TYPES][OPTIONS_CONTROLS_SIZE] = {0};
 
 #define POPUPS_CONTROLS_SIZE 15
-static OptPageControl popupsControls[NUM_TYPES][POPUPS_CONTROLS_SIZE];
+static OptPageControl popupsControls[NUM_TYPES][POPUPS_CONTROLS_SIZE] = {0};
 
 static UINT popupsExpertControls[] = { 
 	IDC_COLOURS_G, IDC_BGCOLOR, IDC_BGCOLOR_L, IDC_TEXTCOLOR, IDC_TEXTCOLOR_L, IDC_WINCOLORS, IDC_DEFAULTCOLORS, 
@@ -75,76 +77,6 @@ Options opts[NUM_TYPES];
 
 // Functions //////////////////////////////////////////////////////////////////////////////////////
 
-#define SETTING(_X_) char _X_[128]; mir_snprintf(_X_, MAX_REGS(_X_), "%s_%s", types[type].name, setting)
-
-DWORD GetSettingDword(int type, char *setting, DWORD def)
-{
-	SETTING(tmp);
-	return DBGetContactSettingDword(NULL, MODULE_NAME, tmp, def);
-}
-
-WORD GetSettingWord(int type, char *setting, WORD def)
-{
-	SETTING(tmp);
-	return DBGetContactSettingWord(NULL, MODULE_NAME, tmp, def);
-}
-
-BYTE GetSettingByte(int type, char *setting, BYTE def)
-{
-	SETTING(tmp);
-	return DBGetContactSettingByte(NULL, MODULE_NAME, tmp, def);
-}
-
-BOOL GetSettingBool(int type, char *setting, BOOL def)
-{
-	SETTING(tmp);
-	return DBGetContactSettingByte(NULL, MODULE_NAME, tmp, def) != 0;
-}
-
-void GetSettingTString(int type, char *setting, TCHAR *str, size_t str_size, TCHAR *def)
-{
-	DBVARIANT dbv;
-	SETTING(tmp);
-	if (!DBGetContactSettingTString(NULL, MODULE_NAME, tmp, &dbv))
-	{
-		lstrcpyn(str, dbv.ptszVal, str_size);
-		DBFreeVariant(&dbv);
-	}
-	else
-	{
-		lstrcpyn(str, def, str_size);
-	}
-}
-
-void WriteSettingDword(int type, char *setting, DWORD val)
-{
-	SETTING(tmp);
-	DBWriteContactSettingDword(NULL, MODULE_NAME, tmp, val);
-}
-
-void WriteSettingWord(int type, char *setting, WORD val)
-{
-	SETTING(tmp);
-	DBWriteContactSettingWord(NULL, MODULE_NAME, tmp, val);
-}
-
-void WriteSettingByte(int type, char *setting, BYTE val)
-{
-	SETTING(tmp);
-	DBWriteContactSettingByte(NULL, MODULE_NAME, tmp, val);
-}
-
-void WriteSettingBool(int type, char *setting, BOOL val)
-{
-	SETTING(tmp);
-	DBWriteContactSettingByte(NULL, MODULE_NAME, tmp, val ? 1 : 0);
-}
-
-void WriteSettingTString(int type, char *setting, TCHAR *str)
-{
-	SETTING(tmp);
-	DBWriteContactSettingTString(NULL, MODULE_NAME, tmp, str);
-}
 
 int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 {
@@ -157,6 +89,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
 	odp.flags = ODPF_BOLDGROUPS | ODPF_EXPERTONLY;
 
+	_ASSERT(MAX_REGS(OptionsDlgProcArr) == NUM_TYPES);
 	for (int i = 0; i < NUM_TYPES; i++) 
 	{
 		odp.pszTitle = types[i].description;
@@ -165,6 +98,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	}
 
 
+	_ASSERT(MAX_REGS(PopupsDlgProcArr) == NUM_TYPES);
 	if(ServiceExists(MS_POPUP_ADDPOPUPEX)
 #ifdef UNICODE
 		|| ServiceExists(MS_POPUP_ADDPOPUPW)
@@ -199,6 +133,8 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 
 void InitOptions()
 {
+	static TCHAR fileChangeTemplates[NUM_TYPES][128];
+	static TCHAR fileRemoveTemplates[NUM_TYPES][128];
 	static TCHAR changeTemplates[NUM_TYPES][128];
 	static TCHAR removeTemplates[NUM_TYPES][128];
 	static char optSet[NUM_TYPES][OPTIONS_CONTROLS_SIZE][64];
@@ -206,11 +142,24 @@ void InitOptions()
 
 	for (int i = 0; i < NUM_TYPES; i++) 
 	{
+		TCHAR *tmp = mir_a2t(types[i].description);
+		CharLower(tmp);
+
 		// Options page
+		mir_sntprintf(&fileChangeTemplates[i][0], 128, TranslateT("[%%date%%] %%contact%% changed his/her %s to %%new%% (was %%old%%)"), tmp);
+		mir_sntprintf(&fileRemoveTemplates[i][0], 128, TranslateT("[%%date%%] %%contact%% removed his/her %s (was %%old%%)"), tmp);
+
 		OptPageControl opt[] = {
 			{ &opts[i].track_only_not_offline,	CONTROL_CHECKBOX,		IDC_ONLY_NOT_OFFLINE,	"TrackOnlyWhenNotOffline", types[i].defs.track_only_not_offline },
-			{ NULL,								CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,			"%sEnabled", TRUE, (int) MyAllowProtocol },
+			{ NULL,								CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,			"%sEnabled", TRUE, (int) AllowProtocolArr[i] },
+			{ &opts[i].file_name,				CONTROL_FILE,			IDC_FILENAME,			"FileName", (DWORD) _T("Log\\history_keeper.log") },
+			{ &opts[i].file_track_changes,		CONTROL_CHECKBOX,		IDC_TRACK_CHANGE,		"FileTrackChanges", FALSE },
+			{ &opts[i].file_template_changed,	CONTROL_TEXT,			IDC_CHANGED,			"FileTemplateChanged", (DWORD) &fileChangeTemplates[i][0] },
+			{ &opts[i].file_track_removes,		CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,		"FileTrackRemoves", FALSE },
+			{ &opts[i].file_template_removed,	CONTROL_TEXT,			IDC_REMOVED,			"FileTemplateRemoved", (DWORD) &fileRemoveTemplates[i][0] },
 		};
+
+		_ASSERT(MAX_REGS(opt) == OPTIONS_CONTROLS_SIZE);
 		int j;
 		for(j = 0; j < OPTIONS_CONTROLS_SIZE; j++)
 		{
@@ -220,20 +169,15 @@ void InitOptions()
 		memcpy(&optionsControls[i][0], &opt, sizeof(opt));
 
 		// Popups page
-		TCHAR *tmp = mir_a2t(types[i].description);
-		CharLower(tmp);
-
 		mir_sntprintf(&changeTemplates[i][0], 128, TranslateT("changed his/her %s to %%new%% (was %%old%%)"), tmp);
 		mir_sntprintf(&removeTemplates[i][0], 128, TranslateT("removed his/her %s (was %%old%%)"), tmp);
-
-		mir_free(tmp);
 
 		OptPageControl pops[] = {
 			{ &opts[i].popup_track_changes,			CONTROL_CHECKBOX,	IDC_TRACK_CHANGE,	"PopupsTrackChanges", TRUE },
 			{ &opts[i].popup_template_changed,		CONTROL_TEXT,		IDC_CHANGED,		"PopupsTemplateChanged", (DWORD) &changeTemplates[i][0] },
 			{ &opts[i].popup_track_removes,			CONTROL_CHECKBOX,	IDC_TRACK_REMOVE,	"PopupsTrackRemoves", TRUE },
 			{ &opts[i].popup_template_removed,		CONTROL_TEXT,		IDC_REMOVED,		"PopupsTemplateRemoved", (DWORD) &removeTemplates[i][0] },
-			{ &opts[i].popup_dont_notfy_on_connect,	CONTROL_CHECKBOX,	IDC_DONT_NOTIFY_ON_CONNECT,	"PopupsDontNotifyOnConnect", types[i].defs.popup_dont_notfy_on_connect },
+			{ &opts[i].popup_dont_notfy_on_connect,	CONTROL_CHECKBOX,	IDC_DONT_NOTIFY_ON_CONNECT,	"PopupsDontNotifyOnConnect", TRUE },
 			{ &opts[i].popup_bkg_color,				CONTROL_COLOR,		IDC_BGCOLOR,		"PopupsBgColor", RGB(255,255,255) },
 			{ &opts[i].popup_text_color,			CONTROL_COLOR,		IDC_TEXTCOLOR,		"PopupsTextColor", RGB(0,0,0) },
 			{ &opts[i].popup_use_win_colors,		CONTROL_CHECKBOX,	IDC_WINCOLORS,		"PopupsWinColors", FALSE },
@@ -245,12 +189,15 @@ void InitOptions()
 			{ &opts[i].popup_right_click_action,	CONTROL_COMBO,		IDC_RIGHT_ACTION,	"PopupsRightClick", POPUP_ACTION_CLOSEPOPUP },
 			{ &opts[i].popup_left_click_action,		CONTROL_COMBO,		IDC_LEFT_ACTION,	"PopupsLeftClick", POPUP_ACTION_OPENHISTORY }
 		};
+		_ASSERT(MAX_REGS(pops) == POPUPS_CONTROLS_SIZE);
 		for(j = 0; j < POPUPS_CONTROLS_SIZE; j++)
 		{
 			mir_snprintf(&popSet[i][j][0], 64, "%s_%s", types[i].name, pops[j].setting);
 			pops[j].setting = &popSet[i][j][0];
 		}
 		memcpy(&popupsControls[i][0], &pops, sizeof(pops));
+
+		mir_free(tmp);
 	}
 
 	LoadOptions();
@@ -277,6 +224,39 @@ void LoadOptions()
 
 static BOOL CALLBACK OptionsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
+	switch (msg) 
+	{
+		case WM_COMMAND:
+		{
+			switch (LOWORD(wParam)) 
+			{
+				case IDC_SELECT_FILE:
+				{
+					if (HIWORD(wParam) == BN_CLICKED)
+					{
+						TCHAR file[1024] = _T("");
+						GetDlgItemText(hwndDlg, IDC_FILENAME, file, 1024);
+
+				        OPENFILENAME ofn = {0};
+						ofn.lStructSize = sizeof(OPENFILENAME);
+						ofn.Flags = OFN_EXPLORER | OFN_ENABLESIZING | OFN_HIDEREADONLY | OFN_NOREADONLYRETURN;
+						ofn.hwndOwner = hwndDlg;
+						ofn.lpstrFile = file;
+						ofn.nMaxFile = MAX_REGS(file);
+						ofn.lpstrFilter = _T("Log files (*.log, *.txt)\0*.LOG;*.TXT\0All Files (*.*)\0*.*\0\0");
+						ofn.lpstrDefExt = _T(".log");
+						ofn.hInstance = hInst;
+
+						if (GetOpenFileName(&ofn)) 
+							SetDlgItemText(hwndDlg, IDC_FILENAME, file);
+					}
+					break;
+				}
+			}
+			break;
+		}
+	}
+
 	return SaveOptsDlgProc(&optionsControls[type][0], OPTIONS_CONTROLS_SIZE, MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
 

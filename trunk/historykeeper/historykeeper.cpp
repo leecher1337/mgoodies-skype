@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,1),
+	PLUGIN_MAKE_VERSION(0,0,0,2),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -55,7 +55,7 @@ HANDLE hHooks[5] = {0};
 HANDLE hEnableMenu[NUM_TYPES]; 
 HANDLE hDisableMenu[NUM_TYPES]; 
 
-char *metacontacts_proto = NULL;
+//char *metacontacts_proto = NULL;
 BOOL loaded = FALSE;
 ContactAsyncQueue *queue;
 
@@ -114,7 +114,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	init_mir_malloc();
 	init_list_interface();
-/*
+
 	CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) MODULE_NAME "/CreationTickCount");
 
 	PROTOCOLDESCRIPTOR **protos;
@@ -126,13 +126,12 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		if (protos[i]->szName == NULL || protos[i]->szName[0] == '\0')
 			continue;
 
-		mir_snprintf(tmp, MAX_REGS(tmp), "%s/" MODULE_NAME "_OnlineTickCount", protos[i]->szName);
-		CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) MODULE_NAME "_OnlineTickCount");
+		mir_snprintf(tmp, MAX_REGS(tmp), "%s/" MODULE_NAME "_OnOfflineTickCount", protos[i]->szName);
+		CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
 
 		mir_snprintf(tmp, MAX_REGS(tmp), "%s/" MODULE_NAME "_LastStatus", protos[i]->szName);
-		CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) MODULE_NAME "_LastStatus");
+		CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
 	}
-*/
 
 	// Add menu item to enable/disable status message check
 	char name[256];
@@ -144,7 +143,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	mi.pszName = name;
 	mi.pszService = service;
 
-	for (int i = 0; i < NUM_TYPES; i++) 
+	for (i = 0; i < NUM_TYPES; i++) 
 	{
 		// History
 
@@ -226,8 +225,8 @@ extern "C" int __declspec(dllexport) Unload(void)
 // Called when all the modules are loaded
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
-	if (ServiceExists(MS_MC_GETPROTOCOLNAME))
-		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
+//	if (ServiceExists(MS_MC_GETPROTOCOLNAME))
+//		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
 
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
@@ -386,6 +385,96 @@ BOOL ContactEnabled(int type, HANDLE hContact)
 	return DBGetContactSettingByte(hContact, MODULE_NAME, setting, def);
 }
 
+void ReplaceVars(Buffer<TCHAR> *buffer, HANDLE hContact, TCHAR **variables, int numVariables)
+{
+	if (buffer->len < 3)
+		return;
+
+	for(size_t i = buffer->len - 1; i > 0; i--)
+	{
+		if (buffer->str[i] == _T('%'))
+		{
+			// Find previous
+			for(size_t j = i - 1; j > 0 && ((buffer->str[j] >= _T('a') && buffer->str[j] <= _T('z'))
+										    || (buffer->str[j] >= _T('A') && buffer->str[j] <= _T('Z'))
+											|| buffer->str[j] == _T('-')
+											|| buffer->str[j] == _T('_')); j--) ;
+
+			if (buffer->str[j] == _T('%'))
+			{
+				size_t foundLen = i - j + 1;
+				if (foundLen == 9 && _tcsncmp(&buffer->str[j], _T("%contact%"), 9) == 0)
+				{
+					buffer->replace(j, i + 1, (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, GCDNF_TCHAR));
+				}
+				else if (foundLen == 6 && _tcsncmp(&buffer->str[j], _T("%date%"), 6) == 0)
+				{
+					TCHAR tmp[128];
+					DBTIMETOSTRINGT tst = {0};
+					tst.szFormat = _T("d s");
+					tst.szDest = tmp;
+					tst.cbDest = MAX_REGS(tmp);
+					CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, (WPARAM) time(NULL), (LPARAM) &tst);
+					buffer->replace(j, i + 1, tmp);
+				}
+				else
+				{
+					for(int k = 0; k < numVariables; k += 2)
+					{
+						if (_tcsncmp(&buffer->str[j], variables[k], foundLen) == 0)
+						{
+							buffer->replace(j, i + 1, variables[k + 1]);
+							break;
+						}
+					}
+				}
+			}
+
+			i = j;
+			if (i == 0)
+				break;
+		}
+		else if (buffer->str[i] == _T('\\') && i+1 <= buffer->len-1 && buffer->str[i+1] == _T('n')) 
+		{
+			buffer->str[i] = _T('\r');
+			buffer->str[i+1] = _T('\n');
+		}
+	}
+}
+
+
+void LogToFile(HANDLE hContact, int typeNum, int templateNum, TCHAR **variables, int numVariables)
+{
+	if (templateNum == 0 && !opts[typeNum].file_track_changes)
+		return;
+	if (templateNum == 1 && !opts[typeNum].file_track_removes)
+		return;
+
+	Buffer<TCHAR> txt;
+	txt.append(templateNum == 1 ? opts[typeNum].file_template_removed : opts[typeNum].file_template_changed);
+	ReplaceVars(&txt, hContact, variables, numVariables);
+	txt.pack();
+
+	// Assert folder exists
+	TCHAR *p = _tcschr(opts[typeNum].file_name, _T('\\'));
+	if (p != NULL)
+		p = _tcschr(p+1, _T('\\'));
+	while(p != NULL)
+	{
+		*p = _T('\0');
+		CreateDirectory(opts[typeNum].file_name, NULL);
+		*p = _T('\\');
+		p = _tcschr(p+1, _T('\\'));
+	}
+
+	FILE *fp = _tfopen(opts[typeNum].file_name, _T("at"));
+	if (fp != NULL)
+	{
+		_ftprintf(fp, _T("%s\n"), txt.str);
+		fclose(fp);
+	}
+}
+
 
 void Notify(int type, BOOL changed, HANDLE hContact, TCHAR *oldVal, TCHAR *newVal)
 {
@@ -399,7 +488,9 @@ void Notify(int type, BOOL changed, HANDLE hContact, TCHAR *oldVal, TCHAR *newVa
 
 	HistoryEvents_AddToHistoryVars(hContact, types[type].eventType, templateNum, vars, MAX_REGS(vars), DBEF_READ);
 	ShowPopup(hContact, type, templateNum, vars, MAX_REGS(vars));
+	LogToFile(hContact, type, templateNum, vars, MAX_REGS(vars));
 }
+
 
 int inline CheckStr(TCHAR *str, int not_empty, int empty)
 {
@@ -427,8 +518,9 @@ int ProtoAckHook(WPARAM wParam, LPARAM lParam)
 		int status = (int) ack->lParam;
 		int oldStatus = DBGetContactSettingWord(NULL, proto, MODULE_NAME "_LastStatus", ID_STATUS_OFFLINE);
 
-		if (status > ID_STATUS_OFFLINE && oldStatus <= ID_STATUS_OFFLINE)
-			DBWriteContactSettingDword(NULL, proto, MODULE_NAME "_OnlineTickCount", GetTickCount());
+		if ( (status > ID_STATUS_OFFLINE && oldStatus <= ID_STATUS_OFFLINE)
+			 || (status <= ID_STATUS_OFFLINE && oldStatus > ID_STATUS_OFFLINE) )
+			DBWriteContactSettingDword(NULL, proto, MODULE_NAME "_OnOfflineTickCount", GetTickCount());
 
 		DBWriteContactSettingWord(NULL, proto, MODULE_NAME "_LastStatus", status);
 	}
@@ -448,7 +540,7 @@ int SettingChanged(WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
-	if (proto == NULL || (metacontacts_proto != NULL && !strcmp(proto, metacontacts_proto)))
+	if (proto == NULL || proto[0] == '\0') // || (metacontacts_proto != NULL && !strcmp(proto, metacontacts_proto)))
 		return 0;
 
 	DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING*)lParam;
@@ -529,13 +621,15 @@ void TrackChangeString(int typeNum, HANDLE hContact)
 
 	BOOL track_removes;
 	if (ret != 0)
-		track_removes = opts[typeNum].popup_track_removes || HistoryEvents_IsEnabledTemplate(type.eventType, ret - 1);
+		track_removes = opts[typeNum].popup_track_removes 
+						|| opts[typeNum].file_track_removes 
+						|| HistoryEvents_IsEnabledTemplate(type.eventType, ret - 1);
 
 	if (ret == 1 || (ret == 2 && track_removes))
 	{
 		// Copy new to current
 		if (ret == 2)
-			DBWriteContactSettingTString(hContact, module, current_setting, _T(""));
+			DBDeleteContactSetting(hContact, module, current_setting);
 		else
 			DBWriteContactSettingTString(hContact, module, current_setting, new_.ptszVal);
 
@@ -608,7 +702,9 @@ void TrackChangeNumber(int typeNum, HANDLE hContact)
 
 	BOOL track_removes;
 	if (ret != 0)
-		track_removes = opts[typeNum].popup_track_removes || HistoryEvents_IsEnabledTemplate(type.eventType, ret - 1);
+		track_removes = opts[typeNum].popup_track_removes 
+						|| opts[typeNum].file_track_removes 
+						|| HistoryEvents_IsEnabledTemplate(type.eventType, ret - 1);
 
 	if (ret == 1 || (ret == 2 && !track_removes))
 	{

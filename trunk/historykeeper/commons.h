@@ -92,7 +92,6 @@ struct HISTORY_TYPE {
 	struct {
 		DWORD value;
 		BYTE track_only_not_offline;
-		BYTE popup_dont_notfy_on_connect;
 	} defs;
 };
 
