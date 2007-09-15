@@ -51,21 +51,33 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPTIONS DIALOGEX 0, 0, 184, 136
+IDD_OPTIONS DIALOGEX 0, 0, 285, 235
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Tracking ",IDC_TRACK_G,3,3,178,33
+    GROUPBOX        " Tracking ",IDC_TRACK_G,3,3,279,33
     CONTROL         "Only when the contact is not offline",
                     IDC_ONLY_NOT_OFFLINE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,12,17,165,11
-    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,40,178,93
+                    WS_TABSTOP,13,18,262,11
+    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,40,279,93
     LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,
-                    13,52,158,11
+                    14,53,158,11
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
-                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,12,64,158,62
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,13,65,158,62
+    GROUPBOX        " Log to file ",IDC_FILE_G,3,136,279,96
+    CONTROL         "Log when contacts change their %s",IDC_TRACK_CHANGE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,169,264,11
+    RTEXT           "Template:",IDC_CHANGED_L2,11,182,55,10
+    EDITTEXT        IDC_CHANGED,72,181,203,13,ES_AUTOHSCROLL
+    CONTROL         "Log when contacts remove their %s",IDC_TRACK_REMOVE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,198,263,11
+    RTEXT           "Template:",IDC_REMOVED_L2,11,212,55,10
+    EDITTEXT        IDC_REMOVED,72,211,203,13,ES_AUTOHSCROLL
+    RTEXT           "Filename:",IDC_FILENAME_L,12,152,41,10
+    EDITTEXT        IDC_FILENAME,60,151,198,13,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_SELECT_FILE,261,151,14,13
 END
 
 IDD_POPUPS DIALOGEX 0, 0, 314, 240
@@ -127,9 +139,9 @@ BEGIN
     IDD_OPTIONS, DIALOG
     BEGIN
         LEFTMARGIN, 3
-        RIGHTMARGIN, 181
+        RIGHTMARGIN, 282
         TOPMARGIN, 3
-        BOTTOMMARGIN, 133
+        BOTTOMMARGIN, 232
     END
 
     IDD_POPUPS, DIALOG

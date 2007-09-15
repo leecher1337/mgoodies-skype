@@ -24,20 +24,26 @@
 #define IDC_REMOVED                     1059
 #define IDC_CHECK1                      1060
 #define IDC_POPUPS                      1060
+#define IDC_FILENAME                    1060
 #define IDC_CHECK2                      1061
 #define IDC_DELAY_SPIN                  1061
 #define IDC_HISTORY                     1061
 #define IDC_ANSI                        1062
 #define IDC_TRACK_G                     1063
 #define IDC_CHANGED_L                   1064
+#define IDC_FILE_G                      1064
 #define IDC_REMOVED_L                   1065
+#define IDC_CHANGED_L2                  1065
 #define IDC_PROTOCOLS_G                 1066
 #define IDC_PROTOCOLS_L                 1067
 #define IDC_COLOURS_G                   1068
+#define IDC_REMOVED_L2                  1068
 #define IDC_BGCOLOR_L                   1069
+#define IDC_FILENAME_L                  1069
 #define IDC_TEXTCOLOR_L                 1070
 #define IDC_ONLY_NOT_OFFLINE            1070
 #define IDC_DELAY_G                     1071
+#define IDC_CHANGED_L3                  1071
 #define IDC_ACTIONS_G                   1072
 #define IDC_RIGHT_ACTION_L              1073
 #define IDC_LEFT_ACTION_L               1074
@@ -46,6 +52,7 @@
 #define IDC_TRACK_REMOVE2               1076
 #define IDC_TRACK_REMOVE                1076
 #define IDC_DONT_NOTIFY_ON_CONNECT      1077
+#define IDC_SELECT_FILE                 1077
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -56,7 +63,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        127
 #define _APS_NEXT_COMMAND_VALUE         40004
-#define _APS_NEXT_CONTROL_VALUE         1075
+#define _APS_NEXT_CONTROL_VALUE         1078
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
