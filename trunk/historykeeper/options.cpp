@@ -51,10 +51,11 @@ HACK(0);
 HACK(1);
 HACK(2);
 HACK(3);
+HACK(4);
 
-DLGPROC OptionsDlgProcArr[] = { OptionsDlgProc0, OptionsDlgProc1, OptionsDlgProc2, OptionsDlgProc3 };
-DLGPROC PopupsDlgProcArr[] = { PopupsDlgProc0, PopupsDlgProc1, PopupsDlgProc2, PopupsDlgProc3 };
-FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProtocol2, AllowProtocol3 };
+DLGPROC OptionsDlgProcArr[] = { OptionsDlgProc0, OptionsDlgProc1, OptionsDlgProc2, OptionsDlgProc3, OptionsDlgProc4 };
+DLGPROC PopupsDlgProcArr[] = { PopupsDlgProc0, PopupsDlgProc1, PopupsDlgProc2, PopupsDlgProc3, PopupsDlgProc4 };
+FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProtocol2, AllowProtocol3, AllowProtocol4 };
 
 
 
@@ -80,18 +81,20 @@ Options opts[NUM_TYPES];
 
 int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 {
-	OPTIONSDIALOGPAGE odp;
-	ZeroMemory(&odp,sizeof(odp));
-	odp.cbSize=sizeof(odp);
+	OPTIONSDIALOGPAGE odp = {0};
+	odp.cbSize = sizeof(odp);
 	odp.position=0;
 	odp.hInstance=hInst;
 	odp.pszGroup = "History";
-	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
 	odp.flags = ODPF_BOLDGROUPS | ODPF_EXPERTONLY;
 
 	_ASSERT(MAX_REGS(OptionsDlgProcArr) == NUM_TYPES);
 	for (int i = 0; i < NUM_TYPES; i++) 
 	{
+		if (types[i].canBeRemoved)
+			odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS_REM);
+		else
+			odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS_NOREM);
 		odp.pszTitle = types[i].description;
 		odp.pfnDlgProc = OptionsDlgProcArr[i];
 		CallService(MS_OPT_ADDPAGE, wParam, (LPARAM)&odp);
@@ -106,11 +109,10 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 		)
 	{
 		ZeroMemory(&odp,sizeof(odp));
-		odp.cbSize=sizeof(odp);
+		odp.cbSize = sizeof(odp);
 		odp.position=0;
 		odp.hInstance=hInst;
 		odp.pszGroup = Translate("Popups");
-		odp.pszTemplate = MAKEINTRESOURCEA(IDD_POPUPS);
 		odp.flags = ODPF_BOLDGROUPS;
 		odp.expertOnlyControls = popupsExpertControls;
 		odp.nExpertOnlyControls = MAX_REGS(popupsExpertControls);
@@ -118,6 +120,11 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 
 		for (int i = 0; i < NUM_TYPES; i++) 
 		{
+			if (types[i].canBeRemoved)
+				odp.pszTemplate = MAKEINTRESOURCEA(IDD_POPUPS_REM);
+			else
+				odp.pszTemplate = MAKEINTRESOURCEA(IDD_POPUPS_NOREM);
+
 			char tmp[128];
 			mir_snprintf(tmp, MAX_REGS(tmp), "%s Change", types[i].description);
 
@@ -305,10 +312,12 @@ static BOOL CALLBACK PopupsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wPar
 			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Do nothing"));
 			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Close popup"));
 			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Show history"));
+			SendDlgItemMessage(hwndDlg, IDC_RIGHT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Open message window"));
 
 			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Do nothing"));
 			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Close popup"));
 			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Show history"));
+			SendDlgItemMessage(hwndDlg, IDC_LEFT_ACTION, CB_ADDSTRING, 0, (LONG) TranslateT("Open message window"));
 
 			// Needs to be called here in this case
 			BOOL ret = SaveOptsDlgProc(&popupsControls[type][0], POPUPS_CONTROLS_SIZE, MODULE_NAME, hwndDlg, msg, wParam, lParam);

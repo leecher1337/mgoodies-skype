@@ -43,6 +43,8 @@ Boston, MA 02111-1307, USA.
 #include <m_metacontacts.h>
 #include <m_popup.h>
 #include <m_history.h>
+#include <m_message.h>
+#include <m_icq.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
@@ -70,6 +72,7 @@ extern PLUGINLINK *pluginLink;
 typedef BOOL (*pfAllowProtocol)(const char *proto);
 typedef void (*pfFormat)(TCHAR *out, size_t out_size, void *val);
 typedef BOOL (*pfEquals)(TCHAR *a, TCHAR *b);
+typedef void (*pfAddVars)(HANDLE hContact, TCHAR **vars, int startAt);
 
 struct HISTORY_TYPE {
 	char *name;
@@ -80,6 +83,7 @@ struct HISTORY_TYPE {
 	pfEquals fEquals;
 	pfFormat fFormat;
 	int historyFlags;
+	BOOL canBeRemoved;
 
 	struct {
 		struct {
@@ -93,16 +97,19 @@ struct HISTORY_TYPE {
 		DWORD value;
 		BYTE track_only_not_offline;
 	} defs;
+
+	int numAddVars;
+	pfAddVars fAddVars;
 };
 
 extern HISTORY_TYPE types[];
-#define NUM_TYPES 4
+#define NUM_TYPES 5
 
 
 BOOL AllowProtocol(int type, const char *proto);
 
 
-#define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION 20000 // ms
+#define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION 30000 // ms
 #define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CONNECTION 10000 // ms
 #define TIME_TO_WAIT_BEFORE_PROCESSING 3000 // ms
 

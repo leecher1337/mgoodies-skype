@@ -86,7 +86,7 @@ void ShowTestPopup(int typeNum, const TCHAR *title, const TCHAR *description, co
 void ShowPopup(HANDLE hContact, int typeNum, int templateNum, TCHAR **variables, int numVariables)
 {
 	// Only some time after creation
-	if (DBGetContactSettingDword(hContact, MODULE_NAME, "CreationTickCount", -100000) 
+	if (DBGetContactSettingDword(hContact, MODULE_NAME, "CreationTickCount", 0) 
 					+ TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION > GetTickCount())
 		return;
 
@@ -94,7 +94,7 @@ void ShowPopup(HANDLE hContact, int typeNum, int templateNum, TCHAR **variables,
 	{
 		char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 		if (proto != NULL 
-			&& DBGetContactSettingDword(NULL, proto, MODULE_NAME "_OnlineTickCount", -100000) 
+			&& DBGetContactSettingDword(NULL, proto, MODULE_NAME "_OnOfflineTickCount", 0) 
 					+ TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CONNECTION > GetTickCount())
 			return;
 	}
@@ -299,6 +299,10 @@ LRESULT CALLBACK PopupWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		if (lParam == POPUP_ACTION_OPENHISTORY)
 		{
 			CallService(MS_HISTORY_SHOWCONTACTHISTORY, wParam, 0);
+		}
+		else if (lParam == POPUP_ACTION_OPENSRMM)
+		{
+			CallService(MS_MSG_SENDMESSAGE, wParam, 0);
 		}
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);

@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,2),
+	PLUGIN_MAKE_VERSION(0,0,0,3),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -476,19 +476,34 @@ void LogToFile(HANDLE hContact, int typeNum, int templateNum, TCHAR **variables,
 }
 
 
-void Notify(int type, BOOL changed, HANDLE hContact, TCHAR *oldVal, TCHAR *newVal)
+void Notify(int type, BOOL found_old, BOOL changed, HANDLE hContact, TCHAR *oldVal, TCHAR *newVal)
 {
 	if (newVal == NULL || newVal[0] == _T('\0'))
 		newVal = TranslateT("<empty>");
 	if (oldVal == NULL || oldVal[0] == _T('\0'))
 		oldVal = TranslateT("<empty>");
-	TCHAR *vars[] = { _T("%old%"), oldVal, _T("%new%"), newVal };
+
+
+	int numVars = 4 + 2 * types[type].numAddVars;
+	TCHAR **vars = (TCHAR **) mir_alloc0(sizeof(TCHAR *) * numVars);
+	vars[0] = _T("%old%");
+	vars[1] = oldVal;
+	vars[2] = _T("%new%");
+	vars[3] = newVal;
+	
+	if (types[type].fAddVars != NULL)
+		types[type].fAddVars(hContact, vars, 4);
 
 	int templateNum = changed ? 0 : 1;
 
-	HistoryEvents_AddToHistoryVars(hContact, types[type].eventType, templateNum, vars, MAX_REGS(vars), DBEF_READ);
-	ShowPopup(hContact, type, templateNum, vars, MAX_REGS(vars));
-	LogToFile(hContact, type, templateNum, vars, MAX_REGS(vars));
+	HistoryEvents_AddToHistoryVars(hContact, types[type].eventType, templateNum, vars, numVars, DBEF_READ);
+	LogToFile(hContact, type, templateNum, vars, numVars);
+
+	if (found_old || types[type].canBeRemoved)
+		ShowPopup(hContact, type, templateNum, vars, numVars);
+
+	for(int i = 0; i < types[type].numAddVars; i++)
+		mir_free(vars[4 + 2 * i + 1]);
 }
 
 
@@ -619,20 +634,20 @@ void TrackChangeString(int typeNum, HANDLE hContact)
 		ret = (eq ? 0 : CheckStr(new_.ptszVal, 1, 2));
 	}
 
+	if (ret == 0)
+	{
+		// Check sub
+	}
+
 	BOOL track_removes;
-	if (ret != 0)
-		track_removes = opts[typeNum].popup_track_removes 
+	if (ret == 2)
+		track_removes = type.canBeRemoved && 
+						(opts[typeNum].popup_track_removes 
 						|| opts[typeNum].file_track_removes 
-						|| HistoryEvents_IsEnabledTemplate(type.eventType, ret - 1);
+						|| HistoryEvents_IsEnabledTemplate(type.eventType, ret - 1));
 
 	if (ret == 1 || (ret == 2 && track_removes))
 	{
-		// Copy new to current
-		if (ret == 2)
-			DBDeleteContactSetting(hContact, module, current_setting);
-		else
-			DBWriteContactSettingTString(hContact, module, current_setting, new_.ptszVal);
-
 		if (type.fFormat != NULL)
 		{
 			TCHAR old_str[256];
@@ -640,10 +655,18 @@ void TrackChangeString(int typeNum, HANDLE hContact)
 
 			type.fFormat(old_str, MAX_REGS(old_str), oldVal);
 			type.fFormat(new_str, MAX_REGS(new_str), new_.ptszVal);
-			Notify(typeNum, ret == 1, hContact, old_str, new_str);
+			Notify(typeNum, found_old, ret == 1, hContact, old_str, new_str);
 		}
 		else
-			Notify(typeNum, ret == 1, hContact, oldVal, new_.ptszVal);
+			Notify(typeNum, found_old, ret == 1, hContact, oldVal, new_.ptszVal);
+
+		// Copy new to current after notification, so old value can still be accessed
+		if (ret == 2)
+		{
+			DBDeleteContactSetting(hContact, module, current_setting);
+		}
+		else
+			DBWriteContactSettingTString(hContact, module, current_setting, new_.ptszVal);
 	}
 
 	if (found_old)
@@ -701,14 +724,26 @@ void TrackChangeNumber(int typeNum, HANDLE hContact)
 	}
 
 	BOOL track_removes;
-	if (ret != 0)
-		track_removes = opts[typeNum].popup_track_removes 
+	if (ret == 2)
+		track_removes = type.canBeRemoved && 
+						(opts[typeNum].popup_track_removes 
 						|| opts[typeNum].file_track_removes 
-						|| HistoryEvents_IsEnabledTemplate(type.eventType, ret - 1);
+						|| HistoryEvents_IsEnabledTemplate(type.eventType, ret - 1));
 
 	if (ret == 1 || (ret == 2 && !track_removes))
 	{
-		// Copy new to current
+		TCHAR tmp_old[256];
+		type.fFormat(tmp_old, MAX_REGS(tmp_old), (void *) oldVal);
+
+		TCHAR tmp_new[256];
+		if (found_new) 
+			type.fFormat(tmp_new, MAX_REGS(tmp_new), (void *) newVal);
+		else
+			tmp_new[0] = _T('\0');
+
+		Notify(typeNum, found_old, ret == 1, hContact, tmp_old, tmp_new);
+
+		// Copy new to current after notification, so old value can still be accessed
 		if (ret == 2 || newVal == type.defs.value)
 		{
 			DBDeleteContactSetting(hContact, module, current_setting);
@@ -722,17 +757,6 @@ void TrackChangeNumber(int typeNum, HANDLE hContact)
 				case DBVT_DWORD: DBWriteContactSettingDword(hContact, module, current_setting, new_.dVal); break;
 			}
 		}
-
-		TCHAR tmp_old[256];
-		type.fFormat(tmp_old, MAX_REGS(tmp_old), (void *) oldVal);
-
-		TCHAR tmp_new[256];
-		if (found_new) 
-			type.fFormat(tmp_new, MAX_REGS(tmp_new), (void *) newVal);
-		else
-			tmp_new[0] = _T('\0');
-
-		Notify(typeNum, ret == 1, hContact, tmp_old, tmp_new);
 	}
 
 	if (found_old)
