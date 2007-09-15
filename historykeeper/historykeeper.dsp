@@ -222,6 +222,10 @@ SOURCE=.\res\sm_change.ico
 
 SOURCE=.\res\status_change.ico
 # End Source File
+# Begin Source File
+
+SOURCE=.\res\xstatus_change.ico
+# End Source File
 # End Group
 # Begin Group "Source Files"
 

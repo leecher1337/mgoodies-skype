@@ -32,6 +32,59 @@ Boston, MA 02111-1307, USA.
 
 
 
+// See if a protocol service exists
+__inline static int ProtoServiceExists(const char *szModule,const char *szService)
+{
+	char str[MAXMODULELABELLENGTH];
+	strcpy(str,szModule);
+	strcat(str,szService);
+	return ServiceExists(str);
+}
+
+
+static TCHAR *GetTString(HANDLE hContact, char *module, char *setting) 
+{
+	TCHAR *ret = NULL;
+
+	DBVARIANT db = {0};
+	if (DBGetContactSettingTString(hContact, module, setting, &db) == 0)
+	{
+		if (db.ptszVal != NULL && db.ptszVal[0] != _T('\0'))
+			ret = mir_tstrdup(db.ptszVal);
+		DBFreeVariant(&db);
+	}
+
+	if (ret == NULL)
+		ret = mir_tstrdup(TranslateT("<empty>"));
+
+	return ret;
+}
+
+static void StatusAddVars(HANDLE hContact, TCHAR **vars, int i)
+{
+	vars[i++] = _T("%msg%");
+	vars[i++] = GetTString(hContact, "CList", "StatusMsg");
+}
+
+
+static void XStatusAddVars(HANDLE hContact, TCHAR **vars, int i)
+{
+	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+
+	vars[i++] = _T("%msg%");
+	vars[i++] = GetTString(hContact, proto, "XStatusMsg");
+}
+
+
+static void ClientAddVars(HANDLE hContact, TCHAR **vars, int i)
+{
+	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+
+	vars[i++] = _T("%MirVer_new%");
+	vars[i++] = GetTString(hContact, proto, "MirVer");
+	vars[i++] = _T("%MirVer_old%");
+	vars[i++] = GetTString(hContact, proto, "MirVerCurrent");
+}
 
 
 BOOL SMHAllowProtocol(const char *proto)
@@ -39,10 +92,18 @@ BOOL SMHAllowProtocol(const char *proto)
 	return (CallProtoService(proto, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGRECV) != 0;
 }
 
+
+BOOL XStatusAllowProtocol(const char *proto)
+{	
+	return ProtoServiceExists(proto, PS_ICQ_GETCUSTOMSTATUS);
+}
+
+
 void StatusFormat(TCHAR *out, size_t out_size, void *val)
 {
 	lstrcpyn(out, (TCHAR *) CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (DWORD) val, GCMDF_TCHAR), out_size);
 }
+
 
 void ClientFormat(TCHAR *out, size_t out_size, void *val)
 {
@@ -84,10 +145,11 @@ BOOL ClientEquals(TCHAR *a, TCHAR *b)
 
 
 HISTORY_TYPE types[NUM_TYPES] = {
-	{ "ClientHistory",	"Client",			IDI_CLIENT,	EVENTTYPE_CLIENT_CHANGE,		NULL,				ClientEquals,	ClientFormat,	0,									(char *) -1,	"MirVer",		TRUE,	NULL,				FALSE },
-	{ "NickHistory",	"Nickname",			IDI_NICK,	EVENTTYPE_NICKNAME_CHANGE,		NULL,				NULL,			NULL,			0, 									(char *) -1,	"Nick",			TRUE,	NULL,				FALSE },
-	{ "StatusHistory",	"Status",			IDI_STATUS, EVENTTYPE_STATUSCHANGE,			NULL,				NULL,			StatusFormat,	HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	(char *) -1,	"Status",		FALSE,	ID_STATUS_OFFLINE,	FALSE },
-	{ "SMH",			"Status Message",	IDI_SMH,	EVENTTYPE_STATUSMESSAGE_CHANGE,	SMHAllowProtocol,	NULL,			NULL,			0, 									"CList",		"StatusMsg",	TRUE,	NULL,				TRUE }
+	{ "ClientHistory",	"Client",			IDI_CLIENT,		EVENTTYPE_CLIENT_CHANGE,			NULL,					ClientEquals,	ClientFormat,	0,									FALSE,	(char *) -1,	"MirVer",		TRUE,	NULL,				FALSE,	2,  ClientAddVars },
+	{ "NickHistory",	"Nickname",			IDI_NICK,		EVENTTYPE_NICKNAME_CHANGE,			NULL,					NULL,			NULL,			0, 									FALSE,	(char *) -1,	"Nick",			TRUE,	NULL,				FALSE,	0,	NULL },
+	{ "StatusHistory",	"Status",			IDI_STATUS,		EVENTTYPE_STATUSCHANGE,				NULL,					NULL,			StatusFormat,	HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	FALSE,	(char *) -1,	"Status",		FALSE,	ID_STATUS_OFFLINE,	FALSE,	1,  StatusAddVars },
+	{ "SMH",			"Status Message",	IDI_SMH,		EVENTTYPE_STATUSMESSAGE_CHANGE,		SMHAllowProtocol,		NULL,			NULL,			0, 									TRUE,	"CList",		"StatusMsg",	TRUE,	NULL,				TRUE,	0,	NULL },
+	{ "XStatusHistory",	"XStatus",			IDI_XSTATUS,	EVENTTYPE_XSTATUS_CHANGE,			XStatusAllowProtocol,	NULL,			NULL,			HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	TRUE,	(char *) -1,	"XStatusName",	TRUE,	NULL,				TRUE,	1,  XStatusAddVars },
 };
 
 

@@ -2,6 +2,14 @@ History Keeper
 
 Changelog:
 
+. 0.0.0.3
+  * Changed handling of notifications (should appear less notifications now)
+  * Fix for showing popups
+  + Added Open message window popup option
+  + Added variable %msg% for Status Change notifications
+  + Added variables %MirVer_new% and %MirVer_old% for Client Change notifications
+  + Added XStatus
+
 . 0.0.0.2
   + Added log to file option
   * Fixed crash on options page
