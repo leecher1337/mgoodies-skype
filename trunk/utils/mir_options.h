@@ -24,17 +24,6 @@ Boston, MA 02111-1307, USA.
 #include <windows.h>
 
 
-// Init / free functions
-
-void InitMirOptions();
-void FreeMirOptions();
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Dialog to save options
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 #define CONTROL_CHECKBOX 0			// Stored as BYTE
 #define CONTROL_SPIN 1				// Stored as WORD
 #define CONTROL_COLOR 2				// Stored as DWORD
@@ -44,6 +33,7 @@ void FreeMirOptions();
 #define CONTROL_TEXT 6				// Stored as TCHARs, max len 1024
 #define CONTROL_COMBO_TEXT 7		// Stored as TCHARs, max len 1024
 #define CONTROL_COMBO_ITEMDATA 8	// Stored as TCHARs, max len 1024
+#define CONTROL_FILE 9				// Stored as TCHARs, max len 1024
 
 
 typedef BOOL (* FPAllowProtocol) (const char *proto);
@@ -70,21 +60,6 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 
 void LoadOpts(OptPageControl *controls, int controlsSize, char *module);
 
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Multiple tabs per dialog
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-typedef struct
-{ 
-	char *name;				// Tab name
-	int id;					// Dialog id
-	DLGPROC wnd_proc;		// Dialog function
-} ItemOption; 
-
-BOOL CALLBACK TabsDlgProc(ItemOption *optItens, int optItensSize, HINSTANCE hInst, UINT idc_tab, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
 
