@@ -79,8 +79,8 @@ void ContactAsyncQueue::RemoveAll(HANDLE hContact)
 			
 			if (item->hContact == hContact)
 			{
-				mir_free(item);
 				List_Remove(queue, i);
+				mir_free(item);
 			}
 		}
 	}
@@ -101,8 +101,8 @@ void ContactAsyncQueue::RemoveAllConsiderParam(HANDLE hContact, void *param)
 			
 			if (item->hContact == hContact && item->param == param)
 			{
-				mir_free(item);
 				List_Remove(queue, i);
+				mir_free(item);
 			}
 		}
 	}
@@ -157,7 +157,7 @@ void ContactAsyncQueue::AddAndRemovePreviousConsiderParam(int waitTime, HANDLE h
 
 void ContactAsyncQueue::InternalAdd(int waitTime, HANDLE hContact, void *param)
 {
-	QueueItem *item = (QueueItem *) malloc(sizeof(QueueItem));
+	QueueItem *item = (QueueItem *) mir_alloc(sizeof(QueueItem));
 	item->hContact = hContact;
 	item->check_time = GetTickCount() + waitTime;
 	item->param = param;
@@ -202,7 +202,7 @@ void ContactAsyncQueue::Thread()
 
 				callback(qi->hContact, qi->param);
 
-				free(qi);
+				mir_free(qi);
 			}
 		}
 	}

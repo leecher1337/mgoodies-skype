@@ -35,32 +35,8 @@ Boston, MA 02111-1307, USA.
 #include <m_system.h>
 
 
-// WinXP stuff
+#define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 
-HMODULE hUxTheme = NULL;
-
-#ifndef ETDT_ENABLETAB
-# define ETDT_ENABLETAB      0x00000006
-#endif
-
-typedef BOOL (WINAPI *fEnableThemeDialogTexture)(HANDLE, DWORD);
-fEnableThemeDialogTexture pfEnableThemeDialogTexture = NULL;
-
-
-void InitMirOptions()
-{
-	hUxTheme = LoadLibraryA("uxtheme.dll");
-    if(hUxTheme == NULL)
-        return;
-
-    pfEnableThemeDialogTexture = (fEnableThemeDialogTexture) GetProcAddress(hUxTheme, "EnableThemeDialogTexture");
-}
-
-void FreeMirOptions()
-{
-    if(hUxTheme != NULL)
-        FreeLibrary(hUxTheme);
-}
 
 static TCHAR* MyDBGetContactSettingTString(HANDLE hContact, char* module, char* setting, TCHAR* out, size_t len, TCHAR *def)
 {
@@ -107,208 +83,64 @@ static TCHAR* MyDBGetContactSettingTString(HANDLE hContact, char* module, char* 
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Multiple tabs per dialog
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+static TCHAR dbPath[MAX_PATH] = {0};		// database profile path (read at startup only)
 
 
-struct ItemOptionData 
-{ 
-	HWND hwnd;				// dialog handle
-}; 
-
-struct WndItemsData 
-{ 
-	ItemOptionData *items;
-	int selected_item;
-}; 
-
-
-// DoLockDlgRes - loads and locks a dialog template resource. 
-// Returns the address of the locked resource. 
-// lpszResName - name of the resource 
-
-static DLGTEMPLATE * DoLockDlgRes(HINSTANCE hInst, LPCTSTR lpszResName) 
-{ 
-	HRSRC hrsrc = FindResource(hInst, lpszResName, RT_DIALOG); 
-	HGLOBAL hglb = LoadResource(hInst, hrsrc); 
-	return (DLGTEMPLATE *) LockResource(hglb); 
-} 
-
-static BOOL __inline ScreenToClientRect(HWND hWnd, LPRECT lpRect)
+static int PathIsAbsolute(const TCHAR *path)
 {
-	BOOL ret;
-
-	POINT pt;
-
-	pt.x = lpRect->left;
-	pt.y = lpRect->top;
-
-	ret = ScreenToClient(hWnd, &pt);
-
-	if (!ret) return ret;
-
-	lpRect->left = pt.x;
-	lpRect->top = pt.y;
-
-
-	pt.x = lpRect->right;
-	pt.y = lpRect->bottom;
-
-	ret = ScreenToClient(hWnd, &pt);
-
-	lpRect->right = pt.x;
-	lpRect->bottom = pt.y;
-
-	return ret;
+    if (!path || !(lstrlen(path) > 2))
+        return 0;
+    if ((path[1]==_T(':') && path[2]==_T('\\')) || (path[0]==_T('\\')&&path[1]==_T('\\'))) 
+		return 1;
+    return 0;
 }
 
-static void ChangeTab(HWND hwndDlg, UINT idc_tab, WndItemsData *data, int sel)
+static void PathToRelative(TCHAR *pOut, size_t outSize, const TCHAR *pSrc)
 {
-	HWND hwndTab;
-	RECT rc_tab;
-	RECT rc_item;
-
-	hwndTab = GetDlgItem(hwndDlg, idc_tab);
-
-	// Get avaible space
-	GetWindowRect(hwndTab, &rc_tab);
-	ScreenToClientRect(hwndDlg, &rc_tab);
-	TabCtrl_AdjustRect(hwndTab, FALSE, &rc_tab);
-	
-	// Get item size
-	GetWindowRect(data->items[sel].hwnd, &rc_item);
-
-	// Fix rc_item
-	rc_item.right -= rc_item.left;	// width
-	rc_item.left = rc_tab.left + (rc_tab.right - rc_tab.left - rc_item.right) / 2;
-
-	// Old style (centered)
-	//rc_item.bottom -= rc_item.top;	// height
-	//rc_item.top = rc_tab.top + (rc_tab.bottom - rc_tab.top - rc_item.bottom) / 2;
-	// New style (at top)
-	rc_item.top = rc_tab.top;
-	rc_item.bottom = rc_tab.bottom - rc_tab.top;
-
-	// Set pos
-	SetWindowPos(data->items[sel].hwnd, HWND_TOP, rc_item.left, rc_item.top, 
-		rc_item.right, rc_item.bottom, SWP_SHOWWINDOW);
-
-	data->selected_item = sel;
-}
-
-BOOL CALLBACK TabsDlgProc(ItemOption *optItens, int optItensSize, HINSTANCE hInst, UINT idc_tab, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	switch (msg)
+    if (!PathIsAbsolute(pSrc)) 
 	{
-		case WM_INITDIALOG:
+		lstrcpyn(pOut, pSrc, outSize);
+    }
+    else 
+	{
+		if (dbPath[0] == _T('\0'))
 		{
-			HWND hwndTab;
-			WndItemsData *data;
-			int i;
-			TCITEM tie; 
-			
-			TranslateDialogDefault(hwndDlg);
-
-			data = (WndItemsData *) mir_alloc0(sizeof(WndItemsData));
-			data->selected_item = -1;
-			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) data); 
-
-			hwndTab = GetDlgItem(hwndDlg, idc_tab);
-
-			// Add tabs
-			tie.mask = TCIF_TEXT | TCIF_IMAGE; 
-			tie.iImage = -1; 
-
-			data->items = (ItemOptionData *) mir_alloc0(sizeof(ItemOptionData) * optItensSize);
-			
-			for (i = 0 ; i < optItensSize ; i++)
-			{
-				DLGTEMPLATE *templ;
-
-				templ = DoLockDlgRes(hInst, MAKEINTRESOURCE(optItens[i].id));
-				data->items[i].hwnd = CreateDialogIndirect(hInst, templ, hwndDlg, 
-													 optItens[i].wnd_proc); 
-
-				if (pfEnableThemeDialogTexture != NULL)
-					pfEnableThemeDialogTexture(data->items[i].hwnd, ETDT_ENABLETAB);
-
-				ShowWindow(data->items[i].hwnd, SW_HIDE);
-
-				tie.pszText = TranslateTS(optItens[i].name); 
-				TabCtrl_InsertItem(hwndTab, i, &tie);
-			}
-
-			// Show first item
-			ChangeTab(hwndDlg, idc_tab, data, 0);
-
-			return TRUE;
-			break;
+			char tmp[1024];
+		    CallService(MS_DB_GETPROFILEPATH, MAX_REGS(tmp), (LPARAM) tmp);
+			mir_sntprintf(dbPath, MAX_REGS(dbPath), _T(TCHAR_STR_PARAM) _T("\\"), tmp);
 		}
-		case WM_NOTIFY: 
+
+		size_t len = lstrlen(dbPath);
+        if (_tcsnicmp(pSrc, dbPath, len)) 
 		{
-			switch (((LPNMHDR)lParam)->code) 
-			{
-				case TCN_SELCHANGING:
-				{
-					WndItemsData *data = (WndItemsData *) GetWindowLong(hwndDlg, GWL_USERDATA);
-					ShowWindow(data->items[data->selected_item].hwnd, SW_HIDE);
-					break;
-				}
-				case TCN_SELCHANGE: 
-				{
-					ChangeTab(hwndDlg, idc_tab, 
-							  (WndItemsData *)GetWindowLong(hwndDlg, GWL_USERDATA), 
-							  TabCtrl_GetCurSel(GetDlgItem(hwndDlg, idc_tab)));
-					break; 
-				}
-
-				case PSN_APPLY:
-				{
-					if (((LPNMHDR)lParam)->idFrom == 0)
-					{
-						WndItemsData *data = (WndItemsData *) GetWindowLong(hwndDlg, GWL_USERDATA);
-						int i;
-						for (i = 0 ; i < optItensSize ; i++)
-						{
-							SendMessage(data->items[i].hwnd, msg, wParam, lParam);
-						}
-						return TRUE;
-					}
-					break;
-				}
-			}
-			break;
-		} 
-		case PSM_CHANGED:
+            mir_sntprintf(pOut, outSize, _T("%s"), pSrc + len);
+        }
+        else 
 		{
-			SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
-			break;
-		}
-		case WM_DESTROY: 
-		{
-			int i;
-			WndItemsData *data = (WndItemsData *) GetWindowLong(hwndDlg, GWL_USERDATA);
-
-			for (i = 0 ; i < optItensSize ; i++)
-			{
-				DestroyWindow(data->items[i].hwnd); 
-			}
-
-			mir_free(data->items); 
-			mir_free(data); 
-			break;
-		}
-	}
-
-	return 0;
+            lstrcpyn(pOut, pSrc, outSize);
+        }
+    }
 }
 
+static void PathToAbsolute(TCHAR *pOut, size_t outSize, const TCHAR *pSrc)
+{
+    if (PathIsAbsolute(pSrc) || !isalnum(pSrc[0])) 
+	{
+        lstrcpyn(pOut, pSrc, outSize);
+    }
+    else 
+	{
+		if (dbPath[0] == _T('\0'))
+		{
+			char tmp[1024];
+		    CallService(MS_DB_GETPROFILEPATH, MAX_REGS(tmp), (LPARAM) tmp);
+			mir_sntprintf(dbPath, MAX_REGS(dbPath), _T(TCHAR_STR_PARAM) _T("\\"), tmp);
+		}
 
+        mir_sntprintf(pOut, outSize, _T("%s%s"), dbPath, pSrc);
+    }
+}
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Dialog to save options
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void LoadOpts(OptPageControl *controls, int controlsSize, char *module)
 {
@@ -354,6 +186,13 @@ void LoadOpts(OptPageControl *controls, int controlsSize, char *module)
 					MyDBGetContactSettingTString(NULL, module, ctrl->setting, ((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue));
 					break;
 				}
+				case CONTROL_FILE:
+				{
+					TCHAR tmp[1024];
+					MyDBGetContactSettingTString(NULL, module, ctrl->setting, tmp, 1024, ctrl->tszDefValue == NULL ? NULL : ctrl->tszDefValue);
+					PathToAbsolute(((TCHAR *) ctrl->var), min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), tmp);
+					break;
+				}
 				case CONTROL_COMBO_TEXT:
 				case CONTROL_COMBO_ITEMDATA:
 				{
@@ -378,6 +217,9 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 			for (int i = 0 ; i < controlsSize ; i++)
 			{
 				OptPageControl *ctrl = &controls[i];
+
+				if (GetDlgItem(hwndDlg, ctrl->nID) == NULL)
+					continue;
 
 				switch(ctrl->type)
 				{
@@ -436,6 +278,9 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 						{
 							if (protos[i]->type != PROTOTYPE_PROTOCOL)
 								continue;
+
+							if (protos[i]->szName == NULL || protos[i]->szName[0] == '\0')
+								continue;
 							
 							if (ctrl->allowProtocol != NULL && !ctrl->allowProtocol(protos[i]->szName))
 								continue;
@@ -467,7 +312,17 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 					{
 						TCHAR tmp[1024];
 						SetDlgItemText(hwndDlg, ctrl->nID, MyDBGetContactSettingTString(NULL, module, ctrl->setting, tmp, 1024, ctrl->tszDefValue == NULL ? NULL : TranslateTS(ctrl->tszDefValue)));
+						SendDlgItemMessage(hwndDlg, ctrl->nID, EM_LIMITTEXT, min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), 0);
+						break;
+					}
+					case CONTROL_FILE:
+					{
+						TCHAR tmp[1024];
+						MyDBGetContactSettingTString(NULL, module, ctrl->setting, tmp, 1024, ctrl->tszDefValue == NULL ? NULL : ctrl->tszDefValue);
+						TCHAR abs[1024];
+						PathToAbsolute(abs, 1024, tmp);
 
+						SetDlgItemText(hwndDlg, ctrl->nID, abs);
 						SendDlgItemMessage(hwndDlg, ctrl->nID, EM_LIMITTEXT, min(ctrl->max <= 0 ? 1024 : ctrl->max, 1024), 0);
 						break;
 					}
@@ -544,6 +399,9 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 				{
 					OptPageControl *ctrl = &controls[i];
 
+					if (GetDlgItem(hwndDlg, ctrl->nID) == NULL)
+						continue;
+
 					switch(ctrl->type)
 					{
 						case CONTROL_CHECKBOX:
@@ -597,6 +455,15 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 							DBWriteContactSettingTString(NULL, module, ctrl->setting, tmp);
 							break;
 						}
+						case CONTROL_FILE:
+						{
+							TCHAR tmp[1024];
+							GetDlgItemText(hwndDlg, ctrl->nID, tmp, 1024);
+							TCHAR rel[1024];
+							PathToRelative(rel, 1024, tmp);
+							DBWriteContactSettingTString(NULL, module, ctrl->setting, rel);
+							break;
+						}
 						case CONTROL_COMBO_TEXT:
 						{
 							TCHAR tmp[1024];
@@ -642,6 +509,9 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 			for (int i = 0 ; i < controlsSize ; i++)
 			{
 				OptPageControl *ctrl = &controls[i];
+
+				if (GetDlgItem(hwndDlg, ctrl->nID) == NULL)
+					continue;
 
 				switch(ctrl->type)
 				{
