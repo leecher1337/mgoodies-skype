@@ -10,6 +10,7 @@ The events that are handled are:
  - Status Message changes
  - Client changes
  - Status changes
+ - XStatus changes
 
 For it to work, it depends on some popup plugin (YAPP or Popup+) and on History Events plugin: http://pescuma.mirandaim.ru/miranda/historyevents
 
@@ -20,7 +21,7 @@ The icons were copied/based on the icons from History++.
 To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=15468
 
 To do:
- - XStatus change notification
  - Integrate avh with it?
+ - Support variables plugin
  
 

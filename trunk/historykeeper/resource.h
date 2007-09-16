@@ -9,7 +9,9 @@
 #define IDD_OPTIONS_REM                 121
 #define IDD_POPUPS_NOREM                122
 #define IDI_NICK                        123
+#define IDD_SPEAK_REM                   123
 #define IDI_SMH                         124
+#define IDD_SPEAK_NOREM                 124
 #define IDI_STATUS                      125
 #define IDI_CLIENT                      126
 #define IDI_XSTATUS                     127

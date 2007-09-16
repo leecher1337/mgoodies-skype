@@ -32,6 +32,7 @@ HANDLE hOptHook = NULL;
 
 static BOOL CALLBACK OptionsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK PopupsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static BOOL CALLBACK SpeakDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #define HACK(i) \
 		static BOOL CALLBACK OptionsDlgProc ## i (HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) \
@@ -41,6 +42,10 @@ static BOOL CALLBACK PopupsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wPar
 		static BOOL CALLBACK PopupsDlgProc ## i (HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) \
 		{ \
 			return PopupsDlgProc(i, hwndDlg, msg, wParam, lParam); \
+		} \
+		static BOOL CALLBACK SpeakDlgProc ## i (HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) \
+		{ \
+			return SpeakDlgProc(i, hwndDlg, msg, wParam, lParam); \
 		} \
 		static BOOL AllowProtocol ## i(const char *proto) \
 		{ \
@@ -55,6 +60,7 @@ HACK(4);
 
 DLGPROC OptionsDlgProcArr[] = { OptionsDlgProc0, OptionsDlgProc1, OptionsDlgProc2, OptionsDlgProc3, OptionsDlgProc4 };
 DLGPROC PopupsDlgProcArr[] = { PopupsDlgProc0, PopupsDlgProc1, PopupsDlgProc2, PopupsDlgProc3, PopupsDlgProc4 };
+DLGPROC SpeakDlgProcArr[] = { SpeakDlgProc0, SpeakDlgProc1, SpeakDlgProc2, SpeakDlgProc3, SpeakDlgProc4 };
 FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProtocol2, AllowProtocol3, AllowProtocol4 };
 
 
@@ -64,6 +70,9 @@ static OptPageControl optionsControls[NUM_TYPES][OPTIONS_CONTROLS_SIZE] = {0};
 
 #define POPUPS_CONTROLS_SIZE 15
 static OptPageControl popupsControls[NUM_TYPES][POPUPS_CONTROLS_SIZE] = {0};
+
+#define SPEAK_CONTROLS_SIZE 4
+static OptPageControl speakControls[NUM_TYPES][SPEAK_CONTROLS_SIZE] = {0};
 
 static UINT popupsExpertControls[] = { 
 	IDC_COLOURS_G, IDC_BGCOLOR, IDC_BGCOLOR_L, IDC_TEXTCOLOR, IDC_TEXTCOLOR_L, IDC_WINCOLORS, IDC_DEFAULTCOLORS, 
@@ -83,8 +92,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 {
 	OPTIONSDIALOGPAGE odp = {0};
 	odp.cbSize = sizeof(odp);
-	odp.position=0;
-	odp.hInstance=hInst;
+	odp.hInstance = hInst;
 	odp.pszGroup = "History";
 	odp.flags = ODPF_BOLDGROUPS | ODPF_EXPERTONLY;
 
@@ -110,8 +118,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	{
 		ZeroMemory(&odp,sizeof(odp));
 		odp.cbSize = sizeof(odp);
-		odp.position=0;
-		odp.hInstance=hInst;
+		odp.hInstance = hInst;
 		odp.pszGroup = Translate("Popups");
 		odp.flags = ODPF_BOLDGROUPS;
 		odp.expertOnlyControls = popupsExpertControls;
@@ -130,7 +137,32 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 
 			odp.pszTitle = tmp;
 			odp.pfnDlgProc = PopupsDlgProcArr[i];
-			CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+			CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) &odp);
+		}
+	}
+
+	_ASSERT(MAX_REGS(SpeakDlgProcArr) == NUM_TYPES);
+	if (ServiceExists(MS_SPEAK_SAY))
+	{
+		ZeroMemory(&odp,sizeof(odp));
+		odp.cbSize = sizeof(odp);
+		odp.hInstance = hInst;
+		odp.pszGroup = Translate("Speak");
+		odp.flags = ODPF_BOLDGROUPS;
+
+		for (int i = 0; i < NUM_TYPES; i++) 
+		{
+			if (types[i].canBeRemoved)
+				odp.pszTemplate = MAKEINTRESOURCEA(IDD_SPEAK_REM);
+			else
+				odp.pszTemplate = MAKEINTRESOURCEA(IDD_SPEAK_NOREM);
+
+			char tmp[128];
+			mir_snprintf(tmp, MAX_REGS(tmp), "%s Change", types[i].description);
+
+			odp.pszTitle = tmp;
+			odp.pfnDlgProc = SpeakDlgProcArr[i];
+			CallService(MS_OPT_ADDPAGE, wParam, (LPARAM) &odp);
 		}
 	}
 
@@ -144,8 +176,11 @@ void InitOptions()
 	static TCHAR fileRemoveTemplates[NUM_TYPES][128];
 	static TCHAR changeTemplates[NUM_TYPES][128];
 	static TCHAR removeTemplates[NUM_TYPES][128];
+	static TCHAR speakChangeTemplates[NUM_TYPES][128];
+	static TCHAR speakRemoveTemplates[NUM_TYPES][128];
 	static char optSet[NUM_TYPES][OPTIONS_CONTROLS_SIZE][64];
 	static char popSet[NUM_TYPES][POPUPS_CONTROLS_SIZE][64];
+	static char speakSet[NUM_TYPES][POPUPS_CONTROLS_SIZE][64];
 
 	for (int i = 0; i < NUM_TYPES; i++) 
 	{
@@ -204,6 +239,29 @@ void InitOptions()
 		}
 		memcpy(&popupsControls[i][0], &pops, sizeof(pops));
 
+	    if (ServiceExists(MS_SPEAK_SAY))
+		{
+			// Speak pages
+			mir_sntprintf(&speakChangeTemplates[i][0], 128, TranslateT("%%contact%% changed his/her %s to %%new%%"), tmp);
+			mir_sntprintf(&speakRemoveTemplates[i][0], 128, TranslateT("%%contact%% removed his/her %s"), tmp);
+
+			OptPageControl opt[] = {
+				{ &opts[i].speak_track_changes,		CONTROL_CHECKBOX,		IDC_TRACK_CHANGE,		"SpeakTrackChanges", FALSE },
+				{ &opts[i].speak_template_changed,	CONTROL_TEXT,			IDC_CHANGED,			"SpeakTemplateChanged", (DWORD) &speakChangeTemplates[i][0] },
+				{ &opts[i].speak_track_removes,		CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,		"SpeakTrackRemoves", FALSE },
+				{ &opts[i].speak_template_removed,	CONTROL_TEXT,			IDC_REMOVED,			"SpeakTemplateRemoved", (DWORD) &speakRemoveTemplates[i][0] },
+			};
+
+			_ASSERT(MAX_REGS(opt) == SPEAK_CONTROLS_SIZE);
+			int j;
+			for(j = 0; j < SPEAK_CONTROLS_SIZE; j++)
+			{
+				mir_snprintf(&speakSet[i][j][0], 64, "%s_%s", types[i].name, opt[j].setting);
+				opt[j].setting = &speakSet[i][j][0];
+			}
+			memcpy(&speakControls[i][0], &opt, sizeof(opt));
+		}
+
 		mir_free(tmp);
 	}
 
@@ -225,6 +283,7 @@ void LoadOptions()
 	{
 		LoadOpts(&optionsControls[i][0], OPTIONS_CONTROLS_SIZE, MODULE_NAME);
 		LoadOpts(&popupsControls[i][0], POPUPS_CONTROLS_SIZE, MODULE_NAME);
+		LoadOpts(&speakControls[i][0], SPEAK_CONTROLS_SIZE, MODULE_NAME);
 	}
 }
 
@@ -265,6 +324,12 @@ static BOOL CALLBACK OptionsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wPa
 	}
 
 	return SaveOptsDlgProc(&optionsControls[type][0], OPTIONS_CONTROLS_SIZE, MODULE_NAME, hwndDlg, msg, wParam, lParam);
+}
+
+
+static BOOL CALLBACK SpeakDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	return SaveOptsDlgProc(&speakControls[type][0], SPEAK_CONTROLS_SIZE, MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
 
 

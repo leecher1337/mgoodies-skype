@@ -45,6 +45,7 @@ Boston, MA 02111-1307, USA.
 #include <m_history.h>
 #include <m_message.h>
 #include <m_icq.h>
+#include <m_skin.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
@@ -112,6 +113,10 @@ BOOL AllowProtocol(int type, const char *proto);
 #define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION 30000 // ms
 #define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CONNECTION 10000 // ms
 #define TIME_TO_WAIT_BEFORE_PROCESSING 3000 // ms
+
+
+
+#define MS_SPEAK_SAY "Speak/Say"
 
 
 #endif // __COMMONS_H__

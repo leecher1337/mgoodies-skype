@@ -46,6 +46,12 @@ struct Options {
 	TCHAR file_template_changed[1024];
 	TCHAR file_template_removed[1024];
 
+	// Speak
+	BYTE speak_track_changes;
+	BYTE speak_track_removes;
+	TCHAR speak_template_changed[1024];
+	TCHAR speak_template_removed[1024];
+
 	// Popup
 	BYTE popup_track_changes;
 	BYTE popup_track_removes;

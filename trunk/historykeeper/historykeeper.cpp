@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,3),
+	PLUGIN_MAKE_VERSION(0,0,0,4),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -145,52 +145,81 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	for (i = 0; i < NUM_TYPES; i++) 
 	{
+		HISTORY_TYPE &type = types[i];
+
 		// History
 
 		char tmp[128];
-		strncpy(tmp, types[i].description, MAX_REGS(tmp));
+		strncpy(tmp, type.description, MAX_REGS(tmp));
 		CharLowerA(tmp);
 
 		char change[256];
 		mir_snprintf(change, MAX_REGS(change), "Change\nchanged his/her %s to %%new%%\n%%old%%\tOld value\n%%new%%\tNew value",
 			tmp);
 
-		char remove[256];
-		mir_snprintf(remove, MAX_REGS(remove), "Removal\nremoved his/her %s\n%%old%%\tOld value",
-			tmp);
+		if (type.canBeRemoved)
+		{
+			char remove[256];
+			mir_snprintf(remove, MAX_REGS(remove), "Removal\nremoved his/her %s\n%%old%%\tOld value",
+				tmp);
 
-		char *templates[] = { change, remove };
+			char *templates[] = { change, remove };
 
-		char desc[128];
-		mir_snprintf(desc, MAX_REGS(desc), "%s Change", types[i].description);
+			char desc[128];
+			mir_snprintf(desc, MAX_REGS(desc), "%s Change", type.description);
 
-		HICON hIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(types[i].icon), IMAGE_ICON, 16, 16, 0);
-		HistoryEvents_RegisterMessageStyle(MODULE_NAME, types[i].name, desc, types[i].eventType, 
-			hIcon, HISTORYEVENTS_FLAG_SHOW_IM_SRMM | HISTORYEVENTS_FLAG_EXPECT_CONTACT_NAME_BEFORE | types[i].historyFlags,
-			templates, MAX_REGS(templates));
-		DestroyIcon(hIcon);
+			HICON hIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(type.icon), IMAGE_ICON, 16, 16, 0);
+			HistoryEvents_RegisterMessageStyle(MODULE_NAME, type.name, desc, type.eventType, 
+				hIcon, HISTORYEVENTS_FLAG_SHOW_IM_SRMM | HISTORYEVENTS_FLAG_EXPECT_CONTACT_NAME_BEFORE | type.historyFlags,
+				templates, MAX_REGS(templates));
+			DestroyIcon(hIcon);
+		}
+		else
+		{
+			char *templates[] = { change };
+
+			char desc[128];
+			mir_snprintf(desc, MAX_REGS(desc), "%s Change", type.description);
+
+			HICON hIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(type.icon), IMAGE_ICON, 16, 16, 0);
+			HistoryEvents_RegisterMessageStyle(MODULE_NAME, type.name, desc, type.eventType, 
+				hIcon, HISTORYEVENTS_FLAG_SHOW_IM_SRMM | HISTORYEVENTS_FLAG_EXPECT_CONTACT_NAME_BEFORE | type.historyFlags,
+				templates, MAX_REGS(templates));
+			DestroyIcon(hIcon);
+		}
 
 
 		// Menus and services
 
-		mi.hIcon = HistoryEvents_GetIcon(types[i].eventType);
+		mi.hIcon = HistoryEvents_GetIcon(type.eventType);
 
-		mir_snprintf(service, MAX_REGS(service), "%s/Disable", types[i].name);
+		mir_snprintf(service, MAX_REGS(service), "%s/Disable", type.name);
 		CreateServiceFunctionParam(service, DisableHistory, i);
 
-		mir_snprintf(name, MAX_REGS(name), "Don't log %s changes", types[i].description);
+		mir_snprintf(name, MAX_REGS(name), "Don't log %s changes", type.description);
 		hDisableMenu[i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 
-		mir_snprintf(service, MAX_REGS(service), "%s/Enable", types[i].name);
+		mir_snprintf(service, MAX_REGS(service), "%s/Enable", type.name);
 		CreateServiceFunctionParam(service, EnableHistory, i);
 		
-		mir_snprintf(name, MAX_REGS(name), "Log %s changes", types[i].description);
+		mir_snprintf(name, MAX_REGS(name), "Log %s changes", type.description);
 		hEnableMenu[i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 
-		mir_snprintf(service, MAX_REGS(service), "%s/Enabled", types[i].name);
+		mir_snprintf(service, MAX_REGS(service), "%s/Enabled", type.name);
 		CreateServiceFunctionParam(service, HistoryEnabled, i);
 
 		HistoryEvents_ReleaseIcon(mi.hIcon);
+
+		// Sounds
+
+		mir_snprintf(change, MAX_REGS(change), "%s change", type.description);
+		SkinAddNewSoundEx(change, "Notifications", change);
+
+		if (type.canBeRemoved)
+		{
+			mir_snprintf(change, MAX_REGS(change), "%s removal", type.description);
+			SkinAddNewSoundEx(change, "Notifications", change);
+		}
 	}
 	
 	// hooks
@@ -199,9 +228,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	hHooks[2] = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, SettingChanged);
 	hHooks[3] = HookEvent(ME_DB_CONTACT_ADDED, ContactAdded);
 	hHooks[4] = HookEvent(ME_PROTO_ACK, ProtoAckHook);
-
-	InitOptions();
-	InitPopups();
 
 	return 0;
 }
@@ -257,6 +283,9 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
 	}
+
+	InitOptions();
+	InitPopups();
 
 	queue = new ContactAsyncQueue(&Process);
 
@@ -502,6 +531,30 @@ void Notify(int type, BOOL found_old, BOOL changed, HANDLE hContact, TCHAR *oldV
 	if (found_old || types[type].canBeRemoved)
 		ShowPopup(hContact, type, templateNum, vars, numVars);
 
+	char tmp[256];
+	mir_snprintf(tmp, MAX_REGS(tmp), changed ? "%s change" : "%s removal", types[type].description);
+	SkinPlaySound(tmp);
+
+	if (ServiceExists(MS_SPEAK_SAY))
+	{
+		if ( (templateNum == 0 && opts[type].speak_track_changes)
+			 || (templateNum == 1 && opts[type].speak_track_removes))
+		{
+			Buffer<TCHAR> txt;
+			txt.append(templateNum == 1 ? opts[type].speak_template_removed : opts[type].speak_template_changed);
+			ReplaceVars(&txt, hContact, vars, numVars);
+			txt.pack();
+
+#ifdef UNICODE
+			char *tmp = mir_t2a(txt.str);
+			CallService(MS_SPEAK_SAY, (LPARAM) NULL, (WPARAM) tmp);
+			mir_free(tmp);
+#else
+			CallService(MS_SPEAK_SAY, (LPARAM) NULL, (WPARAM) txt.str);
+#endif
+		}
+	}
+
 	for(int i = 0; i < types[type].numAddVars; i++)
 		mir_free(vars[4 + 2 * i + 1]);
 }
@@ -644,7 +697,8 @@ void TrackChangeString(int typeNum, HANDLE hContact)
 		track_removes = type.canBeRemoved && 
 						(opts[typeNum].popup_track_removes 
 						|| opts[typeNum].file_track_removes 
-						|| HistoryEvents_IsEnabledTemplate(type.eventType, ret - 1));
+						|| opts[typeNum].speak_track_removes 
+						|| HistoryEvents_IsEnabledTemplate(type.eventType, 1));
 
 	if (ret == 1 || (ret == 2 && track_removes))
 	{
