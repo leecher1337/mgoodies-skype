@@ -188,6 +188,35 @@ BEGIN
     PUSHBUTTON      "Preview",IDC_PREV,131,223,50,14
 END
 
+IDD_SPEAK_REM DIALOGEX 0, 0, 279, 68
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL         "Announce when contacts change their %s",
+                    IDC_TRACK_CHANGE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    12,3,264,11
+    RTEXT           "Template:",IDC_CHANGED_L2,11,16,55,10
+    EDITTEXT        IDC_CHANGED,72,15,203,13,ES_AUTOHSCROLL
+    CONTROL         "Announce when contacts remove their %s",
+                    IDC_TRACK_REMOVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    12,32,263,11
+    RTEXT           "Template:",IDC_REMOVED_L2,11,46,55,10
+    EDITTEXT        IDC_REMOVED,72,45,203,13,ES_AUTOHSCROLL
+END
+
+IDD_SPEAK_NOREM DIALOGEX 0, 0, 279, 68
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL         "Announce when contacts change their %s",
+                    IDC_TRACK_CHANGE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    12,3,264,11
+    RTEXT           "Template:",IDC_CHANGED_L2,11,16,55,10
+    EDITTEXT        IDC_CHANGED,72,15,203,13,ES_AUTOHSCROLL
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -227,6 +256,22 @@ BEGIN
         RIGHTMARGIN, 311
         TOPMARGIN, 3
         BOTTOMMARGIN, 237
+    END
+
+    IDD_SPEAK_REM, DIALOG
+    BEGIN
+        LEFTMARGIN, 3
+        RIGHTMARGIN, 276
+        TOPMARGIN, 3
+        BOTTOMMARGIN, 65
+    END
+
+    IDD_SPEAK_NOREM, DIALOG
+    BEGIN
+        LEFTMARGIN, 3
+        RIGHTMARGIN, 276
+        TOPMARGIN, 3
+        BOTTOMMARGIN, 65
     END
 END
 #endif    // APSTUDIO_INVOKED

@@ -2,6 +2,10 @@ History Keeper
 
 Changelog:
 
+. 0.0.0.4
+  + Added sounds support
+  + Added speak plugin support
+
 . 0.0.0.3
   * Changed handling of notifications (should appear less notifications now)
   * Fix for showing popups
