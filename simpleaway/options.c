@@ -18,6 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "simpleaway.h"
 
+extern UINT	SATimer;
+extern BOOL	is_timer;
+extern void CALLBACK SATimerProc(HWND, UINT, UINT_PTR, DWORD);
+
 struct SingleProtoMsg
 {
 	int		flags;
@@ -172,13 +176,17 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 				data->proto_count = proto_count;
 				for(i=0; i<proto_count; i++)
 				{
-					if (proto[i]->type != PROTOTYPE_PROTOCOL)
+					char protoLabel[MAXMODULELABELLENGTH+1];
+
+					if (proto[i]->type != PROTOTYPE_PROTOCOL || !CallProtoService(proto[i]->szName, PS_GETCAPS,PFLAGNUM_3, 0))
 					{
 						data->proto_msg[i].msg = NULL;
 						continue;
 					}
 
-					index = SendMessage(GetDlgItem(hwndDlg, IDC_CBOPTPROTO), CB_ADDSTRING, 0, (LPARAM)proto[i]->szName);
+					CallProtoService(proto[i]->szName, PS_GETNAME, MAXMODULELABELLENGTH, (LPARAM)protoLabel);
+					index = SendMessage(GetDlgItem(hwndDlg, IDC_CBOPTPROTO), CB_ADDSTRING, 0, (LPARAM)protoLabel);
+					SendMessage(GetDlgItem(hwndDlg, IDC_CBOPTPROTO), CB_SETITEMDATA, index, (LPARAM)i);
 					if (index != CB_ERR && index != CB_ERRSPACE)
 					{
 						_snprintf(setting, sizeof(setting), "Proto%sDefault", proto[i]->szName);
@@ -717,11 +725,20 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 							if (translated)
 								DBWriteContactSettingByte(NULL, "SimpleAway", "DlgTime", (BYTE)val);
 
+							if (is_timer)
+								KillTimer(NULL, SATimer);
+							is_timer = FALSE;
+
 							if (IsDlgButtonChecked(hwndDlg, IDC_CCHECKWINAMP) == BST_CHECKED)
 							{
 								val = GetDlgItemInt(hwndDlg, IDC_ESECWINAMP, &translated, FALSE);
 								if (translated)
 									DBWriteContactSettingByte(NULL, "SimpleAway", "AmpCheck", (BYTE)val);
+								if (translated && val)
+								{
+									SATimer = SetTimer(NULL, 0, val*1000, (TIMERPROC)SATimerProc);
+									is_timer = TRUE;
+								}
 							}
 							else
 								DBWriteContactSettingByte(NULL, "SimpleAway", "AmpCheck", (BYTE)0);
@@ -745,6 +762,9 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 								for(i=0; i<proto_count; i++)
 								{
 									if (proto[i]->type != PROTOTYPE_PROTOCOL)
+										continue;
+
+									if (!CallProtoService(proto[i]->szName, PS_GETCAPS,PFLAGNUM_3, 0))
 										continue;
 
 									_snprintf(setting, sizeof(setting), "Proto%sDefault", proto[i]->szName);

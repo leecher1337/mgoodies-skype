@@ -288,7 +288,7 @@ BEGIN
     GROUPBOX        "Messages",IDC_STATIC,7,2,145,142
     EDITTEXT        IDC_OPTEDIT2,164,64,134,12,ES_MULTILINE | ES_AUTOVSCROLL | 
                     ES_AUTOHSCROLL | ES_WANTRETURN
-    COMBOBOX        IDC_CBOPTPROTO,164,15,43,97,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_CBOPTPROTO,164,15,43,97,CBS_DROPDOWNLIST | CBS_SORT |
                     WS_TABSTOP
     GROUPBOX        "Protocols *",IDC_STATIC,157,2,148,82
     CONTROL         "Do not set status message",IDC_COPTPROTO1,"Button",
@@ -305,7 +305,7 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,188,138,8
     EDITTEXT        IDC_ESECWINAMP,155,186,28,12,ES_NUMBER | NOT WS_BORDER,
                     WS_EX_CLIENTEDGE
-    LTEXT           "seconds. (restart required)",IDC_STATIC,187,188,113,8
+    LTEXT           "seconds.",IDC_STATIC,187,188,113,8
     CONTROL         "Spin2",IDC_SSECWINAMP,"msctls_updown32",UDS_SETBUDDYINT | 
                     UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS,173,186,10,14
     CONTROL         "Remove Carriage Return (CR = '\\r' = #0D) chars from status messages",
