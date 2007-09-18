@@ -85,6 +85,7 @@ struct HISTORY_TYPE {
 	pfFormat fFormat;
 	int historyFlags;
 	BOOL canBeRemoved;
+	BOOL temporary;
 
 	struct {
 		struct {
@@ -111,7 +112,7 @@ BOOL AllowProtocol(int type, const char *proto);
 
 
 #define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION 30000 // ms
-#define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CONNECTION 10000 // ms
+#define TIME_TO_WAIT_BEFORE_NOTIFY_AFTER_CONNECTION 10000 // ms
 #define TIME_TO_WAIT_BEFORE_PROCESSING 3000 // ms
 
 

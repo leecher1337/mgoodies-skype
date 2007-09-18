@@ -60,6 +60,29 @@ static TCHAR *GetTString(HANDLE hContact, char *module, char *setting)
 	return ret;
 }
 
+
+static TCHAR *GetCurrentTString(HANDLE hContact, char *module, char *setting) 
+{
+	char tmp[256];
+	mir_snprintf(tmp, MAX_REGS(tmp), "%s_%s_Current", module, setting);
+
+	TCHAR *ret = NULL;
+
+	DBVARIANT db = {0};
+	if (DBGetContactSettingTString(hContact, MODULE_NAME, tmp, &db) == 0)
+	{
+		if (db.ptszVal != NULL && db.ptszVal[0] != _T('\0'))
+			ret = mir_tstrdup(db.ptszVal);
+		DBFreeVariant(&db);
+	}
+
+	if (ret == NULL)
+		ret = mir_tstrdup(TranslateT("<empty>"));
+
+	return ret;
+}
+
+
 static void StatusAddVars(HANDLE hContact, TCHAR **vars, int i)
 {
 	vars[i++] = _T("%msg%");
@@ -83,7 +106,7 @@ static void ClientAddVars(HANDLE hContact, TCHAR **vars, int i)
 	vars[i++] = _T("%MirVer_new%");
 	vars[i++] = GetTString(hContact, proto, "MirVer");
 	vars[i++] = _T("%MirVer_old%");
-	vars[i++] = GetTString(hContact, proto, "MirVerCurrent");
+	vars[i++] = GetCurrentTString(hContact, proto, "MirVer");
 }
 
 
@@ -132,11 +155,15 @@ BOOL ClientEquals(TCHAR *a, TCHAR *b)
 {
 	if (ServiceExists(MS_FP_SAMECLIENTS))
 	{
+#ifdef UNICODE
 		char *ac = mir_t2a(a);
 		char *bc = mir_t2a(b);
 		char *ret = (char *) CallService(MS_FP_SAMECLIENTS, (WPARAM) ac, (LPARAM) bc);
 		mir_free(ac);
 		mir_free(bc);
+#else
+		char *ret = (char *) CallService(MS_FP_SAMECLIENTS, (WPARAM) a, (LPARAM) b);
+#endif
 		return ret != NULL;
 	}
 	else
@@ -145,11 +172,11 @@ BOOL ClientEquals(TCHAR *a, TCHAR *b)
 
 
 HISTORY_TYPE types[NUM_TYPES] = {
-	{ "ClientHistory",	"Client",			IDI_CLIENT,		EVENTTYPE_CLIENT_CHANGE,			NULL,					ClientEquals,	ClientFormat,	0,									FALSE,	(char *) -1,	"MirVer",		TRUE,	NULL,				FALSE,	2,  ClientAddVars },
-	{ "NickHistory",	"Nickname",			IDI_NICK,		EVENTTYPE_NICKNAME_CHANGE,			NULL,					NULL,			NULL,			0, 									FALSE,	(char *) -1,	"Nick",			TRUE,	NULL,				FALSE,	0,	NULL },
-	{ "StatusHistory",	"Status",			IDI_STATUS,		EVENTTYPE_STATUSCHANGE,				NULL,					NULL,			StatusFormat,	HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	FALSE,	(char *) -1,	"Status",		FALSE,	ID_STATUS_OFFLINE,	FALSE,	1,  StatusAddVars },
-	{ "SMH",			"Status Message",	IDI_SMH,		EVENTTYPE_STATUSMESSAGE_CHANGE,		SMHAllowProtocol,		NULL,			NULL,			0, 									TRUE,	"CList",		"StatusMsg",	TRUE,	NULL,				TRUE,	0,	NULL },
-	{ "XStatusHistory",	"XStatus",			IDI_XSTATUS,	EVENTTYPE_XSTATUS_CHANGE,			XStatusAllowProtocol,	NULL,			NULL,			HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	TRUE,	(char *) -1,	"XStatusName",	TRUE,	NULL,				TRUE,	1,  XStatusAddVars },
+	{ "ClientHistory",	"Client",			IDI_CLIENT,		EVENTTYPE_CLIENT_CHANGE,			NULL,					ClientEquals,	ClientFormat,	0,									FALSE,	FALSE,	(char *) -1,	"MirVer",		TRUE,	NULL,				FALSE,	2,  ClientAddVars },
+	{ "NickHistory",	"Nickname",			IDI_NICK,		EVENTTYPE_NICKNAME_CHANGE,			NULL,					NULL,			NULL,			0, 									FALSE,	FALSE,	(char *) -1,	"Nick",			TRUE,	NULL,				FALSE,	0,	NULL },
+	{ "StatusHistory",	"Status",			IDI_STATUS,		EVENTTYPE_STATUSCHANGE,				NULL,					NULL,			StatusFormat,	HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	FALSE,	TRUE,	(char *) -1,	"Status",		FALSE,	ID_STATUS_OFFLINE,	FALSE,	1,  StatusAddVars },
+	{ "SMH",			"Status Message",	IDI_SMH,		EVENTTYPE_STATUSMESSAGE_CHANGE,		SMHAllowProtocol,		NULL,			NULL,			0, 									TRUE,	FALSE,	"CList",		"StatusMsg",	TRUE,	NULL,				TRUE,	0,	NULL },
+	{ "XStatusHistory",	"XStatus",			IDI_XSTATUS,	EVENTTYPE_XSTATUS_CHANGE,			XStatusAllowProtocol,	NULL,			NULL,			HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	TRUE,	FALSE,	(char *) -1,	"XStatusName",	TRUE,	NULL,				TRUE,	1,  XStatusAddVars },
 };
 
 

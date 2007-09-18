@@ -38,6 +38,7 @@ Boston, MA 02111-1307, USA.
 
 struct Options {
 	BYTE track_only_not_offline;
+	BYTE dont_notify_on_connect;
 
 	// File
 	TCHAR file_name[1024];
@@ -55,7 +56,6 @@ struct Options {
 	// Popup
 	BYTE popup_track_changes;
 	BYTE popup_track_removes;
-	BYTE popup_dont_notfy_on_connect;
 	TCHAR popup_template_changed[1024];
 	TCHAR popup_template_removed[1024];
 	WORD popup_delay_type;
