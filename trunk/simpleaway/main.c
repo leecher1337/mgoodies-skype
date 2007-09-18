@@ -443,6 +443,9 @@ void SaveMessageToDB(char *proto, char *message, BOOL is_format)
 			if (protocols[i]->type != PROTOTYPE_PROTOCOL)
 				continue;
 
+			if (!CallProtoService(protocols[i]->szName, PS_GETCAPS,PFLAGNUM_3, 0))
+				continue;
+
 			if (is_format)
 				_snprintf(buff, sizeof(buff), "FCur%sMsg", protocols[i]->szName);
 			else
@@ -631,6 +634,9 @@ int SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam)
 		if (protocols[i]->type != PROTOTYPE_PROTOCOL)
 			continue;
 
+		if (!CallProtoService(protocols[i]->szName, PS_GETCAPS,PFLAGNUM_3, 0))
+			continue;
+
 		pflags = CallProtoService(protocols[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0);
 
 		if (!(pflags & PF1_MODEMSGSEND) && (pflags & PF1_INDIVMODEMSG))
@@ -685,6 +691,7 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 	{
 		if (!strcmp(proto_name, "mTV"))
 			return;
+		
 		if (message)
 			msg = (char *)InsertVarsIntoMsg(message, proto_name, status_mode);
 
@@ -732,6 +739,9 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 				continue;
 
 			if (!strcmp(proto[i]->szName, "mTV"))
+				continue;
+
+			if (!CallProtoService(proto[i]->szName, PS_GETCAPS,PFLAGNUM_3, 0))
 				continue;
 
 			pflags = CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0);
@@ -900,10 +910,13 @@ int ChangeStatusMessage(WPARAM wParam,LPARAM lParam)
 				if (proto[i]->type != PROTOTYPE_PROTOCOL)
 					continue;
 
-				pflags = CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0);
-
 				if (!strcmp(proto[i]->szName, "mTV"))
 					continue;
+
+				if (!CallProtoService(proto[i]->szName, PS_GETCAPS,PFLAGNUM_3, 0))
+					continue;
+
+				pflags = CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0);
 
 				if (!(pflags & PF1_MODEMSGSEND) && (pflags & PF1_INDIVMODEMSG))
 					continue;
@@ -971,6 +984,10 @@ void CALLBACK SATimerProc(HWND timerhwnd, UINT uMsg, UINT_PTR idEvent, DWORD  dw
 
 					if (!strcmp(proto[i]->szName, "mTV"))
 						continue;
+
+					if (!CallProtoService(proto[i]->szName, PS_GETCAPS,PFLAGNUM_3, 0))
+						continue;
+
 
 					status = CallProtoService(proto[i]->szName, PS_GETSTATUS, 0, 0);
 					if (status == ID_STATUS_OFFLINE)
@@ -1122,6 +1139,11 @@ int InitAwayModule(WPARAM wParam,LPARAM lParam)
 		else
 			ShowCopy=FALSE;
 	}
+
+	// known modules list
+	if (ServiceExists("DBEditorpp/RegisterSingleModule"))
+		CallService("DBEditorpp/RegisterSingleModule", (WPARAM)"SimpleAway", 0);
+
 	return 0;
 }
 
