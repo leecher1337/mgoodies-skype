@@ -55,7 +55,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 IDD_POPUPS_REM DIALOGEX 0, 0, 314, 240
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " Tracking ",IDC_TRACK_G,3,3,308,73
     CONTROL         "Show when contacts change their %s",IDC_TRACK_CHANGE,
@@ -99,11 +99,11 @@ END
 IDD_OPTIONS_NOREM DIALOGEX 0, 0, 285, 202
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " Track ",IDC_STATIC,3,3,279,31
     CONTROL         "Don't notify on protocol connection",
-                    IDC_DONT_NOTIFY_ON_CONNECT2,"Button",BS_AUTOCHECKBOX | 
+                    IDC_DONT_NOTIFY_ON_CONNECT,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,12,16,264,11
     GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,37,279,93
     LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,
@@ -124,7 +124,7 @@ END
 IDD_POPUPS_NOREM DIALOGEX 0, 0, 314, 240
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " Tracking ",IDC_TRACK_G,3,3,308,43
     CONTROL         "Show when contacts change their %s",IDC_TRACK_CHANGE,
@@ -164,7 +164,7 @@ END
 IDD_SPEAK_REM DIALOGEX 0, 0, 279, 68
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Announce when contacts change their %s",
                     IDC_TRACK_CHANGE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
@@ -193,11 +193,11 @@ END
 IDD_OPTIONS_REM DIALOGEX 0, 0, 285, 233
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " Track ",IDC_STATIC,3,3,279,31
     CONTROL         "Don't notify on protocol connection",
-                    IDC_DONT_NOTIFY_ON_CONNECT2,"Button",BS_AUTOCHECKBOX | 
+                    IDC_DONT_NOTIFY_ON_CONNECT,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,12,16,264,11
     GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,37,279,93
     LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,

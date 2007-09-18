@@ -292,6 +292,21 @@ static BOOL CALLBACK OptionsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wPa
 {
 	switch (msg) 
 	{
+		case WM_INITDIALOG:
+		{
+			TCHAR *desc = mir_a2t(types[type].description);
+			CharLower(desc);
+
+			TCHAR tmp[256];
+			mir_sntprintf(tmp, MAX_REGS(tmp), TranslateT("Log when contacts change their %s"), desc);
+			SetDlgItemText(hwndDlg, IDC_TRACK_CHANGE, tmp);
+			mir_sntprintf(tmp, MAX_REGS(tmp), TranslateT("Log when contacts remove their %s"), desc);
+			SetDlgItemText(hwndDlg, IDC_TRACK_REMOVE, tmp);
+
+			mir_free(desc);
+			
+			break;
+		}
 		case WM_COMMAND:
 		{
 			switch (LOWORD(wParam)) 
@@ -309,7 +324,7 @@ static BOOL CALLBACK OptionsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wPa
 						ofn.hwndOwner = hwndDlg;
 						ofn.lpstrFile = file;
 						ofn.nMaxFile = MAX_REGS(file);
-						ofn.lpstrFilter = _T("Log files (*.log, *.txt)\0*.LOG;*.TXT\0All Files (*.*)\0*.*\0\0");
+						ofn.lpstrFilter = _T("Log Files (*.log;*.txt)\0*.LOG;*.TXT\0All Files (*.*)\0*.*\0\0");
 						ofn.lpstrDefExt = _T(".log");
 						ofn.hInstance = hInst;
 
@@ -329,6 +344,24 @@ static BOOL CALLBACK OptionsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wPa
 
 static BOOL CALLBACK SpeakDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
+	switch (msg) 
+	{
+		case WM_INITDIALOG:
+		{
+			TCHAR *desc = mir_a2t(types[type].description);
+			CharLower(desc);
+
+			TCHAR tmp[256];
+			mir_sntprintf(tmp, MAX_REGS(tmp), TranslateT("Announce when contacts change their %s"), desc);
+			SetDlgItemText(hwndDlg, IDC_TRACK_CHANGE, tmp);
+			mir_sntprintf(tmp, MAX_REGS(tmp), TranslateT("Announce when contacts remove their %s"), desc);
+			SetDlgItemText(hwndDlg, IDC_TRACK_REMOVE, tmp);
+
+			mir_free(desc);
+			
+			break;
+		}
+	}
 	return SaveOptsDlgProc(&speakControls[type][0], SPEAK_CONTROLS_SIZE, MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
 
