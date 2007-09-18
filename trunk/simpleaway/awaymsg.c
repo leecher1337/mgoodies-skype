@@ -40,7 +40,7 @@ static BOOL CALLBACK ReadAwayMsgDlgProc(HWND hwndDlg,UINT message,WPARAM wParam,
 	switch(message) {
 		case WM_INITDIALOG:
 			TranslateDialogDefault(hwndDlg);
-			dat=(struct AwayMsgDlgData*)malloc(sizeof(struct AwayMsgDlgData));
+			dat=(struct AwayMsgDlgData*)mir_alloc(sizeof(struct AwayMsgDlgData));
 			SetWindowLong(hwndDlg,GWL_USERDATA,(LONG)dat);
 			dat->hContact=(HANDLE)lParam;
 			dat->hAwayMsgEvent=HookEventMessage(ME_PROTO_ACK,hwndDlg,HM_AWAYMSG);
@@ -128,7 +128,7 @@ static BOOL CALLBACK ReadAwayMsgDlgProc(HWND hwndDlg,UINT message,WPARAM wParam,
 		case WM_DESTROY:
 			if(dat->hAwayMsgEvent!=NULL) UnhookEvent(dat->hAwayMsgEvent);
 			WindowList_Remove(hWindowList,hwndDlg);
-			free(dat);
+			mir_free(dat);
 			break;
 	}
 	return FALSE;
@@ -160,7 +160,7 @@ static BOOL CALLBACK CopyAwayMsgDlgProc(HWND hwndDlg, UINT message, WPARAM wPara
 			char *contactName;
 
 			TranslateDialogDefault(hwndDlg);
-			dat = (struct AwayMsgDlgData*)malloc(sizeof(struct AwayMsgDlgData));
+			dat = (struct AwayMsgDlgData*)mir_alloc(sizeof(struct AwayMsgDlgData));
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG)dat);
 			dat->hContact = (HANDLE)lParam;
 			dat->hAwayMsgEvent = HookEventMessage(ME_PROTO_ACK, hwndDlg, HM_AWAYMSG);
@@ -236,7 +236,7 @@ static BOOL CALLBACK CopyAwayMsgDlgProc(HWND hwndDlg, UINT message, WPARAM wPara
 			if(dat->hAwayMsgEvent!=NULL)
 				UnhookEvent(dat->hAwayMsgEvent);
 			WindowList_Remove(hWindowList2,hwndDlg);
-			free(dat);
+			mir_free(dat);
 			break;
 	}
 	return FALSE;

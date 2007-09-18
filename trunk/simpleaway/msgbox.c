@@ -452,8 +452,7 @@ VOID APIENTRY HandlePopupMenu(HWND hwnd, POINT pt)
 		default:
 		{
 			char	item_string[128];
-			char	msg[1024];
-			int		len, sel_start, sel_end;
+			int		len;
 
 			if (OpenClipboard(GetParent(hwnd)))
 			{
@@ -801,7 +800,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 				hIcon = LoadSkinnedProtoIcon(init_data->proto_name, init_data->status_mode);
 				SendMessage(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM) hIcon); //Set the window icon
 
-				copy_init_data = (struct MsgBoxData *) malloc (sizeof(struct MsgBoxData));
+				copy_init_data = (struct MsgBoxData *) mir_alloc (sizeof(struct MsgBoxData));
 
 				SendDlgItemMessage(hwndDlg, IDC_EDIT1, EM_LIMITTEXT, 1024, 0);
 
@@ -887,7 +886,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 					DisplayCharsCount(copy_init_data, hwndDlg);
 				}
 
-				free(init_data);
+				mir_free(init_data);
 
 				MainDlgProc = (WNDPROC)SetWindowLong(GetDlgItem(hwndDlg, IDC_EDIT1), GWL_WNDPROC, (LONG)EditBoxSubProc);
 				SetFocus(GetDlgItem(hwndDlg, IDC_OK));
@@ -1261,7 +1260,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			ImageList_Destroy(msgbox_data->other_icons);
 			SetWindowLong(GetDlgItem(hwndDlg, IDC_EDIT1), GWL_WNDPROC, (LONG)MainDlgProc); 
 			if (msgbox_data)
-				free(msgbox_data);
+				mir_free(msgbox_data);
 			hwndSAMsgDialog = NULL;
 		break;
 	}
