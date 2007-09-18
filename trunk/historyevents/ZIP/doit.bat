@@ -18,8 +18,8 @@ echo Generating files for %name% ...
 
 del *.zip
 del *.dll
-copy "..\..\..\bin\release\Plugins\%name%.dll"
-copy "..\..\..\bin\release unicode\Plugins\%name%W.dll"
+copy "..\..\..\bin\release\Plugins\aa_%name%.dll"
+copy "..\..\..\bin\release unicode\Plugins\aa_%name%W.dll"
 copy ..\Docs\%name%_changelog.txt
 copy ..\Docs\%name%_version.txt
 copy ..\Docs\%name%_readme.txt
@@ -30,8 +30,8 @@ rem copy ..\..\Docs\langpack_%name%.txt
 copy ..\..\m_%name%.h
 cd ..
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip %name%.dll Docs Plugins
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip %name%W.dll Docs Plugins
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip aa_%name%.dll Docs Plugins
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip aa_%name%W.dll Docs Plugins
 
 del *.dll
 cd Docs

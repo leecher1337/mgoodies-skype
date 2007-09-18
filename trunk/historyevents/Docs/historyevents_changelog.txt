@@ -2,5 +2,10 @@ History Events
 
 Changelog:
 
+. 0.0.0.2
+  * DLL needed to be renamed
+  * Bug fixes
+  + Added 6 months, 1 year, max 10 and max 100 to options to delete history
+
 . 0.0.0.1
   + Initial version

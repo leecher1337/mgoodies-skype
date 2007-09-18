@@ -119,11 +119,9 @@ void WriteSettingTString(HISTORY_EVENT_HANDLER *heh, int templ, char *setting, T
 
 int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 {
-	OPTIONSDIALOGPAGE odp;
-	ZeroMemory(&odp,sizeof(odp));
-    odp.cbSize=sizeof(odp);
-    odp.position=0;
-	odp.hInstance=hInst;
+	OPTIONSDIALOGPAGE odp = {0};
+    odp.cbSize = sizeof(odp);
+	odp.hInstance = hInst;
 	odp.ptszGroup = TranslateT("History");
 	odp.ptszTitle = TranslateT("Events");
 	odp.pfnDlgProc = OptionsDlgProc;
@@ -329,15 +327,19 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 				HWND combo = CreateWindow(_T("COMBOBOX"), _T(""), 
 						WS_CHILD | WS_VISIBLE | WS_TABSTOP | CBS_DROPDOWNLIST | WS_VSCROLL, 
-                        x, pt.y, 200, height, 
+                        x, pt.y, 200, height + 60, 
 						hwndDlg, (HMENU) id, hInst, NULL);
 				SendMessage(combo, WM_SETFONT, (WPARAM) hFont, FALSE);
 
 				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("Forever"));
+				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("For 1 year"));
+				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("For 6 months"));
 				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("For 1 month"));
 				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("For 1 week"));
 				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("For 1 day"));
 				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("Only to view in message window"));
+				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("Max 10 events"));
+				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("Max 100 events"));
 
 				if (!(heh->flags & HISTORYEVENTS_FLAG_DEFAULT))
 					SendMessage(combo, CB_ADDSTRING, 0, (LPARAM) TranslateT("Don't store"));
@@ -386,6 +388,9 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				case SB_THUMBPOSITION: 
 					yNewPos = HIWORD(wParam); 
 					break; 
+				case SB_THUMBTRACK:
+					yNewPos = HIWORD(wParam); 
+					break;
 				default: 
 					yNewPos = current; 
 			} 
