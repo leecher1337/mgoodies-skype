@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Events",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,0),
+	PLUGIN_MAKE_VERSION(0,0,0,2),
 	"A service plugin to handle custom history events",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -58,6 +58,8 @@ int PreShutdown(WPARAM wParam, LPARAM lParam);
 int DbEventFilterAdd(WPARAM wParam, LPARAM lParam);
 int DbEventAdded(WPARAM wParam, LPARAM lParam);
 
+int ServiceGetCount(WPARAM wParam, LPARAM lParam);
+int ServiceGetEvent(WPARAM wParam, LPARAM lParam);
 int ServiceRegister(WPARAM wParam, LPARAM lParam);
 int ServiceCanHandle(WPARAM wParam, LPARAM lParam);
 int ServiceGetIcon(WPARAM wParam, LPARAM lParam);
@@ -95,7 +97,7 @@ struct HistoryEventNode {
 HistoryEventNode *firstHistoryEvent = NULL;
 HistoryEventNode *lastHistoryEvent = NULL;
 
-BOOL ItsTimeToDelete(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe = NULL);
+BOOL ItsTimeToDelete(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe = NULL, int eventNum = -1);
 void AppendHistoryEvent(HANDLE hContact, HANDLE hDbEvent);
 
 
@@ -157,6 +159,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 							 | HISTORYEVENTS_FLAG_EXPECT_CONTACT_NAME_BEFORE, 
 							 "core_main_3", GetFileHistoryEventText);
 
+	CreateServiceFunction(MS_HISTORYEVENTS_GET_COUNT, ServiceGetCount);
+	CreateServiceFunction(MS_HISTORYEVENTS_GET_EVENT, ServiceGetEvent);
 	CreateServiceFunction(MS_HISTORYEVENTS_REGISTER, ServiceRegister);
 	CreateServiceFunction(MS_HISTORYEVENTS_CAN_HANDLE, ServiceCanHandle);
 	CreateServiceFunction(MS_HISTORYEVENTS_GET_ICON, ServiceGetIcon);
@@ -602,6 +606,16 @@ void ReplaceVars(Buffer<TCHAR> *buffer, HISTORY_EVENT_ADD * hea)
 				{
 					buffer->replace(j, i + 1, (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hea->hContact, GCDNF_TCHAR));
 				}
+				else if (foundLen == 6 && _tcsncmp(&buffer->str[j], _T("%date%"), 6) == 0)
+				{
+					TCHAR tmp[128];
+					DBTIMETOSTRINGT tst = {0};
+					tst.szFormat = _T("d s");
+					tst.szDest = tmp;
+					tst.cbDest = MAX_REGS(tmp);
+					CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, (WPARAM) time(NULL), (LPARAM) &tst);
+					buffer->replace(j, i + 1, tmp);
+				}
 				else
 				{
 					for(int k = 0; k < hea->numVariables; k += 2)
@@ -932,7 +946,7 @@ BOOL MsgWndOpen(HANDLE hContact)
 }
 
 
-BOOL ItsTimeToDelete(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe)
+BOOL ItsTimeToDelete(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe, int eventNum)
 {
 	// Get all info
 	DBEVENTINFO dbeTmp = {0};
@@ -960,6 +974,14 @@ BOOL ItsTimeToDelete(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe)
 		{
 			return TRUE;
 		}
+		case HISTORYEVENTS_FLAG_KEEP_ONE_YEAR:
+		{
+			return dbe->timestamp + 365 * 24 * 60 * 60 < (DWORD) time(NULL);
+		}
+		case HISTORYEVENTS_FLAG_KEEP_SIX_MONTHS:
+		{
+			return dbe->timestamp + (6 * 30 + 3) * 24 * 60 * 60 < (DWORD) time(NULL);
+		}
 		case HISTORYEVENTS_FLAG_KEEP_ONE_MONTH:
 		{
 			return dbe->timestamp + 31 * 24 * 60 * 60 < (DWORD) time(NULL);
@@ -971,6 +993,14 @@ BOOL ItsTimeToDelete(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe)
 		case HISTORYEVENTS_FLAG_KEEP_ONE_DAY:
 		{
 			return dbe->timestamp + 24 * 60 * 60 < (DWORD) time(NULL);
+		}
+		case HISTORYEVENTS_FLAG_KEEP_MAX_TEN:
+		{
+			return (eventNum > 10);
+		}
+		case HISTORYEVENTS_FLAG_KEEP_MAX_HUNDRED:
+		{
+			return (eventNum > 100);
 		}
 		case HISTORYEVENTS_FLAG_KEEP_FOR_SRMM:
 		{
@@ -1046,40 +1076,71 @@ void DoFullPass()
 {
 	DWORD lastFulPass = DBGetContactSettingDword(NULL, MODULE_NAME, "LastFullPass", 0);
 	DWORD now = (DWORD) time(NULL);
-	if (now < lastFulPass + 12 * 60 * 60) // 1/2 day
+	if (now < lastFulPass + 24 * 60 * 60) // 1 day
 		return;
 
 	// Start after 1 minute
 	wait(60 * 1000);
+	if (shuttingDown)
+		return;
+
+//	DWORD t = GetTickCount();
+
+	int *counters = (int *) malloc(sizeof(int) * handlers.size());
 
 	int count = 0;
 	HANDLE hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 	while (hContact != NULL && !shuttingDown)
 	{
-		HANDLE hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDFIRST, (WPARAM) hContact, 0);
+		memset(counters, 0, sizeof(int) * handlers.size());
 
+		HANDLE hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDLAST, (WPARAM) hContact, 0);
 		while(hDbEvent != NULL && !shuttingDown)
 		{
-			if (ItsTimeToDelete(hContact, hDbEvent))
+			HANDLE hDbEventProx = (HANDLE) CallService(MS_DB_EVENT_FINDPREV, (WPARAM) hDbEvent, 0);
+
+			DBEVENTINFO dbe = {0};
+			dbe.cbSize = sizeof(dbe);
+			if (CallService(MS_DB_EVENT_GET, (LPARAM) hDbEvent, (WPARAM) &dbe) == 0)
 			{
-				HANDLE tmp = hDbEvent;
-				hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
-				CallService(MS_DB_EVENT_DELETE, (WPARAM) hContact, (LPARAM) tmp);
+				int pos = 0;
+				for(map<WORD, HISTORY_EVENT_HANDLER>::iterator it = handlers.begin(); it != handlers.end(); it++)
+				{
+					if (it->second.eventType == dbe.eventType)
+						break;
+					pos++;
+				}
 
-				wait(100);
-			}
-			else
-				hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDNEXT, (WPARAM) hDbEvent, 0);
+				if (pos < handlers.size())
+				{
+					counters[pos]++;
 
-			if (++count > 100)
+					if (ItsTimeToDelete(hContact, hDbEvent, &dbe, counters[pos]))
+					{
+						CallService(MS_DB_EVENT_DELETE, (WPARAM) hContact, (LPARAM) hDbEvent);
+						wait(10);
+					}
+				}
+			} 
+
+			if (++count > 30)
 			{
 				count = 0;
 				wait(10);
 			}
+
+			hDbEvent = hDbEventProx;
 		}
 		
 		hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM) hContact, 0);
 	}
+
+	free(counters);
+
+//	t = GetTickCount() - t;
+//	char tmp[128];
+//	mir_snprintf(tmp, 128, "TIME: %d\n", (int) t);
+//	OutputDebugStringA(tmp);
 
 	if (!shuttingDown)
 		DBWriteContactSettingDword(NULL, MODULE_NAME, "LastFullPass", now);
@@ -1204,4 +1265,25 @@ int DbEventAdded(WPARAM wParam, LPARAM lParam)
 
 	return 0;
 }
+
+
+int ServiceGetCount(WPARAM wParam, LPARAM lParam)
+{
+	return handlers.size();
+}
+
+
+int ServiceGetEvent(WPARAM wParam, LPARAM lParam)
+{
+	int pos = (int) wParam;
+
+	for(map<WORD, HISTORY_EVENT_HANDLER>::iterator it = handlers.begin(); it != handlers.end() && pos >= 0; it++, pos--)
+	{
+		if (pos == 0)
+			return (int) &it->second;
+	}
+
+	return NULL;
+}
+
 

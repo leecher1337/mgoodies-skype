@@ -34,11 +34,15 @@ Boston, MA 02111-1307, USA.
 #define HISTORYEVENTS_FLAG_SHOW_IM_SRMM					(1 << 1) // If this event has to be shown in srmm dialog
 #define HISTORYEVENTS_FLAG_USE_SENT_FLAG				(1 << 2) // Means that it can be a sent or received and uses DBEF_SENT to mark that
 #define HISTORYEVENTS_FLAG_EXPECT_CONTACT_NAME_BEFORE	(1 << 3) // Means that who is drawing this should draw the contact name before the text
-#define HISTORYEVENTS_FLAG_KEEP_ONE_MONTH 				(1 << 8) // By default store in db for 1 month
-#define HISTORYEVENTS_FLAG_KEEP_ONE_WEEK 				(2 << 8) // By default store in db for 1 week
-#define HISTORYEVENTS_FLAG_KEEP_ONE_DAY					(3 << 8) // By default store in db until restart
-#define HISTORYEVENTS_FLAG_KEEP_FOR_SRMM 				(4 << 8) // By default store in db only enought for message log
-#define HISTORYEVENTS_FLAG_KEEP_DONT					(5 << 8) // By default don't store in db (aka ignore it)
+#define HISTORYEVENTS_FLAG_KEEP_ONE_YEAR 				(1 << 8) // By default store in db for 1 year
+#define HISTORYEVENTS_FLAG_KEEP_SIX_MONTHS 				(2 << 8) // By default store in db for 6 months
+#define HISTORYEVENTS_FLAG_KEEP_ONE_MONTH 				(3 << 8) // By default store in db for 1 month
+#define HISTORYEVENTS_FLAG_KEEP_ONE_WEEK 				(4 << 8) // By default store in db for 1 week
+#define HISTORYEVENTS_FLAG_KEEP_ONE_DAY					(5 << 8) // By default store in db for 1 day
+#define HISTORYEVENTS_FLAG_KEEP_FOR_SRMM 				(6 << 8) // By default store in db only enought for message log
+#define HISTORYEVENTS_FLAG_KEEP_MAX_TEN 				(7 << 8) // By default store in db max 10 entries
+#define HISTORYEVENTS_FLAG_KEEP_MAX_HUNDRED				(8 << 8) // By default store in db for 100 entries
+#define HISTORYEVENTS_FLAG_KEEP_DONT					(9 << 8) // By default don't store in db (aka ignore it)
 
 
 // This function must be implemented by subscribers. It must return a pointer or NULL
@@ -52,8 +56,8 @@ typedef struct {
 	char *description;		// Will be translated
 	WORD eventType;			// The event type it can handle
 	union {
-		HICON defaultIcon;			// Optional
-		char * defaultIconName;		// Don't use - internal use only
+		HICON defaultIcon;			// Use this one when registering
+		char * defaultIconName;		// Use this one when making queries
 	};
 	int supports;			// What kind of return is supported - or of HISTORYEVENTS_FORMAT_*
 	int flags;				// or of HISTORYEVENTS_FLAG_*
@@ -67,7 +71,30 @@ typedef struct {
 
 
 /*
-Register a plugin that can handle an event type
+Get the number of registered events
+
+wParam: ignored
+lParam: ignored
+Return: The number of events registered with the plugin
+*/
+#define MS_HISTORYEVENTS_GET_COUNT		"HistoryEvents/GetCount"
+
+
+/*
+Get the number of registered events
+
+wParam: (int) event number
+lParam: ignored
+Return: (const HISTORY_EVENT_HANDLER *) if the event exists, NULL  otherwise. Don't change the
+		returned strunc: it is a pointer to the internall struct.
+*/
+#define MS_HISTORYEVENTS_GET_EVENT		"HistoryEvents/GetEvent"
+
+
+/*
+Register a plugin that can handle an event type. This must be called during the call to the
+Load function of the plugin. In ModulesLoaded callback all plugins have to be already registered,
+so srmm and history modules can query then.
 
 wParam: HISTORY_EVENT_HANDLER *
 lParam: ignored
