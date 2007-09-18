@@ -36,8 +36,8 @@ struct MM_INTERFACE memoryManagerInterface;
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"SimpleAway",
-	PLUGIN_MAKE_VERSION(1,6,1,2),
-	"This plugin replaces build-in away system.",
+	PLUGIN_MAKE_VERSION(1,7,0,0),
+	"This plugin replaces built-in away system.",
 	"Harven",
 	"harven@users.berlios.de",
 	"© 2005 Harven",
@@ -49,8 +49,8 @@ PLUGININFO pluginInfo={
 PLUGININFOEX pluginInfoEx={
 	sizeof(PLUGININFO),
 	"SimpleAway",
-	PLUGIN_MAKE_VERSION(1,6,1,2),
-	"This plugin replaces build-in away system.",
+	PLUGIN_MAKE_VERSION(1,7,0,0),
+	"This plugin replaces built-in away system.",
 	"Harven",
 	"harven@users.berlios.de",
 	"© 2005 Harven",
