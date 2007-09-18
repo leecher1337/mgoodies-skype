@@ -53,13 +53,10 @@
 #define IDC_ACTIONS_G                   1072
 #define IDC_RIGHT_ACTION_L              1073
 #define IDC_LEFT_ACTION_L               1074
-#define IDC_TRACK_CHANGE2               1075
 #define IDC_TRACK_CHANGE                1075
-#define IDC_TRACK_REMOVE2               1076
 #define IDC_TRACK_REMOVE                1076
-#define IDC_DONT_NOTIFY_ON_CONNECT      1077
 #define IDC_SELECT_FILE                 1077
-#define IDC_DONT_NOTIFY_ON_CONNECT2     1078
+#define IDC_DONT_NOTIFY_ON_CONNECT      1078
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

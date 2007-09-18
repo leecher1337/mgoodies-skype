@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,5),
+	PLUGIN_MAKE_VERSION(0,0,0,6),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -50,7 +50,7 @@ PLUGININFOEX pluginInfo={
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 
-HANDLE hHooks[5] = {0};
+HANDLE hHooks[6] = {0};
 
 HANDLE hEnableMenu[NUM_TYPES]; 
 HANDLE hDisableMenu[NUM_TYPES]; 
@@ -64,6 +64,7 @@ int PreBuildContactMenu(WPARAM wParam,LPARAM lParam);
 int SettingChanged(WPARAM wParam,LPARAM lParam);
 int ContactAdded(WPARAM wParam,LPARAM lParam);
 int ProtoAckHook(WPARAM wParam, LPARAM lParam);
+int PreShutdown(WPARAM wParam, LPARAM lParam);
 
 int EnableHistory(WPARAM wParam, LPARAM lParam, LPARAM type);
 int DisableHistory(WPARAM wParam, LPARAM lParam, LPARAM type);
@@ -257,22 +258,13 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	hHooks[2] = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, SettingChanged);
 	hHooks[3] = HookEvent(ME_DB_CONTACT_ADDED, ContactAdded);
 	hHooks[4] = HookEvent(ME_PROTO_ACK, ProtoAckHook);
+	hHooks[5] = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
 	return 0;
 }
 
 extern "C" int __declspec(dllexport) Unload(void) 
 {
-	// TODO PreShutdown
-
-	delete queue;
-
-	DeInitPopups();
-	DeInitOptions();
-
-	for (int i = 0; i < MAX_REGS(hHooks); i++)
-		if (hHooks[i] != NULL)
-			UnhookEvent(hHooks[i]);
 	return 0;
 }
 
@@ -319,6 +311,21 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	queue = new ContactAsyncQueue(&Process);
 
 	loaded = TRUE;
+
+	return 0;
+}
+
+
+int PreShutdown(WPARAM wParam, LPARAM lParam)
+{
+	delete queue;
+
+	DeInitPopups();
+	DeInitOptions();
+
+	for (int i = 0; i < MAX_REGS(hHooks); i++)
+		if (hHooks[i] != NULL)
+			UnhookEvent(hHooks[i]);
 
 	return 0;
 }
@@ -579,14 +586,14 @@ void Notify(HANDLE hContact, int type, BOOL found_old, int templateNum, TCHAR **
 	{
 		char onOffSetting[256];
 		mir_snprintf(onOffSetting, MAX_REGS(onOffSetting), "%s_OnOfflineTickCount", proto);
-		if (DBGetContactSettingDword(NULL, proto, MODULE_NAME "_OnOfflineTickCount", 0) 
+		if (DBGetContactSettingDword(NULL, MODULE_NAME, onOffSetting, 0) 
 					+ TIME_TO_WAIT_BEFORE_NOTIFY_AFTER_CONNECTION > GetTickCount())
 			return;
 	}
 
 	// Don't notify if is subcontact
 	if (ServiceExists(MS_MC_GETMETACONTACT)) 
-	{
+	{ 
 		HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
 		if (hMetaContact != NULL)
 			return;

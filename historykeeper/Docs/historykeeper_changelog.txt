@@ -2,6 +2,11 @@ History Keeper
 
 Changelog:
 
+. 0.0.0.6
+  * Fix for options pages
+  * Fix for notify on connection
+  * Fix for hangup on exit
+
 . 0.0.0.5
   + Contact menus moved to a submenu
   * Fix for popups on status changes
