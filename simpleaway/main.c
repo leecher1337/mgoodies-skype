@@ -31,11 +31,12 @@ HANDLE		TopButton, h_shutdown, h_terminated, h_modulesloaded, h_ttbloaded, h_opt
 PROTOCOLDESCRIPTOR **protocols;
 int			ProtoCount;
 HWND		hwndSAMsgDialog;
+struct MM_INTERFACE memoryManagerInterface;
 
 PLUGININFO pluginInfo={
 	sizeof(PLUGININFO),
 	"SimpleAway",
-	PLUGIN_MAKE_VERSION(1,6,1,1),
+	PLUGIN_MAKE_VERSION(1,6,1,2),
 	"This plugin replaces build-in away system.",
 	"Harven",
 	"harven@users.berlios.de",
@@ -44,6 +45,22 @@ PLUGININFO pluginInfo={
 	0,		//not transient
 	DEFMOD_SRAWAY
 };
+
+PLUGININFOEX pluginInfoEx={
+	sizeof(PLUGININFO),
+	"SimpleAway",
+	PLUGIN_MAKE_VERSION(1,6,1,2),
+	"This plugin replaces build-in away system.",
+	"Harven",
+	"harven@users.berlios.de",
+	"© 2005 Harven",
+	"http://developer.berlios.de/projects/mgoodies/",
+	0,		//not transient
+	DEFMOD_SRAWAY,
+	{0x8a63ff78, 0x6557, 0x4a42, { 0x8a, 0x82, 0x23, 0xa1, 0x6d, 0x46, 0x84, 0x4c }} //{84636F78-2057-4302-8A65-23A16D46844C}
+};
+
+static const MUUID interfaces[] = {MIID_SRAWAY, MIID_LAST};
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
@@ -55,6 +72,19 @@ __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
 {
 	return &pluginInfo;
 }
+
+__declspec(dllexport)
+	 PLUGININFOEX *MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	return &pluginInfoEx;
+}
+
+__declspec(dllexport)
+     const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
+}
+
 
 //From SRAway module
 char *StatusModeToDbSetting(int status,const char *suffix)
@@ -101,7 +131,7 @@ char *GetDefaultMessage(int status)
 #define WM_WA_IPC WM_USER
 #define IPC_ISPLAYING 104
 
-int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
+char* InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 {
 	int i,j, count=0, len;
 	char substituteStr[1024];
@@ -110,7 +140,7 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 	char *msg;
 	char buff[128];
 
-	msg = _strdup(in);
+	msg = mir_strdup(in);
 
 	for(i=0;msg[i];i++)
 	{
@@ -172,7 +202,7 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 					*++p=0;
 
 					if(lstrlen(winamp_title)>12)
-						msg=(char*)realloc(msg,lstrlen(msg)+1+lstrlen(winamp_title)-12);
+						msg=(char*)mir_realloc(msg,lstrlen(msg)+1+lstrlen(winamp_title)-12);
 
 					MoveMemory(msg+i+lstrlen(winamp_title), msg+i+12, lstrlen(msg)-i-11);
 					CopyMemory(msg+i, winamp_title, lstrlen(winamp_title));
@@ -190,7 +220,7 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 			FortuneMsg = (char*)CallService(MS_FORTUNEMSG_GETMESSAGE, 0, 0);
 
 			if(lstrlen(FortuneMsg)>12)
-				msg=(char*)realloc(msg,lstrlen(msg)+1+lstrlen(FortuneMsg)-12);
+				msg=(char*)mir_realloc(msg,lstrlen(msg)+1+lstrlen(FortuneMsg)-12);
 
 			MoveMemory(msg+i+lstrlen(FortuneMsg),msg+i+12,lstrlen(msg)-i-11);
 			CopyMemory(msg+i,FortuneMsg,lstrlen(FortuneMsg));
@@ -207,7 +237,7 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 			FortuneMsg = (char*)CallService(MS_FORTUNEMSG_GETPROTOMSG, (WPARAM)proto_name, 0);
 
 			if(lstrlen(FortuneMsg)>17)
-				msg=(char*)realloc(msg,lstrlen(msg)+1+lstrlen(FortuneMsg)-17);
+				msg=(char*)mir_realloc(msg,lstrlen(msg)+1+lstrlen(FortuneMsg)-17);
 
 			MoveMemory(msg+i+lstrlen(FortuneMsg),msg+i+17,lstrlen(msg)-i-16);
 			CopyMemory(msg+i,FortuneMsg,lstrlen(FortuneMsg));
@@ -224,7 +254,7 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 			FortuneMsg = (char*)CallService(MS_FORTUNEMSG_GETSTATUSMSG, (WPARAM)status, 0);
 
 			if(lstrlen(FortuneMsg)>18)
-				msg=(char*)realloc(msg,lstrlen(msg)+1+lstrlen(FortuneMsg)-18);
+				msg=(char*)mir_realloc(msg,lstrlen(msg)+1+lstrlen(FortuneMsg)-18);
 
 			MoveMemory(msg+i+lstrlen(FortuneMsg),msg+i+18,lstrlen(msg)-i-17);
 			CopyMemory(msg+i,FortuneMsg,lstrlen(FortuneMsg));
@@ -236,7 +266,7 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 			GetTimeFormat(LOCALE_USER_DEFAULT,TIME_NOSECONDS,NULL,NULL,substituteStr,sizeof(substituteStr));
 
 			if(lstrlen(substituteStr)>6)
-				msg=(char*)realloc(msg,lstrlen(msg)+1+lstrlen(substituteStr)-6);
+				msg=(char*)mir_realloc(msg,lstrlen(msg)+1+lstrlen(substituteStr)-6);
 
 			MoveMemory(msg+i+lstrlen(substituteStr),msg+i+6,lstrlen(msg)-i-5);
 			CopyMemory(msg+i,substituteStr,lstrlen(substituteStr));
@@ -249,7 +279,7 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 			char	*token;
 			int		k;
 
-			temp = _strdup(msg+i+6);
+			temp = mir_strdup(msg+i+6);
 
 			token = strtok (temp, ",)");
 			ran_from = atoi(token);
@@ -270,19 +300,19 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 				}
 
 				if(lstrlen(substituteStr) > k-i)
-					msg=(char*)realloc(msg,lstrlen(msg)+1+lstrlen(substituteStr)-(k-i));
+					msg=(char*)mir_realloc(msg,lstrlen(msg)+1+lstrlen(substituteStr)-(k-i));
 
 				MoveMemory(msg+i+lstrlen(substituteStr),msg+i+(k-i),lstrlen(msg)-i-(k-i-1));
 				CopyMemory(msg+i,substituteStr,lstrlen(substituteStr));
 			}
-			free(temp);
+			mir_free(temp);
 		}
 		else if(!_strnicmp(msg+i,"%date%",6))
 		{
 			GetDateFormat(LOCALE_USER_DEFAULT,DATE_SHORTDATE,NULL,NULL,substituteStr,sizeof(substituteStr));
 
 			if(lstrlen(substituteStr)>6)
-				msg=(char*)realloc(msg,lstrlen(msg)+1+lstrlen(substituteStr)-6);
+				msg=(char*)mir_realloc(msg,lstrlen(msg)+1+lstrlen(substituteStr)-6);
 
 			MoveMemory(msg+i+lstrlen(substituteStr),msg+i+6,lstrlen(msg)-i-5);
 			CopyMemory(msg+i,substituteStr,lstrlen(substituteStr));
@@ -299,15 +329,15 @@ int InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 		len = DBGetContactSettingWord(NULL, "SimpleAway", buff, 1024);
 		if (len < lstrlen(msg))
 		{
-			msg = (char*)realloc(msg, len);
+			msg = (char*)mir_realloc(msg, len);
 			msg[len] = 0;
 		}
 	}
 
-	return (int)msg;
+	return msg;
 }
 
-int InsertVarsIntoMsg(char *msg, char *proto_name, int status)
+char* InsertVarsIntoMsg(char *msg, char *proto_name, int status)
 {
 	char	*format;
 
@@ -323,17 +353,17 @@ int InsertVarsIntoMsg(char *msg, char *proto_name, int status)
 		fInfo.szFormat = format;
 		after_format = (char *)CallService(MS_VARS_FORMATSTRING, (WPARAM)&fInfo, 0);
 		if (after_format == NULL)
-			return (int)format;
-		free(format);
-		format = _strdup(after_format);
+			return format;
+		mir_free(format);
+		format = mir_strdup(after_format);
 		CallService(MS_VARS_FREEMEMORY, (WPARAM)after_format, 0);
-		return (int)format;
+		return format;
 	}
 	else
-		return (int)format;
+		return format;
 }
 
-static int GetAwayMessageFormat(WPARAM wParam, LPARAM lParam)
+static char* GetAwayMessageFormat(WPARAM wParam, LPARAM lParam)
 {
 	DBVARIANT		dbv, dbv2;
 	int				statusMode = (int)wParam;
@@ -343,29 +373,29 @@ static int GetAwayMessageFormat(WPARAM wParam, LPARAM lParam)
 	flags = DBGetContactSettingByte(NULL, "SimpleAway", (char *)StatusModeToDbSetting(statusMode, "Flags"), STATUS_SHOW_DLG|STATUS_LAST_MSG);
 
 	if (flags & STATUS_EMPTY_MSG)
-		return (int)(format = _strdup(""));
+		return mir_strdup("");
 
 	if (flags & STATUS_LAST_STATUS_MSG)
 	{
 		if(DBGetContactSetting(NULL,"SRAway",StatusModeToDbSetting(statusMode,"Msg"),&dbv))
-			return (int)(format = _strdup(""));
+			return mir_strdup("");
 		else
 		{
-			format = _strdup(dbv.pszVal);
+			format = mir_strdup(dbv.pszVal);
 			DBFreeVariant(&dbv);
 		}
 	}
 	else if (flags & STATUS_LAST_MSG)
 	{
 		if (DBGetContactSetting(NULL, "SimpleAway", "LastMsg", &dbv2))
-			return (int)(format = _strdup(""));
+			return mir_strdup("");
 		else
 		{
 			if (DBGetContactSetting(NULL, "SimpleAway", dbv2.pszVal, &dbv))
-				return (int)(format = _strdup(""));
+				return mir_strdup("");
 			else
 			{
-				format = _strdup(dbv.pszVal);
+				format = mir_strdup(dbv.pszVal);
 				DBFreeVariant(&dbv);
 			}
 			DBFreeVariant(&dbv2);
@@ -374,17 +404,17 @@ static int GetAwayMessageFormat(WPARAM wParam, LPARAM lParam)
 	else if (flags & STATUS_THIS_MSG)
 	{
 		if(DBGetContactSetting(NULL,"SRAway",StatusModeToDbSetting(statusMode,"Default"),&dbv))
-			return (int)(format = _strdup(""));
+			return mir_strdup("");
 		else
 		{
-			format = _strdup(dbv.pszVal);
+			format = mir_strdup(dbv.pszVal);
 			DBFreeVariant(&dbv);
 		}
 	}
 	else
-		format = _strdup(GetDefaultMessage(statusMode));
+		format = mir_strdup(GetDefaultMessage(statusMode));
 
-	return (int)format;
+	return format;
 }
 
 void DBWriteMessage(char *buff, char *message)
@@ -435,22 +465,22 @@ static int GetAwayMessage(WPARAM wParam, LPARAM lParam)
 	char			*format;
 	char			*ret;
 
-	format = (char *)GetAwayMessageFormat(wParam, lParam);
+	format = GetAwayMessageFormat(wParam, lParam);
 	if (!format)
 		return (int)NULL;
 
-	ret = (char *)InsertVarsIntoMsg(format, NULL, (int)wParam);
+	ret = InsertVarsIntoMsg(format, NULL, (int)wParam);
 	SaveMessageToDB(NULL, format, TRUE);
 	SaveMessageToDB(NULL, ret, FALSE);
-	free(format);
+	mir_free(format);
 
 	if (ret)
 	{
-		return (int)ret;
+		return (int)(ret);
 	}
 	else
 	{
-		return (int)strdup("");
+		return (int)mir_strdup("");
 	}
 }
 
@@ -561,7 +591,7 @@ int	HasProtoStaticStatusMsg(char *proto, int initial_status, int status)
 				CallProtoService(proto, PS_SETAWAYMSG, (WPARAM)status, (LPARAM)msg);
 			}
 			SaveMessageToDB(proto, msg, FALSE);
-			free(msg);
+			mir_free(msg);
 		}
 		else
 		{
@@ -674,7 +704,7 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 				CallProtoService(proto_name,PS_SETSTATUS, (WPARAM)status_from_proto_settings, 0);
 				CallProtoService(proto_name,PS_SETAWAYMSG, (WPARAM)status_from_proto_settings, (LPARAM)msg);
 				CallProtoService(proto_name,PS_SETSTATUS, (WPARAM)status_mode, 0);
-				free(msg);
+				mir_free(msg);
 				return;
 			}
 		}
@@ -685,7 +715,7 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 		if (msg)
 		{
 			CallProtoService(proto_name,PS_SETAWAYMSG, (WPARAM)status_mode, (LPARAM)msg);
-			free(msg);
+			mir_free(msg);
 		}
 		else
 			CallProtoService(proto_name,PS_SETAWAYMSG, (WPARAM)status_mode, 0);
@@ -731,7 +761,7 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 					CallProtoService(proto[i]->szName, PS_SETSTATUS, (WPARAM)status_from_proto_settings, 0);
 					CallProtoService(proto[i]->szName, PS_SETAWAYMSG, (WPARAM)status_from_proto_settings, (LPARAM)msg);
 					CallProtoService(proto[i]->szName, PS_SETSTATUS, (WPARAM)status_mode, 0);
-					free(msg);
+					mir_free(msg);
 					continue;
 				}
 			}
@@ -742,7 +772,7 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 			if (msg)
 			{
 				CallProtoService(proto[i]->szName, PS_SETAWAYMSG, (WPARAM)status_mode, (LPARAM)msg);
-				free(msg);
+				mir_free(msg);
 			}
 			else
 				CallProtoService(proto[i]->szName, PS_SETAWAYMSG, (WPARAM)status_mode, 0);
@@ -769,7 +799,7 @@ int TTChangeStatusMessage(WPARAM wParam,LPARAM lParam)
 		CallService(MS_TTB_SETBUTTONOPTIONS, MAKEWPARAM((WORD)TTBO_TIPNAME, (WORD)TopButton), (LPARAM)Translate("Change Status Message"));
 	}
 
-	box_data = (struct MsgBoxInitData *) malloc (sizeof(struct MsgBoxInitData));
+	box_data = (struct MsgBoxInitData *) mir_alloc (sizeof(struct MsgBoxInitData));
 	box_data->proto_name = NULL;
 	box_data->status_mode = (int)CallService(MS_CLIST_GETSTATUSMODE, (WPARAM)0, (LPARAM)0);
 	box_data->all_modes = PF2_ONLINE|PF2_INVISIBLE|PF2_SHORTAWAY|PF2_LONGAWAY|PF2_LIGHTDND|PF2_HEAVYDND|PF2_FREECHAT|PF2_OUTTOLUNCH|PF2_ONTHEPHONE;
@@ -833,11 +863,11 @@ int ChangeStatusMessage(WPARAM wParam,LPARAM lParam)
 					char *msg = (char*)GetAwayMessageFormat(wParam, 0);
 					SetStatusMessage((char *)lParam, (int)wParam, (int)wParam, msg);
 					if (msg)
-						free(msg);
+						mir_free(msg);
 					return 1;
 				}
 
-				box_data = (struct MsgBoxInitData *) malloc (sizeof(struct MsgBoxInitData));
+				box_data = (struct MsgBoxInitData *) mir_alloc (sizeof(struct MsgBoxInitData));
 				box_data->proto_name = (char *)lParam;
 				box_data->status_mode = (int)wParam;
 				box_data->all_modes = status_modes;
@@ -882,13 +912,13 @@ int ChangeStatusMessage(WPARAM wParam,LPARAM lParam)
 					char *msg = (char*)GetAwayMessageFormat(wParam, 0);
 					SetStatusMessage(proto[i]->szName, (int)wParam, (int)wParam, msg);
 					if (msg)
-						free(msg);
+						mir_free(msg);
 				}
 			}
 			return 1;
 		}
 
-		box_data = (struct MsgBoxInitData *) malloc (sizeof(struct MsgBoxInitData));
+		box_data = (struct MsgBoxInitData *) mir_alloc (sizeof(struct MsgBoxInitData));
 		box_data->proto_name = NULL;
 		box_data->status_mode = (int)wParam;
 		box_data->all_modes = PF2_ONLINE|PF2_INVISIBLE|PF2_SHORTAWAY|PF2_LONGAWAY|PF2_LIGHTDND|PF2_HEAVYDND|PF2_FREECHAT|PF2_OUTTOLUNCH|PF2_ONTHEPHONE;
@@ -919,7 +949,7 @@ void CALLBACK SATimerProc(HWND timerhwnd, UINT uMsg, UINT_PTR idEvent, DWORD  dw
 			GetWindowText(hwndWinamp, winamp_title, sizeof(winamp_title));
 
 		if (!winampsong)
-			winampsong = _strdup("SimpleAway");
+			winampsong = mir_strdup("SimpleAway");
 
 		if (winampsong)
 		{
@@ -964,11 +994,11 @@ void CALLBACK SATimerProc(HWND timerhwnd, UINT uMsg, UINT_PTR idEvent, DWORD  dw
 					CallProtoService(proto[i]->szName, PS_SETAWAYMSG, (WPARAM)status, (LPARAM)msg);
 
 					SaveMessageToDB(proto[i]->szName, msg, FALSE);
-					free(msg);
+					mir_free(msg);
 				}
 
-				free(winampsong);
-				winampsong = _strdup(winamp_title);
+				mir_free(winampsong);
+				winampsong = mir_strdup(winamp_title);
 			}
 		}
 	}
@@ -1098,7 +1128,7 @@ int InitAwayModule(WPARAM wParam,LPARAM lParam)
 int ShutdownSA (WPARAM wParam,LPARAM lParam)
 {
 	if (winampsong)
-		free(winampsong);
+		mir_free(winampsong);
 	if (is_timer)
 		KillTimer(NULL, SATimer);
 	return 0;
@@ -1117,6 +1147,7 @@ static int IsSARunning(WPARAM wParam, LPARAM lParam)
 int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	pluginLink=link;
+	mir_getMMI( &mmi );
 
 	hwndSAMsgDialog	= NULL;
 	init_mm();

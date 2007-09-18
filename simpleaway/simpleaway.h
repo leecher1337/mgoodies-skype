@@ -20,19 +20,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
-#include "../Miranda-IM/Miranda/Include/newpluginapi.h"
-#include "../Miranda-IM/Miranda/Include/m_button.h"
-#include "../Miranda-IM/Miranda/Include/m_clist.h"
-#include "../Miranda-IM/Miranda/Include/m_skin.h"
-#include "../Miranda-IM/Miranda/Include/m_system.h"
-#include "../Miranda-IM/Miranda/Include/m_options.h"
-#include "../Miranda-IM/Miranda/Include/m_langpack.h"
-#include "../Miranda-IM/Miranda/Include/m_protocols.h"
-#include "../Miranda-IM/Miranda/Include/m_protosvc.h"
-#include "../Miranda-IM/Miranda/Include/m_utils.h"
-#include "../Miranda-IM/Miranda/Include/m_database.h"
-#include "../Miranda-IM/Miranda/Include/m_awaymsg.h"
-#include "../Miranda-IM/Miranda/Include/win2k.h"
+#include "../../include/newpluginapi.h"
+#include "../../include/m_button.h"
+#include "../../include/m_clist.h"
+#include "../../include/m_skin.h"
+#include "../../include/m_system.h"
+#include "../../include/m_options.h"
+#include "../../include/m_langpack.h"
+#include "../../include/m_protocols.h"
+#include "../../include/m_protosvc.h"
+#include "../../include/m_utils.h"
+#include "../../include/m_database.h"
+#include "../../include/m_awaymsg.h"
+#include "../../include/win2k.h"
 #include "m_variables.h"
 #include "m_toptoolbar.h"
 #include "m_fortunemsg.h"
@@ -97,7 +97,7 @@ extern BOOL			ShowCopy;
 extern int			ProtoCount;
 extern HWND			hwndSAMsgDialog;
 
-int InsertVarsIntoMsg2(char *msg, char *proto_name, int status);
+char* InsertVarsIntoMsg2(char *msg, char *proto_name, int status);
 int InitOptions(WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode, char *message);

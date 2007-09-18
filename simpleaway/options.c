@@ -55,7 +55,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 			TranslateDialogDefault(hwndDlg);
 
-			data = (struct OptDlgData*)malloc(sizeof(struct OptDlgData));
+			data = (struct OptDlgData*)mir_alloc(sizeof(struct OptDlgData));
 			SetWindowLong(hwndDlg,GWL_USERDATA,(LONG)data);
 
 			i_btnhide = SendMessage(GetDlgItem(hwndDlg, IDC_CBOPTBUTTONS), CB_ADDSTRING, 0, (LPARAM)Translate("Hide"));
@@ -145,7 +145,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 						data->flags[i-ID_STATUS_ONLINE] = val;
 						data->status[i-ID_STATUS_ONLINE] = i;
 						if(DBGetContactSetting(NULL, "SRAway", StatusModeToDbSetting(i, "Default"), &dbv))
-							dbv.pszVal = _strdup(GetDefaultMessage(i));
+							dbv.pszVal = mir_strdup(GetDefaultMessage(i));
 						lstrcpy(data->msg[i-ID_STATUS_ONLINE], dbv.pszVal);
 						DBFreeVariant(&dbv);
 					}
@@ -155,7 +155,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			SendMessage(hwndDlg, WM_COMMAND, MAKEWPARAM(IDC_CBOPTSTATUS, CBN_SELCHANGE),(LPARAM)GetDlgItem(hwndDlg, IDC_CBOPTSTATUS));
 
 			CallService(MS_PROTO_ENUMPROTOCOLS,(WPARAM)&proto_count,(LPARAM)&proto);
-			data->proto_msg = (struct SingleProtoMsg *)malloc(sizeof(struct SingleProtoMsg)*proto_count);
+			data->proto_msg = (struct SingleProtoMsg *)mir_alloc(sizeof(struct SingleProtoMsg)*proto_count);
 			if (!data->proto_msg)
 			{
 				EnableWindow(GetDlgItem(hwndDlg, IDC_OPTEDIT2), FALSE);
@@ -184,7 +184,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 						_snprintf(setting, sizeof(setting), "Proto%sDefault", proto[i]->szName);
 						if(!DBGetContactSetting(NULL, "SimpleAway", setting, &dbv))
 						{
-							data->proto_msg[i].msg = _strdup(dbv.pszVal);
+							data->proto_msg[i].msg = mir_strdup(dbv.pszVal);
 							DBFreeVariant(&dbv);
 						}
 						else
@@ -457,18 +457,18 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 						if (len > 0)
 						{
 							if (data->proto_msg[i].msg == NULL)
-								data->proto_msg[i].msg = _strdup(msg);
+								data->proto_msg[i].msg = mir_strdup(msg);
 							else
 							{
-								free(data->proto_msg[i].msg);
-								data->proto_msg[i].msg = _strdup(msg);
+								mir_free(data->proto_msg[i].msg);
+								data->proto_msg[i].msg = mir_strdup(msg);
 							}
 						}
 						else
 						{
 							if (data->proto_msg[i].msg != NULL)
 							{
-								free(data->proto_msg[i].msg);
+								mir_free(data->proto_msg[i].msg);
 								data->proto_msg[i].msg = NULL;
 							}
 						}
@@ -775,11 +775,11 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 				for (i=0; i<data->proto_count; i++)
 				{
 					if (data->proto_msg[i].msg) //they want to be free, do they?
-						free(data->proto_msg[i].msg);
+						mir_free(data->proto_msg[i].msg);
 				}
-				free(data->proto_msg);
+				mir_free(data->proto_msg);
 			}
-			free(data);
+			mir_free(data);
 		break;
 
 	}
