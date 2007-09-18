@@ -2,6 +2,13 @@ History Keeper
 
 Changelog:
 
+. 0.0.0.5
+  + Contact menus moved to a submenu
+  * Fix for popups on status changes
+  + Option 'don't popup on protocol connection' changed to 'dont notify  on protocol connection (popup + sound + speak)
+  * All DB entries changed to HistoryKeeper db folder (this affected all *Current entries in db, so some notifications will be fired again - sorry)
+  * It won't log/notify anymore events that happened in a subcontact (you can enable logging per subcontact or to enable logging for all subs create a DB entry HistoryKeeper/PerDefaultLogSubcontacts of type BYTE and set it to 1)
+
 . 0.0.0.4
   + Added sounds support
   + Added speak plugin support

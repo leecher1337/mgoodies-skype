@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,4),
+	PLUGIN_MAKE_VERSION(0,0,0,5),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -74,7 +74,7 @@ BOOL ProtocolEnabled(int type, const char *protocol);
 
 void Process(HANDLE hContact, void *param);
 
-
+#define MODULE_PROTOCOL ((char *)-1)
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -126,26 +126,53 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		if (protos[i]->szName == NULL || protos[i]->szName[0] == '\0')
 			continue;
 
-		mir_snprintf(tmp, MAX_REGS(tmp), "%s/" MODULE_NAME "_OnOfflineTickCount", protos[i]->szName);
+		mir_snprintf(tmp, MAX_REGS(tmp), MODULE_NAME "/%s_OnOfflineTickCount", protos[i]->szName);
 		CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
 
-		mir_snprintf(tmp, MAX_REGS(tmp), "%s/" MODULE_NAME "_LastStatus", protos[i]->szName);
+		mir_snprintf(tmp, MAX_REGS(tmp), MODULE_NAME "/%s_LastStatus", protos[i]->szName);
 		CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
+
+		for (int j = 0; j < NUM_TYPES; j++) 
+		{
+			HISTORY_TYPE &type = types[j];
+
+			if (type.temporary && type.track.db.module == MODULE_PROTOCOL)
+			{
+				mir_snprintf(tmp, MAX_REGS(tmp), MODULE_NAME "/%s_%s_Current", protos[i]->szName, type.track.db.setting);
+				CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
+			}
+		}
 	}
 
 	// Add menu item to enable/disable status message check
-	char name[256];
-	char service[256];
 	CLISTMENUITEM mi = {0};
 	mi.cbSize = sizeof(mi);
-	mi.position = 1000100010;
-	mi.flags = CMIF_NOTOFFLIST;
+	mi.popupPosition = mi.position = 1000090020;
+
+	mi.flags = CMIF_NOTOFFLIST|CMIF_ROOTPOPUP;
+	mi.pszPopupName = (char *)-1;
+	mi.pszName = "History Keeper";
+	HANDLE hRootMenu = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+
+	mi.pszPopupName = (char *) hRootMenu;
+	mi.flags = CMIF_NOTOFFLIST|CMIF_CHILDPOPUP;
+	char name[256];
 	mi.pszName = name;
+	char service[256];
 	mi.pszService = service;
 
 	for (i = 0; i < NUM_TYPES; i++) 
 	{
 		HISTORY_TYPE &type = types[i];
+
+		// DB
+
+		if (type.temporary && type.track.db.module != MODULE_PROTOCOL)
+		{
+			mir_snprintf(tmp, MAX_REGS(tmp), MODULE_NAME "/%s_%s_Current", type.track.db.module, type.track.db.setting);
+			CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
+		}
+
 
 		// History
 
@@ -191,12 +218,14 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 		// Menus and services
 
+		mi.position = i;
+
 		mi.hIcon = HistoryEvents_GetIcon(type.eventType);
 
 		mir_snprintf(service, MAX_REGS(service), "%s/Disable", type.name);
 		CreateServiceFunctionParam(service, DisableHistory, i);
 
-		mir_snprintf(name, MAX_REGS(name), "Don't log %s changes", type.description);
+		mir_snprintf(name, MAX_REGS(name), "Ignore %s changes", type.description);
 		hDisableMenu[i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 
 		mir_snprintf(service, MAX_REGS(service), "%s/Enable", type.name);
@@ -212,12 +241,12 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 		// Sounds
 
-		mir_snprintf(change, MAX_REGS(change), "%s change", type.description);
+		mir_snprintf(change, MAX_REGS(change), Translate("%s change"), type.description);
 		SkinAddNewSoundEx(change, "Notifications", change);
 
 		if (type.canBeRemoved)
 		{
-			mir_snprintf(change, MAX_REGS(change), "%s removal", type.description);
+			mir_snprintf(change, MAX_REGS(change), Translate("%s removal"), type.description);
 			SkinAddNewSoundEx(change, "Notifications", change);
 		}
 	}
@@ -404,9 +433,12 @@ BOOL ContactEnabled(int type, HANDLE hContact)
 	if (ServiceExists(MS_MC_GETMETACONTACT)) 
 	{
 		HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
-
 		if (hMetaContact != NULL)
-			def = ContactEnabled(type, hMetaContact);
+		{
+			def = DBGetContactSettingByte(NULL, MODULE_NAME, "PerDefaultLogSubcontacts", FALSE);
+			if (def)
+				def = ContactEnabled(type, hMetaContact);
+		}
 	}
 
 	char setting[256];
@@ -505,13 +537,77 @@ void LogToFile(HANDLE hContact, int typeNum, int templateNum, TCHAR **variables,
 }
 
 
-void Notify(int type, BOOL found_old, BOOL changed, HANDLE hContact, TCHAR *oldVal, TCHAR *newVal)
+void Speak(HANDLE hContact, int type, int templateNum, TCHAR **vars, int numVars)
+{
+	if (!ServiceExists(MS_SPEAK_SAY))
+		return;
+	
+	if (templateNum == 0 && !opts[type].speak_track_changes)
+		return;
+	if (templateNum == 1 && !opts[type].speak_track_removes)
+		return;
+
+	Buffer<TCHAR> txt;
+	txt.append(templateNum == 1 ? opts[type].speak_template_removed : opts[type].speak_template_changed);
+	ReplaceVars(&txt, hContact, vars, numVars);
+	txt.pack();
+
+#ifdef UNICODE
+	char *tmp = mir_t2a(txt.str);
+	CallService(MS_SPEAK_SAY, (LPARAM) NULL, (WPARAM) tmp);
+	mir_free(tmp);
+#else
+	CallService(MS_SPEAK_SAY, (LPARAM) NULL, (WPARAM) txt.str);
+#endif
+}
+
+
+void Notify(HANDLE hContact, int type, BOOL found_old, int templateNum, TCHAR **vars, int numVars)
+{
+	if (!found_old && !types[type].canBeRemoved && !types[type].temporary)
+		return;
+
+	if (DBGetContactSettingDword(hContact, MODULE_NAME, "CreationTickCount", 0) 
+					+ TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION > GetTickCount())
+		return;
+
+	char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
+	if (proto == NULL || proto[0] == '\0')
+		return;
+
+	if (opts[type].dont_notify_on_connect)
+	{
+		char onOffSetting[256];
+		mir_snprintf(onOffSetting, MAX_REGS(onOffSetting), "%s_OnOfflineTickCount", proto);
+		if (DBGetContactSettingDword(NULL, proto, MODULE_NAME "_OnOfflineTickCount", 0) 
+					+ TIME_TO_WAIT_BEFORE_NOTIFY_AFTER_CONNECTION > GetTickCount())
+			return;
+	}
+
+	// Don't notify if is subcontact
+	if (ServiceExists(MS_MC_GETMETACONTACT)) 
+	{
+		HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
+		if (hMetaContact != NULL)
+			return;
+	}
+
+	ShowPopup(hContact, type, templateNum, vars, numVars);
+
+	char tmp[256];
+	mir_snprintf(tmp, MAX_REGS(tmp), templateNum == 0 ? "%s change" : "%s removal", types[type].description);
+	SkinPlaySound(tmp);
+
+	Speak(hContact, type, templateNum, vars, numVars);
+}
+
+
+void Log(int type, BOOL found_old, BOOL changed, HANDLE hContact, TCHAR *oldVal, TCHAR *newVal)
 {
 	if (newVal == NULL || newVal[0] == _T('\0'))
 		newVal = TranslateT("<empty>");
 	if (oldVal == NULL || oldVal[0] == _T('\0'))
 		oldVal = TranslateT("<empty>");
-
 
 	int numVars = 4 + 2 * types[type].numAddVars;
 	TCHAR **vars = (TCHAR **) mir_alloc0(sizeof(TCHAR *) * numVars);
@@ -527,33 +623,7 @@ void Notify(int type, BOOL found_old, BOOL changed, HANDLE hContact, TCHAR *oldV
 
 	HistoryEvents_AddToHistoryVars(hContact, types[type].eventType, templateNum, vars, numVars, DBEF_READ);
 	LogToFile(hContact, type, templateNum, vars, numVars);
-
-	if (found_old || types[type].canBeRemoved)
-		ShowPopup(hContact, type, templateNum, vars, numVars);
-
-	char tmp[256];
-	mir_snprintf(tmp, MAX_REGS(tmp), changed ? "%s change" : "%s removal", types[type].description);
-	SkinPlaySound(tmp);
-
-	if (ServiceExists(MS_SPEAK_SAY))
-	{
-		if ( (templateNum == 0 && opts[type].speak_track_changes)
-			 || (templateNum == 1 && opts[type].speak_track_removes))
-		{
-			Buffer<TCHAR> txt;
-			txt.append(templateNum == 1 ? opts[type].speak_template_removed : opts[type].speak_template_changed);
-			ReplaceVars(&txt, hContact, vars, numVars);
-			txt.pack();
-
-#ifdef UNICODE
-			char *tmp = mir_t2a(txt.str);
-			CallService(MS_SPEAK_SAY, (LPARAM) NULL, (WPARAM) tmp);
-			mir_free(tmp);
-#else
-			CallService(MS_SPEAK_SAY, (LPARAM) NULL, (WPARAM) txt.str);
-#endif
-		}
-	}
+	Notify(hContact, type, found_old, templateNum, vars, numVars);
 
 	for(int i = 0; i < types[type].numAddVars; i++)
 		mir_free(vars[4 + 2 * i + 1]);
@@ -584,13 +654,21 @@ int ProtoAckHook(WPARAM wParam, LPARAM lParam)
 	{
 		const char *proto = ack->szModule;
 		int status = (int) ack->lParam;
-		int oldStatus = DBGetContactSettingWord(NULL, proto, MODULE_NAME "_LastStatus", ID_STATUS_OFFLINE);
+		char lastStatusSetting[256];
+		mir_snprintf(lastStatusSetting, MAX_REGS(lastStatusSetting), "%s_LastStatus", proto);
+
+		int oldStatus = DBGetContactSettingWord(NULL, MODULE_NAME, lastStatusSetting, ID_STATUS_OFFLINE);
 
 		if ( (status > ID_STATUS_OFFLINE && oldStatus <= ID_STATUS_OFFLINE)
 			 || (status <= ID_STATUS_OFFLINE && oldStatus > ID_STATUS_OFFLINE) )
-			DBWriteContactSettingDword(NULL, proto, MODULE_NAME "_OnOfflineTickCount", GetTickCount());
+		{
+			char onOffSetting[256];
+			mir_snprintf(onOffSetting, MAX_REGS(onOffSetting), "%s_OnOfflineTickCount", proto);
 
-		DBWriteContactSettingWord(NULL, proto, MODULE_NAME "_LastStatus", status);
+			DBWriteContactSettingDword(NULL, MODULE_NAME, onOffSetting, GetTickCount());
+		}
+
+		DBWriteContactSettingWord(NULL, MODULE_NAME, lastStatusSetting, status);
 	}
 
 	return 0;
@@ -621,7 +699,7 @@ int SettingChanged(WPARAM wParam, LPARAM lParam)
 			continue;
 
 		char *module;
-		if ((int) type.track.db.module == -1)
+		if (type.track.db.module == MODULE_PROTOCOL)
 			module = proto;
 		else
 			module = type.track.db.module;
@@ -648,16 +726,16 @@ void TrackChangeString(int typeNum, HANDLE hContact)
 	HISTORY_TYPE &type = types[typeNum];
 
 	char *module;
-	if ((int) type.track.db.module == -1)
+	if (type.track.db.module == MODULE_PROTOCOL)
 		module = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 	else
 		module = type.track.db.module;
 
 	char current_setting[256];
-	mir_snprintf(current_setting, MAX_REGS(current_setting), "%sCurrent", type.track.db.setting);
+	mir_snprintf(current_setting, MAX_REGS(current_setting), "%s_%s_Current", module, type.track.db.setting);
 
 	DBVARIANT old = {0};
-	BOOL found_old = (DBGetContactSettingTString(hContact, module, current_setting, &old) == 0);
+	BOOL found_old = (DBGetContactSettingTString(hContact, MODULE_NAME, current_setting, &old) == 0);
 
 	DBVARIANT new_ = {0};
 	BOOL found_new = (DBGetContactSettingTString(hContact, module, type.track.db.setting, &new_) == 0);
@@ -709,18 +787,20 @@ void TrackChangeString(int typeNum, HANDLE hContact)
 
 			type.fFormat(old_str, MAX_REGS(old_str), oldVal);
 			type.fFormat(new_str, MAX_REGS(new_str), new_.ptszVal);
-			Notify(typeNum, found_old, ret == 1, hContact, old_str, new_str);
+			Log(typeNum, found_old, ret == 1, hContact, old_str, new_str);
 		}
 		else
-			Notify(typeNum, found_old, ret == 1, hContact, oldVal, new_.ptszVal);
+			Log(typeNum, found_old, ret == 1, hContact, oldVal, new_.ptszVal);
 
 		// Copy new to current after notification, so old value can still be accessed
 		if (ret == 2)
 		{
-			DBDeleteContactSetting(hContact, module, current_setting);
+			DBDeleteContactSetting(hContact, MODULE_NAME, current_setting);
 		}
 		else
-			DBWriteContactSettingTString(hContact, module, current_setting, new_.ptszVal);
+		{
+			DBWriteContactSettingTString(hContact, MODULE_NAME, current_setting, new_.ptszVal);
+		}
 	}
 
 	if (found_old)
@@ -745,16 +825,16 @@ void TrackChangeNumber(int typeNum, HANDLE hContact)
 	HISTORY_TYPE &type = types[typeNum];
 
 	char *module;
-	if ((int) type.track.db.module == -1)
+	if (type.track.db.module == MODULE_PROTOCOL)
 		module = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 	else
 		module = type.track.db.module;
 
 	char current_setting[256];
-	mir_snprintf(current_setting, MAX_REGS(current_setting), "%sCurrent", type.track.db.setting);
+	mir_snprintf(current_setting, MAX_REGS(current_setting), "%s_%s_Current", module, type.track.db.setting);
 
 	DBVARIANT old = {0};
-	BOOL found_old = (DBGetContactSetting(hContact, module, current_setting, &old) == 0);
+	BOOL found_old = (DBGetContactSetting(hContact, MODULE_NAME, current_setting, &old) == 0);
 
 	DBVARIANT new_ = {0};
 	BOOL found_new = (DBGetContactSetting(hContact, module, type.track.db.setting, &new_) == 0);
@@ -795,20 +875,20 @@ void TrackChangeNumber(int typeNum, HANDLE hContact)
 		else
 			tmp_new[0] = _T('\0');
 
-		Notify(typeNum, found_old, ret == 1, hContact, tmp_old, tmp_new);
+		Log(typeNum, found_old, ret == 1, hContact, tmp_old, tmp_new);
 
 		// Copy new to current after notification, so old value can still be accessed
-		if (ret == 2 || newVal == type.defs.value)
+		if (ret == 2)
 		{
-			DBDeleteContactSetting(hContact, module, current_setting);
+			DBDeleteContactSetting(hContact, MODULE_NAME, current_setting);
 		}
 		else
 		{
 			switch(new_.type)
 			{
-				case DBVT_BYTE: DBWriteContactSettingByte(hContact, module, current_setting, new_.bVal); break;
-				case DBVT_WORD: DBWriteContactSettingWord(hContact, module, current_setting, new_.wVal); break;
-				case DBVT_DWORD: DBWriteContactSettingDword(hContact, module, current_setting, new_.dVal); break;
+				case DBVT_BYTE: DBWriteContactSettingByte(hContact, MODULE_NAME, current_setting, new_.bVal); break;
+				case DBVT_WORD: DBWriteContactSettingWord(hContact, MODULE_NAME, current_setting, new_.wVal); break;
+				case DBVT_DWORD: DBWriteContactSettingDword(hContact, MODULE_NAME, current_setting, new_.dVal); break;
 			}
 		}
 	}

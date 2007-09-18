@@ -65,10 +65,10 @@ FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProt
 
 
 
-#define OPTIONS_CONTROLS_SIZE 7
+#define OPTIONS_CONTROLS_SIZE 8
 static OptPageControl optionsControls[NUM_TYPES][OPTIONS_CONTROLS_SIZE] = {0};
 
-#define POPUPS_CONTROLS_SIZE 15
+#define POPUPS_CONTROLS_SIZE 14
 static OptPageControl popupsControls[NUM_TYPES][POPUPS_CONTROLS_SIZE] = {0};
 
 #define SPEAK_CONTROLS_SIZE 4
@@ -192,13 +192,14 @@ void InitOptions()
 		mir_sntprintf(&fileRemoveTemplates[i][0], 128, TranslateT("[%%date%%] %%contact%% removed his/her %s (was %%old%%)"), tmp);
 
 		OptPageControl opt[] = {
-			{ &opts[i].track_only_not_offline,	CONTROL_CHECKBOX,		IDC_ONLY_NOT_OFFLINE,	"TrackOnlyWhenNotOffline", types[i].defs.track_only_not_offline },
-			{ NULL,								CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,			"%sEnabled", TRUE, (int) AllowProtocolArr[i] },
-			{ &opts[i].file_name,				CONTROL_FILE,			IDC_FILENAME,			"FileName", (DWORD) _T("Log\\history_keeper.log") },
-			{ &opts[i].file_track_changes,		CONTROL_CHECKBOX,		IDC_TRACK_CHANGE,		"FileTrackChanges", FALSE },
-			{ &opts[i].file_template_changed,	CONTROL_TEXT,			IDC_CHANGED,			"FileTemplateChanged", (DWORD) &fileChangeTemplates[i][0] },
-			{ &opts[i].file_track_removes,		CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,		"FileTrackRemoves", FALSE },
-			{ &opts[i].file_template_removed,	CONTROL_TEXT,			IDC_REMOVED,			"FileTemplateRemoved", (DWORD) &fileRemoveTemplates[i][0] },
+			{ &opts[i].track_only_not_offline,	CONTROL_CHECKBOX,		IDC_ONLY_NOT_OFFLINE,		"TrackOnlyWhenNotOffline", types[i].defs.track_only_not_offline },
+			{ &opts[i].dont_notify_on_connect,	CONTROL_CHECKBOX,		IDC_DONT_NOTIFY_ON_CONNECT,	"DontNotifyOnConnect", TRUE },
+			{ NULL,								CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,				"%sEnabled", TRUE, (int) AllowProtocolArr[i] },
+			{ &opts[i].file_name,				CONTROL_FILE,			IDC_FILENAME,				"FileName", (DWORD) _T("Log\\history_keeper.log") },
+			{ &opts[i].file_track_changes,		CONTROL_CHECKBOX,		IDC_TRACK_CHANGE,			"FileTrackChanges", FALSE },
+			{ &opts[i].file_template_changed,	CONTROL_TEXT,			IDC_CHANGED,				"FileTemplateChanged", (DWORD) &fileChangeTemplates[i][0] },
+			{ &opts[i].file_track_removes,		CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,			"FileTrackRemoves", FALSE },
+			{ &opts[i].file_template_removed,	CONTROL_TEXT,			IDC_REMOVED,				"FileTemplateRemoved", (DWORD) &fileRemoveTemplates[i][0] },
 		};
 
 		_ASSERT(MAX_REGS(opt) == OPTIONS_CONTROLS_SIZE);
@@ -219,7 +220,6 @@ void InitOptions()
 			{ &opts[i].popup_template_changed,		CONTROL_TEXT,		IDC_CHANGED,		"PopupsTemplateChanged", (DWORD) &changeTemplates[i][0] },
 			{ &opts[i].popup_track_removes,			CONTROL_CHECKBOX,	IDC_TRACK_REMOVE,	"PopupsTrackRemoves", TRUE },
 			{ &opts[i].popup_template_removed,		CONTROL_TEXT,		IDC_REMOVED,		"PopupsTemplateRemoved", (DWORD) &removeTemplates[i][0] },
-			{ &opts[i].popup_dont_notfy_on_connect,	CONTROL_CHECKBOX,	IDC_DONT_NOTIFY_ON_CONNECT,	"PopupsDontNotifyOnConnect", TRUE },
 			{ &opts[i].popup_bkg_color,				CONTROL_COLOR,		IDC_BGCOLOR,		"PopupsBgColor", RGB(255,255,255) },
 			{ &opts[i].popup_text_color,			CONTROL_COLOR,		IDC_TEXTCOLOR,		"PopupsTextColor", RGB(0,0,0) },
 			{ &opts[i].popup_use_win_colors,		CONTROL_CHECKBOX,	IDC_WINCOLORS,		"PopupsWinColors", FALSE },

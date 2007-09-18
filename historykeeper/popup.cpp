@@ -83,33 +83,19 @@ void ShowTestPopup(int typeNum, const TCHAR *title, const TCHAR *description, co
 }
 
 
-void ShowPopup(HANDLE hContact, int typeNum, int templateNum, TCHAR **variables, int numVariables)
+void ShowPopup(HANDLE hContact, int type, int templateNum, TCHAR **vars, int numVars)
 {
-	// Only some time after creation
-	if (DBGetContactSettingDword(hContact, MODULE_NAME, "CreationTickCount", 0) 
-					+ TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION > GetTickCount())
+	if (templateNum == 0 && !opts[type].popup_track_changes)
 		return;
-
-	if (opts[typeNum].popup_dont_notfy_on_connect)
-	{
-		char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
-		if (proto != NULL 
-			&& DBGetContactSettingDword(NULL, proto, MODULE_NAME "_OnOfflineTickCount", 0) 
-					+ TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CONNECTION > GetTickCount())
-			return;
-	}
-
-	if (templateNum == 0 && !opts[typeNum].popup_track_changes)
-		return;
-	if (templateNum == 1 && !opts[typeNum].popup_track_removes)
+	if (templateNum == 1 && !opts[type].popup_track_removes)
 		return;
 
 	Buffer<TCHAR> txt;
-	txt.append(templateNum == 1 ? opts[typeNum].popup_template_removed : opts[typeNum].popup_template_changed);
-	ReplaceVars(&txt, hContact, variables, numVariables);
+	txt.append(templateNum == 1 ? opts[type].popup_template_removed : opts[type].popup_template_changed);
+	ReplaceVars(&txt, hContact, vars, numVars);
 	txt.pack();
 
-	ShowPopupEx(hContact, NULL, txt.str, new PopupData(hContact, typeNum), POPUP_TYPE_NORMAL, &opts[typeNum], typeNum);
+	ShowPopupEx(hContact, NULL, txt.str, new PopupData(hContact, type), POPUP_TYPE_NORMAL, &opts[type], type);
 }
 
 

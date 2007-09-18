@@ -52,33 +52,12 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Dialog
 //
 
-IDD_OPTIONS_NOREM DIALOGEX 0, 0, 285, 167
+IDD_POPUPS_REM DIALOGEX 0, 0, 314, 240
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,3,279,93
-    LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,
-                    14,16,158,11
-    CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
-                    LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
-                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,13,28,158,62
-    GROUPBOX        " Log to file ",IDC_FILE_G,3,99,279,65
-    CONTROL         "Log when contacts change their %s",IDC_TRACK_CHANGE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,132,264,11
-    RTEXT           "Template:",IDC_CHANGED_L2,11,145,55,10
-    EDITTEXT        IDC_CHANGED,72,144,203,13,ES_AUTOHSCROLL
-    RTEXT           "Filename:",IDC_FILENAME_L,12,115,41,10
-    EDITTEXT        IDC_FILENAME,60,114,198,13,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_SELECT_FILE,261,114,14,13
-END
-
-IDD_POPUPS_REM DIALOGEX 0, 0, 314, 240
-STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
-BEGIN
-    GROUPBOX        " Tracking ",IDC_TRACK_G,3,3,308,86
+    GROUPBOX        " Tracking ",IDC_TRACK_G,3,3,308,73
     CONTROL         "Show when contacts change their %s",IDC_TRACK_CHANGE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,15,291,11
     RTEXT           "Template:",IDC_CHANGED_L,11,28,55,10
@@ -87,62 +66,59 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,44,291,11
     RTEXT           "Template:",IDC_REMOVED_L,11,58,55,10
     EDITTEXT        IDC_REMOVED,72,57,233,13,ES_AUTOHSCROLL
-    CONTROL         "Don't notify on protocol connection",
-                    IDC_DONT_NOTIFY_ON_CONNECT,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,12,73,291,11
-    GROUPBOX        " Colours ",IDC_COLOURS_G,3,94,158,75
-    CONTROL         "",IDC_BGCOLOR,"ColourPicker",WS_TABSTOP,11,106,35,14
-    LTEXT           "Background colour",IDC_BGCOLOR_L,55,110,66,8
-    CONTROL         "",IDC_TEXTCOLOR,"ColourPicker",WS_TABSTOP,11,124,35,14
-    LTEXT           "Text colour",IDC_TEXTCOLOR_L,55,128,66,8
+    GROUPBOX        " Colours ",IDC_COLOURS_G,3,80,158,75
+    CONTROL         "",IDC_BGCOLOR,"ColourPicker",WS_TABSTOP,11,92,35,14
+    LTEXT           "Background colour",IDC_BGCOLOR_L,55,96,66,8
+    CONTROL         "",IDC_TEXTCOLOR,"ColourPicker",WS_TABSTOP,11,110,35,14
+    LTEXT           "Text colour",IDC_TEXTCOLOR_L,55,114,66,8
     CONTROL         "Use Windows colours",IDC_WINCOLORS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,11,143,108,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,129,108,10
     CONTROL         "Use default colours",IDC_DEFAULTCOLORS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,11,153,107,10
-    GROUPBOX        " Delay ",IDC_DELAY_G,166,94,145,75
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,139,107,10
+    GROUPBOX        " Delay ",IDC_DELAY_G,166,80,145,75
     CONTROL         "From popup plugin",IDC_DELAYFROMPU,"Button",
-                    BS_AUTORADIOBUTTON | WS_GROUP,175,107,122,10
+                    BS_AUTORADIOBUTTON | WS_GROUP,175,93,122,10
     CONTROL         "Custom",IDC_DELAYCUSTOM,"Button",BS_AUTORADIOBUTTON,175,
-                    121,54,10
+                    107,54,10
     CONTROL         "Permanent",IDC_DELAYPERMANENT,"Button",
-                    BS_AUTORADIOBUTTON,175,135,122,10
-    EDITTEXT        IDC_DELAY,233,119,31,14,ES_AUTOHSCROLL | ES_NUMBER
+                    BS_AUTORADIOBUTTON,175,121,122,10
+    EDITTEXT        IDC_DELAY,233,105,31,14,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Spin1",IDC_DELAY_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
                     UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
-                    UDS_HOTTRACK,268,120,11,11
-    GROUPBOX        " Actions ",IDC_ACTIONS_G,3,172,308,46
-    RTEXT           "On right click:",IDC_RIGHT_ACTION_L,13,186,62,9
-    COMBOBOX        IDC_RIGHT_ACTION,83,184,156,60,CBS_DROPDOWNLIST | 
+                    UDS_HOTTRACK,268,106,11,11
+    GROUPBOX        " Actions ",IDC_ACTIONS_G,3,158,308,46
+    RTEXT           "On right click:",IDC_RIGHT_ACTION_L,13,172,62,9
+    COMBOBOX        IDC_RIGHT_ACTION,83,170,156,60,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
-    RTEXT           "On left click:",IDC_LEFT_ACTION_L,13,200,62,9
-    COMBOBOX        IDC_LEFT_ACTION,83,200,156,60,CBS_DROPDOWNLIST | 
+    RTEXT           "On left click:",IDC_LEFT_ACTION_L,13,186,62,9
+    COMBOBOX        IDC_LEFT_ACTION,83,186,156,60,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Preview",IDC_PREV,131,223,50,14
 END
 
-IDD_OPTIONS_REM DIALOGEX 0, 0, 285, 198
+IDD_OPTIONS_NOREM DIALOGEX 0, 0, 285, 202
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,3,279,93
+    GROUPBOX        " Track ",IDC_STATIC,3,3,279,31
+    CONTROL         "Don't notify on protocol connection",
+                    IDC_DONT_NOTIFY_ON_CONNECT2,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,12,16,264,11
+    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,37,279,93
     LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,
-                    14,16,158,11
+                    14,50,158,11
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
-                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,13,28,158,62
-    GROUPBOX        " Log to file ",IDC_FILE_G,3,99,279,96
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,13,62,158,62
+    GROUPBOX        " Log to file ",IDC_FILE_G,3,133,279,65
+    RTEXT           "Filename:",IDC_FILENAME_L,12,149,41,10
+    EDITTEXT        IDC_FILENAME,60,148,198,13,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_SELECT_FILE,261,148,14,13
     CONTROL         "Log when contacts change their %s",IDC_TRACK_CHANGE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,132,264,11
-    RTEXT           "Template:",IDC_CHANGED_L2,11,145,55,10
-    EDITTEXT        IDC_CHANGED,72,144,203,13,ES_AUTOHSCROLL
-    CONTROL         "Log when contacts remove their %s",IDC_TRACK_REMOVE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,161,263,11
-    RTEXT           "Template:",IDC_REMOVED_L2,11,175,55,10
-    EDITTEXT        IDC_REMOVED,72,174,203,13,ES_AUTOHSCROLL
-    RTEXT           "Filename:",IDC_FILENAME_L,12,115,41,10
-    EDITTEXT        IDC_FILENAME,60,114,198,13,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_SELECT_FILE,261,114,14,13
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,166,264,11
+    RTEXT           "Template:",IDC_CHANGED_L2,11,179,55,10
+    EDITTEXT        IDC_CHANGED,72,178,203,13,ES_AUTOHSCROLL
 END
 
 IDD_POPUPS_NOREM DIALOGEX 0, 0, 314, 240
@@ -150,40 +126,37 @@ STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Tracking ",IDC_TRACK_G,3,3,308,58
+    GROUPBOX        " Tracking ",IDC_TRACK_G,3,3,308,43
     CONTROL         "Show when contacts change their %s",IDC_TRACK_CHANGE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,15,291,11
     RTEXT           "Template:",IDC_CHANGED_L,11,28,55,10
     EDITTEXT        IDC_CHANGED,72,27,233,13,ES_AUTOHSCROLL
-    CONTROL         "Don't notify on protocol connection",
-                    IDC_DONT_NOTIFY_ON_CONNECT,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,12,44,291,11
-    GROUPBOX        " Colours ",IDC_COLOURS_G,3,64,158,75
-    CONTROL         "",IDC_BGCOLOR,"ColourPicker",WS_TABSTOP,11,76,35,14
-    LTEXT           "Background colour",IDC_BGCOLOR_L,55,80,66,8
-    CONTROL         "",IDC_TEXTCOLOR,"ColourPicker",WS_TABSTOP,11,94,35,14
-    LTEXT           "Text colour",IDC_TEXTCOLOR_L,55,98,66,8
+    GROUPBOX        " Colours ",IDC_COLOURS_G,3,50,158,75
+    CONTROL         "",IDC_BGCOLOR,"ColourPicker",WS_TABSTOP,11,62,35,14
+    LTEXT           "Background colour",IDC_BGCOLOR_L,55,66,66,8
+    CONTROL         "",IDC_TEXTCOLOR,"ColourPicker",WS_TABSTOP,11,80,35,14
+    LTEXT           "Text colour",IDC_TEXTCOLOR_L,55,84,66,8
     CONTROL         "Use Windows colours",IDC_WINCOLORS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,11,113,108,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,99,108,10
     CONTROL         "Use default colours",IDC_DEFAULTCOLORS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,11,123,107,10
-    GROUPBOX        " Delay ",IDC_DELAY_G,166,64,145,75
+                    BS_AUTOCHECKBOX | WS_TABSTOP,11,109,107,10
+    GROUPBOX        " Delay ",IDC_DELAY_G,166,50,145,75
     CONTROL         "From popup plugin",IDC_DELAYFROMPU,"Button",
-                    BS_AUTORADIOBUTTON | WS_GROUP,175,77,122,10
+                    BS_AUTORADIOBUTTON | WS_GROUP,175,63,122,10
     CONTROL         "Custom",IDC_DELAYCUSTOM,"Button",BS_AUTORADIOBUTTON,175,
-                    91,54,10
+                    77,54,10
     CONTROL         "Permanent",IDC_DELAYPERMANENT,"Button",
-                    BS_AUTORADIOBUTTON,175,105,122,10
-    EDITTEXT        IDC_DELAY,233,89,31,14,ES_AUTOHSCROLL | ES_NUMBER
+                    BS_AUTORADIOBUTTON,175,91,122,10
+    EDITTEXT        IDC_DELAY,233,75,31,14,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Spin1",IDC_DELAY_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
                     UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
-                    UDS_HOTTRACK,268,90,11,11
-    GROUPBOX        " Actions ",IDC_ACTIONS_G,3,142,308,46
-    RTEXT           "On right click:",IDC_RIGHT_ACTION_L,13,156,62,9
-    COMBOBOX        IDC_RIGHT_ACTION,83,154,156,60,CBS_DROPDOWNLIST | 
+                    UDS_HOTTRACK,268,76,11,11
+    GROUPBOX        " Actions ",IDC_ACTIONS_G,3,128,308,46
+    RTEXT           "On right click:",IDC_RIGHT_ACTION_L,13,142,62,9
+    COMBOBOX        IDC_RIGHT_ACTION,83,140,156,60,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
-    RTEXT           "On left click:",IDC_LEFT_ACTION_L,13,170,62,9
-    COMBOBOX        IDC_LEFT_ACTION,83,170,156,60,CBS_DROPDOWNLIST | 
+    RTEXT           "On left click:",IDC_LEFT_ACTION_L,13,156,62,9
+    COMBOBOX        IDC_LEFT_ACTION,83,156,156,60,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Preview",IDC_PREV,131,223,50,14
 END
@@ -191,7 +164,7 @@ END
 IDD_SPEAK_REM DIALOGEX 0, 0, 279, 68
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "Announce when contacts change their %s",
                     IDC_TRACK_CHANGE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
@@ -208,13 +181,42 @@ END
 IDD_SPEAK_NOREM DIALOGEX 0, 0, 279, 68
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "Announce when contacts change their %s",
                     IDC_TRACK_CHANGE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
                     12,3,264,11
     RTEXT           "Template:",IDC_CHANGED_L2,11,16,55,10
     EDITTEXT        IDC_CHANGED,72,15,203,13,ES_AUTOHSCROLL
+END
+
+IDD_OPTIONS_REM DIALOGEX 0, 0, 285, 233
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    GROUPBOX        " Track ",IDC_STATIC,3,3,279,31
+    CONTROL         "Don't notify on protocol connection",
+                    IDC_DONT_NOTIFY_ON_CONNECT2,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,12,16,264,11
+    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,37,279,93
+    LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,
+                    14,50,158,11
+    CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
+                    LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,13,62,158,62
+    GROUPBOX        " Log to file ",IDC_FILE_G,3,133,279,96
+    RTEXT           "Filename:",IDC_FILENAME_L,12,149,41,10
+    EDITTEXT        IDC_FILENAME,60,148,198,13,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_SELECT_FILE,261,148,14,13
+    CONTROL         "Log when contacts change their %s",IDC_TRACK_CHANGE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,166,264,11
+    RTEXT           "Template:",IDC_CHANGED_L2,11,179,55,10
+    EDITTEXT        IDC_CHANGED,72,178,203,13,ES_AUTOHSCROLL
+    CONTROL         "Log when contacts remove their %s",IDC_TRACK_REMOVE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,195,263,11
+    RTEXT           "Template:",IDC_REMOVED_L2,11,209,55,10
+    EDITTEXT        IDC_REMOVED,72,208,203,13,ES_AUTOHSCROLL
 END
 
 
@@ -226,14 +228,6 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO DISCARDABLE 
 BEGIN
-    IDD_OPTIONS_NOREM, DIALOG
-    BEGIN
-        LEFTMARGIN, 3
-        RIGHTMARGIN, 282
-        TOPMARGIN, 3
-        BOTTOMMARGIN, 164
-    END
-
     IDD_POPUPS_REM, DIALOG
     BEGIN
         LEFTMARGIN, 3
@@ -242,12 +236,12 @@ BEGIN
         BOTTOMMARGIN, 237
     END
 
-    IDD_OPTIONS_REM, DIALOG
+    IDD_OPTIONS_NOREM, DIALOG
     BEGIN
         LEFTMARGIN, 3
         RIGHTMARGIN, 282
         TOPMARGIN, 3
-        BOTTOMMARGIN, 195
+        BOTTOMMARGIN, 199
     END
 
     IDD_POPUPS_NOREM, DIALOG
@@ -272,6 +266,14 @@ BEGIN
         RIGHTMARGIN, 276
         TOPMARGIN, 3
         BOTTOMMARGIN, 65
+    END
+
+    IDD_OPTIONS_REM, DIALOG
+    BEGIN
+        LEFTMARGIN, 3
+        RIGHTMARGIN, 282
+        TOPMARGIN, 3
+        BOTTOMMARGIN, 230
     END
 END
 #endif    // APSTUDIO_INVOKED
