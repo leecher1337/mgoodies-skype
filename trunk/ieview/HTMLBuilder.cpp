@@ -163,10 +163,10 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
 	}
     int textLen = 0;
     int l = wcslen(text);
-	if (mathTagName[0] != NULL && mathTagName[1] != NULL) {
-	    for (i=0; i<=l;) {
-			int k = 0, tagDataStart=0, newTokenType = 0, newTokenSize = 0;
-            bool mathFound = false;
+    for (i=0; i<=l;) {
+        bool mathFound = false;
+		int k = 0, tagDataStart=0, newTokenType = 0, newTokenSize = 0;
+    	if (mathTagName[0] != NULL && mathTagName[1] != NULL) {
 			if (!wcsnicmp(text+i, mathTagName[0], mathTagLen[0])) {
 				k = tagDataStart = i + mathTagLen[0];
 				for (; k < l; k++) {
@@ -177,52 +177,52 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
 					}
 				}
 			}
-			if (mathFound) {
-				mathToken = new TextToken(MATH, text + tagDataStart, k - mathTagLen[1] - tagDataStart);
-				char* mathPath=(char*)CallService(MTH_GET_GIF_UNICODE, 0, (LPARAM) mathToken->getTextW());
-				if (mathPath!=NULL) {
-					mathToken->setLink(mathPath);
-					CallService(MTH_FREE_GIFPATH, 0, (LPARAM) mathPath);
-				} else {
-					mathToken->setLink("");
-				}
-				mathToken->setEnd(false);
-				newTokenType = MATH;
-				newTokenSize = k - i;
+    	}
+		if (mathFound) {
+			mathToken = new TextToken(MATH, text + tagDataStart, k - mathTagLen[1] - tagDataStart);
+			char* mathPath=(char*)CallService(MTH_GET_GIF_UNICODE, 0, (LPARAM) mathToken->getTextW());
+			if (mathPath!=NULL) {
+				mathToken->setLink(mathPath);
+				CallService(MTH_FREE_GIFPATH, 0, (LPARAM) mathPath);
 			} else {
-				if (i==l) {
-					newTokenType = END;
-					newTokenSize = 1;
-				} else {
-					newTokenType = TEXT;
-					newTokenSize = 1;
-				}
+				mathToken->setLink("");
 			}
-			if (newTokenType != TEXT) {
-				if (textLen >0 ) {
-	                TextToken *newToken = new TextToken(TEXT, text+i-textLen, textLen);
-					textLen = 0;
-					if (lastToken == NULL) {
-						firstToken = newToken;
-					} else {
-					    lastToken->setNext(newToken);
-					}
-					lastToken = newToken;
-				}
-            	if (newTokenType == MATH) {
-					if (lastToken == NULL) {
-						firstToken = mathToken;
-					} else {
-					    lastToken->setNext(mathToken);
-					}
-					lastToken = mathToken;
-	            }
+			mathToken->setEnd(false);
+			newTokenType = MATH;
+			newTokenSize = k - i;
+		} else {
+			if (i==l) {
+				newTokenType = END;
+				newTokenSize = 1;
 			} else {
-				textLen += newTokenSize;
+				newTokenType = TEXT;
+				newTokenSize = 1;
 			}
-			i += newTokenSize;
 		}
-    }
+		if (newTokenType != TEXT) {
+			if (textLen >0 ) {
+                TextToken *newToken = new TextToken(TEXT, text+i-textLen, textLen);
+				textLen = 0;
+				if (lastToken == NULL) {
+					firstToken = newToken;
+				} else {
+				    lastToken->setNext(newToken);
+				}
+				lastToken = newToken;
+			}
+        	if (newTokenType == MATH) {
+				if (lastToken == NULL) {
+					firstToken = mathToken;
+				} else {
+				    lastToken->setNext(mathToken);
+				}
+				lastToken = mathToken;
+            }
+		} else {
+			textLen += newTokenSize;
+		}
+		i += newTokenSize;
+	}
     return firstToken;
 }
 
