@@ -1,0 +1,301 @@
+
+IDD_CHANNEL DIALOGEX 0, 0, 252, 140
+STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_CHAT_MESSAGE,RICHEDIT_CLASS,ES_MULTILINE | ES_AUTOVSCROLL | ES_NOHIDESEL | ES_WANTRETURN | WS_VSCROLL | WS_TABSTOP,0,128,127,12,WS_EX_STATICEDGE
+    PUSHBUTTON      "&Send",IDOK,136,126,115,14,WS_DISABLED
+    CONTROL         "",IDC_CHAT_SMILEY,"MButtonClass",WS_DISABLED | WS_TABSTOP,112,108,15,13,0x18000000L
+    CONTROL         "",IDC_CHAT_BOLD,"MButtonClass",WS_DISABLED | WS_TABSTOP,8,108,15,13,0x18000000L
+    CONTROL         "",IDC_CHAT_ITALICS,"MButtonClass",WS_DISABLED | WS_TABSTOP,24,108,15,13,0x18000000L
+    CONTROL         "",IDC_CHAT_UNDERLINE,"MButtonClass",WS_DISABLED | WS_TABSTOP,40,108,15,13,0x18000000L
+    CONTROL         "",IDC_CHAT_COLOR,"MButtonClass",WS_DISABLED | WS_TABSTOP,68,108,15,13,0x18000000L
+    CONTROL         "",IDC_CHAT_BKGCOLOR,"MButtonClass",WS_DISABLED | WS_TABSTOP,84,108,15,13,0x18000000L
+    CONTROL         "",IDC_CHAT_HISTORY,"MButtonClass",WS_TABSTOP,188,108,15,13,0x18000000L
+    CONTROL         "",IDC_CHAT_FILTER,"MButtonClass",WS_TABSTOP,220,108,15,13,0x18000000L
+    CONTROL         "",IDC_CHAT_CHANMGR,"MButtonClass",WS_DISABLED | WS_TABSTOP,204,108,15,13,0x18000000L
+    CONTROL         "",IDC_CHAT_SHOWNICKLIST,"MButtonClass",WS_TABSTOP,236,108,15,13,0x18000000L
+    CONTROL         "",IDC_CHAT_LOG,RICHEDIT_CLASS,ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_VSCROLL | WS_TABSTOP,8,23,164,73,WS_EX_STATICEDGE
+    CONTROL         "",IDC_CHAT_SPLITTERX,"Static",SS_ENHMETAFILE,172,23,10,73
+    CONTROL         "",IDC_CHAT_SPLITTERY,"Static",SS_ENHMETAFILE,0,102,251,6
+    LISTBOX         IDC_CHAT_LIST,182,23,69,73,LBS_OWNERDRAWFIXED | LBS_NOINTEGRALHEIGHT | LBS_NODATA | NOT WS_BORDER | WS_VSCROLL | WS_TABSTOP,WS_EX_STATICEDGE
+    CONTROL         "",IDC_CHAT_CLOSE,"MButtonClass",WS_TABSTOP,236,2,15,13,0x18000000L
+END
+
+IDD_FILTER DIALOGEX 0, 0, 83, 125
+STYLE DS_SETFONT | WS_POPUP | WS_BORDER
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CTEXT           "Show these events only:",IDC_CHAT_TEXTO,0,0,83,13,SS_CENTERIMAGE
+    LTEXT           "",IDC_STATIC,0,13,83,112
+    CONTROL         "Actions",IDC_CHAT_1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,13,73,10
+    CONTROL         "Messages",IDC_CHAT_2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,23,73,10
+    CONTROL         "Nick changes",IDC_CHAT_3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,33,73,10
+    CONTROL         "Users joining",IDC_CHAT_4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,43,73,10
+    CONTROL         "Users leaving",IDC_CHAT_5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,53,73,10
+    CONTROL         "Topic changes",IDC_CHAT_6,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,63,73,10
+    CONTROL         "Status changes",IDC_CHAT_7,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,73,73,10
+    CONTROL         "Information",IDC_CHAT_8,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,83,73,10
+    CONTROL         "Disconnects",IDC_CHAT_9,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,93,73,10
+    CONTROL         "User kicks",IDC_CHAT_10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,103,73,10
+    CONTROL         "Notices",IDC_CHAT_11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,5,113,73,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_OPTIONS1 DIALOGEX 4, 0, 302, 232
+STYLE DS_SETFONT | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "Tree1",IDC_CHAT_CHECKBOXES,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_DISABLEDRAGDROP | TVS_FULLROWSELECT | WS_BORDER | WS_TABSTOP,10,12,280,154
+    EDITTEXT        IDC_CHAT_NICKROW,153,206,29,14,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Spin2",IDC_CHAT_SPIN2,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,181,206,11,14
+    GROUPBOX        "Options",IDC_STATIC,0,0,300,174
+    GROUPBOX        "Other",IDC_STATIC,0,174,300,58
+    LTEXT           "Userlist row distance (pixels):",IDC_STATIC,10,209,132,8
+    EDITTEXT        IDC_CHAT_GROUP,153,185,49,14,ES_AUTOHSCROLL
+    LTEXT           "Add new rooms to group:",IDC_STATIC,10,188,132,8
+END
+
+IDD_OPTIONS2 DIALOGEX 4, 0, 302, 232
+STYLE DS_SETFONT | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LISTBOX         IDC_CHAT_FONTLIST,10,12,134,88,LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | LBS_EXTENDEDSEL | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "",IDC_CHAT_FONTCOLOR,"ColourPicker",WS_TABSTOP,148,25,20,14,0x18000000L
+    CONTROL         "Custom1",IDC_CHAT_LOGBKG,"ColourPicker",WS_TABSTOP,266,12,20,14
+    CONTROL         "Custom1",IDC_CHAT_MESSAGEBKG,"ColourPicker",WS_TABSTOP,266,28,20,14
+    CONTROL         "Custom1",IDC_CHAT_NICKLISTBKG,"ColourPicker",WS_TABSTOP,266,44,20,14
+    EDITTEXT        IDC_CHAT_OUTSTAMP,10,126,35,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_CHAT_INSTAMP,60,126,35,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_CHAT_TIMESTAMP,118,126,81,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_CHAT_LOGTIMESTAMP,205,126,81,14,ES_AUTOHSCROLL
+    CONTROL         "Enable highlighting",IDC_CHAT_HIGHLIGHT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,153,118,10
+    EDITTEXT        IDC_CHAT_LOGLIMIT,248,151,38,14,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Spin1",IDC_CHAT_SPIN2,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,281,151,11,14
+    EDITTEXT        IDC_CHAT_HIGHLIGHTWORDS,10,174,276,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_CHAT_LOGDIRECTORY,10,212,211,14,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "...",IDC_CHAT_FONTCHOOSE,221,212,19,14
+    EDITTEXT        IDC_CHAT_LIMIT,248,212,38,14,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Spin1",IDC_CHAT_SPIN3,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,281,212,11,14
+    GROUPBOX        "Fonts 'n Colors",IDC_STATIC,0,0,294,107
+    GROUPBOX        "Log Options",IDC_STATIC,0,108,294,123
+    LTEXT           "Log background",IDC_STATIC,183,15,80,8
+    LTEXT           "Message background",IDC_STATIC,183,31,81,8
+    LTEXT           "Userlist background",IDC_STATIC,183,47,81,8
+    LTEXT           "Timestamp",IDC_STATIC,118,118,78,8
+    LTEXT           "Other name",IDC_STATIC,60,118,57,8
+    LTEXT           "Your name",IDC_STATIC,10,118,50,8
+    LTEXT           "Limit log text to (events):",IDC_STATIC,144,154,101,8
+    LTEXT           "Trim to (kB)",IDC_STATIC,248,204,38,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,10,145,276,1
+    LTEXT           "Log timestamp",IDC_STATIC,205,118,81,8
+    LTEXT           "Words to highlight (wildcards allowed)",IDC_STATIC,10,166,240,8
+    LTEXT           "Log directory",IDC_STATIC,10,204,211,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDVERT,176,12,1,88
+    PUSHBUTTON      "...",IDC_CHAT_CHOOSEFONT,148,51,20,14
+    CONTROL         "Enable logging to disk",IDC_CHAT_LOGGING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,193,211,10
+END
+
+IDD_OPTIONSPOPUP DIALOGEX 0, 0, 277, 177
+STYLE DS_SETFONT | WS_POPUP | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    CONTROL         "Use same style as in the message log",IDC_CHAT_RADIO1,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,33,29,225,10
+    CONTROL         "Use default colours",IDC_CHAT_RADIO2,"Button",BS_AUTORADIOBUTTON,33,62,217,10
+    CONTROL         "Use custom colours",IDC_CHAT_RADIO3,"Button",BS_AUTORADIOBUTTON,33,95,105,10
+    CONTROL         "Custom1",IDC_CHAT_TEXT,"ColourPicker",WS_TABSTOP,141,93,50,14,0x18000000L
+    CONTROL         "Custom2",IDC_CHAT_BKG,"ColourPicker",WS_TABSTOP,201,93,50,14,0x18000000L
+    EDITTEXT        IDC_CHAT_TIMEOUT,132,134,38,14,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Spin1",IDC_CHAT_SPIN1,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,169,135,11,14
+    GROUPBOX        "Popups for the Chat plugin",IDC_STATIC,0,0,277,174
+    LTEXT           "Timeout (s)",IDC_STATIC,33,138,92,8
+    LTEXT           "Text",IDC_STATIC,141,83,49,8
+    LTEXT           "Background",IDC_STATIC,201,83,67,8
+    LTEXT           "(The timeout require at least PopUp plugin v 1.0.1.9. Setting it to 0 means default setting and -1 means indefinite time)",IDC_STATIC,33,151,207,17
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_OPTIONS1, DIALOG
+    BEGIN
+        VERTGUIDE, 10
+        VERTGUIDE, 153
+        VERTGUIDE, 181
+        VERTGUIDE, 202
+        VERTGUIDE, 290
+        HORZGUIDE, 12
+        HORZGUIDE, 174
+        HORZGUIDE, 192
+        HORZGUIDE, 213
+    END
+
+    IDD_OPTIONS2, DIALOG
+    BEGIN
+        LEFTMARGIN, 1
+        RIGHTMARGIN, 295
+        VERTGUIDE, 10
+        VERTGUIDE, 60
+        VERTGUIDE, 144
+        VERTGUIDE, 158
+        VERTGUIDE, 183
+        VERTGUIDE, 221
+        VERTGUIDE, 286
+        TOPMARGIN, 1
+        BOTTOMMARGIN, 238
+        HORZGUIDE, 108
+        HORZGUIDE, 126
+        HORZGUIDE, 146
+        HORZGUIDE, 158
+        HORZGUIDE, 174
+        HORZGUIDE, 212
+    END
+
+    IDD_OPTIONSPOPUP, DIALOG
+    BEGIN
+        VERTGUIDE, 33
+        VERTGUIDE, 157
+        VERTGUIDE, 201
+        HORZGUIDE, 49
+        HORZGUIDE, 81
+        HORZGUIDE, 174
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_TAG1                ICON                    "chat\\Icons\\tag1.ico"
+IDI_TAG2                ICON                    "chat\\Icons\\tag2.ico"
+/////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_COLORCHOOSER DIALOGEX 0, 0, 198, 150
+STYLE DS_SETFONT | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_BORDER
+EXSTYLE WS_EX_TOPMOST
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,172,136,26,14,NOT WS_TABSTOP
+    CTEXT           "",IDC_CHAT_COLORTEXT,0,0,197,12,SS_CENTERIMAGE
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_BUNDERLINE          ICON                    "chat\\Icons\\underline.ico"
+IDI_BBOLD               ICON                    "chat\\Icons\\bold.ico"
+IDI_BITALICS            ICON                    "chat\\Icons\\italics.ico"
+IDI_BSMILEY             ICON                    "chat\\Icons\\smiley.ico"
+IDI_JOIN                ICON                    "chat\\Icons\\join.ico"
+IDI_TOPIC               ICON                    "chat\\Icons\\topic.ico"
+IDI_ADDSTATUS           ICON                    "chat\\Icons\\addmode.ico"
+IDI_INFO                ICON                    "chat\\Icons\\info.ico"
+IDI_KICK                ICON                    "chat\\Icons\\kick.ico"
+IDI_MESSAGE             ICON                    "chat\\Icons\\message.ico"
+IDI_NICK                ICON                    "chat\\Icons\\nick.ico"
+IDI_CHAT_NOTICE         ICON                    "chat\\Icons\\notice.ico"
+IDI_PART                ICON                    "chat\\Icons\\part.ico"
+IDI_QUIT                ICON                    "chat\\Icons\\quit.ico"
+IDI_REMSTATUS           ICON                    "chat\\Icons\\removestatus.ico"
+IDI_HIGHLIGHT           ICON                    "chat\\Icons\\highlight.ico"
+IDI_MESSAGEOUT          ICON                    "chat\\Icons\\messageout.ico"
+IDI_ACTION              ICON                    "chat\\Icons\\action.ico"
+IDI_TOPICBUT            ICON                    "chat\\Icons\\topicbut.ico"
+IDI_BKGCOLOR            ICON                    "chat\\Icons\\bkgcolor.ico"
+IDI_CHANMGR             ICON                    "chat\\Icons\\window.ico"
+IDI_COLOR               ICON                    "chat\\Icons\\color.ico"
+IDI_FILTER              ICON                    "chat\\Icons\\filter.ico"
+IDI_CHAT_HISTORY        ICON                    "chat\\Icons\\history.ico"
+IDI_NICKLIST            ICON                    "chat\\Icons\\nicklist.ico"
+IDI_BLANK               ICON                    "chat\\Icons\\blank.ico"
+IDI_STATUS3             ICON                    "chat\\Icons\\4.ico"
+IDI_STATUS2             ICON                    "chat\\Icons\\3.ico"
+IDI_STATUS4             ICON                    "chat\\Icons\\5.ico"
+IDI_STATUS1             ICON                    "chat\\Icons\\2.ico"
+IDI_STATUS0             ICON                    "chat\\Icons\\1.ico"
+IDI_STATUS5             ICON                    "chat\\Icons\\6.ico"
+IDI_OVERLAY             ICON                    "chat\\Icons\\overlay.ico"
+IDI_NICKLIST2           ICON                    "chat\\Icons\\nicklist2.ico"
+IDI_FILTER2             ICON                    "chat\\Icons\\filter2.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU MENU
+BEGIN
+    POPUP "List"
+    BEGIN
+        MENUITEM "&Message",                    ID_MESS
+    END
+    POPUP "Log"
+    BEGIN
+        MENUITEM "Clear lo&g",                  ID_CLEARLOG
+        MENUITEM SEPARATOR
+        MENUITEM "Co&py all",                   ID_COPYALL
+        MENUITEM SEPARATOR
+        POPUP "Word lookup", GRAYED
+        BEGIN
+            MENUITEM "Google",                      ID_SEARCH_GOOGLE
+            MENUITEM "Wikipedia",                   ID_SEARCH_WIKIPEDIA
+        END
+    END
+    POPUP "Link"
+    BEGIN
+        MENUITEM "Open a &new browser window",  ID_NEW
+        MENUITEM "&Open in current browser window", ID_CURR
+        MENUITEM "&Copy link",                  ID_COPY
+    END
+    MENUITEM "",                            65535
+    POPUP "Message"
+    BEGIN
+        MENUITEM "Undo  ",                      ID_MESSAGE_UNDO, GRAYED
+        MENUITEM "Redo",                        ID_MESSAGE_REDO, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "Copy",                        ID_MESSAGE_COPY, GRAYED
+        MENUITEM "Cut",                         ID_MESSAGE_CUT, GRAYED
+        MENUITEM "Paste",                       ID_MESSAGE_PASTE
+        MENUITEM "Select All",                  ID_MESSAGE_SELECTALL
+        MENUITEM SEPARATOR
+        MENUITEM "Clear",                       ID_MESSAGE_CLEAR
+    END
+    POPUP "Tabs"
+    BEGIN
+        MENUITEM "&Close tab",                  ID_CLOSE
+        MENUITEM "C&lose other tabs",           ID_CLOSEOTHER
+        MENUITEM SEPARATOR
+        MENUITEM "&Open at this position",      ID_LOCKPOSITION
+    END
+END
+
