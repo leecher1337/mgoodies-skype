@@ -46,8 +46,6 @@ struct PopupData
 static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK DumbPopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-void ReplaceVars(Buffer<TCHAR> *buffer, HANDLE hContact, TCHAR **variables, int numVariables);
-
 
 
 // Functions //////////////////////////////////////////////////////////////////////////////////////
@@ -90,10 +88,9 @@ void ShowPopup(HANDLE hContact, int type, int templateNum, TCHAR **vars, int num
 	if (templateNum == 1 && !opts[type].popup_track_removes)
 		return;
 
+	TCHAR *templ = (templateNum == 1 ? opts[type].popup_template_removed : opts[type].popup_template_changed);
 	Buffer<TCHAR> txt;
-	txt.append(templateNum == 1 ? opts[type].popup_template_removed : opts[type].popup_template_changed);
-	ReplaceVars(&txt, hContact, vars, numVars);
-	txt.pack();
+	ReplaceTemplate(&txt, hContact, templ, vars, numVars);
 
 	ShowPopupEx(hContact, NULL, txt.str, new PopupData(hContact, type), POPUP_TYPE_NORMAL, &opts[type], type);
 }

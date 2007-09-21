@@ -2,6 +2,13 @@ History Keeper
 
 Changelog:
 
+. 0.0.0.7
+  + Added variables support
+  + Added option page to set log/notification types per contact
+  * Fixes for bugs
+  + Hidden settings: HistoryKeeper/PerDefaultLogSubcontacts , HistoryKeeper/PerDefaultNotifySubcontacts
+  + New icons by Angeli-Ka
+
 . 0.0.0.6
   * Fix for options pages
   * Fix for notify on connection

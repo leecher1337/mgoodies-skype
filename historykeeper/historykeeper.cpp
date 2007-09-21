@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,6),
+	PLUGIN_MAKE_VERSION(0,0,0,7),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -59,6 +59,10 @@ HANDLE hDisableMenu[NUM_TYPES];
 BOOL loaded = FALSE;
 ContactAsyncQueue *queue;
 
+BOOL PER_DEFAULT_LOG_SUBCONTACTS = FALSE;
+BOOL PER_DEFAULT_NOTIFY_SUBCONTACTS = FALSE;
+BOOL HAS_METACONTACTS = FALSE;
+
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int PreBuildContactMenu(WPARAM wParam,LPARAM lParam);
 int SettingChanged(WPARAM wParam,LPARAM lParam);
@@ -77,6 +81,13 @@ void Process(HANDLE hContact, void *param);
 
 #define MODULE_PROTOCOL ((char *)-1)
 
+char *item_names[NUM_ITEMS] = {
+	"History",
+	"File",
+	"Popup",
+	"Sound",
+	"Speak",
+};
 
 // Functions ////////////////////////////////////////////////////////////////////////////
 
@@ -260,6 +271,11 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	hHooks[4] = HookEvent(ME_PROTO_ACK, ProtoAckHook);
 	hHooks[5] = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
+	// Hidden settings
+	PER_DEFAULT_LOG_SUBCONTACTS = DBGetContactSettingByte(NULL, MODULE_NAME, "PerDefaultLogSubcontacts", FALSE);
+	PER_DEFAULT_NOTIFY_SUBCONTACTS = DBGetContactSettingByte(NULL, MODULE_NAME, "PerDefaultNotifySubcontacts", FALSE);
+	HAS_METACONTACTS = ServiceExists(MS_MC_GETMETACONTACT);
+
 	return 0;
 }
 
@@ -375,9 +391,8 @@ int EnableHistory(WPARAM wParam, LPARAM lParam, LPARAM type)
 	if (hContact == NULL)
 		return 0;
 
-	char setting[256];
-	mir_snprintf(setting, sizeof(setting), "%sEnabled", types[type].name);
-	DBWriteContactSettingByte(hContact, MODULE_NAME, setting, TRUE);
+	for (int i = 0; i <= NUM_ITEMS; i++)
+		EnableItem(type, hContact, i, TRUE);
 
 	return 0;
 }
@@ -388,9 +403,8 @@ int DisableHistory(WPARAM wParam, LPARAM lParam, LPARAM type)
 	if (hContact == NULL)
 		return 0;
 
-	char setting[256];
-	mir_snprintf(setting, sizeof(setting), "%sEnabled", types[type].name);
-	DBWriteContactSettingByte(hContact, MODULE_NAME, setting, FALSE);
+	for (int i = 0; i <= NUM_ITEMS; i++)
+		EnableItem(type, hContact, i, FALSE);
 
 	return 0;
 }
@@ -434,94 +448,64 @@ BOOL ContactEnabled(int type, HANDLE hContact)
 	if (!ProtocolEnabled(type, proto))
 		return FALSE;
 
+	for (int i = 0; i <= NUM_ITEMS; i++)
+	{
+		if (ItemEnabled(type, hContact, i))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+
+BOOL ItemEnabled(int type, HANDLE hContact, int item)
+{
 	BYTE def = TRUE;
 
 	// Is a subcontact?
-	if (ServiceExists(MS_MC_GETMETACONTACT)) 
+	if (HAS_METACONTACTS) 
 	{
 		HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
 		if (hMetaContact != NULL)
 		{
-			def = DBGetContactSettingByte(NULL, MODULE_NAME, "PerDefaultLogSubcontacts", FALSE);
-			if (def)
-				def = ContactEnabled(type, hMetaContact);
+			def = FALSE;
+
+			if (item < NUM_LOG_ITEMS)
+			{
+				if (PER_DEFAULT_LOG_SUBCONTACTS)
+					def = ItemEnabled(type, hMetaContact, item);
+			}
+			else
+			{
+				if (PER_DEFAULT_NOTIFY_SUBCONTACTS)
+					def = ItemEnabled(type, hMetaContact, item);
+			}
 		}
 	}
 
 	char setting[256];
-	mir_snprintf(setting, MAX_REGS(setting), "%sEnabled", types[type].name);
+	mir_snprintf(setting, MAX_REGS(setting), "%s_%s_Enabled", types[type].name, item_names[item]);
 	return DBGetContactSettingByte(hContact, MODULE_NAME, setting, def);
 }
 
-void ReplaceVars(Buffer<TCHAR> *buffer, HANDLE hContact, TCHAR **variables, int numVariables)
+
+BOOL EnableItem(int type, HANDLE hContact, int item, BOOL enable)
 {
-	if (buffer->len < 3)
-		return;
-
-	for(size_t i = buffer->len - 1; i > 0; i--)
-	{
-		if (buffer->str[i] == _T('%'))
-		{
-			// Find previous
-			for(size_t j = i - 1; j > 0 && ((buffer->str[j] >= _T('a') && buffer->str[j] <= _T('z'))
-										    || (buffer->str[j] >= _T('A') && buffer->str[j] <= _T('Z'))
-											|| buffer->str[j] == _T('-')
-											|| buffer->str[j] == _T('_')); j--) ;
-
-			if (buffer->str[j] == _T('%'))
-			{
-				size_t foundLen = i - j + 1;
-				if (foundLen == 9 && _tcsncmp(&buffer->str[j], _T("%contact%"), 9) == 0)
-				{
-					buffer->replace(j, i + 1, (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, GCDNF_TCHAR));
-				}
-				else if (foundLen == 6 && _tcsncmp(&buffer->str[j], _T("%date%"), 6) == 0)
-				{
-					TCHAR tmp[128];
-					DBTIMETOSTRINGT tst = {0};
-					tst.szFormat = _T("d s");
-					tst.szDest = tmp;
-					tst.cbDest = MAX_REGS(tmp);
-					CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, (WPARAM) time(NULL), (LPARAM) &tst);
-					buffer->replace(j, i + 1, tmp);
-				}
-				else
-				{
-					for(int k = 0; k < numVariables; k += 2)
-					{
-						if (_tcsncmp(&buffer->str[j], variables[k], foundLen) == 0)
-						{
-							buffer->replace(j, i + 1, variables[k + 1]);
-							break;
-						}
-					}
-				}
-			}
-
-			i = j;
-			if (i == 0)
-				break;
-		}
-		else if (buffer->str[i] == _T('\\') && i+1 <= buffer->len-1 && buffer->str[i+1] == _T('n')) 
-		{
-			buffer->str[i] = _T('\r');
-			buffer->str[i+1] = _T('\n');
-		}
-	}
+	char setting[256];
+	mir_snprintf(setting, MAX_REGS(setting), "%s_%s_Enabled", types[type].name, item_names[item]);
+	return DBWriteContactSettingByte(hContact, MODULE_NAME, setting, enable);
 }
 
 
-void LogToFile(HANDLE hContact, int typeNum, int templateNum, TCHAR **variables, int numVariables)
+void LogToFile(HANDLE hContact, int typeNum, int templateNum, TCHAR **vars, int numVars)
 {
 	if (templateNum == 0 && !opts[typeNum].file_track_changes)
 		return;
 	if (templateNum == 1 && !opts[typeNum].file_track_removes)
 		return;
 
+	TCHAR *templ = (templateNum == 1 ? opts[typeNum].file_template_removed : opts[typeNum].file_template_changed);
 	Buffer<TCHAR> txt;
-	txt.append(templateNum == 1 ? opts[typeNum].file_template_removed : opts[typeNum].file_template_changed);
-	ReplaceVars(&txt, hContact, variables, numVariables);
-	txt.pack();
+	ReplaceTemplate(&txt, hContact, templ, vars, numVars);
 
 	// Assert folder exists
 	TCHAR *p = _tcschr(opts[typeNum].file_name, _T('\\'));
@@ -554,10 +538,9 @@ void Speak(HANDLE hContact, int type, int templateNum, TCHAR **vars, int numVars
 	if (templateNum == 1 && !opts[type].speak_track_removes)
 		return;
 
+	TCHAR *templ = (templateNum == 1 ? opts[type].speak_template_removed : opts[type].speak_template_changed);
 	Buffer<TCHAR> txt;
-	txt.append(templateNum == 1 ? opts[type].speak_template_removed : opts[type].speak_template_changed);
-	ReplaceVars(&txt, hContact, vars, numVars);
-	txt.pack();
+	ReplaceTemplate(&txt, hContact, templ, vars, numVars);
 
 #ifdef UNICODE
 	char *tmp = mir_t2a(txt.str);
@@ -591,21 +574,18 @@ void Notify(HANDLE hContact, int type, BOOL found_old, int templateNum, TCHAR **
 			return;
 	}
 
-	// Don't notify if is subcontact
-	if (ServiceExists(MS_MC_GETMETACONTACT)) 
-	{ 
-		HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
-		if (hMetaContact != NULL)
-			return;
+	if (ItemEnabled(type, hContact, NOTIFY_POPUP))
+		ShowPopup(hContact, type, templateNum, vars, numVars);
+
+	if (ItemEnabled(type, hContact, NOTIFY_SOUND))
+	{
+		char tmp[256];
+		mir_snprintf(tmp, MAX_REGS(tmp), templateNum == 0 ? "%s change" : "%s removal", types[type].description);
+		SkinPlaySound(tmp);
 	}
 
-	ShowPopup(hContact, type, templateNum, vars, numVars);
-
-	char tmp[256];
-	mir_snprintf(tmp, MAX_REGS(tmp), templateNum == 0 ? "%s change" : "%s removal", types[type].description);
-	SkinPlaySound(tmp);
-
-	Speak(hContact, type, templateNum, vars, numVars);
+	if (ItemEnabled(type, hContact, NOTIFY_SPEAK))
+		Speak(hContact, type, templateNum, vars, numVars);
 }
 
 
@@ -618,9 +598,9 @@ void Log(int type, BOOL found_old, BOOL changed, HANDLE hContact, TCHAR *oldVal,
 
 	int numVars = 4 + 2 * types[type].numAddVars;
 	TCHAR **vars = (TCHAR **) mir_alloc0(sizeof(TCHAR *) * numVars);
-	vars[0] = _T("%old%");
+	vars[0] = _T("old");
 	vars[1] = oldVal;
-	vars[2] = _T("%new%");
+	vars[2] = _T("new");
 	vars[3] = newVal;
 	
 	if (types[type].fAddVars != NULL)
@@ -628,8 +608,12 @@ void Log(int type, BOOL found_old, BOOL changed, HANDLE hContact, TCHAR *oldVal,
 
 	int templateNum = changed ? 0 : 1;
 
-	HistoryEvents_AddToHistoryVars(hContact, types[type].eventType, templateNum, vars, numVars, DBEF_READ);
-	LogToFile(hContact, type, templateNum, vars, numVars);
+	if (ItemEnabled(type, hContact, LOG_HISTORY))
+		HistoryEvents_AddToHistoryVars(hContact, types[type].eventType, templateNum, vars, numVars, DBEF_READ);
+
+	if (ItemEnabled(type, hContact, LOG_FILE))
+		LogToFile(hContact, type, templateNum, vars, numVars);
+	
 	Notify(hContact, type, found_old, templateNum, vars, numVars);
 
 	for(int i = 0; i < types[type].numAddVars; i++)

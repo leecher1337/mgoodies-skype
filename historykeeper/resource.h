@@ -15,6 +15,13 @@
 #define IDI_STATUS                      125
 #define IDI_CLIENT                      126
 #define IDI_XSTATUS                     127
+#define IDI_SPEAK                       129
+#define IDI_FILE                        130
+#define IDI_HISTORY                     131
+#define IDI_POPUP                       132
+#define IDI_SOUND                       133
+#define IDI_SMALLDOT                    134
+#define IDD_NOTIFICATIONS               215
 #define IDC_DELAY                       1001
 #define IDC_WINCOLORS                   1002
 #define IDC_DEFAULTCOLORS               1003
@@ -57,6 +64,11 @@
 #define IDC_TRACK_REMOVE                1076
 #define IDC_SELECT_FILE                 1077
 #define IDC_DONT_NOTIFY_ON_CONNECT      1078
+#define IDC_LIST                        1079
+#define IDC_POPUP                       1204
+#define IDC_SOUND                       1205
+#define IDC_FILE                        1207
+#define IDC_SPEAK                       1208
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -65,7 +77,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        129
+#define _APS_NEXT_RESOURCE_VALUE        135
 #define _APS_NEXT_COMMAND_VALUE         40004
 #define _APS_NEXT_CONTROL_VALUE         1078
 #define _APS_NEXT_SYMED_VALUE           101
