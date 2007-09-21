@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Events",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,2),
+	PLUGIN_MAKE_VERSION(0,0,0,3),
 	"A service plugin to handle custom history events",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -99,6 +99,7 @@ HistoryEventNode *lastHistoryEvent = NULL;
 
 BOOL ItsTimeToDelete(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe = NULL, int eventNum = -1);
 void AppendHistoryEvent(HANDLE hContact, HANDLE hDbEvent);
+BOOL MsgWndOpen(HANDLE hContact);
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -233,7 +234,7 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 		shuttingDown = 1;
 	SetEvent(hDeleteThreadEvent);
 	int count = 0;
-	while(shuttingDown != 2 && ++count < 10)
+	while(shuttingDown != 2 && ++count < 50)
 		Sleep(10);
 
 	DeInitOptions();
@@ -584,65 +585,6 @@ void GetTemplare(Buffer<TCHAR> *buffer, HISTORY_EVENT_HANDLER *heh, int templ)
 }
 
 
-void ReplaceVars(Buffer<TCHAR> *buffer, HISTORY_EVENT_ADD * hea)
-{
-	if (buffer->len < 3)
-		return;
-
-	for(size_t i = buffer->len - 1; i > 0; i--)
-	{
-		if (buffer->str[i] == _T('%'))
-		{
-			// Find previous
-			for(size_t j = i - 1; j > 0 && ((buffer->str[j] >= _T('a') && buffer->str[j] <= _T('z'))
-										    || (buffer->str[j] >= _T('A') && buffer->str[j] <= _T('Z'))
-											|| buffer->str[j] == _T('-')
-											|| buffer->str[j] == _T('_')); j--) ;
-
-			if (buffer->str[j] == _T('%'))
-			{
-				size_t foundLen = i - j + 1;
-				if (foundLen == 9 && _tcsncmp(&buffer->str[j], _T("%contact%"), 9) == 0)
-				{
-					buffer->replace(j, i + 1, (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hea->hContact, GCDNF_TCHAR));
-				}
-				else if (foundLen == 6 && _tcsncmp(&buffer->str[j], _T("%date%"), 6) == 0)
-				{
-					TCHAR tmp[128];
-					DBTIMETOSTRINGT tst = {0};
-					tst.szFormat = _T("d s");
-					tst.szDest = tmp;
-					tst.cbDest = MAX_REGS(tmp);
-					CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, (WPARAM) time(NULL), (LPARAM) &tst);
-					buffer->replace(j, i + 1, tmp);
-				}
-				else
-				{
-					for(int k = 0; k < hea->numVariables; k += 2)
-					{
-						size_t len = lstrlen(hea->variables[k]);
-						if (foundLen == len && _tcsncmp(&buffer->str[j], hea->variables[k], len) == 0)
-						{
-							buffer->replace(j, i + 1, hea->variables[k + 1]);
-							break;
-						}
-					}
-				}
-			}
-
-			i = j;
-			if (i == 0)
-				break;
-		}
-		else if (buffer->str[i] == _T('\\') && i+1 <= buffer->len-1 && buffer->str[i+1] == _T('n')) 
-		{
-			buffer->str[i] = _T('\r');
-			buffer->str[i+1] = _T('\n');
-		}
-	}
-}
-
-
 int ServiceAddToHistory(WPARAM wParam, LPARAM lParam)
 {
 	HISTORY_EVENT_ADD * hea = (HISTORY_EVENT_ADD *) wParam;
@@ -656,9 +598,24 @@ int ServiceAddToHistory(WPARAM wParam, LPARAM lParam)
 	if (!GetSettingBool(heh, hea->templateNum, TEMPLATE_ENABLED, TRUE))
 		return NULL;
 
+	if (heh->flags & HISTORYEVENTS_FLAG_ONLY_LOG_IF_SRMM_OPEN)
+		if (!MsgWndOpen(hea->hContact))
+			return NULL;
+
 	Buffer<TCHAR> buffer;
 	GetTemplare(&buffer, heh, hea->templateNum);
-	ReplaceVars(&buffer, hea);
+	if (ServiceExists(MS_VARS_FORMATSTRING)) 
+	{
+		buffer.pack();
+		TCHAR *tmp = variables_parse_ex(buffer.str, NULL, hea->hContact, hea->variables, hea->numVariables);
+		buffer.clear();
+		buffer.append(tmp);
+		variables_free(tmp);
+	}
+	else
+	{
+		ReplaceVars(&buffer, hea->hContact, hea->variables, hea->numVariables);
+	}
 	buffer.pack();
 	if (buffer.str == NULL)
 		return NULL;
@@ -929,8 +886,8 @@ BOOL MsgWndOpen(HANDLE hContact)
 	}
 	else
 	{
-		MessageWindowData mwd;
-		MessageWindowInputData mwid;
+		MessageWindowData mwd = {0};
+		MessageWindowInputData mwid = {0};
 
 		mwid.cbSize = sizeof(MessageWindowInputData); 
 		mwid.hContact = hContact;
