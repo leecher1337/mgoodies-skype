@@ -85,7 +85,7 @@ static TCHAR *GetCurrentTString(HANDLE hContact, char *module, char *setting)
 
 static void StatusAddVars(HANDLE hContact, TCHAR **vars, int i)
 {
-	vars[i++] = _T("%msg%");
+	vars[i++] = _T("msg");
 	vars[i++] = GetTString(hContact, "CList", "StatusMsg");
 }
 
@@ -94,7 +94,7 @@ static void XStatusAddVars(HANDLE hContact, TCHAR **vars, int i)
 {
 	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 
-	vars[i++] = _T("%msg%");
+	vars[i++] = _T("msg");
 	vars[i++] = GetTString(hContact, proto, "XStatusMsg");
 }
 
@@ -103,9 +103,9 @@ static void ClientAddVars(HANDLE hContact, TCHAR **vars, int i)
 {
 	char *proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 
-	vars[i++] = _T("%MirVer_new%");
+	vars[i++] = _T("MirVer_new");
 	vars[i++] = GetTString(hContact, proto, "MirVer");
-	vars[i++] = _T("%MirVer_old%");
+	vars[i++] = _T("MirVer_old");
 	vars[i++] = GetCurrentTString(hContact, proto, "MirVer");
 }
 
@@ -130,11 +130,12 @@ void StatusFormat(TCHAR *out, size_t out_size, void *val)
 
 void ClientFormat(TCHAR *out, size_t out_size, void *val)
 {
+	TCHAR *str = (TCHAR *) val;
 	char *name = NULL;
 
-	if (ServiceExists(MS_FP_SAMECLIENTS))
+	if (str[0] != _T('\0') && ServiceExists(MS_FP_SAMECLIENTS))
 	{
-		char *tmp = mir_t2a((TCHAR *) val);
+		char *tmp = mir_t2a(str);
 		name = (char *) CallService(MS_FP_SAMECLIENTS, (WPARAM) tmp, (LPARAM) tmp);
 		mir_free(tmp);
 	}
@@ -147,7 +148,7 @@ void ClientFormat(TCHAR *out, size_t out_size, void *val)
 	}
 	else
 	{
-		lstrcpyn(out, (TCHAR *) val, out_size);
+		lstrcpyn(out, str, out_size);
 	}
 }
 

@@ -26,9 +26,13 @@ Boston, MA 02111-1307, USA.
 #include <tchar.h>
 #include <stdio.h>
 #include <time.h>
+#include <commctrl.h>
 
+
+#define MIRANDA_VER 0x0600
 
 // Miranda headers
+#include <win2k.h>
 #include <newpluginapi.h>
 #include <m_system.h>
 #include <m_protocols.h>
@@ -46,6 +50,7 @@ Boston, MA 02111-1307, USA.
 #include <m_message.h>
 #include <m_icq.h>
 #include <m_skin.h>
+#include <m_clc.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
@@ -108,7 +113,19 @@ extern HISTORY_TYPE types[];
 #define NUM_TYPES 5
 
 
+#define LOG_HISTORY 0
+#define LOG_FILE 1
+#define NOTIFY_POPUP 2
+#define NOTIFY_SOUND 3
+#define NOTIFY_SPEAK 4
+#define NUM_ITEMS 5
+#define NUM_LOG_ITEMS 2
+
 BOOL AllowProtocol(int type, const char *proto);
+BOOL ProtocolEnabled(int type, const char *proto);
+BOOL ContactEnabled(int type, HANDLE hContact);
+BOOL ItemEnabled(int type, HANDLE hContact, int item);
+BOOL EnableItem(int type, HANDLE hContact, int item, BOOL enable);
 
 
 #define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION 30000 // ms
