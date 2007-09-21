@@ -2,6 +2,10 @@ History Events
 
 Changelog:
 
+. 0.0.0.3
+  + Added variables support
+  + Added option: only log if message window open
+
 . 0.0.0.2
   * DLL needed to be renamed
   * Bug fixes

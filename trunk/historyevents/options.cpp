@@ -231,7 +231,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 				// Event type
 
-				HWND icon = CreateWindowA("STATIC", "", WS_CHILD | WS_VISIBLE | SS_ICON | SS_CENTERIMAGE, 
+				HWND icon = CreateWindow(_T("STATIC"), _T(""), WS_CHILD | WS_VISIBLE | SS_ICON | SS_CENTERIMAGE, 
                         x, pt.y + (height - 16) / 2, 16, 16, hwndDlg, NULL, hInst, NULL);
 				x += 20;
 
@@ -249,7 +249,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 					pt.y += height + 3;
 					x = pt.x + 20;
 
-					HWND chk = CreateWindowA("BUTTON", "Show in message window", 
+					HWND chk = CreateWindow(_T("BUTTON"), TranslateT("Show in message window"), 
 							WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX | BS_AUTOCHECKBOX, 
 						    x, pt.y, width - (x - pt.x), height, hwndDlg, (HMENU) id, hInst, NULL);
 					SendMessage(chk, BM_SETCHECK, heh->flags & HISTORYEVENTS_FLAG_SHOW_IM_SRMM ? BST_CHECKED : BST_UNCHECKED, 0);
@@ -264,7 +264,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 					pt.y += height + 3;
 					x = pt.x + 20;
 
-					HWND chk = CreateWindowA("BUTTON", Translate("Respect text format"), 
+					HWND chk = CreateWindow(_T("BUTTON"), TranslateT("Respect text format"), 
 							WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX | BS_AUTOCHECKBOX, 
 						    x, pt.y, width - (x - pt.x), height, hwndDlg, (HMENU) id, hInst, NULL);
 					SendMessage(chk, WM_SETFONT, (WPARAM) hFont, FALSE);
@@ -272,13 +272,28 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 					pt.y += height + 3;
 
-					chk = CreateWindowA("BUTTON", Translate("Respect text font"), 
+					chk = CreateWindow(_T("BUTTON"), TranslateT("Respect text font"), 
 							WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX | BS_AUTOCHECKBOX, 
 						    x, pt.y, width - (x - pt.x), height, hwndDlg, (HMENU) (id+1), hInst, NULL);
 					SendMessage(chk, WM_SETFONT, (WPARAM) hFont, FALSE);
 					SendMessage(chk, BM_SETCHECK, GetSettingBool(heh, RESPECT_TEXT_FONT, FALSE) ? BST_CHECKED : BST_UNCHECKED, 0);
 				}
 */				id+=2;
+
+				// Only if SRMM open
+
+				if (!(heh->flags & HISTORYEVENTS_FLAG_DEFAULT))
+				{
+					pt.y += height + 3;
+					x = pt.x + 20;
+
+					HWND chk = CreateWindow(_T("BUTTON"), TranslateT("Only log if message window is open"), 
+							WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX | BS_AUTOCHECKBOX, 
+						    x, pt.y, width - (x - pt.x), height, hwndDlg, (HMENU) id, hInst, NULL);
+					SendMessage(chk, BM_SETCHECK, heh->flags & HISTORYEVENTS_FLAG_ONLY_LOG_IF_SRMM_OPEN ? BST_CHECKED : BST_UNCHECKED, 0);
+					SendMessage(chk, WM_SETFONT, (WPARAM) hFont, FALSE);
+				}
+				id++;
 
 				// Templates
 
@@ -289,7 +304,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 					pt.y += height + 3;
 					x = pt.x + 20;
 
-					name.reset();
+					name.clear();
 					char *end = strchr(heh->templates[i], '\n');
 					size_t len = (end == NULL ? strlen(heh->templates[i]) : end - heh->templates[i]);
 					name.append(heh->templates[i], len);
@@ -304,7 +319,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 					SendMessage(chk, BM_SETCHECK, GetSettingBool(heh, i, TEMPLATE_ENABLED, TRUE) ? BST_CHECKED : BST_UNCHECKED, 0);
 					x += 120;
 
-					templ.reset();
+					templ.clear();
 					GetTemplare(&templ, heh, i);
 					templ.pack();
 
@@ -319,7 +334,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				pt.y += height + 3;
 				x = pt.x + 36;
 
-				tmp = CreateWindowA("STATIC", Translate("Keep in database:"), WS_CHILD | WS_VISIBLE, 
+				tmp = CreateWindow(_T("STATIC"), TranslateT("Keep in database:"), WS_CHILD | WS_VISIBLE, 
                         x, pt.y + (height - font.tmHeight) / 2, 104, font.tmHeight, 
 						hwndDlg, NULL, hInst, NULL);
 				SendMessage(tmp, WM_SETFONT, (WPARAM) hFont, FALSE);
@@ -347,7 +362,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				SendMessage(combo, CB_SETCURSEL, KEEP_FLAG_TO_COMBO(heh->flags), 0);
 
 				pt.y += height + 10;
-				id += 22;
+				id += 21;
 			}
 
 			avaiable = rc.bottom - rc.top;
@@ -430,18 +445,18 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				break;
 
 			int id = (LOWORD(wParam) - IDC_EVENT_TYPES - 1) % 25;
-			if (id == 0 || id == 1 || id == 2 || (id >= 4 && (id - 4) % 2 == 0))
+			if (id == 0 || id == 1 || id == 2 || id == 3 || (id >= 5 && (id - 5) % 2 == 0))
 			{
 				// Checkboxes
 				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 			}
-			else if (id == 3)
+			else if (id == 4)
 			{
 				// Combo
 				if (HIWORD(wParam) == CBN_SELCHANGE)
 					SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 			}
-			else if (id >= 4 && (id - 4) % 2 == 1)
+			else if (id >= 5 && (id - 5) % 2 == 1)
 			{
 				if (HIWORD(wParam) == EN_CHANGE)
 					SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
@@ -480,6 +495,17 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				}
 */				id+=2;
 
+				// Show in SRMM
+
+				if (!(heh->flags & HISTORYEVENTS_FLAG_DEFAULT))
+				{
+					if (IsDlgButtonChecked(hwndDlg, id))
+						heh->flags |= HISTORYEVENTS_FLAG_ONLY_LOG_IF_SRMM_OPEN;
+					else
+						heh->flags &= ~HISTORYEVENTS_FLAG_ONLY_LOG_IF_SRMM_OPEN;
+				}
+				id++;
+
 				// Templates
 
 				Buffer<char> name;
@@ -499,7 +525,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				heh->flags |= KEEP_COMBO_TO_FLAG(SendDlgItemMessage(hwndDlg, id, CB_GETCURSEL, 0, 0));
 				WriteSettingDword(heh, FLAGS, heh->flags);
 
-				id += 22;
+				id += 21;
 			}
 
 			return TRUE;
