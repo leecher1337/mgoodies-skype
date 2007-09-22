@@ -172,42 +172,41 @@ char* InsertVarsIntoMsg2(char *in, char *proto_name, int status)
 		{
 			HWND hwndWinamp = FindWindow("Winamp v1.x",NULL);
 
-			if (hwndWinamp)
+			if (hwndWinamp && SendMessage(hwndWinamp, WM_WA_IPC, 0, IPC_ISPLAYING) == 1)
 			{
-				if (SendMessage(hwndWinamp, WM_WA_IPC, 0, IPC_ISPLAYING) == 1)
+				GetWindowText(hwndWinamp, winamp_title, sizeof(winamp_title));
+
+				p = winamp_title;
+				j=0;
+
+				while (*p != ' ')
 				{
-					GetWindowText(hwndWinamp, winamp_title, sizeof(winamp_title));
-
-					p = winamp_title;
-					j=0;
-
-					while (*p != ' ')
-					{
-						j++;
-						MoveMemory(p, p+1, lstrlen(p)-1);
-					}
+					j++;
 					MoveMemory(p, p+1, lstrlen(p)-1);
-
-					p = winamp_title+strlen(winamp_title)-8;
-					while (p >= winamp_title)
-					{
-						if (!strnicmp(p,"- Winamp",8))
-							break;
-						p--;
-					}
-					if (p >= winamp_title)
-						p--;
-					while (p >= winamp_title && *p == ' ')
-						p--;
-					*++p=0;
-
-					if(lstrlen(winamp_title)>12)
-						msg=(char*)mir_realloc(msg,lstrlen(msg)+1+lstrlen(winamp_title)-12);
-
-					MoveMemory(msg+i+lstrlen(winamp_title), msg+i+12, lstrlen(msg)-i-11);
-					CopyMemory(msg+i, winamp_title, lstrlen(winamp_title));
-					continue;
 				}
+				MoveMemory(p, p+1, lstrlen(p)-1);
+
+				p = winamp_title+strlen(winamp_title)-8;
+				while (p >= winamp_title)
+				{
+					if (!strnicmp(p,"- Winamp",8))
+						break;
+					p--;
+				}
+				if (p >= winamp_title)
+					p--;
+				while (p >= winamp_title && *p == ' ')
+					p--;
+				*++p=0;
+
+				if(lstrlen(winamp_title)>12)
+					msg=(char*)mir_realloc(msg,lstrlen(msg)+1+lstrlen(winamp_title)-12);
+
+				MoveMemory(msg+i+lstrlen(winamp_title), msg+i+12, lstrlen(msg)-i-11);
+				CopyMemory(msg+i, winamp_title, lstrlen(winamp_title));
+				continue;
+			} else {
+				MoveMemory(msg+i, msg+i+12, lstrlen(msg)-i-11);
 			}
 		}
 		else if(!_strnicmp(msg+i,"%fortunemsg%",12))
