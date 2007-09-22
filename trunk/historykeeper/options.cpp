@@ -62,12 +62,13 @@ HACK(1);
 HACK(2);
 HACK(3);
 HACK(4);
+HACK(5);
 
-DLGPROC NotificationsDlgProcArr[] = { NotificationsDlgProc0, NotificationsDlgProc1, NotificationsDlgProc2, NotificationsDlgProc3, NotificationsDlgProc4 };
-DLGPROC OptionsDlgProcArr[] = { OptionsDlgProc0, OptionsDlgProc1, OptionsDlgProc2, OptionsDlgProc3, OptionsDlgProc4 };
-DLGPROC PopupsDlgProcArr[] = { PopupsDlgProc0, PopupsDlgProc1, PopupsDlgProc2, PopupsDlgProc3, PopupsDlgProc4 };
-DLGPROC SpeakDlgProcArr[] = { SpeakDlgProc0, SpeakDlgProc1, SpeakDlgProc2, SpeakDlgProc3, SpeakDlgProc4 };
-FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProtocol2, AllowProtocol3, AllowProtocol4 };
+DLGPROC NotificationsDlgProcArr[] = { NotificationsDlgProc0, NotificationsDlgProc1, NotificationsDlgProc2, NotificationsDlgProc3, NotificationsDlgProc4, NotificationsDlgProc5 };
+DLGPROC OptionsDlgProcArr[] = { OptionsDlgProc0, OptionsDlgProc1, OptionsDlgProc2, OptionsDlgProc3, OptionsDlgProc4, OptionsDlgProc5 };
+DLGPROC PopupsDlgProcArr[] = { PopupsDlgProc0, PopupsDlgProc1, PopupsDlgProc2, PopupsDlgProc3, PopupsDlgProc4, PopupsDlgProc5 };
+DLGPROC SpeakDlgProcArr[] = { SpeakDlgProc0, SpeakDlgProc1, SpeakDlgProc2, SpeakDlgProc3, SpeakDlgProc4, SpeakDlgProc5 };
+FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProtocol2, AllowProtocol3, AllowProtocol4, AllowProtocol5 };
 
 
 
@@ -201,8 +202,15 @@ void InitOptions()
 		CharLower(tmp);
 
 		// Options page
-		mir_sntprintf(&fileChangeTemplates[i][0], 128, TranslateT("[%%date%%] %%contact%% changed his/her %s to %%new%% (was %%old%%)"), tmp);
-		mir_sntprintf(&fileRemoveTemplates[i][0], 128, TranslateT("[%%date%%] %%contact%% removed his/her %s (was %%old%%)"), tmp);
+		if (types[i].defs.change_template != NULL)
+			mir_sntprintf(&fileChangeTemplates[i][0], 128, _T("[%%date%%] %%contact%% ") _T(TCHAR_STR_PARAM), types[i].defs.change_template);
+		else
+			mir_sntprintf(&fileChangeTemplates[i][0], 128, _T("[%%date%%] %%contact%% changed his/her %s to %%new%% (was %%old%%)"), tmp);
+
+		if (types[i].defs.remove_template != NULL)
+			mir_sntprintf(&fileRemoveTemplates[i][0], 128, _T("[%%date%%] %%contact%% ") _T(TCHAR_STR_PARAM), types[i].defs.remove_template);
+		else
+			mir_sntprintf(&fileRemoveTemplates[i][0], 128, _T("[%%date%%] %%contact%% removed his/her %s (was %%old%%)"), tmp);
 
 		OptPageControl opt[] = {
 			{ &opts[i].track_only_not_offline,	CONTROL_CHECKBOX,		IDC_ONLY_NOT_OFFLINE,		"TrackOnlyWhenNotOffline", types[i].defs.track_only_not_offline },
@@ -225,8 +233,15 @@ void InitOptions()
 		memcpy(&optionsControls[i][0], &opt, sizeof(opt));
 
 		// Popups page
-		mir_sntprintf(&changeTemplates[i][0], 128, TranslateT("changed his/her %s to %%new%% (was %%old%%)"), tmp);
-		mir_sntprintf(&removeTemplates[i][0], 128, TranslateT("removed his/her %s (was %%old%%)"), tmp);
+		if (types[i].defs.change_template != NULL)
+			mir_sntprintf(&changeTemplates[i][0], 128, _T(TCHAR_STR_PARAM), types[i].defs.change_template);
+		else
+			mir_sntprintf(&changeTemplates[i][0], 128, _T("changed his/her %s to %%new%% (was %%old%%)"), tmp);
+
+		if (types[i].defs.remove_template != NULL)
+			mir_sntprintf(&removeTemplates[i][0], 128, _T(TCHAR_STR_PARAM), types[i].defs.remove_template);
+		else
+			mir_sntprintf(&removeTemplates[i][0], 128, _T("removed his/her %s (was %%old%%)"), tmp);
 
 		OptPageControl pops[] = {
 			{ &opts[i].popup_track_changes,			CONTROL_CHECKBOX,	IDC_TRACK_CHANGE,	"PopupsTrackChanges", TRUE },
@@ -255,8 +270,15 @@ void InitOptions()
 	    if (ServiceExists(MS_SPEAK_SAY))
 		{
 			// Speak pages
-			mir_sntprintf(&speakChangeTemplates[i][0], 128, TranslateT("%%contact%% changed his/her %s to %%new%%"), tmp);
-			mir_sntprintf(&speakRemoveTemplates[i][0], 128, TranslateT("%%contact%% removed his/her %s"), tmp);
+			if (types[i].defs.change_template != NULL)
+				mir_sntprintf(&speakChangeTemplates[i][0], 128, _T("%%contact%% ") _T(TCHAR_STR_PARAM), types[i].defs.change_template);
+			else
+				mir_sntprintf(&speakChangeTemplates[i][0], 128, TranslateT("%%contact%% changed his/her %s to %%new%%"), tmp);
+
+			if (types[i].defs.remove_template != NULL)
+				mir_sntprintf(&speakChangeTemplates[i][0], 128, _T("%%contact%% ") _T(TCHAR_STR_PARAM), types[i].defs.remove_template);
+			else
+				mir_sntprintf(&speakRemoveTemplates[i][0], 128, _T("%%contact%% removed his/her %s"), tmp);
 
 			OptPageControl opt[] = {
 				{ &opts[i].speak_track_changes,		CONTROL_CHECKBOX,		IDC_TRACK_CHANGE,		"SpeakTrackChanges", FALSE },
@@ -472,7 +494,10 @@ static BOOL CALLBACK PopupsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wPar
 					op.popup_use_win_colors = IsDlgButtonChecked(hwndDlg, IDC_WINCOLORS) != 0;
 					op.popup_use_default_colors = IsDlgButtonChecked(hwndDlg, IDC_DEFAULTCOLORS) != 0;
 
-					ShowTestPopup(type, TranslateT("Test Contact"), TranslateT("Test description"), &op);
+					TCHAR tmp[1024];
+					GetDlgItemText(hwndDlg, IDC_CHANGED, tmp, 1024);
+
+					ShowTestPopup(type, TranslateT("Contact Name"), tmp, &op);
 
 					break;
 				}
