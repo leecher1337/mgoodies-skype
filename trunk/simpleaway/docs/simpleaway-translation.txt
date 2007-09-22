@@ -29,7 +29,7 @@
 ;[Automatically close dialog window after]
 ;[seconds.]
 ;[Check for winamp song change every]
-;[seconds. (restart required)]
+;[seconds.]
 ;[Clear Predefined]
 ;[Do not set status message]
 ;[Always set this message:]

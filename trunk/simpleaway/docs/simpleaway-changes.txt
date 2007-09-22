@@ -77,3 +77,8 @@ v 1.6.1.1:
 + Added new option to "Buttons" combo box (flat buttons).
 + Variables from contex menu are placed at current cursor position.
 + Fixed updating of %winampsong% when song changes.
+==========
+v 1.7.0.0:
+==========
++ Compatibility with MIM v0.7
++ Patches by TioDuke: checking protocol capabilities, options, improved memory management
