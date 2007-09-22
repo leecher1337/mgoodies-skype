@@ -51,6 +51,7 @@ Boston, MA 02111-1307, USA.
 #include <m_icq.h>
 #include <m_skin.h>
 #include <m_clc.h>
+#include <m_proto_listeningto.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
@@ -103,6 +104,8 @@ struct HISTORY_TYPE {
 	struct {
 		DWORD value;
 		BYTE track_only_not_offline;
+		char *change_template;
+		char *remove_template;
 	} defs;
 
 	int numAddVars;
@@ -110,7 +113,7 @@ struct HISTORY_TYPE {
 };
 
 extern HISTORY_TYPE types[];
-#define NUM_TYPES 5
+#define NUM_TYPES 6
 
 
 #define LOG_HISTORY 0

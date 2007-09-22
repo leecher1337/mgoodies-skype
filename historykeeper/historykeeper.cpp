@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,7),
+	PLUGIN_MAKE_VERSION(0,0,0,8),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -193,14 +193,22 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		CharLowerA(tmp);
 
 		char change[256];
-		mir_snprintf(change, MAX_REGS(change), "Change\nchanged his/her %s to %%new%%\n%%old%%\tOld value\n%%new%%\tNew value",
-			tmp);
+		if (type.defs.change_template != NULL)
+			mir_snprintf(change, MAX_REGS(change), "Change\n%s\n%%old%%\tOld value\n%%new%%\tNew value",
+				type.defs.change_template);
+		else
+			mir_snprintf(change, MAX_REGS(change), "Change\nchanged his/her %s to %%new%%\n%%old%%\tOld value\n%%new%%\tNew value",
+				tmp);
 
 		if (type.canBeRemoved)
 		{
 			char remove[256];
-			mir_snprintf(remove, MAX_REGS(remove), "Removal\nremoved his/her %s\n%%old%%\tOld value",
-				tmp);
+			if (type.defs.remove_template != NULL)
+				mir_snprintf(remove, MAX_REGS(remove), "Removal\n%s\n%%old%%\tOld value",
+					type.defs.remove_template);
+			else
+				mir_snprintf(remove, MAX_REGS(remove), "Removal\nremoved his/her %s\n%%old%%\tOld value",
+					tmp);
 
 			char *templates[] = { change, remove };
 
@@ -391,7 +399,7 @@ int EnableHistory(WPARAM wParam, LPARAM lParam, LPARAM type)
 	if (hContact == NULL)
 		return 0;
 
-	for (int i = 0; i <= NUM_ITEMS; i++)
+	for (int i = 0; i < NUM_ITEMS; i++)
 		EnableItem(type, hContact, i, TRUE);
 
 	return 0;
@@ -403,7 +411,7 @@ int DisableHistory(WPARAM wParam, LPARAM lParam, LPARAM type)
 	if (hContact == NULL)
 		return 0;
 
-	for (int i = 0; i <= NUM_ITEMS; i++)
+	for (int i = 0; i < NUM_ITEMS; i++)
 		EnableItem(type, hContact, i, FALSE);
 
 	return 0;
@@ -448,7 +456,7 @@ BOOL ContactEnabled(int type, HANDLE hContact)
 	if (!ProtocolEnabled(type, proto))
 		return FALSE;
 
-	for (int i = 0; i <= NUM_ITEMS; i++)
+	for (int i = 0; i < NUM_ITEMS; i++)
 	{
 		if (ItemEnabled(type, hContact, i))
 			return TRUE;

@@ -2,6 +2,10 @@ History Keeper
 
 Changelog:
 
+. 0.0.0.8
+  * Fix for crash
+  + Added listening to history
+
 . 0.0.0.7
   + Added variables support
   + Added option page to set log/notification types per contact
