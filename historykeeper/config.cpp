@@ -179,12 +179,13 @@ BOOL ClientEquals(TCHAR *a, TCHAR *b)
 
 
 HISTORY_TYPE types[NUM_TYPES] = {
-	{ "ClientHistory",	"Client",			IDI_CLIENT,		EVENTTYPE_CLIENT_CHANGE,			NULL,						ClientEquals,	ClientFormat,	0,									FALSE,	FALSE,	(char *) -1,	"MirVer",		TRUE,	NULL,				FALSE,	NULL,							NULL,							2,  ClientAddVars },
-	{ "ListenHistory",	"Listening",		IDI_LISTENING,	EVENTTYPE_LISTENINGTO_CHANGE,		ListeningToAllowProtocol,	NULL,			NULL,			HISTORYEVENTS_FLAG_KEEP_ONE_WEEK,	TRUE,	FALSE,	(char *) -1,	"ListeningTo",	TRUE,	NULL,				TRUE,	"is now listening to %new%",	"stopped listening to music",	0,  NULL },
-	{ "NickHistory",	"Nickname",			IDI_NICK,		EVENTTYPE_NICKNAME_CHANGE,			NULL,						NULL,			NULL,			0, 									FALSE,	FALSE,	(char *) -1,	"Nick",			TRUE,	NULL,				FALSE,	NULL,							NULL,							0,	NULL },
-	{ "StatusHistory",	"Status",			IDI_STATUS,		EVENTTYPE_STATUSCHANGE,				NULL,						NULL,			StatusFormat,	HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	FALSE,	TRUE,	(char *) -1,	"Status",		FALSE,	ID_STATUS_OFFLINE,	FALSE,	NULL,							NULL,							1,  StatusAddVars },
-	{ "SMH",			"Status Message",	IDI_SMH,		EVENTTYPE_STATUSMESSAGE_CHANGE,		SMHAllowProtocol,			NULL,			NULL,			0, 									TRUE,	FALSE,	"CList",		"StatusMsg",	TRUE,	NULL,				TRUE,	NULL,							NULL,							0,	NULL },
-	{ "XStatusHistory",	"XStatus",			IDI_XSTATUS,	EVENTTYPE_XSTATUS_CHANGE,			XStatusAllowProtocol,		NULL,			NULL,			HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	TRUE,	FALSE,	(char *) -1,	"XStatusName",	TRUE,	NULL,				TRUE,	NULL,							NULL,							1,  XStatusAddVars },
+	{ "ClientHistory",	"Client",			IDI_CLIENT,		EVENTTYPE_CLIENT_CHANGE,			NULL,						ClientEquals,	ClientFormat,	0,									FALSE,	FALSE,	3,	(char *) -1,	"MirVer",		TRUE,	NULL,				FALSE,	NULL,							NULL,							2,  ClientAddVars },
+	{ "ListenHistory",	"Listening",		IDI_LISTENING,	EVENTTYPE_LISTENINGTO_CHANGE,		ListeningToAllowProtocol,	NULL,			NULL,			HISTORYEVENTS_FLAG_KEEP_ONE_WEEK,	TRUE,	FALSE,	30,	(char *) -1,	"ListeningTo",	TRUE,	NULL,				TRUE,	"is now listening to %new%",	"stopped listening to music",	0,  NULL },
+	{ "NickHistory",	"Nickname",			IDI_NICK,		EVENTTYPE_NICKNAME_CHANGE,			NULL,						NULL,			NULL,			0, 									FALSE,	FALSE,	3,	(char *) -1,	"Nick",			TRUE,	NULL,				FALSE,	NULL,							NULL,							0,	NULL },
+	{ "StatusHistory",	"Status",			IDI_STATUS,		EVENTTYPE_STATUSCHANGE,				NULL,						NULL,			StatusFormat,	HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	FALSE,	TRUE,	3,	(char *) -1,	"Status",		FALSE,	ID_STATUS_OFFLINE,	FALSE,	NULL,							NULL,							1,  StatusAddVars },
+	{ "SMH",			"Status Message",	IDI_SMH,		EVENTTYPE_STATUSMESSAGE_CHANGE,		SMHAllowProtocol,			NULL,			NULL,			0, 									TRUE,	FALSE,	3,	"CList",		"StatusMsg",	TRUE,	NULL,				TRUE,	NULL,							NULL,							0,	NULL },
+	{ "XSMHistory",		"X-Status",			IDI_XSTATUS,	EVENTTYPE_XSTATUS_CHANGE,			XStatusAllowProtocol,		NULL,			NULL,			HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	TRUE,	FALSE,	3,	(char *) -1,	"XStatusName",	TRUE,	NULL,				TRUE,	NULL,							NULL,							1,  XStatusAddVars },
+	{ "XStatusHistory",	"X-Status Message",	IDI_XSM,		EVENTTYPE_XSTATUS_MESSAGE_CHANGE,	XStatusAllowProtocol,		NULL,			NULL,			HISTORYEVENTS_FLAG_KEEP_ONE_DAY,	TRUE,	FALSE,	3,	(char *) -1,	"XStatusMsg",	TRUE,	NULL,				TRUE,	NULL,							NULL,							0,  NULL },
 };
 
 

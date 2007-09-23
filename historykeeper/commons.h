@@ -92,6 +92,7 @@ struct HISTORY_TYPE {
 	int historyFlags;
 	BOOL canBeRemoved;
 	BOOL temporary;
+	int ttw;
 
 	struct {
 		struct {
@@ -113,7 +114,7 @@ struct HISTORY_TYPE {
 };
 
 extern HISTORY_TYPE types[];
-#define NUM_TYPES 6
+#define NUM_TYPES 7
 
 
 #define LOG_HISTORY 0
@@ -126,14 +127,13 @@ extern HISTORY_TYPE types[];
 
 BOOL AllowProtocol(int type, const char *proto);
 BOOL ProtocolEnabled(int type, const char *proto);
-BOOL ContactEnabled(int type, HANDLE hContact);
+BOOL ContactEnabled(int type, HANDLE hContact, int min = 0, int max = NUM_ITEMS) ;
 BOOL ItemEnabled(int type, HANDLE hContact, int item);
 BOOL EnableItem(int type, HANDLE hContact, int item, BOOL enable);
 
 
 #define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION 30000 // ms
 #define TIME_TO_WAIT_BEFORE_NOTIFY_AFTER_CONNECTION 10000 // ms
-#define TIME_TO_WAIT_BEFORE_PROCESSING 3000 // ms
 
 
 

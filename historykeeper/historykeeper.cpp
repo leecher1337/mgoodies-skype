@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,8),
+	PLUGIN_MAKE_VERSION(0,0,1,0),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -52,8 +52,8 @@ PLUGINLINK *pluginLink;
 
 HANDLE hHooks[6] = {0};
 
-HANDLE hEnableMenu[NUM_TYPES]; 
-HANDLE hDisableMenu[NUM_TYPES]; 
+HANDLE hEnableMenu[NUM_TYPES * 2] = {0}; 
+HANDLE hDisableMenu[NUM_TYPES * 2] = {0}; 
 
 //char *metacontacts_proto = NULL;
 BOOL loaded = FALSE;
@@ -61,6 +61,7 @@ ContactAsyncQueue *queue;
 
 BOOL PER_DEFAULT_LOG_SUBCONTACTS = FALSE;
 BOOL PER_DEFAULT_NOTIFY_SUBCONTACTS = FALSE;
+BOOL UNIFIED_CONTEXT_MENUS = FALSE;
 BOOL HAS_METACONTACTS = FALSE;
 
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
@@ -70,11 +71,16 @@ int ContactAdded(WPARAM wParam,LPARAM lParam);
 int ProtoAckHook(WPARAM wParam, LPARAM lParam);
 int PreShutdown(WPARAM wParam, LPARAM lParam);
 
-int EnableHistory(WPARAM wParam, LPARAM lParam, LPARAM type);
-int DisableHistory(WPARAM wParam, LPARAM lParam, LPARAM type);
-int HistoryEnabled(WPARAM wParam, LPARAM lParam, LPARAM type);
+int EnableAll(WPARAM wParam, LPARAM lParam, LPARAM type);
+int DisableAll(WPARAM wParam, LPARAM lParam, LPARAM type);
+int AllEnabled(WPARAM wParam, LPARAM lParam, LPARAM type);
+int EnableLog(WPARAM wParam, LPARAM lParam, LPARAM type);
+int DisableLog(WPARAM wParam, LPARAM lParam, LPARAM type);
+int LogEnabled(WPARAM wParam, LPARAM lParam, LPARAM type);
+int EnableNotification(WPARAM wParam, LPARAM lParam, LPARAM type);
+int DisableNotification(WPARAM wParam, LPARAM lParam, LPARAM type);
+int NotificationEnabled(WPARAM wParam, LPARAM lParam, LPARAM type);
 
-BOOL ContactEnabled(int type, HANDLE hContact);
 BOOL ProtocolEnabled(int type, const char *protocol);
 
 void Process(HANDLE hContact, void *param);
@@ -127,34 +133,11 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	init_mir_malloc();
 	init_list_interface();
 
-	CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) MODULE_NAME "/CreationTickCount");
-
-	PROTOCOLDESCRIPTOR **protos;
-	int i, count;
-	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
-	char tmp[256];
-	for (i = 0; i < count; i++)
-	{
-		if (protos[i]->szName == NULL || protos[i]->szName[0] == '\0')
-			continue;
-
-		mir_snprintf(tmp, MAX_REGS(tmp), MODULE_NAME "/%s_OnOfflineTickCount", protos[i]->szName);
-		CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
-
-		mir_snprintf(tmp, MAX_REGS(tmp), MODULE_NAME "/%s_LastStatus", protos[i]->szName);
-		CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
-
-		for (int j = 0; j < NUM_TYPES; j++) 
-		{
-			HISTORY_TYPE &type = types[j];
-
-			if (type.temporary && type.track.db.module == MODULE_PROTOCOL)
-			{
-				mir_snprintf(tmp, MAX_REGS(tmp), MODULE_NAME "/%s_%s_Current", protos[i]->szName, type.track.db.setting);
-				CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
-			}
-		}
-	}
+	// Hidden settings
+	UNIFIED_CONTEXT_MENUS = DBGetContactSettingByte(NULL, MODULE_NAME, "UnifiedContextMenus", FALSE);
+	PER_DEFAULT_LOG_SUBCONTACTS = DBGetContactSettingByte(NULL, MODULE_NAME, "PerDefaultLogSubcontacts", FALSE);
+	PER_DEFAULT_NOTIFY_SUBCONTACTS = DBGetContactSettingByte(NULL, MODULE_NAME, "PerDefaultNotifySubcontacts", FALSE);
+	HAS_METACONTACTS = ServiceExists(MS_MC_GETMETACONTACT);
 
 	// Add menu item to enable/disable status message check
 	CLISTMENUITEM mi = {0};
@@ -173,9 +156,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	char service[256];
 	mi.pszService = service;
 
-	for (i = 0; i < NUM_TYPES; i++) 
+	for (int i = 0; i < NUM_TYPES; i++) 
 	{
 		HISTORY_TYPE &type = types[i];
+		char tmp[256];
 
 		// DB
 
@@ -188,7 +172,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 		// History
 
-		char tmp[128];
 		strncpy(tmp, type.description, MAX_REGS(tmp));
 		CharLowerA(tmp);
 
@@ -242,20 +225,55 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 		mi.hIcon = HistoryEvents_GetIcon(type.eventType);
 
-		mir_snprintf(service, MAX_REGS(service), "%s/Disable", type.name);
-		CreateServiceFunctionParam(service, DisableHistory, i);
+		if (UNIFIED_CONTEXT_MENUS)
+		{
+			mir_snprintf(service, MAX_REGS(service), "%s/Disable", type.name);
+			CreateServiceFunctionParam(service, DisableAll, i);
 
-		mir_snprintf(name, MAX_REGS(name), "Ignore %s changes", type.description);
-		hDisableMenu[i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+			mir_snprintf(name, MAX_REGS(name), "Ignore %s changes", type.description);
+			hDisableMenu[i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 
-		mir_snprintf(service, MAX_REGS(service), "%s/Enable", type.name);
-		CreateServiceFunctionParam(service, EnableHistory, i);
-		
-		mir_snprintf(name, MAX_REGS(name), "Log %s changes", type.description);
-		hEnableMenu[i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+			mir_snprintf(service, MAX_REGS(service), "%s/Enable", type.name);
+			CreateServiceFunctionParam(service, EnableAll, i);
+			
+			mir_snprintf(name, MAX_REGS(name), "Log %s changes", type.description);
+			hEnableMenu[i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+		}
+		else
+		{
+			mir_snprintf(service, MAX_REGS(service), "%s/DisableLog", type.name);
+			CreateServiceFunctionParam(service, DisableLog, i);
+
+			mir_snprintf(name, MAX_REGS(name), "Don't log %s changes", type.description);
+			hDisableMenu[2*i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+
+			mir_snprintf(service, MAX_REGS(service), "%s/DisableNotification", type.name);
+			CreateServiceFunctionParam(service, DisableNotification, i);
+
+			mir_snprintf(name, MAX_REGS(name), "Don't notify %s changes", type.description);
+			hDisableMenu[2*i+1] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+
+			mir_snprintf(service, MAX_REGS(service), "%s/EnableLog", type.name);
+			CreateServiceFunctionParam(service, EnableLog, i);
+			
+			mir_snprintf(name, MAX_REGS(name), "Log %s changes", type.description);
+			hEnableMenu[2*i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+
+			mir_snprintf(service, MAX_REGS(service), "%s/EnableNotification", type.name);
+			CreateServiceFunctionParam(service, EnableNotification, i);
+			
+			mir_snprintf(name, MAX_REGS(name), "Notify %s changes", type.description);
+			hEnableMenu[2*i+1] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+		}
 
 		mir_snprintf(service, MAX_REGS(service), "%s/Enabled", type.name);
-		CreateServiceFunctionParam(service, HistoryEnabled, i);
+		CreateServiceFunctionParam(service, AllEnabled, i);
+
+		mir_snprintf(service, MAX_REGS(service), "%s/LogEnabled", type.name);
+		CreateServiceFunctionParam(service, LogEnabled, i);
+
+		mir_snprintf(service, MAX_REGS(service), "%s/NotificationEnabled", type.name);
+		CreateServiceFunctionParam(service, NotificationEnabled, i);
 
 		HistoryEvents_ReleaseIcon(mi.hIcon);
 
@@ -279,11 +297,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	hHooks[4] = HookEvent(ME_PROTO_ACK, ProtoAckHook);
 	hHooks[5] = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
 
-	// Hidden settings
-	PER_DEFAULT_LOG_SUBCONTACTS = DBGetContactSettingByte(NULL, MODULE_NAME, "PerDefaultLogSubcontacts", FALSE);
-	PER_DEFAULT_NOTIFY_SUBCONTACTS = DBGetContactSettingByte(NULL, MODULE_NAME, "PerDefaultNotifySubcontacts", FALSE);
-	HAS_METACONTACTS = ServiceExists(MS_MC_GETMETACONTACT);
-
 	return 0;
 }
 
@@ -298,6 +311,36 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
 //	if (ServiceExists(MS_MC_GETPROTOCOLNAME))
 //		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
+	
+	CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) MODULE_NAME "/CreationTickCount");
+
+	PROTOCOLDESCRIPTOR **protos;
+	int count;
+	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+	for (int i = 0; i < count; i++)
+	{
+		if (protos[i]->szName == NULL || protos[i]->szName[0] == '\0')
+			continue;
+
+		char tmp[256];
+
+		mir_snprintf(tmp, MAX_REGS(tmp), MODULE_NAME "/%s_OnOfflineTickCount", protos[i]->szName);
+		CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
+
+		mir_snprintf(tmp, MAX_REGS(tmp), MODULE_NAME "/%s_LastStatus", protos[i]->szName);
+		CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
+
+		for (int j = 0; j < NUM_TYPES; j++) 
+		{
+			HISTORY_TYPE &type = types[j];
+
+			if (type.temporary && type.track.db.module == MODULE_PROTOCOL)
+			{
+				mir_snprintf(tmp, MAX_REGS(tmp), MODULE_NAME "/%s_%s_Current", protos[i]->szName, type.track.db.setting);
+				CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) tmp);
+			}
+		}
+	}
 
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
@@ -363,29 +406,79 @@ int PreBuildContactMenu(WPARAM wParam, LPARAM lParam)
 	HANDLE hContact = (HANDLE) wParam;
 	char *proto = (char*) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hContact, 0);
 
-	for (int i = 0; i < NUM_TYPES; i++) 
+	for (int i = 0; i < NUM_TYPES; i ++) 
 	{
-		if (!ProtocolEnabled(i, proto))
-		{
-			clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[i], (LPARAM) &clmi);
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[i], (LPARAM) &clmi);
-		}
-		else if (ContactEnabled(i, hContact))
-		{
-			clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[i], (LPARAM) &clmi);
+		if (UNIFIED_CONTEXT_MENUS)
+		{		
+			if (!ProtocolEnabled(i, proto))
+			{
+				clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[i], (LPARAM) &clmi);
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[i], (LPARAM) &clmi);
+			}
+			else if (AllEnabled((WPARAM) hContact, 0, i))
+			{
+				clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[i], (LPARAM) &clmi);
 
-			clmi.flags = CMIM_FLAGS;
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[i], (LPARAM) &clmi);
+				clmi.flags = CMIM_FLAGS;
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[i], (LPARAM) &clmi);
+			}
+			else
+			{
+				clmi.flags = CMIM_FLAGS;
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[i], (LPARAM) &clmi);
+
+				clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[i], (LPARAM) &clmi);
+			}
 		}
 		else
 		{
-			clmi.flags = CMIM_FLAGS;
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[i], (LPARAM) &clmi);
+			if (!ProtocolEnabled(i, proto))
+			{
+				clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[2*i], (LPARAM) &clmi);
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[2*i], (LPARAM) &clmi);
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[2*i+1], (LPARAM) &clmi);
+				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[2*i+1], (LPARAM) &clmi);
+			}
+			else
+			{
+				if (LogEnabled((WPARAM) hContact, 0, i))
+				{
+					clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[2*i], (LPARAM) &clmi);
 
-			clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
-			CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[i], (LPARAM) &clmi);
+					clmi.flags = CMIM_FLAGS;
+					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[2*i], (LPARAM) &clmi);
+				}
+				else
+				{
+					clmi.flags = CMIM_FLAGS;
+					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[2*i], (LPARAM) &clmi);
+
+					clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[2*i], (LPARAM) &clmi);
+				}
+
+				if (NotificationEnabled((WPARAM) hContact, 0, i))
+				{
+					clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[2*i+1], (LPARAM) &clmi);
+
+					clmi.flags = CMIM_FLAGS;
+					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[2*i+1], (LPARAM) &clmi);
+				}
+				else
+				{
+					clmi.flags = CMIM_FLAGS;
+					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hEnableMenu[2*i+1], (LPARAM) &clmi);
+
+					clmi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+					CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM) hDisableMenu[2*i+1], (LPARAM) &clmi);
+				}
+			}
 		}
 	}
 
@@ -393,7 +486,7 @@ int PreBuildContactMenu(WPARAM wParam, LPARAM lParam)
 }
 
 
-int EnableHistory(WPARAM wParam, LPARAM lParam, LPARAM type) 
+int EnableAll(WPARAM wParam, LPARAM lParam, LPARAM type) 
 {
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
@@ -405,7 +498,7 @@ int EnableHistory(WPARAM wParam, LPARAM lParam, LPARAM type)
 	return 0;
 }
 
-int DisableHistory(WPARAM wParam, LPARAM lParam, LPARAM type) 
+int DisableAll(WPARAM wParam, LPARAM lParam, LPARAM type) 
 {
 	HANDLE hContact = (HANDLE) wParam;
 	if (hContact == NULL)
@@ -418,9 +511,71 @@ int DisableHistory(WPARAM wParam, LPARAM lParam, LPARAM type)
 }
 
 
-int HistoryEnabled(WPARAM wParam, LPARAM lParam, LPARAM type) 
+int EnableLog(WPARAM wParam, LPARAM lParam, LPARAM type) 
+{
+	HANDLE hContact = (HANDLE) wParam;
+	if (hContact == NULL)
+		return 0;
+
+	for (int i = 0; i < NUM_LOG_ITEMS; i++)
+		EnableItem(type, hContact, i, TRUE);
+
+	return 0;
+}
+
+int DisableLog(WPARAM wParam, LPARAM lParam, LPARAM type) 
+{
+	HANDLE hContact = (HANDLE) wParam;
+	if (hContact == NULL)
+		return 0;
+
+	for (int i = 0; i < NUM_LOG_ITEMS; i++)
+		EnableItem(type, hContact, i, FALSE);
+
+	return 0;
+}
+
+
+int EnableNotification(WPARAM wParam, LPARAM lParam, LPARAM type) 
+{
+	HANDLE hContact = (HANDLE) wParam;
+	if (hContact == NULL)
+		return 0;
+
+	for (int i = NUM_LOG_ITEMS; i < NUM_ITEMS; i++)
+		EnableItem(type, hContact, i, TRUE);
+
+	return 0;
+}
+
+int DisableNotification(WPARAM wParam, LPARAM lParam, LPARAM type) 
+{
+	HANDLE hContact = (HANDLE) wParam;
+	if (hContact == NULL)
+		return 0;
+
+	for (int i = NUM_LOG_ITEMS; i < NUM_ITEMS; i++)
+		EnableItem(type, hContact, i, FALSE);
+
+	return 0;
+}
+
+
+int AllEnabled(WPARAM wParam, LPARAM lParam, LPARAM type) 
 {
 	return ContactEnabled(type, (HANDLE) wParam);
+}
+
+
+int LogEnabled(WPARAM wParam, LPARAM lParam, LPARAM type) 
+{
+	return ContactEnabled(type, (HANDLE) wParam, 0, NUM_LOG_ITEMS);
+}
+
+
+int NotificationEnabled(WPARAM wParam, LPARAM lParam, LPARAM type) 
+{
+	return ContactEnabled(type, (HANDLE) wParam, NUM_LOG_ITEMS, NUM_ITEMS);
 }
 
 
@@ -447,7 +602,7 @@ BOOL ProtocolEnabled(int type, const char *proto)
 }
 
 
-BOOL ContactEnabled(int type, HANDLE hContact) 
+BOOL ContactEnabled(int type, HANDLE hContact, int min, int max) 
 {
 	if (hContact == NULL)
 		return FALSE;
@@ -456,7 +611,7 @@ BOOL ContactEnabled(int type, HANDLE hContact)
 	if (!ProtocolEnabled(type, proto))
 		return FALSE;
 
-	for (int i = 0; i < NUM_ITEMS; i++)
+	for (int i = min; i < max; i++)
 	{
 		if (ItemEnabled(type, hContact, i))
 			return TRUE;
@@ -712,7 +867,7 @@ int SettingChanged(WPARAM wParam, LPARAM lParam)
 			if (!ContactEnabled(i, hContact))
 				continue;
 
-			queue->AddAndRemovePreviousConsiderParam(TIME_TO_WAIT_BEFORE_PROCESSING, hContact, (void *) i);
+			queue->AddAndRemovePreviousConsiderParam(type.ttw * 1000, hContact, (void *) i);
 		}
 	}
 

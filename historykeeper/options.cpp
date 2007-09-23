@@ -63,12 +63,13 @@ HACK(2);
 HACK(3);
 HACK(4);
 HACK(5);
+HACK(6);
 
-DLGPROC NotificationsDlgProcArr[] = { NotificationsDlgProc0, NotificationsDlgProc1, NotificationsDlgProc2, NotificationsDlgProc3, NotificationsDlgProc4, NotificationsDlgProc5 };
-DLGPROC OptionsDlgProcArr[] = { OptionsDlgProc0, OptionsDlgProc1, OptionsDlgProc2, OptionsDlgProc3, OptionsDlgProc4, OptionsDlgProc5 };
-DLGPROC PopupsDlgProcArr[] = { PopupsDlgProc0, PopupsDlgProc1, PopupsDlgProc2, PopupsDlgProc3, PopupsDlgProc4, PopupsDlgProc5 };
-DLGPROC SpeakDlgProcArr[] = { SpeakDlgProc0, SpeakDlgProc1, SpeakDlgProc2, SpeakDlgProc3, SpeakDlgProc4, SpeakDlgProc5 };
-FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProtocol2, AllowProtocol3, AllowProtocol4, AllowProtocol5 };
+DLGPROC NotificationsDlgProcArr[] = { NotificationsDlgProc0, NotificationsDlgProc1, NotificationsDlgProc2, NotificationsDlgProc3, NotificationsDlgProc4, NotificationsDlgProc5, NotificationsDlgProc6 };
+DLGPROC OptionsDlgProcArr[] = { OptionsDlgProc0, OptionsDlgProc1, OptionsDlgProc2, OptionsDlgProc3, OptionsDlgProc4, OptionsDlgProc5, OptionsDlgProc6 };
+DLGPROC PopupsDlgProcArr[] = { PopupsDlgProc0, PopupsDlgProc1, PopupsDlgProc2, PopupsDlgProc3, PopupsDlgProc4, PopupsDlgProc5, PopupsDlgProc6 };
+DLGPROC SpeakDlgProcArr[] = { SpeakDlgProc0, SpeakDlgProc1, SpeakDlgProc2, SpeakDlgProc3, SpeakDlgProc4, SpeakDlgProc5, SpeakDlgProc6 };
+FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProtocol2, AllowProtocol3, AllowProtocol4, AllowProtocol5, AllowProtocol6 };
 
 
 
@@ -621,8 +622,9 @@ static void ResetListOptions(HWND hwndList)
 	SendMessage(hwndList,CLM_SETBKBITMAP,0,(LPARAM)(HBITMAP)NULL);
 	SendMessage(hwndList,CLM_SETBKCOLOR,GetSysColor(COLOR_WINDOW),0);
 	SendMessage(hwndList,CLM_SETGREYOUTFLAGS,0,0);
-	SendMessage(hwndList,CLM_SETLEFTMARGIN,2,0);
+	SendMessage(hwndList,CLM_SETLEFTMARGIN,4,0);
 	SendMessage(hwndList,CLM_SETINDENT,10,0);
+	SendMessage(hwndList,CLM_SETHIDEEMPTYGROUPS,1,0);
 	for(i=0;i<=FONTID_MAX;i++)
 		SendMessage(hwndList,CLM_SETTEXTCOLOR,i,GetSysColor(COLOR_WINDOWTEXT));
 	SetWindowLong(hwndList,GWL_STYLE,GetWindowLong(hwndList,GWL_STYLE)|CLS_SHOWHIDDEN);
@@ -640,6 +642,8 @@ static int ImageList_AddIcon_NotShared(HIMAGELIST hIml, int ico)
 
 static BOOL CALLBACK NotificationsDlgProc(int type, HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	static HANDLE hItemAll;
+
 	switch (msg)
 	{
 		case WM_INITDIALOG:
@@ -669,8 +673,14 @@ static BOOL CALLBACK NotificationsDlgProc(int type, HWND hwndDlg, UINT msg, WPAR
 			ResetListOptions(GetDlgItem(hwndDlg,IDC_LIST));
 			SendDlgItemMessage(hwndDlg,IDC_LIST,CLM_SETEXTRACOLUMNS, MAX_REGS(data), 0);
 
+			CLCINFOITEM cii={0};
+			cii.cbSize=sizeof(cii);
+			cii.flags=CLCIIF_GROUPFONT;
+			cii.pszText=TranslateT("** All contacts **");
+			hItemAll=(HANDLE)SendDlgItemMessage(hwndDlg,IDC_LIST,CLM_ADDINFOITEM,0,(LPARAM)&cii);
+
 			SetAllContactIcons(type, GetDlgItem(hwndDlg,IDC_LIST));
-			SetListGroupIcons(GetDlgItem(hwndDlg,IDC_LIST),(HANDLE)SendDlgItemMessage(hwndDlg,IDC_LIST,CLM_GETNEXTITEM,CLGN_ROOT,0),NULL,NULL);
+			SetListGroupIcons(GetDlgItem(hwndDlg,IDC_LIST),(HANDLE)SendDlgItemMessage(hwndDlg,IDC_LIST,CLM_GETNEXTITEM,CLGN_ROOT,0),hItemAll,NULL);
 			return TRUE;
 		}
 		case WM_SETFOCUS:
@@ -686,7 +696,7 @@ static BOOL CALLBACK NotificationsDlgProc(int type, HWND hwndDlg, UINT msg, WPAR
 							SetAllContactIcons(type, GetDlgItem(hwndDlg,IDC_LIST));
 							//fall through
 						case CLN_CONTACTMOVED:
-							SetListGroupIcons(GetDlgItem(hwndDlg,IDC_LIST),(HANDLE)SendDlgItemMessage(hwndDlg,IDC_LIST,CLM_GETNEXTITEM,CLGN_ROOT,0),NULL,NULL);
+							SetListGroupIcons(GetDlgItem(hwndDlg,IDC_LIST),(HANDLE)SendDlgItemMessage(hwndDlg,IDC_LIST,CLM_GETNEXTITEM,CLGN_ROOT,0),hItemAll,NULL);
 							break;
 						case CLN_OPTIONSCHANGED:
 							ResetListOptions(GetDlgItem(hwndDlg,IDC_LIST));
@@ -720,16 +730,23 @@ static BOOL CALLBACK NotificationsDlgProc(int type, HWND hwndDlg, UINT msg, WPAR
 							itemType = SendDlgItemMessage(hwndDlg, IDC_LIST, CLM_GETITEMTYPE, (WPARAM)hItem, 0);
 
 							// Update list
-							if (itemType == CLCIT_CONTACT) { // A contact
+							if (itemType == CLCIT_CONTACT) 
+							{	// A contact
 								SendDlgItemMessage(hwndDlg, IDC_LIST, CLM_SETEXTRAIMAGE, (WPARAM)hItem, MAKELPARAM(nm->iColumn, iImage));
 							}
-							else if (itemType == CLCIT_GROUP) { // A group
+							else if (itemType == CLCIT_INFO) 
+							{
+								if (hItem == hItemAll) 
+									SetAllChildIcons(GetDlgItem(hwndDlg, IDC_LIST), hItem, nm->iColumn, iImage);
+							}
+							else if (itemType == CLCIT_GROUP) 
+							{	// A group
 								hItem = (HANDLE)SendDlgItemMessage(hwndDlg, IDC_LIST, CLM_GETNEXTITEM, CLGN_CHILD, (LPARAM)hItem);
 								if (hItem) 
 									SetAllChildIcons(GetDlgItem(hwndDlg, IDC_LIST), hItem, nm->iColumn, iImage);
 							}
 							// Update the all/none icons
-							SetListGroupIcons(GetDlgItem(hwndDlg, IDC_LIST), (HANDLE)SendDlgItemMessage(hwndDlg, IDC_LIST, CLM_GETNEXTITEM, CLGN_ROOT, 0), NULL, NULL);
+							SetListGroupIcons(GetDlgItem(hwndDlg, IDC_LIST), (HANDLE)SendDlgItemMessage(hwndDlg, IDC_LIST, CLM_GETNEXTITEM, CLGN_ROOT, 0), hItemAll, NULL);
 
 							// Activate Apply button
 							SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
