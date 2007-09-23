@@ -1,0 +1,363 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Polish resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_PLK)
+#ifdef _WIN32
+LANGUAGE LANG_POLISH, SUBLANG_DEFAULT
+#pragma code_page(1250)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_READAWAYMSG DIALOGEX 0, 0, 187, 72
+STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
+    WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "%s Message for %s"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "&Cancel",IDOK,32,53,50,14
+    CTEXT           "Retrieving %s message...",IDC_RETRIEVING,5,21,177,8,
+                    SS_NOPREFIX
+    EDITTEXT        IDC_MSG,5,5,177,43,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_READONLY | NOT WS_VISIBLE | WS_VSCROLL
+    PUSHBUTTON      "Co&py to Clipboard",IDC_COPY,92,53,63,14,BS_CENTER | 
+                    BS_VCENTER
+END
+
+IDD_AWAYMSGBOX DIALOG DISCARDABLE  0, 0, 208, 90
+STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | 
+    WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "%s Status Message: %s"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDC_OK,7,71,66,14,BS_CENTER | BS_VCENTER
+    EDITTEXT        IDC_EDIT1,7,23,193,44,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_NOHIDESEL | ES_WANTRETURN | WS_VSCROLL
+    PUSHBUTTON      "Cancel",IDC_CANCEL,79,71,66,14,BS_CENTER | BS_VCENTER
+END
+
+IDD_COPY DIALOGEX 0, 0, 159, 25
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION
+EXSTYLE WS_EX_TOOLWINDOW
+CAPTION "Retrieving status message for %s..."
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Cancel",IDCANCEL,55,6,50,14,BS_CENTER | BS_VCENTER
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_AWAYMSGBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 200
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 85
+    END
+
+    IDD_COPY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 152
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 18
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_CROSS               ICON    DISCARDABLE     "res\\cross.ico"
+IDI_HISTORY             ICON    DISCARDABLE     "res\\history.ico"
+IDI_MESSAGE             ICON    DISCARDABLE     "res\\msg.ico"
+IDI_PLUS                ICON    DISCARDABLE     "res\\plus.ico"
+IDI_CHIST               ICON    DISCARDABLE     "res\\cbook.ico"
+IDI_COPY                ICON    DISCARDABLE     "res\\copy.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_MSGDN               BITMAP  DISCARDABLE     "res\\msgdn.bmp"
+IDB_MSGUP               BITMAP  DISCARDABLE     "res\\msgup.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_EDITMENU MENU DISCARDABLE 
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "%time%",                      IDM_VTIME
+        MENUITEM "%date%",                      IDM_VDATE
+        MENUITEM "%winampsong%",                IDM_VWINAMPSONG
+        MENUITEM "%rand(x,y)%",                 IDM_VRANDXY
+        MENUITEM SEPARATOR
+        POPUP "Fortune"
+        BEGIN
+            MENUITEM "%fortunemsg%",                ID__FORTUNE
+            MENUITEM "%protofortunemsg%",           ID__FORTUNEAWAYMSG_PROTOFORTUNEMSG
+
+            MENUITEM "%statusfortunemsg%",          ID__FORTUNEAWAYMSG_STATUSFORTUNEMSG
+
+        END
+        POPUP "Variables"
+        BEGIN
+            MENUITEM "%foobarsong%",                ID__VARIABLES_FOOBARSONG
+            MENUITEM "%tvprogram%",                 ID__VARIABLES_TVPROGRAM
+            MENUITEM "%tvchannel%",                 ID__VARIABLES_TVCHANNEL
+            MENUITEM "%ls(contact,value)%",         ID__VARIABLES_LSCONTACTVALUE
+
+            MENUITEM "%lname(contact)%",            ID__VARIABLES_LNAMECONTACT
+
+            MENUITEM "%cstatus(contact)%",          ID__VARIABLES_CSTATUSCONTACT
+
+            MENUITEM "%mstatus(protocol)%",         ID__VARIABLES_MSTATUSPROTOCOL
+
+            MENUITEM "%mstsmsg(status)%",           ID__VARIABLES_MSTSMSGSTATUS
+
+            MENUITEM "%ct(value)%",                 ID__VARIABLES_CTVALUE
+            MENUITEM "%dbsetting(contact,module,setting)%", 
+                                                    ID__VARIABLES_DBSETTINGCONTACTMODULESETTING
+
+            MENUITEM "%txtfile(file,line)%",        ID__VARIABLES_TXTFILEFILELINE
+
+            MENUITEM "%if(condition,true,false)%",  ID__VARIABLES_IFCONDITIONTRUEFALSE
+
+            MENUITEM "%strcmp(string1,string2)%",   ID__VARIABLES_STRCMPSTRING1STRING2
+
+            MENUITEM "%stricmp(string1,string2)%",  ID__VARIABLES_STRICMPSTRING1STRING2
+
+            MENUITEM "%enchtml(string)%",           ID__VARIABLES_ENCHTMLSTRING
+
+            MENUITEM "%cfdate(format)%",            ID__VARIABLES_CFDATEFORMAT
+
+            MENUITEM "%cftime(format)%",            ID__VARIABLES_CFTIMEFORMAT
+
+            MENUITEM "%replace(sub,string1,string2)%", 
+                                                    ID__VARIABLES_REPLACESUBSTRING1STRING2
+
+            MENUITEM "%lcase(string)%",             ID__VARIABLES_LCASESTRING
+
+            MENUITEM "%ucase(string)%",             ID__VARIABLES_UCASESTRING
+
+            MENUITEM "%urlesc(string)%",            ID__VARIABLES_URLESCSTRING
+
+            MENUITEM "%urlunesc(string)%",          ID__VARIABLES_URLUNESCSTRING
+
+            MENUITEM "%contact(string,type)%",      ID__VARIABLES_CONTACTSTRINGTYPE
+
+            MENUITEM "%scroll(string,no chars)%",   ID__VARIABLES_SCROLLSTRINGNOCHARS
+
+        END
+        MENUITEM "Fortune",                     ID__FORTUNEAWAYMSG
+        MENUITEM "Variables",                   ID__VARIABLES
+        MENUITEM SEPARATOR
+        MENUITEM "Cut",                         IDM_CUT
+        MENUITEM "Copy",                        IDM_COPY
+        MENUITEM "Paste",                       IDM_PASTE
+        MENUITEM "Delete",                      IDM_DELETE
+        MENUITEM SEPARATOR
+        MENUITEM "Select All",                  IDM_SELECTALL
+    END
+END
+
+#endif    // Polish resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_OPTIONDLG DIALOGEX 0, 0, 312, 240
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Layout",IDC_TLAYOUT,157,85,148,59
+    CONTROL         "Show status list",IDC_CSTATUSLIST,"Button",
+                    BS_AUTOCHECKBOX | BS_LEFT | BS_VCENTER | WS_TABSTOP,163,
+                    96,137,10
+    CONTROL         "Show icons in message list",IDC_CICONS2,"Button",
+                    BS_AUTOCHECKBOX | BS_LEFT | BS_VCENTER | WS_TABSTOP,163,
+                    118,140,10
+    CONTROL         "Show icons in status list",IDC_CICONS1,"Button",
+                    BS_AUTOCHECKBOX | BS_LEFT | BS_VCENTER | WS_TABSTOP,163,
+                    107,138,10
+    EDITTEXT        IDC_EMAXHIST,59,155,24,12,ES_NUMBER | NOT WS_BORDER,
+                    WS_EX_CLIENTEDGE
+    CONTROL         "Spin2",IDC_SMAXHIST,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS,74,154,10,14
+    CONTROL         "Store up to",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP,13,
+                    157,45,8
+    LTEXT           "recent messages.",IDC_STATIC,87,157,147,8
+    GROUPBOX        "Other",IDC_STATIC,7,146,298,82
+    CONTROL         "Automatically close dialog window after",IDC_CCLOSEWND,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,174,138,8
+    EDITTEXT        IDC_ETIMEOUT,155,172,24,12,ES_NUMBER | NOT WS_BORDER,
+                    WS_EX_CLIENTEDGE
+    CONTROL         "Spin2",IDC_STIMEOUT,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS,170,171,10,14
+    LTEXT           "seconds.",IDC_STATIC,183,174,52,8
+    COMBOBOX        IDC_CBOPTSTATUS,13,21,134,97,CBS_DROPDOWNLIST | 
+                    WS_TABSTOP
+    CONTROL         "Set an empty message",IDC_ROPTMSG1,"Button",
+                    BS_AUTORADIOBUTTON | BS_VCENTER,13,57,132,8
+    CONTROL         "Use default message",IDC_ROPTMSG2,"Button",
+                    BS_AUTORADIOBUTTON | BS_VCENTER,13,68,132,8
+    CONTROL         "Set the following message:",IDC_ROPTMSG4,"Button",
+                    BS_AUTORADIOBUTTON | BS_VCENTER,13,101,132,8
+    EDITTEXT        IDC_OPTEDIT1,13,112,134,20,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_AUTOHSCROLL | ES_WANTRETURN
+    CONTROL         "Use last message",IDC_ROPTMSG3,"Button",
+                    BS_AUTORADIOBUTTON | BS_VCENTER,13,79,132,8
+    CONTROL         "Use last message set for this status",IDC_ROPTMSG5,
+                    "Button",BS_AUTORADIOBUTTON | BS_VCENTER,13,90,132,8
+    CONTROL         "Pop up dialog asking for new message",IDC_COPTMSG1,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,36,136,8
+    GROUPBOX        "Messages",IDC_STATIC,7,2,145,142
+    EDITTEXT        IDC_OPTEDIT2,164,64,134,12,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_AUTOHSCROLL | ES_WANTRETURN
+    COMBOBOX        IDC_CBOPTPROTO,164,15,43,97,CBS_DROPDOWNLIST | CBS_SORT |
+                    WS_TABSTOP
+    GROUPBOX        "Protocols *",IDC_STATIC,157,2,148,82
+    CONTROL         "Do not set status message",IDC_COPTPROTO1,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,164,42,119,8
+    CONTROL         "Always set this message:",IDC_COPTPROTO2,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,164,53,119,8
+    PUSHBUTTON      "Clear History",IDC_BOPTHIST,238,155,61,14,BS_CENTER | 
+                    BS_VCENTER
+    PUSHBUTTON      "Clear Predefined",IDC_BOPDEF,238,172,61,14,BS_CENTER | 
+                    BS_VCENTER
+    LTEXT           "* These setting may not work with some plugins.",
+                    IDC_STATIC,13,230,292,8
+    CONTROL         "Check for winamp song change every",IDC_CCHECKWINAMP,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,188,138,8
+    EDITTEXT        IDC_ESECWINAMP,155,186,28,12,ES_NUMBER | NOT WS_BORDER,
+                    WS_EX_CLIENTEDGE
+    LTEXT           "seconds.",IDC_STATIC,187,188,113,8
+    CONTROL         "Spin2",IDC_SSECWINAMP,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS,173,186,10,14
+    CONTROL         "Remove Carriage Return (CR = '\\r' = #0D) chars from status messages",
+                    IDC_CREMOVECR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,
+                    201,287,8
+    CONTROL         "Show 'Copy Away Message' item in contact menu.",
+                    IDC_CSHOWCOPY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,
+                    214,287,8
+    LTEXT           "Max length:",IDC_STATIC,211,17,51,8
+    EDITTEXT        IDC_EMAXLENGTH,264,15,34,12,ES_NUMBER | NOT WS_BORDER,
+                    WS_EX_CLIENTEDGE
+    CONTROL         "Spin2",IDC_SMAXLENGTH,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS,288,15,10,14
+    CONTROL         "Pop up dialog box",IDC_COPTPROTO3,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,164,31,119,8
+    LTEXT           "Buttons:",IDC_STATIC,163,130,38,8
+    COMBOBOX        IDC_CBOPTBUTTONS,203,128,95,100,CBS_DROPDOWNLIST | WS_TABSTOP
+    CONTROL         "Put default message in message list",IDC_COPTMSG2,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,47,136,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_OPTIONDLG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 305
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 233
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

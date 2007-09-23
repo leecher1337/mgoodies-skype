@@ -1,0 +1,85 @@
+==========
+v 0.0.0.1:
+==========
+Initial release
++ Added status message combo box and character counter.
++ Added status icons and buttons next to the edit control.
+
+==========
+v 0.0.0.2:
+==========
++ Enter key inserts new line.
++ Added status list combo box.
++ Removed status buttons.
++ Dialog window doesn't pop up when switching to global offline status.
++ Dialog window doesn't pop up when StartupStatus disconnects protocols during Miranda shutdown.
++ KeepStatus is disabled when user sets offline status within SimpleAway dialog window.
++ Edit control appears empty if the last status message was empty.
++ SimpleAway stores user status messages in the same place where SRAway did.
++ Added %time% and %date% variables.
++ Dialog window is automatically closed after 5 seconds.
++ SimpleAway checks which status message is set when user goes offline (only works for Tlen and GG protocols now).
+
+==========
+v 0.0.0.3:
+==========
++ Ctrl+Enter works like OK button.
++ User can define and delete status messages.
++ Added "Clear History" option.
++ Changed status message combo box list width to 250 px.
++ All status messages now fit into status combo box list without hscroolbar.
++ Icons in the status list are displayed with 32 bit color palette and 16x16 size.
++ Fixed message list.
++ Added options dialog.
++ SimpleAway is now compatible with StartupStatus.
++ Current status message is stored separately for each protocol.
+
+==========
+v 0.0.0.4:
+==========
++ Added status message manipulation buttons next to the status message list.
++ Changed size of the edit control.
++ Fixed displaying of 32 bit icons with alpha channel on Windows XP.
++ Added new variable %winampsong%.
++ Added automatic status message update if it contains %winampsong% variable.
++ Added ability to use all variables supported by the "variables" plugin (the plugin must be installed in your Miranda-IM).
++ Carriage Return characters are ignored while setting status messages.
++ Few more little fixes.
+
+==========
+v 1.5.0.0:
+==========
++ Added an option to enable/disable sending of Carriage Return characters.
++ Added 4px space between message manipulation buttons.
++ Message manipulation buttons are enabled by default.
++ Added TopToolBar button.
++ Added IcoLib plugin support.
++ New item in contact menu ("Copy Away Message") which copies contact status message to Clipboard.
++ Added new variable %rand(x,y)%.
+
+==========
+v 1.6.0.0:
+==========
++ IcoLib support optimization.
++ Added variables for FortuneAwayMsg plugin.
++ Some new options.
++ Tiny layout reorganization.
++ All available variables placed in contex menu.
++ Fixed character counter.
++ Fixes in TopToolBar button functions.
++ Many other bug fixes and improvements.
+
+==========
+v 1.6.1.1:
+==========
++ Compatibility with BossKey and GamerStatus.
++ Fixes in options dialog.
++ Added new option to "Buttons" combo box (flat buttons).
++ Variables from contex menu are placed at current cursor position.
++ Fixed updating of %winampsong% when song changes.
+==========
+v 1.7.0.0:
+==========
++ Compatibility with MIM v0.7
++ Patches by TioDuke: checking protocol capabilities, options, improved memory management
++ Other small fixes
