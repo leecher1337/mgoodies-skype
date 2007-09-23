@@ -57,7 +57,7 @@ PLUGININFOEX pluginInfoEx={
 	"http://developer.berlios.de/projects/mgoodies/",
 	0,		//not transient
 	DEFMOD_SRAWAY,
-	{0x8a63ff78, 0x6557, 0x4a42, { 0x8a, 0x82, 0x23, 0xa1, 0x6d, 0x46, 0x84, 0x4c }} //{84636F78-2057-4302-8A65-23A16D46844C}
+	{0x14c73458, 0x69a0, 0x11dc, { 0x83, 0x14, 0x08, 0x00, 0x20, 0x0c, 0x9a, 0x66 }} //{14c73458-69a0-11dc-8314-0800200c9a66}
 };
 
 static const MUUID interfaces[] = {MIID_SRAWAY, MIID_LAST};

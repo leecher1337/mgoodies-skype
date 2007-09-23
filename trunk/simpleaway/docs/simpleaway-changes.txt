@@ -82,3 +82,4 @@ v 1.7.0.0:
 ==========
 + Compatibility with MIM v0.7
 + Patches by TioDuke: checking protocol capabilities, options, improved memory management
++ Other small fixes
