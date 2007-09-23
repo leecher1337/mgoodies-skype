@@ -2,6 +2,17 @@ History Keeper
 
 Changelog:
 
+. 0.0.1.0
+  + Added X-Status Message history
+  * Changed XStatus to X-Status
+  * Fix for storing some settings in db as temporary values
+  * Listening changes will wait 30s before notification (to avoid duplicated notifications)
+
+. 0.0.0.9
+  + Added 2 menus, one for log and one for notify
+  + Added hidden option HistoryKeeper/UnifiedContextMenus
+  + Added 'All Contacts' option to Notifications tab
+
 . 0.0.0.8
   * Fix for crash
   + Added listening to history

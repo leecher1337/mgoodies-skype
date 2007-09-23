@@ -41,6 +41,7 @@ IDI_POPUP               ICON    DISCARDABLE     "res\\popup.ico"
 IDI_SOUND               ICON    DISCARDABLE     "res\\sound.ico"
 IDI_SMALLDOT            ICON    DISCARDABLE     "res\\smalldot.ico"
 IDI_LISTENING           ICON    DISCARDABLE     "res\\listening_change.ico"
+IDI_XSM                 ICON    DISCARDABLE     "res\\xsm_change.ico"
 #endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -272,7 +273,6 @@ BEGIN
         LEFTMARGIN, 3
         RIGHTMARGIN, 282
         TOPMARGIN, 3
-        BOTTOMMARGIN, 187
     END
 
     IDD_POPUPS_NOREM, DIALOG

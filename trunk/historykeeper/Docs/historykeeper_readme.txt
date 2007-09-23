@@ -7,10 +7,12 @@ This plugin logs some events to the history and show popups.
 
 The events that are handled are:
  - Nickname changes
- - Status Message changes
  - Client changes
  - Status changes
- - XStatus changes
+ - Status Message changes
+ - X-Status changes
+ - X-Status Message changes
+ - Listening changes
 
 For it to work, it depends on some popup plugin (YAPP or Popup+) and on History Events plugin: http://pescuma.mirandaim.ru/miranda/historyevents
 
