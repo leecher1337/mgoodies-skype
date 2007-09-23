@@ -287,7 +287,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 					pt.y += height + 3;
 					x = pt.x + 20;
 
-					HWND chk = CreateWindow(_T("BUTTON"), TranslateT("Only log if message window is open"), 
+					HWND chk = CreateWindow(_T("BUTTON"), TranslateT("Only add if message window is open"), 
 							WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX | BS_AUTOCHECKBOX, 
 						    x, pt.y, width - (x - pt.x), height, hwndDlg, (HMENU) id, hInst, NULL);
 					SendMessage(chk, BM_SETCHECK, heh->flags & HISTORYEVENTS_FLAG_ONLY_LOG_IF_SRMM_OPEN ? BST_CHECKED : BST_UNCHECKED, 0);
