@@ -47,7 +47,7 @@ PLUGININFO pluginInfo={
 };
 
 PLUGININFOEX pluginInfoEx={
-	sizeof(PLUGININFO),
+	sizeof(PLUGININFOEX),
 	"SimpleAway",
 	PLUGIN_MAKE_VERSION(1,7,0,0),
 	"This plugin replaces built-in away system.",
@@ -55,7 +55,7 @@ PLUGININFOEX pluginInfoEx={
 	"harven@users.berlios.de",
 	"© 2005 Harven",
 	"http://developer.berlios.de/projects/mgoodies/",
-	0,		//not transient
+	UNICODE_AWARE,
 	DEFMOD_SRAWAY,
 	{0x14c73458, 0x69a0, 0x11dc, { 0x83, 0x14, 0x08, 0x00, 0x20, 0x0c, 0x9a, 0x66 }} //{14c73458-69a0-11dc-8314-0800200c9a66}
 };
