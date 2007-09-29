@@ -1,6 +1,7 @@
 #pragma once
 
 #include <queue>
+#include <stack>
 
 typedef struct {} TEmpty;
 
@@ -53,7 +54,7 @@ public:
 
 	public:
 		iterator();
-		iterator(unsigned int Node, int Index);
+		iterator(CBTree* Tree, unsigned int Node, int Index);
 		iterator(const iterator& Other);
 		~iterator();
 

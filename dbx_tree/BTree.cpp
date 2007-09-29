@@ -80,7 +80,7 @@ template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 typename CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator & 
 CBTree<TKey, TData, SizeParam, UniqueKeys>::Insert(const TKey & Key, const TData & Data) const
 {
-	TNode node, node2;
+	TNode node, node;
 	unsigned int actnode = m_Root;
 	unsigned int nextnode;
 	bool exists;
@@ -109,7 +109,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::Insert(const TKey & Key, const TData
 		if (UniqueKeys && exists)  // already exists
 		{
 			AccessNode(actnode)->Data[ge] = Data;  // overwrite data and exit
-			return iterator(actnode, ge);
+			return iterator(this, actnode, ge);
 		} else {				
 			if (node.Info & cIsLeafMask) // direct insert to leaf node
 			{
@@ -123,7 +123,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::Insert(const TKey & Key, const TData
 
 				WriteNode(actnode, node);
 
-				return iterator(actnode, ge);
+				return iterator(this, actnode, ge);
 
 			} else {  // middle node
 				nextnode = node.Childs[ge];
@@ -141,7 +141,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::Insert(const TKey & Key, const TData
 					if (UniqueKeys && (node.Key[ge] == Key))
 					{
 						AccessNode(actnode)->Data[ge] = Data;  // overwrite data and exit
-						return iterator(actnode, ge);
+						return iterator(this, actnode, ge);
 					} else if (node.Key[ge] < Key)
 					{
 						nextnode = node.Childs[ge+1];
@@ -157,7 +157,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::Insert(const TKey & Key, const TData
 	}	// while (actnode)
 
 	// something went wrong
-	return iterator(0,-1);
+	return iterator(this, 0,-1);
 }
 
 
@@ -174,7 +174,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::Find(const TKey & Key) const
 	while (actnode && !InNodeFind(node, Key, ge))
 	{
 		if (node.Info & cIsLeafMask)
-			return iterator(0, -1)
+			return iterator(this, 0, -1)
 		else
 		{
 			actnode = node.Childs[ge];
@@ -182,7 +182,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::Find(const TKey & Key) const
 		}
 	}
 
-	return iterator(actnode, ge);
+	return iterator(this, actnode, ge);
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
@@ -417,12 +417,314 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(const TKey& Key)
 			ReadNode(actnode, node);
 
 	} // while(actnode)
+
+	return false;
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(const iterator& Item)
 {
-	
+	if (Item.m_Tree != this)
+		throw "Iterator from wrong tree!";
+
+	if (!Item)
+		throw "Iterator out of range!";
+
+
+	TNode node;
+
+	ReadNode(Item.m_Node, node);
+
+	if (((node.Info & cKeyCountMask) > cEmptyNode) && (node.Info & cIsLeafMask)) // the easy one: delete in a leaf which is not empty
+	{
+		node.Info = (node.Info & cIsLeafMask) | ((node.Info & cKeyCountMask) - 1);
+		memcpy(&(node.Key[Item.m_Index]), &(node.Key[Item.m_Index + 1]), sizeof(TKey) * ((node.Info & cKeyCountMask) - Item.m_Index));
+		memcpy(&(node.Data[Item.m_Index]), &(node.Data[Item.m_Index + 1]), sizeof(TData) * ((node.Info & cKeyCountMask) - Item.m_Index));
+
+		WriteNode(Item.m_Node, node);
+
+		if ((node.Info & cKeyCountMask) == Item.m_Index) // deleted last item, go up
+			Item++;
+
+	} else { // the hard one :(
+
+		TNode node2;
+		PNode access, access2;
+		unsigned int actnode = m_Root;
+		unsigned int nextnode, l, r;
+		bool exists, skipread;
+		int ge;
+
+		bool foundininnernode = false;
+		bool wantleftmost = false;
+		TKey * innerkey;
+		TData * innerdata;
+
+		std::stack<unsigned int> path;
+
+		actnode = Item.m_Node;
+		while (actnode != m_Root)
+		{
+			path.push(actnode);
+			actnode = AccessNode(actnode)->Parent;			
+		}
+
+		//actnode == m_Root
+
+		ReadNode(actnode, node);
+
+		while (actnode)
+		{
+			skipread = false;
+
+			if (foundininnernode)
+			{
+				exists = false;
+				if (wantleftmost)
+					ge = 0
+				else
+					ge = node.Info & cKeyCountMask;
+
+			} else if (actnode = Item.m_Node)
+			{				
+				exists = true;
+				ge = Item.m_Index;
+			} else {
+				exists = false;
+				nextnode = path.top();
+				path.pop();
+
+				ge = 0;
+				while ((ge < (node.Info & cChildCountMask)) && (node.Childs[ge] != nextnode))
+					ge++;
+
+			}
+
+			if (exists) // we reached the node.
+			{
+				if (node.Info & cIsLeafMask)  // delete in leaf
+				{
+					memcpy(&(node.Key[ge]), &(node.Key[ge+1]), sizeof(TKey) * ((node.Info & cChildCountMask) - ge));
+					memcpy(&(node.Data[ge]), &(node.Data[ge+1]), sizeof(TData) * ((node.Info & cChildCountMask) - ge));
+					memcpy(&(node.Childs[ge+1]), &(node.Childs[ge+2]), sizeof(TNode.Childs[0]) * ((node.Info & cChildCountMask) - ge));
+					
+					node.Info = (node.Info & cIsLeafMask) | ((node.Info & cKeyCountMask) - 1);
+
+					WriteNode(actnode, node);
+
+					return;
+
+				} else { // delete in inner node
+					l = node.Childs[ge];
+					r = node.Childs[ge+1];
+
+					if (((AccessNode(r)->Info & cKeyCountMask) == cEmptyNode) && ((AccessNode(l)->Info & cKeyCountMask) == cEmptyNode))
+					{ // merge childnodes and keep going
+
+						Item.m_Index = AccessNode(l)->Info & cKeyCountMask;
+
+						nextnode = MergeNodes(l, r, node.Key[ge], node.Data[ge]);
+
+						Item.m_Node = nextnode;						
+						
+						memcpy(&(node.Key[ge]), &(node.Key[ge+1]), sizeof(TKey) * ((node.Info & cChildCountMask) - ge));
+						memcpy(&(node.Data[ge]), &(node.Data[ge+1]), sizeof(TData) * ((node.Info & cChildCountMask) - ge));
+						memcpy(&(node.Childs[ge+1]), &(node.Childs[ge+2]), sizeof(TNode.Childs[0]) * ((node.Info & cChildCountMask) - ge));
+					
+						node.Childs[ge] = nextnode;
+						node.Info = (node.Info & cIsLeafMask) | ((node.Info & cKeyCountMask) - 1);
+						
+						if ((actnode == m_Root) && ((node.Info & cKeyCountMask) == 0))
+						{ // root node is empty. delete it
+							DeleteNode(actnode);
+							m_Root = nextnode;
+							RootChanged();
+						} else {
+							WriteNode(actnode, node);
+						}				
+
+					} else { // need a key-data-pair from a leaf to replace deleted pair -> save position
+						Item++;
+
+						foundininnernode = true;
+						innerkey = &(AccessNode(actnode)->Key[ge]);
+						innerdata = &(AccessNode(actnode)->Data[ge]);
+						
+						if ((AccessNode(l)->Info & cKeyCountMask) == cEmptyNode)
+						{
+							wantleftmost = true;
+							nextnode = r;
+						} else {
+							wantleftmost = false;
+							nextnode = l;
+						}
+					}
+				}
+			} else if (node.Info & cIsLeafMask) { // we are at the bottom. finish it
+				if (foundininnernode)
+				{
+					if (wantleftmost) 
+					{
+						node.Info = (node.Info & cIsLeafMask) | ((node.Info & cKeyCountMask) - 1);
+
+						*innerkey = node.Key[0];
+						*innerdata = node.Data[0];
+
+						memcpy(&(node.Key[0]), &(node.Key[1]), sizeof(TKey) * (node.Info & cChildCountMask));
+						memcpy(&(node.Data[0]), &(node.Data[1]), sizeof(TData) * (node.Info & cChildCountMask));
+
+						WriteNode(actnode, node);
+										
+					} else {					
+						node.Info = (node.Info & cIsLeafMask) | ((node.Info & cKeyCountMask) - 1);
+
+						*innerkey = node.Key[node.Info & cKeyCountMask];
+						*innerdata = node.Data[node.Info & cKeyCountMask];
+
+						//WriteNode(actnode, node);
+						AccessNode(actnode)->Info = node.Info;
+					}				
+				}
+				return;
+
+			} else { // inner node. go on and check if moving or merging is neccessary
+				nextnode = node.Childs[ge];
+
+				if ((AccessNode(nextnode)->Info & cKeyCountMask) == cEmptyNode) // move or merge
+				{
+					// set l and r for easier access
+					if (ge > 0)	
+						l = node.Childs[ge - 1] 
+					else 
+						l = 0;
+
+					if (ge - 1 < (node.Info & cKeyCountMask))	
+						r = node.Childs[ge + 1] 
+					else 
+						r = 0;
+
+
+					if ((r != 0) && ((AccessNode(r)->Info & cKeyCountMask) > cEmptyNode)) // move a Key-Data-pair from the right
+					{
+						ReadNode(r, node2);
+						ReadNode(nextnode, node);
+						access = AccessNode(actnode);
+						
+						// move key-data-pair down from current to the next node
+						node.Key[node.Info & cKeyCountMask] = access->Key[ge];
+						node.Data[node.Info & cKeyCountMask] = access->Data[ge];
+
+						// move the child from right to next node
+						node.Childs[(node.Info & cKeyCountMask) + 1] = node2.Childs[0];
+
+						// move key-data-pair up from right to current node
+						access->Key[ge] = node2.Key[0];
+						access->Data[ge] = node2.Data[0];					
+
+						// decrement right node key count and remove the first key-data-pair
+						node2.Info = (node2.Info & cIsLeafMask) | ((node2.Info & cKeyCountMask) - 1);
+						memcpy(&(node2.Key[0]), &(node2.Key[1]), sizeof(TKey) * (node2.Info & cChildCountMask));
+						memcpy(&(node2.Data[0]), &(node2.Data[1]), sizeof(TData) * (node2.Info & cChildCountMask));
+						memcpy(&(node2.Childs[0]), &(node2.Childs[1]), sizeof(TNode.Childs[0]) * ((node2.Info & cChildCountMask) + 1));
+					
+						// increment KeyCount of the next node
+						node.Info = (node.Info & cIsLeafMask) | ((node.Info & cKeyCountMask) + 1);
+						if ((node.Info & cIsLeafMask) == 0) // update the parent property of moved child
+						{
+							AccessNode(node.Childs[access->Info & cKeyCountMask])->Parent = nextnode;
+						}
+
+						WriteNode(r, node2);
+						WriteNode(nextnode, node);
+						skipread = true;
+
+					} else if ((l != 0) && ((AccessNode(l)->Info & cKeyCountMask) > cEmptyNode)) // move a Key-Data-pair from the left
+					{					
+						ReadNode(nextnode, node);
+						access = AccessNode(actnode);
+						access2 = AccessNode(l);
+
+						if (nextnode == Item.m_Node) 
+							Item.m_Index++;
+										
+						// increment next node key count and make new first key-data-pair					
+						memcpy(&(node.Key[1]), &(node.Key[0]), sizeof(TKey) * (node.Info & cChildCountMask));
+						memcpy(&(node.Data[1]), &(node.Data[0]), sizeof(TData) * (node.Info & cChildCountMask));
+						memcpy(&(node.Childs[1]), &(node.Childs[0]), sizeof(TNode.Childs[0]) * ((node.Info & cChildCountMask) + 1));
+						node.Info = (node.Info & cIsLeafMask) | ((node.Info & cKeyCountMask) + 1);					
+
+						// move key-data-pair down from current to the next node
+						node.Key[0] = access->Key[ge];
+						node.Data[0] = access->Data[ge];
+						
+						// move the child from left to next node
+						node.Childs[0] = access2->Childs[access2->Info & cKeyCountMask];
+
+						// move key-data-pair up from left to current node					
+						access->Key[ge] = access2->Key[(access2->Info & cKeyCountMask) - 1];
+						access->Data[ge] = access2->Data[(access2->Info & cKeyCountMask) - 1];		
+
+						// decrement left node key count
+						access2->Info = (access2->Info & cIsLeafMask) | ((access2->Info & cKeyCountMask) - 1);
+
+						if ((node.Info & cIsLeafMask) == 0) // update the parent property of moved child
+						{
+							AccessNode(node.Childs[0])->Parent = nextnode;
+						}
+
+						WriteNode(nextnode, node);
+						skipread = true;			
+
+					} else if (l != 0) // merge with the left node
+					{
+						if (nextnode == Item.m_Node)
+						{
+							Item.m_Index += (AccessNode(l)->Info & cKeyCountMask);
+							nextnode = MergeNodes(l, nextnode, node.Key[ge - 1], node.Data[ge - 1]);
+							Item.m_Node = nextnode;
+						} else {
+							nextnode = MergeNodes(l, nextnode, node.Key[ge - 1], node.Data[ge - 1]);
+						}
+						node.Childs[ge - 1] = nextnode;
+
+						memcpy(&(node.Key[ge-1]), &(node.Key[ge]), sizeof(TKey) * ((node.Info & cChildCountMask) - ge));
+						memcpy(&(node.Data[ge-1]), &(node.Data[ge]), sizeof(TData) * ((node.Info & cChildCountMask) - ge));
+						memcpy(&(node.Childs[ge]), &(node.Childs[ge+1]), sizeof(TNode.Childs[0]) * ((node.Info & cChildCountMask) - ge));
+						
+						node.Info = (node.Info & cIsLeafMask) | ((node.Info & cKeyCountMask) - 1);				
+
+						WriteNode(actnode, node);
+
+					} else { // merge with the right node
+						if (nextnode == Item.m_Node)
+						{
+							nextnode = MergeNodes(nextnode, r, node.Key[ge], node.Data[ge]);
+							Item.m_Node = nextnode;
+						} else {
+							nextnode = MergeNodes(nextnode, r, node.Key[ge], node.Data[ge]);
+						}
+
+						node.Childs[ge] = nextnode;
+
+						memcpy(&(node.Key[ge]), &(node.Key[ge+1]), sizeof(TKey) * ((node.Info & cChildCountMask) - ge - 1));
+						memcpy(&(node.Data[ge]), &(node.Data[ge+1]), sizeof(TData) * ((node.Info & cChildCountMask) - ge - 1));
+						memcpy(&(node.Childs[ge+1]), &(node.Childs[ge+2]), sizeof(TNode.Childs[0]) * ((node.Info & cChildCountMask) - ge - 1));
+						
+						node.Info = (node.Info & cIsLeafMask) | ((node.Info & cKeyCountMask) - 1);				
+
+						WriteNode(actnode, node);
+
+					}
+				}
+			} // if (exists) else if (node.Info & cIsLeafMask)
+
+			actnode = nextnode;
+			if (!skipread)
+				ReadNode(actnode, node);
+
+		} // while(actnode)
+
+	}
 }
 
 
