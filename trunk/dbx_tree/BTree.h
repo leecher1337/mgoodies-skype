@@ -9,10 +9,10 @@ template <typename TKey, typename TData = TEmpty, int SizeParam = 4, bool Unique
 class CBTree 
 {
 private:
-	static const char cIsLeafMask = 0x80;
-	static const char cKeyCountMask = 0x7F;
-	static const char cFullNode = SizeParam * 2 - 1;
-	static const char cEmptyNode = SizeParam - 1;
+	static const unsigned char cIsLeafMask = 0x80;
+	static const unsigned char cKeyCountMask = 0x7F;
+	static const unsigned char cFullNode = SizeParam * 2 - 1;
+	static const unsigned char cEmptyNode = SizeParam - 1;
 
 
 
@@ -21,11 +21,11 @@ private:
 
 		typedef struct TNode {
 			unsigned int Parent;
-			char Info;
+			unsigned char Info;
 			TKey Key[SizeParam * 2 - 1];
 			TData Data[SizeParam * 2 - 1];
-			unsigned int Childs[SizeParam * 2];
-		} TNode, *PNode;
+			unsigned int Child[SizeParam * 2];
+		} TNode;
 
 	#pragma pack(pop)
 
@@ -33,15 +33,19 @@ private:
 	void SplitNode(unsigned int Node, unsigned int & Left, unsigned int & Right, TKey & UpKey, TData & UpData);
 	unsigned int MergeNodes(unsigned int Left, unsigned int Right, const TKey & DownKey, const TData & DownData);
 
+	
+	void ReadNode(unsigned int Node, TNode & Dest);
+	void WriteNode(unsigned int Node, TNode & Source);
+
 protected:
 	unsigned int m_Root;
 
 	virtual unsigned int CreateNewNode();
 	virtual void DeleteNode(unsigned int Node);
 	virtual void RootChanged();
-	virtual PNode AccessNode(unsigned int Node);
-	virtual void ReadNode(unsigned int Node, TNode & Dest);
-	virtual void WriteNode(unsigned int Node, TNode & Source);
+	virtual void Read(unsigned int Node, int Offset, int Size, TNode & Dest);
+	virtual void Write(unsigned int Node, int Offset, int Size, TNode & Source);
+	
 	virtual void ClearTree();
 	
 public:
