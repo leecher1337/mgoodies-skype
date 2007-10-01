@@ -90,3 +90,5 @@ public:
 	void Delete(const iterator& Item);
 
 };
+
+#include "BTree.inl"
