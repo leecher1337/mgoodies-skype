@@ -6,7 +6,7 @@ CMappedMemory::CMappedMemory(const char* FileName)
 {
 	SYSTEM_INFO sysinfo;
 
-	m_FreeFileEnd = NULL;
+	m_FreeFileEnd = m_FreeSpace.end();
 	m_AllocSize = 0;
 	m_Size = 0;
 	m_DirectFile = 0;
@@ -110,7 +110,7 @@ unsigned int CMappedMemory::Alloc(unsigned int Size)
 		m_Base = NULL;
 		CloseHandle(m_FileMapping);
 		
-		if (m_FreeFileEnd != NULL)
+		if (m_FreeFileEnd != m_FreeSpace.end())
 		{
 			freestart = m_FreeFileEnd->second;
 			m_FreeSpace.erase(m_FreeFileEnd);
@@ -134,7 +134,7 @@ unsigned int CMappedMemory::Alloc(unsigned int Size)
 			Free(res + Size, i->first - Size); // if allocating from m_FreeFileEnd it will be set to the left part, if something left...
 
 		if (i == m_FreeFileEnd)
-			m_FreeFileEnd = NULL;  // ...or to NULL if nothing left
+			m_FreeFileEnd = m_FreeSpace.end();  // ...or to end() if nothing left
 
 		m_FreeSpace.erase(i);
 	}
