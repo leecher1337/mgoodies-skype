@@ -146,7 +146,7 @@ template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 unsigned int CBTree<TKey, TData, SizeParam, UniqueKeys>::MergeNodes(unsigned int Left, unsigned int Right, const TKey & DownKey, const TData & DownData)
 {
 	TNode ldata, rdata;
-	int downindex;
+	char downindex;
 
 	ReadNode(Left, ldata);
 	ReadNode(Right, rdata);
@@ -309,7 +309,7 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(const TKey& Key)
 {
 	if (!m_Root) return false;
 
-	TNode node, node2, lnode, rnode, tmp;
+	TNode node, node2, lnode = {0}, rnode = {0}, tmp;
 	unsigned int actnode = m_Root;
 	unsigned int nextnode, l, r;
 	bool exists, skipread;
@@ -317,8 +317,8 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(const TKey& Key)
 
 	bool foundininnernode = false;
 	bool wantleftmost = false;
-	unsigned int innernode;
-	int innerindex;
+	unsigned int innernode = 0;
+	int innerindex = -1;
 
 	ReadNode(actnode, node);
 
@@ -589,7 +589,7 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 	} else { // the hard one :(
 
 
-		TNode node, node2, lnode, rnode, tmp;
+		TNode node, node2, lnode = {0}, rnode = {0}, tmp;
 		unsigned int actnode = m_Root;
 		unsigned int nextnode, l, r;
 		bool exists, skipread;
@@ -597,8 +597,8 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 
 		bool foundininnernode = false;
 		bool wantleftmost = false;
-		unsigned int innernode;
-		int innerindex;
+		unsigned int innernode = 0;
+		int innerindex = -1;
 
 		std::stack<unsigned int> path;
 
