@@ -159,7 +159,7 @@ unsigned int CBTree<TKey, TData, SizeParam, UniqueKeys>::MergeNodes(unsigned int
 	memcpy(&(ldata.Data[downindex+1]), &(rdata.Data[0]), sizeof(TData) * (rdata.Info & cKeyCountMask));
 	memcpy(&(ldata.Child[downindex+1]), &(rdata.Child[0]), sizeof(unsigned int) * ((rdata.Info & cKeyCountMask) + 1));
 
-	ldata.Info = (ldata.Info & cIsLeafMask) | (downindex + 1 + (rdata.Info & cKeyCountMask));
+	ldata.Info =(unsigned char) ((ldata.Info & cIsLeafMask) | (downindex + 1 + (rdata.Info & cKeyCountMask)));
 
 	WriteNode(Left, ldata);
 	DeleteNode(Right);
@@ -626,7 +626,7 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 				else
 					ge = node.Info & cKeyCountMask;
 
-			} else if (actnode = Item.m_Node)
+			} else if (actnode == Item.m_Node)
 			{				
 				exists = true;
 				ge = Item.m_Index;

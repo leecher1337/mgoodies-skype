@@ -153,7 +153,7 @@ void CThreadLocalCounter::Close(PThreadInfo & Thread)
 			q = p;
 			p = p->NextDead;
 			
-			if (q->ThreadID = 0)
+			if (q->ThreadID == 0)
 			{
 				q->ThreadID = 0;
 				q->RecursionCount = timestamp;
@@ -274,7 +274,7 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 
 		m_WriterID = threadid;
 
-		res = (oldrevisionlevel == InterlockedIncrement(&m_RevisionLevel) - 1);
+		res = (oldrevisionlevel+1 == (unsigned int)InterlockedIncrement(&m_RevisionLevel))?true:false;
 
 	}
 
