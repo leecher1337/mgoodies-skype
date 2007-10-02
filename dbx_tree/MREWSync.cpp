@@ -246,7 +246,7 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 	bool hasreadlock;
 	DWORD threadid = GetCurrentThreadId();
 	int test;
-	unsigned int oldrevisionlevel;
+	long oldrevisionlevel;
 
 	if (m_WriterID != threadid)
 	{
@@ -274,7 +274,7 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 
 		m_WriterID = threadid;
 
-		res = (oldrevisionlevel+1 == (unsigned int)InterlockedIncrement(&m_RevisionLevel))?true:false;
+		res = (oldrevisionlevel == (InterlockedIncrement(&m_RevisionLevel) - 1));
 
 	}
 
