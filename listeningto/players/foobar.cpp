@@ -22,11 +22,13 @@ Boston, MA 02111-1307, USA.
 
 
 
-Winamp::Winamp()
+Foobar::Foobar()
 { 
-	name = _T("Winamp");
-	window_class = _T("Winamp v1.x");
-	window_name = NULL;
-	message_window_class = MIRANDA_WINDOWCLASS _T(".Winamp");
-	dll_name = "gen_mlt";
+	name = _T("Foobar");
+}
+
+
+int Foobar::ChangedListeningInfo()
+{
+	return 0;
 }

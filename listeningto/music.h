@@ -30,6 +30,7 @@ Boston, MA 02111-1307, USA.
 #include "players\\watrack.h"
 #include "players\\generic.h"
 #include "players\\winamp.h"
+#include "players\\foobar.h"
 #include "players\\itunes.h"
 #include "players\\wmp.h"
 
@@ -42,7 +43,8 @@ Boston, MA 02111-1307, USA.
 #define WMP 2
 #define WINAMP 3
 #define ITUNES 4
-#define NUM_PLAYERS 5
+#define FOOBAR 5
+#define NUM_PLAYERS 6
 
 extern Player *players[NUM_PLAYERS];
 

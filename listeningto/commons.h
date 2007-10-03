@@ -28,11 +28,6 @@ Boston, MA 02111-1307, USA.
 #include <time.h>
 
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 // Miranda headers
 #define MIRANDA_VER 0x0600
 
@@ -56,12 +51,12 @@ extern "C"
 #include <m_icolib.h>
 #include <m_icq.h>
 #include <m_variables.h>
-
-#include "../modernb/m_clui.h"
-#include "../modernb/CLUIFrames/m_cluiframes.h"
+#include <m_clui.h>
+#include <m_cluiframes.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
+#include "../utils/mir_icons.h"
 
 #include "m_listeningto.h"
 #include "music.h"
@@ -101,9 +96,5 @@ extern PLUGINLINK *pluginLink;
 void StartTimer();
 int ProtoServiceExists(const char *szModule, const char *szService);
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __COMMONS_H__

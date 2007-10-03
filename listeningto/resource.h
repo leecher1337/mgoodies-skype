@@ -62,6 +62,7 @@
 #define IDC_POLL_TIMER_S_L              1091
 #define IDC_OTHER                       1092
 #define IDC_CONTACTS_G                  1093
+#define IDC_FOOBAR                      1093
 #define IDC_LISTENING_G                 1094
 #define IDC_XSTATUS_G                   1095
 #define IDC_XSTATUS_L                   1096

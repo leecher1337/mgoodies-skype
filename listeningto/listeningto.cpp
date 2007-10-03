@@ -29,6 +29,7 @@ Boston, MA 02111-1307, USA.
 // Service called by toptoolbar
 #define MS_LISTENINGTO_TTB		"ListeningTo/TopToolBar"
 
+#define ICON_NAME "LISTENING_TO_ICON"
 
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
@@ -37,7 +38,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,1,7),
+	PLUGIN_MAKE_VERSION(0,1,1,8),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -56,20 +57,15 @@ PLUGININFOEX pluginInfo={
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 
-static HANDLE hModulesLoaded = NULL;
-static HANDLE hPreShutdownHook = NULL;
-static HANDLE hTopToolBarLoadedHook = NULL;
-static HANDLE hClistExtraListRebuildHook = NULL;
-static HANDLE hSettingChangedHook = NULL;
+static HANDLE hHooks[6] = {0};
+static HANDLE hServices[8] = {0};
 static HANDLE hEnableStateChangedEvent = NULL;
-static HANDLE hIconsChanged = NULL;
 
 static HANDLE hTTB = NULL;
 static char *metacontacts_proto = NULL;
 static BOOL loaded = FALSE;
 static UINT hTimer = 0;
 static HANDLE hExtraImage = NULL;
-static HICON hListeningToIcon = NULL;
 static DWORD lastInfoSetTime = 0;
 
 struct ProtocolInfo
@@ -99,6 +95,7 @@ int GetTextFormat(WPARAM wParam,LPARAM lParam);
 int GetParsedFormat(WPARAM wParam,LPARAM lParam);
 int GetOverrideContactOption(WPARAM wParam,LPARAM lParam);
 int GetUnknownText(WPARAM wParam,LPARAM lParam);
+int SetNewSong(WPARAM wParam,LPARAM lParam);
 void SetExtraIcon(HANDLE hContact, BOOL set);
 void SetListeningInfos(LISTENINGTOINFO *lti);
 TCHAR *ReplaceVars(TCHAR *str, TCHAR **fr, int size);
@@ -148,7 +145,6 @@ extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
 	return interfaces;
 }
 
-
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link) 
 {
 	pluginLink = link;
@@ -157,18 +153,20 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	CoInitialize(NULL);
 
-	CreateServiceFunction(MS_LISTENINGTO_ENABLED, ListeningToEnabled);
-	CreateServiceFunction(MS_LISTENINGTO_ENABLE, EnableListeningTo);
-	CreateServiceFunction(MS_LISTENINGTO_GETTEXTFORMAT, GetTextFormat);
-	CreateServiceFunction(MS_LISTENINGTO_GETPARSEDTEXT, GetParsedFormat);
-	CreateServiceFunction(MS_LISTENINGTO_OVERRIDECONTACTOPTION, GetOverrideContactOption);
-	CreateServiceFunction(MS_LISTENINGTO_GETUNKNOWNTEXT, GetUnknownText);
-	CreateServiceFunction(MS_LISTENINGTO_MAINMENU, MainMenuClicked);
+	// Services
+	hServices[0] = CreateServiceFunction(MS_LISTENINGTO_ENABLED, ListeningToEnabled);
+	hServices[1] = CreateServiceFunction(MS_LISTENINGTO_ENABLE, EnableListeningTo);
+	hServices[2] = CreateServiceFunction(MS_LISTENINGTO_GETTEXTFORMAT, GetTextFormat);
+	hServices[3] = CreateServiceFunction(MS_LISTENINGTO_GETPARSEDTEXT, GetParsedFormat);
+	hServices[4] = CreateServiceFunction(MS_LISTENINGTO_OVERRIDECONTACTOPTION, GetOverrideContactOption);
+	hServices[5] = CreateServiceFunction(MS_LISTENINGTO_GETUNKNOWNTEXT, GetUnknownText);
+	hServices[6] = CreateServiceFunction(MS_LISTENINGTO_MAINMENU, MainMenuClicked);
+	hServices[7] = CreateServiceFunction(MS_LISTENINGTO_SET_NEW_SONG, SetNewSong);
 	
-	// hooks
-	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
-	hPreShutdownHook = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
-	hSettingChangedHook = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, SettingChanged);
+	// Hooks
+	hHooks[0] = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
+	hHooks[1] = HookEvent(ME_SYSTEM_PRESHUTDOWN, PreShutdown);
+	hHooks[2] = HookEvent(ME_DB_CONTACT_SETTINGCHANGED, SettingChanged);
 
 	hEnableStateChangedEvent = CreateHookableEvent(ME_LISTENINGTO_ENABLE_STATE_CHANGED);
 
@@ -197,12 +195,6 @@ int ProtoServiceExists(const char *szModule, const char *szService)
 	return ServiceExists(str);
 }
 
-int IconsChanged(WPARAM wParam, LPARAM lParam) 
-{
-	hListeningToIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON");
-	return 0;
-}
-
 // Called when all the modules are loaded
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
@@ -214,34 +206,32 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
 
+	HICON hIcon;
 	if (ServiceExists(MS_SKIN2_ADDICON)) 
 	{
-		hListeningToIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON");
-
-		if (hListeningToIcon == NULL) 
+		hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) ICON_NAME);
+		if (hIcon == NULL) 
 		{
 			SKINICONDESC sid = {0};
 			sid.cbSize = sizeof(SKINICONDESC);
 			sid.flags = SIDF_TCHAR;
 			sid.ptszSection = TranslateT("Contact List");
 			sid.ptszDescription = TranslateT("Listening to");
-			sid.pszName = "LISTENING_TO_ICON";
-			sid.hDefaultIcon = (HICON) LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
+			sid.pszName = ICON_NAME;
+			sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO));
 			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
-			hListeningToIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON");
+			hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) ICON_NAME);
 		}
-
-		hIconsChanged = HookEvent(ME_SKIN2_ICONSCHANGED, IconsChanged);
 	}
 	else
-	{		
-		hListeningToIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO), IMAGE_ICON, 16, 16, 0);
+	{
+		hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO));
 	}
 
 	if (ServiceExists(MS_CLIST_EXTRA_ADD_ICON))
 	{
-		hClistExtraListRebuildHook = HookEvent(ME_CLIST_EXTRA_LIST_REBUILD, ClistExtraListRebuild);
+		hHooks[4] = HookEvent(ME_CLIST_EXTRA_LIST_REBUILD, ClistExtraListRebuild);
 	}
 
     // updater plugin support
@@ -279,7 +269,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	mi.pszPopupName = (char*) -1;
 	mi.pszName = "Listening to";
 	mi.flags = CMIF_ROOTPOPUP;
-	mi.hIcon = hListeningToIcon;
+	mi.hIcon = hIcon;
 	HANDLE popup = (HANDLE) CallService(MS_CLIST_ADDMAINMENUITEM, 0, (LPARAM) &mi);
 
 	mi.pszPopupName = (char *) popup;
@@ -347,7 +337,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		proto_itens_num++;
 	}
 
-	hTopToolBarLoadedHook = HookEvent(ME_TTB_MODULELOADED, TopToolBarLoaded);
+	hHooks[5] = HookEvent(ME_TTB_MODULELOADED, TopToolBarLoaded);
 
 	// Variables support
 	if (ServiceExists(MS_VARS_REGISTERTOKEN))
@@ -408,6 +398,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
 	}
 
+	ReleaseIconEx(hIcon);
+
 	loaded = TRUE;
 
 	SetListeningInfos(NULL);
@@ -423,12 +415,14 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 	DestroyHookableEvent(hEnableStateChangedEvent);
 
-	UnhookEvent(hModulesLoaded);
-	UnhookEvent(hPreShutdownHook);
-	if (hTopToolBarLoadedHook) UnhookEvent(hTopToolBarLoadedHook);
-	UnhookEvent(hClistExtraListRebuildHook);
-	UnhookEvent(hSettingChangedHook);
-	if (hIconsChanged) UnhookEvent(hIconsChanged);
+	int i;
+	for(i = 0; i < MAX_REGS(hHooks); i++)
+		if (hHooks[i] != NULL)
+			UnhookEvent(hHooks[i]);
+
+	for(i = 0; i < MAX_REGS(hServices); i++)
+		if (hServices[i] != NULL)
+			DestroyServiceFunction(hServices[i]);
 
 	if (hTimer != NULL)
 		KillTimer(NULL, hTimer);
@@ -979,7 +973,14 @@ void HasNewListeningInfo()
 
 int ClistExtraListRebuild(WPARAM wParam, LPARAM lParam)
 {
-	hExtraImage = (HANDLE) CallService(MS_CLIST_EXTRA_ADD_ICON, (WPARAM) hListeningToIcon, 0);
+	HICON hIcon = LoadIconEx(ICON_NAME);
+	if (hIcon == NULL)
+		hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO));
+
+	hExtraImage = (HANDLE) CallService(MS_CLIST_EXTRA_ADD_ICON, (WPARAM) hIcon, 0);
+
+	ReleaseIconEx(hIcon);
+
 	return 0;
 }
 
@@ -1026,6 +1027,17 @@ int SettingChanged(WPARAM wParam,LPARAM lParam)
 	else
 		SetExtraIcon(hContact, TRUE);
 
+	return 0;
+}
+
+
+int SetNewSong(WPARAM wParam,LPARAM lParam)
+{
+	WCHAR *data = (WCHAR *) wParam;
+	if (data == NULL)
+		return -1;
+
+	((GenericPlayer *) players[GENERIC])->NewData(data, lstrlenW(data));
 	return 0;
 }
 

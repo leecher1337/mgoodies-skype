@@ -18,15 +18,17 @@ Boston, MA 02111-1307, USA.
 */
 
 
-#include "..\\commons.h"
+class Foobar : public Player
+{
+protected:
 
 
+public:
+	Foobar();
 
-Winamp::Winamp()
-{ 
-	name = _T("Winamp");
-	window_class = _T("Winamp v1.x");
-	window_name = NULL;
-	message_window_class = MIRANDA_WINDOWCLASS _T(".Winamp");
-	dll_name = "gen_mlt";
-}
+	// Return:
+	// < 0 removed
+	// 0 not changed
+	// > 0 changed
+	virtual int ChangedListeningInfo();
+};
