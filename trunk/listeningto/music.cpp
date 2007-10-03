@@ -31,6 +31,7 @@ void InitMusic()
 	players[WMP] = new WindowsMediaPlayer();
 	players[WINAMP] = new Winamp();
 	players[ITUNES] = new ITunes();
+	players[FOOBAR] = new Foobar();
 }
 
 

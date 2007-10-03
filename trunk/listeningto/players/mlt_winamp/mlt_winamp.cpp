@@ -80,7 +80,7 @@ void WindowThread(void *param)
 
 	RegisterClass(&wc);
 
-	hMsgWnd = CreateWindow(MESSAGE_WINDOWCLASS, "Miranda ListeningTo Winamp Plugin", 
+	hMsgWnd = CreateWindow(MESSAGE_WINDOWCLASS, _T("Miranda ListeningTo Winamp Plugin"), 
 							0, 0, 0, 0, 0, HWND_MESSAGE, NULL, hInst, NULL);
 
 	if (hMsgWnd != NULL)
@@ -277,6 +277,7 @@ void SendDataToMiranda(char *filename, char *title)
 	{
 		Concat(data, size, NULL);
 	}
+	Concat(data, size, NULL);
 
 	SendData(data);
 }

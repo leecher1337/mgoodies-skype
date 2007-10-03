@@ -168,6 +168,10 @@ SOURCE=.\m_listeningto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\utils\mir_icons.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\utils\mir_memory.h
 # End Source File
 # Begin Source File
@@ -216,6 +220,10 @@ SOURCE=.\listeningto.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\utils\mir_icons.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\utils\mir_memory.cpp
 # End Source File
 # Begin Source File
@@ -234,6 +242,14 @@ SOURCE=.\options.cpp
 # Begin Group "Players"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\players\foobar.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\players\foobar.h
+# End Source File
 # Begin Source File
 
 SOURCE=.\players\generic.cpp

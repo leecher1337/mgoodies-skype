@@ -58,6 +58,7 @@
 [Winamp (*)]
 [Windows Media Player]
 [iTunes]
+[Foobar]
 [Other players]
 [Ask for new info every]
 [seconds]

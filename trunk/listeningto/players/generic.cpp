@@ -27,7 +27,7 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 static UINT hTimer = NULL;
 
 
-GenericPlayer *singletron = NULL;
+GenericPlayer *singleton = NULL;
 
 
 
@@ -35,7 +35,7 @@ GenericPlayer::GenericPlayer()
 {
 	enabled = TRUE;
 	received[0] = L'\0';
-	singletron = this;
+	singleton = this;
 
 	WNDCLASS wc = {0};
 	wc.lpfnWndProc		= ReceiverWndProc;
@@ -56,7 +56,7 @@ GenericPlayer::~GenericPlayer()
 		KillTimer(NULL, hTimer);
 
 	UnregisterClass(MIRANDA_WINDOWCLASS, hInst);
-	singletron = NULL;
+	singleton = NULL;
 }
 
 
@@ -121,8 +121,6 @@ void GenericPlayer::ProcessReceived()
 
 	FreeData();
 
-OutputDebugStringA("ProcessReceived\n");
-
 	changed = TRUE;
 
 	if (lstrcmpW(L"1", parts[0]) != 0 || parts[1][0] == L'\0' || (parts[3][0] == L'\0' && parts[4][0] == L'\0'))
@@ -143,7 +141,11 @@ OutputDebugStringA("ProcessReceived\n");
 	listening_info.ptszTrack = mir_dupTW(parts[6]);
 	listening_info.ptszYear = mir_dupTW(parts[7]);
 	listening_info.ptszGenre = mir_dupTW(parts[8]);
-	listening_info.ptszPlayer = mir_tstrdup(players[i]->name);
+
+	if (i == NUM_PLAYERS)
+		listening_info.ptszPlayer = mir_dupTW(parts[1]);
+	else
+		listening_info.ptszPlayer = mir_tstrdup(players[i]->name);
 
 	if (parts[9] != NULL)
 	{
@@ -175,16 +177,34 @@ OutputDebugStringA("ProcessReceived\n");
 }
 
 
-
 static VOID CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
 	KillTimer(NULL, hTimer);
 	hTimer = NULL;
 
-	if (singletron != NULL)
-		singletron->ProcessReceived();
+	if (singleton != NULL)
+		singleton->ProcessReceived();
 }
 
+
+void GenericPlayer::NewData(WCHAR *data, size_t len)
+{
+	if (data[0] == L'\0')
+		return;
+
+	EnterCriticalSection(&cs);
+
+	if (wcsncmp(received, data, min(len, 1024)) != 0)
+	{
+		lstrcpynW(received, data, min(len, 1024));
+
+		if (hTimer)
+			KillTimer(NULL, hTimer);
+		hTimer = SetTimer(NULL, NULL, 300, SendTimerProc); // Do the processing after we return true
+	}
+
+	LeaveCriticalSection(&cs);
+}
 
 
 static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -197,21 +217,7 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 			if (pData->dwData != MIRANDA_DW_PROTECTION || pData->cbData == 0 || pData->lpData == NULL)
 				return false;
 
-			if (((WCHAR*) pData->lpData)[0] == L'\0')
-				break;
-
-			EnterCriticalSection(&singletron->cs);
-
-			if (wcsncmp(singletron->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024)) != 0)
-			{
-				lstrcpynW(singletron->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024));
-
-				if (hTimer)
-					KillTimer(NULL, hTimer);
-				hTimer = SetTimer(NULL, NULL, 300, SendTimerProc); // Do the processing after we return true
-			}
-
-			LeaveCriticalSection(&singletron->cs);
+			singleton->NewData((WCHAR *) pData->lpData, pData->cbData / 2);
 
 			return TRUE;
 			break;

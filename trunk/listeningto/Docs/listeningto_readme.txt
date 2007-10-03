@@ -5,7 +5,7 @@ This plugins allows to set/remove your listening info to protocols that support 
 
 This means that it set the user listening to information, not the info from your contacts. To see the info from your contacts you need a clist that supports it (only modern now) or a plugin like tipper (for a contact this info is stored inside <ProtocolName>/ListeningTo db key of the contact).
 
-Any protocol that support some services (in m_proto_listeningto.h) can interface with this plugin. By now it means JGmail unicode version and MSN.
+Any protocol that support some services (in m_proto_listeningto.h) can interface with this plugin. By now it means JGmail unicode version, MSN and Jabber.
 
 This protocol also save the listening info for the user (you!) into <ProtocolName>/ListeningTo db key.
 

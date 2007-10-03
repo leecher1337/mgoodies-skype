@@ -57,4 +57,13 @@ lParam: BOOL - enabled
 #define ME_LISTENINGTO_ENABLE_STATE_CHANGED		"ListeningTo/EnableStateChanged"
 
 
+/*
+Provide new info about a song change to listening to
+
+wParam: WCHAR * - song data, in format L"<Status 0-stoped 1-playing>\\0<Player>\\0<Type>\\0<Title>\\0<Artist>\\0<Album>\\0<Track>\\0<Year>\\0<Genre>\\0<Length (secs)>\\0<Radio Station>\\0"
+lParam: ignored
+*/
+#define MS_LISTENINGTO_SET_NEW_SONG		"ListeningTo/SetNewSong"
+
+
 #endif // __M_LISTENINGTO_H__

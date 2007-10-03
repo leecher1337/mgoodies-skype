@@ -2,6 +2,11 @@ ListeningTo
 
 Changelog:
 
+. 0.1.1.8
+  + First step for foobar support
+  + Added service to allow other plugins to send info to this one
+  * Renamed mlt_winamp.dll to gen_mlt.dll (to be more compatible with winamp). You can delete mlt_winamp.dll
+
 . 0.1.1.7
   * Fix for crash when disabled
   + Wait at least 10s beetween protocol notifications 

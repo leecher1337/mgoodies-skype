@@ -64,6 +64,7 @@ static OptPageControl playersControls[] = {
 	{ NULL,							CONTROL_CHECKBOX,	IDC_WINAMP,			"EnableWinamp", TRUE },
 	{ NULL,							CONTROL_CHECKBOX,	IDC_ITUNES,			"EnableITunes", TRUE },
 	{ NULL,							CONTROL_CHECKBOX,	IDC_WMP,			"EnableWMP", TRUE },
+	{ NULL,							CONTROL_CHECKBOX,	IDC_FOOBAR,			"EnableFoobar", TRUE },
 	{ &opts.enable_other_players,	CONTROL_CHECKBOX,	IDC_OTHER,			"EnableOtherPlayers", TRUE },
 	{ &opts.enable_code_injection,	CONTROL_CHECKBOX,	IDC_CODE_INJECTION,	"EnableCodeInjection", TRUE }
 };
@@ -115,6 +116,7 @@ void InitOptions()
 	playersControls[2].var = &players[WINAMP]->enabled;
 	playersControls[3].var = &players[ITUNES]->enabled;
 	playersControls[4].var = &players[WMP]->enabled;
+	playersControls[5].var = &players[FOOBAR]->enabled;
 
 	LoadOptions();
 
@@ -219,7 +221,8 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 int playerDlgs[] = {
 	WINAMP, IDC_WINAMP, 
 	WMP, IDC_WMP, 
-	ITUNES, IDC_ITUNES
+	ITUNES, IDC_ITUNES,
+	FOOBAR, IDC_FOOBAR
 };
 
 

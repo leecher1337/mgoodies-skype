@@ -30,7 +30,7 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 static UINT hTimer = NULL;
 
 
-WindowsMediaPlayer *singletron = NULL;
+WindowsMediaPlayer *singleton = NULL;
 
 
 
@@ -38,7 +38,7 @@ WindowsMediaPlayer::WindowsMediaPlayer()
 {
 	name = _T("WindowsMediaPlayer");
 	received[0] = L'\0';
-	singletron = this;
+	singleton = this;
 
 	WNDCLASS wc = {0};
 	wc.lpfnWndProc		= ReceiverWndProc;
@@ -59,7 +59,7 @@ WindowsMediaPlayer::~WindowsMediaPlayer()
 		KillTimer(NULL, hTimer);
 
 	UnregisterClass(WMP_WINDOWCLASS, hInst);
-	singletron = NULL;
+	singleton = NULL;
 }
 
 
@@ -128,8 +128,8 @@ static VOID CALLBACK SendTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD
 	KillTimer(NULL, hTimer);
 	hTimer = NULL;
 
-	if (singletron != NULL)
-		singletron->ProcessReceived();
+	if (singleton != NULL)
+		singleton->ProcessReceived();
 }
 
 
@@ -144,18 +144,18 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 			if (pData->dwData != 0x547 || pData->cbData == 0 || pData->lpData == NULL)
 				return false;
 
-			EnterCriticalSection(&singletron->cs);
+			EnterCriticalSection(&singleton->cs);
 
-			if (wcsncmp(singletron->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024)) != 0)
+			if (wcsncmp(singleton->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024)) != 0)
 			{
-				lstrcpynW(singletron->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024));
+				lstrcpynW(singleton->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024));
 
 				if (hTimer)
 					KillTimer(NULL, hTimer);
 				hTimer = SetTimer(NULL, NULL, 5, SendTimerProc); // Do the processing after we return true
 			}
 
-			LeaveCriticalSection(&singletron->cs);
+			LeaveCriticalSection(&singleton->cs);
 
 			return TRUE;
 			break;

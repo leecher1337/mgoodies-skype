@@ -28,9 +28,9 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 IDD_OPTIONS DIALOGEX 0, 0, 288, 205
-STYLE DS_SHELLFONT | WS_CHILD | WS_VISIBLE
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " Listening to information ",IDC_LISTENING_G,3,12,282,45
     CONTROL         "Enable sending listening information to contacts",
@@ -61,8 +61,8 @@ BEGIN
                     WS_TABSTOP
 END
 
-IDD_PLAYERS DIALOG DISCARDABLE  0, 0, 288, 224
-STYLE DS_SHELLFONT | WS_CHILD | WS_VISIBLE
+IDD_PLAYERS DIALOGEX 0, 0, 288, 224
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
@@ -72,26 +72,28 @@ BEGIN
     CONTROL         "Winamp (*)",IDC_WINAMP,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,20,44,129,11
     CONTROL         "Windows Media Player",IDC_WMP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,20,60,129,11
+                    WS_TABSTOP,20,59,129,11
     CONTROL         "iTunes",IDC_ITUNES,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,20,74,129,11
-    CONTROL         "Other players",IDC_OTHER,"Button",BS_AUTOCHECKBOX | 
+    CONTROL         "Foobar",IDC_FOOBAR,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,20,89,129,11
-    LTEXT           "Ask for new info every",IDC_POLL_TIMER_L,3,111,87,12
-    EDITTEXT        IDC_POLL_TIMER,97,110,34,13,ES_AUTOHSCROLL
+    CONTROL         "Other players",IDC_OTHER,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,20,104,129,11
+    LTEXT           "Ask for new info every",IDC_POLL_TIMER_L,3,126,87,12
+    EDITTEXT        IDC_POLL_TIMER,97,125,34,13,ES_AUTOHSCROLL
     CONTROL         "",IDC_POLL_TIMER_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
                     UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
-                    UDS_HOTTRACK,125,108,11,12
-    LTEXT           "seconds",IDC_POLL_TIMER_S_L,138,111,82,12
+                    UDS_HOTTRACK,125,123,11,12
+    LTEXT           "seconds",IDC_POLL_TIMER_S_L,138,126,82,12
     CONTROL         "Allow auto-loading plugins into players (affect players with *)",
                     IDC_CODE_INJECTION,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    3,127,282,11
+                    3,142,282,11
 END
 
 IDD_FORMAT DIALOGEX 0, 0, 288, 221
-STYLE DS_SHELLFONT | WS_CHILD | WS_VISIBLE
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " Listening to ",IDC_LISTENINGTO_G,3,8,282,125
     LTEXT           "Template:",IDC_TEMPLATE_L,11,22,55,10

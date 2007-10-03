@@ -161,6 +161,7 @@ CodeInjectionPlayer::CodeInjectionPlayer()
 	message_window_class = NULL;
 	next_request_time = 0;
 	found_window = FALSE;
+	dll_name = NULL;
 }
 
 CodeInjectionPlayer::~CodeInjectionPlayer()
@@ -207,11 +208,7 @@ int CodeInjectionPlayer::ChangedListeningInfo()
 
 	size_t len = p - dll_path;
 
-#ifdef UNICODE
-	mir_snprintf(p, 1024 - len, "listeningto\\mlt_%S.dll", name);
-#else
-	mir_snprintf(p, 1024 - len, "listeningto\\mlt_%s.dll", name);
-#endif
+	mir_snprintf(p, 1024 - len, "listeningto\\%s.dll", dll_name);
 
 	len = strlen(dll_path);
 

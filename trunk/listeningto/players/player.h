@@ -72,6 +72,7 @@ public:
 class CodeInjectionPlayer : public PollPlayer
 {
 protected:
+	char *dll_name;
 	TCHAR *window_class;
 	TCHAR *window_name;
 	TCHAR *message_window_class;
