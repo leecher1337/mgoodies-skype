@@ -22,7 +22,9 @@ Boston, MA 02111-1307, USA.
 # define __MIR_BUFFER_H__
 
 #include <windows.h>
+
 #include "mir_memory.h"
+#include <m_variables.h>
 
 
 template<class T>
@@ -129,7 +131,7 @@ class Buffer
 			}
 		}
 
-		void reset() 
+		void clear() 
 		{
 			len = 0;
 		}
@@ -284,6 +286,81 @@ class Buffer
 		size_t size;
 };
 
+
+static void ReplaceVars(Buffer<TCHAR> *buffer, HANDLE hContact, TCHAR **variables, int numVariables)
+{
+	if (buffer->len < 3)
+		return;
+
+	for(size_t i = buffer->len - 1; i > 0; i--)
+	{
+		if (buffer->str[i] == _T('%'))
+		{
+			// Find previous
+			for(size_t j = i - 1; j > 0 && ((buffer->str[j] >= _T('a') && buffer->str[j] <= _T('z'))
+										    || (buffer->str[j] >= _T('A') && buffer->str[j] <= _T('Z'))
+											|| buffer->str[j] == _T('-')
+											|| buffer->str[j] == _T('_')); j--) ;
+
+			if (buffer->str[j] == _T('%'))
+			{
+				size_t foundLen = i - j + 1;
+				if (foundLen == 9 && _tcsncmp(&buffer->str[j], _T("%contact%"), 9) == 0)
+				{
+					buffer->replace(j, i + 1, (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, GCDNF_TCHAR));
+				}
+				else if (foundLen == 6 && _tcsncmp(&buffer->str[j], _T("%date%"), 6) == 0)
+				{
+					TCHAR tmp[128];
+					DBTIMETOSTRINGT tst = {0};
+					tst.szFormat = _T("d s");
+					tst.szDest = tmp;
+					tst.cbDest = 128;
+					CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT, (WPARAM) time(NULL), (LPARAM) &tst);
+					buffer->replace(j, i + 1, tmp);
+				}
+				else
+				{
+					for(int k = 0; k < numVariables; k += 2)
+					{
+						size_t len = lstrlen(variables[k]);
+						if (foundLen == len + 2 && _tcsncmp(&buffer->str[j]+1, variables[k], len) == 0)
+						{
+							buffer->replace(j, i + 1, variables[k + 1]);
+							break;
+						}
+					}
+				}
+			}
+
+			i = j;
+			if (i == 0)
+				break;
+		}
+		else if (buffer->str[i] == _T('\\') && i+1 <= buffer->len-1 && buffer->str[i+1] == _T('n')) 
+		{
+			buffer->str[i] = _T('\r');
+			buffer->str[i+1] = _T('\n');
+		}
+	}
+}
+
+
+static void ReplaceTemplate(Buffer<TCHAR> *out, HANDLE hContact, TCHAR *templ, TCHAR **vars, int numVars)
+{
+	if (ServiceExists(MS_VARS_FORMATSTRING)) 
+	{
+		TCHAR *tmp = variables_parse_ex(templ, NULL, hContact, vars, numVars);
+		out->append(tmp);
+		variables_free(tmp);
+	}
+	else
+	{
+		out->append(templ);
+		ReplaceVars(out, hContact, vars, numVars);
+	}
+	out->pack();
+}
 
 
 #endif // __MIR_BUFFER_H__

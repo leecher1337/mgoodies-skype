@@ -56,11 +56,12 @@ ContactAsyncQueue::ContactAsyncQueue(pfContactAsyncQueueCallback fContactAsyncQu
 
 ContactAsyncQueue::~ContactAsyncQueue()
 {
-	finished = 1;
+	if (finished == 0)
+		finished = 1;
 	SetEvent(hEvent);
-
-	while(finished < 2)
-		Sleep(100);
+	int count = 0;
+	while(finished != 2 && ++count < 50)
+		Sleep(10);
 
 	List_DestroyFreeContents(queue);
 	DeleteCriticalSection(&cs);
