@@ -73,6 +73,9 @@ BOOL Player::GetListeningInfo(LISTENINGTOINFO *lti)
 	if (listening_info.cbSize == 0)
 		return FALSE;
 
+	if (!IsTypeEnabled(&listening_info))
+		return FALSE;
+
 	CopyListeningInfo(lti, &listening_info);
 	return TRUE;
 }
@@ -134,8 +137,7 @@ int CallbackPlayer::ChangedListeningInfo()
 			ret = -1;
 		}
 	}
-
-	if (changed)
+	else if (changed)
 	{
 		changed = FALSE;
 		if (listening_info.cbSize == 0)
@@ -170,8 +172,20 @@ CodeInjectionPlayer::~CodeInjectionPlayer()
 
 int CodeInjectionPlayer::ChangedListeningInfo()
 {
-	if (!enabled || !opts.enable_code_injection || next_request_time > GetTickCount())
-		return 0;
+	if (!enabled)
+	{
+		if (found_window)
+		{
+			found_window = FALSE;
+
+			FreeData();
+			return -1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
 
 	// Window is opened?
 	HWND hwnd = FindWindow(window_class, window_name);
@@ -182,12 +196,20 @@ int CodeInjectionPlayer::ChangedListeningInfo()
 			found_window = FALSE;
 
 			FreeData();
-			NotifyInfoChanged();
+			return -1;
 		}
-		return 0;
+		else
+		{
+			return 0;
+		}
 	}
 
 	found_window = TRUE;
+
+	if (!opts.enable_code_injection)
+		return 0;
+	else if (next_request_time > GetTickCount())
+		return 0;
 
 	// Msg Window is registered? (aka plugin is running?)
 	HWND msgHwnd = FindWindow(message_window_class, NULL);
@@ -259,3 +281,60 @@ BOOL CodeInjectionPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
 	return FALSE;
 }
 
+
+
+ExternalPlayer::ExternalPlayer()
+{
+	window_class = NULL;
+	window_name = NULL;
+	next_request_time = 0;
+	found_window = FALSE;
+}
+
+ExternalPlayer::~ExternalPlayer()
+{
+}
+
+int ExternalPlayer::ChangedListeningInfo()
+{
+	if (!enabled)
+	{
+		if (found_window)
+		{
+			found_window = FALSE;
+
+			FreeData();
+			return -1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+
+	// Window is opened?
+	HWND hwnd = FindWindow(window_class, window_name);
+	if (hwnd == NULL)
+	{
+		if (found_window)
+		{
+			found_window = FALSE;
+
+			FreeData();
+			return -1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+
+	found_window = TRUE;
+
+	return 0;
+}
+
+BOOL ExternalPlayer::GetListeningInfo(LISTENINGTOINFO *lti)
+{
+	return FALSE;
+}

@@ -76,19 +76,16 @@ int ChangedListeningInfo()
 
 		for (int i = GENERIC; i < NUM_PLAYERS; i++) 
 		{
-			if (players[i]->enabled)
-			{
-				int changed = players[i]->ChangedListeningInfo();
+			int changed = players[i]->ChangedListeningInfo();
 
-				if (changed < 0)
-					removed = TRUE;
+			if (changed < 0)
+				removed = TRUE;
 
-				else if (changed > 0)
-					return 1;
-			}
+			else if (changed > 0)
+				return 1;
 		}
 
-		return removed ? -1 : 0;;
+		return removed ? -1 : 0;
 	}
 }
 

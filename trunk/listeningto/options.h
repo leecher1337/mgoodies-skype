@@ -43,6 +43,10 @@ Boston, MA 02111-1307, USA.
 
 struct Options {
 	BOOL enable_sending;
+	BOOL enable_music;
+	BOOL enable_radio;
+	BOOL enable_video;
+	BOOL enable_others;
 
 	TCHAR templ[1024];
 	TCHAR unknown[128];
@@ -76,6 +80,9 @@ void DeInitOptions();
 // It don't need to be called, except in some rare cases
 void LoadOptions();
 
+
+
+BOOL IsTypeEnabled(LISTENINGTOINFO *lti);
 
 
 #endif // __OPTIONS_H__

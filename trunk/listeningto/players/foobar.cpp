@@ -24,11 +24,8 @@ Boston, MA 02111-1307, USA.
 
 Foobar::Foobar()
 { 
-	name = _T("Foobar");
+	name = _T("foobar2000");
+	window_class = _T("{DA7CD0DE-1602-45e6-89A1-C2CA151E008E}/1");
+	window_name = NULL;
 }
 
-
-int Foobar::ChangedListeningInfo()
-{
-	return 0;
-}

@@ -87,3 +87,20 @@ public:
 	
 	virtual BOOL GetListeningInfo(LISTENINGTOINFO *lti);
 };
+
+class ExternalPlayer : public PollPlayer
+{
+protected:
+	TCHAR *window_class;
+	TCHAR *window_name;
+	DWORD next_request_time;
+	BOOL found_window;
+
+public:
+	ExternalPlayer();
+	virtual ~ExternalPlayer();
+
+	virtual int ChangedListeningInfo();
+	
+	virtual BOOL GetListeningInfo(LISTENINGTOINFO *lti);
+};

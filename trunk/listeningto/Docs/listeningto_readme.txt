@@ -15,9 +15,14 @@ If you want this to implement some other player, I need a link to a page that ex
 
 One last thing: when reporting bugs, please post the name and version of the player you are using.
 
+It now also support Variables plugin to format the info. BUT you need to use this mod:
+- http://pescuma.mirandaim.ru/miranda/variables.zip
+- http://pescuma.mirandaim.ru/miranda/variablesW.zip 
+It does NOT work with other versions of variables.
+
 Todo:
 - Better support for iTunes (it is not good now)
-- Support for foobar - currently works only using this plugin in foobar: http://stephan.kochen.nl/proj/foobar2000.html#msn
+- For Quintessential player you can use this one: http://www.quinnware.com/list_plugins.php?plugin=149
 
 Known bugs:
 - (In #0.7 this works fine in classic too) In clist classic you can't select one protocol - it allways select all. This is because a limitation of the clist (that don't send the current position in list to the service). So, unless someone patch the clist, it wont work. Clist modern and nicer works fine.

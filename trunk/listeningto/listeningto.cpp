@@ -38,7 +38,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,1,8),
+	PLUGIN_MAKE_VERSION(0,1,2,0),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -98,7 +98,6 @@ int GetUnknownText(WPARAM wParam,LPARAM lParam);
 int SetNewSong(WPARAM wParam,LPARAM lParam);
 void SetExtraIcon(HANDLE hContact, BOOL set);
 void SetListeningInfos(LISTENINGTOINFO *lti);
-TCHAR *ReplaceVars(TCHAR *str, TCHAR **fr, int size);
 
 TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai);
 TCHAR* VariablesParseType(ARGUMENTSINFO *ai);
@@ -113,6 +112,9 @@ TCHAR* VariablesParsePlayer(ARGUMENTSINFO *ai);
 
 
 #define XSTATUS_MUSIC 11
+
+#define UNKNOWN(_X_) ( _X_ == NULL || _X_[0] == _T('\0') ? opts.unknown : _X_ )
+
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
@@ -145,8 +147,29 @@ extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
 	return interfaces;
 }
 
+/*
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+	// Find the windows
+	char class_name[1024];
+	if (GetClassNameA(hwnd, class_name, sizeof(class_name)))
+	{
+		class_name[sizeof(class_name)-1] = '\0';
+OutputDebugStringA(class_name);
+OutputDebugStringA(" -> ");
+		GetWindowTextA(hwnd, class_name, 1024);
+OutputDebugStringA(class_name);
+OutputDebugStringA("\n");
+	}
+
+	return TRUE;
+}
+*/
+
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link) 
 {
+//	EnumWindows(EnumWindowsProc, 0);
+
 	pluginLink = link;
 
 	init_mir_malloc();
@@ -583,17 +606,19 @@ void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 			{
 				// Set text to nothing
 				TCHAR *fr[] = { 
-					_T("%listening%"), opts.nothing
+					_T("listening"), opts.nothing
 				};
 
+				Buffer<TCHAR> name;
+				ReplaceTemplate(&name, NULL, opts.xstatus_name, fr, MAX_REGS(fr));
+				Buffer<TCHAR> msg;
+				ReplaceTemplate(&msg, NULL, opts.xstatus_message, fr, MAX_REGS(fr));
+
 				ics.flags = CSSF_TCHAR | CSSF_MASK_STATUS |	CSSF_MASK_NAME | CSSF_MASK_MESSAGE;
-				ics.ptszName = ReplaceVars(opts.xstatus_name, fr, MAX_REGS(fr));
-				ics.ptszMessage = ReplaceVars(opts.xstatus_message, fr, MAX_REGS(fr));
+				ics.ptszName = name.str;
+				ics.ptszMessage = msg.str;
 
 				CallProtoService(proto, PS_ICQ_SETCUSTOMSTATUSEX, 0, (LPARAM) &ics);
-
-				mir_free(ics.ptszName);
-				mir_free(ics.ptszMessage);
 			}
 			else if (opts.xstatus_set == CHECK_XSTATUS)
 			{
@@ -664,19 +689,31 @@ void SetListeningInfo(char *proto, LISTENINGTOINFO *lti)
 			}
 
 			TCHAR *fr[] = { 
-				_T("%listening%"), (TCHAR *) GetParsedFormat(0, (WPARAM) lti)
+				_T("listening"), (TCHAR *) GetParsedFormat(0, (WPARAM) lti),
+				_T("artist"), UNKNOWN(lti->ptszArtist),
+				_T("album"), UNKNOWN(lti->ptszAlbum),
+				_T("title"), UNKNOWN(lti->ptszTitle),
+				_T("track"), UNKNOWN(lti->ptszTrack),
+				_T("year"), UNKNOWN(lti->ptszYear),
+				_T("genre"), UNKNOWN(lti->ptszGenre),
+				_T("length"), UNKNOWN(lti->ptszLength),
+				_T("player"), UNKNOWN(lti->ptszPlayer),
+				_T("type"), UNKNOWN(lti->ptszType)
 			};
+
+			Buffer<TCHAR> name;
+			ReplaceTemplate(&name, NULL, opts.xstatus_name, fr, MAX_REGS(fr));
+			Buffer<TCHAR> msg;
+			ReplaceTemplate(&msg, NULL, opts.xstatus_message, fr, MAX_REGS(fr));
 
 			status = XSTATUS_MUSIC;
 			ics.flags = CSSF_TCHAR | CSSF_MASK_STATUS |	CSSF_MASK_NAME | CSSF_MASK_MESSAGE;
 			ics.status = &status;
-			ics.ptszName = ReplaceVars(opts.xstatus_name, fr, MAX_REGS(fr));
-			ics.ptszMessage = ReplaceVars(opts.xstatus_message, fr, MAX_REGS(fr));
+			ics.ptszName = name.str;
+			ics.ptszMessage = msg.str;
 
 			CallProtoService(proto, PS_ICQ_SETCUSTOMSTATUSEX, 0, (LPARAM) &ics);
 
-			mir_free(ics.ptszName);
-			mir_free(ics.ptszMessage);
 			mir_free(fr[1]);
 		}
 	}
@@ -778,45 +815,20 @@ int GetParsedFormat(WPARAM wParam,LPARAM lParam)
 		return NULL;
 
 	TCHAR *fr[] = { 
-		_T("%artist%"), lti->ptszArtist,
-		_T("%album%"), lti->ptszAlbum,
-		_T("%title%"), lti->ptszTitle,
-		_T("%track%"), lti->ptszTrack,
-		_T("%year%"), lti->ptszYear,
-		_T("%genre%"), lti->ptszGenre,
-		_T("%length%"), lti->ptszLength,
-		_T("%player%"), lti->ptszPlayer,
-		_T("%type%"), lti->ptszType
+		_T("artist"), UNKNOWN(lti->ptszArtist),
+		_T("album"), UNKNOWN(lti->ptszAlbum),
+		_T("title"), UNKNOWN(lti->ptszTitle),
+		_T("track"), UNKNOWN(lti->ptszTrack),
+		_T("year"), UNKNOWN(lti->ptszYear),
+		_T("genre"), UNKNOWN(lti->ptszGenre),
+		_T("length"), UNKNOWN(lti->ptszLength),
+		_T("player"), UNKNOWN(lti->ptszPlayer),
+		_T("type"), UNKNOWN(lti->ptszType)
 	};
 
-	return (int) ReplaceVars(opts.templ, fr, MAX_REGS(fr));
-}
-
-TCHAR *ReplaceVars(TCHAR *str, TCHAR **fr, int size)
-{
-	TCHAR *ret = mir_tstrdup( str );
-
-	for (int i = 0; i < size; i+=2) {
-		TCHAR *find = fr[i];
-		TCHAR *replace = fr[i+1] ? fr[i+1] : _T("");
-		if (replace[0] == _T('\0'))
-			replace = opts.unknown;
-
-		size_t len_find = lstrlen(find);
-		size_t len_replace = lstrlen(replace);
-
-		for (TCHAR *p = _tcsstr(ret, find); p != NULL; p = _tcsstr(p + len_replace, find)) {
-			if (len_find < len_replace) {
-				int pos = p - ret;
-				ret = (TCHAR *) mir_realloc(ret, (lstrlen(ret) + len_replace - len_find + 1) * sizeof(TCHAR));
-				p = ret + pos;
-			}
-			memmove(p + len_replace, p + len_find, (lstrlen(p + len_find) + 1) * sizeof(TCHAR));
-			memmove(p, replace, len_replace * sizeof(TCHAR));
-		}
-	}
-
-	return ret;
+	Buffer<TCHAR> ret;
+	ReplaceTemplate(&ret, NULL, opts.templ, fr, MAX_REGS(fr));
+	return (int) ret.detach();
 }
 
 
@@ -834,8 +846,6 @@ int GetUnknownText(WPARAM wParam,LPARAM lParam)
 
 void SetListeningInfos(LISTENINGTOINFO *lti)
 {
-OutputDebugStringA("SetListeningInfos\n");
-
 	PROTOCOLDESCRIPTOR **protos;
 	int count;
 	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
@@ -1055,18 +1065,20 @@ TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai)
 	}
 
 	TCHAR *fr[] = { 
-		_T("%artist%"), lti.ptszArtist,
-		_T("%album%"), lti.ptszAlbum,
-		_T("%title%"), lti.ptszTitle,
-		_T("%track%"), lti.ptszTrack,
-		_T("%year%"), lti.ptszYear,
-		_T("%genre%"), lti.ptszGenre,
-		_T("%length%"), lti.ptszLength,
-		_T("%player%"), lti.ptszPlayer,
-		_T("%type%"), lti.ptszType
+		_T("artist"), UNKNOWN(lti.ptszArtist),
+		_T("album"), UNKNOWN(lti.ptszAlbum),
+		_T("title"), UNKNOWN(lti.ptszTitle),
+		_T("track"), UNKNOWN(lti.ptszTrack),
+		_T("year"), UNKNOWN(lti.ptszYear),
+		_T("genre"), UNKNOWN(lti.ptszGenre),
+		_T("length"), UNKNOWN(lti.ptszLength),
+		_T("player"), UNKNOWN(lti.ptszPlayer),
+		_T("type"), UNKNOWN(lti.ptszType)
 	};
 
-	return ReplaceVars(opts.templ, fr, MAX_REGS(fr));
+	Buffer<TCHAR> ret;
+	ReplaceTemplate(&ret, NULL, opts.templ, fr, MAX_REGS(fr));
+	return ret.detach();
 }
 
 #define VARIABLES_PARSE_BODY(__field__) \
