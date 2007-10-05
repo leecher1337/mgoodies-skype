@@ -8,14 +8,7 @@ typedef struct {} TEmpty;
 template <typename TKey, typename TData = TEmpty, int SizeParam = 4, bool UniqueKeys = true>
 class CBTree 
 {
-private:
-	friend class iterator;
-
-	static const unsigned char cIsLeafMask = 0x80;
-	static const unsigned char cKeyCountMask = 0x7F;
-	static const unsigned char cFullNode = SizeParam * 2 - 1;
-	static const unsigned char cEmptyNode = SizeParam - 1;
-
+protected:
 	#pragma pack(push)  /* push current alignment to stack */
 	#pragma pack(1)     /* set alignment to 1 byte boundary */
 
@@ -28,6 +21,14 @@ private:
 		} TNode;
 
 	#pragma pack(pop)
+
+private:
+	friend class iterator;
+
+	static const unsigned char cIsLeafMask = 0x80;
+	static const unsigned char cKeyCountMask = 0x7F;
+	static const unsigned char cFullNode = SizeParam * 2 - 1;
+	static const unsigned char cEmptyNode = SizeParam - 1;
 
 	bool InNodeFind(const TNode & Node, const TKey & Key, int & GreaterEqual);
 	void SplitNode(unsigned int Node, unsigned int & Left, unsigned int & Right, TKey & UpKey, TData & UpData);
@@ -65,6 +66,7 @@ public:
 
 		TKey& Key() const;
 		TData& Data() const;
+		void SetData(const TData & Data);
 
 		operator bool() const;
 		bool operator !() const;
@@ -1000,6 +1002,14 @@ TData& CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Data() const
 	TNode node;
 	m_Tree->Read(m_Node, offsetof(TNode, Data[m_Index]), sizeof(TData), node);
 	return node.Data[m_Index];
+}
+
+template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
+void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::SetData(const TData & Data)
+{
+	TNode node;
+	node.Data[m_Index] = Data;
+	m_Tree->Write(m_Node, offsetof(TNode, Data[m_Index]), sizeof(TData), node);
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>

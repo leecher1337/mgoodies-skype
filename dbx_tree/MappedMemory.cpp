@@ -1,8 +1,7 @@
 #include "MappedMemory.h"
 
 CMappedMemory::CMappedMemory(const char* FileName)
-: m_Sync(),
-	m_FreeSpace()
+:	m_FreeSpace()
 {
 	SYSTEM_INFO sysinfo;
 
@@ -12,7 +11,7 @@ CMappedMemory::CMappedMemory(const char* FileName)
 	m_DirectFile = 0;
 	m_FileMapping = 0;
 
-	m_Sync.BeginWrite();
+	BeginWrite();
 	
 	GetSystemInfo(&sysinfo);
 	m_AllocGranularity = sysinfo.dwAllocationGranularity;
@@ -31,7 +30,7 @@ CMappedMemory::CMappedMemory(const char* FileName)
 
 	Map();
 
-  m_Sync.EndWrite();  
+  EndWrite();  
 }
 
 CMappedMemory::~CMappedMemory()
@@ -46,7 +45,7 @@ CMappedMemory::~CMappedMemory()
 
 void CMappedMemory::Map()
 {
-	m_Sync.BeginWrite();
+	BeginWrite();
 	
   m_FileMapping = CreateFileMapping(m_DirectFile, NULL, PAGE_READWRITE, 0, m_AllocSize, NULL);
 
@@ -57,36 +56,31 @@ void CMappedMemory::Map()
 	if (m_Base == NULL)
 		throw "MapViewOfFile failed";
 
-  m_Sync.EndWrite();
+  EndWrite();
 }
 
 unsigned int CMappedMemory::Read(void* Buf, unsigned int Source, unsigned int Size)
 {
-	m_Sync.BeginRead();
+	BeginRead();
 	memcpy(Buf, m_Base + Source, Size);
-	m_Sync.EndRead();	
+	EndRead();	
 
 	return Size;
 }
 unsigned int CMappedMemory::Write(void* Buf, unsigned int Dest, unsigned int Size)
 {
-	m_Sync.BeginWrite();
+	BeginWrite();
 	memcpy(m_Base + Dest, Buf, Size);
-	m_Sync.EndWrite();	
+	EndWrite();	
 	return Size;
 }
 
 unsigned int CMappedMemory::Move(unsigned int Source, unsigned int Dest, unsigned int Size)
 {
-	m_Sync.BeginWrite();
+	BeginWrite();
 	memcpy(m_Base + Dest, m_Base + Source, Size);
-	m_Sync.EndWrite();
+	EndWrite();
 	return Size;
-}
-
-void* CMappedMemory::MakePointer(unsigned int Source)
-{
-	return m_Base + Source;
 }
 
 
@@ -96,7 +90,7 @@ unsigned int CMappedMemory::Alloc(unsigned int Size)
 
 	if (Size == 0) return res;
 
-	m_Sync.BeginWrite();
+	BeginWrite();
 
 	TFreeSpaceMap::iterator i = m_FreeSpace.lower_bound(Size);
 	
@@ -139,36 +133,20 @@ unsigned int CMappedMemory::Alloc(unsigned int Size)
 		m_FreeSpace.erase(i);
 	}
 	
-	m_Sync.EndWrite();
+	EndWrite();
 
 	return res;
 }
 void CMappedMemory::Free(unsigned int Dest, unsigned int Count)
 {
 	//needs improvements
-	m_Sync.BeginWrite();
+	BeginWrite();
 	TFreeSpaceMap::iterator i = m_FreeSpace.insert(std::make_pair(Count, Dest));
 	if (Dest + Count == m_AllocSize)
 	{
 		m_FreeFileEnd = i;
 	}
 	
-	m_Sync.EndWrite();
+	EndWrite();
 }
 
-void CMappedMemory::BeginRead()
-{
-	m_Sync.BeginRead();
-}
-void CMappedMemory::EndRead()
-{
-	m_Sync.EndRead();
-}
-bool CMappedMemory::BeginWrite()
-{
-	return m_Sync.BeginWrite();
-}
-void CMappedMemory::EndWrite()
-{
-	m_Sync.EndWrite();
-}

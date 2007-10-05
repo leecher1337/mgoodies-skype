@@ -39,6 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="../../include"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -115,6 +116,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
+				AdditionalIncludeDirectories="../../include"
 				RuntimeLibrary="2"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -131,17 +133,19 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				GenerateManifest="false"
+				GenerateManifest="true"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"
+				AllowIsolation="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
 			/>
 			<Tool
 				Name="VCManifestTool"
+				EmbedManifest="true"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -167,12 +171,28 @@
 	</References>
 	<Files>
 		<Filter
-			Name="Quelldateien"
-			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+			Name="Ressource"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\init.cpp"
+				RelativePath=".\dbx_tree.rc"
+				>
+			</File>
+			<File
+				RelativePath=".\resource.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="FileAccess"
+			>
+			<File
+				RelativePath=".\DirectAccess.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\FileAccess.cpp"
 				>
 			</File>
 			<File
@@ -183,30 +203,114 @@
 				RelativePath=".\MREWSync.cpp"
 				>
 			</File>
+			<Filter
+				Name="HeaderFiles"
+				>
+				<File
+					RelativePath=".\DirectAccess.h"
+					>
+				</File>
+				<File
+					RelativePath=".\FileAccess.h"
+					>
+				</File>
+				<File
+					RelativePath=".\MappedMemory.h"
+					>
+				</File>
+				<File
+					RelativePath=".\MREWSync.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
-			Name="Headerdateien"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+			Name="Database"
 			>
 			<File
-				RelativePath=".\BTree.h"
+				RelativePath=".\DataBase.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\MappedMemory.h"
+				RelativePath=".\Entries.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\MREWSync.h"
+				RelativePath=".\Events.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Settings.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Virtuals.cpp"
+				>
+			</File>
+			<Filter
+				Name="HeaderFiles"
+				>
+				<File
+					RelativePath=".\BTree.h"
+					>
+				</File>
+				<File
+					RelativePath=".\DataBase.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Entries.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Events.h"
+					>
+				</File>
+				<File
+					RelativePath=".\FileBTree.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Settings.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Virtuals.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
-			Name="Ressourcendateien"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			Name="Interface"
 			>
+			<File
+				RelativePath=".\DatabaseLink.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\init.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Services.cpp"
+				>
+			</File>
+			<Filter
+				Name="HeaderFiles"
+				>
+				<File
+					RelativePath=".\DatabaseLink.h"
+					>
+				</File>
+				<File
+					RelativePath=".\m_dbx_tree.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Services.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>
