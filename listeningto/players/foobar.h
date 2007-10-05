@@ -18,17 +18,11 @@ Boston, MA 02111-1307, USA.
 */
 
 
-class Foobar : public Player
+class Foobar : public ExternalPlayer
 {
 protected:
 
 
 public:
 	Foobar();
-
-	// Return:
-	// < 0 removed
-	// 0 not changed
-	// > 0 changed
-	virtual int ChangedListeningInfo();
 };

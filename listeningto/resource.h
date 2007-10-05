@@ -72,6 +72,10 @@
 #define IDC_XSTATUS_NAME                1100
 #define IDC_CHECK_XSTATUS_MUSIC         1100
 #define IDC_NAME_L                      1101
+#define IDC_ENABLE_MUSIC                1102
+#define IDC_ENABLE_RADIO                1103
+#define IDC_ENABLE_VIDEO                1104
+#define IDC_ENABLE_OTHERS               1105
 #define IDC_POLL_TIMER_SPIN             1625
 #define IDC_STATIC                      -1
 
@@ -83,7 +87,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        124
 #define _APS_NEXT_COMMAND_VALUE         40004
-#define _APS_NEXT_CONTROL_VALUE         1102
+#define _APS_NEXT_CONTROL_VALUE         1103
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

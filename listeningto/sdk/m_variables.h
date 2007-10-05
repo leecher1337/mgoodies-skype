@@ -128,7 +128,17 @@ typedef struct {
                // to 0 before the call
   int eCount;  // (output) Number of failed tokens, needs to be set to 0 
                // before the call
+  union {
+    char **szaTemporaryVars;	// Temporary variables valid only in the duration of the format call
+    TCHAR **tszaTemporaryVars;	// By pos: [i] is var name, [i + 1] is var value
+    WCHAR **wszaTemporaryVars;
+  };
+  int cbTemporaryVarsSize;		// Number of elements in szaTemporaryVars array
+
 } FORMATINFO;
+
+#define FORMATINFOV2_SIZE 28
+
 
 // Possible flags:
 #define FIF_UNICODE 0x01  // Expects and returns unicode text (WCHAR*).
@@ -159,6 +169,22 @@ __inline static TCHAR *variables_parse(TCHAR *tszFormat, TCHAR *tszExtraText, HA
 
   return (TCHAR *)CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
 }
+__inline static TCHAR *variables_parse_ex(TCHAR *tszFormat, TCHAR *tszExtraText, HANDLE hContact, 
+										  TCHAR **tszaTemporaryVars, int cbTemporaryVarsSize) {
+
+  FORMATINFO fi;
+
+  ZeroMemory(&fi, sizeof(fi));
+  fi.cbSize = sizeof(fi);
+  fi.tszFormat = tszFormat;
+  fi.tszExtraText = tszExtraText;
+  fi.hContact = hContact;
+  fi.flags = FIF_TCHAR;
+  fi.tszaTemporaryVars = tszaTemporaryVars;
+  fi.cbTemporaryVarsSize = cbTemporaryVarsSize;
+
+  return (TCHAR *)CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
+}
 #endif
 
 // Helper #2: variables_parsedup
@@ -181,6 +207,30 @@ __inline static TCHAR *variables_parsedup(TCHAR *tszFormat, TCHAR *tszExtraText,
     fi.tszExtraText = tszExtraText;
     fi.hContact = hContact;
     fi.flags |= FIF_TCHAR;
+    tszParsed = (TCHAR *)CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
+    if (tszParsed) {
+      tszResult = _tcsdup(tszParsed);
+      CallService(MS_VARS_FREEMEMORY, (WPARAM)tszParsed, 0);
+      return tszResult;
+    }
+  }
+  return tszFormat?_tcsdup(tszFormat):tszFormat;
+}
+__inline static TCHAR *variables_parsedup_ex(TCHAR *tszFormat, TCHAR *tszExtraText, HANDLE hContact, 
+										  TCHAR **tszaTemporaryVars, int cbTemporaryVarsSize) {
+
+  if (ServiceExists(MS_VARS_FORMATSTRING)) {
+    FORMATINFO fi;
+    TCHAR *tszParsed, *tszResult;
+    
+    ZeroMemory(&fi, sizeof(fi));
+    fi.cbSize = sizeof(fi);
+    fi.tszFormat = tszFormat;
+    fi.tszExtraText = tszExtraText;
+    fi.hContact = hContact;
+    fi.flags |= FIF_TCHAR;
+	fi.tszaTemporaryVars = tszaTemporaryVars;
+	fi.cbTemporaryVarsSize = cbTemporaryVarsSize;
     tszParsed = (TCHAR *)CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
     if (tszParsed) {
       tszResult = _tcsdup(tszParsed);

@@ -2,6 +2,11 @@ ListeningTo
 
 Changelog:
 
+. 0.1.2.0
+  + Added variables support for template and XStatus template - need Variables MOD
+  + Added option to disable info per type
+  + Added foobar plugin (need to be installed manually) - thanks LRN for this one
+
 . 0.1.1.8
   + First step for foobar support
   + Added service to allow other plugins to send info to this one

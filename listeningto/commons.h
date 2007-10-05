@@ -57,6 +57,7 @@ Boston, MA 02111-1307, USA.
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
 #include "../utils/mir_icons.h"
+#include "../utils/mir_buffer.h"
 
 #include "m_listeningto.h"
 #include "music.h"

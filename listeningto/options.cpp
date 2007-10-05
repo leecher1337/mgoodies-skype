@@ -36,6 +36,10 @@ static BOOL CALLBACK FormatDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 
 static OptPageControl optionsControls[] = { 
 	{ &opts.enable_sending,				CONTROL_CHECKBOX,	IDC_ENABLE_SEND,				"EnableSend", TRUE },
+	{ &opts.enable_music,				CONTROL_CHECKBOX,	IDC_ENABLE_MUSIC,				"EnableMusic", TRUE },
+	{ &opts.enable_radio,				CONTROL_CHECKBOX,	IDC_ENABLE_RADIO,				"EnableRadio", TRUE },
+	{ &opts.enable_video,				CONTROL_CHECKBOX,	IDC_ENABLE_VIDEO,				"EnableVideo", TRUE },
+	{ &opts.enable_others,				CONTROL_CHECKBOX,	IDC_ENABLE_OTHERS,				"EnableOthers", TRUE },
 	{ &opts.xstatus_set,				CONTROL_RADIO,		IDC_SET_XSTATUS,				"XStatusSet", 0, SET_XSTATUS },
 	{ &opts.xstatus_set,				CONTROL_RADIO,		IDC_CHECK_XSTATUS,				"XStatusSet", 0, CHECK_XSTATUS },
 	{ &opts.xstatus_set,				CONTROL_RADIO,		IDC_CHECK_XSTATUS_MUSIC,		"XStatusSet", 0, CHECK_XSTATUS_MUSIC },
@@ -138,9 +142,45 @@ void LoadOptions()
 }
 
 
+BOOL IsTypeEnabled(LISTENINGTOINFO *lti)
+{
+	if (lti == NULL)
+		return TRUE;
+
+#ifdef UNICODE
+	if (lti->dwFlags & LTI_UNICODE)
+	{
+		if (lstrcmpi(lti->ptszType, _T("Music")) == 0)
+			return opts.enable_music;
+		else if (lstrcmpi(lti->ptszType, _T("Radio")) == 0)
+			return opts.enable_radio;
+		else if (lstrcmpi(lti->ptszType, _T("Video")) == 0)
+			return opts.enable_video;
+		else 
+			return opts.enable_others;
+	}
+	else
+#endif
+	{
+		if (strcmpi(lti->pszType, "Music") == 0)
+			return opts.enable_music;
+		else if (strcmpi(lti->pszType, "Radio") == 0)
+			return opts.enable_radio;
+		else if (strcmpi(lti->pszType, "Video") == 0)
+			return opts.enable_video;
+		else 
+			return opts.enable_others;
+	}
+}
+
+
 static void OptionsEnableDisableCtrls(HWND hwndDlg)
 {
 	BOOL enabled = IsDlgButtonChecked(hwndDlg, IDC_ENABLE_SEND);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_ENABLE_MUSIC), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_ENABLE_RADIO), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_ENABLE_VIDEO), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_ENABLE_OTHERS), enabled);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_ENABLE_MENU), enabled);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_XSTATUS_G), enabled);
 	EnableWindow(GetDlgItem(hwndDlg, IDC_XSTATUS_L), enabled);
