@@ -1,4 +1,3 @@
-
 #include "DatabaseLink.h"
 
 /*
@@ -37,8 +36,11 @@ static int getFriendlyName(char* buf, size_t cch, int shortName)
 */
 static int makeDatabase(char* profile, int* error)
 {
-	*error = EMKPRF_CREATEFAILED;
-	return EMKPRF_CREATEFAILED;
+	if (gDataBase) delete gDataBase;
+  gDataBase = new CDataBase(profile);
+
+	*error = gDataBase->CreateDB();
+	return *error;
 }
 
 /*
@@ -53,8 +55,11 @@ static int makeDatabase(char* profile, int* error)
 */
 static int grokHeader(char* profile, int* error)
 {
-	*error = EGROKPRF_UNKHEADER;
-	return EGROKPRF_UNKHEADER;
+	if (gDataBase) delete gDataBase;
+	gDataBase = new CDataBase(profile);
+
+	*error = gDataBase->CheckDB();	
+	return *error;
 }
 
 /*
@@ -64,7 +69,11 @@ Returns: 0 on success, nonzero on failure
 */
 static int Load(char* profile, void* link)
 {
-	return 1;
+	if (gDataBase) delete gDataBase;
+	gDataBase = new CDataBase(profile);
+
+	gPluginLink = (PLUGINLINK*)link;
+	return gDataBase->OpenDB();
 }
 
 /*
@@ -74,6 +83,10 @@ Note: Unload() might be called even if Load() was never called, wasLoaded is set
 */
 static int Unload(int wasLoaded)
 {
+	if (gDataBase)
+		delete gDataBase;
+
+	gDataBase = NULL;
 	return 0;
 }
 
@@ -88,4 +101,4 @@ DATABASELINK gDBLink = {
 	Unload,
 };
 
-
+PLUGINLINK *gPluginLink = NULL;

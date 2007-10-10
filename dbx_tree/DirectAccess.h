@@ -15,7 +15,7 @@ private:
 	HANDLE m_File;
 public:
 	CDirectAccess(const char* FileName);
-	~CDirectAccess();
+	virtual ~CDirectAccess();
 	
 	
 	unsigned int Read(void* Buf, unsigned int Source, unsigned int Size);

@@ -4,3 +4,4 @@
 #include "Database.h"
 
 extern DATABASELINK gDBLink;
+extern PLUGINLINK *gPluginLink;

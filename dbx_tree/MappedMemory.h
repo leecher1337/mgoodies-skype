@@ -23,7 +23,7 @@ protected:
 
 public:
 	CMappedMemory(const char* FileName);
-	~CMappedMemory();
+	virtual ~CMappedMemory();
 
 	unsigned int Read(void* Buf, unsigned int Source, unsigned int Size);
   unsigned int Write(void* Buf, unsigned int Dest, unsigned int Size);

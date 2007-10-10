@@ -6,9 +6,15 @@
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
 
+/**
+	\brief Key Type of the EventsBTree
+	
+	The Key consists of a 64bit timestamp, seconds elapsed since 1.1.1970
+	and an Index releated to the global counter in the header, which makes it possible to store multiple events with the same timestamp
+**/
 typedef struct TEventKey {
-	__time64_t TimeStamp;
-	unsigned int Index;
+	__time64_t TimeStamp;   /// timestamp at which the event occoured
+	unsigned int Index;     /// index counted globally in the databaseheader
 
 	bool operator <  (const TEventKey & Other);
 	//bool operator <= (const TEventKey & Other);
@@ -18,22 +24,29 @@ typedef struct TEventKey {
 } TEventKey;
 
 
+/**
+	\brief The data of an Event
 
+	A event's data is variable length. The data is a TEvent-structure followed by varaible length data.
+	- fixed data	
+	- blob data (mostly UTF8 message body)
+**/
 typedef struct TEvent {
-	unsigned int Signature;
-	unsigned short Flags;
-	unsigned short Type;
-	unsigned short ModuleLen;
-	unsigned short SettingLen;
-	union {
-		unsigned int Data;
-		unsigned int BlobLen;
-	};
+	unsigned int Signature;    /// Signature
+	unsigned short Flags;      /// Flags
+	unsigned short Type;       /// Eventtype
+	__time64_t TimeStamp;      /// Timestamp of the event (seconds elapsed since 1.1.1970) used as key element
+	unsigned int Index;        /// index counted globally in the databaseheader
+	unsigned int Entry;        /// hEntry which owns this event
+	unsigned int DataLen;      /// Length of the stored data in bytes
 } TEvent;
 
 #pragma pack(pop)
 
-class CEvents :	private CFileBTree<TEventKey, unsigned int, 4, true>
+/**
+	\brief Manages the Events in the Database
+**/
+class CEvents :	private CFileBTree<TEventKey, unsigned int, 16, true>
 {
 private:
 
@@ -42,5 +55,5 @@ protected:
 
 public:
 	CEvents(CFileAccess & FileAccess);
-	~CEvents();
+	virtual ~CEvents();
 };

@@ -27,7 +27,7 @@ protected:
 
 public:
 	CThreadLocalCounter();
-	~CThreadLocalCounter();
+	virtual ~CThreadLocalCounter();
 
 	void Open(PThreadInfo & Thread);
 	void Delete(PThreadInfo & Thread);
@@ -57,7 +57,7 @@ private:
 	void WaitForWriteSignal();
 public:
 	CMultiReadExclusiveWriteSynchronizer();
-	~CMultiReadExclusiveWriteSynchronizer();
+	virtual ~CMultiReadExclusiveWriteSynchronizer();
 
 	void BeginRead();
 	void EndRead();
