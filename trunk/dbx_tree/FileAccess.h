@@ -8,7 +8,7 @@ protected:
 	CMultiReadExclusiveWriteSynchronizer m_Sync;
 public:
 	CFileAccess();
-	~CFileAccess();
+	virtual ~CFileAccess();
 
 	virtual unsigned int Read(void* Buf, unsigned int Source, unsigned int Size) = 0;
   virtual unsigned int Write(void* Buf, unsigned int Dest, unsigned int Size) = 0;

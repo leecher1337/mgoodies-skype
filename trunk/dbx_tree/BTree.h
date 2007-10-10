@@ -13,11 +13,11 @@ protected:
 	#pragma pack(1)     /* set alignment to 1 byte boundary */
 
 		typedef struct TNode {
-			unsigned int Parent;
-			unsigned char Info;
-			TKey Key[SizeParam * 2 - 1];
-			TData Data[SizeParam * 2 - 1];
-			unsigned int Child[SizeParam * 2];
+			unsigned int Parent;               /// Handle to the parent node
+			unsigned char Info;                /// Node information (IsLeaf and stored KeyCount)
+			TKey Key[SizeParam * 2 - 1];       /// array with Keys
+			TData Data[SizeParam * 2 - 1];     /// array with Data
+			unsigned int Child[SizeParam * 2]; /// array with child node handles
 		} TNode;
 
 	#pragma pack(pop)
@@ -79,13 +79,17 @@ public:
 
 
 	CBTree(unsigned int RootNode = NULL);
-	~CBTree();
+	virtual ~CBTree();
 
 	iterator Insert(const TKey & Key, const TData & Data);
 	iterator Find(const TKey & Key);
+	iterator LowerBound(const TKey & Key);
+	iterator UpperBound(const TKey & Key);
 	bool Delete(const TKey& Key);
 	void Delete(iterator& Item);
 
+	unsigned int getRoot();
+	void setRoot(unsigned int NewRoot);
 };
 
 
@@ -303,7 +307,105 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::Find(const TKey & Key)
 		}
 	}	
 
-	return iterator(this, foundnode, foundindex);
+	return iterator(this, 0, -1);
+}
+
+template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
+typename CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator 
+CBTree<TKey, TData, SizeParam, UniqueKeys>::LowerBound(const TKey & Key)
+{
+	TNode node;
+	unsigned int actnode = m_Root;
+	int ge;
+	unsigned int foundnode = 0;
+	int foundindex = -1;
+
+	if (!m_Root) return iterator(this, 0, -1);
+
+	ReadNode(actnode, node);
+
+	while (actnode)
+	{
+		if (InNodeFind(node, Key, ge))
+		{
+			if (UniqueKeys)
+			{
+				return iterator(this, actnode, ge);
+			} else {
+				foundnode = actnode;
+				foundindex = ge;
+			}
+		} 
+		
+		if (node.Info & cIsLeafMask)
+		{
+			if (foundindex > -1)
+			{
+				return iterator(this, foundnode, foundindex);
+			} else if (ge > (node.Info & cKeyCountMask)) 
+			{
+				iterator i(this, actnode, ge);
+				i++; 
+				return i;
+			} else {
+				return iterator(this, actnode, ge);
+			}
+		} else {
+			actnode = node.Child[ge];
+			ReadNode(actnode, node);
+		}
+	}	
+
+	return iterator(this, 0, -1);
+}
+
+template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
+typename CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator 
+CBTree<TKey, TData, SizeParam, UniqueKeys>::UpperBound(const TKey & Key)
+{
+	TNode node;
+	unsigned int actnode = m_Root;
+	int ge;
+	unsigned int foundnode = 0;
+	int foundindex = -1;
+
+	if (!m_Root) return iterator(this, 0, -1);
+
+	ReadNode(actnode, node);
+
+	while (actnode)
+	{
+		if (InNodeFind(node, Key, ge))
+		{
+			if (UniqueKeys)
+			{
+				return iterator(this, actnode, ge);
+			} else {
+				foundnode = actnode;
+				foundindex = ge;
+				ge++;
+			}
+		} 
+		
+		if (node.Info & cIsLeafMask)
+		{
+			if (foundindex > -1)
+			{
+				return iterator(this, foundnode, foundindex);
+			} else if (ge == 0) {
+				iterator i(this, actnode, 0);
+				i--; 
+				return i;
+			} else {
+				return iterator(this, actnode, ge - 1);
+			}
+		} else {
+			actnode = node.Child[ge];
+			ReadNode(actnode, node);
+		}
+	}	
+
+	return iterator(this, 0, -1);
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
@@ -887,6 +989,19 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 	}
 }
 
+
+template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
+unsigned int CBTree<TKey, TData, SizeParam, UniqueKeys>::getRoot()
+{
+	return m_Root;
+}
+
+template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
+void CBTree<TKey, TData, SizeParam, UniqueKeys>::setRoot(unsigned int NewRoot)
+{
+	m_Root = NewRoot;
+	return;
+}
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 unsigned int CBTree<TKey, TData, SizeParam, UniqueKeys>::CreateNewNode()

@@ -16,7 +16,7 @@ CMappedMemory::CMappedMemory(const char* FileName)
 	GetSystemInfo(&sysinfo);
 	m_AllocGranularity = sysinfo.dwAllocationGranularity;
 
-	m_DirectFile = CreateFile(FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_FLAG_RANDOM_ACCESS, 0);
+	m_DirectFile = CreateFile(FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
 	if (m_DirectFile == INVALID_HANDLE_VALUE) 
 		throw "CreateFile failed";
 

@@ -19,7 +19,7 @@ protected:
 	virtual void ClearTree();
 public:
 	CFileBTree(CFileAccess & FileAccess);
-	~CFileBTree();
+	virtual ~CFileBTree();
 };
 
 

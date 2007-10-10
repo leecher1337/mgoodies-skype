@@ -16,7 +16,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="C:\Dokumente und Einstellungen\Michael Kunz\Desktop\Miranda IM\Plugins"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="2"
@@ -220,6 +220,30 @@
 				</File>
 				<File
 					RelativePath=".\MREWSync.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Cypher"
+				>
+				<File
+					RelativePath=".\CAST128.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\CAST128.h"
+					>
+				</File>
+				<File
+					RelativePath=".\CAST128.inc"
+					>
+				</File>
+				<File
+					RelativePath=".\Cypher.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Cypher.h"
 					>
 				</File>
 			</Filter>
