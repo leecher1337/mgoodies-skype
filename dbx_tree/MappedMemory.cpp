@@ -10,8 +10,6 @@ CMappedMemory::CMappedMemory(const char* FileName)
 	m_Size = 0;
 	m_DirectFile = 0;
 	m_FileMapping = 0;
-
-	BeginWrite();
 	
 	GetSystemInfo(&sysinfo);
 	m_AllocGranularity = sysinfo.dwAllocationGranularity;
@@ -29,8 +27,6 @@ CMappedMemory::CMappedMemory(const char* FileName)
 		m_AllocSize = m_AllocGranularity;
 
 	Map();
-
-  EndWrite();  
 }
 
 CMappedMemory::~CMappedMemory()
@@ -44,9 +40,7 @@ CMappedMemory::~CMappedMemory()
 }
 
 void CMappedMemory::Map()
-{
-	BeginWrite();
-	
+{	
   m_FileMapping = CreateFileMapping(m_DirectFile, NULL, PAGE_READWRITE, 0, m_AllocSize, NULL);
 
 	if (m_FileMapping == 0)
@@ -55,31 +49,22 @@ void CMappedMemory::Map()
 	m_Base = (__int8*) MapViewOfFile(m_FileMapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 	if (m_Base == NULL)
 		throw "MapViewOfFile failed";
-
-  EndWrite();
 }
 
 unsigned int CMappedMemory::Read(void* Buf, unsigned int Source, unsigned int Size)
 {
-	BeginRead();
 	memcpy(Buf, m_Base + Source, Size);
-	EndRead();	
-
 	return Size;
 }
 unsigned int CMappedMemory::Write(void* Buf, unsigned int Dest, unsigned int Size)
 {
-	BeginWrite();
 	memcpy(m_Base + Dest, Buf, Size);
-	EndWrite();	
 	return Size;
 }
 
 unsigned int CMappedMemory::Move(unsigned int Source, unsigned int Dest, unsigned int Size)
 {
-	BeginWrite();
 	memcpy(m_Base + Dest, m_Base + Source, Size);
-	EndWrite();
 	return Size;
 }
 
@@ -90,11 +75,8 @@ unsigned int CMappedMemory::Alloc(unsigned int Size)
 
 	if (Size == 0) return res;
 
-	BeginWrite();
-
 	TFreeSpaceMap::iterator i = m_FreeSpace.lower_bound(Size);
 	
-
 	if (i == m_FreeSpace.end())
 	{
 		// need new space -> remap file and take care of m_FreeFileEnd
@@ -133,20 +115,17 @@ unsigned int CMappedMemory::Alloc(unsigned int Size)
 		m_FreeSpace.erase(i);
 	}
 	
-	EndWrite();
+	memset(m_Base + res, 0, Size);
 
 	return res;
 }
 void CMappedMemory::Free(unsigned int Dest, unsigned int Count)
 {
 	//needs improvements
-	BeginWrite();
 	TFreeSpaceMap::iterator i = m_FreeSpace.insert(std::make_pair(Count, Dest));
 	if (Dest + Count == m_AllocSize)
 	{
 		m_FreeFileEnd = i;
-	}
-	
-	EndWrite();
+	}	
 }
 

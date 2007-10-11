@@ -49,14 +49,13 @@ typedef struct TEntry {
 
 	A hEntry is equivalent to the fileoffset of its related TEntry structure
 **/
-class CEntries :	private CFileBTree<TEntryKey, TEmpty, 6, true>
+class CEntries :public CFileBTree<TEntryKey, TEmpty, 6, true>
 {
 private:
 
 protected:
-	virtual void RootChanged();
 
 public:
-	CEntries(CFileAccess & FileAccess);
+	CEntries(CFileAccess & FileAccess, unsigned int RootNode);
 	virtual ~CEntries();
 };

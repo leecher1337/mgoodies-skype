@@ -2,55 +2,16 @@
 
 #include <queue>
 #include <stack>
+#include "sigslot.h"
 
 typedef struct {} TEmpty;
 
 template <typename TKey, typename TData = TEmpty, int SizeParam = 4, bool UniqueKeys = true>
 class CBTree 
 {
-protected:
-	#pragma pack(push)  /* push current alignment to stack */
-	#pragma pack(1)     /* set alignment to 1 byte boundary */
-
-		typedef struct TNode {
-			unsigned int Parent;               /// Handle to the parent node
-			unsigned char Info;                /// Node information (IsLeaf and stored KeyCount)
-			TKey Key[SizeParam * 2 - 1];       /// array with Keys
-			TData Data[SizeParam * 2 - 1];     /// array with Data
-			unsigned int Child[SizeParam * 2]; /// array with child node handles
-		} TNode;
-
-	#pragma pack(pop)
-
-private:
-	friend class iterator;
-
-	static const unsigned char cIsLeafMask = 0x80;
-	static const unsigned char cKeyCountMask = 0x7F;
-	static const unsigned char cFullNode = SizeParam * 2 - 1;
-	static const unsigned char cEmptyNode = SizeParam - 1;
-
-	bool InNodeFind(const TNode & Node, const TKey & Key, int & GreaterEqual);
-	void SplitNode(unsigned int Node, unsigned int & Left, unsigned int & Right, TKey & UpKey, TData & UpData);
-	unsigned int MergeNodes(unsigned int Left, unsigned int Right, const TKey & DownKey, const TData & DownData);
-
-	
-	void ReadNode(unsigned int Node, TNode & Dest);
-	void WriteNode(unsigned int Node, TNode & Source);
-
-protected:
-	unsigned int m_Root;
-
-	virtual unsigned int CreateNewNode();
-	virtual void DeleteNode(unsigned int Node);
-	virtual void RootChanged();
-	virtual void Read(unsigned int Node, int Offset, int Size, TNode & Dest);
-	virtual void Write(unsigned int Node, int Offset, int Size, TNode & Source);
-	
-	virtual void ClearTree();
-	
 public:
-	
+	typedef sigslot::signal2< void *, unsigned int> TOnRootChanged;
+
 	class iterator {
 	protected:
 		friend class CBTree;
@@ -78,7 +39,7 @@ public:
 	};
 
 
-	CBTree(unsigned int RootNode = NULL);
+	CBTree(unsigned int RootNode);
 	virtual ~CBTree();
 
 	iterator Insert(const TKey & Key, const TData & Data);
@@ -90,6 +51,50 @@ public:
 
 	unsigned int getRoot();
 	void setRoot(unsigned int NewRoot);
+
+	TOnRootChanged & sigRootChanged() {return m_sigRootChanged;};
+
+
+protected:
+	#pragma pack(push)  /* push current alignment to stack */
+	#pragma pack(1)     /* set alignment to 1 byte boundary */
+
+		typedef struct TNode {
+			unsigned int Parent;               /// Handle to the parent node
+			unsigned char Info;                /// Node information (IsLeaf and stored KeyCount)
+			TKey Key[SizeParam * 2 - 1];       /// array with Keys
+			TData Data[SizeParam * 2 - 1];     /// array with Data
+			unsigned int Child[SizeParam * 2]; /// array with child node handles
+		} TNode;
+
+	#pragma pack(pop)
+
+	unsigned int m_Root;
+	TOnRootChanged m_sigRootChanged;
+
+	virtual unsigned int CreateNewNode();
+	virtual void DeleteNode(unsigned int Node);
+	virtual void Read(unsigned int Node, int Offset, int Size, TNode & Dest);
+	virtual void Write(unsigned int Node, int Offset, int Size, TNode & Source);
+	
+	virtual void ClearTree();
+
+private:
+	friend class iterator;
+
+	static const unsigned char cIsLeafMask = 0x80;
+	static const unsigned char cKeyCountMask = 0x7F;
+	static const unsigned char cFullNode = SizeParam * 2 - 1;
+	static const unsigned char cEmptyNode = SizeParam - 1;
+
+	bool InNodeFind(const TNode & Node, const TKey & Key, int & GreaterEqual);
+	void SplitNode(unsigned int Node, unsigned int & Left, unsigned int & Right, TKey & UpKey, TData & UpData);
+	unsigned int MergeNodes(unsigned int Left, unsigned int Right, const TKey & DownKey, const TData & DownData);
+
+	
+	void ReadNode(unsigned int Node, TNode & Dest);
+	void WriteNode(unsigned int Node, TNode & Source);
+
 };
 
 
@@ -99,6 +104,7 @@ public:
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 CBTree<TKey, TData, SizeParam, UniqueKeys>::CBTree(unsigned int RootNode = NULL)
+: m_sigRootChanged()
 {
 	m_Root = RootNode;
 }
@@ -180,7 +186,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::Insert(const TKey & Key, const TData
 	if (!m_Root)
 	{
 		m_Root = CreateNewNode();
-		RootChanged();
+		m_sigRootChanged.emit(this, m_Root);
 	}
 
 	TNode node, node2;
@@ -206,7 +212,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::Insert(const TKey & Key, const TData
 		actnode = nextnode;
 
 		m_Root = nextnode;
-		RootChanged();
+		m_sigRootChanged.emit(this, m_Root);
 	}
 
 	while (actnode)
@@ -478,7 +484,7 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(const TKey& Key)
 					{ // root node is empty. delete it
 						DeleteNode(actnode);
 						m_Root = nextnode;
-						RootChanged();
+						m_sigRootChanged.emit(this, m_Root);
 					} else {
 						WriteNode(actnode, node);
 					}
@@ -781,10 +787,10 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 						node.Info = (node.Info & cIsLeafMask) | ((node.Info & cKeyCountMask) - 1);
 						
 						if ((actnode == m_Root) && ((node.Info & cKeyCountMask) == 0))
-						{ // root node is empty. delete it
+				 		{ // root node is empty. delete it
 							DeleteNode(actnode);
 							m_Root = nextnode;
-							RootChanged();
+							m_sigRootChanged.emit(this, m_Root);
 						} else {
 							WriteNode(actnode, node);
 						}
@@ -1013,12 +1019,6 @@ template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 void CBTree<TKey, TData, SizeParam, UniqueKeys>::DeleteNode(unsigned int Node)
 {
 	delete (TNode*)Node;
-}
-
-template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-void CBTree<TKey, TData, SizeParam, UniqueKeys>::RootChanged()
-{
-	//nothing to do
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>

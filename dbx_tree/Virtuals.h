@@ -32,14 +32,13 @@ typedef struct TVirtualKey {
 	All copies are stored in this BTree sorted to the realentry.
 	If the RealEntry should be deleted take the first virtual copy and make it real. Also change the relation of other copies.
 **/
-class CVirtuals :	private CFileBTree<TVirtualKey, TEmpty, 4, true>
+class CVirtuals :	public CFileBTree<TVirtualKey, TEmpty, 4, true>
 {
 private:
 
 protected:
-	virtual void RootChanged();
 
 public:
-	CVirtuals(CFileAccess & FileAccess);
+	CVirtuals(CFileAccess & FileAccess, unsigned int Root);
 	virtual ~CVirtuals();
 };

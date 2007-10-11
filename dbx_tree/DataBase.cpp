@@ -5,6 +5,7 @@ CDataBase *gDataBase = NULL;
 
 
 CDataBase::CDataBase(const char* FileName)
+: m_Sync()
 {
 	m_SettingsFN = new char[strlen(FileName) + 1];
 	m_PrivateFN = new char[strlen(FileName) + 5];	
@@ -28,10 +29,10 @@ CDataBase::CDataBase(const char* FileName)
 }
 CDataBase::~CDataBase()
 {
-	/*if (m_Entries) delete m_Entries;
+	if (m_Entries) delete m_Entries;
 	if (m_Virtuals) delete m_Virtuals;
 	if (m_Settings) delete m_Settings;
-*/
+
 	if (m_SettingsFile) delete m_SettingsFile;
 	if (m_PrivateFile) delete m_PrivateFile;
 
@@ -57,29 +58,26 @@ int CDataBase::CreateDB()
 		return EMKPRF_CREATEFAILED;
 	}
 
-	TSettingsHeader sethead = {0};
-	TPrivateHeader usrhead = {0};
+	memcpy(m_SettingsHeader.Signature, cSettingsSignature, sizeof(cSettingsSignature));
+	m_SettingsHeader.Version = cDBVersion;
+	m_SettingsHeader.Settings = 0;
+	m_SettingsHeader.FileSize = sizeof(m_SettingsHeader);
+	m_SettingsHeader.WastedBytes = 0;
 
-	memcpy(sethead.Signature, cSettingsSignature, sizeof(cSettingsSignature));
-	sethead.Version = cDBVersion;
-	sethead.Settings = 0;
-	sethead.FileSize = sizeof(TSettingsHeader);
-	sethead.WastedBytes = 0;
-
-	m_SettingsFile->Write(&sethead, 0, sizeof(TSettingsHeader));
+	m_SettingsFile->Write(&m_SettingsHeader, 0, sizeof(m_SettingsHeader));
 	delete m_SettingsFile;
 	m_SettingsFile = NULL;
 
-	memcpy(usrhead.Signature, cPrivateSignature, sizeof(cPrivateSignature));
-	usrhead.Version = cDBVersion;
-	usrhead.RootEntry = 0;
-	usrhead.Entries = 0;
-	usrhead.Virtuals = 0;
-	usrhead.FileSize = sizeof(TPrivateHeader);
-	usrhead.WastedBytes = 0;
-	usrhead.EventIndex = 1;
+	memcpy(m_PrivateHeader.Signature, cPrivateSignature, sizeof(cPrivateSignature));
+	m_PrivateHeader.Version = cDBVersion;
+	m_PrivateHeader.RootEntry = 0;
+	m_PrivateHeader.Entries = 0;
+	m_PrivateHeader.Virtuals = 0;
+	m_PrivateHeader.FileSize = sizeof(m_PrivateHeader);
+	m_PrivateHeader.WastedBytes = 0;
+	m_PrivateHeader.EventIndex = 1;
 
-	m_PrivateFile->Write(&usrhead, 0, sizeof(TPrivateHeader));
+	m_PrivateFile->Write(&m_PrivateHeader, 0, sizeof(m_PrivateHeader));
 	delete m_PrivateFile;
 	m_PrivateFile = NULL;
 
@@ -89,8 +87,6 @@ int CDataBase::CreateDB()
 
 int CDataBase::CheckDB()
 {
-	TSettingsHeader sethead = {0};
-
 	try 
 	{
 		m_SettingsFile = new CDirectAccess(m_SettingsFN);	
@@ -99,21 +95,19 @@ int CDataBase::CheckDB()
 	{
 		return EGROKPRF_CANTREAD;
 	}
-	m_SettingsFile->Read(&sethead, 0, sizeof(TSettingsHeader));
+	m_SettingsFile->Read(&m_SettingsHeader, 0, sizeof(m_SettingsHeader));
 	delete m_SettingsFile;
 	m_SettingsFile = NULL;
 
-	if (0 != memcmp(sethead.Signature, cSettingsSignature, sizeof(cSettingsSignature)))
+	if (0 != memcmp(m_SettingsHeader.Signature, cSettingsSignature, sizeof(cSettingsSignature)))
 		return EGROKPRF_UNKHEADER;
 
-	if (cDBVersion < sethead.Version)
+	if (cDBVersion < m_SettingsHeader.Version)
 		return EGROKPRF_VERNEWER;
 
 	HANDLE htmp = CreateFile(m_PrivateFN, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_RANDOM_ACCESS, NULL);
 	if (htmp != INVALID_HANDLE_VALUE)
 	{
-		TPrivateHeader usrhead = {0};
-		
 		CloseHandle(htmp);
 
 		try 
@@ -124,14 +118,14 @@ int CDataBase::CheckDB()
 		{
 			return EGROKPRF_CANTREAD;
 		}
-		m_PrivateFile->Read(&usrhead, 0, sizeof(TPrivateHeader));
+		m_PrivateFile->Read(&m_PrivateHeader, 0, sizeof(m_PrivateHeader));
 		delete m_PrivateFile;
 		m_PrivateFile = NULL;
 
-		if (0 != memcmp(usrhead.Signature, cPrivateSignature, sizeof(cPrivateSignature)))
+		if (0 != memcmp(m_PrivateHeader.Signature, cPrivateSignature, sizeof(cPrivateSignature)))
 			return EGROKPRF_UNKHEADER;
 
-		if (cDBVersion < usrhead.Version)
+		if (cDBVersion < m_PrivateHeader.Version)
 			return EGROKPRF_VERNEWER;
 		
 	}
@@ -163,5 +157,32 @@ int CDataBase::OpenDB()
 		}
 	}
 
+	m_SettingsFile->Read(&m_SettingsHeader, 0, sizeof(m_SettingsHeader));
+	m_PrivateFile->Read(&m_PrivateHeader, 0, sizeof(m_PrivateHeader));
+
+
+	m_Settings = new CSettings(*m_SettingsFile, m_SettingsHeader.Settings);
+	m_Settings->sigRootChanged().connect(this, &CDataBase::onSettingsRootChanged);
+
+	m_Virtuals = new CVirtuals(*m_PrivateFile, m_PrivateHeader.Virtuals);
+	m_Virtuals->sigRootChanged().connect(this, &CDataBase::onVirtualsRootChanged);
+
+	m_Entries = new CEntries(*m_PrivateFile, m_PrivateHeader.Entries);
+	m_Entries->sigRootChanged().connect(this, &CDataBase::onEntriesRootChanged);
+
 	return 0;
+}
+
+
+void CDataBase::onSettingsRootChanged(void* Settings, unsigned int NewRoot)
+{
+
+}
+void CDataBase::onVirtualsRootChanged(void* Virtuals, unsigned int NewRoot)
+{
+
+}
+void CDataBase::onEntriesRootChanged(void* Entries, unsigned int NewRoot)
+{
+
 }

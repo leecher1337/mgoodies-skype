@@ -336,6 +336,10 @@
 				</File>
 			</Filter>
 		</Filter>
+		<File
+			RelativePath=".\sigslot.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

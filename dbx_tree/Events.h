@@ -46,14 +46,13 @@ typedef struct TEvent {
 /**
 	\brief Manages the Events in the Database
 **/
-class CEvents :	private CFileBTree<TEventKey, unsigned int, 16, true>
+class CEvents :	public CFileBTree<TEventKey, unsigned int, 16, true>
 {
 private:
 
 protected:
-	virtual void RootChanged();
 
 public:
-	CEvents(CFileAccess & FileAccess);
+	CEvents(CFileAccess & FileAccess, unsigned int RootNode);
 	virtual ~CEvents();
 };

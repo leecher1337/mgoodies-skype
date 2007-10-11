@@ -1,11 +1,13 @@
 #include "Entries.h"
 
-/*
-CEntries::CEntries(void)
+
+CEntries::CEntries(CFileAccess & FileAccess, unsigned int RootNode)
+: CFileBTree(FileAccess, RootNode)
 {
+
 }
 
-CEntries::~CEntries(void)
+CEntries::~CEntries()
 {
+
 }
-*/
