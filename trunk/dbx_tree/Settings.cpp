@@ -1,11 +1,13 @@
 #include "Settings.h"
 
-/*
-CSettings::CSettings(void)
+
+CSettings::CSettings(CFileAccess & FileAccess, unsigned int RootNode)
+: CFileBTree(FileAccess, RootNode)
 {
+
 }
 
-CSettings::~CSettings(void)
+CSettings::~CSettings()
 {
+
 }
-*/

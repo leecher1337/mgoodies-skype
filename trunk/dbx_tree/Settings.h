@@ -49,15 +49,14 @@ typedef struct TSetting {
 /**
 	\brief Manages the Settings in the Database
 **/
-class CSettings :	private CFileBTree<TSettingKey, unsigned int, 8, false>
+class CSettings :	public CFileBTree<TSettingKey, unsigned int, 8, false>
 {
 private:
 
 protected:
-	virtual void RootChanged();
 
 public:
-	CSettings(CFileAccess & FileAccess);
+	CSettings(CFileAccess & FileAccess, unsigned int RootNode);
 	virtual ~CSettings();
 };
 

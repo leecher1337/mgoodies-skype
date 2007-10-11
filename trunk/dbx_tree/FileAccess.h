@@ -1,11 +1,7 @@
 #pragma once
 
-#include "MREWSync.h"
-
 class CFileAccess
 {
-protected:
-	CMultiReadExclusiveWriteSynchronizer m_Sync;
 public:
 	CFileAccess();
 	virtual ~CFileAccess();
@@ -16,9 +12,4 @@ public:
 
 	virtual unsigned int Alloc(unsigned int Size) = 0;
 	virtual void Free(unsigned int Dest, unsigned int Count) = 0;
-
-	virtual void BeginRead(); 
-	virtual void EndRead();
-	virtual bool BeginWrite();
-	virtual void EndWrite();
 };

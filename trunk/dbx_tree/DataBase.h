@@ -1,5 +1,7 @@
 #pragma once
 
+#include "MREWSync.h"
+
 #include "Events.h"
 #include "Settings.h"
 #include "Virtuals.h"
@@ -8,6 +10,8 @@
 #include "FileAccess.h"
 #include "MappedMemory.h"
 #include "DirectAccess.h"
+
+#include "sigslot.h"
 
 
 static const char cSettingsSignature[20] = "Miranda IM Settings";
@@ -38,12 +42,12 @@ typedef struct TPrivateHeader {
 	unsigned int WastedBytes; /// Lost bytes between the data
 	unsigned int EventIndex;  /// global counter for event index
 	char Reserved[80];        /// reserved storage
-} TDataHeader;
+} TPrivateHeader;
 
 #pragma pack(pop)
 
 
-class CDataBase
+class CDataBase : public sigslot::has_slots<>
 {
 private:
 	char* m_SettingsFN;
@@ -52,7 +56,16 @@ private:
 
 	CFileAccess *m_SettingsFile;
 	CFileAccess *m_PrivateFile;
+
+	TSettingsHeader m_SettingsHeader;
+	TPrivateHeader m_PrivateHeader;
+
+	void onSettingsRootChanged(void* Settings, unsigned int NewRoot);
+	void onVirtualsRootChanged(void* Virtuals, unsigned int NewRoot);
+	void onEntriesRootChanged(void* Entries, unsigned int NewRoot);
 protected:
+	CMultiReadExclusiveWriteSynchronizer m_Sync;
+
 	CEntries *m_Entries;
 
 	CVirtuals *m_Virtuals;

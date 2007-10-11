@@ -2,16 +2,11 @@
 
 CDirectAccess::CDirectAccess(const char* FileName)
 {
-
-	BeginWrite();
-
 	m_File = CreateFile(FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
 	if (m_File == INVALID_HANDLE_VALUE) 
 		throw "CreateFile failed";
 
 	m_Size = GetFileSize(m_File, NULL);
-
-	EndWrite();
 }
 
 CDirectAccess::~CDirectAccess()
@@ -78,8 +73,6 @@ unsigned int CDirectAccess::Alloc(unsigned int Size)
 
 	if (Size == 0) return res;
 
-	BeginWrite();
-
 	TFreeSpaceMap::iterator i = m_FreeSpace.lower_bound(Size);
 	
 	if (i == m_FreeSpace.end())
@@ -96,20 +89,15 @@ unsigned int CDirectAccess::Alloc(unsigned int Size)
 		m_FreeSpace.erase(i);
 	}
 	
-	EndWrite();
-
 	return res;
 }
 void CDirectAccess::Free(unsigned int Dest, unsigned int Count)
 {
 	//needs improvements
-	BeginWrite();
 	if (Dest + Count == m_Size)
 	{
 		m_Size -= Count;
 	} else {
 		TFreeSpaceMap::iterator i = m_FreeSpace.insert(std::make_pair(Count, Dest));
 	}
-	
-	EndWrite();
 }

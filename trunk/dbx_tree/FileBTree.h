@@ -12,13 +12,12 @@ protected:
 
 	virtual unsigned int CreateNewNode();
 	virtual void DeleteNode(unsigned int Node);
-	//virtual void RootChanged();
 	virtual void Read(unsigned int Node, int Offset, int Size, TNode & Dest);
 	virtual void Write(unsigned int Node, int Offset, int Size, TNode & Source);
 	
 	virtual void ClearTree();
 public:
-	CFileBTree(CFileAccess & FileAccess);
+	CFileBTree(CFileAccess & FileAccess, unsigned int RootNode);
 	virtual ~CFileBTree();
 };
 
@@ -26,8 +25,9 @@ public:
 
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-CFileBTree<TKey, TData, SizeParam, UniqueKeys>::CFileBTree(CFileAccess & FileAccess)
-:	m_FileAccess(FileAccess)
+CFileBTree<TKey, TData, SizeParam, UniqueKeys>::CFileBTree(CFileAccess & FileAccess, unsigned int RootNode)
+:	CBTree(RootNode),
+	m_FileAccess(FileAccess)
 {
 
 }
