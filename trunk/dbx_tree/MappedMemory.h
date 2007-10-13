@@ -20,14 +20,13 @@ private:
 	HANDLE m_FileMapping;
 protected:
 	void Map();
+	
+	unsigned int mRead(void* Buf, unsigned int Source, unsigned int Size);
+  unsigned int mWrite(void* Buf, unsigned int Dest, unsigned int Size);
 
 public:
 	CMappedMemory(const char* FileName);
 	virtual ~CMappedMemory();
-
-	unsigned int Read(void* Buf, unsigned int Source, unsigned int Size);
-  unsigned int Write(void* Buf, unsigned int Dest, unsigned int Size);
-	unsigned int Move(unsigned int Source, unsigned int Dest, unsigned int Size);
 
 	unsigned int Alloc(unsigned int Size);
 	void Free(unsigned int Dest, unsigned int Count);

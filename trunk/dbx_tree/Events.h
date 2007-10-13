@@ -28,7 +28,8 @@ typedef struct TEventKey {
 	\brief The data of an Event
 
 	A event's data is variable length. The data is a TEvent-structure followed by varaible length data.
-	- fixed data	
+	- fixed data
+	- module name
 	- blob data (mostly UTF8 message body)
 **/
 typedef struct TEvent {
@@ -38,6 +39,7 @@ typedef struct TEvent {
 	__time64_t TimeStamp;      /// Timestamp of the event (seconds elapsed since 1.1.1970) used as key element
 	unsigned int Index;        /// index counted globally in the databaseheader
 	unsigned int Entry;        /// hEntry which owns this event
+	unsigned int ModuleLen;    /// Length of the Module name
 	unsigned int DataLen;      /// Length of the stored data in bytes
 } TEvent;
 

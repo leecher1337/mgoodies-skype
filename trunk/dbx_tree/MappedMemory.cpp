@@ -1,7 +1,8 @@
 #include "MappedMemory.h"
 
 CMappedMemory::CMappedMemory(const char* FileName)
-:	m_FreeSpace()
+:	CFileAccess(FileName),
+	m_FreeSpace()
 {
 	SYSTEM_INFO sysinfo;
 
@@ -51,23 +52,24 @@ void CMappedMemory::Map()
 		throw "MapViewOfFile failed";
 }
 
-unsigned int CMappedMemory::Read(void* Buf, unsigned int Source, unsigned int Size)
+unsigned int CMappedMemory::mRead(void* Buf, unsigned int Source, unsigned int Size)
 {
 	memcpy(Buf, m_Base + Source, Size);
 	return Size;
 }
-unsigned int CMappedMemory::Write(void* Buf, unsigned int Dest, unsigned int Size)
+unsigned int CMappedMemory::mWrite(void* Buf, unsigned int Dest, unsigned int Size)
 {
 	memcpy(m_Base + Dest, Buf, Size);
 	return Size;
 }
 
+/*
 unsigned int CMappedMemory::Move(unsigned int Source, unsigned int Dest, unsigned int Size)
 {
 	memcpy(m_Base + Dest, m_Base + Source, Size);
 	return Size;
 }
-
+*/
 
 unsigned int CMappedMemory::Alloc(unsigned int Size)
 {
