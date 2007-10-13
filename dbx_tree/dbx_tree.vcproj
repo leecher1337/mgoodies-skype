@@ -199,10 +199,6 @@
 				RelativePath=".\MappedMemory.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\MREWSync.cpp"
-				>
-			</File>
 			<Filter
 				Name="HeaderFiles"
 				>
@@ -216,10 +212,6 @@
 				</File>
 				<File
 					RelativePath=".\MappedMemory.h"
-					>
-				</File>
-				<File
-					RelativePath=".\MREWSync.h"
 					>
 				</File>
 			</Filter>
@@ -239,11 +231,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Cypher.cpp"
+					RelativePath=".\Cipher.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\Cypher.h"
+					RelativePath=".\Cipher.h"
 					>
 				</File>
 			</Filter>
@@ -275,10 +267,6 @@
 				Name="HeaderFiles"
 				>
 				<File
-					RelativePath=".\BTree.h"
-					>
-				</File>
-				<File
 					RelativePath=".\DataBase.h"
 					>
 				</File>
@@ -288,10 +276,6 @@
 				</File>
 				<File
 					RelativePath=".\Events.h"
-					>
-				</File>
-				<File
-					RelativePath=".\FileBTree.h"
 					>
 				</File>
 				<File
@@ -323,7 +307,15 @@
 				Name="HeaderFiles"
 				>
 				<File
+					RelativePath=".\BTree.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DatabaseLink.h"
+					>
+				</File>
+				<File
+					RelativePath=".\FileBTree.h"
 					>
 				</File>
 				<File
@@ -336,10 +328,26 @@
 				</File>
 			</Filter>
 		</Filter>
-		<File
-			RelativePath=".\sigslot.h"
+		<Filter
+			Name="Utils"
 			>
-		</File>
+			<File
+				RelativePath=".\MREWSync.cpp"
+				>
+			</File>
+			<Filter
+				Name="HeaderFiles"
+				>
+				<File
+					RelativePath=".\MREWSync.h"
+					>
+				</File>
+				<File
+					RelativePath=".\sigslot.h"
+					>
+				</File>
+			</Filter>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

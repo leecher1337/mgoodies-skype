@@ -1,6 +1,7 @@
 #include "DirectAccess.h"
 
 CDirectAccess::CDirectAccess(const char* FileName)
+: CFileAccess(FileName)
 {
 	m_File = CreateFile(FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
 	if (m_File == INVALID_HANDLE_VALUE) 
@@ -20,7 +21,7 @@ CDirectAccess::~CDirectAccess()
 	}
 }
 
-unsigned int CDirectAccess::Read(void* Buf, unsigned int Source, unsigned int Size)
+unsigned int CDirectAccess::mRead(void* Buf, unsigned int Source, unsigned int Size)
 {
 	unsigned long read = 0;
 
@@ -32,7 +33,7 @@ unsigned int CDirectAccess::Read(void* Buf, unsigned int Source, unsigned int Si
 
 	return read;
 }
-unsigned int CDirectAccess::Write(void* Buf, unsigned int Dest, unsigned int Size)
+unsigned int CDirectAccess::mWrite(void* Buf, unsigned int Dest, unsigned int Size)
 {
 	unsigned long read = 0;
 
@@ -44,6 +45,7 @@ unsigned int CDirectAccess::Write(void* Buf, unsigned int Dest, unsigned int Siz
 
 	return read;
 }
+/*
 unsigned int CDirectAccess::Move(unsigned int Source, unsigned int Dest, unsigned int Size)
 {
 	unsigned long read = 0;
@@ -66,6 +68,7 @@ unsigned int CDirectAccess::Move(unsigned int Source, unsigned int Dest, unsigne
 	delete [] buf;
 	return read;
 }
+*/
 
 unsigned int CDirectAccess::Alloc(unsigned int Size)
 {
