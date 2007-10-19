@@ -13,7 +13,7 @@ CFG=Base - Win32 Release
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "Base.mak" CFG="Base - Win32 Debug"
+!MESSAGE NMAKE /f "Base.mak" CFG="Base - Win32 Release"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
@@ -52,7 +52,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib /nologo /dll /machine:I386 /out:"../../../../bin/release/plugins/YAMN-filter/Base.dll" /filealign:512
-# ADD LINK32 kernel32.lib user32.lib /nologo /dll /machine:I386 /out:"../../../../bin/release/plugins/YAMN-filter/Base.dll" /filealign:512
+# ADD LINK32 kernel32.lib user32.lib /nologo /dll /machine:I386 /out:"../../../../bin/release/plugins/YAMN-filter/base.dll" /filealign:512
 
 !ELSEIF  "$(CFG)" == "Base - Win32 Debug"
 

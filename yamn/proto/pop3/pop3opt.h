@@ -31,6 +31,8 @@ BOOL CALLBACK DlgOptionsProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 //Options dialog procedure
 BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
+//Options dialog procedure
+BOOL CALLBACK DlgProcPOP3AccPopup(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 //Initializes POP3 options for Miranda
 int POP3OptInit(WPARAM wParam,LPARAM lParam);

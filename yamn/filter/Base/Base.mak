@@ -30,15 +30,15 @@ NULL=nul
 OUTDIR=.\Release
 INTDIR=.\Release
 
-ALL : "..\..\..\..\bin\release\plugins\YAMN-filter\Base.dll"
+ALL : "..\..\..\..\bin\release\plugins\YAMN-filter\base.dll"
 
 
 CLEAN :
 	-@erase "$(INTDIR)\debug.obj"
 	-@erase "$(INTDIR)\maindll.obj"
 	-@erase "$(INTDIR)\vc60.idb"
-	-@erase "$(OUTDIR)\Base.exp"
-	-@erase "..\..\..\..\bin\release\plugins\YAMN-filter\Base.dll"
+	-@erase "$(OUTDIR)\base.exp"
+	-@erase "..\..\..\..\bin\release\plugins\YAMN-filter\base.dll"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -84,12 +84,12 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\Base.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\Base.pdb" /machine:I386 /out:"../../../../bin/release/plugins/YAMN-filter/Base.dll" /implib:"$(OUTDIR)\Base.lib" /filealign:512 
+LINK32_FLAGS=kernel32.lib user32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\base.pdb" /machine:I386 /out:"../../../../bin/release/plugins/YAMN-filter/base.dll" /implib:"$(OUTDIR)\base.lib" /filealign:512 
 LINK32_OBJS= \
 	"$(INTDIR)\debug.obj" \
 	"$(INTDIR)\maindll.obj"
 
-"..\..\..\..\bin\release\plugins\YAMN-filter\Base.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"..\..\..\..\bin\release\plugins\YAMN-filter\base.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<

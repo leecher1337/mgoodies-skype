@@ -34,7 +34,7 @@ NULL=nul
 OUTDIR=.\Release\Win2in1
 INTDIR=.\Release\Win2in1
 
-ALL : "..\..\bin\release\plugins\YAMN.dll"
+ALL : "..\..\bin\release\plugins\yamn.dll"
 
 
 CLEAN :
@@ -59,8 +59,8 @@ CLEAN :
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\yamn.obj"
 	-@erase "$(INTDIR)\YAMN.res"
-	-@erase "$(OUTDIR)\YAMN.exp"
-	-@erase "..\..\bin\release\plugins\YAMN.dll"
+	-@erase "$(OUTDIR)\yamn.exp"
+	-@erase "..\..\bin\release\plugins\yamn.dll"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -107,7 +107,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\YAMN.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
+LINK32_FLAGS=libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\yamn.pdb" /machine:I386 /out:"../../bin/release/plugins/yamn.dll" /implib:"$(OUTDIR)\yamn.lib" /filealign:512 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \
@@ -130,7 +130,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\yamn.obj" \
 	"$(INTDIR)\YAMN.res"
 
-"..\..\bin\release\plugins\YAMN.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"..\..\bin\release\plugins\yamn.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -296,7 +296,7 @@ LINK32_OBJS= \
 OUTDIR=.\Release/WinNT
 INTDIR=.\Release/WinNT
 
-ALL : "..\..\bin\release\plugins\YAMN-NT\YAMN.dll"
+ALL : "..\..\bin\release\plugins\YAMN-NT\yamn.dll"
 
 
 CLEAN :
@@ -321,8 +321,8 @@ CLEAN :
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\yamn.obj"
 	-@erase "$(INTDIR)\YAMN.res"
-	-@erase "$(OUTDIR)\YAMN.exp"
-	-@erase "..\..\bin\release\plugins\YAMN-NT\YAMN.dll"
+	-@erase "$(OUTDIR)\yamn.exp"
+	-@erase "..\..\bin\release\plugins\YAMN-NT\yamn.dll"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -369,7 +369,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\YAMN.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\YAMN.pdb" /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll" /implib:"$(OUTDIR)\YAMN.lib" /filealign:512 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\yamn.pdb" /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/yamn.dll" /implib:"$(OUTDIR)\yamn.lib" /filealign:512 
 LINK32_OBJS= \
 	"$(INTDIR)\badconnect.obj" \
 	"$(INTDIR)\mailbrowser.obj" \
@@ -392,7 +392,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\yamn.obj" \
 	"$(INTDIR)\YAMN.res"
 
-"..\..\bin\release\plugins\YAMN-NT\YAMN.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"..\..\bin\release\plugins\YAMN-NT\yamn.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
