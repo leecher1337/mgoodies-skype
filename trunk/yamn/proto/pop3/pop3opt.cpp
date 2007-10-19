@@ -265,6 +265,23 @@ int YAMNOptInitSvc(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
+int POP3OptInit(WPARAM wParam,LPARAM lParam)
+{
+	OPTIONSDIALOGPAGE odp={0};
+	
+	odp.cbSize=sizeof(odp);
+	odp.position=0x00000000;
+	odp.hInstance=pYAMNVar->hInst;
+	odp.pszGroup=Translate("Plugins");
+	odp.flags=ODPF_BOLDGROUPS;
+//insert POP3 account options dialog
+	odp.pszTemplate=MAKEINTRESOURCEA(IDD_POP3ACCOUNTOPT);
+	odp.pszTitle="YAMN-POP3";
+	odp.pfnDlgProc=(DLGPROC)DlgProcPOP3AccOpt;
+	CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+	return 0;
+}
+
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -283,7 +300,28 @@ BOOL DlgEnableAccountStatus(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST9),(BOOL)wParam);
 	return TRUE;
 }
-
+BOOL DlgEnableAccountPopup(HWND hDlg,WPARAM wParam,LPARAM lParam)
+{
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKPOP),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_EDITPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKCOL),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CPB),(IsDlgButtonChecked(hDlg,IDC_CHECKCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CPT),(IsDlgButtonChecked(hDlg,IDC_CHECKCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_RADIOPOPN),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_RADIOPOP1),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKNPOP),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_EDITNPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKNCOL),(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CPNB),(IsDlgButtonChecked(hDlg,IDC_CHECKNCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CPNT),(IsDlgButtonChecked(hDlg,IDC_CHECKNCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKFPOP),(BOOL)wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_EDITFPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKFCOL),(IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CPFB),(IsDlgButtonChecked(hDlg,IDC_CHECKFCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CPFT),(IsDlgButtonChecked(hDlg,IDC_CHECKFCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
+	EnableWindow(GetDlgItem(hDlg,IDC_CHECKAPOP),(BOOL)wParam);
+	return TRUE;
+}
 
 BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 {
@@ -296,32 +334,15 @@ BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKSND),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKMSG),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKICO),(BOOL)wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CHECKPOP),(BOOL)wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_EDITPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CHECKCOL),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CPB),lParam && (IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CPT),lParam && (IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_RADIOPOPN),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_RADIOPOP1),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKAPP),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKKBN),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_BTNAPP),(IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED) && wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_EDITAPP),(IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED) && wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_EDITAPPPARAM),(IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CHECKNPOP),(BOOL)wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_EDITNPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CHECKNCOL),(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CPNB),lParam && (IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CPNT),lParam && (IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED) && wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKNMSGP),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKFSND),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKFMSG),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKFICO),(BOOL)wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CHECKFPOP),(BOOL)wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_EDITFPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CHECKFCOL),(IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CPFB),lParam && (IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CPFT),lParam && (IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
 	/*EnableWindow(GetDlgItem(hDlg,IDC_CHECKST0),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST1),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKST2),(BOOL)wParam);
@@ -342,7 +363,6 @@ BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	EnableWindow(GetDlgItem(hDlg,IDC_BTNSTATUS),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKSSL),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKNOTLS),(IsDlgButtonChecked(hDlg,IDC_CHECKSSL)==BST_UNCHECKED) && wParam);
-	EnableWindow(GetDlgItem(hDlg,IDC_CHECKAPOP),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_AUTOBODY),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKCONTACT),(BOOL)wParam);
 	EnableWindow(GetDlgItem(hDlg,IDC_CHECKCONTACTNICK),(IsDlgButtonChecked(hDlg,IDC_CHECKCONTACT)==BST_CHECKED) && wParam);
@@ -581,7 +601,7 @@ BOOL DlgSetItemText(HWND hDlg,WPARAM wParam,LPARAM lParam)
 	if((TCHAR*)lParam==NULL)
 		SetDlgItemText(hDlg,(UINT)wParam,_T(""));
 	else
-		SetDlgItemText(hDlg,(UINT)wParam,Translate((TCHAR *)lParam));
+		SetDlgItemText(hDlg,(UINT)wParam,(TCHAR *)lParam);
 	return TRUE;
 }
 
@@ -663,6 +683,7 @@ BOOL CALLBACK DlgOptionsProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 
 		 iInit = TRUE;
          tci.mask = TCIF_PARAM|TCIF_TEXT;
+
          tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_POP3ACCOUNTOPT), hwnd, DlgProcPOP3AccOpt);
          tci.pszText = TranslateT("Accounts");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 0, &tci);
@@ -670,9 +691,16 @@ BOOL CALLBACK DlgOptionsProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 		 if(MyEnableThemeDialogTexture)
              MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
 
-         tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_YAMNOPT), hwnd, DlgProcYAMNOpt);
-         tci.pszText = TranslateT("General");
+		 tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_POP3ACCOUNTPOPUP), hwnd, DlgProcPOP3AccPopup);
+         tci.pszText = TranslateT("Popups");
 		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 1, &tci);
+         MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-33,1);
+		 if(MyEnableThemeDialogTexture)
+             MyEnableThemeDialogTexture((HWND)tci.lParam, ETDT_ENABLETAB);
+
+		 tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_YAMNOPT), hwnd, DlgProcYAMNOpt);
+         tci.pszText = TranslateT("General");
+		 TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 2, &tci);
          MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-33,1);
 		 ShowWindow((HWND)tci.lParam, SW_HIDE);
 		 if(MyEnableThemeDialogTexture)
@@ -680,7 +708,7 @@ BOOL CALLBACK DlgOptionsProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam)
 
          tci.lParam = (LPARAM)CreateDialog(YAMNVar.hInst,MAKEINTRESOURCE(IDD_PLUGINOPT),hwnd,DlgProcPluginOpt);
          tci.pszText = TranslateT("Plugins");
-         TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 2, &tci);
+         TabCtrl_InsertItem(GetDlgItem(hwnd, IDC_OPTIONSTAB), 3, &tci);
          MoveWindow((HWND)tci.lParam,1,28,rcClient.right-3,rcClient.bottom-33,1);
          ShowWindow((HWND)tci.lParam, SW_HIDE);
 		 if(MyEnableThemeDialogTexture)
@@ -757,9 +785,10 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			int i;
 
 			EnableWindow(GetDlgItem(hDlg,IDC_BTNDEL),FALSE);
+
 			DlgEnableAccount(hDlg,(WPARAM)FALSE,(LPARAM)FALSE);
 			DlgShowAccount(hDlg,(WPARAM)M_SHOWDEFAULT,0);
-//			DlgShowAccountColors(hDlg,0,(LPARAM)ActualAccount);
+
 			#ifdef DEBUG_SYNCHRO
 			DebugLog(SynchroFile,"Options:INITDIALOG:AccountBrowserSO-read wait\n");
 			#endif
@@ -785,62 +814,12 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 			}
 
 			SendMessage(GetDlgItem(hDlg,IDC_COMBOCP),CB_SETCURSEL,(WPARAM)CPDEFINDEX,(LPARAM)0);
-			ActualAccount=NULL;
-//			AddWndToWndQueue(hDlg);
-/*			DlgSetItemText(hDlg,(WPARAM)IDC_BTNDEL,(LPARAM)"Delete");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECK,(LPARAM)"Check this account");
-			DlgSetItemText(hDlg,(WPARAM)IDC_STSERVER,(LPARAM)"Server:");
-			DlgSetItemText(hDlg,(WPARAM)IDC_STPORT,(LPARAM)"Port:");
-			DlgSetItemText(hDlg,(WPARAM)IDC_STLOGIN,(LPARAM)"User:");
-			DlgSetItemText(hDlg,(WPARAM)IDC_STPASS,(LPARAM)"Password:");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKAPOP,(LPARAM)"APOP auth");
-			DlgSetItemText(hDlg,(WPARAM)IDC_AUTOBODY,(LPARAM)"Auto retrieve body");
-
-			DlgSetItemText(hDlg,(WPARAM)IDC_STINTERVAL,(LPARAM)"Check interval [min]:");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKSND,(LPARAM)"Sound notification");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKMSG,(LPARAM)"Message notification");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKICO,(LPARAM)"Tray icon notification");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKPOP,(LPARAM)"Popup notification");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKAPP,(LPARAM)"Application execution:");
-
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKNPOP,(LPARAM)"Popup if no mail");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKNPOP,(LPARAM)"Persistant message");
-
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKFSND,(LPARAM)"Sound notification if failed");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKFMSG,(LPARAM)"Message notification if failed");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKFICO,(LPARAM)"Tray icon notification if failed");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKFPOP,(LPARAM)"Popup notification if failed");
-
-//			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKHEADERS,(LPARAM)"Store headers");
-			DlgSetItemText(hDlg,(WPARAM)IDC_STCP,(LPARAM)"Default codepage:");
-			DlgSetItemText(hDlg,(WPARAM)IDC_BTNDEL,(LPARAM)"Delete");
-
-			DlgSetItemText(hDlg,(WPARAM)IDC_STWCHECK,(LPARAM)"Check while:");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKST0,(LPARAM)"Offline");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKST1,(LPARAM)"Online");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKST2,(LPARAM)"Away");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKST3,(LPARAM)"N/A");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKST4,(LPARAM)"Occupied");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKST5,(LPARAM)"DND");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKST6,(LPARAM)"Free for chat");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKST7,(LPARAM)"Invisible");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKST8,(LPARAM)"On the phone");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKST9,(LPARAM)"Out to lunch");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKSTART,(LPARAM)"Startup check");
-			DlgSetItemText(hDlg,(WPARAM)IDC_CHECKFORCE,(LPARAM)"Check from menu");
-			DlgSetItemText(hDlg,(WPARAM)IDC_BTNRESET,(LPARAM)"Reset counter");
-			DlgSetItemText(hDlg,(WPARAM)IDC_BTNDEFAULT,(LPARAM)"Default");
-
-			DlgSetItemText(hDlg,(WPARAM)IDC_RADIOPOP1,(LPARAM)"Single popup");
-			DlgSetItemText(hDlg,(WPARAM)IDC_RADIOPOPN,(LPARAM)"Multi popup");
-*/
+			ActualAccount=NULL;			
 			TranslateDialogDefault(hDlg);
-
 			SendMessage(GetParent(hDlg),PSM_UNCHANGED,(WPARAM)hDlg,0);
 			return TRUE;
 		}
-//		case WM_NCDESTROY:
-//		case WM_DESTROY:
+
 		case WM_SHOWWINDOW:
 			if((BOOL)wParam==FALSE)
 			{
@@ -858,14 +837,16 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				break;
 			GetAccountStatus(ActualAccount,accstatus);
 			SetDlgItemTextA(hDlg,IDC_STSTATUS,accstatus);
-		}
 			return TRUE;
+		}
+			
 		case WM_YAMN_CHANGESTATUSOPTION:
 		{
 			Changed=TRUE;
 			SendMessage(GetParent(hDlg),PSM_CHANGED,0,0);
-		}
 			return TRUE;
+		}
+			
 		case WM_YAMN_CHANGETIME:
 			if((HPOP3ACCOUNT)wParam==ActualAccount)
 			{
@@ -905,7 +886,6 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 							else
 							{
 								DlgShowAccount(hDlg,(WPARAM)M_SHOWACTUAL,(LPARAM)ActualAccount);
-								DlgShowAccountColors(hDlg,0,(LPARAM)ActualAccount);
 								DlgEnableAccount(hDlg,(WPARAM)TRUE,(LPARAM)TRUE);
 								EnableWindow(GetDlgItem(hDlg,IDC_BTNDEL),TRUE);
 							}
@@ -921,7 +901,6 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 							else
 							{
 								DlgShowAccount(hDlg,(WPARAM)M_SHOWACTUAL,(LPARAM)ActualAccount);
-								DlgShowAccountColors(hDlg,0,(LPARAM)ActualAccount);
 								DlgEnableAccount(hDlg,(WPARAM)TRUE,(LPARAM)FALSE);
 								EnableWindow(GetDlgItem(hDlg,IDC_BTNDEL),TRUE);
 							}
@@ -985,79 +964,6 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				case IDC_CPNT:
 					if(HIWORD(wParam)!=CPN_COLOURCHANGED)
 						break;
-				case IDC_CHECKCOL:
-				case IDC_CHECKFCOL:
-				case IDC_CHECKNCOL:
-				{
-					POPUPDATA Tester;
-					POPUPDATA TesterF;
-					POPUPDATA TesterN;
-					BOOL TesterC=(IsDlgButtonChecked(hDlg,IDC_CHECKCOL)==BST_CHECKED);
-					BOOL TesterFC=(IsDlgButtonChecked(hDlg,IDC_CHECKFCOL)==BST_CHECKED);
-					BOOL TesterNC=(IsDlgButtonChecked(hDlg,IDC_CHECKNCOL)==BST_CHECKED);
-					
-					ZeroMemory(&Tester,sizeof(Tester));
-					ZeroMemory(&TesterF,sizeof(TesterF));
-					ZeroMemory(&TesterF,sizeof(TesterN));
-					Tester.lchContact=NULL;
-					TesterF.lchContact=NULL;
-					TesterN.lchContact=NULL;
-					Tester.lchIcon=hYamnIcons[2];
-					TesterF.lchIcon=hYamnIcons[3];
-					TesterN.lchIcon=hYamnIcons[1];
-
-					lstrcpy(Tester.lpzContactName,Translate("Account Test"));
-					lstrcpy(TesterF.lpzContactName,Translate("Account Test (failed)"));
-					lstrcpy(TesterN.lpzContactName,Translate("Account Test"));
-					lstrcpy(Tester.lpzText,Translate("You have N new mail messages"));
-					lstrcpy(TesterF.lpzText,Translate("Connection failed message"));
-					lstrcpy(TesterN.lpzText,Translate("No new mail message"));
-					if(TesterC)
-					{
-						Tester.colorBack=SendDlgItemMessage(hDlg,IDC_CPB,CPM_GETCOLOUR,0,0);
-						Tester.colorText=SendDlgItemMessage(hDlg,IDC_CPT,CPM_GETCOLOUR,0,0);
-					}
-					else
-					{
-						Tester.colorBack=GetSysColor(COLOR_BTNFACE);
-						Tester.colorText=GetSysColor(COLOR_WINDOWTEXT);
-					}
-					if(TesterFC)
-					{
-						TesterF.colorBack=SendDlgItemMessage(hDlg,IDC_CPFB,CPM_GETCOLOUR,0,0);
-						TesterF.colorText=SendDlgItemMessage(hDlg,IDC_CPFT,CPM_GETCOLOUR,0,0);
-					}
-					else
-					{
-						TesterF.colorBack=GetSysColor(COLOR_BTNFACE);
-						TesterF.colorText=GetSysColor(COLOR_WINDOWTEXT);
-					}
-					if(TesterNC)
-					{
-						TesterN.colorBack=SendDlgItemMessage(hDlg,IDC_CPNB,CPM_GETCOLOUR,0,0);
-						TesterN.colorText=SendDlgItemMessage(hDlg,IDC_CPNT,CPM_GETCOLOUR,0,0);
-					}
-					else
-					{
-						TesterN.colorBack=GetSysColor(COLOR_BTNFACE);
-						TesterN.colorText=GetSysColor(COLOR_WINDOWTEXT);
-					}
-					Tester.PluginWindowProc=(WNDPROC)NULL;
-					TesterF.PluginWindowProc=(WNDPROC)NULL;
-					TesterN.PluginWindowProc=(WNDPROC)NULL;
-					Tester.PluginData=NULL;	
-					TesterF.PluginData=NULL;
-					TesterN.PluginData=NULL;
-
-					if(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED)
-						CallService(MS_POPUP_ADDPOPUP,(WPARAM)&Tester,0);
-					if(IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED)
-						CallService(MS_POPUP_ADDPOPUP,(WPARAM)&TesterF,0);
-					if(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED)
-						CallService(MS_POPUP_ADDPOPUP,(WPARAM)&TesterN,0);
-					Changed=TRUE;
-				}
-					break;
 				case IDC_CHECKKBN:
 					Changed=TRUE;
 					break;
@@ -1066,29 +972,6 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 					EnableWindow(GetDlgItem(hDlg,IDC_BTNAPP),IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED);
 					EnableWindow(GetDlgItem(hDlg,IDC_EDITAPP),IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED);
 					EnableWindow(GetDlgItem(hDlg,IDC_EDITAPPPARAM),IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED);
-					break;
-				case IDC_CHECKPOP:
-					Changed=TRUE;
-					EnableWindow(GetDlgItem(hDlg,IDC_CHECKCOL),IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hDlg,IDC_CPB),IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hDlg,IDC_CPT),IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hDlg,IDC_RADIOPOPN),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED));
-					EnableWindow(GetDlgItem(hDlg,IDC_RADIOPOP1),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED));
-					EnableWindow(GetDlgItem(hDlg,IDC_EDITPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED));
-					break;
-				case IDC_CHECKFPOP:
-					Changed=TRUE;
-					EnableWindow(GetDlgItem(hDlg,IDC_CHECKFCOL),IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hDlg,IDC_CPFB),IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hDlg,IDC_CPFT),IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hDlg,IDC_EDITFPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED));
-					break;
-				case IDC_CHECKNPOP:
-					Changed=TRUE;
-					EnableWindow(GetDlgItem(hDlg,IDC_CHECKNCOL),IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hDlg,IDC_CPNB),IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hDlg,IDC_CPNT),IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED);
-					EnableWindow(GetDlgItem(hDlg,IDC_EDITNPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED));
 					break;
 				case IDC_BTNSTATUS:
 				{
@@ -1168,27 +1051,26 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 						{
 							TCHAR Text[MAX_PATH];
 							WCHAR TextW[MAX_PATH];
-							BOOL Translated,NewAcc=FALSE,Check,CheckMsg,CheckSnd,CheckIco,CheckPopup,CheckPopupW,CheckApp;
-							BOOL CheckNPopup,CheckNPopupW,CheckNMsgP,CheckFMsg,CheckFSnd,CheckFIco,CheckFPopup,CheckFPopupW;
+							BOOL Translated,NewAcc=FALSE,Check,CheckMsg,CheckSnd,CheckIco,CheckApp;
+							BOOL CheckNMsgP,CheckFMsg,CheckFSnd,CheckFIco;
 							BOOL CheckPopN,CheckKBN, CheckContact,CheckContactNick,CheckContactNoEvent;
-							BOOL CheckSSL,CheckAPOP, CheckABody, CheckNoTLS;
+							BOOL CheckSSL, CheckABody, CheckNoTLS;
 							//BOOL Check0,Check1,Check2,Check3,Check4,Check5,Check6,Check7,Check8,Check9,
 							BOOL CheckStart,CheckForce;
 							int Length,index;
-							UINT Port,Interval,Time,TimeN,TimeF;
+							UINT Port,Interval;
 
 							if(GetDlgItemText(hDlg,IDC_COMBOACCOUNT,Text,sizeof(Text)/sizeof(TCHAR)))
 							{
 								Check=(IsDlgButtonChecked(hDlg,IDC_CHECK)==BST_CHECKED);
 								CheckSSL=(IsDlgButtonChecked(hDlg,IDC_CHECKSSL)==BST_CHECKED);
 								CheckNoTLS=(IsDlgButtonChecked(hDlg,IDC_CHECKNOTLS)==BST_CHECKED);
-								CheckAPOP=(IsDlgButtonChecked(hDlg,IDC_CHECKAPOP)==BST_CHECKED);
+
 								CheckABody=(IsDlgButtonChecked(hDlg,IDC_AUTOBODY)==BST_CHECKED);
 								CheckMsg=(IsDlgButtonChecked(hDlg,IDC_CHECKMSG)==BST_CHECKED);
 								CheckSnd=(IsDlgButtonChecked(hDlg,IDC_CHECKSND)==BST_CHECKED);
 								CheckIco=(IsDlgButtonChecked(hDlg,IDC_CHECKICO)==BST_CHECKED);
-								CheckPopup=(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED);
-								CheckPopupW=(IsDlgButtonChecked(hDlg,IDC_CHECKCOL)==BST_CHECKED);
+
 								CheckApp=(IsDlgButtonChecked(hDlg,IDC_CHECKAPP)==BST_CHECKED);
 								CheckKBN=(IsDlgButtonChecked(hDlg,IDC_CHECKKBN)==BST_CHECKED);
 								CheckContact=(IsDlgButtonChecked(hDlg,IDC_CHECKCONTACT)==BST_CHECKED);
@@ -1198,11 +1080,7 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 								CheckFSnd=(IsDlgButtonChecked(hDlg,IDC_CHECKFSND)==BST_CHECKED);
 								CheckFMsg=(IsDlgButtonChecked(hDlg,IDC_CHECKFMSG)==BST_CHECKED);
 								CheckFIco=(IsDlgButtonChecked(hDlg,IDC_CHECKFICO)==BST_CHECKED);
-								CheckFPopup=(IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED);
-								CheckFPopupW=(IsDlgButtonChecked(hDlg,IDC_CHECKFCOL)==BST_CHECKED);
 
-								CheckNPopup=(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED);
-								CheckNPopupW=(IsDlgButtonChecked(hDlg,IDC_CHECKNCOL)==BST_CHECKED);
 								CheckNMsgP=(IsDlgButtonChecked(hDlg,IDC_CHECKNMSGP)==BST_CHECKED);
 
 								Port=GetDlgItemInt(hDlg,IDC_EDITPORT,&Translated,FALSE);
@@ -1218,33 +1096,6 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 									MessageBox(hDlg,Translate("This is not a valid number value"),Translate("Input error"),MB_OK);
 									SetFocus(GetDlgItem(hDlg,IDC_EDITINTERVAL));
 								        break;
-								}
-								Time=GetDlgItemInt(hDlg,IDC_EDITPOPS,&Translated,FALSE);
-								if(!Translated)
-								{
-									MessageBox(hDlg,Translate("This is not a valid number value"),Translate("Input error"),MB_OK);
-									SetFocus(GetDlgItem(hDlg,IDC_EDITPOPS));
-								        break;
-								}
-								TimeN=GetDlgItemInt(hDlg,IDC_EDITNPOPS,&Translated,FALSE);
-								if(!Translated)
-								{
-									MessageBox(hDlg,Translate("This is not a valid number value"),Translate("Input error"),MB_OK);
-									SetFocus(GetDlgItem(hDlg,IDC_EDITNPOPS));
-								        break;
-								}
-								TimeF=GetDlgItemInt(hDlg,IDC_EDITFPOPS,&Translated,FALSE);
-								if(!Translated)
-								{
-									MessageBox(hDlg,Translate("This is not a valid number value"),Translate("Input error"),MB_OK);
-									SetFocus(GetDlgItem(hDlg,IDC_EDITFPOPS));
-								        break;
-								}
-				        
-								if(Check && !CheckMsg && !CheckSnd && !CheckIco && !CheckApp && !CheckPopup)
-								{
-									MessageBox(hDlg,Translate(_T("At least one mail notification event must be checked")),Translate(_T("Input error")),MB_OK);
-									break;
 								}
 				        
 								GetDlgItemText(hDlg,IDC_EDITAPP,Text,sizeof(Text)/sizeof(TCHAR));
@@ -1353,18 +1204,6 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 				        
 								ActualAccount->Server->Port=Port;
 								ActualAccount->Interval=Interval*60;
-				        
-								ActualAccount->NewMailN.PopUpB=SendDlgItemMessage(hDlg,IDC_CPB,CPM_GETCOLOUR,0,0);
-								ActualAccount->NewMailN.PopUpT=SendDlgItemMessage(hDlg,IDC_CPT,CPM_GETCOLOUR,0,0);
-								ActualAccount->NewMailN.PopUpTime=Time;
-				        
-								ActualAccount->NoNewMailN.PopUpB=SendDlgItemMessage(hDlg,IDC_CPNB,CPM_GETCOLOUR,0,0);
-								ActualAccount->NoNewMailN.PopUpT=SendDlgItemMessage(hDlg,IDC_CPNT,CPM_GETCOLOUR,0,0);
-								ActualAccount->NoNewMailN.PopUpTime=TimeN;
-								
-								ActualAccount->BadConnectN.PopUpB=SendDlgItemMessage(hDlg,IDC_CPFB,CPM_GETCOLOUR,0,0);
-								ActualAccount->BadConnectN.PopUpT=SendDlgItemMessage(hDlg,IDC_CPFT,CPM_GETCOLOUR,0,0);
-								ActualAccount->BadConnectN.PopUpTime=TimeF;
 								
 //								Beep(1000,100);Sleep(200);
 								if(CB_ERR==(index=SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_GETCURSEL,0,0)))
@@ -1395,7 +1234,6 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 									(Check ? YAMN_ACC_ENA : 0) |
 									(CheckSSL ? YAMN_ACC_SSL23 : 0) |
 									(CheckNoTLS ? YAMN_ACC_NOTLS : 0) |
-									(CheckAPOP ? YAMN_ACC_APOP : 0) |
 									(CheckABody ? YAMN_ACC_BODY : 0) |
 									(CheckPopN ? YAMN_ACC_POPN : 0);
 				        
@@ -1417,8 +1255,6 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 									(CheckSnd ? YAMN_ACC_SND : 0) |
 									(CheckMsg ? YAMN_ACC_MSG : 0) |
 									(CheckIco ? YAMN_ACC_ICO : 0) |
-									(CheckPopup ? YAMN_ACC_POP : 0) |
-									(CheckPopupW ? YAMN_ACC_POPC : 0) |
 									(CheckApp ? YAMN_ACC_APP : 0) |
 									(CheckKBN ? YAMN_ACC_KBN : 0) |
 									(CheckContact ? YAMN_ACC_CONT : 0) |
@@ -1427,16 +1263,12 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 									YAMN_ACC_MSGP;			//this is default: when new mail arrives and window was displayed, leave it displayed.
 
 								ActualAccount->NoNewMailN.Flags=
-									(CheckNPopup ? YAMN_ACC_POP : 0) |
-									(CheckNPopupW ? YAMN_ACC_POPC : 0) |
 									(CheckNMsgP ? YAMN_ACC_MSGP : 0);
 
 								ActualAccount->BadConnectN.Flags=
 									(CheckFSnd ? YAMN_ACC_SND : 0) |
 									(CheckFMsg ? YAMN_ACC_MSG : 0) |
-									(CheckFIco ? YAMN_ACC_ICO : 0) |
-									(CheckFPopup ? YAMN_ACC_POP : 0) |
-									(CheckFPopupW ? YAMN_ACC_POPC : 0);
+									(CheckFIco ? YAMN_ACC_ICO : 0) ;
 
 								#ifdef DEBUG_SYNCHRO
 								DebugLog(SynchroFile,"Options:APPLY:ActualAccountSO-write done\n");
@@ -1475,19 +1307,412 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 	return FALSE;
 }
 
-int POP3OptInit(WPARAM wParam,LPARAM lParam)
+BOOL CALLBACK DlgProcPOP3AccPopup(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lParam)
 {
-	OPTIONSDIALOGPAGE odp={0};
-	
-	odp.cbSize=sizeof(odp);
-	odp.position=0x00000000;
-	odp.hInstance=pYAMNVar->hInst;
-	odp.pszGroup=Translate("Plugins");
-	odp.flags=ODPF_BOLDGROUPS;
-//insert POP3 account options dialog
-	odp.pszTemplate=MAKEINTRESOURCEA(IDD_POP3ACCOUNTOPT);
-	odp.pszTitle="YAMN-POP3";
-	odp.pfnDlgProc=(DLGPROC)DlgProcPOP3AccOpt;
-	CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
-	return 0;
+	BOOL Changed=FALSE;
+	static BOOL InList=FALSE;
+	static HPOP3ACCOUNT ActualAccount;
+	static UCHAR ActualStatus;
+//	static struct CPOP3Options POP3Options;
+
+	switch(msg)
+	{
+		case WM_INITDIALOG:
+		{
+			DlgEnableAccountPopup(hDlg,(WPARAM)FALSE,(LPARAM)FALSE);
+			DlgShowAccount(hDlg,(WPARAM)M_SHOWDEFAULT,0);
+			//DlgShowAccountColors(hDlg,0,(LPARAM)ActualAccount);
+			#ifdef DEBUG_SYNCHRO
+			DebugLog(SynchroFile,"Options:INITDIALOG:AccountBrowserSO-read wait\n");
+			#endif
+			WaitToReadSO(POP3Plugin->AccountBrowserSO);
+			#ifdef DEBUG_SYNCHRO
+			DebugLog(SynchroFile,"Options:INITDIALOG:AccountBrowserSO-read enter\n");
+			#endif
+			if(POP3Plugin->FirstAccount!=NULL)
+				for(ActualAccount=(HPOP3ACCOUNT)POP3Plugin->FirstAccount;ActualAccount!=NULL;ActualAccount=(HPOP3ACCOUNT)ActualAccount->Next)
+					if(ActualAccount->Name!=NULL)
+						SendDlgItemMessage(hDlg,IDC_COMBOACCOUNT,CB_ADDSTRING,0,(LPARAM)ActualAccount->Name);
+			#ifdef DEBUG_SYNCHRO
+			DebugLog(SynchroFile,"Options:INITDIALOG:AccountBrowserSO-read done\n");
+			#endif
+			ReadDoneSO(POP3Plugin->AccountBrowserSO);
+			ActualAccount=NULL;
+
+			
+			TranslateDialogDefault(hDlg);
+			SendMessage(GetParent(hDlg),PSM_UNCHANGED,(WPARAM)hDlg,0);
+			return TRUE;
+		}
+
+		case WM_SHOWWINDOW:
+			if((BOOL)wParam==FALSE)
+			{
+				WindowList_Remove(pYAMNVar->MessageWnds,hDlg);
+				SendMessage(GetParent(hDlg),PSM_UNCHANGED,(WPARAM)hDlg,(LPARAM)0);
+			}
+			else
+				WindowList_Add(pYAMNVar->MessageWnds,hDlg,NULL);
+			return TRUE;
+		
+		case WM_COMMAND:
+		{
+			WORD wNotifyCode = HIWORD(wParam);
+			switch(LOWORD(wParam))
+			{
+				LONG Result;
+				case IDC_COMBOACCOUNT:
+					switch(wNotifyCode)
+					{
+						case CBN_EDITCHANGE :
+							ActualAccount=NULL;
+							if(GetDlgItemText(hDlg,IDC_COMBOACCOUNT,DlgInput,sizeof(DlgInput)/sizeof(TCHAR)))
+							{
+								DlgEnableAccountPopup(hDlg,(WPARAM)TRUE,(LPARAM)FALSE);
+								DlgShowAccountColors(hDlg,0,(LPARAM)ActualAccount);
+							}
+							else
+								DlgEnableAccount(hDlg,(WPARAM)FALSE,(LPARAM)FALSE);
+							break;
+						case CBN_KILLFOCUS:
+							GetDlgItemText(hDlg,IDC_COMBOACCOUNT,DlgInput,sizeof(DlgInput)/sizeof(TCHAR));
+							if(NULL==(ActualAccount=(HPOP3ACCOUNT)CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)DlgInput)))
+							{
+								DlgSetItemText(hDlg,(WPARAM)IDC_STTIMELEFT,(LPARAM)NULL);
+								if(lstrlen(DlgInput))
+									DlgEnableAccountPopup(hDlg,(WPARAM)TRUE,(LPARAM)TRUE);
+								else
+									DlgEnableAccountPopup(hDlg,(WPARAM)FALSE,(LPARAM)FALSE);
+							}
+							else
+							{
+								DlgShowAccount(hDlg,(WPARAM)M_SHOWACTUAL,(LPARAM)ActualAccount);
+								DlgShowAccountColors(hDlg,0,(LPARAM)ActualAccount);
+								DlgEnableAccountPopup(hDlg,(WPARAM)TRUE,(LPARAM)TRUE);
+							}
+							break;
+						case CBN_SELCHANGE:
+							if(CB_ERR!=(Result=SendDlgItemMessage(hDlg,IDC_COMBOACCOUNT,CB_GETCURSEL,0,0)))
+								SendDlgItemMessage(hDlg,IDC_COMBOACCOUNT,CB_GETLBTEXT,(WPARAM)Result,(LPARAM)DlgInput);
+							if((Result==CB_ERR) || (NULL==(ActualAccount=(HPOP3ACCOUNT)CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)DlgInput))))
+							{
+								DlgSetItemText(hDlg,(WPARAM)IDC_STTIMELEFT,(LPARAM)NULL);
+							}
+							else
+							{
+								DlgShowAccount(hDlg,(WPARAM)M_SHOWACTUAL,(LPARAM)ActualAccount);
+								DlgShowAccountColors(hDlg,0,(LPARAM)ActualAccount);
+								DlgEnableAccountPopup(hDlg,(WPARAM)TRUE,(LPARAM)FALSE);
+							}
+							break;
+					}
+					break;
+				case IDC_COMBOCP:
+					{
+						int sel = SendDlgItemMessage(hDlg,IDC_COMBOCP,CB_GETCURSEL,0,0);
+						CPINFOEX info; GetCPInfoEx(CodePageNamesSupp[sel].CP,0,&info);
+						DlgSetItemText(hDlg,(WPARAM)IDC_STSTATUS,(LPARAM)info.CodePageName);
+					}
+				case IDC_RADIOPOPN:
+				case IDC_RADIOPOP1:
+				case IDC_CHECKAPOP:
+					Changed=TRUE;
+					break;
+				case IDC_CPB:
+				case IDC_CPT:
+				case IDC_CPFB:
+				case IDC_CPFT:
+				case IDC_CPNB:
+				case IDC_CPNT:
+					if(HIWORD(wParam)!=CPN_COLOURCHANGED)
+						break;
+				case IDC_CHECKCOL:
+				case IDC_CHECKFCOL:
+				case IDC_CHECKNCOL:
+					EnableWindow(GetDlgItem(hDlg,IDC_CPB),(IsDlgButtonChecked(hDlg,IDC_CHECKCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
+					EnableWindow(GetDlgItem(hDlg,IDC_CPT),(IsDlgButtonChecked(hDlg,IDC_CHECKCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED) && wParam);
+					EnableWindow(GetDlgItem(hDlg,IDC_CPNB),(IsDlgButtonChecked(hDlg,IDC_CHECKNCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED) && wParam);
+					EnableWindow(GetDlgItem(hDlg,IDC_CPNT),(IsDlgButtonChecked(hDlg,IDC_CHECKNCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED) && wParam);
+					EnableWindow(GetDlgItem(hDlg,IDC_CPFB),(IsDlgButtonChecked(hDlg,IDC_CHECKFCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
+					EnableWindow(GetDlgItem(hDlg,IDC_CPFT),(IsDlgButtonChecked(hDlg,IDC_CHECKFCOL)==BST_CHECKED) && (IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED) && wParam);
+					Changed=TRUE;
+					break;
+				
+				case IDC_PREVIEW:
+				{
+					POPUPDATA Tester;
+					POPUPDATA TesterF;
+					POPUPDATA TesterN;
+					BOOL TesterC=(IsDlgButtonChecked(hDlg,IDC_CHECKCOL)==BST_CHECKED);
+					BOOL TesterFC=(IsDlgButtonChecked(hDlg,IDC_CHECKFCOL)==BST_CHECKED);
+					BOOL TesterNC=(IsDlgButtonChecked(hDlg,IDC_CHECKNCOL)==BST_CHECKED);
+					
+					ZeroMemory(&Tester,sizeof(Tester));
+					ZeroMemory(&TesterF,sizeof(TesterF));
+					ZeroMemory(&TesterF,sizeof(TesterN));
+					Tester.lchContact=NULL;
+					TesterF.lchContact=NULL;
+					TesterN.lchContact=NULL;
+					Tester.lchIcon=hYamnIcons[2];
+					TesterF.lchIcon=hYamnIcons[3];
+					TesterN.lchIcon=hYamnIcons[1];
+
+					lstrcpy(Tester.lpzContactName,Translate("Account Test"));
+					lstrcpy(TesterF.lpzContactName,Translate("Account Test (failed)"));
+					lstrcpy(TesterN.lpzContactName,Translate("Account Test"));
+					lstrcpy(Tester.lpzText,Translate("You have N new mail messages"));
+					lstrcpy(TesterF.lpzText,Translate("Connection failed message"));
+					lstrcpy(TesterN.lpzText,Translate("No new mail message"));
+					if(TesterC)
+					{
+						Tester.colorBack=SendDlgItemMessage(hDlg,IDC_CPB,CPM_GETCOLOUR,0,0);
+						Tester.colorText=SendDlgItemMessage(hDlg,IDC_CPT,CPM_GETCOLOUR,0,0);
+					}
+					else
+					{
+						Tester.colorBack=GetSysColor(COLOR_BTNFACE);
+						Tester.colorText=GetSysColor(COLOR_WINDOWTEXT);
+					}
+					if(TesterFC)
+					{
+						TesterF.colorBack=SendDlgItemMessage(hDlg,IDC_CPFB,CPM_GETCOLOUR,0,0);
+						TesterF.colorText=SendDlgItemMessage(hDlg,IDC_CPFT,CPM_GETCOLOUR,0,0);
+					}
+					else
+					{
+						TesterF.colorBack=GetSysColor(COLOR_BTNFACE);
+						TesterF.colorText=GetSysColor(COLOR_WINDOWTEXT);
+					}
+					if(TesterNC)
+					{
+						TesterN.colorBack=SendDlgItemMessage(hDlg,IDC_CPNB,CPM_GETCOLOUR,0,0);
+						TesterN.colorText=SendDlgItemMessage(hDlg,IDC_CPNT,CPM_GETCOLOUR,0,0);
+					}
+					else
+					{
+						TesterN.colorBack=GetSysColor(COLOR_BTNFACE);
+						TesterN.colorText=GetSysColor(COLOR_WINDOWTEXT);
+					}
+					Tester.PluginWindowProc=(WNDPROC)NULL;
+					TesterF.PluginWindowProc=(WNDPROC)NULL;
+					TesterN.PluginWindowProc=(WNDPROC)NULL;
+					Tester.PluginData=NULL;	
+					TesterF.PluginData=NULL;
+					TesterN.PluginData=NULL;
+
+					if(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED)
+						CallService(MS_POPUP_ADDPOPUP,(WPARAM)&Tester,0);
+					if(IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED)
+						CallService(MS_POPUP_ADDPOPUP,(WPARAM)&TesterF,0);
+					if(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED)
+						CallService(MS_POPUP_ADDPOPUP,(WPARAM)&TesterN,0);
+					Changed=TRUE;
+				}
+					break;
+				case IDC_CHECKKBN:
+					Changed=TRUE;
+					break;
+				case IDC_CHECKPOP:
+					Changed=TRUE;
+					EnableWindow(GetDlgItem(hDlg,IDC_CHECKCOL),IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hDlg,IDC_CPB),(IsDlgButtonChecked(hDlg,IDC_CHECKCOL)==BST_CHECKED) && IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hDlg,IDC_CPT),(IsDlgButtonChecked(hDlg,IDC_CHECKCOL)==BST_CHECKED) && IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hDlg,IDC_RADIOPOPN),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED));
+					EnableWindow(GetDlgItem(hDlg,IDC_RADIOPOP1),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED));
+					EnableWindow(GetDlgItem(hDlg,IDC_EDITPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED));
+					break;
+				case IDC_CHECKFPOP:
+					Changed=TRUE;
+					EnableWindow(GetDlgItem(hDlg,IDC_CHECKFCOL),IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hDlg,IDC_CPFB),(IsDlgButtonChecked(hDlg,IDC_CHECKFCOL)==BST_CHECKED) && IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hDlg,IDC_CPFT),(IsDlgButtonChecked(hDlg,IDC_CHECKFCOL)==BST_CHECKED) && IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hDlg,IDC_EDITFPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED));
+					break;
+				case IDC_CHECKNPOP:
+					Changed=TRUE;
+					EnableWindow(GetDlgItem(hDlg,IDC_CHECKNCOL),IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hDlg,IDC_CPNB),(IsDlgButtonChecked(hDlg,IDC_CHECKNCOL)==BST_CHECKED) && IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hDlg,IDC_CPNT),(IsDlgButtonChecked(hDlg,IDC_CHECKNCOL)==BST_CHECKED) && IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED);
+					EnableWindow(GetDlgItem(hDlg,IDC_EDITNPOPS),(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED));
+					break;
+				
+ 			}
+			if(HIWORD(wParam)==EN_CHANGE)
+				Changed=TRUE;
+			break;
+		}
+		case WM_NOTIFY:
+			switch(((LPNMHDR)lParam)->idFrom)
+			{
+				case 0:
+					switch(((LPNMHDR)lParam)->code)
+					{
+						case PSN_APPLY:
+						{
+							TCHAR Text[MAX_PATH];
+							WCHAR TextW[MAX_PATH];
+							BOOL Translated,NewAcc=FALSE,CheckPopup,CheckPopupW;
+							BOOL CheckNPopup,CheckNPopupW,CheckFPopup,CheckFPopupW;
+							BOOL CheckPopN;
+							BOOL CheckAPOP;
+							int Length,index;
+							UINT Time,TimeN,TimeF;
+
+							if(GetDlgItemText(hDlg,IDC_COMBOACCOUNT,Text,sizeof(Text)/sizeof(TCHAR)))
+							{
+								CheckAPOP=(IsDlgButtonChecked(hDlg,IDC_CHECKAPOP)==BST_CHECKED);
+								CheckPopup=(IsDlgButtonChecked(hDlg,IDC_CHECKPOP)==BST_CHECKED);
+								CheckPopupW=(IsDlgButtonChecked(hDlg,IDC_CHECKCOL)==BST_CHECKED);
+								
+								CheckFPopup=(IsDlgButtonChecked(hDlg,IDC_CHECKFPOP)==BST_CHECKED);
+								CheckFPopupW=(IsDlgButtonChecked(hDlg,IDC_CHECKFCOL)==BST_CHECKED);
+
+								CheckNPopup=(IsDlgButtonChecked(hDlg,IDC_CHECKNPOP)==BST_CHECKED);
+								CheckNPopupW=(IsDlgButtonChecked(hDlg,IDC_CHECKNCOL)==BST_CHECKED);
+								
+								
+								Time=GetDlgItemInt(hDlg,IDC_EDITPOPS,&Translated,FALSE);
+								if(!Translated)
+								{
+									MessageBox(hDlg,Translate("This is not a valid number value"),Translate("Input error"),MB_OK);
+									SetFocus(GetDlgItem(hDlg,IDC_EDITPOPS));
+								        break;
+								}
+								TimeN=GetDlgItemInt(hDlg,IDC_EDITNPOPS,&Translated,FALSE);
+								if(!Translated)
+								{
+									MessageBox(hDlg,Translate("This is not a valid number value"),Translate("Input error"),MB_OK);
+									SetFocus(GetDlgItem(hDlg,IDC_EDITNPOPS));
+								        break;
+								}
+								TimeF=GetDlgItemInt(hDlg,IDC_EDITFPOPS,&Translated,FALSE);
+								if(!Translated)
+								{
+									MessageBox(hDlg,Translate("This is not a valid number value"),Translate("Input error"),MB_OK);
+									SetFocus(GetDlgItem(hDlg,IDC_EDITFPOPS));
+								        break;
+								}
+				        
+								
+								GetDlgItemText(hDlg,IDC_COMBOACCOUNT,Text,sizeof(Text)/sizeof(TCHAR));
+								if(!(Length=_tcslen(Text)))
+									break;
+				        
+								DlgSetItemText(hDlg,(WPARAM)IDC_STTIMELEFT,(LPARAM)Translate("Please wait while no account is in use."));
+				        
+								if(NULL==(ActualAccount=(HPOP3ACCOUNT)CallService(MS_YAMN_FINDACCOUNTBYNAME,(WPARAM)POP3Plugin,(LPARAM)Text)))
+								{
+									NewAcc=TRUE;
+									#ifdef DEBUG_SYNCHRO                    
+									DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write wait\n");
+									#endif                                  
+									WaitToWriteSO(POP3Plugin->AccountBrowserSO);
+									#ifdef DEBUG_SYNCHRO                    
+									DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write enter\n");
+									#endif                                  
+									if(NULL==(ActualAccount=(HPOP3ACCOUNT)CallService(MS_YAMN_GETNEXTFREEACCOUNT,(WPARAM)POP3Plugin,(LPARAM)YAMN_ACCOUNTVERSION)))
+									{
+										#ifdef DEBUG_SYNCHRO                    
+										DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write done\n");
+										#endif                                  
+										WriteDoneSO(POP3Plugin->AccountBrowserSO);
+										MessageBox(hDlg,Translate("Cannot allocate memory space for new account"),Translate("Memory error"),MB_OK);
+										break;
+									}
+								}
+								else
+								{
+									#ifdef DEBUG_SYNCHRO                    
+									DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write wait\n");
+									#endif                                  
+									//We have to get full access to AccountBrowser, so other iterating thrads cannot get new account until new account is right set
+									WaitToWriteSO(POP3Plugin->AccountBrowserSO);
+									#ifdef DEBUG_SYNCHRO                    
+									DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write enter\n");
+									#endif                                  
+								}
+								#ifdef DEBUG_SYNCHRO
+								DebugLog(SynchroFile,"Options:APPLY:ActualAccountSO-write wait\n");
+								#endif
+								if(WAIT_OBJECT_0!=WaitToWrite(ActualAccount))
+								{
+									#ifdef DEBUG_SYNCHRO
+									DebugLog(SynchroFile,"Options:APPLY:ActualAccountSO-write wait failed\n");
+									#endif
+									#ifdef DEBUG_SYNCHRO
+									DebugLog(SynchroFile,"Options:APPLY:ActualBrowserSO-write done\n");
+									#endif
+									WriteDoneSO(POP3Plugin->AccountBrowserSO);
+
+								}
+								#ifdef DEBUG_SYNCHRO
+								DebugLog(SynchroFile,"Options:APPLY:ActualAccountSO-write enter\n");
+								#endif		        
+								ActualAccount->Flags=
+									ActualAccount->Flags |
+									(CheckAPOP ? YAMN_ACC_APOP : 0);
+
+								ActualAccount->NewMailN.Flags=
+									ActualAccount->NewMailN.Flags |
+									(CheckPopup ? YAMN_ACC_POP : 0) |
+									(CheckPopupW ? YAMN_ACC_POPC : 0) |
+									YAMN_ACC_MSGP;			//this is default: when new mail arrives and window was displayed, leave it displayed.
+
+								ActualAccount->NoNewMailN.Flags=
+									(CheckNPopup ? YAMN_ACC_POP : 0) |
+									(CheckNPopupW ? YAMN_ACC_POPC : 0) |
+									ActualAccount->NoNewMailN.Flags;
+
+								ActualAccount->BadConnectN.Flags=
+									ActualAccount->BadConnectN.Flags |
+									(CheckFPopup ? YAMN_ACC_POP : 0) |
+									(CheckFPopupW ? YAMN_ACC_POPC : 0);
+				        
+								ActualAccount->NewMailN.PopUpB=SendDlgItemMessage(hDlg,IDC_CPB,CPM_GETCOLOUR,0,0);
+								ActualAccount->NewMailN.PopUpT=SendDlgItemMessage(hDlg,IDC_CPT,CPM_GETCOLOUR,0,0);
+								ActualAccount->NewMailN.PopUpTime=Time;
+				        
+								ActualAccount->NoNewMailN.PopUpB=SendDlgItemMessage(hDlg,IDC_CPNB,CPM_GETCOLOUR,0,0);
+								ActualAccount->NoNewMailN.PopUpT=SendDlgItemMessage(hDlg,IDC_CPNT,CPM_GETCOLOUR,0,0);
+								ActualAccount->NoNewMailN.PopUpTime=TimeN;
+								
+								ActualAccount->BadConnectN.PopUpB=SendDlgItemMessage(hDlg,IDC_CPFB,CPM_GETCOLOUR,0,0);
+								ActualAccount->BadConnectN.PopUpT=SendDlgItemMessage(hDlg,IDC_CPFT,CPM_GETCOLOUR,0,0);
+								ActualAccount->BadConnectN.PopUpTime=TimeF;
+								
+								CheckPopN=(IsDlgButtonChecked(hDlg,IDC_RADIOPOPN)==BST_CHECKED);				        
+
+								#ifdef DEBUG_SYNCHRO
+								DebugLog(SynchroFile,"Options:APPLY:ActualAccountSO-write done\n");
+								#endif
+								WriteDone(ActualAccount);
+								#ifdef DEBUG_SYNCHRO                    
+								DebugLog(SynchroFile,"Options:APPLY:AccountBrowserSO-write done\n");
+								#endif                                  
+								WriteDoneSO(POP3Plugin->AccountBrowserSO);
+								if(NewAcc)
+								{
+									index=SendDlgItemMessage(hDlg,IDC_COMBOACCOUNT,CB_ADDSTRING,0,(LPARAM)ActualAccount->Name);
+									if((index==CB_ERR) || (index==CB_ERRSPACE))
+										break;
+									SendDlgItemMessage(hDlg,IDC_COMBOACCOUNT,CB_SETCURSEL,(WPARAM)index,(LPARAM)ActualAccount->Name);
+								}
+
+//								if(0==WritePOP3Accounts())
+//									Beep(500,100);
+								WritePOP3Accounts();
+								RefreshContact();
+								return TRUE;
+							}
+						}
+						break;
+					}
+					break;
+			}
+			break;
+	}
+	if(Changed)
+		SendMessage(GetParent(hDlg),PSM_CHANGED,0,0);
+	return FALSE;
 }
+

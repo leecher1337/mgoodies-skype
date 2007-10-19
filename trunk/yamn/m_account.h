@@ -145,13 +145,13 @@ typedef struct CAccount
 //	Plugin flags. Use this DWORD if you want YAMN to store it to YAMN book file. You can set here any value
 	DWORD PluginFlags;
 
-	YAMN_NOTIFICATION NewMailN;		//access only through AccountAccessSO
+	YAMN_NOTIFICATION NewMailN;			//access only through AccountAccessSO
 	YAMN_NOTIFICATION NoNewMailN;		//access only through AccountAccessSO
 	YAMN_NOTIFICATION BadConnectN;		//access only through AccountAccessSO
 
 	SYSTEMTIME LastChecked;			//last check, access only through AccountAccessSO
 	SYSTEMTIME LastSChecked;		//last check (successfull), access only through AccountAccessSO
-	SYSTEMTIME LastSynchronised;		//last synchronisation (successfull), access only through AccountAccessSO
+	SYSTEMTIME LastSynchronised;	//last synchronisation (successfull), access only through AccountAccessSO
 	SYSTEMTIME LastMail;			//last check when new mail detected, access only through AccountAccessSO
 
 	char Status[255];			//access only through GetStatusFcn() and SetStatusFcn() functions

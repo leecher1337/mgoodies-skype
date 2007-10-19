@@ -48,7 +48,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN2IN1" /YX /FD /c
-# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN2IN1" /YX /FD /c
+# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /O1 /Ob0 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "WIN2IN1" /FR /YX /FD /c
 # ADD BASE RSC /l 0x417 /d "NDEBUG"
 # ADD RSC /l 0x417 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -56,7 +56,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /filealign:512
-# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN.dll" /filealign:512
+# ADD LINK32 libs/unicows.lib kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/yamn.dll" /filealign:512
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug Win2in1"
 
@@ -105,7 +105,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll" /filealign:512
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/YAMN.dll" /filealign:512
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib wsock32.lib /nologo /base:"0x60010000" /subsystem:windows /dll /machine:I386 /out:"../../bin/release/plugins/YAMN-NT/yamn.dll" /filealign:512
 
 !ELSEIF  "$(CFG)" == "YAMN - Win32 Debug"
 

@@ -2,22 +2,23 @@
 // Microsoft Developer Studio generated include file.
 // Used by YAMN.rc
 //
+#define IDI_ONLINE                      104
+#define IDI_OFFLINE                     105
 #define IDD_DLGVIEWMESSAGES             107
 #define IDD_DLGSHOWMESSAGE              108
+#define IDI_ICOYAMN2                    112
+#define IDI_ICOYAMN1                    113
 #define IDD_DLGBADCONNECT               115
 #define IDD_POP3ACCOUNTOPT              121
 #define IDD_YAMNOPT                     126
 #define IDB_ICONS                       127
-#define IDI_ONLINE                      104 // from miranda/src/resource.h
-#define IDI_OFFLINE                     105 // from miranda/src/resource.h
-#define IDI_ICOYAMN2                    112
-#define IDI_ICOYAMN1                    113
-#define IDI_NA                          131 // from miranda/src/resource.h
+#define IDI_NA                          131
 #define IDI_ICOTTBUP                    138
 #define IDD_PLUGINOPT                   141
-#define IDI_OCCUPIED                    159 // from miranda/src/resource.h
+#define IDI_OCCUPIED                    159
 #define IDD_CHOOSESTATUSMODES           310
 #define IDD_OPTIONS                     311
+#define IDD_POP3ACCOUNTPOPUP            312
 #define IDC_EDITSERVER                  1000
 #define IDC_EDITPORT                    1001
 #define IDC_EDITLOGIN                   1002
@@ -113,14 +114,17 @@
 #define IDC_STATUSGROUP                 1338
 #define IDC_SPLITTER                    1400
 #define IDC_EDITBODY                    1401
+#define IDC_PREVIEW                     1402
+#define IDC_BTNADD                      1403
+#define IDC_EDITNAME                    1404
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        142
+#define _APS_NEXT_RESOURCE_VALUE        143
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1402
+#define _APS_NEXT_CONTROL_VALUE         1407
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
