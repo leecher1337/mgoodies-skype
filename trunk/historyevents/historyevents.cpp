@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Events",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,3),
+	PLUGIN_MAKE_VERSION(0,0,0,4),
 	"A service plugin to handle custom history events",
 	"Ricardo Pescuma Domenecci",
 	"",
