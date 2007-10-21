@@ -228,6 +228,10 @@ SOURCE=.\m_spellchecker.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\utils\mir_icons.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\utils\mir_memory.h
 # End Source File
 # Begin Source File
@@ -309,6 +313,10 @@ SOURCE=.\hunspell\utf_info.cxx
 # Begin Source File
 
 SOURCE=.\dictionary.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\utils\mir_icons.cpp
 # End Source File
 # Begin Source File
 

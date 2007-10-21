@@ -62,6 +62,7 @@ using namespace std;
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
+#include "../utils/mir_icons.h"
 
 #include "resource.h"
 #include "m_spellchecker.h"
@@ -122,9 +123,7 @@ struct Dialog {
 	vector<WrongWordPopupMenuData> *wrong_words;
 };
 
-HICON LoadIconEx(char* iconName, BOOL copy = FALSE);
 HICON LoadIconEx(Dictionary *dict, BOOL copy = FALSE);
-void ReleaseIconEx(HICON hIcon);
 
 
 #endif // __COMMONS_H__
