@@ -115,7 +115,7 @@ BEGIN
     CONTROL         "Spin1",IDC_NWAIT_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
                     UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
                     UDS_HOTTRACK,59,18,10,14
-    LTEXT           "ms before notifying (to avoid duplications)",IDC_STATIC,
+    LTEXT           "s before notifying (to avoid duplications)",IDC_STATIC,
                     83,17,190,10
     CONTROL         "Don't notify on protocol connection",
                     IDC_DONT_NOTIFY_ON_CONNECT,"Button",BS_AUTOCHECKBOX | 
@@ -216,7 +216,7 @@ BEGIN
     CONTROL         "Spin1",IDC_NWAIT_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
                     UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
                     UDS_HOTTRACK,59,18,10,14
-    LTEXT           "ms before notifying (to avoid duplications)",IDC_STATIC,
+    LTEXT           "s before notifying (to avoid duplications)",IDC_STATIC,
                     83,17,190,10
     CONTROL         "Don't notify on protocol connection",
                     IDC_DONT_NOTIFY_ON_CONNECT,"Button",BS_AUTOCHECKBOX | 

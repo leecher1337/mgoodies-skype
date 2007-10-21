@@ -2,6 +2,10 @@ History Keeper
 
 Changelog:
 
+. 0.0.1.3
+  * Fixed typo in options
+  + Added langpack
+
 . 0.0.1.2
   * Fix for bugs introduced in latest version
 
