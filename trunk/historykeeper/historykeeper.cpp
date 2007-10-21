@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,1),
+	PLUGIN_MAKE_VERSION(0,0,1,2),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -876,18 +876,38 @@ int SettingChanged(WPARAM wParam, LPARAM lParam)
 			queue->Lock();
 
 			BOOL found = FALSE;
+			int typeNum = i;
+			int notifyAlso = -1;
 
 			if (type.subOf >= 0)
 			{
 				// Check parent
-				for (int i = queue->Size() - 1; i >= 0; --i)
+				for (int j = queue->Size() - 1; j >= 0; --j)
 				{
-					QueueItem *item = queue->Get(i);
+					QueueItem *item = queue->Get(j);
+					QueueData *qd = (QueueData *) item->param;
 					
-					if (item->hContact == hContact && ((QueueData *)item->param)->type == type.subOf)
+					if (item->hContact == hContact && qd->type == type.subOf)
 					{
-						((QueueData *)item->param)->notifyAlso = i;
+						qd->notifyAlso = typeNum;
 						found = TRUE;
+						break;
+					}
+				}
+			}
+			else if (type.parentOf >= 0)
+			{
+				// Check sub
+				for (int j = queue->Size() - 1; j >= 0; --j)
+				{
+					QueueItem *item = queue->Get(j);
+					QueueData *qd = (QueueData *) item->param;
+					
+					if (item->hContact == hContact && qd->type == type.parentOf)
+					{
+						notifyAlso = qd->type;
+						delete qd;
+						queue->Remove(j);
 						break;
 					}
 				}
@@ -896,23 +916,24 @@ int SettingChanged(WPARAM wParam, LPARAM lParam)
 			// Check if already have
 			if (!found)
 			{
-				int notifyAlso = -1;
-
-				for (int i = queue->Size() - 1; i >= 0; --i)
+				for (int j = queue->Size() - 1; j >= 0; --j)
 				{
-					QueueItem *item = queue->Get(i);
+					QueueItem *item = queue->Get(j);
+					QueueData *qd = (QueueData *) item->param;
 					
-					if (item->hContact == hContact && ((QueueData *)item->param)->type == i)
+					if (item->hContact == hContact && qd->type == typeNum)
 					{
-						notifyAlso = ((QueueData *)item->param)->notifyAlso;
-						delete item->param;
-						queue->Remove(i);
+						if (qd->notifyAlso >= 0)
+							notifyAlso = qd->notifyAlso;
+
+						delete qd;
+						queue->Remove(j);
 						break;
 					}
 				}
 
 				QueueData *qd = new QueueData();
-				qd->type = i;
+				qd->type = typeNum;
 				qd->notifyAlso = notifyAlso;
 
 				queue->Add(opts[i].ttw * 1000, hContact, qd);
@@ -969,11 +990,6 @@ void TrackChangeString(int typeNum, HANDLE hContact, BOOL notify)
 			eq = (lstrcmp(new_.ptszVal, oldVal) == 0);
 
 		ret = (eq ? 0 : CheckStr(new_.ptszVal, 1, 2));
-	}
-
-	if (ret == 0)
-	{
-		// Check sub
 	}
 
 	BOOL track_removes;

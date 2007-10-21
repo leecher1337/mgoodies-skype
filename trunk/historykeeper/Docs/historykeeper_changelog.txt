@@ -2,6 +2,9 @@ History Keeper
 
 Changelog:
 
+. 0.0.1.2
+  * Fix for bugs introduced in latest version
+
 . 0.0.1.1
   + Group popups of status/status messages and x-status/x-status messages
   + Option to customize time to wait before notifying a change

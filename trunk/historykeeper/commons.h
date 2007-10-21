@@ -93,6 +93,7 @@ struct HISTORY_TYPE {
 	BOOL canBeRemoved;
 	BOOL temporary;
 	int subOf;
+	int parentOf;
 
 	struct {
 		struct {
