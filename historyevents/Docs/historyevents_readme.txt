@@ -1,7 +1,7 @@
 History Events plugin
 ---------------------
 
-CAUTION: THIS IS ALPHA QUALITY SOFTWARE. IT CAN ERASE ALL YOUR HISTORY. USE AT YOUR OWN RISK.
+CAUTION: THIS IS BETA QUALITY SOFTWARE. IT CAN ERASE ALL YOUR HISTORY. USE AT YOUR OWN RISK.
 
 This is a service plugin that allows adding/reading new event types to history. The main idea is a service that plugins use to add events to history and that the *srmm plugins can use to show then.
 
