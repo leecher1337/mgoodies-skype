@@ -21,11 +21,6 @@ Boston, MA 02111-1307, USA.
 #ifndef __COMMONS_H__
 # define __COMMONS_H__
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 
 #define _WIN32_WINNT 0x0501
 #include <windows.h>
@@ -56,8 +51,8 @@ extern "C"
 #include <m_avatars.h>
 #include <m_statusplugins.h>
 #include <m_ersatz.h>
-#include "../modernb/CLUIFrames/m_cluiframes.h"
 #include <m_icq.h>
+#include "m_cluiframes.h"
 #include "m_simpleaway.h"
 
 #include <richedit.h>
@@ -130,9 +125,5 @@ static __inline int DRAW_TEXT(HDC hDC, LPCSTR lpString, int nCount, LPRECT lpRec
 
 
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __COMMONS_H__
