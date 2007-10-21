@@ -602,20 +602,12 @@ int ServiceAddToHistory(WPARAM wParam, LPARAM lParam)
 		if (!MsgWndOpen(hea->hContact))
 			return NULL;
 
+	Buffer<TCHAR> templ;
+	GetTemplare(&templ, heh, hea->templateNum);
+	templ.pack();
+
 	Buffer<TCHAR> buffer;
-	GetTemplare(&buffer, heh, hea->templateNum);
-	if (ServiceExists(MS_VARS_FORMATSTRING)) 
-	{
-		buffer.pack();
-		TCHAR *tmp = variables_parse_ex(buffer.str, NULL, hea->hContact, hea->variables, hea->numVariables);
-		buffer.clear();
-		buffer.append(tmp);
-		variables_free(tmp);
-	}
-	else
-	{
-		ReplaceVars(&buffer, hea->hContact, hea->variables, hea->numVariables);
-	}
+	ReplaceTemplate(&buffer, hea->hContact, templ.str, hea->variables, hea->numVariables);
 	buffer.pack();
 	if (buffer.str == NULL)
 		return NULL;
