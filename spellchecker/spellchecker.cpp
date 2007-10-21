@@ -212,25 +212,6 @@ HICON LoadIconEx(Dictionary *dict, BOOL copy)
 }
 
 
-HICON LoadIconEx(char *iconName, BOOL copy)
-{
-	HICON hIcon = hIcon = (HICON)CallService(MS_SKIN2_GETICON, 0, (LPARAM)iconName);
-	if (copy)
-	{
-		hIcon = CopyIcon(hIcon);
-		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)iconName);
-	}
-	return hIcon;
-}
-
-
-void ReleaseIconEx(HICON hIcon)
-{
-	CallService(MS_SKIN2_RELEASEICON, (WPARAM)hIcon, 0);
-}
-
-
-
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
 {
 	hInst = hinstDLL;
