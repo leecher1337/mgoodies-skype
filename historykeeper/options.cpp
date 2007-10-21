@@ -148,7 +148,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 				odp.pszTemplate = MAKEINTRESOURCEA(IDD_POPUPS_NOREM);
 
 			char tmp[128];
-			mir_snprintf(tmp, MAX_REGS(tmp), "%s Change", types[i].description);
+			mir_snprintf(tmp, MAX_REGS(tmp), Translate("%s Change"), types[i].description);
 
 			odp.pszTitle = tmp;
 			odp.pfnDlgProc = PopupsDlgProcArr[i];
@@ -173,7 +173,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 				odp.pszTemplate = MAKEINTRESOURCEA(IDD_SPEAK_NOREM);
 
 			char tmp[128];
-			mir_snprintf(tmp, MAX_REGS(tmp), "%s Change", types[i].description);
+			mir_snprintf(tmp, MAX_REGS(tmp), Translate("%s Change"), types[i].description);
 
 			odp.pszTitle = tmp;
 			odp.pfnDlgProc = SpeakDlgProcArr[i];

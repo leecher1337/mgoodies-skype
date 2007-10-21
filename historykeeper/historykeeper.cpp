@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,2),
+	PLUGIN_MAKE_VERSION(0,0,1,3),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -231,13 +231,13 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 			mir_snprintf(service, MAX_REGS(service), "%s/Disable", type.name);
 			CreateServiceFunctionParam(service, DisableAll, i);
 
-			mir_snprintf(name, MAX_REGS(name), "Ignore %s changes", type.description);
+			mir_snprintf(name, MAX_REGS(name), Translate("Ignore %s changes"), type.description);
 			hDisableMenu[i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 
 			mir_snprintf(service, MAX_REGS(service), "%s/Enable", type.name);
 			CreateServiceFunctionParam(service, EnableAll, i);
 			
-			mir_snprintf(name, MAX_REGS(name), "Log %s changes", type.description);
+			mir_snprintf(name, MAX_REGS(name), Translate("Log %s changes"), type.description);
 			hEnableMenu[i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 		}
 		else
@@ -245,25 +245,25 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 			mir_snprintf(service, MAX_REGS(service), "%s/DisableLog", type.name);
 			CreateServiceFunctionParam(service, DisableLog, i);
 
-			mir_snprintf(name, MAX_REGS(name), "Don't log %s changes", type.description);
+			mir_snprintf(name, MAX_REGS(name), Translate("Don't log %s changes"), type.description);
 			hDisableMenu[2*i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 
 			mir_snprintf(service, MAX_REGS(service), "%s/DisableNotification", type.name);
 			CreateServiceFunctionParam(service, DisableNotification, i);
 
-			mir_snprintf(name, MAX_REGS(name), "Don't notify %s changes", type.description);
+			mir_snprintf(name, MAX_REGS(name), Translate("Don't notify %s changes"), type.description);
 			hDisableMenu[2*i+1] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 
 			mir_snprintf(service, MAX_REGS(service), "%s/EnableLog", type.name);
 			CreateServiceFunctionParam(service, EnableLog, i);
 			
-			mir_snprintf(name, MAX_REGS(name), "Log %s changes", type.description);
+			mir_snprintf(name, MAX_REGS(name), Translate("Log %s changes"), type.description);
 			hEnableMenu[2*i] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 
 			mir_snprintf(service, MAX_REGS(service), "%s/EnableNotification", type.name);
 			CreateServiceFunctionParam(service, EnableNotification, i);
 			
-			mir_snprintf(name, MAX_REGS(name), "Notify %s changes", type.description);
+			mir_snprintf(name, MAX_REGS(name), Translate("Notify %s changes"), type.description);
 			hEnableMenu[2*i+1] = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
 		}
 

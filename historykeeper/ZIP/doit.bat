@@ -26,7 +26,8 @@ copy ..\Docs\%name%_readme.txt
 mkdir Docs
 cd Docs
 del /Q *.*
-rem copy ..\..\Docs\langpack_%name%.txt
+copy ..\..\Docs\%name%_readme.txt
+copy ..\..\Docs\langpack_%name%.txt
 rem copy ..\..\Docs\helppack_%name%.txt
 copy ..\..\m_%name%.h
 cd ..

@@ -1,2 +1,76 @@
 ; History Keeper
 ; Author: Pescuma
+
+[Client]
+[Listening]
+[Nickname]
+[Status]
+[Status Message]
+[X-Status]
+[X-Status Message]
+
+; Popups
+[Popups]
+[%s Change]
+[ Tracking ]
+[Show when contacts change their %s]
+[Template:]
+[Show when contacts remove their %s]
+[ Colours ]
+[Background colour]
+[Text colour]
+[Use Windows colours]
+[Use default colours]
+[ Delay ]
+[From popup plugin]
+[Custom]
+[Permanent]
+[ Actions ]
+[On right click:]
+[On left click:]
+[Do nothing]
+[Close popup]
+[Show history]
+[Open message window]
+[Preview]
+
+; Speak
+[Speak]
+[Announce when contacts change their %s]
+[Announce when contacts remove their %s]
+
+; Options
+[History]
+[General]
+[ Track ]
+[Wait]
+[s before notifying (to avoid duplications)]
+[Don't notify on protocol connection]
+[ Protocols ]
+[Enable tracking for these protocols:]
+[ Log to file ]
+[Filename:]
+[Log when contacts change their %s]
+[Log when contacts remove their %s]
+[Notifications]
+[** All contacts **]
+
+; Notifications
+[Log to History]
+[Log to File]
+[Notify using Popups]
+[Notify using Sounds]
+[Notify using Speak plugin]
+
+; Menus
+[Ignore %s changes]
+[Log %s changes]
+[Don't log %s changes]
+[Notify %s changes]
+[Don't notify %s changes]
+
+; Sounds
+[%s change]
+[%s removal]
+
+[<empty>]
