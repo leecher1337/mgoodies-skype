@@ -87,6 +87,8 @@ __inline static void variables_free(void *pntr) {
 
 #define MS_VARS_FORMATSTRING    "Vars/FormatString"
 
+#define MS_VARS_FORMATSTRING_EX    "Vars/FormatStringEx"
+
 // This service can be used to parse tokens in a text. The tokens will be  
 // replaced by their resolved values. A token can either be a field or a 
 // function. A field takes no arguments and is represented between 
@@ -161,7 +163,7 @@ __inline static TCHAR *variables_parse(TCHAR *tszFormat, TCHAR *tszExtraText, HA
   FORMATINFO fi;
 
   ZeroMemory(&fi, sizeof(fi));
-  fi.cbSize = sizeof(fi);
+  fi.cbSize = FORMATINFOV2_SIZE;
   fi.tszFormat = tszFormat;
   fi.tszExtraText = tszExtraText;
   fi.hContact = hContact;
@@ -183,7 +185,7 @@ __inline static TCHAR *variables_parse_ex(TCHAR *tszFormat, TCHAR *tszExtraText,
   fi.tszaTemporaryVars = tszaTemporaryVars;
   fi.cbTemporaryVarsSize = cbTemporaryVarsSize;
 
-  return (TCHAR *)CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
+  return (TCHAR *)CallService(MS_VARS_FORMATSTRING_EX, (WPARAM)&fi, 0);
 }
 #endif
 
@@ -231,7 +233,7 @@ __inline static TCHAR *variables_parsedup_ex(TCHAR *tszFormat, TCHAR *tszExtraTe
     fi.flags |= FIF_TCHAR;
 	fi.tszaTemporaryVars = tszaTemporaryVars;
 	fi.cbTemporaryVarsSize = cbTemporaryVarsSize;
-    tszParsed = (TCHAR *)CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
+    tszParsed = (TCHAR *)CallService(MS_VARS_FORMATSTRING_EX, (WPARAM)&fi, 0);
     if (tszParsed) {
       tszResult = _tcsdup(tszParsed);
       CallService(MS_VARS_FREEMEMORY, (WPARAM)tszParsed, 0);
