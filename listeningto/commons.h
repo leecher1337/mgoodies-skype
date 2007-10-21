@@ -52,7 +52,7 @@ Boston, MA 02111-1307, USA.
 #include <m_icq.h>
 #include <m_variables.h>
 #include <m_clui.h>
-#include <m_cluiframes.h>
+#include "m_cluiframes.h"
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"

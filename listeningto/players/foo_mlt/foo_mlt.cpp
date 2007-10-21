@@ -71,8 +71,7 @@ void Concat(WCHAR *data, size_t &size, const char *str, size_t len = 0)
 
 		if (size >= len + 3)
 		{
-			MultiByteToWideChar(CP_ACP, 0, str, len  * sizeof(char), &data[DATA_SIZE - size], size * sizeof(WCHAR));
-			size -= len;
+			size -= MultiByteToWideChar(CP_UTF8, 0, str, len  * sizeof(char), &data[DATA_SIZE - size], size * sizeof(WCHAR));
 			data[DATA_SIZE - size] = L'\0';
 		}
 	}
