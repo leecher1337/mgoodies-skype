@@ -8,3 +8,7 @@ This is a service to provide a common user interface for voice calls to protocol
 For it to work, protocols/plugins need to support it. By now, only a mod of MirandaComm2 and a mod of JGmail does that (to check it out, look at its thread in miranda forum).
 
 Many thanks to Angeli-Ka for creating the icons.
+
+To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?p=114862
+
+This plugin needs Miranda 0.7 to work.
