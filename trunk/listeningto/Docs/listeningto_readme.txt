@@ -15,17 +15,14 @@ If you want this to implement some other player, I need a link to a page that ex
 
 One last thing: when reporting bugs, please post the name and version of the player you are using.
 
-It now also support Variables plugin to format the info. BUT you need to use this mod:
-- http://pescuma.mirandaim.ru/miranda/variables.zip
-- http://pescuma.mirandaim.ru/miranda/variablesW.zip 
-It does NOT work with other versions of variables.
+It now also support Variables plugin to format the info. It works better with my mod of it:
+- http://pescuma.mirandaim.ru/miranda/variables_mod.zip
+- http://pescuma.mirandaim.ru/miranda/variables_modW.zip 
+This version allows to use temporary variables in the replacement too, so you can use %artist%.
 
 Todo:
 - Better support for iTunes (it is not good now)
 - For Quintessential player you can use this one: http://www.quinnware.com/list_plugins.php?plugin=149
-
-Known bugs:
-- (In #0.7 this works fine in classic too) In clist classic you can't select one protocol - it allways select all. This is because a limitation of the clist (that don't send the current position in list to the service). So, unless someone patch the clist, it wont work. Clist modern and nicer works fine.
 
 To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=10912
 

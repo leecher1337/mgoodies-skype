@@ -2,6 +2,10 @@ ListeningTo
 
 Changelog:
 
+. 0.1.2.1
+  + Support not moded version of variables too
+  * Fix for foo_mlt and non english tags
+
 . 0.1.2.0
   + Added variables support for template and XStatus template - need Variables MOD
   + Added option to disable info per type

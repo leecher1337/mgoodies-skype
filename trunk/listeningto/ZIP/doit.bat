@@ -14,6 +14,8 @@ echo Building %name% ...
 msdev ..\%name%.dsp /MAKE "%name% - Win32 Release" /REBUILD
 msdev ..\%name%.dsp /MAKE "%name% - Win32 Unicode Release" /REBUILD
 msdev ..\players\mlt_winamp\mlt_winamp.dsp /MAKE "mlt_winamp - Win32 Release" /REBUILD
+msdev ..\players\mlt_winamp\mlt_winamp.dsp /MAKE "mlt_winamp - Win32 Release" /REBUILD
+"C:\Program Files\Microsoft Visual Studio 8\Common7\IDE\devenv.com" /Rebuild "Release Unicode" ..\players\foo_mlt\foo_mlt.sln
 
 echo Generating files for %name% ...
 
@@ -23,6 +25,7 @@ copy "..\..\..\bin\release\Plugins\%name%.dll"
 copy "..\..\..\bin\release unicode\Plugins\%name%W.dll"
 copy ..\Docs\%name%_changelog.txt
 copy ..\Docs\%name%_version.txt
+copy ..\Docs\%name%_readme.txt
 mkdir Docs
 cd Docs
 del /Q *.*
@@ -97,6 +100,7 @@ pause
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%W.zip %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt %ftp% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_readme.txt %ftp% -overwrite -close 
 
 :END
 
