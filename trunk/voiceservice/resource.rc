@@ -73,22 +73,6 @@ BEGIN
     PUSHBUTTON      "Preview",IDC_PREV,131,161,50,14
 END
 
-IDD_OPT_AUTO DIALOGEX 0, 0, 313, 240
-STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
-BEGIN
-    GROUPBOX        " Automatic Actions ",IDC_STATIC,0,0,313,240
-    CONTROL         "",IDC_LIST,"CListControl",WS_TABSTOP | 0x1f0,8,14,297,
-                    183,WS_EX_CLIENTEDGE
-    ICON            IDI_ACTION_ANSWER,IDC_ANSWER,8,204,20,20
-    LTEXT           "Auto accept this contact calls",IDC_STATIC,26,205,279,8,
-                    SS_NOPREFIX | SS_CENTERIMAGE
-    ICON            IDI_ACTION_DROP,IDC_DROP,8,219,20,20
-    LTEXT           "Auto drop this contacts calls",IDC_STATIC,26,220,279,8,
-                    SS_NOPREFIX | SS_CENTERIMAGE
-END
-
 IDD_NEW_CALL DIALOG DISCARDABLE  0, 0, 229, 73
 STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
     WS_SYSMENU
@@ -114,6 +98,22 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,11,15,214,12
 END
 
+IDD_OPT_AUTO DIALOGEX 0, 0, 313, 240
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    GROUPBOX        " Automatic Actions ",IDC_STATIC,0,0,313,240
+    CONTROL         "",IDC_LIST,"CListControl",WS_TABSTOP | 0x1f0,8,14,297,
+                    183,WS_EX_CLIENTEDGE
+    ICON            IDI_ACTION_ANSWER,IDC_ANSWER,8,204,20,20
+    LTEXT           "Auto accept this contact calls",IDC_STATIC,26,205,279,8,
+                    SS_NOPREFIX | SS_CENTERIMAGE
+    ICON            IDI_ACTION_DROP,IDC_DROP,8,219,20,20
+    LTEXT           "Auto drop this contacts calls",IDC_STATIC,26,220,279,8,
+                    SS_NOPREFIX | SS_CENTERIMAGE
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -131,12 +131,6 @@ BEGIN
         BOTTOMMARGIN, 237
     END
 
-    IDD_OPT_AUTO, DIALOG
-    BEGIN
-        VERTGUIDE, 8
-        VERTGUIDE, 305
-    END
-
     IDD_NEW_CALL, DIALOG
     BEGIN
         LEFTMARGIN, 7
@@ -151,6 +145,12 @@ BEGIN
         RIGHTMARGIN, 230
         TOPMARGIN, 3
         BOTTOMMARGIN, 38
+    END
+
+    IDD_OPT_AUTO, DIALOG
+    BEGIN
+        VERTGUIDE, 8
+        VERTGUIDE, 305
     END
 END
 #endif    // APSTUDIO_INVOKED
