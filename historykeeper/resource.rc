@@ -104,29 +104,36 @@ BEGIN
     PUSHBUTTON      "Preview",IDC_PREV,131,223,50,14
 END
 
-IDD_OPTIONS_NOREM DIALOGEX 0, 0, 285, 195
+IDD_OPTIONS_NOREM DIALOGEX 0, 0, 285, 187
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Track ",IDC_STATIC,3,3,279,31
+    GROUPBOX        " Track ",IDC_STATIC,3,3,279,46
+    LTEXT           "Wait",IDC_WAIT_L,12,17,30,10
+    EDITTEXT        IDC_NWAIT,42,15,36,13,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Spin1",IDC_NWAIT_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
+                    UDS_HOTTRACK,59,18,10,14
+    LTEXT           "ms before notifying (to avoid duplications)",IDC_STATIC,
+                    83,17,190,10
     CONTROL         "Don't notify on protocol connection",
                     IDC_DONT_NOTIFY_ON_CONNECT,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,12,16,264,11
-    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,37,279,88
+                    WS_TABSTOP,12,32,264,11
+    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,52,279,64
     LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,
-                    14,50,158,11
+                    14,65,158,11
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
-                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,13,62,158,54
-    GROUPBOX        " Log to file ",IDC_FILE_G,3,128,279,65
-    RTEXT           "Filename:",IDC_FILENAME_L,12,144,41,10
-    EDITTEXT        IDC_FILENAME,60,143,198,13,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_SELECT_FILE,261,143,14,13
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,13,77,158,33
+    GROUPBOX        " Log to file ",IDC_FILE_G,3,120,279,65
+    RTEXT           "Filename:",IDC_FILENAME_L,12,136,41,10
+    EDITTEXT        IDC_FILENAME,60,135,198,13,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_SELECT_FILE,261,135,14,13
     CONTROL         "Log when contacts change their %s",IDC_TRACK_CHANGE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,161,264,11
-    RTEXT           "Template:",IDC_CHANGED_L2,11,174,55,10
-    EDITTEXT        IDC_CHANGED,72,173,203,13,ES_AUTOHSCROLL
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,153,264,11
+    RTEXT           "Template:",IDC_CHANGED_L2,11,166,55,10
+    EDITTEXT        IDC_CHANGED,72,165,203,13,ES_AUTOHSCROLL
 END
 
 IDD_POPUPS_NOREM DIALOGEX 0, 0, 314, 240
@@ -198,33 +205,40 @@ BEGIN
     EDITTEXT        IDC_CHANGED,72,15,203,13,ES_AUTOHSCROLL
 END
 
-IDD_OPTIONS_REM DIALOGEX 0, 0, 285, 225
+IDD_OPTIONS_REM DIALOGEX 0, 0, 285, 218
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Track ",IDC_STATIC,3,3,279,31
+    GROUPBOX        " Track ",IDC_STATIC,3,3,279,46
+    LTEXT           "Wait",IDC_WAIT_L,12,17,30,10
+    EDITTEXT        IDC_NWAIT,42,15,36,13,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Spin1",IDC_NWAIT_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
+                    UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
+                    UDS_HOTTRACK,59,18,10,14
+    LTEXT           "ms before notifying (to avoid duplications)",IDC_STATIC,
+                    83,17,190,10
     CONTROL         "Don't notify on protocol connection",
                     IDC_DONT_NOTIFY_ON_CONNECT,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,12,16,264,11
-    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,37,279,88
+                    WS_TABSTOP,12,32,264,11
+    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,52,279,64
     LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,
-                    14,50,158,11
+                    14,65,158,11
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
-                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,13,62,158,54
-    GROUPBOX        " Log to file ",IDC_FILE_G,3,128,279,96
-    RTEXT           "Filename:",IDC_FILENAME_L,12,144,41,10
-    EDITTEXT        IDC_FILENAME,60,143,198,13,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_SELECT_FILE,261,143,14,13
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,13,77,158,33
+    GROUPBOX        " Log to file ",IDC_FILE_G,3,120,279,96
+    RTEXT           "Filename:",IDC_FILENAME_L,12,136,41,10
+    EDITTEXT        IDC_FILENAME,60,135,198,13,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_SELECT_FILE,261,135,14,13
     CONTROL         "Log when contacts change their %s",IDC_TRACK_CHANGE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,161,264,11
-    RTEXT           "Template:",IDC_CHANGED_L2,11,174,55,10
-    EDITTEXT        IDC_CHANGED,72,173,203,13,ES_AUTOHSCROLL
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,153,264,11
+    RTEXT           "Template:",IDC_CHANGED_L2,11,166,55,10
+    EDITTEXT        IDC_CHANGED,72,165,203,13,ES_AUTOHSCROLL
     CONTROL         "Log when contacts remove their %s",IDC_TRACK_REMOVE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,190,263,11
-    RTEXT           "Template:",IDC_REMOVED_L2,11,204,55,10
-    EDITTEXT        IDC_REMOVED,72,203,203,13,ES_AUTOHSCROLL
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,182,263,11
+    RTEXT           "Template:",IDC_REMOVED_L2,11,196,55,10
+    EDITTEXT        IDC_REMOVED,72,195,203,13,ES_AUTOHSCROLL
 END
 
 IDD_NOTIFICATIONS DIALOGEX 0, 0, 301, 229
@@ -304,7 +318,6 @@ BEGIN
         LEFTMARGIN, 3
         RIGHTMARGIN, 282
         TOPMARGIN, 3
-        BOTTOMMARGIN, 218
     END
 
     IDD_NOTIFICATIONS, DIALOG

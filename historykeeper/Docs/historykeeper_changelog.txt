@@ -2,6 +2,12 @@ History Keeper
 
 Changelog:
 
+. 0.0.1.1
+  + Group popups of status/status messages and x-status/x-status messages
+  + Option to customize time to wait before notifying a change
+  * Fixes to avoid some uneeded popups
+  * Now it won't crash with old version of variables plugin (but will not work very well...)
+
 . 0.0.1.0
   + Added X-Status Message history
   * Changed XStatus to X-Status

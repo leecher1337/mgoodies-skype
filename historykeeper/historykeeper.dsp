@@ -172,7 +172,7 @@ SOURCE=.\m_historykeeper.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\utils\mir_dblists.h
+SOURCE=..\utils\mir_buffer.h
 # End Source File
 # Begin Source File
 
@@ -273,10 +273,6 @@ SOURCE=..\utils\ContactAsyncQueue.cpp
 # Begin Source File
 
 SOURCE=.\historykeeper.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\utils\mir_dblists.cpp
 # End Source File
 # Begin Source File
 

@@ -39,6 +39,7 @@ Boston, MA 02111-1307, USA.
 struct Options {
 	BYTE track_only_not_offline;
 	BYTE dont_notify_on_connect;
+	int ttw;
 
 	// File
 	TCHAR file_name[1024];
