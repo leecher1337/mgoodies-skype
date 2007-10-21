@@ -245,6 +245,14 @@ class Buffer
 			len += max(__blen(&str[len]), size - len - 1);
 		}
 
+		T *detach() 
+		{
+			T *ret = str;
+			str = NULL;
+			len = 0;
+			return ret;
+		}
+
 		void trimRight() 
 		{
 			if (str == NULL)
@@ -348,17 +356,37 @@ static void ReplaceVars(Buffer<TCHAR> *buffer, HANDLE hContact, TCHAR **variable
 
 static void ReplaceTemplate(Buffer<TCHAR> *out, HANDLE hContact, TCHAR *templ, TCHAR **vars, int numVars)
 {
-	if (ServiceExists(MS_VARS_FORMATSTRING)) 
+	if (ServiceExists(MS_VARS_FORMATSTRING_EX)) 
 	{
 		TCHAR *tmp = variables_parse_ex(templ, NULL, hContact, vars, numVars);
-		out->append(tmp);
-		variables_free(tmp);
+		if (tmp != NULL)
+		{
+			out->append(tmp);
+			variables_free(tmp);
+			out->pack();
+			return;
+		}
 	}
-	else
+
+	if (ServiceExists(MS_VARS_FORMATSTRING)) 
 	{
 		out->append(templ);
 		ReplaceVars(out, hContact, vars, numVars);
+		out->pack();
+
+		TCHAR *tmp = variables_parse(out->str, NULL, hContact);
+		if (tmp != NULL)
+		{
+			out->clear();
+			out->append(tmp);
+			variables_free(tmp);
+			out->pack();
+			return;
+		}
 	}
+
+	out->append(templ);
+	ReplaceVars(out, hContact, vars, numVars);
 	out->pack();
 }
 
