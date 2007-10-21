@@ -578,7 +578,7 @@ TCHAR * Protocol::GetListeningTo()
 	}
 
 	DBVARIANT dbv = {0};
-	if (DBGetContactSetting(NULL, name, "ListeningTo", &dbv))
+	if (DBGetContactSettingTString(NULL, name, "ListeningTo", &dbv))
 	{
 		lcopystr(listening_to, "", MAX_REGS(listening_to));
 		return listening_to;
@@ -763,7 +763,7 @@ void ProtocolArray::GetDefaultNick()
 {
 	DBVARIANT dbv;
 
-	if (!DBGetContactSetting(0, MODULE_NAME, SETTING_DEFAULT_NICK, &dbv))
+	if (!DBGetContactSettingTString(0, MODULE_NAME, SETTING_DEFAULT_NICK, &dbv))
 	{
 		lstrcpyn(default_nick, dbv.pszVal, sizeof(default_nick));
 		DBFreeVariant(&dbv);
@@ -778,7 +778,7 @@ void ProtocolArray::GetDefaultAvatar()
 {
 	DBVARIANT dbv;
 
-	if (!DBGetContactSetting(0, "ContactPhoto", "File", &dbv))
+	if (!DBGetContactSettingTString(0, "ContactPhoto", "File", &dbv))
 	{
 		lstrcpyn(default_avatar_file, dbv.pszVal, sizeof(default_avatar_file));
 		DBFreeVariant(&dbv);
