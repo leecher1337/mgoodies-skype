@@ -73,7 +73,7 @@ FPAllowProtocol AllowProtocolArr[] = { AllowProtocol0, AllowProtocol1, AllowProt
 
 
 
-#define OPTIONS_CONTROLS_SIZE 8
+#define OPTIONS_CONTROLS_SIZE 9
 static OptPageControl optionsControls[NUM_TYPES][OPTIONS_CONTROLS_SIZE] = {0};
 
 #define POPUPS_CONTROLS_SIZE 14
@@ -214,6 +214,7 @@ void InitOptions()
 			mir_sntprintf(&fileRemoveTemplates[i][0], 128, _T("[%%date%%] %%contact%% removed his/her %s (was %%old%%)"), tmp);
 
 		OptPageControl opt[] = {
+			{ &opts[i].ttw,						CONTROL_SPIN,			IDC_NWAIT,					"Delay", types[i].defs.ttw, IDC_NWAIT_SPIN, (WORD) 0, (WORD) 120 },
 			{ &opts[i].track_only_not_offline,	CONTROL_CHECKBOX,		IDC_ONLY_NOT_OFFLINE,		"TrackOnlyWhenNotOffline", types[i].defs.track_only_not_offline },
 			{ &opts[i].dont_notify_on_connect,	CONTROL_CHECKBOX,		IDC_DONT_NOTIFY_ON_CONNECT,	"DontNotifyOnConnect", TRUE },
 			{ NULL,								CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,				"%sEnabled", TRUE, (int) AllowProtocolArr[i] },
@@ -234,12 +235,16 @@ void InitOptions()
 		memcpy(&optionsControls[i][0], &opt, sizeof(opt));
 
 		// Popups page
-		if (types[i].defs.change_template != NULL)
+		if (types[i].defs.change_template_popup != NULL)
+			mir_sntprintf(&changeTemplates[i][0], 128, types[i].defs.change_template_popup, tmp);
+		else if (types[i].defs.change_template != NULL)
 			mir_sntprintf(&changeTemplates[i][0], 128, _T(TCHAR_STR_PARAM), types[i].defs.change_template);
 		else
 			mir_sntprintf(&changeTemplates[i][0], 128, _T("changed his/her %s to %%new%% (was %%old%%)"), tmp);
 
-		if (types[i].defs.remove_template != NULL)
+		if (types[i].defs.remove_template_popup != NULL)
+			mir_sntprintf(&removeTemplates[i][0], 128, types[i].defs.remove_template_popup, tmp);
+		else if (types[i].defs.remove_template != NULL)
 			mir_sntprintf(&removeTemplates[i][0], 128, _T(TCHAR_STR_PARAM), types[i].defs.remove_template);
 		else
 			mir_sntprintf(&removeTemplates[i][0], 128, _T("removed his/her %s (was %%old%%)"), tmp);

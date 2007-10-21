@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,0),
+	PLUGIN_MAKE_VERSION(0,0,1,1),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -49,6 +49,7 @@ PLUGININFOEX pluginInfo={
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
+LIST_INTERFACE li;
 
 HANDLE hHooks[6] = {0};
 
@@ -131,7 +132,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	pluginLink = link;
 
 	init_mir_malloc();
-	init_list_interface();
+	mir_getLI(&li);
 
 	// Hidden settings
 	UNIFIED_CONTEXT_MENUS = DBGetContactSettingByte(NULL, MODULE_NAME, "UnifiedContextMenus", FALSE);
@@ -728,6 +729,10 @@ void Notify(HANDLE hContact, int type, BOOL found_old, int templateNum, TCHAR **
 	if (proto == NULL || proto[0] == '\0')
 		return;
 
+	int status = CallProtoService(proto, PS_GETSTATUS, 0, 0);
+	if (status <= ID_STATUS_OFFLINE)
+		return;
+
 	if (opts[type].dont_notify_on_connect)
 	{
 		char onOffSetting[256];
@@ -752,7 +757,7 @@ void Notify(HANDLE hContact, int type, BOOL found_old, int templateNum, TCHAR **
 }
 
 
-void Log(int type, BOOL found_old, BOOL changed, HANDLE hContact, TCHAR *oldVal, TCHAR *newVal)
+void Log(int type, BOOL found_old, BOOL changed, HANDLE hContact, TCHAR *oldVal, TCHAR *newVal, BOOL notify)
 {
 	if (newVal == NULL || newVal[0] == _T('\0'))
 		newVal = TranslateT("<empty>");
@@ -777,7 +782,8 @@ void Log(int type, BOOL found_old, BOOL changed, HANDLE hContact, TCHAR *oldVal,
 	if (ItemEnabled(type, hContact, LOG_FILE))
 		LogToFile(hContact, type, templateNum, vars, numVars);
 	
-	Notify(hContact, type, found_old, templateNum, vars, numVars);
+	if (notify)
+		Notify(hContact, type, found_old, templateNum, vars, numVars);
 
 	for(int i = 0; i < types[type].numAddVars; i++)
 		mir_free(vars[4 + 2 * i + 1]);
@@ -867,7 +873,53 @@ int SettingChanged(WPARAM wParam, LPARAM lParam)
 			if (!ContactEnabled(i, hContact))
 				continue;
 
-			queue->AddAndRemovePreviousConsiderParam(type.ttw * 1000, hContact, (void *) i);
+			queue->Lock();
+
+			BOOL found = FALSE;
+
+			if (type.subOf >= 0)
+			{
+				// Check parent
+				for (int i = queue->Size() - 1; i >= 0; --i)
+				{
+					QueueItem *item = queue->Get(i);
+					
+					if (item->hContact == hContact && ((QueueData *)item->param)->type == type.subOf)
+					{
+						((QueueData *)item->param)->notifyAlso = i;
+						found = TRUE;
+						break;
+					}
+				}
+			}
+
+			// Check if already have
+			if (!found)
+			{
+				int notifyAlso = -1;
+
+				for (int i = queue->Size() - 1; i >= 0; --i)
+				{
+					QueueItem *item = queue->Get(i);
+					
+					if (item->hContact == hContact && ((QueueData *)item->param)->type == i)
+					{
+						notifyAlso = ((QueueData *)item->param)->notifyAlso;
+						delete item->param;
+						queue->Remove(i);
+						break;
+					}
+				}
+
+				QueueData *qd = new QueueData();
+				qd->type = i;
+				qd->notifyAlso = notifyAlso;
+
+				queue->Add(opts[i].ttw * 1000, hContact, qd);
+			}
+
+			queue->Release();
+
 		}
 	}
 
@@ -875,7 +927,7 @@ int SettingChanged(WPARAM wParam, LPARAM lParam)
 }
 
 
-void TrackChangeString(int typeNum, HANDLE hContact)
+void TrackChangeString(int typeNum, HANDLE hContact, BOOL notify)
 {
 	HISTORY_TYPE &type = types[typeNum];
 
@@ -941,10 +993,10 @@ void TrackChangeString(int typeNum, HANDLE hContact)
 
 			type.fFormat(old_str, MAX_REGS(old_str), oldVal);
 			type.fFormat(new_str, MAX_REGS(new_str), new_.ptszVal);
-			Log(typeNum, found_old, ret == 1, hContact, old_str, new_str);
+			Log(typeNum, found_old, ret == 1, hContact, old_str, new_str, notify);
 		}
 		else
-			Log(typeNum, found_old, ret == 1, hContact, oldVal, new_.ptszVal);
+			Log(typeNum, found_old, ret == 1, hContact, oldVal, new_.ptszVal, notify);
 
 		// Copy new to current after notification, so old value can still be accessed
 		if (ret == 2)
@@ -974,7 +1026,7 @@ inline static DWORD GetDWORD(const DBVARIANT &dbv)
 	return 0;
 }
 
-void TrackChangeNumber(int typeNum, HANDLE hContact)
+void TrackChangeNumber(int typeNum, HANDLE hContact, BOOL notify)
 {
 	HISTORY_TYPE &type = types[typeNum];
 
@@ -1029,7 +1081,7 @@ void TrackChangeNumber(int typeNum, HANDLE hContact)
 		else
 			tmp_new[0] = _T('\0');
 
-		Log(typeNum, found_old, ret == 1, hContact, tmp_old, tmp_new);
+		Log(typeNum, found_old, ret == 1, hContact, tmp_old, tmp_new, notify);
 
 		// Copy new to current after notification, so old value can still be accessed
 		if (ret == 2)
@@ -1056,10 +1108,20 @@ void TrackChangeNumber(int typeNum, HANDLE hContact)
 
 void Process(HANDLE hContact, void *param)
 {
-	int typeNum = (int) param;
+	QueueData *qd = (QueueData *) param;
 
-	if (types[typeNum].track.db.isString)
-		TrackChangeString(typeNum, hContact);
+	if (types[qd->type].track.db.isString)
+		TrackChangeString(qd->type, hContact, TRUE);
 	else
-		TrackChangeNumber(typeNum, hContact);
+		TrackChangeNumber(qd->type, hContact, TRUE);
+
+	if (qd->notifyAlso >= 0)
+	{
+		if (types[qd->notifyAlso].track.db.isString)
+			TrackChangeString(qd->notifyAlso, hContact, FALSE);
+		else
+			TrackChangeNumber(qd->notifyAlso, hContact, FALSE);
+	}
+
+	delete param;
 }

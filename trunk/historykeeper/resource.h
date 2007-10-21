@@ -58,6 +58,7 @@
 #define IDC_FILENAME_L                  1069
 #define IDC_TEXTCOLOR_L                 1070
 #define IDC_ONLY_NOT_OFFLINE            1070
+#define IDC_WAIT_L                      1070
 #define IDC_DELAY_G                     1071
 #define IDC_ACTIONS_G                   1072
 #define IDC_RIGHT_ACTION_L              1073
@@ -67,6 +68,8 @@
 #define IDC_SELECT_FILE                 1077
 #define IDC_DONT_NOTIFY_ON_CONNECT      1078
 #define IDC_LIST                        1079
+#define IDC_NWAIT                       1080
+#define IDC_NWAIT_SPIN                  1081
 #define IDC_POPUP                       1204
 #define IDC_SOUND                       1205
 #define IDC_FILE                        1207
@@ -79,9 +82,9 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_3D_CONTROLS                     1
-#define _APS_NEXT_RESOURCE_VALUE        137
+#define _APS_NEXT_RESOURCE_VALUE        138
 #define _APS_NEXT_COMMAND_VALUE         40004
-#define _APS_NEXT_CONTROL_VALUE         1078
+#define _APS_NEXT_CONTROL_VALUE         1082
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

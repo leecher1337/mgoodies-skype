@@ -29,7 +29,7 @@ Boston, MA 02111-1307, USA.
 #include <commctrl.h>
 
 
-#define MIRANDA_VER 0x0600
+#define MIRANDA_VER 0x0720
 
 // Miranda headers
 #include <win2k.h>
@@ -92,7 +92,7 @@ struct HISTORY_TYPE {
 	int historyFlags;
 	BOOL canBeRemoved;
 	BOOL temporary;
-	int ttw;
+	int subOf;
 
 	struct {
 		struct {
@@ -107,6 +107,9 @@ struct HISTORY_TYPE {
 		BYTE track_only_not_offline;
 		char *change_template;
 		char *remove_template;
+		TCHAR *change_template_popup;
+		TCHAR *remove_template_popup;
+		int ttw;
 	} defs;
 
 	int numAddVars;
@@ -115,6 +118,12 @@ struct HISTORY_TYPE {
 
 extern HISTORY_TYPE types[];
 #define NUM_TYPES 7
+
+struct QueueData
+{
+	int type;
+	int notifyAlso;
+};
 
 
 #define LOG_HISTORY 0
@@ -133,7 +142,7 @@ BOOL EnableItem(int type, HANDLE hContact, int item, BOOL enable);
 
 
 #define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION 30000 // ms
-#define TIME_TO_WAIT_BEFORE_NOTIFY_AFTER_CONNECTION 10000 // ms
+#define TIME_TO_WAIT_BEFORE_NOTIFY_AFTER_CONNECTION 30000 // ms
 
 
 
