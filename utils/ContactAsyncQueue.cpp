@@ -21,18 +21,11 @@ Boston, MA 02111-1307, USA.
 
 
 
-struct QueueItem
-{
-	DWORD check_time;
-	HANDLE hContact;
-	void *param;
-};
-
 
 // Itens with higher time at end
-static int QueueSortItems(void *i1, void *i2)
+static int QueueSortItems(const QueueItem *i1, const QueueItem *i2)
 {
-	return ((QueueItem*)i2)->check_time - ((QueueItem*)i1)->check_time;
+	return i1->check_time - i2->check_time;
 }
 
 // Itens with higher time at end
@@ -42,13 +35,12 @@ static void ContactAsyncQueueThread(void *obj)
 }
 
 ContactAsyncQueue::ContactAsyncQueue(pfContactAsyncQueueCallback fContactAsyncQueueCallback, int initialSize)
+	: queue(30, QueueSortItems)
 {
 	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	finished = 0;
 	callback = fContactAsyncQueueCallback;
 
-	queue = List_Create(0, initialSize);
-	queue->sortFunc = QueueSortItems;
 	InitializeCriticalSection(&cs);
 
 	mir_forkthread(ContactAsyncQueueThread, this);
@@ -63,97 +55,101 @@ ContactAsyncQueue::~ContactAsyncQueue()
 	while(finished != 2 && ++count < 50)
 		Sleep(10);
 
-	List_DestroyFreeContents(queue);
+	for (int i = 0; i < queue.getCount(); i++)
+		if (queue[i] != NULL)
+			mir_free(queue[i]);
+
 	DeleteCriticalSection(&cs);
 }
 
+void ContactAsyncQueue::Lock()
+{
+	EnterCriticalSection(&cs);
+}
+
+void ContactAsyncQueue::Release()
+{
+	LeaveCriticalSection(&cs);
+}
 
 void ContactAsyncQueue::RemoveAll(HANDLE hContact)
 {
-	EnterCriticalSection(&cs);
+	Lock();
 
-	if (queue->items != NULL)
+	for (int i = queue.getCount() - 1; i >= 0; --i)
 	{
-		for (int i = queue->realCount - 1 ; i >= 0 ; i-- )
+		QueueItem *item = queue[i];
+		
+		if (item->hContact == hContact)
 		{
-			QueueItem *item = (QueueItem*) queue->items[i];
-			
-			if (item->hContact == hContact)
-			{
-				List_Remove(queue, i);
-				mir_free(item);
-			}
+			queue.remove(i);
+			mir_free(item);
 		}
 	}
 
-	LeaveCriticalSection(&cs);
+	Release();
 }
-
 
 void ContactAsyncQueue::RemoveAllConsiderParam(HANDLE hContact, void *param)
 {
-	EnterCriticalSection(&cs);
+	Lock();
 
-	if (queue->items != NULL)
+	for (int i = queue.getCount() - 1; i >= 0; --i)
 	{
-		for (int i = queue->realCount - 1 ; i >= 0 ; i-- )
+		QueueItem *item = queue[i];
+		
+		if (item->hContact == hContact && item->param == param)
 		{
-			QueueItem *item = (QueueItem*) queue->items[i];
-			
-			if (item->hContact == hContact && item->param == param)
-			{
-				List_Remove(queue, i);
-				mir_free(item);
-			}
+			queue.remove(i);
+			mir_free(item);
 		}
 	}
 
-	LeaveCriticalSection(&cs);
+	Release();
 }
-
 
 void ContactAsyncQueue::Add(int waitTime, HANDLE hContact, void *param)
 {
-	EnterCriticalSection(&cs);
+	Lock();
 
 	InternalAdd(waitTime, hContact, param);
 	
-	LeaveCriticalSection(&cs);
+	Release();
 }
 
 void ContactAsyncQueue::AddIfDontHave(int waitTime, HANDLE hContact, void *param)
 {
-	EnterCriticalSection(&cs);
+	Lock();
 
 	int i;
-	for (i = queue->realCount - 1; i >= 0; i--)
-		if (((QueueItem *) queue->items[i])->hContact == hContact)
+	for (i = queue.getCount() - 1; i >= 0; --i)
+		if (queue[i]->hContact == hContact)
 			break;
 
 	if (i < 0)
 		InternalAdd(waitTime, hContact, param);
 
-	LeaveCriticalSection(&cs);
+	Release();
 }
 
 void ContactAsyncQueue::AddAndRemovePrevious(int waitTime, HANDLE hContact, void *param)
 {
-	EnterCriticalSection(&cs);
+	Lock();
 
 	RemoveAll(hContact);
 	InternalAdd(waitTime, hContact, param);
 
-	LeaveCriticalSection(&cs);
+	Release();
 }
 
 void ContactAsyncQueue::AddAndRemovePreviousConsiderParam(int waitTime, HANDLE hContact, void *param)
 {
-	EnterCriticalSection(&cs);
+	Lock();
 
 	RemoveAllConsiderParam(hContact, param);
 	InternalAdd(waitTime, hContact, param);
 
-	LeaveCriticalSection(&cs);
+	Release();
 }
 
 void ContactAsyncQueue::InternalAdd(int waitTime, HANDLE hContact, void *param)
@@ -163,7 +159,7 @@ void ContactAsyncQueue::InternalAdd(int waitTime, HANDLE hContact, void *param)
 	item->check_time = GetTickCount() + waitTime;
 	item->param = param;
 
-	List_InsertOrdered(queue, item);
+	queue.insert(item);
 
 	SetEvent(hEvent);
 }
@@ -172,34 +168,34 @@ void ContactAsyncQueue::Thread()
 {
 	while (!finished)
 	{
-		EnterCriticalSection(&cs);
+		Lock();
 
-		if (!List_HasItens(queue))
+		if (queue.getCount() <= 0)
 		{
 			// No items, so supend thread
-			LeaveCriticalSection(&cs);
+			Release();
 
 			wait(INFINITE);
 		}
 		else
 		{
 			// Take a look at first item
-			QueueItem *qi = (QueueItem *) List_Peek(queue);
+			QueueItem *qi = queue[0];
 
 			int dt = qi->check_time - GetTickCount();
 			if (dt > 0) 
 			{
 				// Not time to request yet, wait...
-				LeaveCriticalSection(&cs);
+				Release();
 
 				wait(dt);
 			}
 			else
 			{
 				// Will request this item
-				qi = (QueueItem *) List_Pop(queue);
+				queue.remove(0);
 
-				LeaveCriticalSection(&cs);
+				Release();
 
 				callback(qi->hContact, qi->param);
 

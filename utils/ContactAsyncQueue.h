@@ -21,12 +21,24 @@ Boston, MA 02111-1307, USA.
 #ifndef __CONTACTASYNCQUEUE_H__
 # define __CONTACTASYNCQUEUE_H__
 
+#ifndef MIRANDA_VER
+#define MIRANDA_VER 0x0700
+#endif
 
-#include "mir_dblists.h"
-
+#include <windows.h>
+#include <newpluginapi.h>
+#include <m_system_cpp.h>
 
 
 typedef void (*pfContactAsyncQueueCallback) (HANDLE hContact, void *param);
+
+
+struct QueueItem
+{
+	DWORD check_time;
+	HANDLE hContact;
+	void *param;
+};
 
 
 class ContactAsyncQueue
@@ -36,6 +48,11 @@ public:
 	ContactAsyncQueue(pfContactAsyncQueueCallback fContactAsyncQueueCallback, int initialSize = 10);
 	~ContactAsyncQueue();
 
+	inline int Size() const						{ return queue.getCount(); }
+	inline int Remove(int idx)					{ mir_free(queue[idx]); return queue.remove(idx); }
+	inline QueueItem* Get(int idx) const		{ return queue[idx]; }
+
+	
 	void RemoveAll(HANDLE hContact);
 	void RemoveAllConsiderParam(HANDLE hContact, void *param);
 	void Add(int waitTime, HANDLE hContact, void *param = NULL);
@@ -43,12 +60,16 @@ public:
 	void AddAndRemovePrevious(int waitTime, HANDLE hContact, void *param = NULL);
 	void AddAndRemovePreviousConsiderParam(int waitTime, HANDLE hContact, void *param = NULL);
 
+	void Lock();
+	void Release();
+
 
 	void Thread();
 
 private:
 
-	SortedList *queue;
+	LIST<QueueItem> queue;
+
 	CRITICAL_SECTION cs;
 	pfContactAsyncQueueCallback callback;
 	HANDLE hEvent;

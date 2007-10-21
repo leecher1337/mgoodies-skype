@@ -20,7 +20,7 @@ Boston, MA 02111-1307, USA.
 
 #include "mir_memory.h"
 
-#define MIRANDA_VER 0x0600
+#define MIRANDA_VER 0x0700
 #include <newpluginapi.h>
 #include <m_system.h>
 
