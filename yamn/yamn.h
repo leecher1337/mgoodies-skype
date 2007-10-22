@@ -6,12 +6,16 @@
 #ifndef _WIN32_WINNT
 	#define _WIN32_WINNT 0x0501
 #endif
+
 #include "filter/simple/AggressiveOptimize.h"	
 #include <wchar.h>
 #include <tchar.h>
 #include <windows.h>
 #include <stdio.h>
 #include <direct.h>		//For _chdir()
+
+#define MIRANDA_VER 0x0600
+
 #include <commctrl.h>		//For hotkeys
 #include "newpluginapi.h"	//CallService,UnHookEvent
 #include "m_utils.h"			//window broadcasting
@@ -45,6 +49,7 @@
 #include "m_synchro.h"	//Synchronization
 #include "debug.h"
 #include "m_folders.h"
+
 
 //icons definitions
 #define ICONSNUMBER 8

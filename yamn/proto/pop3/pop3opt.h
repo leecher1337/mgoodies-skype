@@ -4,6 +4,7 @@
 #define M_SHOWACTUAL	0
 #define M_SHOWDEFAULT	1
 
+
 //Enables account in options
 BOOL DlgEnableAccount(HWND hDlg,WPARAM wParam,LPARAM lParam);
 
@@ -24,9 +25,6 @@ BOOL CALLBACK DlgProcPOP3AccOpt(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPara
 
 //Options dialog procedure
 BOOL CALLBACK DlgProcPOP3AccStatusOpt(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-
-//Options dialog procedure
-BOOL CALLBACK DlgOptionsProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 //Options dialog procedure
 BOOL CALLBACK DlgProcYAMNOpt(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
