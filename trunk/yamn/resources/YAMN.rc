@@ -104,14 +104,6 @@ BEGIN
         BOTTOMMARGIN, 147
     END
 
-    IDD_OPTIONS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        VERTGUIDE, 155
-        VERTGUIDE, 240
-        TOPMARGIN, 4
-    END
-
     IDD_YAMNOPT, DIALOG
     BEGIN
         VERTGUIDE, 8
@@ -195,7 +187,7 @@ STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    COMBOBOX        IDC_COMBOACCOUNT,4,6,106,65,CBS_DROPDOWN | CBS_SORT | 
+    COMBOBOX        IDC_COMBOACCOUNT,4,6,106,65,CBS_DROPDOWNLIST | CBS_SORT | 
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Check this account",IDC_CHECK,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,167,32,115,10,WS_EX_TRANSPARENT
@@ -256,10 +248,10 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,166,174,135,10
     CONTROL         "Tray icon notification if failed",IDC_CHECKFICO,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,166,186,135,10
-    PUSHBUTTON      "Reset counter",IDC_BTNRESET,227,199,75,13
+    PUSHBUTTON      "Reset counter",IDC_BTNRESET,161,200,75,13
     PUSHBUTTON      "-",IDC_BTNDEL,140,6,15,13
-    PUSHBUTTON      "Default",IDC_BTNDEFAULT,166,199,54,13
-    LTEXT           "",IDC_STTIMELEFT,166,213,135,8
+    PUSHBUTTON      "Default",IDC_BTNDEFAULT,9,124,54,13
+    LTEXT           "",IDC_STTIMELEFT,163,216,145,8
     LTEXT           "Status:",IDC_STATIC,175,9,34,9
     PUSHBUTTON      "+",IDC_BTNADD,118,6,15,13
     GROUPBOX        "Account",IDC_STATIC,4,22,151,120
@@ -269,7 +261,7 @@ BEGIN
     EDITTEXT        IDC_EDITNAME,56,32,92,12,ES_AUTOHSCROLL
     GROUPBOX        "Options",IDC_STATIC,161,22,151,120
     GROUPBOX        "New Mail",IDC_STATIC,7,153,149,73
-    GROUPBOX        "Errors",IDC_STATIC,160,153,149,73
+    GROUPBOX        "Errors",IDC_STATIC,162,153,149,44
 END
 
 IDD_CHOOSESTATUSMODES DIALOG DISCARDABLE  0, 0, 226, 154
@@ -300,15 +292,6 @@ BEGIN
                     BS_NOTIFY | WS_TABSTOP,134,83,70,9
     CONTROL         "Out to lunch",IDC_CHECKST9,"Button",BS_AUTOCHECKBOX | 
                     BS_NOTIFY | WS_TABSTOP,134,104,70,9
-END
-
-IDD_OPTIONS DIALOGEX 0, 0, 319, 249
-STYLE DS_FIXEDSYS | DS_CENTER | WS_CHILD
-EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
-BEGIN
-    CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",WS_TABSTOP,0,3,
-                    319,246
 END
 
 IDD_YAMNOPT DIALOGEX 0, 0, 320, 216
@@ -344,7 +327,7 @@ STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    COMBOBOX        IDC_COMBOACCOUNT,4,4,140,65,CBS_DROPDOWN | CBS_SORT | 
+    COMBOBOX        IDC_COMBOACCOUNT,4,4,140,65,CBS_DROPDOWNLIST | CBS_SORT | 
                     WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "Mail Notifications",IDC_GBNEWMAIL,5,23,300,76
     CONTROL         "Popup",IDC_CHECKPOP,"Button",BS_AUTOCHECKBOX | 
@@ -416,8 +399,8 @@ IDB_ICONS               BITMAP  DISCARDABLE     "yamn.bmp"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,1,2,2
- PRODUCTVERSION 0,1,2,2
+ FILEVERSION 0,1,2,3
+ PRODUCTVERSION 0,1,2,3
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -433,13 +416,17 @@ BEGIN
         BLOCK "000004b0"
         BEGIN
             VALUE "Comments", "Yet Another Mail Notifier\0"
+            VALUE "CompanyName", "\0"
             VALUE "FileDescription", "Yet Another Mail Notifier\0"
-            VALUE "FileVersion", "0.1.2.2\0"
+            VALUE "FileVersion", "0.1.2.3\0"
             VALUE "InternalName", "YAMN\0"
             VALUE "LegalCopyright", "Copyright © 2007\0"
+            VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "YAMN.dll\0"
+            VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "YAMN tweety\0"
-            VALUE "ProductVersion", "0.1.2.2\0"
+            VALUE "ProductVersion", "0.1.2.3\0"
+            VALUE "SpecialBuild", "\0"
         END
     END
     BLOCK "VarFileInfo"
