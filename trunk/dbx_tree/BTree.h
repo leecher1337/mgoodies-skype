@@ -1,6 +1,5 @@
 #pragma once
 
-#include <queue>
 #include <stack>
 #include <map>
 #include "sigslot.h"
@@ -21,8 +20,8 @@ public:
 		iterator(const iterator& Other);
 		~iterator();
 
-		TKey& Key() const;
-		TData& Data() const;
+		TKey& Key();
+		TData& Data();
 		void SetData(const TData & Data);
 
 		/**
@@ -33,6 +32,7 @@ public:
 			This can cause Values to be enumerated twice.
 		**/
 		void setManaged();
+		bool wasDeleted();
 
 		operator bool() const;
 		bool operator !() const;
@@ -51,10 +51,12 @@ public:
 		int m_Index;
 		CBTree* m_Tree;		
 
-		bool m_Managed;
+		bool m_Managed, m_LoadedKey, m_LoadedData;
 		TKey m_ManagedKey;
-		bool m_ManagedMove;
+		TData m_ManagedData;
+		bool m_ManagedDeleted;
 
+		void Backup();
 		void Dec();
 		void Inc();
 	};
@@ -90,6 +92,11 @@ protected:
 
 	#pragma pack(pop)
 
+	static const unsigned char cIsLeafMask = 0x80;
+	static const unsigned char cKeyCountMask = 0x7F;
+	static const unsigned char cFullNode = SizeParam * 2 - 1;
+	static const unsigned char cEmptyNode = SizeParam - 1;
+
 	typedef std::multimap<unsigned int, iterator*> TManagedMap;
 
 	unsigned int m_Root;
@@ -101,15 +108,11 @@ protected:
 	virtual void Read(unsigned int Node, int Offset, int Size, TNode & Dest);
 	virtual void Write(unsigned int Node, int Offset, int Size, TNode & Source);
 	
-	virtual void ClearTree();
+	virtual void DestroyTree();
+
 
 private:
 	friend class iterator;
-
-	static const unsigned char cIsLeafMask = 0x80;
-	static const unsigned char cKeyCountMask = 0x7F;
-	static const unsigned char cFullNode = SizeParam * 2 - 1;
-	static const unsigned char cEmptyNode = SizeParam - 1;
 
 	bool InNodeFind(const TNode & Node, const TKey & Key, int & GreaterEqual);
 	void SplitNode(unsigned int Node, unsigned int & Left, unsigned int & Right, TKey & UpKey, TData & UpData, unsigned int ParentNode, int ParentIndex);
@@ -146,7 +149,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::~CBTree()
 		i++;
 	}
 	m_ManagedIterators.clear();
-	ClearTree();
+	DestroyTree();
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
@@ -198,7 +201,18 @@ __forceinline void CBTree<TKey, TData, SizeParam, UniqueKeys>::SplitNode(unsigne
 	
 	memcpy(&(newnode.Key[0]), &(nodedata.Key[upindex+1]), sizeof(TKey) * (cFullNode - upindex));
 	memcpy(&(newnode.Data[0]), &(nodedata.Data[upindex+1]), sizeof(TData) * (cFullNode - upindex));
-	memcpy(&(newnode.Child[0]), &(nodedata.Child[upindex+1]), sizeof(unsigned int) * (cFullNode - upindex + 1));
+	if ((nodedata.Info & cIsLeafMask) == 0)
+	{
+		TNode tmp;
+		tmp.Parent = Right;
+
+		memcpy(&(newnode.Child[0]), &(nodedata.Child[upindex+1]), sizeof(unsigned int) * (cFullNode - upindex + 1));
+		
+		for (int i = 0; i <= upindex; i++)
+		{
+			Write(newnode.Child[i], offsetof(TNode, Parent), sizeof(unsigned int), tmp);
+		}
+	}
 
 	newnode.Info = (nodedata.Info & cIsLeafMask) | (char)(upindex);
 	nodedata.Info = newnode.Info;
@@ -246,10 +260,21 @@ __forceinline unsigned int CBTree<TKey, TData, SizeParam, UniqueKeys>::MergeNode
 
 	memcpy(&(ldata.Key[downindex+1]), &(rdata.Key[0]), sizeof(TKey) * (rdata.Info & cKeyCountMask));
 	memcpy(&(ldata.Data[downindex+1]), &(rdata.Data[0]), sizeof(TData) * (rdata.Info & cKeyCountMask));
-	memcpy(&(ldata.Child[downindex+1]), &(rdata.Child[0]), sizeof(unsigned int) * ((rdata.Info & cKeyCountMask) + 1));
+	if ((ldata.Info & cIsLeafMask) == 0)
+	{
+		TNode tmp;
+		tmp.Parent = Left;
 
-	ldata.Info =(unsigned char) ((ldata.Info & cIsLeafMask) | (downindex + 1 + (rdata.Info & cKeyCountMask)));
+		memcpy(&(ldata.Child[downindex+1]), &(rdata.Child[0]), sizeof(unsigned int) * ((rdata.Info & cKeyCountMask) + 1));
+		
+		for (int i = 0; i <= (rdata.Info & cKeyCountMask); i++)
+		{
+			Write(rdata.Child[i], offsetof(TNode, Parent), sizeof(unsigned int), tmp);
+		}
+	}
 
+	ldata.Info = (unsigned char) ((ldata.Info & cIsLeafMask) | (downindex + 1 + (rdata.Info & cKeyCountMask)));
+	
 	WriteNode(Left, ldata);
 	DeleteNode(Right);
 
@@ -264,7 +289,7 @@ __forceinline void CBTree<TKey, TData, SizeParam, UniqueKeys>::KeyInsert(unsigne
 	memcpy(&(NodeData.Data[Where+1]), &(NodeData.Data[Where]), sizeof(TData) * ((NodeData.Info & cKeyCountMask) - Where));
 
 	if ((NodeData.Info & cIsLeafMask) == 0)
-		memcpy(&(NodeData.Child[Where+2]), &(NodeData.Child[Where+1]), sizeof(unsigned int) * ((NodeData.Info & cKeyCountMask) - Where));
+		memcpy(&(NodeData.Child[Where+1]), &(NodeData.Child[Where]), sizeof(unsigned int) * ((NodeData.Info & cKeyCountMask) - Where + 1));
 
 	NodeData.Info++;
 
@@ -286,20 +311,12 @@ __forceinline void CBTree<TKey, TData, SizeParam, UniqueKeys>::KeyDelete(unsigne
 	TManagedMap::iterator it = m_ManagedIterators.find(Node);
 	while ((it != m_ManagedIterators.end()) && (it->first == Node))
 	{
-		if (it->second->m_Index > Where)
+		if (it->second->m_Index == Where)
 		{
-			if (!it->second->m_ManagedMove)
-			{
-				it->second->m_ManagedMove = true;		
-				it->second->m_ManagedKey = NodeData.Key[Where];
-			}
-			if (Where == 0)
-			{
-				++(it->second);								
-			} else {
-				--(it->second);
-			}
-
+			it->second->Backup();					
+		} else if (it->second->m_Index > Where)
+		{
+			it->second->m_Index--;
 		}
 
 		++it;
@@ -338,18 +355,21 @@ template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 typename CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator 
 CBTree<TKey, TData, SizeParam, UniqueKeys>::Insert(const TKey & Key, const TData & Data)
 {
-	if (!m_Root)
-	{
-		m_Root = CreateNewNode();
-		m_sigRootChanged.emit(this, m_Root);
-	}
-
 	TNode node, node2;
-	unsigned int actnode = m_Root;
+	unsigned int actnode;
 	unsigned int nextnode;
 	bool exists;
 	int ge;
 
+	if (!m_Root)
+	{
+		m_Root = CreateNewNode();
+		node.Info = cIsLeafMask;
+		Write(m_Root, offsetof(TNode, Info), sizeof(unsigned char), node);
+		m_sigRootChanged.emit(this, m_Root);
+	}
+
+	actnode = m_Root;
 	ReadNode(actnode, node);
 	if ((node.Info & cKeyCountMask) == cFullNode)  // root split
 	{
@@ -357,12 +377,14 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::Insert(const TKey & Key, const TData
 		// just assign a new root with keycount to zero and one child = old root
 		// the InNode test will fail with GreaterEqual = 0
 		nextnode = CreateNewNode();
-		node.Parent = nextnode;
-		Write(actnode, offsetof(TNode, Parent), sizeof(unsigned int), node);
-
+		node.Info = 0;
 		node.Child[0] = actnode;
+		Write(nextnode, offsetof(TNode, Info), sizeof(unsigned char), node);
 		Write(nextnode, offsetof(TNode, Child[0]), sizeof(unsigned int), node);
 
+		node.Parent = nextnode;
+		Write(actnode, offsetof(TNode, Parent), sizeof(unsigned int), node);
+		
 		ReadNode(nextnode, node);
 		actnode = nextnode;
 
@@ -497,7 +519,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::LowerBound(const TKey & Key)
 			if (foundindex > -1)
 			{
 				return iterator(this, foundnode, foundindex);
-			} else if (ge > (node.Info & cKeyCountMask)) 
+			} else if (ge >= (node.Info & cKeyCountMask)) 
 			{
 				iterator i(this, actnode, ge);
 				++i; 
@@ -538,7 +560,11 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::UpperBound(const TKey & Key)
 			} else {
 				foundnode = actnode;
 				foundindex = ge;
-				ge++;
+				while ((ge < node.Info & cKeyCountMask) && (node.Key[ge] == Key))
+				{
+					foundindex = ge;
+					ge++;
+				}
 			}
 		} 
 		
@@ -549,7 +575,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::UpperBound(const TKey & Key)
 				return iterator(this, foundnode, foundindex);
 			} else if (ge == 0) {
 				iterator i(this, actnode, 0);
-				++i; 
+				--i; 
 				return i;
 			} else {
 				return iterator(this, actnode, ge - 1);
@@ -617,7 +643,7 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(const TKey& Key)
 				{ // merge childnodes and keep going
 					nextnode = MergeNodes(l, r, node.Key[ge], node.Data[ge], actnode, ge);
 					
-					KeyDelete(actnode, node, ge);					
+					KeyDelete(actnode, node, ge);
 					node.Child[ge] = nextnode;					
 					
 					if ((actnode == m_Root) && ((node.Info & cKeyCountMask) == 0))
@@ -657,11 +683,12 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(const TKey& Key)
 					WriteNode(actnode, node);
 									
 				} else {
-					KeyMove(actnode, node.Info & cKeyCountMask, node, innernode, innerindex, tmp);
+					KeyMove(actnode, (node.Info & cKeyCountMask) - 1, node, innernode, innerindex, tmp);
 					Write(innernode, offsetof(TNode, Key[innerindex]), sizeof(TKey), tmp);
 					Write(innernode, offsetof(TNode, Data[innerindex]), sizeof(TData), tmp);
 
-					KeyDelete(actnode, node, node.Info & cKeyCountMask);
+					//KeyDelete(actnode, node, node.Info & cKeyCountMask);
+					node.Info--;
 					Write(actnode, offsetof(TNode, Info), sizeof(unsigned char), node);
 				}				
 			}
@@ -681,7 +708,7 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(const TKey& Key)
 				} else 
 					l = 0;
 
-				if (ge - 1 < (node.Info & cKeyCountMask))	
+				if (ge < (node.Info & cKeyCountMask))	
 				{
 					r = node.Child[ge + 1];
 					Read(r, offsetof(TNode, Info), sizeof(unsigned char), rnode);
@@ -713,8 +740,9 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(const TKey& Key)
 					if ((node2.Info & cIsLeafMask) == 0) // update the parent property of moved child
 					{						
 						tmp.Parent = nextnode;
-						Write(node2.Child[node.Info & cKeyCountMask], offsetof(TNode, Parent), sizeof(unsigned int), tmp);
+						Write(node2.Child[node2.Info & cKeyCountMask], offsetof(TNode, Parent), sizeof(unsigned int), tmp);
 					}
+					
 
 					WriteNode(r, rnode);
 					WriteNode(nextnode, node2);
@@ -730,15 +758,15 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(const TKey& Key)
 					KeyInsert(nextnode, node2, 0);
 
 					// move key-data-pair down from current to the next node
-					KeyMove(actnode, ge, node, nextnode, 0, node2);
+					KeyMove(actnode, ge - 1, node, nextnode, 0, node2);
 					
 					// move the child from left to next node
 					node2.Child[0] = lnode.Child[lnode.Info & cKeyCountMask];
 
 					// move key-data-pair up from left to current node					
-					KeyMove(l, (lnode.Info & cKeyCountMask) - 1, lnode, actnode, ge, node);
-					Write(actnode, offsetof(TNode, Key[ge]), sizeof(TKey), node);
-					Write(actnode, offsetof(TNode, Data[ge]), sizeof(TData), node);
+					KeyMove(l, (lnode.Info & cKeyCountMask) - 1, lnode, actnode, ge - 1, node);
+					Write(actnode, offsetof(TNode, Key[ge - 1]), sizeof(TKey), node);
+					Write(actnode, offsetof(TNode, Data[ge - 1]), sizeof(TData), node);
 
 					// decrement left node key count
 					lnode.Info--;
@@ -754,22 +782,29 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(const TKey& Key)
 					node = node2;
 					skipread = true;			
 
-				} else if (l != 0) // merge with the left node
-				{
-					nextnode = MergeNodes(l, nextnode, node.Key[ge - 1], node.Data[ge - 1], actnode, ge - 1);
-					KeyDelete(actnode, node, ge - 1);
-					node.Child[ge - 1] = nextnode;
+				} else {
+					if (l != 0) // merge with the left node
+					{
+						nextnode = MergeNodes(l, nextnode, node.Key[ge - 1], node.Data[ge - 1], actnode, ge - 1);
+						KeyDelete(actnode, node, ge - 1);
+						node.Child[ge - 1] = nextnode;
 
-					WriteNode(actnode, node);
+					} else { // merge with the right node
+						nextnode = MergeNodes(nextnode, r, node.Key[ge], node.Data[ge], actnode, ge);
+						KeyDelete(actnode, node, ge);
+						node.Child[ge] = nextnode;					
+					}
 
-				} else { // merge with the right node
-					nextnode = MergeNodes(nextnode, r, node.Key[ge], node.Data[ge], actnode, ge);
-					KeyDelete(actnode, node, ge);
-					node.Child[ge] = nextnode;					
-
-					WriteNode(actnode, node);
+					if ((actnode == m_Root) && ((node.Info & cKeyCountMask) == 0))
+					{
+						DeleteNode(actnode);
+						m_Root = nextnode;						
+						m_sigRootChanged(this, nextnode);
+					} else {
+						WriteNode(actnode, node);
+					}
 				}
-			}
+			}			
 		} // if (exists) else if (node.Info & cIsLeafMask)
 
 		actnode = nextnode;
@@ -792,6 +827,19 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 
 	if (!m_Root) return;
 
+	bool wasmanaged = Item.m_Managed;
+
+	if (Item.m_Managed)
+	{
+		Item.m_Managed = false;
+		TManagedMap::iterator it = m_ManagedIterators.find(Item.m_Node);
+		while ((it != m_ManagedIterators.end()) && (it->second != &Item))
+			++it;
+
+		if (it != m_ManagedIterators.end())
+			m_ManagedIterators.erase(it);
+	}
+
 	TNode node;
 
 	ReadNode(Item.m_Node, node);
@@ -801,15 +849,14 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 		KeyDelete(Item.m_Node, node, Item.m_Index);
 		WriteNode(Item.m_Node, node);
 
-		/*if (!Item.m_Managed && ((node.Info & cKeyCountMask) == Item.m_Index)) // deleted last item, go up
+		if ((node.Info & cKeyCountMask) == Item.m_Index) // deleted last item, go up
 		{
-			Item++;
-			it->second->m_ManagedMove = MM_RIGHT;
-		}*/
+			++Item;
+		}
 
 	} else { // the hard one :(
 
-		TNode node, node2, lnode = {0}, rnode = {0}, tmp;
+		TNode node2, lnode = {0}, rnode = {0}, tmp;
 		unsigned int actnode = m_Root;
 		unsigned int nextnode, l, r;
 		bool exists, skipread;
@@ -868,6 +915,14 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 					KeyDelete(actnode, node, ge);
 					WriteNode(actnode, node);
 
+					if ((node.Info & cKeyCountMask) == Item.m_Index) // deleted last item, go up
+					{
+						Item++;
+					}
+
+					if (wasmanaged)
+						Item.setManaged();
+
 					return;
 
 				} else { // delete in inner node
@@ -876,14 +931,16 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 					Read(l, offsetof(TNode, Info), sizeof(unsigned char), lnode);
 					Read(r, offsetof(TNode, Info), sizeof(unsigned char), rnode);
 
-
 					if (((rnode.Info & cKeyCountMask) == cEmptyNode) && ((lnode.Info & cKeyCountMask) == cEmptyNode))
 					{ // merge childnodes and keep going
 						nextnode = MergeNodes(l, r, node.Key[ge], node.Data[ge], actnode, ge);
 						
-						KeyDelete(actnode, node, ge);					
+						KeyDelete(actnode, node, ge);
 						node.Child[ge] = nextnode;					
 						
+						Item.m_Node = nextnode;
+						Item.m_Index = lnode.Info & cKeyCountMask;
+
 						if ((actnode == m_Root) && ((node.Info & cKeyCountMask) == 0))
 						{ // root node is empty. delete it
 							DeleteNode(actnode);
@@ -903,6 +960,7 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 							wantleftmost = true;
 							nextnode = r;
 						} else {
+							++Item;
 							wantleftmost = false;
 							nextnode = l;
 						}
@@ -921,21 +979,25 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 						WriteNode(actnode, node);
 										
 					} else {
-						KeyMove(actnode, node.Info & cKeyCountMask, node, innernode, innerindex, tmp);
+						KeyMove(actnode, (node.Info & cKeyCountMask) - 1, node, innernode, innerindex, tmp);
 						Write(innernode, offsetof(TNode, Key[innerindex]), sizeof(TKey), tmp);
 						Write(innernode, offsetof(TNode, Data[innerindex]), sizeof(TData), tmp);
 
-						KeyDelete(actnode, node, node.Info & cKeyCountMask);
+						//KeyDelete(actnode, node, node.Info & cKeyCountMask);
+						node.Info--;
 						Write(actnode, offsetof(TNode, Info), sizeof(unsigned char), node);
 					}				
 				}
+
+				if (wasmanaged)
+					Item.setManaged();
 				return;
 
 			} else { // inner node. go on and check if moving or merging is neccessary
 				nextnode = node.Child[ge];
 				Read(nextnode, offsetof(TNode, Info), sizeof(unsigned char), node2);
 
-				if ((node2.Info & cKeyCountMask) == cEmptyNode) // move or merge
+				if ((node2.Info & cKeyCountMask) <= cEmptyNode) // move or merge
 				{
 					// set l and r for easier access
 					if (ge > 0)	
@@ -945,7 +1007,7 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 					} else 
 						l = 0;
 
-					if (ge - 1 < (node.Info & cKeyCountMask))	
+					if (ge < (node.Info & cKeyCountMask))	
 					{
 						r = node.Child[ge + 1];
 						Read(r, offsetof(TNode, Info), sizeof(unsigned char), rnode);
@@ -977,7 +1039,7 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 						if ((node2.Info & cIsLeafMask) == 0) // update the parent property of moved child
 						{						
 							tmp.Parent = nextnode;
-							Write(node2.Child[node.Info & cKeyCountMask], offsetof(TNode, Parent), sizeof(unsigned int), tmp);
+							Write(node2.Child[node2.Info & cKeyCountMask], offsetof(TNode, Parent), sizeof(unsigned int), tmp);
 						}
 
 						WriteNode(r, rnode);
@@ -989,20 +1051,25 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 					{					
 						ReadNode(nextnode, node2);
 						ReadNode(l, lnode);
-										
+						
 						// increment next node key count and make new first key-data-pair					
 						KeyInsert(nextnode, node2, 0);
 
+						if (Item.m_Node == nextnode)
+						{
+							Item.m_Index++;
+						}
+
 						// move key-data-pair down from current to the next node
-						KeyMove(actnode, ge, node, nextnode, 0, node2);
+						KeyMove(actnode, ge - 1, node, nextnode, 0, node2);
 						
 						// move the child from left to next node
 						node2.Child[0] = lnode.Child[lnode.Info & cKeyCountMask];
 
 						// move key-data-pair up from left to current node					
-						KeyMove(l, (lnode.Info & cKeyCountMask) - 1, lnode, actnode, ge, node);
-						Write(actnode, offsetof(TNode, Key[ge]), sizeof(TKey), node);
-						Write(actnode, offsetof(TNode, Data[ge]), sizeof(TData), node);
+						KeyMove(l, (lnode.Info & cKeyCountMask) - 1, lnode, actnode, ge - 1, node);
+						Write(actnode, offsetof(TNode, Key[ge - 1]), sizeof(TKey), node);
+						Write(actnode, offsetof(TNode, Data[ge - 1]), sizeof(TData), node);
 
 						// decrement left node key count
 						lnode.Info--;
@@ -1018,22 +1085,42 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 						node = node2;
 						skipread = true;			
 
-					} else if (l != 0) // merge with the left node
-					{
-						nextnode = MergeNodes(l, nextnode, node.Key[ge - 1], node.Data[ge - 1], actnode, ge - 1);
-						KeyDelete(actnode, node, ge - 1);
-						node.Child[ge - 1] = nextnode;
+					} else {
+						if (l != 0) // merge with the left node
+						{
+							if (Item.m_Node == nextnode)
+							{
+								Item.m_Index = (lnode.Info & cKeyCountMask) + 1 + Item.m_Index;
+								nextnode = MergeNodes(l, nextnode, node.Key[ge - 1], node.Data[ge - 1], actnode, ge - 1);
+								Item.m_Node = nextnode;														
+							} else {
+								nextnode = MergeNodes(l, nextnode, node.Key[ge - 1], node.Data[ge - 1], actnode, ge - 1);
+							}
+							KeyDelete(actnode, node, ge - 1);
+							node.Child[ge - 1] = nextnode;
 
-						WriteNode(actnode, node);
+						} else { // merge with the right node
+							if (Item.m_Node == nextnode)
+							{
+								nextnode = MergeNodes(nextnode, r, node.Key[ge], node.Data[ge], actnode, ge);
+								Item.m_Node = nextnode;
+							} else {
+								nextnode = MergeNodes(nextnode, r, node.Key[ge], node.Data[ge], actnode, ge);
+							}
+							KeyDelete(actnode, node, ge);
+							node.Child[ge] = nextnode;					
+						}
 
-					} else { // merge with the right node
-						nextnode = MergeNodes(nextnode, r, node.Key[ge], node.Data[ge], actnode, ge);
-						KeyDelete(actnode, node, ge);
-						node.Child[ge] = nextnode;					
-
-						WriteNode(actnode, node);
+						if ((actnode == m_Root) && ((node.Info & cKeyCountMask) == 0))
+						{
+							DeleteNode(actnode);
+							m_Root = nextnode;						
+							m_sigRootChanged(this, nextnode);
+						} else {
+							WriteNode(actnode, node);
+						}
 					}
-				}
+				}			
 			} // if (exists) else if (node.Info & cIsLeafMask)
 
 			actnode = nextnode;
@@ -1041,8 +1128,10 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 				ReadNode(actnode, node);
 
 		} // while(actnode)
-
 	}
+
+	if (wasmanaged)
+		Item.setManaged();
 }
 
 
@@ -1062,7 +1151,9 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::setRoot(unsigned int NewRoot)
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 unsigned int CBTree<TKey, TData, SizeParam, UniqueKeys>::CreateNewNode()
 {
-	return (unsigned int) new TNode;
+	TNode* node = new TNode;
+	memset(node, 0, sizeof(TNode));
+	return (unsigned int) node;
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
@@ -1096,21 +1187,22 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Write(unsigned int Node, int Of
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-void CBTree<TKey, TData, SizeParam, UniqueKeys>::ClearTree()
+void CBTree<TKey, TData, SizeParam, UniqueKeys>::DestroyTree()
 {
-	std::queue<TNode*> q;
+	std::stack<TNode*> s;
 	TNode* node;
 	int i;
 
-	q.push((TNode*)m_Root);
-	while (!q.empty())
+	if (m_Root)
+		s.push((TNode*)m_Root);
+	while (!s.empty())
 	{
-		node = q.back();
-		q.pop();
+		node = s.top();
+		s.pop();
 
 		if ((node->Info & cIsLeafMask) == 0)
 			for (i = 0; i <= (node->Info & cKeyCountMask); i++)
-				q.push((TNode*)node->Child[i]);
+				s.push((TNode*)node->Child[i]);
 
 		delete node;
 	}
@@ -1131,7 +1223,9 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::iterator()
 	m_Node = 0;
 	m_Index = -1;
 	m_Managed = false;
-	m_ManagedMove = 0;
+	m_ManagedDeleted = false;
+	m_LoadedKey = false;
+	m_LoadedData = false;
 }
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::iterator(CBTree* Tree, unsigned int Node, int Index)
@@ -1140,7 +1234,9 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::iterator(CBTree* Tree, uns
 	m_Node = Node;
 	m_Index = Index;
 	m_Managed = false;
-	m_ManagedMove = 0;
+	m_ManagedDeleted = false;
+	m_LoadedKey = false;
+	m_LoadedData = false;
 }
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::iterator(const iterator& Other)
@@ -1148,8 +1244,12 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::iterator(const iterator& O
 	m_Tree = Other.m_Tree;
 	m_Node = Other.m_Node;
 	m_Index = Other.m_Index;
-	m_ManagedMove = Other.m_ManagedMove;
+	m_ManagedDeleted = Other.m_ManagedDeleted;
 	m_Managed = Other.m_Managed;
+	m_LoadedKey = Other.m_LoadedKey;
+	m_LoadedData = Other.m_LoadedData;
+	m_ManagedKey = Other.m_ManagedKey;
+	m_ManagedData = Other.m_ManagedData;
 	
 	if (m_Managed)
 		m_Tree->m_ManagedIterators.insert(std::make_pair(m_Node, this));
@@ -1175,33 +1275,81 @@ template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::setManaged()
 {
 	if (!m_Managed)	
+	{
 		m_Tree->m_ManagedIterators.insert(std::make_pair(m_Node, this));
+	}
 
 	m_Managed = true;
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-TKey& CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Key() const
+bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::wasDeleted()
 {
-	TNode node;
-	m_Tree->Read(m_Node, offsetof(TNode, Key[m_Index]), sizeof(TKey), node);
-	return node.Key[m_Index];
+	return m_ManagedDeleted;
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-TData& CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Data() const
+void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Backup()
 {
-	TNode node;
-	m_Tree->Read(m_Node, offsetof(TNode, Data[m_Index]), sizeof(TData), node);
-	return node.Data[m_Index];
+	if ((!m_ManagedDeleted) && (*this))
+	{
+		TNode tmp;
+		if (!m_LoadedKey)
+		{
+			m_Tree->Read(m_Node, offsetof(TNode, Key[m_Index]), sizeof(TKey), tmp);
+			m_ManagedKey = tmp.Key[m_Index];
+		}
+
+		if (!m_LoadedData)
+		{
+			m_Tree->Read(m_Node, offsetof(TNode, Data[m_Index]), sizeof(TData), tmp);
+			m_ManagedData = tmp.Data[m_Index];
+		}
+		m_LoadedKey = true;
+		m_LoadedData = true;
+	}
+
+	m_ManagedDeleted = true;
+}
+
+template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
+TKey& CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Key() 
+{
+	if (!m_LoadedKey)
+	{
+		TNode node;
+		m_Tree->Read(m_Node, offsetof(TNode, Key[m_Index]), sizeof(TKey), node);
+		m_ManagedKey = node.Key[m_Index];
+		m_LoadedKey = true;
+	}
+	return m_ManagedKey;
+}
+
+template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
+TData& CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Data() 
+{
+	if (!m_LoadedData)
+	{
+		TNode node;
+		m_Tree->Read(m_Node, offsetof(TNode, Data[m_Index]), sizeof(TData), node);
+		m_ManagedData = node.Data[m_Index];
+		m_LoadedData = true;
+		
+	}
+	return m_ManagedData;
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::SetData(const TData & Data)
 {
-	TNode node;
-	node.Data[m_Index] = Data;
-	m_Tree->Write(m_Node, offsetof(TNode, Data[m_Index]), sizeof(TData), node);
+	m_ManagedData = Data;
+	m_LoadedData = true;
+	if (!m_ManagedDeleted)
+	{
+		TNode node;
+		node.Data[m_Index] = Data;
+		m_Tree->Write(m_Node, offsetof(TNode, Data[m_Index]), sizeof(TData), node);
+	}
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
@@ -1211,7 +1359,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator bool() const
 	{
 		TNode node;
 		m_Tree->Read(m_Node, offsetof(TNode, Info), sizeof(unsigned char), node);
-		return (m_Index >= 0) && (m_Index <= (node.Info & cKeyCountMask));
+		return (m_Index >= 0) && (m_Index < (node.Info & cKeyCountMask));
 	} else
 		return false;
 }
@@ -1231,7 +1379,7 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator !() const
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator ==(const iterator& Other) const
 {
-	return (m_Tree == Other.m_Tree) && (m_Node == Other.m_Node) && (m_Index == Other.m_Index);
+	return (m_Tree == Other.m_Tree) && (m_Node == Other.m_Node) && (m_Index == Other.m_Index) && (!m_ManagedDeleted) && (!Other.m_ManagedDeleted);
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
@@ -1251,8 +1399,12 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator =(const iterator&
 	m_Tree = Other.m_Tree;
 	m_Node = Other.m_Node;
 	m_Index = Other.m_Index;
-	m_ManagedMove = Other.m_ManagedMove;
+	m_ManagedDeleted = Other.m_ManagedDeleted;
 	m_Managed = Other.m_Managed;
+	m_LoadedKey = Other.m_LoadedKey;
+	m_LoadedData = Other.m_LoadedData;
+	m_ManagedKey = Other.m_ManagedKey;
+	m_ManagedData = Other.m_ManagedData;
 	
 	if (m_Managed)
 		m_Tree->m_ManagedIterators.insert(std::make_pair(m_Node, this));
@@ -1264,11 +1416,17 @@ template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 typename CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator& 
 CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator ++() //pre  ++i
 {
-	if (m_Managed && m_ManagedMove)
+	if (m_Managed && m_ManagedDeleted)
 	{
-		m_ManagedMove = false;
-		(*this) = m_Tree->LowerBound(m_ManagedKey);
-		if (Key() == m_ManagedKey)
+		TKey oldkey = m_ManagedKey;
+		m_LoadedKey = false;
+		m_LoadedData = false;
+
+		m_ManagedDeleted = false;
+		iterator & other = m_Tree->LowerBound(m_ManagedKey);
+		m_Node = other.m_Node;
+		m_Index = other.m_Index;
+		while ((Key() == oldkey) && (*this))
 			Inc();
 	} else
 		Inc();
@@ -1279,12 +1437,18 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator ++() //pre  ++i
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 typename CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator& 
 CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator --() //pre  --i
-{
-	if (m_Managed && m_ManagedMove)
+{	
+	if (m_Managed && m_ManagedDeleted)
 	{
-		m_ManagedMove = false;
-		(*this) = m_Tree->UpperBound(m_ManagedKey);
-		if (Key() == m_ManagedKey)
+		TKey oldkey = m_ManagedKey;
+		m_LoadedKey = false;
+		m_LoadedData = false;
+
+		m_ManagedDeleted = false;
+		iterator& other = m_Tree->UpperBound(m_ManagedKey);
+		m_Node = other.m_Node;
+		m_Index = other.m_Index;
+		while ((Key() == oldkey) && (*this))
 			Dec();
 	} else
 		Dec();
@@ -1317,7 +1481,34 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Inc()
 	m_Tree->Read(m_Node, offsetof(TNode,Info), sizeof(unsigned char), node);
 	m_Tree->Read(m_Node, offsetof(TNode,Parent), sizeof(unsigned int), node);
 
-	while (m_Index >= (node.Info & cKeyCountMask)) // go up
+	m_LoadedKey = false;
+	m_LoadedData = false;
+
+	if ((node.Info & cIsLeafMask) && ((node.Info & cKeyCountMask) > m_Index + 1)) // leaf
+	{
+		m_Index++;
+		return;
+	}
+
+	if ((node.Info & cIsLeafMask) == 0) // inner node. go down
+	{
+		m_Tree->Read(m_Node, offsetof(TNode, Child[m_Index + 1]), sizeof(unsigned int), node);
+		m_Node = node.Child[m_Index + 1];
+		m_Tree->Read(m_Node, offsetof(TNode, Info), sizeof(unsigned char), node);
+
+		m_Index = 0;
+
+		while ((node.Info & cIsLeafMask) == 0)  // go down to a leaf
+		{
+			m_Tree->Read(m_Node, offsetof(TNode, Child[0]), sizeof(unsigned int), node);
+			m_Node = node.Child[0];
+			m_Tree->Read(m_Node, offsetof(TNode, Info), sizeof(unsigned char), node);
+		}
+
+		return;
+	}
+
+	while (m_Index >= (node.Info & cKeyCountMask) - 1) // go up
 	{
 		if (m_Node == m_Tree->m_Root) // the root is the top, we cannot go further
 		{
@@ -1335,25 +1526,10 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Inc()
 
 		m_Node = nextnode;
 
-		if (m_Index <= (node.Info & cKeyCountMask))
+		if (m_Index < (node.Info & cKeyCountMask))
 			return;
 	}
 
-	if (node.Info & cIsLeafMask) // we are in a leaf.
-	{
-		m_Index++;
-		return;
-	}
-
-	m_Index = 0;
-	while ((node.Info & cIsLeafMask) == 0)  // go down to a leaf
-	{
-		m_Tree->Read(m_Node, offsetof(TNode, Child[0]), sizeof(unsigned int), node);
-		m_Node = node.Child[0];
-		m_Tree->Read(m_Node, offsetof(TNode, Info), sizeof(unsigned char), node);
-	}
-
-	return;
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
@@ -1364,7 +1540,33 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Dec()
 	m_Tree->Read(m_Node, offsetof(TNode,Info), sizeof(unsigned char), node);
 	m_Tree->Read(m_Node, offsetof(TNode,Parent), sizeof(unsigned int), node);
 
-	while (m_Index == 0) // go up
+	m_LoadedKey = false;
+	m_LoadedData = false;
+
+	if ((node.Info & cIsLeafMask) && (m_Index > 0))
+	{
+		m_Index--;
+		return;
+	}
+
+	if ((node.Info & cIsLeafMask) == 0) // inner node. go down
+	{
+		m_Tree->Read(m_Node, offsetof(TNode, Child[m_Index]), sizeof(unsigned int), node);
+		m_Node = node.Child[m_Index];
+		m_Tree->Read(m_Node, offsetof(TNode, Info), sizeof(unsigned char), node);
+		m_Index = (node.Info & cKeyCountMask) - 1;
+		while ((node.Info & cIsLeafMask) == 0)  // go down to a leaf
+		{
+			m_Tree->Read(m_Node, offsetof(TNode, Child[node.Info & cKeyCountMask]), sizeof(unsigned int), node);
+			m_Node = node.Child[node.Info & cKeyCountMask];
+			m_Tree->Read(m_Node, offsetof(TNode, Info), sizeof(unsigned char), node);
+			m_Index = (node.Info & cKeyCountMask) - 1;
+		}
+
+		return;
+	}
+
+	while (m_Index <= 0) // go up
 	{
 		if (m_Node == m_Tree->m_Root) // the root is the top, we cannot go further
 		{
@@ -1386,20 +1588,4 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Dec()
 		if (m_Index >= 0)
 			return;
 	}
-
-	if (node.Info & cIsLeafMask) // we are in a leaf.
-	{
-		m_Index--;
-		return;
-	}
-
-	while ((node.Info & cIsLeafMask) == 0)  // go down to a leaf
-	{
-		m_Tree->Read(m_Node, offsetof(TNode, Child[(node.Info & cKeyCountMask) + 1]), sizeof(unsigned int), node);
-		m_Node = node.Child[(node.Info & cKeyCountMask) + 1];
-		m_Tree->Read(m_Node, offsetof(TNode, Info), sizeof(unsigned char), node);
-		m_Index = node.Info & cKeyCountMask;
-	}
-
-	return;
 }

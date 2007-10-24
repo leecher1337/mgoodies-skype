@@ -48,6 +48,8 @@ CDataBase::~CDataBase()
 }
 int CDataBase::CreateDB()
 {
+
+	/// TODO: create and show a dialog
 	try 
 	{
 		m_SettingsFile = new CDirectAccess(m_SettingsFN);
@@ -159,6 +161,7 @@ int CDataBase::OpenDB()
 
 	m_SettingsFile->Read(&m_SettingsHeader, 0, sizeof(m_SettingsHeader));
 	m_PrivateFile->Read(&m_PrivateHeader, 0, sizeof(m_PrivateHeader));
+
 
 
 	m_Settings = new CSettings(*m_SettingsFile, m_SettingsHeader.Settings);

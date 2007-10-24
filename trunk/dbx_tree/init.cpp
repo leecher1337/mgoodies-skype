@@ -1,6 +1,7 @@
 #include <windows.h>
 #include "newpluginapi.h"
 #include "DatabaseLink.h"
+#include "btree.h"
 
 HINSTANCE  hInstance = NULL;
 PLUGINLINK *pluginLink;
