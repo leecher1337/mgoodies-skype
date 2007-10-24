@@ -58,4 +58,6 @@ protected:
 public:
 	CEntries(CFileAccess & FileAccess, unsigned int RootNode);
 	virtual ~CEntries();
+
+	unsigned int CreateEntry(unsigned int Parent, unsigned int Flags);
 };

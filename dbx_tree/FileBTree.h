@@ -15,7 +15,7 @@ protected:
 	virtual void Read(unsigned int Node, int Offset, int Size, TNode & Dest);
 	virtual void Write(unsigned int Node, int Offset, int Size, TNode & Source);
 	
-	virtual void ClearTree();
+	virtual void DestroyTree();
 public:
 	CFileBTree(CFileAccess & FileAccess, unsigned int RootNode);
 	virtual ~CFileBTree();
@@ -63,7 +63,7 @@ void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::Write(unsigned int Node, in
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::ClearTree()
+void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::DestroyTree()
 {
 	//nothing to do
 }

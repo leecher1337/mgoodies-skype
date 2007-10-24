@@ -177,17 +177,4 @@
 #define MS_DB_VENTRY_GETNEXT  "DB/VEntry/GetNext"
 
 
-/**
-	\brief 
-**/
-typedef struct TDBENTRYDATA {
-	unsigned int cbSize;
-	unsigned int hEntry;
-	unsigned int Flags;
-	unsigned short Level;
-	unsigned int hParent;	
-	unsigned int hVParent;
-	unsigned int ChildCount;
-	unsigned int EventCount;
-} TDBENTRYDATA, *PDBENTRYDATA;
 

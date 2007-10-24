@@ -216,7 +216,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Cypher"
+				Name="Cipher"
 				>
 				<File
 					RelativePath=".\CAST128.cpp"

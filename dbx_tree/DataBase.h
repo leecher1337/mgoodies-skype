@@ -27,7 +27,8 @@ typedef struct TSettingsHeader {
 	unsigned int Settings;    /// Offset to the SettingsBTree RootNode
 	unsigned int FileSize;    /// Offset to the last used byte + 1
 	unsigned int WastedBytes; /// Lost bytes between the data
-	char Reserved[92];        /// reserved storage
+	unsigned int FileAccess;  /// File Access method
+	char Reserved[88];        /// reserved storage
 } TSettingsHeader;
 
 
@@ -41,7 +42,8 @@ typedef struct TPrivateHeader {
 	unsigned int FileSize;    /// Offset to the last used byte + 1
 	unsigned int WastedBytes; /// Lost bytes between the data
 	unsigned int EventIndex;  /// global counter for event index
-	char Reserved[80];        /// reserved storage
+	unsigned int FileAccess;  /// File Access method
+	char Reserved[76];        /// reserved storage
 } TPrivateHeader;
 
 #pragma pack(pop)
