@@ -305,10 +305,11 @@ static void ReplaceVars(Buffer<TCHAR> *buffer, HANDLE hContact, TCHAR **variable
 		if (buffer->str[i] == _T('%'))
 		{
 			// Find previous
-			for(size_t j = i - 1; j > 0 && ((buffer->str[j] >= _T('a') && buffer->str[j] <= _T('z'))
-										    || (buffer->str[j] >= _T('A') && buffer->str[j] <= _T('Z'))
-											|| buffer->str[j] == _T('-')
-											|| buffer->str[j] == _T('_')); j--) ;
+			size_t j;
+			for(j = i - 1; j > 0 && ((buffer->str[j] >= _T('a') && buffer->str[j] <= _T('z'))
+								    || (buffer->str[j] >= _T('A') && buffer->str[j] <= _T('Z'))
+									|| buffer->str[j] == _T('-')
+									|| buffer->str[j] == _T('_')); j--) ;
 
 			if (buffer->str[j] == _T('%'))
 			{
