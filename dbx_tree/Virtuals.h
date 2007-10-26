@@ -1,5 +1,6 @@
 #pragma once
 #include "FileBTree.h"
+#include "MREWSync.h"
 
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
@@ -15,11 +16,11 @@ typedef struct TVirtualKey {
 	unsigned int RealEntry;   /// hEntry of the duplicated RealEntry
 	unsigned int Entry;       /// hEntry of the virtual copy
 
-	bool operator <  (const TVirtualKey & Other);
+	bool operator <  (const TVirtualKey & Other) const;
 	//bool operator <= (const TVirtualKey & Other);
-	bool operator == (const TVirtualKey & Other);
+	bool operator == (const TVirtualKey & Other) const;
 	//bool operator >= (const TVirtualKey & Other);
-	//bool operator >  (const TVirtualKey & Other);
+	bool operator >  (const TVirtualKey & Other) const;
 } TVirtualKey;
 
 #pragma pack(pop)
@@ -37,8 +38,8 @@ class CVirtuals :	public CFileBTree<TVirtualKey, TEmpty, 4, true>
 private:
 
 protected:
-
+	 CMultiReadExclusiveWriteSynchronizer & m_Sync;
 public:
-	CVirtuals(CFileAccess & FileAccess, unsigned int Root);
+	CVirtuals(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, unsigned int Root);
 	virtual ~CVirtuals();
 };

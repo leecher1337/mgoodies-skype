@@ -1,4 +1,28 @@
+#ifndef M_DBX_TREE_H__
 
+#define M_DBX_TREE_H__ 1
+
+/**
+	\brief 
+**/
+typedef unsigned int TEntryHandle;
+
+/**
+	\brief Entry isn't a Contact
+**/
+static const unsigned int DB_EF_IsGroup   = 0x00000001;
+/**
+	\brief Entry has Childs (Groups and Metacontacts)
+**/
+static const unsigned int DB_EF_HasChilds = 0x00000002;
+/**
+	\brief Entry is a Virtual Copy
+**/
+static const unsigned int DB_EF_IsVirtual = 0x00000004;
+
+///////////////////////////////////////////////////////////
+// Entries
+///////////////////////////////////////////////////////////
 
 /**
 	\brief 
@@ -9,6 +33,7 @@
 **/
 #define MS_DB_ENTRY_GETROOT "DB/Entry/GetRoot"
 
+
 /**
 	\brief 
 	\param wParam = hEntry
@@ -18,6 +43,7 @@
 **/
 #define MS_DB_ENTRY_CHILDCOUNT "DB/Entry/ChildCount"
 
+
 /**
 	\brief 
 	\param wParam = hEntry
@@ -26,6 +52,17 @@
 	\return Parent hEntry of specified Entry
 **/
 #define MS_DB_ENTRY_GETPARENT "DB/Entry/GetParent"
+
+
+/** 
+	\brief 
+  \param wParam = hEntry
+  \param lParam = hParentEntry
+
+	\return 0 on success
+**/
+#define MS_DB_ENTRY_SETPARENT  "DB/Entry/SetParent"
+
 
 /**
 	\brief 
@@ -45,7 +82,6 @@
 	\return Last Child
 **/
 #define MS_DB_ENTRY_GETLASTCHILD "DB/Entry/GetLastChild"
-
 
 
 /**
@@ -68,47 +104,54 @@
 #define MS_DB_ENTRY_GETPREVSILBING "DB/Entry/GetPrevSilbing"
 
 
+typedef
+	struct TDBENTRYITERFILTER
+	{
+		unsigned int cbSize;
+		unsigned int fHasFlags;
+		unsigned int fDontHaveFlags;
+		TEntryHandle hStartWith;		
+	} TDBENTRYITERFILTER, *PDBENTRYITERFILTER;
+
 /**
 	\brief initialize an enumeration of entries in breadth first search style.
 	
-	Prefer this one over MS_DB_ENTRY_INITDFS because it is faster
-	\param wParam = 0    // maybe some flags based filter struct?
+	Prefer this one over MS_DB_ENTRY_ITER_INITBF because it is faster
+	\param wParam = PDBENTRYITERFILTER
 	\param lParam = 0
 
 	\return EnumID
 **/
-#define MS_DB_ENTRY_ENUM_INITBF "DB/Entry/Enum/InitBF"
+#define MS_DB_ENTRY_ITER_INITBF "DB/Entry/Iter/InitBF"
 
 /**
 	\brief initialize an enumeration of entries in depth first search style.
 	
-	Prefer MS_DB_ENTRY_INITBFS because it is faster
-	\param wParam = 0    // maybe some flags based filter struct?
+	Prefer MS_DB_ENTRY_ITER_INITBF because it is faster
+	\param wParam = PDBENTRYITERFILTER
 	\param lParam = 0
 
 	\return EnumID
 **/
-#define MS_DB_ENTRY_ENUM_INITDF "DB/Entry/Enum/InitDF"
+#define MS_DB_ENTRY_ITER_INITDF "DB/Entry/Iter/InitDF"
 
 /**
 	\brief get the next entry
-	\param wParam = EnumID returned by MS_DB_ENTRY_ENUM_INIT*
+	\param wParam = EnumID returned by MS_DB_ENTRY_ITER_INIT*
 	\param lParam = 0
 
 	\return hEntry, 0 at the end
 **/
-#define MS_DB_ENTRY_ENUM_NEXT "DB/Entry/Enum/Next"
+#define MS_DB_ENTRY_ITER_NEXT "DB/Entry/Iter/Next"
 
 /**
 	\brief closes an enumeration and frees its ressourcs
-	\param wParam = SearchID returned by MS_DB_ENTRY_ENUM_INIT*
+	\param wParam = SearchID returned by MS_DB_ENTRY_ITER_INIT*
 	\param lParam = 0
 
 	\return 0 on success
 **/
-#define MS_DB_ENTRY_ENUM_CLOSE "DB/Entry/Enum/Close"
-
-
+#define MS_DB_ENTRY_ITER_CLOSE "DB/Entry/Iter/Close"
 
 /** 
 	\brief 
@@ -127,18 +170,14 @@
 
 	\return hEntry on success, 0 otherwise
 **/
-#define MS_DB_ENTRY_ADD  "DB/Entry/Add"
+#define MS_DB_ENTRY_CREATE  "DB/Entry/Create"
 
 
-/** 
-	\brief 
-  \param wParam = hEntry
-  \param lParam = hParentEntry
 
-	\return 0 on success
-**/
-#define MS_DB_ENTRY_SETPARENT  "DB/Entry/SetParent"
 
+///////////////////////////////////////////////////////////
+// Virtual Entries
+///////////////////////////////////////////////////////////
 
 /** 
 	\brief 
@@ -147,7 +186,7 @@
 
 	\return hEntry of created duplicate
 **/
-#define MS_DB_VENTRY_CREATE  "DB/VEntry/Create"
+#define MS_DB_VIRTUALENTRY_CREATE  "DB/VirtualEntry/Create"
 
 /** 
 	\brief 
@@ -156,7 +195,7 @@
 
 	\return hEntry of orginal contact
 **/
-#define MS_DB_VENTRY_GETPARENT  "DB/VEntry/GetParent"
+#define MS_DB_VIRTUALENTRY_GETPARENT  "DB/VirtualEntry/GetParent"
 
 /** 
 	\brief 
@@ -165,7 +204,7 @@
 
 	\return hEntry of first virtual copy
 **/
-#define MS_DB_VENTRY_GETFIRST  "DB/VEntry/GetFirst"
+#define MS_DB_VIRTUALENTRY_GETFIRST  "DB/VirtualEntry/GetFirst"
 
 /** 
 	\brief 
@@ -174,7 +213,12 @@
 
 	\return hEntry of next duplicate, 0 otherwise
 **/
-#define MS_DB_VENTRY_GETNEXT  "DB/VEntry/GetNext"
+#define MS_DB_VIRTUALENTRY_GETNEXT  "DB/VirtualEntry/GetNext"
 
 
 
+
+
+typedef unsigned int TEventHandle;
+
+#endif

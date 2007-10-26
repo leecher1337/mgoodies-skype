@@ -1,5 +1,6 @@
 #pragma once
 #include "FileBTree.h"
+#include "MREWSync.h"
 #include <time.h>
 
 
@@ -16,11 +17,11 @@ typedef struct TEventKey {
 	__time64_t TimeStamp;   /// timestamp at which the event occoured
 	unsigned int Index;     /// index counted globally in the databaseheader
 
-	bool operator <  (const TEventKey & Other);
+	bool operator <  (const TEventKey & Other) const;
 	//bool operator <= (const TEventKey & Other);
-	bool operator == (const TEventKey & Other);
+	bool operator == (const TEventKey & Other) const;
 	//bool operator >= (const TEventKey & Other);
-	//bool operator >  (const TEventKey & Other);
+	bool operator >  (const TEventKey & Other) const;
 } TEventKey;
 
 
@@ -53,8 +54,8 @@ class CEvents :	public CFileBTree<TEventKey, unsigned int, 16, true>
 private:
 
 protected:
-
+	 CMultiReadExclusiveWriteSynchronizer & m_Sync;
 public:
-	CEvents(CFileAccess & FileAccess, unsigned int RootNode);
+	CEvents(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, unsigned int RootNode);
 	virtual ~CEvents();
 };

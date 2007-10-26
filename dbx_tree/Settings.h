@@ -1,5 +1,6 @@
 #pragma once
 #include "FileBTree.h"
+#include "MREWSync.h"
 
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
@@ -15,11 +16,11 @@ typedef struct TSettingKey {
 	unsigned short ModuleHash;  /// 16 bit hash of the Module name
 	unsigned short SettingHash; /// 16 bit hash of the Setting name
 
-	bool operator <  (const TSettingKey & Other);
+	bool operator <  (const TSettingKey & Other) const;
 	//bool operator <= (const TSettingKey & Other);
-	bool operator == (const TSettingKey & Other);
+	bool operator == (const TSettingKey & Other) const;
 	//bool operator >= (const TSettingKey & Other);
-	//bool operator >  (const TSettingKey & Other);
+	bool operator >  (const TSettingKey & Other) const;
 } TSettingKey;
 
 
@@ -54,9 +55,10 @@ class CSettings :	public CFileBTree<TSettingKey, unsigned int, 8, false>
 private:
 
 protected:
+	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 
 public:
-	CSettings(CFileAccess & FileAccess, unsigned int RootNode);
+	CSettings(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, unsigned int RootNode);
 	virtual ~CSettings();
 };
 

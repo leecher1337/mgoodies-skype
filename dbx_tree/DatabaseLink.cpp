@@ -73,6 +73,9 @@ static int Load(char* profile, void* link)
 	gDataBase = new CDataBase(profile);
 
 	gPluginLink = (PLUGINLINK*)link;
+
+	RegisterServices();
+
 	return gDataBase->OpenDB();
 }
 

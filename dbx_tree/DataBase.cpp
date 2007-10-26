@@ -164,13 +164,13 @@ int CDataBase::OpenDB()
 
 
 
-	m_Settings = new CSettings(*m_SettingsFile, m_SettingsHeader.Settings);
+	m_Settings = new CSettings(*m_SettingsFile, m_Sync, m_SettingsHeader.Settings);
 	m_Settings->sigRootChanged().connect(this, &CDataBase::onSettingsRootChanged);
 
-	m_Virtuals = new CVirtuals(*m_PrivateFile, m_PrivateHeader.Virtuals);
+	m_Virtuals = new CVirtuals(*m_PrivateFile, m_Sync, m_PrivateHeader.Virtuals);
 	m_Virtuals->sigRootChanged().connect(this, &CDataBase::onVirtualsRootChanged);
 
-	m_Entries = new CEntries(*m_PrivateFile, m_PrivateHeader.Entries);
+	m_Entries = new CEntries(*m_PrivateFile, m_Sync, m_PrivateHeader.Entries);
 	m_Entries->sigRootChanged().connect(this, &CDataBase::onEntriesRootChanged);
 
 	return 0;
@@ -188,4 +188,22 @@ void CDataBase::onVirtualsRootChanged(void* Virtuals, unsigned int NewRoot)
 void CDataBase::onEntriesRootChanged(void* Entries, unsigned int NewRoot)
 {
 
+}
+
+TEntryHandle CDataBase::getRootEntry()
+{
+	return m_PrivateHeader.RootEntry;
+}
+
+CEntries & CDataBase::getEntries()
+{
+	return *m_Entries;
+}
+CVirtuals & CDataBase::getVirtuals()
+{
+	return *m_Virtuals;
+}
+CSettings & CDataBase::getSettings()
+{
+	return *m_Settings;
 }

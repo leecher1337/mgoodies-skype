@@ -1,8 +1,10 @@
 #pragma once
+#include "Interface.h"
 #include "FileBTree.h"
+#include "MREWSync.h"
 
-#pragma pack(push)  /* push current alignment to stack */
-#pragma pack(1)     /* set alignment to 1 byte boundary */
+#pragma pack(push)  // push current alignment to stack
+#pragma pack(1)     // set alignment to 1 byte boundary
 
 /**
 	\brief Key Type of the EntryBTree
@@ -12,19 +14,15 @@
 **/
 typedef struct TEntryKey { 
 	unsigned short Level;   /// Level where Entry is located or parent-steps to root. Root.Level == 0, root children have level 1 etc.
-	unsigned int Parent;    /// hEntry of the Parent. Root.Parent == 0
-	unsigned int Entry;     /// hEntry of the stored entry itself
+	TEntryHandle Parent;    /// hEntry of the Parent. Root.Parent == 0
+	TEntryHandle Entry;     /// hEntry of the stored entry itself
 
-	bool operator <  (const TEntryKey & Other);
+	bool operator <  (const TEntryKey & Other) const;
 	//bool operator <= (const TEntryKey & Other);
-	bool operator == (const TEntryKey & Other);
+	bool operator == (const TEntryKey & Other) const;
 	//bool operator >= (const TEntryKey & Other);
-	//bool operator >  (const TEntryKey & Other);
+	bool operator >  (const TEntryKey & Other) const;
 } TEntryKey;
-
-const unsigned int cEF_IsGroup   = 0x00000001;
-const unsigned int cEF_HasChilds = 0x00000002;
-const unsigned int cEF_IsVirtual = 0x00000004;
 
 /**
 	\brief The data of an Entry
@@ -32,8 +30,8 @@ const unsigned int cEF_IsVirtual = 0x00000004;
 typedef struct TEntry {
 	unsigned int Signature;   /// Signature 
 	unsigned short Level;     /// Level where Entry is located or parent-steps to root. Root.Level == 0, root children have level 1 etc. !used in the BTreeKey!
-	unsigned int ParentEntry; /// hEntry of the Parent. Root.Parent == 0 !used in the BTreeKey!
-	unsigned int VParent;     /// if the Entry is Virtual this is the hEntry of the related Realnode
+	TEntryHandle ParentEntry; /// hEntry of the Parent. Root.Parent == 0 !used in the BTreeKey!
+	TEntryHandle VParent;     /// if the Entry is Virtual this is the hEntry of the related Realnode
 	unsigned int Flags;       /// flags, see cEF_*
 	unsigned int Settings;    /// Offset to the SettingsBTree RootNode of this contact, NULL if no settings are present !invalid for Virtual contact!
 	unsigned int Events;      /// Offset to the EventsBTree RootNode of this contact, NULL if no events are present !invalid for Virtal contact!
@@ -42,22 +40,37 @@ typedef struct TEntry {
 	char Reserved[8];         /// reserved storage
 } TEntry;
 
-#pragma pack(pop)
+#pragma pack(pop)		// pop the alignment from stack
 
 /**
 	\brief Manages the ContactListEntries in the Database
 
 	A hEntry is equivalent to the fileoffset of its related TEntry structure
 **/
-class CEntries :public CFileBTree<TEntryKey, TEmpty, 6, true>
+
+static const unsigned int cEntrySignature = 0x9A6B3C0D;
+
+class CEntries : public CFileBTree<TEntryKey, TEmpty, 6, true>
 {
 private:
 
 protected:
+	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 
 public:
-	CEntries(CFileAccess & FileAccess, unsigned int RootNode);
+	CEntries(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, unsigned int RootNode);
 	virtual ~CEntries();
 
-	unsigned int CreateEntry(unsigned int Parent, unsigned int Flags);
+	TEntryHandle getParent(TEntryHandle hEntry);
+	TEntryHandle setParent(TEntryHandle hEntry, TEntryHandle hParent);
+	unsigned int getChildCount(TEntryHandle hEntry);
+	TEntryHandle getFirstChild(TEntryHandle hParent);
+	TEntryHandle getLastChild(TEntryHandle hParent);
+	TEntryHandle getNextSilbing(TEntryHandle hEntry);
+	TEntryHandle getPrevSilbing(TEntryHandle hEntry);	
+
+	TEntryHandle CreateEntry(TEntryHandle hParent, unsigned int Flags);
+	unsigned int DeleteEntry(TEntryHandle hEntry);
+
+
 };
