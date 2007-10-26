@@ -12,3 +12,4 @@ You also can install this plugins into the player yourself (and avoid the above 
 - Winamp: copy the gen_mlt.dll to <WinampDir>\Plugins\gen_mlt.dll
 - foobar2000: copy the foo_mlt.dll to <FoobarDir>\components\foo_mlt.dll
 
+PS: Auto loading does not work on Win 9X

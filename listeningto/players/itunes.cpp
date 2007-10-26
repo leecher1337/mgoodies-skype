@@ -205,7 +205,7 @@ int ITunes::ChangedListeningInfo()
 	// Fill the data cache
 	FreeListeningInfo(&listening_info);
 
-	lstrcpyW(filename, ret);
+	wcscpy(filename, ret);
 
 	if (!FillCache())
 	{

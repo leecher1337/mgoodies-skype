@@ -44,7 +44,7 @@ inline void SendData(WCHAR *text)
 {
 	static WCHAR lastMsg[DATA_SIZE] = L"";
 
-	if (lstrcmpW(lastMsg, text) == 0)
+	if (wcscmp(lastMsg, text) == 0)
 		return;
 
 	// Prepare the struct
@@ -55,7 +55,8 @@ inline void SendData(WCHAR *text)
 
 	EnumWindows(EnumWindowsProc, (LPARAM) &cds);
 
-	lstrcpynW(lastMsg, text, DATA_SIZE);
+	wcsncpy(lastMsg, text, DATA_SIZE);
+	lastMsg[DATA_SIZE-1] = L'\0';
 }
 
 
@@ -99,11 +100,11 @@ void Concat(WCHAR *data, size_t &size, const WCHAR *str, size_t len = 0)
 	if (str != NULL)
 	{
 		if (len == 0)
-			len = lstrlenW(str);
+			len = wcslen(str);
 
 		if (size >= len + 3)
 		{
-			lstrcpyW(&data[DATA_SIZE - size], str);
+			wcscpy(&data[DATA_SIZE - size], str);
 			size -= len;
 			data[DATA_SIZE - size] = L'\0';
 		}
@@ -223,7 +224,8 @@ void SendDataMusic(const char *filename, const file_info *info)
 	Concat(data, size);
 
 	SendData(data);
-	lstrcpynW(lastSongData, data, DATA_SIZE);
+	wcsncpy(lastSongData, data, DATA_SIZE);
+	lastSongData[DATA_SIZE-1] = L'\0';
 }
 
 void SendDataRadio(const file_info *info, const file_info *info2)
@@ -259,7 +261,8 @@ void SendDataRadio(const file_info *info, const file_info *info2)
 	GetMetadata(info2, "TITLE", data, size);
 
 	SendData(data);
-	lstrcpynW(lastSongData, data, DATA_SIZE);
+	wcsncpy(lastSongData, data, DATA_SIZE);
+	lastSongData[DATA_SIZE-1] = L'\0';
 }
 
 

@@ -48,7 +48,7 @@ WindowsMediaPlayer::WindowsMediaPlayer()
 	RegisterClass(&wc);
 
 	hWnd = CreateWindow(WMP_WINDOWCLASS, _T("Miranda ListeningTo WMP receiver"), 
-						0, 0, 0, 0, 0, NULL, NULL, hInst, NULL);
+							0, 0, 0, 0, 0, NULL, NULL, hInst, NULL);
 }
 
 
@@ -148,7 +148,8 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 
 			if (wcsncmp(singleton->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024)) != 0)
 			{
-				lstrcpynW(singleton->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024));
+				wcsncpy(singleton->received, (WCHAR*) pData->lpData, min(pData->cbData / 2, 1024));
+				singleton->received[1023] = L'\0';
 
 				if (hTimer)
 					KillTimer(NULL, hTimer);
