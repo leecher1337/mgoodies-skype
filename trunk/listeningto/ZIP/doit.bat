@@ -14,7 +14,6 @@ echo Building %name% ...
 msdev ..\%name%.dsp /MAKE "%name% - Win32 Release" /REBUILD
 msdev ..\%name%.dsp /MAKE "%name% - Win32 Unicode Release" /REBUILD
 msdev ..\players\mlt_winamp\mlt_winamp.dsp /MAKE "mlt_winamp - Win32 Release" /REBUILD
-msdev ..\players\mlt_winamp\mlt_winamp.dsp /MAKE "mlt_winamp - Win32 Release" /REBUILD
 "C:\Program Files\Microsoft Visual Studio 8\Common7\IDE\devenv.com" /Rebuild "Release Unicode" ..\players\foo_mlt\foo_mlt.sln
 
 echo Generating files for %name% ...

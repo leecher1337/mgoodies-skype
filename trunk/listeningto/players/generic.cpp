@@ -123,7 +123,7 @@ void GenericPlayer::ProcessReceived()
 
 	changed = TRUE;
 
-	if (lstrcmpW(L"1", parts[0]) != 0 || parts[1][0] == L'\0' || (parts[3][0] == L'\0' && parts[4][0] == L'\0'))
+	if (wcscmp(L"1", parts[0]) != 0 || parts[1][0] == L'\0' || (parts[3][0] == L'\0' && parts[4][0] == L'\0'))
 	{
 		// Stoped playing or not enought info
 		LeaveCriticalSection(&cs);
@@ -169,7 +169,7 @@ void GenericPlayer::ProcessReceived()
 	for(i = 1; i <= pCount; i++)
 		*(parts[i] - 2) = L'\\';
 
-	lstrcpyW(last_received, received);
+	wcscpy(last_received, received);
 
 	LeaveCriticalSection(&cs);
 
@@ -196,7 +196,7 @@ void GenericPlayer::NewData(WCHAR *data, size_t len)
 
 	if (wcsncmp(received, data, min(len, 1024)) != 0)
 	{
-		lstrcpynW(received, data, min(len, 1024));
+		wcsncpy(received, data, min(len, 1024));
 
 		if (hTimer)
 			KillTimer(NULL, hTimer);
@@ -211,18 +211,18 @@ static LRESULT CALLBACK ReceiverWndProc(HWND hWnd, UINT message, WPARAM wParam, 
 {
 	switch (message)
 	{
-		case WM_COPYDATA :
+		case WM_COPYDATA:
 		{
 			COPYDATASTRUCT* pData = (PCOPYDATASTRUCT) lParam;
-			if (pData->dwData != MIRANDA_DW_PROTECTION || pData->cbData == 0 || pData->lpData == NULL)
-				return false;
+			if (pData == NULL || pData->dwData != MIRANDA_DW_PROTECTION 
+					|| pData->cbData == 0 || pData->lpData == NULL)
+				return FALSE;
 
 			singleton->NewData((WCHAR *) pData->lpData, pData->cbData / 2);
 
 			return TRUE;
-			break;
 		}
-		case WM_DESTROY :
+		case WM_DESTROY:
 			PostQuitMessage(0);
 			break;
 

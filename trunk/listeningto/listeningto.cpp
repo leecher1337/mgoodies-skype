@@ -31,6 +31,7 @@ Boston, MA 02111-1307, USA.
 
 #define ICON_NAME "LISTENING_TO_ICON"
 
+
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 #ifdef UNICODE
@@ -38,7 +39,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"ListeningTo",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,2,1),
+	PLUGIN_MAKE_VERSION(0,1,2,2),
 	"Handle listening information to/for contacts",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -118,6 +119,7 @@ TCHAR* VariablesParsePlayer(ARGUMENTSINFO *ai);
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
+
 
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
@@ -1047,7 +1049,7 @@ int SetNewSong(WPARAM wParam,LPARAM lParam)
 	if (data == NULL)
 		return -1;
 
-	((GenericPlayer *) players[GENERIC])->NewData(data, lstrlenW(data));
+	((GenericPlayer *) players[GENERIC])->NewData(data, wcslen(data));
 	return 0;
 }
 

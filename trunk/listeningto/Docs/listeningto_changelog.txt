@@ -2,6 +2,10 @@ ListeningTo
 
 Changelog:
 
+. 0.1.2.2
+  * Fix to work on Win 9X
+  * Fix to compile in VS2005
+
 . 0.1.2.1
   + Support not moded version of variables too
   * Fix for foo_mlt and non english tags

@@ -67,6 +67,7 @@ LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 
+
 // Functions ////////////////////////////////////////////////////////////////////////////
 
 
@@ -81,7 +82,7 @@ void WindowThread(void *param)
 	RegisterClass(&wc);
 
 	hMsgWnd = CreateWindow(MESSAGE_WINDOWCLASS, _T("Miranda ListeningTo Winamp Plugin"), 
-							0, 0, 0, 0, 0, HWND_MESSAGE, NULL, hInst, NULL);
+							0, 0, 0, 0, 0, NULL, NULL, hInst, NULL);
 
 	if (hMsgWnd != NULL)
 		if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)
@@ -151,7 +152,7 @@ inline void SendData(WCHAR *text)
 {
 	static WCHAR lastMsg[1024] = L"";
 
-	if (lstrcmpW(lastMsg, text) == 0)
+	if (wcscmp(lastMsg, text) == 0)
 		return;
 
 	// Prepare the struct
@@ -162,7 +163,8 @@ inline void SendData(WCHAR *text)
 
 	EnumWindows(EnumWindowsProc, (LPARAM) &cds);
 
-	lstrcpynW(lastMsg, text, 1024);
+	wcsncpy(lastMsg, text, 1024);
+	lastMsg[1023] = L'\0';
 }
 
 
@@ -337,7 +339,8 @@ LRESULT CALLBACK MsgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 						if (last_was_stop || is_radio || strcmpi(last_filename, filename) != 0)
 						{
 							last_was_stop = FALSE;
-							lstrcpyn(last_filename, filename, sizeof(last_filename));
+							strncpy(last_filename, filename, sizeof(last_filename));
+							last_filename[sizeof(last_filename) - 1] = '\0';
 
 							// Miranda is running?
 							if (FindWindow(MIRANDA_WINDOWCLASS, NULL) != NULL)

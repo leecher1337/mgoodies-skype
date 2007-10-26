@@ -32,6 +32,7 @@ Boston, MA 02111-1307, USA.
 #define MIRANDA_VER 0x0600
 
 #include <newpluginapi.h>
+#include <win2k.h>
 #include <m_system.h>
 #include <m_protocols.h>
 #include <m_protosvc.h>
