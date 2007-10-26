@@ -1,7 +1,6 @@
 #include <windows.h>
-#include "newpluginapi.h"
+#include "Interface.h"
 #include "DatabaseLink.h"
-#include "btree.h"
 
 HINSTANCE  hInstance = NULL;
 PLUGINLINK *pluginLink;
@@ -11,7 +10,7 @@ static const DWORD gMinMirVer = 0x00070000;
 static const MUUID gInterfaces[] = {MIID_DATABASE, MIID_LAST};
 // {28F45248-8C9C-4bee-9307-7BCF3E12BF99}
 static const MUUID gGUID = 
-{ 0x28f45248, 0x8c9c, 0x4bee, { 0x93, 0x7, 0x7b, 0xcf, 0x3e, 0x12, 0xbf, 0x99 } };
+{ 0x28f45248, 0x8c9c, 0x4bee, { 0x93, 0x07, 0x7b, 0xcf, 0x3e, 0x12, 0xbf, 0x99 } };
 
 
 static PLUGININFOEX gPluginInfoEx = {

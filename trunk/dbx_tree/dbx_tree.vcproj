@@ -319,6 +319,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Interface.h"
+					>
+				</File>
+				<File
 					RelativePath=".\m_dbx_tree.h"
 					>
 				</File>
@@ -338,6 +342,10 @@
 			<Filter
 				Name="HeaderFiles"
 				>
+				<File
+					RelativePath=".\IterationHeap.h"
+					>
+				</File>
 				<File
 					RelativePath=".\MREWSync.h"
 					>

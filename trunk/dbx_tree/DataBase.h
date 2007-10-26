@@ -81,6 +81,12 @@ public:
 	int CreateDB();
 	int CheckDB();
 	int OpenDB();
+
+	TEntryHandle getRootEntry();
+	CEntries & getEntries();
+	CVirtuals & getVirtuals();
+	CSettings & getSettings();
+
 };
 
 

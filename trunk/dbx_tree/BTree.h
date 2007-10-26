@@ -29,7 +29,7 @@ public:
 
 			There are a few possibilities on not UniqueKey-trees where the managing can fail.
 			It can occour when deleting an iterated Key and have some other entries with same Key...
-			This can cause Values to be enumerated twice.
+			This can cause Values to be skipped.
 		**/
 		void setManaged();
 		bool wasDeleted();
@@ -38,12 +38,17 @@ public:
 		bool operator !() const;
 		
 		bool operator ==(const iterator& Other) const;
+		bool operator <  (iterator & Other);
+		bool operator >  (iterator & Other);
+		
 		iterator& operator =(const iterator& Other);
+
 		iterator& operator ++(); //pre  ++i
 		iterator& operator --(); //pre  --i
 		iterator operator ++(int); //post i++
 		iterator operator --(int); //post i--
 
+		
 	protected:
 		friend class CBTree; 
 
@@ -153,7 +158,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::~CBTree()
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-bool CBTree<TKey, TData, SizeParam, UniqueKeys>::InNodeFind(const TNode & Node, const TKey & Key, int & GreaterEqual)
+__forceinline bool CBTree<TKey, TData, SizeParam, UniqueKeys>::InNodeFind(const TNode & Node, const TKey & Key, int & GreaterEqual)
 {
 	GreaterEqual = 0; 
 	while ((GreaterEqual < (Node.Info & cKeyCountMask)) && (Node.Key[GreaterEqual] < Key))
@@ -560,7 +565,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::UpperBound(const TKey & Key)
 			} else {
 				foundnode = actnode;
 				foundindex = ge;
-				while ((ge < node.Info & cKeyCountMask) && (node.Key[ge] == Key))
+				while ((ge < (node.Info & cKeyCountMask)) && (node.Key[ge] == Key))
 				{
 					foundindex = ge;
 					ge++;
@@ -1353,7 +1358,7 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::SetData(const TData &
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator bool() const
+__forceinline CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator bool() const
 {
 	if (m_Tree && m_Node)
 	{
@@ -1365,7 +1370,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator bool() const
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator !() const
+__forceinline bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator !() const
 {		
 	if (m_Tree && m_Node)
 	{
@@ -1377,10 +1382,22 @@ bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator !() const
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator ==(const iterator& Other) const
+__forceinline bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator ==(const iterator& Other) const
 {
 	return (m_Tree == Other.m_Tree) && (m_Node == Other.m_Node) && (m_Index == Other.m_Index) && (!m_ManagedDeleted) && (!Other.m_ManagedDeleted);
 }
+
+template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
+__forceinline bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator <  (iterator & Other)
+{
+	return Key() < Other.Key();
+}
+template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
+__forceinline bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator >  (iterator & Other)
+{
+	return Key() > Other.Key();
+}
+
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
 typename CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator& 
