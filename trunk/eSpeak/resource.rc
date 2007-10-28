@@ -1,0 +1,158 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_OPTIONS DIALOGEX 0, 0, 252, 223
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    GROUPBOX        " System voice ",IDC_SYSTEM,1,1,250,89
+    LTEXT           "Language:",IDC_DEF_LANG_L,11,19,52,8
+    COMBOBOX        IDC_DEF_LANG,66,17,174,60,CBS_DROPDOWNLIST | 
+                    CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "Voice:",IDC_VOICE_L,12,35,52,8
+    COMBOBOX        IDC_VOICE,66,33,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "Variant:",IDC_VARIANT_L,12,51,52,8
+    COMBOBOX        IDC_VARIANT,66,49,107,60,CBS_DROPDOWNLIST | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Test:",IDC_TEST_L,11,71,37,8
+    EDITTEXT        IDC_TEST,66,69,130,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Speak",IDC_SPEAK,200,69,40,12
+    GROUPBOX        " Disable when global status is: ",IDC_STATUS,1,94,250,
+                    91
+    CONTROL         "Online",ID_ONLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    10,107,99,11
+    CONTROL         "Away",ID_AWAY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
+                    122,99,11
+    CONTROL         "NA",ID_NA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,137,
+                    99,11
+    CONTROL         "Occupied",ID_OCCUPIED,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,10,152,99,11
+    CONTROL         "DND",ID_DND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
+                    167,99,11
+    CONTROL         "Free for chat",ID_FREECHAT,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,136,107,99,11
+    CONTROL         "On the phone",ID_ONTHEPHONE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,136,122,99,11
+    CONTROL         "Out to lunch",ID_OUTTOLUNCH,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,136,137,99,11
+    CONTROL         "Invisible",ID_INVISIBLE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,136,152,99,11
+    CONTROL         "Offline",ID_OFFLINE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,136,167,99,11
+    GROUPBOX        " Advanced ",IDC_ADVANCED,1,189,250,31
+    CONTROL         "Use flags",IDC_USE_FLAGS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,10,202,230,10
+END
+
+IDD_CONTACT_LANG DIALOGEX 0, 0, 224, 102
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg"
+BEGIN
+    CONTROL         "Enable speak for this contact",IDC_ENABLE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,4,203,13
+    LTEXT           "Language:",IDC_DEF_LANG_L,9,30,52,8
+    COMBOBOX        IDC_DEF_LANG,64,28,150,60,CBS_DROPDOWNLIST | 
+                    CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "Voice:",IDC_VOICE_L,10,46,52,8
+    COMBOBOX        IDC_VOICE,64,44,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    LTEXT           "Variant:",IDC_VARIANT_L,10,62,52,8
+    COMBOBOX        IDC_VARIANT,64,60,107,60,CBS_DROPDOWNLIST | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Test:",IDC_TEST_L,9,82,37,8
+    EDITTEXT        IDC_TEST,64,80,107,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Speak",IDC_SPEAK,174,80,40,12
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_UNKNOWN_FLAG        ICON    DISCARDABLE     "res\\unknown.ico"
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Portuguese (Brazil) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_PTB)
+#ifdef _WIN32
+LANGUAGE LANG_PORTUGUESE, SUBLANG_PORTUGUESE_BRAZILIAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Portuguese (Brazil) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
