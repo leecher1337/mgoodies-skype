@@ -361,7 +361,8 @@ static int PluginCommand_SetMyNicknameUI(WPARAM wParam,LPARAM lParam)
 
 	if (proto != NULL)
 	{
-		for(int i = 0 ; i < protocols->GetSize() ; i++)
+		int i;
+		for(i = 0 ; i < protocols->GetSize() ; i++)
 		{
 			if (stricmp(protocols->Get(i)->name, proto) == 0)
 			{
@@ -469,7 +470,8 @@ static int PluginCommand_SetMyAvatarUI(WPARAM wParam,LPARAM lParam)
 
 	if (proto != NULL)
 	{
-		for(int i = 0 ; i < protocols->GetSize() ; i++)
+		int i;
+		for(i = 0 ; i < protocols->GetSize() ; i++)
 		{
 			if (stricmp(protocols->Get(i)->name, proto) == 0)
 			{
