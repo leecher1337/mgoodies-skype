@@ -23,8 +23,8 @@ copy ..\Docs\%name%_version.txt
 copy ..\Docs\%name%_readme.txt
 mkdir Plugins
 cd Plugins
+del /Q *.*
 copy ..\..\..\..\bin\release\Plugins\%name%.dll
-copy ..\..\..\..\bin\release\Plugins\%name%W.dll
 cd ..
 mkdir Docs
 cd Docs
@@ -47,25 +47,18 @@ copy ..\..\..\spellchecker\Flags\flags.dll
 cd ..
 
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip Plugins Docs Icons Dictionaries
+
+cd Plugins
+del /Q *.*
+copy ..\..\..\..\bin\release\Plugins\%name%W.dll
+cd ..
+
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip Plugins Docs Icons Dictionaries
 
-del *.dll
-cd Docs
-del /Q *.*
-cd ..
-rmdir Docs
-cd Icons
-del /Q *.*
-cd ..
-rmdir Icons
-cd Dictionaries
-cd Voice
-del /Q *.*
-cd ..
-rmdir Voice
-del /Q *.*
-cd ..
-rmdir Dictionaries
+rd /S /Q Plugins
+rd /S /Q Docs
+rd /S /Q Icons
+rd /S /Q Dictionaries
 
 if "%ftp%"=="" GOTO END
 
