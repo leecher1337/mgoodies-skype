@@ -1,0 +1,15 @@
+//pa_device 7
+
+// play a sound for punctuation, rather than speak its name
+soundicon _( /usr/share/sounds/sound-icons/left-round-bracket
+soundicon _) /usr/share/sounds/sound-icons/right-round-bracket
+soundicon _[ /usr/share/sounds/sound-icons/left-square-bracket
+soundicon _] /usr/share/sounds/sound-icons/right-square-bracket
+soundicon _{ /usr/share/sounds/sound-icons/left-brace
+soundicon _} /usr/share/sounds/sound-icons/right-brace
+
+
+//tone 600 200 1400 160 2000 120 3000 120 
+tone 600 170 1400 135 2000 110 3000 110 
+//tone 250 140 1200 110
+//tone 250 128 1200 128
