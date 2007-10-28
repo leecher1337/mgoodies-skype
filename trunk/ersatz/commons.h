@@ -28,11 +28,6 @@ Boston, MA 02111-1307, USA.
 #include <time.h>
 
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 // Miranda headers
 #include <newpluginapi.h>
 #include <m_system.h>
@@ -44,10 +39,6 @@ extern "C"
 #include <m_updater.h>
 
 #include "../utils/mir_memory.h"
-
-#ifdef __cplusplus
-}
-#endif
 
 
 #include "m_ersatz.h"
