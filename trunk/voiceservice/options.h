@@ -24,11 +24,6 @@ Boston, MA 02111-1307, USA.
 
 #include <windows.h>
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 #define POPUP_ACTION_DONOTHING 0
 #define POPUP_ACTION_CLOSEPOPUP 1
 
@@ -68,9 +63,5 @@ void DeInitOptions();
 void LoadOptions();
 
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __OPTIONS_H__

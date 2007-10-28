@@ -21,11 +21,6 @@ Boston, MA 02111-1307, USA.
 #ifndef __POPUP_H__
 # define __POPUP_H__
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 // Initializations needed by popups
 void InitPopups();
 
@@ -49,10 +44,6 @@ void ShowErrPopup(const char *description, const char *title = NULL);
 void ShowPopupEx(HANDLE hContact, const TCHAR *title, const TCHAR *description, 
 			   void *plugin_data, int type, const Options *op);
 
-
-#ifdef __cplusplus
-}
-#endif
 
 
 #endif // __POPUP_H__
