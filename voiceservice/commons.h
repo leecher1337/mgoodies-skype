@@ -37,11 +37,6 @@ using namespace std;
 
 
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 // Miranda headers
 #include <win2k.h>
 #include <newpluginapi.h>
@@ -74,10 +69,6 @@ extern "C"
 #include "options.h"
 #include "frame.h"
 #include "popup.h"
-
-#ifdef __cplusplus
-}
-#endif
 
 
 #define MODULE_NAME		"VoiceService"
