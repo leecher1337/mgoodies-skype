@@ -2,6 +2,12 @@ History Keeper
 
 Changelog:
 
+. 0.0.1.5
+  + Support for new speak API
+
+. 0.0.1.4
+  + Improved handling of metacontacts
+
 . 0.0.1.3
   * Fixed typo in options
   + Added langpack

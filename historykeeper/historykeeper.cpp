@@ -31,7 +31,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Keeper",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,1,3),
+	PLUGIN_MAKE_VERSION(0,0,1,5),
 	"Log various types of events to history",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -60,7 +60,7 @@ HANDLE hDisableMenu[NUM_TYPES * 2] = {0};
 BOOL loaded = FALSE;
 ContactAsyncQueue *queue;
 
-BOOL PER_DEFAULT_LOG_SUBCONTACTS = FALSE;
+BOOL PER_DEFAULT_LOG_SUBCONTACTS = TRUE;
 BOOL PER_DEFAULT_NOTIFY_SUBCONTACTS = FALSE;
 BOOL UNIFIED_CONTEXT_MENUS = FALSE;
 BOOL HAS_METACONTACTS = FALSE;
@@ -136,10 +136,9 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	// Hidden settings
 	UNIFIED_CONTEXT_MENUS = DBGetContactSettingByte(NULL, MODULE_NAME, "UnifiedContextMenus", FALSE);
-	PER_DEFAULT_LOG_SUBCONTACTS = DBGetContactSettingByte(NULL, MODULE_NAME, "PerDefaultLogSubcontacts", FALSE);
+	PER_DEFAULT_LOG_SUBCONTACTS = DBGetContactSettingByte(NULL, MODULE_NAME, "PerDefaultLogSubcontacts", TRUE);
 	PER_DEFAULT_NOTIFY_SUBCONTACTS = DBGetContactSettingByte(NULL, MODULE_NAME, "PerDefaultNotifySubcontacts", FALSE);
-	HAS_METACONTACTS = ServiceExists(MS_MC_GETMETACONTACT);
-
+	
 	// Add menu item to enable/disable status message check
 	CLISTMENUITEM mi = {0};
 	mi.cbSize = sizeof(mi);
@@ -310,15 +309,56 @@ extern "C" int __declspec(dllexport) Unload(void)
 // Called when all the modules are loaded
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
-//	if (ServiceExists(MS_MC_GETPROTOCOLNAME))
-//		metacontacts_proto = (char *) CallService(MS_MC_GETPROTOCOLNAME, 0, 0);
-	
+	HAS_METACONTACTS = ServiceExists(MS_MC_GETMETACONTACT);
+		
+	int i;
+	for (i = 0; i < NUM_TYPES; i++) 
+	{
+		HISTORY_TYPE &type = types[i];
+
+		char tmp[256];
+		strncpy(tmp, type.description, MAX_REGS(tmp));
+		CharLowerA(tmp);
+
+		char desc[128];
+		mir_snprintf(desc, MAX_REGS(desc), "%s Change", type.description);
+
+		// Speak
+
+		char change[256];
+		if (type.defs.change_template != NULL)
+			mir_snprintf(change, MAX_REGS(change), "Change\n%%contact%% %s\n%%old%%\tOld value\n%%new%%\tNew value",
+				type.defs.change_template);
+		else
+			mir_snprintf(change, MAX_REGS(change), "Change\n%%contact%% changed his/her %s to %%new%%\n%%old%%\tOld value\n%%new%%\tNew value",
+				tmp);
+
+		char remove[256];
+		if (type.canBeRemoved)
+		{
+			if (type.defs.remove_template != NULL)
+				mir_snprintf(remove, MAX_REGS(remove), "Removal\n%%contact%% %s\n%%old%%\tOld value",
+					type.defs.remove_template);
+			else
+				mir_snprintf(remove, MAX_REGS(remove), "Removal\n%%contact%% removed his/her %s\n%%old%%\tOld value",
+					tmp);
+		}
+
+		char *templates[] = { change, remove };
+
+		// TODO: This should not be here
+		char icon[128];
+		mir_snprintf(icon, sizeof(icon), "historyevent_%s", type.name);
+
+		Speak_RegisterWT(MODULE_NAME, type.name, desc, icon, templates, type.canBeRemoved ? 2 : 1);
+	}
+
 	CallService(MS_DB_SETSETTINGRESIDENT, TRUE, (LPARAM) MODULE_NAME "/CreationTickCount");
 
 	PROTOCOLDESCRIPTOR **protos;
 	int count;
 	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
-	for (int i = 0; i < count; i++)
+	for (i = 0; i < count; i++)
 	{
 		if (protos[i]->szName == NULL || protos[i]->szName[0] == '\0')
 			continue;
@@ -613,9 +653,18 @@ BOOL ContactEnabled(int type, HANDLE hContact, int min, int max)
 		return FALSE;
 
 	for (int i = min; i < max; i++)
-	{
 		if (ItemEnabled(type, hContact, i))
 			return TRUE;
+
+	if (!types[type].handleMetacontactsSeparatelly)
+	{
+		HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM) hContact, 0);
+		if (hMetaContact != NULL)
+		{
+			for (int i = min; i < max; i++)
+				if (ItemEnabled(type, hMetaContact, i))
+					return TRUE;
+		}
 	}
 	return FALSE;
 }
@@ -694,7 +743,15 @@ void LogToFile(HANDLE hContact, int typeNum, int templateNum, TCHAR **vars, int 
 
 void Speak(HANDLE hContact, int type, int templateNum, TCHAR **vars, int numVars)
 {
-	if (!ServiceExists(MS_SPEAK_SAY))
+	if (ServiceExists(MS_SPEAK_SAYEX))
+	{
+		// New style
+		Speak_SayExWT(types[type].name, hContact, templateNum, vars, numVars);
+		return;
+	}
+
+	// Old style
+	if (!ServiceExists(MS_SPEAK_SAY_A))
 		return;
 	
 	if (templateNum == 0 && !opts[type].speak_track_changes)
@@ -706,13 +763,16 @@ void Speak(HANDLE hContact, int type, int templateNum, TCHAR **vars, int numVars
 	Buffer<TCHAR> txt;
 	ReplaceTemplate(&txt, hContact, templ, vars, numVars);
 
-#ifdef UNICODE
-	char *tmp = mir_t2a(txt.str);
-	CallService(MS_SPEAK_SAY, (LPARAM) NULL, (WPARAM) tmp);
-	mir_free(tmp);
-#else
-	CallService(MS_SPEAK_SAY, (LPARAM) NULL, (WPARAM) txt.str);
-#endif
+	if (ServiceExists(MS_SPEAK_SAY))
+	{
+		CallService(MS_SPEAK_SAY, (LPARAM) hContact, (WPARAM) txt.str);
+	}
+	else 
+	{
+		char *tmp = mir_t2a(txt.str);
+		CallService(MS_SPEAK_SAY_A, (LPARAM) hContact, (WPARAM) tmp);
+		mir_free(tmp);
+	}
 }
 
 
@@ -784,6 +844,28 @@ void Log(int type, BOOL found_old, BOOL changed, HANDLE hContact, TCHAR *oldVal,
 	
 	if (notify)
 		Notify(hContact, type, found_old, templateNum, vars, numVars);
+
+	// Notify/Log meta?
+	if (HAS_METACONTACTS && !types[type].handleMetacontactsSeparatelly)
+	{
+		HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM) hContact, 0);
+		if (hMetaContact != NULL)
+		{
+			HANDLE hMostOnline = (HANDLE) CallService(MS_MC_GETMOSTONLINECONTACT, (WPARAM) hMetaContact, 0);
+
+			if (hContact == hMostOnline)
+			{
+				if (ItemEnabled(type, hMetaContact, LOG_HISTORY))
+					HistoryEvents_AddToHistoryVars(hMetaContact, types[type].eventType, templateNum, vars, numVars, DBEF_READ);
+
+				if (ItemEnabled(type, hMetaContact, LOG_FILE))
+					LogToFile(hMetaContact, type, templateNum, vars, numVars);
+				
+				if (notify)
+					Notify(hMetaContact, type, found_old, templateNum, vars, numVars);
+			}
+		}
+	}
 
 	for(int i = 0; i < types[type].numAddVars; i++)
 		mir_free(vars[4 + 2 * i + 1]);
@@ -872,6 +954,13 @@ int SettingChanged(WPARAM wParam, LPARAM lParam)
 
 			if (!ContactEnabled(i, hContact))
 				continue;
+
+			if (HAS_METACONTACTS && !type.handleMetacontactsSeparatelly)
+			{
+				int numSubs = (int) CallService(MS_MC_GETNUMCONTACTS, (WPARAM)hContact, 0);
+				if (numSubs > 0)
+					continue;
+			}
 
 			queue->Lock();
 

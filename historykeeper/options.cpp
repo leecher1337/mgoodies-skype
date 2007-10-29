@@ -96,6 +96,22 @@ Options opts[NUM_TYPES];
 // Functions //////////////////////////////////////////////////////////////////////////////////////
 
 
+BOOL HasPopups()
+{
+	return ServiceExists(MS_POPUP_ADDPOPUPEX)
+#ifdef UNICODE
+		|| ServiceExists(MS_POPUP_ADDPOPUPW)
+#endif
+	;
+}
+
+
+BOOL HasOldSpeak()
+{
+	return ServiceExists(MS_SPEAK_SAY_A) && !ServiceExists(MS_SPEAK_SAYEX);
+}
+
+
 int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 {
 	OPTIONSDIALOGPAGE odp = {0};
@@ -125,11 +141,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 
 
 	_ASSERT(MAX_REGS(PopupsDlgProcArr) == NUM_TYPES);
-	if(ServiceExists(MS_POPUP_ADDPOPUPEX)
-#ifdef UNICODE
-		|| ServiceExists(MS_POPUP_ADDPOPUPW)
-#endif
-		)
+	if (HasPopups())
 	{
 		ZeroMemory(&odp,sizeof(odp));
 		odp.cbSize = sizeof(odp);
@@ -157,7 +169,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	}
 
 	_ASSERT(MAX_REGS(SpeakDlgProcArr) == NUM_TYPES);
-	if (ServiceExists(MS_SPEAK_SAY))
+	if (HasOldSpeak())
 	{
 		ZeroMemory(&odp,sizeof(odp));
 		odp.cbSize = sizeof(odp);
@@ -183,6 +195,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 
 	return 0;
 }
+
 
 
 void InitOptions()
@@ -235,45 +248,48 @@ void InitOptions()
 		memcpy(&optionsControls[i][0], &opt, sizeof(opt));
 
 		// Popups page
-		if (types[i].defs.change_template_popup != NULL)
-			mir_sntprintf(&changeTemplates[i][0], 128, types[i].defs.change_template_popup, tmp);
-		else if (types[i].defs.change_template != NULL)
-			mir_sntprintf(&changeTemplates[i][0], 128, _T(TCHAR_STR_PARAM), types[i].defs.change_template);
-		else
-			mir_sntprintf(&changeTemplates[i][0], 128, _T("changed his/her %s to %%new%% (was %%old%%)"), tmp);
-
-		if (types[i].defs.remove_template_popup != NULL)
-			mir_sntprintf(&removeTemplates[i][0], 128, types[i].defs.remove_template_popup, tmp);
-		else if (types[i].defs.remove_template != NULL)
-			mir_sntprintf(&removeTemplates[i][0], 128, _T(TCHAR_STR_PARAM), types[i].defs.remove_template);
-		else
-			mir_sntprintf(&removeTemplates[i][0], 128, _T("removed his/her %s (was %%old%%)"), tmp);
-
-		OptPageControl pops[] = {
-			{ &opts[i].popup_track_changes,			CONTROL_CHECKBOX,	IDC_TRACK_CHANGE,	"PopupsTrackChanges", TRUE },
-			{ &opts[i].popup_template_changed,		CONTROL_TEXT,		IDC_CHANGED,		"PopupsTemplateChanged", (DWORD) &changeTemplates[i][0] },
-			{ &opts[i].popup_track_removes,			CONTROL_CHECKBOX,	IDC_TRACK_REMOVE,	"PopupsTrackRemoves", TRUE },
-			{ &opts[i].popup_template_removed,		CONTROL_TEXT,		IDC_REMOVED,		"PopupsTemplateRemoved", (DWORD) &removeTemplates[i][0] },
-			{ &opts[i].popup_bkg_color,				CONTROL_COLOR,		IDC_BGCOLOR,		"PopupsBgColor", RGB(255,255,255) },
-			{ &opts[i].popup_text_color,			CONTROL_COLOR,		IDC_TEXTCOLOR,		"PopupsTextColor", RGB(0,0,0) },
-			{ &opts[i].popup_use_win_colors,		CONTROL_CHECKBOX,	IDC_WINCOLORS,		"PopupsWinColors", FALSE },
-			{ &opts[i].popup_use_default_colors,	CONTROL_CHECKBOX,	IDC_DEFAULTCOLORS,	"PopupsDefaultColors", FALSE },
-			{ &opts[i].popup_delay_type,			CONTROL_RADIO,		IDC_DELAYFROMPU,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_DEFAULT },
-			{ NULL,									CONTROL_RADIO,		IDC_DELAYCUSTOM,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_CUSTOM },
-			{ NULL,									CONTROL_RADIO,		IDC_DELAYPERMANENT,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_PERMANENT },
-			{ &opts[i].popup_timeout,				CONTROL_SPIN,		IDC_DELAY,			"PopupsTimeout", 10, IDC_DELAY_SPIN, (WORD) 1, (WORD) 255 },
-			{ &opts[i].popup_right_click_action,	CONTROL_COMBO,		IDC_RIGHT_ACTION,	"PopupsRightClick", POPUP_ACTION_CLOSEPOPUP },
-			{ &opts[i].popup_left_click_action,		CONTROL_COMBO,		IDC_LEFT_ACTION,	"PopupsLeftClick", POPUP_ACTION_OPENHISTORY }
-		};
-		_ASSERT(MAX_REGS(pops) == POPUPS_CONTROLS_SIZE);
-		for(j = 0; j < POPUPS_CONTROLS_SIZE; j++)
+		if (HasPopups())
 		{
-			mir_snprintf(&popSet[i][j][0], 64, "%s_%s", types[i].name, pops[j].setting);
-			pops[j].setting = &popSet[i][j][0];
-		}
-		memcpy(&popupsControls[i][0], &pops, sizeof(pops));
+			if (types[i].defs.change_template_popup != NULL)
+				mir_sntprintf(&changeTemplates[i][0], 128, types[i].defs.change_template_popup, tmp);
+			else if (types[i].defs.change_template != NULL)
+				mir_sntprintf(&changeTemplates[i][0], 128, _T(TCHAR_STR_PARAM), types[i].defs.change_template);
+			else
+				mir_sntprintf(&changeTemplates[i][0], 128, _T("changed his/her %s to %%new%% (was %%old%%)"), tmp);
 
-	    if (ServiceExists(MS_SPEAK_SAY))
+			if (types[i].defs.remove_template_popup != NULL)
+				mir_sntprintf(&removeTemplates[i][0], 128, types[i].defs.remove_template_popup, tmp);
+			else if (types[i].defs.remove_template != NULL)
+				mir_sntprintf(&removeTemplates[i][0], 128, _T(TCHAR_STR_PARAM), types[i].defs.remove_template);
+			else
+				mir_sntprintf(&removeTemplates[i][0], 128, _T("removed his/her %s (was %%old%%)"), tmp);
+
+			OptPageControl pops[] = {
+				{ &opts[i].popup_track_changes,			CONTROL_CHECKBOX,	IDC_TRACK_CHANGE,	"PopupsTrackChanges", TRUE },
+				{ &opts[i].popup_template_changed,		CONTROL_TEXT,		IDC_CHANGED,		"PopupsTemplateChanged", (DWORD) &changeTemplates[i][0] },
+				{ &opts[i].popup_track_removes,			CONTROL_CHECKBOX,	IDC_TRACK_REMOVE,	"PopupsTrackRemoves", TRUE },
+				{ &opts[i].popup_template_removed,		CONTROL_TEXT,		IDC_REMOVED,		"PopupsTemplateRemoved", (DWORD) &removeTemplates[i][0] },
+				{ &opts[i].popup_bkg_color,				CONTROL_COLOR,		IDC_BGCOLOR,		"PopupsBgColor", RGB(255,255,255) },
+				{ &opts[i].popup_text_color,			CONTROL_COLOR,		IDC_TEXTCOLOR,		"PopupsTextColor", RGB(0,0,0) },
+				{ &opts[i].popup_use_win_colors,		CONTROL_CHECKBOX,	IDC_WINCOLORS,		"PopupsWinColors", FALSE },
+				{ &opts[i].popup_use_default_colors,	CONTROL_CHECKBOX,	IDC_DEFAULTCOLORS,	"PopupsDefaultColors", FALSE },
+				{ &opts[i].popup_delay_type,			CONTROL_RADIO,		IDC_DELAYFROMPU,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_DEFAULT },
+				{ NULL,									CONTROL_RADIO,		IDC_DELAYCUSTOM,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_CUSTOM },
+				{ NULL,									CONTROL_RADIO,		IDC_DELAYPERMANENT,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_PERMANENT },
+				{ &opts[i].popup_timeout,				CONTROL_SPIN,		IDC_DELAY,			"PopupsTimeout", 10, IDC_DELAY_SPIN, (WORD) 1, (WORD) 255 },
+				{ &opts[i].popup_right_click_action,	CONTROL_COMBO,		IDC_RIGHT_ACTION,	"PopupsRightClick", POPUP_ACTION_CLOSEPOPUP },
+				{ &opts[i].popup_left_click_action,		CONTROL_COMBO,		IDC_LEFT_ACTION,	"PopupsLeftClick", POPUP_ACTION_OPENHISTORY }
+			};
+			_ASSERT(MAX_REGS(pops) == POPUPS_CONTROLS_SIZE);
+			for(j = 0; j < POPUPS_CONTROLS_SIZE; j++)
+			{
+				mir_snprintf(&popSet[i][j][0], 64, "%s_%s", types[i].name, pops[j].setting);
+				pops[j].setting = &popSet[i][j][0];
+			}
+			memcpy(&popupsControls[i][0], &pops, sizeof(pops));
+		}
+
+	    if (HasOldSpeak())
 		{
 			// Speak pages
 			if (types[i].defs.change_template != NULL)
@@ -282,7 +298,7 @@ void InitOptions()
 				mir_sntprintf(&speakChangeTemplates[i][0], 128, TranslateT("%%contact%% changed his/her %s to %%new%%"), tmp);
 
 			if (types[i].defs.remove_template != NULL)
-				mir_sntprintf(&speakChangeTemplates[i][0], 128, _T("%%contact%% ") _T(TCHAR_STR_PARAM), types[i].defs.remove_template);
+				mir_sntprintf(&speakRemoveTemplates[i][0], 128, _T("%%contact%% ") _T(TCHAR_STR_PARAM), types[i].defs.remove_template);
 			else
 				mir_sntprintf(&speakRemoveTemplates[i][0], 128, _T("%%contact%% removed his/her %s"), tmp);
 
@@ -323,8 +339,10 @@ void LoadOptions()
 	for (int i = 0; i < NUM_TYPES; i++) 
 	{
 		LoadOpts(&optionsControls[i][0], OPTIONS_CONTROLS_SIZE, MODULE_NAME);
-		LoadOpts(&popupsControls[i][0], POPUPS_CONTROLS_SIZE, MODULE_NAME);
-		LoadOpts(&speakControls[i][0], SPEAK_CONTROLS_SIZE, MODULE_NAME);
+		if (HasPopups())
+			LoadOpts(&popupsControls[i][0], POPUPS_CONTROLS_SIZE, MODULE_NAME);
+		if (HasOldSpeak())
+			LoadOpts(&speakControls[i][0], SPEAK_CONTROLS_SIZE, MODULE_NAME);
 	}
 }
 

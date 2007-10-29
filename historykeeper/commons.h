@@ -51,6 +51,7 @@ Boston, MA 02111-1307, USA.
 #include <m_icq.h>
 #include <m_skin.h>
 #include <m_clc.h>
+#include <m_speak.h>
 #include <m_proto_listeningto.h>
 
 #include "../utils/mir_memory.h"
@@ -94,6 +95,7 @@ struct HISTORY_TYPE {
 	BOOL temporary;
 	int subOf;
 	int parentOf;
+	BOOL handleMetacontactsSeparatelly;
 
 	struct {
 		struct {
@@ -145,9 +147,6 @@ BOOL EnableItem(int type, HANDLE hContact, int item, BOOL enable);
 #define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION 30000 // ms
 #define TIME_TO_WAIT_BEFORE_NOTIFY_AFTER_CONNECTION 30000 // ms
 
-
-
-#define MS_SPEAK_SAY "Speak/Say"
 
 
 #endif // __COMMONS_H__
