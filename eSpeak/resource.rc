@@ -1,4 +1,4 @@
-//Microsoft Developer Studio generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -27,71 +27,58 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 IDD_OPTIONS DIALOGEX 0, 0, 252, 223
-STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        " System voice ",IDC_SYSTEM,1,1,250,89
     LTEXT           "Language:",IDC_DEF_LANG_L,11,19,52,8
-    COMBOBOX        IDC_DEF_LANG,66,17,174,60,CBS_DROPDOWNLIST | 
-                    CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
-                    WS_TABSTOP
+    COMBOBOX        IDC_DEF_LANG,66,17,174,60,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Voice:",IDC_VOICE_L,12,35,52,8
-    COMBOBOX        IDC_VOICE,66,33,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | 
-                    WS_TABSTOP
+    COMBOBOX        IDC_VOICE,66,33,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Variant:",IDC_VARIANT_L,12,51,52,8
-    COMBOBOX        IDC_VARIANT,66,49,107,60,CBS_DROPDOWNLIST | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_VARIANT,66,49,107,60,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Test:",IDC_TEST_L,11,71,37,8
     EDITTEXT        IDC_TEST,66,69,130,12,ES_AUTOHSCROLL
     PUSHBUTTON      "Speak",IDC_SPEAK,200,69,40,12
-    GROUPBOX        " Disable when global status is: ",IDC_STATUS,1,94,250,
-                    91
-    CONTROL         "Online",ID_ONLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    10,107,99,11
-    CONTROL         "Away",ID_AWAY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    122,99,11
-    CONTROL         "NA",ID_NA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,137,
-                    99,11
-    CONTROL         "Occupied",ID_OCCUPIED,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,152,99,11
-    CONTROL         "DND",ID_DND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    167,99,11
-    CONTROL         "Free for chat",ID_FREECHAT,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,136,107,99,11
-    CONTROL         "On the phone",ID_ONTHEPHONE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,136,122,99,11
-    CONTROL         "Out to lunch",ID_OUTTOLUNCH,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,136,137,99,11
-    CONTROL         "Invisible",ID_INVISIBLE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,136,152,99,11
-    CONTROL         "Offline",ID_OFFLINE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,136,167,99,11
+    GROUPBOX        " Disable when global status is: ",IDC_STATUS,1,94,250,91
+    CONTROL         "Online",ID_ONLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,107,99,11
+    CONTROL         "Away",ID_AWAY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,122,99,11
+    CONTROL         "NA",ID_NA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,137,99,11
+    CONTROL         "Occupied",ID_OCCUPIED,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,152,99,11
+    CONTROL         "DND",ID_DND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,167,99,11
+    CONTROL         "Free for chat",ID_FREECHAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,136,107,99,11
+    CONTROL         "On the phone",ID_ONTHEPHONE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,136,122,99,11
+    CONTROL         "Out to lunch",ID_OUTTOLUNCH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,136,137,99,11
+    CONTROL         "Invisible",ID_INVISIBLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,136,152,99,11
+    CONTROL         "Offline",ID_OFFLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,136,167,99,11
     GROUPBOX        " Advanced ",IDC_ADVANCED,1,189,250,31
-    CONTROL         "Use flags",IDC_USE_FLAGS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,202,230,10
+    CONTROL         "Use flags",IDC_USE_FLAGS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,202,230,10
 END
 
 IDD_CONTACT_LANG DIALOGEX 0, 0, 224, 102
-STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "Enable speak for this contact",IDC_ENABLE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,9,4,203,13
+    CONTROL         "Enable speak for this contact",IDC_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,4,203,13
     LTEXT           "Language:",IDC_DEF_LANG_L,9,30,52,8
-    COMBOBOX        IDC_DEF_LANG,64,28,150,60,CBS_DROPDOWNLIST | 
-                    CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
-                    WS_TABSTOP
+    COMBOBOX        IDC_DEF_LANG,64,28,150,60,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Voice:",IDC_VOICE_L,10,46,52,8
-    COMBOBOX        IDC_VOICE,64,44,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | 
-                    WS_TABSTOP
+    COMBOBOX        IDC_VOICE,64,44,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Variant:",IDC_VARIANT_L,10,62,52,8
-    COMBOBOX        IDC_VARIANT,64,60,107,60,CBS_DROPDOWNLIST | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_VARIANT,64,60,107,60,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Test:",IDC_TEST_L,9,82,37,8
     EDITTEXT        IDC_TEST,64,80,107,12,ES_AUTOHSCROLL
     PUSHBUTTON      "Speak",IDC_SPEAK,174,80,40,12
+END
+
+IDD_TYPES DIALOGEX 0, 0, 321, 240
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_VSCROLL
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    LTEXT           "Speak the following events:",IDC_EVENT_TYPES,10,0,297,10
 END
 
 
@@ -102,7 +89,25 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_UNKNOWN_FLAG        ICON    DISCARDABLE     "res\\unknown.ico"
+IDI_UNKNOWN_FLAG        ICON                    "res\\unknown.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_TYPES, DIALOG
+    BEGIN
+        LEFTMARGIN, 3
+        RIGHTMARGIN, 307
+        BOTTOMMARGIN, 237
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -122,18 +127,18 @@ LANGUAGE LANG_PORTUGUESE, SUBLANG_PORTUGUESE_BRAZILIAN
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE 
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
