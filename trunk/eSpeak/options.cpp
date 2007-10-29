@@ -122,7 +122,7 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	odp.ptszTab = TranslateT("Types");
 	odp.pfnDlgProc = TypesDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_TYPES);
-	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
+	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR | ODPF_EXPERTONLY;
 	CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
 	return 0;
@@ -632,7 +632,7 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 			GetTextMetric(hFont, &font);
 
 			int height = max(font.tmHeight, 16) + 4;
-			int width = rc.right - rc.left - 50;
+			int width = rc.right - rc.left - 35;
 
 			lineHeigth = height;
 
@@ -791,12 +791,12 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				break;
 
 			int id = (LOWORD(wParam) - IDC_EVENT_TYPES - 1) % 2;
-			if (id == 0)
+			if (id == 1)
 			{
 				// Checkboxes
 				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 			}
-			else if (id == 1)
+			else 
 			{
 				if (HIWORD(wParam) == EN_CHANGE)
 					SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);

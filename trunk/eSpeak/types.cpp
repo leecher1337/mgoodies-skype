@@ -86,13 +86,13 @@ int RegisterService(WPARAM wParam, LPARAM lParam)
 	type->cbSize = orig->cbSize;
 	type->module = mir_strdup(orig->module);
 	type->name = mir_strdup(orig->name);
-	type->description = Translate(orig->description);
+	type->description = Translate(mir_strdup(orig->description));
 	type->icon = mir_strdup(orig->icon);
 	type->numTemplates = orig->numTemplates;
 
 	if (orig->numTemplates > 0)
 	{
-		type->templates = (const char **) mir_alloc0(orig->numTemplates * sizeof(char *));
+		type->templates = (char **) mir_alloc0(orig->numTemplates * sizeof(char *));
 		for(int i = 0; i < orig->numTemplates; i++)
 			type->templates[i] = mir_strdup(orig->templates[i] == NULL ? "" : orig->templates[i]);
 	}

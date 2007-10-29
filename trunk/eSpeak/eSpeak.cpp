@@ -869,19 +869,19 @@ Variant *GetContactVariant(HANDLE hContact)
 BOOL StatusEnabled(int status)
 {
 	switch(status) {
-		case ID_STATUS_OFFLINE: return opts.disable_offline;
-		case ID_STATUS_ONLINE: return opts.disable_online;
-		case ID_STATUS_AWAY: return opts.disable_away;
-		case ID_STATUS_DND: return opts.disable_dnd;
-		case ID_STATUS_NA: return opts.disable_na;
-		case ID_STATUS_OCCUPIED: return opts.disable_occupied;
-		case ID_STATUS_FREECHAT: return opts.disable_freechat;
-		case ID_STATUS_INVISIBLE: return opts.disable_invisible;
-		case ID_STATUS_ONTHEPHONE: return opts.disable_onthephone;
-		case ID_STATUS_OUTTOLUNCH: return opts.disable_outtolunch;
+		case ID_STATUS_OFFLINE: return !opts.disable_offline;
+		case ID_STATUS_ONLINE: return !opts.disable_online;
+		case ID_STATUS_AWAY: return !opts.disable_away;
+		case ID_STATUS_DND: return !opts.disable_dnd;
+		case ID_STATUS_NA: return !opts.disable_na;
+		case ID_STATUS_OCCUPIED: return !opts.disable_occupied;
+		case ID_STATUS_FREECHAT: return !opts.disable_freechat;
+		case ID_STATUS_INVISIBLE: return !opts.disable_invisible;
+		case ID_STATUS_ONTHEPHONE: return !opts.disable_onthephone;
+		case ID_STATUS_OUTTOLUNCH: return !opts.disable_outtolunch;
 	}
 
-	return opts.disable_offline;
+	return !opts.disable_offline;
 }
 
 
