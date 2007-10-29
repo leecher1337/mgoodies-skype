@@ -402,7 +402,7 @@ int ServiceRegister(WPARAM wParam, LPARAM lParam)
 
 	if (heh->numTemplates > 0)
 	{
-		char **templates = (char **) malloc(heh->numTemplates * sizeof(char **));
+		char **templates = (char **) malloc(heh->numTemplates * sizeof(char *));
 		for(int i = 0; i < heh->numTemplates; i++)
 			templates[i] = strdup(heh->templates[i] == NULL ? "" : heh->templates[i]);
 		tmp.templates = templates;
@@ -554,8 +554,6 @@ int ServiceReleaseText(WPARAM wParam, LPARAM lParam)
 void GetTemplare(Buffer<TCHAR> *buffer, HISTORY_EVENT_HANDLER *heh, int templ)
 {
 	DBVARIANT dbv;
-
-	TCHAR *ret = NULL;
 
 	char setting[128];
 	mir_snprintf(setting, MAX_REGS(setting), "%d_%d_" TEMPLATE_TEXT, heh->eventType, templ);
