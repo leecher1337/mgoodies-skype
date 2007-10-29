@@ -411,13 +411,9 @@ static BOOL HistoryEvents_IsEnabledTemplate(WORD eventType, int templateNum)
 }
 
 #ifdef UNICODE
-
-#define HistoryEvents_GetTextT HistoryEvents_GetTextW
-
+# define HistoryEvents_GetTextT HistoryEvents_GetTextW
 #else
-
-#define HistoryEvents_GetTextT HistoryEvents_GetTextA
-
+# define HistoryEvents_GetTextT HistoryEvents_GetTextA
 #endif
 
 
