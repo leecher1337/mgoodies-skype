@@ -54,11 +54,13 @@ Boston, MA 02111-1307, USA.
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
 #include "../utils/mir_icons.h"
+#include "../utils/mir_buffer.h"
 #include "../utils/ContactAsyncQueue.h"
 
 #include "resource.h"
 #include "m_speak.h"
 #include "options.h"
+#include "types.h"
 
 #include "eSpeak/speak_lib.h"
 
@@ -139,14 +141,22 @@ extern LIST<Variant> variants;
 extern ContactAsyncQueue *queue;
 
 
+int SpeakService(HANDLE hContact, TCHAR *param);
 void Speak(Voice *voice, Variant *var, TCHAR *text);
+
 Language *GetLanguage(TCHAR *language, BOOL create = FALSE);
+
 Language *GetContactLanguage(HANDLE hContact);
 Voice *GetContactVoice(HANDLE hContact, Language *lang);
 Variant *GetContactVariant(HANDLE hContact);
+
 void GetLangPackLanguage(TCHAR *name, size_t len);
+
 HICON LoadIconEx(Language *lang, BOOL copy = FALSE);
 
+
+#define TEMPLATE_ENABLED "Enabled"
+#define TEMPLATE_TEXT "Text"
 
 
 #endif // __COMMONS_H__

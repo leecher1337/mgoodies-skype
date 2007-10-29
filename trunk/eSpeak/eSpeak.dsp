@@ -186,6 +186,10 @@ SOURCE=..\utils\mir_options.h
 
 SOURCE=.\options.h
 # End Source File
+# Begin Source File
+
+SOURCE=.\types.h
+# End Source File
 # End Group
 # Begin Group "Resource Files"
 
@@ -225,6 +229,10 @@ SOURCE=..\utils\mir_options.cpp
 # Begin Source File
 
 SOURCE=.\options.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\types.cpp
 # End Source File
 # End Group
 # Begin Group "Docs"

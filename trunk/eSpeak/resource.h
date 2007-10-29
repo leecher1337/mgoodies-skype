@@ -1,10 +1,11 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
+// Microsoft Visual C++ generated include file.
 // Used by resource.rc
 //
 #define IDI_UNKNOWN_FLAG                101
 #define IDD_OPTIONS                     119
 #define IDD_CONTACT_LANG                120
+#define IDD_TYPES                       121
 #define ID_OFFLINE                      1060
 #define IDC_ENABLE                      1060
 #define ID_ONLINE                       1061
@@ -28,6 +29,7 @@
 #define IDC_DEF_LANG_L                  1086
 #define IDC_VARIANT_L                   1088
 #define IDC_TEST_L                      1089
+#define IDC_EVENT_TYPES                 1102
 #define IDC_VOICE_L                     65535
 
 // Next default values for new objects

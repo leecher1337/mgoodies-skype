@@ -62,5 +62,12 @@ void DeInitOptions();
 void LoadOptions();
 
 
+BOOL GetSettingBool(SPEAK_TYPE *type, char *setting, BOOL def);
+BOOL GetSettingBool(SPEAK_TYPE *type, int templ, char *setting, BOOL def);
+void WriteSettingBool(SPEAK_TYPE *type, char *setting, BOOL val);
+void WriteSettingBool(SPEAK_TYPE *type, int templ, char *setting, BOOL val);
+void WriteSettingTString(SPEAK_TYPE *type, int templ, char *setting, TCHAR *str);
+
+
 
 #endif // __OPTIONS_H__

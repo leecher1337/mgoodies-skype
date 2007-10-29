@@ -50,8 +50,8 @@ HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 LIST_INTERFACE li;
 
-HANDLE hHooks[2] = {0};
-HANDLE hServices[3] = {0};
+static HANDLE hHooks[3] = {0};
+static HANDLE hServices[2] = {0};
 
 LIST<Language> languages(20);
 LIST<Variant> variants(20);
@@ -98,6 +98,7 @@ TCHAR *aditionalLanguages[] = {
 
 BOOL shutDown = FALSE;
 
+
 // Functions ////////////////////////////////////////////////////////////////////////////
 
 
@@ -107,14 +108,18 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRe
 	return TRUE;
 }
 
-char description[512];
+static void FixPluginDescription()
+{
+	static char description[128];
+	_snprintf(description, MAX_REGS(description), "Speaker plugin based on eSpeak engine (%s)", espeak_Info(NULL));
+	description[MAX_REGS(description)-1] = '\0';
+	pluginInfo.description = description;
+}
 
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
 {
 	pluginInfo.cbSize = sizeof(PLUGININFO);
-	_snprintf(description, MAX_REGS(description), "Speaker plugin based on eSpeak engine (%s)", espeak_Info(NULL));
-	description[MAX_REGS(description)-1] = '\0';
-	pluginInfo.description = description;
+	FixPluginDescription();
 	return (PLUGININFO*) &pluginInfo;
 }
 
@@ -122,9 +127,7 @@ extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVers
 extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
 {
 	pluginInfo.cbSize = sizeof(PLUGININFOEX);
-	_snprintf(description, MAX_REGS(description), "Speaker plugin based on eSpeak engine (%s)", espeak_Info(NULL));
-	description[MAX_REGS(description)-1] = '\0';
-	pluginInfo.description = description;
+	FixPluginDescription();
 	return &pluginInfo;
 }
 
@@ -151,11 +154,15 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	if (GetObject(hCheckedBmp, sizeof(bmpChecked), &bmpChecked) == 0)
 		bmpChecked.bmHeight = bmpChecked.bmWidth = 10;
 
+	InitTypes();
+
 	return 0;
 }
 
 extern "C" int __declspec(dllexport) Unload(void) 
 {
+	FreeTypes();
+
 	DeleteObject(hCheckedBmp);
 
 	for(unsigned i = 0; i < MAX_REGS(hServices); ++i)
@@ -259,7 +266,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		sid.cbSize = sizeof(SKINICONDESC);
 		sid.pszDefaultFile = path;
 		sid.flags = SIDF_TCHAR | SIDF_SORTED;
-		sid.ptszSection = TranslateT("Language/Flags");
+		sid.ptszSection = TranslateT("Languages/Flags");
 
 		// Get language flags
 		for (int i = 0; i < languages.getCount(); i++)
@@ -273,9 +280,34 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			sid.pszName = languages[i]->language;
 #endif
 
-			HICON hFlag;
+			HICON hFlag = LoadIconEx(sid.pszName);
+			if (hFlag != NULL)
+			{
+				// Already registered
+				ReleaseIconEx(hFlag);
+				continue;
+			}
+			
 			if (hFlagsDll != NULL)
+			{
 				hFlag = (HICON) LoadImage(hFlagsDll, languages[i]->language, IMAGE_ICON, 16, 16, 0);
+
+				if (hFlag == NULL)
+				{
+					TCHAR tmp[NAME_SIZE];
+					lstrcpyn(tmp, languages[i]->language, MAX_REGS(tmp));
+					do
+					{
+						TCHAR *p = _tcsrchr(tmp, _T('_'));
+						if (p == NULL)
+							break;
+
+						*p = _T('\0');
+						hFlag = (HICON) LoadImage(hFlagsDll, tmp, IMAGE_ICON, 16, 16, 0);
+					}
+					while(hFlag == NULL);
+				}
+			}
 			else
 				hFlag = NULL;
 
@@ -302,7 +334,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	}
 
 	hServices[0] = CreateServiceFunction(MS_SPEAK_SAY_A, SpeakAService);
-	hServices[1] = CreateServiceFunction(MS_SPEAK_SAY_A, SpeakWService);
+	hServices[1] = CreateServiceFunction(MS_SPEAK_SAY_W, SpeakWService);
 
 	queue = new ContactAsyncQueue(&Speak);
 
@@ -453,7 +485,10 @@ void LoadESpeak()
 #endif
 			TCHAR *tmp = language;
 			while((tmp = _tcschr(tmp, _T('-'))) != NULL)
+			{
 				*tmp = _T('_');
+				CharUpper(tmp);
+			}
 
 
 			Language *lang = GetLanguage(language, TRUE);
