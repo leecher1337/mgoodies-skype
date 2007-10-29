@@ -173,7 +173,7 @@ HANDLE HackCreateServiceFunction(const char *name, MIRANDASERVICE service)
 		return realCreateServiceFunction(name, service);
 
 	// Check if is a set away msg service
-	char *pos = strstr(name, PS_SETAWAYMSG);
+	const char *pos = strstr(name, PS_SETAWAYMSG);
 	if (pos == NULL || *(pos + strlen(PS_SETAWAYMSG)) != '\0')
 		return realCreateServiceFunction(name, service);
 
