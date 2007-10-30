@@ -82,7 +82,7 @@ public:
 	int CheckDB();
 	int OpenDB();
 
-	TEntryHandle getRootEntry();
+	TDBEntryHandle getRootEntry();
 	CEntries & getEntries();
 	CVirtuals & getVirtuals();
 	CSettings & getSettings();
