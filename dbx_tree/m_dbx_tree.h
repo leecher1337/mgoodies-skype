@@ -5,7 +5,9 @@
 /**
 	\brief 
 **/
-typedef unsigned int TEntryHandle;
+typedef unsigned int TDBEntryHandle;
+
+static const unsigned int DB_INVALIDPARAM = 0xFFFFFFFF;
 
 /**
 	\brief Entry isn't a Contact
@@ -105,39 +107,29 @@ static const unsigned int DB_EF_IsVirtual = 0x00000004;
 
 
 typedef
-	struct TDBENTRYITERFILTER
+	struct TDBEntryIterFilter
 	{
 		unsigned int cbSize;
+		bool bDepthFirst;
 		unsigned int fHasFlags;
-		unsigned int fDontHaveFlags;
-		TEntryHandle hStartWith;		
-	} TDBENTRYITERFILTER, *PDBENTRYITERFILTER;
+		unsigned int fDontHasFlags;
+		TDBEntryHandle hParentEntry;		
+	} TDBEntryIterFilter, *PDBEntryIterFilter;
 
+typedef unsigned int TDBEntryIterationHandle;
 /**
-	\brief initialize an enumeration of entries in breadth first search style.
-	
-	Prefer this one over MS_DB_ENTRY_ITER_INITBF because it is faster
-	\param wParam = PDBENTRYITERFILTER
+	\brief initialize an enumeration of entries
+	\param wParam = PDBEntryIterFilter
 	\param lParam = 0
 
 	\return EnumID
 **/
-#define MS_DB_ENTRY_ITER_INITBF "DB/Entry/Iter/InitBF"
+#define MS_DB_ENTRY_ITER_INIT "DB/Entry/Iter/Init"
 
-/**
-	\brief initialize an enumeration of entries in depth first search style.
-	
-	Prefer MS_DB_ENTRY_ITER_INITBF because it is faster
-	\param wParam = PDBENTRYITERFILTER
-	\param lParam = 0
-
-	\return EnumID
-**/
-#define MS_DB_ENTRY_ITER_INITDF "DB/Entry/Iter/InitDF"
 
 /**
 	\brief get the next entry
-	\param wParam = EnumID returned by MS_DB_ENTRY_ITER_INIT*
+	\param wParam = EnumID returned by MS_DB_ENTRY_ITER_INIT
 	\param lParam = 0
 
 	\return hEntry, 0 at the end
@@ -146,7 +138,7 @@ typedef
 
 /**
 	\brief closes an enumeration and frees its ressourcs
-	\param wParam = SearchID returned by MS_DB_ENTRY_ITER_INIT*
+	\param wParam = SearchID returned by MS_DB_ENTRY_ITER_INIT
 	\param lParam = 0
 
 	\return 0 on success
@@ -219,6 +211,6 @@ typedef
 
 
 
-typedef unsigned int TEventHandle;
+typedef unsigned int TDBEventHandle;
 
 #endif

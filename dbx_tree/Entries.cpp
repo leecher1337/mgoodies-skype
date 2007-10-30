@@ -25,15 +25,23 @@ CEntries::CEntries(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronize
 : CFileBTree(FileAccess, RootNode),
 	m_Sync(Synchronize)
 {
-
+	m_IterAllocSize = 1;
+	m_Iterations = new PEntryIteration[1];
 }
 
 CEntries::~CEntries()
 {
+	for (unsigned int i = 0; i < m_IterAllocSize; i++)
+	{
+		if (m_Iterations[i])
+			IterationClose(i + 1);
+	}
+	delete [] m_Iterations;
+
 
 }
 
-TEntryHandle CEntries::getParent(TEntryHandle hEntry)
+TDBEntryHandle CEntries::getParent(TDBEntryHandle hEntry)
 {
 	TEntry entry;
 
@@ -42,18 +50,49 @@ TEntryHandle CEntries::getParent(TEntryHandle hEntry)
 	m_Sync.EndRead();
 
 	if (entry.Signature != cEntrySignature)
-		return -1;
-
-	if (entry.Flags & DB_EF_IsVirtual)
-		return getParent(entry.VParent);
+		return DB_INVALIDPARAM;
 	
 	return entry.ParentEntry;
 }
-TEntryHandle CEntries::setParent(TEntryHandle hEntry, TEntryHandle hParent)
+TDBEntryHandle CEntries::setParent(TDBEntryHandle hEntry, TDBEntryHandle hParent)
 {
-	return 0;	
+	TEntry entry, parententry;
+	
+	m_Sync.BeginWrite();
+	m_FileAccess.Read(&entry, hEntry, sizeof(entry));
+
+	if (entry.Signature != cEntrySignature)
+	{
+		m_Sync.EndWrite();
+		return DB_INVALIDPARAM;
+	}
+
+	m_FileAccess.Read(&parententry, hParent, sizeof(parententry));
+
+	if (parententry.Signature != cEntrySignature)
+	{
+		m_Sync.EndWrite();
+		return DB_INVALIDPARAM;
+	}
+
+	TEntryKey key;
+
+	key.Level = entry.Level;
+	key.Parent = entry.ParentEntry;
+	key.Entry = hEntry;
+	Delete(key);
+
+	key.Level = parententry.Level + 1;
+	key.Parent = hParent;
+	Insert(key, TEmpty());
+
+	m_Sync.EndWrite();
+	/// TODO raise event
+
+	return entry.ParentEntry;
 }
-unsigned int CEntries::getChildCount(TEntryHandle hEntry)
+
+unsigned int CEntries::getChildCount(TDBEntryHandle hEntry)
 {
 	TEntry entry;
 	
@@ -62,11 +101,11 @@ unsigned int CEntries::getChildCount(TEntryHandle hEntry)
 	m_Sync.EndRead();
 
 	if (entry.Signature != cEntrySignature)
-		return -1;
+		return DB_INVALIDPARAM;
 	
 	return entry.ChildCount;
 }
-TEntryHandle CEntries::getFirstChild(TEntryHandle hParent)
+TDBEntryHandle CEntries::getFirstChild(TDBEntryHandle hParent)
 {
 	TEntry entry;
 
@@ -76,7 +115,7 @@ TEntryHandle CEntries::getFirstChild(TEntryHandle hParent)
 	if (entry.Signature != cEntrySignature)
 	{
 		m_Sync.EndRead();
-		return -1;
+		return DB_INVALIDPARAM;
 	}
 
 	TEntryKey key;
@@ -96,7 +135,7 @@ TEntryHandle CEntries::getFirstChild(TEntryHandle hParent)
 	m_Sync.EndRead();
 	return it.Key().Entry;
 }
-TEntryHandle CEntries::getLastChild(TEntryHandle hParent)
+TDBEntryHandle CEntries::getLastChild(TDBEntryHandle hParent)
 {
 	TEntry entry;
 
@@ -106,7 +145,7 @@ TEntryHandle CEntries::getLastChild(TEntryHandle hParent)
 	if (entry.Signature != cEntrySignature)
 	{
 		m_Sync.EndRead();
-		return -1;
+		return DB_INVALIDPARAM;
 	}
 
 	TEntryKey key;
@@ -126,7 +165,7 @@ TEntryHandle CEntries::getLastChild(TEntryHandle hParent)
 	m_Sync.EndRead();
 	return it.Key().Entry;
 }
-TEntryHandle CEntries::getNextSilbing(TEntryHandle hEntry)
+TDBEntryHandle CEntries::getNextSilbing(TDBEntryHandle hEntry)
 {
 	TEntry entry;
 
@@ -136,7 +175,7 @@ TEntryHandle CEntries::getNextSilbing(TEntryHandle hEntry)
 	if (entry.Signature != cEntrySignature)
 	{
 		m_Sync.EndRead();
-		return -1;
+		return DB_INVALIDPARAM;
 	}
 
 	TEntryKey key;
@@ -156,7 +195,7 @@ TEntryHandle CEntries::getNextSilbing(TEntryHandle hEntry)
 	m_Sync.EndRead();
 	return it.Key().Entry;
 }
-TEntryHandle CEntries::getPrevSilbing(TEntryHandle hEntry)
+TDBEntryHandle CEntries::getPrevSilbing(TDBEntryHandle hEntry)
 {
 	TEntry entry;
 
@@ -166,7 +205,7 @@ TEntryHandle CEntries::getPrevSilbing(TEntryHandle hEntry)
 	if (entry.Signature != cEntrySignature)
 	{
 		m_Sync.EndRead();
-		return -1;
+		return DB_INVALIDPARAM;
 	}
 
 	TEntryKey key;
@@ -187,7 +226,7 @@ TEntryHandle CEntries::getPrevSilbing(TEntryHandle hEntry)
 	return it.Key().Entry;
 }
 
-TEntryHandle CEntries::CreateEntry(TEntryHandle hParent, unsigned int Flags)
+TDBEntryHandle CEntries::CreateEntry(TDBEntryHandle hParent, unsigned int Flags)
 {
 	TEntry entry;
 
@@ -197,7 +236,7 @@ TEntryHandle CEntries::CreateEntry(TEntryHandle hParent, unsigned int Flags)
 	if (entry.Signature != cEntrySignature)
 	{
 		m_Sync.EndWrite();
-		return -1;
+		return DB_INVALIDPARAM;
 	}
 
 	entry.ChildCount++;
@@ -227,10 +266,10 @@ TEntryHandle CEntries::CreateEntry(TEntryHandle hParent, unsigned int Flags)
 	m_Sync.EndWrite();
 	return hentry;
 }
-unsigned int CEntries::DeleteEntry(TEntryHandle hEntry)
+unsigned int CEntries::DeleteEntry(TDBEntryHandle hEntry)
 {
 	/// TODO delete settings and events
-	TEntry entry;
+	TEntry entry, z = {0};
 
 	m_Sync.BeginWrite();
 	m_FileAccess.Read(&entry, hEntry, sizeof(entry));
@@ -238,9 +277,10 @@ unsigned int CEntries::DeleteEntry(TEntryHandle hEntry)
 	if (entry.Signature != cEntrySignature)
 	{
 		m_Sync.EndWrite();
-		return -1;
+		return DB_INVALIDPARAM;
 	}
-
+	
+	m_FileAccess.Write(&z, hEntry, sizeof(z));
 	m_FileAccess.Free(hEntry, sizeof(TEntry));
 
 	TEntryKey key;
@@ -260,5 +300,197 @@ unsigned int CEntries::DeleteEntry(TEntryHandle hEntry)
 	m_FileAccess.Write(&entry, key.Parent, sizeof(entry));	
 
 	m_Sync.EndWrite();
+	return 0;
+}
+
+
+
+TDBEntryIterationHandle CEntries::IterationInit(const TDBEntryIterFilter & Filter)
+{
+	TEntry entry;
+
+	m_Sync.BeginWrite();
+	m_FileAccess.Read(&entry, Filter.hParentEntry, sizeof(entry));
+
+	if (entry.Signature != cEntrySignature)
+	{
+		m_Sync.EndWrite();
+		return DB_INVALIDPARAM;
+	}
+
+	if (entry.Flags & DB_EF_HasChilds)
+	{
+		m_Sync.EndWrite();
+		return 0;	
+	}
+
+	unsigned int i = 0;
+
+	while ((i < m_IterAllocSize) && (m_Iterations[i] != NULL))
+		i++;
+
+	if (i == m_IterAllocSize)
+	{
+		PEntryIteration * backup = m_Iterations;
+		m_IterAllocSize = m_IterAllocSize << 1;
+		m_Iterations = new PEntryIteration[m_IterAllocSize];
+		memset(m_Iterations, 0, sizeof(PEntryIteration*) * m_IterAllocSize);
+		memcpy(m_Iterations, backup, sizeof(PEntryIteration*) * (m_IterAllocSize >> 1));
+		delete [] backup;
+	}
+
+	PEntryIteration iter = new TEntryIteration;
+	TEntryKey key;
+	
+	key.Level = entry.Level;
+	key.Parent = entry.ParentEntry;
+	key.Entry = Filter.hParentEntry;
+	
+	iter->filter = Filter;
+	iter->it = new iterator(Find(key));
+	iter->it->setManaged();
+	iter->MinLevel = entry.Level + 1;
+	iter->EndMark = Filter.hParentEntry;		
+	iter->LastEntryWithChilds = Filter.hParentEntry;
+	
+	m_Iterations[i] = iter;
+
+	m_Sync.EndWrite();
+	return i+1;
+}
+TDBEntryHandle CEntries::IterationNext(TDBEntryIterationHandle Iteration)
+{
+	m_Sync.BeginRead();
+
+	if ((Iteration > m_IterAllocSize) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
+	{
+		m_Sync.EndRead();
+		return DB_INVALIDPARAM;
+	}
+
+	PEntryIteration iter = m_Iterations[Iteration - 1];
+
+	if (!iter->it)
+	{
+		IterationClose(Iteration);
+		m_Sync.EndRead();
+		return 0;
+	}
+
+	TDBEntryHandle result = 0;
+	
+	TEntry entry = {0};
+	TEntryKey key = {0};
+	
+	do {
+		
+		if (iter->filter.bDepthFirst)
+		{
+			m_FileAccess.Read(&entry.Flags, iter->it->Key().Entry + offsetof(TEntry, Flags), sizeof(unsigned int));
+
+			if (entry.Flags & DB_EF_HasChilds) // Entry has childs. go down to first
+			{
+				key.Level = iter->it->Key().Level + 1;
+				key.Parent = iter->it->Key().Entry;
+				key.Entry = 0;
+
+				(*iter->it) = LowerBound(key);
+				result = iter->it->Key().Entry;
+
+			} else { // Entry has no childs
+				entry.Level = iter->it->Key().Level;
+				entry.ParentEntry = iter->it->Key().Parent;
+
+				++(*iter->it);	// go to next one
+
+				while ((*iter->it) && (entry.ParentEntry != iter->it->Key().Parent))
+				{
+					result = entry.ParentEntry;
+					m_FileAccess.Read(&entry.ParentEntry, entry.ParentEntry + offsetof(TEntry, ParentEntry), sizeof(TDBEntryHandle));
+					key.Level = entry.Level + 1;
+					key.Parent = entry.ParentEntry;
+					key.Entry = result + 1;
+
+					entry.Level--;
+
+					(*iter->it) = LowerBound(key);
+				}
+
+				if ((*iter->it) && (iter->it->Key().Level >= iter->MinLevel))
+				{
+					result = iter->it->Key().Entry;
+				} else {
+					result = 0;
+				}
+				
+			}
+			
+		} else { // breath first search
+			if (iter->EndMark == iter->it->Key().Entry)  // go a level down
+			{
+				if (iter->LastEntryWithChilds != 0)
+				{
+					key.Level = iter->it->Key().Level + 1;
+					key.Parent = iter->filter.hParentEntry;
+					key.Entry = 0;
+
+					(*iter->it) = LowerBound(key);
+					
+					key.Parent = iter->LastEntryWithChilds;
+					key.Entry = 0xffffffff;				
+
+					iter->EndMark = UpperBound(key).Key().Entry;
+
+					iter->LastEntryWithChilds = 0;
+
+					result = iter->it->Key().Entry;
+				} else {
+					result = 0;
+				}
+			} else {
+				++(*iter->it);
+				
+				result = iter->it->Key().Entry;
+			}
+
+			if (result != 0)
+			{
+				m_FileAccess.Read(&entry.Flags, result + offsetof(TEntry, Flags), sizeof(unsigned int));
+
+				if (entry.Flags & DB_EF_HasChilds)
+				{ 
+					if(iter->LastEntryWithChilds == 0)  // the first entry with childs in this level
+						iter->filter.hParentEntry = result;
+					
+					iter->LastEntryWithChilds = result;					
+				}
+			}
+		}
+
+		if ((result != 0) && ((iter->filter.fHasFlags != 0) || (iter->filter.fDontHasFlags != 0)))
+			m_FileAccess.Read(&entry.Flags, result + offsetof(TEntry, Flags), sizeof(unsigned int));
+
+	} while ((result != 0) && 
+	         ((iter->filter.fHasFlags == 0) || ((entry.Flags & iter->filter.fHasFlags) != 0)) && 
+	         ((iter->filter.fDontHasFlags == 0) || (entry.Flags & iter->filter.fDontHasFlags) == 0));
+
+	m_Sync.EndRead();
+
+	return result;
+}
+unsigned int CEntries::IterationClose(TDBEntryIterationHandle Iteration)
+{
+	m_Sync.BeginWrite();
+
+	if ((Iteration > m_IterAllocSize) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
+	{
+		m_Sync.EndWrite();
+		return DB_INVALIDPARAM;
+	}
+
+	delete m_Iterations[Iteration - 1]->it;
+	delete m_Iterations[Iteration - 1];
+	m_Iterations[Iteration - 1] = NULL;
+
 	return 0;
 }

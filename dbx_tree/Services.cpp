@@ -34,21 +34,17 @@ int DBEntryGetPrevSilbing(WPARAM hEntry, LPARAM lParam)
 {
 	return gDataBase->getEntries().getPrevSilbing(hEntry);
 }
-int DBEntryIterInitBF(WPARAM Filter, LPARAM lParam)
+int DBEntryIterInit(WPARAM Filter, LPARAM lParam)
 {
-	return 0;
-}
-int DBEntryIterInitDF(WPARAM Filter, LPARAM lParam)
-{
-	return 0;
+	return gDataBase->getEntries().IterationInit(*(PDBEntryIterFilter)Filter);
 }
 int DBEntryIterNext(WPARAM hIteration, LPARAM lParam)
 {
-	return 0;
+	return gDataBase->getEntries().IterationNext(hIteration);
 }
-int DBEntryIterClose(WPARAM wParam, LPARAM lParam)
+int DBEntryIterClose(WPARAM hIteration, LPARAM lParam)
 {
-	return 0;
+	return gDataBase->getEntries().IterationClose(hIteration);
 }
 int DBEntryDelete(WPARAM hEntry, LPARAM lParam)
 {
@@ -56,6 +52,7 @@ int DBEntryDelete(WPARAM hEntry, LPARAM lParam)
 }
 int DBEntryCreate(WPARAM hParent, LPARAM Flags)
 {
+	Flags = Flags & ~(DB_EF_HasChilds | DB_EF_IsVirtual); // forbidden flags...
 	return gDataBase->getEntries().CreateEntry(hParent, Flags);
 }
 
@@ -89,8 +86,7 @@ bool RegisterServices()
 	gServices[ 5] = CreateServiceFunction(MS_DB_ENTRY_GETLASTCHILD, DBEntryGetLastChild);
 	gServices[ 6] = CreateServiceFunction(MS_DB_ENTRY_GETNEXTSILBING, DBEntryGetNextSilbing);
 	gServices[ 7] = CreateServiceFunction(MS_DB_ENTRY_GETPREVSILBING, DBEntryGetPrevSilbing);
-	gServices[ 8] = CreateServiceFunction(MS_DB_ENTRY_ITER_INITBF, DBEntryIterInitBF);
-	gServices[ 9] = CreateServiceFunction(MS_DB_ENTRY_ITER_INITDF, DBEntryIterInitDF);
+	gServices[ 8] = CreateServiceFunction(MS_DB_ENTRY_ITER_INIT, DBEntryIterInit);
 	gServices[10] = CreateServiceFunction(MS_DB_ENTRY_ITER_NEXT, DBEntryIterNext);
 	gServices[11] = CreateServiceFunction(MS_DB_ENTRY_ITER_CLOSE, DBEntryIterClose);
 	gServices[12] = CreateServiceFunction(MS_DB_ENTRY_DELETE, DBEntryDelete);

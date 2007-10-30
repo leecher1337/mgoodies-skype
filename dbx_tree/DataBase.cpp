@@ -190,7 +190,7 @@ void CDataBase::onEntriesRootChanged(void* Entries, unsigned int NewRoot)
 
 }
 
-TEntryHandle CDataBase::getRootEntry()
+TDBEntryHandle CDataBase::getRootEntry()
 {
 	return m_PrivateHeader.RootEntry;
 }

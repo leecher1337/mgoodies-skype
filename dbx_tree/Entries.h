@@ -14,8 +14,8 @@
 **/
 typedef struct TEntryKey { 
 	unsigned short Level;   /// Level where Entry is located or parent-steps to root. Root.Level == 0, root children have level 1 etc.
-	TEntryHandle Parent;    /// hEntry of the Parent. Root.Parent == 0
-	TEntryHandle Entry;     /// hEntry of the stored entry itself
+	TDBEntryHandle Parent;    /// hEntry of the Parent. Root.Parent == 0
+	TDBEntryHandle Entry;     /// hEntry of the stored entry itself
 
 	bool operator <  (const TEntryKey & Other) const;
 	//bool operator <= (const TEntryKey & Other);
@@ -30,8 +30,8 @@ typedef struct TEntryKey {
 typedef struct TEntry {
 	unsigned int Signature;   /// Signature 
 	unsigned short Level;     /// Level where Entry is located or parent-steps to root. Root.Level == 0, root children have level 1 etc. !used in the BTreeKey!
-	TEntryHandle ParentEntry; /// hEntry of the Parent. Root.Parent == 0 !used in the BTreeKey!
-	TEntryHandle VParent;     /// if the Entry is Virtual this is the hEntry of the related Realnode
+	TDBEntryHandle ParentEntry; /// hEntry of the Parent. Root.Parent == 0 !used in the BTreeKey!
+	TDBEntryHandle VParent;     /// if the Entry is Virtual this is the hEntry of the related Realnode
 	unsigned int Flags;       /// flags, see cEF_*
 	unsigned int Settings;    /// Offset to the SettingsBTree RootNode of this contact, NULL if no settings are present !invalid for Virtual contact!
 	unsigned int Events;      /// Offset to the EventsBTree RootNode of this contact, NULL if no events are present !invalid for Virtal contact!
@@ -42,35 +42,52 @@ typedef struct TEntry {
 
 #pragma pack(pop)		// pop the alignment from stack
 
+
+static const unsigned int cEntrySignature = 0x9A6B3C0D;
+
+struct TEntryIteration;
+
+
 /**
 	\brief Manages the ContactListEntries in the Database
 
 	A hEntry is equivalent to the fileoffset of its related TEntry structure
 **/
-
-static const unsigned int cEntrySignature = 0x9A6B3C0D;
-
 class CEntries : public CFileBTree<TEntryKey, TEmpty, 6, true>
 {
 private:
 
 protected:
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
+	unsigned int m_IterAllocSize;
+	TEntryIteration **m_Iterations;
 
 public:
 	CEntries(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, unsigned int RootNode);
 	virtual ~CEntries();
 
-	TEntryHandle getParent(TEntryHandle hEntry);
-	TEntryHandle setParent(TEntryHandle hEntry, TEntryHandle hParent);
-	unsigned int getChildCount(TEntryHandle hEntry);
-	TEntryHandle getFirstChild(TEntryHandle hParent);
-	TEntryHandle getLastChild(TEntryHandle hParent);
-	TEntryHandle getNextSilbing(TEntryHandle hEntry);
-	TEntryHandle getPrevSilbing(TEntryHandle hEntry);	
+	TDBEntryHandle getParent(TDBEntryHandle hEntry);
+	TDBEntryHandle setParent(TDBEntryHandle hEntry, TDBEntryHandle hParent);
+	unsigned int getChildCount(TDBEntryHandle hEntry);
+	TDBEntryHandle getFirstChild(TDBEntryHandle hParent);
+	TDBEntryHandle getLastChild(TDBEntryHandle hParent);
+	TDBEntryHandle getNextSilbing(TDBEntryHandle hEntry);
+	TDBEntryHandle getPrevSilbing(TDBEntryHandle hEntry);	
 
-	TEntryHandle CreateEntry(TEntryHandle hParent, unsigned int Flags);
-	unsigned int DeleteEntry(TEntryHandle hEntry);
+	TDBEntryHandle CreateEntry(TDBEntryHandle hParent, unsigned int Flags);
+	unsigned int DeleteEntry(TDBEntryHandle hEntry);
+
+	TDBEntryIterationHandle IterationInit(const TDBEntryIterFilter & Filter);
+	TDBEntryHandle IterationNext(TDBEntryIterationHandle Iteration);
+	unsigned int IterationClose(TDBEntryIterationHandle Iteration);
 
 
 };
+
+
+typedef struct TEntryIteration {
+	TDBEntryIterFilter filter;
+	CEntries::iterator * it;
+	unsigned int MinLevel;
+	TDBEntryHandle EndMark, LastEntryWithChilds;
+} TEntryIteration, *PEntryIteration;
