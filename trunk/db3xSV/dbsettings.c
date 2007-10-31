@@ -466,6 +466,7 @@ static int GetContactSetting(WPARAM wParam,LPARAM lParam)
 			else {
 				dgs->pValue->type = DBVT_ASCIIZ;
 				dgs->pValue->pszVal = mir_strdup( p );
+				mir_free( tmp );
 			}
 		}
 		else {
@@ -488,7 +489,7 @@ static int GetContactSettingStr(WPARAM wParam,LPARAM lParam)
 		return 0;
 
 	if ( ! TYPE_IS_STRING( dgs->pValue->type ))
-		return 0;
+		return 1;
 
 	if ( iSaveType == DBVT_WCHAR ) {
 		if ( dgs->pValue->type != DBVT_UTF8 ) {

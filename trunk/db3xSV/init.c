@@ -47,7 +47,7 @@ static int getCapability( int flag )
 // returns 0 if the profile is created, EMKPRF*
 static int makeDatabase(char * profile, int * error)
 {
-	HANDLE hFile=CreateFile(profile, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+	HANDLE hFile=CreateFileA(profile, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
 	if ( hFile != INVALID_HANDLE_VALUE ) {
 		CreateDbHeaders(hFile);
 		CloseHandle(hFile);
@@ -69,8 +69,8 @@ static int grokHeader( char * profile, int * error )
 	HANDLE hFile = INVALID_HANDLE_VALUE;
 	DWORD dummy=0;
 
-	hFile = CreateFile(profile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-	if ( hFile == INVALID_HANDLE_VALUE ) { 		
+	hFile = CreateFileA(profile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+	if ( hFile == INVALID_HANDLE_VALUE ) {
 		if ( error != NULL ) *error=EGROKPRF_CANTREAD;
 		return 1;
 	}
@@ -237,7 +237,7 @@ static PLUGININFOEX pluginInfo = {
 #else
 	"Miranda Virtualizable database driver",
 #endif
-	PLUGIN_MAKE_VERSION(0,6,0,11),
+	PLUGIN_MAKE_VERSION(0,8,0,11),
 #ifdef SECUREDB
 	"Provides Miranda database support: encryption, virtualisation, global settings, contacts, history, settings per contact, optimized paths.",
 	"Miranda-IM project; YB; Piotr Pawluczuk; Pescuma",
@@ -250,7 +250,7 @@ static PLUGININFOEX pluginInfo = {
 	"Copyright 2000-2007 Miranda-IM project; YB; Pescuma",
 #endif
 	"http://saaplugin.no-ip.info/db3xV/",
-	0,
+	UNICODE_AWARE,
 	DEFMOD_DB,
 #ifdef SECUREDB
 	{0x54f6aa80,0x56de,0x478f,{0x97,0x1b,0x66,0xbf,0x9e,0x65,0x1a,0x0c}} // 54f6aa80-56de-478f-971b-66bf9e651a0c
