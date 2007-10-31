@@ -6,6 +6,11 @@
 #define IDD_OPTIONS                     119
 #define IDD_CONTACT_LANG                120
 #define IDD_TYPES                       121
+#define IDD_ADVANCED                    122
+#define IDC_VOLUME                      1000
+#define IDC_RATE                        1001
+#define IDC_PITCH                       1002
+#define IDC_RANGE                       1003
 #define ID_OFFLINE                      1060
 #define IDC_ENABLE                      1060
 #define ID_ONLINE                       1061
@@ -29,6 +34,11 @@
 #define IDC_DEF_LANG_L                  1086
 #define IDC_VARIANT_L                   1088
 #define IDC_TEST_L                      1089
+#define IDC_VARIANT_L2                  1090
+#define IDC_VOLUME_L                    1090
+#define IDC_RATE_L                      1091
+#define IDC_PITCH_L                     1092
+#define IDC_RANGE_L                     1093
 #define IDC_EVENT_TYPES                 1102
 #define IDC_VOICE_L                     65535
 
@@ -38,7 +48,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        101
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1000
+#define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

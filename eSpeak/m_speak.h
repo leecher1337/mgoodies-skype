@@ -34,16 +34,16 @@ to call
 	Speak_SayA(hContact, "text to speak")
 
 
-2. Integrating with eSpeak GUI: for that you have first to register a speak type and
+2. Integrating with meSpeak GUI: for that you have first to register a speak type and
 then call the speak functions. In both case you have 2 options:
 
-2.1 Sending the full text: eSpeak GUI will only allow to enable/disable the type.
+2.1 Sending the full text: meSpeak GUI will only allow to enable/disable the type.
 To register call (in modules loaded):
 	Speak_Register("PluginName (DB key)", "name", "Prety name for GUI", "icon_xyz")
 And to speak call:
 	Speak_SayEx("name", hContact, _T("text to speak"))
 
-2.2 Using templates: you will not pass the text, but some variables. eSpeak handles
+2.2 Using templates: you will not pass the text, but some variables. meSpeak handles
 the GUI to allow the user to create the text for those variables. These functions
 end with WT (with templates).
 To register call (in modules loaded):

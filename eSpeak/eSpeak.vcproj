@@ -75,7 +75,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/ALIGN:4096 /filealign:0x200 /ignore:4108 "
 				AdditionalDependencies="winmm.lib PAStaticWMME.lib"
-				OutputFile="..\..\bin\debug unicode\Plugins\eSpeakW.dll"
+				OutputFile="..\..\bin\debug unicode\Plugins\meSpeakW.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="lib"
@@ -177,7 +177,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/ALIGN:4096 /filealign:0x200 /ignore:4108 "
 				AdditionalDependencies="winmm.lib PAStaticWMME.lib"
-				OutputFile="..\..\bin\release\Plugins\eSpeakW.dll"
+				OutputFile="..\..\bin\release\Plugins\meSpeakW.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="lib"
@@ -281,7 +281,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/ALIGN:4096 /filealign:0x200 /ignore:4108 "
 				AdditionalDependencies="winmm.lib PAStaticWMME.lib"
-				OutputFile="..\..\bin\release\Plugins\eSpeak.dll"
+				OutputFile="..\..\bin\release\Plugins\meSpeak.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="lib"
@@ -382,7 +382,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/ALIGN:4096 /filealign:0x200 /ignore:4108 "
 				AdditionalDependencies="winmm.lib PAStaticWMME.lib"
-				OutputFile="..\..\bin\debug\Plugins\eSpeak.dll"
+				OutputFile="..\..\bin\debug\Plugins\meSpeak.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="lib"
@@ -767,19 +767,19 @@
 			Name="Docs"
 			>
 			<File
-				RelativePath="Docs\eSpeak_changelog.txt"
+				RelativePath=".\Docs\langpack_meSpeak.txt"
 				>
 			</File>
 			<File
-				RelativePath="Docs\eSpeak_readme.txt"
+				RelativePath=".\Docs\meSpeak_changelog.txt"
 				>
 			</File>
 			<File
-				RelativePath="Docs\eSpeak_version.txt"
+				RelativePath=".\Docs\meSpeak_readme.txt"
 				>
 			</File>
 			<File
-				RelativePath="Docs\langpack_eSpeak.txt"
+				RelativePath=".\Docs\meSpeak_version.txt"
 				>
 			</File>
 		</Filter>

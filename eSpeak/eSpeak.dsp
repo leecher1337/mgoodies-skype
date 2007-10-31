@@ -57,7 +57,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 user32.lib shell32.lib wininet.lib gdi32.lib /nologo /base:"0x67100000" /dll /machine:I386 /filealign:0x200
 # SUBTRACT BASE LINK32 /pdb:none /map
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /map /debug /debugtype:both /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\release\Plugins\eSpeak.dll" /pdbtype:sept /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /map /debug /debugtype:both /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\release\Plugins\meSpeak.dll" /pdbtype:sept /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ELSEIF  "$(CFG)" == "eSpeak - Win32 Debug"
@@ -86,7 +86,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"..\..bin\release\Plugins\eSpeak.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\debug\Plugins\eSpeak.dll" /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\debug\Plugins\meSpeak.dll" /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ELSEIF  "$(CFG)" == "eSpeak - Win32 Unicode Debug"
@@ -115,7 +115,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\eSpeak.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\debug unicode\Plugins\eSpeakW.dll" /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /incremental:yes /debug /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\debug unicode\Plugins\meSpeakW.dll" /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ELSEIF  "$(CFG)" == "eSpeak - Win32 Unicode Release"
@@ -144,7 +144,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /map /machine:I386 /out:"..\..\bin\release\Plugins\eSpeak.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /map /debug /debugtype:both /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\release\Plugins\eSpeakW.dll" /pdbtype:sept /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winmm.lib advapi32.lib PAStaticWMME.lib /nologo /base:"0x3EC20000" /dll /map /debug /debugtype:both /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\bin\release\Plugins\meSpeakW.dll" /pdbtype:sept /libpath:"lib" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ENDIF 
@@ -240,19 +240,19 @@ SOURCE=.\types.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\Docs\eSpeak_changelog.txt
+SOURCE=.\Docs\langpack_meSpeak.txt
 # End Source File
 # Begin Source File
 
-SOURCE=.\Docs\eSpeak_readme.txt
+SOURCE=.\Docs\meSpeak_changelog.txt
 # End Source File
 # Begin Source File
 
-SOURCE=.\Docs\eSpeak_version.txt
+SOURCE=.\Docs\meSpeak_readme.txt
 # End Source File
 # Begin Source File
 
-SOURCE=.\Docs\langpack_eSpeak.txt
+SOURCE=.\Docs\meSpeak_version.txt
 # End Source File
 # End Group
 # Begin Group "eSpeak"

@@ -31,6 +31,7 @@ Options opts;
 static int UserInfoInitialize(WPARAM wParam, LPARAM lParam);
 
 static BOOL CALLBACK UserInfoDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static BOOL CALLBACK SystemDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -51,12 +52,6 @@ static OptPageControl optionsControls[] = {
 	{ &opts.disable_onthephone,		CONTROL_CHECKBOX,		ID_ONTHEPHONE,		"DisableOnThePhone", FALSE },
 	{ &opts.disable_outtolunch,		CONTROL_CHECKBOX,		ID_OUTTOLUNCH,		"DisableOutToLunch", FALSE },
 	{ &opts.use_flags,				CONTROL_CHECKBOX,		IDC_USE_FLAGS,		"UseFlags", TRUE },
-};
-
-static UINT optionsExpertControls[] = { 
-	IDC_STATUS, ID_OFFLINE, ID_ONLINE, ID_AWAY, ID_DND, ID_NA, ID_OCCUPIED, ID_FREECHAT, 
-	ID_INVISIBLE, ID_ONTHEPHONE, ID_OUTTOLUNCH, 
-	IDC_ADVANCED, IDC_USE_FLAGS
 };
 
 
@@ -106,19 +101,17 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	odp.ptszGroup = TranslateT("Events");
 	odp.ptszTitle = TranslateT("Speak");
 	odp.ptszTab = TranslateT("General");
-	odp.pfnDlgProc = OptionsDlgProc;
+	odp.pfnDlgProc = SystemDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPTIONS);
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR;
-	odp.nIDBottomSimpleControl = IDC_SYSTEM;
-	odp.expertOnlyControls = optionsExpertControls;
-	odp.nExpertOnlyControls = MAX_REGS(optionsExpertControls);
     CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
-    ZeroMemory(&odp,sizeof(odp));
-    odp.cbSize = sizeof(odp);
-	odp.hInstance = hInst;
-	odp.ptszGroup = TranslateT("Events");
-	odp.ptszTitle = TranslateT("Speak");
+	odp.ptszTab = TranslateT("Advanced");
+	odp.pfnDlgProc = OptionsDlgProc;
+	odp.pszTemplate = MAKEINTRESOURCEA(IDD_ADVANCED);
+    odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR | ODPF_EXPERTONLY;
+    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+
 	odp.ptszTab = TranslateT("Types");
 	odp.pfnDlgProc = TypesDlgProc;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_TYPES);
@@ -178,7 +171,7 @@ void FillLanguagesCombo(HWND hwndDlg, HANDLE hContact)
 			SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETITEMDATA, pos, (LPARAM) languages[i]);
 	}
 	
-	if (SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SELECTSTRING, -1, (WPARAM) def_lang->full_name) < 0)
+	if (def_lang != NULL && SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SELECTSTRING, -1, (WPARAM) def_lang->full_name) < 0)
 	{
 		SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 		SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETCURSEL, 0, 0);
@@ -254,7 +247,11 @@ void FillVariantsCombo(HWND hwndDlg, HANDLE hContact)
 			SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SETITEMDATA, pos, (LPARAM) variants[i]);
 	}
 
-	if (SendDlgItemMessageA(hwndDlg, IDC_VARIANT, CB_SELECTSTRING, -1, (LPARAM) def_var->name) < 0)
+	if (def_var == NULL)
+	{
+		SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SETCURSEL, 0, 0);
+	}
+	else if (SendDlgItemMessageA(hwndDlg, IDC_VARIANT, CB_SELECTSTRING, -1, (LPARAM) def_var->name) < 0)
 	{
 		SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 		SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_SETCURSEL, 0, 0);
@@ -291,6 +288,7 @@ static Variant *GetVariant(HWND hwndDlg)
 	return (Variant *) SendDlgItemMessage(hwndDlg, IDC_VARIANT, CB_GETITEMDATA, sel, 0);
 }
 
+
 static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
 	switch (msg) 
@@ -301,6 +299,14 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			FillLanguagesCombo(hwndDlg, hContact);
 			FillVoicesCombo(hwndDlg, hContact);
 			FillVariantsCombo(hwndDlg, hContact);
+
+			for (int i = 0; i < NUM_PARAMETERS; i++)
+			{
+				HWND item = GetDlgItem(hwndDlg, PARAMETERS[i].ctrl);
+				SendMessage(item, TBM_SETRANGE, FALSE, MAKELONG(PARAMETERS[i].min, PARAMETERS[i].max));
+				SendMessage(item, TBM_SETPOS, TRUE, GetContactParam(hContact, i));
+			}
+
 			break;
 		}
 
@@ -321,11 +327,18 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 				if (text[0] == _T('\0'))
 					break;
 
+				Language *lang = GetLanguage(hwndDlg);
+				if (lang == NULL)
+					break;
+
 				Voice *voice = GetVoice(hwndDlg);
 				if (voice == NULL)
 					break;
 
-				Speak(voice, GetVariant(hwndDlg), text);
+				SpeakData *data = new SpeakData(lang, voice, GetVariant(hwndDlg), mir_tstrdup(text));
+				for (int i = 0; i < NUM_PARAMETERS; i++)
+					data->setParameter(i, SendMessage(GetDlgItem(hwndDlg, PARAMETERS[i].ctrl), TBM_GETPOS, 0, 0));
+				queue->Add(0, (HANDLE) -1, data);
 			}
 
 			break;
@@ -379,6 +392,9 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 					if (hContact == NULL)
 						opts.default_variant = var;
+
+					for (int i = 0; i < NUM_PARAMETERS; i++)
+						SetContactParam(hContact, i, SendMessage(GetDlgItem(hwndDlg, PARAMETERS[i].ctrl), TBM_GETPOS, 0, 0));
 				}
 			}
 
@@ -454,13 +470,27 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 	return FALSE;
 }
 
+
 static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
+{
+	return SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
+}
+
+
+static BOOL CALLBACK SystemDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
 	switch (msg) 
 	{
 		case WM_INITDIALOG:
 		{
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) NULL);
+			break;
+		}
+
+		case WM_HSCROLL:
+		{
+			//if ((HWND)lParam == GetFocus())
+				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 			break;
 		}
 
@@ -476,10 +506,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 		}
 	}
 
-	BOOL ret = BaseDlgProc(hwndDlg, msg, wParam, lParam);
-	if (!ret)
-		ret = SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
-	return ret;
+	return BaseDlgProc(hwndDlg, msg, wParam, lParam);
 }
 
 
@@ -691,7 +718,7 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 
 						HWND chk = CreateWindowA("BUTTON", name.str, 
 								WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX | BS_AUTOCHECKBOX, 
-								x, pt.y, 120, height, hwndDlg, (HMENU) (id + 2 * i + 1), hInst, NULL);
+								x, pt.y, 120, height, hwndDlg, (HMENU) (id + 2 * i), hInst, NULL);
 						SendMessage(chk, WM_SETFONT, (WPARAM) hFont, FALSE);
 						SendMessage(chk, BM_SETCHECK, GetSettingBool(type, i, TEMPLATE_ENABLED, TRUE) ? BST_CHECKED : BST_UNCHECKED, 0);
 						x += 120;
@@ -702,7 +729,7 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 
 						HWND edit = CreateWindowEx(WS_EX_CLIENTEDGE, _T("EDIT"), templ.str, 
 								WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_AUTOHSCROLL, 
-								x, pt.y, width - (x - pt.x), height, hwndDlg, (HMENU) (id + 2 * i + 2), hInst, NULL);
+								x, pt.y, width - (x - pt.x), height, hwndDlg, (HMENU) (id + 2 * i + 1), hInst, NULL);
 						SendMessage(edit, WM_SETFONT, (WPARAM) hFont, FALSE);
 					}
 				}
@@ -791,7 +818,7 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				break;
 
 			int id = (LOWORD(wParam) - IDC_EVENT_TYPES - 1) % 2;
-			if (id == 1)
+			if (id == 0)
 			{
 				// Checkboxes
 				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
@@ -827,10 +854,10 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 
 					for(int i = 0; i < type->numTemplates; i++)
 					{
-						WriteSettingBool(type, i, TEMPLATE_ENABLED, IsDlgButtonChecked(hwndDlg, id + 2 * i + 1));
+						WriteSettingBool(type, i, TEMPLATE_ENABLED, IsDlgButtonChecked(hwndDlg, id + 2 * i));
 
 						TCHAR tmp[1024];
-						GetDlgItemText(hwndDlg, id + 2 * i + 2, tmp, 1024);
+						GetDlgItemText(hwndDlg, id + 2 * i + 1, tmp, 1024);
 						WriteSettingTString(type, i, TEMPLATE_TEXT, tmp);
 					}
 				}

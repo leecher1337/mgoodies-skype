@@ -4,15 +4,15 @@ rem Batch file to build and upload files
 rem 
 rem TODO: Integration with FL
 
-set name=eSpeak
+set name=meSpeak
 
 rem To upload, this var must be set here or in other batch
 rem set ftp=ftp://<user>:<password>@<ftp>/<path>
 
 echo Building %name% ...
 
-msdev ..\%name%.dsp /MAKE "%name% - Win32 Release" /REBUILD
-msdev ..\%name%.dsp /MAKE "%name% - Win32 Unicode Release" /REBUILD
+msdev ..\eSpeak.dsp /MAKE "eSpeak - Win32 Release" /REBUILD
+msdev ..\eSpeak.dsp /MAKE "eSpeak - Win32 Unicode Release" /REBUILD
 
 echo Generating files for %name% ...
 

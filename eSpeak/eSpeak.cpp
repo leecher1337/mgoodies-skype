@@ -26,16 +26,16 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 #ifdef UNICODE
-	"eSpeak (Unicode)",
+	"meSpeak (Unicode)",
 #else
-	"eSpeak",
+	"meSpeak",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,1),
+	PLUGIN_MAKE_VERSION(0,0,0,2),
 	"Speaker plugin based on eSpeak engine (%s)",
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2007 Ricardo Pescuma Domenecci",
-	"http://pescuma.mirandaim.ru/miranda/eSpeak",
+	"http://pescuma.mirandaim.ru/miranda/meSpeak",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
 #ifdef UNICODE
@@ -210,14 +210,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/eSpeak_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/eSpeak#Changelog";
-		upd.pbBetaVersionPrefix = (BYTE *)"eSpeak ";
+		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/meSpeak_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/mespeak#Changelog";
+		upd.pbBetaVersionPrefix = (BYTE *)"meSpeak ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/eSpeakW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/meSpeakW.zip";
 #else
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/eSpeak.zip";
+		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/meSpeak.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
@@ -229,13 +229,13 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
     // Folders plugin support
 	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
 	{
-		hDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("eSpeak"), 
+		hDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("meSpeak"), 
 					Translate("Languages"), 
 					_T(MIRANDA_PATH) _T("\\Dictionaries\\Voice"));
 
 		FoldersGetCustomPathT(hDictionariesFolder, dictionariesFolder, MAX_REGS(dictionariesFolder), _T("."));
 
-		hFlagsDllFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("eSpeak"), 
+		hFlagsDllFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("meSpeak"), 
 					Translate("Flags DLL"), 
 					_T(MIRANDA_PATH) _T("\\Icons"));
 
@@ -457,7 +457,7 @@ void LoadESpeak()
 
 	if (espeak_Initialize(AUDIO_OUTPUT_SYNCH_PLAYBACK, 0, tmp, 0) == EE_INTERNAL_ERROR)
 	{
-		MessageBox(NULL, _T("Error initializing eSpeak engine"), _T("eSpeak"), MB_OK | MB_ICONERROR);
+		MessageBox(NULL, _T("Error initializing eSpeak engine"), _T("meSpeak"), MB_OK | MB_ICONERROR);
 		mir_free(tmp);
 		return;
 	}
@@ -866,6 +866,21 @@ Variant *GetContactVariant(HANDLE hContact)
 }
 
 
+int GetContactParam(HANDLE hContact, int param)
+{
+	int ret = DBGetContactSettingDword(NULL, MODULE_NAME, PARAMETERS[param].setting, PARAMETERS[param].def);
+	if (hContact != NULL)
+		ret = DBGetContactSettingDword(hContact, MODULE_NAME, PARAMETERS[param].setting, ret);
+	return ret;
+}
+
+
+void SetContactParam(HANDLE hContact, int param, int value)
+{
+	DBWriteContactSettingDword(hContact, MODULE_NAME, PARAMETERS[param].setting, value);
+}
+
+
 BOOL StatusEnabled(int status)
 {
 	switch(status) {
@@ -885,10 +900,12 @@ BOOL StatusEnabled(int status)
 }
 
 
-int SpeakService(HANDLE hContact, TCHAR *param)
+int SpeakService(HANDLE hContact, TCHAR *text)
 {
 	Language *lang;
-	int status;
+	Voice *voice;
+	SpeakData *data;
+	int status, i;
 
 	// Enabled?
 	if (hContact != NULL && !DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", TRUE))
@@ -904,11 +921,19 @@ int SpeakService(HANDLE hContact, TCHAR *param)
 	if (lang == NULL)
 		goto RETURN;
 
-	queue->Add(0, hContact, param);
+	voice = GetContactVoice(hContact, lang);
+	if (voice == NULL)
+		goto RETURN;
+
+	data = new SpeakData(lang, voice, GetContactVariant(hContact), text);
+	for (i = 0; i < NUM_PARAMETERS; i++)
+		data->setParameter(i, GetContactParam(hContact, i));
+	queue->Add(0, hContact, data);
+
 	return 0;
 
 RETURN:
-	mir_free(param);
+	mir_free(text);
 	return -1;
 }
 
@@ -936,46 +961,43 @@ int SpeakWService(WPARAM wParam, LPARAM lParam)
 void Speak(HANDLE hContact, void *param)
 {
 	int status;
-	Language *lang;
-	Voice *voice;
 
-	TCHAR *text = (TCHAR *) param;
-	if (text == NULL)
+	SpeakData *data = (SpeakData *) param;
+	if (data == NULL)
 		return;
 
-	if (hContact != NULL && !DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", TRUE))
-		goto RETURN;
+	if (hContact != (HANDLE) -1)
+	{
+		if (hContact != NULL && !DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", TRUE))
+			goto RETURN;
 
-	status = CallService(MS_CLIST_GETSTATUSMODE, 0, 0);
-	if (!StatusEnabled(status))
-		goto RETURN;
+		status = CallService(MS_CLIST_GETSTATUSMODE, 0, 0);
+		if (!StatusEnabled(status))
+			goto RETURN;
+	}
 
-	lang = GetContactLanguage(hContact);
-	if (lang == NULL)
-		goto RETURN;
-
-	voice = GetContactVoice(hContact, lang);
-	if (voice == NULL)
-		goto RETURN;
-
-	Speak(voice, GetContactVariant(hContact), text);
+	Speak(data);
 
 RETURN:
-	mir_free(text);
+	mir_free(data->text);
+	delete data;
 }
 
 
-void Speak(Voice *voice, Variant *var, TCHAR *text)
+void Speak(SpeakData *data)
 {
-	if (var != NULL)
+	if (data->variant != NULL)
 	{
 		char name[NAME_SIZE];
-		mir_snprintf(name, MAX_REGS(name), "%s+%s", voice->name, var->name);
+		mir_snprintf(name, MAX_REGS(name), "%s+%s", data->voice->name, data->variant->name);
 		espeak_SetVoiceByName(name);
 	}
 	else
-		espeak_SetVoiceByName(voice->name);
+		espeak_SetVoiceByName(data->voice->name);
+
+	for (int i = 0; i < NUM_PARAMETERS; i++)
+		espeak_SetParameter(PARAMETERS[i].eparam, data->getParameter(i), 0);
 	
-	espeak_Synth(text, (lstrlen(text) + 1) * sizeof(TCHAR), 0, POS_CHARACTER, 
+	espeak_Synth(data->text, (lstrlen(data->text) + 1) * sizeof(TCHAR), 0, POS_CHARACTER, 
 				 0, espeakCHARS_TCHAR, NULL, NULL);
 }
