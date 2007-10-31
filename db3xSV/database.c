@@ -131,7 +131,7 @@ int LoadDatabaseModule(void)
 	log0("DB logging running");
 	{
 		DWORD dummy=0;
-		hDbFile=CreateFile(szDbPath,GENERIC_READ|(virtOnBoot?0:GENERIC_WRITE), 0, NULL, OPEN_ALWAYS, 0, NULL);
+		hDbFile=CreateFileA(szDbPath,GENERIC_READ|(virtOnBoot?0:GENERIC_WRITE), FILE_SHARE_READ, NULL, OPEN_ALWAYS, 0, NULL);
 		if ( hDbFile == INVALID_HANDLE_VALUE ) {
 			return 1;
 		}
@@ -192,7 +192,7 @@ static DWORD DatabaseCorrupted=0;
 void __cdecl dbpanic(void *arg)
 {
 	
-	MessageBox(0,Translate("Miranda has detected corruption in your database. This corruption maybe fixed by DBTool.  Please download it from http://www.miranda-im.org. Miranda will now shutdown."),Translate("Database Panic"),MB_SETFOREGROUND|MB_TOPMOST|MB_APPLMODAL|MB_ICONWARNING|MB_OK);
+	MessageBox(0,TranslateT("Miranda has detected corruption in your database. This corruption maybe fixed by DBTool.  Please download it from http://www.miranda-im.org. Miranda will now shutdown."),TranslateT("Database Panic"),MB_SETFOREGROUND|MB_TOPMOST|MB_APPLMODAL|MB_ICONWARNING|MB_OK);
 	TerminateProcess(GetCurrentProcess(),255);
 	return;
 }
