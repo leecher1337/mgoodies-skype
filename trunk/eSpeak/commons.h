@@ -27,6 +27,7 @@ Boston, MA 02111-1307, USA.
 #include <tchar.h>
 #include <stdio.h>
 #include <time.h>
+#include <commctrl.h>
 
 
 // Miranda headers
@@ -65,7 +66,7 @@ Boston, MA 02111-1307, USA.
 #include "eSpeak/speak_lib.h"
 
 
-#define MODULE_NAME		"eSpeak"
+#define MODULE_NAME		"meSpeak"
 
 
 // Global Variables
@@ -135,25 +136,70 @@ public:
 	}
 };
 
+static struct {
+	espeak_PARAMETER eparam;
+	int min;
+	int max;
+	int def;
+	char *setting;
+	int ctrl;
+} PARAMETERS[] = {
+	{ espeakRATE, 80, 369, 165, "Rate", IDC_RATE }, 
+	{ espeakVOLUME, 10, 190, 100, "Volume", IDC_VOLUME }, 
+	{ espeakPITCH, 0, 99, 50, "Pitch", IDC_PITCH }, 
+	{ espeakRANGE, -100, 99, 50, "Range", IDC_RANGE }
+};
+
+#define NUM_PARAMETERS MAX_REGS(PARAMETERS)
+
+class SpeakData
+{
+public:
+	Language *lang;
+	Voice *voice;
+	Variant *variant;
+	TCHAR *text;
+	int parameters[NUM_PARAMETERS];
+
+	SpeakData(Language *aLang, Voice *aVoice, Variant *aVariant, TCHAR *aText)
+	{
+		lang = aLang;
+		voice = aVoice;
+		variant = aVariant;
+		text = aText;
+	}
+
+	void setParameter(int param, int value)
+	{
+		parameters[param] = value;
+	}
+
+	int getParameter(int param)
+	{
+		return parameters[param];
+	}
+};
+
 
 extern LIST<Language> languages;
 extern LIST<Variant> variants;
 extern ContactAsyncQueue *queue;
 
 
-int SpeakService(HANDLE hContact, TCHAR *param);
-void Speak(Voice *voice, Variant *var, TCHAR *text);
+int SpeakService(HANDLE hContact, TCHAR *text);
+void Speak(SpeakData *data);
 
 Language *GetLanguage(TCHAR *language, BOOL create = FALSE);
 
 Language *GetContactLanguage(HANDLE hContact);
 Voice *GetContactVoice(HANDLE hContact, Language *lang);
 Variant *GetContactVariant(HANDLE hContact);
+int GetContactParam(HANDLE hContact, int param);
+void SetContactParam(HANDLE hContact, int param, int value);
 
 void GetLangPackLanguage(TCHAR *name, size_t len);
 
 HICON LoadIconEx(Language *lang, BOOL copy = FALSE);
-
 
 #define TEMPLATE_ENABLED "Enabled"
 #define TEMPLATE_TEXT "Text"

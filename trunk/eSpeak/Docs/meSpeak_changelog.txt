@@ -1,0 +1,12 @@
+meSpeak
+
+Changelog:
+
+. 0.0.0.2
+  * Fix for test speak (while other speak happening at the same time)
+  * Fix for spelling words with accents
+  + Added options for volume, rate, pitch and range
+  + Renamed plugin to meSpeak
+
+. 0.0.0.1
+  + Initial version
