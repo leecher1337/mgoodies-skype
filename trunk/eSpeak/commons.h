@@ -201,6 +201,7 @@ void GetLangPackLanguage(TCHAR *name, size_t len);
 
 HICON LoadIconEx(Language *lang, BOOL copy = FALSE);
 
+#define SPEAK_NAME "SpeakName"
 #define TEMPLATE_ENABLED "Enabled"
 #define TEMPLATE_TEXT "Text"
 

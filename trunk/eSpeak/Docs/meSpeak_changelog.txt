@@ -2,6 +2,11 @@ meSpeak
 
 Changelog:
 
+. 0.0.0.3
+  + Option to prepend name of contact for event types without template
+  * Fix for no voices found
+  * Fix to translate dialog
+  
 . 0.0.0.2
   * Fix for test speak (while other speak happening at the same time)
   * Fix for spelling words with accents

@@ -296,9 +296,12 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 		case WM_INITDIALOG:
 		{
 			HANDLE hContact = (HANDLE) GetWindowLong(hwndDlg, GWL_USERDATA);
-			FillLanguagesCombo(hwndDlg, hContact);
-			FillVoicesCombo(hwndDlg, hContact);
-			FillVariantsCombo(hwndDlg, hContact);
+			if (languages.getCount() > 0)
+			{
+				FillLanguagesCombo(hwndDlg, hContact);
+				FillVoicesCombo(hwndDlg, hContact);
+				FillVariantsCombo(hwndDlg, hContact);
+			}
 
 			for (int i = 0; i < NUM_PARAMETERS; i++)
 			{
@@ -314,6 +317,9 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 		{
 			if (LOWORD(wParam) == IDC_DEF_LANG && HIWORD(wParam) == CBN_SELCHANGE)
 			{
+				if (languages.getCount() <= 0)
+					break;
+
 				HANDLE hContact = (HANDLE) GetWindowLong(hwndDlg, GWL_USERDATA);
 				FillVoicesCombo(hwndDlg, hContact);
 			}
@@ -350,52 +356,52 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
 			{
-				if (languages.getCount() > 0)
+				if (languages.getCount() <= 0)
+					break;
+
+				HANDLE hContact = (HANDLE) GetWindowLong(hwndDlg, GWL_USERDATA);
+
+				// Language
+				Language *lang = GetLanguage(hwndDlg);
+
+				BOOL remove;
+				if (hContact == NULL)
 				{
-					HANDLE hContact = (HANDLE) GetWindowLong(hwndDlg, GWL_USERDATA);
+					TCHAR def[NAME_SIZE];
+					GetLangPackLanguage(def, MAX_REGS(def));
 
-					// Language
-					Language *lang = GetLanguage(hwndDlg);
-
-					BOOL remove;
-					if (hContact == NULL)
-					{
-						TCHAR def[NAME_SIZE];
-						GetLangPackLanguage(def, MAX_REGS(def));
-
-						remove = (lstrcmpi(def, lang->language) == 0);
-					}
-					else
-						remove = FALSE;
-
-					if (remove)
-						DBDeleteContactSetting(hContact, MODULE_NAME, "TalkLanguage");
-					else
-						DBWriteContactSettingTString(hContact, MODULE_NAME, "TalkLanguage", lang->language);
-
-					if (hContact == NULL)
-						opts.default_language = lang;
-
-					// Voice
-					Voice *voice = GetVoice(hwndDlg);
-					if (voice == NULL)
-						voice = lang->voices[0];
-
-					DBWriteContactSettingString(hContact, MODULE_NAME, "Voice", voice->name);
-
-					if (hContact == NULL)
-						opts.default_voice = voice;
-
-					// Variant
-					Variant *var = GetVariant(hwndDlg);
-					DBWriteContactSettingString(hContact, MODULE_NAME, "Variant", var->name);
-
-					if (hContact == NULL)
-						opts.default_variant = var;
-
-					for (int i = 0; i < NUM_PARAMETERS; i++)
-						SetContactParam(hContact, i, SendMessage(GetDlgItem(hwndDlg, PARAMETERS[i].ctrl), TBM_GETPOS, 0, 0));
+					remove = (lstrcmpi(def, lang->language) == 0);
 				}
+				else
+					remove = FALSE;
+
+				if (remove)
+					DBDeleteContactSetting(hContact, MODULE_NAME, "TalkLanguage");
+				else
+					DBWriteContactSettingTString(hContact, MODULE_NAME, "TalkLanguage", lang->language);
+
+				if (hContact == NULL)
+					opts.default_language = lang;
+
+				// Voice
+				Voice *voice = GetVoice(hwndDlg);
+				if (voice == NULL)
+					voice = lang->voices[0];
+
+				DBWriteContactSettingString(hContact, MODULE_NAME, "Voice", voice->name);
+
+				if (hContact == NULL)
+					opts.default_voice = voice;
+
+				// Variant
+				Variant *var = GetVariant(hwndDlg);
+				DBWriteContactSettingString(hContact, MODULE_NAME, "Variant", var->name);
+
+				if (hContact == NULL)
+					opts.default_variant = var;
+
+				for (int i = 0; i < NUM_PARAMETERS; i++)
+					SetContactParam(hContact, i, SendMessage(GetDlgItem(hwndDlg, PARAMETERS[i].ctrl), TBM_GETPOS, 0, 0));
 			}
 
 			break;
@@ -483,14 +489,14 @@ static BOOL CALLBACK SystemDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 	{
 		case WM_INITDIALOG:
 		{
+			TranslateDialogDefault(hwndDlg);
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) NULL);
 			break;
 		}
 
 		case WM_HSCROLL:
 		{
-			//if ((HWND)lParam == GetFocus())
-				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+			SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 			break;
 		}
 
@@ -696,6 +702,15 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 							x, pt.y, width - (x - pt.x), height, hwndDlg, (HMENU) id, hInst, NULL);
 					SendMessage(chk, BM_SETCHECK, GetSettingBool(type, TEMPLATE_ENABLED, TRUE) ? BST_CHECKED : BST_UNCHECKED, 0);
 					SendMessage(chk, WM_SETFONT, (WPARAM) hFont, FALSE);
+
+					pt.y += height + 3;
+					x = pt.x + 20;
+
+					chk = CreateWindow(_T("BUTTON"), TranslateT("Speak contact name before text"), 
+							WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX | BS_AUTOCHECKBOX, 
+							x, pt.y, width - (x - pt.x), height, hwndDlg, (HMENU) id + 2, hInst, NULL);
+					SendMessage(chk, BM_SETCHECK, GetSettingBool(type, SPEAK_NAME, TRUE) ? BST_CHECKED : BST_UNCHECKED, 0);
+					SendMessage(chk, WM_SETFONT, (WPARAM) hFont, FALSE);
 				}
 				else
 				{
@@ -846,7 +861,8 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				{
 					// No templates
 
-					WriteSettingBool(type, TEMPLATE_ENABLED, IsDlgButtonChecked(hwndDlg, id));
+					WriteSettingBool(type, TEMPLATE_ENABLED, IsDlgButtonChecked(hwndDlg, id));					
+					WriteSettingBool(type, SPEAK_NAME, IsDlgButtonChecked(hwndDlg, id + 2));
 				}
 				else
 				{
