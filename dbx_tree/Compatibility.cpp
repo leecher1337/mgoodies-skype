@@ -44,46 +44,36 @@ int IsDbContact(WPARAM hEntry,LPARAM lParam)
 }
 int GetContactCount(WPARAM wParam,LPARAM lParam)
 {
+	TDBEntryHandle hEntry=NULL;
 	TDBEntryIterFilter IterFilter;
 	IterFilter.fDontHasFlags=DB_EF_IsGroup|DB_EF_IsVirtual;
 	TDBEntryIterationHandle hIter=DBEntryIterInit((WPARAM)&IterFilter,0);
 	int nCount=0;
 	while(hIter!=DB_INVALIDPARAM && hIter!=0)
 	{
-		nCount++;
-		hIter=DBEntryIterNext(hIter,0);
+		hEntry=DBEntryIterNext(hIter,0);
+		if(hEntry!=0 && hEntry!= DB_INVALIDPARAM)
+			nCount++;
 	}
 	DBEntryIterClose(hIter,0);
 	return nCount;
 }
 int FindFirstContact(WPARAM wParam,LPARAM lParam)
 {
-	int ret=NULL;
+	TDBEntryHandle hEntry=NULL;
 	TDBEntryIterFilter IterFilter;
 	IterFilter.fDontHasFlags=DB_EF_IsGroup|DB_EF_IsVirtual;
 	TDBEntryIterationHandle hIter=DBEntryIterInit((WPARAM)&IterFilter,0);
 	if(hIter!=DB_INVALIDPARAM && hIter!=0)
-		ret=hIter;
+		hEntry=DBEntryIterNext(hIter,0);
 	DBEntryIterClose(hIter,0);
-	return ret;
+	if(hEntry==0 || hEntry== DB_INVALIDPARAM)
+		return NULL;
+	else
+		return hEntry;
 }
 int FindNextContact(WPARAM hEntry,LPARAM lParam)
 {
-	int ret=NULL;
-	TDBEntryIterFilter IterFilter;
-	IterFilter.fDontHasFlags=DB_EF_IsGroup|DB_EF_IsVirtual;
-	TDBEntryIterationHandle hIter=DBEntryIterInit((WPARAM)&IterFilter,0);
-	if(hIter!=DB_INVALIDPARAM && hIter!=0)
-		ret=DBEntryIterNext(hEntry,0);
-	DBEntryIterClose(hIter,0);
-	if(ret==DB_INVALIDPARAM || hIter==0)
-		return NULL;
-	else
-		return ret;
+	TDBEntryHandle hEntry=NULL;
+	return hEntry;
 }
-
-
-
-
-
-
