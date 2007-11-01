@@ -292,6 +292,10 @@
 			Name="Interface"
 			>
 			<File
+				RelativePath=".\Compatibility.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\DatabaseLink.cpp"
 				>
 			</File>
@@ -308,6 +312,10 @@
 				>
 				<File
 					RelativePath=".\BTree.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Compatibility.h"
 					>
 				</File>
 				<File

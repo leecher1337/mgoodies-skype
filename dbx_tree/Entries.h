@@ -2,6 +2,7 @@
 #include "Interface.h"
 #include "FileBTree.h"
 #include "MREWSync.h"
+#include "Virtuals.h"
 
 #pragma pack(push)  // push current alignment to stack
 #pragma pack(1)     // set alignment to 1 byte boundary
@@ -59,11 +60,13 @@ private:
 
 protected:
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
+	CVirtuals & m_Virtuals;
+
 	unsigned int m_IterAllocSize;
 	TEntryIteration **m_Iterations;
 
 public:
-	CEntries(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, unsigned int RootNode);
+	CEntries(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, CVirtuals & Virtuals, unsigned int RootNode);
 	virtual ~CEntries();
 
 	TDBEntryHandle getParent(TDBEntryHandle hEntry);
@@ -75,6 +78,7 @@ public:
 	TDBEntryHandle getPrevSilbing(TDBEntryHandle hEntry);	
 
 	TDBEntryHandle CreateEntry(TDBEntryHandle hParent, unsigned int Flags);
+	TDBEntryHandle CreateVirtualEntry(TDBEntryHandle hRealEntry, TDBEntryHandle hParent);
 	unsigned int DeleteEntry(TDBEntryHandle hEntry);
 
 	TDBEntryIterationHandle IterationInit(const TDBEntryIterFilter & Filter);
