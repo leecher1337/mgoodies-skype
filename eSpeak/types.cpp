@@ -193,10 +193,19 @@ int SpeakExService(WPARAM wParam, LPARAM lParam)
 		if (!GetSettingBool(type, TEMPLATE_ENABLED, TRUE))
 			return 1;
 
+		Buffer<TCHAR> buff;
+		if (GetSettingBool(type, SPEAK_NAME, TRUE) && item->hContact != NULL && item->hContact != (HANDLE) -1)
+		{
+			buff.append((TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) item->hContact, GCDNF_TCHAR));
+			buff.append(_T(" : "));
+		}
+
 		if (item->flags & SPEAK_CHAR)
-			return SpeakService(item->hContact, mir_a2t((char *) item->text));
+			buff.append((char *) item->text);
 		else
-			return SpeakService(item->hContact, mir_u2t((WCHAR *) item->text));
+			buff.append((WCHAR *) item->text);
+		
+		return SpeakService(item->hContact, buff.detach());
 	}
 	else
 	{

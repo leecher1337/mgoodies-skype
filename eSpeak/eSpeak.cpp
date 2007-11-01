@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"meSpeak",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,2),
+	PLUGIN_MAKE_VERSION(0,0,0,3),
 	"Speaker plugin based on eSpeak engine (%s)",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -561,7 +561,7 @@ void LoadESpeak()
 			}
 		}
 	}
-
+/*
 	for (i = 0; i < languages.getCount(); i++)
 	{
 		Language *lang = languages[i];
@@ -586,6 +586,7 @@ void LoadESpeak()
 			OutputDebugStringA("\n");
 		}
 	}
+*/
 }
 
 
@@ -965,6 +966,9 @@ void Speak(HANDLE hContact, void *param)
 	SpeakData *data = (SpeakData *) param;
 	if (data == NULL)
 		return;
+
+	if (languages.getCount() < 1)
+		goto RETURN;
 
 	if (hContact != (HANDLE) -1)
 	{
