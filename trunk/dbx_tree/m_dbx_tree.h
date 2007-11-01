@@ -21,6 +21,11 @@ static const unsigned int DB_EF_HasChilds = 0x00000002;
 	\brief Entry is a Virtual Copy
 **/
 static const unsigned int DB_EF_IsVirtual = 0x00000004;
+/**
+	\brief Entry has min one Virtual Copy
+**/
+static const unsigned int DB_EF_HasVirtuals = 0x00000008;
+
 
 ///////////////////////////////////////////////////////////
 // Entries

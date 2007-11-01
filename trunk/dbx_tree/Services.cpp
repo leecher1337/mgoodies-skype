@@ -36,6 +36,9 @@ int DBEntryGetPrevSilbing(WPARAM hEntry, LPARAM lParam)
 }
 int DBEntryIterInit(WPARAM Filter, LPARAM lParam)
 {
+	if (((PDBEntryIterFilter)Filter)->fDontHasFlags & ((PDBEntryIterFilter)Filter)->fHasFlags)
+		return DB_INVALIDPARAM;
+
 	return gDataBase->getEntries().IterationInit(*(PDBEntryIterFilter)Filter);
 }
 int DBEntryIterNext(WPARAM hIteration, LPARAM lParam)
@@ -52,7 +55,7 @@ int DBEntryDelete(WPARAM hEntry, LPARAM lParam)
 }
 int DBEntryCreate(WPARAM hParent, LPARAM Flags)
 {
-	Flags = Flags & ~(DB_EF_HasChilds | DB_EF_IsVirtual); // forbidden flags...
+	Flags = Flags & ~(DB_EF_HasChilds | DB_EF_IsVirtual | DB_EF_HasVirtuals); // forbidden flags...
 	return gDataBase->getEntries().CreateEntry(hParent, Flags);
 }
 

@@ -170,7 +170,7 @@ int CDataBase::OpenDB()
 	m_Virtuals = new CVirtuals(*m_PrivateFile, m_Sync, m_PrivateHeader.Virtuals);
 	m_Virtuals->sigRootChanged().connect(this, &CDataBase::onVirtualsRootChanged);
 
-	m_Entries = new CEntries(*m_PrivateFile, m_Sync, m_PrivateHeader.Entries);
+	m_Entries = new CEntries(*m_PrivateFile, m_Sync, *m_Virtuals, m_PrivateHeader.Entries);
 	m_Entries->sigRootChanged().connect(this, &CDataBase::onEntriesRootChanged);
 
 	return 0;

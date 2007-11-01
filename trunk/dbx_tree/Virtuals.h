@@ -1,6 +1,7 @@
 #pragma once
 #include "FileBTree.h"
 #include "MREWSync.h"
+#include "Interface.h"
 
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
@@ -14,7 +15,7 @@
 **/
 typedef struct TVirtualKey {
 	unsigned int RealEntry;   /// hEntry of the duplicated RealEntry
-	unsigned int Entry;       /// hEntry of the virtual copy
+	unsigned int Virtual;       /// hEntry of the virtual copy
 
 	bool operator <  (const TVirtualKey & Other) const;
 	//bool operator <= (const TVirtualKey & Other);
@@ -42,4 +43,19 @@ protected:
 public:
 	CVirtuals(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, unsigned int Root);
 	virtual ~CVirtuals();
+
+	/**
+		\brief Changes reference for all copies to the first Virtual in list
+
+		\return New Orginal (previously first Virtual) to associate data with
+	**/
+	TDBEntryHandle DeleteRealEntry(TDBEntryHandle hRealEntry);
+	
+	unsigned int InsertVirtual(TDBEntryHandle hRealEntry, TDBEntryHandle hVirtual);
+	void DeleteVirtual(TDBEntryHandle hRealEntry, TDBEntryHandle hVirtual);
+
+	
+	TDBEntryHandle getParent(TDBEntryHandle hVirtual);
+	TDBEntryHandle getFirst(TDBEntryHandle hRealEntry);
+	TDBEntryHandle getNext(TDBEntryHandle hVirtual);
 };

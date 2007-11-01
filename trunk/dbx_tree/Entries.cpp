@@ -21,9 +21,10 @@ __forceinline bool TEntryKey::operator >  (const TEntryKey & Other) const
 	return false;
 }
 
-CEntries::CEntries(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, unsigned int RootNode)
+CEntries::CEntries(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, CVirtuals & Virtuals, unsigned int RootNode)
 : CFileBTree(FileAccess, RootNode),
-	m_Sync(Synchronize)
+	m_Sync(Synchronize),
+	m_Virtuals(Virtuals)
 {
 	m_IterAllocSize = 1;
 	m_Iterations = new PEntryIteration[1];
@@ -266,9 +267,73 @@ TDBEntryHandle CEntries::CreateEntry(TDBEntryHandle hParent, unsigned int Flags)
 	m_Sync.EndWrite();
 	return hentry;
 }
+
+TDBEntryHandle CEntries::CreateVirtualEntry(TDBEntryHandle hRealEntry, TDBEntryHandle hParent)
+{
+	TEntry entry, parent;
+
+	m_Sync.BeginWrite();
+
+	m_FileAccess.Read(&entry, hRealEntry, sizeof(entry));
+	
+	if ((entry.Signature != cEntrySignature) || (entry.Flags & DB_EF_IsGroup))
+	{
+		m_Sync.EndWrite();
+		return DB_INVALIDPARAM;
+	}
+
+	m_FileAccess.Read(&parent, hParent, sizeof(parent));
+	
+	if (parent.Signature != cEntrySignature)
+	{
+		m_Sync.EndWrite();
+		return DB_INVALIDPARAM;
+	}
+
+	if (entry.Flags & DB_EF_IsVirtual)
+	{
+		hRealEntry = entry.VParent;
+		m_FileAccess.Read(&entry.Flags, hRealEntry + offsetof(TEntry, Flags), sizeof(unsigned int));
+	}
+
+	if ((entry.Flags & DB_EF_HasVirtuals) == 0)
+	{
+		entry.Flags |= DB_EF_HasVirtuals;
+		m_FileAccess.Write(&entry.Flags, hRealEntry + offsetof(TEntry, Flags), sizeof(unsigned int));
+	}
+
+
+	parent.ChildCount++;
+	parent.Flags = entry.Flags | DB_EF_HasChilds;
+	m_FileAccess.Write(&parent, hParent, sizeof(entry));
+
+	unsigned int hentry = m_FileAccess.Alloc(sizeof(TEntry));
+	TEntryKey key;
+	
+	parent.Level++;
+	parent.ParentEntry = hParent;
+	parent.VParent = hRealEntry;
+	parent.Flags = DB_EF_IsVirtual;
+	parent.Settings = 0;
+	parent.Events = 0;
+	parent.ChildCount = 0;
+	parent.EventCount = 0;
+
+	m_FileAccess.Write(&parent, hentry, sizeof(parent));
+
+	key.Level = parent.Level;
+	key.Parent = hParent;
+	key.Entry = hentry;
+
+	Insert(key, TEmpty());
+
+	m_Virtuals.InsertVirtual(hRealEntry, hentry);
+
+	m_Sync.EndWrite();
+	return hentry;
+}
 unsigned int CEntries::DeleteEntry(TDBEntryHandle hEntry)
 {
-	/// TODO delete settings and events
 	TEntry entry, z = {0};
 
 	m_Sync.BeginWrite();
@@ -280,6 +345,22 @@ unsigned int CEntries::DeleteEntry(TDBEntryHandle hEntry)
 		return DB_INVALIDPARAM;
 	}
 	
+	if (entry.Flags & DB_EF_HasVirtuals)
+	{
+		// move virtuals and make one of them real
+		TDBEntryHandle newreal = m_Virtuals.DeleteRealEntry(hEntry);
+		TEntry real;
+
+		m_FileAccess.Read(&real, newreal, sizeof(real));
+		real.EventCount = entry.EventCount;
+		real.Events = entry.Events;
+		real.Settings = entry.Settings;
+
+		m_FileAccess.Write(&real, newreal, sizeof(real));
+	} else {
+		// TODO delete settings and events
+	}
+
 	m_FileAccess.Write(&z, hEntry, sizeof(z));
 	m_FileAccess.Free(hEntry, sizeof(TEntry));
 
