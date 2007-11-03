@@ -60,6 +60,8 @@ int CDataBase::CreateDB()
 		return EMKPRF_CREATEFAILED;
 	}
 
+	TEntry entry = {0};
+
 	memcpy(m_SettingsHeader.Signature, cSettingsSignature, sizeof(cSettingsSignature));
 	m_SettingsHeader.Version = cDBVersion;
 	m_SettingsHeader.Settings = 0;
@@ -72,14 +74,18 @@ int CDataBase::CreateDB()
 
 	memcpy(m_PrivateHeader.Signature, cPrivateSignature, sizeof(cPrivateSignature));
 	m_PrivateHeader.Version = cDBVersion;
-	m_PrivateHeader.RootEntry = 0;
+	m_PrivateHeader.RootEntry = sizeof(m_PrivateHeader);
 	m_PrivateHeader.Entries = 0;
 	m_PrivateHeader.Virtuals = 0;
-	m_PrivateHeader.FileSize = sizeof(m_PrivateHeader);
+	m_PrivateHeader.FileSize = sizeof(m_PrivateHeader) + sizeof(entry);
 	m_PrivateHeader.WastedBytes = 0;
 	m_PrivateHeader.EventIndex = 1;
 
 	m_PrivateFile->Write(&m_PrivateHeader, 0, sizeof(m_PrivateHeader));
+
+	entry.Flags = DB_EF_IsGroup;
+	m_PrivateFile->Write(&entry, sizeof(m_PrivateHeader), sizeof(entry));	
+
 	delete m_PrivateFile;
 	m_PrivateFile = NULL;
 
@@ -176,6 +182,16 @@ int CDataBase::OpenDB()
 	return 0;
 }
 
+void CDataBase::ReWriteSettingsHeader()
+{
+	m_SettingsFile->Write(&m_SettingsHeader, 0, sizeof(m_SettingsHeader));
+	
+}
+void CDataBase::ReWritePrivateHeader()
+{
+	m_PrivateFile->Write(&m_PrivateHeader, 0, sizeof(m_PrivateHeader));
+}
+
 
 void CDataBase::onSettingsRootChanged(void* Settings, unsigned int NewRoot)
 {
@@ -192,7 +208,7 @@ void CDataBase::onEntriesRootChanged(void* Entries, unsigned int NewRoot)
 
 TDBEntryHandle CDataBase::getRootEntry()
 {
-	return m_PrivateHeader.RootEntry;
+	return m_PrivateHeader.RootEntry;  // the root is never changed -> no need to call Sync.BeginRead
 }
 
 CEntries & CDataBase::getEntries()

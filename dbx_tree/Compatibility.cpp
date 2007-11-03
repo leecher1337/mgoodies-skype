@@ -40,12 +40,14 @@ int DeleteContact(WPARAM hEntry,LPARAM lParam)
 }
 int IsDbContact(WPARAM hEntry,LPARAM lParam)
 {
-	return NULL;
+	int flags = DBEntryGetFlags(hEntry, 0);
+	return (flags != DB_INVALIDPARAM) && ((flags & DB_EF_IsGroup) == 0);
 }
 int GetContactCount(WPARAM wParam,LPARAM lParam)
 {
 	TDBEntryHandle hEntry=NULL;
-	TDBEntryIterFilter IterFilter;
+	TDBEntryIterFilter IterFilter = {0};
+	IterFilter.cbSize = sizeof(IterFilter);
 	IterFilter.fDontHasFlags=DB_EF_IsGroup|DB_EF_IsVirtual;
 	TDBEntryIterationHandle hIter=DBEntryIterInit((WPARAM)&IterFilter,0);
 	int nCount=0;
@@ -61,7 +63,8 @@ int GetContactCount(WPARAM wParam,LPARAM lParam)
 int FindFirstContact(WPARAM wParam,LPARAM lParam)
 {
 	TDBEntryHandle hEntry=NULL;
-	TDBEntryIterFilter IterFilter;
+	TDBEntryIterFilter IterFilter = {0};
+	IterFilter.cbSize = sizeof(IterFilter);
 	IterFilter.fDontHasFlags=DB_EF_IsGroup|DB_EF_IsVirtual;
 	TDBEntryIterationHandle hIter=DBEntryIterInit((WPARAM)&IterFilter,0);
 	if(hIter!=DB_INVALIDPARAM && hIter!=0)
@@ -74,6 +77,43 @@ int FindFirstContact(WPARAM wParam,LPARAM lParam)
 }
 int FindNextContact(WPARAM hEntry,LPARAM lParam)
 {
-	TDBEntryHandle hEntry=NULL;
-	return hEntry;
+	TDBEntryHandle res = 0;
+	TDBEntryIterFilter filter;
+	filter.cbSize = sizeof(filter);
+	filter.fDontHasFlags = DB_EF_IsGroup | DB_EF_IsVirtual;
+	if ((hEntry == 0) || (hEntry == gDataBase->getRootEntry()))
+	{
+		TDBEntryIterationHandle hiter = DBEntryIterInit((WPARAM)&filter, 0);
+		if ((hiter == 0) || (hiter == DB_INVALIDPARAM))
+			return 0;
+
+		res = DBEntryIterNext(hiter, 0);
+		if (res == DB_INVALIDPARAM)
+			res = 0;
+
+		DBEntryIterClose(hiter, 0);
+	} else {
+		filter.hParentEntry = hEntry;
+
+		TDBEntryIterationHandle hiter = DBEntryIterInit((WPARAM)&filter, 0);
+		if ((hiter == 0) || (hiter == DB_INVALIDPARAM))
+			return 0;
+
+		res = DBEntryIterNext(hiter, 0);
+		while ((res != 0) && (res != DB_INVALIDPARAM) && (res != hEntry))
+			res = DBEntryIterNext(hiter, 0);
+
+		if ((res != 0) && (res != DB_INVALIDPARAM))
+		{
+			res = DBEntryIterNext(hiter, 0);
+			if (res == DB_INVALIDPARAM)
+				res = 0;
+		} else {
+			res = 0;
+		}
+
+		DBEntryIterClose(hiter, 0);		
+	}
+
+	return res;
 }

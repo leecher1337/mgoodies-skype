@@ -121,6 +121,17 @@ typedef
 		TDBEntryHandle hParentEntry;		
 	} TDBEntryIterFilter, *PDBEntryIterFilter;
 
+
+/** 
+	\brief 
+  \param wParam = hEntry
+  \param lParam = 0
+
+	\return Flags
+**/
+#define MS_DB_ENTRY_GETFLAGS "DB/Entry/GetFlags"
+
+
 typedef unsigned int TDBEntryIterationHandle;
 /**
 	\brief initialize an enumeration of entries
@@ -163,7 +174,7 @@ typedef unsigned int TDBEntryIterationHandle;
 /** 
 	\brief 
   \param wParam = hParentEntry
-  \param lParam = 0
+  \param lParam = Flags
 
 	\return hEntry on success, 0 otherwise
 **/

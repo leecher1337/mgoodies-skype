@@ -69,6 +69,7 @@ public:
 	CEntries(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, CVirtuals & Virtuals, unsigned int RootNode);
 	virtual ~CEntries();
 
+	//Services:
 	TDBEntryHandle getParent(TDBEntryHandle hEntry);
 	TDBEntryHandle setParent(TDBEntryHandle hEntry, TDBEntryHandle hParent);
 	unsigned int getChildCount(TDBEntryHandle hEntry);
@@ -76,6 +77,7 @@ public:
 	TDBEntryHandle getLastChild(TDBEntryHandle hParent);
 	TDBEntryHandle getNextSilbing(TDBEntryHandle hEntry);
 	TDBEntryHandle getPrevSilbing(TDBEntryHandle hEntry);	
+	unsigned int getFlags(TDBEntryHandle hEntry);
 
 	TDBEntryHandle CreateEntry(TDBEntryHandle hParent, unsigned int Flags);
 	TDBEntryHandle CreateVirtualEntry(TDBEntryHandle hRealEntry, TDBEntryHandle hParent);

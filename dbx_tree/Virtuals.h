@@ -54,7 +54,7 @@ public:
 	unsigned int InsertVirtual(TDBEntryHandle hRealEntry, TDBEntryHandle hVirtual);
 	void DeleteVirtual(TDBEntryHandle hRealEntry, TDBEntryHandle hVirtual);
 
-	
+	// services:
 	TDBEntryHandle getParent(TDBEntryHandle hVirtual);
 	TDBEntryHandle getFirst(TDBEntryHandle hRealEntry);
 	TDBEntryHandle getNext(TDBEntryHandle hVirtual);

@@ -227,6 +227,20 @@ TDBEntryHandle CEntries::getPrevSilbing(TDBEntryHandle hEntry)
 	return it.Key().Entry;
 }
 
+unsigned int CEntries::getFlags(TDBEntryHandle hEntry)
+{
+	TEntry entry;
+
+	m_Sync.BeginRead();
+	m_FileAccess.Read(&entry, hEntry, sizeof(entry));
+	m_Sync.EndRead();
+
+	if (entry.Signature != cEntrySignature)
+		return DB_INVALIDPARAM;
+
+	return entry.Flags;
+}
+
 TDBEntryHandle CEntries::CreateEntry(TDBEntryHandle hParent, unsigned int Flags)
 {
 	TEntry entry;
@@ -334,7 +348,8 @@ TDBEntryHandle CEntries::CreateVirtualEntry(TDBEntryHandle hRealEntry, TDBEntryH
 }
 unsigned int CEntries::DeleteEntry(TDBEntryHandle hEntry)
 {
-	TEntry entry, z = {0};
+	TEntry entry, parent, z = {0};
+	TEntryKey key;
 
 	m_Sync.BeginWrite();
 	m_FileAccess.Read(&entry, hEntry, sizeof(entry));
@@ -345,6 +360,8 @@ unsigned int CEntries::DeleteEntry(TDBEntryHandle hEntry)
 		return DB_INVALIDPARAM;
 	}
 	
+	m_FileAccess.Read(&parent, entry.ParentEntry, sizeof(TEntry));
+
 	if (entry.Flags & DB_EF_HasVirtuals)
 	{
 		// move virtuals and make one of them real
@@ -361,10 +378,31 @@ unsigned int CEntries::DeleteEntry(TDBEntryHandle hEntry)
 		// TODO delete settings and events
 	}
 
+	if (entry.Flags & DB_EF_HasChilds) // keep the children
+	{
+		key.Level = entry.Level + 1;
+		key.Parent = hEntry;
+		key.Entry = 0;
+
+		iterator i = LowerBound(key);
+		i.setManaged();
+
+		key.Level = entry.Level;
+		key.Parent = entry.ParentEntry;
+		while ((i) && (i.Key().Parent == hEntry))
+		{
+			key.Entry = i.Key().Entry;
+			Delete(i);
+			Insert(key, TEmpty());
+			
+			m_FileAccess.Write(&entry.ParentEntry, key.Entry + offsetof(TEntry, ParentEntry), sizeof(TDBEntryHandle));
+
+			parent.ChildCount++;
+		}
+	}
+
 	m_FileAccess.Write(&z, hEntry, sizeof(z));
 	m_FileAccess.Free(hEntry, sizeof(TEntry));
-
-	TEntryKey key;
 
 	key.Level = entry.Level;
 	key.Parent = entry.ParentEntry;
@@ -372,13 +410,11 @@ unsigned int CEntries::DeleteEntry(TDBEntryHandle hEntry)
 
 	Delete(key);
 
-	m_FileAccess.Read(&entry, key.Parent, sizeof(entry));
-
-	entry.ChildCount--;
-	if (entry.ChildCount == 0)
+	parent.ChildCount--;
+	if (parent.ChildCount == 0)
 		entry.Flags = entry.Flags & (~DB_EF_HasChilds);
 
-	m_FileAccess.Write(&entry, key.Parent, sizeof(entry));	
+	m_FileAccess.Write(&parent, entry.ParentEntry, sizeof(parent));	
 
 	m_Sync.EndWrite();
 	return 0;
