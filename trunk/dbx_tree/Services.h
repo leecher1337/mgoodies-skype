@@ -14,6 +14,7 @@ int DBEntryGetFirstChild(WPARAM hParent, LPARAM lParam);
 int DBEntryGetLastChild(WPARAM hParent, LPARAM lParam);
 int DBEntryGetNextSilbing(WPARAM hEntry, LPARAM lParam);
 int DBEntryGetPrevSilbing(WPARAM hEntry, LPARAM lParam);
+int DBEntryGetFlags(WPARAM hEntry, LPARAM lParam);
 int DBEntryIterInit(WPARAM Filter, LPARAM lParam);
 int DBEntryIterNext(WPARAM hIteration, LPARAM lParam);
 int DBEntryIterClose(WPARAM hIteration, LPARAM lParam);
@@ -22,5 +23,5 @@ int DBEntryCreate(WPARAM hParent, LPARAM Flags);
 int DBVirtualEntryCreate(WPARAM hEntry, LPARAM hParent);
 int DBVirtualEntryGetParent(WPARAM hVirtuaEntry, LPARAM lParam);
 int DBVirtualEntryGetFirst(WPARAM hEntry, LPARAM lParam);
-int DBVirtualEntryGetNext(WPARAM hVirtuaEntry, LPARAM lParam);
+int DBVirtualEntryGetNext(WPARAM hVirtualEntry, LPARAM lParam);
 

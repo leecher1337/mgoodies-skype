@@ -18,6 +18,10 @@ static const char cSettingsSignature[20] = "Miranda IM Settings";
 static const char cPrivateSignature[20]  = "Miranda IM DataTree";
 static const unsigned int cDBVersion = 0x00000001;
 
+
+static const unsigned int cDBFAEncrypted = 0x01000000;
+//static const unsigned int cDBFA
+
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
 
@@ -72,6 +76,10 @@ protected:
 
 	CVirtuals *m_Virtuals;
 	CSettings *m_Settings;
+
+
+	void ReWriteSettingsHeader();
+	void ReWritePrivateHeader();
 
 
 public:
