@@ -25,7 +25,7 @@ Boston, MA 02111-1307, USA.
 #include <m_icolib.h>
 
 
-HICON LoadIconEx(char *iconName, BOOL copy)
+HICON LoadIconEx(const char *iconName, BOOL copy)
 {
 	if (!ServiceExists(MS_SKIN2_GETICON))
 		return NULL;

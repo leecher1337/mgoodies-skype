@@ -24,7 +24,7 @@ Boston, MA 02111-1307, USA.
 #include <windows.h>
 
 
-HICON LoadIconEx(char *iconName, BOOL copy = FALSE);
+HICON LoadIconEx(const char *iconName, BOOL copy = FALSE);
 void ReleaseIconEx(HICON hIcon);
 
 

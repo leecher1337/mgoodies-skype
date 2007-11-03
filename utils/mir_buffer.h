@@ -46,39 +46,69 @@ static inline int __bvsnprintf<wchar_t>(wchar_t *str, size_t size, const wchar_t
 }
 
 template<class T>
-static inline int __blen(T *str)
+static inline int __blen(const T *str)
 {
 	return 0;
 }
 
 template<>
-static inline int __blen<char>(char *str)
+static inline int __blen<char>(const char *str)
 {
 	return strlen(str);
 }
 
 template<>
-static inline int __blen<wchar_t>(wchar_t *str)
+static inline int __blen<wchar_t>(const wchar_t *str)
 {
 	return lstrlenW(str);
 }
 
 template<class T>
-static inline T * __bTranslate(T *str)
+static inline T * __bTranslate(const T *str)
 {
 	return 0;
 }
 
 template<>
-static inline char * __bTranslate<char>(char *str)
+static inline char * __bTranslate<char>(const char *str)
 {
 	return Translate(str);
 }
 
 template<>
-static inline wchar_t * __bTranslate<wchar_t>(wchar_t *str)
+static inline wchar_t * __bTranslate<wchar_t>(const wchar_t *str)
 {
 	return TranslateW(str);
+}
+
+
+template<class O, class D>
+static void __bcopy(D *dest, const O *orig, size_t len)
+{
+}
+
+template<>
+static void __bcopy(char *dest, const char *orig, size_t len)
+{
+	strncpy(dest, orig, len);
+}
+
+template<>
+static void __bcopy(WCHAR *dest, const WCHAR *orig, size_t len)
+{
+	wcsncpy(dest, orig, len);
+}
+
+template<>
+static void __bcopy(WCHAR *dest, const char *orig, size_t len)
+{
+	MultiByteToWideChar(CallService("LangPack/GetCodePage", 0, 0), 0, orig, len, dest, len);
+}
+
+template<>
+static void __bcopy(char *dest, const WCHAR *orig, size_t len)
+{
+	WideCharToMultiByte(CallService("LangPack/GetCodePage", 0, 0), 0, orig, len, dest, len, NULL, NULL);
 }
 
 
@@ -144,7 +174,7 @@ class Buffer
 			len++;
 		}
 
-		void append(T *app, size_t appLen = -1)
+		void append(const char *app, size_t appLen = -1)
 		{
 			if (appLen == -1)
 				appLen = __blen(app);
@@ -152,11 +182,23 @@ class Buffer
 			size_t total = len + appLen + 1;
 			alloc(total);
 
-			memmove(&str[len], app, appLen * sizeof(T));
+			__bcopy(&str[len], app, appLen);
 			len += appLen;
 		}
 
-		void appendPrintf(T *app, ...)
+		void append(const WCHAR *app, size_t appLen = -1)
+		{
+			if (appLen == -1)
+				appLen = __blen(app);
+
+			size_t total = len + appLen + 1;
+			alloc(total);
+
+			__bcopy(&str[len], app, appLen);
+			len += appLen;
+		}
+
+		void appendPrintf(const T *app, ...)
 		{
 			size_t total = len + 512;
 			alloc(total);
@@ -298,6 +340,9 @@ class Buffer
 static void ReplaceVars(Buffer<TCHAR> *buffer, HANDLE hContact, TCHAR **variables, int numVariables)
 {
 	if (buffer->len < 3)
+		return;
+
+	if (numVariables <= 0)
 		return;
 
 	for(size_t i = buffer->len - 1; i > 0; i--)
