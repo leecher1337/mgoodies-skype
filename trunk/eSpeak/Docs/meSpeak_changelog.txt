@@ -2,6 +2,9 @@ meSpeak
 
 Changelog:
 
+. 0.0.0.4 
+  + Added function to Variables plugin to allow reading text
+  
 . 0.0.0.3
   + Option to prepend name of contact for event types without template
   * Fix for no voices found

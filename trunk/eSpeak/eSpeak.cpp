@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"meSpeak",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,3),
+	PLUGIN_MAKE_VERSION(0,0,0,4),
 	"Speaker plugin based on eSpeak engine (%s)",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -74,6 +74,7 @@ int PreShutdown(WPARAM wParam, LPARAM lParam);
 
 int SpeakAService(WPARAM wParam, LPARAM lParam);
 int SpeakWService(WPARAM wParam, LPARAM lParam);
+TCHAR * VariablesSpeak(ARGUMENTSINFO *ai);
 
 LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -337,6 +338,20 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	hServices[1] = CreateServiceFunction(MS_SPEAK_SAY_W, SpeakWService);
 
 	queue = new ContactAsyncQueue(&Speak);
+
+	// Variables support
+	if (ServiceExists(MS_VARS_REGISTERTOKEN))
+	{
+		TOKENREGISTER tr = {0};
+		tr.cbSize = sizeof(TOKENREGISTER);
+		tr.memType = TR_MEM_MIRANDA;
+		tr.flags = TRF_FREEMEM | TRF_PARSEFUNC | TRF_FUNCTION | TRF_TCHAR;
+
+		tr.tszTokenString = _T("speak");
+		tr.parseFunctionT = VariablesSpeak;
+		tr.szHelpText = "Speak\t(x,[y])\tSpeak the text x using the y contact voice (y is optional)";
+		CallService(MS_VARS_REGISTERTOKEN, 0, (LPARAM) &tr);
+	}
 
 	loaded = TRUE;
 
@@ -1004,4 +1019,43 @@ void Speak(SpeakData *data)
 	
 	espeak_Synth(data->text, (lstrlen(data->text) + 1) * sizeof(TCHAR), 0, POS_CHARACTER, 
 				 0, espeakCHARS_TCHAR, NULL, NULL);
+}
+
+TCHAR * VariablesSpeak(ARGUMENTSINFO *ai)
+{
+	if (ai->cbSize < sizeof(ARGUMENTSINFO))
+		return NULL;
+
+	ai->flags = AIF_FALSE;
+	if (ai->argc < 2 || ai->argc > 3)
+		return NULL;
+
+	TCHAR *text = ai->targv[1];
+	if (text == NULL)
+		return NULL;
+	
+	HANDLE hContact = NULL;
+	if (ai->argc >= 3)
+	{
+		CONTACTSINFO ci = {0};
+		ci.cbSize = sizeof(ci);
+		ci.tszContact = ai->targv[2];
+		ci.flags = 0xFF | CI_UNICODE;
+		int count = CallService(MS_VARS_GETCONTACTFROMSTRING, (WPARAM)&ci, 0);
+		if (count == 1 && ci.hContacts != NULL) 
+		{
+			hContact = ci.hContacts[0];
+		}
+		else 
+		{
+			if (ci.hContacts != NULL) 
+				CallService(MS_VARS_FREEMEMORY, (WPARAM) ci.hContacts, 0);
+			
+			return NULL;
+		}
+	}
+
+	SpeakService(hContact, mir_tstrdup(text));
+	ai->flags = 0;
+	return mir_tstrdup(_T(""));
 }

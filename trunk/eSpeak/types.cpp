@@ -204,6 +204,8 @@ int SpeakExService(WPARAM wParam, LPARAM lParam)
 			buff.append((char *) item->text);
 		else
 			buff.append((WCHAR *) item->text);
+
+		buff.pack();
 		
 		return SpeakService(item->hContact, buff.detach());
 	}
