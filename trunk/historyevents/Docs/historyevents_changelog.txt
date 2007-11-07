@@ -2,6 +2,11 @@ History Events
 
 Changelog:
 
+. 0.0.0.5
+  + Added option to get event struct by event type
+  + Added option to register using an icolib icon
+  * Now options page is ordered by name (with core types at top)
+
 . 0.0.0.4
   * Fix to work with old version of variables too
 

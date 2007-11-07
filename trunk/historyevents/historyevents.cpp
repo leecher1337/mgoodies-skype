@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Events",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,4),
+	PLUGIN_MAKE_VERSION(0,0,0,5),
 	"A service plugin to handle custom history events",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -48,8 +48,10 @@ PLUGININFOEX pluginInfo={
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
+LIST_INTERFACE li;
 
-map<WORD, HISTORY_EVENT_HANDLER> handlers;
+int SortHandlers(const HISTORY_EVENT_HANDLER *type1, const HISTORY_EVENT_HANDLER *type2);
+LIST<HISTORY_EVENT_HANDLER> handlers(20, SortHandlers);
 
 static HANDLE hHooks[4] = {0};
 
@@ -137,6 +139,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	pluginLink = link;
 
 	init_mir_malloc();
+	mir_getLI(&li);
 
 	hDeleteThreadEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
@@ -243,6 +246,13 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 		if (hHooks[i] != NULL)
 			UnhookEvent(hHooks[i]);
 
+	while(handlers.getCount() > 0)
+	{
+		mir_free(handlers[0]->templates);
+		mir_free(handlers[0]);
+		handlers.remove(0);
+	}
+
 	return 0;
 }
 
@@ -270,33 +280,6 @@ int DbEventFilterAdd(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-
-HICON LoadIcon(char* iconName)
-{
-	return (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM)iconName);
-}
-
-HICON LoadIcon(HISTORY_EVENT_HANDLER *heh)
-{
-	if (heh->defaultIcon != NULL)
-		return LoadIcon((char *) heh->defaultIcon);
-
-	char name[128];
-	mir_snprintf(name, sizeof(name), "historyevent_%s", heh->name);
-	return LoadIcon(name);
-}
-
-HICON LoadIconEx(char* iconName, bool copy)
-{
-	HICON hIcon = (HICON)CallService(MS_SKIN2_GETICON, 0, (LPARAM)iconName);
-	if (copy)
-	{
-		hIcon = CopyIcon(hIcon);
-		CallService(MS_SKIN2_RELEASEICON, 0, (LPARAM)iconName);
-	}
-	return hIcon;
-}
-
 HICON LoadIconEx(HISTORY_EVENT_HANDLER *heh, bool copy)
 {
 	if (heh->defaultIcon != NULL)
@@ -307,33 +290,39 @@ HICON LoadIconEx(HISTORY_EVENT_HANDLER *heh, bool copy)
 	return LoadIconEx(name, copy);
 }
 
-void ReleaseIcon(HICON hIcon)
+
+int GetHandlerID(WORD eventType)
 {
-	if (hIcon != NULL)
-		CallService(MS_SKIN2_RELEASEICON, (WPARAM)hIcon, 0);
+	for (int i = 0; i < handlers.getCount(); i++)
+	{
+		if (handlers[i]->eventType == eventType)
+			return i;
+	}
+
+	return -1;
 }
 
 
 HISTORY_EVENT_HANDLER *GetHandler(WORD eventType)
 {
-	map<WORD, HISTORY_EVENT_HANDLER>::iterator it = handlers.find(eventType);
-	if (it == handlers.end())
-		return NULL;
+	int pos = GetHandlerID(eventType);
 
-	return &(it->second);
+	if (pos >= 0)
+		return handlers[pos];
+	else
+		return NULL;
 }
 
 
 void RegisterDefaultEventType(char *name, char *description, WORD eventType, int flags, char *icon, fGetHistoryEventText pfGetHistoryEventText)
 {
-	HISTORY_EVENT_HANDLER *heh = & handlers[eventType];
-	memset(heh, 0, sizeof(HISTORY_EVENT_HANDLER));
+	HISTORY_EVENT_HANDLER *heh = (HISTORY_EVENT_HANDLER *) mir_alloc0(sizeof(HISTORY_EVENT_HANDLER));
 	heh->name = name;
 	heh->description = Translate(description);
 	heh->eventType = eventType;
-	heh->defaultIcon = (HICON) icon;
+	heh->defaultIconName = icon;
 	heh->supports = HISTORYEVENTS_FORMAT_CHAR | HISTORYEVENTS_FORMAT_WCHAR | HISTORYEVENTS_FORMAT_RICH_TEXT;
-	heh->flags = GetSettingDword(heh, FLAGS, flags) | HISTORYEVENTS_FLAG_DEFAULT;
+	heh->flags = GetSettingDword(heh, FLAGS, flags) | HISTORYEVENTS_FLAG_DEFAULT | HISTORYEVENTS_REGISTERED_IN_ICOLIB;
 	heh->pfGetHistoryEventText = pfGetHistoryEventText;
 
 	if (icon == NULL)
@@ -348,65 +337,75 @@ void RegisterDefaultEventType(char *name, char *description, WORD eventType, int
 		sid.pszSection = Translate("History/Events");
 		sid.pszDescription = heh->description;
 		sid.pszName = heh->defaultIconName;
-		sid.hDefaultIcon = heh->defaultIcon;
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM) &sid);
 	}
+
+	handlers.insert(heh);
 }
 
 
 int ServiceRegister(WPARAM wParam, LPARAM lParam)
 {
-	HISTORY_EVENT_HANDLER *heh = (HISTORY_EVENT_HANDLER *) wParam;
-	if (heh == NULL
-		|| heh->cbSize < sizeof(HISTORY_EVENT_HANDLER)
-		|| heh->name == NULL
-		|| heh->name[0] == '\0'
-		|| heh->description == NULL
-		|| heh->description[0] == '\0'
-		|| heh->eventType == 0
-		|| (heh->pfGetHistoryEventText != NULL && (heh->supports & (HISTORYEVENTS_FORMAT_CHAR | HISTORYEVENTS_FORMAT_WCHAR)) == 0)
-		|| heh->flags == -1)
+	HISTORY_EVENT_HANDLER *orig = (HISTORY_EVENT_HANDLER *) wParam;
+	if (orig == NULL
+		|| orig->cbSize < sizeof(HISTORY_EVENT_HANDLER)
+		|| orig->name == NULL
+		|| orig->name[0] == '\0'
+		|| orig->description == NULL
+		|| orig->description[0] == '\0'
+		|| orig->eventType == 0
+		|| (orig->pfGetHistoryEventText != NULL && (orig->supports & (HISTORYEVENTS_FORMAT_CHAR | HISTORYEVENTS_FORMAT_WCHAR)) == 0)
+		|| orig->flags == -1)
 		return -1;
 
 	// Already have it?
-	if (GetHandler(heh->eventType) != NULL)
+	if (GetHandler(orig->eventType) != NULL)
 		return -2;
 
 	// Lets add it
-	HISTORY_EVENT_HANDLER &tmp = handlers[heh->eventType];
-	tmp = *heh;
-	tmp.name = strdup(heh->name);
-	tmp.description = Translate(heh->description);
-	if (tmp.description == heh->description)
-		tmp.description = strdup(heh->description);
-	tmp.flags = GetSettingDword(heh, FLAGS, tmp.flags);
-	char name[128];
-	mir_snprintf(name, sizeof(name), "historyevent_%s", heh->name);
-	tmp.defaultIconName = strdup(name);
-
-	// Add to icolib
-	SKINICONDESC sid = {0};
-	sid.cbSize = sizeof(SKINICONDESC);
-	sid.flags = SIDF_SORTED;
-	sid.pszSection = Translate("History/Events");
-	sid.pszDescription = tmp.description;
-	sid.pszName = tmp.defaultIconName;
-	sid.hDefaultIcon = heh->defaultIcon;
-	CallService(MS_SKIN2_ADDICON, 0, (LPARAM) &sid);
-
-	if (heh->pfGetHistoryEventText == NULL)
+	HISTORY_EVENT_HANDLER *heh = (HISTORY_EVENT_HANDLER *) mir_alloc0(sizeof(HISTORY_EVENT_HANDLER));
+	*heh = *orig;
+	heh->name = strdup(orig->name);
+	heh->description = Translate(orig->description);
+	if (heh->description == orig->description)
+		heh->description = strdup(orig->description);
+	heh->flags = GetSettingDword(orig, FLAGS, orig->flags) | HISTORYEVENTS_REGISTERED_IN_ICOLIB;
+	if (orig->flags & HISTORYEVENTS_REGISTERED_IN_ICOLIB)
 	{
-		tmp.pfGetHistoryEventText = GetDefaultHistoryEventText;
-		tmp.supports = HISTORYEVENTS_FORMAT_CHAR | HISTORYEVENTS_FORMAT_WCHAR | HISTORYEVENTS_FORMAT_RICH_TEXT;
+		heh->defaultIconName = strdup(orig->defaultIconName);
+	}
+	else
+	{
+		char name[128];
+		mir_snprintf(name, sizeof(name), "historyevent_%s", orig->name);
+		heh->defaultIconName = strdup(name);
+
+		// Add to icolib
+		SKINICONDESC sid = {0};
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.flags = SIDF_SORTED;
+		sid.pszSection = Translate("History/Events");
+		sid.pszDescription = heh->description;
+		sid.pszName = heh->defaultIconName;
+		sid.hDefaultIcon = orig->defaultIcon;
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM) &sid);
 	}
 
-	if (heh->numTemplates > 0)
+	if (orig->pfGetHistoryEventText == NULL)
 	{
-		char **templates = (char **) malloc(heh->numTemplates * sizeof(char *));
-		for(int i = 0; i < heh->numTemplates; i++)
-			templates[i] = strdup(heh->templates[i] == NULL ? "" : heh->templates[i]);
-		tmp.templates = templates;
+		heh->pfGetHistoryEventText = GetDefaultHistoryEventText;
+		heh->supports = HISTORYEVENTS_FORMAT_CHAR | HISTORYEVENTS_FORMAT_WCHAR | HISTORYEVENTS_FORMAT_RICH_TEXT;
 	}
+
+	if (orig->numTemplates > 0)
+	{
+		char **templates = (char **) mir_alloc0(orig->numTemplates * sizeof(char *));
+		for(int i = 0; i < orig->numTemplates; i++)
+			templates[i] = strdup(orig->templates[i] == NULL ? "" : orig->templates[i]);
+		heh->templates = templates;
+	}
+
+	handlers.insert(heh);
 	return 0;
 }
 
@@ -414,7 +413,7 @@ int ServiceRegister(WPARAM wParam, LPARAM lParam)
 int ServiceCanHandle(WPARAM wParam, LPARAM lParam)
 {
 	HISTORY_EVENT_HANDLER *heh = GetHandler(wParam);
-	return heh != NULL && heh->pfGetHistoryEventText != NULL;
+	return heh != NULL;
 }
 
 
@@ -426,7 +425,7 @@ int ServiceGetIcon(WPARAM wParam, LPARAM lParam)
 		return NULL;
 
 	// Get icon
-	return (int) LoadIcon(heh);
+	return (int) LoadIconEx(heh);
 }
 
 
@@ -434,7 +433,7 @@ int ServiceGetFlags(WPARAM wParam, LPARAM lParam)
 {
 	// Get handler
 	HISTORY_EVENT_HANDLER *heh = GetHandler(wParam);
-	if (heh == NULL || heh->pfGetHistoryEventText == NULL)
+	if (heh == NULL)
 		return -1;
 
 	// Get icon
@@ -477,7 +476,7 @@ int ServiceGetText(WPARAM wParam, LPARAM lParam)
 
 	// Get handler
 	HISTORY_EVENT_HANDLER *heh = GetHandler(dbe->eventType);
-	if (heh == NULL || heh->pfGetHistoryEventText == NULL)
+	if (heh == NULL)
 	{
 		if (hep->dbe != dbe && dbe->pBlob != NULL)
 			free(dbe->pBlob);
@@ -501,7 +500,7 @@ int ServiceGetText(WPARAM wParam, LPARAM lParam)
 		else
 		{
 			wchar_t *tmp = (wchar_t *) heh->pfGetHistoryEventText(hContact, hep->hDbEvent, hep->dbe, HISTORYEVENTS_FORMAT_WCHAR);
-			ret = mir_dupToAscii(tmp);
+			ret = mir_u2a(tmp);
 			mir_free(tmp);
 		}
 	}
@@ -514,7 +513,7 @@ int ServiceGetText(WPARAM wParam, LPARAM lParam)
 		else
 		{
 			char *tmp = (char *) heh->pfGetHistoryEventText(hContact, hep->hDbEvent, hep->dbe, HISTORYEVENTS_FORMAT_CHAR);
-			ret = mir_dupToUnicode(tmp);
+			ret = mir_a2u(tmp);
 			mir_free(tmp);
 		}
 	}
@@ -574,11 +573,7 @@ void GetTemplare(Buffer<TCHAR> *buffer, HISTORY_EVENT_HANDLER *heh, int templ)
 		char *end = strchr(tmp, '\n');
 		size_t len = (end == NULL ? strlen(tmp) : end - tmp);
 
-#ifdef UNICODE
-		MultiByteToWideChar(CP_ACP, 0, tmp, len, buffer->appender(len), len);
-#else
 		buffer->append(tmp, len);
-#endif
 	}
 }
 
@@ -685,12 +680,13 @@ void * GetMessageHistoryEventText(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO 
 
 		// Check if there is any extra info
 		BYTE *extra = NULL;
-		if (dbe->flags & DBEF_UTF)
-		{
-			size_t size = strlen((char *) dbe->pBlob) + 1;
-			if (size < dbe->cbBlob)
-				extra = &dbe->pBlob[size];
-		}
+		// Removed by now
+		//if (dbe->flags & DBEF_UTF)
+		//{
+		//	size_t size = strlen((char *) dbe->pBlob) + 1;
+		//	if (size < dbe->cbBlob)
+		//		extra = &dbe->pBlob[size];
+		//}
 
 		ret = ConvertToRTF(tmp, GetHandler(dbe->eventType), extra);
 		mir_free(tmp);
@@ -741,7 +737,7 @@ void * GetFileHistoryEventText(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *db
 	}
 	else if (format & HISTORYEVENTS_FORMAT_WCHAR)
 	{
-		ret = mir_dupToUnicode(tmp);
+		ret = mir_a2u(tmp);
 	}
 	else if (format & HISTORYEVENTS_FORMAT_RICH_TEXT)
 	{
@@ -1033,13 +1029,13 @@ void DoFullPass()
 
 //	DWORD t = GetTickCount();
 
-	int *counters = (int *) malloc(sizeof(int) * handlers.size());
+	int *counters = (int *) malloc(sizeof(int) * handlers.getCount());
 
 	int count = 0;
 	HANDLE hContact = (HANDLE) CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 	while (hContact != NULL && !shuttingDown)
 	{
-		memset(counters, 0, sizeof(int) * handlers.size());
+		memset(counters, 0, sizeof(int) * handlers.getCount());
 
 		HANDLE hDbEvent = (HANDLE) CallService(MS_DB_EVENT_FINDLAST, (WPARAM) hContact, 0);
 		while(hDbEvent != NULL && !shuttingDown)
@@ -1050,15 +1046,8 @@ void DoFullPass()
 			dbe.cbSize = sizeof(dbe);
 			if (CallService(MS_DB_EVENT_GET, (LPARAM) hDbEvent, (WPARAM) &dbe) == 0)
 			{
-				int pos = 0;
-				for(map<WORD, HISTORY_EVENT_HANDLER>::iterator it = handlers.begin(); it != handlers.end(); it++)
-				{
-					if (it->second.eventType == dbe.eventType)
-						break;
-					pos++;
-				}
-
-				if (pos < handlers.size())
+				int pos = GetHandlerID(dbe.eventType);
+				if (pos >= 0)
 				{
 					counters[pos]++;
 
@@ -1216,21 +1205,35 @@ int DbEventAdded(WPARAM wParam, LPARAM lParam)
 
 int ServiceGetCount(WPARAM wParam, LPARAM lParam)
 {
-	return handlers.size();
+	return handlers.getCount();
 }
 
 
 int ServiceGetEvent(WPARAM wParam, LPARAM lParam)
 {
 	int pos = (int) wParam;
-
-	for(map<WORD, HISTORY_EVENT_HANDLER>::iterator it = handlers.begin(); it != handlers.end() && pos >= 0; it++, pos--)
+	if (pos >= 0)
 	{
-		if (pos == 0)
-			return (int) &it->second;
+		if (pos < handlers.getCount())
+			return (int) handlers[pos];
+		else
+			return NULL;
 	}
+
+	int type = (int) lParam;
+	if (type != -1)
+		return (int) GetHandler(type);
 
 	return NULL;
 }
 
 
+int SortHandlers(const HISTORY_EVENT_HANDLER *type1, const HISTORY_EVENT_HANDLER *type2)
+{
+	if ((type1->flags & HISTORYEVENTS_FLAG_DEFAULT) && !(type2->flags & HISTORYEVENTS_FLAG_DEFAULT))
+		return -1;
+	else if (!(type1->flags & HISTORYEVENTS_FLAG_DEFAULT) && (type2->flags & HISTORYEVENTS_FLAG_DEFAULT))
+		return 1;
+	else
+		return stricmp(type1->description, type2->description);
+}

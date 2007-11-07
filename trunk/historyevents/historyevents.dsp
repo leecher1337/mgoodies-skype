@@ -172,6 +172,10 @@ SOURCE=..\utils\mir_buffer.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\utils\mir_icons.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\utils\mir_memory.h
 # End Source File
 # Begin Source File
@@ -197,6 +201,10 @@ SOURCE=.\resource.rc
 # Begin Source File
 
 SOURCE=.\historyevents.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\utils\mir_icons.cpp
 # End Source File
 # Begin Source File
 
