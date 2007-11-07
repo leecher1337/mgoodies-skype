@@ -11,6 +11,7 @@ It provides the following functionality:
 - Per contact voice
 - Options to disable by global status
 - Packed with voices for a lot of languages
+- "fake" support for plugins that support Variables
 
 This is a service plugin, so it does not read any text by itself. Other plugins need to request it!
 
