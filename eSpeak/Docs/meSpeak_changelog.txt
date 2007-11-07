@@ -2,6 +2,10 @@ meSpeak
 
 Changelog:
 
+. 0.0.0.5
+  * Changed to create services in Load method
+  * Language names should be translatable now
+ 
 . 0.0.0.4 
   + Added function to Variables plugin to allow reading text
   

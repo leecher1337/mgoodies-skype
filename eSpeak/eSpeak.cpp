@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"meSpeak",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,4),
+	PLUGIN_MAKE_VERSION(0,0,0,5),
 	"Speaker plugin based on eSpeak engine (%s)",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -85,12 +85,12 @@ Language *GetClosestLanguage(TCHAR *lang_name);
 void Speak(HANDLE hContact, void *param);
 
 TCHAR *aditionalLanguages[] = {
-	_T("en_r"), _T("English (Rhotic)"),
-	_T("en_sc"), _T("English (Scottish)"),
-	_T("en_uk"), _T("English - UK"),
-	_T("en_uk_north"), _T("English - UK (Northern)"),
-	_T("en_uk_rp"), _T("English - UK (Received Pronunciation)"),
-	_T("en_uk_wmids"), _T("English - UK (West Midlands)"),
+	_T("en_R"), _T("English (Rhotic)"),
+	_T("en_SC"), _T("English (Scottish)"),
+	_T("en_UK"), _T("English - UK"),
+	_T("en_UK_NORTH"), _T("English - UK (Northern)"),
+	_T("en_UK_RP"), _T("English - UK (Received Pronunciation)"),
+	_T("en_UK_WMIDS"), _T("English - UK (West Midlands)"),
 	_T("eo"), _T("Esperanto"),
 	_T("la"), _T("Latin"),
 	_T("no"), _T("Norwegian")
@@ -157,6 +157,41 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 	InitTypes();
 
+	TCHAR mirandaFolder[1024];
+	GetModuleFileName(GetModuleHandle(NULL), mirandaFolder, MAX_REGS(mirandaFolder));
+	TCHAR *p = _tcsrchr(mirandaFolder, _T('\\'));
+	if (p != NULL)
+		*p = _T('\0');
+
+    // Folders plugin support
+	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
+	{
+		hDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("meSpeak"), 
+					Translate("Languages"), 
+					_T(MIRANDA_PATH) _T("\\Dictionaries\\Voice"));
+
+		FoldersGetCustomPathT(hDictionariesFolder, dictionariesFolder, MAX_REGS(dictionariesFolder), _T("."));
+
+		hFlagsDllFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("meSpeak"), 
+					Translate("Flags DLL"), 
+					_T(MIRANDA_PATH) _T("\\Icons"));
+
+		FoldersGetCustomPathT(hFlagsDllFolder, flagsDllFolder, MAX_REGS(flagsDllFolder), _T("."));
+	}
+	else
+	{
+		mir_sntprintf(dictionariesFolder, MAX_REGS(dictionariesFolder), _T("%s\\Dictionaries\\Voice"), mirandaFolder);
+
+		mir_sntprintf(flagsDllFolder, MAX_REGS(flagsDllFolder), _T("%s\\Icons"), mirandaFolder);
+	}
+
+	LoadESpeak();
+
+	hServices[0] = CreateServiceFunction(MS_SPEAK_SAY_A, SpeakAService);
+	hServices[1] = CreateServiceFunction(MS_SPEAK_SAY_W, SpeakWService);
+
+	queue = new ContactAsyncQueue(&Speak);
+
 	return 0;
 }
 
@@ -194,12 +229,6 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	// add our modules to the KnownModules list
 	CallService("DBEditorpp/RegisterSingleModule", (WPARAM) MODULE_NAME, 0);
 
-	TCHAR mirandaFolder[1024];
-	GetModuleFileName(GetModuleHandle(NULL), mirandaFolder, MAX_REGS(mirandaFolder));
-	TCHAR *p = _tcsrchr(mirandaFolder, _T('\\'));
-	if (p != NULL)
-		*p = _T('\0');
-
     // updater plugin support
     if(ServiceExists(MS_UPDATE_REGISTER))
 	{
@@ -226,30 +255,6 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
 	}
-
-    // Folders plugin support
-	if (ServiceExists(MS_FOLDERS_REGISTER_PATH))
-	{
-		hDictionariesFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("meSpeak"), 
-					Translate("Languages"), 
-					_T(MIRANDA_PATH) _T("\\Dictionaries\\Voice"));
-
-		FoldersGetCustomPathT(hDictionariesFolder, dictionariesFolder, MAX_REGS(dictionariesFolder), _T("."));
-
-		hFlagsDllFolder = (HANDLE) FoldersRegisterCustomPathT(Translate("meSpeak"), 
-					Translate("Flags DLL"), 
-					_T(MIRANDA_PATH) _T("\\Icons"));
-
-		FoldersGetCustomPathT(hFlagsDllFolder, flagsDllFolder, MAX_REGS(flagsDllFolder), _T("."));
-	}
-	else
-	{
-		mir_sntprintf(dictionariesFolder, MAX_REGS(dictionariesFolder), _T("%s\\Dictionaries\\Voice"), mirandaFolder);
-
-		mir_sntprintf(flagsDllFolder, MAX_REGS(flagsDllFolder), _T("%s\\Icons"), mirandaFolder);
-	}
-
-	LoadESpeak();
 
 	InitOptions();
 
@@ -333,11 +338,6 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		}
 		FreeLibrary(hFlagsDll);
 	}
-
-	hServices[0] = CreateServiceFunction(MS_SPEAK_SAY_A, SpeakAService);
-	hServices[1] = CreateServiceFunction(MS_SPEAK_SAY_W, SpeakWService);
-
-	queue = new ContactAsyncQueue(&Speak);
 
 	// Variables support
 	if (ServiceExists(MS_VARS_REGISTERTOKEN))
@@ -425,7 +425,7 @@ OutputDebugStringA("\n");
 			if (languages[i]->localized_name[0] != _T('\0'))
 			{
 				mir_sntprintf(languages[i]->full_name, MAX_REGS(languages[i]->full_name), 
-					_T("%s [%s]"), languages[i]->localized_name, languages[i]->language);
+					_T("%s [%s]"), TranslateTS(languages[i]->localized_name), languages[i]->language);
 			}
 		}
 		else if (len == 2 && lstrcmpi(languages[i]->language, ini) == 0 && lstrcmpi(languages[i]->language, end) == 0)
@@ -438,7 +438,7 @@ OutputDebugStringA("\n");
 			if (languages[i]->localized_name[0] != _T('\0'))
 			{
 				mir_sntprintf(languages[i]->full_name, MAX_REGS(languages[i]->full_name), 
-					_T("%s [%s]"), languages[i]->localized_name, languages[i]->language);
+					_T("%s [%s]"), TranslateTS(languages[i]->localized_name), languages[i]->language);
 			}
 		}
 		else if (len == 2 && lstrcmpi(languages[i]->language, ini) == 0 && languages[i]->localized_name[0] == _T('\0'))
@@ -451,7 +451,7 @@ OutputDebugStringA("\n");
 			if (languages[i]->localized_name[0] != _T('\0'))
 			{
 				mir_sntprintf(languages[i]->full_name, MAX_REGS(languages[i]->full_name), 
-					_T("%s [%s]"), languages[i]->localized_name, languages[i]->language);
+					_T("%s [%s]"), TranslateTS(languages[i]->localized_name), languages[i]->language);
 			}
 		}
 	}
@@ -568,11 +568,11 @@ void LoadESpeak()
 			if (lang->localized_name[0] != _T('\0'))
 			{
 				mir_sntprintf(lang->full_name, MAX_REGS(lang->full_name), 
-					_T("%s [%s]"), lang->localized_name, lang->language);
+					_T("%s [%s]"), TranslateTS(lang->localized_name), lang->language);
 			}
 			else
 			{
-				lstrcpyn(lang->full_name, lang->language, MAX_REGS(lang->full_name));
+				lstrcpyn(lang->full_name, TranslateTS(lang->language), MAX_REGS(lang->full_name));
 			}
 		}
 	}
