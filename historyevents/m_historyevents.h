@@ -30,11 +30,12 @@ Boston, MA 02111-1307, USA.
 #define HISTORYEVENTS_FORMAT_RICH_TEXT		4
 #define HISTORYEVENTS_FORMAT_HTML			8
 
-#define HISTORYEVENTS_FLAG_DEFAULT						(1 << 0)
+#define HISTORYEVENTS_FLAG_DEFAULT						(1 << 0) // Is a miranda core event type
 #define HISTORYEVENTS_FLAG_SHOW_IM_SRMM					(1 << 1) // If this event has to be shown in srmm dialog
 #define HISTORYEVENTS_FLAG_USE_SENT_FLAG				(1 << 2) // Means that it can be a sent or received and uses DBEF_SENT to mark that
 #define HISTORYEVENTS_FLAG_EXPECT_CONTACT_NAME_BEFORE	(1 << 3) // Means that who is drawing this should draw the contact name before the text
 #define HISTORYEVENTS_FLAG_ONLY_LOG_IF_SRMM_OPEN		(1 << 4) // If this event will be logged only if the message window is open
+#define HISTORYEVENTS_REGISTERED_IN_ICOLIB				(9 << 16) // If the icon is a name already registered in icolib
 #define HISTORYEVENTS_FLAG_KEEP_ONE_YEAR 				(1 << 8) // By default store in db for 1 year
 #define HISTORYEVENTS_FLAG_KEEP_SIX_MONTHS 				(2 << 8) // By default store in db for 6 months
 #define HISTORYEVENTS_FLAG_KEEP_ONE_MONTH 				(3 << 8) // By default store in db for 1 month
@@ -54,11 +55,11 @@ typedef struct {
 	int cbSize;
 	char *module;
 	char *name;				// Internal event name
-	char *description;		// Will be translated
+	char *description;		// Will be translated. When retrieving it is already translated
 	WORD eventType;			// The event type it can handle
 	union {
-		HICON defaultIcon;			// Use this one when registering
-		char * defaultIconName;		// Use this one when making queries
+		HICON defaultIcon;
+		char * defaultIconName;		// if HISTORYEVENTS_REGISTERED_IN_ICOLIB is set. Always use this one when retrieving
 	};
 	int supports;			// What kind of return is supported - or of HISTORYEVENTS_FORMAT_*
 	int flags;				// or of HISTORYEVENTS_FLAG_*
@@ -82,10 +83,11 @@ Return: The number of events registered with the plugin
 
 
 /*
-Get the number of registered events
+Get an event by number or by type. 
+To retrieve by number, pass -1 as type. To retrieve by type, pass -1 as number.
 
 wParam: (int) event number
-lParam: ignored
+lParam: (int) event type
 Return: (const HISTORY_EVENT_HANDLER *) if the event exists, NULL  otherwise. Don't change the
 		returned strunc: it is a pointer to the internall struct.
 */

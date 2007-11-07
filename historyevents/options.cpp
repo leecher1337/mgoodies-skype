@@ -24,8 +24,6 @@ Boston, MA 02111-1307, USA.
 
 // Prototypes /////////////////////////////////////////////////////////////////////////////////////
 
-extern map<WORD, HISTORY_EVENT_HANDLER> handlers;
-
 HANDLE hOptHook = NULL;
 
 static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -223,9 +221,9 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 			// Create all items
 			int id = IDC_EVENT_TYPES + 1;
-			for(map<WORD, HISTORY_EVENT_HANDLER>::iterator it = handlers.begin(); it != handlers.end(); it++)
+			for (int k = 0; k < handlers.getCount(); k++)
 			{
-				HISTORY_EVENT_HANDLER *heh = &it->second;
+				HISTORY_EVENT_HANDLER *heh = handlers[k];
 
 				int x = pt.x;
 
@@ -471,9 +469,9 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				break;
 
 			int id = IDC_EVENT_TYPES + 1;
-			for(map<WORD, HISTORY_EVENT_HANDLER>::iterator it = handlers.begin(); it != handlers.end(); it++)
+			for (int k = 0; k < handlers.getCount(); k++)
 			{
-				HISTORY_EVENT_HANDLER *heh = &it->second;
+				HISTORY_EVENT_HANDLER *heh = handlers[k];
 
 				// Show in SRMM
 

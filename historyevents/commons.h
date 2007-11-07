@@ -27,18 +27,13 @@ Boston, MA 02111-1307, USA.
 #include <stdio.h>
 #include <time.h>
 
-// Disable "...truncated to '255' characters in the debug information" warnings
-#pragma warning(disable: 4786)
-
-#include <map>
-using namespace std;
-
 
 // Miranda headers
-#define MIRANDA_VER 0x0600
+#define MIRANDA_VER 0x0700
 
 #include <newpluginapi.h>
 #include <m_system.h>
+#include <m_system_cpp.h>
 #include <m_contacts.h>
 #include <m_langpack.h>
 #include <m_database.h>
@@ -51,6 +46,8 @@ using namespace std;
 #include <m_message.h>
 
 #include "../utils/mir_memory.h"
+#include "../utils/mir_icons.h"
+#include "../utils/mir_buffer.h"
 
 #include "m_historyevents.h"
 #include "resource.h"
@@ -62,20 +59,14 @@ using namespace std;
 // Global Variables
 extern HINSTANCE hInst;
 extern PLUGINLINK *pluginLink;
-
+extern LIST<HISTORY_EVENT_HANDLER> handlers;
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
-
-#include "../utils/mir_buffer.h"
 
 
 #include "options.h"
 
-HICON LoadIcon(char* iconName);
-HICON LoadIcon(HISTORY_EVENT_HANDLER *heh);
-HICON LoadIconEx(HISTORY_EVENT_HANDLER *heh, bool copy);
-HICON LoadIconEx(char* iconName, bool copy);
-void ReleaseIcon(HICON hIcon);
+HICON LoadIconEx(HISTORY_EVENT_HANDLER *heh, bool copy = false);
 
 
 #define KEEP_FLAG(_x_) ((_x_) & 0xFF00)
