@@ -434,6 +434,7 @@ void GetInfoThread(HANDLE hContact) {
 		free(ptr);
 	}
 
+
 	if (protocol >= 7) {
 		// Notify about the possibility of an avatar
 		ACKDATA ack = {0};
@@ -444,6 +445,32 @@ void GetInfoThread(HANDLE hContact) {
 		ack.result = ACKRESULT_STATUS;
 
 		CallService( MS_PROTO_BROADCASTACK, 0, ( LPARAM )&ack );
+
+
+		str[eol]=0;
+		strcat(str, "RICH_MOOD_TEXT");
+		if (!SkypeSend(str) && (ptr=SkypeRcv(str+4, INFINITE))) {
+			if (ptr[strlen(str+3)]) {
+				TCHAR *unicode = NULL;
+				char *Mood = NULL;
+							
+				if(utf8_decode((ptr+strlen(str+3)), &Mood)!=-1)
+				{
+					if(DBWriteContactSettingTString(hContact, "CList", "StatusMsg", Mood)) 
+					{
+						#if defined( _UNICODE )
+							char buff[TEXT_LEN];
+							WideCharToMultiByte(code_page, 0, Mood, -1, buff, TEXT_LEN, 0, 0);
+							buff[TEXT_LEN] = 0;
+							DBWriteContactSettingString(hContact, "CList", "StatusMsg", buff);
+						#endif
+					}
+					DBWriteContactSettingString(hContact, pszSkypeProtoName, "MirVer", "Skype 3.0");
+				}
+			}
+
+			free(ptr);
+		}
 	}
 
 	i=0;
