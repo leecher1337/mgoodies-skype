@@ -262,9 +262,9 @@ static BOOL CALLBACK DlgProcHotkeyOpts(HWND hwndDlg, UINT msg, WPARAM wParam, LP
 			DBGetContactSettingWord(NULL, "CList", "HKNetSearch", MAKEWORD('S', HOTKEYF_CONTROL | HOTKEYF_SHIFT)), 0);
 		SendDlgItemMessage(hwndDlg, IDC_HKSHOWOPTIONS, HKM_SETHOTKEY,
 			DBGetContactSettingWord(NULL, "CList", "HKShowOptions", MAKEWORD('O', HOTKEYF_CONTROL | HOTKEYF_SHIFT)), 0);
-		if (!DBGetContactSetting(NULL, "CList", "SearchUrl", &dbv)) {
+		if (!DBGetContactSettingString(NULL, "CList", "SearchUrl", &dbv)) {
 			SetDlgItemTextA(hwndDlg, IDC_SEARCHURL, dbv.pszVal);
-			mir_free(dbv.pszVal);
+			DBFreeVariant(&dbv);
 		}
 		else
 			SetDlgItemTextA(hwndDlg, IDC_SEARCHURL, "http://www.google.com/");
@@ -332,7 +332,7 @@ int CListOptInit(WPARAM wParam, LPARAM lParam)
 	odp.position = -1000000000;
 	odp.hInstance = g_hInst;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_CLIST);
-	odp.pszTitle = "Contact List";
+	odp.pszTitle = LPGEN("Contact List");
 	odp.pfnDlgProc = DlgProcGenOpts;
 	odp.flags = ODPF_BOLDGROUPS;
 	odp.nIDBottomSimpleControl = IDC_STCLISTGROUP;
@@ -342,8 +342,8 @@ int CListOptInit(WPARAM wParam, LPARAM lParam)
 
 	odp.position = -900000000;
 	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_HOTKEY);
-	odp.pszTitle = "Hotkeys";
-	odp.pszGroup = "Events";
+	odp.pszTitle = LPGEN("Hotkeys");
+	odp.pszGroup = LPGEN("Events");
 	odp.pfnDlgProc = DlgProcHotkeyOpts;
 	odp.nIDBottomSimpleControl = 0;
 	odp.nExpertOnlyControls = 0;

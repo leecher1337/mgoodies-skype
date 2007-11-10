@@ -86,10 +86,10 @@ PLUGININFOEX pluginInfo = {
 	#else
 		"BClist",
 	#endif
-	PLUGIN_MAKE_VERSION(0, 0, 0, 5),
+	PLUGIN_MAKE_VERSION(0, 7, 1, 0),
 
 	"A contact list for blind folks",
-	"Ricardo Pescuma Domenecci",
+	"Ricardo Pescuma Domenecci, based on previous work from Miranda IM project",
 	"",
 	"Copyright 2000-2006 Miranda IM project",
 	"http://pescuma.mirandaim.ru/miranda/bclist",
@@ -467,7 +467,7 @@ LRESULT CALLBACK ContactListControlWndProc(HWND hwnd, UINT msg, WPARAM wParam, L
 			GetClientRect(hwnd, &r);
 			SetWindowPos(dat->hwnd_list, 0, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE);
 
-			break;
+			return ret;
 		}
 
 		case WM_SIZE:
@@ -499,12 +499,18 @@ LRESULT CALLBACK ContactListControlWndProc(HWND hwnd, UINT msg, WPARAM wParam, L
 				pfnContactListControlWndProc(hwnd, WM_KEYDOWN, key, 0);
 				return dat->selection;
 			}
+			else 
+			{
+				NMKEY nmkey;
+				nmkey.hdr.hwndFrom = hwnd;
+				nmkey.hdr.idFrom = GetDlgCtrlID(hwnd);
+				nmkey.hdr.code = NM_KEYDOWN;
+				nmkey.nVKey = key;
+				nmkey.uFlags = 0;
+				if (SendMessage(GetParent(hwnd), WM_NOTIFY, 0, (LPARAM) & nmkey))
+					return -2;
+			}
 			return -1;
-		}
-
-		case WM_CHAR:
-		{
-			break;
 		}
 
 		case WM_COMMAND:

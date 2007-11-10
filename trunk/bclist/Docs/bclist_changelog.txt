@@ -2,6 +2,11 @@ BClist
 
 Changelog:
 
+. 0.7.1.0
+  * Sync with latest clist version from SVN
+  * Fix for CTRL-1
+  * Changed version number to match clist
+
 . 0.0.0.5
   + Added support for miranda 0.8
 
