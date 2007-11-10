@@ -5,4 +5,4 @@ This is a contact list for blind folks. It uses a list control to show all conta
 
 Based on classic contact list.
 
-This plugin needs Miranda 0.7 (in development stage right now).
+This plugin needs Miranda 0.7

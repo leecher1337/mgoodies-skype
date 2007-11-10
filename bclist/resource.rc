@@ -202,7 +202,7 @@ END
 IDD_OPT_CLC DIALOGEX 0, 0, 314, 242
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        "Items",IDC_STATIC,2,2,310,88
     CONTROL         "Show divider between online and offline contacts",

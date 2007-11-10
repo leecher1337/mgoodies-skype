@@ -34,7 +34,7 @@ mkdir src
 cd src
 del /Q *.*
 copy ..\..\*.h
-copy ..\..\*.cpp
+copy ..\..\*.c*
 copy ..\..\*.
 copy ..\..\*.rc
 copy ..\..\*.dsp

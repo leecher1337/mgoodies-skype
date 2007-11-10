@@ -21,6 +21,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
+#define MIRANDA_VER 0x0700
+
 #if defined(UNICODE)
 #define _UNICODE 1
 #endif
