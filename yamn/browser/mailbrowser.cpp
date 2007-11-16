@@ -1644,6 +1644,54 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 			}
 //			break;
 			return 0;
+		case WM_CONTEXTMENU:
+			{
+				if ( GetWindowLong(( HWND )wParam, GWL_ID ) == IDC_LISTHEADERS)	{
+					//MessageBox(0,"LISTHEADERS","Debug",0);
+					HWND hList = GetDlgItem( hDlg, IDC_LISTHEADERS );
+					POINT pt = { (signed short)LOWORD( lParam ), (signed short)HIWORD( lParam ) };
+					HTREEITEM hItem = 0;
+					if (pt.x==-1) pt.x = 0;
+					if (pt.y==-1) pt.y = 0;
+					if (int numRows = ListView_GetItemCount(hList)){
+						HMENU hMenu = CreatePopupMenu();
+						AppendMenu(hMenu, MF_STRING, (UINT_PTR)1, TranslateT("Copy Selected"));
+						AppendMenu(hMenu, MF_STRING, (UINT_PTR)2, TranslateT("Copy All"));
+						AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
+						AppendMenu(hMenu, MF_STRING, (UINT_PTR)0, TranslateT("Cancel"));
+						int nReturnCmd = TrackPopupMenu( hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hDlg, NULL );
+						DestroyMenu( hMenu );
+						if (nReturnCmd>0){
+							int sizeNeeded = 1, courRow=0;
+							WCHAR headname[64]={0}, headvalue[256]={0}; 
+							for (courRow=0;courRow<numRows;courRow++){
+								if ((nReturnCmd==1) && (ListView_GetItemState(hList, courRow, LVIS_SELECTED)==0)) continue;
+								ListView_GetItemText(hList, courRow, 0, headname, SIZEOF(headname));
+								ListView_GetItemText(hList, courRow, 1, headvalue, SIZEOF(headvalue));
+								int headnamelen=wcslen(headname);
+								if (headnamelen) sizeNeeded += 1 + headnamelen;
+								sizeNeeded += 3+wcslen(headvalue);
+							}
+							if(OpenClipboard(hDlg)){
+								EmptyClipboard();
+								HGLOBAL hData=GlobalAlloc(GMEM_MOVEABLE,(sizeNeeded+1)*sizeof(WCHAR));
+								WCHAR *buff = (WCHAR *)GlobalLock(hData);
+								int courPos = 0;
+								for (courRow=0;courRow<numRows;courRow++){
+									if ((nReturnCmd==1) && (ListView_GetItemState(hList, courRow, LVIS_SELECTED)==0)) continue;
+									ListView_GetItemText(hList, courRow, 0, headname, SIZEOF(headname));
+									ListView_GetItemText(hList, courRow, 1, headvalue, SIZEOF(headvalue));
+									if (wcslen(headname)) courPos += swprintf(&buff[courPos],L"%s:\t%s\r\n",headname,headvalue);
+									else courPos += swprintf(&buff[courPos],L"\t%s\r\n",headvalue);
+								}
+								GlobalUnlock(hData);
+								SetClipboardData(CF_UNICODETEXT,hData);
+								CloseClipboard();
+							}
+						}
+					}
+			}	}
+			break; // just in case
 	}
 	return 0;
 }
@@ -2385,6 +2433,55 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				}
 			}
 			break;
+		case WM_CONTEXTMENU:
+			{
+				if ( GetWindowLong(( HWND )wParam, GWL_ID ) == IDC_LISTMAILS)	{
+					//MessageBox(0,"LISTHEADERS","Debug",0);
+					HWND hList = GetDlgItem( hDlg, IDC_LISTMAILS );
+					POINT pt = { (signed short)LOWORD( lParam ), (signed short)HIWORD( lParam ) };
+					HTREEITEM hItem = 0;
+					if (pt.x==-1) pt.x = 0;
+					if (pt.y==-1) pt.y = 0;
+					if (int numRows = ListView_GetItemCount(hList)){
+						HMENU hMenu = CreatePopupMenu();
+						AppendMenu(hMenu, MF_STRING, (UINT_PTR)1, TranslateT("Copy Selected"));
+						AppendMenu(hMenu, MF_STRING, (UINT_PTR)2, TranslateT("Copy All"));
+						AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
+						AppendMenu(hMenu, MF_STRING, (UINT_PTR)0, TranslateT("Cancel"));
+						int nReturnCmd = TrackPopupMenu( hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hDlg, NULL );
+						DestroyMenu( hMenu );
+						if (nReturnCmd>0){
+							int sizeNeeded = 1, courRow=0;
+							WCHAR from[128]={0}, subject[256]={0}, size[16]={0}, date[64]={0};
+							for (courRow=0;courRow<numRows;courRow++){
+								if ((nReturnCmd==1) && (ListView_GetItemState(hList, courRow, LVIS_SELECTED)==0)) continue;
+								ListView_GetItemText(hList, courRow, 0, from, SIZEOF(from));
+								ListView_GetItemText(hList, courRow, 1, subject, SIZEOF(subject));
+								ListView_GetItemText(hList, courRow, 2, size, SIZEOF(size));
+								ListView_GetItemText(hList, courRow, 3, date, SIZEOF(date));
+								sizeNeeded += 5+wcslen(from)+wcslen(subject)+wcslen(size)+wcslen(date);
+							}
+							if(OpenClipboard(hDlg)){
+								EmptyClipboard();
+								HGLOBAL hData=GlobalAlloc(GMEM_MOVEABLE,(sizeNeeded+1)*sizeof(WCHAR));
+								WCHAR *buff = (WCHAR *)GlobalLock(hData);
+								int courPos = 0;
+								for (courRow=0;courRow<numRows;courRow++){
+									if ((nReturnCmd==1) && (ListView_GetItemState(hList, courRow, LVIS_SELECTED)==0)) continue;
+									ListView_GetItemText(hList, courRow, 0, from, SIZEOF(from));
+									ListView_GetItemText(hList, courRow, 1, subject, SIZEOF(subject));
+									ListView_GetItemText(hList, courRow, 2, size, SIZEOF(size));
+									ListView_GetItemText(hList, courRow, 3, date, SIZEOF(date));
+									courPos += swprintf(&buff[courPos],L"%s\t%s\t%s\t%s\r\n",from,subject,size,date);
+								}
+								GlobalUnlock(hData);
+								SetClipboardData(CF_UNICODETEXT,hData);
+								CloseClipboard();
+							}
+						}
+					}
+			}	}
+			break; // just in case
 		default:
 			return 0;
 	}
