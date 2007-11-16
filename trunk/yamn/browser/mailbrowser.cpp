@@ -1662,7 +1662,7 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 						int nReturnCmd = TrackPopupMenu( hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hDlg, NULL );
 						DestroyMenu( hMenu );
 						if (nReturnCmd>0){
-							int sizeNeeded = 1, courRow=0;
+							int sizeNeeded = 0, courRow=0;
 							WCHAR headname[64]={0}, headvalue[256]={0}; 
 							for (courRow=0;courRow<numRows;courRow++){
 								if ((nReturnCmd==1) && (ListView_GetItemState(hList, courRow, LVIS_SELECTED)==0)) continue;
@@ -1672,7 +1672,11 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 								if (headnamelen) sizeNeeded += 1 + headnamelen;
 								sizeNeeded += 3+wcslen(headvalue);
 							}
-							if(OpenClipboard(hDlg)){
+							if (!sizeNeeded) {
+#ifdef _DEBUG
+								MessageBox(hDlg,"Nothing To Copy","Debug ShowHeaders",0);
+#endif
+							} else if(OpenClipboard(hDlg)){
 								EmptyClipboard();
 								HGLOBAL hData=GlobalAlloc(GMEM_MOVEABLE,(sizeNeeded+1)*sizeof(WCHAR));
 								WCHAR *buff = (WCHAR *)GlobalLock(hData);
@@ -2451,7 +2455,7 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 						int nReturnCmd = TrackPopupMenu( hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, hDlg, NULL );
 						DestroyMenu( hMenu );
 						if (nReturnCmd>0){
-							int sizeNeeded = 1, courRow=0;
+							int sizeNeeded = 0, courRow=0;
 							WCHAR from[128]={0}, subject[256]={0}, size[16]={0}, date[64]={0};
 							for (courRow=0;courRow<numRows;courRow++){
 								if ((nReturnCmd==1) && (ListView_GetItemState(hList, courRow, LVIS_SELECTED)==0)) continue;
@@ -2461,7 +2465,11 @@ BOOL CALLBACK DlgProcYAMNMailBrowser(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 								ListView_GetItemText(hList, courRow, 3, date, SIZEOF(date));
 								sizeNeeded += 5+wcslen(from)+wcslen(subject)+wcslen(size)+wcslen(date);
 							}
-							if(OpenClipboard(hDlg)){
+							if (!sizeNeeded) {
+#ifdef _DEBUG
+								MessageBox(hDlg,"Nothing To Copy","Debug MailBrowser",0);
+#endif
+							} else if(OpenClipboard(hDlg)){
 								EmptyClipboard();
 								HGLOBAL hData=GlobalAlloc(GMEM_MOVEABLE,(sizeNeeded+1)*sizeof(WCHAR));
 								WCHAR *buff = (WCHAR *)GlobalLock(hData);
