@@ -448,12 +448,15 @@ void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode)
 		return;
 
 	while(WS(start)) start++;
-	while(*start!=0)
-	{
-		if(CODES(start))
-		{
+	WCHAR *tempstore=0;
+	if(!ConvertStringToUnicode(stream,cp,&tempstore))return;
+	
+	int outind = 0;
+	while(*start!=0){
+		if(CODES(start)){
 			finder=start+2;finderend=finder;
 			while(!CODED(finderend) && !EOS(finderend)) finderend++;
+			start = finderend;
 			if(CODED(finderend))
 			{
 				Encoding=*(finderend+1);
@@ -523,32 +526,25 @@ void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode)
 						DecodedResult[len+1]=0;
 						finderend++;
 					}
-					if(!ConvertStringToUnicode(DecodedResult,cp,storeto))
-						continue;
-				}
-				else if(!ConvertStringToUnicode(start,cp,storeto))
-					continue;
-			}
-			else if(!ConvertStringToUnicode(start,cp,storeto))
-				continue;
-		}
-		else
-		{
+					WCHAR *oneWord=0;
+					if(ConvertStringToUnicode(DecodedResult,cp,&oneWord)){
+						int len = wcslen(oneWord);
+						memcpy(&tempstore[outind],oneWord,len*sizeof(WCHAR));
+						outind += len;
+					}
+					delete oneWord;
+					oneWord = 0;
+					delete[] DecodedResult; DecodedResult = 0;
+					start = finderend;
+				} else if (!EOS(start)) start++;
+			} else if (!EOS(start)) start++;
+		}else{
 NotEncoded:
-			finderend=start;
-			while(!EOS(finderend) && !CODES(finderend)) finderend++;
-			if(DecodedResult!=NULL)
-				delete[] DecodedResult;
-			DecodedResult=new char[finderend-start+2];
-			for(finder=DecodedResult;start!=finderend;start++,finder++)
-				*finder=*start;
-			*finder=0;
-			if(!ConvertStringToUnicode(DecodedResult,cp,storeto))
-				continue;
+			tempstore[outind] = tempstore[start-stream];
+			outind++;
+			start++;
 		}
-		while(WS(finderend)) finderend++;
-		start=finderend;
 	}
-	if(DecodedResult!=NULL)
-		delete[] DecodedResult;
+	tempstore[outind] = 0;
+	*storeto = tempstore;
 }
