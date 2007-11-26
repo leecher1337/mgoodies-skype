@@ -2,7 +2,7 @@
 
 Miranda IM: the free IM client for Microsoft* Windows*
 
-Copyright 2000-2003 Miranda ICQ/IM project, 
+Copyright 2000-2007 Miranda ICQ/IM project, 
 all portions of this codebase are copyrighted to the people 
 listed in contributors.txt.
 
@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "simpleaway.h"
 
+HANDLE h_prebuildmenu;
+
 static HANDLE hAwayMsgMenuItem;
 static HANDLE hCopyMsgMenuItem;
 static HANDLE hWindowList;
@@ -33,8 +35,7 @@ struct AwayMsgDlgData {
 	HANDLE hAwayMsgEvent;
 };
 #define HM_AWAYMSG  (WM_USER+11)
-static BOOL CALLBACK ReadAwayMsgDlgProc(HWND hwndDlg,UINT message,WPARAM wParam,LPARAM lParam)
-{
+static BOOL CALLBACK ReadAwayMsgDlgProc(HWND hwndDlg,UINT message,WPARAM wParam,LPARAM lParam) {
 	struct AwayMsgDlgData *dat;
 	dat=(struct AwayMsgDlgData*)GetWindowLong(hwndDlg,GWL_USERDATA);
 	switch(message) {
@@ -64,16 +65,15 @@ static BOOL CALLBACK ReadAwayMsgDlgProc(HWND hwndDlg,UINT message,WPARAM wParam,
 				EnableWindow(GetDlgItem(hwndDlg, IDC_COPY), FALSE);
 			}
 			return TRUE;
-		case HM_AWAYMSG:
-		{	ACKDATA *ack=(ACKDATA*)lParam;
+		case HM_AWAYMSG: {
+			ACKDATA *ack=(ACKDATA*)lParam;
 			if(ack->hContact!=dat->hContact) break;
 			if(ack->type!=ACKTYPE_AWAYMSG) break;
 			if(ack->hProcess!=dat->hSeq) break;
 			if(ack->result!=ACKRESULT_SUCCESS) break;
 			if(dat->hAwayMsgEvent!=NULL) {UnhookEvent(dat->hAwayMsgEvent); dat->hAwayMsgEvent=NULL;}
 			SetDlgItemText(hwndDlg,IDC_MSG,(const char*)ack->lParam);
-			if (ack->lParam)
-			{
+			if (ack->lParam) {
 				if (strlen((char*)ack->lParam))
 					EnableWindow(GetDlgItem(hwndDlg, IDC_COPY), TRUE);
 			}
@@ -83,42 +83,36 @@ static BOOL CALLBACK ReadAwayMsgDlgProc(HWND hwndDlg,UINT message,WPARAM wParam,
 			break;
 		}
 		case WM_COMMAND:
-			switch(LOWORD(wParam))
-			{
+			switch(LOWORD(wParam)) {
 				case IDCANCEL:
 				case IDOK:
 					DestroyWindow(hwndDlg);
 					break;
-				case IDC_COPY:
-					{
-						if (OpenClipboard(hwndDlg))
-						{
-							if (EmptyClipboard())
-							{
-								HGLOBAL hglbCopy;
-								LPTSTR  lptstrCopy;
-								int		len;
-								char	msg[1024];
+				case IDC_COPY: {
+					if (OpenClipboard(hwndDlg)) {
+						if (EmptyClipboard()) {
+							HGLOBAL hglbCopy;
+							LPTSTR  lptstrCopy;
+							int		len;
+							char	msg[1024];
 
-								len = GetDlgItemText(hwndDlg, IDC_MSG, msg, sizeof(msg));
-								if (len)
-								{
-									hglbCopy = GlobalAlloc(GMEM_MOVEABLE, (len + 1) * sizeof(TCHAR)); 
-									if (hglbCopy == NULL)
-									{ 
-										CloseClipboard(); 
-										break; 
-									}
-									lptstrCopy = GlobalLock(hglbCopy); 
-									memcpy(lptstrCopy, msg, len*sizeof(TCHAR)); 
-									lptstrCopy[len] = (TCHAR)0;    // null character 
-									GlobalUnlock(hglbCopy);
-									SetClipboardData(CF_TEXT, hglbCopy);
+							len = GetDlgItemText(hwndDlg, IDC_MSG, msg, sizeof(msg));
+							if (len) {
+								hglbCopy = GlobalAlloc(GMEM_MOVEABLE, (len + 1) * sizeof(TCHAR)); 
+								if (hglbCopy == NULL) { 
+									CloseClipboard(); 
+									break; 
 								}
+								lptstrCopy = GlobalLock(hglbCopy); 
+								memcpy(lptstrCopy, msg, len*sizeof(TCHAR)); 
+								lptstrCopy[len] = (TCHAR)0;    // null character 
+								GlobalUnlock(hglbCopy);
+								SetClipboardData(CF_TEXT, hglbCopy);
 							}
-							CloseClipboard();
 						}
+						CloseClipboard();
 					}
+				}
 				break;
 			}
 			break;
@@ -134,11 +128,9 @@ static BOOL CALLBACK ReadAwayMsgDlgProc(HWND hwndDlg,UINT message,WPARAM wParam,
 	return FALSE;
 }
 
-static int GetMessageCommand(WPARAM wParam,LPARAM lParam)
-{
+static int GetMessageCommand(WPARAM wParam,LPARAM lParam) {
 	HWND hwnd;
-	if(hwnd=WindowList_Find(hWindowList,(HANDLE)wParam))
-	{
+	if(hwnd=WindowList_Find(hWindowList,(HANDLE)wParam)) {
 		SetForegroundWindow(hwnd);
 		SetFocus(hwnd);
 	}
@@ -146,16 +138,13 @@ static int GetMessageCommand(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-static BOOL CALLBACK CopyAwayMsgDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
+static BOOL CALLBACK CopyAwayMsgDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	struct AwayMsgDlgData *dat;
 
 	dat=(struct AwayMsgDlgData*)GetWindowLong(hwndDlg, GWL_USERDATA);
 
-	switch(message)
-	{
-		case WM_INITDIALOG:
-		{
+	switch(message) {
+		case WM_INITDIALOG: {
 			char str[256],format[128];
 			char *contactName;
 
@@ -172,8 +161,7 @@ static BOOL CALLBACK CopyAwayMsgDlgProc(HWND hwndDlg, UINT message, WPARAM wPara
 			SetWindowText(hwndDlg, str);
 			return TRUE;
 		}
-		case HM_AWAYMSG:
-		{	
+		case HM_AWAYMSG: {	
 			ACKDATA *ack=(ACKDATA*)lParam;
 			if(ack->hContact!=dat->hContact)
 				break;
@@ -183,26 +171,20 @@ static BOOL CALLBACK CopyAwayMsgDlgProc(HWND hwndDlg, UINT message, WPARAM wPara
 				break;
 			if(ack->result!=ACKRESULT_SUCCESS)
 				break;
-			if(dat->hAwayMsgEvent != NULL)
-			{
+			if(dat->hAwayMsgEvent != NULL) {
 				UnhookEvent(dat->hAwayMsgEvent);
 				dat->hAwayMsgEvent = NULL;
 			}
-			if (ack->lParam)
-			{
-				if (lstrlen((char*)ack->lParam))
-				{
-					if (OpenClipboard(hwndDlg))
-					{
-						if (EmptyClipboard())
-						{
+			if (ack->lParam) {
+				if (lstrlen((char*)ack->lParam)) {
+					if (OpenClipboard(hwndDlg)) {
+						if (EmptyClipboard()) {
 							HGLOBAL hglbCopy;
 							LPTSTR  lptstrCopy;
 							int		len = lstrlen((char*)ack->lParam);
 
 							hglbCopy = GlobalAlloc(GMEM_MOVEABLE, (len + 1) * sizeof(TCHAR)); 
-							if (hglbCopy == NULL)
-							{ 
+							if (hglbCopy == NULL) { 
 								CloseClipboard();
 								DestroyWindow(hwndDlg);
 								break; 
@@ -221,8 +203,7 @@ static BOOL CALLBACK CopyAwayMsgDlgProc(HWND hwndDlg, UINT message, WPARAM wPara
 			break;
 		}
 		case WM_COMMAND:
-			switch(LOWORD(wParam))
-			{
+			switch(LOWORD(wParam)) {
 				case IDCANCEL:
 				case IDOK:
 					DestroyWindow(hwndDlg);
@@ -242,11 +223,9 @@ static BOOL CALLBACK CopyAwayMsgDlgProc(HWND hwndDlg, UINT message, WPARAM wPara
 	return FALSE;
 }
 
-static int CopyAwayMsgInit(WPARAM wParam, LPARAM lParam)
-{
+static int CopyAwayMsgInit(WPARAM wParam, LPARAM lParam) {
 	HWND hwnd;
-	if(hwnd=WindowList_Find(hWindowList2, (HANDLE)wParam))
-	{
+	if(hwnd=WindowList_Find(hWindowList2, (HANDLE)wParam)) {
 		SetForegroundWindow(hwnd);
 		SetFocus(hwnd);
 	}
@@ -254,8 +233,7 @@ static int CopyAwayMsgInit(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static int AwayMsgPreBuildMenu(WPARAM wParam,LPARAM lParam)
-{
+/*static*/ int AwayMsgPreBuildMenu(WPARAM wParam,LPARAM lParam) {
 	CLISTMENUITEM clmi;
 	char str[128];
 	int status;
@@ -266,15 +244,12 @@ static int AwayMsgPreBuildMenu(WPARAM wParam,LPARAM lParam)
 	clmi.cbSize=sizeof(clmi);
 	clmi.flags=CMIM_FLAGS|CMIF_HIDDEN;
 	
-	if(szProto!=NULL)
-	{
+	if(szProto!=NULL) {
 		status = DBGetContactSettingWord((HANDLE)wParam,szProto,"Status",ID_STATUS_OFFLINE);
 		wsprintf(str,Translate("Re&ad %s Message"),(char*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,status,0));
 		clmi.pszName=str;
-		if(CallProtoService(szProto,PS_GETCAPS,PFLAGNUM_1,0)&PF1_MODEMSGRECV)
-		{
-			if(CallProtoService(szProto,PS_GETCAPS,PFLAGNUM_3,0)&Proto_Status2Flag(status == ID_STATUS_OFFLINE ? ID_STATUS_INVISIBLE : status))
-			{
+		if(CallProtoService(szProto,PS_GETCAPS,PFLAGNUM_1,0)&PF1_MODEMSGRECV) {
+			if(CallProtoService(szProto,PS_GETCAPS,PFLAGNUM_3,0)&Proto_Status2Flag(status == ID_STATUS_OFFLINE ? ID_STATUS_INVISIBLE : status)) {
 				clmi.flags=CMIM_FLAGS|CMIM_NAME|CMIM_ICON;
 				clmi.hIcon = LoadSkinnedProtoIcon(szProto, status);
 			}
@@ -296,8 +271,8 @@ static int AwayMsgPreBuildMenu(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-static int AwayMsgPreShutdown(WPARAM wParam, LPARAM lParam)
-{
+int AwayMsgPreShutdown(void) {
+	UnhookEvent(h_prebuildmenu);
 	if (hWindowList)
 		WindowList_BroadcastAsync(hWindowList,WM_CLOSE,0,0);
 	if (hWindowList2)
@@ -305,8 +280,7 @@ static int AwayMsgPreShutdown(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-int LoadAwayMsgModule(void)
-{
+int LoadAwayMsgModule(void) {
 	CLISTMENUITEM mi;
 
 	hWindowList = (HANDLE)CallService(MS_UTILS_ALLOCWINDOWLIST,0,0);
@@ -333,8 +307,7 @@ int LoadAwayMsgModule(void)
 	mi.pszService = MS_SA_COPYAWAYMSG;
 	hCopyMsgMenuItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
 
-	HookEvent(ME_CLIST_PREBUILDCONTACTMENU,AwayMsgPreBuildMenu);
-	HookEvent(ME_SYSTEM_PRESHUTDOWN,AwayMsgPreShutdown);
+	h_prebuildmenu = HookEvent(ME_CLIST_PREBUILDCONTACTMENU,AwayMsgPreBuildMenu);
+
 	return 0;
 }
-
