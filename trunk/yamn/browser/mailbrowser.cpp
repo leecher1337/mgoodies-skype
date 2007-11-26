@@ -1423,7 +1423,12 @@ BOOL CALLBACK DlgProcYAMNShowMessage(HWND hDlg,UINT msg,WPARAM wParam,LPARAM lPa
 				if (!body) if (!_stricmp(Header->name,"Body")) {body = Header->value; continue;}
 				if (!contentType) if (!_stricmp(Header->name,"Content-Type")) contentType = Header->value;
 				if (!transEncoding) if (!_stricmp(Header->name,"Content-Transfer-Encoding")) transEncoding = Header->value;
-				ConvertCodedStringToUnicode(Header->name,&str1,MailParam->mail->MailData->CP,1); 
+				//ConvertCodedStringToUnicode(Header->name,&str1,MailParam->mail->MailData->CP,1); 
+				{
+					int streamsize = MultiByteToWideChar(20127,0,Header->name,-1,NULL,0);
+					str1 = new WCHAR[streamsize+1];
+					MultiByteToWideChar(20127,0,Header->name,-1,str1,streamsize);//US-ASCII
+				}
 				ConvertCodedStringToUnicode(Header->value,&str2,MailParam->mail->MailData->CP,1);
 				if (!str2) { str2 = (WCHAR *)malloc(2); str2[0] = 0; }// the header value may be NULL
 				if (!From) if (!_stricmp(Header->name,"From")) {
