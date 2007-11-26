@@ -491,7 +491,10 @@ void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode)
 				                finder++;
 				                finderend--;
 					}
-					*finderend=(char)0;
+					//*finderend=(char)0;
+					char * oneWordEncoded = new char[finderend-finder+1];
+					strncpy(oneWordEncoded,finder,finderend-finder);
+					oneWordEncoded[finderend-finder]=0;
 					switch(Encoding)
 					{
 						case 'b':
@@ -510,13 +513,14 @@ void ConvertCodedStringToUnicode(char *stream,WCHAR **storeto,DWORD cp,int mode)
 					{
 						case 'q':
 						case 'Q':
-							DecodeQuotedPrintable(finder,DecodedResult,size, TRUE);
+							DecodeQuotedPrintable(oneWordEncoded,DecodedResult,size, TRUE);
 							break;
 						case 'b':
 						case 'B':
-							DecodeBase64(finder,DecodedResult,size);
+							DecodeBase64(oneWordEncoded,DecodedResult,size);
 							break;
 					}
+					delete[] oneWordEncoded;
 					if(codeend)
 						finderend=pcodeend+2;
 					if(WS(finderend))	//if string continues and there's some whitespace, add space to string that is to be converted
