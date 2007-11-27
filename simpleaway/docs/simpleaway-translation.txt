@@ -1,5 +1,5 @@
 ; This is a template for translation of SimpleAway plugin
-; Last updated 26-11-2007 for 1.7.5.0
+; Last updated 27-11-2007 for 1.7.5.0
 
 ;[OK]
 ;[OK (%d)]

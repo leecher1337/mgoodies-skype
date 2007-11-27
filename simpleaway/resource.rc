@@ -51,7 +51,7 @@ BEGIN
             VALUE "LegalCopyright", "Copyright © 2005 Harven, © 2006-2007 Dezeath\0"
             VALUE "OriginalFilename", "simpleaway.dll\0"
             VALUE "ProductName", "SimpleAway\0"
-            VALUE "ProductVersion", "1.7.5.0 RC\0"
+            VALUE "ProductVersion", "1.7.5.0 RC2\0"
         END
     END
     BLOCK "VarFileInfo"
