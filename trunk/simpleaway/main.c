@@ -44,7 +44,7 @@ PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 	"SimpleAway",
 	PLUGIN_MAKE_VERSION(1,7,5,0),
-	"This plugin replaces build-in away system.\r\n[Release Candidate]",
+	"This plugin replaces built-in away system.\r\n[Release Candidate 2]",
 	"Harven, Dezeath",
 	"harven@users.berlios.de, dezred@gmail.com",
 	"© 2005 Harven, © 2006-2007 Dezeath",
@@ -1196,11 +1196,18 @@ int ChangeStatusMessage(WPARAM wParam,LPARAM lParam) {
 	int		status_modes=0;
 	int		status_modes_msg=0;
 	int		dlg_flags;
-	BOOL	show_dlg=FALSE;
+	BOOL	show_dlg=FALSE, on_startup=FALSE;
 	char	buff[80];
 
 	if (terminated)
 		return 0;
+
+	if (lParam) {
+		if (!strcmp((char *)lParam, "SimpleAwayGlobalStartupStatus")) {
+			lParam = (LPARAM)NULL;
+			on_startup = TRUE;
+		}
+	}
 
 	if (ProtoStatusMsgCount == 1 && !lParam) {
 		int				proto_count, i;
@@ -1270,7 +1277,8 @@ int ChangeStatusMessage(WPARAM wParam,LPARAM lParam) {
 				box_data = (struct MsgBoxInitData *) mir_alloc(sizeof(struct MsgBoxInitData));
 				box_data->proto_name = (char *)lParam;
 
-				SaveStatusAsCurrent((char *)lParam, (int)wParam);
+				if (!on_startup)
+					SaveStatusAsCurrent((char *)lParam, (int)wParam);
 				_snprintf(buff, sizeof(buff), "Cur%sStatus", (char *)lParam);
 				if (DBGetContactSettingWord(NULL, "SimpleAway", buff, ID_STATUS_OFFLINE) == (int)wParam)
 					box_data->status_mode = ID_STATUS_CURRENT;
@@ -1520,7 +1528,44 @@ int SetStartupStatus(int i) {
 void CALLBACK SetStartupStatusGlobal(HWND timerhwnd, UINT uMsg, UINT_PTR idEvent, DWORD  dwTime) {
 	int		i;
 
+	int		prev_status_mode=-1, status_mode;
+	char	setting[80];
+	BOOL	globalstatus=TRUE;
+
 	KillTimer(timerhwnd, idEvent);
+
+//is global status mode going to be set?
+	for(i=0; i<ProtoCount; i++) {
+		if (!CallService(MS_PROTO_ISPROTOCOLLOADED, 0, (LPARAM)protocols[i]->szName))
+			continue;
+
+		if (protocols[i]->type != PROTOTYPE_PROTOCOL)
+			continue;
+
+		if (!(CallProtoService(protocols[i]->szName, PS_GETCAPS, PFLAGNUM_2, 0)&~CallProtoService(protocols[i]->szName, PS_GETCAPS, PFLAGNUM_5, 0)))
+			continue;
+
+		_snprintf(setting, sizeof(setting), "Startup%sStatus", protocols[i]->szName);
+		status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
+
+		if (status_mode == ID_STATUS_CURRENT) {//this means load status used last time for this proto
+			_snprintf(setting, sizeof(setting), "Last%sStatus", protocols[i]->szName);
+			status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
+		}
+
+		if (status_mode != prev_status_mode && prev_status_mode != -1) {
+			globalstatus=FALSE;
+			break;
+		}
+
+		prev_status_mode = status_mode;
+	}
+
+//popup status msg change dialog as startup?
+	if (globalstatus) {
+		ChangeStatusMessage((WPARAM)status_mode, (LPARAM)"SimpleAwayGlobalStartupStatus");
+		return;
+	}
 
 	for(i=0; i<ProtoCount; i++) {
 		if (!CallService(MS_PROTO_ISPROTOCOLLOADED, 0, (LPARAM)protocols[i]->szName))
