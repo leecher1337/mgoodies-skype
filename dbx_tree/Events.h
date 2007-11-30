@@ -14,7 +14,7 @@
 	and an Index releated to the global counter in the header, which makes it possible to store multiple events with the same timestamp
 **/
 typedef struct TEventKey {
-	__time64_t TimeStamp;   /// timestamp at which the event occoured
+	unsigned int TimeStamp; /// timestamp at which the event occoured
 	unsigned int Index;     /// index counted globally in the databaseheader
 
 	bool operator <  (const TEventKey & Other) const;
@@ -28,20 +28,21 @@ typedef struct TEventKey {
 /**
 	\brief The data of an Event
 
-	A event's data is variable length. The data is a TEvent-structure followed by varaible length data.
+	A event's data is variable length. The data is a TDBEvent-structure followed by varaible length data.
 	- fixed data
 	- module name
 	- blob data (mostly UTF8 message body)
 **/
 typedef struct TEvent {
 	unsigned int Signature;    /// Signature
-	unsigned short Flags;      /// Flags
-	unsigned short Type;       /// Eventtype
-	__time64_t TimeStamp;      /// Timestamp of the event (seconds elapsed since 1.1.1970) used as key element
-	unsigned int Index;        /// index counted globally in the databaseheader
 	unsigned int Entry;        /// hEntry which owns this event
-	unsigned int ModuleLen;    /// Length of the Module name
+	unsigned int Flags;        /// Flags
+	unsigned int TimeStamp;    /// Timestamp of the event (seconds elapsed since 1.1.1970) used as key element
+	unsigned int Index;        /// index counted globally in the databaseheader
+	unsigned int Type;         /// Eventtype
 	unsigned int DataLen;      /// Length of the stored data in bytes
+
+	char Reserved[4];          /// reserved storage
 } TEvent;
 
 #pragma pack(pop)

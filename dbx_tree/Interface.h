@@ -11,5 +11,5 @@
 
 #include "m_dbx_tree.h"
 
-extern HINSTANCE  hInstance;
+extern HINSTANCE   hInstance;
 extern PLUGINLINK *pluginLink;

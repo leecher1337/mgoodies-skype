@@ -147,7 +147,7 @@ void CIterationHeap<TType>::Pop()
 			}
 		}
 
-		if ((big > 0) && (COMPARE_FUNC(m_Heap[big], ins)))
+		if ((big > 0) && (COMPARE_FUNC(m_Heap[big], ins) || (*m_Heap[big] == *ins))
 		{
 			m_Heap[index] = m_Heap[big];
 			index = big;

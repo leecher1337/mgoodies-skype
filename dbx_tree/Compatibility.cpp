@@ -81,7 +81,7 @@ int FindNextContact(WPARAM hEntry,LPARAM lParam)
 	TDBEntryIterFilter filter;
 	filter.cbSize = sizeof(filter);
 	filter.fDontHasFlags = DB_EF_IsGroup | DB_EF_IsVirtual;
-	if ((hEntry == 0) || (hEntry == gDataBase->getRootEntry()))
+	if ((hEntry == 0) || (hEntry == gDataBase->getEntries().getRootEntry()))
 	{
 		TDBEntryIterationHandle hiter = DBEntryIterInit((WPARAM)&filter, 0);
 		if ((hiter == 0) || (hiter == DB_INVALIDPARAM))

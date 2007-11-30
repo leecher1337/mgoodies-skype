@@ -70,11 +70,9 @@ unsigned int CDirectAccess::Move(unsigned int Source, unsigned int Dest, unsigne
 }
 */
 
-unsigned int CDirectAccess::Alloc(unsigned int Size)
+unsigned int CDirectAccess::mAlloc(unsigned int Size)
 {
 	unsigned int res = 0xFFFFFFFF;	
-
-	if (Size == 0) return res;
 
 	TFreeSpaceMap::iterator i = m_FreeSpace.lower_bound(Size);
 	
@@ -94,9 +92,14 @@ unsigned int CDirectAccess::Alloc(unsigned int Size)
 	
 	return res;
 }
-void CDirectAccess::Free(unsigned int Dest, unsigned int Count)
+void CDirectAccess::mFree(unsigned int Dest, unsigned int Count)
 {
 	//needs improvements
+	void * zero = malloc(Count);
+	memset(zero, 0, Count);
+	Write(zero, Dest, Count);
+	free(zero);
+
 	if (Dest + Count == m_Size)
 	{
 		m_Size -= Count;

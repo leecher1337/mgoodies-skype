@@ -24,13 +24,11 @@ CDataBase::CDataBase(const char* FileName)
 	m_PrivateFile = NULL;
 	
 	m_Entries = NULL;
-	m_Virtuals = NULL;
 	m_Settings = NULL;
 }
 CDataBase::~CDataBase()
 {
 	if (m_Entries) delete m_Entries;
-	if (m_Virtuals) delete m_Virtuals;
 	if (m_Settings) delete m_Settings;
 
 	if (m_SettingsFile) delete m_SettingsFile;
@@ -40,7 +38,6 @@ CDataBase::~CDataBase()
 	m_PrivateFile = NULL;
 	
 	m_Entries = NULL;
-	m_Virtuals = NULL;
 	m_Settings = NULL;
 
 	delete[] m_PrivateFile;
@@ -168,16 +165,13 @@ int CDataBase::OpenDB()
 	m_SettingsFile->Read(&m_SettingsHeader, 0, sizeof(m_SettingsHeader));
 	m_PrivateFile->Read(&m_PrivateHeader, 0, sizeof(m_PrivateHeader));
 
+	m_Entries = new CEntries(*m_PrivateFile, m_Sync, m_PrivateHeader.RootEntry, m_PrivateHeader.Entries, m_PrivateHeader.Virtuals);
+	m_Entries->sigRootChanged().connect(this, &CDataBase::onEntriesRootChanged);
+	m_Entries->sigVirtualRootChanged().connect(this, &CDataBase::onVirtualsRootChanged);
 
-
-	m_Settings = new CSettings(*m_SettingsFile, m_Sync, m_SettingsHeader.Settings);
+	m_Settings = new CSettings(*m_SettingsFile, *m_PrivateFile, m_Sync, m_SettingsHeader.Settings, *m_Entries);
 	m_Settings->sigRootChanged().connect(this, &CDataBase::onSettingsRootChanged);
 
-	m_Virtuals = new CVirtuals(*m_PrivateFile, m_Sync, m_PrivateHeader.Virtuals);
-	m_Virtuals->sigRootChanged().connect(this, &CDataBase::onVirtualsRootChanged);
-
-	m_Entries = new CEntries(*m_PrivateFile, m_Sync, *m_Virtuals, m_PrivateHeader.Entries);
-	m_Entries->sigRootChanged().connect(this, &CDataBase::onEntriesRootChanged);
 
 	return 0;
 }
@@ -193,7 +187,7 @@ void CDataBase::ReWritePrivateHeader()
 }
 
 
-void CDataBase::onSettingsRootChanged(void* Settings, unsigned int NewRoot)
+void CDataBase::onSettingsRootChanged(CSettings* Settings, unsigned int NewRoot)
 {
 
 }
@@ -206,18 +200,9 @@ void CDataBase::onEntriesRootChanged(void* Entries, unsigned int NewRoot)
 
 }
 
-TDBEntryHandle CDataBase::getRootEntry()
-{
-	return m_PrivateHeader.RootEntry;  // the root is never changed -> no need to call Sync.BeginRead
-}
-
 CEntries & CDataBase::getEntries()
 {
 	return *m_Entries;
-}
-CVirtuals & CDataBase::getVirtuals()
-{
-	return *m_Virtuals;
 }
 CSettings & CDataBase::getSettings()
 {

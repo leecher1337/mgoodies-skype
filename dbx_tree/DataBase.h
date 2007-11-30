@@ -4,7 +4,6 @@
 
 #include "Events.h"
 #include "Settings.h"
-#include "Virtuals.h"
 #include "Entries.h"
 
 #include "FileAccess.h"
@@ -66,17 +65,14 @@ private:
 	TSettingsHeader m_SettingsHeader;
 	TPrivateHeader m_PrivateHeader;
 
-	void onSettingsRootChanged(void* Settings, unsigned int NewRoot);
+	void onSettingsRootChanged(CSettings* Settings, unsigned int NewRoot);
 	void onVirtualsRootChanged(void* Virtuals, unsigned int NewRoot);
 	void onEntriesRootChanged(void* Entries, unsigned int NewRoot);
 protected:
 	CMultiReadExclusiveWriteSynchronizer m_Sync;
 
 	CEntries *m_Entries;
-
-	CVirtuals *m_Virtuals;
 	CSettings *m_Settings;
-
 
 	void ReWriteSettingsHeader();
 	void ReWritePrivateHeader();
@@ -90,9 +86,7 @@ public:
 	int CheckDB();
 	int OpenDB();
 
-	TDBEntryHandle getRootEntry();
 	CEntries & getEntries();
-	CVirtuals & getVirtuals();
 	CSettings & getSettings();
 
 };
