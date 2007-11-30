@@ -12,6 +12,9 @@ protected:
 
 	virtual unsigned int mRead(void* Buf, unsigned int Source, unsigned int Size) = 0;
   virtual unsigned int mWrite(void* Buf, unsigned int Dest, unsigned int Size) = 0;
+	virtual unsigned int mAlloc(unsigned int Size) = 0;
+	virtual void mFree(unsigned int Dest, unsigned int Size) = 0;
+
 
 public:
 	CFileAccess(const char* FileName);
@@ -23,6 +26,6 @@ public:
   unsigned int Write(void* Buf, unsigned int Dest, unsigned int Size);
 	//unsigned int Move(unsigned int Source, unsigned int Dest, unsigned int Size);
 
-	virtual unsigned int Alloc(unsigned int Size) = 0;
-	virtual void Free(unsigned int Dest, unsigned int Count) = 0;
+	unsigned int Alloc(unsigned int Size);
+	void Free(unsigned int Dest, unsigned int Count);
 };

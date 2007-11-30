@@ -71,11 +71,9 @@ unsigned int CMappedMemory::Move(unsigned int Source, unsigned int Dest, unsigne
 }
 */
 
-unsigned int CMappedMemory::Alloc(unsigned int Size)
+unsigned int CMappedMemory::mAlloc(unsigned int Size)
 {
 	unsigned int res = 0xFFFFFFFF;	
-
-	if (Size == 0) return res;
 
 	TFreeSpaceMap::iterator i = m_FreeSpace.lower_bound(Size);
 	
@@ -121,9 +119,13 @@ unsigned int CMappedMemory::Alloc(unsigned int Size)
 
 	return res;
 }
-void CMappedMemory::Free(unsigned int Dest, unsigned int Count)
+void CMappedMemory::mFree(unsigned int Dest, unsigned int Count)
 {
-	//needs improvements
+	void * zero = malloc(Count);
+	memset(zero, 0, Count);
+	Write(zero, Dest, Count);
+	free(zero);
+
 	TFreeSpaceMap::iterator i = m_FreeSpace.insert(std::make_pair(Count, Dest));
 	if (Dest + Count == m_AllocSize)
 	{

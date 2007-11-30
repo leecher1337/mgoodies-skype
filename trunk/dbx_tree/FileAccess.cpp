@@ -99,6 +99,33 @@ unsigned int CFileAccess::Write(void* Buf, unsigned int Dest, unsigned int Size)
 
 	return Size;
 }
+
+unsigned int CFileAccess::Alloc(unsigned int Size)
+{
+	if (Size == 0)
+		return 0;
+
+	if (Size & 0x00000003)    // 4 byte align
+		Size = (Size + 4) & 0xFFFFFFFC;
+
+	return mAlloc(Size);
+}
+void CFileAccess::Free(unsigned int Dest, unsigned int Count)
+{
+	if (Dest == 0)
+		return;
+
+	if (Dest & 0x00000003)    // 4 byte align
+		Dest = (Dest + 4) & 0xFFFFFFFC;
+
+	if (Count == 0)
+		return;
+
+	if (Count & 0x00000003)    // 4 byte align
+		Count = (Count + 4) & 0xFFFFFFFC;
+
+	mFree(Dest, Count);
+}
 /*
 unsigned int CFileAccess::Move(unsigned int Source, unsigned int Dest, unsigned int Size)
 {

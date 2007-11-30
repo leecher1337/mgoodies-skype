@@ -185,62 +185,6 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="FileAccess"
-			>
-			<File
-				RelativePath=".\DirectAccess.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\FileAccess.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\MappedMemory.cpp"
-				>
-			</File>
-			<Filter
-				Name="HeaderFiles"
-				>
-				<File
-					RelativePath=".\DirectAccess.h"
-					>
-				</File>
-				<File
-					RelativePath=".\FileAccess.h"
-					>
-				</File>
-				<File
-					RelativePath=".\MappedMemory.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Cipher"
-				>
-				<File
-					RelativePath=".\CAST128.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\CAST128.h"
-					>
-				</File>
-				<File
-					RelativePath=".\CAST128.inc"
-					>
-				</File>
-				<File
-					RelativePath=".\Cipher.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Cipher.h"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
 			Name="Database"
 			>
 			<File
@@ -257,10 +201,6 @@
 			</File>
 			<File
 				RelativePath=".\Settings.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Virtuals.cpp"
 				>
 			</File>
 			<Filter
@@ -282,10 +222,62 @@
 					RelativePath=".\Settings.h"
 					>
 				</File>
+			</Filter>
+			<Filter
+				Name="FileAccess"
+				>
 				<File
-					RelativePath=".\Virtuals.h"
+					RelativePath=".\DirectAccess.cpp"
 					>
 				</File>
+				<File
+					RelativePath=".\FileAccess.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\MappedMemory.cpp"
+					>
+				</File>
+				<Filter
+					Name="HeaderFiles"
+					>
+					<File
+						RelativePath=".\DirectAccess.h"
+						>
+					</File>
+					<File
+						RelativePath=".\FileAccess.h"
+						>
+					</File>
+					<File
+						RelativePath=".\MappedMemory.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="Cipher"
+					>
+					<File
+						RelativePath=".\CAST128.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\CAST128.h"
+						>
+					</File>
+					<File
+						RelativePath=".\CAST128.inc"
+						>
+					</File>
+					<File
+						RelativePath=".\Cipher.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\Cipher.h"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<Filter
