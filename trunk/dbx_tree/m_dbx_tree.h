@@ -267,17 +267,24 @@ typedef unsigned int TDBEntryIterationHandle;
 typedef unsigned int TDBSettingHandle;
 
 
-static const unsigned short DB_ST_BYTE   = 1;
-static const unsigned short DB_ST_WORD   = 2;
-static const unsigned short DB_ST_DWORD  = 3;
-static const unsigned short DB_ST_BOOL   = 4;
-static const unsigned short DB_ST_FLOAT  = 5;
-static const unsigned short DB_ST_DOUBLE = 6;
+static const unsigned short DB_ST_BYTE   = 0x01;
+static const unsigned short DB_ST_WORD   = 0x02;
+static const unsigned short DB_ST_DWORD  = 0x03;
+static const unsigned short DB_ST_QWORD  = 0x04;
 
-static const unsigned short DB_ST_ASCIIZ = 255;
-static const unsigned short DB_ST_BLOB   = 254;
-static const unsigned short DB_ST_UTF8   = 253;
-static const unsigned short DB_ST_WCHAR  = 252;
+static const unsigned short DB_ST_CHAR   = 0x11;
+static const unsigned short DB_ST_SHORT  = 0x12;
+static const unsigned short DB_ST_INT    = 0x13;
+static const unsigned short DB_ST_INT64  = 0x14;
+
+static const unsigned short DB_ST_BOOL   = 0x20;
+static const unsigned short DB_ST_FLOAT  = 0x21;
+static const unsigned short DB_ST_DOUBLE = 0x22;
+
+static const unsigned short DB_ST_ASCIIZ = 0xff;
+static const unsigned short DB_ST_BLOB   = 0xfe;
+static const unsigned short DB_ST_UTF8   = 0xfd;
+static const unsigned short DB_ST_WCHAR  = 0xfc;
 
 #if (defined(_UNICODE) || defined(UNICODE))
 	static const unsigned short DB_ST_TCHAR  = DB_ST_WCHAR;
@@ -285,6 +292,7 @@ static const unsigned short DB_ST_WCHAR  = 252;
 	static const unsigned short DB_ST_TCHAR  = DB_ST_ASCIIZ;
 #endif
 
+static const unsigned short DB_STF_Signed         = 0x10;
 static const unsigned short DB_STF_VariableLength = 0x80;
 
 
@@ -369,9 +377,10 @@ typedef
 typedef
 	union TDBSettingValue {
 		bool Bool;
-		signed char Char; unsigned char Byte;
-		signed short Short; unsigned short Word;
-		signed int Int; unsigned int DWord;
+		signed char Char;       unsigned char Byte;
+		signed short Short;     unsigned short Word;
+		signed int Int;         unsigned int DWord;
+		signed long long Int64; unsigned long long QWord;
 		float Float;
 		double Double;
 
@@ -380,6 +389,7 @@ typedef
 			union {
 				unsigned char * pBlob;				
 				char * pAnsii;
+				char * pUTF8;
 				wchar_t * pWide;
 				TCHAR * pTChar;
 			};
@@ -393,7 +403,7 @@ typedef
 	struct TDBSetting {
 		unsigned int cbSize;		          /// size of the structure in bytes
 		PDBSettingDescriptor Descriptor;  /// pointer to a Setting descriptor used to locate the setting
-		unsigned char Type;			          /// type of the setting, see DB_ST_*
+		unsigned short Type;			        /// type of the setting, see DB_ST_*
 		TDBSettingValue Value;		        /// Value of the setting according to Type
 	} TDBSetting, * PDBSetting;
 
@@ -451,7 +461,7 @@ typedef
   \param wParam = PDBSetting
   \param lParam = 0
 
-	\return 0 on success
+	\return SettingHandle
 **/
 #define MS_DB_SETTING_READ  "DB/Setting/Read"
 
@@ -462,7 +472,7 @@ typedef
   \param wParam = PDBSetting
   \param lParam = TDBSettingHandle
 
-	\return 0 success, 1 not found
+	\return original settings type
 **/
 #define MS_DB_SETTING_READHANDLE  "DB/Setting/ReadHandle"
 

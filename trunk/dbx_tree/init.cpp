@@ -3,7 +3,6 @@
 #include "DatabaseLink.h"
 
 HINSTANCE  hInstance = NULL;
-PLUGINLINK *pluginLink;
 
 static const DWORD gVersion = 0x00000001;
 static const DWORD gMinMirVer = 0x00070000;

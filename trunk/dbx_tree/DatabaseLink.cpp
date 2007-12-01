@@ -1,5 +1,26 @@
 #include "DatabaseLink.h"
 
+static int getCapability(int);
+static int getFriendlyName(char*, size_t, int);
+static int makeDatabase(char*, int*);
+static int grokHeader(char*, int*);
+static int Load(char*, void*);
+static int Unload(int);
+
+DATABASELINK gDBLink = {
+	sizeof(DATABASELINK),
+	getCapability,
+	getFriendlyName,
+	makeDatabase,
+	grokHeader,
+	Load,
+	Unload,
+};
+
+PLUGINLINK *pluginLink = NULL;
+MM_INTERFACE mmi = {0};
+UTF8_INTERFACE utfi = {0};
+
 /*
 returns what the driver can do given the flag
 */
@@ -72,7 +93,10 @@ static int Load(char* profile, void* link)
 	if (gDataBase) delete gDataBase;
 	gDataBase = new CDataBase(profile);
 
-	gPluginLink = (PLUGINLINK*)link;
+	pluginLink = (PLUGINLINK*)link;
+
+	mir_getMMI(&mmi);
+	mir_getUTFI(&utfi);
 
 	RegisterServices();
 	RegisterCompatibilityServices();
@@ -95,14 +119,3 @@ static int Unload(int wasLoaded)
 }
 
 
-DATABASELINK gDBLink = {
-	sizeof(DATABASELINK),
-	getCapability,
-	getFriendlyName,
-	makeDatabase,
-	grokHeader,
-	Load,
-	Unload,
-};
-
-PLUGINLINK *gPluginLink = NULL;
