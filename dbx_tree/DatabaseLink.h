@@ -7,3 +7,5 @@
 
 extern DATABASELINK gDBLink;
 extern PLUGINLINK *gPluginLink;
+extern MM_INTERFACE mmi;
+extern UTF8_INTERFACE utfi;

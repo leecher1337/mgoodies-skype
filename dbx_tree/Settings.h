@@ -39,17 +39,17 @@ static const unsigned int cSettingSignature = 0xF5B87A3D;
 	- maybe blob data
 **/
 typedef struct TSetting {
-	unsigned int   Signature;   /// Signature
-	TDBEntryHandle Entry;			  /// Settings' entry
-	unsigned int   Flags;       /// flags
-	unsigned short Type;        /// setting type	
-	unsigned short NameLength;     /// settingname length
+	unsigned int   Signature;    /// Signature
+	TDBEntryHandle Entry;			   /// Settings' entry
+	unsigned int   Flags;        /// flags
+	unsigned short Type;         /// setting type	
+	unsigned short NameLength;   /// settingname length
 	union {
 		TDBSettingValue Value;     /// if type is fixed length, the data is stored rigth here
 		
 		struct {
-			unsigned int BlobLength;   /// if type is variable length this describes the length of the data in bytes
-			unsigned int AllocSize; /// this is the allocated space for the blob ALWAYS in byte! this prevents us to realloc it too often
+			unsigned int BlobLength; /// if type is variable length this describes the length of the data in bytes
+			unsigned int AllocSize;  /// this is the allocated space for the blob ALWAYS in byte! this prevents us to realloc it too often
 		};
 
 		// settingname with terminating NULL
