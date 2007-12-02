@@ -77,7 +77,7 @@ public:
 	TDBSettingHandle _FindSetting(const unsigned int Hash, const char * Name, const unsigned int Length); 
 	bool _DeleteSetting(const unsigned int Hash, const TDBSettingHandle hSetting);
 	bool _ChangeSetting(const unsigned int Hash, const TDBSettingHandle OldSetting, const TDBSettingHandle NewSetting);
-
+	bool _AddSetting(const unsigned int Hash, const TDBSettingHandle hSetting);
 };
 
 

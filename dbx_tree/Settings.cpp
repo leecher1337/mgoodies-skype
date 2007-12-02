@@ -97,6 +97,18 @@ bool CSettingsTree::_ChangeSetting(const unsigned int Hash, const TDBSettingHand
 	return false;
 }
 
+bool CSettingsTree::_AddSetting(const unsigned int Hash, const TDBSettingHandle hSetting)
+{
+	TSettingKey key;
+	key.Hash = Hash;
+	Insert(key, hSetting);
+	return true;
+}
+
+
+
+
+
 
 /// lookup3, by Bob Jenkins, May 2006, Public Domain.
 #define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
@@ -543,6 +555,9 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 	CFileAccess & file(m_PrivateFile);
 	bool fileflag = false;
 
+	TSetting set = {0};
+	CSettingsTree * tree = NULL;
+
 	if (hSetting & cSettingsFileFlag)
 	{
 		file = m_SettingsFile;
@@ -550,43 +565,112 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		fileflag = true;
 	}
 
-	TSetting set = {0};
 	if (hSetting == 0)
 	{
-		m_Sync.EndWrite();
-		return DB_INVALIDPARAM;
+		if (Setting.Descriptor->Entry == 0)
+		{
+			file = m_SettingsFile;
+			fileflag = true;
+		}
+
+		if ((Setting.Descriptor) && (Setting.Descriptor->pszSettingName)) // setting needs a name
+			tree = getSettingsTree(Setting.Descriptor->Entry);
+		
 	} else {		
 		file.Read(&set, hSetting, sizeof(set));
 
-		if (set.Signature != cSettingSignature)
-		{
-			m_Sync.EndWrite();
-			return DB_INVALIDPARAM;
-		}
+		if (set.Signature == cSettingSignature)
+			tree = getSettingsTree(set.Entry);
 	}
 
-	CSettingsTree * tree = getSettingsTree(set.Entry);
 	if (tree == NULL)
 	{
 		m_Sync.EndWrite();
 		return DB_INVALIDPARAM;
 	}
 
-	if (((Setting.Type & DB_STF_VariableLength) == 0) && (set.Type & DB_STF_VariableLength))
-	{ // shrink setting (variable size->fixed size)
-		file.Free(hSetting + sizeof(set) + set.NameLength + 1, set.AllocSize);
+
+	if (hSetting == 0) // create new setting
+	{
+		int neededsize = 0;
+		switch (Setting.Type)
+		{
+			case DB_ST_ASCIIZ: case DB_ST_UTF8:
+				{
+					if (Setting.Value.Length == 0)
+						neededsize = strlen(Setting.Value.pAnsii);
+					else
+						neededsize = Setting.Value.Length - 1;
+				} break;
+			case DB_ST_WCHAR:
+				{
+					if (Setting.Value.Length == 0)
+						neededsize = sizeof(wchar_t) * wcslen(Setting.Value.pWide);
+					else
+						neededsize = sizeof(wchar_t) * (Setting.Value.Length - 1);
+				} break;
+			case DB_ST_BLOB:
+				neededsize = Setting.Value.Length;
+				break;
+		}
+
+		set.Signature = cSettingSignature;
+		set.Entry = Setting.Descriptor->Entry;
+		set.Flags = 0;
+		set.Type = Setting.Type;
+		set.AllocSize = neededsize;
+
+		if (Setting.Descriptor->sSettingNameLength == 0)
+			set.NameLength = strlen(Setting.Descriptor->pszSettingName);
+		else
+			set.NameLength = Setting.Descriptor->sSettingNameLength;
+
+		neededsize += sizeof(set) + set.NameLength + 1;
+		
+		hSetting = file.Alloc(neededsize);
+
+		tree->_AddSetting(Hash(Setting.Descriptor->pszSettingName, set.NameLength), hSetting);		
+
+
+	} else {
+
+		if (((Setting.Type & DB_STF_VariableLength) == 0) && (set.Type & DB_STF_VariableLength))
+		{ // shrink setting (variable size->fixed size)
+			file.Free(hSetting + sizeof(set) + set.NameLength + 1, set.AllocSize);
+		}
+
+		if ((Setting.Type & DB_STF_VariableLength) && ((set.Type & DB_STF_VariableLength) == 0))
+		{ // trick it
+			set.AllocSize = 0;
+		}
 	}
 
-	if ((Setting.Type & DB_STF_VariableLength) && ((set.Type & DB_STF_VariableLength) == 0))
-	{ // trick it
-		set.AllocSize = 0;
-	}
+
 
 	if (Setting.Type & DB_STF_VariableLength)
 	{
-		unsigned int neededblob = Setting.Value.Length;
-		if (Setting.Type == DB_ST_WCHAR)
-			neededblob = neededblob * sizeof(wchar_t);
+		unsigned int neededblob;
+		switch (Setting.Type)
+		{
+			case DB_ST_ASCIIZ: case DB_ST_UTF8:
+				{
+					if (Setting.Value.Length == 0)
+						neededblob = strlen(Setting.Value.pAnsii);
+					else
+						neededblob = Setting.Value.Length - 1;
+				} break;
+			case DB_ST_WCHAR:
+				{
+					if (Setting.Value.Length == 0)
+						neededblob = sizeof(wchar_t) * wcslen(Setting.Value.pWide);
+					else
+						neededblob = sizeof(wchar_t) * (Setting.Value.Length - 1);
+				} break;
+			default:
+				neededblob = Setting.Value.Length;
+				break;
+		}
+
 
 		if (set.AllocSize < neededblob)
 		{
@@ -611,7 +695,9 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		set.Type = Setting.Type;
 		file.Write(&set, hSetting, sizeof(set));
 		file.Write(Setting.Value.pBlob, hSetting + sizeof(set) + set.NameLength + 1, neededblob);
+
 	} else {
+
 		switch (Setting.Type)	
 		{
 			case DB_ST_BYTE: case DB_ST_CHAR: case DB_ST_BOOL:
@@ -643,10 +729,7 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting)
 	if ((hset == 0) || (hset == DB_INVALIDPARAM))
 	{		
 		m_Sync.EndRead();
-		if (hset)
-			return DB_INVALIDPARAM;
-		else
-			return 1;
+		return hset;
 	}
 
 	PDBSettingDescriptor back = Setting.Descriptor;
