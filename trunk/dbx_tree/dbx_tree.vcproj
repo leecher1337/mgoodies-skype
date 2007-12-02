@@ -207,6 +207,10 @@
 				Name="HeaderFiles"
 				>
 				<File
+					RelativePath=".\BTree.h"
+					>
+				</File>
+				<File
 					RelativePath=".\DataBase.h"
 					>
 				</File>
@@ -216,6 +220,10 @@
 				</File>
 				<File
 					RelativePath=".\Events.h"
+					>
+				</File>
+				<File
+					RelativePath=".\FileBTree.h"
 					>
 				</File>
 				<File
@@ -303,19 +311,11 @@
 				Name="HeaderFiles"
 				>
 				<File
-					RelativePath=".\BTree.h"
-					>
-				</File>
-				<File
 					RelativePath=".\Compatibility.h"
 					>
 				</File>
 				<File
 					RelativePath=".\DatabaseLink.h"
-					>
-				</File>
-				<File
-					RelativePath=".\FileBTree.h"
 					>
 				</File>
 				<File

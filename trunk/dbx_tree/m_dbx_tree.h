@@ -385,7 +385,7 @@ typedef
 		double Double;
 
 		struct {
-			unsigned int Length;  // length in bytes of pBlob, length in characters of char types
+			unsigned int Length;  // length in bytes of pBlob, length in characters of char types including trailing null
 			union {
 				unsigned char * pBlob;				
 				char * pAnsii;
