@@ -1,0 +1,277 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_CLIST_FRAME DIALOGEX 0, 0, 78, 47
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_URICOMBO,"ComboBoxEx32",CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP,3,16,72,89
+    CONTROL         "&C",IDC_CALL,"MButtonClass",WS_TABSTOP,43,30,16,14,WS_EX_TRANSPARENT | 0x18000000L
+    CONTROL         "&H",IDC_HANGUP,"MButtonClass",WS_TABSTOP,59,30,16,14,WS_EX_TRANSPARENT | 0x18000000L
+    CONTROL         "&S",IDC_OPEN_SESSION_DLG,"MButtonClass",WS_TABSTOP,3,30,16,14,WS_EX_TRANSPARENT | 0x18000000L
+    CONTROL         "&M",IDC_POPUP_MENU,"MButtonClass",WS_TABSTOP,19,30,16,14,WS_EX_TRANSPARENT | 0x18000000L
+    CONTROL         "Call in progress",IDC_STATUS,"Static",SS_LEFTNOWORDWRAP | SS_NOPREFIX | SS_WORDELLIPSIS | WS_GROUP,3,3,48,12,WS_EX_TRANSPARENT
+    RTEXT           "00:00",IDC_TIME,51,3,24,12,0,WS_EX_TRANSPARENT
+END
+
+IDD_SIGNIN DIALOGEX 0, 0, 219, 166
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Sign In to a SIP Network"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_NAME,67,33,145,14,ES_AUTOHSCROLL
+    CONTROL         "Automatic configuration",IDC_AUTODETECT,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,25,80,173,10
+    EDITTEXT        IDC_SERVER,123,94,79,14,ES_AUTOHSCROLL | WS_DISABLED
+    COMBOBOX        IDC_TRANSPORT,123,112,48,85,CBS_DROPDOWNLIST | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON   "OK",IDOK,109,145,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,162,145,50,14
+    LTEXT           "Sign-in name:",IDC_STATIC,14,36,44,8
+    LTEXT           "Server name or IP address:",IDC_STATIC,26,97,89,8
+    LTEXT           "Connect using:",IDC_STATIC,26,113,49,8
+    GROUPBOX        "Connection settings",IDC_STATIC,14,65,198,72
+    LTEXT           "Enter you SIP sign-in name to sign in to SIP network",IDC_STATIC,14,11,198,17
+    LTEXT           "Example: someone@example.com",IDC_STATIC,67,50,145,8
+END
+
+IDD_AUTH DIALOGEX 0, 0, 219, 186
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Sign In to a SIP Network"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_NAME,67,39,145,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_ACCOUNT,67,88,145,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PASSWORD,67,126,145,14,ES_PASSWORD | ES_AUTOHSCROLL
+    CONTROL         "Save password",IDC_SAVE_PASSWORD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,144,145,10
+    DEFPUSHBUTTON   "OK",IDOK,109,165,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,162,165,50,14
+    LTEXT           "Sign-in name:",IDC_STATIC,14,42,44,8
+    LTEXT           "Realm:",IDC_STATIC,14,72,23,8
+    LTEXT           "Account:",IDC_STATIC,14,91,30,8
+    LTEXT           "Password:",IDC_STATIC,14,129,34,8
+    EDITTEXT        IDC_REALM,66,72,145,12,ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    LTEXT           "Example: someone@example.com",IDC_STATIC,67,56,145,8
+    LTEXT           "Examples: DOMAIN\\username, someone@example.com",IDC_STATIC,67,105,145,19
+    LTEXT           "Enter you sign-in name, account and password to sign in to SIP network",IDC_STATIC,14,11,198,25
+END
+
+IDD_OPTIONS DIALOGEX 0, 0, 304, 230
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_NAME,67,11,145,14,ES_AUTOHSCROLL
+    CONTROL         "Automatic configuration",IDC_AUTOAUTH,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,26,57,173,10
+    EDITTEXT        IDC_ACCOUNT,79,73,124,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_PASSWORD,79,91,124,14,ES_PASSWORD | ES_AUTOHSCROLL | WS_DISABLED
+    CONTROL         "Automatic configuration",IDC_AUTOCONNECT,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,25,135,173,10
+    EDITTEXT        IDC_SERVER,123,152,79,14,ES_AUTOHSCROLL | WS_DISABLED
+    COMBOBOX        IDC_TRANSPORT,123,170,48,75,CBS_DROPDOWNLIST | WS_DISABLED | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Sign-in name:",IDC_STATIC,14,14,44,8
+    LTEXT           "Server name or IP address:",IDC_STATIC,26,155,89,8
+    LTEXT           "Connect using:",IDC_STATIC,26,171,49,8
+    GROUPBOX        "Connection settings",IDC_STATIC,14,121,198,72
+    LTEXT           "Account:",IDC_STATIC,26,76,30,8
+    LTEXT           "Password:",IDC_STATIC,26,94,34,8
+    GROUPBOX        "Authentication settings",IDC_STATIC,14,44,198,72
+    LTEXT           "Example: someone@example.com",IDC_STATIC,67,28,145,8
+    LTEXT           "Note: You have to reconnect to the SIP network before the changes take effect",IDC_STATIC,14,215,286,15
+    CONTROL         "Enable log to file",IDC_ENABLELOG,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,14,200,173,10
+END
+
+IDD_ACCEPT_T120 DIALOGEX 0, 0, 340, 58
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Invitation to a data sharing session"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "&Accept",IDC_ACCEPT,227,37,50,14
+    PUSHBUTTON      "&Reject",IDCANCEL,283,37,50,14
+    LTEXT           "User would like to have a session using Whiteboard or Application Sharing with you.\nDo you want to accept the invitation?",IDC_INVITATION,7,7,326,27
+END
+
+IDD_SESSION DIALOGEX 0, 0, 168, 154
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Call"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "",IDC_SESSION_STATUS,7,26,154,16
+    PUSHBUTTON      "&C",IDC_CALL,19,56,32,22
+    COMBOBOX        IDC_PARTICIPANT,7,7,154,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "&H",IDC_HANGUP,97,56,32,22
+    CONTROL         "",IDC_SPEAKER_VOLUME,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,21,108,37,9
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_CLIST_FRAME, DIALOG
+    BEGIN
+        LEFTMARGIN, 3
+        RIGHTMARGIN, 75
+        TOPMARGIN, 3
+        BOTTOMMARGIN, 44
+    END
+
+    IDD_SIGNIN, DIALOG
+    BEGIN
+        LEFTMARGIN, 14
+        RIGHTMARGIN, 212
+        TOPMARGIN, 11
+        BOTTOMMARGIN, 159
+    END
+
+    IDD_AUTH, DIALOG
+    BEGIN
+        LEFTMARGIN, 14
+        RIGHTMARGIN, 212
+        TOPMARGIN, 11
+        BOTTOMMARGIN, 179
+    END
+
+    IDD_OPTIONS, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 220
+    END
+
+    IDD_ACCEPT_T120, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 333
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 51
+    END
+
+    IDD_SESSION, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 161
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 147
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_SIPRTC              ICON                    "Res\\sip.ico"
+IDI_ICON_CALL           ICON                    "Res\\call.ico"
+IDI_ICON_HANGUP         ICON                    "Res\\hangup.ico"
+IDI_ICON_DOWN_ARROW     ICON                    "Res\\downarrow.ico"
+IDI_ICON_NETMEETING     ICON                    "Res\\netmeeting.ico"
+IDI_ICON_OPEN_SESSION   ICON                    "Res\\opensession.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_SIGNIN DLGINIT
+BEGIN
+    IDC_TRANSPORT, 0x403, 4, 0
+0x4354, 0x0050, 
+    IDC_TRANSPORT, 0x403, 4, 0
+0x4c54, 0x0053, 
+    IDC_TRANSPORT, 0x403, 4, 0
+0x4455, 0x0050, 
+    0
+END
+
+
+#include "siprtc.rc2"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RT_MANIFEST
+//
+
+IDR_RT_MANIFEST         RT_MANIFEST             "Res/siprtc.manifest"
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
