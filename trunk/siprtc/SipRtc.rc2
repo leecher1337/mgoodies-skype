@@ -28,7 +28,7 @@ BEGIN
             VALUE "FileDescription", "SIP RTC Protocol for Miranda IM"
             VALUE "FileVersion", SIPRTC_VERSION_TEXT
             VALUE "InternalName", "SIPRTC"
-            VALUE "LegalCopyright", "Copyright (C) 2007 Paul Shmakov"
+            VALUE "LegalCopyright", "Copyright (C) 2007 Paul Shmakov, Zhao Wang"
             VALUE "OriginalFilename", "SipRtc.dll"
             VALUE "ProductName", "SIP RTC Protocol for Miranda IM"
             VALUE "ProductVersion", SIPRTC_VERSION_TEXT
