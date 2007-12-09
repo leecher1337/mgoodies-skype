@@ -1,6 +1,0 @@
-ersatz 0.0.1.0
-
-Changelog:
-
-. 0.0.1.0
-  + A lot of internal changes
