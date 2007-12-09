@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #pragma once
 //--------------------------------------------------------------------------------------------------
+#include "database.h"
 
 class CSipRtcTrace
 {
@@ -48,6 +49,8 @@ public:
     void                WriteWarning(const wchar_t* fmt, ...) const;
     void                WriteVerbose(const wchar_t* fmt, ...) const;
 
+	void				SetDatabase(CDatabase* db);
+
 private:
     // Copying is not allowed
                         CSipRtcTrace(const CSipRtcTrace&);
@@ -56,6 +59,7 @@ private:
 private:
     TraceLevel          m_level;
     wchar_t             m_logFileName[MAX_PATH];
+	CDatabase*			m_db;
 };
 //--------------------------------------------------------------------------------------------------
 
@@ -79,8 +83,6 @@ inline CSipRtcTrace::CSipRtcTrace(void) :
             StringCbCopy(m_logFileName, sizeof(m_logFileName), path);
         }
     }
-
-    Write(L"SipRtc trace started. CSipRtcTrace level: %d", m_level);
 }
 //--------------------------------------------------------------------------------------------------
 
@@ -121,33 +123,37 @@ inline void CSipRtcTrace::Write(const wchar_t* fmt, va_list va) const
 
     if(text[0])
     {
-        wchar_t date[16];
-        ::GetDateFormatW(LOCALE_USER_DEFAULT, 0, 0, L"yy'-'MM'-'dd' '", date,
-            sizeof(date) / sizeof(date[0]));
+		bool enableLog = m_db->GetMySettingBool("EnableLogFile", false);
+		if (enableLog)
+		{
+			wchar_t date[16];
+			::GetDateFormatW(LOCALE_USER_DEFAULT, 0, 0, L"yy'-'MM'-'dd' '", date,
+				sizeof(date) / sizeof(date[0]));
 
-        wchar_t timestamp[16];
-        ::GetTimeFormatW(LOCALE_USER_DEFAULT, 0, 0, L"HH':'mm':'ss' '", timestamp,
-            sizeof(timestamp) / sizeof(timestamp[0]));
+			wchar_t timestamp[16];
+			::GetTimeFormatW(LOCALE_USER_DEFAULT, 0, 0, L"HH':'mm':'ss' '", timestamp,
+				sizeof(timestamp) / sizeof(timestamp[0]));
 
-        HANDLE hFile = ::CreateFile(m_logFileName, GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_ALWAYS,
-            FILE_ATTRIBUTE_NORMAL, 0);
+			HANDLE hFile = ::CreateFile(m_logFileName, GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_ALWAYS,
+				FILE_ATTRIBUTE_NORMAL, 0);
 
-        if(INVALID_HANDLE_VALUE != hFile)
-        {
-            ::SetFilePointer(hFile, 0, 0, FILE_END);
+			if(INVALID_HANDLE_VALUE != hFile)
+			{
+				::SetFilePointer(hFile, 0, 0, FILE_END);
 
-            DWORD written = 0;
+				DWORD written = 0;
 
-            ::WriteFile(hFile, date, lstrlenW(date) * sizeof(wchar_t), &written, 0);
-            ::WriteFile(hFile, timestamp, lstrlenW(timestamp) * sizeof(wchar_t), &written, 0);
+				::WriteFile(hFile, date, lstrlenW(date) * sizeof(wchar_t), &written, 0);
+				::WriteFile(hFile, timestamp, lstrlenW(timestamp) * sizeof(wchar_t), &written, 0);
 
-            ::WriteFile(hFile, text, lstrlenW(text) * sizeof(wchar_t), &written, 0);
+				::WriteFile(hFile, text, lstrlenW(text) * sizeof(wchar_t), &written, 0);
 
-            const wchar_t crlf[] = L"\r\n";
-            ::WriteFile(hFile, crlf, sizeof(wchar_t) * 2, &written, 0);
+				const wchar_t crlf[] = L"\r\n";
+				::WriteFile(hFile, crlf, sizeof(wchar_t) * 2, &written, 0);
 
-            ::CloseHandle(hFile);
-        }
+				::CloseHandle(hFile);
+			}
+		} //endif (enableLog)
     }
 }
 //--------------------------------------------------------------------------------------------------
@@ -209,5 +215,11 @@ inline void CSipRtcTrace::WriteVerbose(const wchar_t* fmt, ...) const
         Write(fmt, va);
         va_end(va);
     }
+}
+//--------------------------------------------------------------------------------------------------
+
+inline void CSipRtcTrace::SetDatabase(CDatabase* db)
+{
+	m_db = db;
 }
 //--------------------------------------------------------------------------------------------------

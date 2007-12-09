@@ -2,6 +2,10 @@
 // Microsoft Visual C++ generated include file.
 // Used by SipRtc.rc
 //
+#define SIPRTC_VERSION_V1               0
+#define SIPRTC_VERSION_V2               0
+#define SIPRTC_VERSION_V3               0
+#define SIPRTC_VERSION_V4               10
 #define IDI_SIPRTC                      101
 #define IDD_SIGNIN                      102
 #define IDD_AUTH                        103
@@ -26,7 +30,7 @@
 #define IDC_PASSWORD                    1006
 #define IDC_SAVE_PASSWORD               1007
 #define IDC_AUTOAUTH                    1007
-#define IDC_AUTODETECT2                 1008
+#define IDC_ENABLELOG                   1008
 #define IDC_TEXT                        1009
 #define IDC_INVITATION                  1009
 #define IDC_ACCEPT                      1010
@@ -54,7 +58,7 @@
 #define IDC_COMBOBOXEX1                 1028
 
 // Next default values for new objects
-//
+// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        113

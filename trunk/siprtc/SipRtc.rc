@@ -118,7 +118,7 @@ BEGIN
     LTEXT           "Enter you sign-in name, account and password to sign in to SIP network",IDC_STATIC,14,11,198,25
 END
 
-IDD_OPTIONS DIALOGEX 0, 0, 304, 220
+IDD_OPTIONS DIALOGEX 0, 0, 304, 230
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
@@ -138,7 +138,8 @@ BEGIN
     LTEXT           "Password:",IDC_STATIC,26,94,34,8
     GROUPBOX        "Authentication settings",IDC_STATIC,14,44,198,72
     LTEXT           "Example: someone@example.com",IDC_STATIC,67,28,145,8
-    LTEXT           "Note: You have to reconnect to the SIP network before the changes take effect",IDC_STATIC,14,202,286,15
+    LTEXT           "Note: You have to reconnect to the SIP network before the changes take effect",IDC_STATIC,14,215,286,15
+    CONTROL         "Enable log to file",IDC_ENABLELOG,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | WS_TABSTOP,14,200,173,10
 END
 
 IDD_ACCEPT_T120 DIALOGEX 0, 0, 340, 58
@@ -198,7 +199,7 @@ BEGIN
 
     IDD_OPTIONS, DIALOG
     BEGIN
-        BOTTOMMARGIN, 207
+        BOTTOMMARGIN, 220
     END
 
     IDD_ACCEPT_T120, DIALOG
@@ -251,7 +252,42 @@ BEGIN
 END
 
 
-#include "SipRtc.rc2"
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,0,0,10
+ PRODUCTVERSION 0,0,0,10
+ FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "FileDescription", "SIP RTC Protocol for Miranda IM"
+            VALUE "FileVersion", "0, 0, 0, 10"
+            VALUE "InternalName", "SIPRTC"
+            VALUE "LegalCopyright", "Copyright (C) 2007 Paul Shmakov"
+            VALUE "OriginalFilename", "SipRtc.dll"
+            VALUE "ProductName", "SIP RTC Protocol for Miranda IM"
+            VALUE "ProductVersion", "0, 0, 0, 10"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END
 
 
 /////////////////////////////////////////////////////////////////////////////

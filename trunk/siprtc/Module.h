@@ -209,6 +209,11 @@ inline int CSipRtcPlugin::OnLoad(void)
 
     g_env.DB().Upgrade();
 
+	// [notrom, 20071202] The first line of SipRtc.log. This call was in the
+	// construction function of CSipRtcTrace, but accessing the database for
+	// parameter "EnableLogFile" is impossible there.
+	g_env.Trace().Write(L"SipRtc trace started. CSipRtcTrace level: %d", g_env.Trace().GetLevel());
+
     try
     {
         char mirandaVersion[MAX_PATH] = { 0 };
