@@ -31,7 +31,7 @@ CEnvironment::CEnvironment(void) :
     m_protocol(0),
     m_instance(0)
 {
-    // Nothing
+    m_trace.SetDatabase(&m_db);
 }
 //--------------------------------------------------------------------------------------------------
 

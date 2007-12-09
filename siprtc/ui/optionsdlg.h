@@ -38,6 +38,7 @@ private:
         MESSAGE_HANDLER(WM_INITDIALOG,      OnInitDialog)
         COMMAND_ID_HANDLER(IDC_AUTOAUTH,    OnAutoChanged)
         COMMAND_ID_HANDLER(IDC_AUTOCONNECT, OnAutoChanged)
+		COMMAND_ID_HANDLER(IDC_ENABLELOG,	OnDataChanged)
         COMMAND_CODE_HANDLER(CBN_SELCHANGE, OnDataChanged)
         COMMAND_CODE_HANDLER(EN_CHANGE,     OnDataChanged)
         CHAIN_MSG_MAP(baseClass_t)
@@ -66,6 +67,7 @@ inline LRESULT COptionsDialog::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LP
     bstr_t transport = g_env.DB().GetMySettingWString("Transport");
     if(0 == transport.length())
        transport = L"TCP";
+	bool enableLog   = g_env.DB().GetMySettingBool("EnableLogFile", false);
 
     SetDlgItemText(IDC_NAME,        uri);
     SetDlgItemText(IDC_ACCOUNT,     account);
@@ -86,6 +88,7 @@ inline LRESULT COptionsDialog::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LP
 
     CheckDlgButton(IDC_AUTOAUTH,    autoAuth ? BST_CHECKED : BST_UNCHECKED);
     CheckDlgButton(IDC_AUTOCONNECT, autoConnect ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(IDC_ENABLELOG,	enableLog ? BST_CHECKED : BST_UNCHECKED);
 
     UpdateControls();
 
@@ -109,6 +112,7 @@ inline BOOL COptionsDialog::OnApply(void)
 
     bool autoConnect = BST_CHECKED == IsDlgButtonChecked(IDC_AUTOCONNECT);
     bool autoAuth    = BST_CHECKED == IsDlgButtonChecked(IDC_AUTOAUTH);
+	bool enableLog   = BST_CHECKED == IsDlgButtonChecked(IDC_ENABLELOG);
 
     g_env.DB().WriteMySettingWString("URI",       uri.length() > 0 ? uri : L"");
     g_env.DB().WriteMySettingBool("AutoConnect",  autoConnect);
@@ -117,6 +121,7 @@ inline BOOL COptionsDialog::OnApply(void)
     g_env.DB().WriteMySettingBool("AutoAuth",     autoAuth);
     g_env.DB().WriteMySettingWString("Account",   account.length() > 0 ? account : L"");
     g_env.DB().WriteMyEncryptedSettingWString("Password", password.length() > 0 ? password : L"");
+	g_env.DB().WriteMySettingBool("EnableLogFile", enableLog);
 
     bstr_t nick = g_env.DB().GetMySettingWString("Nick");
     if(0 == nick.length() && uri.length() > 0)
