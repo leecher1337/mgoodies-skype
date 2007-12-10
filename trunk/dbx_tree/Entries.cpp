@@ -207,13 +207,14 @@ CEntries::CEntries(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronize
 
 CEntries::~CEntries()
 {
+	m_Sync.BeginWrite();
 	for (unsigned int i = 0; i < m_IterAllocSize; i++)
 	{
 		if (m_Iterations[i])
 			IterationClose(i + 1);
 	}
 	delete [] m_Iterations;
-
+	m_Sync.EndWrite();
 }
 
 
@@ -749,6 +750,7 @@ unsigned int CEntries::IterationClose(TDBEntryIterationHandle Iteration)
 	delete m_Iterations[Iteration - 1];
 	m_Iterations[Iteration - 1] = NULL;
 
+	m_Sync.EndWrite();
 	return 0;
 }
 

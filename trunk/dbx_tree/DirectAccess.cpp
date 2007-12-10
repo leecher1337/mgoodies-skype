@@ -95,10 +95,10 @@ unsigned int CDirectAccess::mAlloc(unsigned int Size)
 void CDirectAccess::mFree(unsigned int Dest, unsigned int Count)
 {
 	//needs improvements
-	void * zero = malloc(Count);
+	char * zero = new char[Count];
 	memset(zero, 0, Count);
 	Write(zero, Dest, Count);
-	free(zero);
+	delete [] zero;
 
 	if (Dest + Count == m_Size)
 	{

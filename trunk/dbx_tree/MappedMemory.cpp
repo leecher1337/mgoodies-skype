@@ -121,10 +121,10 @@ unsigned int CMappedMemory::mAlloc(unsigned int Size)
 }
 void CMappedMemory::mFree(unsigned int Dest, unsigned int Count)
 {
-	void * zero = malloc(Count);
+	char * zero = new char [Count];
 	memset(zero, 0, Count);
 	Write(zero, Dest, Count);
-	free(zero);
+	delete [] zero;
 
 	TFreeSpaceMap::iterator i = m_FreeSpace.insert(std::make_pair(Count, Dest));
 	if (Dest + Count == m_AllocSize)
