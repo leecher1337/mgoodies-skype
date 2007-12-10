@@ -20,6 +20,7 @@ public:
 		iterator(const iterator& Other);
 		~iterator();
 
+		CBTree * Tree();
 		TKey& Key();
 		TData& Data();
 		void SetData(const TData & Data);
@@ -1355,6 +1356,12 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Backup()
 	}
 
 	m_ManagedDeleted = true;
+}
+
+template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
+CBTree<TKey, TData, SizeParam, UniqueKeys> * CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::Tree()
+{
+	return m_Tree;
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>

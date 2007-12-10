@@ -1,5 +1,4 @@
 #include "Settings.h"
-#include <queue>
 #include <math.h>
 
 __forceinline bool TSettingKey::operator <  (const TSettingKey & Other) const
@@ -43,7 +42,7 @@ TDBSettingHandle CSettingsTree::_FindSetting(const unsigned int Hash, const char
 	
 	unsigned int res = 0;
 	TSetting set;
-	char * str = (char *) malloc(Length + 1);
+	char * str = new char[Length + 1];
 	while ((res == 0) && (i) && (i.Key().Hash == Hash))
 	{
 		m_FileAccess.Read(&set, i.Data(), sizeof(set));
@@ -58,7 +57,7 @@ TDBSettingHandle CSettingsTree::_FindSetting(const unsigned int Hash, const char
 		++i;
 	} 
 
-	free(str);
+	delete [] str;
 	return res;
 }
 
@@ -104,9 +103,6 @@ bool CSettingsTree::_AddSetting(const unsigned int Hash, const TDBSettingHandle 
 	Insert(key, hSetting);
 	return true;
 }
-
-
-
 
 
 
@@ -291,19 +287,30 @@ CSettings::CSettings(CFileAccess & SettingsFile, CFileAccess & PrivateFile, CMul
 	settree->sigRootChanged().connect(this, &CSettings::onRootChanged);
 	m_SettingsMap.insert(std::make_pair(0, settree));
 
+	m_IterAllocSize = 1;
+	m_Iterations = new PSettingIteration[1];
 }
 
 CSettings::~CSettings()
 {
-	std::map<TDBEntryHandle, CSettingsTree*>::iterator i = m_SettingsMap.begin();
+	m_Sync.BeginWrite();
+	std::map<TDBEntryHandle, CSettingsTree*>::iterator it = m_SettingsMap.begin();
 
-	while (i != m_SettingsMap.end())
+	while (it != m_SettingsMap.end())
 	{
-		delete i->second;
-		++i;
+		delete it->second;
+		++it;
 	}
 
 	m_SettingsMap.clear();
+
+	for (unsigned int i = 0; i < m_IterAllocSize; i++)
+	{
+		if (m_Iterations[i])
+			IterationClose(i + 1);
+	}
+	delete [] m_Iterations;
+	m_Sync.EndWrite();
 }
 
 
@@ -358,7 +365,10 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 	unsigned int entryflags = m_Entries.getFlags(Descriptor.Entry);
 
 	if (entryflags == DB_INVALIDPARAM)
+	{
+		m_Sync.EndRead();
 		return DB_INVALIDPARAM;
+	}
 
 
 	if (Descriptor.Flags & DB_SDF_FoundEntryValid)
@@ -422,23 +432,21 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 
 	if (Descriptor.Flags & DB_SDF_SearchParents)
 	{
-		TDBEntryHandle p,n;
-		p = m_Entries.getParent(Descriptor.Entry);
-		n = m_Entries.getParent(Descriptor.Entry);
+		TDBEntryHandle p;
+		p = m_Entries.getParent(Descriptor.Entry);			
 
-		while ((n != 0) && (n != DB_INVALIDPARAM))
+		while ((p != 0) && (p != DB_INVALIDPARAM) && (p != m_Entries.getRootEntry()) && ((m_Entries.getFlags(p) & DB_EF_IsGroup) == (entryflags & DB_EF_IsGroup)))
 		{
 			entries.push(p);
 
 			if (!((Descriptor.Flags & DB_SDF_NoVirtualLookup) == DB_SDF_NoVirtualLookup))
 			{
-				p = m_Entries.VirtualGetParent(p);
-				if (p != DB_INVALIDPARAM)
-					entries.push(p);		
+				TDBEntryHandle e = m_Entries.VirtualGetParent(p);
+				if (e != DB_INVALIDPARAM)
+					entries.push(e);		
 			}
 			
-			p = n;
-			n = m_Entries.getParent(Descriptor.Entry);
+			p = m_Entries.getParent(p);
 		}
 	}
 	
@@ -517,7 +525,7 @@ unsigned int CSettings::DeleteSetting(TDBSettingHandle hSetting)
 		return DB_INVALIDPARAM;
 	}
 
-	char * str = (char *) malloc(set.NameLength + 1);
+	char * str = new char[set.NameLength + 1];
 	file.Read(str, hSetting + sizeof(set), set.NameLength + 1);
 	
 	tree->_DeleteSetting(Hash(str, set.NameLength), hSetting);
@@ -529,6 +537,7 @@ unsigned int CSettings::DeleteSetting(TDBSettingHandle hSetting)
 
 	m_Sync.EndWrite();
 
+	delete [] str;
 	return 0;
 }
 TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting)
@@ -620,11 +629,8 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		set.Type = Setting.Type;
 		set.AllocSize = neededsize;
 
-		if (Setting.Descriptor->sSettingNameLength == 0)
-			set.NameLength = strlen(Setting.Descriptor->pszSettingName);
-		else
-			set.NameLength = Setting.Descriptor->sSettingNameLength;
-
+		set.NameLength = strlen(Setting.Descriptor->pszSettingName);
+		
 		neededsize += sizeof(set) + set.NameLength + 1;
 		
 		hSetting = file.Alloc(neededsize);
@@ -674,7 +680,7 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 
 		if (set.AllocSize < neededblob)
 		{
-			char * name = (char *) malloc(set.NameLength + 1);
+			char * name = new char[set.NameLength + 1];
 			file.Read(name, hSetting + sizeof(set), set.NameLength + 1);
 			unsigned int hash = Hash(name, set.NameLength);
 
@@ -686,7 +692,7 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 
 			file.Write(name, hSetting + sizeof(set), set.NameLength + 1);
 
-			free(name);
+			delete [] name;
 
 			set.AllocSize = neededblob;
 		}
@@ -1187,20 +1193,384 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 		Setting.Descriptor->FoundInEntry = set.Entry;
 		Setting.Descriptor->Flags = DB_SDF_FoundEntryValid;
 
-		if ((Setting.Descriptor->pszSettingName) && (Setting.Descriptor->sSettingNameLength))
-		{
-			if (Setting.Descriptor->sSettingNameLength < set.NameLength + 1)
-			{
-				file.Read(Setting.Descriptor->pszSettingName, hSetting + sizeof(set), Setting.Descriptor->sSettingNameLength);
-				Setting.Descriptor->pszSettingName[Setting.Descriptor->sSettingNameLength - 1] = 0;
-			} else {
-				file.Read(Setting.Descriptor->pszSettingName, hSetting + sizeof(set), set.NameLength + 1);
-			}
-		}
-		Setting.Descriptor->sSettingNameLength = set.NameLength + 1;
+		Setting.Descriptor->pszSettingName = (char *) mir_realloc(Setting.Descriptor->pszSettingName, set.NameLength + 1);
+		file.Read(Setting.Descriptor->pszSettingName, hSetting + sizeof(set), set.NameLength + 1);		
+		Setting.Descriptor->pszSettingName[set.NameLength] = 0;
 	}
 
 	m_Sync.EndRead();
 
 	return set.Type;
+}
+
+
+
+
+TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter)
+{
+	m_Sync.BeginWrite();
+
+
+
+
+
+	unsigned int i = 0;
+
+	while ((i < m_IterAllocSize) && (m_Iterations[i] != NULL))
+		i++;
+
+	if (i == m_IterAllocSize)
+	{
+		PSettingIteration * backup = m_Iterations;
+		m_IterAllocSize = m_IterAllocSize << 1;
+		m_Iterations = new PSettingIteration[m_IterAllocSize];
+		memset(m_Iterations, 0, sizeof(PSettingIteration*) * m_IterAllocSize);
+		memcpy(m_Iterations, backup, sizeof(PSettingIteration*) * (m_IterAllocSize >> 1));
+		delete [] backup;
+	}
+
+
+	std::queue<TDBEntryHandle> entries;
+	entries.push(Filter.hEntry);
+
+	CSettingsTree * tree = getSettingsTree(Filter.hEntry);
+
+	if (tree == NULL)
+	{
+		m_Sync.EndWrite();
+		return DB_INVALIDPARAM;
+	}
+
+	if (Filter.hEntry != 0)
+	{	
+		unsigned int entryflags = m_Entries.getFlags(Filter.hEntry);
+
+		if (entryflags == DB_INVALIDPARAM)
+		{
+			m_Sync.EndWrite();
+			return DB_INVALIDPARAM;
+		}
+		
+		if ((entryflags & DB_EF_IsVirtual) && ((Filter.Options & DB_SIFO_NoPrimaryVirtualLookup) == 0))
+		{	// virtual lookup
+			TDBEntryHandle e = m_Entries.VirtualGetParent(Filter.hEntry);
+			if (e != DB_INVALIDPARAM)
+				entries.push(e);
+			
+		}
+
+		if (Filter.Options & DB_SIFO_SearchSubEntries)
+		{
+			TDBEntryIterFilter filter = {0};
+			
+			filter.cbSize = sizeof(filter);
+			filter.hParentEntry = Filter.hEntry;
+
+			if ((entryflags & DB_EF_IsGroup) && !((Filter.Options & DB_SIFO_SearchOutOfGroups) == DB_SIFO_SearchOutOfGroups))
+			{	// only groups
+				filter.fHasFlags = DB_EF_IsGroup;
+			}
+
+			TDBEntryIterationHandle iter = m_Entries.IterationInit(filter);
+			if ((iter != 0) && (iter != DB_INVALIDPARAM))
+			{
+				TDBEntryHandle e = m_Entries.IterationNext(iter);
+				while ((e != 0) && (e != DB_INVALIDPARAM))
+				{
+					entries.push(e);				
+					
+					if (!((Filter.Options & DB_SIFO_NoVirtualLookup) == DB_SIFO_NoVirtualLookup))
+					{
+						e = m_Entries.VirtualGetParent(e);
+						if (e != DB_INVALIDPARAM)
+							entries.push(e);		
+					}
+					
+					e = m_Entries.IterationNext(iter);
+				}
+
+			}
+		}
+
+		if (Filter.Options & DB_SIFO_SearchParents)
+		{
+			TDBEntryHandle p;
+			p = m_Entries.getParent(Filter.hEntry);			
+
+			while ((p != 0) && (p != DB_INVALIDPARAM) && (p != m_Entries.getRootEntry()) && ((m_Entries.getFlags(p) & DB_EF_IsGroup) == (entryflags & DB_EF_IsGroup)))
+			{
+				entries.push(p);
+
+				if (!((Filter.Options & DB_SDF_NoVirtualLookup) == DB_SDF_NoVirtualLookup))
+				{
+					TDBEntryHandle e = m_Entries.VirtualGetParent(p);
+					if (e != DB_INVALIDPARAM)
+						entries.push(e);		
+				}
+				
+				p = m_Entries.getParent(p);
+			}
+		}
+		
+
+		if (Filter.Options & DB_SIFO_RootHasStandard)
+		{
+			entries.push(m_Entries.getRootEntry());
+		}
+	}
+
+	for (unsigned int j = 0; j < Filter.ExtraCount; ++j)
+	{
+		entries.push(Filter.ExtraEntries[j]);
+	}
+
+	PSettingIteration iter = new TSettingIteration;
+	iter->Filter = Filter;
+	iter->FilterNameStartLength = 0;
+	if (Filter.NameStart)
+	{
+		unsigned int l = strlen(Filter.NameStart);
+		iter->Filter.NameStart = new char[l + 1];
+		memcpy(iter->Filter.NameStart, Filter.NameStart, l + 1);
+		iter->FilterNameStartLength = l;
+	}
+
+	TSettingKey key;
+	key.Hash = 0;
+	TDBEntryHandle entry = entries.front();
+	entries.pop();
+
+	CSettingsTree::iterator * tmp = new CSettingsTree::iterator(tree->LowerBound(key));
+	tmp->setManaged();
+	iter->Heap = new TSettingsHeap(*tmp, TSettingsHeap::ITForward, true);
+	
+	while (!entries.empty())
+	{
+		tree = getSettingsTree(entries.front());
+		entries.pop();
+		if (tree != NULL)
+		{
+			tmp = new CSettingsTree::iterator(tree->LowerBound(key));
+			tmp->setManaged();
+			iter->Heap->Insert(*tmp);
+		}
+	}
+			
+	iter->Frame = new std::queue<TSettingIterationResult>;
+	m_Iterations[i] = iter;
+
+	m_Sync.EndWrite();
+	return i + 1;
+}
+
+
+typedef struct TSettingIterationHelper {
+		TDBSettingHandle Handle;
+		CSettingsTree * Tree;
+		unsigned short NameLen;
+		char * Name;
+	} TSettingIterationHelper;
+
+TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
+{
+	m_Sync.BeginRead();
+
+	if (Iteration == 0)
+		return 0;
+
+	if ((Iteration > m_IterAllocSize) || (m_Iterations[Iteration - 1] == NULL))
+	{
+		m_Sync.EndRead();
+		return DB_INVALIDPARAM;
+	}
+
+	PSettingIteration iter = m_Iterations[Iteration - 1];
+
+	while (iter->Frame->empty() && iter->Heap->Top())
+	{
+		while (iter->Heap->Top() && iter->Heap->Top().wasDeleted())
+			iter->Heap->Pop();
+
+		if (iter->Heap->Top())
+		{
+			unsigned int h = iter->Heap->Top().Key().Hash;
+			std::queue<TSettingIterationHelper> q;
+			TSettingIterationHelper help;
+			help.NameLen = 0;
+			help.Name = NULL;
+			
+			help.Handle = iter->Heap->Top().Data();
+			help.Tree = (CSettingsTree *) iter->Heap->Top().Tree();
+			q.push(help);
+			
+			iter->Heap->Pop();
+
+			// add all candidates
+			while (iter->Heap->Top() && (iter->Heap->Top().Key().Hash == h))
+			{
+				if (!iter->Heap->Top().wasDeleted())
+				{
+					help.Handle = iter->Heap->Top().Data();
+					help.Tree = (CSettingsTree *) iter->Heap->Top().Tree();
+					q.push(help);
+				}
+				iter->Heap->Pop();
+			}
+
+			while (!q.empty())
+			{
+				help = q.front();
+				q.pop();
+		
+				if (help.NameLen == 0)
+				{
+					if (help.Tree->getEntry() == 0)
+						m_SettingsFile.Read(&help.NameLen, help.Handle + offsetof(TSetting, NameLength), sizeof(unsigned short));
+					else
+						m_PrivateFile.Read(&help.NameLen, help.Handle + offsetof(TSetting, NameLength), sizeof(unsigned short));
+				}
+				
+				if (help.Name == NULL)
+				{
+					help.Name = new char[help.NameLen + 1];
+					if (help.Tree->getEntry() == 0)
+						m_SettingsFile.Read(help.Name, help.Handle + sizeof(TSetting), help.NameLen + 1);
+					else
+						m_PrivateFile.Read(help.Name, help.Handle + sizeof(TSetting), help.NameLen + 1);
+				}
+
+
+				q.push(help);
+				while (q.front().Handle != help.Handle)
+				{
+					TSettingIterationHelper tmp;
+					tmp = q.front();
+					q.pop();
+
+					if (tmp.NameLen == 0)
+					{
+						if (tmp.Tree->getEntry() == 0)
+							m_SettingsFile.Read(&tmp.NameLen, tmp.Handle + offsetof(TSetting, NameLength), sizeof(unsigned short));
+						else
+							m_PrivateFile.Read(&tmp.NameLen, tmp.Handle + offsetof(TSetting, NameLength), sizeof(unsigned short));
+					}
+
+					if (tmp.NameLen != help.NameLen)
+					{
+						q.push(tmp);
+					} else {
+						if (tmp.Name == NULL)
+						{
+							tmp.Name = new char[tmp.NameLen + 1];
+							if (tmp.Tree->getEntry() == 0)
+								m_SettingsFile.Read(tmp.Name, tmp.Handle + sizeof(TSetting), tmp.NameLen + 1);
+							else
+								m_PrivateFile.Read(tmp.Name, tmp.Handle + sizeof(TSetting), tmp.NameLen + 1);
+						}
+
+						if (strcmp(tmp.Name, help.Name) != 0)
+						{
+							q.push(tmp);
+						} else {
+							delete [] tmp.Name;
+						}
+					}
+				}
+
+				// namefilter
+				if ((iter->Filter.NameStart == NULL) || ((iter->FilterNameStartLength >= help.NameLen) && (memcmp(iter->Filter.NameStart, help.Name, iter->FilterNameStartLength) == 0)))
+				{
+					TSettingIterationResult tmp;			
+					if (help.Tree->getEntry() == 0)
+						help.Handle |= cSettingsFileFlag;
+
+					tmp.Handle = help.Handle;
+					tmp.Entry = help.Tree->getEntry();
+					tmp.Name = help.Name;
+					tmp.NameLen = help.NameLen;
+					iter->Frame->push(tmp);
+				} else {
+					delete [] help.Name;
+				}
+
+				q.pop();
+			}
+		}
+	}
+
+
+	TSettingIterationResult res = {0};
+	if (!iter->Frame->empty())
+	{
+		res = iter->Frame->front();
+		iter->Frame->pop();
+
+
+		if ((iter->Filter.Descriptor) && ((iter->Filter.Setting == NULL) || (iter->Filter.Setting->Descriptor != iter->Filter.Descriptor)))
+		{
+			iter->Filter.Descriptor->Entry = res.Entry;
+			iter->Filter.Descriptor->pszSettingName = (char *) mir_realloc(iter->Filter.Descriptor->pszSettingName, res.NameLen + 1);
+			memcpy(iter->Filter.Descriptor->pszSettingName, res.Name, res.NameLen + 1);
+			iter->Filter.Descriptor->Flags = DB_SDF_FoundEntryValid;
+			iter->Filter.Descriptor->FoundInEntry = res.Entry;
+		}
+		if (iter->Filter.Setting)
+		{
+			if ((iter->Filter.Setting->Type & DB_STF_VariableLength) && (iter->Filter.Setting->Value.pBlob))
+			{
+				mir_free(iter->Filter.Setting->Value.pBlob);
+				iter->Filter.Setting->Value.pBlob = NULL;
+			}
+			iter->Filter.Setting->Type = 0;
+
+			ReadSetting(*iter->Filter.Setting, res.Handle);
+		}
+
+		delete [] res.Name;
+	}
+
+	m_Sync.EndRead();
+
+	return res.Handle;
+}
+unsigned int CSettings::IterationClose(TDBSettingIterationHandle Iteration)
+{
+	m_Sync.BeginWrite();
+
+	if ((Iteration > m_IterAllocSize) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
+	{
+		m_Sync.EndWrite();
+		return DB_INVALIDPARAM;
+	}
+
+	if (m_Iterations[Iteration - 1]->Filter.NameStart)
+		delete [] m_Iterations[Iteration - 1]->Filter.NameStart;
+
+	if (m_Iterations[Iteration - 1]->Filter.Descriptor)
+	{
+		mir_free(m_Iterations[Iteration - 1]->Filter.Descriptor->pszSettingName);
+		m_Iterations[Iteration - 1]->Filter.Descriptor->pszSettingName = NULL;
+	}
+	if (m_Iterations[Iteration - 1]->Filter.Setting)
+	{
+		if (m_Iterations[Iteration - 1]->Filter.Setting->Descriptor)
+		{
+			mir_free(m_Iterations[Iteration - 1]->Filter.Setting->Descriptor->pszSettingName);
+			m_Iterations[Iteration - 1]->Filter.Setting->Descriptor->pszSettingName = NULL;
+		}	
+		
+		if (m_Iterations[Iteration - 1]->Filter.Setting->Type & DB_STF_VariableLength)
+		{
+			mir_free(m_Iterations[Iteration - 1]->Filter.Setting->Value.pBlob);
+			m_Iterations[Iteration - 1]->Filter.Setting->Value.pBlob = NULL;
+		}
+	}
+
+	delete m_Iterations[Iteration - 1]->Frame;
+	delete m_Iterations[Iteration - 1]->Heap;
+	delete m_Iterations[Iteration - 1];
+	m_Iterations[Iteration - 1] = NULL;
+
+	m_Sync.EndWrite();
+	return 0;
 }

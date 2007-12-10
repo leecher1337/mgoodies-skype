@@ -4,8 +4,10 @@
 #include "MREWSync.h"
 #include "sigslot.h"
 #include "Entries.h"
+#include "IterationHeap.h"
 
 #include <map>
+#include <queue>
 
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
@@ -106,8 +108,14 @@ public:
 	unsigned int ReadSetting(TDBSetting & Setting);
 	unsigned int ReadSetting(TDBSetting & Setting, TDBSettingHandle hSetting);
 
-protected:
+
+	TDBSettingIterationHandle IterationInit(TDBSettingIterFilter & Filter);
+	TDBSettingHandle IterationNext(TDBSettingIterationHandle Iteration);
+	unsigned int IterationClose(TDBSettingIterationHandle Iteration);
+
+private:
 	typedef std::map<TDBEntryHandle, CSettingsTree*> TSettingsTreeMap;
+	typedef CIterationHeap<CSettingsTree::iterator> TSettingsHeap;
 
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CFileAccess & m_SettingsFile;
@@ -116,6 +124,22 @@ protected:
 
 	TSettingsTreeMap m_SettingsMap;
 
+	typedef struct TSettingIterationResult {
+		TDBSettingHandle Handle;
+		TDBEntryHandle Entry;
+		char * Name;
+		unsigned short NameLen;
+	} TSettingIterationResult;
+
+	typedef struct TSettingIteration {
+		TDBSettingIterFilter Filter;
+		unsigned int FilterNameStartLength;
+		TSettingsHeap * Heap;
+		std::queue<TSettingIterationResult> * Frame;
+	} TSettingIteration, *PSettingIteration;
+
+	unsigned int m_IterAllocSize;
+	TSettingIteration **m_Iterations;
 
 	TOnRootChanged m_sigRootChanged;
 	void onRootChanged(void* SettingsTree, unsigned int NewRoot);
@@ -124,6 +148,6 @@ protected:
 
 	unsigned int Hash(void * Data, unsigned int Length);
 
-		
+	
 };
 

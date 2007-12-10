@@ -361,9 +361,6 @@ typedef
 		unsigned int cbSize;                           /// size of the structure in bytes
 		TDBEntryHandle Entry;                          /// Entryhandle where the setting can be found, or where searching starts
 		char * pszSettingName;                         /// Setting name
-		
-		unsigned short sSettingNameLength;             /// size of the pszSettingName buffer if you wish to read description of a settinghandle
-
 		unsigned int Flags;                            /// flags describing where the setting can be found DB_SDF_*
 
 		TDBEntryHandle FoundInEntry;                   /// internal use to avoid to do the searching twice
@@ -530,7 +527,7 @@ typedef
 		unsigned int Options;               /// DB_SIFO_* flags
 		TDBEntryHandle hEntry;              /// hEntry which settings should be iterated (or where iteration begins)
 		char * NameStart;                   /// if set != NULL the iteration will only return settings which name starts with this string
-		unsigned int ExtraCount;            /// count of additional Entries which settings are enumerated, size of the array pointed by EtraEntries
+		unsigned int ExtraCount;            /// count of additional Entries which settings are enumerated, size of the array pointed by ExtraEntries
 		TDBEntryHandle * ExtraEntries;      /// pointer to an array with additional Entry handles in prioritized order
 
 		PDBSettingDescriptor Descriptor;    /// if set, the iteration will fill in the correct data, you may set SettingsNameLength and SettingName to a buffer to recieve the name of each setting
