@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SIPRTC_VERSION_V1   0
 #define SIPRTC_VERSION_V2   0
 #define SIPRTC_VERSION_V3   0
-#define SIPRTC_VERSION_V4   10
+#define SIPRTC_VERSION_V4   11
 //--------------------------------------------------------------------------------------------------
 
 #if !defined(_CRT_STRINGIZE)

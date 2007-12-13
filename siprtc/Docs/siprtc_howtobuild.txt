@@ -10,7 +10,7 @@ REQUIRED ENVIRONMENT
    To build SIP RTC plugin you need the following:
 
      - Visual C++ 2003 or 2005.
-     - WTL 7 or later (http://wtl.sourceforge.net) must be
+     - WTL 8.0 or later (http://wtl.sourceforge.net) must be
        installed and added to include paths of VC.
      - (optional) Platform SDK for 2000 or XP or Vista.
      - (optional) RTC SDK 1.3.
@@ -19,7 +19,7 @@ REQUIRED ENVIRONMENT
        already included in this distribution package.
        Anyway, it's highly recommended to install it
        to get the documentation.
-     - Source code of Miranda IM 0.5 or later.
+     - Source code of Miranda IM 0.7 or later.
 
 
 HOW TO BUILD
