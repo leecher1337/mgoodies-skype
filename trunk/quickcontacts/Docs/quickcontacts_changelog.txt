@@ -2,6 +2,9 @@ Quick Contacts
 
 Changelog:
 
+. 0.0.3.0
+  + Added support for hotkeys module in 0.8 (some texts changed in langpack)
+
 . 0.0.2.9
   + Added contact icon
   * Fix when comparing unicode strings

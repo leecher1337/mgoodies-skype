@@ -58,6 +58,7 @@ Boston, MA 02111-1307, USA.
 #include <m_voice.h>
 #include <m_voiceservice.h>
 #include <m_icolib.h>
+#include <m_hotkeys.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
