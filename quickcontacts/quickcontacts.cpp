@@ -32,11 +32,11 @@ PLUGININFOEX pluginInfo={
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,9),
+	PLUGIN_MAKE_VERSION(0,0,3,0),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
-	"© 2006 Ricardo Pescuma Domenecci",
+	"© 2007 Ricardo Pescuma Domenecci",
 	"http://pescuma.mirandaim.ru/miranda/quickcontacts",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
@@ -66,6 +66,8 @@ int ShowDialog(WPARAM wParam,LPARAM lParam);
 
 int hksModule = 0;
 int hksAction = 0;
+
+BOOL hasNewHotkeyModule = FALSE;
 
 #define IDC_ICO 12344
 
@@ -178,6 +180,64 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	// Add hotkey to multiple services
 
+	if (ServiceExists(MS_HOTKEY_REGISTER))
+	{
+		hasNewHotkeyModule = TRUE;
+
+		HOTKEYDESC hkd = {0};
+		hkd.cbSize = sizeof(hkd);
+		hkd.pszName = Translate("Quick Contacts/Open dialog");
+		hkd.pszDescription = Translate("Open dialog");
+		hkd.pszSection = Translate("Quick Contacts");
+		hkd.pszService = MS_QC_SHOW_DIALOG;
+		hkd.DefHotKey = HOTKEYCODE(HOTKEYF_CONTROL|HOTKEYF_ALT, 'Q');
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+
+		hkd.pszService = NULL;
+
+		hkd.lParam = HOTKEY_VOICE;
+		hkd.DefHotKey = HOTKEYCODE(HOTKEYF_CONTROL, 'V');
+		hkd.pszName = Translate("Quick Contacts/Voice");
+		hkd.pszDescription = Translate("Make a voice call");
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+
+		hkd.lParam = HOTKEY_FILE;
+		hkd.DefHotKey = HOTKEYCODE(HOTKEYF_CONTROL, 'F');
+		hkd.pszName = Translate("Quick Contacts/File");
+		hkd.pszDescription = Translate("Send file");
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+
+		hkd.lParam = HOTKEY_URL;
+		hkd.DefHotKey = HOTKEYCODE(HOTKEYF_CONTROL, 'U');
+		hkd.pszName = Translate("Quick Contacts/URL");
+		hkd.pszDescription = Translate("Send URL");
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+
+		hkd.lParam = HOTKEY_INFO;
+		hkd.DefHotKey = HOTKEYCODE(HOTKEYF_CONTROL, 'I');
+		hkd.pszName = Translate("Quick Contacts/Info");
+		hkd.pszDescription = Translate("Open userinfo");
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+		
+		hkd.lParam = HOTKEY_HISTORY;
+		hkd.DefHotKey = HOTKEYCODE(HOTKEYF_CONTROL, 'H');
+		hkd.pszName = Translate("Quick Contacts/History");
+		hkd.pszDescription = Translate("Open history");
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+		
+		hkd.lParam = HOTKEY_MENU;
+		hkd.DefHotKey = HOTKEYCODE(HOTKEYF_CONTROL, 'M');
+		hkd.pszName = Translate("Quick Contacts/Menu");
+		hkd.pszDescription = Translate("Open contact menu");
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+		
+		hkd.lParam = HOTKEY_ALL_CONTACTS;
+		hkd.DefHotKey = HOTKEYCODE(HOTKEYF_CONTROL, 'A');
+		hkd.pszName = Translate("Quick Contacts/All Contacts");
+		hkd.pszDescription = Translate("Show all contacts");
+		CallService(MS_HOTKEY_REGISTER, 0, (LPARAM)&hkd);
+	}
+
 	hksModule = HKS_RegisterModule("Quick Contacts");
 	if (hksModule >= 0)
 	{
@@ -188,8 +248,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	if (ServiceExists(MS_SKIN_ADDHOTKEY))
 	{
-		SKINHOTKEYDESCEX hk;
-		ZeroMemory(&hk,sizeof(hk));
+		SKINHOTKEYDESCEX hk = {0};
 		hk.cbSize = sizeof(hk);
 		hk.pszSection = Translate("Quick Contacts");
 		hk.pszName = Translate("Open dialog");
@@ -250,7 +309,7 @@ int EventAdded(WPARAM wparam, LPARAM lparam)
 #define IDC_ENTER 2000	// Pseudo control to handle enter in the main window
 
 
-#define MAX_CONTACTS	512
+#define MAX_CONTACTS	1024
 
 // array where the contacts are put into
 struct c_struct {
@@ -665,13 +724,27 @@ LRESULT CALLBACK HookProc(int code, WPARAM wparam, LPARAM lparam)
 		return 0;
 
 	msg = (MSG*)lparam;
-	htemp = msg->hwnd;
-	msg->hwnd = hwndMain;
 
-	if(TranslateAccelerator(msg->hwnd, hAcct, msg))
-		return 1;
+
+	if (hasNewHotkeyModule)
+	{
+		int action = CallService(MS_HOTKEY_CHECK, (WPARAM) msg, (LPARAM) "Quick Contacts");
+		if (action != 0)
+		{
+			SendMessage(hwndMain, WM_COMMAND, action, 0);
+			return 1;
+		}
+	}
 	else
+	{
+		htemp = msg->hwnd;
+		msg->hwnd = hwndMain;
+
+		if (TranslateAccelerator(msg->hwnd, hAcct, msg))
+			return 1;
+		
 		msg->hwnd=htemp;
+	}
 
 	if (msg->message == WM_KEYDOWN && msg->wParam == VK_ESCAPE)
 	{
@@ -725,6 +798,34 @@ BOOL MoveWindow(HWND hWnd, const RECT &rect, BOOL bRepaint)
 }
 
 
+static void FillButton(HWND hwndDlg, int dlgItem, char *name, char *key, HICON icon)
+{
+	char tmp[256];
+	char *full;
+	if (key == NULL)
+		full = Translate(name);
+	else
+		mir_snprintf(full = tmp, MAX_REGS(tmp), "%s (%s)", Translate(name), key);
+
+	SendMessage(GetDlgItem(hwndDlg, dlgItem), BUTTONSETASFLATBTN, 0, 0);
+	SendMessageA(GetDlgItem(hwndDlg, dlgItem), BUTTONADDTOOLTIP, (LPARAM) full, 0);
+	SendDlgItemMessage(hwndDlg, dlgItem, BM_SETIMAGE, IMAGE_ICON, (LPARAM) icon);
+}
+
+
+static void FillCheckbox(HWND hwndDlg, int dlgItem, char *name, char *key)
+{
+	char tmp[256];
+	char *full;
+	if (key == NULL)
+		full = Translate(name);
+	else
+		mir_snprintf(full = tmp, MAX_REGS(tmp), "%s (%s)", Translate(name), key);
+
+	SendMessageA(GetDlgItem(hwndDlg, dlgItem), WM_SETTEXT, 0, (LPARAM) full);
+}
+
+
 static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -741,7 +842,8 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
                     rc.left - 20, rc.top + (rc.bottom - rc.top - 16) / 2, 16, 16, hwndDlg, (HMENU) IDC_ICO, 
 					hInst, NULL);
 
-			hAcct = LoadAccelerators(hInst, MAKEINTRESOURCE(ACCEL_TABLE));
+			if (!hasNewHotkeyModule)
+				hAcct = LoadAccelerators(hInst, MAKEINTRESOURCE(ACCEL_TABLE));
 
 			hHook = SetWindowsHookEx(WH_MSGFILTER, HookProc, hInst, GetCurrentThreadId());
 
@@ -750,15 +852,12 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			wpEditMainProc = (WNDPROC) SetWindowLong(GetWindow(GetDlgItem(hwndDlg, IDC_USERNAME),GW_CHILD), GWL_WNDPROC, (LONG)EditProc);
 
 			// Buttons
-			SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), BUTTONSETASFLATBTN, 0, 0);
-			SendMessage(GetDlgItem(hwndDlg, IDC_MESSAGE), BUTTONADDTOOLTIP, (LPARAM) Translate("Send message"), 0);
-			SendDlgItemMessage(hwndDlg, IDC_MESSAGE, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
+			FillCheckbox(hwndDlg, IDC_SHOW_ALL_CONTACTS, "Show all contacts", hasNewHotkeyModule ? NULL : "Ctrl+A");
+			FillButton(hwndDlg, IDC_MESSAGE, "Send message", NULL, LoadSkinnedIcon(SKINICON_EVENT_MESSAGE));
 
 			if (ServiceExists(MS_VOICESERVICE_CAN_CALL))
 			{
-				SendMessage(GetDlgItem(hwndDlg, IDC_VOICE), BUTTONSETASFLATBTN, 0, 0);
-				SendMessage(GetDlgItem(hwndDlg, IDC_VOICE), BUTTONADDTOOLTIP, (LPARAM) Translate("Make a voice call (Ctrl+V)"), 0);
-				SendDlgItemMessage(hwndDlg, IDC_VOICE, BM_SETIMAGE, IMAGE_ICON, (LPARAM) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "vca_call"));
+				FillButton(hwndDlg, IDC_VOICE, "Make a voice call", hasNewHotkeyModule ? NULL : "Ctrl+V", (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) "vca_call"));
 			}
 			else
 			{
@@ -768,25 +867,11 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 				ShowWindow(GetDlgItem(hwndDlg, IDC_VOICE), SW_HIDE);
 			}
 
-			SendMessage(GetDlgItem(hwndDlg, IDC_FILE), BUTTONSETASFLATBTN, 0, 0);
-			SendMessage(GetDlgItem(hwndDlg, IDC_FILE), BUTTONADDTOOLTIP, (LPARAM) Translate("Send file (Ctrl+F)"), 0);
-			SendDlgItemMessage(hwndDlg, IDC_FILE, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_FILE));
-
-			SendMessage(GetDlgItem(hwndDlg, IDC_URL), BUTTONSETASFLATBTN, 0, 0);
-			SendMessage(GetDlgItem(hwndDlg, IDC_URL), BUTTONADDTOOLTIP, (LPARAM) Translate("Send URL (Ctrl+U)"), 0);
-			SendDlgItemMessage(hwndDlg, IDC_URL, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadSkinnedIcon(SKINICON_EVENT_URL));
-
-			SendMessage(GetDlgItem(hwndDlg, IDC_USERINFO), BUTTONSETASFLATBTN, 0, 0);
-			SendMessage(GetDlgItem(hwndDlg, IDC_USERINFO), BUTTONADDTOOLTIP, (LPARAM) Translate("Open userinfo (Ctrl+I)"), 0);
-			SendDlgItemMessage(hwndDlg, IDC_USERINFO, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(160),IMAGE_ICON,16,16,LR_DEFAULTCOLOR));
-
-			SendMessage(GetDlgItem(hwndDlg, IDC_HISTORY), BUTTONSETASFLATBTN, 0, 0);
-			SendMessage(GetDlgItem(hwndDlg, IDC_HISTORY), BUTTONADDTOOLTIP, (LPARAM) Translate("Open history (Ctrl+H)"), 0);
-			SendDlgItemMessage(hwndDlg, IDC_HISTORY, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(174),IMAGE_ICON,16,16,LR_DEFAULTCOLOR));
-
-			SendMessage(GetDlgItem(hwndDlg, IDC_MENU), BUTTONSETASFLATBTN, 0, 0);
-			SendMessage(GetDlgItem(hwndDlg, IDC_MENU), BUTTONADDTOOLTIP, (LPARAM) Translate("Open contact menu (Ctrl+M)"), 0);
-			SendDlgItemMessage(hwndDlg, IDC_MENU, BM_SETIMAGE, IMAGE_ICON, (LPARAM) LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(264),IMAGE_ICON,16,16,LR_DEFAULTCOLOR));
+			FillButton(hwndDlg, IDC_FILE, "Send file", hasNewHotkeyModule ? NULL : "Ctrl+F", LoadSkinnedIcon(SKINICON_EVENT_FILE));
+			FillButton(hwndDlg, IDC_URL, "Send URL", hasNewHotkeyModule ? NULL : "Ctrl+U", LoadSkinnedIcon(SKINICON_EVENT_URL));
+			FillButton(hwndDlg, IDC_USERINFO, "Open userinfo", hasNewHotkeyModule ? NULL : "Ctrl+I", (HICON) LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(160),IMAGE_ICON,16,16,LR_DEFAULTCOLOR));
+			FillButton(hwndDlg, IDC_HISTORY, "Open history", hasNewHotkeyModule ? NULL : "Ctrl+H", (HICON) LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(174),IMAGE_ICON,16,16,LR_DEFAULTCOLOR));
+			FillButton(hwndDlg, IDC_MENU, "Open contact menu", hasNewHotkeyModule ? NULL : "Ctrl+M", (HICON) LoadImage(GetModuleHandle(NULL),MAKEINTRESOURCE(264),IMAGE_ICON,16,16,LR_DEFAULTCOLOR));
 
 			SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETEXTENDEDUI, (WPARAM)TRUE, 0);
 

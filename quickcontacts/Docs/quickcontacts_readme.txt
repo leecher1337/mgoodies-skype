@@ -14,6 +14,9 @@ Available hotkeys:
 - Ctrl-I: Show userinfo
 - Ctrl-H: Open history
 - Ctrl-M: Open contact menu
-- User defined: Open hotkey dialog (see options page)
+- User defined: Open hotkey dialog
+In Miranda 0.8 all this keys can be configured in options.
 
 To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=8797
+
+To report bugs, please create a attache dump using the pdb file (you need to copy to pdb to the same place the dll is)

@@ -19,7 +19,9 @@ echo Generating files for %name% ...
 del *.zip
 del *.dll
 copy ..\..\..\bin\release\Plugins\%name%.dll
-copy ..\..\..\bin\release\Plugins\%name%W.dll
+copy "..\..\..\bin\release unicode\Plugins\%name%W.dll"
+copy ..\Release\%name%.pdb
+copy ..\Unicode_Release\%name%W.pdb
 copy ..\Docs\%name%_changelog.txt
 copy ..\Docs\%name%_version.txt
 copy ..\Docs\%name%_readme.txt
@@ -48,9 +50,12 @@ cd ..
 
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip %name%.dll Docs
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip %name%W.dll Docs
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.pdb.zip %name%.pdb
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.pdb.zip %name%W.pdb
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
 
 del *.dll
+del *.pdb
 cd Docs
 del /Q *.*
 cd ..
@@ -71,6 +76,8 @@ pause
 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.zip %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%W.zip %ftp% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.pdb.zip %ftp% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%W.pdb.zip %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_readme.txt %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt %ftp% -overwrite -close 

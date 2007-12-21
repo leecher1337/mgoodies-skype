@@ -13,16 +13,16 @@
 
 ; Main dialog
 [Enter Username:]
-[Show all contacts (Ctrl+A)]
+[Show all contacts]
 
 ; Tooltips
 [Send message]
-[Send file (Ctrl+F)]
-[Make a voice call (Ctrl+V)]
-[Send URL (Ctrl+U)]
-[Open userinfo (Ctrl+I)]
-[Open history (Ctrl+H)]
-[Open contact menu (Ctrl+M)]
+[Make a voice call]
+[Send file]
+[Send URL]
+[Open userinfo]
+[Open history]
+[Open contact menu]
 
 ; Options
 [ Last Sent ]
