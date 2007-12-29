@@ -23,11 +23,6 @@ Boston, MA 02111-1307, USA.
 
 #include <windows.h>
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 #include "commons.h"
 
 
@@ -43,9 +38,5 @@ void FreeStatus();
 
 
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __STATUS_H__

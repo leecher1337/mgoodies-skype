@@ -84,7 +84,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"..\..bin\release\Plugins\smr.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /profile /pdb:none
-# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug\Plugins\smr.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
+# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x32100000" /dll /incremental:yes /debug /machine:I386 /out:"..\..\bin\debug unicode\Plugins\smr.dll" /filealign:0x200 /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /profile /pdb:none
 
 !ENDIF 
@@ -150,7 +150,7 @@ SOURCE=.\resource.rc
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\utils\mir_dblists.c
+SOURCE=..\utils\mir_dblists.cpp
 # End Source File
 # Begin Source File
 
@@ -170,7 +170,7 @@ SOURCE=.\poll.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\smr.c
+SOURCE=.\smr.cpp
 # End Source File
 # Begin Source File
 

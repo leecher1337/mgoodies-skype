@@ -1,1 +1,1 @@
-Status Message Retriever 1.0.0.4
+Status Message Retriever 1.0.0.5

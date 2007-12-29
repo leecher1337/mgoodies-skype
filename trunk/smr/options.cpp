@@ -63,9 +63,16 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
 	odp.hInstance=hInst;
 	odp.ptszGroup = TranslateT("Status");
 	odp.ptszTitle = TranslateT("Status Msg Retrieve");
-	odp.pfnDlgProc = OptionsDlgProc;
-	odp.pszTemplate = MAKEINTRESOURCE(IDD_OPTS);
-    odp.flags = ODPF_BOLDGROUPS;
+    odp.flags = ODPF_BOLDGROUPS | ODPF_EXPERTONLY;
+
+	odp.ptszTab = TranslateT("General");
+	odp.pfnDlgProc = GeneralOptionsDlgProc;
+	odp.pszTemplate = MAKEINTRESOURCE(IDD_OPT_GENERAL);
+    CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+
+	odp.ptszTab = TranslateT("Protocols");
+	odp.pfnDlgProc = ProtocolsOptionsDlgProc;
+	odp.pszTemplate = MAKEINTRESOURCE(IDD_OPT_PROTOCOLS);
     CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
 	return 0;
@@ -77,47 +84,26 @@ void InitOptions()
 	LoadOptions();
 
 	hOptHook = HookEvent(ME_OPT_INITIALISE, InitOptionsCallback);
-
-	InitMirOptions();
 }
 
 // Deinitializations needed by options
 void DeInitOptions()
 {
 	UnhookEvent(hOptHook);
-
-	FreeMirOptions();
-}
-
-// Options page
-
-static ItemOption pages[] = {
-	{ "General", IDD_OPT_GENERAL, GeneralOptionsDlgProc },
-	{ "Protocols", IDD_OPT_PROTOCOLS, ProtocolsOptionsDlgProc }
-};
-
-static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
-{
-	BOOL ret = TabsDlgProc(pages, MAX_REGS(pages), hInst, IDC_TAB, hwndDlg, msg, wParam, lParam);
-
-	if (msg == WM_NOTIFY && ((LPNMHDR)lParam)->idFrom == 0 && ((LPNMHDR)lParam)->code == PSN_APPLY)
-		LoadOptions();
-
-	return ret;
 }
 
 
 // General page
 
 static OptPageControl generalControls[] = { 
-	{ NULL, CONTROL_CHECKBOX, IDC_CHECK_ONTIMER, OPT_CHECK_ONTIMER, (BYTE) TRUE },
-	{ NULL, CONTROL_CHECKBOX, IDC_CHECK_ONSTATUS, OPT_CHECK_ONSTATUSCHANGE, (BYTE) TRUE },
-	{ NULL, CONTROL_CHECKBOX, IDC_CHECK_ONSTATUSTIMER, OPT_CHECK_ONSTATUSCHANGETIMER, (BYTE) TRUE },
-	{ NULL, CONTROL_CHECKBOX, IDC_CLEAR_ON_STATUS, OPT_CLEAR_ONSTATUSCHANGE, (BYTE) TRUE },
-	{ NULL, CONTROL_CHECKBOX, IDC_ALWAYS_CLEAR, OPT_ALWAYS_CLEAR, (BYTE) TRUE },
+	{ NULL, CONTROL_CHECKBOX,	IDC_CHECK_ONTIMER, OPT_CHECK_ONTIMER, (BYTE) TRUE },
+	{ NULL, CONTROL_CHECKBOX,	IDC_CHECK_ONSTATUS, OPT_CHECK_ONSTATUSCHANGE, (BYTE) TRUE },
+	{ NULL, CONTROL_CHECKBOX,	IDC_CHECK_ONSTATUSTIMER, OPT_CHECK_ONSTATUSCHANGETIMER, (BYTE) TRUE },
+	{ NULL, CONTROL_CHECKBOX,	IDC_CLEAR_ON_STATUS, OPT_CLEAR_ONSTATUSCHANGE, (BYTE) TRUE },
+	{ NULL, CONTROL_CHECKBOX,	IDC_ALWAYS_CLEAR, OPT_ALWAYS_CLEAR, (BYTE) TRUE },
 	{ NULL, CONTROL_SPIN,		IDC_CHECK_ONTIMER_TIMER, OPT_CHECK_ONTIMER_TIMER, (WORD) 10, IDC_CHECK_ONTIMER_TIMER_SPIN, (WORD) 1, (WORD) 255 },
 	{ NULL, CONTROL_SPIN,		IDC_CHECK_ONSTATUSTIMER_TIMER, OPT_CHECK_ONSTATUSTIMER_TIMER, (WORD) 15, IDC_CHECK_ONSTATUSTIMER_TIMER_SPIN, (WORD) 1, (WORD) 255 }, 
-	{ NULL, CONTROL_COMBO,	IDC_XSTATUS, OPT_WHEN_XSTATUS, (WORD) Clear }
+	{ NULL, CONTROL_COMBO,		IDC_XSTATUS, OPT_WHEN_XSTATUS, (WORD) Clear }
 };
 
 

@@ -27,11 +27,11 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Status Message Retriever",
-	PLUGIN_MAKE_VERSION(1,0,0,4),
+	PLUGIN_MAKE_VERSION(1,0,0,5),
 	"Retrieve status message based on timer / status change",
 	"Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
 	"",
-	"© 2006 Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
+	"© 2007 Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
 	"http://pescuma.mirandaim.ru/miranda/smr",
 	0, 
 	0,		//doesn't replace anything built-in
@@ -60,21 +60,21 @@ int MsgRetrievalEnabledForProtocol(WPARAM wParam, LPARAM lParam);
 // Functions ////////////////////////////////////////////////////////////////////////////
 
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
+extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
 {
 	hInst = hinstDLL;
 	return TRUE;
 }
 
 
-__declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
+extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
 {
 	pluginInfo.cbSize = sizeof(PLUGININFO);
 	return (PLUGININFO*) &pluginInfo;
 }
 
 
-__declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
 {
 	pluginInfo.cbSize = sizeof(PLUGININFOEX);
 	return &pluginInfo;
@@ -82,13 +82,13 @@ __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
 
 
 static const MUUID interfaces[] = { MIID_STATUS_MESSAGE_RETRIEVER, MIID_LAST };
-__declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
 {
 	return interfaces;
 }
 
 
-int __declspec(dllexport) Load(PLUGINLINK *link) {
+extern "C" int __declspec(dllexport) Load(PLUGINLINK *link) {
 	CLISTMENUITEM mi = {0};
 	
 	pluginLink = link;
@@ -122,7 +122,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link) {
 	return 0;
 }
 
-int __declspec(dllexport) Unload(void) 
+extern "C" int __declspec(dllexport) Unload(void) 
 {
 	FreeStatus();
 	FreeStatusMsgs();

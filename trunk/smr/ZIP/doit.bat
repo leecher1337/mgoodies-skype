@@ -17,10 +17,15 @@ echo Generating files for %name% ...
 
 del *.zip
 del *.dll
-copy ..\..\..\bin\release\Plugins\%name%.dll
+del *.txt
 copy ..\Docs\%name%_changelog.txt
 copy ..\Docs\%name%_version.txt
 copy ..\Docs\%name%_readme.txt
+mkdir Plugins
+cd Plugins
+del /Q *.*
+copy ..\..\..\..\bin\release\Plugins\%name%.dll
+cd ..
 mkdir Docs
 cd Docs
 del /Q *.*
@@ -34,7 +39,6 @@ cd src
 del /Q *.*
 copy ..\..\*.h
 copy ..\..\*.cpp
-copy ..\..\*.
 copy ..\..\*.rc
 copy ..\..\*.dsp
 copy ..\..\*.dsw
@@ -45,10 +49,13 @@ copy ..\..\..\Docs\*.*
 cd ..
 cd ..
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip %name%.dll Docs
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip Plugins Docs
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
 
-del *.dll
+cd Plugins
+del /Q *.*
+cd ..
+rmdir Plugins
 cd Docs
 del /Q *.*
 cd ..
