@@ -1,7 +1,7 @@
 /*
 "Last Seen mod" plugin for Miranda IM
 Copyright ( C ) 2002-03  micron-x
-Copyright ( C ) 2005-06  Y.B.
+Copyright ( C ) 2005-07  Y.B.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -541,11 +541,11 @@ void myPlaySound(HANDLE hcontact, WORD newStatus, WORD oldStatus){
 	if(CallService(MS_IGNORE_ISIGNORED,(WPARAM)hcontact,IGNOREEVENT_USERONLINE)) return;
 	//oldStatus and hcontact are not used yet
 	if (DBGetContactSettingByte(NULL,"Skin","UseSound",1)){
-		char * soundname = ((newStatus==ID_STATUS_ONLINE) || (newStatus==ID_STATUS_FREECHAT))?
-			"LastSeenTrackedStatusOnline":
-				(newStatus==ID_STATUS_OFFLINE)?
-					"LastSeenTrackedStatusOffline":
-					"LastSeenTrackedStatusChange";
+		char * soundname=0;
+		if ((newStatus==ID_STATUS_ONLINE) || (newStatus==ID_STATUS_FREECHAT)) soundname = "LastSeenTrackedStatusOnline";
+		else if (newStatus==ID_STATUS_OFFLINE) soundname = "LastSeenTrackedStatusOffline";
+		else if (oldStatus==ID_STATUS_OFFLINE) soundname = "LastSeenTrackedStatusFromOffline";
+		else soundname = "LastSeenTrackedStatusChange";
 		if (!DBGetContactSettingByte(NULL,"SkinSoundsOff",soundname,0)){
 			DBVARIANT dbv;
 			if (!DBGetContactSetting(NULL,"SkinSounds",soundname,&dbv)){

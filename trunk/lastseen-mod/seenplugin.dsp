@@ -166,10 +166,6 @@ SOURCE=.\file.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\protocols\IcqOscarJ\forkthread.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\history.c
 # End Source File
 # Begin Source File

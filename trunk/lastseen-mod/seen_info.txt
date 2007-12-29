@@ -49,7 +49,8 @@ Version history
 Last Seen Mod
 *************
     * v. 5.0.4.7
-	      o Used the core service MS_SYSTEM_FORK_THREAD_EX
+          o Added special sound for "Uses Logged In"
+          o Used the core service MS_SYSTEM_FORK_THREAD_EX
 
     * v. 5.0.4.3
           o Included seenTS DB setting
