@@ -42,7 +42,7 @@ END
 
 IDD_OPT_GENERAL DIALOGEX 0, 0, 271, 167
 STYLE WS_CHILD
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        " Retrieve ",IDC_STATIC,7,7,257,60
     CONTROL         "Retrieve status messages every",IDC_CHECK_ONTIMER,
@@ -51,7 +51,7 @@ BEGIN
                     WS_BORDER,WS_EX_STATICEDGE
     CONTROL         "Spin1",IDC_CHECK_ONTIMER_TIMER_SPIN,"msctls_updown32",
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | 
-                    UDS_NOTHOUSANDS | UDS_HOTTRACK,167,20,11,11
+                    UDS_NOTHOUSANDS | UDS_HOTTRACK,157,18,11,11
     LTEXT           "minutes",IDC_STATIC,173,21,37,10
     CONTROL         "Retrieve on status change",IDC_CHECK_ONSTATUS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,15,34,216,10
@@ -61,9 +61,9 @@ BEGIN
                     NOT WS_BORDER,WS_EX_STATICEDGE
     CONTROL         "Spin2",IDC_CHECK_ONSTATUSTIMER_TIMER_SPIN,
                     "msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | 
-                    UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,123,49,11,
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS | UDS_HOTTRACK,119,42,11,
                     10
-    LTEXT           "seconds after status change",IDC_STATIC,133,48,99,10
+    LTEXT           "seconds after status change",IDC_STATIC,130,48,99,10
     GROUPBOX        " Clear ",IDC_STATIC,7,70,257,53
     CONTROL         "Clear message on status change",IDC_CLEAR_ON_STATUS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,83,216,10
@@ -76,13 +76,6 @@ BEGIN
     LTEXT           "If contact has XStatus set:",IDC_STATIC,15,141,92,13
     COMBOBOX        IDC_XSTATUS,109,139,148,72,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
-END
-
-IDD_OPTS DIALOG DISCARDABLE  0, 0, 299, 246
-STYLE WS_CHILD
-FONT 8, "MS Shell Dlg"
-BEGIN
-    CONTROL         "Tab2",IDC_TAB,"SysTabControl32",0x0,7,7,285,232
 END
 
 
@@ -110,14 +103,6 @@ BEGIN
         RIGHTMARGIN, 264
         TOPMARGIN, 7
         BOTTOMMARGIN, 160
-    END
-
-    IDD_OPTS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 292
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 239
     END
 END
 #endif    // APSTUDIO_INVOKED

@@ -28,12 +28,8 @@ Boston, MA 02111-1307, USA.
 
 
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 // Miranda headers
+#define MIRANDA_VER 0x0700
 #include <newpluginapi.h>
 #include <m_system.h>
 #include <m_protocols.h>
@@ -93,9 +89,5 @@ __inline static int ProtoServiceExists(const char *szModule,const char *szServic
 
 
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __COMMONS_H__

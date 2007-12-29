@@ -26,11 +26,6 @@ Boston, MA 02111-1307, USA.
 
 #include <windows.h>
 
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-
 #define OPT_CHECK_ONTIMER				"CheckOnTimer"
 #define OPT_CHECK_ONSTATUSCHANGE		"CheckOnStatusChange"
 #define OPT_CHECK_ONSTATUSCHANGETIMER	"CheckOnStatusChangeTimer"
@@ -78,9 +73,5 @@ void DeInitOptions();
 void LoadOptions();
 
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __OPTIONS_H__

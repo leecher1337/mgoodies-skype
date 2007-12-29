@@ -2,6 +2,10 @@ Status Message Retriever
 
 Changelog:
 
+. 1.0.0.5
+  * Now uses tabs from core in options
+  * Options are now expert only
+
 . 1.0.0.4
   + Added support for Miranda 0.8
 
