@@ -1,7 +1,7 @@
 /*
 "Last Seen mod" plugin for Miranda IM
 Copyright ( C ) 2002-03  micron-x
-Copyright ( C ) 2005-06  Y.B.
+Copyright ( C ) 2005-07  Y.B.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -51,8 +51,7 @@ Last change by : $Author$
 #include <m_popup.h>
 #include <m_system.h>
 
-//#include "..\..\protocols\IcqOscarJ\forkthread.h"
-#include "..\..\include\m_tipper.h"
+#include "../tipper/docs/m_tipper.h"
 WCHAR *any_to_IdleNotidleUnknown(HANDLE hContact, const char *module_name, const char *setting_name, WCHAR *buff, int bufflen);
 WCHAR *any_to_Idle(HANDLE hContact, const char *module_name, const char *setting_name, WCHAR *buff, int bufflen);
 

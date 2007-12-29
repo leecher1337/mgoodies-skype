@@ -1,7 +1,7 @@
 /*
 "Last Seen mod" plugin for Miranda IM
 Copyright ( C ) 2002-03  micron-x
-Copyright ( C ) 2005-06  Y.B.
+Copyright ( C ) 2005-07  Y.B.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -35,11 +35,11 @@ PLUGININFO pluginInfo={
 #else	
 		"Last seen plugin mod (NSNCompat)",
 #endif
-		PLUGIN_MAKE_VERSION(5,0,4,6),
+		PLUGIN_MAKE_VERSION(5,0,4,7),
 		"Log when a user was last seen online and which users were online while you were away",
 		"Heiko Schillinger, YB",
 		"",
-		"© 2001-2002 Heiko Schillinger, 2003 modified by Bruno Rino, 2005 Modified by YB",
+		"© 2001-2002 Heiko Schillinger, 2003 modified by Bruno Rino, 2005-7 Modified by YB",
 		"http://forums.miranda-im.org/showthread.php?t=2822",
 		0,
 #ifndef PERMITNSN
@@ -102,7 +102,8 @@ int MainInit(WPARAM wparam,LPARAM lparam)
 
 	SkinAddNewSoundEx("LastSeenTrackedStatusChange",Translate("LastSeen"),Translate("User status change"));
 	SkinAddNewSoundEx("LastSeenTrackedStatusOnline",Translate("LastSeen"),Translate("Changed to Online"));
-	SkinAddNewSoundEx("LastSeenTrackedStatusOffline",Translate("LastSeen"),Translate("Changed to Offline"));
+	SkinAddNewSoundEx("LastSeenTrackedStatusOffline",Translate("LastSeen"),Translate("User Logged Off"));
+	SkinAddNewSoundEx("LastSeenTrackedStatusFromOffline",Translate("LastSeen"),Translate("User Logged In"));
 	// known modules list
 	if (ServiceExists("DBEditorpp/RegisterSingleModule"))
 		CallService("DBEditorpp/RegisterSingleModule", (WPARAM)S_MOD, 0);

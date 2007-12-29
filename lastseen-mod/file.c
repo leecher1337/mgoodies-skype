@@ -1,7 +1,7 @@
 /*
 "Last Seen mod" plugin for Miranda IM
 Copyright ( C ) 2002-03  micron-x
-Copyright ( C ) 2005-06  Y.B.
+Copyright ( C ) 2005-07  Y.B.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
