@@ -28,8 +28,9 @@ Last change by : $Author$
 HINSTANCE hInstance;
 HANDLE ehdb=NULL,ehproto=NULL,ehmissed=NULL,ehuserinfo=NULL,ehmissed_proto=NULL;
 PLUGINLINK *pluginLink;
-PLUGININFO pluginInfo={
-		sizeof(PLUGININFO),
+char authemail[] = "fscking@spammer.oip.info";//the correct e-mail shall be constructed in DllMain
+PLUGININFOEX pluginInfo={
+		sizeof(PLUGININFOEX),
 #ifndef PERMITNSN
 		"Last seen plugin mod",
 #else	
@@ -38,14 +39,16 @@ PLUGININFO pluginInfo={
 		PLUGIN_MAKE_VERSION(5,0,4,7),
 		"Log when a user was last seen online and which users were online while you were away",
 		"Heiko Schillinger, YB",
-		"",
+		authemail,
 		"© 2001-2002 Heiko Schillinger, 2003 modified by Bruno Rino, 2005-7 Modified by YB",
 		"http://forums.miranda-im.org/showthread.php?t=2822",
 		0,
 #ifndef PERMITNSN
-		DEFMOD_RNDUSERONLINE
+		DEFMOD_RNDUSERONLINE,
+		{ 0x0beac488,0x578d,0x458d,{0xbb, 0x93, 0x8f, 0x2f, 0x53, 0x9b, 0x2a, 0xe4}}/* 0beac488-578d-458d-bb93-8f2f539b2ae4 */
 #else	
-		0
+		0,
+		{ 0x2d506d46,0xc94e,0x4ef8,{0x85, 0x37, 0xf1, 0x12, 0x33, 0xa8, 0x03, 0x81}}/* 2d506d46-c94e-4ef8-8537-f11233a80381 */
 #endif
 };
 
@@ -122,14 +125,32 @@ int MainInit(WPARAM wparam,LPARAM lparam)
 	return 0;
 }
 
-
-
-__declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
+__declspec(dllexport) PLUGININFOEX * MirandaPluginInfo(DWORD mirandaVersion)
 {
+	if ( mirandaVersion < PLUGIN_MAKE_VERSION(0,5,2,0)) {
+		MessageBox( NULL, _T("The LastSeen-mod plugin cannot be loaded. Your Miranda is too old."), _T("SeenPlugin"), MB_OK|MB_ICONWARNING|MB_SETFOREGROUND|MB_TOPMOST );
+		return NULL;
+	}
+	if ( mirandaVersion < PLUGIN_MAKE_VERSION( 0,7,0,17 )) pluginInfo.cbSize = sizeof( PLUGININFO );
 	return &pluginInfo;
 }
 
+__declspec(dllexport) PLUGININFOEX * MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	pluginInfo.cbSize = sizeof( PLUGININFOEX );
+	return &pluginInfo;
+}
 
+#define MIID_LASTSEEN     {0x0df23e71, 0x7950, 0x43d5, {0xb9, 0x86, 0x7a, 0xbf, 0xf5, 0xa5, 0x40, 0x18}}
+static const MUUID interfaces[] = {MIID_LASTSEEN,
+#ifndef PERMITNSN
+MIID_USERONLINE, 
+#endif
+MIID_LAST};
+__declspec(dllexport) const MUUID * MirandaPluginInterfaces(void)
+{
+	return interfaces;
+}
 
 __declspec(dllexport)int Unload(void)
 {
@@ -145,6 +166,7 @@ __declspec(dllexport)int Unload(void)
 
 BOOL WINAPI DllMain(HINSTANCE hinst,DWORD fdwReason,LPVOID lpvReserved)
 {
+	memcpy(pluginInfo.authorEmail,"y_b@saaplugin.no-",17);
 	hInstance=hinst;
 	return 1;
 }
