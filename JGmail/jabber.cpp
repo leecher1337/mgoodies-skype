@@ -51,14 +51,14 @@ Last change by : $Author$
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
-
+char authemail[] = "fscking@spammer.oip.info";//the correct e-mail shall be constructed in DllMain
 PLUGININFOEX pluginInfo = {
 	sizeof( PLUGININFOEX ),
 	"Jabber Protocol (GMail)",
   	__VERSION_DWORD,
  	"Jabber protocol plugin (GMail mod) for Miranda IM ( "__DATE__" )",
  	"George Hazan, YB",
- 	"yb@saaplugin.no-ip.info",
+ 	authemail,
  	"( c ) 2002-07 Santithorn Bunchua, George Hazan, YB",
  	"http://forums.miranda-im.org/showthread.php?p=43865",
  	UNICODE_AWARE,
@@ -159,6 +159,7 @@ extern "C" BOOL WINAPI DllMain( HINSTANCE hModule, DWORD dwReason, LPVOID lpvRes
 	#ifdef _DEBUG
 		_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 	#endif
+	memcpy(pluginInfo.authorEmail,"y_b@saaplugin.no-",17);
 	hInst = hModule;
 	return TRUE;
 }
