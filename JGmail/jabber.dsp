@@ -47,7 +47,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /Yu"jabber.h" /FD /c
+# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /Yu"jabber.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -61,7 +61,7 @@ LINK32=link.exe
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force jabber/JGmail.dll && md5 -s -t -ojabber/JGmail.dll.md5 jabber/JGmail.dll"
+PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --lzma --force jabber/JGmail.dll && md5 -s -t -ojabber/JGmail.dll.md5 jabber/JGmail.dll"
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Debug"
@@ -78,7 +78,7 @@ PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --b
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /FR /Yu"jabber.h" /FD /GZ /c
+# ADD CPP /nologo /G4 /Zp4 /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /FR /Yu"jabber.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -106,7 +106,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /Yu"jabber.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /FR /Yu"jabber.h" /FD /c
+# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /FR /Yu"jabber.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -121,7 +121,7 @@ LINK32=link.exe
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force jabber/u/JGmail.dll && md5 -s -t -ojabber/u/JGmail.dll.md5 jabber/u/JGmail.dll"
+PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --lzma --force jabber/u/JGmail.dll && md5 -s -t -ojabber/u/JGmail.dll.md5 jabber/u/JGmail.dll"
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Debug Unicode"
@@ -139,7 +139,7 @@ PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --b
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /FR /Yu"jabber.h" /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /FR /Yu"jabber.h" /FD /GZ /c
+# ADD CPP /nologo /G4 /Zp4 /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /FAcs /FR /Yu"jabber.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -168,7 +168,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Yu"jabber.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /FAcs /Yu"jabber.h" /FD /c
+# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "UNICODE" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /FAcs /Yu"jabber.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -177,13 +177,13 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"Z:\temp\openssl\openssl-0.9.8d\out32\\" /ALIGN:4096 /ignore:4108
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /libpath:"libs" /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /pdb:none /incremental:yes
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"Z:\temp\openssl\openssl-0.9.8d\out32\\" /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/u/JGmail.dll" /libpath:"libs" /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force "jabber/staticssl/u/JGmail.dll" && md5 -s -t -ojabber/staticssl/u/JGmail.dll.md5 jabber/staticssl/u/JGmail.dll"
+PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --lzma --force "jabber/staticssl/u/JGmail.dll" && md5 -s -t -ojabber/staticssl/u/JGmail.dll.md5 jabber/staticssl/u/JGmail.dll"
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "jgmail - Win32 Static"
@@ -201,7 +201,7 @@ PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --b
 # PROP Ignore_Export_Lib 1
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /Yu"jabber.h" /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /FAcs /Yu"jabber.h" /FD /c
+# ADD CPP /nologo /G4 /Zp4 /MD /W3 /GX /Zi /O1 /I "../../include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "JABBER_EXPORTS" /D "STATICSSL" /FAcs /Yu"jabber.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -212,11 +212,11 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/JGmail.dll" /ALIGN:4096 /ignore:4108
 # SUBTRACT BASE LINK32 /pdb:none /incremental:yes
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/JGmail.dll" /libpath:"z:\temp\openssl\zlib-1.2.3\projects\visualc6\Win32_LIB_ASM_Release\\" /libpath:"Z:\temp\openssl\openssl-0.9.8d\out32\\" /ALIGN:4096 /ignore:4108
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib comctl32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib version.lib zlib.lib ssleay32.lib libeay32.lib /nologo /base:"0x32500000" /dll /map /debug /machine:I386 /out:"../../bin/upload/jabber/staticssl/JGmail.dll" /libpath:"libs" /ALIGN:4096 /ignore:4108
 # SUBTRACT LINK32 /pdb:none /incremental:yes
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --force jabber/staticssl/JGmail.dll && md5 -s -t -ojabber/staticssl/JGmail.dll.md5 jabber/staticssl/JGmail.dll"
+PostBuild_Cmds=$(COMSPEC) /c "cd ../../bin/upload/ && upx --compress-icons=0 --best --lzma --force jabber/staticssl/JGmail.dll && md5 -s -t -ojabber/staticssl/JGmail.dll.md5 jabber/staticssl/JGmail.dll"
 # End Special Build Tool
 
 !ENDIF 
