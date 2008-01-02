@@ -27,7 +27,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Status Message Retriever",
-	PLUGIN_MAKE_VERSION(1,0,0,5),
+	PLUGIN_MAKE_VERSION(1,0,0,6),
 	"Retrieve status message based on timer / status change",
 	"Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
 	"",
@@ -89,9 +89,10 @@ extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
 
 
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link) {
-	CLISTMENUITEM mi = {0};
-	
 	pluginLink = link;
+
+	init_mir_malloc();
+	init_list_interface();
 
 	CreateServiceFunction(MS_SMR_DISABLE_CONTACT, DisableContactMsgRetrieval);
 	CreateServiceFunction(MS_SMR_ENABLE_CONTACT, EnableContactMsgRetrieval);
@@ -99,6 +100,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link) {
 	CreateServiceFunction(MS_SMR_ENABLED_FOR_CONTACT, MsgRetrievalEnabledForUser);
 
 	// Add menu item to enable/disable status message check
+	CLISTMENUITEM mi = {0};
 	mi.cbSize = sizeof(mi);
 	mi.flags = 0;
 	mi.pszPopupName = NULL;
@@ -112,7 +114,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link) {
 	mi.ptszName = TranslateT("Enable Status Message Check");
 	mi.pszService = MS_SMR_ENABLE_CONTACT;
 	hEnableMenu = (HANDLE) CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
-	
+
 	// hooks
 	hModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
 
@@ -138,9 +140,6 @@ extern "C" int __declspec(dllexport) Unload(void)
 // Called when all the modules are loaded
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
-	init_mir_malloc();
-	init_list_interface();
-
 	InitPoll();
 	InitStatusMsgs();
 	InitStatus();

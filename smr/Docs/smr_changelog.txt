@@ -2,6 +2,9 @@ Status Message Retriever
 
 Changelog:
 
+. 1.0.0.6
+  * Fix for crash at startup
+
 . 1.0.0.5
   * Now uses tabs from core in options
   * Options are now expert only
