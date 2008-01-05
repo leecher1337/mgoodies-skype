@@ -222,13 +222,11 @@ static DATABASELINK dblink = {
 	UnloadDatabase,
 };
 
-#define EMAILYB "y_b@saaplugin" \
-	/*these fscking spammers gather even from source code */ \
-	".no-ip.info"
-
-#define EMAILP "piotrek@pio" \
-	/*these fscking spammers gather even from source code */ \
-	"pawlu.net"
+char authemail[] = "fscking@spammer.oip.info"
+#ifdef SECUREDB
+", fsck@spammers.lu.net"
+#endif
+;//the correct e-mail shall be constructed in DllMain
 
 static PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
@@ -241,12 +239,14 @@ static PLUGININFOEX pluginInfo = {
 #ifdef SECUREDB
 	"Provides Miranda database support: encryption, virtualisation, global settings, contacts, history, settings per contact, optimized paths.",
 	"Miranda-IM project; YB; Piotr Pawluczuk; Pescuma",
-	EMAILYB"; "EMAILP,
-	"Copyright 2000-2007 Miranda-IM project; Piotr Pawluczuk; YB; Pescuma",
 #else
 	"Provides Miranda database support: virtualisation, global settings, contacts, history, settings per contact, optimized paths.",
 	"Miranda-IM project; YB; Pescuma",
-	EMAILYB,
+#endif
+	authemail,
+#ifdef SECUREDB
+	"Copyright 2000-2007 Miranda-IM project; Piotr Pawluczuk; YB; Pescuma",
+#else
 	"Copyright 2000-2007 Miranda-IM project; YB; Pescuma",
 #endif
 	"http://saaplugin.no-ip.info/db3xV/",
@@ -259,9 +259,12 @@ static PLUGININFOEX pluginInfo = {
 #endif
 };
 
-
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID reserved)
 {
+	memcpy(pluginInfo.authorEmail,"y_b@saaplugin.no-",17);
+#ifdef SECUREDB
+	memcpy(&pluginInfo.authorEmail[26],"piotrek@piopaw",14);
+#endif
 	g_hInst = hInstDLL;
 	return TRUE;
 }
