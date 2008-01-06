@@ -2,6 +2,9 @@ Spell Checker
 
 Changelog:
 
+. 0.1.0.0
+  + First release in FL
+
 . 0.0.4.0
   * Updated to Hunspell 1.2.1
   * Changes for compatibility with meSpeak
