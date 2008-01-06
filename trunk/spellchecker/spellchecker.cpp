@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,4,0),
+	PLUGIN_MAKE_VERSION(0,1,0,0),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
