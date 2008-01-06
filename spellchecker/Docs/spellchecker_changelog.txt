@@ -2,6 +2,10 @@ Spell Checker
 
 Changelog:
 
+. 0.0.4.0
+  * Updated to Hunspell 1.2.1
+  * Changes for compatibility with meSpeak
+
 . 0.0.3.2
   * Renamed to Use input language to select dictionary
 

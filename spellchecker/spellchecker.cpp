@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,3,2),
+	PLUGIN_MAKE_VERSION(0,0,4,0),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -375,7 +375,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		HMODULE hFlagsDll = LoadLibrary(flag_file);
 
 		sid.flags = SIDF_TCHAR | SIDF_SORTED;
-		sid.ptszSection = TranslateT("Spell Checker/Flags");
+		sid.ptszSection = TranslateT("Languages/Flags");
 
 		// Get language flags
 		for(unsigned i = 0; i < languages.count; i++)
@@ -389,7 +389,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			sid.pszName = languages.dicts[i]->language;
 #endif
 
-			HICON hFlag;
+			HICON hFlag = LoadIconEx(sid.pszName);
+			if (hFlag != NULL)
+			{
+				// Already registered
+				ReleaseIconEx(hFlag);
+				continue;
+			}
+			
 			if (hFlagsDll != NULL)
 				hFlag = (HICON) LoadImage(hFlagsDll, languages.dicts[i]->language, IMAGE_ICON, 16, 16, 0);
 			else
@@ -818,8 +825,6 @@ void LoadDictFromKbdl(Dialog *dlg)
 			if (dlg->srmm)
 				ModifyIcon(dlg);
 		}
-
-//				GetLocaleID(dat, szKLName);
 	}
 }
 
@@ -1089,6 +1094,12 @@ void GetContactLanguage(Dialog *dlg)
 			DBFreeVariant(&dbv);
 		}
 
+		if (dlg->lang_name[0] == _T('\0') && !DBGetContactSettingTString(dlg->hContact, "eSpeak", "TalkLanguage", &dbv))
+		{
+			lstrcpyn(dlg->lang_name, dbv.ptszVal, MAX_REGS(dlg->lang_name));
+			DBFreeVariant(&dbv);
+		}
+
 		// Try from metacontact
 		if (dlg->lang_name[0] == _T('\0') && ServiceExists(MS_MC_GETMETACONTACT)) 
 		{
@@ -1096,6 +1107,12 @@ void GetContactLanguage(Dialog *dlg)
 			if (hMetaContact != NULL)
 			{
 				if (!DBGetContactSettingTString(hMetaContact, MODULE_NAME, "TalkLanguage", &dbv))
+				{
+					lstrcpyn(dlg->lang_name, dbv.ptszVal, MAX_REGS(dlg->lang_name));
+					DBFreeVariant(&dbv);
+				}
+
+				if (dlg->lang_name[0] == _T('\0') && !DBGetContactSettingTString(hMetaContact, "eSpeak", "TalkLanguage", &dbv))
 				{
 					lstrcpyn(dlg->lang_name, dbv.ptszVal, MAX_REGS(dlg->lang_name));
 					DBFreeVariant(&dbv);
@@ -1578,6 +1595,7 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 		else
 			DBWriteContactSettingTString(dlg->hContact, MODULE_NAME, "TalkLanguage", 
 					languages.dicts[selection - LANGUAGE_MENU_ID_BASE]->language);
+
 		GetContactLanguage(dlg);
 
 		if (dlg->srmm)

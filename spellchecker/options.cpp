@@ -174,6 +174,8 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 					(TCHAR *) languages.dicts[sel]->language);
 				lstrcpy(opts.default_language, languages.dicts[sel]->language);
 			}
+			
+			break;
 		}
 
 		case WM_DRAWITEM:

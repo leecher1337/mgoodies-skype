@@ -3,9 +3,9 @@
 
 #define MAXSWL 100
 #define MAXSWUTF8L (MAXSWL * 4)
-#define MAX_ROOTS 150
-#define MAX_WORDS 150
-#define MAX_GUESS 150
+#define MAX_ROOTS 100
+#define MAX_WORDS 100
+#define MAX_GUESS 200
 #define MAXNGRAMSUGS 4
 #define MAXPHONSUGS 2
 
@@ -57,12 +57,13 @@ public:
   int suggest_pos_stems(char*** slst, const char * word, int nsug);
 
   char * suggest_morph(const char * word);
+  char * suggest_gen(char ** pl, int pln, char * pattern);
   char * suggest_morph_for_spelling_error(const char * word);
 
 private:
    int testsug(char** wlst, const char * candidate, int wl, int ns, int cpdsuggest,
-     int * timer, time_t * timelimit);
-   int checkword(const char *, int, int, int *, time_t *);
+     int * timer, clock_t * timelimit);
+   int checkword(const char *, int, int, int *, clock_t *);
    int check_forbidden(const char *, int);
 
    int capchars(char **, const char *, int, int);
@@ -89,15 +90,16 @@ private:
    int movechar_utf(char **, const w_char *, int, int, int);
 
    int mapchars(char**, const char *, int, int);
-   int map_related(const char *, int, char ** wlst, int, int, const mapentry*, int, int *, time_t *);
-   int map_related_utf(w_char *, int, int, int, char ** wlst, int, const mapentry*, int, int *, time_t *);
+   int map_related(const char *, int, char ** wlst, int, int, const mapentry*, int, int *, clock_t *);
+   int map_related_utf(w_char *, int, int, int, char ** wlst, int, const mapentry*, int, int *, clock_t *);
    int ngram(int n, char * s1, const char * s2, int opt);
    int mystrlen(const char * word);
    int leftcommonsubstring(char * s1, const char * s2);
    int commoncharacterpositions(char * s1, const char * s2, int * is_swap);
-   void bubblesort( char ** rwd, int * rsc, int n);
+   void bubblesort( char ** rwd, char ** rwd2, int * rsc, int n);
    void lcs(const char * s, const char * s2, int * l1, int * l2, char ** result);
    int lcslen(const char * s, const char* s2);
+   char * suggest_hentry_gen(hentry * rv, char * pattern);
 
 };
 

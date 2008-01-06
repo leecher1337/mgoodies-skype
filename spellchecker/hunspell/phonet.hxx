@@ -1,5 +1,5 @@
 /*  phonetic.c - generic replacement aglogithms for phonetic transformation
-    Copyright (C) 2000 Björn Jacke
+    Copyright (C) 2000 Bjoern Jacke
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -11,33 +11,34 @@
     Lesser General Public License for more details.
  
     You should have received a copy of the GNU Lesser General Public
-    License along with this library; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-    Björn Jacke may be reached by email at bjoern.jacke@gmx.de
+    License along with this library; If not, see
+    <http://www.gnu.org/licenses/>.
 
     Changelog:
 
-    2000-01-05  Björn Jacke <bjoern.jacke AT gmx.de>
+    2000-01-05  Bjoern Jacke <bjoern at j3e.de>
                 Initial Release insprired by the article about phonetic
                 transformations out of c't 25/1999
 
-    2007-07-20  Björn Jacke <bjoern.jacke AT gmx.de>
+    2007-07-26  Bjoern Jacke <bjoern at j3e.de>
 		Released under MPL/GPL/LGPL tri-license for Hunspell
 		
-    2007-08-22  LÃ¡szlÃ³ NÃ©meth <nemeth at OOo>
-                Porting from Aspell to Hunspell by little modifications
+    2007-08-23  Laszlo Nemeth <nemeth at OOo>
+                Porting from Aspell to Hunspell using C-like structs
 */
 
 #ifndef __PHONETHXX__
 #define __PHONETHXX__
 
 #define PHONETABLE_HASH_SIZE 256
+#define MAXPHONETLEN      256
+#define MAXPHONETUTF8LEN  (MAXPHONETLEN * 4)
+
 struct phonetable {
   char utf8;
   cs_info * lang;
   int num;
-  const char * * rules;
+  char * * rules;
   int hash[PHONETABLE_HASH_SIZE];
 };
 
