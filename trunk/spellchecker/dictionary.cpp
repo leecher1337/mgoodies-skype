@@ -81,7 +81,7 @@ protected:
 					if (pos > 0)
 					{
 						tmp[pos] = '\0';
-						hunspell->put_word(tmp);
+						hunspell->add(tmp);
 					}
 
 					pos = 0;
@@ -216,7 +216,7 @@ protected:
 		char hunspell_word[1024];
 		toHunspell(hunspell_word, word, MAX_REGS(hunspell_word));
 
-		hunspell->put_word(hunspell_word);
+		hunspell->add(hunspell_word);
 	}
 
 	void toHunspell(char *hunspellWord, const TCHAR *word, size_t hunspellWordLen)
@@ -282,7 +282,8 @@ public:
 		hunspell = new Hunspell(aff, dic);
 
 		// Get codepage
-		if (hunspell->get_utf8())
+		const char *dic_enc = hunspell->get_dic_encoding();
+		if (strcmp(dic_enc, "UTF-8") == 0)
 		{
 			codePage = CP_UTF8;
 
@@ -305,7 +306,18 @@ public:
 					break;
 				}
 			}
-			wordChars = fromHunspell(hunspell->get_wordchars());
+
+			char *casechars = get_casechars(dic_enc);
+			char *hwordchars = (char *) hunspell->get_wordchars();
+			if (hwordchars != NULL) 
+			{
+				casechars = (char *) realloc(casechars, strlen(casechars) + strlen(hwordchars) + 1);
+				strcat(casechars, hwordchars);
+			}
+
+			wordChars = fromHunspell(casechars);
+
+			free(casechars);
 		}
 
 		// Make a suggestion to load hunspell internalls

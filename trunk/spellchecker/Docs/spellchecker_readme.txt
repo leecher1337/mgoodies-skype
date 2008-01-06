@@ -1,7 +1,7 @@
 Spell Checker plugin
 --------------------
 
-CAUTION: THIS IS AN ALPHA STAGE PLUGIN. IT CAN DO VERY BAD THINGS. USE AT YOUR OWN RISK.
+CAUTION: THIS IS A BETA STAGE PLUGIN. IT CAN DO VERY BAD THINGS. USE AT YOUR OWN RISK.
 
 This is a spell checker plugin that uses Hunspell to do the dirty work. Hunspell is the spell checker used by OpenOffice, so it should have a good range of dictionaries.
 
