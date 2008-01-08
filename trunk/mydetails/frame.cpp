@@ -628,6 +628,7 @@ void DeleteTooltipWindows(MyDetailsFrameData *data)
 void CalcRectangles(HWND hwnd)
 {
 	HDC hdc = GetDC(hwnd);
+	HFONT hOldFont = (HFONT) GetCurrentObject(hdc, OBJ_FONT);
 	MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
 
 	if (hdc == NULL || data == NULL)
@@ -677,6 +678,7 @@ void CalcRectangles(HWND hwnd)
 					}
 				}
 			}
+			SelectObject(hdc, hOldFont);
 			ReleaseDC(hwnd, hdc);
 			return;
 		}
@@ -1023,6 +1025,7 @@ void CalcRectangles(HWND hwnd)
 	}
 
 finish:
+	SelectObject(hdc, hOldFont);
 	ReleaseDC(hwnd, hdc);
 }
 
