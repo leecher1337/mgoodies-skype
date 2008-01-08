@@ -289,7 +289,7 @@ public:
 
 #ifdef UNICODE
 			int len;
-			wordChars = _tcsdup(hunspell->get_wordchars_utf16(&len));
+			wordChars = _tcsdup((TCHAR *) hunspell->get_wordchars_utf16(&len));
 #else
 			// No option
 			wordChars = _tcsdup("qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM");

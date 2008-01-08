@@ -673,7 +673,8 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor,
 			// Now lets get the words
 			int last_pos = -1;
 			BOOL found_real_char = FALSE;
-			for (int pos = 0; pos < len; pos++)
+			int pos;
+			for (pos = 0; pos < len; pos++)
 			{
 				if (!dlg->lang->isWordChar(text[pos]) && !(text[pos] >= _T('0') && text[pos] <= _T('9')))
 				{

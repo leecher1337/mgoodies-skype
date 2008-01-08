@@ -109,7 +109,8 @@ void LoadOptions()
 		DBFreeVariant(&dbv);
 	}
 
-	for(unsigned i = 0; i < languages.count; i++)
+	unsigned i;
+	for(i = 0; i < languages.count; i++)
 		if (lstrcmp(languages.dicts[i]->language, opts.default_language) == 0)
 			break;
 
