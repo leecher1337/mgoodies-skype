@@ -331,6 +331,18 @@ class Buffer
 			trimLeft();
 		}
 
+		Buffer<T>& operator+=(const char *txt) 
+		{
+			append(txt);
+			return *this;
+		}
+
+		Buffer<T>& operator+=(const WCHAR *txt) 
+		{
+			append(txt);
+			return *this;
+		}
+
 
 	private:
 		size_t size;

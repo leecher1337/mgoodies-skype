@@ -45,32 +45,6 @@ void * mir_alloc0(size_t size)
 	return ptr;
 }
 
-char *mir_dupToAscii(WCHAR *ptr)
-{
-	if (ptr == NULL)
-		return NULL;
-
-	size_t size = lstrlenW(ptr) + 1;
-	char *tmp = (char *) mir_alloc0(size);
-
-	WideCharToMultiByte(CP_ACP, 0, ptr, -1, tmp, size, NULL, NULL);
-
-	return tmp;
-}
-
-WCHAR *mir_dupToUnicode(char *ptr)
-{
-	if (ptr == NULL)
-		return NULL;
-
-	size_t size = strlen(ptr) + 1;
-	WCHAR *tmp = (WCHAR *) mir_alloc0(size * sizeof(WCHAR));
-
-	MultiByteToWideChar(CP_ACP, 0, ptr, -1, tmp, size * sizeof(WCHAR));
-
-	return tmp;
-}
-
 int strcmpnull(char *str1, char *str2)
 {
 	if ( str1 == NULL && str2 == NULL )

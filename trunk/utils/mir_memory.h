@@ -29,15 +29,12 @@ void init_mir_malloc();
 
 
 void * mir_alloc0(size_t size);
-char *mir_dupToAscii(WCHAR *ptr);
-WCHAR *mir_dupToUnicode(char *ptr);
 int strcmpnull(char *str1, char *str2);
 int strcmpnullW(WCHAR *str1, WCHAR *str2);
 
 
 #ifdef _UNICODE
-# define mir_dupTA mir_dupToUnicode
-# define mir_dupTW mir_wstrdup
+
 # define lstrcmpnull strcmpnullW
 
 #define INPLACE_CHAR_TO_TCHAR(_new_var_, _size_, _old_var_)									\
@@ -51,8 +48,6 @@ int strcmpnullW(WCHAR *str1, WCHAR *str2);
 
 #else
 
-# define mir_dupTA mir_strdup
-# define mir_dupTW mir_dupToAscii
 # define lstrcmpnull strcmpnull
 
 #define INPLACE_CHAR_TO_TCHAR(_new_var_, _size_, _old_var_)									\
@@ -66,7 +61,7 @@ int strcmpnullW(WCHAR *str1, WCHAR *str2);
 
 
 // Free memory and set to NULL
-#define MIR_FREE(_x_) if (_x_ != NULL) { mir_free(_x_); _x_ = NULL; }
+//#define MIR_FREE(_x_) if (_x_ != NULL) { mir_free(_x_); _x_ = NULL; }
 
 
 
