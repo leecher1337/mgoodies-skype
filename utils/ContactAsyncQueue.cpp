@@ -18,8 +18,7 @@ Boston, MA 02111-1307, USA.
 */
 
 #include "ContactAsyncQueue.h"
-
-
+#include <process.h>
 
 
 // Itens with higher time at end
@@ -37,13 +36,14 @@ static void ContactAsyncQueueThread(void *obj)
 ContactAsyncQueue::ContactAsyncQueue(pfContactAsyncQueueCallback fContactAsyncQueueCallback, int initialSize)
 	: queue(30, QueueSortItems)
 {
-	hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	finished = 0;
 	callback = fContactAsyncQueueCallback;
 
 	InitializeCriticalSection(&cs);
 
-	mir_forkthread(ContactAsyncQueueThread, this);
+	_beginthread(ContactAsyncQueueThread, 0, this);
+	//mir_forkthread(ContactAsyncQueueThread, this);
 }
 
 ContactAsyncQueue::~ContactAsyncQueue()
@@ -168,6 +168,8 @@ void ContactAsyncQueue::Thread()
 {
 	while (!finished)
 	{
+		ResetEvent(hEvent);
+
 		Lock();
 
 		if (queue.getCount() <= 0)
@@ -175,7 +177,7 @@ void ContactAsyncQueue::Thread()
 			// No items, so supend thread
 			Release();
 
-			wait(INFINITE);
+			wait(/*INFINITE*/ 2 * 60 * 1000);
 		}
 		else
 		{
