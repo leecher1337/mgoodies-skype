@@ -20,7 +20,7 @@
 
 
 typedef struct {
-	char name[40];
+	char v_name[40];
 
 	int phoneme_tab_ix;  // phoneme table number
 	int pitch_base;    // Hz<<12
@@ -43,6 +43,7 @@ typedef struct {
 	short freq[N_PEAKS];    // 100% = 256
 	short height[N_PEAKS];  // 100% = 256
 	short width[N_PEAKS];   // 100% = 256
+	short freqadd[N_PEAKS];  // Hz
 
 	// copies without temporary adjustments from embedded commands
 	short freq2[N_PEAKS];    // 100% = 256
@@ -67,8 +68,10 @@ extern USHORT voice_pcnt[N_PEAKS+1][3];
 extern voice_t *voice;
 extern int tone_points[10];
 
+const char *SelectVoice(espeak_VOICE *voice_select);
 voice_t *LoadVoice(const char *voice_name, int control);
 voice_t *LoadVoiceVariant(const char *voice_name, int variant);
+void DoVoiceChange(voice_t *v);
 void WavegenSetVoice(voice_t *v);
 void ReadTonePoints(char *string, int *tone_pts);
 

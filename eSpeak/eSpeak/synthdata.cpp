@@ -35,8 +35,8 @@
 #include "translate.h"
 #include "wave.h"
 
-const char *version_string = "1.29  27.Aug.07";
-const int version_phdata  = 0x012901;
+const char *version_string = "1.31  19.Jan.08";
+const int version_phdata  = 0x013100;
 
 int option_device_number = -1;
 
@@ -204,7 +204,7 @@ static unsigned int LookupSound2(int index, unsigned int other_phcode, int contr
 {//================================================================================
 // control=1  get formant transition data only
 
-	int code;
+	unsigned int code;
 	unsigned int value, value2;
 	
 	while((value = phoneme_index[index++]) != 0)
@@ -224,11 +224,16 @@ static unsigned int LookupSound2(int index, unsigned int other_phcode, int contr
 					break;
 				case 1:
 					if(control==0)
+					{
 						seq_len_adjust = value2 >> 8;
+					}
 					break;
 				case 2:
 					if(control==0)
-						seq_len_adjust = -(value2 >> 8);
+					{
+						seq_len_adjust = value2 >> 8;
+						seq_len_adjust = -seq_len_adjust;
+					}
 					break;
 				case 3:
 					if(control==0)
@@ -615,7 +620,13 @@ void LoadConfig(void)
 	int ix;
 	char c1;
 	char *p;
-	char string[120];
+	char string[200];
+
+	for(ix=0; ix<N_SOUNDICON_SLOTS; ix++)
+	{
+		soundicon_tab[ix].filename = NULL;
+		soundicon_tab[ix].data = NULL;
+	}
 
 	sprintf(buf,"%s%c%s",path_home,PATHSEP,"config");
 	if((f = fopen(buf,"r"))==NULL)

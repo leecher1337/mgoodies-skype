@@ -52,6 +52,7 @@ static OptPageControl optionsControls[] = {
 	{ &opts.disable_onthephone,		CONTROL_CHECKBOX,		ID_ONTHEPHONE,		"DisableOnThePhone", FALSE },
 	{ &opts.disable_outtolunch,		CONTROL_CHECKBOX,		ID_OUTTOLUNCH,		"DisableOutToLunch", FALSE },
 	{ &opts.use_flags,				CONTROL_CHECKBOX,		IDC_USE_FLAGS,		"UseFlags", TRUE },
+	{ &opts.respect_sndvol_mute,	CONTROL_CHECKBOX,		IDC_SNDVOL,			"RespectSndVolMute", TRUE },
 };
 
 
@@ -112,11 +113,14 @@ int InitOptionsCallback(WPARAM wParam,LPARAM lParam)
     odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR | ODPF_EXPERTONLY;
     CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
 
-	odp.ptszTab = TranslateT("Types");
-	odp.pfnDlgProc = TypesDlgProc;
-	odp.pszTemplate = MAKEINTRESOURCEA(IDD_TYPES);
-	odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR | ODPF_EXPERTONLY;
-	CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+	if (types.getCount() > 0) 
+	{
+		odp.ptszTab = TranslateT("Types");
+		odp.pfnDlgProc = TypesDlgProc;
+		odp.pszTemplate = MAKEINTRESOURCEA(IDD_TYPES);
+		odp.flags = ODPF_BOLDGROUPS | ODPF_TCHAR | ODPF_EXPERTONLY;
+		CallService(MS_OPT_ADDPAGE,wParam,(LPARAM)&odp);
+	}
 
 	return 0;
 }
@@ -303,25 +307,55 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 				FillVariantsCombo(hwndDlg, hContact);
 			}
 
+			HWND item = GetDlgItem(hwndDlg, IDC_PUNCT);
+			if (item != NULL)
+			{
+				SendMessage(item, CB_ADDSTRING, 0, (LPARAM) TranslateT("None"));
+				SendMessage(item, CB_ADDSTRING, 0, (LPARAM) TranslateT("All"));
+				SendMessage(item, CB_ADDSTRING, 0, (LPARAM) TranslateT("Some"));
+			}
+
 			for (int i = 0; i < NUM_PARAMETERS; i++)
 			{
-				HWND item = GetDlgItem(hwndDlg, PARAMETERS[i].ctrl);
-				SendMessage(item, TBM_SETRANGE, FALSE, MAKELONG(PARAMETERS[i].min, PARAMETERS[i].max));
-				SendMessage(item, TBM_SETPOS, TRUE, GetContactParam(hContact, i));
+				item = GetDlgItem(hwndDlg, PARAMETERS[i].ctrl);
+				if (item == NULL)
+					continue;
+
+				if (PARAMETERS[i].type == SCROLL)
+				{
+					SendMessage(item, TBM_SETRANGE, FALSE, MAKELONG(PARAMETERS[i].min, PARAMETERS[i].max));
+					SendMessage(item, TBM_SETPOS, TRUE, GetContactParam(hContact, i));
+				}
+				else
+				{
+					SendMessage(item, CB_SETCURSEL, GetContactParam(hContact, i), 0);
+				}
 			}
 
 			break;
 		}
 
+		case WM_HSCROLL:
+		{
+			SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+			break;
+		}
+
 		case WM_COMMAND:
 		{
-			if (LOWORD(wParam) == IDC_DEF_LANG && HIWORD(wParam) == CBN_SELCHANGE)
+			if (HIWORD(wParam) == CBN_SELCHANGE)
 			{
 				if (languages.getCount() <= 0)
 					break;
 
-				HANDLE hContact = (HANDLE) GetWindowLong(hwndDlg, GWL_USERDATA);
-				FillVoicesCombo(hwndDlg, hContact);
+				if ((HWND)lParam == GetFocus())
+					SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+
+				if (LOWORD(wParam))
+				{
+					HANDLE hContact = (HANDLE) GetWindowLong(hwndDlg, GWL_USERDATA);
+					FillVoicesCombo(hwndDlg, hContact);
+				}
 			}
 			else if (LOWORD(wParam) == IDC_SPEAK)
 			{
@@ -343,7 +377,16 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 
 				SpeakData *data = new SpeakData(lang, voice, GetVariant(hwndDlg), mir_tstrdup(text));
 				for (int i = 0; i < NUM_PARAMETERS; i++)
-					data->setParameter(i, SendMessage(GetDlgItem(hwndDlg, PARAMETERS[i].ctrl), TBM_GETPOS, 0, 0));
+				{
+					HWND item = GetDlgItem(hwndDlg, PARAMETERS[i].ctrl);
+					if (item == NULL)
+						continue;
+
+					if (PARAMETERS[i].type == SCROLL)
+						data->setParameter(i, SendMessage(GetDlgItem(hwndDlg, PARAMETERS[i].ctrl), TBM_GETPOS, 0, 0));
+					else
+						data->setParameter(i, SendMessage(GetDlgItem(hwndDlg, PARAMETERS[i].ctrl), CB_GETCURSEL, 0, 0));
+				}
 				queue->Add(0, (HANDLE) -1, data);
 			}
 
@@ -401,7 +444,16 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					opts.default_variant = var;
 
 				for (int i = 0; i < NUM_PARAMETERS; i++)
-					SetContactParam(hContact, i, SendMessage(GetDlgItem(hwndDlg, PARAMETERS[i].ctrl), TBM_GETPOS, 0, 0));
+				{
+					HWND item = GetDlgItem(hwndDlg, PARAMETERS[i].ctrl);
+					if (item == NULL)
+						continue;
+
+					if (PARAMETERS[i].type == SCROLL)
+						SetContactParam(hContact, i, SendMessage(item, TBM_GETPOS, 0, 0));
+					else
+						SetContactParam(hContact, i, SendMessage(item, CB_GETCURSEL, 0, 0));
+				}
 			}
 
 			break;
@@ -493,23 +545,6 @@ static BOOL CALLBACK SystemDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 			SetWindowLong(hwndDlg, GWL_USERDATA, (LONG) NULL);
 			break;
 		}
-
-		case WM_HSCROLL:
-		{
-			SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
-			break;
-		}
-
-		case WM_COMMAND:
-		{
-			if (HIWORD(wParam) == CBN_SELCHANGE)
-			{
-				if ((HWND)lParam == GetFocus())
-					SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
-			}
-
-			break;
-		}
 	}
 
 	return BaseDlgProc(hwndDlg, msg, wParam, lParam);
@@ -575,20 +610,22 @@ static BOOL CALLBACK UserInfoDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPAR
 
 		case WM_COMMAND:
 		{
-			if (HIWORD(wParam) == CBN_SELCHANGE && (HWND)lParam == GetFocus())
+			if (LOWORD(wParam) == IDC_ENABLE)
 			{
-				NMHDR nmhdr;
-				nmhdr.idFrom = 0;
-				nmhdr.code = PSN_APPLY;
-				BaseDlgProc(hwndDlg, WM_NOTIFY, 0, (LPARAM) &nmhdr);
+				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+				EnableDisableControls(hwndDlg);
 			}
-			else if (LOWORD(wParam) == IDC_ENABLE)
+
+			break;
+		}
+		case WM_NOTIFY:
+		{
+			LPNMHDR lpnmhdr = (LPNMHDR)lParam;
+
+			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY)
 			{
 				HANDLE hContact = (HANDLE) GetWindowLong(hwndDlg, GWL_USERDATA);
-
 				DBWriteContactSettingByte(hContact, MODULE_NAME, "Enabled", (BYTE) IsDlgButtonChecked(hwndDlg, IDC_ENABLE));
-
-				EnableDisableControls(hwndDlg);
 			}
 
 			break;

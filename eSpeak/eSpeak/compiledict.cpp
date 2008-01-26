@@ -34,6 +34,7 @@
 //#define OPT_FORMAT         // format the text and write formatted copy to Log file 
 //#define OUTPUT_FORMAT
 
+extern void Write4Bytes(FILE *f, int value);
 int HashDictionary(const char *string);
 
 static FILE *f_log = NULL;
@@ -44,6 +45,8 @@ static int error_count;
 static int transpose_offset;  // transpose character range for LookupDictList()
 static int transpose_min;
 static int transpose_max;
+static int text_mode = 0;
+static int debug_flag = 0;
 
 int hash_counts[N_HASH_DICT];
 char *hash_chains[N_HASH_DICT];
@@ -76,7 +79,6 @@ MNEM_TAB mnem_flags[] = {
 	{"$unstressend",13},   /* reduce stress at end of clause */
 	{"$atend",     14},    /* use this pronunciation if at end of clause */
 
-	{"$capital",   15},   /* use this pronunciation if initial letter is upper case */
 	{"$dot",       16},   /* ignore '.' after this word (abbreviation) */
 	{"$abbrev",    17},    /* use this pronuciation rather than split into letters */
 	{"$stem",      18},   // must have a suffix
@@ -86,17 +88,27 @@ MNEM_TAB mnem_flags[] = {
 	{"$alt",       20},   // use alternative pronunciation
 	{"$alt2",      21},
 
-	{"$verbf",     22},    /* verb follows */
-	{"$verbsf",    23},    /* verb follows, allow -s suffix */
-	{"$nounf",     24},    /* noun follows */
-	{"$verb",      25},   /* use this pronunciation when its a verb */
-	{"$past",      26},   /* use this pronunciation when its past tense */
-	{"$pastf",     27},   /* past tense follows */
-	{"$verbextend",28},   /* extend influence of 'verb follows' */
 
-	{"$brk",       30},   /* a shorter $pause */
+	{"$brk",       28},   // a shorter $pause
+	{"$text",      29},   // word translates to replcement text, not phonemes
+
+// flags in dictionary word 2
+	{"$verbf",   0x20},    /* verb follows */
+	{"$verbsf",  0x21},    /* verb follows, allow -s suffix */
+	{"$nounf",   0x22},    /* noun follows */
+	{"$pastf",   0x23},   /* past tense follows */
+	{"$verb",    0x24},   /* use this pronunciation when its a verb */
+	{"$noun",    0x25},   /* use this pronunciation when its a noun */
+	{"$past",    0x26},   /* use this pronunciation when its past tense */
+	{"$verbextend",0x28},   /* extend influence of 'verb follows' */
+	{"$capital", 0x29},   /* use this pronunciation if initial letter is upper case */
+	{"$allcaps", 0x2a},   /* use this pronunciation if initial letter is upper case */
+
 	// doesn't set dictionary_flags
 	{"$?",        100},   // conditional rule, followed by byte giving the condition number
+
+	{"$textmode",  200},
+	{"$phonememode", 201},
 	{NULL,   -1}
 };
 
@@ -158,9 +170,9 @@ int compile_line(char *linebuf, char *dict_line, int *hash)
 	char *p;
 	char *word;
 	char *phonetic;
-	int  ix;
+	unsigned int  ix;
 	int  step;
-	int  n_flag_codes = 0;
+	unsigned int  n_flag_codes = 0;
 	int  flag_offset;
 	int  length;
 	int  multiple_words = 0;
@@ -169,17 +181,37 @@ int compile_line(char *linebuf, char *dict_line, int *hash)
 	
 	int len_word;
 	int len_phonetic;
+	int text_not_phonemes;   // this word specifies replacement text, not phonemes
 	
 	char *mnemptr;
 	char *comment;
 	unsigned char flag_codes[100];
 	char encoded_ph[200];
 	unsigned char bad_phoneme[4];
+static char nullstring[] = {0};
 	
+	comment = NULL;
+	text_not_phonemes = 0;
+	phonetic = word = nullstring;
 	
 	p = linebuf;
-	comment = NULL;
-	phonetic = word = "";
+//	while(isspace2(*p)) p++;
+
+#ifdef deleted
+	if(*p == '$')
+	{
+		if(memcmp(p,"$textmode",9) == 0)
+		{
+			text_mode = 1;
+			return(0);
+		}
+		if(memcmp(p,"$phonememode",12) == 0)
+		{
+			text_mode = 0;
+			return(0);
+		}
+	}
+#endif
 
 	step = 0;
 	
@@ -225,7 +257,26 @@ int compile_line(char *linebuf, char *dict_line, int *hash)
 	
 			ix = LookupMnem(mnem_flags,mnemptr);
 			if(ix > 0)
+			{
+				if(ix == 200)
+				{
+					text_mode = 1;
+				}
+				else
+				if(ix == 201)
+				{
+					text_mode = 0;
+				}
+				else
+				if(ix == BITNUM_FLAG_TEXTMODE)
+				{
+					text_not_phonemes = 1;
+				}
+				else
+				{
 				flag_codes[n_flag_codes++] = ix;
+				}
+			}
 			else
 			{
 				fprintf(f_log,"%5d: Unknown keyword: %s\n",linenum,mnemptr);
@@ -326,13 +377,29 @@ int compile_line(char *linebuf, char *dict_line, int *hash)
 #endif
 		return(0);   /* blank line */
 	}
+
+	if(text_mode)
+		text_not_phonemes = 1;
+
+	if(text_not_phonemes != translator->langopts.textmode)
+	{
+		flag_codes[n_flag_codes++] = BITNUM_FLAG_TEXTMODE;
+	}
+
+	if(text_not_phonemes)
+	{
+		strcpy(encoded_ph,phonetic);   // this is replacement text, so don't encode as phonemes
+	}
+	else
+	{
 	EncodePhonemes(phonetic,encoded_ph,bad_phoneme);
 	if(strchr(encoded_ph,phonSWITCH) != 0)
 	{
-		flag_codes[n_flag_codes++] = BITNUM_FLAG_ONLY_S;
+			flag_codes[n_flag_codes++] = BITNUM_FLAG_ONLY_S;  // don't match on suffixes (except 's') when switching languages
 	}
 	
-	for(ix=0; ix<255; ix++)
+		// check for errors in the phonemes codes
+		for(ix=0; ix<sizeof(encoded_ph); ix++)
 	{
 		c = encoded_ph[ix];
 		if(c == 0)   break;
@@ -344,10 +411,12 @@ int compile_line(char *linebuf, char *dict_line, int *hash)
 			error_count++;
 		}
 	}
+	}
 	
 	if((word[0] & 0x80)==0)  // 7 bit ascii only
 	{
-		// 1st letter - need to consider utf8 here
+		// If first letter is uppercase, convert to lower case.  (Only if it's 7bit ascii)
+		// ??? need to consider utf8 here
 		word[0] = tolower(word[0]);
 	}
 
@@ -384,12 +453,19 @@ int compile_line(char *linebuf, char *dict_line, int *hash)
 	}
 	length += n_flag_codes;
 
-	if((multiple_string != NULL) && (multiple_words > 0) && (multiple_words <= 4))
+	if((multiple_string != NULL) && (multiple_words > 0))
 	{
-		dict_line[length++] = 40 + multiple_words;
+		if(multiple_words > 10)
+		{
+			fprintf(f_log,"%5d: Two many parts in a multi-word entry: %d\n",linenum,multiple_words);
+		}
+		else
+		{
+			dict_line[length++] = 80 + multiple_words;
 		ix = multiple_string_end - multiple_string;
 		memcpy(&dict_line[length],multiple_string,ix);
 		length += ix;
+	}
 	}
 	dict_line[0] = length;
 
@@ -494,14 +570,17 @@ int compile_dictlist_file(const char *path, const char* filename)
 	char *p;
 	int  count=0;
 	FILE *f_in;
-	char buf[256];
+	char buf[200];
+	char fname[sizeof(path_home)+45];
 	char dict_line[128];
 	
-	sprintf(buf,"%s%s",path,filename);
-	if((f_in = fopen(buf,"r")) == NULL)
+	text_mode = 0;
+
+	sprintf(fname,"%s%s",path,filename);
+	if((f_in = fopen(fname,"r")) == NULL)
 		return(-1);
 
-	fprintf(f_log,"Compiling: '%s'\n",buf);
+	fprintf(f_log,"Compiling: '%s'\n",fname);
 
 	linenum=0;
 	
@@ -590,7 +669,7 @@ void copy_rule_string(char *string, int &state)
 		if(c == '\\')
 		{
 			c = *p++;   // treat next character literally
-			if((c >= '0') && (c <= '2') && (p[0] >= '0') && (p[0] <= '7') && (p[1] >= '0') && (p[1] <= '7'))
+			if((c >= '0') && (c <= '3') && (p[0] >= '0') && (p[0] <= '7') && (p[1] >= '0') && (p[1] <= '7'))
 			{
 				// character code given by 3 digit octal value;
 				c = (c-'0')*64 + (p[0]-'0')*8 + (p[1]-'0');
@@ -782,8 +861,6 @@ char *compile_rule(char *input)
 	for(ix=0; finish==0; ix++)
 	{
 		c = input[ix];
-		if((c=='/') && (input[ix+1]=='/'))
-			c = input[ix] = '\n';    //  treat command as end of line
 
 		switch(c = input[ix])
 		{
@@ -867,6 +944,15 @@ char *compile_rule(char *input)
 	}
 	strcpy(&output[len],rule_match);
 	len += strlen(rule_match);
+
+	if(debug_flag)
+	{
+		output[len] = RULE_LINENUM;
+		output[len+1] = (linenum % 255) + 1;
+		output[len+2] = (linenum / 255) + 1;
+		len+=3;
+	}
+
 	if(rule_cond[0] != 0)
 	{
 		ix = -1;
@@ -1158,10 +1244,11 @@ static int compile_dictrules(FILE *f_in, FILE *f_out, char *fname_temp)
 	int n_rules=0;
 	int count=0;
 	int different;
-	char *prev_rgroup_name;
+	const char *prev_rgroup_name;
 	unsigned int char_code;
+	int compile_mode=0;
 	char *buf;
-	char buf1[120];
+	char buf1[200];
 	char *rules[N_RULES];
 
 	int n_rgroups = 0;
@@ -1177,19 +1264,15 @@ static int compile_dictrules(FILE *f_in, FILE *f_out, char *fname_temp)
 	{
 		linenum++;
 		buf = fgets(buf1,sizeof(buf1),f_in);
-		if((buf != NULL) && (buf[0] == '\r')) buf++;  // ignore extra \r in \r\n 
-
-		if((buf != NULL) && (memcmp(buf,".L",2)==0))
+		if(buf != NULL)
 		{
-			if(compile_lettergroup(&buf[2], f_out) != 0)
-			{
-				fprintf(f_log,"%5d: Bad lettergroup\n",linenum);
-				error_count++;
-			}
-			continue;
+			if((p = (unsigned char *)strstr(buf,"//")) != NULL)
+				*p = 0;
+
+			if(buf[0] == '\r') buf++;  // ignore extra \r in \r\n 
 		}
 
-		if((buf == NULL) || (memcmp(buf,".group",6)==0))
+		if((buf == NULL) || (buf[0] == '.'))
 		{
 			// next .group or end of file, write out the previous group
 
@@ -1205,7 +1288,39 @@ static int compile_dictrules(FILE *f_in, FILE *f_out, char *fname_temp)
 			}
 			n_rules = 0;
 
+			if(compile_mode == 2)
+			{
+				// end of the character replacements section
+				fwrite(&n_rules,1,4,f_out);   // write a zero word to terminate the replacemenmt list
+				compile_mode = 0;
+			}
+
 			if(buf == NULL) break;   // end of file
+
+			if(memcmp(buf,".L",2)==0)
+			{
+				if(compile_lettergroup(&buf[2], f_out) != 0)
+				{
+					fprintf(f_log,"%5d: Bad lettergroup\n",linenum);
+					error_count++;
+				}
+				continue;
+			}
+
+			if(memcmp(buf,".replace",8)==0)
+			{
+				compile_mode = 2;
+				fputc(RULE_GROUP_START,f_out);
+				fputc(RULE_REPLACEMENTS,f_out);
+
+				// advance to next word boundary
+				while((ftell(f_out) & 3) != 0)
+					fputc(0,f_out);
+			}
+
+			if(memcmp(buf,".group",6)==0)
+			{
+				compile_mode = 1;
 
 			p = (unsigned char *)&buf[6];
 			while((p[0]==' ') || (p[0]=='\t')) p++;    // Note: Windows isspace(0xe1) gives TRUE !
@@ -1237,14 +1352,53 @@ static int compile_dictrules(FILE *f_in, FILE *f_out, char *fname_temp)
 
 				group_name[2] = 0;
 			}
+			}
 
 			continue;
 		}
 		
+		switch(compile_mode)
+		{
+		case 1:    //  .group
 		prule = compile_rule(buf);
 		if((prule != NULL) && (n_rules < N_RULES))
 		{
 			rules[n_rules++] = prule;
+		}
+			break;
+
+		case 2:   //  .replace
+			{
+				int replace1;
+				int replace2;
+				char *p;
+
+				p = buf;
+				replace1 = 0;
+				replace2 = 0;
+				while(isspace2(*p)) p++;
+				ix = 0;
+				while((unsigned char)(*p) > 0x20)   // not space or zero-byte
+				{
+					p += utf8_in(&c,p,0);
+					replace1 += (c << ix);
+					ix += 16;
+				}
+				while(isspace2(*p)) p++;
+				ix = 0;
+				while((unsigned char)(*p) > 0x20)
+				{
+					p += utf8_in(&c,p,0);
+					replace2 += (c << ix);
+					ix += 16;
+				}
+				if(replace1 != 0)
+				{
+					Write4Bytes(f_out,replace1);   // write as little-endian
+					Write4Bytes(f_out,replace2);   // if big-endian, reverse the bytes in LoadDictionary()
+				}
+			}
+			break;
 		}
 	}
 	fclose(f_temp);
@@ -1293,24 +1447,25 @@ static int compile_dictrules(FILE *f_in, FILE *f_out, char *fname_temp)
 
 
 
-int CompileDictionary(const char *dsource, const char *dict_name, FILE *log, char *fname)
-{//======================================================================================
+int CompileDictionary(const char *dsource, const char *dict_name, FILE *log, char *fname_err, int flags)
+{//=====================================================================================================
 // fname:  space to write the filename in case of error
+// flags: bit 0:  include source line number information, for debug purposes.
 
 	FILE *f_in;
 	FILE *f_out;
 	int offset_rules=0;
 	int value;
-	char fname_buf[sizeof(path_home)+15];
+	char fname_in[sizeof(path_home)+45];
+	char fname_out[sizeof(path_home)+15];
 	char fname_temp[sizeof(path_home)+15];
 	char path[sizeof(path_home)+40];       // path_dsource+20
 
 	error_count = 0;
+	debug_flag = flags & 1;
 
 	if(dsource == NULL)
 		dsource = "";
-	if(fname == NULL)
-		fname = fname_buf;
 
 	f_log = log;
 //f_log = fopen("log2.txt","w");
@@ -1318,10 +1473,20 @@ int CompileDictionary(const char *dsource, const char *dict_name, FILE *log, cha
 		f_log = stderr;
 
 	sprintf(path,"%s%s_",dsource,dict_name);
-
-	sprintf(fname,"%s%c%s_dict",path_home,PATHSEP,dict_name);
-	if((f_out = fopen_log(fname,"wb+")) == NULL)
+	sprintf(fname_in,"%srules",path);
+	f_in = fopen_log(fname_in,"r");
+	if(f_in == NULL)
 	{
+		if(fname_err)
+			strcpy(fname_err,fname_in);
+		return(-1);
+	}
+
+	sprintf(fname_out,"%s%c%s_dict",path_home,PATHSEP,dict_name);
+	if((f_out = fopen_log(fname_out,"wb+")) == NULL)
+	{
+		if(fname_err)
+			strcpy(fname_err,fname_in);
 		return(-1);
 	}
 	sprintf(fname_temp,"%s%ctemp",path_home,PATHSEP);
@@ -1352,13 +1517,7 @@ int CompileDictionary(const char *dsource, const char *dict_name, FILE *log, cha
 	compile_dictlist_end(f_out);
 	offset_rules = ftell(f_out);
 	
-	sprintf(fname,"%srules",path);
-	fprintf(f_log,"Compiling: '%s'\n",fname);
-	f_in = fopen_log(fname,"r");
-	if(f_in == NULL)
-	{
-		return(-1);
-	}
+	fprintf(f_log,"Compiling: '%s'\n",fname_in);
 
 	compile_dictrules(f_in,f_out,fname_temp);
 	fclose(f_in);

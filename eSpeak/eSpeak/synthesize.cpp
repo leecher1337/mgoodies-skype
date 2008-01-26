@@ -33,9 +33,6 @@
 #include "voice.h"
 #include "translate.h"
 
-#define    PITCHfall   0
-#define    PITCHrise   1
-
 
 extern FILE *f_log;
 static void SmoothSpect(void);
@@ -49,6 +46,7 @@ char mbrola_name[20];
 
 int speed_factor1;
 int speed_factor2;
+int speed_min_sample_len;
 
 static int  last_pitch_cmd;
 static int  last_amp_cmd;
@@ -64,7 +62,7 @@ static int  syllable_centre;
 
 static voice_t *new_voice=NULL;
 
-int n_soundicon_tab=0;
+int n_soundicon_tab=N_SOUNDICON_SLOTS;
 SOUND_ICON soundicon_tab[N_SOUNDICON_TAB];
 
 #define RMS_GLOTTAL1 35   // vowel before glottal stop
@@ -220,6 +218,7 @@ static int DoSample2(int index, int which, int length_mod, int amp)
 	int length;
 	int length1;
 	int format;
+	int min_length;
 	int start=0;
 	long *q;
 	unsigned char *p;
@@ -247,11 +246,19 @@ static int DoSample2(int index, int which, int length_mod, int amp)
 
 
 	length = (length * speed_factor2)/256;
+	min_length = speed_min_sample_len;
+	if(format==0)
+		min_length *= 2;
+
+	if(length < min_length)
+		length = min_length;
+
 	if(length > length1)
 		length = length1;  // don't exceed wavefile length
 
 	if(format==0)
 		length /= 2;     // 2 byte samples
+
 
 	index += 4;
 
@@ -572,6 +579,8 @@ static short vcolouring[N_VCOLOUR][5] = {
 			else
 			{
 				fr = DuplicateLastFrame(seq,n_frames++,len);
+				if(len > 36)
+					seq_len_adjust += (len - 36);
 	
 				if(f2 != 0)
 				{
@@ -999,8 +1008,8 @@ static void DoMarker(int type, int char_posn, int length, int value)
 }  // end of Synthesize::DoMarker
 
 
-static void DoVoice(voice_t *v)
-{//============================
+void DoVoiceChange(voice_t *v)
+{//===========================
 // allocate memory for a copy of the voice data, and free it in wavegenfill()
 	voice_t *v2;
 
@@ -1034,13 +1043,13 @@ static void DoEmbedded(int &embix, int sourceix)
 		case EMBED_I:   // play dynamically loaded wav data (sound icon)
 			if((int)value < n_soundicon_tab)
 			{
-				if((wcmdq[wcmdq_tail][1] = soundicon_tab[value].length) != 0)
+				if(soundicon_tab[value].length != 0)
 				{
 					DoPause(10);   // ensure a break in the speech
 					wcmdq[wcmdq_tail][0] = WCMD_WAVE;
 					wcmdq[wcmdq_tail][1] = soundicon_tab[value].length;
-					wcmdq[wcmdq_tail][2] = (long)soundicon_tab[value].data;
-					wcmdq[wcmdq_tail][3] = 0;   // 16 bit data
+					wcmdq[wcmdq_tail][2] = (long)soundicon_tab[value].data + 44;  // skip WAV header
+					wcmdq[wcmdq_tail][3] = 0x1500;   // 16 bit data, amp=21
 					WcmdqInc();
 				}
 			}
@@ -1140,16 +1149,6 @@ int Generate(PHONEME_LIST *phoneme_list, int *n_ph, int resume)
 
 			if(p->newword & 1)
 				DoMarker(espeakEVENT_WORD, (p->sourceix & 0x7ff) + clause_start_char, p->sourceix >> 11, clause_start_word + word_count++);
-		}
-
-		if((translator->langopts.word_gap & 1) || (translator->langopts.vowel_pause && (next->type == phVOWEL)))
-		{
-			// prevent word merging into next, make it look as though next is a pause
-			if((next->newword) && (next->type != phPAUSE))
-			{
-//				next_pause.ph = phoneme_tab[phonPAUSE];
-//				next = &next_pause;
-			}
 		}
 
 		EndAmplitude();
@@ -1413,13 +1412,6 @@ int Generate(PHONEME_LIST *phoneme_list, int *n_ph, int resume)
 		*n_ph = 0;
 	}
 
-	if(new_voice)
-	{
-		// finished the current clause, now change the voice if there was an embedded
-		// change voice command at the end of it (i.e. clause was broken at the change voice command)
-		DoVoice(new_voice);
-		new_voice = NULL;
-	}
 	return(0);  // finished the phoneme list
 }  //  end of Generate
 
@@ -1548,6 +1540,10 @@ int SpeakNextClause(FILE *f_in, const void *text_in, int control)
 	// entries in the wavegen command queue
 	p_text = translator->TranslateClause(f_text,p_text,&clause_tone,&voice_change);
 
+	translator->CalcPitches(clause_tone);
+	translator->CalcLengths();
+
+	translator->GetTranslatedPhonemeString(translator->phon_out,sizeof(translator->phon_out));
 	if(option_phonemes > 0)
 	{
 		fprintf(f_trans,"%s\n",translator->phon_out);
@@ -1557,16 +1553,6 @@ int SpeakNextClause(FILE *f_in, const void *text_in, int control)
 		phoneme_callback(translator->phon_out);
 	}
 
-	translator->CalcPitches(clause_tone);
-	translator->CalcLengths();
-
-	if(voice_change != NULL)
-	{
-		// voice change at the end of the clause (i.e. clause was terminated by a voice change)
-		new_voice = LoadVoiceVariant(voice_change+1,voice_change[0]); // add a Voice instruction to wavegen at the end of the clause
-		if(new_voice != NULL)
-			voice = new_voice; 
-	}
 
 	if(skipping_text)
 	{
@@ -1585,6 +1571,20 @@ int SpeakNextClause(FILE *f_in, const void *text_in, int control)
 
 	Generate(phoneme_list,&n_phoneme_list,0);
 	WavegenOpenSound();
+
+	if(voice_change != NULL)
+	{
+		// voice change at the end of the clause (i.e. clause was terminated by a voice change)
+		new_voice = LoadVoiceVariant(voice_change,0); // add a Voice instruction to wavegen at the end of the clause
+	}
+
+	if(new_voice)
+	{
+		// finished the current clause, now change the voice if there was an embedded
+		// change voice command at the end of it (i.e. clause was broken at the change voice command)
+		DoVoiceChange(voice);
+		new_voice = NULL;
+	}
 
 	return(1);
 }  //  end of SpeakNextClause

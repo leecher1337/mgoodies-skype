@@ -83,6 +83,8 @@ extern PLUGINLINK *pluginLink;
 #define GENDER_MALE 1
 #define GENDER_FEMALE 1
 
+#define STRNCPY(DEST, SRC) strncpy(DEST, SRC, MAX_REGS(DEST)); DEST[MAX_REGS(DEST)-1] = '\0'
+
 int SortVoices(const Voice *voice1, const Voice *voice2);
 
 
@@ -91,11 +93,13 @@ class Variant
 public:
 	char name[NAME_SIZE];
 	int gender;
+	char id[NAME_SIZE];
 
-	Variant(char *aName, int aGender)
+	Variant(const char *aName, int aGender, const char *anId)
 	{
-		lstrcpynA(name, aName, MAX_REGS(name));
+		STRNCPY(name, aName);
 		gender = aGender;
+		STRNCPY(id, anId);
 	}
 };
 
@@ -106,12 +110,14 @@ public:
 	char name[NAME_SIZE];
 	int prio;
 	int gender;
+	char id[NAME_SIZE];
 
-	Voice(char *aName, int aPrio, int aGender)
+	Voice(const char *aName, int aPrio, int aGender, const char *anId)
 	{
-		lstrcpynA(name, aName, MAX_REGS(name));
+		STRNCPY(name, aName);
 		prio = aPrio;
 		gender = aGender;
+		STRNCPY(id, anId);
 	}
 };
 
@@ -136,6 +142,10 @@ public:
 	}
 };
 
+
+#define SCROLL 0
+#define COMBO 1
+
 static struct {
 	espeak_PARAMETER eparam;
 	int min;
@@ -143,11 +153,13 @@ static struct {
 	int def;
 	char *setting;
 	int ctrl;
+	int type;
 } PARAMETERS[] = {
-	{ espeakRATE, 80, 369, 165, "Rate", IDC_RATE }, 
-	{ espeakVOLUME, 10, 190, 100, "Volume", IDC_VOLUME }, 
-	{ espeakPITCH, 0, 99, 50, "Pitch", IDC_PITCH }, 
-	{ espeakRANGE, -100, 99, 50, "Range", IDC_RANGE }
+	{ espeakRATE, 80, 389, 165, "Rate", IDC_RATE, SCROLL }, 
+	{ espeakVOLUME, 10, 190, 100, "Volume", IDC_VOLUME, SCROLL }, 
+	{ espeakPITCH, 0, 99, 50, "Pitch", IDC_PITCH, SCROLL }, 
+	{ espeakRANGE, -100, 99, 50, "Range", IDC_RANGE, SCROLL },
+	{ espeakPUNCTUATION, espeakPUNCT_NONE, espeakPUNCT_SOME, espeakPUNCT_SOME, "Punctuation", IDC_PUNCT, COMBO },
 };
 
 #define NUM_PARAMETERS MAX_REGS(PARAMETERS)

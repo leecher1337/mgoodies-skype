@@ -18,7 +18,7 @@
  ***************************************************************************/
 
 
-#define N_PHONEME_LIST  700    // enough for source[] full of text, else it will truncate
+#define N_PHONEME_LIST  1000    // enough for source[N_TR_SOURCE] full of text, else it will truncate
 
 #define MAX_HARMONIC  400           // 400 * 50Hz = 20 kHz, more than enough
 #define N_SEQ_FRAMES   25           // max frames in a spectrum sequence (real max is ablut 8)
@@ -43,7 +43,7 @@
 #define SFLAG_LENGTHEN         0x08   // lengthen symbol : included after this phoneme
 #define SFLAG_DICTIONARY       0x10   // the pronunciation of this word was listed in the xx_list dictionary
 #define SFLAG_SWITCHED_LANG    0x20   // this word uses phonemes from a different language
-
+#define SFLAG_PROMOTE_STRESS   0x40   // this unstressed word can be promoted to stressed
 
 // embedded command numbers
 #define EMBED_P     1   // pitch
@@ -204,10 +204,7 @@ int  WavegenOpenSound();
 int  WavegenCloseSound();
 int  WavegenInitSound();
 void WavegenInit(int rate, int wavemult_fact);
-int  OpenWaveFile(const char *path, int rate);
-void CloseWaveFile(int rate);
 float polint(float xa[],float ya[],int n,float x);
-int  WavegenFile(void);
 int WavegenFill(int fill_zeros);
 void MarkerEvent(int type, unsigned int char_position, int value, unsigned char *out_ptr);
 
@@ -248,7 +245,7 @@ extern unsigned char *envelope_data[16];
 extern int formant_rate[];         // max rate of change of each formant
 extern int speed_factor1;
 extern int speed_factor2;
-
+extern int speed_min_sample_len;
 
 extern long count_samples;
 extern int outbuf_size;
@@ -262,13 +259,14 @@ extern int option_log_frames;
 extern const char *version_string;
 extern const int version_phdata;
 
-#define N_SOUNDICON_TAB  100
+#define N_SOUNDICON_TAB  80   // total entries in soundicon_tab
+#define N_SOUNDICON_SLOTS 4    // number of slots reserved for dynamic loading of autio files
 extern int n_soundicon_tab;
 extern SOUND_ICON soundicon_tab[N_SOUNDICON_TAB];
 
 espeak_ERROR SetVoiceByName(const char *name);
 espeak_ERROR SetVoiceByProperties(espeak_VOICE *voice_selector);
-espeak_ERROR LoadMbrolaTable(const char *mbrola_voice, const char *phtrans);
+espeak_ERROR LoadMbrolaTable(const char *mbrola_voice, const char *phtrans, int srate);
 void SetParameter(int parameter, int value, int relative);
 void MbrolaTranslate(PHONEME_LIST *plist, int n_phonemes, FILE *f_mbrola);
 int MbrolaSynth(char *p_mbrola);

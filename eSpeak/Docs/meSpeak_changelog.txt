@@ -2,6 +2,12 @@ meSpeak
 
 Changelog:
 
+. 0.0.0.6
+  + Updated to eSpeak 1.31
+  + Added punctuation to system settings
+  + Added option to respect SndVol mute (enabled by default)
+  * Fix for variants
+
 . 0.0.0.5
   * Changed to create services in Load method
   * Language names should be translatable now
