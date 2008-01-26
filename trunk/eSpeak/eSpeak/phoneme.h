@@ -48,6 +48,7 @@
 #define phLONG     0x1000
 #define phAPPENDPH 0x2000  // always insert another phoneme (link_out) after this one
 #define phBRKAFTER 0x4000  // [*] add a post-pause
+#define phBEFOREPAUSE 0x8000  // replace with the link_out phoneme if the next phoneme is a pause
 
 #define phALTERNATIVE    0x0c00   // bits 10,11  specifying use of alternative_ph
 #define phBEFOREVOWEL    0x0000
@@ -64,7 +65,7 @@
 #define phonSTRESS_2    4
 #define phonSTRESS_3    5
 #define phonSTRESS_P    6
-#define phonSTRESS_TONIC 7
+#define phonSTRESS_P2   7    // priority stress within a word
 #define phonSTRESS_PREV 8
 #define phonPAUSE       9
 #define phonPAUSE_SHORT 10
@@ -81,8 +82,12 @@
 #define phonSWITCH      21
 #define phonX1          22      // a language specific action
 #define phonPAUSE_VSHORT 23
-#define phonT_REDUCED   24
+#define phonPAUSE_LONG  24
+#define phonT_REDUCED   25
+#define phonSTRESS_TONIC 26
+#define phonPAUSE_CLAUSE 27
 
+extern const unsigned char pause_phonemes[8];  // 0, vshort, short, pause, long, glottalstop
 
 // place of articulation
 #define phPLACE        0xf0000

@@ -30,12 +30,12 @@ PLUGININFOEX pluginInfo={
 #else
 	"meSpeak",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,5),
+	PLUGIN_MAKE_VERSION(0,0,0,6),
 	"Speaker plugin based on eSpeak engine (%s)",
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2007 Ricardo Pescuma Domenecci",
-	"http://pescuma.mirandaim.ru/miranda/meSpeak",
+	"http://pescuma.org/miranda/meSpeak",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
 #ifdef UNICODE
@@ -91,9 +91,14 @@ TCHAR *aditionalLanguages[] = {
 	_T("en_UK_NORTH"), _T("English - UK (Northern)"),
 	_T("en_UK_RP"), _T("English - UK (Received Pronunciation)"),
 	_T("en_UK_WMIDS"), _T("English - UK (West Midlands)"),
+	_T("en_WI"), _T("English - Westindies"),
 	_T("eo"), _T("Esperanto"),
 	_T("la"), _T("Latin"),
-	_T("no"), _T("Norwegian")
+	_T("no"), _T("Norwegian"),
+	_T("jbo"), _T("Lojban"),
+	_T("sr"), _T("Serbian"),
+	_T("grc"), _T("Ancient Greek"),
+	_T("yue"), _T("Cantonese"),
 };
 
 
@@ -101,6 +106,40 @@ BOOL shutDown = FALSE;
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
+
+
+int mlog(const char *fmt, ...)
+{
+#if 0
+    va_list va;
+    char text[1024];
+	size_t len;
+	static DWORD tick = GetTickCount();
+
+	mir_snprintf(text, sizeof(text) - 10, "[%08u - %08u] [%8u] ", 
+				 GetCurrentThreadId(), GetTickCount(), GetTickCount() - tick);
+	tick = GetTickCount();
+	len = strlen(text);
+
+    va_start(va, fmt);
+    mir_vsnprintf(&text[len], sizeof(text) - len, fmt, va);
+    va_end(va);
+
+	FILE *fp = fopen("c:\\miranda_meSpeak.log.txt","at");
+
+	if (fp != NULL)
+	{
+		fprintf(fp, "%s\n", text);
+		fclose(fp);
+		return 0;
+	}
+	else
+	{
+		return -1;
+	}
+#endif
+	return -1;
+}
 
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
@@ -240,14 +279,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/meSpeak_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/mespeak#Changelog";
+		upd.szBetaVersionURL = "http://pescuma.org/miranda/meSpeak_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.org/miranda/mespeak#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"meSpeak ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/meSpeakW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/meSpeakW.zip";
 #else
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/meSpeak.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/meSpeak.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
@@ -486,7 +525,7 @@ void LoadESpeak()
 	int i;
 	for (i = 0; (voice = voices[i]) != NULL; i++)
 	{
-		char *p = voice->languages;
+		const char *p = voice->languages;
 		while(*p != '\0')
 		{
 			size_t len = strlen(p+1);
@@ -507,7 +546,7 @@ void LoadESpeak()
 
 
 			Language *lang = GetLanguage(language, TRUE);
-			lang->voices.insert(new Voice(voice->name, *p, voice->gender));
+			lang->voices.insert(new Voice(voice->name, *p, voice->gender, voice->identifier));
 
 #ifdef UNICODE
 			mir_free(language);
@@ -529,7 +568,7 @@ void LoadESpeak()
 	voices = espeak_ListVoices(&voice_select);
 	for (i = 0; (voice = voices[i]) != NULL; i++)
 	{
-		variants.insert(new Variant(voice->name, voice->gender));
+		variants.insert(new Variant(voice->name, voice->gender, &voice->identifier[3]));
 	}
 
 	EnumSystemLocales(EnumLocalesProc, LCID_SUPPORTED);
@@ -941,6 +980,7 @@ int SpeakService(HANDLE hContact, TCHAR *text)
 	if (voice == NULL)
 		goto RETURN;
 
+mlog("Adding to queue %s", text);
 	data = new SpeakData(lang, voice, GetContactVariant(hContact), text);
 	for (i = 0; i < NUM_PARAMETERS; i++)
 		data->setParameter(i, GetContactParam(hContact, i));
@@ -985,6 +1025,9 @@ void Speak(HANDLE hContact, void *param)
 	if (languages.getCount() < 1)
 		goto RETURN;
 
+	if (opts.respect_sndvol_mute && !DBGetContactSettingByte(NULL, "Skin", "UseSound", 1))
+		goto RETURN;
+
 	if (hContact != (HANDLE) -1)
 	{
 		if (hContact != NULL && !DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", TRUE))
@@ -1008,17 +1051,19 @@ void Speak(SpeakData *data)
 	if (data->variant != NULL)
 	{
 		char name[NAME_SIZE];
-		mir_snprintf(name, MAX_REGS(name), "%s+%s", data->voice->name, data->variant->name);
+		mir_snprintf(name, MAX_REGS(name), "%s+%s", data->voice->id, data->variant->id);
 		espeak_SetVoiceByName(name);
 	}
 	else
-		espeak_SetVoiceByName(data->voice->name);
+		espeak_SetVoiceByName(data->voice->id);
 
 	for (int i = 0; i < NUM_PARAMETERS; i++)
 		espeak_SetParameter(PARAMETERS[i].eparam, data->getParameter(i), 0);
 	
+mlog("Calling eSpeak to speak 5 %s", data->text);
 	espeak_Synth(data->text, (lstrlen(data->text) + 1) * sizeof(TCHAR), 0, POS_CHARACTER, 
 				 0, espeakCHARS_TCHAR, NULL, NULL);
+mlog("Spoke %s", data->text);
 }
 
 TCHAR * VariablesSpeak(ARGUMENTSINFO *ai)

@@ -35,12 +35,25 @@
    provide a more flexible intonation system.
 */
 
+// bits in SYLLABLE.flags
+#define SYL_RISE        1
+#define SYL_EMPHASIS    2
+#define SYL_END_CLAUSE   4
+
+typedef struct {
+	char stress;
+	char env;
+	char flags;   //bit 0=pitch rising, bit1=emnphasized, bit2=end of clause
+	char nextph_type;
+	short pitch1;
+	short pitch2;
+} SYLLABLE;
+
+SYLLABLE *syllable_tab;
+
+
 static int tone_pitch_env;    /* used to return pitch envelope */
 
-
-static int vowel_ix;
-static int vowel_ix_top;
-static int *vowel_tab;
 
 
 /* Pitch data for tone types */
@@ -228,192 +241,183 @@ unsigned char *envelope_data[16] = {
 /* all pitches given in Hz above pitch_base */
 
 // pitch change during the main part of the clause
-static int drops_0[8] = {0x400,0x400,0x700,0x700,0x700,0xa00,0x0e00,0x0e00};
-static int drops_1[8] = {0x400,0x400,0x600,0x600,0xc00,0xc00,0x0e00,0x0e00};
-static int drops_2[8] = {0x400,0x400,0x600,0x600,-0x800,0xc00,0x0e00,0x0e00};
+static int drops_0[8] = {0x400,0x400,0x700,0x700,0x700,0xa00,0x1800,0x0e00};
+//static int drops_1[8] = {0x400,0x400,0x600,0x600,0xc00,0xc00,0x0e00,0x0e00};
+//static int drops_2[8] = {0x400,0x400,0x600,0x600,-0x800,0xc00,0x0e00,0x0e00};
+
+static short oflow[] = {0, 20, 12, 4, 0};
+static short oflow_emf[] = {5, 24, 15, 10, 5};
+static short oflow_less[] = {1, 17, 10, 5, 1};
+static short back_emf[] = {35, 32, 0};
 
 typedef struct {
-   unsigned char pitch_env0;     /* pitch envelope, tonic syllable at end */
-   unsigned char tonic_max0;
-   unsigned char tonic_min0;
+	unsigned char pitch_env0;     /* pitch envelope, tonic syllable at end */
+	unsigned char tonic_max0;
+	unsigned char tonic_min0;
 
-   unsigned char pitch_env1;     /*     followed by unstressed */
-   unsigned char tonic_max1;
-   unsigned char tonic_min1;
+	unsigned char pitch_env1;     /*     followed by unstressed */
+	unsigned char tonic_max1;
+	unsigned char tonic_min1;
 
-   unsigned char pre_start;
-   unsigned char pre_end;
+	unsigned char pre_start;
+	unsigned char pre_end;
 
-   unsigned char body_start;
-   unsigned char body_end;
+	unsigned char body_start;
+	unsigned char body_end;
 
-   int  *body_drops;
-   unsigned char body_max_steps;
-   unsigned char body_lower_u;
+	int  *body_drops;
+	unsigned char body_max_steps;
+	unsigned char body_lower_u;
 
-   unsigned char tail_start;
-   unsigned char tail_end;
-   unsigned char tail_shape;
+	char n_overflow;
+	short *overflow;
+	short *backwards;
+
+	unsigned char tail_start;
+	unsigned char tail_end;
+	unsigned char tail_shape;
 } TONE_TABLE;
 
-#define N_TONE_TABLE  15
+#define N_TONE_TABLE  11
 
 static TONE_TABLE tone_table[N_TONE_TABLE] = {
-   {PITCHfall, 30, 5,  PITCHfall, 30, 7,              // statement
-   20, 25,   34, 22,  drops_0, 3, 3,   12, 8, 0},
+   {PITCHfall, 30, 5,  PITCHfall, 30, 8,              // 0 statement
+   20, 25,   34, 22,  drops_0, 3, 3,   5, oflow, NULL, 12, 7, 0},
 
-   {PITCHfrise, 38,10, PITCHfrise2, 36,10,              // comma, or question
-   20, 25,   34, 20,  drops_0, 3, 3,   15, 25, 0},
+   {PITCHfrise, 35,8, PITCHfrise2, 35,10,              // 1 comma
+   20, 25,   34, 20,  drops_0, 3, 3,   5, oflow, NULL, 15, 23, 0},
 
-   {PITCHdrop, 38, 1,  PITCHdrop, 42,25,              // exclamation
-   20, 25,   34, 22,  drops_0, 3, 3,   12, 8, 0},
+   {PITCHfrise, 39,10, PITCHfrise2, 36,10,              // 2 question
+   20, 25,   34, 20,  drops_0, 3, 3,   5, oflow, NULL, 15, 28, 0},
 
+   {PITCHfall, 41, 4,  PITCHfall, 41, 27,              // 3 exclamation
+   20, 25,   36, 22,  drops_0, 3, 4,   5, oflow_emf, back_emf, 16, 4, 0},
 
-
-   {PITCHfall, 30, 5,  PITCHfall, 30, 7,              // statement
-   20, 25,   34, 22,  drops_1, 3, 3,   12, 8, 0},
-
-   {PITCHfrise, 38,10, PITCHfrise2, 36,10,              // comma, or question
-   20, 25,   34, 20,  drops_1, 3, 3,   15, 25, 0},
-
-   {PITCHfall, 30, 5,  PITCHfall, 30, 7,              // exclamation
-   20, 25,   34, 22,  drops_1, 3, 3,   12, 8, 0},
+   {PITCHfall, 38, 2,  PITCHfall, 42, 30,              // 4 statement, emphatic
+   20, 25,   34, 22,  drops_0, 3, 3,   5, oflow, NULL, 15, 5, 0},
 
 
+   {PITCHfall, 28, 6,  PITCHfall, 28, 10,              // 5 statement, less intonation
+   20, 25,   30, 22,  drops_0, 4, 3,   5, oflow_less, NULL, 12, 6, 0},
 
-   {PITCHfall, 30, 5,  PITCHfall, 30, 7,              // statement
-   20, 25,   34, 22,  drops_2, 3, 3,   12, 8, 0},
+   {PITCHfrise2, 33,11, PITCHfall, 28,10,              // 6 comma, less intonation
+   20, 25,   30, 22,  drops_0, 4, 3,   5, oflow_less, NULL, 9,14, 0},
 
-   {PITCHfrise, 38,10, PITCHfrise2, 36,10,              // comma, or question
-   20, 25,   34, 20,  drops_2, 3, 3,   15, 25, 0},
+   {PITCHfrise2, 28, 7,  PITCHfall, 28, 12,              // 7 comma, less intonation, less rise
+   20, 25,   30, 22,  drops_0, 4, 3,   5, oflow_less, NULL, 14, 8, 0},
 
-   {PITCHfall, 30, 5,  PITCHfall, 30, 7,              // exclamation
-   20, 25,   34, 22,  drops_2, 3, 3,   12, 8, 0},
+   {PITCHrise, 30, 20,  PITCHfall, 19, 14,              // 8 pitch raises at end of sentence
+   20, 25,   34, 22,  drops_0, 3, 3,   5, oflow, NULL, 24, 30, 0},
 
+   {PITCHfrise, 35,11, PITCHfrise2, 32,10,              // 9 comma
+   20, 25,   34, 20,  drops_0, 3, 3,   5, oflow, NULL, 19, 24, 0},
 
+   {PITCHfrise, 39, 15,  PITCHfall, 28, 14,              // 10  question
+   20, 25,   34, 22,  drops_0, 3, 3,   5, oflow, NULL, 20, 36, 0},
 
-// alternatives
-   {PITCHfall, 36, 6,  PITCHfall, 36, 8,
-   30, 20,   18, 34,  drops_0, 3, 3,   12, 8, 0},
-   
-   {PITCHfrise, 38, 8, PITCHfrise2, 36, 8,
-   30, 20,   18, 34,  drops_0, 3, 3,   20, 32, 0},
-
-   {PITCHfall, 36, 6,  PITCHfall, 36, 8,
-   30, 20,   18, 34,  drops_0, 3, 3,   12, 8, 0},
-   
 };
   
 
 
+/* index by 0=. 1=, 2=?, 3=! 4=none, 5=emphasized */
+unsigned char punctuation_to_tone[INTONATION_TYPES][PUNCT_INTONATIONS] = {
+	{0,1,2,3,0,4},
+	{0,1,2,3,0,4},
+	{5,6,2,0,0,4},
+	{5,7,1,0,0,4},
+	{8,9,10,3,0,0},
+	{8,8,10,3,0,0},
+	{0,1,2,3,0,4},
+	{0,1,2,3,0,0} };
+
+
 
 /* indexed by stress */
-static int min_drop[] =  {0x300,0x300,0x300,0x300,0x300,0x500,0xc00,0xc00};
+static int min_drop[] =  {0x300,0x300,0x400,0x400,0x900,0x900,0x900,0xb00};
 
 
 
 
 #define SECONDARY  3
 #define PRIMARY    4
-#define PRIMARY_MARKED 6
-#define BODY_RESET 7
-#define FIRST_TONE 8    /* first of the tone types */
+#define PRIMARY_STRESSED 6
+#define PRIMARY_LAST 7
 
 
 static int  number_pre;
 static int  number_body;
 static int  number_tail;
 static int  last_primary;
-static int  tone_type;
 static int  tone_posn;
-static int  annotation;
+static int  tone_posn2;
 static int  no_tonic;
 
 
-static void count_pitch_vowels()
-/******************************/
+static void count_pitch_vowels(int start, int end, int clause_end)
+/****************************************************************/
 {
 	int  ix;
 	int  stress;
-	int  stage=0;   /* 0=pre, 1=body, 2=tail */
 	int  max_stress = 0;
-	int  max_stress_posn = 0;
-	int  tone_type_marker = 0;
-	int  marked_stress_count = 0;
+	int  max_stress_posn = 0;  // last syllable ot the highest stress
+	int  max_stress_posn2 = 0;  // penuntimate syllable of the highest stress
 
-	number_pre=0;    /* number of vowels before 1st primary stress */
-	number_body=0;
-	number_tail=0;   /* number between tonic syllable and next primary */
+	number_pre = -1;    /* number of vowels before 1st primary stress */
+	number_body = 0;
+	number_tail = 0;   /* number between tonic syllable and next primary */
+	last_primary = -1;
 	
-	for(ix=vowel_ix; ix<vowel_ix_top; ix++)
+	for(ix=start; ix<end; ix++)
 	{
-		stress = vowel_tab[ix] & 0x3f;   /* marked stress level */
+		stress = syllable_tab[ix].stress;   /* marked stress level */
+
 		if(stress >= max_stress)
 		{
-			max_stress = stress;
+			if(stress > max_stress)
+			{
+				max_stress_posn2 = ix;
+			}
+			else
+			{
+				max_stress_posn2 = max_stress_posn;
+			}
 			max_stress_posn = ix;
+			max_stress = stress;
 		}
 		if(stress >= PRIMARY)
 		{
-			if(stress > PRIMARY)
-			{
-				marked_stress_count++;
-			}
+			if(number_pre < 0)
+				number_pre = ix - start;
 
 			last_primary = ix;
 		}
 
-		switch(stage)
-		{
-		case 0:
-			if(stress < PRIMARY)
-				number_pre++;
-			else
-			{
-				stage = 1;
-				ix = ix-1;
-			}
-			break;
-
-		case 1:
-			if(stress >= FIRST_TONE)
-			{
-				tone_type_marker = stress;
-				tone_posn = ix;
-				stage = 2;
-			}
-			break;
-
-		case 2:
-			if(stress < PRIMARY)
-				number_tail++;
-			else
-				stage = 3;
-			break;
-		}
 	}
+
+	if(number_pre < 0)
+		number_pre = end;
+
+	number_tail = end - max_stress_posn - 1;
+	tone_posn = max_stress_posn;
+	tone_posn2 = max_stress_posn2;
 
 	if(no_tonic)
 	{
-		tone_posn = vowel_ix_top;
+		tone_posn = tone_posn2 = end;  // next position after the end of the truncated clause
 	}
 	else
-	if((tone_type_marker >= FIRST_TONE) && (tone_type_marker < (N_TONE_TABLE + FIRST_TONE)))
+	if(last_primary >= 0)
 	{
-		tone_type = tone_type_marker - FIRST_TONE;
+		if(end == clause_end)
+		{
+			syllable_tab[last_primary].stress = PRIMARY_LAST;
+		}
 	}
 	else
 	{
-		/* no tonic syllable found, use highest stress */
-		vowel_tab[max_stress_posn] = FIRST_TONE;
-		number_tail = vowel_ix_top - max_stress_posn - 1;
-		tone_posn = max_stress_posn;
+		// no primary stress. Use the highest stress
+		syllable_tab[tone_posn].stress = PRIMARY_LAST;
 	}
-
-	if(marked_stress_count > 1)
-		annotation = 1;
-	else
-		annotation = 0;
 }   /* end of count_pitch_vowels */
 
 
@@ -428,10 +432,10 @@ static int count_increments(int ix, int end_ix, int min_stress)
 
 	while(ix < end_ix)
 	{
-		stress = vowel_tab[ix++] & 0x3f;
-		if(stress >= BODY_RESET)
+		stress = syllable_tab[ix++].stress;
+		if(stress >= PRIMARY_LAST)
 			break;
-		else
+
 		if(stress >= min_stress)
 			count++;
 	}
@@ -440,9 +444,9 @@ static int count_increments(int ix, int end_ix, int min_stress)
 
 
 
-static void set_pitch(int ix, int base, int drop)
-/***********************************************/
-// Set the pitch of a vowel in vowel_tab.  Base & drop are Hz * 256
+static void set_pitch(SYLLABLE *syl, int base, int drop)
+/******************************************************/
+// Set the pitch of a vowel in syllable_tab.  Base & drop are Hz * 256
 {
 	int  pitch1, pitch2;
 	int  flags = 0;
@@ -451,39 +455,30 @@ static void set_pitch(int ix, int base, int drop)
 	int  pitch_range2 = 148;
 	int  pitch_base2 = 72;
 
-// fprintf(f_log,"base=%3d,drop=%3d ",base>>8,drop>>8);
-
-//	pitch_range2 = pitch_range + 20;
-//	pitch_base2 = pitch_base - (128-72);
-
 	if(base < 0)  base = 0;
 
 	pitch2 = ((base * pitch_range2 ) >> 15) + pitch_base2;
 
 	if(drop < 0)
 	{
-		flags = 0x80;
+		flags = SYL_RISE;
 		drop = -drop;
 	}
 
 	pitch1 = pitch2 + ((drop * pitch_range2) >> 15);
-//x = (pitch1 - pitch2) / 4;  // TEST
-//pitch1 -= x;
-//pitch2 += x;
 
 	if(pitch1 > 511) pitch1 = 511;
 	if(pitch2 > 511) pitch2 = 511;
 
-// fprintf(f_log," %d p1=%3d p2=%3d  %x\n",vowel_tab[ix] & 0x3f,pitch1,pitch2,flags);
-	vowel_tab[ix] = (vowel_tab[ix] & 0x3f) + flags
-							+ (pitch1 << 8) + (pitch2 << 17);
-
+	syl->pitch1 = pitch1;
+	syl->pitch2 = pitch2;
+	syl->flags |= flags;
 }   /* end of set_pitch */
 
 
 
-static int calc_pitch_segment(int ix, int end_ix, TONE_TABLE *t, int min_stress)
-/******************************************************************************/
+static int calc_pitch_segment(int ix, int end_ix, TONE_TABLE *t, int min_stress, int continuing)
+/**********************************************************************************************/
 /* Calculate pitches until next RESET or tonic syllable, or end.
 	Increment pitch if stress is >= min_stress.
 	Used for tonic segment */
@@ -492,37 +487,59 @@ static int calc_pitch_segment(int ix, int end_ix, TONE_TABLE *t, int min_stress)
 	int  pitch=0;
 	int  increment=0;
 	int  n_primary=0;
+	int  n_steps=0;
 	int  initial;
 	int  overflow=0;
+	int  n_overflow;
 	int *drops;
+	short *overflow_tab;
+	SYLLABLE *syl;
 
-	static char overflow_tab[5] = {0, 5, 3, 1, 0};
+	static short continue_tab[5] = {-13, 16, 10, 4, 0};
 
 	drops = t->body_drops;
-	
-	initial = 1;
+
+	if(continuing)
+	{
+		initial =0;
+		overflow = 0;
+		n_overflow = 5;
+		overflow_tab = continue_tab;
+		increment = (t->body_end - t->body_start) << 8;
+		increment = increment / (t->body_max_steps -1);
+	}
+	else
+	{
+		n_overflow = t->n_overflow;
+		overflow_tab = t->overflow;
+		initial = 1;
+	}
+
 	while(ix < end_ix)
 	{
-		stress = vowel_tab[ix] & 0x3f;
+		syl = &syllable_tab[ix];
+		stress = syl->stress;
 
-		if(stress == BODY_RESET)
-			initial = 1;
+//		if(stress == PRIMARY_MARKED)
+//			initial = 1;    // reset the intonation pattern
 
 		if(initial || (stress >= min_stress))
 		{
-			if(initial)
+			// a primary stress
+
+			if((initial) || (stress == 5))
 			{
 				initial = 0;
 				overflow = 0;
-				n_primary = count_increments(ix,end_ix,min_stress);
+				n_steps = n_primary = count_increments(ix,end_ix,min_stress);
 
-				if(n_primary > t->body_max_steps)
-					n_primary = t->body_max_steps;
+				if(n_steps > t->body_max_steps)
+					n_steps = t->body_max_steps;
 
-				if(n_primary > 1)
+				if(n_steps > 1)
 				{
 					increment = (t->body_end - t->body_start) << 8;
-					increment = increment / (n_primary -1);
+					increment = increment / (n_steps -1);
 				}
 				else
 					increment = 0;
@@ -531,41 +548,53 @@ static int calc_pitch_segment(int ix, int end_ix, TONE_TABLE *t, int min_stress)
 			}
 			else
 			{
-				if(n_primary > 0)
+				if(n_steps > 0)
 					pitch += increment;
 				else
 				{
-					pitch = (t->body_end << 8) - (increment * overflow_tab[overflow++])/4;
-					if(overflow > 4)  overflow = 0;
+					pitch = (t->body_end << 8) - (increment * overflow_tab[overflow++])/16;
+					if(overflow >= n_overflow)
+					{
+						overflow = 0;
+						overflow_tab = t->overflow;
+					}
 				}
 			}
+
+			n_steps--;
+
 			n_primary--;
+			if((t->backwards) && (n_primary < 2))
+			{
+					pitch = t->backwards[n_primary] << 8;	
+			}
 		}
 
-		if(((annotation==0) && (stress >= PRIMARY)) || (stress >= PRIMARY_MARKED))
+		if(stress >= PRIMARY)
 		{
-			vowel_tab[ix] = PRIMARY_MARKED;
-			set_pitch(ix,pitch,drops[stress]);
+			syl->stress = PRIMARY_STRESSED;
+			set_pitch(syl,pitch,drops[stress]);
 		}
 		else
 		if(stress >= SECONDARY)
 		{
-			/* use secondary stress for unmarked word stress, if no annotation */
-			set_pitch(ix,pitch,drops[stress]);
+			set_pitch(syl,pitch,drops[stress]);
 		}
 		else
 		{
 			/* unstressed, drop pitch if preceded by PRIMARY */
-			if((vowel_tab[ix-1] & 0x3f) >= SECONDARY)
-				set_pitch(ix,pitch - (t->body_lower_u << 8), drops[stress]);
+			if((syllable_tab[ix-1].stress & 0x3f) >= SECONDARY)
+				set_pitch(syl,pitch - (t->body_lower_u << 8), drops[stress]);
 			else
-				set_pitch(ix,pitch,drops[stress]);
+				set_pitch(syl,pitch,drops[stress]);
 		}
 
 		ix++;
 	}
 	return(ix);
 }   /* end of calc_pitch_segment */
+
+
 
 
 
@@ -579,6 +608,7 @@ static int calc_pitch_segment2(int ix, int end_ix, int start_p, int end_p, int m
 	int  increment;
 	int  n_increments;
 	int  drop;
+	SYLLABLE *syl;
 
 	if(ix >= end_ix)
 		return(ix);
@@ -595,11 +625,12 @@ static int calc_pitch_segment2(int ix, int end_ix, int start_p, int end_p, int m
 	pitch = start_p << 8;
 	while(ix < end_ix)
 	{
-		stress = vowel_tab[ix] & 0x3f;
+		syl = &syllable_tab[ix];
+		stress = syl->stress;
 
 		if(increment > 0)
 		{
-			set_pitch(ix,pitch,-increment);
+			set_pitch(syl,pitch,-increment);
 			pitch += increment;
 		}
 		else
@@ -609,7 +640,7 @@ static int calc_pitch_segment2(int ix, int end_ix, int start_p, int end_p, int m
 				drop = min_drop[stress];
 				
 			pitch += increment;
-			set_pitch(ix,pitch,drop);
+			set_pitch(syl,pitch,drop);
 		}
 			
 		ix++;
@@ -622,32 +653,37 @@ static int calc_pitch_segment2(int ix, int end_ix, int start_p, int end_p, int m
 
 
 
-static int calc_pitches(int *syllable_tab, int num, int sentence_tone)
-/********************************************************************/
+static int calc_pitches(int start, int end,  int group_tone)
+/**********************************************************/
 /* Calculate pitch values for the vowels in this tone group */
 {
 	int  ix;
 	TONE_TABLE *t;
 	int  drop;
+	int continuing = 0;
 
-	t = &tone_table[tone_type];
-	ix = vowel_ix;
+	if(start > 0)
+		continuing = 1;
+
+	t = &tone_table[group_tone];
+	ix = start;
 
 	/* vowels before the first primary stress */
 	/******************************************/
 
 	if(number_pre > 0)
 	{
-		ix = calc_pitch_segment2(ix,ix+number_pre,t->pre_start,t->pre_end, 0);
+		ix = calc_pitch_segment2(ix, ix+number_pre, t->pre_start, t->pre_end, 0);
 	}
 
 	/* body of tonic segment */
 	/*************************/
 
-	if(annotation)
-		ix = calc_pitch_segment(ix,tone_posn, t, PRIMARY_MARKED);
-	else
-		ix = calc_pitch_segment(ix,tone_posn, t, PRIMARY);
+	if(option_tone_flags & OPTION_EMPHASIZE_PENULTIMATE)
+	{
+		tone_posn = tone_posn2;  // put tone on the penultimate stressed word 
+	}
+	ix = calc_pitch_segment(ix,tone_posn, t, PRIMARY, continuing);
 		
 	if(no_tonic)
 		return(0);
@@ -659,149 +695,29 @@ static int calc_pitches(int *syllable_tab, int num, int sentence_tone)
 	{
 		tone_pitch_env = t->pitch_env0;
 		drop = t->tonic_max0 - t->tonic_min0;
-		set_pitch(ix++,t->tonic_min0 << 8,drop << 8);
+		set_pitch(&syllable_tab[ix++],t->tonic_min0 << 8,drop << 8);
 	}
 	else
 	{
 		tone_pitch_env = t->pitch_env1;
 		drop = t->tonic_max1 - t->tonic_min1;
-		set_pitch(ix++,t->tonic_min1 << 8,drop << 8);
+		set_pitch(&syllable_tab[ix++],t->tonic_min1 << 8,drop << 8);
 	}
 
+	syllable_tab[tone_posn].env = tone_pitch_env;
+	if(syllable_tab[tone_posn].stress == PRIMARY)
+		syllable_tab[tone_posn].stress = PRIMARY_STRESSED;
 
 	/* tail, after the tonic syllable */
 	/**********************************/
 	
-	calc_pitch_segment2(ix,vowel_ix_top,t->tail_start,t->tail_end,0);
+	calc_pitch_segment2(ix, end, t->tail_start, t->tail_end, 0);
 
 	return(tone_pitch_env);
 }   /* end of calc_pitches */
 
 
 
-
-
-static int calc_pitch_segmentX(int ix, int end_ix, TONE_TABLE *t, int min_stress)
-/******************************************************************************/
-/* Calculate pitches until next RESET or tonic syllable, or end.
-	Increment pitch if stress is >= min_stress.
-	Used for tonic segment */
-// EXPERIMENTAL VERSION
-{
-	int  stress;
-	int  pitch=0;
-	int  n_primary;
-	int  initial;
-	int *drops;
-
-	int prev_stress=0;
-	int n_unstressed;
-	int j;
-
-	drops = t->body_drops;  // pitch fall or raise for each stress value
-
-	n_primary = count_increments(ix,end_ix,min_stress)-1;   // number if primary stress in the clause -1
-	
-	initial = 1;
-	while(ix < end_ix)  // for each syllable
-	{
-		for(j=ix; j<end_ix; j++)
-		{
-			// how many unstressed syllables before the next primary stress ?
-			if((vowel_tab[j] & 0x3f) > SECONDARY)
-				break;
-		}
-		n_unstressed = (j - ix - 1);
-
-		stress = vowel_tab[ix] & 0x3f;  // stress value of this syllable
-
-		pitch = 0x1000;      // set a base pitch
-		pitch += ((n_primary % 3) * 0x0500);   // some variety. add an offset that changes after each primary stress
-
-		if(stress >= PRIMARY)
-		{
-			vowel_tab[ix] = PRIMARY_MARKED;
-			set_pitch(ix,pitch+0x100, -0x0900);
-			n_primary--;
-		}
-//		else
-//		if(stress >= SECONDARY)
-//		{
-//			set_pitch(ix,pitch,drops[stress]);
-//		}
-		else
-		{
-			if(ix > 0)
-				prev_stress = vowel_tab[ix-1] & 0x3f;   // stress level of previous syllable
-
-			if(prev_stress >= PRIMARY)
-			{
-				// an unstressed syllable which follows a primary stress syllable
-				set_pitch(ix,pitch+0x0200, 0x0800);
-			}
-			else
-			{
-stress = 0; // treat secondary stress the same as unstressed ??
-
-				set_pitch(ix,pitch + n_unstressed*0x300, drops[stress]);
-			}
-			n_unstressed--;
-		}
-		ix++;
-	}
-	return(ix);
-}   /* end of calc_pitch_segmentX */
-
-
-
-static int calc_pitchesX(int *syllable_tab, int num, int sentence_tone)
-/********************************************************************/
-/* Calculate pitch values for the vowels in this tone group */
-// EXPERMENTAL VERSION of calc_pitches()
-{
-	int  ix;
-	TONE_TABLE *t;
-	int  drop;
-
-	t = &tone_table[tone_type];
-	ix = vowel_ix;
-
-
-	/* body of tonic segment */
-	/*************************/
-
-	if(annotation)
-		ix = calc_pitch_segmentX(ix,tone_posn, t, PRIMARY_MARKED);
-	else
-		ix = calc_pitch_segmentX(ix,tone_posn, t, PRIMARY);
-		
-	if(no_tonic)
-		return(0);
-
-	/* tonic syllable */
-	/******************/
-	
-	if(number_tail == 0)
-	{
-		tone_pitch_env = t->pitch_env0;
-		drop = t->tonic_max0 - t->tonic_min0;
-		set_pitch(ix++,t->tonic_min0 << 8,drop << 8);
-	}
-	else
-	{
-		tone_pitch_env = t->pitch_env1;
-		drop = t->tonic_max1 - t->tonic_min1;
-		set_pitch(ix++,t->tonic_min1 << 8,drop << 8);
-	}
-
-
-	/* tail, after the tonic syllable */
-	/**********************************/
-	
-	calc_pitch_segment2(ix,vowel_ix_top,t->tail_start,t->tail_end,0);
-
-	return(tone_pitch_env);
-}   /* end of calc_pitchesX */
 
 
 
@@ -811,14 +727,20 @@ void Translator::CalcPitches_Tone(int clause_tone)
 	PHONEME_LIST *p;
 	int  ix;
 	int  count_stressed=0;
-	int  count_stressed2=0;
 	int  final_stressed=0;
 
 	int  tone_ph;
+	int pause;
+	int tone_promoted;
+	PHONEME_TAB *tph;
+	PHONEME_TAB *prev_tph;   // forget across word boundary
+	PHONEME_TAB *prevw_tph;  // remember across word boundary
+	PHONEME_TAB *prev2_tph;  // 2 tones previous
+	PHONEME_LIST *prev_p;
 
-	int  pitch_adjust = 13;     // pitch gradient through the clause - inital value
-	int  pitch_decrement = 3;   //   decrease by this for each stressed syllable
-	int  pitch_low =  0;         //   until it drops to this
+	int  pitch_adjust = 10;     // pitch gradient through the clause - inital value
+	int  pitch_decrement = 0;   //   decrease by this for each stressed syllable
+	int  pitch_low = 10;         //   until it drops to this
 	int  pitch_high = 10;       //   then reset to this
 
 	p = &phoneme_list[0];
@@ -845,6 +767,89 @@ void Translator::CalcPitches_Tone(int clause_tone)
 	}
 
 
+	pause = 1;
+	tone_promoted = 0;
+
+	prev_p = p = &phoneme_list[0];
+	prev_tph = prevw_tph = phoneme_tab[phonPAUSE];
+
+	// perform tone sandhi
+	for(ix=0; ix<n_phoneme_list; ix++, p++)
+	{
+		if((p->type == phPAUSE) && (p->ph->std_length > 50))
+		{
+			pause = 1;  // there is a pause since the previous vowel
+		}
+
+		if(p->newword)
+		{
+			prev_tph = phoneme_tab[phonPAUSE];  // forget across word boundaries
+		}
+
+		if(p->type == phVOWEL)
+		{
+			tone_ph = p->tone_ph;
+			tph = phoneme_tab[tone_ph];
+
+			// Mandarin
+			if(translator_name == L('z','h'))
+			{
+				if(tone_ph == 0)
+				{
+					if(pause || tone_promoted)
+					{
+						tone_ph = LookupPh("55");  // no previous vowel, use tone 1
+						tone_promoted = 1;
+					}
+					else
+					{
+						tone_ph = LookupPh("11");  // default tone 5
+					}
+
+					p->tone_ph = tone_ph;
+					tph = phoneme_tab[tone_ph];
+
+				}
+				else
+				{
+					tone_promoted = 0;
+				}
+
+				if(prev_tph->mnemonic == 0x343132)  // [214]
+				{
+					if(tph->mnemonic == 0x343132)   // [214]
+						prev_p->tone_ph = LookupPh("35");
+					else
+						prev_p->tone_ph = LookupPh("21"); 
+				}
+				if((prev_tph->mnemonic == 0x3135)  && (tph->mnemonic == 0x3135))  //  [51] + [51]
+				{
+					prev_p->tone_ph = LookupPh("53");
+				}
+
+				if(tph->mnemonic == 0x3131)  // [11] Tone 5
+				{
+					// tone 5, change its level depending on the previous tone (across word boundaries)
+					if(prevw_tph->mnemonic == 0x3535)
+						p->tone_ph = LookupPh("22");
+					if(prevw_tph->mnemonic == 0x3533)
+						p->tone_ph = LookupPh("33");
+					if(prevw_tph->mnemonic == 0x343132)
+						p->tone_ph = LookupPh("44");
+
+					// tone 5 is unstressed (shorter)
+					p->tone = 1;   // diminished stress
+				}
+			}
+
+			prev_p = p;
+			prev2_tph = prevw_tph;
+			prevw_tph = prev_tph = tph;
+			pause = 0;
+		}
+	}
+
+	// convert tone numbers to pitch
 	p = &phoneme_list[0];
 	for(ix=0; ix<n_phoneme_list; ix++, p++)
 	{
@@ -852,160 +857,214 @@ void Translator::CalcPitches_Tone(int clause_tone)
 		{
 			tone_ph = p->tone_ph;
 
-			if(p->tone >= 2)
+			if(p->tone != 1)  // TEST, consider all syllables as stressed
 			{
-				// a stressed syllable
-				if(p->tone >= 4)
+				if(ix == final_stressed)
 				{
-
-					count_stressed2++;
-					if(count_stressed2 == count_stressed)
-					{
-						// the last stressed syllable
-						pitch_adjust = pitch_low;
-					}
-					else
-					{
-						pitch_adjust -= pitch_decrement;
-						if(pitch_adjust <= pitch_low)
-							pitch_adjust = pitch_high;
-					}
+					// the last stressed syllable
+					pitch_adjust = pitch_low;
 				}
-
-				if(tone_ph ==0)
+				else
 				{
-					tone_ph = phonDEFAULTTONE;  // no tone specified, use default tone 1
-					p->tone_ph = tone_ph;
+					pitch_adjust -= pitch_decrement;
+					if(pitch_adjust <= pitch_low)
+						pitch_adjust = pitch_high;
 				}
-				p->pitch1 = pitch_adjust + phoneme_tab[tone_ph]->start_type;
-				p->pitch2 = pitch_adjust + phoneme_tab[tone_ph]->end_type;
 			}
-			else
+
+			if(tone_ph ==0)
 			{
-				// what to do for unstressed syllables ?
-				p->pitch1 = 10;   // temporary
-				p->pitch2 = 14;
+				tone_ph = phonDEFAULTTONE;  // no tone specified, use default tone 1
+				p->tone_ph = tone_ph;
 			}
+			p->pitch1 = pitch_adjust + phoneme_tab[tone_ph]->start_type;
+			p->pitch2 = pitch_adjust + phoneme_tab[tone_ph]->end_type;
 		}
 	}
-
-
 }  // end of Translator::CalcPitches_Tone
 
 
 
-void Translator::CalcPitches(int clause_tone)
+void Translator::CalcPitches(int clause_type)
 {//==========================================
-//  clause_tone: 0=. 1=, 2=?, 3=! 4=none
+//  clause_type: 0=. 1=, 2=?, 3=! 4=none
 	PHONEME_LIST *p;
+	SYLLABLE *syl;
 	int  ix;
 	int  x;
 	int  st_ix;
-	int  tonic_ix=0;
-	int  tonic_env;
-	int  max_stress=0;
+	int n_st;
 	int  option;
-	int  st_ix_changed = -1;
-	int  syllable_tab[N_PHONEME_LIST];
+	int  group_tone;
+	int  group_tone_emph;
+	int  group_tone_comma;
+	int ph_start=0;
+	int st_start;
+	int st_clause_end;
+	int count;
+	int n_primary;
+	int count_primary;
+	int ph_end=n_phoneme_list;
 
-	if(langopts.intonation == 1)
+	SYLLABLE syllable_tab2[N_PHONEME_LIST];
+
+	syllable_tab = syllable_tab2;   // don't use permanent storage. it's only needed during the call of CalcPitches()
+	n_st = 0;
+	n_primary = 0;
+	for(ix=0; ix<(n_phoneme_list-1); ix++)
 	{
-		CalcPitches_Tone(clause_tone);
+		p = &phoneme_list[ix];
+		if(p->synthflags & SFLAG_SYLLABLE)
+		{
+			syllable_tab[n_st].flags = 0;
+			syllable_tab[n_st].env = PITCHfall;
+			syllable_tab[n_st].nextph_type = phoneme_list[ix+1].type;
+			syllable_tab[n_st++].stress = p->tone;  // stress level
+
+			if(p->tone >= 4)
+				n_primary++;
+		}
+		else
+		if((p->ph->code == phonPAUSE_CLAUSE) && (n_st > 0))
+		{
+			syllable_tab[n_st-1].flags |= SYL_END_CLAUSE;
+		}
+	}
+	syllable_tab[n_st].stress = 0;   // extra 0 entry at the end
+
+	if(n_st == 0)
+		return;  // nothing to do
+
+
+
+	if(langopts.tone_language == 1)
+	{
+		CalcPitches_Tone(clause_type);
 		return;
 	}
 
-	st_ix=0;
-	p = &phoneme_list[0];
 
-	for(ix=0; ix<n_phoneme_list; ix++, p++)
-	{
-		if(p->synthflags & SFLAG_SYLLABLE)
-		{
-			syllable_tab[st_ix] = p->tone;
-
-			if(option_tone2 == 1)
-			{
-				// reduce number of full-stress words
-				if((p->tone == 4) && ((st_ix % 2) != 1))
-				{
-					syllable_tab[st_ix] = 3;
-					st_ix_changed = st_ix;
-				}
-			}
-			if(option_tone2 == 2)
-			{
-				// reduce all full-stress words, except last
-				if(p->tone == 4)
-				{
-					syllable_tab[st_ix] = 3;
-					st_ix_changed = st_ix;
-				}
-			}
-
-			st_ix++;
-			if(p->tone >= max_stress)
-			{
-				max_stress = p->tone;
-				tonic_ix = ix;
-			}
-		}
-	}
-
-	if(st_ix_changed >= 0)
-		syllable_tab[st_ix_changed] = 4;
-
-	if(st_ix == 0)
-		return;  // no vowels, nothing to do
-
-
-	option = option_tone1 & 0xf;
-	if(option > 4)
+	option = langopts.intonation_group;
+	if(option >= INTONATION_TYPES)
 		option = 0;
 
-	tone_type = punct_to_tone[option][clause_tone];  /* unless changed by count_pitch_vowels */
+	group_tone = punct_to_tone[option][clause_type]; 
+	group_tone_emph = punct_to_tone[option][5];   // emphatic form of statement
+	group_tone_comma = punct_to_tone[option][1];   // emphatic form of statement
 
-	if(clause_tone == 4)
+	if(clause_type == 4)
 		no_tonic = 1;       /* incomplete clause, used for abbreviations such as Mr. Dr. Mrs. */
 	else
 		no_tonic = 0;
 
-	/* transfer vowel data from ph_list to syllable_tab */
-	vowel_tab = syllable_tab;
-	vowel_ix_top = st_ix;
+	st_start = 0;
+	count_primary=0;
+	for(st_ix=0; st_ix<n_st; st_ix++)
+	{
+		syl = &syllable_tab[st_ix];
 
-	count_pitch_vowels();
+		if(syl->stress >= 4)
+			count_primary++;
 
-	if((option_tone1 & 0xf0)== 0x10)
-		tonic_env = calc_pitchesX(syllable_tab,st_ix,clause_tone);
-	else
-		tonic_env = calc_pitches(syllable_tab,st_ix,clause_tone);
+		if(syl->stress == 6)
+		{
+			// reduce the stress of the previous stressed syllable (review only the previous few syllables)
+			for(ix=st_ix-1; ix>=st_start && ix>=(st_ix-3); ix--)
+			{
+				if(syllable_tab[ix].stress == 6)
+					break;
+				if(syllable_tab[ix].stress == 4)
+				{
+					syllable_tab[ix].stress = 3;
+					break;
+				}
+			}
 
+			// are the next primary syllables also emphasized ?
+			for(ix=st_ix+1; ix<n_st; ix++)
+			{
+				if(syllable_tab[ix].stress == 4)
+					break;
+				if(syllable_tab[ix].stress == 6)
+				{
+					// emphasize this syllable, but don't end the current tone group
+					syllable_tab[st_ix].flags = SYL_EMPHASIS;
+					syl->stress = 5;
+					break;
+				}
+			}
+		}
+
+		if(syl->stress == 6)
+		{
+			// an emphasized syllable, end the tone group after the next primary stress
+			syllable_tab[st_ix].flags = SYL_EMPHASIS;
+
+			count = 0;
+			if((n_primary - count_primary) > 1)
+				count =1;
+
+			for(ix=st_ix+1; ix<n_st; ix++)
+			{
+				if(syllable_tab[ix].stress > 4)
+					break;
+				if(syllable_tab[ix].stress == 4)
+				{
+					count++;
+					if(count > 1)
+						break;
+				}
+			}
+
+			count_pitch_vowels(st_start, ix, n_st);
+			if((ix < n_st) || (clause_type == 0))
+				calc_pitches(st_start, ix, group_tone_emph);   // split into > 1 tone groups, use emphatic tone
+			else
+				calc_pitches(st_start, ix, group_tone);
+
+			st_start = ix;
+		}
+		if((st_start < st_ix) && (syl->flags & SYL_END_CLAUSE))
+		{
+			// end of clause after this syllable, indicated by a phonPAUSE_CLAUSE phoneme
+			st_clause_end = st_ix+1;
+			count_pitch_vowels(st_start, st_clause_end, st_clause_end);
+			calc_pitches(st_start, st_clause_end, group_tone_comma);
+			st_start = st_clause_end;
+		}
+	}
+
+	if(st_start < st_ix)
+	{
+		count_pitch_vowels(st_start, st_ix, n_st);
+		calc_pitches(st_start, st_ix, group_tone);
+	}
+
+	
 	// unpack pitch data
 	st_ix=0;
-	p = &phoneme_list[0];
-	for(ix=0; ix<n_phoneme_list; ix++, p++)
+	for(ix=ph_start; ix < ph_end; ix++)
 	{
-		p->tone = syllable_tab[st_ix] & 0x3f;
+		p = &phoneme_list[ix];
+		p->tone = syllable_tab[st_ix].stress;
 		
 		if(p->synthflags & SFLAG_SYLLABLE)
 		{
-			x = ((syllable_tab[st_ix] >> 8) & 0x1ff) - 72;
+			syl = &syllable_tab[st_ix];
+
+			x = syl->pitch1 - 72;
 			if(x < 0) x = 0;
 			p->pitch1 = x;
 
-			x = ((syllable_tab[st_ix] >> 17) & 0x1ff) - 72;
+			x = syl->pitch2 - 72;
 			if(x < 0) x = 0;
 			p->pitch2 = x;
 
 			p->env = PITCHfall;
-			if(syllable_tab[st_ix] & 0x80)
+			if(syl->flags & SYL_RISE)
 			{
-//				if(p->pitch1 > p->pitch2)
-//					p->env = PITCHfall;
-//				else
-					p->env = PITCHrise;
+				p->env = PITCHrise;
 			}
-
 			if(p->pitch1 > p->pitch2)
 			{
 				// swap so that pitch2 is the higher
@@ -1013,10 +1072,18 @@ void Translator::CalcPitches(int clause_tone)
 				p->pitch1 = p->pitch2;
 				p->pitch2 = x;
 			}
-			if(ix==tonic_ix) p->env = tonic_env;
+			if(p->tone > 5)
+				p->env = syl->env;
+
+			if(syl->flags & SYL_EMPHASIS)
+			{
+				p->tone |= 8;      // emphasized
+			}
+	
 			st_ix++;
 		}
 	}
+
 }  // end of Translator::CalcPitches
 
  

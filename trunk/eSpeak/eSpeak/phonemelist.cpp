@@ -30,15 +30,12 @@
 #include "translate.h"
 
 
+const unsigned char pause_phonemes[8] = {0, phonPAUSE_VSHORT, phonPAUSE_SHORT, phonPAUSE, phonPAUSE_LONG, phonGLOTTALSTOP, phonPAUSE_LONG, phonPAUSE_LONG};
 
 
 int Translator::ChangePhonemes(PHONEME_LIST2 *phlist, int n_ph, int index, PHONEME_TAB *ph, CHANGEPH *ch)
 {//======================================================================================================
 // Called for each phoneme in the phoneme list, to allow a language to make changes
-// flags: bit 0=1 last phoneme in a word
-//        bit 1=1 this is the highest stressed vowel in the current word
-//        bit 2=1 after the highest stressed vowel in the current word
-//        bit 3=1 the phonemes were specified explicitly, or found from an entry in the xx_list dictionary
 // ph     The current phoneme
 	return(0);
 }
@@ -184,13 +181,14 @@ void Translator::MakePhonemeList(int post_pause, int start_sentence)
 	PHONEME_TAB *ph;
 	PHONEME_TAB *prev, *next, *next2;
 	int unstress_count = 0;
-	int word_has_stress = 0;
+	int word_stress = 0;
 	int switched_language = 0;
 	int max_stress;
 	int voicing;
 	int regression;
 	int end_sourceix;
 	int alternative;
+	int first_vowel=0;   // first vowel in a word
 	PHONEME_LIST2 ph_list3[N_PHONEME_LIST];
 
 	static PHONEME_LIST2 ph_list2_null = {0,0,0,0,0};
@@ -214,12 +212,12 @@ void Translator::MakePhonemeList(int post_pause, int start_sentence)
 		// the last word is unstressed, look for a previous word that can be stressed
 		while(--j >= 0)
 		{
-			if(ph_list2[j].stress & 0x80)  // dictionary flags indicated that this stress can be promoted
+			if(ph_list2[j].synthflags & SFLAG_PROMOTE_STRESS)  // dictionary flags indicated that this stress can be promoted
 			{
 				ph_list2[j].stress = 4;   // promote to stressed
 				break;
 			}
-			if((ph_list2[j].stress & 0x7f) >= 4)
+			if(ph_list2[j].stress >= 4)
 			{
 				// found a stressed syllable, so stop looking
 				break;
@@ -338,7 +336,22 @@ void Translator::MakePhonemeList(int post_pause, int start_sentence)
 		}
 
 		if(plist2->sourceix)
-			word_has_stress = 0;   // start of a word
+		{
+			// start of a word
+			int k;
+			word_stress = 0;
+			first_vowel = 1;
+
+			// find the highest stress level in this word
+			for(k=j+1; k < n_ph_list2; k++)
+			{
+				if(ph_list3[k].sourceix)
+					break;   // start of the next word
+
+				if(ph_list3[k].stress > word_stress)
+					word_stress = ph_list3[k].stress;
+			}
+		}
 
 		if(ph == NULL) continue;
 
@@ -353,7 +366,7 @@ void Translator::MakePhonemeList(int post_pause, int start_sentence)
 				{
 					// in a sequence of unstressed syllables, reduce alternate syllables to 'diminished'
                // stress.  But not for the last phoneme of a stressed word
-					if((langopts.stress_flags & 0x2) || (word_has_stress && ((plist2+1)->sourceix!=0)))
+					if((langopts.stress_flags & 0x2) || ((word_stress > 3) && ((plist2+1)->sourceix!=0)))
 					{
 						// An unstressed final vowel of a stressed word
 						unstress_count=1;    // try again for next syllable
@@ -367,15 +380,13 @@ void Translator::MakePhonemeList(int post_pause, int start_sentence)
 			else
 			{
 				unstress_count = 0;
-				if(plist2->stress > 3)
-					word_has_stress = 1;   // word has a primary or a secondary stress
 			}
 		}
 
+		alternative = 0;
+
 		if(ph->alternative_ph > 0)
 		{
-			alternative = 0;
-
 			switch(ph->phflags & phALTERNATIVE)
 			{
 			// This phoneme changes if vowel follows, or doesn't follow, depending on its phNOTFOLLOWS flag
@@ -394,25 +405,30 @@ void Translator::MakePhonemeList(int post_pause, int start_sentence)
 					alternative = ph->alternative_ph;
 				break;
 			}
+		}
+		if(ph->phflags & phBEFOREPAUSE)
+		{
+			if(next->type == phPAUSE)
+				alternative = ph->link_out;   // replace with the link_out phoneme
+		}
 
-			if(alternative == 1)
-				continue;    // NULL phoneme, discard
+		if(alternative == 1)
+			continue;    // NULL phoneme, discard
 
-			if(alternative > 1)
+		if(alternative > 1)
+		{
+			PHONEME_TAB *ph2;
+			ph2 = ph;
+			ph = phoneme_tab[alternative];
+
+			if(ph->type == phVOWEL)
 			{
-				PHONEME_TAB *ph2;
-				ph2 = ph;
-				ph = phoneme_tab[alternative];
-
-				if(ph->type == phVOWEL)
-				{
-					plist2->synthflags |= SFLAG_SYLLABLE;
-					if(ph2->type != phVOWEL)
-						plist2->stress = 0;   // change from non-vowel to vowel, make sure it's unstressed
-				}
-				else
-					plist2->synthflags &= ~SFLAG_SYLLABLE;
+				plist2->synthflags |= SFLAG_SYLLABLE;
+				if(ph2->type != phVOWEL)
+					plist2->stress = 0;   // change from non-vowel to vowel, make sure it's unstressed
 			}
+			else
+				plist2->synthflags &= ~SFLAG_SYLLABLE;
 		}
 
 		if(langopts.param[LOPT_REDUCE_T])
@@ -426,21 +442,51 @@ void Translator::MakePhonemeList(int post_pause, int start_sentence)
 			}
 		}
 
-		if((ph->reduce_to != 0) && (ph->type != phVOWEL) && !(plist2->synthflags & SFLAG_DICTIONARY))
-		{
-			// reduction for vowels has already been done in SetWordStress
-			int reduce_level;
 
-			if(next->type == phVOWEL)
+		while((ph->reduce_to != 0) && (!(plist2->synthflags & SFLAG_DICTIONARY)  || (langopts.param[LOPT_REDUCE] & 1)))
+		{
+			int reduce_level;
+			int stress_level;
+			int reduce = 0;
+
+			reduce_level = (ph->phflags >> 28) & 7;
+
+			if(ph->type == phVOWEL)
 			{
-				reduce_level = (ph->phflags >> 28) & 7;
-				if((&plist2[1])->stress < reduce_level)
-				{
-					// look at the stress of the following vowel
-					ph = phoneme_tab[ph->reduce_to];
-				}
+				stress_level = plist2->stress;
 			}
+			else
+			{
+				// consonant, get stress from the following vowel
+				if(next->type == phVOWEL)
+					stress_level = (plist2+1)->stress;
+				else
+					break;
+			}
+
+			if((stress_level == 1) && (first_vowel))
+				stress_level = 0;   // ignore 'dimished' stress on first syllable
+
+			if(stress_level == 1)
+				reduce = 1;    // stress = 'reduced'
+
+			if(stress_level < reduce_level)
+				reduce =1;
+
+			if((word_stress < 4) && (langopts.param[LOPT_REDUCE] & 0x2) && (stress_level >= word_stress))
+			{
+				// don't reduce the most stressed syllable in an unstressed word
+				reduce = 0;
+			}
+
+			if(reduce)
+				ph = phoneme_tab[ph->reduce_to];
+			else
+				break;
 		}
+
+		if(ph->type == phVOWEL)
+			first_vowel = 0;
 
 		if((plist2+1)->synthflags & SFLAG_LENGTHEN)
 		{
@@ -457,55 +503,56 @@ void Translator::MakePhonemeList(int post_pause, int start_sentence)
 		{
 			int x;
 
-			if(langopts.word_gap & 1)
+			if(langopts.vowel_pause && (ph->type != phPAUSE))
 			{
-				insert_ph = phonPAUSE_VSHORT;
-			}
-			if(langopts.vowel_pause && (ph->type != phPAUSE) && (next->type == phVOWEL))
-			{
-				if(langopts.vowel_pause & 0x04)
+
+				if((ph->type != phVOWEL) && (langopts.vowel_pause & 0x200))
 				{
-					// break before a word which starts with a vowel
-					insert_ph = phonPAUSE_VSHORT;
+					// add a pause after a word which ends in a consonant
+					insert_ph = phonPAUSE_NOLINK;
 				}
 
-				if((ph->type == phVOWEL) && ((x = langopts.vowel_pause & 0x03) != 0))
+				if(next->type == phVOWEL)
 				{
-					// adjacent vowels over a word boundary
-					if(x == 2)
+					if((x = langopts.vowel_pause & 0x0c) != 0)
+					{
+						// break before a word which starts with a vowel
+						if(x == 0xc)
+							insert_ph = phonPAUSE_NOLINK;
+						else
+							insert_ph = phonPAUSE_VSHORT;
+					}
+	
+					if((ph->type == phVOWEL) && ((x = langopts.vowel_pause & 0x03) != 0))
+					{
+						// adjacent vowels over a word boundary
+						if(x == 2)
+							insert_ph = phonPAUSE_SHORT;
+						else
+							insert_ph = phonPAUSE_VSHORT;
+					}
+	
+					if(((plist2+1)->stress >= 4) && (langopts.vowel_pause & 0x100))
+					{
+						// pause before a words which starts with a stressed vowel
 						insert_ph = phonPAUSE_SHORT;
-					else
-						insert_ph = phonPAUSE_VSHORT;
+					}
 				}
+			}
 
-				if(((plist2+1)->stress >= 4) && (langopts.vowel_pause & 0x08))
-				{
-					// pause before a words which starts with a stressed vowel
-					insert_ph = phonPAUSE_SHORT;
-				}
+			if((x = (langopts.word_gap & 0x7)) != 0)
+			{
+				insert_ph = pause_phonemes[x];
+			}
+			if(option_wordgap > 0)
+			{
+				insert_ph = phonPAUSE_LONG;
 			}
 		}
 
 		next2 = phoneme_tab[(plist2+2)->phcode];
 
-#ifdef deleted
-		if((ph->type != phVOWEL)  && (ph->type != phPAUSE)   //&& ((ph->phflags & phVOICED)==0)
-			&& (next->type == phLIQUID) && (next->mnemonic != ';') && (next2->type != phVOWEL))
-		{
-			// semi-vowel surrounded by consonants.  precede by a short schwa
-			insert_ph = phonSCHWA_SHORT;
-			insert_synthflags = SFLAG_SYLLABLE;
-		}
-
-		if((ph->type == phLIQUID) && (prev->type != phVOWEL) && (next->type != phVOWEL))
-		{
-			// semi-vowel surrounded by consonants.  precede by a short schwa
-			insert_ph = phonSCHWA_SHORT;
-			insert_synthflags = SFLAG_SYLLABLE;
-		}
-#endif
-
-		if((insert_ph == 0) && (ph->link_out != 0) && (((plist2+1)->synthflags & SFLAG_EMBEDDED)==0))
+		if((insert_ph == 0) && (ph->link_out != 0) && !(ph->phflags & phBEFOREPAUSE) && (((plist2+1)->synthflags & SFLAG_EMBEDDED)==0))
 		{
 			if(ph->phflags & phAPPENDPH)
 			{
@@ -517,7 +564,7 @@ void Translator::MakePhonemeList(int post_pause, int start_sentence)
 				}
 			}
 			else
-			if(((langopts.word_gap & 2)==0) || ((plist2+1)->sourceix == 0))
+			if(((langopts.word_gap & 8)==0) || ((plist2+1)->sourceix == 0))
 			{
 				// This phoneme can be linked to a following vowel by inserting a linking phoneme
 				if(next->type == phVOWEL)
@@ -565,6 +612,11 @@ void Translator::MakePhonemeList(int post_pause, int start_sentence)
 		}
 
 		phlist[ix].length = ph->std_length;
+		if((ph->code == phonPAUSE_LONG) && (option_wordgap > 0))
+		{
+			phlist[ix].ph = phoneme_tab[phonPAUSE_SHORT];
+			phlist[ix].length = option_wordgap*14;   // 10mS per unit at the default speed
+		}
 
 		if(ph->type==phVOWEL || ph->type==phLIQUID || ph->type==phNASAL || ph->type==phVSTOP || ph->type==phVFRICATIVE)
 		{
@@ -590,7 +642,7 @@ void Translator::MakePhonemeList(int post_pause, int start_sentence)
 	phlist[ix].length = 0;
 	phlist[ix].sourceix=0;
 	phlist[ix].synthflags = 0;
-   phlist[ix++].ph = phoneme_tab[phonPAUSE_VSHORT];
+   phlist[ix++].ph = phoneme_tab[phonPAUSE_SHORT];
 
 	n_phoneme_list = ix;
 }  // end of MakePhonemeList

@@ -45,6 +45,7 @@ struct Options {
 	BOOL disable_outtolunch;
 
 	BOOL use_flags;
+	BOOL respect_sndvol_mute;
 };
 
 extern Options opts;

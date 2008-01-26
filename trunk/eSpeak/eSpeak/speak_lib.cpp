@@ -47,7 +47,7 @@
 #include "wave.h"
 
 unsigned char *outbuf=NULL;
-extern espeak_VOICE *voice_selected;
+extern espeak_VOICE voice_selected;
 
 espeak_EVENT *event_list=NULL;
 int event_list_ix=0;
@@ -64,9 +64,6 @@ int (* uri_callback)(int, const char *, const char *) = NULL;
 int (* phoneme_callback)(const char *) = NULL;
 
 char path_home[N_PATH_HOME];   // this is the espeak-data directory
-
-voice_t voicedata;
-voice_t *voice = &voicedata;
 
 
 #ifdef USE_ASYNC
@@ -184,6 +181,8 @@ int sync_espeak_terminated_msg( uint unique_identifier, void* user_data)
 	event_list[0].unique_identifier = unique_identifier;
 	event_list[0].user_data = user_data;
 	event_list[1].type = espeakEVENT_LIST_TERMINATED;
+	event_list[1].unique_identifier = unique_identifier;
+	event_list[1].user_data = user_data;
 
 	if (my_mode==AUDIO_OUTPUT_PLAYBACK)
 	{
@@ -337,9 +336,7 @@ static int initialise(void)
 	int param;
 	int result;
 
-#ifndef __WIN32__
-	LoadConfig();  // causes problem on Windows, don't know why
-#endif
+	LoadConfig();
 	WavegenInit(22050,0);   // 22050
 	if((result = LoadPhData()) != 1)
 	{
@@ -349,7 +346,7 @@ static int initialise(void)
 			fprintf(stderr,"Wrong version of espeak-data 0x%x (expects 0x%x)\n",result,version_phdata);
 	}
 
-	voice_selected = NULL;
+	memset(&voice_selected,0,sizeof(voice_selected));
 	SetVoiceStack(NULL);
 	SynthesizeInit();
 	InitNamedata();
@@ -368,7 +365,9 @@ static espeak_ERROR Synthesize(unsigned int unique_identifier, const void *text,
 	int length;
 	int finished = 0;
 	int count_buffers = 0;
+#ifdef USE_ASYNC
 	uint32_t a_write_pos=0;
+#endif
 
 #ifdef DEBUG_ENABLED
 	if (text)
@@ -435,6 +434,8 @@ static espeak_ERROR Synthesize(unsigned int unique_identifier, const void *text,
 		length = (out_ptr - outbuf)/2;
 		count_samples += length;
 		event_list[event_list_ix].type = espeakEVENT_LIST_TERMINATED; // indicates end of event list
+		event_list[event_list_ix].unique_identifier = my_unique_identifier;
+		event_list[event_list_ix].user_data = my_user_data;
 
 		count_buffers++;
 		if (my_mode==AUDIO_OUTPUT_PLAYBACK)
@@ -462,6 +463,8 @@ static espeak_ERROR Synthesize(unsigned int unique_identifier, const void *text,
 				// This ensures that <audio> tag (which causes end-of-clause) is at a sound buffer boundary
 
 				event_list[0].type = espeakEVENT_LIST_TERMINATED;
+				event_list[0].unique_identifier = my_unique_identifier;
+				event_list[0].user_data = my_user_data;
 
 				if(SpeakNextClause(NULL,NULL,1)==0)
 				{
@@ -711,7 +714,8 @@ ENTER("espeak_Initialize");
 	SetParameter(espeakVOLUME,100,0);
 	SetParameter(espeakCAPITALS,option_capitals,0);
 	SetParameter(espeakPUNCTUATION,option_punctuation,0);
-	WavegenSetVoice(voice);
+	SetParameter(espeakWORDGAP,0,0);
+	DoVoiceChange(voice);
 	
 #ifdef USE_ASYNC
 	fifo_init();
@@ -1028,10 +1032,10 @@ ESPEAK_API void espeak_SetPhonemeTrace(int value, FILE *stream)
 }   //  end of espeak_SetPhonemes
 
 
-ESPEAK_API void espeak_CompileDictionary(const char *path, FILE *log)
-{//==================================================================
+ESPEAK_API void espeak_CompileDictionary(const char *path, FILE *log, int flags)
+{//=============================================================================
 	ENTER("espeak_CompileDictionary");
-	CompileDictionary(path,dictionary_name,log,NULL);
+	CompileDictionary(path, dictionary_name, log, NULL, flags);
 }   //  end of espeak_CompileDirectory
 
 

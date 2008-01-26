@@ -19,7 +19,6 @@
 
 #include "StdAfx.h"
 
-
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -180,13 +179,13 @@ void Translator::SetSpellingStress(char *phonemes, int control)
 		else
 		if(c == 0xff)
 		{
-			if(control < 2)
+			if((control < 2) || (ix==0))
 				continue;   // don't insert pauses
 
 			if(control == 4)
 				c = phonPAUSE;    // pause after each character
 			if(((count % 3) == 0) || (control == 4))
-				c = phonPAUSE_NOLINK;  // pause following a primary stress
+				c = phonPAUSE_SHORT;  // pause following a primary stress
 			else
 				continue;       // remove marker
 		}
@@ -204,29 +203,36 @@ int Translator::TranslateRoman(char *word, char *ph_out)
 {//=====================================================
 	int c;
 	char *p;
+	const char *p2;
 	int acc;
 	int prev;
 	int value;
 	int subtract;
+	int repeat = 0;
 	unsigned int flags;
 	char number_chars[N_WORD_BYTES];
 
-	static char *roman_numbers = "ixcmvld";
+	static const char *roman_numbers = "ixcmvld";
 	static int roman_values[] = {1,10,100,1000,5,50,500};
  
-	if((langopts.numbers & NUM_ROMAN) == 0)
-		return(0);
-
 	acc = 0;
 	prev = 0;
 	subtract = 0x7fff;
 
 	while((c = *word++) != ' ')
 	{
-		if((p = strchr(roman_numbers,c)) == NULL)
+		if((p2 = strchr(roman_numbers,c)) == NULL)
 			return(0);
 
-		value = roman_values[p - roman_numbers];
+		value = roman_values[p2 - roman_numbers];
+		if(value == prev)
+		{
+			repeat++;
+			if(repeat >= 3)
+				return(0);
+		}
+		else
+			repeat = 0;
 
 		if((prev==5) || (prev==50) || (prev==500))
 		{
@@ -357,12 +363,14 @@ int Translator::LookupNum2(int value, int control, char *ph_out)
 		if(langopts.numbers & 0x200)
 		{
 			// remove vowel from the end of tens if units starts with a vowel (LANG=Italian)
-			ix = strlen(ph_tens)-1;
-			if((next_phtype = phoneme_tab[(unsigned int)(ph_digits[0])]->type) == phSTRESS)
-				next_phtype = phoneme_tab[(unsigned int)(ph_digits[1])]->type;
-
-			if((phoneme_tab[(unsigned int)(ph_tens[ix])]->type == phVOWEL) && (next_phtype == phVOWEL))
-				ph_tens[ix] = 0;
+			if((ix = strlen(ph_tens)-1) >= 0)
+			{
+				if((next_phtype = phoneme_tab[(unsigned int)(ph_digits[0])]->type) == phSTRESS)
+					next_phtype = phoneme_tab[(unsigned int)(ph_digits[1])]->type;
+	
+				if((phoneme_tab[(unsigned int)(ph_tens[ix])]->type == phVOWEL) && (next_phtype == phVOWEL))
+					ph_tens[ix] = 0;
+			}
 		}
 		sprintf(ph_out,"%s%s",ph_tens,ph_digits);
 	}
@@ -505,8 +513,8 @@ int Translator::LookupNum3(int value, char *ph_out, int suppress_null, int thous
 
 
 
-static char *M_Variant(int value)
-{//==============================
+static const char *M_Variant(int value)
+{//====================================
 	// returns M, or perhaps MA for some cases
 	
 	if(((value % 100)>20) || ((value % 100)<10))   // but not teens, 10 to 19
@@ -796,10 +804,16 @@ int Translator::TranslateNumber_1(char *word, char *ph_out, unsigned int *flags,
 			decimal_point = 0;
 		}
 	}
-	if(ph_out[0] != 0)
+	if((ph_out[0] != 0) && (ph_out[0] != phonSWITCH))
 	{
 		int next_char;
-		utf8_in(&next_char,&word[n_digits+1],0);
+		char *p;
+		p = &word[n_digits+1];
+
+		p += utf8_in(&next_char,p,0);
+		if((langopts.numbers & NUM_NOPAUSE) && (next_char == ' '))
+			utf8_in(&next_char,p,0);
+
 		if(!iswalpha(next_char))
 			strcat(ph_out,str_pause);  // don't add pause for 100s,  6th, etc.
 	}

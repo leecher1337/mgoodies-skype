@@ -92,8 +92,13 @@ static unsigned char speed_lookup[290] = {
 	  15,  15,  14,  14,  13,	// 350
 	  13,  12,  12,  11,  11,	// 355
 	  10,  10,   9,   8,   8,	// 360
-	   7,   7,   6,   6,   5,	// 365
+	   7,   6,   5,   5,   4,	// 365
 };
+
+// speed_factor2 adjustments for speeds 370 to 390
+static unsigned char faster[] = {
+114,112,110,109,107,105,104,102,100,98, // 370-379
+96,94,92,90,88,85,83,80,78,75,72 }; //380-390
 
 static int speed1 = 130;
 static int speed2 = 121;
@@ -106,8 +111,9 @@ void SetSpeed(int control)
 	int x;
 	int s1;
 	int wpm;
+	int wpm2;
 
-	wpm = embedded_value[EMBED_S];
+	wpm2 = wpm = embedded_value[EMBED_S];
 	if(wpm > 369) wpm = 369;
 	if(wpm < 80) wpm = 80;
 
@@ -127,15 +133,23 @@ void SetSpeed(int control)
 		// these are used in synthesis file
 		s1 = (x * voice->speedf1)/256;
 		speed_factor1 = (256 * s1)/115;      // full speed adjustment, used for pause length
-if(speed_factor1 < 16)
-	speed_factor1 = 16;
+if(speed_factor1 < 15)
+	speed_factor1 = 15;
 		if(wpm >= 170)
 //			speed_factor2 = 100 + (166*s1)/128;  // reduced speed adjustment, used for playing recorded sounds
-			speed_factor2 = 110 + (151*s1)/128;  // reduced speed adjustment, used for playing recorded sounds
+			speed_factor2 = 110 + (150*s1)/128;  // reduced speed adjustment, used for playing recorded sounds
 		else
 			speed_factor2 = 128 + (128*s1)/130;  // = 215 at 170 wpm
+
+		if(wpm2 > 369)
+		{
+			if(wpm2 > 390)
+				wpm2 = 390;
+			speed_factor2 = faster[wpm2 - 370];
+		}
 	}
 
+	speed_min_sample_len = 450;
 }  //  end of SetSpeed
 
 
@@ -195,14 +209,18 @@ void SetParameter(int parameter, int value, int relative)
 		embedded_value[EMBED_R] = new_value;
 		break;
 
-	case espeakPUNCTUATION:
-		break;
-
-	case espeakCAPITALS:
-		break;
-
 	case espeakLINELENGTH:
 		option_linelength = new_value;
+		break;
+
+	case espeakWORDGAP:
+		option_wordgap = new_value;
+		break;
+
+	case espeakINTONATION:
+		if((new_value & 0xff) != 0)
+			translator->langopts.intonation_group = new_value & 0xff;
+		option_tone_flags = new_value;
 		break;
 
 	default:
@@ -255,13 +273,15 @@ void Translator::CalcLengths()
 	int  end_of_clause;
 	int  embedded_ix = 0;
 	int  min_drop;
+	int emphasized;
 	unsigned char *pitch_env=NULL;
 
 	for(ix=1; ix<n_phoneme_list; ix++)
 	{
 		prev = &phoneme_list[ix-1];
 		p = &phoneme_list[ix];
-		stress = p->tone & 0xf;
+		stress = p->tone & 0x7;
+		emphasized = p->tone & 0x8;
 
 		next = &phoneme_list[ix+1];
 
@@ -430,6 +450,9 @@ void Translator::CalcLengths()
 			else
 				p->amp = stress_amps[stress];
 
+			if(emphasized)
+				p->amp = 25;
+
 			if(ix >= (n_phoneme_list-3))
 			{
 				// last phoneme of a clause, limit its amplitude
@@ -444,7 +467,13 @@ void Translator::CalcLengths()
 			{
 				if((p2->type == phVOWEL) && !(p2->ph->phflags & phNONSYLLABIC))
 					more_syllables++;
+
+				if(p2->ph->code == phonPAUSE_CLAUSE)
+					end_of_clause = 2;
 			}
+			if(p2->ph->code == phonPAUSE_CLAUSE)
+				end_of_clause = 2;
+
 			if((p2->newword & 2) && (more_syllables==0))
 			{
 				end_of_clause = 2;
@@ -455,7 +484,7 @@ void Translator::CalcLengths()
 			{
 				len = langopts.length_mods0[next2->ph->length_mod *10+ next->ph->length_mod];
 
-				if((next->newword) && (langopts.word_gap & 0x4))
+				if((next->newword) && (langopts.word_gap & 0x20))
 				{
 					// consider as a pause + first phoneme of the next word
 					length_mod = (len + langopts.length_mods0[next->ph->length_mod *10+ 1])/2;
@@ -480,18 +509,26 @@ void Translator::CalcLengths()
 				length_mod *= speed3;
 
 			length_mod = length_mod / 128;
-//			if(length_mod < 24)
-//				length_mod = 24;     // restrict how much lengths can be reduced
-			if(length_mod < 9)
-				length_mod = 9;     // restrict how much lengths can be reduced
+//			if(length_mod < 9)
+//				length_mod = 9;     // restrict how much lengths can be reduced
+			if(length_mod < 8)
+				length_mod = 8;     // restrict how much lengths can be reduced
 
 			if(stress >= 7)
 			{
 				// tonic syllable, include a constant component so it doesn't decrease directly with speed
-				length_mod += 22;
+				length_mod += 20;
+			}
+			else
+			if(emphasized)
+			{
+				length_mod += 20;
 			}
 			
-			length_mod = (length_mod * stress_lengths[stress])/128;
+			if((len = stress_lengths[stress]) == 0)
+				len = stress_lengths[6];
+
+			length_mod = (length_mod * len)/128;
 
 			if(end_of_clause == 2)
 			{
@@ -525,8 +562,8 @@ if(p->type != phVOWEL)
 			if(pre_sonorant || pre_voiced)
 			{
 				// set pitch for pre-vocalic part
-				if(pitch_start - last_pitch > 9)
-					last_pitch = pitch_start - 9;
+				if(pitch_start - last_pitch > 8)   // was 9
+					last_pitch = pitch_start - 8;
 				prev->pitch1 = last_pitch;
 				prev->pitch2 = pitch_start;
 				if(last_pitch < pitch_start)

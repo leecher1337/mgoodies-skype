@@ -27,10 +27,16 @@
 
 #include <stdio.h>
 
-#define ESPEAK_API_REVISION  2
+#define ESPEAK_API_REVISION  3
 /*
 Revision 2
    Added parameter "options" to eSpeakInitialize()
+
+Revision 3
+   Added espeakWORDGAP to  espeak_PARAMETER
+
+Revision 4
+   Added flags parameter to espeak_CompileDictionary()
 
 */
          /********************/
@@ -44,7 +50,7 @@ typedef enum {
   espeakEVENT_SENTENCE,            // Start of sentence
   espeakEVENT_MARK,                // Mark
   espeakEVENT_PLAY,                // Audio element
-  espeakEVENT_END,                 // End of sentence
+  espeakEVENT_END,                 // End of sentence or clause
   espeakEVENT_MSG_TERMINATED,      // End of message
   espeakEVENT_PHONEME              // Phoneme, if enabled in espeak_Initialize()
 } espeak_EVENT_TYPE;
@@ -338,7 +344,6 @@ espeak_ERROR espeak_Char(wchar_t character);
 	   EE_INTERNAL_ERROR.
 */
 
-/* Note, there is no function to play a sound icon. This would be done by the calling program */
 
 
 
@@ -348,12 +353,18 @@ espeak_ERROR espeak_Char(wchar_t character);
 
 typedef enum {
   espeakSILENCE=0, /* internal use */
-  espeakRATE,
-  espeakVOLUME,
-  espeakPITCH,
-  espeakRANGE,
-  espeakPUNCTUATION,
-  espeakCAPITALS,
+  espeakRATE=1,
+  espeakVOLUME=2,
+  espeakPITCH=3,
+  espeakRANGE=4,
+  espeakPUNCTUATION=5,
+  espeakCAPITALS=6,
+  espeakWORDGAP=7,
+  espeakOPTIONS=8,   // reserved for misc. options.  not yet used
+  espeakINTONATION=9,
+
+  espeakRESERVED1=10,
+  espeakRESERVED2=11,
   espeakEMPHASIS,   /* internal use */
   espeakLINELENGTH, /* internal use */
   espeakVOICETYPE,  // internal, 1=mbrola
@@ -393,6 +404,8 @@ espeak_ERROR espeak_SetParameter(espeak_PARAMETER parameter, int value, int rela
          2=spelling,
          3 or higher, by raising pitch.  This values gives the amount in Hz by which the pitch
             of a word raised to indicate it has a capital letter.
+
+      espeakWORDGAP:  pause between words, units of 10mS (at the default speed)
 
    Return: EE_OK: operation achieved 
            EE_BUFFER_FULL: the command can not be buffered; 
@@ -438,13 +451,16 @@ void espeak_SetPhonemeTrace(int value, FILE *stream);
 #ifdef __cplusplus
 extern "C"
 #endif
-void espeak_CompileDictionary(const char *path, FILE *log);
+void espeak_CompileDictionary(const char *path, FILE *log, int flags);
 /* Compile pronunciation dictionary for a language which corresponds to the currently
    selected voice.  The required voice should be selected before calling this function.
 
    path:  The directory which contains the language's '_rules' and '_list' files.
           'path' should end with a path separator character ('/').
    log:   Stream for error reports and statistics information. If log=NULL then stderr will be used.
+
+   flags:  Bit 0: include source line information for debug purposes (This is displayed with the
+          -X command line option).
 */
          /***********************/
          /*   Voice Selection   */
@@ -453,9 +469,9 @@ void espeak_CompileDictionary(const char *path, FILE *log);
 
 // voice table
 typedef struct {
-	char *name;            // a given name for this voice. UTF8 string.
-	char *languages;       // list of pairs of (byte) priority + (string) language (and dialect qualifier)
-	char *identifier;      // the filename for this voice within espeak-data/voices
+	const char *name;      // a given name for this voice. UTF8 string.
+	const char *languages;       // list of pairs of (byte) priority + (string) language (and dialect qualifier)
+	const char *identifier;      // the filename for this voice within espeak-data/voices
 	unsigned char gender;  // 0=none 1=male, 2=female,
 	unsigned char age;     // 0=not specified, or age in years
 	unsigned char variant; // only used when passed as a parameter to espeak_SetVoiceByProperties
