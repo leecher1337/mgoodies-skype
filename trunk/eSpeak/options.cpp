@@ -380,7 +380,10 @@ static BOOL CALLBACK BaseDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 				{
 					HWND item = GetDlgItem(hwndDlg, PARAMETERS[i].ctrl);
 					if (item == NULL)
-						continue;
+					{
+						data->setParameter(i, GetContactParam(NULL, i));
+						break;
+					}
 
 					if (PARAMETERS[i].type == SCROLL)
 						data->setParameter(i, SendMessage(GetDlgItem(hwndDlg, PARAMETERS[i].ctrl), TBM_GETPOS, 0, 0));

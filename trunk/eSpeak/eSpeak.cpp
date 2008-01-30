@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"meSpeak",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,6),
+	PLUGIN_MAKE_VERSION(0,0,0,8),
 	"Speaker plugin based on eSpeak engine (%s)",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -106,40 +106,6 @@ BOOL shutDown = FALSE;
 
 
 // Functions ////////////////////////////////////////////////////////////////////////////
-
-
-int mlog(const char *fmt, ...)
-{
-#if 0
-    va_list va;
-    char text[1024];
-	size_t len;
-	static DWORD tick = GetTickCount();
-
-	mir_snprintf(text, sizeof(text) - 10, "[%08u - %08u] [%8u] ", 
-				 GetCurrentThreadId(), GetTickCount(), GetTickCount() - tick);
-	tick = GetTickCount();
-	len = strlen(text);
-
-    va_start(va, fmt);
-    mir_vsnprintf(&text[len], sizeof(text) - len, fmt, va);
-    va_end(va);
-
-	FILE *fp = fopen("c:\\miranda_meSpeak.log.txt","at");
-
-	if (fp != NULL)
-	{
-		fprintf(fp, "%s\n", text);
-		fclose(fp);
-		return 0;
-	}
-	else
-	{
-		return -1;
-	}
-#endif
-	return -1;
-}
 
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
@@ -881,22 +847,27 @@ Language *GetContactLanguage(HANDLE hContact)
 
 Voice *GetContactVoice(HANDLE hContact, Language *lang)
 {
+	int i;
 	DBVARIANT dbv;
 	if (DBGetContactSettingString(hContact, MODULE_NAME, "Voice", &dbv))
-		return lang->voices[0];
+		goto DEFAULT;
 
 	char name[NAME_SIZE];
 	strncpy(name, dbv.pszVal, MAX_REGS(name));
 	DBFreeVariant(&dbv);
 	
 	if (name[0] == '\0')
-		return lang->voices[0];
+		goto DEFAULT;
 
-	for (int i = 0; i < lang->voices.getCount(); i++)
+	for (i = 0; i < lang->voices.getCount(); i++)
 		if (stricmp(name, lang->voices[i]->name) == 0)
 			return lang->voices[i];
 	
-	return lang->voices[0];
+DEFAULT:
+	if (lang == opts.default_language)
+		return opts.default_voice;
+	else
+		return lang->voices[0];
 }
 
 
@@ -904,20 +875,20 @@ Variant *GetContactVariant(HANDLE hContact)
 {
 	DBVARIANT dbv;
 	if (DBGetContactSettingString(hContact, MODULE_NAME, "Variant", &dbv))
-		return NULL;
+		return opts.default_variant;
 
 	char name[NAME_SIZE];
 	strncpy(name, dbv.pszVal, MAX_REGS(name));
 	DBFreeVariant(&dbv);
 
 	if (name[0] == '\0')
-		return NULL;
+		return opts.default_variant;
 
 	for (int i = 0; i < variants.getCount(); i++)
 		if (stricmp(name, variants[i]->name) == 0)
 			return variants[i];
 	
-	return NULL;
+	return opts.default_variant;
 }
 
 
@@ -980,7 +951,6 @@ int SpeakService(HANDLE hContact, TCHAR *text)
 	if (voice == NULL)
 		goto RETURN;
 
-mlog("Adding to queue %s", text);
 	data = new SpeakData(lang, voice, GetContactVariant(hContact), text);
 	for (i = 0; i < NUM_PARAMETERS; i++)
 		data->setParameter(i, GetContactParam(hContact, i));
@@ -1060,10 +1030,8 @@ void Speak(SpeakData *data)
 	for (int i = 0; i < NUM_PARAMETERS; i++)
 		espeak_SetParameter(PARAMETERS[i].eparam, data->getParameter(i), 0);
 	
-mlog("Calling eSpeak to speak 5 %s", data->text);
 	espeak_Synth(data->text, (lstrlen(data->text) + 1) * sizeof(TCHAR), 0, POS_CHARACTER, 
 				 0, espeakCHARS_TCHAR, NULL, NULL);
-mlog("Spoke %s", data->text);
 }
 
 TCHAR * VariablesSpeak(ARGUMENTSINFO *ai)

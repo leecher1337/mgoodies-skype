@@ -2,6 +2,13 @@ meSpeak
 
 Changelog:
 
+. 0.0.0.8
+  * Fix for test button in contact options to use punctuation data
+  - Removed old mlog function
+
+. 0.0.0.7
+  * Fix to make contacts use system voice and variant if none is set for them
+
 . 0.0.0.6
   + Updated to eSpeak 1.31
   + Added punctuation to system settings
