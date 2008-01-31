@@ -1,0 +1,105 @@
+// Created by Microsoft (R) C/C++ Compiler Version 12.00.8964.0 (b709eb45).
+//
+// compiler-generated file created 01/12/08 at 02:29:48 - DO NOT EDIT!
+
+#pragma once
+#pragma pack(push, 8)
+
+#include <comdef.h>
+
+//
+// Forward references and typedefs
+//
+
+struct /* coclass */ CGifSmileyCtrl;
+struct __declspec(uuid("cb64102b-8ce4-4a55-b050-131c435a3a3f"))
+/* dual interface */ IGifSmileyCtrl;
+
+//
+// Smart pointer typedef declarations
+//
+
+_COM_SMARTPTR_TYPEDEF(IGifSmileyCtrl, __uuidof(IGifSmileyCtrl));
+
+//
+// Type library items
+//
+
+struct __declspec(uuid("db35dd77-55e2-4905-8075-eb351bb5cbc1"))
+CGifSmileyCtrl;
+    // [ default ] interface IGifSmileyCtrl
+
+struct __declspec(uuid("cb64102b-8ce4-4a55-b050-131c435a3a3f"))
+IGifSmileyCtrl : IDispatch
+{
+    //
+    // Property data
+    //
+
+    __declspec(property(get=GetBackColor,put=PutBackColor))
+    OLE_COLOR BackColor;
+    __declspec(property(get=GetHWND))
+    long HWND;
+
+    //
+    // Wrapper methods for error-handling
+    //
+
+    void PutBackColor (
+        OLE_COLOR pclr );
+    OLE_COLOR GetBackColor ( );
+    long GetHWND ( );
+    HRESULT LoadFromFile (
+        _bstr_t bstrFileName );
+    HRESULT LoadFromFileSized (
+        _bstr_t bstrFileName,
+        int nHeight );
+    HRESULT SetHostWindow (
+        long hwndHostWindow,
+        int nNotyfyMode );
+    HRESULT SetHint (
+        _bstr_t bstrHint );
+    _bstr_t GetHint ( );
+
+    //
+    // Raw methods provided by interface
+    //
+
+    virtual HRESULT __stdcall put_BackColor (
+        OLE_COLOR pclr ) = 0;
+    virtual HRESULT __stdcall get_BackColor (
+        OLE_COLOR * pclr ) = 0;
+    virtual HRESULT __stdcall get_HWND (
+        long * pHWND ) = 0;
+    virtual HRESULT __stdcall raw_LoadFromFile (
+        BSTR bstrFileName ) = 0;
+    virtual HRESULT __stdcall raw_LoadFromFileSized (
+        BSTR bstrFileName,
+        int nHeight ) = 0;
+    virtual HRESULT __stdcall raw_SetHostWindow (
+        long hwndHostWindow,
+        int nNotyfyMode ) = 0;
+    virtual HRESULT __stdcall raw_SetHint (
+        BSTR bstrHint ) = 0;
+    virtual HRESULT __stdcall raw_GetHint (
+        BSTR * bstrHint ) = 0;
+};
+
+//
+// Named GUID constants initializations
+//
+
+extern "C" const GUID __declspec(selectany) LIBID_GifSmiley =
+    {0x518667de,0x537d,0x4790,{0x8e,0x93,0x48,0xb9,0xce,0x8e,0xba,0xd2}};
+extern "C" const GUID __declspec(selectany) CLSID_CGifSmileyCtrl =
+    {0xdb35dd77,0x55e2,0x4905,{0x80,0x75,0xeb,0x35,0x1b,0xb5,0xcb,0xc1}};
+extern "C" const GUID __declspec(selectany) IID_IGifSmileyCtrl =
+    {0xcb64102b,0x8ce4,0x4a55,{0xb0,0x50,0x13,0x1c,0x43,0x5a,0x3a,0x3f}};
+
+//
+// Wrapper method implementations
+//
+
+#include "AniSmiley.tli"
+
+#pragma pack(pop)
