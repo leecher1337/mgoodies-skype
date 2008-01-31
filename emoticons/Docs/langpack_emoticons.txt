@@ -1,0 +1,17 @@
+; Emoticons
+; Author: Pescuma
+
+; Options
+
+[Message Sessions]
+[Emoticons]
+
+[ Emoticons ]
+[by %s]
+[Replace emoticons in text input area too]
+[Use default emoticon pack for unknown protocols]
+[Only replace emoticons surrounded by spaces]
+[Download more emoticon packs]
+
+[Protocols Configuration]
+[Emoticon Packs]

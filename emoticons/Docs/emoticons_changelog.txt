@@ -1,0 +1,33 @@
+Emoticons
+
+Changelog:
+
+. 0.0.0.7
+  + Option to only replace emoticons surrounded by spaces
+
+. 0.0.0.6
+  * Fix for URLs in history
+  * Fix for HOME key in input area
+
+. 0.0.0.5
+  + Added Yahoo emoticons
+  * Fix for emoticons like :(|) in input area
+
+. 0.0.0.4
+  * Fix for emoticons in history
+  + New emoticon pack selection control
+
+. 0.0.0.3
+  * Protocol and pack names are case insensitive
+  + Tooltips in selection window
+  + Show smileys without images as text in selection window
+  + Added default module
+  * Fix for transparent images
+
+. 0.0.0.2
+  * Fix if not using metacontacts
+  * Fix for first message only with :)
+  + Added jgmail emoticons (still missing one)
+
+. 0.0.0.1
+  + Initial version
