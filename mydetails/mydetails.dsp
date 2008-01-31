@@ -183,5 +183,25 @@ SOURCE=.\mydetails.h
 SOURCE=.\options.h
 # End Source File
 # End Group
+# Begin Group "Docs"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\Docs\langpack_MyDetails.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\mydetails_changelog.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\mydetails_readme.txt
+# End Source File
+# Begin Source File
+
+SOURCE=.\Docs\mydetails_version.txt
+# End Source File
+# End Group
 # End Target
 # End Project

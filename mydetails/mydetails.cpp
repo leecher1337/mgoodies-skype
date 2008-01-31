@@ -28,17 +28,18 @@ Boston, MA 02111-1307, USA.
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 
-PLUGININFO pluginInfo={
-	sizeof(PLUGININFO),
+PLUGININFOEX pluginInfo={
+	sizeof(PLUGININFOEX),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,1,5),
+	PLUGIN_MAKE_VERSION(0,0,1,6),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
 	"http://www.miranda-im.org/",
 	0,		//not transient
-	0		//doesn't replace anything built-in
+	0,		//doesn't replace anything built-in
+	{ 0xa82baeb3, 0xa33c, 0x4036, { 0xb8, 0x37, 0x78, 0x3, 0xa5, 0xb6, 0xc2, 0xab } } // {A82BAEB3-A33C-4036-B837-7803A5B6C2AB}
 };
 
 
@@ -76,14 +77,29 @@ static int PluginCommand_CicleThroughtProtocols(WPARAM wParam,LPARAM lParam);
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved)
 {
-	hInst=hinstDLL;
+	hInst = hinstDLL;
 	return TRUE;
 }
 
 
-__declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
+extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
 {
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO*) &pluginInfo;
+}
+
+
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	pluginInfo.cbSize = sizeof(PLUGININFOEX);
 	return &pluginInfo;
+}
+
+
+static const MUUID interfaces[] = { MIID_MDETAILS, MIID_LAST };
+extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 
@@ -215,13 +231,13 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://br.geocities.com/ricardo_pescuma/mydetails_version.txt";
-		upd.szBetaChangelogURL = "http://br.geocities.com/ricardo_pescuma/mydetails_changelog.txt";
+		upd.szBetaVersionURL = "http://pescuma.org/miranda/mydetails_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.org/miranda/mydetails_changelog.txt";
 		upd.pbBetaVersionPrefix = (BYTE *)"My Details ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
-		upd.szBetaUpdateURL = "http://br.geocities.com/ricardo_pescuma/mydetails.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/mydetails.zip";
 
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
