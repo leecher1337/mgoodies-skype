@@ -23,32 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Options.h"
 #include "Utils.h"
 
-// srmm stuff
-#define FLAG_SHOW_NICKNAMES	 0x00000001
-#define FLAG_MSGONNEWLINE	 0x00000002
-#define FLAG_OPT_SENDONENTER 0x00000004
-
-#define FLAG_SHOW_DATE		 0x00000010
-#define FLAG_SHOW_TIMESTAMP	 0x00000020
-#define FLAG_SHOW_SECONDS	 0x00000040
-#define FLAG_LONG_DATE		 0x00000080
-
-
-#define SMF_LOG_SHOWNICK 1
-#define SMF_LOG_SHOWTIME 2
-#define SMF_LOG_SHOWDATE 4
-#define SMF_LOG_SHOWICONS 8
-#define SMF_LOG_SHOWSTATUSCHANGES 16
-#define SMF_LOG_SHOWSECONDS 32
-#define SMF_LOG_USERELATIVEDATE 64
-#define SMF_LOG_USELONGDATE 128
-#define SMF_LOG_GROUPMESSAGES	256
-#define SMF_LOG_MARKFOLLOWUPS	512
-#define SMF_LOG_MSGONNEWLINE 	1024
-
-#define EVENTTYPE_STATUSCHANGE 25368
 #define MUCCMOD 			"MUCC"
-#define MUCCSET_OPTIONS      "ChatWindowOptions"
 
 #define FONTF_BOLD   1
 #define FONTF_ITALIC 2
@@ -103,7 +78,7 @@ void MUCCHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
     }
 }
 
-char *MUCCHTMLBuilder::timestampToString(DWORD dwFlags, time_t check)
+char *MUCCHTMLBuilder::timestampToString(DWORD dwData, time_t check)
 {
     static char szResult[512];
     char str[80];
@@ -121,16 +96,16 @@ char *MUCCHTMLBuilder::timestampToString(DWORD dwFlags, time_t check)
     tm_today = tm_now;
     tm_today.tm_hour = tm_today.tm_min = tm_today.tm_sec = 0;
     today = mktime(&tm_today);
-	if (dwFlags&FLAG_SHOW_DATE && dwFlags&FLAG_SHOW_TIMESTAMP) {
-		if (dwFlags&FLAG_LONG_DATE) {
-			dbtts.szFormat = dwFlags&FLAG_SHOW_SECONDS ? (char *)"D s" : (char *)"D t";
+	if (dwData&IEEDD_MUCC_SHOW_DATE && dwData&IEEDD_MUCC_SHOW_TIME) {
+		if (dwData&IEEDD_MUCC_LONG_DATE) {
+			dbtts.szFormat = dwData&IEEDD_MUCC_SECONDS ? (char *)"D s" : (char *)"D t";
 		} else {
-			dbtts.szFormat = dwFlags&FLAG_SHOW_SECONDS ? (char *)"d s" : (char *)"d t";
+			dbtts.szFormat = dwData&IEEDD_MUCC_SECONDS ? (char *)"d s" : (char *)"d t";
 		}
-	} else if (dwFlags&FLAG_SHOW_DATE) {
-		dbtts.szFormat = dwFlags&FLAG_LONG_DATE ? (char *)"D" : (char *)"d";
-	} else if (dwFlags&FLAG_SHOW_TIMESTAMP) {
-		dbtts.szFormat = dwFlags&FLAG_SHOW_SECONDS ? (char *)"s" : (char *)"t";
+	} else if (dwData&IEEDD_MUCC_SHOW_DATE) {
+		dbtts.szFormat = dwData&IEEDD_MUCC_LONG_DATE ? (char *)"D" : (char *)"d";
+	} else if (dwData&IEEDD_MUCC_SHOW_TIME) {
+		dbtts.szFormat = dwData&IEEDD_MUCC_SECONDS ? (char *)"s" : (char *)"t";
 	} else {
 		dbtts.szFormat = (char *)"";
 	}
@@ -211,7 +186,7 @@ void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 
     IEVIEWEVENTDATA* eventData = (IEVIEWEVENTDATA *) event->eventData;
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
-		DWORD dwFlags = eventData->dwData;
+		DWORD dwData = eventData->dwData;
 		char *style = NULL;
 		int styleSize;
 		int isSent = eventData->bIsMe;
@@ -230,15 +205,15 @@ void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 				szName = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NAMESMILEYS);
 			}
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
-			if (dwFlags & FLAG_SHOW_TIMESTAMP || dwFlags & FLAG_SHOW_DATE) {
+			if (dwData & IEEDD_MUCC_SHOW_TIME || dwData & IEEDD_MUCC_SHOW_DATE) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
-							isSent ? "timestamp" : "timestamp", timestampToString(dwFlags, eventData->time));
+							isSent ? "timestamp" : "timestamp", timestampToString(dwData, eventData->time));
 			}
-			if (dwFlags & SMF_LOG_SHOWNICK) {
+			if (dwData & IEEDD_MUCC_SHOW_NICK) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: </span>",
 							isSent ? "nameOut" : "nameIn", szName);
 			}
-			if (dwFlags & FLAG_MSGONNEWLINE) {
+			if (dwData & IEEDD_MUCC_MSG_ON_NEW_LINE) {
 				Utils::appendText(&output, &outputSize, "<br>");
 			}
 			const char *className = isSent ? "messageOut" : "messageIn";
@@ -265,23 +240,23 @@ void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			if (eventData->iType == IEED_MUCC_EVENT_JOINED) {
                 className = "userJoined";
                 divName = "divUserJoined";
-				eventText = Translate("%s has joined.");
+				eventText = "%s has joined.";
 				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else if (eventData->iType == IEED_MUCC_EVENT_LEFT) {
                 className = "userLeft";
                 divName = "divUserJoined";
-				eventText = Translate("%s has left.");
+				eventText = "%s has left.";
 				szText = encodeUTF8(NULL, event->pszProto, eventData->pszNick, ENF_NONE);
 			} else {
                 className = "topicChange";
                 divName = "divTopicChange";
-				eventText = Translate("The topic is %s.");
+				eventText = "The topic is %s.";
 				szText = encodeUTF8(NULL, event->pszProto, eventData->pszText, ENF_ALL);
 			}
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", divName);
-			if (dwFlags & FLAG_SHOW_TIMESTAMP || dwFlags & FLAG_SHOW_DATE) {
+			if (dwData & IEEDD_MUCC_SHOW_TIME || dwData & IEEDD_MUCC_SHOW_DATE) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
-							isSent ? "timestamp" : "timestamp", timestampToString(dwFlags, eventData->time));
+							isSent ? "timestamp" : "timestamp", timestampToString(dwData, eventData->time));
 			}
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">", className);
 			Utils::appendText(&output, &outputSize, Translate(eventText), szText);

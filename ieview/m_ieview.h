@@ -56,19 +56,20 @@ typedef struct {
 
 } IEVIEWWINDOW;
 
-#define IEEDF_UNICODE 		1          // if set pszText is a pointer to wchar_t string instead of char string
-#define IEEDF_UNICODE_TEXT	1          // if set pszText is a pointer to wchar_t string instead of char string
-#define IEEDF_UNICODE_NICK	2          // if set pszNick is a pointer to wchar_t string instead of char string
-#define IEEDF_UNICODE_TEXT2	4          // if set pszText2 is a pointer to wchar_t string instead of char string
-/* The following flags are valid only for message events (IEED_EVENT_MESSAGE) */
-#define IEEDF_FORMAT_FONT	0x00000100 // if set pszFont (font name) is valid and should be used
-#define IEEDF_FORMAT_SIZE	0x00000200 // if set fontSize is valid and should be used
-#define IEEDF_FORMAT_COLOR	0x00000400 // if set color is valid and should be used
-#define IEEDF_FORMAT_STYLE	0x00000800 // if set fontSize is valid and should be used
+#define IEEDF_UNICODE 			0x00000001          // if set pszText is a pointer to wchar_t string instead of char string
+#define IEEDF_UNICODE_TEXT		0x00000001          // if set pszText is a pointer to wchar_t string instead of char string
+#define IEEDF_UNICODE_NICK		0x00000002          // if set pszNick is a pointer to wchar_t string instead of char string
+#define IEEDF_UNICODE_TEXT2		0x00000004          // if set pszText2 is a pointer to wchar_t string instead of char string
 
-#define IEEDF_READ			0x00001000 // if set
-#define IEEDF_SENT			0x00002000 // if set
-#define IEEDF_RTL			0x00004000 // if set
+/* The following flags are valid only for message events (IEED_EVENT_MESSAGE) */
+#define IEEDF_FORMAT_FONT		0x00000100 // if set pszFont (font name) is valid and should be used
+#define IEEDF_FORMAT_SIZE		0x00000200 // if set fontSize is valid and should be used
+#define IEEDF_FORMAT_COLOR		0x00000400 // if set color is valid and should be used
+#define IEEDF_FORMAT_STYLE		0x00000800 // if set fontSize is valid and should be used
+
+#define IEEDF_READ				0x00001000 // if set
+#define IEEDF_SENT				0x00002000 // if set
+#define IEEDF_RTL				0x00004000 // if set
 
 #define IEED_EVENT_MESSAGE			0x0001 // message
 #define IEED_EVENT_STATUSCHANGE		0x0002 // status change
@@ -83,6 +84,14 @@ typedef struct {
 #define IEED_MUCC_EVENT_LEFT		0x0004 // user left
 #define IEED_MUCC_EVENT_ERROR		0x0005 // error
 
+/* MUCC-related dwData bit flags */
+#define IEEDD_MUCC_SHOW_NICK		0x00000001
+#define IEEDD_MUCC_MSG_ON_NEW_LINE	0x00000002
+#define IEEDD_MUCC_SHOW_DATE		0x00000010
+#define IEEDD_MUCC_SHOW_TIME		0x00000020
+#define IEEDD_MUCC_SECONDS			0x00000040
+#define IEEDD_MUCC_LONG_DATE		0x00000080
+
 #define IEED_GC_EVENT_HIGHLIGHT 	0x8000
 #define IEED_GC_EVENT_MESSAGE   	0x0001
 #define IEED_GC_EVENT_TOPIC     	0x0002
@@ -96,6 +105,14 @@ typedef struct {
 #define IEED_GC_EVENT_INFORMATION   0x000B
 #define IEED_GC_EVENT_ADDSTATUS     0x000C
 #define IEED_GC_EVENT_REMOVESTATUS  0x000D
+
+/* GC-related dwData bit flags */
+#define IEEDD_GC_SHOW_NICK			0x00000001
+#define IEEDD_GC_SHOW_DATE			0x00000002
+#define IEEDD_GC_SHOW_TIME			0x00000004
+#define IEEDD_GC_SECONDS			0x00000008
+#define IEEDD_GC_LONG_DATE			0x00000010
+#define IEEDD_GC_MSG_ON_NEW_LINE	0x00001000
 
 #define IE_FONT_BOLD			0x000100	// Bold font flag
 #define IE_FONT_ITALIC			0x000200	// Italic font flag
@@ -117,7 +134,7 @@ typedef struct tagIEVIEWEVENTDATA {
 		const char *pszText;			// Text, usage depends on type of event
 		const wchar_t *pszTextW;			// Text - Unicode
 	};
-	DWORD		dwData;				// DWORD data e.g. status
+	DWORD		dwData;				// DWORD data e.g. status see IEEDD_* values
 	BOOL		bIsMe;				// TRUE if the event is related to the user
 	DWORD		time;				// Time of the event
 	struct tagIEVIEWEVENTDATA *next;
