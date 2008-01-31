@@ -744,37 +744,44 @@ bool HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text
 }
 
 wchar_t * HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text, int flags ) {
-	wchar_t *output;
  	int outputSize;
-	output = NULL;
-	if (text == NULL) return NULL;
-	encode(hContact, proto, text, &output, &outputSize, 0, flags);
+	wchar_t *output = NULL;
+	if (text != NULL) {
+		encode(hContact, proto, text, &output, &outputSize, 0, flags);
+	}
 	return output;
 }
 
 
 char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const wchar_t *wtext, int flags) {
-	wchar_t *output;
-	char * outputStr;
-	output = encode(hContact, proto, wtext, flags);
-	outputStr = Utils::UTF8Encode(output);
-	free(output);
+	char *outputStr = NULL;
+	if (wtext != NULL) {
+		wchar_t *output = encode(hContact, proto, wtext, flags);
+		outputStr = Utils::UTF8Encode(output);
+		if (output != NULL) {
+			free(output);
+		}
+	}
 	return outputStr;
 }
 
 char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const char *text, int flags) {
-	char * outputStr;
-	wchar_t *wtext = Utils::convertToWCS(text);
-	outputStr = encodeUTF8(hContact, proto, wtext, flags);
-	delete wtext;
+	char *outputStr = NULL;
+	if (text != NULL) {
+		wchar_t *wtext = Utils::convertToWCS(text);
+		outputStr = encodeUTF8(hContact, proto, wtext, flags);
+		delete wtext;
+	}
 	return outputStr;
 }
 
 char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const char *text, int cp, int flags) {
-	char * outputStr;
-	wchar_t *wtext = Utils::convertToWCS(text, cp);
-	outputStr = encodeUTF8(hContact, proto, wtext, flags);
-	delete wtext;
+	char * outputStr = NULL;
+	if (text != NULL) {
+		wchar_t *wtext = Utils::convertToWCS(text, cp);
+		outputStr = encodeUTF8(hContact, proto, wtext, flags);
+		delete wtext;
+	}
 	return outputStr;
 }
 
