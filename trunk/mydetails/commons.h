@@ -71,7 +71,6 @@ Boston, MA 02111-1307, USA.
 
 extern HINSTANCE hInst;
 extern PLUGINLINK *pluginLink;
-extern PLUGININFO pluginInfo;
 
 extern long nickname_dialog_open;
 extern long status_msg_dialog_open;

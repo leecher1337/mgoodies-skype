@@ -2,6 +2,9 @@ My Details
 
 Changelog:
 
+. 0.0.1.6
+  + Added uid for 0.8
+
 . 0.0.1.5:
   + Added option to set status message per protocol
 

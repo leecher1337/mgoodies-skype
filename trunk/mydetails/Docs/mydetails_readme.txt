@@ -4,12 +4,11 @@ My Details plugin
 What it does:
 - Show your current configuration, per protocol, for avatar, nickname, status and away message
 - It shows each protocol at a time, cicling throught then
-- Allows to set nickname (per protocol or for all protocols) and away messages (per protocol or for all protocols or - need NewAwaySystem, SimpleAway or core module)
+- Allows to set nickname (per protocol or for all protocols) and away messages (per protocol or for all protocols - need NewAwaySystem, SimpleAway or core module)
 
 Some comments:
 1. SimpleAway does not show a dialog to set a message for all protocols. Someones it does not show the dialog (I requested it in the thread http://forums.miranda-im.org/showthread.php?p=47157).
-2. For core away system, only some protocols works (probabily the same as SimpleAway). But for the ones that it works, the message in the frame is the old message. I know, it suck... But if you use ersatz plugin this problem doesn't happen: http://pescuma.mirandaim.ru/miranda/ersatz.zip
-3. To allow setting avatar, a protocol must implement the services in http://forums.miranda-im.org/showthread.php?t=5583 (AFAIK now ICQ, Yahoo and MSN does)
+2. For core away system, only some protocols works (probabily the same as SimpleAway). But for the ones that it works, the message in the frame is the old message. I know, it sucks... But if you use ersatz plugin this problem doesn't happen: http://pescuma.mirandaim.ru/miranda/ersatz.zip
 
 Todo:
 - Global page
@@ -22,8 +21,7 @@ Todo:
 - Options to show/hide itens
 
 Dependencies:
-- If you want integration with clist, an frame enabled clist, such as , clist_modern_layered or clist_nicer+
-- To draw and set avatars, Avatar service (latest version)
+- If you want integration with clist, an frame enabled clist, such as clist_modern or clist_nicer+
 - Away systens supported: Core, NewAwaySystem or SimpleAway
 
 To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=5643

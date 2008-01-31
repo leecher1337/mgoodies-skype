@@ -17,9 +17,14 @@ echo Generating files for %name% ...
 
 del *.zip
 del *.dll
-copy ..\..\..\bin\release\Plugins\%name%.dll
+del *.pdb
+
 copy ..\Docs\%name%_changelog.txt
 copy ..\Docs\%name%_version.txt
+mkdir Plugins
+cd Plugins
+copy ..\..\..\..\bin\release\Plugins\%name%.dll
+cd ..
 mkdir Docs
 cd Docs
 del /Q *.*
@@ -55,33 +60,12 @@ copy ..\..\..\..\utils\*.cpp
 cd ..
 cd ..
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip %name%.dll Docs
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip Plugins Docs
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\mydetails src\utils
 
-del *.dll
-cd Docs
-del /Q *.*
-cd ..
-rmdir Docs
-cd src
-cd mydetails
-del /Q *.*
-cd Docs
-del /Q *.*
-cd ..
-rmdir Docs
-cd sdk
-del /Q *.*
-cd ..
-rmdir sdk
-cd ..
-rmdir mydetails
-cd utils
-del /Q *.*
-cd ..
-rmdir utils
-cd ..
-rmdir src
+rd /S /Q Plugins
+rd /S /Q Docs
+rd /S /Q src
 
 if "%ftp%"=="" GOTO END
 
@@ -91,6 +75,12 @@ pause
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.zip %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt %ftp% -overwrite -close 
+
+if "%ftp2%"=="" GOTO END
+
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.zip %ftp2% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt %ftp2% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt %ftp2% -overwrite -close 
 
 :END
 

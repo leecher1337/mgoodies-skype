@@ -1,4 +1,4 @@
-; My Details 0.0.0.40
+; My Details
 ; Author: Pescuma
 ; http://forums.miranda-im.org/showthread.php?t=5643
 
