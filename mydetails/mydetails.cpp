@@ -35,8 +35,8 @@ PLUGININFOEX pluginInfo={
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci",
 	"",
-	"© 2006 Ricardo Pescuma Domenecci",
-	"http://www.miranda-im.org/",
+	"© 2008 Ricardo Pescuma Domenecci",
+	"http://pescuma.org/miranda/mydetails",
 	0,		//not transient
 	0,		//doesn't replace anything built-in
 	{ 0xa82baeb3, 0xa33c, 0x4036, { 0xb8, 0x37, 0x78, 0x3, 0xa5, 0xb6, 0xc2, 0xab } } // {A82BAEB3-A33C-4036-B837-7803A5B6C2AB}
