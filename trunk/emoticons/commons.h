@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2006 Ricardo Pescuma Domenecci
+Copyright (C) 2008 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -64,8 +64,8 @@ using namespace std;
 #include <m_folders.h>
 #include <m_icolib.h>
 #include <m_avatars.h>
+#include <m_imgsrvc.h>
 #include <m_anismiley.h>
-#include <AniSmiley.tlh>
 #include <m_smileyadd.h>
 
 
@@ -77,6 +77,7 @@ using namespace std;
 #include "resource.h"
 #include "m_emoticons.h"
 #include "options.h"
+#include "OleImage.h"
 
 
 #define MODULE_NAME		"Emoticons"
@@ -85,6 +86,7 @@ using namespace std;
 // Global Variables
 extern HINSTANCE hInst;
 extern PLUGINLINK *pluginLink;
+extern FI_INTERFACE *fei;
 
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )

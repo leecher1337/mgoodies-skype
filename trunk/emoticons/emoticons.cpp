@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2006 Ricardo Pescuma Domenecci
+Copyright (C) 2008 Ricardo Pescuma Domenecci
 
 This is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Emoticons",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,7),
+	PLUGIN_MAKE_VERSION(0,0,0,8),
 	"Emoticons",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -66,6 +66,7 @@ typedef map<HWND, Dialog *> DialogMapType;
 DialogMapType dialogData;
 
 LIST_INTERFACE li;
+FI_INTERFACE *fei = NULL;
 
 LIST<Module> modules(10);
 LIST<EmoticonPack> packs(10);
@@ -173,8 +174,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	pluginLink = link;
 
+	// TODO Assert results here
 	init_mir_malloc();
 	mir_getLI(&li);
+	CallService(MS_IMG_GETINTERFACE, FI_IF_VERSION, (LPARAM) &fei);
 
 	// hooks
 	hHooks[0] = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
@@ -296,7 +299,7 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 
 // Return the size difference with the original text
-int ReplaceEmoticonBackwards(HWND hwnd, TCHAR *text, int text_len, int last_pos, TCHAR next_char, Module *module)
+int ReplaceEmoticonBackwards(RichEditCtrl &rec, TCHAR *text, int text_len, int last_pos, TCHAR next_char, Module *module)
 {
 	if (opts.only_replace_isolated && next_char != _T('\0') && /*!_istpunct(next_char) &&*/ !_istspace(next_char))
 		return 0;
@@ -337,30 +340,52 @@ int ReplaceEmoticonBackwards(HWND hwnd, TCHAR *text, int text_len, int last_pos,
 		}
 	}
 
+	int ret = 0;
+
 	if (found != NULL)
 	{
 		// Found ya
 		CHARRANGE sel = { last_pos - foundLen, last_pos };
-		SendMessage(hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
+		SendMessage(rec.hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
 
 		CHARFORMAT2 cf;
 		memset(&cf, 0, sizeof(CHARFORMAT2));
 		cf.cbSize = sizeof(CHARFORMAT2);
 		cf.dwMask = CFM_BACKCOLOR;
-		SendMessage(hwnd, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM) &cf);
+		SendMessage(rec.hwnd, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM) &cf);
 
 		if (cf.dwEffects & CFE_AUTOBACKCOLOR)
 		{
-			cf.crBackColor = SendMessage(hwnd, EM_SETBKGNDCOLOR, 0, GetSysColor(COLOR_WINDOW));
-			SendMessage(hwnd, EM_SETBKGNDCOLOR, 0, cf.crBackColor);
+			cf.crBackColor = SendMessage(rec.hwnd, EM_SETBKGNDCOLOR, 0, GetSysColor(COLOR_WINDOW));
+			SendMessage(rec.hwnd, EM_SETBKGNDCOLOR, 0, cf.crBackColor);
+		}
+		
+		OleImage *img = new OleImage(rec.hwnd, found->img->path, foundText);
+		if (!img->isValid())
+		{
+			delete img;
+			return 0;
 		}
 
-		if (InsertAnimatedSmiley(hwnd, found->img->path, cf.crBackColor, 0 , foundText))
-		{
-			return - foundLen + 1;
-		}
+		IOleClientSite *clientSite; 
+		rec.ole->GetClientSite(&clientSite);
+
+		REOBJECT reobject = {0};
+		reobject.cbStruct = sizeof(REOBJECT);
+		reobject.cp = REO_CP_SELECTION ;
+		reobject.dvaspect = DVASPECT_CONTENT;
+		reobject.poleobj = img;
+		reobject.polesite = clientSite;
+		reobject.dwFlags = REO_BELOWBASELINE;
+
+		if (rec.ole->InsertObject(&reobject) == S_OK)
+			ret = - foundLen + 1;
+
+		clientSite->Release();
+		img->Release();
 	}
-	return 0;
+
+	return ret;
 }
 
 void FixSelection(LONG &sel, LONG end, int dif)
@@ -461,7 +486,7 @@ void ReplaceAllEmoticonsBackwards(RichEditCtrl &rec, Module *module, TCHAR *text
 {
 	for(int i = len; i > 0; i--)
 	{
-		int dif = ReplaceEmoticonBackwards(rec.hwnd, text, i, start + i, i == len ? next_char : text[i], module);
+		int dif = ReplaceEmoticonBackwards(rec, text, i, start + i, i == len ? next_char : text[i], module);
 		if (dif != 0)
 		{
 			FixSelection(__old_sel.cpMax, i, dif);
@@ -645,29 +670,36 @@ int RestoreInput(RichEditCtrl &rec, int start = 0, int end = -1)
 			continue;
 		}
 		
-		IGifSmileyCtrl *igsc = NULL;
-		reObj.poleobj->QueryInterface(IID_IGifSmileyCtrl, (void**) &igsc);
+		OleImage *oimg = NULL;
+		reObj.poleobj->QueryInterface(IID_IOleImage, (void**) &oimg);
 		reObj.poleobj->Release();
-		if (igsc == NULL)
+		if (oimg == NULL)
 			continue;
 
-		BSTR hint = NULL;
-		hr = igsc->raw_GetHint(&hint);
-		if (SUCCEEDED(hr) && hint != NULL)
+		const TCHAR *text = oimg->GetText();
+		if (text != NULL)
 		{
 			ITextRange *range;
 			if (rec.textDocument->Range(reObj.cp, reObj.cp + 1, &range) == S_OK) 
 			{
-				if (range->SetText(hint) == S_OK)
-					ret += wcslen(hint) - 1;
+#ifdef UNICODE
+				BSTR txt = SysAllocString(text);
+#else
+				WCHAR *wtext = mir_t2u(text);
+				BSTR txt = SysAllocString(wtext);
+				mir_free(wtext);
+#endif
+
+				if (range->SetText(txt) == S_OK)
+					ret += lstrlen(text) - 1;
+
+				SysFreeString(txt);
 
 				range->Release();
 			}
-
-			SysFreeString(hint);
 		}
 
-		igsc->Release();
+		oimg->Release();
 	}
 
 	return ret;
@@ -737,7 +769,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (dif == 0 && !opts.only_replace_isolated)
 			{
 				// Can replace just last text
-				dif = ReplaceEmoticonBackwards(hwnd, text, len, sel.cpMax, last, dlg->module);
+				dif = ReplaceEmoticonBackwards(dlg->input, text, len, sel.cpMax, last, dlg->module);
 				if (dif != 0)
 				{
 					FixSelection(__old_sel.cpMax, sel.cpMax, dif);
