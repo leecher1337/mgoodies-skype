@@ -24,6 +24,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # define __M_ERSATZ_H__
 
 
+#define MIID_ERSATZ { 0x3bbc5fbb, 0x5897, 0x4e37, { 0x90, 0xae, 0x48, 0xda, 0xda, 0xbf, 0x49, 0x6 } }
+
+
+
 // Returns the status message for a status
 // wParam=(WORD) 0 for current status or a status
 // lParam=0

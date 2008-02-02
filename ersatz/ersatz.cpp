@@ -24,17 +24,18 @@ Boston, MA 02111-1307, USA.
 // Prototypes ///////////////////////////////////////////////////////////////////////////
 
 
-PLUGININFO pluginInfo = {
-	sizeof(PLUGININFO),
+PLUGININFOEX pluginInfo = {
+	sizeof(PLUGININFOEX),
 	"ersatz",
-	PLUGIN_MAKE_VERSION(0,0,1,0),
+	PLUGIN_MAKE_VERSION(0,0,1,1),
 	"Hacks the PS_SETAWAYMSG service in order to provide a new one: PS_GETMYAWAYMSG",
 	"TioDuke, Ricardo Pescuma Domenecci",
 	"tioduke@yahoo.ca",
 	"(c) 2006 TioDuke",
 	"http://miranda-im.org",
 	0,	//not transient
-	0	//not used
+	0,	//not used
+	{ 0x610493fe, 0x37c5, 0x412e, { 0xb1, 0xf3, 0xb8, 0x47, 0xd1, 0xc9, 0xd5, 0x74 } }
 };
 
 
@@ -59,10 +60,24 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvRe
 	return TRUE;
 }
 
-
 extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) 
 {
+	pluginInfo.cbSize = sizeof(PLUGININFO);
+	return (PLUGININFO*) &pluginInfo;
+}
+
+
+extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion)
+{
+	pluginInfo.cbSize = sizeof(PLUGININFOEX);
 	return &pluginInfo;
+}
+
+
+static const MUUID interfaces[] = { MIID_ERSATZ, MIID_LAST };
+extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
+{
+	return interfaces;
 }
 
 
@@ -106,12 +121,12 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		upd.cbSize = sizeof(upd);
 		upd.szComponentName = pluginInfo.shortName;
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
-		upd.szBetaVersionURL = "http://eth0.dk/files/pescuma/ersatz_version.txt";
-		upd.szBetaChangelogURL = "http://eth0.dk/files/pescuma/ersatz_changelog.txt";
+		upd.szBetaVersionURL = "http://pescuma.org/miranda/ersatz_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.org/miranda/ersatz_changelog.txt";
 		upd.pbBetaVersionPrefix = (BYTE *)"ersatz ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
-		upd.szBetaUpdateURL = "http://eth0.dk/files/pescuma/ersatz.zip";
-		upd.pbVersion = (BYTE *)CreateVersionStringPlugin(&pluginInfo, szCurrentVersion);
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/ersatz.zip";
+		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO *) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
 
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
