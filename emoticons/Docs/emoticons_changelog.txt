@@ -2,6 +2,9 @@ Emoticons
 
 Changelog:
 
+. 0.0.0.8
+  + Created my own ole image control
+
 . 0.0.0.7
   + Option to only replace emoticons surrounded by spaces
 

@@ -3,7 +3,7 @@ Emoticons plugin
 
 CAUTION: THIS IS AN ALPHA STAGE PLUGIN. IT CAN DO VERY BAD THINGS. USE AT YOUR OWN RISK.
 
-This is a plugin to replace emoticons in message windows. It support replacement in the log and in message entry area. The image insertion functionality is provided by AniSmiley, so animated gifs are supported in both areas.
+This is a plugin to replace emoticons in message windows. It support replacement in the log and in message entry area. Animated gifs are supported in both areas.
 
 It is based in two concepts:
 
@@ -22,7 +22,7 @@ A default pack, containing Tango Emoticons (made by Hylke) is packed and can be 
 
 Currently there is a lot more work to be done on this plugin, but I wanted to show an initial version, so I could get some feedback.
 
-Thanks to FYR for the AniSmiley plugin and to Hylke for the nice emoticons.
+Thanks to FYR for the AniSmiley plugin (which this plugin originally used) and to Hylke for the nice emoticons.
 
 To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=17210
 
