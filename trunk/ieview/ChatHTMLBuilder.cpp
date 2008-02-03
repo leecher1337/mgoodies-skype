@@ -185,6 +185,7 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
     IEVIEWEVENTDATA* eventData = (IEVIEWEVENTDATA *) event->hDbEventFirst;
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
 		//DWORD dwFlags = eventData->dwFlags;
+		const char *iconFile = "";
 		DWORD dwData = eventData->dwData;
 		char *style = NULL;
 		int styleSize;
@@ -203,6 +204,11 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			szName = encodeUTF8(NULL, event->pszProto, (char *) eventData->pszNick, ENF_NAMESMILEYS);
 		}
 		if (eventData->iType == IEED_GC_EVENT_MESSAGE) {
+			if (isSent) {
+				iconFile = "message_out_chat.gif";
+			} else {
+				iconFile = "message_in_chat.gif";
+			}
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
 			if (dwData & IEEDD_GC_SHOW_TIME || dwData & IEEDD_GC_SHOW_DATE) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
@@ -233,7 +239,7 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\"><span style=\"%s\">%s</span></span>", className, style!=NULL ? style : "", szText);
             Utils::appendText(&output, &outputSize, "</div>\n");
 			if (style!=NULL) free(style);
-		} else if (eventData->iType != IEED_GC_EVENT_NOTICE) {
+		} else {
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
 			if (dwData & IEEDD_GC_SHOW_TIME || dwData & IEEDD_GC_SHOW_DATE) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
@@ -242,36 +248,47 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			const char *className;
 			const char *eventText;
 			if (eventData->iType == IEED_GC_EVENT_JOIN) {
+				iconFile = "join.gif";
                 className = "userJoined";
 				eventText = "%s has joined";
 			} else if (eventData->iType == IEED_GC_EVENT_PART) {
+				iconFile = "part.gif";
                 className = "userLeft";
 				eventText = "%s has left";
 			} else if (eventData->iType == IEED_GC_EVENT_QUIT) {
+				iconFile = "quit.gif";
                 className = "userDisconnected";
 				eventText = "%s disconnected: %s";
 			} else if (eventData->iType == IEED_GC_EVENT_NICK) {
+				iconFile = "nick.gif";
                 className = "nickChange";
 				eventText = "%s is now known as %s";
 			} else if (eventData->iType == IEED_GC_EVENT_ACTION) {
+				iconFile = "action.gif";
                 className = "action";
 				eventText = "%s %s";
 			} else if (eventData->iType == IEED_GC_EVENT_KICK) {
+				iconFile = "kick.gif";
                 className = "userKicked";
 				eventText = "%s was kicked: %s";
 			} else if (eventData->iType == IEED_GC_EVENT_NOTICE) {
+				iconFile = "notice.gif";
                 className = "notice";
 				eventText = "Notice from %s: %s";
 			} else if (eventData->iType == IEED_GC_EVENT_INFORMATION) {
+				iconFile = "info.gif";
                 className = "information";
 				eventText = "";
 			} else if (eventData->iType == IEED_GC_EVENT_ADDSTATUS) {
+				iconFile = "addstatus.gif";
                 className = "statusEnable";
 				eventText = "%s enables status for %s";
 			} else if (eventData->iType == IEED_GC_EVENT_REMOVESTATUS) {
+				iconFile = "removestatus.gif";
                 className = "statusDisable";
 				eventText = "%s disables status for %s";
 			} else {
+				iconFile = "topic.gif";
                 className = "topicChange";
 				eventText = "The topic is \'%s\' (set by %s)";
 			}
@@ -284,12 +301,6 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 				Utils::appendText(&output, &outputSize, Translate(eventText), szName, szText);
 			}
 			Utils::appendText(&output, &outputSize, "</span>");
-            Utils::appendText(&output, &outputSize, "</div>\n");
-		} else {
-            const char *className = "error";
-			szText = encodeUTF8(NULL, event->pszProto, eventData->pszText, ENF_NONE);
-			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
-			Utils::appendText(&output, &outputSize, "<span class=\"%s\"> %s: %s</span>", className, Translate("Error"), szText);
             Utils::appendText(&output, &outputSize, "</div>\n");
 		}
 		if (szName!=NULL) delete szName;
