@@ -24,6 +24,7 @@ class HTMLBuilder;
 #define HTMLBUILDER_INCLUDED
 
 #define EVENTTYPE_STATUSCHANGE 25368
+#define EVENTTYPE_JABBER_CHATSTATES     2000
 
 #include "IEView.h"
 #include "Options.h"
