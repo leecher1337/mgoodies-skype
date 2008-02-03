@@ -233,7 +233,7 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\"><span style=\"%s\">%s</span></span>", className, style!=NULL ? style : "", szText);
             Utils::appendText(&output, &outputSize, "</div>\n");
 			if (style!=NULL) free(style);
-		} else if (eventData->iType == IEED_GC_EVENT_JOIN || eventData->iType == IEED_GC_EVENT_PART || eventData->iType == IEED_GC_EVENT_TOPIC) {
+		} else if (eventData->iType != IEED_GC_EVENT_NOTICE) {
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
 			if (dwData & IEEDD_GC_SHOW_TIME || dwData & IEEDD_GC_SHOW_DATE) {
 				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
@@ -285,7 +285,7 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			}
 			Utils::appendText(&output, &outputSize, "</span>");
             Utils::appendText(&output, &outputSize, "</div>\n");
-		} else if (eventData->iType == IEED_GC_EVENT_NOTICE) {
+		} else {
             const char *className = "error";
 			szText = encodeUTF8(NULL, event->pszProto, eventData->pszText, ENF_NONE);
 			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
