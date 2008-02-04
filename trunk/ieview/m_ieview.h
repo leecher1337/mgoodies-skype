@@ -127,20 +127,23 @@ typedef struct tagIEVIEWEVENTDATA {
 	int         fontStyle;          // Text font style (combination of IE_FONT_* flags)
 	COLORREF	color;				// Text color
 	union {
-		const char *pszNick;		// Nick, usage depends on type of event
+		const TCHAR *ptszNick;		// Nick, usage depends on type of event
+		const char *pszNick;		// Nick - ANSII
 		const wchar_t *pszNickW;    // Nick - Unicode
 	};
 	union {
-		const char *pszText;			// Text, usage depends on type of event
-		const wchar_t *pszTextW;			// Text - Unicode
+		const TCHAR *ptszText;		// Text, usage depends on type of event
+		const char *pszText;		// Text - ANSII
+		const wchar_t *pszTextW;	// Text - Unicode
 	};
 	DWORD		dwData;				// DWORD data e.g. status see IEEDD_* values
 	BOOL		bIsMe;				// TRUE if the event is related to the user
 	DWORD		time;				// Time of the event
 	struct tagIEVIEWEVENTDATA *next;
 	union {
-		const char *pszText2;			// Text, usage depends on type of event
-		const wchar_t *pszText2W;		// Text - Unicode
+		const TCHAR *ptszText2;			// Text2, usage depends on type of event
+		const char *pszText2;			// Text2 - ANSII
+		const wchar_t *pszText2W;		// Text2 - Unicode
 	};
 } IEVIEWEVENTDATA;
 
@@ -153,7 +156,7 @@ typedef struct tagIEVIEWEVENTDATA {
 
 /* IEView event flags */
 #define IEEF_RTL          1           // turn on RTL support
-#define IEEF_NO_UNICODE   2           // disable Unicode support
+#define IEEF_NO_UNICODE   2           // disable Unicode support - valid for IEE_LOG_DB_EVENTS and IEE_GET_SELECTION events
 
 #define IEVIEWEVENT_SIZE_V1 28
 #define IEVIEWEVENT_SIZE_V2 32

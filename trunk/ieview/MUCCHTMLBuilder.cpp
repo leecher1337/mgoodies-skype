@@ -184,7 +184,7 @@ void MUCCHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 
 void MUCCHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 
-    IEVIEWEVENTDATA* eventData = (IEVIEWEVENTDATA *) event->eventData;
+    IEVIEWEVENTDATA* eventData = event->eventData;
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
 		DWORD dwData = eventData->dwData;
 		char *style = NULL;
