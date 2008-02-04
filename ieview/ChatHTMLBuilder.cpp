@@ -22,10 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Options.h"
 #include "Utils.h"
+#include "m_chat.h"
 
 #define CHATMOD 			"Chat"
 #define CHATFONTMOD 		"ChatFonts"
-#define MUCCSET_OPTIONS     "ChatWindowOptions"
+#define CHAT_ICON_FLAGS		"IconFlags"
 
 #define FONTF_BOLD   1
 #define FONTF_ITALIC 2
@@ -180,9 +181,15 @@ void ChatHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 	setLastEventType(-1);
 }
 
+/* WORK IN PROGRESS:
+ * The following method is going to be completely changed rewritten soon. Do not modify or complain for the time being...
+ */
+
 void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 
-    IEVIEWEVENTDATA* eventData = (IEVIEWEVENTDATA *) event->hDbEventFirst;
+	DWORD iconFlags = DBGetContactSettingDword(NULL, CHATMOD, CHAT_ICON_FLAGS, 0);
+    IEVIEWEVENTDATA* eventData = event->eventData;
+	MessageBoxA(NULL, "Append event 2", "ASASAS", MB_OK);
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
 		//DWORD dwFlags = eventData->dwFlags;
 		const char *iconFile = "";
@@ -193,6 +200,11 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		int outputSize;
 		char *output = NULL;
 		char *szName = NULL, *szText = NULL;
+		const char *className;
+		const char *eventText = "%s";
+		bool showNick = false;
+		bool showIcon = false;
+
 		if (eventData->dwFlags & IEEDF_UNICODE) {
 			szText = encodeUTF8(NULL, event->pszProto, (wchar_t *)eventData->pszText, ENF_ALL);
 		} else {
@@ -204,24 +216,9 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			szName = encodeUTF8(NULL, event->pszProto, (char *) eventData->pszNick, ENF_NAMESMILEYS);
 		}
 		if (eventData->iType == IEED_GC_EVENT_MESSAGE) {
-			if (isSent) {
-				iconFile = "message_out_chat.gif";
-			} else {
-				iconFile = "message_in_chat.gif";
-			}
-			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
-			if (dwData & IEEDD_GC_SHOW_TIME || dwData & IEEDD_GC_SHOW_DATE) {
-				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
-							isSent ? "timestamp" : "timestamp", timestampToString(dwData, eventData->time));
-			}
-			if (dwData & IEEDD_GC_SHOW_NICK) {
-				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: </span>",
-							isSent ? "nameOut" : "nameIn", szName);
-			}
-			if (dwData & IEEDD_GC_MSG_ON_NEW_LINE) {
-				Utils::appendText(&output, &outputSize, "<br>");
-			}
-			const char *className = isSent ? "messageOut" : "messageIn";
+			iconFile = isSent ? "message_out_chat.gif" : "message_in_chat.gif";
+			showIcon = iconFlags & (isSent ? GC_EVENT_MESSAGE : GC_EVENT_MESSAGE);
+			className = isSent ? "messageOut" : "messageIn";
 			if (eventData->dwFlags & IEEDF_FORMAT_SIZE && eventData->fontSize > 0) {
                 Utils::appendText(&style, &styleSize, "font-size:%dpt;", eventData->fontSize);
 			}
@@ -236,21 +233,15 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
                 Utils::appendText(&style, &styleSize, "font-style: %s;", eventData->fontStyle & IE_FONT_ITALIC ? "italic" : "normal");
                 Utils::appendText(&style, &styleSize, "text-decoration: %s;", eventData->fontStyle & IE_FONT_UNDERLINE ? "underline" : "none");
 			}
-			Utils::appendText(&output, &outputSize, "<span class=\"%s\"><span style=\"%s\">%s</span></span>", className, style!=NULL ? style : "", szText);
-            Utils::appendText(&output, &outputSize, "</div>\n");
-			if (style!=NULL) free(style);
 		} else {
-			Utils::appendText(&output, &outputSize, "<div class=\"%s\">", "divIn");
-			if (dwData & IEEDD_GC_SHOW_TIME || dwData & IEEDD_GC_SHOW_DATE) {
-				Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
-							isSent ? "timestamp" : "timestamp", timestampToString(dwData, eventData->time));
-			}
-			const char *className;
-			const char *eventText;
 			if (eventData->iType == IEED_GC_EVENT_JOIN) {
 				iconFile = "join.gif";
                 className = "userJoined";
-				eventText = "%s has joined";
+				if (!eventData->bIsMe) {
+					eventText = "You have has joined %s";
+				} else {
+					eventText = "%s has joined";
+				}
 			} else if (eventData->iType == IEED_GC_EVENT_PART) {
 				iconFile = "part.gif";
                 className = "userLeft";
@@ -292,23 +283,46 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
                 className = "topicChange";
 				eventText = "The topic is \'%s\' (set by %s)";
 			}
-			Utils::appendText(&output, &outputSize, "<span class=\"%s\">", className);
+			if (eventText != NULL) {
+				eventText = Translate(eventText);
+			}
 			if (eventData->iType == IEED_GC_EVENT_TOPIC ||
 				eventData->iType == IEED_GC_EVENT_ADDSTATUS ||
 				eventData->iType == IEED_GC_EVENT_REMOVESTATUS) {
-				Utils::appendText(&output, &outputSize, Translate(eventText), szText, szName);
+				Utils::appendText(&output, &outputSize, eventText, szText, szName);
 			} else {
-				Utils::appendText(&output, &outputSize, Translate(eventText), szName, szText);
+				Utils::appendText(&output, &outputSize, eventText, szName, szText);
 			}
-			Utils::appendText(&output, &outputSize, "</span>");
-            Utils::appendText(&output, &outputSize, "</div>\n");
 		}
-		if (szName!=NULL) delete szName;
-		if (szText!=NULL) delete szText;
+		Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
+		if (dwData & IEEDD_GC_SHOW_TIME || dwData & IEEDD_GC_SHOW_DATE) {
+			Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
+						isSent ? "timestamp" : "timestamp", timestampToString(dwData, eventData->time));
+		}
+		if (dwData & IEEDD_GC_SHOW_NICK) {
+			Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: </span>",
+						isSent ? "nameOut" : "nameIn", szName);
+		}
+		if (dwData & IEEDD_GC_MSG_ON_NEW_LINE) {
+			Utils::appendText(&output, &outputSize, "<br>");
+		}
+		Utils::appendText(&output, &outputSize, "<span class=\"%s\">");
+		if (style != NULL) {
+			Utils::appendText(&output, &outputSize, "<span style=\"%s\">", style);
+		}
+		Utils::appendText(&output, &outputSize, eventText, szText, szName);
+		if (style != NULL) {
+			Utils::appendText(&output, &outputSize, "</span>");
+			free(style);
+		}
+        Utils::appendText(&output, &outputSize, "</span></div>\n");
 		if (output != NULL) {
+			MessageBoxA(NULL, output, "Append event", MB_OK);
             view->write(output);
 			free(output);
 		}
+		if (szName!=NULL) delete szName;
+		if (szText!=NULL) delete szText;
     }
 }
 
