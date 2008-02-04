@@ -306,7 +306,7 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		if (dwData & IEEDD_GC_MSG_ON_NEW_LINE) {
 			Utils::appendText(&output, &outputSize, "<br>");
 		}
-		Utils::appendText(&output, &outputSize, "<span class=\"%s\">");
+		Utils::appendText(&output, &outputSize, "<span class=\"%s\">", className);
 		if (style != NULL) {
 			Utils::appendText(&output, &outputSize, "<span style=\"%s\">", style);
 		}
