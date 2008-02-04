@@ -317,7 +317,6 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		}
         Utils::appendText(&output, &outputSize, "</span></div>\n");
 		if (output != NULL) {
-			MessageBoxA(NULL, output, "Append event", MB_OK);
             view->write(output);
 			free(output);
 		}
