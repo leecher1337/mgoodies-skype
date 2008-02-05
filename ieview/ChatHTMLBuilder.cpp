@@ -101,16 +101,8 @@ char *ChatHTMLBuilder::timestampToString(DWORD dwData, time_t check)
     tm_today = tm_now;
     tm_today.tm_hour = tm_today.tm_min = tm_today.tm_sec = 0;
     today = mktime(&tm_today);
-	if (dwData&IEEDD_GC_SHOW_DATE && dwData&IEEDD_GC_SHOW_TIME) {
-		if (dwData&IEEDD_GC_LONG_DATE) {
-			dbtts.szFormat = dwData&IEEDD_GC_SECONDS ? (char *)"D s" : (char *)"D t";
-		} else {
-			dbtts.szFormat = dwData&IEEDD_GC_SECONDS ? (char *)"d s" : (char *)"d t";
-		}
-	} else if (dwData&IEEDD_GC_SHOW_DATE) {
-		dbtts.szFormat = dwData&IEEDD_GC_LONG_DATE ? (char *)"D" : (char *)"d";
-	} else if (dwData&IEEDD_GC_SHOW_TIME) {
-		dbtts.szFormat = dwData&IEEDD_GC_SECONDS ? (char *)"s" : (char *)"t";
+	if (dwData&IEEDD_GC_SHOW_TIME) {
+		dbtts.szFormat = (char *)"t";
 	} else {
 		dbtts.szFormat = (char *)"";
 	}
@@ -189,7 +181,6 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 
 	DWORD iconFlags = DBGetContactSettingDword(NULL, CHATMOD, CHAT_ICON_FLAGS, 0);
     IEVIEWEVENTDATA* eventData = event->eventData;
-	MessageBoxA(NULL, "Append event 2", "ASASAS", MB_OK);
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
 		//DWORD dwFlags = eventData->dwFlags;
 		const char *iconFile = "";
@@ -199,13 +190,17 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		int isSent = eventData->bIsMe;
 		int outputSize;
 		char *output = NULL;
-		char *szName = NULL, *szText = NULL;
+		char *szName = NULL, *szText = NULL, *szText2 = NULL;
 		const char *className;
 		const char *eventText = "%s";
 		bool showNick = false;
 		bool showIcon = false;
+		bool switchNickAndText = false;
+		bool showText2First = false;
+		bool showText2Second = false;
+		bool addColonAndEventText = false;
 
-		if (eventData->dwFlags & IEEDF_UNICODE) {
+		if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
 			szText = encodeUTF8(NULL, event->pszProto, (wchar_t *)eventData->pszText, ENF_ALL);
 		} else {
 			szText = encodeUTF8(NULL, event->pszProto, (char *)eventData->pszText, ENF_ALL);
@@ -214,6 +209,11 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			szName = encodeUTF8(NULL, event->pszProto, (wchar_t *) eventData->pszNick, ENF_NAMESMILEYS);
 		} else {
 			szName = encodeUTF8(NULL, event->pszProto, (char *) eventData->pszNick, ENF_NAMESMILEYS);
+		}
+		if (eventData->dwFlags & IEEDF_UNICODE_TEXT2) {
+			szText2 = encodeUTF8(NULL, event->pszProto, (wchar_t *)eventData->pszText2, ENF_ALL);
+		} else {
+			szText2 = encodeUTF8(NULL, event->pszProto, (char *)eventData->pszText2, ENF_ALL);
 		}
 		if (eventData->iType == IEED_GC_EVENT_MESSAGE) {
 			iconFile = isSent ? "message_out_chat.gif" : "message_in_chat.gif";
@@ -233,12 +233,18 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
                 Utils::appendText(&style, &styleSize, "font-style: %s;", eventData->fontStyle & IE_FONT_ITALIC ? "italic" : "normal");
                 Utils::appendText(&style, &styleSize, "text-decoration: %s;", eventData->fontStyle & IE_FONT_UNDERLINE ? "underline" : "none");
 			}
+			switchNickAndText = true;
 		} else {
-			if (eventData->iType == IEED_GC_EVENT_JOIN) {
+			if (eventData->iType == IEED_GC_EVENT_ACTION) {
+				iconFile = "action.gif";
+                className = "action";
+				eventText = "%s %s";
+			} else if (eventData->iType == IEED_GC_EVENT_JOIN) {
 				iconFile = "join.gif";
                 className = "userJoined";
-				if (!eventData->bIsMe) {
-					eventText = "You have has joined %s";
+				if (eventData->bIsMe) {
+					switchNickAndText = true;
+					eventText = "You have joined %s";
 				} else {
 					eventText = "%s has joined";
 				}
@@ -246,42 +252,62 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 				iconFile = "part.gif";
                 className = "userLeft";
 				eventText = "%s has left";
+				addColonAndEventText = true;
 			} else if (eventData->iType == IEED_GC_EVENT_QUIT) {
 				iconFile = "quit.gif";
                 className = "userDisconnected";
-				eventText = "%s disconnected: %s";
+				eventText = "%s has disconnected";
+				addColonAndEventText = true;
 			} else if (eventData->iType == IEED_GC_EVENT_NICK) {
 				iconFile = "nick.gif";
                 className = "nickChange";
-				eventText = "%s is now known as %s";
-			} else if (eventData->iType == IEED_GC_EVENT_ACTION) {
-				iconFile = "action.gif";
-                className = "action";
-				eventText = "%s %s";
+				if (eventData->bIsMe) {
+					switchNickAndText = true;
+					eventText = "You are now known as %s";
+				} else {
+					eventText = "%s is now known as %s";
+				}
 			} else if (eventData->iType == IEED_GC_EVENT_KICK) {
 				iconFile = "kick.gif";
                 className = "userKicked";
-				eventText = "%s was kicked: %s";
+				eventText = "%s kicked %s";
+				showText2First = true;
+				addColonAndEventText = true;
 			} else if (eventData->iType == IEED_GC_EVENT_NOTICE) {
 				iconFile = "notice.gif";
                 className = "notice";
-				eventText = "Notice from %s: %s";
-			} else if (eventData->iType == IEED_GC_EVENT_INFORMATION) {
-				iconFile = "info.gif";
-                className = "information";
-				eventText = "";
+				eventText = "Notice from %s";
+				addColonAndEventText = true;
+			} else if (eventData->iType == IEED_GC_EVENT_TOPIC) {
+				iconFile = "topic.gif";
+                className = "topicChange";
+				eventText = "The topic is '%s'";
+				if (szName != NULL) {
+					if (szText2 != NULL) {
+						eventText = "The topic is \'%s\' (set by %s on %s)";
+					} else {
+						eventText = "The topic is \'%s\' (set by %s)";
+					}
+				}
 			} else if (eventData->iType == IEED_GC_EVENT_ADDSTATUS) {
 				iconFile = "addstatus.gif";
                 className = "statusEnable";
-				eventText = "%s enables status for %s";
+				eventText = "%s enables '%s' status for %s";
+				showText2Second = true;
+				switchNickAndText = true;
 			} else if (eventData->iType == IEED_GC_EVENT_REMOVESTATUS) {
 				iconFile = "removestatus.gif";
                 className = "statusDisable";
-				eventText = "%s disables status for %s";
+				eventText = "%s disables '%s' status for %s";
+				showText2Second = true;
+				switchNickAndText = true;
 			} else {
-				iconFile = "topic.gif";
-                className = "topicChange";
-				eventText = "The topic is \'%s\' (set by %s)";
+				switchNickAndText = true;
+				if (eventData->bIsMe) {
+					eventText = "--> %s";
+				} else {
+					eventText = "%s";
+				}
 			}
 			if (eventText != NULL) {
 				eventText = Translate(eventText);
@@ -289,17 +315,19 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			if (eventData->iType == IEED_GC_EVENT_TOPIC ||
 				eventData->iType == IEED_GC_EVENT_ADDSTATUS ||
 				eventData->iType == IEED_GC_EVENT_REMOVESTATUS) {
-				Utils::appendText(&output, &outputSize, eventText, szText, szName);
-			} else {
-				Utils::appendText(&output, &outputSize, eventText, szName, szText);
+				switchNickAndText = true;
 			}
 		}
 		Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
-		if (dwData & IEEDD_GC_SHOW_TIME || dwData & IEEDD_GC_SHOW_DATE) {
+		if (dwData & IEEDD_GC_SHOW_ICON) {
+			Utils::appendText(&output, &outputSize, "<img class=\"img\" src=\"file://%s/plugins/ieview/%s\"/> ",
+						workingDir, iconFile);
+		}
+		if (dwData & IEEDD_GC_SHOW_TIME) {
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
 						isSent ? "timestamp" : "timestamp", timestampToString(dwData, eventData->time));
 		}
-		if (dwData & IEEDD_GC_SHOW_NICK) {
+		if ((dwData & IEEDD_GC_SHOW_NICK)) { //eventData->iType == IEED_GC_EVENT_MESSAGE && (
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: </span>",
 						isSent ? "nameOut" : "nameIn", szName);
 		}
@@ -310,7 +338,24 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		if (style != NULL) {
 			Utils::appendText(&output, &outputSize, "<span style=\"%s\">", style);
 		}
-		Utils::appendText(&output, &outputSize, eventText, szText, szName);
+		eventText = Utils::UTF8Encode(eventText);
+		if (switchNickAndText) {
+			if (showText2First) {
+				Utils::appendText(&output, &outputSize, eventText, szText2, szText, szName);
+			} else if (showText2Second) {
+				Utils::appendText(&output, &outputSize, eventText, szText, szText2, szName);
+			} else {
+				Utils::appendText(&output, &outputSize, eventText, szText, szName, szText2);
+			}
+		} else {
+			if (showText2First) {
+				Utils::appendText(&output, &outputSize, eventText, szText2, szName, szText);
+			} else if (showText2Second) {
+				Utils::appendText(&output, &outputSize, eventText, szName, szText2, szText);
+			} else {
+				Utils::appendText(&output, &outputSize, eventText, szName, szText, szText2);
+			}
+		}
 		if (style != NULL) {
 			Utils::appendText(&output, &outputSize, "</span>");
 			free(style);
@@ -320,8 +365,10 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
             view->write(output);
 			free(output);
 		}
+		if (eventText!=NULL) delete eventText;
 		if (szName!=NULL) delete szName;
 		if (szText!=NULL) delete szText;
+		if (szText2!=NULL) delete szText2;
     }
 }
 
