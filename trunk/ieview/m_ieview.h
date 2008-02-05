@@ -108,10 +108,8 @@ typedef struct {
 
 /* GC-related dwData bit flags */
 #define IEEDD_GC_SHOW_NICK			0x00000001
-#define IEEDD_GC_SHOW_DATE			0x00000002
-#define IEEDD_GC_SHOW_TIME			0x00000004
-#define IEEDD_GC_SECONDS			0x00000008
-#define IEEDD_GC_LONG_DATE			0x00000010
+#define IEEDD_GC_SHOW_TIME			0x00000002
+#define IEEDD_GC_SHOW_ICON			0x00000004
 #define IEEDD_GC_MSG_ON_NEW_LINE	0x00001000
 
 #define IE_FONT_BOLD			0x000100	// Bold font flag
