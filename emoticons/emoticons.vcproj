@@ -454,6 +454,10 @@
 				RelativePath="resource.h"
 				>
 			</File>
+			<File
+				RelativePath=".\selwin.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -739,6 +743,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\selwin.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter

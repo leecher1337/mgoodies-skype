@@ -36,7 +36,7 @@ typedef struct _tagINSERTANISMILEY
 #ifdef _cplusplus
 extern "C" {
 #endif
-    static BOOL InsertAnimatedSmiley(HWND _hwnd, TCHAR * _szFilename, COLORREF _dwBack, int _nHeight, TCHAR * _szText)
+static BOOL InsertAnimatedSmiley(HWND _hwnd, TCHAR * _szFilename, COLORREF _dwBack, int _nHeight, TCHAR * _szText)
     {
         static int bServiceExists=-1;        
         INSERTANISMILEY ias={0};

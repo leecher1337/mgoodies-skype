@@ -126,7 +126,7 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 				pd->max_height = 0;
 				pd->max_width = 0;
-				for(int j = 0; j < pd->pack->images.getCount(); j++)
+				for(int j = 0; j < pd->pack->images.getCount() && j < 15; j++)
 					LoadImage(pd->pack->images[j], pd->max_height, pd->max_width);
 
 				SendDlgItemMessage(hwndDlg, IDC_PACK, LB_ADDSTRING, 0, (LONG) pd);

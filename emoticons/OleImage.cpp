@@ -14,39 +14,50 @@ static ImageTimerMapType timers;
 
 
 
-OleImage::OleImage(HWND aParent, const TCHAR *aFilename, const TCHAR *aText)
+OleImage::OleImage(const TCHAR *aFilename, const TCHAR *aText, const TCHAR *aTooltip)
 {
 	memset(&si, 0, sizeof(si));
 	memset(&ag, 0, sizeof(ag));
 
 	refCount = 1;
-	hwndParent = aParent;
 	filename = mir_t2a(aFilename);
+	originalFilename = mir_tstrdup(aFilename);
 	text = mir_tstrdup(aText);
+	closed = FALSE;
 
+	if (aTooltip == NULL)
+		tooltip = NULL;
+	else
+	{
+#ifdef UNICODE
+		tooltip = SysAllocString(aTooltip);
+#else
+		WCHAR *wtext = mir_t2u(aTooltip);
+		tooltip = SysAllocString(wtext);
+		mir_free(wtext);
+#endif
+	}
+
+	clientSite = NULL;
 	oleAdviseHolder = NULL;
 	viewAdviseSink = NULL;
 
-	animated = LoadAnimatedGif();
+	if (!LoadImages())
+		return;
 
-	if (!animated)
-	{
-		if (!LoadStaticImage())
-			return;
-	}
-
-	HDC hdc = GetDC(NULL);
-	int ppiX = GetDeviceCaps(hdc, LOGPIXELSX);
-	int ppiY = GetDeviceCaps(hdc, LOGPIXELSY);
-	ReleaseDC(NULL, hdc);
-
-	sizel.cx = (2540 * (width + 1) + ppiX / 2) / ppiX;
-	sizel.cy = (2540 * (height + 1) + ppiY / 2) / ppiY;
+	CalcSize();
 }
+
 
 OleImage::~OleImage()
 {
 	KillTimer();
+
+	if (clientSite != NULL)
+	{
+		clientSite->Release();
+		clientSite = NULL;
+	}
 
 	if (oleAdviseHolder != NULL)
 	{
@@ -60,6 +71,62 @@ OleImage::~OleImage()
 		viewAdviseSink = NULL;
 	}
 
+	DestroyImages();
+
+	if (tooltip != NULL) 
+	{
+		SysFreeString(tooltip);
+		tooltip = NULL;
+	}
+	mir_free(filename);
+	mir_free(originalFilename);
+	mir_free(text);
+}
+
+
+BOOL OleImage::ShowDownloadingIcon(BOOL show)
+{
+	DestroyImages();
+
+	if (show)
+	{
+		mir_free(filename);
+
+		size_t len = lstrlen(protocolsFolder) + 20;
+		filename = (char *) mir_alloc(len * sizeof(char));
+		mir_snprintf(filename, len, TCHAR_STR_PARAM "\\downloading.gif", protocolsFolder);
+	}
+	else
+	{
+		mir_free(filename);
+
+		filename = mir_t2a(originalFilename);
+	}
+
+	if (!LoadImages())
+		return FALSE;
+
+	CalcSize();
+
+	OnImageChange();
+
+	return TRUE;
+}
+
+
+BOOL OleImage::LoadImages()
+{
+	animated = LoadAnimatedGif();
+	if (!animated)
+		if (!LoadStaticImage())
+			return FALSE;
+
+	return TRUE;
+}
+
+
+void OleImage::DestroyImages()
+{
 	if (animated)
 	{
 		DestroyAnimatedGif();
@@ -70,18 +137,38 @@ OleImage::~OleImage()
 		si.hBmp = NULL;
 	}
 
-	mir_free(filename);
-	mir_free(text);
+	memset(&si, 0, sizeof(si));
+	memset(&ag, 0, sizeof(ag));
 }
+
+
+const TCHAR * OleImage::GetFilename() const
+{
+	return originalFilename;
+}
+
 
 const TCHAR * OleImage::GetText() const
 {
 	return text;
 }
 
+
 BOOL OleImage::isValid() const
 {
 	return animated || si.hBmp != NULL;
+}
+
+
+void OleImage::CalcSize()
+{
+	HDC hdc = GetDC(NULL);
+	int ppiX = GetDeviceCaps(hdc, LOGPIXELSX);
+	int ppiY = GetDeviceCaps(hdc, LOGPIXELSY);
+	ReleaseDC(NULL, hdc);
+
+	sizel.cx = (2540 * (width + 1) + ppiX / 2) / ppiX;
+	sizel.cy = (2540 * (height + 1) + ppiY / 2) / ppiY;
 }
 
 
@@ -105,6 +192,10 @@ HRESULT STDMETHODCALLTYPE OleImage::QueryInterface(/* [in] */ REFIID riid, /* [i
 	{
 		*ppvObject = (IOleObject *) this;
 	}
+	else if (riid == __uuidof(ITooltipData))
+	{
+		*ppvObject = (ITooltipData *) this;
+	}
 	else if (riid == IID_IUnknown) 
 	{
 		*ppvObject = (OleImage *) this;
@@ -119,10 +210,12 @@ HRESULT STDMETHODCALLTYPE OleImage::QueryInterface(/* [in] */ REFIID riid, /* [i
 	return S_OK;
 }
 
+
 ULONG STDMETHODCALLTYPE OleImage::AddRef(void)
 {
 	return InterlockedIncrement(&refCount);
 }
+
 
 ULONG STDMETHODCALLTYPE OleImage::Release(void)
 {
@@ -139,13 +232,22 @@ ULONG STDMETHODCALLTYPE OleImage::Release(void)
 
 HRESULT STDMETHODCALLTYPE OleImage::SetClientSite(/* [unique][in] */ IOleClientSite *pClientSite)
 {
-	return E_NOTIMPL;
+	if (clientSite != NULL)
+		clientSite->Release();
+
+	clientSite = pClientSite;
+
+	if (clientSite != NULL)
+		clientSite->AddRef();
+
+	return S_OK;
 }
 
 
 HRESULT STDMETHODCALLTYPE OleImage::GetClientSite(/* [out] */ IOleClientSite **ppClientSite)
 {
-	return E_NOTIMPL;
+	*ppClientSite = clientSite;
+	return S_OK;
 }
 
 
@@ -162,10 +264,12 @@ HRESULT STDMETHODCALLTYPE OleImage::Close(/* [in] */ DWORD dwSaveOption)
 	if (animated)
 		ag.started = FALSE;
 
+	closed = TRUE;
+
 //	if (viewAdviseSink != NULL)
 //	{
-//		viewAdviseSink->Release();
-//		viewAdviseSink = NULL;
+//		viewAdviseSink->OnClose();
+//		//viewAdviseSink = NULL;
 //	}
 
 	return S_OK;
@@ -309,7 +413,13 @@ HRESULT STDMETHODCALLTYPE OleImage::Draw(/* [in] */ DWORD dwDrawAspect, /* [in] 
 	if (lprcBounds == NULL)
 		return E_INVALIDARG;
 
+	if (closed)
+		closed = FALSE;
+
 	int oldBkMode = SetBkMode(hdcDraw, TRANSPARENT);
+
+	int w = min(lprcBounds->right - lprcBounds->left, width);
+	int h = min(lprcBounds->bottom - lprcBounds->top, height);
 
 	if (animated)
 	{
@@ -322,7 +432,7 @@ HRESULT STDMETHODCALLTYPE OleImage::Draw(/* [in] */ DWORD dwDrawAspect, /* [in] 
 		BLENDFUNCTION bf = {0};
 		bf.SourceConstantAlpha = 255;
 		bf.AlphaFormat = AC_SRC_ALPHA;
-		AlphaBlend(hdcDraw, lprcBounds->left, lprcBounds->top, width, height, hdcImg, 0, 0, width, height, bf);
+		AlphaBlend(hdcDraw, lprcBounds->left, lprcBounds->top, w, h, hdcImg, 0, 0, w, h, bf);
 
 		SelectObject(hdcImg, oldBmp);
 		DeleteDC(hdcImg);
@@ -333,7 +443,7 @@ HRESULT STDMETHODCALLTYPE OleImage::Draw(/* [in] */ DWORD dwDrawAspect, /* [in] 
 			ag.started = TRUE;
 		}
 	}
-	else
+	else if (si.hBmp != NULL)
 	{
 		HDC hdcImg = CreateCompatibleDC(hdcDraw);
 		HBITMAP oldBmp = (HBITMAP) SelectObject(hdcImg, si.hBmp);
@@ -343,11 +453,11 @@ HRESULT STDMETHODCALLTYPE OleImage::Draw(/* [in] */ DWORD dwDrawAspect, /* [in] 
 			BLENDFUNCTION bf = {0};
 			bf.SourceConstantAlpha = 255;
 			bf.AlphaFormat = AC_SRC_ALPHA;
-			AlphaBlend(hdcDraw, lprcBounds->left, lprcBounds->top, width, height, hdcImg, 0, 0, width, height, bf);
+			AlphaBlend(hdcDraw, lprcBounds->left, lprcBounds->top, w, h, hdcImg, 0, 0, w, h, bf);
 		}
 		else
 		{
-			BitBlt(hdcDraw, lprcBounds->left, lprcBounds->top, width, height, hdcImg, 0, 0, SRCCOPY);
+			BitBlt(hdcDraw, lprcBounds->left, lprcBounds->top, w, h, hdcImg, 0, 0, SRCCOPY);
 		}
 
 		SelectObject(hdcImg, oldBmp);
@@ -378,31 +488,6 @@ HRESULT STDMETHODCALLTYPE OleImage::Unfreeze(/* [in] */ DWORD dwFreeze)
 }
 
 
-void OleImage::SendOnViewChage()
-{
-	if (viewAdviseSink == NULL)
-		return;
-
-	viewAdviseSink->OnViewChange(DVASPECT_CONTENT, -1);
-	if (viewAdvf & ADVF_ONLYONCE)
-	{
-		viewAdviseSink->Release();
-		viewAdviseSink = NULL;
-	}
-
-//	HWND hwndGrand = GetParent(hwndParent);
-//	if (hwndGrand != NULL)
-//	{
-//		FVCNDATA_NMHDR nmhdr = {0};
-//		nmhdr.cbSize = sizeof(FVCNDATA_NMHDR);
-//		nmhdr.hwndFrom = hwndParent;
-//		nmhdr.code = NM_FIREVIEWCHANGE;
-//		nmhdr.bAction = FVCA_SENDVIEWCHANGE;
-//		nmhdr.bEvent = FVCN_POSTFIRE;
-//		SendMessage(hwndGrand, WM_NOTIFY, (WPARAM) nmhdr.hwndFrom, (LPARAM) &nmhdr);
-//	}
-}
-
 HRESULT STDMETHODCALLTYPE OleImage::SetAdvise(/* [in] */ DWORD aspects, /* [in] */ DWORD advf, /* [unique][in] */ IAdviseSink *pAdvSink)
 {
 	if (aspects != DVASPECT_CONTENT) 
@@ -426,9 +511,116 @@ HRESULT STDMETHODCALLTYPE OleImage::SetAdvise(/* [in] */ DWORD aspects, /* [in] 
 
 /* [local] */ HRESULT STDMETHODCALLTYPE OleImage::GetAdvise(/* [unique][out] */ DWORD *pAspects, /* [unique][out] */ DWORD *pAdvf, /* [out] */ IAdviseSink **ppAdvSink)
 {
-	*ppAdvSink = NULL;
+	*pAspects = DVASPECT_CONTENT;
+	*pAdvf = viewAdvf;
+	*ppAdvSink = viewAdviseSink;
 
 	return S_OK;
+}
+
+
+
+// ITooltipData /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+HRESULT OleImage::SetTooltip(/* [in] */ BSTR aTooltip)
+{
+	if (tooltip != NULL) 
+	{
+		SysFreeString(tooltip);
+		tooltip = NULL;
+	}
+	if (aTooltip != NULL)
+		tooltip = SysAllocString(aTooltip);
+
+	return S_OK;
+}
+
+
+HRESULT OleImage::GetTooltip(/* [out, retval] */ BSTR * aTooltip)
+{
+	if (tooltip == NULL) 
+		*aTooltip = NULL;
+	else
+		*aTooltip = SysAllocString(tooltip);
+
+	return S_OK;
+}
+
+
+
+
+void OleImage::OnImageChange()
+{
+	if (closed)
+		return;
+
+	SendOnViewChage();
+	NotifyHpp();
+}
+
+
+void OleImage::NotifyHpp()
+{
+	if (clientSite == NULL)
+		return;
+
+	IOleWindow *oleWindow = NULL;
+	clientSite->QueryInterface(IID_IOleWindow, (void **) &oleWindow);
+	if (oleWindow != NULL)
+	{
+		HWND hwnd = NULL;
+		oleWindow->GetWindow(&hwnd);
+		if (hwnd != NULL)
+		{
+			HWND hwndGrand = GetParent(hwnd);
+			if (hwndGrand != NULL)
+			{
+				FVCNDATA_NMHDR nmhdr = {0};
+				nmhdr.cbSize = sizeof(FVCNDATA_NMHDR);
+				nmhdr.hwndFrom = hwnd;
+				nmhdr.code = NM_FIREVIEWCHANGE;
+				nmhdr.bAction = FVCA_SENDVIEWCHANGE;
+				nmhdr.bEvent = FVCN_POSTFIRE;
+				SendMessage(hwndGrand, WM_NOTIFY, (WPARAM) nmhdr.hwndFrom, (LPARAM) &nmhdr);
+			}
+		}
+		oleWindow->Release();
+	}
+}
+
+
+void OleImage::Invalidate()
+{
+	if (clientSite == NULL)
+		return;
+	
+	IOleWindow *oleWindow = NULL;
+	clientSite->QueryInterface(IID_IOleWindow, (void **) &oleWindow);
+	if (oleWindow != NULL)
+	{
+		HWND hwnd = NULL;
+		oleWindow->GetWindow(&hwnd);
+		if (hwnd != NULL)
+		{
+			InvalidateRect(hwnd, NULL, FALSE);
+		}
+		oleWindow->Release();
+	}
+}
+
+
+void OleImage::SendOnViewChage()
+{
+	if (viewAdviseSink == NULL)
+		return;
+
+	viewAdviseSink->OnViewChange(DVASPECT_CONTENT, -1);
+	if (viewAdvf & ADVF_ONLYONCE)
+	{
+		viewAdviseSink->Release();
+		viewAdviseSink = NULL;
+	}
 }
 
 
@@ -437,7 +629,6 @@ BOOL OleImage::LoadStaticImage()
 	// Load static image
 	DWORD transp;
 	si.hBmp = (HBITMAP) CallService(MS_AV_LOADBITMAP32, (WPARAM) &transp, (LPARAM) filename);
-
 	if (si.hBmp == NULL)
 		return FALSE;
 
@@ -693,8 +884,7 @@ void OleImage::OnTimer()
 	ag.frame.num = frame;
 	ag.started = FALSE;
 
-	// Notify the world
-	SendOnViewChage();
+	OnImageChange();
 }
 
 

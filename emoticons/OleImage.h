@@ -25,16 +25,17 @@ Boston, MA 02111-1307, USA.
 // {2FD9449B-7EBB-476a-A9DD-AE61382CCE08}
 static const GUID IID_IOleImage = { 0x2fd9449b, 0x7ebb, 0x476a, { 0xa9, 0xdd, 0xae, 0x61, 0x38, 0x2c, 0xce, 0x8 } };
 
-
-class OleImage : public IOleObject, IViewObject
+class OleImage : public IOleObject, public IViewObject, public ITooltipData
 {
 public:
-	OleImage(HWND aParent, const TCHAR *aFilename, const TCHAR *aText);
+	OleImage(const TCHAR *aFilename, const TCHAR *aText, const TCHAR *aTooltip);
 	virtual ~OleImage();
 
+	BOOL ShowDownloadingIcon(BOOL show);
 
 	BOOL isValid() const;
 	const TCHAR * GetText() const;
+	const TCHAR * GetFilename() const;
 	void OnTimer();
 
 
@@ -74,24 +75,37 @@ public:
 	virtual HRESULT STDMETHODCALLTYPE SetAdvise(/* [in] */ DWORD aspects, /* [in] */ DWORD advf, /* [unique][in] */ IAdviseSink *pAdvSink);
 	virtual /* [local] */ HRESULT STDMETHODCALLTYPE GetAdvise(/* [unique][out] */ DWORD *pAspects, /* [unique][out] */ DWORD *pAdvf, /* [out] */ IAdviseSink **ppAdvSink);
 
+	// ITooltipData
+	virtual HRESULT STDMETHODCALLTYPE SetTooltip(/* [in] */ BSTR aTooltip);
+	virtual HRESULT STDMETHODCALLTYPE GetTooltip(/* [out, retval] */ BSTR * aTooltip);
+
 protected: 
-	HWND hwndParent;
 	char *filename;
+	TCHAR *originalFilename;
 	TCHAR *text;
+	BSTR tooltip;
 	int width;
 	int height;
 	BOOL animated;
+	BOOL closed;
 
 	LONG refCount;
 
+	IOleClientSite *clientSite;
 	IOleAdviseHolder *oleAdviseHolder;
 	IAdviseSink *viewAdviseSink;
 	DWORD viewAdvf;
 	SIZEL sizel;
 
+	BOOL LoadImages();
+	void DestroyImages();
+	void CalcSize();
 	void SetTimer(int time);
 	void KillTimer();
+	void Invalidate();
 	void SendOnViewChage();
+	void OnImageChange();
+	void NotifyHpp();
 
 	BOOL LoadStaticImage();
 	BOOL LoadAnimatedGif();
