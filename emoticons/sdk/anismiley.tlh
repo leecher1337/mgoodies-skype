@@ -1,0 +1,78 @@
+// Created by Microsoft (R) C/C++ Compiler Version 14.00.50727.42 (48e453e7).
+//
+// c:\desenvolvimento\miranda\plugins\emoticons\unicode_debug\anismiley.tlh
+//
+// C++ source equivalent of Win32 type library C:\Desenvolvimento\Miranda\bin\debug unicode\Plugins\AniSmiley.dll
+// compiler-generated file created 02/07/08 at 01:32:06 - DO NOT EDIT!
+
+#pragma once
+#pragma pack(push, 8)
+
+#include <comdef.h>
+
+//
+// Forward references and typedefs
+//
+
+struct __declspec(uuid("518667de-537d-4790-8e93-48b9ce8ebad2"))
+/* LIBID */ __GifSmiley;
+struct /* coclass */ CGifSmileyCtrl;
+struct __declspec(uuid("58b32d03-1bd2-4840-992e-9ae799fd4ade"))
+/* interface */ ITooltipData;
+struct __declspec(uuid("cb64102b-8ce4-4a55-b050-131c435a3a3f"))
+/* interface */ IGifSmileyCtrl;
+
+//
+// Smart pointer typedef declarations
+//
+
+_COM_SMARTPTR_TYPEDEF(ITooltipData, __uuidof(ITooltipData));
+_COM_SMARTPTR_TYPEDEF(IGifSmileyCtrl, __uuidof(IGifSmileyCtrl));
+
+//
+// Type library items
+//
+
+struct __declspec(uuid("db35dd77-55e2-4905-8075-eb351bb5cbc1"))
+CGifSmileyCtrl;
+    // interface ITooltipData
+    // [ default ] interface IGifSmileyCtrl
+
+struct __declspec(uuid("58b32d03-1bd2-4840-992e-9ae799fd4ade"))
+ITooltipData : IUnknown
+{
+    //
+    // Raw methods provided by interface
+    //
+
+      virtual HRESULT __stdcall SetTooltip (
+        /*[in]*/ BSTR bstrHint ) = 0;
+      virtual HRESULT __stdcall GetTooltip (
+        /*[out,retval]*/ BSTR * bstrHint ) = 0;
+};
+
+struct __declspec(uuid("cb64102b-8ce4-4a55-b050-131c435a3a3f"))
+IGifSmileyCtrl : IUnknown
+{
+    //
+    // Raw methods provided by interface
+    //
+
+      virtual HRESULT __stdcall put_BackColor (
+        /*[in]*/ OLE_COLOR pclr ) = 0;
+      virtual HRESULT __stdcall get_BackColor (
+        /*[out,retval]*/ OLE_COLOR * pclr ) = 0;
+      virtual HRESULT __stdcall get_HWND (
+        /*[out,retval]*/ long * pHWND ) = 0;
+      virtual HRESULT __stdcall LoadFromFile (
+        /*[in]*/ BSTR bstrFileName ) = 0;
+      virtual HRESULT __stdcall LoadFromFileSized (
+        /*[in]*/ BSTR bstrFileName,
+        /*[in]*/ int nHeight ) = 0;
+      virtual HRESULT __stdcall SetHostWindow (
+        /*[in]*/ long hwndHostWindow,
+        /*[in]*/ int nNotyfyMode ) = 0;
+      virtual HRESULT __stdcall ShowHint ( ) = 0;
+};
+
+#pragma pack(pop)
