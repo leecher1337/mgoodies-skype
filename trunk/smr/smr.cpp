@@ -27,7 +27,7 @@ Boston, MA 02111-1307, USA.
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"Status Message Retriever",
-	PLUGIN_MAKE_VERSION(1,0,0,6),
+	PLUGIN_MAKE_VERSION(1,0,0,7),
 	"Retrieve status message based on timer / status change",
 	"Ricardo Pescuma Domenecci, Tomasz S³otwiñski",
 	"",
@@ -159,11 +159,11 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/smr_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/smr#Changelog";
+		upd.szBetaVersionURL = "http://pescuma.org/miranda/smr_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.org/miranda/smr#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Status Message Retriever ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/smr.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/smr.zip";
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
 		upd.cpbVersion = strlen((char *)upd.pbVersion);
