@@ -489,24 +489,20 @@ Check ProtocolStatusCheckMsg(HANDLE hContact, const char *protocol)
 
 			bool has_xstatus_name = false;
 			bool has_xstatus_message = false;
-			TCHAR name[256] = {0};
-			TCHAR msg[256] = {0};
 
 			DBVARIANT dbv;
-			if (!DBGetContactSettingTString(hContact, protocol, "XStatusName", &dbv))
+			if (!DBGetContactSettingString(hContact, protocol, "XStatusName", &dbv))
 			{
-				if (dbv.ptszVal != NULL && dbv.ptszVal[0] != _T('\0'))
+				if (dbv.pszVal != NULL && dbv.pszVal[0] != '\0')
 				{
-					lstrcpyn(name, dbv.ptszVal, sizeof(name));
 					has_xstatus_name = true;
 				}
 				DBFreeVariant(&dbv);
 			}
-			if (!DBGetContactSettingTString(hContact, protocol, "XStatusMsg", &dbv))
+			if (!DBGetContactSettingString(hContact, protocol, "XStatusMsg", &dbv))
 			{
-				if (dbv.ptszVal != NULL && dbv.ptszVal[0] != _T('\0'))
+				if (dbv.pszVal != NULL && dbv.pszVal[0] != '\0')
 				{
-					lstrcpyn(msg, dbv.ptszVal, sizeof(msg));
 					has_xstatus_message = true;
 				}
 				DBFreeVariant(&dbv);
@@ -557,24 +553,28 @@ void ProcessCheckNotToServer(Check what, HANDLE hContact, const char *protocol)
 		{
 			bool has_xstatus_name = false;
 			bool has_xstatus_message = false;
-			TCHAR name[256] = {0};
-			TCHAR msg[256] = {0};
+			char name[256];
+			char msg[256];
+			name[0] = '\0';
+			msg[0] = '\0';
 
 			DBVARIANT dbv;
-			if (!DBGetContactSettingTString(hContact, protocol, "XStatusName", &dbv))
+			if (!DBGetContactSettingString(hContact, protocol, "XStatusName", &dbv))
 			{
-				if (dbv.ptszVal != NULL && dbv.ptszVal[0] != _T('\0'))
+				if (dbv.pszVal != NULL && dbv.pszVal[0] != '\0')
 				{
-					lstrcpyn(name, dbv.ptszVal, sizeof(name));
+					strncpy(name, dbv.pszVal, sizeof(name));
+					name[sizeof(name)-1] = '\0';
 					has_xstatus_name = true;
 				}
 				DBFreeVariant(&dbv);
 			}
-			if (!DBGetContactSettingTString(hContact, protocol, "XStatusMsg", &dbv))
+			if (!DBGetContactSettingString(hContact, protocol, "XStatusMsg", &dbv))
 			{
-				if (dbv.ptszVal != NULL && dbv.ptszVal[0] != _T('\0'))
+				if (dbv.pszVal != NULL && dbv.pszVal[0] != '\0')
 				{
-					lstrcpyn(msg, dbv.ptszVal, sizeof(msg));
+					strncpy(msg, dbv.pszVal, sizeof(msg));
+					msg[sizeof(msg)-1] = '\0';
 					has_xstatus_message = true;
 				}
 				DBFreeVariant(&dbv);
@@ -599,15 +599,15 @@ void ProcessCheckNotToServer(Check what, HANDLE hContact, const char *protocol)
 			{
 				if (has_xstatus_name && has_xstatus_message)
 				{
-					if (lstrcmp(name, msg) == 0)
+					if (strcmp(name, msg) == 0)
 					{
 						// Both are the same, use only one
 						SetStatusMessage(hContact, name);
 					}
 					else
 					{
-						TCHAR message[512];
-						mir_sntprintf(message, sizeof(message), _T("%s: %s"), name, msg);
+						char message[512];
+						mir_snprintf(message, sizeof(message), "%s: %s", name, msg);
 						SetStatusMessage(hContact, message);
 					}
 				}

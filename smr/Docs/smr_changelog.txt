@@ -2,6 +2,9 @@ Status Message Retriever
 
 Changelog:
 
+. 1.0.0.7
+  * Fix for crash
+
 . 1.0.0.6
   * Fix for crash at startup
 
