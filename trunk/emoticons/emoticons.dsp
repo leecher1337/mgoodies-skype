@@ -190,6 +190,10 @@ SOURCE=.\options.h
 
 SOURCE=.\resource.h
 # End Source File
+# Begin Source File
+
+SOURCE=.\selwin.h
+# End Source File
 # End Group
 # Begin Group "Resource Files"
 
@@ -225,6 +229,10 @@ SOURCE=.\OleImage.cpp
 # Begin Source File
 
 SOURCE=.\options.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\selwin.cpp
 # End Source File
 # End Group
 # Begin Group "Docs"

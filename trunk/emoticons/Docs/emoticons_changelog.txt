@@ -2,6 +2,11 @@ Emoticons
 
 Changelog:
 
+. 0.0.0.9
+  + Use AniSmiley if avaiable (recomended) or my control as fallback (more buggy)
+  * Updated AniSmiley to latest version (a lot of fixes)
+  * Fixes and other stuff
+
 . 0.0.0.8
   + Created my own ole image control
 

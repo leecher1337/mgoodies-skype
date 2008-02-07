@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Emoticons",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,8),
+	PLUGIN_MAKE_VERSION(0,0,0,9),
 	"Emoticons",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -70,6 +70,8 @@ FI_INTERFACE *fei = NULL;
 
 LIST<Module> modules(10);
 LIST<EmoticonPack> packs(10);
+LIST<Contact> contacts(10);
+LIST<OleImage> downloading(10);
 
 BOOL LoadModule(Module *m);
 void LoadModules();
@@ -80,11 +82,13 @@ void FillModuleImages(EmoticonPack *pack);
 
 EmoticonPack *GetPack(TCHAR *name);
 Module *GetModule(const char *name);
-
+Contact * GetContact(HANDLE hContact);
+CustomEmoticon *GetCustomEmoticon(Contact *c, TCHAR *text);
 
 int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int PreShutdown(WPARAM wParam, LPARAM lParam);
 int MsgWindowEvent(WPARAM wParam, LPARAM lParam);
+int CustomSmileyReceivedEvent(WPARAM wParam, LPARAM lParam);
 
 int ReplaceEmoticonsService(WPARAM wParam, LPARAM lParam);
 int GetInfo2Service(WPARAM wParam, LPARAM lParam);
@@ -277,6 +281,23 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	hServices[1] = CreateServiceFunction(MS_SMILEYADD_GETINFO2, GetInfo2Service);
 	hServices[2] = CreateServiceFunction(MS_SMILEYADD_SHOWSELECTION, ShowSelectionService);
 
+	// Hook custom emoticons notification
+	PROTOCOLDESCRIPTOR **protos;
+	int count;
+	CallService(MS_PROTO_ENUMPROTOCOLS, (WPARAM)&count, (LPARAM)&protos);
+	for (int i = 0; i < count; i++)
+	{
+		if (protos[i]->type != PROTOTYPE_PROTOCOL)
+			continue;
+
+		if (protos[i]->szName == NULL || protos[i]->szName[0] == '\0')
+			continue;
+
+		char evname[250];
+		mir_snprintf(evname, MAX_REGS(evname), "%s%s", protos[i]->szName, ME_CUSTOMSMILEY_RECEIVED);
+		HookEvent(evname, &CustomSmileyReceivedEvent);
+	}
+
 	loaded = TRUE;
 
 	return 0;
@@ -286,6 +307,19 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
 	int i;
+
+	for(i = downloading.getCount() - 1; i >= 0; i--)
+	{
+		OleImage *oimg = downloading[i];
+		oimg->Release();
+
+		downloading.remove(i);
+	}
+
+	for(i = 0; i < packs.getCount(); i++)
+		for(int j = 0; j < packs[i]->images.getCount(); j++)
+			ReleaseImage(packs[i]->images[j]);
+
 	for(i = 0; i < MAX_REGS(hServices); i++)
 		DestroyServiceFunction(hServices[i]);
 
@@ -299,90 +333,136 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 
 
 // Return the size difference with the original text
-int ReplaceEmoticonBackwards(RichEditCtrl &rec, TCHAR *text, int text_len, int last_pos, TCHAR next_char, Module *module)
+int ReplaceEmoticonBackwards(RichEditCtrl &rec, Contact *contact, Module *module, TCHAR *text, int text_len, int last_pos, TCHAR next_char)
 {
-	if (opts.only_replace_isolated && next_char != _T('\0') && /*!_istpunct(next_char) &&*/ !_istspace(next_char))
-		return 0;
-
 	// This are needed to allow 2 different emoticons that end the same way
-	Emoticon *found = NULL;
-	int foundLen = -1;
-	TCHAR *foundText;
+	TCHAR *found_path = NULL;
+	int found_len = -1;
+	TCHAR *found_text;
+	BOOL down = FALSE;
 
-	for(int i = 0; i < module->emoticons.getCount(); i++)
-	{
-		Emoticon *e = module->emoticons[i];
-		if (e->img == NULL)
-			continue;
-
-		for(int j = 0; j < e->texts.getCount(); j++)
+	// Replace normal emoticons
+	if (!opts.only_replace_isolated || next_char == _T('\0') || _istspace(next_char))
+	{	
+		for(int i = 0; i < module->emoticons.getCount(); i++)
 		{
-			TCHAR *txt = e->texts[j];
+			Emoticon *e = module->emoticons[i];
+			if (e->img == NULL)
+				continue;
+
+			for(int j = 0; j < e->texts.getCount(); j++)
+			{
+				TCHAR *txt = e->texts[j];
+				int len = lstrlen(txt);
+				if (last_pos < len || text_len < len)
+					continue;
+
+				if (len <= found_len)
+					continue;
+
+				if (_tcsncmp(&text[text_len - len], txt, len) != 0)
+					continue;
+
+				if (opts.only_replace_isolated && text_len > len 
+						&& !_istspace(text[text_len - len - 1]))
+					continue;
+
+				found_path = e->img->path;
+				found_len = len;
+				found_text = txt;
+			}
+		}
+	}
+
+	// Replace custom smileys
+	if (contact != NULL)
+	{
+		for(int i = 0; i < contact->emoticons.getCount(); i++)
+		{
+			CustomEmoticon *e = contact->emoticons[i];
+
+			TCHAR *txt = e->text;
 			int len = lstrlen(txt);
 			if (last_pos < len || text_len < len)
 				continue;
 
-			if (len <= foundLen)
+			if (len <= found_len)
 				continue;
 
 			if (_tcsncmp(&text[text_len - len], txt, len) != 0)
 				continue;
 
-			if (opts.only_replace_isolated && text_len > len 
-					/*&& !_istpunct(text[text_len - len - 1])*/
-					&& !_istspace(text[text_len - len - 1]))
-				continue;
-
-
-			found = e;
-			foundLen = len;
-			foundText = txt;
+			found_path = e->path;
+			found_len = len;
+			found_text = txt;
+			down = e->downloading;
 		}
 	}
 
 	int ret = 0;
 
-	if (found != NULL)
+	if (found_path != NULL)
 	{
 		// Found ya
-		CHARRANGE sel = { last_pos - foundLen, last_pos };
+		CHARRANGE sel = { last_pos - found_len, last_pos };
 		SendMessage(rec.hwnd, EM_EXSETSEL, 0, (LPARAM) &sel);
 
-		CHARFORMAT2 cf;
-		memset(&cf, 0, sizeof(CHARFORMAT2));
-		cf.cbSize = sizeof(CHARFORMAT2);
-		cf.dwMask = CFM_BACKCOLOR;
-		SendMessage(rec.hwnd, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM) &cf);
-
-		if (cf.dwEffects & CFE_AUTOBACKCOLOR)
+		if (ServiceExists(MS_INSERTANISMILEY))
 		{
-			cf.crBackColor = SendMessage(rec.hwnd, EM_SETBKGNDCOLOR, 0, GetSysColor(COLOR_WINDOW));
-			SendMessage(rec.hwnd, EM_SETBKGNDCOLOR, 0, cf.crBackColor);
+			CHARFORMAT2 cf;
+			memset(&cf, 0, sizeof(CHARFORMAT2));
+			cf.cbSize = sizeof(CHARFORMAT2);
+			cf.dwMask = CFM_BACKCOLOR;
+			SendMessage(rec.hwnd, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM) &cf);
+
+			if (cf.dwEffects & CFE_AUTOBACKCOLOR)
+			{
+				cf.crBackColor = SendMessage(rec.hwnd, EM_SETBKGNDCOLOR, 0, GetSysColor(COLOR_WINDOW));
+				SendMessage(rec.hwnd, EM_SETBKGNDCOLOR, 0, cf.crBackColor);
+			}
+
+			if (InsertAnimatedSmiley(rec.hwnd, found_path, cf.crBackColor, 0 , found_text))
+			{
+				ret = - found_len + 1;
+			}
 		}
-		
-		OleImage *img = new OleImage(rec.hwnd, found->img->path, foundText);
-		if (!img->isValid())
+		else
 		{
-			delete img;
-			return 0;
+			OleImage *img = new OleImage(found_path, found_text, found_text);
+			if (!img->isValid())
+			{
+				if (down && img->ShowDownloadingIcon(TRUE))
+				{
+					img->AddRef();
+					downloading.insert(img);
+				}
+				else
+				{
+					delete img;
+					return 0;
+				}
+			}
+
+			IOleClientSite *clientSite; 
+			rec.ole->GetClientSite(&clientSite);
+
+			REOBJECT reobject = {0};
+			reobject.cbStruct = sizeof(REOBJECT);
+			reobject.cp = REO_CP_SELECTION;
+			reobject.dvaspect = DVASPECT_CONTENT;
+			reobject.poleobj = img;
+			reobject.polesite = clientSite;
+			reobject.dwFlags = REO_BELOWBASELINE; // | REO_DYNAMICSIZE;
+
+			if (rec.ole->InsertObject(&reobject) == S_OK)
+			{
+				img->SetClientSite(clientSite);
+				ret = - found_len + 1;
+			}
+
+			clientSite->Release();
+			img->Release();
 		}
-
-		IOleClientSite *clientSite; 
-		rec.ole->GetClientSite(&clientSite);
-
-		REOBJECT reobject = {0};
-		reobject.cbStruct = sizeof(REOBJECT);
-		reobject.cp = REO_CP_SELECTION ;
-		reobject.dvaspect = DVASPECT_CONTENT;
-		reobject.poleobj = img;
-		reobject.polesite = clientSite;
-		reobject.dwFlags = REO_BELOWBASELINE;
-
-		if (rec.ole->InsertObject(&reobject) == S_OK)
-			ret = - foundLen + 1;
-
-		clientSite->Release();
-		img->Release();
 	}
 
 	return ret;
@@ -482,11 +562,11 @@ BOOL IsHidden(RichEditCtrl &rec, int start, int end)
 }
 
 
-void ReplaceAllEmoticonsBackwards(RichEditCtrl &rec, Module *module, TCHAR *text, int len, TCHAR next_char, int start, CHARRANGE &__old_sel)
+void ReplaceAllEmoticonsBackwards(RichEditCtrl &rec, Contact *contact, Module *module, TCHAR *text, int len, TCHAR next_char, int start, CHARRANGE &__old_sel)
 {
 	for(int i = len; i > 0; i--)
 	{
-		int dif = ReplaceEmoticonBackwards(rec, text, i, start + i, i == len ? next_char : text[i], module);
+		int dif = ReplaceEmoticonBackwards(rec, contact, module, text, i, start + i, i == len ? next_char : text[i]);
 		if (dif != 0)
 		{
 			FixSelection(__old_sel.cpMax, i, dif);
@@ -498,14 +578,14 @@ void ReplaceAllEmoticonsBackwards(RichEditCtrl &rec, Module *module, TCHAR *text
 }
 
 
-void ReplaceAllEmoticonsBackwards(RichEditCtrl &rec, Module *module)
+void ReplaceAllEmoticonsBackwards(RichEditCtrl &rec, Contact *contact, Module *module)
 {
 	STOP_RICHEDIT(rec);
 
 	TCHAR *text = GetText(rec, 0, -1);
 	int len = lstrlen(text);
 
-	ReplaceAllEmoticonsBackwards(rec, module, text, len, _T('\0'), 0, __old_sel);
+	ReplaceAllEmoticonsBackwards(rec, contact, module, text, len, _T('\0'), 0, __old_sel);
 
 	mir_free(text);
 
@@ -540,7 +620,7 @@ static TCHAR *webs[] = {
 };
 
 
-void ReplaceAllEmoticons(RichEditCtrl &rec, Module *module, int start, int end)
+void ReplaceAllEmoticons(RichEditCtrl &rec, Contact *contact, Module *module, int start, int end)
 {
 	STOP_RICHEDIT(rec);
 
@@ -552,7 +632,7 @@ void ReplaceAllEmoticons(RichEditCtrl &rec, Module *module, int start, int end)
 
 	int last_start_pos = 0;
 	BOOL replace = TRUE;
-	HANDLE hContact = NULL;
+	HANDLE hContact = (contact == NULL ? NULL : contact->hContact);
 	for(int i = 0; i <= len; i++)
 	{
 		int tl;
@@ -564,7 +644,7 @@ void ReplaceAllEmoticons(RichEditCtrl &rec, Module *module, int start, int end)
 				{
 					if (tl = matches(webs[j], &text[i]))
 					{
-						ReplaceAllEmoticonsBackwards(rec, module, &text[last_start_pos], i - last_start_pos, _T('\0'), start + last_start_pos, __old_sel);
+						ReplaceAllEmoticonsBackwards(rec, contact, module, &text[last_start_pos], i - last_start_pos, _T('\0'), start + last_start_pos, __old_sel);
 
 						i += tl;
 						
@@ -587,7 +667,7 @@ void ReplaceAllEmoticons(RichEditCtrl &rec, Module *module, int start, int end)
 		{
 			if (IsHidden(rec, start + i, start + i + tl))
 			{
-				ReplaceAllEmoticonsBackwards(rec, module, &text[last_start_pos], i - last_start_pos, _T('\0'), start + last_start_pos, __old_sel);
+				ReplaceAllEmoticonsBackwards(rec, contact, module, &text[last_start_pos], i - last_start_pos, _T('\0'), start + last_start_pos, __old_sel);
 
 				replace = FALSE;
 				i += tl - 1;
@@ -610,9 +690,9 @@ void ReplaceAllEmoticons(RichEditCtrl &rec, Module *module, int start, int end)
 		{
 			if (IsHidden(rec, start + i, start + i + tl))
 			{
-				ReplaceAllEmoticonsBackwards(rec, module, &text[last_start_pos], i - last_start_pos, _T('\0'), start + last_start_pos, __old_sel);
+				ReplaceAllEmoticonsBackwards(rec, contact, module, &text[last_start_pos], i - last_start_pos, _T('\0'), start + last_start_pos, __old_sel);
 
-				hContact = NULL;
+				hContact = (contact == NULL ? NULL : contact->hContact);
 				i += tl - 1;
 				last_start_pos = i + 1;
 			}
@@ -632,7 +712,7 @@ void ReplaceAllEmoticons(RichEditCtrl &rec, Module *module, int start, int end)
 
 			if (IsHidden(rec, start + i, start + i + len))
 			{
-				ReplaceAllEmoticonsBackwards(rec, module, &text[last_start_pos], i - last_start_pos, _T('\0'), start + last_start_pos, __old_sel);
+				ReplaceAllEmoticonsBackwards(rec, contact, module, &text[last_start_pos], i - last_start_pos, _T('\0'), start + last_start_pos, __old_sel);
 
 				hContact = (HANDLE) _ttoi(&text[i + tl]);
 				i += len - 1;
@@ -642,7 +722,7 @@ void ReplaceAllEmoticons(RichEditCtrl &rec, Module *module, int start, int end)
 	}
 
 	if (replace)
-		ReplaceAllEmoticonsBackwards(rec, module, &text[last_start_pos], len - last_start_pos, _T('\0'), start + last_start_pos, __old_sel);
+		ReplaceAllEmoticonsBackwards(rec, contact, module, &text[last_start_pos], len - last_start_pos, _T('\0'), start + last_start_pos, __old_sel);
 	
 	mir_free(text);
 
@@ -669,37 +749,30 @@ int RestoreInput(RichEditCtrl &rec, int start = 0, int end = -1)
 			reObj.poleobj->Release();
 			continue;
 		}
-		
-		OleImage *oimg = NULL;
-		reObj.poleobj->QueryInterface(IID_IOleImage, (void**) &oimg);
+
+		ITooltipData *ttd = NULL;
+		hr = reObj.poleobj->QueryInterface(__uuidof(ITooltipData), (void**) &ttd);
 		reObj.poleobj->Release();
-		if (oimg == NULL)
+		if (SUCCEEDED(hr) && ttd == NULL)
 			continue;
 
-		const TCHAR *text = oimg->GetText();
-		if (text != NULL)
+		BSTR hint = NULL;
+		hr = ttd->GetTooltip(&hint);
+		if (SUCCEEDED(hr) && hint != NULL)
 		{
 			ITextRange *range;
 			if (rec.textDocument->Range(reObj.cp, reObj.cp + 1, &range) == S_OK) 
 			{
-#ifdef UNICODE
-				BSTR txt = SysAllocString(text);
-#else
-				WCHAR *wtext = mir_t2u(text);
-				BSTR txt = SysAllocString(wtext);
-				mir_free(wtext);
-#endif
-
-				if (range->SetText(txt) == S_OK)
-					ret += lstrlen(text) - 1;
-
-				SysFreeString(txt);
+				if (range->SetText(hint) == S_OK)
+					ret += wcslen(hint) - 1;
 
 				range->Release();
 			}
+
+			SysFreeString(hint);
 		}
 
-		oimg->Release();
+		ttd->Release();
 	}
 
 	return ret;
@@ -769,7 +842,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (dif == 0 && !opts.only_replace_isolated)
 			{
 				// Can replace just last text
-				dif = ReplaceEmoticonBackwards(dlg->input, text, len, sel.cpMax, last, dlg->module);
+				dif = ReplaceEmoticonBackwards(dlg->input, NULL, dlg->module, text, len, sel.cpMax, last);
 				if (dif != 0)
 				{
 					FixSelection(__old_sel.cpMax, sel.cpMax, dif);
@@ -779,7 +852,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			else
 			{
 				// Because we already changed the text, we need to replace all range
-				ReplaceAllEmoticonsBackwards(dlg->input, dlg->module, text, len, last, min, __old_sel);
+				ReplaceAllEmoticonsBackwards(dlg->input, NULL, dlg->module, text, len, last, min, __old_sel);
 			}
 
 			mir_free(text);
@@ -796,7 +869,7 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case EM_PASTESPECIAL:
 		case WM_PASTE:
 		{
-			ReplaceAllEmoticonsBackwards(dlg->input, dlg->module);
+			ReplaceAllEmoticonsBackwards(dlg->input, NULL, dlg->module);
 
 			break;
 		}
@@ -918,7 +991,7 @@ LRESULT CALLBACK OwnerProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				if (!ret)
 					// Add emoticons again
-					ReplaceAllEmoticonsBackwards(dlg->input, dlg->module);
+					ReplaceAllEmoticonsBackwards(dlg->input, NULL, dlg->module);
 
 				dlg->log.sending = FALSE;
 			}
@@ -1044,7 +1117,7 @@ int MsgWindowEvent(WPARAM wParam, LPARAM lParam)
 		Dialog *dlg = (Dialog *) malloc(sizeof(Dialog));
 		ZeroMemory(dlg, sizeof(Dialog));
 
-		dlg->hContact = event->hContact;
+		dlg->contact = GetContact(event->hContact);
 		dlg->module = m;
 		dlg->hwnd_owner = event->hwndWindow;
 
@@ -1407,6 +1480,7 @@ void FillModuleImages(EmoticonPack *pack)
 		for(int k = 0; k < m->emoticons.getCount(); k++)
 		{
 			Emoticon *e = m->emoticons[k];
+			e->img = NULL;
 			for(int i = 0; i < pack->images.getCount(); i++)
 			{
 				EmoticonImage *img = pack->images[i];
@@ -1481,7 +1555,7 @@ int ReplaceEmoticonsService(WPARAM wParam, LPARAM lParam)
 	if (dlgit != dialogData.end())
 	{
 		Dialog *dlg = dlgit->second;
-		ReplaceAllEmoticons(dlg->log, dlg->module, sre->rangeToReplace == NULL ? 0 : sre->rangeToReplace->cpMin, 
+		ReplaceAllEmoticons(dlg->log, dlg->contact, dlg->module, sre->rangeToReplace == NULL ? 0 : sre->rangeToReplace->cpMin, 
 			sre->rangeToReplace == NULL ? -1 : sre->rangeToReplace->cpMax);
 	}
 	else
@@ -1503,7 +1577,7 @@ int ReplaceEmoticonsService(WPARAM wParam, LPARAM lParam)
 
 		RichEditCtrl rec = {0};
 		LoadRichEdit(&rec, sre->hwndRichEditControl);
-		ReplaceAllEmoticons(rec, m, sre->rangeToReplace == NULL ? 0 : sre->rangeToReplace->cpMin, 
+		ReplaceAllEmoticons(rec, GetContact(sre->hContact), m, sre->rangeToReplace == NULL ? 0 : sre->rangeToReplace->cpMin, 
 			sre->rangeToReplace == NULL ? -1 : sre->rangeToReplace->cpMax);
 	}
 
@@ -1536,63 +1610,6 @@ int GetInfo2Service(WPARAM wParam, LPARAM lParam)
 
 	return TRUE;
 }
-
-
-struct EmoticonSelectionData
-{
-	Module *module;
-	COLORREF background;
-	int max_height;
-	int max_width;
-	int lines;
-	int cols;
-	int selection;
-
-    int xPosition;
-    int yPosition;
-    int Direction;
-    HWND hwndTarget;
-    UINT targetMessage;
-    LPARAM targetWParam;
-
-	void SetSelection(HWND hwnd, int sel)
-	{
-		if (sel < 0)
-			sel = -1;
-		if (sel >= module->emoticons.getCount())
-			sel = -1;
-		if (sel != selection)
-			InvalidateRect(hwnd, NULL, FALSE);
-		selection = sel;
-	}
-};
-
-
-HBITMAP CreateBitmap32(int cx, int cy)
-{
-   BITMAPINFO RGB32BitsBITMAPINFO; 
-    UINT * ptPixels;
-    HBITMAP DirectBitmap;
-
-    ZeroMemory(&RGB32BitsBITMAPINFO,sizeof(BITMAPINFO));
-    RGB32BitsBITMAPINFO.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);
-    RGB32BitsBITMAPINFO.bmiHeader.biWidth=cx;//bm.bmWidth;
-    RGB32BitsBITMAPINFO.bmiHeader.biHeight=cy;//bm.bmHeight;
-    RGB32BitsBITMAPINFO.bmiHeader.biPlanes=1;
-    RGB32BitsBITMAPINFO.bmiHeader.biBitCount=32;
-
-    DirectBitmap = CreateDIBSection(NULL, 
-                                       (BITMAPINFO *)&RGB32BitsBITMAPINFO, 
-                                       DIB_RGB_COLORS,
-                                       (void **)&ptPixels, 
-                                       NULL, 0);
-    return DirectBitmap;
-}
-
-
-#define MIN_COLS 5
-#define MAX_LINES 5
-#define BORDER 5
 
 
 void PreMultiply(HBITMAP hBitmap)
@@ -1641,119 +1658,21 @@ void PreMultiply(HBITMAP hBitmap)
 }
 
 
-HWND CreateTooltip(HWND hwnd, RECT &rect, TCHAR *text)
-{
-          // struct specifying control classes to register
-    INITCOMMONCONTROLSEX iccex; 
-    HWND hwndTT;                 // handle to the ToolTip control
-          // struct specifying info about tool in ToolTip control
-    TOOLINFO ti;
-    unsigned int uid = 0;       // for ti initialization
-
-	// Load the ToolTip class from the DLL.
-    iccex.dwSize = sizeof(iccex);
-    iccex.dwICC  = ICC_BAR_CLASSES;
-
-    if(!InitCommonControlsEx(&iccex))
-       return NULL;
-
-    /* CREATE A TOOLTIP WINDOW */
-    hwndTT = CreateWindowEx(WS_EX_TOPMOST,
-        TOOLTIPS_CLASS,
-        NULL,
-        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,		
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        hwnd,
-        NULL,
-        hInst,
-        NULL
-        );
-
-	/* Gives problem with mToolTip
-    SetWindowPos(hwndTT,
-        HWND_TOPMOST,
-        0,
-        0,
-        0,
-        0,
-        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-	*/
-
-    /* INITIALIZE MEMBERS OF THE TOOLINFO STRUCTURE */
-    ti.cbSize = sizeof(TOOLINFO);
-    ti.uFlags = TTF_SUBCLASS;
-    ti.hwnd = hwnd;
-    ti.hinst = hInst;
-    ti.uId = uid;
-    ti.lpszText = text;
-        // ToolTip control will cover the whole window
-    ti.rect.left = rect.left;    
-    ti.rect.top = rect.top;
-    ti.rect.right = rect.right;
-    ti.rect.bottom = rect.bottom;
-
-    /* SEND AN ADDTOOL MESSAGE TO THE TOOLTIP CONTROL WINDOW */
-    SendMessage(hwndTT, TTM_ADDTOOL, 0, (LPARAM) (LPTOOLINFO) &ti);	
-	SendMessage(hwndTT, TTM_SETDELAYTIME, (WPARAM) (DWORD) TTDT_AUTOPOP, (LPARAM) MAKELONG(24 * 60 * 60 * 1000, 0));	
-
-	return hwndTT;
-} 
-
-
-void AssertInsideScreen(RECT &rc)
-{
-	// Make sure it is inside screen
-	if (IsWinVer98Plus()) {
-		static BOOL loaded = FALSE;
-		static HMONITOR (WINAPI *MyMonitorFromRect)(LPCRECT,DWORD) = NULL;
-		static BOOL (WINAPI *MyGetMonitorInfo)(HMONITOR,LPMONITORINFO) = NULL;
-
-		if (!loaded) {
-			HMODULE hUser32 = GetModuleHandleA("user32");
-			if (hUser32) {
-				MyMonitorFromRect = (HMONITOR(WINAPI*)(LPCRECT,DWORD))GetProcAddress(hUser32,"MonitorFromRect");
-				MyGetMonitorInfo = (BOOL(WINAPI*)(HMONITOR,LPMONITORINFO))GetProcAddress(hUser32,"GetMonitorInfoA");
-				if (MyGetMonitorInfo == NULL)
-					MyGetMonitorInfo = (BOOL(WINAPI*)(HMONITOR,LPMONITORINFO))GetProcAddress(hUser32,"GetMonitorInfo");
-			}
-			loaded = TRUE;
-		}
-
-		if (MyMonitorFromRect != NULL && MyGetMonitorInfo != NULL) {
-			HMONITOR hMonitor;
-			MONITORINFO mi;
-
-			hMonitor = MyMonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
-			mi.cbSize = sizeof(mi);
-			MyGetMonitorInfo(hMonitor, &mi);
-
-			if (rc.bottom > mi.rcWork.bottom)
-				OffsetRect(&rc, 0, mi.rcWork.bottom - rc.bottom);
-			if (rc.bottom < mi.rcWork.top)
-				OffsetRect(&rc, 0, mi.rcWork.top - rc.top);
-			if (rc.top > mi.rcWork.bottom)
-				OffsetRect(&rc, 0, mi.rcWork.bottom - rc.bottom);
-			if (rc.top < mi.rcWork.top)
-				OffsetRect(&rc, 0, mi.rcWork.top - rc.top);
-			if (rc.right > mi.rcWork.right)
-				OffsetRect(&rc, mi.rcWork.right - rc.right, 0);
-			if (rc.right < mi.rcWork.left)
-				OffsetRect(&rc, mi.rcWork.left - rc.left, 0);
-			if (rc.left > mi.rcWork.right)
-				OffsetRect(&rc, mi.rcWork.right - rc.right, 0);
-			if (rc.left < mi.rcWork.left)
-				OffsetRect(&rc, mi.rcWork.left - rc.left, 0);
-		}
-	}
-}
-
 void LoadImage(EmoticonImage *img, int &max_height, int &max_width)
 {
 	if (img == NULL)
 		return;
+
+	if (img->img != NULL)
+	{
+		BITMAP bmp;
+		GetObject(img->img, sizeof(bmp), &bmp);
+
+		max_height = max(max_height, bmp.bmHeight);
+		max_width = max(max_width, bmp.bmWidth);
+
+		return;
+	}
 
 	DWORD transparent;
 
@@ -1791,539 +1710,197 @@ void ReleaseImage(EmoticonImage *img)
 }
 
 
-INT_PTR CALLBACK EmoticonSeletionDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
+Contact * GetContact(HANDLE hContact)
 {
-	switch(msg) 
+	if (hContact == NULL)
+		return NULL;
+
+	// Check if already loaded
+	for(int i = 0; i < contacts.getCount(); i++)
+		if (contacts[i]->hContact == hContact)
+			return contacts[i];
+
+	Contact *c = new Contact(hContact);
+	contacts.insert(c);
+
+	// Get from db
+	BOOL pack = FALSE;
+	c->lastId = -1;
+	char setting[256];
+	while(TRUE) 
 	{
-		case WM_INITDIALOG: 
-		{
-			EmoticonSelectionData *ssd = (EmoticonSelectionData *) lParam;
-			SetWindowLong(hwnd, GWL_USERDATA, (LONG) ssd);
+		c->lastId++;
 
-			ssd->selection = -1;
-
-			// Load emoticons
-			ssd->max_height = 4;
-			ssd->max_width = 4;
-
-			HDC hdc = GetDC(hwnd);
-
-			int num_emotes = ssd->module->emoticons.getCount();
-			int i;
-			for(i = 0; i < num_emotes; i++)
-			{
-				Emoticon *e = ssd->module->emoticons[i];
-				LoadImage(e->img, ssd->max_height, ssd->max_width);
-
-				if (e->img == NULL || e->img->img == NULL)
-				{
-					HFONT hFont;
-					if (ssd->hwndTarget != NULL)
-					{
-						CHARFORMAT2 cf;
-						ZeroMemory(&cf, sizeof(cf));
-						cf.cbSize = sizeof(cf);
-						cf.dwMask = CFM_FACE | CFM_ITALIC | CFM_CHARSET | CFM_FACE | CFM_WEIGHT | CFM_SIZE;
-						SendMessage(ssd->hwndTarget, EM_GETCHARFORMAT, SCF_SELECTION, (LPARAM) &cf);
-
-						LOGFONT lf = {0};
-						lf.lfHeight = -MulDiv(cf.yHeight / 20, GetDeviceCaps(hdc, LOGPIXELSY), 72);
-						lf.lfWeight = cf.wWeight;
-						lf.lfItalic = (cf.dwEffects & CFE_ITALIC) == CFE_ITALIC;
-						lf.lfCharSet = cf.bCharSet;
-						lf.lfPitchAndFamily = cf.bPitchAndFamily;
-						lstrcpyn(lf.lfFaceName, cf.szFaceName, MAX_REGS(lf.lfFaceName));
-
-						hFont = CreateFontIndirect(&lf);
-					}
-					else
-						hFont = (HFONT) SendMessage(hwnd, WM_GETFONT, 0, 0);
-
-					if (hFont != NULL)
-						SelectObject(hdc, hFont);
-
-					RECT rc = { 0, 0, 0xFFFF, 0xFFFF };
-					DrawText(hdc, e->texts[0], lstrlen(e->texts[0]), &rc, DT_CALCRECT | DT_NOPREFIX);
-
-					ssd->max_height = max(ssd->max_height, rc.bottom - rc.top + 1);
-					ssd->max_width = max(ssd->max_width, rc.right - rc.left + 1);
-
-					if (ssd->hwndTarget != NULL)
-						DeleteObject(hFont);
-				}
-			}
-
-			ReleaseDC(hwnd, hdc);
-
-			ssd->cols = num_emotes / MAX_LINES;
-			if (num_emotes % MAX_LINES != 0)
-				ssd->cols++;
-			ssd->cols = max(ssd->cols, MIN_COLS);
-
-			ssd->lines = num_emotes / ssd->cols;
-			if (num_emotes % ssd->cols != 0)
-				ssd->lines++;
-
-			// Calc position
-			int width = ssd->max_width * ssd->cols + (ssd->cols + 1) * BORDER + 1;
-			int height = ssd->max_height * ssd->lines + (ssd->lines + 1) * BORDER + 1;
-
-			int x = ssd->xPosition;
-			int y = ssd->yPosition;
-			switch (ssd->Direction) 
-			{
-				case 1: 
-					x -= width;
-					break;
-				case 2:
-					x -= width;
-					y -= height;
-					break;
-				case 3:
-					y -= height;
-					break;
-			}
-
-			// Get background
-			ssd->background = RGB(255, 255, 255);
-			if (ssd->hwndTarget != NULL)
-			{
-				ssd->background = SendMessage(ssd->hwndTarget, EM_SETBKGNDCOLOR, 0, ssd->background);
-				SendMessage(ssd->hwndTarget, EM_SETBKGNDCOLOR, 0, ssd->background);
-			}
-
-			RECT rc = { x, y, x + width, y + height };
-			AssertInsideScreen(rc);
-			SetWindowPos(hwnd, HWND_TOPMOST, rc.left, rc.top, width, height, 0);
-
-			for(i = 0; i < ssd->lines; i++)
-			{
-				for(int j = 0; j < ssd->cols; j++)
-				{
-					int index = i * ssd->cols + j;
-					if (index >= ssd->module->emoticons.getCount())
-						break;
-					
-					Emoticon *e = ssd->module->emoticons[index];
-
-					RECT fr;
-					fr.left = BORDER + j * (ssd->max_width + BORDER) - 1;
-					fr.right = fr.left + ssd->max_width + 2;
-					fr.top = BORDER + i * (ssd->max_height + BORDER) - 1;
-					fr.bottom = fr.top + ssd->max_height + 2;
-
-					Buffer<TCHAR> tt;
-					if (e->description[0] != _T('\0'))
-					{
-						tt += e->description;
-						tt.translate();
-						tt += _T(" ");
-					}
-
-					for(int k = 0; k < e->texts.getCount(); k++)
-					{
-						tt += _T(" ");
-						tt += e->texts[k];
-						tt += _T(" ");
-					}
-					tt.pack();
-
-					e->tt = CreateTooltip(hwnd, fr, tt.str);
-				}
-			}
-
-			TRACKMOUSEEVENT tme;
-			tme.cbSize = sizeof(TRACKMOUSEEVENT);
-			tme.dwFlags = TME_HOVER | TME_LEAVE;
-			tme.hwndTrack = hwnd;
-			tme.dwHoverTime = HOVER_DEFAULT;
-			TrackMouseEvent(&tme);
-
-			return TRUE;
-		}
-
-		case WM_PAINT:
-		{
-			RECT r;
-			if (GetUpdateRect(hwnd, &r, FALSE)) 
-			{
-				EmoticonSelectionData *ssd = (EmoticonSelectionData *) GetWindowLong(hwnd, GWL_USERDATA);
-
-				PAINTSTRUCT ps;
-
-				HDC hdc_orig = BeginPaint(hwnd, &ps);
-
-				RECT rc;
-				GetClientRect(hwnd, &rc);
-
-				// Create double buffer
-				HDC hdc = CreateCompatibleDC(hdc_orig);
-				HBITMAP hBmp = CreateBitmap32(rc.right, rc.bottom);
-				SelectObject(hdc, hBmp);
-
-				SetBkMode(hdc, TRANSPARENT);
-
-				// Erase background
-				HBRUSH hB = CreateSolidBrush(ssd->background);
-				FillRect(hdc, &rc, hB);
-				DeleteObject(hB);
-
-				// Draw emoticons
-				for(int i = 0; i < ssd->lines; i++)
-				{
-					for(int j = 0; j < ssd->cols; j++)
-					{
-						int index = i * ssd->cols + j;
-						if (index >= ssd->module->emoticons.getCount())
-							break;
-						
-						Emoticon *e = ssd->module->emoticons[index];
-						if (e->img == NULL || e->img->img == NULL)
-						{
-							HFONT hFont;
-							if (ssd->hwndTarget != NULL)
-							{
-								CHARFORMAT2 cf;
-								ZeroMemory(&cf, sizeof(cf));
-								cf.cbSize = sizeof(cf);
-								cf.dwMask = CFM_FACE | CFM_ITALIC | CFM_CHARSET | CFM_FACE | CFM_WEIGHT | CFM_SIZE | CFM_COLOR;
-								SendMessage(ssd->hwndTarget, EM_GETCHARFORMAT, SCF_DEFAULT, (LPARAM) &cf);
-
-								LOGFONT lf = {0};
-								lf.lfHeight = -MulDiv(cf.yHeight / 20, GetDeviceCaps(hdc, LOGPIXELSY), 72);
-								lf.lfWeight = cf.wWeight;
-								lf.lfItalic = (cf.dwEffects & CFE_ITALIC) == CFE_ITALIC;
-								lf.lfCharSet = cf.bCharSet;
-								lf.lfPitchAndFamily = cf.bPitchAndFamily;
-								lstrcpyn(lf.lfFaceName, cf.szFaceName, MAX_REGS(lf.lfFaceName));
-
-								hFont = CreateFontIndirect(&lf);
-								SetTextColor(hdc, cf.crTextColor);
-							}
-							else
-								hFont = (HFONT) SendMessage(hwnd, WM_GETFONT, 0, 0);
-
-							if (hFont != NULL)
-								SelectObject(hdc, hFont);
-
-							RECT rc = { 0, 0, 0xFFFF, 0xFFFF };
-							DrawText(hdc, e->texts[0], lstrlen(e->texts[0]), &rc, DT_CALCRECT | DT_NOPREFIX);
-
-							int height = rc.bottom - rc.top + 1;
-							int width = rc.right - rc.left + 1;
-
-							rc.left = BORDER + j * (ssd->max_width + BORDER) + (ssd->max_width - width) / 2;
-							rc.top = BORDER + i * (ssd->max_height + BORDER) + (ssd->max_height - height) / 2;
-
-							rc.right = rc.left + width;
-							rc.bottom = rc.top + height;
-
-							DrawText(hdc, e->texts[0], lstrlen(e->texts[0]), &rc, DT_NOPREFIX);
-
-							if (ssd->hwndTarget != NULL)
-								DeleteObject(hFont);
-						}
-						else
-						{
-							BITMAP bmp;
-							GetObject(e->img->img, sizeof(bmp), &bmp);
-
-							int x = BORDER + j * (ssd->max_width + BORDER) + (ssd->max_width - bmp.bmWidth) / 2;
-							int y = BORDER + i * (ssd->max_height + BORDER) + (ssd->max_height - bmp.bmHeight) / 2;
-
-							HDC hdc_img = CreateCompatibleDC(hdc);
-							HBITMAP old_bmp = (HBITMAP) SelectObject(hdc_img, e->img->img);
-
-							if (e->img->transparent)
-							{
-								BLENDFUNCTION bf = {0};
-								bf.SourceConstantAlpha = 255;
-								bf.AlphaFormat = AC_SRC_ALPHA;
-								AlphaBlend(hdc, x, y, bmp.bmWidth, bmp.bmHeight, hdc_img, 0, 0, bmp.bmWidth, bmp.bmHeight, bf);
-							}
-							else
-							{
-								BitBlt(hdc, x, y, bmp.bmWidth, bmp.bmHeight, hdc_img, 0, 0, SRCCOPY);
-							}
-
-							SelectObject(hdc_img, old_bmp);
-							DeleteDC(hdc_img);
-
-						}
-
-						if (ssd->selection == index)
-						{
-							RECT fr;
-							fr.left = BORDER + j * (ssd->max_width + BORDER) - 1;
-							fr.right = fr.left + ssd->max_width + 2;
-							fr.top = BORDER + i * (ssd->max_height + BORDER) - 1;
-							fr.bottom = fr.top + ssd->max_height + 2;
-							FrameRect(hdc, &fr, (HBRUSH) GetStockObject(GRAY_BRUSH));
-						}
-					}
-				}
-
-				// Copy buffer to screen
-				BitBlt(hdc_orig, rc.left, rc.top, rc.right - rc.left, 
-						rc.bottom - rc.top, hdc, rc.left, rc.top, SRCCOPY);
-				DeleteDC(hdc);
-				DeleteObject(hBmp);
-
-				EndPaint(hwnd, &ps);
-			}
-			
-			return TRUE;
-		}
-
-		case WM_MOUSELEAVE:
-		{
-			TRACKMOUSEEVENT tme;
-			tme.cbSize = sizeof(TRACKMOUSEEVENT);
-			tme.dwFlags = TME_HOVER;
-			tme.hwndTrack = hwnd;
-			tme.dwHoverTime = HOVER_DEFAULT;
-			TrackMouseEvent(&tme);
-		}
-		case WM_NCMOUSEMOVE:
-		{
-			EmoticonSelectionData *ssd = (EmoticonSelectionData *) GetWindowLong(hwnd, GWL_USERDATA);
-			ssd->SetSelection(hwnd, -1);
+		mir_snprintf(setting, MAX_REGS(setting), "%d_Text", c->lastId);
+		DBVARIANT dbv_text = {0};
+		if (DBGetContactSettingTString(hContact, "CustomSmileys", setting, &dbv_text))
 			break;
-		}
 
-		case WM_MOUSEHOVER:
+		mir_snprintf(setting, MAX_REGS(setting), "%d_Path", c->lastId);
+		DBVARIANT dbv_path = {0};
+		if (DBGetContactSettingTString(hContact, "CustomSmileys", setting, &dbv_path))
 		{
-			TRACKMOUSEEVENT tme;
-			tme.cbSize = sizeof(TRACKMOUSEEVENT);
-			tme.dwFlags = TME_LEAVE;
-			tme.hwndTrack = hwnd;
-			tme.dwHoverTime = HOVER_DEFAULT;
-			TrackMouseEvent(&tme);
-		}
-		case WM_MOUSEMOVE:
-		{
-			EmoticonSelectionData *ssd = (EmoticonSelectionData *) GetWindowLong(hwnd, GWL_USERDATA);
-
-			POINT p;
-			p.x = LOWORD(lParam); 
-			p.y = HIWORD(lParam); 
-
-			int col;
-			if (p.x % (BORDER + ssd->max_width) < BORDER)
-				col = -1;
-			else
-				col = p.x / (BORDER + ssd->max_width);
-
-			int line;
-			if (p.y % (BORDER + ssd->max_height) < BORDER)
-				line = -1;
-			else
-				line = p.y / (BORDER + ssd->max_height);
-
-			int index = line * ssd->cols + col;
-
-			if (col >= 0 && line >= 0 && index < ssd->module->emoticons.getCount())
-			{
-				ssd->SetSelection(hwnd, index);
-			}
-			else
-			{
-				ssd->SetSelection(hwnd, -1);
-			}
-
-			break;
-		}
-
-		case WM_GETDLGCODE:
-		{
-			if (lParam != NULL)
-			{
-				static DWORD last_time = 0;
-
-				MSG *msg = (MSG* ) lParam;
-				if (msg->message == WM_KEYDOWN && msg->time != last_time)
-				{
-					last_time = msg->time;
-
-					if (msg->wParam == VK_UP)
-					{
-						EmoticonSelectionData *ssd = (EmoticonSelectionData *) GetWindowLong(hwnd, GWL_USERDATA);
-
-						if (ssd->selection < 0)
-						{
-							ssd->SetSelection(hwnd, (ssd->lines - 1) * ssd->cols);
-						}
-						else
-						{
-							int index = (ssd->selection - ssd->cols) % ssd->module->emoticons.getCount();
-							if (index < 0)
-								index += ssd->module->emoticons.getCount();
-							ssd->SetSelection(hwnd, index);
-						}
-					}
-					else if (msg->wParam == VK_DOWN)
-					{
-						EmoticonSelectionData *ssd = (EmoticonSelectionData *) GetWindowLong(hwnd, GWL_USERDATA);
-
-						if (ssd->selection < 0)
-						{
-							ssd->SetSelection(hwnd, 0);
-						}
-						else
-						{
-							ssd->SetSelection(hwnd, (ssd->selection + ssd->cols) % ssd->module->emoticons.getCount());
-						}
-					}
-					else if (msg->wParam == VK_LEFT)
-					{
-						EmoticonSelectionData *ssd = (EmoticonSelectionData *) GetWindowLong(hwnd, GWL_USERDATA);
-
-						if (ssd->selection < 0)
-						{
-							ssd->SetSelection(hwnd, ssd->cols - 1);
-						}
-						else
-						{
-							int index = (ssd->selection - 1) % ssd->module->emoticons.getCount();
-							if (index < 0)
-								index += ssd->module->emoticons.getCount();
-							ssd->SetSelection(hwnd, index);
-						}
-					}
-					else if (msg->wParam == VK_RIGHT)
-					{
-						EmoticonSelectionData *ssd = (EmoticonSelectionData *) GetWindowLong(hwnd, GWL_USERDATA);
-
-						if (ssd->selection < 0)
-						{
-							ssd->SetSelection(hwnd, 0);
-						}
-						else
-						{
-							ssd->SetSelection(hwnd, (ssd->selection + 1) % ssd->module->emoticons.getCount());
-						}
-					}
-					else if (msg->wParam == VK_HOME)
-					{
-						EmoticonSelectionData *ssd = (EmoticonSelectionData *) GetWindowLong(hwnd, GWL_USERDATA);
-						ssd->SetSelection(hwnd, 0);
-					}
-					else if (msg->wParam == VK_END)
-					{
-						EmoticonSelectionData *ssd = (EmoticonSelectionData *) GetWindowLong(hwnd, GWL_USERDATA);
-						ssd->SetSelection(hwnd, ssd->module->emoticons.getCount() - 1);
-					}
-				}
-			}
-
-			return DLGC_WANTALLKEYS;
+			pack = TRUE;
+			DBFreeVariant(&dbv_text);
+			continue;
 		}
 		
-	    case WM_ACTIVATE:
+		if (GetCustomEmoticon(c, dbv_text.ptszVal) != NULL)
 		{
-			if (wParam == WA_INACTIVE) 
-				PostMessage(hwnd, WM_CLOSE, 0, 0);
-			break;
+			pack = TRUE;
+		}
+		else
+		{
+			CustomEmoticon *ce = new CustomEmoticon();
+			ce->text = mir_tstrdup(dbv_text.ptszVal);
+			ce->path = mir_tstrdup(dbv_path.ptszVal);
+
+			c->emoticons.insert(ce);
 		}
 
-		case WM_COMMAND:
-		{
-			switch (LOWORD(wParam)) 
-			{
-				case IDOK:
-					PostMessage(hwnd, WM_LBUTTONUP, 0, 0);
-					break;
-
-				case IDCANCEL:
-					PostMessage(hwnd, WM_CLOSE, 0, 0);
-					break;
-			}
-			break;
-		}
-
-		case WM_LBUTTONUP:
-		{
-			EmoticonSelectionData *ssd = (EmoticonSelectionData *) GetWindowLong(hwnd, GWL_USERDATA);
-			if (ssd->selection >= 0 && ssd->hwndTarget != NULL)
-			{
-				if (opts.only_replace_isolated)
-				{
-					TCHAR tmp[16];
-					mir_sntprintf(tmp, MAX_REGS(tmp), _T(" %s "), ssd->module->emoticons[ssd->selection]->texts[0]);
-					SendMessage(ssd->hwndTarget, ssd->targetMessage, ssd->targetWParam, (LPARAM) tmp);
-				}
-				else
-					SendMessage(ssd->hwndTarget, ssd->targetMessage, ssd->targetWParam, (LPARAM) ssd->module->emoticons[ssd->selection]->texts[0]);
-			}
-
-			PostMessage(hwnd, WM_CLOSE, 0, 0);
-			break;
-		}
-
-		case WM_CLOSE:
-		{
-			EmoticonSelectionData *ssd = (EmoticonSelectionData *) GetWindowLong(hwnd, GWL_USERDATA);
-			SetWindowLong(hwnd, GWL_USERDATA, NULL);
-
-			for(int i = 0; i < ssd->module->emoticons.getCount(); i++)
-			{
-				Emoticon *e = ssd->module->emoticons[i];
-				ReleaseImage(e->img);
-
-				if (e->tt != NULL)
-				{
-					DestroyWindow(e->tt);
-					e->tt = NULL;
-				}
-			}
-
-			DestroyWindow(hwnd);
-
-			SetFocus(ssd->hwndTarget);
-			delete ssd;
-			break;
-		}
+		DBFreeVariant(&dbv_path);
+		DBFreeVariant(&dbv_text);
 	}
 
-	return FALSE;
-}
+	c->lastId--;
 
-int ShowSelectionService(WPARAM wParam, LPARAM lParam)
-{
-    SMADD_SHOWSEL3 *sss = (SMADD_SHOWSEL3 *)lParam;
-	if (sss == NULL || sss->cbSize < sizeof(SMADD_SHOWSEL3)) 
-		return FALSE;
-
-	const char *proto = NULL;
-	if (sss->hContact != NULL)
+	if (pack)
 	{
-		HANDLE hReal = GetRealContact(sss->hContact);
-		proto = (char *) CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM) hReal, 0);
+		// Re-store then
+		int i;
+		for(i = 0; i < c->emoticons.getCount(); i++)
+		{
+			CustomEmoticon *ce = c->emoticons[i];
+
+			mir_snprintf(setting, MAX_REGS(setting), "%d_Text", i);
+			DBWriteContactSettingTString(c->hContact, "CustomSmileys", setting, ce->text);
+
+			mir_snprintf(setting, MAX_REGS(setting), "%d_Path", i);
+			DBWriteContactSettingTString(c->hContact, "CustomSmileys", setting, ce->path);
+		}
+		for(int j = i; j <= c->lastId; j++)
+		{
+			mir_snprintf(setting, MAX_REGS(setting), "%d_Text", j);
+			DBDeleteContactSetting(c->hContact, "CustomSmileys", setting);
+
+			mir_snprintf(setting, MAX_REGS(setting), "%d_Path", j);
+			DBDeleteContactSetting(c->hContact, "CustomSmileys", setting);
+		}
+
+		c->lastId = i - 1;
 	}
-	if (proto == NULL)
-		proto = sss->Protocolname;
-	if (proto == NULL)
-		return FALSE;
 
-	Module *m = GetModule(proto);
-	if (m == NULL)
-		return FALSE;
-
-	EmoticonSelectionData * ssd = new EmoticonSelectionData();
-	ssd->module = m;
-
-	ssd->xPosition = sss->xPosition;
-	ssd->yPosition = sss->yPosition;
-	ssd->Direction = sss->Direction;
-
-	ssd->hwndTarget = sss->hwndTarget;
-	ssd->targetMessage = sss->targetMessage;
-	ssd->targetWParam = sss->targetWParam;
-
-	CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_EMOTICON_SELECTION), sss->hwndParent, 
-					  EmoticonSeletionDlgProc, (LPARAM) ssd);
-
-    return TRUE;
+	return c;
 }
 
 
+CustomEmoticon *GetCustomEmoticon(Contact *c, TCHAR *text)
+{
+	for(int i = 0; i < c->emoticons.getCount(); i++)
+	{
+		if (lstrcmp(c->emoticons[i]->text, text) == 0)
+			return c->emoticons[i];
+	}
+	return NULL;
+}
+
+
+void DownloadedCustomEmoticon(HANDLE hContact, TCHAR *path)
+{
+	// Mark that it was received
+
+	Contact *c = GetContact(hContact);
+	if (c != NULL)
+	{
+		for(int i = 0; i < c->emoticons.getCount(); i++)
+		{
+			CustomEmoticon *ce = c->emoticons[i];
+			if (lstrcmpi(ce->path, path) == 0)
+				ce->downloading = FALSE;
+		}
+	}
+
+	for(int i = downloading.getCount() - 1; i >= 0; i--)
+	{
+		if (lstrcmpi(downloading[i]->GetFilename(), path) == 0)
+		{
+			OleImage *oimg = downloading[i];
+			oimg->ShowDownloadingIcon(FALSE);
+			oimg->Release();
+
+			downloading.remove(i);
+		}
+	}
+}
+
+int CustomSmileyReceivedEvent(WPARAM wParam, LPARAM lParam)
+{
+	CUSTOMSMILEY *cs = (CUSTOMSMILEY *) lParam;
+	if (cs == NULL || cs->cbSize < sizeof(CUSTOMSMILEY) || cs->pszFilename == NULL || cs->hContact == NULL)
+		return 0;
+
+	TCHAR *path = mir_a2t(cs->pszFilename);
+
+	// Check if this is the second notification
+	if (!(cs->flags & CUSTOMSMILEY_STATE_RECEIVED))
+	{
+		if (cs->flags & CUSTOMSMILEY_STATE_DOWNLOADED)
+			DownloadedCustomEmoticon(cs->hContact, path);
+
+		mir_free(path);
+		return 0;
+	}
+
+	// This is the first one 
+	if (cs->pszText == NULL)
+	{
+		mir_free(path);
+		return 0;
+	}
+
+	// Get data
+	Contact *c = GetContact(cs->hContact);
+
+	TCHAR *text;
+	if (cs->flags & CUSTOMSMILEY_UNICODE)
+		text = mir_u2t(cs->pwszText);
+	else
+		text = mir_a2t(cs->pszText);
+
+	// Create it
+	CustomEmoticon *ce = GetCustomEmoticon(c, text);
+	if (ce != NULL)
+	{
+		mir_free(ce->path);
+		ce->path = path;
+
+		mir_free(text);
+	}
+	else
+	{
+		ce = new CustomEmoticon();
+		ce->text = text;
+		ce->path = path;
+
+		c->emoticons.insert(ce);
+		c->lastId++;
+	}
+
+	// Check if need to download
+	if (!(cs->flags & CUSTOMSMILEY_STATE_DOWNLOADED) && GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
+	{
+		// Request emoticon download
+		cs->download = TRUE;
+		ce->downloading = TRUE;
+	}
+
+	// Store in DB
+	char setting[256];
+	mir_snprintf(setting, MAX_REGS(setting), "%d_Text", c->lastId);
+	DBWriteContactSettingTString(c->hContact, "CustomSmileys", setting, ce->text);
+
+	mir_snprintf(setting, MAX_REGS(setting), "%d_Path", c->lastId);
+	DBWriteContactSettingTString(c->hContact, "CustomSmileys", setting, ce->path);
+
+	return 0;
+}

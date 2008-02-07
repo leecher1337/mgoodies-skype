@@ -66,8 +66,9 @@ using namespace std;
 #include <m_avatars.h>
 #include <m_imgsrvc.h>
 #include <m_anismiley.h>
+#include <anismiley.tlh>
 #include <m_smileyadd.h>
-
+#include <m_customsmileys.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
@@ -77,6 +78,7 @@ using namespace std;
 #include "resource.h"
 #include "m_emoticons.h"
 #include "options.h"
+#include "selwin.h"
 #include "OleImage.h"
 
 
@@ -117,6 +119,15 @@ struct Emoticon
 	Emoticon() : name(0), description(0), texts(20), img(0), tt(0) {}
 };
 
+struct CustomEmoticon
+{
+	TCHAR *text;
+	TCHAR *path;
+	BOOL downloading;
+
+	CustomEmoticon() : text(0), path(0), downloading(FALSE) {}
+};
+
 struct Module
 {
 	char *name;
@@ -149,9 +160,18 @@ struct RichEditCtrl
 	BOOL sending;
 };
 
-struct Dialog 
+struct Contact
 {
 	HANDLE hContact;
+	LIST<CustomEmoticon> emoticons;
+	int lastId;
+
+	Contact(HANDLE aHContact) : hContact(aHContact), emoticons(5), lastId(-1) {}
+};
+
+struct Dialog 
+{
+	Contact *contact;
 	Module *module;
 
 	HWND hwnd_owner;
@@ -164,15 +184,23 @@ struct Dialog
 extern LIST<Module> modules;
 extern LIST<EmoticonPack> packs;
 
+extern TCHAR protocolsFolder[1024];
+extern TCHAR emoticonPacksFolder[1024];
 
 // SRMM messages
 #define DM_REMAKELOG         (WM_USER + 11)
 #define DM_APPENDTOLOG       (WM_USER + 17)
 
 
+HANDLE GetRealContact(HANDLE hContact);
+Module *GetModule(const char *name);
 
 void FillModuleImages(EmoticonPack *pack);
 void LoadImage(EmoticonImage *img, int &max_height, int &max_width);
 void ReleaseImage(EmoticonImage *img);
+
+
+
+
 
 #endif // __COMMONS_H__
