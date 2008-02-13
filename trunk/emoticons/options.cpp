@@ -87,12 +87,13 @@ void LoadOptions()
 {
 	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
 
-	opts.pack[0] = _T('\0');
+	opts.pack[0] = '\0';
 
 	DBVARIANT dbv;
-	if (!DBGetContactSettingTString(NULL, MODULE_NAME, "DefaultPack", &dbv))
+	if (!DBGetContactSettingString(NULL, MODULE_NAME, "DefaultPack", &dbv))
 	{
-		lstrcpyn(opts.pack, dbv.ptszVal, MAX_REGS(opts.pack));
+		strncpy(opts.pack, dbv.pszVal, MAX_REGS(opts.pack)-1);
+		opts.pack[MAX_REGS(opts.pack)-1] = _T('\0');
 		DBFreeVariant(&dbv);
 	}
 }
@@ -127,12 +128,12 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				pd->max_height = 0;
 				pd->max_width = 0;
 				for(int j = 0; j < pd->pack->images.getCount() && j < 15; j++)
-					LoadImage(pd->pack->images[j], pd->max_height, pd->max_width);
+					pd->pack->images[j]->Load(pd->max_height, pd->max_width);
 
 				SendDlgItemMessage(hwndDlg, IDC_PACK, LB_ADDSTRING, 0, (LONG) pd);
 				SendDlgItemMessage(hwndDlg, IDC_PACK, LB_SETITEMDATA, i, (LONG) pd);
 
-				if (lstrcmp(opts.pack, pd->pack->name) == 0)
+				if (strcmp(opts.pack, pd->pack->name) == 0)
 					sel = i;
 			}
 			SendDlgItemMessage(hwndDlg, IDC_PACK, LB_SETCURSEL, sel, 0);
@@ -173,8 +174,8 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				if (pack == NULL)
 					pack = packs[0];
 
-				DBWriteContactSettingTString(NULL, MODULE_NAME, "DefaultPack", (TCHAR *) pack->name);
-				lstrcpy(opts.pack, pack->name);
+				DBWriteContactSettingString(NULL, MODULE_NAME, "DefaultPack", pack->name);
+				strcpy(opts.pack, pack->name);
 				FillModuleImages(pack);
 			}
 			
@@ -267,9 +268,9 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			HFONT old_font = (HFONT) SelectObject(hdc, hBigFont);
 
 			RECT rc_tmp = { rc.left, rc.top, 0xFFFF, 0xFFFF };
-			DrawText(hdc, pd->pack->name, lstrlen(pd->pack->name), &rc_tmp, DT_CALCRECT | DT_NOPREFIX | DT_TOP | DT_SINGLELINE);
+			DrawText(hdc, pd->pack->description, lstrlen(pd->pack->description), &rc_tmp, DT_CALCRECT | DT_NOPREFIX | DT_TOP | DT_SINGLELINE);
 
-			DrawText(hdc, pd->pack->name, lstrlen(pd->pack->name), &rc_tmp, DT_NOPREFIX | DT_BOTTOM | DT_SINGLELINE);
+			DrawText(hdc, pd->pack->description, lstrlen(pd->pack->description), &rc_tmp, DT_NOPREFIX | DT_BOTTOM | DT_SINGLELINE);
 
 			rc_tmp.left = rc_tmp.right + BORDER;
 			rc_tmp.right = rc.right;
@@ -350,8 +351,10 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 				if (pd != NULL)
 					delete pd;
 
-				for(int j = 0; j < packs[i]->images.getCount(); j++)
-					ReleaseImage(packs[i]->images[j]);
+				if (strcmp(opts.pack, packs[i]->name) != 0)
+					for(int j = 0; j < packs[i]->images.getCount(); j++)
+						if (packs[i]->images[j] != NULL)
+							packs[i]->images[j]->Release();
 			}
 
 			break;

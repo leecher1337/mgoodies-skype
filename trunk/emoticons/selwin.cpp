@@ -190,7 +190,8 @@ INT_PTR CALLBACK EmoticonSeletionDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 			for(i = 0; i < num_emotes; i++)
 			{
 				Emoticon *e = ssd->module->emoticons[i];
-				LoadImage(e->img, ssd->max_height, ssd->max_width);
+				if (e->img != NULL)
+					e->img->Load(ssd->max_height, ssd->max_width);
 
 				if (e->img == NULL || e->img->img == NULL)
 				{
@@ -646,7 +647,6 @@ INT_PTR CALLBACK EmoticonSeletionDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 			for(int i = 0; i < ssd->module->emoticons.getCount(); i++)
 			{
 				Emoticon *e = ssd->module->emoticons[i];
-//				ReleaseImage(e->img);
 
 				if (e->tt != NULL)
 				{

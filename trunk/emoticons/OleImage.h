@@ -28,14 +28,14 @@ static const GUID IID_IOleImage = { 0x2fd9449b, 0x7ebb, 0x476a, { 0xa9, 0xdd, 0x
 class OleImage : public IOleObject, public IViewObject, public ITooltipData
 {
 public:
-	OleImage(const TCHAR *aFilename, const TCHAR *aText, const TCHAR *aTooltip);
+	OleImage(const char *aFilename, const TCHAR *aText, const TCHAR *aTooltip);
 	virtual ~OleImage();
 
 	BOOL ShowDownloadingIcon(BOOL show);
 
 	BOOL isValid() const;
 	const TCHAR * GetText() const;
-	const TCHAR * GetFilename() const;
+	const char * GetFilename() const;
 	void OnTimer();
 
 
@@ -81,7 +81,7 @@ public:
 
 protected: 
 	char *filename;
-	TCHAR *originalFilename;
+	char *originalFilename;
 	TCHAR *text;
 	BSTR tooltip;
 	int width;

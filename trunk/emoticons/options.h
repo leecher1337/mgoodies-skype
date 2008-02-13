@@ -26,7 +26,7 @@ Boston, MA 02111-1307, USA.
 
 
 struct Options {
-	TCHAR pack[128];
+	char pack[128];
 	BOOL replace_in_input;
 	BOOL use_default_pack;
 	BOOL only_replace_isolated;
