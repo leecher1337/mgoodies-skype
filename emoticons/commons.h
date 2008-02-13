@@ -91,19 +91,29 @@ extern PLUGINLINK *pluginLink;
 extern FI_INTERFACE *fei;
 
 
+#define MIR_FREE(_X_) { mir_free(_X_); _X_ = NULL; }
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )
 
+struct EmoticonPack;
 
 struct EmoticonImage
 {
+	EmoticonPack *pack;
 	char *name;
-	TCHAR *path;
+	char *relPath;
+	char *module;
 
 	// For selection window
 	HBITMAP img;
 	BOOL transparent;
 
-	EmoticonImage() : name(0), path(0), img(0) {}
+	EmoticonImage() : name(0), relPath(0), img(0), module(0) {}
+	~EmoticonImage();
+
+	void Load(int &max_height, int &max_width);
+	void Release();
+	BOOL isAvaiable();
+	BOOL isAvaiableFor(char *nodule);
 };
 
 struct Emoticon
@@ -117,12 +127,13 @@ struct Emoticon
 	HWND tt;
 
 	Emoticon() : name(0), description(0), texts(20), img(0), tt(0) {}
+	~Emoticon();
 };
 
 struct CustomEmoticon
 {
 	TCHAR *text;
-	TCHAR *path;
+	char *path;
 	BOOL downloading;
 
 	CustomEmoticon() : text(0), path(0), downloading(FALSE) {}
@@ -135,18 +146,21 @@ struct Module
 	LIST<Emoticon> emoticons;
 
 	Module() : name(0), path(0), emoticons(20) {}
+	~Module();
 };
 
 
 struct EmoticonPack
 {
-	TCHAR *name;
-	TCHAR *path;
+	char *name;
+	TCHAR *description;
+	char *path;
 	TCHAR *creator;
 	TCHAR *updater_URL;
 	LIST<EmoticonImage> images;
 
 	EmoticonPack() : name(0), path(0), creator(0), updater_URL(0), images(20) {}
+	~EmoticonPack();
 };
 
 struct RichEditCtrl
@@ -196,8 +210,6 @@ HANDLE GetRealContact(HANDLE hContact);
 Module *GetModule(const char *name);
 
 void FillModuleImages(EmoticonPack *pack);
-void LoadImage(EmoticonImage *img, int &max_height, int &max_width);
-void ReleaseImage(EmoticonImage *img);
 
 
 

@@ -14,14 +14,14 @@ static ImageTimerMapType timers;
 
 
 
-OleImage::OleImage(const TCHAR *aFilename, const TCHAR *aText, const TCHAR *aTooltip)
+OleImage::OleImage(const char *aFilename, const TCHAR *aText, const TCHAR *aTooltip)
 {
 	memset(&si, 0, sizeof(si));
 	memset(&ag, 0, sizeof(ag));
 
 	refCount = 1;
-	filename = mir_t2a(aFilename);
-	originalFilename = mir_tstrdup(aFilename);
+	filename = mir_strdup(aFilename);
+	originalFilename = mir_strdup(aFilename);
 	text = mir_tstrdup(aText);
 	closed = FALSE;
 
@@ -100,7 +100,7 @@ BOOL OleImage::ShowDownloadingIcon(BOOL show)
 	{
 		mir_free(filename);
 
-		filename = mir_t2a(originalFilename);
+		filename = mir_strdup(originalFilename);
 	}
 
 	if (!LoadImages())
@@ -142,7 +142,7 @@ void OleImage::DestroyImages()
 }
 
 
-const TCHAR * OleImage::GetFilename() const
+const char * OleImage::GetFilename() const
 {
 	return originalFilename;
 }
