@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Emoticons",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,9),
+	PLUGIN_MAKE_VERSION(0,0,1,0),
 	"Emoticons",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -351,7 +351,7 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 int ReplaceEmoticonBackwards(RichEditCtrl &rec, Contact *contact, Module *module, TCHAR *text, int text_len, int last_pos, TCHAR next_char)
 {
 	// This are needed to allow 2 different emoticons that end the same way
-	char *found_path = NULL;
+	char found_path[1024];
 	int found_len = -1;
 	TCHAR *found_text;
 	BOOL down = FALSE;
@@ -382,7 +382,7 @@ int ReplaceEmoticonBackwards(RichEditCtrl &rec, Contact *contact, Module *module
 						&& !_istspace(text[text_len - len - 1]))
 					continue;
 
-				found_path = e->img->relPath;
+				mir_snprintf(found_path, MAX_REGS(found_path), "%s\\%s", e->img->pack->path, e->img->relPath);
 				found_len = len;
 				found_text = txt;
 			}
@@ -407,7 +407,7 @@ int ReplaceEmoticonBackwards(RichEditCtrl &rec, Contact *contact, Module *module
 			if (_tcsncmp(&text[text_len - len], txt, len) != 0)
 				continue;
 
-			found_path = e->path;
+			mir_snprintf(found_path, MAX_REGS(found_path), "%s", e->path);
 			found_len = len;
 			found_text = txt;
 			down = e->downloading;
@@ -416,7 +416,7 @@ int ReplaceEmoticonBackwards(RichEditCtrl &rec, Contact *contact, Module *module
 
 	int ret = 0;
 
-	if (found_path != NULL)
+	if (found_len > 0)
 	{
 		// Found ya
 		CHARRANGE sel = { last_pos - found_len, last_pos };
@@ -1395,11 +1395,12 @@ void LoadPacks()
 }
 
 
-EmoticonImage * HandleMepLine(EmoticonPack *p, char *line, BOOL module)
+EmoticonImage * HandleMepLine(EmoticonPack *p, char *line)
 {
 	int len = strlen(line);
 	int state = 0;
 	int pos;
+	int module_pos = -1;
 
 	EmoticonImage *img = NULL;
 
@@ -1411,9 +1412,6 @@ EmoticonImage * HandleMepLine(EmoticonPack *p, char *line, BOOL module)
 
 		if ((state % 2) == 0)
 		{
-			if (state == 0 && !module && c == '\\') // Module name
-				break;
-
 			if (c != '"')
 				continue;
 
@@ -1422,25 +1420,29 @@ EmoticonImage * HandleMepLine(EmoticonPack *p, char *line, BOOL module)
 		}
 		else
 		{
+			if (state == 1 && c == '\\') // Module name
+				module_pos = i;
+
 			if (c != '"')
 				continue;
 
 			line[i] = 0;
 
-			if (state == 1 && module)
+			char *module;
+			char *txt;
+			
+			if (state == 1 && module_pos >= 0)
 			{
-				// Remove the '\\' 
-				for(int j = i - 1; j > pos; j--)
-				{
-					if (line[j] == '\\')
-					{
-						pos = j + i;
-						break;
-					}
-				}
-			}
+				line[module_pos] = 0;
 
-			char * txt = mir_strdup(&line[pos]);
+				module = mir_strdup(&line[pos]);
+				txt = mir_strdup(&line[module_pos + 1]);
+			}
+			else
+			{
+				module = NULL;
+				txt = mir_strdup(&line[pos]);
+			}
 
 			// Found something
 			switch(state)
@@ -1449,6 +1451,7 @@ EmoticonImage * HandleMepLine(EmoticonPack *p, char *line, BOOL module)
 					img = new EmoticonImage();
 					img->pack = p;
 					img->name = txt;
+					img->module = module;
 					break;
 				case 3: 
 					img->relPath = txt; 
@@ -1542,14 +1545,17 @@ BOOL LoadPack(EmoticonPack *pack)
 			}
 			else if (tmp[0] == '"')
 			{
-				EmoticonImage *img = HandleMepLine(pack, tmp, FALSE);
+				EmoticonImage *img = HandleMepLine(pack, tmp);
 				if (img != NULL)
 				{
 					// Chek if already exists
 					for(int i = 0; i < pack->images.getCount(); i++)
 					{
 						EmoticonImage *tmp_img = pack->images[i];
-						if (strcmp(img->name, tmp_img->name) == 0)
+						if (strcmp(img->name, tmp_img->name) == 0
+							&& ((tmp_img->module == NULL && img->module == NULL) 
+								|| (tmp_img->module != NULL && img->module != NULL 
+									&& stricmp(tmp_img->module, img->module) == 0)))
 						{
 							delete tmp_img;
 							pack->images.remove(i);
@@ -1577,15 +1583,20 @@ BOOL LoadPack(EmoticonPack *pack)
 }
 
 
-EmoticonImage * GetModuleImage(EmoticonImage *img, Module *m)
+EmoticonImage * GetModuleImage(EmoticonPack *pack, EmoticonImage *img, Module *m)
 {
 	if (img->isAvaiableFor(m->name))
 	{
 		EmoticonImage * ret = new EmoticonImage();
 		ret->pack = img->pack;
 		ret->name = mir_strdup(img->name);
-		ret->relPath = mir_strdup(img->relPath);
-		ret->module = m->name;
+
+		int size = strlen(m->name) + 1 + strlen(img->relPath) + 1;
+		ret->relPath = (char *) mir_alloc(size * sizeof(char));
+		mir_snprintf(ret->relPath, size, "%s\\%s", m->name, img->relPath);
+
+		ret->module = mir_strdup(m->name);
+		pack->images.insert(ret);
 		return ret;
 	}
 	else if (img->isAvaiable())
@@ -1596,51 +1607,6 @@ EmoticonImage * GetModuleImage(EmoticonImage *img, Module *m)
 	{
 		return NULL;
 	}
-}
-
-
-EmoticonImage * GetEmoticonImageFromMep(EmoticonPack *pack, Emoticon *e, Module *module)
-{
-	char fullname[1024];
-	mir_snprintf(fullname, MAX_REGS(fullname), "\"%s\\%s\"", module->name,  e->name);
-
-	char tmp[1024];
-	mir_snprintf(tmp, MAX_REGS(tmp), "%s\\%s.mep", pack->path, pack->name);
-	FILE *file = fopen(tmp, "rb");
-	if (file == NULL) 
-		return NULL;
-	
-	EmoticonImage *img = NULL;
-	int fullname_len = strlen(fullname);
-	char c;
-	int pos = 0;
-	do
-	{
-		c = fgetc(file);
-
-		if (c == '\n' || c == '\r' || c == EOF || pos >= MAX_REGS(tmp) - 1) 
-		{
-			tmp[pos] = 0;
-			strtrim(tmp);
-			if (strncmp(tmp, fullname, fullname_len) == 0)
-			{
-				img = HandleMepLine(pack, tmp, TRUE);
-				img->module = module->name;
-				break;
-			}
-
-			pos = 0;
-		}
-		else
-		{
-			tmp[pos] = c;
-			pos ++;
-		}
-	}
-	while(c != EOF);
-	fclose(file);
-
-	return img;
 }
 
 
@@ -1698,15 +1664,19 @@ void FillModuleImages(EmoticonPack *pack)
 			Emoticon *e = m->emoticons[k];
 
 			// Free old one
-			if (e->img != NULL)
-			{
-				if (e->img->module != NULL)
-					delete e->img;
-				e->img = NULL;
-			}
+			e->img = NULL;
 
-			// First try from pack file
-			e->img = GetEmoticonImageFromMep(pack, e, m);
+			// First try from pack file for this module
+			int i;
+			for(i = 0; i < pack->images.getCount(); i++)
+			{
+				EmoticonImage *img = pack->images[i];
+				if (img->module != NULL && stricmp(img->module, m->name) == 0 && strcmp(img->name, e->name) == 0)
+				{
+					e->img = img;
+					break;
+				}
+			}
 			if (e->img != NULL)
 				continue;
 
@@ -1715,13 +1685,13 @@ void FillModuleImages(EmoticonPack *pack)
 			if (e->img != NULL)
 				continue;
 
-			// Now try to load from cache
-			for(int i = 0; i < pack->images.getCount(); i++)
+			// Now try to load from defaults cache
+			for(i = 0; i < pack->images.getCount(); i++)
 			{
 				EmoticonImage *img = pack->images[i];
-				if (strcmp(img->name, e->name) == 0)
+				if (img->module == NULL && strcmp(img->name, e->name) == 0)
 				{
-					e->img = GetModuleImage(img, m);
+					e->img = GetModuleImage(pack, img, m);
 					break;
 				}
 			}
@@ -1911,9 +1881,6 @@ Emoticon::~Emoticon()
 	MIR_FREE(name);
 	MIR_FREE(description);
 
-	if (img != NULL && img->module != NULL)
-		delete img;
-
 	for(int i = 0; i < texts.getCount(); i++)
 	{
 		mir_free(texts[i]);
@@ -1942,6 +1909,7 @@ EmoticonImage::~EmoticonImage()
 	Release();
 
 	MIR_FREE(name);
+	MIR_FREE(module);
 	MIR_FREE(relPath);
 }
 
@@ -1978,15 +1946,12 @@ void EmoticonImage::Load(int &max_height, int &max_width)
 		return;
 	}
 
-	DWORD transparent;
+	DWORD transp;
 
 	char tmp[1024];
-	if (module == NULL)
-		mir_snprintf(tmp, MAX_REGS(tmp), "%s\\%s", pack->path, relPath);
-	else
-		mir_snprintf(tmp, MAX_REGS(tmp), "%s\\%s\\%s", pack->path, module, relPath);
+	mir_snprintf(tmp, MAX_REGS(tmp), "%s\\%s", pack->path, relPath);
 
-	img = (HBITMAP) CallService(MS_AV_LOADBITMAP32, (WPARAM) &transparent, (LPARAM) tmp);
+	img = (HBITMAP) CallService(MS_AV_LOADBITMAP32, (WPARAM) &transp, (LPARAM) tmp);
 
 	if (img == NULL)
 		return;
@@ -1999,7 +1964,7 @@ void EmoticonImage::Load(int &max_height, int &max_width)
 		return;
 	}
 
-	transparent = (bmp.bmBitsPixel == 32 && transparent);
+	transparent = (bmp.bmBitsPixel == 32 && transp);
 	if (transparent)
 		PreMultiply(img);
 

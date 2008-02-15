@@ -127,8 +127,14 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 
 				pd->max_height = 0;
 				pd->max_width = 0;
-				for(int j = 0; j < pd->pack->images.getCount() && j < 15; j++)
+				srand(time(NULL));
+				int prob = (pd->pack->images.getCount() - 15) / 30 + 1;
+				for(int j = 0, count = 0; j < pd->pack->images.getCount() && count < 15; j++) {
+					if (rand() % prob != 0)
+						continue;
 					pd->pack->images[j]->Load(pd->max_height, pd->max_width);
+					count++;
+				}
 
 				SendDlgItemMessage(hwndDlg, IDC_PACK, LB_ADDSTRING, 0, (LONG) pd);
 				SendDlgItemMessage(hwndDlg, IDC_PACK, LB_SETITEMDATA, i, (LONG) pd);
@@ -275,19 +281,22 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 			rc_tmp.left = rc_tmp.right + BORDER;
 			rc_tmp.right = rc.right;
 
-			TEXTMETRIC tmb = {0};
-			GetTextMetrics(hdc, &tmb);
+			if (pd->pack->creator != NULL && pd->pack->creator[0] != _T('\0'))
+			{
+				TEXTMETRIC tmb = {0};
+				GetTextMetrics(hdc, &tmb);
 
-			SelectObject(hdc, hFont);
+				SelectObject(hdc, hFont);
 
-			TEXTMETRIC tms = {0};
-			GetTextMetrics(hdc, &tms);
+				TEXTMETRIC tms = {0};
+				GetTextMetrics(hdc, &tms);
 
-			rc_tmp.bottom -= tmb.tmDescent - tms.tmDescent;
+				rc_tmp.bottom -= tmb.tmDescent - tms.tmDescent;
 
-			TCHAR tmp[256];
-			mir_sntprintf(tmp, MAX_REGS(tmp), TranslateT("by %s"), pd->pack->creator);
-			DrawText(hdc, tmp, lstrlen(tmp), &rc_tmp, DT_NOPREFIX | DT_BOTTOM | DT_SINGLELINE);
+				TCHAR tmp[256];
+				mir_sntprintf(tmp, MAX_REGS(tmp), TranslateT("by %s"), pd->pack->creator);
+				DrawText(hdc, tmp, lstrlen(tmp), &rc_tmp, DT_NOPREFIX | DT_BOTTOM | DT_SINGLELINE);
+			}
 
 			rc_tmp.left = rc.left;
 			rc_tmp.right = rc.right;
