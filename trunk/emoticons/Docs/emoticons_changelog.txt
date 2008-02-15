@@ -2,6 +2,11 @@ Emoticons
 
 Changelog:
 
+. 0.0.1.0
+  + Allows loading emoticons from folder with proto name
+  + Allows to write generic paths (inside pack folder) for an emoticon in .mep
+  + Random emoticons in options page
+
 . 0.0.0.9
   + Use AniSmiley if avaiable (recomended) or my control as fallback (more buggy)
   * Updated AniSmiley to latest version (a lot of fixes)

@@ -18,11 +18,22 @@ field 3 -> "/wx" -> Default emoticon text (used when using the selection window)
 fields 4 ... -> "/:)" "/small_smile" -> Other possible texts. Please, try get all possible texts. Also, note that this is case sensitive, so if the protocol is not you have to type all possible combinations.
 
 2. Emoticon packs, containing the emoticons to show, only contain the images and a .mep file describing the creator. 
-Each one must be a folder inside Customize\Emoticons, with the images beeing the pre-configured name of the smiley. Currently gif (included animated ones), png and jpeg images are supported.
+Each one must be a folder inside Customize\Emoticons, with the images beeing the pre-configured name of the smiley. 
+If you want to change images for a protocol, you can create a sub-folder with the protocol name and put the images there (with the images beeing the pre-configured name of the smiley). Currently gif (included animated ones), png and jpeg images are supported.
 The name of the pack is the name of the folder, and a file <Pack name>.mep can exist inside the folder, containing this entries (all of then are optional):
 Name: <Full name of the pack>
 Creator: <Artist name>
 Updater URL: <URL for updating this pack - not yet implemented>
+
+Also, the mep file can expecify the filename for an emoticon, in a line like:
+"<The unique name of the emoticon>" = "<Relative path from pack foler>"
+For example:
+"smile" = "01.gif"
+This will affect all protocols. If you want to change the image for a protocol only, you can write:
+"ICQ\smile" = "ICQ_smile01.gif"
+or
+"ICQ\smile" = "ICQ\smile01.gif"
+
 
 A default pack, containing Tango Emoticons (made by Hylke) is packed and can be used as an example.
 
@@ -37,5 +48,5 @@ TODO:
 - Per protocol pack
 - Support for custom smileys
 - Updater support for Emoticon Packs
-- Support h++
+- Support h++ (works using AniSmiley)
 
