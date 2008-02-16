@@ -22,6 +22,8 @@ Boston, MA 02111-1307, USA.
 # define __DICTIONARY_H__
 
 #include <windows.h>
+#include <m_system_cpp.h>
+
 
 struct Suggestions {
 	TCHAR ** words;
@@ -37,6 +39,7 @@ public:
 	TCHAR localized_name[128];
 	TCHAR english_name[128];
 	TCHAR full_name[256];
+	TCHAR source[128];
 
 	virtual ~Dictionary() {}
 
@@ -76,18 +79,13 @@ public:
 	virtual BOOL isLoaded() =0;
 };
 
-struct Dictionaries {
-	Dictionary ** dicts;
-	size_t count;
-};
-
 
 
 // Return a list of avaible languages
-Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path);
+void GetAvaibleDictionaries(LIST<Dictionary> &dicts, TCHAR *path, TCHAR *user_path);
 
 // Free the list returned by GetAvaibleDictionaries
-void FreeDictionaries(Dictionaries &dicts);
+void FreeDictionaries(LIST<Dictionary> &dicts);
 
 // Free the list returned by GetAvaibleDictionaries
 void FreeSuggestions(Suggestions &suggestions);

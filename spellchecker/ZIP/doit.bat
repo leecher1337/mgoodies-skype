@@ -73,30 +73,10 @@ cd ..
 
 del *.dll
 del *.PDB
-cd Docs
-del /Q *.*
-cd ..
-rmdir Docs
-cd src
-del /Q *.*
-cd Docs
-del /Q *.*
-cd ..
-rmdir Docs
-cd res
-del /Q *.*
-cd ..
-rmdir res
-cd sdk
-del /Q *.*
-cd ..
-rmdir sdk
-cd hunspell
-del /Q *.*
-cd ..
-rmdir hunspell
-cd ..
-rmdir src
+
+rd /S /Q Plugins
+rd /S /Q Docs
+rd /S /Q src
 
 if "%ftp%"=="" GOTO END
 
