@@ -2,6 +2,10 @@ Spell Checker
 
 Changelog:
 
+. 0.1.0.1
+  + Will use also language files avaiable for other apps (Thunderbird and Firefox by now) (thanks yb)
+  * Fix for showing popup menu in group chat
+
 . 0.1.0.0
   + First release in FL
 

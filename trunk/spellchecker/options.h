@@ -45,6 +45,7 @@ struct Options {
 	BOOL show_wrong_word;
 	BOOL use_flags;
 	BOOL auto_locale;
+	BOOL use_other_apps_dicts;
 };
 
 extern Options opts;

@@ -1,1 +1,1 @@
-Spell Checker 0.1.0.0
+Spell Checker 0.1.0.1

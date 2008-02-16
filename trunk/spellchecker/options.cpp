@@ -45,6 +45,7 @@ static OptPageControl optionsControls[] = {
 	{ &opts.show_wrong_word,		CONTROL_CHECKBOX,		IDC_SHOW_WRONG_WORD,		"ShowWrongWord", TRUE },
 	{ &opts.use_flags,				CONTROL_CHECKBOX,		IDC_USE_FLAGS,				"UseFlags", TRUE },
 	{ &opts.auto_locale,			CONTROL_CHECKBOX,		IDC_AUTO_LOCALE,			"AutoLocale", FALSE },
+	{ &opts.use_other_apps_dicts,	CONTROL_CHECKBOX,		IDC_OTHER_PROGS,			"UseOtherAppsDicts", TRUE },
 };
 
 static UINT optionsExpertControls[] = { 
@@ -96,7 +97,7 @@ void LoadOptions()
 {
 	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
 	
-	if (languages.count <= 0)
+	if (languages.getCount() <= 0)
 	{
 		opts.default_language[0] = _T('\0');
 		return;
@@ -109,13 +110,13 @@ void LoadOptions()
 		DBFreeVariant(&dbv);
 	}
 
-	unsigned i;
-	for(i = 0; i < languages.count; i++)
-		if (lstrcmp(languages.dicts[i]->language, opts.default_language) == 0)
+	int i;
+	for(i = 0; i < languages.getCount(); i++)
+		if (lstrcmp(languages[i]->language, opts.default_language) == 0)
 			break;
 
-	if (i >= languages.count)
-		lstrcpy(opts.default_language, languages.dicts[0]->language);
+	if (i >= languages.getCount())
+		lstrcpy(opts.default_language, languages[0]->language);
 }
 
 
@@ -125,13 +126,13 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 	{
 		case WM_INITDIALOG:
 		{
-			unsigned i, sel = UINT_MAX;
-			for(i = 0; i < languages.count; i++)
+			int i, sel = -1;
+			for(i = 0; i < languages.getCount(); i++)
 			{
-				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_ADDSTRING, 0, (LONG) languages.dicts[i]->full_name);
-				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETITEMDATA, i, (DWORD) languages.dicts[i]);
+				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_ADDSTRING, 0, (LONG) languages[i]->full_name);
+				SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETITEMDATA, i, (DWORD) languages[i]);
 
-				if (lstrcmp(opts.default_language, languages.dicts[i]->language) == 0)
+				if (lstrcmp(opts.default_language, languages[i]->language) == 0)
 					sel = i;
 			}
 			SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_SETCURSEL, sel, 0);
@@ -166,14 +167,14 @@ static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARA
 		{
 			LPNMHDR lpnmhdr = (LPNMHDR)lParam;
 
-			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY && languages.dicts != NULL)
+			if (lpnmhdr->idFrom == 0 && lpnmhdr->code == PSN_APPLY && languages.getCount() > 0)
 			{
-				unsigned sel = SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_GETCURSEL, 0, 0);
-				if (sel >= languages.count)
+				int sel = SendDlgItemMessage(hwndDlg, IDC_DEF_LANG, CB_GETCURSEL, 0, 0);
+				if (sel >= languages.getCount())
 					sel = 0;
 				DBWriteContactSettingTString(NULL, MODULE_NAME, "DefaultLanguage", 
-					(TCHAR *) languages.dicts[sel]->language);
-				lstrcpy(opts.default_language, languages.dicts[sel]->language);
+					(TCHAR *) languages[sel]->language);
+				lstrcpy(opts.default_language, languages[sel]->language);
 			}
 			
 			break;

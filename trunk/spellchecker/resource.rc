@@ -27,14 +27,14 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 // Dialog
 //
 
-IDD_OPTIONS DIALOGEX 0, 0, 252, 210
+IDD_OPTIONS DIALOGEX 0, 0, 276, 229
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,250,99
+    GROUPBOX        " Spell Checker ",IDC_SPELL_CHECKER,1,5,274,99
     LTEXT           "Default language:",IDC_STATIC,11,20,82,8
-    COMBOBOX        IDC_DEF_LANG,95,18,145,60,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_DEF_LANG,95,18,173,60,CBS_DROPDOWNLIST | 
                     CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
                     WS_TABSTOP
     CONTROL         "Auto-replace words with dictionary suggestions",
@@ -46,10 +46,10 @@ BEGIN
     CONTROL         "Ignore words in UPPER CASE",IDC_IGNORE_UPPERCASE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,10,64,230,10
     CONTROL         "Download more dictionaries",IDC_GETMORE,"Hyperlink",
-                    WS_TABSTOP | 0x1,10,85,230,12
-    GROUPBOX        " Advanced ",IDC_ADVANCED,1,107,250,100
+                    WS_TABSTOP | 0x1,10,85,258,12
+    GROUPBOX        " Advanced ",IDC_ADVANCED,1,107,274,113
     LTEXT           "Underline type:",IDC_UNDERLINE_TYPE_L,11,123,91,8
-    COMBOBOX        IDC_UNDERLINE_TYPE,110,121,130,60,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_UNDERLINE_TYPE,110,121,158,60,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Show corrections in submenu",IDC_CASCADE_CORRECTIONS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,143,230,10
@@ -63,6 +63,8 @@ BEGIN
     CONTROL         "Use input language to select dictionary",
                     IDC_AUTO_LOCALE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
                     191,230,10
+    CONTROL         "Use dictionaries from other programs",IDC_OTHER_PROGS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,203,230,10
 END
 
 IDD_ADD_REPLACEMENT DIALOG DISCARDABLE  0, 0, 226, 68
@@ -90,9 +92,9 @@ BEGIN
     IDD_OPTIONS, DIALOG
     BEGIN
         LEFTMARGIN, 1
-        RIGHTMARGIN, 251
+        RIGHTMARGIN, 275
         TOPMARGIN, 1
-        BOTTOMMARGIN, 209
+        BOTTOMMARGIN, 228
     END
 
     IDD_ADD_REPLACEMENT, DIALOG

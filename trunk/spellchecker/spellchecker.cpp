@@ -65,6 +65,7 @@ static IconStruct iconList[] =
 
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
+LIST_INTERFACE li;
 
 HANDLE hHooks[6];
 HANDLE hServices[3];
@@ -84,7 +85,7 @@ BITMAP bmpChecked;
 char *metacontacts_proto = NULL;
 BOOL loaded = FALSE;
 
-Dictionaries languages = {0};
+LIST<Dictionary> languages(1);
 
 typedef map<HWND, Dialog *> DialogMapType;
 
@@ -245,6 +246,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	pluginLink = link;
 
 	init_mir_malloc();
+	mir_getLI(&li);
 
 	// hooks
 	hHooks[0] = HookEvent(ME_SYSTEM_MODULESLOADED, ModulesLoaded);
@@ -260,9 +262,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 extern "C" int __declspec(dllexport) Unload(void) 
 {
 	DeleteObject(hCheckedBmp);
-
-	for(unsigned i = 0; i < MAX_REGS(hServices); ++i)
-		DestroyServiceFunction(hServices[i]);
 
 	return 0;
 }
@@ -293,14 +292,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/spellchecker_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/spellchecker#Changelog";
+		upd.szBetaVersionURL = "http://pescuma.org/miranda/spellchecker_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.org/miranda/spellchecker#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"Spell Checker ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/spellcheckerW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/spellcheckerW.zip";
 #else
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/spellchecker.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/spellchecker.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
@@ -363,9 +362,11 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 	}
 
-	languages = GetAvaibleDictionaries(dictionariesFolder, customDictionariesFolder);
-
 	InitOptions();
+	
+	GetAvaibleDictionaries(languages, dictionariesFolder, customDictionariesFolder);
+
+	LoadOptions();
 
 	if (opts.use_flags)
 	{
@@ -378,15 +379,15 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		sid.ptszSection = TranslateT("Languages/Flags");
 
 		// Get language flags
-		for(unsigned i = 0; i < languages.count; i++)
+		for(int i = 0; i < languages.getCount(); i++)
 		{
-			sid.ptszDescription = languages.dicts[i]->full_name;
+			sid.ptszDescription = languages[i]->full_name;
 #ifdef UNICODE
 			char lang[32];
-			mir_snprintf(lang, MAX_REGS(lang), "%S", languages.dicts[i]->language);
+			mir_snprintf(lang, MAX_REGS(lang), "%S", languages[i]->language);
 			sid.pszName = lang;
 #else
-			sid.pszName = languages.dicts[i]->language;
+			sid.pszName = languages[i]->language;
 #endif
 
 			HICON hFlag = LoadIconEx(sid.pszName);
@@ -398,7 +399,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 			}
 			
 			if (hFlagsDll != NULL)
-				hFlag = (HICON) LoadImage(hFlagsDll, languages.dicts[i]->language, IMAGE_ICON, 16, 16, 0);
+				hFlag = (HICON) LoadImage(hFlagsDll, languages[i]->language, IMAGE_ICON, 16, 16, 0);
 			else
 				hFlag = NULL;
 
@@ -426,11 +427,11 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	if (opts.default_language[0] != _T('\0'))
 	{
-		for(unsigned i = 0; i < languages.count; i++)
+		for (int i = 0; i < languages.getCount(); i++)
 		{
-			if (lstrcmp(languages.dicts[i]->language, opts.default_language) == 0)
+			if (lstrcmp(languages[i]->language, opts.default_language) == 0)
 			{
-				languages.dicts[i]->load();
+				languages[i]->load();
 				break;
 			}
 		}
@@ -453,17 +454,17 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 		sid.hIconDisabled = LoadIconEx("spellchecker_disabled", TRUE);
 		sid.flags = MBF_HIDDEN;
 
-		for(unsigned i = 0; i < languages.count; i++)
+		for (int i = 0; i < languages.getCount(); i++)
 		{
 			sid.dwId = i;
 
 			char tmp[128];
 			mir_snprintf(tmp, MAX_REGS(tmp), "%s - " TCHAR_STR_PARAM, 
-				Translate("Spell Checker"), languages.dicts[i]->full_name);
+				Translate("Spell Checker"), languages[i]->full_name);
 			sid.szTooltip = tmp;
 
 			if (opts.use_flags)
-				sid.hIcon = LoadIconEx(languages.dicts[i], TRUE);
+				sid.hIcon = LoadIconEx(languages[i], TRUE);
 			else
 				sid.hIcon = LoadIconEx("spellchecker_enabled", TRUE);
 
@@ -488,17 +489,17 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 		sid.flags = MBF_HIDDEN;
 		
 
-		for(unsigned i = 0; i < languages.count; i++)
+		for (int i = 0; i < languages.getCount(); i++)
 		{
 			sid.dwId = i;
 
 			char tmp[128];
 			mir_snprintf(tmp, MAX_REGS(tmp), "%s - " TCHAR_STR_PARAM, 
-				Translate("Spell Checker"), languages.dicts[i]->full_name);
+				Translate("Spell Checker"), languages[i]->full_name);
 			sid.szTooltip = tmp;
 
 			if (opts.use_flags)
-				sid.hIcon = LoadIconEx(languages.dicts[i], TRUE);
+				sid.hIcon = LoadIconEx(languages[i], TRUE);
 			else
 				sid.hIcon = LoadIconEx("spellchecker_enabled", TRUE);
 
@@ -512,6 +513,13 @@ int IconsChanged(WPARAM wParam, LPARAM lParam)
 
 int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
+	int i;
+	for(i = 0; i < MAX_REGS(hServices); i++)
+		DestroyServiceFunction(hServices[i]);
+
+	for(i = 0; i < MAX_REGS(hHooks); i++)
+		UnhookEvent(hHooks[i]);
+
 	DeInitOptions();
 
 	if (ServiceExists(MS_MSG_REMOVEICON))
@@ -521,9 +529,6 @@ int PreShutdown(WPARAM wParam, LPARAM lParam)
 		sid.szModule = MODULE_NAME;
 		CallService(MS_MSG_REMOVEICON, 0, (LPARAM) &sid);
 	}
-
-	for(unsigned i=0; i<MAX_REGS(hHooks); ++i)
-		UnhookEvent(hHooks[i]);
 
 	return 0;
 }
@@ -563,7 +568,7 @@ inline void GetLineOfText(Dialog *dlg, int line, int &first_char, TCHAR *text, s
 	first_char = SendMessage(dlg->hwnd, EM_LINEINDEX, (WPARAM) line, 0);
 
 	*((WORD*)text) = text_len - 1;
-	int size = SendMessage(dlg->hwnd, EM_GETLINE, (WPARAM) line, (LPARAM) text);
+	unsigned size = (unsigned) SendMessage(dlg->hwnd, EM_GETLINE, (WPARAM) line, (LPARAM) text);
 	size = max(0, min(text_len-1, size-1));
 	text[size] = _T('\0');
 }
@@ -641,7 +646,7 @@ inline void DealWord(Dialog *dlg, TCHAR *text, int &first_char, int &last_pos, i
 
 
 // Checks for errors in all text
-void CheckText(Dialog *dlg, BOOL check_word_under_cursor, 
+void CheckText(Dialog *dlg, BOOL check_all, 
 			   FoundWrongWordCallback callback = NULL, void *param = NULL)
 {
 	STOP_RICHEDIT(dlg);
@@ -651,7 +656,7 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor,
 		int lines = SendMessage(dlg->hwnd, EM_GETLINECOUNT, 0, 0);
 		int line = 0;
 
-		if (!check_word_under_cursor)
+		if (!check_all)
 		{
 			// Check only the current line, one up and one down
 			int current_line = SendMessage(dlg->hwnd, EM_LINEFROMCHAR, (WPARAM) __old_sel.cpMin, 0);
@@ -752,7 +757,7 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor,
 						if (found_real_char)
 						{
 							// Is under cursor?
-							if (check_word_under_cursor || !(first_char+last_pos <= __old_sel.cpMax && first_char+pos >= __old_sel.cpMin))
+							if (check_all || !(first_char+last_pos <= __old_sel.cpMax && first_char+pos >= __old_sel.cpMin))
 							{
 								DealWord(dlg, text, first_char, last_pos, pos, __old_sel, diff, callback, param);
 							}
@@ -779,7 +784,7 @@ void CheckText(Dialog *dlg, BOOL check_word_under_cursor,
 				if (found_real_char)
 				{
 					// Is under cursor?
-					if (check_word_under_cursor || !(first_char+last_pos <= __old_sel.cpMax && first_char+pos >= __old_sel.cpMin))
+					if (check_all || !(first_char+last_pos <= __old_sel.cpMax && first_char+pos >= __old_sel.cpMin))
 					{
 						DealWord(dlg, text, first_char, last_pos, pos, __old_sel, diff, callback, param);
 					}
@@ -820,7 +825,7 @@ void LoadDictFromKbdl(Dialog *dlg)
 		int d = GetClosestLanguage(szKLName);
 		if (d >= 0)
 		{
-			dlg->lang = languages.dicts[d];
+			dlg->lang = languages[d];
 			dlg->lang->load();
 
 			if (dlg->srmm)
@@ -984,9 +989,9 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 int GetClosestLanguage(TCHAR *lang_name) 
 {
 	// Search the language by name
-	for(unsigned i = 0; i < languages.count; i++)
+	for (int i = 0; i < languages.getCount(); i++)
 	{
-		if (lstrcmpi(languages.dicts[i]->language, lang_name) == 0)
+		if (lstrcmpi(languages[i]->language, lang_name) == 0)
 		{
 			return i;
 		}
@@ -997,9 +1002,9 @@ int GetClosestLanguage(TCHAR *lang_name)
 	if (p != NULL)
 	{
 		*p = _T('\0');
-		for(unsigned i = 0; i < languages.count; i++)
+		for (int i = 0; i < languages.getCount(); i++)
 		{
-			if (lstrcmpi(languages.dicts[i]->language, lang_name) == 0)
+			if (lstrcmpi(languages[i]->language, lang_name) == 0)
 			{
 				*p = '_';
 				return i;
@@ -1012,10 +1017,10 @@ int GetClosestLanguage(TCHAR *lang_name)
 	if (p == NULL)
 	{
 		size_t len = lstrlen(lang_name);
-		for(unsigned i = 0; i < languages.count; i++)
+		for (int i = 0; i < languages.getCount(); i++)
 		{
-			if (_tcsnicmp(languages.dicts[i]->language, lang_name, len) == 0 
-				&& languages.dicts[i]->language[len] == _T('_'))
+			if (_tcsnicmp(languages[i]->language, lang_name, len) == 0 
+				&& languages[i]->language[len] == _T('_'))
 			{
 				return i;
 			}
@@ -1031,16 +1036,16 @@ void GetUserProtoLanguageSetting(Dialog *dlg, HANDLE hContact, char *proto, char
 
 	if (!DBGetContactSettingTString(hContact, proto, setting, &dbv))
 	{
-		for(unsigned i = 0; i < languages.count; i++)
+		for (int i = 0; i < languages.getCount(); i++)
 		{
-			if (lstrcmpi(languages.dicts[i]->localized_name, dbv.ptszVal) == 0)
+			if (lstrcmpi(languages[i]->localized_name, dbv.ptszVal) == 0)
 			{
-				lstrcpyn(dlg->lang_name, languages.dicts[i]->language, MAX_REGS(dlg->lang_name));
+				lstrcpyn(dlg->lang_name, languages[i]->language, MAX_REGS(dlg->lang_name));
 				break;
 			}
-			if (lstrcmpi(languages.dicts[i]->english_name, dbv.ptszVal) == 0)
+			if (lstrcmpi(languages[i]->english_name, dbv.ptszVal) == 0)
 			{
-				lstrcpyn(dlg->lang_name, languages.dicts[i]->language, MAX_REGS(dlg->lang_name));
+				lstrcpyn(dlg->lang_name, languages[i]->language, MAX_REGS(dlg->lang_name));
 				break;
 			}
 		}
@@ -1146,7 +1151,7 @@ void GetContactLanguage(Dialog *dlg)
 
 	if (i >= 0)
 	{
-		dlg->lang = languages.dicts[i];
+		dlg->lang = languages[i];
 		dlg->lang->load();
 	}
 	else 
@@ -1163,11 +1168,11 @@ void ModifyIcon(Dialog *dlg)
 		sid.cbSize = sizeof(sid);
 		sid.szModule = MODULE_NAME;
 
-		for(unsigned i = 0; i < languages.count; i++)
+		for (int i = 0; i < languages.getCount(); i++)
 		{
 			sid.dwId = i;
 			
-			if (languages.dicts[i] == dlg->lang)
+			if (languages[i] == dlg->lang)
 				sid.flags = (dlg->enabled ? 0 : MBF_DISABLED);
 			else
 				sid.flags = MBF_HIDDEN;
@@ -1188,7 +1193,7 @@ int AddContactTextBoxService(WPARAM wParam, LPARAM lParam)
 
 int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hwndOwner) 
 {
-	if (languages.count <= 0)
+	if (languages.getCount() <= 0)
 		return 0;
 
 	if (dialogs.find(hwnd) == dialogs.end())
@@ -1513,7 +1518,7 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 	if (GetMenuItemCount(hMenu) > 0)
 		InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
 
-	if (languages.count > 0 && dlg->enabled)
+	if (languages.getCount() > 0 && dlg->enabled)
 	{
 		dlg->hLanguageSubMenu = CreatePopupMenu();
 
@@ -1521,10 +1526,10 @@ void AddItemsToMenu(Dialog *dlg, HMENU hMenu, POINT pt, HWND hwndOwner)
 			dlg->old_menu_proc = (WNDPROC) SetWindowLong(dlg->hwnd_menu_owner, GWL_WNDPROC, (LONG) MenuWndProc);
 
 		// First add languages
-		for(unsigned i = 0; i < languages.count; i++)
+		for (int i = 0; i < languages.getCount(); i++)
 		{
-			AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0),
-				LANGUAGE_MENU_ID_BASE + i, languages.dicts[i]->full_name);
+			AppendMenu(dlg->hLanguageSubMenu, MF_STRING | (languages[i] == dlg->lang ? MF_CHECKED : 0),
+				LANGUAGE_MENU_ID_BASE + i, languages[i]->full_name);
 		}
 
 		AppendSubmenu(hMenu, dlg->hLanguageSubMenu, TranslateT("Language"));
@@ -1584,7 +1589,7 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 
 		ret = TRUE;
 	}
-	else if (selection >= LANGUAGE_MENU_ID_BASE && selection < LANGUAGE_MENU_ID_BASE + languages.count)
+	else if (selection >= LANGUAGE_MENU_ID_BASE && selection < LANGUAGE_MENU_ID_BASE + (unsigned) languages.getCount())
 	{
 		STOP_RICHEDIT(dlg);
 		SetNoUnderline(dlg->hwnd);
@@ -1592,10 +1597,10 @@ BOOL HandleMenuSelection(Dialog *dlg, POINT pt, unsigned selection)
 
 		if (dlg->hContact == NULL)
 			DBWriteContactSettingTString(NULL, MODULE_NAME, dlg->name, 
-					languages.dicts[selection - LANGUAGE_MENU_ID_BASE]->language);
+					languages[selection - LANGUAGE_MENU_ID_BASE]->language);
 		else
 			DBWriteContactSettingTString(dlg->hContact, MODULE_NAME, "TalkLanguage", 
-					languages.dicts[selection - LANGUAGE_MENU_ID_BASE]->language);
+					languages[selection - LANGUAGE_MENU_ID_BASE]->language);
 
 		GetContactLanguage(dlg);
 
@@ -1802,7 +1807,7 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 		// Show the menu
 		HMENU hMenu = CreatePopupMenu();
 
-		if (languages.count > 0)
+		if (languages.getCount() > 0)
 		{
 			if (opts.use_flags)
 			{
@@ -1812,10 +1817,10 @@ int IconPressed(WPARAM wParam, LPARAM lParam)
 			}
 
 			// First add languages
-			for(unsigned i = 0; i < languages.count; i++)
+			for (int i = 0; i < languages.getCount(); i++)
 			{
-				AppendMenu(hMenu, MF_STRING | (languages.dicts[i] == dlg->lang ? MF_CHECKED : 0),
-					LANGUAGE_MENU_ID_BASE + i, languages.dicts[i]->full_name);
+				AppendMenu(hMenu, MF_STRING | (languages[i] == dlg->lang ? MF_CHECKED : 0),
+					LANGUAGE_MENU_ID_BASE + i, languages[i]->full_name);
 			}
 
 			InsertMenu(hMenu, 0, MF_BYPOSITION | MF_SEPARATOR, 0, 0);
@@ -1860,7 +1865,7 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			for(int i = 0; i < count; i++)
 			{
 				unsigned id = GetMenuItemID(hMenu, i);
-				if (id < LANGUAGE_MENU_ID_BASE || id >= LANGUAGE_MENU_ID_BASE + languages.count) 
+				if (id < LANGUAGE_MENU_ID_BASE || id >= LANGUAGE_MENU_ID_BASE + (unsigned) languages.getCount()) 
 					continue;
 
 				MENUITEMINFO mii = {0};
@@ -1877,12 +1882,12 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_DRAWITEM:
 		{
 			LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT)lParam;
-			if(lpdis->itemID < LANGUAGE_MENU_ID_BASE || lpdis->itemID >= LANGUAGE_MENU_ID_BASE + languages.count) 
+			if (lpdis->CtlType != ODT_MENU || lpdis->itemID < LANGUAGE_MENU_ID_BASE || lpdis->itemID >= LANGUAGE_MENU_ID_BASE + (unsigned) languages.getCount()) 
 				break;
 
 			int pos = lpdis->itemID - LANGUAGE_MENU_ID_BASE;
 
-			Dictionary *dict = languages.dicts[pos];
+			Dictionary *dict = languages[pos];
 
 			COLORREF clrfore = SetTextColor(lpdis->hDC, 
 					GetSysColor(lpdis->itemState & ODS_SELECTED ? COLOR_HIGHLIGHTTEXT : COLOR_MENUTEXT));
@@ -1942,12 +1947,12 @@ LRESULT CALLBACK MenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_MEASUREITEM:
 		{
 			LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT)lParam;
-			if(lpmis->itemID < LANGUAGE_MENU_ID_BASE || lpmis->itemID >= LANGUAGE_MENU_ID_BASE + languages.count) 
+			if (lpmis->CtlType != ODT_MENU || lpmis->itemID < LANGUAGE_MENU_ID_BASE || lpmis->itemID >= LANGUAGE_MENU_ID_BASE + (unsigned) languages.getCount()) 
 				break;
 
 			int pos = lpmis->itemID - LANGUAGE_MENU_ID_BASE;
 
-			Dictionary *dict = languages.dicts[pos];
+			Dictionary *dict = languages[pos];
 
 			HDC hdc = GetDC(hwnd);
 

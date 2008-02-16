@@ -55,7 +55,7 @@ TCHAR *aditionalLanguages[] = {
 
 class HunspellDictionary : public Dictionary {
 protected:
-	TCHAR path[1024];
+	TCHAR fileWithoutExtension[1024];
 	TCHAR userPath[1024];
 	map<TSTRING, TSTRING> autoReplaceMap;
 	int loaded;
@@ -243,11 +243,15 @@ protected:
 	}
 
 public:
-	HunspellDictionary(TCHAR *aLanguage, TCHAR *aPath, TCHAR *aUserPath)
+	HunspellDictionary(TCHAR *aLanguage, TCHAR *aFileWithoutExtension, TCHAR *aUserPath, TCHAR *aSource)
 	{
 		lstrcpyn(language, aLanguage, MAX_REGS(language));
-		lstrcpyn(path, aPath, MAX_REGS(path));
+		lstrcpyn(fileWithoutExtension, aFileWithoutExtension, MAX_REGS(fileWithoutExtension));
 		lstrcpyn(userPath, aUserPath, MAX_REGS(userPath));
+		if (aSource == NULL)
+			source[0] = _T('\0');
+		else
+			lstrcpyn(source, aSource, MAX_REGS(source));
 
 		loaded = LANGUAGE_NOT_LOADED;
 		localized_name[0] = _T('\0');
@@ -272,11 +276,11 @@ public:
 		char aff[1024];
 
 #ifdef UNICODE
-		mir_snprintf(dic, MAX_REGS(dic), "%S\\%S.dic", path, language);
-		mir_snprintf(aff, MAX_REGS(aff), "%S\\%S.aff", path, language);
+		mir_snprintf(dic, MAX_REGS(dic), "%S.dic", fileWithoutExtension);
+		mir_snprintf(aff, MAX_REGS(aff), "%S.aff", fileWithoutExtension);
 #else
-		mir_snprintf(dic, MAX_REGS(dic), "%s\\%s.dic", path, language);
-		mir_snprintf(aff, MAX_REGS(aff), "%s\\%s.aff", path, language);
+		mir_snprintf(dic, MAX_REGS(dic), "%s.dic", fileWithoutExtension);
+		mir_snprintf(aff, MAX_REGS(aff), "%s.aff", fileWithoutExtension);
 #endif
 
 		hunspell = new Hunspell(aff, dic);
@@ -366,7 +370,7 @@ public:
 		{
 			// Oki, lets make our array
 			ret.words = (TCHAR **) malloc(ret.count * sizeof(TCHAR *));
-			for (int i = 0; i < ret.count; i++)
+			for (unsigned i = 0; i < ret.count; i++)
 			{
 				ret.words[i] = fromHunspell(words[i]);
 				free(words[i]);
@@ -545,7 +549,7 @@ DWORD WINAPI LoadThread(LPVOID hd)
 
 
 // To use with EnumLocalesProc :(
-Dictionaries *tmp_dicts;
+LIST<Dictionary> *tmp_dicts;
 
 // To get the names of the languages
 BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
@@ -560,19 +564,17 @@ BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
 
 	TCHAR name[64];
 	mir_sntprintf(name, MAX_REGS(name), _T("%s_%s"), ini, end);
-	for(unsigned i = 0; i < tmp_dicts->count; i++)
+	for(int i = 0; i < tmp_dicts->getCount(); i++)
 	{
-		if (lstrcmpi(tmp_dicts->dicts[i]->language, name) == 0)
+		Dictionary *dict = (*tmp_dicts)[i];
+		if (lstrcmpi(dict->language, name) == 0)
 		{
-			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLANGUAGE, 
-				tmp_dicts->dicts[i]->localized_name, MAX_REGS(tmp_dicts->dicts[i]->localized_name));
-			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SENGLANGUAGE, 
-				tmp_dicts->dicts[i]->english_name, MAX_REGS(tmp_dicts->dicts[i]->english_name));
+			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SLANGUAGE, dict->localized_name, MAX_REGS(dict->localized_name));
+			GetLocaleInfo(MAKELCID(langID, 0), LOCALE_SENGLANGUAGE, dict->english_name, MAX_REGS(dict->english_name));
 
-			if (tmp_dicts->dicts[i]->localized_name[0] != _T('\0'))
+			if (dict->localized_name[0] != _T('\0'))
 			{
-				mir_sntprintf(tmp_dicts->dicts[i]->full_name, MAX_REGS(tmp_dicts->dicts[i]->full_name), 
-					_T("%s [%s]"), tmp_dicts->dicts[i]->localized_name, tmp_dicts->dicts[i]->language);
+				mir_sntprintf(dict->full_name, MAX_REGS(dict->full_name), _T("%s [%s]"), dict->localized_name, dict->language);
 			}
 			break;
 		}
@@ -581,144 +583,210 @@ BOOL CALLBACK EnumLocalesProc(LPTSTR lpLocaleString)
 }
 
 
-// Return a list of avaible languages
-Dictionaries GetAvaibleDictionaries(TCHAR *path, TCHAR *user_path)
+void GetDictsInfo(LIST<Dictionary> &dicts)
 {
-	Dictionaries dicts = {0};
+	tmp_dicts = &dicts;
+	EnumSystemLocales(EnumLocalesProc, LCID_SUPPORTED);
 
+	// Try to get name from DB
+	for(int i = 0; i < dicts.getCount(); i++)
+	{
+		Dictionary *dict = dicts[i];
+		if (dict->full_name[0] == _T('\0'))
+		{
+			DBVARIANT dbv;
+#ifdef UNICODE
+			char lang[128];
+			WideCharToMultiByte(CP_ACP, 0, dict->language, -1, lang, sizeof(lang), NULL, NULL);
+			if (!DBGetContactSettingTString(NULL, MODULE_NAME, lang, &dbv))
+#else
+			if (!DBGetContactSettingTString(NULL, MODULE_NAME, dict->language, &dbv))
+#endif
+			{
+				lstrcpyn(dict->localized_name, dbv.ptszVal, MAX_REGS(dict->localized_name));
+				DBFreeVariant(&dbv);
+			}
+
+			if (dict->localized_name[0] == _T('\0'))
+			{
+				for(size_t j = 0; j < MAX_REGS(aditionalLanguages); j+=2)
+				{
+					if (lstrcmp(aditionalLanguages[j], dict->language) == 0)
+					{
+						lstrcpyn(dict->localized_name, aditionalLanguages[j+1], MAX_REGS(dict->localized_name));
+						break;
+					}
+				}
+			}
+
+			if (dict->localized_name[0] != _T('\0'))
+			{
+				mir_sntprintf(dict->full_name, MAX_REGS(dict->full_name), _T("%s [%s]"), dict->localized_name, dict->language);
+			}
+			else
+			{
+				lstrcpyn(dict->full_name, dict->language, MAX_REGS(dict->full_name));
+			}
+		}
+	}
+}
+
+
+void GetHunspellDictionariesFromFolder(LIST<Dictionary> &dicts, TCHAR *path, TCHAR *user_path, TCHAR *source)
+{
 	// Load the language files and create an array with then
 	TCHAR file[1024];
 	mir_sntprintf(file, MAX_REGS(file), _T("%s\\*.dic"), path);
 
-	// Lets count the files
+	BOOL found = FALSE;
+
 	WIN32_FIND_DATA ffd = {0};
 	HANDLE hFFD = FindFirstFile(file, &ffd);
 	if (hFFD != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			TCHAR tmp[1024];
-			mir_sntprintf(tmp, MAX_REGS(tmp), _T("%s\\%s"), path, ffd.cFileName);
+			mir_sntprintf(file, MAX_REGS(file), _T("%s\\%s"), path, ffd.cFileName);
 
 			// Check .dic
-			DWORD attrib = GetFileAttributes(tmp);
+			DWORD attrib = GetFileAttributes(file);
 			if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
 				continue;
 
 			// See if .aff exists too
-			lstrcpy(&tmp[lstrlen(tmp) - 4], _T(".aff"));
-			attrib = GetFileAttributes(tmp);
+			lstrcpy(&file[lstrlen(file) - 4], _T(".aff"));
+			attrib = GetFileAttributes(file);
 			if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
 				continue;
 
-			dicts.count++;
+			ffd.cFileName[lstrlen(ffd.cFileName)-4] = _T('\0');
+
+			TCHAR *lang = ffd.cFileName;
+
+			// Replace - for _
+			int i;
+			for(i = 0; i < lstrlen(lang); i++)
+				if (lang[i] == _T('-'))
+					lang[i] = _T('_');
+
+			// Check if dict is new
+			BOOL exists = FALSE;
+			for(i = 0; i < dicts.getCount() && !exists; i++)
+				if (lstrcmp(dicts[i]->language, lang) == 0)
+					exists = TRUE;
+
+			if (!exists)
+			{
+				found = TRUE;
+				file[lstrlen(file) - 4] = _T('\0');
+				dicts.insert(new HunspellDictionary(lang, file, user_path, source));
+			}
 		}
 		while(FindNextFile(hFFD, &ffd));
 
 		FindClose(hFFD);
 	}
+}
 
-	if (dicts.count > 0)
+
+// Return a list of avaible languages
+void GetAvaibleDictionaries(LIST<Dictionary> &dicts, TCHAR *path, TCHAR *user_path)
+{
+	// Get miranda folder dicts
+	GetHunspellDictionariesFromFolder(dicts, path, user_path, NULL);
+
+	if (opts.use_other_apps_dicts)
 	{
-		// Oki, lets make our cache struct
-		dicts.dicts = (Dictionary **) malloc(dicts.count * sizeof(Dictionary *));
-		ZeroMemory(dicts.dicts, dicts.count * sizeof(Dictionary *));
+		TCHAR *otherHunspellApps[] = { _T("Thunderbird"), _T("thunderbird.exe"), 
+									   _T("Firefox"), _T("firefox.exe") };
 
-		size_t i = 0;
-		hFFD = FindFirstFile(file, &ffd);
-		if (hFFD != INVALID_HANDLE_VALUE)
+#define APPPATH  _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\%s")
+#define MUICACHE _T("Software\\Microsoft\\Windows\\ShellNoRoam\\MUICache")
+
+		// Get other apps dicts
+		for (int i = 0; i < MAX_REGS(otherHunspellApps); i += 2)
 		{
-			do
+			TCHAR key[1024];
+			mir_sntprintf(key, MAX_REGS(key), APPPATH, otherHunspellApps[i+1]);
+
+			HKEY hKey = 0;
+			LONG lResult = 0;
+			if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_LOCAL_MACHINE, key, 0, KEY_QUERY_VALUE, &hKey))
 			{
-				TCHAR tmp[1024];
-				mir_sntprintf(tmp, MAX_REGS(tmp), _T("%s\\%s"), path, ffd.cFileName);
-
-				// Check .dic
-				DWORD attrib = GetFileAttributes(tmp);
-				if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
-					continue;
-
-				// See if .aff exists too
-				lstrcpy(&tmp[lstrlen(tmp) - 4], _T(".aff"));
-				attrib = GetFileAttributes(tmp);
-				if (attrib == 0xFFFFFFFF || (attrib & FILE_ATTRIBUTE_DIRECTORY))
-					continue;
-
-				ffd.cFileName[lstrlen(ffd.cFileName)-4] = _T('\0');
-
-				dicts.dicts[i] = new HunspellDictionary(ffd.cFileName, path, user_path);
-
-				i++;
+				DWORD size = MAX_REGS(key);
+				lResult = RegQueryValueEx(hKey, _T("Path"), NULL, NULL, (LPBYTE)key, &size);
+				RegCloseKey(hKey);
 			}
-			while(i < dicts.count && FindNextFile(hFFD, &ffd));
-
-			dicts.count = i;
-
-			FindClose(hFFD);
-		}
-		
-		tmp_dicts = &dicts;
-		EnumSystemLocales(EnumLocalesProc, LCID_SUPPORTED);
-
-		// Try to get name from DB
-		for(i = 0; i < dicts.count; i++)
-		{
-			Dictionary *dict = dicts.dicts[i];
-			if (dict->full_name[0] == _T('\0'))
-			{
-				DBVARIANT dbv;
-#ifdef UNICODE
-				char lang[128];
-				WideCharToMultiByte(CP_ACP, 0, dict->language, -1, lang, sizeof(lang), NULL, NULL);
-				if (!DBGetContactSettingTString(NULL, MODULE_NAME, lang, &dbv))
-#else
-				if (!DBGetContactSettingTString(NULL, MODULE_NAME, dict->language, &dbv))
-#endif
+			else 
+			{ 
+				// Not found in installed apps - Try MUICache
+				lResult = RegOpenKeyEx(HKEY_CURRENT_USER, MUICACHE, 0, KEY_QUERY_VALUE, &hKey);
+				if (ERROR_SUCCESS == lResult)
 				{
-					lstrcpyn(dict->localized_name, dbv.ptszVal, MAX_REGS(dict->localized_name));
-					DBFreeVariant(&dbv);
-				}
+					DWORD numValues;
+					if (ERROR_SUCCESS != RegQueryInfoKey(hKey, NULL, NULL, NULL, NULL, NULL, NULL, &numValues, NULL, NULL, NULL, NULL)) 
+						numValues = 0;
 
-				if (dict->localized_name[0] == _T('\0'))
-				{
-					for(size_t j = 0; j < MAX_REGS(aditionalLanguages); j+=2)
+					lResult = ERROR_NO_MORE_ITEMS;
+					for (DWORD local = 0; local < numValues; local++) 
 					{
-						if (lstrcmp(aditionalLanguages[j], dict->language) == 0)
-						{
-							lstrcpyn(dict->localized_name, aditionalLanguages[j+1], MAX_REGS(dict->localized_name));
+						DWORD cchValue = MAX_REGS(key);
+						if (ERROR_SUCCESS != RegEnumValue(hKey, local, key, &cchValue, NULL, NULL, NULL, NULL)) 
 							break;
+						key[cchValue] = 0;
+						TCHAR *pos;
+						if (pos = _tcsrchr(key, _T('\\')))
+						{
+							if (lstrcmpi(&pos[1], otherHunspellApps[i+1]) == 0)
+							{
+								pos[0] = 0;
+								lResult = ERROR_SUCCESS;
+								break;
+							}
 						}
 					}
-				}
-
-				if (dict->localized_name[0] != _T('\0'))
-				{
-					mir_sntprintf(dict->full_name, MAX_REGS(dict->full_name), 
-						_T("%s [%s]"), dict->localized_name, dict->language);
-				}
-				else
-				{
-					lstrcpyn(dict->full_name, dict->language, MAX_REGS(dict->full_name));
-				}
+					RegCloseKey(hKey);
+				} 
 			}
+
+			if (ERROR_SUCCESS == lResult)
+			{
+				TCHAR folder[1024];
+				mir_sntprintf(folder, MAX_REGS(folder), _T("%s\\Dictionaries"), key);
+				GetHunspellDictionariesFromFolder(languages, folder, user_path, otherHunspellApps[i]);
+			}       
 		}
 	}
 
-	return dicts;
+	GetDictsInfo(dicts);
+
+	// Yeah, yeah, yeah, I know, but this is the easiest way...
+	SortedList *sl = (SortedList *) &dicts;
+
+	// Sort dicts
+	for(int i = 0; i < dicts.getCount(); i++)
+	{
+		for(int j = i + 1; j < dicts.getCount(); j++)
+		{
+			if (lstrcmp(dicts[i]->full_name, dicts[j]->full_name) > 0)
+			{
+				Dictionary *dict = dicts[i];
+				sl->items[i] = dicts[j];
+				sl->items[j] = dict;
+			}
+		}
+	}
 }
 
 
 // Free the list returned by GetAvaibleDictionaries
-void FreeDictionaries(Dictionaries &dicts)
+void FreeDictionaries(LIST<Dictionary> &dicts)
 {
-	for (size_t i = 0; i < dicts.count; i++)
+	for (int i = 0; i < dicts.getCount(); i++)
 	{
-		delete dicts.dicts[i];
+		delete dicts[i];
 	}
-	free(dicts.dicts);
-
-	dicts.dicts = NULL;
-	dicts.count = 0;
+	dicts.destroy();
 }
 
 
