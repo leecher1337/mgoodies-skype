@@ -30,12 +30,12 @@ PLUGININFOEX pluginInfo={
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,0),
+	PLUGIN_MAKE_VERSION(0,1,0,1),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
 	"© 2006 Ricardo Pescuma Domenecci",
-	"http://pescuma.mirandaim.ru/miranda/spellchecker",
+	"http://pescuma.org/miranda/spellchecker",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
 #ifdef UNICODE
@@ -988,8 +988,10 @@ LRESULT CALLBACK EditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 int GetClosestLanguage(TCHAR *lang_name) 
 {
+	int i;
+
 	// Search the language by name
-	for (int i = 0; i < languages.getCount(); i++)
+	for (i = 0; i < languages.getCount(); i++)
 	{
 		if (lstrcmpi(languages[i]->language, lang_name) == 0)
 		{
@@ -998,32 +1000,37 @@ int GetClosestLanguage(TCHAR *lang_name)
 	}
 
 	// Try searching by the prefix only
-	TCHAR *p = _tcschr(lang_name, _T('_'));
+	TCHAR lang[128];
+	lstrcpyn(lang, lang_name, MAX_REGS(lang));
+
+	TCHAR *p = _tcschr(lang, _T('_'));
 	if (p != NULL)
-	{
 		*p = _T('\0');
-		for (int i = 0; i < languages.getCount(); i++)
+
+	// First check if there is a language that is only the prefix
+	for (i = 0; i < languages.getCount(); i++)
+	{
+		if (lstrcmpi(languages[i]->language, lang) == 0)
 		{
-			if (lstrcmpi(languages[i]->language, lang_name) == 0)
-			{
-				*p = '_';
-				return i;
-			}
+			return i;
 		}
-		*p = _T('_');
 	}
 
-	// Try any suffix, if one not provided
-	if (p == NULL)
+	// Now try any suffix
+	size_t len = lstrlen(lang);
+	for (i = 0; i < languages.getCount(); i++)
 	{
-		size_t len = lstrlen(lang_name);
-		for (int i = 0; i < languages.getCount(); i++)
+		TCHAR *p = _tcschr(languages[i]->language, _T('_'));
+		if (p == NULL)
+			continue;
+
+		int prefix_len = p - languages[i]->language;
+		if (prefix_len != len)
+			continue;
+
+		if (_tcsnicmp(languages[i]->language, lang_name, len) == 0)
 		{
-			if (_tcsnicmp(languages[i]->language, lang_name, len) == 0 
-				&& languages[i]->language[len] == _T('_'))
-			{
-				return i;
-			}
+			return i;
 		}
 	}
 
@@ -1142,7 +1149,7 @@ void GetContactLanguage(Dialog *dlg)
 	}
 
 	int i = GetClosestLanguage(dlg->lang_name);
-	if(i < 0)
+	if (i < 0)
 	{
 		// Lost a dict?
 		lstrcpyn(dlg->lang_name, opts.default_language, MAX_REGS(dlg->lang_name));
