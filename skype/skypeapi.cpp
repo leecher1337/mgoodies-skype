@@ -508,6 +508,59 @@ char *SkypeRcv(char *what, DWORD maxwait) {
 	LOG("<SkypeRcv:", "(empty)");	
 	return NULL;
 }
+
+char *SkypeRcvMsg(char *what, DWORD maxwait) {
+    char *msg, *token=NULL;
+	struct MsgQueue *ptr, *ptr_;
+	DWORD dwWaitStat;
+
+	LOG ("SkypeRcvMsg - Requesting answer: ", what);
+	do {
+		EnterCriticalSection(&MsgQueueMutex);
+		ptr_=SkypeMsgs;
+		ptr=ptr_->next;
+		while (ptr!=NULL) {
+		/*	if (what && what[0]==0) {
+				// Tokenizer syntax active
+				token=what+1;
+				while (*token) {
+					if (!strstr (ptr->message, token)) {
+						token=NULL;
+						break;
+					}
+					token+=strlen(token)+1;
+				}
+			}
+
+		*/
+			LOG ("SkypeRcvMsg - msg: ", ptr->message);
+			if( (strstr (ptr->message, "MESSAGE") && 
+					(strstr (ptr->message, "STATUS SENT") || strstr (ptr->message, "STATUS QUEUED"))
+				) || !strncmp(ptr->message, "ERROR", 5))
+			{
+				msg=ptr->message;
+				ptr_->next=ptr->next;
+				LOG("<SkypeRcv:", msg);
+				free(ptr);
+				LeaveCriticalSection(&MsgQueueMutex);
+				return msg;
+			}
+			ptr_=ptr;
+			ptr=ptr_->next;
+			
+		}
+		LeaveCriticalSection(&MsgQueueMutex);
+		InterlockedIncrement ((long *)&receivers); //receivers++;
+		dwWaitStat = WaitForSingleObject(SkypeMsgReceived, maxwait);
+		if (receivers>1) InterlockedDecrement ((long *)&receivers); //  receivers--;
+		if (receivers>1) {LOGL ("SkypeRcvMsg: receivers still waiting: ", receivers);}
+		
+	} while(dwWaitStat == WAIT_OBJECT_0 && !MirandaShuttingDown);	
+	InterlockedDecrement ((long *)&receivers);
+	LOG("<SkypeRcvMsg:", "(empty)");	
+	return NULL;
+}
+
 /*
   Introduced in 0.0.0.17
   

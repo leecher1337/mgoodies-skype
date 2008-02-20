@@ -35,6 +35,7 @@ void SkypeMsgCleanup(void);
 char *SkypeMsgGet(void);
 int SkypeSend(char*, ...);
 char *SkypeRcv(char *what, DWORD maxwait);
+char *SkypeRcvMsg(char *what, DWORD maxwait);
 int SkypeCall(WPARAM wParam, LPARAM lParam);
 int SkypeOutCall(WPARAM wParam, LPARAM lParam);
 int SkypeHup(WPARAM wParam, LPARAM lParam);
