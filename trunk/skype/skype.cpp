@@ -1549,6 +1549,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 	static char *onlinestatus=NULL;
 	static BOOL RestoreUserStatus=FALSE;
 	int sstat, oldstatus, flag;
+	static bool isEdited = false;
 	HANDLE hContact;
 	fetchmsg_arg *args;
 
@@ -1878,6 +1879,23 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 				break;
 			}
 
+			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " EDITED_TIMESTAMP"))!=NULL) {
+				isEdited = true;
+				break;
+			}
+			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " EDITED_BY"))!=NULL) {
+				isEdited = true;
+				break;
+			}
+			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " BODY"))!=NULL) {
+				
+				if(isEdited)
+				{
+					isEdited = false;
+					break;
+				}
+			}
+
 			if (!strncmp(szSkypeMsg, cmdMessage, strlen(cmdMessage)) && (ptr=strstr(szSkypeMsg, " STATUS RECEIVED"))!=NULL) {
 				// If new message is available, fetch it
 				ptr[0]=0;
@@ -1894,6 +1912,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					LOGL(_strdup(strchr(szSkypeMsg, ' ')), strlen(szSkypeMsg));
 					break;
 				}
+				LOG("MessageListProcessingThread","launched");
 				pthread_create(( pThreadFunc )MessageListProcessingThread, _strdup(strchr(szSkypeMsg, ' ')));
 				break;
 			}
@@ -1913,6 +1932,7 @@ LONG APIENTRY WndProc(HWND hWndDlg, UINT message, UINT wParam, LONG lParam)
 					hMenuAddSkypeContact = add_mainmenu();
 				}
 			}
+			LOG("SkypeMsgAdd","launched");
 			SkypeMsgAdd(szSkypeMsg);
 			ReleaseSemaphore(SkypeMsgReceived, receivers, NULL);
 		}  
@@ -2386,7 +2406,7 @@ void MessageSendWatchThread(HANDLE hContact) {
 	char *str, *err;
 
 	LOG("MessageSendWatchThread", "started.");
-	if (!(str=SkypeRcv("\0MESSAGE\0STATUS SENT\0", DBGetContactSettingDword(NULL,"SRMsg","MessageTimeout",TIMEOUT_MSGSEND)+1000))) return;
+	if (!(str=SkypeRcvMsg("\0MESSAGE\0STATUS SENT\0", DBGetContactSettingDword(NULL,"SRMsg","MessageTimeout",TIMEOUT_MSGSEND)+1000))) return;
 	if (err=GetSkypeErrorMsg(str)) {
 		ProtoBroadcastAck(pszSkypeProtoName, hContact, ACKTYPE_MESSAGE, ACKRESULT_FAILED, (HANDLE) 1, (LPARAM)Translate(err));
 		free(err);
