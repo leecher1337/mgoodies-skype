@@ -1,16 +1,14 @@
 #include "MappedMemory.h"
 
 CMappedMemory::CMappedMemory(const char* FileName)
-:	CFileAccess(FileName),
-	m_FreeSpace()
+:	CFileAccess(FileName)
 {
 	SYSTEM_INFO sysinfo;
 
-	m_FreeFileEnd = m_FreeSpace.end();
 	m_AllocSize = 0;
-	m_Size = 0;
 	m_DirectFile = 0;
 	m_FileMapping = 0;
+	m_Base = NULL;
 	
 	GetSystemInfo(&sysinfo);
 	m_AllocGranularity = sysinfo.dwAllocationGranularity;
@@ -19,15 +17,7 @@ CMappedMemory::CMappedMemory(const char* FileName)
 	if (m_DirectFile == INVALID_HANDLE_VALUE) 
 		throw "CreateFile failed";
 
-	m_AllocSize = GetFileSize(m_DirectFile, NULL);
-
-	if (m_AllocSize % m_AllocGranularity > 0)
-		m_AllocSize = m_AllocSize - m_AllocSize % m_AllocGranularity + m_AllocGranularity;
-
-	if (m_AllocSize == 0)
-		m_AllocSize = m_AllocGranularity;
-
-	Map();
+	SetAllocationSize(GetFileSize(m_DirectFile, NULL));
 }
 
 CMappedMemory::~CMappedMemory()
@@ -40,96 +30,54 @@ CMappedMemory::~CMappedMemory()
 		CloseHandle(m_DirectFile);
 }
 
-void CMappedMemory::Map()
-{	
-  m_FileMapping = CreateFileMapping(m_DirectFile, NULL, PAGE_READWRITE, 0, m_AllocSize, NULL);
 
-	if (m_FileMapping == 0)
-		throw "CreateFileMapping failed";
-
-	m_Base = (__int8*) MapViewOfFile(m_FileMapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-	if (m_Base == NULL)
-		throw "MapViewOfFile failed";
-}
-
-unsigned int CMappedMemory::mRead(void* Buf, unsigned int Source, unsigned int Size)
+uint32_t CMappedMemory::mRead(void* Buf, uint32_t Source, uint32_t Size)
 {
 	memcpy(Buf, m_Base + Source, Size);
 	return Size;
 }
-unsigned int CMappedMemory::mWrite(void* Buf, unsigned int Dest, unsigned int Size)
+uint32_t CMappedMemory::mWrite(void* Buf, uint32_t Dest, uint32_t Size)
 {
 	memcpy(m_Base + Dest, Buf, Size);
 	return Size;
 }
 
-/*
-unsigned int CMappedMemory::Move(unsigned int Source, unsigned int Dest, unsigned int Size)
+uint32_t CMappedMemory::SetAllocationSize(uint32_t Size)
 {
-	memcpy(m_Base + Dest, m_Base + Source, Size);
-	return Size;
-}
-*/
+	if (Size % m_AllocGranularity > 0)
+		Size = Size - Size % m_AllocGranularity + m_AllocGranularity;
 
-unsigned int CMappedMemory::mAlloc(unsigned int Size)
-{
-	unsigned int res = 0xFFFFFFFF;	
+	if (Size == 0)
+		Size = m_AllocGranularity;
 
-	TFreeSpaceMap::iterator i = m_FreeSpace.lower_bound(Size);
-	
-	if (i == m_FreeSpace.end())
+	if (Size != m_AllocSize)
 	{
-		// need new space -> remap file and take care of m_FreeFileEnd
-		unsigned int freestart;
+		if (m_Base)
+			UnmapViewOfFile(m_Base);
+		if (m_FileMapping)
+			CloseHandle(m_FileMapping);
 
-		UnmapViewOfFile(m_Base);
 		m_Base = NULL;
-		CloseHandle(m_FileMapping);
-		
-		if (m_FreeFileEnd != m_FreeSpace.end())
-		{
-			freestart = m_FreeFileEnd->second;
-			m_FreeSpace.erase(m_FreeFileEnd);
-		}	else {
-			freestart = m_AllocSize;
-		}
+		m_FileMapping = NULL;
 
-		m_AllocSize += Size;
-		if (m_AllocSize % m_AllocGranularity > 0)
-			m_AllocSize = m_AllocSize - m_AllocSize % m_AllocGranularity + m_AllocGranularity;
-		
-		Map();
+		if (INVALID_SET_FILE_POINTER == SetFilePointer(m_DirectFile, Size, NULL, FILE_BEGIN))
+			throw "Cannot set file position";
 
-		Free(freestart, m_AllocSize - freestart);
+		if (!SetEndOfFile(m_DirectFile))
+			throw "Cannot set end of file";
 
-		res = Alloc(Size);
-	} else {
-		res = i->second;
+		m_AllocSize = Size;
 
-		if (i->first > Size)
-			Free(res + Size, i->first - Size); // if allocating from m_FreeFileEnd it will be set to the left part, if something left...
+		m_FileMapping = CreateFileMapping(m_DirectFile, NULL, PAGE_READWRITE, 0, m_AllocSize, NULL);
 
-		if (i == m_FreeFileEnd)
-			m_FreeFileEnd = m_FreeSpace.end();  // ...or to end() if nothing left
+		if (m_FileMapping == 0)
+			throw "CreateFileMapping failed";
 
-		m_FreeSpace.erase(i);
+		m_Base = (uint8_t*) MapViewOfFile(m_FileMapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+		if (m_Base == NULL)
+			throw "MapViewOfFile failed";;
 	}
-	
-	memset(m_Base + res, 0, Size);
 
-	return res;
+	return Size;
+
 }
-void CMappedMemory::mFree(unsigned int Dest, unsigned int Count)
-{
-	char * zero = new char [Count];
-	memset(zero, 0, Count);
-	Write(zero, Dest, Count);
-	delete [] zero;
-
-	TFreeSpaceMap::iterator i = m_FreeSpace.insert(std::make_pair(Count, Dest));
-	if (Dest + Count == m_AllocSize)
-	{
-		m_FreeFileEnd = i;
-	}	
-}
-

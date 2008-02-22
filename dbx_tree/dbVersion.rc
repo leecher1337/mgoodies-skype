@@ -1,6 +1,6 @@
 // Microsoft Visual C++ generated resource script.
 //
-#include "resource.h"
+#include "dbVersion_rc.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -13,7 +13,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Deutsch (Deutschland) resources
+// German (Germany) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
 #ifdef _WIN32
@@ -29,7 +29,7 @@ LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
 
 1 TEXTINCLUDE 
 BEGIN
-    "resource.h\0"
+    "dbVersion_rc.h\0"
 END
 
 2 TEXTINCLUDE 
@@ -55,11 +55,11 @@ END
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 0,0,0,1
  PRODUCTVERSION 0,0,0,1
- FILEFLAGSMASK 0x37L
+ FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
- FILEFLAGS 0x21L
+ FILEFLAGS 0x3L
 #else
- FILEFLAGS 0x20L
+ FILEFLAGS 0x2L
 #endif
  FILEOS 0x4L
  FILETYPE 0x2L
@@ -69,14 +69,14 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "FileDescription", "dbx_tree for Miranda IM"
+            VALUE "CompanyName", "Michael ""Protogenes"" Kunz"
+            VALUE "FileDescription", "dbx_tree Miranda IM Database Plugin"
             VALUE "FileVersion", "0, 0, 0, 1"
             VALUE "InternalName", "dbx_tree"
-            VALUE "LegalCopyright", "(C) 2007 Michael ""Protogenes"" Kunz"
+            VALUE "LegalCopyright", "(C) 2007, 2008 Michael ""Protogenes"" Kunz"
             VALUE "OriginalFilename", "dbx_tree.dll"
-            VALUE "ProductName", "dbx_tree for Miranda IM"
+            VALUE "ProductName", "dbx_tree Miranda IM Database Plugin"
             VALUE "ProductVersion", "0, 0, 0, 1"
-            VALUE "SpecialBuild", "development"
         END
     END
     BLOCK "VarFileInfo"
@@ -85,7 +85,7 @@ BEGIN
     END
 END
 
-#endif    // Deutsch (Deutschland) resources
+#endif    // German (Germany) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

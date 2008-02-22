@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Cipher.h"
 #include <windows.h>
+#include "stdint.h"
+#include "Cipher.h"
 
 class CFileAccess
 {
@@ -10,22 +11,17 @@ protected:
 	CCipher * m_Cipher;
 	unsigned int m_EncryptionStart;
 
-	virtual unsigned int mRead(void* Buf, unsigned int Source, unsigned int Size) = 0;
-  virtual unsigned int mWrite(void* Buf, unsigned int Dest, unsigned int Size) = 0;
-	virtual unsigned int mAlloc(unsigned int Size) = 0;
-	virtual void mFree(unsigned int Dest, unsigned int Size) = 0;
-
+	virtual uint32_t mRead(void* Buf, uint32_t Source, uint32_t Size) = 0;
+  virtual uint32_t mWrite(void* Buf, uint32_t Dest, uint32_t Size) = 0;
 
 public:
 	CFileAccess(const char* FileName);
 	virtual ~CFileAccess();
 
-	void SetCipher(CCipher * Cipher, unsigned int EncryptionStart);
+	void SetCipher(CCipher * Cipher);
+	void SetEncryptionStart(uint32_t EncryptionStart);
 
-	unsigned int Read(void* Buf, unsigned int Source, unsigned int Size);
-  unsigned int Write(void* Buf, unsigned int Dest, unsigned int Size);
-	//unsigned int Move(unsigned int Source, unsigned int Dest, unsigned int Size);
-
-	unsigned int Alloc(unsigned int Size);
-	void Free(unsigned int Dest, unsigned int Count);
+	uint32_t Read(void* Buf, uint32_t Source, uint32_t Size);
+  uint32_t Write(void* Buf, uint32_t Dest, uint32_t Size);
+	virtual uint32_t SetAllocationSize(uint32_t Size) = 0;
 };

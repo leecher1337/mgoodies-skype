@@ -47,11 +47,12 @@ bool CIterationHeap<TType>::A_b4_B(PHeapElement a, PHeapElement b)
 template <class TType>
 CIterationHeap<TType>::CIterationHeap(TType & InitialItem, TIterationType MinMax, bool DeleteItems)
 {
-	m_Heap = new PHeapElement[1];
+	m_Heap = (PHeapElement*)malloc(sizeof(PHeapElement));
 	m_HeapSize = 1;
 	m_AllocSize = 1 << 1;
 	m_Type = MinMax;
-
+	
+	m_Heap[0] = (THeapElement*)malloc(sizeof(THeapElement));
 	m_Heap[0]->Elem = &InitialItem;
 	m_Heap[0]->Index = m_HeapSize;
 	m_DeleteItems = DeleteItems;
@@ -64,32 +65,28 @@ CIterationHeap<TType>::~CIterationHeap()
 	while ((i < m_HeapSize) && (m_Heap[i]))
 	{
 		if (m_DeleteItems && m_Heap[i]->Elem)
-			delete m_Heap[i]->Elem;
+			free(m_Heap[i]->Elem);
 
-		delete m_Heap[i];
+		free(m_Heap[i]);
 		++i;
 	}
-	delete [] m_Heap;
+	free(m_Heap);
 }
 
 template <class TType>
 bool CIterationHeap<TType>::Insert(TType & Item)
 {
 	if (m_AllocSize == m_HeapSize + 1)
-	{
-		PHeapElement * backup = m_Heap;
+	{		
 		m_AllocSize = m_AllocSize << 1;
-		m_Heap = new PHeapElement[m_AllocSize - 1];
-		memset(m_Heap, 0, sizeof(PHeapElement) * (m_AllocSize - 1));
-		memcpy(m_Heap, backup, m_HeapSize * sizeof(PHeapElement));
-		delete []backup;
+		m_Heap = (PHeapElement*)realloc(m_Heap, (m_AllocSize - 1) * sizeof(PHeapElement));		
 	}
 
 	m_HeapSize++;
 
 	unsigned int way = m_AllocSize >> 2;	
 	unsigned int index = 0;	
-	PHeapElement ins = new THeapElement;
+	PHeapElement ins = (THeapElement*)malloc(sizeof(THeapElement));
 	ins->Elem = &Item;
 	ins->Index = m_HeapSize;
 

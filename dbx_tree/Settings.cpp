@@ -18,8 +18,8 @@ __forceinline bool TSettingKey::operator >  (const TSettingKey & Other) const
 
 
 
-CSettingsTree::CSettingsTree(CFileAccess & FileAccess, unsigned int RootNode, TDBEntryHandle Entry)
-: CFileBTree(FileAccess, RootNode)
+CSettingsTree::CSettingsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBEntryHandle Entry)
+: CFileBTree(BlockManager, RootNode, cSettingNodeSignature)
 {
 	m_Entry = Entry;
 }
@@ -34,23 +34,23 @@ __forceinline TDBEntryHandle CSettingsTree::getEntry()
 	return m_Entry;
 }
 
-TDBSettingHandle CSettingsTree::_FindSetting(const unsigned int Hash, const char * Name, const unsigned int Length)
+TDBSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length)
 {
 	TSettingKey key;
 	key.Hash = Hash;
 	iterator i = Find(key);
+	uint16_t l;
+	uint32_t sig = cSettingSignature;
 	
-	unsigned int res = 0;
-	TSetting set;
+	TDBSettingHandle res = 0;
 	char * str = new char[Length + 1];
 	while ((res == 0) && (i) && (i.Key().Hash == Hash))
 	{
-		m_FileAccess.Read(&set, i.Data(), sizeof(set));
-	
-		if (set.NameLength == Length)
+		if (m_BlockManager.ReadPart(i.Data(), &l, offsetof(TSetting, NameLength), sizeof(l), sig) &&	
+		    (l == Length))
 		{
-			m_FileAccess.Read(str, i.Data() + sizeof(set), Length + 1);
-			if (strcmp(Name, str) == 0)
+			if (m_BlockManager.ReadPart(i.Data(), str, sizeof(TSetting), Length + 1, sig) &&
+			   (strcmp(Name, str) == 0))
 				res = i.Data();
 		}
 	
@@ -61,7 +61,7 @@ TDBSettingHandle CSettingsTree::_FindSetting(const unsigned int Hash, const char
 	return res;
 }
 
-bool CSettingsTree::_DeleteSetting(const unsigned int Hash, const TDBSettingHandle hSetting)
+bool CSettingsTree::_DeleteSetting(const uint32_t Hash, const TDBSettingHandle hSetting)
 {
 	TSettingKey key;
 	key.Hash = Hash;
@@ -78,8 +78,8 @@ bool CSettingsTree::_DeleteSetting(const unsigned int Hash, const TDBSettingHand
 	
 	return false;
 }
-
-bool CSettingsTree::_ChangeSetting(const unsigned int Hash, const TDBSettingHandle OldSetting, const TDBSettingHandle NewSetting)
+/*
+bool CSettingsTree::_ChangeSetting(const uint32_t Hash, const TDBSettingHandle OldSetting, const TDBSettingHandle NewSetting)
 {
 	TSettingKey key;
 	key.Hash = Hash;
@@ -94,9 +94,9 @@ bool CSettingsTree::_ChangeSetting(const unsigned int Hash, const TDBSettingHand
 	}
 
 	return false;
-}
+}*/
 
-bool CSettingsTree::_AddSetting(const unsigned int Hash, const TDBSettingHandle hSetting)
+bool CSettingsTree::_AddSetting(const uint32_t Hash, const TDBSettingHandle hSetting)
 {
 	TSettingKey key;
 	key.Hash = Hash;
@@ -130,10 +130,10 @@ bool CSettingsTree::_AddSetting(const unsigned int Hash, const TDBSettingHandle 
 }
 
 
-unsigned int CSettings::Hash(void * Data, unsigned int Length)
+uint32_t CSettings::Hash(void * Data, uint32_t Length)
 {
-	register unsigned int a,b,c; // internal state
-  union { const void *ptr; unsigned int i; } u; // needed for Mac Powerbook G4
+	register uint32_t a,b,c; // internal state
+  union { const void *ptr; uint32_t i; } u; // needed for Mac Powerbook G4
 
   // Set up the internal state
   a = b = c = 0xdeadbeef + Length; // + initval = 0
@@ -141,7 +141,7 @@ unsigned int CSettings::Hash(void * Data, unsigned int Length)
   u.ptr = Data;
   if ((u.i & 0x3) == 0) 
 	{
-    const unsigned int  *k = (const unsigned int *)Data; // read 32-bit chunks
+    const uint32_t *k = (const uint32_t *)Data; // read 32-bit chunks
 
     // all but last block: aligned reads and affect 32 bits of (a,b,c)
     while (Length > 12)
@@ -172,45 +172,45 @@ unsigned int CSettings::Hash(void * Data, unsigned int Length)
     }
 
   } else if ((u.i & 0x1) == 0) {
-    const unsigned short *k = (const unsigned short *)Data;         /* read 16-bit chunks */
-    const unsigned char  *k8;
+    const uint16_t *k = (const uint16_t *)Data;         /* read 16-bit chunks */
+		const uint8_t  *k8;
 
     // all but last block: aligned reads and different mixing
     while (Length > 12)
     {
-      a += k[0] + (((unsigned int)k[1]) << 16);
-      b += k[2] + (((unsigned int)k[3]) << 16);
-      c += k[4] + (((unsigned int)k[5]) << 16);
+      a += k[0] + (((uint32_t)k[1]) << 16);
+      b += k[2] + (((uint32_t)k[3]) << 16);
+      c += k[4] + (((uint32_t)k[5]) << 16);
       HASHmix(a,b,c);
       Length -= 12;
       k += 6;
     }
 
     // handle the last (probably partial) block
-    k8 = (const unsigned char *)k;
+    k8 = (const uint8_t *)k;
     switch(Length)
     {
-			case 12: c += k[4] + (((unsigned int)k[5]) << 16);
-							 b += k[2] + (((unsigned int)k[3]) << 16);
-							 a += k[0] + (((unsigned int)k[1]) << 16);
+			case 12: c += k[4] + (((uint32_t)k[5]) << 16);
+							 b += k[2] + (((uint32_t)k[3]) << 16);
+							 a += k[0] + (((uint32_t)k[1]) << 16);
 							 break;
-			case 11: c += ((unsigned int)k8[10]) << 16; // fall through 
+			case 11: c += ((uint32_t)k8[10]) << 16; // fall through 
 			case 10: c += k[4];
-							 b += k[2] + (((unsigned int)k[3]) << 16);
-							 a += k[0] + (((unsigned int)k[1]) << 16);
+							 b += k[2] + (((uint32_t)k[3]) << 16);
+							 a += k[0] + (((uint32_t)k[1]) << 16);
 							 break;
 			case 9 : c += k8[8];                        // fall through
-			case 8 : b += k[2] + (((unsigned int)k[3]) << 16);
-							 a += k[0] + (((unsigned int)k[1]) << 16);
+			case 8 : b += k[2] + (((uint32_t)k[3]) << 16);
+							 a += k[0] + (((uint32_t)k[1]) << 16);
 							 break;
-			case 7 : b += ((unsigned int)k8[6]) << 16;  // fall through
+			case 7 : b += ((uint32_t)k8[6]) << 16;  // fall through
 			case 6 : b += k[2];
-							 a += k[0] + (((unsigned int)k[1]) << 16);
+							 a += k[0] + (((uint32_t)k[1]) << 16);
 							 break;
 			case 5 : b += k8[4];                        // fall through
-			case 4 : a += k[0] + (((unsigned int)k[1]) << 16);
+			case 4 : a += k[0] + (((uint32_t)k[1]) << 16);
 							 break;
-			case 3 : a += ((unsigned int)k8[2]) << 16;  // fall through
+			case 3 : a += ((uint32_t)k8[2]) << 16;  // fall through
 			case 2 : a += k[0];
 							 break;
 			case 1 : a += k8[0];
@@ -219,23 +219,23 @@ unsigned int CSettings::Hash(void * Data, unsigned int Length)
     }
 
   } else { // need to read the key one byte at a time
-    const unsigned char *k = (const unsigned char *)Data;
+    const uint8_t *k = (const uint8_t *)Data;
 
     // all but the last block: affect some 32 bits of (a,b,c)
     while (Length > 12)
     {
       a += k[0];
-      a += ((unsigned int)k[1] ) <<  8;
-      a += ((unsigned int)k[2] ) << 16;
-      a += ((unsigned int)k[3] ) << 24;
+      a += ((uint32_t)k[1] ) <<  8;
+      a += ((uint32_t)k[2] ) << 16;
+      a += ((uint32_t)k[3] ) << 24;
       b += k[4];
-      b += ((unsigned int)k[5] ) <<  8;
-      b += ((unsigned int)k[6] ) << 16;
-      b += ((unsigned int)k[7] ) << 24;
+      b += ((uint32_t)k[5] ) <<  8;
+      b += ((uint32_t)k[6] ) << 16;
+      b += ((uint32_t)k[7] ) << 24;
       c += k[8];
-      c += ((unsigned int)k[9] ) << 8;
-      c += ((unsigned int)k[10]) << 16;
-      c += ((unsigned int)k[11]) << 24;
+      c += ((uint32_t)k[9] ) << 8;
+      c += ((uint32_t)k[10]) << 16;
+      c += ((uint32_t)k[11]) << 24;
       HASHmix(a,b,c);
       Length -= 12;
       k += 12;
@@ -244,17 +244,17 @@ unsigned int CSettings::Hash(void * Data, unsigned int Length)
     // last block: affect all 32 bits of (c)
     switch(Length) // all the case statements fall through
     {
-			case 12: c += ((unsigned int)k[11]) << 24;
-			case 11: c += ((unsigned int)k[10]) << 16;
-			case 10: c += ((unsigned int)k[9] ) <<  8;
+			case 12: c += ((uint32_t)k[11]) << 24;
+			case 11: c += ((uint32_t)k[10]) << 16;
+			case 10: c += ((uint32_t)k[9] ) <<  8;
 			case 9 : c += k[8];
-			case 8 : b += ((unsigned int)k[7] ) << 24;
-			case 7 : b += ((unsigned int)k[6] ) << 16;
-			case 6 : b += ((unsigned int)k[5] ) <<  8;
+			case 8 : b += ((uint32_t)k[7] ) << 24;
+			case 7 : b += ((uint32_t)k[6] ) << 16;
+			case 6 : b += ((uint32_t)k[5] ) <<  8;
 			case 5 : b += k[4];
-			case 4 : a += ((unsigned int)k[3] ) << 24;
-			case 3 : a += ((unsigned int)k[2] ) << 16;
-			case 2 : a += ((unsigned int)k[1] ) <<  8;
+			case 4 : a += ((uint32_t)k[3] ) << 24;
+			case 3 : a += ((uint32_t)k[2] ) << 16;
+			case 2 : a += ((uint32_t)k[1] ) <<  8;
 			case 1 : a += k[0];
 							 break;
 			case 0 : return c;
@@ -273,22 +273,22 @@ unsigned int CSettings::Hash(void * Data, unsigned int Length)
 
 
 
-CSettings::CSettings(CFileAccess & SettingsFile, CFileAccess & PrivateFile, CMultiReadExclusiveWriteSynchronizer & Synchronize, unsigned int SettingsRoot, CEntries & Entries)
+CSettings::CSettings(CBlockManager & BlockManagerSet, CBlockManager & BlockManagerPri, CMultiReadExclusiveWriteSynchronizer & Synchronize, CSettingsTree::TNodeRef SettingsRoot, CEntries & Entries)
 :	m_Sync(Synchronize),
-	m_SettingsFile(SettingsFile),
-	m_PrivateFile(PrivateFile),
+	m_BlockManagerSet(BlockManagerSet),
+	m_BlockManagerPri(BlockManagerPri),
 	m_Entries(Entries),
 	m_SettingsMap(),
 
 	m_sigRootChanged()	
 {
-	CSettingsTree * settree = new CSettingsTree(SettingsFile, SettingsRoot, 0);
+	CSettingsTree * settree = new CSettingsTree(m_BlockManagerSet, SettingsRoot, 0);
 
 	settree->sigRootChanged().connect(this, &CSettings::onRootChanged);
 	m_SettingsMap.insert(std::make_pair(0, settree));
 
 	m_IterAllocSize = 1;
-	m_Iterations = new PSettingIteration[1];
+	m_Iterations = (PSettingIteration*) malloc(sizeof(PSettingIteration));
 }
 
 CSettings::~CSettings()
@@ -309,7 +309,7 @@ CSettings::~CSettings()
 		if (m_Iterations[i])
 			IterationClose(i + 1);
 	}
-	delete [] m_Iterations;
+	free(m_Iterations);
 	m_Sync.EndWrite();
 }
 
@@ -324,7 +324,7 @@ CSettingsTree * CSettings::getSettingsTree(TDBEntryHandle hEntry)
 	if (root == DB_INVALIDPARAM)
 		return NULL;
 
-	CSettingsTree * tree = new CSettingsTree(m_PrivateFile, root, hEntry);
+	CSettingsTree * tree = new CSettingsTree(m_BlockManagerPri, root, hEntry);
 	tree->sigRootChanged().connect(this, &CSettings::onRootChanged);
 	m_SettingsMap.insert(std::make_pair(hEntry, tree));
 
@@ -335,7 +335,7 @@ CSettings::TOnRootChanged & CSettings::sigRootChanged()
 {
 	return m_sigRootChanged;
 }
-void CSettings::onRootChanged(void* SettingsTree, unsigned int NewRoot)
+void CSettings::onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot)
 {
 	if (((CSettingsTree*)SettingsTree)->getEntry() == 0)
 		m_sigRootChanged.emit(this, NewRoot);
@@ -347,8 +347,8 @@ void CSettings::onRootChanged(void* SettingsTree, unsigned int NewRoot)
 
 TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 {
-	unsigned int NameLength = strlen(Descriptor.pszSettingName);
-	unsigned int namehash = Hash(Descriptor.pszSettingName, NameLength);
+	uint32_t NameLength = strlen(Descriptor.pszSettingName);
+	uint32_t namehash = Hash(Descriptor.pszSettingName, NameLength);
 	CSettingsTree * tree;
 	TDBSettingHandle res = 0;
 
@@ -362,7 +362,7 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 		return res | cSettingsFileFlag;
 	}
 
-	unsigned int entryflags = m_Entries.getFlags(Descriptor.Entry);
+	uint32_t entryflags = m_Entries.getFlags(Descriptor.Entry);
 
 	if (entryflags == DB_INVALIDPARAM)
 	{
@@ -501,43 +501,40 @@ unsigned int CSettings::DeleteSetting(TDBSettingHandle hSetting)
 {
 	m_Sync.BeginWrite();
 	
-	CFileAccess & file(m_PrivateFile);
+	CBlockManager & file(m_BlockManagerPri);
 
 	if (hSetting & cSettingsFileFlag)
 	{
-		file = m_SettingsFile;
+		file = m_BlockManagerSet;
 		hSetting = hSetting & ~cSettingsFileFlag;
 	}
 
-	TSetting set;
-	file.Read(&set, hSetting, sizeof(set));
-
-	if (set.Signature != cSettingSignature)
+	void* buf = NULL;
+	uint32_t size = 0;
+	uint32_t sig = cSettingSignature;
+	
+	if (!file.ReadBlock(hSetting, buf, size, sig))
 	{
 		m_Sync.EndWrite();
 		return DB_INVALIDPARAM;
 	}
 
-	CSettingsTree * tree = getSettingsTree(set.Entry);
+	TSetting* set = (TSetting*)buf;
+
+	CSettingsTree * tree = getSettingsTree(set->Entry);
 	if (tree == NULL)
 	{
 		m_Sync.EndWrite();
 		return DB_INVALIDPARAM;
 	}
 
-	char * str = new char[set.NameLength + 1];
-	file.Read(str, hSetting + sizeof(set), set.NameLength + 1);
+	char * str = (char*) (set+1);
+	tree->_DeleteSetting(Hash(str, set->NameLength), hSetting);
 	
-	tree->_DeleteSetting(Hash(str, set.NameLength), hSetting);
-	
-	if (set.Type & DB_STF_VariableLength)
-		file.Free(hSetting, sizeof(set) + set.NameLength + 1 + set.AllocSize);
-	else
-		file.Free(hSetting, sizeof(set) + set.NameLength + 1);
-
+	file.DeleteBlock(hSetting);
 	m_Sync.EndWrite();
 
-	delete [] str;
+	free(buf);
 	return 0;
 }
 TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting)
@@ -561,24 +558,24 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 {
 	m_Sync.BeginWrite();
 	
-	CFileAccess & file(m_PrivateFile);
+	CBlockManager & file(m_BlockManagerPri);
 	bool fileflag = false;
-
-	TSetting set = {0};
-	CSettingsTree * tree = NULL;
+	uint32_t sig = cSettingSignature;
 
 	if (hSetting & cSettingsFileFlag)
 	{
-		file = m_SettingsFile;
+		file = m_BlockManagerSet;
 		hSetting = hSetting & ~cSettingsFileFlag;
 		fileflag = true;
 	}
 
+	CSettingsTree * tree = NULL;
+	
 	if (hSetting == 0)
 	{
 		if (Setting.Descriptor->Entry == 0)
 		{
-			file = m_SettingsFile;
+			file = m_BlockManagerSet;
 			fileflag = true;
 		}
 
@@ -586,10 +583,9 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 			tree = getSettingsTree(Setting.Descriptor->Entry);
 		
 	} else {		
-		file.Read(&set, hSetting, sizeof(set));
-
-		if (set.Signature == cSettingSignature)
-			tree = getSettingsTree(set.Entry);
+		TDBEntryHandle e;
+		if (file.ReadPart(hSetting, &e, offsetof(TSetting, Entry), sizeof(e), sig))
+			tree = getSettingsTree(e);
 	}
 
 	if (tree == NULL)
@@ -598,51 +594,50 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		return DB_INVALIDPARAM;
 	}
 
+	TSetting set = {0};
+	uint32_t blobsize = 0;
 
-	if (hSetting == 0) // create new setting
-	{
-		int neededsize = 0;
+	if (Setting.Type & DB_STF_VariableLength)
+	{		
 		switch (Setting.Type)
 		{
 			case DB_ST_ASCIIZ: case DB_ST_UTF8:
 				{
 					if (Setting.Value.Length == 0)
-						neededsize = strlen(Setting.Value.pAnsii);
+						blobsize = strlen(Setting.Value.pAnsii);
 					else
-						neededsize = Setting.Value.Length - 1;
+						blobsize = Setting.Value.Length;
 				} break;
 			case DB_ST_WCHAR:
 				{
 					if (Setting.Value.Length == 0)
-						neededsize = sizeof(wchar_t) * wcslen(Setting.Value.pWide);
+						blobsize = sizeof(wchar_t) * (wcslen(Setting.Value.pWide) + 1);
 					else
-						neededsize = sizeof(wchar_t) * (Setting.Value.Length - 1);
+						blobsize = sizeof(wchar_t) * (Setting.Value.Length);
 				} break;
-			case DB_ST_BLOB:
-				neededsize = Setting.Value.Length;
+			default:
+				blobsize = Setting.Value.Length;
 				break;
 		}
+	}
 
-		set.Signature = cSettingSignature;
+	if (hSetting == 0) // create new setting
+	{
 		set.Entry = Setting.Descriptor->Entry;
 		set.Flags = 0;
 		set.Type = Setting.Type;
-		set.AllocSize = neededsize;
-
+		set.AllocSize = blobsize;		
 		set.NameLength = strlen(Setting.Descriptor->pszSettingName);
 		
-		neededsize += sizeof(set) + set.NameLength + 1;
-		
-		hSetting = file.Alloc(neededsize);
+		hSetting = file.CreateBlock(sizeof(set) + set.NameLength + 1 + blobsize, cSettingSignature);
 
-		tree->_AddSetting(Hash(Setting.Descriptor->pszSettingName, set.NameLength), hSetting);		
-
+		tree->_AddSetting(Hash(Setting.Descriptor->pszSettingName, set.NameLength), hSetting);
 
 	} else {
-
+		file.ReadPart(hSetting, &set, 0, sizeof(set), sig);
 		if (((Setting.Type & DB_STF_VariableLength) == 0) && (set.Type & DB_STF_VariableLength))
 		{ // shrink setting (variable size->fixed size)
-			file.Free(hSetting + sizeof(set) + set.NameLength + 1, set.AllocSize);
+			file.ResizeBlock(hSetting, sizeof(set) + set.NameLength + 1);
 		}
 
 		if ((Setting.Type & DB_STF_VariableLength) && ((set.Type & DB_STF_VariableLength) == 0))
@@ -651,71 +646,33 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		}
 	}
 
-
-
 	if (Setting.Type & DB_STF_VariableLength)
 	{
-		unsigned int neededblob;
-		switch (Setting.Type)
-		{
-			case DB_ST_ASCIIZ: case DB_ST_UTF8:
-				{
-					if (Setting.Value.Length == 0)
-						neededblob = strlen(Setting.Value.pAnsii);
-					else
-						neededblob = Setting.Value.Length - 1;
-				} break;
-			case DB_ST_WCHAR:
-				{
-					if (Setting.Value.Length == 0)
-						neededblob = sizeof(wchar_t) * wcslen(Setting.Value.pWide);
-					else
-						neededblob = sizeof(wchar_t) * (Setting.Value.Length - 1);
-				} break;
-			default:
-				neededblob = Setting.Value.Length;
-				break;
+		if (set.AllocSize < blobsize)
+		{			
+			set.AllocSize = file.ResizeBlock(hSetting, sizeof(set) + set.NameLength + 1 + blobsize) - 
+				                (sizeof(set) + set.NameLength + 1);
 		}
 
-
-		if (set.AllocSize < neededblob)
-		{
-			char * name = new char[set.NameLength + 1];
-			file.Read(name, hSetting + sizeof(set), set.NameLength + 1);
-			unsigned int hash = Hash(name, set.NameLength);
-
-			file.Free(hSetting, sizeof(set) + set.NameLength + 1 + set.AllocSize);
-			unsigned int tmp = file.Alloc(sizeof(set) + set.NameLength + 1 + neededblob);
-
-			tree->_ChangeSetting(hash, hSetting, tmp);
-			hSetting = tmp;
-
-			file.Write(name, hSetting + sizeof(set), set.NameLength + 1);
-
-			delete [] name;
-
-			set.AllocSize = neededblob;
-		}
-
-		set.BlobLength = neededblob;
+		set.BlobLength = blobsize;
 		set.Type = Setting.Type;
-		file.Write(&set, hSetting, sizeof(set));
-		file.Write(Setting.Value.pBlob, hSetting + sizeof(set) + set.NameLength + 1, neededblob);
+		file.WritePart(hSetting, &set, 0, sizeof(set));
+		file.WritePart(hSetting, Setting.Value.pBlob, sizeof(set) + set.NameLength + 1, blobsize);
 
 	} else {
 
 		switch (Setting.Type)	
 		{
 			case DB_ST_BYTE: case DB_ST_CHAR: case DB_ST_BOOL:
-				memset(((unsigned char*) &Setting.Value) + 1, 0, sizeof(Setting.Value) - 1); break;
+				memset(((uint8_t*) &Setting.Value) + 1, 0, sizeof(Setting.Value) - 1); break;
 			case DB_ST_WORD: case DB_ST_SHORT:
-				memset(((unsigned char*) &Setting.Value) + 2, 0, sizeof(Setting.Value) - 2); break;
+				memset(((uint8_t*) &Setting.Value) + 2, 0, sizeof(Setting.Value) - 2); break;
 			case DB_ST_DWORD: case DB_ST_INT: case DB_ST_FLOAT:
-				memset(((unsigned char*) &Setting.Value) + 4, 0, sizeof(Setting.Value) - 4); break;			
+				memset(((uint8_t*) &Setting.Value) + 4, 0, sizeof(Setting.Value) - 4); break;			
 		}
 		set.Type = Setting.Type;
 		set.Value = Setting.Value;
-		file.Write(&set, hSetting, sizeof(set));
+		file.WritePart(hSetting, &set, 0, sizeof(set));
 	}
 
 	if (fileflag)
@@ -751,105 +708,117 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 {
 	m_Sync.BeginRead();
 	
-	CFileAccess & file(m_PrivateFile);
+	CBlockManager & file(m_BlockManagerPri);
 
 	if (hSetting & cSettingsFileFlag)
 	{
-		file = m_SettingsFile;
+		file = m_BlockManagerSet;
 		hSetting = hSetting & ~cSettingsFileFlag;
 	}
 
-	TSetting set = {0};
+	void* buf = NULL;
+	uint32_t size = 0;
+	uint32_t sig = cSettingSignature;
+
 	if (hSetting == 0)
 	{
 		m_Sync.EndRead();
 		return DB_INVALIDPARAM;
 	} else {		
-		file.Read(&set, hSetting, sizeof(set));
-
-		if (set.Signature != cSettingSignature)
+		if (!file.ReadBlock(hSetting, buf, size, sig))
 		{
 			m_Sync.EndRead();
 			return DB_INVALIDPARAM;
 		}
 	}
 
+	TSetting* set = (TSetting*)buf;
+	uint8_t* str = (uint8_t*)buf + sizeof(set) + set->NameLength + 1;
+
 	if (Setting.Type == 0)
 	{
-		Setting.Type = set.Type;
-		Setting.Value = set.Value;
-		if (set.Type & DB_STF_VariableLength)
+		Setting.Type = set->Type;
+		Setting.Value = set->Value;
+		if (set->Type & DB_STF_VariableLength)
 		{
-			Setting.Value.Length = set.BlobLength;
-			if (set.Type == DB_ST_WCHAR)
+			Setting.Value.Length = set->BlobLength;
+			switch (set->Type)
 			{
-				Setting.Value.Length = (set.BlobLength + sizeof(wchar_t) - 1) / sizeof(wchar_t);
-				Setting.Value.pWide = (wchar_t*) mir_realloc(Setting.Value.pWide, set.BlobLength + sizeof(wchar_t) - 1);
-				file.Read(Setting.Value.pWide, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-				Setting.Value.pWide[Setting.Value.Length - 1] = 0;
-			} else if	((set.Type == DB_ST_ASCIIZ) || (set.Type == DB_ST_UTF8))
-			{
-				Setting.Value.Length = set.BlobLength + 1;
-				Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pWide, set.BlobLength + 1);
-				file.Read(Setting.Value.pAnsii, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-				Setting.Value.pWide[Setting.Value.Length - 1] = 0;
-			} else {
-				Setting.Value.Length = set.BlobLength;
-				Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pWide, set.BlobLength + 1);
-				file.Read(Setting.Value.pBlob, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
+				case DB_ST_WCHAR:
+				{
+					Setting.Value.Length = set->BlobLength / sizeof(wchar_t);
+					Setting.Value.pWide = (wchar_t*) mir_realloc(Setting.Value.pWide, sizeof(wchar_t) * Setting.Value.Length);
+					memcpy(Setting.Value.pWide, str, set->BlobLength);
+					Setting.Value.pWide[Setting.Value.Length - 1] = 0;
+					
+				} break;
+				case DB_ST_ASCIIZ: case DB_ST_UTF8:
+				{
+					Setting.Value.Length = set->BlobLength;
+					Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, set->BlobLength);
+					memcpy(Setting.Value.pAnsii, str, set->BlobLength);					
+					Setting.Value.pAnsii[Setting.Value.Length - 1] = 0;
+					
+				} break;
+				default:
+				{
+					Setting.Value.Length = set->BlobLength;
+					Setting.Value.pBlob = (uint8_t *) mir_realloc(Setting.Value.pBlob, set->BlobLength);
+					memcpy(Setting.Value.pBlob, str, set->BlobLength);					
+				} break;
 			}
 		}
 	} else {
-		switch (set.Type)
+		switch (set->Type)
 		{
 			case DB_ST_BYTE: case DB_ST_WORD: case DB_ST_DWORD: case DB_ST_QWORD:
 				{
 					switch (Setting.Type)
 					{
-						case DB_ST_BYTE:  Setting.Value.Byte  = (unsigned char)        set.Value.QWord; break;
-						case DB_ST_WORD:  Setting.Value.Word  = (unsigned short)       set.Value.QWord; break;
-						case DB_ST_DWORD: Setting.Value.DWord = (unsigned int)         set.Value.QWord; break;
-						case DB_ST_QWORD: Setting.Value.QWord =                        set.Value.QWord; break;
-						case DB_ST_CHAR:  Setting.Value.Char  = (signed char)          set.Value.QWord; break;
-						case DB_ST_SHORT: Setting.Value.Short = (signed short)         set.Value.QWord; break;
-						case DB_ST_INT:   Setting.Value.Int   = (signed int)           set.Value.QWord; break;
-						case DB_ST_INT64: Setting.Value.Int64 = (signed long long int) set.Value.QWord; break;
-						case DB_ST_BOOL:  Setting.Value.Bool  = set.Value.QWord != 0; break;
+						case DB_ST_BYTE:  Setting.Value.Byte  = (uint8_t)   set->Value.QWord; break;
+						case DB_ST_WORD:  Setting.Value.Word  = (uint16_t)  set->Value.QWord; break;
+						case DB_ST_DWORD: Setting.Value.DWord = (uint32_t)  set->Value.QWord; break;
+						case DB_ST_QWORD: Setting.Value.QWord = (uint64_t)  set->Value.QWord; break;
+						case DB_ST_CHAR:  Setting.Value.Char  = ( int8_t)   set->Value.QWord; break;
+						case DB_ST_SHORT: Setting.Value.Short = ( int16_t)  set->Value.QWord; break;
+						case DB_ST_INT:   Setting.Value.Int   = ( int32_t)  set->Value.QWord; break;
+						case DB_ST_INT64: Setting.Value.Int64 = ( int64_t)  set->Value.QWord; break;
+						case DB_ST_BOOL:  Setting.Value.Bool  = set->Value.QWord != 0; break;
 
 						case DB_ST_ASCIIZ: case DB_ST_UTF8:
 							{
 								char buffer[24];
 								buffer[0] = 0;
-								sprintf_s(buffer, 24, "%llu", set.Value.QWord);
-								unsigned int l = strlen(buffer);
-								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, l + 1);
-								memcpy(Setting.Value.pAnsii, buffer, l + 1);
-								Setting.Value.Length = l + 1;							
+								sprintf_s(buffer, 24, "%llu", set->Value.QWord);
+								Setting.Value.Length = strlen(buffer) + 1;
+								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, Setting.Value.Length);
+								memcpy(Setting.Value.pAnsii, buffer, Setting.Value.Length);
+													
 							} break;
 						case DB_ST_WCHAR:
 							{
 								wchar_t buffer[24];
 								buffer[0] = 0;
-								swprintf_s(buffer, 24, L"%llu", set.Value.QWord);
-								unsigned int l = wcslen(buffer);
-								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, (l + 1) * sizeof(wchar_t));
-								memcpy(Setting.Value.pWide, buffer, (l + 1) * sizeof(wchar_t));
-								Setting.Value.Length = l + 1;
+								swprintf_s(buffer, 24, L"%llu", set->Value.QWord);
+								Setting.Value.Length = wcslen(buffer) + 1;
+								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, Setting.Value.Length * sizeof(wchar_t));
+								memcpy(Setting.Value.pWide, buffer, Setting.Value.Length * sizeof(wchar_t));
+
 							} break;
 						case DB_ST_BLOB:
 							{
-								unsigned int l = 0;
-								switch (set.Type)
+								Setting.Value.Length = 0;
+								switch (set->Type)
 								{									
-									case DB_ST_BYTE:  l = 1; break;
-									case DB_ST_WORD:  l = 2; break;
-									case DB_ST_DWORD: l = 4; break;
-									case DB_ST_QWORD: l = 8; break;
+									case DB_ST_BYTE:  Setting.Value.Length = 1; break;
+									case DB_ST_WORD:  Setting.Value.Length = 2; break;
+									case DB_ST_DWORD: Setting.Value.Length = 4; break;
+									case DB_ST_QWORD: Setting.Value.Length = 8; break;
 								}
 								
-								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, l);
-								memcpy(Setting.Value.pBlob, &set.Value, l);
-								Setting.Value.Length = l;
+								Setting.Value.pBlob = (uint8_t *) mir_realloc(Setting.Value.pBlob, Setting.Value.Length);
+								memcpy(Setting.Value.pBlob, &set->Value, Setting.Value.Length);
+			
 
 							} break;									
 					}
@@ -857,24 +826,24 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 				} break;
 			case DB_ST_CHAR: case DB_ST_SHORT: case DB_ST_INT: case DB_ST_INT64:
 				{
-					signed long long int val = 0;
-					switch (set.Type) 
+					int64_t val = 0;
+					switch (set->Type) 
 					{
-						case DB_ST_CHAR:  val = set.Value.Char;  break;
-						case DB_ST_SHORT: val = set.Value.Short; break;
-						case DB_ST_INT:   val = set.Value.Int;   break;
-						case DB_ST_INT64: val = set.Value.Int64; break;
+						case DB_ST_CHAR:  val = set->Value.Char;  break;
+						case DB_ST_SHORT: val = set->Value.Short; break;
+						case DB_ST_INT:   val = set->Value.Int;   break;
+						case DB_ST_INT64: val = set->Value.Int64; break;
 					}
 					switch (Setting.Type)
 					{
-						case DB_ST_BYTE:  Setting.Value.Byte  = (unsigned char)          val; break;
-						case DB_ST_WORD:  Setting.Value.Word  = (unsigned short)         val; break;
-						case DB_ST_DWORD: Setting.Value.DWord = (unsigned int)           val; break;
-						case DB_ST_QWORD: Setting.Value.QWord = (unsigned long long int) val; break;
-						case DB_ST_CHAR:  Setting.Value.Char  = (signed char)            val; break;
-						case DB_ST_SHORT: Setting.Value.Short = (signed short)           val; break;
-						case DB_ST_INT:   Setting.Value.Int   = (signed int)             val; break;
-						case DB_ST_INT64: Setting.Value.Int64 =                          val; break;
+						case DB_ST_BYTE:  Setting.Value.Byte  = (uint8_t)   val; break;
+						case DB_ST_WORD:  Setting.Value.Word  = (uint16_t)  val; break;
+						case DB_ST_DWORD: Setting.Value.DWord = (uint32_t)  val; break;
+						case DB_ST_QWORD: Setting.Value.QWord = (uint64_t)  val; break;
+						case DB_ST_CHAR:  Setting.Value.Char  = ( int8_t)   val; break;
+						case DB_ST_SHORT: Setting.Value.Short = ( int16_t)  val; break;
+						case DB_ST_INT:   Setting.Value.Int   = ( int32_t)  val; break;
+						case DB_ST_INT64: Setting.Value.Int64 = ( int64_t)  val; break;
 						case DB_ST_BOOL:  Setting.Value.Bool  = val != 0; break;
 
 						case DB_ST_ASCIIZ: case DB_ST_UTF8:
@@ -882,36 +851,35 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 								char buffer[24];
 								buffer[0] = 0;
 								sprintf_s(buffer, 24, "%lli", val);
-								unsigned int l = strlen(buffer);
-								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, l + 1);
-								memcpy(Setting.Value.pAnsii, buffer, l + 1);
-								Setting.Value.Length = l + 1;							
+								Setting.Value.Length = strlen(buffer) + 1;
+								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, Setting.Value.Length);
+								memcpy(Setting.Value.pAnsii, buffer, Setting.Value.Length);
+							
 							} break;
 						case DB_ST_WCHAR:
 							{
 								wchar_t buffer[24];
 								buffer[0] = 0;
 								swprintf_s(buffer, 24, L"%lli", val);
-								unsigned int l = wcslen(buffer);
-								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, (l + 1) * sizeof(wchar_t));
-								memcpy(Setting.Value.pWide, buffer, (l + 1) * sizeof(wchar_t));
-								Setting.Value.Length = l + 1;
+								Setting.Value.Length = wcslen(buffer) + 1;
+								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, Setting.Value.Length * sizeof(wchar_t));
+								memcpy(Setting.Value.pWide, buffer, Setting.Value.Length * sizeof(wchar_t));
+								
 							} break;
 						case DB_ST_BLOB:
 							{
-								unsigned int l = 0;
-								switch (set.Type)
+								Setting.Value.Length = 0;
+								switch (set->Type)
 								{									
-									case DB_ST_CHAR:  l = 1; break;
-									case DB_ST_SHORT: l = 2; break;
-									case DB_ST_INT:   l = 4; break;
-									case DB_ST_INT64: l = 8; break;
+									case DB_ST_CHAR:  Setting.Value.Length = 1; break;
+									case DB_ST_SHORT: Setting.Value.Length = 2; break;
+									case DB_ST_INT:   Setting.Value.Length = 4; break;
+									case DB_ST_INT64: Setting.Value.Length = 8; break;
 								}
 								
-								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, l);
-								memcpy(Setting.Value.pBlob, &set.Value, l);
-								Setting.Value.Length = l;
-
+								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, Setting.Value.Length);
+								memcpy(Setting.Value.pBlob, &set->Value, Setting.Value.Length);
+						
 							} break;								
 					}
 
@@ -919,52 +887,49 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 			case DB_ST_FLOAT: case DB_ST_DOUBLE:
 				{
 					double val = 0;
-					if (set.Type == DB_ST_DOUBLE)
-						val = set.Value.Double;
+					if (set->Type == DB_ST_DOUBLE)
+						val = set->Value.Double;
 					else
-						val = set.Value.Float;
+						val = set->Value.Float;
 				
 					switch (Setting.Type)
 					{
-						case DB_ST_BYTE:  Setting.Value.Byte  = (unsigned char)          floor(val); break;
-						case DB_ST_WORD:  Setting.Value.Word  = (unsigned short)         floor(val); break;
-						case DB_ST_DWORD: Setting.Value.DWord = (unsigned int)           floor(val); break;
-						case DB_ST_QWORD: Setting.Value.QWord = (unsigned long long int) floor(val); break;
-						case DB_ST_CHAR:  Setting.Value.Char  = (signed char)            floor(val); break;
-						case DB_ST_SHORT: Setting.Value.Short = (signed short)           floor(val); break;
-						case DB_ST_INT:   Setting.Value.Int   = (signed int)             floor(val); break;
-						case DB_ST_INT64: Setting.Value.Int64 = (signed long long int)   floor(val); break;
+						case DB_ST_BYTE:  Setting.Value.Byte  = (uint8_t)   floor(val); break;
+						case DB_ST_WORD:  Setting.Value.Word  = (uint16_t)  floor(val); break;
+						case DB_ST_DWORD: Setting.Value.DWord = (uint32_t)  floor(val); break;
+						case DB_ST_QWORD: Setting.Value.QWord = (uint64_t)  floor(val); break;
+						case DB_ST_CHAR:  Setting.Value.Char  = ( int8_t)   floor(val); break;
+						case DB_ST_SHORT: Setting.Value.Short = ( int16_t)  floor(val); break;
+						case DB_ST_INT:   Setting.Value.Int   = ( int32_t)  floor(val); break;
+						case DB_ST_INT64: Setting.Value.Int64 = ( int64_t)  floor(val); break;
 						case DB_ST_BOOL:  Setting.Value.Bool  = val != 0; break;
 							
 						case DB_ST_ASCIIZ: case DB_ST_UTF8:
 							{
 								char buffer[128];
 								buffer[0] = 0;
-								sprintf_s(buffer, 24, "%lf", set.Value.QWord);
-								unsigned int l = strlen(buffer);
-								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, l + 1);
-								memcpy(Setting.Value.pAnsii, buffer, l + 1);
-								Setting.Value.Length = l + 1;							
+								sprintf_s(buffer, 24, "%lf", set->Value.QWord);
+								Setting.Value.Length = strlen(buffer) + 1;
+								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, Setting.Value.Length);
+								memcpy(Setting.Value.pAnsii, buffer, Setting.Value.Length);	
 							} break;
 						case DB_ST_WCHAR:
 							{
 								wchar_t buffer[128];
 								buffer[0] = 0;
-								swprintf_s(buffer, 24, L"%lf", set.Value.QWord);
-								unsigned int l = wcslen(buffer);
-								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, (l + 1) * sizeof(wchar_t));
-								memcpy(Setting.Value.pWide, buffer, (l + 1) * sizeof(wchar_t));
-								Setting.Value.Length = l + 1;
+								swprintf_s(buffer, 24, L"%lf", set->Value.QWord);
+								Setting.Value.Length = wcslen(buffer) + 1;
+								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, Setting.Value.Length * sizeof(wchar_t));
+								memcpy(Setting.Value.pWide, buffer, Setting.Value.Length * sizeof(wchar_t));
 							} break;
 						case DB_ST_BLOB:
 							{
-								unsigned int l = 4;
-								if (set.Type == DB_ST_DOUBLE)
-									l = 8;
+								Setting.Value.Length = 4;
+								if (set->Type == DB_ST_DOUBLE)
+									Setting.Value.Length = 8;
 								
-								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, l);
-								memcpy(Setting.Value.pBlob, &set.Value, l);
-								Setting.Value.Length = l;
+								Setting.Value.pBlob = (uint8_t*) mir_realloc(Setting.Value.pBlob, Setting.Value.Length);
+								memcpy(Setting.Value.pBlob, &set->Value, Setting.Value.Length);
 
 							} break;									
 					}
@@ -977,21 +942,21 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 						case DB_ST_BYTE: case DB_ST_WORD: case DB_ST_DWORD: case DB_ST_QWORD: 
 						case DB_ST_CHAR: case DB_ST_SHORT: case DB_ST_INT: case DB_ST_INT64:
 							{
-								if (set.Value.Bool)
+								if (set->Value.Bool)
 									Setting.Value.QWord = 1;
 								else
 									Setting.Value.QWord = 0;
 							} break;
 						case DB_ST_FLOAT:
 							{
-								if (set.Value.Bool)
+								if (set->Value.Bool)
 									Setting.Value.Float = 1;
 								else
 									Setting.Value.Float = 0;
 							} break;
 						case DB_ST_DOUBLE:
 							{
-								if (set.Value.Bool)
+								if (set->Value.Bool)
 									Setting.Value.Double = 1;
 								else
 									Setting.Value.Double = 0;
@@ -999,35 +964,33 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 						case DB_ST_ASCIIZ: case DB_ST_UTF8:
 							{
 								char * buffer = "false";
-								unsigned int l = 5;
-								if (set.Value.Bool)
+								Setting.Value.Length = 5;
+								if (set->Value.Bool)
 								{
 									buffer = "true";
-									l = 4;
+									Setting.Value.Length = 4;
 								}
 
-								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, l + 1);
-								memcpy(Setting.Value.pAnsii, buffer, l + 1);
-								Setting.Value.Length = l + 1;							
+								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, Setting.Value.Length);
+								memcpy(Setting.Value.pAnsii, buffer, Setting.Value.Length);						
 							} break;
 						case DB_ST_WCHAR:
 							{
 								wchar_t * buffer = L"false";
-								unsigned int l = 5;
-								if (set.Value.Bool)
+								Setting.Value.Length = 5;
+								if (set->Value.Bool)
 								{
 									buffer = L"true";
-									l = 4;
+									Setting.Value.Length = 4;
 								}
 
-								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, (l + 1) * sizeof(wchar_t));
-								memcpy(Setting.Value.pWide, buffer, (l + 1) * sizeof(wchar_t));
-								Setting.Value.Length = l + 1;							
+								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, Setting.Value.Length * sizeof(wchar_t));
+								memcpy(Setting.Value.pWide, buffer, Setting.Value.Length * sizeof(wchar_t));						
 							} break;
 						case DB_ST_BLOB:
 							{
-								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, 1);
-								(*((bool*)Setting.Value.pBlob)) = set.Value.Bool;								
+								Setting.Value.pBlob = (uint8_t*) mir_realloc(Setting.Value.pBlob, 1);
+								(*((bool*)Setting.Value.pBlob)) = set->Value.Bool;								
 								Setting.Value.Length = 1;
 							} break;
 					}
@@ -1043,34 +1006,28 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 							} break;
 						case DB_ST_ASCIIZ:
 							{
-								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, set.BlobLength + 1);
-								file.Read(Setting.Value.pAnsii, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-								Setting.Value.pAnsii[set.BlobLength] = 0;
-								Setting.Value.Length = set.BlobLength + 1;
+								Setting.Value.Length = set->BlobLength;
+								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, set->BlobLength);
+								memcpy(Setting.Value.pAnsii, str, set->BlobLength);								
+								Setting.Value.pAnsii[Setting.Value.Length - 1] = 0;								
 							} break;
 						case DB_ST_UTF8:
-							{
-								char * buffer = new char[set.BlobLength + 1];								
-								file.Read(buffer, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-								buffer[set.BlobLength] = 0;
-								Setting.Value.pUTF8 = mir_utf8encode(buffer);
+							{								
+								str[set->BlobLength - 1] = 0;
+								Setting.Value.pUTF8 = mir_utf8encode((char*)str);								
 								Setting.Value.Length = DB_INVALIDPARAM;
-								delete [] buffer;
 							} break;
 						case DB_ST_WCHAR:
-							{
-								char * buffer = new char[set.BlobLength + 1];								
-								file.Read(buffer, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-								buffer[set.BlobLength] = 0;
-								Setting.Value.pWide = mir_a2u(buffer);
+							{				
+								str[set->BlobLength - 1] = 0;
+								Setting.Value.pWide = mir_a2u((char*)str);
 								Setting.Value.Length = DB_INVALIDPARAM;
-								delete [] buffer;
 							} break;
 						case DB_ST_BLOB:
 							{
-								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, set.BlobLength);
-								file.Read(Setting.Value.pBlob, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-								Setting.Value.Length = set.BlobLength;
+								Setting.Value.Length = set->BlobLength;
+								Setting.Value.pBlob = (uint8_t *) mir_realloc(Setting.Value.pBlob, set->BlobLength);
+								memcpy(Setting.Value.pBlob, str, set->BlobLength);								
 							} break;
 					}
 				} break;
@@ -1084,34 +1041,30 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 								Setting.Value.QWord = 0;		
 							} break;
 						case DB_ST_ASCIIZ:
-							{
-								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, set.BlobLength + 1);
-								file.Read(Setting.Value.pAnsii, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-								Setting.Value.pAnsii[set.BlobLength] = 0;
-								mir_utf8decode(Setting.Value.pAnsii, NULL);
-								Setting.Value.Length = DB_INVALIDPARAM;
+							{								
+								str[set->BlobLength - 1] = 0;		
+								mir_utf8decode((char*)str, NULL);								
+								Setting.Value.Length = strlen((char*)str) + 1;
+								mir_realloc(Setting.Value.pAnsii, Setting.Value.Length);								
 							} break;
 						case DB_ST_UTF8:
 							{
-								Setting.Value.pUTF8 = (char *) mir_realloc(Setting.Value.pUTF8, set.BlobLength + 1);
-								file.Read(Setting.Value.pUTF8, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-								Setting.Value.pUTF8[set.BlobLength] = 0;	
-								Setting.Value.Length = set.BlobLength + 1;
+								Setting.Value.Length = set->BlobLength;
+								Setting.Value.pUTF8 = (char *) mir_realloc(Setting.Value.pUTF8, set->BlobLength);
+								memcpy(Setting.Value.pUTF8, str, set->BlobLength);
+								Setting.Value.pUTF8[set->BlobLength - 1] = 0;									
 							} break;
 						case DB_ST_WCHAR:
-							{
-								char * buffer = (char *) mir_realloc(Setting.Value.pWide, set.BlobLength + 1);
-								file.Read(buffer, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-								buffer[set.BlobLength] = 0;
-								Setting.Value.pWide = mir_utf8decodeW(buffer);
-								mir_free(buffer);
+							{								
+								str[set->BlobLength - 1] = 0;
+								Setting.Value.pWide = mir_utf8decodeW((char*)str);								
 								Setting.Value.Length = DB_INVALIDPARAM;								
 							} break;
 						case DB_ST_BLOB:
 							{
-								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, set.BlobLength);
-								file.Read(Setting.Value.pBlob, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);								
-								Setting.Value.Length = set.BlobLength;
+								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, set->BlobLength);
+								memcpy(Setting.Value.pBlob, str, set->BlobLength);
+								Setting.Value.Length = set->BlobLength;
 							} break;
 					}
 				} break;
@@ -1126,34 +1079,28 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 							} break;
 						case DB_ST_ASCIIZ:
 							{
-								wchar_t * buffer = (wchar_t *) mir_realloc(Setting.Value.pAnsii, set.BlobLength + sizeof(wchar_t));
-								file.Read(buffer, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-								buffer[set.BlobLength / sizeof(wchar_t)] = 0;
-								Setting.Value.pAnsii = mir_u2a(Setting.Value.pWide);
-								mir_free(buffer);
-								Setting.Value.Length = set.BlobLength / sizeof(wchar_t) + 1;
+								((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
+								Setting.Value.pAnsii = mir_u2a((wchar_t*)str);
+								Setting.Value.Length = set->BlobLength / sizeof(wchar_t);
 							} break;
 						case DB_ST_UTF8:
 							{
-								wchar_t * buffer = (wchar_t *) mir_realloc(Setting.Value.pUTF8, set.BlobLength + sizeof(wchar_t));
-								file.Read(buffer, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-								buffer[set.BlobLength / sizeof(wchar_t)] = 0;	
-								Setting.Value.pUTF8 = mir_utf8encodeW(buffer);
-								mir_free(buffer);
+								((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
+								Setting.Value.pUTF8 = mir_utf8encodeW((wchar_t*)str);
 								Setting.Value.Length = DB_INVALIDPARAM;
 							} break;
 						case DB_ST_WCHAR:
 							{
-								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, set.BlobLength + sizeof(wchar_t));
-								file.Read(Setting.Value.pWide, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);
-								Setting.Value.pWide[set.BlobLength / sizeof(wchar_t)] = 0;	
-								Setting.Value.Length = set.BlobLength / sizeof(wchar_t) + 1;						
+								Setting.Value.Length = set->BlobLength / sizeof(wchar_t);
+								((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
+								Setting.Value.pWide = (wchar_t*) mir_realloc(Setting.Value.pWide, Setting.Value.Length);
+								memcpy(Setting.Value.pWide, str, set->BlobLength);								
 							} break;
 						case DB_ST_BLOB:
 							{
-								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, set.BlobLength);
-								file.Read(Setting.Value.pBlob, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);								
-								Setting.Value.Length = set.BlobLength;
+								Setting.Value.pBlob = (uint8_t *) mir_realloc(Setting.Value.pBlob, set->BlobLength);
+								memcpy(Setting.Value.pBlob, str, set->BlobLength);
+								Setting.Value.Length = set->BlobLength;
 							} break;
 					}
 				} break;
@@ -1176,9 +1123,9 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 							} break;
 						case DB_ST_BLOB:
 							{
-								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, set.BlobLength);
-								file.Read(Setting.Value.pBlob, hSetting + sizeof(set) + set.NameLength + 1, set.BlobLength);								
-								Setting.Value.Length = set.BlobLength;
+								Setting.Value.pBlob = (uint8_t *) mir_realloc(Setting.Value.pBlob, set->BlobLength);
+								memcpy(Setting.Value.pBlob, str, set->BlobLength);
+								Setting.Value.Length = set->BlobLength;
 							} break;
 					}
 				} break;
@@ -1189,18 +1136,18 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 
 	if (Setting.Descriptor)
 	{
-		Setting.Descriptor->Entry = set.Entry;
-		Setting.Descriptor->FoundInEntry = set.Entry;
+		Setting.Descriptor->Entry = set->Entry;
+		Setting.Descriptor->FoundInEntry = set->Entry;
 		Setting.Descriptor->Flags = DB_SDF_FoundEntryValid;
 
-		Setting.Descriptor->pszSettingName = (char *) mir_realloc(Setting.Descriptor->pszSettingName, set.NameLength + 1);
-		file.Read(Setting.Descriptor->pszSettingName, hSetting + sizeof(set), set.NameLength + 1);		
-		Setting.Descriptor->pszSettingName[set.NameLength] = 0;
+		Setting.Descriptor->pszSettingName = (char *) mir_realloc(Setting.Descriptor->pszSettingName, set->NameLength + 1);
+		memcpy(Setting.Descriptor->pszSettingName, set + 1, set->NameLength + 1);
+		Setting.Descriptor->pszSettingName[set->NameLength] = 0;
 	}
 
 	m_Sync.EndRead();
 
-	return set.Type;
+	return set->Type;
 }
 
 
@@ -1210,10 +1157,6 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 {
 	m_Sync.BeginWrite();
 
-
-
-
-
 	unsigned int i = 0;
 
 	while ((i < m_IterAllocSize) && (m_Iterations[i] != NULL))
@@ -1221,14 +1164,9 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 
 	if (i == m_IterAllocSize)
 	{
-		PSettingIteration * backup = m_Iterations;
 		m_IterAllocSize = m_IterAllocSize << 1;
-		m_Iterations = new PSettingIteration[m_IterAllocSize];
-		memset(m_Iterations, 0, sizeof(PSettingIteration*) * m_IterAllocSize);
-		memcpy(m_Iterations, backup, sizeof(PSettingIteration*) * (m_IterAllocSize >> 1));
-		delete [] backup;
+		m_Iterations = (PSettingIteration*)realloc(m_Iterations, sizeof(PSettingIteration*) * m_IterAllocSize);
 	}
-
 
 	std::queue<TDBEntryHandle> entries;
 	entries.push(Filter.hEntry);
@@ -1243,7 +1181,7 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 
 	if (Filter.hEntry != 0)
 	{	
-		unsigned int entryflags = m_Entries.getFlags(Filter.hEntry);
+		uint32_t entryflags = m_Entries.getFlags(Filter.hEntry);
 
 		if (entryflags == DB_INVALIDPARAM)
 		{
@@ -1255,8 +1193,7 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 		{	// virtual lookup
 			TDBEntryHandle e = m_Entries.VirtualGetParent(Filter.hEntry);
 			if (e != DB_INVALIDPARAM)
-				entries.push(e);
-			
+				entries.push(e);	
 		}
 
 		if (Filter.Options & DB_SIFO_SearchSubEntries)
@@ -1355,7 +1292,7 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 			iter->Heap->Insert(*tmp);
 		}
 	}
-			
+	
 	iter->Frame = new std::queue<TSettingIterationResult>;
 	m_Iterations[i] = iter;
 
@@ -1367,7 +1304,7 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 typedef struct TSettingIterationHelper {
 		TDBSettingHandle Handle;
 		CSettingsTree * Tree;
-		unsigned short NameLen;
+		uint16_t NameLen;
 		char * Name;
 	} TSettingIterationHelper;
 
@@ -1385,6 +1322,7 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 	}
 
 	PSettingIteration iter = m_Iterations[Iteration - 1];
+	uint32_t sig = cSettingSignature;
 
 	while (iter->Frame->empty() && iter->Heap->Top())
 	{
@@ -1393,7 +1331,7 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 
 		if (iter->Heap->Top())
 		{
-			unsigned int h = iter->Heap->Top().Key().Hash;
+			uint32_t h = iter->Heap->Top().Key().Hash;
 			std::queue<TSettingIterationHelper> q;
 			TSettingIterationHelper help;
 			help.NameLen = 0;
@@ -1401,7 +1339,8 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 			
 			help.Handle = iter->Heap->Top().Data();
 			help.Tree = (CSettingsTree *) iter->Heap->Top().Tree();
-			q.push(help);
+			if (help.Tree)
+				q.push(help);
 			
 			iter->Heap->Pop();
 
@@ -1425,23 +1364,23 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 				if (help.NameLen == 0)
 				{
 					if (help.Tree->getEntry() == 0)
-						m_SettingsFile.Read(&help.NameLen, help.Handle + offsetof(TSetting, NameLength), sizeof(unsigned short));
+						m_BlockManagerSet.ReadPart(help.Handle, &help.NameLen, offsetof(TSetting, NameLength), sizeof(help.NameLen), sig);						
 					else
-						m_PrivateFile.Read(&help.NameLen, help.Handle + offsetof(TSetting, NameLength), sizeof(unsigned short));
+						m_BlockManagerPri.ReadPart(help.Handle, &help.NameLen, offsetof(TSetting, NameLength), sizeof(help.NameLen), sig);
 				}
 				
 				if (help.Name == NULL)
 				{
 					help.Name = new char[help.NameLen + 1];
 					if (help.Tree->getEntry() == 0)
-						m_SettingsFile.Read(help.Name, help.Handle + sizeof(TSetting), help.NameLen + 1);
+						m_BlockManagerSet.ReadPart(help.Handle, help.Name, sizeof(TSetting), help.NameLen, sig);
 					else
-						m_PrivateFile.Read(help.Name, help.Handle + sizeof(TSetting), help.NameLen + 1);
+						m_BlockManagerPri.ReadPart(help.Handle, help.Name, sizeof(TSetting), help.NameLen, sig);
 				}
 
 
 				q.push(help);
-				while (q.front().Handle != help.Handle)
+				while (q.front().Handle != help.Handle)  // remove all qequed settings with same name
 				{
 					TSettingIterationHelper tmp;
 					tmp = q.front();
@@ -1449,10 +1388,10 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 
 					if (tmp.NameLen == 0)
 					{
-						if (tmp.Tree->getEntry() == 0)
-							m_SettingsFile.Read(&tmp.NameLen, tmp.Handle + offsetof(TSetting, NameLength), sizeof(unsigned short));
+						if (help.Tree->getEntry() == 0)
+							m_BlockManagerSet.ReadPart(tmp.Handle, &tmp.NameLen, offsetof(TSetting, NameLength), sizeof(tmp.NameLen), sig);						
 						else
-							m_PrivateFile.Read(&tmp.NameLen, tmp.Handle + offsetof(TSetting, NameLength), sizeof(unsigned short));
+							m_BlockManagerPri.ReadPart(tmp.Handle, &tmp.NameLen, offsetof(TSetting, NameLength), sizeof(tmp.NameLen), sig);
 					}
 
 					if (tmp.NameLen != help.NameLen)
@@ -1463,9 +1402,9 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 						{
 							tmp.Name = new char[tmp.NameLen + 1];
 							if (tmp.Tree->getEntry() == 0)
-								m_SettingsFile.Read(tmp.Name, tmp.Handle + sizeof(TSetting), tmp.NameLen + 1);
+								m_BlockManagerSet.ReadPart(tmp.Handle, tmp.Name, sizeof(TSetting), tmp.NameLen, sig);
 							else
-								m_PrivateFile.Read(tmp.Name, tmp.Handle + sizeof(TSetting), tmp.NameLen + 1);
+								m_BlockManagerPri.ReadPart(tmp.Handle, tmp.Name, sizeof(TSetting), tmp.NameLen, sig);
 						}
 
 						if (strcmp(tmp.Name, help.Name) != 0)
@@ -1504,7 +1443,6 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 	{
 		res = iter->Frame->front();
 		iter->Frame->pop();
-
 
 		if ((iter->Filter.Descriptor) && ((iter->Filter.Setting == NULL) || (iter->Filter.Setting->Descriptor != iter->Filter.Descriptor)))
 		{

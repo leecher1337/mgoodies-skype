@@ -1,5 +1,6 @@
 #pragma once
 
+#include "stdint.h"
 #include "MREWSync.h"
 
 #include "Events.h"
@@ -9,45 +10,67 @@
 #include "FileAccess.h"
 #include "MappedMemory.h"
 #include "DirectAccess.h"
+#include "Blockmanager.h"
 
 #include "sigslot.h"
 
-
-static const char cSettingsSignature[20] = "Miranda IM Settings";
-static const char cPrivateSignature[20]  = "Miranda IM DataTree";
-static const unsigned int cDBVersion = 0x00000001;
+#include "CipherList.inc"
 
 
-static const unsigned int cDBFAEncrypted = 0x01000000;
-//static const unsigned int cDBFA
+typedef enum TDBFileType {
+	DBFileSetting = 0,
+	DBFilePrivate = 1,
+	DBFileMax = 2
+} TDBFileType;
+
+static const uint8_t cFileSignature[DBFileMax][20] = {"Miranda IM Settings", "Miranda IM DataTree"};
+static const uint32_t cDBVersion = 0x00000001;
+
+static const uint32_t cDBFAEncryptedMask  = 0x00000003;
+static const uint32_t cDBFAEncryptFull    = 0x00000003;
+static const uint32_t cDBFAEncryptBlocks  = 0x00000002;
+static const uint32_t cDBFAEncryptHistory = 0x00000001;
+
+static const uint32_t cDBFAEncryptMethodMask = 0xFF000000;
+
+static const uint32_t cHeaderBlockSignature = 0x7265491E;
+
 
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
 
 typedef struct TSettingsHeader {
-	char Signature[20];       /// signature must be cSettingsHeader
-	unsigned int Version;     /// internal DB version cDataBaseVersion
-	unsigned int Settings;    /// Offset to the SettingsBTree RootNode
-	unsigned int FileSize;    /// Offset to the last used byte + 1
-	unsigned int WastedBytes; /// Lost bytes between the data
-	unsigned int FileAccess;  /// File Access method
-	char Reserved[88];        /// reserved storage
+	uint8_t Signature[20];       /// signature must be cSettingsHeader
+	uint32_t Version;            /// internal DB version cDataBaseVersion
+	uint32_t FileAccess;         /// File Access method
+	uint32_t FileSize;           /// Offset to the last used byte + 1		
+	uint32_t Settings;           /// Offset to the SettingsBTree RootNode	
+	uint8_t Reserved[92];        /// reserved storage
 } TSettingsHeader;
 
-
-
 typedef struct TPrivateHeader {
-	char Signature[20];       /// signature must be CDataHeader
-	unsigned int Version;     /// internal DB version cDataBaseVersion
-	unsigned int RootEntry;   /// Offset to the Root CList Entry
-	unsigned int Entries;     /// Offset to the EntryBTree RootNode
-	unsigned int Virtuals;    /// Offset to the VirtualsBTree RootNode
-	unsigned int FileSize;    /// Offset to the last used byte + 1
-	unsigned int WastedBytes; /// Lost bytes between the data
-	unsigned int EventIndex;  /// global counter for event index
-	unsigned int FileAccess;  /// File Access method
-	char Reserved[76];        /// reserved storage
+	uint8_t Signature[20];       /// signature must be CDataHeader
+	uint32_t Version;            /// internal DB version cDataBaseVersion
+	uint32_t FileAccess;         /// File Access method
+	uint32_t FileSize;           /// Offset to the last used byte + 1
+	uint32_t RootEntry;          /// Offset to the Root CList Entry
+	uint32_t Entries;            /// Offset to the EntryBTree RootNode
+	uint32_t Virtuals;           /// Offset to the VirtualsBTree RootNode	
+	uint8_t Reserved[84];        /// reserved storage
 } TPrivateHeader;
+
+
+typedef union TGenericFileHeader {
+	struct {
+		uint8_t Signature[20];       /// signature must be cSettingsHeader
+		uint32_t Version;            /// internal DB version cDataBaseVersion
+		uint32_t FileAccess;         /// File Access method
+		uint32_t FileSize;           /// Offset to the last used byte + 1	
+		uint8_t Reserved[96];        /// reserved storage
+	} Gen;
+	TSettingsHeader Set;
+	TPrivateHeader Pri;
+} TGenericFileHeader;
 
 #pragma pack(pop)
 
@@ -55,27 +78,33 @@ typedef struct TPrivateHeader {
 class CDataBase : public sigslot::has_slots<>
 {
 private:
-	char* m_SettingsFN;
-	char* m_PrivateFN;
+	char* m_FileName[DBFileMax];
 	bool m_Opened;
 
-	CFileAccess *m_SettingsFile;
-	CFileAccess *m_PrivateFile;
+	CBlockManager *m_BlockManager[DBFileMax];
+	CFileAccess *m_FileAccess[DBFileMax];
+	TGenericFileHeader m_Header[DBFileMax];
+	CCipher *m_Cipher[DBFileMax];
 
-	TSettingsHeader m_SettingsHeader;
-	TPrivateHeader m_PrivateHeader;
+	uint32_t m_HeaderBlock[DBFileMax];
 
-	void onSettingsRootChanged(CSettings* Settings, unsigned int NewRoot);
-	void onVirtualsRootChanged(void* Virtuals, unsigned int NewRoot);
-	void onEntriesRootChanged(void* Entries, unsigned int NewRoot);
+	void onSettingsRootChanged(CSettings* Settings, CSettingsTree::TNodeRef NewRoot);
+	void onVirtualsRootChanged(void* Virtuals, CVirtuals::TNodeRef NewRoot);
+	void onEntriesRootChanged(void* Entries, CEntries::TNodeRef NewRoot);
+
+	bool PrivateFileExists();
+	bool CreateNewPrivateFile();
+
+	int CheckFile(TDBFileType Index);
+	int LoadFile(TDBFileType Index);
+	CCipher* MakeCipher(uint32_t Access);
 protected:
 	CMultiReadExclusiveWriteSynchronizer m_Sync;
 
 	CEntries *m_Entries;
 	CSettings *m_Settings;
 
-	void ReWriteSettingsHeader();
-	void ReWritePrivateHeader();
+	void ReWriteHeader(TDBFileType Index);
 
 
 public:

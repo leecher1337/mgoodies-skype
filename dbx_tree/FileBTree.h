@@ -1,23 +1,24 @@
 #pragma once
 #include "BTree.h"
-#include "FileAccess.h"
+#include "BlockManager.h"
 
 template <typename TKey, typename TData = TEmpty, int SizeParam = 4, bool UniqueKeys = true>
 class CFileBTree :	public CBTree<TKey, TData, SizeParam, UniqueKeys>
 {
 private:
-
+	
 protected:
-	CFileAccess & m_FileAccess;
+	CBlockManager & m_BlockManager;
+	uint32_t cSignature;
 
-	virtual unsigned int CreateNewNode();
-	virtual void DeleteNode(unsigned int Node);
-	virtual void Read(unsigned int Node, int Offset, int Size, TNode & Dest);
-	virtual void Write(unsigned int Node, int Offset, int Size, TNode & Source);
+	virtual TNodeRef CreateNewNode();
+	virtual void DeleteNode(TNodeRef Node);
+	virtual void Read(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Dest);
+	virtual void Write(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Source);
 	
 	virtual void DestroyTree();
 public:
-	CFileBTree(CFileAccess & FileAccess, unsigned int RootNode);
+	CFileBTree(CBlockManager & BlockManager, TNodeRef RootNode, uint16_t Signature);
 	virtual ~CFileBTree();
 };
 
@@ -25,11 +26,11 @@ public:
 
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-CFileBTree<TKey, TData, SizeParam, UniqueKeys>::CFileBTree(CFileAccess & FileAccess, unsigned int RootNode)
+CFileBTree<TKey, TData, SizeParam, UniqueKeys>::CFileBTree(CBlockManager & BlockManager, TNodeRef RootNode, uint16_t Signature)
 :	CBTree(RootNode),
-	m_FileAccess(FileAccess)
+	m_BlockManager(BlockManager)
 {
-
+	cSignature = Signature << 16;
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
@@ -39,27 +40,44 @@ CFileBTree<TKey, TData, SizeParam, UniqueKeys>::~CFileBTree()
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-unsigned int CFileBTree<TKey, TData, SizeParam, UniqueKeys>::CreateNewNode()
+typename CFileBTree<TKey, TData, SizeParam, UniqueKeys>::TNodeRef CFileBTree<TKey, TData, SizeParam, UniqueKeys>::CreateNewNode()
 {
-	return m_FileAccess.Alloc(sizeof(TNode));
+	return m_BlockManager.CreateBlock(sizeof(TNode) - 2, cSignature);
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::DeleteNode(unsigned int Node)
+void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::DeleteNode(TNodeRef Node)
 {
-	m_FileAccess.Free(Node, sizeof(TNode));
+	m_BlockManager.DeleteBlock(Node);
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::Read(unsigned int Node, int Offset, int Size, TNode & Dest)
+void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::Read(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Dest)
 {
-	m_FileAccess.Read((char*)(&Dest) + Offset, Node + Offset, Size);
+	uint32_t sig = 0;
+	if (Offset == 0)
+	{
+		m_BlockManager.ReadPart(Node, (uint16_t*)&Dest + 1, 0, Size - 2, sig);
+	} else {
+		m_BlockManager.ReadPart(Node, (uint8_t*)&Dest + Offset, Offset - 2, Size, sig);		
+	}
+	Dest.Info = sig & 0xffff;
+	sig = sig & 0xffff0000;
+
+	if (sig != cSignature)
+			throw "Signature check failed";
+
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::Write(unsigned int Node, int Offset, int Size, TNode & Source)
+void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::Write(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Source)
 {
-	m_FileAccess.Write((char*)(&Source) + Offset, Node + Offset, Size);
+	if (Offset == 0)
+	{
+		m_BlockManager.WritePart(Node, (uint16_t*)&Source + 1, 0, Size - 2, cSignature | Source.Info);
+	} else {
+		m_BlockManager.WritePart(Node, (uint8_t*)&Source + Offset, Offset - 2, Size, 0);		
+	}
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
