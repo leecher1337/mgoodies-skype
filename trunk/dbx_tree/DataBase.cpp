@@ -7,21 +7,27 @@ CDataBase *gDataBase = NULL;
 CDataBase::CDataBase(const char* FileName)
 : m_Sync()
 {
-	m_SettingsFN = new char[strlen(FileName) + 1];
-	m_PrivateFN = new char[strlen(FileName) + 5];	
-	strcpy_s(m_SettingsFN, strlen(FileName) + 1, FileName);
-	strcpy_s(m_PrivateFN, strlen(FileName) + 5, FileName);
+	m_FileName[0] = new char[strlen(FileName) + 1];
+	m_FileName[1] = new char[strlen(FileName) + 5];	
+	strcpy_s(m_FileName[0], strlen(FileName) + 1, FileName);
+	strcpy_s(m_FileName[1], strlen(FileName) + 5, FileName);
 	
-	char * tmp = strrchr(m_PrivateFN, '.');
+	char * tmp = strrchr(m_FileName[1], '.');
 	if (tmp) 
 		(*tmp) = '\0';
 
-	strcat_s(m_PrivateFN, strlen(FileName) + 5, ".usr");
+	strcat_s(m_FileName[1], strlen(FileName) + 5, ".pri");
 
 
 	m_Opened = false;
-	m_SettingsFile = NULL;
-	m_PrivateFile = NULL;
+
+	for (int i = 0; i < DBFileMax; ++i)
+	{
+		m_BlockManager[i] = NULL;
+		m_FileAccess[i] = NULL;
+		m_Cipher[i] = NULL;
+		m_HeaderBlock[i] = 0;
+	}
 	
 	m_Entries = NULL;
 	m_Settings = NULL;
@@ -31,173 +37,230 @@ CDataBase::~CDataBase()
 	if (m_Entries) delete m_Entries;
 	if (m_Settings) delete m_Settings;
 
-	if (m_SettingsFile) delete m_SettingsFile;
-	if (m_PrivateFile) delete m_PrivateFile;
-
-	m_SettingsFile = NULL;
-	m_PrivateFile = NULL;
-	
 	m_Entries = NULL;
 	m_Settings = NULL;
 
-	delete[] m_PrivateFile;
-	delete[] m_SettingsFile;
+	for (int i = 0; i < 2; ++i)
+	{
+		if (m_BlockManager[i]) delete m_BlockManager[i];
+		if (m_FileAccess[i]) delete m_FileAccess[i];
+		m_BlockManager[i] = NULL;
+		m_FileAccess[i] = NULL;		
+
+		delete[] m_FileName[i];
+	}
+
 }
 int CDataBase::CreateDB()
 {
 
-	/// TODO: create and show a dialog
+/*
+	/// TODO: create and show wizard
 	try 
 	{
-		m_SettingsFile = new CDirectAccess(m_SettingsFN);
-		m_PrivateFile = new CDirectAccess(m_PrivateFN);
+		m_FileAccessSet = new CDirectAccess(m_SettingsFN);
+		m_FileAccessPri = new CDirectAccess(m_PrivateFN);
 	}
 	catch (char *)
 	{
 		return EMKPRF_CREATEFAILED;
 	}
-
-	TEntry entry = {0};
-
-	memcpy(m_SettingsHeader.Signature, cSettingsSignature, sizeof(cSettingsSignature));
-	m_SettingsHeader.Version = cDBVersion;
-	m_SettingsHeader.Settings = 0;
-	m_SettingsHeader.FileSize = sizeof(m_SettingsHeader);
-	m_SettingsHeader.WastedBytes = 0;
-
-	m_SettingsFile->Write(&m_SettingsHeader, 0, sizeof(m_SettingsHeader));
-	delete m_SettingsFile;
-	m_SettingsFile = NULL;
-
-	memcpy(m_PrivateHeader.Signature, cPrivateSignature, sizeof(cPrivateSignature));
-	m_PrivateHeader.Version = cDBVersion;
-	m_PrivateHeader.RootEntry = sizeof(m_PrivateHeader);
-	m_PrivateHeader.Entries = 0;
-	m_PrivateHeader.Virtuals = 0;
-	m_PrivateHeader.FileSize = sizeof(m_PrivateHeader) + sizeof(entry);
-	m_PrivateHeader.WastedBytes = 0;
-	m_PrivateHeader.EventIndex = 1;
-
-	m_PrivateFile->Write(&m_PrivateHeader, 0, sizeof(m_PrivateHeader));
-
-	entry.Flags = DB_EF_IsGroup;
-	m_PrivateFile->Write(&entry, sizeof(m_PrivateHeader), sizeof(entry));	
-
-	delete m_PrivateFile;
-	m_PrivateFile = NULL;
-
+*/
 	return 0;
 }
 
 
-int CDataBase::CheckDB()
+int CDataBase::CheckFile(TDBFileType Index)
 {
 	try 
 	{
-		m_SettingsFile = new CDirectAccess(m_SettingsFN);	
+		m_FileAccess[Index] = new CDirectAccess(m_FileName[Index]);	
 	} 
-	catch (char * e)
+	catch (char * )
 	{
 		return EGROKPRF_CANTREAD;
 	}
-	m_SettingsFile->Read(&m_SettingsHeader, 0, sizeof(m_SettingsHeader));
-	delete m_SettingsFile;
-	m_SettingsFile = NULL;
+	m_FileAccess[0]->Read(&m_Header[Index], 0, sizeof(m_Header[Index]));
+	delete m_FileAccess[Index];
+	m_FileAccess[Index] = NULL;
 
-	if (0 != memcmp(m_SettingsHeader.Signature, cSettingsSignature, sizeof(cSettingsSignature)))
+	if (0 != memcmp(m_Header[Index].Gen.Signature, cFileSignature[Index], sizeof(cFileSignature[Index])))
 		return EGROKPRF_UNKHEADER;
 
-	if (cDBVersion < m_SettingsHeader.Version)
+	if (cDBVersion < m_Header[Index].Gen.Version)
 		return EGROKPRF_VERNEWER;
-
-	HANDLE htmp = CreateFile(m_PrivateFN, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_RANDOM_ACCESS, NULL);
-	if (htmp != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(htmp);
-
-		try 
-		{
-			m_PrivateFile = new CDirectAccess(m_PrivateFN);
-		} 
-		catch (char * e)
-		{
-			return EGROKPRF_CANTREAD;
-		}
-		m_PrivateFile->Read(&m_PrivateHeader, 0, sizeof(m_PrivateHeader));
-		delete m_PrivateFile;
-		m_PrivateFile = NULL;
-
-		if (0 != memcmp(m_PrivateHeader.Signature, cPrivateSignature, sizeof(cPrivateSignature)))
-			return EGROKPRF_UNKHEADER;
-
-		if (cDBVersion < m_PrivateHeader.Version)
-			return EGROKPRF_VERNEWER;
-		
-	}
 
 	return EGROKPRF_NOERROR;
 }
-int CDataBase::OpenDB()
+
+int CDataBase::CheckDB()
 {
-	if (GetVersion() & 0x80000000)
-	{ // win98
-		try 
-		{
-			m_SettingsFile = new CDirectAccess(m_SettingsFN);
-			m_PrivateFile = new CDirectAccess(m_PrivateFN);
-		} 
-		catch (char * e)
-		{
-			return GetLastError();
-		}
-	} else { //win nt, 2000, xp.. usw
-		try 
-		{
-			m_SettingsFile = new CMappedMemory(m_SettingsFN);
-			m_PrivateFile = new CMappedMemory(m_PrivateFN);
-		} 
-		catch (char * e)
-		{
-			return GetLastError();
-		}
+	int res = CheckFile(DBFileSetting);
+
+	if (res != EGROKPRF_NOERROR)
+		return res;
+
+	
+	if (PrivateFileExists())
+		res = CheckFile(DBFilePrivate);
+	
+	return res;
+}
+
+int CDataBase::LoadFile(TDBFileType Index)
+{
+	try 
+	{
+		if (GetVersion() & 0x80000000) // win98
+			m_FileAccess[Index] = new CDirectAccess(m_FileName[Index]);		
+		else //win nt, 2000, xp.. usw		
+			m_FileAccess[Index] = new CMappedMemory(m_FileName[Index]);
+	}
+	catch (char * )
+	{
+		return GetLastError();
 	}
 
-	m_SettingsFile->Read(&m_SettingsHeader, 0, sizeof(m_SettingsHeader));
-	m_PrivateFile->Read(&m_PrivateHeader, 0, sizeof(m_PrivateHeader));
+	m_FileAccess[Index]->SetEncryptionStart(sizeof(m_Header[Index]));
+	m_FileAccess[Index]->Read(&m_Header[Index], 0, sizeof(m_Header[Index]));
 
-	m_Entries = new CEntries(*m_PrivateFile, m_Sync, m_PrivateHeader.RootEntry, m_PrivateHeader.Entries, m_PrivateHeader.Virtuals);
+	m_BlockManager[Index] = new CBlockManager(*m_FileAccess[Index]);
+	m_Cipher[Index] = MakeCipher(m_Header[Index].Gen.FileAccess);
+
+	if ((m_Header[Index].Gen.FileAccess & cDBFAEncryptedMask) == cDBFAEncryptFull)
+		m_FileAccess[Index]->SetCipher(m_Cipher[Index]);
+
+	if ((m_Header[Index].Gen.FileAccess & cDBFAEncryptedMask) == cDBFAEncryptBlocks)
+		m_BlockManager[Index]->SetCipher(m_Cipher[Index]);
+
+	m_HeaderBlock[Index] = m_BlockManager[Index]->ScanFile(sizeof(m_Header[Index]), cHeaderBlockSignature);
+
+	if (m_HeaderBlock[Index] == 0)			
+		return -1;
+	
+	TGenericFileHeader buf;
+	void* pbuf = &buf;
+	uint32_t size = sizeof(buf);
+	uint32_t sig = cHeaderBlockSignature;
+	if (!m_BlockManager[Index]->ReadBlock(m_HeaderBlock[Index], pbuf, size, sig))
+		return -1;
+
+	if ((m_Header[Index].Gen.FileAccess & cDBFAEncryptedMask) == cDBFAEncryptHistory)
+		m_Cipher[Index]->Decrypt(pbuf, size, cHeaderBlockSignature);
+
+	if (memcmp(&m_Header[Index], pbuf, size) != 0)
+		return -2;
+
+	return 0;
+}
+
+int CDataBase::OpenDB()
+{
+  if (!PrivateFileExists())
+	{
+		if (!CreateNewPrivateFile())
+			return -1;
+	}
+	
+	int res = LoadFile(DBFileSetting) ;
+	if (res != 0) return res;
+
+	res = LoadFile(DBFilePrivate);
+	if (res != 0) return res;
+	
+	m_Entries = new CEntries(*m_BlockManager[DBFilePrivate],
+		                       m_Sync, 
+													 m_Header[DBFilePrivate].Pri.RootEntry, 
+													 m_Header[DBFilePrivate].Pri.Entries, 
+													 m_Header[DBFilePrivate].Pri.Virtuals);
+
 	m_Entries->sigRootChanged().connect(this, &CDataBase::onEntriesRootChanged);
 	m_Entries->sigVirtualRootChanged().connect(this, &CDataBase::onVirtualsRootChanged);
+	
+	if (m_Entries->getRootEntry() != m_Header[DBFilePrivate].Pri.RootEntry)
+	{
+		m_Header[DBFilePrivate].Pri.RootEntry = m_Entries->getRootEntry();
+		ReWriteHeader(DBFilePrivate);
+	}
 
-	m_Settings = new CSettings(*m_SettingsFile, *m_PrivateFile, m_Sync, m_SettingsHeader.Settings, *m_Entries);
+	m_Settings = new CSettings(*m_BlockManager[DBFileSetting],
+		                         *m_BlockManager[DBFilePrivate],
+														 m_Sync,
+														 m_Header[DBFileSetting].Set.Settings,
+														 *m_Entries);
+
 	m_Settings->sigRootChanged().connect(this, &CDataBase::onSettingsRootChanged);
 
 
 	return 0;
 }
 
-void CDataBase::ReWriteSettingsHeader()
+bool CDataBase::PrivateFileExists()
 {
-	m_SettingsFile->Write(&m_SettingsHeader, 0, sizeof(m_SettingsHeader));
+	HANDLE htmp = CreateFile(m_FileName[DBFilePrivate], GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_RANDOM_ACCESS, NULL);
+	if (htmp != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(htmp);
+		return true;
+	}
+
+	return false;
+}
+
+
+bool CDataBase::CreateNewPrivateFile()
+{
+	/// TODO Wizard
+	return true;
+}
+
+CCipher * CDataBase::MakeCipher(uint32_t Access)
+{
+	int i;
+	if (Access & cDBFAEncryptedMask)
+	{
+		i = 0;
+		while (i < sizeof(cCipherList) / sizeof(cCipherList[0]))
+		{
+			if (cCipherList[i].ID == (Access & cDBFAEncryptMethodMask))
+				return cCipherList[i].Create();
+
+			++i;
+		}	
+		
+		throw "CipherID not present!";
+	}
+
+	return NULL;
+}
+
+void CDataBase::ReWriteHeader(TDBFileType Index)
+{ 
+	TGenericFileHeader h = m_Header[Index];
+
+	m_FileAccess[Index]->Write(&m_Header[Index], 0, sizeof(m_Header[Index]));
 	
+	if ((m_Header[Index].Gen.FileAccess & cDBFAEncryptedMask) == cDBFAEncryptHistory)		
+		m_Cipher[Index]->Encrypt(&h, sizeof(h), cHeaderBlockSignature);
+	
+	m_BlockManager[Index]->WriteBlock(m_HeaderBlock[Index], &h, sizeof(h), cHeaderBlockSignature);
 }
-void CDataBase::ReWritePrivateHeader()
+
+
+void CDataBase::onSettingsRootChanged(CSettings* Settings, CSettingsTree::TNodeRef NewRoot)
 {
-	m_PrivateFile->Write(&m_PrivateHeader, 0, sizeof(m_PrivateHeader));
+	m_Header[DBFileSetting].Set.Settings = NewRoot;
+	ReWriteHeader(DBFileSetting);
 }
-
-
-void CDataBase::onSettingsRootChanged(CSettings* Settings, unsigned int NewRoot)
-{
-
+void CDataBase::onVirtualsRootChanged(void* Virtuals, CVirtuals::TNodeRef NewRoot)
+{	
+	m_Header[DBFilePrivate].Pri.Virtuals = NewRoot;
+	ReWriteHeader(DBFilePrivate);
 }
-void CDataBase::onVirtualsRootChanged(void* Virtuals, unsigned int NewRoot)
+void CDataBase::onEntriesRootChanged(void* Entries, CEntries::TNodeRef NewRoot)
 {
-
-}
-void CDataBase::onEntriesRootChanged(void* Entries, unsigned int NewRoot)
-{
-
+	m_Header[DBFilePrivate].Pri.Entries = NewRoot;
+	ReWriteHeader(DBFilePrivate);
 }
 
 CEntries & CDataBase::getEntries()

@@ -12,39 +12,53 @@ CFileAccess::~CFileAccess()
 	delete [] m_FileName;
 }
 
-void CFileAccess::SetCipher(CCipher * Cipher, unsigned int EncryptionStart)
+void CFileAccess::SetCipher(CCipher * Cipher)
 {
 	m_Cipher = Cipher;
+}
+
+
+void CFileAccess::SetEncryptionStart(uint32_t EncryptionStart)
+{
 	m_EncryptionStart = EncryptionStart;
 }
 
 
-unsigned int CFileAccess::Read(void* Buf, unsigned int Source, unsigned int Size)
+uint32_t CFileAccess::Read(void* Buf, uint32_t Source, uint32_t Size)
 {
 	if (m_Cipher)
 	{
 		if (Source < m_EncryptionStart)
 		{
-			if (Source + Size > m_EncryptionStart)
+			uint32_t cryptstart;
+			uint32_t cryptsize;
+			void* cryptbuf;
+
+			if (Source + Size <= m_EncryptionStart)
 			{
-				mRead(Buf, Source, m_EncryptionStart - Source);
-				Read(((char*)Buf) + m_EncryptionStart - Source, m_EncryptionStart, Size - m_EncryptionStart + Source);
-			} else {
 				mRead(Buf, Source, Size);
+				return Size;
+
+			} else {
+				mRead(Buf, Source, m_EncryptionStart - Source);
+				Source = m_EncryptionStart;
+				Size = Size - (m_EncryptionStart - Source);
+				Buf = (uint8_t*)Buf + (m_EncryptionStart - Source);
 			}
-		} else {
 
-			unsigned char * cryptbuf;
-			unsigned int startadd = Source % m_Cipher->BlockSizeBytes();
-			unsigned int endadd   = (m_Cipher->BlockSizeBytes() - ((Size + Source) % m_Cipher->BlockSizeBytes())) % m_Cipher->BlockSizeBytes();
+			cryptstart = Source - (Source % m_Cipher->BlockSizeBytes());
+			cryptsize = Size + (Source % m_Cipher->BlockSizeBytes());
+			if (cryptsize % m_Cipher->BlockSizeBytes() != 0)
+			{
+				cryptsize = cryptsize + m_Cipher->BlockSizeBytes() - (cryptsize % m_Cipher->BlockSizeBytes());
+			}
 
-			cryptbuf = new unsigned char [startadd + Size + endadd];
-			mRead(cryptbuf, Source - startadd, startadd + Size + endadd);
-			m_Cipher->Decrypt(cryptbuf, startadd + Size + endadd);
-			
-			memcpy(Buf, cryptbuf + startadd, Size);
+			cryptbuf = malloc(cryptsize);
+			mRead(cryptbuf, cryptstart, cryptsize);
+			m_Cipher->Decrypt(cryptbuf, cryptsize, cryptstart - m_EncryptionStart);
+			memcpy(Buf, (uint8_t*)cryptbuf + (Source - cryptstart), Size);
+			free(cryptbuf);
 
-			delete [] cryptbuf;
 		}
 	} else {
 		mRead(Buf, Source, Size);
@@ -52,45 +66,54 @@ unsigned int CFileAccess::Read(void* Buf, unsigned int Source, unsigned int Size
 
 	return Size;
 }
-unsigned int CFileAccess::Write(void* Buf, unsigned int Dest, unsigned int Size)
+uint32_t CFileAccess::Write(void* Buf, uint32_t Dest, uint32_t Size)
 {
 	if (m_Cipher)
 	{
 		if (Dest < m_EncryptionStart)
 		{
-			if (Dest + Size > m_EncryptionStart)
+			uint32_t cryptstart;
+			uint32_t cryptsize;
+			void* cryptbuf;
+			bool loadlast = false;
+
+
+			if (Dest + Size <= m_EncryptionStart)
 			{
-				mWrite(Buf, Dest, m_EncryptionStart - Dest);
-				Write(((char*)Buf) + m_EncryptionStart - Dest, m_EncryptionStart, Size - m_EncryptionStart + Dest);
-			} else {
 				mWrite(Buf, Dest, Size);
+				return Size;
+			} else {
+				mWrite(Buf, Dest, m_EncryptionStart - Dest);
+				Dest = m_EncryptionStart;
+				Size = Size - (m_EncryptionStart - Dest);
+				Buf = (uint8_t*)Buf + (m_EncryptionStart - Dest);	
 			}
-		} else {
 
-			unsigned char * cryptbuf;
-			unsigned int startadd = Dest % m_Cipher->BlockSizeBytes();
-			unsigned int endadd   = (m_Cipher->BlockSizeBytes() - ((Size + Dest) % m_Cipher->BlockSizeBytes())) % m_Cipher->BlockSizeBytes();
+			cryptstart = Dest - (Dest % m_Cipher->BlockSizeBytes());
+			cryptsize = Size + (Dest % m_Cipher->BlockSizeBytes());
+			if (cryptsize % m_Cipher->BlockSizeBytes() != 0)
+			{
+				cryptsize = cryptsize + m_Cipher->BlockSizeBytes() - (cryptsize % m_Cipher->BlockSizeBytes());
+				loadlast = true;
+			}
 
-			cryptbuf = new unsigned char [startadd + Size + endadd];
+			cryptbuf = malloc(cryptsize);		
 			
-			if (startadd > 0)
+			if (loadlast) 
 			{
-				mRead(cryptbuf, Dest - startadd, m_Cipher->BlockSizeBytes());
-				m_Cipher->Decrypt(cryptbuf, m_Cipher->BlockSizeBytes());
+				mRead((uint8_t*)cryptbuf + (cryptsize - m_Cipher->BlockSizeBytes()), cryptstart + (cryptsize - m_Cipher->BlockSizeBytes()), m_Cipher->BlockSizeBytes());
+				m_Cipher->Decrypt((uint8_t*)cryptbuf + (cryptsize - m_Cipher->BlockSizeBytes()), m_Cipher->BlockSizeBytes(), cryptstart + (cryptsize - m_Cipher->BlockSizeBytes()));
+			}
+			if ((cryptstart != Dest) && ((!loadlast) || (cryptsize > m_Cipher->BlockSizeBytes()))) // check if only one block at all
+			{
+				mRead(cryptbuf, cryptstart, m_Cipher->BlockSizeBytes());
+				m_Cipher->Decrypt(cryptbuf, m_Cipher->BlockSizeBytes(), cryptstart);
 			}
 
-			if (endadd > 0)
-			{
-				mRead(cryptbuf + startadd + Size + endadd - m_Cipher->BlockSizeBytes(), Dest + Size + endadd - m_Cipher->BlockSizeBytes(), m_Cipher->BlockSizeBytes());
-				m_Cipher->Decrypt(cryptbuf + startadd + Size + endadd - m_Cipher->BlockSizeBytes(), m_Cipher->BlockSizeBytes());
-			}
-
-			memcpy(cryptbuf + startadd, Buf, Size);
-			m_Cipher->Encrypt(cryptbuf, startadd + Size + endadd);		
-
-			mWrite(cryptbuf, Dest - startadd, startadd + Size + endadd);
-
-			delete [] cryptbuf;
+			memcpy((uint8_t*)cryptbuf + (Dest - cryptstart), Buf, Size);
+			m_Cipher->Encrypt(cryptbuf, cryptsize, cryptstart);
+			mWrite(cryptbuf, cryptstart, cryptsize);
+			free(cryptbuf);
 		}
 
 	} else {
@@ -99,36 +122,3 @@ unsigned int CFileAccess::Write(void* Buf, unsigned int Dest, unsigned int Size)
 
 	return Size;
 }
-
-unsigned int CFileAccess::Alloc(unsigned int Size)
-{
-	if (Size == 0)
-		return 0;
-
-	if (Size & 0x00000003)    // 4 byte align
-		Size = (Size + 4) & 0xFFFFFFFC;
-
-	return mAlloc(Size);
-}
-void CFileAccess::Free(unsigned int Dest, unsigned int Count)
-{
-	if (Dest == 0)
-		return;
-
-	if (Dest & 0x00000003)    // 4 byte align
-		Dest = (Dest + 4) & 0xFFFFFFFC;
-
-	if (Count == 0)
-		return;
-
-	if (Count & 0x00000003)    // 4 byte align
-		Count = (Count + 4) & 0xFFFFFFFC;
-
-	mFree(Dest, Count);
-}
-/*
-unsigned int CFileAccess::Move(unsigned int Source, unsigned int Dest, unsigned int Size)
-{
-
-}
-*/

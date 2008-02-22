@@ -2,6 +2,8 @@
 
 #define M_DBX_TREE_H__ 1
 
+#include "stdint.h"
+
 #pragma pack(push)
 #pragma pack(4)
 
@@ -19,25 +21,29 @@ static const unsigned int DB_INVALIDPARAM = 0xFFFFFFFF;
 /**
 	\brief A handle to an Entry
 **/
-typedef unsigned int TDBEntryHandle;
+typedef uint32_t TDBEntryHandle;
 
 
+/**
+	\brief Entry is the Root
+**/
+static const uint32_t DB_EF_IsRoot = 0x00000001;
 /**
 	\brief Entry isn't a Contact
 **/
-static const unsigned int DB_EF_IsGroup   = 0x00000001;
+static const uint32_t DB_EF_IsGroup   = 0x00000002;
 /**
 	\brief Entry has Childs (Groups and Metacontacts)
 **/
-static const unsigned int DB_EF_HasChildren = 0x00000002;
+static const uint32_t DB_EF_HasChildren = 0x00000004;
 /**
 	\brief Entry is a Virtual duplicate
 **/
-static const unsigned int DB_EF_IsVirtual = 0x00000004;
+static const uint32_t DB_EF_IsVirtual = 0x00000008;
 /**
 	\brief Entry has min one Virtual duplicate
 **/
-static const unsigned int DB_EF_HasVirtuals = 0x00000008;
+static const uint32_t DB_EF_HasVirtuals = 0x00000010;
 
 ///////////////////////////////////////////////////////////
 // Entries
@@ -143,7 +149,7 @@ static const unsigned int DB_EF_HasVirtuals = 0x00000008;
 	It first iterates the first child of hParentEntry, than all its children and subchildren (as recursive),
 	before it iterates the second child of hParentEntry and its children.
 **/
-static const unsigned int DB_EIFO_DEPTHFIRST = 0x00000001;
+static const uint32_t DB_EIFO_DEPTHFIRST = 0x00000001;
 
 /**
 	\brief Entryfilter options for entry iteration
@@ -151,17 +157,17 @@ static const unsigned int DB_EIFO_DEPTHFIRST = 0x00000001;
 typedef
 	struct TDBEntryIterFilter
 	{
-		unsigned int cbSize;					/// size of the structur in bytes
-		unsigned int Options;					/// Options for iteration: DB_EIFO_*
-		unsigned int fHasFlags;				/// flags an entry must have to be iterated
-		unsigned int fDontHasFlags;		/// flags an entry have not to have to be iterated
+		uint32_t cbSize;					/// size of the structur in bytes
+		uint32_t Options;					/// Options for iteration: DB_EIFO_*
+		uint32_t fHasFlags;				/// flags an entry must have to be iterated
+		uint32_t fDontHasFlags;		/// flags an entry have not to have to be iterated
 		TDBEntryHandle hParentEntry;	/// entry which children should be iterated	
 	} TDBEntryIterFilter, *PDBEntryIterFilter;
 
 /**
 	\brief Handle of an Entry-Iteration
 **/
-typedef unsigned int TDBEntryIterationHandle;
+typedef uint32_t TDBEntryIterationHandle;
 /**
 	\brief initialize an iteration of entries
 	\param wParam = PDBEntryIterFilter, NULL to iterate all entries (breadthfirst, all but root)
@@ -264,36 +270,36 @@ typedef unsigned int TDBEntryIterationHandle;
 /**
 	\brief Handle of a Setting
 **/
-typedef unsigned int TDBSettingHandle;
+typedef uint32_t TDBSettingHandle;
 
 
-static const unsigned short DB_ST_BYTE   = 0x01;
-static const unsigned short DB_ST_WORD   = 0x02;
-static const unsigned short DB_ST_DWORD  = 0x03;
-static const unsigned short DB_ST_QWORD  = 0x04;
+static const uint16_t DB_ST_BYTE   = 0x01;
+static const uint16_t DB_ST_WORD   = 0x02;
+static const uint16_t DB_ST_DWORD  = 0x03;
+static const uint16_t DB_ST_QWORD  = 0x04;
 
-static const unsigned short DB_ST_CHAR   = 0x11;
-static const unsigned short DB_ST_SHORT  = 0x12;
-static const unsigned short DB_ST_INT    = 0x13;
-static const unsigned short DB_ST_INT64  = 0x14;
+static const uint16_t DB_ST_CHAR   = 0x11;
+static const uint16_t DB_ST_SHORT  = 0x12;
+static const uint16_t DB_ST_INT    = 0x13;
+static const uint16_t DB_ST_INT64  = 0x14;
 
-static const unsigned short DB_ST_BOOL   = 0x20;
-static const unsigned short DB_ST_FLOAT  = 0x21;
-static const unsigned short DB_ST_DOUBLE = 0x22;
+static const uint16_t DB_ST_BOOL   = 0x20;
+static const uint16_t DB_ST_FLOAT  = 0x21;
+static const uint16_t DB_ST_DOUBLE = 0x22;
 
-static const unsigned short DB_ST_ASCIIZ = 0xff;
-static const unsigned short DB_ST_BLOB   = 0xfe;
-static const unsigned short DB_ST_UTF8   = 0xfd;
-static const unsigned short DB_ST_WCHAR  = 0xfc;
+static const uint16_t DB_ST_ASCIIZ = 0xff;
+static const uint16_t DB_ST_BLOB   = 0xfe;
+static const uint16_t DB_ST_UTF8   = 0xfd;
+static const uint16_t DB_ST_WCHAR  = 0xfc;
 
 #if (defined(_UNICODE) || defined(UNICODE))
-	static const unsigned short DB_ST_TCHAR  = DB_ST_WCHAR;
+	static const uint16_t DB_ST_TCHAR  = DB_ST_WCHAR;
 #else
-	static const unsigned short DB_ST_TCHAR  = DB_ST_ASCIIZ;
+	static const uint16_t DB_ST_TCHAR  = DB_ST_ASCIIZ;
 #endif
 
-static const unsigned short DB_STF_Signed         = 0x10;
-static const unsigned short DB_STF_VariableLength = 0x80;
+static const uint16_t DB_STF_Signed         = 0x10;
+static const uint16_t DB_STF_VariableLength = 0x80;
 
 
 /**
@@ -301,7 +307,7 @@ static const unsigned short DB_STF_VariableLength = 0x80;
 
 	If the setting was not found, it will be searched in the children of the entry.
 **/
-static const unsigned int DB_SDF_SearchSubEntries       = 0x00000001;
+static const uint32_t DB_SDF_SearchSubEntries       = 0x00000001;
 
 /**
 	\brief Setting Descriptor flag
@@ -311,19 +317,19 @@ static const unsigned int DB_SDF_SearchSubEntries       = 0x00000001;
 
 	Please don't use this flag
 **/
-static const unsigned int DB_SDF_SearchOutOfGroups      = 0x00000002 | DB_SDF_SearchSubEntries;
+static const uint32_t DB_SDF_SearchOutOfGroups      = 0x00000002 | DB_SDF_SearchSubEntries;
 /**
 	\brief Setting Descriptor flag
 
 	If the setting was not found, it will be searched in the parent entries, while it isn't a group.
 **/
-static const unsigned int DB_SDF_SearchParents          = 0x00000004;
+static const uint32_t DB_SDF_SearchParents          = 0x00000004;
 /**
 	\brief Setting Descriptor flag
 
 	If the setting was not found, we look in the root entry for it.
 **/
-static const unsigned int DB_SDF_RootHasStandard        = 0x00000008;
+static const uint32_t DB_SDF_RootHasStandard        = 0x00000008;
 /**
 	\brief Setting Descriptor flag
 
@@ -333,14 +339,14 @@ static const unsigned int DB_SDF_RootHasStandard        = 0x00000008;
 	Changes the save destination. for standard settings are allways stored in the original entry.
 	With this flag set, the setting will be stored in the virtual duplicate and superseed the original's setting.
 **/
-static const unsigned int DB_SDF_NoPrimaryVirtualLookup = 0x00000010;
+static const uint32_t DB_SDF_NoPrimaryVirtualLookup = 0x00000010;
 /**
 	\brief Setting Descriptor flag
 
 	Turns off the lookup for original entry settings, if the specified entry is a virtual duplicate.
 	Turns it off for all searched entries.
 **/
-static const unsigned int DB_SDF_NoVirtualLookup        = 0x00000020 | DB_SDF_NoPrimaryVirtualLookup;
+static const uint32_t DB_SDF_NoVirtualLookup        = 0x00000020 | DB_SDF_NoPrimaryVirtualLookup;
 
 /**
 	\brief Setting Descriptor flag
@@ -350,7 +356,7 @@ static const unsigned int DB_SDF_NoVirtualLookup        = 0x00000020 | DB_SDF_No
 	Used for speed improvements.
 	\warning do not set this flag on your own!
 **/
-static const unsigned int DB_SDF_FoundEntryValid        = 0x01000000;
+static const uint32_t DB_SDF_FoundEntryValid        = 0x01000000;
 
 
 /**
@@ -358,10 +364,10 @@ static const unsigned int DB_SDF_FoundEntryValid        = 0x01000000;
 **/
 typedef
 	struct TDBSettingDescriptor {
-		unsigned int cbSize;                           /// size of the structure in bytes
+		uint32_t cbSize;                           /// size of the structure in bytes
 		TDBEntryHandle Entry;                          /// Entryhandle where the setting can be found, or where searching starts
 		char * pszSettingName;                         /// Setting name
-		unsigned int Flags;                            /// flags describing where the setting can be found DB_SDF_*
+		uint32_t Flags;                            /// flags describing where the setting can be found DB_SDF_*
 
 		TDBEntryHandle FoundInEntry;                   /// internal use to avoid to do the searching twice
 	} TDBSettingDescriptor, * PDBSettingDescriptor;
@@ -374,17 +380,17 @@ typedef
 typedef
 	union TDBSettingValue {
 		bool Bool;
-		signed char Char;       unsigned char Byte;
-		signed short Short;     unsigned short Word;
-		signed int Int;         unsigned int DWord;
-		signed long long Int64; unsigned long long QWord;
+		int8_t  Char;  uint8_t  Byte;
+		int16_t Short; uint16_t Word;
+		uint32_t Int;   uint32_t DWord;
+		int64_t Int64; uint64_t QWord;
 		float Float;
 		double Double;
 
 		struct {
-			unsigned int Length;  // length in bytes of pBlob, length in characters of char types including trailing null
+			uint32_t Length;  // length in bytes of pBlob, length in characters of char types including trailing null
 			union {
-				unsigned char * pBlob;				
+				uint8_t * pBlob;				
 				char * pAnsii;
 				char * pUTF8;
 				wchar_t * pWide;
@@ -398,9 +404,9 @@ typedef
 **/
 typedef
 	struct TDBSetting {
-		unsigned int cbSize;		          /// size of the structure in bytes
+		uint32_t cbSize;		          /// size of the structure in bytes
 		PDBSettingDescriptor Descriptor;  /// pointer to a Setting descriptor used to locate the setting
-		unsigned short Type;			        /// type of the setting, see DB_ST_*
+		uint16_t Type;			        /// type of the setting, see DB_ST_*
 		TDBSettingValue Value;		        /// Value of the setting according to Type
 	} TDBSetting, * PDBSetting;
 
@@ -480,7 +486,7 @@ typedef
 
 	Settings of all Children will be iterated.
 **/
-static const unsigned int DB_SIFO_SearchSubEntries       = 0x00000001;
+static const uint32_t DB_SIFO_SearchSubEntries       = 0x00000001;
 
 /**
 	\brief Setting Iteration Filter Option
@@ -489,33 +495,33 @@ static const unsigned int DB_SIFO_SearchSubEntries       = 0x00000001;
 
 	Please don't use this flag
 **/
-static const unsigned int DB_SIFO_SearchOutOfGroups      = 0x00000002 | DB_SDF_SearchSubEntries;
+static const uint32_t DB_SIFO_SearchOutOfGroups      = 0x00000002 | DB_SDF_SearchSubEntries;
 /**
 	\brief Setting Iteration Filter Option
 
 	Iterates the settings of any parent entry, as long it isn't a group
 **/
-static const unsigned int DB_SIFO_SearchParents          = 0x00000004;
+static const uint32_t DB_SIFO_SearchParents          = 0x00000004;
 /**
 	\brief Setting Iteration Filter Option
 
 	Iterates the settings of the root entry, which could hold standard values
 **/
-static const unsigned int DB_SIFO_RootHasStandard        = 0x00000008;
+static const uint32_t DB_SIFO_RootHasStandard        = 0x00000008;
 /**
 	\brief Setting Iteration Filter Option
 
 	Turns off the lookup for original entry settings, if the specified entry is a virtual duplicate.
 	And only for the specified entry. Children will do the lookup.
 **/
-static const unsigned int DB_SIFO_NoPrimaryVirtualLookup = 0x00000010;
+static const uint32_t DB_SIFO_NoPrimaryVirtualLookup = 0x00000010;
 /**
 	\brief Setting Iteration Filter Option
 
 	Turns off the lookup for original entry settings, if the specified entry is a virtual duplicate.
 	Turns it off for all searched entries.
 **/
-static const unsigned int DB_SIFO_NoVirtualLookup        = 0x00000020 | DB_SDF_NoPrimaryVirtualLookup;
+static const uint32_t DB_SIFO_NoVirtualLookup        = 0x00000020 | DB_SDF_NoPrimaryVirtualLookup;
 
 
 /**
@@ -523,11 +529,11 @@ static const unsigned int DB_SIFO_NoVirtualLookup        = 0x00000020 | DB_SDF_N
 **/
 typedef
 	struct TDBSettingIterFilter {
-		unsigned int cbSize;								/// size in bytes of this structure
-		unsigned int Options;               /// DB_SIFO_* flags
+		uint32_t cbSize;								/// size in bytes of this structure
+		uint32_t Options;               /// DB_SIFO_* flags
 		TDBEntryHandle hEntry;              /// hEntry which settings should be iterated (or where iteration begins)
 		char * NameStart;                   /// if set != NULL the iteration will only return settings which name starts with this string
-		unsigned int ExtraCount;            /// count of additional Entries which settings are enumerated, size of the array pointed by ExtraEntries
+		uint32_t ExtraCount;            /// count of additional Entries which settings are enumerated, size of the array pointed by ExtraEntries
 		TDBEntryHandle * ExtraEntries;      /// pointer to an array with additional Entry handles in prioritized order
 
 		PDBSettingDescriptor Descriptor;    /// if set, the iteration will fill in the correct data, you may set SettingsNameLength and SettingName to a buffer to recieve the name of each setting
@@ -539,7 +545,7 @@ typedef
 /**
 	\brief Handle of a Setting-Iteration
 **/
-typedef unsigned int TDBSettingIterationHandle;
+typedef uint32_t TDBSettingIterationHandle;
 /**
 	\brief initialize an iteration of settings
 	\param wParam = PDBSettingIterFilter
@@ -574,7 +580,7 @@ typedef unsigned int TDBSettingIterationHandle;
 ///////////////////////////////////////////////////////////
 
 
-typedef unsigned int TDBEventHandle;
+typedef uint32_t TDBEventHandle;
 
 
 /**
@@ -582,45 +588,45 @@ typedef unsigned int TDBEventHandle;
 
 	\warning obsolete in dbx_tree
 **/
-static const unsigned int DB_EVF_First = 0x00000001;
+static const uint32_t DB_EVF_First = 0x00000001;
 
 /**
 	\brief this event was sent by the user. If not set this event was received.
 **/
-static const unsigned int DB_EVF_Sent  = 0x00000002; 
+static const uint32_t DB_EVF_Sent  = 0x00000002; 
 
 /**
 	\brief event has been read by the user. It does not need to be processed any more except for history.
 **/
-static const unsigned int DB_EVF_Read  = 0x00000004; 
+static const uint32_t DB_EVF_Read  = 0x00000004; 
 
 /**
 	\brief event contains the right-to-left aligned text
 **/
-static const unsigned int DB_EVF_RTL   = 0x00000008;
+static const uint32_t DB_EVF_RTL   = 0x00000008;
 
 /**
 	\brief event contains a text in utf-8
 **/
-static const unsigned int DB_EVF_UTF   = 0x00000010;
+static const uint32_t DB_EVF_UTF   = 0x00000010;
 
 typedef struct TDBEvent {
-	unsigned int    cbSize;    /// size of the structure in bytes
-	unsigned int    timestamp; /// seconds since 00:00, 01/01/1970. Gives us times until 2106 unless you use the standard C library which is signed and can only do until 2038. In GMT.
-	unsigned int    flags;	   /// the omnipresent flags
-	unsigned int    eventType; /// global-unique event type ID
-	unsigned int    cbBlob;	   /// size of pBlob in bytes
-	unsigned char * pBlob;	   /// pointer to buffer containing module-defined event data
+	uint32_t    cbSize;    /// size of the structure in bytes
+	uint32_t    timestamp; /// seconds since 00:00, 01/01/1970. Gives us times until 2106 unless you use the standard C library which is signed and can only do until 2038. In GMT.
+	uint32_t    flags;	   /// the omnipresent flags
+	uint32_t    eventType; /// global-unique event type ID
+	uint32_t    cbBlob;	   /// size of pBlob in bytes
+	uint8_t  * pBlob;	   /// pointer to buffer containing module-defined event data
 
 //	TDBEntryHandle  hEntry;    /// Entry to which this event belongs 
 } TDBEvent, *PDBEvent;
 
-static const unsigned int DB_EventType_Message     = 0;
-static const unsigned int DB_EventType_URL         = 1;
-static const unsigned int DB_EventType_Contacts    = 2;
-static const unsigned int DB_EventType_Added       = 1000;
-static const unsigned int DB_EventType_AuthRequest = 1001;  //specific codes, hence the module-
-static const unsigned int DB_EventType_File        = 1002;  //specific limit has been raised to 2000
+static const uint32_t DB_EventType_Message     = 0;
+static const uint32_t DB_EventType_URL         = 1;
+static const uint32_t DB_EventType_Contacts    = 2;
+static const uint32_t DB_EventType_Added       = 1000;
+static const uint32_t DB_EventType_AuthRequest = 1001;  //specific codes, hence the module-
+static const uint32_t DB_EventType_File        = 1002;  //specific limit has been raised to 2000
 
 
 /** 

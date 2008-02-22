@@ -1,22 +1,25 @@
+#pragma once
+
 #include "Cipher.h"
 
 class CCAST128 : public CCipher
 {
 private:
-	static const int cBlockSize = 8;
+	static const uint32_t cBlockSize = 8;
 
-	unsigned int Km[16], Kr[16];
+	uint32_t Km[16], Kr[16];
 
-	void EncryptBlock(unsigned char *Block);
-	void DecryptBlock(unsigned char *Block);
-	void CreateSubKeys(unsigned char* Key);
+	void EncryptBlock(uint8_t *Block, uint32_t BlockIndex);
+	void DecryptBlock(uint8_t *Block, uint32_t BlockIndex);
+	void CreateSubKeys(uint8_t* Key);
 
 public:
 	CCAST128();
 	virtual ~CCAST128();
+	static CCipher* Create();
 
-	virtual int BlockSizeBytes();
-	virtual void SetKey(unsigned char* Key, int KeyLength);
-	virtual void Encrypt(unsigned char* Data, int DataLength);
-	virtual void Decrypt(unsigned char* Data, int DataLength);	
+	virtual uint32_t BlockSizeBytes();
+	virtual void SetKey(void* Key, uint32_t KeyLength);
+	virtual void Encrypt(void* Data, uint32_t DataLength, uint32_t StartBlockIndex);
+	virtual void Decrypt(void* Data, uint32_t DataLength, uint32_t StartBlockIndex);	
 };

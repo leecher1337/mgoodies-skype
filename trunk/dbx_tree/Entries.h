@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Interface.h"
 #include "FileBTree.h"
 #include "MREWSync.h"
@@ -16,8 +17,8 @@
 	That is for enumeration of one Entry's virtual copies, which are all stored in one block in the BTree
 **/
 typedef struct TVirtualKey {
-	unsigned int RealEntry;     /// hEntry of the duplicated RealEntry
-	unsigned int Virtual;       /// hEntry of the virtual duplicate
+	TDBEntryHandle RealEntry;     /// hEntry of the duplicated RealEntry
+	TDBEntryHandle Virtual;       /// hEntry of the virtual duplicate
 
 	bool operator <  (const TVirtualKey & Other) const;
 	//bool operator <= (const TVirtualKey & Other);
@@ -35,7 +36,7 @@ typedef struct TVirtualKey {
 	That is for enumeration of one Entry's children, which are all stored in one block in the BTree
 **/
 typedef struct TEntryKey { 
-	unsigned short Level;   /// Level where Entry is located or parent-steps to root. Root.Level == 0, root children have level 1 etc.
+	uint16_t Level;   /// Level where Entry is located or parent-steps to root. Root.Level == 0, root children have level 1 etc.
 	TDBEntryHandle Parent;    /// hEntry of the Parent. Root.Parent == 0
 	TDBEntryHandle Entry;     /// hEntry of the stored entry itself
 
@@ -47,22 +48,21 @@ typedef struct TEntryKey {
 } TEntryKey;
 
 
-static const unsigned int cEntrySignature = 0x9A6B3C0D;
-
 /**
 	\brief The data of an Entry
 **/
 typedef struct TEntry {
-	unsigned int Signature;     /// Signature 
-	unsigned short Level;       /// Level where Entry is located or parent-steps to root. Root.Level == 0, root children have level 1 etc. !used in the BTreeKey!
+	uint16_t Level;       /// Level where Entry is located or parent-steps to root. Root.Level == 0, root children have level 1 etc. !used in the BTreeKey!
+	uint16_t ChildCount;    /// Count of the children !invalid for Virtal contact!
 	TDBEntryHandle ParentEntry; /// hEntry of the Parent. Root.Parent == 0 !used in the BTreeKey!
 	TDBEntryHandle VParent;     /// if the Entry is Virtual this is the hEntry of the related Realnode
-	unsigned int Flags;         /// flags, see cEF_*
-	unsigned int Settings;      /// Offset to the SettingsBTree RootNode of this contact, NULL if no settings are present !invalid for Virtual contact!
-	unsigned int Events;        /// Offset to the EventsBTree RootNode of this contact, NULL if no events are present !invalid for Virtal contact!
-	unsigned int ChildCount;    /// Count of the children !invalid for Virtal contact!
-	unsigned int EventCount;    /// Count of the stored events !invalid for Virtal contact!
-	char Reserved[8];           /// reserved storage
+	uint32_t Flags;         /// flags, see cEF_*
+	/*CSettingsTree::TNodeRef*/
+	uint32_t Settings;      /// Offset to the SettingsBTree RootNode of this contact, NULL if no settings are present !invalid for Virtual contact!
+	/// TODO update type to events TNodeRef
+	uint32_t Events;        /// Offset to the EventsBTree RootNode of this contact, NULL if no events are present !invalid for Virtal contact!
+	uint32_t EventCount;    /// Count of the stored events !invalid for Virtal contact!
+	uint8_t Reserved[8];           /// reserved storage
 } TEntry;
 
 #pragma pack(pop)		// pop the alignment from stack
@@ -85,7 +85,7 @@ private:
 protected:
 	 CMultiReadExclusiveWriteSynchronizer & m_Sync;
 public:
-	CVirtuals(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, unsigned int Root);
+	CVirtuals(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TNodeRef Root);
 	virtual ~CVirtuals();
 
 	/**
@@ -95,7 +95,7 @@ public:
 	**/
 	TDBEntryHandle _DeleteRealEntry(TDBEntryHandle hRealEntry);
 	
-	unsigned int _InsertVirtual(TDBEntryHandle hRealEntry, TDBEntryHandle hVirtual);
+	bool _InsertVirtual(TDBEntryHandle hRealEntry, TDBEntryHandle hVirtual);
 	void _DeleteVirtual(TDBEntryHandle hRealEntry, TDBEntryHandle hVirtual);
 
 	// services:
@@ -104,6 +104,10 @@ public:
 	TDBEntryHandle getNext(TDBEntryHandle hVirtual);
 };
 
+
+static const uint32_t cEntrySignature = 0x9A6B3C0D;
+static const uint16_t cEntryNodeSignature = 0x65A9;
+static const uint16_t cVirtualNodeSignature = 0x874E;
 /**
 	\brief Manages the ContactListEntries in the Database
 
@@ -126,29 +130,32 @@ protected:
 	unsigned int m_IterAllocSize;
 	TEntryIteration **m_Iterations;
 
+	TDBEntryHandle CreateRootEntry();
+
 public:
-	CEntries(CFileAccess & FileAccess, CMultiReadExclusiveWriteSynchronizer & Synchronize, TDBEntryHandle RootEntry, unsigned int EntryRoot, unsigned int VirtualRoot);
+	CEntries(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TDBEntryHandle RootEntry, TNodeRef EntryRoot, CVirtuals::TNodeRef VirtualRoot);
 	virtual ~CEntries();
 
 
 	CVirtuals::TOnRootChanged & sigVirtualRootChanged();
 
 	//internal helpers:
-	unsigned int _getSettingsRoot(TDBEntryHandle hEntry);
-	unsigned int _setSettingsRoot(TDBEntryHandle hEntry, unsigned int NewRoot);
+	/*CSettingsTree::TNodeRef*/
+	uint32_t _getSettingsRoot(TDBEntryHandle hEntry);
+	bool _setSettingsRoot(TDBEntryHandle hEntry, /*CSettingsTree::TNodeRef*/ uint32_t NewRoot);
 
 	//Services:
 	TDBEntryHandle getRootEntry();
 	TDBEntryHandle getParent(TDBEntryHandle hEntry);
 	TDBEntryHandle setParent(TDBEntryHandle hEntry, TDBEntryHandle hParent);
-	unsigned int getChildCount(TDBEntryHandle hEntry);
+	uint32_t getChildCount(TDBEntryHandle hEntry);
 	TDBEntryHandle getFirstChild(TDBEntryHandle hParent);
 	TDBEntryHandle getLastChild(TDBEntryHandle hParent);
 	TDBEntryHandle getNextSilbing(TDBEntryHandle hEntry);
 	TDBEntryHandle getPrevSilbing(TDBEntryHandle hEntry);	
-	unsigned int getFlags(TDBEntryHandle hEntry);
+	uint32_t getFlags(TDBEntryHandle hEntry);
 
-	TDBEntryHandle CreateEntry(TDBEntryHandle hParent, unsigned int Flags);
+	TDBEntryHandle CreateEntry(TDBEntryHandle hParent, uint32_t Flags);
 	unsigned int DeleteEntry(TDBEntryHandle hEntry);
 
 	TDBEntryIterationHandle IterationInit(const TDBEntryIterFilter & Filter);

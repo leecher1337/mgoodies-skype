@@ -105,7 +105,7 @@ int DBEntryCreate(WPARAM hParent, LPARAM Flags)
 	if (hParent == 0)
 		hParent = gDataBase->getEntries().getRootEntry();
 
-	Flags = Flags & ~(DB_EF_HasChildren | DB_EF_IsVirtual | DB_EF_HasVirtuals); // forbidden flags...
+	Flags = Flags & ~(DB_EF_IsRoot | DB_EF_HasChildren | DB_EF_IsVirtual | DB_EF_HasVirtuals); // forbidden flags...
 	return gDataBase->getEntries().CreateEntry(hParent, Flags);
 }
 
