@@ -5,6 +5,7 @@ CFileAccess::CFileAccess(const char* FileName)
 	m_FileName = new char[strlen(FileName) + 1];
 	strcpy_s(m_FileName, strlen(FileName) + 1, FileName);
 	m_Cipher = NULL;
+	m_ReadOnly = false;
 }
 
 CFileAccess::~CFileAccess()
@@ -15,6 +16,15 @@ CFileAccess::~CFileAccess()
 void CFileAccess::SetCipher(CCipher * Cipher)
 {
 	m_Cipher = Cipher;
+	if (Cipher)
+	{
+		int i = 1;
+		while (m_AllocGranularity % Cipher->BlockSizeBytes())
+		{
+			m_AllocGranularity = m_AllocGranularity / i * (i+1);
+			++i;
+		}
+	}
 }
 
 
@@ -77,7 +87,6 @@ uint32_t CFileAccess::Write(void* Buf, uint32_t Dest, uint32_t Size)
 			void* cryptbuf;
 			bool loadlast = false;
 
-
 			if (Dest + Size <= m_EncryptionStart)
 			{
 				mWrite(Buf, Dest, Size);
@@ -121,4 +130,36 @@ uint32_t CFileAccess::Write(void* Buf, uint32_t Dest, uint32_t Size)
 	}
 
 	return Size;
+}
+
+
+uint32_t CFileAccess::SetSize(uint32_t Size)
+{
+	m_Size = Size;
+	
+	if (Size % m_AllocGranularity > 0)
+		Size = Size - Size % m_AllocGranularity + m_AllocGranularity;
+
+	if (Size == 0)
+		Size = m_AllocGranularity;
+
+	if (Size != m_AllocSize)
+	{
+		m_AllocSize = mSetSize(Size);
+	}
+
+	return Size;	
+}
+uint32_t CFileAccess::GetSize()
+{
+	return m_Size;
+}
+
+void CFileAccess::SetReadOnly(bool ReadOnly)
+{
+	m_ReadOnly = ReadOnly;
+}
+bool CFileAccess::GetReadOnly()
+{
+	return m_ReadOnly;
 }

@@ -21,5 +21,5 @@ public:
 	virtual uint32_t BlockSizeBytes();
 	virtual void SetKey(void* Key, uint32_t KeyLength);
 	virtual void Encrypt(void* Data, uint32_t DataLength, uint32_t StartBlockIndex);
-	virtual void Decrypt(void* Data, uint32_t DataLength, uint32_t StartBlockIndex);	
+	virtual void Decrypt(void* Data, uint32_t DataLength, uint32_t StartBlockIndex);
 };

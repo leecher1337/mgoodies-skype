@@ -17,7 +17,7 @@ CMappedMemory::CMappedMemory(const char* FileName)
 	if (m_DirectFile == INVALID_HANDLE_VALUE) 
 		throw "CreateFile failed";
 
-	SetAllocationSize(GetFileSize(m_DirectFile, NULL));
+	SetSize(GetFileSize(m_DirectFile, NULL));
 }
 
 CMappedMemory::~CMappedMemory()
@@ -42,42 +42,30 @@ uint32_t CMappedMemory::mWrite(void* Buf, uint32_t Dest, uint32_t Size)
 	return Size;
 }
 
-uint32_t CMappedMemory::SetAllocationSize(uint32_t Size)
+uint32_t CMappedMemory::mSetSize(uint32_t Size)
 {
-	if (Size % m_AllocGranularity > 0)
-		Size = Size - Size % m_AllocGranularity + m_AllocGranularity;
+	if (m_Base)
+		UnmapViewOfFile(m_Base);
+	if (m_FileMapping)
+		CloseHandle(m_FileMapping);
 
-	if (Size == 0)
-		Size = m_AllocGranularity;
+	m_Base = NULL;
+	m_FileMapping = NULL;
 
-	if (Size != m_AllocSize)
-	{
-		if (m_Base)
-			UnmapViewOfFile(m_Base);
-		if (m_FileMapping)
-			CloseHandle(m_FileMapping);
+	if (INVALID_SET_FILE_POINTER == SetFilePointer(m_DirectFile, Size, NULL, FILE_BEGIN))
+		throw "Cannot set file position";
 
-		m_Base = NULL;
-		m_FileMapping = NULL;
+	if (!SetEndOfFile(m_DirectFile))
+		throw "Cannot set end of file";
 
-		if (INVALID_SET_FILE_POINTER == SetFilePointer(m_DirectFile, Size, NULL, FILE_BEGIN))
-			throw "Cannot set file position";
+	m_FileMapping = CreateFileMapping(m_DirectFile, NULL, PAGE_READWRITE, 0, Size, NULL);
 
-		if (!SetEndOfFile(m_DirectFile))
-			throw "Cannot set end of file";
+	if (m_FileMapping == 0)
+		throw "CreateFileMapping failed";
 
-		m_AllocSize = Size;
-
-		m_FileMapping = CreateFileMapping(m_DirectFile, NULL, PAGE_READWRITE, 0, m_AllocSize, NULL);
-
-		if (m_FileMapping == 0)
-			throw "CreateFileMapping failed";
-
-		m_Base = (uint8_t*) MapViewOfFile(m_FileMapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-		if (m_Base == NULL)
-			throw "MapViewOfFile failed";;
-	}
+	m_Base = (uint8_t*) MapViewOfFile(m_FileMapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	if (m_Base == NULL)
+		throw "MapViewOfFile failed";
 
 	return Size;
-
 }

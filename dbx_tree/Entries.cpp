@@ -2,19 +2,19 @@
 
 
 
-__forceinline bool TVirtualKey::operator <  (const TVirtualKey & Other) const
+inline bool TVirtualKey::operator <  (const TVirtualKey & Other) const
 {
 	if (RealEntry != Other.RealEntry) return RealEntry < Other.RealEntry;
 	if (Virtual != Other.Virtual) return Virtual < Other.Virtual;
 	return false;
 }
 
-__forceinline bool TVirtualKey::operator == (const TVirtualKey & Other) const
+inline bool TVirtualKey::operator == (const TVirtualKey & Other) const
 {
 	return (RealEntry == Other.RealEntry) && (Virtual == Other.Virtual);
 }
 
-__forceinline bool TVirtualKey::operator >  (const TVirtualKey & Other) const
+inline bool TVirtualKey::operator >  (const TVirtualKey & Other) const
 {	
 	if (RealEntry != Other.RealEntry) return RealEntry > Other.RealEntry;
 	if (Virtual != Other.Virtual) return Virtual > Other.Virtual;
@@ -22,7 +22,7 @@ __forceinline bool TVirtualKey::operator >  (const TVirtualKey & Other) const
 }
 
 
-__forceinline bool TEntryKey::operator <  (const TEntryKey & Other) const
+inline bool TEntryKey::operator <  (const TEntryKey & Other) const
 {
 	if (Level != Other.Level) return Level < Other.Level;
 	if (Parent != Other.Parent) return Parent < Other.Parent;
@@ -30,12 +30,12 @@ __forceinline bool TEntryKey::operator <  (const TEntryKey & Other) const
 	return false;
 }
 
-__forceinline bool TEntryKey::operator == (const TEntryKey & Other) const
+inline bool TEntryKey::operator == (const TEntryKey & Other) const
 {
 	return (Level == Other.Level) && (Parent == Other.Parent) && (Entry == Other.Entry);
 }
 
-__forceinline bool TEntryKey::operator >  (const TEntryKey & Other) const
+inline bool TEntryKey::operator >  (const TEntryKey & Other) const
 {	
 	if (Level != Other.Level) return Level > Other.Level;
 	if (Parent != Other.Parent) return Parent > Other.Parent;
@@ -728,7 +728,7 @@ TDBEntryHandle CEntries::IterationNext(TDBEntryIterationHandle Iteration)
 
 	TDBEntryHandle result = 0;
 	
-	uint32_t f;
+	uint32_t f = 0;
 	uint32_t sig = cEntrySignature;
 	TEntryKey key = {0};
 	
@@ -743,7 +743,7 @@ TDBEntryHandle CEntries::IterationNext(TDBEntryIterationHandle Iteration)
 			{
 				result = candidate->Key().Entry;
 				
-				
+		
 				if (m_BlockManager.ReadPart(result, &f, offsetof(TEntry, Flags), sizeof(f), sig) && 
 					 (f & DB_EF_HasChildren))
 				{
