@@ -15,10 +15,7 @@ If you want this to implement some other player, I need a link to a page that ex
 
 One last thing: when reporting bugs, please post the name and version of the player you are using.
 
-It now also support Variables plugin to format the info. It works better with my mod of it:
-- http://pescuma.mirandaim.ru/miranda/variables_mod.zip
-- http://pescuma.mirandaim.ru/miranda/variables_modW.zip 
-This version allows to use temporary variables in the replacement too, so you can use %artist%.
+It also support Variables plugin to format the info, but it has to be the lastest version of the plugin (avaiable at http://pboonplugins.googlecode.com/). This version allows to use temporary variables in the replacement too, so you can use %artist%.
 
 Todo:
 - Better support for iTunes (it is not good now)

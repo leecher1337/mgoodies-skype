@@ -102,10 +102,10 @@ void WindowsMediaPlayer::ProcessReceived()
 	// Fill cache
 	if (pCount > 4 && parts[1][0] != L'\0' && (parts[4][0] != L'\0' || parts[5][0] != L'\0'))
 	{
-		listening_info.ptszType = mir_dupTW(parts[1]);
-		if (parts[4][0] != '\0') listening_info.ptszTitle = mir_dupTW(parts[4]);
-		if (pCount > 5 && parts[5][0] != '\0') listening_info.ptszArtist = mir_dupTW(parts[5]);
-		if (pCount > 6 && parts[6][0] != '\0') listening_info.ptszAlbum = mir_dupTW(parts[6]);
+		listening_info.ptszType = mir_u2t(parts[1]);
+		if (parts[4][0] != '\0') listening_info.ptszTitle = mir_u2t(parts[4]);
+		if (pCount > 5 && parts[5][0] != '\0') listening_info.ptszArtist = mir_u2t(parts[5]);
+		if (pCount > 6 && parts[6][0] != '\0') listening_info.ptszAlbum = mir_u2t(parts[6]);
 
 		listening_info.ptszPlayer = mir_tstrdup(name);
 		listening_info.cbSize = sizeof(listening_info);

@@ -109,15 +109,15 @@ BOOL ITunes::FillCache()
 
 	CALL( track->get_Album(&ret) );
 	if (ret != NULL && ret[0] != L'\0')
-		listening_info.ptszAlbum = mir_dupTW(ret);
+		listening_info.ptszAlbum = mir_u2t(ret);
 
 	CALL( track->get_Artist(&ret) );
 	if (ret != NULL && ret[0] != L'\0')
-		listening_info.ptszArtist = mir_dupTW(ret);
+		listening_info.ptszArtist = mir_u2t(ret);
 
 	CALL( track->get_Name(&ret) );
 	if (ret != NULL && ret[0] != L'\0')
-		listening_info.ptszTitle = mir_dupTW(ret);
+		listening_info.ptszTitle = mir_u2t(ret);
 
 	CALL( track->get_Year(&lret) );
 	if (lret > 0)
@@ -135,7 +135,7 @@ BOOL ITunes::FillCache()
 
 	CALL( track->get_Genre(&ret) );
 	if (ret != NULL && ret[0] != L'\0')
-		listening_info.ptszGenre = mir_dupTW(ret);
+		listening_info.ptszGenre = mir_u2t(ret);
 
 	CALL( track->get_Duration(&lret) );
 	if (lret > 0)
@@ -163,7 +163,7 @@ BOOL ITunes::FillCache()
 		else
 			p = filename;
 		
-		listening_info.ptszTitle = mir_dupTW(p);
+		listening_info.ptszTitle = mir_u2t(p);
 
 		TCHAR *pt = _tcsrchr(listening_info.ptszTitle, '.');
 		if (pt != NULL)

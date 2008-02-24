@@ -134,16 +134,16 @@ void GenericPlayer::ProcessReceived()
 	listening_info.cbSize = sizeof(listening_info);
 	listening_info.dwFlags = LTI_TCHAR;
 
-	listening_info.ptszType = mir_dupTW(parts[2][0] == L'\0' ? L"Music" : parts[2]);
-	listening_info.ptszArtist = mir_dupTW(parts[4]);
-	listening_info.ptszAlbum = mir_dupTW(parts[5]);
-	listening_info.ptszTitle = mir_dupTW(parts[3]);
-	listening_info.ptszTrack = mir_dupTW(parts[6]);
-	listening_info.ptszYear = mir_dupTW(parts[7]);
-	listening_info.ptszGenre = mir_dupTW(parts[8]);
+	listening_info.ptszType = mir_u2t(parts[2][0] == L'\0' ? L"Music" : parts[2]);
+	listening_info.ptszArtist = mir_u2t(parts[4]);
+	listening_info.ptszAlbum = mir_u2t(parts[5]);
+	listening_info.ptszTitle = mir_u2t(parts[3]);
+	listening_info.ptszTrack = mir_u2t(parts[6]);
+	listening_info.ptszYear = mir_u2t(parts[7]);
+	listening_info.ptszGenre = mir_u2t(parts[8]);
 
 	if (i == NUM_PLAYERS)
-		listening_info.ptszPlayer = mir_dupTW(parts[1]);
+		listening_info.ptszPlayer = mir_u2t(parts[1]);
 	else
 		listening_info.ptszPlayer = mir_tstrdup(players[i]->name);
 

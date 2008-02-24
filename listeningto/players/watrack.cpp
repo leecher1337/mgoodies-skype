@@ -116,16 +116,16 @@ void WATrack::GetData()
 	FreeData();
 
 	if (si->album != NULL && si->album[0] != L'\0')
-		listening_info.ptszAlbum = mir_dupTW(si->album);
+		listening_info.ptszAlbum = mir_u2t(si->album);
 
 	if (si->artist != NULL && si->artist[0] != L'\0')
-		listening_info.ptszArtist = mir_dupTW(si->artist);
+		listening_info.ptszArtist = mir_u2t(si->artist);
 
 	if (si->title != NULL && si->title[0] != L'\0')
-		listening_info.ptszTitle = mir_dupTW(si->title);
+		listening_info.ptszTitle = mir_u2t(si->title);
 
 	if (si->year != NULL && si->year[0] != L'\0')
-		listening_info.ptszYear = mir_dupTW(si->year);
+		listening_info.ptszYear = mir_u2t(si->year);
 
 	if (si->track > 0)
 	{
@@ -134,7 +134,7 @@ void WATrack::GetData()
 	}
 
 	if (si->genre != NULL && si->genre[0] != L'\0')
-		listening_info.ptszGenre = mir_dupTW(si->genre);
+		listening_info.ptszGenre = mir_u2t(si->genre);
 
 	if (si->total > 0)
 	{
@@ -155,7 +155,7 @@ void WATrack::GetData()
 	else
 		listening_info.ptszType = mir_tstrdup(_T("Music"));
 
-	listening_info.ptszPlayer = mir_dupTW(si->player);
+	listening_info.ptszPlayer = mir_u2t(si->player);
 
 	listening_info.cbSize = sizeof(listening_info);
 	listening_info.dwFlags = LTI_TCHAR;

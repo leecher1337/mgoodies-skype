@@ -773,6 +773,7 @@ int EnableListeningTo(WPARAM wParam,LPARAM lParam)
 					SetListeningInfo(proto, NULL);
 				else
 					SetListeningInfo(proto, &lti);
+				FreeListeningInfo(&lti);
 				break;
 			}
 		}
@@ -902,6 +903,8 @@ static void CALLBACK GetInfoTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTi
 		SetListeningInfos(NULL);
 	else if (changed > 0)
 		SetListeningInfos(&lti);
+
+	FreeListeningInfo(&lti);
 
 	StartTimer();
 }
@@ -1080,6 +1083,7 @@ TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai)
 
 	Buffer<TCHAR> ret;
 	ReplaceTemplate(&ret, NULL, opts.templ, fr, MAX_REGS(fr));
+	FreeListeningInfo(&lti);
 	return ret.detach();
 }
 
@@ -1091,18 +1095,22 @@ TCHAR* VariablesParseInfo(ARGUMENTSINFO *ai)
 	if (!GetListeningInfo(&lti)) \
 	{ \
 		ai->flags = AIF_FALSE; \
+		FreeListeningInfo(&lti); \
 		return mir_tstrdup(_T("")); \
 	} \
 	else if (lti.__field__ == NULL  || lti.__field__[0] == _T('\0'))  \
 	{ \
 		ai->flags = AIF_FALSE; \
+		FreeListeningInfo(&lti); \
 		return mir_tstrdup(opts.unknown); \
 	} \
 	else \
 	{ \
 		ai->flags = AIF_DONTPARSE; \
+		FreeListeningInfo(&lti); \
 		return mir_tstrdup(lti.__field__); \
-	}
+	} \
+	FreeListeningInfo(&lti)
 
 
 TCHAR* VariablesParseType(ARGUMENTSINFO *ai)
