@@ -14,8 +14,7 @@ class CSettingsTree;
 
 #include "Entries.h"
 
-#pragma pack(push)  /* push current alignment to stack */
-#pragma pack(1)     /* set alignment to 1 byte boundary */
+#pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
 
 /**
 	\brief Key Type of the SettingsBTree
@@ -65,7 +64,6 @@ typedef struct TSetting {
 } TSetting;
 
 #pragma pack(pop)
-
 
 /**
 	\brief Manages the Settings in the Database

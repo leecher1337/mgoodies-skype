@@ -35,9 +35,8 @@ static const uint32_t cDBFAEncryptMethodMask = 0xFF000000;
 
 static const uint32_t cHeaderBlockSignature = 0x7265491E;
 
+#pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
 
-#pragma pack(push)  /* push current alignment to stack */
-#pragma pack(1)     /* set alignment to 1 byte boundary */
 
 typedef struct TSettingsHeader {
 	uint8_t Signature[20];       /// signature must be cSettingsHeader

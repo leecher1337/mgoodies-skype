@@ -7,6 +7,7 @@ CDirectAccess::CDirectAccess(const char* FileName)
 	if (m_File == INVALID_HANDLE_VALUE) 
 		throw "CreateFile failed";
 
+	m_AllocGranularity = 65536; // 64kb to avoid heavy fragmentation
 }
 
 CDirectAccess::~CDirectAccess()
@@ -45,7 +46,7 @@ uint32_t CDirectAccess::mWrite(void* Buf, uint32_t Dest, uint32_t Size)
 	return read;
 }
 
-uint32_t CDirectAccess::SetAllocationSize(uint32_t Size)
+uint32_t CDirectAccess::mSetSize(uint32_t Size)
 {
 	if (INVALID_SET_FILE_POINTER == SetFilePointer(m_File, Size, NULL, FILE_BEGIN))
 		throw "Cannot set file position";

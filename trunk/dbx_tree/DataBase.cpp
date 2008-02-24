@@ -123,9 +123,18 @@ int CDataBase::LoadFile(TDBFileType Index)
 
 	m_FileAccess[Index]->SetEncryptionStart(sizeof(m_Header[Index]));
 	m_FileAccess[Index]->Read(&m_Header[Index], 0, sizeof(m_Header[Index]));
+	m_FileAccess[Index]->SetSize(m_Header[Index].Gen.FileSize);
+
+	try
+	{
+		m_Cipher[Index] = MakeCipher(m_Header[Index].Gen.FileAccess);
+	}
+	catch (char *)
+	{
+		return -1;
+	}
 
 	m_BlockManager[Index] = new CBlockManager(*m_FileAccess[Index]);
-	m_Cipher[Index] = MakeCipher(m_Header[Index].Gen.FileAccess);
 
 	if ((m_Header[Index].Gen.FileAccess & cDBFAEncryptedMask) == cDBFAEncryptFull)
 		m_FileAccess[Index]->SetCipher(m_Cipher[Index]);
@@ -133,6 +142,7 @@ int CDataBase::LoadFile(TDBFileType Index)
 	if ((m_Header[Index].Gen.FileAccess & cDBFAEncryptedMask) == cDBFAEncryptBlocks)
 		m_BlockManager[Index]->SetCipher(m_Cipher[Index]);
 
+	/// TODO ask password
 	m_HeaderBlock[Index] = m_BlockManager[Index]->ScanFile(sizeof(m_Header[Index]), cHeaderBlockSignature);
 
 	if (m_HeaderBlock[Index] == 0)			
@@ -149,7 +159,7 @@ int CDataBase::LoadFile(TDBFileType Index)
 		m_Cipher[Index]->Decrypt(pbuf, size, cHeaderBlockSignature);
 
 	if (memcmp(&m_Header[Index], pbuf, size) != 0)
-		return -2;
+		return -2; /// TODO go back and ask pw again
 
 	return 0;
 }

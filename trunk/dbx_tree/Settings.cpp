@@ -1,17 +1,17 @@
 #include "Settings.h"
 #include <math.h>
 
-__forceinline bool TSettingKey::operator <  (const TSettingKey & Other) const
+inline bool TSettingKey::operator <  (const TSettingKey & Other) const
 {
 	return Hash < Other.Hash;	
 }
 
-__forceinline bool TSettingKey::operator == (const TSettingKey & Other) const
+inline bool TSettingKey::operator == (const TSettingKey & Other) const
 {
 	return (Hash == Other.Hash);
 }
 
-__forceinline bool TSettingKey::operator >  (const TSettingKey & Other) const
+inline bool TSettingKey::operator >  (const TSettingKey & Other) const
 {	
 	return Hash > Other.Hash;
 }
@@ -29,7 +29,7 @@ CSettingsTree::~CSettingsTree()
 
 }
 
-__forceinline TDBEntryHandle CSettingsTree::getEntry()
+inline TDBEntryHandle CSettingsTree::getEntry()
 {
 	return m_Entry;
 }
@@ -501,11 +501,11 @@ unsigned int CSettings::DeleteSetting(TDBSettingHandle hSetting)
 {
 	m_Sync.BeginWrite();
 	
-	CBlockManager & file(m_BlockManagerPri);
+	CBlockManager * file = &m_BlockManagerPri;
 
 	if (hSetting & cSettingsFileFlag)
 	{
-		file = m_BlockManagerSet;
+		file = &m_BlockManagerSet;
 		hSetting = hSetting & ~cSettingsFileFlag;
 	}
 
@@ -513,7 +513,7 @@ unsigned int CSettings::DeleteSetting(TDBSettingHandle hSetting)
 	uint32_t size = 0;
 	uint32_t sig = cSettingSignature;
 	
-	if (!file.ReadBlock(hSetting, buf, size, sig))
+	if (!file->ReadBlock(hSetting, buf, size, sig))
 	{
 		m_Sync.EndWrite();
 		return DB_INVALIDPARAM;
@@ -531,7 +531,7 @@ unsigned int CSettings::DeleteSetting(TDBSettingHandle hSetting)
 	char * str = (char*) (set+1);
 	tree->_DeleteSetting(Hash(str, set->NameLength), hSetting);
 	
-	file.DeleteBlock(hSetting);
+	file->DeleteBlock(hSetting);
 	m_Sync.EndWrite();
 
 	free(buf);
@@ -558,13 +558,13 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 {
 	m_Sync.BeginWrite();
 	
-	CBlockManager & file(m_BlockManagerPri);
+	CBlockManager * file = &m_BlockManagerPri;
 	bool fileflag = false;
 	uint32_t sig = cSettingSignature;
 
 	if (hSetting & cSettingsFileFlag)
 	{
-		file = m_BlockManagerSet;
+		file = &m_BlockManagerSet;
 		hSetting = hSetting & ~cSettingsFileFlag;
 		fileflag = true;
 	}
@@ -575,7 +575,7 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 	{
 		if (Setting.Descriptor->Entry == 0)
 		{
-			file = m_BlockManagerSet;
+			file = &m_BlockManagerSet;
 			fileflag = true;
 		}
 
@@ -584,7 +584,7 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		
 	} else {		
 		TDBEntryHandle e;
-		if (file.ReadPart(hSetting, &e, offsetof(TSetting, Entry), sizeof(e), sig))
+		if (file->ReadPart(hSetting, &e, offsetof(TSetting, Entry), sizeof(e), sig))
 			tree = getSettingsTree(e);
 	}
 
@@ -629,15 +629,15 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		set.AllocSize = blobsize;		
 		set.NameLength = strlen(Setting.Descriptor->pszSettingName);
 		
-		hSetting = file.CreateBlock(sizeof(set) + set.NameLength + 1 + blobsize, cSettingSignature);
+		hSetting = file->CreateBlock(sizeof(set) + set.NameLength + 1 + blobsize, cSettingSignature);
 
 		tree->_AddSetting(Hash(Setting.Descriptor->pszSettingName, set.NameLength), hSetting);
 
 	} else {
-		file.ReadPart(hSetting, &set, 0, sizeof(set), sig);
+		file->ReadPart(hSetting, &set, 0, sizeof(set), sig);
 		if (((Setting.Type & DB_STF_VariableLength) == 0) && (set.Type & DB_STF_VariableLength))
 		{ // shrink setting (variable size->fixed size)
-			file.ResizeBlock(hSetting, sizeof(set) + set.NameLength + 1);
+			file->ResizeBlock(hSetting, sizeof(set) + set.NameLength + 1);
 		}
 
 		if ((Setting.Type & DB_STF_VariableLength) && ((set.Type & DB_STF_VariableLength) == 0))
@@ -650,14 +650,14 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 	{
 		if (set.AllocSize < blobsize)
 		{			
-			set.AllocSize = file.ResizeBlock(hSetting, sizeof(set) + set.NameLength + 1 + blobsize) - 
+			set.AllocSize = file->ResizeBlock(hSetting, sizeof(set) + set.NameLength + 1 + blobsize) - 
 				                (sizeof(set) + set.NameLength + 1);
 		}
 
 		set.BlobLength = blobsize;
 		set.Type = Setting.Type;
-		file.WritePart(hSetting, &set, 0, sizeof(set));
-		file.WritePart(hSetting, Setting.Value.pBlob, sizeof(set) + set.NameLength + 1, blobsize);
+		file->WritePart(hSetting, &set, 0, sizeof(set));
+		file->WritePart(hSetting, Setting.Value.pBlob, sizeof(set) + set.NameLength + 1, blobsize);
 
 	} else {
 
@@ -672,7 +672,7 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		}
 		set.Type = Setting.Type;
 		set.Value = Setting.Value;
-		file.WritePart(hSetting, &set, 0, sizeof(set));
+		file->WritePart(hSetting, &set, 0, sizeof(set));
 	}
 
 	if (fileflag)
@@ -708,11 +708,11 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 {
 	m_Sync.BeginRead();
 	
-	CBlockManager & file(m_BlockManagerPri);
+	CBlockManager * file = &m_BlockManagerPri;
 
 	if (hSetting & cSettingsFileFlag)
 	{
-		file = m_BlockManagerSet;
+		file = &m_BlockManagerSet;
 		hSetting = hSetting & ~cSettingsFileFlag;
 	}
 
@@ -725,7 +725,7 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 		m_Sync.EndRead();
 		return DB_INVALIDPARAM;
 	} else {		
-		if (!file.ReadBlock(hSetting, buf, size, sig))
+		if (!file->ReadBlock(hSetting, buf, size, sig))
 		{
 			m_Sync.EndRead();
 			return DB_INVALIDPARAM;
@@ -1266,7 +1266,7 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 	iter->FilterNameStartLength = 0;
 	if (Filter.NameStart)
 	{
-		unsigned int l = strlen(Filter.NameStart);
+		uint16_t l = strlen(Filter.NameStart);
 		iter->Filter.NameStart = new char[l + 1];
 		memcpy(iter->Filter.NameStart, Filter.NameStart, l + 1);
 		iter->FilterNameStartLength = l;
@@ -1274,7 +1274,8 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 
 	TSettingKey key;
 	key.Hash = 0;
-	TDBEntryHandle entry = entries.front();
+
+	// pop first entry. we have always one and always its tree
 	entries.pop();
 
 	CSettingsTree::iterator * tmp = new CSettingsTree::iterator(tree->LowerBound(key));

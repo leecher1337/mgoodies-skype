@@ -3,9 +3,7 @@
 #define M_DBX_TREE_H__ 1
 
 #include "stdint.h"
-
-#pragma pack(push)
-#pragma pack(4)
+#pragma pack(push, 8)
 
 
 /**
@@ -50,7 +48,7 @@ static const uint32_t DB_EF_HasVirtuals = 0x00000010;
 ///////////////////////////////////////////////////////////
 
 /**
-	\brief 
+	\brief
 	\param wParam = 0
 	\param lParam = 0
 
@@ -60,7 +58,7 @@ static const uint32_t DB_EF_HasVirtuals = 0x00000010;
 
 
 /**
-	\brief 
+	\brief
 	\param wParam = hEntry
 	\param lParam = 0
 
@@ -70,7 +68,7 @@ static const uint32_t DB_EF_HasVirtuals = 0x00000010;
 
 
 /**
-	\brief 
+	\brief
 	\param wParam = hEntry
 	\param lParam = 0
 
@@ -79,8 +77,8 @@ static const uint32_t DB_EF_HasVirtuals = 0x00000010;
 #define MS_DB_ENTRY_GETPARENT "DB/Entry/GetParent"
 
 
-/** 
-	\brief 
+/**
+	\brief
   \param wParam = hEntry
   \param lParam = hParentEntry
 
@@ -90,7 +88,7 @@ static const uint32_t DB_EF_HasVirtuals = 0x00000010;
 
 
 /**
-	\brief 
+	\brief
 	\param wParam = hEntry
 	\param lParam = 0
 
@@ -100,7 +98,7 @@ static const uint32_t DB_EF_HasVirtuals = 0x00000010;
 
 
 /**
-	\brief 
+	\brief
 	\param wParam = hEntry
 	\param lParam = 0
 
@@ -110,7 +108,7 @@ static const uint32_t DB_EF_HasVirtuals = 0x00000010;
 
 
 /**
-	\brief 
+	\brief
 	\param wParam = hEntry
 	\param lParam = 0
 
@@ -120,7 +118,7 @@ static const uint32_t DB_EF_HasVirtuals = 0x00000010;
 
 
 /**
-	\brief 
+	\brief
 	\param wParam = hEntry
 	\param lParam = 0
 
@@ -128,7 +126,7 @@ static const uint32_t DB_EF_HasVirtuals = 0x00000010;
 **/
 #define MS_DB_ENTRY_GETPREVSILBING "DB/Entry/GetPrevSilbing"
 
-/** 
+/**
 	\brief Read the flags of an entry
   \param wParam = hEntry
   \param lParam = 0
@@ -161,7 +159,7 @@ typedef
 		uint32_t Options;					/// Options for iteration: DB_EIFO_*
 		uint32_t fHasFlags;				/// flags an entry must have to be iterated
 		uint32_t fDontHasFlags;		/// flags an entry have not to have to be iterated
-		TDBEntryHandle hParentEntry;	/// entry which children should be iterated	
+		TDBEntryHandle hParentEntry;	/// entry which children should be iterated
 	} TDBEntryIterFilter, *PDBEntryIterFilter;
 
 /**
@@ -196,12 +194,12 @@ typedef uint32_t TDBEntryIterationHandle;
 **/
 #define MS_DB_ENTRY_ITER_CLOSE "DB/Entry/Iter/Close"
 
-/** 
+/**
 	\brief Deletes an Entry.
-	
+
 	All children will be moved to its parent.
 	If the Entry has virtual copies, history and settings will be transfered to the first duplicate.
-  
+
 	\param wParam = hEntry
   \param lParam = 0
 
@@ -210,7 +208,7 @@ typedef uint32_t TDBEntryIterationHandle;
 #define MS_DB_ENTRY_DELETE  "DB/Entry/Delete"
 
 
-/** 
+/**
 	\brief Creates a new Entry.
   \param wParam = hParentEntry
   \param lParam = Flags, only DB_EF_IsGroup is allowed here.
@@ -226,7 +224,7 @@ typedef uint32_t TDBEntryIterationHandle;
 // Virtual Entries
 ///////////////////////////////////////////////////////////
 
-/** 
+/**
 	\brief Creates a virtual duplicate of an Entry
   \param wParam = hEntry to duplicate, couldn't be a group (DB_EF_IsGroup set to 0)
   \param lParam = hParentEntry to place duplicate
@@ -235,7 +233,7 @@ typedef uint32_t TDBEntryIterationHandle;
 **/
 #define MS_DB_VIRTUALENTRY_CREATE  "DB/VirtualEntry/Create"
 
-/** 
+/**
 	\brief Retrieves the original entry, which this is a duplicate of
   \param wParam = hEntry of virtual entry
   \param lParam = 0
@@ -244,7 +242,7 @@ typedef uint32_t TDBEntryIterationHandle;
 **/
 #define MS_DB_VIRTUALENTRY_GETPARENT  "DB/VirtualEntry/GetParent"
 
-/** 
+/**
 	\brief Retrieves the first virtual duplicate of an entry (if any)
   \param wParam = hEntry with virtual copies
   \param lParam
@@ -253,7 +251,7 @@ typedef uint32_t TDBEntryIterationHandle;
 **/
 #define MS_DB_VIRTUALENTRY_GETFIRST  "DB/VirtualEntry/GetFirst"
 
-/** 
+/**
 	\brief Retrieves the following duplicate
   \param wParam = hVirtualEntry of virtual entry
   \param lParam = 0
@@ -312,7 +310,7 @@ static const uint32_t DB_SDF_SearchSubEntries       = 0x00000001;
 /**
 	\brief Setting Descriptor flag
 
-	If the setting of a group was not found, it will be searched in all children of this group, 
+	If the setting of a group was not found, it will be searched in all children of this group,
 	even in children which aren't groups.
 
 	Please don't use this flag
@@ -335,7 +333,7 @@ static const uint32_t DB_SDF_RootHasStandard        = 0x00000008;
 
 	Turns off the lookup for original entry settings, if the specified entry is a virtual duplicate.
 	And only for the specified entry. Children will do the lookup.
-	
+
 	Changes the save destination. for standard settings are allways stored in the original entry.
 	With this flag set, the setting will be stored in the virtual duplicate and superseed the original's setting.
 **/
@@ -390,7 +388,7 @@ typedef
 		struct {
 			uint32_t Length;  // length in bytes of pBlob, length in characters of char types including trailing null
 			union {
-				uint8_t * pBlob;				
+				uint8_t * pBlob;
 				char * pAnsii;
 				char * pUTF8;
 				wchar_t * pWide;
@@ -412,7 +410,7 @@ typedef
 
 
 
-/** 
+/**
 	\brief retrieves the handle of the setting
   \param wParam = PDBSettingDescriptor
   \param lParam = 0
@@ -422,7 +420,7 @@ typedef
 #define MS_DB_SETTING_FIND  "DB/Setting/Find"
 
 
-/** 
+/**
 	\brief deletes the specified Setting
   \param wParam = PDBSettingDescriptor
   \param lParam = 0
@@ -431,7 +429,7 @@ typedef
 **/
 #define MS_DB_SETTING_DELETE  "DB/Setting/Delete"
 
-/** 
+/**
 	\brief deletes the specified Setting
   \param wParam = TDBSettingHandle
   \param lParam = 0
@@ -441,7 +439,7 @@ typedef
 #define MS_DB_SETTING_DELETEHANDLE  "DB/Setting/DeleteHandle"
 
 
-/** 
+/**
 	\brief Write a setting (and creates it if neccessary)
   \param wParam = PDBSetting
   \param lParam = 0
@@ -450,7 +448,7 @@ typedef
 **/
 #define MS_DB_SETTING_WRITE  "DB/Setting/Write"
 
-/** 
+/**
 	\brief retrieves the handle of the setting
   \param wParam = PDBSetting
   \param lParam = TDBSettingHandle
@@ -459,7 +457,7 @@ typedef
 **/
 #define MS_DB_SETTING_WRITEHANDLE  "DB/Setting/WriteHandle"
 
-/** 
+/**
 	\brief retrieves the value of the setting
   \param wParam = PDBSetting
   \param lParam = 0
@@ -468,7 +466,7 @@ typedef
 **/
 #define MS_DB_SETTING_READ  "DB/Setting/Read"
 
-/** 
+/**
 	\brief retrieves the value of the setting
 
 	Also retrieves the SettingDescriptor if it is set and prepared correctly (name buffers set etc)
@@ -593,12 +591,12 @@ static const uint32_t DB_EVF_First = 0x00000001;
 /**
 	\brief this event was sent by the user. If not set this event was received.
 **/
-static const uint32_t DB_EVF_Sent  = 0x00000002; 
+static const uint32_t DB_EVF_Sent  = 0x00000002;
 
 /**
 	\brief event has been read by the user. It does not need to be processed any more except for history.
 **/
-static const uint32_t DB_EVF_Read  = 0x00000004; 
+static const uint32_t DB_EVF_Read  = 0x00000004;
 
 /**
 	\brief event contains the right-to-left aligned text
@@ -618,7 +616,7 @@ typedef struct TDBEvent {
 	uint32_t    cbBlob;	   /// size of pBlob in bytes
 	uint8_t  * pBlob;	   /// pointer to buffer containing module-defined event data
 
-//	TDBEntryHandle  hEntry;    /// Entry to which this event belongs 
+//	TDBEntryHandle  hEntry;    /// Entry to which this event belongs
 } TDBEvent, *PDBEvent;
 
 static const uint32_t DB_EventType_Message     = 0;
@@ -629,7 +627,7 @@ static const uint32_t DB_EventType_AuthRequest = 1001;  //specific codes, hence 
 static const uint32_t DB_EventType_File        = 1002;  //specific limit has been raised to 2000
 
 
-/** 
+/**
 	\brief retrieves the blobsize of an event in bytes
   \param wParam = hEvent
   \param lParam = 0
@@ -640,7 +638,7 @@ static const uint32_t DB_EventType_File        = 1002;  //specific limit has bee
 
 
 
-/** 
+/**
 	\brief retrieves all information of an event
   \param wParam = hEvent
   \param lParam = PDBEvent
@@ -650,7 +648,7 @@ static const uint32_t DB_EventType_File        = 1002;  //specific limit has bee
 #define MS_DB_EVENT_GET "DB/Event/Get"
 
 
-/** 
+/**
 	\brief Deletes the specfied event
   \param wParam = hEvent
   \param lParam = 0
@@ -659,7 +657,7 @@ static const uint32_t DB_EventType_File        = 1002;  //specific limit has bee
 **/
 #define MS_DB_EVENT_DELETE "DB/Event/Delete"
 
-/** 
+/**
 	\brief Creates a new Event
   \param wParam = hEntry
   \param lParam = 0
