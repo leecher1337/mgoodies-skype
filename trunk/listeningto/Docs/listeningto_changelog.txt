@@ -2,6 +2,9 @@ ListeningTo
 
 Changelog:
 
+. 0.1.2.3
+  * Fix for memory leak
+
 . 0.1.2.2
   * Fix to work on Win 9X
   * Fix to compile in VS2005
