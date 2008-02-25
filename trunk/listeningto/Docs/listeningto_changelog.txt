@@ -4,6 +4,7 @@ Changelog:
 
 . 0.1.2.3
   * Fix for memory leak
+  * Fix for variables (also need latest variables version)
 
 . 0.1.2.2
   * Fix to work on Win 9X
