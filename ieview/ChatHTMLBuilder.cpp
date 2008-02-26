@@ -174,7 +174,7 @@ void ChatHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
 }
 
 /* WORK IN PROGRESS:
- * The following method is going to be completely changed rewritten soon. Do not modify or complain for the time being...
+ * The following method is going to be completely rewritten soon. Do not modify or complain for the time being...
  */
 
 void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
@@ -185,137 +185,58 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		//DWORD dwFlags = eventData->dwFlags;
 		const char *iconFile = "";
 		DWORD dwData = eventData->dwData;
-		char *style = NULL;
-		int styleSize;
 		int isSent = eventData->bIsMe;
-		int outputSize;
+		int outputSize = 0;
 		char *output = NULL;
-		char *szName = NULL, *szText = NULL, *szText2 = NULL;
-		const char *className;
-		const char *eventText = "%s";
-		bool showNick = false;
+		char *szName = NULL, *szText = NULL;
+		const char *className = "";
 		bool showIcon = false;
-		bool switchNickAndText = false;
-		bool showText2First = false;
-		bool showText2Second = false;
-		bool addColonAndEventText = false;
 
 		if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
-			szText = encodeUTF8(NULL, event->pszProto, (wchar_t *)eventData->pszText, ENF_ALL);
+			szText = encodeUTF8(NULL, event->pszProto, eventData->pszTextW, ENF_ALL);
 		} else {
 			szText = encodeUTF8(NULL, event->pszProto, (char *)eventData->pszText, ENF_ALL);
 		}
 		if (eventData->dwFlags & IEEDF_UNICODE_NICK) {
-			szName = encodeUTF8(NULL, event->pszProto, (wchar_t *) eventData->pszNick, ENF_NAMESMILEYS);
+			szName = encodeUTF8(NULL, event->pszProto, eventData->pszNickW, ENF_NAMESMILEYS);
 		} else {
 			szName = encodeUTF8(NULL, event->pszProto, (char *) eventData->pszNick, ENF_NAMESMILEYS);
-		}
-		if (eventData->dwFlags & IEEDF_UNICODE_TEXT2) {
-			szText2 = encodeUTF8(NULL, event->pszProto, (wchar_t *)eventData->pszText2, ENF_ALL);
-		} else {
-			szText2 = encodeUTF8(NULL, event->pszProto, (char *)eventData->pszText2, ENF_ALL);
 		}
 		if (eventData->iType == IEED_GC_EVENT_MESSAGE) {
 			iconFile = isSent ? "message_out_chat.gif" : "message_in_chat.gif";
 			showIcon = iconFlags & (isSent ? GC_EVENT_MESSAGE : GC_EVENT_MESSAGE);
 			className = isSent ? "messageOut" : "messageIn";
-			if (eventData->dwFlags & IEEDF_FORMAT_SIZE && eventData->fontSize > 0) {
-                Utils::appendText(&style, &styleSize, "font-size:%dpt;", eventData->fontSize);
-			}
-			if (eventData->dwFlags & IEEDF_FORMAT_COLOR && eventData->color!=0xFFFFFFFF) {
-                Utils::appendText(&style, &styleSize, "color:#%06X;", ((eventData->color & 0xFF) << 16) | (eventData->color & 0xFF00) | ((eventData->color & 0xFF0000) >> 16));
-			}
-			if (eventData->dwFlags & IEEDF_FORMAT_FONT) {
-                Utils::appendText(&style, &styleSize, "font-family:%s;", eventData->fontName);
-			}
-			if (eventData->dwFlags & IEEDF_FORMAT_STYLE) {
-                Utils::appendText(&style, &styleSize, "font-weight: %s;", eventData->fontStyle & IE_FONT_BOLD ? "bold" : "normal");
-                Utils::appendText(&style, &styleSize, "font-style: %s;", eventData->fontStyle & IE_FONT_ITALIC ? "italic" : "normal");
-                Utils::appendText(&style, &styleSize, "text-decoration: %s;", eventData->fontStyle & IE_FONT_UNDERLINE ? "underline" : "none");
-			}
-			switchNickAndText = true;
 		} else {
 			if (eventData->iType == IEED_GC_EVENT_ACTION) {
 				iconFile = "action.gif";
                 className = "action";
-				eventText = "%s %s";
 			} else if (eventData->iType == IEED_GC_EVENT_JOIN) {
 				iconFile = "join.gif";
                 className = "userJoined";
-				if (eventData->bIsMe) {
-					switchNickAndText = true;
-					eventText = "You have joined %s";
-				} else {
-					eventText = "%s has joined";
-				}
 			} else if (eventData->iType == IEED_GC_EVENT_PART) {
 				iconFile = "part.gif";
                 className = "userLeft";
-				eventText = "%s has left";
-				addColonAndEventText = true;
 			} else if (eventData->iType == IEED_GC_EVENT_QUIT) {
 				iconFile = "quit.gif";
                 className = "userDisconnected";
-				eventText = "%s has disconnected";
-				addColonAndEventText = true;
 			} else if (eventData->iType == IEED_GC_EVENT_NICK) {
 				iconFile = "nick.gif";
                 className = "nickChange";
-				if (eventData->bIsMe) {
-					switchNickAndText = true;
-					eventText = "You are now known as %s";
-				} else {
-					eventText = "%s is now known as %s";
-				}
 			} else if (eventData->iType == IEED_GC_EVENT_KICK) {
 				iconFile = "kick.gif";
                 className = "userKicked";
-				eventText = "%s kicked %s";
-				showText2First = true;
-				addColonAndEventText = true;
 			} else if (eventData->iType == IEED_GC_EVENT_NOTICE) {
 				iconFile = "notice.gif";
                 className = "notice";
-				eventText = "Notice from %s";
-				addColonAndEventText = true;
 			} else if (eventData->iType == IEED_GC_EVENT_TOPIC) {
 				iconFile = "topic.gif";
                 className = "topicChange";
-				eventText = "The topic is '%s'";
-				if (szName != NULL) {
-					if (szText2 != NULL) {
-						eventText = "The topic is \'%s\' (set by %s on %s)";
-					} else {
-						eventText = "The topic is \'%s\' (set by %s)";
-					}
-				}
 			} else if (eventData->iType == IEED_GC_EVENT_ADDSTATUS) {
 				iconFile = "addstatus.gif";
                 className = "statusEnable";
-				eventText = "%s enables '%s' status for %s";
-				showText2Second = true;
-				switchNickAndText = true;
 			} else if (eventData->iType == IEED_GC_EVENT_REMOVESTATUS) {
 				iconFile = "removestatus.gif";
                 className = "statusDisable";
-				eventText = "%s disables '%s' status for %s";
-				showText2Second = true;
-				switchNickAndText = true;
-			} else {
-				switchNickAndText = true;
-				if (eventData->bIsMe) {
-					eventText = "--> %s";
-				} else {
-					eventText = "%s";
-				}
-			}
-			if (eventText != NULL) {
-				eventText = Translate(eventText);
-			}
-			if (eventData->iType == IEED_GC_EVENT_TOPIC ||
-				eventData->iType == IEED_GC_EVENT_ADDSTATUS ||
-				eventData->iType == IEED_GC_EVENT_REMOVESTATUS) {
-				switchNickAndText = true;
 			}
 		}
 		Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
@@ -327,7 +248,7 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
 						isSent ? "timestamp" : "timestamp", timestampToString(dwData, eventData->time));
 		}
-		if ((dwData & IEEDD_GC_SHOW_NICK)) { //eventData->iType == IEED_GC_EVENT_MESSAGE && (
+		if ((dwData & IEEDD_GC_SHOW_NICK) && eventData->iType == IEED_GC_EVENT_MESSAGE) {
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: </span>",
 						isSent ? "nameOut" : "nameIn", szName);
 		}
@@ -335,40 +256,14 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			Utils::appendText(&output, &outputSize, "<br>");
 		}
 		Utils::appendText(&output, &outputSize, "<span class=\"%s\">", className);
-		if (style != NULL) {
-			Utils::appendText(&output, &outputSize, "<span style=\"%s\">", style);
-		}
-		eventText = Utils::UTF8Encode(eventText);
-		if (switchNickAndText) {
-			if (showText2First) {
-				Utils::appendText(&output, &outputSize, eventText, szText2, szText, szName);
-			} else if (showText2Second) {
-				Utils::appendText(&output, &outputSize, eventText, szText, szText2, szName);
-			} else {
-				Utils::appendText(&output, &outputSize, eventText, szText, szName, szText2);
-			}
-		} else {
-			if (showText2First) {
-				Utils::appendText(&output, &outputSize, eventText, szText2, szName, szText);
-			} else if (showText2Second) {
-				Utils::appendText(&output, &outputSize, eventText, szName, szText2, szText);
-			} else {
-				Utils::appendText(&output, &outputSize, eventText, szName, szText, szText2);
-			}
-		}
-		if (style != NULL) {
-			Utils::appendText(&output, &outputSize, "</span>");
-			free(style);
-		}
+		Utils::appendText(&output, &outputSize, "%s", szText);
         Utils::appendText(&output, &outputSize, "</span></div>\n");
 		if (output != NULL) {
             view->write(output);
 			free(output);
 		}
-		if (eventText!=NULL) delete eventText;
 		if (szName!=NULL) delete szName;
 		if (szText!=NULL) delete szText;
-		if (szText2!=NULL) delete szText2;
     }
 }
 

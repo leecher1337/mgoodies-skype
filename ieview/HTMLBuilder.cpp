@@ -225,13 +225,13 @@ TextToken* TextToken::tokenizeMath(const wchar_t *text) {
 	}
     return firstToken;
 }
-
-#define BB_TAG_NUM 9
+// TODO: Add the following BBCodes: code
+#define BB_TAG_NUM 10
 TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
-	static wchar_t *bbTagName[] = {L"b", L"i", L"u", L"s", L"img", L"color", L"size", L"bimg", L"url"};
-	static int 		bbTagNameLen[] = {1, 1, 1, 1, 3, 5, 4, 4, 3};
-	static int 		bbTagArg[] = {0, 0, 0, 0, 0, 1, 1, 0, 1};
-	static int 		bbTagId[] = {BB_B, BB_I, BB_U, BB_S, BB_IMG, BB_COLOR, BB_SIZE, BB_BIMG, BB_URL};
+	static wchar_t *bbTagName[] = {L"b", L"i", L"u", L"s", L"img", L"color", L"size", L"bimg", L"url", L"code"};
+	static int 		bbTagNameLen[] = {1, 1, 1, 1, 3, 5, 4, 4, 3, 4};
+	static int 		bbTagArg[] = {0, 0, 0, 0, 0, 1, 1, 0, 1, 0};
+	static int 		bbTagId[] = {BB_B, BB_I, BB_U, BB_S, BB_IMG, BB_COLOR, BB_SIZE, BB_BIMG, BB_URL, BB_CODE};
 	static int      bbTagEnd[BB_TAG_NUM];
 	static int      bbTagCount[BB_TAG_NUM];
 	int i,j;
@@ -288,6 +288,7 @@ TextToken* TextToken::tokenizeBBCodes(const wchar_t *text, int l) {
 					case BB_I:
 					case BB_U:
                     case BB_S:
+					case BB_CODE:
 					case BB_COLOR:
 					case BB_SIZE:
 	                    bbTagCount[j]++;
@@ -483,7 +484,7 @@ TextToken* TextToken::tokenizeSmileysSA(HANDLE hContact, const char *proto, cons
     return firstToken;
 }
 
-wchar_t *TextToken::urlEncode(const wchar_t *str) {
+wchar_t *TextToken::htmlEncode(const wchar_t *str) {
     wchar_t *out;
     const wchar_t *ptr;
     bool wasSpace;
@@ -536,21 +537,21 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
     wchar_t *eText = NULL, *eLink = NULL;
     switch (type) {
         case TEXT:
-            eText = urlEncode(wtext);
+            eText = htmlEncode(wtext);
             Utils::appendText(str, sizeAlloced, L"%s", eText);
             break;
         case WWWLINK:
-            eText = urlEncode(wtext);
-            eLink = urlEncode(wlink);
+            eText = htmlEncode(wtext);
+            eLink = htmlEncode(wlink);
             Utils::appendText(str, sizeAlloced, L"<a class=\"link\" target=\"_self\" href=\"http://%s\">%s</a>", eLink, eText);
             break;
         case LINK:
-            eText = urlEncode(wtext);
-            eLink = urlEncode(wlink);
+            eText = htmlEncode(wtext);
+            eLink = htmlEncode(wlink);
             Utils::appendText(str, sizeAlloced, L"<a class=\"link\" target=\"_self\" href=\"%s\">%s</a>", eLink, eText);
             break;
         case SMILEY:
-            eText = urlEncode(wtext);
+            eText = htmlEncode(wtext);
             if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_FLASH) && (wcsstr(wlink, L".swf")!=NULL)) {
                 Utils::appendText(str, sizeAlloced,
 		L"<span title=\"%s\" class=\"img\"><object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
@@ -564,7 +565,7 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 			}
             break;
         case MATH:
-            eText = urlEncode(wtext);
+            eText = htmlEncode(wtext);
 			if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_PNGHACK) && (wcsstr(wlink, L".png")!=NULL)) {
 			    Utils::appendText(str, sizeAlloced, L"<img class=\"img\" style=\"height:1px;width:1px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='%s',sizingMethod='image');\"  alt=\"%s\" /><span style=\"position:absolute; visibility:hidden;\">%s</span>",wlink , eText, eText);
 			} else {
@@ -590,8 +591,12 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 					//Utils::appendText(str, sizeAlloced, L"<span style=\"font-style: italic;\">");
 					Utils::appendText(str, sizeAlloced, L"<s>");
 					break;
+				case BB_CODE:
+					//Utils::appendText(str, sizeAlloced, L"<span style=\"font-style: italic;\">");
+					Utils::appendText(str, sizeAlloced, L"<pre class=\"code\">");
+					break;
 				case BB_IMG:
-            		eText = urlEncode(wtext);
+            		eText = htmlEncode(wtext);
 		            if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_FLASH) && (wcsstr(eText, L".swf")!=NULL)) {
         		    	Utils::appendText(str, sizeAlloced,
 		L"<div style=\"width: 100%%; border: 0; overflow: hidden;\"><object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" \
@@ -611,7 +616,7 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 				case BB_BIMG:
 					{
 						wchar_t *absolutePath = Utils::toAbsolute(wtext);
-	            		eText = urlEncode(absolutePath);
+	            		eText = htmlEncode(absolutePath);
 						delete absolutePath;
 					}
 		            if ((Options::getGeneralFlags()&Options::GENERAL_ENABLE_FLASH) && (wcsstr(eText, L".swf")!=NULL)) {
@@ -627,17 +632,17 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 					}
         	    	break;
 				case BB_URL:
-					eText = urlEncode(wtext);
-					eLink = urlEncode(wlink);
+					eText = htmlEncode(wtext);
+					eLink = htmlEncode(wlink);
         	    	Utils::appendText(str, sizeAlloced, L"<a href =\"%s\">%s</a>", eLink, eText);
         	    	break;
 				case BB_COLOR:
-            		eText = urlEncode(wtext);
+            		eText = htmlEncode(wtext);
         	    	//Utils::appendText(str, sizeAlloced, L"<span style=\"color: %s;\">", eText);
         	    	Utils::appendText(str, sizeAlloced, L"<font color =\"%s\">", eText);
         	    	break;
 				case BB_SIZE:
-            		eText = urlEncode(wtext);
+            		eText = htmlEncode(wtext);
         	    	Utils::appendText(str, sizeAlloced, L"<span style=\"font-size: %s;\">", eText);
         	    	break;
 				}
@@ -654,6 +659,9 @@ void TextToken::toString(wchar_t **str, int *sizeAlloced) {
 					break;
 				case BB_S:
 					Utils::appendText(str, sizeAlloced, L"</s>");
+					break;
+				case BB_CODE:
+					Utils::appendText(str, sizeAlloced, L"</pre>");
 					break;
 				case BB_COLOR:
 					Utils::appendText(str, sizeAlloced, L"</font>");
