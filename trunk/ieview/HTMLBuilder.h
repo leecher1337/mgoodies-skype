@@ -62,6 +62,7 @@ public:
 		BB_IMG,
 		BB_BIMG,
 		BB_URL,
+		BB_CODE
 	};
 	TextToken(int type, const char *text, int len);
 	TextToken(int type, const wchar_t *wtext, int len);
@@ -81,12 +82,12 @@ public:
 	void   				setNext(TextToken *);
 //	void				toString(char **str, int *sizeAlloced);
 	void				toString(wchar_t **str, int *sizeAlloced);
-//	static char *		urlEncode(const char *str);
+//	static char *		htmlEncode(const char *str);
 //	static char *		urlEncode2(const char *str);
 //	static TextToken* 	tokenizeLinks(const char *text);
 //	static TextToken*	tokenizeSmileys(const char *proto, const char *text);
 	// UNICODE
-	wchar_t *			urlEncode(const wchar_t *str);
+	wchar_t *			htmlEncode(const wchar_t *str);
 	static TextToken* 	tokenizeLinks(const wchar_t *wtext);
 	static TextToken* 	tokenizeSmileys(const char *proto, const wchar_t *wtext);
 	static TextToken* 	tokenizeSmileysSA(HANDLE hContact, const char *proto, const wchar_t *wtext);
