@@ -191,6 +191,10 @@ SOURCE=.\hunspell\dictmgr.hxx
 # End Source File
 # Begin Source File
 
+SOURCE=.\hunspell\filemgr.hxx
+# End Source File
+# Begin Source File
+
 SOURCE=.\hunspell\hashmgr.hxx
 # End Source File
 # Begin Source File
@@ -204,6 +208,10 @@ SOURCE=.\hunspell\hunspell.h
 # Begin Source File
 
 SOURCE=.\hunspell\hunspell.hxx
+# End Source File
+# Begin Source File
+
+SOURCE=.\hunspell\hunzip.hxx
 # End Source File
 # Begin Source File
 
@@ -291,11 +299,19 @@ SOURCE=.\hunspell\dictmgr.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=.\hunspell\filemgr.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=.\hunspell\hashmgr.cxx
 # End Source File
 # Begin Source File
 
 SOURCE=.\hunspell\hunspell.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=.\hunspell\hunzip.cxx
 # End Source File
 # Begin Source File
 

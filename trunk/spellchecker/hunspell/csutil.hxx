@@ -30,7 +30,6 @@
 #define MSEP_REC '\n'
 #define MSEP_ALT '\v'
 
-
 // default flags
 #define DEFAULTFLAGS   65510
 #define FORBIDDENWORD  65510
@@ -199,5 +198,11 @@ char * copy_field(char * dest, const char * morph, const char * var);
 int morphcmp(const char * s, const char * t);
 
 int get_sfxcount(const char * morph);
+
+// conversion function for protected memory
+void store_pointer(char * dest, char * source);
+
+// conversion function for protected memory
+char * get_stored_pointer(char * s);
 
 #endif
