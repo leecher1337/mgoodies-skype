@@ -470,14 +470,14 @@ inline int SfxEntry::test_condition(const char * st, const char * beg)
     if (numconds == 0) return 1;
     char * p = c.conds;
     st--;
-    int c = 1;
+    int i = 1;
     while (1) {
       switch (*p) {
         case '\0': return 1;
         case '[': { p = nextchar(p); pos = st; break; }
         case '^': { p = nextchar(p); neg = true; break; }
         case ']': { if (!neg && !ingroup) return 0;
-                c++;
+                i++;
                 pos = NULL;
                 neg = false;
                 ingroup = false;
@@ -515,17 +515,17 @@ inline int SfxEntry::test_condition(const char * st, const char * beg)
                         }
                         if (pos && st != pos) {
                             if (neg) return 0;
-                            else if (c == numconds) return 1;
+                            else if (i == numconds) return 1;
                             ingroup = true;
                         }
                         if (p && *p != '\0') p = nextchar(p);
                     } else if (pos) {
                         if (neg) return 0;
-                        else if (c == numconds) return 1;                        
+                        else if (i == numconds) return 1;                        
                         ingroup = true;
                     }
                     if (!pos) {
-                        c++;
+                        i++;
                         st--;
                         if (st < beg && p && *p != '\0') return 0; // word <= condition
                     }

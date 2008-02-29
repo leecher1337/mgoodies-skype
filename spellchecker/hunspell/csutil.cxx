@@ -55,8 +55,8 @@ static int utf_tbl_count = 0; // utf_tbl can be used by multiple Hunspell instan
 
 /* only UTF-16 (BMP) implementation */
 char * u16_u8(char * dest, int size, const w_char * src, int srclen) {
-    char * u8 = dest;
-    char * u8_max = u8 + size;
+    signed char * u8 = (signed char *)dest;
+    signed char * u8_max = (signed char *)(u8 + size);
     const w_char * u2 = src;
     const w_char * u2_max = src + srclen;
     while ((u2 < u2_max) && (u8 < u8_max)) {
@@ -103,7 +103,7 @@ char * u16_u8(char * dest, int size, const w_char * src, int srclen) {
 
 /* only UTF-16 (BMP) implementation */
 int u8_u16(w_char * dest, int size, const char * src) {
-    const char * u8 = src;
+    const signed char * u8 = (const signed char *)src;
     w_char * u2 = dest;
     w_char * u2_max = u2 + size;
     
@@ -125,7 +125,7 @@ int u8_u16(w_char * dest, int size, const char * src) {
         case 0x90:
         case 0xa0:
         case 0xb0: {
-            HUNSPELL_WARNING(stderr, "UTF-8 encoding error. Unexpected continuation bytes in %ld. character position\n%s\n", static_cast<long>(u8 - src), src);    
+            HUNSPELL_WARNING(stderr, "UTF-8 encoding error. Unexpected continuation bytes in %ld. character position\n%s\n", static_cast<long>(u8 - (signed char *)src), src);    
             u2->h = 0xff;
             u2->l = 0xfd;
             break;
@@ -137,7 +137,7 @@ int u8_u16(w_char * dest, int size, const char * src) {
                 u2->l = (*u8 << 6) + (*(u8+1) & 0x3f);
                 u8++;
             } else {
-                HUNSPELL_WARNING(stderr, "UTF-8 encoding error. Missing continuation byte in %ld. character position:\n%s\n", static_cast<long>(u8 - src), src);
+                HUNSPELL_WARNING(stderr, "UTF-8 encoding error. Missing continuation byte in %ld. character position:\n%s\n", static_cast<long>(u8 - (signed char *)src), src);
                 u2->h = 0xff;
                 u2->l = 0xfd;
             }
@@ -151,12 +151,12 @@ int u8_u16(w_char * dest, int size, const char * src) {
                     u2->l = (*u8 << 6) + (*(u8+1) & 0x3f);
                     u8++;
                 } else {
-                    HUNSPELL_WARNING(stderr, "UTF-8 encoding error. Missing continuation byte in %ld. character position:\n%s\n", static_cast<long>(u8 - src), src);
+                    HUNSPELL_WARNING(stderr, "UTF-8 encoding error. Missing continuation byte in %ld. character position:\n%s\n", static_cast<long>(u8 - (signed char *)src), src);
                     u2->h = 0xff;
                     u2->l = 0xfd;
                 }
             } else {
-                HUNSPELL_WARNING(stderr, "UTF-8 encoding error. Missing continuation byte in %ld. character position:\n%s\n", static_cast<long>(u8 - src), src);
+                HUNSPELL_WARNING(stderr, "UTF-8 encoding error. Missing continuation byte in %ld. character position:\n%s\n", static_cast<long>(u8 - (signed char *)src), src);
                 u2->h = 0xff;
                 u2->l = 0xfd;
             }
@@ -416,8 +416,8 @@ char * tr(char * text, char oldc, char newc) {
 // otherwise return -1
 int morphcmp(const char * s, const char * t)
 {
-    int se;
-    int te;
+    int se = 0;
+    int te = 0;
     const char * sl;
     const char * tl;    
     const char * olds;
@@ -683,6 +683,20 @@ void mkallcap_utf(w_char * u, int nc, int langnum) {
    if (*p != '\0') *d= csconv[((unsigned char)*p)].cupper;
  }
 
+ // conversion function for protected memory
+ void store_pointer(char * dest, char * source)
+ {
+    memcpy(dest, &source, sizeof(char *));
+ }
+
+ // conversion function for protected memory
+ char * get_stored_pointer(char * s)
+ {
+    char * p;
+    memcpy(&p, s, sizeof(char *));
+    return p;
+ }
+
 // these are simple character mappings for the 
 // encodings supported
 // supplying isupper, tolower, and toupper
@@ -943,7 +957,7 @@ struct cs_info iso1_tbl[] = {
 { 0x00, 0xfc, 0xdc },
 { 0x00, 0xfd, 0xdd },
 { 0x00, 0xfe, 0xde },
-{ 0x00, 0xff, 0xff },
+{ 0x00, 0xff, 0xff }
 };
 
 
@@ -1203,7 +1217,7 @@ struct cs_info iso2_tbl[] = {
 { 0x00, 0xfc, 0xdc },
 { 0x00, 0xfd, 0xdd },
 { 0x00, 0xfe, 0xde },
-{ 0x00, 0xff, 0xff },
+{ 0x00, 0xff, 0xff }
 };
 
 
@@ -1463,7 +1477,7 @@ struct cs_info iso3_tbl[] = {
 { 0x00, 0xfc, 0xdc },
 { 0x00, 0xfd, 0xdd },
 { 0x00, 0xfe, 0xde },
-{ 0x00, 0xff, 0xff },
+{ 0x00, 0xff, 0xff }
 };
 
 struct cs_info iso4_tbl[] = {
@@ -1722,7 +1736,7 @@ struct cs_info iso4_tbl[] = {
 { 0x00, 0xfc, 0xdc },
 { 0x00, 0xfd, 0xdd },
 { 0x00, 0xfe, 0xde },
-{ 0x00, 0xff, 0xff },
+{ 0x00, 0xff, 0xff }
 };
 
 struct cs_info iso5_tbl[] = {
@@ -1981,7 +1995,7 @@ struct cs_info iso5_tbl[] = {
 { 0x00, 0xfc, 0xac },
 { 0x00, 0xfd, 0xfd },
 { 0x00, 0xfe, 0xae },
-{ 0x00, 0xff, 0xaf },
+{ 0x00, 0xff, 0xaf }
 };
 
 struct cs_info iso6_tbl[] = {
@@ -2240,7 +2254,7 @@ struct cs_info iso6_tbl[] = {
 { 0x00, 0xfc, 0xfc },
 { 0x00, 0xfd, 0xfd },
 { 0x00, 0xfe, 0xfe },
-{ 0x00, 0xff, 0xff },
+{ 0x00, 0xff, 0xff }
 };
 
 struct cs_info iso7_tbl[] = {
@@ -2499,7 +2513,7 @@ struct cs_info iso7_tbl[] = {
 { 0x00, 0xfc, 0xbc },
 { 0x00, 0xfd, 0xbe },
 { 0x00, 0xfe, 0xbf },
-{ 0x00, 0xff, 0xff },
+{ 0x00, 0xff, 0xff }
 };
 
 struct cs_info iso8_tbl[] = {
@@ -2758,7 +2772,7 @@ struct cs_info iso8_tbl[] = {
 { 0x00, 0xfc, 0xfc },
 { 0x00, 0xfd, 0xfd },
 { 0x00, 0xfe, 0xfe },
-{ 0x00, 0xff, 0xff },
+{ 0x00, 0xff, 0xff }
 };
 
 struct cs_info iso9_tbl[] = {
@@ -3017,7 +3031,7 @@ struct cs_info iso9_tbl[] = {
 { 0x00, 0xfc, 0xdc },
 { 0x00, 0xfd, 0x49 },
 { 0x00, 0xfe, 0xde },
-{ 0x00, 0xff, 0xff },
+{ 0x00, 0xff, 0xff }
 };
 
 struct cs_info iso10_tbl[] = {
@@ -3276,7 +3290,7 @@ struct cs_info iso10_tbl[] = {
 { 0x00, 0xfc, 0xfc },
 { 0x00, 0xfd, 0xfd },
 { 0x00, 0xfe, 0xfe },
-{ 0x00, 0xff, 0xff },
+{ 0x00, 0xff, 0xff }
 };
 
 struct cs_info koi8r_tbl[] = {
@@ -3535,7 +3549,7 @@ struct cs_info koi8r_tbl[] = {
 { 0x01, 0xdc, 0xfc },
 { 0x01, 0xdd, 0xfd },
 { 0x01, 0xde, 0xfe },
-{ 0x01, 0xdf, 0xff },
+{ 0x01, 0xdf, 0xff }
 };
 
 struct cs_info koi8u_tbl[] = {
@@ -3794,7 +3808,7 @@ struct cs_info koi8u_tbl[] = {
 { 0x01, 0xdc, 0xfc },
 { 0x01, 0xdd, 0xfd },
 { 0x01, 0xde, 0xfe },
-{ 0x01, 0xdf, 0xff },
+{ 0x01, 0xdf, 0xff }
 };
 
 struct cs_info cp1251_tbl[] = {
@@ -4053,7 +4067,7 @@ struct cs_info cp1251_tbl[] = {
 { 0x00, 0xfc, 0xdc },
 { 0x00, 0xfd, 0xdd },
 { 0x00, 0xfe, 0xde },
-{ 0x00, 0xff, 0xdf },
+{ 0x00, 0xff, 0xdf }
 };
 
 struct cs_info iso13_tbl[] = {
@@ -4312,7 +4326,7 @@ struct cs_info iso13_tbl[] = {
 { 0x00, 0xFC, 0xDC },
 { 0x00, 0xFD, 0xDD },
 { 0x00, 0xFE, 0xDE },
-{ 0x00, 0xFF, 0xFF },
+{ 0x00, 0xFF, 0xFF }
 };
 
 
@@ -4572,7 +4586,7 @@ struct cs_info iso14_tbl[] = {
 { 0x00, 0xfc, 0xdc },
 { 0x00, 0xfd, 0xdd },
 { 0x00, 0xfe, 0xde },
-{ 0x00, 0xff, 0xff },
+{ 0x00, 0xff, 0xff }
 };
 
 struct cs_info iso15_tbl[] = {
@@ -4831,7 +4845,7 @@ struct cs_info iso15_tbl[] = {
 { 0x00, 0xfc, 0xdc },
 { 0x00, 0xfd, 0xdd },
 { 0x00, 0xfe, 0xde },
-{ 0x00, 0xff, 0xbe },
+{ 0x00, 0xff, 0xbe }
 };
 
 struct cs_info iscii_devanagari_tbl[] = {
@@ -5090,7 +5104,7 @@ struct cs_info iscii_devanagari_tbl[] = {
 { 0x00, 0xfc, 0xfc },
 { 0x00, 0xfd, 0xfd },
 { 0x00, 0xfe, 0xfe },
-{ 0x00, 0xff, 0xff },
+{ 0x00, 0xff, 0xff }
 };
 
 struct enc_entry encds[] = {
@@ -5110,7 +5124,7 @@ struct enc_entry encds[] = {
 {"ISO8859-13", iso13_tbl},
 {"ISO8859-14", iso14_tbl},
 {"ISO8859-15", iso15_tbl},
-{"ISCII-DEVANAGARI", iscii_devanagari_tbl},
+{"ISCII-DEVANAGARI", iscii_devanagari_tbl}
 };
 
 struct cs_info * get_current_cs(const char * es) {
@@ -5119,6 +5133,7 @@ struct cs_info * get_current_cs(const char * es) {
   for (int i = 0; i < n; i++) {
     if (strcmp(es,encds[i].enc_name) == 0) {
       ccs = encds[i].cs_table;
+      break;
     }
   }
   return ccs;
@@ -5364,14 +5379,14 @@ int get_captype(char * word, int nl, cs_info * csconv) {
    int ncap = 0;
    int nneutral = 0;
    int firstcap = 0;
-
-      for (char * q = word; *q != '\0'; q++) {
-         if (csconv[*((unsigned char *)q)].ccase) ncap++;
-         if (csconv[*((unsigned char *)q)].cupper == csconv[*((unsigned char *)q)].clower) nneutral++;
-      }
-      if (ncap) {
-        firstcap = csconv[*((unsigned char *) word)].ccase;
-      }
+   if (csconv == NULL) return NOCAP;
+   for (char * q = word; *q != '\0'; q++) {
+      if (csconv[*((unsigned char *)q)].ccase) ncap++;
+      if (csconv[*((unsigned char *)q)].cupper == csconv[*((unsigned char *)q)].clower) nneutral++;
+   }
+   if (ncap) {
+     firstcap = csconv[*((unsigned char *) word)].ccase;
+   }
 
    // now finally set the captype
    if (ncap == 0) {

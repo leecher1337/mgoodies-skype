@@ -11,6 +11,7 @@
 #define  SPELL_NOCAP     (1 << 3)
 #define  SPELL_INITCAP   (1 << 4)
 
+#define MAXDIC 20
 #define MAXSUGGESTION 15
 #define MAXSHARPS 5
 
@@ -34,14 +35,17 @@ class Hunspell
 #endif
 {
   AffixMgr*       pAMgr;
-  HashMgr*        pHMgr;
+  HashMgr*        pHMgr[MAXDIC];
+  int             maxdic;
   SuggestMgr*     pSMgr;
+  char *          affixpath;
   char *          encoding;
   struct cs_info * csconv;
   int             langnum;
   int             utf8;
   int             complexprefixes;
   char**          wordbreak;
+  char *          key;
 
 public:
 
@@ -49,9 +53,11 @@ public:
    * input: path of affix file and dictionary file
    */
   
-  Hunspell(const char * affpath, const char * dpath);
-
+  Hunspell(const char * affpath, const char * dpath, const char * key = NULL);
   ~Hunspell();
+
+  /* load extra dictionaries (only dic files) */
+  int add_dic(const char * dpath, const char * key = NULL);
 
   /* spell(word) - spellcheck word
    * output: 0 = bad word, not 0 = good word
@@ -134,6 +140,8 @@ public:
   const char * get_wordchars();
   unsigned short * get_wordchars_utf16(int * len);
 
+  const char * get_try_string();
+
   struct cs_info * get_csconv();
   const char * get_version();
   
@@ -165,7 +173,7 @@ private:
    hentry * spellsharps(char * base, char *, int, int, char * tmp, int * info, char **root);
    int    is_keepcase(const hentry * rv);
    int    insert_sug(char ***slst, char * word, int ns);
-   char * cat_result(char * result, char * st);
+   void   cat_result(char * result, char * st);
    char * stem_description(const char * desc);
 
 };

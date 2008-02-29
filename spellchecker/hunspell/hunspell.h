@@ -8,6 +8,10 @@ extern "C" {
 typedef struct Hunhandle Hunhandle;
 
 Hunhandle *Hunspell_create(const char * affpath, const char * dpath);
+
+Hunhandle *Hunspell_create_key(const char * affpath, const char * dpath,
+    const char * key);
+
 void Hunspell_destroy(Hunhandle *pHunspell);
 
 /* spell(word) - spellcheck word
@@ -65,19 +69,19 @@ int Hunspell_generate2(Hunhandle *pHunspell, char*** slst, const char * word,
 
   /* add word to the run-time dictionary */
   
-int Hunspell_add(const char * word);
+int Hunspell_add(Hunhandle *pHunspell, const char * word);
 
   /* add word to the run-time dictionary with affix flags of
    * the example (a dictionary word): Hunspell will recognize
    * affixed forms of the new word, too.
    */
   
-int Hunspell_add_with_affix(const char * word, const char * example);
+int Hunspell_add_with_affix(Hunhandle *pHunspell, const char * word, const char * example);
 
   /* remove word from the run-time dictionary */
   /* NOTE: not implemented yet */
 
-int Hunspell_remove(const char * word);
+int Hunspell_remove(Hunhandle *pHunspell, const char * word);
 
 
 #ifdef __cplusplus

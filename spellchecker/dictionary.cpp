@@ -301,7 +301,8 @@ public:
 		}
 		else
 		{
-			for (int i = 0; i < MAX_REGS(codepages); i++)
+			int i;
+			for (i = 0; i < MAX_REGS(codepages); i++)
 			{
 				if (strcmpi(codepages[i].name, hunspell->get_dic_encoding()) == 0)
 				{
@@ -312,14 +313,36 @@ public:
 			}
 
 			char *casechars = get_casechars(dic_enc);
-			char *hwordchars = (char *) hunspell->get_wordchars();
+			const char *hwordchars = hunspell->get_wordchars();
 			if (hwordchars != NULL) 
 			{
 				casechars = (char *) realloc(casechars, strlen(casechars) + strlen(hwordchars) + 1);
 				strcat(casechars, hwordchars);
 			}
+			const char *try_string = hunspell->get_try_string();
+			if (try_string != NULL) 
+			{
+				casechars = (char *) realloc(casechars, strlen(casechars) + strlen(try_string) + 1);
+				strcat(casechars, try_string);
+			}
 
 			wordChars = fromHunspell(casechars);
+
+			// Remove duplicated chars
+			int last = lstrlen(wordChars) - 1;
+			for(i = 0; i <= last; i++)
+			{
+				TCHAR c = wordChars[i];
+				for(int j = last; j > i; j--)
+				{
+					if (c != wordChars[j])
+						continue;
+					if (j != last)
+						wordChars[j] = wordChars[last];
+					wordChars[last] = _T('\0');
+					last--;
+				}
+			}
 
 			free(casechars);
 		}
