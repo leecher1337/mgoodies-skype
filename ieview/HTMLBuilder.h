@@ -1,7 +1,7 @@
 /*
 
 IEView Plugin for Miranda IM
-Copyright (C) 2005  Piotr Piastucki
+Copyright (C) 2005-2008  Piotr Piastucki
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -28,72 +28,7 @@ class HTMLBuilder;
 
 #include "IEView.h"
 #include "Options.h"
-#include "m_MathModule.h"
-
-class TextToken {
-private:
-	int  type;
-	bool end;
-	int  tag;
-	DWORD value;
-	wchar_t *wtext;
-	char *text;
-	wchar_t *wlink;
-	char *link;
-	TextToken *next;
-	static TextToken* 	tokenizeBBCodes(const wchar_t *text, int len);
-public:
-	enum TOKENS {
-		END      = 0,
-		TEXT,
-		LINK,
-		WWWLINK,
-		SMILEY,
-		BBCODE,
-		MATH,
-	};
-	enum BBCODES {
-		BB_B = 0,
-		BB_I,
-		BB_U,
-		BB_S,
-		BB_COLOR,
-		BB_SIZE,
-		BB_IMG,
-		BB_BIMG,
-		BB_URL,
-		BB_CODE
-	};
-	TextToken(int type, const char *text, int len);
-	TextToken(int type, const wchar_t *wtext, int len);
-	~TextToken();
-	int 				getType();
-	const char *		getText();
-	const wchar_t*      getTextW();
-	const char *		getLink();
-	const wchar_t *		getLinkW();
-	void 				setLink(const char *link);
-	void 				setLink(const wchar_t *wlink);
-	int 				getTag();
-	void                setTag(int);
-	bool 				isEnd();
-	void                setEnd(bool);
-	TextToken *			getNext();
-	void   				setNext(TextToken *);
-//	void				toString(char **str, int *sizeAlloced);
-	void				toString(wchar_t **str, int *sizeAlloced);
-//	static char *		htmlEncode(const char *str);
-//	static char *		urlEncode2(const char *str);
-//	static TextToken* 	tokenizeLinks(const char *text);
-//	static TextToken*	tokenizeSmileys(const char *proto, const char *text);
-	// UNICODE
-	wchar_t *			htmlEncode(const wchar_t *str);
-	static TextToken* 	tokenizeLinks(const wchar_t *wtext);
-	static TextToken* 	tokenizeSmileys(const char *proto, const wchar_t *wtext);
-	static TextToken* 	tokenizeSmileysSA(HANDLE hContact, const char *proto, const wchar_t *wtext);
-	static TextToken* 	tokenizeBBCodes(const wchar_t *text);
-	static TextToken* 	tokenizeMath(const wchar_t *text);
-};
+#include "TextToken.h"
 
 class HTMLBuilder {
 private:
@@ -112,7 +47,8 @@ protected:
         ENF_NAMESMILEYS = 2,
         ENF_BBCODES = 4,
         ENF_LINKS = 8,
-        ENF_ALL = 255
+        ENF_ALL = 255,
+        ENF_CHAT_FORMATTING = 256
     };
 //	virtual char *encode(const char *text, const char *proto, bool replaceSmiley);
 	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const wchar_t *text, int flags);
