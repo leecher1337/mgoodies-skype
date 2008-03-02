@@ -5,7 +5,7 @@ CC   = gcc.exe
 WINDRES = windres.exe
 RM = rm
 UPX = upx -9 -q --compress-icons=0
-SRC = IEView.cpp ieview_services.cpp ieview_main.cpp HTMLBuilder.cpp ChatHTMLBuilder.cpp MUCCHTMLBuilder.cpp ScriverHTMLBuilder.cpp TabSRMMHTMLBuilder.cpp HistoryHTMLBuilder.cpp Options.cpp Template.cpp TemplateHTMLBuilder.cpp Utils.cpp
+SRC = IEView.cpp ieview_services.cpp ieview_main.cpp HTMLBuilder.cpp ChatHTMLBuilder.cpp MUCCHTMLBuilder.cpp ScriverHTMLBuilder.cpp TabSRMMHTMLBuilder.cpp HistoryHTMLBuilder.cpp Options.cpp Template.cpp TemplateHTMLBuilder.cpp TextToken.cpp Utils.cpp
 RES  = ieview.res
 OBJ = $(SRC:.cpp=.o) $(RES)
 BIN  = ieview.dll

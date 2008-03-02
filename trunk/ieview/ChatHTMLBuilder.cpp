@@ -1,7 +1,7 @@
 /*
 
 IEView Plugin for Miranda IM
-Copyright (C) 2005  Piotr Piastucki
+Copyright (C) 2005-2008  Piotr Piastucki
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -83,33 +83,15 @@ void ChatHTMLBuilder::loadMsgDlgFont(int i, LOGFONTA * lf, COLORREF * colour) {
     }
 }
 
-char *ChatHTMLBuilder::timestampToString(DWORD dwData, time_t check)
+char *ChatHTMLBuilder::timestampToString(time_t time)
 {
     static char szResult[512];
-    char str[80];
-
-    DBTIMETOSTRING dbtts;
-
-    dbtts.cbDest = 70;;
-    dbtts.szDest = str;
-
-	szResult[0] = '\0';
-	struct tm tm_now, tm_today;
-	time_t now = time(NULL);
-	time_t today;
-    tm_now = *localtime(&now);
-    tm_today = tm_now;
-    tm_today.tm_hour = tm_today.tm_min = tm_today.tm_sec = 0;
-    today = mktime(&tm_today);
-	if (dwData&IEEDD_GC_SHOW_TIME) {
-		dbtts.szFormat = (char *)"t";
-	} else {
-		dbtts.szFormat = (char *)"";
-	}
-	CallService(MS_DB_TIME_TIMESTAMPTOSTRING, check, (LPARAM) & dbtts);
-    strncat(szResult, str, 500);
-	Utils::UTF8Encode(szResult, szResult, 500);
-    return szResult;
+	static TCHAR str[80];
+	char *pszStamp = "[%H:%M]";
+	//InitSetting( &g_Settings.pszTimeStamp, "HeaderTime", _T("[%H:%M]"));
+	_tcsftime(str, 79, pszStamp, localtime(&time));
+	Utils::UTF8Encode(str, szResult, 500);
+	return szResult;
 }
 
 void ChatHTMLBuilder::buildHead(IEView *view, IEVIEWEVENT *event) {
@@ -193,9 +175,9 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		bool showIcon = false;
 
 		if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
-			szText = encodeUTF8(NULL, event->pszProto, eventData->pszTextW, ENF_ALL);
+			szText = encodeUTF8(NULL, event->pszProto, eventData->pszTextW, ENF_ALL | ENF_CHAT_FORMATTING);
 		} else {
-			szText = encodeUTF8(NULL, event->pszProto, (char *)eventData->pszText, ENF_ALL);
+			szText = encodeUTF8(NULL, event->pszProto, (char *)eventData->pszText, ENF_ALL | ENF_CHAT_FORMATTING);
 		}
 		if (eventData->dwFlags & IEEDF_UNICODE_NICK) {
 			szName = encodeUTF8(NULL, event->pszProto, eventData->pszNickW, ENF_NAMESMILEYS);
@@ -237,6 +219,9 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 			} else if (eventData->iType == IEED_GC_EVENT_REMOVESTATUS) {
 				iconFile = "removestatus.gif";
                 className = "statusDisable";
+			} else if (eventData->iType == IEED_GC_EVENT_INFORMATION) {
+				iconFile = "info.gif";
+                className = "information";
 			}
 		}
 		Utils::appendText(&output, &outputSize, "<div class=\"%s\">", isSent ? "divOut" : "divIn");
@@ -246,7 +231,7 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		}
 		if (dwData & IEEDD_GC_SHOW_TIME) {
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s </span>",
-						isSent ? "timestamp" : "timestamp", timestampToString(dwData, eventData->time));
+						isSent ? "timestamp" : "timestamp", timestampToString(eventData->time));
 		}
 		if ((dwData & IEEDD_GC_SHOW_NICK) && eventData->iType == IEED_GC_EVENT_MESSAGE) {
 			Utils::appendText(&output, &outputSize, "<span class=\"%s\">%s: </span>",

@@ -1,3 +1,23 @@
+/*
+
+IEView Plugin for Miranda IM
+Copyright (C) 2005-2008  Piotr Piastucki
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+*/
 #include "Utils.h"
 
 wchar_t Utils::base_dir[MAX_PATH];
@@ -249,8 +269,16 @@ void Utils::UTF8Encode(const char *text, char *output, int maxLen) {
 	wchar_t *wtext = Utils::convertToWCS(text);
 	char *atext = UTF8Encode(wtext);
 	memcpy(output, atext, min ((int)strlen(atext)+1, maxLen));
+	output[maxLen - 1] = '\0';
 	delete atext;
 	delete wtext;
+}
+
+void Utils::UTF8Encode(const wchar_t *wtext, char *output, int maxLen) {
+	char *atext = UTF8Encode(wtext);
+	memcpy(output, atext, min ((int)strlen(atext)+1, maxLen));
+	output[maxLen - 1] = '\0';
+	delete atext;
 }
 
 int Utils::detectURL(const wchar_t *text) {
