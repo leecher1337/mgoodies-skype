@@ -2,143 +2,143 @@
 
 HANDLE gServices[28] = {0};
 
-int DBEntryGetRoot(WPARAM wParam, LPARAM lParam)
+int DBContactGetRoot(WPARAM wParam, LPARAM lParam)
 {
-	return gDataBase->getEntries().getRootEntry();
+	return gDataBase->getContacts().getRootContact();
 }
-int DBEntryChildCount(WPARAM hEntry, LPARAM lParam)
+int DBContactChildCount(WPARAM hContact, LPARAM lParam)
 {
-	if (hEntry == 0)
-		hEntry = gDataBase->getEntries().getRootEntry();
+	if (hContact == 0)
+		hContact = gDataBase->getContacts().getRootContact();
 
-	return gDataBase->getEntries().getChildCount(hEntry);
+	return gDataBase->getContacts().getChildCount(hContact);
 }
-int DBEntryGetParent(WPARAM hEntry, LPARAM lParam)
+int DBContactGetParent(WPARAM hContact, LPARAM lParam)
 {
-	if (hEntry == 0)
-		hEntry = gDataBase->getEntries().getRootEntry();
+	if (hContact == 0)
+		hContact = gDataBase->getContacts().getRootContact();
 
-	return gDataBase->getEntries().getParent(hEntry);
+	return gDataBase->getContacts().getParent(hContact);
 }
-int DBEntrySetParent(WPARAM hEntry, LPARAM hParent)
+int DBContactSetParent(WPARAM hContact, LPARAM hParent)
 {
-	if ((hEntry == 0) || (hEntry == gDataBase->getEntries().getRootEntry()))
+	if ((hContact == 0) || (hContact == gDataBase->getContacts().getRootContact()))
 		return DB_INVALIDPARAM;
 
 	if (hParent == 0)
-		hParent = gDataBase->getEntries().getRootEntry();
+		hParent = gDataBase->getContacts().getRootContact();
 
-	return gDataBase->getEntries().setParent(hEntry, hParent);
+	return gDataBase->getContacts().setParent(hContact, hParent);
 }
-int DBEntryGetFirstChild(WPARAM hParent, LPARAM lParam)
+int DBContactGetFirstChild(WPARAM hParent, LPARAM lParam)
 {
 	if (hParent == 0)
-		hParent = gDataBase->getEntries().getRootEntry();
+		hParent = gDataBase->getContacts().getRootContact();
 
-	return gDataBase->getEntries().getFirstChild(hParent);
+	return gDataBase->getContacts().getFirstChild(hParent);
 }
-int DBEntryGetLastChild(WPARAM hParent, LPARAM lParam)
+int DBContactGetLastChild(WPARAM hParent, LPARAM lParam)
 {
 	if (hParent == 0)
-		hParent = gDataBase->getEntries().getRootEntry();
+		hParent = gDataBase->getContacts().getRootContact();
 
-	return gDataBase->getEntries().getLastChild(hParent);
+	return gDataBase->getContacts().getLastChild(hParent);
 }
-int DBEntryGetNextSilbing(WPARAM hEntry, LPARAM lParam)
+int DBContactGetNextSilbing(WPARAM hContact, LPARAM lParam)
 {
-	if (hEntry == 0)
-		hEntry = gDataBase->getEntries().getRootEntry();
+	if (hContact == 0)
+		hContact = gDataBase->getContacts().getRootContact();
 
-	return gDataBase->getEntries().getNextSilbing(hEntry);
+	return gDataBase->getContacts().getNextSilbing(hContact);
 }
-int DBEntryGetPrevSilbing(WPARAM hEntry, LPARAM lParam)
+int DBContactGetPrevSilbing(WPARAM hContact, LPARAM lParam)
 {
-	if (hEntry == 0)
-		hEntry = gDataBase->getEntries().getRootEntry();
+	if (hContact == 0)
+		hContact = gDataBase->getContacts().getRootContact();
 
-	return gDataBase->getEntries().getPrevSilbing(hEntry);
+	return gDataBase->getContacts().getPrevSilbing(hContact);
 }
-int DBEntryGetFlags(WPARAM hEntry, LPARAM lParam)
+int DBContactGetFlags(WPARAM hContact, LPARAM lParam)
 {
-	if (hEntry == 0)
-		hEntry = gDataBase->getEntries().getRootEntry();
+	if (hContact == 0)
+		hContact = gDataBase->getContacts().getRootContact();
 
-	return gDataBase->getEntries().getFlags(hEntry);
+	return gDataBase->getContacts().getFlags(hContact);
 }
-int DBEntryIterInit(WPARAM pFilter, LPARAM lParam)
+int DBContactIterInit(WPARAM pFilter, LPARAM hParent)
 {
-	TDBEntryIterFilter fil = {0};
+	TDBContactIterFilter fil = {0};
 	if (pFilter == NULL)
 	{
 		pFilter = (WPARAM)&fil;
 		fil.cbSize = sizeof(fil);
 	}
 
-	if (((PDBEntryIterFilter)pFilter)->cbSize != sizeof(TDBEntryIterFilter))
+	if (((PDBContactIterFilter)pFilter)->cbSize != sizeof(TDBContactIterFilter))
 		return DB_INVALIDPARAM;
 
-	if (((PDBEntryIterFilter)pFilter)->fDontHasFlags & ((PDBEntryIterFilter)pFilter)->fHasFlags)
-		return DB_INVALIDPARAM;
-
-	if (((PDBEntryIterFilter)pFilter)->hParentEntry == 0)
-		((PDBEntryIterFilter)pFilter)->hParentEntry = gDataBase->getEntries().getRootEntry();
-
-	return gDataBase->getEntries().IterationInit(*(PDBEntryIterFilter)pFilter);
-}
-int DBEntryIterNext(WPARAM hIteration, LPARAM lParam)
-{
-	return gDataBase->getEntries().IterationNext(hIteration);
-}
-int DBEntryIterClose(WPARAM hIteration, LPARAM lParam)
-{
-	return gDataBase->getEntries().IterationClose(hIteration);
-}
-int DBEntryDelete(WPARAM hEntry, LPARAM lParam)
-{
-	if ((hEntry == 0) || (hEntry == gDataBase->getEntries().getRootEntry()))
-		return DB_INVALIDPARAM;
-
-	return gDataBase->getEntries().DeleteEntry(hEntry);
-}
-int DBEntryCreate(WPARAM hParent, LPARAM Flags)
-{
-	if (hParent == 0)
-		hParent = gDataBase->getEntries().getRootEntry();
-
-	Flags = Flags & ~(DB_EF_IsRoot | DB_EF_HasChildren | DB_EF_IsVirtual | DB_EF_HasVirtuals); // forbidden flags...
-	return gDataBase->getEntries().CreateEntry(hParent, Flags);
-}
-
-int DBVirtualEntryCreate(WPARAM hEntry, LPARAM hParent)
-{
-	if ((hEntry == 0) || (hEntry == gDataBase->getEntries().getRootEntry()))
+	if (((PDBContactIterFilter)pFilter)->fDontHasFlags & ((PDBContactIterFilter)pFilter)->fHasFlags)
 		return DB_INVALIDPARAM;
 
 	if (hParent == 0)
-		hParent = gDataBase->getEntries().getRootEntry();
+		hParent = gDataBase->getContacts().getRootContact();
 
-	return gDataBase->getEntries().VirtualCreate(hEntry, hParent);
+	return gDataBase->getContacts().IterationInit(*(PDBContactIterFilter)pFilter, hParent);
 }
-int DBVirtualEntryGetParent(WPARAM hVirtuaEntry, LPARAM lParam)
+int DBContactIterNext(WPARAM hIteration, LPARAM lParam)
 {
-	if ((hVirtuaEntry == 0) || (hVirtuaEntry == gDataBase->getEntries().getRootEntry()))
+	return gDataBase->getContacts().IterationNext(hIteration);
+}
+int DBContactIterClose(WPARAM hIteration, LPARAM lParam)
+{
+	return gDataBase->getContacts().IterationClose(hIteration);
+}
+int DBContactDelete(WPARAM hContact, LPARAM lParam)
+{
+	if ((hContact == 0) || (hContact == gDataBase->getContacts().getRootContact()))
 		return DB_INVALIDPARAM;
 
-	return gDataBase->getEntries().VirtualGetParent(hVirtuaEntry);
+	return gDataBase->getContacts().DeleteContact(hContact);
 }
-int DBVirtualEntryGetFirst(WPARAM hEntry, LPARAM lParam)
+int DBContactCreate(WPARAM hParent, LPARAM Flags)
 {
-	if ((hEntry == 0) || (hEntry == gDataBase->getEntries().getRootEntry()))
+	if (hParent == 0)
+		hParent = gDataBase->getContacts().getRootContact();
+
+	Flags = Flags & ~(DB_CF_IsRoot | DB_CF_HasChildren | DB_CF_IsVirtual | DB_CF_HasVirtuals); // forbidden flags...
+	return gDataBase->getContacts().CreateContact(hParent, Flags);
+}
+
+int DBVirtualContactCreate(WPARAM hContact, LPARAM hParent)
+{
+	if ((hContact == 0) || (hContact == gDataBase->getContacts().getRootContact()))
+		return DB_INVALIDPARAM;
+
+	if (hParent == 0)
+		hParent = gDataBase->getContacts().getRootContact();
+
+	return gDataBase->getContacts().VirtualCreate(hContact, hParent);
+}
+int DBVirtualContactGetParent(WPARAM hVirtuaContact, LPARAM lParam)
+{
+	if ((hVirtuaContact == 0) || (hVirtuaContact == gDataBase->getContacts().getRootContact()))
+		return DB_INVALIDPARAM;
+
+	return gDataBase->getContacts().VirtualGetParent(hVirtuaContact);
+}
+int DBVirtualContactGetFirst(WPARAM hContact, LPARAM lParam)
+{
+	if ((hContact == 0) || (hContact == gDataBase->getContacts().getRootContact()))
 		return DB_INVALIDPARAM;
 	
-	return gDataBase->getEntries().VirtualGetFirst(hEntry);
+	return gDataBase->getContacts().VirtualGetFirst(hContact);
 }
-int DBVirtualEntryGetNext(WPARAM hVirtualEntry, LPARAM lParam)
+int DBVirtualContactGetNext(WPARAM hVirtualContact, LPARAM lParam)
 {
-	if ((hVirtualEntry == 0) || (hVirtualEntry == gDataBase->getEntries().getRootEntry()))
+	if ((hVirtualContact == 0) || (hVirtualContact == gDataBase->getContacts().getRootContact()))
 		return DB_INVALIDPARAM;
 
-	return gDataBase->getEntries().VirtualGetNext(hVirtualEntry);
+	return gDataBase->getContacts().VirtualGetNext(hVirtualContact);
 }
 
 
@@ -252,25 +252,25 @@ int DBSettingIterClose(WPARAM hIteration, LPARAM lParam)
 
 bool RegisterServices()
 {
-	gServices[ 0] = CreateServiceFunction(MS_DB_ENTRY_GETROOT, DBEntryGetRoot);
-	gServices[ 1] = CreateServiceFunction(MS_DB_ENTRY_CHILDCOUNT, DBEntryChildCount);
-	gServices[ 2] = CreateServiceFunction(MS_DB_ENTRY_GETPARENT, DBEntryGetParent);
-	gServices[ 3] = CreateServiceFunction(MS_DB_ENTRY_SETPARENT, DBEntrySetParent);
-	gServices[ 4] = CreateServiceFunction(MS_DB_ENTRY_GETFIRSTCHILD, DBEntryGetFirstChild);
-	gServices[ 5] = CreateServiceFunction(MS_DB_ENTRY_GETLASTCHILD, DBEntryGetLastChild);
-	gServices[ 6] = CreateServiceFunction(MS_DB_ENTRY_GETNEXTSILBING, DBEntryGetNextSilbing);
-	gServices[ 7] = CreateServiceFunction(MS_DB_ENTRY_GETPREVSILBING, DBEntryGetPrevSilbing);
-	gServices[ 8] = CreateServiceFunction(MS_DB_ENTRY_GETFLAGS, DBEntryGetFlags);
-	gServices[ 9] = CreateServiceFunction(MS_DB_ENTRY_ITER_INIT, DBEntryIterInit);
-	gServices[10] = CreateServiceFunction(MS_DB_ENTRY_ITER_NEXT, DBEntryIterNext);
-	gServices[11] = CreateServiceFunction(MS_DB_ENTRY_ITER_CLOSE, DBEntryIterClose);
-	gServices[12] = CreateServiceFunction(MS_DB_ENTRY_DELETE, DBEntryDelete);
-	gServices[13] = CreateServiceFunction(MS_DB_ENTRY_CREATE, DBEntryCreate);
+	gServices[ 0] = CreateServiceFunction(MS_DB_CONTACT_GETROOT, DBContactGetRoot);
+	gServices[ 1] = CreateServiceFunction(MS_DB_CONTACT_CHILDCOUNT, DBContactChildCount);
+	gServices[ 2] = CreateServiceFunction(MS_DB_CONTACT_GETPARENT, DBContactGetParent);
+	gServices[ 3] = CreateServiceFunction(MS_DB_CONTACT_SETPARENT, DBContactSetParent);
+	gServices[ 4] = CreateServiceFunction(MS_DB_CONTACT_GETFIRSTCHILD, DBContactGetFirstChild);
+	gServices[ 5] = CreateServiceFunction(MS_DB_CONTACT_GETLASTCHILD, DBContactGetLastChild);
+	gServices[ 6] = CreateServiceFunction(MS_DB_CONTACT_GETNEXTSILBING, DBContactGetNextSilbing);
+	gServices[ 7] = CreateServiceFunction(MS_DB_CONTACT_GETPREVSILBING, DBContactGetPrevSilbing);
+	gServices[ 8] = CreateServiceFunction(MS_DB_CONTACT_GETFLAGS, DBContactGetFlags);
+	gServices[ 9] = CreateServiceFunction(MS_DB_CONTACT_ITER_INIT, DBContactIterInit);
+	gServices[10] = CreateServiceFunction(MS_DB_CONTACT_ITER_NEXT, DBContactIterNext);
+	gServices[11] = CreateServiceFunction(MS_DB_CONTACT_ITER_CLOSE, DBContactIterClose);
+	gServices[12] = CreateServiceFunction(MS_DB_CONTACT_DELETE, DBContactDelete);
+	gServices[13] = CreateServiceFunction(MS_DB_CONTACT_CREATE, DBContactCreate);
 
-	gServices[14] = CreateServiceFunction(MS_DB_VIRTUALENTRY_CREATE, DBVirtualEntryCreate);
-	gServices[15] = CreateServiceFunction(MS_DB_VIRTUALENTRY_GETPARENT, DBVirtualEntryGetParent);
-	gServices[16] = CreateServiceFunction(MS_DB_VIRTUALENTRY_GETFIRST, DBVirtualEntryGetFirst);
-	gServices[17] = CreateServiceFunction(MS_DB_VIRTUALENTRY_GETNEXT, DBVirtualEntryGetNext);
+	gServices[14] = CreateServiceFunction(MS_DB_VIRTUALCONTACT_CREATE, DBVirtualContactCreate);
+	gServices[15] = CreateServiceFunction(MS_DB_VIRTUALCONTACT_GETPARENT, DBVirtualContactGetParent);
+	gServices[16] = CreateServiceFunction(MS_DB_VIRTUALCONTACT_GETFIRST, DBVirtualContactGetFirst);
+	gServices[17] = CreateServiceFunction(MS_DB_VIRTUALCONTACT_GETNEXT, DBVirtualContactGetNext);
 
 	gServices[18] = CreateServiceFunction(MS_DB_SETTING_FIND, DBSettingFind);
 	gServices[19] = CreateServiceFunction(MS_DB_SETTING_DELETE, DBSettingDelete);

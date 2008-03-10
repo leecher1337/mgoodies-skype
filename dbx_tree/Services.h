@@ -6,25 +6,25 @@
 bool RegisterServices();
 
 
-int DBEntryGetRoot(WPARAM wParam, LPARAM lParam);
-int DBEntryChildCount(WPARAM hEntry, LPARAM lParam);
-int DBEntryGetParent(WPARAM hEntry, LPARAM lParam);
-int DBEntrySetParent(WPARAM hEntry, LPARAM hParent);
-int DBEntryGetFirstChild(WPARAM hParent, LPARAM lParam);
-int DBEntryGetLastChild(WPARAM hParent, LPARAM lParam);
-int DBEntryGetNextSilbing(WPARAM hEntry, LPARAM lParam);
-int DBEntryGetPrevSilbing(WPARAM hEntry, LPARAM lParam);
-int DBEntryGetFlags(WPARAM hEntry, LPARAM lParam);
-int DBEntryIterInit(WPARAM pFilter, LPARAM lParam);
-int DBEntryIterNext(WPARAM hIteration, LPARAM lParam);
-int DBEntryIterClose(WPARAM hIteration, LPARAM lParam);
-int DBEntryDelete(WPARAM hEntry, LPARAM lParam);
-int DBEntryCreate(WPARAM hParent, LPARAM Flags);
+int DBContactGetRoot(WPARAM wParam, LPARAM lParam);
+int DBContactChildCount(WPARAM hContact, LPARAM lParam);
+int DBContactGetParent(WPARAM hContact, LPARAM lParam);
+int DBContactSetParent(WPARAM hContact, LPARAM hParent);
+int DBContactGetFirstChild(WPARAM hParent, LPARAM lParam);
+int DBContactGetLastChild(WPARAM hParent, LPARAM lParam);
+int DBContactGetNextSilbing(WPARAM hContact, LPARAM lParam);
+int DBContactGetPrevSilbing(WPARAM hContact, LPARAM lParam);
+int DBContactGetFlags(WPARAM hContact, LPARAM lParam);
+int DBContactIterInit(WPARAM pFilter, LPARAM hParent);
+int DBContactIterNext(WPARAM hIteration, LPARAM lParam);
+int DBContactIterClose(WPARAM hIteration, LPARAM lParam);
+int DBContactDelete(WPARAM hContact, LPARAM lParam);
+int DBContactCreate(WPARAM hParent, LPARAM Flags);
 
-int DBVirtualEntryCreate(WPARAM hEntry, LPARAM hParent);
-int DBVirtualEntryGetParent(WPARAM hVirtuaEntry, LPARAM lParam);
-int DBVirtualEntryGetFirst(WPARAM hEntry, LPARAM lParam);
-int DBVirtualEntryGetNext(WPARAM hVirtualEntry, LPARAM lParam);
+int DBVirtualContactCreate(WPARAM hContact, LPARAM hParent);
+int DBVirtualContactGetParent(WPARAM hVirtuaContact, LPARAM lParam);
+int DBVirtualContactGetFirst(WPARAM hContact, LPARAM lParam);
+int DBVirtualContactGetNext(WPARAM hVirtualContact, LPARAM lParam);
 
 int DBSettingFind(WPARAM pSettingDescriptor, LPARAM lParam);
 int DBSettingDelete(WPARAM pSettingDescriptor, LPARAM lParam);

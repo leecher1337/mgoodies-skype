@@ -3,21 +3,19 @@
 
 CBlockManager::CBlockManager(CFileAccess & FileAccess)
 : m_FileAccess(FileAccess),
+	m_BlockTable(1),
 	m_FreeBlocks(),
 	m_FreeIDs()
 {
-	m_BlockTable = (TBlockTableEntry*)malloc(sizeof(TBlockTableEntry));
+
 	m_BlockTable[0].Addr = 0;
-//	m_BlockTable[0].Flags = 0;
-	m_TableSize = 1;
 
 	m_Granularity = 4;
 
 }
 CBlockManager::~CBlockManager()
 {
-	if (m_BlockTable)
-		free(m_BlockTable);
+
 }
 
 void CBlockManager::SetCipher(CCipher *Cipher)
@@ -45,19 +43,18 @@ uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignat
 	while (p < m_FileAccess.GetSize())
 	{
 		m_FileAccess.Read(&h, p, sizeof(h));
-		if (h.ID == 0)
+		if (h.Size == 0)
+		{
+			throw "File Corrupt!";
+		}
+
+		if (h.ID == cFreeBlockID)
 		{
 			m_FreeBlocks.insert(std::make_pair(h.Size, p));
 		} else {
-			uint32_t oldsize = m_TableSize;
-			while ((h.ID >> 2) >= m_TableSize)
-				m_TableSize = m_TableSize << 1;
 
-			if (oldsize != m_TableSize)
-			{
-				m_BlockTable = (TBlockTableEntry*) realloc(m_BlockTable, sizeof(TBlockTableEntry) * m_TableSize);
-				memset(&m_BlockTable[oldsize], 0, sizeof(TBlockTableEntry) * (m_TableSize - oldsize));
-			}			
+			while ((h.ID >> 2) >= m_BlockTable.size())
+				m_BlockTable.resize(m_BlockTable.size() << 1);
 
 			m_BlockTable[h.ID >> 2].Addr = p;
 
@@ -68,7 +65,7 @@ uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignat
 		p = p + h.Size;
 	}
 
-	for (uint32_t i = 1; i < m_TableSize; ++i)
+	for (uint32_t i = 1; i < m_BlockTable.size(); ++i)
 	{
 		if (m_BlockTable[i].Addr == 0)
 			m_FreeIDs.push_back(i);
@@ -96,22 +93,23 @@ inline void CBlockManager::Write(uint32_t Addr, bool IsVirtual, void* Buffer, ui
 
 inline void CBlockManager::Zero(uint32_t Addr, bool IsVirtual, uint32_t Size)
 {
-	if (IsVirtual)
+/*	if (IsVirtual)
 	{
-	memset((void*)Addr, 0, Size);
+		memset((void*)Addr, 0, Size);
 	} else {
 		void *buf = malloc(Size);
 		memset(buf,0,Size);
-		Write(Addr, false, buf, Size);
+		m_FileAccess.Write(buf, Addr, Size);
 		free(buf);
 	}
+	*/
 }
 
 
 inline bool CBlockManager::InitOperation(uint32_t BlockID, uint32_t & Addr, bool & IsVirtual, TBlockHeadOcc & Header)
 {
 	BlockID = BlockID >> 2;
-	if (BlockID >= m_TableSize)
+	if (BlockID >= m_BlockTable.size())
 		return false;
 
 	Addr = m_BlockTable[BlockID].Addr;
@@ -139,45 +137,50 @@ inline uint32_t CBlockManager::CreateVirtualBlock(uint32_t BlockID, uint32_t Con
 	return res;
 }
 
-inline void CBlockManager::InsertFreeBlock(uint32_t Addr, uint32_t Size)
+inline void CBlockManager::InsertFreeBlock(uint32_t Addr, uint32_t Size, bool LookLeft, bool LookRight)
 {
 	TBlockTailFree ft;
 	TBlockHeadFree fh;
 
-	if (Addr > m_FirstBlockStart) // don't go before our start.
+	if (LookLeft && (Addr > m_FirstBlockStart + sizeof(TBlockTailFree))) // don't go before our start.
 	{
 		Read(Addr - sizeof(ft), false, &ft, sizeof(ft));
-		if (ft.ID == 0)
+		if (ft.ID == cFreeBlockID)
 		{ // free block in front of ours
 			Addr = Addr - ft.Size;
 			Size = Size + ft.Size;
 
-			RemoveFreeBlock(Addr, Size);
+			RemoveFreeBlock(Addr, ft.Size);
 		}
 	}
-
-	if (Addr < m_FileAccess.GetSize())
+	
+	if (LookRight && (Addr + Size + sizeof(TBlockHeadFree) < m_FileAccess.GetSize()))
 	{
 		Read(Addr + Size, false, &fh, sizeof(fh));
-		if (fh.ID == 0) 
+		if (fh.ID == cFreeBlockID) 
 		{ // free block beyond our block				
 			RemoveFreeBlock(Addr + Size, fh.Size);
 
 			Size = Size + fh.Size;
 		}
-	}
+	} 
 
-	fh.ID = 0;
-	fh.Size = Size;
-	ft.ID = 0;
-	ft.Size = Size;
+	if (Addr + Size == m_FileAccess.GetSize())
+	{
+		m_FileAccess.SetSize(Addr);
+	} else {
+		fh.ID = cFreeBlockID;
+		fh.Size = Size;
+		ft.ID = cFreeBlockID;
+		ft.Size = Size;
 
-	Zero(Addr + sizeof(fh), false, Size - sizeof(fh) - sizeof(ft));
-	
-	Write(Addr, false, &fh, sizeof(fh));
-	Write(Addr + Size - sizeof(ft), false, &ft, sizeof(ft));
+		Zero(Addr + sizeof(fh), false, Size - sizeof(fh) - sizeof(ft));
+		
+		Write(Addr, false, &fh, sizeof(fh));
+		Write(Addr + Size - sizeof(ft), false, &ft, sizeof(ft));
 
-	m_FreeBlocks.insert(std::make_pair(Size, Addr));
+		m_FreeBlocks.insert(std::make_pair(Size, Addr));
+	}	
 
 }
 
@@ -197,21 +200,23 @@ inline void CBlockManager::RemoveFreeBlock(uint32_t Addr, uint32_t Size)
 }
 
 
-inline uint32_t CBlockManager::FindFreePosition(uint32_t Size)
+inline uint32_t CBlockManager::FindFreePosition(uint32_t & Size)
 {
 	// try to find free block
 	TFreeBlockMap::iterator f = m_FreeBlocks.end();
 
-	if (m_FreeBlocks.rbegin()->first >= Size) // check if we can fulfill the request
+	if ((!m_FreeBlocks.empty()) && (m_FreeBlocks.rbegin()->first >= Size)) // check if we can fulfill the request
 	{
-		int i = 0;
-		while ((i < 5) && (m_FreeBlocks.end() == f)) // try to find perfect fit
+		int i = 1;
+		while ((i < 5) && (m_FreeBlocks.end() == f)) // try to find a good fit
 		{
-			f = m_FreeBlocks.find(Size * i);
+			f = m_FreeBlocks.lower_bound(Size * i);
+			if ((f != m_FreeBlocks.end()) && (f->first >= Size * i + sizeof(TBlockHeadFree) + sizeof(TBlockTailFree)))
+				f = m_FreeBlocks.end();
 			++i;		
 		}
 
-		if (m_FreeBlocks.end() == f) // try worst fit strategy. take the biggest block available that has at least the double size
+		if (m_FreeBlocks.end() == f) // try worst fit strategy. take the biggest block available (double size of request to catch remaining part later)
 		{
 			f = m_FreeBlocks.end();
 			--f;
@@ -228,8 +233,12 @@ inline uint32_t CBlockManager::FindFreePosition(uint32_t Size)
 		m_FileAccess.SetSize(addr + Size);
 	} else { 			
 		addr = f->second;		
-		if (f->first != Size)
-			m_FreeBlocks.insert(std::make_pair(f->first - Size, f->second + Size)); // we have some space left.
+		if (f->first <= Size + sizeof(TBlockHeadFree) + sizeof(TBlockTailFree))
+		{
+			Size = f->first;
+		} else { // we have some space left.
+			InsertFreeBlock(addr + Size, f->first - Size, false, true); 	
+		}
 
 		m_FreeBlocks.erase(f);
 	}
@@ -505,7 +514,7 @@ bool CBlockManager::WritePartCheck(uint32_t BlockID, void * Buffer, uint32_t Off
 	return true;
 }
 
-uint32_t CBlockManager::CreateBlock(size_t Size, uint32_t Signature)
+uint32_t CBlockManager::CreateBlock(uint32_t Size, uint32_t Signature)
 {
 	if (Size % m_Granularity > 0)
 		Size = Size - Size % m_Granularity + m_Granularity;
@@ -513,13 +522,11 @@ uint32_t CBlockManager::CreateBlock(size_t Size, uint32_t Signature)
 	uint32_t id = 0;
 	if (m_FreeIDs.empty())
 	{
-		id = m_TableSize;
+		id = m_BlockTable.size();
 
-		m_TableSize = m_TableSize << 1;
-		m_BlockTable = (TBlockTableEntry*) realloc(m_BlockTable, sizeof(TBlockTableEntry) * m_TableSize);
-		memset(&m_BlockTable[id], 0, id);
-		
-		for (uint32_t i = 1 + id; i < m_TableSize; ++i)
+		m_BlockTable.resize(m_BlockTable.size() << 1);
+				
+		for (uint32_t i = 1 + id; i < m_BlockTable.size(); ++i)
 			m_FreeIDs.push_back(i);
 	} else {
 		id = m_FreeIDs.front();
@@ -534,7 +541,7 @@ uint32_t CBlockManager::CreateBlock(size_t Size, uint32_t Signature)
 	{
 		uint32_t a = CreateVirtualBlock(h.ID, Size);
 		Zero(a, true, Size + sizeof(TBlockHeadOcc));
-		
+		memcpy((void*)a, &h, sizeof(h));
 	} else {
 
 		uint32_t addr = FindFreePosition(h.Size);
@@ -542,13 +549,42 @@ uint32_t CBlockManager::CreateBlock(size_t Size, uint32_t Signature)
 		TBlockTailOcc t;
 		t.ID = h.ID;
 
-		Zero(addr + sizeof(h), false, Size);
+		Zero(addr + sizeof(h), false, h.Size - sizeof(h) - sizeof(t));
 		
 		Write(addr, false, &h, sizeof(h));
-		Write(addr + sizeof(h) + Size, false, &t, sizeof(t));
-		m_BlockTable[id].Addr = addr;
-		
+		Write(addr + h.Size - sizeof(t), false, &t, sizeof(t));
+		m_BlockTable[id].Addr = addr;		
 	}
+
+	return h.ID;
+}
+uint32_t CBlockManager::CreateBlockVirtual(uint32_t Size, uint32_t Signature)
+{
+	if (Size % m_Granularity > 0)
+		Size = Size - Size % m_Granularity + m_Granularity;
+
+	uint32_t id = 0;
+	if (m_FreeIDs.empty())
+	{
+		id = m_BlockTable.size();
+
+		m_BlockTable.resize(m_BlockTable.size() << 1);
+				
+		for (uint32_t i = 1 + id; i < m_BlockTable.size(); ++i)
+			m_FreeIDs.push_back(i);
+	} else {
+		id = m_FreeIDs.front();
+		m_FreeIDs.pop_front();
+	}
+
+	TBlockHeadOcc h;
+	h.ID = id << 2;
+	h.Signature = Signature;
+	h.Size = Size + sizeof(TBlockHeadOcc) + sizeof(TBlockTailOcc);
+
+	uint32_t a = CreateVirtualBlock(h.ID, Size);
+	Zero(a, true, Size + sizeof(TBlockHeadOcc));
+	memcpy((void*)a, &h, sizeof(h));
 
 	return h.ID;
 }
@@ -564,7 +600,7 @@ bool CBlockManager::DeleteBlock(uint32_t BlockID)
 	BlockID = BlockID >> 2;
 
 	m_BlockTable[BlockID].Addr = 0;
-	m_FreeIDs.push_back(BlockID);
+	// m_FreeIDs.push_back(BlockID); don't reuse blockids during a session to avoid 
 	
 	if (isvirtual)
 	{
@@ -582,7 +618,7 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 
 	if (Size % m_Granularity > 0)
 		Size = Size - Size % m_Granularity + m_Granularity;
-	
+
 
 	uint32_t a;
 	bool isvirtual;
@@ -590,7 +626,7 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 	if (!InitOperation(BlockID, a, isvirtual, h))
 		return false;
 
-	if (Size == h.Size - sizeof(h) - sizeof(TBlockTailOcc))
+	if (Size + sizeof(h) + sizeof(TBlockTailOcc) == h.Size)
 		return Size;
 
 	if (isvirtual)
@@ -623,13 +659,13 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 		TBlockTailOcc t;
 		t.ID = BlockID;
 
-		if (h.Size - sizeof(h) - sizeof(t) < Size) // enlarge
+		if (h.Size < Size + sizeof(h) + sizeof(t)) // enlarge
 		{
 			if (a + h.Size >= m_FileAccess.GetSize()) // fileend
 			{
 				m_FileAccess.SetSize(a + Size + sizeof(h) + sizeof(t));
 
-				Zero(a + h.Size - sizeof(t), false, Size - (h.Size - sizeof(h) - sizeof(t)));
+				Zero(a + h.Size - sizeof(t), false, Size + sizeof(h) + sizeof(t) - h.Size);
 				
 				h.Size = Size + sizeof(h) + sizeof(t);
 				Write(a, false, &h, sizeof(h));
@@ -642,16 +678,16 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 				bool split = false;
 
 				Read(a + h.Size, false, &fh, sizeof(fh));
-				if (fh.ID == 0) // we have an empty block behind.
+				if (fh.ID == cFreeBlockID) // we have an empty block behind.
 				{
-					if (fh.Size < Size - (h.Size - sizeof(h) - sizeof(t)))
+					if (fh.Size + h.Size < Size + sizeof(h) + sizeof(t))
 					{ // block too small :-(
 						newalloc = true;
-					} else if (fh.Size - sizeof(TBlockHeadFree) - sizeof(TBlockTailFree) < Size - sizeof(h) - sizeof(t)) // following block nearly used complete (we cannot write the boundmarkers again)
-					{
+					} else if (fh.Size + h.Size < Size + sizeof(h) + sizeof(t) + sizeof(TBlockHeadFree) + sizeof(TBlockTailFree))
+					{ // following block nearly used complete (we cannot write the boundmarkers again)
 						newalloc = false;
-					} else if (fh.Size < Size + h.Size) // cannot use the free block, because we don't know if enough will left to use it again.
-					{
+					} else if (fh.Size < h.Size) 
+					{ // cannot use the free block, because we don't know if enough will left to use it again.					
 						newalloc = true;
 					} else // huge free block, use it
 					{
@@ -659,39 +695,49 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 						split = true;
 					}
 				}
-
+					
 				if (newalloc)
 				{
-					uint32_t na = FindFreePosition(Size + sizeof(h) + sizeof(t));
-
-					Zero(na + h.Size - sizeof(t), false, Size - h.Size);
-
-					void* buf = malloc(h.Size - sizeof(h) - sizeof(t));
-					Read(a + sizeof(h), false, buf, h.Size - sizeof(h) - sizeof(t));
-					Write(na + sizeof(h), false, buf, Size);
-					free(buf);					
-
-					InsertFreeBlock(a, h.Size);
-					
+					uint32_t os = h.Size;
+					uint32_t oa = a;
 					h.Size = Size + sizeof(h) + sizeof(t);
-					Write(na, false, &h, sizeof(h));
-					Write(na + h.Size - sizeof(t), false, &t, sizeof(t));
+
+					a = FindFreePosition(h.Size);
+					Size = h.Size - sizeof(h) - sizeof(t); // only for return
+					m_BlockTable[BlockID >> 2].Addr = a;
+
+					Zero(a + os - sizeof(t), false, h.Size - os);
+
+					if (SaveData)
+					{
+						void* buf = malloc(os - sizeof(h) - sizeof(t));
+						Read(oa + sizeof(h), false, buf, os - sizeof(h) - sizeof(t));
+						Write(a + sizeof(h), false, buf, os - sizeof(h) - sizeof(t));
+						free(buf);
+					}
+					
+					Write(a, false, &h, sizeof(h));
+					Write(a + h.Size - sizeof(t), false, &t, sizeof(t));
+
+					InsertFreeBlock(oa, os);
 				} else {
 					RemoveFreeBlock(a + h.Size, fh.Size);
+					Zero(a + h.Size - sizeof(t), false, sizeof(t) + sizeof(fh));
 
 					if (split)
 					{
-						Zero(a + h.Size - sizeof(t), false, sizeof(t) + sizeof(fh));
-
-						InsertFreeBlock(a + Size + sizeof(h) + sizeof(t), fh.Size - (Size - (h.Size - sizeof(h) - sizeof(t))));
+						uint32_t os = h.Size;
 
 						h.Size = Size + sizeof(h) + sizeof(t);
 						Write(a, false, &h, sizeof(h));
 						Write(a + h.Size - sizeof(t), false, &t, sizeof(t));
-					} else {
-						Zero(a + h.Size - sizeof(t), false, fh.Size + sizeof(t));
 
+						InsertFreeBlock(a + Size + sizeof(h) + sizeof(t), fh.Size + os - (Size + sizeof(h) + sizeof(t)), false, false);
+					} else {					
 						h.Size = h.Size + fh.Size;
+						
+						Zero(a + h.Size - sizeof(TBlockTailFree), false, sizeof(TBlockTailFree));
+						
 						Write(a, false, &h, sizeof(h));
 						Write(a + h.Size - sizeof(t), false, &t, sizeof(t));
 						Size = h.Size - sizeof(h) - sizeof(t);
@@ -700,15 +746,16 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 			}
 
 		} else { // shrink block.
-			if (h.Size - sizeof(h) - sizeof(t) - Size > sizeof(TBlockHeadFree) + sizeof(TBlockTailFree))
+			if (h.Size >= sizeof(TBlockHeadFree) + sizeof(TBlockTailFree) + sizeof(h) + sizeof(t) + Size)
 			{ // produce new free block
-				uint32_t fs = h.Size - sizeof(h) - sizeof(t) - Size;
-
+				uint32_t fs = h.Size - (Size + sizeof(h) + sizeof(t));
+				
 				h.Size = Size + sizeof(h) + sizeof(t);
+				
 				Write(a, false, &h, sizeof(h));
 				Write(a + h.Size - sizeof(t), false, &t, sizeof(t));
-				
-				InsertFreeBlock(a + h.Size, fs);
+
+				InsertFreeBlock(a + h.Size, fs, false, true);
 			} else { // do nothing.
 				Size = h.Size - sizeof(h) - sizeof(t);
 			}
@@ -718,4 +765,36 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 
 	return Size;
 
+}
+
+
+bool CBlockManager::WriteBlockToDisk(uint32_t BlockID)
+{
+	uint32_t a;
+	bool isvirtual;
+	TBlockHeadOcc h;
+	if (!InitOperation(BlockID, a, isvirtual, h))
+		return false;
+
+	if (!isvirtual)
+		return true;
+
+	if (m_FileAccess.GetReadOnly())
+		return false;
+
+	uint32_t os = h.Size;
+	uint32_t oa = a;
+	a = FindFreePosition(h.Size);
+	TBlockTailOcc t;
+	t.ID = h.ID;
+
+	Write(a, false, &h, sizeof(h));
+	Write(a + sizeof(h), false, (void*)(oa + sizeof(h)), os);
+	Write(a + h.Size, false, &t, sizeof(t));
+
+	m_BlockTable[BlockID >> 2].Addr = a;
+
+	free((void*)oa);
+
+	return true;
 }

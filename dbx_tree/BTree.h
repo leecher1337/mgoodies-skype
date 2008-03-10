@@ -43,7 +43,7 @@ public:
 			\brief Keeps track of changes in the tree and refresh the iterator
 
 			There are a few possibilities on not UniqueKey-trees where the managing can fail.
-			It can occour when deleting an iterated Key and have some other entries with same Key...
+			It can occour when deleting an iterated Key and have some other Contacts with same Key...
 			This can cause Values to be skipped.
 		**/
 		void setManaged();
@@ -1208,13 +1208,13 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::WriteNode(TNodeRef Node, TNode 
 template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
 void CBTree<TKey, TData, SizeParam, UniqueKeys>::Read(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Dest)
 {
-	memcpy((char*)(&Dest) + Offset, (void*)(Node + Offset), Size);
+	memcpy((uint8_t*)(&Dest) + Offset, (void*)(Node + Offset), Size);
 }
 
 template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
 void CBTree<TKey, TData, SizeParam, UniqueKeys>::Write(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Source)
 {
-	memcpy((void*)(Node + Offset), (char*)(&Source) + Offset, Size);
+	memcpy((void*)(Node + Offset), (uint8_t*)(&Source) + Offset, Size);
 }
 
 template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>

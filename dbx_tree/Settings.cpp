@@ -1,5 +1,6 @@
 #include "Settings.h"
 #include <math.h>
+#include "Hash.h"
 
 inline bool TSettingKey::operator <  (const TSettingKey & Other) const
 {
@@ -18,10 +19,10 @@ inline bool TSettingKey::operator >  (const TSettingKey & Other) const
 
 
 
-CSettingsTree::CSettingsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBEntryHandle Entry)
+CSettingsTree::CSettingsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBContactHandle Contact)
 : CFileBTree(BlockManager, RootNode, cSettingNodeSignature)
 {
-	m_Entry = Entry;
+	m_Contact = Contact;
 }
 
 CSettingsTree::~CSettingsTree()
@@ -29,9 +30,9 @@ CSettingsTree::~CSettingsTree()
 
 }
 
-inline TDBEntryHandle CSettingsTree::getEntry()
+inline TDBContactHandle CSettingsTree::getContact()
 {
-	return m_Entry;
+	return m_Contact;
 }
 
 TDBSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length)
@@ -78,23 +79,6 @@ bool CSettingsTree::_DeleteSetting(const uint32_t Hash, const TDBSettingHandle h
 	
 	return false;
 }
-/*
-bool CSettingsTree::_ChangeSetting(const uint32_t Hash, const TDBSettingHandle OldSetting, const TDBSettingHandle NewSetting)
-{
-	TSettingKey key;
-	key.Hash = Hash;
-	iterator i = Find(key);
-	while ((i) && (i.Key().Hash == Hash) && (i.Data() != OldSetting))
-		++i;
-
-	if ((i) && (i.Key().Hash == Hash))
-	{
-		i.SetData(NewSetting);
-		return true;
-	}
-
-	return false;
-}*/
 
 bool CSettingsTree::_AddSetting(const uint32_t Hash, const TDBSettingHandle hSetting)
 {
@@ -104,180 +88,11 @@ bool CSettingsTree::_AddSetting(const uint32_t Hash, const TDBSettingHandle hSet
 	return true;
 }
 
-
-
-/// lookup3, by Bob Jenkins, May 2006, Public Domain.
-#define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
-
-#define HASHmix(a,b,c) \
-{ \
-  a -= c;  a ^= rot(c, 4);  c += b; \
-  b -= a;  b ^= rot(a, 6);  a += c; \
-  c -= b;  c ^= rot(b, 8);  b += a; \
-  a -= c;  a ^= rot(c,16);  c += b; \
-  b -= a;  b ^= rot(a,19);  a += c; \
-  c -= b;  c ^= rot(b, 4);  b += a; \
-}
-#define HASHfinal(a,b,c) \
-{ \
-  c ^= b; c -= rot(b,14); \
-  a ^= c; a -= rot(c,11); \
-  b ^= a; b -= rot(a,25); \
-  c ^= b; c -= rot(b,16); \
-  a ^= c; a -= rot(c, 4);  \
-  b ^= a; b -= rot(a,14); \
-  c ^= b; c -= rot(b,24); \
-}
-
-
-uint32_t CSettings::Hash(void * Data, uint32_t Length)
-{
-	register uint32_t a,b,c; // internal state
-  union { const void *ptr; uint32_t i; } u; // needed for Mac Powerbook G4
-
-  // Set up the internal state
-  a = b = c = 0xdeadbeef + Length; // + initval = 0
-
-  u.ptr = Data;
-  if ((u.i & 0x3) == 0) 
-	{
-    const uint32_t *k = (const uint32_t *)Data; // read 32-bit chunks
-
-    // all but last block: aligned reads and affect 32 bits of (a,b,c)
-    while (Length > 12)
-    {
-      a += k[0];
-      b += k[1];
-      c += k[2];
-      HASHmix(a,b,c);
-      Length -= 12;
-      k += 3;
-    }
-
-    switch(Length)
-    {
-			case 12: c += k[2];            b += k[1]; a += k[0]; break;
-			case 11: c += k[2] & 0xffffff; b += k[1]; a += k[0]; break;
-			case 10: c += k[2] & 0xffff;   b += k[1]; a += k[0]; break;
-			case 9 : c += k[2] & 0xff;     b += k[1]; a += k[0]; break;
-			case 8 : b += k[1];            a += k[0]; break;
-			case 7 : b += k[1] & 0xffffff; a += k[0]; break;
-			case 6 : b += k[1] & 0xffff;   a += k[0]; break;
-			case 5 : b += k[1] & 0xff;     a += k[0]; break;
-			case 4 : a += k[0];            break;
-			case 3 : a += k[0] & 0xffffff; break;
-			case 2 : a += k[0] & 0xffff;   break;
-			case 1 : a += k[0] & 0xff;     break;
-			case 0 : return c;  // zero length strings require no mixing
-    }
-
-  } else if ((u.i & 0x1) == 0) {
-    const uint16_t *k = (const uint16_t *)Data;         /* read 16-bit chunks */
-		const uint8_t  *k8;
-
-    // all but last block: aligned reads and different mixing
-    while (Length > 12)
-    {
-      a += k[0] + (((uint32_t)k[1]) << 16);
-      b += k[2] + (((uint32_t)k[3]) << 16);
-      c += k[4] + (((uint32_t)k[5]) << 16);
-      HASHmix(a,b,c);
-      Length -= 12;
-      k += 6;
-    }
-
-    // handle the last (probably partial) block
-    k8 = (const uint8_t *)k;
-    switch(Length)
-    {
-			case 12: c += k[4] + (((uint32_t)k[5]) << 16);
-							 b += k[2] + (((uint32_t)k[3]) << 16);
-							 a += k[0] + (((uint32_t)k[1]) << 16);
-							 break;
-			case 11: c += ((uint32_t)k8[10]) << 16; // fall through 
-			case 10: c += k[4];
-							 b += k[2] + (((uint32_t)k[3]) << 16);
-							 a += k[0] + (((uint32_t)k[1]) << 16);
-							 break;
-			case 9 : c += k8[8];                        // fall through
-			case 8 : b += k[2] + (((uint32_t)k[3]) << 16);
-							 a += k[0] + (((uint32_t)k[1]) << 16);
-							 break;
-			case 7 : b += ((uint32_t)k8[6]) << 16;  // fall through
-			case 6 : b += k[2];
-							 a += k[0] + (((uint32_t)k[1]) << 16);
-							 break;
-			case 5 : b += k8[4];                        // fall through
-			case 4 : a += k[0] + (((uint32_t)k[1]) << 16);
-							 break;
-			case 3 : a += ((uint32_t)k8[2]) << 16;  // fall through
-			case 2 : a += k[0];
-							 break;
-			case 1 : a += k8[0];
-							 break;
-			case 0 : return c; // zero length requires no mixing
-    }
-
-  } else { // need to read the key one byte at a time
-    const uint8_t *k = (const uint8_t *)Data;
-
-    // all but the last block: affect some 32 bits of (a,b,c)
-    while (Length > 12)
-    {
-      a += k[0];
-      a += ((uint32_t)k[1] ) <<  8;
-      a += ((uint32_t)k[2] ) << 16;
-      a += ((uint32_t)k[3] ) << 24;
-      b += k[4];
-      b += ((uint32_t)k[5] ) <<  8;
-      b += ((uint32_t)k[6] ) << 16;
-      b += ((uint32_t)k[7] ) << 24;
-      c += k[8];
-      c += ((uint32_t)k[9] ) << 8;
-      c += ((uint32_t)k[10]) << 16;
-      c += ((uint32_t)k[11]) << 24;
-      HASHmix(a,b,c);
-      Length -= 12;
-      k += 12;
-    }
-
-    // last block: affect all 32 bits of (c)
-    switch(Length) // all the case statements fall through
-    {
-			case 12: c += ((uint32_t)k[11]) << 24;
-			case 11: c += ((uint32_t)k[10]) << 16;
-			case 10: c += ((uint32_t)k[9] ) <<  8;
-			case 9 : c += k[8];
-			case 8 : b += ((uint32_t)k[7] ) << 24;
-			case 7 : b += ((uint32_t)k[6] ) << 16;
-			case 6 : b += ((uint32_t)k[5] ) <<  8;
-			case 5 : b += k[4];
-			case 4 : a += ((uint32_t)k[3] ) << 24;
-			case 3 : a += ((uint32_t)k[2] ) << 16;
-			case 2 : a += ((uint32_t)k[1] ) <<  8;
-			case 1 : a += k[0];
-							 break;
-			case 0 : return c;
-    }
-  }
-
-  HASHfinal(a,b,c);
-  return c;
-}
-
-#undef rot
-#undef HASHmix
-#undef HASHfinal
-
-
-
-
-
-CSettings::CSettings(CBlockManager & BlockManagerSet, CBlockManager & BlockManagerPri, CMultiReadExclusiveWriteSynchronizer & Synchronize, CSettingsTree::TNodeRef SettingsRoot, CEntries & Entries)
+CSettings::CSettings(CBlockManager & BlockManagerSet, CBlockManager & BlockManagerPri, CMultiReadExclusiveWriteSynchronizer & Synchronize, CSettingsTree::TNodeRef SettingsRoot, CContacts & Contacts)
 :	m_Sync(Synchronize),
 	m_BlockManagerSet(BlockManagerSet),
 	m_BlockManagerPri(BlockManagerPri),
-	m_Entries(Entries),
+	m_Contacts(Contacts),
 	m_SettingsMap(),
 
 	m_sigRootChanged()	
@@ -294,7 +109,7 @@ CSettings::CSettings(CBlockManager & BlockManagerSet, CBlockManager & BlockManag
 CSettings::~CSettings()
 {
 	m_Sync.BeginWrite();
-	std::map<TDBEntryHandle, CSettingsTree*>::iterator it = m_SettingsMap.begin();
+	TSettingsTreeMap::iterator it = m_SettingsMap.begin();
 
 	while (it != m_SettingsMap.end())
 	{
@@ -314,19 +129,19 @@ CSettings::~CSettings()
 }
 
 
-CSettingsTree * CSettings::getSettingsTree(TDBEntryHandle hEntry)
+CSettingsTree * CSettings::getSettingsTree(TDBContactHandle hContact)
 {
-	TSettingsTreeMap::iterator i = m_SettingsMap.find(hEntry);
+	TSettingsTreeMap::iterator i = m_SettingsMap.find(hContact);
 	if (i != m_SettingsMap.end())
 		return i->second;
 
-	unsigned int root = m_Entries._getSettingsRoot(hEntry);
+	unsigned int root = m_Contacts._getSettingsRoot(hContact);
 	if (root == DB_INVALIDPARAM)
 		return NULL;
 
-	CSettingsTree * tree = new CSettingsTree(m_BlockManagerPri, root, hEntry);
+	CSettingsTree * tree = new CSettingsTree(m_BlockManagerPri, root, hContact);
 	tree->sigRootChanged().connect(this, &CSettings::onRootChanged);
-	m_SettingsMap.insert(std::make_pair(hEntry, tree));
+	m_SettingsMap.insert(std::make_pair(hContact, tree));
 
 	return tree;	
 }
@@ -337,10 +152,10 @@ CSettings::TOnRootChanged & CSettings::sigRootChanged()
 }
 void CSettings::onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot)
 {
-	if (((CSettingsTree*)SettingsTree)->getEntry() == 0)
+	if (((CSettingsTree*)SettingsTree)->getContact() == 0)
 		m_sigRootChanged.emit(this, NewRoot);
 	else 
-		m_Entries._setSettingsRoot(((CSettingsTree*)SettingsTree)->getEntry(), NewRoot);
+		m_Contacts._setSettingsRoot(((CSettingsTree*)SettingsTree)->getContact(), NewRoot);
 }
 
 	
@@ -354,7 +169,7 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 
 	m_Sync.BeginRead();
 
-	if (Descriptor.Entry == 0)
+	if (Descriptor.Contact == 0)
 	{
 		tree = getSettingsTree(0);
 		res = tree->_FindSetting(namehash, Descriptor.pszSettingName, NameLength);
@@ -362,18 +177,16 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 		return res | cSettingsFileFlag;
 	}
 
-	uint32_t entryflags = m_Entries.getFlags(Descriptor.Entry);
-
-	if (entryflags == DB_INVALIDPARAM)
+	uint32_t cf = m_Contacts.getFlags(Descriptor.Contact);
+	if (cf == DB_INVALIDPARAM)
 	{
 		m_Sync.EndRead();
 		return DB_INVALIDPARAM;
 	}
 
-
-	if (Descriptor.Flags & DB_SDF_FoundEntryValid)
+	if (Descriptor.FoundInContact != 0)
 	{
-		tree = getSettingsTree(Descriptor.FoundInEntry);
+		tree = getSettingsTree(Descriptor.FoundInContact);
 		if (tree)
 		{
 			res = tree->_FindSetting(namehash, Descriptor.pszSettingName, NameLength);
@@ -385,95 +198,44 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 		}
 	}
 
-	// build list of entries
-	std::queue<TDBEntryHandle> entries;
-	entries.push(Descriptor.Entry);
 	
-	if ((entryflags & DB_EF_IsVirtual) && ((Descriptor.Flags & DB_SDF_NoPrimaryVirtualLookup) == 0))
-	{	// virtual lookup
-		TDBEntryHandle e = m_Entries.VirtualGetParent(Descriptor.Entry);
-		if (e != DB_INVALIDPARAM)
-			entries.push(e);
-		
-	}
-
-	if (Descriptor.Flags & DB_SDF_SearchSubEntries)
-	{
-		TDBEntryIterFilter filter = {0};
-		
-		filter.cbSize = sizeof(filter);
-		filter.hParentEntry = Descriptor.Entry;
-
-		if ((entryflags & DB_EF_IsGroup) && !((Descriptor.Flags & DB_SDF_SearchOutOfGroups) == DB_SDF_SearchOutOfGroups))
-		{	// only groups
-			filter.fHasFlags = DB_EF_IsGroup;
-		}
-
-		TDBEntryIterationHandle iter = m_Entries.IterationInit(filter);
-		if ((iter != 0) && (iter != DB_INVALIDPARAM))
-		{
-			TDBEntryHandle e = m_Entries.IterationNext(iter);
-			while ((e != 0) && (e != DB_INVALIDPARAM))
-			{
-				entries.push(e);				
-				
-				if (!((Descriptor.Flags & DB_SDF_NoVirtualLookup) == DB_SDF_NoVirtualLookup))
-				{
-					e = m_Entries.VirtualGetParent(e);
-					if (e != DB_INVALIDPARAM)
-						entries.push(e);		
-				}
-				
-				e = m_Entries.IterationNext(iter);
-			}
-
-		}
-	}
-
-	if (Descriptor.Flags & DB_SDF_SearchParents)
-	{
-		TDBEntryHandle p;
-		p = m_Entries.getParent(Descriptor.Entry);			
-
-		while ((p != 0) && (p != DB_INVALIDPARAM) && (p != m_Entries.getRootEntry()) && ((m_Entries.getFlags(p) & DB_EF_IsGroup) == (entryflags & DB_EF_IsGroup)))
-		{
-			entries.push(p);
-
-			if (!((Descriptor.Flags & DB_SDF_NoVirtualLookup) == DB_SDF_NoVirtualLookup))
-			{
-				TDBEntryHandle e = m_Entries.VirtualGetParent(p);
-				if (e != DB_INVALIDPARAM)
-					entries.push(e);		
-			}
-			
-			p = m_Entries.getParent(p);
-		}
-	}
-	
-
-	if (Descriptor.Flags & DB_SDF_RootHasStandard)
-	{
-		entries.push(m_Entries.getRootEntry());
-	}
-
-
 	// search the setting
 	res = 0;
-	TDBEntryHandle e = 0;
-	while ((res == 0) && (!entries.empty()))
+	
+	TDBContactIterFilter f;
+	f.cbSize = sizeof(f);
+	if (cf & DB_CF_IsGroup)
 	{
-		e = entries.front();
-		entries.pop();
-		
+		f.fDontHasFlags = 0;
+		f.fHasFlags = DB_CF_IsGroup;
+	} else {
+		f.fDontHasFlags = DB_CF_IsGroup;
+		f.fHasFlags = 0;	
+	}
+	f.Options = Descriptor.Flags;
+
+	TDBContactIterationHandle i = m_Contacts.IterationInit(f, Descriptor.Contact);
+	if (i == DB_INVALIDPARAM)
+	{
+		m_Sync.EndRead();
+		return DB_INVALIDPARAM;
+	}
+
+	TDBContactHandle e = m_Contacts.IterationNext(i);
+	while ((res == 0) && (e != 0))
+	{
 		tree = getSettingsTree(e);
 		if (tree)
 			res = tree->_FindSetting(namehash, Descriptor.pszSettingName, NameLength);
+
+		e = m_Contacts.IterationNext(i);
 	}
+
+	m_Contacts.IterationClose(i);
 
 	if (res)
 	{
-		Descriptor.FoundInEntry = e;
-		Descriptor.Flags |= DB_SDF_FoundEntryValid;
+		Descriptor.FoundInContact = e;
 	}
 
 	m_Sync.EndRead();
@@ -521,7 +283,7 @@ unsigned int CSettings::DeleteSetting(TDBSettingHandle hSetting)
 
 	TSetting* set = (TSetting*)buf;
 
-	CSettingsTree * tree = getSettingsTree(set->Entry);
+	CSettingsTree * tree = getSettingsTree(set->Contact);
 	if (tree == NULL)
 	{
 		m_Sync.EndWrite();
@@ -573,18 +335,18 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 	
 	if (hSetting == 0)
 	{
-		if (Setting.Descriptor->Entry == 0)
+		if (Setting.Descriptor->Contact == 0)
 		{
 			file = &m_BlockManagerSet;
 			fileflag = true;
 		}
 
 		if ((Setting.Descriptor) && (Setting.Descriptor->pszSettingName)) // setting needs a name
-			tree = getSettingsTree(Setting.Descriptor->Entry);
+			tree = getSettingsTree(Setting.Descriptor->Contact);
 		
 	} else {		
-		TDBEntryHandle e;
-		if (file->ReadPart(hSetting, &e, offsetof(TSetting, Entry), sizeof(e), sig))
+		TDBContactHandle e;
+		if (file->ReadPart(hSetting, &e, offsetof(TSetting, Contact), sizeof(e), sig))
 			tree = getSettingsTree(e);
 	}
 
@@ -623,7 +385,7 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 
 	if (hSetting == 0) // create new setting
 	{
-		set.Entry = Setting.Descriptor->Entry;
+		set.Contact = Setting.Descriptor->Contact;
 		set.Flags = 0;
 		set.Type = Setting.Type;
 		set.AllocSize = blobsize;		
@@ -1136,10 +898,9 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 
 	if (Setting.Descriptor)
 	{
-		Setting.Descriptor->Entry = set->Entry;
-		Setting.Descriptor->FoundInEntry = set->Entry;
-		Setting.Descriptor->Flags = DB_SDF_FoundEntryValid;
-
+		Setting.Descriptor->Contact = set->Contact;
+		Setting.Descriptor->FoundInContact = set->Contact;
+		
 		Setting.Descriptor->pszSettingName = (char *) mir_realloc(Setting.Descriptor->pszSettingName, set->NameLength + 1);
 		memcpy(Setting.Descriptor->pszSettingName, set + 1, set->NameLength + 1);
 		Setting.Descriptor->pszSettingName[set->NameLength] = 0;
@@ -1168,10 +929,10 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 		m_Iterations = (PSettingIteration*)realloc(m_Iterations, sizeof(PSettingIteration*) * m_IterAllocSize);
 	}
 
-	std::queue<TDBEntryHandle> entries;
-	entries.push(Filter.hEntry);
+	std::queue<TDBContactHandle> contacts;
+	contacts.push(Filter.hContact);
 
-	CSettingsTree * tree = getSettingsTree(Filter.hEntry);
+	CSettingsTree * tree = getSettingsTree(Filter.hContact);
 
 	if (tree == NULL)
 	{
@@ -1179,86 +940,46 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 		return DB_INVALIDPARAM;
 	}
 
-	if (Filter.hEntry != 0)
+	if (Filter.hContact != 0)
 	{	
-		uint32_t entryflags = m_Entries.getFlags(Filter.hEntry);
+		uint32_t cf = m_Contacts.getFlags(Filter.hContact);
 
-		if (entryflags == DB_INVALIDPARAM)
+		if (cf == DB_INVALIDPARAM)
 		{
 			m_Sync.EndWrite();
 			return DB_INVALIDPARAM;
 		}
 		
-		if ((entryflags & DB_EF_IsVirtual) && ((Filter.Options & DB_SIFO_NoPrimaryVirtualLookup) == 0))
-		{	// virtual lookup
-			TDBEntryHandle e = m_Entries.VirtualGetParent(Filter.hEntry);
-			if (e != DB_INVALIDPARAM)
-				entries.push(e);	
-		}
-
-		if (Filter.Options & DB_SIFO_SearchSubEntries)
+		TDBContactIterFilter f;
+		f.cbSize = sizeof(f);
+		if (cf & DB_CF_IsGroup)
 		{
-			TDBEntryIterFilter filter = {0};
-			
-			filter.cbSize = sizeof(filter);
-			filter.hParentEntry = Filter.hEntry;
+			f.fDontHasFlags = 0;
+			f.fHasFlags = DB_CF_IsGroup;
+		} else {
+			f.fDontHasFlags = DB_CF_IsGroup;
+			f.fHasFlags = 0;	
+		}
+		f.Options = Filter.Options;
 
-			if ((entryflags & DB_EF_IsGroup) && !((Filter.Options & DB_SIFO_SearchOutOfGroups) == DB_SIFO_SearchOutOfGroups))
-			{	// only groups
-				filter.fHasFlags = DB_EF_IsGroup;
-			}
-
-			TDBEntryIterationHandle iter = m_Entries.IterationInit(filter);
-			if ((iter != 0) && (iter != DB_INVALIDPARAM))
+		TDBContactIterationHandle iter = m_Contacts.IterationInit(f, Filter.hContact);
+		if (iter != DB_INVALIDPARAM)
+		{
+			m_Contacts.IterationNext(iter); // the initial contact was already added
+			TDBContactHandle e = m_Contacts.IterationNext(iter);
+			while (e != 0)
 			{
-				TDBEntryHandle e = m_Entries.IterationNext(iter);
-				while ((e != 0) && (e != DB_INVALIDPARAM))
-				{
-					entries.push(e);				
-					
-					if (!((Filter.Options & DB_SIFO_NoVirtualLookup) == DB_SIFO_NoVirtualLookup))
-					{
-						e = m_Entries.VirtualGetParent(e);
-						if (e != DB_INVALIDPARAM)
-							entries.push(e);		
-					}
-					
-					e = m_Entries.IterationNext(iter);
-				}
-
+				contacts.push(e);
+				e = m_Contacts.IterationNext(iter);
 			}
-		}
 
-		if (Filter.Options & DB_SIFO_SearchParents)
-		{
-			TDBEntryHandle p;
-			p = m_Entries.getParent(Filter.hEntry);			
-
-			while ((p != 0) && (p != DB_INVALIDPARAM) && (p != m_Entries.getRootEntry()) && ((m_Entries.getFlags(p) & DB_EF_IsGroup) == (entryflags & DB_EF_IsGroup)))
-			{
-				entries.push(p);
-
-				if (!((Filter.Options & DB_SDF_NoVirtualLookup) == DB_SDF_NoVirtualLookup))
-				{
-					TDBEntryHandle e = m_Entries.VirtualGetParent(p);
-					if (e != DB_INVALIDPARAM)
-						entries.push(e);		
-				}
-				
-				p = m_Entries.getParent(p);
-			}
-		}
-		
-
-		if (Filter.Options & DB_SIFO_RootHasStandard)
-		{
-			entries.push(m_Entries.getRootEntry());
+			m_Contacts.IterationClose(iter);
 		}
 	}
 
 	for (unsigned int j = 0; j < Filter.ExtraCount; ++j)
 	{
-		entries.push(Filter.ExtraEntries[j]);
+		contacts.push(Filter.ExtraContacts[j]);
 	}
 
 	PSettingIteration iter = new TSettingIteration;
@@ -1275,17 +996,17 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 	TSettingKey key;
 	key.Hash = 0;
 
-	// pop first entry. we have always one and always its tree
-	entries.pop();
+	// pop first Contact. we have always one and always its tree
+	contacts.pop();
 
 	CSettingsTree::iterator * tmp = new CSettingsTree::iterator(tree->LowerBound(key));
 	tmp->setManaged();
 	iter->Heap = new TSettingsHeap(*tmp, TSettingsHeap::ITForward, true);
 	
-	while (!entries.empty())
+	while (!contacts.empty())
 	{
-		tree = getSettingsTree(entries.front());
-		entries.pop();
+		tree = getSettingsTree(contacts.front());
+		contacts.pop();
 		if (tree != NULL)
 		{
 			tmp = new CSettingsTree::iterator(tree->LowerBound(key));
@@ -1364,7 +1085,7 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 		
 				if (help.NameLen == 0)
 				{
-					if (help.Tree->getEntry() == 0)
+					if (help.Tree->getContact() == 0)
 						m_BlockManagerSet.ReadPart(help.Handle, &help.NameLen, offsetof(TSetting, NameLength), sizeof(help.NameLen), sig);						
 					else
 						m_BlockManagerPri.ReadPart(help.Handle, &help.NameLen, offsetof(TSetting, NameLength), sizeof(help.NameLen), sig);
@@ -1373,7 +1094,7 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 				if (help.Name == NULL)
 				{
 					help.Name = new char[help.NameLen + 1];
-					if (help.Tree->getEntry() == 0)
+					if (help.Tree->getContact() == 0)
 						m_BlockManagerSet.ReadPart(help.Handle, help.Name, sizeof(TSetting), help.NameLen, sig);
 					else
 						m_BlockManagerPri.ReadPart(help.Handle, help.Name, sizeof(TSetting), help.NameLen, sig);
@@ -1389,7 +1110,7 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 
 					if (tmp.NameLen == 0)
 					{
-						if (help.Tree->getEntry() == 0)
+						if (help.Tree->getContact() == 0)
 							m_BlockManagerSet.ReadPart(tmp.Handle, &tmp.NameLen, offsetof(TSetting, NameLength), sizeof(tmp.NameLen), sig);						
 						else
 							m_BlockManagerPri.ReadPart(tmp.Handle, &tmp.NameLen, offsetof(TSetting, NameLength), sizeof(tmp.NameLen), sig);
@@ -1402,7 +1123,7 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 						if (tmp.Name == NULL)
 						{
 							tmp.Name = new char[tmp.NameLen + 1];
-							if (tmp.Tree->getEntry() == 0)
+							if (tmp.Tree->getContact() == 0)
 								m_BlockManagerSet.ReadPart(tmp.Handle, tmp.Name, sizeof(TSetting), tmp.NameLen, sig);
 							else
 								m_BlockManagerPri.ReadPart(tmp.Handle, tmp.Name, sizeof(TSetting), tmp.NameLen, sig);
@@ -1421,11 +1142,11 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 				if ((iter->Filter.NameStart == NULL) || ((iter->FilterNameStartLength >= help.NameLen) && (memcmp(iter->Filter.NameStart, help.Name, iter->FilterNameStartLength) == 0)))
 				{
 					TSettingIterationResult tmp;			
-					if (help.Tree->getEntry() == 0)
+					if (help.Tree->getContact() == 0)
 						help.Handle |= cSettingsFileFlag;
 
 					tmp.Handle = help.Handle;
-					tmp.Entry = help.Tree->getEntry();
+					tmp.Contact = help.Tree->getContact();
 					tmp.Name = help.Name;
 					tmp.NameLen = help.NameLen;
 					iter->Frame->push(tmp);
@@ -1447,11 +1168,10 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 
 		if ((iter->Filter.Descriptor) && ((iter->Filter.Setting == NULL) || (iter->Filter.Setting->Descriptor != iter->Filter.Descriptor)))
 		{
-			iter->Filter.Descriptor->Entry = res.Entry;
+			iter->Filter.Descriptor->Contact = res.Contact;
 			iter->Filter.Descriptor->pszSettingName = (char *) mir_realloc(iter->Filter.Descriptor->pszSettingName, res.NameLen + 1);
 			memcpy(iter->Filter.Descriptor->pszSettingName, res.Name, res.NameLen + 1);
-			iter->Filter.Descriptor->Flags = DB_SDF_FoundEntryValid;
-			iter->Filter.Descriptor->FoundInEntry = res.Entry;
+			iter->Filter.Descriptor->FoundInContact = res.Contact;
 		}
 		if (iter->Filter.Setting)
 		{

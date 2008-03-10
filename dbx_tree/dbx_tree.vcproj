@@ -17,7 +17,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="C:\Dokumente und Einstellungen\Michael Kunz\Desktop\Miranda IM\Plugins"
+			OutputDirectory="D:\Test Miranda IM\Plugins"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="2"
@@ -196,11 +196,11 @@
 			Name="Database"
 			>
 			<File
-				RelativePath=".\DataBase.cpp"
+				RelativePath=".\Contacts.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\Entries.cpp"
+				RelativePath=".\DataBase.cpp"
 				>
 			</File>
 			<File
@@ -219,11 +219,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\DataBase.h"
+					RelativePath=".\Contacts.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Entries.h"
+					RelativePath=".\DataBase.h"
 					>
 				</File>
 				<File
@@ -356,12 +356,20 @@
 			Name="Utils"
 			>
 			<File
+				RelativePath=".\Hash.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\MREWSync.cpp"
 				>
 			</File>
 			<Filter
 				Name="HeaderFiles"
 				>
+				<File
+					RelativePath=".\Hash.h"
+					>
+				</File>
 				<File
 					RelativePath=".\IterationHeap.h"
 					>

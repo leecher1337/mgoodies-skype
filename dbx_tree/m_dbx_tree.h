@@ -7,44 +7,29 @@
 
 
 /**
-	\brief invalid param specified or invalid combination
+	\brief general return value if invalid param or invalid combination of params specified
 **/
 static const unsigned int DB_INVALIDPARAM = 0xFFFFFFFF;
 
 
 ///////////////////////////////////////////////////////////
-// Entries
+// Contacts
 ///////////////////////////////////////////////////////////
 
 /**
-	\brief A handle to an Entry
+	\brief A handle to a Contact
 **/
-typedef uint32_t TDBEntryHandle;
+typedef uint32_t TDBContactHandle;
 
 
-/**
-	\brief Entry is the Root
-**/
-static const uint32_t DB_EF_IsRoot = 0x00000001;
-/**
-	\brief Entry isn't a Contact
-**/
-static const uint32_t DB_EF_IsGroup   = 0x00000002;
-/**
-	\brief Entry has Childs (Groups and Metacontacts)
-**/
-static const uint32_t DB_EF_HasChildren = 0x00000004;
-/**
-	\brief Entry is a Virtual duplicate
-**/
-static const uint32_t DB_EF_IsVirtual = 0x00000008;
-/**
-	\brief Entry has min one Virtual duplicate
-**/
-static const uint32_t DB_EF_HasVirtuals = 0x00000010;
+static const uint32_t DB_CF_IsRoot      = 0x00000001;  /// Contact is the Root
+static const uint32_t DB_CF_IsGroup     = 0x00000002;  /// Contact is group
+static const uint32_t DB_CF_HasChildren = 0x00000004;  /// Contact has Children (for Groups and Metacontacts)
+static const uint32_t DB_CF_IsVirtual   = 0x00000008;  /// Contact is a Virtual duplicate
+static const uint32_t DB_CF_HasVirtuals = 0x00000010;  /// Contact has min. one Virtual duplicate
 
 ///////////////////////////////////////////////////////////
-// Entries
+// Contacts
 ///////////////////////////////////////////////////////////
 
 /**
@@ -52,213 +37,223 @@ static const uint32_t DB_EF_HasVirtuals = 0x00000010;
 	\param wParam = 0
 	\param lParam = 0
 
-	\return Handle to root entry
+	\return Handle to root Contact
 **/
-#define MS_DB_ENTRY_GETROOT "DB/Entry/GetRoot"
+#define MS_DB_CONTACT_GETROOT "DB/Contact/GetRoot"
 
 
 /**
 	\brief
-	\param wParam = hEntry
+	\param wParam = hContact
 	\param lParam = 0
 
-	\return ChildCount of specified Entry
+	\return ChildCount of specified Contact
 **/
-#define MS_DB_ENTRY_CHILDCOUNT "DB/Entry/ChildCount"
+#define MS_DB_CONTACT_CHILDCOUNT "DB/Contact/ChildCount"
 
 
 /**
 	\brief
-	\param wParam = hEntry
+	\param wParam = hContact
 	\param lParam = 0
 
-	\return Parent hEntry of specified Entry
+	\return Parent hContact of specified Contact
 **/
-#define MS_DB_ENTRY_GETPARENT "DB/Entry/GetParent"
+#define MS_DB_CONTACT_GETPARENT "DB/Contact/GetParent"
 
 
 /**
 	\brief
-  \param wParam = hEntry
-  \param lParam = hParentEntry
+  \param wParam = hContact
+  \param lParam = hParentContact
 
 	\return 0 on success
 **/
-#define MS_DB_ENTRY_SETPARENT  "DB/Entry/SetParent"
+#define MS_DB_CONTACT_SETPARENT  "DB/Contact/SetParent"
 
 
 /**
 	\brief
-	\param wParam = hEntry
+	\param wParam = hContact
 	\param lParam = 0
 
 	\return First Child
 **/
-#define MS_DB_ENTRY_GETFIRSTCHILD "DB/Entry/GetFirstChild"
+#define MS_DB_CONTACT_GETFIRSTCHILD "DB/Contact/GetFirstChild"
 
 
 /**
 	\brief
-	\param wParam = hEntry
+	\param wParam = hContact
 	\param lParam = 0
 
 	\return Last Child
 **/
-#define MS_DB_ENTRY_GETLASTCHILD "DB/Entry/GetLastChild"
+#define MS_DB_CONTACT_GETLASTCHILD "DB/Contact/GetLastChild"
 
 
 /**
 	\brief
-	\param wParam = hEntry
+	\param wParam = hContact
 	\param lParam = 0
 
-	\return Next Entry with same parent
+	\return Next Contact with same parent
 **/
-#define MS_DB_ENTRY_GETNEXTSILBING "DB/Entry/GetNextSilbing"
+#define MS_DB_CONTACT_GETNEXTSILBING "DB/Contact/GetNextSilbing"
 
 
 /**
 	\brief
-	\param wParam = hEntry
+	\param wParam = hContact
 	\param lParam = 0
 
-	\return Previous Entry with same parent
+	\return Previous Contact with same parent
 **/
-#define MS_DB_ENTRY_GETPREVSILBING "DB/Entry/GetPrevSilbing"
+#define MS_DB_CONTACT_GETPREVSILBING "DB/Contact/GetPrevSilbing"
 
 /**
-	\brief Read the flags of an entry
-  \param wParam = hEntry
+	\brief Read the flags of an Contact
+  \param wParam = hContact
   \param lParam = 0
 
 	\return Flags
 **/
-#define MS_DB_ENTRY_GETFLAGS "DB/Entry/GetFlags"
+#define MS_DB_CONTACT_GETFLAGS "DB/Contact/GetFlags"
 
+
+
+static const uint32_t DB_CIFO_OSC_AC   = 0x00000001;                  /// onStartContact - AddChildren
+static const uint32_t DB_CIFO_OSC_AP   = 0x00000002;                  /// onStartContact - AddParent
+static const uint32_t DB_CIFO_OSC_AO   = 0x00000004;                  /// onStartContact - AddOriginal (only if contact is virtual)
+static const uint32_t DB_CIFO_OSC_AOC  = 0x00000008 | DB_CIFO_OSC_AO; /// onStartContact - AddOriginalChildren (only if contact is virtual)
+static const uint32_t DB_CIFO_OSC_AOP  = 0x00000010 | DB_CIFO_OSC_AO; /// onStartContact - AddOriginalParent (only if contact is virtual)
+
+static const uint32_t DB_CIFO_OC_AC    = 0x00000001 <<8;                 /// onChildContact - AddChildren
+//static const uint32_t DB_LC_OC_AP      = 0x00000002 <<8;                // invalid for children
+static const uint32_t DB_CIFO_OC_AO    = 0x00000004 <<8;                 /// onChildContact - AddOriginal (only if contact is virtual)
+static const uint32_t DB_CIFO_OC_AOC   = 0x00000008 <<8 | DB_CIFO_OC_AO; /// onChildContact - AddOriginalChildren (only if contact is virtual)
+static const uint32_t DB_CIFO_OC_AOP   = 0x00000010 <<8 | DB_CIFO_OC_AO; /// onChildContact - AddOriginalParent (only if contact is virtual)
+
+static const uint32_t DB_CIFO_OP_AC    = 0x00000001 <<16;                 /// onParentContact - AddChildren
+static const uint32_t DB_CIFO_OP_AP    = 0x00000002 <<16;                 /// onParentContact - AddParent
+static const uint32_t DB_CIFO_OP_AO    = 0x00000004 <<16;                 /// onParentContact - AddOriginal (only if contact is virtual)
+static const uint32_t DB_CIFO_OP_AOC   = 0x00000008 <<16 | DB_CIFO_OP_AO; /// onParentContact - AddOriginalChildren (only if contact is virtual)
+static const uint32_t DB_CIFO_OP_AOP   = 0x00000010 <<16 | DB_CIFO_OP_AO; /// onParentContact - AddOriginalParent (only if contact is virtual)
+
+static const uint32_t DB_CIFO_GF_DEPTHFIRST = 0x01000000;  /// general flags - depth first iteration instead of breath first
+static const uint32_t DB_CIFO_GF_USEROOT    = 0x02000000;  /// general flags - use root as fallback, only for settings
+static const uint32_t DB_CIFO_GF_VL1        = 0x10000000;  /// general flags - limit virtual lookup depth to 1
+static const uint32_t DB_CIFO_GF_VL2        = 0x20000000;  /// general flags - limit virtual lookup depth to 2
+static const uint32_t DB_CIFO_GF_VL3        = 0x30000000;  /// general flags - limit virtual lookup depth to 3
+static const uint32_t DB_CIFO_GF_VL4        = 0x40000000;  /// general flags - limit virtual lookup depth to 4
 
 /**
-	\brief Option flag for entry iteration: changes the iteration behaviour from Breadthfirst to Depthfirst
-
-	Standard behaviour of iteration is Breadthfirst: it goes through entries based on level.
-	First the children of the specified hParentEntry are iterated, than their children (grouped by parent),
-	than their children and so on.
-
-	Depthfirst iterates the first child before it iterates the next silbing.
-	It first iterates the first child of hParentEntry, than all its children and subchildren (as recursive),
-	before it iterates the second child of hParentEntry and its children.
-**/
-static const uint32_t DB_EIFO_DEPTHFIRST = 0x00000001;
-
-/**
-	\brief Entryfilter options for entry iteration
+	\brief Contactfilter options for Contact iteration
 **/
 typedef
-	struct TDBEntryIterFilter
+	struct TDBContactIterFilter
 	{
 		uint32_t cbSize;					/// size of the structur in bytes
 		uint32_t Options;					/// Options for iteration: DB_EIFO_*
-		uint32_t fHasFlags;				/// flags an entry must have to be iterated
-		uint32_t fDontHasFlags;		/// flags an entry have not to have to be iterated
-		TDBEntryHandle hParentEntry;	/// entry which children should be iterated
-	} TDBEntryIterFilter, *PDBEntryIterFilter;
+		uint32_t fHasFlags;				/// flags an Contact must have to be iterated
+		uint32_t fDontHasFlags;		/// flags an Contact have not to have to be iterated
+	} TDBContactIterFilter, *PDBContactIterFilter;
 
 /**
-	\brief Handle of an Entry-Iteration
+	\brief Handle of an Contact-Iteration
 **/
-typedef uint32_t TDBEntryIterationHandle;
+typedef uint32_t TDBContactIterationHandle;
 /**
-	\brief initialize an iteration of entries
-	\param wParam = PDBEntryIterFilter, NULL to iterate all entries (breadthfirst, all but root)
-	\param lParam = 0
+	\brief initialize an iteration of Contacts
+	\param wParam = PDBContactIterFilter, NULL to iterate all Contacts (breadthfirst, all but root)
+	\param lParam = TDBContactHandle Contact, where iteration starts
 
 	\return EnumID
 **/
-#define MS_DB_ENTRY_ITER_INIT "DB/Entry/Iter/Init"
+#define MS_DB_CONTACT_ITER_INIT "DB/Contact/Iter/Init"
 
 
 /**
-	\brief get the next entry
-	\param wParam = EnumID returned by MS_DB_ENTRY_ITER_INIT
+	\brief get the next Contact
+	\param wParam = EnumID returned by MS_DB_CONTACT_ITER_INIT
 	\param lParam = 0
 
-	\return hEntry, 0 at the end
+	\return hContact, 0 at the end
 **/
-#define MS_DB_ENTRY_ITER_NEXT "DB/Entry/Iter/Next"
+#define MS_DB_CONTACT_ITER_NEXT "DB/Contact/Iter/Next"
 
 /**
 	\brief closes an iteration and frees its ressourcs
-	\param wParam = IterationHandle returned by MS_DB_ENTRY_ITER_INIT
+	\param wParam = IterationHandle returned by MS_DB_CONTACT_ITER_INIT
 	\param lParam = 0
 
 	\return 0 on success
 **/
-#define MS_DB_ENTRY_ITER_CLOSE "DB/Entry/Iter/Close"
+#define MS_DB_CONTACT_ITER_CLOSE "DB/Contact/Iter/Close"
 
 /**
-	\brief Deletes an Entry.
+	\brief Deletes an Contact.
 
 	All children will be moved to its parent.
-	If the Entry has virtual copies, history and settings will be transfered to the first duplicate.
+	If the Contact has virtual copies, history and settings will be transfered to the first duplicate.
 
-	\param wParam = hEntry
+	\param wParam = hContact
   \param lParam = 0
 
 	\return 0 on success
 **/
-#define MS_DB_ENTRY_DELETE  "DB/Entry/Delete"
+#define MS_DB_CONTACT_DELETE  "DB/Contact/Delete"
 
 
 /**
-	\brief Creates a new Entry.
-  \param wParam = hParentEntry
-  \param lParam = Flags, only DB_EF_IsGroup is allowed here.
+	\brief Creates a new Contact.
+  \param wParam = hParentContact
+  \param lParam = Flags, only DB_CF_IsGroup is allowed here.
 
-	\return hEntry on success, 0 otherwise
+	\return hContact on success, 0 otherwise
 **/
-#define MS_DB_ENTRY_CREATE  "DB/Entry/Create"
-
-
+#define MS_DB_CONTACT_CREATE  "DB/Contact/Create"
 
 
 ///////////////////////////////////////////////////////////
-// Virtual Entries
+// Virtual Contacts
 ///////////////////////////////////////////////////////////
 
 /**
-	\brief Creates a virtual duplicate of an Entry
-  \param wParam = hEntry to duplicate, couldn't be a group (DB_EF_IsGroup set to 0)
-  \param lParam = hParentEntry to place duplicate
+	\brief Creates a virtual duplicate of an Contact
+  \param wParam = hContact to duplicate, couldn't be a group (DB_CF_IsGroup set to 0)
+  \param lParam = hParentContact to place duplicate
 
-	\return hEntry of created duplicate
+	\return hContact of created duplicate
 **/
-#define MS_DB_VIRTUALENTRY_CREATE  "DB/VirtualEntry/Create"
+#define MS_DB_VIRTUALCONTACT_CREATE  "DB/VirtualContact/Create"
 
 /**
-	\brief Retrieves the original entry, which this is a duplicate of
-  \param wParam = hEntry of virtual entry
+	\brief Retrieves the original Contact, which this is a duplicate of
+  \param wParam = hContact of virtual Contact
   \param lParam = 0
 
-	\return hEntry of original contact
+	\return hContact of original contact
 **/
-#define MS_DB_VIRTUALENTRY_GETPARENT  "DB/VirtualEntry/GetParent"
+#define MS_DB_VIRTUALCONTACT_GETPARENT  "DB/VirtualContact/GetParent"
 
 /**
-	\brief Retrieves the first virtual duplicate of an entry (if any)
-  \param wParam = hEntry with virtual copies
+	\brief Retrieves the first virtual duplicate of an Contact (if any)
+  \param wParam = hContact with virtual copies
   \param lParam
 
-	\return hEntry of first virtual duplicate
+	\return hContact of first virtual duplicate
 **/
-#define MS_DB_VIRTUALENTRY_GETFIRST  "DB/VirtualEntry/GetFirst"
+#define MS_DB_VIRTUALCONTACT_GETFIRST  "DB/VirtualContact/GetFirst"
 
 /**
 	\brief Retrieves the following duplicate
-  \param wParam = hVirtualEntry of virtual entry
+  \param wParam = hVirtualContact of virtual Contact
   \param lParam = 0
 
-	\return hEntry of next duplicate, 0 if hVirtualEntry was the last duplicate
+	\return hContact of next duplicate, 0 if hVirtualContact was the last duplicate
 **/
-#define MS_DB_VIRTUALENTRY_GETNEXT  "DB/VirtualEntry/GetNext"
+#define MS_DB_VIRTUALCONTACT_GETNEXT  "DB/VirtualContact/GetNext"
 
 
 ///////////////////////////////////////////////////////////
@@ -301,73 +296,16 @@ static const uint16_t DB_STF_VariableLength = 0x80;
 
 
 /**
-	\brief Setting Descriptor flag
-
-	If the setting was not found, it will be searched in the children of the entry.
-**/
-static const uint32_t DB_SDF_SearchSubEntries       = 0x00000001;
-
-/**
-	\brief Setting Descriptor flag
-
-	If the setting of a group was not found, it will be searched in all children of this group,
-	even in children which aren't groups.
-
-	Please don't use this flag
-**/
-static const uint32_t DB_SDF_SearchOutOfGroups      = 0x00000002 | DB_SDF_SearchSubEntries;
-/**
-	\brief Setting Descriptor flag
-
-	If the setting was not found, it will be searched in the parent entries, while it isn't a group.
-**/
-static const uint32_t DB_SDF_SearchParents          = 0x00000004;
-/**
-	\brief Setting Descriptor flag
-
-	If the setting was not found, we look in the root entry for it.
-**/
-static const uint32_t DB_SDF_RootHasStandard        = 0x00000008;
-/**
-	\brief Setting Descriptor flag
-
-	Turns off the lookup for original entry settings, if the specified entry is a virtual duplicate.
-	And only for the specified entry. Children will do the lookup.
-
-	Changes the save destination. for standard settings are allways stored in the original entry.
-	With this flag set, the setting will be stored in the virtual duplicate and superseed the original's setting.
-**/
-static const uint32_t DB_SDF_NoPrimaryVirtualLookup = 0x00000010;
-/**
-	\brief Setting Descriptor flag
-
-	Turns off the lookup for original entry settings, if the specified entry is a virtual duplicate.
-	Turns it off for all searched entries.
-**/
-static const uint32_t DB_SDF_NoVirtualLookup        = 0x00000020 | DB_SDF_NoPrimaryVirtualLookup;
-
-/**
-	\brief Setting Descriptor flag
-
-	Setting was found in previous call to MS_DB_SETTING_FIND
-	FoundInEntry is valid and will be used in future calls.
-	Used for speed improvements.
-	\warning do not set this flag on your own!
-**/
-static const uint32_t DB_SDF_FoundEntryValid        = 0x01000000;
-
-
-/**
 	\brief Describes a setting, its name and location
 **/
 typedef
 	struct TDBSettingDescriptor {
-		uint32_t cbSize;                           /// size of the structure in bytes
-		TDBEntryHandle Entry;                          /// Entryhandle where the setting can be found, or where searching starts
+		uint32_t cbSize;                               /// size of the structure in bytes
+		TDBContactHandle Contact;                      /// Contacthandle where the setting can be found, or where searching starts
 		char * pszSettingName;                         /// Setting name
-		uint32_t Flags;                            /// flags describing where the setting can be found DB_SDF_*
+		uint32_t Flags;                                /// flags describing where the setting can be found DB_CIFO_*
 
-		TDBEntryHandle FoundInEntry;                   /// internal use to avoid to do the searching twice
+		TDBContactHandle FoundInContact;               /// internal use to avoid to do the searching twice
 	} TDBSettingDescriptor, * PDBSettingDescriptor;
 
 /**
@@ -479,63 +417,20 @@ typedef
 
 
 
-	/**
-	\brief Setting Iteration Filter Option
-
-	Settings of all Children will be iterated.
-**/
-static const uint32_t DB_SIFO_SearchSubEntries       = 0x00000001;
-
-/**
-	\brief Setting Iteration Filter Option
-
-	all children of this group, even in children which aren't groups.
-
-	Please don't use this flag
-**/
-static const uint32_t DB_SIFO_SearchOutOfGroups      = 0x00000002 | DB_SDF_SearchSubEntries;
-/**
-	\brief Setting Iteration Filter Option
-
-	Iterates the settings of any parent entry, as long it isn't a group
-**/
-static const uint32_t DB_SIFO_SearchParents          = 0x00000004;
-/**
-	\brief Setting Iteration Filter Option
-
-	Iterates the settings of the root entry, which could hold standard values
-**/
-static const uint32_t DB_SIFO_RootHasStandard        = 0x00000008;
-/**
-	\brief Setting Iteration Filter Option
-
-	Turns off the lookup for original entry settings, if the specified entry is a virtual duplicate.
-	And only for the specified entry. Children will do the lookup.
-**/
-static const uint32_t DB_SIFO_NoPrimaryVirtualLookup = 0x00000010;
-/**
-	\brief Setting Iteration Filter Option
-
-	Turns off the lookup for original entry settings, if the specified entry is a virtual duplicate.
-	Turns it off for all searched entries.
-**/
-static const uint32_t DB_SIFO_NoVirtualLookup        = 0x00000020 | DB_SDF_NoPrimaryVirtualLookup;
-
-
 /**
 	\brief Settings Filter Options for setting iteration
 **/
 typedef
 	struct TDBSettingIterFilter {
-		uint32_t cbSize;								/// size in bytes of this structure
-		uint32_t Options;               /// DB_SIFO_* flags
-		TDBEntryHandle hEntry;              /// hEntry which settings should be iterated (or where iteration begins)
-		char * NameStart;                   /// if set != NULL the iteration will only return settings which name starts with this string
-		uint32_t ExtraCount;            /// count of additional Entries which settings are enumerated, size of the array pointed by ExtraEntries
-		TDBEntryHandle * ExtraEntries;      /// pointer to an array with additional Entry handles in prioritized order
+		uint32_t cbSize;								  /// size in bytes of this structure
+		uint32_t Options;                 /// DB_CIFO_* flags
+		TDBContactHandle hContact;        /// hContact which settings should be iterated (or where iteration begins)
+		char * NameStart;                 /// if set != NULL the iteration will only return settings which name starts with this string
+		uint32_t ExtraCount;              /// count of additional Contacts which settings are enumerated, size of the array pointed by ExtraContacts
+		TDBContactHandle * ExtraContacts; /// pointer to an array with additional Contact handles in prioritized order
 
-		PDBSettingDescriptor Descriptor;    /// if set, the iteration will fill in the correct data, you may set SettingsNameLength and SettingName to a buffer to recieve the name of each setting
-		PDBSetting Setting;	                /// if set, iteration loads every settings value, except variable length data (blob, strings) but returns their length
+		PDBSettingDescriptor Descriptor;  /// if set, the iteration will fill in the correct data, you may set SettingsNameLength and SettingName to a buffer to recieve the name of each setting
+		PDBSetting Setting;	              /// if set, iteration loads every settings value, except variable length data (blob, strings) but returns their length
 
 	} TDBSettingIterFilter, *PDBSettingIterFilter;
 
@@ -577,46 +472,75 @@ typedef uint32_t TDBSettingIterationHandle;
 // Events
 ///////////////////////////////////////////////////////////
 
+/**
+	\brief Event Type Specification for register
+**/
+typedef struct TDBEventTypeDescriptor
+{
+	uint32_t cbSize;      /// structure size in bytes
+	char *   ModuleName;  /// event module name
+	uint32_t EventType;   /// event id, unique for this module
+	char *   Description; /// event type description (i.e. "File Transfer")
+}	TDBEventTypeDescriptor, *PDBEventTypeDescriptor;
+
+#define MS_DB_EVENT_REGISTERTYPE  "DB/EventType/Register"
+
+/** 
+	\brief Retrieves the previously registered database event type, by module & id.
+  \param wParam = ModuleName, if == NULL EventType means global ID, module specific else
+  \param lParam = EventType
+
+	\return PDBEventTypeDescriptor or NULL, if a type isn't found.
+**/
+
+#define MS_DB_EVENT_GETTYPE "DB/EventType/Get"
+
+
 
 typedef uint32_t TDBEventHandle;
 
 
 /**
-	\brief this is the first event in the chain, internal only: *do not* use this flag
-
-	\warning obsolete in dbx_tree
-**/
-static const uint32_t DB_EVF_First = 0x00000001;
-
-/**
 	\brief this event was sent by the user. If not set this event was received.
 **/
-static const uint32_t DB_EVF_Sent  = 0x00000002;
+static const uint32_t DB_EF_Sent  = 0x00000002;
 
 /**
 	\brief event has been read by the user. It does not need to be processed any more except for history.
 **/
-static const uint32_t DB_EVF_Read  = 0x00000004;
+static const uint32_t DB_EF_Read  = 0x00000004;
 
 /**
 	\brief event contains the right-to-left aligned text
 **/
-static const uint32_t DB_EVF_RTL   = 0x00000008;
+static const uint32_t DB_EF_RTL   = 0x00000008;
 
 /**
 	\brief event contains a text in utf-8
 **/
-static const uint32_t DB_EVF_UTF   = 0x00000010;
+static const uint32_t DB_EF_UTF   = 0x00000010;
 
+/**
+	\brief event belongs to more than one contact, so it started to count refernce instead of remembering its initial contact
+**/
+static const uint32_t DB_EF_REFERENCECOUNTING  = 0x80000000;
+
+/**
+	\brief event is virtual. it is not stored to db file yet.
+**/
+static const uint32_t DB_EF_VIRTUAL   = 0x00000020;
+
+/**
+	\brief describes an event
+**/
 typedef struct TDBEvent {
-	uint32_t    cbSize;    /// size of the structure in bytes
-	uint32_t    timestamp; /// seconds since 00:00, 01/01/1970. Gives us times until 2106 unless you use the standard C library which is signed and can only do until 2038. In GMT.
-	uint32_t    flags;	   /// the omnipresent flags
-	uint32_t    eventType; /// global-unique event type ID
-	uint32_t    cbBlob;	   /// size of pBlob in bytes
-	uint8_t  * pBlob;	   /// pointer to buffer containing module-defined event data
-
-//	TDBEntryHandle  hEntry;    /// Entry to which this event belongs
+	uint32_t    cbSize;     /// size of the structure in bytes
+	char *			ModuleName; /// 
+	uint32_t    Timestamp;  /// seconds since 00:00, 01/01/1970. Gives us times until 2106 unless you use the standard C library which is signed and can only do until 2038. In GMT.
+	uint32_t    Flags;	    /// the omnipresent flags	
+	uint32_t    EventType;  /// module-unique event type ID
+	uint32_t    cbBlob;	    /// size of pBlob in bytes
+	uint8_t  *  pBlob;	      /// pointer to buffer containing module-defined event data
 } TDBEvent, *PDBEvent;
 
 static const uint32_t DB_EventType_Message     = 0;
@@ -650,8 +574,8 @@ static const uint32_t DB_EventType_File        = 1002;  //specific limit has bee
 
 /**
 	\brief Deletes the specfied event
-  \param wParam = hEvent
-  \param lParam = 0
+  \param wParam = hContact
+  \param lParam = hEvent
 
 	\return 0 on success
 **/
@@ -659,15 +583,96 @@ static const uint32_t DB_EventType_File        = 1002;  //specific limit has bee
 
 /**
 	\brief Creates a new Event
-  \param wParam = hEntry
-  \param lParam = 0
+  \param wParam = hContact
+  \param lParam = PDBEvent
 
 	\return hEvent on success, 0 otherwise
 **/
 
-#define MS_DB_EVENT_CREATE "DB/Event/Create"
+#define MS_DB_EVENT_ADD "DB/Event/Add"
 
 
+/**
+	\brief Changes the flags for an event to mark it as read.
+  \param wParam = hContact
+  \param lParam = hEvent
+
+	\return New flags
+**/
+#define MS_DB_EVENT_MARKREAD "DB/Event/MarkRead"
+
+/**
+	\brief Saves a virtual event to file and changes the flags.
+  \param wParam = hContact
+  \param lParam = hEvent
+
+	\return New flags
+**/
+#define MS_DB_EVENT_WRITETODISK  "DB/Event/WriteToDisk"
+
+/**
+	\brief Retrieves a handle to the contact that owns hEvent.
+  \param wParam = hEvent
+  \param lParam = 0
+
+	\return NULL is a valid return value, meaning, as usual, the user.
+					DB_INVALIDPARAM if hDbEvent is invalid, or the handle to the contact on
+					success
+	\warning This service is exceptionally slow on reference counting contacts
+*/
+#define MS_DB_EVENT_GETCONTACT  "DB/Event/GetContact"
+
+
+/**
+	\brief Settings Filter Options for setting iteration
+**/
+typedef
+	struct TDBEventIterFilter {
+		uint32_t cbSize;										/// size in bytes of this structure
+		uint32_t Options;										/// DB_CIFO_* flags
+		TDBContactHandle hContact;					/// hContact which events should be iterated (or where iteration begins)
+		uint32_t ExtraCount;								/// count of additional Contacts which settings are enumerated, size of the array pointed by ExtraContacts
+		TDBContactHandle * ExtraContacts;   /// pointer to an array with additional Contact handles in prioritized order
+
+		uint32_t tSince;                    /// timestamp when to start iteration, 0 for first item
+		uint32_t tTill;                     /// timestamp when to stop iteration, 0 for last item
+
+		PDBEvent Event;	                    /// if set every events data gets stored there
+
+	} TDBEventIterFilter, *PDBEventIterFilter;
+
+
+/**
+	\brief Handle of a Event-Iteration
+**/
+typedef uint32_t TDBEventIterationHandle;
+/**
+	\brief initialize an iteration of events
+	\param wParam = PDBEventIterFilter
+	\param lParam = 0
+
+	\return EnumID
+**/
+#define MS_DB_EVENT_ITER_INIT "DB/Event/Iter/Init"
+
+
+/**
+	\brief get the next event
+	\param wParam = EnumID returned by MS_DB_EVENT_ITER_INIT
+	\param lParam = 0
+
+	\return hSetting, 0 at the end
+**/
+#define MS_DB_EVENT_ITER_NEXT "DB/Event/Iter/Next"
+
+/**
+	\brief closes an iteration and frees its ressourcs
+	\param wParam = IterationHandle returned by MS_DB_EVENT_ITER_INIT
+	\param lParam = 0
+
+	\return 0 on success
+**/
+#define MS_DB_EVENT_ITER_CLOSE "DB/Event/Iter/Close"
 
 
 
