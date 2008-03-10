@@ -7,14 +7,14 @@
 
 typedef CCipher* (*TCipherCreate)();
 
-typedef struct TCipherListEntry {
+typedef struct TCipherListContact {
 	uint32_t ID;
 	TCipherCreate Create;
 	char * Name;
-} TCipherListEntry, *PCipherListEntry;
+} TCipherListContact, *PCipherListContact;
 
 
-static const TCipherListEntry cCipherList[1] = {
+static const TCipherListContact cCipherList[1] = {
 		{0x01000000, CCAST128::Create, "CAST128"}
 	};
 	

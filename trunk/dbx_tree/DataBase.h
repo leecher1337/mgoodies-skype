@@ -5,7 +5,7 @@
 
 #include "Events.h"
 #include "Settings.h"
-#include "Entries.h"
+#include "Contacts.h"
 
 #include "FileAccess.h"
 #include "MappedMemory.h"
@@ -52,8 +52,8 @@ typedef struct TPrivateHeader {
 	uint32_t Version;            /// internal DB version cDataBaseVersion
 	uint32_t FileAccess;         /// File Access method
 	uint32_t FileSize;           /// Offset to the last used byte + 1
-	uint32_t RootEntry;          /// Offset to the Root CList Entry
-	uint32_t Entries;            /// Offset to the EntryBTree RootNode
+	uint32_t RootContact;          /// Offset to the Root CList Contact
+	uint32_t Contacts;            /// Offset to the ContactBTree RootNode
 	uint32_t Virtuals;           /// Offset to the VirtualsBTree RootNode	
 	uint8_t Reserved[84];        /// reserved storage
 } TPrivateHeader;
@@ -89,7 +89,7 @@ private:
 
 	void onSettingsRootChanged(CSettings* Settings, CSettingsTree::TNodeRef NewRoot);
 	void onVirtualsRootChanged(void* Virtuals, CVirtuals::TNodeRef NewRoot);
-	void onEntriesRootChanged(void* Entries, CEntries::TNodeRef NewRoot);
+	void onContactsRootChanged(void* Contacts, CContacts::TNodeRef NewRoot);
 
 	bool PrivateFileExists();
 	bool CreateNewPrivateFile();
@@ -100,7 +100,7 @@ private:
 protected:
 	CMultiReadExclusiveWriteSynchronizer m_Sync;
 
-	CEntries *m_Entries;
+	CContacts *m_Contacts;
 	CSettings *m_Settings;
 
 	void ReWriteHeader(TDBFileType Index);
@@ -114,7 +114,7 @@ public:
 	int CheckDB();
 	int OpenDB();
 
-	CEntries & getEntries();
+	CContacts & getContacts();
 	CSettings & getSettings();
 
 };

@@ -6,13 +6,13 @@
 #include "sigslot.h"
 #include "IterationHeap.h"
 
-#include <map>
+#include <hash_map>
 #include <queue>
 
 class CSettings;
 class CSettingsTree;
 
-#include "Entries.h"
+#include "Contacts.h"
 
 #pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
 
@@ -46,7 +46,7 @@ static const uint16_t cSettingNodeSignature = 0xBA12;
 	- maybe blob data
 **/
 typedef struct TSetting {
-	TDBEntryHandle Entry;			   /// Settings' entry
+	TDBContactHandle Contact;			   /// Settings' Contact
 	uint32_t   Flags;        /// flags
 	uint16_t   Type;         /// setting type	
 	uint16_t   NameLength;   /// settingname length
@@ -57,10 +57,11 @@ typedef struct TSetting {
 			uint32_t BlobLength; /// if type is variable length this describes the length of the data in bytes
 			uint32_t AllocSize;  /// this is the allocated space for the blob ALWAYS in byte! this prevents us to realloc it too often
 		};
-
-		// settingname with terminating NULL
-		// blob
 	};
+	uint8_t Reserved[8];
+	
+	// settingname with terminating NULL
+  // blob
 } TSetting;
 
 #pragma pack(pop)
@@ -71,17 +72,16 @@ typedef struct TSetting {
 class CSettingsTree : public CFileBTree<TSettingKey, TDBSettingHandle, 8, false>
 {
 protected:
-	TDBEntryHandle m_Entry;
+	TDBContactHandle m_Contact;
 
 public: 
-	CSettingsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBEntryHandle Entry);
+	CSettingsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBContactHandle Contact);
 	~CSettingsTree();
 
-	TDBEntryHandle getEntry();
+	TDBContactHandle getContact();
 
 	TDBSettingHandle _FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length); 
 	bool _DeleteSetting(const uint32_t Hash, const TDBSettingHandle hSetting);
-	//bool _ChangeSetting(const uint32_t Hash, const TDBSettingHandle OldSetting, const TDBSettingHandle NewSetting);
 	bool _AddSetting(const uint32_t Hash, const TDBSettingHandle hSetting);
 };
 
@@ -96,7 +96,7 @@ public:
 
 	static const uint32_t cSettingsFileFlag = 0x00000001;
 
-	CSettings(CBlockManager & BlockManagerSet, CBlockManager & BlockManagerPri, CMultiReadExclusiveWriteSynchronizer & Synchronize, CSettingsTree::TNodeRef SettingsRoot, CEntries & Entries);
+	CSettings(CBlockManager & BlockManagerSet, CBlockManager & BlockManagerPri, CMultiReadExclusiveWriteSynchronizer & Synchronize, CSettingsTree::TNodeRef SettingsRoot, CContacts & Contacts);
 	virtual ~CSettings();
 
 	TOnRootChanged & sigRootChanged();
@@ -117,20 +117,20 @@ public:
 	unsigned int IterationClose(TDBSettingIterationHandle Iteration);
 
 private:
-	typedef std::map<TDBEntryHandle, CSettingsTree*> TSettingsTreeMap;
+	typedef stdext::hash_map<TDBContactHandle, CSettingsTree*> TSettingsTreeMap;
 	typedef CIterationHeap<CSettingsTree::iterator> TSettingsHeap;
 
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CBlockManager & m_BlockManagerSet;
 	CBlockManager & m_BlockManagerPri;
 
-	CEntries & m_Entries;
+	CContacts & m_Contacts;
 
 	TSettingsTreeMap m_SettingsMap;
 
 	typedef struct TSettingIterationResult {
 		TDBSettingHandle Handle;
-		TDBEntryHandle Entry;
+		TDBContactHandle Contact;
 		char * Name;
 		uint16_t NameLen;
 	} TSettingIterationResult;
@@ -148,9 +148,6 @@ private:
 	TOnRootChanged m_sigRootChanged;
 	void onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot);
 
-	CSettingsTree * getSettingsTree(TDBEntryHandle hEntry);
-
-	uint32_t Hash(void * Data, uint32_t Length);
-
+	CSettingsTree * getSettingsTree(TDBContactHandle hContact);
 	
 };

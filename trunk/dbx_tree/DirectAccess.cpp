@@ -3,11 +3,12 @@
 CDirectAccess::CDirectAccess(const char* FileName)
 : CFileAccess(FileName)
 {
-	m_File = CreateFile(FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
+	m_File = CreateFileA(FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
 	if (m_File == INVALID_HANDLE_VALUE) 
 		throw "CreateFile failed";
 
 	m_AllocGranularity = 65536; // 64kb to avoid heavy fragmentation
+	SetSize(GetFileSize(m_File, NULL));
 }
 
 CDirectAccess::~CDirectAccess()

@@ -9,7 +9,7 @@ bool UnRegisterCompatibilityServices();
 
 int GetContactCount(WPARAM wParam,LPARAM lParam);
 int FindFirstContact(WPARAM wParam,LPARAM lParam);
-int FindNextContact(WPARAM hEntry,LPARAM lParam);
-int DeleteContact(WPARAM hEntry,LPARAM lParam);
+int FindNextContact(WPARAM hContact,LPARAM lParam);
+int DeleteContact(WPARAM hContact,LPARAM lParam);
 int AddContact(WPARAM wParam,LPARAM lParam);
-int IsDbContact(WPARAM hEntry,LPARAM lParam);
+int IsDbContact(WPARAM hContact,LPARAM lParam);

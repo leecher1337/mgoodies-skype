@@ -23,96 +23,96 @@ bool UnRegisterCompatibilityServices()
 int AddContact(WPARAM wParam,LPARAM lParam)
 {
 	int ret;
-	ret=DBEntryCreate(DBEntryGetRoot(0,0),0);
+	ret=DBContactCreate(DBContactGetRoot(0,0),0);
 	if(ret == DB_INVALIDPARAM)
 		return 1;
 	NotifyEventHooks(hContactAddedEvent,(WPARAM)ret,0);
 	return ret;
 }
-int DeleteContact(WPARAM hEntry,LPARAM lParam)
+int DeleteContact(WPARAM hContact,LPARAM lParam)
 {
 	int ret;
-	ret=DBEntryDelete(hEntry,0); //what about settings and events?
+	ret=DBContactDelete(hContact,0); //what about settings and events?
 	if(ret==DB_INVALIDPARAM)
 		return 1;
-	NotifyEventHooks(hContactDeletedEvent,hEntry,0);
+	NotifyEventHooks(hContactDeletedEvent,hContact,0);
 	return ret;
 }
-int IsDbContact(WPARAM hEntry,LPARAM lParam)
+int IsDbContact(WPARAM hContact,LPARAM lParam)
 {
-	int flags = DBEntryGetFlags(hEntry, 0);
-	return (flags != DB_INVALIDPARAM) && ((flags & DB_EF_IsGroup) == 0);
+	int flags = DBContactGetFlags(hContact, 0);
+	return (flags != DB_INVALIDPARAM) && ((flags & DB_CF_IsGroup) == 0);
 }
 int GetContactCount(WPARAM wParam,LPARAM lParam)
 {
-	TDBEntryHandle hEntry=NULL;
-	TDBEntryIterFilter IterFilter = {0};
+	TDBContactHandle hContact=NULL;
+	TDBContactIterFilter IterFilter = {0};
 	IterFilter.cbSize = sizeof(IterFilter);
-	IterFilter.fDontHasFlags=DB_EF_IsGroup|DB_EF_IsVirtual;
-	TDBEntryIterationHandle hIter=DBEntryIterInit((WPARAM)&IterFilter,0);
+	IterFilter.fDontHasFlags=DB_CF_IsGroup|DB_CF_IsVirtual;
+	TDBContactIterationHandle hIter=DBContactIterInit((WPARAM)&IterFilter,0);
 	int nCount=0;
 	while(hIter!=DB_INVALIDPARAM && hIter!=0)
 	{
-		hEntry=DBEntryIterNext(hIter,0);
-		if(hEntry!=0 && hEntry!= DB_INVALIDPARAM)
+		hContact=DBContactIterNext(hIter,0);
+		if(hContact!=0 && hContact!= DB_INVALIDPARAM)
 			nCount++;
 	}
-	DBEntryIterClose(hIter,0);
+	DBContactIterClose(hIter,0);
 	return nCount;
 }
 int FindFirstContact(WPARAM wParam,LPARAM lParam)
 {
-	TDBEntryHandle hEntry=NULL;
-	TDBEntryIterFilter IterFilter = {0};
+	TDBContactHandle hContact=NULL;
+	TDBContactIterFilter IterFilter = {0};
 	IterFilter.cbSize = sizeof(IterFilter);
-	IterFilter.fDontHasFlags=DB_EF_IsGroup|DB_EF_IsVirtual;
-	TDBEntryIterationHandle hIter=DBEntryIterInit((WPARAM)&IterFilter,0);
+	IterFilter.fDontHasFlags=DB_CF_IsGroup|DB_CF_IsVirtual;
+	TDBContactIterationHandle hIter=DBContactIterInit((WPARAM)&IterFilter,0);
 	if(hIter!=DB_INVALIDPARAM && hIter!=0)
-		hEntry=DBEntryIterNext(hIter,0);
-	DBEntryIterClose(hIter,0);
-	if(hEntry==0 || hEntry== DB_INVALIDPARAM)
+		hContact=DBContactIterNext(hIter,0);
+	DBContactIterClose(hIter,0);
+	if(hContact==0 || hContact== DB_INVALIDPARAM)
 		return NULL;
 	else
-		return hEntry;
+		return hContact;
 }
-int FindNextContact(WPARAM hEntry,LPARAM lParam)
+int FindNextContact(WPARAM hContact,LPARAM lParam)
 {
-	TDBEntryHandle res = 0;
-	TDBEntryIterFilter filter;
+	TDBContactHandle res = 0;
+	TDBContactIterFilter filter;
 	filter.cbSize = sizeof(filter);
-	filter.fDontHasFlags = DB_EF_IsGroup | DB_EF_IsVirtual;
-	if ((hEntry == 0) || (hEntry == gDataBase->getEntries().getRootEntry()))
+	filter.fDontHasFlags = DB_CF_IsGroup | DB_CF_IsVirtual;
+	filter.Options = DB_CIFO_OSC_AC | DB_CIFO_OC_AC;
+
+	if ((hContact == 0) || (hContact == gDataBase->getContacts().getRootContact()))
 	{
-		TDBEntryIterationHandle hiter = DBEntryIterInit((WPARAM)&filter, 0);
+		TDBContactIterationHandle hiter = DBContactIterInit((WPARAM)&filter, 0);
 		if ((hiter == 0) || (hiter == DB_INVALIDPARAM))
 			return 0;
 
-		res = DBEntryIterNext(hiter, 0);
+		res = DBContactIterNext(hiter, 0);
 		if (res == DB_INVALIDPARAM)
 			res = 0;
 
-		DBEntryIterClose(hiter, 0);
+		DBContactIterClose(hiter, 0);
 	} else {
-		filter.hParentEntry = hEntry;
-
-		TDBEntryIterationHandle hiter = DBEntryIterInit((WPARAM)&filter, 0);
+		TDBContactIterationHandle hiter = DBContactIterInit((WPARAM)&filter, 0);
 		if ((hiter == 0) || (hiter == DB_INVALIDPARAM))
 			return 0;
 
-		res = DBEntryIterNext(hiter, 0);
-		while ((res != 0) && (res != DB_INVALIDPARAM) && (res != hEntry))
-			res = DBEntryIterNext(hiter, 0);
+		res = DBContactIterNext(hiter, 0);
+		while ((res != 0) && (res != DB_INVALIDPARAM) && (res != hContact))
+			res = DBContactIterNext(hiter, 0);
 
 		if ((res != 0) && (res != DB_INVALIDPARAM))
 		{
-			res = DBEntryIterNext(hiter, 0);
+			res = DBContactIterNext(hiter, 0);
 			if (res == DB_INVALIDPARAM)
 				res = 0;
 		} else {
 			res = 0;
 		}
 
-		DBEntryIterClose(hiter, 0);		
+		DBContactIterClose(hiter, 0);		
 	}
 
 	return res;

@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <map>
 #include <list>
+#include <vector>
 
 #include "stdint.h"
 #include "FileAccess.h"
@@ -12,6 +13,7 @@
 class CBlockManager
 {
 protected:
+	static const uint32_t cFreeBlockID = 0xFFFFFFFF;
 	static const uint32_t cVirtualBlockFlag = 0x00000001; // coded into addressfield of blocktable !!! malloc needs to align memory correctly !!!
 
 	#pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
@@ -37,14 +39,13 @@ protected:
 
 	#pragma pack(pop)
 
-	typedef std::map<uint32_t, uint32_t> TFreeBlockMap;
+	typedef std::multimap<uint32_t, uint32_t> TFreeBlockMap;
 
-	typedef struct TBlockTableEntry {
+	typedef struct TBlockTableContact {
 		uint32_t Addr;
 		//uint32_t Flags;
-	} TBlockTableEntry;
-	TBlockTableEntry* m_BlockTable;
-	uint32_t m_TableSize;
+	} TBlockTableContact;
+	std::vector<TBlockTableContact> m_BlockTable;
 
 	CFileAccess & m_FileAccess;
 	CCipher * m_Cipher;
@@ -61,8 +62,8 @@ protected:
 	bool InitOperation(uint32_t BlockID, uint32_t & Addr, bool & IsVirtual, TBlockHeadOcc & Header);
 	uint32_t CreateVirtualBlock(uint32_t BlockID, uint32_t ContentSize);
 
-	void InsertFreeBlock(uint32_t Addr, uint32_t Size);	
-	uint32_t FindFreePosition(uint32_t Size);
+	void InsertFreeBlock(uint32_t Addr, uint32_t Size, bool LookLeft = true, bool LookRight = true);	
+	uint32_t FindFreePosition(uint32_t & Size);
 	void RemoveFreeBlock(uint32_t Addr, uint32_t Size);
 
 	void PartWriteEncrypt(uint32_t BlockID, uint32_t Offset, uint32_t Size, void * Buffer, uint32_t Addr);
@@ -81,9 +82,10 @@ public:
 	bool WritePart(uint32_t BlockID, void * Buffer, uint32_t Offset, size_t Size, uint32_t Signature = 0);
 	bool WritePartCheck(uint32_t BlockID, void * Buffer, uint32_t Offset, size_t Size, uint32_t & Signature);
 
-	uint32_t CreateBlock(size_t Size, uint32_t Signature);
+	uint32_t CreateBlock(uint32_t Size, uint32_t Signature);
+	uint32_t CreateBlockVirtual(uint32_t Size, uint32_t Signature);
 	bool DeleteBlock(uint32_t BlockID);
 	uint32_t ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveData = true);
 
-
+	bool WriteBlockToDisk(uint32_t BlockID);
 };
