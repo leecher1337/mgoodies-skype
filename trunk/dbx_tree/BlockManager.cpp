@@ -450,7 +450,7 @@ bool CBlockManager::WritePart(uint32_t BlockID, void * Buffer, uint32_t Offset, 
 
 	if ((!isvirtual) && m_FileAccess.GetReadOnly())
 	{
-		int b = a;
+		uint32_t b = a;
 		a = CreateVirtualBlock(BlockID, h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc));
 		Read(b, false, (void*)a, h.Size - sizeof(TBlockTailOcc)); // copy block.
 		isvirtual = true;
@@ -495,7 +495,7 @@ bool CBlockManager::WritePartCheck(uint32_t BlockID, void * Buffer, uint32_t Off
 
 	if ((!isvirtual) && m_FileAccess.GetReadOnly())
 	{
-		int b = a;
+		uint32_t b = a;
 		a = CreateVirtualBlock(BlockID, h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc));
 		Read(b, false, (void*)a, h.Size - sizeof(TBlockTailOcc)); // copy block.
 		isvirtual = true;
@@ -767,6 +767,24 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 
 }
 
+bool CBlockManager::IsForcedVirtual(uint32_t BlockID)
+{
+	BlockID = BlockID >> 2;
+	if (BlockID >= m_BlockTable.size())
+		return true;
+
+	uint32_t addr = m_BlockTable[BlockID].Addr;
+	
+	if (addr == 0)
+		return true;
+
+	if (addr & cForcedVirtualBlockFlag)
+	{
+		return true;
+	}
+
+	return false;
+}
 
 bool CBlockManager::WriteBlockToDisk(uint32_t BlockID)
 {
@@ -780,7 +798,10 @@ bool CBlockManager::WriteBlockToDisk(uint32_t BlockID)
 		return true;
 
 	if (m_FileAccess.GetReadOnly())
+	{
+		m_BlockTable[BlockID >> 2].Addr = m_BlockTable[BlockID >> 2].Addr & ~cForcedVirtualBlockFlag;
 		return false;
+	}
 
 	uint32_t os = h.Size;
 	uint32_t oa = a;
@@ -795,6 +816,30 @@ bool CBlockManager::WriteBlockToDisk(uint32_t BlockID)
 	m_BlockTable[BlockID >> 2].Addr = a;
 
 	free((void*)oa);
+
+	return true;
+}
+
+bool CBlockManager::MakeBlockVirtual(uint32_t BlockID)
+{
+	uint32_t a;
+	bool isvirtual;
+	TBlockHeadOcc h;
+	if (!InitOperation(BlockID, a, isvirtual, h))
+		return false;
+
+	if (isvirtual)
+	{
+		m_BlockTable[BlockID >> 2].Addr = m_BlockTable[BlockID >> 2].Addr | cForcedVirtualBlockFlag;	
+		return true;
+	}
+
+	uint32_t b = CreateVirtualBlock(BlockID, h.Size - sizeof(h) - sizeof(TBlockTailOcc));
+	m_BlockTable[BlockID >> 2].Addr = m_BlockTable[BlockID >> 2].Addr | cForcedVirtualBlockFlag;
+
+	Read(a, false, (void*)b, h.Size - sizeof(TBlockTailOcc));
+
+	InsertFreeBlock(a, h.Size);
 
 	return true;
 }

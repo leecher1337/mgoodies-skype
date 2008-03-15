@@ -135,7 +135,7 @@ CSettingsTree * CSettings::getSettingsTree(TDBContactHandle hContact)
 	if (i != m_SettingsMap.end())
 		return i->second;
 
-	unsigned int root = m_Contacts._getSettingsRoot(hContact);
+	uint32_t root = m_Contacts._getSettingsRoot(hContact);
 	if (root == DB_INVALIDPARAM)
 		return NULL;
 
@@ -459,7 +459,7 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting)
 
 	PDBSettingDescriptor back = Setting.Descriptor;
 	Setting.Descriptor = NULL;
-	hset = ReadSetting(Setting, hset);
+	ReadSetting(Setting, hset);
 	Setting.Descriptor = back;
 
 	m_Sync.EndRead();

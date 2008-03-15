@@ -503,12 +503,12 @@ typedef uint32_t TDBEventHandle;
 /**
 	\brief this event was sent by the user. If not set this event was received.
 **/
-static const uint32_t DB_EF_Sent  = 0x00000002;
+static const uint32_t DB_EF_SENT  = 0x00000002;
 
 /**
 	\brief event has been read by the user. It does not need to be processed any more except for history.
 **/
-static const uint32_t DB_EF_Read  = 0x00000004;
+static const uint32_t DB_EF_READ  = 0x00000004;
 
 /**
 	\brief event contains the right-to-left aligned text
@@ -611,20 +611,41 @@ static const uint32_t DB_EventType_File        = 1002;  //specific limit has bee
 #define MS_DB_EVENT_WRITETODISK  "DB/Event/WriteToDisk"
 
 /**
-	\brief Retrieves a handle to the contact that owns hEvent.
+	\brief Retrieves a handle to a contact that owns hEvent.
   \param wParam = hEvent
   \param lParam = 0
 
 	\return NULL is a valid return value, meaning, as usual, the user.
 					DB_INVALIDPARAM if hDbEvent is invalid, or the handle to the contact on
 					success
-	\warning This service is exceptionally slow on reference counting contacts
-*/
+**/
 #define MS_DB_EVENT_GETCONTACT  "DB/Event/GetContact"
+
+/**
+	\brief options to create event hard link
+**/
+typedef 
+	struct TDBEventHardLink {
+		uint32_t cbSize;           /// size of the structure
+		TDBEventHandle hEvent;     /// event to link
+		TDBContactHandle hContact; /// contact to link to
+		uint32_t Flags;            /// flags, only DB_EF_VIRTUAL yet
+	} TDBEventHardLink, *PEventHardLink;
+
+/**
+	\brief Creates a hard linked event.
+
+	This service adds an existing event to a specific contact.
+  \param wParam = PEventHardLink
+  \param lParam = 0
+
+	\return 0 on success
+**/
+#define MS_DB_EVENT_CREATEHARDLINK  "DB/Event/CreateHardLink"
 
 
 /**
-	\brief Settings Filter Options for setting iteration
+	\brief Event Filter Options for event iteration
 **/
 typedef
 	struct TDBEventIterFilter {
