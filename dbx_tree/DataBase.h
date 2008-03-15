@@ -55,7 +55,8 @@ typedef struct TPrivateHeader {
 	uint32_t RootContact;          /// Offset to the Root CList Contact
 	uint32_t Contacts;            /// Offset to the ContactBTree RootNode
 	uint32_t Virtuals;           /// Offset to the VirtualsBTree RootNode	
-	uint8_t Reserved[84];        /// reserved storage
+	uint32_t EventLinks;         /// 
+	uint8_t Reserved[80];        /// reserved storage
 } TPrivateHeader;
 
 

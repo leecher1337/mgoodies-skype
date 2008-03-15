@@ -14,7 +14,8 @@ class CBlockManager
 {
 protected:
 	static const uint32_t cFreeBlockID = 0xFFFFFFFF;
-	static const uint32_t cVirtualBlockFlag = 0x00000001; // coded into addressfield of blocktable !!! malloc needs to align memory correctly !!!
+	static const uint32_t cVirtualBlockFlag = 0x00000001; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
+	static const uint32_t cForcedVirtualBlockFlag = 0x00000002; // coded into addressfield of blocktable !!! malloc needs to align memory !!!
 
 	#pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
 
@@ -87,5 +88,7 @@ public:
 	bool DeleteBlock(uint32_t BlockID);
 	uint32_t ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveData = true);
 
+	bool IsForcedVirtual(uint32_t BlockID);
 	bool WriteBlockToDisk(uint32_t BlockID);
+	bool MakeBlockVirtual(uint32_t BlockID);
 };

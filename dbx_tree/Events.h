@@ -7,9 +7,12 @@
 #include "IterationHeap.h"
 #include "Contacts.h"
 #include "Settings.h"
+#include "Hash.h"
 
 #include <hash_map>
+#include <hash_set>
 #include <time.h>
+#include <windows.h>
 
 
 #pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
@@ -17,12 +20,12 @@
 /**
 	\brief Key Type of the EventsBTree
 	
-	The Key consists of a 64bit timestamp, seconds elapsed since 1.1.1970
-	and an Index releated to the global counter in the header, which makes it possible to store multiple events with the same timestamp
+	The Key consists of a timestamp, seconds elapsed since 1.1.1970
+	and an Index, which makes it possible to store multiple events with the same timestamp
 **/
 typedef struct TEventKey {
-	unsigned int TimeStamp; /// timestamp at which the event occoured
-	unsigned int Index;     /// index counted globally
+	uint32_t TimeStamp; /// timestamp at which the event occoured
+	uint32_t Index;     /// index counted globally
 
 	bool operator <  (const TEventKey & Other) const;
 	//bool operator <= (const TEventKey & Other);
@@ -31,6 +34,19 @@ typedef struct TEventKey {
 	bool operator >  (const TEventKey & Other) const;
 } TEventKey;
 
+/**
+	\brief Key Type of the EventLinkBTree
+**/
+typedef struct TEventLinkKey {
+	TDBEventHandle   Event;    /// handle to the event
+	TDBContactHandle Contact;  /// handle to the contact which includes this event
+
+	bool operator <  (const TEventLinkKey & Other) const;
+	//bool operator <= (const TEventKey & Other);
+	bool operator == (const TEventLinkKey & Other) const;
+	//bool operator >= (const TEventKey & Other);
+	bool operator >  (const TEventLinkKey & Other) const;
+} TEventLinkKey;
 
 /**
 	\brief The data of an Event
@@ -40,14 +56,17 @@ typedef struct TEventKey {
 	- blob data (mostly UTF8 message body)
 **/
 typedef struct TEvent {
-	TDBContactHandle Contact;        /// hContact which owns this event
-	uint32_t Flags;        /// Flags
-	uint32_t TimeStamp;    /// Timestamp of the event (seconds elapsed since 1.1.1970) used as key element
-	uint32_t Index;        /// index counter to seperate events with the same timestamp
-	uint32_t Type;         /// Eventtype
-	uint32_t DataLen;      /// Length of the stored data in bytes
+	uint32_t Flags;				       /// Flags
+	uint32_t TimeStamp;          /// Timestamp of the event (seconds elapsed since 1.1.1970) used as key element
+	uint32_t Index;              /// index counter to seperate events with the same timestamp
+	uint32_t Type;               /// Eventtype
+	union {
+		TDBContactHandle Contact;  /// hContact which owns this event
+		uint32_t ReferenceCount;   /// Reference Count, if event was hardlinked
+	};
+	uint32_t DataLength;         /// Length of the stored data in bytes
 
-	char Reserved[8];      /// reserved storage
+	char Reserved[8];            /// reserved storage
 } TEvent;
 
 #pragma pack(pop)
@@ -60,36 +79,88 @@ static const uint16_t cEventNodeSignature = 0x195C;
 
 
 /**
-	\brief Manages the Events in the Database
+	\brief Manages the Events Index in the Database
 **/
 class CEventsTree : public CFileBTree<TEventKey, TDBEventHandle, 16, true>
 {
 private:
+	TDBContactHandle m_Contact;
 
-protected:
-	 CMultiReadExclusiveWriteSynchronizer & m_Sync;
 public:
 	CEventsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBContactHandle Contact);
 	~CEventsTree();
+
+	TDBContactHandle getContact();
+};
+
+/**
+	\brief Manages the Virtual Events Index
+	Sorry for duplicating code...
+**/
+class CVirtualEventsTree : public CBTree<TEventKey, TDBEventHandle, 16, true>
+{
+private:
+	TDBContactHandle m_Contact;
+
+public:
+	CVirtualEventsTree(TDBContactHandle Contact);
+	~CVirtualEventsTree();
+
+	TDBContactHandle getContact();
 };
 
 
-class CEvents 
+class CEventsTypeManager 
+{
+public:
+	CEventsTypeManager(CContacts & Contacts, CSettings & Settings);
+	~CEventsTypeManager();
+
+
+	uint32_t MakeGlobalID(char* Module, uint32_t EventType);
+	PDBEventTypeDescriptor GetDescriptor(uint32_t GlobalID);
+	uint32_t EnsureIDExists(char* Module, uint32_t EventType, char* Description);
+
+private:
+	typedef stdext::hash_map<uint32_t, PDBEventTypeDescriptor> TTypeMap;
+
+	CContacts & m_Contacts;
+	CSettings & m_Settings;
+	TTypeMap m_Map;
+
+};
+
+
+class CEventLinks : public CFileBTree<TEventLinkKey, TEmpty, 8, true>
+{
+public:
+	CEventLinks(TNodeRef RootNode);
+	~CEventLinks();
+
+private:
+
+
+};
+
+class CEvents : public sigslot::has_slots<>
 {
 public:
 
-	CEvents(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, CContacts & Contacts, CSettings & Settings);
+	CEvents(CBlockManager & BlockManager, CEventLinks::TNodeRef LinkRootNode, CMultiReadExclusiveWriteSynchronizer & Synchronize, CContacts & Contacts, CSettings & Settings);
 	~CEvents();
+
+	CEventLinks::TOnRootChanged & sigLinkRootChanged();
 
 	unsigned int TypeRegister(TDBEventTypeDescriptor & Type);
 	PDBEventTypeDescriptor TypeGet(char * ModuleName, uint32_t EventType);
 
 	unsigned int GetBlobSize(TDBEventHandle hEvent);
-	unsigned int Get(TDBEventHandle hEvent, PDBEvent Event);
+	unsigned int Get(TDBEventHandle hEvent, TDBEvent & Event);
 	unsigned int Delete(TDBContactHandle hContact, TDBEventHandle hEvent);
-	TDBEventHandle Add(TDBContactHandle hContact, PDBEvent Event);
+	TDBEventHandle Add(TDBContactHandle hContact, TDBEvent & Event);
 	unsigned int MarkRead(TDBContactHandle hContact, TDBEventHandle hEvent);
 	unsigned int WriteToDisk(TDBContactHandle hContact, TDBEventHandle hEvent);
+	unsigned int CreateHardLink(TDBEventHardLink & HardLink);
 
 	TDBContactHandle GetContact(TDBEventHandle hEvent);
 
@@ -98,19 +169,24 @@ public:
 	unsigned int IterationClose(TDBEventIterationHandle Iteration);
 
 private:
-	typedef CBTree<TEventKey, TDBEventHandle, 16, true> CVirtualEventsTree;
-
+	typedef CBTree<TEventKey, TDBEventHandle, 16, true>::iterator TEventBaseIterator;
 	typedef stdext::hash_map<TDBContactHandle, CEventsTree*> TEventsTreeMap;
 	typedef stdext::hash_map<TDBContactHandle, CVirtualEventsTree*> TVirtualEventsTreeMap;
-	typedef CIterationHeap<CSettingsTree::iterator> TEventsHeap;
+	typedef CIterationHeap<TEventBaseIterator> TEventsHeap;
 	
+	typedef stdext::hash_set<TDBContactHandle> TVirtualOwnerSet;
+	typedef stdext::hash_map<TDBEventHandle, TVirtualOwnerSet*> TVirtualOwnerMap;
+
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CBlockManager & m_BlockManager;
 
 	CContacts & m_Contacts;
-	CSettings & m_Settings;
+	CEventsTypeManager m_Types;
+	CEventLinks m_Links;
 
 	TEventsTreeMap m_EventsMap;
+	TVirtualEventsTreeMap m_VirtualEventsMap;
+	TVirtualOwnerMap m_VirtualOwnerMap;
 
 	uint32_t m_Counter;
 

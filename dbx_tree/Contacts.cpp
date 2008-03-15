@@ -272,8 +272,26 @@ bool CContacts::_setSettingsRoot(TDBContactHandle hContact, /*CSettingsTree::TNo
 	return true;
 }
 
+uint32_t CContacts::_getEventsRoot(TDBContactHandle hContact)
+{
+	/*CEventsTree::TNodeRef*/
+	uint32_t ev;
+	uint32_t sig = cContactSignature;
 
+	if (!m_BlockManager.ReadPart(hContact, &ev, offsetof(TContact, Events), sizeof(ev), sig))
+		return DB_INVALIDPARAM;
 
+	return ev;
+}
+bool CContacts::_setEventsRoot(TDBContactHandle hContact, /*CEventsTree::TNodeRef*/ uint32_t NewRoot)
+{
+	uint32_t sig = cContactSignature;
+
+	if (!m_BlockManager.WritePartCheck(hContact, &NewRoot, offsetof(TContact, Events), sizeof(NewRoot), sig))
+		return false;
+	
+	return true;
+}
 
 
 

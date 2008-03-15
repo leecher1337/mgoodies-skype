@@ -61,7 +61,7 @@ typedef struct TContact {
 	uint32_t Settings;      /// Offset to the SettingsBTree RootNode of this contact, NULL if no settings are present !invalid for Virtual contact!
 	/// TODO update type to events TNodeRef
 	uint32_t Events;        /// Offset to the EventsBTree RootNode of this contact, NULL if no events are present !invalid for Virtal contact!
-	uint32_t EventCount;    /// Count of the stored events !invalid for Virtal contact!
+	uint32_t EventCount;    /// Count of the stored events !invalid for Virtual contact!
 	uint8_t Reserved[8];           /// reserved storage
 } TContact;
 
@@ -154,6 +154,9 @@ public:
 	/*CSettingsTree::TNodeRef*/
 	uint32_t _getSettingsRoot(TDBContactHandle hContact);
 	bool _setSettingsRoot(TDBContactHandle hContact, /*CSettingsTree::TNodeRef*/ uint32_t NewRoot);
+	uint32_t _getEventsRoot(TDBContactHandle hContact);
+	bool _setEventsRoot(TDBContactHandle hContact, /*CSettingsTree::TNodeRef*/ uint32_t NewRoot);
+
 
 	//Services:
 	TDBContactHandle getRootContact();
