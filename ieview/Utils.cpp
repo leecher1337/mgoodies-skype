@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include "Utils.h"
-
+#include <ctype.h>
 wchar_t Utils::base_dir[MAX_PATH];
 unsigned Utils::hookNum = 0;
 unsigned Utils::serviceNum = 0;
@@ -284,14 +284,14 @@ void Utils::UTF8Encode(const wchar_t *wtext, char *output, int maxLen) {
 int Utils::detectURL(const wchar_t *text) {
 	int i;
 	for (i=0;text[i]!='\0';i++) {
-		if (!((text[i] >= '0' && text[i]<='9') || (text[i] >= 'A' && text[i]<='Z') || (text[i] >= 'a' && text[i]<='z'))) {
+		if (!((text[i] >= '0' && text[i]<='9') || iswalpha(text[i]))) {
 			break;
 		}
 	}
 	if (i > 0 && text[i]==':' && text[i+1]=='/' && text[i+2]=='/') {
 		i += countNoWhitespace(text+i);
 		for (; i > 0; i --) {
-			if ((text[i-1] >= '0' && text[i-1]<='9') || (text[i-1] >= 'A' && text[i-1]<='Z') || (text[i-1] >= 'a' && text[i-1]<='z') || text[i-1]=='/') {
+			if ((text[i-1] >= '0' && text[i-1]<='9') || iswalpha(text[i-1]) || text[i-1]=='/') {
 				break;
 			}
 		}
