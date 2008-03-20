@@ -51,11 +51,11 @@ protected:
         ENF_CHAT_FORMATTING = 256
     };
 //	virtual char *encode(const char *text, const char *proto, bool replaceSmiley);
-	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const wchar_t *text, int flags);
-	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const char *text, int flags);
-	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const char *text, int cp, int flags);
-	virtual wchar_t *encode(HANDLE hContact, const char *proto, const wchar_t *text, int flags);
-	virtual bool encode(HANDLE hContact, const char *proto, const wchar_t *text, wchar_t **output, int *outputSize,  int level, int flags);
+	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const wchar_t *text, int flags, bool isSent);
+	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const char *text, int flags, bool isSent);
+	virtual char *encodeUTF8(HANDLE hContact, const char *proto, const char *text, int cp, int flags, bool isSent);
+	virtual wchar_t *encode(HANDLE hContact, const char *proto, const wchar_t *text, int flags, bool isSent);
+	virtual bool encode(HANDLE hContact, const char *proto, const wchar_t *text, wchar_t **output, int *outputSize,  int level, int flags, bool isSent);
 	virtual char* getProto(HANDLE hContact);
 	virtual char* getProto(const char *proto, HANDLE hContact);
 	virtual char* getRealProto(HANDLE hContact);

@@ -175,14 +175,14 @@ void ChatHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event) {
 		bool showIcon = false;
 
 		if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
-			szText = encodeUTF8(NULL, event->pszProto, eventData->pszTextW, ENF_ALL | ENF_CHAT_FORMATTING);
+			szText = encodeUTF8(NULL, event->pszProto, eventData->pszTextW, ENF_ALL | ENF_CHAT_FORMATTING, isSent);
 		} else {
-			szText = encodeUTF8(NULL, event->pszProto, (char *)eventData->pszText, ENF_ALL | ENF_CHAT_FORMATTING);
+			szText = encodeUTF8(NULL, event->pszProto, (char *)eventData->pszText, ENF_ALL | ENF_CHAT_FORMATTING, isSent);
 		}
 		if (eventData->dwFlags & IEEDF_UNICODE_NICK) {
-			szName = encodeUTF8(NULL, event->pszProto, eventData->pszNickW, ENF_NAMESMILEYS);
+			szName = encodeUTF8(NULL, event->pszProto, eventData->pszNickW, ENF_NAMESMILEYS, true);
 		} else {
-			szName = encodeUTF8(NULL, event->pszProto, (char *) eventData->pszNick, ENF_NAMESMILEYS);
+			szName = encodeUTF8(NULL, event->pszProto, (char *) eventData->pszNick, ENF_NAMESMILEYS, true);
 		}
 		if (eventData->iType == IEED_GC_EVENT_MESSAGE) {
 			iconFile = isSent ? "message_out_chat.gif" : "message_in_chat.gif";

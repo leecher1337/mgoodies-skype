@@ -426,7 +426,7 @@ TextToken* TextToken::tokenizeLinks(const wchar_t *text) {
     return firstToken;
 }
 
-TextToken* TextToken::tokenizeSmileys(HANDLE hContact, const char *proto, const wchar_t *text) {
+TextToken* TextToken::tokenizeSmileys(HANDLE hContact, const char *proto, const wchar_t *text, bool isSent) {
     TextToken *firstToken = NULL, *lastToken = NULL;
     SMADD_BATCHPARSE2 sp;
     SMADD_BATCHPARSERES *spRes;
@@ -436,7 +436,7 @@ TextToken* TextToken::tokenizeSmileys(HANDLE hContact, const char *proto, const 
 	}
 	sp.cbSize = sizeof(sp);
 	sp.Protocolname = proto;
-	sp.flag = SAFL_PATH | SAFL_UNICODE;
+	sp.flag = SAFL_PATH | SAFL_UNICODE | (isSent ? SAFL_OUTGOING : 0);
 	sp.wstr = (wchar_t *)text;
 	sp.hContact = hContact;
 	spRes = (SMADD_BATCHPARSERES *) CallService(MS_SMILEYADD_BATCHPARSE, 0, (LPARAM)&sp);

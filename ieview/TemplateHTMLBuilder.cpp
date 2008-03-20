@@ -222,7 +222,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	ci.szProto = szProto;
 	ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-		szNickIn = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS);
+		szNickIn = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS, true);
 	}
 	ZeroMemory(&ci, sizeof(ci));
 	ci.cbSize = sizeof(ci);
@@ -230,7 +230,7 @@ void TemplateHTMLBuilder::buildHeadTemplate(IEView *view, IEVIEWEVENT *event, Pr
 	ci.szProto = szProto;
 	ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-		szNickOut = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS);
+		szNickOut = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS, true);
 	}
 
 	Template *tmplt = tmpm->getTemplate(((event->dwFlags & IEEF_RTL) && tmpm->isRTL()) ? "HTMLStartRTL" : "HTMLStart");
@@ -398,7 +398,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	ci.szProto = szProto;
 	ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-		szNickIn = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS);
+		szNickIn = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS, true);
 	}
 	ZeroMemory(&ci, sizeof(ci));
 	ci.cbSize = sizeof(ci);
@@ -406,7 +406,7 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 	ci.szProto = szProto;
 	ci.dwFlag = CNF_NICK;
 	if (!CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci)) {
-		szNickOut = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS);
+		szNickOut = encodeUTF8(event->hContact, szRealProto, ci.pszVal, ENF_NAMESMILEYS, true);
 	}
 	IEVIEWEVENTDATA* eventData = event->eventData;
 	for (int eventIdx = 0; eventData!=NULL && (eventIdx < event->count || event->count==-1); eventData = eventData->next, eventIdx++) {
@@ -441,19 +441,19 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 			szText = NULL;
 			szFileDesc = NULL;
 			if (event->eventData->dwFlags & IEEDF_UNICODE_NICK) {
-				szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNickW, ENF_NAMESMILEYS);
+				szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNickW, ENF_NAMESMILEYS, true);
 			} else {
-				szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNick, ENF_NAMESMILEYS);
+				szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNick, ENF_NAMESMILEYS, true);
 			}
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
-				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
+				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0, isSent);
    			} else {
-				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszText, event->codepage, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
+				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszText, event->codepage, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0, isSent);
 			}
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT2) {
-				szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2W, 0);
+				szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2W, 0, isSent);
    			} else {
-				szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2, event->codepage, 0);
+				szFileDesc = encodeUTF8(event->hContact, szRealProto, eventData->pszText2, event->codepage, 0, isSent);
 			}
 			if ((eventData->iType == IEED_EVENT_MESSAGE)) {
 				if (!isRTL) {
@@ -634,4 +634,5 @@ void TemplateHTMLBuilder::appendEventTemplate(IEView *view, IEVIEWEVENT *event, 
 time_t TemplateHTMLBuilder::getStartedTime() {
 	return startedTime;
 }
+
 

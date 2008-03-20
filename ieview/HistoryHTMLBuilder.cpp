@@ -236,14 +236,14 @@ void HistoryHTMLBuilder::appendEventNonTemplate(IEView *view, IEVIEWEVENT *event
 			char *szName = NULL;
 			char *szText = NULL;
 			if (eventData->dwFlags & IEEDF_UNICODE_NICK) {
-				szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNickW, ENF_NAMESMILEYS);
+				szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNickW, ENF_NAMESMILEYS, true);
    			} else {
-                szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNick, ENF_NAMESMILEYS);
+                szName = encodeUTF8(event->hContact, szRealProto, eventData->pszNick, ENF_NAMESMILEYS, true);
 			}
 			if (eventData->dwFlags & IEEDF_UNICODE_TEXT) {
-				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
+				szText = encodeUTF8(event->hContact, szRealProto, eventData->pszTextW, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0, isSent);
    			} else {
-                szText = encodeUTF8(event->hContact, szRealProto, eventData->pszText, event->codepage, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0);
+                szText = encodeUTF8(event->hContact, szRealProto, eventData->pszText, event->codepage, eventData->iType == IEED_EVENT_MESSAGE ? ENF_ALL : 0, isSent);
 			}
 			/* History++-specific formatting */
 			const char *className = NULL;

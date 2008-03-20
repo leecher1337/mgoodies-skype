@@ -58,7 +58,7 @@ bool HTMLBuilder::isUnicodeMIM() {
 	return (mimFlags & MIM_UNICODE) != 0;
 }
 
-bool HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text, wchar_t **output, int *outputSize,  int level, int flags) {
+bool HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text, wchar_t **output, int *outputSize,  int level, int flags, bool isSent) {
 	TextToken *token = NULL, *token2;
 	switch (level) {
 	case 0:
@@ -85,7 +85,7 @@ bool HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text
 	case 4:
 		if ((flags & ENF_SMILEYS) ||
       			((Options::getGeneralFlags() & Options::GENERAL_SMILEYINNAMES) &&  (flags & ENF_NAMESMILEYS))) {
-			token = TextToken::tokenizeSmileys(hContact, proto, text);
+			token = TextToken::tokenizeSmileys(hContact, proto, text, isSent);
 		}
 		break;
 	}
@@ -94,7 +94,7 @@ bool HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text
 			bool skip = false;
 			token2 = token->getNext();
 			if (token->getType() == TextToken::TEXT) {
-				skip = encode(hContact, proto, token->getTextW(), output, outputSize, level+1, flags);
+				skip = encode(hContact, proto, token->getTextW(), output, outputSize, level+1, flags, isSent);
 			}
 			if (!skip) {
 				token->toString(output, outputSize);
@@ -106,20 +106,20 @@ bool HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text
 	return false;
 }
 
-wchar_t * HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text, int flags ) {
+wchar_t * HTMLBuilder::encode(HANDLE hContact, const char *proto, const wchar_t *text, int flags, bool isSent) {
  	int outputSize;
 	wchar_t *output = NULL;
 	if (text != NULL) {
-		encode(hContact, proto, text, &output, &outputSize, 0, flags);
+		encode(hContact, proto, text, &output, &outputSize, 0, flags, isSent);
 	}
 	return output;
 }
 
 
-char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const wchar_t *wtext, int flags) {
+char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const wchar_t *wtext, int flags, bool isSent) {
 	char *outputStr = NULL;
 	if (wtext != NULL) {
-		wchar_t *output = encode(hContact, proto, wtext, flags);
+		wchar_t *output = encode(hContact, proto, wtext, flags, isSent);
 		outputStr = Utils::UTF8Encode(output);
 		if (output != NULL) {
 			free(output);
@@ -128,21 +128,21 @@ char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const wchar_t
 	return outputStr;
 }
 
-char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const char *text, int flags) {
+char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const char *text, int flags, bool isSent) {
 	char *outputStr = NULL;
 	if (text != NULL) {
 		wchar_t *wtext = Utils::convertToWCS(text);
-		outputStr = encodeUTF8(hContact, proto, wtext, flags);
+		outputStr = encodeUTF8(hContact, proto, wtext, flags, isSent);
 		delete wtext;
 	}
 	return outputStr;
 }
 
-char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const char *text, int cp, int flags) {
+char * HTMLBuilder::encodeUTF8(HANDLE hContact, const char *proto, const char *text, int cp, int flags, bool isSent) {
 	char * outputStr = NULL;
 	if (text != NULL) {
 		wchar_t *wtext = Utils::convertToWCS(text, cp);
-		outputStr = encodeUTF8(hContact, proto, wtext, flags);
+		outputStr = encodeUTF8(hContact, proto, wtext, flags, isSent);
 		delete wtext;
 	}
 	return outputStr;
@@ -313,11 +313,11 @@ char *HTMLBuilder::getEncodedContactName(HANDLE hContact, const char* szProto, c
 	char *szName = NULL;
 	wchar_t *name = getContactName(hContact, szProto);
 	if (name != NULL) {
-		szName = encodeUTF8(hContact, szSmileyProto, name, ENF_NAMESMILEYS);
+		szName = encodeUTF8(hContact, szSmileyProto, name, ENF_NAMESMILEYS, true);
 		delete name;
 		return szName;
 	}
-    return encodeUTF8(hContact, szSmileyProto, TranslateT("(Unknown Contact)"), ENF_NAMESMILEYS);
+    return encodeUTF8(hContact, szSmileyProto, TranslateT("(Unknown Contact)"), ENF_NAMESMILEYS, true);
 }
 
 void HTMLBuilder::appendEventNew(IEView *view, IEVIEWEVENT *event) {
