@@ -32,24 +32,11 @@ TCHAR *workingDir;
 static int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 static int PreShutdown(WPARAM wParam, LPARAM lParam);
 
-PLUGININFO pluginInfo = {
-	sizeof(PLUGININFO),
-	"IEView",
-	PLUGIN_MAKE_VERSION(1,0,9,10),
-	"IE Based Chat Log (1.0.9.10 "__DATE__")",
-	"Piotr Piastucki, Francois Mean",
-	"the_leech@users.berlios.de",
-	"(c) 2005-2007 Piotr Piastucki, Francois Mean",
-	"http://developer.berlios.de/projects/mgoodies",
-	UNICODE_AWARE,
-	0
-};
-
 PLUGININFOEX pluginInfoEx = {
 	sizeof(PLUGININFOEX),
 	"IEView",
-	PLUGIN_MAKE_VERSION(1,0,9,12),
-	"IE Based Chat Log (1.0.9.12 "__DATE__")",
+	PLUGIN_MAKE_VERSION(1,1,0,0),
+	"IE Based Chat Log (1.1.0.0 "__DATE__")",
 	"Piotr Piastucki, Francois Mean",
 	"the_leech@users.berlios.de",
 	"(c) 2005-2008 Piotr Piastucki, Francois Mean",
@@ -63,14 +50,6 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpvRese
 {
 	hInstance = hModule;
 	return TRUE;
-}
-
-extern "C" __declspec(dllexport) PLUGININFO *MirandaPluginInfo(DWORD mirandaVersion)
-{
-	if (mirandaVersion < PLUGIN_MAKE_VERSION(0,6,0,0)) {
-		return NULL;
-	}
-	return &pluginInfo;
 }
 
 extern "C" __declspec(dllexport) PLUGININFOEX *MirandaPluginInfoEx(DWORD mirandaVersion)
