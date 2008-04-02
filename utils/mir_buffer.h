@@ -414,28 +414,12 @@ static void ReplaceVars(Buffer<TCHAR> *buffer, HANDLE hContact, TCHAR **variable
 
 static void ReplaceTemplate(Buffer<TCHAR> *out, HANDLE hContact, TCHAR *templ, TCHAR **vars, int numVars)
 {
-	if (ServiceExists(MS_VARS_FORMATSTRING_EX)) 
+
+	if (ServiceExists(MS_VARS_FORMATSTRING)) 
 	{
 		TCHAR *tmp = variables_parse_ex(templ, NULL, hContact, vars, numVars);
 		if (tmp != NULL)
 		{
-			out->append(tmp);
-			variables_free(tmp);
-			out->pack();
-			return;
-		}
-	}
-
-	if (ServiceExists(MS_VARS_FORMATSTRING)) 
-	{
-		out->append(templ);
-		ReplaceVars(out, hContact, vars, numVars);
-		out->pack();
-
-		TCHAR *tmp = variables_parse(out->str, NULL, hContact);
-		if (tmp != NULL)
-		{
-			out->clear();
 			out->append(tmp);
 			variables_free(tmp);
 			out->pack();
