@@ -99,6 +99,13 @@ Alternatively, you may install AvatarService plugin and IEView will automaticall
 
 6. Change Log
 -------------
+1.1.0.0
++ initial support for group chats (compatibility mode)
++ new BBCode - [code]
+* improvements in SmileAdd support
+* improved URL detection
+* improved Jabber chat states handling (patch by Andrey Balaguta)
+* fix for random crash (buffer overflow)
 1.0.9.10
 * support for UTF-8 encoded messages (required by Miranda 0.7 build #30)
 * critical changes in RTL templates (existing template files should be modified and they SHOULD provide HTMLStartRTL, MessageInRTL and MessageOutRTL templates to be recognized as RTL-compliant in the future IEView releases, 
