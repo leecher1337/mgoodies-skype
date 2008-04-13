@@ -9,7 +9,7 @@ CBlockManager::CBlockManager(CFileAccess & FileAccess)
 {
 
 	m_BlockTable[0].Addr = 0;
-
+	m_Cipher = NULL;
 	m_Granularity = 4;
 
 }
@@ -65,12 +65,13 @@ uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignat
 		p = p + h.Size;
 	}
 
-	for (uint32_t i = 1; i < m_BlockTable.size(); ++i)
+	for (uint32_t i = m_BlockTable.size() - 1; i > 0; --i)
 	{
 		if (m_BlockTable[i].Addr == 0)
 			m_FreeIDs.push_back(i);
 	}
 
+	printf("Block Count = %d\n", m_BlockTable.size() - m_FreeIDs.size());
 	return res;
 }
 
@@ -108,6 +109,9 @@ inline void CBlockManager::Zero(uint32_t Addr, bool IsVirtual, uint32_t Size)
 
 inline bool CBlockManager::InitOperation(uint32_t BlockID, uint32_t & Addr, bool & IsVirtual, TBlockHeadOcc & Header)
 {
+	if (BlockID & 3) 
+		return false;
+
 	BlockID = BlockID >> 2;
 	if (BlockID >= m_BlockTable.size())
 		return false;
@@ -355,10 +359,6 @@ bool CBlockManager::WriteBlockCheck(uint32_t BlockID, void * Buffer, size_t Size
 
 bool CBlockManager::ReadPart(uint32_t BlockID, void * Buffer, uint32_t Offset, size_t Size, uint32_t & Signature)
 {
-	//if ((Size == 0) || ((Buffer == NULL) ^ (Size == 0))) // if the one is specified the other must be too
-	if ((Size == 0) || (Buffer == NULL)) // same as above, simplified
-		return false;
-
 	uint32_t a;
 	bool isvirtual;
 	TBlockHeadOcc h;
@@ -372,6 +372,10 @@ bool CBlockManager::ReadPart(uint32_t BlockID, void * Buffer, uint32_t Offset, s
 		return false;
 	}
 	Signature = h.Signature;
+
+	//if ((Size == 0) || ((Buffer == NULL) ^ (Size == 0))) // if the one is specified the other must be too
+	if ((Size == 0) || (Buffer == NULL)) // same as above, simplified
+		return false;
 
 	if ((Size + Offset > h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc)))
 		return false;
@@ -526,11 +530,11 @@ uint32_t CBlockManager::CreateBlock(uint32_t Size, uint32_t Signature)
 
 		m_BlockTable.resize(m_BlockTable.size() << 1);
 				
-		for (uint32_t i = 1 + id; i < m_BlockTable.size(); ++i)
+		for (uint32_t i = m_BlockTable.size() - 1; i > id; --i)
 			m_FreeIDs.push_back(i);
 	} else {
-		id = m_FreeIDs.front();
-		m_FreeIDs.pop_front();
+		id = m_FreeIDs.back();
+		m_FreeIDs.pop_back();
 	}
 
 	TBlockHeadOcc h;
@@ -570,11 +574,11 @@ uint32_t CBlockManager::CreateBlockVirtual(uint32_t Size, uint32_t Signature)
 
 		m_BlockTable.resize(m_BlockTable.size() << 1);
 				
-		for (uint32_t i = 1 + id; i < m_BlockTable.size(); ++i)
+		for (uint32_t i = m_BlockTable.size() - 1; i > id; --i)
 			m_FreeIDs.push_back(i);
 	} else {
-		id = m_FreeIDs.front();
-		m_FreeIDs.pop_front();
+		id = m_FreeIDs.back();
+		m_FreeIDs.pop_back();
 	}
 
 	TBlockHeadOcc h;

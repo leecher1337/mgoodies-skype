@@ -2,7 +2,6 @@
 
 #include <windows.h>
 #include <map>
-#include <list>
 #include <vector>
 
 #include "stdint.h"
@@ -54,7 +53,7 @@ protected:
 	uint32_t m_FirstBlockStart;
 	uint32_t m_Granularity;
 	TFreeBlockMap m_FreeBlocks;
-	std::list<uint32_t> m_FreeIDs;
+	std::vector<uint32_t> m_FreeIDs;
 
 	void Read(uint32_t Addr, bool IsVirtual, void* Buffer, uint32_t Size);
 	void Write(uint32_t Addr, bool IsVirtual, void* Buffer, uint32_t Size);

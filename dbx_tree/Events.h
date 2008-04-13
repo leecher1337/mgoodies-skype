@@ -11,6 +11,7 @@
 
 #include <hash_map>
 #include <hash_set>
+#include <queue>
 #include <time.h>
 #include <windows.h>
 
@@ -66,7 +67,7 @@ typedef struct TEvent {
 	};
 	uint32_t DataLength;         /// Length of the stored data in bytes
 
-	char Reserved[8];            /// reserved storage
+	uint8_t Reserved[8];            /// reserved storage
 } TEvent;
 
 #pragma pack(pop)
@@ -75,6 +76,7 @@ typedef struct TEvent {
 
 static const uint32_t cEventSignature = 0x365A7E92;
 static const uint16_t cEventNodeSignature = 0x195C;
+static const uint16_t cEventLinkNodeSignature = 0xC16A;
 
 
 
@@ -134,7 +136,7 @@ private:
 class CEventLinks : public CFileBTree<TEventLinkKey, TEmpty, 8, true>
 {
 public:
-	CEventLinks(TNodeRef RootNode);
+	CEventLinks(CBlockManager & BlockManager, TNodeRef RootNode);
 	~CEventLinks();
 
 private:
@@ -169,10 +171,10 @@ public:
 	unsigned int IterationClose(TDBEventIterationHandle Iteration);
 
 private:
-	typedef CBTree<TEventKey, TDBEventHandle, 16, true>::iterator TEventBaseIterator;
+	typedef CBTree<TEventKey, TDBEventHandle, 16, true> TEventBase;
 	typedef stdext::hash_map<TDBContactHandle, CEventsTree*> TEventsTreeMap;
 	typedef stdext::hash_map<TDBContactHandle, CVirtualEventsTree*> TVirtualEventsTreeMap;
-	typedef CIterationHeap<TEventBaseIterator> TEventsHeap;
+	typedef CIterationHeap<TEventBase::iterator> TEventsHeap;
 	
 	typedef stdext::hash_set<TDBContactHandle> TVirtualOwnerSet;
 	typedef stdext::hash_map<TDBEventHandle, TVirtualOwnerSet*> TVirtualOwnerMap;
@@ -193,7 +195,7 @@ private:
 	typedef struct TEventIteration {
 		TDBEventIterFilter Filter;
 		TEventsHeap * Heap;
-		TEventKey LastKey;
+		TDBEventHandle LastEvent;
 	} TEventIteration, *PEventIteration;
 
 	unsigned int m_IterAllocSize;

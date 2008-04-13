@@ -962,18 +962,18 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 		}
 		f.Options = Filter.Options;
 
-		TDBContactIterationHandle iter = m_Contacts.IterationInit(f, Filter.hContact);
-		if (iter != DB_INVALIDPARAM)
+		TDBContactIterationHandle citer = m_Contacts.IterationInit(f, Filter.hContact);
+		if (citer != DB_INVALIDPARAM)
 		{
-			m_Contacts.IterationNext(iter); // the initial contact was already added
-			TDBContactHandle e = m_Contacts.IterationNext(iter);
+			m_Contacts.IterationNext(citer); // the initial contact was already added
+			TDBContactHandle e = m_Contacts.IterationNext(citer);
 			while (e != 0)
 			{
 				contacts.push(e);
-				e = m_Contacts.IterationNext(iter);
+				e = m_Contacts.IterationNext(citer);
 			}
 
-			m_Contacts.IterationClose(iter);
+			m_Contacts.IterationClose(citer);
 		}
 	}
 
