@@ -20,6 +20,68 @@ inline bool TEventKey::operator >  (const TEventKey & Other) const
 }
 
 
+inline bool TEventLinkKey::operator <  (const TEventLinkKey & Other) const
+{
+	if (Event != Other.Event) return Event < Other.Event;
+	if (Contact != Other.Contact) return Contact < Other.Contact;
+	return false;
+}
+
+inline bool TEventLinkKey::operator == (const TEventLinkKey & Other) const
+{
+	return (Event == Other.Event) && (Contact == Other.Contact);
+}	
+
+inline bool TEventLinkKey::operator >  (const TEventLinkKey & Other) const
+{
+	if (Event != Other.Event) return Event > Other.Event;
+	if (Contact != Other.Contact) return Contact > Other.Contact;
+	return false;
+}
+
+
+
+CEventsTree::CEventsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBContactHandle Contact)
+:	CFileBTree(BlockManager, RootNode, cEventNodeSignature)
+{
+	m_Contact = Contact;
+}
+CEventsTree::~CEventsTree()
+{
+
+}
+
+TDBContactHandle CEventsTree::getContact()
+{
+	return m_Contact;
+};
+
+
+CVirtualEventsTree::CVirtualEventsTree(TDBContactHandle Contact)
+:	CBTree(0)
+{
+	m_Contact = Contact;
+}
+CVirtualEventsTree::~CVirtualEventsTree()
+{
+
+}
+
+TDBContactHandle CVirtualEventsTree::getContact()
+{
+	return m_Contact;
+};
+
+
+CEventLinks::CEventLinks(CBlockManager & BlockManager, TNodeRef RootNode)
+: CFileBTree(BlockManager, RootNode, cEventLinkNodeSignature)
+{
+
+}
+CEventLinks::~CEventLinks()
+{
+
+}
 
 
 
@@ -183,12 +245,12 @@ CEvents::CEvents(CBlockManager & BlockManager, CEventLinks::TNodeRef LinkRootNod
 	m_BlockManager(BlockManager),	
 	m_Contacts(Contacts),
 	m_Types(Contacts, Settings),
-	m_Links(LinkRootNode),
+	m_Links(BlockManager, LinkRootNode),
 	m_EventsMap(),
 	m_VirtualEventsMap(),
 	m_VirtualOwnerMap()
 {
-	srand(time(NULL) + GetTickCount() + GetCurrentThreadId());
+	srand(_time32(NULL) + GetTickCount() + GetCurrentThreadId());
 	m_Counter = rand() & 0xffff;
 
 	m_IterAllocSize = 1;
@@ -747,13 +809,174 @@ unsigned int CEvents::CreateHardLink(TDBEventHardLink & HardLink)
 
 TDBEventIterationHandle CEvents::IterationInit(TDBEventIterFilter & Filter)
 {
+	m_Sync.BeginWrite();
 
+	unsigned int i = 0;
+
+	while ((i < m_IterAllocSize) && (m_Iterations[i] != NULL))
+		i++;
+
+	if (i == m_IterAllocSize)
+	{
+		m_IterAllocSize = m_IterAllocSize << 1;
+		m_Iterations = (PEventIteration*)realloc(m_Iterations, sizeof(PEventIteration*) * m_IterAllocSize);
+	}
+
+	CEventsTree * tree = getEventsTree(Filter.hContact);
+	CVirtualEventsTree * vtree = getVirtualEventsTree(Filter.hContact);
+
+	if ((tree == NULL) || (vtree == NULL))
+	{
+		m_Sync.EndWrite();
+		return DB_INVALIDPARAM;
+	}
+
+	std::queue<TEventBase * > q;
+	q.push(tree);
+	q.push(vtree);
+
+	TDBContactIterFilter f = {0};
+	f.cbSize = sizeof(f);
+	f.Options = Filter.Options;
+	
+	TDBContactIterationHandle citer = m_Contacts.IterationInit(f, Filter.hContact);
+	if (citer != DB_INVALIDPARAM)
+	{
+		m_Contacts.IterationNext(citer);
+		TDBContactHandle c = m_Contacts.IterationNext(citer);
+		while (c != 0)
+		{
+			tree = getEventsTree(c);
+			if (tree)
+			{
+				q.push(tree);
+				
+				vtree = getVirtualEventsTree(c);
+				if (vtree)
+					q.push(vtree);
+			}
+
+			c = m_Contacts.IterationNext(citer);
+		}
+
+		m_Contacts.IterationClose(citer);
+	}
+
+	for (unsigned int j = 0; j < Filter.ExtraCount; ++j)
+	{
+		tree = getEventsTree(Filter.ExtraContacts[j]);
+		if (tree)
+		{
+			q.push(tree);
+			
+			vtree = getVirtualEventsTree(Filter.ExtraContacts[j]);
+			if (vtree)
+				q.push(vtree);
+		}
+	}	
+
+	PEventIteration iter = new TEventIteration;
+	iter->Filter = Filter;
+	iter->LastEvent = 0;
+
+	TEventKey key;
+	key.Index = 0;
+	key.TimeStamp = Filter.tSince;
+
+	while (!q.empty())
+	{
+		TEventBase * b = q.front();
+		q.pop();
+
+		TEventBase::iterator it = b->LowerBound(key);
+		if (it)
+		{
+			TEventBase::iterator * it2 = new TEventBase::iterator(it);
+			it2->setManaged();
+			if (iter->Heap)
+			{
+				iter->Heap->Insert(*it2);
+			} else {				
+				iter->Heap = new TEventsHeap(*it2, TEventsHeap::ITForward, true);
+			}
+		}		
+	}
+
+
+
+	if (iter->Heap == NULL)
+	{
+		delete iter;
+		i = DB_INVALIDPARAM - 1;
+	} else {
+		m_Iterations[i] = iter;
+	}
+
+	m_Sync.EndWrite();
+
+	return i + 1;
 }
 TDBEventHandle CEvents::IterationNext(TDBEventIterationHandle Iteration)
 {
+	m_Sync.BeginRead();
 
+	if (Iteration == 0)
+		return 0;
+
+	if ((Iteration > m_IterAllocSize) || (m_Iterations[Iteration - 1] == NULL))
+	{
+		m_Sync.EndRead();
+		return DB_INVALIDPARAM;
+	}
+
+	PEventIteration iter = m_Iterations[Iteration - 1];
+	uint32_t sig = cEventSignature;
+
+	TDBEventHandle res = 0;
+	TEventBase::iterator it = iter->Heap->Top();
+	
+	while ((it) && (it.Key().TimeStamp <= iter->Filter.tTill) && (it.Data() == iter->LastEvent))
+	{
+		iter->Heap->Pop();
+		it = iter->Heap->Top();
+	}
+
+	if ((it) && (it.Key().TimeStamp <= iter->Filter.tTill))
+	{
+		res = it.Data();
+		iter->Heap->Pop();
+	}
+
+	if (res)
+	{
+		iter->LastEvent = res;
+		if (iter->Filter.Event)
+		{
+			iter->Filter.Event->EventType = 0;
+			Get(res, *iter->Filter.Event);
+		}
+	}
+
+	m_Sync.EndRead();
+
+	return res;
 }
 unsigned int CEvents::IterationClose(TDBEventIterationHandle Iteration)
 {
+	m_Sync.BeginWrite();
 
+	if ((Iteration > m_IterAllocSize) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
+	{
+		m_Sync.EndWrite();
+		return DB_INVALIDPARAM;
+	}
+
+	delete m_Iterations[Iteration - 1]->Heap;
+	delete m_Iterations[Iteration - 1];
+
+	m_Iterations[Iteration - 1] = NULL;
+
+	m_Sync.EndWrite();
+
+	return 0;
 }

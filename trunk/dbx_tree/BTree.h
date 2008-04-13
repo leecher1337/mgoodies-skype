@@ -112,12 +112,14 @@ protected:
 	TOnRootChanged m_sigRootChanged;
 	TManagedMap	m_ManagedIterators;
 
+	bool m_DestroyTree;
+
 	virtual TNodeRef CreateNewNode();
 	virtual void DeleteNode(TNodeRef Node);
 	virtual void Read(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Dest);
 	virtual void Write(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Source);
 
-	virtual void DestroyTree();
+	void DestroyTree();
 
 
 private:
@@ -146,6 +148,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::CBTree(TNodeRef RootNode = NULL)
 	m_ManagedIterators()
 {
 	m_Root = RootNode;
+	m_DestroyTree = true;
 }
 
 template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
@@ -158,7 +161,9 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::~CBTree()
 		i++;
 	}
 	m_ManagedIterators.clear();
-	DestroyTree();
+
+	if (m_DestroyTree)
+		DestroyTree();
 }
 
 template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
@@ -174,10 +179,10 @@ inline bool CBTree<TKey, TData, SizeParam, UniqueKeys>::InNodeFind(const TNode &
 	*/
 
 	uint16_t l = 0;
-	uint16_t r = (Node.Info & cKeyCountMask) - 1;
+	uint16_t r = (Node.Info & cKeyCountMask);
 	bool res = false;
 	GreaterEqual = 0;
-	while ((l <= r) && !res)
+	while ((l < r) && !res)
 	{
 		GreaterEqual = (l + r) >> 1;
 		if (Node.Key[GreaterEqual] < Key)
@@ -189,7 +194,7 @@ inline bool CBTree<TKey, TData, SizeParam, UniqueKeys>::InNodeFind(const TNode &
 			//r = -1;
 			res = true;
 		} else {
-			r = GreaterEqual - 1;
+			r = GreaterEqual;
 		}
 	}
 
@@ -861,6 +866,9 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 
 	bool wasmanaged = Item.m_Managed;
 
+	Item.m_LoadedData = false;
+	Item.m_LoadedKey = false;
+
 	if (Item.m_Managed)
 	{
 		Item.m_Managed = false;
@@ -876,294 +884,316 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 
 	ReadNode(Item.m_Node, node);
 
-	if (((node.Info & cKeyCountMask) > cEmptyNode) && (node.Info & cIsLeafMask)) // the easy one: delete in a leaf which is not empty
+	if ((((node.Info & cKeyCountMask) > cEmptyNode) || (Item.m_Node == m_Root)) && (node.Info & cIsLeafMask)) // the easy one: delete in a leaf which is not empty
 	{
 		KeyDelete(Item.m_Node, node, Item.m_Index);
-		WriteNode(Item.m_Node, node);
-
-		if ((node.Info & cKeyCountMask) == Item.m_Index) // deleted last item, go up
+		
+		if ((Item.m_Node == m_Root) && ((node.Info & cKeyCountMask) == 0))
 		{
-			++Item;
+			// root node is empty. delete it
+			DeleteNode(m_Root);
+			m_Root = 0;
+			m_sigRootChanged.emit(this, m_Root);
+
+			Item.m_Node = 0;
+			Item.m_Index = 0xFFFF;
+		} else {
+			WriteNode(Item.m_Node, node);
+
+			if (Item.m_Index == (node.Info & cKeyCountMask))
+				++Item;
 		}
+		if (wasmanaged)
+			Item.setManaged();
 
-	} else { // the hard one :(
+		return;
 
-		TNode node2, lnode = {0}, rnode = {0}, tmp;
-		TNodeRef actnode = m_Root;
-		TNodeRef nextnode, l, r;
-		bool exists, skipread;
-		uint16_t ge;
+	} 
+	
+	// the hard one :(
 
-		bool foundininnernode = false;
-		bool wantleftmost = false;
-		TNodeRef innernode = 0;
-		uint16_t innerindex = 0xFFFF;
+	TNode node2, lnode = {0}, rnode = {0}, tmp;
+	TNodeRef actnode = m_Root;
+	TNodeRef nextnode, l, r;
+	bool exists, skipread;
+	uint16_t ge;
 
-		std::stack<TNodeRef> path;
+	bool foundininnernode = false;
+	bool wantleftmost = false;
+	TNodeRef innernode = 0;
+	uint16_t innerindex = 0xFFFF;
 
-		actnode = Item.m_Node;
-		while (actnode != m_Root)
+	std::stack<TNodeRef> path;
+
+	actnode = Item.m_Node;
+	while (actnode != m_Root)
+	{
+		path.push(actnode);
+		Read(actnode, offsetof(TNode, Parent), sizeof(TNodeRef), node);
+		actnode = node.Parent;
+	}
+
+	//actnode == m_Root
+
+	ReadNode(actnode, node);
+
+	while (actnode)
+	{
+		skipread = false;
+
+		if (foundininnernode)
 		{
-			path.push(actnode);
-			Read(actnode, offsetof(TNode, Parent), sizeof(TNodeRef), node);
-			actnode = node.Parent;
-		}
-
-		//actnode == m_Root
-
-		ReadNode(actnode, node);
-
-		while (actnode)
-		{
-			skipread = false;
-
-			if (foundininnernode)
-			{
-				exists = false;
-				if (wantleftmost)
-					ge = 0;
-				else
-					ge = node.Info & cKeyCountMask;
-
-			} else if (actnode == Item.m_Node)
-			{
-				exists = true;
-				ge = Item.m_Index;
-			} else {
-				exists = false;
-				nextnode = path.top();
-				path.pop();
-
+			exists = false;
+			if (wantleftmost)
 				ge = 0;
-				while ((ge <= (node.Info & cKeyCountMask)) && (node.Child[ge] != nextnode))
-					ge++;
+			else
+				ge = node.Info & cKeyCountMask;
 
-			}
+		} else if (actnode == Item.m_Node)
+		{
+			exists = true;
+			ge = Item.m_Index;
+		} else {
+			exists = false;
+			nextnode = path.top();
+			path.pop();
 
-			if (exists)
+			ge = 0;
+			while ((ge <= (node.Info & cKeyCountMask)) && (node.Child[ge] != nextnode))
+				ge++;
+
+		}
+
+		if (exists)
+		{
+			if (node.Info & cIsLeafMask)  // delete in leaf
 			{
-				if (node.Info & cIsLeafMask)  // delete in leaf
-				{
-					KeyDelete(actnode, node, ge);
-					WriteNode(actnode, node);
+				KeyDelete(actnode, node, ge);
+				WriteNode(actnode, node);
 
-					if ((node.Info & cKeyCountMask) == Item.m_Index) // deleted last item, go up
-					{
-						Item++;
-					}
-
-					if (wasmanaged)
-						Item.setManaged();
-
-					return;
-
-				} else { // delete in inner node
-					l = node.Child[ge];
-					r = node.Child[ge+1];
-					Read(l, offsetof(TNode, Info), sizeof(uint16_t), lnode);
-					Read(r, offsetof(TNode, Info), sizeof(uint16_t), rnode);
-
-					if (((rnode.Info & cKeyCountMask) == cEmptyNode) && ((lnode.Info & cKeyCountMask) == cEmptyNode))
-					{ // merge childnodes and keep going
-						nextnode = MergeNodes(l, r, node.Key[ge], node.Data[ge], actnode, ge);
-
-						KeyDelete(actnode, node, ge);
-						node.Child[ge] = nextnode;
-
-						Item.m_Node = nextnode;
-						Item.m_Index = lnode.Info & cKeyCountMask;
-
-						if ((actnode == m_Root) && ((node.Info & cKeyCountMask) == 0))
-						{ // root node is empty. delete it
-							DeleteNode(actnode);
-							m_Root = nextnode;
-							m_sigRootChanged.emit(this, m_Root);
-						} else {
-							WriteNode(actnode, node);
-						}
-
-					} else { // need a key-data-pair from a leaf to replace deleted pair -> save position
-						foundininnernode = true;
-						innernode = actnode;
-						innerindex = ge;
-
-						if ((lnode.Info & cKeyCountMask) == cEmptyNode)
-						{
-							wantleftmost = true;
-							nextnode = r;
-						} else {
-							++Item;
-							wantleftmost = false;
-							nextnode = l;
-						}
-					}
-				}
-			} else if (node.Info & cIsLeafMask) { // we are at the bottom. finish it
-				if (foundininnernode)
-				{
-					if (wantleftmost)
-					{
-						KeyMove(actnode, 0, node, innernode, innerindex, tmp);
-						Write(innernode, offsetof(TNode, Key[innerindex]), sizeof(TKey), tmp);
-						Write(innernode, offsetof(TNode, Data[innerindex]), sizeof(TData), tmp);
-
-						KeyDelete(actnode, node, 0);
-						WriteNode(actnode, node);
-
-					} else {
-						KeyMove(actnode, (node.Info & cKeyCountMask) - 1, node, innernode, innerindex, tmp);
-						Write(innernode, offsetof(TNode, Key[innerindex]), sizeof(TKey), tmp);
-						Write(innernode, offsetof(TNode, Data[innerindex]), sizeof(TData), tmp);
-
-						//KeyDelete(actnode, node, node.Info & cKeyCountMask);
-						node.Info--;
-						Write(actnode, offsetof(TNode, Info), sizeof(uint16_t), node);
-					}
-				}
+				if (Item.m_Index == (node.Info & cKeyCountMask))
+					++Item;
 
 				if (wasmanaged)
 					Item.setManaged();
+
 				return;
 
-			} else { // inner node. go on and check if moving or merging is neccessary
-				nextnode = node.Child[ge];
-				Read(nextnode, offsetof(TNode, Info), sizeof(uint16_t), node2);
+			} else { // delete in inner node
+				l = node.Child[ge];
+				r = node.Child[ge+1];
+				Read(l, offsetof(TNode, Info), sizeof(uint16_t), lnode);
+				Read(r, offsetof(TNode, Info), sizeof(uint16_t), rnode);
 
-				if ((node2.Info & cKeyCountMask) <= cEmptyNode) // move or merge
-				{
-					// set l and r for easier access
-					if (ge > 0)
-					{
-						l = node.Child[ge - 1];
-						Read(l, offsetof(TNode, Info), sizeof(uint16_t), lnode);
-					} else
-						l = 0;
+				if (((rnode.Info & cKeyCountMask) == cEmptyNode) && ((lnode.Info & cKeyCountMask) == cEmptyNode))
+				{ // merge childnodes and keep going
+					nextnode = MergeNodes(l, r, node.Key[ge], node.Data[ge], actnode, ge);
 
-					if (ge < (node.Info & cKeyCountMask))
-					{
-						r = node.Child[ge + 1];
-						Read(r, offsetof(TNode, Info), sizeof(uint16_t), rnode);
-					} else
-						r = 0;
+					KeyDelete(actnode, node, ge);
+					node.Child[ge] = nextnode;
 
-					if ((r != 0) && ((rnode.Info & cKeyCountMask) > cEmptyNode)) // move a Key-Data-pair from the right
-					{
-						ReadNode(r, rnode);
-						ReadNode(nextnode, node2);
+					Item.m_Node = nextnode;
+					Item.m_Index = lnode.Info & cKeyCountMask;
 
-						// move key-data-pair down from current to the next node
-						KeyMove(actnode, ge, node, nextnode, node2.Info & cKeyCountMask, node2);
-
-						// move the child from right to next node
-						node2.Child[(node2.Info & cKeyCountMask) + 1] = rnode.Child[0];
-
-						// move key-data-pair up from right to current node
-						KeyMove(r, 0, rnode, actnode, ge, node);
-						Write(actnode, offsetof(TNode, Key[ge]), sizeof(TKey), node);
-						Write(actnode, offsetof(TNode, Data[ge]), sizeof(TData), node);
-
-						// decrement right node key count and remove the first key-data-pair
-						KeyDelete(r, rnode, 0);
-
-						// increment KeyCount of the next node
-						node2.Info++;
-
-						if ((node2.Info & cIsLeafMask) == 0) // update the parent property of moved child
-						{
-							tmp.Parent = nextnode;
-							Write(node2.Child[node2.Info & cKeyCountMask], offsetof(TNode, Parent), sizeof(TNodeRef), tmp);
-						}
-
-						WriteNode(r, rnode);
-						WriteNode(nextnode, node2);
-						node = node2;
-						skipread = true;
-
-					} else if ((l != 0) && ((lnode.Info & cKeyCountMask) > cEmptyNode)) // move a Key-Data-pair from the left
-					{
-						ReadNode(nextnode, node2);
-						ReadNode(l, lnode);
-
-						// increment next node key count and make new first key-data-pair
-						KeyInsert(nextnode, node2, 0);
-
-						if (Item.m_Node == nextnode)
-						{
-							Item.m_Index++;
-						}
-
-						// move key-data-pair down from current to the next node
-						KeyMove(actnode, ge - 1, node, nextnode, 0, node2);
-
-						// move the child from left to next node
-						node2.Child[0] = lnode.Child[lnode.Info & cKeyCountMask];
-
-						// move key-data-pair up from left to current node
-						KeyMove(l, (lnode.Info & cKeyCountMask) - 1, lnode, actnode, ge - 1, node);
-						Write(actnode, offsetof(TNode, Key[ge - 1]), sizeof(TKey), node);
-						Write(actnode, offsetof(TNode, Data[ge - 1]), sizeof(TData), node);
-
-						// decrement left node key count
-						lnode.Info--;
-						Write(l, offsetof(TNode, Info), sizeof(uint16_t), lnode);
-
-						if ((node2.Info & cIsLeafMask) == 0) // update the parent property of moved child
-						{
-							tmp.Parent = nextnode;
-							Write(node2.Child[0], offsetof(TNode, Parent), sizeof(TNodeRef), tmp);
-						}
-
-						WriteNode(nextnode, node2);
-						node = node2;
-						skipread = true;
-
+					if ((actnode == m_Root) && ((node.Info & cKeyCountMask) == 0))
+					{ // root node is empty. delete it
+						DeleteNode(actnode);
+						m_Root = nextnode;
+						m_sigRootChanged.emit(this, m_Root);
 					} else {
-						if (l != 0) // merge with the left node
-						{
-							if (Item.m_Node == nextnode)
-							{
-								Item.m_Index = (lnode.Info & cKeyCountMask) + 1 + Item.m_Index;
-								nextnode = MergeNodes(l, nextnode, node.Key[ge - 1], node.Data[ge - 1], actnode, ge - 1);
-								Item.m_Node = nextnode;
-							} else {
-								nextnode = MergeNodes(l, nextnode, node.Key[ge - 1], node.Data[ge - 1], actnode, ge - 1);
-							}
-							KeyDelete(actnode, node, ge - 1);
-							node.Child[ge - 1] = nextnode;
+						WriteNode(actnode, node);
+					}
 
-						} else { // merge with the right node
-							if (Item.m_Node == nextnode)
-							{
-								nextnode = MergeNodes(nextnode, r, node.Key[ge], node.Data[ge], actnode, ge);
-								Item.m_Node = nextnode;
-							} else {
-								nextnode = MergeNodes(nextnode, r, node.Key[ge], node.Data[ge], actnode, ge);
-							}
-							KeyDelete(actnode, node, ge);
-							node.Child[ge] = nextnode;
-						}
+				} else { // need a key-data-pair from a leaf to replace deleted pair -> save position
+					foundininnernode = true;
+					innernode = actnode;
+					innerindex = ge;
 
-						if ((actnode == m_Root) && ((node.Info & cKeyCountMask) == 0))
-						{
-							DeleteNode(actnode);
-							m_Root = nextnode;
-							m_sigRootChanged(this, nextnode);
-						} else {
-							WriteNode(actnode, node);
-						}
+					if ((lnode.Info & cKeyCountMask) == cEmptyNode)
+					{
+						wantleftmost = true;
+						nextnode = r;
+
+						// Item ok, the successor will be moved at the position
+					} else {
+						wantleftmost = false;
+						nextnode = l;
+						// we must handle this
+						++Item;
 					}
 				}
-			} // if (exists) else if (node.Info & cIsLeafMask)
+			}
+		} else if (node.Info & cIsLeafMask) { // we are at the bottom. finish it
+			if (foundininnernode)
+			{
+				if (wantleftmost)
+				{
+					KeyMove(actnode, 0, node, innernode, innerindex, tmp);
+					Write(innernode, offsetof(TNode, Key[innerindex]), sizeof(TKey), tmp);
+					Write(innernode, offsetof(TNode, Data[innerindex]), sizeof(TData), tmp);
 
-			actnode = nextnode;
-			if (!skipread)
-				ReadNode(actnode, node);
+					KeyDelete(actnode, node, 0);
+					WriteNode(actnode, node);
 
-		} // while(actnode)
-	}
+				} else {
+					KeyMove(actnode, (node.Info & cKeyCountMask) - 1, node, innernode, innerindex, tmp);
+					Write(innernode, offsetof(TNode, Key[innerindex]), sizeof(TKey), tmp);
+					Write(innernode, offsetof(TNode, Data[innerindex]), sizeof(TData), tmp);
 
+					//KeyDelete(actnode, node, node.Info & cKeyCountMask);
+					node.Info--;
+					Write(actnode, offsetof(TNode, Info), sizeof(uint16_t), node);
+				}
+			}
+
+			if (wasmanaged)
+				Item.setManaged();
+
+			return;
+
+		} else { // inner node. go on and check if moving or merging is neccessary
+			nextnode = node.Child[ge];
+			Read(nextnode, offsetof(TNode, Info), sizeof(uint16_t), node2);
+
+			if ((node2.Info & cKeyCountMask) <= cEmptyNode) // move or merge
+			{
+				// set l and r for easier access
+				if (ge > 0)
+				{
+					l = node.Child[ge - 1];
+					Read(l, offsetof(TNode, Info), sizeof(uint16_t), lnode);
+				} else
+					l = 0;
+
+				if (ge < (node.Info & cKeyCountMask))
+				{
+					r = node.Child[ge + 1];
+					Read(r, offsetof(TNode, Info), sizeof(uint16_t), rnode);
+				} else
+					r = 0;
+
+				if ((r != 0) && ((rnode.Info & cKeyCountMask) > cEmptyNode)) // move a Key-Data-pair from the right
+				{
+					ReadNode(r, rnode);
+					ReadNode(nextnode, node2);
+
+					// move key-data-pair down from current to the next node
+					KeyMove(actnode, ge, node, nextnode, node2.Info & cKeyCountMask, node2);
+
+					// move the child from right to next node
+					node2.Child[(node2.Info & cKeyCountMask) + 1] = rnode.Child[0];
+
+					// move key-data-pair up from right to current node
+					KeyMove(r, 0, rnode, actnode, ge, node);
+					Write(actnode, offsetof(TNode, Key[ge]), sizeof(TKey), node);
+					Write(actnode, offsetof(TNode, Data[ge]), sizeof(TData), node);
+
+					// decrement right node key count and remove the first key-data-pair
+					KeyDelete(r, rnode, 0);
+
+					// increment KeyCount of the next node
+					node2.Info++;
+
+					if ((node2.Info & cIsLeafMask) == 0) // update the parent property of moved child
+					{
+						tmp.Parent = nextnode;
+						Write(node2.Child[node2.Info & cKeyCountMask], offsetof(TNode, Parent), sizeof(TNodeRef), tmp);
+					}
+
+					// Item is ok. nothing changed
+
+					WriteNode(r, rnode);
+					WriteNode(nextnode, node2);
+					node = node2;
+					skipread = true;
+
+				} else if ((l != 0) && ((lnode.Info & cKeyCountMask) > cEmptyNode)) // move a Key-Data-pair from the left
+				{
+					ReadNode(nextnode, node2);
+					ReadNode(l, lnode);
+
+					// increment next node key count and make new first key-data-pair
+					KeyInsert(nextnode, node2, 0);
+
+					// move key-data-pair down from current to the next node
+					KeyMove(actnode, ge - 1, node, nextnode, 0, node2);
+
+					// move the child from left to next node
+					node2.Child[0] = lnode.Child[lnode.Info & cKeyCountMask];
+
+					// move key-data-pair up from left to current node
+					KeyMove(l, (lnode.Info & cKeyCountMask) - 1, lnode, actnode, ge - 1, node);
+					Write(actnode, offsetof(TNode, Key[ge - 1]), sizeof(TKey), node);
+					Write(actnode, offsetof(TNode, Data[ge - 1]), sizeof(TData), node);
+
+					// decrement left node key count
+					lnode.Info--;
+					Write(l, offsetof(TNode, Info), sizeof(uint16_t), lnode);
+
+					if ((node2.Info & cIsLeafMask) == 0) // update the parent property of moved child
+					{
+						tmp.Parent = nextnode;
+						Write(node2.Child[0], offsetof(TNode, Parent), sizeof(TNodeRef), tmp);
+					}
+
+					// track Item!
+					if (nextnode == Item.m_Node)
+						Item.m_Index++;
+
+					WriteNode(nextnode, node2);
+					node = node2;
+					skipread = true;
+
+				} else {
+					if (l != 0) // merge with the left node
+					{
+						// track the Item! take care
+						TNodeRef bak = nextnode;
+						nextnode = MergeNodes(l, nextnode, node.Key[ge - 1], node.Data[ge - 1], actnode, ge - 1);
+						if (bak == Item.m_Node)
+						{
+							Item.m_Node = nextnode;
+							Item.m_Index = Item.m_Index + (lnode.Info & cKeyCountMask);
+						}						
+
+						KeyDelete(actnode, node, ge - 1);
+						node.Child[ge - 1] = nextnode;
+
+					} else { // merge with the right node
+						// track the Item! take care
+						TNodeRef bak = nextnode;
+						nextnode = MergeNodes(nextnode, r, node.Key[ge], node.Data[ge], actnode, ge);
+						if (bak == Item.m_Node)
+						{
+							Item.m_Node = nextnode;
+						}
+
+						KeyDelete(actnode, node, ge);
+						node.Child[ge] = nextnode;
+					}
+
+					if ((actnode == m_Root) && ((node.Info & cKeyCountMask) == 0))
+					{
+						DeleteNode(actnode);
+						m_Root = nextnode;
+						m_sigRootChanged(this, nextnode);
+					} else {
+						WriteNode(actnode, node);
+					}
+				}
+			}
+		} // if (exists) else if (node.Info & cIsLeafMask)
+
+		actnode = nextnode;
+		if (!skipread)
+			ReadNode(actnode, node);
+
+	} // while(actnode)
+	
 	if (wasmanaged)
 		Item.setManaged();
+
+	return;
 }
 
 template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>

@@ -122,6 +122,7 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
+				ShowIncludes="false"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -142,6 +143,7 @@
 				DataExecutionPrevention="0"
 				TargetMachine="1"
 				AllowIsolation="true"
+				CLRImageType="0"
 			/>
 			<Tool
 				Name="VCALinkTool"

@@ -16,7 +16,6 @@ protected:
 	virtual void Read(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Dest);
 	virtual void Write(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Source);
 	
-	virtual void DestroyTree();
 public:
 	CFileBTree(CBlockManager & BlockManager, TNodeRef RootNode, uint16_t Signature);
 	virtual ~CFileBTree();
@@ -31,6 +30,7 @@ CFileBTree<TKey, TData, SizeParam, UniqueKeys>::CFileBTree(CBlockManager & Block
 	m_BlockManager(BlockManager)
 {
 	cSignature = Signature << 16;
+	m_DestroyTree = false;
 }
 
 template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
@@ -76,12 +76,6 @@ void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::Write(TNodeRef Node, uint32
 	{
 		m_BlockManager.WritePart(Node, (uint16_t*)&Source + 1, 0, Size - 2, cSignature | Source.Info);
 	} else {
-		m_BlockManager.WritePart(Node, (uint8_t*)&Source + Offset, Offset - 2, Size, 0);		
+		m_BlockManager.WritePart(Node, (uint8_t*)&Source + Offset, Offset - 2, Size);		
 	}
-}
-
-template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::DestroyTree()
-{
-	//nothing to do
 }
