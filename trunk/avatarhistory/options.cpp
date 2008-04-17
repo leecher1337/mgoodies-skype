@@ -35,10 +35,7 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 
 
 static OptPageControl optionsControls[] = { 
-	{ &opts.template_changed,		CONTROL_TEXT,			IDC_CHANGED,		"TemplateChanged", (DWORD) _T(DEFAULT_TEMPLATE_CHANGED) },
-	{ &opts.track_removes,			CONTROL_CHECKBOX,		IDC_TRACK_REMOVE,	"TrackRemoves", TRUE },
-	{ &opts.template_removed,		CONTROL_TEXT,			IDC_REMOVED,		"TemplateRemoved", (DWORD) _T(DEFAULT_TEMPLATE_REMOVED) },
-	{ NULL,							CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,		"%sEnabled", TRUE }
+	{ NULL, 	CONTROL_PROTOCOL_LIST,	IDC_PROTOCOLS,		"%sEnabled", TRUE }
 };
 
 
@@ -53,7 +50,11 @@ static OptPageControl popupsControls[] = {
 	{ NULL,									CONTROL_RADIO,		IDC_DELAYPERMANENT,	"PopupsDelayType", POPUP_DELAY_DEFAULT, POPUP_DELAY_PERMANENT },
 	{ &opts.popup_timeout,					CONTROL_SPIN,		IDC_DELAY,			"PopupsTimeout", 10, IDC_DELAY_SPIN, (WORD) 1, (WORD) 255 },
 	{ &opts.popup_right_click_action,		CONTROL_COMBO,		IDC_RIGHT_ACTION,	"PopupsRightClick", POPUP_ACTION_CLOSEPOPUP },
-	{ &opts.popup_left_click_action,		CONTROL_COMBO,		IDC_LEFT_ACTION,	"PopupsLeftClick", POPUP_ACTION_OPENAVATARHISTORY }
+	{ &opts.popup_left_click_action,		CONTROL_COMBO,		IDC_LEFT_ACTION,	"PopupsLeftClick", POPUP_ACTION_OPENAVATARHISTORY },
+	{ &opts.popup_show_changed,				CONTROL_CHECKBOX,	IDC_CHANGED_L,		"PopupsShowChanged", TRUE },
+	{ &opts.popup_changed,					CONTROL_TEXT,		IDC_CHANGED,		"PopupsTextChanged", (DWORD) _T(DEFAULT_TEMPLATE_CHANGED) },
+	{ &opts.popup_show_removed,				CONTROL_CHECKBOX,	IDC_REMOVED_L,		"PopupsShowRemoved", TRUE },
+	{ &opts.popup_removed,					CONTROL_TEXT,		IDC_REMOVED,		"PopupsTextRemoved", (DWORD) _T(DEFAULT_TEMPLATE_REMOVED) }
 };
 
 static UINT popupsExpertControls[] = { 
@@ -119,41 +120,9 @@ void LoadOptions()
 }
 
 
-static void OptionsEnableDisableCtrls(HWND hwndDlg)
-{
-	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED_L), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
-	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED), IsDlgButtonChecked(hwndDlg, IDC_TRACK_REMOVE));
-}
-
-
 static BOOL CALLBACK OptionsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
-	BOOL ret = SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
-
-	switch (msg) 
-	{
-		case WM_INITDIALOG:
-		{
-			OptionsEnableDisableCtrls(hwndDlg);
-			break;
-		}
-		case WM_COMMAND:
-		{
-			switch (LOWORD(wParam)) 
-			{
-				case IDC_TRACK_REMOVE:
-				{
-					if (HIWORD(wParam) == BN_CLICKED)
-						OptionsEnableDisableCtrls(hwndDlg);
-
-					break;
-				}
-			}
-			break;
-		}
-	}
-
-	return ret;
+	return SaveOptsDlgProc(optionsControls, MAX_REGS(optionsControls), MODULE_NAME, hwndDlg, msg, wParam, lParam);
 }
 
 
@@ -188,6 +157,14 @@ static void PopupsEnableDisableCtrls(HWND hwndDlg)
 
 	EnableWindow(GetDlgItem(hwndDlg, IDC_DELAY), enabled &&
 			IsDlgButtonChecked(hwndDlg, IDC_DELAYCUSTOM));
+
+	EnableWindow(GetDlgItem(hwndDlg, IDC_CHANGED_L), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED_L), enabled);
+	EnableWindow(GetDlgItem(hwndDlg, IDC_CHANGED), enabled && 
+			IsDlgButtonChecked(hwndDlg, IDC_CHANGED_L));
+	EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVED), enabled && 
+			IsDlgButtonChecked(hwndDlg, IDC_REMOVED_L));
+
 }
 
 
@@ -224,6 +201,8 @@ static BOOL CALLBACK PopupsDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM
 				case IDC_DELAYFROMPU:
 				case IDC_DELAYPERMANENT:
 				case IDC_DELAYCUSTOM:
+				case IDC_CHANGED_L:
+				case IDC_REMOVED_L:
 				{
 					if (HIWORD(wParam) == BN_CLICKED)
 						PopupsEnableDisableCtrls(hwndDlg);

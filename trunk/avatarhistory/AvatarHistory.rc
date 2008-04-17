@@ -80,30 +80,22 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,159,121,50,14
 END
 
-IDD_OPTIONS DIALOGEX 0, 0, 314, 186
+IDD_OPTIONS DIALOGEX 0, 0, 314, 109
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " History templates ",IDC_TRACK_G,3,3,308,66
-    LTEXT           "Avatar change:",IDC_CHANGED_L,11,17,89,10
-    EDITTEXT        IDC_CHANGED,104,16,201,13,ES_AUTOHSCROLL
-    CONTROL         "Track when contacts remove their avatars too",
-                    IDC_TRACK_REMOVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    12,33,291,11
-    LTEXT           "Avatar removal:",IDC_REMOVED_L,26,49,74,10
-    EDITTEXT        IDC_REMOVED,104,48,201,13,ES_AUTOHSCROLL
-    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,72,308,103
+    GROUPBOX        " Protocols ",IDC_PROTOCOLS_G,3,3,308,103
     LTEXT           "Enable tracking for these protocols:",IDC_PROTOCOLS_L,
-                    13,86,157,11
+                    13,17,157,11
     CONTROL         "List1",IDC_PROTOCOLS,"SysListView32",LVS_REPORT | 
                     LVS_SINGLESEL | LVS_SORTASCENDING | LVS_NOCOLUMNHEADER | 
-                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,12,98,158,70
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,12,29,158,70
     LTEXT           "MetaContacts have special handling: the info is always copied from subcontacts (notifications from a meta are ignored)",
-                    IDC_STATIC,181,98,124,70
+                    IDC_STATIC,181,29,124,70
 END
 
-IDD_POPUPS DIALOG DISCARDABLE  0, 0, 314, 240
+IDD_POPUPS DIALOGEX 0, 0, 314, 240
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
@@ -137,7 +129,14 @@ BEGIN
     RTEXT           "On left click:",IDC_LEFT_ACTION_L,13,132,62,9
     COMBOBOX        IDC_LEFT_ACTION,83,132,156,60,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "Preview",IDC_PREV,131,161,50,14
+    GROUPBOX        " Track ",IDC_TRACK_G,3,153,308,47
+    CONTROL         "Avatar change:",IDC_CHANGED_L,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,11,166,89,10
+    EDITTEXT        IDC_CHANGED,105,166,201,13,ES_AUTOHSCROLL
+    CONTROL         "Avatar removal:",IDC_REMOVED_L,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,11,183,89,10
+    EDITTEXT        IDC_REMOVED,105,183,201,13,ES_AUTOHSCROLL
+    PUSHBUTTON      "Preview",IDC_PREV,131,213,50,14
 END
 
 IDD_FIRST_RUN DIALOG DISCARDABLE  0, 0, 338, 251
@@ -204,7 +203,7 @@ BEGIN
         LEFTMARGIN, 3
         RIGHTMARGIN, 311
         TOPMARGIN, 3
-        BOTTOMMARGIN, 184
+        BOTTOMMARGIN, 107
     END
 
     IDD_POPUPS, DIALOG

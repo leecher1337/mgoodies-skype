@@ -4,8 +4,6 @@
 #include <time.h>
 
 
-extern "C"
-{
 #include <newpluginapi.h>
 #include <m_folders.h>
 #include <m_clist.h>
@@ -24,6 +22,7 @@ extern "C"
 #include <m_history.h>
 #include <m_updater.h>
 #include <m_imgsrvc.h>
+#include <m_icolib.h>
 
 // Globals
 extern HINSTANCE hInst;
@@ -31,12 +30,13 @@ extern PLUGINLINK *pluginLink;
 extern HANDLE hMenu;
 extern DWORD mirVer;
 
-}
-
 #include "resource.h"
 #include "m_avatarhist.h"
 
 #include "../utils/mir_memory.h"
+#include "../utils/mir_buffer.h"
+
+#include "../historyevents/m_historyevents.h"
 
 #define MODULE_NAME "AvatarHistory"
 
@@ -77,19 +77,16 @@ HICON createProtoOverlayedIcon(HANDLE hContact);
 
 
 struct Options {
-	// Templates
-	TCHAR template_changed[1024];
-	TCHAR template_removed[1024];
-
 	// Log
 	BOOL log_per_contact_folders;
 	BOOL log_keep_same_folder;
 	BOOL log_store_as_hash;
 
-	// Track
-	BYTE track_removes;
-
 	// Popup
+	BOOL popup_show_changed;
+	TCHAR popup_changed[1024];
+	BOOL popup_show_removed;
+	TCHAR popup_removed[1024];
 	WORD popup_delay_type;
 	WORD popup_timeout;
 	BYTE popup_use_win_colors;

@@ -52,6 +52,8 @@ TCHAR * GetOldStyleAvatarName(TCHAR *fn, HANDLE hContact);
 void InitFolders();
 void InitMenuItem();
 
+void * GetHistoryEventText(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe, int format);
+
 // Services
 static int IsEnabled(WPARAM wParam, LPARAM lParam);
 static int GetCachedAvatar(WPARAM wParam, LPARAM lParam);
@@ -72,7 +74,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Avatar History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,8),
+	PLUGIN_MAKE_VERSION(0,0,2,9),
 	"This plugin keeps backups of all your contacts' avatar changes and/or shows popups",
 	"Matthew Wild (MattJ), Ricardo Pescuma Domenecci",
 	"mwild1@gmail.com",
@@ -165,6 +167,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	pluginLink=link;
 
+	init_mir_malloc();
+
 	// Is first run?
 	if (DBGetContactSettingByte(NULL, MODULE_NAME, "FirstRun", 1))
 	{
@@ -200,7 +204,6 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		DBWriteContactSettingByte(NULL, MODULE_NAME, "FirstRun", 0);
 	}
 
-	init_mir_malloc();
 	LoadOptions();
 
 	hHooks[0] = HookEvent(ME_SYSTEM_MODULESLOADED,ModulesLoaded);
@@ -263,6 +266,18 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
 	}
 
+	if (DBGetContactSettingByte(NULL, MODULE_NAME, "LogToHistory", AVH_DEF_LOGTOHISTORY))
+	{
+		char *templates[] = { "Avatar change\n%contact% changed his/her avatar", 
+							 "Avatar removal\n%contact% removed his/her avatar" };
+		HICON hIcon = createDefaultOverlayedIcon(FALSE);
+		HistoryEvents_RegisterWithTemplates(MODULE_NAME, "avatarchange", "Avatar change", EVENTTYPE_AVATAR_CHANGE, hIcon, 
+			HISTORYEVENTS_FORMAT_CHAR | HISTORYEVENTS_FORMAT_WCHAR | HISTORYEVENTS_FORMAT_RICH_TEXT,
+			HISTORYEVENTS_FLAG_SHOW_IM_SRMM, 
+			GetHistoryEventText, templates, MAX_REGS(templates));
+		DestroyIcon(hIcon);
+	}
+
 	return 0;
 }
 
@@ -321,102 +336,6 @@ BOOL IsUnicodeAscii(const WCHAR * pBuffer, int nSize)
 }
 
 
-HANDLE HistoryLog(HANDLE hContact, TCHAR *log_text, char *filename)
-{
-	if (log_text == NULL)
-		return NULL;
-
-	DBEVENTINFO event = { 0 };
-	BYTE *tmp = NULL;
-
-	event.cbSize = sizeof(event);
-
-	size_t file_len;
-	if (filename != NULL)
-		file_len = strlen(filename) + 1;
-	else
-		file_len = 0;
-
-#ifdef UNICODE
-
-	size_t needed = WideCharToMultiByte(CP_ACP, 0, log_text, -1, NULL, 0, NULL, NULL);
-	size_t len = lstrlen(log_text) + 1;
-	size_t size;
-	BOOL isAscii = IsUnicodeAscii(log_text, len);
-
-	if (isAscii)
-		size = needed + (filename != NULL ? 2 : 0);
-	else
-		size = needed + len * sizeof(WCHAR);
-
-	tmp = (BYTE *) mir_alloc0(size + file_len);
-
-	WideCharToMultiByte(CP_ACP, 0, log_text, -1, (char *) tmp, needed, NULL, NULL);
-
-	if (isAscii)
-	{
-		if (filename != NULL)
-		{
-			tmp[needed] = 0;
-			tmp[needed+1] = 0;
-		}
-	}
-	else
-	{
-		lstrcpyn((WCHAR *) &tmp[needed], log_text, len);
-	}
-
-	if (filename != NULL)
-		strcpy((char *) &tmp[size], filename);
-
-	event.pBlob = tmp;
-	event.cbBlob = size + file_len;
-
-#else
-
-	if (filename != NULL)
-	{
-		size_t len = lstrlen(log_text) + 1;
-		tmp = (BYTE *) mir_alloc0(len + 2 + file_len);
-
-		strcpy((char *) tmp, log_text);
-		tmp[len] = 0;
-		tmp[len + 1] = 0;
-		strcpy((char *) &tmp[len + 2], filename);
-
-		event.pBlob = tmp;
-		event.cbBlob = len + 2 + file_len;
-	}
-	else
-	{
-		event.pBlob = (PBYTE) log_text;
-		event.cbBlob = strlen(log_text) + 1;
-	}
-
-#endif
-
-	event.eventType = EVENTTYPE_AVATAR_CHANGE;
-	event.flags = DBEF_READ;
-	event.timestamp = (DWORD) time(NULL);
-
-	event.szModule = MODULE_NAME;
-	
-	// Is a subcontact?
-	if (ServiceExists(MS_MC_GETMETACONTACT)) 
-	{
-		HANDLE hMetaContact = (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM)hContact, 0);
-
-		if (hMetaContact != NULL && ContactEnabled(hMetaContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
-			CallService(MS_DB_EVENT_ADD,(WPARAM)hMetaContact,(LPARAM)&event);
-	}
-
-	HANDLE ret = (HANDLE) CallService(MS_DB_EVENT_ADD,(WPARAM)hContact,(LPARAM)&event);
-
-	mir_free(tmp);
-
-	return ret;
-}
-
 int PathIsAbsolute(const char *path)
 {
     if (!path || !(strlen(path) > 2)) 
@@ -449,15 +368,19 @@ int PathToRelative(const char *pSrc, char *pOut)
 	return 0;
 }
 
-int PathToAbsolute(char *pSrc, char *pOut) {
-    if (!pSrc||!strlen(pSrc)||strlen(pSrc)>MAX_PATH) return 0;
-    if (PathIsAbsolute(pSrc)||!isalnum(pSrc[0])) {
+int PathToAbsolute(char *pSrc, char *pOut) 
+{
+    if (!pSrc||!strlen(pSrc)||strlen(pSrc)>MAX_PATH) 
+		return 0;
+    if (PathIsAbsolute(pSrc)||!isalnum(pSrc[0])) 
+	{
         mir_snprintf(pOut, MAX_PATH, "%s", pSrc);
-        return strlen(pOut);
+        return 1;
     }
-    else {
+    else 
+	{
         mir_snprintf(pOut, MAX_PATH, "%s\\%s", profilePath, pSrc);
-        return strlen(pOut);
+        return 1;
     }
 }
 
@@ -587,9 +510,6 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 
 	BOOL removed = (avatar == NULL && DBGetContactSettingWord(hContact, "ContactPhoto", "Format", 0) == 0);
 
-	if (!opts.track_removes && removed)
-		return 0;
-	
 	char oldhash[1024] = "";
 	char * ret = MyDBGetString(hContact, "AvatarHistory", "AvatarHash", oldhash, sizeof(oldhash));
 
@@ -608,11 +528,11 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 	{
 		db_string_set(hContact, "AvatarHistory", "AvatarHash", "");
 
-		if (!first_time && ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS))
-			ShowPopup(hContact, NULL, opts.template_removed);
+		if (!first_time && ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS) && opts.popup_show_removed)
+			ShowPopup(hContact, NULL, opts.popup_removed);
 
 		if (ContactEnabled(hContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
-			HistoryLog(hContact, opts.template_removed, NULL);
+			HistoryEvents_AddToHistorySimple(hContact, EVENTTYPE_AVATAR_CHANGE, 1, DBEF_READ);
 	}
 	else if (avatar == NULL)
 	{
@@ -625,11 +545,11 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 		// Is a flash avatar or avs could not load it
 		db_string_set(hContact, "AvatarHistory", "AvatarHash", "-");
 
-		if (!first_time && ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS))
-			ShowPopup(hContact, NULL, opts.template_changed);
+		if (!first_time && ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS) && opts.popup_show_changed)
+			ShowPopup(hContact, NULL, opts.popup_changed);
 
 		if (ContactEnabled(hContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
-			HistoryLog(hContact, opts.template_changed, NULL);
+			HistoryEvents_AddToHistorySimple(hContact, EVENTTYPE_AVATAR_CHANGE, 0, DBEF_READ);
 	}
 	else
 	{
@@ -718,15 +638,15 @@ static int AvatarChanged(WPARAM wParam, LPARAM lParam)
 		}
 
 
-		if (!first_time && ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS))
-			ShowPopup(hContact, NULL, opts.template_changed);
+		if (!first_time && ContactEnabled(hContact, "AvatarPopups", AVH_DEF_AVPOPUPS) && opts.popup_show_changed)
+			ShowPopup(hContact, NULL, opts.popup_changed);
 
 		if (ContactEnabled(hContact, "LogToHistory", AVH_DEF_LOGTOHISTORY))
 		{
 			char rel_path[MAX_PATH] = "";
 			INPLACE_TCHAR_TO_CHAR(tmp, MAX_PATH, history_filename);
 			PathToRelative(tmp, rel_path);
-			HistoryLog(hContact, opts.template_changed, rel_path);
+			HistoryEvents_AddToHistoryEx(hContact, EVENTTYPE_AVATAR_CHANGE, 0, NULL, 0, (PBYTE) rel_path, strlen(rel_path) + 1, DBEF_READ);
 		}
 	}
 
@@ -1007,3 +927,107 @@ BOOL ResolveShortcut(TCHAR *shortcut, TCHAR *file)
 
 	return SUCCEEDED(hr);
 }
+
+
+template<class T>
+void ConvertToRTF(Buffer<char> *buffer, T *line)
+{
+	buffer->append("{\\uc1 ", 6);
+	
+	for (; *line; line++) 
+	{
+		if (*line == (T)'\r' && line[1] == (T)'\n') {
+			buffer->append("\\par ", 5);
+			line++;
+		}
+		else if (*line == (T)'\n') {
+			buffer->append("\\par ", 5);
+		}
+		else if (*line == (T)'\t') {
+			buffer->append("\\tab ", 5);
+		}
+		else if (*line == (T)'\\' || *line == (T)'{' || *line == (T)'}') {
+			buffer->append('\\');
+			buffer->append((char) *line);
+		}
+		else if (*line < 128) {
+			buffer->append((char) *line);
+		}
+		else 
+			buffer->appendPrintf("\\u%d ?", *line);
+	}
+
+	buffer->append('}');
+}
+
+
+void GetRTFFor(Buffer<char> *buffer, HBITMAP hBitmap)
+{
+	BITMAP bmp;
+	GetObject(hBitmap, sizeof(bmp), &bmp);
+
+	DWORD dwLen = bmp.bmWidth * bmp.bmHeight * (bmp.bmBitsPixel / 8);
+	BYTE *p = (BYTE *) malloc(dwLen);
+	if (p == NULL)
+		return;
+
+	dwLen = GetBitmapBits(hBitmap, dwLen, p);
+
+	buffer->appendPrintf("{\\pict\\wbitmap0\\wbmbitspixel%u\\wbmplanes%u\\wbmwidthbytes%u\\picw%u\\pich%u ", 
+				bmp.bmBitsPixel, bmp.bmPlanes, bmp.bmWidthBytes, bmp.bmWidth, bmp.bmHeight);
+
+	for (DWORD i = 0; i < dwLen; i++)
+		buffer->appendPrintf("%02X", p[i]);
+
+	buffer->append('}');
+
+	free(p);
+}
+
+
+void * GetHistoryEventText(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe, int format)
+{
+	void *ret;
+
+	if (format & HISTORYEVENTS_FORMAT_CHAR)
+	{
+		ret = DbGetEventTextA(dbe, CP_ACP);
+	}
+	else if (format & HISTORYEVENTS_FORMAT_WCHAR)
+	{
+		ret = DbGetEventTextW(dbe, CP_ACP);
+	}
+	else if (format & HISTORYEVENTS_FORMAT_RICH_TEXT)
+	{
+		Buffer<char> buffer;
+
+		TCHAR *tmp = DbGetEventTextT(dbe, CP_ACP);
+		ConvertToRTF(&buffer, tmp);
+		mir_free(tmp);
+
+		// Load the image
+		size_t i;
+		for(i = dbe->cbBlob-2; i > 0 && dbe->pBlob[i] != 0; i--) ;
+		i++;
+
+		if (dbe->pBlob[i] != 0)
+		{
+			char absFile[MAX_PATH] = "";
+			PathToAbsolute((char *) & dbe->pBlob[i], absFile);
+			HBITMAP hBmp = (HBITMAP) CallService(MS_IMG_LOAD, (WPARAM) absFile, 0);
+
+			if (hBmp != NULL)
+			{
+				buffer.append("\\par ", 5);
+				GetRTFFor(&buffer, hBmp);
+				DeleteObject(hBmp);
+			}
+		}
+
+		buffer.pack();
+		ret = buffer.str;
+	}
+
+	return ret;
+}
+

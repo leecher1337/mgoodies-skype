@@ -1,8 +1,6 @@
 #include "AvatarHistory.h"
 #include <commctrl.h> //for ImageList_*
 
-#include <m_icolib.h>
-
 enum IconIndex
 {
 	I_HISTORY,
