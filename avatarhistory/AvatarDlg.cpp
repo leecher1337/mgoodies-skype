@@ -479,7 +479,7 @@ int FillAvatarListFromDB(HWND list, HANDLE hContact)
 				// Get file in disk
 				char path[MAX_PATH] = "";
 				PathToAbsolute((char *) &dbei.pBlob[i+1], path);
-				TCHAR *filename = mir_dupTA(path);
+				TCHAR *filename = mir_a2t(path);
 
 				// Add to list
 				ListEntry *le = new ListEntry();

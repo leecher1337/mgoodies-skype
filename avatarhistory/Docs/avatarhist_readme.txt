@@ -24,6 +24,6 @@ To user the importer, you should:
 
 Now all avatars are stored in per protocol folders. This is done to allow avoiding duplicated avatars. (If you enable 'Keep all in same folder' there will be only one folder for all protocols - this may help in case you have more than one instance of the same proto). The relation avatar <-> contact and the avatar history dialog is created from info from the contact history (and not using the files in HD). Since some people like to see the images in contacts folders, there is the option 'Also create per contact folders with shortcuts'. This option will create the contact folders (as previous version) and will create shortcuts inside it to the avatar stored in the protocol folder (if 2 avatars are the same, there will be 2 shortcuts but only one avatar in disk). Importer will use this option too when importing, but you must set it before importing everything.
 
-This plugin needs Avatar Service and the latest 0.7 nightlies of miranda to be able to work.
+This plugin needs Avatar Service and Miranda 0.7 to be able to work. To log events to history it needs History Events plugin.
 
 To report bugs/make suggestions, go to the forum thread: http://forums.miranda-im.org/showthread.php?t=9118

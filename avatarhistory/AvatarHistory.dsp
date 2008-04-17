@@ -193,6 +193,10 @@ SOURCE=.\m_avatarhist.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\utils\mir_buffer.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\utils\mir_memory.h
 # End Source File
 # Begin Source File
