@@ -13,50 +13,12 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Bulgarian resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_BGR)
-#ifdef _WIN32
-LANGUAGE LANG_BULGARIAN, SUBLANG_DEFAULT
-#pragma code_page(1251)
-#endif //_WIN32
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE MOVEABLE PURE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE MOVEABLE PURE 
-BEGIN
-    "#include ""winres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE MOVEABLE PURE 
-BEGIN
-    "\r\n"
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-#endif    // Bulgarian resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
 // Neutral resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-#pragma code_page(1252)
+#pragma code_page(1250)
 #endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
@@ -69,99 +31,101 @@ STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        "Check status for which nudge are allowed",IDC_STATIC,8,
-                    131,302,42
+    GROUPBOX        "Allow nudges when you're:",IDC_STATIC,8,133,157,63
     CONTROL         "Offline",IDC_CHECKST0,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,18,140,67,9
+                    BS_NOTIFY | WS_TABSTOP,13,143,65,9
     CONTROL         "Online",IDC_CHECKST1,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,18,150,67,9
+                    BS_NOTIFY | WS_TABSTOP,13,153,65,9
     CONTROL         "Away",IDC_CHECKST2,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_TABSTOP,18,161,67,9
+                    WS_TABSTOP,13,163,65,9
     CONTROL         "N/A",IDC_CHECKST3,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_TABSTOP,237,140,54,9
+                    WS_TABSTOP,13,173,65,9
     CONTROL         "Occupied",IDC_CHECKST4,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,160,140,70,9
+                    BS_NOTIFY | WS_TABSTOP,13,183,65,9
     CONTROL         "DND",IDC_CHECKST5,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
-                    WS_TABSTOP,88,140,70,9
+                    WS_TABSTOP,85,143,70,9
     CONTROL         "Free for chat",IDC_CHECKST6,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,88,150,70,9
+                    BS_NOTIFY | WS_TABSTOP,85,153,70,9
     CONTROL         "Invisible",IDC_CHECKST7,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,88,161,70,9
+                    BS_NOTIFY | WS_TABSTOP,85,163,70,9
     CONTROL         "On the phone",IDC_CHECKST8,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,160,162,70,8
+                    BS_NOTIFY | WS_TABSTOP,85,173,70,9
     CONTROL         "Out to lunch",IDC_CHECKST9,"Button",BS_AUTOCHECKBOX | 
-                    BS_NOTIFY | WS_TABSTOP,160,150,70,9
-    PUSHBUTTON      "Preview",IDC_PREVIEW,268,211,39,12
-    GROUPBOX        "Popup options",IDC_STATIC,8,176,301,50
+                    BS_NOTIFY | WS_TABSTOP,85,183,70,9
+    PUSHBUTTON      "Preview",IDC_PREVIEW,265,207,39,12
+    GROUPBOX        "Popup options",IDC_STATIC,169,133,140,88
     CONTROL         "Popup notification",IDC_CHECKPOP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,13,185,108,10
-    EDITTEXT        IDC_POPUPTIME,22,196,20,12,ES_AUTOHSCROLL
-    LTEXT           "s",IDC_STATIC,46,199,8,8
-    LTEXT           "Popup duration",IDC_STATIC,56,199,82,8
-    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_TABSTOP,148,194,
+                    BS_AUTOCHECKBOX | WS_TABSTOP,174,143,121,9
+    EDITTEXT        IDC_POPUPTIME,174,163,20,12,ES_AUTOHSCROLL
+    LTEXT           "s",IDC_STATIC,196,165,12,8
+    LTEXT           "Popup duration",IDC_STATIC,216,165,79,8
+    CONTROL         "",IDC_POPUPBACKCOLOR,"ColourPicker",WS_TABSTOP,174,177,
                     39,12
-    LTEXT           "Background colour",IDC_STATIC,192,196,75,8,
+    LTEXT           "Background colour",IDC_STATIC,216,179,80,8,
                     SS_CENTERIMAGE
-    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,148,208,
+    CONTROL         "",IDC_POPUPTEXTCOLOR,"ColourPicker",WS_TABSTOP,174,192,
                     39,12
-    LTEXT           "Text colour",IDC_STATIC,192,210,71,8,SS_CENTERIMAGE
+    LTEXT           "Text colour",IDC_STATIC,216,193,80,8,SS_CENTERIMAGE
     CONTROL         "&Use Windows colours",IDC_USEWINCOLORS,"Button",
-                    BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,22,
-                    211,121,8
+                    BS_AUTOCHECKBOX | BS_NOTIFY | BS_FLAT | WS_TABSTOP,174,
+                    153,121,9
     CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP | 
                     TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER | 
-                    WS_TABSTOP,8,13,105,78
-    GROUPBOX        "Protocol options",IDC_STATIC,4,1,309,228
+                    WS_TABSTOP,8,10,105,84
+    GROUPBOX        "Protocol options",IDC_STATIC,4,1,309,224
     CONTROL         "Specify options for each protocol",IDC_USEBYPROTOCOL,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,121,8,162,8
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,121,10,162,8
     CONTROL         "Enable clist shaking",IDC_CHECKCLIST,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,132,18,147,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,132,20,147,8
     CONTROL         "Enable message window shaking",IDC_CHECKCHAT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,132,27,147,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,132,30,147,8
     CONTROL         "Treat nudge as a message",IDC_CHECKEVENT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,132,56,147,8
-    EDITTEXT        IDC_SENDTEXT,205,67,102,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_RECVTEXT,205,81,102,12,ES_AUTOHSCROLL
-    RTEXT           "Sending text",IDC_STATIC,131,68,70,8
-    RTEXT           "Receiving text",IDC_STATIC,131,82,70,8
-    RTEXT           "Allow sending one nudge to the same contact every :",
-                    IDC_STATIC,26,101,243,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,132,60,147,8
+    EDITTEXT        IDC_SENDTEXT,205,70,102,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_RECVTEXT,205,85,102,12,ES_AUTOHSCROLL
+    RTEXT           "Sending text",IDC_STATIC,131,73,70,8
+    RTEXT           "Receiving text",IDC_STATIC,131,87,70,8
+    RTEXT           "Allow sending* one nudge to the same contact every :",
+                    IDC_STATIC,13,106,256,8
     RTEXT           "Allow receiving one nudge from the same contact every :",
-                    IDC_STATIC,27,115,243,8
-    EDITTEXT        IDC_SENDTIME,274,99,17,12,ES_AUTOHSCROLL | ES_READONLY | 
+                    IDC_STATIC,13,120,257,8
+    EDITTEXT        IDC_SENDTIME,274,104,17,12,ES_AUTOHSCROLL | ES_READONLY | 
                     WS_DISABLED
-    EDITTEXT        IDC_RECVTIME,274,113,18,12,ES_AUTOHSCROLL
-    LTEXT           "s",IDC_STATIC,293,101,8,8
-    LTEXT           "s",IDC_STATIC,293,115,8,8
-    GROUPBOX        "Privacy",IDC_STATIC,8,92,302,36
+    EDITTEXT        IDC_RECVTIME,274,118,18,12,ES_AUTOHSCROLL
+    LTEXT           "s",IDC_STATIC,293,106,8,8
+    LTEXT           "s",IDC_STATIC,293,120,8,8
+    GROUPBOX        "Privacy",IDC_STATIC,8,97,301,36
     CONTROL         "Show as status change",IDC_CHECKSTATUS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,132,37,147,8
-    CONTROL         "Auto resend nudge",IDC_AUTORESEND,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,132,46,147,8
-    EDITTEXT        IDC_RESENDDELAY,281,44,18,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "s",IDC_STATIC,301,46,8,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,132,40,147,8
+    CONTROL         "Auto resend nudge after",IDC_AUTORESEND,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,132,50,147,8
+    EDITTEXT        IDC_RESENDDELAY,281,48,18,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "s",IDC_STATIC,301,50,8,8
+    CTEXT           "* Nudge sending delay is hardcoded and cannot be changed.",
+                    IDC_STATIC,15,199,141,22,NOT WS_GROUP
 END
 
 IDD_OPTIONS DIALOGEX 0, 0, 319, 249
 STYLE DS_FIXEDSYS | DS_CENTER | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
-    CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",0x0,0,3,319,246
+    CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",WS_TABSTOP,0,3,
+                    319,246
 END
 
 IDD_OPT_SHAKE DIALOGEX 0, 0, 300, 240
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        "Shaking Clist Options",IDC_STATIC,7,10,291,96
     GROUPBOX        "Shaking Message Window Options",IDC_STATIC,7,111,291,
                     101
     CONTROL         "Slider1",IDC_SNUMBER_CLIST,"msctls_trackbar32",
                     TBS_AUTOTICKS | TBS_BOTH | WS_TABSTOP,81,25,179,21
-    RTEXT           "Number of move",IDC_STATIC,13,31,67,9
-    RTEXT           "Number of move",IDC_STATIC,13,140,67,9
+    RTEXT           "Number of moves",IDC_STATIC,13,31,67,9
+    RTEXT           "Number of moves",IDC_STATIC,13,140,67,9
     CONTROL         "Slider1",IDC_SNUMBER_CHAT,"msctls_trackbar32",
                     TBS_AUTOTICKS | TBS_BOTH | WS_TABSTOP,81,134,179,21
     LTEXT           "Static",IDC_LNUMBER_CLIST,260,32,25,8
@@ -201,17 +165,15 @@ BEGIN
         LEFTMARGIN, 4
         VERTGUIDE, 8
         VERTGUIDE, 85
-        VERTGUIDE, 160
-        TOPMARGIN, 4
-        BOTTOMMARGIN, 229
-        HORZGUIDE, 5
-        HORZGUIDE, 18
-        HORZGUIDE, 150
-        HORZGUIDE, 157
-        HORZGUIDE, 171
-        HORZGUIDE, 184
-        HORZGUIDE, 205
-        HORZGUIDE, 220
+        VERTGUIDE, 165
+        VERTGUIDE, 174
+        TOPMARGIN, 1
+        BOTTOMMARGIN, 231
+        HORZGUIDE, 4
+        HORZGUIDE, 10
+        HORZGUIDE, 189
+        HORZGUIDE, 204
+        HORZGUIDE, 225
     END
 
     IDD_OPTIONS, DIALOG
@@ -282,6 +244,44 @@ END
 #endif    // APSTUDIO_INVOKED
 
 #endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Bulgarian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_BGR)
+#ifdef _WIN32
+LANGUAGE LANG_BULGARIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Bulgarian resources
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -367,4 +367,5 @@ IDI_NUDGE_META          ICON    DISCARDABLE     "resources\\NudgeMeta.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
+
 
