@@ -1,3 +1,7 @@
+0.0.1.19
+===========
+! Patch by Drugwash : option page redesign and ansi buit fix
+
 0.0.1.18
 ===========
 ! Fix autoresend save setting
