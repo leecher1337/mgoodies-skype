@@ -1,13 +1,14 @@
 #include "headers.h"
 #include "main.h"
 #include "shake.h"
+#include "include\m_msg_buttonsbar.h"
 
 
 static BOOL CALLBACK DlgProcOptsTrigger(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK NudgePopUpProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam);
 
 int nProtocol = 0;
-static HANDLE hEventOptionsInitialize;
+static HANDLE hEventOptionsInitialize, g_hIcon = NULL, g_hEventDbWindowEvent = NULL, g_hEventToolbarLoaded = NULL, g_hEventButtonPressed = NULL;
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 NudgeElementList *NudgeList;
@@ -527,7 +528,7 @@ void LoadIcons(void)
 		sid.pszDescription = iconDesc;
 		sid.iDefaultIndex = -IDI_NUDGE;
 		sid.hDefaultIcon =  LoadIcon(hInst,MAKEINTRESOURCE(IDI_NUDGE));
-		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		g_hIcon = (HANDLE)CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
 
 		DefaultNudge.hIcon = (HICON) CallService(MS_SKIN2_GETICON, 0, (LPARAM) iconName);
 	}
@@ -565,6 +566,64 @@ static int LoadChangedIcons(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+// Nudge support
+static int TabsrmmButtonPressed(WPARAM wParam, LPARAM lParam)
+{
+	CustomButtonClickData *cbcd=(CustomButtonClickData *)lParam;
+
+	if(!strcmp(cbcd->pszModule,"Nudge"))
+		NudgeSend(wParam, 0);
+
+	return 0;
+}
+
+static int TabsrmmButtonInit(WPARAM wParam, LPARAM lParam)
+{
+	BBButton bbd = {0};
+ 
+	bbd.cbSize = sizeof(BBButton);
+	bbd.pszModuleName = "Nudge";
+	bbd.pszTooltip = "Nudge";
+	bbd.dwDefPos = 300;
+	bbd.bbbFlags = BBBF_ISIMBUTTON|BBBF_ISLSIDEBUTTON|BBBF_CANBEHIDDEN|BBBF_ANSITOOLTIP;
+	bbd.hIcon = g_hIcon;
+	CallService (MS_BB_ADDBUTTON, 0, (LPARAM)&bbd);
+
+	return 0;
+} 
+
+void HideNudgeButton(HANDLE hContact) 
+{ 
+	char str[MAXMODULELABELLENGTH + 12] = {0};
+	CONTACTINFO ci = { 0 };
+					
+	ci.cbSize = sizeof(ci);
+	ci.hContact = hContact;
+
+	CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) & ci);
+	mir_snprintf(str,MAXMODULELABELLENGTH + 12,"%s/SendNudge", ci.szProto);
+
+	if (!ServiceExists(str)) 
+    { 
+      BBButton bbd={0}; 
+      bbd.cbSize=sizeof(BBButton); 
+      bbd.bbbFlags=BBSF_HIDDEN|BBSF_DISABLED; 
+      bbd.pszModuleName="Nudge"; 
+      CallService(MS_BB_SETBUTTONSTATE, (WPARAM)hContact, (LPARAM)&bbd); 
+    } 
+} 
+
+static int ContactWindowOpen(WPARAM wparam,LPARAM lParam) 
+{ 
+   MessageWindowEventData *MWeventdata = (MessageWindowEventData*)lParam; 
+
+   if(MWeventdata->uType == MSG_WINDOW_EVT_OPENING&&MWeventdata->hContact) 
+   { 
+      HideNudgeButton(MWeventdata->hContact); 
+   } 
+   return 0; 
+}
+
 int ModulesLoaded(WPARAM,LPARAM)
 {
 	RegisterToUpdate();
@@ -572,6 +631,12 @@ int ModulesLoaded(WPARAM,LPARAM)
 	RegisterToDbeditorpp();
 	LoadProtocols();
 	LoadIcons();
+	g_hEventToolbarLoaded = HookEvent(ME_MSG_TOOLBARLOADED, TabsrmmButtonInit);
+	if (g_hEventToolbarLoaded)
+	{
+		g_hEventButtonPressed = HookEvent(ME_MSG_BUTTONPRESSED, TabsrmmButtonPressed);
+		g_hEventDbWindowEvent = HookEvent(ME_MSG_WINDOWEVENT,ContactWindowOpen);
+	}
 	return 0;
 }
 
@@ -596,6 +661,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 extern "C" int __declspec(dllexport) Unload(void) 
 { 
+	if(g_hEventToolbarLoaded) UnhookEvent(g_hEventToolbarLoaded);
+	if(g_hEventDbWindowEvent) UnhookEvent(g_hEventButtonPressed);
+	if(g_hEventDbWindowEvent) UnhookEvent(g_hEventDbWindowEvent);
+
 	FreeVSApi();
 	NudgeElementList* p = NudgeList;
 	while ( p != NULL ) 
