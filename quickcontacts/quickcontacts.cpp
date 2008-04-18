@@ -32,7 +32,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Quick Contacts",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,3,0),
+	PLUGIN_MAKE_VERSION(0,0,3,1),
 	"Open contact-specific windows by hotkey",
 	"Ricardo Pescuma Domenecci, Heiko Schillinger",
 	"",
@@ -51,6 +51,7 @@ PLUGININFOEX pluginInfo={
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 HIMAGELIST hIml;
+LIST_INTERFACE li;
 
 HANDLE hModulesLoaded = NULL;
 HANDLE hEventAdded = NULL;
@@ -63,6 +64,7 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam);
 int EventAdded(WPARAM wparam, LPARAM lparam);
 int HotkeyPressed(WPARAM wParam, LPARAM lParam);
 int ShowDialog(WPARAM wParam,LPARAM lParam);
+void FreeContacts();
 
 int hksModule = 0;
 int hksAction = 0;
@@ -119,6 +121,8 @@ extern "C" __declspec(dllexport) int Load(PLUGINLINK *link) {
 
 extern "C" __declspec(dllexport) int Unload(void) 
 {
+	FreeContacts();
+
 	DeInitOptions();
 
 	UnhookEvent(hModulesLoaded);
@@ -132,6 +136,7 @@ extern "C" __declspec(dllexport) int Unload(void)
 int ModulesLoaded(WPARAM wParam, LPARAM lParam) 
 {
 	init_mir_malloc();
+	mir_getLI(&li);
 
 	InitOptions();
 
@@ -309,8 +314,6 @@ int EventAdded(WPARAM wparam, LPARAM lparam)
 #define IDC_ENTER 2000	// Pseudo control to handle enter in the main window
 
 
-#define MAX_CONTACTS	1024
-
 // array where the contacts are put into
 struct c_struct {
 	TCHAR szname[120];
@@ -319,30 +322,24 @@ struct c_struct {
 	char proto[20];
 };
 
-struct CONTACTSTRUCT {
-	c_struct contact[MAX_CONTACTS];
-	short int count;
-	long max_proto_width;
-};
-
-
-CONTACTSTRUCT ns;
+LIST<c_struct> contacts(200);
+long max_proto_width;
 
 
 // Get the name the contact has in list
 // This was not made to be called by more than one thread!
 TCHAR tmp_list_name[120];
 
-TCHAR *GetListName(c_struct &cs)
+TCHAR *GetListName(c_struct *cs)
 {
-	if (opts.group_append && cs.szgroup[0] != _T('\0'))
+	if (opts.group_append && cs->szgroup[0] != _T('\0'))
 	{
-		mir_sntprintf(tmp_list_name, MAX_REGS(tmp_list_name), _T("%s (%s)"), cs.szname, cs.szgroup);
+		mir_sntprintf(tmp_list_name, MAX_REGS(tmp_list_name), _T("%s (%s)"), cs->szname, cs->szgroup);
 		return tmp_list_name;
 	}
 	else
 	{
-		return cs.szname;
+		return cs->szname;
 	}
 }
 
@@ -353,29 +350,40 @@ TCHAR *GetListName(c_struct &cs)
 void SortArray(void)
 {
 	int loop,doop;
-	c_struct cs_temp;
+	c_struct *cs_temp;
 
-	for(loop=0;loop<ns.count;loop++)
+	SortedList *sl = (SortedList *) &contacts;
+	for(loop=0;loop<contacts.getCount();loop++)
 	{
-		for(doop=loop+1;doop<ns.count;doop++)
+		for(doop=loop+1;doop<contacts.getCount();doop++)
 		{
-			if(lstrcmp(ns.contact[loop].szname,ns.contact[doop].szname)>0)
+			if(lstrcmp(contacts[loop]->szname,contacts[doop]->szname)>0)
 			{
-				cs_temp=ns.contact[loop];
-				ns.contact[loop]=ns.contact[doop];
-				ns.contact[doop]=cs_temp;
+				cs_temp=contacts[loop];
+				sl->items[loop]=contacts[doop];
+				sl->items[doop]=cs_temp;
 			}
-			else if(!lstrcmp(ns.contact[loop].szname,ns.contact[doop].szname))
+			else if(!lstrcmp(contacts[loop]->szname,contacts[doop]->szname))
 			{
-				if(strcmp(ns.contact[loop].proto,ns.contact[doop].proto)>0)
+				if(strcmp(contacts[loop]->proto,contacts[doop]->proto)>0)
 				{
-					cs_temp=ns.contact[loop];
-					ns.contact[loop]=ns.contact[doop];
-					ns.contact[doop]=cs_temp;
+					cs_temp=contacts[loop];
+					sl->items[loop]=contacts[doop];
+					sl->items[doop]=cs_temp;
 				}
 			}
 
 		}
+	}
+}
+
+
+void FreeContacts()
+{
+	for (int i = contacts.getCount() - 1; i >= 0; i--)
+	{
+		delete contacts[i];
+		contacts.remove(i);
 	}
 }
 
@@ -388,8 +396,7 @@ void LoadContacts(HWND hwndDlg, BOOL show_all)
 
 	// enumerate all contacts and write them to the array
 	// item data of listbox-strings is the array position
-	ns.count = 0;
-	ns.max_proto_width = 0;
+	FreeContacts();
 	for(HANDLE hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST,0,0); 
 		hContact != NULL; 
 		hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDNEXT,(WPARAM)hContact,0))
@@ -443,7 +450,7 @@ void LoadContacts(HWND hwndDlg, BOOL show_all)
 			// Add to list
 
 			// Get group
-			memset(&ns.contact[ns.count], 0, sizeof(ns.contact[ns.count]));
+			c_struct *contact = new c_struct();
 			
 			if (opts.group_append)
 			{
@@ -451,7 +458,7 @@ void LoadContacts(HWND hwndDlg, BOOL show_all)
 				if (DBGetContactSettingTString(hMeta == NULL ? hContact : hMeta, "CList", "Group", &dbv) == 0)
 				{
 					if (dbv.ptszVal != NULL)
-						lstrcpyn(ns.contact[ns.count].szgroup, dbv.ptszVal, MAX_REGS(ns.contact[ns.count].szgroup));
+						lstrcpyn(contact->szgroup, dbv.ptszVal, MAX_REGS(contact->szgroup));
 
 					DBFreeVariant(&dbv);
 				}
@@ -459,25 +466,25 @@ void LoadContacts(HWND hwndDlg, BOOL show_all)
 
 			// Make contact name
 			TCHAR *tmp = (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)hContact, GCDNF_TCHAR);
-			lstrcpyn(ns.contact[ns.count].szname, tmp, MAX_REGS(ns.contact[ns.count].szname));
+			lstrcpyn(contact->szname, tmp, MAX_REGS(contact->szname));
 
-			strncpy(ns.contact[ns.count].proto, pszProto, sizeof(ns.contact[ns.count].proto)-1);
-			ns.contact[ns.count].proto[sizeof(ns.contact[ns.count].proto)-1] = '\0';
+			strncpy(contact->proto, pszProto, sizeof(contact->proto)-1);
+			contact->proto[sizeof(contact->proto)-1] = '\0';
 
-			ns.contact[ns.count].hcontact = hContact;
+			contact->hcontact = hContact;
 
-			ns.count++;
+			contacts.insert(contact);
 		}
 	}
 
 	SortArray();
 			
 	SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_RESETCONTENT, 0, 0);
-	for(int loop = 0; loop < ns.count; loop++)
+	for(int loop = 0; loop < contacts.getCount(); loop++)
 	{
 		SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETITEMDATA, 
 							(WPARAM)SendDlgItemMessage(hwndDlg, IDC_USERNAME, 
-											CB_ADDSTRING, 0, (LPARAM) GetListName(ns.contact[loop])), 
+											CB_ADDSTRING, 0, (LPARAM) GetListName(contacts[loop])), 
 							(LPARAM)loop);
 	}
 }
@@ -563,23 +570,23 @@ int CheckText(HWND hdlg, TCHAR *sztext, BOOL only_enable = FALSE)
 	int len = lstrlen(sztext);
 
 	int loop;
-	for(loop=0;loop<ns.count;loop++)
+	for(loop=0;loop<contacts.getCount();loop++)
 	{
 		if (only_enable)
 		{
-			if(lstreq(sztext, ns.contact[loop].szname) || lstreq(sztext, GetListName(ns.contact[loop])))
+			if(lstreq(sztext, contacts[loop]->szname) || lstreq(sztext, GetListName(contacts[loop])))
 			{
-				EnableButtons(hwndMain, ns.contact[loop].hcontact);
+				EnableButtons(hwndMain, contacts[loop]->hcontact);
 				return 0;
 			}
 		}
 		else
 		{
-			if(lstreq(sztext, GetListName(ns.contact[loop]), len))
+			if(lstreq(sztext, GetListName(contacts[loop]), len))
 			{
-				SendMessage(hdlg, WM_SETTEXT, 0, (LPARAM) GetListName(ns.contact[loop]));
+				SendMessage(hdlg, WM_SETTEXT, 0, (LPARAM) GetListName(contacts[loop]));
 				SendMessage(hdlg, EM_SETSEL, (WPARAM) len, (LPARAM) -1);
-				EnableButtons(hwndMain, ns.contact[loop].hcontact);
+				EnableButtons(hwndMain, contacts[loop]->hcontact);
 				return 0;
 			}
 		}
@@ -598,7 +605,7 @@ HANDLE GetSelectedContact(HWND hwndDlg)
 	{
 		int pos = SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_GETITEMDATA, sel, 0);
 		if (pos != CB_ERR)
-			return ns.contact[pos].hcontact;
+			return contacts[pos]->hcontact;
 	}
 
 	// Now try the name
@@ -606,10 +613,10 @@ HANDLE GetSelectedContact(HWND hwndDlg)
 
 	GetDlgItemText(hwndDlg, IDC_USERNAME, cname, MAX_REGS(cname));
 			
-	for(int loop = 0; loop < ns.count; loop++)
+	for(int loop = 0; loop < contacts.getCount(); loop++)
 	{
-		if(!lstrcmpi(cname, GetListName(ns.contact[loop])))
-			return ns.contact[loop].hcontact;
+		if(!lstrcmpi(cname, GetListName(contacts[loop])))
+			return contacts[loop]->hcontact;
 	}
 
 	return NULL;
@@ -620,9 +627,9 @@ int GetItemPos(HANDLE hcontact)
 {
 	int loop;
 
-	for(loop=0;loop<ns.count;loop++)
+	for(loop=0;loop<contacts.getCount();loop++)
 	{
-		if(hcontact==ns.contact[loop].hcontact)
+		if(hcontact==contacts[loop]->hcontact)
 			return loop;
 	}
 	return -1;
@@ -889,7 +896,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 				if (pos != -1)
 				{
 					SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_SETCURSEL, (WPARAM) pos, 0);
-					EnableButtons(hwndDlg, ns.contact[pos].hcontact);
+					EnableButtons(hwndDlg, contacts[pos]->hcontact);
 				}
 			}
 
@@ -907,7 +914,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					if (HIWORD(wParam) == CBN_SELCHANGE)
 					{
 						int pos = SendDlgItemMessage(hwndDlg, IDC_USERNAME, CB_GETCURSEL, 0, 0);
-						EnableButtons(hwndDlg, pos < ns.count ? ns.contact[pos].hcontact : NULL);
+						EnableButtons(hwndDlg, pos < contacts.getCount() ? contacts[pos]->hcontact : NULL);
 					}
 					break;
 				}
@@ -1132,6 +1139,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 		{
 			UnhookWindowsHookEx(hHook);
 			hwndMain = NULL;
+			FreeContacts();
 			InterlockedExchange(&main_dialog_open, 0);
 			break;
 		}
@@ -1176,7 +1184,7 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			// Draw icon
 			rc.left = lpdis->rcItem.left + 5;
 			rc.top = (lpdis->rcItem.bottom + lpdis->rcItem.top - icon_height) / 2;
-			ImageList_Draw(hIml, CallService(MS_CLIST_GETCONTACTICON, (WPARAM)ns.contact[lpdis->itemData].hcontact, 0), 
+			ImageList_Draw(hIml, CallService(MS_CLIST_GETCONTACTICON, (WPARAM)contacts[lpdis->itemData]->hcontact, 0), 
 							lpdis->hDC, rc.left, rc.top, ILD_NORMAL);
 
 			// Make rect for text
@@ -1188,33 +1196,33 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			// Draw Protocol
 			if (opts.num_protos > 1)
 			{
-				if (ns.max_proto_width == 0)
+				if (max_proto_width == 0)
 				{
 					// Has to be done, else the DC isnt the right one
 					// Dont ask me why
-					for(int loop = 0; loop < ns.count; loop++)
+					for(int loop = 0; loop < contacts.getCount(); loop++)
 					{
 						RECT rcc = { 0, 0, 0x7FFF, 0x7FFF };
 
-						DrawTextA(lpdis->hDC, ns.contact[loop].proto, strlen(ns.contact[loop].proto), 
+						DrawTextA(lpdis->hDC, contacts[loop]->proto, strlen(contacts[loop]->proto), 
 								 &rcc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE | DT_CALCRECT);
-						ns.max_proto_width = max(ns.max_proto_width, rcc.right - rcc.left);
+						max_proto_width = max(max_proto_width, rcc.right - rcc.left);
 					}
 
 					// Fix max_proto_width
 					if (opts.group_append && opts.group_column)
-						ns.max_proto_width = min(ns.max_proto_width, (rc.right - rc.left) / 5);
+						max_proto_width = min(max_proto_width, (rc.right - rc.left) / 5);
 					else if (opts.group_append)
-						ns.max_proto_width = min(ns.max_proto_width, (rc.right - rc.left) / 4);
+						max_proto_width = min(max_proto_width, (rc.right - rc.left) / 4);
 					else
-						ns.max_proto_width = min(ns.max_proto_width, (rc.right - rc.left) / 3);
+						max_proto_width = min(max_proto_width, (rc.right - rc.left) / 3);
 				}
 
 				RECT rc_tmp = rc;
 
-				rc_tmp.left = rc_tmp.right - ns.max_proto_width;
+				rc_tmp.left = rc_tmp.right - max_proto_width;
 
-				DrawTextA(lpdis->hDC, ns.contact[lpdis->itemData].proto, strlen(ns.contact[lpdis->itemData].proto), 
+				DrawTextA(lpdis->hDC, contacts[lpdis->itemData]->proto, strlen(contacts[lpdis->itemData]->proto), 
 						 &rc_tmp, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
 
 				rc.right = rc_tmp.left - 5;
@@ -1236,16 +1244,16 @@ static BOOL CALLBACK MainDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 					rc.right = rc_tmp.left - 5;
 				}
 
-				DrawText(lpdis->hDC, ns.contact[lpdis->itemData].szgroup, lstrlen(ns.contact[lpdis->itemData].szgroup),
+				DrawText(lpdis->hDC, contacts[lpdis->itemData]->szgroup, lstrlen(contacts[lpdis->itemData]->szgroup),
 						 &rc_tmp, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
 			}
 
 			// Draw text
 			TCHAR *name;
 			if (opts.group_append && !opts.group_column)
-				name = GetListName(ns.contact[lpdis->itemData]);
+				name = GetListName(contacts[lpdis->itemData]);
 			else
-				name = ns.contact[lpdis->itemData].szname;
+				name = contacts[lpdis->itemData]->szname;
 
 			DrawText(lpdis->hDC, name, lstrlen(name), &rc, DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
 
@@ -1308,6 +1316,8 @@ int ShowDialog(WPARAM wParam,LPARAM lParam)
 		hwndMain = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN), NULL, MainDlgProc);
 	}
 
+/* This is inside miranda now
+
 	// Make sure it is inside screen
 	RECT rc;
 	GetWindowRect(hwndMain, &rc);
@@ -1345,6 +1355,7 @@ int ShowDialog(WPARAM wParam,LPARAM lParam)
 		OffsetRect(&rc, screen_rc.left - rc.left, 0);
 
 	MoveWindow(hwndMain, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE);
+*/
 
 	// Show it
 	SetForegroundWindow(hwndMain);
