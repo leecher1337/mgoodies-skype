@@ -109,7 +109,7 @@ BEGIN
                     153,121,9
     CONTROL         "",IDC_PROTOLIST,"SysTreeView32",TVS_DISABLEDRAGDROP | 
                     TVS_SHOWSELALWAYS | TVS_CHECKBOXES | WS_BORDER | 
-                    WS_TABSTOP,8,10,105,84
+                    WS_TABSTOP,8,12,105,84
     GROUPBOX        "Protocol options",IDC_STATIC,4,1,309,224
     CONTROL         "Specify options for each protocol",IDC_USEBYPROTOCOL,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,121,10,162,8
