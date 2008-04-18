@@ -13,12 +13,50 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
+// Bulgarian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_BGR)
+#ifdef _WIN32
+LANGUAGE LANG_BULGARIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Bulgarian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
 // Neutral resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-#pragma code_page(1250)
+#pragma code_page(1252)
 #endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
@@ -38,7 +76,7 @@ BEGIN
                     BS_NOTIFY | WS_TABSTOP,13,153,65,9
     CONTROL         "Away",IDC_CHECKST2,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
                     WS_TABSTOP,13,163,65,9
-    CONTROL         "N/A",IDC_CHECKST3,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
+    CONTROL         "NA",IDC_CHECKST3,"Button",BS_AUTOCHECKBOX | BS_NOTIFY | 
                     WS_TABSTOP,13,173,65,9
     CONTROL         "Occupied",IDC_CHECKST4,"Button",BS_AUTOCHECKBOX | 
                     BS_NOTIFY | WS_TABSTOP,13,183,65,9
@@ -108,7 +146,7 @@ END
 IDD_OPTIONS DIALOGEX 0, 0, 319, 249
 STYLE DS_FIXEDSYS | DS_CENTER | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "Tab1",IDC_OPTIONSTAB,"SysTabControl32",WS_TABSTOP,0,3,
                     319,246
@@ -117,7 +155,7 @@ END
 IDD_OPT_SHAKE DIALOGEX 0, 0, 300, 240
 STYLE DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX        "Shaking Clist Options",IDC_STATIC,7,10,291,96
     GROUPBOX        "Shaking Message Window Options",IDC_STATIC,7,111,291,
@@ -248,44 +286,6 @@ END
 
 
 /////////////////////////////////////////////////////////////////////////////
-// Bulgarian resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_BGR)
-#ifdef _WIN32
-LANGUAGE LANG_BULGARIAN, SUBLANG_DEFAULT
-#pragma code_page(1251)
-#endif //_WIN32
-
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE MOVEABLE PURE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE MOVEABLE PURE 
-BEGIN
-    "#include ""winres.h""\r\n"
-    "\0"
-END
-
-3 TEXTINCLUDE MOVEABLE PURE 
-BEGIN
-    "\r\n"
-    "\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-#endif    // Bulgarian resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
 // French (Belgium) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_FRB)
@@ -367,5 +367,4 @@ IDI_NUDGE_META          ICON    DISCARDABLE     "resources\\NudgeMeta.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-
 
