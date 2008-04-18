@@ -2,6 +2,7 @@
 ===========
 ! Patch by Drugwash : option page redesign and ansi buit fix
 * Change N/A to NA (requested by freak)
++ Patch for tabsrmm button api support (thx DaniOK)
 
 0.0.1.18
 ===========
