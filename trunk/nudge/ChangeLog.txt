@@ -1,3 +1,7 @@
+0.0.1.20
+===========
+! Bug in options layout
+
 0.0.1.19
 ===========
 ! Patch by Drugwash : option page redesign and ansi buit fix
