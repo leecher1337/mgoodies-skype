@@ -1210,19 +1210,25 @@ void FileTimeToLocalizedDateTime(LONGLONG filetime, WCHAR *dateout, int lendateo
 	}
 	ft.dwLowDateTime = (DWORD)filetime;
 	ft.dwHighDateTime = (DWORD)(filetime >> 32);
-	if (!FileTimeToSystemTime(&ft,&st)){
-		// this should never happen
-		wcsncpy(dateout,L"Incorrect FileTime",lendateout);
+	FILETIME localft;
+	if (!FileTimeToLocalFileTime(&ft,&localft)){
+			// this should never happen
+			wcsncpy(dateout,L"Incorrect FileTime",lendateout);
 	} else {
-		dateout[lendateout-1]=0;
-		int templen = 0;
-		if (!willShowDate) willShowDate = (wTodayYear!=st.wYear)||(wTodayMonth!=st.wMonth)||(wTodayDay!=st.wDay);
-		if (willShowDate){
-			templen = GetDateFormatW(localeID,(optDateTime&SHOWDATELONG)?DATE_LONGDATE:DATE_SHORTDATE,&st,NULL,dateout,lendateout-2);
-			dateout[templen-1] = ' ';
-		}
-		if (templen<(lendateout-1)){
-			GetTimeFormatW(localeID,(optDateTime&SHOWDATENOSECONDS)?TIME_NOSECONDS:0,&st,NULL,&dateout[templen],lendateout-templen-1);
+		if (!FileTimeToSystemTime(&localft,&st)){
+			// this should never happen
+			wcsncpy(dateout,L"Incorrect LocalFileTime",lendateout);
+		} else {
+			dateout[lendateout-1]=0;
+			int templen = 0;
+			if (!willShowDate) willShowDate = (wTodayYear!=st.wYear)||(wTodayMonth!=st.wMonth)||(wTodayDay!=st.wDay);
+			if (willShowDate){
+				templen = GetDateFormatW(localeID,(optDateTime&SHOWDATELONG)?DATE_LONGDATE:DATE_SHORTDATE,&st,NULL,dateout,lendateout-2);
+				dateout[templen-1] = ' ';
+			}
+			if (templen<(lendateout-1)){
+				GetTimeFormatW(localeID,(optDateTime&SHOWDATENOSECONDS)?TIME_NOSECONDS:0,&st,NULL,&dateout[templen],lendateout-templen-1);
+			}
 		}
 	}
 }
