@@ -2,6 +2,9 @@ Avatar History
 
 Changelog:
 
+. 0.0.2.10
+  * Fix for get event text
+
 . 0.0.2.9
   + Depends on history events to add events to history
 
