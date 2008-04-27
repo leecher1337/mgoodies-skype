@@ -2,6 +2,9 @@ History Events
 
 Changelog:
 
+. 0.0.0.6
+  * Fix for get event text
+
 . 0.0.0.5
   + Added option to get event struct by event type
   + Added option to register using an icolib icon
