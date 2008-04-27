@@ -74,7 +74,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Avatar History",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,2,9),
+	PLUGIN_MAKE_VERSION(0,0,2,10),
 	"This plugin keeps backups of all your contacts' avatar changes and/or shows popups",
 	"Matthew Wild (MattJ), Ricardo Pescuma Domenecci",
 	"mwild1@gmail.com",
@@ -268,12 +268,12 @@ static int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 	if (DBGetContactSettingByte(NULL, MODULE_NAME, "LogToHistory", AVH_DEF_LOGTOHISTORY))
 	{
-		char *templates[] = { "Avatar change\n%contact% changed his/her avatar", 
-							 "Avatar removal\n%contact% removed his/her avatar" };
+		char *templates[] = { "Avatar change\nchanged his/her avatar", 
+							  "Avatar removal\nremoved his/her avatar" };
 		HICON hIcon = createDefaultOverlayedIcon(FALSE);
 		HistoryEvents_RegisterWithTemplates(MODULE_NAME, "avatarchange", "Avatar change", EVENTTYPE_AVATAR_CHANGE, hIcon, 
 			HISTORYEVENTS_FORMAT_CHAR | HISTORYEVENTS_FORMAT_WCHAR | HISTORYEVENTS_FORMAT_RICH_TEXT,
-			HISTORYEVENTS_FLAG_SHOW_IM_SRMM, 
+			HISTORYEVENTS_FLAG_SHOW_IM_SRMM | HISTORYEVENTS_FLAG_EXPECT_CONTACT_NAME_BEFORE, 
 			GetHistoryEventText, templates, MAX_REGS(templates));
 		DestroyIcon(hIcon);
 	}
@@ -937,11 +937,11 @@ void ConvertToRTF(Buffer<char> *buffer, T *line)
 	for (; *line; line++) 
 	{
 		if (*line == (T)'\r' && line[1] == (T)'\n') {
-			buffer->append("\\par ", 5);
+			buffer->append("\\line ", 6);
 			line++;
 		}
 		else if (*line == (T)'\n') {
-			buffer->append("\\par ", 5);
+			buffer->append("\\line ", 6);
 		}
 		else if (*line == (T)'\t') {
 			buffer->append("\\tab ", 5);
@@ -981,6 +981,25 @@ void GetRTFFor(Buffer<char> *buffer, HBITMAP hBitmap)
 
 	buffer->append('}');
 
+
+/*	
+	BITMAPINFOHEADER bih = { 0 };
+	HDC hdc = GetDC(NULL);
+	GetDIBits(hdc, hBitmap, 0, bmp.bmHeight, p, (BITMAPINFO *) & bih, DIB_RGB_COLORS);
+
+	buffer->appendPrintf("{\\pict\\wbitmap0\\wbmbitspixel%u\\wbmplanes%u\\wbmwidthbytes%u\\picw%u\\pich%u ", 
+				bmp.bmBitsPixel, bmp.bmPlanes, bmp.bmWidthBytes, bmp.bmWidth, bmp.bmHeight);
+
+	DWORD i;
+	for (i = 0; i < sizeof(BITMAPINFOHEADER); i++)
+		buffer->appendPrintf("%02X", ((PBYTE) & bih)[i]);
+
+	for (i = 0; i < dwLen; i++)
+		buffer->appendPrintf("%02X", p[i]);
+
+	buffer->append('}');
+*/
+
 	free(p);
 }
 
@@ -1018,14 +1037,15 @@ void * GetHistoryEventText(HANDLE hContact, HANDLE hDbEvent, DBEVENTINFO *dbe, i
 
 			if (hBmp != NULL)
 			{
-				buffer.append("\\par ", 5);
+				buffer.append("\\line  ", 7);
 				GetRTFFor(&buffer, hBmp);
 				DeleteObject(hBmp);
 			}
 		}
 
+		buffer.append(' ');
 		buffer.pack();
-		ret = buffer.str;
+		ret = buffer.detach();
 	}
 
 	return ret;
