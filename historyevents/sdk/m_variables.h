@@ -32,15 +32,15 @@
 // Memory management
 // --------------------------------------------------------------------------
 
-// Release memory that was allocated by the Variables plugin, e.g. returned 
+// Release memory that was allocated by the Variables plugin, e.g. returned
 // strings.
 
 #define MS_VARS_FREEMEMORY  "Vars/FreeMemory"
 
 // Parameters:
 // ------------------------
-// wParam = (WPARAM)(void *)pntr 
-//   Pointer to memory that was allocated by the Variables plugin (e.g. a 
+// wParam = (WPARAM)(void *)pntr
+//   Pointer to memory that was allocated by the Variables plugin (e.g. a
 //   returned string) (can be NULL).
 // lParam = 0
 
@@ -48,7 +48,7 @@
 // ------------------------
 // Does return 0 on success, nozero otherwise.
 
-// Note: Do only use this service to free memory that was *explicitliy* 
+// Note: Do only use this service to free memory that was *explicitliy*
 // stated that it should be free with this service.
 
 
@@ -61,14 +61,14 @@
 // Parameters:
 // ------------------------
 // wParam = 0
-// lParam = (LPARAM) &MM_INTERFACE  
+// lParam = (LPARAM) &MM_INTERFACE
 //   Pointer to a memory manager interface struct (see m_system.h).
 
 // Return Value:
 // ------------------------
 // Returns 0 on success, nozero otherwise
 
-// Note: Works exactly the same as the MS_SYSTEM_GET_MMI service 
+// Note: Works exactly the same as the MS_SYSTEM_GET_MMI service
 // service of m_system.h.
 
 // Helper function for easy using:
@@ -87,13 +87,11 @@ __inline static void variables_free(void *pntr) {
 
 #define MS_VARS_FORMATSTRING    "Vars/FormatString"
 
-#define MS_VARS_FORMATSTRING_EX    "Vars/FormatStringEx"
-
-// This service can be used to parse tokens in a text. The tokens will be  
-// replaced by their resolved values. A token can either be a field or a 
-// function. A field takes no arguments and is represented between 
-// %-characters, e.g. "%winampsong%". A function can take any number of 
-// arguments and is represented by a ? or !-character followed by the name 
+// This service can be used to parse tokens in a text. The tokens will be
+// replaced by their resolved values. A token can either be a field or a
+// function. A field takes no arguments and is represented between
+// %-characters, e.g. "%winampsong%". A function can take any number of
+// arguments and is represented by a ? or !-character followed by the name
 // of the function and a list of arguments, e.g. "?add(1,2)".
 
 // Parameters:
@@ -112,14 +110,14 @@ typedef struct {
   int cbSize;  // Set this to sizeof(FORMATINFO).
   int flags;  // Flags to use (see FIF_* below).
   union {
-    char *szFormat;  // Text in which the tokens will be replaced (can't be 
+    char *szFormat;  // Text in which the tokens will be replaced (can't be
                      // NULL).
     WCHAR *wszFormat;
     TCHAR *tszFormat;
   };
   union {
-    char *szExtraText;  // Extra, context-specific string (can be NULL) -> 
-                        // The field "extratext" will be replaced by this 
+    char *szExtraText;  // Extra, context-specific string (can be NULL) ->
+                        // The field "extratext" will be replaced by this
                         // string. (Previously szSource).
     WCHAR *wszExtraText;
     TCHAR *tszExtraText;
@@ -128,19 +126,18 @@ typedef struct {
                     // represents this contact.
   int pCount;  // (output) Number of succesful parsed tokens, needs to be set
                // to 0 before the call
-  int eCount;  // (output) Number of failed tokens, needs to be set to 0 
+  int eCount;  // (output) Number of failed tokens, needs to be set to 0
                // before the call
   union {
-    char **szaTemporaryVars;	// Temporary variables valid only in the duration of the format call
-    TCHAR **tszaTemporaryVars;	// By pos: [i] is var name, [i + 1] is var value
-    WCHAR **wszaTemporaryVars;
+     char **szaTemporaryVars;	// Temporary variables valid only in the duration of the format call
+     TCHAR **tszaTemporaryVars;	// By pos: [i] is var name, [i + 1] is var value
+     WCHAR **wszaTemporaryVars;
   };
   int cbTemporaryVarsSize;		// Number of elements in szaTemporaryVars array
 
 } FORMATINFO;
 
 #define FORMATINFOV2_SIZE 28
-
 
 // Possible flags:
 #define FIF_UNICODE 0x01  // Expects and returns unicode text (WCHAR*).
@@ -163,7 +160,7 @@ __inline static TCHAR *variables_parse(TCHAR *tszFormat, TCHAR *tszExtraText, HA
   FORMATINFO fi;
 
   ZeroMemory(&fi, sizeof(fi));
-  fi.cbSize = FORMATINFOV2_SIZE;
+  fi.cbSize = sizeof(fi);
   fi.tszFormat = tszFormat;
   fi.tszExtraText = tszExtraText;
   fi.hContact = hContact;
@@ -171,8 +168,10 @@ __inline static TCHAR *variables_parse(TCHAR *tszFormat, TCHAR *tszExtraText, HA
 
   return (TCHAR *)CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
 }
-__inline static TCHAR *variables_parse_ex(TCHAR *tszFormat, TCHAR *tszExtraText, HANDLE hContact, 
-										  TCHAR **tszaTemporaryVars, int cbTemporaryVarsSize) {
+#endif
+
+__inline static TCHAR *variables_parse_ex(TCHAR *tszFormat, TCHAR *tszExtraText, HANDLE hContact,
+ 										  TCHAR **tszaTemporaryVars, int cbTemporaryVarsSize) {
 
   FORMATINFO fi;
 
@@ -185,13 +184,11 @@ __inline static TCHAR *variables_parse_ex(TCHAR *tszFormat, TCHAR *tszExtraText,
   fi.tszaTemporaryVars = tszaTemporaryVars;
   fi.cbTemporaryVarsSize = cbTemporaryVarsSize;
 
-  return (TCHAR *)CallService(MS_VARS_FORMATSTRING_EX, (WPARAM)&fi, 0);
+  return (TCHAR *)CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
 }
-#endif
-
 // Helper #2: variables_parsedup
 // ------------------------
-// Returns a _strdup()'ed copy of the unparsed string when Variables is not 
+// Returns a _strdup()'ed copy of the unparsed string when Variables is not
 // installed, returns a strdup()'ed copy of the parsed result otherwise.
 
 // Note: The returned pointer needs to be released using your own free().
@@ -202,7 +199,7 @@ __inline static TCHAR *variables_parsedup(TCHAR *tszFormat, TCHAR *tszExtraText,
   if (ServiceExists(MS_VARS_FORMATSTRING)) {
     FORMATINFO fi;
     TCHAR *tszParsed, *tszResult;
-    
+
     ZeroMemory(&fi, sizeof(fi));
     fi.cbSize = sizeof(fi);
     fi.tszFormat = tszFormat;
@@ -218,22 +215,23 @@ __inline static TCHAR *variables_parsedup(TCHAR *tszFormat, TCHAR *tszExtraText,
   }
   return tszFormat?_tcsdup(tszFormat):tszFormat;
 }
-__inline static TCHAR *variables_parsedup_ex(TCHAR *tszFormat, TCHAR *tszExtraText, HANDLE hContact, 
+
+__inline static TCHAR *variables_parsedup_ex(TCHAR *tszFormat, TCHAR *tszExtraText, HANDLE hContact,
 										  TCHAR **tszaTemporaryVars, int cbTemporaryVarsSize) {
 
   if (ServiceExists(MS_VARS_FORMATSTRING)) {
     FORMATINFO fi;
     TCHAR *tszParsed, *tszResult;
-    
+
     ZeroMemory(&fi, sizeof(fi));
     fi.cbSize = sizeof(fi);
     fi.tszFormat = tszFormat;
     fi.tszExtraText = tszExtraText;
     fi.hContact = hContact;
     fi.flags |= FIF_TCHAR;
-	fi.tszaTemporaryVars = tszaTemporaryVars;
-	fi.cbTemporaryVarsSize = cbTemporaryVarsSize;
-    tszParsed = (TCHAR *)CallService(MS_VARS_FORMATSTRING_EX, (WPARAM)&fi, 0);
+    fi.tszaTemporaryVars = tszaTemporaryVars;
+    fi.cbTemporaryVarsSize = cbTemporaryVarsSize;
+    tszParsed = (TCHAR *)CallService(MS_VARS_FORMATSTRING, (WPARAM)&fi, 0);
     if (tszParsed) {
       tszResult = _tcsdup(tszParsed);
       CallService(MS_VARS_FREEMEMORY, (WPARAM)tszParsed, 0);
@@ -254,8 +252,8 @@ __inline static TCHAR *variables_parsedup_ex(TCHAR *tszFormat, TCHAR *tszExtraTe
 
 #define MS_VARS_REGISTERTOKEN "Vars/RegisterToken"
 
-// With this service you can define your own token. The newly added tokens 
-// using this service are taken into account on every call to 
+// With this service you can define your own token. The newly added tokens
+// using this service are taken into account on every call to
 // MS_VARS_FORMATSTRING.
 
 // Parameters:
@@ -266,32 +264,32 @@ __inline static TCHAR *variables_parsedup_ex(TCHAR *tszFormat, TCHAR *tszExtraTe
 
 // Return Value:
 // ------------------------
-// Returns 0 on success, nonzero otherwise. Existing tokens will be 
+// Returns 0 on success, nonzero otherwise. Existing tokens will be
 // 'overwritten' if registered twice.
 
 // Needed for szService and parseFunction:
 typedef struct {
-  int cbSize;  // You need to check if this is >=sizeof(ARGUMENTSINFO) 
+  int cbSize;  // You need to check if this is >=sizeof(ARGUMENTSINFO)
                // (already filled in).
   FORMATINFO *fi;  // Arguments passed to MS_VARS_FORMATSTRING.
   unsigned int argc;  // Number of elements in the argv array.
   union {
-    char **argv; // Argv[0] will be the token name, the following elements 
+    char **argv; // Argv[0] will be the token name, the following elements
                  // are the additional arguments.
-    WCHAR **wargv;  // If the registered token was registered as a unicode 
+    WCHAR **wargv;  // If the registered token was registered as a unicode
                     // token, wargv should be accessed.
     TCHAR **targv;
   };
-  int flags;  // (output) You can set flags here (initially 0), use the 
+  int flags;  // (output) You can set flags here (initially 0), use the
               // AIF_* flags (see below).
 } ARGUMENTSINFO;
 
 // Available flags for ARGUMENTSINFO:
-// Set the flags of the ARGUMENTSINFO struct to any of these to influence 
+// Set the flags of the ARGUMENTSINFO struct to any of these to influence
 // further parsing.
-#define AIF_DONTPARSE   0x01    // Don't parse the result of this function, 
-                                // usually the result of a token is parsed 
-                                // again, if the `?` is used as a function 
+#define AIF_DONTPARSE   0x01    // Don't parse the result of this function,
+                                // usually the result of a token is parsed
+                                // again, if the `?` is used as a function
                                 // character.
 #define AIF_FALSE       0x02    // The function returned logical false.
 
@@ -312,87 +310,87 @@ typedef void (*VARCLEANUPFUNCW)(WCHAR *wszReturn);
 typedef struct {
   int cbSize;  // Set this to sizeof(TOKENREGISTER).
   union {
-    char *szTokenString;  // Name of the new token to be created, without %, 
+    char *szTokenString;  // Name of the new token to be created, without %,
                           // ?, ! etc. signs (can't be NULL).
-    WCHAR *wszTokenString;  
+    WCHAR *wszTokenString;
     TCHAR *tszTokenString;
   };
   union {
-    char *szService;  // Name of a service that is used to request the 
-                      // token's value, if no service is used, a function 
+    char *szService;  // Name of a service that is used to request the
+                      // token's value, if no service is used, a function
                       // and TRF_PARSEFUNC must be used.
     VARPARSEFUNCA parseFunction;  // See above, use with TRF_PARSEFUNC.
     VARPARSEFUNCW parseFunctionW;
     VARPARSEFUNC parseFunctionT;
   };
   union {
-    char *szCleanupService;  // Name of a service to be called when the 
+    char *szCleanupService;  // Name of a service to be called when the
                              // memory allocated in szService can be freed
-                             // (only used when flag VRF_CLEANUP is set, 
+                             // (only used when flag VRF_CLEANUP is set,
                              // else set this to NULL).
     VARCLEANUPFUNCA cleanupFunction;  // See above, use with TRF_CLEANUPFUNC.
     VARCLEANUPFUNCW cleanupFunctionW;
     VARCLEANUPFUNC cleanupFunctionT;
   };
-  char *szHelpText;  // Help info shown in help dialog (can be NULL). Has to 
-                     // be in the following format: 
-                     // "subject\targuments\tdescription" 
-                     // (Example: "math\t(x, y ,...)\tx + y + ..."), or:  
-                     // "subject\tdescription" 
-                     // (Example: "miranda\tPath to the Miranda-IM 
+  char *szHelpText;  // Help info shown in help dialog (can be NULL). Has to
+                     // be in the following format:
+                     // "subject\targuments\tdescription"
+                     // (Example: "math\t(x, y ,...)\tx + y + ..."), or:
+                     // "subject\tdescription"
+                     // (Example: "miranda\tPath to the Miranda-IM
                      // executable").
-                     // Note: subject and description are translated by 
+                     // Note: subject and description are translated by
                      // Variables.
-  int memType;  // Describes which method Varibale's plugin needs to use to 
-                // free the returned buffer, use one of the VR_MEM_* values 
-                // (see below). Only valid if the flag VRF_FREEMEM is set, 
+  int memType;  // Describes which method Varibale's plugin needs to use to
+                // free the returned buffer, use one of the VR_MEM_* values
+                // (see below). Only valid if the flag VRF_FREEMEM is set,
                 // use TR_MEM_OWNER otherwise).
   int flags; // Flags to use (see below), one of TRF_* (see below).
 } TOKENREGISTER;
 
 // Available Memory Storage Types:
-// These values describe which method Variables Plugin will use to free the 
+// These values describe which method Variables Plugin will use to free the
 // buffer returned by the parse function or service
-#define TR_MEM_VARIABLES    1  // Memory is allocated using the functions 
+#define TR_MEM_VARIABLES    1  // Memory is allocated using the functions
                                // retrieved by MS_VARS_GET_MMI.
 #define TR_MEM_MIRANDA      2  // Memory is allocated using Miranda's Memory
-                               // Manager Interface (using the functions 
-                               // returned by MS_SYSTEM_GET_MMI), if 
-                               // VRF_FREEMEM is set, the memory will be 
+                               // Manager Interface (using the functions
+                               // returned by MS_SYSTEM_GET_MMI), if
+                               // VRF_FREEMEM is set, the memory will be
                                // freed by Variables.
-#define TR_MEM_OWNER        3  // Memory is owned by the calling plugin 
-                               // (can't be freed by Variables Plugin 
-                               // automatically). This should be used if 
+#define TR_MEM_OWNER        3  // Memory is owned by the calling plugin
+                               // (can't be freed by Variables Plugin
+                               // automatically). This should be used if
                                // VRF_FREEMEM is not specified in the flags.
 
 // Available Flags for TOKENREGISTER:
 #define TRF_FREEMEM     0x01  // Variables Plugin will automatically free the
-                              // pointer returned by the parse function or 
-                              // service (which method it will us is 
+                              // pointer returned by the parse function or
+                              // service (which method it will us is
                               // specified in memType -> see above).
-#define TRF_CLEANUP     0x02  // Call cleanup service or function, notifying 
-                              // that the returned buffer can be freed. 
-                              // Normally you should use either TRF_FREEMEM 
+#define TRF_CLEANUP     0x02  // Call cleanup service or function, notifying
+                              // that the returned buffer can be freed.
+                              // Normally you should use either TRF_FREEMEM
                               // or TRF_CLEANUP.
-#define TRF_PARSEFUNC   0x40  // parseFunction will be used instead of a 
+#define TRF_PARSEFUNC   0x40  // parseFunction will be used instead of a
                               // service.
-#define TRF_CLEANUPFUNC 0x80  // cleanupFunction will be used instead of a 
+#define TRF_CLEANUPFUNC 0x80  // cleanupFunction will be used instead of a
                               // service.
 #define TRF_USEFUNCS    TRF_PARSEFUNC|TRF_CLEANUPFUNC
-#define TRF_UNPARSEDARGS    0x04  // Provide the arguments for the parse 
-                                  // function in their raw (unparsed) form. 
-                                  // By default, arguments are parsed before 
+#define TRF_UNPARSEDARGS    0x04  // Provide the arguments for the parse
+                                  // function in their raw (unparsed) form.
+                                  // By default, arguments are parsed before
                                   // presenting them to the parse function.
 #define TRF_FIELD       0x08  // The token can be used as a %field%.
-#define TRF_FUNCTION    0x10  // The token can be used as a ?function(). 
-                              // Normally you should use either TRF_FIELD or 
+#define TRF_FUNCTION    0x10  // The token can be used as a ?function().
+                              // Normally you should use either TRF_FIELD or
                               // TRF_FUNCTION.
-#define TRF_UNICODE     0x20  // Strings in structure are unicode (WCHAR*). 
-                              // In this case, the strings pointing to the 
-                              // arguments in the ARGUMENTS struct are 
-                              // unicode also. The returned buffer is 
-                              // expected to be unicode also, and the 
-                              // unicode parse and cleanup functions are 
+#define TRF_UNICODE     0x20  // Strings in structure are unicode (WCHAR*).
+                              // In this case, the strings pointing to the
+                              // arguments in the ARGUMENTS struct are
+                              // unicode also. The returned buffer is
+                              // expected to be unicode also, and the
+                              // unicode parse and cleanup functions are
                               // called.
 
 #if defined(UNICODE) || defined(_UNICODE)
@@ -415,14 +413,14 @@ typedef struct {
 //   see above
 
 // Return Value:
-// Needs to return the pointer to a dynamically allocacated string or NULL. 
+// Needs to return the pointer to a dynamically allocacated string or NULL.
 // A return value of NULL is regarded as an error (eCount will be increaded).
 // Flags in the ARGUMENTSINFO struct can be set (see above).
 
 // Callback Service (szCallbackService) / cleanupFunction:
 // ------------------------
-// This service is called when the memory that was allocated by the parse 
-// function or service can be freed. Note: It will only be called when the 
+// This service is called when the memory that was allocated by the parse
+// function or service can be freed. Note: It will only be called when the
 // flag VRF_CLEANUP of TOKENREGISTER is set.
 
 // Parameters:
@@ -445,7 +443,7 @@ typedef struct {
 #define MS_VARS_SHOWHELPEX    "Vars/ShowHelpEx"
 
 // This service can be used to open the help dialog of Variables. This dialog
-// provides easy input for the user and/or information about the available 
+// provides easy input for the user and/or information about the available
 // tokens.
 
 // Parameters:
@@ -460,20 +458,20 @@ typedef struct {
 
 typedef struct {
   int cbSize;  // Set to sizeof(VARHELPINFO).
-  FORMATINFO *fi;  // Used for both input and output. If this pointer is not 
-                   // NULL, the information is used as the initial values for 
+  FORMATINFO *fi;  // Used for both input and output. If this pointer is not
+                   // NULL, the information is used as the initial values for
                    // the dialog.
-  HWND hwndCtrl;  // Used for both input and output. The window text of this 
-                  // window will be read and used as the initial input of the 
+  HWND hwndCtrl;  // Used for both input and output. The window text of this
+                  // window will be read and used as the initial input of the
                   // input dialog. If the user presses the OK button the window
-                  // text of this window will be set to the text of the input 
-                  // field and a EN_CHANGE message via WM_COMMAND is send to 
+                  // text of this window will be set to the text of the input
+                  // field and a EN_CHANGE message via WM_COMMAND is send to
                   // this window. (Can be NULL).
-  char *szSubjectDesc;  // The description of the %subject% token will be set 
+  char *szSubjectDesc;  // The description of the %subject% token will be set
                         // to this text, if not NULL. This is translated
                         // automatically.
-  char *szExtraTextDesc;  // The description of the %extratext% token will be 
-                          // set to this text, if not NULL. This is translated 
+  char *szExtraTextDesc;  // The description of the %extratext% token will be
+                          // set to this text, if not NULL. This is translated
                           // automatically.
   int flags;  // Flags, see below.
 } VARHELPINFO;
@@ -482,26 +480,26 @@ typedef struct {
 // Flags for VARHELPINFO
 #define VHF_TOKENS              0x00000001  // Create a dialog with the list of
                                             // tokens
-#define VHF_INPUT               0x00000002  // Create a dialog with an input 
+#define VHF_INPUT               0x00000002  // Create a dialog with an input
                                             // field (this contains the list of
                                             // tokens as well).
-#define VHF_SUBJECT             0x00000004  // Create a dialog to select a 
+#define VHF_SUBJECT             0x00000004  // Create a dialog to select a
                                             // contact for the %subject% token.
-#define VHF_EXTRATEXT           0x00000008  // Create a dialog to enter a text 
+#define VHF_EXTRATEXT           0x00000008  // Create a dialog to enter a text
                                             // for the %extratext% token.
 #define VHF_HELP                0x00000010  // Create a dialog with help info.
-#define VHF_HIDESUBJECTTOKEN    0x00000020  // Hide the %subject% token in the 
+#define VHF_HIDESUBJECTTOKEN    0x00000020  // Hide the %subject% token in the
                                             // list of tokens.
-#define VHF_HIDEEXTRATEXTTOKEN  0x00000040  // Hide the %extratext% token in 
+#define VHF_HIDEEXTRATEXTTOKEN  0x00000040  // Hide the %extratext% token in
                                             // the list of tokens.
-#define VHF_DONTFILLSTRUCT      0x00000080  // Don't fill the struct with the 
+#define VHF_DONTFILLSTRUCT      0x00000080  // Don't fill the struct with the
                                             // new information if OK is pressed
-#define VHF_FULLFILLSTRUCT      0x00000100  // Fill all members of the struct 
-                                            // when OK is pressed. By default 
+#define VHF_FULLFILLSTRUCT      0x00000100  // Fill all members of the struct
+                                            // when OK is pressed. By default
                                             // only szFormat is set. With this
-                                            // flag on, hContact and 
+                                            // flag on, hContact and
                                             // szExtraText are also set.
-#define VHF_SETLASTSUBJECT      0x00000200  // Set the last contact that was 
+#define VHF_SETLASTSUBJECT      0x00000200  // Set the last contact that was
                                             // used in the %subject% dialog in
                                             // case fi.hContact is NULL.
 
@@ -510,20 +508,20 @@ typedef struct {
 #define VHF_SIMPLEDLG           VHF_INPUT|VHF_HELP
 #define VHF_NOINPUTDLG          VHF_TOKENS|VHF_HELP
 
-// If the service fills information in the struct for szFormat or szExtraText, 
+// If the service fills information in the struct for szFormat or szExtraText,
 // these members must be free'd using the free function of Variables.
-// If wParam==NULL, the dialog is created modeless. Only one dialog can be 
-// shown at the time. 
-// If both hwndCtrl and fi are NULL, the user input will not be retrievable. 
-// In this case, the dialog is created with only a "Close" button, instead of 
+// If wParam==NULL, the dialog is created modeless. Only one dialog can be
+// shown at the time.
+// If both hwndCtrl and fi are NULL, the user input will not be retrievable.
+// In this case, the dialog is created with only a "Close" button, instead of
 // the "OK" and "Cancel" buttons.
-// In case of modeless dialog and fi != NULL, please make sure this pointer 
+// In case of modeless dialog and fi != NULL, please make sure this pointer
 // stays valid while the dialog is open.
 
 // Helper function for easy use in standard case:
 #ifndef VARIABLES_NOHELPER
 __inline static int variables_showhelp(HWND hwndDlg, UINT uIDEdit, int flags, char *szSubjectDesc, char *szExtraDesc) {
-	
+
   VARHELPINFO vhi;
 
   ZeroMemory(&vhi, sizeof(VARHELPINFO));
@@ -562,12 +560,12 @@ __inline static int variables_showhelp(HWND hwndDlg, UINT uIDEdit, int flags, ch
                            // Variables help dialog. Returns (HICON)hIcon on
                            // success or NULL on failure;
 #define VSI_HELPTIPTEXT 2  // Returns the tooltip text you can use for the
-                           // help button. Returns (char *)szTipText, a 
+                           // help button. Returns (char *)szTipText, a
                            // static, translated buffer containing the help
                            // text or NULL on error.
 
-// Helper to set the icon on a button accessing the help dialog. 
-// Preferably a 16x14 MButtonClass control, but it works on a standard 
+// Helper to set the icon on a button accessing the help dialog.
+// Preferably a 16x14 MButtonClass control, but it works on a standard
 // button control as well. If no icon is availble (because of old version of
 // Variables) the string "V" is shown on the button. If Variables is not
 // available, the button will be hidden.
@@ -616,7 +614,7 @@ __inline static int variables_skin_helpbutton(HWND hwndDlg, UINT uIDButton) {
 		res = -1;
 	}
 	ShowWindow(GetDlgItem(hwndDlg, uIDButton), ServiceExists(MS_VARS_FORMATSTRING));
-	
+
 	return res;
 }
 #endif
@@ -627,29 +625,29 @@ __inline static int variables_skin_helpbutton(HWND hwndDlg, UINT uIDButton) {
 // WARNING: This service is obsolete, please use MS_VARS_SHOWHELPEX
 
 // Shows a help dialog where all possible tokens are displayed. The tokens
-// are explained on the dialog, too. The user can edit the initial string and 
+// are explained on the dialog, too. The user can edit the initial string and
 // insert as many tokens as he likes.
 
 // Parameters:
 // ------------------------
 // wParam = (HWND)hwndEdit
-//   Handle to an edit control in which the modified string 
-//   should be inserted (When the user clicks OK in the dialog the edited 
+//   Handle to an edit control in which the modified string
+//   should be inserted (When the user clicks OK in the dialog the edited
 //   string will be set to hwndEdit) (can be NULL).
 // lParam = (char *)pszInitialString
-//   String that the user is provided with initially when 
-//   the dialog gets opened (If this is NULL then the current text in the 
+//   String that the user is provided with initially when
+//   the dialog gets opened (If this is NULL then the current text in the
 //   hwndEdit edit control will be used) (can be NULL).
 
 // Return Value:
 // ------------------------
 // Returns the handle to the help dialog (HWND).
 
-// Note: Only one help dialog can be opened at a time. When the dialog gets 
-// closed an EN_CHANGE of the edit controll will be triggered because the 
+// Note: Only one help dialog can be opened at a time. When the dialog gets
+// closed an EN_CHANGE of the edit controll will be triggered because the
 // contents were updated. (Only when user selected OK).
 
-// Example: 
+// Example:
 // CallService(MS_VARS_SHOWHELP, (WPARAM)hwndEdit, (LPARAM)"some initial text");
 
 // --------------------------------------------------------------------------
@@ -658,7 +656,7 @@ __inline static int variables_skin_helpbutton(HWND hwndDlg, UINT uIDButton) {
 
 #define MS_VARS_GETCONTACTFROMSTRING    "Vars/GetContactFromString"
 
-// Searching for contacts in the database. You can find contacts in db by 
+// Searching for contacts in the database. You can find contacts in db by
 // searching for their name, e.g first name.
 
 // Parameters:
@@ -670,43 +668,43 @@ __inline static int variables_skin_helpbutton(HWND hwndDlg, UINT uIDButton) {
 // Return Value:
 // ------------------------
 // Returns number of contacts found matching the given string representation.
-// The hContacts array of CONTACTSINFO struct contains these hContacts after 
+// The hContacts array of CONTACTSINFO struct contains these hContacts after
 // the call.
 
-// Note: The hContacts array needs to be freed after use using 
+// Note: The hContacts array needs to be freed after use using
 // MS_VARS_FREEMEMORY.
 
 typedef struct {
   int cbSize;  // Set this to sizeof(CONTACTSINFO).
   union {
     char *szContact;  // String to search for, e.g. last name (can't be NULL).
-    WCHAR * wszContact;
+    WCHAR *wszContact;
     TCHAR *tszContact;
   };
   HANDLE *hContacts;  // (output) Array of contacts found.
-  DWORD flags;  // Contact details that will be matched with the search 
+  DWORD flags;  // Contact details that will be matched with the search
                 // string (flags can be combined).
 } CONTACTSINFO;
 
 // Possible flags:
-#define CI_PROTOID      0x00000001  // The contact in the string is encoded 
+#define CI_PROTOID      0x00000001  // The contact in the string is encoded
                                     // in the format <PROTOID:UNIQUEID>, e.g.
                                     // <ICQ:12345678>.
 #define CI_NICK         0x00000002  // Search nick names.
-#define CI_LISTNAME     0x00000004  // Search custom names shown in contact 
+#define CI_LISTNAME     0x00000004  // Search custom names shown in contact
                                     // list.
-#define CI_FIRSTNAME    0x00000008  // Search contact's first names (contact 
+#define CI_FIRSTNAME    0x00000008  // Search contact's first names (contact
                                     // details).
-#define CI_LASTNAME     0x00000010  // Search contact's last names (contact 
+#define CI_LASTNAME     0x00000010  // Search contact's last names (contact
                                     // details).
-#define CI_EMAIL        0x00000020  // Search contact's email adresses 
+#define CI_EMAIL        0x00000020  // Search contact's email adresses
                                     // (contact details).
-#define CI_UNIQUEID     0x00000040  // Search unique ids of the contac, e.g. 
+#define CI_UNIQUEID     0x00000040  // Search unique ids of the contac, e.g.
                                     // UIN.
-#define CI_CNFINFO	    0x40000000  // Searches one of the CNF_* flags (set 
-                                    // flags to CI_CNFINFO|CNF_X), only one 
+#define CI_CNFINFO	    0x40000000  // Searches one of the CNF_* flags (set
+                                    // flags to CI_CNFINFO|CNF_X), only one
                                     // CNF_ type possible
-#define CI_UNICODE      0x80000000  // tszContact is a unicode string 
+#define CI_UNICODE      0x80000000  // tszContact is a unicode string
                                     // (WCHAR*).
 
 #if defined(UNICODE) || defined(_UNICODE)

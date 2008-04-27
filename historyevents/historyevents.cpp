@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Events",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,5),
+	PLUGIN_MAKE_VERSION(0,0,0,6),
 	"A service plugin to handle custom history events",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -453,15 +453,15 @@ int ServiceGetText(WPARAM wParam, LPARAM lParam)
 	// Get event type
 	DBEVENTINFO dbeTmp = {0};
 	DBEVENTINFO *dbe;
-	if (hep->dbe != NULL)
+	if (hep->dbe != NULL && hep->dbe->cbBlob != NULL)
 	{
 		dbe = hep->dbe;
 	}
 	else
 	{
-		dbeTmp.cbSize = sizeof(dbe);
+		dbeTmp.cbSize = sizeof(dbeTmp);
 		dbeTmp.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (LPARAM) hep->hDbEvent, 0);
-		if (dbeTmp.cbBlob < 0)
+		if (dbeTmp.cbBlob <= 0)
 			return NULL;
 		if (dbeTmp.cbBlob > 0)
 			dbeTmp.pBlob = (PBYTE) malloc(dbeTmp.cbBlob);
@@ -495,11 +495,11 @@ int ServiceGetText(WPARAM wParam, LPARAM lParam)
 	{
 		if (heh->supports & HISTORYEVENTS_FORMAT_CHAR)
 		{
-			ret = heh->pfGetHistoryEventText(hContact, hep->hDbEvent, hep->dbe, HISTORYEVENTS_FORMAT_CHAR);
+			ret = heh->pfGetHistoryEventText(hContact, hep->hDbEvent, dbe, HISTORYEVENTS_FORMAT_CHAR);
 		}
 		else
 		{
-			wchar_t *tmp = (wchar_t *) heh->pfGetHistoryEventText(hContact, hep->hDbEvent, hep->dbe, HISTORYEVENTS_FORMAT_WCHAR);
+			wchar_t *tmp = (wchar_t *) heh->pfGetHistoryEventText(hContact, hep->hDbEvent, dbe, HISTORYEVENTS_FORMAT_WCHAR);
 			ret = mir_u2a(tmp);
 			mir_free(tmp);
 		}
@@ -508,11 +508,11 @@ int ServiceGetText(WPARAM wParam, LPARAM lParam)
 	{
 		if (heh->supports & HISTORYEVENTS_FORMAT_WCHAR)
 		{
-			ret = heh->pfGetHistoryEventText(hContact, hep->hDbEvent, hep->dbe, HISTORYEVENTS_FORMAT_WCHAR);
+			ret = heh->pfGetHistoryEventText(hContact, hep->hDbEvent, dbe, HISTORYEVENTS_FORMAT_WCHAR);
 		}
 		else
 		{
-			char *tmp = (char *) heh->pfGetHistoryEventText(hContact, hep->hDbEvent, hep->dbe, HISTORYEVENTS_FORMAT_CHAR);
+			char *tmp = (char *) heh->pfGetHistoryEventText(hContact, hep->hDbEvent, dbe, HISTORYEVENTS_FORMAT_CHAR);
 			ret = mir_a2u(tmp);
 			mir_free(tmp);
 		}
@@ -521,17 +521,17 @@ int ServiceGetText(WPARAM wParam, LPARAM lParam)
 	{
 		if (heh->supports & HISTORYEVENTS_FORMAT_RICH_TEXT)
 		{
-			ret = heh->pfGetHistoryEventText(hContact, hep->hDbEvent, hep->dbe, HISTORYEVENTS_FORMAT_RICH_TEXT);
+			ret = heh->pfGetHistoryEventText(hContact, hep->hDbEvent, dbe, HISTORYEVENTS_FORMAT_RICH_TEXT);
 		}
 		else if (heh->supports & HISTORYEVENTS_FORMAT_WCHAR)
 		{
-			wchar_t *tmp = (wchar_t *) heh->pfGetHistoryEventText(hContact, hep->hDbEvent, hep->dbe, HISTORYEVENTS_FORMAT_WCHAR);
+			wchar_t *tmp = (wchar_t *) heh->pfGetHistoryEventText(hContact, hep->hDbEvent, dbe, HISTORYEVENTS_FORMAT_WCHAR);
 			ret = ConvertToRTF(tmp);
 			mir_free(tmp);
 		}
 		else
 		{
-			char *tmp = (char *) heh->pfGetHistoryEventText(hContact, hep->hDbEvent, hep->dbe, HISTORYEVENTS_FORMAT_CHAR);
+			char *tmp = (char *) heh->pfGetHistoryEventText(hContact, hep->hDbEvent, dbe, HISTORYEVENTS_FORMAT_CHAR);
 			ret = ConvertToRTF(tmp);
 			mir_free(tmp);
 		}
@@ -835,11 +835,11 @@ char * ConvertToRTF(T *line, HISTORY_EVENT_HANDLER *heh, BYTE *extra)
 		}
 
 		if (*line == (T)'\r' && line[1] == (T)'\n') {
-			buffer.append("\\par ", 5);
+			buffer.append("\\line ", 6);
 			line++;
 		}
 		else if (*line == (T)'\n') {
-			buffer.append("\\par ", 5);
+			buffer.append("\\line ", 6);
 		}
 		else if (*line == (T)'\t') {
 			buffer.append("\\tab ", 5);
@@ -860,7 +860,7 @@ char * ConvertToRTF(T *line, HISTORY_EVENT_HANDLER *heh, BYTE *extra)
 	buffer.append('}');
 	buffer.pack();
 
-	return buffer.str;
+	return buffer.detach();
 }
 
 
