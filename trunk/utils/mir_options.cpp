@@ -287,7 +287,7 @@ BOOL CALLBACK SaveOptsDlgProc(OptPageControl *controls, int controlsSize, char *
 
 							CallProtoService(protos[i]->szName, PS_GETNAME, sizeof(szName), (LPARAM)szName);
 							
-							char *setting = (char *) mir_alloc0(128 * sizeof(char));
+							char *setting = (char *) mir_alloc(128 * sizeof(char));
 							mir_snprintf(setting, 128, ctrl->setting, protos[i]->szName);
 
 							BOOL show = (BOOL)DBGetContactSettingByte(NULL, module, setting, ctrl->dwDefValue);
