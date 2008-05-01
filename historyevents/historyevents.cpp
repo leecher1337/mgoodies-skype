@@ -21,6 +21,9 @@ Boston, MA 02111-1307, USA.
 #include "commons.h"
 
 
+#define SIZEOF_HISTORY_EVENT_ADD_V1 36
+
+
 // Prototypes ///////////////////////////////////////////////////////////////////////////
 
 PLUGININFOEX pluginInfo={
@@ -30,7 +33,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Events",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,6),
+	PLUGIN_MAKE_VERSION(0,0,0,7),
 	"A service plugin to handle custom history events",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -578,29 +581,40 @@ void GetTemplare(Buffer<TCHAR> *buffer, HISTORY_EVENT_HANDLER *heh, int templ)
 }
 
 
+HANDLE GetMetaContact(HANDLE hContact)
+{
+	if (!ServiceExists(MS_MC_GETMETACONTACT))
+		return NULL;
+
+	return (HANDLE) CallService(MS_MC_GETMETACONTACT, (WPARAM) hContact, 0);
+}
+
+
 int ServiceAddToHistory(WPARAM wParam, LPARAM lParam)
 {
-	HISTORY_EVENT_ADD * hea = (HISTORY_EVENT_ADD *) wParam;
-	if (hea == NULL || hea->cbSize < sizeof(HISTORY_EVENT_ADD) || hea->templateNum < 0)
+	HISTORY_EVENT_ADD * heaIn = (HISTORY_EVENT_ADD *) wParam;
+	if (heaIn == NULL || (heaIn->cbSize < sizeof(HISTORY_EVENT_ADD) && heaIn->cbSize != SIZEOF_HISTORY_EVENT_ADD_V1) || heaIn->templateNum < 0)
+		return NULL;
+	HISTORY_EVENT_ADD hea = {0};
+	memmove(&hea, heaIn, heaIn->cbSize);
+
+	HISTORY_EVENT_HANDLER *heh = GetHandler(hea.eventType);
+	if (heh == NULL || heh->numTemplates < 1 || heh->numTemplates < hea.templateNum)
 		return NULL;
 
-	HISTORY_EVENT_HANDLER *heh = GetHandler(hea->eventType);
-	if (heh == NULL || heh->numTemplates < 1 || heh->numTemplates < hea->templateNum)
-		return NULL;
-
-	if (!GetSettingBool(heh, hea->templateNum, TEMPLATE_ENABLED, TRUE))
+	if (!GetSettingBool(heh, hea.templateNum, TEMPLATE_ENABLED, TRUE))
 		return NULL;
 
 	if (heh->flags & HISTORYEVENTS_FLAG_ONLY_LOG_IF_SRMM_OPEN)
-		if (!MsgWndOpen(hea->hContact))
+		if (!MsgWndOpen(hea.hContact))
 			return NULL;
 
 	Buffer<TCHAR> templ;
-	GetTemplare(&templ, heh, hea->templateNum);
+	GetTemplare(&templ, heh, hea.templateNum);
 	templ.pack();
 
 	Buffer<TCHAR> buffer;
-	ReplaceTemplate(&buffer, hea->hContact, templ.str, hea->variables, hea->numVariables);
+	ReplaceTemplate(&buffer, hea.hContact, templ.str, hea.variables, hea.numVariables);
 	buffer.pack();
 	if (buffer.str == NULL)
 		return NULL;
@@ -611,23 +625,30 @@ int ServiceAddToHistory(WPARAM wParam, LPARAM lParam)
 	DBEVENTINFO event = { 0 };
 	event.cbSize = sizeof(event);
 	event.eventType = heh->eventType;
-	event.flags = DBEF_UTF | hea->flags;
-	event.timestamp = (DWORD) time(NULL);
+	event.flags = DBEF_UTF | hea.flags;
+	event.timestamp = (hea.timestamp == 0 ? (DWORD) time(NULL) : hea.timestamp);
 	event.szModule = heh->module;
 
 	size_t size = strlen(text) + 1;
 
-	if (hea->additionalDataSize > 0 && hea->additionalData != NULL)
+	if (hea.additionalDataSize > 0 && hea.additionalData != NULL)
 	{
-		text = (char *) mir_realloc(text, size + hea->additionalDataSize);
-		memmove(&text[size], hea->additionalData, hea->additionalDataSize);
-		size += hea->additionalDataSize;
+		text = (char *) mir_realloc(text, size + hea.additionalDataSize);
+		memmove(&text[size], hea.additionalData, hea.additionalDataSize);
+		size += hea.additionalDataSize;
 	}
 
 	event.pBlob = (PBYTE) text;
 	event.cbBlob = size;
 
-	HANDLE ret = (HANDLE) CallService(MS_DB_EVENT_ADD, (WPARAM) hea->hContact, (LPARAM) &event);
+	HANDLE ret = (HANDLE) CallService(MS_DB_EVENT_ADD, (WPARAM) hea.hContact, (LPARAM) &event);
+
+	if (hea.addToMetaToo)
+	{
+		HANDLE hMeta = GetMetaContact(hea.hContact);
+		if (hMeta != NULL)
+			CallService(MS_DB_EVENT_ADD, (WPARAM) hMeta, (LPARAM) &event);
+	}
 
 	mir_free(text);
 
