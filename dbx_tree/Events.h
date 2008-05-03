@@ -8,6 +8,7 @@
 #include "Contacts.h"
 #include "Settings.h"
 #include "Hash.h"
+#include "Cipher.h"
 
 #include <hash_map>
 #include <hash_set>
@@ -152,6 +153,7 @@ public:
 	~CEvents();
 
 	CEventLinks::TOnRootChanged & sigLinkRootChanged();
+	void SetCipher(CCipher * Cipher);
 
 	unsigned int TypeRegister(TDBEventTypeDescriptor & Type);
 	PDBEventTypeDescriptor TypeGet(char * ModuleName, uint32_t EventType);
@@ -189,6 +191,8 @@ private:
 	TEventsTreeMap m_EventsMap;
 	TVirtualEventsTreeMap m_VirtualEventsMap;
 	TVirtualOwnerMap m_VirtualOwnerMap;
+
+	CCipher *m_Cipher;
 
 	uint32_t m_Counter;
 

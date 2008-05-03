@@ -255,6 +255,8 @@ CEvents::CEvents(CBlockManager & BlockManager, CEventLinks::TNodeRef LinkRootNod
 
 	m_IterAllocSize = 1;
 	m_Iterations = (PEventIteration*) malloc(sizeof(PEventIteration));
+
+	m_Cipher = NULL;
 }
 CEvents::~CEvents()
 {
@@ -284,6 +286,11 @@ CEvents::~CEvents()
 	free(m_Iterations);
 	m_Sync.EndWrite();
 
+}
+
+void CEvents::SetCipher(CCipher * Cipher)
+{
+  m_Cipher = Cipher;
 }
 CEventLinks::TOnRootChanged & CEvents::sigLinkRootChanged() 
 {
@@ -364,9 +371,19 @@ unsigned int CEvents::Get(TDBEventHandle hEvent, TDBEvent & Event)
 	}
 
 	TEvent * ev = (TEvent*)buf;
+	uint8_t * blob = (uint8_t *)(ev + 1);
 	PDBEventTypeDescriptor d = m_Types.GetDescriptor(ev->Type);
 
-	m_Sync.EndRead();
+	m_Sync.EndRead();  // we leave here.
+
+	if (m_Cipher)
+	{
+		uint32_t cryptsize = ev->DataLength;
+		if (cryptsize % m_Cipher->BlockSizeBytes() > 0)
+			cryptsize = cryptsize - cryptsize % m_Cipher->BlockSizeBytes() + m_Cipher->BlockSizeBytes();
+
+		m_Cipher->Decrypt(blob, cryptsize, hEvent); 
+	}
 
 	if (d)
 	{
@@ -494,18 +511,30 @@ TDBEventHandle CEvents::Add(TDBContactHandle hContact, TDBEvent & Event)
 	CEventsTree* tree;
 	TDBEventHandle res = 0;
 
+	uint32_t cryptsize = Event.cbBlob;
+	uint8_t *blobdata = Event.pBlob;
+	if (m_Cipher)
+	{
+		if (cryptsize % m_Cipher->BlockSizeBytes() > 0)
+			cryptsize = cryptsize - cryptsize % m_Cipher->BlockSizeBytes() + m_Cipher->BlockSizeBytes();
+
+		blobdata = (uint8_t*) malloc(cryptsize);
+		memset(blobdata, 0, cryptsize);
+		memcpy(blobdata, Event.pBlob, Event.cbBlob);
+	}
+
 	m_Sync.BeginWrite();
 
 	if (Event.Flags & DB_EF_VIRTUAL)
 	{
 		vtree = getVirtualEventsTree(hContact);
 		if (vtree != NULL)
-			res = m_BlockManager.CreateBlockVirtual(sizeof(TEvent) + Event.cbBlob, cEventSignature);
+			res = m_BlockManager.CreateBlockVirtual(sizeof(TEvent) + cryptsize, cEventSignature);
 		
 	} else {
 		tree = getEventsTree(hContact);
 		if (tree != NULL)
-			res = m_BlockManager.CreateBlock(sizeof(TEvent) + Event.cbBlob, cEventSignature);
+			res = m_BlockManager.CreateBlock(sizeof(TEvent) + cryptsize, cEventSignature);
 	}
 
 	if (res == 0)
@@ -513,6 +542,9 @@ TDBEventHandle CEvents::Add(TDBContactHandle hContact, TDBEvent & Event)
 		m_Sync.EndWrite();
 		return DB_INVALIDPARAM;
 	}
+
+  if (m_Cipher)
+		m_Cipher->Encrypt(blobdata, cryptsize, res);
 
 	TEvent ev = {0};
 	TEventKey key = {0};
@@ -531,7 +563,10 @@ TDBEventHandle CEvents::Add(TDBContactHandle hContact, TDBEvent & Event)
 	ev.Contact = hContact;
 
 	m_BlockManager.WritePart(res, &ev, 0, sizeof(ev));
-	m_BlockManager.WritePart(res, Event.pBlob, sizeof(ev), ev.DataLength);
+	m_BlockManager.WritePart(res, blobdata, sizeof(ev), cryptsize);
+
+	if (m_Cipher)
+		free(blobdata);
 
 	if (Event.Flags & DB_EF_VIRTUAL)
 		vtree->Insert(key, res);
