@@ -19,8 +19,9 @@ inline bool TSettingKey::operator >  (const TSettingKey & Other) const
 
 
 
-CSettingsTree::CSettingsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBContactHandle Contact)
-: CFileBTree(BlockManager, RootNode, cSettingNodeSignature)
+CSettingsTree::CSettingsTree(CSettings & Owner, CBlockManager & BlockManager, TNodeRef RootNode, TDBContactHandle Contact)
+: CFileBTree(BlockManager, RootNode, cSettingNodeSignature),
+	m_Owner(Owner)
 {
 	m_Contact = Contact;
 }
@@ -41,24 +42,25 @@ TDBSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * N
 	key.Hash = Hash;
 	iterator i = Find(key);
 	uint16_t l;
-	uint32_t sig = cSettingSignature;
 	
 	TDBSettingHandle res = 0;
-	char * str = new char[Length + 1];
+
+	char * str = NULL;
+
 	while ((res == 0) && (i) && (i.Key().Hash == Hash))
 	{
-		if (m_BlockManager.ReadPart(i.Data(), &l, offsetof(TSetting, NameLength), sizeof(l), sig) &&	
-		    (l == Length))
-		{
-			if (m_BlockManager.ReadPart(i.Data(), str, sizeof(TSetting), Length + 1, sig) &&
-			   (strcmp(Name, str) == 0))
-				res = i.Data();
-		}
+		l = Length;
+		if (m_Owner._ReadSettingName(m_BlockManager, i.Data(), l, str) &&
+			(strncmp(str, Name, Length) == 0))
+
+			res = i.Data();
 	
 		++i;
 	} 
 
-	delete [] str;
+	if (str) 
+		free(str);
+
 	return res;
 }
 
@@ -97,13 +99,14 @@ CSettings::CSettings(CBlockManager & BlockManagerSet, CBlockManager & BlockManag
 
 	m_sigRootChanged()	
 {
-	CSettingsTree * settree = new CSettingsTree(m_BlockManagerSet, SettingsRoot, 0);
+	CSettingsTree * settree = new CSettingsTree(*this, m_BlockManagerSet, SettingsRoot, 0);
 
 	settree->sigRootChanged().connect(this, &CSettings::onRootChanged);
 	m_SettingsMap.insert(std::make_pair(0, settree));
 
 	m_IterAllocSize = 1;
 	m_Iterations = (PSettingIteration*) malloc(sizeof(PSettingIteration));
+	m_Cipher = NULL;
 }
 
 CSettings::~CSettings()
@@ -139,11 +142,59 @@ CSettingsTree * CSettings::getSettingsTree(TDBContactHandle hContact)
 	if (root == DB_INVALIDPARAM)
 		return NULL;
 
-	CSettingsTree * tree = new CSettingsTree(m_BlockManagerPri, root, hContact);
+	CSettingsTree * tree = new CSettingsTree(*this, m_BlockManagerPri, root, hContact);
 	tree->sigRootChanged().connect(this, &CSettings::onRootChanged);
 	m_SettingsMap.insert(std::make_pair(hContact, tree));
 
 	return tree;	
+}
+
+void CSettings::SetCipher(CCipher *Cipher)
+{
+  m_Cipher = Cipher;
+}
+inline uint32_t CSettings::AlignOnCipher(uint32_t Value)
+{
+	if (m_Cipher && (Value % m_Cipher->BlockSizeBytes() > 0))
+		Value = Value - Value % m_Cipher->BlockSizeBytes() + m_Cipher->BlockSizeBytes();
+
+	return Value;
+}
+
+inline bool CSettings::_ReadSettingName(CBlockManager & BlockManager, TDBSettingHandle Setting, uint16_t & NameLength, char *& NameBuf)
+{
+	uint32_t sig = cSettingSignature;
+	uint16_t len;
+	char * buf;
+
+	if (!BlockManager.ReadPart(Setting, &len, offsetof(TSetting, NameLength), sizeof(len), sig))
+		return false;
+
+	if ((NameLength != 0) && (NameLength != len))
+		return false;
+
+	NameLength = len;
+
+	if (NameBuf)
+	{
+		NameBuf = (char*) malloc(NameLength + 1);
+	} else {
+		NameBuf = (char*) realloc(NameBuf, NameLength + 1);
+	}
+
+	if (!m_Cipher)
+	{
+		BlockManager.ReadPart(Setting, NameBuf, sizeof(TSetting), NameLength + 1, sig);
+	} else {
+		len = AlignOnCipher(sizeof(((TSetting*)NULL)->Value) + NameLength + 1);
+		buf = (char*) malloc(len);
+		BlockManager.ReadPart(Setting, buf, offsetof(TSetting, Value), len, sig);
+		m_Cipher->Decrypt(buf, len, Setting);
+		memcpy(NameBuf, buf, NameLength + 1);
+		free(buf);
+	}
+
+	return true;
 }
 
 CSettings::TOnRootChanged & CSettings::sigRootChanged()
@@ -158,12 +209,12 @@ void CSettings::onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoo
 		m_Contacts._setSettingsRoot(((CSettingsTree*)SettingsTree)->getContact(), NewRoot);
 }
 
-	
+
 
 TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 {
-	uint32_t NameLength = strlen(Descriptor.pszSettingName);
-	uint32_t namehash = Hash(Descriptor.pszSettingName, NameLength);
+	uint32_t namelength = strlen(Descriptor.pszSettingName);
+	uint32_t namehash = Hash(Descriptor.pszSettingName, namelength);
 	CSettingsTree * tree;
 	TDBSettingHandle res = 0;
 
@@ -172,7 +223,7 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 	if (Descriptor.Contact == 0)
 	{
 		tree = getSettingsTree(0);
-		res = tree->_FindSetting(namehash, Descriptor.pszSettingName, NameLength);
+		res = tree->_FindSetting(namehash, Descriptor.pszSettingName, namelength);
 		m_Sync.EndRead();
 		return res | cSettingsFileFlag;
 	}
@@ -189,7 +240,7 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 		tree = getSettingsTree(Descriptor.FoundInContact);
 		if (tree)
 		{
-			res = tree->_FindSetting(namehash, Descriptor.pszSettingName, NameLength);
+			res = tree->_FindSetting(namehash, Descriptor.pszSettingName, namelength);
 			if (res)
 			{
 				m_Sync.EndRead();			
@@ -226,7 +277,7 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 	{
 		tree = getSettingsTree(e);
 		if (tree)
-			res = tree->_FindSetting(namehash, Descriptor.pszSettingName, NameLength);
+			res = tree->_FindSetting(namehash, Descriptor.pszSettingName, namelength);
 
 		e = m_Contacts.IterationNext(i);
 	}
@@ -356,8 +407,10 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		return DB_INVALIDPARAM;
 	}
 
-	TSetting set = {0};
+	uint8_t * buf;
+	TSetting * set = NULL;
 	uint32_t blobsize = 0;
+	uint32_t blocksize = 0;
 
 	if (Setting.Type & DB_STF_VariableLength)
 	{		
@@ -381,61 +434,73 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 				blobsize = Setting.Value.Length;
 				break;
 		}
-	}
+	}	
+
+	blocksize = sizeof(TSetting) - sizeof(set->Value) + AlignOnCipher(sizeof(set->Value) + strlen(Setting.Descriptor->pszSettingName) + 1 + blobsize);
+	buf = (uint8_t *)malloc(blocksize);
+	set = (TSetting*)buf;
 
 	if (hSetting == 0) // create new setting
 	{
-		set.Contact = Setting.Descriptor->Contact;
-		set.Flags = 0;
-		set.Type = Setting.Type;
-		set.AllocSize = blobsize;		
-		set.NameLength = strlen(Setting.Descriptor->pszSettingName);
+		set->Contact = Setting.Descriptor->Contact;
+		set->Flags = 0;
+		set->AllocSize = blobsize;
 		
-		hSetting = file->CreateBlock(sizeof(set) + set.NameLength + 1 + blobsize, cSettingSignature);
+		hSetting = file->CreateBlock(blocksize, cSettingSignature);
 
-		tree->_AddSetting(Hash(Setting.Descriptor->pszSettingName, set.NameLength), hSetting);
+		tree->_AddSetting(Hash(Setting.Descriptor->pszSettingName, strlen(Setting.Descriptor->pszSettingName)), hSetting);
 
 	} else {
-		file->ReadPart(hSetting, &set, 0, sizeof(set), sig);
-		if (((Setting.Type & DB_STF_VariableLength) == 0) && (set.Type & DB_STF_VariableLength))
+		file->ReadPart(hSetting, set, 0, sizeof(TSetting), sig);
+		if (((Setting.Type & DB_STF_VariableLength) == 0) && (set->Type & DB_STF_VariableLength))
 		{ // shrink setting (variable size->fixed size)
-			file->ResizeBlock(hSetting, sizeof(set) + set.NameLength + 1);
+			file->ResizeBlock(hSetting, blocksize);
 		}
 
-		if ((Setting.Type & DB_STF_VariableLength) && ((set.Type & DB_STF_VariableLength) == 0))
+		if ((Setting.Type & DB_STF_VariableLength) && ((set->Type & DB_STF_VariableLength) == 0))
 		{ // trick it
-			set.AllocSize = 0;
+			set->AllocSize = 0;
 		}
 	}
+
+	set->Type = Setting.Type;
+	set->NameLength = strlen(Setting.Descriptor->pszSettingName);
+	memcpy(set + 1, Setting.Descriptor->pszSettingName, set->NameLength + 1);
 
 	if (Setting.Type & DB_STF_VariableLength)
 	{
-		if (set.AllocSize < blobsize)
+		if (set->AllocSize < blobsize)
 		{			
-			set.AllocSize = file->ResizeBlock(hSetting, sizeof(set) + set.NameLength + 1 + blobsize) - 
-				                (sizeof(set) + set.NameLength + 1);
+			set->AllocSize = file->ResizeBlock(hSetting, blocksize) - 
+				                (sizeof(TSetting) + set->NameLength + 1);
 		}
 
-		set.BlobLength = blobsize;
-		set.Type = Setting.Type;
-		file->WritePart(hSetting, &set, 0, sizeof(set));
-		file->WritePart(hSetting, Setting.Value.pBlob, sizeof(set) + set.NameLength + 1, blobsize);
-
+		set->BlobLength = blobsize;
+		
+		memcpy(buf + sizeof(TSetting) + set->NameLength + 1, Setting.Value.pBlob, blobsize);
 	} else {
-
-		switch (Setting.Type)	
+		memset(&(set->Value), 0, sizeof(set->Value));
+		switch (Setting.Type)
 		{
-			case DB_ST_BYTE: case DB_ST_CHAR: case DB_ST_BOOL:
-				memset(((uint8_t*) &Setting.Value) + 1, 0, sizeof(Setting.Value) - 1); break;
-			case DB_ST_WORD: case DB_ST_SHORT:
-				memset(((uint8_t*) &Setting.Value) + 2, 0, sizeof(Setting.Value) - 2); break;
-			case DB_ST_DWORD: case DB_ST_INT: case DB_ST_FLOAT:
-				memset(((uint8_t*) &Setting.Value) + 4, 0, sizeof(Setting.Value) - 4); break;			
+			case DB_ST_BOOL:
+				set->Value.Bool = Setting.Value.Bool; break;
+			case DB_ST_BYTE: case DB_ST_CHAR:
+				set->Value.Byte = Setting.Value.Byte; break;
+			case DB_ST_SHORT: case DB_ST_WORD:
+				set->Value.Short = Setting.Value.Short; break;
+			case DB_ST_INT: case DB_ST_DWORD:
+				set->Value.Int = Setting.Value.Int; break;
+			default:
+				set->Value = Setting.Value; break;
 		}
-		set.Type = Setting.Type;
-		set.Value = Setting.Value;
-		file->WritePart(hSetting, &set, 0, sizeof(set));
 	}
+
+	if (m_Cipher)
+		m_Cipher->Encrypt(&(set->Value), AlignOnCipher(sizeof(set->Value) + set->NameLength + 1 + set->AllocSize), hSetting);
+
+
+	file->WriteBlock(hSetting, buf, blocksize, cSettingSignature);
+	free(buf);
 
 	if (fileflag)
 	{
@@ -468,8 +533,6 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting)
 }
 unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSetting)
 {
-	m_Sync.BeginRead();
-	
 	CBlockManager * file = &m_BlockManagerPri;
 
 	if (hSetting & cSettingsFileFlag)
@@ -483,19 +546,26 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 	uint32_t sig = cSettingSignature;
 
 	if (hSetting == 0)
+		return DB_INVALIDPARAM;
+
+
+	m_Sync.BeginRead();
+
+	if (!file->ReadBlock(hSetting, buf, size, sig))
 	{
 		m_Sync.EndRead();
 		return DB_INVALIDPARAM;
-	} else {		
-		if (!file->ReadBlock(hSetting, buf, size, sig))
-		{
-			m_Sync.EndRead();
-			return DB_INVALIDPARAM;
-		}
 	}
 
+	m_Sync.EndRead();
+
 	TSetting* set = (TSetting*)buf;
-	uint8_t* str = (uint8_t*)buf + sizeof(set) + set->NameLength + 1;
+	uint8_t* str = (uint8_t*)buf + sizeof(TSetting) + set->NameLength + 1;
+
+	if (m_Cipher)
+	{
+		m_Cipher->Decrypt(&(set->Value), AlignOnCipher(size - sizeof(TSetting) + sizeof(set->Value)), hSetting);
+	}
 
 	if (Setting.Type == 0)
 	{
@@ -906,8 +976,6 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 		Setting.Descriptor->pszSettingName[set->NameLength] = 0;
 	}
 
-	m_Sync.EndRead();
-
 	return set->Type;
 }
 
@@ -1082,58 +1150,42 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 			{
 				help = q.front();
 				q.pop();
-		
-				if (help.NameLen == 0)
-				{
-					if (help.Tree->getContact() == 0)
-						m_BlockManagerSet.ReadPart(help.Handle, &help.NameLen, offsetof(TSetting, NameLength), sizeof(help.NameLen), sig);						
-					else
-						m_BlockManagerPri.ReadPart(help.Handle, &help.NameLen, offsetof(TSetting, NameLength), sizeof(help.NameLen), sig);
-				}
-				
+
 				if (help.Name == NULL)
 				{
-					help.Name = new char[help.NameLen + 1];
 					if (help.Tree->getContact() == 0)
-						m_BlockManagerSet.ReadPart(help.Handle, help.Name, sizeof(TSetting), help.NameLen, sig);
+						_ReadSettingName(m_BlockManagerSet, help.Handle, help.NameLen, help.Name);
 					else
-						m_BlockManagerPri.ReadPart(help.Handle, help.Name, sizeof(TSetting), help.NameLen, sig);
+						_ReadSettingName(m_BlockManagerPri, help.Handle, help.NameLen, help.Name);
 				}
-
+		
 
 				q.push(help);
 				while (q.front().Handle != help.Handle)  // remove all qequed settings with same name
 				{
+					bool namereadres = false;
+
 					TSettingIterationHelper tmp;
 					tmp = q.front();
 					q.pop();
 
-					if (tmp.NameLen == 0)
+					if (tmp.Name == NULL)
 					{
 						if (help.Tree->getContact() == 0)
-							m_BlockManagerSet.ReadPart(tmp.Handle, &tmp.NameLen, offsetof(TSetting, NameLength), sizeof(tmp.NameLen), sig);						
+							namereadres = _ReadSettingName(m_BlockManagerSet, tmp.Handle, tmp.NameLen, tmp.Name);
 						else
-							m_BlockManagerPri.ReadPart(tmp.Handle, &tmp.NameLen, offsetof(TSetting, NameLength), sizeof(tmp.NameLen), sig);
+							namereadres = _ReadSettingName(m_BlockManagerPri, tmp.Handle, tmp.NameLen, tmp.Name);
 					}
 
-					if (tmp.NameLen != help.NameLen)
+					if (!namereadres)
 					{
 						q.push(tmp);
 					} else {
-						if (tmp.Name == NULL)
-						{
-							tmp.Name = new char[tmp.NameLen + 1];
-							if (tmp.Tree->getContact() == 0)
-								m_BlockManagerSet.ReadPart(tmp.Handle, tmp.Name, sizeof(TSetting), tmp.NameLen, sig);
-							else
-								m_BlockManagerPri.ReadPart(tmp.Handle, tmp.Name, sizeof(TSetting), tmp.NameLen, sig);
-						}
-
 						if (strcmp(tmp.Name, help.Name) != 0)
 						{
 							q.push(tmp);
 						} else {
-							delete [] tmp.Name;
+							free(tmp.Name);
 						}
 					}
 				}
@@ -1151,7 +1203,7 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 					tmp.NameLen = help.NameLen;
 					iter->Frame->push(tmp);
 				} else {
-					delete [] help.Name;
+					free(help.Name);
 				}
 
 				q.pop();
@@ -1185,7 +1237,7 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 			ReadSetting(*iter->Filter.Setting, res.Handle);
 		}
 
-		delete [] res.Name;
+		free(res.Name);
 	}
 
 	m_Sync.EndRead();
@@ -1225,6 +1277,13 @@ unsigned int CSettings::IterationClose(TDBSettingIterationHandle Iteration)
 		}
 	}
 
+	while (!m_Iterations[Iteration - 1]->Frame->empty())
+	{
+		if (m_Iterations[Iteration - 1]->Frame->front().Name)
+			free(m_Iterations[Iteration - 1]->Frame->front().Name);
+
+		m_Iterations[Iteration - 1]->Frame->pop();
+	}
 	delete m_Iterations[Iteration - 1]->Frame;
 	delete m_Iterations[Iteration - 1]->Heap;
 	delete m_Iterations[Iteration - 1];

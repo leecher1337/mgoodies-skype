@@ -5,6 +5,7 @@
 #include "MREWSync.h"
 #include "sigslot.h"
 #include "IterationHeap.h"
+#include "Cipher.h"
 
 #include <hash_map>
 #include <queue>
@@ -50,6 +51,7 @@ typedef struct TSetting {
 	uint32_t   Flags;        /// flags
 	uint16_t   Type;         /// setting type	
 	uint16_t   NameLength;   /// settingname length
+	uint8_t    Reserved[8];
 	union {
 		TDBSettingValue Value;     /// if type is fixed length, the data is stored rigth here
 		
@@ -58,7 +60,6 @@ typedef struct TSetting {
 			uint32_t AllocSize;  /// this is the allocated space for the blob ALWAYS in byte! this prevents us to realloc it too often
 		};
 	};
-	uint8_t Reserved[8];
 	
 	// settingname with terminating NULL
   // blob
@@ -73,9 +74,9 @@ class CSettingsTree : public CFileBTree<TSettingKey, TDBSettingHandle, 8, false>
 {
 protected:
 	TDBContactHandle m_Contact;
-
+	CSettings & m_Owner;
 public: 
-	CSettingsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBContactHandle Contact);
+	CSettingsTree(CSettings & Owner, CBlockManager & BlockManager, TNodeRef RootNode, TDBContactHandle Contact);
 	~CSettingsTree();
 
 	TDBContactHandle getContact();
@@ -101,6 +102,9 @@ public:
 
 	TOnRootChanged & sigRootChanged();
 
+	void SetCipher(CCipher *Cipher);
+
+	bool _ReadSettingName(CBlockManager & BlockManager, TDBSettingHandle Setting, uint16_t & NameLength, char *& NameBuf);
 
 	// services:
 	TDBSettingHandle FindSetting(TDBSettingDescriptor & Descriptor);
@@ -126,6 +130,8 @@ private:
 
 	CContacts & m_Contacts;
 
+	CCipher * m_Cipher;
+
 	TSettingsTreeMap m_SettingsMap;
 
 	typedef struct TSettingIterationResult {
@@ -149,5 +155,7 @@ private:
 	void onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot);
 
 	CSettingsTree * getSettingsTree(TDBContactHandle hContact);
+
+	uint32_t AlignOnCipher(uint32_t Value);
 	
 };
