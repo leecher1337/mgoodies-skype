@@ -35,6 +35,7 @@ Boston, MA 02111-1307, USA.
 #define HISTORYEVENTS_FLAG_USE_SENT_FLAG				(1 << 2) // Means that it can be a sent or received and uses DBEF_SENT to mark that
 #define HISTORYEVENTS_FLAG_EXPECT_CONTACT_NAME_BEFORE	(1 << 3) // Means that who is drawing this should draw the contact name before the text
 #define HISTORYEVENTS_FLAG_ONLY_LOG_IF_SRMM_OPEN		(1 << 4) // If this event will be logged only if the message window is open
+#define HISTORYEVENTS_FLAG_FLASH_MSG_WINDOW				(1 << 5) // If this event will trigger the openning/flashing of the message window
 #define HISTORYEVENTS_REGISTERED_IN_ICOLIB				(9 << 16) // If the icon is a name already registered in icolib
 #define HISTORYEVENTS_FLAG_KEEP_ONE_YEAR 				(1 << 8) // By default store in db for 1 year
 #define HISTORYEVENTS_FLAG_KEEP_SIX_MONTHS 				(2 << 8) // By default store in db for 6 months
