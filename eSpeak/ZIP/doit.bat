@@ -45,6 +45,42 @@ mkdir Icons
 cd Icons
 copy ..\..\..\spellchecker\Flags\flags.dll
 cd ..
+mkdir src
+cd src
+del /Q *.*
+copy ..\..\*.h
+copy ..\..\*.c*
+copy ..\..\*.
+copy ..\..\*.rc
+copy ..\..\*.dsp
+copy ..\..\*.dsw
+mkdir Docs
+cd Docs
+del /Q *.*
+copy ..\..\..\Docs\*.*
+cd ..
+mkdir sdk
+cd sdk
+del /Q *.*
+copy ..\..\..\sdk\*.*
+cd ..
+mkdir lib
+cd lib
+del /Q *.*
+copy ..\..\..\lib\*.*
+cd ..
+mkdir res
+cd res
+del /Q *.*
+copy ..\..\..\res\*.*
+cd ..
+mkdir eSpeak
+cd eSpeak
+del /Q *.*
+copy ..\..\..\eSpeak\*.*
+cd ..
+cd ..
+
 
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip Plugins Docs Icons Dictionaries
 
@@ -55,10 +91,12 @@ cd ..
 
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip Plugins Docs Icons Dictionaries
 
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
+
 rd /S /Q Plugins
 rd /S /Q Docs
-rd /S /Q Icons
 rd /S /Q Dictionaries
+rd /S /Q src
 
 if "%ftp%"=="" GOTO END
 
