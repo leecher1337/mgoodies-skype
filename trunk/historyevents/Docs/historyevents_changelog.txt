@@ -2,6 +2,9 @@ History Events
 
 Changelog:
 
+. 0.0.0.8
+  + Added option to return a copy of the icon in GETICON service
+
 . 0.0.0.7
   + Allow setting history timestamp on addToHistory
   + Allow adding to meta too on addToHistory

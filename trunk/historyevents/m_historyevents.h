@@ -128,8 +128,9 @@ Return: BOOL
 Get the icon for a history event type
 
 wParam: WORD - event type
-lParam: ignored
-Return: HICON - after use free with MS_HISTORYEVENTS_RELEASE_ICON
+lParam: BOOL - TRUE to copy the icon (should be released with DestroyObject), 
+			   FALSE to use icolib one (should be released with MS_HISTORYEVENTS_RELEASE_ICON)
+Return: HICON
 */
 #define MS_HISTORYEVENTS_GET_ICON		"HistoryEvents/GetIcon"
 
