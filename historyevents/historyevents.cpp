@@ -33,7 +33,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"History Events",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,7),
+	PLUGIN_MAKE_VERSION(0,0,0,8),
 	"A service plugin to handle custom history events",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -210,14 +210,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
 
-		upd.szBetaVersionURL = "http://pescuma.mirandaim.ru/miranda/historyevents_version.txt";
-		upd.szBetaChangelogURL = "http://pescuma.mirandaim.ru/miranda/historyevents#Changelog";
+		upd.szBetaVersionURL = "http://pescuma.org/miranda/historyevents_version.txt";
+		upd.szBetaChangelogURL = "http://pescuma.org/miranda/historyevents#Changelog";
 		upd.pbBetaVersionPrefix = (BYTE *)"HistoryEvents ";
 		upd.cpbBetaVersionPrefix = strlen((char *)upd.pbBetaVersionPrefix);
 #ifdef UNICODE
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/historyeventsW.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/historyeventsW.zip";
 #else
-		upd.szBetaUpdateURL = "http://pescuma.mirandaim.ru/miranda/historyevents.zip";
+		upd.szBetaUpdateURL = "http://pescuma.org/miranda/historyevents.zip";
 #endif
 
 		upd.pbVersion = (BYTE *)CreateVersionStringPlugin((PLUGININFO*) &pluginInfo, szCurrentVersion);
@@ -428,7 +428,7 @@ int ServiceGetIcon(WPARAM wParam, LPARAM lParam)
 		return NULL;
 
 	// Get icon
-	return (int) LoadIconEx(heh);
+	return (int) LoadIconEx(heh, lParam != FALSE);
 }
 
 
