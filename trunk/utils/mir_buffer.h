@@ -46,19 +46,19 @@ static inline int __bvsnprintf<wchar_t>(wchar_t *str, size_t size, const wchar_t
 }
 
 template<class T>
-static inline int __blen(const T *str)
+static inline size_t __blen(const T *str)
 {
 	return 0;
 }
 
 template<>
-static inline int __blen<char>(const char *str)
+static inline size_t __blen<char>(const char *str)
 {
 	return strlen(str);
 }
 
 template<>
-static inline int __blen<wchar_t>(const wchar_t *str)
+static inline size_t __blen<wchar_t>(const wchar_t *str)
 {
 	return lstrlenW(str);
 }
@@ -354,7 +354,7 @@ static void ReplaceVars(Buffer<TCHAR> *buffer, HANDLE hContact, TCHAR **variable
 	if (buffer->len < 3)
 		return;
 
-	if (numVariables <= 0)
+	if (numVariables < 0)
 		return;
 
 	for(size_t i = buffer->len - 1; i > 0; i--)
@@ -373,7 +373,7 @@ static void ReplaceVars(Buffer<TCHAR> *buffer, HANDLE hContact, TCHAR **variable
 				size_t foundLen = i - j + 1;
 				if (foundLen == 9 && _tcsncmp(&buffer->str[j], _T("%contact%"), 9) == 0)
 				{
-					buffer->replace(j, i + 1, (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, GCDNF_TCHAR));
+					buffer->replace(j, i + 1, (TCHAR *) CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM) hContact, GCDNF_TCHAR | GCDNF_NOCACHE));
 				}
 				else if (foundLen == 6 && _tcsncmp(&buffer->str[j], _T("%date%"), 6) == 0)
 				{
