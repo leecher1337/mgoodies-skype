@@ -52,7 +52,7 @@ public:
 		operator bool() const;
 		bool operator !() const;
 
-		bool operator ==(const iterator& Other) const;
+		bool operator ==(iterator& Other);
 		bool operator <  (iterator & Other);
 		bool operator >  (iterator & Other);
 
@@ -79,6 +79,8 @@ public:
 		void Backup();
 		void Dec();
 		void Inc();
+		void RemoveManaged(TNodeRef FromNode);
+		void InsertManaged();
 	};
 
 
@@ -903,7 +905,7 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 			if (Item.m_Index == (node.Info & cKeyCountMask))
 				++Item;
 		}
-		if (wasmanaged)
+		if (wasmanaged) 
 			Item.setManaged();
 
 		return;
@@ -960,7 +962,7 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 
 			ge = 0;
 			while ((ge <= (node.Info & cKeyCountMask)) && (node.Child[ge] != nextnode))
-				ge++;
+				++ge;
 
 		}
 
@@ -1153,7 +1155,7 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 						if (bak == Item.m_Node)
 						{
 							Item.m_Node = nextnode;
-							Item.m_Index = Item.m_Index + (lnode.Info & cKeyCountMask);
+							Item.m_Index = Item.m_Index + (lnode.Info & cKeyCountMask) + 1;
 						}						
 
 						KeyDelete(actnode, node, ge - 1);
@@ -1352,22 +1354,13 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::iterator(const iterator& O
 	m_ManagedData = Other.m_ManagedData;
 
 	if (m_Managed)
-		m_Tree->m_ManagedIterators.insert(std::make_pair(m_Node, this));
+		InsertManaged();
 }
 
 template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
 CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::~iterator()
 {
-	if (m_Managed && m_Tree)
-	{
-		TManagedMap::iterator i = m_Tree->m_ManagedIterators.find(m_Node);
-
-		while ((i != m_Tree->m_ManagedIterators.end()) && (i->second != this))
-			++i;
-
-		if (i != m_Tree->m_ManagedIterators.end())
-			m_Tree->m_ManagedIterators.erase(i);
-	}
+	RemoveManaged(m_Node);
 }
 
 
@@ -1375,11 +1368,30 @@ template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
 void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::setManaged()
 {
 	if (!m_Managed)
-	{
-		m_Tree->m_ManagedIterators.insert(std::make_pair(m_Node, this));
-	}
+		InsertManaged();
 
 	m_Managed = true;
+}
+
+template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
+inline void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::RemoveManaged(TNodeRef FromNode)
+{
+	if (m_Managed && m_Tree)
+	{
+		TManagedMap::iterator i = m_Tree->m_ManagedIterators.find(FromNode);
+
+		while ((i != m_Tree->m_ManagedIterators.end()) && (i->second != this) && (i->first == FromNode))
+			++i;
+
+		if ((i != m_Tree->m_ManagedIterators.end()) && (i->second == this))
+			m_Tree->m_ManagedIterators.erase(i);
+	}
+}
+template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
+inline void CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::InsertManaged()
+{
+	if (m_Tree)
+		m_Tree->m_ManagedIterators.insert(std::make_pair(m_Node, this));
 }
 
 template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
@@ -1483,9 +1495,10 @@ inline bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator !() c
 }
 
 template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
-inline bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator ==(const iterator& Other) const
+inline bool CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator ==(iterator & Other)
 {
-	return (m_Tree == Other.m_Tree) && (m_Node == Other.m_Node) && (m_Index == Other.m_Index) && (!m_ManagedDeleted) && (!Other.m_ManagedDeleted);
+	//return (m_Tree == Other.m_Tree) && (m_Node == Other.m_Node) && (m_Index == Other.m_Index) && (!m_ManagedDeleted) && (!Other.m_ManagedDeleted);
+	return Key() == Other.Key();
 }
 
 template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
@@ -1504,15 +1517,7 @@ template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
 typename CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator&
 CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator =(const iterator& Other)
 {
-	if (m_Managed && (m_Tree != NULL))
-	{
-		TManagedMap::iterator it = m_Tree->m_ManagedIterators.find(m_Node);
-		while ((it != m_Tree->m_ManagedIterators.end()) && (it->second != this))
-			++it;
-
-		if (it != m_Tree->m_ManagedIterators.end())
-			m_Tree->m_ManagedIterators.erase(it);
-	}
+	RemoveManaged(m_Node);
 
 	m_Tree = Other.m_Tree;
 	m_Node = Other.m_Node;
@@ -1525,7 +1530,7 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator =(const iterator&
 	m_ManagedData = Other.m_ManagedData;
 
 	if (m_Managed)
-		m_Tree->m_ManagedIterators.insert(std::make_pair(m_Node, this));
+		InsertManaged();
 
 	return *this;
 }
@@ -1534,6 +1539,7 @@ template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
 typename CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator&
 CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator ++() //pre  ++i
 {
+	TNodeRef oldnode = m_Node;
 	if (m_Managed && m_ManagedDeleted)
 	{
 		TKey oldkey = m_ManagedKey;
@@ -1541,14 +1547,20 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator ++() //pre  ++i
 		m_LoadedData = false;
 
 		m_ManagedDeleted = false;
-		iterator & other(m_Tree->LowerBound(m_ManagedKey));
-		m_Node = other.m_Node;
+		iterator & other(m_Tree->LowerBound(m_ManagedKey));	
+		m_Node = other.m_Node;		
 		m_Index = other.m_Index;
 		while ((Key() == oldkey) && (*this))
 			Inc();
+
 	} else
 		Inc();
 
+	if (m_Managed && (oldnode != m_Node))
+	{
+		RemoveManaged(oldnode);
+		InsertManaged();
+	}
 	return *this;
 }
 
@@ -1556,6 +1568,7 @@ template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
 typename CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator&
 CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator --() //pre  --i
 {
+	TNodeRef oldnode = m_Node;
 	if (m_Managed && m_ManagedDeleted)
 	{
 		TKey oldkey = m_ManagedKey;
@@ -1571,6 +1584,11 @@ CBTree<TKey, TData, SizeParam, UniqueKeys>::iterator::operator --() //pre  --i
 	} else
 		Dec();
 
+	if (m_Managed && (oldnode != m_Node))
+	{
+		RemoveManaged(oldnode);
+		InsertManaged();
+	}
 	return *this;
 }
 

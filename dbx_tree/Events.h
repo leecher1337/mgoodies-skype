@@ -16,7 +16,6 @@
 #include <time.h>
 #include <windows.h>
 
-
 #pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
 
 /**
@@ -164,13 +163,14 @@ public:
 	TDBEventHandle Add(TDBContactHandle hContact, TDBEvent & Event);
 	unsigned int MarkRead(TDBContactHandle hContact, TDBEventHandle hEvent);
 	unsigned int WriteToDisk(TDBContactHandle hContact, TDBEventHandle hEvent);
-	unsigned int CreateHardLink(TDBEventHardLink & HardLink);
+	unsigned int HardLinkEvent(TDBEventHardLink & HardLink);
 
 	TDBContactHandle GetContact(TDBEventHandle hEvent);
 
 	TDBEventIterationHandle IterationInit(TDBEventIterFilter & Filter);
 	TDBEventHandle IterationNext(TDBEventIterationHandle Iteration);
 	unsigned int IterationClose(TDBEventIterationHandle Iteration);
+
 
 private:
 	typedef CBTree<TEventKey, TDBEventHandle, 16, true> TEventBase;
@@ -202,8 +202,9 @@ private:
 		TDBEventHandle LastEvent;
 	} TEventIteration, *PEventIteration;
 
-	unsigned int m_IterAllocSize;
-	TEventIteration **m_Iterations;
+	typedef std::vector<PEventIteration> TEventIterationVector;
+
+	TEventIterationVector m_Iterations;
 
 	void onRootChanged(void* EventsTree, CEventsTree::TNodeRef NewRoot);
 

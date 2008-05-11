@@ -1,5 +1,5 @@
 #include "Settings.h"
-#include <math.h>
+#include <math.h> // floor function
 #include "Hash.h"
 
 inline bool TSettingKey::operator <  (const TSettingKey & Other) const
@@ -52,10 +52,11 @@ TDBSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * N
 		l = Length;
 		if (m_Owner._ReadSettingName(m_BlockManager, i.Data(), l, str) &&
 			(strncmp(str, Name, Length) == 0))
-
+		{
 			res = i.Data();
-	
-		++i;
+		} else {
+			++i;
+		}
 	} 
 
 	if (str) 
@@ -96,7 +97,7 @@ CSettings::CSettings(CBlockManager & BlockManagerSet, CBlockManager & BlockManag
 	m_BlockManagerPri(BlockManagerPri),
 	m_Contacts(Contacts),
 	m_SettingsMap(),
-
+	m_Iterations(),
 	m_sigRootChanged()	
 {
 	CSettingsTree * settree = new CSettingsTree(*this, m_BlockManagerSet, SettingsRoot, 0);
@@ -104,14 +105,19 @@ CSettings::CSettings(CBlockManager & BlockManagerSet, CBlockManager & BlockManag
 	settree->sigRootChanged().connect(this, &CSettings::onRootChanged);
 	m_SettingsMap.insert(std::make_pair(0, settree));
 
-	m_IterAllocSize = 1;
-	m_Iterations = (PSettingIteration*) malloc(sizeof(PSettingIteration));
 	m_Cipher = NULL;
 }
 
 CSettings::~CSettings()
 {
 	m_Sync.BeginWrite();
+
+	for (unsigned int i = 0; i < m_Iterations.size(); ++i)
+	{
+		if (m_Iterations[i])
+			IterationClose(i + 1);
+	}
+
 	TSettingsTreeMap::iterator it = m_SettingsMap.begin();
 
 	while (it != m_SettingsMap.end())
@@ -122,12 +128,6 @@ CSettings::~CSettings()
 
 	m_SettingsMap.clear();
 
-	for (unsigned int i = 0; i < m_IterAllocSize; i++)
-	{
-		if (m_Iterations[i])
-			IterationClose(i + 1);
-	}
-	free(m_Iterations);
 	m_Sync.EndWrite();
 }
 
@@ -213,8 +213,23 @@ void CSettings::onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoo
 
 TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 {
+	if (Descriptor.Flags & DB_SDF_FoundValid)
+		return Descriptor.FoundHandle;
+
 	uint32_t namelength = strlen(Descriptor.pszSettingName);
-	uint32_t namehash = Hash(Descriptor.pszSettingName, namelength);
+	uint32_t namehash;
+	
+	if (Descriptor.Flags & DB_SDF_HashValid)
+	{
+		namehash = Descriptor.Hash;
+	} else {
+		namehash = Hash(Descriptor.pszSettingName, namelength);
+		Descriptor.Hash = namehash;
+		Descriptor.Flags = Descriptor.Flags | DB_SDF_HashValid;
+	}
+
+	Descriptor.Flags = Descriptor.Flags & ~DB_SDF_FoundValid;
+
 	CSettingsTree * tree;
 	TDBSettingHandle res = 0;
 
@@ -224,6 +239,14 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 	{
 		tree = getSettingsTree(0);
 		res = tree->_FindSetting(namehash, Descriptor.pszSettingName, namelength);
+	
+		if (res)
+		{
+			Descriptor.FoundInContact = 0;
+			Descriptor.FoundHandle = res;
+			Descriptor.Flags = Descriptor.Flags | DB_SDF_FoundValid;
+		}
+
 		m_Sync.EndRead();
 		return res | cSettingsFileFlag;
 	}
@@ -234,21 +257,6 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 		m_Sync.EndRead();
 		return DB_INVALIDPARAM;
 	}
-
-	if (Descriptor.FoundInContact != 0)
-	{
-		tree = getSettingsTree(Descriptor.FoundInContact);
-		if (tree)
-		{
-			res = tree->_FindSetting(namehash, Descriptor.pszSettingName, namelength);
-			if (res)
-			{
-				m_Sync.EndRead();			
-				return res;
-			}
-		}
-	}
-
 	
 	// search the setting
 	res = 0;
@@ -263,7 +271,7 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 		f.fDontHasFlags = DB_CF_IsGroup;
 		f.fHasFlags = 0;	
 	}
-	f.Options = Descriptor.Flags;
+	f.Options = Descriptor.Options;
 
 	TDBContactIterationHandle i = m_Contacts.IterationInit(f, Descriptor.Contact);
 	if (i == DB_INVALIDPARAM)
@@ -273,11 +281,15 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 	}
 
 	TDBContactHandle e = m_Contacts.IterationNext(i);
+	TDBContactHandle found = 0;
 	while ((res == 0) && (e != 0))
 	{
 		tree = getSettingsTree(e);
 		if (tree)
+		{
 			res = tree->_FindSetting(namehash, Descriptor.pszSettingName, namelength);
+			found = e;
+		}
 
 		e = m_Contacts.IterationNext(i);
 	}
@@ -286,7 +298,9 @@ TDBSettingHandle CSettings::FindSetting(TDBSettingDescriptor & Descriptor)
 
 	if (res)
 	{
-		Descriptor.FoundInContact = e;
+		Descriptor.FoundInContact = found;
+		Descriptor.FoundHandle = res;
+		Descriptor.Flags = Descriptor.Flags | DB_SDF_FoundValid;
 	}
 
 	m_Sync.EndRead();
@@ -301,10 +315,36 @@ unsigned int CSettings::DeleteSetting(TDBSettingDescriptor & Descriptor)
 	if ((hset == 0) || (hset == DB_INVALIDPARAM))
 	{		
 		m_Sync.EndWrite();
-		return hset;
+		return DB_INVALIDPARAM; // hset;
 	}
 
-	unsigned int res = DeleteSetting(hset);
+	unsigned int res = 0;
+	if ((Descriptor.Flags & DB_SDF_FoundValid) && (Descriptor.Flags & DB_SDF_HashValid))
+	{
+		CBlockManager * file = &m_BlockManagerPri;
+		TDBContactHandle con;
+		uint32_t sig = cSettingSignature;
+
+		if (Descriptor.FoundInContact == 0)
+		{
+			file = &m_BlockManagerSet;
+			hset = hset & ~cSettingsFileFlag;
+		}
+		
+		if (file->ReadPart(hset, &con, offsetof(TSetting, Contact), sizeof(con), sig) &&
+			(con == Descriptor.FoundInContact))
+		{
+			CSettingsTree * tree = getSettingsTree(con);
+			if (tree)
+			{
+				tree->_DeleteSetting(Descriptor.Hash, hset);
+				file->DeleteBlock(hset);
+			}
+		}
+
+	} else {
+		res = DeleteSetting(hset);
+	}
 
 	m_Sync.EndWrite();
 	
@@ -341,6 +381,9 @@ unsigned int CSettings::DeleteSetting(TDBSettingHandle hSetting)
 		return DB_INVALIDPARAM;
 	}
 
+	if (m_Cipher)
+		m_Cipher->Decrypt(&(set->Value), AlignOnCipher(sizeof(set->Value) + set->NameLength + 1), hSetting);
+
 	char * str = (char*) (set+1);
 	tree->_DeleteSetting(Hash(str, set->NameLength), hSetting);
 	
@@ -369,6 +412,9 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting)
 }
 TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle hSetting)
 {
+	if (!hSetting && !(Setting.Descriptor && Setting.Descriptor->Contact))
+		return DB_INVALIDPARAM;
+
 	m_Sync.BeginWrite();
 	
 	CBlockManager * file = &m_BlockManagerPri;
@@ -397,7 +443,7 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		
 	} else {		
 		TDBContactHandle e;
-		if (file->ReadPart(hSetting, &e, offsetof(TSetting, Contact), sizeof(e), sig))
+		if (file->ReadPart(hSetting, &e, offsetof(TSetting, Contact), sizeof(e), sig)) // check if hSetting is valid
 			tree = getSettingsTree(e);
 	}
 
@@ -419,7 +465,7 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 			case DB_ST_ASCIIZ: case DB_ST_UTF8:
 				{
 					if (Setting.Value.Length == 0)
-						blobsize = strlen(Setting.Value.pAnsii);
+						blobsize = strlen(Setting.Value.pAnsii) + 1;
 					else
 						blobsize = Setting.Value.Length;
 				} break;
@@ -439,6 +485,7 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 	blocksize = sizeof(TSetting) - sizeof(set->Value) + AlignOnCipher(sizeof(set->Value) + strlen(Setting.Descriptor->pszSettingName) + 1 + blobsize);
 	buf = (uint8_t *)malloc(blocksize);
 	set = (TSetting*)buf;
+	memset(&(set->Reserved), 0, sizeof(set->Reserved));
 
 	if (hSetting == 0) // create new setting
 	{
@@ -448,7 +495,12 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		
 		hSetting = file->CreateBlock(blocksize, cSettingSignature);
 
-		tree->_AddSetting(Hash(Setting.Descriptor->pszSettingName, strlen(Setting.Descriptor->pszSettingName)), hSetting);
+		if (Setting.Descriptor && (Setting.Descriptor->Flags & DB_SDF_HashValid))
+		{
+			tree->_AddSetting(Setting.Descriptor->Hash, hSetting);
+		} else  {
+			tree->_AddSetting(Hash(Setting.Descriptor->pszSettingName, strlen(Setting.Descriptor->pszSettingName)), hSetting);
+		}
 
 	} else {
 		file->ReadPart(hSetting, set, 0, sizeof(TSetting), sig);
@@ -466,7 +518,7 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 	set->Type = Setting.Type;
 	set->NameLength = strlen(Setting.Descriptor->pszSettingName);
 	memcpy(set + 1, Setting.Descriptor->pszSettingName, set->NameLength + 1);
-
+	
 	if (Setting.Type & DB_STF_VariableLength)
 	{
 		if (set->AllocSize < blobsize)
@@ -570,7 +622,6 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 	if (Setting.Type == 0)
 	{
 		Setting.Type = set->Type;
-		Setting.Value = set->Value;
 		if (set->Type & DB_STF_VariableLength)
 		{
 			Setting.Value.Length = set->BlobLength;
@@ -599,6 +650,8 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 					memcpy(Setting.Value.pBlob, str, set->BlobLength);					
 				} break;
 			}
+		} else {
+			Setting.Value = set->Value;
 		}
 	} else {
 		switch (set->Type)
@@ -988,14 +1041,11 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 
 	unsigned int i = 0;
 
-	while ((i < m_IterAllocSize) && (m_Iterations[i] != NULL))
-		i++;
+	while ((i < m_Iterations.size()) && (m_Iterations[i] != NULL))
+		++i;
 
-	if (i == m_IterAllocSize)
-	{
-		m_IterAllocSize = m_IterAllocSize << 1;
-		m_Iterations = (PSettingIteration*)realloc(m_Iterations, sizeof(PSettingIteration*) * m_IterAllocSize);
-	}
+	if (i == m_Iterations.size())
+		m_Iterations.push_back(NULL);
 
 	std::queue<TDBContactHandle> contacts;
 	contacts.push(Filter.hContact);
@@ -1018,15 +1068,13 @@ TDBSettingIterationHandle CSettings::IterationInit(TDBSettingIterFilter & Filter
 			return DB_INVALIDPARAM;
 		}
 		
-		TDBContactIterFilter f;
+		TDBContactIterFilter f = {0};
 		f.cbSize = sizeof(f);
 		if (cf & DB_CF_IsGroup)
 		{
-			f.fDontHasFlags = 0;
 			f.fHasFlags = DB_CF_IsGroup;
 		} else {
 			f.fDontHasFlags = DB_CF_IsGroup;
-			f.fHasFlags = 0;	
 		}
 		f.Options = Filter.Options;
 
@@ -1105,7 +1153,7 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 	if (Iteration == 0)
 		return 0;
 
-	if ((Iteration > m_IterAllocSize) || (m_Iterations[Iteration - 1] == NULL))
+	if ((Iteration > m_Iterations.size()) || (m_Iterations[Iteration - 1] == NULL))
 	{
 		m_Sync.EndRead();
 		return DB_INVALIDPARAM;
@@ -1248,7 +1296,7 @@ unsigned int CSettings::IterationClose(TDBSettingIterationHandle Iteration)
 {
 	m_Sync.BeginWrite();
 
-	if ((Iteration > m_IterAllocSize) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
+	if ((Iteration > m_Iterations.size()) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
 	{
 		m_Sync.EndWrite();
 		return DB_INVALIDPARAM;
