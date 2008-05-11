@@ -295,6 +295,10 @@ static const uint16_t DB_STF_Signed         = 0x10;
 static const uint16_t DB_STF_VariableLength = 0x80;
 
 
+
+static const uint32_t DB_SDF_FoundValid  = 0x00000001;
+static const uint32_t DB_SDF_HashValid   = 0x00000002;
+
 /**
 	\brief Describes a setting, its name and location
 **/
@@ -303,9 +307,12 @@ typedef
 		uint32_t cbSize;                               /// size of the structure in bytes
 		TDBContactHandle Contact;                      /// Contacthandle where the setting can be found, or where searching starts
 		char * pszSettingName;                         /// Setting name
-		uint32_t Flags;                                /// flags describing where the setting can be found DB_CIFO_*
+		uint32_t Options;                              /// options describing where the setting can be found DB_CIFO_*
+		uint32_t Flags;                                /// Valid Flags. DB_SDF_* describes which following values are valid (internal use)
 
 		TDBContactHandle FoundInContact;               /// internal use to avoid to do the searching twice
+		uint32_t Hash;                                 /// internal used HashValue for settingname
+		TDBSettingHandle FoundHandle;                  /// internal used SettingHandle
 	} TDBSettingDescriptor, * PDBSettingDescriptor;
 
 /**
@@ -641,7 +648,7 @@ typedef
 
 	\return 0 on success
 **/
-#define MS_DB_EVENT_CREATEHARDLINK  "DB/Event/CreateHardLink"
+#define MS_DB_EVENT_CREATEHARDLINK  "DB/Event/HardLinkEvent"
 
 
 /**

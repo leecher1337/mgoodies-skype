@@ -1,5 +1,7 @@
 #pragma once 
 
+#include <vector>
+
 template <class TType>
 class CIterationHeap
 {
@@ -19,9 +21,7 @@ protected:
 		unsigned int Index;
 	} THeapElement, * PHeapElement;
 
-	PHeapElement * m_Heap;
-	unsigned int m_HeapSize;
-	unsigned int m_AllocSize;
+	std::vector <PHeapElement> m_Heap;
 	TIterationType m_Type;
 	bool m_DeleteItems;	
 
@@ -32,7 +32,7 @@ private:
 
 
 template <class TType>
-bool CIterationHeap<TType>::A_b4_B(PHeapElement a, PHeapElement b)
+inline bool CIterationHeap<TType>::A_b4_B(PHeapElement a, PHeapElement b)
 {
 	if (m_Type == ITForward)
 	{
@@ -46,15 +46,15 @@ bool CIterationHeap<TType>::A_b4_B(PHeapElement a, PHeapElement b)
 
 template <class TType>
 CIterationHeap<TType>::CIterationHeap(TType & InitialItem, TIterationType MinMax, bool DeleteItems)
+:	m_Heap()
 {
-	m_Heap = (PHeapElement*)malloc(sizeof(PHeapElement));
-	m_HeapSize = 1;
-	m_AllocSize = 1 << 1;
+	m_Heap.resize(1);
+	m_Heap.reserve(1 << 1);
 	m_Type = MinMax;
 	
 	m_Heap[0] = (THeapElement*)malloc(sizeof(THeapElement));
 	m_Heap[0]->Elem = &InitialItem;
-	m_Heap[0]->Index = m_HeapSize;
+	m_Heap[0]->Index = m_Heap.size();
 	m_DeleteItems = DeleteItems;
 }
 
@@ -62,37 +62,34 @@ template <class TType>
 CIterationHeap<TType>::~CIterationHeap()
 {
 	unsigned int i = 0; 
-	while ((i < m_HeapSize) && (m_Heap[i]))
+	while ((i < m_Heap.size()) && (m_Heap[i]))
 	{
 		if (m_DeleteItems && m_Heap[i]->Elem)
-			free(m_Heap[i]->Elem);
+			delete m_Heap[i]->Elem;
 
-		free(m_Heap[i]);
+		delete m_Heap[i];
 		++i;
 	}
-	free(m_Heap);
 }
 
 template <class TType>
 bool CIterationHeap<TType>::Insert(TType & Item)
 {
-	if (m_AllocSize == m_HeapSize + 1)
-	{		
-		m_AllocSize = m_AllocSize << 1;
-		m_Heap = (PHeapElement*)realloc(m_Heap, (m_AllocSize - 1) * sizeof(PHeapElement));		
-	}
+	if (m_Heap.capacity() == m_Heap.size() + 1)		
+		m_Heap.reserve(m_Heap.capacity() << 1);
+	
 
-	m_HeapSize++;
+	m_Heap.push_back(NULL);
 
-	unsigned int way = m_AllocSize >> 2;	
+	unsigned int way = m_Heap.capacity() >> 2;	
 	unsigned int index = 0;	
-	PHeapElement ins = (THeapElement*)malloc(sizeof(THeapElement));
+	PHeapElement ins = new THeapElement;
 	ins->Elem = &Item;
-	ins->Index = m_HeapSize;
+	ins->Index = m_Heap.size();
 
 	PHeapElement next;
 
-	while ((way > 0) && (index + 1 < m_HeapSize))
+	while ((way > 0) && (index + 1 < m_Heap.size()))
 	{
 		next = m_Heap[index];
 		if ((!(*next->Elem)) || A_b4_B(ins, next))
@@ -101,7 +98,7 @@ bool CIterationHeap<TType>::Insert(TType & Item)
 			ins = next;
 		}
 
-		if (way & m_HeapSize)	 //right
+		if (way & m_Heap.size())	 //right
 		{
 			index = (index << 1) + 2;
 		} else {	// left
@@ -133,11 +130,11 @@ void CIterationHeap<TType>::Pop()
 	PHeapElement ins = m_Heap[0];
 	unsigned int big = 1;
 
-	while ((big > 0) && (index < (m_HeapSize >> 1)))
+	while ((big > 0) && (index < (m_Heap.size() >> 1)))
 	{
 		big = 0;
 
-		if ((((index << 1) + 2) < m_HeapSize) && (*m_Heap[(index << 1) + 2]->Elem)) 
+		if ((((index << 1) + 2) < m_Heap.size()) && (*m_Heap[(index << 1) + 2]->Elem)) 
 		{
 			if (*ins->Elem)
 			{
@@ -151,7 +148,7 @@ void CIterationHeap<TType>::Pop()
 				index = (index << 1) + 2;
 				m_Heap[index] = ins;
 			}
-		} else if ((((index << 1) + 1) < m_HeapSize) && (*m_Heap[(index << 1) + 1]->Elem))
+		} else if ((((index << 1) + 1) < m_Heap.size()) && (*m_Heap[(index << 1) + 1]->Elem))
 		{
 			if (*ins->Elem) 
 			{

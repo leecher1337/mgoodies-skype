@@ -98,8 +98,8 @@ CEventsTypeManager::~CEventsTypeManager()
 	
 	while (it != m_Map.end())
 	{
-		delete it->second->Description;
-		delete it->second->ModuleName;
+		delete [] it->second->Description;
+		delete [] it->second->ModuleName;
 		delete it->second;
 		++it;
 	}
@@ -115,7 +115,7 @@ uint32_t CEventsTypeManager::MakeGlobalID(char* Module, uint32_t EventType)
 	uint32_t h = Hash(buf, l + sizeof(uint32_t));
 
 	PDBEventTypeDescriptor d = GetDescriptor(h);
-	while ((d != NULL) || ((d->EventType != EventType) || (strcmp(d->ModuleName, Module) != 0)))
+	while ((d != NULL) && ((d->EventType != EventType) || (strcmp(d->ModuleName, Module) != 0)))
 	{
 		++h;
 		d = GetDescriptor(h);
@@ -154,17 +154,19 @@ PDBEventTypeDescriptor CEventsTypeManager::GetDescriptor(uint32_t GlobalID)
 		sdesc.Descriptor = &d;
 		sdesc.Type = DB_ST_ASCIIZ;
 
-		sprintf_s(n, 256, "$EventTypes/%xModuleID", GlobalID);
+		sprintf_s(n, 256, "$EventTypes/%08x/ModuleID", GlobalID);
 		TDBSettingHandle h = m_Settings.ReadSetting(sid);
-		
+
 		if ((h != DB_INVALIDPARAM) && (h != 0))
 		{
-			sprintf_s(n, 256, "$EventTypes/%xModuleName", GlobalID);
+			sprintf_s(n, 256, "$EventTypes/%08x/ModuleName", GlobalID);
+			d.Flags = 0;
 			h = m_Settings.ReadSetting(sname);
 
 			if ((h != DB_INVALIDPARAM) && (h != 0))
 			{
-				sprintf_s(n, 256, "$EventTypes/%xDescription", GlobalID);
+				sprintf_s(n, 256, "$EventTypes/%08x/Description", GlobalID);
+				d.Flags = 0;
 				h = m_Settings.ReadSetting(sdesc);
 
 				if ((h != DB_INVALIDPARAM) && (h != 0))
@@ -210,18 +212,21 @@ uint32_t CEventsTypeManager::EnsureIDExists(char* Module, uint32_t EventType, ch
 		s.cbSize = sizeof(s);
 		s.Descriptor = &d;
 
-		sprintf_s(n, 256, "$EventTypes/%xModuleID", res);
+		sprintf_s(n, 256, "$EventTypes/%08x/ModuleID", res);
 		s.Type = DB_ST_INT;
 		s.Value.Int = EventType;
 		m_Settings.WriteSetting(s);
 
-		sprintf_s(n, 256, "$EventTypes/%xModuleName", res);
+		sprintf_s(n, 256, "$EventTypes/%08x/ModuleName", res);
+		d.Flags = 0;
 		s.Type = DB_ST_ASCIIZ;
 		s.Value.Length = strlen(Module) + 1;
 		s.Value.pAnsii = Module;
 		m_Settings.WriteSetting(s);
 
-		sprintf_s(n, 256, "$EventTypes/%xDescription", res);
+		sprintf_s(n, 256, "$EventTypes/%08x/Description", res);
+		d.Flags = 0;
+
 		if (Description)
 		{
 			s.Value.Length = strlen(Module) + 1;
@@ -229,8 +234,8 @@ uint32_t CEventsTypeManager::EnsureIDExists(char* Module, uint32_t EventType, ch
 			m_Settings.WriteSetting(s);
 		} else {
 			char tmp[256];
-			sprintf_s(tmp, 256, "??? %s - %x ???", Module, EventType);
-			s.Value.Length = strlen(Module);
+			sprintf_s(tmp, 256, "%s/%08x", Module, EventType);
+			s.Value.Length = strlen(tmp) + 1;
 			s.Value.pAnsii = tmp;
 			m_Settings.WriteSetting(s);
 		}
@@ -248,19 +253,24 @@ CEvents::CEvents(CBlockManager & BlockManager, CEventLinks::TNodeRef LinkRootNod
 	m_Links(BlockManager, LinkRootNode),
 	m_EventsMap(),
 	m_VirtualEventsMap(),
-	m_VirtualOwnerMap()
+	m_VirtualOwnerMap(),
+	m_Iterations()
 {
 	srand(_time32(NULL) + GetTickCount() + GetCurrentThreadId());
 	m_Counter = rand() & 0xffff;
-
-	m_IterAllocSize = 1;
-	m_Iterations = (PEventIteration*) malloc(sizeof(PEventIteration));
 
 	m_Cipher = NULL;
 }
 CEvents::~CEvents()
 {
 	m_Sync.BeginWrite();
+	
+	for (unsigned int i = 0; i < m_Iterations.size(); ++i)
+	{
+		if (m_Iterations[i])
+			IterationClose(i + 1);
+	}
+
 
 	TEventsTreeMap::iterator it1 = m_EventsMap.begin();
 	while (it1 != m_EventsMap.end())
@@ -278,12 +288,6 @@ CEvents::~CEvents()
 	}
 	m_VirtualEventsMap.clear();
 
-	for (unsigned int i = 0; i < m_IterAllocSize; i++)
-	{
-		if (m_Iterations[i])
-			IterationClose(i + 1);
-	}
-	free(m_Iterations);
 	m_Sync.EndWrite();
 
 }
@@ -755,7 +759,7 @@ TDBContactHandle CEvents::GetContact(TDBEventHandle hEvent)
 	return res;
 }
 
-unsigned int CEvents::CreateHardLink(TDBEventHardLink & HardLink)
+unsigned int CEvents::HardLinkEvent(TDBEventHardLink & HardLink)
 {
 	uint32_t sig = cEventSignature;
 	uint32_t flags;
@@ -848,14 +852,11 @@ TDBEventIterationHandle CEvents::IterationInit(TDBEventIterFilter & Filter)
 
 	unsigned int i = 0;
 
-	while ((i < m_IterAllocSize) && (m_Iterations[i] != NULL))
-		i++;
+	while ((i < m_Iterations.size()) && (m_Iterations[i] != NULL))
+		++i;
 
-	if (i == m_IterAllocSize)
-	{
-		m_IterAllocSize = m_IterAllocSize << 1;
-		m_Iterations = (PEventIteration*)realloc(m_Iterations, sizeof(PEventIteration*) * m_IterAllocSize);
-	}
+	if (i == m_Iterations.size())
+		m_Iterations.push_back(NULL);
 
 	CEventsTree * tree = getEventsTree(Filter.hContact);
 	CVirtualEventsTree * vtree = getVirtualEventsTree(Filter.hContact);
@@ -913,6 +914,7 @@ TDBEventIterationHandle CEvents::IterationInit(TDBEventIterFilter & Filter)
 	PEventIteration iter = new TEventIteration;
 	iter->Filter = Filter;
 	iter->LastEvent = 0;
+	iter->Heap = NULL;
 
 	TEventKey key;
 	key.Index = 0;
@@ -958,7 +960,7 @@ TDBEventHandle CEvents::IterationNext(TDBEventIterationHandle Iteration)
 	if (Iteration == 0)
 		return 0;
 
-	if ((Iteration > m_IterAllocSize) || (m_Iterations[Iteration - 1] == NULL))
+	if ((Iteration > m_Iterations.size()) || (m_Iterations[Iteration - 1] == NULL))
 	{
 		m_Sync.EndRead();
 		return DB_INVALIDPARAM;
@@ -1000,7 +1002,7 @@ unsigned int CEvents::IterationClose(TDBEventIterationHandle Iteration)
 {
 	m_Sync.BeginWrite();
 
-	if ((Iteration > m_IterAllocSize) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
+	if ((Iteration > m_Iterations.size()) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
 	{
 		m_Sync.EndWrite();
 		return DB_INVALIDPARAM;

@@ -48,7 +48,7 @@ uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignat
 			throw "File Corrupt!";
 		}
 
-		if (h.ID == cFreeBlockID)
+ 		if (h.ID == cFreeBlockID)
 		{
 			m_FreeBlocks.insert(std::make_pair(h.Size, p));
 		} else {
@@ -71,7 +71,6 @@ uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignat
 			m_FreeIDs.push_back(i);
 	}
 
-	printf("Block Count = %d\n", m_BlockTable.size() - m_FreeIDs.size());
 	return res;
 }
 
@@ -94,7 +93,8 @@ inline void CBlockManager::Write(uint32_t Addr, bool IsVirtual, void* Buffer, ui
 
 inline void CBlockManager::Zero(uint32_t Addr, bool IsVirtual, uint32_t Size)
 {
-/*	if (IsVirtual)
+#ifdef _DEBUG
+	if (IsVirtual)
 	{
 		memset((void*)Addr, 0, Size);
 	} else {
@@ -103,7 +103,7 @@ inline void CBlockManager::Zero(uint32_t Addr, bool IsVirtual, uint32_t Size)
 		m_FileAccess.Write(buf, Addr, Size);
 		free(buf);
 	}
-	*/
+#endif
 }
 
 
@@ -274,6 +274,7 @@ bool CBlockManager::ReadBlock(uint32_t BlockID, void * & Buffer, size_t & Size, 
 		Size = h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc);
 		return false;
 	} 
+	Size = h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc);
 
 	if (Buffer == NULL)
 		Buffer = malloc(Size);
@@ -294,13 +295,23 @@ bool CBlockManager::WriteBlock(uint32_t BlockID, void * Buffer, size_t Size, uin
 	uint32_t a;
 	bool isvirtual;
 	TBlockHeadOcc h;
+	bool freebuf = false;
 
 	if (!InitOperation(BlockID, a, isvirtual, h))
 		return false;
 
-	if (Size != h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc))
+	if (Size > h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc))
 		return false;
 
+	if (Size < h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc))
+	{
+		void * tmp = malloc(h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc));
+		memset((uint8_t*)tmp + sizeof(h) + Size, 0, h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc) - Size);
+		memcpy(tmp, Buffer, Size);
+		Buffer = tmp;
+		freebuf = true;
+	}
+	
 	if ((!isvirtual) && m_FileAccess.GetReadOnly())
 	{
 		a = CreateVirtualBlock(BlockID, Size);
@@ -320,7 +331,7 @@ bool CBlockManager::WriteBlock(uint32_t BlockID, void * Buffer, size_t Size, uin
 }
 bool CBlockManager::WriteBlockCheck(uint32_t BlockID, void * Buffer, size_t Size, uint32_t & Signature)
 {
-	if ((Buffer == NULL) || (Size == 0)) // must be something usefull...
+	if ((Buffer == NULL) || (Size == 0)) // data must be something usefull...
 		return false;
 
 	uint32_t a;
@@ -562,6 +573,7 @@ uint32_t CBlockManager::CreateBlock(uint32_t Size, uint32_t Signature)
 
 	return h.ID;
 }
+
 uint32_t CBlockManager::CreateBlockVirtual(uint32_t Size, uint32_t Signature)
 {
 	if (Size % m_Granularity > 0)

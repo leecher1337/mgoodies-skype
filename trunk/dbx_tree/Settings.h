@@ -9,6 +9,7 @@
 
 #include <hash_map>
 #include <queue>
+#include <vector>
 
 class CSettings;
 class CSettingsTree;
@@ -120,6 +121,7 @@ public:
 	TDBSettingHandle IterationNext(TDBSettingIterationHandle Iteration);
 	unsigned int IterationClose(TDBSettingIterationHandle Iteration);
 
+
 private:
 	typedef stdext::hash_map<TDBContactHandle, CSettingsTree*> TSettingsTreeMap;
 	typedef CIterationHeap<CSettingsTree::iterator> TSettingsHeap;
@@ -148,8 +150,11 @@ private:
 		std::queue<TSettingIterationResult> * Frame;
 	} TSettingIteration, *PSettingIteration;
 
-	unsigned int m_IterAllocSize;
-	TSettingIteration **m_Iterations;
+
+	typedef std::vector<PSettingIteration> TSettingIterationVector;
+
+	TSettingIterationVector m_Iterations;
+
 
 	TOnRootChanged m_sigRootChanged;
 	void onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot);
