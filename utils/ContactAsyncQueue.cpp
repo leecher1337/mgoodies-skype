@@ -48,18 +48,24 @@ ContactAsyncQueue::ContactAsyncQueue(pfContactAsyncQueueCallback fContactAsyncQu
 
 ContactAsyncQueue::~ContactAsyncQueue()
 {
-	if (finished == 0)
-		finished = 1;
-	SetEvent(hEvent);
+	Finish();
+
 	int count = 0;
 	while(finished != 2 && ++count < 50)
-		Sleep(10);
+		Sleep(30);
 
 	for (int i = 0; i < queue.getCount(); i++)
 		if (queue[i] != NULL)
 			mir_free(queue[i]);
 
 	DeleteCriticalSection(&cs);
+}
+
+void ContactAsyncQueue::Finish()
+{
+	if (finished == 0)
+		finished = 1;
+	SetEvent(hEvent);
 }
 
 void ContactAsyncQueue::Lock()
@@ -169,6 +175,9 @@ void ContactAsyncQueue::Thread()
 	while (!finished)
 	{
 		ResetEvent(hEvent);
+
+		if (finished)
+			break;
 
 		Lock();
 

@@ -174,6 +174,17 @@ class Buffer
 			len++;
 		}
 
+		void appendn(size_t n, T app)
+		{
+			alloc(len + n);
+
+			for(; n > 0; n--)
+			{
+				str[len] = app;
+				len++;
+			}
+		}
+
 		void append(const char *app, size_t appLen = -1)
 		{
 			if (appLen == -1)
@@ -195,6 +206,28 @@ class Buffer
 			alloc(total);
 
 			__bcopy(&str[len], app, appLen);
+			len += appLen;
+		}
+
+		void append(const Buffer<char> &app)
+		{
+			size_t appLen = app.len;
+
+			size_t total = len + appLen + 1;
+			alloc(total);
+
+			__bcopy(&str[len], app.str, appLen);
+			len += appLen;
+		}
+
+		void append(const Buffer<WCHAR> &app)
+		{
+			size_t appLen = app.len;
+
+			size_t total = len + appLen + 1;
+			alloc(total);
+
+			__bcopy(&str[len], app.str	, appLen);
 			len += appLen;
 		}
 
@@ -254,6 +287,13 @@ class Buffer
 			memmove(&str[start], app, appLen * sizeof(T));
 
 			len += appLen - oldLen;
+		}
+
+		void replaceAll(T find, T replace)
+		{
+			for(size_t i = 0; i < len; i++)
+				if (str[len] == find)
+					str[len] = replace;
 		}
 
 		void translate()

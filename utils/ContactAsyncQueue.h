@@ -48,6 +48,8 @@ public:
 	ContactAsyncQueue(pfContactAsyncQueueCallback fContactAsyncQueueCallback, int initialSize = 10);
 	~ContactAsyncQueue();
 
+	void Finish();
+
 	inline int Size() const						{ return queue.getCount(); }
 	inline int Remove(int idx)					{ mir_free(queue[idx]); return queue.remove(idx); }
 	inline QueueItem* Get(int idx) const		{ return queue[idx]; }
