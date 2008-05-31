@@ -19,9 +19,10 @@ inline bool TSettingKey::operator >  (const TSettingKey & Other) const
 
 
 
-CSettingsTree::CSettingsTree(CSettings & Owner, CBlockManager & BlockManager, TNodeRef RootNode, TDBContactHandle Contact)
+CSettingsTree::CSettingsTree(CSettings & Owner, CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TNodeRef RootNode, TDBContactHandle Contact)
 : CFileBTree(BlockManager, RootNode, cSettingNodeSignature),
-	m_Owner(Owner)
+	m_Owner(Owner),
+	m_EncryptionManager(EncryptionManager)
 {
 	m_Contact = Contact;
 }
@@ -50,7 +51,7 @@ TDBSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * N
 	while ((res == 0) && (i) && (i.Key().Hash == Hash))
 	{
 		l = Length;
-		if (m_Owner._ReadSettingName(m_BlockManager, i.Data(), l, str) &&
+		if (m_Owner._ReadSettingName(m_BlockManager, m_EncryptionManager, i.Data(), l, str) &&
 			(strncmp(str, Name, Length) == 0))
 		{
 			res = i.Data();
@@ -91,21 +92,30 @@ bool CSettingsTree::_AddSetting(const uint32_t Hash, const TDBSettingHandle hSet
 	return true;
 }
 
-CSettings::CSettings(CBlockManager & BlockManagerSet, CBlockManager & BlockManagerPri, CMultiReadExclusiveWriteSynchronizer & Synchronize, CSettingsTree::TNodeRef SettingsRoot, CContacts & Contacts)
+CSettings::CSettings(
+		CBlockManager & BlockManagerSet,
+		CBlockManager & BlockManagerPri,
+		CEncryptionManager & EncryptionManagerSet,
+		CEncryptionManager & EncryptionManagerPri,
+		CMultiReadExclusiveWriteSynchronizer & Synchronize, 
+		CSettingsTree::TNodeRef SettingsRoot,
+		CContacts & Contacts
+)
 :	m_Sync(Synchronize),
 	m_BlockManagerSet(BlockManagerSet),
 	m_BlockManagerPri(BlockManagerPri),
+	m_EncryptionManagerSet(EncryptionManagerSet),
+	m_EncryptionManagerPri(EncryptionManagerPri),
 	m_Contacts(Contacts),
 	m_SettingsMap(),
 	m_Iterations(),
 	m_sigRootChanged()	
 {
-	CSettingsTree * settree = new CSettingsTree(*this, m_BlockManagerSet, SettingsRoot, 0);
+	CSettingsTree * settree = new CSettingsTree(*this, m_BlockManagerSet, m_EncryptionManagerSet, SettingsRoot, 0);
 
 	settree->sigRootChanged().connect(this, &CSettings::onRootChanged);
 	m_SettingsMap.insert(std::make_pair(0, settree));
 
-	m_Cipher = NULL;
 }
 
 CSettings::~CSettings()
@@ -142,26 +152,14 @@ CSettingsTree * CSettings::getSettingsTree(TDBContactHandle hContact)
 	if (root == DB_INVALIDPARAM)
 		return NULL;
 
-	CSettingsTree * tree = new CSettingsTree(*this, m_BlockManagerPri, root, hContact);
+	CSettingsTree * tree = new CSettingsTree(*this, m_BlockManagerPri, m_EncryptionManagerPri, root, hContact);
 	tree->sigRootChanged().connect(this, &CSettings::onRootChanged);
 	m_SettingsMap.insert(std::make_pair(hContact, tree));
 
 	return tree;	
 }
 
-void CSettings::SetCipher(CCipher *Cipher)
-{
-  m_Cipher = Cipher;
-}
-inline uint32_t CSettings::AlignOnCipher(uint32_t Value)
-{
-	if (m_Cipher && (Value % m_Cipher->BlockSizeBytes() > 0))
-		Value = Value - Value % m_Cipher->BlockSizeBytes() + m_Cipher->BlockSizeBytes();
-
-	return Value;
-}
-
-inline bool CSettings::_ReadSettingName(CBlockManager & BlockManager, TDBSettingHandle Setting, uint16_t & NameLength, char *& NameBuf)
+inline bool CSettings::_ReadSettingName(CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TDBSettingHandle Setting, uint16_t & NameLength, char *& NameBuf)
 {
 	uint32_t sig = cSettingSignature;
 	uint16_t len;
@@ -174,25 +172,27 @@ inline bool CSettings::_ReadSettingName(CBlockManager & BlockManager, TDBSetting
 		return false;
 
 	NameLength = len;
+	NameBuf = (char*) realloc(NameBuf, NameLength + 1);
 
-	if (NameBuf)
+	if (EncryptionManager.IsEncrypted(Setting, ET_DATA))
 	{
-		NameBuf = (char*) malloc(NameLength + 1);
-	} else {
-		NameBuf = (char*) realloc(NameBuf, NameLength + 1);
-	}
-
-	if (!m_Cipher)
-	{
-		BlockManager.ReadPart(Setting, NameBuf, sizeof(TSetting), NameLength + 1, sig);
-	} else {
-		len = AlignOnCipher(sizeof(((TSetting*)NULL)->Value) + NameLength + 1);
+		len = EncryptionManager.AlignSize(Setting, ET_DATA, sizeof(((TSetting*)NULL)->Value) + NameLength + 1);
 		buf = (char*) malloc(len);
-		BlockManager.ReadPart(Setting, buf, offsetof(TSetting, Value), len, sig);
-		m_Cipher->Decrypt(buf, len, Setting);
-		memcpy(NameBuf, buf, NameLength + 1);
-		free(buf);
+		__try
+		{
+			BlockManager.ReadPart(Setting, buf, offsetof(TSetting, Value), len, sig);
+			EncryptionManager.Decrypt(buf, len, ET_DATA, Setting, 0);
+			memcpy(NameBuf, buf + sizeof(((TSetting*)NULL)->Value), NameLength + 1);
+		}
+		__finally 
+		{
+			free(buf);
+		}
+	} else {	
+		BlockManager.ReadPart(Setting, NameBuf, sizeof(TSetting), NameLength + 1, sig);
 	}
+
+	NameBuf[NameLength] = 0;
 
 	return true;
 }
@@ -355,10 +355,12 @@ unsigned int CSettings::DeleteSetting(TDBSettingHandle hSetting)
 	m_Sync.BeginWrite();
 	
 	CBlockManager * file = &m_BlockManagerPri;
+	CEncryptionManager * enc = &m_EncryptionManagerPri;
 
 	if (hSetting & cSettingsFileFlag)
 	{
 		file = &m_BlockManagerSet;
+		enc = &m_EncryptionManagerSet;
 		hSetting = hSetting & ~cSettingsFileFlag;
 	}
 
@@ -381,8 +383,11 @@ unsigned int CSettings::DeleteSetting(TDBSettingHandle hSetting)
 		return DB_INVALIDPARAM;
 	}
 
-	if (m_Cipher)
-		m_Cipher->Decrypt(&(set->Value), AlignOnCipher(sizeof(set->Value) + set->NameLength + 1), hSetting);
+	// encryption
+	if (enc->IsEncrypted(hSetting, ET_DATA))
+	{
+		enc->Decrypt(&(set->Value), enc->AlignSize(hSetting, ET_DATA, sizeof(set->Value) + set->NameLength + 1), ET_DATA, hSetting, 0);
+	}
 
 	char * str = (char*) (set+1);
 	tree->_DeleteSetting(Hash(str, set->NameLength), hSetting);
@@ -418,12 +423,14 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 	m_Sync.BeginWrite();
 	
 	CBlockManager * file = &m_BlockManagerPri;
+	CEncryptionManager * enc = &m_EncryptionManagerPri;
 	bool fileflag = false;
 	uint32_t sig = cSettingSignature;
 
 	if (hSetting & cSettingsFileFlag)
 	{
 		file = &m_BlockManagerSet;
+		enc = &m_EncryptionManagerSet;
 		hSetting = hSetting & ~cSettingsFileFlag;
 		fileflag = true;
 	}
@@ -435,6 +442,7 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		if (Setting.Descriptor->Contact == 0)
 		{
 			file = &m_BlockManagerSet;
+			enc = &m_EncryptionManagerSet;
 			fileflag = true;
 		}
 
@@ -482,18 +490,25 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		}
 	}	
 
-	blocksize = sizeof(TSetting) - sizeof(set->Value) + AlignOnCipher(sizeof(set->Value) + strlen(Setting.Descriptor->pszSettingName) + 1 + blobsize);
-	buf = (uint8_t *)malloc(blocksize);
-	set = (TSetting*)buf;
-	memset(&(set->Reserved), 0, sizeof(set->Reserved));
-
+	blocksize = sizeof(TSetting) - sizeof(set->Value) + enc->AlignSize(hSetting, ET_DATA, sizeof(set->Value) + strlen(Setting.Descriptor->pszSettingName) + 1 + blobsize);
+	
 	if (hSetting == 0) // create new setting
-	{
+	{	
+		hSetting = file->CreateBlock(blocksize, cSettingSignature);
+
+		if (blocksize != sizeof(TSetting) - sizeof(set->Value) + enc->AlignSize(hSetting, ET_DATA, sizeof(set->Value) + strlen(Setting.Descriptor->pszSettingName) + 1 + blobsize))
+		{
+			blocksize = blocksize = sizeof(TSetting) - sizeof(set->Value) + enc->AlignSize(hSetting, ET_DATA, sizeof(set->Value) + strlen(Setting.Descriptor->pszSettingName) + 1 + blobsize);
+			file->ResizeBlock(hSetting, blocksize, false);
+		}
+
+		buf = (uint8_t *)malloc(blocksize);
+		set = (TSetting*)buf;
+		memset(&(set->Reserved), 0, sizeof(set->Reserved));
+
 		set->Contact = Setting.Descriptor->Contact;
 		set->Flags = 0;
 		set->AllocSize = blobsize;
-		
-		hSetting = file->CreateBlock(blocksize, cSettingSignature);
 
 		if (Setting.Descriptor && (Setting.Descriptor->Flags & DB_SDF_HashValid))
 		{
@@ -503,6 +518,11 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		}
 
 	} else {
+
+		buf = (uint8_t *)malloc(blocksize);
+		set = (TSetting*)buf;
+		memset(&(set->Reserved), 0, sizeof(set->Reserved));
+
 		file->ReadPart(hSetting, set, 0, sizeof(TSetting), sig);
 		if (((Setting.Type & DB_STF_VariableLength) == 0) && (set->Type & DB_STF_VariableLength))
 		{ // shrink setting (variable size->fixed size)
@@ -547,9 +567,10 @@ TDBSettingHandle CSettings::WriteSetting(TDBSetting & Setting, TDBSettingHandle 
 		}
 	}
 
-	if (m_Cipher)
-		m_Cipher->Encrypt(&(set->Value), AlignOnCipher(sizeof(set->Value) + set->NameLength + 1 + set->AllocSize), hSetting);
-
+	if (enc->IsEncrypted(hSetting, ET_DATA))
+	{
+		enc->Encrypt(&(set->Value), enc->AlignSize(hSetting, ET_DATA, sizeof(set->Value) + set->NameLength + 1 + set->AllocSize), ET_DATA, hSetting, 0);
+	}
 
 	file->WriteBlock(hSetting, buf, blocksize, cSettingSignature);
 	free(buf);
@@ -586,10 +607,12 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting)
 unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSetting)
 {
 	CBlockManager * file = &m_BlockManagerPri;
+	CEncryptionManager * enc = &m_EncryptionManagerPri;
 
 	if (hSetting & cSettingsFileFlag)
 	{
 		file = &m_BlockManagerSet;
+		enc = &m_EncryptionManagerSet;
 		hSetting = hSetting & ~cSettingsFileFlag;
 	}
 
@@ -614,9 +637,9 @@ unsigned int CSettings::ReadSetting(TDBSetting & Setting, TDBSettingHandle hSett
 	TSetting* set = (TSetting*)buf;
 	uint8_t* str = (uint8_t*)buf + sizeof(TSetting) + set->NameLength + 1;
 
-	if (m_Cipher)
+	if (enc->IsEncrypted(hSetting, ET_DATA))
 	{
-		m_Cipher->Decrypt(&(set->Value), AlignOnCipher(size - sizeof(TSetting) + sizeof(set->Value)), hSetting);
+		enc->Decrypt(&(set->Value), enc->AlignSize(hSetting, ET_DATA, size - sizeof(TSetting) + sizeof(set->Value)), ET_DATA, hSetting, 0);
 	}
 
 	if (Setting.Type == 0)
@@ -1202,9 +1225,9 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 				if (help.Name == NULL)
 				{
 					if (help.Tree->getContact() == 0)
-						_ReadSettingName(m_BlockManagerSet, help.Handle, help.NameLen, help.Name);
+						_ReadSettingName(m_BlockManagerSet, m_EncryptionManagerSet, help.Handle, help.NameLen, help.Name);
 					else
-						_ReadSettingName(m_BlockManagerPri, help.Handle, help.NameLen, help.Name);
+						_ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, help.Handle, help.NameLen, help.Name);
 				}
 		
 
@@ -1220,9 +1243,9 @@ TDBSettingHandle CSettings::IterationNext(TDBSettingIterationHandle Iteration)
 					if (tmp.Name == NULL)
 					{
 						if (help.Tree->getContact() == 0)
-							namereadres = _ReadSettingName(m_BlockManagerSet, tmp.Handle, tmp.NameLen, tmp.Name);
+							namereadres = _ReadSettingName(m_BlockManagerSet, m_EncryptionManagerSet, tmp.Handle, tmp.NameLen, tmp.Name);
 						else
-							namereadres = _ReadSettingName(m_BlockManagerPri, tmp.Handle, tmp.NameLen, tmp.Name);
+							namereadres = _ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, tmp.Handle, tmp.NameLen, tmp.Name);
 					}
 
 					if (!namereadres)

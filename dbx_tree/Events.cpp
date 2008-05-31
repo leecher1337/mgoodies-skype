@@ -245,9 +245,17 @@ uint32_t CEventsTypeManager::EnsureIDExists(char* Module, uint32_t EventType, ch
 }
 
 
-CEvents::CEvents(CBlockManager & BlockManager, CEventLinks::TNodeRef LinkRootNode, CMultiReadExclusiveWriteSynchronizer & Synchronize, CContacts & Contacts, CSettings & Settings)
+CEvents::CEvents(
+	CBlockManager & BlockManager, 
+	CEncryptionManager & EncryptionManager,
+	CEventLinks::TNodeRef LinkRootNode, 
+	CMultiReadExclusiveWriteSynchronizer & Synchronize,
+	CContacts & Contacts, 
+	CSettings & Settings
+)
 :	m_Sync(Synchronize),
 	m_BlockManager(BlockManager),	
+	m_EncryptionManager(EncryptionManager),
 	m_Contacts(Contacts),
 	m_Types(Contacts, Settings),
 	m_Links(BlockManager, LinkRootNode),
@@ -259,7 +267,6 @@ CEvents::CEvents(CBlockManager & BlockManager, CEventLinks::TNodeRef LinkRootNod
 	srand(_time32(NULL) + GetTickCount() + GetCurrentThreadId());
 	m_Counter = rand() & 0xffff;
 
-	m_Cipher = NULL;
 }
 CEvents::~CEvents()
 {
@@ -292,10 +299,6 @@ CEvents::~CEvents()
 
 }
 
-void CEvents::SetCipher(CCipher * Cipher)
-{
-  m_Cipher = Cipher;
-}
 CEventLinks::TOnRootChanged & CEvents::sigLinkRootChanged() 
 {
 	return m_Links.sigRootChanged();
@@ -378,16 +381,15 @@ unsigned int CEvents::Get(TDBEventHandle hEvent, TDBEvent & Event)
 	uint8_t * blob = (uint8_t *)(ev + 1);
 	PDBEventTypeDescriptor d = m_Types.GetDescriptor(ev->Type);
 
-	m_Sync.EndRead();  // we leave here.
-
-	if (m_Cipher)
+	// encryption
+	if (m_EncryptionManager.IsEncrypted(hEvent, ET_DATA))
 	{
-		uint32_t cryptsize = ev->DataLength;
-		if (cryptsize % m_Cipher->BlockSizeBytes() > 0)
-			cryptsize = cryptsize - cryptsize % m_Cipher->BlockSizeBytes() + m_Cipher->BlockSizeBytes();
-
-		m_Cipher->Decrypt(blob, cryptsize, hEvent); 
+		uint32_t size = ev->DataLength;
+		m_EncryptionManager.AlignSize(hEvent, ET_DATA, size);
+		m_EncryptionManager.Decrypt(blob, size, ET_DATA, hEvent, 0);
 	}
+
+	m_Sync.EndRead();  // we leave here. we cannot leave earlier due to encryption change thread
 
 	if (d)
 	{
@@ -515,19 +517,11 @@ TDBEventHandle CEvents::Add(TDBContactHandle hContact, TDBEvent & Event)
 	CEventsTree* tree;
 	TDBEventHandle res = 0;
 
-	uint32_t cryptsize = Event.cbBlob;
-	uint8_t *blobdata = Event.pBlob;
-	if (m_Cipher)
-	{
-		if (cryptsize % m_Cipher->BlockSizeBytes() > 0)
-			cryptsize = cryptsize - cryptsize % m_Cipher->BlockSizeBytes() + m_Cipher->BlockSizeBytes();
-
-		blobdata = (uint8_t*) malloc(cryptsize);
-		memset(blobdata, 0, cryptsize);
-		memcpy(blobdata, Event.pBlob, Event.cbBlob);
-	}
-
 	m_Sync.BeginWrite();
+	
+	uint8_t *blobdata = Event.pBlob;
+	bool bloballocated = false;
+	uint32_t cryptsize = m_EncryptionManager.AlignSize(0, ET_DATA, Event.cbBlob);
 
 	if (Event.Flags & DB_EF_VIRTUAL)
 	{
@@ -547,8 +541,27 @@ TDBEventHandle CEvents::Add(TDBContactHandle hContact, TDBEvent & Event)
 		return DB_INVALIDPARAM;
 	}
 
-  if (m_Cipher)
-		m_Cipher->Encrypt(blobdata, cryptsize, res);
+	// encryption
+	if (m_EncryptionManager.IsEncrypted(res, ET_DATA))
+	{
+		uint32_t realsize = m_EncryptionManager.AlignSize(res, ET_DATA, Event.cbBlob);
+		if (realsize != cryptsize)
+			m_BlockManager.ResizeBlock(res, realsize, false);
+
+		blobdata = NULL;
+		bloballocated = true;
+		blobdata = (uint8_t*) malloc(realsize);
+		memset(blobdata, 0, realsize);
+		memcpy(blobdata, Event.pBlob, Event.cbBlob);
+		
+		m_EncryptionManager.Encrypt(blobdata, realsize, ET_DATA, res, 0);
+		cryptsize = realsize;
+	} else {
+		if (Event.cbBlob != cryptsize)
+			m_BlockManager.ResizeBlock(res, Event.cbBlob, false);
+
+		cryptsize = Event.cbBlob;
+	}
 
 	TEvent ev = {0};
 	TEventKey key = {0};
@@ -569,7 +582,7 @@ TDBEventHandle CEvents::Add(TDBContactHandle hContact, TDBEvent & Event)
 	m_BlockManager.WritePart(res, &ev, 0, sizeof(ev));
 	m_BlockManager.WritePart(res, blobdata, sizeof(ev), cryptsize);
 
-	if (m_Cipher)
+	if (bloballocated)
 		free(blobdata);
 
 	if (Event.Flags & DB_EF_VIRTUAL)
@@ -759,7 +772,7 @@ TDBContactHandle CEvents::GetContact(TDBEventHandle hEvent)
 	return res;
 }
 
-unsigned int CEvents::HardLinkEvent(TDBEventHardLink & HardLink)
+unsigned int CEvents::HardLink(TDBEventHardLink & HardLink)
 {
 	uint32_t sig = cEventSignature;
 	uint32_t flags;

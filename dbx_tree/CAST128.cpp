@@ -2,55 +2,51 @@
 #include "CAST128.inc"
 
 
-CCAST128::CCAST128()
+CAST128::CAST128()
 {
 
 }
-CCAST128::~CCAST128()
+CAST128::~CAST128()
 {
 
 }
-CCipher* CCAST128::Create()
+CCipher* CAST128::Create()
 {
-	return new CCAST128();
+	return new CAST128();
 }
 
-uint32_t CCAST128::BlockSizeBytes()
+void CAST128::SetKey(void* Key, uint32_t KeyLength)
 {
-	return cBlockSize;
-}
-void CCAST128::SetKey(void* Key, uint32_t KeyLength)
-{
-	uint8_t k128[16] = "Hello MirandaIM";
+	uint8_t k128[16] = "Mirandadbx_tree";
 	int i = 0;
 	uint8_t* k = (uint8_t*) Key;
 	while (KeyLength > 0)
 	{
 		k128[i] = k128[i] ^ (*k);
 		i = (i + 1) % 16;
-		k++;
-		KeyLength--;
+		++k;
+		--KeyLength;
 	}
 	CreateSubKeys(k128);
 }
-void CCAST128::Encrypt(void* Data, uint32_t DataLength, uint32_t StartBlock)
+void CAST128::Encrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte)
 {
-	for (uint32_t i = 0; i <= DataLength - cBlockSize; i += cBlockSize)
+	for (uint32_t i = 0; i <= Size - BlockSizeBytes(); i += BlockSizeBytes())
 	{
-		EncryptBlock((uint8_t*)Data + i, StartBlock);
-		StartBlock += cBlockSize;
+		EncryptBlock((uint8_t*)Data + i);
+		StartByte += BlockSizeBytes();
 	}
 }
-void CCAST128::Decrypt(void* Data, uint32_t DataLength, uint32_t StartBlock)
+void CAST128::Decrypt(void* Data, uint32_t Size, uint32_t Nonce, uint32_t StartByte)
 {
-	for (uint32_t i = 0; i <= DataLength - cBlockSize; i += cBlockSize)
+	for (uint32_t i = 0; i <= Size - BlockSizeBytes(); i += BlockSizeBytes())
 	{
-		DecryptBlock((uint8_t*)Data + i, StartBlock);
-		StartBlock += cBlockSize;
+		DecryptBlock((uint8_t*)Data + i);
+		StartByte += BlockSizeBytes();
 	}
 }
 
-void CCAST128::CreateSubKeys(uint8_t* Key)
+void CAST128::CreateSubKeys(uint8_t* Key)
 {
 	union {
 		uint8_t z[16];
@@ -148,7 +144,7 @@ void CCAST128::CreateSubKeys(uint8_t* Key)
 }
 
 
-inline void CCAST128::EncryptBlock(uint8_t *Block, uint32_t BlockIndex)
+inline void CAST128::EncryptBlock(uint8_t *Block)
 {
 	uint32_t l, r, tmp;
 	union {
@@ -163,16 +159,13 @@ inline void CCAST128::EncryptBlock(uint8_t *Block, uint32_t BlockIndex)
 	{
 		if ((i % 3) == 0)
 		{
-			t.block = (r + Km[i]) ^ BlockIndex;
 			t.block = (t.block << Kr[i]) | (t.block >> (32 - Kr[i]));
 			t.block = ((S1[t.byte[0]] ^ S2[t.byte[1]]) - S3[t.byte[2]]) + S4[t.byte[3]];
 		} else if ((i % 3) == 1)
 		{
-			t.block = (r ^ Km[i]) - (BlockIndex << 1);
 			t.block = (t.block << Kr[i]) | (t.block >> (32 - Kr[i]));
 			t.block = ((S1[t.byte[0]] - S2[t.byte[1]]) + S3[t.byte[2]]) ^ S4[t.byte[3]];
 		} else {
-			t.block = (r - Km[i]) + (BlockIndex << 3);
 			t.block = (t.block << Kr[i]) | (t.block >> (32 - Kr[i]));
 			t.block = ((S1[t.byte[0]] + S2[t.byte[1]]) ^ S3[t.byte[2]]) - S4[t.byte[3]];
 		}
@@ -188,7 +181,7 @@ inline void CCAST128::EncryptBlock(uint8_t *Block, uint32_t BlockIndex)
 
 
 
-inline void CCAST128::DecryptBlock(uint8_t *Block, uint32_t BlockIndex)
+inline void CAST128::DecryptBlock(uint8_t *Block)
 {
 	uint32_t l, r, tmp;
 	union {
@@ -203,16 +196,13 @@ inline void CCAST128::DecryptBlock(uint8_t *Block, uint32_t BlockIndex)
 	{
 		if ((i % 3) == 0)
 		{
-			t.block = (r + Km[i]) ^ BlockIndex;
 			t.block = (t.block << Kr[i]) | (t.block >> (32 - Kr[i]));
 			t.block = ((S1[t.byte[0]] ^ S2[t.byte[1]]) - S3[t.byte[2]]) + S4[t.byte[3]];
 		} else if ((i % 3) == 1)
 		{
-			t.block = (r ^ Km[i]) - (BlockIndex << 1);
 			t.block = (t.block << Kr[i]) | (t.block >> (32 - Kr[i]));
 			t.block = ((S1[t.byte[0]] - S2[t.byte[1]]) + S3[t.byte[2]]) ^ S4[t.byte[3]];
 		} else {
-			t.block = (r - Km[i]) + (BlockIndex << 3);
 			t.block = (t.block << Kr[i]) | (t.block >> (32 - Kr[i]));
 			t.block = ((S1[t.byte[0]] + S2[t.byte[1]]) ^ S3[t.byte[2]]) - S4[t.byte[3]];
 		}

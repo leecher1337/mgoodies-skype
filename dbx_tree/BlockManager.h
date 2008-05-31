@@ -4,9 +4,10 @@
 #include <map>
 #include <vector>
 
+#include "Exception.h"
 #include "stdint.h"
 #include "FileAccess.h"
-#include "Cipher.h"
+#include "EncryptionManager.h"
 
 
 class CBlockManager
@@ -48,10 +49,9 @@ protected:
 	std::vector<TBlockTableContact> m_BlockTable;
 
 	CFileAccess & m_FileAccess;
-	CCipher * m_Cipher;
+	CEncryptionManager & m_EncryptionManager;
 
 	uint32_t m_FirstBlockStart;
-	uint32_t m_Granularity;
 	TFreeBlockMap m_FreeBlocks;
 	std::vector<uint32_t> m_FreeIDs;
 
@@ -68,11 +68,13 @@ protected:
 
 	void PartWriteEncrypt(uint32_t BlockID, uint32_t Offset, uint32_t Size, void * Buffer, uint32_t Addr);
 public:
-	CBlockManager(CFileAccess & FileAccess);
+	CBlockManager(
+		CFileAccess & FileAccess,
+		CEncryptionManager & EncryptionManager
+		);
 	~CBlockManager();
 
-	void SetCipher(CCipher *Cipher);
-	uint32_t ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignature);
+	uint32_t ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignature, uint32_t FileSize);
 
 	bool ReadBlock(uint32_t BlockID, void * & Buffer, size_t & Size, uint32_t & Signature);
 	bool WriteBlock(uint32_t BlockID, void * Buffer, size_t Size, uint32_t Signature);

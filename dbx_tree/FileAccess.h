@@ -2,13 +2,14 @@
 
 #include <windows.h>
 #include "stdint.h"
-#include "Cipher.h"
+#include "EncryptionManager.h"
+#include "Exception.h"
 
 class CFileAccess
 {
 protected:
 	char * m_FileName;
-	CCipher * m_Cipher;
+	CEncryptionManager & m_EncryptionManager;
 	
 	uint32_t m_Size;
 	uint32_t m_AllocSize;
@@ -21,11 +22,8 @@ protected:
 	virtual uint32_t mSetSize(uint32_t Size) = 0;
 
 public:
-	CFileAccess(const char* FileName);
+	CFileAccess(const char* FileName, CEncryptionManager & EncryptionManager, uint32_t EncryptionStart);
 	virtual ~CFileAccess();
-
-	void SetCipher(CCipher * Cipher);
-	void SetEncryptionStart(uint32_t EncryptionStart);
 
 	uint32_t Read(void* Buf, uint32_t Source, uint32_t Size);
   uint32_t Write(void* Buf, uint32_t Dest, uint32_t Size);

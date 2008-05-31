@@ -16,6 +16,6 @@ protected:
   uint32_t mWrite(void* Buf, uint32_t Dest, uint32_t Size);	
 	uint32_t mSetSize(uint32_t Size);
 public:
-	CMappedMemory(const char* FileName);
+	CMappedMemory(const char* FileName, CEncryptionManager & EncryptionManager, uint32_t EncryptionStart);
 	virtual ~CMappedMemory();
 };

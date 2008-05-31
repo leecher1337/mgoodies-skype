@@ -3,19 +3,26 @@
 
 #include "Cipher.h"
 #include "Cast128.h"
+#include "ARC4.h"
+#include "HC256.h"
 #include "stdint.h"
 
 typedef CCipher* (*TCipherCreate)();
+typedef const char* (*TCipherName)();
+typedef const char* (*TCipherDescription)();
 
-typedef struct TCipherListContact {
-	uint32_t ID;
+typedef struct TCipherListItem {
+	const uint32_t ID;
 	TCipherCreate Create;
-	char * Name;
-} TCipherListContact, *PCipherListContact;
+	TCipherName Name;
+	TCipherDescription Description;
+} TCipherListItem, *PCipherListItem;
 
 
-static const TCipherListContact cCipherList[1] = {
-		{0x01000000, CCAST128::Create, "CAST128"}
+static const TCipherListItem cCipherList[3] = {
+		{1, ARC4::Create, ARC4::Name, ARC4::Description},
+		{2, CAST128::Create, CAST128::Name, CAST128::Description},
+		{3, HC256::Create, HC256::Name, HC256::Description},
 	};
 	
 

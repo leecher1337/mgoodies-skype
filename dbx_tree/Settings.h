@@ -5,7 +5,7 @@
 #include "MREWSync.h"
 #include "sigslot.h"
 #include "IterationHeap.h"
-#include "Cipher.h"
+#include "EncryptionManager.h"
 
 #include <hash_map>
 #include <queue>
@@ -76,8 +76,15 @@ class CSettingsTree : public CFileBTree<TSettingKey, TDBSettingHandle, 8, false>
 protected:
 	TDBContactHandle m_Contact;
 	CSettings & m_Owner;
+	CEncryptionManager & m_EncryptionManager;
 public: 
-	CSettingsTree(CSettings & Owner, CBlockManager & BlockManager, TNodeRef RootNode, TDBContactHandle Contact);
+	CSettingsTree(
+		CSettings & Owner,
+		CBlockManager & BlockManager,
+		CEncryptionManager & EncryptionManager,
+		TNodeRef RootNode,
+		TDBContactHandle Contact
+		);
 	~CSettingsTree();
 
 	TDBContactHandle getContact();
@@ -98,14 +105,20 @@ public:
 
 	static const uint32_t cSettingsFileFlag = 0x00000001;
 
-	CSettings(CBlockManager & BlockManagerSet, CBlockManager & BlockManagerPri, CMultiReadExclusiveWriteSynchronizer & Synchronize, CSettingsTree::TNodeRef SettingsRoot, CContacts & Contacts);
+	CSettings(
+		CBlockManager & BlockManagerSet,
+		CBlockManager & BlockManagerPri,
+		CEncryptionManager & EncryptionManagerSet,
+		CEncryptionManager & EncryptionManagerPri,
+		CMultiReadExclusiveWriteSynchronizer & Synchronize, 
+		CSettingsTree::TNodeRef SettingsRoot,
+		CContacts & Contacts
+		);
 	virtual ~CSettings();
 
 	TOnRootChanged & sigRootChanged();
 
-	void SetCipher(CCipher *Cipher);
-
-	bool _ReadSettingName(CBlockManager & BlockManager, TDBSettingHandle Setting, uint16_t & NameLength, char *& NameBuf);
+	bool _ReadSettingName(CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TDBSettingHandle Setting, uint16_t & NameLength, char *& NameBuf);
 
 	// services:
 	TDBSettingHandle FindSetting(TDBSettingDescriptor & Descriptor);
@@ -129,10 +142,10 @@ private:
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CBlockManager & m_BlockManagerSet;
 	CBlockManager & m_BlockManagerPri;
+	CEncryptionManager & m_EncryptionManagerSet;
+	CEncryptionManager & m_EncryptionManagerPri;
 
 	CContacts & m_Contacts;
-
-	CCipher * m_Cipher;
 
 	TSettingsTreeMap m_SettingsMap;
 
@@ -160,7 +173,5 @@ private:
 	void onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot);
 
 	CSettingsTree * getSettingsTree(TDBContactHandle hContact);
-
-	uint32_t AlignOnCipher(uint32_t Value);
 	
 };

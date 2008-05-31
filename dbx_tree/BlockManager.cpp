@@ -1,38 +1,24 @@
 #include "BlockManager.h"
 
 
-CBlockManager::CBlockManager(CFileAccess & FileAccess)
+CBlockManager::CBlockManager(
+	CFileAccess & FileAccess, 
+	CEncryptionManager & EncryptionManager
+	)
 : m_FileAccess(FileAccess),
+	m_EncryptionManager(EncryptionManager),
 	m_BlockTable(1),
 	m_FreeBlocks(),
 	m_FreeIDs()
 {
-
 	m_BlockTable[0].Addr = 0;
-	m_Cipher = NULL;
-	m_Granularity = 4;
-
 }
 CBlockManager::~CBlockManager()
 {
 
 }
 
-void CBlockManager::SetCipher(CCipher *Cipher)
-{
-	m_Cipher = Cipher;
-	if (Cipher)
-	{
-		int i = 1;
-		while (m_Granularity % Cipher->BlockSizeBytes())
-		{
-			m_Granularity = m_Granularity / i * (i+1);
-			++i;
-		}
-	}
-}
-
-uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignature)
+uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignature, uint32_t FileSize)
 {
 	TBlockHeadOcc h;
 	uint32_t p;
@@ -40,12 +26,12 @@ uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignat
 	p = FirstBlockStart;
 	m_FirstBlockStart = FirstBlockStart;
 
-	while (p < m_FileAccess.GetSize())
+	while (p < FileSize)
 	{
 		m_FileAccess.Read(&h, p, sizeof(h));
 		if (h.Size == 0)
 		{
-			throw "File Corrupt!";
+			throwException("File Corrupt!");
 		}
 
  		if (h.ID == cFreeBlockID)
@@ -281,9 +267,9 @@ bool CBlockManager::ReadBlock(uint32_t BlockID, void * & Buffer, size_t & Size, 
 	
 	Read(a + sizeof(h), isvirtual, Buffer, Size);
 	
-	if ((m_Cipher) && !isvirtual)
+	if (!isvirtual && m_EncryptionManager.IsEncrypted(BlockID, ET_BLOCK))
 	{
-		m_Cipher->Decrypt(Buffer, Size, BlockID);
+		m_EncryptionManager.Decrypt(Buffer, Size, ET_BLOCK, BlockID, 0);
 	}
 	return true;
 }
@@ -320,9 +306,9 @@ bool CBlockManager::WriteBlock(uint32_t BlockID, void * Buffer, size_t Size, uin
 
 	h.Signature = Signature;
 
-	if ((m_Cipher) && !isvirtual)
+	if (!isvirtual && m_EncryptionManager.IsEncrypted(BlockID, ET_BLOCK))
 	{
-		m_Cipher->Encrypt(Buffer, Size, BlockID);
+		m_EncryptionManager.Encrypt(Buffer, Size, ET_BLOCK, BlockID, 0);
 	}
 	Write(a, isvirtual, &h, sizeof(h));
 	Write(a + sizeof(h), isvirtual, Buffer, Size);
@@ -358,9 +344,9 @@ bool CBlockManager::WriteBlockCheck(uint32_t BlockID, void * Buffer, size_t Size
 		isvirtual = true;
 	}
 
-	if ((m_Cipher) && !isvirtual)
+	if (!isvirtual && m_EncryptionManager.IsEncrypted(BlockID, ET_BLOCK))
 	{
-		m_Cipher->Encrypt(Buffer, Size, BlockID);
+		m_EncryptionManager.Encrypt(Buffer, Size, ET_BLOCK, BlockID, 0);
 	}
 	Write(a, isvirtual, &h, sizeof(h));
 	Write(a + sizeof(h), isvirtual, Buffer, Size);
@@ -391,23 +377,24 @@ bool CBlockManager::ReadPart(uint32_t BlockID, void * Buffer, uint32_t Offset, s
 	if ((Size + Offset > h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc)))
 		return false;
 
-	if ((m_Cipher) && !isvirtual)
+	if (!isvirtual && m_EncryptionManager.IsEncrypted(BlockID, ET_BLOCK))
 	{
-		uint32_t cryptoffset;
-		uint32_t cryptsize;
+		uint32_t estart = Offset;
+		uint32_t eend = Offset + Size;
 		void* cryptbuf;
 
-		cryptoffset = Offset - (Offset % m_Cipher->BlockSizeBytes());
-		cryptsize = Size + (Offset % m_Cipher->BlockSizeBytes());
-		if (cryptsize % m_Cipher->BlockSizeBytes() != 0)
-			cryptsize = cryptsize + m_Granularity - (cryptsize % m_Cipher->BlockSizeBytes());
+		m_EncryptionManager.AlignData(BlockID, ET_BLOCK, estart, eend);
 
-		cryptbuf = malloc(cryptsize);
-		Read(a + sizeof(h) + cryptoffset, false, cryptbuf, cryptsize);
-		m_Cipher->Decrypt(cryptbuf, cryptsize, BlockID + cryptoffset);
-		
-		memcpy(Buffer, (uint8_t*)cryptbuf + (Offset - cryptoffset), Size);
-		free(cryptbuf);
+		cryptbuf = malloc(eend - estart);
+		__try 
+		{
+			Read(a + sizeof(h) + estart, false, cryptbuf, eend - estart);
+			m_EncryptionManager.Decrypt(cryptbuf, eend - estart, ET_BLOCK, BlockID, estart);
+			
+			memcpy(Buffer, (uint8_t*)cryptbuf + (Offset - estart), Size);
+		} __finally {
+			free(cryptbuf);
+		}
 	} else {
 		Read(a + sizeof(h) + Offset, isvirtual, Buffer, Size);
 	}
@@ -417,38 +404,43 @@ bool CBlockManager::ReadPart(uint32_t BlockID, void * Buffer, uint32_t Offset, s
 
 void CBlockManager::PartWriteEncrypt(uint32_t BlockID, uint32_t Offset, uint32_t Size, void * Buffer, uint32_t Addr)
 {
-	uint32_t cryptoffset;
-	uint32_t cryptsize;
-	void* cryptbuf;
-	bool loadlast = false;
+	uint32_t estart1 = Offset;
+	uint32_t eend1 = Offset;
+	uint32_t estart2 = Offset + Size;
+	uint32_t eend2 = Offset + Size;
 
-	cryptoffset = Offset - (Offset % m_Cipher->BlockSizeBytes());
-	cryptsize = Size + (Offset % m_Cipher->BlockSizeBytes());
-	if (cryptsize % m_Cipher->BlockSizeBytes() != 0)
-	{
-		cryptsize = cryptsize + m_Granularity - (cryptsize % m_Cipher->BlockSizeBytes());
-		loadlast = true;
+	m_EncryptionManager.AlignData(BlockID, ET_BLOCK, estart1, eend1);
+	m_EncryptionManager.AlignData(BlockID, ET_BLOCK, estart2, eend2);
+
+	uint8_t * cryptbuf;
+
+	cryptbuf = (uint8_t*) malloc(eend2 - estart1);
+	__try {
+		if (estart1 != estart2) // two different blocks
+		{
+			if (estart1 < Offset) // load leading block
+			{
+				Read(Addr + estart1 + sizeof(TBlockHeadOcc), false, cryptbuf, eend1 - estart1);
+				m_EncryptionManager.Decrypt(cryptbuf, eend1 - estart1, ET_BLOCK, BlockID, estart1);
+			}
+			if (eend2 > Offset + Size) // load trailing block
+			{
+				Read(Addr + estart2 + sizeof(TBlockHeadOcc), false, cryptbuf + (estart2 - estart1), eend2 - estart2);
+				m_EncryptionManager.Decrypt(cryptbuf + (estart2 - estart1), eend2 - estart2, ET_BLOCK, BlockID, estart2);
+			}
+		} else if ((estart2 != Offset) || (eend2 != Offset + Size)) 
+		{ // only one block
+			Read(Addr + estart2 + sizeof(TBlockHeadOcc), false, cryptbuf, eend2 - estart2);
+			m_EncryptionManager.Decrypt(cryptbuf, eend2 - estart2, ET_BLOCK, BlockID, estart2);
+		}
+		
+		memcpy(cryptbuf + (Offset - estart1), Buffer, Size);
+
+		m_EncryptionManager.Encrypt(cryptbuf, eend2 - estart1, ET_BLOCK, BlockID, estart1);
+		Write(Addr + sizeof(TBlockHeadOcc) + estart1, false, cryptbuf, eend2 - estart1);
+	} __finally {
+		free(cryptbuf);
 	}
-
-	cryptbuf = malloc(cryptsize);
-	
-	if (loadlast)
-	{
-		Read(Addr + sizeof(TBlockHeadOcc) + cryptoffset + cryptsize - m_Cipher->BlockSizeBytes(), false, (uint8_t*)cryptbuf + cryptsize - m_Cipher->BlockSizeBytes(), m_Cipher->BlockSizeBytes());
-		m_Cipher->Decrypt((uint8_t*)cryptbuf + cryptsize - m_Cipher->BlockSizeBytes(), m_Cipher->BlockSizeBytes(), BlockID + cryptsize - m_Cipher->BlockSizeBytes());
-	}
-
-	if ((cryptoffset != Offset) && ((!loadlast) || (cryptsize > m_Cipher->BlockSizeBytes())))
-	{
-		Read(Addr + sizeof(TBlockHeadOcc), false, cryptbuf, m_Cipher->BlockSizeBytes());
-		m_Cipher->Decrypt(cryptbuf, m_Cipher->BlockSizeBytes(), BlockID + cryptoffset);
-	}
-
-	memcpy((uint8_t*)cryptbuf + (Offset - cryptoffset), Buffer, Size);
-
-	m_Cipher->Encrypt(cryptbuf, cryptsize, BlockID + cryptoffset);
-	Write(Addr + sizeof(TBlockHeadOcc) + cryptoffset, false, cryptbuf, cryptsize);
-	free(cryptbuf);
 }
 
 bool CBlockManager::WritePart(uint32_t BlockID, void * Buffer, uint32_t Offset, size_t Size, uint32_t Signature)
@@ -479,7 +471,7 @@ bool CBlockManager::WritePart(uint32_t BlockID, void * Buffer, uint32_t Offset, 
 	
 	if ((Size != 0) && (Buffer != NULL))
 	{
-		if ((m_Cipher) && !isvirtual)
+		if (!isvirtual && m_EncryptionManager.IsEncrypted(BlockID, ET_BLOCK))
 		{
 			PartWriteEncrypt(BlockID, Offset, Size, Buffer, a);
 		} else {
@@ -518,8 +510,8 @@ bool CBlockManager::WritePartCheck(uint32_t BlockID, void * Buffer, uint32_t Off
 
 	if ((Size != 0) && (Buffer != NULL))
 	{
-		if ((m_Cipher) && !isvirtual)
-		{
+		if (!isvirtual && m_EncryptionManager.IsEncrypted(BlockID, ET_BLOCK))
+		{ 
 			PartWriteEncrypt(BlockID, Offset, Size, Buffer, a);
 		} else {
 			Write(a + sizeof(h) + Offset, isvirtual, Buffer, Size);
@@ -531,9 +523,6 @@ bool CBlockManager::WritePartCheck(uint32_t BlockID, void * Buffer, uint32_t Off
 
 uint32_t CBlockManager::CreateBlock(uint32_t Size, uint32_t Signature)
 {
-	if (Size % m_Granularity > 0)
-		Size = Size - Size % m_Granularity + m_Granularity;
-
 	uint32_t id = 0;
 	if (m_FreeIDs.empty())
 	{
@@ -547,6 +536,8 @@ uint32_t CBlockManager::CreateBlock(uint32_t Size, uint32_t Signature)
 		id = m_FreeIDs.back();
 		m_FreeIDs.pop_back();
 	}
+
+	Size = m_EncryptionManager.AlignSize(id << 2, ET_BLOCK, (Size + 3) & 0xfffffffc); // align on cipher after we aligned on 4 bytes
 
 	TBlockHeadOcc h;
 	h.ID = id << 2;
@@ -576,9 +567,6 @@ uint32_t CBlockManager::CreateBlock(uint32_t Size, uint32_t Signature)
 
 uint32_t CBlockManager::CreateBlockVirtual(uint32_t Size, uint32_t Signature)
 {
-	if (Size % m_Granularity > 0)
-		Size = Size - Size % m_Granularity + m_Granularity;
-
 	uint32_t id = 0;
 	if (m_FreeIDs.empty())
 	{
@@ -592,6 +580,8 @@ uint32_t CBlockManager::CreateBlockVirtual(uint32_t Size, uint32_t Signature)
 		id = m_FreeIDs.back();
 		m_FreeIDs.pop_back();
 	}
+
+	Size = m_EncryptionManager.AlignSize(id << 2, ET_BLOCK, (Size + 3) & 0xfffffffc); // align on cipher after we aligned on 4 bytes
 
 	TBlockHeadOcc h;
 	h.ID = id << 2;
@@ -632,9 +622,7 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 {
 	if (Size == 0) return 0;
 
-	if (Size % m_Granularity > 0)
-		Size = Size - Size % m_Granularity + m_Granularity;
-
+	Size = m_EncryptionManager.AlignSize(BlockID, ET_BLOCK, (Size + 3) & 0xfffffffc); // align on cipher after we aligned on 4 bytes
 
 	uint32_t a;
 	bool isvirtual;

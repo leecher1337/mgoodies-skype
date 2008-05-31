@@ -13,6 +13,6 @@ protected:
   uint32_t mWrite(void* Buf, uint32_t Dest, uint32_t Size);	
 	uint32_t mSetSize(uint32_t Size);
 public:
-	CDirectAccess(const char* FileName);
+	CDirectAccess(const char* FileName, CEncryptionManager & EncryptionManager, uint32_t EncryptionStart);
 	virtual ~CDirectAccess();
 };
