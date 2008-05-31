@@ -637,7 +637,7 @@ typedef
 		TDBEventHandle hEvent;     /// event to link
 		TDBContactHandle hContact; /// contact to link to
 		uint32_t Flags;            /// flags, only DB_EF_VIRTUAL yet
-	} TDBEventHardLink, *PEventHardLink;
+	} TDBEventHardLink, *PDBEventHardLink;
 
 /**
 	\brief Creates a hard linked event.
@@ -648,7 +648,7 @@ typedef
 
 	\return 0 on success
 **/
-#define MS_DB_EVENT_CREATEHARDLINK  "DB/Event/HardLinkEvent"
+#define MS_DB_EVENT_HARDLINK  "DB/Event/HardLink"
 
 
 /**

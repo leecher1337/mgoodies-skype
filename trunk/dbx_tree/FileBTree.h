@@ -65,7 +65,7 @@ void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::Read(TNodeRef Node, uint32_
 	sig = sig & 0xffff0000;
 
 	if (sig != cSignature)
-			throw "Signature check failed";
+		throwException("Signature check failed");
 
 }
 

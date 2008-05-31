@@ -8,7 +8,7 @@
 #include "Contacts.h"
 #include "Settings.h"
 #include "Hash.h"
-#include "Cipher.h"
+#include "EncryptionManager.h"
 
 #include <hash_map>
 #include <hash_set>
@@ -148,11 +148,17 @@ class CEvents : public sigslot::has_slots<>
 {
 public:
 
-	CEvents(CBlockManager & BlockManager, CEventLinks::TNodeRef LinkRootNode, CMultiReadExclusiveWriteSynchronizer & Synchronize, CContacts & Contacts, CSettings & Settings);
+	CEvents(
+		CBlockManager & BlockManager, 
+		CEncryptionManager & EncryptionManager,
+		CEventLinks::TNodeRef LinkRootNode, 
+		CMultiReadExclusiveWriteSynchronizer & Synchronize,
+		CContacts & Contacts, 
+		CSettings & Settings
+		);
 	~CEvents();
 
 	CEventLinks::TOnRootChanged & sigLinkRootChanged();
-	void SetCipher(CCipher * Cipher);
 
 	unsigned int TypeRegister(TDBEventTypeDescriptor & Type);
 	PDBEventTypeDescriptor TypeGet(char * ModuleName, uint32_t EventType);
@@ -163,7 +169,7 @@ public:
 	TDBEventHandle Add(TDBContactHandle hContact, TDBEvent & Event);
 	unsigned int MarkRead(TDBContactHandle hContact, TDBEventHandle hEvent);
 	unsigned int WriteToDisk(TDBContactHandle hContact, TDBEventHandle hEvent);
-	unsigned int HardLinkEvent(TDBEventHardLink & HardLink);
+	unsigned int HardLink(TDBEventHardLink & HardLink);
 
 	TDBContactHandle GetContact(TDBEventHandle hEvent);
 
@@ -183,6 +189,7 @@ private:
 
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CBlockManager & m_BlockManager;
+	CEncryptionManager & m_EncryptionManager;
 
 	CContacts & m_Contacts;
 	CEventsTypeManager m_Types;
@@ -191,8 +198,6 @@ private:
 	TEventsTreeMap m_EventsMap;
 	TVirtualEventsTreeMap m_VirtualEventsMap;
 	TVirtualOwnerMap m_VirtualOwnerMap;
-
-	CCipher *m_Cipher;
 
 	uint32_t m_Counter;
 

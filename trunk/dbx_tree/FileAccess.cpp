@@ -1,11 +1,12 @@
 #include "FileAccess.h"
 
-CFileAccess::CFileAccess(const char* FileName)
+CFileAccess::CFileAccess(const char* FileName, CEncryptionManager & EncryptionManager, uint32_t EncryptionStart)
+: m_EncryptionManager(EncryptionManager)
 {
 	m_FileName = new char[strlen(FileName) + 1];
 	strcpy_s(m_FileName, strlen(FileName) + 1, FileName);
-	m_Cipher = NULL;
 	m_ReadOnly = false;
+	m_EncryptionStart = EncryptionStart;
 }
 
 CFileAccess::~CFileAccess()
@@ -13,123 +14,106 @@ CFileAccess::~CFileAccess()
 	delete [] m_FileName;
 }
 
-void CFileAccess::SetCipher(CCipher * Cipher)
-{
-	m_Cipher = Cipher;
-	if (Cipher)
-	{
-		int i = 1;
-		while (m_AllocGranularity % Cipher->BlockSizeBytes())
-		{
-			m_AllocGranularity = m_AllocGranularity / i * (i+1);
-			++i;
-		}
-	}
-}
-
-
-void CFileAccess::SetEncryptionStart(uint32_t EncryptionStart)
-{
-	m_EncryptionStart = EncryptionStart;
-}
-
-
 uint32_t CFileAccess::Read(void* Buf, uint32_t Source, uint32_t Size)
 {
-	if (m_Cipher)
+	uint32_t retsize = Size;
+
+	if (((Source >= m_EncryptionStart) && m_EncryptionManager.IsEncrypted(Source - m_EncryptionStart, ET_FILE))
+		|| ((Source + Size > m_EncryptionStart) && m_EncryptionManager.IsEncrypted(Source + Size - m_EncryptionStart, ET_FILE)))
 	{
 		if (Source < m_EncryptionStart)
 		{
-			uint32_t cryptstart;
-			uint32_t cryptsize;
-			void* cryptbuf;
-
-			if (Source + Size <= m_EncryptionStart)
-			{
-				mRead(Buf, Source, Size);
-				return Size;
-
-			} else {
-				mRead(Buf, Source, m_EncryptionStart - Source);
-				Source = m_EncryptionStart;
-				Size = Size - (m_EncryptionStart - Source);
-				Buf = (uint8_t*)Buf + (m_EncryptionStart - Source);
-			}
-
-			cryptstart = Source - (Source % m_Cipher->BlockSizeBytes());
-			cryptsize = Size + (Source % m_Cipher->BlockSizeBytes());
-			if (cryptsize % m_Cipher->BlockSizeBytes() != 0)
-			{
-				cryptsize = cryptsize + m_Cipher->BlockSizeBytes() - (cryptsize % m_Cipher->BlockSizeBytes());
-			}
-
-			cryptbuf = malloc(cryptsize);
-			mRead(cryptbuf, cryptstart, cryptsize);
-			m_Cipher->Decrypt(cryptbuf, cryptsize, cryptstart - m_EncryptionStart);
-			memcpy(Buf, (uint8_t*)cryptbuf + (Source - cryptstart), Size);
-			free(cryptbuf);
-
+			mRead(Buf, Source, m_EncryptionStart - Source);
+			Size -= m_EncryptionStart - Source;
+			Buf = (uint8_t *)Buf + (m_EncryptionStart - Source);
+			Source = m_EncryptionStart;			
 		}
-	} else {
+
+		uint32_t estart = Source - m_EncryptionStart;
+		uint32_t eend = Source + Size - m_EncryptionStart;
+		m_EncryptionManager.AlignData(Source, ET_FILE, estart, eend);
+		
+		if ((estart != Source - m_EncryptionStart) || (eend != Source + Size - m_EncryptionStart)) // we need an extra buffer
+		{
+			uint8_t * cryptbuf = (uint8_t*) malloc(eend - estart);
+			__try {
+				mRead(cryptbuf, estart + m_EncryptionStart, eend - estart);
+				m_EncryptionManager.Decrypt(cryptbuf, eend - estart, ET_FILE, estart, estart);
+				memcpy(Buf, cryptbuf + (Source - m_EncryptionStart - estart), Size);
+
+			} __finally {
+				free(cryptbuf);
+			}
+
+		} else {
+			mRead(Buf, Source, Size);
+			m_EncryptionManager.Decrypt(Buf, Size, ET_FILE, estart, estart);
+		}
+
+	} else { // whole unencrypted goes here
 		mRead(Buf, Source, Size);
 	}
 
-	return Size;
+	return retsize;
 }
 uint32_t CFileAccess::Write(void* Buf, uint32_t Dest, uint32_t Size)
 {
-	if (m_Cipher)
+	uint32_t retsize = Size;
+	if (((Dest >= m_EncryptionStart) && m_EncryptionManager.IsEncrypted(Dest - m_EncryptionStart, ET_FILE))
+		|| ((Dest + Size > m_EncryptionStart) && m_EncryptionManager.IsEncrypted(Dest + Size - m_EncryptionStart, ET_FILE)))
 	{
 		if (Dest < m_EncryptionStart)
 		{
-			uint32_t cryptstart;
-			uint32_t cryptsize;
-			void* cryptbuf;
-			bool loadlast = false;
-
-			if (Dest + Size <= m_EncryptionStart)
+			if (Dest < m_EncryptionStart)
 			{
-				mWrite(Buf, Dest, Size);
-				return Size;
-			} else {
-				mWrite(Buf, Dest, m_EncryptionStart - Dest);
-				Dest = m_EncryptionStart;
-				Size = Size - (m_EncryptionStart - Dest);
-				Buf = (uint8_t*)Buf + (m_EncryptionStart - Dest);	
+				mRead(Buf, Dest, m_EncryptionStart - Dest);
+				Size -= m_EncryptionStart - Dest;
+				Buf = (uint8_t *)Buf + (m_EncryptionStart - Dest);
+				Dest = m_EncryptionStart;			
 			}
 
-			cryptstart = Dest - (Dest % m_Cipher->BlockSizeBytes());
-			cryptsize = Size + (Dest % m_Cipher->BlockSizeBytes());
-			if (cryptsize % m_Cipher->BlockSizeBytes() != 0)
-			{
-				cryptsize = cryptsize + m_Cipher->BlockSizeBytes() - (cryptsize % m_Cipher->BlockSizeBytes());
-				loadlast = true;
-			}
+			uint32_t estart1 = Dest - m_EncryptionStart;
+			uint32_t eend1 = estart1;
+			uint32_t estart2 = Dest + Size - m_EncryptionStart;
+			uint32_t eend2 = estart2;
 
-			cryptbuf = malloc(cryptsize);		
-			
-			if (loadlast) 
-			{
-				mRead((uint8_t*)cryptbuf + (cryptsize - m_Cipher->BlockSizeBytes()), cryptstart + (cryptsize - m_Cipher->BlockSizeBytes()), m_Cipher->BlockSizeBytes());
-				m_Cipher->Decrypt((uint8_t*)cryptbuf + (cryptsize - m_Cipher->BlockSizeBytes()), m_Cipher->BlockSizeBytes(), cryptstart + (cryptsize - m_Cipher->BlockSizeBytes()));
-			}
-			if ((cryptstart != Dest) && ((!loadlast) || (cryptsize > m_Cipher->BlockSizeBytes()))) // check if only one block at all
-			{
-				mRead(cryptbuf, cryptstart, m_Cipher->BlockSizeBytes());
-				m_Cipher->Decrypt(cryptbuf, m_Cipher->BlockSizeBytes(), cryptstart);
-			}
+			m_EncryptionManager.AlignData(estart1, ET_FILE, estart1, eend1);
+			m_EncryptionManager.AlignData(estart2, ET_FILE, estart2, eend2);
 
-			memcpy((uint8_t*)cryptbuf + (Dest - cryptstart), Buf, Size);
-			m_Cipher->Encrypt(cryptbuf, cryptsize, cryptstart);
-			mWrite(cryptbuf, cryptstart, cryptsize);
-			free(cryptbuf);
+			uint8_t * cryptbuf = (uint8_t *) malloc(eend2 - estart1);
+			__try {
+				if (estart1 != estart2) // two different blocks
+				{
+					if (estart1 < Dest - m_EncryptionStart) // load leading block
+					{
+						mRead(cryptbuf, estart1 + m_EncryptionStart, eend1 - estart1);
+						m_EncryptionManager.Decrypt(cryptbuf, eend1 - estart1, ET_FILE, estart1, estart1);
+					}
+					if (eend2 > Dest - m_EncryptionStart + Size) // load trailing block
+					{
+						Read(cryptbuf + (estart2 - estart1), estart2 + m_EncryptionStart, eend2 - estart2);
+						m_EncryptionManager.Decrypt(cryptbuf + (estart2 - estart1), eend2 - estart2, ET_FILE, estart2, estart2);
+					}
+				} else if ((estart2 != Dest - m_EncryptionStart) || (eend2 != Dest + Size - m_EncryptionStart)) 
+				{ // only one block
+					Read(cryptbuf, estart2 + m_EncryptionStart, eend2 - estart2);
+					m_EncryptionManager.Decrypt(cryptbuf, eend2 - estart2, ET_FILE, estart2, estart2);
+				}
+				
+				memcpy(cryptbuf + ((Dest - m_EncryptionStart) - estart1), Buf, Size);
+
+				m_EncryptionManager.Encrypt(cryptbuf, eend2 - estart1, ET_FILE, estart1, estart1);
+				mWrite(cryptbuf, estart1 + m_EncryptionStart, eend2 - estart1);
+			} __finally {
+				free(cryptbuf);
+			}
 		}
 
 	} else {
 		mWrite(Buf, Dest, Size);
 	}
 
-	return Size;
+	return retsize;
 }
 
 
@@ -137,11 +121,13 @@ uint32_t CFileAccess::SetSize(uint32_t Size)
 {
 	m_Size = Size;
 	
-	if (Size % m_AllocGranularity > 0)
-		Size = Size - Size % m_AllocGranularity + m_AllocGranularity;
+	Size = (Size + 0x00000fff) & 0xfffff000; // align on 4kb
+
+	if (Size >= m_EncryptionStart)
+		Size = m_EncryptionManager.AlignSize(Size - m_EncryptionStart, ET_FILE, Size - m_EncryptionStart) + m_EncryptionStart;
 
 	if (Size == 0)
-		Size = m_AllocGranularity;
+		Size = 4096;
 
 	if (Size != m_AllocSize)
 	{

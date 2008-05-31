@@ -25,27 +25,33 @@ CDataBase::CDataBase(const char* FileName)
 	{
 		m_BlockManager[i] = NULL;
 		m_FileAccess[i] = NULL;
-		m_Cipher[i] = NULL;
+		m_EncryptionManager[i] = NULL;
 		m_HeaderBlock[i] = 0;
 	}
 	
 	m_Contacts = NULL;
 	m_Settings = NULL;
+	m_Events   = NULL;
 }
 CDataBase::~CDataBase()
 {
-	if (m_Contacts) delete m_Contacts;
+	if (m_Events)   delete m_Events;
 	if (m_Settings) delete m_Settings;
+	if (m_Contacts) delete m_Contacts;
 
 	m_Contacts = NULL;
 	m_Settings = NULL;
+	m_Events   = NULL;
 
-	for (int i = 0; i < 2; ++i)
+	for (int i = 0; i < DBFileMax; ++i)
 	{
-		if (m_BlockManager[i]) delete m_BlockManager[i];
-		if (m_FileAccess[i]) delete m_FileAccess[i];
-		m_BlockManager[i] = NULL;
-		m_FileAccess[i] = NULL;		
+		if (m_BlockManager[i])      delete m_BlockManager[i];
+		if (m_FileAccess[i])        delete m_FileAccess[i];
+		if (m_EncryptionManager[i]) delete m_EncryptionManager[i];
+
+		m_BlockManager[i]      = NULL;
+		m_FileAccess[i]        = NULL;
+		m_EncryptionManager[i] = NULL;
 
 		delete[] m_FileName[i];
 	}
@@ -53,44 +59,42 @@ CDataBase::~CDataBase()
 }
 int CDataBase::CreateDB()
 {
-
-/*
 	/// TODO: create and show wizard
-	try 
-	{
-		m_FileAccessSet = new CDirectAccess(m_SettingsFN);
-		m_FileAccessPri = new CDirectAccess(m_PrivateFN);
-	}
-	catch (char *)
-	{
+	if (!CreateNewFile(DBFileSetting) || 
+		  !CreateNewFile(DBFilePrivate))
 		return EMKPRF_CREATEFAILED;
-	}
-*/
+
 	return 0;
 }
 
 
 int CDataBase::CheckFile(TDBFileType Index)
 {
-	try 
+	TGenericFileHeader h = {0};
+	DWORD r = 0;
+	HANDLE htmp = CreateFile(m_FileName[Index], GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_RANDOM_ACCESS, NULL);
+	if (htmp != INVALID_HANDLE_VALUE)
 	{
-		m_FileAccess[Index] = new CDirectAccess(m_FileName[Index]);	
-	} 
-	catch (char * )
-	{
-		return EGROKPRF_CANTREAD;
+		__try
+		{
+			SetFilePointer(htmp, 0, NULL, FILE_BEGIN);
+			if (ReadFile(htmp, &h, sizeof(h), &r, NULL))
+			{
+				if (0 != memcmp(h.Gen.Signature, cFileSignature[Index], sizeof(cFileSignature[Index])))
+					return EGROKPRF_UNKHEADER;
+
+				if (cDBVersion < h.Gen.Version)
+					return EGROKPRF_VERNEWER;
+				
+				
+				return EGROKPRF_NOERROR;
+			}
+		} __finally {
+			CloseHandle(htmp);
+		}
 	}
-	m_FileAccess[0]->Read(&m_Header[Index], 0, sizeof(m_Header[Index]));
-	delete m_FileAccess[Index];
-	m_FileAccess[Index] = NULL;
 
-	if (0 != memcmp(m_Header[Index].Gen.Signature, cFileSignature[Index], sizeof(cFileSignature[Index])))
-		return EGROKPRF_UNKHEADER;
-
-	if (cDBVersion < m_Header[Index].Gen.Version)
-		return EGROKPRF_VERNEWER;
-
-	return EGROKPRF_NOERROR;
+	return EGROKPRF_CANTREAD;
 }
 
 int CDataBase::CheckDB()
@@ -99,7 +103,6 @@ int CDataBase::CheckDB()
 
 	if (res != EGROKPRF_NOERROR)
 		return res;
-
 	
 	if (PrivateFileExists())
 		res = CheckFile(DBFilePrivate);
@@ -109,57 +112,37 @@ int CDataBase::CheckDB()
 
 int CDataBase::LoadFile(TDBFileType Index)
 {
-	try 
-	{
-		if (GetVersion() & 0x80000000) // win98
-			m_FileAccess[Index] = new CDirectAccess(m_FileName[Index]);		
-		else //win nt, 2000, xp.. usw		
-			m_FileAccess[Index] = new CMappedMemory(m_FileName[Index]);
-	}
-	catch (char * )
-	{
-		return GetLastError();
-	}
+	m_EncryptionManager[Index] = new CEncryptionManager;
 
-	m_FileAccess[Index]->SetEncryptionStart(sizeof(m_Header[Index]));
+	if (GetVersion() & 0x80000000) // win98
+		m_FileAccess[Index] = new CDirectAccess(m_FileName[Index], *m_EncryptionManager[Index], sizeof(m_Header[Index]));		
+	else //win nt, 2000, xp...
+		m_FileAccess[Index] = new CMappedMemory(m_FileName[Index], *m_EncryptionManager[Index], sizeof(m_Header[Index]));
+
 	m_FileAccess[Index]->Read(&m_Header[Index], 0, sizeof(m_Header[Index]));
+	m_EncryptionManager[Index]->InitEncryption(m_Header[Index].Gen.FileEncryption);
+
 	m_FileAccess[Index]->SetSize(m_Header[Index].Gen.FileSize);
 
-	try
-	{
-		m_Cipher[Index] = MakeCipher(m_Header[Index].Gen.FileAccess);
-	}
-	catch (char *)
-	{
-		return -1;
-	}
-
-	m_BlockManager[Index] = new CBlockManager(*m_FileAccess[Index]);
-
-	if ((m_Header[Index].Gen.FileAccess & cDBFAEncryptedMask) == cDBFAEncryptFull)
-		m_FileAccess[Index]->SetCipher(m_Cipher[Index]);
-
-	if ((m_Header[Index].Gen.FileAccess & cDBFAEncryptedMask) == cDBFAEncryptBlocks)
-		m_BlockManager[Index]->SetCipher(m_Cipher[Index]);
-
-	/// TODO ask password
-	m_HeaderBlock[Index] = m_BlockManager[Index]->ScanFile(sizeof(m_Header[Index]), cHeaderBlockSignature);
+	m_BlockManager[Index] = new CBlockManager(*m_FileAccess[Index], *m_EncryptionManager[Index]);
+	m_HeaderBlock[Index] = m_BlockManager[Index]->ScanFile(sizeof(m_Header[Index]), cHeaderBlockSignature, m_Header[Index].Gen.FileSize);
 
 	if (m_HeaderBlock[Index] == 0)			
-		return -1;
+		throwException("Header Block not found! File damaged: \"%s\"", m_FileName[Index]);
 	
 	TGenericFileHeader buf;
 	void* pbuf = &buf;
 	uint32_t size = sizeof(buf);
 	uint32_t sig = cHeaderBlockSignature;
 	if (!m_BlockManager[Index]->ReadBlock(m_HeaderBlock[Index], pbuf, size, sig))
-		return -1;
+		throwException("Header Block cannot be read! File damaged: \"%s\"", m_FileName[Index]);
 
-	if ((m_Header[Index].Gen.FileAccess & cDBFAEncryptedMask) == cDBFAEncryptHistory)
-		m_Cipher[Index]->Decrypt(pbuf, size, cHeaderBlockSignature);
+	m_EncryptionManager[Index]->Decrypt(pbuf, size, ET_DATA, cHeaderBlockSignature, 0);
+
+	buf.Gen.Obscure = 0;
 
 	if (memcmp(&m_Header[Index], pbuf, size) != 0)
-		return -2; /// TODO go back and ask pw again
+		throwException("Header Block in \"%s\" damaged!", m_FileName[Index]);;
 
 	return 0;
 }
@@ -168,11 +151,12 @@ int CDataBase::OpenDB()
 {
   if (!PrivateFileExists())
 	{
-		if (!CreateNewPrivateFile())
+		// TODO WIZARD
+		if (!CreateNewFile(DBFilePrivate))
 			return -1;
 	}
 	
-	int res = LoadFile(DBFileSetting) ;
+	int res = LoadFile(DBFileSetting);
 	if (res != 0) return res;
 
 	res = LoadFile(DBFilePrivate);
@@ -195,13 +179,23 @@ int CDataBase::OpenDB()
 
 	m_Settings = new CSettings(*m_BlockManager[DBFileSetting],
 		                         *m_BlockManager[DBFilePrivate],
+														 *m_EncryptionManager[DBFileSetting],
+														 *m_EncryptionManager[DBFilePrivate],
 														 m_Sync,
 														 m_Header[DBFileSetting].Set.Settings,
 														 *m_Contacts);
 
 	m_Settings->sigRootChanged().connect(this, &CDataBase::onSettingsRootChanged);
+	
+	m_Events = new CEvents(*m_BlockManager[DBFilePrivate],
+		                     *m_EncryptionManager[DBFilePrivate],
+												 m_Header[DBFilePrivate].Pri.EventLinks,
+												 m_Sync,
+												 *m_Contacts,
+												 *m_Settings);
 
-
+	m_Events->sigLinkRootChanged().connect(this, &CDataBase::onEventLinksRootChanged);
+	
 	return 0;
 }
 
@@ -218,42 +212,45 @@ bool CDataBase::PrivateFileExists()
 }
 
 
-bool CDataBase::CreateNewPrivateFile()
+bool CDataBase::CreateNewFile(TDBFileType File)
 {
-	/// TODO Wizard
+	try {
+		TGenericFileHeader h = {0};
+		memcpy(&h.Gen.Signature, &cFileSignature[File], sizeof(h.Gen.Signature));
+		h.Gen.Version = cDBVersion;
+		
+		CEncryptionManager enc;
+		CDirectAccess fa(m_FileName[File], enc, sizeof(TGenericFileHeader));
+		fa.SetSize(sizeof(h));		
+		CBlockManager bm(fa, enc);
+		bm.ScanFile(sizeof(h), 0, sizeof(h));
+		uint32_t block = bm.CreateBlock(sizeof(h), cHeaderBlockSignature);
+
+		h.Gen.FileSize = fa.GetSize();
+		bm.WriteBlock(block, &h, sizeof(h), cHeaderBlockSignature);
+		fa.Write(&h, 0, sizeof(h));
+
+	}
+	catch (CException e)
+	{
+		return false;
+	}
 	return true;
 }
 
-CCipher * CDataBase::MakeCipher(uint32_t Access)
-{
-	int i;
-	if (Access & cDBFAEncryptedMask)
-	{
-		i = 0;
-		while (i < sizeof(cCipherList) / sizeof(cCipherList[0]))
-		{
-			if (cCipherList[i].ID == (Access & cDBFAEncryptMethodMask))
-				return cCipherList[i].Create();
-
-			++i;
-		}	
-		
-		throw "CipherID not present!";
-	}
-
-	return NULL;
-}
-
 void CDataBase::ReWriteHeader(TDBFileType Index)
-{ 
+{
 	TGenericFileHeader h = m_Header[Index];
+	uint32_t tmp[3];
+	tmp[0] = GetTickCount();
+	tmp[1] = GetCurrentThreadId();
+	tmp[2] = _time32(NULL);
+
+	h.Gen.Obscure = Hash(tmp, sizeof(tmp));
+	m_EncryptionManager[Index]->Encrypt(&h, sizeof(h), ET_DATA, cHeaderBlockSignature, 0);
+	m_BlockManager[Index]->WriteBlock(m_HeaderBlock[Index], &h, sizeof(h), cHeaderBlockSignature);
 
 	m_FileAccess[Index]->Write(&m_Header[Index], 0, sizeof(m_Header[Index]));
-	
-	if ((m_Header[Index].Gen.FileAccess & cDBFAEncryptedMask) == cDBFAEncryptHistory)		
-		m_Cipher[Index]->Encrypt(&h, sizeof(h), cHeaderBlockSignature);
-	
-	m_BlockManager[Index]->WriteBlock(m_HeaderBlock[Index], &h, sizeof(h), cHeaderBlockSignature);
 }
 
 
@@ -272,6 +269,11 @@ void CDataBase::onContactsRootChanged(void* Contacts, CContacts::TNodeRef NewRoo
 	m_Header[DBFilePrivate].Pri.Contacts = NewRoot;
 	ReWriteHeader(DBFilePrivate);
 }
+void CDataBase::onEventLinksRootChanged(void* Events, CEventLinks::TNodeRef NewRoot)
+{
+	m_Header[DBFilePrivate].Pri.EventLinks = NewRoot;
+	ReWriteHeader(DBFilePrivate);
+}
 
 CContacts & CDataBase::getContacts()
 {
@@ -280,4 +282,8 @@ CContacts & CDataBase::getContacts()
 CSettings & CDataBase::getSettings()
 {
 	return *m_Settings;
+}
+CEvents & CDataBase::getEvents()
+{
+	return *m_Events;
 }

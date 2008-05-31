@@ -1,17 +1,20 @@
 #include "Compatibility.h"
+#define DB_NOHELPERFUNCTIONS
+	#include "m_database.h"
+#undef DB_NOHELPERFUNCTIONS
 
 static HANDLE hContactDeletedEvent,hContactAddedEvent;
 
 bool RegisterCompatibilityServices()
 {
-	CreateServiceFunction(MS_DB_CONTACT_GETCOUNT,GetContactCount);
-	CreateServiceFunction(MS_DB_CONTACT_FINDFIRST,FindFirstContact);
-	CreateServiceFunction(MS_DB_CONTACT_FINDNEXT,FindNextContact);
-	CreateServiceFunction(MS_DB_CONTACT_DELETE,DeleteContact);
-	CreateServiceFunction(MS_DB_CONTACT_ADD,AddContact);
-	CreateServiceFunction(MS_DB_CONTACT_IS,IsDbContact);
-	hContactDeletedEvent=CreateHookableEvent(ME_DB_CONTACT_DELETED);
-	hContactAddedEvent=CreateHookableEvent(ME_DB_CONTACT_ADDED);
+	CreateServiceFunction(MS_DB_CONTACT_GETCOUNT,  GetContactCount);
+	CreateServiceFunction(MS_DB_CONTACT_FINDFIRST, FindFirstContact);
+	CreateServiceFunction(MS_DB_CONTACT_FINDNEXT,  FindNextContact);
+	CreateServiceFunction(MS_DB_CONTACT_DELETE,    DeleteContact);
+	CreateServiceFunction(MS_DB_CONTACT_ADD,       AddContact);
+	CreateServiceFunction(MS_DB_CONTACT_IS,	       IsDbContact);
+	hContactDeletedEvent = CreateHookableEvent(ME_DB_CONTACT_DELETED);
+	hContactAddedEvent   = CreateHookableEvent(ME_DB_CONTACT_ADDED);
 	return true;
 }
 bool UnRegisterCompatibilityServices()

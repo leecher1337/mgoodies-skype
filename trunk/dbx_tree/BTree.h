@@ -4,6 +4,7 @@
 #include <map>
 #include "sigslot.h"
 #include "stdint.h"
+#include "Exception.h"
 
 
 typedef struct TEmpty {} TEmpty;
@@ -859,10 +860,10 @@ template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
 void CBTree<TKey, TData, SizeParam, UniqueKeys>::Delete(iterator& Item)
 {
 	if (Item.m_Tree != this)
-		throw "Iterator from wrong tree!";
+		throwException("Iterator from wrong tree!");
 
 	if (!Item)
-		throw "Iterator out of range!";
+		throwException("Iterator out of range!");
 
 	if (!m_Root) return;
 

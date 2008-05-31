@@ -281,20 +281,8 @@
 					</File>
 				</Filter>
 				<Filter
-					Name="Cipher"
+					Name="Encryption"
 					>
-					<File
-						RelativePath=".\CAST128.cpp"
-						>
-					</File>
-					<File
-						RelativePath=".\CAST128.h"
-						>
-					</File>
-					<File
-						RelativePath=".\CAST128.inc"
-						>
-					</File>
 					<File
 						RelativePath=".\Cipher.cpp"
 						>
@@ -307,6 +295,66 @@
 						RelativePath=".\CipherList.inc"
 						>
 					</File>
+					<File
+						RelativePath=".\EncryptionManager.cpp"
+						>
+					</File>
+					<File
+						RelativePath=".\EncryptionManager.h"
+						>
+					</File>
+					<Filter
+						Name="Cast128"
+						>
+						<File
+							RelativePath=".\CAST128.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\CAST128.h"
+							>
+						</File>
+						<File
+							RelativePath=".\CAST128.inc"
+							>
+						</File>
+					</Filter>
+					<Filter
+						Name="ARC4"
+						>
+						<File
+							RelativePath=".\ARC4.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\ARC4.h"
+							>
+						</File>
+					</Filter>
+					<Filter
+						Name="HC256"
+						>
+						<File
+							RelativePath=".\HC256.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\HC256.h"
+							>
+						</File>
+					</Filter>
+					<Filter
+						Name="SHA256"
+						>
+						<File
+							RelativePath=".\SHA256.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\SHA256.h"
+							>
+						</File>
+					</Filter>
 				</Filter>
 			</Filter>
 		</Filter>
@@ -358,6 +406,10 @@
 			Name="Utils"
 			>
 			<File
+				RelativePath=".\Exception.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Hash.cpp"
 				>
 			</File>
@@ -368,6 +420,10 @@
 			<Filter
 				Name="HeaderFiles"
 				>
+				<File
+					RelativePath=".\Exception.h"
+					>
+				</File>
 				<File
 					RelativePath=".\Hash.h"
 					>
