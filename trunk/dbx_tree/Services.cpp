@@ -1,6 +1,6 @@
 #include "Services.h"
 
-HANDLE gServices[41] = {0};
+HANDLE gServices[39] = {0};
 
 int DBContactGetRoot(WPARAM wParam, LPARAM lParam)
 {
@@ -264,23 +264,6 @@ int DBSettingIterClose(WPARAM hIteration, LPARAM lParam)
 	return gDataBase->getSettings().IterationClose(hIteration);
 }
 
-
-int DBEventTypeRegister(WPARAM pType, LPARAM lParam)
-{
-	if ((pType == NULL) || (((PDBEventTypeDescriptor)pType)->cbSize != sizeof(TDBEventTypeDescriptor)))
-		return DB_INVALIDPARAM;
-
-	return gDataBase->getEvents().TypeRegister(*((PDBEventTypeDescriptor)pType));
-}
-
-int DBEventTypeGet(WPARAM pModuleName, LPARAM EventType)
-{
-	if (pModuleName == NULL)
-		return DB_INVALIDPARAM;
-
-	return (int) gDataBase->getEvents().TypeGet((char*)pModuleName, EventType);
-}
-
 int DBEventGetBlobSize(WPARAM hEvent, LPARAM lParam)
 {
 	return gDataBase->getEvents().GetBlobSize(hEvent);
@@ -385,19 +368,17 @@ bool RegisterServices()
 	gServices[26] = CreateServiceFunction(MS_DB_SETTING_ITER_NEXT, DBSettingIterNext);
 	gServices[27] = CreateServiceFunction(MS_DB_SETTING_ITER_CLOSE, DBSettingIterClose);
 
-	gServices[28] = CreateServiceFunction(MS_DB_EVENT_REGISTERTYPE, DBEventTypeRegister);
-	gServices[29] = CreateServiceFunction(MS_DB_EVENT_GETTYPE, DBEventTypeGet);
-	gServices[30] = CreateServiceFunction(MS_DB_EVENT_GETBLOBSIZE, DBEventGetBlobSize);
-	gServices[31] = CreateServiceFunction(MS_DB_EVENT_GET, DBEventGet);
-	gServices[32] = CreateServiceFunction(MS_DB_EVENT_DELETE, DBEventDelete);
-	gServices[33] = CreateServiceFunction(MS_DB_EVENT_ADD, DBEventAdd);
-	gServices[34] = CreateServiceFunction(MS_DB_EVENT_MARKREAD, DBEventMarkRead);
-	gServices[35] = CreateServiceFunction(MS_DB_EVENT_WRITETODISK, DBEventWriteToDisk);
-	gServices[36] = CreateServiceFunction(MS_DB_EVENT_GETCONTACT, DBEventGetContact);
-	gServices[37] = CreateServiceFunction(MS_DB_EVENT_HARDLINK, DBEventHardLink);
-	gServices[38] = CreateServiceFunction(MS_DB_EVENT_ITER_INIT, DBEventIterInit);
-	gServices[39] = CreateServiceFunction(MS_DB_EVENT_ITER_NEXT, DBEventIterNext);
-	gServices[40] = CreateServiceFunction(MS_DB_EVENT_ITER_CLOSE, DBEventIterClose);
+	gServices[28] = CreateServiceFunction(MS_DB_EVENT_GETBLOBSIZE, DBEventGetBlobSize);
+	gServices[29] = CreateServiceFunction(MS_DB_EVENT_GET, DBEventGet);
+	gServices[30] = CreateServiceFunction(MS_DB_EVENT_DELETE, DBEventDelete);
+	gServices[31] = CreateServiceFunction(MS_DB_EVENT_ADD, DBEventAdd);
+	gServices[32] = CreateServiceFunction(MS_DB_EVENT_MARKREAD, DBEventMarkRead);
+	gServices[33] = CreateServiceFunction(MS_DB_EVENT_WRITETODISK, DBEventWriteToDisk);
+	gServices[34] = CreateServiceFunction(MS_DB_EVENT_GETCONTACT, DBEventGetContact);
+	gServices[35] = CreateServiceFunction(MS_DB_EVENT_HARDLINK, DBEventHardLink);
+	gServices[36] = CreateServiceFunction(MS_DB_EVENT_ITER_INIT, DBEventIterInit);
+	gServices[37] = CreateServiceFunction(MS_DB_EVENT_ITER_NEXT, DBEventIterNext);
+	gServices[38] = CreateServiceFunction(MS_DB_EVENT_ITER_CLOSE, DBEventIterClose);
 
 
 	return true;

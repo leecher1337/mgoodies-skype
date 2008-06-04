@@ -9,6 +9,7 @@
 #include "Settings.h"
 #include "Hash.h"
 #include "EncryptionManager.h"
+#include "sigslot.h"
 
 #include <hash_map>
 #include <hash_set>
@@ -93,6 +94,7 @@ public:
 	~CEventsTree();
 
 	TDBContactHandle getContact();
+	void setContact(TDBContactHandle NewContact);
 };
 
 /**
@@ -109,6 +111,7 @@ public:
 	~CVirtualEventsTree();
 
 	TDBContactHandle getContact();
+	void setContact(TDBContactHandle NewContact);
 };
 
 
@@ -118,13 +121,16 @@ public:
 	CEventsTypeManager(CContacts & Contacts, CSettings & Settings);
 	~CEventsTypeManager();
 
-
 	uint32_t MakeGlobalID(char* Module, uint32_t EventType);
-	PDBEventTypeDescriptor GetDescriptor(uint32_t GlobalID);
-	uint32_t EnsureIDExists(char* Module, uint32_t EventType, char* Description);
+	bool GetType(uint32_t GlobalID, char * & Module, uint32_t & EventType);
+	uint32_t EnsureIDExists(char* Module, uint32_t EventType);
 
 private:
-	typedef stdext::hash_map<uint32_t, PDBEventTypeDescriptor> TTypeMap;
+	typedef struct TEventType {
+		char *   ModuleName;
+		uint32_t EventType;
+	} TEventType, *PEventType;
+	typedef stdext::hash_map<uint32_t, PEventType> TTypeMap;
 
 	CContacts & m_Contacts;
 	CSettings & m_Settings;
@@ -160,8 +166,8 @@ public:
 
 	CEventLinks::TOnRootChanged & sigLinkRootChanged();
 
-	unsigned int TypeRegister(TDBEventTypeDescriptor & Type);
-	PDBEventTypeDescriptor TypeGet(char * ModuleName, uint32_t EventType);
+//	unsigned int TypeRegister(TDBEventTypeDescriptor & Type);
+//	PDBEventTypeDescriptor TypeGet(char * ModuleName, uint32_t EventType);
 
 	unsigned int GetBlobSize(TDBEventHandle hEvent);
 	unsigned int Get(TDBEventHandle hEvent, TDBEvent & Event);
@@ -212,6 +218,11 @@ private:
 	TEventIterationVector m_Iterations;
 
 	void onRootChanged(void* EventsTree, CEventsTree::TNodeRef NewRoot);
+
+	void onDeleteEventCallback(void * Tree, TEventKey Key, TDBEventHandle Data, uint32_t Param);
+	void onDeleteVirtualEventCallback(void * Tree, TEventKey Key, TDBEventHandle Data, uint32_t Param);
+	void onDeleteEvents(CContacts * Contacts, TDBContactHandle hContact);
+	void onTransferEvents(CContacts * Contacts, TDBContactHandle Source, TDBContactHandle Dest);
 
 	CEventsTree * getEventsTree(TDBContactHandle hContact);
 	CVirtualEventsTree * getVirtualEventsTree(TDBContactHandle hContact);

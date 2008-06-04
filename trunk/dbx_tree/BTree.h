@@ -95,7 +95,8 @@ public:
 	bool Delete(const TKey& Key);
 	void Delete(iterator& Item);
 
-	void DeleteTree(sigslot::signal2<TKey, TData> * CallBack);
+	typedef sigslot::signal4<void *, TKey, TData, uint32_t> TDeleteCallback;
+	void DeleteTree(TDeleteCallback * CallBack, uint32_t Param);
 
 	TNodeRef getRoot();
 	void setRoot(TNodeRef NewRoot);
@@ -1274,12 +1275,20 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::DestroyTree()
 
 
 template <typename TKey, typename TData, uint16_t SizeParam, bool UniqueKeys>
-void CBTree<TKey, TData, SizeParam, UniqueKeys>::DeleteTree(sigslot::signal2<TKey, TData> * CallBack)
+void CBTree<TKey, TData, SizeParam, UniqueKeys>::DeleteTree(TDeleteCallback * CallBack, uint32_t Param)
 {
 	std::stack<TNodeRef> s;
 	TNodeRef actnode;
 	TNode node;
 	uint16_t i;
+
+	TManagedMap::iterator it = m_ManagedIterators.begin();
+	while (it != m_ManagedIterators.end())
+	{
+		it->second->m_Node = 0;
+		it->second->m_Index = 0xffff;
+		++it;
+	}
 
 	if (m_Root)
 		s.push(m_Root);
@@ -1294,19 +1303,19 @@ void CBTree<TKey, TData, SizeParam, UniqueKeys>::DeleteTree(sigslot::signal2<TKe
 
 		ReadNode(actnode, node);
 
-		if ((node->Info & cIsLeafMask) == 0)
+		if ((node.Info & cIsLeafMask) == 0)
 		{
-			for (i = 0; i <= (node->Info & cKeyCountMask); i++)
+			for (i = 0; i <= (node.Info & cKeyCountMask); i++)
 			{
-				s.push((TNode*)node->Child[i]);
+				s.push(node.Child[i]);
 				if (CallBack)
-					CallBack->emit(node.Key[i], node.Data[i]);
+					CallBack->emit(this, node.Key[i], node.Data[i], Param);
 			}
 
 		} else if (CallBack)
 		{
-			for (i = 0; i <= (node->Info & cKeyCountMask); i++)
-				CallBack->emit(node.Key[i], node.Data[i]);
+			for (i = 0; i <= (node.Info & cKeyCountMask); i++)
+				CallBack->emit(this, node.Key[i], node.Data[i], Param);
 		}
 
 		DeleteNode(actnode);

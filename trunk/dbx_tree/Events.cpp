@@ -54,8 +54,11 @@ CEventsTree::~CEventsTree()
 TDBContactHandle CEventsTree::getContact()
 {
 	return m_Contact;
-};
-
+}
+void CEventsTree::setContact(TDBContactHandle NewContact)
+{
+	m_Contact = NewContact;
+}
 
 CVirtualEventsTree::CVirtualEventsTree(TDBContactHandle Contact)
 :	CBTree(0)
@@ -70,7 +73,12 @@ CVirtualEventsTree::~CVirtualEventsTree()
 TDBContactHandle CVirtualEventsTree::getContact()
 {
 	return m_Contact;
-};
+}
+void CVirtualEventsTree::setContact(TDBContactHandle NewContact)
+{
+	m_Contact = NewContact;
+}
+
 
 
 CEventLinks::CEventLinks(CBlockManager & BlockManager, TNodeRef RootNode)
@@ -98,7 +106,6 @@ CEventsTypeManager::~CEventsTypeManager()
 	
 	while (it != m_Map.end())
 	{
-		delete [] it->second->Description;
 		delete [] it->second->ModuleName;
 		delete it->second;
 		++it;
@@ -114,19 +121,17 @@ uint32_t CEventsTypeManager::MakeGlobalID(char* Module, uint32_t EventType)
 
 	uint32_t h = Hash(buf, l + sizeof(uint32_t));
 
-	PDBEventTypeDescriptor d = GetDescriptor(h);
-	while ((d != NULL) && ((d->EventType != EventType) || (strcmp(d->ModuleName, Module) != 0)))
+	char * m;
+	uint32_t t;
+	while (GetType(h, m, t) && ((t != EventType) || (strcmp(m, Module) != 0)))
 	{
 		++h;
-		d = GetDescriptor(h);
 	}
 
 	return h;
 }
-PDBEventTypeDescriptor CEventsTypeManager::GetDescriptor(uint32_t GlobalID)
+bool CEventsTypeManager::GetType(uint32_t GlobalID, char * & Module, uint32_t & EventType)
 {
-	PDBEventTypeDescriptor res = NULL;
-
 	TTypeMap::iterator it = m_Map.find(GlobalID);	
 
 	if (it == m_Map.end())
@@ -140,7 +145,6 @@ PDBEventTypeDescriptor CEventsTypeManager::GetDescriptor(uint32_t GlobalID)
 
 		TDBSetting sid = {0};
 		TDBSetting sname = {0};
-		TDBSetting sdesc = {0};
 
 		sid.cbSize = sizeof(sid);
 		sid.Descriptor = &d;
@@ -149,10 +153,6 @@ PDBEventTypeDescriptor CEventsTypeManager::GetDescriptor(uint32_t GlobalID)
 		sname.cbSize = sizeof(sname);
 		sname.Descriptor = &d;
 		sname.Type = DB_ST_ASCIIZ;
-
-		sdesc.cbSize = sizeof(sdesc);
-		sdesc.Descriptor = &d;
-		sdesc.Type = DB_ST_ASCIIZ;
 
 		sprintf_s(n, 256, "$EventTypes/%08x/ModuleID", GlobalID);
 		TDBSettingHandle h = m_Settings.ReadSetting(sid);
@@ -165,41 +165,39 @@ PDBEventTypeDescriptor CEventsTypeManager::GetDescriptor(uint32_t GlobalID)
 
 			if ((h != DB_INVALIDPARAM) && (h != 0))
 			{
-				sprintf_s(n, 256, "$EventTypes/%08x/Description", GlobalID);
-				d.Flags = 0;
-				h = m_Settings.ReadSetting(sdesc);
+				PEventType t = new TEventType;
 
-				if ((h != DB_INVALIDPARAM) && (h != 0))
-				{
-					res = new TDBEventTypeDescriptor;
-					res->cbSize = sizeof(TDBEventTypeDescriptor);
-					res->EventType = sid.Value.Int;
+				t->EventType = sid.Value.Int;
 					
-					res->ModuleName = new char[sname.Value.Length];
-					strcpy_s(res->ModuleName, sname.Value.Length, sname.Value.pAnsii);
-
-					res->Description = new char[sdesc.Value.Length];
-					strcpy_s(res->Description, sdesc.Value.Length, sdesc.Value.pAnsii);
-					mir_free(sdesc.Value.pAnsii);
-
-					m_Map.insert(std::make_pair(GlobalID, res));
-				}
-
+				t->ModuleName = new char[sname.Value.Length];
+				strcpy_s(t->ModuleName, sname.Value.Length, sname.Value.pAnsii);
+				
+				m_Map.insert(std::make_pair(GlobalID, t));
+				
 				mir_free(sname.Value.pAnsii);
+
+				Module = t->ModuleName;
+				EventType  = t->EventType;
+
+				return true;
 			}
 		}
 	} else {
-		res = it->second;
+		Module = it->second->ModuleName;
+		EventType  = it->second->EventType;
 
+		return true;
 	}
 
-	return res;
+	return false;
 }
 
-uint32_t CEventsTypeManager::EnsureIDExists(char* Module, uint32_t EventType, char* Description = NULL)
+uint32_t CEventsTypeManager::EnsureIDExists(char* Module, uint32_t EventType)
 {
 	uint32_t res = MakeGlobalID(Module, EventType);
-	if (GetDescriptor(res) == NULL)
+	char *   m;
+	uint32_t t;
+	if (!GetType(res, m, t))
 	{
 		char n[256];
 
@@ -224,21 +222,6 @@ uint32_t CEventsTypeManager::EnsureIDExists(char* Module, uint32_t EventType, ch
 		s.Value.pAnsii = Module;
 		m_Settings.WriteSetting(s);
 
-		sprintf_s(n, 256, "$EventTypes/%08x/Description", res);
-		d.Flags = 0;
-
-		if (Description)
-		{
-			s.Value.Length = strlen(Module) + 1;
-			s.Value.pAnsii = Description;
-			m_Settings.WriteSetting(s);
-		} else {
-			char tmp[256];
-			sprintf_s(tmp, 256, "%s/%08x", Module, EventType);
-			s.Value.Length = strlen(tmp) + 1;
-			s.Value.pAnsii = tmp;
-			m_Settings.WriteSetting(s);
-		}
 	}
 
 	return res;
@@ -266,6 +249,9 @@ CEvents::CEvents(
 {
 	srand(_time32(NULL) + GetTickCount() + GetCurrentThreadId());
 	m_Counter = rand() & 0xffff;
+
+	Contacts._sigDeleteEvents().connect(this, &CEvents::onDeleteEvents);
+	Contacts._sigTransferEvents().connect(this, &CEvents::onTransferEvents);
 
 }
 CEvents::~CEvents()
@@ -310,6 +296,185 @@ void CEvents::onRootChanged(void* EventsTree, CEventsTree::TNodeRef NewRoot)
 	m_Contacts._setEventsRoot(((CEventsTree*)EventsTree)->getContact(), NewRoot);
 }
 
+
+void CEvents::onDeleteEventCallback(void * Tree, TEventKey Key, TDBEventHandle Data, uint32_t Param)
+{
+	uint32_t sig = cEventSignature;
+	uint32_t f;
+	if (m_BlockManager.ReadPart(Data, &f, offsetof(TEvent, Flags), sizeof(f), sig))
+	{
+		if (f & DB_EF_REFERENCECOUNTING)
+		{
+			TEventLinkKey key;
+			key.Contact = Param;
+			key.Event = Data;
+			m_Links.Delete(key);
+
+			uint32_t rc;
+			m_BlockManager.ReadPart(Data, &rc, offsetof(TEvent, ReferenceCount), sizeof(rc), sig);
+			--rc;
+
+			if (rc == 1)
+			{
+				key.Contact = 0;
+
+				CEventLinks::iterator i = m_Links.LowerBound(key);
+				if (!i || (i.Key().Event != Data))
+					throwException("Event reference tree corrupt!");
+
+				f = f & (~DB_EF_REFERENCECOUNTING);
+				TDBContactHandle c = i.Key().Contact;
+
+				m_BlockManager.WritePart(Data, &rc, offsetof(TEvent, Contact), sizeof(c));
+				m_BlockManager.WritePart(Data, &f, offsetof(TEvent, Flags), sizeof(f));
+
+				m_Links.Delete(i.Key()); // this is faster than deleting the iterator
+			} else {
+				m_BlockManager.WritePart(Data, &rc, offsetof(TEvent, ReferenceCount), sizeof(rc));
+			}
+
+		} else {
+			TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(Data);
+
+			if (mit != m_VirtualOwnerMap.end())
+			{
+				m_BlockManager.MakeBlockVirtual(Data);
+			} else {
+				m_BlockManager.DeleteBlock(Data);
+			}
+		}
+	}
+}
+
+void CEvents::onDeleteVirtualEventCallback(void * Tree, TEventKey Key, TDBEventHandle Data, uint32_t Param)
+{
+	TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(Data);
+	if (mit != m_VirtualOwnerMap.end())
+	{
+		TVirtualOwnerSet::iterator sit = mit->second->find(Param);
+
+		if (sit != mit->second->end())
+		{
+			mit->second->erase(sit);
+			if (mit->second->empty())
+			{
+				delete mit->second;
+				m_VirtualOwnerMap.erase(mit);
+
+				if (m_BlockManager.IsForcedVirtual(Data))
+					m_BlockManager.DeleteBlock(Data);
+			}
+		}
+	}
+}
+void CEvents::onDeleteEvents(CContacts * Contacts, TDBContactHandle hContact)
+{
+	CVirtualEventsTree * vtree = getVirtualEventsTree(hContact);
+	CEventsTree * tree = getEventsTree(hContact);
+
+	m_Contacts._setEventsRoot(hContact, 0);
+
+	if (vtree)
+	{
+		CVirtualEventsTree::TDeleteCallback callback;
+		callback.connect(this, &CEvents::onDeleteVirtualEventCallback);
+
+		vtree->DeleteTree(&callback, hContact);
+
+		TVirtualEventsTreeMap::iterator i = m_VirtualEventsMap.find(hContact);
+		delete i->second; // vtree
+		m_VirtualEventsMap.erase(i);
+	}
+
+	if (tree)
+	{
+		CEventsTree::TDeleteCallback callback;
+		callback.connect(this, &CEvents::onDeleteEventCallback);
+
+		tree->DeleteTree(&callback, hContact);
+
+		TEventsTreeMap::iterator i = m_EventsMap.find(hContact);
+		delete i->second; // tree
+		m_EventsMap.erase(i);
+	}
+}
+void CEvents::onTransferEvents(CContacts * Contacts, TDBContactHandle Source, TDBContactHandle Dest)
+{
+	CVirtualEventsTree * vtree = getVirtualEventsTree(Source);
+	CEventsTree * tree = getEventsTree(Source);
+
+	if (vtree)
+	{
+		TEventKey key = {0};
+
+		CVirtualEventsTree::iterator i = vtree->LowerBound(key);
+
+		while (i)
+		{
+			TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(i.Data());
+			TVirtualOwnerSet * s = NULL;
+			if (mit == m_VirtualOwnerMap.end())
+			{
+				s = new TVirtualOwnerSet();
+				m_VirtualOwnerMap.insert(std::make_pair(i.Data(), s));
+			} else {
+				s = mit->second;
+				mit->second->erase(Source);
+			}
+			
+			s->insert(Dest);
+
+			++i;
+		}
+
+		TVirtualEventsTreeMap::iterator tit = m_VirtualEventsMap.find(Source);
+		m_VirtualEventsMap.erase(tit);
+		m_VirtualEventsMap.insert(std::make_pair(Dest, vtree));
+		vtree->setContact(Dest);
+	}
+
+	if (tree)
+	{
+		TEventKey key = {0};
+
+		CEventsTree::iterator i = tree->LowerBound(key);
+		while (i)
+		{
+			uint32_t f;
+			uint32_t sig = cEventSignature;
+
+			if (m_BlockManager.ReadPart(i.Data(), &f, offsetof(TEvent, Flags), sizeof(f), sig))
+			{
+				if (f & DB_EF_REFERENCECOUNTING)
+				{
+					TEventLinkKey lkey;
+
+					lkey.Contact = Source;
+					lkey.Event = i.Data();
+					
+					m_Links.Delete(lkey);
+
+					lkey.Contact = Dest;
+					m_Links.Insert(lkey, TEmpty());
+
+				} else {
+					m_BlockManager.WritePart(i.Data(), &Dest, offsetof(TEvent, Contact), sizeof(Dest));
+				}
+			}
+
+			++i;
+		}
+
+		m_Contacts._setEventsRoot(Source, 0);
+		m_Contacts._setEventsRoot(Dest, tree->getRoot());
+
+		TEventsTreeMap::iterator tit = m_EventsMap.find(Source);
+		m_EventsMap.erase(tit);
+		m_EventsMap.insert(std::make_pair(Dest, tree));
+		tree->setContact(Dest);
+	}
+}
+
 CEventsTree * CEvents::getEventsTree(TDBContactHandle hContact)
 {
 	TEventsTreeMap::iterator i = m_EventsMap.find(hContact);
@@ -340,16 +505,16 @@ CVirtualEventsTree * CEvents::getVirtualEventsTree(TDBContactHandle hContact)
 }
 
 
-
+/*
 unsigned int CEvents::TypeRegister(TDBEventTypeDescriptor & Type)
 {
-	return m_Types.EnsureIDExists(Type.ModuleName, Type.EventType, Type.Description);
+	return m_Types.Register(Type);
 }
 PDBEventTypeDescriptor CEvents::TypeGet(char * ModuleName, uint32_t EventType)
 {
 	return m_Types.GetDescriptor(m_Types.MakeGlobalID(ModuleName, EventType));
 }
-
+*/
 unsigned int CEvents::GetBlobSize(TDBEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
@@ -379,7 +544,12 @@ unsigned int CEvents::Get(TDBEventHandle hEvent, TDBEvent & Event)
 
 	TEvent * ev = (TEvent*)buf;
 	uint8_t * blob = (uint8_t *)(ev + 1);
-	PDBEventTypeDescriptor d = m_Types.GetDescriptor(ev->Type);
+	
+	if (!m_Types.GetType(ev->Type, Event.ModuleName, Event.EventType))
+	{
+		Event.EventType = ev->Type;
+		Event.ModuleName = "???";
+	}
 
 	// encryption
 	if (m_EncryptionManager.IsEncrypted(hEvent, ET_DATA))
@@ -390,15 +560,6 @@ unsigned int CEvents::Get(TDBEventHandle hEvent, TDBEvent & Event)
 	}
 
 	m_Sync.EndRead();  // we leave here. we cannot leave earlier due to encryption change thread
-
-	if (d)
-	{
-		Event.EventType = d->EventType;
-		Event.ModuleName = d->ModuleName;
-	} else {
-		Event.EventType = ev->Type;
-		Event.ModuleName = "???";
-	}
 
 	Event.Flags = ev->Flags;
 	if (m_BlockManager.IsForcedVirtual(hEvent))
@@ -472,6 +633,7 @@ unsigned int CEvents::Delete(TDBContactHandle hContact, TDBEventHandle hEvent)
 			return DB_INVALIDPARAM;
 		}
 		tree->Delete(key);
+		m_Contacts._adjustEventCount(hContact, -1);
 
 		if (flags & DB_EF_REFERENCECOUNTING)
 		{
@@ -518,7 +680,14 @@ TDBEventHandle CEvents::Add(TDBContactHandle hContact, TDBEvent & Event)
 	TDBEventHandle res = 0;
 
 	m_Sync.BeginWrite();
-	
+
+
+	{ // virtual resolve
+		TDBContactHandle tmp = m_Contacts.VirtualGetParent(hContact);
+		if (tmp != DB_INVALIDPARAM)
+			hContact = tmp;
+	}
+
 	uint8_t *blobdata = Event.pBlob;
 	bool bloballocated = false;
 	uint32_t cryptsize = m_EncryptionManager.AlignSize(0, ET_DATA, Event.cbBlob);
@@ -575,7 +744,7 @@ TDBEventHandle CEvents::Add(TDBContactHandle hContact, TDBEvent & Event)
 
 
 	ev.Flags = Event.Flags & ~(DB_EF_VIRTUAL | DB_EF_REFERENCECOUNTING); 
-	ev.Type = m_Types.EnsureIDExists(Event.ModuleName, Event.EventType, NULL);
+	ev.Type = m_Types.EnsureIDExists(Event.ModuleName, Event.EventType);
 	ev.DataLength = Event.cbBlob;
 	ev.Contact = hContact;
 
@@ -586,9 +755,23 @@ TDBEventHandle CEvents::Add(TDBContactHandle hContact, TDBEvent & Event)
 		free(blobdata);
 
 	if (Event.Flags & DB_EF_VIRTUAL)
+	{
 		vtree->Insert(key, res);
-	else
+
+		TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(hContact);
+		if (mit == m_VirtualOwnerMap.end())
+		{
+			TVirtualOwnerSet * tmp = new TVirtualOwnerSet();
+			tmp->insert(hContact);
+			m_VirtualOwnerMap.insert(std::make_pair(res, tmp));
+			
+		} else {
+			mit->second->insert(hContact);
+		}
+	} else {
 		tree->Insert(key, res);
+		m_Contacts._adjustEventCount(hContact, +1);
+	}
 
 	m_Sync.EndWrite();
 
@@ -697,6 +880,8 @@ unsigned int CEvents::WriteToDisk(TDBContactHandle hContact, TDBEventHandle hEve
 	vtree->Delete(key);
 	tree->Insert(key, hEvent);
 
+	m_Contacts._adjustEventCount(hContact, +1);
+
 	if (m_BlockManager.IsForcedVirtual(hEvent))
 	{
 		m_BlockManager.WritePart(hEvent, &hContact, offsetof(TEvent, Contact), sizeof(hContact));
@@ -788,6 +973,12 @@ unsigned int CEvents::HardLink(TDBEventHardLink & HardLink)
 		return DB_INVALIDPARAM;
 	}
 
+	{ // virtual resolve
+		TDBContactHandle tmp = m_Contacts.VirtualGetParent(HardLink.hContact);
+		if (tmp != DB_INVALIDPARAM)
+			HardLink.hContact = tmp;
+	}
+
 	if (HardLink.Flags & DB_EF_VIRTUAL)
 	{
 		CVirtualEventsTree * vtree = getVirtualEventsTree(HardLink.hContact);
@@ -820,6 +1011,8 @@ unsigned int CEvents::HardLink(TDBEventHardLink & HardLink)
 		}
 
 		tree->Insert(key, HardLink.hEvent);
+		m_Contacts._adjustEventCount(HardLink.hContact, +1);
+
 		if (m_BlockManager.IsForcedVirtual(HardLink.hEvent))
 		{
 			m_BlockManager.WritePart(HardLink.hEvent, &HardLink.hContact, offsetof(TEvent, Contact), sizeof(HardLink.hContact));

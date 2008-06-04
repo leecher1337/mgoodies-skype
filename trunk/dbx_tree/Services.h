@@ -37,8 +37,6 @@ int DBSettingIterInit(WPARAM pFilter, LPARAM lParam);
 int DBSettingIterNext(WPARAM hIteration, LPARAM lParam);
 int DBSettingIterClose(WPARAM hIteration, LPARAM lParam);
 
-int DBEventTypeRegister(WPARAM pType, LPARAM lParam);
-int DBEventTypeGet(WPARAM pModuleName, LPARAM EventType);
 int DBEventGetBlobSize(WPARAM hEvent, LPARAM lParam);
 int DBEventGet(WPARAM hEvent, LPARAM pEvent);
 int DBEventDelete(WPARAM hContact, LPARAM hEvent);
