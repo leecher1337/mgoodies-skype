@@ -93,6 +93,8 @@
 #	define _SIGSLOT_SINGLE_THREADED
 #endif
 
+#define SIGSLOT_DEFAULT_MT_POLICY multi_threaded_global
+
 #ifndef SIGSLOT_DEFAULT_MT_POLICY
 #	ifdef _SIGSLOT_SINGLE_THREADED
 #		define SIGSLOT_DEFAULT_MT_POLICY single_threaded

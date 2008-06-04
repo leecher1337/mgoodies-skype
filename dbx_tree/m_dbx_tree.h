@@ -479,31 +479,6 @@ typedef uint32_t TDBSettingIterationHandle;
 // Events
 ///////////////////////////////////////////////////////////
 
-/**
-	\brief Event Type Specification for register
-**/
-typedef struct TDBEventTypeDescriptor
-{
-	uint32_t cbSize;      /// structure size in bytes
-	char *   ModuleName;  /// event module name
-	uint32_t EventType;   /// event id, unique for this module
-	char *   Description; /// event type description (i.e. "File Transfer")
-}	TDBEventTypeDescriptor, *PDBEventTypeDescriptor;
-
-#define MS_DB_EVENT_REGISTERTYPE  "DB/EventType/Register"
-
-/** 
-	\brief Retrieves the previously registered database event type, by module & id.
-  \param wParam = ModuleName, if == NULL EventType means global ID, module specific else
-  \param lParam = EventType
-
-	\return PDBEventTypeDescriptor or NULL, if a type isn't found.
-**/
-
-#define MS_DB_EVENT_GETTYPE "DB/EventType/Get"
-
-
-
 typedef uint32_t TDBEventHandle;
 
 
@@ -547,7 +522,7 @@ typedef struct TDBEvent {
 	uint32_t    Flags;	    /// the omnipresent flags	
 	uint32_t    EventType;  /// module-unique event type ID
 	uint32_t    cbBlob;	    /// size of pBlob in bytes
-	uint8_t  *  pBlob;	      /// pointer to buffer containing module-defined event data
+	uint8_t  *  pBlob;	    /// pointer to buffer containing module-defined event data
 } TDBEvent, *PDBEvent;
 
 static const uint32_t DB_EventType_Message     = 0;

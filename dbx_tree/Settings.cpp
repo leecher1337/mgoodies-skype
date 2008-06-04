@@ -37,6 +37,11 @@ inline TDBContactHandle CSettingsTree::getContact()
 	return m_Contact;
 }
 
+void CSettingsTree::setContact(TDBContactHandle NewContact)
+{
+	m_Contact = NewContact;
+}
+
 TDBSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length)
 {
 	TSettingKey key;
@@ -116,6 +121,8 @@ CSettings::CSettings(
 	settree->sigRootChanged().connect(this, &CSettings::onRootChanged);
 	m_SettingsMap.insert(std::make_pair(0, settree));
 
+	m_Contacts._sigDeleteSettings().connect(this, &CSettings::onDeleteSettings);
+	m_Contacts._sigMergeSettings().connect (this, &CSettings::onMergeSettings);
 }
 
 CSettings::~CSettings()
@@ -208,6 +215,122 @@ void CSettings::onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoo
 	else 
 		m_Contacts._setSettingsRoot(((CSettingsTree*)SettingsTree)->getContact(), NewRoot);
 }
+
+void CSettings::onDeleteSettingCallback(void * Tree, TSettingKey Key, TDBSettingHandle Data, uint32_t Param)
+{
+	if (Param == 0)
+	{
+		m_BlockManagerSet.DeleteBlock(Data);
+	} else {
+		m_BlockManagerPri.DeleteBlock(Data);
+	}
+}
+void CSettings::onDeleteSettings(CContacts * Contacts, TDBContactHandle hContact)
+{
+	CSettingsTree * tree = getSettingsTree(hContact);
+
+	m_Contacts._setSettingsRoot(hContact, 0);
+
+	if (tree)
+	{
+		CSettingsTree::TDeleteCallback callback;
+		callback.connect(this, &CSettings::onDeleteSettingCallback);
+
+		tree->DeleteTree(&callback, hContact);
+
+		TSettingsTreeMap::iterator i = m_SettingsMap.find(hContact);
+		delete i->second; // tree
+		m_SettingsMap.erase(i);
+	}
+}
+
+
+typedef struct TSettingMergeHelper 
+{
+	TDBContactHandle Source;
+	TDBContactHandle Dest;
+	CSettingsTree * SourceTree;
+
+
+
+} TSettingMergeHelper, *PSettingMergeHelper;
+
+
+void CSettings::onMergeSettingCallback(void * Tree, TSettingKey Key, TDBSettingHandle Data, uint32_t Param)
+{
+	PSettingMergeHelper hlp = (PSettingMergeHelper)Param;
+
+	uint16_t dnl = 0;
+	char * dnb = NULL;
+		
+	_ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, Data, dnl, dnb);
+
+	CSettingsTree::iterator i = hlp->SourceTree->Find(Key);
+	TDBSettingHandle res = 0;
+	while (i && (i.Key() == Key) && (res == 0))
+	{
+		uint16_t snl = dnl;
+		char * snb = NULL;
+		
+		if (_ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, i.Data(), snl, snb)
+			  && (strcmp(dnb, snb) == 0)) // found it
+		{
+			res = i.Data();
+		}
+	}
+
+	if (res == 0)
+	{
+		hlp->SourceTree->Insert(Key, Data);
+	} else {
+		i.SetData(Data);
+		m_BlockManagerPri.DeleteBlock(res);
+	}
+}
+
+void CSettings::onMergeSettings(CContacts * Contacts, TDBContactHandle Source, TDBContactHandle Dest)
+{
+	if ((Source == 0) || (Dest == 0))
+		throwException("Cannot Merge with global settings!\nSource %d Dest %d", Source, Dest);
+
+	CSettingsTree * stree = getSettingsTree(Source);
+	CSettingsTree * dtree = getSettingsTree(Dest);
+
+	if (stree && dtree)
+	{
+		m_Contacts._setSettingsRoot(Source, 0);
+
+		stree->setContact(Dest);
+		m_Contacts._setSettingsRoot(Dest, stree->getRoot());
+
+		TSettingKey key = {0};
+		CSettingsTree::iterator it = stree->LowerBound(key);
+
+		while (it) // transfer all source settings to new contact
+		{
+			m_BlockManagerPri.WritePart(it.Data(), &Dest, offsetof(TSetting, Contact), sizeof(Dest));
+			++it;
+		}
+
+		// merge the dest tree into the source tree. override existing items
+		// do it this way, because source tree should be much larger
+		TSettingMergeHelper hlp;
+		hlp.Source = Source;
+		hlp.Dest = Dest;
+		hlp.SourceTree = stree;
+
+		CSettingsTree::TDeleteCallback callback;
+		callback.connect(this, &CSettings::onMergeSettingCallback);
+		dtree->DeleteTree(&callback, (uint32_t)&hlp);
+
+		TSettingsTreeMap::iterator i = m_SettingsMap.find(Dest);
+		delete i->second; // dtree
+		i->second = stree;
+		m_SettingsMap.erase(Source);
+		
+	}
+}
+
 
 
 

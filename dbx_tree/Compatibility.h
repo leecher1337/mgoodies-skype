@@ -13,3 +13,6 @@ int FindNextContact(WPARAM hContact,LPARAM lParam);
 int DeleteContact(WPARAM hContact,LPARAM lParam);
 int AddContact(WPARAM wParam,LPARAM lParam);
 int IsDbContact(WPARAM hContact,LPARAM lParam);
+
+
+

@@ -48,17 +48,17 @@ static const uint16_t cSettingNodeSignature = 0xBA12;
 	- maybe blob data
 **/
 typedef struct TSetting {
-	TDBContactHandle Contact;			   /// Settings' Contact
-	uint32_t   Flags;        /// flags
-	uint16_t   Type;         /// setting type	
-	uint16_t   NameLength;   /// settingname length
+	TDBContactHandle Contact; /// Settings' Contact
+	uint32_t   Flags;         /// flags
+	uint16_t   Type;          /// setting type	
+	uint16_t   NameLength;    /// settingname length
 	uint8_t    Reserved[8];
 	union {
-		TDBSettingValue Value;     /// if type is fixed length, the data is stored rigth here
+		TDBSettingValue Value;  /// if type is fixed length, the data is stored rigth here
 		
 		struct {
-			uint32_t BlobLength; /// if type is variable length this describes the length of the data in bytes
-			uint32_t AllocSize;  /// this is the allocated space for the blob ALWAYS in byte! this prevents us to realloc it too often
+			uint32_t BlobLength;  /// if type is variable length this describes the length of the data in bytes
+			uint32_t AllocSize;   /// this is the allocated space for the blob ALWAYS in byte! this prevents us to realloc it too often
 		};
 	};
 	
@@ -88,6 +88,7 @@ public:
 	~CSettingsTree();
 
 	TDBContactHandle getContact();
+	void setContact(TDBContactHandle NewContact);
 
 	TDBSettingHandle _FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length); 
 	bool _DeleteSetting(const uint32_t Hash, const TDBSettingHandle hSetting);
@@ -168,9 +169,13 @@ private:
 
 	TSettingIterationVector m_Iterations;
 
-
 	TOnRootChanged m_sigRootChanged;
 	void onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot);
+
+	void onDeleteSettingCallback(void * Tree, TSettingKey Key, TDBSettingHandle Data, uint32_t Param);
+	void onDeleteSettings(CContacts * Contacts, TDBContactHandle hContact);
+	void onMergeSettingCallback(void * Tree, TSettingKey Key, TDBSettingHandle Data, uint32_t Param);
+	void onMergeSettings(CContacts * Contacts, TDBContactHandle Source, TDBContactHandle Dest);
 
 	CSettingsTree * getSettingsTree(TDBContactHandle hContact);
 	

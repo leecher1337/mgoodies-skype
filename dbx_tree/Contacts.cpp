@@ -209,7 +209,13 @@ CContacts::CContacts(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynch
 : CFileBTree(BlockManager, ContactRoot, cContactNodeSignature),
 	m_Sync(Synchronize),
 	m_Virtuals(BlockManager, Synchronize, VirtualRoot),
-	m_Iterations()
+	m_Iterations(),
+
+	m_sigContactDelete(),
+	m_sigInternalDeleteEvents(),
+	m_sigInternalDeleteSettings(),
+	m_sigInternalMergeSettings(),
+	m_sigInternalTransferEvents()
 {
 	if (RootContact == 0)
 		m_RootContact = CreateRootContact();
@@ -246,6 +252,27 @@ TDBContactHandle CContacts::CreateRootContact()
 CVirtuals::TOnRootChanged & CContacts::sigVirtualRootChanged()
 {
 	return m_Virtuals.sigRootChanged();
+}
+
+CContacts::TOnContactDelete &          CContacts::sigContactDelete()
+{
+	return m_sigContactDelete;
+}
+CContacts::TOnInternalDeleteEvents &   CContacts::_sigDeleteEvents()  
+{
+	return m_sigInternalDeleteEvents;
+}
+CContacts::TOnInternalDeleteSettings & CContacts::_sigDeleteSettings()
+{
+	return m_sigInternalDeleteSettings;
+}
+CContacts::TOnInternalMergeSettings &  CContacts::_sigMergeSettings() 
+{
+	return m_sigInternalMergeSettings;
+}
+CContacts::TOnInternalTransferEvents & CContacts::_sigTransferEvents()
+{
+	return m_sigInternalTransferEvents;
 }
 
 
@@ -291,7 +318,23 @@ bool CContacts::_setEventsRoot(TDBContactHandle hContact, /*CEventsTree::TNodeRe
 	return true;
 }
 
+uint32_t CContacts::_adjustEventCount(TDBContactHandle hContact, int32_t Adjust)
+{
+	uint32_t sig = cContactSignature;
+	uint32_t c;
 
+	if (m_BlockManager.ReadPart(hContact, &c, offsetof(TContact, EventCount), sizeof(c), sig))
+	{
+		if (((Adjust < 0) && ((uint32_t)(-Adjust) < c)) || 
+			  ((Adjust > 0) && ((0xffffffff - c) > (uint32_t)Adjust)))
+		{
+			c += Adjust;
+			m_BlockManager.WritePart(hContact, &c, offsetof(TContact, EventCount), sizeof(c));
+		}
+	}
+
+	return c;
+}
 CVirtuals & CContacts::_getVirtuals()
 {
 	return m_Virtuals;
@@ -647,17 +690,22 @@ unsigned int CContacts::DeleteContact(TDBContactHandle hContact)
 		return DB_INVALIDPARAM;
 	}
 
+	m_sigContactDelete.emit(this, hContact);
+
 	if (Contact.Flags & DB_CF_HasVirtuals)
 	{
 		// move virtuals and make one of them real
 		TDBContactHandle newreal = m_Virtuals._DeleteRealContact(hContact);
-		
-		m_BlockManager.WritePartCheck(newreal, &Contact.EventCount, offsetof(TContact, EventCount), sizeof(uint32_t), sig);
+
+		m_BlockManager.WritePartCheck(newreal, &Contact.EventCount, offsetof(TContact, EventCount), sizeof(uint32_t), sig);		
 		m_BlockManager.WritePart(newreal, &Contact.Events, offsetof(TContact, Events), sizeof(uint32_t));
-		m_BlockManager.WritePart(newreal, &Contact.Settings, offsetof(TContact, Settings), sizeof(/*CSettingsTree::TNodeRef*/ uint32_t));
+
+		m_sigInternalTransferEvents.emit(this, hContact, newreal);
+		m_sigInternalMergeSettings.emit(this, hContact, newreal);
 
 	} else {
-		// TODO delete settings and events
+		m_sigInternalDeleteEvents.emit(this, hContact);
+		m_sigInternalDeleteSettings.emit(this, hContact);
 	}
 
 	key.Level = Contact.Level;
