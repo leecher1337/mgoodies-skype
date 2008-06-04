@@ -22,9 +22,12 @@ Boston, MA 02111-1307, USA.
 
 
 // Itens with higher time at end
-static int QueueSortItems(const QueueItem *i1, const QueueItem *i2)
+static int QueueSortItems(const QueueItem *oldItem, const QueueItem *newItem)
 {
-	return i1->check_time - i2->check_time;
+	if (oldItem->check_time == newItem->check_time)
+		return -1;
+
+	return oldItem->check_time - newItem->check_time;
 }
 
 // Itens with higher time at end

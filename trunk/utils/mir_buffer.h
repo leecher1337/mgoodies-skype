@@ -308,6 +308,16 @@ class Buffer
 			memmove(str, tmp, len * sizeof(T));
 		}
 
+		void reverse()
+		{
+			for(size_t i = 0; i < len/2; i++)
+			{
+				T tmp = str[i];
+				str[i] = str[len-i-1];
+				str[len-i-1] = tmp;
+			}
+		}
+
 		T *appender(size_t appLen) 
 		{
 			alloc(len + appLen + 1);
