@@ -59,10 +59,13 @@ copy ..\..\..\..\utils\*.h
 copy ..\..\..\..\utils\*.cpp
 cd ..
 cd ..
+copy ..\Release\%name%.pdb
 
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip Plugins Docs
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\mydetails src\utils
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.pdb.zip %name%.pdb
 
+del *.pdb
 rd /S /Q Plugins
 rd /S /Q Docs
 rd /S /Q src
@@ -73,12 +76,14 @@ echo Going to upload files...
 pause
 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.zip %ftp% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.pdb.zip %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt %ftp% -overwrite -close 
 
 if "%ftp2%"=="" GOTO END
 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.zip %ftp2% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.pdb.zip %ftp2% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt %ftp2% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt %ftp2% -overwrite -close 
 
