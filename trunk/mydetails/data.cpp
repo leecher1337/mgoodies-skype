@@ -146,7 +146,7 @@ int Protocol::GetStatus()
 	if (old_status != status)
 		data_changed = true;
 
-	if (status > ID_STATUS_OFFLINE && ProtoServiceExists(name, PS_ICQ_GETCUSTOMSTATUS))
+	if (/*status > ID_STATUS_OFFLINE &&*/ ProtoServiceExists(name, PS_ICQ_GETCUSTOMSTATUS))
 	{
 		custom_status = CallProtoService(name, PS_ICQ_GETCUSTOMSTATUS, (WPARAM) &custom_status_name, 
 																		(LPARAM) &custom_status_message);

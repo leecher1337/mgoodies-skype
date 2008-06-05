@@ -280,7 +280,6 @@ int CreateFrame()
 	wndclass.lpszClassName = WINDOW_CLASS_NAME;
 	RegisterClass(&wndclass);
 
-
 	if(ServiceExists(MS_CLIST_FRAMES_ADDFRAME)) 
 	{
 		hwnd_frame = CreateWindow(WINDOW_CLASS_NAME, Translate("My Details"), 
@@ -297,6 +296,25 @@ int CreateFrame()
 		Frame.height = 100;
 
 		frame_id = CallService(MS_CLIST_FRAMES_ADDFRAME, (WPARAM)&Frame, 0);
+
+		
+		if (DBGetContactSettingByte(NULL, "MyDetails", "ForceHideFrame", 0))
+		{
+			int flags = CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS, MAKEWPARAM(FO_FLAGS, frame_id), 0);
+			if(flags & F_VISIBLE) 
+				CallService(MS_CLIST_FRAMES_SHFRAME, frame_id, 0);
+
+			DBDeleteContactSetting(NULL, "MyDetails", "ForceHideFrame");
+		}
+
+		if (DBGetContactSettingByte(NULL, "MyDetails", "ForceShowFrame", 0))
+		{	
+			int flags = CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS, MAKEWPARAM(FO_FLAGS, frame_id), 0);
+			if(!(flags & F_VISIBLE)) 
+				CallService(MS_CLIST_FRAMES_SHFRAME, frame_id, 0);
+
+			DBDeleteContactSetting(NULL, "MyDetails", "ForceShowFrame");
+		}
 	}
 	else 
 	{
@@ -635,6 +653,8 @@ void CalcRectangles(HWND hwnd)
 		return;
 
 	Protocol *proto = protocols->Get(data->protocol_number);
+	if (proto == NULL)
+		return;
 
 	data->recalc_rectangles = false;
 	proto->data_changed = false;
@@ -1139,6 +1159,12 @@ void Draw(HWND hwnd, HDC hdc_orig)
 {
 	MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
 	Protocol *proto = protocols->Get(data->protocol_number);
+
+	if (proto == NULL)
+	{
+		EraseBackground(hwnd, hdc_orig);
+		return;
+	}
 
 	if (data->recalc_rectangles || proto->data_changed)
 		CalcRectangles(hwnd);
@@ -1751,6 +1777,8 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		{
 			MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
 			Protocol *proto = protocols->Get(data->protocol_number);
+			if (proto == NULL)
+				break;
 
 			POINT p;
 			p.x = LOWORD(lParam); 
@@ -1857,6 +1885,8 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		{
 			MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
 			Protocol *proto = protocols->Get(data->protocol_number);
+			if (proto == NULL)
+				break;
 
 			POINT p;
 			p.x = LOWORD(lParam); 
@@ -2294,6 +2324,8 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		{
 			MyDetailsFrameData *data = (MyDetailsFrameData *)GetWindowLong(hwnd, GWL_USERDATA);
 			Protocol *proto = protocols->Get(data->protocol_number);
+			if (proto == NULL)
+				break;
 
 			POINT p;
 			p.x = LOWORD(lParam); 
