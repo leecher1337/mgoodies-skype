@@ -99,7 +99,7 @@ static int Load(char* profile, void* link)
 	mir_getUTFI(&utfi);
 
 	RegisterServices();
-	RegisterCompatibilityServices();
+	CompatibilityRegister();
 
 	return gDataBase->OpenDB();
 }

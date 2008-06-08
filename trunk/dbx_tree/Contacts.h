@@ -18,8 +18,8 @@
 	That is for enumeration of one Contact's virtual copies, which are all stored in one block in the BTree
 **/
 typedef struct TVirtualKey {
-	TDBContactHandle RealContact;     /// hContact of the duplicated RealContact
-	TDBContactHandle Virtual;       /// hContact of the virtual duplicate
+	TDBTContactHandle RealContact;     /// hContact of the duplicated RealContact
+	TDBTContactHandle Virtual;       /// hContact of the virtual duplicate
 
 	bool operator <  (const TVirtualKey & Other) const;
 	//bool operator <= (const TVirtualKey & Other);
@@ -38,8 +38,8 @@ typedef struct TVirtualKey {
 **/
 typedef struct TContactKey { 
 	uint16_t Level;   /// Level where Contact is located or parent-steps to root. Root.Level == 0, root children have level 1 etc.
-	TDBContactHandle Parent;    /// hContact of the Parent. Root.Parent == 0
-	TDBContactHandle Contact;     /// hContact of the stored Contact itself
+	TDBTContactHandle Parent;    /// hContact of the Parent. Root.Parent == 0
+	TDBTContactHandle Contact;     /// hContact of the stored Contact itself
 
 	bool operator <  (const TContactKey & Other) const;
 	//bool operator <= (const TContactKey & Other);
@@ -55,8 +55,8 @@ typedef struct TContactKey {
 typedef struct TContact {
 	uint16_t Level;       /// Level where Contact is located or parent-steps to root. Root.Level == 0, root children have level 1 etc. !used in the BTreeKey!
 	uint16_t ChildCount;    /// Count of the children !invalid for Virtal contact!
-	TDBContactHandle ParentContact; /// hContact of the Parent. Root.Parent == 0 !used in the BTreeKey!
-	TDBContactHandle VParent;     /// if the Contact is Virtual this is the hContact of the related Realnode
+	TDBTContactHandle ParentContact; /// hContact of the Parent. Root.Parent == 0 !used in the BTreeKey!
+	TDBTContactHandle VParent;     /// if the Contact is Virtual this is the hContact of the related Realnode
 	uint32_t Flags;         /// flags, see cEF_*
 	/*CSettingsTree::TNodeRef*/
 	uint32_t Settings;      /// Offset to the SettingsBTree RootNode of this contact, NULL if no settings are present
@@ -94,15 +94,15 @@ public:
 
 		\return New Original (previously first Virtual) to associate data with
 	**/
-	TDBContactHandle _DeleteRealContact(TDBContactHandle hRealContact);
+	TDBTContactHandle _DeleteRealContact(TDBTContactHandle hRealContact);
 	
-	bool _InsertVirtual(TDBContactHandle hRealContact, TDBContactHandle hVirtual);
-	void _DeleteVirtual(TDBContactHandle hRealContact, TDBContactHandle hVirtual);
+	bool _InsertVirtual(TDBTContactHandle hRealContact, TDBTContactHandle hVirtual);
+	void _DeleteVirtual(TDBTContactHandle hRealContact, TDBTContactHandle hVirtual);
 
 	// services:
-	TDBContactHandle getParent(TDBContactHandle hVirtual);
-	TDBContactHandle getFirst(TDBContactHandle hRealContact);
-	TDBContactHandle getNext(TDBContactHandle hVirtual);
+	TDBTContactHandle getParent(TDBTContactHandle hVirtual);
+	TDBTContactHandle getFirst(TDBTContactHandle hRealContact);
+	TDBTContactHandle getNext(TDBTContactHandle hVirtual);
 };
 
 
@@ -118,15 +118,15 @@ class CContacts : public CFileBTree<TContactKey, TEmpty, 6, true>
 {
 
 public:
-	CContacts(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TDBContactHandle RootContact, TNodeRef ContactRoot, CVirtuals::TNodeRef VirtualRoot);
+	CContacts(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TDBTContactHandle RootContact, TNodeRef ContactRoot, CVirtuals::TNodeRef VirtualRoot);
 	virtual ~CContacts();
 
-	typedef sigslot::signal2<CContacts *, TDBContactHandle> TOnContactDelete;
-	typedef sigslot::signal2<CContacts *, TDBContactHandle> TOnInternalDeleteSettings;
-	typedef sigslot::signal2<CContacts *, TDBContactHandle> TOnInternalDeleteEvents;
+	typedef sigslot::signal2<CContacts *, TDBTContactHandle> TOnContactDelete;
+	typedef sigslot::signal2<CContacts *, TDBTContactHandle> TOnInternalDeleteSettings;
+	typedef sigslot::signal2<CContacts *, TDBTContactHandle> TOnInternalDeleteEvents;
 
-	typedef sigslot::signal3<CContacts *, TDBContactHandle, TDBContactHandle> TOnInternalMergeSettings;
-	typedef sigslot::signal3<CContacts *, TDBContactHandle, TDBContactHandle> TOnInternalTransferEvents;
+	typedef sigslot::signal3<CContacts *, TDBTContactHandle, TDBTContactHandle> TOnInternalMergeSettings;
+	typedef sigslot::signal3<CContacts *, TDBTContactHandle, TDBTContactHandle> TOnInternalTransferEvents;
 
 	TOnContactDelete &           sigContactDelete();
 	TOnInternalDeleteEvents &   _sigDeleteEvents();
@@ -138,36 +138,40 @@ public:
 
 	//internal helpers:
 	/*CSettingsTree::TNodeRef*/
-	uint32_t _getSettingsRoot(TDBContactHandle hContact);
-	bool _setSettingsRoot(TDBContactHandle hContact, /*CSettingsTree::TNodeRef*/ uint32_t NewRoot);
-	uint32_t _getEventsRoot(TDBContactHandle hContact);
-	bool _setEventsRoot(TDBContactHandle hContact, /*CSettingsTree::TNodeRef*/ uint32_t NewRoot);
-	uint32_t _adjustEventCount(TDBContactHandle hContact, int32_t Adjust);
+	uint32_t _getSettingsRoot(TDBTContactHandle hContact);
+	bool _setSettingsRoot(TDBTContactHandle hContact, /*CSettingsTree::TNodeRef*/ uint32_t NewRoot);
+	uint32_t _getEventsRoot(TDBTContactHandle hContact);
+	bool _setEventsRoot(TDBTContactHandle hContact, /*CSettingsTree::TNodeRef*/ uint32_t NewRoot);
+	uint32_t _getEventCount(TDBTContactHandle hContact);
+	uint32_t _adjustEventCount(TDBTContactHandle hContact, int32_t Adjust);
 
 	CVirtuals & _getVirtuals();
 
+	//compatibility:
+	TDBTContactHandle compFirstContact();
+	TDBTContactHandle compNextContact(TDBTContactHandle hContact);
 	//Services:
-	TDBContactHandle getRootContact();
-	TDBContactHandle getParent(TDBContactHandle hContact);
-	TDBContactHandle setParent(TDBContactHandle hContact, TDBContactHandle hParent);
-	uint32_t getChildCount(TDBContactHandle hContact);
-	TDBContactHandle getFirstChild(TDBContactHandle hParent);
-	TDBContactHandle getLastChild(TDBContactHandle hParent);
-	TDBContactHandle getNextSilbing(TDBContactHandle hContact);
-	TDBContactHandle getPrevSilbing(TDBContactHandle hContact);	
-	uint32_t getFlags(TDBContactHandle hContact);
+	TDBTContactHandle getRootContact();
+	TDBTContactHandle getParent(TDBTContactHandle hContact);
+	TDBTContactHandle setParent(TDBTContactHandle hContact, TDBTContactHandle hParent);
+	uint32_t getChildCount(TDBTContactHandle hContact);
+	TDBTContactHandle getFirstChild(TDBTContactHandle hParent);
+	TDBTContactHandle getLastChild(TDBTContactHandle hParent);
+	TDBTContactHandle getNextSilbing(TDBTContactHandle hContact);
+	TDBTContactHandle getPrevSilbing(TDBTContactHandle hContact);	
+	uint32_t getFlags(TDBTContactHandle hContact);
 
-	TDBContactHandle CreateContact(TDBContactHandle hParent, uint32_t Flags);
-	unsigned int DeleteContact(TDBContactHandle hContact);
+	TDBTContactHandle CreateContact(TDBTContactHandle hParent, uint32_t Flags);
+	unsigned int DeleteContact(TDBTContactHandle hContact);
 
-	TDBContactIterationHandle IterationInit(const TDBContactIterFilter & Filter, TDBContactHandle hParent);
-	TDBContactHandle IterationNext(TDBContactIterationHandle Iteration);
-	unsigned int IterationClose(TDBContactIterationHandle Iteration);
+	TDBTContactIterationHandle IterationInit(const TDBTContactIterFilter & Filter, TDBTContactHandle hParent);
+	TDBTContactHandle IterationNext(TDBTContactIterationHandle Iteration);
+	unsigned int IterationClose(TDBTContactIterationHandle Iteration);
 
-	TDBContactHandle VirtualCreate(TDBContactHandle hRealContact, TDBContactHandle hParent);
-	TDBContactHandle VirtualGetParent(TDBContactHandle hVirtual);
-	TDBContactHandle VirtualGetFirst(TDBContactHandle hRealContact);
-	TDBContactHandle VirtualGetNext(TDBContactHandle hVirtual);
+	TDBTContactHandle VirtualCreate(TDBTContactHandle hRealContact, TDBTContactHandle hParent);
+	TDBTContactHandle VirtualGetParent(TDBTContactHandle hVirtual);
+	TDBTContactHandle VirtualGetFirst(TDBTContactHandle hRealContact);
+	TDBTContactHandle VirtualGetNext(TDBTContactHandle hVirtual);
 
 private:
 
@@ -176,27 +180,27 @@ protected:
 	typedef struct TContactIterationItem {
 		uint8_t Options;
 		uint8_t LookupDepth;
-		TDBContactHandle Handle;
+		TDBTContactHandle Handle;
 		uint16_t Level;
 		uint32_t Flags;
 	} TContactIterationItem;
 
 	typedef struct TContactIteration {
-		TDBContactIterFilter filter;
+		TDBTContactIterFilter filter;
 		std::deque<TContactIterationItem> * q;
 		std::deque<TContactIterationItem> * parents;
-		stdext::hash_set<TDBContactHandle> * returned;
+		stdext::hash_set<TDBTContactHandle> * returned;
 	} TContactIteration, *PContactIteration;
 
 	typedef std::vector<PContactIteration> TContactIterationVector;
 
-	TDBContactHandle m_RootContact;
+	TDBTContactHandle m_RootContact;
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CVirtuals m_Virtuals;
 
 	TContactIterationVector m_Iterations;
 
-	TDBContactHandle CreateRootContact();
+	TDBTContactHandle CreateRootContact();
 
 	TOnContactDelete           m_sigContactDelete;
 	TOnInternalDeleteEvents    m_sigInternalDeleteEvents;

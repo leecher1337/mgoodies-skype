@@ -123,6 +123,7 @@ int CDataBase::LoadFile(TDBFileType Index)
 	m_EncryptionManager[Index]->InitEncryption(m_Header[Index].Gen.FileEncryption);
 
 	m_FileAccess[Index]->SetSize(m_Header[Index].Gen.FileSize);
+	m_FileAccess[Index]->sigFileSizeChange().connect(this, &CDataBase::onFileSizeChange);
 
 	m_BlockManager[Index] = new CBlockManager(*m_FileAccess[Index], *m_EncryptionManager[Index]);
 	m_HeaderBlock[Index] = m_BlockManager[Index]->ScanFile(sizeof(m_Header[Index]), cHeaderBlockSignature, m_Header[Index].Gen.FileSize);
@@ -273,6 +274,17 @@ void CDataBase::onEventLinksRootChanged(void* Events, CEventLinks::TNodeRef NewR
 {
 	m_Header[DBFilePrivate].Pri.EventLinks = NewRoot;
 	ReWriteHeader(DBFilePrivate);
+}
+void CDataBase::onFileSizeChange(CFileAccess * File, uint32_t Size)
+{
+	if (File == m_FileAccess[DBFileSetting])
+	{
+		m_Header[DBFileSetting].Gen.FileSize = Size;
+		ReWriteHeader(DBFileSetting);
+	} else {		
+		m_Header[DBFilePrivate].Gen.FileSize = Size;
+		ReWriteHeader(DBFilePrivate);
+	}
 }
 
 CContacts & CDataBase::getContacts()

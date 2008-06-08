@@ -40,8 +40,8 @@ typedef struct TEventKey {
 	\brief Key Type of the EventLinkBTree
 **/
 typedef struct TEventLinkKey {
-	TDBEventHandle   Event;    /// handle to the event
-	TDBContactHandle Contact;  /// handle to the contact which includes this event
+	TDBTEventHandle   Event;    /// handle to the event
+	TDBTContactHandle Contact;  /// handle to the contact which includes this event
 
 	bool operator <  (const TEventLinkKey & Other) const;
 	//bool operator <= (const TEventKey & Other);
@@ -53,17 +53,22 @@ typedef struct TEventLinkKey {
 /**
 	\brief The data of an Event
 
-	A event's data is variable length. The data is a TDBEvent-structure followed by varaible length data.
+	A event's data is variable length. The data is a TDBTEvent-structure followed by varaible length data.
 	- fixed data
 	- blob data (mostly UTF8 message body)
 **/
 typedef struct TEvent {
 	uint32_t Flags;				       /// Flags
-	uint32_t TimeStamp;          /// Timestamp of the event (seconds elapsed since 1.1.1970) used as key element
-	uint32_t Index;              /// index counter to seperate events with the same timestamp
+	union {
+		struct {
+			uint32_t TimeStamp;          /// Timestamp of the event (seconds elapsed since 1.1.1970) used as key element
+			uint32_t Index;              /// index counter to seperate events with the same timestamp
+		};
+		TEventKey Key;
+	};
 	uint32_t Type;               /// Eventtype
 	union {
-		TDBContactHandle Contact;  /// hContact which owns this event
+		TDBTContactHandle Contact;  /// hContact which owns this event
 		uint32_t ReferenceCount;   /// Reference Count, if event was hardlinked
 	};
 	uint32_t DataLength;         /// Length of the stored data in bytes
@@ -84,34 +89,34 @@ static const uint16_t cEventLinkNodeSignature = 0xC16A;
 /**
 	\brief Manages the Events Index in the Database
 **/
-class CEventsTree : public CFileBTree<TEventKey, TDBEventHandle, 16, true>
+class CEventsTree : public CFileBTree<TEventKey, TDBTEventHandle, 16, true>
 {
 private:
-	TDBContactHandle m_Contact;
+	TDBTContactHandle m_Contact;
 
 public:
-	CEventsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBContactHandle Contact);
+	CEventsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBTContactHandle Contact);
 	~CEventsTree();
 
-	TDBContactHandle getContact();
-	void setContact(TDBContactHandle NewContact);
+	TDBTContactHandle getContact();
+	void setContact(TDBTContactHandle NewContact);
 };
 
 /**
 	\brief Manages the Virtual Events Index
 	Sorry for duplicating code...
 **/
-class CVirtualEventsTree : public CBTree<TEventKey, TDBEventHandle, 16, true>
+class CVirtualEventsTree : public CBTree<TEventKey, TDBTEventHandle, 16, true>
 {
 private:
-	TDBContactHandle m_Contact;
+	TDBTContactHandle m_Contact;
 
 public:
-	CVirtualEventsTree(TDBContactHandle Contact);
+	CVirtualEventsTree(TDBTContactHandle Contact);
 	~CVirtualEventsTree();
 
-	TDBContactHandle getContact();
-	void setContact(TDBContactHandle NewContact);
+	TDBTContactHandle getContact();
+	void setContact(TDBTContactHandle NewContact);
 };
 
 
@@ -169,29 +174,39 @@ public:
 //	unsigned int TypeRegister(TDBEventTypeDescriptor & Type);
 //	PDBEventTypeDescriptor TypeGet(char * ModuleName, uint32_t EventType);
 
-	unsigned int GetBlobSize(TDBEventHandle hEvent);
-	unsigned int Get(TDBEventHandle hEvent, TDBEvent & Event);
-	unsigned int Delete(TDBContactHandle hContact, TDBEventHandle hEvent);
-	TDBEventHandle Add(TDBContactHandle hContact, TDBEvent & Event);
-	unsigned int MarkRead(TDBContactHandle hContact, TDBEventHandle hEvent);
-	unsigned int WriteToDisk(TDBContactHandle hContact, TDBEventHandle hEvent);
-	unsigned int HardLink(TDBEventHardLink & HardLink);
+	//compatibility
+	TDBTEventHandle compFirstEvent(TDBTContactHandle hContact);
+	TDBTEventHandle compFirstUnreadEvent(TDBTContactHandle hContact);
+	TDBTEventHandle compLastEvent(TDBTContactHandle hContact);
+	TDBTEventHandle compNextEvent(TDBTEventHandle hEvent);
+	TDBTEventHandle compPrevEvent(TDBTEventHandle hEvent);
 
-	TDBContactHandle GetContact(TDBEventHandle hEvent);
+	//services
+	unsigned int GetBlobSize(TDBTEventHandle hEvent);
+	unsigned int Get(TDBTEventHandle hEvent, TDBTEvent & Event);
+	unsigned int GetCount(TDBTContactHandle hContact);
+	unsigned int Delete(TDBTContactHandle hContact, TDBTEventHandle hEvent);
+	TDBTEventHandle Add(TDBTContactHandle hContact, TDBTEvent & Event);
+	unsigned int MarkRead(TDBTContactHandle hContact, TDBTEventHandle hEvent);
+	unsigned int WriteToDisk(TDBTContactHandle hContact, TDBTEventHandle hEvent);
+	unsigned int HardLink(TDBTEventHardLink & HardLink);
 
-	TDBEventIterationHandle IterationInit(TDBEventIterFilter & Filter);
-	TDBEventHandle IterationNext(TDBEventIterationHandle Iteration);
-	unsigned int IterationClose(TDBEventIterationHandle Iteration);
+	TDBTContactHandle GetContact(TDBTEventHandle hEvent);
+
+	TDBTEventIterationHandle IterationInit(TDBTEventIterFilter & Filter);
+	TDBTEventHandle IterationNext(TDBTEventIterationHandle Iteration);
+	unsigned int IterationClose(TDBTEventIterationHandle Iteration);
 
 
 private:
-	typedef CBTree<TEventKey, TDBEventHandle, 16, true> TEventBase;
-	typedef stdext::hash_map<TDBContactHandle, CEventsTree*> TEventsTreeMap;
-	typedef stdext::hash_map<TDBContactHandle, CVirtualEventsTree*> TVirtualEventsTreeMap;
+	typedef CBTree<TEventKey, TDBTEventHandle, 16, true> TEventBase;
+	typedef stdext::hash_map<TDBTContactHandle, CEventsTree*> TEventsTreeMap;
+	typedef stdext::hash_map<TDBTContactHandle, CVirtualEventsTree*> TVirtualEventsTreeMap;
+	typedef stdext::hash_map<TDBTContactHandle, uint32_t> TVirtualEventsCountMap;
 	typedef CIterationHeap<TEventBase::iterator> TEventsHeap;
 	
-	typedef stdext::hash_set<TDBContactHandle> TVirtualOwnerSet;
-	typedef stdext::hash_map<TDBEventHandle, TVirtualOwnerSet*> TVirtualOwnerMap;
+	typedef stdext::hash_set<TDBTContactHandle> TVirtualOwnerSet;
+	typedef stdext::hash_map<TDBTEventHandle, TVirtualOwnerSet*> TVirtualOwnerMap;
 
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CBlockManager & m_BlockManager;
@@ -204,13 +219,14 @@ private:
 	TEventsTreeMap m_EventsMap;
 	TVirtualEventsTreeMap m_VirtualEventsMap;
 	TVirtualOwnerMap m_VirtualOwnerMap;
+	TVirtualEventsCountMap m_VirtualCountMap;
 
 	uint32_t m_Counter;
 
 	typedef struct TEventIteration {
-		TDBEventIterFilter Filter;
+		TDBTEventIterFilter Filter;
 		TEventsHeap * Heap;
-		TDBEventHandle LastEvent;
+		TDBTEventHandle LastEvent;
 	} TEventIteration, *PEventIteration;
 
 	typedef std::vector<PEventIteration> TEventIterationVector;
@@ -219,11 +235,12 @@ private:
 
 	void onRootChanged(void* EventsTree, CEventsTree::TNodeRef NewRoot);
 
-	void onDeleteEventCallback(void * Tree, TEventKey Key, TDBEventHandle Data, uint32_t Param);
-	void onDeleteVirtualEventCallback(void * Tree, TEventKey Key, TDBEventHandle Data, uint32_t Param);
-	void onDeleteEvents(CContacts * Contacts, TDBContactHandle hContact);
-	void onTransferEvents(CContacts * Contacts, TDBContactHandle Source, TDBContactHandle Dest);
+	void onDeleteEventCallback(void * Tree, TEventKey Key, TDBTEventHandle Data, uint32_t Param);
+	void onDeleteVirtualEventCallback(void * Tree, TEventKey Key, TDBTEventHandle Data, uint32_t Param);
+	void onDeleteEvents(CContacts * Contacts, TDBTContactHandle hContact);
+	void onTransferEvents(CContacts * Contacts, TDBTContactHandle Source, TDBTContactHandle Dest);
 
-	CEventsTree * getEventsTree(TDBContactHandle hContact);
-	CVirtualEventsTree * getVirtualEventsTree(TDBContactHandle hContact);
+	CEventsTree * getEventsTree(TDBTContactHandle hContact);
+	CVirtualEventsTree * getVirtualEventsTree(TDBTContactHandle hContact);
+	uint32_t adjustVirtualEventCount(TDBTContactHandle hContact, int32_t Adjust);
 };

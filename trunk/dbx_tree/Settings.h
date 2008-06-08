@@ -48,13 +48,13 @@ static const uint16_t cSettingNodeSignature = 0xBA12;
 	- maybe blob data
 **/
 typedef struct TSetting {
-	TDBContactHandle Contact; /// Settings' Contact
+	TDBTContactHandle Contact; /// Settings' Contact
 	uint32_t   Flags;         /// flags
 	uint16_t   Type;          /// setting type	
 	uint16_t   NameLength;    /// settingname length
 	uint8_t    Reserved[8];
 	union {
-		TDBSettingValue Value;  /// if type is fixed length, the data is stored rigth here
+		TDBTSettingValue Value;  /// if type is fixed length, the data is stored rigth here
 		
 		struct {
 			uint32_t BlobLength;  /// if type is variable length this describes the length of the data in bytes
@@ -71,10 +71,10 @@ typedef struct TSetting {
 /**
 	\brief Manages the Settings in the Database
 **/
-class CSettingsTree : public CFileBTree<TSettingKey, TDBSettingHandle, 8, false>
+class CSettingsTree : public CFileBTree<TSettingKey, TDBTSettingHandle, 8, false>
 {
 protected:
-	TDBContactHandle m_Contact;
+	TDBTContactHandle m_Contact;
 	CSettings & m_Owner;
 	CEncryptionManager & m_EncryptionManager;
 public: 
@@ -83,16 +83,16 @@ public:
 		CBlockManager & BlockManager,
 		CEncryptionManager & EncryptionManager,
 		TNodeRef RootNode,
-		TDBContactHandle Contact
+		TDBTContactHandle Contact
 		);
 	~CSettingsTree();
 
-	TDBContactHandle getContact();
-	void setContact(TDBContactHandle NewContact);
+	TDBTContactHandle getContact();
+	void setContact(TDBTContactHandle NewContact);
 
-	TDBSettingHandle _FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length); 
-	bool _DeleteSetting(const uint32_t Hash, const TDBSettingHandle hSetting);
-	bool _AddSetting(const uint32_t Hash, const TDBSettingHandle hSetting);
+	TDBTSettingHandle _FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length); 
+	bool _DeleteSetting(const uint32_t Hash, const TDBTSettingHandle hSetting);
+	bool _AddSetting(const uint32_t Hash, const TDBTSettingHandle hSetting);
 };
 
 
@@ -119,25 +119,25 @@ public:
 
 	TOnRootChanged & sigRootChanged();
 
-	bool _ReadSettingName(CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TDBSettingHandle Setting, uint16_t & NameLength, char *& NameBuf);
+	bool _ReadSettingName(CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TDBTSettingHandle Setting, uint16_t & NameLength, char *& NameBuf);
 
 	// services:
-	TDBSettingHandle FindSetting(TDBSettingDescriptor & Descriptor);
-	unsigned int DeleteSetting(TDBSettingDescriptor & Descriptor);
-	unsigned int DeleteSetting(TDBSettingHandle hSetting);
-	TDBSettingHandle WriteSetting(TDBSetting & Setting);
-	TDBSettingHandle WriteSetting(TDBSetting & Setting, TDBSettingHandle hSetting);
-	unsigned int ReadSetting(TDBSetting & Setting);
-	unsigned int ReadSetting(TDBSetting & Setting, TDBSettingHandle hSetting);
+	TDBTSettingHandle FindSetting(TDBTSettingDescriptor & Descriptor);
+	unsigned int DeleteSetting(TDBTSettingDescriptor & Descriptor);
+	unsigned int DeleteSetting(TDBTSettingHandle hSetting);
+	TDBTSettingHandle WriteSetting(TDBTSetting & Setting);
+	TDBTSettingHandle WriteSetting(TDBTSetting & Setting, TDBTSettingHandle hSetting);
+	unsigned int ReadSetting(TDBTSetting & Setting);
+	unsigned int ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSetting);
 
 
-	TDBSettingIterationHandle IterationInit(TDBSettingIterFilter & Filter);
-	TDBSettingHandle IterationNext(TDBSettingIterationHandle Iteration);
-	unsigned int IterationClose(TDBSettingIterationHandle Iteration);
+	TDBTSettingIterationHandle IterationInit(TDBTSettingIterFilter & Filter);
+	TDBTSettingHandle IterationNext(TDBTSettingIterationHandle Iteration);
+	unsigned int IterationClose(TDBTSettingIterationHandle Iteration);
 
 
 private:
-	typedef stdext::hash_map<TDBContactHandle, CSettingsTree*> TSettingsTreeMap;
+	typedef stdext::hash_map<TDBTContactHandle, CSettingsTree*> TSettingsTreeMap;
 	typedef CIterationHeap<CSettingsTree::iterator> TSettingsHeap;
 
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
@@ -151,14 +151,14 @@ private:
 	TSettingsTreeMap m_SettingsMap;
 
 	typedef struct TSettingIterationResult {
-		TDBSettingHandle Handle;
-		TDBContactHandle Contact;
+		TDBTSettingHandle Handle;
+		TDBTContactHandle Contact;
 		char * Name;
 		uint16_t NameLen;
 	} TSettingIterationResult;
 
 	typedef struct TSettingIteration {
-		TDBSettingIterFilter Filter;
+		TDBTSettingIterFilter Filter;
 		uint16_t FilterNameStartLength;
 		TSettingsHeap * Heap;
 		std::queue<TSettingIterationResult> * Frame;
@@ -172,11 +172,11 @@ private:
 	TOnRootChanged m_sigRootChanged;
 	void onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot);
 
-	void onDeleteSettingCallback(void * Tree, TSettingKey Key, TDBSettingHandle Data, uint32_t Param);
-	void onDeleteSettings(CContacts * Contacts, TDBContactHandle hContact);
-	void onMergeSettingCallback(void * Tree, TSettingKey Key, TDBSettingHandle Data, uint32_t Param);
-	void onMergeSettings(CContacts * Contacts, TDBContactHandle Source, TDBContactHandle Dest);
+	void onDeleteSettingCallback(void * Tree, TSettingKey Key, TDBTSettingHandle Data, uint32_t Param);
+	void onDeleteSettings(CContacts * Contacts, TDBTContactHandle hContact);
+	void onMergeSettingCallback(void * Tree, TSettingKey Key, TDBTSettingHandle Data, uint32_t Param);
+	void onMergeSettings(CContacts * Contacts, TDBTContactHandle Source, TDBTContactHandle Dest);
 
-	CSettingsTree * getSettingsTree(TDBContactHandle hContact);
+	CSettingsTree * getSettingsTree(TDBTContactHandle hContact);
 	
 };

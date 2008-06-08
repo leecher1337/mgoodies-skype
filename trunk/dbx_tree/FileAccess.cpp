@@ -120,7 +120,8 @@ uint32_t CFileAccess::Write(void* Buf, uint32_t Dest, uint32_t Size)
 uint32_t CFileAccess::SetSize(uint32_t Size)
 {
 	m_Size = Size;
-	
+	m_sigFileSizeChange.emit(this, Size);
+
 	Size = (Size + 0x00000fff) & 0xfffff000; // align on 4kb
 
 	if (Size >= m_EncryptionStart)
@@ -148,4 +149,9 @@ void CFileAccess::SetReadOnly(bool ReadOnly)
 bool CFileAccess::GetReadOnly()
 {
 	return m_ReadOnly;
+}
+
+CFileAccess::TOnFileSizeChange & CFileAccess::sigFileSizeChange()
+{
+	return m_sigFileSizeChange;
 }
