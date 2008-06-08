@@ -31,7 +31,7 @@ PLUGINLINK *pluginLink;
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,1,7),
+	PLUGIN_MAKE_VERSION(0,0,1,8),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -70,6 +70,8 @@ static int PluginCommand_SetMyAvatar(WPARAM wParam,LPARAM lParam);
 static int PluginCommand_GetMyAvatar(WPARAM wParam,LPARAM lParam);
 static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam);
 static int PluginCommand_CicleThroughtProtocols(WPARAM wParam,LPARAM lParam);
+
+
 
 
 // Functions //////////////////////////////////////////////////////////////////////////////////////
@@ -161,6 +163,20 @@ int __declspec(dllexport) Unload(void)
 }
 
 
+static int Menu_SetMyAvatarUI(WPARAM wParam,LPARAM lParam)
+{
+	return PluginCommand_SetMyAvatarUI(0, 0);
+}
+static int Menu_SetMyNicknameUI(WPARAM wParam,LPARAM lParam)
+{
+	return PluginCommand_SetMyNicknameUI(0, 0);
+}
+static int Menu_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
+{
+	return PluginCommand_SetMyStatusMessageUI(0, 0);
+}
+
+
 // Hook called after init
 static int MainInit(WPARAM wparam,LPARAM lparam) 
 {
@@ -178,7 +194,8 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 		mi.pszPopupName = Translate("My Details");
 		mi.position = 100001;
 		mi.pszName = Translate("Set My Avatar...");
-		mi.pszService = MS_MYDETAILS_SETMYAVATARUI;
+		CreateServiceFunction("MENU_" MS_MYDETAILS_SETMYAVATARUI, Menu_SetMyAvatarUI);
+		mi.pszService = "MENU_" MS_MYDETAILS_SETMYAVATARUI;
 
 		CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 	}
@@ -190,7 +207,8 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 	mi.pszPopupName = Translate("My Details");
 	mi.position = 100002;
 	mi.pszName = Translate("Set My Nickname...");
-	mi.pszService = MS_MYDETAILS_SETMYNICKNAMEUI;
+	CreateServiceFunction("MENU_" MS_MYDETAILS_SETMYNICKNAMEUI, Menu_SetMyNicknameUI);
+	mi.pszService = "MENU_" MS_MYDETAILS_SETMYNICKNAMEUI;
 
 	CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 
@@ -201,7 +219,8 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 	mi.pszPopupName = Translate("My Details");
 	mi.position = 100003;
 	mi.pszName = Translate("Set My Status Message...");
-	mi.pszService = MS_MYDETAILS_SETMYSTATUSMESSAGEUI;
+	CreateServiceFunction("MENU_" MS_MYDETAILS_SETMYSTATUSMESSAGEUI, Menu_SetMyStatusMessageUI);
+	mi.pszService = "MENU_" MS_MYDETAILS_SETMYSTATUSMESSAGEUI;
 
 	CallService(MS_CLIST_ADDMAINMENUITEM,0,(LPARAM)&mi);
 
@@ -754,6 +773,9 @@ static int PluginCommand_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 	int proto_num = -1;
 	Protocol *proto = NULL;
 	TCHAR status_message[256];
+
+	if (status != 0 && (status < ID_STATUS_OFFLINE || status > ID_STATUS_OUTTOLUNCH))
+		return -10;
 
 	if (proto_name != NULL)
 	{
