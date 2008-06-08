@@ -2,7 +2,10 @@ My Details
 
 Changelog:
 
-. 0.1.0.7
+. 0.0.1.8
+  * Fix for crash when using main menu options
+
+. 0.0.1.7
   * Fix for crash when no protocol found
   + Added 2 keys to allow themes to show/hide frame: MyDetails\ForceHideFrame and MyDetails\ForceShowFrame (BYTE). Both are deleted after use.
 
