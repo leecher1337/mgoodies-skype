@@ -87,6 +87,7 @@ private:
 	void onVirtualsRootChanged(void* Virtuals, CVirtuals::TNodeRef NewRoot);
 	void onContactsRootChanged(void* Contacts, CContacts::TNodeRef NewRoot);
 	void onEventLinksRootChanged(void* Events, CEventLinks::TNodeRef NewRoot);
+	void onFileSizeChange(CFileAccess * File, uint32_t Size);
 
 	bool PrivateFileExists();
 	bool CreateNewFile(TDBFileType File);

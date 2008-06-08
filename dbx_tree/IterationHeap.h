@@ -75,10 +75,12 @@ CIterationHeap<TType>::~CIterationHeap()
 template <class TType>
 bool CIterationHeap<TType>::Insert(TType & Item)
 {
+	if (!Item) 
+		return false;
+
 	if (m_Heap.capacity() == m_Heap.size() + 1)		
 		m_Heap.reserve(m_Heap.capacity() << 1);
 	
-
 	m_Heap.push_back(NULL);
 
 	unsigned int way = m_Heap.capacity() >> 2;	

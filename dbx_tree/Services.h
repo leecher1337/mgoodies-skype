@@ -39,6 +39,7 @@ int DBSettingIterClose(WPARAM hIteration, LPARAM lParam);
 
 int DBEventGetBlobSize(WPARAM hEvent, LPARAM lParam);
 int DBEventGet(WPARAM hEvent, LPARAM pEvent);
+int DBEventGetCount(WPARAM hContact, LPARAM lParam);
 int DBEventDelete(WPARAM hContact, LPARAM hEvent);
 int DBEventAdd(WPARAM hContact, LPARAM pEvent);
 int DBEventMarkRead(WPARAM hContact, LPARAM hEvent);

@@ -58,9 +58,9 @@ CVirtuals::~CVirtuals()
 
 }
 
-TDBContactHandle CVirtuals::_DeleteRealContact(TDBContactHandle hRealContact)
+TDBTContactHandle CVirtuals::_DeleteRealContact(TDBTContactHandle hRealContact)
 {
-	TDBContactHandle result;
+	TDBTContactHandle result;
 	TVirtualKey key;
 	TContact Contact;
 	bool copies = false;
@@ -83,22 +83,22 @@ TDBContactHandle CVirtuals::_DeleteRealContact(TDBContactHandle hRealContact)
 		Insert(key, TEmpty());		
 
 		Contact.VParent = result;
-		m_BlockManager.WritePart(key.Virtual, &Contact.VParent, offsetof(TContact, VParent), sizeof(TDBContactHandle));
+		m_BlockManager.WritePart(key.Virtual, &Contact.VParent, offsetof(TContact, VParent), sizeof(TDBTContactHandle));
 	
 		copies = true;
 	}
 
 	m_BlockManager.ReadPart(result, &Contact.Flags, offsetof(TContact, Flags), sizeof(uint32_t), sig);
-	Contact.Flags = Contact.Flags & ~(DB_CF_HasVirtuals | DB_CF_IsVirtual);
+	Contact.Flags = Contact.Flags & ~(DBT_CF_HasVirtuals | DBT_CF_IsVirtual);
 	if (copies)
-		Contact.Flags |= DB_CF_HasVirtuals;
+		Contact.Flags |= DBT_CF_HasVirtuals;
 
 	m_BlockManager.WritePart(result, &Contact.Flags, offsetof(TContact, Flags), sizeof(uint32_t));
 
 	return result;
 }
 
-bool CVirtuals::_InsertVirtual(TDBContactHandle hRealContact, TDBContactHandle hVirtual)
+bool CVirtuals::_InsertVirtual(TDBTContactHandle hRealContact, TDBTContactHandle hVirtual)
 {
 	TVirtualKey key;
 	key.RealContact = hRealContact;
@@ -108,7 +108,7 @@ bool CVirtuals::_InsertVirtual(TDBContactHandle hRealContact, TDBContactHandle h
 
 	return true;
 }
-void CVirtuals::_DeleteVirtual(TDBContactHandle hRealContact, TDBContactHandle hVirtual)
+void CVirtuals::_DeleteVirtual(TDBTContactHandle hRealContact, TDBTContactHandle hVirtual)
 {
 	TVirtualKey key;
 	key.RealContact = hRealContact;
@@ -116,7 +116,7 @@ void CVirtuals::_DeleteVirtual(TDBContactHandle hRealContact, TDBContactHandle h
 
 	Delete(key);
 }
-TDBContactHandle CVirtuals::getParent(TDBContactHandle hVirtual)
+TDBTContactHandle CVirtuals::getParent(TDBTContactHandle hVirtual)
 {
 	TContact Contact;
 	void* p = &Contact;
@@ -125,16 +125,16 @@ TDBContactHandle CVirtuals::getParent(TDBContactHandle hVirtual)
 
 	m_Sync.BeginRead();
 	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) || 
-	   ((Contact.Flags & DB_CF_IsVirtual) == 0))
+	   ((Contact.Flags & DBT_CF_IsVirtual) == 0))
 	{
 		m_Sync.EndRead();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
 	m_Sync.EndRead();	
 	return Contact.VParent;
 }
-TDBContactHandle CVirtuals::getFirst(TDBContactHandle hRealContact)
+TDBTContactHandle CVirtuals::getFirst(TDBTContactHandle hRealContact)
 {
 	TContact Contact;
 	void* p = &Contact;
@@ -145,10 +145,10 @@ TDBContactHandle CVirtuals::getFirst(TDBContactHandle hRealContact)
 	
 
 	if (!m_BlockManager.ReadBlock(hRealContact, p, size, sig) || 
-	   ((Contact.Flags & DB_CF_HasVirtuals) == 0))
+	   ((Contact.Flags & DBT_CF_HasVirtuals) == 0))
 	{
 		m_Sync.EndRead();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 	
 	TVirtualKey key;
@@ -166,7 +166,7 @@ TDBContactHandle CVirtuals::getFirst(TDBContactHandle hRealContact)
 
 	return key.Virtual;
 }
-TDBContactHandle CVirtuals::getNext(TDBContactHandle hVirtual)
+TDBTContactHandle CVirtuals::getNext(TDBTContactHandle hVirtual)
 {
 	TContact Contact;
 	void* p = &Contact;
@@ -176,10 +176,10 @@ TDBContactHandle CVirtuals::getNext(TDBContactHandle hVirtual)
 	m_Sync.BeginRead();
 	
 	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) || 
-	   ((Contact.Flags & DB_CF_IsVirtual) == 0))
+	   ((Contact.Flags & DBT_CF_IsVirtual) == 0))
 	{
 		m_Sync.EndRead();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 	
 	TVirtualKey key;
@@ -205,7 +205,7 @@ TDBContactHandle CVirtuals::getNext(TDBContactHandle hVirtual)
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-CContacts::CContacts(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TDBContactHandle RootContact, TNodeRef ContactRoot, CVirtuals::TNodeRef VirtualRoot)
+CContacts::CContacts(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TDBTContactHandle RootContact, TNodeRef ContactRoot, CVirtuals::TNodeRef VirtualRoot)
 : CFileBTree(BlockManager, ContactRoot, cContactNodeSignature),
 	m_Sync(Synchronize),
 	m_Virtuals(BlockManager, Synchronize, VirtualRoot),
@@ -236,12 +236,12 @@ CContacts::~CContacts()
 	m_Sync.EndWrite();
 }
 
-TDBContactHandle CContacts::CreateRootContact()
+TDBTContactHandle CContacts::CreateRootContact()
 {
 	TContact Contact = {0};
 	TContactKey key = {0};
 
-	Contact.Flags = DB_CF_IsGroup | DB_CF_IsRoot;
+	Contact.Flags = DBT_CF_IsGroup | DBT_CF_IsRoot;
 	key.Contact = m_BlockManager.CreateBlock(sizeof(Contact), cContactSignature);
 	m_BlockManager.WriteBlock(key.Contact, &Contact, sizeof(Contact), cContactSignature);
 	Insert(key, TEmpty());
@@ -276,18 +276,18 @@ CContacts::TOnInternalTransferEvents & CContacts::_sigTransferEvents()
 }
 
 
-uint32_t CContacts::_getSettingsRoot(TDBContactHandle hContact)
+uint32_t CContacts::_getSettingsRoot(TDBTContactHandle hContact)
 {
 	/*CSettingsTree::TNodeRef*/
 	uint32_t set;
 	uint32_t sig = cContactSignature;
 
 	if (!m_BlockManager.ReadPart(hContact, &set, offsetof(TContact, Settings), sizeof(set), sig))
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 
 	return set;
 }
-bool CContacts::_setSettingsRoot(TDBContactHandle hContact, /*CSettingsTree::TNodeRef*/ uint32_t NewRoot)
+bool CContacts::_setSettingsRoot(TDBTContactHandle hContact, /*CSettingsTree::TNodeRef*/ uint32_t NewRoot)
 {
 	uint32_t sig = cContactSignature;
 
@@ -297,18 +297,18 @@ bool CContacts::_setSettingsRoot(TDBContactHandle hContact, /*CSettingsTree::TNo
 	return true;
 }
 
-uint32_t CContacts::_getEventsRoot(TDBContactHandle hContact)
+uint32_t CContacts::_getEventsRoot(TDBTContactHandle hContact)
 {
 	/*CEventsTree::TNodeRef*/
 	uint32_t ev;
 	uint32_t sig = cContactSignature;
 
 	if (!m_BlockManager.ReadPart(hContact, &ev, offsetof(TContact, Events), sizeof(ev), sig))
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 
 	return ev;
 }
-bool CContacts::_setEventsRoot(TDBContactHandle hContact, /*CEventsTree::TNodeRef*/ uint32_t NewRoot)
+bool CContacts::_setEventsRoot(TDBTContactHandle hContact, /*CEventsTree::TNodeRef*/ uint32_t NewRoot)
 {
 	uint32_t sig = cContactSignature;
 
@@ -318,7 +318,18 @@ bool CContacts::_setEventsRoot(TDBContactHandle hContact, /*CEventsTree::TNodeRe
 	return true;
 }
 
-uint32_t CContacts::_adjustEventCount(TDBContactHandle hContact, int32_t Adjust)
+uint32_t CContacts::_getEventCount(TDBTContactHandle hContact)
+{
+	uint32_t res = 0;
+	uint32_t sig = cContactSignature;
+
+	if (!m_BlockManager.ReadPart(hContact, &res, offsetof(TContact, EventCount), sizeof(res), sig))
+		return DBT_INVALIDPARAM;
+	
+	return res;
+}
+
+uint32_t CContacts::_adjustEventCount(TDBTContactHandle hContact, int32_t Adjust)
 {
 	uint32_t sig = cContactSignature;
 	uint32_t c;
@@ -340,27 +351,27 @@ CVirtuals & CContacts::_getVirtuals()
 	return m_Virtuals;
 }
 
-TDBContactHandle CContacts::getRootContact()
+TDBTContactHandle CContacts::getRootContact()
 {
 	return m_RootContact;
 }
 
-TDBContactHandle CContacts::getParent(TDBContactHandle hContact)
+TDBTContactHandle CContacts::getParent(TDBTContactHandle hContact)
 {
-	TDBContactHandle par;
+	TDBTContactHandle par;
 	uint32_t sig = cContactSignature;
 
 	m_Sync.BeginRead();	
 	if (!m_BlockManager.ReadPart(hContact, &par, offsetof(TContact, ParentContact), sizeof(par), sig))
 	{
 		m_Sync.EndRead();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
 	m_Sync.EndRead();	
 	return par;
 }
-TDBContactHandle CContacts::setParent(TDBContactHandle hContact, TDBContactHandle hParent)
+TDBTContactHandle CContacts::setParent(TDBTContactHandle hContact, TDBTContactHandle hParent)
 {
 	TContact Contact;
 	void* pContact = &Contact;
@@ -377,7 +388,7 @@ TDBContactHandle CContacts::setParent(TDBContactHandle hContact, TDBContactHandl
 			!m_BlockManager.ReadPart(hParent, &l, offsetof(TContact, Level), sizeof(l), sig))
 	{
 		m_Sync.EndWrite();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
 	// update parents
@@ -388,7 +399,7 @@ TDBContactHandle CContacts::setParent(TDBContactHandle hContact, TDBContactHandl
 	if (co == 0)
 	{
 		m_BlockManager.ReadPart(Contact.ParentContact, &fo, offsetof(TContact, Flags), sizeof(fo), sig);
-		fo = fo & ~DB_CF_HasChildren;
+		fo = fo & ~DBT_CF_HasChildren;
 		m_BlockManager.WritePart(Contact.ParentContact, &fo, offsetof(TContact, Flags), sizeof(fo));
 	}
 	
@@ -396,7 +407,7 @@ TDBContactHandle CContacts::setParent(TDBContactHandle hContact, TDBContactHandl
 	if (cn == 1)
 	{
 		m_BlockManager.ReadPart(hParent, &fn, offsetof(TContact, Flags), sizeof(fn), sig);
-		fn = fn | DB_CF_HasChildren;
+		fn = fn | DBT_CF_HasChildren;
 		m_BlockManager.WritePart(hParent, &fn, offsetof(TContact, Flags), sizeof(fn));
 	}	
 	
@@ -416,15 +427,15 @@ TDBContactHandle CContacts::setParent(TDBContactHandle hContact, TDBContactHandl
 		m_BlockManager.WritePart(hContact, &key.Parent, offsetof(TContact, ParentContact), sizeof(key.Parent));
 		
 	} else {
-		TDBContactIterFilter filter = {0};
+		TDBTContactIterFilter filter = {0};
 		filter.cbSize = sizeof(filter);
-		filter.Options = DB_CIFO_OSC_AC | DB_CIFO_OC_AC;
+		filter.Options = DBT_CIFO_OSC_AC | DBT_CIFO_OC_AC;
 
-		TDBContactIterationHandle iter = IterationInit(filter, hContact);
+		TDBTContactIterationHandle iter = IterationInit(filter, hContact);
 
 		key.Contact = IterationNext(iter);
 
-		while ((key.Contact != 0) && (key.Contact != DB_INVALIDPARAM))
+		while ((key.Contact != 0) && (key.Contact != DBT_INVALIDPARAM))
 		{
 			if (m_BlockManager.ReadPart(key.Contact, &key.Parent, offsetof(TContact, ParentContact), sizeof(key.Parent), sig) &&
 					m_BlockManager.ReadPart(key.Contact, &key.Level, offsetof(TContact, Level), sizeof(key.Level), sig))
@@ -455,7 +466,7 @@ TDBContactHandle CContacts::setParent(TDBContactHandle hContact, TDBContactHandl
 	return Contact.ParentContact;
 }
 
-unsigned int CContacts::getChildCount(TDBContactHandle hContact)
+unsigned int CContacts::getChildCount(TDBTContactHandle hContact)
 {
 	uint32_t c;
 	uint32_t sig = cContactSignature;
@@ -464,27 +475,28 @@ unsigned int CContacts::getChildCount(TDBContactHandle hContact)
 	if (!m_BlockManager.ReadPart(hContact, &c, offsetof(TContact, ChildCount), sizeof(c), sig))
 	{
 		m_Sync.EndRead();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 	
+	m_Sync.EndRead();
 	return c;
 }
-TDBContactHandle CContacts::getFirstChild(TDBContactHandle hParent)
+TDBTContactHandle CContacts::getFirstChild(TDBTContactHandle hParent)
 {
 	uint16_t l;
 	uint32_t f;
 	uint32_t sig = cContactSignature;
-	TDBContactHandle result;
+	TDBTContactHandle result;
 
 	m_Sync.BeginRead();
 	if (!m_BlockManager.ReadPart(hParent, &f, offsetof(TContact, Flags), sizeof(f), sig) ||
 		  !m_BlockManager.ReadPart(hParent, &l, offsetof(TContact, Level), sizeof(l), sig))
 	{
 		m_Sync.EndRead();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
-	if ((f & DB_CF_HasChildren) == 0)
+	if ((f & DBT_CF_HasChildren) == 0)
 	{
 		m_Sync.EndRead();
 		return 0;
@@ -508,22 +520,22 @@ TDBContactHandle CContacts::getFirstChild(TDBContactHandle hParent)
 
 	return result;
 }
-TDBContactHandle CContacts::getLastChild(TDBContactHandle hParent)
+TDBTContactHandle CContacts::getLastChild(TDBTContactHandle hParent)
 {
 	uint16_t l;
 	uint32_t f;
 	uint32_t sig = cContactSignature;
-	TDBContactHandle result;
+	TDBTContactHandle result;
 
 	m_Sync.BeginRead();
 	if (!m_BlockManager.ReadPart(hParent, &f, offsetof(TContact, Flags), sizeof(f), sig) ||
 		  !m_BlockManager.ReadPart(hParent, &l, offsetof(TContact, Level), sizeof(l), sig))
 	{
 		m_Sync.EndRead();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
-	if ((f & DB_CF_HasChildren) == 0)
+	if ((f & DBT_CF_HasChildren) == 0)
 	{
 		m_Sync.EndRead();
 		return 0;
@@ -548,18 +560,18 @@ TDBContactHandle CContacts::getLastChild(TDBContactHandle hParent)
 
 	return result;
 }
-TDBContactHandle CContacts::getNextSilbing(TDBContactHandle hContact)
+TDBTContactHandle CContacts::getNextSilbing(TDBTContactHandle hContact)
 {
 	uint16_t l;
 	uint32_t sig = cContactSignature;
-	TDBContactHandle result, parent;
+	TDBTContactHandle result, parent;
 
 	m_Sync.BeginRead();
 	if (!m_BlockManager.ReadPart(hContact, &l, offsetof(TContact, Level), sizeof(l), sig) ||
 		  !m_BlockManager.ReadPart(hContact, &parent, offsetof(TContact, ParentContact), sizeof(parent), sig))
 	{
 		m_Sync.EndRead();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
 	TContactKey key;
@@ -580,18 +592,18 @@ TDBContactHandle CContacts::getNextSilbing(TDBContactHandle hContact)
 
 	return result;
 }
-TDBContactHandle CContacts::getPrevSilbing(TDBContactHandle hContact)
+TDBTContactHandle CContacts::getPrevSilbing(TDBTContactHandle hContact)
 {
 	uint16_t l;
 	uint32_t sig = cContactSignature;
-	TDBContactHandle result, parent;
+	TDBTContactHandle result, parent;
 
 	m_Sync.BeginRead();
 	if (!m_BlockManager.ReadPart(hContact, &l, offsetof(TContact, Level), sizeof(l), sig) ||
 		  !m_BlockManager.ReadPart(hContact, &parent, offsetof(TContact, ParentContact), sizeof(parent), sig))
 	{
 		m_Sync.EndRead();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
 	TContactKey key;
@@ -613,7 +625,7 @@ TDBContactHandle CContacts::getPrevSilbing(TDBContactHandle hContact)
 	return result;
 }
 
-unsigned int CContacts::getFlags(TDBContactHandle hContact)
+unsigned int CContacts::getFlags(TDBTContactHandle hContact)
 {
 	uint32_t f;
 	uint32_t sig = cContactSignature;
@@ -622,14 +634,14 @@ unsigned int CContacts::getFlags(TDBContactHandle hContact)
 	if (!m_BlockManager.ReadPart(hContact, &f, offsetof(TContact, Flags), sizeof(f), sig))
 	{
 		m_Sync.EndRead();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
 	m_Sync.EndRead();
 	return f;
 }
 
-TDBContactHandle CContacts::CreateContact(TDBContactHandle hParent, uint32_t Flags)
+TDBTContactHandle CContacts::CreateContact(TDBTContactHandle hParent, uint32_t Flags)
 {
 	TContact Contact = {0}, parent;
 	void* pparent = &parent;
@@ -640,10 +652,10 @@ TDBContactHandle CContacts::CreateContact(TDBContactHandle hParent, uint32_t Fla
 	if (!m_BlockManager.ReadBlock(hParent, pparent, size, sig))
 	{
 		m_Sync.EndWrite();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
-	TDBContactHandle hContact = m_BlockManager.CreateBlock(sizeof(TContact), cContactSignature);
+	TDBTContactHandle hContact = m_BlockManager.CreateBlock(sizeof(TContact), cContactSignature);
 	TContactKey key;
 	
 	Contact.Level = parent.Level + 1;
@@ -660,7 +672,7 @@ TDBContactHandle CContacts::CreateContact(TDBContactHandle hParent, uint32_t Fla
 	
 	if (parent.ChildCount == 0)
 	{
-		parent.Flags = parent.Flags | DB_CF_HasChildren;
+		parent.Flags = parent.Flags | DBT_CF_HasChildren;
 		m_BlockManager.WritePart(hParent, &parent.Flags, offsetof(TContact, Flags), sizeof(uint32_t));
 	}
 	++parent.ChildCount;
@@ -670,7 +682,7 @@ TDBContactHandle CContacts::CreateContact(TDBContactHandle hParent, uint32_t Fla
 	return hContact;
 }
 
-unsigned int CContacts::DeleteContact(TDBContactHandle hContact)
+unsigned int CContacts::DeleteContact(TDBTContactHandle hContact)
 {
 	TContact Contact;
 	void* pContact = &Contact;
@@ -687,15 +699,15 @@ unsigned int CContacts::DeleteContact(TDBContactHandle hContact)
 			!m_BlockManager.ReadPart(Contact.ParentContact, &parentf, offsetof(TContact, Flags), sizeof(parentf), sig))
 	{
 		m_Sync.EndWrite();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
 	m_sigContactDelete.emit(this, hContact);
 
-	if (Contact.Flags & DB_CF_HasVirtuals)
+	if (Contact.Flags & DBT_CF_HasVirtuals)
 	{
 		// move virtuals and make one of them real
-		TDBContactHandle newreal = m_Virtuals._DeleteRealContact(hContact);
+		TDBTContactHandle newreal = m_Virtuals._DeleteRealContact(hContact);
 
 		m_BlockManager.WritePartCheck(newreal, &Contact.EventCount, offsetof(TContact, EventCount), sizeof(uint32_t), sig);		
 		m_BlockManager.WritePart(newreal, &Contact.Events, offsetof(TContact, Events), sizeof(uint32_t));
@@ -713,22 +725,22 @@ unsigned int CContacts::DeleteContact(TDBContactHandle hContact)
 	key.Contact = hContact;
 	Delete(key);
 	
-	if (Contact.Flags & DB_CF_HasChildren) // keep the children
+	if (Contact.Flags & DBT_CF_HasChildren) // keep the children
 	{
-		parentf = parentf | DB_CF_HasChildren;
+		parentf = parentf | DBT_CF_HasChildren;
 		parentcc += Contact.ChildCount;
 
-		TDBContactIterFilter filter = {0};
+		TDBTContactIterFilter filter = {0};
 		filter.cbSize = sizeof(filter);
-		filter.Options = DB_CIFO_OSC_AC | DB_CIFO_OC_AC;
+		filter.Options = DBT_CIFO_OSC_AC | DBT_CIFO_OC_AC;
 
-		TDBContactIterationHandle iter = IterationInit(filter, hContact);
-		if (iter != DB_INVALIDPARAM)
+		TDBTContactIterationHandle iter = IterationInit(filter, hContact);
+		if (iter != DBT_INVALIDPARAM)
 		{
 			IterationNext(iter);
 			key.Contact = IterationNext(iter);
 			
-			while ((key.Contact != 0) && (key.Contact != DB_INVALIDPARAM))
+			while ((key.Contact != 0) && (key.Contact != DBT_INVALIDPARAM))
 			{
 				if (m_BlockManager.ReadPart(key.Contact, &key.Parent, offsetof(TContact, ParentContact), sizeof(key.Parent), sig) &&
 					m_BlockManager.ReadPart(key.Contact, &key.Level, offsetof(TContact, Level), sizeof(key.Level), sig))
@@ -757,7 +769,7 @@ unsigned int CContacts::DeleteContact(TDBContactHandle hContact)
 	--parentcc;
 
 	if (parentcc == 0)
-		Contact.Flags = Contact.Flags & (~DB_CF_HasChildren);
+		Contact.Flags = Contact.Flags & (~DBT_CF_HasChildren);
 
 	m_BlockManager.WritePartCheck(Contact.ParentContact, &parentcc, offsetof(TContact, ChildCount), sizeof(parentcc), sig);
 	m_BlockManager.WritePart(Contact.ParentContact, &parentf, offsetof(TContact, Flags), sizeof(parentf));
@@ -768,7 +780,7 @@ unsigned int CContacts::DeleteContact(TDBContactHandle hContact)
 
 
 
-TDBContactIterationHandle CContacts::IterationInit(const TDBContactIterFilter & Filter, TDBContactHandle hParent)
+TDBTContactIterationHandle CContacts::IterationInit(const TDBTContactIterFilter & Filter, TDBTContactHandle hParent)
 {
 	uint16_t l;
 	uint32_t f;
@@ -780,7 +792,7 @@ TDBContactIterationHandle CContacts::IterationInit(const TDBContactIterFilter & 
 	    !m_BlockManager.ReadPart(hParent, &f, offsetof(TContact, Flags), sizeof(f), sig))
 	{
 		m_Sync.EndWrite();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
 	unsigned int i = 0;
@@ -796,7 +808,7 @@ TDBContactIterationHandle CContacts::IterationInit(const TDBContactIterFilter & 
 	iter->filter = Filter;
 	iter->q = new std::deque<TContactIterationItem>;
 	iter->parents = new std::deque<TContactIterationItem>;
-	iter->returned = new stdext::hash_set<TDBContactHandle>;
+	iter->returned = new stdext::hash_set<TDBTContactHandle>;
 	iter->returned->insert(hParent);
 	
 	TContactIterationItem it;
@@ -813,7 +825,7 @@ TDBContactIterationHandle CContacts::IterationInit(const TDBContactIterFilter & 
 	m_Sync.EndWrite();
 	return i + 1;
 }
-TDBContactHandle CContacts::IterationNext(TDBContactIterationHandle Iteration)
+TDBTContactHandle CContacts::IterationNext(TDBTContactIterationHandle Iteration)
 {
 	uint32_t sig = cContactSignature;
 
@@ -825,12 +837,12 @@ TDBContactHandle CContacts::IterationNext(TDBContactIterationHandle Iteration)
 	if ((Iteration > m_Iterations.size()) || (m_Iterations[Iteration - 1] == NULL))
 	{
 		m_Sync.EndRead();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
 	PContactIteration iter = m_Iterations[Iteration - 1];
 	TContactIterationItem item;
-	TDBContactHandle result = 0;
+	TDBTContactHandle result = 0;
 
 	if (iter->q->empty())
 	{
@@ -840,7 +852,7 @@ TDBContactHandle CContacts::IterationNext(TDBContactIterationHandle Iteration)
 	}
 
 	if (iter->q->empty() && 
-		  (iter->filter.Options & DB_CIFO_GF_USEROOT) &&
+		  (iter->filter.Options & DBT_CIFO_GF_USEROOT) &&
 			(iter->returned->find(m_RootContact) == iter->returned->end()))
 	{
 		item.Handle = m_RootContact;
@@ -849,7 +861,7 @@ TDBContactHandle CContacts::IterationNext(TDBContactIterationHandle Iteration)
 		item.Flags = 0;
 		item.LookupDepth = 255;
 
-		iter->filter.Options = iter->filter.Options & ~DB_CIFO_GF_USEROOT;
+		iter->filter.Options = iter->filter.Options & ~DBT_CIFO_GF_USEROOT;
 
 		iter->q->push_back(item);
 	}
@@ -868,8 +880,8 @@ TDBContactHandle CContacts::IterationNext(TDBContactIterationHandle Iteration)
 		TContactIterationItem newitem;
 
 		// children
-		if ((item.Flags & DB_CF_HasChildren) &&
-		  	(item.Options & DB_CIFO_OSC_AC))
+		if ((item.Flags & DBT_CF_HasChildren) &&
+		  	(item.Options & DBT_CIFO_OSC_AC))
 		{
 			TContactKey key;
 			key.Parent = item.Handle;
@@ -877,9 +889,9 @@ TDBContactHandle CContacts::IterationNext(TDBContactIterationHandle Iteration)
 
 			newitem.Level = item.Level + 1;
 			newitem.LookupDepth = item.LookupDepth;
-			newitem.Options = (iter->filter.Options / DB_CIFO_OC_AC * DB_CIFO_OSC_AC) & (DB_CIFO_OSC_AC | DB_CIFO_OSC_AO | DB_CIFO_OSC_AOC | DB_CIFO_OSC_AOP);
+			newitem.Options = (iter->filter.Options / DBT_CIFO_OC_AC * DBT_CIFO_OSC_AC) & (DBT_CIFO_OSC_AC | DBT_CIFO_OSC_AO | DBT_CIFO_OSC_AOC | DBT_CIFO_OSC_AOP);
 
-			if (iter->filter.Options & DB_CIFO_GF_DEPTHFIRST)
+			if (iter->filter.Options & DBT_CIFO_GF_DEPTHFIRST)
 			{
 				key.Contact = 0xffffffff;
 
@@ -890,7 +902,7 @@ TDBContactHandle CContacts::IterationNext(TDBContactIterationHandle Iteration)
 					
 					if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
 						  m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TContact, Flags), sizeof(newitem.Flags), sig) &&
-						  (((newitem.Flags & DB_CF_IsGroup) == 0) || ((DB_CF_IsGroup & iter->filter.fHasFlags) == 0))) // if we want only groups, we don't need to trace down contacts...
+						  (((newitem.Flags & DBT_CF_IsGroup) == 0) || ((DBT_CF_IsGroup & iter->filter.fHasFlags) == 0))) // if we want only groups, we don't need to trace down contacts...
 					{
 						iter->q->push_front(newitem);
 						iter->returned->insert(newitem.Handle);
@@ -908,7 +920,7 @@ TDBContactHandle CContacts::IterationNext(TDBContactIterationHandle Iteration)
 					
 					if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
 						  m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TContact, Flags), sizeof(newitem.Flags), sig) &&
-						  (((newitem.Flags & DB_CF_IsGroup) == 0) || ((DB_CF_IsGroup & iter->filter.fHasFlags) == 0))) // if we want only groups, we don't need to trace down contacts...
+						  (((newitem.Flags & DBT_CF_IsGroup) == 0) || ((DBT_CF_IsGroup & iter->filter.fHasFlags) == 0))) // if we want only groups, we don't need to trace down contacts...
 					{
 						iter->q->push_back(newitem);
 						iter->returned->insert(newitem.Handle);
@@ -921,18 +933,18 @@ TDBContactHandle CContacts::IterationNext(TDBContactIterationHandle Iteration)
 		}
 
 		// parent...
-		if ((item.Options & DB_CIFO_OSC_AP) && (item.Handle != m_RootContact))
+		if ((item.Options & DBT_CIFO_OSC_AP) && (item.Handle != m_RootContact))
 		{
 			newitem.Handle = getParent(item.Handle);
 			if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
-				  (newitem.Handle != DB_INVALIDPARAM) &&
+				  (newitem.Handle != DBT_INVALIDPARAM) &&
 				  m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TContact, Flags), sizeof(newitem.Flags), sig))
 			{
 				newitem.Level = item.Level - 1;
 				newitem.LookupDepth = item.LookupDepth;
-				newitem.Options = (iter->filter.Options / DB_CIFO_OP_AC * DB_CIFO_OSC_AC) & (DB_CIFO_OSC_AC | DB_CIFO_OSC_AP | DB_CIFO_OSC_AO | DB_CIFO_OSC_AOC | DB_CIFO_OSC_AOP);
+				newitem.Options = (iter->filter.Options / DBT_CIFO_OP_AC * DBT_CIFO_OSC_AC) & (DBT_CIFO_OSC_AC | DBT_CIFO_OSC_AP | DBT_CIFO_OSC_AO | DBT_CIFO_OSC_AOC | DBT_CIFO_OSC_AOP);
 
-				if ((newitem.Flags & iter->filter.fDontHasFlags & DB_CF_IsGroup) == 0) // if we don't want groups, stop it
+				if ((newitem.Flags & iter->filter.fDontHasFlags & DBT_CF_IsGroup) == 0) // if we don't want groups, stop it
 				{
 					iter->parents->push_back(newitem);
 					iter->returned->insert(newitem.Handle);
@@ -941,22 +953,22 @@ TDBContactHandle CContacts::IterationNext(TDBContactIterationHandle Iteration)
 		}
 
 		// virtual lookup, original contact is the next one
-		if ((item.Flags & DB_CF_IsVirtual) && 
-			  (item.Options & DB_CIFO_OSC_AO) && 
+		if ((item.Flags & DBT_CF_IsVirtual) && 
+			  (item.Options & DBT_CIFO_OSC_AO) && 
 				(((iter->filter.Options >> 28) >= item.LookupDepth) || ((iter->filter.Options >> 28) == 0)))
 		{
 			newitem.Handle = VirtualGetParent(item.Handle);
 
 			if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
-				  (newitem.Handle != DB_INVALIDPARAM) &&
+				  (newitem.Handle != DBT_INVALIDPARAM) &&
 				   m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TContact, Flags), sizeof(newitem.Flags), sig) &&
            m_BlockManager.ReadPart(newitem.Handle, &newitem.Level, offsetof(TContact, Level), sizeof(newitem.Level), sig))
 			{
 				newitem.Options  = 0;
-				if ((item.Options & DB_CIFO_OSC_AOC) == DB_CIFO_OSC_AOC)
-					newitem.Options |= DB_CIFO_OSC_AC;
-				if ((item.Options & DB_CIFO_OSC_AOP) == DB_CIFO_OSC_AOP)
-					newitem.Options |= DB_CIFO_OSC_AP;
+				if ((item.Options & DBT_CIFO_OSC_AOC) == DBT_CIFO_OSC_AOC)
+					newitem.Options |= DBT_CIFO_OSC_AC;
+				if ((item.Options & DBT_CIFO_OSC_AOP) == DBT_CIFO_OSC_AOP)
+					newitem.Options |= DBT_CIFO_OSC_AP;
 
 				newitem.LookupDepth = item.LookupDepth + 1;
 
@@ -983,14 +995,14 @@ TDBContactHandle CContacts::IterationNext(TDBContactIterationHandle Iteration)
 
 	return result;
 }
-unsigned int CContacts::IterationClose(TDBContactIterationHandle Iteration)
+unsigned int CContacts::IterationClose(TDBTContactIterationHandle Iteration)
 {
 	m_Sync.BeginWrite();
 
 	if ((Iteration > m_Iterations.size()) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
 	{
 		m_Sync.EndWrite();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
 	delete m_Iterations[Iteration - 1]->q;
@@ -1005,7 +1017,7 @@ unsigned int CContacts::IterationClose(TDBContactIterationHandle Iteration)
 
 
 
-TDBContactHandle CContacts::VirtualCreate(TDBContactHandle hRealContact, TDBContactHandle hParent)
+TDBTContactHandle CContacts::VirtualCreate(TDBTContactHandle hRealContact, TDBTContactHandle hParent)
 {
 	uint32_t f;
 	uint32_t sig = cContactSignature;
@@ -1013,20 +1025,20 @@ TDBContactHandle CContacts::VirtualCreate(TDBContactHandle hRealContact, TDBCont
 	m_Sync.BeginWrite();
 	
 	if (!m_BlockManager.ReadPart(hRealContact, &f, offsetof(TContact, Flags), sizeof(f), sig) || 
-		 (f & DB_CF_IsGroup))
+		 (f & DBT_CF_IsGroup))
 	{
 		m_Sync.EndWrite();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
-	TDBContactHandle result = CreateContact(hParent, DB_CF_IsVirtual);
-	if (result == DB_INVALIDPARAM)
+	TDBTContactHandle result = CreateContact(hParent, DBT_CF_IsVirtual);
+	if (result == DBT_INVALIDPARAM)
 	{
 		m_Sync.EndWrite();
-		return DB_INVALIDPARAM;
+		return DBT_INVALIDPARAM;
 	}
 
-	if (f & DB_CF_IsVirtual)
+	if (f & DBT_CF_IsVirtual)
 	{		
 		m_BlockManager.ReadPart(hRealContact, &hRealContact, offsetof(TContact, VParent), sizeof(hRealContact), sig);		
 		m_BlockManager.ReadPart(hRealContact, &f, offsetof(TContact, Flags), sizeof(f), sig);
@@ -1034,9 +1046,9 @@ TDBContactHandle CContacts::VirtualCreate(TDBContactHandle hRealContact, TDBCont
 
 	m_BlockManager.WritePart(result, &hRealContact, offsetof(TContact, VParent), sizeof(hRealContact));
 
-	if ((f & DB_CF_HasVirtuals) == 0)
+	if ((f & DBT_CF_HasVirtuals) == 0)
 	{
-		f |= DB_CF_HasVirtuals;
+		f |= DBT_CF_HasVirtuals;
 		m_BlockManager.WritePart(hRealContact, &f, offsetof(TContact, Flags), sizeof(f));
 	}
 
@@ -1046,15 +1058,74 @@ TDBContactHandle CContacts::VirtualCreate(TDBContactHandle hRealContact, TDBCont
 	return result;
 }
 
-TDBContactHandle CContacts::VirtualGetParent(TDBContactHandle hVirtual)
+TDBTContactHandle CContacts::VirtualGetParent(TDBTContactHandle hVirtual)
 {
 	return m_Virtuals.getParent(hVirtual);
 }
-TDBContactHandle CContacts::VirtualGetFirst(TDBContactHandle hRealContact)
+TDBTContactHandle CContacts::VirtualGetFirst(TDBTContactHandle hRealContact)
 {
 	return m_Virtuals.getFirst(hRealContact);
 }
-TDBContactHandle CContacts::VirtualGetNext(TDBContactHandle hVirtual)
+TDBTContactHandle CContacts::VirtualGetNext(TDBTContactHandle hVirtual)
 {	
 	return m_Virtuals.getNext(hVirtual);
+}
+
+
+TDBTContactHandle CContacts::compFirstContact()
+{
+	uint32_t sig = cContactSignature;
+
+	m_Sync.BeginRead();
+	TContactKey key = {0};
+	iterator i = LowerBound(key);
+	TDBTContactHandle res = 0;
+
+	while (i && (res == 0))
+	{
+		uint32_t f = 0;
+		if (m_BlockManager.ReadPart(i.Key().Contact, &f, offsetof(TContact, Flags), sizeof(f), sig))
+		{
+			if ((f & (DBT_CF_IsGroup | DBT_CF_IsVirtual)) == 0)
+				res = i.Key().Contact;
+		}
+		if (res == 0)
+			++i;
+	}
+	m_Sync.EndRead();
+
+	return res;
+}
+TDBTContactHandle CContacts::compNextContact(TDBTContactHandle hContact)
+{
+	uint32_t sig = cContactSignature;
+
+	m_Sync.BeginRead();
+
+	TContactKey key;
+	key.Contact = hContact;
+	TDBTContactHandle res = 0;
+
+	if (m_BlockManager.ReadPart(hContact, &key.Level, offsetof(TContact, Level), sizeof(key.Level), sig) &&
+			m_BlockManager.ReadPart(hContact, &key.Parent, offsetof(TContact, ParentContact), sizeof(key.Parent), sig))
+	{
+		key.Contact++;
+		iterator i = LowerBound(key);
+		
+		while (i && (res == 0))
+		{
+			uint32_t f = 0;
+			if (m_BlockManager.ReadPart(i.Key().Contact, &f, offsetof(TContact, Flags), sizeof(f), sig))
+			{
+				if ((f & (DBT_CF_IsGroup | DBT_CF_IsVirtual)) == 0)
+					res = i.Key().Contact;
+			}
+			if (res == 0)
+				++i;
+		}
+	}
+
+	m_Sync.EndRead();
+
+	return res;
 }
