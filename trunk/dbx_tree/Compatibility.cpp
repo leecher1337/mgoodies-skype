@@ -208,7 +208,128 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 }
 int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 {
-	return CompGetContactSetting(hContact, pSetting);
+	DBCONTACTGETSETTING * dbcgs = (DBCONTACTGETSETTING *) pSetting;
+
+	AddModule(dbcgs->szModule);
+
+	if ((dbcgs->pValue->type & DBVTF_VARIABLELENGTH) == 0)
+		dbcgs->pValue->type = 0;
+
+	char namebuf[512];
+	namebuf[0] = 0;
+	if (dbcgs->szModule)
+		strcpy_s(namebuf, dbcgs->szModule);
+	strcat_s(namebuf, "/");
+	strcat_s(namebuf, dbcgs->szSetting);
+	
+	TDBTSettingDescriptor desc = {0};
+	TDBTSetting set = {0};
+	desc.cbSize = sizeof(desc);
+	desc.Contact = hContact;
+	desc.pszSettingName = namebuf;
+
+	set.cbSize = sizeof(set);
+	set.Descriptor = &desc;
+
+	
+	switch (dbcgs->pValue->type)
+	{
+		case DBVT_ASCIIZ: set.Type = DBT_ST_ASCIIZ; break;
+		case DBVT_BLOB:   set.Type = DBT_ST_BLOB; break;
+		case DBVT_UTF8:   set.Type = DBT_ST_UTF8; break;
+		case DBVT_WCHAR:  set.Type = DBT_ST_WCHAR; break;
+	}
+	
+	if (DBSettingRead((WPARAM)&set, 0) == DBT_INVALIDPARAM)
+		return DBT_INVALIDPARAM;
+
+	
+	switch (set.Type)
+	{
+		case DBT_ST_ASCIIZ: 
+		{			
+			if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
+				mir_free(dbcgs->pValue->pszVal);
+
+			dbcgs->pValue->type = DBVT_ASCIIZ;
+			dbcgs->pValue->pszVal = set.Value.pAnsii;
+			dbcgs->pValue->cchVal = set.Value.Length - 1;
+		} break;
+		case DBT_ST_UTF8:
+		{			
+			if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
+				mir_free(dbcgs->pValue->pszVal);
+
+			dbcgs->pValue->type = DBVT_UTF8;
+			dbcgs->pValue->pszVal = set.Value.pUTF8;
+			dbcgs->pValue->cchVal = set.Value.Length - 1;
+		} break;
+		case DBT_ST_WCHAR:
+		{			
+			if ((dbcgs->pValue->pwszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
+				mir_free(dbcgs->pValue->pwszVal);
+
+			dbcgs->pValue->type = DBVT_WCHAR;
+			dbcgs->pValue->pwszVal = set.Value.pWide;
+			dbcgs->pValue->cchVal = set.Value.Length - 1;
+		} break;
+		case DBT_ST_BLOB:
+		{
+			if ((dbcgs->pValue->pbVal) && (dbcgs->pValue->type == DBVT_BLOB))
+			{
+				mir_free(dbcgs->pValue->pbVal);
+			} else if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
+			{
+				mir_free(dbcgs->pValue->pszVal);
+			}
+
+			dbcgs->pValue->type = DBVT_BLOB;
+			dbcgs->pValue->pbVal = set.Value.pBlob;
+			dbcgs->pValue->cpbVal = set.Value.Length;
+		} break;
+		case DBT_ST_BOOL:
+		{
+			dbcgs->pValue->type = DBVT_BYTE;
+			dbcgs->pValue->bVal = (uint8_t)set.Value.Bool;
+		} break;
+		case DBT_ST_BYTE: case DBT_ST_CHAR:
+		{
+			dbcgs->pValue->type = DBVT_BYTE;
+			dbcgs->pValue->bVal = set.Value.Byte;
+		} break;
+		case DBT_ST_SHORT: case DBT_ST_WORD:
+		{
+			dbcgs->pValue->type = DBVT_WORD;
+			dbcgs->pValue->wVal = set.Value.Word;
+		} break;
+		case DBT_ST_INT: case DBT_ST_DWORD:
+		{
+			dbcgs->pValue->type = DBVT_DWORD;
+			dbcgs->pValue->dVal = set.Value.DWord;
+		} break;
+		case DBT_ST_INT64: case DBT_ST_QWORD:
+		case DBT_ST_DOUBLE: case DBT_ST_FLOAT:
+		{
+			if ((dbcgs->pValue->pbVal) && (dbcgs->pValue->type == DBVT_BLOB))
+			{
+				mir_free(dbcgs->pValue->pbVal);
+			} else if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
+			{
+				mir_free(dbcgs->pValue->pszVal);
+			}
+
+			dbcgs->pValue->type = DBVT_BLOB;
+			dbcgs->pValue->cpbVal = sizeof(set.Value);
+			dbcgs->pValue->pbVal = (BYTE*)mir_alloc(sizeof(set.Value));
+			memcpy(dbcgs->pValue->pbVal, &set.Value, sizeof(set.Value));
+		} break;
+		default:
+		{
+			return -1;
+		}
+	}
+
+	return 0;
 }
 int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 {
