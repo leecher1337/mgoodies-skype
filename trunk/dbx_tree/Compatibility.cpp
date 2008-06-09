@@ -800,7 +800,7 @@ bool CompatibilityRegister()
 	gCompServices[24] = CreateServiceFunction(MS_DB_EVENT_FINDNEXT,           CompFindNextEvent);
 	gCompServices[25] = CreateServiceFunction(MS_DB_EVENT_FINDPREV,           CompFindPrevEvent);
 
-	gCompServices[16] = CreateServiceFunction(MS_DB_MODULES_ENUM,             CompEnumModules);
+	gCompServices[26] = CreateServiceFunction(MS_DB_MODULES_ENUM,             CompEnumModules);
 
 	gCompServices[27] = CreateServiceFunction(MS_DB_CRYPT_ENCODESTRING,       CompEncodeString);
 	gCompServices[28] = CreateServiceFunction(MS_DB_CRYPT_DECODESTRING,       CompDecodeString);

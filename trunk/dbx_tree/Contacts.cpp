@@ -123,15 +123,15 @@ TDBTContactHandle CVirtuals::getParent(TDBTContactHandle hVirtual)
 	uint32_t size = sizeof(Contact);
 	uint32_t sig = cContactSignature;
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) || 
 	   ((Contact.Flags & DBT_CF_IsVirtual) == 0))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	m_Sync.EndRead();	
+	SYNC_ENDREAD(m_Sync);	
 	return Contact.VParent;
 }
 TDBTContactHandle CVirtuals::getFirst(TDBTContactHandle hRealContact)
@@ -141,13 +141,13 @@ TDBTContactHandle CVirtuals::getFirst(TDBTContactHandle hRealContact)
 	uint32_t size = sizeof(Contact);
 	uint32_t sig = cContactSignature;
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 	
 
 	if (!m_BlockManager.ReadBlock(hRealContact, p, size, sig) || 
 	   ((Contact.Flags & DBT_CF_HasVirtuals) == 0))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 	
@@ -162,7 +162,7 @@ TDBTContactHandle CVirtuals::getFirst(TDBTContactHandle hRealContact)
 	else
 		key.Virtual = 0;
 
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return key.Virtual;
 }
@@ -173,12 +173,12 @@ TDBTContactHandle CVirtuals::getNext(TDBTContactHandle hVirtual)
 	uint32_t size = sizeof(Contact);
 	uint32_t sig = cContactSignature;
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 	
 	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) || 
 	   ((Contact.Flags & DBT_CF_IsVirtual) == 0))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 	
@@ -193,7 +193,7 @@ TDBTContactHandle CVirtuals::getNext(TDBTContactHandle hVirtual)
 	else
 		key.Virtual = 0;
 
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return key.Virtual;
 }
@@ -209,7 +209,6 @@ CContacts::CContacts(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynch
 : CFileBTree(BlockManager, ContactRoot, cContactNodeSignature),
 	m_Sync(Synchronize),
 	m_Virtuals(BlockManager, Synchronize, VirtualRoot),
-	m_Iterations(),
 
 	m_sigContactDelete(),
 	m_sigInternalDeleteEvents(),
@@ -226,14 +225,7 @@ CContacts::CContacts(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynch
 
 CContacts::~CContacts()
 {
-	m_Sync.BeginWrite();
-	for (unsigned int i = 0; i < m_Iterations.size(); ++i)
-	{
-		if (m_Iterations[i])
-			IterationClose(i + 1);
-	}
 
-	m_Sync.EndWrite();
 }
 
 TDBTContactHandle CContacts::CreateRootContact()
@@ -361,14 +353,14 @@ TDBTContactHandle CContacts::getParent(TDBTContactHandle hContact)
 	TDBTContactHandle par;
 	uint32_t sig = cContactSignature;
 
-	m_Sync.BeginRead();	
+	SYNC_BEGINREAD(m_Sync);	
 	if (!m_BlockManager.ReadPart(hContact, &par, offsetof(TContact, ParentContact), sizeof(par), sig))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	m_Sync.EndRead();	
+	SYNC_ENDREAD(m_Sync);	
 	return par;
 }
 TDBTContactHandle CContacts::setParent(TDBTContactHandle hContact, TDBTContactHandle hParent)
@@ -381,13 +373,13 @@ TDBTContactHandle CContacts::setParent(TDBTContactHandle hContact, TDBTContactHa
 	uint32_t fn, fo;
 	uint16_t l;
 	
-	m_Sync.BeginWrite();
+	SYNC_BEGINWRITE(m_Sync);
 	if (!m_BlockManager.ReadBlock(hContact, pContact, size, sig) ||
 		  !m_BlockManager.ReadPart(hParent, &cn, offsetof(TContact,ChildCount), sizeof(cn), sig) ||
 			!m_BlockManager.ReadPart(Contact.ParentContact, &co, offsetof(TContact, ChildCount), sizeof(co), sig) ||
 			!m_BlockManager.ReadPart(hParent, &l, offsetof(TContact, Level), sizeof(l), sig))
 	{
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -459,7 +451,7 @@ TDBTContactHandle CContacts::setParent(TDBTContactHandle hContact, TDBTContactHa
 		IterationClose(iter);
 	}
 
-	m_Sync.EndWrite();
+	SYNC_ENDWRITE(m_Sync);
 
 	/// TODO raise event
 
@@ -471,14 +463,14 @@ unsigned int CContacts::getChildCount(TDBTContactHandle hContact)
 	uint32_t c;
 	uint32_t sig = cContactSignature;
 	
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 	if (!m_BlockManager.ReadPart(hContact, &c, offsetof(TContact, ChildCount), sizeof(c), sig))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 	
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 	return c;
 }
 TDBTContactHandle CContacts::getFirstChild(TDBTContactHandle hParent)
@@ -488,17 +480,17 @@ TDBTContactHandle CContacts::getFirstChild(TDBTContactHandle hParent)
 	uint32_t sig = cContactSignature;
 	TDBTContactHandle result;
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 	if (!m_BlockManager.ReadPart(hParent, &f, offsetof(TContact, Flags), sizeof(f), sig) ||
 		  !m_BlockManager.ReadPart(hParent, &l, offsetof(TContact, Level), sizeof(l), sig))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
 	if ((f & DBT_CF_HasChildren) == 0)
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
 
@@ -512,11 +504,11 @@ TDBTContactHandle CContacts::getFirstChild(TDBTContactHandle hParent)
 	
 	if ((!it) || (it.Key().Parent != hParent))
 	{
-		m_Sync.EndRead();	
+		SYNC_ENDREAD(m_Sync);	
 		return 0;
 	}
 	result = it.Key().Contact;
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return result;
 }
@@ -527,17 +519,17 @@ TDBTContactHandle CContacts::getLastChild(TDBTContactHandle hParent)
 	uint32_t sig = cContactSignature;
 	TDBTContactHandle result;
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 	if (!m_BlockManager.ReadPart(hParent, &f, offsetof(TContact, Flags), sizeof(f), sig) ||
 		  !m_BlockManager.ReadPart(hParent, &l, offsetof(TContact, Level), sizeof(l), sig))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
 	if ((f & DBT_CF_HasChildren) == 0)
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
 
@@ -551,12 +543,12 @@ TDBTContactHandle CContacts::getLastChild(TDBTContactHandle hParent)
 	
 	if ((!it) || (it.Key().Parent != hParent))
 	{
-		m_Sync.EndRead();	
+		SYNC_ENDREAD(m_Sync);	
 		return 0;
 	}
 
 	result = it.Key().Contact;
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return result;
 }
@@ -566,11 +558,11 @@ TDBTContactHandle CContacts::getNextSilbing(TDBTContactHandle hContact)
 	uint32_t sig = cContactSignature;
 	TDBTContactHandle result, parent;
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 	if (!m_BlockManager.ReadPart(hContact, &l, offsetof(TContact, Level), sizeof(l), sig) ||
 		  !m_BlockManager.ReadPart(hContact, &parent, offsetof(TContact, ParentContact), sizeof(parent), sig))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -584,11 +576,11 @@ TDBTContactHandle CContacts::getNextSilbing(TDBTContactHandle hContact)
 	
 	if ((!it) || (it.Key().Parent != parent))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
 	result = it.Key().Contact;
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return result;
 }
@@ -598,11 +590,11 @@ TDBTContactHandle CContacts::getPrevSilbing(TDBTContactHandle hContact)
 	uint32_t sig = cContactSignature;
 	TDBTContactHandle result, parent;
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 	if (!m_BlockManager.ReadPart(hContact, &l, offsetof(TContact, Level), sizeof(l), sig) ||
 		  !m_BlockManager.ReadPart(hContact, &parent, offsetof(TContact, ParentContact), sizeof(parent), sig))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -616,11 +608,11 @@ TDBTContactHandle CContacts::getPrevSilbing(TDBTContactHandle hContact)
 	
 	if ((!it) || (it.Key().Parent != parent))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
 	result = it.Key().Contact;
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return result;
 }
@@ -630,14 +622,14 @@ unsigned int CContacts::getFlags(TDBTContactHandle hContact)
 	uint32_t f;
 	uint32_t sig = cContactSignature;
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 	if (!m_BlockManager.ReadPart(hContact, &f, offsetof(TContact, Flags), sizeof(f), sig))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 	return f;
 }
 
@@ -648,10 +640,10 @@ TDBTContactHandle CContacts::CreateContact(TDBTContactHandle hParent, uint32_t F
 	uint32_t size = sizeof(Contact);
 	uint32_t sig = cContactSignature;
 
-	m_Sync.BeginWrite();
+	SYNC_BEGINWRITE(m_Sync);
 	if (!m_BlockManager.ReadBlock(hParent, pparent, size, sig))
 	{
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -678,7 +670,7 @@ TDBTContactHandle CContacts::CreateContact(TDBTContactHandle hParent, uint32_t F
 	++parent.ChildCount;
 	m_BlockManager.WritePart(hParent, &parent.ChildCount, offsetof(TContact, ChildCount), sizeof(uint16_t));
 	
-	m_Sync.EndWrite();
+	SYNC_ENDWRITE(m_Sync);
 	return hContact;
 }
 
@@ -693,12 +685,12 @@ unsigned int CContacts::DeleteContact(TDBTContactHandle hContact)
 
 	TContactKey key;
 
-	m_Sync.BeginWrite();
+	SYNC_BEGINWRITE(m_Sync);
 	if (!m_BlockManager.ReadBlock(hContact, pContact, size, sig) ||
 		  !m_BlockManager.ReadPart(Contact.ParentContact, &parentcc, offsetof(TContact, ChildCount), sizeof(parentcc), sig) ||
 			!m_BlockManager.ReadPart(Contact.ParentContact, &parentf, offsetof(TContact, Flags), sizeof(parentf), sig))
 	{
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -774,7 +766,7 @@ unsigned int CContacts::DeleteContact(TDBTContactHandle hContact)
 	m_BlockManager.WritePartCheck(Contact.ParentContact, &parentcc, offsetof(TContact, ChildCount), sizeof(parentcc), sig);
 	m_BlockManager.WritePart(Contact.ParentContact, &parentf, offsetof(TContact, Flags), sizeof(parentf));
 
-	m_Sync.EndWrite();
+	SYNC_ENDWRITE(m_Sync);
 	return 0;
 }
 
@@ -786,23 +778,14 @@ TDBTContactIterationHandle CContacts::IterationInit(const TDBTContactIterFilter 
 	uint32_t f;
 	uint32_t sig = cContactSignature;
 
-	m_Sync.BeginWrite();
+	SYNC_BEGINREAD(m_Sync);
 	
 	if (!m_BlockManager.ReadPart(hParent, &l, offsetof(TContact, Level), sizeof(l), sig) ||
 	    !m_BlockManager.ReadPart(hParent, &f, offsetof(TContact, Flags), sizeof(f), sig))
 	{
-		m_Sync.EndWrite();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
-
-	unsigned int i = 0;
-
-	while ((i < m_Iterations.size()) && (m_Iterations[i] != NULL))
-		++i;
-
-	if (i == m_Iterations.size())
-		m_Iterations.push_back(NULL);
-
 
 	PContactIteration iter = new TContactIteration;
 	iter->filter = Filter;
@@ -820,27 +803,20 @@ TDBTContactIterationHandle CContacts::IterationInit(const TDBTContactIterFilter 
 
 	iter->q->push_back(it);
 
-	m_Iterations[i] = iter;
+	SYNC_ENDREAD(m_Sync);
 
-	m_Sync.EndWrite();
-	return i + 1;
+	return (TDBTContactIterationHandle)iter;
 }
 TDBTContactHandle CContacts::IterationNext(TDBTContactIterationHandle Iteration)
 {
 	uint32_t sig = cContactSignature;
 
-	m_Sync.BeginRead();
-
 	if (Iteration == 0)
 		return 0;
 
-	if ((Iteration > m_Iterations.size()) || (m_Iterations[Iteration - 1] == NULL))
-	{
-		m_Sync.EndRead();
-		return DBT_INVALIDPARAM;
-	}
+	SYNC_BEGINREAD(m_Sync);
 
-	PContactIteration iter = m_Iterations[Iteration - 1];
+	PContactIteration iter = (PContactIteration)Iteration;
 	TContactIterationItem item;
 	TDBTContactHandle result = 0;
 
@@ -868,7 +844,7 @@ TDBTContactHandle CContacts::IterationNext(TDBTContactIterationHandle Iteration)
 
 	if (iter->q->empty())
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
 	
@@ -985,33 +961,28 @@ TDBTContactHandle CContacts::IterationNext(TDBTContactIterationHandle Iteration)
 
 	} while ((result == 0) && !iter->q->empty());
 
-
-
 	if (result == 0)
 		result = IterationNext(Iteration);
 
-
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return result;
 }
 unsigned int CContacts::IterationClose(TDBTContactIterationHandle Iteration)
 {
-	m_Sync.BeginWrite();
+	if (Iteration == 0)
+		return 0;
 
-	if ((Iteration > m_Iterations.size()) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
-	{
-		m_Sync.EndWrite();
-		return DBT_INVALIDPARAM;
-	}
+	SYNC_BEGINREAD(m_Sync);
 
-	delete m_Iterations[Iteration - 1]->q;
-	delete m_Iterations[Iteration - 1]->parents;
-	delete m_Iterations[Iteration - 1]->returned;
-	delete m_Iterations[Iteration - 1];
-	m_Iterations[Iteration - 1] = NULL;
+	PContactIteration iter = (PContactIteration) Iteration;
 
-	m_Sync.EndWrite();
+	delete iter->q;
+	delete iter->parents;
+	delete iter->returned;
+	delete iter;
+
+	SYNC_ENDREAD(m_Sync);
 	return 0;
 }
 
@@ -1022,19 +993,19 @@ TDBTContactHandle CContacts::VirtualCreate(TDBTContactHandle hRealContact, TDBTC
 	uint32_t f;
 	uint32_t sig = cContactSignature;
 
-	m_Sync.BeginWrite();
+	SYNC_BEGINWRITE(m_Sync);
 	
 	if (!m_BlockManager.ReadPart(hRealContact, &f, offsetof(TContact, Flags), sizeof(f), sig) || 
 		 (f & DBT_CF_IsGroup))
 	{
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
 	TDBTContactHandle result = CreateContact(hParent, DBT_CF_IsVirtual);
 	if (result == DBT_INVALIDPARAM)
 	{
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -1054,7 +1025,7 @@ TDBTContactHandle CContacts::VirtualCreate(TDBTContactHandle hRealContact, TDBTC
 
 	m_Virtuals._InsertVirtual(hRealContact, result);
 
-	m_Sync.EndWrite();
+	SYNC_ENDWRITE(m_Sync);
 	return result;
 }
 
@@ -1076,7 +1047,7 @@ TDBTContactHandle CContacts::compFirstContact()
 {
 	uint32_t sig = cContactSignature;
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 	TContactKey key = {0};
 	iterator i = LowerBound(key);
 	TDBTContactHandle res = 0;
@@ -1092,7 +1063,7 @@ TDBTContactHandle CContacts::compFirstContact()
 		if (res == 0)
 			++i;
 	}
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return res;
 }
@@ -1100,7 +1071,7 @@ TDBTContactHandle CContacts::compNextContact(TDBTContactHandle hContact)
 {
 	uint32_t sig = cContactSignature;
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 
 	TContactKey key;
 	key.Contact = hContact;
@@ -1125,7 +1096,7 @@ TDBTContactHandle CContacts::compNextContact(TDBTContactHandle hContact)
 		}
 	}
 
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return res;
 }

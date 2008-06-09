@@ -1,5 +1,6 @@
 #include "MREWSync.h"
 #include <assert.h>
+#include <stdio.h>
 
 #define mrWRITEREQUEST 0xFFFF
 
@@ -189,6 +190,10 @@ CMultiReadExclusiveWriteSynchronizer::CMultiReadExclusiveWriteSynchronizer(void)
 	m_WriteRecursionCount = 0;
 	m_WriterID = 0;
 	m_RevisionLevel = 0;
+#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
+	m_Log = CreateFileA("dbx_treeSync.log", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
+#endif
+
 }
 
 CMultiReadExclusiveWriteSynchronizer::~CMultiReadExclusiveWriteSynchronizer(void)
@@ -196,6 +201,10 @@ CMultiReadExclusiveWriteSynchronizer::~CMultiReadExclusiveWriteSynchronizer(void
 	BeginWrite();
 	CloseHandle(m_ReadSignal);
 	CloseHandle(m_WriteSignal);
+#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
+	CloseHandle(m_Log);
+#endif
+
 }
 
 void CMultiReadExclusiveWriteSynchronizer::BeginRead()
@@ -326,3 +335,38 @@ void CMultiReadExclusiveWriteSynchronizer::WaitForWriteSignal()
 {
 	WaitForSingleObject(m_WriteSignal, m_WaitRecycle);
 }
+
+#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
+
+void CMultiReadExclusiveWriteSynchronizer::BeginRead (char * File, int Line, char * Function)
+{
+	//DoLog("BeginRead ", File, Line, Function);
+	BeginRead();
+}
+void CMultiReadExclusiveWriteSynchronizer::EndRead   (char * File, int Line, char * Function)
+{
+	//DoLog("EndRead   ", File, Line, Function);
+	EndRead();
+}
+bool CMultiReadExclusiveWriteSynchronizer::BeginWrite(char * File, int Line, char * Function)
+{
+	bool res = BeginWrite();
+	DoLog("BeginWrite", File, Line, Function);
+	return res;
+}
+void CMultiReadExclusiveWriteSynchronizer::EndWrite  (char * File, int Line, char * Function)
+{
+	DoLog("EndWrite  ", File, Line, Function);
+	EndWrite();
+}
+
+
+void CMultiReadExclusiveWriteSynchronizer::DoLog(char * Desc, char * File, int Line, char * Function)
+{
+	char buf [1024];
+	int l = sprintf_s(buf, "%08x - %s from \"%s\" %d (%s)\n", GetCurrentThreadId(), Desc, File, Line, Function);
+	DWORD read = 0;
+
+	WriteFile(m_Log, buf, l, &read, NULL);
+}
+#endif
