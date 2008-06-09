@@ -192,6 +192,9 @@ int DBSettingWrite(WPARAM pSetting, LPARAM lParam)
 	if (((PDBTSetting)pSetting)->Descriptor->pszSettingName == NULL)
 		return DBT_INVALIDPARAM;
 
+	if ((((PDBTSetting)pSetting)->Type & DBT_STF_VariableLength) && (((PDBTSetting)pSetting)->Value.pBlob == NULL))
+		return DBT_INVALIDPARAM;
+
 	return gDataBase->getSettings().WriteSetting(*((PDBTSetting)pSetting));
 }
 int DBSettingWriteHandle(WPARAM pSetting, LPARAM hSetting)

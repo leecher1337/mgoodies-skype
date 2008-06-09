@@ -715,12 +715,14 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting)
 	if ((hset == 0) || (hset == DBT_INVALIDPARAM))
 	{		
 		m_Sync.EndRead();
-		return hset;
+		return DBT_INVALIDPARAM;
 	}
 
 	PDBTSettingDescriptor back = Setting.Descriptor;
 	Setting.Descriptor = NULL;
-	ReadSetting(Setting, hset);
+	if (ReadSetting(Setting, hset) == DBT_INVALIDPARAM)
+		hset = DBT_INVALIDPARAM;
+
 	Setting.Descriptor = back;
 
 	m_Sync.EndRead();
@@ -1124,7 +1126,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{
 								Setting.Value.Length = set->BlobLength / sizeof(wchar_t);
 								((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
-								Setting.Value.pWide = (wchar_t*) mir_realloc(Setting.Value.pWide, Setting.Value.Length);
+								Setting.Value.pWide = (wchar_t*) mir_realloc(Setting.Value.pWide, Setting.Value.Length * sizeof(wchar_t));
 								memcpy(Setting.Value.pWide, str, set->BlobLength);								
 							} break;
 						case DBT_ST_BLOB:
