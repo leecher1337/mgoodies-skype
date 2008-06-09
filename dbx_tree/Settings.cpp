@@ -127,7 +127,7 @@ CSettings::CSettings(
 
 CSettings::~CSettings()
 {
-	m_Sync.BeginWrite();
+	SYNC_BEGINWRITE(m_Sync);
 
 	for (unsigned int i = 0; i < m_Iterations.size(); ++i)
 	{
@@ -145,7 +145,7 @@ CSettings::~CSettings()
 
 	m_SettingsMap.clear();
 
-	m_Sync.EndWrite();
+	SYNC_ENDWRITE(m_Sync);
 }
 
 
@@ -356,7 +356,7 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 	CSettingsTree * tree;
 	TDBTSettingHandle res = 0;
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 
 	if (Descriptor.Contact == 0)
 	{
@@ -370,14 +370,14 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 			Descriptor.Flags = Descriptor.Flags | DBT_SDF_FoundValid;
 		}
 
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return res | cSettingsFileFlag;
 	}
 
 	uint32_t cf = m_Contacts.getFlags(Descriptor.Contact);
 	if (cf == DBT_INVALIDPARAM)
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 	
@@ -399,7 +399,7 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 	TDBTContactIterationHandle i = m_Contacts.IterationInit(f, Descriptor.Contact);
 	if (i == DBT_INVALIDPARAM)
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -426,18 +426,18 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 		Descriptor.Flags = Descriptor.Flags | DBT_SDF_FoundValid;
 	}
 
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return res;
 }
 unsigned int CSettings::DeleteSetting(TDBTSettingDescriptor & Descriptor)
 {
-	m_Sync.BeginWrite();
+	SYNC_BEGINWRITE(m_Sync);
 
 	TDBTSettingHandle hset = FindSetting(Descriptor);
 	if ((hset == 0) || (hset == DBT_INVALIDPARAM))
 	{		
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return hset;
 	}
 
@@ -469,13 +469,13 @@ unsigned int CSettings::DeleteSetting(TDBTSettingDescriptor & Descriptor)
 		res = DeleteSetting(hset);
 	}
 
-	m_Sync.EndWrite();
+	SYNC_ENDWRITE(m_Sync);
 	
 	return res;
 }
 unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 {
-	m_Sync.BeginWrite();
+	SYNC_BEGINWRITE(m_Sync);
 	
 	CBlockManager * file = &m_BlockManagerPri;
 	CEncryptionManager * enc = &m_EncryptionManagerPri;
@@ -493,7 +493,7 @@ unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 	
 	if (!file->ReadBlock(hSetting, buf, size, sig))
 	{
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -502,7 +502,7 @@ unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 	CSettingsTree * tree = getSettingsTree(set->Contact);
 	if (tree == NULL)
 	{
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -516,25 +516,25 @@ unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 	tree->_DeleteSetting(Hash(str, set->NameLength), hSetting);
 	
 	file->DeleteBlock(hSetting);
-	m_Sync.EndWrite();
+	SYNC_ENDWRITE(m_Sync);
 
 	free(buf);
 	return 0;
 }
 TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting)
 {
-	m_Sync.BeginWrite();
+	SYNC_BEGINWRITE(m_Sync);
 
 	TDBTSettingHandle hset = FindSetting(*Setting.Descriptor);
 	if (hset == DBT_INVALIDPARAM)
 	{		
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return hset;
 	}
 
 	hset = WriteSetting(Setting, hset);
 
-	m_Sync.EndWrite();
+	SYNC_ENDWRITE(m_Sync);
 	
 	return hset;
 }
@@ -543,7 +543,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 	if (!hSetting && !(Setting.Descriptor && Setting.Descriptor->Contact))
 		return DBT_INVALIDPARAM;
 
-	m_Sync.BeginWrite();
+	SYNC_BEGINWRITE(m_Sync);
 	
 	CBlockManager * file = &m_BlockManagerPri;
 	CEncryptionManager * enc = &m_EncryptionManagerPri;
@@ -580,7 +580,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 
 	if (tree == NULL)
 	{
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -703,18 +703,18 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 		hSetting = hSetting | cSettingsFileFlag;
 	}
 	
-	m_Sync.EndWrite();
+	SYNC_ENDWRITE(m_Sync);
 
 	return hSetting;
 }
 unsigned int CSettings::ReadSetting(TDBTSetting & Setting)
 {
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 
 	TDBTSettingHandle hset = FindSetting(*Setting.Descriptor);
 	if ((hset == 0) || (hset == DBT_INVALIDPARAM))
 	{		
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -725,7 +725,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting)
 
 	Setting.Descriptor = back;
 
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return hset;
 }
@@ -749,15 +749,15 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 		return DBT_INVALIDPARAM;
 
 
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 
 	if (!file->ReadBlock(hSetting, buf, size, sig))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	TSetting* set = (TSetting*)buf;
 	uint8_t* str = (uint8_t*)buf + sizeof(TSetting) + set->NameLength + 1;
@@ -944,7 +944,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 								sprintf_s(buffer, 24, "%lf", set->Value.QWord);
 								Setting.Value.Length = strlen(buffer) + 1;
 								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, Setting.Value.Length);
-								memcpy(Setting.Value.pAnsii, buffer, Setting.Value.Length);	
+								memcpy(Setting.Value.pAnsii, buffer, Setting.Value.Length);								
 							} break;
 						case DBT_ST_WCHAR:
 							{
@@ -1041,20 +1041,20 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{
 								Setting.Value.Length = set->BlobLength;
 								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, set->BlobLength);
-								memcpy(Setting.Value.pAnsii, str, set->BlobLength);								
+								memcpy(Setting.Value.pAnsii, str, set->BlobLength);
 								Setting.Value.pAnsii[Setting.Value.Length - 1] = 0;								
 							} break;
 						case DBT_ST_UTF8:
 							{								
 								str[set->BlobLength - 1] = 0;
-								Setting.Value.pUTF8 = mir_utf8encode((char*)str);								
-								Setting.Value.Length = DBT_INVALIDPARAM;
+								Setting.Value.pUTF8 = mir_utf8encode((char*)str);
+								Setting.Value.Length = strlen(Setting.Value.pUTF8) + 1;
 							} break;
 						case DBT_ST_WCHAR:
 							{				
 								str[set->BlobLength - 1] = 0;
 								Setting.Value.pWide = mir_a2u((char*)str);
-								Setting.Value.Length = DBT_INVALIDPARAM;
+								Setting.Value.Length = wcslen(Setting.Value.pWide) + 1;
 							} break;
 						case DBT_ST_BLOB:
 							{
@@ -1091,7 +1091,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{								
 								str[set->BlobLength - 1] = 0;
 								Setting.Value.pWide = mir_utf8decodeW((char*)str);								
-								Setting.Value.Length = DBT_INVALIDPARAM;								
+								Setting.Value.Length = wcslen(Setting.Value.pWide) + 1;
 							} break;
 						case DBT_ST_BLOB:
 							{
@@ -1114,20 +1114,21 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{
 								((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
 								Setting.Value.pAnsii = mir_u2a((wchar_t*)str);
-								Setting.Value.Length = set->BlobLength / sizeof(wchar_t);
+								Setting.Value.Length = strlen(Setting.Value.pAnsii) + 1;
 							} break;
 						case DBT_ST_UTF8:
 							{
 								((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
 								Setting.Value.pUTF8 = mir_utf8encodeW((wchar_t*)str);
-								Setting.Value.Length = DBT_INVALIDPARAM;
+								Setting.Value.Length = strlen(Setting.Value.pUTF8) + 1;
 							} break;
 						case DBT_ST_WCHAR:
 							{
 								Setting.Value.Length = set->BlobLength / sizeof(wchar_t);
 								((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
 								Setting.Value.pWide = (wchar_t*) mir_realloc(Setting.Value.pWide, Setting.Value.Length * sizeof(wchar_t));
-								memcpy(Setting.Value.pWide, str, set->BlobLength);								
+								memcpy(Setting.Value.pWide, str, set->BlobLength);
+								Setting.Value.pWide[set->BlobLength / sizeof(wchar_t) - 1] = 0;
 							} break;
 						case DBT_ST_BLOB:
 							{
@@ -1185,7 +1186,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 
 TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filter)
 {
-	m_Sync.BeginWrite();
+	SYNC_BEGINWRITE(m_Sync);
 
 	unsigned int i = 0;
 
@@ -1202,7 +1203,7 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 
 	if (tree == NULL)
 	{
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -1212,7 +1213,7 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 
 		if (cf == DBT_INVALIDPARAM)
 		{
-			m_Sync.EndWrite();
+			SYNC_ENDWRITE(m_Sync);
 			return DBT_INVALIDPARAM;
 		}
 		
@@ -1282,7 +1283,7 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 	iter->Frame = new std::queue<TSettingIterationResult>;
 	m_Iterations[i] = iter;
 
-	m_Sync.EndWrite();
+	SYNC_ENDWRITE(m_Sync);
 	return i + 1;
 }
 
@@ -1296,14 +1297,14 @@ typedef struct TSettingIterationHelper {
 
 TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 {
-	m_Sync.BeginRead();
+	SYNC_BEGINREAD(m_Sync);
 
 	if (Iteration == 0)
 		return 0;
 
 	if ((Iteration > m_Iterations.size()) || (m_Iterations[Iteration - 1] == NULL))
 	{
-		m_Sync.EndRead();
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -1436,17 +1437,17 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 		free(res.Name);
 	}
 
-	m_Sync.EndRead();
+	SYNC_ENDREAD(m_Sync);
 
 	return res.Handle;
 }
 unsigned int CSettings::IterationClose(TDBTSettingIterationHandle Iteration)
 {
-	m_Sync.BeginWrite();
+	SYNC_BEGINWRITE(m_Sync);
 
 	if ((Iteration > m_Iterations.size()) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
 	{
-		m_Sync.EndWrite();
+		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -1485,6 +1486,6 @@ unsigned int CSettings::IterationClose(TDBTSettingIterationHandle Iteration)
 	delete m_Iterations[Iteration - 1];
 	m_Iterations[Iteration - 1] = NULL;
 
-	m_Sync.EndWrite();
+	SYNC_ENDWRITE(m_Sync);
 	return 0;
 }

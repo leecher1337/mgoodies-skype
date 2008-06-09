@@ -5,7 +5,6 @@
 #include "MREWSync.h"
 #include <deque>
 #include <hash_set>
-#include <vector>
 
 #pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
 
@@ -192,13 +191,9 @@ protected:
 		stdext::hash_set<TDBTContactHandle> * returned;
 	} TContactIteration, *PContactIteration;
 
-	typedef std::vector<PContactIteration> TContactIterationVector;
-
 	TDBTContactHandle m_RootContact;
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CVirtuals m_Virtuals;
-
-	TContactIterationVector m_Iterations;
 
 	TDBTContactHandle CreateRootContact();
 

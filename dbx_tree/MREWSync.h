@@ -2,8 +2,23 @@
 
 #include <windows.h>
 
+//#define MREW_DO_DEBUG_LOGGING 1
 
 #define cTLCHASHTABLESIZE 16
+
+#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
+	#define SYNC_BEGINREAD(sync)  sync.BeginRead (__FILE__, __LINE__, __FUNCTION__)
+	#define SYNC_ENDREAD(sync)    sync.EndRead   (__FILE__, __LINE__, __FUNCTION__)
+	#define SYNC_BEGINWRITE(sync) sync.BeginWrite(__FILE__, __LINE__, __FUNCTION__)
+	#define SYNC_ENDWRITE(sync)   sync.EndWrite  (__FILE__, __LINE__, __FUNCTION__)
+#else
+	#define SYNC_BEGINREAD(sync)  sync.BeginRead ()
+	#define SYNC_ENDREAD(sync)    sync.EndRead   ()
+	#define SYNC_BEGINWRITE(sync) sync.BeginWrite()
+	#define SYNC_ENDWRITE(sync)   sync.EndWrite  ()
+#endif
+
+
 
 class CThreadLocalCounter
 {
@@ -55,12 +70,27 @@ private:
 	void UnblockOneWriter();
 	void WaitForReadSignal();
 	void WaitForWriteSignal();
+
+#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
+	HANDLE m_Log;
+	void  DoLog(char * Desc, char * File, int Line, char * Function);
+
+#endif
+
+
 public:
 	CMultiReadExclusiveWriteSynchronizer();
 	virtual ~CMultiReadExclusiveWriteSynchronizer();
 
+#if defined(MREW_DO_DEBUG_LOGGING) && (defined(DEBUG) || defined(_DEBUG))
+	void BeginRead (char * File, int Line, char * Function);
+	void EndRead   (char * File, int Line, char * Function);
+	bool BeginWrite(char * File, int Line, char * Function);
+	void EndWrite  (char * File, int Line, char * Function);
+#endif
 	void BeginRead();
 	void EndRead();
 	bool BeginWrite();
 	void EndWrite();
+
 };
