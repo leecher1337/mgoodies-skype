@@ -87,10 +87,16 @@ int DBContactIterInit(WPARAM pFilter, LPARAM hParent)
 }
 int DBContactIterNext(WPARAM hIteration, LPARAM lParam)
 {
+	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
+		return hIteration;
+
 	return gDataBase->getContacts().IterationNext(hIteration);
 }
 int DBContactIterClose(WPARAM hIteration, LPARAM lParam)
 {
+	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
+		return hIteration;
+
 	return gDataBase->getContacts().IterationClose(hIteration);
 }
 int DBContactDelete(WPARAM hContact, LPARAM lParam)
@@ -260,10 +266,16 @@ int DBSettingIterInit(WPARAM pFilter, LPARAM lParam)
 }
 int DBSettingIterNext(WPARAM hIteration, LPARAM lParam)
 {
+	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
+		return hIteration;
+
 	return gDataBase->getSettings().IterationNext(hIteration);
 }
 int DBSettingIterClose(WPARAM hIteration, LPARAM lParam)
 {
+	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
+		return hIteration;
+
 	return gDataBase->getSettings().IterationClose(hIteration);
 }
 
@@ -334,11 +346,17 @@ int DBEventIterInit(WPARAM pFilter, LPARAM lParam)
 
 int DBEventIterNext(WPARAM hIteration, LPARAM lParam)
 {
+	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
+		return hIteration;
+
 	return gDataBase->getEvents().IterationNext(hIteration);
 }
 
 int DBEventIterClose(WPARAM hIteration, LPARAM lParam)
 {
+	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
+		return hIteration;
+
 	return gDataBase->getEvents().IterationClose(hIteration);
 }
 

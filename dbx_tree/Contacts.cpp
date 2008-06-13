@@ -811,9 +811,6 @@ TDBTContactHandle CContacts::IterationNext(TDBTContactIterationHandle Iteration)
 {
 	uint32_t sig = cContactSignature;
 
-	if (Iteration == 0)
-		return 0;
-
 	SYNC_BEGINREAD(m_Sync);
 
 	PContactIteration iter = (PContactIteration)Iteration;
@@ -970,10 +967,7 @@ TDBTContactHandle CContacts::IterationNext(TDBTContactIterationHandle Iteration)
 }
 unsigned int CContacts::IterationClose(TDBTContactIterationHandle Iteration)
 {
-	if (Iteration == 0)
-		return 0;
-
-	SYNC_BEGINREAD(m_Sync);
+//	SYNC_BEGINREAD(m_Sync); // no sync needed
 
 	PContactIteration iter = (PContactIteration) Iteration;
 
@@ -982,7 +976,7 @@ unsigned int CContacts::IterationClose(TDBTContactIterationHandle Iteration)
 	delete iter->returned;
 	delete iter;
 
-	SYNC_ENDREAD(m_Sync);
+//	SYNC_ENDREAD(m_Sync);
 	return 0;
 }
 

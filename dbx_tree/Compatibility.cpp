@@ -8,35 +8,12 @@
 HANDLE gCompServices[31] = {0};
 HANDLE gEvents[6] = {0};
 
-std::multimap<char, char*> gModules;
-
 HANDLE hEventDeletedEvent, 
        hEventAddedEvent,
 			 hEventFilterAddedEvent,
 			 hSettingChangeEvent, 
 			 hContactDeletedEvent, 
 			 hContactAddedEvent;
-
-void AddModule(const char* Module)
-{
-	if (Module == NULL)
-		return;
-
-	std::multimap<char, char*>::iterator i = gModules.find(*Module);
-	while (i != gModules.end())
-	{
-		if (i->first != *Module)
-		{
-			break;
-		} else if (strcmp(i->second, Module) == 0)
-		{
-			return;
-		}
-		++i;
-	}
-
-	gModules.insert(std::make_pair(*Module, _strdup(Module)));
-}
 
 int CompAddContact(WPARAM wParam, LPARAM lParam)
 {
@@ -98,8 +75,6 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 {
 	DBCONTACTGETSETTING * dbcgs = (DBCONTACTGETSETTING *) pSetting;
 
-	AddModule(dbcgs->szModule);
-
 	char namebuf[512];
 	namebuf[0] = 0;
 	if (dbcgs->szModule)
@@ -119,45 +94,30 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 	if (DBSettingRead((WPARAM)&set, 0) == DBT_INVALIDPARAM)
 		return DBT_INVALIDPARAM;
 
+	CompFreeVariant(0, (LPARAM)dbcgs->pValue);
+
 	switch (set.Type)
 	{
 		case DBT_ST_ASCIIZ: 
 		{			
-			if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
-				mir_free(dbcgs->pValue->pszVal);
-
 			dbcgs->pValue->type = DBVT_ASCIIZ;
 			dbcgs->pValue->pszVal = set.Value.pAnsii;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_UTF8:
-		{			
-			if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
-				mir_free(dbcgs->pValue->pszVal);
-
+		{
 			dbcgs->pValue->type = DBVT_UTF8;
 			dbcgs->pValue->pszVal = set.Value.pUTF8;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_WCHAR:
-		{			
-			if ((dbcgs->pValue->pwszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
-				mir_free(dbcgs->pValue->pwszVal);
-
+		{	
 			dbcgs->pValue->type = DBVT_WCHAR;
 			dbcgs->pValue->pwszVal = set.Value.pWide;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_BLOB:
 		{
-			if ((dbcgs->pValue->pbVal) && (dbcgs->pValue->type == DBVT_BLOB))
-			{
-				mir_free(dbcgs->pValue->pbVal);
-			} else if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
-			{
-				mir_free(dbcgs->pValue->pszVal);
-			}
-
 			dbcgs->pValue->type = DBVT_BLOB;
 			dbcgs->pValue->pbVal = set.Value.pBlob;
 			dbcgs->pValue->cpbVal = set.Value.Length;
@@ -185,14 +145,6 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 		case DBT_ST_INT64: case DBT_ST_QWORD:
 		case DBT_ST_DOUBLE: case DBT_ST_FLOAT:
 		{
-			if ((dbcgs->pValue->pbVal) && (dbcgs->pValue->type == DBVT_BLOB))
-			{
-				mir_free(dbcgs->pValue->pbVal);
-			} else if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
-			{
-				mir_free(dbcgs->pValue->pszVal);
-			}
-
 			dbcgs->pValue->type = DBVT_BLOB;
 			dbcgs->pValue->cpbVal = sizeof(set.Value);
 			dbcgs->pValue->pbVal = (BYTE*)mir_alloc(sizeof(set.Value));
@@ -210,10 +162,11 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 {
 	DBCONTACTGETSETTING * dbcgs = (DBCONTACTGETSETTING *) pSetting;
 
-	AddModule(dbcgs->szModule);
-
 	if ((dbcgs->pValue->type & DBVTF_VARIABLELENGTH) == 0)
+	{
+		CompFreeVariant(0, (LPARAM)dbcgs->pValue);
 		dbcgs->pValue->type = 0;
+	}
 
 	char namebuf[512];
 	namebuf[0] = 0;
@@ -242,47 +195,31 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 	
 	if (DBSettingRead((WPARAM)&set, 0) == DBT_INVALIDPARAM)
 		return DBT_INVALIDPARAM;
-
 	
+	CompFreeVariant(0, (LPARAM)dbcgs->pValue);
+
 	switch (set.Type)
 	{
 		case DBT_ST_ASCIIZ: 
-		{			
-			if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
-				mir_free(dbcgs->pValue->pszVal);
-
+		{	
 			dbcgs->pValue->type = DBVT_ASCIIZ;
 			dbcgs->pValue->pszVal = set.Value.pAnsii;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_UTF8:
-		{			
-			if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
-				mir_free(dbcgs->pValue->pszVal);
-
+		{	
 			dbcgs->pValue->type = DBVT_UTF8;
 			dbcgs->pValue->pszVal = set.Value.pUTF8;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_WCHAR:
-		{			
-			if ((dbcgs->pValue->pwszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
-				mir_free(dbcgs->pValue->pwszVal);
-
+		{	
 			dbcgs->pValue->type = DBVT_WCHAR;
 			dbcgs->pValue->pwszVal = set.Value.pWide;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_BLOB:
 		{
-			if ((dbcgs->pValue->pbVal) && (dbcgs->pValue->type == DBVT_BLOB))
-			{
-				mir_free(dbcgs->pValue->pbVal);
-			} else if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
-			{
-				mir_free(dbcgs->pValue->pszVal);
-			}
-
 			dbcgs->pValue->type = DBVT_BLOB;
 			dbcgs->pValue->pbVal = set.Value.pBlob;
 			dbcgs->pValue->cpbVal = set.Value.Length;
@@ -310,14 +247,6 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 		case DBT_ST_INT64: case DBT_ST_QWORD:
 		case DBT_ST_DOUBLE: case DBT_ST_FLOAT:
 		{
-			if ((dbcgs->pValue->pbVal) && (dbcgs->pValue->type == DBVT_BLOB))
-			{
-				mir_free(dbcgs->pValue->pbVal);
-			} else if ((dbcgs->pValue->pszVal) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
-			{
-				mir_free(dbcgs->pValue->pszVal);
-			}
-
 			dbcgs->pValue->type = DBVT_BLOB;
 			dbcgs->pValue->cpbVal = sizeof(set.Value);
 			dbcgs->pValue->pbVal = (BYTE*)mir_alloc(sizeof(set.Value));
@@ -334,8 +263,6 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 {
 	DBCONTACTGETSETTING * dbcgs = (DBCONTACTGETSETTING *) pSetting;
-
-	AddModule(dbcgs->szModule);
 
 	char namebuf[512];
 	namebuf[0] = 0;
@@ -479,10 +406,6 @@ int CompWriteContactSetting(WPARAM hContact, LPARAM pSetting)
 {
 	DBCONTACTWRITESETTING * dbcws = (DBCONTACTWRITESETTING *)pSetting;
 
-	AddModule(dbcws->szModule);
-
-	NotifyEventHooks(ME_DB_CONTACT_SETTINGCHANGED, hContact, pSetting);
-
 	char namebuf[512];
 	namebuf[0] = 0;
 	if (dbcws->szModule)
@@ -545,19 +468,13 @@ int CompWriteContactSetting(WPARAM hContact, LPARAM pSetting)
 	if (DBSettingWrite((WPARAM)&set, 0) == DBT_INVALIDPARAM)
 		return -1;
 
+	NotifyEventHooks(ME_DB_CONTACT_SETTINGCHANGED, hContact, pSetting);
+
 	return 0;
 }
 int CompDeleteContactSetting(WPARAM hContact, LPARAM pSetting)
 {
 	DBCONTACTGETSETTING * dbcgs = (DBCONTACTGETSETTING *) pSetting;
-
-	/*{
-		DBCONTACTWRITESETTING tmp = {0};
-		tmp.szModule = dbcgs->szModule;
-		tmp.szSetting = dbcgs->szSetting;
-		tmp.value.type = 0;
-		NotifyEventHooks(hSettingChangeEvent, hContact, (LPARAM)&tmp);
-	}*/
 
 	char namebuf[512];
 	namebuf[0] = 0;
@@ -574,14 +491,20 @@ int CompDeleteContactSetting(WPARAM hContact, LPARAM pSetting)
 	if (DBSettingDelete((WPARAM)&desc, 0) == DBT_INVALIDPARAM)
 		return -1;
 
+	{
+		DBCONTACTWRITESETTING tmp = {0};
+		tmp.szModule = dbcgs->szModule;
+		tmp.szSetting = dbcgs->szSetting;
+		tmp.value.type = 0;
+		NotifyEventHooks(hSettingChangeEvent, hContact, (LPARAM)&tmp);
+	}
+
 	return 0;
 }
 int CompEnumContactSettings(WPARAM hContact, LPARAM pEnum)
 {
 	DBCONTACTENUMSETTINGS * pces = (DBCONTACTENUMSETTINGS *)pEnum;
 
-	AddModule(pces->szModule);
-	
 	TDBTSettingDescriptor desc = {0};
 	desc.cbSize = sizeof(desc);
 	desc.Contact = hContact;
@@ -639,8 +562,6 @@ int CompAddEvent(WPARAM hContact, LPARAM pEventInfo)
 	DBEVENTINFO * dbei = (DBEVENTINFO*) pEventInfo;
 	if (dbei->cbSize < sizeof(DBEVENTINFO))
 		return -1;
-
-	AddModule(dbei->szModule);
 
 	int tmp = NotifyEventHooks(hEventFilterAddedEvent, hContact, pEventInfo);
 	if (tmp != 0)
@@ -722,18 +643,14 @@ int CompFindPrevEvent(WPARAM hEvent, LPARAM lParam)
 	return gDataBase->getEvents().compPrevEvent(hEvent);
 }
 
-int CompEnumModules(WPARAM pCallback, LPARAM lParam)
+int CompEnumModules(WPARAM wParam, LPARAM pCallback)
 {
+	if (pCallback == NULL)
+		return -1;
+
 	DBMODULEENUMPROC cb = (DBMODULEENUMPROC) pCallback;
-	
-	std::multimap<char, char*>::iterator i = gModules.begin();
-	int res = 0;
-	while ((i != gModules.end()) && (res == 0))
-	{
-		res = cb(i->second, 0, lParam);
-		++i;
-	}
-	return res;
+
+	return gDataBase->getSettings().CompEnumModules(cb, wParam);
 }
 
 void Encrypt(char*msg, BOOL up)
@@ -804,8 +721,6 @@ bool CompatibilityRegister()
 
 	gCompServices[27] = CreateServiceFunction(MS_DB_CRYPT_ENCODESTRING,       CompEncodeString);
 	gCompServices[28] = CreateServiceFunction(MS_DB_CRYPT_DECODESTRING,       CompDecodeString);
-
-
 
 	hEventDeletedEvent     = CreateHookableEvent(ME_DB_EVENT_DELETED);
 	hEventAddedEvent       = CreateHookableEvent(ME_DB_EVENT_ADDED);

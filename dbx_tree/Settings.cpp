@@ -113,8 +113,8 @@ CSettings::CSettings(
 	m_EncryptionManagerPri(EncryptionManagerPri),
 	m_Contacts(Contacts),
 	m_SettingsMap(),
-	m_Iterations(),
-	m_sigRootChanged()	
+	m_sigRootChanged(),
+	m_Modules()
 {
 	CSettingsTree * settree = new CSettingsTree(*this, m_BlockManagerSet, m_EncryptionManagerSet, SettingsRoot, 0);
 
@@ -123,17 +123,14 @@ CSettings::CSettings(
 
 	m_Contacts._sigDeleteSettings().connect(this, &CSettings::onDeleteSettings);
 	m_Contacts._sigMergeSettings().connect (this, &CSettings::onMergeSettings);
+
+	_LoadModules();
+	_EnsureModuleExists("$Modules");
 }
 
 CSettings::~CSettings()
 {
 	SYNC_BEGINWRITE(m_Sync);
-
-	for (unsigned int i = 0; i < m_Iterations.size(); ++i)
-	{
-		if (m_Iterations[i])
-			IterationClose(i + 1);
-	}
 
 	TSettingsTreeMap::iterator it = m_SettingsMap.begin();
 
@@ -144,6 +141,14 @@ CSettings::~CSettings()
 	}
 
 	m_SettingsMap.clear();
+
+	TModulesMap::iterator it2 = m_Modules.begin();
+	while (it2 != m_Modules.end())
+	{
+		if (it2->second)
+			delete [] it2->second;
+		++it2;
+	}
 
 	SYNC_ENDWRITE(m_Sync);
 }
@@ -202,6 +207,76 @@ inline bool CSettings::_ReadSettingName(CBlockManager & BlockManager, CEncryptio
 	NameBuf[NameLength] = 0;
 
 	return true;
+}
+
+void CSettings::_EnsureModuleExists(char * Module)
+{
+	if ((Module == NULL) || (*Module == 0))
+		return;
+
+	char * e = strchr(Module, '/');
+	if (e)
+		*e = 0;
+
+	TModulesMap::iterator i = m_Modules.find(*((uint16_t*)Module));
+	while ((i != m_Modules.end()) && (i->first == *((uint16_t*)Module)) && (strcmp(i->second, Module) != 0))
+	{
+		++i;
+	}
+
+	if ((i == m_Modules.end()) || (i->first != *((uint16_t*)Module)))
+	{
+		unsigned int l = strlen(Module);
+		char * tmp = new char [l + 1];
+		memcpy(tmp, Module, l + 1);
+		m_Modules.insert(std::make_pair(*((uint16_t *) tmp), tmp));
+
+		char namebuf[512];
+		strcpy_s(namebuf, "$Modules/");
+		strcat_s(namebuf, Module);
+
+		TDBTSettingDescriptor desc = {0};
+		desc.cbSize = sizeof(desc);
+		desc.pszSettingName = namebuf;
+
+		TDBTSetting set = {0};
+		set.cbSize = sizeof(set);
+		set.Descriptor = &desc;
+		set.Type = DBT_ST_DWORD;
+		
+		WriteSetting(set, cSettingsFileFlag);
+	}
+
+	if (e)
+		*e = '/';
+}
+
+void CSettings::_LoadModules()
+{
+	TDBTSettingDescriptor desc = {0};
+	desc.cbSize = sizeof(desc);
+
+	TDBTSettingIterFilter f = {0};
+	f.cbSize = sizeof(f);
+	f.Descriptor = &desc;
+	f.NameStart = "$Modules/";
+	
+	TDBTSettingIterationHandle hiter = IterationInit(f);
+	
+	if ((hiter != 0) && (hiter != DBT_INVALIDPARAM))
+	{
+		TDBTSettingHandle res = IterationNext(hiter);
+		while ((res != 0) && (res != DBT_INVALIDPARAM))
+		{
+			unsigned int l = strlen(desc.pszSettingName);
+			char * tmp = new char [l - 9 + 1];
+			memcpy(tmp, desc.pszSettingName + 9, l - 9 + 1);
+			m_Modules.insert(std::make_pair(*((uint16_t *) tmp), tmp));
+			res = IterationNext(hiter);
+		}
+
+		IterationClose(hiter);
+	}
 }
 
 CSettings::TOnRootChanged & CSettings::sigRootChanged()
@@ -358,20 +433,30 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 
 	SYNC_BEGINREAD(m_Sync);
 
-	if (Descriptor.Contact == 0)
+	if ((Descriptor.Contact == 0) || (Descriptor.Options == 0))
 	{
-		tree = getSettingsTree(0);
+		tree = getSettingsTree(Descriptor.Contact);
+		if (tree == NULL)
+		{
+			SYNC_ENDREAD(m_Sync);
+			return DBT_INVALIDPARAM;
+		}
+
 		res = tree->_FindSetting(namehash, Descriptor.pszSettingName, namelength);
 	
 		if (res)
 		{
-			Descriptor.FoundInContact = 0;
+			Descriptor.FoundInContact = Descriptor.Contact;
 			Descriptor.FoundHandle = res;
 			Descriptor.Flags = Descriptor.Flags | DBT_SDF_FoundValid;
 		}
 
 		SYNC_ENDREAD(m_Sync);
-		return res | cSettingsFileFlag;
+
+		if (Descriptor.Contact == 0)
+			res = res | cSettingsFileFlag;
+
+		return res;
 	}
 
 	uint32_t cf = m_Contacts.getFlags(Descriptor.Contact);
@@ -397,7 +482,7 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 	f.Options = Descriptor.Options;
 
 	TDBTContactIterationHandle i = m_Contacts.IterationInit(f, Descriptor.Contact);
-	if (i == DBT_INVALIDPARAM)
+	if ((i == DBT_INVALIDPARAM) || (i == 0))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
@@ -570,7 +655,10 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 		}
 
 		if ((Setting.Descriptor) && (Setting.Descriptor->pszSettingName)) // setting needs a name
+		{
 			tree = getSettingsTree(Setting.Descriptor->Contact);
+			_EnsureModuleExists(Setting.Descriptor->pszSettingName);
+		}
 		
 	} else {		
 		TDBTContactHandle e;
@@ -621,7 +709,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 
 		if (blocksize != sizeof(TSetting) - sizeof(set->Value) + enc->AlignSize(hSetting, ET_DATA, sizeof(set->Value) + strlen(Setting.Descriptor->pszSettingName) + 1 + blobsize))
 		{
-			blocksize = blocksize = sizeof(TSetting) - sizeof(set->Value) + enc->AlignSize(hSetting, ET_DATA, sizeof(set->Value) + strlen(Setting.Descriptor->pszSettingName) + 1 + blobsize);
+			blocksize = sizeof(TSetting) - sizeof(set->Value) + enc->AlignSize(hSetting, ET_DATA, sizeof(set->Value) + strlen(Setting.Descriptor->pszSettingName) + 1 + blobsize);
 			file->ResizeBlock(hSetting, blocksize, false);
 		}
 
@@ -1186,15 +1274,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 
 TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filter)
 {
-	SYNC_BEGINWRITE(m_Sync);
-
-	unsigned int i = 0;
-
-	while ((i < m_Iterations.size()) && (m_Iterations[i] != NULL))
-		++i;
-
-	if (i == m_Iterations.size())
-		m_Iterations.push_back(NULL);
+	SYNC_BEGINREAD(m_Sync);
 
 	std::queue<TDBTContactHandle> contacts;
 	contacts.push(Filter.hContact);
@@ -1203,7 +1283,7 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 
 	if (tree == NULL)
 	{
-		SYNC_ENDWRITE(m_Sync);
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -1213,7 +1293,7 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 
 		if (cf == DBT_INVALIDPARAM)
 		{
-			SYNC_ENDWRITE(m_Sync);
+			SYNC_ENDREAD(m_Sync);
 			return DBT_INVALIDPARAM;
 		}
 		
@@ -1281,10 +1361,10 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 	}
 	
 	iter->Frame = new std::queue<TSettingIterationResult>;
-	m_Iterations[i] = iter;
 
-	SYNC_ENDWRITE(m_Sync);
-	return i + 1;
+	SYNC_ENDREAD(m_Sync);
+
+	return (TDBTSettingIterationHandle)iter;
 }
 
 
@@ -1299,16 +1379,7 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 {
 	SYNC_BEGINREAD(m_Sync);
 
-	if (Iteration == 0)
-		return 0;
-
-	if ((Iteration > m_Iterations.size()) || (m_Iterations[Iteration - 1] == NULL))
-	{
-		SYNC_ENDREAD(m_Sync);
-		return DBT_INVALIDPARAM;
-	}
-
-	PSettingIteration iter = m_Iterations[Iteration - 1];
+	PSettingIteration iter = (PSettingIteration)Iteration;
 	uint32_t sig = cSettingSignature;
 
 	while (iter->Frame->empty() && iter->Heap->Top())
@@ -1443,49 +1514,66 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 }
 unsigned int CSettings::IterationClose(TDBTSettingIterationHandle Iteration)
 {
-	SYNC_BEGINWRITE(m_Sync);
+	PSettingIteration iter = (PSettingIteration) Iteration;
 
-	if ((Iteration > m_Iterations.size()) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
+	SYNC_BEGINREAD(m_Sync);
+	delete iter->Heap;  // only this need syncronization
+	SYNC_ENDREAD(m_Sync);
+
+	if (iter->Filter.NameStart)
+		delete [] iter->Filter.NameStart;
+
+	if (iter->Filter.Descriptor && iter->Filter.Descriptor->pszSettingName)
 	{
-		SYNC_ENDWRITE(m_Sync);
-		return DBT_INVALIDPARAM;
+		mir_free(iter->Filter.Descriptor->pszSettingName);
+		iter->Filter.Descriptor->pszSettingName = NULL;
 	}
-
-	if (m_Iterations[Iteration - 1]->Filter.NameStart)
-		delete [] m_Iterations[Iteration - 1]->Filter.NameStart;
-
-	if (m_Iterations[Iteration - 1]->Filter.Descriptor)
+	if (iter->Filter.Setting)
 	{
-		mir_free(m_Iterations[Iteration - 1]->Filter.Descriptor->pszSettingName);
-		m_Iterations[Iteration - 1]->Filter.Descriptor->pszSettingName = NULL;
-	}
-	if (m_Iterations[Iteration - 1]->Filter.Setting)
-	{
-		if (m_Iterations[Iteration - 1]->Filter.Setting->Descriptor)
+		if (iter->Filter.Setting->Descriptor)
 		{
-			mir_free(m_Iterations[Iteration - 1]->Filter.Setting->Descriptor->pszSettingName);
-			m_Iterations[Iteration - 1]->Filter.Setting->Descriptor->pszSettingName = NULL;
+			mir_free(iter->Filter.Setting->Descriptor->pszSettingName);
+			iter->Filter.Setting->Descriptor->pszSettingName = NULL;
 		}	
 		
-		if (m_Iterations[Iteration - 1]->Filter.Setting->Type & DBT_STF_VariableLength)
+		if (iter->Filter.Setting->Type & DBT_STF_VariableLength)
 		{
-			mir_free(m_Iterations[Iteration - 1]->Filter.Setting->Value.pBlob);
-			m_Iterations[Iteration - 1]->Filter.Setting->Value.pBlob = NULL;
+			mir_free(iter->Filter.Setting->Value.pBlob);
+			iter->Filter.Setting->Value.pBlob = NULL;
 		}
 	}
 
-	while (!m_Iterations[Iteration - 1]->Frame->empty())
+	while (!iter->Frame->empty())
 	{
-		if (m_Iterations[Iteration - 1]->Frame->front().Name)
-			free(m_Iterations[Iteration - 1]->Frame->front().Name);
+		if (iter->Frame->front().Name)
+			free(iter->Frame->front().Name);
 
-		m_Iterations[Iteration - 1]->Frame->pop();
+		iter->Frame->pop();
 	}
-	delete m_Iterations[Iteration - 1]->Frame;
-	delete m_Iterations[Iteration - 1]->Heap;
-	delete m_Iterations[Iteration - 1];
-	m_Iterations[Iteration - 1] = NULL;
+	delete iter->Frame;
+	delete iter;
 
-	SYNC_ENDWRITE(m_Sync);
 	return 0;
+}
+
+
+int CSettings::CompEnumModules(DBMODULEENUMPROC CallBack, LPARAM lParam)
+{
+	SYNC_BEGINREAD(m_Sync);
+
+	TModulesMap::iterator i = m_Modules.begin();
+	int res = 0;
+	while ((i != m_Modules.end()) && (res == 0))
+	{
+		char * tmp = i->second;
+		SYNC_ENDREAD(m_Sync);
+
+		res = CallBack(tmp, 0, lParam);
+
+		SYNC_BEGINREAD(m_Sync);
+		++i;
+	}
+	SYNC_ENDREAD(m_Sync);
+
+	return res;
 }

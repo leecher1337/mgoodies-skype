@@ -9,7 +9,6 @@
 
 #include <hash_map>
 #include <queue>
-#include <vector>
 
 class CSettings;
 class CSettingsTree;
@@ -120,7 +119,12 @@ public:
 	TOnRootChanged & sigRootChanged();
 
 	bool _ReadSettingName(CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TDBTSettingHandle Setting, uint16_t & NameLength, char *& NameBuf);
+	void _EnsureModuleExists(char * Module);
 
+	// compatibility:
+	typedef int (*DBMODULEENUMPROC)(const char *szModuleName,DWORD ofsModuleName,LPARAM lParam);
+
+	int CompEnumModules(DBMODULEENUMPROC CallBack, LPARAM lParam);
 	// services:
 	TDBTSettingHandle FindSetting(TDBTSettingDescriptor & Descriptor);
 	unsigned int DeleteSetting(TDBTSettingDescriptor & Descriptor);
@@ -164,11 +168,6 @@ private:
 		std::queue<TSettingIterationResult> * Frame;
 	} TSettingIteration, *PSettingIteration;
 
-
-	typedef std::vector<PSettingIteration> TSettingIterationVector;
-
-	TSettingIterationVector m_Iterations;
-
 	TOnRootChanged m_sigRootChanged;
 	void onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot);
 
@@ -178,5 +177,11 @@ private:
 	void onMergeSettings(CContacts * Contacts, TDBTContactHandle Source, TDBTContactHandle Dest);
 
 	CSettingsTree * getSettingsTree(TDBTContactHandle hContact);
+
+	typedef stdext::hash_multimap<uint16_t, char *> TModulesMap;
+
+	TModulesMap m_Modules;
+
+	void _LoadModules();
 	
 };
