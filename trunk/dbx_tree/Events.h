@@ -229,10 +229,6 @@ private:
 		TDBTEventHandle LastEvent;
 	} TEventIteration, *PEventIteration;
 
-	typedef std::vector<PEventIteration> TEventIterationVector;
-
-	TEventIterationVector m_Iterations;
-
 	void onRootChanged(void* EventsTree, CEventsTree::TNodeRef NewRoot);
 
 	void onDeleteEventCallback(void * Tree, TEventKey Key, TDBTEventHandle Data, uint32_t Param);

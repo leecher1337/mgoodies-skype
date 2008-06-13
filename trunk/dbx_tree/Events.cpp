@@ -98,7 +98,7 @@ CEventsTypeManager::CEventsTypeManager(CContacts & Contacts, CSettings & Setting
 	m_Settings(Settings),
 	m_Map()
 {
-	
+	m_Settings._EnsureModuleExists("$EventTypes");	
 }
 CEventsTypeManager::~CEventsTypeManager()
 {
@@ -222,6 +222,7 @@ uint32_t CEventsTypeManager::EnsureIDExists(char* Module, uint32_t EventType)
 		s.Value.pAnsii = Module;
 		m_Settings.WriteSetting(s);
 
+		m_Settings._EnsureModuleExists(Module);
 	}
 
 	return res;
@@ -244,8 +245,7 @@ CEvents::CEvents(
 	m_Links(BlockManager, LinkRootNode),
 	m_EventsMap(),
 	m_VirtualEventsMap(),
-	m_VirtualOwnerMap(),
-	m_Iterations()
+	m_VirtualOwnerMap()
 {
 	srand(_time32(NULL) + GetTickCount() + GetCurrentThreadId());
 	m_Counter = rand() & 0xffff;
@@ -258,13 +258,6 @@ CEvents::~CEvents()
 {
 	SYNC_BEGINWRITE(m_Sync);
 	
-	for (unsigned int i = 0; i < m_Iterations.size(); ++i)
-	{
-		if (m_Iterations[i])
-			IterationClose(i + 1);
-	}
-
-
 	TEventsTreeMap::iterator it1 = m_EventsMap.begin();
 	while (it1 != m_EventsMap.end())
 	{
@@ -1114,21 +1107,13 @@ unsigned int CEvents::HardLink(TDBTEventHardLink & HardLink)
 
 TDBTEventIterationHandle CEvents::IterationInit(TDBTEventIterFilter & Filter)
 {
-	SYNC_BEGINWRITE(m_Sync);
-
-	unsigned int i = 0;
-
-	while ((i < m_Iterations.size()) && (m_Iterations[i] != NULL))
-		++i;
-
-	if (i == m_Iterations.size())
-		m_Iterations.push_back(NULL);
+	SYNC_BEGINREAD(m_Sync);
 
 	CEventsTree * tree = getEventsTree(Filter.hContact);
 
 	if (tree == NULL)
 	{
-		SYNC_ENDWRITE(m_Sync);
+		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
@@ -1209,29 +1194,18 @@ TDBTEventIterationHandle CEvents::IterationInit(TDBTEventIterFilter & Filter)
 	if (iter->Heap == NULL)
 	{
 		delete iter;
-		i = DBT_INVALIDPARAM - 1;
-	} else {
-		m_Iterations[i] = iter;
+		iter = (PEventIteration)DBT_INVALIDPARAM;
 	}
 
-	SYNC_ENDWRITE(m_Sync);
+	SYNC_ENDREAD(m_Sync);
 
-	return i + 1;
+	return (TDBTEventIterationHandle)iter;
 }
 TDBTEventHandle CEvents::IterationNext(TDBTEventIterationHandle Iteration)
 {
 	SYNC_BEGINREAD(m_Sync);
 
-	if (Iteration == 0)
-		return 0;
-
-	if ((Iteration > m_Iterations.size()) || (m_Iterations[Iteration - 1] == NULL))
-	{
-		SYNC_ENDREAD(m_Sync);
-		return DBT_INVALIDPARAM;
-	}
-
-	PEventIteration iter = m_Iterations[Iteration - 1];
+	PEventIteration iter = (PEventIteration) Iteration;
 	uint32_t sig = cEventSignature;
 
 	TDBTEventHandle res = 0;
@@ -1264,22 +1238,14 @@ TDBTEventHandle CEvents::IterationNext(TDBTEventIterationHandle Iteration)
 	return res;
 }
 unsigned int CEvents::IterationClose(TDBTEventIterationHandle Iteration)
-{
-	SYNC_BEGINWRITE(m_Sync);
-
-	if ((Iteration > m_Iterations.size()) || (Iteration == 0) || (m_Iterations[Iteration - 1] == NULL))
-	{
-		SYNC_ENDWRITE(m_Sync);
-		return DBT_INVALIDPARAM;
-	}
-
-	delete m_Iterations[Iteration - 1]->Heap;
-	delete m_Iterations[Iteration - 1];
-
-	m_Iterations[Iteration - 1] = NULL;
-
-	SYNC_ENDWRITE(m_Sync);
-
+{	
+	PEventIteration iter = (PEventIteration) Iteration;
+	
+	SYNC_BEGINREAD(m_Sync);
+	delete iter->Heap;
+	SYNC_ENDREAD(m_Sync);
+	
+	delete iter;
 	return 0;
 }
 

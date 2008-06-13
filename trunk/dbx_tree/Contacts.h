@@ -179,8 +179,8 @@ protected:
 	typedef struct TContactIterationItem {
 		uint8_t Options;
 		uint8_t LookupDepth;
-		TDBTContactHandle Handle;
 		uint16_t Level;
+		TDBTContactHandle Handle;
 		uint32_t Flags;
 	} TContactIterationItem;
 
