@@ -92,7 +92,7 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 	set.Descriptor = &desc;
 	
 	if (DBSettingRead((WPARAM)&set, 0) == DBT_INVALIDPARAM)
-		return DBT_INVALIDPARAM;
+		return -1;
 
 	CompFreeVariant(0, (LPARAM)dbcgs->pValue);
 
@@ -194,7 +194,7 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 	}
 	
 	if (DBSettingRead((WPARAM)&set, 0) == DBT_INVALIDPARAM)
-		return DBT_INVALIDPARAM;
+		return -1;
 	
 	CompFreeVariant(0, (LPARAM)dbcgs->pValue);
 
@@ -281,12 +281,12 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 	set.Descriptor = &desc;
 	
 	if (DBSettingRead((WPARAM)&set, 0) == DBT_INVALIDPARAM)
-		return DBT_INVALIDPARAM;
+		return -1;
 
 	if ((set.Type & DBT_STF_VariableLength) ^ (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
 	{
 		mir_free(set.Value.pBlob);
-		return DBT_INVALIDPARAM;
+		return -1;
 	}
 
 	if ((set.Type & DBT_STF_VariableLength) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
@@ -297,7 +297,7 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 					 ((set.Type == DBT_ST_BLOB)   && (dbcgs->pValue->type == DBVT_BLOB  )) ))
 		{
 			mir_free(set.Value.pBlob);
-			return DBT_INVALIDPARAM;
+			return -1;
 		}
 	}
 
@@ -685,6 +685,15 @@ int CompDecodeString(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+int CompGetProfileName(WPARAM cbBytes, LPARAM pszName)
+{
+	return gDataBase->getProfileName(cbBytes, (char *)pszName);
+}
+
+int CompGetProfilePath(WPARAM cbBytes, LPARAM pszName)
+{
+	return gDataBase->getProfilePath(cbBytes, (char *)pszName);
+}
 
 bool CompatibilityRegister()
 {
@@ -721,6 +730,10 @@ bool CompatibilityRegister()
 
 	gCompServices[27] = CreateServiceFunction(MS_DB_CRYPT_ENCODESTRING,       CompEncodeString);
 	gCompServices[28] = CreateServiceFunction(MS_DB_CRYPT_DECODESTRING,       CompDecodeString);
+
+	gCompServices[29] = CreateServiceFunction(MS_DB_GETPROFILENAME,           CompGetProfileName);
+	gCompServices[30] = CreateServiceFunction(MS_DB_GETPROFILEPATH,           CompGetProfilePath);
+
 
 	hEventDeletedEvent     = CreateHookableEvent(ME_DB_EVENT_DELETED);
 	hEventAddedEvent       = CreateHookableEvent(ME_DB_EVENT_ADDED);

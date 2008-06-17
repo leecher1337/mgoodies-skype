@@ -38,3 +38,6 @@ int CompFindPrevEvent(WPARAM hEvent, LPARAM lParam);
 
 int CompEncodeString(WPARAM wParam, LPARAM lParam);
 int CompDecodeString(WPARAM wParam, LPARAM lParam);
+
+int CompGetProfileName(WPARAM cbBytes, LPARAM pszName);
+int CompGetProfilePath(WPARAM cbBytes, LPARAM pszName);
