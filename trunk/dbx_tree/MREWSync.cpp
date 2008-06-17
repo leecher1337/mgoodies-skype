@@ -1,6 +1,16 @@
 #include "MREWSync.h"
 #include <assert.h>
 #include <stdio.h>
+/*
+#include <intrin.h>
+
+#pragma intrinsic (_InterlockedIncrement)
+#pragma intrinsic (_InterlockedDecrement)
+#pragma intrinsic (_InterlockedExchange)
+#pragma intrinsic (_InterlockedExchangeAdd)
+*/
+
+
 
 #define mrWRITEREQUEST 0xFFFF
 

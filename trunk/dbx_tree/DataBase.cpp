@@ -299,3 +299,39 @@ CEvents & CDataBase::getEvents()
 {
 	return *m_Events;
 }
+
+int CDataBase::getProfileName(int BufferSize, char * Buffer)
+{
+	char * slash = strrchr(m_FileName[DBFileSetting], '\\');
+	if (!slash)
+		return -1;
+
+	slash++;
+	int l = strlen(slash);
+	l -= 4;
+	if (BufferSize < l + 1)
+		return -1;
+
+	memcpy(Buffer, slash, l);
+	Buffer[l] = 0;
+
+	return 0;
+}
+int CDataBase::getProfilePath(int BufferSize, char * Buffer)
+{
+	char * slash = strrchr(m_FileName[DBFileSetting], '\\');
+	if (!slash)
+		return -1;
+
+	int l = (int)((slash - m_FileName[DBFileSetting]) / sizeof(char));
+	
+	if (BufferSize < l + 1)
+	{
+		return -1;
+	}
+
+	memcpy(Buffer, m_FileName[DBFileSetting], l);
+	Buffer[l] = 0;
+
+	return 0;
+}

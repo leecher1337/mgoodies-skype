@@ -115,6 +115,9 @@ public:
 	CSettings & getSettings();
 	CEvents   & getEvents();
 
+	int getProfileName(int BufferSize, char * Buffer);
+	int getProfilePath(int BufferSize, char * Buffer);
+
 };
 
 
