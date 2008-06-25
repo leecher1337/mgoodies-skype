@@ -88,6 +88,9 @@ void RedrawFrame();
 bool MyDetailsFrameVisible();
 void SetMyDetailsFrameVisible(bool visible);
 int ShowHideMenuFunc(WPARAM wParam, LPARAM lParam);
+int ShowFrameFunc(WPARAM wParam, LPARAM lParam);
+int HideFrameFunc(WPARAM wParam, LPARAM lParam);
+int ShowHideFrameFunc(WPARAM wParam, LPARAM lParam);
 
 
 
@@ -280,7 +283,7 @@ int CreateFrame()
 	wndclass.lpszClassName = WINDOW_CLASS_NAME;
 	RegisterClass(&wndclass);
 
-	if(ServiceExists(MS_CLIST_FRAMES_ADDFRAME)) 
+	if (ServiceExists(MS_CLIST_FRAMES_ADDFRAME)) 
 	{
 		hwnd_frame = CreateWindow(WINDOW_CLASS_NAME, Translate("My Details"), 
 				WS_CHILD | WS_VISIBLE, 
@@ -342,7 +345,6 @@ int CreateFrame()
 		SendMessage(hwnd_container, WM_SIZE, 0, 0);
 
 		// Create menu item
-		CreateServiceFunction(MODULE_NAME "/ShowHideMyDetails", ShowHideMenuFunc);
 
 		CLISTMENUITEM menu = {0};
 
@@ -362,6 +364,10 @@ int CreateFrame()
 			FixMainMenu();
 		}
 	}
+
+	CreateServiceFunction(MS_MYDETAILS_SHOWFRAME, ShowFrameFunc);
+	CreateServiceFunction(MS_MYDETAILS_HIDEFRAME, HideFrameFunc);
+	CreateServiceFunction(MS_MYDETAILS_SHOWHIDEFRAME, ShowHideFrameFunc);
 
 	return 0;
 }
@@ -2464,19 +2470,70 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 }
 
 
-int ShowHideMenuFunc(WPARAM wParam, LPARAM lParam) 
+int ShowHideFrameFunc(WPARAM wParam, LPARAM lParam) 
 {
-	if (MyDetailsFrameVisible())
+	if (ServiceExists(MS_CLIST_FRAMES_ADDFRAME)) 
 	{
-		SendMessage(hwnd_container, WM_CLOSE, 0, 0);
+		CallService(MS_CLIST_FRAMES_SHFRAME, frame_id, 0);
 	}
-	else 
+	else
 	{
-		ShowWindow(hwnd_container, SW_SHOW);
-		DBWriteContactSettingByte(0, MODULE_NAME, SETTING_FRAME_VISIBLE, 1);
-	}
+		if (MyDetailsFrameVisible())
+		{
+			SendMessage(hwnd_container, WM_CLOSE, 0, 0);
+		}
+		else 
+		{
+			ShowWindow(hwnd_container, SW_SHOW);
+			DBWriteContactSettingByte(0, MODULE_NAME, SETTING_FRAME_VISIBLE, 1);
+		}
 
-	FixMainMenu();
+		FixMainMenu();
+	}
+	return 0;
+}
+
+
+int ShowFrameFunc(WPARAM wParam, LPARAM lParam)
+{
+	if (ServiceExists(MS_CLIST_FRAMES_ADDFRAME)) 
+	{
+		int flags = CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS, MAKEWPARAM(FO_FLAGS, frame_id), 0);
+		if(!(flags & F_VISIBLE)) 
+			CallService(MS_CLIST_FRAMES_SHFRAME, frame_id, 0);
+	}
+	else
+	{
+		if (!MyDetailsFrameVisible())
+		{
+			ShowWindow(hwnd_container, SW_SHOW);
+			DBWriteContactSettingByte(0, MODULE_NAME, SETTING_FRAME_VISIBLE, 1);
+
+			FixMainMenu();
+		}
+
+	}
+	return 0;
+}
+
+
+int HideFrameFunc(WPARAM wParam, LPARAM lParam)
+{
+	if (ServiceExists(MS_CLIST_FRAMES_ADDFRAME)) 
+	{
+		int flags = CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS, MAKEWPARAM(FO_FLAGS, frame_id), 0);
+		if (flags & F_VISIBLE) 
+			CallService(MS_CLIST_FRAMES_SHFRAME, frame_id, 0);
+	}
+	else
+	{
+		if (MyDetailsFrameVisible())
+		{
+			SendMessage(hwnd_container, WM_CLOSE, 0, 0);
+
+			FixMainMenu();
+		}
+	}
 	return 0;
 }
 

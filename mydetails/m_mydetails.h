@@ -151,4 +151,37 @@ returns: -1 on error, 0 on success
 #define MS_MYDETAILS_CICLE_THROUGHT_PROTOCOLS	"MyDetails/CicleThroughtProtocols"
 
 
+/*
+MyDetails/ShowFrame service
+Shows the MyDetails frame/window if it is hidden
+
+wparam = 0
+lparam = 0
+returns: 0
+*/
+#define MS_MYDETAILS_SHOWFRAME	"MyDetails/ShowFrame"
+
+
+/*
+MyDetails/HideFrame service
+Hides the MyDetails frame/window if it is shown
+
+wparam = 0
+lparam = 0
+returns: 0
+*/
+#define MS_MYDETAILS_HIDEFRAME	"MyDetails/HideFrame"
+
+
+/*
+MyDetails/ShowHideMyDetails service
+Shows the MyDetails frame/window if it is hidden or hides the MyDetails frame/window if it is shown
+
+wparam = 0
+lparam = 0
+returns: 0
+*/
+#define MS_MYDETAILS_SHOWHIDEFRAME	"MyDetails/ShowHideMyDetails"
+
+
 #endif

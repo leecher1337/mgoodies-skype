@@ -2,6 +2,10 @@ My Details
 
 Changelog:
 
+. 0.0.1.9
+  + Created 2 services: MyDetails/HideFrame and MyDetails/ShowFrame
+  * MyDetails/ShowHideMyDetails changed to work with frames too (it toggles the frame)
+
 . 0.0.1.8
   * Fix for crash when using main menu options
 
