@@ -94,8 +94,6 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 	if (DBSettingRead((WPARAM)&set, 0) == DBT_INVALIDPARAM)
 		return -1;
 
-	CompFreeVariant(0, (LPARAM)dbcgs->pValue);
-
 	switch (set.Type)
 	{
 		case DBT_ST_ASCIIZ: 
@@ -195,8 +193,6 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 	
 	if (DBSettingRead((WPARAM)&set, 0) == DBT_INVALIDPARAM)
 		return -1;
-	
-	CompFreeVariant(0, (LPARAM)dbcgs->pValue);
 
 	switch (set.Type)
 	{
@@ -567,6 +563,10 @@ int CompAddEvent(WPARAM hContact, LPARAM pEventInfo)
 	if (tmp != 0)
 		return tmp;
 
+	if (hContact == 0)
+		hContact = gDataBase->getContacts().getRootContact();
+
+
 	TDBTEvent ev = {0};
 	ev.cbSize = sizeof(ev);
 	ev.ModuleName = dbei->szModule;
@@ -583,6 +583,10 @@ int CompAddEvent(WPARAM hContact, LPARAM pEventInfo)
 int CompDeleteEvent(WPARAM hContact, LPARAM hEvent)
 {
 	int res = NotifyEventHooks(hEventDeletedEvent, hContact, hEvent);
+
+	if (hContact == 0)
+		hContact = gDataBase->getContacts().getRootContact();
+
 	if (res == 0)
 		return DBEventDelete(hContact, hEvent);
 
@@ -620,18 +624,29 @@ int CompMarkEventRead(WPARAM hContact, LPARAM hEvent)
 }
 int CompGetEventContact(WPARAM hEvent, LPARAM lParam)
 {
-	return DBEventGetContact(hEvent, 0);
+	TDBTContactHandle res = DBEventGetContact(hEvent, 0);
+	if (res == gDataBase->getContacts().getRootContact())
+		res = 0;
+
+	return res;
 }
 int CompFindFirstEvent(WPARAM hContact, LPARAM lParam)
 {
+	if (hContact == 0)
+		hContact = gDataBase->getContacts().getRootContact();
+
 	return gDataBase->getEvents().compFirstEvent(hContact);
 }
 int CompFindFirstUnreadEvent(WPARAM hContact, LPARAM lParam)
 {
+	if (hContact == 0)
+		hContact = gDataBase->getContacts().getRootContact();
 	return gDataBase->getEvents().compFirstUnreadEvent(hContact);
 }
 int CompFindLastEvent(WPARAM hContact, LPARAM lParam)
 {
+	if (hContact == 0)
+		hContact = gDataBase->getContacts().getRootContact();
 	return gDataBase->getEvents().compLastEvent(hContact);
 }
 int CompFindNextEvent(WPARAM hEvent, LPARAM lParam)

@@ -292,7 +292,7 @@ bool CBlockManager::WriteBlock(uint32_t BlockID, void * Buffer, size_t Size, uin
 	if (Size < h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc))
 	{
 		void * tmp = malloc(h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc));
-		memset((uint8_t*)tmp + sizeof(h) + Size, 0, h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc) - Size);
+		memset((uint8_t*)tmp + Size, 0, h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc) - Size);
 		memcpy(tmp, Buffer, Size);
 		Buffer = tmp;
 		freebuf = true;
