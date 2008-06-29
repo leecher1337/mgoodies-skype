@@ -2513,6 +2513,16 @@ LRESULT CALLBACK ListViewSubclassProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM
 	HWND hwndParent = GetParent(hDlg);
 	
 	switch(msg) {
+      case WM_GETDLGCODE :
+       {
+        LPMSG lpmsg;
+          if ( ( lpmsg = (LPMSG)lParam ) != NULL ) {
+             if ( lpmsg->message == WM_KEYDOWN
+             && lpmsg->wParam == VK_RETURN)
+           return DLGC_WANTALLKEYS;
+           }
+         break;
+       }
 		case WM_KEYDOWN:
         {
 			
@@ -2525,6 +2535,7 @@ LRESULT CALLBACK ListViewSubclassProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM
 				case 'A':  // ctrl-a
 					if(!isAlt && !isShift && isCtrl) SendMessage(hwndParent,WM_COMMAND,IDC_BTNCHECKALL,0);
 					break;
+				case VK_RETURN:
 				case VK_SPACE:
 					if(!isAlt && !isShift && !isCtrl) SendMessage(hwndParent,WM_YAMN_SHOWSELECTED,0,0);
 					break;
