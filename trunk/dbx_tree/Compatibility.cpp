@@ -110,9 +110,10 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 		} break;
 		case DBT_ST_WCHAR:
 		{	
-			dbcgs->pValue->type = DBVT_WCHAR;
-			dbcgs->pValue->pwszVal = set.Value.pWide;
-			dbcgs->pValue->cchVal = set.Value.Length - 1;
+			dbcgs->pValue->type = DBVT_UTF8;
+			dbcgs->pValue->pszVal = mir_utf8encodeW(set.Value.pWide);
+			dbcgs->pValue->cchVal = strlen(dbcgs->pValue->pszVal);
+			mir_free(set.Value.pWide);
 		} break;
 		case DBT_ST_BLOB:
 		{
@@ -210,9 +211,16 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 		} break;
 		case DBT_ST_WCHAR:
 		{	
-			dbcgs->pValue->type = DBVT_WCHAR;
-			dbcgs->pValue->pwszVal = set.Value.pWide;
-			dbcgs->pValue->cchVal = set.Value.Length - 1;
+			if (dbcgs->pValue->type == DBVT_WCHAR)
+			{
+				dbcgs->pValue->pwszVal = set.Value.pWide;
+				dbcgs->pValue->cchVal = set.Value.Length - 1;
+			} else {
+				dbcgs->pValue->type = DBVT_UTF8;
+				dbcgs->pValue->pszVal = mir_utf8encodeW(set.Value.pWide);
+				dbcgs->pValue->cchVal = strlen(dbcgs->pValue->pszVal);
+				mir_free(set.Value.pWide);
+			}
 		} break;
 		case DBT_ST_BLOB:
 		{
@@ -328,18 +336,22 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 			mir_free(set.Value.pUTF8);
 		} break;
 		case DBT_ST_WCHAR:
-		{			
-			if (dbcgs->pValue->cchVal < set.Value.Length * sizeof(wchar_t))
-			{
-				memcpy(dbcgs->pValue->pwszVal, set.Value.pWide, dbcgs->pValue->cchVal);
-				dbcgs->pValue->pwszVal[dbcgs->pValue->cchVal / sizeof(wchar_t) - 1] = 0;
-			} else {
-				memcpy(dbcgs->pValue->pwszVal, set.Value.pWide, set.Value.Length * sizeof(wchar_t));
-			}
-			dbcgs->pValue->type = DBVT_WCHAR;
-			dbcgs->pValue->cchVal = (set.Value.Length - 1) * sizeof(wchar_t);
-
+		{
+			char * tmp = mir_utf8encodeW(set.Value.pWide);
+			unsigned int l = strlen(tmp);
 			mir_free(set.Value.pWide);
+
+			if (dbcgs->pValue->cchVal < l + 1)
+			{
+				memcpy(dbcgs->pValue->pszVal, tmp, dbcgs->pValue->cchVal);
+				dbcgs->pValue->pszVal[l] = 0;
+			} else {
+				memcpy(dbcgs->pValue->pszVal, tmp, l + 1);
+			}
+			dbcgs->pValue->type = DBVT_UTF8;
+			dbcgs->pValue->cchVal = l;
+
+			mir_free(tmp);
 		} break;
 		case DBT_ST_BLOB:
 		{			

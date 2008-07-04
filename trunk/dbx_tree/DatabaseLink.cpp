@@ -1,4 +1,5 @@
 #include "DatabaseLink.h"
+#include <crtdbg.h>
 
 static int getCapability(int);
 static int getFriendlyName(char*, size_t, int);
@@ -90,6 +91,8 @@ Returns: 0 on success, nonzero on failure
 */
 static int Load(char* profile, void* link)
 {
+	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF /*| _CRTDBG_CHECK_ALWAYS_DF*/);
+
 	if (gDataBase) delete gDataBase;
 	gDataBase = new CDataBase(profile);
 
