@@ -152,7 +152,7 @@ bool CEventsTypeManager::GetType(uint32_t GlobalID, char * & Module, uint32_t & 
 
 		sname.cbSize = sizeof(sname);
 		sname.Descriptor = &d;
-		sname.Type = DBT_ST_ASCIIZ;
+		sname.Type = DBT_ST_ANSI;
 
 		sprintf_s(n, 256, "$EventTypes/%08x/ModuleID", GlobalID);
 		TDBTSettingHandle h = m_Settings.ReadSetting(sid);
@@ -170,11 +170,11 @@ bool CEventsTypeManager::GetType(uint32_t GlobalID, char * & Module, uint32_t & 
 				t->EventType = sid.Value.Int;
 					
 				t->ModuleName = new char[sname.Value.Length];
-				strcpy_s(t->ModuleName, sname.Value.Length, sname.Value.pAnsii);
+				strcpy_s(t->ModuleName, sname.Value.Length, sname.Value.pAnsi);
 				
 				m_Map.insert(std::make_pair(GlobalID, t));
 				
-				mir_free(sname.Value.pAnsii);
+				mir_free(sname.Value.pAnsi);
 
 				Module = t->ModuleName;
 				EventType  = t->EventType;
@@ -217,9 +217,9 @@ uint32_t CEventsTypeManager::EnsureIDExists(char* Module, uint32_t EventType)
 
 		sprintf_s(n, 256, "$EventTypes/%08x/ModuleName", res);
 		d.Flags = 0;
-		s.Type = DBT_ST_ASCIIZ;
+		s.Type = DBT_ST_ANSI;
 		s.Value.Length = strlen(Module) + 1;
-		s.Value.pAnsii = Module;
+		s.Value.pAnsi = Module;
 		m_Settings.WriteSetting(s);
 
 		m_Settings._EnsureModuleExists(Module);
@@ -521,7 +521,7 @@ inline uint32_t CEvents::adjustVirtualEventCount(TDBTContactHandle hContact, int
 		i = m_VirtualCountMap.find(hContact);
 	}
 
-	if (((Adjust < 0) && ((uint32_t)(-Adjust) < i->second)) || 
+	if (((Adjust < 0) && ((uint32_t)(-Adjust) <= i->second)) || 
 		  ((Adjust > 0) && ((0xffffffff - i->second) > (uint32_t)Adjust)))
 	{
 		i->second += Adjust;
