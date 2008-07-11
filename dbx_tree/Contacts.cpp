@@ -328,7 +328,7 @@ uint32_t CContacts::_adjustEventCount(TDBTContactHandle hContact, int32_t Adjust
 
 	if (m_BlockManager.ReadPart(hContact, &c, offsetof(TContact, EventCount), sizeof(c), sig))
 	{
-		if (((Adjust < 0) && ((uint32_t)(-Adjust) < c)) || 
+		if (((Adjust < 0) && ((uint32_t)(-Adjust) <= c)) || 
 			  ((Adjust > 0) && ((0xffffffff - c) > (uint32_t)Adjust)))
 		{
 			c += Adjust;

@@ -681,10 +681,10 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 	{		
 		switch (Setting.Type)
 		{
-			case DBT_ST_ASCIIZ: case DBT_ST_UTF8:
+			case DBT_ST_ANSI: case DBT_ST_UTF8:
 				{
 					if (Setting.Value.Length == 0)
-						blobsize = strlen(Setting.Value.pAnsii) + 1;
+						blobsize = strlen(Setting.Value.pAnsi) + 1;
 					else
 						blobsize = Setting.Value.Length;
 				} break;
@@ -871,12 +871,12 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 					Setting.Value.pWide[Setting.Value.Length - 1] = 0;
 					
 				} break;
-				case DBT_ST_ASCIIZ: case DBT_ST_UTF8:
+				case DBT_ST_ANSI: case DBT_ST_UTF8:
 				{
 					Setting.Value.Length = set->BlobLength;
-					Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, set->BlobLength);
-					memcpy(Setting.Value.pAnsii, str, set->BlobLength);					
-					Setting.Value.pAnsii[Setting.Value.Length - 1] = 0;
+					Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, set->BlobLength);
+					memcpy(Setting.Value.pAnsi, str, set->BlobLength);					
+					Setting.Value.pAnsi[Setting.Value.Length - 1] = 0;
 					
 				} break;
 				default:
@@ -906,14 +906,14 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 						case DBT_ST_INT64: Setting.Value.Int64 = ( int64_t)  set->Value.QWord; break;
 						case DBT_ST_BOOL:  Setting.Value.Bool  = set->Value.QWord != 0; break;
 
-						case DBT_ST_ASCIIZ: case DBT_ST_UTF8:
+						case DBT_ST_ANSI: case DBT_ST_UTF8:
 							{
 								char buffer[24];
 								buffer[0] = 0;
 								sprintf_s(buffer, 24, "%llu", set->Value.QWord);
 								Setting.Value.Length = strlen(buffer) + 1;
-								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, Setting.Value.Length);
-								memcpy(Setting.Value.pAnsii, buffer, Setting.Value.Length);
+								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);
+								memcpy(Setting.Value.pAnsi, buffer, Setting.Value.Length);
 													
 							} break;
 						case DBT_ST_WCHAR:
@@ -967,14 +967,14 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 						case DBT_ST_INT64: Setting.Value.Int64 = ( int64_t)  val; break;
 						case DBT_ST_BOOL:  Setting.Value.Bool  = val != 0; break;
 
-						case DBT_ST_ASCIIZ: case DBT_ST_UTF8:
+						case DBT_ST_ANSI: case DBT_ST_UTF8:
 							{
 								char buffer[24];
 								buffer[0] = 0;
 								sprintf_s(buffer, 24, "%lli", val);
 								Setting.Value.Length = strlen(buffer) + 1;
-								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, Setting.Value.Length);
-								memcpy(Setting.Value.pAnsii, buffer, Setting.Value.Length);
+								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);
+								memcpy(Setting.Value.pAnsi, buffer, Setting.Value.Length);
 							
 							} break;
 						case DBT_ST_WCHAR:
@@ -1025,14 +1025,14 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 						case DBT_ST_INT64: Setting.Value.Int64 = ( int64_t)  floor(val); break;
 						case DBT_ST_BOOL:  Setting.Value.Bool  = val != 0; break;
 							
-						case DBT_ST_ASCIIZ: case DBT_ST_UTF8:
+						case DBT_ST_ANSI: case DBT_ST_UTF8:
 							{
 								char buffer[128];
 								buffer[0] = 0;
 								sprintf_s(buffer, 24, "%lf", set->Value.QWord);
 								Setting.Value.Length = strlen(buffer) + 1;
-								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, Setting.Value.Length);
-								memcpy(Setting.Value.pAnsii, buffer, Setting.Value.Length);								
+								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);
+								memcpy(Setting.Value.pAnsi, buffer, Setting.Value.Length);								
 							} break;
 						case DBT_ST_WCHAR:
 							{
@@ -1082,7 +1082,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 								else
 									Setting.Value.Double = 0;
 							} break;
-						case DBT_ST_ASCIIZ: case DBT_ST_UTF8:
+						case DBT_ST_ANSI: case DBT_ST_UTF8:
 							{
 								char * buffer = "false";
 								Setting.Value.Length = 5;
@@ -1092,8 +1092,8 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 									Setting.Value.Length = 4;
 								}
 
-								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, Setting.Value.Length);
-								memcpy(Setting.Value.pAnsii, buffer, Setting.Value.Length);						
+								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);
+								memcpy(Setting.Value.pAnsi, buffer, Setting.Value.Length);						
 							} break;
 						case DBT_ST_WCHAR:
 							{
@@ -1116,7 +1116,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							} break;
 					}
 				} break;
-			case DBT_ST_ASCIIZ:
+			case DBT_ST_ANSI:
 				{
 					switch (Setting.Type)
 					{
@@ -1125,12 +1125,12 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{
 								Setting.Value.QWord = 0;		
 							} break;
-						case DBT_ST_ASCIIZ:
+						case DBT_ST_ANSI:
 							{
 								Setting.Value.Length = set->BlobLength;
-								Setting.Value.pAnsii = (char *) mir_realloc(Setting.Value.pAnsii, set->BlobLength);
-								memcpy(Setting.Value.pAnsii, str, set->BlobLength);
-								Setting.Value.pAnsii[Setting.Value.Length - 1] = 0;								
+								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, set->BlobLength);
+								memcpy(Setting.Value.pAnsi, str, set->BlobLength);
+								Setting.Value.pAnsi[Setting.Value.Length - 1] = 0;								
 							} break;
 						case DBT_ST_UTF8:
 							{								
@@ -1161,12 +1161,12 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{
 								Setting.Value.QWord = 0;		
 							} break;
-						case DBT_ST_ASCIIZ:
+						case DBT_ST_ANSI:
 							{								
 								str[set->BlobLength - 1] = 0;		
 								mir_utf8decode((char*)str, NULL);								
 								Setting.Value.Length = strlen((char*)str) + 1;
-								mir_realloc(Setting.Value.pAnsii, Setting.Value.Length);								
+								mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);								
 							} break;
 						case DBT_ST_UTF8:
 							{
@@ -1198,11 +1198,11 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{
 								Setting.Value.QWord = 0;		
 							} break;
-						case DBT_ST_ASCIIZ:
+						case DBT_ST_ANSI:
 							{
 								((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
-								Setting.Value.pAnsii = mir_u2a((wchar_t*)str);
-								Setting.Value.Length = strlen(Setting.Value.pAnsii) + 1;
+								Setting.Value.pAnsi = mir_u2a((wchar_t*)str);
+								Setting.Value.Length = strlen(Setting.Value.pAnsi) + 1;
 							} break;
 						case DBT_ST_UTF8:
 							{
@@ -1235,7 +1235,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{
 								Setting.Value.QWord = 0;		
 							} break;
-						case DBT_ST_ASCIIZ: case DBT_ST_WCHAR: case DBT_ST_UTF8:
+						case DBT_ST_ANSI: case DBT_ST_WCHAR: case DBT_ST_UTF8:
 							{
 								Setting.Value.Length = 0;
 								if (Setting.Value.pBlob)

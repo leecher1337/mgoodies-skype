@@ -96,22 +96,22 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 
 	switch (set.Type)
 	{
-		case DBT_ST_ASCIIZ: 
+		case DBT_ST_ANSI: 
 		{			
 			dbcgs->pValue->type = DBVT_ASCIIZ;
-			dbcgs->pValue->pszVal = set.Value.pAnsii;
+			dbcgs->pValue->pszVal = set.Value.pAnsi;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_UTF8:
 		{
-			dbcgs->pValue->type = DBVT_UTF8;
-			dbcgs->pValue->pszVal = set.Value.pUTF8;
+			dbcgs->pValue->type = DBVT_ASCIIZ; //DBVT_UTF8;
+			dbcgs->pValue->pszVal = mir_utf8decode(set.Value.pUTF8, NULL);
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_WCHAR:
 		{	
-			dbcgs->pValue->type = DBVT_UTF8;
-			dbcgs->pValue->pszVal = mir_utf8encodeW(set.Value.pWide);
+			dbcgs->pValue->type = DBVT_ASCIIZ;
+			dbcgs->pValue->pszVal = mir_u2a(set.Value.pWide);
 			dbcgs->pValue->cchVal = strlen(dbcgs->pValue->pszVal);
 			mir_free(set.Value.pWide);
 		} break;
@@ -186,7 +186,7 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 	
 	switch (dbcgs->pValue->type)
 	{
-		case DBVT_ASCIIZ: set.Type = DBT_ST_ASCIIZ; break;
+		case DBVT_ASCIIZ: set.Type = DBT_ST_ANSI; break;
 		case DBVT_BLOB:   set.Type = DBT_ST_BLOB; break;
 		case DBVT_UTF8:   set.Type = DBT_ST_UTF8; break;
 		case DBVT_WCHAR:  set.Type = DBT_ST_WCHAR; break;
@@ -197,10 +197,10 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 
 	switch (set.Type)
 	{
-		case DBT_ST_ASCIIZ: 
+		case DBT_ST_ANSI: 
 		{	
 			dbcgs->pValue->type = DBVT_ASCIIZ;
-			dbcgs->pValue->pszVal = set.Value.pAnsii;
+			dbcgs->pValue->pszVal = set.Value.pAnsi;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_UTF8:
@@ -289,13 +289,14 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 
 	if ((set.Type & DBT_STF_VariableLength) ^ (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
 	{
-		mir_free(set.Value.pBlob);
+		if (set.Type & DBT_STF_VariableLength)
+			mir_free(set.Value.pBlob);
 		return -1;
 	}
 
 	if ((set.Type & DBT_STF_VariableLength) && (dbcgs->pValue->type & DBVTF_VARIABLELENGTH))
 	{
-		if (!( ((set.Type == DBT_ST_ASCIIZ) && (dbcgs->pValue->type == DBVT_ASCIIZ)) ||
+		if (!( ((set.Type == DBT_ST_ANSI)   && (dbcgs->pValue->type == DBVT_ASCIIZ)) ||
 			     ((set.Type == DBT_ST_UTF8)   && (dbcgs->pValue->type == DBVT_UTF8  )) ||
 					 ((set.Type == DBT_ST_WCHAR)  && (dbcgs->pValue->type == DBVT_WCHAR )) ||
 					 ((set.Type == DBT_ST_BLOB)   && (dbcgs->pValue->type == DBVT_BLOB  )) ))
@@ -307,22 +308,25 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 
 	switch (set.Type)
 	{
-		case DBT_ST_ASCIIZ: 
+		case DBT_ST_ANSI: 
 		{			
 			if (dbcgs->pValue->cchVal < set.Value.Length)
 			{
-				memcpy(dbcgs->pValue->pszVal, set.Value.pAnsii, dbcgs->pValue->cchVal);
+				memcpy(dbcgs->pValue->pszVal, set.Value.pAnsi, dbcgs->pValue->cchVal);
 				dbcgs->pValue->pszVal[dbcgs->pValue->cchVal - 1] = 0;
 			} else {
-				memcpy(dbcgs->pValue->pszVal, set.Value.pAnsii, set.Value.Length);
+				memcpy(dbcgs->pValue->pszVal, set.Value.pAnsi, set.Value.Length);
 			}
 			dbcgs->pValue->type = DBVT_ASCIIZ;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 
-			mir_free(set.Value.pAnsii);
+			mir_free(set.Value.pAnsi);
 		} break;
 		case DBT_ST_UTF8:
 		{			
+			set.Value.pUTF8 = mir_utf8decode(set.Value.pUTF8, NULL);
+			set.Value.Length = strlen(set.Value.pUTF8);
+
 			if (dbcgs->pValue->cchVal < set.Value.Length)
 			{
 				memcpy(dbcgs->pValue->pszVal, set.Value.pUTF8, dbcgs->pValue->cchVal);
@@ -330,14 +334,14 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 			} else {
 				memcpy(dbcgs->pValue->pszVal, set.Value.pUTF8, set.Value.Length);
 			}
-			dbcgs->pValue->type = DBVT_UTF8;
+			dbcgs->pValue->type = DBVT_ASCIIZ;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 
 			mir_free(set.Value.pUTF8);
 		} break;
 		case DBT_ST_WCHAR:
 		{
-			char * tmp = mir_utf8encodeW(set.Value.pWide);
+			char * tmp = mir_u2a(set.Value.pWide);
 			unsigned int l = strlen(tmp);
 			mir_free(set.Value.pWide);
 
@@ -348,7 +352,7 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 			} else {
 				memcpy(dbcgs->pValue->pszVal, tmp, l + 1);
 			}
-			dbcgs->pValue->type = DBVT_UTF8;
+			dbcgs->pValue->type = DBVT_ASCIIZ;
 			dbcgs->pValue->cchVal = l;
 
 			mir_free(tmp);
@@ -434,8 +438,8 @@ int CompWriteContactSetting(WPARAM hContact, LPARAM pSetting)
 	{
 		case DBVT_ASCIIZ:
 		{
-			set.Type = DBT_ST_ASCIIZ;
-			set.Value.pAnsii = dbcws->value.pszVal;
+			set.Type = DBT_ST_ANSI;
+			set.Value.pAnsi = dbcws->value.pszVal;
 		} break;
 		case DBVT_UTF8:
 		{

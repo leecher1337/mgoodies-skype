@@ -280,7 +280,7 @@ static const uint16_t DBT_ST_BOOL   = 0x20;
 static const uint16_t DBT_ST_FLOAT  = 0x21;
 static const uint16_t DBT_ST_DOUBLE = 0x22;
 
-static const uint16_t DBT_ST_ASCIIZ = 0xff;
+static const uint16_t DBT_ST_ANSI   = 0xff;
 static const uint16_t DBT_ST_BLOB   = 0xfe;
 static const uint16_t DBT_ST_UTF8   = 0xfd;
 static const uint16_t DBT_ST_WCHAR  = 0xfc;
@@ -288,7 +288,7 @@ static const uint16_t DBT_ST_WCHAR  = 0xfc;
 #if (defined(_UNICODE) || defined(UNICODE))
 	static const uint16_t DBT_ST_TCHAR  = DBT_ST_WCHAR;
 #else
-	static const uint16_t DBT_ST_TCHAR  = DBT_ST_ASCIIZ;
+	static const uint16_t DBT_ST_TCHAR  = DBT_ST_ANSI;
 #endif
 
 static const uint16_t DBT_STF_Signed         = 0x10;
@@ -334,7 +334,7 @@ typedef
 			uint32_t Length;  // length in bytes of pBlob, length in characters of char types including trailing null
 			union {
 				uint8_t * pBlob;
-				char * pAnsii;
+				char * pAnsi;
 				char * pUTF8;
 				wchar_t * pWide;
 				TCHAR * pTChar;
@@ -396,9 +396,9 @@ typedef
 /**
 	\brief retrieves the handle of the setting
   \param wParam = PDBTSetting
-  \param lParam = TDBTSettingHandle
+  \param lParam = TDBTSettingHandle, could be 0 to create new setting, but needs wParam->Descriptor with valid data
 
-	\return hSetting when found (could change!), 0 otherwise
+	\return hSetting when found or created, 0 otherwise
 **/
 #define MS_DBT_SETTING_WRITEHANDLE  "DBT/Setting/WriteHandle"
 
