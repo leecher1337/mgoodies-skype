@@ -24,21 +24,16 @@ class CThreadLocalCounter
 {
 public:
 	typedef struct TThreadInfo {
-			TThreadInfo* Next;  //must be first elem - look at CThreadLocalCounter::Delete
-			TThreadInfo* NextDead;
+			TThreadInfo* Next;
 			unsigned int ThreadID;
+			int          Active;
 			unsigned int RecursionCount;
 		}	TThreadInfo, *PThreadInfo;
 private:
 	PThreadInfo m_HashTable[cTLCHASHTABLESIZE];
-	PThreadInfo m_Purgatory;
-	long m_OpenCount;
 
-	int HashIndex();
+	unsigned char HashIndex();
 	PThreadInfo Recycle();
-	void Reattach(PThreadInfo List);
-protected:
-	unsigned int m_HoldTime;
 
 public:
 	CThreadLocalCounter();
@@ -46,7 +41,6 @@ public:
 
 	void Open(PThreadInfo & Thread);
 	void Delete(PThreadInfo & Thread);
-	void Close(PThreadInfo & Thread);
 
 
 };
@@ -54,13 +48,13 @@ public:
 class CMultiReadExclusiveWriteSynchronizer
 {
 private:
-	CThreadLocalCounter tls;
-
 	long m_Sentinel;
 	HANDLE m_ReadSignal;
 	HANDLE m_WriteSignal;
 	unsigned int m_WaitRecycle;
 	unsigned int m_WriteRecursionCount;
+
+	CThreadLocalCounter tls;
 
 	unsigned int m_WriterID;
 	long m_RevisionLevel;

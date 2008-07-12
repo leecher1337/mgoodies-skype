@@ -12,7 +12,8 @@
 
 
 
-#define mrWRITEREQUEST 0xFFFF
+#define mrWRITEREQUEST 0x10000
+#define ALIVE          0x7FFFFFFF
 
 
 CThreadLocalCounter::CThreadLocalCounter()
@@ -21,17 +22,11 @@ CThreadLocalCounter::CThreadLocalCounter()
 	for (i = 0; i < cTLCHASHTABLESIZE; i++)
 		m_HashTable[i] = NULL;
 
-	m_Purgatory = NULL;
-	m_OpenCount = 0;
-
-	m_HoldTime = 60 * 1000; //1 minute
 }
 CThreadLocalCounter::~CThreadLocalCounter()
 {
 	PThreadInfo p, q;
 	int i;
-
-	assert(m_OpenCount == 0);
 
 	for (i = 0; i < cTLCHASHTABLESIZE; i++)
 	{
@@ -45,70 +40,38 @@ CThreadLocalCounter::~CThreadLocalCounter()
 			delete q;
 		}
 	}
-
-	p = m_Purgatory;
-	m_Purgatory = NULL;
-	
-	while (p)
-	{
-		q = p;
-		p = p->NextDead;
-		delete q;
-	}
 }
 
-int CThreadLocalCounter::HashIndex()
+unsigned char CThreadLocalCounter::HashIndex()
 {
 	unsigned long h = GetCurrentThreadId();	
 	return (cTLCHASHTABLESIZE - 1) & (h ^ (h >> 8));
 }
 CThreadLocalCounter::PThreadInfo CThreadLocalCounter::Recycle()
 {
-	PThreadInfo head, p, q;
-	head = (PThreadInfo) _InterlockedExchange((long*)&m_Purgatory, 0);
-	p = head;
-	q = head;
-	while ((p) && (p->ThreadID != 0))
+	int gen;
+	PThreadInfo res = m_HashTable[HashIndex()];
+	while (res)
 	{
-		q = p;
-		p = p->NextDead;
-	}
+		gen = _InterlockedExchange((long*)&res->Active, (long)ALIVE);
 
-	if (p) 
-	{
-		if (p == head)
+		if (gen != ALIVE)
 		{
-			head = p->NextDead;
+			res->ThreadID = GetCurrentThreadId();
+			return res;
 		} else {
-			q->NextDead = p->NextDead;
+			res = res->Next;
 		}
 	}
 
-	Reattach(head);
-	return p;
-}
-void CThreadLocalCounter::Reattach(PThreadInfo List)
-{
-	PThreadInfo p;
-	if (List)
-	{
-		p = List;
-		while (p->NextDead) p = p->NextDead;
-		p->NextDead = List;
-		p->NextDead = (PThreadInfo) _InterlockedExchange((long*)&m_Purgatory, (long)List);
-	}
+	return res;
 }
 
 void CThreadLocalCounter::Open(PThreadInfo & Thread)
 {
-	PThreadInfo p;
-	int h;
-	unsigned long curthread;
-
-	_InterlockedIncrement(&m_OpenCount);
-	h = HashIndex();
-	p = m_HashTable[h];
-	curthread = GetCurrentThreadId();
+	unsigned char h = HashIndex();
+	PThreadInfo p = m_HashTable[h];
+	unsigned long curthread = GetCurrentThreadId();
 
 	while ((p) && (p->ThreadID != curthread))
 		p = p->Next;
@@ -117,76 +80,25 @@ void CThreadLocalCounter::Open(PThreadInfo & Thread)
 	{
 		p = Recycle();
 		if (!p)
+		{
 			p = new TThreadInfo;
 			
-		memset(p, 0, sizeof(TThreadInfo));
-		p->ThreadID = curthread;
-		p->Next = p;
-		p->Next = (PThreadInfo)_InterlockedExchange((long*)&m_HashTable[h], (long)p);
+			p->ThreadID = curthread;
+			p->Active = ALIVE;
+			p->RecursionCount = 0;
+			p->Next = p;
+			p->Next = (PThreadInfo)_InterlockedExchange((long*)&m_HashTable[h], (long)p);
+		}
 	}
 
 	Thread = p;
 }
+
 void CThreadLocalCounter::Delete(PThreadInfo & Thread)
 {
-	PThreadInfo p;
-
-	assert(m_OpenCount > 0);
-	assert(Thread);
-
-	p = (PThreadInfo) &(m_HashTable[HashIndex()]); //cheating around
-	while ((p->Next) && (p->Next != Thread))
-		p = p->Next;
-
-	assert(p->Next == Thread);
-
-	_InterlockedExchange((long*)&p->Next, (long)Thread->Next);
-	Thread->NextDead = Thread;
-	Thread->NextDead = (PThreadInfo) _InterlockedExchange((long*)&m_Purgatory, (long)Thread);
+	Thread->ThreadID = 0;
+	Thread->Active = 0;
 }
-void CThreadLocalCounter::Close(PThreadInfo & Thread)
-{
-	PThreadInfo p, q, head;
-	PThreadInfo* trail;
-	unsigned long timestamp;
-
-	assert(m_OpenCount > 0);
-
-	head = (PThreadInfo)_InterlockedExchange((long*)&m_Purgatory,0);
-	if (_InterlockedDecrement(&m_OpenCount) == 0)
-	{
-		p = head;
-		trail = &head;
-		timestamp = GetTickCount();
-
-		while (p)
-		{
-			q = p;
-			p = p->NextDead;
-			
-			if (q->ThreadID == 0)
-			{
-				q->ThreadID = 0;
-				q->RecursionCount = timestamp;
-
-				trail = &(q->NextDead);
-			}
-			else if ((timestamp < q->RecursionCount) || (timestamp - q->RecursionCount > m_HoldTime))
-			{
-				delete q;
-				(*trail) = p;
-			} else {
-				trail = &(q->NextDead);
-			}
-		}
-	}
-
-	Reattach(head);
-	Thread = NULL;
-}
-
-
-
 
 
 
@@ -220,31 +132,37 @@ CMultiReadExclusiveWriteSynchronizer::~CMultiReadExclusiveWriteSynchronizer(void
 void CMultiReadExclusiveWriteSynchronizer::BeginRead()
 {
 	CThreadLocalCounter::PThreadInfo thread;
-	bool diddec = false;
-
-	if (m_WriterID != GetCurrentThreadId())
-	{
-		while (_InterlockedDecrement(&m_Sentinel) <= 0)
-		{
-			_InterlockedIncrement(&m_Sentinel);
-
-			WaitForReadSignal();
-		}
-
-		diddec = true;
-	}
+	bool wasrecursive;
+	int sentvalue;
 
 	tls.Open(thread);
 	thread->RecursionCount++;
+	wasrecursive = thread->RecursionCount > 1;
 
-	if ((thread->RecursionCount > 1) && diddec)
-		_InterlockedIncrement(&m_Sentinel);
+	if (m_WriterID != GetCurrentThreadId())
+	{
+		if (!wasrecursive)
+		{
+			WaitForReadSignal();
 
-	tls.Close(thread);	
+			while (_InterlockedDecrement((long*)&m_Sentinel) <= 0)
+			{
+				sentvalue = _InterlockedIncrement((long*)&m_Sentinel);
+
+				if (sentvalue == mrWRITEREQUEST)
+					UnblockOneWriter();
+
+				Sleep(0);
+
+				WaitForReadSignal();
+			}
+		}
+	}
 }
 void CMultiReadExclusiveWriteSynchronizer::EndRead()
 {
 	CThreadLocalCounter::PThreadInfo thread;
+	int test;
 
 	tls.Open(thread);
 	thread->RecursionCount--;
@@ -252,11 +170,18 @@ void CMultiReadExclusiveWriteSynchronizer::EndRead()
 	if (thread->RecursionCount == 0)
 	{
 		tls.Delete(thread);
-		if ((m_WriterID != GetCurrentThreadId()) && (_InterlockedIncrement(&m_Sentinel) == mrWRITEREQUEST))
-			UnblockOneWriter();
+		
+		if (m_WriterID != GetCurrentThreadId())
+		{
+			test = _InterlockedIncrement((long*)&m_Sentinel);
+
+			if ((test & (mrWRITEREQUEST - 1)) == 0)
+			{
+				UnblockOneWriter();
+			}
+		}
 	}
 
-	tls.Close(thread);
 }
 bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 {
@@ -267,7 +192,7 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 	int test;
 	long oldrevisionlevel;
 
-	if (m_WriterID != threadid)
+	if (m_WriterID != threadid) 
 	{
 		BlockReaders();
 
@@ -279,14 +204,14 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 		if (hasreadlock)
 			_InterlockedIncrement(&m_Sentinel);
 
-		tls.Close(thread);
-
-		while ((_InterlockedExchangeAdd(&m_Sentinel, -mrWRITEREQUEST) - mrWRITEREQUEST) != 0)
+		while (_InterlockedExchangeAdd(&m_Sentinel, -mrWRITEREQUEST) != mrWRITEREQUEST)
 		{
-			test = _InterlockedExchangeAdd(&m_Sentinel, mrWRITEREQUEST) + mrWRITEREQUEST;
+			test = _InterlockedExchangeAdd(&m_Sentinel, mrWRITEREQUEST);
 			if (test > 0)
 				WaitForWriteSignal();
 		}
+
+		BlockReaders();
 
 		if (hasreadlock)
 			_InterlockedDecrement(&m_Sentinel);
@@ -294,7 +219,6 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 		m_WriterID = threadid;
 
 		res = (oldrevisionlevel == (_InterlockedIncrement(&m_RevisionLevel) - 1));
-
 	}
 
 	m_WriteRecursionCount++;
@@ -314,14 +238,13 @@ void CMultiReadExclusiveWriteSynchronizer::EndWrite()
 		m_WriterID = 0;
 		_InterlockedExchangeAdd(&m_Sentinel, mrWRITEREQUEST);
 		UnblockOneWriter();
-		Sleep(0); //prefer Writers: give the chance to sneak in, before readers can
+		
 		UnblockReaders();
 	}
 
 	if (thread->RecursionCount == 0)
 		tls.Delete(thread);
 
-	tls.Close(thread);
 }
 
 
