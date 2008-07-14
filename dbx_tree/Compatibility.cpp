@@ -44,8 +44,9 @@ int CompGetContactCount(WPARAM wParam, LPARAM lParam)
 	TDBTContactIterFilter f = {0};
 	f.cbSize = sizeof(f);
 	f.fDontHasFlags = DBT_CF_IsGroup | DBT_CF_IsVirtual;
+	f.Options = DBT_CIFO_OSC_AC | DBT_CIFO_OC_AC;
 
-	TDBTContactIterationHandle hiter = DBContactIterInit((WPARAM)&f, 0);
+	TDBTContactIterationHandle hiter = DBContactIterInit((WPARAM)&f, gDataBase->getContacts().getRootContact());
 	int c = 0;
 	if ((hiter != 0) && (hiter != DBT_INVALIDPARAM))
 	{
@@ -77,10 +78,15 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 
 	char namebuf[512];
 	namebuf[0] = 0;
+
+	if (!(dbcgs->szModule || dbcgs->szSetting)) 
+		return -1;
+
 	if (dbcgs->szModule)
 		strcpy_s(namebuf, dbcgs->szModule);
 	strcat_s(namebuf, "/");
-	strcat_s(namebuf, dbcgs->szSetting);
+	if (dbcgs->szSetting)
+		strcat_s(namebuf, dbcgs->szSetting);
 	
 	TDBTSettingDescriptor desc = {0};
 	TDBTSetting set = {0};
