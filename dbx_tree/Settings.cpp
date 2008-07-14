@@ -1110,14 +1110,16 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							} break;
 						case DBT_ST_BLOB:
 							{
-								Setting.Value.pBlob = (uint8_t*) mir_realloc(Setting.Value.pBlob, 1);
+								Setting.Value.pBlob = (uint8_t*) mir_realloc(Setting.Value.pBlob, sizeof(bool));
 								(*((bool*)Setting.Value.pBlob)) = set->Value.Bool;								
-								Setting.Value.Length = 1;
+								Setting.Value.Length = sizeof(bool);
 							} break;
 					}
 				} break;
 			case DBT_ST_ANSI:
 				{
+					str[set->BlobLength - 1] = 0;
+
 					switch (Setting.Type)
 					{
 						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: case DBT_ST_BOOL: 
@@ -1130,17 +1132,14 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 								Setting.Value.Length = set->BlobLength;
 								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, set->BlobLength);
 								memcpy(Setting.Value.pAnsi, str, set->BlobLength);
-								Setting.Value.pAnsi[Setting.Value.Length - 1] = 0;								
 							} break;
 						case DBT_ST_UTF8:
-							{								
-								str[set->BlobLength - 1] = 0;
+							{
 								Setting.Value.pUTF8 = mir_utf8encode((char*)str);
 								Setting.Value.Length = strlen(Setting.Value.pUTF8) + 1;
 							} break;
 						case DBT_ST_WCHAR:
-							{				
-								str[set->BlobLength - 1] = 0;
+							{
 								Setting.Value.pWide = mir_a2u((char*)str);
 								Setting.Value.Length = wcslen(Setting.Value.pWide) + 1;
 							} break;
@@ -1154,6 +1153,8 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 				} break;
 			case DBT_ST_UTF8:
 				{
+					str[set->BlobLength - 1] = 0;		
+
 					switch (Setting.Type)
 					{
 						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: case DBT_ST_BOOL: 
@@ -1162,28 +1163,26 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 								Setting.Value.QWord = 0;		
 							} break;
 						case DBT_ST_ANSI:
-							{								
-								str[set->BlobLength - 1] = 0;		
-								mir_utf8decode((char*)str, NULL);								
+							{
+								mir_utf8decode((char*)str, NULL);
 								Setting.Value.Length = strlen((char*)str) + 1;
-								mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);								
+								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);								
+								memcpy(Setting.Value.pAnsi, str, Setting.Value.Length);
 							} break;
 						case DBT_ST_UTF8:
 							{
 								Setting.Value.Length = set->BlobLength;
 								Setting.Value.pUTF8 = (char *) mir_realloc(Setting.Value.pUTF8, set->BlobLength);
 								memcpy(Setting.Value.pUTF8, str, set->BlobLength);
-								Setting.Value.pUTF8[set->BlobLength - 1] = 0;									
 							} break;
 						case DBT_ST_WCHAR:
 							{								
-								str[set->BlobLength - 1] = 0;
 								Setting.Value.pWide = mir_utf8decodeW((char*)str);								
 								Setting.Value.Length = wcslen(Setting.Value.pWide) + 1;
 							} break;
 						case DBT_ST_BLOB:
 							{
-								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, set->BlobLength);
+								Setting.Value.pBlob = (uint8_t *) mir_realloc(Setting.Value.pBlob, set->BlobLength);
 								memcpy(Setting.Value.pBlob, str, set->BlobLength);
 								Setting.Value.Length = set->BlobLength;
 							} break;
@@ -1191,6 +1190,8 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 				} break;
 			case DBT_ST_WCHAR:
 				{
+					((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
+
 					switch (Setting.Type)
 					{
 						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: case DBT_ST_BOOL: 
@@ -1200,23 +1201,19 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							} break;
 						case DBT_ST_ANSI:
 							{
-								((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
 								Setting.Value.pAnsi = mir_u2a((wchar_t*)str);
 								Setting.Value.Length = strlen(Setting.Value.pAnsi) + 1;
 							} break;
 						case DBT_ST_UTF8:
 							{
-								((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
 								Setting.Value.pUTF8 = mir_utf8encodeW((wchar_t*)str);
 								Setting.Value.Length = strlen(Setting.Value.pUTF8) + 1;
 							} break;
 						case DBT_ST_WCHAR:
 							{
 								Setting.Value.Length = set->BlobLength / sizeof(wchar_t);
-								((wchar_t*)str)[set->BlobLength / sizeof(wchar_t) - 1] = 0;
 								Setting.Value.pWide = (wchar_t*) mir_realloc(Setting.Value.pWide, Setting.Value.Length * sizeof(wchar_t));
-								memcpy(Setting.Value.pWide, str, set->BlobLength);
-								Setting.Value.pWide[set->BlobLength / sizeof(wchar_t) - 1] = 0;
+								memcpy(Setting.Value.pWide, str, Setting.Value.Length * sizeof(wchar_t));
 							} break;
 						case DBT_ST_BLOB:
 							{

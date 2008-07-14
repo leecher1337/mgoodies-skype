@@ -287,19 +287,6 @@ void CDataBase::onFileSizeChange(CFileAccess * File, uint32_t Size)
 	}
 }
 
-CContacts & CDataBase::getContacts()
-{
-	return *m_Contacts;
-}
-CSettings & CDataBase::getSettings()
-{
-	return *m_Settings;
-}
-CEvents & CDataBase::getEvents()
-{
-	return *m_Events;
-}
-
 int CDataBase::getProfileName(int BufferSize, char * Buffer)
 {
 	char * slash = strrchr(m_FileName[DBFileSetting], '\\');
