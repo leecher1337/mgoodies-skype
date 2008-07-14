@@ -111,9 +111,18 @@ public:
 	int CheckDB();
 	int OpenDB();
 
-	CContacts & getContacts();
-	CSettings & getSettings();
-	CEvents   & getEvents();
+	CContacts & getContacts()
+	{
+		return *m_Contacts;
+	}
+	CSettings & getSettings()
+	{
+		return *m_Settings;
+	}
+	CEvents   & getEvents()
+	{
+		return *m_Events;
+	}
 
 	int getProfileName(int BufferSize, char * Buffer);
 	int getProfilePath(int BufferSize, char * Buffer);
