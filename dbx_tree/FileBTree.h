@@ -2,8 +2,8 @@
 #include "BTree.h"
 #include "BlockManager.h"
 
-template <typename TKey, typename TData = TEmpty, int SizeParam = 4, bool UniqueKeys = true>
-class CFileBTree :	public CBTree<TKey, TData, SizeParam, UniqueKeys>
+template <typename TKey, int SizeParam = 4>
+class CFileBTree :	public CBTree<TKey, SizeParam>
 {
 private:
 	
@@ -24,8 +24,8 @@ public:
 
 
 
-template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-CFileBTree<TKey, TData, SizeParam, UniqueKeys>::CFileBTree(CBlockManager & BlockManager, TNodeRef RootNode, uint16_t Signature)
+template <typename TKey, int SizeParam>
+CFileBTree<TKey, SizeParam>::CFileBTree(CBlockManager & BlockManager, TNodeRef RootNode, uint16_t Signature)
 :	CBTree(RootNode),
 	m_BlockManager(BlockManager)
 {
@@ -33,26 +33,26 @@ CFileBTree<TKey, TData, SizeParam, UniqueKeys>::CFileBTree(CBlockManager & Block
 	m_DestroyTree = false;
 }
 
-template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-CFileBTree<TKey, TData, SizeParam, UniqueKeys>::~CFileBTree()
+template <typename TKey, int SizeParam>
+CFileBTree<TKey, SizeParam>::~CFileBTree()
 {
 
 }
 
-template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-typename CFileBTree<TKey, TData, SizeParam, UniqueKeys>::TNodeRef CFileBTree<TKey, TData, SizeParam, UniqueKeys>::CreateNewNode()
+template <typename TKey, int SizeParam>
+typename CFileBTree<TKey, SizeParam>::TNodeRef CFileBTree<TKey, SizeParam>::CreateNewNode()
 {
 	return m_BlockManager.CreateBlock(sizeof(TNode) - 2, cSignature);
 }
 
-template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::DeleteNode(TNodeRef Node)
+template <typename TKey, int SizeParam>
+void CFileBTree<TKey, SizeParam>::DeleteNode(TNodeRef Node)
 {
 	m_BlockManager.DeleteBlock(Node);
 }
 
-template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::Read(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Dest)
+template <typename TKey, int SizeParam>
+void CFileBTree<TKey, SizeParam>::Read(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Dest)
 {
 	uint32_t sig = 0;
 	if (Offset == 0)
@@ -69,8 +69,8 @@ void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::Read(TNodeRef Node, uint32_
 
 }
 
-template <typename TKey, typename TData, int SizeParam, bool UniqueKeys>
-void CFileBTree<TKey, TData, SizeParam, UniqueKeys>::Write(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Source)
+template <typename TKey, int SizeParam>
+void CFileBTree<TKey, SizeParam>::Write(TNodeRef Node, uint32_t Offset, uint32_t Size, TNode & Source)
 {
 	if (Offset == 0)
 	{

@@ -36,11 +36,11 @@ inline bool CIterationHeap<TType>::A_b4_B(PHeapElement a, PHeapElement b)
 {
 	if (m_Type == ITForward)
 	{
-		if ((*a->Elem) == (*b->Elem)) return a->Index < b->Index;
-		return (*a->Elem) < (*b->Elem);
+		if ((**a->Elem) == (**b->Elem)) return a->Index < b->Index;
+		return (**a->Elem) < (**b->Elem);
 	} else {
-		if ((*a->Elem) == (*b->Elem)) return a->Index > b->Index;
-		return (*a->Elem) > (*b->Elem);
+		if ((**a->Elem) == (**b->Elem)) return a->Index > b->Index;
+		return (**a->Elem) > (**b->Elem);
 	}
 }
 

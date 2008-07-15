@@ -24,7 +24,8 @@ class CSettingsTree;
 **/
 
 typedef struct TSettingKey {
-	uint32_t Hash; /// 32 bit hash of the Setting name
+	uint32_t          Hash;    /// 32 bit hash of the Setting name
+	TDBTSettingHandle Setting;
 
 	bool operator <  (const TSettingKey & Other) const;
 	//bool operator <= (const TSettingKey & Other);
@@ -70,7 +71,7 @@ typedef struct TSetting {
 /**
 	\brief Manages the Settings in the Database
 **/
-class CSettingsTree : public CFileBTree<TSettingKey, TDBTSettingHandle, 8, false>
+class CSettingsTree : public CFileBTree<TSettingKey, 8>
 {
 protected:
 	TDBTContactHandle m_Contact;
@@ -171,9 +172,9 @@ private:
 	TOnRootChanged m_sigRootChanged;
 	void onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot);
 
-	void onDeleteSettingCallback(void * Tree, TSettingKey Key, TDBTSettingHandle Data, uint32_t Param);
+	void onDeleteSettingCallback(void * Tree, const TSettingKey & Key, uint32_t Param);
 	void onDeleteSettings(CContacts * Contacts, TDBTContactHandle hContact);
-	void onMergeSettingCallback(void * Tree, TSettingKey Key, TDBTSettingHandle Data, uint32_t Param);
+	void onMergeSettingCallback(void * Tree, const TSettingKey & Key, uint32_t Param);
 	void onMergeSettings(CContacts * Contacts, TDBTContactHandle Source, TDBTContactHandle Dest);
 
 	CSettingsTree * getSettingsTree(TDBTContactHandle hContact);

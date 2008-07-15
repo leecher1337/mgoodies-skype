@@ -78,7 +78,7 @@ typedef struct TContact {
 	All copies are stored in this BTree sorted to the realContact.
 	If the RealContact should be deleted take the first virtual duplicate and make it real. Also change the relation of other copies.
 **/
-class CVirtuals :	public CFileBTree<TVirtualKey, TEmpty, 4, true>
+class CVirtuals :	public CFileBTree<TVirtualKey, 4>
 {
 private:
 
@@ -113,7 +113,7 @@ static const uint16_t cVirtualNodeSignature = 0x874E;
 
 	A hContact is equivalent to the fileoffset of its related TContact structure
 **/
-class CContacts : public CFileBTree<TContactKey, TEmpty, 6, true>
+class CContacts : public CFileBTree<TContactKey, 6>
 {
 
 public:

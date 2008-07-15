@@ -26,8 +26,9 @@
 	and an Index, which makes it possible to store multiple events with the same timestamp
 **/
 typedef struct TEventKey {
-	uint32_t TimeStamp; /// timestamp at which the event occoured
-	uint32_t Index;     /// index counted globally
+	uint32_t        TimeStamp; /// timestamp at which the event occoured
+	uint32_t        Index;     /// index counted globally
+	TDBTEventHandle Event;
 
 	bool operator <  (const TEventKey & Other) const;
 	//bool operator <= (const TEventKey & Other);
@@ -59,13 +60,8 @@ typedef struct TEventLinkKey {
 **/
 typedef struct TEvent {
 	uint32_t Flags;				       /// Flags
-	union {
-		struct {
-			uint32_t TimeStamp;          /// Timestamp of the event (seconds elapsed since 1.1.1970) used as key element
-			uint32_t Index;              /// index counter to seperate events with the same timestamp
-		};
-		TEventKey Key;
-	};
+	uint32_t TimeStamp;          /// Timestamp of the event (seconds elapsed since 1.1.1970) used as key element
+	uint32_t Index;              /// index counter to seperate events with the same timestamp
 	uint32_t Type;               /// Eventtype
 	union {
 		TDBTContactHandle Contact;  /// hContact which owns this event
@@ -89,7 +85,7 @@ static const uint16_t cEventLinkNodeSignature = 0xC16A;
 /**
 	\brief Manages the Events Index in the Database
 **/
-class CEventsTree : public CFileBTree<TEventKey, TDBTEventHandle, 16, true>
+class CEventsTree : public CFileBTree<TEventKey, 16>
 {
 private:
 	TDBTContactHandle m_Contact;
@@ -106,7 +102,7 @@ public:
 	\brief Manages the Virtual Events Index
 	Sorry for duplicating code...
 **/
-class CVirtualEventsTree : public CBTree<TEventKey, TDBTEventHandle, 16, true>
+class CVirtualEventsTree : public CBTree<TEventKey, 16>
 {
 private:
 	TDBTContactHandle m_Contact;
@@ -144,7 +140,7 @@ private:
 };
 
 
-class CEventLinks : public CFileBTree<TEventLinkKey, TEmpty, 8, true>
+class CEventLinks : public CFileBTree<TEventLinkKey, 8>
 {
 public:
 	CEventLinks(CBlockManager & BlockManager, TNodeRef RootNode);
@@ -201,7 +197,7 @@ public:
 
 
 private:
-	typedef CBTree<TEventKey, TDBTEventHandle, 16, true> TEventBase;
+	typedef CBTree<TEventKey, 16> TEventBase;
 	typedef stdext::hash_map<TDBTContactHandle, CEventsTree*> TEventsTreeMap;
 	typedef stdext::hash_map<TDBTContactHandle, CVirtualEventsTree*> TVirtualEventsTreeMap;
 	typedef stdext::hash_map<TDBTContactHandle, uint32_t> TVirtualEventsCountMap;
@@ -234,8 +230,8 @@ private:
 
 	void onRootChanged(void* EventsTree, CEventsTree::TNodeRef NewRoot);
 
-	void onDeleteEventCallback(void * Tree, TEventKey Key, TDBTEventHandle Data, uint32_t Param);
-	void onDeleteVirtualEventCallback(void * Tree, TEventKey Key, TDBTEventHandle Data, uint32_t Param);
+	void onDeleteEventCallback(void * Tree, const TEventKey & Key, uint32_t Param);
+	void onDeleteVirtualEventCallback(void * Tree, const TEventKey & Key, uint32_t Param);
 	void onDeleteEvents(CContacts * Contacts, TDBTContactHandle hContact);
 	void onTransferEvents(CContacts * Contacts, TDBTContactHandle Source, TDBTContactHandle Dest);
 
