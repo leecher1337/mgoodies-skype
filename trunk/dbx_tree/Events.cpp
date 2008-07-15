@@ -4,18 +4,20 @@ inline bool TEventKey::operator <  (const TEventKey & Other) const
 {
 	if (TimeStamp != Other.TimeStamp) return TimeStamp < Other.TimeStamp;
 	if (Index != Other.Index) return Index < Other.Index;
+	if (Event != Other.Event) return Event < Other.Event;
 	return false;
 }
 
 inline bool TEventKey::operator == (const TEventKey & Other) const
 {
-	return (TimeStamp == Other.TimeStamp) && (Index == Other.Index);
+	return (TimeStamp == Other.TimeStamp) && (Index == Other.Index) && (Event == Other.Event);
 }
 
 inline bool TEventKey::operator >  (const TEventKey & Other) const
 {	
 	if (TimeStamp != Other.TimeStamp) return TimeStamp > Other.TimeStamp;
 	if (Index != Other.Index) return Index > Other.Index;
+	if (Event != Other.Event) return Event > Other.Event;
 	return false;
 }
 
@@ -296,58 +298,58 @@ void CEvents::onRootChanged(void* EventsTree, CEventsTree::TNodeRef NewRoot)
 }
 
 
-void CEvents::onDeleteEventCallback(void * Tree, TEventKey Key, TDBTEventHandle Data, uint32_t Param)
+void CEvents::onDeleteEventCallback(void * Tree, const TEventKey & Key, uint32_t Param)
 {
 	uint32_t sig = cEventSignature;
 	uint32_t f;
-	if (m_BlockManager.ReadPart(Data, &f, offsetof(TEvent, Flags), sizeof(f), sig))
+	if (m_BlockManager.ReadPart(Key.Event, &f, offsetof(TEvent, Flags), sizeof(f), sig))
 	{
 		if (f & DBT_EF_REFERENCECOUNTING)
 		{
-			TEventLinkKey key;
-			key.Contact = Param;
-			key.Event = Data;
-			m_Links.Delete(key);
+			TEventLinkKey lkey;
+			lkey.Contact = Param;
+			lkey.Event = Key.Event;
+			m_Links.Delete(lkey);
 
 			uint32_t rc;
-			m_BlockManager.ReadPart(Data, &rc, offsetof(TEvent, ReferenceCount), sizeof(rc), sig);
+			m_BlockManager.ReadPart(Key.Event, &rc, offsetof(TEvent, ReferenceCount), sizeof(rc), sig);
 			--rc;
 
 			if (rc == 1)
 			{
-				key.Contact = 0;
+				lkey.Contact = 0;
 
-				CEventLinks::iterator i = m_Links.LowerBound(key);
-				if (!i || (i.Key().Event != Data))
+				CEventLinks::iterator i = m_Links.LowerBound(lkey);
+				if (!i || (i->Event != Key.Event))
 					throwException("Event reference tree corrupt!");
 
 				f = f & (~DBT_EF_REFERENCECOUNTING);
-				TDBTContactHandle c = i.Key().Contact;
+				TDBTContactHandle c = i->Contact;
 
-				m_BlockManager.WritePart(Data, &rc, offsetof(TEvent, Contact), sizeof(c));
-				m_BlockManager.WritePart(Data, &f, offsetof(TEvent, Flags), sizeof(f));
+				m_BlockManager.WritePart(Key.Event, &rc, offsetof(TEvent, Contact), sizeof(c));
+				m_BlockManager.WritePart(Key.Event, &f, offsetof(TEvent, Flags), sizeof(f));
 
-				m_Links.Delete(i.Key()); // this is faster than deleting the iterator
+				m_Links.Delete(*i);
 			} else {
-				m_BlockManager.WritePart(Data, &rc, offsetof(TEvent, ReferenceCount), sizeof(rc));
+				m_BlockManager.WritePart(Key.Event, &rc, offsetof(TEvent, ReferenceCount), sizeof(rc));
 			}
 
 		} else {
-			TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(Data);
+			TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(Key.Event);
 
 			if (mit != m_VirtualOwnerMap.end())
 			{
-				m_BlockManager.MakeBlockVirtual(Data);
+				m_BlockManager.MakeBlockVirtual(Key.Event);
 			} else {
-				m_BlockManager.DeleteBlock(Data);
+				m_BlockManager.DeleteBlock(Key.Event);
 			}
 		}
 	}
 }
 
-void CEvents::onDeleteVirtualEventCallback(void * Tree, TEventKey Key, TDBTEventHandle Data, uint32_t Param)
+void CEvents::onDeleteVirtualEventCallback(void * Tree, const TEventKey & Key, uint32_t Param)
 {
-	TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(Data);
+	TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(Key.Event);
 	if (mit != m_VirtualOwnerMap.end())
 	{
 		TVirtualOwnerSet::iterator sit = mit->second->find(Param);
@@ -360,8 +362,8 @@ void CEvents::onDeleteVirtualEventCallback(void * Tree, TEventKey Key, TDBTEvent
 				delete mit->second;
 				m_VirtualOwnerMap.erase(mit);
 
-				if (m_BlockManager.IsForcedVirtual(Data))
-					m_BlockManager.DeleteBlock(Data);
+				if (m_BlockManager.IsForcedVirtual(Key.Event))
+					m_BlockManager.DeleteBlock(Key.Event);
 			}
 		}
 	}
@@ -418,12 +420,12 @@ void CEvents::onTransferEvents(CContacts * Contacts, TDBTContactHandle Source, T
 
 		while (i)
 		{
-			TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(i.Data());
+			TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(i->Event);
 			TVirtualOwnerSet * s = NULL;
 			if (mit == m_VirtualOwnerMap.end())
 			{
 				s = new TVirtualOwnerSet();
-				m_VirtualOwnerMap.insert(std::make_pair(i.Data(), s));
+				m_VirtualOwnerMap.insert(std::make_pair(i->Event, s));
 			} else {
 				s = mit->second;
 				mit->second->erase(Source);
@@ -454,22 +456,22 @@ void CEvents::onTransferEvents(CContacts * Contacts, TDBTContactHandle Source, T
 			uint32_t f;
 			uint32_t sig = cEventSignature;
 
-			if (m_BlockManager.ReadPart(i.Data(), &f, offsetof(TEvent, Flags), sizeof(f), sig))
+			if (m_BlockManager.ReadPart(i->Event, &f, offsetof(TEvent, Flags), sizeof(f), sig))
 			{
 				if (f & DBT_EF_REFERENCECOUNTING)
 				{
 					TEventLinkKey lkey;
 
 					lkey.Contact = Source;
-					lkey.Event = i.Data();
+					lkey.Event = i->Event;
 					
 					m_Links.Delete(lkey);
 
 					lkey.Contact = Dest;
-					m_Links.Insert(lkey, TEmpty());
+					m_Links.Insert(lkey);
 
 				} else {
-					m_BlockManager.WritePart(i.Data(), &Dest, offsetof(TEvent, Contact), sizeof(Dest));
+					m_BlockManager.WritePart(i->Event, &Dest, offsetof(TEvent, Contact), sizeof(Dest));
 				}
 			}
 
@@ -688,8 +690,8 @@ unsigned int CEvents::Delete(TDBTContactHandle hContact, TDBTEventHandle hEvent)
 
 				lkey.Contact = 0;
 				CEventLinks::iterator it = m_Links.LowerBound(lkey);
-				lkey = it.Key();
-				m_Links.Delete(it);
+				lkey = *it;
+				m_Links.Delete(*it);
 				m_BlockManager.WritePart(hEvent, &lkey.Contact, offsetof(TEvent, Contact), sizeof(lkey.Contact));
 			} else {
 				m_BlockManager.WritePart(hEvent, &ref, offsetof(TEvent, ReferenceCount), sizeof(ref));
@@ -784,6 +786,7 @@ TDBTEventHandle CEvents::Add(TDBTContactHandle hContact, TDBTEvent & Event)
 
 	key.TimeStamp = ev.TimeStamp;
 	key.Index = ev.Index;
+	key.Event = res;
 
 
 	ev.Flags = Event.Flags & ~(DBT_EF_VIRTUAL | DBT_EF_REFERENCECOUNTING); 
@@ -799,7 +802,7 @@ TDBTEventHandle CEvents::Add(TDBTContactHandle hContact, TDBTEvent & Event)
 
 	if (Event.Flags & DBT_EF_VIRTUAL)
 	{
-		vtree->Insert(key, res);
+		vtree->Insert(key);
 
 		TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(hContact);
 		if (mit == m_VirtualOwnerMap.end())
@@ -813,7 +816,7 @@ TDBTEventHandle CEvents::Add(TDBTContactHandle hContact, TDBTEvent & Event)
 		}
 		adjustVirtualEventCount(hContact, +1);
 	} else {
-		tree->Insert(key, res);
+		tree->Insert(key);
 		m_Contacts._adjustEventCount(hContact, +1);
 	}
 
@@ -857,7 +860,7 @@ unsigned int CEvents::MarkRead(TDBTContactHandle hContact, TDBTEventHandle hEven
 		b = false;
 		if (heap.Top())
 		{
-			TDBTEventHandle ev = heap.Top().Data();
+			TDBTEventHandle ev = heap.Top()->Event;
 			uint32_t flags;
 
 			heap.Pop();
@@ -886,6 +889,8 @@ unsigned int CEvents::WriteToDisk(TDBTContactHandle hContact, TDBTEventHandle hE
 	uint32_t sig = cEventSignature;
 	TEventKey key;
 	uint32_t flags;
+
+	key.Event = hEvent;
 
 	SYNC_BEGINWRITE(m_Sync);
 
@@ -924,7 +929,7 @@ unsigned int CEvents::WriteToDisk(TDBTContactHandle hContact, TDBTEventHandle hE
 	}
 
 	vtree->Delete(key);
-	tree->Insert(key, hEvent);
+	tree->Insert(key);
 
 	m_Contacts._adjustEventCount(hContact, +1);
 	adjustVirtualEventCount(hContact, -1);
@@ -943,7 +948,7 @@ unsigned int CEvents::WriteToDisk(TDBTContactHandle hContact, TDBTEventHandle hE
 			m_BlockManager.ReadPart(hEvent, &tmp, offsetof(TEvent, Contact), sizeof(tmp), sig);
 			
 			lkey.Contact = tmp;
-			m_Links.Insert(lkey, TEmpty());
+			m_Links.Insert(lkey);
 
 			uint32_t ref = 2;
 			flags = flags | DBT_EF_REFERENCECOUNTING;
@@ -959,7 +964,7 @@ unsigned int CEvents::WriteToDisk(TDBTContactHandle hContact, TDBTEventHandle hE
 		}
 
 		lkey.Contact = hContact;
-		m_Links.Insert(lkey, TEmpty());
+		m_Links.Insert(lkey);
 	}
 
 	SYNC_ENDWRITE(m_Sync);
@@ -993,8 +998,8 @@ TDBTContactHandle CEvents::GetContact(TDBTEventHandle hEvent)
 			lkey.Event = hEvent;
 			lkey.Contact = 0;
 			CEventLinks::iterator it = m_Links.LowerBound(lkey);
-			if ((it) && (it.Key().Event == hEvent))
-				res = it.Key().Contact;
+			if ((it) && (it->Event == hEvent))
+				res = it->Contact;
 		} else {
 			m_BlockManager.ReadPart(hEvent, &res, offsetof(TEvent, Contact), sizeof(res), sig);
 		}
@@ -1010,11 +1015,14 @@ unsigned int CEvents::HardLink(TDBTEventHardLink & HardLink)
 	uint32_t flags;
 	TEventKey key;
 
+	key.Event = HardLink.hEvent;
+
 	SYNC_BEGINWRITE(m_Sync);
 	
 
 	if (!m_BlockManager.ReadPart(HardLink.hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags), sig) ||
-		  !m_BlockManager.ReadPart(HardLink.hEvent, &key, offsetof(TEvent, Key), sizeof(key), sig))
+		  !m_BlockManager.ReadPart(HardLink.hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) ||
+			!m_BlockManager.ReadPart(HardLink.hEvent, &key.Index, offsetof(TEvent, Index), sizeof(key.Index), sig))
 	{
 		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
@@ -1041,7 +1049,7 @@ unsigned int CEvents::HardLink(TDBTEventHardLink & HardLink)
 			return DBT_INVALIDPARAM;
 		}
 
-		vtree->Insert(key, HardLink.hEvent);
+		vtree->Insert(key);
 		adjustVirtualEventCount(HardLink.hContact, +1);
 
 		TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(HardLink.hContact);
@@ -1064,7 +1072,7 @@ unsigned int CEvents::HardLink(TDBTEventHardLink & HardLink)
 			return DBT_INVALIDPARAM;
 		}
 
-		tree->Insert(key, HardLink.hEvent);
+		tree->Insert(key);
 		m_Contacts._adjustEventCount(HardLink.hContact, +1);
 
 		if (m_BlockManager.IsForcedVirtual(HardLink.hEvent))
@@ -1087,7 +1095,7 @@ unsigned int CEvents::HardLink(TDBTEventHardLink & HardLink)
 				m_BlockManager.WritePart(HardLink.hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags));
 
 				m_BlockManager.ReadPart(HardLink.hEvent, &lkey.Contact, offsetof(TEvent, Contact), sizeof(lkey.Contact), sig);
-				m_Links.Insert(lkey, TEmpty());
+				m_Links.Insert(lkey);
 
 				ref = 1;
 			} else {
@@ -1095,7 +1103,7 @@ unsigned int CEvents::HardLink(TDBTEventHardLink & HardLink)
 			}
 
 			lkey.Contact = HardLink.hContact;
-			m_Links.Insert(lkey, TEmpty());
+			m_Links.Insert(lkey);
 
 			m_BlockManager.WritePart(HardLink.hEvent, &ref, offsetof(TEvent, ReferenceCount), sizeof(ref));
 		}
@@ -1212,15 +1220,15 @@ TDBTEventHandle CEvents::IterationNext(TDBTEventIterationHandle Iteration)
 	TDBTEventHandle res = 0;
 	TEventBase::iterator it = iter->Heap->Top();
 	
-	while ((it) && (it.wasDeleted() || ((it.Key().TimeStamp <= iter->Filter.tTill) && (it.Data() == iter->LastEvent))))
+	while ((it) && (it.wasDeleted() || ((it->TimeStamp <= iter->Filter.tTill) && (it->Event == iter->LastEvent))))
 	{
 		iter->Heap->Pop();
 		it = iter->Heap->Top();
 	}
 
-	if ((it) && !it.wasDeleted() && (it.Key().TimeStamp <= iter->Filter.tTill))
+	if ((it) && !it.wasDeleted() && (it->TimeStamp <= iter->Filter.tTill))
 	{
-		res = it.Data();
+		res = it->Event;
 		iter->Heap->Pop();
 	}
 
@@ -1271,18 +1279,18 @@ TDBTEventHandle CEvents::compFirstEvent(TDBTContactHandle hContact)
 
 	if (i && vi)
 	{
-		if (i.Key() < vi.Key())
+		if (*i < *vi)
 		{
-			res = i.Data();
+			res = i->Event;
 		} else {
-			res = vi.Data();
+			res = vi->Event;
 		}
 	} else if (i)
 	{
-		res = i.Data();
+		res = i->Event;
 	} else if (vi)
 	{
-		res = vi.Data();
+		res = vi->Event;
 	}
 
 	SYNC_ENDREAD(m_Sync);
@@ -1320,12 +1328,12 @@ TDBTEventHandle CEvents::compFirstUnreadEvent(TDBTContactHandle hContact)
 	while (h.Top() && (res == 0))
 	{
 		uint32_t f;
-		if (m_BlockManager.ReadPart(h.Top().Data(), &f, offsetof(TEvent, Flags), sizeof(f), sig))
+		if (m_BlockManager.ReadPart(h.Top()->Event, &f, offsetof(TEvent, Flags), sizeof(f), sig))
 		{
 			if ((f & DBT_EF_READ) == 0)
 				res = l;
 			else
-				l = h.Top().Data();
+				l = h.Top()->Event;
 		}
 
 		if (res == 0)
@@ -1360,18 +1368,18 @@ TDBTEventHandle CEvents::compLastEvent(TDBTContactHandle hContact)
 
 	if (i && vi)
 	{
-		if (i.Key() > vi.Key())
+		if (*i > *vi)
 		{
-			res = i.Data();
+			res = i->Event;
 		} else {
-			res = vi.Data();
+			res = vi->Event;
 		}
 	} else if (i)
 	{
-		res = i.Data();
+		res = i->Event;
 	} else if (vi)
 	{
-		res = vi.Data();
+		res = vi->Event;
 	}
 
 	SYNC_ENDREAD(m_Sync);
@@ -1388,7 +1396,8 @@ TDBTEventHandle CEvents::compNextEvent(TDBTEventHandle hEvent)
 	TEventKey key;
 
 	if (!m_BlockManager.ReadPart(hEvent, &c, offsetof(TEvent, Contact), sizeof(c), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key, offsetof(TEvent, Key), sizeof(key), sig))
+		  !m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) ||
+			!m_BlockManager.ReadPart(hEvent, &key.Index, offsetof(TEvent, Index), sizeof(key.Index), sig))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return 0;
@@ -1423,18 +1432,18 @@ TDBTEventHandle CEvents::compNextEvent(TDBTEventHandle hEvent)
 	TDBTEventHandle res = 0;
 	if (i && vi)
 	{
-		if (i.Key() < vi.Key())
+		if (*i < *vi)
 		{
-			res = i.Data();
+			res = i->Event;
 		} else {
-			res = vi.Data();
+			res = vi->Event;
 		}
 	} else if (i)
 	{
-		res = i.Data();
+		res = i->Event;
 	} else if (vi)
 	{
-		res = vi.Data();
+		res = vi->Event;
 	}
 
 	SYNC_ENDREAD(m_Sync);
@@ -1451,7 +1460,8 @@ TDBTEventHandle CEvents::compPrevEvent(TDBTEventHandle hEvent)
 	TEventKey key;
 
 	if (!m_BlockManager.ReadPart(hEvent, &c, offsetof(TEvent, Contact), sizeof(c), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key, offsetof(TEvent, Key), sizeof(key), sig))
+		  !m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) ||
+			!m_BlockManager.ReadPart(hEvent, &key.Index, offsetof(TEvent, Index), sizeof(key.Index), sig))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return 0;
@@ -1486,18 +1496,18 @@ TDBTEventHandle CEvents::compPrevEvent(TDBTEventHandle hEvent)
 	TDBTEventHandle res = 0;
 	if (i && vi)
 	{
-		if (i.Key() > vi.Key())
+		if (*i > *vi)
 		{
-			res = i.Data();
+			res = i->Event;
 		} else {
-			res = vi.Data();
+			res = vi->Event;
 		}
 	} else if (i)
 	{
-		res = i.Data();
+		res = i->Event;
 	} else if (vi)
 	{
-		res = vi.Data();
+		res = vi->Event;
 	}
 
 	SYNC_ENDREAD(m_Sync);

@@ -70,17 +70,17 @@ TDBTContactHandle CVirtuals::_DeleteRealContact(TDBTContactHandle hRealContact)
 	key.Virtual = 0;
 
 	iterator i = LowerBound(key);
-	result = i.Key().Virtual;
+	result = i->Virtual;
 	i.setManaged();
-	Delete(i);
+	Delete(*i);
 
-	while ((i) && (i.Key().RealContact == hRealContact))
+	while ((i) && (i->RealContact == hRealContact))
 	{
-		key = i.Key();
-		Delete(i);
+		key = *i;
+		Delete(*i);
 
 		key.RealContact = result;		
-		Insert(key, TEmpty());		
+		Insert(key);		
 
 		Contact.VParent = result;
 		m_BlockManager.WritePart(key.Virtual, &Contact.VParent, offsetof(TContact, VParent), sizeof(TDBTContactHandle));
@@ -104,7 +104,7 @@ bool CVirtuals::_InsertVirtual(TDBTContactHandle hRealContact, TDBTContactHandle
 	key.RealContact = hRealContact;
 	key.Virtual = hVirtual;
 
-	Insert(key, TEmpty());
+	Insert(key);
 
 	return true;
 }
@@ -157,8 +157,8 @@ TDBTContactHandle CVirtuals::getFirst(TDBTContactHandle hRealContact)
 
 	iterator i = LowerBound(key);
 
-	if ((i) && (i.Key().RealContact == hRealContact))
-		key.Virtual = i.Key().Virtual;
+	if ((i) && (i->RealContact == hRealContact))
+		key.Virtual = i->Virtual;
 	else
 		key.Virtual = 0;
 
@@ -188,8 +188,8 @@ TDBTContactHandle CVirtuals::getNext(TDBTContactHandle hVirtual)
 
 	iterator i = LowerBound(key);
 	
-	if ((i) && (i.Key().RealContact == Contact.VParent))
-		key.Virtual = i.Key().Virtual;
+	if ((i) && (i->RealContact == Contact.VParent))
+		key.Virtual = i->Virtual;
 	else
 		key.Virtual = 0;
 
@@ -236,7 +236,7 @@ TDBTContactHandle CContacts::CreateRootContact()
 	Contact.Flags = DBT_CF_IsGroup | DBT_CF_IsRoot;
 	key.Contact = m_BlockManager.CreateBlock(sizeof(Contact), cContactSignature);
 	m_BlockManager.WriteBlock(key.Contact, &Contact, sizeof(Contact), cContactSignature);
-	Insert(key, TEmpty());
+	Insert(key);
 	return key.Contact;
 }
 
@@ -415,7 +415,7 @@ TDBTContactHandle CContacts::setParent(TDBTContactHandle hContact, TDBTContactHa
 		key.Parent = Contact.ParentContact;
 		Delete(key);
 		key.Parent = hParent;
-		Insert(key, TEmpty());
+		Insert(key);
 		m_BlockManager.WritePart(hContact, &key.Parent, offsetof(TContact, ParentContact), sizeof(key.Parent));
 		
 	} else {
@@ -443,7 +443,7 @@ TDBTContactHandle CContacts::setParent(TDBTContactHandle hContact, TDBTContactHa
 				key.Level = key.Level + dif;
 				m_BlockManager.WritePart(key.Contact, &key.Level, offsetof(TContact, Level), sizeof(key.Level));
 				
-				Insert(key, TEmpty());
+				Insert(key);
 			}
 			key.Contact = IterationNext(iter);
 		}
@@ -502,12 +502,12 @@ TDBTContactHandle CContacts::getFirstChild(TDBTContactHandle hParent)
 
 	iterator it = LowerBound(key);
 	
-	if ((!it) || (it.Key().Parent != hParent))
+	if ((!it) || (it->Parent != hParent))
 	{
 		SYNC_ENDREAD(m_Sync);	
 		return 0;
 	}
-	result = it.Key().Contact;
+	result = it->Contact;
 	SYNC_ENDREAD(m_Sync);
 
 	return result;
@@ -541,13 +541,13 @@ TDBTContactHandle CContacts::getLastChild(TDBTContactHandle hParent)
 
 	iterator it = UpperBound(key);
 	
-	if ((!it) || (it.Key().Parent != hParent))
+	if ((!it) || (it->Parent != hParent))
 	{
 		SYNC_ENDREAD(m_Sync);	
 		return 0;
 	}
 
-	result = it.Key().Contact;
+	result = it->Contact;
 	SYNC_ENDREAD(m_Sync);
 
 	return result;
@@ -574,12 +574,12 @@ TDBTContactHandle CContacts::getNextSilbing(TDBTContactHandle hContact)
 
 	iterator it = LowerBound(key);
 	
-	if ((!it) || (it.Key().Parent != parent))
+	if ((!it) || (it->Parent != parent))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
-	result = it.Key().Contact;
+	result = it->Contact;
 	SYNC_ENDREAD(m_Sync);
 
 	return result;
@@ -606,12 +606,12 @@ TDBTContactHandle CContacts::getPrevSilbing(TDBTContactHandle hContact)
 
 	iterator it = UpperBound(key);
 	
-	if ((!it) || (it.Key().Parent != parent))
+	if ((!it) || (it->Parent != parent))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
-	result = it.Key().Contact;
+	result = it->Contact;
 	SYNC_ENDREAD(m_Sync);
 
 	return result;
@@ -660,7 +660,7 @@ TDBTContactHandle CContacts::CreateContact(TDBTContactHandle hParent, uint32_t F
 	key.Parent = hParent;
 	key.Contact = hContact;
 
-	Insert(key, TEmpty());
+	Insert(key);
 	
 	if (parent.ChildCount == 0)
 	{
@@ -747,7 +747,7 @@ unsigned int CContacts::DeleteContact(TDBTContactHandle hContact)
 					
 					key.Level--;
 					m_BlockManager.WritePart(key.Contact, &key.Level, offsetof(TContact, Level), sizeof(key.Level));
-					Insert(key, TEmpty());
+					Insert(key);
 
 				}
 				key.Contact = IterationNext(iter);
@@ -869,9 +869,9 @@ TDBTContactHandle CContacts::IterationNext(TDBTContactIterationHandle Iteration)
 				key.Contact = 0xffffffff;
 
 				iterator c = UpperBound(key);
-				while ((c) && (c.Key().Parent == item.Handle))
+				while ((c) && (c->Parent == item.Handle))
 				{
-					newitem.Handle = c.Key().Contact;
+					newitem.Handle = c->Contact;
 					
 					if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
 						  m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TContact, Flags), sizeof(newitem.Flags), sig) &&
@@ -887,9 +887,9 @@ TDBTContactHandle CContacts::IterationNext(TDBTContactIterationHandle Iteration)
 				key.Contact = 0;
 
 				iterator c = LowerBound(key);
-				while ((c) && (c.Key().Parent == item.Handle))
+				while ((c) && (c->Parent == item.Handle))
 				{
-					newitem.Handle = c.Key().Contact;
+					newitem.Handle = c->Contact;
 					
 					if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
 						  m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TContact, Flags), sizeof(newitem.Flags), sig) &&
@@ -1049,10 +1049,10 @@ TDBTContactHandle CContacts::compFirstContact()
 	while (i && (res == 0))
 	{
 		uint32_t f = 0;
-		if (m_BlockManager.ReadPart(i.Key().Contact, &f, offsetof(TContact, Flags), sizeof(f), sig))
+		if (m_BlockManager.ReadPart(i->Contact, &f, offsetof(TContact, Flags), sizeof(f), sig))
 		{
 			if ((f & (DBT_CF_IsGroup | DBT_CF_IsVirtual)) == 0)
-				res = i.Key().Contact;
+				res = i->Contact;
 		}
 		if (res == 0)
 			++i;
@@ -1080,10 +1080,10 @@ TDBTContactHandle CContacts::compNextContact(TDBTContactHandle hContact)
 		while (i && (res == 0))
 		{
 			uint32_t f = 0;
-			if (m_BlockManager.ReadPart(i.Key().Contact, &f, offsetof(TContact, Flags), sizeof(f), sig))
+			if (m_BlockManager.ReadPart(i->Contact, &f, offsetof(TContact, Flags), sizeof(f), sig))
 			{
 				if ((f & (DBT_CF_IsGroup | DBT_CF_IsVirtual)) == 0)
-					res = i.Key().Contact;
+					res = i->Contact;
 			}
 			if (res == 0)
 				++i;

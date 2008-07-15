@@ -4,17 +4,21 @@
 
 inline bool TSettingKey::operator <  (const TSettingKey & Other) const
 {
-	return Hash < Other.Hash;	
+	if (Hash != Other.Hash) return Hash < Other.Hash;
+	if (Setting != Other.Setting) return Setting < Other.Setting;
+	return false;
 }
 
 inline bool TSettingKey::operator == (const TSettingKey & Other) const
 {
-	return (Hash == Other.Hash);
+	return (Hash == Other.Hash) && (Setting == Other.Setting);
 }
 
 inline bool TSettingKey::operator >  (const TSettingKey & Other) const
 {	
-	return Hash > Other.Hash;
+	if (Hash != Other.Hash) return Hash > Other.Hash;
+	if (Setting != Other.Setting) return Setting > Other.Setting;
+	return false;
 }
 
 
@@ -44,22 +48,22 @@ void CSettingsTree::setContact(TDBTContactHandle NewContact)
 
 TDBTSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length)
 {
-	TSettingKey key;
+	TSettingKey key = {0};
 	key.Hash = Hash;
-	iterator i = Find(key);
+	iterator i = LowerBound(key);
 	uint16_t l;
 	
 	TDBTSettingHandle res = 0;
 
 	char * str = NULL;
 
-	while ((res == 0) && (i) && (i.Key().Hash == Hash))
+	while ((res == 0) && (i) && (i->Hash == Hash))
 	{
 		l = Length;
-		if (m_Owner._ReadSettingName(m_BlockManager, m_EncryptionManager, i.Data(), l, str) &&
+		if (m_Owner._ReadSettingName(m_BlockManager, m_EncryptionManager, i->Setting, l, str) &&
 			(strncmp(str, Name, Length) == 0))
 		{
-			res = i.Data();
+			res = i->Setting;
 		} else {
 			++i;
 		}
@@ -73,16 +77,16 @@ TDBTSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * 
 
 bool CSettingsTree::_DeleteSetting(const uint32_t Hash, const TDBTSettingHandle hSetting)
 {
-	TSettingKey key;
+	TSettingKey key = {0};
 	key.Hash = Hash;
-	iterator i = Find(key);
+	iterator i = LowerBound(key);
 
-	while ((i) && (i.Key().Hash == Hash) && (i.Data() != hSetting))
+	while ((i) && (i->Hash == Hash) && (i->Setting != hSetting))
 		++i;
 
-	if ((i) && (i.Key().Hash == Hash))
+	if ((i) && (i->Hash == Hash))
 	{
-		Delete(i);
+		Delete(*i);
 		return true;
 	}
 	
@@ -93,7 +97,8 @@ bool CSettingsTree::_AddSetting(const uint32_t Hash, const TDBTSettingHandle hSe
 {
 	TSettingKey key;
 	key.Hash = Hash;
-	Insert(key, hSetting);
+	key.Setting = hSetting;
+	Insert(key);
 	return true;
 }
 
@@ -291,13 +296,13 @@ void CSettings::onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoo
 		m_Contacts._setSettingsRoot(((CSettingsTree*)SettingsTree)->getContact(), NewRoot);
 }
 
-void CSettings::onDeleteSettingCallback(void * Tree, TSettingKey Key, TDBTSettingHandle Data, uint32_t Param)
+void CSettings::onDeleteSettingCallback(void * Tree, const TSettingKey & Key, uint32_t Param)
 {
 	if (Param == 0)
 	{
-		m_BlockManagerSet.DeleteBlock(Data);
+		m_BlockManagerSet.DeleteBlock(Key.Setting);
 	} else {
-		m_BlockManagerPri.DeleteBlock(Data);
+		m_BlockManagerPri.DeleteBlock(Key.Setting);
 	}
 }
 void CSettings::onDeleteSettings(CContacts * Contacts, TDBTContactHandle hContact)
@@ -331,34 +336,38 @@ typedef struct TSettingMergeHelper
 } TSettingMergeHelper, *PSettingMergeHelper;
 
 
-void CSettings::onMergeSettingCallback(void * Tree, TSettingKey Key, TDBTSettingHandle Data, uint32_t Param)
+void CSettings::onMergeSettingCallback(void * Tree, const TSettingKey & Key,uint32_t Param)
 {
 	PSettingMergeHelper hlp = (PSettingMergeHelper)Param;
 
 	uint16_t dnl = 0;
 	char * dnb = NULL;
 		
-	_ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, Data, dnl, dnb);
+	_ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, Key.Setting, dnl, dnb);
 
-	CSettingsTree::iterator i = hlp->SourceTree->Find(Key);
+	TSettingKey k = {0};
+	k.Hash = Key.Hash;
+
+	CSettingsTree::iterator i = hlp->SourceTree->LowerBound(k);
 	TDBTSettingHandle res = 0;
-	while (i && (i.Key() == Key) && (res == 0))
+	while ((res == 0) && i && (i->Hash == Key.Hash))
 	{
 		uint16_t snl = dnl;
 		char * snb = NULL;
 		
-		if (_ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, i.Data(), snl, snb)
+		if (_ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, i->Setting, snl, snb)
 			  && (strcmp(dnb, snb) == 0)) // found it
 		{
-			res = i.Data();
+			res = i->Setting;
 		}
 	}
 
 	if (res == 0)
 	{
-		hlp->SourceTree->Insert(Key, Data);
+		hlp->SourceTree->Insert(Key);
 	} else {
-		i.SetData(Data);
+		hlp->SourceTree->Delete(*i);
+		hlp->SourceTree->Insert(Key);
 		m_BlockManagerPri.DeleteBlock(res);
 	}
 }
@@ -383,7 +392,7 @@ void CSettings::onMergeSettings(CContacts * Contacts, TDBTContactHandle Source, 
 
 		while (it) // transfer all source settings to new contact
 		{
-			m_BlockManagerPri.WritePart(it.Data(), &Dest, offsetof(TSetting, Contact), sizeof(Dest));
+			m_BlockManagerPri.WritePart(it->Setting, &Dest, offsetof(TSetting, Contact), sizeof(Dest));
 			++it;
 		}
 
@@ -1386,13 +1395,13 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 
 		if (iter->Heap->Top())
 		{
-			uint32_t h = iter->Heap->Top().Key().Hash;
+			uint32_t h = iter->Heap->Top()->Hash;
 			std::queue<TSettingIterationHelper> q;
 			TSettingIterationHelper help;
 			help.NameLen = 0;
 			help.Name = NULL;
 			
-			help.Handle = iter->Heap->Top().Data();
+			help.Handle = iter->Heap->Top()->Setting;
 			help.Tree = (CSettingsTree *) iter->Heap->Top().Tree();
 			if (help.Tree)
 				q.push(help);
@@ -1400,11 +1409,11 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 			iter->Heap->Pop();
 
 			// add all candidates
-			while (iter->Heap->Top() && (iter->Heap->Top().Key().Hash == h))
+			while (iter->Heap->Top() && (iter->Heap->Top()->Hash == h))
 			{
 				if (!iter->Heap->Top().wasDeleted())
 				{
-					help.Handle = iter->Heap->Top().Data();
+					help.Handle = iter->Heap->Top()->Setting;
 					help.Tree = (CSettingsTree *) iter->Heap->Top().Tree();
 					q.push(help);
 				}
