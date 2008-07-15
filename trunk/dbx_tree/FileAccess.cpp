@@ -7,6 +7,8 @@ CFileAccess::CFileAccess(const char* FileName, CEncryptionManager & EncryptionMa
 	strcpy_s(m_FileName, strlen(FileName) + 1, FileName);
 	m_ReadOnly = false;
 	m_EncryptionStart = EncryptionStart;
+
+	m_LastAllocTime = _time32(NULL);
 }
 
 CFileAccess::~CFileAccess()
@@ -119,20 +121,36 @@ uint32_t CFileAccess::Write(void* Buf, uint32_t Dest, uint32_t Size)
 
 uint32_t CFileAccess::SetSize(uint32_t Size)
 {
-	m_Size = Size;
-	m_sigFileSizeChange.emit(this, Size);
+	m_sigFileSizeChanged.emit(this, Size);
 
-	Size = (Size + 0x00000fff) & 0xfffff000; // align on 4kb
+	m_Size = Size;
+
+	Size = (Size + m_AllocGranularity - 1) & ~(m_AllocGranularity - 1);
+	
+	if (Size == 0)
+		Size = m_AllocGranularity;
 
 	if (Size >= m_EncryptionStart)
 		Size = m_EncryptionManager.AlignSize(Size - m_EncryptionStart, ET_FILE, Size - m_EncryptionStart) + m_EncryptionStart;
 
-	if (Size == 0)
-		Size = 4096;
-
 	if (Size != m_AllocSize)
 	{
 		m_AllocSize = mSetSize(Size);
+
+		// adapt Alloc Granularity
+		uint32_t t = _time32(NULL);
+		uint32_t d = t - m_LastAllocTime;
+		m_LastAllocTime = t;
+		
+		if (d < 30) // increase alloc stepping
+		{
+			if (m_AllocGranularity < m_MaxAllocGranularity)
+				m_AllocGranularity = m_AllocGranularity << 1;
+		} else if (d > 120) // decrease alloc stepping
+		{
+			if (m_AllocGranularity > m_MinAllocGranularity)
+				m_AllocGranularity = m_AllocGranularity >> 1;
+		}
 	}
 
 	return Size;	
@@ -151,7 +169,7 @@ bool CFileAccess::GetReadOnly()
 	return m_ReadOnly;
 }
 
-CFileAccess::TOnFileSizeChange & CFileAccess::sigFileSizeChange()
+CFileAccess::TOnFileSizeChanged & CFileAccess::sigFileSizeChanged()
 {
-	return m_sigFileSizeChange;
+	return m_sigFileSizeChanged;
 }

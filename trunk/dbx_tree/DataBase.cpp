@@ -123,7 +123,7 @@ int CDataBase::LoadFile(TDBFileType Index)
 	m_EncryptionManager[Index]->InitEncryption(m_Header[Index].Gen.FileEncryption);
 
 	m_FileAccess[Index]->SetSize(m_Header[Index].Gen.FileSize);
-	m_FileAccess[Index]->sigFileSizeChange().connect(this, &CDataBase::onFileSizeChange);
+	m_FileAccess[Index]->sigFileSizeChanged().connect(this, &CDataBase::onFileSizeChanged);
 
 	m_BlockManager[Index] = new CBlockManager(*m_FileAccess[Index], *m_EncryptionManager[Index]);
 	m_HeaderBlock[Index] = m_BlockManager[Index]->ScanFile(sizeof(m_Header[Index]), cHeaderBlockSignature, m_Header[Index].Gen.FileSize);
@@ -193,9 +193,11 @@ int CDataBase::OpenDB()
 												 m_Header[DBFilePrivate].Pri.EventLinks,
 												 m_Sync,
 												 *m_Contacts,
-												 *m_Settings);
+												 *m_Settings,
+												 m_Header[DBFilePrivate].Pri.EventIndexCounter);
 
 	m_Events->sigLinkRootChanged().connect(this, &CDataBase::onEventLinksRootChanged);
+	m_Events->_sigIndexCounterChanged().connect(this, &CDataBase::onEventIndexCounterChanged);
 	
 	return 0;
 }
@@ -275,7 +277,7 @@ void CDataBase::onEventLinksRootChanged(void* Events, CEventLinks::TNodeRef NewR
 	m_Header[DBFilePrivate].Pri.EventLinks = NewRoot;
 	ReWriteHeader(DBFilePrivate);
 }
-void CDataBase::onFileSizeChange(CFileAccess * File, uint32_t Size)
+void CDataBase::onFileSizeChanged(CFileAccess * File, uint32_t Size)
 {
 	if (File == m_FileAccess[DBFileSetting])
 	{
@@ -285,6 +287,12 @@ void CDataBase::onFileSizeChange(CFileAccess * File, uint32_t Size)
 		m_Header[DBFilePrivate].Gen.FileSize = Size;
 		ReWriteHeader(DBFilePrivate);
 	}
+}
+
+void CDataBase::onEventIndexCounterChanged(CEvents * Events, uint32_t Counter)
+{
+	m_Header[DBFilePrivate].Pri.EventIndexCounter = Counter;
+	ReWriteHeader(DBFilePrivate);
 }
 
 int CDataBase::getProfileName(int BufferSize, char * Buffer)

@@ -235,7 +235,8 @@ CEvents::CEvents(
 	CEventLinks::TNodeRef LinkRootNode, 
 	CMultiReadExclusiveWriteSynchronizer & Synchronize,
 	CContacts & Contacts, 
-	CSettings & Settings
+	CSettings & Settings,
+	uint32_t IndexCounter
 )
 :	m_Sync(Synchronize),
 	m_BlockManager(BlockManager),	
@@ -245,10 +246,11 @@ CEvents::CEvents(
 	m_Links(BlockManager, LinkRootNode),
 	m_EventsMap(),
 	m_VirtualEventsMap(),
-	m_VirtualOwnerMap()
+	m_VirtualOwnerMap(),
+
+	m_sigIndexCounterChanged()
 {
-	srand(_time32(NULL) + GetTickCount() + GetCurrentThreadId());
-	m_Counter = rand() & 0xffff;
+	m_Counter = IndexCounter + 0x20;
 
 	m_Contacts._sigDeleteEvents().connect(this, &CEvents::onDeleteEvents);
 	m_Contacts._sigTransferEvents().connect(this, &CEvents::onTransferEvents);
@@ -281,6 +283,10 @@ CEvents::~CEvents()
 CEventLinks::TOnRootChanged & CEvents::sigLinkRootChanged() 
 {
 	return m_Links.sigRootChanged();
+}
+CEvents::TOnIndexCounterChanged & CEvents::_sigIndexCounterChanged()
+{
+	return m_sigIndexCounterChanged;
 }
 
 
@@ -582,17 +588,10 @@ unsigned int CEvents::Get(TDBTEventHandle hEvent, TDBTEvent & Event)
 
 	Event.Timestamp = ev->TimeStamp;
 
-	if (Event.pBlob)
-	{
-		if (Event.cbBlob >= ev->DataLength)
-			memcpy(Event.pBlob, ev + 1, ev->DataLength);
-		else
-			memcpy(Event.pBlob, ev + 1, Event.cbBlob);		
-	} else {
-		Event.pBlob = (uint8_t*)mir_alloc(ev->DataLength);
-		memcpy(Event.pBlob, ev + 1, ev->DataLength);
-	}
-
+	if (Event.cbBlob < ev->DataLength)
+		Event.pBlob = (uint8_t*) mir_realloc(Event.pBlob, ev->DataLength);
+	
+	memcpy(Event.pBlob, ev + 1, ev->DataLength);	
 	Event.cbBlob = ev->DataLength;
 
 	free(buf);
@@ -779,7 +778,9 @@ TDBTEventHandle CEvents::Add(TDBTContactHandle hContact, TDBTEvent & Event)
 
 	ev.TimeStamp = Event.Timestamp;
 	ev.Index = m_Counter;
-	m_Counter += rand() & 0xffff + 1;
+	m_Counter++;
+	if ((m_Counter & 0x1f) == 0)
+		m_sigIndexCounterChanged.emit(this, m_Counter);
 
 	key.TimeStamp = ev.TimeStamp;
 	key.Index = ev.Index;
@@ -1211,13 +1212,13 @@ TDBTEventHandle CEvents::IterationNext(TDBTEventIterationHandle Iteration)
 	TDBTEventHandle res = 0;
 	TEventBase::iterator it = iter->Heap->Top();
 	
-	while ((it) && (it.Key().TimeStamp <= iter->Filter.tTill) && (it.Data() == iter->LastEvent))
+	while ((it) && (it.wasDeleted() || ((it.Key().TimeStamp <= iter->Filter.tTill) && (it.Data() == iter->LastEvent))))
 	{
 		iter->Heap->Pop();
 		it = iter->Heap->Top();
 	}
 
-	if ((it) && (it.Key().TimeStamp <= iter->Filter.tTill))
+	if ((it) && !it.wasDeleted() && (it.Key().TimeStamp <= iter->Filter.tTill))
 	{
 		res = it.Data();
 		iter->Heap->Pop();
@@ -1422,7 +1423,7 @@ TDBTEventHandle CEvents::compNextEvent(TDBTEventHandle hEvent)
 	TDBTEventHandle res = 0;
 	if (i && vi)
 	{
-		if (i.Key() > vi.Key())
+		if (i.Key() < vi.Key())
 		{
 			res = i.Data();
 		} else {
@@ -1485,7 +1486,7 @@ TDBTEventHandle CEvents::compPrevEvent(TDBTEventHandle hEvent)
 	TDBTEventHandle res = 0;
 	if (i && vi)
 	{
-		if (i.Key() < vi.Key())
+		if (i.Key() > vi.Key())
 		{
 			res = i.Data();
 		} else {
