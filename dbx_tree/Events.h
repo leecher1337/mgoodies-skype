@@ -165,14 +165,16 @@ public:
 		CEventLinks::TNodeRef LinkRootNode, 
 		CMultiReadExclusiveWriteSynchronizer & Synchronize,
 		CContacts & Contacts, 
-		CSettings & Settings
+		CSettings & Settings,
+		uint32_t IndexCounter
 		);
 	~CEvents();
 
 	CEventLinks::TOnRootChanged & sigLinkRootChanged();
+	
+	typedef sigslot::signal2<CEvents *, uint32_t> TOnIndexCounterChanged;
+	TOnIndexCounterChanged & _sigIndexCounterChanged();
 
-//	unsigned int TypeRegister(TDBEventTypeDescriptor & Type);
-//	PDBEventTypeDescriptor TypeGet(char * ModuleName, uint32_t EventType);
 
 	//compatibility
 	TDBTEventHandle compFirstEvent(TDBTContactHandle hContact);
@@ -222,6 +224,7 @@ private:
 	TVirtualEventsCountMap m_VirtualCountMap;
 
 	uint32_t m_Counter;
+	TOnIndexCounterChanged m_sigIndexCounterChanged;
 
 	typedef struct TEventIteration {
 		TDBTEventIterFilter Filter;

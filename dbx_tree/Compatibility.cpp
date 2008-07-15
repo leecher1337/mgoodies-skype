@@ -3,7 +3,6 @@
 	#include "m_database.h"
 #undef DB_NOHELPERFUNCTIONS
 
-#include <map>
 
 HANDLE gCompServices[31] = {0};
 HANDLE gEvents[6] = {0};
@@ -616,7 +615,11 @@ int CompDeleteEvent(WPARAM hContact, LPARAM hEvent)
 }
 int CompGetBlobSize(WPARAM hEvent, LPARAM lParam)
 {
-	return DBEventGetBlobSize(hEvent, 0);
+	int res = DBEventGetBlobSize(hEvent, 0);
+	if (res == DBT_INVALIDPARAM)
+		return -1;
+
+	return res;
 }
 int CompGetEvent(WPARAM hEvent, LPARAM pEventInfo)
 {
@@ -626,8 +629,8 @@ int CompGetEvent(WPARAM hEvent, LPARAM pEventInfo)
 
 	TDBTEvent ev = {0};
 	ev.cbSize = sizeof(ev);
-	ev.cbBlob = dbei->cbBlob;
-	ev.pBlob = dbei->pBlob;
+	ev.cbBlob = 0;
+	ev.pBlob = NULL;
 
 	int res = DBEventGet(hEvent, (LPARAM)&ev);
 	
@@ -635,9 +638,20 @@ int CompGetEvent(WPARAM hEvent, LPARAM pEventInfo)
 	dbei->timestamp = ev.Timestamp;
 	dbei->flags = ev.Flags;
 	dbei->eventType = ev.EventType;
+
+	if (dbei->cbBlob && dbei->pBlob)
+	{
+		if (dbei->cbBlob >= ev.cbBlob)
+			memcpy(dbei->pBlob, ev.pBlob, ev.cbBlob);
+		else
+			memcpy(dbei->pBlob, ev.pBlob, dbei->cbBlob);
+	}
+	mir_free(ev.pBlob);
 	dbei->cbBlob = ev.cbBlob;
-	dbei->pBlob = ev.pBlob;
-	
+		
+	if (res == DBT_INVALIDPARAM)
+		return 1;
+
 	return res;
 }
 int CompMarkEventRead(WPARAM hContact, LPARAM hEvent)

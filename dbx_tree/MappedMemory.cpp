@@ -11,7 +11,9 @@ CMappedMemory::CMappedMemory(const char* FileName, CEncryptionManager & Encrypti
 	m_Base = NULL;
 	
 	GetSystemInfo(&sysinfo);
-	m_AllocGranularity = sysinfo.dwAllocationGranularity;
+	m_AllocGranularity = sysinfo.dwAllocationGranularity; // usually 64kb
+	m_MinAllocGranularity = m_AllocGranularity;           // must be at least one segment
+	m_MaxAllocGranularity = m_AllocGranularity << 4;      // usually 1mb for fast increasing
 
 	m_DirectFile = CreateFileA(FileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, 0);
 	if (m_DirectFile == INVALID_HANDLE_VALUE) 
@@ -49,7 +51,10 @@ uint32_t CMappedMemory::mWrite(void* Buf, uint32_t Dest, uint32_t Size)
 uint32_t CMappedMemory::mSetSize(uint32_t Size)
 {
 	if (m_Base)
+	{
+		FlushViewOfFile(m_Base, 0);
 		UnmapViewOfFile(m_Base);
+	}
 	if (m_FileMapping)
 		CloseHandle(m_FileMapping);
 

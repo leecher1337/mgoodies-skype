@@ -7,7 +7,10 @@ CDirectAccess::CDirectAccess(const char* FileName, CEncryptionManager & Encrypti
 	if (m_File == INVALID_HANDLE_VALUE) 
 		throwException("CreateFile failed");
 
-	m_AllocGranularity = 65536; // 64kb to avoid heavy fragmentation
+	m_MinAllocGranularity = 0x00001000;  // 4kb   to avoid heavy fragmentation
+	m_AllocGranularity    = 0x00008000;  // 32kb
+	m_MaxAllocGranularity = 0x00100000;  // 1mb   for fast increasing
+
 	SetSize(GetFileSize(m_File, NULL));
 }
 
