@@ -74,6 +74,7 @@ int CompFindNextContact(WPARAM hContact, LPARAM lParam)
 int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 {
 	DBCONTACTGETSETTING * dbcgs = (DBCONTACTGETSETTING *) pSetting;
+	dbcgs->pValue->type = 0;
 
 	char namebuf[512];
 	namebuf[0] = 0;
@@ -485,10 +486,10 @@ int CompWriteContactSetting(WPARAM hContact, LPARAM pSetting)
 	if (DBSettingWrite((WPARAM)&set, 0) == DBT_INVALIDPARAM)
 		return -1;
 
-	NotifyEventHooks(ME_DB_CONTACT_SETTINGCHANGED, hContact, pSetting);
-
+	NotifyEventHooks(hSettingChangeEvent, hContact, pSetting);
 	return 0;
 }
+
 int CompDeleteContactSetting(WPARAM hContact, LPARAM pSetting)
 {
 	DBCONTACTGETSETTING * dbcgs = (DBCONTACTGETSETTING *) pSetting;
