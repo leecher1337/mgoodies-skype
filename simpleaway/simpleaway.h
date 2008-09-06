@@ -2,7 +2,7 @@
 
 SimpleAway plugin for Miranda-IM
 
-Copyright © 2005 Harven, © 2006-2007 Dezeath
+Copyright © 2005 Harven, © 2006-2008 Dezeath
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // this plugin requires Miranda 0.6 or newer
 #define MIRANDA_VER 0x0600
 
+// for Visual Studio 2008
+#define _CRT_SECURE_NO_DEPRECATE
+
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,13 +41,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../include/m_utils.h"
 #include "../../include/m_database.h"
 #include "../../include/m_awaymsg.h"
+#include "../../include/m_icolib.h"
 #include "../../include/win2k.h"
-#include "../../include2/m_variables.h"
-#include "../../include2/m_toptoolbar.h"
-#include "../../include2/m_fortunemsg.h"
-#include "../../include2/m_icolib.h"
-#include "../../include2/m_statusplugins.h"
-#include "../../include2/AggressiveOptimize.h"
+#include "include/m_variables.h"
+#include "include/m_toptoolbar.h"
+#include "include/m_fortunemsg.h"
+#include "include/m_statusplugins.h"
+//#include "include/AggressiveOptimize.h"
 #include "m_simpleaway.h"
 #include "resource.h"
 #ifndef _WIN32_IE
@@ -107,6 +110,7 @@ struct MsgBoxInitData
 	int		all_modes;
 	int		all_modes_msg;
 	BOOL	ttchange;
+	BOOL	onstartup;
 };
 
 extern HINSTANCE	hInst;
@@ -115,16 +119,22 @@ extern BOOL			check_winamp;
 extern BOOL			removeCR;
 extern BOOL			ShowCopy;
 extern int			ProtoCount;
+extern int			ProtoStatusCount;
 extern int			ProtoStatusMsgCount;
 extern HWND			hwndSAMsgDialog;
 
+int LoadAwayMsgModule(void);
 int AwayMsgPreShutdown(void);
+
 int InitOptions(WPARAM wParam, LPARAM lParam);
 int InitStatusOptions(WPARAM wParam, LPARAM lParam);
+
 INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode, char *message);
-int LoadAwayMsgModule(void);
+void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode, char *message, BOOL on_startup);
+int GetCurrentStatus(char *proto_name);
+int GetStartupStatus(char *proto_name);
 char *StatusModeToDbSetting(int status,const char *suffix);
 char *GetDefaultMessage(int status);
+
 void init_mm(void);
 int ranfr( int from, int to );

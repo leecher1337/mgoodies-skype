@@ -2,7 +2,7 @@
 
 SimpleAway plugin for Miranda-IM
 
-Copyright © 2005 Harven, © 2006-2007 Dezeath
+Copyright © 2005 Harven, © 2006-2008 Dezeath
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@ HINSTANCE	hInst;
 PLUGINLINK	*pluginLink;
 struct MM_INTERFACE	mmi;
 BOOL		terminated=TRUE;
-DWORD		ProtoStatusMsgFlags;
+DWORD		ProtoStatusMsgFlags, mirVersion=0;
 UINT		SATimer, SARandMsgTimer, *SASetStatusTimer;
 char		*winampsong;
 BOOL		is_timer, is_randmsgtimer;
@@ -37,17 +37,17 @@ HWND		hwndSAMsgDialog;
 HANDLE		h_changedicons, h_csstatuschange;
 static HANDLE hChangeStatusMsgMenuItem;
 static HANDLE hGlobalStatusMenuItem;
-static HANDLE *hProtoStatusMenuItem;
+static HANDLE *hProtoStatusMenuItem = NULL;
 HANDLE		h_prebuildstatusmenu;
 
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
 	"SimpleAway",
-	PLUGIN_MAKE_VERSION(1,7,5,0),
-	"This plugin replaces built-in away system.\r\n[Release Candidate 2]",
+	PLUGIN_MAKE_VERSION(1,7,5,2),
+	"This plugin replaces built-in away system.",
 	"Harven, Dezeath",
-	"harven@users.berlios.de, dezred@gmail.com",
-	"© 2005 Harven, © 2006-2007 Dezeath",
+	"dezred"/*antispam*/"@"/*antispam*/"gmail"/*antispam*/"."/*antispam*/"com",
+	"© 2005 Harven, © 2006-2008 Dezeath",
 	"http://dezhq.rogacz.com/miranda/",
 	0,		//not transient
 	DEFMOD_SRAWAY,
@@ -67,11 +67,13 @@ __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion) {
 		MessageBoxA(NULL, "The SimpleAway plugin cannot be loaded. It requires Miranda IM 0.6 or later.", "SimpleAway Plugin", MB_OK|MB_ICONWARNING|MB_SETFOREGROUND|MB_TOPMOST);
 		return NULL;
 	}
+	mirVersion = mirandaVersion;
 	pluginInfo.cbSize = sizeof(PLUGININFO);
 	return (PLUGININFO *)&pluginInfo;
 }
 
 __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD mirandaVersion) {
+	mirVersion = mirandaVersion;
 	return &pluginInfo;
 }
 
@@ -269,7 +271,7 @@ char *InsertVarsIntoMsg2(char *in, char *proto_name, int status) {
 
 //			p = winamp_title+strlen(winamp_title)-8;
 			p = winamp_title+sizeof(winamp_title)-1;
-			while (p>=winamp_title && strnicmp(p,"- Winamp",8))
+			while (p>=winamp_title && _strnicmp(p,"- Winamp",8))
 				p--;
 
 			if (p>=winamp_title)
@@ -640,7 +642,10 @@ void SaveMessageToDB(char *proto, char *message, BOOL is_format) {
 			DBWriteMessage(buff, message);
 
 		#ifdef _DEBUG
-			log2file("SaveMessageToDB(): Set \"%s\" status message for %s.", message, protocols[i]->szName);
+			if (is_format)
+				log2file("SaveMessageToDB(): Set \"%s\" status message (without inserted vars) for %s.", message, protocols[i]->szName);
+			else
+				log2file("SaveMessageToDB(): Set \"%s\" status message for %s.", message, protocols[i]->szName);
 		#endif
 		}
 	}
@@ -655,7 +660,10 @@ void SaveMessageToDB(char *proto, char *message, BOOL is_format) {
 		DBWriteMessage(buff, message);
 
 	#ifdef _DEBUG
-		log2file("SaveMessageToDB(): Set \"%s\" status message for %s.", message, proto);
+		if (is_format)
+			log2file("SaveMessageToDB(): Set \"%s\" status message (without inserted vars) for %s.", message, proto);
+		else
+			log2file("SaveMessageToDB(): Set \"%s\" status message for %s.", message, proto);
 	#endif
 	}
 }
@@ -665,6 +673,18 @@ void SaveStatusAsCurrent(char *proto_name, int status) {
 
 	_snprintf(setting, sizeof(setting), "Cur%sStatus", proto_name);
 	DBWriteContactSettingWord(NULL, "SimpleAway", setting, (WORD)status);
+}
+
+int GetCurrentStatus(char *proto_name) {
+	if (proto_name) {
+		char	setting[80];
+
+		_snprintf(setting, sizeof(setting), "Cur%sStatus", proto_name);
+		return (int)DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
+
+	}
+	//proto_name = NULL
+	return ID_STATUS_OFFLINE;
 }
 
 //remember to mir_free() the return value
@@ -768,7 +788,7 @@ int HasProtoStaticStatusMsg(char *proto, int initial_status, int status) {
 		else if (initial_status != status)
 			EnableKeepStatus(proto);
 		CallProtoService(proto, PS_SETSTATUS, (WPARAM)status, 0);
-		SaveStatusAsCurrent(proto, status);
+//		SaveStatusAsCurrent(proto, status);
 		if (!(CallProtoService(proto, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_INDIVMODEMSG))
 			CallProtoService(proto, PS_SETAWAYMSG, (WPARAM)status, (LPARAM)"");
 		SaveMessageToDB(proto, NULL, TRUE);
@@ -821,15 +841,14 @@ int HasProtoStaticStatusMsg(char *proto, int initial_status, int status) {
 			SaveMessageToDB(proto, NULL, TRUE);
 			SaveMessageToDB(proto, NULL, FALSE);
 		}
-		SaveStatusAsCurrent(proto, status);
+//		SaveStatusAsCurrent(proto, status);
 		return 1;
 	}
 	return 0;
 }
 
-int SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam) {
+int SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam) { //TODO: Rework & clean-up
 	int	i, status_modes_msg;
-	char	buff[80];
 	BOOL	currentstatus=FALSE;
 	
 	if (wParam < ID_STATUS_OFFLINE || (wParam > ID_STATUS_OUTTOLUNCH && wParam != ID_STATUS_CURRENT))
@@ -849,15 +868,14 @@ int SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam) {
 			wParam = ID_STATUS_CURRENT;
 
 		if (wParam == ID_STATUS_CURRENT) {
-			_snprintf(buff, sizeof(buff), "Cur%sStatus", protocols[i]->szName);
-			wParam = DBGetContactSettingWord(NULL, "SimpleAway", buff, ID_STATUS_OFFLINE);
+			wParam = GetCurrentStatus(protocols[i]->szName);
 			if (!currentstatus)
 				currentstatus=TRUE;
 		}
 
 		if (!(CallProtoService(protocols[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND)) {
 			CallProtoService(protocols[i]->szName, PS_SETSTATUS, wParam, 0);
-			SaveStatusAsCurrent(protocols[i]->szName, (int)wParam);
+//			SaveStatusAsCurrent(protocols[i]->szName, (int)wParam);
 			continue;
 		}
 			
@@ -879,12 +897,12 @@ int SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam) {
 					CallProtoService(protocols[i]->szName, PS_SETAWAYMSG, (WPARAM)status_from_proto_settings, lParam);
 				}
 				CallProtoService(protocols[i]->szName, PS_SETSTATUS, wParam, 0);
-				SaveStatusAsCurrent(protocols[i]->szName, (int)wParam);
+//				SaveStatusAsCurrent(protocols[i]->szName, (int)wParam);
 				continue;
 			}
 			
 			CallProtoService(protocols[i]->szName, PS_SETSTATUS, wParam, 0);
-			SaveStatusAsCurrent(protocols[i]->szName, (int)wParam);
+//			SaveStatusAsCurrent(protocols[i]->szName, (int)wParam);
 			EnableKeepStatus(protocols[i]->szName);
 
 			if (!(CallProtoService(protocols[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_INDIVMODEMSG)) {
@@ -896,7 +914,7 @@ int SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam) {
 		}
 		else {
 			CallProtoService(protocols[i]->szName, PS_SETSTATUS, wParam, 0);
-			SaveStatusAsCurrent(protocols[i]->szName, (int)wParam);
+//			SaveStatusAsCurrent(protocols[i]->szName, (int)wParam);
 			continue;
 		}
 	}
@@ -904,12 +922,35 @@ int SetStatusModeFromExtern(WPARAM wParam, LPARAM lParam) {
 }
 
 int ChangeStatusMessage(WPARAM wParam,LPARAM lParam);
+int SetStartupStatus(int i);
 
-void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode, char *message) {
+void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode, char *message, BOOL on_startup) {
 	char	*msg=NULL;
 
 	if (proto_name) {
-		char	setting[80];
+		if (on_startup && ProtoStatusCount > 1) { //TODO: Not only at startup?
+			int					proto_count, i, status;
+			PROTOCOLDESCRIPTOR	**proto;
+
+			CallService(MS_PROTO_ENUMPROTOCOLS,(WPARAM)&proto_count,(LPARAM)&proto);
+			for(i=0; i<proto_count; i++) {
+				if (proto[i]->type != PROTOTYPE_PROTOCOL)
+					continue;
+
+				if (!(CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_2, 0)&~CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_5, 0)))
+					continue;
+
+				if (status_mode == ID_STATUS_CURRENT)
+					status = GetStartupStatus(proto[i]->szName);
+				else
+					status = status_mode;
+
+				if (!CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_3, 0) || !(CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND)) {
+					if (!(on_startup && status == ID_STATUS_OFFLINE) && GetCurrentStatus(proto[i]->szName) != status)
+						CallProtoService(proto[i]->szName, PS_SETSTATUS, (WPARAM)status, 0);
+				}
+			}
+		}
 
 		if (message)
 			msg = InsertVarsIntoMsg(message, proto_name, status_mode);
@@ -918,8 +959,10 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 		SaveMessageToDB(proto_name, msg, FALSE);
 
 		if (initial_status_mode == ID_STATUS_CURRENT) {
-			_snprintf(setting, sizeof(setting), "Cur%sStatus", proto_name);
-			initial_status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
+			if (on_startup)
+				initial_status_mode = GetStartupStatus(proto_name);
+			else
+				initial_status_mode = GetCurrentStatus(proto_name);
 		}
 
 		if (initial_status_mode != status_mode) {
@@ -935,14 +978,14 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 					CallProtoService(proto_name, PS_SETAWAYMSG, (WPARAM)status_from_proto_settings, (LPARAM)msg);
 				}
 				CallProtoService(proto_name, PS_SETSTATUS, (WPARAM)status_mode, 0);
-				SaveStatusAsCurrent(proto_name, status_mode);
+//				SaveStatusAsCurrent(proto_name, status_mode);
 				mir_free(msg);
 				return;
 			}
 		}
 
-		CallProtoService(proto_name,PS_SETSTATUS, (WPARAM)status_mode, 0);
-		SaveStatusAsCurrent(proto_name, status_mode);
+		CallProtoService(proto_name, PS_SETSTATUS, (WPARAM)status_mode, 0);
+//		SaveStatusAsCurrent(proto_name, status_mode);
 		EnableKeepStatus(proto_name);
 
 		if (msg) {
@@ -959,26 +1002,24 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 		int					proto_count, i, pflags=0, profilestatus=0;
 		PROTOCOLDESCRIPTOR	**proto;
 		BOOL				currentstatus=FALSE, initial_currentstatus=FALSE;
-		char				setting[128];
 
 		CallService(MS_PROTO_ENUMPROTOCOLS,(WPARAM)&proto_count,(LPARAM)&proto);
 		for(i=0; i<proto_count; i++) {
 			if (proto[i]->type != PROTOTYPE_PROTOCOL)
 				continue;
 
-			if (!CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_3, 0))
+			if (!(CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_2, 0)&~CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_5, 0)))
 				continue;
 
-			if (DBGetContactSettingByte(NULL, proto[i]->szName, "LockMainStatus", 0) == 1)
+			if ((on_startup == FALSE) && (DBGetContactSettingByte(NULL, proto[i]->szName, "LockMainStatus", 0) == 1))
 				continue;
-
-			pflags = CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0);
 
 			if (profilestatus)
 				status_mode = profilestatus;
 
-			if ((status_mode > ID_STATUS_CURRENT) && (pflags & PF1_MODEMSGSEND)) {
-				int profilenumber = status_mode-40083;
+			if (status_mode > ID_STATUS_CURRENT) {
+				int		profilenumber = status_mode-40083;
+				char	setting[128];
 
 				profilestatus = status_mode;
 				_snprintf(setting, sizeof(setting), "%d_%s", profilenumber, proto[i]->szName);
@@ -988,33 +1029,43 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 					status_mode = DBGetContactSettingWord(NULL, "StartupStatus", setting, ID_STATUS_OFFLINE);
 				}
 				else if (status_mode == ID_STATUS_CURRENT) {
-					_snprintf(setting, sizeof(setting), "Cur%sStatus", proto[i]->szName);
-					status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
+					status_mode = GetCurrentStatus(proto[i]->szName);
 				}
 			}
 
 			if (currentstatus)
 				status_mode = ID_STATUS_CURRENT;
 
-			if (!(pflags & PF1_MODEMSGSEND)) {
-				if (status_mode != ID_STATUS_CURRENT)
-					SaveStatusAsCurrent(proto[i]->szName, status_mode);
-				continue;
-			}
-
 			if (status_mode == ID_STATUS_CURRENT) {
-				_snprintf(setting, sizeof(setting), "Cur%sStatus", proto[i]->szName);
-				status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
+				if (on_startup)
+					status_mode = GetStartupStatus(proto[i]->szName);
+				else
+					status_mode = GetCurrentStatus(proto[i]->szName);
 				if (!currentstatus)
 					currentstatus=TRUE;
+			}
+
+			pflags = CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0);
+
+			if (!CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_3, 0) || !(pflags & PF1_MODEMSGSEND)) {
+				if (!(on_startup && status_mode == ID_STATUS_OFFLINE) && GetCurrentStatus(proto[i]->szName) != status_mode) {
+					CallProtoService(proto[i]->szName, PS_SETSTATUS, (WPARAM)status_mode, 0);
+//					SaveStatusAsCurrent(proto[i]->szName, status_mode);
+//				#ifdef _DEBUG
+//					log2file("SetStatusMessage(): Set %s status for %s.", StatusModeToDbSetting(status_mode, ""), proto[i]->szName);
+//				#endif
+				}
+				continue;
 			}
 
 			if (initial_currentstatus)
 				initial_status_mode = ID_STATUS_CURRENT;
 
 			if (initial_status_mode == ID_STATUS_CURRENT) {
-				_snprintf(setting, sizeof(setting), "Cur%sStatus", proto[i]->szName);
-				initial_status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
+				if (on_startup)
+					initial_status_mode = GetStartupStatus(proto[i]->szName);
+				else
+					initial_status_mode = GetCurrentStatus(proto[i]->szName);
 				if (!initial_currentstatus)
 					initial_currentstatus=TRUE;
 			}
@@ -1032,7 +1083,7 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 				if (msg && status_mode == ID_STATUS_OFFLINE) {//ugly hack to set offline status message
 					DisableKeepStatus(proto[i]->szName);
 
-					if (!(CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_INDIVMODEMSG)) {
+					if (!(pflags & PF1_INDIVMODEMSG)) {
 						int		status_from_proto_settings;
 
 						status_from_proto_settings = CheckProtoSettings(proto[i]->szName, initial_status_mode);
@@ -1041,29 +1092,27 @@ void SetStatusMessage(char *proto_name, int initial_status_mode, int status_mode
 						CallProtoService(proto[i]->szName, PS_SETAWAYMSG, (WPARAM)status_from_proto_settings, (LPARAM)msg);
 					}
 					CallProtoService(proto[i]->szName, PS_SETSTATUS, (WPARAM)status_mode, 0);
-					SaveStatusAsCurrent(proto[i]->szName, status_mode);
+//					SaveStatusAsCurrent(proto[i]->szName, status_mode);
 					mir_free(msg);
 					continue;
 				}
 			}
 
 			CallProtoService(proto[i]->szName, PS_SETSTATUS, (WPARAM)status_mode, 0);
-			SaveStatusAsCurrent(proto[i]->szName, status_mode);
+//			SaveStatusAsCurrent(proto[i]->szName, status_mode);
 			EnableKeepStatus(proto[i]->szName);
-
 			
 			if (msg) {
-				if (!(CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_INDIVMODEMSG))
+				if (!(pflags & PF1_INDIVMODEMSG))
 					CallProtoService(proto[i]->szName, PS_SETAWAYMSG, (WPARAM)status_mode, (LPARAM)msg);
 				mir_free(msg);
 			}
 			else {
-				if (!(CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_INDIVMODEMSG))
+				if (!(pflags & PF1_INDIVMODEMSG))
 					CallProtoService(proto[i]->szName, PS_SETAWAYMSG, (WPARAM)status_mode, (LPARAM)"");
 			}
 		}
 
-//		if (CallService(MS_CLIST_GETSTATUSMODE, 0, 0) != status_mode)
 		if ((CallService(MS_CLIST_GETSTATUSMODE, 0, 0) != status_mode) && (!currentstatus) && (!profilestatus)) {
 			UnhookEvent(h_statusmodechange); //my beautiful haxor part 1
 			CallService(MS_CLIST_SETSTATUSMODE, (WPARAM)status_mode, 0);
@@ -1120,7 +1169,7 @@ int TTChangeStatusMessage(WPARAM wParam,LPARAM lParam) {
 			if (!GetProtocolVisibility(proto[i]->szName))
 				continue;
 	
-			if (hProtoStatusMenuItem[i]==(HANDLE)lParam) {
+			if (hProtoStatusMenuItem[i] == (HANDLE)lParam) {
 				box_data->proto_name = proto[i]->szName;
 				box_data->all_modes = CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_2, 0)&~CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_5, 0);
 				box_data->all_modes_msg = CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_3, 0);
@@ -1137,6 +1186,7 @@ int TTChangeStatusMessage(WPARAM wParam,LPARAM lParam) {
 	}
 	box_data->status_mode = ID_STATUS_CURRENT;
 	box_data->ttchange = TRUE;
+	box_data->onstartup = FALSE;
 
 	if (hwndSAMsgDialog)
 		DestroyWindow(hwndSAMsgDialog);
@@ -1185,6 +1235,7 @@ int ShowStatusMessageChangeDialog(WPARAM wParam,LPARAM lParam) {
 	}
 	box_data->status_mode = ID_STATUS_CURRENT;
 	box_data->ttchange = TRUE;
+	box_data->onstartup = FALSE;
 
 	if (hwndSAMsgDialog)
 		DestroyWindow(hwndSAMsgDialog);
@@ -1196,8 +1247,8 @@ int ChangeStatusMessage(WPARAM wParam,LPARAM lParam) {
 	int		status_modes=0;
 	int		status_modes_msg=0;
 	int		dlg_flags;
-	BOOL	show_dlg=FALSE, on_startup=FALSE;
-	char	buff[80];
+	BOOL	show_dlg=FALSE, on_startup=FALSE, global_startup_status=TRUE;
+	char	setting[80];
 
 	if (terminated)
 		return 0;
@@ -1225,82 +1276,91 @@ int ChangeStatusMessage(WPARAM wParam,LPARAM lParam) {
 				continue;
 
 			lParam = (LPARAM)proto[i]->szName;
+			if (on_startup && wParam == ID_STATUS_CURRENT) {
+				wParam = (WPARAM)GetStartupStatus(proto[i]->szName);
+				global_startup_status = FALSE;
+			}
 			break;
 		}
 	}
 
 	if (lParam)
-		_snprintf(buff, sizeof(buff), "%sFlags", (char *)lParam);
+		_snprintf(setting, sizeof(setting), "%sFlags", (char *)lParam);
 	else
-		_snprintf(buff, sizeof(buff), "Flags");
-	dlg_flags = DBGetContactSettingByte(NULL, "SimpleAway", (char *)StatusModeToDbSetting((int)wParam, buff), STATUS_SHOW_DLG|STATUS_LAST_MSG);
-	if (dlg_flags & STATUS_SHOW_DLG)
+		_snprintf(setting, sizeof(setting), "Flags");
+	dlg_flags = DBGetContactSettingByte(NULL, "SimpleAway", (char *)StatusModeToDbSetting((int)wParam, setting), STATUS_SHOW_DLG|STATUS_LAST_MSG);
+	if (dlg_flags & STATUS_SHOW_DLG || on_startup)
 		show_dlg = TRUE;
 
 	if (lParam) {
-		status_modes = CallProtoService((char *)lParam, PS_GETCAPS, PFLAGNUM_2, 0)&~CallProtoService((char *)lParam, PS_GETCAPS, PFLAGNUM_5, 0);
+		struct MsgBoxInitData	*box_data;
 
-		if ((!status_modes || !(Proto_Status2Flag(wParam) & status_modes)) && (wParam != ID_STATUS_OFFLINE))
+		status_modes = CallProtoService((char *)lParam, PS_GETCAPS, PFLAGNUM_2, 0)&~CallProtoService((char *)lParam, PS_GETCAPS, PFLAGNUM_5, 0);
+		if (!status_modes || (!(Proto_Status2Flag(wParam) & status_modes) && (wParam != ID_STATUS_OFFLINE)))
 			return 0;
 
-		if (CallProtoService((char *)lParam, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND) {
-			status_modes_msg = CallProtoService((char *)lParam, PS_GETCAPS, PFLAGNUM_3, 0);
+		#ifdef _DEBUG
+		log2file(":-) [1]");
+		#endif
 
-			if (!status_modes_msg || !(Proto_Status2Flag(wParam) & status_modes_msg)) {
-				SaveStatusAsCurrent((char *)lParam, (int)wParam);
-				return 0;
+		status_modes_msg = CallProtoService((char *)lParam, PS_GETCAPS, PFLAGNUM_3, 0);
+		if (!status_modes_msg || !(Proto_Status2Flag(wParam) & status_modes_msg) || !(CallProtoService((char *)lParam, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND)) {
+			if (GetCurrentStatus((char *)lParam) != (int)wParam) {
+				CallProtoService((char *)lParam, PS_SETSTATUS, wParam, 0);
+//				SaveStatusAsCurrent((char *)lParam, (int)wParam);
+//			#ifdef _DEBUG
+//				log2file("ChangeStatusMessage(): %s status mode = %s.", (char *)lParam, StatusModeToDbSetting(GetCurrentStatus((char *)lParam), ""));
+//			#endif
 			}
-			else {
-				struct MsgBoxInitData	*box_data;
-				char					setting[80];
-				int						flags;
-
-				_snprintf(setting, sizeof(setting), "Proto%sFlags", (char *)lParam);
-				flags = DBGetContactSettingByte(NULL, "SimpleAway", setting, PROTO_POPUPDLG);
-
-				if (!(flags & PROTO_POPUPDLG)) {
-					if (HasProtoStaticStatusMsg((char*)lParam, (int)wParam, (int)wParam))
-						return 1;
-				}
-
-				if (!show_dlg) {
-					char *msg = GetAwayMessageFormat(wParam, lParam);
-				#ifdef _DEBUG
-					log2file("ChangeStatusMessage(): Set %s status and \"%s\" status message for %s.", StatusModeToDbSetting((int)wParam, ""), msg, (char *)lParam);
-				#endif
-					SetStatusMessage((char *)lParam, (int)wParam, (int)wParam, msg);
-					if (msg)
-						mir_free(msg);
-					return 1;
-				}
-
-				box_data = (struct MsgBoxInitData *) mir_alloc(sizeof(struct MsgBoxInitData));
-				box_data->proto_name = (char *)lParam;
-
-				if (!on_startup)
-					SaveStatusAsCurrent((char *)lParam, (int)wParam);
-				_snprintf(buff, sizeof(buff), "Cur%sStatus", (char *)lParam);
-				if (DBGetContactSettingWord(NULL, "SimpleAway", buff, ID_STATUS_OFFLINE) == (int)wParam)
-					box_data->status_mode = ID_STATUS_CURRENT;
-				else
-					box_data->status_mode = (int)wParam; 
-
-				box_data->all_modes = status_modes;
-				box_data->all_modes_msg = status_modes_msg;
-				box_data->ttchange = FALSE;
-
-				if (hwndSAMsgDialog)
-					DestroyWindow(hwndSAMsgDialog);
-				hwndSAMsgDialog = CreateDialogParam(hInst,MAKEINTRESOURCE(IDD_AWAYMSGBOX),NULL,AwayMsgBoxDlgProc,(LPARAM)box_data);
-			}
+			return 0;
 		}
-		else
+
+		#ifdef _DEBUG
+		log2file(":-) [2]");
+		#endif
+
+		_snprintf(setting, sizeof(setting), "Proto%sFlags", (char *)lParam);
+		if (!(DBGetContactSettingByte(NULL, "SimpleAway", setting, PROTO_POPUPDLG) & PROTO_POPUPDLG)) {
+			if (HasProtoStaticStatusMsg((char*)lParam, (int)wParam, (int)wParam))
+				return 1;
+		}
+
+		if (!show_dlg) {
+			char *msg = GetAwayMessageFormat(wParam, lParam);
+		#ifdef _DEBUG
+			log2file("ChangeStatusMessage(): Set %s status and \"%s\" status message for %s.", StatusModeToDbSetting((int)wParam, ""), msg, (char *)lParam);
+		#endif
+			SetStatusMessage((char *)lParam, (int)wParam, (int)wParam, msg, FALSE);
+			if (msg)
+				mir_free(msg);
+			return 1;
+		}
+
+		box_data = (struct MsgBoxInitData *) mir_alloc(sizeof(struct MsgBoxInitData));
+		box_data->proto_name = (char *)lParam;
+
+		if (!on_startup)
 			SaveStatusAsCurrent((char *)lParam, (int)wParam);
+
+		if (GetCurrentStatus((char *)lParam) == (int)wParam || (on_startup && !global_startup_status))
+			box_data->status_mode = ID_STATUS_CURRENT;
+		else
+			box_data->status_mode = (int)wParam; 
+
+		box_data->all_modes = status_modes;
+		box_data->all_modes_msg = status_modes_msg;
+		box_data->ttchange = FALSE;
+		box_data->onstartup = on_startup;
+
+		if (hwndSAMsgDialog)
+			DestroyWindow(hwndSAMsgDialog);
+		hwndSAMsgDialog = CreateDialogParam(hInst,MAKEINTRESOURCE(IDD_AWAYMSGBOX),NULL,AwayMsgBoxDlgProc,(LPARAM)box_data);
 	}
 	else {
 		struct MsgBoxInitData	*box_data;
 
-		if (wParam == ID_STATUS_OFFLINE) {
+		//wParam == ID_STATUS_CURRENT only when on_startup == TRUE
+		if (wParam == ID_STATUS_OFFLINE || (!(ProtoStatusMsgFlags & Proto_Status2Flag(wParam)) && (wParam != ID_STATUS_CURRENT))) {
 			int				proto_count, i;
 			PROTOCOLDESCRIPTOR	**proto;
 
@@ -1312,13 +1372,20 @@ int ChangeStatusMessage(WPARAM wParam,LPARAM lParam) {
 				if (!(CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_2, 0)&~CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_5, 0)))
 					continue;
 
-				SaveStatusAsCurrent(proto[i]->szName, (int)wParam);
+				if (DBGetContactSettingByte(NULL, proto[i]->szName, "LockMainStatus", 0) == 1)
+					continue;
+
+				//TODO: Change to PS_GETSTATUS or ProcessProtoAck for non-statusmsg protos and DON'T SET not supported status
+				if (GetCurrentStatus(proto[i]->szName) != (int)wParam) {
+					CallProtoService(proto[i]->szName, PS_SETSTATUS, wParam, 0);
+//					SaveStatusAsCurrent(proto[i]->szName, (int)wParam);
+//				#ifdef _DEBUG
+//					log2file("ChangeStatusMessage(): Set %s status for %s.", StatusModeToDbSetting((int)wParam, ""), proto[i]->szName);
+//				#endif
+				}
 			}
 			return 0;
 		}
-
-		if (!(ProtoStatusMsgFlags & Proto_Status2Flag(wParam)))
-			return 0;
 
 		if (!show_dlg) {
 			int					proto_count, i;
@@ -1329,23 +1396,32 @@ int ChangeStatusMessage(WPARAM wParam,LPARAM lParam) {
 				if (proto[i]->type != PROTOTYPE_PROTOCOL)
 					continue;
 
-				if (!CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_3, 0))
+				if (!(CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_2, 0)&~CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_5, 0)))
 					continue;
 
 				if (DBGetContactSettingByte(NULL, proto[i]->szName, "LockMainStatus", 0) == 1)
 					continue;
 
-				if (CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND) {
+				if (!CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_3, 0) || !(CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND)) {
+					if (GetCurrentStatus(proto[i]->szName) != (int)wParam) {
+						CallProtoService(proto[i]->szName, PS_SETSTATUS, wParam, 0);
+//						SaveStatusAsCurrent(proto[i]->szName, (int)wParam);
+//					#ifdef _DEBUG
+//						log2file("ChangeStatusMessage(): Set %s status for %s.", StatusModeToDbSetting((int)wParam, ""), proto[i]->szName);
+//					#endif
+					}
+					continue;
+				}
+
+				{
 					char *msg = GetAwayMessageFormat(wParam, (LPARAM)NULL);
 				#ifdef _DEBUG
-					log2file("ChangeStatusMessage(): Set %s status and \"%s\" status message for %s.", StatusModeToDbSetting((int)wParam, ""), msg, proto[i]->szName);
+					log2file("ChangeStatusMessage(): Set %s status and \"%s\" status message for %s. [2]", StatusModeToDbSetting((int)wParam, ""), msg, proto[i]->szName);
 				#endif
-					SetStatusMessage(proto[i]->szName, (int)wParam, (int)wParam, msg);
+					SetStatusMessage(proto[i]->szName, (int)wParam, (int)wParam, msg, FALSE);
 					if (msg)
 						mir_free(msg);
 				}
-				else
-					SaveStatusAsCurrent(proto[i]->szName, (int)wParam);
 			}
 			return 1;
 		}
@@ -1356,6 +1432,7 @@ int ChangeStatusMessage(WPARAM wParam,LPARAM lParam) {
 		box_data->all_modes = ProtoStatusMsgFlags;
 		box_data->all_modes_msg = box_data->all_modes;
 		box_data->ttchange = FALSE;
+		box_data->onstartup = on_startup;
 
 		if (hwndSAMsgDialog)
 			DestroyWindow(hwndSAMsgDialog);
@@ -1471,19 +1548,13 @@ int SetStartupStatus(int i) {
 	int		status_mode;
 	char	setting[80], *fmsg, *msg=NULL;
 
-	_snprintf(setting, sizeof(setting), "Startup%sStatus", protocols[i]->szName);
-	status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
-
-	if (status_mode == ID_STATUS_CURRENT) {//this means load status used last time for this proto
-		_snprintf(setting, sizeof(setting), "Last%sStatus", protocols[i]->szName);
-		status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
-	}
+	status_mode = GetStartupStatus(protocols[i]->szName);
 
 	if (status_mode == ID_STATUS_OFFLINE)
 		return -1;
 
 	CallProtoService(protocols[i]->szName, PS_SETSTATUS, (WPARAM)status_mode, 0);
-	SaveStatusAsCurrent(protocols[i]->szName, status_mode);
+//	SaveStatusAsCurrent(protocols[i]->szName, status_mode);
 
 	if (!CallProtoService(protocols[i]->szName, PS_GETCAPS, PFLAGNUM_3, 0))
 		return -1;
@@ -1525,33 +1596,46 @@ int SetStartupStatus(int i) {
 	return 0;
 }
 
+int GetStartupStatus(char *proto_name) {
+	if (proto_name) {
+		int		status_mode;
+		char	setting[80];
+
+		_snprintf(setting, sizeof(setting), "Startup%sStatus", proto_name);
+		status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
+
+		if (status_mode == ID_STATUS_CURRENT) {//this means load status used last time for this proto
+			_snprintf(setting, sizeof(setting), "Last%sStatus", proto_name);
+			status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
+		}
+
+		return status_mode;
+	}
+	//proto_name = NULL
+	return (int)DBGetContactSettingWord(NULL, "SimpleAway", "StartupStatus", ID_STATUS_OFFLINE);
+}
+
 void CALLBACK SetStartupStatusGlobal(HWND timerhwnd, UINT uMsg, UINT_PTR idEvent, DWORD  dwTime) {
 	int		i;
 
-	int		prev_status_mode=-1, status_mode;
-	char	setting[80];
+	int		prev_status_mode=-1, status_mode, temp_status_mode=ID_STATUS_OFFLINE;
+//	char	setting[80];
 	BOOL	globalstatus=TRUE;
 
 	KillTimer(timerhwnd, idEvent);
 
 //is global status mode going to be set?
 	for(i=0; i<ProtoCount; i++) {
-		if (!CallService(MS_PROTO_ISPROTOCOLLOADED, 0, (LPARAM)protocols[i]->szName))
-			continue;
-
 		if (protocols[i]->type != PROTOTYPE_PROTOCOL)
 			continue;
 
 		if (!(CallProtoService(protocols[i]->szName, PS_GETCAPS, PFLAGNUM_2, 0)&~CallProtoService(protocols[i]->szName, PS_GETCAPS, PFLAGNUM_5, 0)))
 			continue;
 
-		_snprintf(setting, sizeof(setting), "Startup%sStatus", protocols[i]->szName);
-		status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
+		status_mode = GetStartupStatus(protocols[i]->szName);
 
-		if (status_mode == ID_STATUS_CURRENT) {//this means load status used last time for this proto
-			_snprintf(setting, sizeof(setting), "Last%sStatus", protocols[i]->szName);
-			status_mode = DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE);
-		}
+		if (status_mode != ID_STATUS_OFFLINE)
+			temp_status_mode = status_mode;
 
 		if (status_mode != prev_status_mode && prev_status_mode != -1) {
 			globalstatus=FALSE;
@@ -1561,16 +1645,19 @@ void CALLBACK SetStartupStatusGlobal(HWND timerhwnd, UINT uMsg, UINT_PTR idEvent
 		prev_status_mode = status_mode;
 	}
 
-//popup status msg change dialog as startup?
-	if (globalstatus) {
-		ChangeStatusMessage((WPARAM)status_mode, (LPARAM)"SimpleAwayGlobalStartupStatus");
+//popup status msg dialog at startup?
+	if (DBGetContactSettingByte(NULL, "SimpleAway", "StartupPopupDlg", 1) && ProtoStatusMsgFlags) {
+		if (globalstatus) {
+			ChangeStatusMessage((WPARAM)status_mode, (LPARAM)"SimpleAwayGlobalStartupStatus");
+		}
+		else {
+			DBWriteContactSettingWord(NULL, "SimpleAway", "StartupStatus", (WORD)temp_status_mode); //pseudo-currentDesiredStatusMode ;-)
+			ChangeStatusMessage((WPARAM)ID_STATUS_CURRENT, (LPARAM)"SimpleAwayGlobalStartupStatus");
+		}
 		return;
 	}
 
 	for(i=0; i<ProtoCount; i++) {
-		if (!CallService(MS_PROTO_ISPROTOCOLLOADED, 0, (LPARAM)protocols[i]->szName))
-			continue;
-
 		if (protocols[i]->type != PROTOTYPE_PROTOCOL)
 			continue;
 
@@ -1589,9 +1676,6 @@ void CALLBACK SetStartupStatusProc(HWND timerhwnd, UINT uMsg, UINT_PTR idEvent, 
 	BOOL	found = FALSE;
 
 	for(i=0; i<ProtoCount; i++) {
-		if (!CallService(MS_PROTO_ISPROTOCOLLOADED, 0, (LPARAM)protocols[i]->szName))
-			continue;
-
 		if (protocols[i]->type != PROTOTYPE_PROTOCOL)
 			continue;
 
@@ -1926,7 +2010,10 @@ int ChangeStatusMsgStatusMenuItemInit(void) {
 			continue;
 
 		CallProtoService(proto[i]->szName, PS_GETNAME, SIZEOF(ProtoName), (LPARAM)ProtoName);
-		mi.pszPopupName = ProtoName;
+		if (mirVersion < PLUGIN_MAKE_VERSION(0,8,0,11))
+			mi.pszPopupName = ProtoName;
+		else
+			mi.pszPopupName = proto[i]->szName;
 		hProtoStatusMenuItem[i] = (HANDLE)CallService(MS_CLIST_ADDSTATUSMENUITEM, 0, (LPARAM)&mi);
 	}
 
@@ -2043,13 +2130,24 @@ int InitAwayModule(WPARAM wParam,LPARAM lParam) {
 		h_statusmodechange = HookEvent(ME_CLIST_STATUSMODECHANGE, ChangeStatusMessage);
 		h_protoack = HookEvent(ME_PROTO_ACK, ProcessProtoAck);
 		ChangeStatusMsgMenuItemInit();
-		hProtoStatusMenuItem = (static HANDLE *)mir_alloc(sizeof(HANDLE)*ProtoCount);
+		hProtoStatusMenuItem = (HANDLE *)mir_realloc(hProtoStatusMenuItem, sizeof(HANDLE)*ProtoCount);
 		if ((ServiceExists(MS_CLIST_ADDSTATUSMENUITEM)) && (DBGetContactSettingByte(NULL, "SimpleAway", "ShowStatusMenuItem", 1) == 1)) {
 			h_prebuildstatusmenu = HookEvent(ME_CLIST_PREBUILDSTATUSMENU, ChangeStatusMsgPrebuild);
 			ChangeStatusMsgStatusMenuItemInit();
 		}
 
-		winampsong = mir_strdup("SimpleAway");
+		if (DBGetContactSettingByte(NULL, "SimpleAway", "AmpLeaveTitle", 1)) {
+			DBVARIANT		dbv;
+
+			if (!DBGetContactSetting(NULL, "SimpleAway", "AmpLastTitle", &dbv)) {
+				winampsong = mir_strdup(dbv.pszVal);
+				DBFreeVariant(&dbv);
+			}
+			else
+				winampsong = mir_strdup("SimpleAway");
+		}
+		else
+			winampsong = mir_strdup("SimpleAway");
 		if (DBGetContactSettingByte(NULL, "SimpleAway", "AmpCheckOn", 1)) {
 			SATimer = SetTimer(NULL,0,DBGetContactSettingByte(NULL, "SimpleAway", "AmpCheck", 15)*1000,(TIMERPROC)SATimerProc);
 			is_timer = TRUE;
@@ -2094,9 +2192,6 @@ int InitAwayModule(WPARAM wParam,LPARAM lParam) {
 			SASetStatusTimer = (UINT *)malloc(sizeof(UINT)*ProtoCount);
 
 			for(i=0; i<ProtoCount; i++) {
-				if (!CallService(MS_PROTO_ISPROTOCOLLOADED, 0, (LPARAM)protocols[i]->szName))
-					continue;
-
 				if (protocols[i]->type != PROTOTYPE_PROTOCOL)
 					continue;
 
@@ -2127,6 +2222,9 @@ int OkToExitSA(WPARAM wParam,LPARAM lParam) {
 			_snprintf(setting, sizeof(setting), "Last%sStatus", protocols[i]->szName);
 			DBWriteContactSettingWord(NULL, "SimpleAway", setting, (WORD)CallProtoService(protocols[i]->szName, PS_GETSTATUS, 0, 0));
 		}
+
+		if (winampsong && strcmp(winampsong, "SimpleAway") && DBGetContactSettingByte(NULL, "SimpleAway", "AmpLeaveTitle", 1))
+			DBWriteMessage("AmpLastTitle", winampsong);
 	}
 	return 0;
 }

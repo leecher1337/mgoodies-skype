@@ -75,6 +75,7 @@
 #define IDC_HEADPROTO                   1056
 #define IDC_HEADSTATUS                  1057
 #define IDC_HEADGROUP                   1058
+#define IDC_POPUPDLG                    1059
 #define IDM_VDATE                       40002
 #define IDM_VWINAMPSONG                 40003
 #define IDM_VRANDXY                     40004
@@ -116,7 +117,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        116
 #define _APS_NEXT_COMMAND_VALUE         40037
-#define _APS_NEXT_CONTROL_VALUE         1059
+#define _APS_NEXT_CONTROL_VALUE         1060
 #define _APS_NEXT_SYMED_VALUE           100
 #endif
 #endif

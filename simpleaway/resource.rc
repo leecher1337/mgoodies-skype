@@ -28,8 +28,8 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,7,5,0
- PRODUCTVERSION 1,7,5,0
+ FILEVERSION 1,7,5,2
+ PRODUCTVERSION 1,7,5,2
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -46,12 +46,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "Licensed under the terms of the GNU General Public License.\0"
             VALUE "FileDescription", "SimpleAway plugin for Miranda IM\0"
-            VALUE "FileVersion", "1.7.5.0\0"
+            VALUE "FileVersion", "1.7.5.2\0"
             VALUE "InternalName", "simpleaway\0"
-            VALUE "LegalCopyright", "Copyright © 2005 Harven, © 2006-2007 Dezeath\0"
+            VALUE "LegalCopyright", "Copyright © 2005 Harven, © 2006-2008 Dezeath\0"
             VALUE "OriginalFilename", "simpleaway.dll\0"
             VALUE "ProductName", "SimpleAway\0"
-            VALUE "ProductVersion", "1.7.5.0 RC2\0"
+            VALUE "ProductVersion", "1.7.5.2\0"
         END
     END
     BLOCK "VarFileInfo"
@@ -418,12 +418,12 @@ BEGIN
                     IDC_NOTE2,11,215,287,8,NOT WS_VISIBLE
 END
 
-IDD_OPTSTATUS DIALOGEX 0, 0, 241, 150
+IDD_OPTSTATUS DIALOGEX 0, 0, 241, 162
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        "Status on Startup",IDC_HEADGROUP,5,2,230,142,WS_GROUP
+    GROUPBOX        "Status on Startup",IDC_HEADGROUP,5,2,230,154,WS_GROUP
     LTEXT           "Set status after",IDC_STATIC,15,18,80,8
     EDITTEXT        IDC_ESETSTATUS,96,16,36,12,ES_NUMBER | NOT WS_BORDER,
                     WS_EX_CLIENTEDGE
@@ -439,6 +439,8 @@ BEGIN
                     WS_VSCROLL | WS_TABSTOP
     CONTROL         "Independent setting for each protocol",IDC_SPECSET,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,126,210,8
+    CONTROL         "Pop up dialog asking for status message",IDC_POPUPDLG,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,138,210,8
 END
 
 
