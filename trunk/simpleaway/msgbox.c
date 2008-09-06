@@ -2,7 +2,7 @@
 
 SimpleAway plugin for Miranda-IM
 
-Copyright © 2005 Harven, © 2006-2007 Dezeath
+Copyright © 2005 Harven, © 2006-2008 Dezeath
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -47,6 +47,7 @@ struct MsgBoxData {
 	int		num_def_msgs;
 	BOOL	predef_changed;
 	BOOL	is_history;
+	BOOL	on_startup;
 };
 
 HIMAGELIST AddOtherIconsToImageList(struct MsgBoxData *data) { 
@@ -103,7 +104,6 @@ HWND WINAPI CreateStatusComboBoxEx(HWND HwndMain, struct MsgBoxData *data) {
 	COMBOBOXEXITEM	cbei;
 	int				i,j=0, cur_sel=0;
 	char			*status_desc;
-	char			setting[80];
 
 	if (!(data->dlg_flags & DLG_SHOW_STATUS))
 		return NULL;
@@ -126,19 +126,28 @@ HWND WINAPI CreateStatusComboBoxEx(HWND HwndMain, struct MsgBoxData *data) {
 	else
 		cbei.mask = CBEIF_LPARAM | CBEIF_TEXT | CBEIF_IMAGE | CBEIF_SELECTEDIMAGE;
 
-	status_desc = (char*)Translate("<current>");
+	if (data->on_startup)
+		status_desc = (char*)Translate("<startup>");
+	else
+		status_desc = (char*)Translate("<current>");
 	cbei.iItem          = j;
 	cbei.pszText        = (LPTSTR)status_desc;
 	cbei.cchTextMax     = sizeof(status_desc);
 
 	if (data->proto_name) {
-		_snprintf(setting, sizeof(setting), "Cur%sStatus", data->proto_name);
-		j = (int)DBGetContactSettingWord(NULL, "SimpleAway", setting, ID_STATUS_OFFLINE) - ID_STATUS_OFFLINE;
+		if (data->on_startup)
+			j = GetStartupStatus(data->proto_name) - ID_STATUS_OFFLINE;
+		else
+			j = GetCurrentStatus(data->proto_name) - ID_STATUS_OFFLINE;
 	}
 	else {
-		if (data->status_mode == ID_STATUS_CURRENT)
-			j = (int)CallService(MS_CLIST_GETSTATUSMODE, 0, 0) - ID_STATUS_OFFLINE;
-//			j = (int)DBGetContactSettingWord(NULL, "CList", "Status", ID_STATUS_OFFLINE) - ID_STATUS_OFFLINE;
+		if (data->status_mode == ID_STATUS_CURRENT) {
+			if (data->on_startup)
+				j = (int)DBGetContactSettingWord(NULL, "SimpleAway", "StartupStatus", ID_STATUS_OFFLINE) - ID_STATUS_OFFLINE;
+			else
+				j = (int)CallService(MS_CLIST_GETSTATUSMODE, 0, 0) - ID_STATUS_OFFLINE;
+//				j = (int)DBGetContactSettingWord(NULL, "CList", "Status", ID_STATUS_OFFLINE) - ID_STATUS_OFFLINE;
+		}
 		else
 			j = data->status_mode - ID_STATUS_OFFLINE;
 	}
@@ -463,26 +472,26 @@ VOID APIENTRY HandlePopupMenu(HWND hwnd, POINT pt, HWND edit_control) {
  	switch(m_selection) {
 		case IDM_COPY:
 			SendMessage(edit_control, WM_COPY, 0, 0);
-		break;
+			break;
 		case IDM_CUT:
             SendMessage(edit_control, WM_CUT, 0, 0);
-        break;
+			break;
         case IDM_PASTE:
 			SendMessage(edit_control, WM_PASTE, 0, 0);
-		break;
+			break;
 		case IDM_SELECTALL:
 			SendMessage(edit_control, EM_SETSEL, (WPARAM)0, (LPARAM)-1);
-		break;
+			break;
 		case IDM_DELETE:
 			SendMessage(edit_control, WM_SETTEXT, (WPARAM)0, (LPARAM)"");
 			SendMessage(GetParent(hwnd), WM_COMMAND, MAKEWPARAM(IDC_EDIT1, EN_CHANGE), (LPARAM)edit_control);
-		break;
+			break;
 		case ID__FORTUNEAWAYMSG:
 			CallService(MS_UTILS_OPENURL,1,(LPARAM)"http://addons.miranda-im.org/details.php?action=viewfile&id=1933");
-		break;
+			break;
 		case ID__VARIABLES:
 			CallService(MS_UTILS_OPENURL,1,(LPARAM)"http://addons.miranda-im.org/details.php?action=viewfile&id=2834");
-		break;
+			break;
 		case ID__VARIABLES_MOREVARIABLES: {
 			VARHELPINFO vhi;
 
@@ -581,41 +590,40 @@ LRESULT CALLBACK EditBoxSubProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			return 0;
 		}
         break;
-		case WM_CHAR: {
-				if (wParam=='\n' && GetKeyState(VK_CONTROL)&0x8000) {
-					PostMessage(GetParent(hwndDlg), WM_COMMAND, IDC_OK, 0);
-					return 0;
-				}
-				if (wParam == 1 && GetKeyState(VK_CONTROL) & 0x8000) {//ctrl-a
-					SendMessage(hwndDlg, EM_SETSEL, 0, -1);
-					return 0;
-				}
-				if (wParam == 23 && GetKeyState(VK_CONTROL) & 0x8000) {//ctrl-w
-					SendMessage(GetParent(hwndDlg), WM_COMMAND, IDC_CANCEL, 0);
-					return 0;
-				}
-
-/*				if (GetKeyState(VK_CONTROL)&0x8000) {	
-					switch (wParam) {
-						case '1': status = ID_STATUS_ONLINE; break;
-						case '2': status = ID_STATUS_AWAY; break;
-						case '3': status = ID_STATUS_NA; break;
-						case '4': status = ID_STATUS_OCCUPIED; break;
-						case '5': status = ID_STATUS_DND; break;
-						case '6': status = ID_STATUS_FREECHAT; break;
-						case '7': status = ID_STATUS_INVISIBLE; break;
-						case '8': status = ID_STATUS_ONTHEPHONE; break;
-						case '9': status = ID_STATUS_OUTTOLUNCH; break;
-					}
-					if (status)
-
-						if (status & msgbox_data->all_modes)
-							ChangeDlgStatus(GetParent(hwndDlg), msgbox_data, status);
-						return 0;		
-					}
-				}*/
+		case WM_CHAR:
+			if (wParam=='\n' && GetKeyState(VK_CONTROL)&0x8000) {
+				PostMessage(GetParent(hwndDlg), WM_COMMAND, IDC_OK, 0);
+				return 0;
 			}
-		break;
+			if (wParam == 1 && GetKeyState(VK_CONTROL) & 0x8000) {//ctrl-a
+				SendMessage(hwndDlg, EM_SETSEL, 0, -1);
+				return 0;
+			}
+			if (wParam == 23 && GetKeyState(VK_CONTROL) & 0x8000) {//ctrl-w
+				SendMessage(GetParent(hwndDlg), WM_COMMAND, IDC_CANCEL, 0);
+				return 0;
+			}
+
+/*			if (GetKeyState(VK_CONTROL)&0x8000) {	
+				switch (wParam) {
+					case '1': status = ID_STATUS_ONLINE; break;
+					case '2': status = ID_STATUS_AWAY; break;
+					case '3': status = ID_STATUS_NA; break;
+					case '4': status = ID_STATUS_OCCUPIED; break;
+					case '5': status = ID_STATUS_DND; break;
+					case '6': status = ID_STATUS_FREECHAT; break;
+					case '7': status = ID_STATUS_INVISIBLE; break;
+					case '8': status = ID_STATUS_ONTHEPHONE; break;
+					case '9': status = ID_STATUS_OUTTOLUNCH; break;
+				}
+				if (status)
+
+					if (status & msgbox_data->all_modes)
+						ChangeDlgStatus(GetParent(hwndDlg), msgbox_data, status);
+					return 0;		
+				}
+			}*/
+			break;
 	}
 
 	return CallWindowProc(MainDlgProc, hwndDlg, uMsg, wParam, lParam);
@@ -922,8 +930,12 @@ void ChangeDlgStatus(HWND hwndDlg, struct MsgBoxData *msgbox_data, int status) {
 	else
 		_snprintf(ProtoName, sizeof(ProtoName), Translate("Global"));
 
-	if (status == ID_STATUS_CURRENT)
-		_snprintf(title, sizeof(title), Translate("%s Status Message: %s"), ProtoName, Translate("<current>"));
+	if (status == ID_STATUS_CURRENT) {
+		if (msgbox_data->on_startup)
+			_snprintf(title, sizeof(title), Translate("%s Status Message: %s"), ProtoName, Translate("<startup>"));
+		else
+			_snprintf(title, sizeof(title), Translate("%s Status Message: %s"), ProtoName, Translate("<current>"));
+	}
 	else if (status > ID_STATUS_CURRENT) {
 		CallService(MS_SS_GETPROFILENAME, status-40083, (LPARAM)buff);
 		_snprintf(title, sizeof(title), Translate("%s Status Message: %s"), ProtoName, (char*)buff);
@@ -934,11 +946,17 @@ void ChangeDlgStatus(HWND hwndDlg, struct MsgBoxData *msgbox_data, int status) {
 
 	if (status == ID_STATUS_CURRENT) {
 		if (msgbox_data->proto_name) {
-			_snprintf(buff, sizeof(buff), "Cur%sStatus", msgbox_data->proto_name);
-			status = DBGetContactSettingWord(NULL, "SimpleAway", buff, ID_STATUS_OFFLINE);
+			if (msgbox_data->on_startup)
+				status = GetStartupStatus(msgbox_data->proto_name);
+			else
+				status = GetCurrentStatus(msgbox_data->proto_name);
 		}
-		else
-			status = (int)CallService(MS_CLIST_GETSTATUSMODE, (WPARAM)0, (LPARAM)0);
+		else {
+			if (msgbox_data->on_startup)
+				status = (int)DBGetContactSettingWord(NULL, "SimpleAway", "StartupStatus", ID_STATUS_OFFLINE);
+			else
+				status = (int)CallService(MS_CLIST_GETSTATUSMODE, (WPARAM)0, (LPARAM)0);
+		}
 		currentstatus=TRUE;
 	}
 	else if (status > ID_STATUS_CURRENT) {
@@ -1031,7 +1049,6 @@ void ChangeDlgStatus(HWND hwndDlg, struct MsgBoxData *msgbox_data, int status) {
 
 INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	struct MsgBoxData *msgbox_data;
-	char	buff1[80];
 
 	msgbox_data=(struct MsgBoxData*)GetWindowLong(hwndDlg,GWL_USERDATA);
 
@@ -1062,19 +1079,29 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 				CallProtoService(init_data->proto_name, PS_GETNAME, SIZEOF(ProtoName), (LPARAM) ProtoName);
 			else
 				_snprintf(ProtoName, sizeof(ProtoName), Translate("Global"));
-			if (init_data->status_mode == ID_STATUS_CURRENT)
-				_snprintf(title, sizeof(title), format, ProtoName, Translate("<current>"));
+			if (init_data->status_mode == ID_STATUS_CURRENT) {
+				if (init_data->onstartup)
+					_snprintf(title, sizeof(title), format, ProtoName, Translate("<startup>"));
+				else
+					_snprintf(title, sizeof(title), format, ProtoName, Translate("<current>"));
+			}
 			else
 				_snprintf(title, sizeof(title), format, ProtoName, (char*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,init_data->status_mode,0));
 			SetWindowText(hwndDlg, title); //Set the window title
 
 			if (init_data->status_mode == ID_STATUS_CURRENT) {
 				if (init_data->proto_name) {
-					_snprintf(buff1, sizeof(buff1), "Cur%sStatus", init_data->proto_name);
-					hIcon = LoadSkinnedProtoIcon(init_data->proto_name, DBGetContactSettingWord(NULL, "SimpleAway", buff1, ID_STATUS_OFFLINE));
+					if (init_data->onstartup)
+						hIcon = LoadSkinnedProtoIcon(init_data->proto_name, GetStartupStatus(init_data->proto_name));
+					else
+						hIcon = LoadSkinnedProtoIcon(init_data->proto_name, GetCurrentStatus(init_data->proto_name));
 				}
-				else
-					hIcon = LoadSkinnedProtoIcon(init_data->proto_name, (int)CallService(MS_CLIST_GETSTATUSMODE, (WPARAM)0, (LPARAM)0));
+				else {
+					if (init_data->onstartup)
+						hIcon = LoadSkinnedProtoIcon(init_data->proto_name, (int)DBGetContactSettingWord(NULL, "SimpleAway", "StartupStatus", ID_STATUS_OFFLINE));
+					else
+						hIcon = LoadSkinnedProtoIcon(init_data->proto_name, (int)CallService(MS_CLIST_GETSTATUSMODE, (WPARAM)0, (LPARAM)0));
+				}
 			}
 			else
 				hIcon = LoadSkinnedProtoIcon(init_data->proto_name, init_data->status_mode);
@@ -1095,6 +1122,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			copy_init_data->all_modes = init_data->all_modes;
 			copy_init_data->all_modes_msg = init_data->all_modes_msg;
 			copy_init_data->initial_status_mode = init_data->status_mode;
+			copy_init_data->on_startup = init_data->onstartup;
 
 			//Load Icons
 			if (ServiceExists(MS_SKIN2_GETICON)) {
@@ -1142,11 +1170,16 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 			if (copy_init_data->status_mode == ID_STATUS_CURRENT) {
 				if (copy_init_data->proto_name) {
-					_snprintf(buff1, sizeof(buff1), "Cur%sStatus", copy_init_data->proto_name);
-					copy_init_data->status_mode = DBGetContactSettingWord(NULL, "SimpleAway", buff1, ID_STATUS_OFFLINE);
+					if (copy_init_data->on_startup)
+						copy_init_data->status_mode = GetStartupStatus(copy_init_data->proto_name);
+					else
+						copy_init_data->status_mode = GetCurrentStatus(copy_init_data->proto_name);
 				}
 				else {
-					copy_init_data->status_mode = (int)CallService(MS_CLIST_GETSTATUSMODE, (WPARAM)0, (LPARAM)0);
+					if (copy_init_data->on_startup)
+						copy_init_data->status_mode = (int)DBGetContactSettingWord(NULL, "SimpleAway", "StartupStatus", ID_STATUS_OFFLINE);
+					else
+						copy_init_data->status_mode = (int)CallService(MS_CLIST_GETSTATUSMODE, (WPARAM)0, (LPARAM)0);
 					curstatus=TRUE;
 				}
 			}
@@ -1259,7 +1292,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			}
 			msgbox_data->countdown--;
 		break;
-		case WM_COMMAND: {
+		case WM_COMMAND:
 			switch(LOWORD(wParam)) {
 				case IDC_OK: {
 					char	msg[1024];
@@ -1268,11 +1301,16 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 					if (msgbox_data->status_mode == ID_STATUS_CURRENT) {
 						if (msgbox_data->proto_name) {
-							_snprintf(buff1, sizeof(buff1), "Cur%sStatus", msgbox_data->proto_name);
-							msgbox_data->status_mode = DBGetContactSettingWord(NULL, "SimpleAway", buff1, ID_STATUS_OFFLINE);
+							if (msgbox_data->on_startup)
+								msgbox_data->status_mode = GetStartupStatus(msgbox_data->proto_name);
+							else
+								msgbox_data->status_mode = GetCurrentStatus(msgbox_data->proto_name);
 						}
 						else {
-							msgbox_data->status_mode = (int)CallService(MS_CLIST_GETSTATUSMODE, (WPARAM)0, (LPARAM)0);
+							if (msgbox_data->on_startup)
+								msgbox_data->status_mode = (int)DBGetContactSettingWord(NULL, "SimpleAway", "StartupStatus", ID_STATUS_OFFLINE);
+							else
+								msgbox_data->status_mode = (int)CallService(MS_CLIST_GETSTATUSMODE, (WPARAM)0, (LPARAM)0);
 							currentstatus=TRUE;
 						}
 					}
@@ -1286,15 +1324,15 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 					if (len == 0) {
 						if (msgbox_data->proto_name) {
-							char	buff2[80];
-							_snprintf(buff2, sizeof(buff2), "Last%sMsg", msgbox_data->proto_name);
-							DBWriteContactSettingString(NULL, "SimpleAway", buff2, "");
+							char	setting[80];
+							_snprintf(setting, sizeof(setting), "Last%sMsg", msgbox_data->proto_name);
+							DBWriteContactSettingString(NULL, "SimpleAway", setting, "");
 
-							_snprintf(buff2, sizeof(buff2), "%sMsg", msgbox_data->proto_name);
-							DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(msgbox_data->status_mode, buff2), "");
+							_snprintf(setting, sizeof(setting), "%sMsg", msgbox_data->proto_name);
+							DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(msgbox_data->status_mode, setting), "");
 						}
 						else {
-							char				buff2[80];
+							char				setting[80];
 							int					proto_count, j;
 							PROTOCOLDESCRIPTOR	**proto;
 
@@ -1313,23 +1351,22 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 								if (!(CallProtoService(proto[j]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND))
 									continue;
 
-								_snprintf(buff2, sizeof(buff2), "Last%sMsg", proto[j]->szName);
-								DBWriteContactSettingString(NULL, "SimpleAway", buff2, "");
+								_snprintf(setting, sizeof(setting), "Last%sMsg", proto[j]->szName);
+								DBWriteContactSettingString(NULL, "SimpleAway", setting, "");
 
-								_snprintf(buff1, sizeof(buff1), "Cur%sStatus", proto[j]->szName);
-								_snprintf(buff2, sizeof(buff2), "%sMsg", proto[j]->szName);
-								DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(DBGetContactSettingWord(NULL, "SimpleAway", buff1, ID_STATUS_OFFLINE), buff2), "");
+								_snprintf(setting, sizeof(setting), "%sMsg", proto[j]->szName);
+								DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(GetCurrentStatus(proto[j]->szName), setting), "");
 							}
 
 							DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(msgbox_data->status_mode, "Msg"), ""); //for compatibility with some plugins
 						}
 								
 						if (currentstatus)
-							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, ID_STATUS_CURRENT, 0);
+							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, ID_STATUS_CURRENT, 0, msgbox_data->on_startup);
 						else if (profilestatus != 0)
-							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, profilestatus, 0);
+							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, profilestatus, 0, FALSE);
 						else
-							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, msgbox_data->status_mode, 0);
+							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, msgbox_data->status_mode, 0, msgbox_data->on_startup);
 					}
 					else {
 						char		buff[64], buff2[80];
@@ -1371,9 +1408,8 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 											_snprintf(buff2, sizeof(buff2), "Last%sMsg", proto[j]->szName);
 											DBWriteContactSettingString(NULL, "SimpleAway", buff2, buff);
 
-											_snprintf(buff1, sizeof(buff1), "Cur%sStatus", proto[j]->szName);
 											_snprintf(buff2, sizeof(buff2), "%sMsg", proto[j]->szName);
-											DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(DBGetContactSettingWord(NULL, "SimpleAway", buff1, ID_STATUS_OFFLINE), buff2), msg);
+											DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(GetCurrentStatus(proto[j]->szName), buff2), msg);
 										}
 									}
 									DBFreeVariant(&dbv);
@@ -1423,9 +1459,8 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 									_snprintf(buff2, sizeof(buff2), "Last%sMsg", proto[j]->szName);
 									DBWriteContactSettingString(NULL, "SimpleAway", buff2, buff);
 
-									_snprintf(buff1, sizeof(buff1), "Cur%sStatus", proto[j]->szName);
 									_snprintf(buff2, sizeof(buff2), "%sMsg", proto[j]->szName);
-									DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(DBGetContactSettingWord(NULL, "SimpleAway", buff1, ID_STATUS_OFFLINE), buff2), msg);
+									DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(GetCurrentStatus(proto[j]->szName), buff2), msg);
 								}
 							}
 							DBWriteContactSettingWord(NULL, "SimpleAway", "LMMsg", (WORD)last_modified_msg);
@@ -1435,20 +1470,19 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 							DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(msgbox_data->status_mode, "Msg"), msg); //for compatibility with some plugins
 
 						if (currentstatus)
-							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, ID_STATUS_CURRENT, msg);
+							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, ID_STATUS_CURRENT, msg, msgbox_data->on_startup);
 						else if (profilestatus != 0)
-							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, profilestatus, msg);
+							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, profilestatus, msg, FALSE);
 						else
-							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, msgbox_data->status_mode, msg);
+							SetStatusMessage(msgbox_data->proto_name, msgbox_data->initial_status_mode, msgbox_data->status_mode, msg, msgbox_data->on_startup);
 					}
 					DestroyWindow(hwndDlg);
 				}
 				break;
 				case IDCANCEL:
-				case IDC_CANCEL: {
+				case IDC_CANCEL:
 					DestroyWindow(hwndDlg);
-				}
-				break;
+					break;
 				case IDC_EDIT1: {//Notification from the edit control
 					if (msgbox_data->countdown > -2) {
 						KillTimer(hwndDlg,1);
@@ -1457,7 +1491,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 					}
 
 					switch(HIWORD(wParam)) {
-						case EN_CHANGE: {
+						case EN_CHANGE:
 							DisplayCharsCount(msgbox_data, hwndDlg);
 							SendMessage(msgbox_data->recent_cbex, CB_SETCURSEL, -1, 0);
 							if ((msgbox_data->dlg_flags & DLG_SHOW_BUTTONS) || (msgbox_data->dlg_flags & DLG_SHOW_BUTTONS_FLAT)) {
@@ -1473,8 +1507,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 								else if (!IsWindowEnabled(msgbox_data->badd))
 									EnableWindow(msgbox_data->badd, TRUE);
 							}
-						}
-						break;
+							break;
 					}
 				}
 				break;
@@ -1508,11 +1541,17 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 				if (msgbox_data->status_mode == ID_STATUS_CURRENT) {
 					if (msgbox_data->proto_name) {
-						_snprintf(buff1, sizeof(buff1), "Cur%sStatus", msgbox_data->proto_name);
-						msgbox_data->status_mode = DBGetContactSettingWord(NULL, "SimpleAway", buff1, ID_STATUS_OFFLINE);
+						if (msgbox_data->on_startup)
+							msgbox_data->status_mode = GetStartupStatus(msgbox_data->proto_name);
+						else
+							msgbox_data->status_mode = GetCurrentStatus(msgbox_data->proto_name);
 					}
-					else
-						msgbox_data->status_mode = (int)CallService(MS_CLIST_GETSTATUSMODE, (WPARAM)0, (LPARAM)0);
+					else {
+						if (msgbox_data->on_startup)
+							msgbox_data->status_mode = (int)DBGetContactSettingWord(NULL, "SimpleAway", "StartupStatus", ID_STATUS_OFFLINE);
+						else
+							msgbox_data->status_mode = (int)CallService(MS_CLIST_GETSTATUSMODE, (WPARAM)0, (LPARAM)0);
+					}
 					curstatus=TRUE;
 				}
 				else if (msgbox_data->status_mode >= ID_STATUS_CURRENT) {
@@ -1666,7 +1705,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			}
 			if((HWND)lParam == msgbox_data->bclear) {
 				switch(HIWORD(wParam)) {
-					case BN_CLICKED: {
+					case BN_CLICKED:
 						if (MessageBox(NULL, Translate("Are you sure you want to clear status message history?"), Translate("Confirm clearing history"), MB_ICONQUESTION | MB_YESNO) == IDYES) {
 							int num_items;
 
@@ -1682,7 +1721,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 							}
 							EnableWindow(msgbox_data->bclear, FALSE);
 						}
-					}
+					break;
 				}
 			}
 			if((HWND)lParam == msgbox_data->bdel) {
@@ -1739,12 +1778,10 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 					}
 				}
 			}
-		}
-		break;
-		case DM_SIMPAWAY_SHUTDOWN: {
+			break;
+		case DM_SIMPAWAY_SHUTDOWN:
 			DestroyWindow(hwndDlg);
-		}
-		break;
+			break;
 		case DM_SIMPAWAY_CHANGEICONS: {
 			int i;
 				

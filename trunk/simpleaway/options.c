@@ -2,7 +2,7 @@
 
 SimpleAway plugin for Miranda-IM
 
-Copyright © 2005 Harven, © 2006-2007 Dezeath
+Copyright © 2005 Harven, © 2006-2008 Dezeath
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -62,7 +62,7 @@ LRESULT CALLBACK OptEditBoxSubProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			return 0;
 		}
         break;
-		case WM_CHAR: {
+		case WM_CHAR:
 			if (wParam=='\n' && GetKeyState(VK_CONTROL)&0x8000) {
 				PostMessage(GetParent(hwndDlg), WM_COMMAND, IDC_OK, 0);
 				return 0;
@@ -75,8 +75,7 @@ LRESULT CALLBACK OptEditBoxSubProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 				SendMessage(GetParent(hwndDlg), WM_COMMAND, IDC_CANCEL, 0);
 				return 0;
 			}
-		}
-		break;
+			break;
 	}
 
 	return CallWindowProc(OldDlgProc, hwndDlg, uMsg, wParam, lParam);
@@ -872,10 +871,9 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 					}
 				}
 				break;
-				case IDC_VARSHELP: {
+				case IDC_VARSHELP:
 					variables_showhelp(hwndDlg, IDC_OPTEDIT1, VHF_FULLDLG|VHF_SETLASTSUBJECT, NULL, NULL);
-				}
-				break;
+					break;
 				case IDC_BOPTPROTO: {
 					PROTOCOLDESCRIPTOR	**proto;
 					int					proto_count, i, j, k;
@@ -995,7 +993,7 @@ INT_PTR CALLBACK DlgOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 								}
 							}
 
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_COPTMSG2))
+							if (IsDlgButtonChecked(hwndDlg, IDC_COPTMSG2) == BST_CHECKED)
 								DBWriteContactSettingByte(NULL, "SimpleAway", "PutDefInList", (BYTE)1);
 							else
 								DBWriteContactSettingByte(NULL, "SimpleAway", "PutDefInList", (BYTE)0);
@@ -1243,7 +1241,7 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 			switch(LOWORD(wParam)) {
 				case IDC_CCLOSEWND:
 					switch (HIWORD(wParam)) {
-						case BN_CLICKED: {
+						case BN_CLICKED:
 							if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_UNCHECKED) {
 								if (IsWindowEnabled(GetDlgItem(hwndDlg, IDC_ETIMEOUT))) {
 									EnableWindow(GetDlgItem(hwndDlg, IDC_ETIMEOUT), FALSE);
@@ -1256,8 +1254,7 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 									EnableWindow(GetDlgItem(hwndDlg, IDC_STIMEOUT), TRUE);
 								}
 							}
-						}
-						break;
+							break;
 					}
 				break;
 				case IDC_EMAXHIST:
@@ -1333,7 +1330,7 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 				break;
 				case IDC_CSTATUSLIST:
 					switch (HIWORD(wParam)) {
-						case BN_CLICKED: {
+						case BN_CLICKED:
 							if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_UNCHECKED) {
 								if (IsWindowEnabled(GetDlgItem(hwndDlg, IDC_CICONS1)))
 									EnableWindow(GetDlgItem(hwndDlg, IDC_CICONS1), FALSE);
@@ -1346,13 +1343,12 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 								if (ServiceExists(MS_SS_GETPROFILECOUNT) && !IsWindowEnabled(GetDlgItem(hwndDlg, IDC_CPROFILES)))
 									EnableWindow(GetDlgItem(hwndDlg, IDC_CPROFILES), TRUE);
 							}
-						}
-						break;
+							break;
 					}
 				break;
 				case IDC_CCHECKWINAMP:
 					switch (HIWORD(wParam)) {
-						case BN_CLICKED: {
+						case BN_CLICKED:
 							if (IsDlgButtonChecked(hwndDlg, IDC_CCHECKWINAMP) == BST_CHECKED) {
 								if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDC_ESECWINAMP))) {
 									EnableWindow(GetDlgItem(hwndDlg, IDC_ESECWINAMP), TRUE);
@@ -1365,13 +1361,12 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 								EnableWindow(GetDlgItem(hwndDlg, IDC_SSECWINAMP), FALSE);
 								EnableWindow(GetDlgItem(hwndDlg, IDC_CLEAVEWINAMP), FALSE);
 							}
-						}
-						break;
+							break;
 					}
 				break;
 				case IDC_CSETRANDMSG:
 					switch (HIWORD(wParam)) {
-						case BN_CLICKED: {
+						case BN_CLICKED:
 							if (IsDlgButtonChecked(hwndDlg, IDC_CSETRANDMSG) == BST_CHECKED) {
 								if (!IsWindowEnabled(GetDlgItem(hwndDlg, IDC_EMINRANDMSG))) {
 									EnableWindow(GetDlgItem(hwndDlg, IDC_EMINRANDMSG), TRUE);
@@ -1382,11 +1377,10 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 								EnableWindow(GetDlgItem(hwndDlg, IDC_EMINRANDMSG), FALSE);
 								EnableWindow(GetDlgItem(hwndDlg, IDC_SMINRANDMSG), FALSE);
 							}
-						}
 						break;
 					}
 				break;
-				case IDC_BOPTHIST: {
+				case IDC_BOPTHIST:
 					if (MessageBox(NULL, Translate("Are you sure you want to clear status message history?"), Translate("Confirm clearing history"), MB_ICONQUESTION | MB_YESNO) == IDYES) {
 						int		i, max_hist_msgs, proto_count;
 						char	text[8], setting[80];
@@ -1416,9 +1410,8 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 						DBWriteContactSettingWord(NULL, "SimpleAway", "LMMsg", (WORD)max_hist_msgs);
 						EnableWindow(GetDlgItem(hwndDlg, IDC_BOPTHIST), FALSE);
 					}
-				}
-				break;
-				case IDC_BOPTDEF: {
+					break;
+				case IDC_BOPTDEF:
 					if (MessageBox(NULL, Translate("Are you sure you want to clear predefined status messages?"), Translate("Confirm clearing predefined"), MB_ICONQUESTION | MB_YESNO) == IDYES) {
 						int		i, num_predef;
 						char	text[16];
@@ -1432,8 +1425,7 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 						DBWriteContactSettingWord(NULL, "SimpleAway", "DefMsgCount", 0);
 						EnableWindow(GetDlgItem(hwndDlg, IDC_BOPTDEF), FALSE);
 					}
-				}
-				break;
+					break;
 			}
 		break;
 		case WM_NOTIFY:
@@ -1445,18 +1437,18 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 							int		val;
 							int		flags=0;
 
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_CCLOSEWND))
+							if (IsDlgButtonChecked(hwndDlg, IDC_CCLOSEWND) == BST_CHECKED)
 								DBWriteContactSettingByte(NULL, "SimpleAway", "AutoClose", (BYTE)1);
 							else
 								DBWriteContactSettingByte(NULL, "SimpleAway", "AutoClose", (BYTE)0);
 
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_CSTATUSLIST))
+							if (IsDlgButtonChecked(hwndDlg, IDC_CSTATUSLIST) == BST_CHECKED)
 								flags |= DLG_SHOW_STATUS;
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_CICONS1))
+							if (IsDlgButtonChecked(hwndDlg, IDC_CICONS1) == BST_CHECKED)
 								flags |= DLG_SHOW_STATUS_ICONS;
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_CICONS2))
+							if (IsDlgButtonChecked(hwndDlg, IDC_CICONS2) == BST_CHECKED)
 								flags |= DLG_SHOW_LIST_ICONS;
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_CPROFILES))
+							if (IsDlgButtonChecked(hwndDlg, IDC_CPROFILES) == BST_CHECKED)
 								flags |= DLG_SHOW_STATUS_PROFILES;
 							val = SendMessage(GetDlgItem(hwndDlg, IDC_CBOPTBUTTONS), CB_GETCURSEL, 0, 0);
 							if (val != CB_ERR)
@@ -1464,7 +1456,7 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 
 							DBWriteContactSettingByte(NULL, "SimpleAway", "DlgFlags", (BYTE)flags);
 
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_CREMOVECR)) {
+							if (IsDlgButtonChecked(hwndDlg, IDC_CREMOVECR) == BST_CHECKED) {
 								DBWriteContactSettingByte(NULL, "SimpleAway", "RemoveCR", (BYTE)1);
 								removeCR = TRUE;
 							}
@@ -1473,7 +1465,7 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 								removeCR = FALSE;
 							}
 
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_CSHOWCOPY)) {
+							if (IsDlgButtonChecked(hwndDlg, IDC_CSHOWCOPY) == BST_CHECKED) {
 								DBWriteContactSettingByte(NULL, "SimpleAway", "ShowCopy", (BYTE)1);
 								ShowCopy = TRUE;
 							}
@@ -1482,17 +1474,17 @@ INT_PTR CALLBACK DlgAdvancedOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 								ShowCopy = FALSE;
 							}
 
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_CRPOSWND))
+							if (IsDlgButtonChecked(hwndDlg, IDC_CRPOSWND) == BST_CHECKED)
 								DBWriteContactSettingByte(NULL, "SimpleAway", "WinCentered", (BYTE)0);
 							else
 								DBWriteContactSettingByte(NULL, "SimpleAway", "WinCentered", (BYTE)1);
 
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_CSHOWSMSG))
+							if (IsDlgButtonChecked(hwndDlg, IDC_CSHOWSMSG) == BST_CHECKED)
 								DBWriteContactSettingByte(NULL, "SimpleAway", "ShowStatusMenuItem", (BYTE)1);
 							else
 								DBWriteContactSettingByte(NULL, "SimpleAway", "ShowStatusMenuItem", (BYTE)0);
 
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_CLEAVEWINAMP))
+							if (IsDlgButtonChecked(hwndDlg, IDC_CLEAVEWINAMP) == BST_CHECKED)
 								DBWriteContactSettingByte(NULL, "SimpleAway", "AmpLeaveTitle", (BYTE)1);
 							else
 								DBWriteContactSettingByte(NULL, "SimpleAway", "AmpLeaveTitle", (BYTE)0);
@@ -1615,9 +1607,22 @@ INT_PTR CALLBACK DlgStatusOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
 				SetDlgItemInt(hwndDlg, IDC_ESETSTATUS, data->setglobaldelay, FALSE);
 			}
 
-			if (ProtoStatusMsgCount == 1) {
+			if (DBGetContactSettingByte(NULL, "SimpleAway", "StartupPopupDlg", 1)) {
+				CheckDlgButton(hwndDlg, IDC_POPUPDLG, BST_CHECKED);
+
+				if (IsDlgButtonChecked(hwndDlg, IDC_SPECSET) == BST_CHECKED) {
+					CheckDlgButton(hwndDlg, IDC_SPECSET, BST_UNCHECKED);
+					SetDlgItemInt(hwndDlg, IDC_ESETSTATUS, data->setglobaldelay, FALSE);
+				}
 				EnableWindow(GetDlgItem(hwndDlg, IDC_SPECSET), FALSE);
-				CheckDlgButton(hwndDlg, IDC_SPECSET, BST_CHECKED);
+			}
+			else {
+				CheckDlgButton(hwndDlg, IDC_POPUPDLG, BST_UNCHECKED);
+			}
+
+			if (ProtoStatusCount == 1 && ProtoStatusMsgCount == 1) {
+				EnableWindow(GetDlgItem(hwndDlg, IDC_SPECSET), FALSE);
+				CheckDlgButton(hwndDlg, IDC_SPECSET, BST_UNCHECKED); //should work like when checked, but should not be checked
 				i = SendMessage(GetDlgItem(hwndDlg, IDC_LISTPROTO), LB_GETITEMDATA, (WPARAM)SendMessage(GetDlgItem(hwndDlg, IDC_LISTPROTO), LB_GETCURSEL, 0, 0), 0);
 				SetDlgItemInt(hwndDlg, IDC_ESETSTATUS, data->setdelay[i], FALSE);
 			}
@@ -1645,7 +1650,7 @@ INT_PTR CALLBACK DlgStatusOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
 								SetDlgItemInt(hwndDlg, IDC_ESETSTATUS, 0, FALSE);
 							val = GetDlgItemInt(hwndDlg, IDC_ESETSTATUS, &translated, FALSE);
 
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_SPECSET)) {
+							if (IsDlgButtonChecked(hwndDlg, IDC_SPECSET) == BST_CHECKED || (ProtoStatusCount == 1 && ProtoStatusMsgCount == 1)) {
 								int	i;
 
 								i = SendMessage(GetDlgItem(hwndDlg, IDC_LISTPROTO), LB_GETITEMDATA, (WPARAM)SendMessage(GetDlgItem(hwndDlg, IDC_LISTPROTO), LB_GETCURSEL, 0, 0), 0);
@@ -1659,8 +1664,8 @@ INT_PTR CALLBACK DlgStatusOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
 				break;
 				case IDC_SPECSET:
 					switch(HIWORD(wParam)) {
-						case BN_CLICKED: {
-							if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+						case BN_CLICKED:
+							if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED || (ProtoStatusCount == 1 && ProtoStatusMsgCount == 1)) {
 								int	i;
 
 								i = SendMessage(GetDlgItem(hwndDlg, IDC_LISTPROTO), LB_GETITEMDATA, (WPARAM)SendMessage(GetDlgItem(hwndDlg, IDC_LISTPROTO), LB_GETCURSEL, 0, 0), 0);
@@ -1668,8 +1673,26 @@ INT_PTR CALLBACK DlgStatusOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
 							}
 							else
 								SetDlgItemInt(hwndDlg, IDC_ESETSTATUS, data->setglobaldelay, FALSE);
-						}
-						break;
+							break;
+					}
+				break;
+				case IDC_POPUPDLG:
+					switch(HIWORD(wParam)) {
+						case BN_CLICKED:
+							if (ProtoStatusCount == 1 && ProtoStatusMsgCount == 1)
+								break;
+
+							if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+								if (IsDlgButtonChecked(hwndDlg, IDC_SPECSET) == BST_CHECKED) {
+									CheckDlgButton(hwndDlg, IDC_SPECSET, BST_UNCHECKED);
+									SetDlgItemInt(hwndDlg, IDC_ESETSTATUS, data->setglobaldelay, FALSE);
+								}
+								EnableWindow(GetDlgItem(hwndDlg, IDC_SPECSET), FALSE);
+							}
+							else {
+								EnableWindow(GetDlgItem(hwndDlg, IDC_SPECSET), TRUE);
+							}
+							break;
 					}
 				break;
 				case IDC_LISTPROTO:
@@ -1705,7 +1728,7 @@ INT_PTR CALLBACK DlgStatusOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
 
 							SendMessage(GetDlgItem(hwndDlg, IDC_LISTSTATUS), LB_SETCURSEL, (WPARAM)newindex, 0);
 
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_SPECSET))
+							if (IsDlgButtonChecked(hwndDlg, IDC_SPECSET) == BST_CHECKED || (ProtoStatusCount == 1 && ProtoStatusMsgCount == 1))
 								SetDlgItemInt(hwndDlg, IDC_ESETSTATUS, data->setdelay[i], FALSE);
 						}
 						break;
@@ -1748,10 +1771,15 @@ INT_PTR CALLBACK DlgStatusOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
 								DBWriteContactSettingWord(NULL, "SimpleAway", setting, (WORD)data->setdelay[i]);
 							}
 
-							if (BST_CHECKED == IsDlgButtonChecked(hwndDlg, IDC_SPECSET))
+							if (IsDlgButtonChecked(hwndDlg, IDC_SPECSET) == BST_CHECKED)
 								DBWriteContactSettingByte(NULL, "SimpleAway", "GlobalStatusDelay", (BYTE)0);
 							else
 								DBWriteContactSettingByte(NULL, "SimpleAway", "GlobalStatusDelay", (BYTE)1);
+
+							if (IsDlgButtonChecked(hwndDlg, IDC_POPUPDLG) == BST_CHECKED)
+								DBWriteContactSettingByte(NULL, "SimpleAway", "StartupPopupDlg", (BYTE)1);
+							else
+								DBWriteContactSettingByte(NULL, "SimpleAway", "StartupPopupDlg", (BYTE)0);
 
 							DBWriteContactSettingWord(NULL, "SimpleAway", "SetStatusDelay", (WORD)data->setglobaldelay);
 
@@ -1762,12 +1790,11 @@ INT_PTR CALLBACK DlgStatusOptionsProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
 				break;
 			}
 		break;
-		case WM_DESTROY: {
+		case WM_DESTROY:
 			mir_free(data->status);
 			mir_free(data->setdelay);
 			mir_free(data);
-		}
-		break;
+			break;
 	}
 	return FALSE;
 }

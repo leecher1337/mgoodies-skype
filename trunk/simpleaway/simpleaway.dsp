@@ -43,7 +43,8 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SIMPLEAWAY_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SIMPLEAWAY_EXPORTS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O1 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SIMPLEAWAY_EXPORTS" /YX /FD /c
+# SUBTRACT CPP /WX /Fr
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x415 /d "NDEBUG"
@@ -53,8 +54,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib /nologo /base:"0x3ab00000" /dll /machine:I386
-# SUBTRACT LINK32 /profile /incremental:yes /debug /nodefaultlib
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib /nologo /base:"0x3ab00000" /dll /machine:I386 /debug
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "simpleaway - Win32 Debug"
 
@@ -118,27 +119,7 @@ SOURCE=.\random.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\include2\m_fortunemsg.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\include2\m_icolib.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\m_simpleaway.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\include2\m_statusplugins.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\include2\m_toptoolbar.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\include2\m_variables.h
 # End Source File
 # Begin Source File
 
@@ -179,10 +160,6 @@ SOURCE=.\res\msg.ico
 # Begin Source File
 
 SOURCE=.\res\msgttb.bmp
-# End Source File
-# Begin Source File
-
-SOURCE=.\res\msgup.bmp
 # End Source File
 # Begin Source File
 
