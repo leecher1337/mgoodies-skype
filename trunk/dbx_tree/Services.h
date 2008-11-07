@@ -6,25 +6,22 @@
 bool RegisterServices();
 
 
-int DBContactGetRoot(WPARAM wParam, LPARAM lParam);
-int DBContactChildCount(WPARAM hContact, LPARAM lParam);
-int DBContactGetParent(WPARAM hContact, LPARAM lParam);
-int DBContactSetParent(WPARAM hContact, LPARAM hParent);
-int DBContactGetFirstChild(WPARAM hParent, LPARAM lParam);
-int DBContactGetLastChild(WPARAM hParent, LPARAM lParam);
-int DBContactGetNextSilbing(WPARAM hContact, LPARAM lParam);
-int DBContactGetPrevSilbing(WPARAM hContact, LPARAM lParam);
-int DBContactGetFlags(WPARAM hContact, LPARAM lParam);
-int DBContactIterInit(WPARAM pFilter, LPARAM hParent);
-int DBContactIterNext(WPARAM hIteration, LPARAM lParam);
-int DBContactIterClose(WPARAM hIteration, LPARAM lParam);
-int DBContactDelete(WPARAM hContact, LPARAM lParam);
-int DBContactCreate(WPARAM hParent, LPARAM Flags);
+int DBEntityGetRoot(WPARAM wParam, LPARAM lParam);
+int DBEntityChildCount(WPARAM hEntity, LPARAM lParam);
+int DBEntityGetParent(WPARAM hEntity, LPARAM lParam);
+int DBEntitySetParent(WPARAM hEntity, LPARAM hParent);
+int DBEntityGetFlags(WPARAM hEntity, LPARAM lParam);
+int DBEntityIterInit(WPARAM pFilter, LPARAM hParent);
+int DBEntityIterNext(WPARAM hIteration, LPARAM lParam);
+int DBEntityIterClose(WPARAM hIteration, LPARAM lParam);
+int DBEntityDelete(WPARAM hEntity, LPARAM lParam);
+int DBEntityCreate(WPARAM pEntity, LPARAM lParam);
+int DBEntityGetAccount(WPARAM hEntity, LPARAM lParam);
 
-int DBVirtualContactCreate(WPARAM hContact, LPARAM hParent);
-int DBVirtualContactGetParent(WPARAM hVirtuaContact, LPARAM lParam);
-int DBVirtualContactGetFirst(WPARAM hContact, LPARAM lParam);
-int DBVirtualContactGetNext(WPARAM hVirtualContact, LPARAM lParam);
+int DBVirtualEntityCreate(WPARAM hEntity, LPARAM hParent);
+int DBVirtualEntityGetParent(WPARAM hVirtualEntity, LPARAM lParam);
+int DBVirtualEntityGetFirst(WPARAM hEntity, LPARAM lParam);
+int DBVirtualEntityGetNext(WPARAM hVirtualEntity, LPARAM lParam);
 
 int DBSettingFind(WPARAM pSettingDescriptor, LPARAM lParam);
 int DBSettingDelete(WPARAM pSettingDescriptor, LPARAM lParam);
@@ -39,13 +36,13 @@ int DBSettingIterClose(WPARAM hIteration, LPARAM lParam);
 
 int DBEventGetBlobSize(WPARAM hEvent, LPARAM lParam);
 int DBEventGet(WPARAM hEvent, LPARAM pEvent);
-int DBEventGetCount(WPARAM hContact, LPARAM lParam);
-int DBEventDelete(WPARAM hContact, LPARAM hEvent);
-int DBEventAdd(WPARAM hContact, LPARAM pEvent);
-int DBEventMarkRead(WPARAM hContact, LPARAM hEvent);
-int DBEventWriteToDisk(WPARAM hContact, LPARAM hEvent);
+int DBEventGetCount(WPARAM hEntity, LPARAM lParam);
+int DBEventDelete(WPARAM hEntity, LPARAM hEvent);
+int DBEventAdd(WPARAM hEntity, LPARAM pEvent);
+int DBEventMarkRead(WPARAM hEntity, LPARAM hEvent);
+int DBEventWriteToDisk(WPARAM hEntity, LPARAM hEvent);
 int DBEventHardLink(WPARAM pHardLink, LPARAM lParam);
-int DBEventGetContact(WPARAM hEvent, LPARAM lParam);
+int DBEventGetEntity(WPARAM hEvent, LPARAM lParam);
 int DBEventIterInit(WPARAM pFilter, LPARAM lParam);
 int DBEventIterNext(WPARAM hIteration, LPARAM lParam);
 int DBEventIterClose(WPARAM hIteration, LPARAM lParam);

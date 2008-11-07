@@ -13,23 +13,26 @@ static const unsigned int DBT_INVALIDPARAM = 0xFFFFFFFF;
 
 
 ///////////////////////////////////////////////////////////
-// Contacts
+// Entities
 ///////////////////////////////////////////////////////////
 
 /**
-	\brief A handle to a Contact
+	\brief A handle to a Entity
 **/
-typedef uint32_t TDBTContactHandle;
+typedef uint32_t TDBTEntityHandle;
 
+static const uint32_t DBT_NF_IsRoot      = 0x00000001;  /// Entity is the Root
+static const uint32_t DBT_NF_IsGroup     = 0x00000002;  /// Entity is a   group
+static const uint32_t DBT_NF_IsAccount   = 0x00000004;  /// Entity is an  account
 
-static const uint32_t DBT_CF_IsRoot      = 0x00000001;  /// Contact is the Root
-static const uint32_t DBT_CF_IsGroup     = 0x00000002;  /// Contact is group
-static const uint32_t DBT_CF_HasChildren = 0x00000004;  /// Contact has Children (for Groups and Metacontacts)
-static const uint32_t DBT_CF_IsVirtual   = 0x00000008;  /// Contact is a Virtual duplicate
-static const uint32_t DBT_CF_HasVirtuals = 0x00000010;  /// Contact has min. one Virtual duplicate
+static const uint32_t DBT_NF_HasChildren = 0x00010000;  /// Entity has Children (for Groups and Metacontacts)
+static const uint32_t DBT_NF_HasVirtuals = 0x00020000;  /// Entity has at least one Virtual duplicate
+static const uint32_t DBT_NF_IsVirtual   = 0x00040000;  /// Entity is a Virtual duplicate
+
+static const uint32_t DBT_NFM_SpecialEntity = DBT_NF_IsRoot | DBT_NF_IsGroup | DBT_NF_IsAccount | DBT_NF_IsVirtual;
 
 ///////////////////////////////////////////////////////////
-// Contacts
+// Entities
 ///////////////////////////////////////////////////////////
 
 /**
@@ -37,223 +40,203 @@ static const uint32_t DBT_CF_HasVirtuals = 0x00000010;  /// Contact has min. one
 	\param wParam = 0
 	\param lParam = 0
 
-	\return Handle to root Contact
+	\return Handle to root Entity
 **/
-#define MS_DBT_CONTACT_GETROOT "DBT/Contact/GetRoot"
+#define MS_DBT_ENTITY_GETROOT "DBT/Entity/GetRoot"
 
 
 /**
 	\brief
-	\param wParam = hContact
+	\param wParam = hEntity
 	\param lParam = 0
 
-	\return ChildCount of specified Contact
+	\return ChildCount of specified Entity
 **/
-#define MS_DBT_CONTACT_CHILDCOUNT "DBT/Contact/ChildCount"
+#define MS_DBT_ENTITY_CHILDCOUNT "DBT/Entity/ChildCount"
 
 
 /**
 	\brief
-	\param wParam = hContact
+	\param wParam = hEntity
 	\param lParam = 0
 
-	\return Parent hContact of specified Contact
+	\return Parent hEntity of specified Entity
 **/
-#define MS_DBT_CONTACT_GETPARENT "DBT/Contact/GetParent"
+#define MS_DBT_ENTITY_GETPARENT "DBT/Entity/GetParent"
 
 
 /**
 	\brief
-  \param wParam = hContact
-  \param lParam = hParentContact
+  \param wParam = hEntity
+  \param lParam = hParentEntity
 
 	\return 0 on success
 **/
-#define MS_DBT_CONTACT_SETPARENT  "DBT/Contact/SetParent"
-
-
-/**
-	\brief
-	\param wParam = hContact
-	\param lParam = 0
-
-	\return First Child
-**/
-#define MS_DBT_CONTACT_GETFIRSTCHILD "DBT/Contact/GetFirstChild"
-
+#define MS_DBT_ENTITY_SETPARENT  "DBT/Entity/SetParent"
 
 /**
-	\brief
-	\param wParam = hContact
-	\param lParam = 0
-
-	\return Last Child
-**/
-#define MS_DBT_CONTACT_GETLASTCHILD "DBT/Contact/GetLastChild"
-
-
-/**
-	\brief
-	\param wParam = hContact
-	\param lParam = 0
-
-	\return Next Contact with same parent
-**/
-#define MS_DBT_CONTACT_GETNEXTSILBING "DBT/Contact/GetNextSilbing"
-
-
-/**
-	\brief
-	\param wParam = hContact
-	\param lParam = 0
-
-	\return Previous Contact with same parent
-**/
-#define MS_DBT_CONTACT_GETPREVSILBING "DBT/Contact/GetPrevSilbing"
-
-/**
-	\brief Read the flags of an Contact
-  \param wParam = hContact
+	\brief Read the flags of an Entity
+  \param wParam = hEntity
   \param lParam = 0
 
 	\return Flags
 **/
-#define MS_DBT_CONTACT_GETFLAGS "DBT/Contact/GetFlags"
+#define MS_DBT_ENTITY_GETFLAGS "DBT/Entity/GetFlags"
 
 
 
-static const uint32_t DBT_CIFO_OSC_AC   = 0x00000001;                  /// onStartContact - AddChildren
-static const uint32_t DBT_CIFO_OSC_AP   = 0x00000002;                  /// onStartContact - AddParent
-static const uint32_t DBT_CIFO_OSC_AO   = 0x00000004;                  /// onStartContact - AddOriginal (only if contact is virtual)
-static const uint32_t DBT_CIFO_OSC_AOC  = 0x00000008 | DBT_CIFO_OSC_AO; /// onStartContact - AddOriginalChildren (only if contact is virtual)
-static const uint32_t DBT_CIFO_OSC_AOP  = 0x00000010 | DBT_CIFO_OSC_AO; /// onStartContact - AddOriginalParent (only if contact is virtual)
+static const uint32_t DBT_NIFO_OSC_AC   = 0x00000001;                       /// onStartEntity - AddChildren
+static const uint32_t DBT_NIFO_OSC_AP   = 0x00000002;                       /// onStartEntity - AddParent
+static const uint32_t DBT_NIFO_OSC_AO   = 0x00000004;                       /// onStartEntity - AddOriginal (only if Entity is virtual)
+static const uint32_t DBT_NIFO_OSC_AOC  = 0x00000008 | DBT_NIFO_OSC_AO;     /// onStartEntity - AddOriginalChildren (only if Entity is virtual)
+static const uint32_t DBT_NIFO_OSC_AOP  = 0x00000010 | DBT_NIFO_OSC_AO;     /// onStartEntity - AddOriginalParent (only if Entity is virtual)
+static const uint32_t DBT_NIFO_OSC_USEACCOUNT  = 0x00000080;                /// onStartEntity - use Account as fallback, only for settings
 
-static const uint32_t DBT_CIFO_OC_AC    = 0x00000001 <<8;                 /// onChildContact - AddChildren
-//static const uint32_t DBT_LC_OC_AP      = 0x00000002 <<8;                // invalid for children
-static const uint32_t DBT_CIFO_OC_AO    = 0x00000004 <<8;                 /// onChildContact - AddOriginal (only if contact is virtual)
-static const uint32_t DBT_CIFO_OC_AOC   = 0x00000008 <<8 | DBT_CIFO_OC_AO; /// onChildContact - AddOriginalChildren (only if contact is virtual)
-static const uint32_t DBT_CIFO_OC_AOP   = 0x00000010 <<8 | DBT_CIFO_OC_AO; /// onChildContact - AddOriginalParent (only if contact is virtual)
+static const uint32_t DBT_NIFO_OC_AC    = 0x00000001 <<8;                   /// onChildEntity - AddChildren
+//static const uint32_t DBT_LC_OC_AP      = 0x00000002 <<8;                 /// invalid for children
+static const uint32_t DBT_NIFO_OC_AO    = 0x00000004 <<8;                   /// onChildEntity - AddOriginal (only if Entity is virtual)
+static const uint32_t DBT_NIFO_OC_AOC   = 0x00000008 <<8 | DBT_NIFO_OC_AO;  /// onChildEntity - AddOriginalChildren (only if Entity is virtual)
+static const uint32_t DBT_NIFO_OC_AOP   = 0x00000010 <<8 | DBT_NIFO_OC_AO;  /// onChildEntity - AddOriginalParent (only if Entity is virtual)
+static const uint32_t DBT_NIFO_OC_USEACCOUNT  = 0x00000080 <<8;             /// onStartEntity - use Account as fallback, only for settings
 
-static const uint32_t DBT_CIFO_OP_AC    = 0x00000001 <<16;                 /// onParentContact - AddChildren
-static const uint32_t DBT_CIFO_OP_AP    = 0x00000002 <<16;                 /// onParentContact - AddParent
-static const uint32_t DBT_CIFO_OP_AO    = 0x00000004 <<16;                 /// onParentContact - AddOriginal (only if contact is virtual)
-static const uint32_t DBT_CIFO_OP_AOC   = 0x00000008 <<16 | DBT_CIFO_OP_AO; /// onParentContact - AddOriginalChildren (only if contact is virtual)
-static const uint32_t DBT_CIFO_OP_AOP   = 0x00000010 <<16 | DBT_CIFO_OP_AO; /// onParentContact - AddOriginalParent (only if contact is virtual)
+static const uint32_t DBT_NIFO_OP_AC    = 0x00000001 <<16;                  /// onParentEntity - AddChildren
+static const uint32_t DBT_NIFO_OP_AP    = 0x00000002 <<16;                  /// onParentEntity - AddParent
+static const uint32_t DBT_NIFO_OP_AO    = 0x00000004 <<16;                  /// onParentEntity - AddOriginal (only if Entity is virtual)
+static const uint32_t DBT_NIFO_OP_AOC   = 0x00000008 <<16 | DBT_NIFO_OP_AO; /// onParentEntity - AddOriginalChildren (only if Entity is virtual)
+static const uint32_t DBT_NIFO_OP_AOP   = 0x00000010 <<16 | DBT_NIFO_OP_AO; /// onParentEntity - AddOriginalParent (only if Entity is virtual)
+static const uint32_t DBT_NIFO_OP_USEACCOUNT  = 0x00000080 <<16;           /// onStartEntity - use Account as fallback, only for settings
 
-static const uint32_t DBT_CIFO_GF_DEPTHFIRST = 0x01000000;  /// general flags - depth first iteration instead of breath first
-static const uint32_t DBT_CIFO_GF_USEROOT    = 0x02000000;  /// general flags - use root as fallback, only for settings
-static const uint32_t DBT_CIFO_GF_VL1        = 0x10000000;  /// general flags - limit virtual lookup depth to 1
-static const uint32_t DBT_CIFO_GF_VL2        = 0x20000000;  /// general flags - limit virtual lookup depth to 2
-static const uint32_t DBT_CIFO_GF_VL3        = 0x30000000;  /// general flags - limit virtual lookup depth to 3
-static const uint32_t DBT_CIFO_GF_VL4        = 0x40000000;  /// general flags - limit virtual lookup depth to 4
+static const uint32_t DBT_NIFO_GF_DEPTHFIRST = 0x01000000;  /// general flags - depth first iteration instead of breath first
+static const uint32_t DBT_NIFO_GF_USEROOT    = 0x02000000;  /// general flags - use root as fallback, only for settings
+static const uint32_t DBT_NIFO_GF_VL1        = 0x10000000;  /// general flags - limit virtual lookup depth to 1
+static const uint32_t DBT_NIFO_GF_VL2        = 0x20000000;  /// general flags - limit virtual lookup depth to 2
+static const uint32_t DBT_NIFO_GF_VL3        = 0x30000000;  /// general flags - limit virtual lookup depth to 3
+static const uint32_t DBT_NIFO_GF_VL4        = 0x40000000;  /// general flags - limit virtual lookup depth to 4
 
 /**
-	\brief Contactfilter options for Contact iteration
+	\brief Entityfilter options for Entity iteration
 **/
 typedef
-	struct TDBTContactIterFilter
+	struct TDBTEntityIterFilter
 	{
 		uint32_t cbSize;					/// size of the structur in bytes
 		uint32_t Options;					/// Options for iteration: DB_EIFO_*
-		uint32_t fHasFlags;				/// flags an Contact must have to be iterated
-		uint32_t fDontHasFlags;		/// flags an Contact have not to have to be iterated
-	} TDBTContactIterFilter, *PDBTContactIterFilter;
+		uint32_t fHasFlags;				/// flags an Entity must have to be iterated
+		uint32_t fDontHasFlags;		/// flags an Entity have not to have to be iterated
+	} TDBTEntityIterFilter, *PDBTEntityIterFilter;
 
 /**
-	\brief Handle of an Contact-Iteration
+	\brief Handle of an Entity-Iteration
 **/
-typedef uint32_t TDBTContactIterationHandle;
+typedef uint32_t TDBTEntityIterationHandle;
 /**
-	\brief initialize an iteration of Contacts
-	\param wParam = PDBTContactIterFilter, NULL to iterate all Contacts (breadthfirst, all but root)
-	\param lParam = TDBTContactHandle Contact, where iteration starts
+	\brief initialize an iteration of Entities
+	\param wParam = PDBTEntityIterFilter, NULL to iterate all Entities (breadthfirst, all but root)
+	\param lParam = TDBTEntityHandle Entity, where iteration starts
 
 	\return EnumID
 **/
-#define MS_DBT_CONTACT_ITER_INIT "DBT/Contact/Iter/Init"
+#define MS_DBT_ENTITY_ITER_INIT "DBT/Entity/Iter/Init"
 
 
 /**
-	\brief get the next Contact
-	\param wParam = EnumID returned by MS_DBT_CONTACT_ITER_INIT
+	\brief get the next Entity
+	\param wParam = EnumID returned by MS_DBT_ENTITY_ITER_INIT
 	\param lParam = 0
 
-	\return hContact, 0 at the end
+	\return hEntity, 0 at the end
 **/
-#define MS_DBT_CONTACT_ITER_NEXT "DBT/Contact/Iter/Next"
+#define MS_DBT_ENTITY_ITER_NEXT "DBT/Entity/Iter/Next"
 
 /**
 	\brief closes an iteration and frees its ressourcs
-	\param wParam = IterationHandle returned by MS_DBT_CONTACT_ITER_INIT
+	\param wParam = IterationHandle returned by MS_DBT_ENTITY_ITER_INIT
 	\param lParam = 0
 
 	\return 0 on success
 **/
-#define MS_DBT_CONTACT_ITER_CLOSE "DBT/Contact/Iter/Close"
+#define MS_DBT_ENTITY_ITER_CLOSE "DBT/Entity/Iter/Close"
 
 /**
-	\brief Deletes an Contact.
+	\brief Deletes an Entity.
 
 	All children will be moved to its parent.
-	If the Contact has virtual copies, history and settings will be transfered to the first duplicate.
+	If the Entity has virtual copies, history and settings will be transfered to the first duplicate.
 
-	\param wParam = hContact
-  \param lParam = 0
+	\param wParam = hEntity
+	\param lParam = 0
 
 	\return 0 on success
 **/
-#define MS_DBT_CONTACT_DELETE  "DBT/Contact/Delete"
+#define MS_DBT_ENTITY_DELETE  "DBT/Entity/Delete"
 
 
-/**
-	\brief Creates a new Contact.
-  \param wParam = hParentContact
-  \param lParam = Flags, only DBT_CF_IsGroup is allowed here.
-
-	\return hContact on success, 0 otherwise
-**/
-#define MS_DBT_CONTACT_CREATE  "DBT/Contact/Create"
-
-
-///////////////////////////////////////////////////////////
-// Virtual Contacts
-///////////////////////////////////////////////////////////
+typedef struct TDBTEntity
+{
+	TDBTEntityHandle hParentEntity;
+	uint32_t fFlags;                 /// Flags DBT_NF_
+	TDBTEntityHandle hAccountEntity; /// Needed for normal Entities, reference to AccountEntity for the created one
+} TDBTEntity, *PDBTEntity;
 
 /**
-	\brief Creates a virtual duplicate of an Contact
-  \param wParam = hContact to duplicate, couldn't be a group (DBT_CF_IsGroup set to 0)
-  \param lParam = hParentContact to place duplicate
-
-	\return hContact of created duplicate
-**/
-#define MS_DBT_VIRTUALCONTACT_CREATE  "DBT/VirtualContact/Create"
-
-/**
-	\brief Retrieves the original Contact, which this is a duplicate of
-  \param wParam = hContact of virtual Contact
+	\brief Creates a new Entity.
+  \param wParam = PDBTEntity
   \param lParam = 0
 
-	\return hContact of original contact
+	\return hEntity on success, 0 otherwise
 **/
-#define MS_DBT_VIRTUALCONTACT_GETPARENT  "DBT/VirtualContact/GetParent"
+#define MS_DBT_ENTITY_CREATE  "DBT/Entity/Create"
+
 
 /**
-	\brief Retrieves the first virtual duplicate of an Contact (if any)
-  \param wParam = hContact with virtual copies
+	\brief returns the account entity handle specified during creation
+  \param wParam = TDBTEntityHandle
+  \param lParam = 0
+
+	\return hEntity on success, 0 otherwise
+**/
+#define MS_DBT_ENTITY_GETACCOUNT "DBT/Entity/GetAccount"
+
+
+///////////////////////////////////////////////////////////
+// Virtual Entities
+///////////////////////////////////////////////////////////
+
+/**
+	\brief Creates a virtual duplicate of an Entity
+  \param wParam = hEntity to duplicate, couldn't be a group (DBT_NF_IsGroup set to 0)
+  \param lParam = hParentEntity to place duplicate
+
+	\return hEntity of created duplicate
+**/
+#define MS_DBT_VIRTUALENTITY_CREATE  "DBT/VirtualEntity/Create"
+
+/**
+	\brief Retrieves the original Entity, which this is a duplicate of
+  \param wParam = hEntity of virtual Entity
+  \param lParam = 0
+
+	\return hEntity of original Entity
+**/
+#define MS_DBT_VIRTUALENTITY_GETPARENT  "DBT/VirtualEntity/GetParent"
+
+/**
+	\brief Retrieves the first virtual duplicate of an Entity (if any)
+  \param wParam = hEntity with virtual copies
   \param lParam
 
-	\return hContact of first virtual duplicate
+	\return hEntity of first virtual duplicate
 **/
-#define MS_DBT_VIRTUALCONTACT_GETFIRST  "DBT/VirtualContact/GetFirst"
+#define MS_DBT_VIRTUALENTITY_GETFIRST  "DBT/VirtualEntity/GetFirst"
 
 /**
 	\brief Retrieves the following duplicate
-  \param wParam = hVirtualContact of virtual Contact
+  \param wParam = hVirtualEntity of virtual Entity
   \param lParam = 0
 
-	\return hContact of next duplicate, 0 if hVirtualContact was the last duplicate
+	\return hEntity of next duplicate, 0 if hVirtualEntity was the last duplicate
 **/
-#define MS_DBT_VIRTUALCONTACT_GETNEXT  "DBT/VirtualContact/GetNext"
+#define MS_DBT_VIRTUALENTITY_GETNEXT  "DBT/VirtualEntity/GetNext"
 
 
 ///////////////////////////////////////////////////////////
@@ -305,12 +288,12 @@ static const uint32_t DBT_SDF_HashValid   = 0x00000002;
 typedef
 	struct TDBTSettingDescriptor {
 		uint32_t cbSize;                               /// size of the structure in bytes
-		TDBTContactHandle Contact;                      /// Contacthandle where the setting can be found, or where searching starts
+		TDBTEntityHandle Entity;                      /// Entityhandle where the setting can be found, or where searching starts
 		char * pszSettingName;                         /// Setting name
-		uint32_t Options;                              /// options describing where the setting can be found DBT_CIFO_*
+		uint32_t Options;                              /// options describing where the setting can be found DBT_NIFO_*
 		uint32_t Flags;                                /// Valid Flags. DBT_SDF_* describes which following values are valid (internal use)
 
-		TDBTContactHandle FoundInContact;               /// internal use to avoid to do the searching twice
+		TDBTEntityHandle FoundInEntity;               /// internal use to avoid to do the searching twice
 		uint32_t Hash;                                 /// internal used HashValue for settingname
 		TDBTSettingHandle FoundHandle;                  /// internal used SettingHandle
 	} TDBTSettingDescriptor, * PDBTSettingDescriptor;
@@ -430,11 +413,11 @@ typedef
 typedef
 	struct TDBTSettingIterFilter {
 		uint32_t cbSize;								  /// size in bytes of this structure
-		uint32_t Options;                 /// DBT_CIFO_* flags
-		TDBTContactHandle hContact;        /// hContact which settings should be iterated (or where iteration begins)
+		uint32_t Options;                 /// DBT_NIFO_* flags
+		TDBTEntityHandle hEntity;        /// hEntity which settings should be iterated (or where iteration begins)
 		char * NameStart;                 /// if set != NULL the iteration will only return settings which name starts with this string
-		uint32_t ExtraCount;              /// count of additional Contacts which settings are enumerated, size of the array pointed by ExtraContacts
-		TDBTContactHandle * ExtraContacts; /// pointer to an array with additional Contact handles in prioritized order
+		uint32_t ExtraCount;              /// count of additional Entities which settings are enumerated, size of the array pointed by ExtraEntities
+		TDBTEntityHandle * ExtraEntities; /// pointer to an array with additional Entity handles in prioritized order
 
 		PDBTSettingDescriptor Descriptor;  /// if set, the iteration will fill in the correct data, you may set SettingsNameLength and SettingName to a buffer to recieve the name of each setting
 		PDBTSetting Setting;	              /// if set, iteration loads every settings value, except variable length data (blob, strings) but returns their length
@@ -503,7 +486,7 @@ static const uint32_t DBT_EF_RTL   = 0x00000008;
 static const uint32_t DBT_EF_UTF   = 0x00000010;
 
 /**
-	\brief event belongs to more than one contact, so it started to count refernce instead of remembering its initial contact
+	\brief event belongs to more than one Entity, so it started to count refernce instead of remembering its initial Entity
 **/
 static const uint32_t DBT_EF_REFERENCECOUNTING  = 0x80000000;
 
@@ -555,17 +538,17 @@ static const uint32_t DBT_EventType_File        = 1002;  //specific limit has be
 
 /**
 	\brief retrieves all information of an event
-  \param wParam = hContact
+  \param wParam = hEntity
   \param lParam = 0
 
-	\return Event count of specified contact on success, DBT_INVALIDPARAM on error
+	\return Event count of specified Entity on success, DBT_INVALIDPARAM on error
 **/
 #define MS_DBT_EVENT_GETCOUNT "DBT/Event/GetCount"
 
 
 /**
 	\brief Deletes the specfied event
-  \param wParam = hContact
+  \param wParam = hEntity
   \param lParam = hEvent
 
 	\return 0 on success
@@ -574,7 +557,7 @@ static const uint32_t DBT_EventType_File        = 1002;  //specific limit has be
 
 /**
 	\brief Creates a new Event
-  \param wParam = hContact
+  \param wParam = hEntity
   \param lParam = PDBTEvent
 
 	\return hEvent on success, 0 otherwise
@@ -585,7 +568,7 @@ static const uint32_t DBT_EventType_File        = 1002;  //specific limit has be
 
 /**
 	\brief Changes the flags for an event to mark it as read.
-  \param wParam = hContact
+  \param wParam = hEntity
   \param lParam = hEvent
 
 	\return New flags
@@ -594,7 +577,7 @@ static const uint32_t DBT_EventType_File        = 1002;  //specific limit has be
 
 /**
 	\brief Saves a virtual event to file and changes the flags.
-  \param wParam = hContact
+  \param wParam = hEntity
   \param lParam = hEvent
 
 	\return New flags
@@ -602,15 +585,15 @@ static const uint32_t DBT_EventType_File        = 1002;  //specific limit has be
 #define MS_DBT_EVENT_WRITETODISK  "DBT/Event/WriteToDisk"
 
 /**
-	\brief Retrieves a handle to a contact that owns hEvent.
+	\brief Retrieves a handle to a Entity that owns hEvent.
   \param wParam = hEvent
   \param lParam = 0
 
 	\return NULL is a valid return value, meaning, as usual, the user.
-					DBT_INVALIDPARAM if hDbEvent is invalid, or the handle to the contact on
+					DBT_INVALIDPARAM if hDbEvent is invalid, or the handle to the Entity on
 					success
 **/
-#define MS_DBT_EVENT_GETCONTACT  "DBT/Event/GetContact"
+#define MS_DBT_EVENT_GETENTITY  "DBT/Event/GetEntity"
 
 /**
 	\brief options to create event hard link
@@ -619,14 +602,14 @@ typedef
 	struct TDBTEventHardLink {
 		uint32_t cbSize;           /// size of the structure
 		TDBTEventHandle hEvent;     /// event to link
-		TDBTContactHandle hContact; /// contact to link to
+		TDBTEntityHandle hEntity; /// Entity to link to
 		uint32_t Flags;            /// flags, only DBT_EF_VIRTUAL yet
 	} TDBTEventHardLink, *PDBTEventHardLink;
 
 /**
 	\brief Creates a hard linked event.
 
-	This service adds an existing event to a specific contact.
+	This service adds an existing event to a specific Entity.
   \param wParam = PEventHardLink
   \param lParam = 0
 
@@ -641,10 +624,10 @@ typedef
 typedef
 	struct TDBTEventIterFilter {
 		uint32_t cbSize;										/// size in bytes of this structure
-		uint32_t Options;										/// DBT_CIFO_* flags
-		TDBTContactHandle hContact;					/// hContact which events should be iterated (or where iteration begins)
-		uint32_t ExtraCount;								/// count of additional Contacts which settings are enumerated, size of the array pointed by ExtraContacts
-		TDBTContactHandle * ExtraContacts;   /// pointer to an array with additional Contact handles in prioritized order
+		uint32_t Options;										/// DBT_NIFO_* flags
+		TDBTEntityHandle hEntity;					/// hEntity which events should be iterated (or where iteration begins)
+		uint32_t ExtraCount;								/// count of additional Entities which settings are enumerated, size of the array pointed by ExtraEntities
+		TDBTEntityHandle * ExtraEntities;   /// pointer to an array with additional Entity handles in prioritized order
 
 		uint32_t tSince;                    /// timestamp when to start iteration, 0 for first item
 		uint32_t tTill;                     /// timestamp when to stop iteration, 0 for last item

@@ -6,7 +6,7 @@
 
 #include "Events.h"
 #include "Settings.h"
-#include "Contacts.h"
+#include "Entities.h"
 
 #include "FileAccess.h"
 #include "MappedMemory.h"
@@ -46,8 +46,8 @@ typedef struct TPrivateHeader {
 	uint32_t Obscure;
 	TFileEncryption FileEncryption; /// Encryption Method
 	uint32_t FileSize;              /// Offset to the last used byte + 1
-	uint32_t RootContact;           /// Offset to the Root CList Contact
-	uint32_t Contacts;              /// Offset to the ContactBTree RootNode
+	uint32_t RootEntity;           /// Offset to the Root CList Entity
+	uint32_t Entities;              /// Offset to the EntityBTree RootNode
 	uint32_t Virtuals;              /// Offset to the VirtualsBTree RootNode	
 	uint32_t EventLinks;            /// 
 	uint32_t EventIndexCounter;     /// Event Index Counter
@@ -86,7 +86,7 @@ private:
 
 	void onSettingsRootChanged(CSettings* Settings, CSettingsTree::TNodeRef NewRoot);
 	void onVirtualsRootChanged(void* Virtuals, CVirtuals::TNodeRef NewRoot);
-	void onContactsRootChanged(void* Contacts, CContacts::TNodeRef NewRoot);
+	void onEntitiesRootChanged(void* Entities, CEntities::TNodeRef NewRoot);
 	void onEventLinksRootChanged(void* Events, CEventLinks::TNodeRef NewRoot);
 	void onFileSizeChanged(CFileAccess * File, uint32_t Size);
 	void onEventIndexCounterChanged(CEvents * Events, uint32_t Counter);
@@ -99,7 +99,7 @@ private:
 protected:
 	CMultiReadExclusiveWriteSynchronizer m_Sync;
 
-	CContacts *m_Contacts;
+	CEntities *m_Entities;
 	CSettings *m_Settings;
 	CEvents   *m_Events;
 
@@ -113,9 +113,9 @@ public:
 	int CheckDB();
 	int OpenDB();
 
-	CContacts & getContacts()
+	CEntities & getEntities()
 	{
-		return *m_Contacts;
+		return *m_Entities;
 	}
 	CSettings & getSettings()
 	{

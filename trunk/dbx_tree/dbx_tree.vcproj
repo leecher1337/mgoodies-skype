@@ -17,7 +17,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="D:\Tree Miranda IM\Plugins"
+			OutputDirectory="..\..\..\..\Miranda IM Test\Plugins"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="2"
@@ -116,6 +116,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../include"
 				RuntimeLibrary="0"
 				EnableEnhancedInstructionSet="0"
@@ -198,11 +199,11 @@
 			Name="Database"
 			>
 			<File
-				RelativePath=".\Contacts.cpp"
+				RelativePath=".\DataBase.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\DataBase.cpp"
+				RelativePath=".\Entities.cpp"
 				>
 			</File>
 			<File
@@ -221,11 +222,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\Contacts.h"
+					RelativePath=".\DataBase.h"
 					>
 				</File>
 				<File
-					RelativePath=".\DataBase.h"
+					RelativePath=".\Entities.h"
 					>
 				</File>
 				<File

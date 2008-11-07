@@ -3,7 +3,6 @@
 
 CDataBase *gDataBase = NULL;
 
-
 CDataBase::CDataBase(const char* FileName)
 : m_Sync()
 {
@@ -29,7 +28,7 @@ CDataBase::CDataBase(const char* FileName)
 		m_HeaderBlock[i] = 0;
 	}
 	
-	m_Contacts = NULL;
+	m_Entities = NULL;
 	m_Settings = NULL;
 	m_Events   = NULL;
 }
@@ -37,9 +36,9 @@ CDataBase::~CDataBase()
 {
 	if (m_Events)   delete m_Events;
 	if (m_Settings) delete m_Settings;
-	if (m_Contacts) delete m_Contacts;
+	if (m_Entities) delete m_Entities;
 
-	m_Contacts = NULL;
+	m_Entities = NULL;
 	m_Settings = NULL;
 	m_Events   = NULL;
 
@@ -128,7 +127,7 @@ int CDataBase::LoadFile(TDBFileType Index)
 	m_BlockManager[Index] = new CBlockManager(*m_FileAccess[Index], *m_EncryptionManager[Index]);
 	m_HeaderBlock[Index] = m_BlockManager[Index]->ScanFile(sizeof(m_Header[Index]), cHeaderBlockSignature, m_Header[Index].Gen.FileSize);
 
-	if (m_HeaderBlock[Index] == 0)			
+	if (m_HeaderBlock[Index] == 0)
 		throwException("Header Block not found! File damaged: \"%s\"", m_FileName[Index]);
 	
 	TGenericFileHeader buf;
@@ -163,18 +162,18 @@ int CDataBase::OpenDB()
 	res = LoadFile(DBFilePrivate);
 	if (res != 0) return res;
 	
-	m_Contacts = new CContacts(*m_BlockManager[DBFilePrivate],
+	m_Entities = new CEntities(*m_BlockManager[DBFilePrivate],
 		                       m_Sync, 
-													 m_Header[DBFilePrivate].Pri.RootContact, 
-													 m_Header[DBFilePrivate].Pri.Contacts, 
+													 m_Header[DBFilePrivate].Pri.RootEntity, 
+													 m_Header[DBFilePrivate].Pri.Entities, 
 													 m_Header[DBFilePrivate].Pri.Virtuals);
 
-	m_Contacts->sigRootChanged().connect(this, &CDataBase::onContactsRootChanged);
-	m_Contacts->sigVirtualRootChanged().connect(this, &CDataBase::onVirtualsRootChanged);
+	m_Entities->sigRootChanged().connect(this, &CDataBase::onEntitiesRootChanged);
+	m_Entities->sigVirtualRootChanged().connect(this, &CDataBase::onVirtualsRootChanged);
 	
-	if (m_Contacts->getRootContact() != m_Header[DBFilePrivate].Pri.RootContact)
+	if (m_Entities->getRootEntity() != m_Header[DBFilePrivate].Pri.RootEntity)
 	{
-		m_Header[DBFilePrivate].Pri.RootContact = m_Contacts->getRootContact();
+		m_Header[DBFilePrivate].Pri.RootEntity = m_Entities->getRootEntity();
 		ReWriteHeader(DBFilePrivate);
 	}
 
@@ -184,7 +183,7 @@ int CDataBase::OpenDB()
 														 *m_EncryptionManager[DBFilePrivate],
 														 m_Sync,
 														 m_Header[DBFileSetting].Set.Settings,
-														 *m_Contacts);
+														 *m_Entities);
 
 	m_Settings->sigRootChanged().connect(this, &CDataBase::onSettingsRootChanged);
 	
@@ -192,7 +191,7 @@ int CDataBase::OpenDB()
 		                     *m_EncryptionManager[DBFilePrivate],
 												 m_Header[DBFilePrivate].Pri.EventLinks,
 												 m_Sync,
-												 *m_Contacts,
+												 *m_Entities,
 												 *m_Settings,
 												 m_Header[DBFilePrivate].Pri.EventIndexCounter);
 
@@ -267,9 +266,9 @@ void CDataBase::onVirtualsRootChanged(void* Virtuals, CVirtuals::TNodeRef NewRoo
 	m_Header[DBFilePrivate].Pri.Virtuals = NewRoot;
 	ReWriteHeader(DBFilePrivate);
 }
-void CDataBase::onContactsRootChanged(void* Contacts, CContacts::TNodeRef NewRoot)
+void CDataBase::onEntitiesRootChanged(void* Entities, CEntities::TNodeRef NewRoot)
 {
-	m_Header[DBFilePrivate].Pri.Contacts = NewRoot;
+	m_Header[DBFilePrivate].Pri.Entities = NewRoot;
 	ReWriteHeader(DBFilePrivate);
 }
 void CDataBase::onEventLinksRootChanged(void* Events, CEventLinks::TNodeRef NewRoot)
