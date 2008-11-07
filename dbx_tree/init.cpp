@@ -16,7 +16,7 @@ static PLUGININFOEX gPluginInfoEx = {
 	sizeof(PLUGININFOEX),
 	"Miranda tree database driver",
 	gVersion,
-	"Provides extended Miranda database support: global settings, contacts, history, settings per contact.",
+	"Provides extended Miranda database support: global settings, Entities, history, settings per Entity.",
 	"Michael \"Protogenes\" Kunz, parts by Peter \"Lastwebpage\" Flindt, support Scott \"sje\" Ellis",
 	"Michael.Kunz@2005.tu-chemnitz.de",
 	"2007 Michael Kunz",

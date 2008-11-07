@@ -16,7 +16,11 @@ HANDLE hEventDeletedEvent,
 
 int CompAddContact(WPARAM wParam, LPARAM lParam)
 {
-	int res = DBContactCreate(DBContactGetRoot(0, 0), 0);
+	TDBTEntity entity = {0};
+	entity.hParentEntity = DBEntityGetRoot(0, 0);
+	entity.hAccountEntity = entity.hParentEntity;
+
+	int res = gDataBase->getEntities().CreateEntity(entity);
 	if (res == DBT_INVALIDPARAM)
 		return 1;
 
@@ -27,7 +31,7 @@ int CompDeleteContact(WPARAM hContact, LPARAM lParam)
 {
 	NotifyEventHooks(hContactDeletedEvent, hContact, 0);
 
-	int res = DBContactDelete(hContact, 0);
+	int res = DBEntityDelete(hContact, 0);
 	if (res == DBT_INVALIDPARAM)
 		return 1;
 	
@@ -35,40 +39,41 @@ int CompDeleteContact(WPARAM hContact, LPARAM lParam)
 }
 int CompIsDbContact(WPARAM hContact, LPARAM lParam)
 {
-	int flags = DBContactGetFlags(hContact, 0);
-	return (flags != DBT_INVALIDPARAM) && ((flags & (DBT_CF_IsGroup | DBT_CF_IsVirtual)) == 0);
+	int flags = DBEntityGetFlags(hContact, 0);
+	return (flags != DBT_INVALIDPARAM) && 
+		     ((flags & DBT_NFM_SpecialEntity) == 0);
 }
 int CompGetContactCount(WPARAM wParam, LPARAM lParam)
 {
-	TDBTContactIterFilter f = {0};
+	TDBTEntityIterFilter f = {0};
 	f.cbSize = sizeof(f);
-	f.fDontHasFlags = DBT_CF_IsGroup | DBT_CF_IsVirtual;
-	f.Options = DBT_CIFO_OSC_AC | DBT_CIFO_OC_AC;
+	f.fDontHasFlags = DBT_NF_IsGroup | DBT_NF_IsVirtual | DBT_NF_IsAccount | DBT_NF_IsRoot;
+	f.Options = DBT_NIFO_OSC_AC | DBT_NIFO_OC_AC;
 
-	TDBTContactIterationHandle hiter = DBContactIterInit((WPARAM)&f, gDataBase->getContacts().getRootContact());
+	TDBTEntityIterationHandle hiter = DBEntityIterInit((WPARAM)&f, gDataBase->getEntities().getRootEntity());
 	int c = 0;
 	if ((hiter != 0) && (hiter != DBT_INVALIDPARAM))
 	{
-		TDBTContactHandle con = DBContactIterNext(hiter, 0);
+		TDBTEntityHandle con = DBEntityIterNext(hiter, 0);
 
 		while ((con != DBT_INVALIDPARAM) && (con != 0))
 		{
 			if ((con != 0) && (con != DBT_INVALIDPARAM))
 				c++;
 
-			con = DBContactIterNext(hiter, 0);
+			con = DBEntityIterNext(hiter, 0);
 		}
-		DBContactIterClose(hiter, 0);
+		DBEntityIterClose(hiter, 0);
 	}
 	return c;
 }
 int CompFindFirstContact(WPARAM wParam, LPARAM lParam)
 {
-	return gDataBase->getContacts().compFirstContact();
+	return gDataBase->getEntities().compFirstContact();
 }
 int CompFindNextContact(WPARAM hContact, LPARAM lParam)
 {
-	return gDataBase->getContacts().compNextContact(hContact);
+	return gDataBase->getEntities().compNextContact(hContact);
 }
 
 int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
@@ -91,7 +96,7 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 	TDBTSettingDescriptor desc = {0};
 	TDBTSetting set = {0};
 	desc.cbSize = sizeof(desc);
-	desc.Contact = hContact;
+	desc.Entity = hContact;
 	desc.pszSettingName = namebuf;
 
 	set.cbSize = sizeof(set);
@@ -183,7 +188,7 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 	TDBTSettingDescriptor desc = {0};
 	TDBTSetting set = {0};
 	desc.cbSize = sizeof(desc);
-	desc.Contact = hContact;
+	desc.Entity = hContact;
 	desc.pszSettingName = namebuf;
 
 	set.cbSize = sizeof(set);
@@ -284,7 +289,7 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 	TDBTSettingDescriptor desc = {0};
 	TDBTSetting set = {0};
 	desc.cbSize = sizeof(desc);
-	desc.Contact = hContact;
+	desc.Entity = hContact;
 	desc.pszSettingName = namebuf;
 
 	set.cbSize = sizeof(set);
@@ -434,7 +439,7 @@ int CompWriteContactSetting(WPARAM hContact, LPARAM pSetting)
 	TDBTSettingDescriptor desc = {0};
 	TDBTSetting set = {0};
 	desc.cbSize = sizeof(desc);
-	desc.Contact = hContact;
+	desc.Entity = hContact;
 	desc.pszSettingName = namebuf;
 
 	set.cbSize = sizeof(set);
@@ -503,7 +508,7 @@ int CompDeleteContactSetting(WPARAM hContact, LPARAM pSetting)
 	
 	TDBTSettingDescriptor desc = {0};
 	desc.cbSize = sizeof(desc);
-	desc.Contact = hContact;
+	desc.Entity = hContact;
 	desc.pszSettingName = namebuf;
 
 	if (DBSettingDelete((WPARAM)&desc, 0) == DBT_INVALIDPARAM)
@@ -525,7 +530,7 @@ int CompEnumContactSettings(WPARAM hContact, LPARAM pEnum)
 
 	TDBTSettingDescriptor desc = {0};
 	desc.cbSize = sizeof(desc);
-	desc.Contact = hContact;
+	desc.Entity = hContact;
 	
 	char namebuf[512];
 	namebuf[0] = 0;
@@ -535,7 +540,7 @@ int CompEnumContactSettings(WPARAM hContact, LPARAM pEnum)
 	TDBTSettingIterFilter filter = {0};
 	filter.cbSize = sizeof(filter);
 	filter.Descriptor = &desc;
-	filter.hContact = hContact;
+	filter.hEntity = hContact;
 	filter.NameStart = namebuf;
 
 	TDBTSettingIterationHandle hiter = DBSettingIterInit((WPARAM)&filter, 0);
@@ -586,7 +591,7 @@ int CompAddEvent(WPARAM hContact, LPARAM pEventInfo)
 		return tmp;
 
 	if (hContact == 0)
-		hContact = gDataBase->getContacts().getRootContact();
+		hContact = gDataBase->getEntities().getRootEntity();
 
 
 	TDBTEvent ev = {0};
@@ -607,7 +612,7 @@ int CompDeleteEvent(WPARAM hContact, LPARAM hEvent)
 	int res = NotifyEventHooks(hEventDeletedEvent, hContact, hEvent);
 
 	if (hContact == 0)
-		hContact = gDataBase->getContacts().getRootContact();
+		hContact = gDataBase->getEntities().getRootEntity();
 
 	if (res == 0)
 		return DBEventDelete(hContact, hEvent);
@@ -661,8 +666,8 @@ int CompMarkEventRead(WPARAM hContact, LPARAM hEvent)
 }
 int CompGetEventContact(WPARAM hEvent, LPARAM lParam)
 {
-	TDBTContactHandle res = DBEventGetContact(hEvent, 0);
-	if (res == gDataBase->getContacts().getRootContact())
+	TDBTEntityHandle res = DBEventGetEntity(hEvent, 0);
+	if (res == gDataBase->getEntities().getRootEntity())
 		res = 0;
 
 	return res;
@@ -670,20 +675,20 @@ int CompGetEventContact(WPARAM hEvent, LPARAM lParam)
 int CompFindFirstEvent(WPARAM hContact, LPARAM lParam)
 {
 	if (hContact == 0)
-		hContact = gDataBase->getContacts().getRootContact();
+		hContact = gDataBase->getEntities().getRootEntity();
 
 	return gDataBase->getEvents().compFirstEvent(hContact);
 }
 int CompFindFirstUnreadEvent(WPARAM hContact, LPARAM lParam)
 {
 	if (hContact == 0)
-		hContact = gDataBase->getContacts().getRootContact();
+		hContact = gDataBase->getEntities().getRootEntity();
 	return gDataBase->getEvents().compFirstUnreadEvent(hContact);
 }
 int CompFindLastEvent(WPARAM hContact, LPARAM lParam)
 {
 	if (hContact == 0)
-		hContact = gDataBase->getContacts().getRootContact();
+		hContact = gDataBase->getEntities().getRootEntity();
 	return gDataBase->getEvents().compLastEvent(hContact);
 }
 int CompFindNextEvent(WPARAM hEvent, LPARAM lParam)

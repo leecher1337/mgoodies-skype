@@ -38,7 +38,7 @@ public:
 			\brief Keeps track of changes in the tree and refresh the iterator
 
 			There are a few possibilities on not UniqueKey-trees where the managing can fail.
-			It can occour when deleting an iterated Key and have some other Contacts with same Key...
+			It can occour when deleting an iterated Key and have some other Entities with same Key...
 			This can cause Values to be skipped.
 		**/
 		void setManaged();
@@ -1055,7 +1055,7 @@ inline CBTree<TKey, SizeParam>::iterator::operator bool() const
 	{
 		TNode node;
 		m_Tree->Read(m_Node, offsetof(TNode, Info), sizeof(uint16_t), node);
-		return (m_Index >= 0) && (m_Index < (node.Info & cKeyCountMask));
+		return (m_Index < (node.Info & cKeyCountMask));
 	} else
 		return false;
 }
@@ -1067,7 +1067,7 @@ inline bool CBTree<TKey, SizeParam>::iterator::operator !() const
 	{
 		TNode node;
 		m_Tree->Read(m_Node, offsetof(TNode, Info), sizeof(uint16_t), node);
-		return (m_Index < 0) || (m_Index > (node.Info & cKeyCountMask));
+		return (m_Index > (node.Info & cKeyCountMask));
 	} else
 		return true;
 }
@@ -1121,7 +1121,7 @@ CBTree<TKey, SizeParam>::iterator::operator ++() //pre  ++i
 		TKey oldkey = m_ManagedKey;
 		m_LoadedKey = false;
 		m_ManagedDeleted = false;
-		iterator & other(m_Tree->LowerBound(m_ManagedKey));	
+		iterator & other = m_Tree->LowerBound(m_ManagedKey);	
 		m_Node = other.m_Node;		
 		m_Index = other.m_Index;
 		while (((**this) == oldkey) && (*this))
@@ -1149,7 +1149,7 @@ CBTree<TKey, SizeParam>::iterator::operator --() //pre  --i
 		m_LoadedKey = false;
 
 		m_ManagedDeleted = false;
-		iterator & other(m_Tree->UpperBound(m_ManagedKey));
+		iterator & other = m_Tree->UpperBound(m_ManagedKey);
 		m_Node = other.m_Node;
 		m_Index = other.m_Index;
 		while (((**this) == oldkey) && (*this))
@@ -1250,7 +1250,7 @@ void CBTree<TKey, SizeParam>::iterator::Dec()
 
 	m_LoadedKey = false;
 
-	if ((node.Info & cIsLeafMask) && (m_Index > 0))
+	if ((node.Info & cIsLeafMask) && (m_Index > 0)) // leaf
 	{
 		m_Index--;
 		return;
@@ -1262,6 +1262,7 @@ void CBTree<TKey, SizeParam>::iterator::Dec()
 		m_Node = node.Child[m_Index];
 		m_Tree->Read(m_Node, offsetof(TNode, Info), sizeof(uint16_t), node);
 		m_Index = (node.Info & cKeyCountMask) - 1;
+
 		while ((node.Info & cIsLeafMask) == 0)  // go down to a leaf
 		{
 			m_Tree->Read(m_Node, offsetof(TNode, Child[node.Info & cKeyCountMask]), sizeof(TNodeRef), node);
@@ -1273,7 +1274,7 @@ void CBTree<TKey, SizeParam>::iterator::Dec()
 		return;
 	}
 
-	while (m_Index <= 0) // go up
+	while (m_Index == 0) // go up
 	{
 		if (m_Node == m_Tree->m_Root) // the root is the top, we cannot go further
 		{
@@ -1288,11 +1289,13 @@ void CBTree<TKey, SizeParam>::iterator::Dec()
 
 		while ((m_Index <= (node.Info & cKeyCountMask)) && (node.Child[m_Index] != m_Node))
 			m_Index++;
-
-		m_Index--;
+		
 		m_Node = nextnode;
 
-		if (m_Index >= 0)
+		if (m_Index > 0)
+		{
+			m_Index--;
 			return;
+		}
 	}
 }

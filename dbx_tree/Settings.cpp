@@ -23,12 +23,12 @@ inline bool TSettingKey::operator >  (const TSettingKey & Other) const
 
 
 
-CSettingsTree::CSettingsTree(CSettings & Owner, CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TNodeRef RootNode, TDBTContactHandle Contact)
+CSettingsTree::CSettingsTree(CSettings & Owner, CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TNodeRef RootNode, TDBTEntityHandle Entity)
 : CFileBTree(BlockManager, RootNode, cSettingNodeSignature),
 	m_Owner(Owner),
 	m_EncryptionManager(EncryptionManager)
 {
-	m_Contact = Contact;
+	m_Entity = Entity;
 }
 
 CSettingsTree::~CSettingsTree()
@@ -36,14 +36,14 @@ CSettingsTree::~CSettingsTree()
 
 }
 
-inline TDBTContactHandle CSettingsTree::getContact()
+inline TDBTEntityHandle CSettingsTree::getEntity()
 {
-	return m_Contact;
+	return m_Entity;
 }
 
-void CSettingsTree::setContact(TDBTContactHandle NewContact)
+void CSettingsTree::setEntity(TDBTEntityHandle NewEntity)
 {
-	m_Contact = NewContact;
+	m_Entity = NewEntity;
 }
 
 TDBTSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length)
@@ -109,14 +109,14 @@ CSettings::CSettings(
 		CEncryptionManager & EncryptionManagerPri,
 		CMultiReadExclusiveWriteSynchronizer & Synchronize, 
 		CSettingsTree::TNodeRef SettingsRoot,
-		CContacts & Contacts
+		CEntities & Entities
 )
 :	m_Sync(Synchronize),
 	m_BlockManagerSet(BlockManagerSet),
 	m_BlockManagerPri(BlockManagerPri),
 	m_EncryptionManagerSet(EncryptionManagerSet),
 	m_EncryptionManagerPri(EncryptionManagerPri),
-	m_Contacts(Contacts),
+	m_Entities(Entities),
 	m_SettingsMap(),
 	m_sigRootChanged(),
 	m_Modules()
@@ -126,8 +126,8 @@ CSettings::CSettings(
 	settree->sigRootChanged().connect(this, &CSettings::onRootChanged);
 	m_SettingsMap.insert(std::make_pair(0, settree));
 
-	m_Contacts._sigDeleteSettings().connect(this, &CSettings::onDeleteSettings);
-	m_Contacts._sigMergeSettings().connect (this, &CSettings::onMergeSettings);
+	m_Entities._sigDeleteSettings().connect(this, &CSettings::onDeleteSettings);
+	m_Entities._sigMergeSettings().connect (this, &CSettings::onMergeSettings);
 
 	_LoadModules();
 	_EnsureModuleExists("$Modules");
@@ -159,19 +159,19 @@ CSettings::~CSettings()
 }
 
 
-CSettingsTree * CSettings::getSettingsTree(TDBTContactHandle hContact)
+CSettingsTree * CSettings::getSettingsTree(TDBTEntityHandle hEntity)
 {
-	TSettingsTreeMap::iterator i = m_SettingsMap.find(hContact);
+	TSettingsTreeMap::iterator i = m_SettingsMap.find(hEntity);
 	if (i != m_SettingsMap.end())
 		return i->second;
 
-	uint32_t root = m_Contacts._getSettingsRoot(hContact);
+	uint32_t root = m_Entities._getSettingsRoot(hEntity);
 	if (root == DBT_INVALIDPARAM)
 		return NULL;
 
-	CSettingsTree * tree = new CSettingsTree(*this, m_BlockManagerPri, m_EncryptionManagerPri, root, hContact);
+	CSettingsTree * tree = new CSettingsTree(*this, m_BlockManagerPri, m_EncryptionManagerPri, root, hEntity);
 	tree->sigRootChanged().connect(this, &CSettings::onRootChanged);
-	m_SettingsMap.insert(std::make_pair(hContact, tree));
+	m_SettingsMap.insert(std::make_pair(hEntity, tree));
 
 	return tree;	
 }
@@ -290,10 +290,10 @@ CSettings::TOnRootChanged & CSettings::sigRootChanged()
 }
 void CSettings::onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot)
 {
-	if (((CSettingsTree*)SettingsTree)->getContact() == 0)
+	if (((CSettingsTree*)SettingsTree)->getEntity() == 0)
 		m_sigRootChanged.emit(this, NewRoot);
 	else 
-		m_Contacts._setSettingsRoot(((CSettingsTree*)SettingsTree)->getContact(), NewRoot);
+		m_Entities._setSettingsRoot(((CSettingsTree*)SettingsTree)->getEntity(), NewRoot);
 }
 
 void CSettings::onDeleteSettingCallback(void * Tree, const TSettingKey & Key, uint32_t Param)
@@ -305,20 +305,20 @@ void CSettings::onDeleteSettingCallback(void * Tree, const TSettingKey & Key, ui
 		m_BlockManagerPri.DeleteBlock(Key.Setting);
 	}
 }
-void CSettings::onDeleteSettings(CContacts * Contacts, TDBTContactHandle hContact)
+void CSettings::onDeleteSettings(CEntities * Entities, TDBTEntityHandle hEntity)
 {
-	CSettingsTree * tree = getSettingsTree(hContact);
+	CSettingsTree * tree = getSettingsTree(hEntity);
 
-	m_Contacts._setSettingsRoot(hContact, 0);
+	m_Entities._setSettingsRoot(hEntity, 0);
 
 	if (tree)
 	{
 		CSettingsTree::TDeleteCallback callback;
 		callback.connect(this, &CSettings::onDeleteSettingCallback);
 
-		tree->DeleteTree(&callback, hContact);
+		tree->DeleteTree(&callback, hEntity);
 
-		TSettingsTreeMap::iterator i = m_SettingsMap.find(hContact);
+		TSettingsTreeMap::iterator i = m_SettingsMap.find(hEntity);
 		delete i->second; // tree
 		m_SettingsMap.erase(i);
 	}
@@ -327,8 +327,8 @@ void CSettings::onDeleteSettings(CContacts * Contacts, TDBTContactHandle hContac
 
 typedef struct TSettingMergeHelper 
 {
-	TDBTContactHandle Source;
-	TDBTContactHandle Dest;
+	TDBTEntityHandle Source;
+	TDBTEntityHandle Dest;
 	CSettingsTree * SourceTree;
 
 
@@ -372,7 +372,7 @@ void CSettings::onMergeSettingCallback(void * Tree, const TSettingKey & Key,uint
 	}
 }
 
-void CSettings::onMergeSettings(CContacts * Contacts, TDBTContactHandle Source, TDBTContactHandle Dest)
+void CSettings::onMergeSettings(CEntities * Entities, TDBTEntityHandle Source, TDBTEntityHandle Dest)
 {
 	if ((Source == 0) || (Dest == 0))
 		throwException("Cannot Merge with global settings!\nSource %d Dest %d", Source, Dest);
@@ -382,17 +382,17 @@ void CSettings::onMergeSettings(CContacts * Contacts, TDBTContactHandle Source, 
 
 	if (stree && dtree)
 	{
-		m_Contacts._setSettingsRoot(Source, 0);
+		m_Entities._setSettingsRoot(Source, 0);
 
-		stree->setContact(Dest);
-		m_Contacts._setSettingsRoot(Dest, stree->getRoot());
+		stree->setEntity(Dest);
+		m_Entities._setSettingsRoot(Dest, stree->getRoot());
 
 		TSettingKey key = {0};
 		CSettingsTree::iterator it = stree->LowerBound(key);
 
-		while (it) // transfer all source settings to new contact
+		while (it) // transfer all source settings to new Entity
 		{
-			m_BlockManagerPri.WritePart(it->Setting, &Dest, offsetof(TSetting, Contact), sizeof(Dest));
+			m_BlockManagerPri.WritePart(it->Setting, &Dest, offsetof(TSetting, Entity), sizeof(Dest));
 			++it;
 		}
 
@@ -442,9 +442,9 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 
 	SYNC_BEGINREAD(m_Sync);
 
-	if ((Descriptor.Contact == 0) || (Descriptor.Options == 0))
+	if ((Descriptor.Entity == 0) || (Descriptor.Options == 0))
 	{
-		tree = getSettingsTree(Descriptor.Contact);
+		tree = getSettingsTree(Descriptor.Entity);
 		if (tree == NULL)
 		{
 			SYNC_ENDREAD(m_Sync);
@@ -455,20 +455,20 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 	
 		if (res)
 		{
-			Descriptor.FoundInContact = Descriptor.Contact;
+			Descriptor.FoundInEntity = Descriptor.Entity;
 			Descriptor.FoundHandle = res;
 			Descriptor.Flags = Descriptor.Flags | DBT_SDF_FoundValid;
 		}
 
 		SYNC_ENDREAD(m_Sync);
 
-		if (Descriptor.Contact == 0)
+		if (Descriptor.Entity == 0)
 			res = res | cSettingsFileFlag;
 
 		return res;
 	}
 
-	uint32_t cf = m_Contacts.getFlags(Descriptor.Contact);
+	uint32_t cf = m_Entities.getFlags(Descriptor.Entity);
 	if (cf == DBT_INVALIDPARAM)
 	{
 		SYNC_ENDREAD(m_Sync);
@@ -478,27 +478,27 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 	// search the setting
 	res = 0;
 	
-	TDBTContactIterFilter f;
+	TDBTEntityIterFilter f;
 	f.cbSize = sizeof(f);
-	if (cf & DBT_CF_IsGroup)
+	if (cf & DBT_NF_IsGroup)
 	{
 		f.fDontHasFlags = 0;
-		f.fHasFlags = DBT_CF_IsGroup;
+		f.fHasFlags = DBT_NF_IsGroup;
 	} else {
-		f.fDontHasFlags = DBT_CF_IsGroup;
+		f.fDontHasFlags = DBT_NF_IsGroup;
 		f.fHasFlags = 0;	
 	}
 	f.Options = Descriptor.Options;
 
-	TDBTContactIterationHandle i = m_Contacts.IterationInit(f, Descriptor.Contact);
+	TDBTEntityIterationHandle i = m_Entities.IterationInit(f, Descriptor.Entity);
 	if ((i == DBT_INVALIDPARAM) || (i == 0))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	TDBTContactHandle e = m_Contacts.IterationNext(i);
-	TDBTContactHandle found = 0;
+	TDBTEntityHandle e = m_Entities.IterationNext(i);
+	TDBTEntityHandle found = 0;
 	while ((res == 0) && (e != 0))
 	{
 		tree = getSettingsTree(e);
@@ -508,14 +508,14 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 			found = e;
 		}
 
-		e = m_Contacts.IterationNext(i);
+		e = m_Entities.IterationNext(i);
 	}
 
-	m_Contacts.IterationClose(i);
+	m_Entities.IterationClose(i);
 
 	if (res)
 	{
-		Descriptor.FoundInContact = found;
+		Descriptor.FoundInEntity = found;
 		Descriptor.FoundHandle = res;
 		Descriptor.Flags = Descriptor.Flags | DBT_SDF_FoundValid;
 	}
@@ -539,17 +539,17 @@ unsigned int CSettings::DeleteSetting(TDBTSettingDescriptor & Descriptor)
 	if ((Descriptor.Flags & DBT_SDF_FoundValid) && (Descriptor.Flags & DBT_SDF_HashValid))
 	{
 		CBlockManager * file = &m_BlockManagerPri;
-		TDBTContactHandle con;
+		TDBTEntityHandle con;
 		uint32_t sig = cSettingSignature;
 
-		if (Descriptor.FoundInContact == 0)
+		if (Descriptor.FoundInEntity == 0)
 		{
 			file = &m_BlockManagerSet;
 			hset = hset & ~cSettingsFileFlag;
 		}
 		
-		if (file->ReadPart(hset, &con, offsetof(TSetting, Contact), sizeof(con), sig) &&
-			(con == Descriptor.FoundInContact))
+		if (file->ReadPart(hset, &con, offsetof(TSetting, Entity), sizeof(con), sig) &&
+			(con == Descriptor.FoundInEntity))
 		{
 			CSettingsTree * tree = getSettingsTree(con);
 			if (tree)
@@ -593,7 +593,7 @@ unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 
 	TSetting* set = (TSetting*)buf;
 
-	CSettingsTree * tree = getSettingsTree(set->Contact);
+	CSettingsTree * tree = getSettingsTree(set->Entity);
 	if (tree == NULL)
 	{
 		SYNC_ENDWRITE(m_Sync);
@@ -634,7 +634,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting)
 }
 TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHandle hSetting)
 {
-	if (!hSetting && !(Setting.Descriptor && Setting.Descriptor->Contact))
+	if (!hSetting && !(Setting.Descriptor && Setting.Descriptor->Entity))
 		return DBT_INVALIDPARAM;
 
 	SYNC_BEGINWRITE(m_Sync);
@@ -656,7 +656,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 	
 	if (hSetting == 0)
 	{
-		if (Setting.Descriptor->Contact == 0)
+		if (Setting.Descriptor->Entity == 0)
 		{
 			file = &m_BlockManagerSet;
 			enc = &m_EncryptionManagerSet;
@@ -665,13 +665,13 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 
 		if ((Setting.Descriptor) && (Setting.Descriptor->pszSettingName)) // setting needs a name
 		{
-			tree = getSettingsTree(Setting.Descriptor->Contact);
+			tree = getSettingsTree(Setting.Descriptor->Entity);
 			_EnsureModuleExists(Setting.Descriptor->pszSettingName);
 		}
 		
 	} else {		
-		TDBTContactHandle e;
-		if (file->ReadPart(hSetting, &e, offsetof(TSetting, Contact), sizeof(e), sig)) // check if hSetting is valid
+		TDBTEntityHandle e;
+		if (file->ReadPart(hSetting, &e, offsetof(TSetting, Entity), sizeof(e), sig)) // check if hSetting is valid
 			tree = getSettingsTree(e);
 	}
 
@@ -726,7 +726,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 		set = (TSetting*)buf;
 		memset(&(set->Reserved), 0, sizeof(set->Reserved));
 
-		set->Contact = Setting.Descriptor->Contact;
+		set->Entity = Setting.Descriptor->Entity;
 		set->Flags = 0;
 		set->AllocSize = blobsize;
 
@@ -1264,8 +1264,8 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 
 	if (Setting.Descriptor)
 	{
-		Setting.Descriptor->Contact = set->Contact;
-		Setting.Descriptor->FoundInContact = set->Contact;
+		Setting.Descriptor->Entity = set->Entity;
+		Setting.Descriptor->FoundInEntity = set->Entity;
 		
 		Setting.Descriptor->pszSettingName = (char *) mir_realloc(Setting.Descriptor->pszSettingName, set->NameLength + 1);
 		memcpy(Setting.Descriptor->pszSettingName, set + 1, set->NameLength + 1);
@@ -1282,10 +1282,10 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 {
 	SYNC_BEGINREAD(m_Sync);
 
-	std::queue<TDBTContactHandle> contacts;
-	contacts.push(Filter.hContact);
+	std::queue<TDBTEntityHandle> Entities;
+	Entities.push(Filter.hEntity);
 
-	CSettingsTree * tree = getSettingsTree(Filter.hContact);
+	CSettingsTree * tree = getSettingsTree(Filter.hEntity);
 
 	if (tree == NULL)
 	{
@@ -1293,9 +1293,9 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 		return DBT_INVALIDPARAM;
 	}
 
-	if (Filter.hContact != 0)
+	if (Filter.hEntity != 0)
 	{	
-		uint32_t cf = m_Contacts.getFlags(Filter.hContact);
+		uint32_t cf = m_Entities.getFlags(Filter.hEntity);
 
 		if (cf == DBT_INVALIDPARAM)
 		{
@@ -1303,34 +1303,34 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 			return DBT_INVALIDPARAM;
 		}
 		
-		TDBTContactIterFilter f = {0};
+		TDBTEntityIterFilter f = {0};
 		f.cbSize = sizeof(f);
-		if (cf & DBT_CF_IsGroup)
+		if (cf & DBT_NF_IsGroup)
 		{
-			f.fHasFlags = DBT_CF_IsGroup;
+			f.fHasFlags = DBT_NF_IsGroup;
 		} else {
-			f.fDontHasFlags = DBT_CF_IsGroup;
+			f.fDontHasFlags = DBT_NF_IsGroup;
 		}
 		f.Options = Filter.Options;
 
-		TDBTContactIterationHandle citer = m_Contacts.IterationInit(f, Filter.hContact);
+		TDBTEntityIterationHandle citer = m_Entities.IterationInit(f, Filter.hEntity);
 		if (citer != DBT_INVALIDPARAM)
 		{
-			m_Contacts.IterationNext(citer); // the initial contact was already added
-			TDBTContactHandle e = m_Contacts.IterationNext(citer);
+			m_Entities.IterationNext(citer); // the initial Entity was already added
+			TDBTEntityHandle e = m_Entities.IterationNext(citer);
 			while (e != 0)
 			{
-				contacts.push(e);
-				e = m_Contacts.IterationNext(citer);
+				Entities.push(e);
+				e = m_Entities.IterationNext(citer);
 			}
 
-			m_Contacts.IterationClose(citer);
+			m_Entities.IterationClose(citer);
 		}
 	}
 
 	for (unsigned int j = 0; j < Filter.ExtraCount; ++j)
 	{
-		contacts.push(Filter.ExtraContacts[j]);
+		Entities.push(Filter.ExtraEntities[j]);
 	}
 
 	PSettingIteration iter = new TSettingIteration;
@@ -1347,17 +1347,17 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 	TSettingKey key;
 	key.Hash = 0;
 
-	// pop first Contact. we have always one and always its tree
-	contacts.pop();
+	// pop first Entity. we have always one and always its tree
+	Entities.pop();
 
 	CSettingsTree::iterator * tmp = new CSettingsTree::iterator(tree->LowerBound(key));
 	tmp->setManaged();
 	iter->Heap = new TSettingsHeap(*tmp, TSettingsHeap::ITForward, true);
 	
-	while (!contacts.empty())
+	while (!Entities.empty())
 	{
-		tree = getSettingsTree(contacts.front());
-		contacts.pop();
+		tree = getSettingsTree(Entities.front());
+		Entities.pop();
 		if (tree != NULL)
 		{
 			tmp = new CSettingsTree::iterator(tree->LowerBound(key));
@@ -1427,7 +1427,7 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 
 				if (help.Name == NULL)
 				{
-					if (help.Tree->getContact() == 0)
+					if (help.Tree->getEntity() == 0)
 						_ReadSettingName(m_BlockManagerSet, m_EncryptionManagerSet, help.Handle, help.NameLen, help.Name);
 					else
 						_ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, help.Handle, help.NameLen, help.Name);
@@ -1445,7 +1445,7 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 
 					if (tmp.Name == NULL)
 					{
-						if (help.Tree->getContact() == 0)
+						if (help.Tree->getEntity() == 0)
 							namereadres = _ReadSettingName(m_BlockManagerSet, m_EncryptionManagerSet, tmp.Handle, tmp.NameLen, tmp.Name);
 						else
 							namereadres = _ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, tmp.Handle, tmp.NameLen, tmp.Name);
@@ -1468,11 +1468,11 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 				if ((iter->Filter.NameStart == NULL) || ((iter->FilterNameStartLength <= help.NameLen) && (memcmp(iter->Filter.NameStart, help.Name, iter->FilterNameStartLength) == 0)))
 				{
 					TSettingIterationResult tmp;			
-					if (help.Tree->getContact() == 0)
+					if (help.Tree->getEntity() == 0)
 						help.Handle |= cSettingsFileFlag;
 
 					tmp.Handle = help.Handle;
-					tmp.Contact = help.Tree->getContact();
+					tmp.Entity = help.Tree->getEntity();
 					tmp.Name = help.Name;
 					tmp.NameLen = help.NameLen;
 					iter->Frame->push(tmp);
@@ -1494,10 +1494,10 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 
 		if ((iter->Filter.Descriptor) && ((iter->Filter.Setting == NULL) || (iter->Filter.Setting->Descriptor != iter->Filter.Descriptor)))
 		{
-			iter->Filter.Descriptor->Contact = res.Contact;
+			iter->Filter.Descriptor->Entity = res.Entity;
 			iter->Filter.Descriptor->pszSettingName = (char *) mir_realloc(iter->Filter.Descriptor->pszSettingName, res.NameLen + 1);
 			memcpy(iter->Filter.Descriptor->pszSettingName, res.Name, res.NameLen + 1);
-			iter->Filter.Descriptor->FoundInContact = res.Contact;
+			iter->Filter.Descriptor->FoundInEntity = res.Entity;
 		}
 		if (iter->Filter.Setting)
 		{

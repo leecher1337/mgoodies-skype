@@ -13,7 +13,7 @@
 class CSettings;
 class CSettingsTree;
 
-#include "Contacts.h"
+#include "Entities.h"
 
 #pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
 
@@ -48,7 +48,7 @@ static const uint16_t cSettingNodeSignature = 0xBA12;
 	- maybe blob data
 **/
 typedef struct TSetting {
-	TDBTContactHandle Contact; /// Settings' Contact
+	TDBTEntityHandle Entity; /// Settings' Entity
 	uint32_t   Flags;         /// flags
 	uint16_t   Type;          /// setting type	
 	uint16_t   NameLength;    /// settingname length
@@ -74,7 +74,7 @@ typedef struct TSetting {
 class CSettingsTree : public CFileBTree<TSettingKey, 8>
 {
 protected:
-	TDBTContactHandle m_Contact;
+	TDBTEntityHandle m_Entity;
 	CSettings & m_Owner;
 	CEncryptionManager & m_EncryptionManager;
 public: 
@@ -83,12 +83,12 @@ public:
 		CBlockManager & BlockManager,
 		CEncryptionManager & EncryptionManager,
 		TNodeRef RootNode,
-		TDBTContactHandle Contact
+		TDBTEntityHandle Entity
 		);
 	~CSettingsTree();
 
-	TDBTContactHandle getContact();
-	void setContact(TDBTContactHandle NewContact);
+	TDBTEntityHandle getEntity();
+	void setEntity(TDBTEntityHandle NewEntity);
 
 	TDBTSettingHandle _FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length); 
 	bool _DeleteSetting(const uint32_t Hash, const TDBTSettingHandle hSetting);
@@ -113,7 +113,7 @@ public:
 		CEncryptionManager & EncryptionManagerPri,
 		CMultiReadExclusiveWriteSynchronizer & Synchronize, 
 		CSettingsTree::TNodeRef SettingsRoot,
-		CContacts & Contacts
+		CEntities & Entities
 		);
 	virtual ~CSettings();
 
@@ -142,7 +142,7 @@ public:
 
 
 private:
-	typedef stdext::hash_map<TDBTContactHandle, CSettingsTree*> TSettingsTreeMap;
+	typedef stdext::hash_map<TDBTEntityHandle, CSettingsTree*> TSettingsTreeMap;
 	typedef CIterationHeap<CSettingsTree::iterator> TSettingsHeap;
 
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
@@ -151,13 +151,13 @@ private:
 	CEncryptionManager & m_EncryptionManagerSet;
 	CEncryptionManager & m_EncryptionManagerPri;
 
-	CContacts & m_Contacts;
+	CEntities & m_Entities;
 
 	TSettingsTreeMap m_SettingsMap;
 
 	typedef struct TSettingIterationResult {
 		TDBTSettingHandle Handle;
-		TDBTContactHandle Contact;
+		TDBTEntityHandle Entity;
 		char * Name;
 		uint16_t NameLen;
 	} TSettingIterationResult;
@@ -173,11 +173,11 @@ private:
 	void onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoot);
 
 	void onDeleteSettingCallback(void * Tree, const TSettingKey & Key, uint32_t Param);
-	void onDeleteSettings(CContacts * Contacts, TDBTContactHandle hContact);
+	void onDeleteSettings(CEntities * Entities, TDBTEntityHandle hEntity);
 	void onMergeSettingCallback(void * Tree, const TSettingKey & Key, uint32_t Param);
-	void onMergeSettings(CContacts * Contacts, TDBTContactHandle Source, TDBTContactHandle Dest);
+	void onMergeSettings(CEntities * Entities, TDBTEntityHandle Source, TDBTEntityHandle Dest);
 
-	CSettingsTree * getSettingsTree(TDBTContactHandle hContact);
+	CSettingsTree * getSettingsTree(TDBTEntityHandle hEntity);
 
 	typedef stdext::hash_multimap<uint16_t, char *> TModulesMap;
 

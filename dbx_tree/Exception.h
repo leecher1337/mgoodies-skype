@@ -1,6 +1,6 @@
 #pragma once
 
-#define throwException(Format, ...) {throw CException(__FILE__, __LINE__, __FUNCTION__, Format, ##__VA_ARGS__);}
+#define throwException(Format, ...) throw CException(__FILE__, __LINE__, __FUNCTION__, Format, __VA_ARGS__)
 
 class CException
 {

@@ -2,149 +2,126 @@
 
 HANDLE gServices[40] = {0};
 
-int DBContactGetRoot(WPARAM wParam, LPARAM lParam)
+int DBEntityGetRoot(WPARAM wParam, LPARAM lParam)
 {
-	return gDataBase->getContacts().getRootContact();
+	return gDataBase->getEntities().getRootEntity();
 }
-int DBContactChildCount(WPARAM hContact, LPARAM lParam)
+int DBEntityChildCount(WPARAM hEntity, LPARAM lParam)
 {
-	if (hContact == 0)
-		hContact = gDataBase->getContacts().getRootContact();
+	if (hEntity == 0)
+		hEntity = gDataBase->getEntities().getRootEntity();
 
-	return gDataBase->getContacts().getChildCount(hContact);
+	return gDataBase->getEntities().getChildCount(hEntity);
 }
-int DBContactGetParent(WPARAM hContact, LPARAM lParam)
+int DBEntityGetParent(WPARAM hEntity, LPARAM lParam)
 {
-	if (hContact == 0)
-		hContact = gDataBase->getContacts().getRootContact();
+	if (hEntity == 0)
+		hEntity = gDataBase->getEntities().getRootEntity();
 
-	return gDataBase->getContacts().getParent(hContact);
+	return gDataBase->getEntities().getParent(hEntity);
 }
-int DBContactSetParent(WPARAM hContact, LPARAM hParent)
+int DBEntitySetParent(WPARAM hEntity, LPARAM hParent)
 {
-	if ((hContact == 0) || (hContact == gDataBase->getContacts().getRootContact()))
+	if ((hEntity == 0) || (hEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
 
 	if (hParent == 0)
-		hParent = gDataBase->getContacts().getRootContact();
+		hParent = gDataBase->getEntities().getRootEntity();
 
-	return gDataBase->getContacts().setParent(hContact, hParent);
+	return gDataBase->getEntities().setParent(hEntity, hParent);
 }
-int DBContactGetFirstChild(WPARAM hParent, LPARAM lParam)
+int DBEntityGetFlags(WPARAM hEntity, LPARAM lParam)
 {
-	if (hParent == 0)
-		hParent = gDataBase->getContacts().getRootContact();
+	if (hEntity == 0)
+		hEntity = gDataBase->getEntities().getRootEntity();
 
-	return gDataBase->getContacts().getFirstChild(hParent);
+	return gDataBase->getEntities().getFlags(hEntity);
 }
-int DBContactGetLastChild(WPARAM hParent, LPARAM lParam)
+int DBEntityIterInit(WPARAM pFilter, LPARAM hParent)
 {
-	if (hParent == 0)
-		hParent = gDataBase->getContacts().getRootContact();
-
-	return gDataBase->getContacts().getLastChild(hParent);
-}
-int DBContactGetNextSilbing(WPARAM hContact, LPARAM lParam)
-{
-	if (hContact == 0)
-		hContact = gDataBase->getContacts().getRootContact();
-
-	return gDataBase->getContacts().getNextSilbing(hContact);
-}
-int DBContactGetPrevSilbing(WPARAM hContact, LPARAM lParam)
-{
-	if (hContact == 0)
-		hContact = gDataBase->getContacts().getRootContact();
-
-	return gDataBase->getContacts().getPrevSilbing(hContact);
-}
-int DBContactGetFlags(WPARAM hContact, LPARAM lParam)
-{
-	if (hContact == 0)
-		hContact = gDataBase->getContacts().getRootContact();
-
-	return gDataBase->getContacts().getFlags(hContact);
-}
-int DBContactIterInit(WPARAM pFilter, LPARAM hParent)
-{
-	TDBTContactIterFilter fil = {0};
+	TDBTEntityIterFilter fil = {0};
 	if (pFilter == NULL)
 	{
 		pFilter = (WPARAM)&fil;
 		fil.cbSize = sizeof(fil);
 	}
 
-	if (((PDBTContactIterFilter)pFilter)->cbSize != sizeof(TDBTContactIterFilter))
+	if (((PDBTEntityIterFilter)pFilter)->cbSize != sizeof(TDBTEntityIterFilter))
 		return DBT_INVALIDPARAM;
 
-	if (((PDBTContactIterFilter)pFilter)->fDontHasFlags & ((PDBTContactIterFilter)pFilter)->fHasFlags)
+	if (((PDBTEntityIterFilter)pFilter)->fDontHasFlags & ((PDBTEntityIterFilter)pFilter)->fHasFlags)
 		return DBT_INVALIDPARAM;
 
 	if (hParent == 0)
-		hParent = gDataBase->getContacts().getRootContact();
+		hParent = gDataBase->getEntities().getRootEntity();
 
-	return gDataBase->getContacts().IterationInit(*(PDBTContactIterFilter)pFilter, hParent);
+	return gDataBase->getEntities().IterationInit(*(PDBTEntityIterFilter)pFilter, hParent);
 }
-int DBContactIterNext(WPARAM hIteration, LPARAM lParam)
+int DBEntityIterNext(WPARAM hIteration, LPARAM lParam)
 {
 	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
 		return hIteration;
 
-	return gDataBase->getContacts().IterationNext(hIteration);
+	return gDataBase->getEntities().IterationNext(hIteration);
 }
-int DBContactIterClose(WPARAM hIteration, LPARAM lParam)
+int DBEntityIterClose(WPARAM hIteration, LPARAM lParam)
 {
 	if ((hIteration == 0) || (hIteration == DBT_INVALIDPARAM))
 		return hIteration;
 
-	return gDataBase->getContacts().IterationClose(hIteration);
+	return gDataBase->getEntities().IterationClose(hIteration);
 }
-int DBContactDelete(WPARAM hContact, LPARAM lParam)
+int DBEntityDelete(WPARAM hEntity, LPARAM lParam)
 {
-	if ((hContact == 0) || (hContact == gDataBase->getContacts().getRootContact()))
+	if ((hEntity == 0) || (hEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
 
-	return gDataBase->getContacts().DeleteContact(hContact);
+	return gDataBase->getEntities().DeleteEntity(hEntity);
 }
-int DBContactCreate(WPARAM hParent, LPARAM Flags)
+int DBEntityCreate(WPARAM pEntity, LPARAM lParam)
 {
+	if (((PDBTEntity)pEntity)->hParentEntity == 0)
+		((PDBTEntity)pEntity)->hParentEntity = gDataBase->getEntities().getRootEntity();
+
+	((PDBTEntity)pEntity)->fFlags = ((PDBTEntity)pEntity)->fFlags & ~(DBT_NF_IsRoot | DBT_NF_HasChildren | DBT_NF_IsVirtual | DBT_NF_HasVirtuals); // forbidden flags...
+	return gDataBase->getEntities().CreateEntity(*((PDBTEntity)pEntity));
+}
+
+int DBEntityGetAccount(WPARAM hEntity, LPARAM lParam)
+{
+	return gDataBase->getEntities().getAccount(hEntity);
+}
+
+int DBVirtualEntityCreate(WPARAM hEntity, LPARAM hParent)
+{
+	if ((hEntity == 0) || (hEntity == gDataBase->getEntities().getRootEntity()))
+		return DBT_INVALIDPARAM;
+
 	if (hParent == 0)
-		hParent = gDataBase->getContacts().getRootContact();
+		hParent = gDataBase->getEntities().getRootEntity();
 
-	Flags = Flags & ~(DBT_CF_IsRoot | DBT_CF_HasChildren | DBT_CF_IsVirtual | DBT_CF_HasVirtuals); // forbidden flags...
-	return gDataBase->getContacts().CreateContact(hParent, Flags);
+	return gDataBase->getEntities().VirtualCreate(hEntity, hParent);
 }
-
-int DBVirtualContactCreate(WPARAM hContact, LPARAM hParent)
+int DBVirtualEntityGetParent(WPARAM hVirtualEntity, LPARAM lParam)
 {
-	if ((hContact == 0) || (hContact == gDataBase->getContacts().getRootContact()))
+	if ((hVirtualEntity == 0) || (hVirtualEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
 
-	if (hParent == 0)
-		hParent = gDataBase->getContacts().getRootContact();
-
-	return gDataBase->getContacts().VirtualCreate(hContact, hParent);
+	return gDataBase->getEntities().VirtualGetParent(hVirtualEntity);
 }
-int DBVirtualContactGetParent(WPARAM hVirtuaContact, LPARAM lParam)
+int DBVirtualEntityGetFirst(WPARAM hEntity, LPARAM lParam)
 {
-	if ((hVirtuaContact == 0) || (hVirtuaContact == gDataBase->getContacts().getRootContact()))
-		return DBT_INVALIDPARAM;
-
-	return gDataBase->getContacts().VirtualGetParent(hVirtuaContact);
-}
-int DBVirtualContactGetFirst(WPARAM hContact, LPARAM lParam)
-{
-	if ((hContact == 0) || (hContact == gDataBase->getContacts().getRootContact()))
+	if ((hEntity == 0) || (hEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
 	
-	return gDataBase->getContacts().VirtualGetFirst(hContact);
+	return gDataBase->getEntities().VirtualGetFirst(hEntity);
 }
-int DBVirtualContactGetNext(WPARAM hVirtualContact, LPARAM lParam)
+int DBVirtualEntityGetNext(WPARAM hVirtualEntity, LPARAM lParam)
 {
-	if ((hVirtualContact == 0) || (hVirtualContact == gDataBase->getContacts().getRootContact()))
+	if ((hVirtualEntity == 0) || (hVirtualEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
 
-	return gDataBase->getContacts().VirtualGetNext(hVirtualContact);
+	return gDataBase->getEntities().VirtualGetNext(hVirtualEntity);
 }
 
 
@@ -292,32 +269,32 @@ int DBEventGet(WPARAM hEvent, LPARAM pEvent)
 	return gDataBase->getEvents().Get(hEvent, *((PDBTEvent)pEvent));
 }
 
-int DBEventGetCount(WPARAM hContact, LPARAM lParam)
+int DBEventGetCount(WPARAM hEntity, LPARAM lParam)
 {
-	return gDataBase->getEvents().GetCount(hContact);
+	return gDataBase->getEvents().GetCount(hEntity);
 }
 
-int DBEventDelete(WPARAM hContact, LPARAM hEvent)
+int DBEventDelete(WPARAM hEntity, LPARAM hEvent)
 {
-	return gDataBase->getEvents().Delete(hContact, hEvent);
+	return gDataBase->getEvents().Delete(hEntity, hEvent);
 }
 
-int DBEventAdd(WPARAM hContact, LPARAM pEvent)
+int DBEventAdd(WPARAM hEntity, LPARAM pEvent)
 {
 	if ((pEvent == NULL) || (((PDBTEvent)pEvent)->cbSize != sizeof(TDBTEvent)) || (((PDBTEvent)pEvent)->pBlob == NULL) || (((PDBTEvent)pEvent)->cbBlob == 0))
 		return DBT_INVALIDPARAM;
 	
-	return gDataBase->getEvents().Add(hContact, *((PDBTEvent)pEvent));
+	return gDataBase->getEvents().Add(hEntity, *((PDBTEvent)pEvent));
 }
 
-int DBEventMarkRead(WPARAM hContact, LPARAM hEvent)
+int DBEventMarkRead(WPARAM hEntity, LPARAM hEvent)
 {
-	return gDataBase->getEvents().MarkRead(hContact, hEvent);
+	return gDataBase->getEvents().MarkRead(hEntity, hEvent);
 }
 
-int DBEventWriteToDisk(WPARAM hContact, LPARAM hEvent)
+int DBEventWriteToDisk(WPARAM hEntity, LPARAM hEvent)
 {
-	return gDataBase->getEvents().WriteToDisk(hContact, hEvent);
+	return gDataBase->getEvents().WriteToDisk(hEntity, hEvent);
 }
 
 int DBEventHardLink(WPARAM pHardLink, LPARAM lParam)
@@ -328,9 +305,9 @@ int DBEventHardLink(WPARAM pHardLink, LPARAM lParam)
 	return gDataBase->getEvents().HardLink(*((PDBTEventHardLink)pHardLink));
 }
 
-int DBEventGetContact(WPARAM hEvent, LPARAM lParam)
+int DBEventGetEntity(WPARAM hEvent, LPARAM lParam)
 {
-	return gDataBase->getEvents().GetContact(hEvent);
+	return gDataBase->getEvents().getEntity(hEvent);
 }
 
 int DBEventIterInit(WPARAM pFilter, LPARAM lParam)
@@ -363,25 +340,22 @@ int DBEventIterClose(WPARAM hIteration, LPARAM lParam)
 
 bool RegisterServices()
 {
-	gServices[ 0] = CreateServiceFunction(MS_DBT_CONTACT_GETROOT,          DBContactGetRoot);
-	gServices[ 1] = CreateServiceFunction(MS_DBT_CONTACT_CHILDCOUNT,       DBContactChildCount);
-	gServices[ 2] = CreateServiceFunction(MS_DBT_CONTACT_GETPARENT,        DBContactGetParent);
-	gServices[ 3] = CreateServiceFunction(MS_DBT_CONTACT_SETPARENT,        DBContactSetParent);
-	gServices[ 4] = CreateServiceFunction(MS_DBT_CONTACT_GETFIRSTCHILD,    DBContactGetFirstChild);
-	gServices[ 5] = CreateServiceFunction(MS_DBT_CONTACT_GETLASTCHILD,     DBContactGetLastChild);
-	gServices[ 6] = CreateServiceFunction(MS_DBT_CONTACT_GETNEXTSILBING,   DBContactGetNextSilbing);
-	gServices[ 7] = CreateServiceFunction(MS_DBT_CONTACT_GETPREVSILBING,   DBContactGetPrevSilbing);
-	gServices[ 8] = CreateServiceFunction(MS_DBT_CONTACT_GETFLAGS,         DBContactGetFlags);
-	gServices[ 9] = CreateServiceFunction(MS_DBT_CONTACT_ITER_INIT,        DBContactIterInit);
-	gServices[10] = CreateServiceFunction(MS_DBT_CONTACT_ITER_NEXT,        DBContactIterNext);
-	gServices[11] = CreateServiceFunction(MS_DBT_CONTACT_ITER_CLOSE,       DBContactIterClose);
-	gServices[12] = CreateServiceFunction(MS_DBT_CONTACT_DELETE,           DBContactDelete);
-	gServices[13] = CreateServiceFunction(MS_DBT_CONTACT_CREATE,           DBContactCreate);
+	gServices[ 0] = CreateServiceFunction(MS_DBT_ENTITY_GETROOT,          DBEntityGetRoot);
+	gServices[ 1] = CreateServiceFunction(MS_DBT_ENTITY_CHILDCOUNT,       DBEntityChildCount);
+	gServices[ 2] = CreateServiceFunction(MS_DBT_ENTITY_GETPARENT,        DBEntityGetParent);
+	gServices[ 3] = CreateServiceFunction(MS_DBT_ENTITY_SETPARENT,        DBEntitySetParent);
+	gServices[ 8] = CreateServiceFunction(MS_DBT_ENTITY_GETFLAGS,         DBEntityGetFlags);
+	gServices[ 9] = CreateServiceFunction(MS_DBT_ENTITY_ITER_INIT,        DBEntityIterInit);
+	gServices[10] = CreateServiceFunction(MS_DBT_ENTITY_ITER_NEXT,        DBEntityIterNext);
+	gServices[11] = CreateServiceFunction(MS_DBT_ENTITY_ITER_CLOSE,       DBEntityIterClose);
+	gServices[12] = CreateServiceFunction(MS_DBT_ENTITY_DELETE,           DBEntityDelete);
+	gServices[13] = CreateServiceFunction(MS_DBT_ENTITY_CREATE,           DBEntityCreate);
+	gServices[13] = CreateServiceFunction(MS_DBT_ENTITY_GETACCOUNT,       DBEntityGetAccount);
 
-	gServices[14] = CreateServiceFunction(MS_DBT_VIRTUALCONTACT_CREATE,    DBVirtualContactCreate);
-	gServices[15] = CreateServiceFunction(MS_DBT_VIRTUALCONTACT_GETPARENT, DBVirtualContactGetParent);
-	gServices[16] = CreateServiceFunction(MS_DBT_VIRTUALCONTACT_GETFIRST,  DBVirtualContactGetFirst);
-	gServices[17] = CreateServiceFunction(MS_DBT_VIRTUALCONTACT_GETNEXT,   DBVirtualContactGetNext);
+	gServices[14] = CreateServiceFunction(MS_DBT_VIRTUALENTITY_CREATE,    DBVirtualEntityCreate);
+	gServices[15] = CreateServiceFunction(MS_DBT_VIRTUALENTITY_GETPARENT, DBVirtualEntityGetParent);
+	gServices[16] = CreateServiceFunction(MS_DBT_VIRTUALENTITY_GETFIRST,  DBVirtualEntityGetFirst);
+	gServices[17] = CreateServiceFunction(MS_DBT_VIRTUALENTITY_GETNEXT,   DBVirtualEntityGetNext);
 
 	gServices[18] = CreateServiceFunction(MS_DBT_SETTING_FIND,             DBSettingFind);
 	gServices[19] = CreateServiceFunction(MS_DBT_SETTING_DELETE,           DBSettingDelete);
@@ -401,7 +375,7 @@ bool RegisterServices()
 	gServices[32] = CreateServiceFunction(MS_DBT_EVENT_ADD,                DBEventAdd);
 	gServices[33] = CreateServiceFunction(MS_DBT_EVENT_MARKREAD,           DBEventMarkRead);
 	gServices[34] = CreateServiceFunction(MS_DBT_EVENT_WRITETODISK,        DBEventWriteToDisk);
-	gServices[35] = CreateServiceFunction(MS_DBT_EVENT_GETCONTACT,         DBEventGetContact);
+	gServices[35] = CreateServiceFunction(MS_DBT_EVENT_GETENTITY,         DBEventGetEntity);
 	// hardlinking is disabled, because it would destroy compatibility with FindNext/Prev Event services
 	//gServices[36] = CreateServiceFunction(MS_DBT_EVENT_HARDLINK,           DBEventHardLink);
 	gServices[37] = CreateServiceFunction(MS_DBT_EVENT_ITER_INIT,          DBEventIterInit);

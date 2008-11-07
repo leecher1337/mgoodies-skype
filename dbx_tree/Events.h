@@ -5,7 +5,7 @@
 #include "FileBTree.h"
 #include "BlockManager.h"
 #include "IterationHeap.h"
-#include "Contacts.h"
+#include "Entities.h"
 #include "Settings.h"
 #include "Hash.h"
 #include "EncryptionManager.h"
@@ -42,7 +42,7 @@ typedef struct TEventKey {
 **/
 typedef struct TEventLinkKey {
 	TDBTEventHandle   Event;    /// handle to the event
-	TDBTContactHandle Contact;  /// handle to the contact which includes this event
+	TDBTEntityHandle Entity;  /// handle to the Entity which includes this event
 
 	bool operator <  (const TEventLinkKey & Other) const;
 	//bool operator <= (const TEventKey & Other);
@@ -64,7 +64,7 @@ typedef struct TEvent {
 	uint32_t Index;              /// index counter to seperate events with the same timestamp
 	uint32_t Type;               /// Eventtype
 	union {
-		TDBTContactHandle Contact;  /// hContact which owns this event
+		TDBTEntityHandle Entity;  /// hEntity which owns this event
 		uint32_t ReferenceCount;   /// Reference Count, if event was hardlinked
 	};
 	uint32_t DataLength;         /// Length of the stored data in bytes
@@ -88,14 +88,14 @@ static const uint16_t cEventLinkNodeSignature = 0xC16A;
 class CEventsTree : public CFileBTree<TEventKey, 16>
 {
 private:
-	TDBTContactHandle m_Contact;
+	TDBTEntityHandle m_Entity;
 
 public:
-	CEventsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBTContactHandle Contact);
+	CEventsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBTEntityHandle Entity);
 	~CEventsTree();
 
-	TDBTContactHandle getContact();
-	void setContact(TDBTContactHandle NewContact);
+	TDBTEntityHandle getEntity();
+	void setEntity(TDBTEntityHandle NewEntity);
 };
 
 /**
@@ -105,21 +105,21 @@ public:
 class CVirtualEventsTree : public CBTree<TEventKey, 16>
 {
 private:
-	TDBTContactHandle m_Contact;
+	TDBTEntityHandle m_Entity;
 
 public:
-	CVirtualEventsTree(TDBTContactHandle Contact);
+	CVirtualEventsTree(TDBTEntityHandle Entity);
 	~CVirtualEventsTree();
 
-	TDBTContactHandle getContact();
-	void setContact(TDBTContactHandle NewContact);
+	TDBTEntityHandle getEntity();
+	void setEntity(TDBTEntityHandle NewEntity);
 };
 
 
 class CEventsTypeManager 
 {
 public:
-	CEventsTypeManager(CContacts & Contacts, CSettings & Settings);
+	CEventsTypeManager(CEntities & Entities, CSettings & Settings);
 	~CEventsTypeManager();
 
 	uint32_t MakeGlobalID(char* Module, uint32_t EventType);
@@ -133,7 +133,7 @@ private:
 	} TEventType, *PEventType;
 	typedef stdext::hash_map<uint32_t, PEventType> TTypeMap;
 
-	CContacts & m_Contacts;
+	CEntities & m_Entities;
 	CSettings & m_Settings;
 	TTypeMap m_Map;
 
@@ -160,7 +160,7 @@ public:
 		CEncryptionManager & EncryptionManager,
 		CEventLinks::TNodeRef LinkRootNode, 
 		CMultiReadExclusiveWriteSynchronizer & Synchronize,
-		CContacts & Contacts, 
+		CEntities & Entities, 
 		CSettings & Settings,
 		uint32_t IndexCounter
 		);
@@ -173,23 +173,23 @@ public:
 
 
 	//compatibility
-	TDBTEventHandle compFirstEvent(TDBTContactHandle hContact);
-	TDBTEventHandle compFirstUnreadEvent(TDBTContactHandle hContact);
-	TDBTEventHandle compLastEvent(TDBTContactHandle hContact);
+	TDBTEventHandle compFirstEvent(TDBTEntityHandle hEntity);
+	TDBTEventHandle compFirstUnreadEvent(TDBTEntityHandle hEntity);
+	TDBTEventHandle compLastEvent(TDBTEntityHandle hEntity);
 	TDBTEventHandle compNextEvent(TDBTEventHandle hEvent);
 	TDBTEventHandle compPrevEvent(TDBTEventHandle hEvent);
 
 	//services
 	unsigned int GetBlobSize(TDBTEventHandle hEvent);
 	unsigned int Get(TDBTEventHandle hEvent, TDBTEvent & Event);
-	unsigned int GetCount(TDBTContactHandle hContact);
-	unsigned int Delete(TDBTContactHandle hContact, TDBTEventHandle hEvent);
-	TDBTEventHandle Add(TDBTContactHandle hContact, TDBTEvent & Event);
-	unsigned int MarkRead(TDBTContactHandle hContact, TDBTEventHandle hEvent);
-	unsigned int WriteToDisk(TDBTContactHandle hContact, TDBTEventHandle hEvent);
+	unsigned int GetCount(TDBTEntityHandle hEntity);
+	unsigned int Delete(TDBTEntityHandle hEntity, TDBTEventHandle hEvent);
+	TDBTEventHandle Add(TDBTEntityHandle hEntity, TDBTEvent & Event);
+	unsigned int MarkRead(TDBTEntityHandle hEntity, TDBTEventHandle hEvent);
+	unsigned int WriteToDisk(TDBTEntityHandle hEntity, TDBTEventHandle hEvent);
 	unsigned int HardLink(TDBTEventHardLink & HardLink);
 
-	TDBTContactHandle GetContact(TDBTEventHandle hEvent);
+	TDBTEntityHandle getEntity(TDBTEventHandle hEvent);
 
 	TDBTEventIterationHandle IterationInit(TDBTEventIterFilter & Filter);
 	TDBTEventHandle IterationNext(TDBTEventIterationHandle Iteration);
@@ -198,19 +198,19 @@ public:
 
 private:
 	typedef CBTree<TEventKey, 16> TEventBase;
-	typedef stdext::hash_map<TDBTContactHandle, CEventsTree*> TEventsTreeMap;
-	typedef stdext::hash_map<TDBTContactHandle, CVirtualEventsTree*> TVirtualEventsTreeMap;
-	typedef stdext::hash_map<TDBTContactHandle, uint32_t> TVirtualEventsCountMap;
+	typedef stdext::hash_map<TDBTEntityHandle, CEventsTree*> TEventsTreeMap;
+	typedef stdext::hash_map<TDBTEntityHandle, CVirtualEventsTree*> TVirtualEventsTreeMap;
+	typedef stdext::hash_map<TDBTEntityHandle, uint32_t> TVirtualEventsCountMap;
 	typedef CIterationHeap<TEventBase::iterator> TEventsHeap;
 	
-	typedef stdext::hash_set<TDBTContactHandle> TVirtualOwnerSet;
+	typedef stdext::hash_set<TDBTEntityHandle> TVirtualOwnerSet;
 	typedef stdext::hash_map<TDBTEventHandle, TVirtualOwnerSet*> TVirtualOwnerMap;
 
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CBlockManager & m_BlockManager;
 	CEncryptionManager & m_EncryptionManager;
 
-	CContacts & m_Contacts;
+	CEntities & m_Entities;
 	CEventsTypeManager m_Types;
 	CEventLinks m_Links;
 
@@ -232,10 +232,10 @@ private:
 
 	void onDeleteEventCallback(void * Tree, const TEventKey & Key, uint32_t Param);
 	void onDeleteVirtualEventCallback(void * Tree, const TEventKey & Key, uint32_t Param);
-	void onDeleteEvents(CContacts * Contacts, TDBTContactHandle hContact);
-	void onTransferEvents(CContacts * Contacts, TDBTContactHandle Source, TDBTContactHandle Dest);
+	void onDeleteEvents(CEntities * Entities, TDBTEntityHandle hEntity);
+	void onTransferEvents(CEntities * Entities, TDBTEntityHandle Source, TDBTEntityHandle Dest);
 
-	CEventsTree * getEventsTree(TDBTContactHandle hContact);
-	CVirtualEventsTree * getVirtualEventsTree(TDBTContactHandle hContact);
-	uint32_t adjustVirtualEventCount(TDBTContactHandle hContact, int32_t Adjust);
+	CEventsTree * getEventsTree(TDBTEntityHandle hEntity);
+	CVirtualEventsTree * getVirtualEventsTree(TDBTEntityHandle hEntity);
+	uint32_t adjustVirtualEventCount(TDBTEntityHandle hEntity, int32_t Adjust);
 };
