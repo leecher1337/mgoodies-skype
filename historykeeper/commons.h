@@ -144,8 +144,8 @@ BOOL ItemEnabled(int type, HANDLE hContact, int item);
 BOOL EnableItem(int type, HANDLE hContact, int item, BOOL enable);
 
 
-#define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION 30000 // ms
-#define TIME_TO_WAIT_BEFORE_NOTIFY_AFTER_CONNECTION 30000 // ms
+#define TIME_TO_WAIT_BEFORE_SHOW_POPUP_AFTER_CREATION 60000 // ms
+#define TIME_TO_WAIT_BEFORE_NOTIFY_AFTER_CONNECTION 60000 // ms
 
 
 
