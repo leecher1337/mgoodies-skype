@@ -31,11 +31,11 @@ PLUGINLINK *pluginLink;
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,1,9),
+	PLUGIN_MAKE_VERSION(0,0,1,10),
 	"Show and allows you to edit your details for all protocols.",
-	"Ricardo Pescuma Domenecci",
+	"Ricardo Pescuma Domenecci, Drugwash",
 	"",
-	"© 2008 Ricardo Pescuma Domenecci",
+	"© 2005-2008 Ricardo Pescuma Domenecci, Drugwash",
 	"http://pescuma.org/miranda/mydetails",
 	0,		//not transient
 	0,		//doesn't replace anything built-in
@@ -134,7 +134,7 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 	CreateServiceFunction(MS_MYDETAILS_SHOWNEXTPROTOCOL, PluginCommand_ShowNextProtocol);
 	CreateServiceFunction(MS_MYDETAILS_SHOWPREVIOUSPROTOCOL, PluginCommand_ShowPreviousProtocol);
 	CreateServiceFunction(MS_MYDETAILS_SHOWPROTOCOL, PluginCommand_ShowProtocol);
-	CreateServiceFunction(MS_MYDETAILS_CICLE_THROUGHT_PROTOCOLS, PluginCommand_CicleThroughtProtocols);
+	CreateServiceFunction(MS_MYDETAILS_CYCLE_THROUGH_PROTOCOLS, PluginCommand_CicleThroughtProtocols);
 
 	return 0;
 }
@@ -152,7 +152,7 @@ int __declspec(dllexport) Unload(void)
 	DestroyServiceFunction(MS_MYDETAILS_SHOWNEXTPROTOCOL);
 	DestroyServiceFunction(MS_MYDETAILS_SHOWPREVIOUSPROTOCOL);
 	DestroyServiceFunction(MS_MYDETAILS_SHOWPROTOCOL);
-	DestroyServiceFunction(MS_MYDETAILS_CICLE_THROUGHT_PROTOCOLS);
+	DestroyServiceFunction(MS_MYDETAILS_CYCLE_THROUGH_PROTOCOLS);
 
 	if (hModulesLoadedHook) UnhookEvent(hModulesLoadedHook);
 
@@ -238,6 +238,42 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 
 	InitFrames();
 
+	if (ServiceExists(MS_SKIN2_ADDICON)) 
+	{
+		if (CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON") == NULL) 
+		{
+			SKINICONDESC sid = {0};
+			sid.cbSize = sizeof(SKINICONDESC);
+			sid.flags = SIDF_TCHAR;
+			sid.ptszSection = TranslateT("Contact List");
+			sid.ptszDescription = TranslateT("Listening to");
+			sid.pszName = "LISTENING_TO_ICON";
+			sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO));
+			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		}
+
+		{
+			SKINICONDESC sid = {0};
+			sid.cbSize = sizeof(SKINICONDESC);
+			sid.flags = SIDF_TCHAR;
+			sid.ptszSection = TranslateT("My Details");
+			sid.ptszDescription = TranslateT("Previous protocol");
+			sid.pszName = "MYDETAILS_PREV_PROTOCOL";
+			sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_LEFT_ARROW));
+			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		}
+
+		{
+			SKINICONDESC sid = {0};
+			sid.cbSize = sizeof(SKINICONDESC);
+			sid.flags = SIDF_TCHAR;
+			sid.ptszSection = TranslateT("My Details");
+			sid.ptszDescription = TranslateT("Next protocol");
+			sid.pszName = "MYDETAILS_NEXT_PROTOCOL";
+			sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_RIGHT_ARROW));
+			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+		}
+	}
 
     // updater plugin support
     if(ServiceExists(MS_UPDATE_REGISTER))

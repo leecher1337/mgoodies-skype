@@ -84,7 +84,7 @@ void RefreshFrame();
 void RedrawFrame();
 
 
-// used when no multiwindow functionality avaiable
+// used when no multiwindow functionality available
 bool MyDetailsFrameVisible();
 void SetMyDetailsFrameVisible(bool visible);
 int ShowHideMenuFunc(WPARAM wParam, LPARAM lParam);
@@ -96,8 +96,8 @@ int ShowHideFrameFunc(WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK FrameContainerWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-void SetCicleTime();
-void SetCicleTime(HWND hwnd);
+void SetCycleTime();
+void SetCycleTime(HWND hwnd);
 void SetStatusMessageRefreshTime();
 void SetStatusMessageRefreshTime(HWND hwnd);
 int SettingsChangedHook(WPARAM wParam, LPARAM lParam);
@@ -120,6 +120,12 @@ struct MyDetailsFrameData
 	RECT proto_rect;
 	bool draw_proto;
 	bool mouse_over_proto;
+
+	bool draw_proto_cycle;
+	RECT next_proto_rect;
+	HWND next_proto_tt_hwnd;
+	RECT prev_proto_rect;
+	HWND prev_proto_tt_hwnd;
 
 	RECT img_rect;
 	bool draw_img;
@@ -291,6 +297,7 @@ int CreateFrame()
 
 		CLISTFrame Frame = {0};
 		
+		Frame.cbSize = sizeof(Frame);
 		Frame.name = Translate("My Details");
 		Frame.cbSize = sizeof(CLISTFrame);
 		Frame.hWnd = hwnd_frame;
@@ -636,6 +643,18 @@ void DeleteTooltipWindows(MyDetailsFrameData *data)
 		data->status_tt_hwnd = NULL;
 	}
 
+	if (data->next_proto_tt_hwnd != NULL)
+	{ 
+		DestroyWindow(data->next_proto_tt_hwnd);
+		data->next_proto_tt_hwnd = NULL;
+	}
+
+	if (data->prev_proto_tt_hwnd != NULL)
+	{ 
+		DestroyWindow(data->prev_proto_tt_hwnd);
+		data->prev_proto_tt_hwnd = NULL;
+	}
+
 	if (data->away_msg_tt_hwnd != NULL)
 	{ 
 		DestroyWindow(data->away_msg_tt_hwnd);
@@ -666,6 +685,7 @@ void CalcRectangles(HWND hwnd)
 	proto->data_changed = false;
 
 	data->draw_proto = false;
+	data->draw_proto_cycle = false;
 	data->draw_img = false;
 	data->draw_nick = false;
 	data->draw_status = false;
@@ -835,10 +855,75 @@ void CalcRectangles(HWND hwnd)
 
 			SelectObject(hdc, hFont[FONT_PROTO]);
 
-			data->proto_rect = GetRect(hdc, r, proto->description, "", proto, uFormat, 
-									  next_top, text_left, false, true, false);
+			RECT tmp_r = r;
+			int tmp_text_left = text_left;
+			if (opts.show_protocol_cycle_button)
+			{
+				if (opts.draw_text_align_right)
+					tmp_text_left += 2 * ICON_SIZE;
+				else
+					tmp_r.right -= 2 * ICON_SIZE;
+			}
 
-			next_top = data->proto_rect.bottom + SPACE_TEXT_TEXT;
+			data->proto_rect = GetRect(hdc, tmp_r, proto->description, "", proto, uFormat, 
+									  next_top, tmp_text_left, false, true, false);
+
+
+			if (opts.show_protocol_cycle_button)
+			{
+				data->draw_proto_cycle= true;
+
+				RECT prev = r;
+				prev.top = next_top;
+				prev.bottom = min(r.bottom, prev.top + ICON_SIZE);
+
+				int diff = (data->proto_rect.bottom - data->proto_rect.top) - (prev.bottom - prev.top);
+				if (diff < 0)
+				{
+					diff = -diff / 2;
+					data->proto_rect.top += diff;
+					data->proto_rect.bottom += diff;
+				}
+				else
+				{
+					diff = diff / 2;
+					prev.top += diff;
+					prev.bottom += diff;
+				}
+
+				if (opts.draw_text_align_right)
+				{
+					prev.left = text_left;
+					prev.right = r.left + ICON_SIZE;
+				}
+				else
+				{
+					prev.right -= ICON_SIZE;
+					prev.left = prev.right - ICON_SIZE;
+				}
+
+				RECT next = prev;
+				next.left += ICON_SIZE;
+				next.right += ICON_SIZE;
+
+				prev.left = max(text_left, prev.left);
+				prev.right = min(r.right, prev.right);
+				next.left = max(text_left, next.left);
+				next.right = min(r.right, next.right);
+
+				data->prev_proto_rect = prev;
+				data->next_proto_rect = next;
+
+				data->next_proto_tt_hwnd = CreateTooltip(hwnd, data->next_proto_rect);
+				data->prev_proto_tt_hwnd = CreateTooltip(hwnd, data->prev_proto_rect);
+
+
+				next_top = max(data->next_proto_rect.bottom, data->proto_rect.bottom) + SPACE_TEXT_TEXT;
+			}
+			else
+			{
+				next_top = data->proto_rect.bottom + SPACE_TEXT_TEXT;
+			}
 		}
 
 		// Fits more?
@@ -1196,7 +1281,7 @@ void Draw(HWND hwnd, HDC hdc_orig)
 	r.top += min(opts.borders[TOP], r.bottom);
 	r.bottom = max(r.bottom - opts.borders[BOTTOM], r.top);
 
-	// Draw itens
+	// Draw items
 
 	UINT uFormat = DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS 
 					| (opts.draw_text_align_right ? DT_RIGHT : DT_LEFT)
@@ -1261,6 +1346,36 @@ void Draw(HWND hwnd, HDC hdc_orig)
 						 data->mouse_over_nick && proto->CanSetNick(), proto);
 
 		// Clipping rgn
+		SelectClipRgn(hdc, NULL);
+		DeleteObject(rgn);
+	}
+
+	// Protocol cycle icon
+	if (data->draw_proto_cycle)
+	{
+		RECT rc = GetInnerRect(data->next_proto_rect, r);
+		HRGN rgn = CreateRectRgnIndirect(&rc);
+		SelectClipRgn(hdc, rgn);
+
+		HICON icon = LoadIconEx("MYDETAILS_NEXT_PROTOCOL");
+		if (icon == NULL)
+			icon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_RIGHT_ARROW));
+		DrawIconEx(hdc, data->next_proto_rect.left, data->next_proto_rect.top, icon, ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+		ReleaseIconEx(icon);
+
+		SelectClipRgn(hdc, NULL);
+		DeleteObject(rgn);
+
+		rc = GetInnerRect(data->prev_proto_rect, r);
+		rgn = CreateRectRgnIndirect(&rc);
+		SelectClipRgn(hdc, rgn);
+
+		icon = LoadIconEx("MYDETAILS_PREV_PROTOCOL");
+		if (icon == NULL)
+			icon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_RIGHT_ARROW));
+		DrawIconEx(hdc, data->prev_proto_rect.left, data->prev_proto_rect.top, icon, ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+		ReleaseIconEx(icon);
+
 		SelectClipRgn(hdc, NULL);
 		DeleteObject(rgn);
 	}
@@ -1390,9 +1505,11 @@ void Draw(HWND hwnd, HDC hdc_orig)
 			HRGN rgn = CreateRectRgnIndirect(&rc);
 			SelectClipRgn(hdc, rgn);
 
-			DrawIconEx(hdc, data->listening_to_icon_rect.left, data->listening_to_icon_rect.top, 
-						LoadIcon(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO)), 
-						ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+			HICON icon = LoadIconEx("LISTENING_TO_ICON");
+			if (icon == NULL)
+				icon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO));
+			DrawIconEx(hdc, data->listening_to_icon_rect.left, data->listening_to_icon_rect.top, icon, ICON_SIZE, ICON_SIZE, 0, NULL, DI_NORMAL);
+			ReleaseIconEx(icon);
 			
 			SelectClipRgn(hdc, NULL);
 			DeleteObject(rgn);
@@ -1690,7 +1807,7 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				data->protocol_number = 0;
 			}
 
-			SetCicleTime(hwnd);
+			SetCycleTime(hwnd);
 			SetStatusMessageRefreshTime(hwnd);
 
 			TRACKMOUSEEVENT tme;
@@ -1805,6 +1922,15 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					CallService(MS_MYDETAILS_SETMYNICKNAMEUI, 0, 0);
 				else
 					CallService(MS_MYDETAILS_SETMYNICKNAMEUI, 0, (LPARAM) proto->name);
+			}
+			// In proto cycle button?
+			else if (data->draw_proto_cycle && InsideRect(&p, &data->next_proto_rect))
+			{
+				CallService(MS_MYDETAILS_SHOWNEXTPROTOCOL, 0, 0);
+			}
+			else if (data->draw_proto_cycle && InsideRect(&p, &data->prev_proto_rect))
+			{
+				CallService(MS_MYDETAILS_SHOWPREVIOUSPROTOCOL, 0, 0);
 			}
 			// In status message?
 			else if (data->draw_away_msg && InsideRect(&p, &data->away_msg_rect) && proto->CanSetStatusMsg())
@@ -1994,6 +2120,15 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					}
 				}
 			}
+			// In proto cycle button?
+			else if (data->draw_proto_cycle && InsideRect(&p, &data->next_proto_rect))
+			{
+				CallService(MS_MYDETAILS_SHOWPREVIOUSPROTOCOL, 0, 0);
+			}
+			else if (data->draw_proto_cycle && InsideRect(&p, &data->prev_proto_rect))
+			{
+				CallService(MS_MYDETAILS_SHOWNEXTPROTOCOL, 0, 0);
+			}
 			// In status message?
 			else if (data->draw_away_msg && InsideRect(&p, &data->away_msg_rect))
 			{
@@ -2096,10 +2231,10 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				HMENU submenu = GetSubMenu(menu, 1);
 				CallService(MS_LANGPACK_TRANSLATEMENU,(WPARAM)submenu,0);
 
-				if (opts.cicle_throught_protocols)
-					RemoveMenu(submenu, ID_CICLE_THORUGHT_PROTOS, MF_BYCOMMAND);
+				if (opts.cycle_through_protocols)
+					RemoveMenu(submenu, ID_CYCLE_THROUGH_PROTOS, MF_BYCOMMAND);
 				else
-					RemoveMenu(submenu, ID_DONT_CICLE_THORUGHT_PROTOS, MF_BYCOMMAND);
+					RemoveMenu(submenu, ID_DONT_CYCLE_THROUGH_PROTOS, MF_BYCOMMAND);
 
 				// Add this proto to menu
 				char tmp[128];
@@ -2275,14 +2410,14 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 						CallService(MS_MYDETAILS_SHOWPREVIOUSPROTOCOL, 0, 0);
 						break;
 					}
-					case ID_CICLE_THORUGHT_PROTOS:
+					case ID_CYCLE_THROUGH_PROTOS:
 					{
-						CallService(MS_MYDETAILS_CICLE_THROUGHT_PROTOCOLS, TRUE, 0);
+						CallService(MS_MYDETAILS_CYCLE_THROUGH_PROTOCOLS, TRUE, 0);
 						break;
 					}
-					case ID_DONT_CICLE_THORUGHT_PROTOS:
+					case ID_DONT_CYCLE_THROUGH_PROTOS:
 					{
-						CallService(MS_MYDETAILS_CICLE_THROUGHT_PROTOCOLS, FALSE, 0);
+						CallService(MS_MYDETAILS_CYCLE_THROUGH_PROTOCOLS, FALSE, 0);
 						break;
 					}
 				}
@@ -2370,6 +2505,10 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 						lpttd->lpszText = proto->status_message;
 					else if (lpnmhdr->hwndFrom == data->listening_to_tt_hwnd)
 						lpttd->lpszText = proto->listening_to;
+					else if (lpnmhdr->hwndFrom == data->next_proto_tt_hwnd)
+						lpttd->lpszText = _T("Show next protocol");
+					else if (lpnmhdr->hwndFrom == data->prev_proto_tt_hwnd)
+						lpttd->lpszText = _T("Show previous protocol");
 
 					return 0;
 				}
@@ -2603,17 +2742,17 @@ void SetMyDetailsFrameVisible(bool visible)
 	}
 }
 
-void SetCicleTime()
+void SetCycleTime()
 {
 	if (hwnd_frame != NULL)
-		SetCicleTime(hwnd_frame);
+		SetCycleTime(hwnd_frame);
 }
 
-void SetCicleTime(HWND hwnd)
+void SetCycleTime(HWND hwnd)
 {
 	KillTimer(hwnd, ID_FRAME_TIMER);
 
-	if (opts.cicle_throught_protocols)
+	if (opts.cycle_through_protocols)
 		SetTimer(hwnd, ID_FRAME_TIMER, opts.seconds_to_show_protocol * 1000, 0);
 }
 
@@ -2651,7 +2790,7 @@ int PluginCommand_ShowNextProtocol(WPARAM wParam,LPARAM lParam)
 
 	data->recalc_rectangles = true;
 
-	SetCicleTime();
+	SetCycleTime();
 
 	RedrawFrame();
 
@@ -2675,7 +2814,7 @@ int PluginCommand_ShowPreviousProtocol(WPARAM wParam,LPARAM lParam)
 
 	data->recalc_rectangles = true;
 
-	SetCicleTime();
+	SetCycleTime();
 
 	RedrawFrame();
 
@@ -2712,7 +2851,7 @@ int PluginCommand_ShowProtocol(WPARAM wParam,LPARAM lParam)
 
 	data->recalc_rectangles = true;
 
-	SetCicleTime();
+	SetCycleTime();
 
 	RedrawFrame();
 

@@ -29,7 +29,7 @@ Boston, MA 02111-1307, USA.
 
 struct Options 
 {
-	bool cicle_throught_protocols;
+	bool cycle_through_protocols;
 	int seconds_to_show_protocol;
 	bool replace_smileys;
 	bool resize_smileys;
@@ -39,6 +39,7 @@ struct Options
 	bool draw_text_align_right;
 
 	bool draw_show_protocol_name;
+	bool show_protocol_cycle_button;
 
 	bool global_on_avatar;
 	bool global_on_nickname;
@@ -54,6 +55,7 @@ struct Options
 	bool draw_avatar_use_custom_corner_size;
 	int draw_avatar_custom_corner_size;
 
+	COLORREF bkg_color;
 	int borders[4];
 
 	bool use_avatar_space_to_draw_text;

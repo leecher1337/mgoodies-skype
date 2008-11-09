@@ -28,7 +28,7 @@ void DeInitFrames();
 void RefreshFrame();
 void RefreshFrameAndCalcRects();
 
-void SetCicleTime();
+void SetCycleTime();
 
 int PluginCommand_ShowNextProtocol(WPARAM wParam,LPARAM lParam);
 int PluginCommand_ShowPreviousProtocol(WPARAM wParam,LPARAM lParam);

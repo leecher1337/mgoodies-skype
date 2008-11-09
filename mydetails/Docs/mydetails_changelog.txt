@@ -2,6 +2,10 @@ My Details
 
 Changelog:
 
+. 0.0.1.10
+  + Added arrows to change protocols (Drugwash patch)
+  * Use icolib to show icons (uses listening to icon from contact list)
+
 . 0.0.1.9
   + Created 2 services: MyDetails/HideFrame and MyDetails/ShowFrame
   * MyDetails/ShowHideMyDetails changed to work with frames too (it toggles the frame)

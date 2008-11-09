@@ -42,6 +42,7 @@
 
 [ Protocol ]
 [Show protocol name]
+[Show protocol cycle button]
 
 
 ; Default values
