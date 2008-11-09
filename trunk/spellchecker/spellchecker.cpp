@@ -664,9 +664,9 @@ void CheckText(Dialog *dlg, BOOL check_all,
 			lines = min(lines, current_line + 2);
 		}
 
+		TCHAR text[1024];
 		for(; line < lines; line++) 
 		{
-			TCHAR text[1024];
 			int first_char;
 			int diff = 0;
 
