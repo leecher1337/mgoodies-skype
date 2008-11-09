@@ -426,14 +426,14 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 
 int PreShutdown(WPARAM wParam, LPARAM lParam)
 {
-	delete queue;
-
 	DeInitPopups();
 	DeInitOptions();
 
 	for (int i = 0; i < MAX_REGS(hHooks); i++)
 		if (hHooks[i] != NULL)
 			UnhookEvent(hHooks[i]);
+
+	delete queue;
 
 	return 0;
 }
