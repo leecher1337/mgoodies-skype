@@ -7,9 +7,11 @@
 #define IDD_SETSTATUSMESSAGE            103
 #define IDR_MENU1                       104
 #define IDI_LISTENINGTO                 105
+#define IDI_RIGHT_ARROW                 106
+#define IDI_LEFT_ARROW                  107
 #define IDC_NICKNAME                    1000
 #define IDC_SHOW_PROTO_NAME             1001
-#define IDC_CICLE_THROUGHT_PROTOS       1002
+#define IDC_CYCLE_THROUGH_PROTOS        1002
 #define IDC_TEXT_RTL                    1003
 #define IDC_TEXT_ALIGN_RIGHT            1004
 #define IDC_REPLACE_SMILEYS             1005
@@ -23,6 +25,7 @@
 #define IDC_GLOBAL_ON_STATUS_MESSAGE    1011
 #define IDC_GLOBAL_ON_STATUS            1012
 #define IDC_GLOBAL_ON_AVATAR            1013
+#define IDC_SHOW_CYCLE_PROTO_BUTTON     1014
 #define IDC_AVATAR_CUSTOM_CORNER_SIZE   1622
 #define IDC_AVATAR_CUSTOM_CORNER_SIZE_SPIN 1623
 #define IDC_BORDER_TOP                  1624
@@ -33,8 +36,8 @@
 #define IDC_BORDER_BOTTOM_SPIN          1629
 #define IDC_BORDER_RIGHT                1630
 #define IDC_BORDER_RIGHT_SPIN           1631
-#define IDC_CICLE_TIME                  1632
-#define IDC_CICLE_TIME_SPIN             1633
+#define IDC_CYCLE_TIME                  1632
+#define IDC_CYCLE_TIME_SPIN             1633
 #define IDC_AVATAR_CUSTOM_SIZE          1634
 #define IDC_AVATAR_CUSTOM_SIZE_SPIN     1635
 #define IDC_AVATAR_CUSTOM_CORNER_SIZE_CHECK 1761
@@ -46,8 +49,8 @@
 #define IDC_AVATAR_BORDER_COLOR         1840
 #define IDC_AVATAR_BKG_COLOR_L          1841
 #define IDC_AVATAR_BKG_COLOR            1842
-#define ID_CICLE_THORUGHT_PROTOS        40004
-#define ID_DONT_CICLE_THORUGHT_PROTOS   40005
+#define ID_CYCLE_THROUGH_PROTOS         40004
+#define ID_DONT_CYCLE_THROUGH_PROTOS    40005
 #define ID_SHOW_NEXT_PROTO              40006
 #define ID_SHOW_PREV_PROTO              40007
 #define ID_NICKPOPUP_SETMYNICKNAME      40008
@@ -60,7 +63,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        106
+#define _APS_NEXT_RESOURCE_VALUE        108
 #define _APS_NEXT_COMMAND_VALUE         40013
 #define _APS_NEXT_CONTROL_VALUE         1011
 #define _APS_NEXT_SYMED_VALUE           101

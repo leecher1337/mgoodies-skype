@@ -29,8 +29,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,1,6
- PRODUCTVERSION 0,0,1,6
+ FILEVERSION 0,0,1,10
+ PRODUCTVERSION 0,0,1,10
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -48,14 +48,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", " \0"
             VALUE "FileDescription", "MyDetails Miranda Plugin\0"
-            VALUE "FileVersion", "0, 0, 1, 6\0"
+            VALUE "FileVersion", "0, 0, 1, 10\0"
             VALUE "InternalName", "mydetails\0"
-            VALUE "LegalCopyright", "Copyright © 2008 Ricardo Pescuma Domenecci\0"
+            VALUE "LegalCopyright", "Copyright © 2005-2008 Ricardo Pescuma Domenecci, Drugwash\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "mydetails.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "\0"
-            VALUE "ProductVersion", "0, 0, 1, 6\0"
+            VALUE "ProductVersion", "0, 0, 1, 10\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -74,7 +74,8 @@ END
 //
 
 IDD_SETNICKNAME DIALOG DISCARDABLE  0, 0, 283, 65
-STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
 CAPTION "Set My Nickname"
 FONT 8, "MS Shell Dlg"
 BEGIN
@@ -86,16 +87,16 @@ BEGIN
 END
 
 IDD_OPTS DIALOGEX 0, 0, 316, 246
-STYLE DS_SHELLFONT | WS_CHILD | WS_VISIBLE
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        " General ",IDC_STATIC,7,7,302,70
     CONTROL         "Cycle through protocols every:",
-                    IDC_CICLE_THROUGHT_PROTOS,"Button",BS_AUTOCHECKBOX | 
+                    IDC_CYCLE_THROUGH_PROTOS,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,13,18,114,14
-    EDITTEXT        IDC_CICLE_TIME,129,18,35,12,ES_NUMBER
-    CONTROL         "",IDC_CICLE_TIME_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
+    EDITTEXT        IDC_CYCLE_TIME,129,18,35,12,ES_NUMBER
+    CONTROL         "",IDC_CYCLE_TIME_SPIN,"msctls_updown32",UDS_SETBUDDYINT | 
                     UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS | 
                     UDS_HOTTRACK,156,18,11,12
     LTEXT           "seconds",IDC_STATIC,171,21,32,11
@@ -173,11 +174,14 @@ BEGIN
                     WS_TABSTOP,16,195,280,8
     GROUPBOX        " Protocol ",IDC_STATIC,7,209,302,28
     CONTROL         "Show protocol name",IDC_SHOW_PROTO_NAME,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,13,221,280,14
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,221,138,14
+    CONTROL         "Show protocol cycle button",IDC_SHOW_CYCLE_PROTO_BUTTON,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,163,221,138,14
 END
 
 IDD_SETSTATUSMESSAGE DIALOG DISCARDABLE  0, 0, 283, 68
-STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | 
+    WS_SYSMENU
 CAPTION "Set My Status Message for All Status"
 FONT 8, "MS Shell Dlg"
 BEGIN
@@ -223,6 +227,17 @@ BEGIN
 END
 #endif    // APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_LISTENINGTO         ICON    DISCARDABLE     "res\\listening_to.ico"
+IDI_RIGHT_ARROW         ICON    DISCARDABLE     "res\\rightarrow.ico"
+IDI_LEFT_ARROW          ICON    DISCARDABLE     "res\\leftarrow.ico"
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -296,10 +311,9 @@ BEGIN
         MENUITEM "Show next protocol",          ID_SHOW_NEXT_PROTO
         MENUITEM "Show previous protocol",      ID_SHOW_PREV_PROTO
         MENUITEM SEPARATOR
-        MENUITEM "Cycle through protocols",     ID_CICLE_THORUGHT_PROTOS
+        MENUITEM "Cycle through protocols",     ID_CYCLE_THROUGH_PROTOS
         MENUITEM "Don't cycle through protocols", 
-                                                ID_DONT_CICLE_THORUGHT_PROTOS
-
+                                                ID_DONT_CYCLE_THROUGH_PROTOS
     END
     POPUP "Nick popup"
     BEGIN
@@ -325,15 +339,6 @@ BEGIN
     END
 END
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_LISTENINGTO         ICON    DISCARDABLE     "res\\listening_to.ico"
 #endif    // Portuguese (Brazil) resources
 /////////////////////////////////////////////////////////////////////////////
 

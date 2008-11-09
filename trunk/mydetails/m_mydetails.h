@@ -148,7 +148,7 @@ wparam = FALSE to stop, TRUE to start
 lparam = 0
 returns: -1 on error, 0 on success
 */
-#define MS_MYDETAILS_CICLE_THROUGHT_PROTOCOLS	"MyDetails/CicleThroughtProtocols"
+#define MS_MYDETAILS_CYCLE_THROUGH_PROTOCOLS	"MyDetails/CicleThroughtProtocols"
 
 
 /*

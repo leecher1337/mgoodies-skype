@@ -52,6 +52,7 @@ Boston, MA 02111-1307, USA.
 #include <m_statusplugins.h>
 #include <m_ersatz.h>
 #include <m_icq.h>
+#include <m_icolib.h>
 #include "m_cluiframes.h"
 #include "m_simpleaway.h"
 
@@ -83,6 +84,7 @@ extern long status_msg_dialog_open;
 #include "../utils/mir_smileys.h"
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
+#include "../utils/mir_icons.h"
 
 
 #define PS_SETMYAVATAR "/SetMyAvatar"
