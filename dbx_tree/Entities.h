@@ -196,7 +196,8 @@ protected:
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CVirtuals m_Virtuals;
 
-	TDBTEntityHandle CreateRootEntity();
+	TDBTEntityHandle _CreateRootEntity();
+	void _InternalTransferContacts(TDBTEntityHandle OldAccount, TDBTEntityHandle NewAccount);
 
 	TOnEntityDelete            m_sigEntityDelete;
 	TOnInternalDeleteEvents    m_sigInternalDeleteEvents;

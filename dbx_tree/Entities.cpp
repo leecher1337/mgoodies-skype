@@ -217,7 +217,7 @@ CEntities::CEntities(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynch
 	m_sigInternalTransferEvents()
 {
 	if (RootEntity == 0)
-		m_RootEntity = CreateRootEntity();
+		m_RootEntity = _CreateRootEntity();
 	else
 		m_RootEntity = RootEntity;
 	
@@ -228,7 +228,7 @@ CEntities::~CEntities()
 
 }
 
-TDBTEntityHandle CEntities::CreateRootEntity()
+TDBTEntityHandle CEntities::_CreateRootEntity()
 {
 	TEntity Entity = {0};
 	TEntityKey key = {0};
@@ -240,6 +240,26 @@ TDBTEntityHandle CEntities::CreateRootEntity()
 	return key.Entity;
 }
 
+void CEntities::_InternalTransferContacts(TDBTEntityHandle OldAccount, TDBTEntityHandle NewAccount)
+{
+	uint32_t sig = cEntitySignature;
+
+	TDBTEntityHandle acc;
+	TEntityKey key = {0};
+	iterator i = LowerBound(key);
+
+	while (i)
+	{
+		sig = cEntitySignature;
+		if (m_BlockManager.ReadPart(i->Entity, &acc, offsetof(TEntity, Account), sizeof(acc), sig) &&
+			  (acc == OldAccount))
+		{
+			m_BlockManager.WritePart(i->Entity, &NewAccount, offsetof(TEntity, Account), sizeof(NewAccount));
+		}
+
+		++i;
+	}
+}
 
 CVirtuals::TOnRootChanged & CEntities::sigVirtualRootChanged()
 {
@@ -527,14 +547,21 @@ TDBTEntityHandle CEntities::CreateEntity(const TDBTEntity & Entity)
 	}
 
 	// check account specification
-	if ((Entity.fFlags == 0) && (Entity.hAccountEntity != m_RootEntity)) // TODO Check root account thing...
+	if ((Entity.fFlags == 0) && (Entity.hAccountEntity != m_RootEntity)) // TODO disable root account thing, after conversion
 	{
 		uint32_t f = 0;
 		if (!m_BlockManager.ReadPart(Entity.hAccountEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig) ||
-			  ((f & DBT_NF_IsAccount) != DBT_NF_IsAccount))
+			  !(f & DBT_NF_IsAccount))
 		{
 			SYNC_ENDWRITE(m_Sync);
 			return DBT_INVALIDPARAM;	
+		}
+
+		if (f & DBT_NF_IsVirtual)
+		{
+			en.Account = VirtualGetParent(Entity.hAccountEntity);
+		} else {
+			en.Account = Entity.hAccountEntity;
 		}
 	}		
 
@@ -544,8 +571,6 @@ TDBTEntityHandle CEntities::CreateEntity(const TDBTEntity & Entity)
 	en.Level = parent.Level + 1;
 	en.ParentEntity = Entity.hParentEntity;
 	en.Flags = Entity.fFlags;
-	if (Entity.fFlags == 0)
-		en.Account = Entity.hAccountEntity;
 		
 	m_BlockManager.WriteBlock(hEntity, &en, sizeof(TEntity), cEntitySignature);
 	
@@ -600,9 +625,18 @@ unsigned int CEntities::DeleteEntity(TDBTEntityHandle hEntity)
 		m_sigInternalTransferEvents.emit(this, hEntity, newreal);
 		m_sigInternalMergeSettings.emit(this, hEntity, newreal);
 
+		if (Entity.Flags & DBT_NF_IsAccount)
+		{
+			_InternalTransferContacts(hEntity, newreal);
+		}
 	} else {
 		m_sigInternalDeleteEvents.emit(this, hEntity);
 		m_sigInternalDeleteSettings.emit(this, hEntity);
+
+		if ((Entity.Flags & DBT_NF_IsAccount) && !(Entity.Flags & DBT_NF_IsVirtual))
+		{
+			_InternalTransferContacts(hEntity, m_RootEntity);
+		}
 	}
 
 	key.Level = Entity.Level;
@@ -860,7 +894,7 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 			if (((item.Flags & (DBT_NF_IsAccount | DBT_NF_IsGroup | DBT_NF_IsRoot)) == 0) && 
 			    ((item.Options & DBT_NIFO_OC_USEACCOUNT) == DBT_NIFO_OC_USEACCOUNT))
 			{
-				TDBTEntityHandle acc = item.Options;
+				TDBTEntityHandle acc = item.Handle;
 				if (item.Flags & DBT_NF_IsVirtual)
 					acc = VirtualGetParent(item.Handle);
 
@@ -921,7 +955,7 @@ TDBTEntityHandle CEntities::VirtualCreate(TDBTEntityHandle hRealEntity, TDBTEnti
 	SYNC_BEGINWRITE(m_Sync);
 	
 	if (!m_BlockManager.ReadPart(hRealEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig) || 
-		  (f & (DBT_NF_IsGroup | DBT_NF_IsAccount | DBT_NF_IsRoot)))
+		  (f & (DBT_NF_IsGroup | DBT_NF_IsRoot)))
 	{
 		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
@@ -929,7 +963,7 @@ TDBTEntityHandle CEntities::VirtualCreate(TDBTEntityHandle hRealEntity, TDBTEnti
 
 	TDBTEntity entity = {0};
 	entity.hParentEntity = hParent;
-	entity.fFlags = DBT_NF_IsVirtual;
+	entity.fFlags = DBT_NF_IsVirtual | (f & DBT_NF_IsAccount);
 	entity.hAccountEntity = 0;
 
 	TDBTEntityHandle result = CreateEntity(entity);
