@@ -2,6 +2,9 @@ My Details
 
 Changelog:
 
+. 0.0.1.11
+  * Fix for arrows: always draw then at right side
+
 . 0.0.1.10
   + Added arrows to change protocols (Drugwash patch)
   * Use icolib to show icons (uses listening to icon from contact list)

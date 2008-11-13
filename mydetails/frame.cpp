@@ -859,10 +859,7 @@ void CalcRectangles(HWND hwnd)
 			int tmp_text_left = text_left;
 			if (opts.show_protocol_cycle_button)
 			{
-				if (opts.draw_text_align_right)
-					tmp_text_left += 2 * ICON_SIZE;
-				else
-					tmp_r.right -= 2 * ICON_SIZE;
+				tmp_r.right -= 2 * ICON_SIZE;
 			}
 
 			data->proto_rect = GetRect(hdc, tmp_r, proto->description, "", proto, uFormat, 
@@ -891,16 +888,8 @@ void CalcRectangles(HWND hwnd)
 					prev.bottom += diff;
 				}
 
-				if (opts.draw_text_align_right)
-				{
-					prev.left = text_left;
-					prev.right = r.left + ICON_SIZE;
-				}
-				else
-				{
-					prev.right -= ICON_SIZE;
-					prev.left = prev.right - ICON_SIZE;
-				}
+				prev.right -= ICON_SIZE;
+				prev.left = prev.right - ICON_SIZE;
 
 				RECT next = prev;
 				next.left += ICON_SIZE;
