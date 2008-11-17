@@ -711,9 +711,8 @@ unsigned int CEvents::Delete(TDBTEntityHandle hEntity, TDBTEventHandle hEvent)
 }
 TDBTEventHandle CEvents::Add(TDBTEntityHandle hEntity, TDBTEvent & Event)
 {
-	uint32_t sig = cEventSignature;
-	CVirtualEventsTree* vtree;
-	CEventsTree* tree;
+	CVirtualEventsTree* vtree = NULL;
+	CEventsTree* tree = NULL;
 	TDBTEventHandle res = 0;
 
 	SYNC_BEGINWRITE(m_Sync);
@@ -1215,7 +1214,6 @@ TDBTEventHandle CEvents::IterationNext(TDBTEventIterationHandle Iteration)
 	SYNC_BEGINREAD(m_Sync);
 
 	PEventIteration iter = (PEventIteration) Iteration;
-	uint32_t sig = cEventSignature;
 
 	TDBTEventHandle res = 0;
 	TEventBase::iterator it = iter->Heap->Top();

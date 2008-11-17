@@ -5,7 +5,7 @@
 #include <iostream>
 #include <windows.h>
 
-CException::CException(CException & Other)
+CException::CException(const CException & Other)
 {
 	int len = strlen(Other.m_Message) + 1;
 	m_Message = new char[len];

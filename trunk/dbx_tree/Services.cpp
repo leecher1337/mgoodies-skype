@@ -80,6 +80,9 @@ int DBEntityDelete(WPARAM hEntity, LPARAM lParam)
 }
 int DBEntityCreate(WPARAM pEntity, LPARAM lParam)
 {
+	if (((PDBTEntity)pEntity)->bcSize != sizeof(TDBTEntity))
+		return DBT_INVALIDPARAM;
+
 	if (((PDBTEntity)pEntity)->hParentEntity == 0)
 		((PDBTEntity)pEntity)->hParentEntity = gDataBase->getEntities().getRootEntity();
 

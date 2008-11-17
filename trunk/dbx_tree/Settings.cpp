@@ -1272,7 +1272,9 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 		Setting.Descriptor->pszSettingName[set->NameLength] = 0;
 	}
 
-	return set->Type;
+	uint16_t result = set->Type;
+	free(buf);
+	return result;
 }
 
 
@@ -1386,7 +1388,6 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 	SYNC_BEGINREAD(m_Sync);
 
 	PSettingIteration iter = (PSettingIteration)Iteration;
-	uint32_t sig = cSettingSignature;
 
 	while (iter->Frame->empty() && iter->Heap->Top())
 	{

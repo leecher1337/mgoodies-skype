@@ -14,7 +14,7 @@ private:
 	char * m_SysMessage;
 
 public:
-	CException(CException & Other);
+	CException(const CException & Other);
 	CException(char * File, int Line, char * Function, char * Format, ...);
 	~CException();
 

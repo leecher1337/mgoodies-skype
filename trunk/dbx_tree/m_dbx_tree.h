@@ -173,6 +173,7 @@ typedef uint32_t TDBTEntityIterationHandle;
 
 typedef struct TDBTEntity
 {
+	uint32_t bcSize;
 	TDBTEntityHandle hParentEntity;
 	uint32_t fFlags;                 /// Flags DBT_NF_
 	TDBTEntityHandle hAccountEntity; /// Needed for normal Entities, reference to AccountEntity for the created one

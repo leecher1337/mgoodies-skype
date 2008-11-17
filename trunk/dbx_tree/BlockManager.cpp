@@ -313,6 +313,9 @@ bool CBlockManager::WriteBlock(uint32_t BlockID, void * Buffer, size_t Size, uin
 	Write(a, isvirtual, &h, sizeof(h));
 	Write(a + sizeof(h), isvirtual, Buffer, Size);
 
+	if (freebuf)
+		free(Buffer);
+
 	return true;
 }
 bool CBlockManager::WriteBlockCheck(uint32_t BlockID, void * Buffer, size_t Size, uint32_t & Signature)
