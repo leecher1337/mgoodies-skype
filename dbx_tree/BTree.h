@@ -1121,7 +1121,7 @@ CBTree<TKey, SizeParam>::iterator::operator ++() //pre  ++i
 		TKey oldkey = m_ManagedKey;
 		m_LoadedKey = false;
 		m_ManagedDeleted = false;
-		iterator & other = m_Tree->LowerBound(m_ManagedKey);	
+		iterator other = m_Tree->LowerBound(m_ManagedKey);	
 		m_Node = other.m_Node;		
 		m_Index = other.m_Index;
 		while (((**this) == oldkey) && (*this))
@@ -1149,7 +1149,7 @@ CBTree<TKey, SizeParam>::iterator::operator --() //pre  --i
 		m_LoadedKey = false;
 
 		m_ManagedDeleted = false;
-		iterator & other = m_Tree->UpperBound(m_ManagedKey);
+		iterator other = m_Tree->UpperBound(m_ManagedKey);
 		m_Node = other.m_Node;
 		m_Index = other.m_Index;
 		while (((**this) == oldkey) && (*this))
