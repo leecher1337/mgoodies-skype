@@ -30,11 +30,11 @@ PLUGININFOEX pluginInfo={
 #else
 	"meSpeak",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,8),
+	PLUGIN_MAKE_VERSION(0,0,0,9),
 	"Speaker plugin based on eSpeak engine (%s)",
 	"Ricardo Pescuma Domenecci",
 	"",
-	"© 2007 Ricardo Pescuma Domenecci",
+	"© 2007-2008 Ricardo Pescuma Domenecci",
 	"http://pescuma.org/miranda/meSpeak",
 	UNICODE_AWARE,
 	0,		//doesn't replace anything built-in
@@ -92,6 +92,7 @@ TCHAR *aditionalLanguages[] = {
 	_T("en_UK_RP"), _T("English - UK (Received Pronunciation)"),
 	_T("en_UK_WMIDS"), _T("English - UK (West Midlands)"),
 	_T("en_WI"), _T("English - Westindies"),
+	_T("es_LA"), _T("Spanish - Latin American"),
 	_T("eo"), _T("Esperanto"),
 	_T("la"), _T("Latin"),
 	_T("no"), _T("Norwegian"),
@@ -99,6 +100,7 @@ TCHAR *aditionalLanguages[] = {
 	_T("sr"), _T("Serbian"),
 	_T("grc"), _T("Ancient Greek"),
 	_T("yue"), _T("Cantonese"),
+	_T("ku"), _T("Kurdish"),
 };
 
 
@@ -148,6 +150,8 @@ extern "C" __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link) 
 {
 	pluginLink = link;
+
+	CHECK_VERSION("meSpeak")
 
 	init_mir_malloc();
 	mir_getLI(&li);
@@ -267,7 +271,8 @@ int ModulesLoaded(WPARAM wParam, LPARAM lParam)
 	{
 		// Load flags dll
 		TCHAR flag_file[1024];
-		mir_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\flags.dll"), flagsDllFolder);
+		_sntprintf(flag_file, MAX_REGS(flag_file), _T("%s\\flags.dll"), flagsDllFolder);
+		flag_file[1023] = 0;
 		HMODULE hFlagsDll = LoadLibrary(flag_file);
 
 		char path[1024];
@@ -871,23 +876,58 @@ DEFAULT:
 }
 
 
+Variant *GetVariant(char *name)
+{
+	for (int i = 0; i < variants.getCount(); i++)
+		if (stricmp(name, variants[i]->name) == 0)
+			return variants[i];
+	return NULL;
+}
+
+
 Variant *GetContactVariant(HANDLE hContact)
 {
+	Variant *ret;
+
 	DBVARIANT dbv;
 	if (DBGetContactSettingString(hContact, MODULE_NAME, "Variant", &dbv))
-		return opts.default_variant;
+		goto DEFAULT;
 
 	char name[NAME_SIZE];
 	strncpy(name, dbv.pszVal, MAX_REGS(name));
 	DBFreeVariant(&dbv);
 
 	if (name[0] == '\0')
-		return opts.default_variant;
+		goto DEFAULT;
 
-	for (int i = 0; i < variants.getCount(); i++)
-		if (stricmp(name, variants[i]->name) == 0)
-			return variants[i];
+	ret = GetVariant(name);
+	if (ret != NULL)
+		return ret;
 	
+DEFAULT:
+
+	if (hContact != NULL)
+	{
+		CONTACTINFO ci = {0};
+		ci.cbSize = sizeof(ci);
+		ci.hContact = hContact;
+		ci.dwFlag = CNF_GENDER;
+		CallService(MS_CONTACT_GETCONTACTINFO, 0, (LPARAM) &ci);
+
+		if (ci.bVal == 'M')
+		{
+			ret = GetVariant("male1");
+			if (ret != NULL)
+				return ret;
+		}
+		else if (ci.bVal == 'F')
+		{
+			ret = GetVariant("female1");
+			if (ret != NULL)
+				return ret;
+		}
+	}	
+
 	return opts.default_variant;
 }
 
@@ -941,6 +981,14 @@ int SpeakService(HANDLE hContact, TCHAR *text)
 	status = CallService(MS_CLIST_GETSTATUSMODE, 0, 0);
 	if (!StatusEnabled(status))
 		goto RETURN;
+
+	if (opts.enable_only_idle)
+	{
+		MIRANDA_IDLE_INFO idle = {0};
+		CallService(MS_IDLE_GETIDLEINFO, 0, (LPARAM) &idle);
+		if (idle.idleType == 0)
+			goto RETURN;
+	}
 
 	// Check language
 	lang = GetContactLanguage(hContact);
@@ -1006,6 +1054,14 @@ void Speak(HANDLE hContact, void *param)
 		status = CallService(MS_CLIST_GETSTATUSMODE, 0, 0);
 		if (!StatusEnabled(status))
 			goto RETURN;
+
+		if (opts.enable_only_idle)
+		{
+			MIRANDA_IDLE_INFO idle = {0};
+			CallService(MS_IDLE_GETIDLEINFO, 0, (LPARAM) &idle);
+			if (idle.idleType == 0)
+				goto RETURN;
+		}
 	}
 
 	Speak(data);

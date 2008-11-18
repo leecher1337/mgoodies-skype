@@ -35,13 +35,14 @@
 #include "translate.h"
 #include "wave.h"
 
-const char *version_string = "1.31  19.Jan.08";
-const int version_phdata  = 0x013100;
+const char *version_string = "1.39  08.Sep.08";
+const int version_phdata  = 0x013900;
 
 int option_device_number = -1;
 
 // copy the current phoneme table into here
 int n_phoneme_tab;
+int current_phoneme_table;
 PHONEME_TAB *phoneme_tab[N_PHONEME_TAB];
 unsigned char phoneme_tab_flags[N_PHONEME_TAB];   // bit 0: not inherited
 
@@ -426,7 +427,7 @@ frameref_t *LookupSpect(PHONEME_TAB *this_ph, PHONEME_TAB *prev_ph, PHONEME_TAB 
 		{
 			// lookup formant transition for the following phoneme
 
-			if(*match_level == 0)
+			if((*match_level == 0) || (next_ph->type == phNASAL))
 			{
 				LookupSound(next_ph,this_ph,1,NULL,1);
 				seq_len_adjust += FormantTransition2(frames,nf,vowel_transition[2],vowel_transition[3],next_ph,which);
@@ -574,6 +575,7 @@ void SelectPhonemeTable(int number)
 	n_phoneme_tab = 0;
 	SetUpPhonemeTable(number,0);  // recursively for included phoneme tables
 	n_phoneme_tab++;
+	current_phoneme_table = number;
 }  //  end of SelectPhonemeTable
 
 

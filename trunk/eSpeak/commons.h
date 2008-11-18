@@ -51,6 +51,7 @@ Boston, MA 02111-1307, USA.
 #include <m_folders.h>
 #include <m_icolib.h>
 #include <m_userinfo.h>
+#include <m_idle.h>
 
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"

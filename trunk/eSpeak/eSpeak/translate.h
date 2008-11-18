@@ -33,7 +33,7 @@
 
 
 /* dictionary flags, word 1 */
-// bits 0-3  stressed syllable,  7=unstressed
+// bits 0-3  stressed syllable,  bit 6=unstressed
 #define FLAG_SKIPWORDS        0x80
 #define FLAG_PREPAUSE        0x100
 
@@ -46,6 +46,7 @@
 #define FLAG_STRESS_END2    0x1000  /* full stress if at end of clause, or only followed by unstressed */
 #define FLAG_UNSTRESS_END   0x2000  /* reduce stress at end of clause */
 #define FLAG_ATEND          0x4000  /* use this pronunciation if at end of clause */
+#define FLAG_SPELLWORD      0x8000  // re-translate the word as individual letters, separated by spaces
 
 #define FLAG_DOT           0x10000  /* ignore '.' after word (abbreviation) */
 #define FLAG_ABBREV        0x20000  // spell as letters, even with a vowel, OR use specified pronunciation rather than split into letters
@@ -74,6 +75,7 @@
 #define FLAG_VERB_EXT        0x100  /* extend the 'verb follows' */
 #define FLAG_CAPITAL         0x200  /* pronunciation if initial letter is upper case */
 #define FLAG_ALLCAPS         0x400  // only if the word is all capitals
+#define FLAG_ACCENT          0x800  // character name is base-character name + accent name
 
 
 
@@ -84,7 +86,7 @@
 #define FLAG_HAS_PLURAL    0x4    /* upper-case word with s or 's lower-case ending */
 #define FLAG_PHONEMES      0x8    /* word is phonemes */
 #define FLAG_LAST_WORD     0x10   /* last word in clause */
-//#define FLAG_STRESSED_WORD 0x20   /* this word has explicit stress */
+//#define FLAG_SPELLING      0x20  // speak the word as individual letters
 #define FLAG_EMBEDDED      0x40   /* word is preceded by embedded commands */
 #define FLAG_HYPHEN        0x80
 #define FLAG_NOSPACE       0x100  // word is not seperated from previous word by a space
@@ -106,6 +108,7 @@
 #define SUFX_F        0x2000   // verb follows
 #define SUFX_Q        0x4000   // don't retranslate
 #define SUFX_T        0x10000   // don't affect the stress position in the stem
+#define SUFX_B        0x20000  // break, this character breaks the word into stem and suffix (used with SUFX_P)
 
 #define FLAG_ALLOW_TEXTMODE  0x02  // allow dictionary to translate to text rather than phonemes
 #define FLAG_SUFX       0x04
@@ -229,7 +232,7 @@ extern const int param_defaults[N_SPEECH_PARAM];
 
 
 
-#define N_LOPTS      14
+#define N_LOPTS      15
 #define LOPT_DIERESES        1
  // 1=remove [:] from unstressed syllables, 2= remove from unstressed or non-penultimate syllables
  // bit 4=0, if stress < 4,  bit 4=1, if not the highest stress in the word
@@ -253,9 +256,8 @@ extern const int param_defaults[N_SPEECH_PARAM];
  // increase this to prevent sonorants being shortened before shortened (eg. unstressed) vowels
 #define LOPT_SONORANT_MIN    7
 
- // bit 0=Italian "syntactic doubling" of consoants in the word after a word marked with $double attribute
- // bit 1=also after a word which ends with a stressed vowel
-#define LOPT_IT_DOUBLING     8
+ // don't break vowels at word boundary
+#define LOPT_WORD_MERGE      8
 
  // max. amplitude for vowel at the end of a clause
 #define LOPT_MAXAMP_EOC      9
@@ -275,6 +277,11 @@ extern const int param_defaults[N_SPEECH_PARAM];
 
  // stressed syllable is indicated by capitals
 #define LOPT_SYLLABLE_CAPS  13
+
+ // bit 0=Italian "syntactic doubling" of consoants in the word after a word marked with $double attribute
+ // bit 1=also after a word which ends with a stressed vowel
+#define LOPT_IT_DOUBLING    14
+
 
 
 typedef struct {
@@ -316,29 +323,35 @@ typedef struct {
 	// bit3=  , decimal separator, not .
 	// bit4=use three-and-twenty rather than twenty-three
 	// bit5='and' between tens and units
-	// bit6=add "and" after hundred and thousand
+	// bit6=add "and" after hundred or thousand
 	// bit7=don't have "and" both after hundreds and also between tens and units
    // bit8=only one primary stress in tens+units
 	// bit9=only one vowel betwen tens and units
 	// bit10=omit "one" before "hundred"
-	// bit11=don't say 19** as nineteen hundred
+	// bit11=say 19** as nineteen hundred
 	// bit12=allow space as thousands separator (in addition to langopts.thousands_sep)
 	// bits13-15  post-decimal-digits 0=single digits, 1=(LANG=it) 2=(LANG=pl) 3=(LANG=ro)
 	// bit16=dot after number indicates ordinal
 	// bit17=recognize roman numbers
 	// bit18=Roman numbers only if upper case
 	// bit19=don't add pause after a number
+	// bit20='and' before hundreds
 	int numbers;
 
 	// bits 1-4  use variant form of numbers before thousands,millions,etc.
 	// bit6=(LANG=pl) two forms of plural, M or MA
 	// bit7=(LANG-ru) use MB for 1 thousand, million, etc
 	// bit8=(LANG=sw) special word for 100,000s
+	// bit9=(LANG=rw) say "thousand" and "million" before its number, not after
 	int numbers2;
 
 	int max_roman;
 	int thousands_sep;
 	int decimal_sep;
+
+	// bit 0, accent name before the letter name, bit 1 "capital" after letter name
+	int accents;
+
 	int tone_language;          // 1=tone language
 	int intonation_group;
 	int long_stop;          // extra mS pause for a lengthened stop
@@ -349,6 +362,7 @@ typedef struct {
 	char ideographs;      // treat as separate words
 	char textmode;          // the meaning of FLAG_TEXTMODE is reversed (to save data when *_list file is compiled)
 	int testing;            // testing options: bit 1= specify stressed syllable in the form:  "outdoor/2"
+	int listx;    // compile *_listx after *list
 	const unsigned int *replace_chars;      // characters to be substitutes
 } LANGUAGE_OPTIONS;
 
@@ -415,29 +429,33 @@ public:
 
 private:
 	int TranslateWord2(char *word, WORD_TAB *wtab, int pre_pause, int next_pause);
-	int TranslateLetter(char *letter, char *phonemes, int control);
-	void SetSpellingStress(char *phonemes, int control);
+	int TranslateLetter(char *letter, char *phonemes, int control, int word_length);
+	void SetSpellingStress(char *phonemes, int control, int n_chars);
 	void WriteMnemonic(int *ix, int mnem);
 	void MakePhonemeList(int post_pause, int new_sentence);
 	int SubstitutePhonemes(PHONEME_LIST2 *plist_out);
 
-	int ReadClause(FILE *f_in, char *buf, unsigned short *charix, int n_buf);
+	int ReadClause(FILE *f_in, char *buf, short *charix, int n_buf);
 	int AnnouncePunctuation(int c1, int c2, char *buf, int ix);
 
 	const char *LookupDict2(const char *word, const char *word2, char *phonetic, unsigned int *flags, int end_flags, WORD_TAB *wtab);
-	const char *LookupSpecial(const char *string);
+	const char *LookupSpecial(const char *string, char *text_out);
 	const char *LookupCharName(int c);
+	void LookupLetter(unsigned int letter, int next_byte, char *ph_buf);
+	int LookupLetter2(unsigned int letter, char *ph_buf);
+	void LookupAccentedLetter(unsigned int letter, char *ph_buf);
 	int LookupNum2(int value, int control, char *ph_out);
 	int LookupNum3(int value, char *ph_out, int suppress_null, int thousandplex, int prev_thousands);
 	int LookupThousands(int value, int thousandplex, char *ph_out);
    int TranslateNumber_1(char *word1, char *ph_out, unsigned int *flags, int wflags);
 	int TranslateRoman(char *word, char *ph_out);
+	int TranslateChar(char *ptr, int prev_in, unsigned int c, unsigned int next_in, int *insert);
 
 	void InitGroups(void);
 	void AppendPhonemes(char *string, int size, const char *ph);
 	char *DecodeRule(const char *group, char *rule);
 	void MatchRule(char *word[], const char *group, char *rule, MatchRecord *match_out, int end_flags, int dict_flags);
-	int TranslateRules(char *p, char *phonemes, int size, char *end_phonemes, int end_flags, int dict_flags);
+	int TranslateRules(char *p, char *phonemes, int size, char *end_phonemes, int end_flags, unsigned int *dict_flags);
 	void ApplySpecialAttribute(char *phonemes, int dict_flags);
 
 	int IsLetter(int letter, int group);
@@ -449,7 +467,6 @@ protected:
 	virtual int Unpronouncable(char *word);
 	virtual void SetWordStress(char *output, unsigned int dictionary_flags, int tonic, int prev_stress);
 	virtual int RemoveEnding(char *word, int end_type, char *word_copy);
-	virtual int TranslateChar(char *ptr, int prev_in, unsigned int c, unsigned int next_in, int *insert);
    virtual int TranslateNumber(char *word1, char *ph_out, unsigned int *flags, int wflags);
 	virtual int ChangePhonemes(PHONEME_LIST2 *phlist, int n_ph, int index, PHONEME_TAB *ph, CHANGEPH *ch);
 
@@ -536,10 +553,12 @@ extern char skip_marker[N_MARKER_LENGTH];
 #define N_PUNCTLIST  60
 extern wchar_t option_punctlist[N_PUNCTLIST];  // which punctuation characters to announce
 extern unsigned char punctuation_to_tone[INTONATION_TYPES][PUNCT_INTONATIONS];
+extern const unsigned short punct_chars[];   // punctuation chars fo end-of-clause
 
 extern int speech_parameters[];
 
 extern Translator *translator;
+extern Translator *translator2;
 extern const unsigned short *charsets[N_CHARSETS];
 extern char dictionary_name[40];
 extern char ctrl_embedded;    // to allow an alternative CTRL for embedded commands
@@ -553,6 +572,7 @@ extern int (* phoneme_callback)(const char *);
 extern void SetLengthMods(Translator *tr, int value);
 
 Translator *SelectTranslator(const char *name);
+int SetTranslator2(const char *name);
 int CompileDictionary(const char *dsource, const char *dict_name, FILE *log, char *err_name,int flags);
 void LoadConfig(void);
 int PhonemeCode(unsigned int mnem);
@@ -575,6 +595,7 @@ void InitText2(void);
 int IsDigit(unsigned int c);
 int IsAlpha(unsigned int c);
 int isspace2(unsigned int c);
+int towlower2(unsigned int c);
 void SetVoiceStack(espeak_VOICE *v);
 
 extern FILE *f_trans;		// for logging

@@ -113,7 +113,11 @@ void SetSpeed(int control)
 	int wpm;
 	int wpm2;
 
-	wpm2 = wpm = embedded_value[EMBED_S];
+	wpm = embedded_value[EMBED_S];
+	if(control == 2)
+		wpm = embedded_value[EMBED_S2];
+	wpm2 = wpm;
+
 	if(wpm > 369) wpm = 369;
 	if(wpm < 80) wpm = 80;
 
@@ -308,6 +312,9 @@ void Translator::CalcLengths()
 			if((more_syllables > 0) || (stress < 4))
 				p->prepause = 40;
 			else
+				p->prepause = 60;
+
+			if(prev->type == phSTOP)
 				p->prepause = 60;
 
 			if((langopts.word_gap & 0x10) && (p->newword))
@@ -518,6 +525,8 @@ void Translator::CalcLengths()
 			{
 				// tonic syllable, include a constant component so it doesn't decrease directly with speed
 				length_mod += 20;
+				if(emphasized)
+					length_mod += 10;
 			}
 			else
 			if(emphasized)
@@ -564,6 +573,7 @@ if(p->type != phVOWEL)
 				// set pitch for pre-vocalic part
 				if(pitch_start - last_pitch > 8)   // was 9
 					last_pitch = pitch_start - 8;
+
 				prev->pitch1 = last_pitch;
 				prev->pitch2 = pitch_start;
 				if(last_pitch < pitch_start)

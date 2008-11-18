@@ -51,7 +51,7 @@
 #define EMBED_A     3   // amplitude/volume
 #define EMBED_R     4   // pitch range/expression
 #define EMBED_H     5   // echo/reverberation
-#define EMBED_T     6   // different tone
+#define EMBED_T     6   // different tone for announcing punctuation
 #define EMBED_I     7   // sound icon
 #define EMBED_S2    8   // speed (used in synthesize)
 #define EMBED_Y     9   // say-as commands
@@ -189,7 +189,7 @@ extern unsigned char pitch_adjust_tab[MAX_PITCH_VALUE+1];
 
 
 #define N_WCMDQ   160
-#define MIN_WCMDQ  20   // need this many free entries before adding new phoneme
+#define MIN_WCMDQ  22   // need this many free entries before adding new phoneme
 
 extern long wcmdq[N_WCMDQ][4];
 extern int wcmdq_head;
@@ -241,7 +241,7 @@ void SelectPhonemeTable(int number);
 int  SelectPhonemeTableName(const char *name);
 
 
-extern unsigned char *envelope_data[16];
+extern unsigned char *envelope_data[18];
 extern int formant_rate[];         // max rate of change of each formant
 extern int speed_factor1;
 extern int speed_factor2;
@@ -260,7 +260,7 @@ extern const char *version_string;
 extern const int version_phdata;
 
 #define N_SOUNDICON_TAB  80   // total entries in soundicon_tab
-#define N_SOUNDICON_SLOTS 4    // number of slots reserved for dynamic loading of autio files
+#define N_SOUNDICON_SLOTS 4    // number of slots reserved for dynamic loading of audio files
 extern int n_soundicon_tab;
 extern SOUND_ICON soundicon_tab[N_SOUNDICON_TAB];
 
@@ -273,6 +273,7 @@ int MbrolaSynth(char *p_mbrola);
 int DoSample(PHONEME_TAB *ph1, PHONEME_TAB *ph2, int which, int length_mod, int amp);
 int DoSpect(PHONEME_TAB *this_ph, PHONEME_TAB *prev_ph, PHONEME_TAB *next_ph,
 		int which, PHONEME_LIST *plist, int modulation);
-int PauseLength(int pause);
+int PauseLength(int pause, int control);
+int LookupPhonemeTable(const char *name);
 
 void InitBreath(void);

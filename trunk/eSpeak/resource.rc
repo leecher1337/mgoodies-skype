@@ -1,4 +1,4 @@
-// Microsoft Visual C++ generated resource script.
+//Microsoft Developer Studio generated resource script.
 //
 #include "resource.h"
 
@@ -27,84 +27,116 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 IDD_OPTIONS DIALOGEX 0, 0, 252, 189
-STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        " System voice ",IDC_SYSTEM,2,6,250,177
     LTEXT           "Language:",IDC_DEF_LANG_L,11,24,52,8
-    COMBOBOX        IDC_DEF_LANG,66,22,174,60,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_DEF_LANG,66,22,174,60,CBS_DROPDOWNLIST | 
+                    CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
+                    WS_TABSTOP
     LTEXT           "Voice:",IDC_VOICE_L,11,39,52,8
-    COMBOBOX        IDC_VOICE,66,37,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_VOICE,66,37,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
     LTEXT           "Variant:",IDC_VARIANT_L,11,54,52,8
-    COMBOBOX        IDC_VARIANT,66,52,107,60,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_VARIANT,66,52,107,60,CBS_DROPDOWNLIST | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
     LTEXT           "Volume:",IDC_VOLUME_L,11,69,52,8
-    CONTROL         "",IDC_VOLUME,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,66,69,174,10
+    CONTROL         "",IDC_VOLUME,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | 
+                    WS_TABSTOP,66,69,174,10
     LTEXT           "Rate:",IDC_RATE_L,11,84,52,8
-    CONTROL         "",IDC_RATE,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,66,84,174,10
+    CONTROL         "",IDC_RATE,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | 
+                    WS_TABSTOP,66,84,174,10
     LTEXT           "Pitch:",IDC_PITCH_L,11,99,52,8
-    CONTROL         "",IDC_PITCH,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,66,99,174,10
+    CONTROL         "",IDC_PITCH,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | 
+                    WS_TABSTOP,66,99,174,10
     LTEXT           "Range:",IDC_RANGE_L,11,114,52,8
-    CONTROL         "",IDC_RANGE,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,66,114,174,10
+    CONTROL         "",IDC_RANGE,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | 
+                    WS_TABSTOP,66,114,174,10
     LTEXT           "Punctuation:",IDC_PUNCT_L,11,129,52,8
-    COMBOBOX        IDC_PUNCT,66,127,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_PUNCT,66,127,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
     LTEXT           "Test:",IDC_TEST_L,11,163,37,8
     EDITTEXT        IDC_TEST,66,161,130,12,ES_AUTOHSCROLL
     PUSHBUTTON      "Speak",IDC_SPEAK,200,161,40,12
 END
 
 IDD_CONTACT_LANG DIALOGEX 0, 0, 224, 155
-STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    CONTROL         "Enable speak for this contact",IDC_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,4,203,13
+    CONTROL         "Enable speak for this contact",IDC_ENABLE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,9,4,203,13
     LTEXT           "Language:",IDC_DEF_LANG_L,8,27,52,8
-    COMBOBOX        IDC_DEF_LANG,63,25,155,60,CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_DEF_LANG,63,25,155,60,CBS_DROPDOWNLIST | 
+                    CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_VSCROLL | 
+                    WS_TABSTOP
     LTEXT           "Voice:",IDC_VOICE_L,8,41,52,8
-    COMBOBOX        IDC_VOICE,63,40,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_VOICE,63,40,107,60,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
     LTEXT           "Variant:",IDC_VARIANT_L,8,57,52,8
-    COMBOBOX        IDC_VARIANT,63,55,107,60,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_VARIANT,63,55,107,60,CBS_DROPDOWNLIST | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
     LTEXT           "Volume:",IDC_VOLUME_L,8,72,52,8
-    CONTROL         "",IDC_VOLUME,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,63,72,155,10
+    CONTROL         "",IDC_VOLUME,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | 
+                    WS_TABSTOP,63,72,155,10
     LTEXT           "Rate:",IDC_RATE_L,8,87,52,8
-    CONTROL         "",IDC_RATE,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,63,87,155,10
+    CONTROL         "",IDC_RATE,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | 
+                    WS_TABSTOP,63,87,155,10
     LTEXT           "Pitch:",IDC_PITCH_L,8,102,52,8
-    CONTROL         "",IDC_PITCH,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,63,102,155,10
+    CONTROL         "",IDC_PITCH,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | 
+                    WS_TABSTOP,63,102,155,10
     LTEXT           "Range:",IDC_RANGE_L,8,116,52,8
-    CONTROL         "",IDC_RANGE,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,63,116,155,10
+    CONTROL         "",IDC_RANGE,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | 
+                    WS_TABSTOP,63,116,155,10
     LTEXT           "Test:",IDC_TEST_L,8,138,37,8
     EDITTEXT        IDC_TEST,63,136,110,12,ES_AUTOHSCROLL
     PUSHBUTTON      "Speak",IDC_SPEAK,178,136,40,12
 END
 
 IDD_TYPES DIALOGEX 0, 0, 318, 230
-STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_VSCROLL
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_VSCROLL
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     LTEXT           "Speak the following events:",IDC_EVENT_TYPES,3,4,297,13
 END
 
-IDD_ADVANCED DIALOGEX 0, 0, 252, 158
-STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+IDD_ADVANCED DIALOGEX 0, 0, 252, 171
+STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        " Disable when global status is: ",IDC_STATUS,1,8,250,91
-    CONTROL         "Online",ID_ONLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,21,99,11
-    CONTROL         "Away",ID_AWAY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,36,99,11
-    CONTROL         "NA",ID_NA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,51,99,11
-    CONTROL         "Occupied",ID_OCCUPIED,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,66,99,11
-    CONTROL         "DND",ID_DND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,82,99,11
-    CONTROL         "Free for chat",ID_FREECHAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,136,21,99,11
-    CONTROL         "On the phone",ID_ONTHEPHONE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,136,36,99,11
-    CONTROL         "Out to lunch",ID_OUTTOLUNCH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,136,51,99,11
-    CONTROL         "Invisible",ID_INVISIBLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,136,66,99,11
-    CONTROL         "Offline",ID_OFFLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,136,82,99,11
-    GROUPBOX        " Advanced ",IDC_ADVANCED,1,103,250,49
-    CONTROL         "Use flags",IDC_USE_FLAGS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,118,230,10
-    CONTROL         "Respect SndVol mute",IDC_SNDVOL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,133,230,10
+    CONTROL         "Online",ID_ONLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    10,21,99,11
+    CONTROL         "Away",ID_AWAY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
+                    36,99,11
+    CONTROL         "NA",ID_NA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,51,
+                    99,11
+    CONTROL         "Occupied",ID_OCCUPIED,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,10,66,99,11
+    CONTROL         "DND",ID_DND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,82,
+                    99,11
+    CONTROL         "Free for chat",ID_FREECHAT,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,136,21,99,11
+    CONTROL         "On the phone",ID_ONTHEPHONE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,136,36,99,11
+    CONTROL         "Out to lunch",ID_OUTTOLUNCH,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,136,51,99,11
+    CONTROL         "Invisible",ID_INVISIBLE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,136,66,99,11
+    CONTROL         "Offline",ID_OFFLINE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,136,82,99,11
+    GROUPBOX        " Advanced ",IDC_ADVANCED,1,103,250,65
+    CONTROL         "Use flags",IDC_USE_FLAGS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,10,118,230,10
+    CONTROL         "Respect SndVol mute",IDC_SNDVOL,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,133,230,10
+    CONTROL         "Enable only if Miranda is idle",IDC_ONLY_IDLE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,148,230,10
 END
 
 
@@ -115,7 +147,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_UNKNOWN_FLAG        ICON                    "res\\unknown.ico"
+IDI_UNKNOWN_FLAG        ICON    DISCARDABLE     "res\\unknown.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -123,7 +155,7 @@ IDI_UNKNOWN_FLAG        ICON                    "res\\unknown.ico"
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO MOVEABLE PURE 
 BEGIN
     IDD_OPTIONS, DIALOG
     BEGIN
@@ -144,7 +176,7 @@ BEGIN
 
     IDD_ADVANCED, DIALOG
     BEGIN
-        BOTTOMMARGIN, 137
+        BOTTOMMARGIN, 158
         HORZGUIDE, 108
     END
 END
@@ -182,18 +214,18 @@ LANGUAGE LANG_PORTUGUESE, SUBLANG_PORTUGUESE_BRAZILIAN
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE MOVEABLE PURE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE MOVEABLE PURE 
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE MOVEABLE PURE 
 BEGIN
     "\r\n"
     "\0"

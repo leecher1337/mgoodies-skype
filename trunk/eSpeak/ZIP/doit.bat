@@ -80,6 +80,8 @@ del /Q *.*
 copy ..\..\..\eSpeak\*.*
 cd ..
 cd ..
+copy ..\Release\%name%.pdb
+copy ..\Unicode_Release\%name%W.pdb
 
 
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip Plugins Docs Icons Dictionaries
@@ -92,11 +94,15 @@ cd ..
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip Plugins Docs Icons Dictionaries
 
 "C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.pdb.zip %name%.pdb
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.pdb.zip %name%W.pdb
 
+del *.pdb
 rd /S /Q Plugins
 rd /S /Q Docs
 rd /S /Q Dictionaries
 rd /S /Q src
+rd /S /Q Icons
 
 if "%ftp%"=="" GOTO END
 
@@ -105,6 +111,8 @@ pause
 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.zip %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%W.zip %ftp% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.pdb.zip %ftp% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%W.pdb.zip %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt %ftp% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_readme.txt %ftp% -overwrite -close 
@@ -113,6 +121,8 @@ if "%ftp2%"=="" GOTO END
 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.zip %ftp2% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%W.zip %ftp2% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%.pdb.zip %ftp2% -overwrite -close 
+"C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%W.pdb.zip %ftp2% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_changelog.txt %ftp2% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_version.txt %ftp2% -overwrite -close 
 "C:\Program Files\FileZilla\FileZilla.exe" -u .\%name%_readme.txt %ftp2% -overwrite -close 
