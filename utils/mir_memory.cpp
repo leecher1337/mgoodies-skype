@@ -18,9 +18,9 @@ Boston, MA 02111-1307, USA.
 */
 
 
+#define MIRANDA_VER 0x0700
 #include "mir_memory.h"
 
-#define MIRANDA_VER 0x0700
 #include <newpluginapi.h>
 #include <m_system.h>
 
@@ -32,6 +32,14 @@ void init_mir_malloc()
 {
 	mir_getMMI(&mmi);
 	mir_getUTFI(&utfi);
+}
+
+
+BOOL mir_is_unicode()
+{
+	char ver[1024];
+	CallService(MS_SYSTEM_GETVERSIONTEXT, (WPARAM) sizeof(ver), (LPARAM) ver);
+	return strstr(ver, "Unicode") != NULL;
 }
 
 

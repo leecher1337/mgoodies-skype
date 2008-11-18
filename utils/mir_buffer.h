@@ -120,12 +120,24 @@ class Buffer
 		size_t len;
 		T *str;
 
-		Buffer() : len(0), str(NULL), size(0) {}
-
-		Buffer(T in) 
+		Buffer() : str(NULL), size(0), len(0)
 		{
-			str = in;
-			size = len = __blen(in);
+			alloc(1);			
+			pack();
+		}
+
+		Buffer(T in) : str(NULL), size(0), len(0)
+		{
+			if (in == NUL)
+			{
+				alloc(1);
+				pack();
+			}
+			else
+			{
+				str = in;
+				size = len = __blen(str);
+			}
 		}
 
 		~Buffer()
@@ -145,9 +157,9 @@ class Buffer
 			{
 				size = total + 256 - total % 256;
 				if (str == NULL)
-					str = (T *) mir_alloc(size * sizeof(T));
+					str = (T *) malloc(size * sizeof(T));
 				else
-					str = (T *) mir_realloc(str, size * sizeof(T));
+					str = (T *) realloc(str, size * sizeof(T));
 			}
 		}
 
@@ -155,7 +167,7 @@ class Buffer
 		{
 			if (str != NULL)
 			{
-				mir_free(str);
+				::free(str);
 				str = NULL;
 				len = size = 0;
 			}
@@ -164,6 +176,7 @@ class Buffer
 		void clear() 
 		{
 			len = 0;
+			pack();
 		}
 
 		void append(T app)
@@ -172,6 +185,7 @@ class Buffer
 
 			str[len] = app;
 			len++;
+			pack();
 		}
 
 		void appendn(size_t n, T app)
@@ -183,10 +197,13 @@ class Buffer
 				str[len] = app;
 				len++;
 			}
+			pack();
 		}
 
 		void append(const char *app, size_t appLen = -1)
 		{
+			if (app == NULL)
+				return;
 			if (appLen == -1)
 				appLen = __blen(app);
 
@@ -195,10 +212,13 @@ class Buffer
 
 			__bcopy(&str[len], app, appLen);
 			len += appLen;
+			pack();
 		}
 
 		void append(const WCHAR *app, size_t appLen = -1)
 		{
+			if (app == NULL)
+				return;
 			if (appLen == -1)
 				appLen = __blen(app);
 
@@ -207,10 +227,13 @@ class Buffer
 
 			__bcopy(&str[len], app, appLen);
 			len += appLen;
+			pack();
 		}
 
 		void append(const Buffer<char> &app)
 		{
+			if (app.str == NULL)
+				return;
 			size_t appLen = app.len;
 
 			size_t total = len + appLen + 1;
@@ -218,6 +241,7 @@ class Buffer
 
 			__bcopy(&str[len], app.str, appLen);
 			len += appLen;
+			pack();
 		}
 
 		void append(const Buffer<WCHAR> &app)
@@ -229,6 +253,7 @@ class Buffer
 
 			__bcopy(&str[len], app.str	, appLen);
 			len += appLen;
+			pack();
 		}
 
 		void appendPrintf(const T *app, ...)
@@ -242,6 +267,7 @@ class Buffer
 			if (total < 0)
 				total = size - len - 1;
 			len += total;
+			pack();
 		}
 
 		void insert(size_t pos, T *app, size_t appLen = -1)
@@ -261,6 +287,7 @@ class Buffer
 			memmove(&str[pos], app, appLen * sizeof(T));
 
 			len += appLen;
+			pack();
 		}
 
 		void replace(size_t start, size_t end, T *app, size_t appLen = -1)
@@ -287,6 +314,7 @@ class Buffer
 			memmove(&str[start], app, appLen * sizeof(T));
 
 			len += appLen - oldLen;
+			pack();
 		}
 
 		void replaceAll(T find, T replace)
@@ -294,6 +322,7 @@ class Buffer
 			for(size_t i = 0; i < len; i++)
 				if (str[len] == find)
 					str[len] = replace;
+			pack();
 		}
 
 		void translate()
@@ -306,6 +335,7 @@ class Buffer
 			len = __blen(tmp);
 			alloc(len + 1);
 			memmove(str, tmp, len * sizeof(T));
+			pack();
 		}
 
 		void reverse()
@@ -316,6 +346,7 @@ class Buffer
 				str[i] = str[len-i-1];
 				str[len-i-1] = tmp;
 			}
+			pack();
 		}
 
 		T *appender(size_t appLen) 
@@ -356,6 +387,7 @@ class Buffer
 									  || str[e] == (T)'\r' 
 									  || str[e] == (T)'\n'); e--) ;
 			len = e+1;
+			pack();
 		}
 
 		void trimLeft() 
@@ -373,6 +405,7 @@ class Buffer
 				memmove(str, &str[s], (len - s) * sizeof(T));
 				len -= s;
 			}
+			pack();
 		}
 
 		void trim() 
@@ -389,6 +422,33 @@ class Buffer
 
 		Buffer<T>& operator+=(const WCHAR *txt) 
 		{
+			append(txt);
+			return *this;
+		}
+
+		Buffer<T>& operator+=(const Buffer<T> &txt) 
+		{
+			append(txt);
+			return *this;
+		}
+
+		Buffer<T>& operator=(const char *txt) 
+		{
+			clear();
+			append(txt);
+			return *this;
+		}
+
+		Buffer<T>& operator=(const WCHAR *txt) 
+		{
+			clear();
+			append(txt);
+			return *this;
+		}
+
+		Buffer<T>& operator=(const Buffer<T> &txt) 
+		{
+			clear();
 			append(txt);
 			return *this;
 		}

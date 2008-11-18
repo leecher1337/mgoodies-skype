@@ -28,12 +28,23 @@ Boston, MA 02111-1307, USA.
 void init_mir_malloc();
 
 
+BOOL mir_is_unicode();
+
+
 void * mir_alloc0(size_t size);
 int strcmpnull(char *str1, char *str2);
 int strcmpnullW(WCHAR *str1, WCHAR *str2);
 
 
-#ifdef _UNICODE
+#ifdef UNICODE
+
+#define CHECK_VERSION(_NAME_)																\
+	if (!mir_is_unicode())																	\
+	{																						\
+		MessageBox(NULL, _T("Your Miranda is ansi. You have to install ansi ") _T(_NAME_),	\
+						_T(_NAME_), MB_OK | MB_ICONERROR);									\
+		return -1;																			\
+	}
 
 # define lstrcmpnull strcmpnullW
 
@@ -47,6 +58,14 @@ int strcmpnullW(WCHAR *str1, WCHAR *str2);
 	WideCharToMultiByte(CP_ACP, 0, _old_var_, -1, _new_var_, _size_, NULL, NULL);
 
 #else
+
+#define CHECK_VERSION(_NAME_)																\
+	if (mir_is_unicode())																	\
+	{																						\
+		MessageBox(NULL, _T("Your Miranda is unicode. You have to install unicode ") _T(_NAME_),	\
+						_T(_NAME_), MB_OK | MB_ICONERROR);									\
+		return -1;																			\
+	}
 
 # define lstrcmpnull strcmpnull
 
