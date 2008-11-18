@@ -1043,11 +1043,11 @@ void Speak(HANDLE hContact, void *param)
 	if (languages.getCount() < 1)
 		goto RETURN;
 
-	if (opts.respect_sndvol_mute && !DBGetContactSettingByte(NULL, "Skin", "UseSound", 1))
-		goto RETURN;
-
 	if (hContact != (HANDLE) -1)
 	{
+		if (opts.respect_sndvol_mute && !DBGetContactSettingByte(NULL, "Skin", "UseSound", 1))
+			goto RETURN;
+
 		if (hContact != NULL && !DBGetContactSettingByte(hContact, MODULE_NAME, "Enabled", TRUE))
 			goto RETURN;
 
