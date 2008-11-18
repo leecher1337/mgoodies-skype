@@ -190,7 +190,7 @@ int SpeakExService(WPARAM wParam, LPARAM lParam)
 		if (item->text == NULL)
 			return -3;
 
-		if (!GetSettingBool(type, TEMPLATE_ENABLED, TRUE))
+		if (!GetSettingBool(type, TEMPLATE_ENABLED, FALSE))
 			return 1;
 
 		Buffer<TCHAR> buff;
@@ -211,7 +211,7 @@ int SpeakExService(WPARAM wParam, LPARAM lParam)
 	}
 	else
 	{
-		if (!GetSettingBool(type, item->templateNum, TEMPLATE_ENABLED, TRUE))
+		if (!GetSettingBool(type, item->templateNum, TEMPLATE_ENABLED, FALSE))
 			return 1;
 
 		Buffer<TCHAR> templ;

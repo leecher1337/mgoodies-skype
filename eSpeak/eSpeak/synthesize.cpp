@@ -185,20 +185,26 @@ static void DoPitch(unsigned char *env, int pitch1, int pitch2)
 
 
 
-int PauseLength(int pause)
-{//=======================
+int PauseLength(int pause, int control)
+{//====================================
 	int len;
-	len = (pause * speed_factor1)/256;
+
+	if(control == 0)
+		len = (pause * speed_factor1)/256;
+	else
+		len = (pause * speed_factor2)/256;
+
 	if(len < 5) len = 5;      // mS, limit the amount to which pauses can be shortened
 	return(len);
 }
 
 
-static void DoPause(int length)
-{//============================
+static void DoPause(int length, int control)
+{//=========================================
+// control = 1, less shortening at fast speeds
 	int len;
 
-	len = PauseLength(length);
+	len = PauseLength(length, control);
 
 	len = (len * samplerate) / 1000;  // convert from mS to number of samples
 
@@ -617,7 +623,7 @@ static short vcolouring[N_VCOLOUR][5] = {
 	}
 
 	if(flags & 0x40)
-		DoPause(12);  // add a short pause after the consonant
+		DoPause(12,0);  // add a short pause after the consonant
 
 	if(flags & 16)
 		return(len);
@@ -1045,7 +1051,7 @@ static void DoEmbedded(int &embix, int sourceix)
 			{
 				if(soundicon_tab[value].length != 0)
 				{
-					DoPause(10);   // ensure a break in the speech
+					DoPause(10,0);   // ensure a break in the speech
 					wcmdq[wcmdq_tail][0] = WCMD_WAVE;
 					wcmdq[wcmdq_tail][1] = soundicon_tab[value].length;
 					wcmdq[wcmdq_tail][2] = (long)soundicon_tab[value].data + 44;  // skip WAV header
@@ -1064,7 +1070,7 @@ static void DoEmbedded(int &embix, int sourceix)
 			break;
 
 		default:
-			DoPause(10);   // ensure a break in the speech
+			DoPause(10,0);   // ensure a break in the speech
 			wcmdq[wcmdq_tail][0] = WCMD_EMBEDDED;
 			wcmdq[wcmdq_tail][1] = command;
 			wcmdq[wcmdq_tail][2] = value;
@@ -1093,10 +1099,12 @@ int Generate(PHONEME_LIST *phoneme_list, int *n_ph, int resume)
 	int  stress;
 	int  modulation;
 	int  pre_voiced;
+	int  free_min;
 	unsigned char *pitch_env=NULL;
 	unsigned char *amp_env;
 	PHONEME_TAB *ph;
 	PHONEME_TAB *prev_ph;
+	static int sourceix=0;
 
 #ifdef TEST_MBROLA
 	if(mbrola_name[0] != 0)
@@ -1124,11 +1132,20 @@ int Generate(PHONEME_LIST *phoneme_list, int *n_ph, int resume)
 
 	while(ix < (*n_ph))
 	{
-		if(WcmdqFree() <= MIN_WCMDQ)
+		p = &phoneme_list[ix];
+
+		if(p->type == phPAUSE)
+			free_min = 5;
+		else
+		if(p->type != phVOWEL)
+			free_min = 10;     // we need less Q space for non-vowels, and we need to generate phonemes after a vowel so that the pitch_length is filled in
+		else
+			free_min = MIN_WCMDQ;  // 22
+
+		if(WcmdqFree() <= free_min)
 			return(1);  // wait
 
 		prev = &phoneme_list[ix-1];
-		p = &phoneme_list[ix];
 		next = &phoneme_list[ix+1];
 		next2 = &phoneme_list[ix+2];
 
@@ -1139,32 +1156,36 @@ int Generate(PHONEME_LIST *phoneme_list, int *n_ph, int resume)
 
 		if(p->newword)
 		{
-			last_frame = NULL;
+			if(translator->langopts.param[LOPT_WORD_MERGE] == 0)
+				last_frame = NULL;
+
+			sourceix = (p->sourceix & 0x7ff) + clause_start_char;
 
 			if(p->newword & 4)
-				DoMarker(espeakEVENT_SENTENCE, (p->sourceix & 0x7ff) + clause_start_char, 0, count_sentences);  // start of sentence
+				DoMarker(espeakEVENT_SENTENCE, sourceix, 0, count_sentences);  // start of sentence
 
 //			if(p->newword & 2)
 //				DoMarker(espeakEVENT_END, count_characters, 0, count_sentences);  // end of clause
 
 			if(p->newword & 1)
-				DoMarker(espeakEVENT_WORD, (p->sourceix & 0x7ff) + clause_start_char, p->sourceix >> 11, clause_start_word + word_count++);
+				DoMarker(espeakEVENT_WORD, sourceix, p->sourceix >> 11, clause_start_word + word_count++);
 		}
 
 		EndAmplitude();
 
 		if(p->prepause > 0)
-			DoPause(p->prepause);
+			DoPause(p->prepause,1);
 
-		if(option_phoneme_events)
+		if(option_phoneme_events && (p->type != phVOWEL))
 		{
-			DoMarker(espeakEVENT_PHONEME, (p->sourceix & 0x7ff) + clause_start_char, 0, p->ph->mnemonic);
+			// Note, for vowels, do the phoneme event after the vowel-start
+			DoMarker(espeakEVENT_PHONEME, sourceix, 0, p->ph->mnemonic);
 		}
 
 		switch(p->type)
 		{
 		case phPAUSE:
-			DoPause(p->length);
+			DoPause(p->length,0);
 			break;
 
 		case phSTOP:
@@ -1214,7 +1235,7 @@ int Generate(PHONEME_LIST *phoneme_list, int *n_ph, int resume)
 				DoSpect(p->ph,phoneme_tab[phonSCHWA],next->ph,1,p,0);
 				if(p->synthflags & SFLAG_LENGTHEN)
 				{
-					DoPause(20);
+					DoPause(20,0);
 					DoSpect(p->ph,phoneme_tab[phonSCHWA],next->ph,1,p,0);
 				}
 			}
@@ -1222,7 +1243,7 @@ int Generate(PHONEME_LIST *phoneme_list, int *n_ph, int resume)
 			{
 				if(p->synthflags & SFLAG_LENGTHEN)
 				{
-					DoPause(50);
+					DoPause(50,0);
 				}
 			}
 
@@ -1398,6 +1419,11 @@ int Generate(PHONEME_LIST *phoneme_list, int *n_ph, int resume)
 				DoSpect(ph,prev->ph,next->ph,1,p,modulation);
 			}
 
+			if(option_phoneme_events)
+			{
+				DoMarker(espeakEVENT_PHONEME, sourceix, 0, p->ph->mnemonic);
+			}
+
 			DoSpect(p->ph,prev->ph,next->ph,2,p,modulation);
 
 			memset(vowel_transition,0,sizeof(vowel_transition));
@@ -1536,6 +1562,11 @@ int SpeakNextClause(FILE *f_in, const void *text_in, int control)
 		return(0);
 	}
 
+	if(current_phoneme_table != voice->phoneme_tab_ix)
+	{
+		SelectPhonemeTable(voice->phoneme_tab_ix);
+	}
+
 	// read the next clause from the input text file, translate it, and generate
 	// entries in the wavegen command queue
 	p_text = translator->TranslateClause(f_text,p_text,&clause_tone,&voice_change);
@@ -1547,6 +1578,12 @@ int SpeakNextClause(FILE *f_in, const void *text_in, int control)
 	if(option_phonemes > 0)
 	{
 		fprintf(f_trans,"%s\n",translator->phon_out);
+
+		if(!iswalpha(0x010d))
+		{
+			// check that c-caron is recognized as an alphabetic character
+			fprintf(stderr,"Warning: Accented letters are not recognized, eg: U+010D\nSet LC_CTYPE to a UTF-8 locale\n");
+		}
 	}
 	if(phoneme_callback != NULL)
 	{

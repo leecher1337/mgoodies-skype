@@ -29,7 +29,9 @@
 #ifdef PLATFORM_WINDOWS
 #include "windows.h"
 #else
-#ifndef PLATFORM_RISCOS
+#ifdef PLATFORM_RISCOS
+#include "kernel.h"
+#else
 #include "dirent.h"
 #endif
 #endif
@@ -103,7 +105,7 @@ espeak_VOICE voice_selected;
 
 // these need a phoneme table to have been specified
 #define V_REPLACE    28
-
+#define V_CONSONANTS 29
 
 
 typedef struct {
@@ -141,6 +143,7 @@ static keywtab_t keyword_tab[] = {
 	{"numbers",    V_NUMBERS},
 	{"option",     V_OPTION},
 	{"mbrola",     V_MBROLA},
+	{"consonants", V_CONSONANTS},
 
 	// these just set a value in langopts.param[]
 	{"l_dieresis", 0x100+LOPT_DIERESES},
@@ -368,6 +371,9 @@ void VoiceReset(int tone_only)
 	voice->n_harmonic_peaks = 5;
 	voice->peak_shape = 1;
 	voice->voicing = 64;
+	voice->consonant_amp = 100;
+	voice->consonant_ampv = 100;
+
 #ifdef PLATFORM_RISCOS
 	voice->roughness = 1;
 #else
@@ -836,6 +842,10 @@ voice_t *LoadVoice(const char *vname, int control)
 				voice->breathw[0] = Read8Numbers(p,&voice->breathw[1]);
 			break;
 
+		case V_CONSONANTS:
+			value = sscanf(p,"%d %d",&voice->consonant_amp, &voice->consonant_ampv);
+			break;
+
 		case V_MBROLA:
 			{
 				int srate = 16000;
@@ -937,8 +947,10 @@ char *ExtractVoiceVariantName(char *vname, int variant_num)
 
 	char *p;
 	static char variant_name[20];
+	char variant_prefix[5];
 
 	variant_name[0] = 0;
+	sprintf(variant_prefix,"!v%c",PATHSEP);
 
 	if(vname != NULL)
 	{
@@ -953,7 +965,7 @@ char *ExtractVoiceVariantName(char *vname, int variant_num)
 			else
 			{
 				// voice variant name, not number
-				strcpy(variant_name,"!v/");
+				strcpy(variant_name,variant_prefix);
 				strncpy0(&variant_name[3],p,sizeof(variant_name)-3);
 			}	
 		}
@@ -962,9 +974,9 @@ char *ExtractVoiceVariantName(char *vname, int variant_num)
 	if(variant_num > 0)
 	{
 		if(variant_num < 10)
-			sprintf(variant_name,"!v/m%d",variant_num);  // male
+			sprintf(variant_name,"%sm%d",variant_prefix, variant_num);  // male
 		else
-			sprintf(variant_name,"!v/f%d",variant_num-10);  // female
+			sprintf(variant_name,"%sf%d",variant_prefix, variant_num-10);  // female
 	}
 
 	return(variant_name);
@@ -1023,8 +1035,8 @@ static int __cdecl VoiceScoreSorter(const void *p1, const void *p2)
 }
 
 
-static int ScoreVoice(espeak_VOICE *voice_spec, int spec_n_parts, int spec_lang_len, espeak_VOICE *voice)
-{//======================================================================================================
+static int ScoreVoice(espeak_VOICE *voice_spec, const char *spec_language, int spec_n_parts, int spec_lang_len, espeak_VOICE *voice)
+{//=========================================================================================================================
 	int ix;
 	const char *p;
 	int c1, c2;
@@ -1040,13 +1052,21 @@ static int ScoreVoice(espeak_VOICE *voice_spec, int spec_n_parts, int spec_lang_
 
 	p = voice->languages;  // list of languages+dialects for which this voice is suitable
 
+	if(strcmp(spec_language,"mbrola")==0)
+	{
+		// only list mbrola voices
+		if(memcmp(voice->identifier,"mb/",3) == 0)
+			return(100);
+		return(0);
+	}
+
 	if(spec_n_parts == 0)
 	{
 		score = 100;
 	}
 	else
 	{
-		if((*p == 0) && (strcmp(voice_spec->languages,"variants")==0))
+		if((*p == 0) && (strcmp(spec_language,"variants")==0))
 		{
 			// match on a voice with no languages if the required language is "variants"
 			score = 100;
@@ -1063,7 +1083,7 @@ static int ScoreVoice(espeak_VOICE *voice_spec, int spec_n_parts, int spec_lang_
 
 			for(ix=0; ; ix++)
 			{
-				if((ix >= spec_lang_len) || ((c1 = voice_spec->languages[ix]) == '-'))
+				if((ix >= spec_lang_len) || ((c1 = spec_language[ix]) == '-'))
 					c1 = 0;
 				if((c2 = p[ix]) == '-')
 					c2 = 0;
@@ -1167,17 +1187,17 @@ static int SetVoiceScores(espeak_VOICE *voice_select, espeak_VOICE **voices, int
 	int nv;           // number of candidates
 	int n_parts=0;
 	int lang_len=0;
-	const char *p;
 	espeak_VOICE *vp;
+	char language[80];
 
 	// count number of parts in the specified language
 	if((voice_select->languages != NULL) && (voice_select->languages[0] != 0))
 	{
 		n_parts = 1;
 		lang_len = strlen(voice_select->languages);
-		for(p = voice_select->languages; *p != 0; p++)
+		for(ix=0; (ix<=lang_len) && ((unsigned)ix < sizeof(language)); ix++)
 		{
-			if(*p == '-')
+			if((language[ix] = tolower(voice_select->languages[ix])) == '-')
 				n_parts++;
 		}
 	}
@@ -1186,10 +1206,11 @@ static int SetVoiceScores(espeak_VOICE *voice_select, espeak_VOICE **voices, int
 	for(ix=0; ix<n_voices_list; ix++)
 	{
 		vp = voices_list[ix];
+
 		if(((control & 1) == 0) && (memcmp(vp->identifier,"mb/",3) == 0))
 			continue;
 
-		if((score = ScoreVoice(voice_select, n_parts, lang_len, voices_list[ix])) > 0)
+		if((score = ScoreVoice(voice_select, language, n_parts, lang_len, voices_list[ix])) > 0)
 		{
 			voices[nv++] = vp;
 			vp->score = score;
@@ -1209,8 +1230,8 @@ static int SetVoiceScores(espeak_VOICE *voice_select, espeak_VOICE **voices, int
 
 
 
-static espeak_VOICE *SelectVoiceByName(espeak_VOICE **voices, const char *name)
-{//============================================================================
+espeak_VOICE *SelectVoiceByName(espeak_VOICE **voices, const char *name)
+{//=====================================================================
 	int ix;
 	int match_fname = -1;
 	int match_fname2 = -1;
@@ -1218,6 +1239,13 @@ static espeak_VOICE *SelectVoiceByName(espeak_VOICE **voices, const char *name)
 	const char *id;
 	int last_part_len;
 	char last_part[41];
+
+	if(voices == NULL)
+	{
+		if(n_voices_list == 0)
+			espeak_ListVoices(NULL);   // create the voices list
+		voices = voices_list;
+	}
 
 	sprintf(last_part,"%c%s",PATHSEP,name);
 	last_part_len = strlen(last_part);
@@ -1409,11 +1437,58 @@ void GetVoices(const char *path)
 	char fname[sizeof(path_home)+100];
 
 #ifdef PLATFORM_RISCOS
+	int len;
+	int *type;
+	char *p;
+	_kernel_swi_regs regs;
+	_kernel_oserror *error;
+	char buf[80];
+	char directory2[sizeof(path_home)+100];
+
+	regs.r[0] = 10;
+	regs.r[1] = (int)path;
+	regs.r[2] = (int)buf;
+	regs.r[3] = 1;
+	regs.r[4] = 0;
+	regs.r[5] = sizeof(buf);
+	regs.r[6] = 0;
+
+	while(regs.r[3] > 0)
+	{
+		error = _kernel_swi(0x0c+0x20000,&regs,&regs);      /* OS_GBPB 10, read directory entries */
+		if((error != NULL) || (regs.r[3] == 0))
+		{
+			break;
+		}
+		type = (int *)(&buf[16]);
+		len = strlen(&buf[20]);
+		sprintf(fname,"%s.%s",path,&buf[20]);
+
+		if(*type == 2)
+		{
+			// a sub-directory
+			GetVoices(fname);
+		}
+		else
+		{
+			// a regular line, add it to the voices list	
+			if((f_voice = fopen(fname,"r")) == NULL)
+				continue;
+		
+			// pass voice file name within the voices directory
+			voice_data = ReadVoiceFile(f_voice, fname+len_path_voices, &buf[20]);
+			fclose(f_voice);
+
+			if(voice_data != NULL)
+			{
+				voices_list[n_voices_list++] = voice_data;
+			}
+		}
+	}
 #else
 #ifdef PLATFORM_WINDOWS
    WIN32_FIND_DATAA FindFileData;
    HANDLE hFind = INVALID_HANDLE_VALUE;
-   DWORD dwError;
 
 #undef UNICODE         // we need FindFirstFileA() which takes an 8-bit c-string
 	sprintf(fname,"%s\\*",path);
@@ -1507,7 +1582,7 @@ espeak_ERROR SetVoiceByName(const char *name)
 
 	memset(&voice_selector,0,sizeof(voice_selector));
 //	voice_selector.name = buf;
-	voice_selector.name = name;  // include variant name in voice stack ??
+	voice_selector.name = (char *)name;  // include variant name in voice stack ??
 
 	// first check for a voice with this filename
 	// This may avoid the need to call espeak_ListVoices().
@@ -1564,7 +1639,7 @@ espeak_ERROR SetVoiceByProperties(espeak_VOICE *voice_selector)
 //=======================================================================
 //  Library Interface Functions
 //=======================================================================
-//#pragma GCC visibility push(default)
+#pragma GCC visibility push(default)
 
 
 ESPEAK_API const espeak_VOICE **espeak_ListVoices(espeak_VOICE *voice_spec)
@@ -1603,11 +1678,11 @@ ESPEAK_API const espeak_VOICE **espeak_ListVoices(espeak_VOICE *voice_spec)
 	}
 	else
 	{
-		// omit variant voices
+		// list all: omit variant voices and mbrola voices
 		j = 0;
 		for(ix=0; (v = voices_list[ix]) != NULL; ix++)
 		{
-			if((v->languages[0] != 0) && (strcmp(&v->languages[1],"variant") != 0))
+			if((v->languages[0] != 0) && (strcmp(&v->languages[1],"variant") != 0) && (memcmp(v->identifier,"mb/",3) != 0))
 			{
 				voices[j++] = v;
 			}
@@ -1626,6 +1701,6 @@ ESPEAK_API espeak_VOICE *espeak_GetCurrentVoice(void)
 	return(&voice_selected);
 }
 
-//#pragma GCC visibility pop
+#pragma GCC visibility pop
 
 

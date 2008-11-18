@@ -2,6 +2,12 @@ meSpeak
 
 Changelog:
 
+. 0.0.0.9
+  + Updated to eSpeak 1.39
+  + Option to only talk when idle
+  + Now the types are disabled by default
+  + If contact has gender, select a variant based on it (male1 or female1)
+
 . 0.0.0.8
   * Fix for test button in contact options to use punctuation data
   - Removed old mlog function

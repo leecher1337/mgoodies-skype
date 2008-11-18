@@ -144,8 +144,8 @@ int wcmdq_head=0;
 int wcmdq_tail=0;
 
 // pitch,speed,
-int embedded_default[N_EMBEDDED_VALUES]        = {0,50,170,100,50, 0,50, 0,170,0,0,0,0,0};
-static int embedded_max[N_EMBEDDED_VALUES]     = {0,0x7fff,360,300,99,99,99, 0,360,0,0,0,0,4};
+int embedded_default[N_EMBEDDED_VALUES]        = {0,50,170,100,50, 0,0, 0,170,0,0,0,0,0};
+static int embedded_max[N_EMBEDDED_VALUES]     = {0,0x7fff,400,300,99,99,99, 0,360,0,0,0,0,4};
 
 #define N_CALLBACK_IX N_WAV_BUF-2   // adjust this delay to match display with the currently spoken word
 int current_source_index=0;
@@ -385,8 +385,8 @@ static void WcmdqIncHead()
 // data points from which to make the presets for pk_shape1 and pk_shape2
 #define PEAKSHAPEW 256
 static const float pk_shape_x[2][8] = {
-	{0,-0.6, 0.0, 0.6, 1.4, 2.5, 4.5, 5.5},
-	{0,-0.6, 0.0, 0.6, 1.4, 2.0, 4.5, 5.5 }};
+	{0,-0.6f, 0.0, 0.6f, 1.4f, 2.5f, 4.5f, 5.5f},
+	{0,-0.6f, 0.0, 0.6f, 1.4f, 2.0f, 4.5f, 5.5f }};
 static const float pk_shape_y[2][8] = {
 	{0,  67,  81,  67,  31,  14,   0,  -6} ,
 	{0,  77,  81,  77,  31,   7,   0,  -6 }};
@@ -748,12 +748,6 @@ void WavegenInit(int rate, int wavemult_fact)
 	for(ix=0; ix<N_EMBEDDED_VALUES; ix++)
 		embedded_value[ix] = embedded_default[ix];
 
-	if(rate <= 11000)
-	{
-		// adjust some parameters for telephony with low sample rates
-		consonant_amp = 50;
-		option_harmonic1 = 6;
-	}
 
 	// set up window to generate a spread of harmonics from a
 	// single peak for HF peaks
@@ -819,12 +813,20 @@ static void WavegenSetEcho(void)
 		amp = embedded_value[EMBED_H];
 		delay = 130;
 	}
+	if(embedded_value[EMBED_T] > 0)
+	{
+		// announcing punctuation
+		amp = embedded_value[EMBED_T] * 8;
+		delay = 60;
+	}
 
 	if(delay == 0)
 		amp = 0;
 
 	echo_head = (delay * samplerate)/1000;
 	echo_length = echo_head;       // ensure completion of echo at the end of speech. Use 1 delay period?
+	if(amp == 0)
+		echo_length = 0;
 	if(amp > 20)
 		echo_length = echo_head * 2;    // perhaps allow 2 echo periods if the echo is loud.
 
@@ -1011,7 +1013,7 @@ static void AdvanceParameters()
 }  //  end of AdvanceParameters
 
 
-
+#ifndef PLATFORM_RISCOS
 static double resonator(RESONATOR *r, double input)
 {//================================================
 	double x;
@@ -1055,11 +1057,12 @@ static void setresonator(RESONATOR *rp, int freq, int bwidth, int init)
 	// a = 1.0 - b - c
 	rp->a = 1.0 - rp->b - rp->c;
 }  // end if setresonator
-
+#endif
 
 
 void InitBreath(void)
 {//==================
+#ifndef PLATFORM_RISCOS
 	int ix;
 
 	minus_pi_t = -PI / samplerate;
@@ -1069,12 +1072,14 @@ void InitBreath(void)
 	{
 		setresonator(&rbreath[ix],2000,200,1);
 	}
+#endif
 }  // end of InitBreath
 
 
 
 void SetBreath()
 {//=============
+#ifndef PLATFORM_RISCOS
 	int pk;
 
 	if(wvoice->breath[0] == 0)
@@ -1089,15 +1094,17 @@ void SetBreath()
 			setresonator(&rbreath[pk], peaks[pk].freq >> 16, wvoice->breathw[pk],0);
 		}
 	}
+#endif
 }  // end of SetBreath
 
 
 int ApplyBreath(void)
 {//==================
+	int value = 0;
+#ifndef PLATFORM_RISCOS
 	int noise;
 	int ix;
 	int amp;
-	int value = 0;
 
 	// use two random numbers, for alternate formants
 	noise = (rand() & 0x3fff) - 0x2000;
@@ -1110,6 +1117,7 @@ int ApplyBreath(void)
 			value += int(resonator(&rbreath[ix],noise) * amp);
 		}
 	}
+#endif
 	return (value);
 }
 
@@ -1320,10 +1328,12 @@ int Wavegen()
 			total = (total >> 6) * voicing;
 		}
 
+#ifndef PLATFORM_RISCOS
 		if(wvoice->breath[0])
 		{
 			total +=  ApplyBreath();
 		}
+#endif
 
 		// mix with sampled wave if required
 		z2 = 0;
@@ -1515,8 +1525,9 @@ void SetEmbedded(int control, int value)
 
 	switch(command)
 	{
-	case EMBED_P:
 	case EMBED_T:
+		WavegenSetEcho();   // and drop through to case P
+	case EMBED_P:
 		// adjust formants to give better results for a different voice pitch
 		if((pitch_value = embedded_value[EMBED_P]) > MAX_PITCH_VALUE)
 			pitch_value = MAX_PITCH_VALUE;
@@ -1526,7 +1537,7 @@ void SetEmbedded(int control, int value)
 		{
 			wvoice->freq[ix] = (wvoice->freq2[ix] * factor)/256;
 		}
-		factor = (embedded_value[EMBED_T] - 50)*2;
+		factor = embedded_value[EMBED_T]*3;
 		wvoice->height[0] = (wvoice->height2[0] * (256 - factor*2))/256;
 		wvoice->height[1] = (wvoice->height2[1] * (256 - factor))/256;
 		break;
@@ -1558,6 +1569,12 @@ void WavegenSetVoice(voice_t *v)
 	else
 		pk_shape = pk_shape2;
 
+	consonant_amp = (v->consonant_amp * 26) /100;
+	if(samplerate <= 11000)
+	{
+		consonant_amp = consonant_amp*2;  // emphasize consonants at low sample rates
+		option_harmonic1 = 6;
+	}
 	WavegenSetEcho();
 }
 
@@ -1571,19 +1588,46 @@ static void SetAmplitude(int length, unsigned char *amp_env, int value)
 		amp_inc = (256 * ENV_LEN * STEPSIZE)/length;
 
 	amplitude = (value * general_amplitude)/16;
-	amplitude_v = amplitude * 15;           // for wave mixed with voiced sounds
+	amplitude_v = (amplitude * wvoice->consonant_ampv * 15)/100;           // for wave mixed with voiced sounds
 
 	amplitude_env = amp_env;
+}
+
+
+void SetPitch2(voice_t *voice, int pitch1, int pitch2, int *pitch_base, int *pitch_range)
+{//======================================================================================
+	int x;
+	int base;
+	int range;
+	int pitch_value;
+
+	if(pitch1 > pitch2)
+	{
+		x = pitch1;   // swap values
+		pitch1 = pitch2;
+		pitch2 = x;
+	}
+
+	if((pitch_value = embedded_value[EMBED_P]) > MAX_PITCH_VALUE)
+		pitch_value = MAX_PITCH_VALUE;
+	pitch_value -= embedded_value[EMBED_T];   // adjust tone for announcing punctuation
+	if(pitch_value < 0)
+		pitch_value = 0;
+
+	base = (voice->pitch_base * pitch_adjust_tab[pitch_value])/128;
+	range =  (voice->pitch_range * embedded_value[EMBED_R])/50;
+
+	// compensate for change in pitch when the range is narrowed or widened
+	base -= (range - voice->pitch_range)*18;
+
+	*pitch_base = base + (pitch1 * range);
+	*pitch_range = base + (pitch2 * range) - *pitch_base;
 }
 
 
 void SetPitch(int length, unsigned char *env, int pitch1, int pitch2)
 {//==================================================================
 // length in samples
-	int x;
-	int base;
-	int range;
-	int pitch_value;
 
 #ifdef LOG_FRAMES
 if(option_log_frames)
@@ -1606,27 +1650,7 @@ if(option_log_frames)
 	else
 		pitch_inc = (256 * ENV_LEN * STEPSIZE)/length;
 
-	if(pitch1 > pitch2)
-	{
-		x = pitch1;   // swap values
-		pitch1 = pitch2;
-		pitch2 = x;
-	}
-
-	if((pitch_value = embedded_value[EMBED_P]) > MAX_PITCH_VALUE)
-		pitch_value = MAX_PITCH_VALUE;
-	if(pitch_value < 0)
-		pitch_value = 0;
-
-	base = (wvoice->pitch_base * pitch_adjust_tab[pitch_value])/128;
-	range =  (wvoice->pitch_range * embedded_value[EMBED_R])/50;
-
-	// compensate for change in pitch when the range is narrowed or widened
-	base -= (range - wvoice->pitch_range)*20;
-
-	pitch_base = base + (pitch1 * range);
-	pitch_range = base + (pitch2 * range) - pitch_base;
-
+	SetPitch2(wvoice, pitch1, pitch2, &pitch_base, &pitch_range);
 	// set initial pitch
 	pitch = ((pitch_env[0]*pitch_range)>>8) + pitch_base;   // Hz << 12
 

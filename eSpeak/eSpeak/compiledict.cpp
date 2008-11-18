@@ -87,7 +87,7 @@ MNEM_TAB mnem_flags[] = {
 	{"$double",    19},   // IT double the initial consonant of next word
 	{"$alt",       20},   // use alternative pronunciation
 	{"$alt2",      21},
-
+	
 
 	{"$brk",       28},   // a shorter $pause
 	{"$text",      29},   // word translates to replcement text, not phonemes
@@ -103,6 +103,7 @@ MNEM_TAB mnem_flags[] = {
 	{"$verbextend",0x28},   /* extend influence of 'verb follows' */
 	{"$capital", 0x29},   /* use this pronunciation if initial letter is upper case */
 	{"$allcaps", 0x2a},   /* use this pronunciation if initial letter is upper case */
+	{"$accent",  0x2b},   // character name is base-character name + accent name
 
 	// doesn't set dictionary_flags
 	{"$?",        100},   // conditional rule, followed by byte giving the condition number
@@ -113,8 +114,10 @@ MNEM_TAB mnem_flags[] = {
 };
 
 
+#define LEN_GROUP_NAME  12
+
 typedef struct {
-	char name[6];
+	char name[LEN_GROUP_NAME+1];
 	unsigned int start;
 	unsigned int length;
 } RGROUP;
@@ -182,6 +185,7 @@ int compile_line(char *linebuf, char *dict_line, int *hash)
 	int len_word;
 	int len_phonetic;
 	int text_not_phonemes;   // this word specifies replacement text, not phonemes
+	unsigned int  wc;
 	
 	char *mnemptr;
 	char *comment;
@@ -189,11 +193,11 @@ int compile_line(char *linebuf, char *dict_line, int *hash)
 	char encoded_ph[200];
 	unsigned char bad_phoneme[4];
 static char nullstring[] = {0};
-	
+
 	comment = NULL;
 	text_not_phonemes = 0;
 	phonetic = word = nullstring;
-	
+
 	p = linebuf;
 //	while(isspace2(*p)) p++;
 
@@ -274,7 +278,7 @@ static char nullstring[] = {0};
 				}
 				else
 				{
-				flag_codes[n_flag_codes++] = ix;
+					flag_codes[n_flag_codes++] = ix;
 				}
 			}
 			else
@@ -388,31 +392,39 @@ static char nullstring[] = {0};
 
 	if(text_not_phonemes)
 	{
-		strcpy(encoded_ph,phonetic);   // this is replacement text, so don't encode as phonemes
+		// this is replacement text, so don't encode as phonemes. Restrict the length of the replacement word
+		strncpy0(encoded_ph,phonetic,N_WORD_BYTES-4);
 	}
 	else
 	{
-	EncodePhonemes(phonetic,encoded_ph,bad_phoneme);
-	if(strchr(encoded_ph,phonSWITCH) != 0)
-	{
+		EncodePhonemes(phonetic,encoded_ph,bad_phoneme);
+		if(strchr(encoded_ph,phonSWITCH) != 0)
+		{
 			flag_codes[n_flag_codes++] = BITNUM_FLAG_ONLY_S;  // don't match on suffixes (except 's') when switching languages
-	}
-	
+		}
+
 		// check for errors in the phonemes codes
 		for(ix=0; ix<sizeof(encoded_ph); ix++)
-	{
-		c = encoded_ph[ix];
-		if(c == 0)   break;
-	
-		if(c == 255)
 		{
-			/* unrecognised phoneme, report error */
-			fprintf(f_log,"%5d: Bad phoneme [%c] (0x%x) in: %s  %s\n",linenum,bad_phoneme[0],bad_phoneme[0],word,phonetic);
-			error_count++;
+			c = encoded_ph[ix];
+			if(c == 0)   break;
+		
+			if(c == 255)
+			{
+				/* unrecognised phoneme, report error */
+				fprintf(f_log,"%5d: Bad phoneme [%c] (0x%x) in: %s  %s\n",linenum,bad_phoneme[0],bad_phoneme[0],word,phonetic);
+				error_count++;
+			}
 		}
 	}
+
+	if(sscanf(word,"U+%x",&wc) == 1)
+	{
+		// Character code
+		ix = utf8_out(wc, word);
+		word[ix] = 0;
 	}
-	
+	else
 	if((word[0] & 0x80)==0)  // 7 bit ascii only
 	{
 		// If first letter is uppercase, convert to lower case.  (Only if it's 7bit ascii)
@@ -462,10 +474,10 @@ static char nullstring[] = {0};
 		else
 		{
 			dict_line[length++] = 80 + multiple_words;
-		ix = multiple_string_end - multiple_string;
-		memcpy(&dict_line[length],multiple_string,ix);
-		length += ix;
-	}
+			ix = multiple_string_end - multiple_string;
+			memcpy(&dict_line[length],multiple_string,ix);
+			length += ix;
+		}
 	}
 	dict_line[0] = length;
 
@@ -622,7 +634,7 @@ char rule_pre[80];
 char rule_post[80];
 char rule_match[80];
 char rule_phonemes[80];
-char group_name[12];
+char group_name[LEN_GROUP_NAME+1];
 
 #define N_RULES 2000		// max rules for each group
 
@@ -809,6 +821,9 @@ void copy_rule_string(char *string, int &state)
 							break;
 						case 't':
 							sxflags |= SUFX_T;
+							break;
+						case 'b':
+							sxflags |= SUFX_B;
 							break;
 						default:
 							if(isdigit(c))
@@ -1322,36 +1337,36 @@ static int compile_dictrules(FILE *f_in, FILE *f_out, char *fname_temp)
 			{
 				compile_mode = 1;
 
-			p = (unsigned char *)&buf[6];
-			while((p[0]==' ') || (p[0]=='\t')) p++;    // Note: Windows isspace(0xe1) gives TRUE !
-			ix = 0;
-			while((*p > ' ') && (ix<12))
-				group_name[ix++] = *p++;
-			group_name[ix]=0;
-
-			if(sscanf(group_name,"0x%x",&char_code)==1)
-			{
-				// group character is given as a character code (max 16 bits)
-				p = (unsigned char *)group_name;
-
-				if(char_code > 0x100)
+				p = (unsigned char *)&buf[6];
+				while((p[0]==' ') || (p[0]=='\t')) p++;    // Note: Windows isspace(0xe1) gives TRUE !
+				ix = 0;
+				while((*p > ' ') && (ix < LEN_GROUP_NAME))
+					group_name[ix++] = *p++;
+				group_name[ix]=0;
+	
+				if(sscanf(group_name,"0x%x",&char_code)==1)
 				{
-					*p++ = (char_code >> 8);
+					// group character is given as a character code (max 16 bits)
+					p = (unsigned char *)group_name;
+	
+					if(char_code > 0x100)
+					{
+						*p++ = (char_code >> 8);
+					}
+					*p++ = char_code;
+					*p = 0;
 				}
-				*p++ = char_code;
-				*p = 0;
-			}
-
-			if(strlen(group_name) > 2)
-			{
-				if(utf8_in(&c,group_name,0) < 2)
+	
+				if(strlen(group_name) > 2)
 				{
-					fprintf(f_log,"%5d: Group name longer than 2 bytes (UTF8)",linenum);
-					error_count++;
+					if(utf8_in(&c,group_name,0) < 2)
+					{
+						fprintf(f_log,"%5d: Group name longer than 2 bytes (UTF8)",linenum);
+						error_count++;
+					}
+	
+					group_name[2] = 0;
 				}
-
-				group_name[2] = 0;
-			}
 			}
 
 			continue;
@@ -1360,11 +1375,11 @@ static int compile_dictrules(FILE *f_in, FILE *f_out, char *fname_temp)
 		switch(compile_mode)
 		{
 		case 1:    //  .group
-		prule = compile_rule(buf);
-		if((prule != NULL) && (n_rules < N_RULES))
-		{
-			rules[n_rules++] = prule;
-		}
+			prule = compile_rule(buf);
+			if((prule != NULL) && (n_rules < N_RULES))
+			{
+				rules[n_rules++] = prule;
+			}
 			break;
 
 		case 2:   //  .replace
@@ -1503,15 +1518,23 @@ int CompileDictionary(const char *dsource, const char *dict_name, FILE *log, cha
 	}
 
 	value = N_HASH_DICT;
-	fwrite(&value,4,1,f_out);
-	fwrite(&offset_rules,4,1,f_out);
+	Write4Bytes(f_out,value);
+	Write4Bytes(f_out,offset_rules);
 
 	compile_dictlist_start();
 
 	fprintf(f_log,"Using phonemetable: '%s'\n",PhonemeTabName());
 	compile_dictlist_file(path,"roots");
-	compile_dictlist_file(path,"listx");
-	compile_dictlist_file(path,"list");
+	if(translator->langopts.listx)
+	{
+		compile_dictlist_file(path,"list");
+		compile_dictlist_file(path,"listx");
+	}
+	else
+	{
+		compile_dictlist_file(path,"listx");
+		compile_dictlist_file(path,"list");
+	}
 	compile_dictlist_file(path,"extra");
 	
 	compile_dictlist_end(f_out);
@@ -1523,7 +1546,7 @@ int CompileDictionary(const char *dsource, const char *dict_name, FILE *log, cha
 	fclose(f_in);
 
 	fseek(f_out,4,SEEK_SET);
-	fwrite(&offset_rules,4,1,f_out);
+	Write4Bytes(f_out,offset_rules);
 	fclose(f_out);
 
 	translator->LoadDictionary(dict_name,0);

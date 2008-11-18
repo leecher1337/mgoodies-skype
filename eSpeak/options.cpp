@@ -26,7 +26,7 @@ Boston, MA 02111-1307, USA.
 HANDLE hOptHook = NULL;
 HANDLE hUserInfoInitHook = NULL;
 
-Options opts;
+Options opts = {0};
 
 static int UserInfoInitialize(WPARAM wParam, LPARAM lParam);
 
@@ -51,6 +51,7 @@ static OptPageControl optionsControls[] = {
 	{ &opts.disable_invisible,		CONTROL_CHECKBOX,		ID_INVISIBLE,		"DisableInvisible", FALSE },
 	{ &opts.disable_onthephone,		CONTROL_CHECKBOX,		ID_ONTHEPHONE,		"DisableOnThePhone", FALSE },
 	{ &opts.disable_outtolunch,		CONTROL_CHECKBOX,		ID_OUTTOLUNCH,		"DisableOutToLunch", FALSE },
+	{ &opts.enable_only_idle,		CONTROL_CHECKBOX,		IDC_ONLY_IDLE,		"EnableOnlyIfIdle", FALSE },
 	{ &opts.use_flags,				CONTROL_CHECKBOX,		IDC_USE_FLAGS,		"UseFlags", TRUE },
 	{ &opts.respect_sndvol_mute,	CONTROL_CHECKBOX,		IDC_SNDVOL,			"RespectSndVolMute", TRUE },
 };
@@ -147,12 +148,7 @@ void LoadOptions()
 	LoadOpts(optionsControls, MAX_REGS(optionsControls), MODULE_NAME);
 	
 	if (languages.getCount() <= 0)
-	{
-		opts.default_language = NULL;
-		opts.default_voice = NULL;
-		opts.default_variant = NULL;
 		return;
-	}
 
 	opts.default_language = GetContactLanguage(NULL);
 	opts.default_voice = GetContactVoice(NULL, opts.default_language);
@@ -740,7 +736,7 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 					HWND chk = CreateWindow(_T("BUTTON"), TranslateT("Enable"), 
 							WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX | BS_AUTOCHECKBOX, 
 							x, pt.y, width - (x - pt.x), height, hwndDlg, (HMENU) id, hInst, NULL);
-					SendMessage(chk, BM_SETCHECK, GetSettingBool(type, TEMPLATE_ENABLED, TRUE) ? BST_CHECKED : BST_UNCHECKED, 0);
+					SendMessage(chk, BM_SETCHECK, GetSettingBool(type, TEMPLATE_ENABLED, FALSE) ? BST_CHECKED : BST_UNCHECKED, 0);
 					SendMessage(chk, WM_SETFONT, (WPARAM) hFont, FALSE);
 
 					pt.y += height + 3;
@@ -775,7 +771,7 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 								WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_CHECKBOX | BS_AUTOCHECKBOX, 
 								x, pt.y, 120, height, hwndDlg, (HMENU) (id + 2 * i), hInst, NULL);
 						SendMessage(chk, WM_SETFONT, (WPARAM) hFont, FALSE);
-						SendMessage(chk, BM_SETCHECK, GetSettingBool(type, i, TEMPLATE_ENABLED, TRUE) ? BST_CHECKED : BST_UNCHECKED, 0);
+						SendMessage(chk, BM_SETCHECK, GetSettingBool(type, i, TEMPLATE_ENABLED, FALSE) ? BST_CHECKED : BST_UNCHECKED, 0);
 						x += 120;
 
 						templ.clear();

@@ -18,20 +18,42 @@
  ***************************************************************************/
 
 
+#include <sys/types.h>
 
 // conditional compilation options
+
+#if defined(BYTE_ORDER) && BYTE_ORDER == BIG_ENDIAN
+#define ARCH_BIG
+#endif
 
 #define PLATFORM_WINDOWS
 #define __WIN32__
 #define NEED_WCSTOF
 #define NEED_GETOPT
-
-#define PATHSEP '\\'
+#define PATHSEP  '\\'
+// USE_PORTAUDIO or USE_PULSEAUDIO are now defined in the makefile
 #define USE_PORTAUDIO
-#define ESPEAK_API
+//#define USE_PULSEAUDIO
+//#define USE_NANOSLEEP
+//#define __cdecl 
+#define ESPEAK_API  extern "C"
+
+#define USE_MBROLA_LIB
+#ifdef LIBRARY
+#define USE_ASYNC
+//#define USE_MBROLA_LIB
+#endif
+
+#ifdef _ESPEAKEDIT
+#define USE_PORTAUDIO
+#define USE_ASYNC
+#define LOG_FRAMES      // write keyframe info to log-espeakedit
+#endif
 
 // will look for espeak_data directory here, and also in user's home directory
-//#define PATH_ESPEAK_DATA  "/usr/share/espeak-data"
+#ifndef PATH_ESPEAK_DATA
+   #define PATH_ESPEAK_DATA  "/usr/share/espeak-data"
+#endif
 
 typedef unsigned short USHORT;
 typedef unsigned char  UCHAR;

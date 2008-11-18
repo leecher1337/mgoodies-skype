@@ -288,7 +288,8 @@ static void init_path(const char *path)
 
 	if(path != NULL)
 	{
-		sprintf(path_home,"%s",path);
+		strncpy(path_home,path,sizeof(path_home)-1);
+		path_home[sizeof(path_home)-1]=0;
 		return;
 	}
 
@@ -308,7 +309,7 @@ static void init_path(const char *path)
 	sprintf(path_home,"%s\\espeak-data",buf);
 
 #else
-//	char *env;
+	char *env;
 
 	if(path != NULL)
 	{
@@ -316,12 +317,13 @@ static void init_path(const char *path)
 		return;
 	}
 
-//	if((env = getenv("ESPEAK_DATA_PATH")) != NULL)
-//	{
-//		snprintf(path_home,sizeof(path_home),"%s/espeak-data",env);
-//		if(GetFileLength(path_home) == -2)
-//			return;   // an espeak-data directory exists 
-//	}
+	// check for environment variable
+	if((env = getenv("ESPEAK_DATA_PATH")) != NULL)
+	{
+		snprintf(path_home,sizeof(path_home),"%s/espeak-data",env);
+		if(GetFileLength(path_home) == -2)
+			return;   // an espeak-data directory exists 
+	}
 
 	snprintf(path_home,sizeof(path_home),"%s/espeak-data",getenv("HOME"));
 	if(access(path_home,R_OK) != 0)
@@ -611,9 +613,20 @@ espeak_ERROR sync_espeak_Synth_Mark(unsigned int unique_identifier, const void *
 void sync_espeak_Key(const char *key)
 {//==================================
 	// symbolic name, symbolicname_character  - is there a system resource of symbolic names per language?
+	int letter;
+	int ix;
+
+	ix = utf8_in(&letter,key,0);
+	if(key[ix] == 0)
+	{
+		// a single character
+		sync_espeak_Char(letter);
+		return;
+	}
+
 	my_unique_identifier = 0;
 	my_user_data = NULL;
-	Synthesize(0, key,0);  // for now, just say the key name as passed
+	Synthesize(0, key,0);   // speak key as a text string
 }
 
 
@@ -643,7 +656,7 @@ void sync_espeak_SetPunctuationList(const wchar_t *punctlist)
 
 
 
-//#pragma GCC visibility push(default)
+#pragma GCC visibility push(default)
 
 
 ESPEAK_API void espeak_SetSynthCallback(t_espeak_callback* SynthCallback)
@@ -697,8 +710,9 @@ ENTER("espeak_Initialize");
 	if((out_start = outbuf) == NULL)
 		return(EE_INTERNAL_ERROR);
 	
-	// allocate space for event list.  Allow 200 events per second
-	n_event_list = (buf_length*200)/1000;
+	// allocate space for event list.  Allow 200 events per second.
+	// Add a constant to allow for very small buf_length
+	n_event_list = (buf_length*200)/1000 + 20;
 	if((event_list = (espeak_EVENT *)realloc(event_list,sizeof(espeak_EVENT) * n_event_list)) == NULL)
 		return(EE_INTERNAL_ERROR);
 	
@@ -1115,6 +1129,6 @@ ESPEAK_API const char *espeak_Info(void *)
 	return(version_string);
 }
 
-//#pragma GCC visibility pop
+#pragma GCC visibility pop
 
   

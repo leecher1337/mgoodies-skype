@@ -1,5 +1,5 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
+// Microsoft Developer Studio generated include file.
 // Used by resource.rc
 //
 #define IDI_UNKNOWN_FLAG                101
@@ -25,6 +25,7 @@
 #define ID_INVISIBLE                    1069
 #define ID_ONTHEPHONE                   1070
 #define ID_OUTTOLUNCH                   1071
+#define IDC_ONLY_IDLE                   1072
 #define IDC_DEF_LANG                    1075
 #define IDC_VOICE                       1076
 #define IDC_ADVANCED                    1077

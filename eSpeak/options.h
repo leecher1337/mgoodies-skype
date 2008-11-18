@@ -43,6 +43,7 @@ struct Options {
 	BOOL disable_invisible;
 	BOOL disable_onthephone;
 	BOOL disable_outtolunch;
+	BOOL enable_only_idle;
 
 	BOOL use_flags;
 	BOOL respect_sndvol_mute;
