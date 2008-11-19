@@ -157,9 +157,9 @@ class Buffer
 			{
 				size = total + 256 - total % 256;
 				if (str == NULL)
-					str = (T *) malloc(size * sizeof(T));
+					str = (T *) mir_alloc(size * sizeof(T));
 				else
-					str = (T *) realloc(str, size * sizeof(T));
+					str = (T *) mir_realloc(str, size * sizeof(T));
 			}
 		}
 
@@ -167,7 +167,7 @@ class Buffer
 		{
 			if (str != NULL)
 			{
-				::free(str);
+				mir_free(str);
 				str = NULL;
 				len = size = 0;
 			}
@@ -181,7 +181,7 @@ class Buffer
 
 		void append(T app)
 		{
-			alloc(len + 1);
+			alloc(len + 1 + 1);
 
 			str[len] = app;
 			len++;
@@ -190,7 +190,7 @@ class Buffer
 
 		void appendn(size_t n, T app)
 		{
-			alloc(len + n);
+			alloc(len + n + 1);
 
 			for(; n > 0; n--)
 			{
@@ -346,7 +346,6 @@ class Buffer
 				str[i] = str[len-i-1];
 				str[len-i-1] = tmp;
 			}
-			pack();
 		}
 
 		T *appender(size_t appLen) 
