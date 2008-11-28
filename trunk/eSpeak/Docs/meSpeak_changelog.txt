@@ -2,6 +2,13 @@ meSpeak
 
 Changelog:
 
+. 0.0.0.11
+  * Fix for stop speaking bug
+
+. 0.0.0.10
+  * Fix for overlaping options
+  + Option to disable selection of variant based on genre
+
 . 0.0.0.9
   + Updated to eSpeak 1.39
   + Option to only talk when idle

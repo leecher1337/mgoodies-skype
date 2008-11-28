@@ -42,11 +42,15 @@
 #define L_jbo  0x6a626f   // jbo  Lojban
 #define L_zhy  0x7a6879   // zhy
 
-
+// start of unicode pages for character sets
 #define OFFSET_GREEK  0x380
 #define OFFSET_CYRILLIC 0x420
+#define OFFSET_ARMENIAN 0x530
 #define OFFSET_DEVANAGARI  0x900
+#define OFFSET_BENGALI 0x980
 #define OFFSET_TAMIL  0xb80
+#define OFFSET_KANNADA 0xc80
+#define OFFSET_MALAYALAM 0xd00
 #define OFFSET_KOREAN 0x1100
 
 
@@ -87,6 +91,24 @@ static const unsigned int replace_cyrillic_latin[] =
 0};  // ѓ  ѕ  ќ
 
 
+void SetIndicLetters(Translator *tr)
+{//=================================
+	// Set letter types for Indic scripts, Devanagari, Tamill, etc
+	static const char dev_consonants2[] = {0x02,0x03,0x58,0x59,0x5a,0x5b,0x5c,0x5d,0x5e,0x5f};
+
+	memset(tr->letter_bits,0,sizeof(tr->letter_bits));
+	SetLetterBitsRange(tr,LETTERGP_A,0x04,0x14);   // vowel letters only
+	SetLetterBitsRange(tr,LETTERGP_B,0x3e,0x4d);   // vowel signs, and virama
+
+	SetLetterBitsRange(tr,LETTERGP_C,0x15,0x39);   // the main consonant range
+	SetLetterBits(tr,LETTERGP_C,dev_consonants2);  // + additional consonants
+
+	SetLetterBitsRange(tr,LETTERGP_Y,0x04,0x14);   // vowel letters
+	SetLetterBitsRange(tr,LETTERGP_Y,0x3e,0x4c);   // + vowel signs
+
+	tr->langopts.param[LOPT_UNPRONOUNCABLE] = 1;   // disable check for unpronouncable words
+}
+
 void SetupTranslator(Translator *tr, const short *lengths, const unsigned char *amps)
 {//==================================================================================
 	if(lengths != NULL)
@@ -100,6 +122,9 @@ Translator *SelectTranslator(const char *name)
 {//===========================================
 	int name2 = 0;
 	Translator *tr;
+
+	static const unsigned char stress_amps_sk[8] = {17,17, 20,20, 20,24, 24,22 };
+	static const short stress_lengths_sk[8] = {190,190, 210,210, 0,0, 210,210};
 
 	// convert name string into a word of up to 4 characters, for the switch()
 	while(*name != 0)
@@ -122,6 +147,26 @@ Translator *SelectTranslator(const char *name)
 		
 			tr->langopts.numbers = 0x8d1 + NUM_ROMAN;
 			tr->langopts.accents = 1;
+		}
+		break;
+
+	case L('b','n'):  // Bengali
+		{
+			static const short stress_lengths_bn[8] = {180, 180,  210, 210,  0, 0,  230, 240};
+			static const unsigned char stress_amps_bn[8] = {18,18, 18,18, 20,20, 22,22 };
+
+			tr = new Translator();
+			SetupTranslator(tr,stress_lengths_bn,stress_amps_bn);
+			tr->langopts.length_mods0 = tr->langopts.length_mods;  // don't lengthen vowels in the last syllable
+
+			tr->langopts.stress_rule = 0;
+			tr->langopts.stress_flags =  0x10004;   // use 'diminished' for unstressed final syllable
+			tr->letter_bits_offset = OFFSET_BENGALI;
+			SetIndicLetters(tr);   // call this after setting OFFSET_BENGALI
+			SetLetterBitsRange(tr,LETTERGP_F,0x3e,0x4c);   // vowel signs, but not virama
+
+			tr->langopts.numbers = 0x1;
+			tr->langopts.numbers2 = 0x100;
 		}
 		break;
 
@@ -153,10 +198,9 @@ Translator *SelectTranslator(const char *name)
 
 	case L('d','a'):  // Danish
 		{
-			static const unsigned char stress_amps_da[] = {16,16, 20,20, 20,24, 24,22 };
 			static const short stress_lengths_da[8] = {160,140, 200,200, 0,0, 220,210};
 			tr = new Translator();
-			SetupTranslator(tr,stress_lengths_da,stress_amps_da);
+			SetupTranslator(tr,stress_lengths_da,NULL);
 
 			tr->langopts.stress_rule = 0;
 			SetLetterVowel(tr,'y');
@@ -230,7 +274,7 @@ Translator *SelectTranslator(const char *name)
 
 	case L('e','o'):
 		{
-			static const short stress_lengths_eo[8] = {145, 180,  200, 190,    0,   0,  300, 320};
+			static const short stress_lengths_eo[8] = {145, 145,  230, 170,    0,   0,  360, 370};
 			static const unsigned char stress_amps_eo[] = {16,14, 20,20, 20,24, 24,22 };
 			static const wchar_t eo_char_apostrophe[2] = {'l',0};
 		
@@ -240,10 +284,11 @@ Translator *SelectTranslator(const char *name)
 			tr->charset_a0 = charsets[3];  // ISO-8859-3
 			tr->char_plus_apostrophe = eo_char_apostrophe;
 
-			tr->langopts.vowel_pause = 1;
+			tr->langopts.word_gap = 1;
+			tr->langopts.vowel_pause = 2;
 			tr->langopts.stress_rule = 2;
 			tr->langopts.stress_flags =  0x6 | 0x10; 
-			tr->langopts.unstressed_wd1 = 1;
+			tr->langopts.unstressed_wd1 = 3;
 			tr->langopts.unstressed_wd2 = 2;
 
 			tr->langopts.numbers = 0x1409 + NUM_ROMAN;
@@ -251,9 +296,12 @@ Translator *SelectTranslator(const char *name)
 		break;
 
 	case L('e','s'):   // Spanish
+	case L('c','a'):   // Catalan
 		{
-			static const short stress_lengths_es[8] = {170, 200,  180, 180,  0, 0,  220, 250};
+			static const short stress_lengths_es[8] = {180, 210,  190, 190,  0, 0,  230, 260};
+//			static const short stress_lengths_es[8] = {170, 200,  180, 180,  0, 0,  220, 250};
 			static const unsigned char stress_amps_es[8] = {16,12, 18,18, 20,20, 20,20 };    // 'diminished' is used to mark a quieter, final unstressed syllable
+			static const wchar_t ca_punct_within_word[] = {'\'',0xb7,0};   // ca: allow middle-dot within word
 
 			tr = new Translator();
 			SetupTranslator(tr,stress_lengths_es,stress_amps_es);
@@ -268,7 +316,13 @@ Translator *SelectTranslator(const char *name)
 			tr->langopts.unstressed_wd2 = 2;
 			tr->langopts.param[LOPT_SONORANT_MIN] = 120;  // limit the shortening of sonorants before short vowels
 
-			tr->langopts.numbers = 0x529 + NUM_ROMAN;
+			tr->langopts.numbers = 0x529 + NUM_ROMAN + NUM_ROMAN_AFTER;
+
+			if(name2 == L('c','a'))
+			{
+				tr->punct_within_word = ca_punct_within_word;
+				tr->langopts.stress_flags = 0x200 | 0x6 | 0x30;  // stress last syllable unless word ends with a vowel
+			}
 		}
 		break;
 
@@ -310,9 +364,9 @@ Translator *SelectTranslator(const char *name)
 		}
 		break;
 
-	case L('h','i'):
+	case L('h','i'):    // Hindi
+	case L('n','e'):    // Nepali
 		{
-			static const char dev_consonants2[] = {0x02,0x03,0x58,0x59,0x5a,0x5b,0x5c,0x5d,0x5e,0x5f};
 			static const short stress_lengths_hi[8] = {190, 190,  210, 210,  0, 0,  230, 250};
 			static const unsigned char stress_amps_hi[8] = {17,14, 20,19, 20,24, 24,22 };
 
@@ -324,15 +378,9 @@ Translator *SelectTranslator(const char *name)
 			tr->langopts.stress_rule = 6;      // stress on last heaviest syllable, excluding final syllable
 			tr->langopts.stress_flags =  0x10004;   // use 'diminished' for unstressed final syllable
 			tr->langopts.numbers = 0x011;
-			tr->langopts.numbers2 = 0x100;
+			tr->langopts.numbers2 = NUM2_100000;
 			tr->letter_bits_offset = OFFSET_DEVANAGARI;
-
-			memset(tr->letter_bits,0,sizeof(tr->letter_bits));
-			SetLetterBitsRange(tr,LETTERGP_A,0x06,0x14);   // vowel letters
-			SetLetterBitsRange(tr,LETTERGP_B,0x3e,0x4d);   // vowel signs + virama
-			SetLetterBitsRange(tr,LETTERGP_C,0x15,0x39);   // the main consonant range
-			SetLetterBits(tr,LETTERGP_C,dev_consonants2);  // additional consonants
-			tr->langopts.param[LOPT_UNPRONOUNCABLE] = 1;   // disable check for unpronouncable words
+			SetIndicLetters(tr);
 		}
 		break;
 
@@ -341,7 +389,7 @@ Translator *SelectTranslator(const char *name)
 	case L('b','s'):   // Bosnian
 	case L('s','r'):   // Serbian
 		{
-			static const unsigned char stress_amps_hr[8] = {16,16, 20,20, 20,24, 24,22 };
+			static const unsigned char stress_amps_hr[8] = {17,17, 20,20, 20,24, 24,22 };
 			static const short stress_lengths_hr[8] = {180,160, 200,200, 0,0, 220,230};
 			static const short stress_lengths_sr[8] = {160,150, 200,200, 0,0, 250,260};
 
@@ -394,6 +442,24 @@ SetLengthMods(tr,3);  // all equal
 		}
 		break;
 
+	case L('h','y'):   // Armenian
+		{
+			static const short stress_lengths_hy[8] = {250, 200,  250, 250,  0, 0,  250, 250};
+			static const char hy_vowels[] = {0x31, 0x35, 0x37, 0x38, 0x3b, 0x48, 0x55, 0};
+			static const char hy_consonants[] = {0x32,0x33,0x34,0x36,0x39,0x3a,0x3c,0x3d,0x3e,0x3f,
+				0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x49,0x4a,0x4b,0x4c,0x4d,0x4e,0x4f,0x50,0x51,0x52,0x53,0x54,0x56,0};
+			tr = new Translator();
+			SetupTranslator(tr,stress_lengths_hy,NULL);
+			tr->langopts.stress_rule = 3;  // default stress on final syllable
+
+			tr->letter_bits_offset = OFFSET_ARMENIAN;
+			memset(tr->letter_bits,0,sizeof(tr->letter_bits));
+			SetLetterBits(tr,LETTERGP_A,hy_vowels);
+			SetLetterBits(tr,LETTERGP_C,hy_consonants);
+			tr->langopts.max_initial_consonants = 6;
+		}
+		break;
+
 	case L('i','d'):   // Indonesian
 		{
 			static const short stress_lengths_id[8] = {160, 200,  180, 180,  0, 0,  220, 240};
@@ -409,12 +475,11 @@ SetLengthMods(tr,3);  // all equal
 
 	case L('i','s'):   // Icelandic
 		{
-			static const unsigned char stress_amps_is[] = {16,16, 20,20, 20,24, 24,22 };
 			static const short stress_lengths_is[8] = {180,160, 200,200, 0,0, 240,250};
 			static const wchar_t is_lettergroup_B[] = {'c','f','h','k','p','t','x',0xfe,0};  // voiceless conants, including 'þ'  ?? 's'
 
 			tr = new Translator();
-			SetupTranslator(tr,stress_lengths_is,stress_amps_is);
+			SetupTranslator(tr,stress_lengths_is,NULL);
 			tr->langopts.stress_rule = 0;
 			tr->langopts.stress_flags = 0x10;
 			tr->langopts.param[LOPT_IT_LENGTHEN] = 0x11;    // remove lengthen indicator from unstressed vowels
@@ -432,8 +497,8 @@ SetLengthMods(tr,3);  // all equal
 
 	case L('i','t'):   // Italian
 		{
-			static const short stress_lengths_it[8] = {150, 140,  180, 180,  0, 0,  270, 320};
-			static const unsigned char stress_amps_it[8] = {15,14, 19,19, 20,24, 24,22 };
+			static const short stress_lengths_it[8] = {150, 140,  170, 170,  0, 0,  300, 330};
+			static const unsigned char stress_amps_it[8] = {15,14, 19,19, 20,22, 22,20 };
 
 			tr = new Translator();
 			SetupTranslator(tr,stress_lengths_it,stress_amps_it);
@@ -448,6 +513,7 @@ SetLengthMods(tr,3);  // all equal
 			tr->langopts.param[LOPT_SONORANT_MIN] = 130;  // limit the shortening of sonorants before short vowels
 			tr->langopts.param[LOPT_REDUCE] = 1;        // reduce vowels even if phonemes are specified in it_list
 			tr->langopts.numbers = 0x2709 + NUM_ROMAN;
+			tr->langopts.accents = 2;   // Say "Capital" after the letter.
 		}
 		break;
 
@@ -458,12 +524,13 @@ SetLengthMods(tr,3);  // all equal
 
 	case L_jbo:   // Lojban
 		{
-			static const short stress_lengths_jbo[8] = {185,170, 200,200, 0,0, 290,300};
+			static const short stress_lengths_jbo[8] = {145,145, 170,160, 0,0, 330,350};
 			static const wchar_t jbo_punct_within_word[] = {'.',',','\'',0x2c8,0};  // allow period and comma within a word, also stress marker (from LOPT_SYLLABLE_CAPS)
 			tr = new Translator();
 			SetupTranslator(tr,stress_lengths_jbo,NULL);
 			tr->langopts.stress_rule = 2;
 			tr->langopts.vowel_pause = 0x20c;  // pause before a word which starts with a vowel, or after a word which ends in a consonant
+//			tr->langopts.word_gap = 1;
 			tr->punct_within_word = jbo_punct_within_word;
 			tr->langopts.param[LOPT_SYLLABLE_CAPS] = 1;  // capitals indicate stressed syllables
 			SetLetterVowel(tr,'y');
@@ -518,11 +585,26 @@ SetLengthMods(tr,3);  // all equal
 		}
 		break;
 
+	case L('l','v'):  // latvian
+		{
+			static const unsigned char stress_amps_lv[8] = {17,14, 20,20, 20,22, 22,22 };
+			static const short stress_lengths_lv[8] = {180,140, 210,210, 0,0, 210,210};
+			tr = new Translator();
+			SetupTranslator(tr,stress_lengths_lv,stress_amps_lv);
+
+			tr->langopts.stress_rule = 0;
+			tr->langopts.spelling_stress = 1;
+			tr->charset_a0 = charsets[4];   // ISO-8859-4
+			tr->langopts.numbers = 0x409 + 0x8000 + 0x10000;
+			tr->langopts.stress_flags = 0x16 + 0x40000;
+		}
+		break;
+
 	case L('m','k'):   // Macedonian
 		{
 			static wchar_t vowels_cyrillic[] = {0x440,  // also include 'р' [R]
 				 0x430,0x435,0x438,0x439,0x43e,0x443,0x44b,0x44d,0x44e,0x44f,0x450,0x451,0x456,0x457,0x45d,0x45e,0};
-			static const unsigned char stress_amps_mk[8] = {16,16, 20,20, 20,24, 24,22 };
+			static const unsigned char stress_amps_mk[8] = {17,17, 20,20, 20,24, 24,22 };
 			static const short stress_lengths_mk[8] = {180,160, 200,200, 0,0, 220,230};
 
 			tr = new Translator();
@@ -555,14 +637,25 @@ SetLengthMods(tr,3);  // all equal
 
 	case L('n','o'):  // Norwegian
 		{
-			static const unsigned char stress_amps_no[] = {16,16, 20,20, 20,24, 24,22 };
 			static const short stress_lengths_no[8] = {160,140, 200,200, 0,0, 220,210};
 			tr = new Translator();
-			SetupTranslator(tr,stress_lengths_no,stress_amps_no);
+			SetupTranslator(tr,stress_lengths_no,NULL);
 
 			tr->langopts.stress_rule = 0;
 			SetLetterVowel(tr,'y');
 			tr->langopts.numbers = 0x11849;
+		}
+		break;
+
+	case L('o','m'):
+		{
+			static const unsigned char stress_amps_om[] = {18,15, 20,20, 20,22, 22,22 };
+			static const short stress_lengths_om[8] = {200,200, 200,200, 0,0, 200,200};
+			tr = new Translator();
+			SetupTranslator(tr,stress_lengths_om,stress_amps_om);
+
+			tr->langopts.stress_rule = 2;
+			tr->langopts.stress_flags = 0x16 + 0x80000;
 		}
 		break;
 
@@ -639,8 +732,6 @@ SetLengthMods(tr,3);  // all equal
 	case L('s','k'):   // Slovak
 	case L('c','s'):   // Czech
 		{
-			static const unsigned char stress_amps_sk[8] = {16,16, 20,20, 20,24, 24,22 };
-			static const short stress_lengths_sk[8] = {190,190, 210,210, 0,0, 210,210};
 			static const char *sk_voiced = "bdgjlmnrvwzaeiouy";
 
 			tr = new Translator();
@@ -672,8 +763,17 @@ SetLengthMods(tr,3);  // all equal
 		break;
 
 	case L('s','q'):  // Albanian
+		{
+			static const short stress_lengths_sq[8] = {170, 170,  170, 170,  0, 0,  250, 270};
+			static const unsigned char stress_amps_sq[8] = {17,12, 17,17, 20,20, 24,22 };
 			tr = new Translator();
+			SetupTranslator(tr,stress_lengths_sq,stress_amps_sq);
+
+			tr->langopts.stress_rule = 2;
+			tr->langopts.stress_flags =  0x16 + 0x100; 
 			SetLetterVowel(tr,'y');
+			tr->langopts.numbers = 0x69 + 0x8000;
+		}
 		break;
 
 
@@ -706,11 +806,13 @@ SetLengthMods(tr,3);  // all equal
 			tr->langopts.stress_flags =  0x6 | 0x10; 
 
 			tr->langopts.numbers = 0x4e1;
-			tr->langopts.numbers2 = 0x100;
+			tr->langopts.numbers2 = NUM2_100000a;
 		}
 		break;
 
 	case L('t','a'):  // Tamil
+	case L('m','l'):  // Malayalam
+	case L('k','n'):  // Kannada
 		{
 			static const short stress_lengths_ta[8] = {200, 200,  210, 210,  0, 0,  230, 230};
 			static const unsigned char stress_amps_ta[8] = {18,18, 18,18, 20,20, 22,22 };
@@ -722,18 +824,24 @@ SetLengthMods(tr,3);  // all equal
 			tr->langopts.stress_rule = 0;
 			tr->langopts.stress_flags =  0x10004;   // use 'diminished' for unstressed final syllable
 			tr->letter_bits_offset = OFFSET_TAMIL;
-			tr->langopts.param[LOPT_WORD_MERGE] = 1;   // don't break vowels betwen words
 
-			memset(tr->letter_bits,0,sizeof(tr->letter_bits));
-			SetLetterBitsRange(tr,LETTERGP_A,0x05,0x14);   // vowel letters
-			SetLetterBitsRange(tr,LETTERGP_A,0x3e,0x4c);   // vowel signs
-			SetLetterBitsRange(tr,LETTERGP_B,0x3e,0x4d);   // vowel signs, and virama
-			SetLetterBitsRange(tr,LETTERGP_C,0x15,0x39);   // the main consonant range
-			tr->langopts.param[LOPT_UNPRONOUNCABLE] = 1;   // disable check for unpronouncable words
+			if(name2 == L('m','l'))
+			{
+				tr->letter_bits_offset = OFFSET_MALAYALAM;
+			}
+			else
+			if(name2 == L('k','n'))
+			{
+				tr->letter_bits_offset = OFFSET_KANNADA;
+				tr->langopts.numbers = 0x1;
+				tr->langopts.numbers2 = NUM2_100000;
+			}
+			tr->langopts.param[LOPT_WORD_MERGE] = 1;   // don't break vowels betwen words
+			SetIndicLetters(tr);   // call this after setting OFFSET_
 		}
 		break;
 
-
+#ifdef deleted
 	case L('t','h'):  // Thai
 		{
 			static const short stress_lengths_th[8] = {230,150, 230,230, 230,0, 230,250};
@@ -750,6 +858,7 @@ SetLengthMods(tr,3);  // all equal
 			tr->langopts.word_gap = 0x21;   // length of a final vowel is less dependent on the next consonant, don't merge consonant with next word
 		}
 		break;
+#endif
 
 	case L('t','r'):   // Turkish
 		{

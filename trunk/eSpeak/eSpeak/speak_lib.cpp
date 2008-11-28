@@ -345,7 +345,7 @@ static int initialise(void)
 		if(result == -1)
 			fprintf(stderr,"Failed to load espeak-data\n");
 		else
-			fprintf(stderr,"Wrong version of espeak-data 0x%x (expects 0x%x)\n",result,version_phdata);
+			fprintf(stderr,"Wrong version of espeak-data 0x%x (expects 0x%x) at %s\n",result,version_phdata,path_home);
 	}
 
 	memset(&voice_selected,0,sizeof(voice_selected));
@@ -518,9 +518,9 @@ void MarkerEvent(int type, unsigned int char_position, int value, unsigned char 
 	ep->text_position = char_position & 0xffff;
 	ep->length = char_position >> 24;
 	
-	time = (double(count_samples + (out_ptr - out_start)/2)*1000.0)/samplerate;
+	time = (double(count_samples + mbrola_delay + (out_ptr - out_start)/2)*1000.0)/samplerate;
 	ep->audio_position = int(time);
-	ep->sample = (count_samples + (out_ptr - out_start)/2);
+	ep->sample = (count_samples + mbrola_delay + (out_ptr - out_start)/2);
 	
 //	SHOW("MarkerEvent > count_samples=%d, out_ptr=%x, out_start=0x%x\n",count_samples, out_ptr, out_start);
 //	SHOW("*** MarkerEvent > type=%s, uid=%d, text_pos=%d, length=%d, audio_position=%d, sample=%d\n",
@@ -656,7 +656,7 @@ void sync_espeak_SetPunctuationList(const wchar_t *punctlist)
 
 
 
-#pragma GCC visibility push(default)
+//#pragma GCC visibility push(default)
 
 
 ESPEAK_API void espeak_SetSynthCallback(t_espeak_callback* SynthCallback)
@@ -1041,7 +1041,7 @@ ESPEAK_API void espeak_SetPhonemeTrace(int value, FILE *stream)
 	option_phonemes = value;
 	f_trans = stream;
 	if(stream == NULL)
-		f_trans = stdout;
+		f_trans = stderr;
 	
 }   //  end of espeak_SetPhonemes
 
@@ -1066,6 +1066,7 @@ ESPEAK_API espeak_ERROR espeak_Cancel(void)
 	}
 	SHOW_TIME("espeak_Cancel > LEAVE");
 #endif
+	embedded_value[EMBED_T] = 0;    // reset echo for pronunciation announcements
 	return EE_OK;
 }   //  end of espeak_Cancel
 
@@ -1129,6 +1130,6 @@ ESPEAK_API const char *espeak_Info(void *)
 	return(version_string);
 }
 
-#pragma GCC visibility pop
+//#pragma GCC visibility pop
 
   

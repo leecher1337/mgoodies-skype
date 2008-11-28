@@ -684,19 +684,34 @@ int Translator::IsLetterGroup(char *word, int group, int pre)
 	// match the word against a list of utf-8 strings
 	char *p;
 	char *w;
+	int  len;
 
 	p = letterGroups[group];
+	if(p == NULL)
+		return(0);
 
 	while(*p != RULE_GROUP_END)
 	{
-		w = word;
+		if(pre)
+		{
+			len = strlen(p);
+			w = word - len + 1;
+		}
+		else
+		{
+			w = word;
+		}
 		while(*p == *w)
 		{
 			w++;
 			p++;
 		}
 		if(*p == 0)
+		{
+			if(pre)
+				return(len);
 			return(w-word);   // matched a complete string
+		}
 
 		while(*p++ != 0);  // skip to end of string
 	}
@@ -1012,13 +1027,16 @@ void Translator::SetWordStress(char *output, unsigned int dictionary_flags, int 
 	int  unstressed_word = 0;
 	char *max_output;
 	int final_ph;
+	int final_ph2;
 	int mnem;
+	int mnem2;
 	int post_tonic;
 	int opt_length;
 	int done;
 
 	unsigned char vowel_stress[N_WORD_PHONEMES/2];
 	char syllable_weight[N_WORD_PHONEMES/2];
+	char vowel_length[N_WORD_PHONEMES/2];
 	unsigned char phonetic[N_WORD_PHONEMES];
 
 	static char consonant_types[16] = {0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0};
@@ -1043,6 +1061,7 @@ void Translator::SetWordStress(char *output, unsigned int dictionary_flags, int 
 	}
 	if(ix == 0) return;
 	final_ph = phonetic[ix-1];
+	final_ph2 =  phonetic[ix-2];
 
 	max_output = output + (N_WORD_PHONEMES-3);   /* check for overrun */
 
@@ -1074,6 +1093,7 @@ void Translator::SetWordStress(char *output, unsigned int dictionary_flags, int 
 				// long vowel, increase syllable weight
 				weight++;
 			}
+			vowel_length[ix] = weight;
 
 			if(lengthened) p++;  // advance over phonLENGTHEN
 
@@ -1131,11 +1151,26 @@ void Translator::SetWordStress(char *output, unsigned int dictionary_flags, int 
 						else
 						{
 							mnem = phoneme_tab[final_ph]->mnemonic;
-							if((mnem != 'n') && (mnem != 's'))
+							mnem2 = phoneme_tab[final_ph2]->mnemonic;
+
+							if((mnem == 's') && (mnem2 == 'n'))
+							{
+								// -ns  stress remains on penultimate syllable
+							}
+							else
+							if(((mnem != 'n') && (mnem != 's')) || (phoneme_tab[final_ph2]->type != phVOWEL))
 							{
 								stressed_syllable = vowel_count - 1;
 							}
 						}
+					}
+				}
+				if(langopts.stress_flags & 0x80000)
+				{
+					// stress on last syllable if it has a long vowel, but previous syllable has a short vowel
+					if(vowel_length[vowel_count - 1] > vowel_length[vowel_count - 2])
+					{
+						stressed_syllable = vowel_count - 1;
 					}
 				}
 
@@ -1768,6 +1803,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 	int  distance_left;
 	int  lg_pts;
 	int  n_bytes;
+	int add_points;
 
 	MatchRecord match;
 	static MatchRecord best;
@@ -1832,9 +1868,11 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 					if(common_phonemes != NULL)
 					{
 						match.phonemes = common_phonemes;
-						if(*match.phonemes == RULE_CONDITION)
-							match.phonemes += 2;   // skip over condition number
-						while(((rb = *match.phonemes++) != 0) && (rb != RULE_PHONEMES));
+						while(((rb = *match.phonemes++) != 0) && (rb != RULE_PHONEMES))
+						{
+							if(rb == RULE_CONDITION)
+								match.phonemes++;  // skip over condition number
+						}
 					}
 					else
 					{
@@ -1883,6 +1921,8 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 				continue;
 			}
 
+			add_points = 0;
+
 			switch(match_type)
 			{
 			case 0:
@@ -1892,7 +1932,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 
 				if((letter == rb) || ((letter==(unsigned char)REPLACED_E) && (rb=='e')))
 				{
-					match.points += 21;
+					add_points = 21;
 					consumed++;
 				}
 				else
@@ -1918,7 +1958,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 						lg_pts = 20;
 						if(letter_group==2)
 							lg_pts = 19;  // fewer points for C, general consonant
-						match.points += (lg_pts-distance_right);
+						add_points = (lg_pts-distance_right);
 						post_ptr += letter_xbytes;
 					}
 					else
@@ -1929,7 +1969,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 					letter_group = *rule++ - 'A';
 					if((n_bytes = IsLetterGroup(post_ptr-1,letter_group,0)) >0)
 					{
-						match.points += (20-distance_right);
+						add_points = (20-distance_right);
 						post_ptr += (n_bytes-1);
 					}
 					else
@@ -1939,7 +1979,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 				case RULE_NOTVOWEL:
 					if(!IsLetter(letter_w,0))
 					{
-						match.points += (20-distance_right);
+						add_points = (20-distance_right);
 						post_ptr += letter_xbytes;
 					}
 					else
@@ -1949,14 +1989,14 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 				case RULE_DIGIT:
 					if(IsDigit(letter_w))
 					{
-						match.points += (20-distance_right);
+						add_points = (20-distance_right);
 						post_ptr += letter_xbytes;
 					}
 					else
 					if(langopts.tone_numbers)
 					{
 						// also match if there is no digit
-						match.points += (20-distance_right);
+						add_points = (20-distance_right);
 						post_ptr--;
 					}
 					else
@@ -1966,7 +2006,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 				case RULE_NONALPHA:
 					if(!iswalpha(letter_w))
 					{
-						match.points += (21-distance_right);
+						add_points = (21-distance_right);
 						post_ptr += letter_xbytes;
 					}
 					else
@@ -1975,14 +2015,14 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 
 				case RULE_DOUBLE:
 					if(letter == last_letter)
-						match.points += (21-distance_right);
+						add_points = (21-distance_right);
 					else
 						failed = 1;
 					break;
 
 				case RULE_ALT1:
 					if(dict_flags & FLAG_ALT_TRANS)
-						match.points++;
+						add_points = 1;
 					else
 						failed = 1;
 					break;
@@ -1990,7 +2030,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 				case '-':
 					if((letter == '-') || ((letter == ' ') && (word_flags & FLAG_HYPHEN_AFTER)))
 					{
-						match.points += (22-distance_right);    // one point more than match against space
+						add_points = (22-distance_right);    // one point more than match against space
 					}
 					else
 						failed = 1;
@@ -2019,7 +2059,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 							p += utf8_in(&letter_w,p,0);
 						}
 						if(syllable_count <= 0)
-							match.points+= (19-distance_right);
+							add_points = (19-distance_right);
 						else
 							failed = 1;
 					}
@@ -2038,12 +2078,12 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 							p += utf8_in(&letter_w,p,0);
 						}
 						if(!failed)
-							match.points += (19-distance_right);
+							add_points = (19-distance_right);
 					}
 					break;
 
 				case RULE_INC_SCORE:
-					match.points += 20;      // force an increase in points
+					add_points = 20;      // force an increase in points
 					break;
 
 				case RULE_DEL_FWD:
@@ -2068,16 +2108,16 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 					if(word_flags & FLAG_SUFFIX_REMOVED)
 						failed = 1;             // a suffix has been removed
 					else
-						match.points++;
+						add_points = 1;
 					break;
 
 				default:
 					if(letter == rb)
 					{
 						if(letter == RULE_SPACE)
-							match.points += (21-distance_right);
+							add_points = (21-distance_right);
 						else
-							match.points += (21-distance_right);
+							add_points = (21-distance_right);
 					}
 					else
 						failed = 1;
@@ -2106,7 +2146,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 						lg_pts = 20;
 						if(letter_group==2)
 							lg_pts = 19;  // fewer points for C, general consonant
-						match.points += (lg_pts-distance_left);
+						add_points = (lg_pts-distance_left);
 						pre_ptr -= letter_xbytes;
 					}
 					else
@@ -2117,7 +2157,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 					letter_group = *rule++ - 'A';
 					if((n_bytes = IsLetterGroup(pre_ptr-letter_xbytes,letter_group,1)) >0)
 					{
-						match.points += (20-distance_right);
+						add_points = (20-distance_right);
 						pre_ptr -= (n_bytes-1);
 					}
 					else
@@ -2127,7 +2167,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 				case RULE_NOTVOWEL:
 					if(!IsLetter(letter_w,0))
 					{
-						match.points += (20-distance_left);
+						add_points = (20-distance_left);
 						pre_ptr -= letter_xbytes;
 					}
 					else
@@ -2136,7 +2176,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 
 				case RULE_DOUBLE:
 					if(letter == last_letter)
-						match.points += (21-distance_left);
+						add_points = (21-distance_left);
 					else
 						failed = 1;
 					break;
@@ -2144,7 +2184,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 				case RULE_DIGIT:
 					if(IsDigit(letter_w))
 					{
-						match.points += (21-distance_left);
+						add_points = (21-distance_left);
 						pre_ptr -= letter_xbytes;
 					}
 					else
@@ -2154,7 +2194,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 				case RULE_NONALPHA:
 					if(!iswalpha(letter_w))
 					{
-						match.points += (21-distance_right);
+						add_points = (21-distance_right);
 						pre_ptr -= letter_xbytes;
 					}
 					else
@@ -2170,14 +2210,14 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 						syllable_count++;   /* number of syllables to match */
 					}
 					if(syllable_count <= word_vowel_count)
-						match.points+= (19-distance_left);
+						add_points = (19-distance_left);
 					else
 						failed = 1;
 					break;
 
 				case RULE_STRESSED:
 					if(word_stressed_count > 0)
-						match.points += 19;
+						add_points = 19;
 					else
 						failed = 1;
 					break;
@@ -2195,20 +2235,20 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 							p -= utf8_in(&letter_w,p,1);
 						}
 						if(!failed)
-							match.points += 3;
+							add_points = 3;
 					}
 					break;
 
 				case RULE_IFVERB:
 					if(expect_verb)
-						match.points += 1;
+						add_points = 1;
 					else
 						failed = 1;
 					break;
 
 				case RULE_CAPITAL:
 					if(word_flags & FLAG_FIRST_UPPER)
-						match.points += 1;
+						add_points = 1;
 					else
 						failed = 1;
 					break;
@@ -2219,7 +2259,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 					{
 						if(*p == '.')
 						{
-							match.points +=50;
+							add_points = 50;
 							break;
 						}
 					}
@@ -2230,7 +2270,7 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 				case '-':
 					if((letter == '-') || ((letter == ' ') && (word_flags & FLAG_HYPHEN)))
 					{
-						match.points += (22-distance_right);       // one point more than match against space
+						add_points = (22-distance_right);       // one point more than match against space
 					}
 					else
 						failed = 1;
@@ -2240,9 +2280,9 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 					if(letter == rb)
 					{
 						if(letter == RULE_SPACE)
-							match.points += 4;
+							add_points = 4;
 						else
-							match.points += (21-distance_left);
+							add_points = (21-distance_left);
 					}
 					else
 						failed = 1;
@@ -2250,6 +2290,9 @@ void Translator::MatchRule(char *word[], const char *group, char *rule, MatchRec
 				}
 				break;
 			}
+
+			if(failed == 0)
+				match.points += add_points;
 		}
 
 		if(failed == 2)
@@ -2500,6 +2543,11 @@ int Translator::TranslateRules(char *p_start, char *phonemes, int ph_size, char 
 
 				if(match1.points == 0)
 				{
+					if((wc >= 0x300) && (wc <= 0x36f))
+					{
+						// combining accent inside a word, ignore
+					}
+					else
 					if(IsAlpha(wc))
 					{
 						if((any_alpha > 1) || (p[wc_bytes-1] > ' '))
@@ -2865,7 +2913,7 @@ const char *Translator::LookupDict2(const char *word, const char *word2, char *p
 				// don't use the contraction if any of the words are emphasized
 				for(ix=0; ix <= skipwords; ix++)
 				{
-					if((wtab != NULL) && (wtab[ix].flags & FLAG_EMPHASIZED))
+					if((wtab != NULL) && (wtab[ix].flags & FLAG_EMPHASIZED2))
 					{
 						condition_failed = 1;
 					}
@@ -2933,6 +2981,13 @@ const char *Translator::LookupDict2(const char *word, const char *word2, char *p
 			}
 		}
 
+		if(dictionary_flags2 & FLAG_HYPHENATED)
+		{
+			if(!(word_flags & FLAG_HYPHEN_AFTER))
+			{
+				continue;
+			}
+		}
 		if(dictionary_flags2 & FLAG_CAPITAL)
 		{
 			if(!(word_flags & FLAG_FIRST_UPPER))
@@ -3068,7 +3123,11 @@ int Translator::LookupDictList(char **wordptr, char *ph_out, unsigned int *flags
 	if(length > 0)
 	{
 		// found an abbreviation containing dots
-		nbytes = utf8_nbytes(word2);
+		nbytes = 0;
+		while(((c = word2[nbytes]) != 0) && (c != ' '))
+		{
+			nbytes++;
+		}
 		memcpy(&word[length],word2,nbytes);
 		word[length+nbytes] = 0;
 		found =  LookupDict2(word, word2, ph_out, flags, end_flags, wtab);

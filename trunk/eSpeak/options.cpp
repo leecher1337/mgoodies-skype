@@ -54,6 +54,7 @@ static OptPageControl optionsControls[] = {
 	{ &opts.enable_only_idle,		CONTROL_CHECKBOX,		IDC_ONLY_IDLE,		"EnableOnlyIfIdle", FALSE },
 	{ &opts.use_flags,				CONTROL_CHECKBOX,		IDC_USE_FLAGS,		"UseFlags", TRUE },
 	{ &opts.respect_sndvol_mute,	CONTROL_CHECKBOX,		IDC_SNDVOL,			"RespectSndVolMute", TRUE },
+	{ &opts.select_variant_per_genre,CONTROL_CHECKBOX,		IDC_PER_GENRE,		"SelectVariantPerGenre", TRUE },
 };
 
 
@@ -786,7 +787,7 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 				}
 
 				pt.y += height + 10;
-				id += 20;
+				id += 60;
 			}
 
 			avaiable = rc.bottom - rc.top;
@@ -849,8 +850,9 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
  
 			ScrollWindowEx(hwndDlg, 0, -yDelta, (CONST RECT *) NULL, 
 				(CONST RECT *) NULL, (HRGN) NULL, (LPRECT) NULL, 
-				SW_ERASE | SW_INVALIDATE | SW_SCROLLCHILDREN); 
-			UpdateWindow(hwndDlg); 
+				/* SW_ERASE | SW_INVALIDATE | */ SW_SCROLLCHILDREN); 
+//			UpdateWindow(hwndDlg); 
+			InvalidateRect(hwndDlg, NULL, TRUE);
  
 			// Reset the scroll bar. 
  
@@ -914,7 +916,7 @@ static BOOL CALLBACK TypesDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM 
 					}
 				}
 
-				id += 20;
+				id += 60;
 			}
 
 			return TRUE;

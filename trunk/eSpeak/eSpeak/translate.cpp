@@ -55,7 +55,7 @@ int option_sayas = 0;
 int option_sayas2 = 0;  // used in translate_clause()
 int option_emphasis = 0;  // 0=normal, 1=normal, 2=weak, 3=moderate, 4=strong
 int option_ssml = 0;
-int option_phoneme_input = 1;  // allow [[phonemes]] in input
+int option_phoneme_input = 0;  // allow [[phonemes]] in input
 int option_phoneme_variants = 0;  // 0= don't display phoneme variant mnemonics
 int option_wordgap = 0;
 
@@ -361,11 +361,13 @@ int IsAlpha(unsigned int c)
 	if(iswalpha(c))
 		return(1);
 
-	if((c >= 0x901) && (c <= 0x957))
-		return(1);    // Devanagari  vowel signs and other signs
-
-	if((c >= 0xb81) && (c <= 0xbe5))
-		return(1);    // Tamil  vowel signs and other signs
+	if((c >= 0x901) && (c <= 0xdf7))
+	{
+		// Indic scripts: Devanagari, Tamil, etc
+		if((c & 0x7f) < 0x64)
+			return(1);
+		return(0);
+	}
 
 	if((c >= 0x300) && (c <= 0x36f))
 		return(1);   // combining accents
@@ -410,7 +412,7 @@ int IsSpace(unsigned int c)
 Translator::Translator()
 {//=====================
 	int ix;
-	static const unsigned char stress_amps2[] = {16,16, 20,20, 20,24, 24,21 };
+	static const unsigned char stress_amps2[] = {17,17, 20,20, 20,24, 24,21 };
 	static const short stress_lengths2[8] = {182,140, 220,220, 220,240, 260,280};
 	static const wchar_t empty_wstring[1] = {0};
 	static const wchar_t punct_in_word[2] = {'\'', 0};  // allow hyphen within words
@@ -1177,13 +1179,13 @@ strcpy(phonemes2,phonemes);
 		dictionary_flags[0] &= ~FLAG_PAUSE1;
 	}
 
-	if(wflags & FLAG_EMPHASIZED)
+	if(wflags & FLAG_EMPHASIZED2)
 	{
 		// A word is indicated in the source text as stressed
 		// Give it stress level 6 (for the intonation module)
 		ChangeWordStress(this,word_phonemes,6);
 
-//		if(!(wflags & FLAG_LAST_WORD))     // ?? omit pre-pause if it's the last word in the sentence?
+		if(wflags & FLAG_EMPHASIZED)
 			dictionary_flags[0] |= FLAG_PAUSE1;   // precede by short pause
 	}
 	else
@@ -1745,7 +1747,11 @@ int Translator::TranslateWord2(char *word, WORD_TAB *wtab, int pre_pause, int ne
 			first_phoneme = 0;
 		}
 	}
-	plist2->sourceix = source_ix;  // ????
+	// don't set new-word if there is a hyphen before it
+	if((word_flags & FLAG_HYPHEN) == 0)
+	{
+		plist2->sourceix = source_ix;
+	}
 
 	end_stressed_vowel = 0;
 	if((stress >= 4) && (phoneme_tab[ph_list2[n_ph_list2-1].phcode]->type == phVOWEL))
@@ -1921,6 +1927,7 @@ int Translator::TranslateChar(char *ptr, int prev_in, unsigned int c, unsigned i
 	int initial;
 	int medial;
 	int final;
+	int next2;
 
 	static const unsigned char hangul_compatibility[0x34] = {
 	 0,  0x00,0x01,0xaa,0x02,0xac,0xad,0x03,
@@ -1935,10 +1942,12 @@ int Translator::TranslateChar(char *ptr, int prev_in, unsigned int c, unsigned i
 	{
 	case L('a','f'):
 	// look for 'n  and replace by a special character (unicode: schwa)
-	
+
+		utf8_in(&next2, &ptr[1], 0);
+
 		if(!iswalpha(prev_in))
 		{
-			if((c == '\'') && (next_in == 'n'))
+			if((c == '\'') && (next_in == 'n') && IsSpace(next2))
 			{
 				// n preceded by either apostrophe or U2019 "right single quotation mark"
 				ptr[0] = ' ';  // delete the  n
@@ -2010,6 +2019,7 @@ void *Translator::TranslateClause(FILE *f_text, const void *vp_input, int *tone_
 	int letter_count = 0;
 	int space_inserted = 0;
 	int syllable_marked = 0;
+	int decimal_sep_count = 0;
 	char *word;
 	char *p;
 	int j, k;
@@ -2024,12 +2034,14 @@ void *Translator::TranslateClause(FILE *f_text, const void *vp_input, int *tone_
 
 	int terminator;
 	int tone;
+	int tone2;
 
 	p_textinput = (char *)vp_input;
 	p_wchar_input = (wchar_t *)vp_input;
 
 	embedded_ix = 0;
 	embedded_read = 0;
+	option_phoneme_input &= ~2;   // clear bit 1 (temporary indication)
 
 	if((clause_start_char = count_characters) < 0)
 		clause_start_char = 0;
@@ -2037,12 +2049,17 @@ void *Translator::TranslateClause(FILE *f_text, const void *vp_input, int *tone_
 
 	for(ix=0; ix<N_TR_SOURCE; ix++)
 		charix[ix] = 0;
-	terminator = translator->ReadClause(f_text,source,charix,N_TR_SOURCE);
+	terminator = translator->ReadClause(f_text, source, charix, N_TR_SOURCE, &tone2);
 
 	charix[N_TR_SOURCE] = count_characters;
 
 	clause_pause = (terminator & 0xfff) * 10;  // mS
 	tone = (terminator >> 12) & 0xf;
+	if(tone2 != 0)
+	{
+		// override the tone type
+		tone = tone2;
+	}
 
 	for(p=source; *p != 0; p++)
 	{
@@ -2241,6 +2258,13 @@ if((c == '/') && (langopts.testing & 2) && IsDigit09(next_in) && IsAlpha(prev_ou
 				c = '\'';
 			}
 
+			if(c == CHAR_EMPHASIS)
+			{
+				// this character is a marker that the previous word is the focus of the clause
+				c = ' ';
+				word_flags |= FLAG_FOCUS;
+			}
+
 			c = TranslateChar(&source[source_index], prev_in,c, next_in, &char_inserted);  // optional language specific function
 			if(c == 8)
 				continue;  // ignore this character
@@ -2264,12 +2288,20 @@ if((c == '/') && (langopts.testing & 2) && IsDigit09(next_in) && IsAlpha(prev_ou
 					}
 				}
 			}
+
 			if(iswdigit(prev_out))
 			{
 				if(!iswdigit(c) && (c != '.') && (c != ','))
 				{
 					c = ' ';   // terminate digit string with a space
 					space_inserted = 1;
+				}
+			}
+			else
+			{
+				if(prev_in != ',')
+				{
+					decimal_sep_count = 0;
 				}
 			}
 
@@ -2455,10 +2487,17 @@ if((c == '/') && (langopts.testing & 2) && IsDigit09(next_in) && IsAlpha(prev_ou
 				{
 				}
 				else
-				if((prev_out != ' ') && !iswdigit(prev_out) && (prev_out != langopts.decimal_sep))   // TEST2
+				if((prev_out != ' ') && !iswdigit(prev_out))
 				{
-					c = ' ';
-					space_inserted = 1;
+					if((prev_out != langopts.decimal_sep) || ((decimal_sep_count > 0) && (langopts.decimal_sep == ',')))
+					{
+						c = ' ';
+						space_inserted = 1;
+					}
+					else
+					{
+						decimal_sep_count = 1;
+					}
 				}
 				else
 				if((prev_out == ' ') && IsAlpha(sbuf[ix-2]) && !IsAlpha(prev_in))
@@ -2562,10 +2601,14 @@ if((c == '/') && (langopts.testing & 2) && IsDigit09(next_in) && IsAlpha(prev_ou
 
 	for(ix=0; ix<word_count; ix++)
 	{
-		int j;
+		int nx;
 		int c_temp;
 		char *pn;
 		char *pw;
+		static unsigned int break_numbers1 = 0x49249248;
+		static unsigned int break_numbers2 = 0x492492a8;  // for languages which have numbers for 100,000 and 100,00,000
+		static unsigned int break_numbers3 = 0x49249268;  // for languages which have numbers for 100,000 and 1,000,000
+		unsigned int break_numbers;
 		char number_buf[80];
 
 		// start speaking at a specified word position in the text?
@@ -2582,24 +2625,76 @@ if((c == '/') && (langopts.testing & 2) && IsDigit09(next_in) && IsAlpha(prev_ou
 
 		// digits should have been converted to Latin alphabet ('0' to '9')
 		word = pw = &sbuf[words[ix].start];
+
+		if(iswdigit(word[0]) && (langopts.numbers2 & NUM2_100000))
+		{
+			// Languages with 100000 numbers.  Remove thousands separators so that we can insert them again later
+			pn = number_buf;
+			while(pn < &number_buf[sizeof(number_buf)-3])
+			{
+				if(iswdigit(*pw))
+				{
+					*pn++ = *pw++;
+				}
+				else
+				if((*pw == langopts.thousands_sep) && (pw[1] == ' ') && iswdigit(pw[2]))
+				{
+					pw += 2;
+					ix++;  // skip "word"
+				}
+				else
+				{
+					nx = pw - word;
+					memset(word,' ',nx);
+					nx = pn - number_buf;
+					memcpy(word,number_buf,nx);
+					break;
+				}
+			}
+			pw = word;
+		}
+
 		for(n_digits=0; iswdigit(word[n_digits]); n_digits++);  // count consecutive digits
+
 		if((n_digits > 4) && (word[0] != '0'))
 		{
 			// word is entirely digits, insert commas and break into 3 digit "words"
 			number_buf[0] = ' ';
 			pn = &number_buf[1];
-			j = n_digits;
+			nx = n_digits;
+
+			if(langopts.numbers2 & NUM2_100000a)
+				break_numbers = break_numbers3;
+			else
+			if(langopts.numbers2 & NUM2_100000)
+				break_numbers = break_numbers2;
+			else
+				break_numbers = break_numbers1;
+
 			while(pn < &number_buf[sizeof(number_buf)-3])
 			{
 				if(!isdigit(c = *pw++) && (c != langopts.decimal_sep))
 					break;
 
 				*pn++ = c;
-				if((--j > 0) && (j % 3)==0)
+				if((--nx > 0) && (break_numbers & (1 << nx)))
 				{
 					if(langopts.thousands_sep != ' ')
+					{
 						*pn++ = langopts.thousands_sep;
+					}
 					*pn++ = ' ';
+					if(break_numbers & (1 << (nx-1)))
+					{
+						// the next group only has 1 digits (i.e. NUM2_10000), make it three
+						*pn++ = '0';
+						*pn++ = '0';
+					}
+					if(break_numbers & (1 << (nx-2)))
+					{
+						// the next group only has 2 digits (i.e. NUM2_10000), make it three
+						*pn++ = '0';
+					}
 				}
 			}
 			pn[0] = ' ';
@@ -2624,10 +2719,10 @@ if((c == '/') && (langopts.testing & 2) && IsDigit09(next_in) && IsAlpha(prev_ou
 				for(pw = word; *pw != ' ';)
 				{
 					memset(number_buf,' ',9);
-					j = utf8_in(&c_temp, pw, 0);
-					memcpy(&number_buf[2],pw,j);
+					nx = utf8_in(&c_temp, pw, 0);
+					memcpy(&number_buf[2],pw,nx);
 					TranslateWord2(&number_buf[2], &words[ix], 0, 0 );
-					pw += j;
+					pw += nx;
 				}
 			}
 

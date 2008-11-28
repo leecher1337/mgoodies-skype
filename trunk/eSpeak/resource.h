@@ -26,6 +26,7 @@
 #define ID_ONTHEPHONE                   1070
 #define ID_OUTTOLUNCH                   1071
 #define IDC_ONLY_IDLE                   1072
+#define IDC_PER_GENRE                   1073
 #define IDC_DEF_LANG                    1075
 #define IDC_VOICE                       1076
 #define IDC_ADVANCED                    1077
