@@ -50,6 +50,7 @@ static int debug_flag = 0;
 
 int hash_counts[N_HASH_DICT];
 char *hash_chains[N_HASH_DICT];
+char letterGroupsDefined[N_LETTER_GROUPS];
 
 MNEM_TAB mnem_flags[] = {
 	// these in the first group put a value in bits0-3 of dictionary_flags
@@ -186,6 +187,7 @@ int compile_line(char *linebuf, char *dict_line, int *hash)
 	int len_phonetic;
 	int text_not_phonemes;   // this word specifies replacement text, not phonemes
 	unsigned int  wc;
+	int all_upper_case;
 	
 	char *mnemptr;
 	char *comment;
@@ -198,6 +200,10 @@ static char nullstring[] = {0};
 	text_not_phonemes = 0;
 	phonetic = word = nullstring;
 
+if(memcmp(linebuf,"_-",2)==0)
+{
+step=1;  // TEST
+}
 	p = linebuf;
 //	while(isspace2(*p)) p++;
 
@@ -312,6 +318,11 @@ static char nullstring[] = {0};
 			break;
 	
 		case 1:
+			if((c == '-') && (word[0] != '_'))
+			{
+				flag_codes[n_flag_codes++] = BITNUM_FLAG_HYPHENATED;
+				c = ' ';
+			}
 			if(isspace2(c))
 			{
 				p[0] = 0;   /* terminate english word */
@@ -425,11 +436,34 @@ static char nullstring[] = {0};
 		word[ix] = 0;
 	}
 	else
-	if((word[0] & 0x80)==0)  // 7 bit ascii only
+	if(word[0] != '_')
 	{
-		// If first letter is uppercase, convert to lower case.  (Only if it's 7bit ascii)
-		// ??? need to consider utf8 here
-		word[0] = tolower(word[0]);
+		// convert to lower case, and note if the word is all-capitals
+		int c2;
+
+		all_upper_case = 1;
+		p = word;
+		for(p=word;;)
+		{
+			// this assumes that the lower case char is the same length as the upper case char
+			// OK, except for Turkish "I", but use towlower() rather than towlower2()
+			ix = utf8_in(&c2,p,0);
+			if(c2 == 0)
+				break;
+			if(iswupper(c2))
+			{
+				utf8_out(towlower(c2),p);
+			}
+			else
+			{
+				all_upper_case = 0;
+			}
+			p += ix;
+		}
+		if(all_upper_case)
+		{
+			flag_codes[n_flag_codes++] = BITNUM_FLAG_ALLCAPS;
+		}
 	}
 
 	len_word = strlen(word);
@@ -769,10 +803,16 @@ void copy_rule_string(char *string, int &state)
 					c = *p++ - '0';
 					value = *p++ - '0';
 					c = c * 10 + value;
-					if((value < 0) || (value > 9) || (c <= 0) || (c >= N_LETTER_GROUPS))
+					if((value < 0) || (value > 9))
 					{
 						c = 0;
-						fprintf(f_log,"%5d: Expected 2 digits after 'L'",linenum);
+						fprintf(f_log,"%5d: Expected 2 digits after 'L'\n",linenum);
+						error_count++;
+					}
+					else
+					if((c <= 0) || (c >= N_LETTER_GROUPS) || (letterGroupsDefined[(int)c] == 0))
+					{
+						fprintf(f_log,"%5d: Letter group L%.2d not defined\n",linenum,c);
 						error_count++;
 					}
 					c += 'A';
@@ -788,9 +828,12 @@ void copy_rule_string(char *string, int &state)
 					}
 					break;
 
+				case '$':   // obsolete, replaced by S
+						fprintf(f_log,"%5d: $ now not allowed, use S for suffix",linenum);
+						error_count++;
+					break;
 				case 'P':
 					sxflags |= SUFX_P;   // Prefix, now drop through to Suffix
-				case '$':   // obsolete, replaced by S
 				case 'S':
 					output[ix++] = RULE_ENDING;
 					value = 0;
@@ -1217,18 +1260,25 @@ static int compile_lettergroup(char *input, FILE *f_out)
 	p = input;
 	if(!isdigit(p[0]) || !isdigit(p[1]))
 	{
+		fprintf(f_log,"%5d: Expected 2 digits after '.L'\n",linenum);
+		error_count++;
 		return(1);
 	}
 
-	group = atoi(&p[1]);
+	group = atoi(&p[0]);
 	if(group >= N_LETTER_GROUPS)
+	{
+		fprintf(f_log,"%5d: lettergroup out of range (01-%.2d)\n",linenum,N_LETTER_GROUPS-1);
+		error_count++;
 		return(1);
+	}
 
 	while(!isspace2(*p)) p++;
 
 	fputc(RULE_GROUP_START,f_out);
 	fputc(RULE_LETTERGP2,f_out);
 	fputc(group + 'A', f_out);
+	letterGroupsDefined[group] = 1;
 
 	for(;;)
 	{
@@ -1314,11 +1364,7 @@ static int compile_dictrules(FILE *f_in, FILE *f_out, char *fname_temp)
 
 			if(memcmp(buf,".L",2)==0)
 			{
-				if(compile_lettergroup(&buf[2], f_out) != 0)
-				{
-					fprintf(f_log,"%5d: Bad lettergroup\n",linenum);
-					error_count++;
-				}
+				compile_lettergroup(&buf[2], f_out);
 				continue;
 			}
 
@@ -1477,6 +1523,8 @@ int CompileDictionary(const char *dsource, const char *dict_name, FILE *log, cha
 	char path[sizeof(path_home)+40];       // path_dsource+20
 
 	error_count = 0;
+	memset(letterGroupsDefined,0,sizeof(letterGroupsDefined));
+
 	debug_flag = flags & 1;
 
 	if(dsource == NULL)

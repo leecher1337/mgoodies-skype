@@ -65,7 +65,7 @@ END
 IDD_CONTACT_LANG DIALOGEX 0, 0, 224, 155
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
-FONT 8, "MS Shell Dlg", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Enable speak for this contact",IDC_ENABLE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,9,4,203,13
@@ -104,39 +104,44 @@ BEGIN
     LTEXT           "Speak the following events:",IDC_EVENT_TYPES,3,4,297,13
 END
 
-IDD_ADVANCED DIALOGEX 0, 0, 252, 171
+IDD_ADVANCED DIALOGEX 0, 0, 252, 188
 STYLE DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        " Disable when global status is: ",IDC_STATUS,1,8,250,91
+    GROUPBOX        " Enabled when ",IDC_STATUS,1,6,250,117
+    LTEXT           " Disable when global status is: ",IDC_STATIC,10,20,230,
+                    10
     CONTROL         "Online",ID_ONLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    10,21,99,11
-    CONTROL         "Away",ID_AWAY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
-                    36,99,11
-    CONTROL         "NA",ID_NA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,51,
+                    22,34,99,11
+    CONTROL         "Away",ID_AWAY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,
+                    47,99,11
+    CONTROL         "NA",ID_NA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,60,
                     99,11
     CONTROL         "Occupied",ID_OCCUPIED,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,66,99,11
-    CONTROL         "DND",ID_DND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,82,
+                    WS_TABSTOP,22,73,99,11
+    CONTROL         "DND",ID_DND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,86,
                     99,11
     CONTROL         "Free for chat",ID_FREECHAT,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,136,21,99,11
+                    WS_TABSTOP,136,34,99,11
     CONTROL         "On the phone",ID_ONTHEPHONE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,136,36,99,11
+                    WS_TABSTOP,136,47,99,11
     CONTROL         "Out to lunch",ID_OUTTOLUNCH,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,136,51,99,11
+                    WS_TABSTOP,136,60,99,11
     CONTROL         "Invisible",ID_INVISIBLE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,136,66,99,11
+                    WS_TABSTOP,136,73,99,11
     CONTROL         "Offline",ID_OFFLINE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,136,82,99,11
-    GROUPBOX        " Advanced ",IDC_ADVANCED,1,103,250,65
-    CONTROL         "Use flags",IDC_USE_FLAGS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,10,118,230,10
-    CONTROL         "Respect SndVol mute",IDC_SNDVOL,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,133,230,10
+                    WS_TABSTOP,136,86,99,11
     CONTROL         "Enable only if Miranda is idle",IDC_ONLY_IDLE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,10,148,230,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,105,230,10
+    GROUPBOX        " Advanced ",IDC_ADVANCED,1,126,250,58
+    CONTROL         "Use flags",IDC_USE_FLAGS,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,10,141,230,10
+    CONTROL         "Respect Miranda sound mute",IDC_SNDVOL,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,10,154,230,10
+    CONTROL         "Select voice variant based on contact genre",
+                    IDC_PER_GENRE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,
+                    167,230,10
 END
 
 
@@ -172,12 +177,6 @@ BEGIN
         LEFTMARGIN, 3
         RIGHTMARGIN, 304
         BOTTOMMARGIN, 227
-    END
-
-    IDD_ADVANCED, DIALOG
-    BEGIN
-        BOTTOMMARGIN, 158
-        HORZGUIDE, 108
     END
 END
 #endif    // APSTUDIO_INVOKED

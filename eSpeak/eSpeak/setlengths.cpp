@@ -320,6 +320,9 @@ void Translator::CalcLengths()
 			if((langopts.word_gap & 0x10) && (p->newword))
 				p->prepause = 60;
 
+			if(p->ph->phflags & phLENGTHENSTOP)
+				p->prepause += 30;
+
 			if(p->synthflags & SFLAG_LENGTHEN)
 				p->prepause += langopts.long_stop;
 			break;
@@ -487,6 +490,14 @@ void Translator::CalcLengths()
 			}
 
 			// calc length modifier
+			if((next->ph->code == phonPAUSE_VSHORT) && (next2->type == phPAUSE))
+			{
+				// if PAUSE_VSHORT is followed by a pause, then use that
+				next = next2;
+				next2 = next3;
+				next3 = &phoneme_list[ix+4];
+			}
+
 			if(more_syllables==0)
 			{
 				len = langopts.length_mods0[next2->ph->length_mod *10+ next->ph->length_mod];
@@ -542,7 +553,10 @@ void Translator::CalcLengths()
 			if(end_of_clause == 2)
 			{
 				// this is the last syllable in the clause, lengthen it - more for short vowels
-				length_mod = length_mod * (256 + (280 - p->ph->std_length)/3)/256;
+				len = p->ph->std_length;
+				if(langopts.stress_flags & 0x40000)
+					len=200;  // don't lengthen short vowels more than long vowels at end-of-clause
+				length_mod = length_mod * (256 + (280 - len)/3)/256;
 			}
 
 if(p->type != phVOWEL)

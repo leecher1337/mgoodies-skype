@@ -47,6 +47,7 @@ struct Options {
 
 	BOOL use_flags;
 	BOOL respect_sndvol_mute;
+	BOOL select_variant_per_genre;
 };
 
 extern Options opts;

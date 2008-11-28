@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"meSpeak",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,9),
+	PLUGIN_MAKE_VERSION(0,0,0,11),
 	"Speaker plugin based on eSpeak engine (%s)",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -906,7 +906,7 @@ Variant *GetContactVariant(HANDLE hContact)
 	
 DEFAULT:
 
-	if (hContact != NULL)
+	if (hContact != NULL && opts.select_variant_per_genre)
 	{
 		CONTACTINFO ci = {0};
 		ci.cbSize = sizeof(ci);

@@ -204,8 +204,6 @@ int SpeakExService(WPARAM wParam, LPARAM lParam)
 			buff.append((char *) item->text);
 		else
 			buff.append((WCHAR *) item->text);
-
-		buff.pack();
 		
 		return SpeakService(item->hContact, buff.detach());
 	}
@@ -222,7 +220,6 @@ int SpeakExService(WPARAM wParam, LPARAM lParam)
 		TCHAR **variables = CopyVariablesToUnicode(item);
 		ReplaceTemplate(&buffer, item->hContact, templ.str, variables, item->numVariables);
 		FreeVariablesCopy(item, variables);
-		buffer.pack();
 
 		if (buffer.str == NULL)
 			return -3;

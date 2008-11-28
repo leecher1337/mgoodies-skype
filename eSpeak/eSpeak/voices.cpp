@@ -49,8 +49,8 @@ MNEM_TAB genders [] = {
 	{"female", 2},
 	{NULL, 0 }};
 
-//int tone_points[10] = {250,140, 1200,110, -1,0, -1,0, -1,0};
-int tone_points[10] = {600,170, 1200,135, 2000,110, 3000,110, -1,0};
+int tone_points[12] = {600,170, 1200,135, 2000,110, 3000,110, -1,0};
+//int tone_points[12] = {250,200,  400,170, 600,170, 1200,135, 2000,110, -1,0};
 
 // limit the rate of change for each formant number
 //static int formant_rate_22050[9] = {50, 104, 165, 230, 220, 220, 220, 220, 220};  // values for 22kHz sample rate
@@ -101,11 +101,13 @@ espeak_VOICE voice_selected;
 #define V_NUMBERS     25
 #define V_OPTION      26
 
-#define V_MBROLA     27
+#define V_MBROLA      27
+#define V_KLATT       28
 
 // these need a phoneme table to have been specified
-#define V_REPLACE    28
-#define V_CONSONANTS 29
+#define V_REPLACE    29
+#define V_CONSONANTS 30
+
 
 
 typedef struct {
@@ -144,6 +146,7 @@ static keywtab_t keyword_tab[] = {
 	{"option",     V_OPTION},
 	{"mbrola",     V_MBROLA},
 	{"consonants", V_CONSONANTS},
+	{"klatt",      V_KLATT},
 
 	// these just set a value in langopts.param[]
 	{"l_dieresis", 0x100+LOPT_DIERESES},
@@ -195,7 +198,7 @@ void SetToneAdjust(voice_t *voice, int *tone_pts)
 	int height2;
 	double rate;
 
-	for(pt=0; pt<10; pt+=2)
+	for(pt=0; pt<12; pt+=2)
 	{
 		if(tone_pts[pt] == -1)
 		{
@@ -225,15 +228,16 @@ void SetToneAdjust(voice_t *voice, int *tone_pts)
 
 void ReadTonePoints(char *string, int *tone_pts)
 {//=============================================
-// tone_pts[] is int[10]
+// tone_pts[] is int[12]
 	int ix;
 
-	for(ix=0; ix<10; ix++)
+	for(ix=0; ix<12; ix++)
 		tone_pts[ix] = -1;
 
-	sscanf(string,"%d %d %d %d %d %d %d %d",
+	sscanf(string,"%d %d %d %d %d %d %d %d %d %d",
 		&tone_pts[0],&tone_pts[1],&tone_pts[2],&tone_pts[3],
-		&tone_pts[4],&tone_pts[5],&tone_pts[6],&tone_pts[7]);
+		&tone_pts[4],&tone_pts[5],&tone_pts[6],&tone_pts[7],
+		&tone_pts[8],&tone_pts[9]);
 }
 
 
@@ -361,18 +365,22 @@ void VoiceReset(int tone_only)
 	static int breath_widths[N_PEAKS] = {0,200,200,400,400,400,600,600,600};
 
 	// default is:  pitch 82,118
-	voice->pitch_base =   0x49000;    // default, 73 << 12;
-	voice->pitch_range =  0x0f30;     // default = 0x1000
+//	voice->pitch_base =   0x49000;    // default, 73 << 12;
+//	voice->pitch_range =  0x0f30;     // default = 0x1000
+	voice->pitch_base = 0x47000;
+	voice->pitch_range = 3996;
+
 	voice->formant_factor = 256;
 
 	voice->echo_delay = 0;
 	voice->echo_amp = 0;
 	voice->flutter = 64;
 	voice->n_harmonic_peaks = 5;
-	voice->peak_shape = 1;
+	voice->peak_shape = 0;
 	voice->voicing = 64;
 	voice->consonant_amp = 100;
 	voice->consonant_ampv = 100;
+	memset(voice->klatt,0,sizeof(voice->klatt));
 
 #ifdef PLATFORM_RISCOS
 	voice->roughness = 1;
@@ -547,6 +555,12 @@ voice_t *LoadVoice(const char *vname, int control)
 			langname[1] = voicename[1];
 			langname[2] = 0;
 			sprintf(buf,"%s%s%c%s",path_voices,langname,PATHSEP,voicename);
+
+			if(GetFileLength(buf) <= 0)
+			{
+				// look in "test" sub-directory
+				sprintf(buf,"%stest%c%s",path_voices,PATHSEP,voicename);
+			}
 		}
 	}
 
@@ -776,7 +790,7 @@ voice_t *LoadVoice(const char *vname, int control)
 			break;
 
 		case V_NUMBERS:
-			sscanf(p,"%d",&langopts->numbers);
+			sscanf(p,"%d %d",&langopts->numbers,&langopts->numbers2);
 			break;
 
 		case V_OPTION:
@@ -856,6 +870,11 @@ voice_t *LoadVoice(const char *vname, int control)
 				sscanf(p,"%s %s %d",name,phtrans,&srate);
 				LoadMbrolaTable(name,phtrans,srate);
 			}
+			break;
+
+		case V_KLATT:
+			Read8Numbers(p,voice->klatt);
+			voice->klatt[KLATT_Kopen] -= 40;
 			break;
 
 		default:
