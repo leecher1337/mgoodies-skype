@@ -20,21 +20,32 @@ class CSettingsTree;
 /**
 	\brief Key Type of the SettingsBTree
 
-	The setting names (UTF8) are hashed, so that they can easily be accessed.
+	The setting names (ASCII) are hashed, so that they can easily be accessed.
 **/
 
 typedef struct TSettingKey {
 	uint32_t          Hash;    /// 32 bit hash of the Setting name
 	TDBTSettingHandle Setting;
 
-	bool operator <  (const TSettingKey & Other) const;
+	bool operator <  (const TSettingKey & Other) const
+	{
+		if (Hash != Other.Hash) return Hash < Other.Hash;
+		if (Setting != Other.Setting) return Setting < Other.Setting;
+		return false;
+	}
 	//bool operator <= (const TSettingKey & Other);
-	bool operator == (const TSettingKey & Other) const;
+	bool operator == (const TSettingKey & Other) const
+	{
+		return (Hash == Other.Hash) && (Setting == Other.Setting);
+	}
 	//bool operator >= (const TSettingKey & Other);
-	bool operator >  (const TSettingKey & Other) const;
+	bool operator >  (const TSettingKey & Other) const
+	{	
+		if (Hash != Other.Hash) return Hash > Other.Hash;
+		if (Setting != Other.Setting) return Setting > Other.Setting;
+		return false;
+	}
 } TSettingKey;
-
-
 
 static const uint32_t cSettingSignature = 0xF5B87A3D;
 static const uint16_t cSettingNodeSignature = 0xBA12;
@@ -42,26 +53,25 @@ static const uint16_t cSettingNodeSignature = 0xBA12;
 /**
 	\brief The data of a setting
 
-	A setting's data is variable length. The data is a TSetting-structure followed by varaible length data.
+	A setting's data is variable length. The data is a TSetting-structure followed by variable length data.
 	- fixed data
-	- SettingName (UTF8)
+	- SettingName (ASCII)
 	- maybe blob data
 **/
 typedef struct TSetting {
-	TDBTEntityHandle Entity; /// Settings' Entity
-	uint32_t   Flags;         /// flags
-	uint16_t   Type;          /// setting type	
-	uint16_t   NameLength;    /// settingname length
-	uint8_t    Reserved[8];
+	TDBTEntityHandle Entity;   /// Settings' Entity
+	uint32_t   Flags;          /// flags
+	uint16_t   Type;           /// setting type	
+	uint16_t   NameLength;     /// settingname length	
 	union {
 		TDBTSettingValue Value;  /// if type is fixed length, the data is stored rigth here
 		
 		struct {
-			uint32_t BlobLength;  /// if type is variable length this describes the length of the data in bytes
-			uint32_t AllocSize;   /// this is the allocated space for the blob ALWAYS in byte! this prevents us to realloc it too often
+			uint32_t BlobLength;   /// if type is variable length this describes the length of the data in bytes
+			uint32_t AllocSize;    /// this is the allocated space for the blob ALWAYS in byte! this prevents us to realloc it too often
 		};
 	};
-	
+	uint8_t    Reserved[8];
 	// settingname with terminating NULL
   // blob
 } TSetting;

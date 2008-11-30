@@ -30,12 +30,30 @@ typedef struct TEventKey {
 	uint32_t        Index;     /// index counted globally
 	TDBTEventHandle Event;
 
-	bool operator <  (const TEventKey & Other) const;
+	bool operator <  (const TEventKey & Other) const
+	{
+		if (TimeStamp != Other.TimeStamp) return TimeStamp < Other.TimeStamp;
+		if (Index != Other.Index) return Index < Other.Index;
+		if (Event != Other.Event) return Event < Other.Event;
+		return false;
+	}
 	//bool operator <= (const TEventKey & Other);
-	bool operator == (const TEventKey & Other) const;
+	bool operator == (const TEventKey & Other) const
+	{
+		return (TimeStamp == Other.TimeStamp) && (Index == Other.Index) && (Event == Other.Event);
+	}
+
 	//bool operator >= (const TEventKey & Other);
-	bool operator >  (const TEventKey & Other) const;
+	bool operator >  (const TEventKey & Other) const
+	{	
+		if (TimeStamp != Other.TimeStamp) return TimeStamp > Other.TimeStamp;
+		if (Index != Other.Index) return Index > Other.Index;
+		if (Event != Other.Event) return Event > Other.Event;
+		return false;
+	}
+
 } TEventKey;
+
 
 /**
 	\brief Key Type of the EventLinkBTree
@@ -44,11 +62,24 @@ typedef struct TEventLinkKey {
 	TDBTEventHandle   Event;    /// handle to the event
 	TDBTEntityHandle Entity;  /// handle to the Entity which includes this event
 
-	bool operator <  (const TEventLinkKey & Other) const;
+	bool operator <  (const TEventLinkKey & Other) const
+	{
+		if (Event != Other.Event) return Event < Other.Event;
+		if (Entity != Other.Entity) return Entity < Other.Entity;
+		return false;
+	}
 	//bool operator <= (const TEventKey & Other);
-	bool operator == (const TEventLinkKey & Other) const;
+	bool operator == (const TEventLinkKey & Other) const
+	{
+		return (Event == Other.Event) && (Entity == Other.Entity);
+	}	
 	//bool operator >= (const TEventKey & Other);
-	bool operator >  (const TEventLinkKey & Other) const;
+	bool operator >  (const TEventLinkKey & Other) const
+	{
+		if (Event != Other.Event) return Event > Other.Event;
+		if (Entity != Other.Entity) return Entity > Other.Entity;
+		return false;
+	}
 } TEventLinkKey;
 
 /**
@@ -64,12 +95,12 @@ typedef struct TEvent {
 	uint32_t Index;              /// index counter to seperate events with the same timestamp
 	uint32_t Type;               /// Eventtype
 	union {
-		TDBTEntityHandle Entity;  /// hEntity which owns this event
+		TDBTEntityHandle Entity;   /// hEntity which owns this event
 		uint32_t ReferenceCount;   /// Reference Count, if event was hardlinked
 	};
 	uint32_t DataLength;         /// Length of the stored data in bytes
 
-	uint8_t Reserved[8];            /// reserved storage
+	uint8_t Reserved[8];         /// reserved storage
 } TEvent;
 
 #pragma pack(pop)

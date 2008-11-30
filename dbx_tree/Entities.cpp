@@ -1,51 +1,5 @@
 #include "Entities.h"
 
-inline bool TVirtualKey::operator <  (const TVirtualKey & Other) const
-{
-	if (RealEntity != Other.RealEntity) return RealEntity < Other.RealEntity;
-	if (Virtual != Other.Virtual) return Virtual < Other.Virtual;
-	return false;
-}
-
-inline bool TVirtualKey::operator == (const TVirtualKey & Other) const
-{
-	return (RealEntity == Other.RealEntity) && (Virtual == Other.Virtual);
-}
-
-inline bool TVirtualKey::operator >  (const TVirtualKey & Other) const
-{	
-	if (RealEntity != Other.RealEntity) return RealEntity > Other.RealEntity;
-	if (Virtual != Other.Virtual) return Virtual > Other.Virtual;
-	return false;
-}
-
-
-inline bool TEntityKey::operator <  (const TEntityKey & Other) const
-{
-	if (Level != Other.Level) return Level < Other.Level;
-	if (Parent != Other.Parent) return Parent < Other.Parent;
-	if (Entity != Other.Entity) return Entity < Other.Entity;
-	return false;
-}
-
-inline bool TEntityKey::operator == (const TEntityKey & Other) const
-{
-	return (Level == Other.Level) && (Parent == Other.Parent) && (Entity == Other.Entity);
-}
-
-inline bool TEntityKey::operator >  (const TEntityKey & Other) const
-{	
-	if (Level != Other.Level) return Level > Other.Level;
-	if (Parent != Other.Parent) return Parent > Other.Parent;
-	if (Entity != Other.Entity) return Entity > Other.Entity;
-	return false;
-}
-
-
-
-
-
-
 CVirtuals::CVirtuals(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TNodeRef RootNode)
 : CFileBTree(BlockManager, RootNode, cVirtualNodeSignature),
 	m_Sync(Synchronize)

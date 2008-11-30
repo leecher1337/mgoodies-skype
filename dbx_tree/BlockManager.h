@@ -8,9 +8,10 @@
 #include "stdint.h"
 #include "FileAccess.h"
 #include "EncryptionManager.h"
+#include "MREWSync.h"
+#include "Thread.h"
 
-
-class CBlockManager
+class CBlockManager : private CThread
 {
 protected:
 	static const uint32_t cFreeBlockID = 0xFFFFFFFF;
@@ -42,18 +43,22 @@ protected:
 
 	typedef std::multimap<uint32_t, uint32_t> TFreeBlockMap;
 
-	typedef struct TBlockTableContact {
+	typedef struct TBlockTableEntry {
 		uint32_t Addr;
-		//uint32_t Flags;
-	} TBlockTableContact;
-	std::vector<TBlockTableContact> m_BlockTable;
+	} TBlockTableEntry;
+	std::vector<TBlockTableEntry> m_BlockTable;
 
 	CFileAccess & m_FileAccess;
 	CEncryptionManager & m_EncryptionManager;
-
+	CSmallMREWSynchronizer m_BlockSync;
+	
 	uint32_t m_FirstBlockStart;
 	TFreeBlockMap m_FreeBlocks;
 	std::vector<uint32_t> m_FreeIDs;
+
+	uint32_t m_Optimize;
+
+	void Execute();
 
 	void Read(uint32_t Addr, bool IsVirtual, void* Buffer, uint32_t Size);
 	void Write(uint32_t Addr, bool IsVirtual, void* Buffer, uint32_t Size);
