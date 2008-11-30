@@ -88,3 +88,31 @@ public:
 	void EndWrite();
 
 };
+
+class CSmallMREWSynchronizer 
+{
+private:
+	volatile long m_Sentinel;
+	volatile long m_RevisionLevel;
+	volatile long m_ReadWaiting;
+	
+	HANDLE m_ReadSignal;
+	HANDLE m_WriteSignal;
+	unsigned int m_WaitRecycle;
+	unsigned int m_WriterID;
+
+	void BlockReaders();
+	void UnblockReaders();
+	void UnblockOneWriter();
+	void WaitForReadSignal();
+	void WaitForWriteSignal();
+public:
+	CSmallMREWSynchronizer();
+	~CSmallMREWSynchronizer();
+
+	void BeginRead();
+	void EndRead();
+	bool BeginWrite();
+	void EndWrite();
+	long ReadWaiting() {return m_ReadWaiting;};
+};

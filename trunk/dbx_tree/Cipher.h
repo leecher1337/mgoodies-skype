@@ -5,8 +5,8 @@
 class CCipher
 {
 public:
-	CCipher();
-	virtual ~CCipher();
+	CCipher() {};
+	virtual ~CCipher() {};
 
 	virtual uint32_t     BlockSizeBytes() = 0;
 	virtual bool         IsStreamCipher() = 0;

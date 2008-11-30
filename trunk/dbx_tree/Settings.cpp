@@ -2,27 +2,6 @@
 #include <math.h> // floor function
 #include "Hash.h"
 
-inline bool TSettingKey::operator <  (const TSettingKey & Other) const
-{
-	if (Hash != Other.Hash) return Hash < Other.Hash;
-	if (Setting != Other.Setting) return Setting < Other.Setting;
-	return false;
-}
-
-inline bool TSettingKey::operator == (const TSettingKey & Other) const
-{
-	return (Hash == Other.Hash) && (Setting == Other.Setting);
-}
-
-inline bool TSettingKey::operator >  (const TSettingKey & Other) const
-{	
-	if (Hash != Other.Hash) return Hash > Other.Hash;
-	if (Setting != Other.Setting) return Setting > Other.Setting;
-	return false;
-}
-
-
-
 CSettingsTree::CSettingsTree(CSettings & Owner, CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TNodeRef RootNode, TDBTEntityHandle Entity)
 : CFileBTree(BlockManager, RootNode, cSettingNodeSignature),
 	m_Owner(Owner),
@@ -761,12 +740,9 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 	
 	if (Setting.Type & DBT_STF_VariableLength)
 	{
-		if (set->AllocSize < blobsize)
-		{			
-			set->AllocSize = file->ResizeBlock(hSetting, blocksize) - 
+		set->AllocSize = file->ResizeBlock(hSetting, blocksize) - 
 				                (sizeof(TSetting) + set->NameLength + 1);
-		}
-
+		
 		set->BlobLength = blobsize;
 		
 		memcpy(buf + sizeof(TSetting) + set->NameLength + 1, Setting.Value.pBlob, blobsize);

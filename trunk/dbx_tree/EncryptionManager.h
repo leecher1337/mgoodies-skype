@@ -4,7 +4,7 @@
 #include "sigslot.h"
 #include "Cipher.h"
 #include "SHA256.h"
-
+//#include "Thread.h"
 
 typedef enum TEncryptionType {
 	ET_NONE = 0,
@@ -33,7 +33,7 @@ typedef struct TFileEncryption {
 typedef struct TEncryption {
 	uint32_t CipherID;
 	TEncryptionType Type;
-	char * Password;
+	wchar_t * Password;
 } TEncryption, *PEncryption;
 
 class CEncryptionManager

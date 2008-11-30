@@ -1,48 +1,5 @@
 #include "Events.h"
 
-inline bool TEventKey::operator <  (const TEventKey & Other) const
-{
-	if (TimeStamp != Other.TimeStamp) return TimeStamp < Other.TimeStamp;
-	if (Index != Other.Index) return Index < Other.Index;
-	if (Event != Other.Event) return Event < Other.Event;
-	return false;
-}
-
-inline bool TEventKey::operator == (const TEventKey & Other) const
-{
-	return (TimeStamp == Other.TimeStamp) && (Index == Other.Index) && (Event == Other.Event);
-}
-
-inline bool TEventKey::operator >  (const TEventKey & Other) const
-{	
-	if (TimeStamp != Other.TimeStamp) return TimeStamp > Other.TimeStamp;
-	if (Index != Other.Index) return Index > Other.Index;
-	if (Event != Other.Event) return Event > Other.Event;
-	return false;
-}
-
-
-inline bool TEventLinkKey::operator <  (const TEventLinkKey & Other) const
-{
-	if (Event != Other.Event) return Event < Other.Event;
-	if (Entity != Other.Entity) return Entity < Other.Entity;
-	return false;
-}
-
-inline bool TEventLinkKey::operator == (const TEventLinkKey & Other) const
-{
-	return (Event == Other.Event) && (Entity == Other.Entity);
-}	
-
-inline bool TEventLinkKey::operator >  (const TEventLinkKey & Other) const
-{
-	if (Event != Other.Event) return Event > Other.Event;
-	if (Entity != Other.Entity) return Entity > Other.Entity;
-	return false;
-}
-
-
-
 CEventsTree::CEventsTree(CBlockManager & BlockManager, TNodeRef RootNode, TDBTEntityHandle Entity)
 :	CFileBTree(BlockManager, RootNode, cEventNodeSignature)
 {

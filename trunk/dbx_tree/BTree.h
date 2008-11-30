@@ -36,10 +36,6 @@ public:
 
 		/**
 			\brief Keeps track of changes in the tree and refresh the iterator
-
-			There are a few possibilities on not UniqueKey-trees where the managing can fail.
-			It can occour when deleting an iterated Key and have some other Entities with same Key...
-			This can cause Values to be skipped.
 		**/
 		void setManaged();
 		bool wasDeleted();

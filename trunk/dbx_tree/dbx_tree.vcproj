@@ -285,10 +285,6 @@
 					Name="Encryption"
 					>
 					<File
-						RelativePath=".\Cipher.cpp"
-						>
-					</File>
-					<File
 						RelativePath=".\Cipher.h"
 						>
 					</File>
@@ -418,6 +414,10 @@
 				RelativePath=".\MREWSync.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Thread.cpp"
+				>
+			</File>
 			<Filter
 				Name="HeaderFiles"
 				>
@@ -443,6 +443,10 @@
 				</File>
 				<File
 					RelativePath=".\stdint.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Thread.h"
 					>
 				</File>
 			</Filter>

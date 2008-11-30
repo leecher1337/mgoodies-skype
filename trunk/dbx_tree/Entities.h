@@ -20,14 +20,25 @@ typedef struct TVirtualKey {
 	TDBTEntityHandle RealEntity;     /// hEntity of the duplicated RealEntity
 	TDBTEntityHandle Virtual;       /// hEntity of the virtual duplicate
 
-	bool operator <  (const TVirtualKey & Other) const;
+	bool operator <  (const TVirtualKey & Other) const
+	{
+		if (RealEntity != Other.RealEntity) return RealEntity < Other.RealEntity;
+		if (Virtual != Other.Virtual) return Virtual < Other.Virtual;
+		return false;
+	}
 	//bool operator <= (const TVirtualKey & Other);
-	bool operator == (const TVirtualKey & Other) const;
+	bool operator == (const TVirtualKey & Other) const
+	{
+		return (RealEntity == Other.RealEntity) && (Virtual == Other.Virtual);
+	}
 	//bool operator >= (const TVirtualKey & Other);
-	bool operator >  (const TVirtualKey & Other) const;
+	bool operator >  (const TVirtualKey & Other) const
+	{	
+		if (RealEntity != Other.RealEntity) return RealEntity > Other.RealEntity;
+		if (Virtual != Other.Virtual) return Virtual > Other.Virtual;
+		return false;
+	}
 } TVirtualKey;
-
-
 
 /**
 	\brief Key Type of the EntityBTree
@@ -40,13 +51,27 @@ typedef struct TEntityKey {
 	TDBTEntityHandle Parent;    /// hEntity of the Parent. Root.Parent == 0
 	TDBTEntityHandle Entity;     /// hEntity of the stored Entity itself
 
-	bool operator <  (const TEntityKey & Other) const;
+	bool operator <  (const TEntityKey & Other) const
+	{
+		if (Level != Other.Level) return Level < Other.Level;
+		if (Parent != Other.Parent) return Parent < Other.Parent;
+		if (Entity != Other.Entity) return Entity < Other.Entity;
+		return false;
+	}
 	//bool operator <= (const TEntityKey & Other);
-	bool operator == (const TEntityKey & Other) const;
+	bool operator == (const TEntityKey & Other) const
+	{
+		return (Level == Other.Level) && (Parent == Other.Parent) && (Entity == Other.Entity);
+	}
 	//bool operator >= (const TEntityKey & Other);
-	bool operator >  (const TEntityKey & Other) const;
+	bool operator >  (const TEntityKey & Other) const
+	{	
+		if (Level != Other.Level) return Level > Other.Level;
+		if (Parent != Other.Parent) return Parent > Other.Parent;
+		if (Entity != Other.Entity) return Entity > Other.Entity;
+		return false;
+	}
 } TEntityKey;
-
 
 /**
 	\brief The data of an Entity
