@@ -56,7 +56,7 @@
 #define FLAG_ALT_TRANS    0x100000  // language specific
 #define FLAG_ALT2_TRANS   0x200000  // language specific
 
-
+#define FLAG_MAX3       0x08000000  // limit to 3 repeats
 #define FLAG_PAUSE1     0x10000000  // shorter prepause
 #define FLAG_TEXTMODE   0x20000000  // word translates to replacement text, not phonemes
 #define BITNUM_FLAG_TEXTMODE    29
@@ -417,6 +417,8 @@ public:
 
 	char phon_out[300];
 	char word_phonemes[N_WORD_PHONEMES];    // a word translated into phoneme codes
+	char phonemes_repeat[20];
+	int phonemes_repeat_count;
 
 	unsigned char stress_amps[8];
 	unsigned char stress_amps_r[8];

@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"meSpeak",
 #endif
-	PLUGIN_MAKE_VERSION(0,0,0,11),
+	PLUGIN_MAKE_VERSION(0,0,0,12),
 	"Speaker plugin based on eSpeak engine (%s)",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -1086,6 +1086,7 @@ void Speak(SpeakData *data)
 	for (int i = 0; i < NUM_PARAMETERS; i++)
 		espeak_SetParameter(PARAMETERS[i].eparam, data->getParameter(i), 0);
 	
+	//mir_log(
 	espeak_Synth(data->text, (lstrlen(data->text) + 1) * sizeof(TCHAR), 0, POS_CHARACTER, 
 				 0, espeakCHARS_TCHAR, NULL, NULL);
 }

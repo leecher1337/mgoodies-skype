@@ -67,7 +67,7 @@ int n_soundicon_tab=N_SOUNDICON_SLOTS;
 SOUND_ICON soundicon_tab[N_SOUNDICON_TAB];
 
 #define RMS_GLOTTAL1 35   // vowel before glottal stop
-#define RMS_START  28  // 14 - 30
+#define RMS_START 28  // 28
 
 #define VOWEL_FRONT_LENGTH  50
 
@@ -1482,6 +1482,9 @@ int SynthOnTimer()
 	}
 
 	do {
+		if (WcmdqUsed() > 0)
+			WavegenOpenSound();
+
 		if(Generate(phoneme_list,&n_phoneme_list,1)==0)
 		{
 			SpeakNextClause(NULL,NULL,1);

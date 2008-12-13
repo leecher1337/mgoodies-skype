@@ -1244,9 +1244,9 @@ int Wavegen()
 					// amplitude envelope is only used for creaky voice effect on certain vowels/tones
 					if((ix = amp_ix>>8) > 127) ix = 127;
 					amp = amplitude_env[ix];
-					amplitude2 = (amplitude2 * amp)/255;
-					if(amp < 255)
-						modulation_type = 7;
+					amplitude2 = (amplitude2 * amp)/128;
+//					if(amp < 255)
+//						modulation_type = 7;
 				}
 
 				// introduce roughness into the sound by reducing the amplitude of

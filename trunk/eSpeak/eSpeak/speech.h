@@ -60,8 +60,6 @@ typedef unsigned char  UCHAR;
 typedef double DOUBLEX;
 
 
-
-
 typedef struct {
    const char *mnem;
    int  value;
