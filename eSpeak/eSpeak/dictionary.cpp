@@ -684,7 +684,7 @@ int Translator::IsLetterGroup(char *word, int group, int pre)
 	// match the word against a list of utf-8 strings
 	char *p;
 	char *w;
-	int  len;
+	int  len=0;
 
 	p = letterGroups[group];
 	if(p == NULL)
@@ -2570,6 +2570,10 @@ int Translator::TranslateRules(char *p_start, char *phonemes, int ph_size, char 
 					}
 					p += (wc_bytes-1);
 				}
+				else
+				{
+					phonemes_repeat_count = 0;
+				}
 			}
 		}
 
@@ -3149,6 +3153,28 @@ int Translator::LookupDictList(char **wordptr, char *ph_out, unsigned int *flags
 	word[length] = 0;
 
 	found = LookupDict2(word, word1, ph_out, flags, end_flags, wtab);
+
+	if(flags[0] & FLAG_MAX3)
+	{
+		if(strcmp(ph_out, phonemes_repeat) == 0)
+		{
+			phonemes_repeat_count++;
+			if(phonemes_repeat_count > 3)
+			{
+				ph_out[0] = 0;
+			}
+		}
+		else
+		{
+			strncpy0(phonemes_repeat, ph_out, sizeof(phonemes_repeat));
+			phonemes_repeat_count = 1;
+		}
+	}
+	else
+	{
+		phonemes_repeat_count = 0;
+	}
+
 
 	if((found == 0) && (flags[1] & FLAG_ACCENT))
 	{

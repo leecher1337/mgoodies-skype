@@ -362,6 +362,9 @@ void VoiceReset(int tone_only)
 // Set voice to the default values
 
 	int  pk;
+	static unsigned char default_heights[N_PEAKS] = {255,255,240,232,210,210,255,255,255};
+	static unsigned char default_widths[N_PEAKS] = {128,128,128,160,171,171,128,128,128};
+
 	static int breath_widths[N_PEAKS] = {0,200,200,400,400,400,600,600,600};
 
 	// default is:  pitch 82,118
@@ -392,8 +395,8 @@ void VoiceReset(int tone_only)
 	for(pk=0; pk<N_PEAKS; pk++)
 	{
 		voice->freq[pk] = 256;
-		voice->height[pk] = 256;
-		voice->width[pk] = 256;
+		voice->height[pk] = default_heights[pk];
+		voice->width[pk] = default_widths[pk]*2;
 		voice->breath[pk] = 0;
 		voice->breathw[pk] = breath_widths[pk];  // default breath formant woidths
 		voice->freqadd[pk] = 0;
@@ -1125,7 +1128,7 @@ static int ScoreVoice(espeak_VOICE *voice_spec, const char *spec_language, int s
 			matching_parts += matching;  // number of parts which match
 
 			if(matching_parts == 0)
-				break;   // no matching parts for this language
+				continue;   // no matching parts for this language
 
 			x = 5;
 			// reduce the score if not all parts of the required language match
@@ -1304,8 +1307,8 @@ espeak_VOICE *SelectVoiceByName(espeak_VOICE **voices, const char *name)
 
 
 
-char const *SelectVoice(espeak_VOICE *voice_select)
-{//================================================
+char const *SelectVoice(espeak_VOICE *voice_select, int *found)
+{//============================================================
 // Returns a path within espeak-voices, with a possible +variant suffix
 // variant is an output-only parameter
 	int nv;           // number of candidates
@@ -1326,6 +1329,7 @@ char const *SelectVoice(espeak_VOICE *voice_select)
 	static espeak_VOICE voice_variants[N_VOICE_VARIANTS];
 	static char voice_id[50];
 
+	*found = 1;
 	memcpy(&voice_select2,voice_select,sizeof(voice_select2));
 
 	if(n_voices_list == 0)
@@ -1369,6 +1373,7 @@ char const *SelectVoice(espeak_VOICE *voice_select)
 	if(nv == 0)
 	{
 		// no matching voice, choose the default
+		*found = 0;
 		if((voices[0] = SelectVoiceByName(voices_list,"default")) != NULL)
 			nv = 1;
 	}
@@ -1642,8 +1647,12 @@ espeak_ERROR SetVoiceByName(const char *name)
 espeak_ERROR SetVoiceByProperties(espeak_VOICE *voice_selector)
 {//============================================================
 	const char *voice_id;
+	int voice_found;
 
-	voice_id = SelectVoice(voice_selector);
+	voice_id = SelectVoice(voice_selector, &voice_found);
+
+	if(voice_found == 0)
+		return(EE_NOT_FOUND);
 
 	LoadVoiceVariant(voice_id,0);
 	DoVoiceChange(voice);
@@ -1658,7 +1667,7 @@ espeak_ERROR SetVoiceByProperties(espeak_VOICE *voice_selector)
 //=======================================================================
 //  Library Interface Functions
 //=======================================================================
-#pragma GCC visibility push(default)
+//#pragma GCC visibility push(default)
 
 
 ESPEAK_API const espeak_VOICE **espeak_ListVoices(espeak_VOICE *voice_spec)
@@ -1720,6 +1729,6 @@ ESPEAK_API espeak_VOICE *espeak_GetCurrentVoice(void)
 	return(&voice_selected);
 }
 
-#pragma GCC visibility pop
+//#pragma GCC visibility pop
 
 

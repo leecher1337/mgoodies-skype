@@ -487,6 +487,7 @@ static espeak_ERROR Synthesize(unsigned int unique_identifier, const void *text,
 			}
 		}
     }
+
   return(EE_OK);
 }  //  end of Synthesize
 
@@ -912,7 +913,9 @@ ESPEAK_API espeak_ERROR espeak_SetVoiceByName(const char *name)
 {//===================================================
   ENTER("espeak_SetVoiceByName");
 
-#ifdef USE_ASYNC
+//#ifdef USE_ASYNC
+// I don't think there's a need to queue change voice requests
+#ifdef deleted
 	espeak_ERROR a_error;
 
 	if(synchronous_mode)
@@ -935,10 +938,11 @@ ESPEAK_API espeak_ERROR espeak_SetVoiceByName(const char *name)
 
 
 ESPEAK_API espeak_ERROR espeak_SetVoiceByProperties(espeak_VOICE *voice_selector)
-{//=====================================================================
+{//==============================================================================
   ENTER("espeak_SetVoiceByProperties");
 
-#ifdef USE_ASYNC
+//#ifdef USE_ASYNC
+#ifdef deleted
 	espeak_ERROR a_error;
 
 	if(synchronous_mode)

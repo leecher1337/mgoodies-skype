@@ -883,7 +883,7 @@ int Translator::AnnouncePunctuation(int c1, int c2, char *buf, int bufix)
 #define SSML_AUDIO    11
 #define SSML_EMPHASIS 12
 #define SSML_BREAK    13
-#define SSML_METADATA 14
+#define SSML_IGNORE_TEXT 14
 #define HTML_BREAK    15
 #define SSML_CLOSE    0x10   // for a closing tag, OR this with the tag type
 
@@ -905,7 +905,7 @@ MNEM_TAB ssmltags[] = {
 	{"audio", SSML_AUDIO},
 	{"emphasis", SSML_EMPHASIS},
 	{"break", SSML_BREAK},
-	{"metadata", SSML_METADATA},
+	{"metadata", SSML_IGNORE_TEXT},
 
 	{"br", HTML_BREAK},
 	{"li", HTML_BREAK},
@@ -916,6 +916,8 @@ MNEM_TAB ssmltags[] = {
 	{"h3", SSML_PARAGRAPH},
 	{"h4", SSML_PARAGRAPH},
 	{"hr", SSML_PARAGRAPH},
+	{"script", SSML_IGNORE_TEXT},
+	{"style", SSML_IGNORE_TEXT},
 	{NULL,0}};
 
 
@@ -929,6 +931,7 @@ static const char *VoiceFromStack()
 	SSML_STACK *sp;
 	const char *v_id;
 	int voice_name_specified;
+	int voice_found;
 	espeak_VOICE voice_select;
 	char voice_name[40];
 	char language[40];
@@ -970,7 +973,7 @@ static const char *VoiceFromStack()
 
 	voice_select.name = voice_name;
 	voice_select.languages = language;
-	v_id = SelectVoice(&voice_select);
+	v_id = SelectVoice(&voice_select, &voice_found);
 	if(v_id == NULL)
 		return("default");
 	return(v_id);
@@ -1643,12 +1646,12 @@ static int ProcessSsmlTag(wchar_t *xml_buf, char *outbuf, int &outix, int n_outb
 		}
 		break;
 
-	case SSML_METADATA:
+	case SSML_IGNORE_TEXT:
 		ignore_text = 1;
 		break;
 
 	case SSML_SUB + SSML_CLOSE:
-	case SSML_METADATA + SSML_CLOSE:
+	case SSML_IGNORE_TEXT + SSML_CLOSE:
 		ignore_text = 0;
 		break;
 
