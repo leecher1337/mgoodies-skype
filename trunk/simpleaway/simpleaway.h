@@ -19,7 +19,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-// this plugin requires Miranda 0.6 or newer
+// to enable all 0.6 core functions
 #define MIRANDA_VER 0x0600
 
 // for Visual Studio 2008
@@ -32,22 +32,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "../../include/newpluginapi.h"
 #include "../../include/m_button.h"
 #include "../../include/m_clist.h"
+#include "../../include/m_clistint.h"
 #include "../../include/m_skin.h"
 #include "../../include/m_system.h"
 #include "../../include/m_options.h"
 #include "../../include/m_langpack.h"
-#include "../../include/m_protocols.h"
 #include "../../include/m_protosvc.h"
 #include "../../include/m_utils.h"
 #include "../../include/m_database.h"
 #include "../../include/m_awaymsg.h"
+#include "../../include/m_idle.h"
 #include "../../include/m_icolib.h"
 #include "../../include/win2k.h"
 #include "include/m_variables.h"
 #include "include/m_toptoolbar.h"
+#include "include/m_toolbar.h"
 #include "include/m_fortunemsg.h"
 #include "include/m_statusplugins.h"
-//#include "include/AggressiveOptimize.h"
 #include "m_simpleaway.h"
 #include "resource.h"
 #ifndef _WIN32_IE
@@ -74,16 +75,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PROTO_NO_MSG	1
 #define PROTO_THIS_MSG	2
 #define PROTO_POPUPDLG	4
-
-#define	ID_STATUS_CURRENT	40082
-
-#ifndef MS_CLIST_ADDSTATUSMENUITEM
-#define MS_CLIST_ADDSTATUSMENUITEM			"CList/AddStatusMenuItem"
-#endif
-
-#ifndef ME_CLIST_PREBUILDSTATUSMENU
-#define ME_CLIST_PREBUILDSTATUSMENU			"CList/PreBuildStatusMenu"
-#endif
+#define PROTO_NOCHANGE	8
 
 /*
 ** Icons

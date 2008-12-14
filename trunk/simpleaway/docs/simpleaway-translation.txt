@@ -1,5 +1,5 @@
 ; This is a template for translation of SimpleAway plugin
-; Last updated 29-04-2008 for 1.7.5.1
+; Last updated 14-12-2008 for 1.7.5.4
 
 ;[OK]
 ;[OK (%d)]
@@ -71,6 +71,7 @@
 ;[Pop up dialog box]
 ;[Do not set status message]
 ;[Always set the same message]
+;[Do not change status message]
 ;[Pop up dialog asking for new message]
 ;[Set an empty message]
 ;[Use default message]

@@ -55,11 +55,11 @@ static BOOL CALLBACK ReadAwayMsgDlgProc(HWND hwndDlg,UINT message,WPARAM wParam,
 				szProto=(char*)CallService(MS_PROTO_GETCONTACTBASEPROTO,(WPARAM)dat->hContact,0);
 				dwStatus = DBGetContactSettingWord(dat->hContact,szProto,"Status",ID_STATUS_OFFLINE);
 				status=(char*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,dwStatus,0);
-				GetWindowText(hwndDlg,format,sizeof(format));
-				_snprintf(str,sizeof(str),format,status,contactName);
+				GetWindowText(hwndDlg,format,SIZEOF(format));
+				_snprintf(str,SIZEOF(str),format,status,contactName);
 				SetWindowText(hwndDlg,str);
-				GetDlgItemText(hwndDlg,IDC_RETRIEVING,format,sizeof(format));
-				_snprintf(str,sizeof(str),format,status);
+				GetDlgItemText(hwndDlg,IDC_RETRIEVING,format,SIZEOF(format));
+				_snprintf(str,SIZEOF(str),format,status);
 				SetDlgItemText(hwndDlg,IDC_RETRIEVING,str);
 				SendMessage(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadSkinnedProtoIcon(szProto, dwStatus));
 				EnableWindow(GetDlgItem(hwndDlg, IDC_COPY), FALSE);
@@ -96,7 +96,7 @@ static BOOL CALLBACK ReadAwayMsgDlgProc(HWND hwndDlg,UINT message,WPARAM wParam,
 							int		len;
 							char	msg[1024];
 
-							len = GetDlgItemText(hwndDlg, IDC_MSG, msg, sizeof(msg));
+							len = GetDlgItemText(hwndDlg, IDC_MSG, msg, SIZEOF(msg));
 							if (len) {
 								hglbCopy = GlobalAlloc(GMEM_MOVEABLE, (len + 1) * sizeof(TCHAR)); 
 								if (hglbCopy == NULL) { 
@@ -156,8 +156,8 @@ static BOOL CALLBACK CopyAwayMsgDlgProc(HWND hwndDlg, UINT message, WPARAM wPara
 			dat->hSeq = (HANDLE)CallContactService(dat->hContact, PSS_GETAWAYMSG, 0, 0);
 			WindowList_Add(hWindowList2, hwndDlg, dat->hContact);
 			contactName = (char*)CallService(MS_CLIST_GETCONTACTDISPLAYNAME, (WPARAM)dat->hContact, 0);
-			GetWindowText(hwndDlg, format, sizeof(format));
-			_snprintf(str, sizeof(str), format, contactName);
+			GetWindowText(hwndDlg, format, SIZEOF(format));
+			_snprintf(str, SIZEOF(str), format, contactName);
 			SetWindowText(hwndDlg, str);
 			return TRUE;
 		}
@@ -244,14 +244,17 @@ static int CopyAwayMsgInit(WPARAM wParam, LPARAM lParam) {
 	clmi.cbSize=sizeof(clmi);
 	clmi.flags=CMIM_FLAGS|CMIF_HIDDEN;
 	
-	if(szProto!=NULL) {
-		status = DBGetContactSettingWord((HANDLE)wParam,szProto,"Status",ID_STATUS_OFFLINE);
-		wsprintf(str,Translate("Re&ad %s Message"),(char*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,status,0));
-		clmi.pszName=str;
-		if(CallProtoService(szProto,PS_GETCAPS,PFLAGNUM_1,0)&PF1_MODEMSGRECV) {
-			if(CallProtoService(szProto,PS_GETCAPS,PFLAGNUM_3,0)&Proto_Status2Flag(status == ID_STATUS_OFFLINE ? ID_STATUS_INVISIBLE : status)) {
-				clmi.flags=CMIM_FLAGS|CMIM_NAME|CMIM_ICON;
-				clmi.hIcon = LoadSkinnedProtoIcon(szProto, status);
+	if (szProto != NULL) {
+		int chatRoom = szProto ? DBGetContactSettingByte((HANDLE)wParam, szProto, "ChatRoom", 0) : 0;
+		if ( !chatRoom ) {
+			status = DBGetContactSettingWord((HANDLE)wParam,szProto,"Status",ID_STATUS_OFFLINE);
+			wsprintf(str,Translate("Re&ad %s Message"),(char*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,status,0));
+			clmi.pszName = str;
+			if(CallProtoService(szProto,PS_GETCAPS,PFLAGNUM_1,0) & PF1_MODEMSGRECV) {
+				if(CallProtoService(szProto,PS_GETCAPS,PFLAGNUM_3,0) & Proto_Status2Flag(status == ID_STATUS_OFFLINE ? ID_STATUS_INVISIBLE : status)) {
+					clmi.flags = CMIM_FLAGS | CMIM_NAME | CMIM_ICON;
+					clmi.hIcon = LoadSkinnedProtoIcon(szProto, status);
+				}
 			}
 		}
 	}
@@ -291,7 +294,7 @@ int LoadAwayMsgModule(void) {
 	mi.flags=0;
 	mi.hIcon=NULL;
 	mi.pszContactOwner=NULL;
-	mi.pszName=Translate("Re&ad Away Message");
+	mi.pszName=LPGEN("Re&ad Away Message");
 	mi.pszService=MS_AWAYMSG_SHOWAWAYMSG;
 	hAwayMsgMenuItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
 
@@ -303,7 +306,7 @@ int LoadAwayMsgModule(void) {
 	mi.flags=0;
 	mi.hIcon = NULL;
 	mi.pszContactOwner=NULL;
-	mi.pszName=Translate("Copy Away Message");
+	mi.pszName=LPGEN("Copy Away Message");
 	mi.pszService = MS_SA_COPYAWAYMSG;
 	hCopyMsgMenuItem=(HANDLE)CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
 

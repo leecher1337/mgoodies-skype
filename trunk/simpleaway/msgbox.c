@@ -271,7 +271,7 @@ HWND WINAPI CreateRecentComboBoxEx(HWND HwndMain, struct MsgBoxData *data) {
 	for(i=1; i<=data->max_hist_msgs; i++) {//history MSGS
 		if (j<1)
 			j = data->max_hist_msgs;
-		_snprintf(buff, sizeof(buff), "SMsg%d", j);
+		_snprintf(buff, SIZEOF(buff), "SMsg%d", j);
 		j--;
 		if (!DBGetContactSetting(NULL, "SimpleAway", buff, &dbv)) {//0 - no error
 			if (dbv.pszVal) {
@@ -314,48 +314,48 @@ HWND WINAPI CreateRecentComboBoxEx(HWND HwndMain, struct MsgBoxData *data) {
 	else if (data->dlg_flags & DLG_SHOW_BUTTONS_INLIST) {
 		if (found) {
 			if (data->dlg_flags & DLG_SHOW_LIST_ICONS) {
-				_snprintf(text, sizeof(text), Translate("Clear History"));
+				_snprintf(text, SIZEOF(text), Translate("Clear History"));
 				cbei.iImage         = I_ICON_CLEAR;
 				cbei.iSelectedImage = I_ICON_CLEAR;
 			}
 			else {
-				_snprintf(text, sizeof(text), "## %s ##", Translate("Clear History"));
+				_snprintf(text, SIZEOF(text), "## %s ##", Translate("Clear History"));
 				cbei.iIndent        = 1;
 			}
 			cbei.iItem          = -1;
 			cbei.pszText        = (LPTSTR)text;
-			cbei.cchTextMax     = sizeof(text);
+			cbei.cchTextMax     = SIZEOF(text);
 			cbei.lParam			= MAKELPARAM(CLEAR_HISTORY, 0);
 			SendMessage(handle,CBEM_INSERTITEM,0,(LPARAM)&cbei);
 		}
 
 		cbei.iItem          = -1;
 		if (data->dlg_flags & DLG_SHOW_LIST_ICONS) {
-			_snprintf(text, sizeof(text), Translate("Add to Predefined"));
+			_snprintf(text, SIZEOF(text), Translate("Add to Predefined"));
 			cbei.iImage         = I_ICON_ADD;
 			cbei.iSelectedImage = I_ICON_ADD;
 		}
 		else {
-			_snprintf(text, sizeof(text), "## %s ##", Translate("Add to Predefined"));
+			_snprintf(text, SIZEOF(text), "## %s ##", Translate("Add to Predefined"));
 			cbei.iIndent        = 1;
 		}
 		cbei.pszText        = (LPTSTR)text;
-		cbei.cchTextMax     = sizeof(text);
+		cbei.cchTextMax     = SIZEOF(text);
 		cbei.lParam			= MAKELPARAM(ADD_MSG, 0);
 		SendMessage(handle,CBEM_INSERTITEM,0,(LPARAM)&cbei);
 
 		if (data->dlg_flags & DLG_SHOW_LIST_ICONS) {
-			_snprintf(text, sizeof(text), Translate("Delete Selected"));
+			_snprintf(text, SIZEOF(text), Translate("Delete Selected"));
 			cbei.iImage         = I_ICON_DEL;
 			cbei.iSelectedImage = I_ICON_DEL;
 		}
 		else {
 			cbei.iIndent        = 1;
-			_snprintf(text, sizeof(text), "## %s ##", Translate("Delete Selected"));
+			_snprintf(text, SIZEOF(text), "## %s ##", Translate("Delete Selected"));
 		}
 		cbei.iItem          = -1;
 		cbei.pszText        = (LPTSTR)text;
-		cbei.cchTextMax     = sizeof(text);
+		cbei.cchTextMax     = SIZEOF(text);
 		cbei.lParam			= MAKELPARAM(DELETE_SELECTED, 0);
 		SendMessage(handle,CBEM_INSERTITEM,0,(LPARAM)&cbei);
 	}
@@ -370,7 +370,7 @@ HWND WINAPI CreateRecentComboBoxEx(HWND HwndMain, struct MsgBoxData *data) {
 	}
 
 	for(i=1; i<=data->num_def_msgs; i++) {//predefined MSGS
-		_snprintf(buff, sizeof(buff), "DefMsg%d", i);
+		_snprintf(buff, SIZEOF(buff), "DefMsg%d", i);
 		if (!DBGetContactSetting(NULL, "SimpleAway", buff, &dbv)) {//0 - no error
 			if (dbv.pszVal) {
 				if (!strlen(dbv.pszVal)) {
@@ -595,14 +595,31 @@ LRESULT CALLBACK EditBoxSubProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 				PostMessage(GetParent(hwndDlg), WM_COMMAND, IDC_OK, 0);
 				return 0;
 			}
-			if (wParam == 1 && GetKeyState(VK_CONTROL) & 0x8000) {//ctrl-a
+			if (wParam == 1 && GetKeyState(VK_CONTROL) & 0x8000) {	//ctrl-a
 				SendMessage(hwndDlg, EM_SETSEL, 0, -1);
 				return 0;
 			}
-			if (wParam == 23 && GetKeyState(VK_CONTROL) & 0x8000) {//ctrl-w
+			if (wParam == 23 && GetKeyState(VK_CONTROL) & 0x8000) {	//ctrl-w
 				SendMessage(GetParent(hwndDlg), WM_COMMAND, IDC_CANCEL, 0);
 				return 0;
 			}
+			if (wParam == 127 && GetKeyState(VK_CONTROL) & 0x8000) {	//ctrl-backspace
+                DWORD start, end;
+                TCHAR *text;
+                int textLen;
+                SendMessage(hwndDlg, EM_GETSEL, (WPARAM)&end, (LPARAM)(PDWORD)NULL);
+                SendMessage(hwndDlg, WM_KEYDOWN, VK_LEFT, 0);
+                SendMessage(hwndDlg, EM_GETSEL, (WPARAM)&start, (LPARAM)(PDWORD)NULL);
+                textLen = GetWindowTextLength(hwndDlg);
+                text = (TCHAR *)mir_alloc(sizeof(TCHAR) * (textLen + 1));
+                GetWindowText(hwndDlg, text, textLen + 1);
+                MoveMemory(text + start, text + end, sizeof(TCHAR) * (textLen + 1 - end));
+                SetWindowText(hwndDlg, text);
+                mir_free(text);
+                SendMessage(hwndDlg, EM_SETSEL, start, start);
+                SendMessage(GetParent(hwndDlg), WM_COMMAND, MAKEWPARAM(GetDlgCtrlID(hwndDlg), EN_CHANGE), (LPARAM)hwndDlg);
+                return 0;
+            }
 
 /*			if (GetKeyState(VK_CONTROL)&0x8000) {	
 				switch (wParam) {
@@ -635,7 +652,7 @@ int AddToPredefined(HWND hwndDlg, struct MsgBoxData *data) {
 	char			msg[1024], text[1024];
 
 	if (IsWindowEnabled(GetDlgItem(hwndDlg, IDC_EDIT1)))
-		len = GetDlgItemText(hwndDlg,IDC_EDIT1,msg,sizeof(msg));
+		len = GetDlgItemText(hwndDlg,IDC_EDIT1,msg,SIZEOF(msg));
 
 	if (!len)
 		return -1;
@@ -646,7 +663,7 @@ int AddToPredefined(HWND hwndDlg, struct MsgBoxData *data) {
 	for (i=1; i<=data->num_def_msgs; i++) {
 		newitem.mask = CBEIF_LPARAM|CBEIF_TEXT;
 		newitem.iItem = num_items;
-		newitem.cchTextMax = sizeof(text);
+		newitem.cchTextMax = SIZEOF(text);
 		newitem.pszText = text;
 
 		SendMessage(data->recent_cbex, CBEM_GETITEM, 0, (LPARAM)&newitem);
@@ -666,7 +683,7 @@ int AddToPredefined(HWND hwndDlg, struct MsgBoxData *data) {
 
 	newitem.iItem = -1;
 	newitem.pszText	= (LPTSTR)msg;
-	newitem.cchTextMax = sizeof(msg);
+	newitem.cchTextMax = SIZEOF(msg);
 	if (data->dlg_flags & DLG_SHOW_LIST_ICONS) {
 		newitem.iImage			= I_ICON_MSG;
 		newitem.iSelectedImage	= I_ICON_MSG;
@@ -686,7 +703,7 @@ void ClearHistory(struct MsgBoxData *data, int cur_sel) {
 	PROTOCOLDESCRIPTOR	**proto;
 
 	for (i=1; i<=data->max_hist_msgs; i++) {
-		_snprintf(text, sizeof(text), "SMsg%d", i);
+		_snprintf(text, SIZEOF(text), "SMsg%d", i);
 		DBWriteContactSettingString(NULL, "SimpleAway", text, "");
 	}
 
@@ -702,7 +719,7 @@ void ClearHistory(struct MsgBoxData *data, int cur_sel) {
 		if (!(CallProtoService(proto[i]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND))
 			continue;
 
-		_snprintf(buff2, sizeof(buff2), "Last%sMsg", proto[i]->szName);
+		_snprintf(buff2, SIZEOF(buff2), "Last%sMsg", proto[i]->szName);
 		DBWriteContactSettingString(NULL, "SimpleAway", buff2, "");
 	}
 	DBWriteContactSettingWord(NULL, "SimpleAway", "LMMsg", (WORD)data->max_hist_msgs);
@@ -734,7 +751,7 @@ void DisplayCharsCount(struct MsgBoxData *dlg_data, HWND hwndDlg) {
 	if (dlg_data->countdown != -2)
 		return;
 
-	len = GetDlgItemText(hwndDlg, IDC_EDIT1, msg, sizeof(msg));
+	len = GetDlgItemText(hwndDlg, IDC_EDIT1, msg, SIZEOF(msg));
 
 	if (removeCR) {
 		int	i, index, num_lines;
@@ -749,7 +766,7 @@ void DisplayCharsCount(struct MsgBoxData *dlg_data, HWND hwndDlg) {
 				lines++;
 		}
 	}
-	_snprintf(status_text, sizeof(status_text), Translate("OK (%d)"), len-(lines-1));
+	_snprintf(status_text, SIZEOF(status_text), Translate("OK (%d)"), len-(lines-1));
 	SendMessage(GetDlgItem(hwndDlg, IDC_OK), WM_SETTEXT, (WPARAM)0, (LPARAM)status_text);
 }
 
@@ -762,16 +779,16 @@ void SetEditControlText(struct MsgBoxData *data, HWND hwndDlg, int status_mode) 
 	num_start -= data->num_def_msgs + 1;
 
 	if (data->proto_name)
-		_snprintf(setting, sizeof(setting), "%sFlags", (char *)data->proto_name);
+		_snprintf(setting, SIZEOF(setting), "%sFlags", (char *)data->proto_name);
 	else
-		_snprintf(setting, sizeof(setting), "Flags");
+		_snprintf(setting, SIZEOF(setting), "Flags");
 	flags = DBGetContactSettingByte(NULL, "SimpleAway", (char *)StatusModeToDbSetting(status_mode, setting), STATUS_SHOW_DLG|STATUS_LAST_MSG);
 
 	if (flags & STATUS_LAST_MSG) {
 		if (data->proto_name)
-			_snprintf(setting, sizeof(setting), "Last%sMsg", data->proto_name);
+			_snprintf(setting, SIZEOF(setting), "Last%sMsg", data->proto_name);
 		else
-			_snprintf(setting, sizeof(setting), "LastMsg");
+			_snprintf(setting, SIZEOF(setting), "LastMsg");
 
 		if (!DBGetContactSetting(NULL, "SimpleAway", setting, &dbv)) {
 			if (dbv.pszVal) {
@@ -801,9 +818,9 @@ void SetEditControlText(struct MsgBoxData *data, HWND hwndDlg, int status_mode) 
 	}
 	else if (flags & STATUS_THIS_MSG) {
 		if (data->proto_name)
-			_snprintf(setting, sizeof(setting), "%sDefault", data->proto_name);
+			_snprintf(setting, SIZEOF(setting), "%sDefault", data->proto_name);
 		else
-			_snprintf(setting, sizeof(setting), "Default");
+			_snprintf(setting, SIZEOF(setting), "Default");
 
 		if (!DBGetContactSetting(NULL, "SRAway", StatusModeToDbSetting(status_mode, setting), &dbv)) {
 			SetDlgItemText(hwndDlg, IDC_EDIT1, dbv.pszVal);
@@ -815,9 +832,9 @@ void SetEditControlText(struct MsgBoxData *data, HWND hwndDlg, int status_mode) 
 	}
 	else if (flags & STATUS_LAST_STATUS_MSG) {
 		if (data->proto_name)
-			_snprintf(setting, sizeof(setting), "%sMsg", data->proto_name);
+			_snprintf(setting, SIZEOF(setting), "%sMsg", data->proto_name);
 		else
-			_snprintf(setting, sizeof(setting), "Msg");
+			_snprintf(setting, SIZEOF(setting), "Msg");
 
 		if (!DBGetContactSetting(NULL, "SRAway", StatusModeToDbSetting(status_mode, setting), &dbv)) {
 			SetDlgItemText(hwndDlg, IDC_EDIT1, dbv.pszVal);
@@ -841,9 +858,9 @@ void ChangeEditControlText(struct MsgBoxData *data, HWND hwndDlg, int status_mod
 	num_start -= data->num_def_msgs + 1;
 
 	if (data->proto_name)
-		_snprintf(setting, sizeof(setting), "%sFlags", (char *)data->proto_name);
+		_snprintf(setting, SIZEOF(setting), "%sFlags", (char *)data->proto_name);
 	else
-		_snprintf(setting, sizeof(setting), "Flags");
+		_snprintf(setting, SIZEOF(setting), "Flags");
 	flags = DBGetContactSettingByte(NULL, "SimpleAway", (char *)StatusModeToDbSetting(status_mode, setting), STATUS_SHOW_DLG|STATUS_LAST_MSG);
 
 	if (flags & STATUS_EMPTY_MSG) {
@@ -853,32 +870,32 @@ void ChangeEditControlText(struct MsgBoxData *data, HWND hwndDlg, int status_mod
 		char	msg[1024];
 
 		if (data->proto_name)
-			_snprintf(setting, sizeof(setting), "Last%sMsg", data->proto_name);
+			_snprintf(setting, SIZEOF(setting), "Last%sMsg", data->proto_name);
 		else
-			_snprintf(setting, sizeof(setting), "LastMsg");
+			_snprintf(setting, SIZEOF(setting), "LastMsg");
 
 		if (!DBGetContactSetting(NULL, "SimpleAway", setting, &dbv)) {
 			if (dbv.pszVal) {
 				if (!DBGetContactSetting(NULL, "SimpleAway", dbv.pszVal, &dbv2) && strlen(dbv.pszVal)) {
 					if ((dbv2.pszVal) && (strlen(dbv2.pszVal))) {
 						if (IsWindowEnabled(GetDlgItem(hwndDlg, IDC_EDIT1))) {
-							GetDlgItemText(hwndDlg,IDC_EDIT1,msg,sizeof(msg));
+							GetDlgItemText(hwndDlg,IDC_EDIT1,msg,SIZEOF(msg));
 							if (!strcmp(msg, dbv2.pszVal))
 								fcursel=SendMessage(data->recent_cbex, CB_FINDSTRINGEXACT, num_start, (LPARAM)dbv2.pszVal);
 							else
 								fcursel=SendMessage(data->recent_cbex, CB_FINDSTRINGEXACT, num_start, (LPARAM)msg);
 						}
 					}
-					else if (GetDlgItemText(hwndDlg,IDC_EDIT1,msg,sizeof(msg)))
+					else if (GetDlgItemText(hwndDlg,IDC_EDIT1,msg,SIZEOF(msg)))
 						fcursel=SendMessage(data->recent_cbex, CB_FINDSTRINGEXACT, num_start, (LPARAM)msg);
 					DBFreeVariant(&dbv2);
 				}
 			}
-			else if (GetDlgItemText(hwndDlg,IDC_EDIT1,msg,sizeof(msg)))
+			else if (GetDlgItemText(hwndDlg,IDC_EDIT1,msg,SIZEOF(msg)))
 				fcursel=SendMessage(data->recent_cbex, CB_FINDSTRINGEXACT, num_start, (LPARAM)msg);
 			DBFreeVariant(&dbv);
 		}
-		else if (GetDlgItemText(hwndDlg,IDC_EDIT1,msg,sizeof(msg)))
+		else if (GetDlgItemText(hwndDlg,IDC_EDIT1,msg,SIZEOF(msg)))
 			fcursel=SendMessage(data->recent_cbex, CB_FINDSTRINGEXACT, num_start, (LPARAM)msg);
 	}
 	else if (flags & STATUS_DEFAULT_MSG) {
@@ -888,9 +905,9 @@ void ChangeEditControlText(struct MsgBoxData *data, HWND hwndDlg, int status_mod
 	}
 	else if (flags & STATUS_THIS_MSG) {
 		if (data->proto_name)
-			_snprintf(setting, sizeof(setting), "%sDefault", data->proto_name);
+			_snprintf(setting, SIZEOF(setting), "%sDefault", data->proto_name);
 		else
-			_snprintf(setting, sizeof(setting), "Default");
+			_snprintf(setting, SIZEOF(setting), "Default");
 
 		if (!DBGetContactSetting(NULL, "SRAway", StatusModeToDbSetting(status_mode, setting), &dbv)) {
 			SetDlgItemText(hwndDlg, IDC_EDIT1, dbv.pszVal);
@@ -900,9 +917,9 @@ void ChangeEditControlText(struct MsgBoxData *data, HWND hwndDlg, int status_mod
 	}
 	else if (flags & STATUS_LAST_STATUS_MSG) {
 		if (data->proto_name)
-			_snprintf(setting, sizeof(setting), "%sMsg", data->proto_name);
+			_snprintf(setting, SIZEOF(setting), "%sMsg", data->proto_name);
 		else
-			_snprintf(setting, sizeof(setting), "Msg");
+			_snprintf(setting, SIZEOF(setting), "Msg");
 
 		if (!DBGetContactSetting(NULL, "SRAway", StatusModeToDbSetting(status_mode, setting), &dbv)) {
 			SetDlgItemText(hwndDlg, IDC_EDIT1, dbv.pszVal);
@@ -911,7 +928,7 @@ void ChangeEditControlText(struct MsgBoxData *data, HWND hwndDlg, int status_mod
 		}
 		else {
 			char	msg[1024];
-			if (GetDlgItemText(hwndDlg,IDC_EDIT1,msg,sizeof(msg)))
+			if (GetDlgItemText(hwndDlg,IDC_EDIT1,msg,SIZEOF(msg)))
 				fcursel=SendMessage(data->recent_cbex, CB_FINDSTRINGEXACT, num_start, (LPARAM)msg);
 		}
 	}
@@ -921,27 +938,28 @@ void ChangeEditControlText(struct MsgBoxData *data, HWND hwndDlg, int status_mod
 }
 
 void ChangeDlgStatus(HWND hwndDlg, struct MsgBoxData *msgbox_data, int status) {
-	char			title[256], buff[128], ProtoName[128];
+	char			title[256], ProtoName[128];
 	BOOL			currentstatus=FALSE, blck=FALSE;
 	int				profilestatus=0;
 
 	if (msgbox_data->proto_name)
 		CallProtoService(msgbox_data->proto_name, PS_GETNAME, SIZEOF(ProtoName), (LPARAM) ProtoName);
 	else
-		_snprintf(ProtoName, sizeof(ProtoName), Translate("Global"));
+		_snprintf(ProtoName, SIZEOF(ProtoName), Translate("Global"));
 
 	if (status == ID_STATUS_CURRENT) {
 		if (msgbox_data->on_startup)
-			_snprintf(title, sizeof(title), Translate("%s Status Message: %s"), ProtoName, Translate("<startup>"));
+			_snprintf(title, SIZEOF(title), Translate("%s Status Message: %s"), ProtoName, Translate("<startup>"));
 		else
-			_snprintf(title, sizeof(title), Translate("%s Status Message: %s"), ProtoName, Translate("<current>"));
+			_snprintf(title, SIZEOF(title), Translate("%s Status Message: %s"), ProtoName, Translate("<current>"));
 	}
 	else if (status > ID_STATUS_CURRENT) {
+		char	buff[128];
 		CallService(MS_SS_GETPROFILENAME, status-40083, (LPARAM)buff);
-		_snprintf(title, sizeof(title), Translate("%s Status Message: %s"), ProtoName, (char*)buff);
+		_snprintf(title, SIZEOF(title), Translate("%s Status Message: %s"), ProtoName, (char*)buff);
 	}
 	else
-		_snprintf(title, sizeof(title), Translate("%s Status Message: %s"), ProtoName, (char*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, status, 0));
+		_snprintf(title, SIZEOF(title), Translate("%s Status Message: %s"), ProtoName, (char*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, status, 0));
 	SetWindowText(hwndDlg, title);
 
 	if (status == ID_STATUS_CURRENT) {
@@ -985,7 +1003,7 @@ void ChangeDlgStatus(HWND hwndDlg, struct MsgBoxData *msgbox_data, int status) {
 		if ((msgbox_data->dlg_flags & DLG_SHOW_BUTTONS) || (msgbox_data->dlg_flags & DLG_SHOW_BUTTONS_FLAT)) {
 			char	msg[1024];
 
-			if (!GetDlgItemText(hwndDlg, IDC_EDIT1, msg, sizeof(msg))) {
+			if (!GetDlgItemText(hwndDlg, IDC_EDIT1, msg, SIZEOF(msg))) {
 				if (IsWindowEnabled(msgbox_data->badd))
 					EnableWindow(msgbox_data->badd, FALSE);
 			}
@@ -1001,7 +1019,7 @@ void ChangeDlgStatus(HWND hwndDlg, struct MsgBoxData *msgbox_data, int status) {
 
 					cbitem.mask = CBEIF_LPARAM|CBEIF_TEXT;
 					cbitem.iItem = msgbox_data->curr_sel_msg;
-					cbitem.cchTextMax = sizeof(msg);
+					cbitem.cchTextMax = SIZEOF(msg);
 					cbitem.pszText = msg;
 
 					SendMessage(msgbox_data->recent_cbex, CBEM_GETITEM, 0, (LPARAM)&cbitem);
@@ -1073,20 +1091,20 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			TranslateDialogDefault(hwndDlg);
 			init_data = (struct MsgBoxInitData*)lParam;
 
-			GetWindowText(hwndDlg, format, sizeof(format));
+			GetWindowText(hwndDlg, format, SIZEOF(format));
 
 			if (init_data->proto_name)
 				CallProtoService(init_data->proto_name, PS_GETNAME, SIZEOF(ProtoName), (LPARAM) ProtoName);
 			else
-				_snprintf(ProtoName, sizeof(ProtoName), Translate("Global"));
+				_snprintf(ProtoName, SIZEOF(ProtoName), Translate("Global"));
 			if (init_data->status_mode == ID_STATUS_CURRENT) {
 				if (init_data->onstartup)
-					_snprintf(title, sizeof(title), format, ProtoName, Translate("<startup>"));
+					_snprintf(title, SIZEOF(title), format, ProtoName, Translate("<startup>"));
 				else
-					_snprintf(title, sizeof(title), format, ProtoName, Translate("<current>"));
+					_snprintf(title, SIZEOF(title), format, ProtoName, Translate("<current>"));
 			}
 			else
-				_snprintf(title, sizeof(title), format, ProtoName, (char*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,init_data->status_mode,0));
+				_snprintf(title, SIZEOF(title), format, ProtoName, (char*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION,init_data->status_mode,0));
 			SetWindowText(hwndDlg, title); //Set the window title
 
 			if (init_data->status_mode == ID_STATUS_CURRENT) {
@@ -1192,7 +1210,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			if ((copy_init_data->dlg_flags & DLG_SHOW_BUTTONS) || (copy_init_data->dlg_flags & DLG_SHOW_BUTTONS_FLAT)) {
 				char	msg[1024];
 
-				if (!GetDlgItemText(hwndDlg, IDC_EDIT1, msg, sizeof(msg)))
+				if (!GetDlgItemText(hwndDlg, IDC_EDIT1, msg, SIZEOF(msg)))
 					EnableWindow(copy_init_data->badd, FALSE);
 
 				if (copy_init_data->curr_sel_msg == -1) {
@@ -1204,7 +1222,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 					cbitem.mask = CBEIF_LPARAM|CBEIF_TEXT;
 					cbitem.iItem = copy_init_data->curr_sel_msg;
-					cbitem.cchTextMax = sizeof(msg);
+					cbitem.cchTextMax = SIZEOF(msg);
 					cbitem.pszText = msg;
 
 					SendMessage(copy_init_data->recent_cbex, CBEM_GETITEM, 0, (LPARAM)&cbitem);
@@ -1287,7 +1305,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 			}
 			else {	
 				char str[64];
-				_snprintf(str, sizeof(str), Translate("Closing in %d"), msgbox_data->countdown);
+				_snprintf(str, SIZEOF(str), Translate("Closing in %d"), msgbox_data->countdown);
 				SetDlgItemText(hwndDlg, IDC_OK, str);
 			}
 			msgbox_data->countdown--;
@@ -1320,15 +1338,15 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 					}
 
 					if (IsWindowEnabled(GetDlgItem(hwndDlg, IDC_EDIT1)))
-						len = GetDlgItemText(hwndDlg, IDC_EDIT1, msg, sizeof(msg));
+						len = GetDlgItemText(hwndDlg, IDC_EDIT1, msg, SIZEOF(msg));
 
 					if (len == 0) {
 						if (msgbox_data->proto_name) {
 							char	setting[80];
-							_snprintf(setting, sizeof(setting), "Last%sMsg", msgbox_data->proto_name);
+							_snprintf(setting, SIZEOF(setting), "Last%sMsg", msgbox_data->proto_name);
 							DBWriteContactSettingString(NULL, "SimpleAway", setting, "");
 
-							_snprintf(setting, sizeof(setting), "%sMsg", msgbox_data->proto_name);
+							_snprintf(setting, SIZEOF(setting), "%sMsg", msgbox_data->proto_name);
 							DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(msgbox_data->status_mode, setting), "");
 						}
 						else {
@@ -1351,10 +1369,10 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 								if (!(CallProtoService(proto[j]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND))
 									continue;
 
-								_snprintf(setting, sizeof(setting), "Last%sMsg", proto[j]->szName);
+								_snprintf(setting, SIZEOF(setting), "Last%sMsg", proto[j]->szName);
 								DBWriteContactSettingString(NULL, "SimpleAway", setting, "");
 
-								_snprintf(setting, sizeof(setting), "%sMsg", proto[j]->szName);
+								_snprintf(setting, SIZEOF(setting), "%sMsg", proto[j]->szName);
 								DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(GetCurrentStatus(proto[j]->szName), setting), "");
 							}
 
@@ -1375,15 +1393,15 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 						BOOL		found=FALSE;
 
 						for (i=1; i<=msgbox_data->max_hist_msgs; i++) {
-							_snprintf(buff, sizeof(buff), "SMsg%d", i);
+							_snprintf(buff, SIZEOF(buff), "SMsg%d", i);
 							if (!DBGetContactSetting(NULL, "SimpleAway", buff, &dbv)) {
 								if (!strcmp(dbv.pszVal, msg)) {
 									found = TRUE;
 									if (msgbox_data->proto_name) {
-										_snprintf(buff2, sizeof(buff2), "Last%sMsg", msgbox_data->proto_name);
+										_snprintf(buff2, SIZEOF(buff2), "Last%sMsg", msgbox_data->proto_name);
 										DBWriteContactSettingString(NULL, "SimpleAway", buff2, buff);
 
-										_snprintf(buff2, sizeof(buff2), "%sMsg", msgbox_data->proto_name);
+										_snprintf(buff2, SIZEOF(buff2), "%sMsg", msgbox_data->proto_name);
 										DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(msgbox_data->status_mode, buff2), msg);
 									}
 									else {
@@ -1405,10 +1423,10 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 											if (!(CallProtoService(proto[j]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND))
 												continue;
 
-											_snprintf(buff2, sizeof(buff2), "Last%sMsg", proto[j]->szName);
+											_snprintf(buff2, SIZEOF(buff2), "Last%sMsg", proto[j]->szName);
 											DBWriteContactSettingString(NULL, "SimpleAway", buff2, buff);
 
-											_snprintf(buff2, sizeof(buff2), "%sMsg", proto[j]->szName);
+											_snprintf(buff2, SIZEOF(buff2), "%sMsg", proto[j]->szName);
 											DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(GetCurrentStatus(proto[j]->szName), buff2), msg);
 										}
 									}
@@ -1427,14 +1445,14 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 							else
 								last_modified_msg++;
 
-							_snprintf(buff, sizeof(buff), "SMsg%d", last_modified_msg);
+							_snprintf(buff, SIZEOF(buff), "SMsg%d", last_modified_msg);
 							DBWriteContactSettingString(NULL, "SimpleAway", buff, msg);
 
 							if (msgbox_data->proto_name) {
-								_snprintf(buff2, sizeof(buff2), "Last%sMsg", msgbox_data->proto_name);
+								_snprintf(buff2, SIZEOF(buff2), "Last%sMsg", msgbox_data->proto_name);
 								DBWriteContactSettingString(NULL, "SimpleAway", buff2, buff);
 
-								_snprintf(buff2, sizeof(buff2), "%sMsg", msgbox_data->proto_name);
+								_snprintf(buff2, SIZEOF(buff2), "%sMsg", msgbox_data->proto_name);
 								DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(msgbox_data->status_mode, buff2), msg);
 							}
 							else {
@@ -1456,10 +1474,10 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 									if (!(CallProtoService(proto[j]->szName, PS_GETCAPS, PFLAGNUM_1, 0) & PF1_MODEMSGSEND))
 										continue;
 
-									_snprintf(buff2, sizeof(buff2), "Last%sMsg", proto[j]->szName);
+									_snprintf(buff2, SIZEOF(buff2), "Last%sMsg", proto[j]->szName);
 									DBWriteContactSettingString(NULL, "SimpleAway", buff2, buff);
 
-									_snprintf(buff2, sizeof(buff2), "%sMsg", proto[j]->szName);
+									_snprintf(buff2, SIZEOF(buff2), "%sMsg", proto[j]->szName);
 									DBWriteContactSettingString(NULL, "SRAway", StatusModeToDbSetting(GetCurrentStatus(proto[j]->szName), buff2), msg);
 								}
 							}
@@ -1500,7 +1518,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 								if (IsWindowEnabled(msgbox_data->bdel))
 									EnableWindow(msgbox_data->bdel, FALSE);
 
-								if (!GetDlgItemText(hwndDlg, IDC_EDIT1, msg, sizeof(msg))) {
+								if (!GetDlgItemText(hwndDlg, IDC_EDIT1, msg, SIZEOF(msg))) {
 									if (IsWindowEnabled(msgbox_data->badd))
 										EnableWindow(msgbox_data->badd, FALSE);
 								}
@@ -1575,7 +1593,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 						cbitem.mask = CBEIF_LPARAM|CBEIF_TEXT;
 						cbitem.iItem = cur_sel;
-						cbitem.cchTextMax = sizeof(text);
+						cbitem.cchTextMax = SIZEOF(text);
 						cbitem.pszText = text;
 
 						SendMessage(msgbox_data->recent_cbex, CBEM_GETITEM, 0, (LPARAM)&cbitem);
@@ -1604,7 +1622,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 									num_start = SendMessage(msgbox_data->recent_cbex, CB_GETCOUNT, 0, 0);
 									num_start -= msgbox_data->num_def_msgs + 1;
 
-									GetDlgItemText(hwndDlg, IDC_EDIT1, msg, sizeof(msg));
+									GetDlgItemText(hwndDlg, IDC_EDIT1, msg, SIZEOF(msg));
 									fcursel=SendMessage(msgbox_data->recent_cbex, CB_FINDSTRINGEXACT, num_start, (LPARAM)msg);
 									SendMessage(msgbox_data->recent_cbex, CB_SETCURSEL, fcursel, 0);
 								}
@@ -1621,7 +1639,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 							SendMessage(msgbox_data->recent_cbex, CBEM_GETITEM, 0, (LPARAM)&histitem);
 
 							if (LOWORD(histitem.lParam) == HISTORY_MSG) {
-								_snprintf(buff, sizeof(buff), "SMsg%d", (int)HIWORD(histitem.lParam));
+								_snprintf(buff, SIZEOF(buff), "SMsg%d", (int)HIWORD(histitem.lParam));
 								DBWriteContactSettingString(NULL, "SimpleAway", buff, "");
 								SendMessage(msgbox_data->recent_cbex, CBEM_DELETEITEM, (WPARAM)msgbox_data->curr_sel_msg, 0);
 							}
@@ -1650,7 +1668,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 							histitem.mask = CBEIF_LPARAM|CBEIF_TEXT;
 							histitem.iItem = cur_sel;
-							histitem.cchTextMax = sizeof(text);
+							histitem.cchTextMax = SIZEOF(text);
 							histitem.pszText = text;
 
 							SendMessage(msgbox_data->recent_cbex, CBEM_GETITEM, 0, (LPARAM)&histitem);
@@ -1740,7 +1758,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 						SendMessage(msgbox_data->recent_cbex, CBEM_GETITEM, 0, (LPARAM)&histitem);
 
 						if (LOWORD(histitem.lParam) == HISTORY_MSG) {
-							_snprintf(buff, sizeof(buff), "SMsg%d", (int)HIWORD(histitem.lParam));
+							_snprintf(buff, SIZEOF(buff), "SMsg%d", (int)HIWORD(histitem.lParam));
 							DBWriteContactSettingString(NULL, "SimpleAway", buff, "");
 							left_items = SendMessage(msgbox_data->recent_cbex, CBEM_DELETEITEM, (WPARAM)msgbox_data->curr_sel_msg, 0);
 						}
@@ -1766,7 +1784,7 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 							histitem.mask = CBEIF_LPARAM|CBEIF_TEXT;
 							histitem.iItem = cur_sel;
-							histitem.cchTextMax = sizeof(text);
+							histitem.cchTextMax = SIZEOF(text);
 							histitem.pszText = text;
 
 							SendMessage(msgbox_data->recent_cbex, CBEM_GETITEM, 0, (LPARAM)&histitem);
@@ -1822,11 +1840,11 @@ INT_PTR CALLBACK AwayMsgBoxDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 				for (i=1; i<=msgbox_data->num_def_msgs; i++) {
 					cbitem.mask = CBEIF_LPARAM|CBEIF_TEXT;
 					cbitem.iItem = num_items;
-					cbitem.cchTextMax = sizeof(text);
+					cbitem.cchTextMax = SIZEOF(text);
 					cbitem.pszText = text;
 
 					SendMessage(msgbox_data->recent_cbex, CBEM_GETITEM, 0, (LPARAM)&cbitem);
-					_snprintf(buff, sizeof(buff), "DefMsg%d", i);
+					_snprintf(buff, SIZEOF(buff), "DefMsg%d", i);
 					if (LOWORD(cbitem.lParam) == PREDEFINED_MSG) {
 						new_num_def_msgs++;
 						DBWriteContactSettingString(NULL, "SimpleAway", buff, text);
