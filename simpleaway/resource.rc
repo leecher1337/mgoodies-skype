@@ -28,8 +28,8 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,7,5,2
- PRODUCTVERSION 1,7,5,2
+ FILEVERSION 1,7,5,4
+ PRODUCTVERSION 1,7,5,4
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -44,14 +44,14 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "Comments", "Licensed under the terms of the GNU General Public License.\0"
+            VALUE "Comments", "Licensed under the terms of the GNU General Public License\0"
             VALUE "FileDescription", "SimpleAway plugin for Miranda IM\0"
-            VALUE "FileVersion", "1.7.5.2\0"
+            VALUE "FileVersion", "1.7.5.4\0"
             VALUE "InternalName", "simpleaway\0"
             VALUE "LegalCopyright", "Copyright © 2005 Harven, © 2006-2008 Dezeath\0"
             VALUE "OriginalFilename", "simpleaway.dll\0"
             VALUE "ProductName", "SimpleAway\0"
-            VALUE "ProductVersion", "1.7.5.2\0"
+            VALUE "ProductVersion", "1.7.5.4\0"
         END
     END
     BLOCK "VarFileInfo"
@@ -308,9 +308,11 @@ BEGIN
     CONTROL         "Pop up dialog box",IDC_ROPTPROTO3,"Button",
                     BS_AUTORADIOBUTTON | WS_TABSTOP,26,31,128,8
     CONTROL         "Do not set status message",IDC_ROPTPROTO1,"Button",
-                    BS_AUTORADIOBUTTON | WS_TABSTOP,26,43,128,8
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,155,43,128,8
     CONTROL         "Always set the same message",IDC_ROPTPROTO2,"Button",
                     BS_AUTORADIOBUTTON | WS_TABSTOP,155,31,144,8
+    CONTROL         "Do not change status message",IDC_ROPTPROTO4,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,26,43,128,8
     GROUPBOX        "Status Messages",IDC_STATIC,4,62,300,148,WS_GROUP
     COMBOBOX        IDC_CBOPTSTATUS,35,73,240,97,CBS_DROPDOWNLIST | 
                     WS_TABSTOP

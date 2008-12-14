@@ -22,23 +22,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef M_SIMPLEAWAY_H__
 #define M_SIMPLEAWAY_H__ 1
 
+// Represents status that a protocol(s) is/are currently in
+#define	ID_STATUS_CURRENT	40082
+
 // Force a change of global status mode/message
-// wParam = new status, from statusmodes.h
+// wParam = (int)new status, from statusmodes.h or ID_STATUS_CURRENT
 // lParam = (char *)status message
-// ID_STATUS_CURRENT (= 40082) can be used
 #define MS_SA_SETSTATUSMODE "SimpleAway/SetStatusMode"
-#define MS_AWAYSYS_SETSTATUSMODE MS_SA_SETSTATUSMODE //for compatibility with some plugins
+#define MS_AWAYSYS_SETSTATUSMODE MS_SA_SETSTATUSMODE // for compatibility with some plugins
 
 // Brings up the status message dialog
 // wParam = 0
-// lParam = protocol name, NULL if for all protocols
+// lParam = (char *)protocol name, NULL if for all protocols
 #define MS_SA_SHOWSTATUSMSGDIALOG "SimpleAway/ShowStatusMessageDialog"
-#define MS_SA_TTCHANGESTATUSMSG "SimpleAway/TTChangeStatusMessage" //internally only, do not use
+
+// Similar to the service above, for internal use only
+#define MS_SA_TTCHANGESTATUSMSG "SimpleAway/TTChangeStatusMessage"
 
 // Force a change of status mode/message. The status message dialog will appear,
 // depending on the configuration of the user
-// wParam = new status, from statusmodes.h
-// lParam = protocol name, NULL if for all protocols
+// wParam = (int)new status, from statusmodes.h
+// lParam = (char *)protocol name, NULL if for all protocols
 // Returns 1 when changed without showing the status message dialog
 #define MS_SA_CHANGESTATUSMSG "SimpleAway/ChangeStatusMessage"
 
@@ -55,8 +59,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MS_SA_COPYAWAYMSG  "SimpleAway/CopyAwayMsg"
 
 // Returns the default status message for a status in specified protocol module
-// wParam = (int)status
-// lParam = protocol name, NULL if for all protocols
+// or the current status message for the specified protocol if ID_STATUS_CURRENT is used
+// wParam = (int)status, from statusmodes.h or ID_STATUS_CURRENT
+// lParam = (char *)protocol name, NULL if for all protocols
 // Returns status msg. Remember to free the return value
 #ifndef MS_AWAYMSG_GETSTATUSMSG
 #define MS_AWAYMSG_GETSTATUSMSG  "SRAway/GetStatusMessage"
