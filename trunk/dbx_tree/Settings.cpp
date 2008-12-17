@@ -533,7 +533,7 @@ unsigned int CSettings::DeleteSetting(TDBTSettingDescriptor & Descriptor)
 	if ((hset == 0) || (hset == DBT_INVALIDPARAM))
 	{		
 		SYNC_ENDWRITE(m_Sync);
-		return hset;
+		return DBT_INVALIDPARAM;
 	}
 
 	unsigned int res = 0;
