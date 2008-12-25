@@ -30,7 +30,7 @@ static const DWORD gVersion = 0x00000001;
 static const DWORD gMinMirVer = 0x00080000;
 static const MUUID gInterfaces[] = {MIID_DATABASE, MIID_LAST};
 // {28F45248-8C9C-4bee-9307-7BCF3E12BF99}
-static const MUUID gGUID = 
+static const MUUID gGUID =
 { 0x28f45248, 0x8c9c, 0x4bee, { 0x93, 0x07, 0x7b, 0xcf, 0x3e, 0x12, 0xbf, 0x99 } };
 
 
@@ -57,7 +57,7 @@ extern "C" __declspec(dllexport) PLUGININFOEX * MirandaPluginInfoEx(DWORD Mirand
 {
 	if (MirandaVersion < gMinMirVer)
 	{
-		MessageBox( 0, "The dbx_tree plugin cannot be loaded. It requires Miranda IM 0.8.0.0 or later.", "dbx_tree Plugin", MB_OK | MB_ICONEXCLAMATION | MB_SETFOREGROUND | MB_TOPMOST );
+		MessageBoxA( 0, "The dbx_tree plugin cannot be loaded. It requires Miranda IM 0.8.0.0 or later.", "dbx_tree Plugin", MB_OK | MB_ICONEXCLAMATION | MB_SETFOREGROUND | MB_TOPMOST );
 		return NULL;
 	}
 	return &gPluginInfoEx;

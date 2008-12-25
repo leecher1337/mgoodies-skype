@@ -22,24 +22,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #pragma once
 
-#include <windows.h>
-#include "FileAccess.h"
-
-class CMappedMemory : public CFileAccess
+inline long _InterlockedExchange(long volatile * Target, long Value)
 {
-private:
-	uint8_t* m_Base;
-
-	HANDLE m_DirectFile;
-	HANDLE m_FileMapping;
-protected:
-	
-	uint32_t mRead(void* Buf, uint32_t Source, uint32_t Size);
-  uint32_t mWrite(void* Buf, uint32_t Dest, uint32_t Size);	
-	uint32_t mSetSize(uint32_t Size);
-public:
-	CMappedMemory(const char* FileName, CEncryptionManager & EncryptionManager, uint32_t EncryptionStart);
-	virtual ~CMappedMemory();
-
-	static bool InitMMAP();
-};
+    __asm__ __volatile__ ( "lock xchg %1, %0"
+                 : "+m"(*Target),"=r"(Value)
+                 : "1"(Value)
+                 : "memory");
+    return Value;
+}
+inline long _InterlockedExchangeAdd(long volatile * Addend, long Value)
+{
+    __asm__ __volatile__ ( "lock xadd %1, %0"
+                 : "+m"(*Addend),"=r"(Value)
+                 : "1"(Value)
+                 : "memory");
+    return Value;
+}
+inline long _InterlockedIncrement(long volatile * Addend)
+{
+    return _InterlockedExchangeAdd(Addend, 1) + 1;
+}
+inline long _InterlockedDecrement(long volatile * Addend)
+{
+    return _InterlockedExchangeAdd(Addend, -1) - 1;
+}

@@ -27,7 +27,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <vector>
 
 #include "Exception.h"
+#ifdef _MSC_VER
 #include "stdint.h"
+#else
+#include <stdint.h>
+#endif
 #include "FileAccess.h"
 #include "EncryptionManager.h"
 #include "MREWSync.h"
@@ -83,7 +87,7 @@ protected:
 	CFileAccess & m_FileAccess;
 	CEncryptionManager & m_EncryptionManager;
 	CSmallMREWSynchronizer m_BlockSync;
-	
+
 	uint32_t m_FirstBlockStart;
 	TFreeBlockMap m_FreeBlocks;
 	std::vector<uint32_t> m_FreeIDs;
@@ -94,12 +98,11 @@ protected:
 
 	void Read(uint32_t Addr, bool IsVirtual, void* Buffer, uint32_t Size);
 	void Write(uint32_t Addr, bool IsVirtual, void* Buffer, uint32_t Size);
-	void Zero(uint32_t Addr, bool IsVirtual, uint32_t Size);
 
 	bool InitOperation(uint32_t BlockID, uint32_t & Addr, bool & IsVirtual, TBlockHeadOcc & Header);
 	uint32_t CreateVirtualBlock(uint32_t BlockID, uint32_t ContentSize);
 
-	void InsertFreeBlock(uint32_t Addr, uint32_t Size, bool LookLeft = true, bool LookRight = true);	
+	void InsertFreeBlock(uint32_t Addr, uint32_t Size, bool LookLeft = true, bool LookRight = true);
 	uint32_t FindFreePosition(uint32_t & Size);
 	void RemoveFreeBlock(uint32_t Addr, uint32_t Size);
 

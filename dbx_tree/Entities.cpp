@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Entities.h"
 
 CVirtuals::CVirtuals(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TNodeRef RootNode)
-: CFileBTree(BlockManager, RootNode, cVirtualNodeSignature),
+:   CFileBTree<TVirtualKey, 4>::CFileBTree(BlockManager, RootNode, cVirtualNodeSignature),
 	m_Sync(Synchronize)
 {
 
@@ -55,12 +55,12 @@ TDBTEntityHandle CVirtuals::_DeleteRealEntity(TDBTEntityHandle hRealEntity)
 		key = *i;
 		Delete(*i);
 
-		key.RealEntity = result;		
-		Insert(key);		
+		key.RealEntity = result;
+		Insert(key);
 
 		Entity.VParent = result;
 		m_BlockManager.WritePart(key.Virtual, &Entity.VParent, offsetof(TEntity, VParent), sizeof(TDBTEntityHandle));
-	
+
 		copies = true;
 	}
 
@@ -100,14 +100,14 @@ TDBTEntityHandle CVirtuals::getParent(TDBTEntityHandle hVirtual)
 	uint32_t sig = cEntitySignature;
 
 	SYNC_BEGINREAD(m_Sync);
-	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) || 
+	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) ||
 	   ((Entity.Flags & DBT_NF_IsVirtual) == 0))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	SYNC_ENDREAD(m_Sync);	
+	SYNC_ENDREAD(m_Sync);
 	return Entity.VParent;
 }
 TDBTEntityHandle CVirtuals::getFirst(TDBTEntityHandle hRealEntity)
@@ -118,15 +118,15 @@ TDBTEntityHandle CVirtuals::getFirst(TDBTEntityHandle hRealEntity)
 	uint32_t sig = cEntitySignature;
 
 	SYNC_BEGINREAD(m_Sync);
-	
 
-	if (!m_BlockManager.ReadBlock(hRealEntity, p, size, sig) || 
+
+	if (!m_BlockManager.ReadBlock(hRealEntity, p, size, sig) ||
 	   ((Entity.Flags & DBT_NF_HasVirtuals) == 0))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
-	
+
 	TVirtualKey key;
 	key.RealEntity = hRealEntity;
 	key.Virtual = 0;
@@ -150,20 +150,20 @@ TDBTEntityHandle CVirtuals::getNext(TDBTEntityHandle hVirtual)
 	uint32_t sig = cEntitySignature;
 
 	SYNC_BEGINREAD(m_Sync);
-	
-	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) || 
+
+	if (!m_BlockManager.ReadBlock(hVirtual, p, size, sig) ||
 	   ((Entity.Flags & DBT_NF_IsVirtual) == 0))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
-	
+
 	TVirtualKey key;
 	key.RealEntity = Entity.VParent;
 	key.Virtual = hVirtual + 1;
 
 	iterator i = LowerBound(key);
-	
+
 	if ((i) && (i->RealEntity == Entity.VParent))
 		key.Virtual = i->Virtual;
 	else
@@ -182,7 +182,7 @@ TDBTEntityHandle CVirtuals::getNext(TDBTEntityHandle hVirtual)
 ///////////////////////////////////////////////////////////////////////////////
 
 CEntities::CEntities(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynchronizer & Synchronize, TDBTEntityHandle RootEntity, TNodeRef EntityRoot, CVirtuals::TNodeRef VirtualRoot)
-: CFileBTree(BlockManager, EntityRoot, cEntityNodeSignature),
+:   CFileBTree<TEntityKey, 6>::CFileBTree(BlockManager, EntityRoot, cEntityNodeSignature),
 	m_Sync(Synchronize),
 	m_Virtuals(BlockManager, Synchronize, VirtualRoot),
 
@@ -196,7 +196,7 @@ CEntities::CEntities(CBlockManager & BlockManager, CMultiReadExclusiveWriteSynch
 		m_RootEntity = _CreateRootEntity();
 	else
 		m_RootEntity = RootEntity;
-	
+
 }
 
 CEntities::~CEntities()
@@ -206,8 +206,8 @@ CEntities::~CEntities()
 
 TDBTEntityHandle CEntities::_CreateRootEntity()
 {
-	TEntity Entity = {0};
-	TEntityKey key = {0};
+	TEntity Entity = {0,0,0,0,0,0,0,0,0};
+	TEntityKey key = {0,0,0};
 
 	Entity.Flags = DBT_NF_IsGroup | DBT_NF_IsRoot;
 	key.Entity = m_BlockManager.CreateBlock(sizeof(Entity), cEntitySignature);
@@ -221,7 +221,7 @@ void CEntities::_InternalTransferContacts(TDBTEntityHandle OldAccount, TDBTEntit
 	uint32_t sig = cEntitySignature;
 
 	TDBTEntityHandle acc;
-	TEntityKey key = {0};
+	TEntityKey key = {0,0,0};
 	iterator i = LowerBound(key);
 
 	while (i)
@@ -246,7 +246,7 @@ CEntities::TOnEntityDelete &          CEntities::sigEntityDelete()
 {
 	return m_sigEntityDelete;
 }
-CEntities::TOnInternalDeleteEvents &   CEntities::_sigDeleteEvents()  
+CEntities::TOnInternalDeleteEvents &   CEntities::_sigDeleteEvents()
 {
 	return m_sigInternalDeleteEvents;
 }
@@ -254,7 +254,7 @@ CEntities::TOnInternalDeleteSettings & CEntities::_sigDeleteSettings()
 {
 	return m_sigInternalDeleteSettings;
 }
-CEntities::TOnInternalMergeSettings &  CEntities::_sigMergeSettings() 
+CEntities::TOnInternalMergeSettings &  CEntities::_sigMergeSettings()
 {
 	return m_sigInternalMergeSettings;
 }
@@ -281,7 +281,7 @@ bool CEntities::_setSettingsRoot(TDBTEntityHandle hEntity, /*CSettingsTree::TNod
 
 	if (!m_BlockManager.WritePartCheck(hEntity, &NewRoot, offsetof(TEntity, Settings), sizeof(NewRoot), sig))
 		return false;
-	
+
 	return true;
 }
 
@@ -302,7 +302,7 @@ bool CEntities::_setEventsRoot(TDBTEntityHandle hEntity, /*CEventsTree::TNodeRef
 
 	if (!m_BlockManager.WritePartCheck(hEntity, &NewRoot, offsetof(TEntity, Events), sizeof(NewRoot), sig))
 		return false;
-	
+
 	return true;
 }
 
@@ -313,7 +313,7 @@ uint32_t CEntities::_getEventCount(TDBTEntityHandle hEntity)
 
 	if (!m_BlockManager.ReadPart(hEntity, &res, offsetof(TEntity, EventCount), sizeof(res), sig))
 		return DBT_INVALIDPARAM;
-	
+
 	return res;
 }
 
@@ -324,7 +324,7 @@ uint32_t CEntities::_adjustEventCount(TDBTEntityHandle hEntity, int32_t Adjust)
 
 	if (m_BlockManager.ReadPart(hEntity, &c, offsetof(TEntity, EventCount), sizeof(c), sig))
 	{
-		if (((Adjust < 0) && ((uint32_t)(-Adjust) <= c)) || 
+		if (((Adjust < 0) && ((uint32_t)(-Adjust) <= c)) ||
 			  ((Adjust > 0) && ((0xffffffff - c) > (uint32_t)Adjust)))
 		{
 			c += Adjust;
@@ -349,14 +349,14 @@ TDBTEntityHandle CEntities::getParent(TDBTEntityHandle hEntity)
 	TDBTEntityHandle par;
 	uint32_t sig = cEntitySignature;
 
-	SYNC_BEGINREAD(m_Sync);	
+	SYNC_BEGINREAD(m_Sync);
 	if (!m_BlockManager.ReadPart(hEntity, &par, offsetof(TEntity, ParentEntity), sizeof(par), sig))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	SYNC_ENDREAD(m_Sync);	
+	SYNC_ENDREAD(m_Sync);
 	return par;
 }
 TDBTEntityHandle CEntities::setParent(TDBTEntityHandle hEntity, TDBTEntityHandle hParent)
@@ -368,7 +368,7 @@ TDBTEntityHandle CEntities::setParent(TDBTEntityHandle hEntity, TDBTEntityHandle
 	uint16_t cn, co;
 	uint32_t fn, fo;
 	uint16_t l;
-	
+
 	SYNC_BEGINWRITE(m_Sync);
 	if (!m_BlockManager.ReadBlock(hEntity, pEntity, size, sig) ||
 		  !m_BlockManager.ReadPart(hParent, &cn, offsetof(TEntity,ChildCount), sizeof(cn), sig) ||
@@ -390,15 +390,15 @@ TDBTEntityHandle CEntities::setParent(TDBTEntityHandle hEntity, TDBTEntityHandle
 		fo = fo & ~DBT_NF_HasChildren;
 		m_BlockManager.WritePart(Entity.ParentEntity, &fo, offsetof(TEntity, Flags), sizeof(fo));
 	}
-	
+
 	m_BlockManager.WritePart(hParent, &cn, offsetof(TEntity, ChildCount), sizeof(cn));
 	if (cn == 1)
 	{
 		m_BlockManager.ReadPart(hParent, &fn, offsetof(TEntity, Flags), sizeof(fn), sig);
 		fn = fn | DBT_NF_HasChildren;
 		m_BlockManager.WritePart(hParent, &fn, offsetof(TEntity, Flags), sizeof(fn));
-	}	
-	
+	}
+
 	// update rest
 
 	TEntityKey key;
@@ -413,9 +413,9 @@ TDBTEntityHandle CEntities::setParent(TDBTEntityHandle hEntity, TDBTEntityHandle
 		key.Parent = hParent;
 		Insert(key);
 		m_BlockManager.WritePart(hEntity, &key.Parent, offsetof(TEntity, ParentEntity), sizeof(key.Parent));
-		
+
 	} else {
-		TDBTEntityIterFilter filter = {0};
+		TDBTEntityIterFilter filter = {0,0,0,0};
 		filter.cbSize = sizeof(filter);
 		filter.Options = DBT_NIFO_OSC_AC | DBT_NIFO_OC_AC;
 
@@ -435,10 +435,10 @@ TDBTEntityHandle CEntities::setParent(TDBTEntityHandle hEntity, TDBTEntityHandle
 					key.Parent = hParent;
 					m_BlockManager.WritePart(key.Entity, &key.Parent, offsetof(TEntity, ParentEntity), sizeof(key.Parent));
 				}
-				
+
 				key.Level = key.Level + dif;
 				m_BlockManager.WritePart(key.Entity, &key.Level, offsetof(TEntity, Level), sizeof(key.Level));
-				
+
 				Insert(key);
 			}
 			key.Entity = IterationNext(iter);
@@ -458,14 +458,14 @@ uint32_t CEntities::getChildCount(TDBTEntityHandle hEntity)
 {
 	uint32_t c;
 	uint32_t sig = cEntitySignature;
-	
+
 	SYNC_BEGINREAD(m_Sync);
 	if (!m_BlockManager.ReadPart(hEntity, &c, offsetof(TEntity, ChildCount), sizeof(c), sig))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
-	
+
 	SYNC_ENDREAD(m_Sync);
 	return c;
 }
@@ -510,7 +510,7 @@ uint32_t CEntities::getAccount(TDBTEntityHandle hEntity)
 
 TDBTEntityHandle CEntities::CreateEntity(const TDBTEntity & Entity)
 {
-	TEntity en = {0}, parent;
+	TEntity en = {0,0,0,0,0,0,0,0,0}, parent;
 	void* pparent = &parent;
 	uint32_t size = sizeof(en);
 	uint32_t sig = cEntitySignature;
@@ -530,7 +530,7 @@ TDBTEntityHandle CEntities::CreateEntity(const TDBTEntity & Entity)
 			  !(f & DBT_NF_IsAccount))
 		{
 			SYNC_ENDWRITE(m_Sync);
-			return DBT_INVALIDPARAM;	
+			return DBT_INVALIDPARAM;
 		}
 
 		if (f & DBT_NF_IsVirtual)
@@ -539,23 +539,23 @@ TDBTEntityHandle CEntities::CreateEntity(const TDBTEntity & Entity)
 		} else {
 			en.Account = Entity.hAccountEntity;
 		}
-	}		
+	}
 
 	TDBTEntityHandle hEntity = m_BlockManager.CreateBlock(sizeof(TEntity), cEntitySignature);
 	TEntityKey key;
-	
+
 	en.Level = parent.Level + 1;
 	en.ParentEntity = Entity.hParentEntity;
 	en.Flags = Entity.fFlags;
-		
+
 	m_BlockManager.WriteBlock(hEntity, &en, sizeof(TEntity), cEntitySignature);
-	
+
 	key.Level = en.Level;
 	key.Parent = en.ParentEntity;
 	key.Entity = hEntity;
 
 	Insert(key);
-	
+
 	if (parent.ChildCount == 0)
 	{
 		parent.Flags = parent.Flags | DBT_NF_HasChildren;
@@ -563,7 +563,7 @@ TDBTEntityHandle CEntities::CreateEntity(const TDBTEntity & Entity)
 	}
 	++parent.ChildCount;
 	m_BlockManager.WritePart(Entity.hParentEntity, &parent.ChildCount, offsetof(TEntity, ChildCount), sizeof(uint16_t));
-	
+
 	SYNC_ENDWRITE(m_Sync);
 	return hEntity;
 }
@@ -595,7 +595,7 @@ unsigned int CEntities::DeleteEntity(TDBTEntityHandle hEntity)
 		// move virtuals and make one of them real
 		TDBTEntityHandle newreal = m_Virtuals._DeleteRealEntity(hEntity);
 
-		m_BlockManager.WritePartCheck(newreal, &Entity.EventCount, offsetof(TEntity, EventCount), sizeof(uint32_t), sig);		
+		m_BlockManager.WritePartCheck(newreal, &Entity.EventCount, offsetof(TEntity, EventCount), sizeof(uint32_t), sig);
 		m_BlockManager.WritePart(newreal, &Entity.Events, offsetof(TEntity, Events), sizeof(uint32_t));
 
 		m_sigInternalTransferEvents.emit(this, hEntity, newreal);
@@ -619,13 +619,13 @@ unsigned int CEntities::DeleteEntity(TDBTEntityHandle hEntity)
 	key.Parent = Entity.ParentEntity;
 	key.Entity = hEntity;
 	Delete(key);
-	
+
 	if (Entity.Flags & DBT_NF_HasChildren) // keep the children
 	{
 		parentf = parentf | DBT_NF_HasChildren;
 		parentcc += Entity.ChildCount;
 
-		TDBTEntityIterFilter filter = {0};
+		TDBTEntityIterFilter filter = {0,0,0,0};
 		filter.cbSize = sizeof(filter);
 		filter.Options = DBT_NIFO_OSC_AC | DBT_NIFO_OC_AC;
 
@@ -634,7 +634,7 @@ unsigned int CEntities::DeleteEntity(TDBTEntityHandle hEntity)
 		{
 			IterationNext(iter);
 			key.Entity = IterationNext(iter);
-			
+
 			while ((key.Entity != 0) && (key.Entity != DBT_INVALIDPARAM))
 			{
 				if (m_BlockManager.ReadPart(key.Entity, &key.Parent, offsetof(TEntity, ParentEntity), sizeof(key.Parent), sig) &&
@@ -647,7 +647,7 @@ unsigned int CEntities::DeleteEntity(TDBTEntityHandle hEntity)
 						key.Parent = Entity.ParentEntity;
 						m_BlockManager.WritePart(key.Entity, &key.Parent, offsetof(TEntity, ParentEntity), sizeof(key.Parent));
 					}
-					
+
 					key.Level--;
 					m_BlockManager.WritePart(key.Entity, &key.Level, offsetof(TEntity, Level), sizeof(key.Level));
 					Insert(key);
@@ -682,7 +682,7 @@ TDBTEntityIterationHandle CEntities::IterationInit(const TDBTEntityIterFilter & 
 	uint32_t sig = cEntitySignature;
 
 	SYNC_BEGINREAD(m_Sync);
-	
+
 	if (!m_BlockManager.ReadPart(hParent, &l, offsetof(TEntity, Level), sizeof(l), sig) ||
 	    !m_BlockManager.ReadPart(hParent, &f, offsetof(TEntity, Flags), sizeof(f), sig))
 	{
@@ -695,9 +695,13 @@ TDBTEntityIterationHandle CEntities::IterationInit(const TDBTEntityIterFilter & 
 	iter->q = new std::deque<TEntityIterationItem>;
 	iter->parents = new std::deque<TEntityIterationItem>;
 	iter->accounts = new std::deque<TEntityIterationItem>;
-	iter->returned = new stdext::hash_set<TDBTEntityHandle>;
+	#ifdef _MSC_VER
+    iter->returned = new stdext::hash_set<TDBTEntityHandle>;
+    #else
+	iter->returned = new __gnu_cxx::hash_set<TDBTEntityHandle>;
+    #endif
 	iter->returned->insert(hParent);
-	
+
 	TEntityIterationItem it;
 	it.Flags = f;
 	it.Handle = hParent;
@@ -735,7 +739,7 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 		iter->accounts = tmp;
 	}
 
-	if (iter->q->empty() && 
+	if (iter->q->empty() &&
 		  (iter->filter.Options & DBT_NIFO_GF_USEROOT) &&
 			(iter->returned->find(m_RootEntity) == iter->returned->end()))
 	{
@@ -755,7 +759,7 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
-	
+
 	do {
 		item = iter->q->front();
 		iter->q->pop_front();
@@ -779,11 +783,11 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 			{
 				key.Entity = 0xffffffff;
 
-				iterator c = UpperBound(key);
+				CEntities::iterator c = UpperBound(key);
 				while ((c) && (c->Parent == item.Handle))
 				{
 					newitem.Handle = c->Entity;
-					
+
 					if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
 						  m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TEntity, Flags), sizeof(newitem.Flags), sig) &&
 						  (((newitem.Flags & DBT_NF_IsGroup) == 0) || ((DBT_NF_IsGroup & iter->filter.fHasFlags) == 0))) // if we want only groups, we don't need to trace down Entities...
@@ -797,11 +801,11 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 			} else {
 				key.Entity = 0;
 
-				iterator c = LowerBound(key);
+				CEntities::iterator c = LowerBound(key);
 				while ((c) && (c->Parent == item.Handle))
 				{
 					newitem.Handle = c->Entity;
-					
+
 					if ((iter->returned->find(newitem.Handle) == iter->returned->end()) &&
 						  m_BlockManager.ReadPart(newitem.Handle, &newitem.Flags, offsetof(TEntity, Flags), sizeof(newitem.Flags), sig) &&
 						  (((newitem.Flags & DBT_NF_IsGroup) == 0) || ((DBT_NF_IsGroup & iter->filter.fHasFlags) == 0))) // if we want only groups, we don't need to trace down Entities...
@@ -837,8 +841,8 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 		}
 
 		// virtual lookup, original Entity is the next one
-		if ((item.Flags & DBT_NF_IsVirtual) && 
-			  (item.Options & DBT_NIFO_OSC_AO) && 
+		if ((item.Flags & DBT_NF_IsVirtual) &&
+			  (item.Options & DBT_NIFO_OSC_AO) &&
 				(((iter->filter.Options >> 28) >= item.LookupDepth) || ((iter->filter.Options >> 28) == 0)))
 		{
 			newitem.Handle = VirtualGetParent(item.Handle);
@@ -865,9 +869,9 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 		    ((iter->filter.fDontHasFlags & item.Flags) == 0))
 		{
 			result = item.Handle;
-			
+
 			// account lookup
-			if (((item.Flags & (DBT_NF_IsAccount | DBT_NF_IsGroup | DBT_NF_IsRoot)) == 0) && 
+			if (((item.Flags & (DBT_NF_IsAccount | DBT_NF_IsGroup | DBT_NF_IsRoot)) == 0) &&
 			    ((item.Options & DBT_NIFO_OC_USEACCOUNT) == DBT_NIFO_OC_USEACCOUNT))
 			{
 				TDBTEntityHandle acc = item.Handle;
@@ -877,7 +881,7 @@ TDBTEntityHandle CEntities::IterationNext(TDBTEntityIterationHandle Iteration)
 				acc = getAccount(acc);
 
 				std::deque<TEntityIterationItem>::iterator acci = iter->accounts->begin();
-				
+
 				while ((acci != iter->accounts->end()) && (acc != 0))
 				{
 					if (acci->Handle == acc)
@@ -929,15 +933,15 @@ TDBTEntityHandle CEntities::VirtualCreate(TDBTEntityHandle hRealEntity, TDBTEnti
 	uint32_t sig = cEntitySignature;
 
 	SYNC_BEGINWRITE(m_Sync);
-	
-	if (!m_BlockManager.ReadPart(hRealEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig) || 
+
+	if (!m_BlockManager.ReadPart(hRealEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig) ||
 		  (f & (DBT_NF_IsGroup | DBT_NF_IsRoot)))
 	{
 		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	TDBTEntity entity = {0};
+	TDBTEntity entity = {0,0,0,0};
 	entity.hParentEntity = hParent;
 	entity.fFlags = DBT_NF_IsVirtual | (f & DBT_NF_IsAccount);
 	entity.hAccountEntity = 0;
@@ -950,8 +954,8 @@ TDBTEntityHandle CEntities::VirtualCreate(TDBTEntityHandle hRealEntity, TDBTEnti
 	}
 
 	if (f & DBT_NF_IsVirtual)
-	{		
-		m_BlockManager.ReadPart(hRealEntity, &hRealEntity, offsetof(TEntity, VParent), sizeof(hRealEntity), sig);		
+	{
+		m_BlockManager.ReadPart(hRealEntity, &hRealEntity, offsetof(TEntity, VParent), sizeof(hRealEntity), sig);
 		m_BlockManager.ReadPart(hRealEntity, &f, offsetof(TEntity, Flags), sizeof(f), sig);
 	}
 
@@ -978,7 +982,7 @@ TDBTEntityHandle CEntities::VirtualGetFirst(TDBTEntityHandle hRealEntity)
 	return m_Virtuals.getFirst(hRealEntity);
 }
 TDBTEntityHandle CEntities::VirtualGetNext(TDBTEntityHandle hVirtual)
-{	
+{
 	return m_Virtuals.getNext(hVirtual);
 }
 
@@ -988,7 +992,7 @@ TDBTEntityHandle CEntities::compFirstContact()
 	uint32_t sig = cEntitySignature;
 
 	SYNC_BEGINREAD(m_Sync);
-	TEntityKey key = {0};
+	TEntityKey key = {0,0,0};
 	iterator i = LowerBound(key);
 	TDBTEntityHandle res = 0;
 
@@ -1022,7 +1026,7 @@ TDBTEntityHandle CEntities::compNextContact(TDBTEntityHandle hEntity)
 	{
 		key.Entity++;
 		iterator i = LowerBound(key);
-		
+
 		while (i && (res == 0))
 		{
 			uint32_t f = 0;

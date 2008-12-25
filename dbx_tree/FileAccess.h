@@ -24,7 +24,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <windows.h>
 #include <time.h>
+#ifndef _MSC_VER
+#include <stdint.h>
+#else
 #include "stdint.h"
+#endif
 #include "EncryptionManager.h"
 #include "Exception.h"
 #include "sigslot.h"

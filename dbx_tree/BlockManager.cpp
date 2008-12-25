@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 CBlockManager::CBlockManager(
-	CFileAccess & FileAccess, 
+	CFileAccess & FileAccess,
 	CEncryptionManager & EncryptionManager
 	)
 :	m_FileAccess(FileAccess),
@@ -40,7 +40,7 @@ CBlockManager::CBlockManager(
 }
 CBlockManager::~CBlockManager()
 {
-	m_BlockSync.BeginWrite();
+	SYNC_BEGINWRITE(m_BlockSync);
 	if (m_OptimizeThread)
 	{
 		m_OptimizeThread->FreeOnTerminate(false);
@@ -58,9 +58,17 @@ CBlockManager::~CBlockManager()
 // Optimize File Size
 void CBlockManager::ExecuteOptimize()
 {
-	TBlockHeadFree h;
+	TBlockHeadFree h = {0,0};
 	uint8_t * buf = NULL;
-	uint32_t optimizefrom;
+	uint32_t bufsize = 0;
+	uint32_t nextbufpos = 0;
+	uint32_t freebytes = 0;
+	struct {
+		uint32_t BlockID;
+		uint32_t NewPos;
+	} moveblocks[32];
+	uint32_t blocks = 0;
+	uint32_t flushblocks = 8;
 
 	{
 		int i = 0;
@@ -71,52 +79,97 @@ void CBlockManager::ExecuteOptimize()
 		}
 	}
 
-	m_BlockSync.BeginWrite();
+	SYNC_BEGINWRITE(m_BlockSync);
 
 	if (m_FileAccess.GetReadOnly())
 	{
-		m_BlockSync.EndWrite();
+		SYNC_ENDWRITE(m_BlockSync);
 		return;
 	}
 
 	m_Optimize = m_FirstBlockStart;
 
+	while (!m_OptimizeThread->Terminated() && (m_Optimize < m_FileAccess.GetSize()) && (h.ID != cFreeBlockID))
+	{
+		m_Optimize += h.Size;
+		Read(m_Optimize, false, &h, sizeof(h));
+	}
+
 	while (!m_OptimizeThread->Terminated() && (m_Optimize < m_FileAccess.GetSize()))
 	{
-		h.Size = 0;
-		do {
-			m_Optimize += h.Size;
-			Read(m_Optimize, false, &h, sizeof(h));			
-		} while ((h.ID != cFreeBlockID) && (m_Optimize < m_FileAccess.GetSize())); // find the first free block
-
-		optimizefrom = m_Optimize + h.Size;
-
-		if (optimizefrom < m_FileAccess.GetSize())
+		Read(m_Optimize, false, &h, sizeof(h));
+		if (h.ID == cFreeBlockID)
 		{
-			Read(optimizefrom, false, &h, sizeof(h));
-			buf = (uint8_t*) realloc(buf, h.Size + (optimizefrom - m_Optimize));
-			Read(optimizefrom, false, buf, h.Size);
-			Read(m_Optimize, false, buf + h.Size, optimizefrom - m_Optimize);
+			RemoveFreeBlock(m_Optimize, h.Size);
+			freebytes += h.Size;
+		} else if (freebytes > 0) {
+			moveblocks[blocks].BlockID = h.ID;
+			moveblocks[blocks].NewPos = m_Optimize - freebytes;
+			blocks++;
 
-			Write(m_Optimize, false, buf, h.Size + (optimizefrom - m_Optimize));
+			if (bufsize < nextbufpos + freebytes + h.Size)
+			{
+				bufsize = nextbufpos + freebytes + h.Size;
+				buf = (uint8_t*) realloc(buf, bufsize);
+			}
+			Read(m_Optimize, false, buf + nextbufpos, h.Size);
+			nextbufpos += h.Size;
 
-			if ((m_BlockTable[h.ID >> 2].Addr & cVirtualBlockFlag) == 0)
-				m_BlockTable[h.ID >> 2].Addr = m_Optimize;
+		}
+		m_Optimize += h.Size;
+	
+		if (blocks == flushblocks)
+		{
+			memset(buf + nextbufpos, 0, freebytes);
+			((TBlockHeadFree*)(buf + nextbufpos))->ID = cFreeBlockID;
+			((TBlockHeadFree*)(buf + nextbufpos))->Size = freebytes;
+			((TBlockTailFree*)(buf + (nextbufpos + freebytes - sizeof(TBlockTailFree))))->ID = cFreeBlockID;
+			((TBlockTailFree*)(buf + (nextbufpos + freebytes - sizeof(TBlockTailFree))))->Size = freebytes;
+			Write(m_Optimize - nextbufpos - freebytes, false, buf, nextbufpos + freebytes);
 			
-			RemoveFreeBlock(m_Optimize, optimizefrom - m_Optimize);
-			InsertFreeBlock(m_Optimize + h.Size, optimizefrom - m_Optimize, false, true);
+			for (unsigned int i = 0; i < blocks; i++)
+			{
+				if ((m_BlockTable[moveblocks[i].BlockID >> 2].Addr & cVirtualBlockFlag) == 0)
+					m_BlockTable[moveblocks[i].BlockID >> 2].Addr = moveblocks[i].NewPos;
+			}
 			
-			m_Optimize = m_Optimize + h.Size;
+			blocks = 0;
+			nextbufpos = 0;
+			m_Optimize -= freebytes;
+			freebytes = 0;			
+
+			flushblocks += 3 - m_BlockSync.ReadWaiting();
+			if (flushblocks < 4)
+				flushblocks = 4;
+			if (flushblocks > 32)
+				flushblocks = 32;
+
+			if (m_BlockSync.ReadWaiting() > 0)
+			{
+				SYNC_ENDWRITE(m_BlockSync);
+				Sleep(m_BlockSync.ReadWaiting() * 50 + 1);
+				SYNC_BEGINWRITE(m_BlockSync);
+			}
+		}
+	}
+
+	if (m_Optimize >= m_FileAccess.GetSize())
+	{
+		if (blocks)
+			Write(m_Optimize - nextbufpos - freebytes, false, buf, nextbufpos);
+
+		for (unsigned int i = 0; i < blocks; i++)
+		{
+			if ((m_BlockTable[moveblocks[i].BlockID >> 2].Addr & cVirtualBlockFlag) == 0)
+				m_BlockTable[moveblocks[i].BlockID >> 2].Addr = moveblocks[i].NewPos;
 		}
 
-		m_BlockSync.EndWrite();
-		Sleep(m_BlockSync.ReadWaiting() * 50);
-		m_BlockSync.BeginWrite();
+		m_FileAccess.SetSize(m_Optimize - freebytes);
 	}
 
 	m_OptimizeThread = NULL;
 	m_Optimize = 0;
-	m_BlockSync.EndWrite();
+	SYNC_ENDWRITE(m_BlockSync);
 
 	if (buf)
 		free(buf);
@@ -125,9 +178,11 @@ void CBlockManager::ExecuteOptimize()
 
 uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignature, uint32_t FileSize)
 {
-	TBlockHeadOcc h, lasth = {0};
+	TBlockHeadOcc h, lasth = {0, 0, 0};
 	uint32_t p;
 	uint32_t res = 0;
+	bool merge = false;
+
 	p = FirstBlockStart;
 	m_FirstBlockStart = FirstBlockStart;
 
@@ -142,14 +197,24 @@ uint32_t CBlockManager::ScanFile(uint32_t FirstBlockStart, uint32_t HeaderSignat
  		if (h.ID == cFreeBlockID)
 		{
 			if (lasth.ID == cFreeBlockID)
+			{				
+				lasth.Size += h.Size;
+				merge = true;
+			} else {				
+				lasth = h;
+			}
+		
+		} else {
+			
+			if (lasth.ID == cFreeBlockID)
 			{
-				RemoveFreeBlock(p - lasth.Size, lasth.Size);
-				InsertFreeBlock(p, h.Size, true, false);
-			} else {
-				m_FreeBlocks.insert(std::make_pair(h.Size, p));
+				if (merge)
+					InsertFreeBlock(p - lasth.Size, lasth.Size, false, false);
+				else
+					m_FreeBlocks.insert(std::make_pair(lasth.Size, p - lasth.Size));
 			}
 			lasth = h;
-		} else {
+			merge = false;
 
 			while ((h.ID >> 2) >= m_BlockTable.size())
 				m_BlockTable.resize(m_BlockTable.size() << 1);
@@ -194,25 +259,9 @@ inline void CBlockManager::Write(uint32_t Addr, bool IsVirtual, void* Buffer, ui
 		m_FileAccess.Write(Buffer, Addr, Size);
 }
 
-inline void CBlockManager::Zero(uint32_t Addr, bool IsVirtual, uint32_t Size)
-{
-//#ifdef _DEBUG
-	if (IsVirtual)
-	{
-		memset((void*)Addr, 0, Size);
-	} else {
-		void *buf = malloc(Size);
-		memset(buf,0,Size);
-		m_FileAccess.Write(buf, Addr, Size);
-		free(buf);
-	}
-//#endif
-}
-
-
 inline bool CBlockManager::InitOperation(uint32_t BlockID, uint32_t & Addr, bool & IsVirtual, TBlockHeadOcc & Header)
 {
-	if (BlockID & 3) 
+	if (BlockID & 3)
 		return false;
 
 	BlockID = BlockID >> 2;
@@ -220,7 +269,7 @@ inline bool CBlockManager::InitOperation(uint32_t BlockID, uint32_t & Addr, bool
 		return false;
 
 	Addr = m_BlockTable[BlockID].Addr;
-	
+
 	if (Addr == 0)
 		return false;
 
@@ -230,9 +279,9 @@ inline bool CBlockManager::InitOperation(uint32_t BlockID, uint32_t & Addr, bool
 		Addr = Addr & ~cVirtualBlockFlag;
 		IsVirtual = true;
 	}
-	
+
 	Read(Addr, IsVirtual, &Header, sizeof(Header));
-	
+
 	return true;
 }
 
@@ -254,26 +303,31 @@ inline void CBlockManager::InsertFreeBlock(uint32_t Addr, uint32_t Size, bool Lo
 		Read(Addr - sizeof(ft), false, &ft, sizeof(ft));
 		if (ft.ID == cFreeBlockID)
 		{ // free block in front of ours
-			if (m_Optimize == Addr)
-				m_Optimize = m_Optimize - ft.Size;
+			if (m_Optimize != Addr - ft.Size)
+			{
+				Addr = Addr - ft.Size;
+				Size = Size + ft.Size;
 
-			Addr = Addr - ft.Size;
-			Size = Size + ft.Size;
-
-			RemoveFreeBlock(Addr, ft.Size);
+				RemoveFreeBlock(Addr, ft.Size);
+			}
 		}
 	}
-	
+
 	if (LookRight && (Addr + Size + sizeof(TBlockHeadFree) < m_FileAccess.GetSize()))
 	{
 		Read(Addr + Size, false, &fh, sizeof(fh));
-		if (fh.ID == cFreeBlockID) 
-		{ // free block beyond our block				
-			RemoveFreeBlock(Addr + Size, fh.Size);
+		if (fh.ID == cFreeBlockID)
+		{ // free block beyond our block
+			if (m_Optimize == Addr + Size)
+			{
+				m_Optimize = Addr;
+			} else {
+				RemoveFreeBlock(Addr + Size, fh.Size);
 
-			Size = Size + fh.Size;
+				Size = Size + fh.Size;
+			}
 		}
-	} 
+	}
 
 	if (Addr + Size == m_FileAccess.GetSize())
 	{
@@ -290,7 +344,7 @@ inline void CBlockManager::InsertFreeBlock(uint32_t Addr, uint32_t Size, bool Lo
 		free(buf);
 
 		m_FreeBlocks.insert(std::make_pair(Size, Addr));
-	}	
+	}
 }
 
 inline void CBlockManager::RemoveFreeBlock(uint32_t Addr, uint32_t Size)
@@ -319,10 +373,8 @@ inline uint32_t CBlockManager::FindFreePosition(uint32_t & Size)
 		int i = 1;
 		while ((i < 5) && (m_FreeBlocks.end() == f)) // try to find a good fit
 		{
-			f = m_FreeBlocks.lower_bound(Size * i);
-			if ((f != m_FreeBlocks.end()) && (f->first >= Size * i + sizeof(TBlockHeadFree) + sizeof(TBlockTailFree)))
-				f = m_FreeBlocks.end();
-			++i;		
+			f = m_FreeBlocks.find(Size * i);
+			++i;
 		}
 
 		if (m_FreeBlocks.end() == f) // try worst fit strategy. take the biggest block available (double size of request to catch remaining part later)
@@ -335,13 +387,13 @@ inline uint32_t CBlockManager::FindFreePosition(uint32_t & Size)
 	}
 
 	uint32_t addr = 0;
-	
+
 	if (f == m_FreeBlocks.end()) // no block found - expand file
 	{
 		addr = m_FileAccess.GetSize();
 		m_FileAccess.SetSize(addr + Size);
-	} else { 			
-		addr = f->second;		
+	} else {
+		addr = f->second;
 		if (f->first <= Size + sizeof(TBlockHeadFree) + sizeof(TBlockTailFree))
 		{
 			Size = f->first;
@@ -350,7 +402,7 @@ inline uint32_t CBlockManager::FindFreePosition(uint32_t & Size)
 			uint8_t * buf = (uint8_t*) malloc(f->first);
 			memset(buf, 0, f->first);
 			((TBlockHeadFree*)buf)->ID = cFreeBlockID;
-			((TBlockHeadFree*)buf)->Size = Size;			
+			((TBlockHeadFree*)buf)->Size = Size;
 			((TBlockTailFree*)(buf + Size - sizeof(TBlockTailFree)))->ID = cFreeBlockID;
 			((TBlockTailFree*)(buf + Size - sizeof(TBlockTailFree)))->Size = Size;
 			((TBlockHeadFree*)(buf + Size))->ID = cFreeBlockID;
@@ -376,16 +428,16 @@ bool CBlockManager::ReadBlock(uint32_t BlockID, void * & Buffer, size_t & Size, 
 	bool isvirtual;
 	TBlockHeadOcc h;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (!InitOperation(BlockID, a, isvirtual, h))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
-	
+
 	if ((Signature != 0) && (Signature != h.Signature))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		Signature = h.Signature;
 		return false;
 	}
@@ -393,17 +445,17 @@ bool CBlockManager::ReadBlock(uint32_t BlockID, void * & Buffer, size_t & Size, 
 
 	if ((Size != 0) && (Size != h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc)))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		Size = h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc);
 		return false;
-	} 
+	}
 	Size = h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc);
 
 	if (Buffer == NULL)
 		Buffer = malloc(Size);
-	
+
 	Read(a + sizeof(h), isvirtual, Buffer, Size);
-	m_BlockSync.EndRead();
+	SYNC_ENDREAD(m_BlockSync);
 
 	if (!isvirtual && m_EncryptionManager.IsEncrypted(BlockID, ET_BLOCK))
 	{
@@ -420,19 +472,19 @@ bool CBlockManager::WriteBlock(uint32_t BlockID, void * Buffer, size_t Size, uin
 	bool isvirtual;
 	TBlockHeadOcc h;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (!InitOperation(BlockID, a, isvirtual, h))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
 
 	if (Size > h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
-	
+
 	if ((!isvirtual) && m_FileAccess.GetReadOnly())
 	{
 		a = CreateVirtualBlock(BlockID, Size);
@@ -448,7 +500,7 @@ bool CBlockManager::WriteBlock(uint32_t BlockID, void * Buffer, size_t Size, uin
 	Write(a, isvirtual, &h, sizeof(h));
 	Write(a + sizeof(h), isvirtual, Buffer, Size);
 
-	m_BlockSync.EndRead();
+	SYNC_ENDREAD(m_BlockSync);
 
 	return true;
 }
@@ -461,16 +513,16 @@ bool CBlockManager::WriteBlockCheck(uint32_t BlockID, void * Buffer, size_t Size
 	bool isvirtual;
 	TBlockHeadOcc h;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (!InitOperation(BlockID, a, isvirtual, h))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
 
 	if ((Signature != 0) && (h.Signature != Signature))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		Signature = h.Signature;
 		return false;
 	}
@@ -478,7 +530,7 @@ bool CBlockManager::WriteBlockCheck(uint32_t BlockID, void * Buffer, size_t Size
 
 	if (Size != h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
 
@@ -496,7 +548,7 @@ bool CBlockManager::WriteBlockCheck(uint32_t BlockID, void * Buffer, size_t Size
 	Write(a, isvirtual, &h, sizeof(h));
 	Write(a + sizeof(h), isvirtual, Buffer, Size);
 
-	m_BlockSync.EndRead();
+	SYNC_ENDREAD(m_BlockSync);
 	return true;
 }
 
@@ -506,16 +558,16 @@ bool CBlockManager::ReadPart(uint32_t BlockID, void * Buffer, uint32_t Offset, s
 	bool isvirtual;
 	TBlockHeadOcc h;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (!InitOperation(BlockID, a, isvirtual, h))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
-	
+
 	if ((Signature != 0) && (Signature != h.Signature))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		Signature = h.Signature;
 		return false;
 	}
@@ -524,13 +576,13 @@ bool CBlockManager::ReadPart(uint32_t BlockID, void * Buffer, uint32_t Offset, s
 	//if ((Size == 0) || ((Buffer == NULL) ^ (Size == 0))) // if the one is specified the other must be too
 	if ((Size == 0) || (Buffer == NULL)) // same as above, simplified
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
 
 	if ((Size + Offset > h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc)))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 		}
 
@@ -543,18 +595,18 @@ bool CBlockManager::ReadPart(uint32_t BlockID, void * Buffer, uint32_t Offset, s
 		m_EncryptionManager.AlignData(BlockID, ET_BLOCK, estart, eend);
 
 		cryptbuf = malloc(eend - estart);
-		
+
 		Read(a + sizeof(h) + estart, false, cryptbuf, eend - estart);
 		m_EncryptionManager.Decrypt(cryptbuf, eend - estart, ET_BLOCK, BlockID, estart);
-		
+
 		memcpy(Buffer, (uint8_t*)cryptbuf + (Offset - estart), Size);
 		free(cryptbuf);
-		
+
 	} else {
 		Read(a + sizeof(h) + Offset, isvirtual, Buffer, Size);
 	}
-	
-	m_BlockSync.EndRead();
+
+	SYNC_ENDREAD(m_BlockSync);
 	return true;
 }
 
@@ -584,19 +636,19 @@ void CBlockManager::PartWriteEncrypt(uint32_t BlockID, uint32_t Offset, uint32_t
 			Read(Addr + estart2 + sizeof(TBlockHeadOcc), false, cryptbuf + (estart2 - estart1), eend2 - estart2);
 			m_EncryptionManager.Decrypt(cryptbuf + (estart2 - estart1), eend2 - estart2, ET_BLOCK, BlockID, estart2);
 		}
-	} else if ((estart2 != Offset) || (eend2 != Offset + Size)) 
+	} else if ((estart2 != Offset) || (eend2 != Offset + Size))
 	{ // only one block
 		Read(Addr + estart2 + sizeof(TBlockHeadOcc), false, cryptbuf, eend2 - estart2);
 		m_EncryptionManager.Decrypt(cryptbuf, eend2 - estart2, ET_BLOCK, BlockID, estart2);
 	}
-	
+
 	memcpy(cryptbuf + (Offset - estart1), Buffer, Size);
 
 	m_EncryptionManager.Encrypt(cryptbuf, eend2 - estart1, ET_BLOCK, BlockID, estart1);
 	Write(Addr + sizeof(TBlockHeadOcc) + estart1, false, cryptbuf, eend2 - estart1);
 
 	free(cryptbuf);
-	
+
 }
 
 bool CBlockManager::WritePart(uint32_t BlockID, void * Buffer, uint32_t Offset, size_t Size, uint32_t Signature)
@@ -605,16 +657,16 @@ bool CBlockManager::WritePart(uint32_t BlockID, void * Buffer, uint32_t Offset, 
 	bool isvirtual;
 	TBlockHeadOcc h;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (!InitOperation(BlockID, a, isvirtual, h))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
-	
+
 	if ((Size + Offset > h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc)))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
 
@@ -631,7 +683,7 @@ bool CBlockManager::WritePart(uint32_t BlockID, void * Buffer, uint32_t Offset, 
 		h.Signature = Signature;
 		Write(a, isvirtual, &h, sizeof(h));
 	}
-	
+
 	if ((Size != 0) && (Buffer != NULL))
 	{
 		if (!isvirtual && m_EncryptionManager.IsEncrypted(BlockID, ET_BLOCK))
@@ -642,7 +694,7 @@ bool CBlockManager::WritePart(uint32_t BlockID, void * Buffer, uint32_t Offset, 
 		}
 	}
 
-	m_BlockSync.EndRead();		
+	SYNC_ENDREAD(m_BlockSync);
 	return true;
 }
 bool CBlockManager::WritePartCheck(uint32_t BlockID, void * Buffer, uint32_t Offset, size_t Size, uint32_t & Signature)
@@ -651,22 +703,22 @@ bool CBlockManager::WritePartCheck(uint32_t BlockID, void * Buffer, uint32_t Off
 	bool isvirtual;
 	TBlockHeadOcc h;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (!InitOperation(BlockID, a, isvirtual, h))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
-	
+
 	if ((Size + Offset > h.Size - sizeof(TBlockHeadOcc) - sizeof(TBlockTailOcc)))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
 
 	if ((Signature != 0) && (Signature != h.Signature))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		Signature = h.Signature;
 		return false;
 	}
@@ -683,14 +735,14 @@ bool CBlockManager::WritePartCheck(uint32_t BlockID, void * Buffer, uint32_t Off
 	if ((Size != 0) && (Buffer != NULL))
 	{
 		if (!isvirtual && m_EncryptionManager.IsEncrypted(BlockID, ET_BLOCK))
-		{ 
+		{
 			PartWriteEncrypt(BlockID, Offset, Size, Buffer, a);
 		} else {
 			Write(a + sizeof(h) + Offset, isvirtual, Buffer, Size);
 		}
 	}
 
-	m_BlockSync.EndRead();
+	SYNC_ENDREAD(m_BlockSync);
 	return true;
 }
 
@@ -698,13 +750,13 @@ uint32_t CBlockManager::CreateBlock(uint32_t Size, uint32_t Signature)
 {
 	uint32_t id = 0;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (m_FreeIDs.empty())
 	{
 		id = m_BlockTable.size();
 
 		m_BlockTable.resize(m_BlockTable.size() << 1);
-				
+
 		for (uint32_t i = m_BlockTable.size() - 1; i > id; --i)
 			m_FreeIDs.push_back(i);
 	} else {
@@ -726,16 +778,16 @@ uint32_t CBlockManager::CreateBlock(uint32_t Size, uint32_t Signature)
 		((TBlockTailOcc*)(a + Size + sizeof(TBlockHeadOcc)))->ID = h.ID;
 	} else {
 		uint32_t addr = FindFreePosition(h.Size);
-		
+
 		TBlockTailOcc t;
 		t.ID = h.ID;
-		
+
 		Write(addr + h.Size - sizeof(t), false, &t, sizeof(t));
-		Write(addr, false, &h, sizeof(h));		
+		Write(addr, false, &h, sizeof(h));
 		m_BlockTable[id].Addr = addr;
 	}
 
-	m_BlockSync.EndRead();
+	SYNC_ENDREAD(m_BlockSync);
 	return h.ID;
 }
 
@@ -743,13 +795,13 @@ uint32_t CBlockManager::CreateBlockVirtual(uint32_t Size, uint32_t Signature)
 {
 	uint32_t id = 0;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (m_FreeIDs.empty())
 	{
 		id = m_BlockTable.size();
 
 		m_BlockTable.resize(m_BlockTable.size() << 1);
-				
+
 		for (uint32_t i = m_BlockTable.size() - 1; i > id; --i)
 			m_FreeIDs.push_back(i);
 	} else {
@@ -760,7 +812,7 @@ uint32_t CBlockManager::CreateBlockVirtual(uint32_t Size, uint32_t Signature)
 	Size = m_EncryptionManager.AlignSize(id << 2, ET_BLOCK, (Size + 3) & 0xfffffffc); // align on cipher after we aligned on 4 bytes
 
 	uint32_t a = CreateVirtualBlock(id << 2, Size);
-	m_BlockSync.EndRead();
+	SYNC_ENDREAD(m_BlockSync);
 
 	memset((void*)(a + sizeof(TBlockHeadOcc)), 0, Size);
 	((TBlockHeadOcc*)a)->ID = id << 2;
@@ -776,10 +828,10 @@ bool CBlockManager::DeleteBlock(uint32_t BlockID)
 	bool isvirtual;
 	TBlockHeadOcc h;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (!InitOperation(BlockID, a, isvirtual, h))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
 
@@ -787,16 +839,16 @@ bool CBlockManager::DeleteBlock(uint32_t BlockID)
 
 	m_BlockTable[BlockID].Addr = 0;
 	// m_FreeIDs.push_back(BlockID); don't reuse blockids during a session to avoid side effects
-	
+
 	if (isvirtual)
 	{
-		free((void*)a);		
+		free((void*)a);
 
 	} else if (!m_FileAccess.GetReadOnly()) {
 		InsertFreeBlock(a, h.Size);
 	}
-	
-	m_BlockSync.EndRead();
+
+	SYNC_ENDREAD(m_BlockSync);
 	return true;
 }
 uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveData)
@@ -809,16 +861,16 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 	bool isvirtual;
 	TBlockHeadOcc h;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (!InitOperation(BlockID, a, isvirtual, h))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
 
 	if (Size + sizeof(h) + sizeof(TBlockTailOcc) == h.Size)
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return Size;
 	}
 
@@ -827,7 +879,7 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 		a = (uint32_t) realloc((void*)a, Size + sizeof(h) + sizeof(TBlockTailOcc));
 		memset((void*)(a + h.Size), 0, Size + sizeof(h) - h.Size);
 
-		h.Size = Size + sizeof(h);		
+		h.Size = Size + sizeof(h);
 		memcpy((void*)a, &h, sizeof(h));
 		m_BlockTable[BlockID >> 2].Addr = a | cVirtualBlockFlag;
 	} else if (m_FileAccess.GetReadOnly())
@@ -844,7 +896,7 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 				Read(a, false, (void*) na, ns);
 			}
 		}
-		
+
 		h.Size = ns;
 		memcpy((void*)na, &h, sizeof(h));
 		((TBlockTailOcc*)(na + ns - sizeof(TBlockTailOcc)))->ID = h.ID;
@@ -852,7 +904,7 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 		uint32_t ns = Size + sizeof(TBlockHeadOcc) + sizeof(TBlockTailOcc);
 		uint32_t na = FindFreePosition(ns);
 		uint8_t * buf = (uint8_t*) malloc(ns);
-		
+
 		if (SaveData)
 		{
 			if (ns > h.Size)
@@ -862,7 +914,7 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 				Read(a, false, buf, ns);
 			}
 		}
-				
+
 		((TBlockHeadOcc*)buf)->ID = h.ID;
 		((TBlockHeadOcc*)buf)->Size = ns;
 		((TBlockHeadOcc*)buf)->Signature = h.Signature;
@@ -870,11 +922,11 @@ uint32_t CBlockManager::ResizeBlock(uint32_t BlockID, uint32_t Size, bool SaveDa
 		Write(na, false, buf, ns);
 		InsertFreeBlock(a, h.Size, true, true);
 		m_BlockTable[BlockID >> 2].Addr = na;
-		
+
 		free(buf);
 	}
 
-	m_BlockSync.EndRead();
+	SYNC_ENDREAD(m_BlockSync);
 	return Size;
 }
 
@@ -882,22 +934,22 @@ bool CBlockManager::IsForcedVirtual(uint32_t BlockID)
 {
 	BlockID = BlockID >> 2;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (BlockID >= m_BlockTable.size())
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return true;
 	}
 
 	uint32_t addr = m_BlockTable[BlockID].Addr;
-	m_BlockSync.EndRead();
+	SYNC_ENDREAD(m_BlockSync);
 
 	if (addr == 0)
 		return true;
-	
+
 	if (addr & cForcedVirtualBlockFlag)
 		return true;
-	
+
 	return false;
 }
 
@@ -907,36 +959,36 @@ bool CBlockManager::WriteBlockToDisk(uint32_t BlockID)
 	bool isvirtual;
 	TBlockHeadOcc h;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (!InitOperation(BlockID, a, isvirtual, h))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
 
 	if (!isvirtual)
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return true;
 	}
 
 	if (m_FileAccess.GetReadOnly())
 	{
 		m_BlockTable[BlockID >> 2].Addr = m_BlockTable[BlockID >> 2].Addr & ~cForcedVirtualBlockFlag;
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
 
 	uint32_t os = h.Size;
 	uint32_t oa = a;
 	a = FindFreePosition(h.Size);
-	
+
 	((TBlockTailOcc*)(oa + os - sizeof(TBlockTailOcc)))->ID = h.ID;
 	Write(a, false, (void*)oa, os);
-	
+
 	m_BlockTable[BlockID >> 2].Addr = a;
 
-	m_BlockSync.EndRead();
+	SYNC_ENDREAD(m_BlockSync);
 	free((void*)oa);
 
 	return true;
@@ -948,17 +1000,17 @@ bool CBlockManager::MakeBlockVirtual(uint32_t BlockID)
 	bool isvirtual;
 	TBlockHeadOcc h;
 
-	m_BlockSync.BeginRead();
+	SYNC_BEGINREAD(m_BlockSync);
 	if (!InitOperation(BlockID, a, isvirtual, h))
 	{
-		m_BlockSync.EndRead();
+		SYNC_ENDREAD(m_BlockSync);
 		return false;
 	}
 
 	if (isvirtual)
 	{
-		m_BlockTable[BlockID >> 2].Addr = m_BlockTable[BlockID >> 2].Addr | cForcedVirtualBlockFlag;	
-		m_BlockSync.EndRead();
+		m_BlockTable[BlockID >> 2].Addr = m_BlockTable[BlockID >> 2].Addr | cForcedVirtualBlockFlag;
+		SYNC_ENDREAD(m_BlockSync);
 		return true;
 	}
 
@@ -969,6 +1021,6 @@ bool CBlockManager::MakeBlockVirtual(uint32_t BlockID)
 
 	InsertFreeBlock(a, h.Size);
 
-	m_BlockSync.EndRead();
+	SYNC_ENDREAD(m_BlockSync);
 	return true;
 }

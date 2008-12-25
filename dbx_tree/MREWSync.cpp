@@ -27,13 +27,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	#include <stdio.h>
 #endif
 
+#ifdef _MSC_VER
 #include <intrin.h>
 
 #pragma intrinsic (_InterlockedIncrement)
 #pragma intrinsic (_InterlockedDecrement)
 #pragma intrinsic (_InterlockedExchange)
 #pragma intrinsic (_InterlockedExchangeAdd)
-
+#else
+#include "intrin_gcc.h"
+#endif
 
 #define mrWRITEREQUEST 0x10000
 #define ALIVE          1
@@ -67,7 +70,7 @@ CThreadLocalCounter::~CThreadLocalCounter()
 
 unsigned char CThreadLocalCounter::HashIndex()
 {
-	unsigned long h = GetCurrentThreadId();	
+	unsigned long h = GetCurrentThreadId();
 	return (cTLCHASHTABLESIZE - 1) & (h ^ (h >> 8));
 }
 CThreadLocalCounter::PThreadInfo CThreadLocalCounter::Recycle()
@@ -105,7 +108,7 @@ void CThreadLocalCounter::Open(PThreadInfo & Thread)
 		if (!p)
 		{
 			p = new TThreadInfo;
-			
+
 			p->ThreadID = curthread;
 			p->Active = ALIVE;
 			p->RecursionCount = 0;
@@ -193,7 +196,7 @@ void CMultiReadExclusiveWriteSynchronizer::EndRead()
 	if (thread->RecursionCount == 0)
 	{
 		tls.Delete(thread);
-		
+
 		if (m_WriterID != GetCurrentThreadId())
 		{
 			test = _InterlockedIncrement((long*)&m_Sentinel);
@@ -215,7 +218,7 @@ bool CMultiReadExclusiveWriteSynchronizer::BeginWrite()
 	int test;
 	long oldrevisionlevel;
 
-	if (m_WriterID != threadid) 
+	if (m_WriterID != threadid)
 	{
 		BlockReaders();
 
@@ -261,7 +264,7 @@ void CMultiReadExclusiveWriteSynchronizer::EndWrite()
 		m_WriterID = 0;
 		_InterlockedExchangeAdd(&m_Sentinel, mrWRITEREQUEST);
 		UnblockOneWriter();
-		
+
 		UnblockReaders();
 	}
 

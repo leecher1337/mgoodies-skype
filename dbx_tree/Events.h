@@ -33,8 +33,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "EncryptionManager.h"
 #include "sigslot.h"
 
+#ifdef _MSC_VER
 #include <hash_map>
 #include <hash_set>
+#else
+#include <ext/hash_map>
+#include <ext/hash_set>
+#endif
 #include <queue>
 #include <time.h>
 #include <windows.h>
@@ -43,7 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 /**
 	\brief Key Type of the EventsBTree
-	
+
 	The Key consists of a timestamp, seconds elapsed since 1.1.1970
 	and an Index, which makes it possible to store multiple events with the same timestamp
 **/
@@ -67,7 +72,7 @@ typedef struct TEventKey {
 
 	//bool operator >= (const TEventKey & Other);
 	bool operator >  (const TEventKey & Other) const
-	{	
+	{
 		if (TimeStamp != Other.TimeStamp) return TimeStamp > Other.TimeStamp;
 		if (Index != Other.Index) return Index > Other.Index;
 		if (Event != Other.Event) return Event > Other.Event;
@@ -94,7 +99,7 @@ typedef struct TEventLinkKey {
 	bool operator == (const TEventLinkKey & Other) const
 	{
 		return (Event == Other.Event) && (Entity == Other.Entity);
-	}	
+	}
 	//bool operator >= (const TEventKey & Other);
 	bool operator >  (const TEventLinkKey & Other) const
 	{
@@ -169,7 +174,7 @@ public:
 };
 
 
-class CEventsTypeManager 
+class CEventsTypeManager
 {
 public:
 	CEventsTypeManager(CEntities & Entities, CSettings & Settings);
@@ -184,7 +189,11 @@ private:
 		char *   ModuleName;
 		uint32_t EventType;
 	} TEventType, *PEventType;
+	#ifdef _MSC_VER
 	typedef stdext::hash_map<uint32_t, PEventType> TTypeMap;
+	#else
+    typedef __gnu_cxx::hash_map<uint32_t, PEventType> TTypeMap;
+	#endif
 
 	CEntities & m_Entities;
 	CSettings & m_Settings;
@@ -209,18 +218,18 @@ class CEvents : public sigslot::has_slots<>
 public:
 
 	CEvents(
-		CBlockManager & BlockManager, 
+		CBlockManager & BlockManager,
 		CEncryptionManager & EncryptionManager,
-		CEventLinks::TNodeRef LinkRootNode, 
+		CEventLinks::TNodeRef LinkRootNode,
 		CMultiReadExclusiveWriteSynchronizer & Synchronize,
-		CEntities & Entities, 
+		CEntities & Entities,
 		CSettings & Settings,
 		uint32_t IndexCounter
 		);
 	~CEvents();
 
 	CEventLinks::TOnRootChanged & sigLinkRootChanged();
-	
+
 	typedef sigslot::signal2<CEvents *, uint32_t> TOnIndexCounterChanged;
 	TOnIndexCounterChanged & _sigIndexCounterChanged();
 
@@ -251,13 +260,23 @@ public:
 
 private:
 	typedef CBTree<TEventKey, 16> TEventBase;
+	#ifdef _MSC_VER
 	typedef stdext::hash_map<TDBTEntityHandle, CEventsTree*> TEventsTreeMap;
 	typedef stdext::hash_map<TDBTEntityHandle, CVirtualEventsTree*> TVirtualEventsTreeMap;
 	typedef stdext::hash_map<TDBTEntityHandle, uint32_t> TVirtualEventsCountMap;
-	typedef CIterationHeap<TEventBase::iterator> TEventsHeap;
-	
+
 	typedef stdext::hash_set<TDBTEntityHandle> TVirtualOwnerSet;
 	typedef stdext::hash_map<TDBTEventHandle, TVirtualOwnerSet*> TVirtualOwnerMap;
+	#else
+	typedef __gnu_cxx::hash_map<TDBTEntityHandle, CEventsTree*> TEventsTreeMap;
+	typedef __gnu_cxx::hash_map<TDBTEntityHandle, CVirtualEventsTree*> TVirtualEventsTreeMap;
+	typedef __gnu_cxx::hash_map<TDBTEntityHandle, uint32_t> TVirtualEventsCountMap;
+
+	typedef __gnu_cxx::hash_set<TDBTEntityHandle> TVirtualOwnerSet;
+	typedef __gnu_cxx::hash_map<TDBTEventHandle, TVirtualOwnerSet*> TVirtualOwnerMap;
+
+    #endif
+    typedef CIterationHeap<TEventBase::iterator> TEventsHeap;
 
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CBlockManager & m_BlockManager;

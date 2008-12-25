@@ -26,18 +26,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdarg.h>
 #include <iostream>
 #include <windows.h>
+#ifndef _MSC_VER
+#include "savestrings_gcc.h"
+#endif
 
 CException::CException(const CException & Other)
+:	m_File(Other.m_File),
+	m_Line(Other.m_Line),
+	m_Function(Other.m_Function)
 {
 	int len = strlen(Other.m_Message) + 1;
 	m_Message = new char[len];
 	strcpy_s(m_Message, len, Other.m_Message);
 
-	m_File = Other.m_File;
-	m_Line = Other.m_Line;
-	m_Function = Other.m_Function;
 	m_SysError = Other.m_SysError;
-	
+
 	if (m_SysError)
 	{
 		len = strlen(Other.m_SysMessage) + 1;
@@ -45,7 +48,10 @@ CException::CException(const CException & Other)
 		strcpy_s(m_SysMessage, len, Other.m_SysMessage);
 	}
 }
-CException::CException(char * File, int Line, char * Function, char * Format, ...)
+CException::CException(const char * File, const int Line, const char * Function, const char * Format, ...)
+:	m_File(File),
+	m_Line(Line),
+	m_Function(Function)
 {
 	m_SysError = GetLastError();
 	m_SysMessage = NULL;
@@ -66,9 +72,8 @@ CException::CException(char * File, int Line, char * Function, char * Format, ..
 		strcpy_s(m_SysMessage, len, buf);
 	}
 
-	m_File = File;
-	m_Line = Line;
-	m_Function = Function;
+	sprintf_s(buf, "%s %d (%s)\n%s", File, Line, Function, m_Message);
+	MessageBoxA(0, buf, "exception", MB_OK);
 }
 CException::~CException()
 {
@@ -82,9 +87,9 @@ void CException::ShowMessage()
 	char buf[8192];
 	if (m_SysError)
 	{
-		sprintf_s(buf, 8192, "Error occoured in \"%s\" (%i) in function \"%s\":\n\n%s\n\nSystem Error state: %i\n%s", m_File, m_Line, m_Function, m_Message, m_SysError, m_SysMessage);
+		sprintf_s(buf, "Error occoured in \"%s\" (%i) in function \"%s\":\n\n%s\n\nSystem Error state: %i\n%s", m_File, m_Line, m_Function, m_Message, m_SysError, m_SysMessage);
 	} else {
-		sprintf_s(buf, 8192, "Error occoured in \"%s\" (%i) in function \"%s\":\n\n%s", m_File, m_Line, m_Function, m_Message);
+		sprintf_s(buf, "Error occoured in \"%s\" (%i) in function \"%s\":\n\n%s", m_File, m_Line, m_Function, m_Message);
 	}
-	MessageBoxA(0, buf, NULL, MB_OK | MB_ICONERROR); 
+	MessageBoxA(0, buf, NULL, MB_OK | MB_ICONERROR);
 }
