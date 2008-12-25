@@ -38,7 +38,7 @@ CEncryptionManager::CEncryptionManager()
 bool CEncryptionManager::InitEncryption(TFileEncryption & Enc)
 {
 	m_Type = (TEncryptionType)(Enc.AccessType & ET_MASK);
-		
+
 	if (Enc.AccessType & cEncryptionChangingFlag)
 	{
 		m_Changing = true;
@@ -115,7 +115,7 @@ uint32_t CEncryptionManager::AlignSize(uint32_t ID, TEncryptionType Type, uint32
 {
 	if (Type == ET_FILE)
 		ID = ID & cFileBlockMask;
-	
+
 	if (m_Cipher && (Type == m_Type) && (!m_Changing || (ID < m_ChangingProcess)))
 	{
 		if (Size % m_Cipher->BlockSizeBytes())
@@ -183,9 +183,9 @@ void CEncryptionManager::Encrypt(void* Data, uint32_t DataLength, TEncryptionTyp
 				Data = (uint8_t *)Data + (~cFileBlockMask) + 1;
 			}
 		}
-	} 
-	
-	if (DataLength > 0) // last partial file block handled here, also all other 
+	}
+
+	if (DataLength > 0) // last partial file block handled here, also all other
 	{
 		if (m_Cipher && (Type == m_Type) && (!m_Changing || (ID < m_ChangingProcess)))
 		{
@@ -197,7 +197,7 @@ void CEncryptionManager::Encrypt(void* Data, uint32_t DataLength, TEncryptionTyp
 	}
 }
 void CEncryptionManager::Decrypt(void* Data, uint32_t DataLength, TEncryptionType Type, uint32_t ID, uint32_t StartByte)
-{	
+{
 	if (Type == ET_FILE)
 		ID = ID & cFileBlockMask;
 
@@ -239,9 +239,9 @@ void CEncryptionManager::Decrypt(void* Data, uint32_t DataLength, TEncryptionTyp
 				Data = (uint8_t *)Data + (~cFileBlockMask) + 1;
 			}
 		}
-	} 
-	
-	if (DataLength > 0) // last partial file block handled here, also all other 
+	}
+
+	if (DataLength > 0) // last partial file block handled here, also all other
 	{
 		if (m_Cipher && (Type == m_Type) && (!m_Changing || (ID < m_ChangingProcess)))
 		{

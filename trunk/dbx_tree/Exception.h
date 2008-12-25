@@ -22,22 +22,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #pragma once
 
+#ifdef _MSC_VER
 #define throwException(Format, ...) throw CException(__FILE__, __LINE__, __FUNCTION__, Format, __VA_ARGS__)
+#else
+#define throwException(Format, ...) throw CException(__FILE__, __LINE__, __FUNCTION__, Format, ##__VA_ARGS__)
+#endif
+
 
 class CException
 {
 private:
 	char * m_Message;
-	char * m_File;
-	int    m_Line;
-	char * m_Function;
+	const char * m_File;
+	const int    m_Line;
+	const char * m_Function;
 
 	int    m_SysError;
 	char * m_SysMessage;
 
 public:
 	CException(const CException & Other);
-	CException(char * File, int Line, char * Function, char * Format, ...);
+	CException(const char * File, const int Line, const char * Function, const char * Format, ...);
 	~CException();
 
 	void ShowMessage();

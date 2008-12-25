@@ -61,7 +61,7 @@ int DBEntityGetFlags(WPARAM hEntity, LPARAM lParam)
 }
 int DBEntityIterInit(WPARAM pFilter, LPARAM hParent)
 {
-	TDBTEntityIterFilter fil = {0};
+	TDBTEntityIterFilter fil = {0,0,0,0};
 	if (pFilter == NULL)
 	{
 		pFilter = (WPARAM)&fil;
@@ -138,7 +138,7 @@ int DBVirtualEntityGetFirst(WPARAM hEntity, LPARAM lParam)
 {
 	if ((hEntity == 0) || (hEntity == gDataBase->getEntities().getRootEntity()))
 		return DBT_INVALIDPARAM;
-	
+
 	return gDataBase->getEntities().VirtualGetFirst(hEntity);
 }
 int DBVirtualEntityGetNext(WPARAM hVirtualEntity, LPARAM lParam)
@@ -185,7 +185,7 @@ int DBSettingDeleteHandle(WPARAM hSetting, LPARAM lParam)
 }
 int DBSettingWrite(WPARAM pSetting, LPARAM lParam)
 {
-	if (pSetting == NULL)		
+	if (pSetting == NULL)
 		return DBT_INVALIDPARAM;
 
 	if (((PDBTSetting)pSetting)->cbSize != sizeof(TDBTSetting))
@@ -207,7 +207,7 @@ int DBSettingWrite(WPARAM pSetting, LPARAM lParam)
 }
 int DBSettingWriteHandle(WPARAM pSetting, LPARAM hSetting)
 {
-	if (pSetting == NULL)		
+	if (pSetting == NULL)
 		return DBT_INVALIDPARAM;
 
 	if (((PDBTSetting)pSetting)->cbSize != sizeof(TDBTSetting))
@@ -217,7 +217,7 @@ int DBSettingWriteHandle(WPARAM pSetting, LPARAM hSetting)
 }
 int DBSettingRead(WPARAM pSetting, LPARAM lParam)
 {
-	if (pSetting == NULL)		
+	if (pSetting == NULL)
 		return DBT_INVALIDPARAM;
 
 	if (((PDBTSetting)pSetting)->cbSize != sizeof(TDBTSetting))
@@ -244,7 +244,7 @@ int DBSettingReadHandle(WPARAM pSetting, LPARAM hSetting)
 
 	if ((((PDBTSetting)pSetting)->Descriptor != NULL) && (((PDBTSetting)pSetting)->Descriptor->cbSize != sizeof(TDBTSettingDescriptor)))
 		return DBT_INVALIDPARAM;
-	
+
 	return gDataBase->getSettings().ReadSetting(*((PDBTSetting)pSetting), hSetting);
 }
 int DBSettingIterInit(WPARAM pFilter, LPARAM lParam)
@@ -308,7 +308,7 @@ int DBEventAdd(WPARAM hEntity, LPARAM pEvent)
 {
 	if ((pEvent == NULL) || (((PDBTEvent)pEvent)->cbSize != sizeof(TDBTEvent)) || (((PDBTEvent)pEvent)->pBlob == NULL) || (((PDBTEvent)pEvent)->cbBlob == 0))
 		return DBT_INVALIDPARAM;
-	
+
 	return gDataBase->getEvents().Add(hEntity, *((PDBTEvent)pEvent));
 }
 

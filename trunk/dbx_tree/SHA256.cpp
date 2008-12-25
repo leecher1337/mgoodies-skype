@@ -22,8 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "SHA256.h"
 #include <stdlib.h>
+#include <string.h>
 
-//#define NO_ASM
+#ifndef _MSC_VER
+#define NO_ASM
+#endif
 #define SHA_LOOPUNROLL
 
 #ifndef _MSC_VER
@@ -106,7 +109,7 @@ void SHA256::SHAUpdate(void * Data, uint32_t Length)
 	if (len > 0)
 	{
 		memcpy(m_Block, dat, len);
-	}	
+	}
 
 	m_Length += Length;
 }
@@ -131,7 +134,7 @@ void SHA256::SHAFinal(SHA256::THash & Hash)
 					0,0,0,0,0,0,0,0,
 					0,0,0,0,0,0,0,0
 			};
-	
+
 	uint32_t padlen = 0;
 	if ((m_Length & 63) < 55) // 64 - 9 -> short padding
 	{
@@ -194,7 +197,7 @@ void SHA256::SHAFinal(SHA256::THash & Hash)
 		}
 #endif
 	}
-		
+
 	SHAInit();
 }
 
@@ -275,7 +278,7 @@ void SHA256::SHABlock()
 
 		t2  = (rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) +  //s0
 		      ((a & b) ^ (a & c) ^ (b & c)); //maj
-		
+
 		h = g;
 		g = f;
 		f = e;

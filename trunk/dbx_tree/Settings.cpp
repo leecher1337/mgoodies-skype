@@ -23,9 +23,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Settings.h"
 #include <math.h> // floor function
 #include "Hash.h"
+#ifndef _MSC_VER
+#include "savestrings_gcc.h"
+#endif
 
 CSettingsTree::CSettingsTree(CSettings & Owner, CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TNodeRef RootNode, TDBTEntityHandle Entity)
-: CFileBTree(BlockManager, RootNode, cSettingNodeSignature),
+:   CFileBTree<TSettingKey, 8>::CFileBTree(BlockManager, RootNode, cSettingNodeSignature),
 	m_Owner(Owner),
 	m_EncryptionManager(EncryptionManager)
 {
@@ -49,11 +52,11 @@ void CSettingsTree::setEntity(TDBTEntityHandle NewEntity)
 
 TDBTSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length)
 {
-	TSettingKey key = {0};
+	TSettingKey key = {0,0};
 	key.Hash = Hash;
 	iterator i = LowerBound(key);
 	uint16_t l;
-	
+
 	TDBTSettingHandle res = 0;
 
 	char * str = NULL;
@@ -68,9 +71,9 @@ TDBTSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * 
 		} else {
 			++i;
 		}
-	} 
+	}
 
-	if (str) 
+	if (str)
 		free(str);
 
 	return res;
@@ -78,7 +81,7 @@ TDBTSettingHandle CSettingsTree::_FindSetting(const uint32_t Hash, const char * 
 
 bool CSettingsTree::_DeleteSetting(const uint32_t Hash, const TDBTSettingHandle hSetting)
 {
-	TSettingKey key = {0};
+	TSettingKey key = {0,0};
 	key.Hash = Hash;
 	iterator i = LowerBound(key);
 
@@ -90,7 +93,7 @@ bool CSettingsTree::_DeleteSetting(const uint32_t Hash, const TDBTSettingHandle 
 		Delete(*i);
 		return true;
 	}
-	
+
 	return false;
 }
 
@@ -108,7 +111,7 @@ CSettings::CSettings(
 		CBlockManager & BlockManagerPri,
 		CEncryptionManager & EncryptionManagerSet,
 		CEncryptionManager & EncryptionManagerPri,
-		CMultiReadExclusiveWriteSynchronizer & Synchronize, 
+		CMultiReadExclusiveWriteSynchronizer & Synchronize,
 		CSettingsTree::TNodeRef SettingsRoot,
 		CEntities & Entities
 )
@@ -174,7 +177,7 @@ CSettingsTree * CSettings::getSettingsTree(TDBTEntityHandle hEntity)
 	tree->sigRootChanged().connect(this, &CSettings::onRootChanged);
 	m_SettingsMap.insert(std::make_pair(hEntity, tree));
 
-	return tree;	
+	return tree;
 }
 
 inline bool CSettings::_ReadSettingName(CBlockManager & BlockManager, CEncryptionManager & EncryptionManager, TDBTSettingHandle Setting, uint16_t & NameLength, char *& NameBuf)
@@ -196,17 +199,14 @@ inline bool CSettings::_ReadSettingName(CBlockManager & BlockManager, CEncryptio
 	{
 		len = EncryptionManager.AlignSize(Setting, ET_DATA, sizeof(((TSetting*)NULL)->Value) + NameLength + 1);
 		buf = (char*) malloc(len);
-		__try
-		{
-			BlockManager.ReadPart(Setting, buf, offsetof(TSetting, Value), len, sig);
-			EncryptionManager.Decrypt(buf, len, ET_DATA, Setting, 0);
-			memcpy(NameBuf, buf + sizeof(((TSetting*)NULL)->Value), NameLength + 1);
-		}
-		__finally 
-		{
-			free(buf);
-		}
-	} else {	
+
+		BlockManager.ReadPart(Setting, buf, offsetof(TSetting, Value), len, sig);
+		EncryptionManager.Decrypt(buf, len, ET_DATA, Setting, 0);
+		memcpy(NameBuf, buf + sizeof(((TSetting*)NULL)->Value), NameLength + 1);
+
+        free(buf);
+
+	} else {
 		BlockManager.ReadPart(Setting, NameBuf, sizeof(TSetting), NameLength + 1, sig);
 	}
 
@@ -241,15 +241,15 @@ void CSettings::_EnsureModuleExists(char * Module)
 		strcpy_s(namebuf, "$Modules/");
 		strcat_s(namebuf, Module);
 
-		TDBTSettingDescriptor desc = {0};
+		TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
 		desc.cbSize = sizeof(desc);
 		desc.pszSettingName = namebuf;
 
-		TDBTSetting set = {0};
+		TDBTSetting set = {0,0,0,0};
 		set.cbSize = sizeof(set);
 		set.Descriptor = &desc;
 		set.Type = DBT_ST_DWORD;
-		
+
 		WriteSetting(set, cSettingsFileFlag);
 	}
 
@@ -259,16 +259,16 @@ void CSettings::_EnsureModuleExists(char * Module)
 
 void CSettings::_LoadModules()
 {
-	TDBTSettingDescriptor desc = {0};
+	TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
 	desc.cbSize = sizeof(desc);
 
-	TDBTSettingIterFilter f = {0};
+	TDBTSettingIterFilter f = {0,0,0,0,0,0,0,0};
 	f.cbSize = sizeof(f);
 	f.Descriptor = &desc;
 	f.NameStart = "$Modules/";
-	
+
 	TDBTSettingIterationHandle hiter = IterationInit(f);
-	
+
 	if ((hiter != 0) && (hiter != DBT_INVALIDPARAM))
 	{
 		TDBTSettingHandle res = IterationNext(hiter);
@@ -293,7 +293,7 @@ void CSettings::onRootChanged(void* SettingsTree, CSettingsTree::TNodeRef NewRoo
 {
 	if (((CSettingsTree*)SettingsTree)->getEntity() == 0)
 		m_sigRootChanged.emit(this, NewRoot);
-	else 
+	else
 		m_Entities._setSettingsRoot(((CSettingsTree*)SettingsTree)->getEntity(), NewRoot);
 }
 
@@ -326,7 +326,7 @@ void CSettings::onDeleteSettings(CEntities * Entities, TDBTEntityHandle hEntity)
 }
 
 
-typedef struct TSettingMergeHelper 
+typedef struct TSettingMergeHelper
 {
 	TDBTEntityHandle Source;
 	TDBTEntityHandle Dest;
@@ -343,10 +343,10 @@ void CSettings::onMergeSettingCallback(void * Tree, const TSettingKey & Key,uint
 
 	uint16_t dnl = 0;
 	char * dnb = NULL;
-		
+
 	_ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, Key.Setting, dnl, dnb);
 
-	TSettingKey k = {0};
+	TSettingKey k = {0,0};
 	k.Hash = Key.Hash;
 
 	CSettingsTree::iterator i = hlp->SourceTree->LowerBound(k);
@@ -355,7 +355,7 @@ void CSettings::onMergeSettingCallback(void * Tree, const TSettingKey & Key,uint
 	{
 		uint16_t snl = dnl;
 		char * snb = NULL;
-		
+
 		if (_ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, i->Setting, snl, snb)
 			  && (strcmp(dnb, snb) == 0)) // found it
 		{
@@ -388,7 +388,7 @@ void CSettings::onMergeSettings(CEntities * Entities, TDBTEntityHandle Source, T
 		stree->setEntity(Dest);
 		m_Entities._setSettingsRoot(Dest, stree->getRoot());
 
-		TSettingKey key = {0};
+		TSettingKey key = {0,0};
 		CSettingsTree::iterator it = stree->LowerBound(key);
 
 		while (it) // transfer all source settings to new Entity
@@ -412,7 +412,7 @@ void CSettings::onMergeSettings(CEntities * Entities, TDBTEntityHandle Source, T
 		delete i->second; // dtree
 		i->second = stree;
 		m_SettingsMap.erase(Source);
-		
+
 	}
 }
 
@@ -426,7 +426,7 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 
 	uint32_t namelength = strlen(Descriptor.pszSettingName);
 	uint32_t namehash;
-	
+
 	if (Descriptor.Flags & DBT_SDF_HashValid)
 	{
 		namehash = Descriptor.Hash;
@@ -453,7 +453,7 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 		}
 
 		res = tree->_FindSetting(namehash, Descriptor.pszSettingName, namelength);
-	
+
 		if (res)
 		{
 			Descriptor.FoundInEntity = Descriptor.Entity;
@@ -475,10 +475,10 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
-	
+
 	// search the setting
 	res = 0;
-	
+
 	TDBTEntityIterFilter f;
 	f.cbSize = sizeof(f);
 	if (cf & DBT_NF_IsGroup)
@@ -487,7 +487,7 @@ TDBTSettingHandle CSettings::FindSetting(TDBTSettingDescriptor & Descriptor)
 		f.fHasFlags = DBT_NF_IsGroup;
 	} else {
 		f.fDontHasFlags = DBT_NF_IsGroup;
-		f.fHasFlags = 0;	
+		f.fHasFlags = 0;
 	}
 	f.Options = Descriptor.Options;
 
@@ -531,7 +531,7 @@ unsigned int CSettings::DeleteSetting(TDBTSettingDescriptor & Descriptor)
 
 	TDBTSettingHandle hset = FindSetting(Descriptor);
 	if ((hset == 0) || (hset == DBT_INVALIDPARAM))
-	{		
+	{
 		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
@@ -548,7 +548,7 @@ unsigned int CSettings::DeleteSetting(TDBTSettingDescriptor & Descriptor)
 			file = &m_BlockManagerSet;
 			hset = hset & ~cSettingsFileFlag;
 		}
-		
+
 		if (file->ReadPart(hset, &con, offsetof(TSetting, Entity), sizeof(con), sig) &&
 			(con == Descriptor.FoundInEntity))
 		{
@@ -565,13 +565,13 @@ unsigned int CSettings::DeleteSetting(TDBTSettingDescriptor & Descriptor)
 	}
 
 	SYNC_ENDWRITE(m_Sync);
-	
+
 	return res;
 }
 unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 {
 	SYNC_BEGINWRITE(m_Sync);
-	
+
 	CBlockManager * file = &m_BlockManagerPri;
 	CEncryptionManager * enc = &m_EncryptionManagerPri;
 
@@ -585,7 +585,7 @@ unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 	void* buf = NULL;
 	uint32_t size = 0;
 	uint32_t sig = cSettingSignature;
-	
+
 	if (!file->ReadBlock(hSetting, buf, size, sig))
 	{
 		SYNC_ENDWRITE(m_Sync);
@@ -609,7 +609,7 @@ unsigned int CSettings::DeleteSetting(TDBTSettingHandle hSetting)
 
 	char * str = (char*) (set+1);
 	tree->_DeleteSetting(Hash(str, set->NameLength), hSetting);
-	
+
 	file->DeleteBlock(hSetting);
 	SYNC_ENDWRITE(m_Sync);
 
@@ -622,7 +622,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting)
 
 	TDBTSettingHandle hset = FindSetting(*Setting.Descriptor);
 	if (hset == DBT_INVALIDPARAM)
-	{		
+	{
 		SYNC_ENDWRITE(m_Sync);
 		return hset;
 	}
@@ -630,7 +630,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting)
 	hset = WriteSetting(Setting, hset);
 
 	SYNC_ENDWRITE(m_Sync);
-	
+
 	return hset;
 }
 TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHandle hSetting)
@@ -639,7 +639,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 		return DBT_INVALIDPARAM;
 
 	SYNC_BEGINWRITE(m_Sync);
-	
+
 	CBlockManager * file = &m_BlockManagerPri;
 	CEncryptionManager * enc = &m_EncryptionManagerPri;
 	bool fileflag = false;
@@ -654,7 +654,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 	}
 
 	CSettingsTree * tree = NULL;
-	
+
 	if (hSetting == 0)
 	{
 		if (Setting.Descriptor->Entity == 0)
@@ -669,8 +669,8 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 			tree = getSettingsTree(Setting.Descriptor->Entity);
 			_EnsureModuleExists(Setting.Descriptor->pszSettingName);
 		}
-		
-	} else {		
+
+	} else {
 		TDBTEntityHandle e;
 		if (file->ReadPart(hSetting, &e, offsetof(TSetting, Entity), sizeof(e), sig)) // check if hSetting is valid
 			tree = getSettingsTree(e);
@@ -688,7 +688,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 	uint32_t blocksize = 0;
 
 	if (Setting.Type & DBT_STF_VariableLength)
-	{		
+	{
 		switch (Setting.Type)
 		{
 			case DBT_ST_ANSI: case DBT_ST_UTF8:
@@ -709,12 +709,12 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 				blobsize = Setting.Value.Length;
 				break;
 		}
-	}	
+	}
 
 	blocksize = sizeof(TSetting) - sizeof(set->Value) + enc->AlignSize(hSetting, ET_DATA, sizeof(set->Value) + strlen(Setting.Descriptor->pszSettingName) + 1 + blobsize);
-	
+
 	if (hSetting == 0) // create new setting
-	{	
+	{
 		hSetting = file->CreateBlock(blocksize, cSettingSignature);
 
 		if (blocksize != sizeof(TSetting) - sizeof(set->Value) + enc->AlignSize(hSetting, ET_DATA, sizeof(set->Value) + strlen(Setting.Descriptor->pszSettingName) + 1 + blobsize))
@@ -759,14 +759,14 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 	set->Type = Setting.Type;
 	set->NameLength = strlen(Setting.Descriptor->pszSettingName);
 	memcpy(set + 1, Setting.Descriptor->pszSettingName, set->NameLength + 1);
-	
+
 	if (Setting.Type & DBT_STF_VariableLength)
 	{
-		set->AllocSize = file->ResizeBlock(hSetting, blocksize) - 
+		set->AllocSize = file->ResizeBlock(hSetting, blocksize) -
 				                (sizeof(TSetting) + set->NameLength + 1);
-		
+
 		set->BlobLength = blobsize;
-		
+
 		memcpy(buf + sizeof(TSetting) + set->NameLength + 1, Setting.Value.pBlob, blobsize);
 	} else {
 		memset(&(set->Value), 0, sizeof(set->Value));
@@ -797,7 +797,7 @@ TDBTSettingHandle CSettings::WriteSetting(TDBTSetting & Setting, TDBTSettingHand
 	{
 		hSetting = hSetting | cSettingsFileFlag;
 	}
-	
+
 	SYNC_ENDWRITE(m_Sync);
 
 	return hSetting;
@@ -808,7 +808,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting)
 
 	TDBTSettingHandle hset = FindSetting(*Setting.Descriptor);
 	if ((hset == 0) || (hset == DBT_INVALIDPARAM))
-	{		
+	{
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
@@ -876,21 +876,21 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 					Setting.Value.pWide = (wchar_t*) mir_realloc(Setting.Value.pWide, sizeof(wchar_t) * Setting.Value.Length);
 					memcpy(Setting.Value.pWide, str, set->BlobLength);
 					Setting.Value.pWide[Setting.Value.Length - 1] = 0;
-					
+
 				} break;
 				case DBT_ST_ANSI: case DBT_ST_UTF8:
 				{
 					Setting.Value.Length = set->BlobLength;
 					Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, set->BlobLength);
-					memcpy(Setting.Value.pAnsi, str, set->BlobLength);					
+					memcpy(Setting.Value.pAnsi, str, set->BlobLength);
 					Setting.Value.pAnsi[Setting.Value.Length - 1] = 0;
-					
+
 				} break;
 				default:
 				{
 					Setting.Value.Length = set->BlobLength;
 					Setting.Value.pBlob = (uint8_t *) mir_realloc(Setting.Value.pBlob, set->BlobLength);
-					memcpy(Setting.Value.pBlob, str, set->BlobLength);					
+					memcpy(Setting.Value.pBlob, str, set->BlobLength);
 				} break;
 			}
 		} else {
@@ -917,17 +917,17 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{
 								char buffer[24];
 								buffer[0] = 0;
-								sprintf_s(buffer, 24, "%llu", set->Value.QWord);
+								sprintf_s(buffer, "%llu", set->Value.QWord);
 								Setting.Value.Length = strlen(buffer) + 1;
 								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);
 								memcpy(Setting.Value.pAnsi, buffer, Setting.Value.Length);
-													
+
 							} break;
 						case DBT_ST_WCHAR:
 							{
 								wchar_t buffer[24];
 								buffer[0] = 0;
-								swprintf_s(buffer, 24, L"%llu", set->Value.QWord);
+								swprintf_s(buffer, L"%llu", set->Value.QWord);
 								Setting.Value.Length = wcslen(buffer) + 1;
 								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, Setting.Value.Length * sizeof(wchar_t));
 								memcpy(Setting.Value.pWide, buffer, Setting.Value.Length * sizeof(wchar_t));
@@ -937,25 +937,25 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{
 								Setting.Value.Length = 0;
 								switch (set->Type)
-								{									
+								{
 									case DBT_ST_BYTE:  Setting.Value.Length = 1; break;
 									case DBT_ST_WORD:  Setting.Value.Length = 2; break;
 									case DBT_ST_DWORD: Setting.Value.Length = 4; break;
 									case DBT_ST_QWORD: Setting.Value.Length = 8; break;
 								}
-								
+
 								Setting.Value.pBlob = (uint8_t *) mir_realloc(Setting.Value.pBlob, Setting.Value.Length);
 								memcpy(Setting.Value.pBlob, &set->Value, Setting.Value.Length);
-			
 
-							} break;									
+
+							} break;
 					}
 
 				} break;
 			case DBT_ST_CHAR: case DBT_ST_SHORT: case DBT_ST_INT: case DBT_ST_INT64:
 				{
 					int64_t val = 0;
-					switch (set->Type) 
+					switch (set->Type)
 					{
 						case DBT_ST_CHAR:  val = set->Value.Char;  break;
 						case DBT_ST_SHORT: val = set->Value.Short; break;
@@ -978,37 +978,37 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{
 								char buffer[24];
 								buffer[0] = 0;
-								sprintf_s(buffer, 24, "%lli", val);
+								sprintf_s(buffer, "%lli", val);
 								Setting.Value.Length = strlen(buffer) + 1;
 								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);
 								memcpy(Setting.Value.pAnsi, buffer, Setting.Value.Length);
-							
+
 							} break;
 						case DBT_ST_WCHAR:
 							{
 								wchar_t buffer[24];
 								buffer[0] = 0;
-								swprintf_s(buffer, 24, L"%lli", val);
+								swprintf_s(buffer, L"%lli", val);
 								Setting.Value.Length = wcslen(buffer) + 1;
 								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, Setting.Value.Length * sizeof(wchar_t));
 								memcpy(Setting.Value.pWide, buffer, Setting.Value.Length * sizeof(wchar_t));
-								
+
 							} break;
 						case DBT_ST_BLOB:
 							{
 								Setting.Value.Length = 0;
 								switch (set->Type)
-								{									
+								{
 									case DBT_ST_CHAR:  Setting.Value.Length = 1; break;
 									case DBT_ST_SHORT: Setting.Value.Length = 2; break;
 									case DBT_ST_INT:   Setting.Value.Length = 4; break;
 									case DBT_ST_INT64: Setting.Value.Length = 8; break;
 								}
-								
+
 								Setting.Value.pBlob = (unsigned char *) mir_realloc(Setting.Value.pBlob, Setting.Value.Length);
 								memcpy(Setting.Value.pBlob, &set->Value, Setting.Value.Length);
-						
-							} break;								
+
+							} break;
 					}
 
 				} break;
@@ -1019,7 +1019,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 						val = set->Value.Double;
 					else
 						val = set->Value.Float;
-				
+
 					switch (Setting.Type)
 					{
 						case DBT_ST_BYTE:  Setting.Value.Byte  = (uint8_t)   floor(val); break;
@@ -1031,21 +1031,21 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 						case DBT_ST_INT:   Setting.Value.Int   = ( int32_t)  floor(val); break;
 						case DBT_ST_INT64: Setting.Value.Int64 = ( int64_t)  floor(val); break;
 						case DBT_ST_BOOL:  Setting.Value.Bool  = val != 0; break;
-							
+
 						case DBT_ST_ANSI: case DBT_ST_UTF8:
 							{
 								char buffer[128];
 								buffer[0] = 0;
-								sprintf_s(buffer, 24, "%lf", set->Value.QWord);
+								sprintf_s(buffer, "%lf", set->Value.QWord);
 								Setting.Value.Length = strlen(buffer) + 1;
 								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);
-								memcpy(Setting.Value.pAnsi, buffer, Setting.Value.Length);								
+								memcpy(Setting.Value.pAnsi, buffer, Setting.Value.Length);
 							} break;
 						case DBT_ST_WCHAR:
 							{
 								wchar_t buffer[128];
 								buffer[0] = 0;
-								swprintf_s(buffer, 24, L"%lf", set->Value.QWord);
+								swprintf_s(buffer, L"%lf", set->Value.QWord);
 								Setting.Value.Length = wcslen(buffer) + 1;
 								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, Setting.Value.Length * sizeof(wchar_t));
 								memcpy(Setting.Value.pWide, buffer, Setting.Value.Length * sizeof(wchar_t));
@@ -1055,11 +1055,11 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 								Setting.Value.Length = 4;
 								if (set->Type == DBT_ST_DOUBLE)
 									Setting.Value.Length = 8;
-								
+
 								Setting.Value.pBlob = (uint8_t*) mir_realloc(Setting.Value.pBlob, Setting.Value.Length);
 								memcpy(Setting.Value.pBlob, &set->Value, Setting.Value.Length);
 
-							} break;									
+							} break;
 					}
 
 				} break;
@@ -1067,7 +1067,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 				{
 					switch (Setting.Type)
 					{
-						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: 
+						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD:
 						case DBT_ST_CHAR: case DBT_ST_SHORT: case DBT_ST_INT: case DBT_ST_INT64:
 							{
 								if (set->Value.Bool)
@@ -1100,7 +1100,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 								}
 
 								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);
-								memcpy(Setting.Value.pAnsi, buffer, Setting.Value.Length);						
+								memcpy(Setting.Value.pAnsi, buffer, Setting.Value.Length);
 							} break;
 						case DBT_ST_WCHAR:
 							{
@@ -1113,12 +1113,12 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 								}
 
 								Setting.Value.pWide = (wchar_t *) mir_realloc(Setting.Value.pWide, Setting.Value.Length * sizeof(wchar_t));
-								memcpy(Setting.Value.pWide, buffer, Setting.Value.Length * sizeof(wchar_t));						
+								memcpy(Setting.Value.pWide, buffer, Setting.Value.Length * sizeof(wchar_t));
 							} break;
 						case DBT_ST_BLOB:
 							{
 								Setting.Value.pBlob = (uint8_t*) mir_realloc(Setting.Value.pBlob, sizeof(bool));
-								(*((bool*)Setting.Value.pBlob)) = set->Value.Bool;								
+								(*((bool*)Setting.Value.pBlob)) = set->Value.Bool;
 								Setting.Value.Length = sizeof(bool);
 							} break;
 					}
@@ -1129,10 +1129,10 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 
 					switch (Setting.Type)
 					{
-						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: case DBT_ST_BOOL: 
+						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: case DBT_ST_BOOL:
 						case DBT_ST_CHAR: case DBT_ST_SHORT: case DBT_ST_INT: case DBT_ST_INT64:
 							{
-								Setting.Value.QWord = 0;		
+								Setting.Value.QWord = 0;
 							} break;
 						case DBT_ST_ANSI:
 							{
@@ -1154,26 +1154,26 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 							{
 								Setting.Value.Length = set->BlobLength;
 								Setting.Value.pBlob = (uint8_t *) mir_realloc(Setting.Value.pBlob, set->BlobLength);
-								memcpy(Setting.Value.pBlob, str, set->BlobLength);								
+								memcpy(Setting.Value.pBlob, str, set->BlobLength);
 							} break;
 					}
 				} break;
 			case DBT_ST_UTF8:
 				{
-					str[set->BlobLength - 1] = 0;		
+					str[set->BlobLength - 1] = 0;
 
 					switch (Setting.Type)
 					{
-						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: case DBT_ST_BOOL: 
+						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: case DBT_ST_BOOL:
 						case DBT_ST_CHAR: case DBT_ST_SHORT: case DBT_ST_INT: case DBT_ST_INT64:
 							{
-								Setting.Value.QWord = 0;		
+								Setting.Value.QWord = 0;
 							} break;
 						case DBT_ST_ANSI:
 							{
 								mir_utf8decode((char*)str, NULL);
 								Setting.Value.Length = strlen((char*)str) + 1;
-								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);								
+								Setting.Value.pAnsi = (char *) mir_realloc(Setting.Value.pAnsi, Setting.Value.Length);
 								memcpy(Setting.Value.pAnsi, str, Setting.Value.Length);
 							} break;
 						case DBT_ST_UTF8:
@@ -1183,8 +1183,8 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 								memcpy(Setting.Value.pUTF8, str, set->BlobLength);
 							} break;
 						case DBT_ST_WCHAR:
-							{								
-								Setting.Value.pWide = mir_utf8decodeW((char*)str);								
+							{
+								Setting.Value.pWide = mir_utf8decodeW((char*)str);
 								Setting.Value.Length = wcslen(Setting.Value.pWide) + 1;
 							} break;
 						case DBT_ST_BLOB:
@@ -1201,10 +1201,10 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 
 					switch (Setting.Type)
 					{
-						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: case DBT_ST_BOOL: 
+						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: case DBT_ST_BOOL:
 						case DBT_ST_CHAR: case DBT_ST_SHORT: case DBT_ST_INT: case DBT_ST_INT64:
 							{
-								Setting.Value.QWord = 0;		
+								Setting.Value.QWord = 0;
 							} break;
 						case DBT_ST_ANSI:
 							{
@@ -1234,10 +1234,10 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 				{
 					switch (Setting.Type)
 					{
-						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: case DBT_ST_BOOL: 
+						case DBT_ST_BYTE: case DBT_ST_WORD: case DBT_ST_DWORD: case DBT_ST_QWORD: case DBT_ST_BOOL:
 						case DBT_ST_CHAR: case DBT_ST_SHORT: case DBT_ST_INT: case DBT_ST_INT64:
 							{
-								Setting.Value.QWord = 0;		
+								Setting.Value.QWord = 0;
 							} break;
 						case DBT_ST_ANSI: case DBT_ST_WCHAR: case DBT_ST_UTF8:
 							{
@@ -1264,7 +1264,7 @@ unsigned int CSettings::ReadSetting(TDBTSetting & Setting, TDBTSettingHandle hSe
 	{
 		Setting.Descriptor->Entity = set->Entity;
 		Setting.Descriptor->FoundInEntity = set->Entity;
-		
+
 		Setting.Descriptor->pszSettingName = (char *) mir_realloc(Setting.Descriptor->pszSettingName, set->NameLength + 1);
 		memcpy(Setting.Descriptor->pszSettingName, set + 1, set->NameLength + 1);
 		Setting.Descriptor->pszSettingName[set->NameLength] = 0;
@@ -1294,7 +1294,7 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 	}
 
 	if (Filter.hEntity != 0)
-	{	
+	{
 		uint32_t cf = m_Entities.getFlags(Filter.hEntity);
 
 		if (cf == DBT_INVALIDPARAM)
@@ -1302,8 +1302,8 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 			SYNC_ENDREAD(m_Sync);
 			return DBT_INVALIDPARAM;
 		}
-		
-		TDBTEntityIterFilter f = {0};
+
+		TDBTEntityIterFilter f = {0,0,0,0};
 		f.cbSize = sizeof(f);
 		if (cf & DBT_NF_IsGroup)
 		{
@@ -1353,7 +1353,7 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 	CSettingsTree::iterator * tmp = new CSettingsTree::iterator(tree->LowerBound(key));
 	tmp->setManaged();
 	iter->Heap = new TSettingsHeap(*tmp, TSettingsHeap::ITForward, true);
-	
+
 	while (!Entities.empty())
 	{
 		tree = getSettingsTree(Entities.front());
@@ -1365,7 +1365,7 @@ TDBTSettingIterationHandle CSettings::IterationInit(TDBTSettingIterFilter & Filt
 			iter->Heap->Insert(*tmp);
 		}
 	}
-	
+
 	iter->Frame = new std::queue<TSettingIterationResult>;
 
 	SYNC_ENDREAD(m_Sync);
@@ -1399,12 +1399,12 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 			TSettingIterationHelper help;
 			help.NameLen = 0;
 			help.Name = NULL;
-			
+
 			help.Handle = iter->Heap->Top()->Setting;
 			help.Tree = (CSettingsTree *) iter->Heap->Top().Tree();
 			if (help.Tree)
 				q.push(help);
-			
+
 			iter->Heap->Pop();
 
 			// add all candidates
@@ -1431,7 +1431,7 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 					else
 						_ReadSettingName(m_BlockManagerPri, m_EncryptionManagerPri, help.Handle, help.NameLen, help.Name);
 				}
-		
+
 
 				q.push(help);
 				while (q.front().Handle != help.Handle)  // remove all qequed settings with same name
@@ -1466,7 +1466,7 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 				// namefilter
 				if ((iter->Filter.NameStart == NULL) || ((iter->FilterNameStartLength <= help.NameLen) && (memcmp(iter->Filter.NameStart, help.Name, iter->FilterNameStartLength) == 0)))
 				{
-					TSettingIterationResult tmp;			
+					TSettingIterationResult tmp;
 					if (help.Tree->getEntity() == 0)
 						help.Handle |= cSettingsFileFlag;
 
@@ -1485,7 +1485,7 @@ TDBTSettingHandle CSettings::IterationNext(TDBTSettingIterationHandle Iteration)
 	}
 
 
-	TSettingIterationResult res = {0};
+	TSettingIterationResult res = {0,0,0,0};
 	if (!iter->Frame->empty())
 	{
 		res = iter->Frame->front();
@@ -1539,8 +1539,8 @@ unsigned int CSettings::IterationClose(TDBTSettingIterationHandle Iteration)
 		{
 			mir_free(iter->Filter.Setting->Descriptor->pszSettingName);
 			iter->Filter.Setting->Descriptor->pszSettingName = NULL;
-		}	
-		
+		}
+
 		if (iter->Filter.Setting->Type & DBT_STF_VariableLength)
 		{
 			mir_free(iter->Filter.Setting->Value.pBlob);

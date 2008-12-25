@@ -27,7 +27,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Cast128.h"
 #include "ARC4.h"
 #include "HC256.h"
+#ifndef _MSC_VER
+#include <stdint.h>
+#else
 #include "stdint.h"
+#endif
 
 typedef CCipher* (*TCipherCreate)();
 typedef const char* (*TCipherName)();
@@ -46,6 +50,6 @@ static const TCipherListItem cCipherList[3] = {
 		{2, CAST128::Create, CAST128::Name, CAST128::Description},
 		{3, HC256::Create, HC256::Name, HC256::Description},
 	};
-	
+
 
 #endif

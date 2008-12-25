@@ -29,7 +29,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "IterationHeap.h"
 #include "EncryptionManager.h"
 
+#ifdef _MSC_VER
 #include <hash_map>
+#else
+#include <ext/hash_map>
+#endif
 #include <queue>
 
 class CSettings;
@@ -62,7 +66,7 @@ typedef struct TSettingKey {
 	}
 	//bool operator >= (const TSettingKey & Other);
 	bool operator >  (const TSettingKey & Other) const
-	{	
+	{
 		if (Hash != Other.Hash) return Hash > Other.Hash;
 		if (Setting != Other.Setting) return Setting > Other.Setting;
 		return false;
@@ -83,11 +87,11 @@ static const uint16_t cSettingNodeSignature = 0xBA12;
 typedef struct TSetting {
 	TDBTEntityHandle Entity;   /// Settings' Entity
 	uint32_t   Flags;          /// flags
-	uint16_t   Type;           /// setting type	
-	uint16_t   NameLength;     /// settingname length	
+	uint16_t   Type;           /// setting type
+	uint16_t   NameLength;     /// settingname length
 	union {
 		TDBTSettingValue Value;  /// if type is fixed length, the data is stored rigth here
-		
+
 		struct {
 			uint32_t BlobLength;   /// if type is variable length this describes the length of the data in bytes
 			uint32_t AllocSize;    /// this is the allocated space for the blob ALWAYS in byte! this prevents us to realloc it too often
@@ -109,7 +113,7 @@ protected:
 	TDBTEntityHandle m_Entity;
 	CSettings & m_Owner;
 	CEncryptionManager & m_EncryptionManager;
-public: 
+public:
 	CSettingsTree(
 		CSettings & Owner,
 		CBlockManager & BlockManager,
@@ -122,7 +126,7 @@ public:
 	TDBTEntityHandle getEntity();
 	void setEntity(TDBTEntityHandle NewEntity);
 
-	TDBTSettingHandle _FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length); 
+	TDBTSettingHandle _FindSetting(const uint32_t Hash, const char * Name, const uint32_t Length);
 	bool _DeleteSetting(const uint32_t Hash, const TDBTSettingHandle hSetting);
 	bool _AddSetting(const uint32_t Hash, const TDBTSettingHandle hSetting);
 };
@@ -143,7 +147,7 @@ public:
 		CBlockManager & BlockManagerPri,
 		CEncryptionManager & EncryptionManagerSet,
 		CEncryptionManager & EncryptionManagerPri,
-		CMultiReadExclusiveWriteSynchronizer & Synchronize, 
+		CMultiReadExclusiveWriteSynchronizer & Synchronize,
 		CSettingsTree::TNodeRef SettingsRoot,
 		CEntities & Entities
 		);
@@ -174,7 +178,12 @@ public:
 
 
 private:
+	#ifdef _MSC_VER
 	typedef stdext::hash_map<TDBTEntityHandle, CSettingsTree*> TSettingsTreeMap;
+	#else
+	typedef __gnu_cxx::hash_map<TDBTEntityHandle, CSettingsTree*> TSettingsTreeMap;
+	#endif
+
 	typedef CIterationHeap<CSettingsTree::iterator> TSettingsHeap;
 
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
@@ -210,11 +219,14 @@ private:
 	void onMergeSettings(CEntities * Entities, TDBTEntityHandle Source, TDBTEntityHandle Dest);
 
 	CSettingsTree * getSettingsTree(TDBTEntityHandle hEntity);
-
-	typedef stdext::hash_multimap<uint16_t, char *> TModulesMap;
+    #ifdef _MSC_VER
+    typedef stdext::hash_multimap<uint16_t, char *> TModulesMap;
+    #else
+	typedef __gnu_cxx::hash_multimap<uint16_t, char *> TModulesMap;
+    #endif
 
 	TModulesMap m_Modules;
 
 	void _LoadModules();
-	
+
 };

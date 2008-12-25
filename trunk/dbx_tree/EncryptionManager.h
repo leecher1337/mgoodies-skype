@@ -22,7 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #pragma once
 
+#ifndef _MSC_VER
+#include <stdint.h>
+#else
 #include "stdint.h"
+#endif
 #include "sigslot.h"
 #include "Cipher.h"
 #include "SHA256.h"

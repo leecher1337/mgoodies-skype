@@ -26,7 +26,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "FileBTree.h"
 #include "MREWSync.h"
 #include <deque>
+#ifdef _MSC_VER
 #include <hash_set>
+#else
+#include <ext/hash_set>
+#endif
 
 #pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
 
@@ -55,7 +59,7 @@ typedef struct TVirtualKey {
 	}
 	//bool operator >= (const TVirtualKey & Other);
 	bool operator >  (const TVirtualKey & Other) const
-	{	
+	{
 		if (RealEntity != Other.RealEntity) return RealEntity > Other.RealEntity;
 		if (Virtual != Other.Virtual) return Virtual > Other.Virtual;
 		return false;
@@ -68,7 +72,7 @@ typedef struct TVirtualKey {
 	The Entities are sorted first based on their level. (root is first node, followed by its children)
 	That is for enumeration of one Entity's children, which are all stored in one block in the BTree
 **/
-typedef struct TEntityKey { 
+typedef struct TEntityKey {
 	uint16_t Level;   /// Level where Entity is located or parent-steps to root. Root.Level == 0, root children have level 1 etc.
 	TDBTEntityHandle Parent;    /// hEntity of the Parent. Root.Parent == 0
 	TDBTEntityHandle Entity;     /// hEntity of the stored Entity itself
@@ -87,7 +91,7 @@ typedef struct TEntityKey {
 	}
 	//bool operator >= (const TEntityKey & Other);
 	bool operator >  (const TEntityKey & Other) const
-	{	
+	{
 		if (Level != Other.Level) return Level > Other.Level;
 		if (Parent != Other.Parent) return Parent > Other.Parent;
 		if (Entity != Other.Entity) return Entity > Other.Entity;
@@ -144,7 +148,7 @@ public:
 		\return New Original (previously first Virtual) to associate data with
 	**/
 	TDBTEntityHandle _DeleteRealEntity(TDBTEntityHandle hRealEntity);
-	
+
 	bool _InsertVirtual(TDBTEntityHandle hRealEntity, TDBTEntityHandle hVirtual);
 	void _DeleteVirtual(TDBTEntityHandle hRealEntity, TDBTEntityHandle hVirtual);
 
@@ -236,7 +240,11 @@ protected:
 		std::deque<TEntityIterationItem> * q;
 		std::deque<TEntityIterationItem> * parents;
 		std::deque<TEntityIterationItem> * accounts;
-		stdext::hash_set<TDBTEntityHandle> * returned;
+		#ifdef _MSC_VER
+        stdext::hash_set<TDBTEntityHandle> * returned;
+        #else
+		__gnu_cxx::hash_set<TDBTEntityHandle> * returned;
+		#endif
 	} TEntityIteration, *PEntityIteration;
 
 	TDBTEntityHandle m_RootEntity;

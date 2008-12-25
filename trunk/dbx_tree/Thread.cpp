@@ -22,9 +22,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Thread.h"
 
+
+#ifdef _MSC_VER
 #include <intrin.h>
 
 #pragma intrinsic (_InterlockedExchange)
+#else
+#include "intrin_gcc.h"
+#endif
+
 
 unsigned int __stdcall ThreadDistributor(void* Param)
 {
@@ -45,7 +51,7 @@ CThread::CThread(bool CreateSuspended)
 	unsigned int flags = 0;
 	if (CreateSuspended)
 		flags = CREATE_SUSPENDED;
-	
+
 	m_Handle = reinterpret_cast<HANDLE> (_beginthreadex(NULL, 0, &ThreadDistributor, this, flags, &m_ThreadID));
 }
 CThread::~CThread()
@@ -60,11 +66,8 @@ CThread::~CThread()
 }
 DWORD CThread::Wrapper()
 {
-	__try {
-    Execute();
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-		ReturnValue(GetExceptionCode());
-	}
+  Execute();
+
   bool dofree = FreeOnTerminate();
   DWORD result = ReturnValue();
 	m_Finished = true;
@@ -72,7 +75,7 @@ DWORD CThread::Wrapper()
 	m_sigTerminate(this);
   if (dofree)
     delete this;
-	
+
 	return result;
 }
 

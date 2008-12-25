@@ -21,7 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "DatabaseLink.h"
-#include <crtdbg.h>
+#ifndef _MSC_VER
+#include "savestrings_gcc.h"
+#endif
 
 static int getCapability(int);
 static int getFriendlyName(char*, size_t, int);
@@ -41,8 +43,8 @@ DATABASELINK gDBLink = {
 };
 
 PLUGINLINK *pluginLink = NULL;
-MM_INTERFACE mmi = {0};
-UTF8_INTERFACE utfi = {0};
+MM_INTERFACE mmi = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+UTF8_INTERFACE utfi = {0,0,0,0,0,0,0};
 
 /*
 returns what the driver can do given the flag
@@ -102,7 +104,7 @@ static int grokHeader(char* profile, int* error)
 	if (gDataBase) delete gDataBase;
 	gDataBase = new CDataBase(profile);
 
-	*error = gDataBase->CheckDB();	
+	*error = gDataBase->CheckDB();
 	return *error;
 }
 
@@ -113,8 +115,6 @@ Returns: 0 on success, nonzero on failure
 */
 static int Load(char* profile, void* link)
 {
-	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_DELAY_FREE_MEM_DF /*| _CRTDBG_CHECK_ALWAYS_DF*/);
-
 	if (gDataBase) delete gDataBase;
 	gDataBase = new CDataBase(profile);
 

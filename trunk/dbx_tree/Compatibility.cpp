@@ -24,21 +24,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DB_NOHELPERFUNCTIONS
 	#include "m_database.h"
 #undef DB_NOHELPERFUNCTIONS
-
+#ifndef _MSC_VER
+#include "savestrings_gcc.h"
+#endif
 
 HANDLE gCompServices[31] = {0};
 HANDLE gEvents[6] = {0};
 
-HANDLE hEventDeletedEvent, 
+HANDLE hEventDeletedEvent,
        hEventAddedEvent,
 			 hEventFilterAddedEvent,
-			 hSettingChangeEvent, 
-			 hContactDeletedEvent, 
+			 hSettingChangeEvent,
+			 hContactDeletedEvent,
 			 hContactAddedEvent;
 
 int CompAddContact(WPARAM wParam, LPARAM lParam)
 {
-	TDBTEntity entity = {0};
+	TDBTEntity entity = {0,0,0,0};
 	entity.hParentEntity = DBEntityGetRoot(0, 0);
 	entity.hAccountEntity = entity.hParentEntity;
 
@@ -56,18 +58,18 @@ int CompDeleteContact(WPARAM hContact, LPARAM lParam)
 	int res = DBEntityDelete(hContact, 0);
 	if (res == DBT_INVALIDPARAM)
 		return 1;
-	
+
 	return res;
 }
 int CompIsDbContact(WPARAM hContact, LPARAM lParam)
 {
 	int flags = DBEntityGetFlags(hContact, 0);
-	return (flags != DBT_INVALIDPARAM) && 
+	return (flags != DBT_INVALIDPARAM) &&
 		     ((flags & DBT_NFM_SpecialEntity) == 0);
 }
 int CompGetContactCount(WPARAM wParam, LPARAM lParam)
 {
-	TDBTEntityIterFilter f = {0};
+	TDBTEntityIterFilter f = {0,0,0,0};
 	f.cbSize = sizeof(f);
 	f.fDontHasFlags = DBT_NF_IsGroup | DBT_NF_IsVirtual | DBT_NF_IsAccount | DBT_NF_IsRoot;
 	f.Options = DBT_NIFO_OSC_AC | DBT_NIFO_OC_AC;
@@ -106,7 +108,7 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 	char namebuf[512];
 	namebuf[0] = 0;
 
-	if (!(dbcgs->szModule || dbcgs->szSetting)) 
+	if (!(dbcgs->szModule || dbcgs->szSetting))
 		return -1;
 
 	if (dbcgs->szModule)
@@ -114,23 +116,23 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 	strcat_s(namebuf, "/");
 	if (dbcgs->szSetting)
 		strcat_s(namebuf, dbcgs->szSetting);
-	
-	TDBTSettingDescriptor desc = {0};
-	TDBTSetting set = {0};
+
+	TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
+	TDBTSetting set = {0,0,0,0};
 	desc.cbSize = sizeof(desc);
 	desc.Entity = hContact;
 	desc.pszSettingName = namebuf;
 
 	set.cbSize = sizeof(set);
 	set.Descriptor = &desc;
-	
+
 	if (DBSettingRead((WPARAM)&set, 0) == DBT_INVALIDPARAM)
 		return -1;
 
 	switch (set.Type)
 	{
-		case DBT_ST_ANSI: 
-		{			
+		case DBT_ST_ANSI:
+		{
 			dbcgs->pValue->type = DBVT_ASCIIZ;
 			dbcgs->pValue->pszVal = set.Value.pAnsi;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
@@ -142,7 +144,7 @@ int CompGetContactSetting(WPARAM hContact, LPARAM pSetting)
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_WCHAR:
-		{	
+		{
 			dbcgs->pValue->type = DBVT_ASCIIZ;
 			dbcgs->pValue->pszVal = mir_u2a(set.Value.pWide);
 			dbcgs->pValue->cchVal = strlen(dbcgs->pValue->pszVal);
@@ -206,9 +208,9 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 		strcpy_s(namebuf, dbcgs->szModule);
 	strcat_s(namebuf, "/");
 	strcat_s(namebuf, dbcgs->szSetting);
-	
-	TDBTSettingDescriptor desc = {0};
-	TDBTSetting set = {0};
+
+	TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
+	TDBTSetting set = {0,0,0,0};
 	desc.cbSize = sizeof(desc);
 	desc.Entity = hContact;
 	desc.pszSettingName = namebuf;
@@ -216,7 +218,7 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 	set.cbSize = sizeof(set);
 	set.Descriptor = &desc;
 
-	
+
 	switch (dbcgs->pValue->type)
 	{
 		case DBVT_ASCIIZ: set.Type = DBT_ST_ANSI; break;
@@ -224,26 +226,26 @@ int CompGetContactSettingStr(WPARAM hContact, LPARAM pSetting)
 		case DBVT_UTF8:   set.Type = DBT_ST_UTF8; break;
 		case DBVT_WCHAR:  set.Type = DBT_ST_WCHAR; break;
 	}
-	
+
 	if (DBSettingRead((WPARAM)&set, 0) == DBT_INVALIDPARAM)
 		return -1;
 
 	switch (set.Type)
 	{
-		case DBT_ST_ANSI: 
-		{	
+		case DBT_ST_ANSI:
+		{
 			dbcgs->pValue->type = DBVT_ASCIIZ;
 			dbcgs->pValue->pszVal = set.Value.pAnsi;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_UTF8:
-		{	
+		{
 			dbcgs->pValue->type = DBVT_UTF8;
 			dbcgs->pValue->pszVal = set.Value.pUTF8;
 			dbcgs->pValue->cchVal = set.Value.Length - 1;
 		} break;
 		case DBT_ST_WCHAR:
-		{	
+		{
 			if (dbcgs->pValue->type == DBVT_WCHAR)
 			{
 				dbcgs->pValue->pwszVal = set.Value.pWide;
@@ -307,16 +309,16 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 		strcpy_s(namebuf, dbcgs->szModule);
 	strcat_s(namebuf, "/");
 	strcat_s(namebuf, dbcgs->szSetting);
-	
-	TDBTSettingDescriptor desc = {0};
-	TDBTSetting set = {0};
+
+	TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
+	TDBTSetting set = {0,0,0,0};
 	desc.cbSize = sizeof(desc);
 	desc.Entity = hContact;
 	desc.pszSettingName = namebuf;
 
 	set.cbSize = sizeof(set);
 	set.Descriptor = &desc;
-	
+
 	if (DBSettingRead((WPARAM)&set, 0) == DBT_INVALIDPARAM)
 		return -1;
 
@@ -341,8 +343,8 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 
 	switch (set.Type)
 	{
-		case DBT_ST_ANSI: 
-		{			
+		case DBT_ST_ANSI:
+		{
 			if (dbcgs->pValue->cchVal < set.Value.Length)
 			{
 				memcpy(dbcgs->pValue->pszVal, set.Value.pAnsi, dbcgs->pValue->cchVal);
@@ -356,7 +358,7 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 			mir_free(set.Value.pAnsi);
 		} break;
 		case DBT_ST_UTF8:
-		{			
+		{
 			set.Value.pUTF8 = mir_utf8decode(set.Value.pUTF8, NULL);
 			set.Value.Length = strlen(set.Value.pUTF8);
 
@@ -391,7 +393,7 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 			mir_free(tmp);
 		} break;
 		case DBT_ST_BLOB:
-		{			
+		{
 			if (dbcgs->pValue->cchVal < set.Value.Length)
 			{
 				memcpy(dbcgs->pValue->pbVal, set.Value.pBlob, dbcgs->pValue->cchVal);
@@ -434,7 +436,7 @@ int CompGetContactSettingStatic(WPARAM hContact, LPARAM pSetting)
 int CompFreeVariant(WPARAM wParam, LPARAM pSetting)
 {
 	DBVARIANT * dbv = (DBVARIANT *) pSetting;
-	
+
 	if ((dbv->type == DBVT_BLOB) && (dbv->pbVal))
 	{
 		mir_free(dbv->pbVal);
@@ -457,9 +459,9 @@ int CompWriteContactSetting(WPARAM hContact, LPARAM pSetting)
 		strcpy_s(namebuf, dbcws->szModule);
 	strcat_s(namebuf, "/");
 	strcat_s(namebuf, dbcws->szSetting);
-	
-	TDBTSettingDescriptor desc = {0};
-	TDBTSetting set = {0};
+
+	TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
+	TDBTSetting set = {0,0,0,0};
 	desc.cbSize = sizeof(desc);
 	desc.Entity = hContact;
 	desc.pszSettingName = namebuf;
@@ -527,8 +529,8 @@ int CompDeleteContactSetting(WPARAM hContact, LPARAM pSetting)
 		strcpy_s(namebuf, dbcgs->szModule);
 	strcat_s(namebuf, "/");
 	strcat_s(namebuf, dbcgs->szSetting);
-	
-	TDBTSettingDescriptor desc = {0};
+
+	TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
 	desc.cbSize = sizeof(desc);
 	desc.Entity = hContact;
 	desc.pszSettingName = namebuf;
@@ -537,7 +539,7 @@ int CompDeleteContactSetting(WPARAM hContact, LPARAM pSetting)
 		return -1;
 
 	{
-		DBCONTACTWRITESETTING tmp = {0};
+		DBCONTACTWRITESETTING tmp = {0,0,0,0};
 		tmp.szModule = dbcgs->szModule;
 		tmp.szSetting = dbcgs->szSetting;
 		tmp.value.type = 0;
@@ -550,16 +552,16 @@ int CompEnumContactSettings(WPARAM hContact, LPARAM pEnum)
 {
 	DBCONTACTENUMSETTINGS * pces = (DBCONTACTENUMSETTINGS *)pEnum;
 
-	TDBTSettingDescriptor desc = {0};
+	TDBTSettingDescriptor desc = {0,0,0,0,0,0,0,0};
 	desc.cbSize = sizeof(desc);
 	desc.Entity = hContact;
-	
+
 	char namebuf[512];
 	namebuf[0] = 0;
 	strcpy_s(namebuf, pces->szModule);
 	strcat_s(namebuf, "/");
 
-	TDBTSettingIterFilter filter = {0};
+	TDBTSettingIterFilter filter = {0,0,0,0,0,0,0,0};
 	filter.cbSize = sizeof(filter);
 	filter.Descriptor = &desc;
 	filter.hEntity = hContact;
@@ -594,7 +596,7 @@ int CompEnumContactSettings(WPARAM hContact, LPARAM pEnum)
 	if (desc.pszSettingName)
 		mir_free(desc.pszSettingName);
 
-	return res;	
+	return res;
 }
 
 
@@ -616,7 +618,7 @@ int CompAddEvent(WPARAM hContact, LPARAM pEventInfo)
 		hContact = gDataBase->getEntities().getRootEntity();
 
 
-	TDBTEvent ev = {0};
+	TDBTEvent ev = {0,0,0,0,0,0,0};
 	ev.cbSize = sizeof(ev);
 	ev.ModuleName = dbei->szModule;
 	ev.Timestamp = dbei->timestamp;
@@ -655,13 +657,13 @@ int CompGetEvent(WPARAM hEvent, LPARAM pEventInfo)
 	if (dbei->cbSize < sizeof(DBEVENTINFO))
 		return -1;
 
-	TDBTEvent ev = {0};
+	TDBTEvent ev = {0,0,0,0,0,0,0};
 	ev.cbSize = sizeof(ev);
 	ev.cbBlob = 0;
 	ev.pBlob = NULL;
 
 	int res = DBEventGet(hEvent, (LPARAM)&ev);
-	
+
 	dbei->szModule = ev.ModuleName;
 	dbei->timestamp = ev.Timestamp;
 	dbei->flags = ev.Flags;
@@ -676,7 +678,7 @@ int CompGetEvent(WPARAM hEvent, LPARAM pEventInfo)
 	}
 	mir_free(ev.pBlob);
 	dbei->cbBlob = ev.cbBlob;
-		
+
 	if (res == DBT_INVALIDPARAM)
 		return 1;
 
@@ -724,7 +726,7 @@ int CompFindPrevEvent(WPARAM hEvent, LPARAM lParam)
 
 int CompEnumModules(WPARAM wParam, LPARAM pCallback)
 {
-	if (pCallback == NULL)
+	if (!pCallback)
 		return -1;
 
 	DBMODULEENUMPROC cb = (DBMODULEENUMPROC) pCallback;

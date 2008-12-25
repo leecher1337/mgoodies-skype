@@ -25,8 +25,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stack>
 #include <map>
 #include "sigslot.h"
+#ifdef _MSC_VER
 #include "stdint.h"
+#else
+#include <stdint.h>
+#endif
 #include "Exception.h"
+
+#ifndef _MSC_VER
+#ifdef offsetof
+#undef offsetof
+#endif
+#define offsetof(TYPE, MEMBER)                  \
+  ( (reinterpret_cast <size_t>                  \
+    (&reinterpret_cast <const volatile char &>  \
+    (static_cast<TYPE *> (0)->MEMBER))))
+#endif
 
 template <typename TKey, uint16_t SizeParam = 4>
 class CBTree
@@ -34,7 +48,7 @@ class CBTree
 public:
 	typedef uint32_t TNodeRef;
 	typedef sigslot::signal2< void *, TNodeRef > TOnRootChanged;
-	
+
 	#pragma pack(push, 1)  // push current alignment to stack, set alignment to 1 byte boundary
 
 		typedef struct TNode {
@@ -173,7 +187,7 @@ CBTree<TKey, SizeParam>::CBTree(TNodeRef RootNode = NULL)
 template <typename TKey, uint16_t SizeParam>
 CBTree<TKey, SizeParam>::~CBTree()
 {
-	TManagedMap::iterator i = m_ManagedIterators.begin();
+	typename TManagedMap::iterator i = m_ManagedIterators.begin();
 	while (i != m_ManagedIterators.end())
 	{
 		i->second->m_Tree = NULL;
@@ -216,14 +230,15 @@ template <typename TKey, uint16_t SizeParam>
 inline void CBTree<TKey, SizeParam>::SplitNode(TNodeRef Node, TNodeRef & Left, TNodeRef & Right, TKey & UpKey, TNodeRef ParentNode, uint16_t ParentIndex)
 {
 	TNode nodedata;
-	TNode newnode = {0};
+	TNode newnode;
+	memset(&newnode, 0, sizeof(newnode));
 	const uint16_t upindex = SizeParam - 1;
 
 	Left = Node;
 	Right = CreateNewNode();
 	ReadNode(Node, nodedata);
 
-	TManagedMap::iterator it = m_ManagedIterators.find(Node);
+	typename TManagedMap::iterator it = m_ManagedIterators.find(Node);
 	while ((it != m_ManagedIterators.end()) && (it->first == Node))
 	{
 		if (it->second->m_Index == upindex)
@@ -279,7 +294,7 @@ inline unsigned int CBTree<TKey, SizeParam>::MergeNodes(TNodeRef Left, TNodeRef 
 	downindex = ldata.Info & cKeyCountMask;
 	ldata.Key[downindex] = DownKey;
 
-	TManagedMap::iterator it = m_ManagedIterators.find(Right);
+	typename TManagedMap::iterator it = m_ManagedIterators.find(Right);
 	while ((it != m_ManagedIterators.end()) && (it->first == Right))
 	{
 		it->second->m_Index = it->second->m_Index + downindex + 1;
@@ -335,7 +350,7 @@ inline void CBTree<TKey, SizeParam>::KeyInsert(TNodeRef Node, TNode & NodeData, 
 
 	NodeData.Info++;
 
-	TManagedMap::iterator it = m_ManagedIterators.find(Node);
+	typename TManagedMap::iterator it = m_ManagedIterators.find(Node);
 	while ((it != m_ManagedIterators.end()) && (it->first == Node))
 	{
 		if (it->second->m_Index >= Where)
@@ -350,7 +365,7 @@ inline void CBTree<TKey, SizeParam>::KeyDelete(TNodeRef Node, TNode & NodeData, 
 {
 	NodeData.Info--;
 
-	TManagedMap::iterator it = m_ManagedIterators.find(Node);
+	typename TManagedMap::iterator it = m_ManagedIterators.find(Node);
 	while ((it != m_ManagedIterators.end()) && (it->first == Node))
 	{
 		if (it->second->m_Index == Where)
@@ -376,7 +391,7 @@ inline void CBTree<TKey, SizeParam>::KeyMove(TNodeRef Source, uint16_t SourceInd
 {
 	DestData.Key[DestIndex] = SourceData.Key[SourceIndex];
 
-	TManagedMap::iterator it = m_ManagedIterators.find(Source);
+	typename TManagedMap::iterator it = m_ManagedIterators.find(Source);
 	while ((it != m_ManagedIterators.end()) && (it->first == Source))
 	{
 		if (it->second->m_Index == SourceIndex)
@@ -571,7 +586,7 @@ CBTree<TKey, SizeParam>::UpperBound(const TKey & Key)
 
 		if (node.Info & cIsLeafMask)
 		{
-			if (ge == 0) 
+			if (ge == 0)
 			{
 				iterator i(this, actnode, 0);
 				--i;
@@ -593,7 +608,10 @@ bool CBTree<TKey, SizeParam>::Delete(const TKey& Key)
 {
 	if (!m_Root) return false;
 
-	TNode node, node2, lnode = {0}, rnode = {0}, tmp;
+	TNode node, node2, lnode, rnode, tmp;
+	memset(&lnode, 0, sizeof(lnode));
+	memset(&rnode, 0, sizeof(rnode));
+
 	TNodeRef actnode = m_Root;
 	TNodeRef nextnode, l, r;
 	bool exists, skipread;
@@ -669,6 +687,7 @@ bool CBTree<TKey, SizeParam>::Delete(const TKey& Key)
 					}
 				}
 			}
+
 		} else if (node.Info & cIsLeafMask) { // we are at the bottom. finish it
 			if (foundininnernode)
 			{
@@ -893,7 +912,7 @@ void CBTree<TKey, SizeParam>::DeleteTree(TDeleteCallback * CallBack, uint32_t Pa
 	TNode node;
 	uint16_t i;
 
-	TManagedMap::iterator it = m_ManagedIterators.begin();
+	typename TManagedMap::iterator it = m_ManagedIterators.begin();
 	while (it != m_ManagedIterators.end())
 	{
 		it->second->m_Node = 0;
@@ -995,7 +1014,7 @@ inline void CBTree<TKey, SizeParam>::iterator::RemoveManaged(TNodeRef FromNode)
 {
 	if (m_Managed && m_Tree)
 	{
-		TManagedMap::iterator i = m_Tree->m_ManagedIterators.find(FromNode);
+		typename TManagedMap::iterator i = m_Tree->m_ManagedIterators.find(FromNode);
 
 		while ((i != m_Tree->m_ManagedIterators.end()) && (i->second != this) && (i->first == FromNode))
 			++i;
@@ -1139,8 +1158,8 @@ CBTree<TKey, SizeParam>::iterator::operator ++() //pre  ++i
 		TKey oldkey = m_ManagedKey;
 		m_LoadedKey = false;
 		m_ManagedDeleted = false;
-		iterator other = m_Tree->LowerBound(m_ManagedKey);	
-		m_Node = other.m_Node;		
+		iterator other = m_Tree->LowerBound(m_ManagedKey);
+		m_Node = other.m_Node;
 		m_Index = other.m_Index;
 		while (((**this) == oldkey) && (*this))
 			Inc();
@@ -1307,7 +1326,7 @@ void CBTree<TKey, SizeParam>::iterator::Dec()
 
 		while ((m_Index <= (node.Info & cKeyCountMask)) && (node.Child[m_Index] != m_Node))
 			m_Index++;
-		
+
 		m_Node = nextnode;
 
 		if (m_Index > 0)

@@ -180,7 +180,7 @@ inline void HC256::CreateTables(uint8_t* Key)
 	uint32_t i, j;
 	uint8_t iv[32] = "Miranda IM dbx_tree Protogenes!";
 	//expand the key and iv into P and Q
-	for (i = 0; i < 8; i++) 
+	for (i = 0; i < 8; i++)
 		P[i] = Key[i];
 	for (i = 8; i < 16; i++)
 		P[i] = iv[i - 8];
@@ -199,7 +199,7 @@ inline void HC256::CreateTables(uint8_t* Key)
 	for (i = 16; i < 1024;i++)
 		Q[i] = f(Q[i - 2], Q[i - 7], Q[i - 15], Q[i - 16]) + 1536 + i;
 	//run the cipher 4096 steps without generating output
-	for (i = 0; i < 2; i++) 
+	for (i = 0; i < 2; i++)
 	{
 		for (j = 0; j < 10; j++)
 			feedback_1(P[j], P[j + 1], P[(j - 10) & 0x3ff], P[(j - 3) & 0x3ff]);
@@ -214,7 +214,7 @@ inline void HC256::CreateTables(uint8_t* Key)
 	}
 	//initialize counter2048, and tables X and Y
 	counter2048 = 0;
-	for (i = 0; i < 16; i++) 
+	for (i = 0; i < 16; i++)
 		X[i] = P[1008 + i];
 	for (i = 0; i < 16; i++)
 		Y[i] = Q[1008 + i];
