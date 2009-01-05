@@ -624,7 +624,7 @@ int CompAddEvent(WPARAM hContact, LPARAM pEventInfo)
 	ev.Timestamp = dbei->timestamp;
 	ev.Flags = dbei->flags;
 	if (ev.Flags & DBT_EF_SENT)
-		ev.Flags = ev.Flags & DBT_EF_READ;
+		ev.Flags = ev.Flags | DBT_EF_READ;
 	ev.EventType = dbei->eventType;
 	ev.cbBlob = dbei->cbBlob;
 	ev.pBlob = dbei->pBlob;
