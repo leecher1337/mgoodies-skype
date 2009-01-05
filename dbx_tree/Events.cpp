@@ -809,11 +809,14 @@ unsigned int CEvents::MarkRead(TDBTEntityHandle hEntity, TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
 	TEventKey key = {0,0,0};
+	uint32_t flags;
+	uint32_t res = 0;
 
 	SYNC_BEGINWRITE(m_Sync);
 
 	if (!m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key.Index, offsetof(TEvent, Index), sizeof(key.Index), sig))
+		  !m_BlockManager.ReadPart(hEvent, &key.Index, offsetof(TEvent, Index), sizeof(key.Index), sig) ||
+			!m_BlockManager.ReadPart(hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags), sig))
 	{
 		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
@@ -827,39 +830,36 @@ unsigned int CEvents::MarkRead(TDBTEntityHandle hEntity, TDBTEventHandle hEvent)
 		return DBT_INVALIDPARAM;
 	}
 
+	flags = flags | DBT_EF_READ;
+	res = flags;
+	m_BlockManager.WritePart(hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags));
+
 	CVirtualEventsTree* vtree = getVirtualEventsTree(hEntity);
 
 	CEventsTree::iterator it(tree->UpperBound(key));
+	--it;
 	CVirtualEventsTree::iterator vit(vtree->UpperBound(key));
 
 	TEventsHeap heap(it, TEventsHeap::ITBackward, false);
 	heap.Insert(vit);
 
-	bool b;
-	uint32_t res = 0;
-	do {
-		b = false;
-		if (heap.Top())
+	bool b = true;
+	while (b && heap.Top())
+	{
+		TDBTEventHandle ev = heap.Top()->Event;
+		heap.Pop();
+
+		if (m_BlockManager.ReadPart(ev, &flags, offsetof(TEvent, Flags), sizeof(flags), sig))
 		{
-			TDBTEventHandle ev = heap.Top()->Event;
-			uint32_t flags;
-
-			heap.Pop();
-
-			if (m_BlockManager.ReadPart(ev, &flags, offsetof(TEvent, Flags), sizeof(flags), sig))
+			if ((flags & DBT_EF_READ) == 0)
 			{
-				if ((flags & DBT_EF_READ) == 0)
-				{
-					b = true;
-					flags = flags | DBT_EF_READ;
-					if (res == 0)
-						res = flags;
-
-					m_BlockManager.WritePart(ev, &flags, offsetof(TEvent, Flags), sizeof(flags));
-				}
+				flags = flags | DBT_EF_READ;
+				m_BlockManager.WritePart(ev, &flags, offsetof(TEvent, Flags), sizeof(flags));
+			} else {
+				b = false;
 			}
-		}
-	} while (b);
+		}		
+	}
 
 	SYNC_ENDWRITE(m_Sync);
 
@@ -1296,6 +1296,7 @@ TDBTEventHandle CEvents::compFirstUnreadEvent(TDBTEntityHandle hEntity)
 	TEventKey key;
 	key.TimeStamp = 0xffffffff;
 	key.Index = 0xffffffff;
+	key.Event = 0xffffffff;
 
 	CEventsTree::iterator i = tree->UpperBound(key);
 	CVirtualEventsTree::iterator vi = vtree->UpperBound(key);
@@ -1303,22 +1304,17 @@ TDBTEventHandle CEvents::compFirstUnreadEvent(TDBTEntityHandle hEntity)
 	TEventsHeap h(i, TEventsHeap::ITBackward, false);
 
 	h.Insert(vi);
+	uint32_t f = 0;
 
-	TDBTEventHandle l = 0;
-	while (h.Top() && (res == 0))
+	while (h.Top() && ((f & DBT_EF_READ) == 0))
 	{
-		uint32_t f;
-		if (m_BlockManager.ReadPart(h.Top()->Event, &f, offsetof(TEvent, Flags), sizeof(f), sig))
+		if (m_BlockManager.ReadPart(h.Top()->Event, &f, offsetof(TEvent, Flags), sizeof(f), sig) && 
+			 ((f & DBT_EF_READ) == 0))
 		{
-			if ((f & DBT_EF_READ) == 0)
-				res = l;
-			else
-				l = h.Top()->Event;
+			res = h.Top()->Event;
 		}
 
-		if (res == 0)
-			h.Pop();
-
+		h.Pop();
 	}
 
 	SYNC_ENDREAD(m_Sync);
