@@ -22,12 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #pragma once
 #include <windows.h>
-#include "newpluginapi.h"
+#include "Interface.h"
 #include "Database.h"
 #include "Services.h"
 #include "Compatibility.h"
-
-extern DATABASELINK gDBLink;
-extern PLUGINLINK *gPluginLink;
-extern MM_INTERFACE mmi;
-extern UTF8_INTERFACE utfi;
+#include "m_updater.h"

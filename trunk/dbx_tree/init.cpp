@@ -20,13 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include <windows.h>
 #include "Interface.h"
-#include "DatabaseLink.h"
 
 HINSTANCE  hInstance = NULL;
 
-static const DWORD gVersion = 0x00000001;
 static const DWORD gMinMirVer = 0x00080000;
 static const MUUID gInterfaces[] = {MIID_DATABASE, MIID_LAST};
 // {28F45248-8C9C-4bee-9307-7BCF3E12BF99}
@@ -36,13 +33,13 @@ static const MUUID gGUID =
 
 static PLUGININFOEX gPluginInfoEx = {
 	sizeof(PLUGININFOEX),
-	"Miranda tree database driver",
+	gInternalNameLong,
 	gVersion,
-	"Provides extended Miranda database support: global settings, entities, history, settings per entity - build " __DATE__ " @ " __TIME__,
-	"Michael \"Protogenes\" Kunz",
-	"Michael.Kunz@2005.tu-chemnitz.de",
-	"2007, 2008 Michael Kunz",
-	"",
+	gDescription " - build " __DATE__ " @ " __TIME__,
+	gAutor,
+	gAutorEmail,
+	gCopyright,
+	"www.protogenes.de/?dbx_tree&lang=en",
 	UNICODE_AWARE,
 	DEFMOD_DB,
   gGUID
@@ -57,7 +54,7 @@ extern "C" __declspec(dllexport) PLUGININFOEX * MirandaPluginInfoEx(DWORD Mirand
 {
 	if (MirandaVersion < gMinMirVer)
 	{
-		MessageBoxA( 0, "The dbx_tree plugin cannot be loaded. It requires Miranda IM 0.8.0.0 or later.", "dbx_tree Plugin", MB_OK | MB_ICONEXCLAMATION | MB_SETFOREGROUND | MB_TOPMOST );
+		MessageBoxA( 0, "The dbx_tree plugin cannot be loaded. It requires Miranda IM 0.8.0.0 or later.", gInternalName, MB_OK | MB_ICONEXCLAMATION | MB_SETFOREGROUND | MB_TOPMOST );
 		return NULL;
 	}
 	return &gPluginInfoEx;

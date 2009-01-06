@@ -45,6 +45,32 @@ DATABASELINK gDBLink = {
 PLUGINLINK *pluginLink = NULL;
 MM_INTERFACE mmi = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 UTF8_INTERFACE utfi = {0,0,0,0,0,0,0};
+HANDLE hSystemModulesLoaded = 0;
+
+
+static int SystemModulesLoaded(WPARAM wParam, LPARAM lParam)
+{
+	Update upd = {0,0,0,0,0,0,0,0,0,0,0,0,0};
+	char buf[16];
+	sprintf_s(buf, "%d.%d.%d.%d", gVersion >> 24, (BYTE)(gVersion >> 16), (BYTE)(gVersion >> 8), (BYTE)gVersion);
+
+	upd.cbSize = sizeof(upd);
+	upd.szComponentName = gInternalName;
+	upd.szBetaVersionURL = "http://www.protogenes.de/?dbx_tree";
+	upd.pbBetaVersionPrefix = (BYTE *)"<!-- Updater Beta: ";
+	upd.cpbBetaVersionPrefix = 14;
+	upd.szBetaUpdateURL = "http://www.protogenes.de/Downloads/dbx_tree.zip";
+	upd.pbVersion = (BYTE*)buf;
+	upd.cpbVersion = strlen(buf);
+	upd.szBetaChangelogURL = "http://www.protogenes.de/?dbx_tree=BetaLog&lang=en";
+
+	CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
+
+	UnhookEvent(hSystemModulesLoaded);
+	hSystemModulesLoaded = 0;
+
+	return 0;
+}
 
 /*
 returns what the driver can do given the flag
@@ -66,9 +92,9 @@ static int getCapability(int flag)
 static int getFriendlyName(char* buf, size_t cch, int shortName)
 {
 	if (shortName)
-		strncpy_s(buf, cch, "dbx tree", 8);
+		strncpy_s(buf, cch, gInternalName, strlen(gInternalName));
 	else
-		strncpy_s(buf, cch, "Miranda tree database driver", 28);
+		strncpy_s(buf, cch, gInternalNameLong, strlen(gInternalNameLong));
 	return 0;
 }
 
@@ -125,6 +151,8 @@ static int Load(char* profile, void* link)
 
 	RegisterServices();
 	CompatibilityRegister();
+
+	hSystemModulesLoaded = HookEvent(ME_SYSTEM_MODULESLOADED, SystemModulesLoaded);
 
 	return gDataBase->OpenDB();
 }

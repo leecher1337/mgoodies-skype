@@ -1,6 +1,9 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "dbVersion_rc.h"
+#define INTERFACE_VERSION_ONLY
+#include "Interface.h"
+#undef INTERFACE_VERSION_ONLY
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -53,8 +56,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,0,1
- PRODUCTVERSION 0,0,0,1
+ FILEVERSION gResVersion
+ PRODUCTVERSION gResVersion
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x3L
@@ -69,14 +72,14 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName", "Michael ""Protogenes"" Kunz"
-            VALUE "FileDescription", "dbx_tree Miranda IM Database Plugin"
-            VALUE "FileVersion", "0, 0, 0, 1"
-            VALUE "InternalName", "dbx_tree"
-            VALUE "LegalCopyright", "(C) 2007, 2008 Michael ""Protogenes"" Kunz"
+            VALUE "CompanyName", gAutor
+            VALUE "FileDescription", gDescription
+            VALUE "FileVersion", gResVersionString
+            VALUE "InternalName", gInternalName
+            VALUE "LegalCopyright", gCopyright
             VALUE "OriginalFilename", "dbx_tree.dll"
-            VALUE "ProductName", "dbx_tree Miranda IM Database Plugin"
-            VALUE "ProductVersion", "0, 0, 0, 1"
+            VALUE "ProductName", gInternalNameLong
+            VALUE "ProductVersion", gResVersionString
         END
     END
     BLOCK "VarFileInfo"
