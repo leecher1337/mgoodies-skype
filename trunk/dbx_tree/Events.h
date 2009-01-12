@@ -54,60 +54,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 **/
 typedef struct TEventKey {
 	uint32_t        TimeStamp; /// timestamp at which the event occoured
-	uint32_t        Index;     /// index counted globally
 	TDBTEventHandle Event;
 
 	bool operator <  (const TEventKey & Other) const
 	{
 		if (TimeStamp != Other.TimeStamp) return TimeStamp < Other.TimeStamp;
-		if (Index != Other.Index) return Index < Other.Index;
 		if (Event != Other.Event) return Event < Other.Event;
 		return false;
 	}
 	//bool operator <= (const TEventKey & Other);
 	bool operator == (const TEventKey & Other) const
 	{
-		return (TimeStamp == Other.TimeStamp) && (Index == Other.Index) && (Event == Other.Event);
+		return (TimeStamp == Other.TimeStamp) && (Event == Other.Event);
 	}
 
 	//bool operator >= (const TEventKey & Other);
 	bool operator >  (const TEventKey & Other) const
 	{
 		if (TimeStamp != Other.TimeStamp) return TimeStamp > Other.TimeStamp;
-		if (Index != Other.Index) return Index > Other.Index;
 		if (Event != Other.Event) return Event > Other.Event;
 		return false;
 	}
 
 } TEventKey;
-
-
-/**
-	\brief Key Type of the EventLinkBTree
-**/
-typedef struct TEventLinkKey {
-	TDBTEventHandle   Event;    /// handle to the event
-	TDBTEntityHandle Entity;  /// handle to the Entity which includes this event
-
-	bool operator <  (const TEventLinkKey & Other) const
-	{
-		if (Event != Other.Event) return Event < Other.Event;
-		if (Entity != Other.Entity) return Entity < Other.Entity;
-		return false;
-	}
-	//bool operator <= (const TEventKey & Other);
-	bool operator == (const TEventLinkKey & Other) const
-	{
-		return (Event == Other.Event) && (Entity == Other.Entity);
-	}
-	//bool operator >= (const TEventKey & Other);
-	bool operator >  (const TEventLinkKey & Other) const
-	{
-		if (Event != Other.Event) return Event > Other.Event;
-		if (Entity != Other.Entity) return Entity > Other.Entity;
-		return false;
-	}
-} TEventLinkKey;
 
 /**
 	\brief The data of an Event
@@ -119,12 +88,8 @@ typedef struct TEventLinkKey {
 typedef struct TEvent {
 	uint32_t Flags;				       /// Flags
 	uint32_t TimeStamp;          /// Timestamp of the event (seconds elapsed since 1.1.1970) used as key element
-	uint32_t Index;              /// index counter to seperate events with the same timestamp
 	uint32_t Type;               /// Eventtype
-	union {
-		TDBTEntityHandle Entity;   /// hEntity which owns this event
-		uint32_t ReferenceCount;   /// Reference Count, if event was hardlinked
-	};
+	TDBTEntityHandle Entity;     /// hEntity which owns this event
 	uint32_t DataLength;         /// Length of the stored data in bytes
 
 	uint8_t Reserved[8];         /// reserved storage
@@ -133,12 +98,8 @@ typedef struct TEvent {
 #pragma pack(pop)
 
 
-
 static const uint32_t cEventSignature = 0x365A7E92;
 static const uint16_t cEventNodeSignature = 0x195C;
-static const uint16_t cEventLinkNodeSignature = 0xC16A;
-
-
 
 /**
 	\brief Manages the Events Index in the Database
@@ -202,17 +163,6 @@ private:
 };
 
 
-class CEventLinks : public CFileBTree<TEventLinkKey, 8>
-{
-public:
-	CEventLinks(CBlockManager & BlockManager, TNodeRef RootNode);
-	~CEventLinks();
-
-private:
-
-
-};
-
 class CEvents : public sigslot::has_slots<>
 {
 public:
@@ -220,19 +170,11 @@ public:
 	CEvents(
 		CBlockManager & BlockManager,
 		CEncryptionManager & EncryptionManager,
-		CEventLinks::TNodeRef LinkRootNode,
 		CMultiReadExclusiveWriteSynchronizer & Synchronize,
 		CEntities & Entities,
-		CSettings & Settings,
-		uint32_t IndexCounter
+		CSettings & Settings
 		);
 	~CEvents();
-
-	CEventLinks::TOnRootChanged & sigLinkRootChanged();
-
-	typedef sigslot::signal2<CEvents *, uint32_t> TOnIndexCounterChanged;
-	TOnIndexCounterChanged & _sigIndexCounterChanged();
-
 
 	//compatibility
 	TDBTEventHandle compFirstEvent(TDBTEntityHandle hEntity);
@@ -245,11 +187,10 @@ public:
 	unsigned int GetBlobSize(TDBTEventHandle hEvent);
 	unsigned int Get(TDBTEventHandle hEvent, TDBTEvent & Event);
 	unsigned int GetCount(TDBTEntityHandle hEntity);
-	unsigned int Delete(TDBTEntityHandle hEntity, TDBTEventHandle hEvent);
+	unsigned int Delete(TDBTEventHandle hEvent);
 	TDBTEventHandle Add(TDBTEntityHandle hEntity, TDBTEvent & Event);
-	unsigned int MarkRead(TDBTEntityHandle hEntity, TDBTEventHandle hEvent);
-	unsigned int WriteToDisk(TDBTEntityHandle hEntity, TDBTEventHandle hEvent);
-	unsigned int HardLink(TDBTEventHardLink & HardLink);
+	unsigned int MarkRead(TDBTEventHandle hEvent);
+	unsigned int WriteToDisk(TDBTEventHandle hEvent);
 
 	TDBTEntityHandle getEntity(TDBTEventHandle hEvent);
 
@@ -260,23 +201,19 @@ public:
 
 private:
 	typedef CBTree<TEventKey, 16> TEventBase;
+	typedef struct  
+	{
+		CEventsTree * RealTree;
+		CVirtualEventsTree * VirtualTree;
+		uint32_t VirtualCount;
+		TEventKey FirstVirtualUnread;
+	} TEntityEventsRecord, *PEntityEventsRecord;
 	#ifdef _MSC_VER
-	typedef stdext::hash_map<TDBTEntityHandle, CEventsTree*> TEventsTreeMap;
-	typedef stdext::hash_map<TDBTEntityHandle, CVirtualEventsTree*> TVirtualEventsTreeMap;
-	typedef stdext::hash_map<TDBTEntityHandle, uint32_t> TVirtualEventsCountMap;
-
-	typedef stdext::hash_set<TDBTEntityHandle> TVirtualOwnerSet;
-	typedef stdext::hash_map<TDBTEventHandle, TVirtualOwnerSet*> TVirtualOwnerMap;
+		typedef stdext::hash_map<TDBTEntityHandle, TEntityEventsRecord*> TEntityEventsMap;
 	#else
-	typedef __gnu_cxx::hash_map<TDBTEntityHandle, CEventsTree*> TEventsTreeMap;
-	typedef __gnu_cxx::hash_map<TDBTEntityHandle, CVirtualEventsTree*> TVirtualEventsTreeMap;
-	typedef __gnu_cxx::hash_map<TDBTEntityHandle, uint32_t> TVirtualEventsCountMap;
-
-	typedef __gnu_cxx::hash_set<TDBTEntityHandle> TVirtualOwnerSet;
-	typedef __gnu_cxx::hash_map<TDBTEventHandle, TVirtualOwnerSet*> TVirtualOwnerMap;
-
-    #endif
-    typedef CIterationHeap<TEventBase::iterator> TEventsHeap;
+		typedef __gnu_cxx::hash_map<TDBTEntityHandle, TEntityEventsRecord*> TEntityEventsMap;
+  #endif
+  typedef CIterationHeap<TEventBase::iterator> TEventsHeap;
 
 	CMultiReadExclusiveWriteSynchronizer & m_Sync;
 	CBlockManager & m_BlockManager;
@@ -284,15 +221,8 @@ private:
 
 	CEntities & m_Entities;
 	CEventsTypeManager m_Types;
-	CEventLinks m_Links;
 
-	TEventsTreeMap m_EventsMap;
-	TVirtualEventsTreeMap m_VirtualEventsMap;
-	TVirtualOwnerMap m_VirtualOwnerMap;
-	TVirtualEventsCountMap m_VirtualCountMap;
-
-	uint32_t m_Counter;
-	TOnIndexCounterChanged m_sigIndexCounterChanged;
+	TEntityEventsMap m_EntityEventsMap;
 
 	typedef struct TEventIteration {
 		TDBTEventIterFilter Filter;
@@ -307,7 +237,8 @@ private:
 	void onDeleteEvents(CEntities * Entities, TDBTEntityHandle hEntity);
 	void onTransferEvents(CEntities * Entities, TDBTEntityHandle Source, TDBTEntityHandle Dest);
 
-	CEventsTree * getEventsTree(TDBTEntityHandle hEntity);
-	CVirtualEventsTree * getVirtualEventsTree(TDBTEntityHandle hEntity);
-	uint32_t adjustVirtualEventCount(TDBTEntityHandle hEntity, int32_t Adjust);
+	PEntityEventsRecord getEntityRecord(TDBTEntityHandle hEntity);
+	uint32_t adjustVirtualEventCount(PEntityEventsRecord Record, int32_t Adjust);
+	bool MarkEventsTree(TEventBase::iterator Iterator, TDBTEventHandle FirstUnread);
+	void FindNextUnreadEvent(TEventBase::iterator & Iterator);
 };

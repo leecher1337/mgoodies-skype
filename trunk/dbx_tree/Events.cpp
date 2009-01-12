@@ -65,18 +65,6 @@ void CVirtualEventsTree::setEntity(TDBTEntityHandle NewEntity)
 
 
 
-CEventLinks::CEventLinks(CBlockManager & BlockManager, TNodeRef RootNode)
-: CFileBTree<TEventLinkKey, 8>::CFileBTree(BlockManager, RootNode, cEventLinkNodeSignature)
-{
-
-}
-CEventLinks::~CEventLinks()
-{
-
-}
-
-
-
 CEventsTypeManager::CEventsTypeManager(CEntities & Entities, CSettings & Settings)
 :	m_Entities(Entities),
 	m_Settings(Settings),
@@ -216,308 +204,191 @@ uint32_t CEventsTypeManager::EnsureIDExists(char* Module, uint32_t EventType)
 CEvents::CEvents(
 	CBlockManager & BlockManager,
 	CEncryptionManager & EncryptionManager,
-	CEventLinks::TNodeRef LinkRootNode,
 	CMultiReadExclusiveWriteSynchronizer & Synchronize,
 	CEntities & Entities,
-	CSettings & Settings,
-	uint32_t IndexCounter
+	CSettings & Settings
 )
 :	m_Sync(Synchronize),
 	m_BlockManager(BlockManager),
 	m_EncryptionManager(EncryptionManager),
 	m_Entities(Entities),
 	m_Types(Entities, Settings),
-	m_Links(BlockManager, LinkRootNode),
-	m_EventsMap(),
-	m_VirtualEventsMap(),
-	m_VirtualOwnerMap(),
-
-	m_sigIndexCounterChanged()
+	m_EntityEventsMap()
 {
-	m_Counter = IndexCounter + 0x20;
-
 	m_Entities._sigDeleteEvents().connect(this, &CEvents::onDeleteEvents);
 	m_Entities._sigTransferEvents().connect(this, &CEvents::onTransferEvents);
-
 }
+
 CEvents::~CEvents()
 {
 	SYNC_BEGINWRITE(m_Sync);
 
-	TEventsTreeMap::iterator it1 = m_EventsMap.begin();
-	while (it1 != m_EventsMap.end())
+	TEntityEventsMap::iterator i = m_EntityEventsMap.begin();
+	while (i != m_EntityEventsMap.end())
 	{
-		delete it1->second;
-		++it1;
+		delete i->second->RealTree;
+		delete i->second->VirtualTree;
+		delete i->second;
+		++i;
 	}
-	m_EventsMap.clear();
-
-	TVirtualEventsTreeMap::iterator it2 = m_VirtualEventsMap.begin();
-	while (it2 != m_VirtualEventsMap.end())
-	{
-		delete it2->second;
-		++it2;
-	}
-	m_VirtualEventsMap.clear();
 
 	SYNC_ENDWRITE(m_Sync);
-
 }
-
-CEventLinks::TOnRootChanged & CEvents::sigLinkRootChanged()
-{
-	return m_Links.sigRootChanged();
-}
-CEvents::TOnIndexCounterChanged & CEvents::_sigIndexCounterChanged()
-{
-	return m_sigIndexCounterChanged;
-}
-
 
 void CEvents::onRootChanged(void* EventsTree, CEventsTree::TNodeRef NewRoot)
 {
 	m_Entities._setEventsRoot(((CEventsTree*)EventsTree)->getEntity(), NewRoot);
 }
 
-
 void CEvents::onDeleteEventCallback(void * Tree, const TEventKey & Key, uint32_t Param)
 {
-	uint32_t sig = cEventSignature;
-	uint32_t f;
-	if (m_BlockManager.ReadPart(Key.Event, &f, offsetof(TEvent, Flags), sizeof(f), sig))
-	{
-		if (f & DBT_EF_REFERENCECOUNTING)
-		{
-			TEventLinkKey lkey;
-			lkey.Entity = Param;
-			lkey.Event = Key.Event;
-			m_Links.Delete(lkey);
-
-			uint32_t rc;
-			m_BlockManager.ReadPart(Key.Event, &rc, offsetof(TEvent, ReferenceCount), sizeof(rc), sig);
-			--rc;
-
-			if (rc == 1)
-			{
-				lkey.Entity = 0;
-
-				CEventLinks::iterator i = m_Links.LowerBound(lkey);
-				if (!i || (i->Event != Key.Event))
-					throwException("Event reference tree corrupt!");
-
-				f = f & (~DBT_EF_REFERENCECOUNTING);
-				TDBTEntityHandle c = i->Entity;
-
-				m_BlockManager.WritePart(Key.Event, &rc, offsetof(TEvent, Entity), sizeof(c));
-				m_BlockManager.WritePart(Key.Event, &f, offsetof(TEvent, Flags), sizeof(f));
-
-				m_Links.Delete(*i);
-			} else {
-				m_BlockManager.WritePart(Key.Event, &rc, offsetof(TEvent, ReferenceCount), sizeof(rc));
-			}
-
-		} else {
-			TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(Key.Event);
-
-			if (mit != m_VirtualOwnerMap.end())
-			{
-				m_BlockManager.MakeBlockVirtual(Key.Event);
-			} else {
-				m_BlockManager.DeleteBlock(Key.Event);
-			}
-		}
-	}
+	m_BlockManager.DeleteBlock(Key.Event);
 }
 
 void CEvents::onDeleteVirtualEventCallback(void * Tree, const TEventKey & Key, uint32_t Param)
 {
-	TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(Key.Event);
-	if (mit != m_VirtualOwnerMap.end())
-	{
-		TVirtualOwnerSet::iterator sit = mit->second->find(Param);
-
-		if (sit != mit->second->end())
-		{
-			mit->second->erase(sit);
-			if (mit->second->empty())
-			{
-				delete mit->second;
-				m_VirtualOwnerMap.erase(mit);
-
-				if (m_BlockManager.IsForcedVirtual(Key.Event))
-					m_BlockManager.DeleteBlock(Key.Event);
-			}
-		}
-	}
+	m_BlockManager.DeleteBlock(Key.Event);
 }
 void CEvents::onDeleteEvents(CEntities * Entities, TDBTEntityHandle hEntity)
 {
-	CEventsTree * tree = getEventsTree(hEntity);
+	PEntityEventsRecord record = getEntityRecord(hEntity);
 
-	if (tree == NULL)
+	if (record == NULL)
 		return;
-
-	CVirtualEventsTree * vtree = getVirtualEventsTree(hEntity);
 
 	m_Entities._setEventsRoot(hEntity, 0);
 
-	if (vtree)
+	if (record->VirtualCount)
 	{
 		CVirtualEventsTree::TDeleteCallback callback;
 		callback.connect(this, &CEvents::onDeleteVirtualEventCallback);
 
-		vtree->DeleteTree(&callback, hEntity);
-
-		TVirtualEventsTreeMap::iterator i = m_VirtualEventsMap.find(hEntity);
-		delete i->second; // vtree
-		m_VirtualEventsMap.erase(i);
+		record->VirtualTree->DeleteTree(&callback, hEntity);
 	}
+	delete record->VirtualTree;
 
-	if (tree)
-	{
-		CEventsTree::TDeleteCallback callback;
-		callback.connect(this, &CEvents::onDeleteEventCallback);
-
-		tree->DeleteTree(&callback, hEntity);
-
-		TEventsTreeMap::iterator i = m_EventsMap.find(hEntity);
-		delete i->second; // tree
-		m_EventsMap.erase(i);
-	}
+	CEventsTree::TDeleteCallback callback;
+	callback.connect(this, &CEvents::onDeleteEventCallback);
+	record->RealTree->DeleteTree(&callback, hEntity);
+	delete record->RealTree;
+	m_EntityEventsMap.erase(hEntity);
 }
 void CEvents::onTransferEvents(CEntities * Entities, TDBTEntityHandle Source, TDBTEntityHandle Dest)
 {
-	CEventsTree * tree = getEventsTree(Source);
+	PEntityEventsRecord record = getEntityRecord(Source);
 
-	if (tree == NULL)
+	if (record == NULL)
 		return;
 
-	CVirtualEventsTree * vtree = getVirtualEventsTree(Source);
-
-	if (vtree)
+	if (record->VirtualCount)
 	{
-		TEventKey key = {0,0,0};
+		TEventKey key = {0,0};
 
-		CVirtualEventsTree::iterator i = vtree->LowerBound(key);
+		CVirtualEventsTree::iterator i = record->VirtualTree->LowerBound(key);
 
 		while (i)
 		{
-			TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(i->Event);
-			TVirtualOwnerSet * s = NULL;
-			if (mit == m_VirtualOwnerMap.end())
-			{
-				s = new TVirtualOwnerSet();
-				m_VirtualOwnerMap.insert(std::make_pair(i->Event, s));
-			} else {
-				s = mit->second;
-				mit->second->erase(Source);
-			}
-
-			s->insert(Dest);
-
+			uint32_t sig = cEventSignature;
+			m_BlockManager.WritePartCheck(i->Event, &Dest, offsetof(TEvent, Entity), sizeof(Dest), sig);
 			++i;
 		}
-
-		TVirtualEventsTreeMap::iterator tit = m_VirtualEventsMap.find(Source);
-		m_VirtualEventsMap.erase(tit);
-		m_VirtualEventsMap.insert(std::make_pair(Dest, vtree));
-		vtree->setEntity(Dest);
-
-		TVirtualEventsCountMap::iterator cit = m_VirtualCountMap.find(Source);
-		m_VirtualCountMap.insert(std::make_pair(Dest, cit->second));
-		m_VirtualCountMap.erase(cit);
 	}
 
-	if (tree)
 	{
-		TEventKey key = {0,0,0};
+		TEventKey key = {0,0};
 
-		CEventsTree::iterator i = tree->LowerBound(key);
+		CEventsTree::iterator i = record->RealTree->LowerBound(key);
 		while (i)
-		{
-			uint32_t f;
+		{			
 			uint32_t sig = cEventSignature;
-
-			if (m_BlockManager.ReadPart(i->Event, &f, offsetof(TEvent, Flags), sizeof(f), sig))
-			{
-				if (f & DBT_EF_REFERENCECOUNTING)
-				{
-					TEventLinkKey lkey;
-
-					lkey.Entity = Source;
-					lkey.Event = i->Event;
-
-					m_Links.Delete(lkey);
-
-					lkey.Entity = Dest;
-					m_Links.Insert(lkey);
-
-				} else {
-					m_BlockManager.WritePart(i->Event, &Dest, offsetof(TEvent, Entity), sizeof(Dest));
-				}
-			}
-
+			m_BlockManager.WritePartCheck(i->Event, &Dest, offsetof(TEvent, Entity), sizeof(Dest), sig);			
 			++i;
 		}
 
 		m_Entities._setEventsRoot(Source, 0);
-		m_Entities._setEventsRoot(Dest, tree->getRoot());
-
-		TEventsTreeMap::iterator tit = m_EventsMap.find(Source);
-		m_EventsMap.erase(tit);
-		m_EventsMap.insert(std::make_pair(Dest, tree));
-		tree->setEntity(Dest);
+		m_Entities._setEventsRoot(Dest, record->RealTree->getRoot());
+		m_Entities._adjustEventCount(Dest, m_Entities._getEventCount(Source));
+		m_Entities._getFirstUnreadEvent(Source, key.Event, key.TimeStamp);
+		m_Entities._setFirstUnreadEvent(Dest, key.Event, key.TimeStamp);
 	}
+
+	record->VirtualTree->setEntity(Dest);
+	record->RealTree->setEntity(Dest);
+	m_EntityEventsMap.erase(Source);
+	m_EntityEventsMap.insert(std::make_pair(Dest, record));
 }
 
-CEventsTree * CEvents::getEventsTree(TDBTEntityHandle hEntity)
+CEvents::PEntityEventsRecord CEvents::getEntityRecord(TDBTEntityHandle hEntity)
 {
-	TEventsTreeMap::iterator i = m_EventsMap.find(hEntity);
-	if (i != m_EventsMap.end())
+	TEntityEventsMap::iterator i = m_EntityEventsMap.find(hEntity);
+	if (i != m_EntityEventsMap.end())
 		return i->second;
 
 	uint32_t root = m_Entities._getEventsRoot(hEntity);
 	if (root == DBT_INVALIDPARAM)
 		return NULL;
 
-	CEventsTree * tree = new CEventsTree(m_BlockManager, root, hEntity);
-	tree->sigRootChanged().connect(this, &CEvents::onRootChanged);
-	m_EventsMap.insert(std::make_pair(hEntity, tree));
+	PEntityEventsRecord res = new TEntityEventsRecord;
+	res->RealTree = new CEventsTree(m_BlockManager, root, hEntity);
+	res->RealTree->sigRootChanged().connect(this, &CEvents::onRootChanged);
+	res->VirtualTree = new CVirtualEventsTree(hEntity);
+	res->VirtualCount = 0;
+	res->FirstVirtualUnread.TimeStamp = 0;
+	res->FirstVirtualUnread.Event = 0;
+	m_EntityEventsMap.insert(std::make_pair(hEntity, res));
 
-	return tree;
-}
-CVirtualEventsTree * CEvents::getVirtualEventsTree(TDBTEntityHandle hEntity)
-{
-	TVirtualEventsTreeMap::iterator i = m_VirtualEventsMap.find(hEntity);
-	if (i != m_VirtualEventsMap.end())
-		return i->second;
-
-	CVirtualEventsTree * tree = new CVirtualEventsTree(hEntity);
-	tree->sigRootChanged().connect(this, &CEvents::onRootChanged);
-	m_VirtualEventsMap.insert(std::make_pair(hEntity, tree));
-
-	m_VirtualCountMap.insert(std::make_pair(hEntity, 0));
-
-	return tree;
+	return res;
 }
 
-inline uint32_t CEvents::adjustVirtualEventCount(TDBTEntityHandle hEntity, int32_t Adjust)
+inline uint32_t CEvents::adjustVirtualEventCount(PEntityEventsRecord Record, int32_t Adjust)
 {
-	TVirtualEventsCountMap::iterator i = m_VirtualCountMap.find(hEntity);
-
-	if (i == m_VirtualCountMap.end())
+	if (((Adjust < 0) && ((uint32_t)(-Adjust) <= Record->VirtualCount)) ||
+		  ((Adjust > 0) && ((0xffffffff - Record->VirtualCount) > (uint32_t)Adjust)))
 	{
-		m_VirtualCountMap.insert(std::make_pair(hEntity, 0));
-		i = m_VirtualCountMap.find(hEntity);
+		Record->VirtualCount += Adjust;
 	}
 
-	if (((Adjust < 0) && ((uint32_t)(-Adjust) <= i->second)) ||
-		  ((Adjust > 0) && ((0xffffffff - i->second) > (uint32_t)Adjust)))
-	{
-		i->second += Adjust;
-	}
+	return Record->VirtualCount;
+}
 
-	return i->second;
+inline bool CEvents::MarkEventsTree(TEventBase::iterator Iterator, TDBTEventHandle FirstUnread)
+{
+	uint32_t sig = cEventSignature;
+	bool b = true;
+	uint32_t flags;
+	bool res = false;
+	while (Iterator && b)
+	{
+		if (m_BlockManager.ReadPart(Iterator->Event, &flags, offsetof(TEvent, Flags), sizeof(flags), sig))
+		{
+			if (Iterator->Event == FirstUnread) 
+				res = true;
+
+			if ((flags & DBT_EF_READ) == 0)
+			{
+				flags = flags | DBT_EF_READ;
+				m_BlockManager.WritePart(Iterator->Event, &flags, offsetof(TEvent, Flags), sizeof(flags));
+				--Iterator;
+			} else {
+				b = false;
+			}
+		}
+	}
+	return res;
+}
+inline void CEvents::FindNextUnreadEvent(TEventBase::iterator & Iterator)
+{
+	uint32_t sig = cEventSignature;
+	bool b = true;
+	uint32_t flags = DBT_EF_READ;
+	while (Iterator && (flags & DBT_EF_READ))
+	{
+		if (m_BlockManager.ReadPart(Iterator->Event, &flags, offsetof(TEvent, Flags), sizeof(flags), sig) &&
+			  ((flags & DBT_EF_READ) != 0))
+		{			
+			++Iterator;
+		}
+	}
 }
 
 unsigned int CEvents::GetBlobSize(TDBTEventHandle hEvent)
@@ -585,129 +456,101 @@ unsigned int CEvents::Get(TDBTEventHandle hEvent, TDBTEvent & Event)
 unsigned int CEvents::GetCount(TDBTEntityHandle hEntity)
 {
 	SYNC_BEGINREAD(m_Sync);
-
 	uint32_t res = m_Entities._getEventCount(hEntity);
-	if (res == DBT_INVALIDPARAM)
+	PEntityEventsRecord record = getEntityRecord(hEntity);
+
+	if ((res == DBT_INVALIDPARAM) || !record)
 	{
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
-
-	TVirtualEventsCountMap::iterator i = m_VirtualCountMap.find(hEntity);
-	if (i != m_VirtualCountMap.end())
-		res += i->second;
-
+	res = res + record->VirtualCount; // access to Virtual Count need sync, too
 	SYNC_ENDREAD(m_Sync);
+
 	return res;
 }
 
-unsigned int CEvents::Delete(TDBTEntityHandle hEntity, TDBTEventHandle hEvent)
+unsigned int CEvents::Delete(TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
-	uint32_t flags;
-	TEventKey key;
+	TEventKey key = {0, hEvent};
+	TDBTEntityHandle entity;
 
 	SYNC_BEGINWRITE(m_Sync);
-	if (!m_BlockManager.ReadPart(hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key.Index, offsetof(TEvent, Index), sizeof(key.Index), sig))
+	if (!m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) || 
+			!m_BlockManager.ReadPart(hEvent, &entity, offsetof(TEvent, Entity), sizeof(entity), sig))
 	{
 		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(hEvent);
-	TVirtualOwnerSet::iterator sit;
-	if (mit != m_VirtualOwnerMap.end())
-		sit = mit->second->find(hEntity);
-
-	if ((mit != m_VirtualOwnerMap.end()) && (sit != mit->second->end()))
-	{ // virtual event
-		CVirtualEventsTree* tree = getVirtualEventsTree(hEntity);
-
-		if (tree == NULL)
+	PEntityEventsRecord record = getEntityRecord(entity);
+	if (!record)
+	{
+		SYNC_ENDWRITE(m_Sync);
+		return DBT_INVALIDPARAM;	
+	}
+	if (m_BlockManager.IsForcedVirtual(hEvent))
+	{
+		if (record->VirtualTree->Delete(key))
 		{
-			SYNC_ENDWRITE(m_Sync);
-			return DBT_INVALIDPARAM;
-		}
-		tree->Delete(key);
-		adjustVirtualEventCount(hEntity, -1);
-
-		mit->second->erase(sit);
-		if (mit->second->empty())
-		{
-			delete mit->second;
-			m_VirtualOwnerMap.erase(mit);
-
-			if (m_BlockManager.IsForcedVirtual(hEvent))
-				m_BlockManager.DeleteBlock(hEvent);
-		}
-
-	} else { // real event
-		CEventsTree* tree = getEventsTree(hEntity);
-
-		if (tree == NULL)
-		{
-			SYNC_ENDWRITE(m_Sync);
-			return DBT_INVALIDPARAM;
-		}
-		tree->Delete(key);
-		m_Entities._adjustEventCount(hEntity, -1);
-
-		if (flags & DBT_EF_REFERENCECOUNTING)
-		{
-			uint32_t ref;
-			m_BlockManager.ReadPart(hEvent, &ref, offsetof(TEvent, ReferenceCount), sizeof(ref), sig);
-			--ref;
-
-			TEventLinkKey lkey = {0,0};
-			lkey.Event = hEvent;
-			lkey.Entity = hEntity;
-			m_Links.Delete(lkey);
-
-			if (ref == 1)
+			adjustVirtualEventCount(record, -1);
+			
+			if (record->FirstVirtualUnread.Event == hEvent)
 			{
-				flags = flags & ~DBT_EF_REFERENCECOUNTING;
-				m_BlockManager.WritePart(hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags));
-
-				lkey.Entity = 0;
-				CEventLinks::iterator it = m_Links.LowerBound(lkey);
-				lkey = *it;
-				m_Links.Delete(*it);
-				m_BlockManager.WritePart(hEvent, &lkey.Entity, offsetof(TEvent, Entity), sizeof(lkey.Entity));
-			} else {
-				m_BlockManager.WritePart(hEvent, &ref, offsetof(TEvent, ReferenceCount), sizeof(ref));
+				CVirtualEventsTree::iterator vi = record->VirtualTree->LowerBound(key);
+				FindNextUnreadEvent(vi);
+				if (vi)
+				{
+					record->FirstVirtualUnread = *vi;
+				} else {
+					record->FirstVirtualUnread.TimeStamp = 0;
+					record->FirstVirtualUnread.Event = 0;
+				}
 			}
-		} else {
-			if (mit != m_VirtualOwnerMap.end())
-			{ // we have virtuals left
-				m_BlockManager.MakeBlockVirtual(hEvent);
-			} else {
-				m_BlockManager.DeleteBlock(hEvent);
+		}
+	} else { // real event
+		if (record->RealTree->Delete(key))
+		{
+			m_Entities._adjustEventCount(entity, -1);
+			TEventKey unreadkey;
+			m_Entities._getFirstUnreadEvent(entity, unreadkey.Event, unreadkey.TimeStamp);
+			if (unreadkey.Event == hEvent)
+			{
+				CEventsTree::iterator it = record->VirtualTree->LowerBound(key);
+				FindNextUnreadEvent(it);
+				if (it)
+				{
+					m_Entities._setFirstUnreadEvent(entity, it->Event, it->TimeStamp);
+				} else {
+					m_Entities._setFirstUnreadEvent(entity, 0, 0);
+				}
 			}
 		}
 	}
+	m_BlockManager.DeleteBlock(hEvent);
 
 	SYNC_ENDWRITE(m_Sync);
 	return 0;
 }
 TDBTEventHandle CEvents::Add(TDBTEntityHandle hEntity, TDBTEvent & Event)
 {
-	CVirtualEventsTree* vtree = NULL;
-	CEventsTree* tree = NULL;
 	TDBTEventHandle res = 0;
 
 	SYNC_BEGINWRITE(m_Sync);
 
-	uint32_t cflags = m_Entities.getFlags(hEntity);
+	uint32_t eflags = m_Entities.getFlags(hEntity);
+	PEntityEventsRecord record = getEntityRecord(hEntity);
 
-	if ((cflags == DBT_INVALIDPARAM) || (cflags & DBT_NF_IsGroup))
+	if ((eflags == DBT_INVALIDPARAM) ||
+		 ((eflags & (DBT_NF_IsGroup | DBT_NF_IsRoot)) == DBT_NF_IsGroup) ||  // forbid events in groups. but allow root to have system history
+		 !record)
 	{
 		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	if (cflags & DBT_NF_IsVirtual)
+	if (eflags & DBT_NF_IsVirtual)
 	{
 		hEntity = m_Entities.VirtualGetParent(hEntity);
 	}
@@ -718,14 +561,9 @@ TDBTEventHandle CEvents::Add(TDBTEntityHandle hEntity, TDBTEvent & Event)
 
 	if (Event.Flags & DBT_EF_VIRTUAL)
 	{
-		vtree = getVirtualEventsTree(hEntity);
-		if (vtree != NULL)
-			res = m_BlockManager.CreateBlockVirtual(sizeof(TEvent) + cryptsize, cEventSignature);
-
+		res = m_BlockManager.CreateBlockVirtual(sizeof(TEvent) + cryptsize, cEventSignature);
 	} else {
-		tree = getEventsTree(hEntity);
-		if (tree != NULL)
-			res = m_BlockManager.CreateBlock(sizeof(TEvent) + cryptsize, cEventSignature);
+		res = m_BlockManager.CreateBlock(sizeof(TEvent) + cryptsize, cEventSignature);
 	}
 
 	if (res == 0)
@@ -757,23 +595,16 @@ TDBTEventHandle CEvents::Add(TDBTEntityHandle hEntity, TDBTEvent & Event)
 	}
 
 	TEvent ev = {0,0,0,0,0,0,0};
-	TEventKey key = {0,0,0};
+	TEventKey key = {0,0};
 
 	ev.TimeStamp = Event.Timestamp;
-	ev.Index = m_Counter;
-	m_Counter++;
-	if ((m_Counter & 0x1f) == 0)
-		m_sigIndexCounterChanged.emit(this, m_Counter);
-
-	key.TimeStamp = ev.TimeStamp;
-	key.Index = ev.Index;
-	key.Event = res;
-
-
-	ev.Flags = Event.Flags & ~(DBT_EF_VIRTUAL | DBT_EF_REFERENCECOUNTING);
+	ev.Flags = Event.Flags & ~DBT_EF_VIRTUAL;
 	ev.Type = m_Types.EnsureIDExists(Event.ModuleName, Event.EventType);
 	ev.DataLength = Event.cbBlob;
 	ev.Entity = hEntity;
+
+	key.TimeStamp = ev.TimeStamp;
+	key.Event = res;
 
 	m_BlockManager.WritePart(res, &ev, 0, sizeof(ev));
 	m_BlockManager.WritePart(res, blobdata, sizeof(ev), cryptsize);
@@ -783,335 +614,164 @@ TDBTEventHandle CEvents::Add(TDBTEntityHandle hEntity, TDBTEvent & Event)
 
 	if (Event.Flags & DBT_EF_VIRTUAL)
 	{
-		vtree->Insert(key);
-
-		TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(hEntity);
-		if (mit == m_VirtualOwnerMap.end())
+		record->VirtualTree->Insert(key);
+		adjustVirtualEventCount(record, +1);
+		if (!(Event.Flags & DBT_EF_READ) && ((record->FirstVirtualUnread.Event == 0) || (key < record->FirstVirtualUnread)))
 		{
-			TVirtualOwnerSet * tmp = new TVirtualOwnerSet();
-			tmp->insert(hEntity);
-			m_VirtualOwnerMap.insert(std::make_pair(res, tmp));
-
-		} else {
-			mit->second->insert(hEntity);
+			record->FirstVirtualUnread = key;
 		}
-		adjustVirtualEventCount(hEntity, +1);
 	} else {
-		tree->Insert(key);
+		record->RealTree->Insert(key);
 		m_Entities._adjustEventCount(hEntity, +1);
+
+		if (!(Event.Flags & DBT_EF_READ))
+		{
+			TEventKey unreadkey;
+			if (m_Entities._getFirstUnreadEvent(hEntity, unreadkey.Event, unreadkey.TimeStamp) &&
+				  ((unreadkey.Event == 0) || (key < unreadkey)))
+			{
+				m_Entities._setFirstUnreadEvent(hEntity, key.Event, key.TimeStamp);
+			}
+		}
 	}
 
 	SYNC_ENDWRITE(m_Sync);
 
 	return res;
 }
-unsigned int CEvents::MarkRead(TDBTEntityHandle hEntity, TDBTEventHandle hEvent)
+unsigned int CEvents::MarkRead(TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
-	TEventKey key = {0,0,0};
+	TEventKey key = {0,hEvent};
 	uint32_t flags;
-	uint32_t res = 0;
+	uint32_t entity;
 
 	SYNC_BEGINWRITE(m_Sync);
 
 	if (!m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key.Index, offsetof(TEvent, Index), sizeof(key.Index), sig) ||
-			!m_BlockManager.ReadPart(hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags), sig))
+			!m_BlockManager.ReadPart(hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags), sig) ||
+			!m_BlockManager.ReadPart(hEvent, &entity, offsetof(TEvent, Entity), sizeof(entity), sig))
 	{
 		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	CEventsTree* tree = getEventsTree(hEntity);
-
-	if (tree == NULL)
+	PEntityEventsRecord record = getEntityRecord(entity);
+	if (record == NULL)
 	{
 		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	flags = flags | DBT_EF_READ;
-	res = flags;
-	m_BlockManager.WritePart(hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags));
+	CEventsTree::iterator it = record->RealTree->UpperBound(key);
+	CVirtualEventsTree::iterator vi = record->VirtualTree->UpperBound(key);
 
-	CVirtualEventsTree* vtree = getVirtualEventsTree(hEntity);
-
-	CEventsTree::iterator it(tree->UpperBound(key));
-	--it;
-	CVirtualEventsTree::iterator vit(vtree->UpperBound(key));
-
-	TEventsHeap heap(it, TEventsHeap::ITBackward, false);
-	heap.Insert(vit);
-
-	bool b = true;
-	while (b && heap.Top())
+	m_Entities._getFirstUnreadEvent(entity, key.Event, key.TimeStamp);
+	if (MarkEventsTree(it, key.Event))
 	{
-		TDBTEventHandle ev = heap.Top()->Event;
-		heap.Pop();
-
-		if (m_BlockManager.ReadPart(ev, &flags, offsetof(TEvent, Flags), sizeof(flags), sig))
+		FindNextUnreadEvent(++it);
+		if (it)
 		{
-			if ((flags & DBT_EF_READ) == 0)
-			{
-				flags = flags | DBT_EF_READ;
-				m_BlockManager.WritePart(ev, &flags, offsetof(TEvent, Flags), sizeof(flags));
-			} else {
-				b = false;
-			}
-		}		
+			m_Entities._setFirstUnreadEvent(entity, it->Event, it->TimeStamp);
+		} else {
+			m_Entities._setFirstUnreadEvent(entity, 0, 0);
+		}
+	}
+	if (MarkEventsTree(vi, record->FirstVirtualUnread.Event))
+	{
+		FindNextUnreadEvent(++vi);
+		if (vi)
+		{
+			record->FirstVirtualUnread = *it;
+		} else {
+			record->FirstVirtualUnread.TimeStamp = 0;
+			record->FirstVirtualUnread.Event = 0;
+		}
 	}
 
 	SYNC_ENDWRITE(m_Sync);
 
-	return res;
+	return flags | DBT_EF_READ;
 }
-unsigned int CEvents::WriteToDisk(TDBTEntityHandle hEntity, TDBTEventHandle hEvent)
+unsigned int CEvents::WriteToDisk(TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
 	TEventKey key;
-	uint32_t flags;
+	void * buf = NULL;
+	uint32_t size = 0;
 
 	key.Event = hEvent;
 
 	SYNC_BEGINWRITE(m_Sync);
 
-	CEventsTree * tree = getEventsTree(hEntity);
-
-	if ((tree == NULL) ||
-		  !m_BlockManager.ReadPart(hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key.Index, offsetof(TEvent, Index), sizeof(key.Index), sig))
+	if (!m_BlockManager.IsForcedVirtual(hEvent))
+	{
+		SYNC_ENDWRITE(m_Sync);
+		return DBT_INVALIDPARAM;
+	}
+	
+	if (!m_BlockManager.ReadBlock(hEvent, buf, size, sig) ||
+		  (size < sizeof(TEvent)))
 	{
 		SYNC_ENDWRITE(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	CVirtualEventsTree * vtree = getVirtualEventsTree(hEntity);
-
-	TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(hEvent);
-	if (mit == m_VirtualOwnerMap.end())
+	PEntityEventsRecord record = getEntityRecord(((TEvent*)buf)->Entity);
+	if (!record)
 	{
+		free(buf);
 		SYNC_ENDWRITE(m_Sync);
-		return DBT_INVALIDPARAM;
+		return DBT_INVALIDPARAM;			
 	}
 
-	TVirtualOwnerSet::iterator sit = mit->second->find(hEntity);
-	if (sit == mit->second->end())
-	{
-		SYNC_ENDWRITE(m_Sync);
-		return DBT_INVALIDPARAM;
-	}
+	key.TimeStamp = ((TEvent*)buf)->TimeStamp;
+	key.Event = hEvent;
 
-	mit->second->erase(sit);
-	if (mit->second->empty())
-	{
-		delete mit->second;
-		m_VirtualOwnerMap.erase(mit);
-	}
+	if (record->VirtualTree->Delete(key))
+		adjustVirtualEventCount(record, -1);
 
-	vtree->Delete(key);
-	tree->Insert(key);
-
-	m_Entities._adjustEventCount(hEntity, +1);
-	adjustVirtualEventCount(hEntity, -1);
-
-	if (m_BlockManager.IsForcedVirtual(hEvent))
-	{
-		m_BlockManager.WritePart(hEvent, &hEntity, offsetof(TEvent, Entity), sizeof(hEntity));
-		m_BlockManager.WriteBlockToDisk(hEvent);
-	} else {
-		TEventLinkKey lkey;
-		lkey.Event = hEvent;
-
-		if ((flags & DBT_EF_REFERENCECOUNTING) == 0)
-		{
-			TDBTEntityHandle tmp;
-			m_BlockManager.ReadPart(hEvent, &tmp, offsetof(TEvent, Entity), sizeof(tmp), sig);
-
-			lkey.Entity = tmp;
-			m_Links.Insert(lkey);
-
-			uint32_t ref = 2;
-			flags = flags | DBT_EF_REFERENCECOUNTING;
-
-			m_BlockManager.WritePart(hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags));
-			m_BlockManager.WritePart(hEvent, &ref, offsetof(TEvent, ReferenceCount), sizeof(ref));
-
-		} else {
-			uint32_t ref;
-			m_BlockManager.ReadPart(hEvent, &ref, offsetof(TEvent, ReferenceCount), sizeof(ref), sig);
-			++ref;
-			m_BlockManager.WritePart(hEvent, &ref, offsetof(TEvent, ReferenceCount), sizeof(ref));
-		}
-
-		lkey.Entity = hEntity;
-		m_Links.Insert(lkey);
-	}
-
+	if (record->RealTree->Insert(key))
+		m_Entities._adjustEventCount(((TEvent*)buf)->Entity, +1);
+	m_BlockManager.WriteBlockToDisk(hEvent);
+	
 	SYNC_ENDWRITE(m_Sync);
 
-	return flags;
+	return 0;
 }
 
 TDBTEntityHandle CEvents::getEntity(TDBTEventHandle hEvent)
 {
 	uint32_t sig = cEventSignature;
-	uint32_t flags;
 	TDBTEntityHandle res = 0;
 
 	SYNC_BEGINREAD(m_Sync);
 
-	if (!m_BlockManager.ReadPart(hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags), sig))
+	if (!m_BlockManager.ReadPart(hEvent, &res, offsetof(TEvent, Entity), sizeof(res), sig))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
-	}
-
-	if (m_BlockManager.IsForcedVirtual(hEvent))
-	{
-		TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(hEvent);
-		if (mit != m_VirtualOwnerMap.end())
-			res = *mit->second->begin();
-	} else {
-		if (flags & DBT_EF_REFERENCECOUNTING)
-		{
-			TEventLinkKey lkey;
-			lkey.Event = hEvent;
-			lkey.Entity = 0;
-			CEventLinks::iterator it = m_Links.LowerBound(lkey);
-			if ((it) && (it->Event == hEvent))
-				res = it->Entity;
-		} else {
-			m_BlockManager.ReadPart(hEvent, &res, offsetof(TEvent, Entity), sizeof(res), sig);
-		}
 	}
 
 	SYNC_ENDREAD(m_Sync);
 	return res;
 }
 
-unsigned int CEvents::HardLink(TDBTEventHardLink & HardLink)
-{
-	uint32_t sig = cEventSignature;
-	uint32_t flags;
-	TEventKey key;
-
-	key.Event = HardLink.hEvent;
-
-	SYNC_BEGINWRITE(m_Sync);
-
-
-	if (!m_BlockManager.ReadPart(HardLink.hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags), sig) ||
-		  !m_BlockManager.ReadPart(HardLink.hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) ||
-			!m_BlockManager.ReadPart(HardLink.hEvent, &key.Index, offsetof(TEvent, Index), sizeof(key.Index), sig))
-	{
-		SYNC_ENDWRITE(m_Sync);
-		return DBT_INVALIDPARAM;
-	}
-
-	uint32_t cflags = m_Entities.getFlags(HardLink.hEntity);
-	if ((cflags == DBT_INVALIDPARAM) || (cflags & DBT_NF_IsGroup))
-	{
-		SYNC_ENDWRITE(m_Sync);
-		return DBT_INVALIDPARAM;
-	}
-
-	if (cflags & DBT_NF_IsVirtual)
-	{
-		HardLink.hEntity = m_Entities.VirtualGetParent(HardLink.hEntity);
-	}
-
-	if (HardLink.Flags & DBT_EF_VIRTUAL)
-	{
-		CVirtualEventsTree * vtree = getVirtualEventsTree(HardLink.hEntity);
-		if (vtree == NULL)
-		{
-			SYNC_ENDWRITE(m_Sync);
-			return DBT_INVALIDPARAM;
-		}
-
-		vtree->Insert(key);
-		adjustVirtualEventCount(HardLink.hEntity, +1);
-
-		TVirtualOwnerMap::iterator mit = m_VirtualOwnerMap.find(HardLink.hEntity);
-		if (mit == m_VirtualOwnerMap.end())
-		{
-			TVirtualOwnerSet * tmp = new TVirtualOwnerSet();
-			tmp->insert(HardLink.hEntity);
-			m_VirtualOwnerMap.insert(std::make_pair(HardLink.hEvent, tmp));
-
-		} else {
-			mit->second->insert(HardLink.hEntity);
-		}
-
-	} else {
-		CEventsTree * tree = getEventsTree(HardLink.hEntity);
-
-		if (tree == NULL)
-		{
-			SYNC_ENDWRITE(m_Sync);
-			return DBT_INVALIDPARAM;
-		}
-
-		tree->Insert(key);
-		m_Entities._adjustEventCount(HardLink.hEntity, +1);
-
-		if (m_BlockManager.IsForcedVirtual(HardLink.hEvent))
-		{
-			m_BlockManager.WritePart(HardLink.hEvent, &HardLink.hEntity, offsetof(TEvent, Entity), sizeof(HardLink.hEntity));
-			if (flags & DBT_EF_REFERENCECOUNTING)
-			{
-				flags = flags & ~DBT_EF_REFERENCECOUNTING;
-				m_BlockManager.WritePart(HardLink.hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags));
-			}
-			m_BlockManager.WriteBlockToDisk(HardLink.hEvent);
-		} else {
-			TEventLinkKey lkey;
-			uint32_t ref;
-			lkey.Event = HardLink.hEvent;
-
-			if ((flags & DBT_EF_REFERENCECOUNTING) == 0)
-			{
-				flags = flags | DBT_EF_REFERENCECOUNTING;
-				m_BlockManager.WritePart(HardLink.hEvent, &flags, offsetof(TEvent, Flags), sizeof(flags));
-
-				m_BlockManager.ReadPart(HardLink.hEvent, &lkey.Entity, offsetof(TEvent, Entity), sizeof(lkey.Entity), sig);
-				m_Links.Insert(lkey);
-
-				ref = 1;
-			} else {
-				m_BlockManager.ReadPart(HardLink.hEvent, &ref, offsetof(TEvent, ReferenceCount), sizeof(ref), sig);
-			}
-
-			lkey.Entity = HardLink.hEntity;
-			m_Links.Insert(lkey);
-
-			m_BlockManager.WritePart(HardLink.hEvent, &ref, offsetof(TEvent, ReferenceCount), sizeof(ref));
-		}
-	}
-
-	SYNC_ENDWRITE(m_Sync);
-
-	return 0;
-}
-
 TDBTEventIterationHandle CEvents::IterationInit(TDBTEventIterFilter & Filter)
 {
 	SYNC_BEGINREAD(m_Sync);
 
-	CEventsTree * tree = getEventsTree(Filter.hEntity);
+	PEntityEventsRecord record = getEntityRecord(Filter.hEntity);
 
-	if (tree == NULL)
+	if (!record)
 	{
 		SYNC_ENDREAD(m_Sync);
 		return DBT_INVALIDPARAM;
 	}
 
-	CVirtualEventsTree * vtree = getVirtualEventsTree(Filter.hEntity);
-
 	std::queue<TEventBase * > q;
-	q.push(tree);
-	q.push(vtree);
+	q.push(record->RealTree);
+	q.push(record->VirtualTree);
 
 	TDBTEntityIterFilter f = {0,0,0,0};
 	f.cbSize = sizeof(f);
@@ -1124,14 +784,11 @@ TDBTEventIterationHandle CEvents::IterationInit(TDBTEventIterFilter & Filter)
 		TDBTEntityHandle c = m_Entities.IterationNext(citer);
 		while (c != 0)
 		{
-			tree = getEventsTree(c);
-			if (tree)
+			record = getEntityRecord(c);
+			if (record)
 			{
-				q.push(tree);
-
-				vtree = getVirtualEventsTree(c);
-				if (vtree)
-					q.push(vtree);
+				q.push(record->RealTree);
+				q.push(record->VirtualTree);
 			}
 
 			c = m_Entities.IterationNext(citer);
@@ -1142,14 +799,11 @@ TDBTEventIterationHandle CEvents::IterationInit(TDBTEventIterFilter & Filter)
 
 	for (unsigned int j = 0; j < Filter.ExtraCount; ++j)
 	{
-		tree = getEventsTree(Filter.ExtraEntities[j]);
-		if (tree)
+		record = getEntityRecord(Filter.ExtraEntities[j]);
+		if (record)
 		{
-			q.push(tree);
-
-			vtree = getVirtualEventsTree(Filter.ExtraEntities[j]);
-			if (vtree)
-				q.push(vtree);
+			q.push(record->RealTree);
+			q.push(record->VirtualTree);
 		}
 	}
 
@@ -1159,8 +813,8 @@ TDBTEventIterationHandle CEvents::IterationInit(TDBTEventIterFilter & Filter)
 	iter->Heap = NULL;
 
 	TEventKey key;
-	key.Index = 0;
 	key.TimeStamp = Filter.tSince;
+	key.Event = 0;
 
 	while (!q.empty())
 	{
@@ -1245,17 +899,16 @@ TDBTEventHandle CEvents::compFirstEvent(TDBTEntityHandle hEntity)
 
 	TDBTEventHandle res = 0;
 
-	CEventsTree * tree = getEventsTree(hEntity);
-	if (tree == NULL)
+	PEntityEventsRecord record = getEntityRecord(hEntity);
+	if (!record)
 	{
 		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
-	CVirtualEventsTree * vtree = getVirtualEventsTree(hEntity);
 
-	TEventKey key = {0,0,0};
-	CEventsTree::iterator i = tree->LowerBound(key);
-	CVirtualEventsTree::iterator vi = vtree->LowerBound(key);
+	TEventKey key = {0,0};
+	CEventsTree::iterator i = record->RealTree->LowerBound(key);
+	CVirtualEventsTree::iterator vi = record->VirtualTree->LowerBound(key);
 
 	if (i && vi)
 	{
@@ -1284,37 +937,27 @@ TDBTEventHandle CEvents::compFirstUnreadEvent(TDBTEntityHandle hEntity)
 	SYNC_BEGINREAD(m_Sync);
 
 	TDBTEventHandle res = 0;
-
-	CEventsTree * tree = getEventsTree(hEntity);
-	if (tree == NULL)
+	
+	PEntityEventsRecord record = getEntityRecord(hEntity);
+	if (!record)
 	{
 		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
-	CVirtualEventsTree * vtree = getVirtualEventsTree(hEntity);
 
 	TEventKey key;
-	key.TimeStamp = 0xffffffff;
-	key.Index = 0xffffffff;
-	key.Event = 0xffffffff;
-
-	CEventsTree::iterator i = tree->UpperBound(key);
-	CVirtualEventsTree::iterator vi = vtree->UpperBound(key);
-
-	TEventsHeap h(i, TEventsHeap::ITBackward, false);
-
-	h.Insert(vi);
-	uint32_t f = 0;
-
-	while (h.Top() && ((f & DBT_EF_READ) == 0))
+	m_Entities._getFirstUnreadEvent(hEntity, key.Event, key.TimeStamp);
+	if (key.Event)
 	{
-		if (m_BlockManager.ReadPart(h.Top()->Event, &f, offsetof(TEvent, Flags), sizeof(f), sig) && 
-			 ((f & DBT_EF_READ) == 0))
+		if (record->FirstVirtualUnread.Event && (record->FirstVirtualUnread < key))
 		{
-			res = h.Top()->Event;
+			res = record->FirstVirtualUnread.Event;
+		} else {
+			res = key.Event;
 		}
-
-		h.Pop();
+	} else if (record->FirstVirtualUnread.Event)
+	{
+		res = record->FirstVirtualUnread.Event;
 	}
 
 	SYNC_ENDREAD(m_Sync);
@@ -1327,20 +970,17 @@ TDBTEventHandle CEvents::compLastEvent(TDBTEntityHandle hEntity)
 
 	TDBTEventHandle res = 0;
 
-	CEventsTree * tree = getEventsTree(hEntity);
-	if (tree == NULL)
+	PEntityEventsRecord record = getEntityRecord(hEntity);
+	if (!record)
 	{
 		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
-	CVirtualEventsTree * vtree = getVirtualEventsTree(hEntity);
 
-	TEventKey key;
-	key.TimeStamp = 0xffffffff;
-	key.Index = 0xffffffff;
+	TEventKey key = {0xffffffff, 0xffffffff};
 
-	CEventsTree::iterator i = tree->UpperBound(key);
-	CVirtualEventsTree::iterator vi = vtree->UpperBound(key);
+	CEventsTree::iterator i = record->RealTree->UpperBound(key);
+	CVirtualEventsTree::iterator vi = record->VirtualTree->UpperBound(key);
 
 	if (i && vi)
 	{
@@ -1368,42 +1008,39 @@ TDBTEventHandle CEvents::compNextEvent(TDBTEventHandle hEvent)
 
 	SYNC_BEGINREAD(m_Sync);
 
-	TDBTEntityHandle c;
-	TEventKey key;
+	TDBTEntityHandle entity;
+	TEventKey key = {0, hEvent};
 
-	if (!m_BlockManager.ReadPart(hEvent, &c, offsetof(TEvent, Entity), sizeof(c), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) ||
-			!m_BlockManager.ReadPart(hEvent, &key.Index, offsetof(TEvent, Index), sizeof(key.Index), sig))
+	if (!m_BlockManager.ReadPart(hEvent, &entity, offsetof(TEvent, Entity), sizeof(entity), sig) ||
+		  !m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
 
-	CEventsTree * tree = getEventsTree(c);
+	PEntityEventsRecord record = getEntityRecord(entity);
 
-	if (tree == NULL)
+	if (!record)
 	{
 		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
-
-	CVirtualEventsTree * vtree = getVirtualEventsTree(c);
-
-	if (key.Index == 0xffffffff)
+	
+	if (key.Event == 0xffffffff)
 	{
 		if (key.TimeStamp == 0xffffffff)
-		{
+		{			
 			SYNC_ENDREAD(m_Sync);
 			return 0;
+		} else {
+			++key.TimeStamp;
 		}
-		++key.TimeStamp;
-		key.Index = 0;
 	} else {
-		++key.Index;
-	}
+		++key.Event;
+	}	
 
-	CEventsTree::iterator i = tree->LowerBound(key);
-	CVirtualEventsTree::iterator vi = vtree->LowerBound(key);
+	CEventsTree::iterator i = record->RealTree->LowerBound(key);
+	CVirtualEventsTree::iterator vi = record->VirtualTree->LowerBound(key);
 
 	TDBTEventHandle res = 0;
 	if (i && vi)
@@ -1432,42 +1069,38 @@ TDBTEventHandle CEvents::compPrevEvent(TDBTEventHandle hEvent)
 
 	SYNC_BEGINREAD(m_Sync);
 
-	TDBTEntityHandle c;
-	TEventKey key;
+	TDBTEntityHandle entity;
+	TEventKey key = {0, hEvent};
 
-	if (!m_BlockManager.ReadPart(hEvent, &c, offsetof(TEvent, Entity), sizeof(c), sig) ||
-		  !m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig) ||
-			!m_BlockManager.ReadPart(hEvent, &key.Index, offsetof(TEvent, Index), sizeof(key.Index), sig))
+	if (!m_BlockManager.ReadPart(hEvent, &entity, offsetof(TEvent, Entity), sizeof(entity), sig) ||
+		  !m_BlockManager.ReadPart(hEvent, &key.TimeStamp, offsetof(TEvent, TimeStamp), sizeof(key.TimeStamp), sig))
 	{
 		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
 
-	CEventsTree * tree = getEventsTree(c);
-
-	if (tree == NULL)
+	PEntityEventsRecord record = getEntityRecord(entity);
+	if (!record)
 	{
 		SYNC_ENDREAD(m_Sync);
 		return 0;
 	}
 
-	CVirtualEventsTree * vtree = getVirtualEventsTree(c);
-
-	if (key.Index == 0)
+	if (key.Event == 0)
 	{
 		if (key.TimeStamp == 0)
 		{
 			SYNC_ENDREAD(m_Sync);
 			return 0;
+		} else {
+			--key.TimeStamp;
 		}
-		--key.TimeStamp;
-		key.Index = 0xffffffff;
 	} else {
-		--key.Index;
+		--key.Event;
 	}
 
-	CEventsTree::iterator i = tree->UpperBound(key);
-	CVirtualEventsTree::iterator vi = vtree->UpperBound(key);
+	CEventsTree::iterator i = record->RealTree->UpperBound(key);
+	CVirtualEventsTree::iterator vi = record->VirtualTree->UpperBound(key);
 
 	TDBTEventHandle res = 0;
 	if (i && vi)

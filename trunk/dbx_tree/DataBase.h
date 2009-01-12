@@ -74,10 +74,8 @@ typedef struct TPrivateHeader {
 	uint32_t FileSize;              /// Offset to the last used byte + 1
 	uint32_t RootEntity;           /// Offset to the Root CList Entity
 	uint32_t Entities;              /// Offset to the EntityBTree RootNode
-	uint32_t Virtuals;              /// Offset to the VirtualsBTree RootNode	
-	uint32_t EventLinks;            /// 
-	uint32_t EventIndexCounter;     /// Event Index Counter
-	uint8_t Reserved[256 - sizeof(TFileEncryption) - 20 - 8*sizeof(uint32_t)]; /// reserved storage
+	uint32_t Virtuals;              /// Offset to the VirtualsBTree RootNode
+	uint8_t Reserved[256 - sizeof(TFileEncryption) - 20 - 6*sizeof(uint32_t)]; /// reserved storage
 } TPrivateHeader;
 
 
@@ -113,9 +111,7 @@ private:
 	void onSettingsRootChanged(CSettings* Settings, CSettingsTree::TNodeRef NewRoot);
 	void onVirtualsRootChanged(void* Virtuals, CVirtuals::TNodeRef NewRoot);
 	void onEntitiesRootChanged(void* Entities, CEntities::TNodeRef NewRoot);
-	void onEventLinksRootChanged(void* Events, CEventLinks::TNodeRef NewRoot);
 	void onFileSizeChanged(CFileAccess * File, uint32_t Size);
-	void onEventIndexCounterChanged(CEvents * Events, uint32_t Counter);
 
 	bool PrivateFileExists();
 	bool CreateNewFile(TDBFileType File);

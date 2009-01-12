@@ -104,7 +104,7 @@ typedef struct TEntityKey {
 **/
 typedef struct TEntity {
 	uint16_t Level;       /// Level where Entity is located or parent-steps to root. Root.Level == 0, root children have level 1 etc. !used in the BTreeKey!
-	uint16_t ChildCount;    /// Count of the children !invalid for Virtal Entity!
+	uint16_t ChildCount;    /// Count of the children !invalid for Virtual Entity!
 	TDBTEntityHandle ParentEntity; /// hEntity of the Parent. Root.Parent == 0 !used in the BTreeKey!
 	union {
 		TDBTEntityHandle VParent;     /// if the Entity is Virtual this is the hEntity of the related Realnode
@@ -116,7 +116,9 @@ typedef struct TEntity {
 	/*CEventsTree::TNodeRef*/
 	uint32_t Events;        /// Offset to the EventsBTree RootNode of this Entity, NULL if no events are present !invalid for Virtal Entity!
 	uint32_t EventCount;    /// Count of the stored events !invalid for Virtual Entity!
-	uint8_t Reserved[8];           /// reserved storage
+	uint32_t FirstUnreadEventTimestamp;   /// timestamp of the first unread event
+	uint32_t FirstUnreadEventHandle;/// ID of the first unread event
+	uint8_t Reserved[4];           /// reserved storage
 } TEntity;
 
 #pragma pack(pop)		// pop the alignment from stack
@@ -197,6 +199,8 @@ public:
 	bool _setEventsRoot(TDBTEntityHandle hEntity, /*CSettingsTree::TNodeRef*/ uint32_t NewRoot);
 	uint32_t _getEventCount(TDBTEntityHandle hEntity);
 	uint32_t _adjustEventCount(TDBTEntityHandle hEntity, int32_t Adjust);
+	bool _getFirstUnreadEvent(TDBTEntityHandle hEntity, uint32_t & hEvent, uint32_t & Timestamp);
+	bool _setFirstUnreadEvent(TDBTEntityHandle hEntity, uint32_t hEvent, uint32_t Timestamp);
 
 	CVirtuals & _getVirtuals();
 

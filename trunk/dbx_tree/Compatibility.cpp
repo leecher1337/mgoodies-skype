@@ -630,8 +630,12 @@ int CompAddEvent(WPARAM hContact, LPARAM pEventInfo)
 	ev.pBlob = dbei->pBlob;
 
 	int res = DBEventAdd(hContact, (LPARAM)&ev);
-	NotifyEventHooks(hEventAddedEvent, hContact, res);
-	return res;
+	if (res != DBT_INVALIDPARAM)
+	{
+		NotifyEventHooks(hEventAddedEvent, hContact, res);
+		return res;
+	}
+	return 0;
 }
 int CompDeleteEvent(WPARAM hContact, LPARAM hEvent)
 {
@@ -641,7 +645,7 @@ int CompDeleteEvent(WPARAM hContact, LPARAM hEvent)
 		hContact = gDataBase->getEntities().getRootEntity();
 
 	if (res == 0)
-		return DBEventDelete(hContact, hEvent);
+		return DBEventDelete(hEvent, 0);
 
 	return res;
 }
@@ -688,7 +692,7 @@ int CompGetEvent(WPARAM hEvent, LPARAM pEventInfo)
 }
 int CompMarkEventRead(WPARAM hContact, LPARAM hEvent)
 {
-	return DBEventMarkRead(hContact, hEvent);
+	return DBEventMarkRead(hEvent, 0);
 }
 int CompGetEventContact(WPARAM hEvent, LPARAM lParam)
 {

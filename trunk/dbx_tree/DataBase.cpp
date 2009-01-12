@@ -217,14 +217,9 @@ int CDataBase::OpenDB()
 
 	m_Events = new CEvents(*m_BlockManager[DBFilePrivate],
 		                     *m_EncryptionManager[DBFilePrivate],
-												 m_Header[DBFilePrivate].Pri.EventLinks,
 												 m_Sync,
 												 *m_Entities,
-												 *m_Settings,
-												 m_Header[DBFilePrivate].Pri.EventIndexCounter);
-
-	m_Events->sigLinkRootChanged().connect(this, &CDataBase::onEventLinksRootChanged);
-	m_Events->_sigIndexCounterChanged().connect(this, &CDataBase::onEventIndexCounterChanged);
+												 *m_Settings);
 
 	return 0;
 }
@@ -296,11 +291,6 @@ void CDataBase::onEntitiesRootChanged(void* Entities, CEntities::TNodeRef NewRoo
 	m_Header[DBFilePrivate].Pri.Entities = NewRoot;
 	ReWriteHeader(DBFilePrivate);
 }
-void CDataBase::onEventLinksRootChanged(void* Events, CEventLinks::TNodeRef NewRoot)
-{
-	m_Header[DBFilePrivate].Pri.EventLinks = NewRoot;
-	ReWriteHeader(DBFilePrivate);
-}
 void CDataBase::onFileSizeChanged(CFileAccess * File, uint32_t Size)
 {
 	if (File == m_FileAccess[DBFileSetting])
@@ -313,21 +303,15 @@ void CDataBase::onFileSizeChanged(CFileAccess * File, uint32_t Size)
 	}
 }
 
-void CDataBase::onEventIndexCounterChanged(CEvents * Events, uint32_t Counter)
-{
-	m_Header[DBFilePrivate].Pri.EventIndexCounter = Counter;
-	ReWriteHeader(DBFilePrivate);
-}
-
 int CDataBase::getProfileName(int BufferSize, char * Buffer)
 {
 	char * slash = strrchr(m_FileName[DBFileSetting], '\\');
-	if (!slash)
-		return -1;
+	if (slash)
+		slash++;
+	else
+		slash = m_FileName[DBFileSetting];
 
-	slash++;
 	int l = strlen(slash);
-	l -= 4;
 	if (BufferSize < l + 1)
 		return -1;
 

@@ -513,11 +513,6 @@ static const uint32_t DBT_EF_RTL   = 0x00000008;
 static const uint32_t DBT_EF_UTF   = 0x00000010;
 
 /**
-	\brief event belongs to more than one Entity, so it started to count refernce instead of remembering its initial Entity
-**/
-static const uint32_t DBT_EF_REFERENCECOUNTING  = 0x80000000;
-
-/**
 	\brief event is virtual. it is not stored to db file yet.
 **/
 static const uint32_t DBT_EF_VIRTUAL   = 0x00000020;
@@ -607,7 +602,7 @@ static const uint32_t DBT_EventType_File        = 1002;  //specific limit has be
   \param wParam = hEntity
   \param lParam = hEvent
 
-	\return New flags
+	\return 0 on success
 **/
 #define MS_DBT_EVENT_WRITETODISK  "DBT/Event/WriteToDisk"
 
@@ -621,29 +616,6 @@ static const uint32_t DBT_EventType_File        = 1002;  //specific limit has be
 					success
 **/
 #define MS_DBT_EVENT_GETENTITY  "DBT/Event/GetEntity"
-
-/**
-	\brief options to create event hard link
-**/
-typedef 
-	struct TDBTEventHardLink {
-		uint32_t cbSize;           /// size of the structure
-		TDBTEventHandle hEvent;     /// event to link
-		TDBTEntityHandle hEntity; /// Entity to link to
-		uint32_t Flags;            /// flags, only DBT_EF_VIRTUAL yet
-	} TDBTEventHardLink, *PDBTEventHardLink;
-
-/**
-	\brief Creates a hard linked event.
-
-	This service adds an existing event to a specific Entity.
-  \param wParam = PEventHardLink
-  \param lParam = 0
-
-	\return 0 on success
-**/
-#define MS_DBT_EVENT_HARDLINK  "DBT/Event/HardLink"
-
 
 /**
 	\brief Event Filter Options for event iteration
@@ -688,7 +660,7 @@ typedef uint32_t TDBTEventIterationHandle;
 #define MS_DBT_EVENT_ITER_NEXT "DBT/Event/Iter/Next"
 
 /**
-	\brief closes an iteration and frees its ressourcs
+	\brief closes an iteration and frees its resourcs
 	\param wParam = IterationHandle returned by MS_DBT_EVENT_ITER_INIT
 	\param lParam = 0
 
