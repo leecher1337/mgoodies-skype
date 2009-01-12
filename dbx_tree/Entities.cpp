@@ -334,6 +334,29 @@ uint32_t CEntities::_adjustEventCount(TDBTEntityHandle hEntity, int32_t Adjust)
 
 	return c;
 }
+
+bool CEntities::_getFirstUnreadEvent(TDBTEntityHandle hEntity, uint32_t & hEvent, uint32_t & Timestamp)
+{
+	uint32_t sig = cEntitySignature;
+	uint32_t e[2];
+
+	if (!m_BlockManager.ReadPart(hEntity, &e, offsetof(TEntity, FirstUnreadEventTimestamp), sizeof(e), sig))
+		return false;
+
+	Timestamp = e[0];
+	hEvent = e[1];
+	return true;
+}
+bool CEntities::_setFirstUnreadEvent(TDBTEntityHandle hEntity, uint32_t hEvent, uint32_t Timestamp)
+{
+	uint32_t sig = cEntitySignature;
+	uint32_t e[2] = {Timestamp, hEvent};
+
+	if (!m_BlockManager.WritePartCheck(hEntity, &e, offsetof(TEntity, FirstUnreadEventTimestamp), sizeof(e), sig))
+		return false;
+
+	return true;
+}
 CVirtuals & CEntities::_getVirtuals()
 {
 	return m_Virtuals;

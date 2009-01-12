@@ -51,17 +51,15 @@ HANDLE hSystemModulesLoaded = 0;
 static int SystemModulesLoaded(WPARAM wParam, LPARAM lParam)
 {
 	Update upd = {0,0,0,0,0,0,0,0,0,0,0,0,0};
-	char buf[16];
-	sprintf_s(buf, "%d.%d.%d.%d", gVersion >> 24, (BYTE)(gVersion >> 16), (BYTE)(gVersion >> 8), (BYTE)gVersion);
 
 	upd.cbSize = sizeof(upd);
 	upd.szComponentName = gInternalName;
 	upd.szBetaVersionURL = "http://www.protogenes.de/?dbx_tree";
 	upd.pbBetaVersionPrefix = (BYTE *)"<!-- Updater Beta: ";
-	upd.cpbBetaVersionPrefix = 14;
+	upd.cpbBetaVersionPrefix = 19;
 	upd.szBetaUpdateURL = "http://www.protogenes.de/Downloads/dbx_tree.zip";
-	upd.pbVersion = (BYTE*)buf;
-	upd.cpbVersion = strlen(buf);
+	upd.pbVersion = (BYTE*)gResVersionString;
+	upd.cpbVersion = sizeof(gResVersionString) - 1;
 	upd.szBetaChangelogURL = "http://www.protogenes.de/?dbx_tree=BetaLog&lang=en";
 
 	CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);

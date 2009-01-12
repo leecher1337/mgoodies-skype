@@ -45,13 +45,12 @@ CBlockManager::~CBlockManager()
 	{
 		m_OptimizeThread->FreeOnTerminate(false);
 		m_OptimizeThread->Terminate();
-		m_OptimizeThread->Resume();
-		m_BlockSync.EndWrite();
+		SYNC_ENDWRITE(m_BlockSync);
 		m_OptimizeThread->WaitFor();
 
 		delete m_OptimizeThread;
 	} else {
-		m_BlockSync.EndWrite();
+		SYNC_ENDWRITE(m_BlockSync);
 	}
 }
 

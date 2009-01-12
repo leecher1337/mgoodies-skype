@@ -299,9 +299,9 @@ int DBEventGetCount(WPARAM hEntity, LPARAM lParam)
 	return gDataBase->getEvents().GetCount(hEntity);
 }
 
-int DBEventDelete(WPARAM hEntity, LPARAM hEvent)
+int DBEventDelete(WPARAM hEvent, LPARAM lParam)
 {
-	return gDataBase->getEvents().Delete(hEntity, hEvent);
+	return gDataBase->getEvents().Delete(hEvent);
 }
 
 int DBEventAdd(WPARAM hEntity, LPARAM pEvent)
@@ -312,22 +312,14 @@ int DBEventAdd(WPARAM hEntity, LPARAM pEvent)
 	return gDataBase->getEvents().Add(hEntity, *((PDBTEvent)pEvent));
 }
 
-int DBEventMarkRead(WPARAM hEntity, LPARAM hEvent)
+int DBEventMarkRead(WPARAM hEvent, LPARAM lParam)
 {
-	return gDataBase->getEvents().MarkRead(hEntity, hEvent);
+	return gDataBase->getEvents().MarkRead(hEvent);
 }
 
-int DBEventWriteToDisk(WPARAM hEntity, LPARAM hEvent)
+int DBEventWriteToDisk(WPARAM hEvent, LPARAM lParam)
 {
-	return gDataBase->getEvents().WriteToDisk(hEntity, hEvent);
-}
-
-int DBEventHardLink(WPARAM pHardLink, LPARAM lParam)
-{
-	if ((pHardLink == NULL) || (((PDBTEventHardLink)pHardLink)->cbSize != sizeof(TDBTEventHardLink)))
-		return DBT_INVALIDPARAM;
-
-	return gDataBase->getEvents().HardLink(*((PDBTEventHardLink)pHardLink));
+	return gDataBase->getEvents().WriteToDisk(hEvent);
 }
 
 int DBEventGetEntity(WPARAM hEvent, LPARAM lParam)
@@ -400,12 +392,10 @@ bool RegisterServices()
 	gServices[32] = CreateServiceFunction(MS_DBT_EVENT_ADD,                DBEventAdd);
 	gServices[33] = CreateServiceFunction(MS_DBT_EVENT_MARKREAD,           DBEventMarkRead);
 	gServices[34] = CreateServiceFunction(MS_DBT_EVENT_WRITETODISK,        DBEventWriteToDisk);
-	gServices[35] = CreateServiceFunction(MS_DBT_EVENT_GETENTITY,         DBEventGetEntity);
-	// hardlinking is disabled, because it would destroy compatibility with FindNext/Prev Event services
-	//gServices[36] = CreateServiceFunction(MS_DBT_EVENT_HARDLINK,           DBEventHardLink);
-	gServices[37] = CreateServiceFunction(MS_DBT_EVENT_ITER_INIT,          DBEventIterInit);
-	gServices[38] = CreateServiceFunction(MS_DBT_EVENT_ITER_NEXT,          DBEventIterNext);
-	gServices[39] = CreateServiceFunction(MS_DBT_EVENT_ITER_CLOSE,         DBEventIterClose);
+	gServices[35] = CreateServiceFunction(MS_DBT_EVENT_GETENTITY,          DBEventGetEntity);
+	gServices[36] = CreateServiceFunction(MS_DBT_EVENT_ITER_INIT,          DBEventIterInit);
+	gServices[37] = CreateServiceFunction(MS_DBT_EVENT_ITER_NEXT,          DBEventIterNext);
+	gServices[38] = CreateServiceFunction(MS_DBT_EVENT_ITER_CLOSE,         DBEventIterClose);
 
 
 	return true;
