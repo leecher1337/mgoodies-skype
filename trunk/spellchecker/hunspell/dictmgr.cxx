@@ -6,12 +6,7 @@
 
 #include "dictmgr.hxx"
 
-#ifndef MOZILLA_CLIENT
-#ifndef W32
-using namespace std;
-#endif
-#endif
-
+//using namespace std;
 
 DictMgr::DictMgr(const char * dictpath, const char * etype) 
 {

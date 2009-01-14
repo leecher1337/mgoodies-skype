@@ -11,11 +11,8 @@
 #define H_OPT_ALIASM (1 << 1)
 #define H_OPT_PHON   (1 << 2)
 
+// see also csutil.hxx
 #define HENTRY_WORD(h) &(h->word)
-#define HENTRY_DATA(h) (h->var ? ((h->var & H_OPT_ALIASM) ? \
-    get_stored_pointer(&(h->word) + h->blen + 1) : &(h->word) + h->blen + 1) : NULL)
-//    *((char **) (&(h->word) + h->blen + 1)) : &(h->word) + h->blen + 1) : NULL)
-#define HENTRY_FIND(h,p) (HENTRY_DATA(h) ? strstr(HENTRY_DATA(h), p) : NULL)
 
 // approx. number  of user defined words
 #define USERWORD 1000

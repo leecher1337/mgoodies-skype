@@ -45,7 +45,7 @@ static NS_DEFINE_CID(kUnicharUtilCID, NS_UNICHARUTIL_CID);
 using namespace std;
 #endif
 #else
-#ifndef W32
+#ifndef WIN32
 using namespace std;
 #endif
 #endif
@@ -245,7 +245,6 @@ int flag_bsearch(unsigned short flags[], unsigned short flag, int length) {
    return NULL;
  }
 
- 
  // replaces strdup with ansi version
  char * mystrdup(const char * s)
  {
@@ -253,12 +252,27 @@ int flag_bsearch(unsigned short flags[], unsigned short flag, int length) {
    if (s) {
       int sl = strlen(s);
       d = (char *) malloc(((sl+1) * sizeof(char)));
-      if (d) memcpy(d,s,((sl+1)*sizeof(char)));
+      if (d) {
+         memcpy(d,s,((sl+1)*sizeof(char)));
+         return d;
+      }
+      HUNSPELL_WARNING(stderr, "Can't allocate memory.\n");
    }
    return d;
  }
- 
- 
+
+ // strcat for limited length destination string
+ char * mystrcat(char * dest, const char * st, int max) {
+   int len;
+   int len2;
+   if (dest == NULL || st == NULL) return dest;
+   len = strlen(dest);
+   len2 = strlen(st);
+   if (len + len2 + 1 > max) return dest;
+   strcpy(dest + len, st);
+   return dest;
+ }
+
  // remove cross-platform text line end characters
  void mychomp(char * s)
  {
@@ -298,7 +312,9 @@ int line_tok(const char * text, char *** lines, char breakchar) {
         p = strchr(p, breakchar);
     }
     linenum++;
+//    fprintf(stderr, "LINEN:%d %p %p\n", linenum, lines, *lines);
     *lines = (char **) malloc(linenum * sizeof(char *));
+//    fprintf(stderr, "hello\n");
     if (!(*lines)) {
         free(dup);
         return 0;
@@ -309,6 +325,11 @@ int line_tok(const char * text, char *** lines, char breakchar) {
     for (int i = 0; i < linenum; i++) {
         if (*p != '\0') {
             (*lines)[l] = mystrdup(p);
+            if (!(*lines)[l]) {
+                for (i = 0; i < l; i++) free((*lines)[i]);
+                free(dup);
+                return 0;
+            }
             l++;
         }
         p += strlen(p) + 1;
@@ -350,9 +371,9 @@ char * line_uniq_app(char ** text, char breakchar) {
     }
     
     char ** lines;
+    int i;
     int linenum = line_tok(*text, &lines, breakchar);
     int dup = 0;
-	int i;
     for (i = 0; i < linenum; i++) {
         for (int j = 0; j < (i - 1); j++) {
             if (strcmp(lines[i], lines[j]) == 0) {
@@ -390,16 +411,18 @@ char * line_uniq_app(char ** text, char breakchar) {
     char * dup = mystrdup(dest);
     char * source = dup;
     int len = strlen(s);
-    while (*source) {
-        if (*source == '\n') {
-            strncpy(dest, s, len);
-            dest += len;
+    if (dup) {
+        while (*source) {
+            if (*source == '\n') {
+                strncpy(dest, s, len);
+                dest += len;
+            }
+            *dest = *source;
+            source++; dest++;
         }
-        *dest = *source;
-        source++; dest++;
+        strcpy(dest, s);
+        free(dup);
     }
-    strcpy(dest, s);
-    free(dup);
  }
 
 // change \n to char c
@@ -580,8 +603,8 @@ char * mystrrep(char * word, const char * pat, const char * rep) {
  }
 
  int uniqlist(char ** list, int n) {
-   if (n < 2) return n;
    int i;
+   if (n < 2) return n;
    for (i = 0; i < n; i++) {
      for (int j = 0; j < i; j++) {
         if (list[j] && list[i] && (strcmp(list[j], list[i]) == 0)) {
@@ -600,10 +623,10 @@ char * mystrrep(char * word, const char * pat, const char * rep) {
  }
  
  void freelist(char *** list, int n) {
-   if (list && (n > 0)) {
-      for (int i = 0; i < n; i++) if ((*list)[i]) free((*list)[i]);
-      free(*list);
-      *list = NULL;
+   if (list && *list && n > 0) {
+     for (int i = 0; i < n; i++) if ((*list)[i]) free((*list)[i]);
+     free(*list);
+     *list = NULL;
    }
  }
  
@@ -651,6 +674,20 @@ void mkallcap_utf(w_char * u, int nc, int langnum) {
    if (*p != '\0') *p = csconv[((unsigned char)*p)].cupper;
  }
 
+ // conversion function for protected memory
+ void store_pointer(char * dest, char * source)
+ {
+    memcpy(dest, &source, sizeof(char *));
+ }
+
+ // conversion function for protected memory
+ char * get_stored_pointer(char * s)
+ {
+    char * p;
+    memcpy(&p, s, sizeof(char *));
+    return p;
+ }
+
 #ifndef MOZILLA_CLIENT
  // convert null terminated string to all caps using encoding
  void enmkallcap(char * d, const char * p, const char * encoding)
@@ -681,20 +718,6 @@ void mkallcap_utf(w_char * u, int nc, int langnum) {
    struct cs_info * csconv = get_current_cs(encoding);
    memcpy(d,p,(strlen(p)+1));
    if (*p != '\0') *d= csconv[((unsigned char)*p)].cupper;
- }
-
- // conversion function for protected memory
- void store_pointer(char * dest, char * source)
- {
-    memcpy(dest, &source, sizeof(char *));
- }
-
- // conversion function for protected memory
- char * get_stored_pointer(char * s)
- {
-    char * p;
-    memcpy(&p, s, sizeof(char *));
-    return p;
  }
 
 // these are simple character mappings for the 
@@ -5107,7 +5130,7 @@ struct cs_info iscii_devanagari_tbl[] = {
 { 0x00, 0xff, 0xff }
 };
 
-struct enc_entry encds[] = {
+static struct enc_entry encds[] = {
 {"ISO8859-1",iso1_tbl},
 {"ISO8859-2",iso2_tbl},
 {"ISO8859-3",iso3_tbl},
@@ -5464,14 +5487,14 @@ void remove_ignored_chars(char * word, char * ignored_chars)
    *word = '\0';
 }
 
-int parse_string(char * line, char ** out, const char * warnvar)
+int parse_string(char * line, char ** out, int ln)
 {
    char * tp = line;
    char * piece;
    int i = 0;
    int np = 0;
    if (*out) {
-      HUNSPELL_WARNING(stderr, "error: duplicate %s line\n", warnvar);
+      HUNSPELL_WARNING(stderr, "error: line %d: multiple definitions\n", ln);
       return 1;
    }
    piece = mystrsep(&tp, 0);
@@ -5481,6 +5504,7 @@ int parse_string(char * line, char ** out, const char * warnvar)
               case 0: { np++; break; }
               case 1: { 
                 *out = mystrdup(piece);
+                if (!*out) return 1;
                 np++;
                 break;
               }
@@ -5492,15 +5516,15 @@ int parse_string(char * line, char ** out, const char * warnvar)
       piece = mystrsep(&tp, 0);
    }
    if (np != 2) {
-      HUNSPELL_WARNING(stderr, "error: missing %s information\n", warnvar);
+      HUNSPELL_WARNING(stderr, "error: line %d: missing data\n", ln);
       return 1;
    } 
    return 0;
 }
 
-int parse_array(char * line, char ** out,
-        unsigned short ** out_utf16, int * out_utf16_len, const char * name, int utf8) {
-   if (parse_string(line, out, name)) return 1;
+int parse_array(char * line, char ** out, unsigned short ** out_utf16,
+       int * out_utf16_len, int utf8, int ln) {
+   if (parse_string(line, out, ln)) return 1;
    if (utf8) {
         w_char w[MAXWORDLEN];
         int n = u8_u16(w, MAXWORDLEN, *out);

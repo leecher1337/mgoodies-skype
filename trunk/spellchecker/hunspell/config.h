@@ -10,7 +10,7 @@
 
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
-#define ENABLE_NLS 1
+#undef ENABLE_NLS
 
 /* Define to 1 if you have `alloca', as a function or macro. */
 #define HAVE_ALLOCA 1
@@ -23,7 +23,7 @@
 #define HAVE_ARGZ_H 1
 
 /* "Define if you have the <curses.h> header" */
-#define HAVE_CURSES_H 1
+#undef HAVE_CURSES_H
 
 /* Define if the GNU dcgettext() function is already present or preinstalled.
    */
@@ -69,7 +69,7 @@
 #define HAVE_GETUID 1
 
 /* Define if you have the iconv() function. */
-#define HAVE_ICONV 1
+#undef HAVE_ICONV
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
@@ -121,7 +121,7 @@
 #define HAVE_PUTENV 1
 
 /* "Define if you have fancy command input editing with Readline" */
-#define HAVE_READLINE 1
+#undef HAVE_READLINE
 
 /* Define to 1 if you have the `setenv' function. */
 #define HAVE_SETENV 1
@@ -190,7 +190,7 @@
 #define HUNSPELL_EXPERIMENTAL 1
 
 /* "Define if you need warning messages" */
-#undef HUNSPELL_WARNING_ON
+#define HUNSPELL_WARNING_ON
 
 /* Define as const if the declaration of iconv() needs const. */
 #define ICONV_CONST 1
@@ -211,4 +211,5 @@
 #define PACKAGE_TARNAME
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION
+#define PACKAGE_VERSION "1.2.8"
+#define VERSION "1.2.8"

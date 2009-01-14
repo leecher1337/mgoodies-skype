@@ -3,12 +3,20 @@
 
 // First some base level utility routines
 
+#include "w_char.hxx"
+
+// casing
 #define NOCAP   0
 #define INITCAP 1
 #define ALLCAP  2
 #define HUHCAP  3
 #define HUHINITCAP  4
 
+// default encoding and keystring
+#define SPELL_ENCODING  "ISO8859-1"
+#define SPELL_KEYSTRING "qwertyuiop|asdfghjkl|zxcvbnm" 
+
+// default morphological fields
 #define MORPH_STEM        "st:"
 #define MORPH_ALLOMORPH   "al:"
 #define MORPH_POS         "po:"
@@ -23,6 +31,7 @@
 #define MORPH_PHON        "ph:"
 #define MORPH_HYPH        "hy:"
 #define MORPH_PART        "pa:"
+#define MORPH_FLAG        "fl:"
 #define MORPH_HENTRY      "_H:"
 #define MORPH_TAG_LEN     strlen(MORPH_STEM)
 
@@ -35,10 +44,13 @@
 #define FORBIDDENWORD  65510
 #define ONLYUPCASEFLAG 65511
 
-typedef struct {
-    unsigned char l;
-    unsigned char h;
-} w_char;
+// hash entry macros
+#define HENTRY_DATA(h) (h->var ? ((h->var & H_OPT_ALIASM) ? \
+    get_stored_pointer(&(h->word) + h->blen + 1) : &(h->word) + h->blen + 1) : NULL)
+// NULL-free version for warning-free OOo build
+#define HENTRY_DATA2(h) (h->var ? ((h->var & H_OPT_ALIASM) ? \
+    get_stored_pointer(&(h->word) + h->blen + 1) : &(h->word) + h->blen + 1) : "")
+#define HENTRY_FIND(h,p) (HENTRY_DATA(h) ? strstr(HENTRY_DATA(h), p) : NULL)
 
 #define w_char_eq(a,b) (((a).l == (b).l) && ((a).h == (b).h))
 
@@ -59,6 +71,9 @@ void   mychomp(char * s);
 
 // duplicate string
 char * mystrdup(const char * s);
+
+// strcat for limited length destination string
+char * mystrcat(char * dest, const char * st, int max);
 
 // duplicate reverse of string
 char * myrevstrdup(const char * s);
@@ -101,12 +116,6 @@ struct cs_info {
   unsigned char ccase;
   unsigned char clower;
   unsigned char cupper;
-};
-
-// two character arrays
-struct replentry {
-  char * pattern;
-  char * pattern2;
 };
 
 // Unicode character encoding information
@@ -187,10 +196,10 @@ void remove_ignored_chars_utf(char * word, unsigned short ignored_chars[], int i
 // strip all ignored characters in the string
 void remove_ignored_chars(char * word, char * ignored_chars);
 
-int parse_string(char * line, char ** out, const char * name);
+int parse_string(char * line, char ** out, int ln);
 
-int parse_array(char * line, char ** out,
-        unsigned short ** out_utf16, int * out_utf16_len, const char * name, int utf8);
+int parse_array(char * line, char ** out, unsigned short ** out_utf16,
+    int * out_utf16_len, int utf8, int ln);
 
 int fieldlen(const char * r);
 char * copy_field(char * dest, const char * morph, const char * var);

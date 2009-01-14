@@ -30,7 +30,7 @@
 #ifndef __PHONETHXX__
 #define __PHONETHXX__
 
-#define PHONETABLE_HASH_SIZE 256
+#define HASHSIZE          256
 #define MAXPHONETLEN      256
 #define MAXPHONETUTF8LEN  (MAXPHONETLEN * 4)
 
@@ -39,7 +39,7 @@ struct phonetable {
   cs_info * lang;
   int num;
   char * * rules;
-  int hash[PHONETABLE_HASH_SIZE];
+  int hash[HASHSIZE];
 };
 
 void init_phonet_hash(phonetable & parms);
