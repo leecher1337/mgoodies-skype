@@ -2,6 +2,10 @@ Spell Checker
 
 Changelog:
 
+. 0.1.0.3
+  + Updated to Hunspell 1.2.8
+  * Fix for wordchar in utf8 (fixes French dict)
+
 . 0.1.0.2
   + Updated to Hunspell 1.2.2b (closes issue 16)
   + Use also TRY as word chars (closes issue 13)

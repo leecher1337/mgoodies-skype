@@ -65,11 +65,11 @@ copy ..\..\..\Docs\*.*
 cd ..
 cd ..
 
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip %name%.dll Docs
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip %name%W.dll Docs
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.pdb.zip %name%.pdb
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.pdb.zip %name%W.pdb
-"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
+"C:\Program Files\jZip\jZip.exe" -a -rp %name%.zip %name%.dll Docs
+"C:\Program Files\jZip\jZip.exe" -a -rp %name%W.zip %name%W.dll Docs
+"C:\Program Files\jZip\jZip.exe" -a -rp %name%.pdb.zip %name%.pdb
+"C:\Program Files\jZip\jZip.exe" -a -rp %name%W.pdb.zip %name%W.pdb
+"C:\Program Files\jZip\jZip.exe" -a -rp %name%_src.zip src\*.*
 
 del *.dll
 del *.PDB

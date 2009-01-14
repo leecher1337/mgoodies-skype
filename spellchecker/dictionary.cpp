@@ -22,7 +22,9 @@ Boston, MA 02111-1307, USA.
 
 #include "dictionary.h"
 
+#include "hunspell/config.h"
 #include "hunspell/hunspell.hxx"
+#include "hunspell/csutil.hxx"
 
 
 #ifdef UNICODE
@@ -242,6 +244,16 @@ protected:
 #endif
 	}
 
+	TCHAR * fromHunspellAndFree(char *hunspellWord)
+	{
+		if (hunspellWord == NULL)
+			return NULL;
+		
+		TCHAR *ret = fromHunspell(hunspellWord);
+		free(hunspellWord);
+		return ret;
+	}
+
 public:
 	HunspellDictionary(TCHAR *aLanguage, TCHAR *aFileWithoutExtension, TCHAR *aUserPath, TCHAR *aSource)
 	{
@@ -270,6 +282,60 @@ public:
 			free(wordChars);
 	}
 
+	TCHAR * merge(TCHAR * s1, TCHAR *s2)
+	{
+		int len1 = (s1 == NULL ? 0 : lstrlen(s1));
+		int len2 = (s2 == NULL ? 0 : lstrlen(s2));
+
+		TCHAR *ret;
+		if (len1 > 0 && len2 > 0) 
+		{
+			ret = (TCHAR *) malloc(sizeof(TCHAR) * (len1 + len2 + 1));
+			lstrcpyn(ret, s1, len1+1);
+			lstrcpyn(&ret[len1], s2, len2+1);
+
+			FREE(s1);
+			FREE(s2);
+		}
+		else if (len1 > 0)
+		{
+			ret = s1;
+			FREE(s2);
+		}
+		else if (len2 > 0)
+		{
+			ret = s2;
+			FREE(s1);
+		}
+		else
+		{
+			ret = (TCHAR *) malloc(sizeof(TCHAR));
+			ret[0] = 0;
+
+			FREE(s1);
+			FREE(s2);
+		}
+
+		// Remove duplicated chars
+		int last = lstrlen(ret) - 1;
+		for(int i = 0; i <= last; i++)
+		{
+			TCHAR c = ret[i];
+			for(int j = last; j > i; j--)
+			{
+				if (c != ret[j])
+					continue;
+				if (j != last)
+					ret[j] = ret[last];
+				ret[last] = _T('\0');
+				last--;
+			}
+		}
+
+		return ret;
+	}
+
+
 	void loadThread()
 	{
 		char dic[1024];
@@ -287,65 +353,29 @@ public:
 
 		// Get codepage
 		const char *dic_enc = hunspell->get_dic_encoding();
+
+		TCHAR *hwordchars;
 		if (strcmp(dic_enc, "UTF-8") == 0)
 		{
 			codePage = CP_UTF8;
 
 #ifdef UNICODE
-			int len;
-			wordChars = _tcsdup((TCHAR *) hunspell->get_wordchars_utf16(&len));
+			int wcs_len;
+			hwordchars = fromHunspell((char *) hunspell->get_wordchars_utf16(&wcs_len));
 #else
 			// No option
-			wordChars = _tcsdup("qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM");
+			hwordchars = NULL;
 #endif
 		}
 		else
 		{
-			int i;
-			for (i = 0; i < MAX_REGS(codepages); i++)
-			{
-				if (strcmpi(codepages[i].name, hunspell->get_dic_encoding()) == 0)
-				{
-					if (IsValidCodePage(codepages[i].codepage))
-						codePage = codepages[i].codepage;
-					break;
-				}
-			}
-
-			char *casechars = get_casechars(dic_enc);
-			const char *hwordchars = hunspell->get_wordchars();
-			if (hwordchars != NULL) 
-			{
-				casechars = (char *) realloc(casechars, strlen(casechars) + strlen(hwordchars) + 1);
-				strcat(casechars, hwordchars);
-			}
-			const char *try_string = hunspell->get_try_string();
-			if (try_string != NULL) 
-			{
-				casechars = (char *) realloc(casechars, strlen(casechars) + strlen(try_string) + 1);
-				strcat(casechars, try_string);
-			}
-
-			wordChars = fromHunspell(casechars);
-
-			// Remove duplicated chars
-			int last = lstrlen(wordChars) - 1;
-			for(i = 0; i <= last; i++)
-			{
-				TCHAR c = wordChars[i];
-				for(int j = last; j > i; j--)
-				{
-					if (c != wordChars[j])
-						continue;
-					if (j != last)
-						wordChars[j] = wordChars[last];
-					wordChars[last] = _T('\0');
-					last--;
-				}
-			}
-
-			free(casechars);
+			hwordchars = fromHunspell(hunspell->get_wordchars());
 		}
+
+		TCHAR *casechars = fromHunspellAndFree(get_casechars(dic_enc));
+		TCHAR *try_string = fromHunspellAndFree(hunspell->get_try_string());
+
+		wordChars = merge(merge(casechars, hwordchars), try_string);
 
 		// Make a suggestion to load hunspell internalls
 		char ** words = NULL;

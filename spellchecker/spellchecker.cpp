@@ -30,7 +30,7 @@ PLUGININFOEX pluginInfo={
 #else
 	"Spell Checker",
 #endif
-	PLUGIN_MAKE_VERSION(0,1,0,2),
+	PLUGIN_MAKE_VERSION(0,1,0,3),
 	"Spell Checker",
 	"Ricardo Pescuma Domenecci",
 	"",
@@ -66,6 +66,8 @@ static IconStruct iconList[] =
 HINSTANCE hInst;
 PLUGINLINK *pluginLink;
 LIST_INTERFACE li;
+MM_INTERFACE mmi;
+UTF8_INTERFACE utfi;
 
 HANDLE hHooks[6];
 HANDLE hServices[3];
@@ -245,7 +247,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	pluginLink = link;
 
-	init_mir_malloc();
+	mir_getMMI(&mmi);
+	mir_getUTFI(&utfi);
 	mir_getLI(&li);
 
 	// hooks
@@ -1243,7 +1246,6 @@ int AddContactTextBox(HANDLE hContact, HWND hwnd, char *name, BOOL srmm, HWND hw
 }
 
 #define DESTROY_MENY(_m_)	if (_m_ != NULL) { DestroyMenu(_m_); _m_ = NULL; }
-#define FREE(_m_)			if (_m_ != NULL) { free(_m_); _m_ = NULL; }
 
 void FreePopupData(Dialog *dlg)
 {

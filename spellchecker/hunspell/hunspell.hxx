@@ -1,15 +1,15 @@
 #include "hashmgr.hxx"
 #include "affixmgr.hxx"
 #include "suggestmgr.hxx"
-#include "csutil.hxx"
 #include "langnum.hxx"
-#include "config.h"
 
 #define  SPELL_COMPOUND  (1 << 0)
 #define  SPELL_FORBIDDEN (1 << 1)
 #define  SPELL_ALLCAP    (1 << 2)
 #define  SPELL_NOCAP     (1 << 3)
 #define  SPELL_INITCAP   (1 << 4)
+
+#define  SPELL_XML "<?xml?>"
 
 #define MAXDIC 20
 #define MAXSUGGESTION 15
@@ -18,18 +18,18 @@
 #ifndef _MYSPELLMGR_HXX_
 #define _MYSPELLMGR_HXX_
 
-#ifdef HUNSPELL_STATIC
+//#ifdef HUNSPELL_STATIC
 	#define DLLEXPORT
-#else
-	#ifdef HUNSPELL_EXPORTS
-		#define DLLEXPORT  __declspec( dllexport )
-	#else
-		#define DLLEXPORT  __declspec( dllimport )
-	#endif
-#endif
+//#else
+//	#ifdef HUNSPELL_EXPORTS
+//		#define DLLEXPORT  __declspec( dllexport )
+//	#else
+//		#define DLLEXPORT  __declspec( dllimport )
+//	#endif
+//#endif
 
-#ifdef W32
-class Hunspell
+#ifdef WIN32
+class DLLEXPORT Hunspell
 #else
 class Hunspell
 #endif
@@ -45,14 +45,13 @@ class Hunspell
   int             utf8;
   int             complexprefixes;
   char**          wordbreak;
-  char *          key;
 
 public:
 
   /* Hunspell(aff, dic) - constructor of Hunspell class
    * input: path of affix file and dictionary file
    */
-  
+
   Hunspell(const char * affpath, const char * dpath, const char * key = NULL);
   ~Hunspell();
 
@@ -81,6 +80,10 @@ public:
 
   int suggest(char*** slst, const char * word);
 
+  /* deallocate suggestion lists */
+
+  void free_list(char *** slst, int n);
+
   char * get_dic_encoding();
 
  /* morphological functions */
@@ -96,8 +99,8 @@ public:
  /* stem(result, analysis, n) - get stems from a morph. analysis
   * example:
   * char ** result, result2;
-  * int n1 = analyze(result, "words");
-  * int n2 = stem(result2, result, n1);   
+  * int n1 = analyze(&result, "words");
+  * int n2 = stem(&result2, result, n1);   
   */
  
   int stem(char*** slst, char ** morph, int n);
@@ -110,7 +113,7 @@ public:
   * example:
   * char ** result;
   * char * affix = "is:plural"; // description depends from dictionaries, too
-  * int n = generate(result, "word", &affix, 1);
+  * int n = generate(&result, "word", &affix, 1);
   * for (int i = 0; i < n; i++) printf("%s\n", result[i]);
   */
 
@@ -130,7 +133,6 @@ public:
   int add_with_affix(const char * word, const char * example);
 
   /* remove word from the run-time dictionary */
-  /* NOTE: not implemented yet */
 
   int remove(const char * word);
 
@@ -140,7 +142,7 @@ public:
   const char * get_wordchars();
   unsigned short * get_wordchars_utf16(int * len);
 
-  const char * get_try_string();
+  char * get_try_string();
 
   struct cs_info * get_csconv();
   const char * get_version();
@@ -175,6 +177,11 @@ private:
    int    insert_sug(char ***slst, char * word, int ns);
    void   cat_result(char * result, char * st);
    char * stem_description(const char * desc);
+   int    spellml(char*** slst, const char * word);
+   int    get_xml_par(char * dest, const char * par, int maxl);
+   const char * get_xml_pos(const char * s, const char * attr);
+   int    get_xml_list(char ***slst, char * list, const char * tag);
+   int    check_xml_par(const char * q, const char * attr, const char * value);
 
 };
 

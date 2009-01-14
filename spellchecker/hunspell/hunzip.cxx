@@ -1,6 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef MOZILLA_CLIENT
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
+#else
+#include <stdlib.h> 
 #include <string.h>
+#include <stdio.h> 
+#endif
 
 #include "hunzip.hxx"
 
@@ -31,11 +37,11 @@ Hunzip::Hunzip(const char * file, const char * key) {
 
 int Hunzip::getcode(const char * key) {
     unsigned char c[2];
-    int i, j, n, o, p;
+    int i, j, n, p;
     int allocatedbit = BASEBITREC;
     const char * enc = key;
 
-    fin = fopen(filename, "r");
+    fin = fopen(filename, "rb");
     if (!fin) return -1;
 
     // read magic number
@@ -85,7 +91,7 @@ int Hunzip::getcode(const char * key) {
             if (*(++enc) == '\0') enc = key;
             l ^= *enc;
         }
-        if (fread(in, 1, l/8+1, fin) < l/8+1) return fail(MSG_FORMAT, filename);
+        if (fread(in, 1, l/8+1, fin) < (size_t) l/8+1) return fail(MSG_FORMAT, filename);
         if (key) for (j = 0; j <= l/8; j++) {
             if (*(++enc) == '\0') enc = key;
             in[j] ^= *enc;
@@ -151,7 +157,6 @@ int Hunzip::getbuf() {
 const char * Hunzip::getline() {
     char linebuf[BUFSIZE];
     int l = 0, eol = 0, left = 0, right = 0;
-    char end;
     if (bufsiz == -1) return NULL;
     while (l < bufsiz && !eol) {
         linebuf[l++] = out[outc];

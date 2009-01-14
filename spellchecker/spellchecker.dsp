@@ -219,7 +219,15 @@ SOURCE=.\hunspell\langnum.hxx
 # End Source File
 # Begin Source File
 
+SOURCE=.\hunspell\replist.hxx
+# End Source File
+# Begin Source File
+
 SOURCE=.\hunspell\suggestmgr.hxx
+# End Source File
+# Begin Source File
+
+SOURCE=.\hunspell\w_char.hxx
 # End Source File
 # End Group
 # Begin Source File
@@ -319,6 +327,10 @@ SOURCE=.\hunspell\phonet.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=.\hunspell\replist.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=.\hunspell\suggestmgr.cxx
 # End Source File
 # Begin Source File
@@ -333,10 +345,6 @@ SOURCE=.\dictionary.cpp
 # Begin Source File
 
 SOURCE=..\utils\mir_icons.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\utils\mir_memory.cpp
 # End Source File
 # Begin Source File
 
