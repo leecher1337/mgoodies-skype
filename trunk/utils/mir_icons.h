@@ -30,4 +30,4 @@ void ReleaseIconEx(HICON hIcon);
 
 
 
-#endif // __MIR_MEMORY_H__
+#endif // __MIR_ICONS_H__

@@ -18,9 +18,7 @@ Boston, MA 02111-1307, USA.
 */
 
 
-#include "mir_options.h"
-#include "mir_memory.h"
-
+#include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
 #include <tchar.h>
@@ -33,6 +31,9 @@ Boston, MA 02111-1307, USA.
 #include <m_protocols.h>
 #include <m_protosvc.h>
 #include <m_system.h>
+
+#include "mir_options.h"
+#include "mir_memory.h"
 
 
 #define MAX_REGS(_A_) ( sizeof(_A_) / sizeof(_A_[0]) )

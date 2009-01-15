@@ -22,20 +22,59 @@ Boston, MA 02111-1307, USA.
 # define __LOG_H__
 
 #include <windows.h>
-
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
+#include <string>
 
 
 int mlog(const char *module, const char *function, const char *fmt, ...);
+int mlog(const char *module, const char *function, const char *fmt, va_list va);
 int mlogC(const char *module, const char *function, HANDLE hContact, const char *fmt, ...);
 
 
-
 #ifdef __cplusplus
-}
-#endif
+
+class MLog
+{
+private:
+	std::string module;
+	std::string function;
+
+	static int deep;
+
+public:
+	MLog(const char *aModule, const char *aFunction) : module(aModule) 
+	{
+		function = "";
+		for(int i = 0; i < deep; i++)
+			function += "   ";
+		function += aFunction;
+
+		deep ++;
+
+		mlog(module.c_str(), function.c_str(), "BEGIN");
+	}
+
+	~MLog()
+	{
+		mlog(module.c_str(), function.c_str(), "END");
+		deep --;
+	}
+
+	int log(const char *fmt, ...)
+	{
+		va_list va;
+		va_start(va, fmt);
+
+		int ret = mlog(module.c_str(), function.c_str(), fmt, va);
+
+		va_end(va);
+
+		return ret;
+	}
+};
+
+
+#endif __cplusplus
+
+
 
 #endif // __LOG_H__
