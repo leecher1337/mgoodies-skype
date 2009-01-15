@@ -21,19 +21,52 @@ Boston, MA 02111-1307, USA.
 #ifndef __MIR_MEMORY_H__
 # define __MIR_MEMORY_H__
 
+
 #include <windows.h>
 
 
-// Need to be called on ME_SYSTEM_MODULESLOADED or Load
-void init_mir_malloc();
+
+static BOOL mir_is_unicode()
+{
+	char ver[1024];
+	CallService(MS_SYSTEM_GETVERSIONTEXT, (WPARAM) sizeof(ver), (LPARAM) ver);
+	return strstr(ver, "Unicode") != NULL;
+}
 
 
-BOOL mir_is_unicode();
+static void * mir_alloc0(size_t size) 
+{
+	void * ptr = mir_alloc(size);
 
+	if (ptr != NULL)
+		memset(ptr, 0, size);
 
-void * mir_alloc0(size_t size);
-int strcmpnull(char *str1, char *str2);
-int strcmpnullW(WCHAR *str1, WCHAR *str2);
+	return ptr;
+}
+
+static int strcmpnull(char *str1, char *str2)
+{
+	if ( str1 == NULL && str2 == NULL )
+		return 0;
+	if ( str1 != NULL && str2 == NULL )
+		return 1;
+	if ( str1 == NULL && str2 != NULL )
+		return -1;
+
+	return strcmp(str1, str2);
+}
+
+static int strcmpnullW(WCHAR *str1, WCHAR *str2)
+{
+	if ( str1 == NULL && str2 == NULL )
+		return 0;
+	if ( str1 != NULL && str2 == NULL )
+		return 1;
+	if ( str1 == NULL && str2 != NULL )
+		return -1;
+
+	return lstrcmpW(str1, str2);
+}
 
 
 #ifdef UNICODE

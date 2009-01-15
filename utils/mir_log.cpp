@@ -22,20 +22,23 @@ Boston, MA 02111-1307, USA.
 
 #include <stdio.h>
 
-extern "C"
-{
 #include <newpluginapi.h>
 #include <m_netlib.h>
 #include <m_protocols.h>
 #include <m_clist.h>
-}
+
+#define ENABLE_LOG 
 
 
-int mlog(const char *module, const char *function, const char *fmt, ...)
+int MLog::deep = 0;
+
+
+
+
+int mlog(const char *module, const char *function, const char *fmt, va_list va)
 {
 #ifdef ENABLE_LOG
 
-    va_list va;
     char text[1024];
 	size_t len;
 
@@ -43,9 +46,7 @@ int mlog(const char *module, const char *function, const char *fmt, ...)
 				 GetCurrentThreadId(), GetTickCount(), module, function);
 	len = strlen(text);
 
-    va_start(va, fmt);
     mir_vsnprintf(&text[len], sizeof(text) - len, fmt, va);
-    va_end(va);
 
 #ifdef LOG_TO_NETLIB
 
@@ -75,6 +76,19 @@ int mlog(const char *module, const char *function, const char *fmt, ...)
 	return 0;
 
 #endif
+}
+
+
+int mlog(const char *module, const char *function, const char *fmt, ...)
+{
+    va_list va;
+    va_start(va, fmt);
+
+	int ret = mlog(module, function, fmt, va);
+
+    va_end(va);
+
+	return ret;
 }
 
 int mlogC(const char *module, const char *function, HANDLE hContact, const char *fmt, ...)

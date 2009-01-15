@@ -128,7 +128,7 @@ class Buffer
 
 		Buffer(T in) : str(NULL), size(0), len(0)
 		{
-			if (in == NUL)
+			if (in == NULL)
 			{
 				alloc(1);
 				pack();
@@ -148,7 +148,7 @@ class Buffer
 		void pack() 
 		{
 			if (str != NULL)
-				str[len] = 0;
+				memset(&str[len], 0, sizeof(str[len]));
 		}
 
 		void alloc(size_t total) 
