@@ -1,4 +1,4 @@
-@echo off
+rem @echo off
 
 rem Batch file to build and upload files
 rem 
@@ -19,8 +19,10 @@ echo Generating files for %name% ...
 del *.zip
 del *.dll
 del *.pdb
-copy ..\..\..\bin\release\Plugins\%name%.dll
-copy ..\..\..\bin\release\Plugins\%name%W.dll
+rd /S /Q Plugins
+rd /S /Q Docs
+rd /S /Q src
+
 copy ..\Release\%name%.pdb
 copy ..\Unicode_Release\%name%W.pdb
 copy ..\Docs\%name%_changelog.txt
@@ -37,39 +39,62 @@ copy ..\..\m_%name%.h
 cd ..
 mkdir src
 cd src
+mkdir %name%
+cd %name%
 del /Q *.*
-copy ..\..\*.h
-copy ..\..\*.cpp
-copy ..\..\*.rc
-copy ..\..\*.dsp
-copy ..\..\*.dsw
+copy ..\..\..\*.h
+copy ..\..\..\*.cpp
+copy ..\..\..\*.rc
+copy ..\..\..\*.dsp
+copy ..\..\..\*.dsw
 mkdir res
 cd res
 del /Q *.*
-copy ..\..\..\res\*.*
+copy ..\..\..\..\res\*.*
 cd ..
 mkdir sdk
 cd sdk
 del /Q *.*
-copy ..\..\..\sdk\*.*
+copy ..\..\..\..\sdk\*.*
 cd ..
 mkdir hunspell
 cd hunspell
 del /Q *.*
-copy ..\..\..\hunspell\*.*
+copy ..\..\..\..\hunspell\*.*
 cd ..
 mkdir Docs
 cd Docs
 del /Q *.*
-copy ..\..\..\Docs\*.*
+copy ..\..\..\..\Docs\*.*
+cd ..
+cd ..
+mkdir utils
+cd utils
+del /Q *.*
+copy ..\..\..\..\utils\*.*
 cd ..
 cd ..
 
-"C:\Program Files\jZip\jZip.exe" -a -rp %name%.zip %name%.dll Docs
-"C:\Program Files\jZip\jZip.exe" -a -rp %name%W.zip %name%W.dll Docs
-"C:\Program Files\jZip\jZip.exe" -a -rp %name%.pdb.zip %name%.pdb
-"C:\Program Files\jZip\jZip.exe" -a -rp %name%W.pdb.zip %name%W.pdb
-"C:\Program Files\jZip\jZip.exe" -a -rp %name%_src.zip src\*.*
+mkdir Plugins
+cd Plugins
+del /Q *.dll
+copy ..\..\..\..\bin\release\Plugins\%name%.dll
+cd ..
+
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.zip Plugins Docs  
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%.FL.zip Plugins Docs Dictionaries Icons
+
+mkdir Plugins
+cd Plugins
+del /Q *.dll
+copy ..\..\..\..\bin\release\Plugins\%name%W.dll
+cd ..
+
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.zip Plugins Docs
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.FL.zip Plugins Docs Dictionaries Icons
+
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%W.pdb.zip %name%W.pdb
+"C:\Program Files\Filzip\Filzip.exe" -a -rp %name%_src.zip src\*.*
 
 del *.dll
 del *.PDB

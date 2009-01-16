@@ -2,6 +2,9 @@ Spell Checker
 
 Changelog:
 
+. 0.1.0.4
+  * Fix for codepage)
+
 . 0.1.0.3
   + Updated to Hunspell 1.2.8
   * Fix for wordchar in utf8 (fixes French dict)
