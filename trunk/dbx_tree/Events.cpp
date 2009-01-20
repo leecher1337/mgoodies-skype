@@ -656,6 +656,12 @@ unsigned int CEvents::MarkRead(TDBTEventHandle hEvent)
 		return DBT_INVALIDPARAM;
 	}
 
+	if (flags & DBT_EF_READ)
+	{
+		SYNC_ENDWRITE(m_Sync);
+		return flags;
+	}
+
 	PEntityEventsRecord record = getEntityRecord(entity);
 	if (record == NULL)
 	{
