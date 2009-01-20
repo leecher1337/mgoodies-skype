@@ -17,8 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)/Plugins"
+			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)/Obj/$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="2"
 			>
@@ -60,7 +60,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="bin\$(ProjectName)_D.dll"
 				GenerateManifest="false"
 				GenerateDebugInformation="true"
 				OptimizeForWindows98="2"
@@ -92,8 +91,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)/Plugins"
+			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)/Obj/$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
@@ -139,7 +138,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="bin\$(ProjectName)_R.dll"
 				GenerateManifest="true"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
@@ -176,8 +174,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug Unicode|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)/Plugins"
+			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)/Obj/$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="2"
 			>
@@ -200,7 +198,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../include"
-				PreprocessorDefinitions="UNICODE"
+				PreprocessorDefinitions="UNICODE;_UNICODE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -220,7 +218,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="bin\$(ProjectName)_UD.dll"
 				GenerateManifest="false"
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
@@ -251,8 +248,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release Unicode|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)/Plugins"
+			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)/Obj/$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
@@ -280,7 +277,7 @@
 				FavorSizeOrSpeed="1"
 				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../include"
-				PreprocessorDefinitions="UNICODE"
+				PreprocessorDefinitions="UNICODE;_UNICODE"
 				RuntimeLibrary="0"
 				EnableEnhancedInstructionSet="0"
 				WarningLevel="3"
@@ -299,7 +296,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="bin\$(ProjectName)_RU.dll"
 				GenerateManifest="true"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
@@ -335,8 +331,8 @@
 		</Configuration>
 		<Configuration
 			Name="myDebugExecute|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)/Plugins"
+			IntermediateDirectory="$(SolutionDir)$(ConfigurationName)/Obj/$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="2"
 			>

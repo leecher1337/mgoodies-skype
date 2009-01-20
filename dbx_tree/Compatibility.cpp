@@ -623,8 +623,8 @@ int CompAddEvent(WPARAM hContact, LPARAM pEventInfo)
 	ev.ModuleName = dbei->szModule;
 	ev.Timestamp = dbei->timestamp;
 	ev.Flags = dbei->flags;
-	if (ev.Flags & DBT_EF_SENT)
-		ev.Flags = ev.Flags | DBT_EF_READ;
+	if (ev.Flags & DBEF_SENT)
+		ev.Flags = ev.Flags | DBEF_READ;
 	ev.EventType = dbei->eventType;
 	ev.cbBlob = dbei->cbBlob;
 	ev.pBlob = dbei->pBlob;
@@ -673,6 +673,8 @@ int CompGetEvent(WPARAM hEvent, LPARAM pEventInfo)
 	dbei->szModule = ev.ModuleName;
 	dbei->timestamp = ev.Timestamp;
 	dbei->flags = ev.Flags;
+	if (dbei->flags & DBEF_SENT)
+		dbei->flags = dbei->flags & ~DBEF_READ;
 	dbei->eventType = ev.EventType;
 
 	if (dbei->cbBlob && dbei->pBlob)
@@ -692,7 +694,10 @@ int CompGetEvent(WPARAM hEvent, LPARAM pEventInfo)
 }
 int CompMarkEventRead(WPARAM hContact, LPARAM hEvent)
 {
-	return DBEventMarkRead(hEvent, 0);
+	int res = DBEventMarkRead(hEvent, 0);
+	if ((res != DBT_INVALIDPARAM) && (res & DBEF_SENT))
+		res = res & ~DBEF_READ;
+	return res;
 }
 int CompGetEventContact(WPARAM hEvent, LPARAM lParam)
 {
