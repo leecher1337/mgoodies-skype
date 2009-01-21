@@ -31,7 +31,7 @@ PLUGINLINK *pluginLink;
 PLUGININFOEX pluginInfo={
 	sizeof(PLUGININFOEX),
 	"My Details",
-	PLUGIN_MAKE_VERSION(0,0,1,11),
+	PLUGIN_MAKE_VERSION(0,0,2,0),
 	"Show and allows you to edit your details for all protocols.",
 	"Ricardo Pescuma Domenecci, Drugwash",
 	"",
@@ -41,6 +41,11 @@ PLUGININFOEX pluginInfo={
 	0,		//doesn't replace anything built-in
 	{ 0xa82baeb3, 0xa33c, 0x4036, { 0xb8, 0x37, 0x78, 0x3, 0xa5, 0xb6, 0xc2, 0xab } } // {A82BAEB3-A33C-4036-B837-7803A5B6C2AB}
 };
+
+
+struct MM_INTERFACE mmi;
+struct UTF8_INTERFACE utfi;
+struct SKIN_INTERFACE mski;
 
 
 HANDLE hTTB = NULL;
@@ -54,6 +59,8 @@ HWND hwndSetNickname;
 
 long status_msg_dialog_open;
 HWND hwndSetStatusMsg;
+
+SkinDialog *dialog;
 
 
 // Hook called after init
@@ -110,7 +117,9 @@ int __declspec(dllexport) Load(PLUGINLINK *link)
 	// Copy data
 	pluginLink = link;
 
-	init_mir_malloc();
+	mir_getMMI(&mmi);
+	mir_getUTFI(&utfi);
+
 	init_list_interface();
 
 	// Hook event to load messages and show first one
@@ -176,10 +185,73 @@ static int Menu_SetMyStatusMessageUI(WPARAM wParam,LPARAM lParam)
 	return PluginCommand_SetMyStatusMessageUI(0, 0);
 }
 
+static void SkinChanged(void *param, SKINNED_DIALOG dlg)
+{
+	RefreshFrameAndCalcRects();
+}
+
 
 // Hook called after init
 static int MainInit(WPARAM wparam,LPARAM lparam) 
-{
+{	
+	if ( mir_skins_getInterface(&mski) != 0 )
+	{
+		MessageBox(NULL, _T("MyDetails needs Skins plugin in order to work"), _T("MyDetails"), MB_OK | MB_ICONERROR);
+		return 0;
+	}
+		
+	if (CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON") == NULL) 
+	{
+		SKINICONDESC sid = {0};
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.ptszSection = "Contact List";
+		sid.ptszDescription = "Listening to";
+		sid.pszName = "LISTENING_TO_ICON";
+		sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO));
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+	}
+	
+	{
+		SKINICONDESC sid = {0};
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.ptszSection = "My Details";
+		sid.ptszDescription = "Previous protocol";
+		sid.pszName = "MYDETAILS_PREV_PROTOCOL";
+		sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_LEFT_ARROW));
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+	}
+	
+	{
+		SKINICONDESC sid = {0};
+		sid.cbSize = sizeof(SKINICONDESC);
+		sid.ptszSection = "My Details";
+		sid.ptszDescription = "Next protocol";
+		sid.pszName = "MYDETAILS_NEXT_PROTOCOL";
+		sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_RIGHT_ARROW));
+		CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
+	}
+	
+	dialog = new SkinDialog("MyDetails", "My Details", MODULE_NAME);
+	if (!dialog->isValid())
+	{
+		MessageBox(NULL, _T("MyDetails could not create dialog. Check if default skin is installed"), _T("MyDetails"), MB_OK | MB_ICONERROR);
+		return 0;
+	}
+
+	dialog->addImageField("avatar", "Avatar");
+	dialog->addTextField("nickname", "Nickname");
+	dialog->addTextField("protocol", "Protocol");
+	dialog->addIconField("status_icon", "Status Icon");
+	dialog->addTextField("status_name", "Status");
+	dialog->addTextField("status_msg", "Status Message");
+	dialog->addIconField("listening_icon", "Listening To Icon");
+	dialog->addTextField("listening", "Listening To");
+	dialog->addIconField("next_proto", "Next Protocol");
+	dialog->addIconField("prev_proto", "Previous Protocol");
+	dialog->setSkinChangedCallback(SkinChanged, NULL);
+	dialog->finishedConfiguring();
+
+
 	InitProtocolData();
 
 	// Add options to menu
@@ -238,43 +310,6 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
 
 	InitFrames();
 
-	if (ServiceExists(MS_SKIN2_ADDICON)) 
-	{
-		if (CallService(MS_SKIN2_GETICON, 0, (LPARAM) "LISTENING_TO_ICON") == NULL) 
-		{
-			SKINICONDESC sid = {0};
-			sid.cbSize = sizeof(SKINICONDESC);
-			sid.flags = SIDF_TCHAR;
-			sid.ptszSection = TranslateT("Contact List");
-			sid.ptszDescription = TranslateT("Listening to");
-			sid.pszName = "LISTENING_TO_ICON";
-			sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_LISTENINGTO));
-			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-		}
-
-		{
-			SKINICONDESC sid = {0};
-			sid.cbSize = sizeof(SKINICONDESC);
-			sid.flags = SIDF_TCHAR;
-			sid.ptszSection = TranslateT("My Details");
-			sid.ptszDescription = TranslateT("Previous protocol");
-			sid.pszName = "MYDETAILS_PREV_PROTOCOL";
-			sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_LEFT_ARROW));
-			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-		}
-
-		{
-			SKINICONDESC sid = {0};
-			sid.cbSize = sizeof(SKINICONDESC);
-			sid.flags = SIDF_TCHAR;
-			sid.ptszSection = TranslateT("My Details");
-			sid.ptszDescription = TranslateT("Next protocol");
-			sid.pszName = "MYDETAILS_NEXT_PROTOCOL";
-			sid.hDefaultIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_RIGHT_ARROW));
-			CallService(MS_SKIN2_ADDICON, 0, (LPARAM)&sid);
-		}
-	}
-
     // updater plugin support
     if(ServiceExists(MS_UPDATE_REGISTER))
 	{
@@ -298,13 +333,15 @@ static int MainInit(WPARAM wparam,LPARAM lparam)
         CallService(MS_UPDATE_REGISTER, 0, (LPARAM)&upd);
 	}
 
-
     return 0;
 }
 
 static int MainUninit(WPARAM wParam, LPARAM lParam) 
 {
 	DeInitFrames();
+	
+	delete dialog;
+
 	return 0;
 }
 
