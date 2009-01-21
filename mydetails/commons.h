@@ -27,6 +27,8 @@ Boston, MA 02111-1307, USA.
 #include <win2k.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include <vector>
+
 #include <newpluginapi.h>
 #include <m_clist.h>
 #include <m_skin.h>
@@ -61,6 +63,8 @@ Boston, MA 02111-1307, USA.
 
 #include <io.h>
 
+#include "../skins/m_skins_cpp.h"
+
 #include "resource.h"
 
 
@@ -76,6 +80,8 @@ extern PLUGINLINK *pluginLink;
 extern long nickname_dialog_open;
 extern long status_msg_dialog_open;
 
+extern SkinDialog *dialog;
+
 
 #include "m_mydetails.h"
 #include "data.h"
@@ -85,6 +91,7 @@ extern long status_msg_dialog_open;
 #include "../utils/mir_memory.h"
 #include "../utils/mir_options.h"
 #include "../utils/mir_icons.h"
+#include "../utils/tstring.h"
 
 
 #define PS_SETMYAVATAR "/SetMyAvatar"

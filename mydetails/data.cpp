@@ -294,7 +294,19 @@ void Protocol::GetStatusMsg(int aStatus, char *msg, size_t msg_size)
 		return;
 	}
 
-	if (aStatus == status && ProtoServiceExists(name, PS_GETMYAWAYMSG) )
+	if (ServiceExists(MS_SA_ISSARUNNING) && CallService(MS_SA_ISSARUNNING, 0, 0)) 
+	{
+		char *tmp= (char *) CallService(MS_AWAYMSG_GETSTATUSMSG, (WPARAM) aStatus, (LPARAM) name);
+
+		if (tmp != NULL)
+		{
+			lcopystr(msg, tmp, msg_size);
+			mir_free(tmp);
+		}
+		else lcopystr(msg, "", msg_size);
+		
+	}
+	else if (aStatus == status && ProtoServiceExists(name, PS_GETMYAWAYMSG))
 	{
 		char *tmp = (char *) CallProtoService(name, PS_GETMYAWAYMSG, 0, 0);
 		lcopystr(msg, tmp == NULL ? "" : tmp, msg_size);
