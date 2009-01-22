@@ -233,7 +233,7 @@ struct SimpleItem
 	virtual void update(HWND hwnd, SkinFieldState *item)
 	{
 		draw = item->isVisible();
-		alignRight = ( ((SkinTextFieldState *) item)->getHorizontalAlign() == SKN_HALIGN_RIGHT );
+		alignRight = FALSE;
 
 		if (draw)
 		{
@@ -244,6 +244,12 @@ struct SimpleItem
 		{
 			tt.removeTooltip();
 		}
+	}
+
+	virtual void update(HWND hwnd, SkinTextFieldState *item)
+	{
+		update(hwnd, (SkinFieldState *) item);
+		alignRight = ( item->getHorizontalAlign() == SKN_HALIGN_RIGHT );
 	}
 
 	virtual BOOL hitTest(const POINT &p)
@@ -1128,20 +1134,26 @@ void MakeHover(HWND hwnd, POINT *p, SimpleItem *item)
 	}
 }
 
+int ShowPopupMenu(HWND hwnd, HMENU submenu, SimpleItem &item)
+{
+	POINT p;
+	if (item.alignRight)
+		p.x = item.rc.right;
+	else
+		p.x = item.rc.left;
+	p.y =  item.rc.bottom+1;
+	ClientToScreen(hwnd, &p);
+	
+	return TrackPopupMenu(submenu, TPM_TOPALIGN|TPM_RIGHTBUTTON|TPM_RETURNCMD
+			| (item.alignRight ? TPM_RIGHTALIGN : TPM_LEFTALIGN), p.x, p.y, 0, hwnd, NULL);
+}
+
+
 void ShowGlobalStatusMenu(HWND hwnd, MyDetailsFrameData *data, Protocol *proto, POINT &p)
 {
 	HMENU submenu = (HMENU) CallService(MS_CLIST_MENUGETSTATUS,0,0);
 	
-	if (data->status.alignRight)
-		p.x = data->status.rc.right;
-	else
-		p.x = data->status.rc.left;
-	p.y =  data->status.rc.bottom+1;
-	ClientToScreen(hwnd, &p);
-	
-	int ret = TrackPopupMenu(submenu, TPM_TOPALIGN|TPM_RIGHTBUTTON|TPM_RETURNCMD
-			| (data->status.alignRight ? TPM_RIGHTALIGN : TPM_LEFTALIGN), p.x, p.y, 0, hwnd, NULL);
-
+	int ret = ShowPopupMenu(hwnd, submenu, data->status);
 	if(ret)
 		CallService(MS_CLIST_MENUPROCESSCOMMAND, MAKEWPARAM(LOWORD(ret),MPCF_MAINMENU),(LPARAM)NULL);
 }
@@ -1195,48 +1207,9 @@ void ShowProtocolStatusMenu(HWND hwnd, MyDetailsFrameData *data, Protocol *proto
 
 	if (submenu != NULL)
 	{
-		/*
-		// Remove the first itens (protocol name and separator)
-		int to_remove = 0;
-		for(; to_remove < 5; to_remove++)
-		{
-			MENUITEMINFO mii = {0};
-			mii.cbSize = sizeof(mii);
-			mii.fMask = MIIM_TYPE;
-			GetMenuItemInfo(submenu, to_remove, TRUE, &mii);
-
-			if (mii.fType == MFT_SEPARATOR)
-				break;
-		}
-
-		if (to_remove < 5)
-		{
-			submenu = CopyMenu(submenu);
-
-			for(int i = 0; i <= to_remove; i++)
-				RemoveMenu(submenu, i, MF_BYPOSITION);
-		}
-		*/
-
-		if (data->proto.alignRight)
-			p.x = data->status.rc.right;
-		else
-			p.x = data->status.rc.left;
-		p.y =  data->status.rc.bottom+1;
-		ClientToScreen(hwnd, &p);
-		
-		int ret = TrackPopupMenu(submenu, TPM_TOPALIGN|TPM_RIGHTBUTTON|TPM_RETURNCMD
-				| (data->proto.alignRight ? TPM_RIGHTALIGN : TPM_LEFTALIGN), p.x, p.y, 0, hwnd, NULL);
-
+		int ret = ShowPopupMenu(hwnd, submenu, data->status);
 		if(ret)
 			CallService(MS_CLIST_MENUPROCESSCOMMAND, MAKEWPARAM(LOWORD(ret),MPCF_MAINMENU),(LPARAM)NULL);
-
-		/*
-		if (to_remove < 5)
-		{
-			DestroyMenu(submenu);
-		}
-		*/
 	}
 	else
 	{
@@ -1257,20 +1230,11 @@ void ShowProtocolStatusMenu(HWND hwnd, MyDetailsFrameData *data, Protocol *proto
 			}
 		}
 
-		if (data->proto.alignRight)
-			p.x = data->status.rc.right;
-		else
-			p.x = data->status.rc.left;
-		p.y =  data->status.rc.bottom+1;
-		ClientToScreen(hwnd, &p);
-		
-		int ret = TrackPopupMenu(submenu, TPM_TOPALIGN|TPM_RIGHTBUTTON|TPM_RETURNCMD
-				| (data->proto.alignRight ? TPM_RIGHTALIGN : TPM_LEFTALIGN), p.x, p.y, 0, hwnd, NULL);
+		int ret = ShowPopupMenu(hwnd, submenu, data->status);
 		DestroyMenu(menu);
+
 		if(ret) 
-		{
 			proto->SetStatus(ret);
-		}
 	}
 }
 
@@ -1312,15 +1276,8 @@ void ShowListeningToMenu(HWND hwnd, MyDetailsFrameData *data, Protocol *proto, P
 
 	SetMenuItemInfo(submenu, ID_LISTENINGTOPOPUP_SENDLISTENINGTO, FALSE, &mii);
 	
-	if (data->listening_to.alignRight)
-		p.x = data->listening_to.rc.right;
-	else
-		p.x = data->listening_to.rc.left;
-	p.y =  data->listening_to.rc.bottom+1;
-	ClientToScreen(hwnd, &p);
-	
-	int ret = TrackPopupMenu(submenu, TPM_TOPALIGN|TPM_RIGHTBUTTON|TPM_RETURNCMD
-			| (data->listening_to.alignRight ? TPM_RIGHTALIGN : TPM_LEFTALIGN), p.x, p.y, 0, hwnd, NULL);
+	int ret = ShowPopupMenu(hwnd, submenu, data->listening_to);
+
 	DestroyMenu(menu);
 
 	switch(ret)
@@ -1531,20 +1488,12 @@ LRESULT CALLBACK FrameWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 					InsertMenuItem(menu, 0, TRUE, &mii);
 				}
 				
-				if (data->proto.alignRight)
-					p.x = data->proto.rc.right;
-				else
-					p.x = data->proto.rc.left;
-				p.y =  data->proto.rc.bottom+1;
-				ClientToScreen(hwnd, &p);
-	
-				int ret = TrackPopupMenu(menu, TPM_TOPALIGN|TPM_LEFTALIGN|TPM_RIGHTBUTTON|TPM_RETURNCMD, p.x, p.y, 0, hwnd, NULL);
+				int ret = ShowPopupMenu(hwnd, menu, data->proto);
+
 				DestroyMenu(menu);
 
 				if (ret != 0)
-				{
 					PluginCommand_ShowProtocol(NULL, (WPARAM) protocols->Get(ret-1)->name);
-				}
 
 				data->showing_menu = false;
 			}
